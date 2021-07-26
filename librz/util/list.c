@@ -56,7 +56,7 @@ RZ_API void rz_list_init(RzList *list) {
 	list->sorted = false;
 }
 
-RZ_API int rz_list_length(const RzList *list) {
+RZ_API ut32 rz_list_length(const RzList *list) {
 	rz_return_val_if_fail(list, 0);
 	return list->length;
 }
@@ -137,11 +137,11 @@ RZ_API void rz_list_split_iter(RzList *list, RzListIter *iter) {
 }
 
 //Warning: free functions must be compatible
-RZ_API int rz_list_join(RzList *list1, RzList *list2) {
+RZ_API bool rz_list_join(RzList *list1, RzList *list2) {
 	rz_return_val_if_fail(list1 && list2, 0);
 
 	if (!(list2->length)) {
-		return 0;
+		return false;
 	}
 	if (!(list1->length)) {
 		list1->head = list2->head;
@@ -156,7 +156,7 @@ RZ_API int rz_list_join(RzList *list1, RzList *list2) {
 	list1->length += list2->length;
 	list2->length = 0;
 	list2->head = list2->tail = NULL;
-	return 1;
+	return true;
 }
 
 RZ_API RzList *rz_list_new(void) {
@@ -242,9 +242,9 @@ RZ_API RzListIter *rz_list_prepend(RzList *list, void *data) {
 	return item;
 }
 
-RZ_API RzListIter *rz_list_insert(RzList *list, int n, void *data) {
+RZ_API RzListIter *rz_list_insert(RzList *list, ut32 n, void *data) {
 	RzListIter *it, *item;
-	int i;
+	ut32 i;
 
 	rz_return_val_if_fail(list, NULL);
 
@@ -313,9 +313,9 @@ RZ_API void *rz_list_pop_head(RzList *list) {
 	return data;
 }
 
-RZ_API int rz_list_del_n(RzList *list, int n) {
+RZ_API ut32 rz_list_del_n(RzList *list, ut32 n) {
 	RzListIter *it;
-	int i;
+	ut32 i;
 
 	rz_return_val_if_fail(list, false);
 
@@ -416,9 +416,9 @@ RZ_API RzListIter *rz_list_add_sorted(RzList *list, void *data, RzListComparator
 	return item;
 }
 
-RZ_API int rz_list_set_n(RzList *list, int n, void *p) {
+RZ_API ut32 rz_list_set_n(RzList *list, ut32 n, void *p) {
 	RzListIter *it;
-	int i;
+	ut32 i;
 
 	rz_return_val_if_fail(list, false);
 	for (it = list->head, i = 0; it; it = it->n, i++) {
@@ -434,9 +434,9 @@ RZ_API int rz_list_set_n(RzList *list, int n, void *p) {
 	return false;
 }
 
-RZ_API void *rz_list_get_n(const RzList *list, int n) {
+RZ_API void *rz_list_get_n(const RzList *list, ut32 n) {
 	RzListIter *it;
-	int i;
+	ut32 i;
 
 	rz_return_val_if_fail(list, NULL);
 

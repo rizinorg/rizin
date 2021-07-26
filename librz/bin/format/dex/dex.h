@@ -33,6 +33,27 @@ typedef enum {
 	DEX_MAP_ITEM_TYPE_HIDDENAPI_CLASS_DATA_ITEM = 0xF000,
 } DexMapItemType;
 
+typedef enum {
+	ACCESS_FLAG_PUBLIC /*               */ = 0x00001,
+	ACCESS_FLAG_PRIVATE /*              */ = 0x00002,
+	ACCESS_FLAG_PROTECTED /*            */ = 0x00004,
+	ACCESS_FLAG_STATIC /*               */ = 0x00008,
+	ACCESS_FLAG_FINAL /*                */ = 0x00010,
+	ACCESS_FLAG_SYNCHRONIZED /*         */ = 0x00008,
+	ACCESS_FLAG_BRIDGE /*               */ = 0x00040,
+	ACCESS_FLAG_VARARGS /*              */ = 0x00080,
+	ACCESS_FLAG_NATIVE /*               */ = 0x00100,
+	ACCESS_FLAG_INTERFACE /*            */ = 0x00200,
+	ACCESS_FLAG_ABSTRACT /*             */ = 0x00400,
+	ACCESS_FLAG_STRICT /*               */ = 0x00800,
+	ACCESS_FLAG_SYNTHETIC /*            */ = 0x01000,
+	ACCESS_FLAG_ANNOTATION /*           */ = 0x02000,
+	ACCESS_FLAG_ENUM /*                 */ = 0x04000,
+	ACCESS_FLAG_MODULE /*               */ = 0x08000,
+	ACCESS_FLAG_CONSTRUCTOR /*          */ = 0x10000,
+	ACCESS_FLAG_DECLARED_SYNCHRONIZED /**/ = 0x20000
+} DexAccessFlag;
+
 typedef struct dex_map_item_t {
 	ut16 map_type; /* DexMapItemType */
 	ut16 unused;
@@ -55,7 +76,8 @@ typedef ut32 DexTypeId;
 typedef struct dex_proto_id_t {
 	ut32 shorty_idx;
 	ut32 return_type_idx;
-	ut32 parameters_offset;
+	ut32 type_list_size;
+	ut16 *type_list;
 	ut64 offset;
 } DexProtoId;
 #define DEX_PROTO_ID_SIZE (0xC)
@@ -76,6 +98,30 @@ typedef struct dex_method_id_t {
 } DexMethodId;
 #define DEX_METHOD_ID_SIZE (8)
 
+typedef struct dex_encoded_field_t {
+	ut64 offset;
+	ut64 field_idx_diff;
+	ut64 access_flags;
+} DexEncodedField;
+
+typedef struct dex_encoded_method_t {
+	ut64 offset;
+	ut64 method_idx;
+	ut64 access_flags;
+
+	/* core related data */
+	ut16 registers_size;
+	ut16 ins_size;
+	ut16 outs_size;
+	ut16 tries_size;
+	ut32 debug_info_offset;
+	ut32 code_size;
+	ut64 code_offset;
+	/*ut16 padding*/
+	/*try_item[tries_size]*/
+	/*encoded_catch_handler_list handlers */
+} DexEncodedMethod;
+
 typedef struct dex_class_def_t {
 	ut32 class_idx;
 	ut32 access_flags;
@@ -86,10 +132,16 @@ typedef struct dex_class_def_t {
 	ut32 class_data_offset;
 	ut32 static_values_offset;
 	ut64 offset;
+
+	RzList /*<DexEncodedField>*/ *static_fields;
+	RzList /*<DexEncodedField>*/ *instance_fields;
+	RzList /*<DexEncodedMethod>*/ *direct_methods;
+	RzList /*<DexEncodedMethod>*/ *virtual_methods;
 } DexClassDef;
 #define DEX_CLASS_DEF_SIZE (0x20)
 
 typedef struct dex_t {
+	ut64 header_offset;
 	ut8 magic[4];
 	ut8 version[4];
 	ut32 checksum;
@@ -131,6 +183,8 @@ typedef struct dex_t {
 RZ_API RzBinDex *rz_bin_dex_new(RzBuffer *buf, ut64 base, Sdb *kv);
 RZ_API void rz_bin_dex_free(RzBinDex *dex);
 RZ_API RzList *rz_bin_dex_strings(RzBinDex *dex);
+RZ_API RzList *rz_bin_dex_classes(RzBinDex *dex);
+RZ_API RzList *rz_bin_dex_sections(RzBinDex *dex);
 
 RZ_API void rz_bin_dex_checksum(RzBinDex *dex, RzBinHash *hash);
 RZ_API void rz_bin_dex_sha1(RzBinDex *dex, RzBinHash *hash);

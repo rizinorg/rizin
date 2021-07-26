@@ -57,7 +57,7 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 }
 
 static void destroy(RzBinFile *bf) {
-	// rz_bin_java_class_free(rz_bin_file_get_dex(bf));
+	rz_bin_dex_free(rz_bin_file_get_dex(bf));
 }
 
 static bool check_buffer(RzBuffer *b) {
@@ -77,56 +77,13 @@ static Sdb *get_sdb(RzBinFile *bf) {
 	return bf->sdb;
 }
 
-static void free_rz_bin_class(void /*RzBinClass*/ *k) {
-	/*
-	RzBinClass *bclass = (RzBinClass *)k;
-	if (bclass) {
-		rz_list_free(bclass->methods);
-		rz_list_free(bclass->fields);
-		free(bclass->name);
-		free(bclass->super);
-		free(bclass->visibility_str);
-		free(bclass);
-	}
-	*/
-}
-
 static RzList *classes(RzBinFile *bf) {
-	return NULL;
-	/*
-	RzBinClass *bclass = NULL;
-	RzList *classes = NULL;
 	RzBinDex *dex = rz_bin_file_get_dex(bf);
 	if (!dex) {
 		return NULL;
 	}
 
-	classes = rz_list_newf(free_rz_bin_class);
-	if (!classes) {
-		return NULL;
-	}
-
-	bclass = RZ_NEW0(RzBinClass);
-	if (!bclass) {
-		rz_list_free(classes);
-		return NULL;
-	}
-	rz_list_append(classes, bclass);
-
-	bclass->name = rz_bin_java_class_name(dex);
-	bclass->super = rz_bin_java_class_super(dex);
-	bclass->visibility = rz_bin_java_class_access_flags(dex);
-	bclass->visibility_str = rz_bin_java_class_access_flags_readable(dex, ACCESS_FLAG_MASK_ALL);
-
-	bclass->methods = rz_bin_java_class_methods_as_symbols(dex);
-	bclass->fields = rz_bin_java_class_fields_as_binfields(dex);
-	if (!bclass->methods || !bclass->fields) {
-		rz_list_free(classes);
-		return NULL;
-	}
-
-	return classes;
-	*/
+	return rz_bin_dex_classes(dex);
 }
 
 static RzList *imports(RzBinFile *bf) {
@@ -142,15 +99,12 @@ static RzList *imports(RzBinFile *bf) {
 }
 
 static RzList *sections(RzBinFile *bf) {
-	return NULL;
-	/*
 	RzBinDex *dex = rz_bin_file_get_dex(bf);
 	if (!dex) {
 		return NULL;
 	}
 
-	return rz_bin_java_class_as_sections(dex);
-	*/
+	return rz_bin_dex_sections(dex);
 }
 
 static RzList *symbols(RzBinFile *bf) {
