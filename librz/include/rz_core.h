@@ -31,7 +31,8 @@
 #include <rz_crypto.h>
 #include <rz_bind.h>
 #include <rz_util/rz_annotated_code.h>
-#include "rz_heap_glibc.h"
+#include <rz_heap_glibc.h>
+#include <rz_windows_heap.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -785,6 +786,10 @@ RZ_API RzHeapBin *rz_heap_fastbin_content(RzCore *core, MallocState *arena, int 
 RZ_API MallocState *rz_heap_get_arena(RzCore *core, ut64 m_state);
 RZ_API RzList *rz_heap_tcache_content(RzCore *core, ut64 arena_base);
 RZ_API bool rz_heap_write_chunk(RzCore *core, RzHeapChunkSimple *chunk_simple);
+
+/* cmd_windows_heap.c */
+RZ_API RzList *rz_heap_windows_blocks_list(RzCore *core);
+RZ_API RzList *rz_heap_windows_heap_list(RzCore *core);
 
 // XXX dupe from rz_bin.h
 /* bin.c */
