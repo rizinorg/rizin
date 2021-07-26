@@ -536,7 +536,10 @@ typedef enum {
 	eTRICALL = 0x00000013,
 	eSH5CALL = 0x00000014,
 	eM32RCALL = 0x00000015,
-	eRESERVED = 0x00000016,
+	eCLRCALL = 0x00000016,
+	eINLINE = 0x00000017,
+	eNEAR_VEC = 0X00000018,
+	eRESERVED = 0x00000019,
 	eMAX_CV_CALL
 } ECV_CALL;
 
@@ -608,7 +611,7 @@ typedef union {
 		unsigned char ctorvbase : 1; // true if func is an instance constructor of a class with virtual bases
 		unsigned char unused : 5; // unused
 	} bits;
-	ut16 funcattr;
+	ut8 funcattr;
 } UCV_funcattr;
 
 RZ_PACKED(

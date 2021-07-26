@@ -17,5 +17,7 @@ int parse_scstring(SCString *sctr, unsigned char *leaf_data, unsigned int *read_
 ///////////////////////////////////////////////////////////////////////////////
 void init_scstring(SCString *cstr, unsigned int size, char *name);
 // Get SType data by type_info->type_index
-RZ_API SType *get_stype_by_index(int index);
+RZ_API SType *get_stype_by_index(ut32 index);
+RZ_API char *parse_calling_convention(ECV_CALL idx);
+RZ_API STypeInfo parse_simple_type(ut32 idx);
 #endif // TPI_H

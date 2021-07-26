@@ -32,6 +32,37 @@ static int skip_padding(uint8_t *leaf_data, unsigned int *read_bytes, unsigned i
 }
 
 /**
+ * @brief Parses calling convention
+ *
+ * @param idx
+ */
+RZ_API char *parse_calling_convention(ECV_CALL idx) {
+	switch (idx) {
+	case eNEAR_C:
+	case eFAR_C:
+		return strdup("__cdecl");
+	case eNEAR_PASCAL:
+	case eFAR_PASCAL:
+		return strdup("__pascal");
+	case eNEAR_FAST:
+	case eFAR_FAST:
+		return strdup("__fastcall");
+	case eNEAR_STD:
+	case eFAR_STD:
+		return strdup("__stdcall");
+	case eNEAR_SYS:
+	case eFAR_SYS:
+		return strdup("__syscall");
+	case eTHISCALL:
+		return strdup("__thiscall");
+	case eNEAR_VEC:
+		return strdup("__vectorcall");
+	default:
+		return NULL;
+	}
+}
+
+/**
  * @brief Parses simple type if the idx represents one
  *
  * @param idx
@@ -39,7 +70,7 @@ static int skip_padding(uint8_t *leaf_data, unsigned int *read_bytes, unsigned i
  *  This can be made smarter by using the masks
  *  and splitting it on 2 parts, 1 mode, 1 type
  */
-static STypeInfo parse_simple_type(ut32 idx) {
+RZ_API STypeInfo parse_simple_type(ut32 idx) {
 	STypeInfo type = { 0 };
 	SLF_SIMPLE_TYPE *simple_type = RZ_NEW0(SLF_SIMPLE_TYPE);
 	if (!simple_type) {
@@ -876,7 +907,7 @@ static void free_snumeric(SNumeric *numeric) {
 		break;
 	default:
 		if (numeric->type_index >= 0x8000) {
-			printf("free_snumeric()::not supproted type\n");
+			eprintf("%s::not supproted type\n", __FUNCTION__);
 			break;
 		}
 		RZ_FREE(numeric->data);
@@ -2290,7 +2321,7 @@ int parse_tpi_stream(void *parsed_pdb_stream, RZ_STREAM_FILE *stream) {
 	return 1;
 }
 
-RZ_API SType *get_stype_by_index(int index) {
+RZ_API SType *get_stype_by_index(ut32 index) {
 	if (index == 0) {
 		return NULL;
 	}
