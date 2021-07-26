@@ -1,3 +1,11 @@
+#if __WINDOWS__
+#define START_ENV_CHAR "%"
+#define END_ENV_CHAR "%"
+#else // __WINDOWS__
+#define START_ENV_CHAR "${"
+#define END_ENV_CHAR "}"
+#endif
+
 static char *config_path(RzCore *core) {
 	char *path = NULL;
 	int fd = rz_file_mkstemp(NULL, &path);
@@ -19,9 +27,7 @@ static char *config_path(RzCore *core) {
 	return path;
 }
 
-static const char *system_apply_env_var(const char *env, const char *value, const char *arg, RzList *alloc) {
-	char *string = NULL;
-	RzListIter *it = NULL;
+static const char *system_apply_env_var(const char *env, const char *value, const char *arg, char **alloc_str) {
 	size_t len = strlen(arg);
 	if (!strstr(arg, env)) {
 		return arg;
@@ -29,19 +35,12 @@ static const char *system_apply_env_var(const char *env, const char *value, cons
 		return value;
 	}
 
-	if ((it = rz_list_find_ptr(alloc, (void *)arg))) {
-		string = it->data;
-	} else {
-		string = strdup(arg);
+	if (!*alloc_str) {
+		*alloc_str = strdup(arg);
 	}
 
-	string = rz_str_replace(string, env, value, 1);
-	if (it) {
-		it->data = string;
-	} else {
-		rz_list_append(alloc, string);
-	}
-	return string;
+	*alloc_str = rz_str_replace(*alloc_str, env, value, 1);
+	return *alloc_str;
 }
 
 static bool system_exec(RzCore *core, int argc, const char **argv, char **output, int *length) {
@@ -116,37 +115,24 @@ static bool system_exec(RzCore *core, int argc, const char **argv, char **output
 	}
 
 	for (int i = 0; i < argc; ++i) {
-#if __WINDOWS__
-		args[i] = system_apply_env_var("%RZ_FILE%" /*         */, file_path /*   */, argv[i], alloc);
-		args[i] = system_apply_env_var("%RZ_SIZE%" /*         */, file_size /*   */, args[i], alloc);
-		args[i] = system_apply_env_var("%RZ_ARCH%" /*         */, asm_arch /*    */, args[i], alloc);
-		args[i] = system_apply_env_var("%RZ_BITS%" /*         */, asm_bits /*    */, args[i], alloc);
-		args[i] = system_apply_env_var("%RZ_OFFSET%" /*       */, core_offset /* */, args[i], alloc);
-		args[i] = system_apply_env_var("%RZ_ENDIAN%" /*       */, endian /*      */, args[i], alloc);
-		args[i] = system_apply_env_var("%RZ_BIN_DEMANGLE%" /* */, bin_demangle /**/, args[i], alloc);
-		args[i] = system_apply_env_var("%RZ_BIN_LANG%" /*     */, bin_lang /*    */, args[i], alloc);
-		args[i] = system_apply_env_var("%RZ_BIN_PDBSERVER%" /**/, pdb_server /*  */, args[i], alloc);
-		args[i] = system_apply_env_var("%RZ_IOVA%" /*         */, io_va /*       */, args[i], alloc);
-		args[i] = system_apply_env_var("%RZ_COLOR%" /*        */, scr_color /*   */, args[i], alloc);
-		args[i] = system_apply_env_var("%RZ_BSIZE%" /*        */, block_size /*  */, args[i], alloc);
-		args[i] = system_apply_env_var("%RZ_DEBUG%" /*        */, cfg_debug /*   */, args[i], alloc);
-		args[i] = system_apply_env_var("%RZ_CONFIG%" /*       */, cfg_path /*    */, args[i], alloc);
-#else // __WINDOWS__
-		args[i] = system_apply_env_var("${RZ_FILE}" /*         */, file_path /*   */, argv[i], alloc);
-		args[i] = system_apply_env_var("${RZ_SIZE}" /*         */, file_size /*   */, args[i], alloc);
-		args[i] = system_apply_env_var("${RZ_ARCH}" /*         */, asm_arch /*    */, args[i], alloc);
-		args[i] = system_apply_env_var("${RZ_BITS}" /*         */, asm_bits /*    */, args[i], alloc);
-		args[i] = system_apply_env_var("${RZ_OFFSET}" /*       */, core_offset /* */, args[i], alloc);
-		args[i] = system_apply_env_var("${RZ_ENDIAN}" /*       */, endian /*      */, args[i], alloc);
-		args[i] = system_apply_env_var("${RZ_BIN_DEMANGLE}" /* */, bin_demangle /**/, args[i], alloc);
-		args[i] = system_apply_env_var("${RZ_BIN_LANG}" /*     */, bin_lang /*    */, args[i], alloc);
-		args[i] = system_apply_env_var("${RZ_BIN_PDBSERVER}" /**/, pdb_server /*  */, args[i], alloc);
-		args[i] = system_apply_env_var("${RZ_IOVA}" /*         */, io_va /*       */, args[i], alloc);
-		args[i] = system_apply_env_var("${RZ_COLOR}" /*        */, scr_color /*   */, args[i], alloc);
-		args[i] = system_apply_env_var("${RZ_BSIZE}" /*        */, block_size /*  */, args[i], alloc);
-		args[i] = system_apply_env_var("${RZ_DEBUG}" /*        */, cfg_debug /*   */, args[i], alloc);
-		args[i] = system_apply_env_var("${RZ_CONFIG}" /*       */, cfg_path /*    */, args[i], alloc);
-#endif
+		char *alloc_str = NULL;
+		args[i] = system_apply_env_var(START_ENV_CHAR "RZ_FILE" END_ENV_CHAR, file_path, argv[i], &alloc_str);
+		args[i] = system_apply_env_var(START_ENV_CHAR "RZ_SIZE" END_ENV_CHAR, file_size, args[i], &alloc_str);
+		args[i] = system_apply_env_var(START_ENV_CHAR "RZ_ARCH" END_ENV_CHAR, asm_arch, args[i], &alloc_str);
+		args[i] = system_apply_env_var(START_ENV_CHAR "RZ_BITS" END_ENV_CHAR, asm_bits, args[i], &alloc_str);
+		args[i] = system_apply_env_var(START_ENV_CHAR "RZ_OFFSET" END_ENV_CHAR, core_offset, args[i], &alloc_str);
+		args[i] = system_apply_env_var(START_ENV_CHAR "RZ_ENDIAN" END_ENV_CHAR, endian, args[i], &alloc_str);
+		args[i] = system_apply_env_var(START_ENV_CHAR "RZ_BIN_DEMANGLE" END_ENV_CHAR, bin_demangle, args[i], &alloc_str);
+		args[i] = system_apply_env_var(START_ENV_CHAR "RZ_BIN_LANG" END_ENV_CHAR, bin_lang, args[i], &alloc_str);
+		args[i] = system_apply_env_var(START_ENV_CHAR "RZ_BIN_PDBSERVER" END_ENV_CHAR, pdb_server, args[i], &alloc_str);
+		args[i] = system_apply_env_var(START_ENV_CHAR "RZ_IOVA" END_ENV_CHAR, io_va, args[i], &alloc_str);
+		args[i] = system_apply_env_var(START_ENV_CHAR "RZ_COLOR" END_ENV_CHAR, scr_color, args[i], &alloc_str);
+		args[i] = system_apply_env_var(START_ENV_CHAR "RZ_BSIZE" END_ENV_CHAR, block_size, args[i], &alloc_str);
+		args[i] = system_apply_env_var(START_ENV_CHAR "RZ_DEBUG" END_ENV_CHAR, cfg_debug, args[i], &alloc_str);
+		args[i] = system_apply_env_var(START_ENV_CHAR "RZ_CONFIG" END_ENV_CHAR, cfg_path, args[i], &alloc_str);
+		if (alloc_str) {
+			rz_list_append(alloc, alloc_str);
+		}
 	}
 
 	RzSubprocessOpt opt = {
@@ -207,3 +193,6 @@ RZ_IPI RzCmdStatus rz_system_to_cons_handler(RzCore *core, int argc, const char 
 
 	return ret ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
+
+#undef START_ENV_CHAR
+#undef END_ENV_CHAR
