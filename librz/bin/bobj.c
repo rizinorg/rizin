@@ -317,7 +317,7 @@ RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *bf, RzBinPlugin *plugin, RzBinO
 }
 
 static void filter_classes(RzBinFile *bf, RzList *list) {
-	Sdb *db = sdb_new0();
+	HtPU *db = ht_pu_new0();
 	HtPP *ht = ht_pp_new0();
 	RzListIter *iter, *iter2;
 	RzBinClass *cls;
@@ -346,7 +346,7 @@ static void filter_classes(RzBinFile *bf, RzList *list) {
 			eprintf("Cannot alloc %d byte(s)\n", namepad_len);
 		}
 	}
-	sdb_free(db);
+	ht_pu_free(db);
 	ht_pp_free(ht);
 }
 
