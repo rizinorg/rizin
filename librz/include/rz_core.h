@@ -156,6 +156,35 @@ typedef struct rz_core_times_t {
 #define RZ_CORE_ASMQJMPS_MAX_LETTERS (26 * 26 * 26 * 26 * 26)
 #define RZ_CORE_ASMQJMPS_LEN_LETTERS 5
 
+typedef enum rz_core_autocomplete_types_t {
+	RZ_CORE_AUTOCMPLT_DFLT = 0,
+	RZ_CORE_AUTOCMPLT_FLAG,
+	RZ_CORE_AUTOCMPLT_FLSP,
+	RZ_CORE_AUTOCMPLT_SEEK,
+	RZ_CORE_AUTOCMPLT_FCN,
+	RZ_CORE_AUTOCMPLT_ZIGN,
+	RZ_CORE_AUTOCMPLT_EVAL,
+	RZ_CORE_AUTOCMPLT_MINS,
+	RZ_CORE_AUTOCMPLT_BRKP,
+	RZ_CORE_AUTOCMPLT_MACR,
+	RZ_CORE_AUTOCMPLT_FILE,
+	RZ_CORE_AUTOCMPLT_THME,
+	RZ_CORE_AUTOCMPLT_OPTN,
+	RZ_CORE_AUTOCMPLT_MS,
+	RZ_CORE_AUTOCMPLT_SDB,
+	// --- left as last always
+	RZ_CORE_AUTOCMPLT_END,
+} RzCoreAutocompleteType;
+
+typedef struct rz_core_autocomplete_t {
+	const char *cmd;
+	int length;
+	int n_subcmds;
+	bool locked;
+	int type;
+	struct rz_core_autocomplete_t **subcmds;
+} RzCoreAutocomplete;
+
 typedef struct rz_core_visual_tab_t {
 	int printidx;
 	ut64 offset;
