@@ -257,18 +257,6 @@ static const char *help_msg_y[] = {
 	NULL
 };
 
-static const char *help_msg_triple_exclamation[] = {
-	"Usage:", "!!![-*][cmd] [arg|$type...]", " # user-defined autocompletion for commands",
-	"!!!", "", "list all autocompletions",
-	"!!!?", "", "show this help",
-	"!!!", "-*", "remove all user-defined autocompletions",
-	"!!!", "-\\*", "remove autocompletions matching this glob expression",
-	"!!!", "-foo", "remove autocompletion named 'foo'",
-	"!!!", "foo", "add 'foo' for autocompletion",
-	"!!!", "bar $flag", "add 'bar' for autocompletion with $flag as argument",
-	NULL
-};
-
 static const char *help_msg_vertical_bar[] = {
 	"Usage:", "[cmd] | [program|H|T|.|]", "",
 	"", "[cmd] |?", "show this help",
@@ -1758,99 +1746,6 @@ static inline void print_dict(RzCoreAutocomplete *a, int sub) {
 		eprintf("[%3d] %s: '%s'\n", sub, name, b->cmd);
 		print_dict(a->subcmds[i], sub + 1);
 	}
-}
-
-static int autocomplete_type(const char *strflag) {
-	int i;
-	for (i = 0; i < RZ_CORE_AUTOCMPLT_END; i++) {
-		if (autocomplete_flags[i].desc && !strncmp(strflag, autocomplete_flags[i].name, 5)) {
-			return autocomplete_flags[i].type;
-		}
-	}
-	eprintf("Invalid flag '%s'\n", strflag);
-	return RZ_CORE_AUTOCMPLT_END;
-}
-
-static void cmd_autocomplete(RzCore *core, const char *input) {
-	RzCoreAutocomplete *b = core->autocomplete;
-	input = rz_str_trim_head_ro(input);
-	char arg[256];
-	if (!*input) {
-		print_dict(core->autocomplete, 0);
-		return;
-	}
-	if (*input == '?') {
-		rz_core_cmd_help(core, help_msg_triple_exclamation);
-		int i;
-		rz_cons_printf("|Types:\n");
-		for (i = 0; i < RZ_CORE_AUTOCMPLT_END; i++) {
-			if (autocomplete_flags[i].desc) {
-				rz_cons_printf("| %s     %s\n",
-					autocomplete_flags[i].name,
-					autocomplete_flags[i].desc);
-			}
-		}
-		return;
-	}
-	if (*input == '-') {
-		const char *arg = input + 1;
-		if (!*input) {
-			eprintf("Use !!!-* or !!!-<cmd>\n");
-			return;
-		}
-		rz_core_autocomplete_remove(b, arg);
-		return;
-	}
-	while (b) {
-		const char *end = rz_str_trim_head_wp(input);
-		if (!end) {
-			break;
-		}
-		if ((end - input) >= sizeof(arg)) {
-			eprintf("Exceeded the max arg length (255).\n");
-			return;
-		}
-		if (end == input) {
-			break;
-		}
-		memcpy(arg, input, end - input);
-		arg[end - input] = 0;
-		RzCoreAutocomplete *a = rz_core_autocomplete_find(b, arg, true);
-		input = rz_str_trim_head_ro(end);
-		if (input && *input && !a) {
-			if (b->type == RZ_CORE_AUTOCMPLT_DFLT && !(b = rz_core_autocomplete_add(b, arg, RZ_CORE_AUTOCMPLT_DFLT, false))) {
-				eprintf("ENOMEM\n");
-				return;
-			} else if (b->type != RZ_CORE_AUTOCMPLT_DFLT) {
-				eprintf("Cannot add autocomplete to '%s'. type not $dflt\n", b->cmd);
-				return;
-			}
-		} else if ((!input || !*input) && !a) {
-			if (arg[0] == '$') {
-				int type = autocomplete_type(arg);
-				if (type != RZ_CORE_AUTOCMPLT_END && !b->locked && !b->n_subcmds) {
-					b->type = type;
-				} else if (b->locked || b->n_subcmds) {
-					if (!b->cmd) {
-						return;
-					}
-					eprintf("Changing type of '%s' is forbidden.\n", b->cmd);
-				}
-			} else {
-				if (!rz_core_autocomplete_add(b, arg, RZ_CORE_AUTOCMPLT_DFLT, false)) {
-					eprintf("ENOMEM\n");
-					return;
-				}
-			}
-			return;
-		} else if ((!input || !*input) && a) {
-			// eprintf ("Cannot add '%s'. Already exists.\n", arg);
-			return;
-		} else {
-			b = a;
-		}
-	}
-	eprintf("Invalid usage of !!!\n");
 }
 
 RZ_IPI RzCmdStatus rz_cmd_exit_handler(RzCore *core, int argc, const char **argv) {
