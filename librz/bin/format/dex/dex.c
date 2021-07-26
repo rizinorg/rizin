@@ -3,6 +3,14 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "dex.h"
+#include <rz_util.h>
+
+typedef struct dex_access_flags_readable_t {
+	ut32 flag;
+	const char *readable;
+} DexAccessFlagsReadable;
+
+#define dex_is_static(a) (a & ACCESS_FLAG_STATIC)
 
 #define dex_fail_if_eof(b, o, s, g) \
 	do { \
@@ -21,6 +29,36 @@
 		} \
 	} while (0)
 
+#define CLASS_ACCESS_FLAGS_SIZE 18
+static const DexAccessFlagsReadable access_flags_list[CLASS_ACCESS_FLAGS_SIZE] = {
+	{ ACCESS_FLAG_PUBLIC /*               */, "public" },
+	{ ACCESS_FLAG_PRIVATE /*              */, "private" },
+	{ ACCESS_FLAG_PROTECTED /*            */, "protected" },
+	{ ACCESS_FLAG_STATIC /*               */, "static" },
+	{ ACCESS_FLAG_FINAL /*                */, "final" },
+	{ ACCESS_FLAG_SYNCHRONIZED /*         */, "synchronized" },
+	{ ACCESS_FLAG_BRIDGE /*               */, "bridge" },
+	{ ACCESS_FLAG_VARARGS /*              */, "varargs" },
+	{ ACCESS_FLAG_NATIVE /*               */, "native" },
+	{ ACCESS_FLAG_INTERFACE /*            */, "interface" },
+	{ ACCESS_FLAG_ABSTRACT /*             */, "abstract" },
+	{ ACCESS_FLAG_STRICT /*               */, "strict" },
+	{ ACCESS_FLAG_SYNTHETIC /*            */, "synthetic" },
+	{ ACCESS_FLAG_ANNOTATION /*           */, "annotation" },
+	{ ACCESS_FLAG_ENUM /*                 */, "enum" },
+	{ ACCESS_FLAG_MODULE /*               */, "module" },
+	{ ACCESS_FLAG_CONSTRUCTOR /*          */, "constructor" },
+	{ ACCESS_FLAG_DECLARED_SYNCHRONIZED /**/, "declared_synchronized" },
+};
+
+static void dex_string_free(DexString *string) {
+	if (!string) {
+		return;
+	}
+	free(string->data);
+	free(string);
+}
+
 static DexString *dex_string_new(RzBuffer *buf, ut64 offset, st64 *pread) {
 	ut64 size = 0;
 	char *data = NULL;
@@ -31,15 +69,15 @@ static DexString *dex_string_new(RzBuffer *buf, ut64 offset, st64 *pread) {
 	data = malloc(size + 1);
 	if (!data || rz_buf_read(buf, (ut8 *)data, size) != size) {
 		rz_warn_if_reached();
-		free(string);
+		free(data);
 		return NULL;
 	}
 	data[size] = 0;
 
-	string = RZ_NEW(DexString);
+	string = RZ_NEW0(DexString);
 	if (!string) {
 		rz_warn_if_reached();
-		free(string);
+		free(data);
 		return NULL;
 	}
 
@@ -50,37 +88,58 @@ static DexString *dex_string_new(RzBuffer *buf, ut64 offset, st64 *pread) {
 	return string;
 }
 
-static void dex_string_free(DexString *string) {
+static void dex_proto_id_free(DexProtoId *string) {
 	if (!string) {
 		return;
 	}
-	free(string->data);
+	free(string->type_list);
 	free(string);
 }
 
-#define dex_proto_id_free free
 static DexProtoId *dex_proto_id_new(RzBuffer *buf, ut64 offset) {
-	DexProtoId *proto_id = RZ_NEW(DexProtoId);
+	DexProtoId *proto_id = RZ_NEW0(DexProtoId);
 	if (!proto_id) {
 		return NULL;
 	}
 
+	ut32 parameters_offset = 0;
+
 	proto_id->shorty_idx = /*       */ rz_buf_read_le32(buf);
 	proto_id->return_type_idx = /*  */ rz_buf_read_le32(buf);
-	proto_id->parameters_offset = /**/ rz_buf_read_le32(buf);
 	proto_id->offset = offset;
+
+	parameters_offset = rz_buf_read_le32(buf);
+	if (parameters_offset > 0) {
+		ut32 count = rz_buf_read_le32_at(buf, parameters_offset);
+
+		proto_id->type_list_size = count;
+		proto_id->type_list = RZ_NEWS(ut16, count);
+		if (!proto_id->type_list) {
+			rz_warn_if_reached();
+			goto dex_proto_id_new_fail;
+		}
+
+		for (ut32 i = 0; i < count; ++i) {
+			proto_id->type_list[i] = rz_buf_read_le16(buf);
+		}
+	}
+
 	return proto_id;
+
+dex_proto_id_new_fail:
+	free(proto_id);
+	return NULL;
 }
 
 #define dex_field_id_free free
 static DexFieldId *dex_field_id_new(RzBuffer *buf, ut64 offset) {
-	DexFieldId *field_id = RZ_NEW(DexFieldId);
+	DexFieldId *field_id = RZ_NEW0(DexFieldId);
 	if (!field_id) {
 		return NULL;
 	}
 
-	field_id->class_idx = /**/ rz_buf_read_le32(buf);
-	field_id->type_idx = /* */ rz_buf_read_le32(buf);
+	field_id->class_idx = /**/ rz_buf_read_le16(buf);
+	field_id->type_idx = /* */ rz_buf_read_le16(buf);
 	field_id->name_idx = /* */ rz_buf_read_le32(buf);
 	field_id->offset = offset;
 	return field_id;
@@ -88,24 +147,47 @@ static DexFieldId *dex_field_id_new(RzBuffer *buf, ut64 offset) {
 
 #define dex_method_id_free free
 static DexMethodId *dex_method_id_new(RzBuffer *buf, ut64 offset) {
-	DexMethodId *method_id = RZ_NEW(DexMethodId);
+	DexMethodId *method_id = RZ_NEW0(DexMethodId);
 	if (!method_id) {
 		return NULL;
 	}
 
-	method_id->class_idx = /**/ rz_buf_read_le32(buf);
-	method_id->proto_idx = /**/ rz_buf_read_le32(buf);
+	method_id->class_idx = /**/ rz_buf_read_le16(buf);
+	method_id->proto_idx = /**/ rz_buf_read_le16(buf);
 	method_id->name_idx = /* */ rz_buf_read_le32(buf);
 	method_id->offset = offset;
 	return method_id;
 }
 
-#define dex_class_def_free free
-static DexClassDef *dex_class_def_new(RzBuffer *buf, ut64 offset) {
-	DexClassDef *class_def = RZ_NEW(DexClassDef);
+static void dex_class_def_free(DexClassDef *class_def) {
+	if (!class_def) {
+		return;
+	}
+	rz_list_free(class_def->static_fields);
+	rz_list_free(class_def->instance_fields);
+	rz_list_free(class_def->direct_methods);
+	rz_list_free(class_def->virtual_methods);
+	free(class_def);
+}
+
+static DexClassDef *dex_class_def_new(RzBuffer *buf, ut64 offset, ut64 base) {
+	DexClassDef *class_def = RZ_NEW0(DexClassDef);
 	if (!class_def) {
 		return NULL;
 	}
+
+	ut64 static_fields_size = 0;
+	ut64 instance_fields_size = 0;
+	ut64 direct_methods_size = 0;
+	ut64 virtual_methods_size = 0;
+	ut64 diff_value_prev;
+	ut64 code_offset;
+
+	class_def->static_fields = /*  */ rz_list_newf((RzListFree)free);
+	class_def->instance_fields = /**/ rz_list_newf((RzListFree)free);
+	class_def->direct_methods = /* */ rz_list_newf((RzListFree)free);
+	class_def->virtual_methods = /**/ rz_list_newf((RzListFree)free);
+
 	class_def->class_idx = /*           */ rz_buf_read_le32(buf);
 	class_def->access_flags = /*        */ rz_buf_read_le32(buf);
 	class_def->superclass_idx = /*      */ rz_buf_read_le32(buf);
@@ -115,7 +197,136 @@ static DexClassDef *dex_class_def_new(RzBuffer *buf, ut64 offset) {
 	class_def->class_data_offset = /*   */ rz_buf_read_le32(buf);
 	class_def->static_values_offset = /**/ rz_buf_read_le32(buf);
 	class_def->offset = offset;
+
+	if (rz_buf_seek(buf, class_def->class_data_offset, RZ_BUF_SET) < 0) {
+		rz_warn_if_reached();
+		goto dex_class_def_new_fail;
+	}
+
+	rz_buf_uleb128(buf, &static_fields_size);
+	rz_buf_uleb128(buf, &instance_fields_size);
+	rz_buf_uleb128(buf, &direct_methods_size);
+	rz_buf_uleb128(buf, &virtual_methods_size);
+
+	for (ut64 i = 0; i < static_fields_size; ++i) {
+		DexEncodedField *encoded_field = RZ_NEW0(DexEncodedField);
+		if (!encoded_field) {
+			rz_warn_if_reached();
+			goto dex_class_def_new_fail;
+		}
+
+		encoded_field->offset = rz_buf_tell(buf) + base;
+		rz_buf_uleb128(buf, &encoded_field->field_idx_diff);
+		rz_buf_uleb128(buf, &encoded_field->access_flags);
+
+		if (!rz_list_append(class_def->static_fields, encoded_field)) {
+			free(encoded_field);
+			rz_warn_if_reached();
+			goto dex_class_def_new_fail;
+		}
+	}
+
+	for (ut64 i = 0; i < instance_fields_size; ++i) {
+		DexEncodedField *encoded_field = RZ_NEW0(DexEncodedField);
+		if (!encoded_field) {
+			rz_warn_if_reached();
+			goto dex_class_def_new_fail;
+		}
+
+		encoded_field->offset = rz_buf_tell(buf) + base;
+		rz_buf_uleb128(buf, &encoded_field->field_idx_diff);
+		rz_buf_uleb128(buf, &encoded_field->access_flags);
+
+		if (!rz_list_append(class_def->instance_fields, encoded_field)) {
+			free(encoded_field);
+			rz_warn_if_reached();
+			goto dex_class_def_new_fail;
+		}
+	}
+
+	ut64 diff_value;
+	for (ut64 i = 0; i < direct_methods_size; ++i) {
+		DexEncodedMethod *encoded_method = RZ_NEW0(DexEncodedMethod);
+		if (!encoded_method) {
+			rz_warn_if_reached();
+			goto dex_class_def_new_fail;
+		}
+
+		encoded_method->offset = rz_buf_tell(buf) + base;
+		rz_buf_uleb128(buf, &diff_value);
+		rz_buf_uleb128(buf, &encoded_method->access_flags);
+		rz_buf_uleb128(buf, &code_offset);
+
+		if (i < 1) {
+			encoded_method->method_idx = diff_value;
+			diff_value_prev = diff_value;
+		} else {
+			encoded_method->method_idx = diff_value_prev + diff_value;
+			diff_value_prev = encoded_method->method_idx;
+		}
+
+
+		if (code_offset > 0) {
+			encoded_method->registers_size = /*   */ rz_buf_read_le16_at(buf, code_offset);
+			encoded_method->ins_size = /*         */ rz_buf_read_le16_at(buf, code_offset + 2);
+			encoded_method->outs_size = /*        */ rz_buf_read_le16_at(buf, code_offset + 4);
+			encoded_method->tries_size = /*       */ rz_buf_read_le16_at(buf, code_offset + 6);
+			encoded_method->debug_info_offset = /**/ rz_buf_read_le32_at(buf, code_offset + 8);
+			encoded_method->code_size = /*        */ rz_buf_read_le32_at(buf, code_offset + 12);
+			encoded_method->code_size *= sizeof(ut16); // code ushort[insns_size]
+			encoded_method->code_offset = code_offset + 16 + base;
+		}
+
+		if (!rz_list_append(class_def->direct_methods, encoded_method)) {
+			free(encoded_method);
+			rz_warn_if_reached();
+			goto dex_class_def_new_fail;
+		}
+	}
+
+	for (ut64 i = 0; i < virtual_methods_size; ++i) {
+		DexEncodedMethod *encoded_method = RZ_NEW0(DexEncodedMethod);
+		if (!encoded_method) {
+			rz_warn_if_reached();
+			goto dex_class_def_new_fail;
+		}
+
+		encoded_method->offset = rz_buf_tell(buf) + base;
+		rz_buf_uleb128(buf, &diff_value);
+		rz_buf_uleb128(buf, &encoded_method->access_flags);
+		rz_buf_uleb128(buf, &code_offset);
+
+		if (i < 1) {
+			encoded_method->method_idx = diff_value;
+			diff_value_prev = diff_value;
+		} else {
+			encoded_method->method_idx = diff_value_prev + diff_value;
+			diff_value_prev = encoded_method->method_idx;
+		}
+
+		if (code_offset > 0) {
+			encoded_method->registers_size = /*   */ rz_buf_read_le16_at(buf, code_offset);
+			encoded_method->ins_size = /*         */ rz_buf_read_le16_at(buf, code_offset + 2);
+			encoded_method->outs_size = /*        */ rz_buf_read_le16_at(buf, code_offset + 4);
+			encoded_method->tries_size = /*       */ rz_buf_read_le16_at(buf, code_offset + 6);
+			encoded_method->debug_info_offset = /**/ rz_buf_read_le32_at(buf, code_offset + 8);
+			encoded_method->code_size = /*        */ rz_buf_read_le32_at(buf, code_offset + 12);
+			encoded_method->code_size *= sizeof(ut16); // code ushort[insns_size]
+			encoded_method->code_offset = code_offset + 16 + base;
+		}
+
+		if (!rz_list_append(class_def->virtual_methods, encoded_method)) {
+			free(encoded_method);
+			rz_warn_if_reached();
+			goto dex_class_def_new_fail;
+		}
+	}
+
 	return class_def;
+
+dex_class_def_new_fail:
+	dex_class_def_free(class_def);
+	return NULL;
 }
 
 static bool dex_parse(RzBinDex *dex, ut64 base, RzBuffer *buf) {
@@ -128,6 +339,7 @@ static bool dex_parse(RzBinDex *dex, ut64 base, RzBuffer *buf) {
 		goto dex_parse_bad;
 	}
 
+	dex->header_offset = base;
 	rz_buf_read(buf, dex->magic, sizeof(dex->magic));
 	rz_buf_read(buf, dex->version, sizeof(dex->version));
 	dex->checksum_offset = rz_buf_tell(buf) + base;
@@ -159,11 +371,11 @@ static bool dex_parse(RzBinDex *dex, ut64 base, RzBuffer *buf) {
 
 	dex->field_ids_size = /*   */ rz_buf_read_le32(buf);
 	dex->field_ids_offset = /* */ rz_buf_read_le32(buf);
-	//dex_fail_if_bad_ids(dex->field_ids, sizeof(ut32), buffer_size, dex_parse_bad);
+	dex_fail_if_bad_ids(dex->field_ids, DEX_FIELD_ID_SIZE, buffer_size, dex_parse_bad);
 
 	dex->method_ids_size = /*  */ rz_buf_read_le32(buf);
 	dex->method_ids_offset = /**/ rz_buf_read_le32(buf);
-	//dex_fail_if_bad_ids(dex->method_ids, sizeof(ut32), buffer_size, dex_parse_bad);
+	dex_fail_if_bad_ids(dex->method_ids, DEX_METHOD_ID_SIZE, buffer_size, dex_parse_bad);
 
 	dex->class_defs_size = /*  */ rz_buf_read_le32(buf);
 	dex->class_defs_offset = /**/ rz_buf_read_le32(buf);
@@ -274,7 +486,7 @@ static bool dex_parse(RzBinDex *dex, ut64 base, RzBuffer *buf) {
 			rz_warn_if_reached();
 			goto dex_parse_bad;
 		}
-		DexClassDef *class_def = dex_class_def_new(buf, base + offset);
+		DexClassDef *class_def = dex_class_def_new(buf, base + offset, base);
 		if (!class_def) {
 			rz_warn_if_reached();
 			goto dex_parse_bad;
@@ -284,15 +496,6 @@ static bool dex_parse(RzBinDex *dex, ut64 base, RzBuffer *buf) {
 			dex_class_def_free(class_def);
 			goto dex_parse_bad;
 		}
-		eprintf("class_def: 0x%08x 0x%08x 0x%08x 0x%08x 0x%08x 0x%08x 0x%08x 0x%08x\n",
-			class_def->class_idx,
-			class_def->access_flags,
-			class_def->superclass_idx,
-			class_def->interfaces_offset,
-			class_def->source_file_idx,
-			class_def->annotations_offset,
-			class_def->class_data_offset,
-			class_def->static_values_offset);
 	}
 
 	return true;
@@ -359,13 +562,32 @@ RZ_API RzBinDex *rz_bin_dex_new(RzBuffer *buf, ut64 base, Sdb *kv) {
 	return dex;
 }
 
+static char *dex_access_flags_readable(ut32 access_flags) {
+	RzStrBuf *sb = NULL;
+	for (ut32 i = 0; i < CLASS_ACCESS_FLAGS_SIZE; ++i) {
+		const DexAccessFlagsReadable *afr = &access_flags_list[i];
+		if (access_flags & afr->flag) {
+			if (!sb) {
+				sb = rz_strbuf_new(afr->readable);
+				if (!sb) {
+					return NULL;
+				}
+			} else {
+				rz_strbuf_appendf(sb, " %s", afr->readable);
+			}
+		}
+	}
+
+	return sb ? rz_strbuf_drain(sb) : NULL;
+}
+
 RZ_API RzList *rz_bin_dex_strings(RzBinDex *dex) {
 	rz_return_val_if_fail(dex, NULL);
 
 	DexString *string;
 	RzListIter *it;
-	RzList *list = rz_list_newf(rz_bin_string_free);
-	if (!list) {
+	RzList *strings = rz_list_newf(rz_bin_string_free);
+	if (!strings) {
 		return NULL;
 	}
 
@@ -382,12 +604,355 @@ RZ_API RzList *rz_bin_dex_strings(RzBinDex *dex) {
 		bstr->size = string->size;
 		bstr->string = rz_str_ndup(string->data, string->size);
 		bstr->type = RZ_STRING_TYPE_UTF8;
-		if (!rz_list_append(list, bstr)) {
+		if (!rz_list_append(strings, bstr)) {
 			free(bstr);
 		}
 		ordinal++;
 	}
-	return list;
+	return strings;
+}
+
+static char *dex_resolve_string_id(RzBinDex *dex, ut32 string_idx) {
+	DexString *string = (DexString *)rz_list_get_n(dex->strings, string_idx);
+	if (!string) {
+		RZ_LOG_ERROR("cannot find string with index %u\n", string_idx);
+		return NULL;
+	}
+	return rz_str_ndup(string->data, string->size);
+}
+
+static char *dex_resolve_type_id(RzBinDex *dex, ut32 type_idx) {
+	if (type_idx >= dex->type_ids_size) {
+		RZ_LOG_ERROR("cannot find type_id with index %u\n", type_idx);
+		return NULL;
+	}
+	DexTypeId type_id = dex->types[type_idx];
+	return dex_resolve_string_id(dex, type_id);
+}
+
+static char *dex_resolve_proto_id(RzBinDex *dex, const char* name, ut32 proto_idx) {
+	DexProtoId *proto_id = (DexProtoId *)rz_list_get_n(dex->proto_ids, proto_idx);
+	if (!proto_id) {
+		RZ_LOG_ERROR("cannot find proto_id with index %u out of %u\n", proto_idx, rz_list_length(dex->proto_ids));
+		return NULL;
+	}
+
+	RzStrBuf *sb = rz_strbuf_new(name);
+	if (!sb) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	if (proto_id->return_type_idx >= dex->type_ids_size) {
+		RZ_LOG_ERROR("cannot find return type id with index %u\n", proto_id->return_type_idx);
+		return NULL;
+	}
+
+	DexString *return_type = (DexString *)rz_list_get_n(dex->strings, dex->types[proto_id->return_type_idx]);
+	if (!return_type) {
+		RZ_LOG_ERROR("cannot find return type string with index %u\n", proto_id->return_type_idx);
+		rz_strbuf_free(sb);
+		return NULL;
+	}
+
+	rz_strbuf_append(sb, "(");
+	for (ut32 i = 0; i < proto_id->type_list_size; ++i) {
+		ut16 type_idx = proto_id->type_list[i];
+		DexString *param = (DexString *)rz_list_get_n(dex->strings, dex->types[type_idx]);
+		if (!param) {
+			RZ_LOG_INFO("cannot find param string with index %d\n", dex->types[type_idx]);
+			rz_strbuf_free(sb);
+			return NULL;
+		}
+		rz_strbuf_append_n(sb, param->data, param->size);
+	}
+	rz_strbuf_append(sb, ")");
+	rz_strbuf_append_n(sb, return_type->data, return_type->size);
+	return rz_strbuf_drain(sb);
+}
+
+static ut64 dex_access_flags_to_method_flags(ut64 access_flags) {
+	ut64 flags = 0;
+	if (access_flags & ACCESS_FLAG_PUBLIC) {
+		flags |= RZ_BIN_METH_PUBLIC;
+	}
+	if (access_flags & ACCESS_FLAG_PRIVATE) {
+		flags |= RZ_BIN_METH_PRIVATE;
+	}
+	if (access_flags & ACCESS_FLAG_PROTECTED) {
+		flags |= RZ_BIN_METH_PROTECTED;
+	}
+	if (access_flags & ACCESS_FLAG_STATIC) {
+		flags |= RZ_BIN_METH_STATIC;
+	}
+	if (access_flags & ACCESS_FLAG_FINAL) {
+		flags |= RZ_BIN_METH_FINAL;
+	}
+	if (access_flags & ACCESS_FLAG_SYNCHRONIZED) {
+		flags |= RZ_BIN_METH_SYNCHRONIZED;
+	}
+	if (access_flags & ACCESS_FLAG_BRIDGE) {
+		flags |= RZ_BIN_METH_BRIDGE;
+	}
+	if (access_flags & ACCESS_FLAG_VARARGS) {
+		flags |= RZ_BIN_METH_VARARGS;
+	}
+	if (access_flags & ACCESS_FLAG_NATIVE) {
+		flags |= RZ_BIN_METH_NATIVE;
+	}
+	// RZ_BIN_METH_INTERFACE does not exists
+	//if (access_flags & ACCESS_FLAG_INTERFACE) {
+	//	flags |= RZ_BIN_METH_INTERFACE;
+	//}
+	if (access_flags & ACCESS_FLAG_ABSTRACT) {
+		flags |= RZ_BIN_METH_ABSTRACT;
+	}
+	if (access_flags & ACCESS_FLAG_STRICT) {
+		flags |= RZ_BIN_METH_STRICT;
+	}
+	if (access_flags & ACCESS_FLAG_SYNTHETIC) {
+		flags |= RZ_BIN_METH_SYNTHETIC;
+	}
+	// RZ_BIN_METH_ANNOTATION does not exists
+	//if (access_flags & ACCESS_FLAG_ANNOTATION) {
+	//	flags |= RZ_BIN_METH_ANNOTATION;
+	//}
+	// RZ_BIN_METH_ENUM does not exists
+	//if (access_flags & ACCESS_FLAG_ENUM) {
+	//	flags |= RZ_BIN_METH_ENUM;
+	//}
+	// RZ_BIN_METH_MODULE does not exists
+	//if (access_flags & ACCESS_FLAG_MODULE) {
+	//	flags |= RZ_BIN_METH_MODULE;
+	//}
+	if (access_flags & ACCESS_FLAG_CONSTRUCTOR) {
+		flags |= RZ_BIN_METH_CONSTRUCTOR;
+	}
+	if (access_flags & ACCESS_FLAG_DECLARED_SYNCHRONIZED) {
+		flags |= RZ_BIN_METH_DECLARED_SYNCHRONIZED;
+	}
+	return flags;
+}
+
+static RzList /*<RzBinSymbol>*/ *dex_resolve_methods_in_class(RzBinDex *dex, DexClassDef *class_def) {
+	RzList *methods = rz_list_newf((RzListFree)rz_bin_symbol_free);
+	if (!methods) {
+		return NULL;
+	}
+	DexMethodId *method_id = NULL;
+	DexEncodedMethod *encoded_method = NULL;
+	RzListIter *it = NULL;
+
+	rz_list_foreach (class_def->direct_methods, it, encoded_method) {
+		method_id = (DexMethodId *)rz_list_get_n(dex->method_ids, encoded_method->method_idx);
+		if (!method_id) {
+			RZ_LOG_INFO("cannot find method with index %u\n", encoded_method->method_idx);
+			continue;
+		}
+
+		RzBinSymbol *symbol = RZ_NEW0(RzBinSymbol);
+		if (!symbol) {
+			rz_warn_if_reached();
+			break;
+		}
+
+		symbol->name = dex_resolve_string_id(dex, method_id->name_idx);
+		symbol->dname = dex_resolve_proto_id(dex, symbol->name, method_id->proto_idx);
+		//symbol->libname = ;
+		symbol->classname = dex_resolve_type_id(dex, method_id->class_idx);
+		//const char *forwarder;
+		symbol->bind = dex_is_static(encoded_method->access_flags) ? RZ_BIN_BIND_GLOBAL_STR : RZ_BIN_BIND_LOCAL_STR;
+		//const char *type;
+		//const char *rtype;
+		symbol->is_imported = false;
+		symbol->visibility = encoded_method->access_flags & UT32_MAX;
+		symbol->visibility_str = dex_access_flags_readable(symbol->visibility);
+		symbol->vaddr = encoded_method->code_offset;
+		symbol->paddr = encoded_method->code_offset;
+		symbol->size = encoded_method->code_size;
+		symbol->ordinal = encoded_method->method_idx;
+		symbol->method_flags = dex_access_flags_to_method_flags(encoded_method->access_flags);
+
+		if (!rz_list_append(methods, symbol)) {
+			rz_bin_symbol_free(symbol);
+			rz_warn_if_reached();
+			break;
+		}
+	}
+
+	rz_list_foreach (class_def->virtual_methods, it, encoded_method) {
+		method_id = (DexMethodId *)rz_list_get_n(dex->method_ids, encoded_method->method_idx);
+		if (!method_id) {
+			RZ_LOG_INFO("cannot find method with index %u\n", encoded_method->method_idx);
+			continue;
+		}
+
+		RzBinSymbol *symbol = RZ_NEW0(RzBinSymbol);
+		if (!symbol) {
+			rz_warn_if_reached();
+			break;
+		}
+		symbol->name = dex_resolve_string_id(dex, method_id->name_idx);
+		symbol->dname = dex_resolve_proto_id(dex, symbol->name, method_id->proto_idx);
+		//symbol->libname = ;
+		symbol->classname = dex_resolve_type_id(dex, method_id->class_idx);
+		//const char *forwarder;
+		symbol->bind = dex_is_static(encoded_method->access_flags) ? RZ_BIN_BIND_GLOBAL_STR : RZ_BIN_BIND_LOCAL_STR;
+		//const char *type;
+		//const char *rtype;
+		symbol->is_imported = false;
+		symbol->visibility = encoded_method->access_flags & UT32_MAX;
+		symbol->visibility_str = dex_access_flags_readable(symbol->visibility);
+		symbol->vaddr = encoded_method->code_offset;
+		symbol->paddr = encoded_method->code_offset;
+		symbol->size = encoded_method->code_size;
+		symbol->ordinal = encoded_method->method_idx;
+		symbol->method_flags = dex_access_flags_to_method_flags(encoded_method->access_flags);
+
+		if (!rz_list_append(methods, symbol)) {
+			rz_bin_symbol_free(symbol);
+			rz_warn_if_reached();
+			break;
+		}
+	}
+	return methods;
+}
+
+static RzList /*<RzBinField>*/ *dex_resolve_fields_in_class(RzBinDex *dex, DexClassDef *class_def) {
+	RzList *fields = rz_list_newf((RzListFree)rz_bin_field_free);
+	if (!fields) {
+		return NULL;
+	}
+	DexFieldId *field_id = NULL;
+	DexEncodedField *encoded_field = NULL;
+	RzListIter *it = NULL;
+
+	//class_def->static_fields
+	//class_def->instance_fields
+
+	rz_list_foreach(class_def->static_fields, it, encoded_field) {
+		RzBinField *field = RZ_NEW0(RzBinField);
+		if (!field) {
+			rz_warn_if_reached();
+			break;
+		}
+
+
+		if (!rz_list_append(fields, field)) {
+			rz_bin_field_free(field);
+			rz_warn_if_reached();
+			break;
+		}
+	}
+	return fields;
+}
+
+static void free_rz_bin_class(RzBinClass *bclass) {
+	if (!bclass) {
+		return;
+	}
+	rz_list_free(bclass->methods);
+	rz_list_free(bclass->fields);
+	free(bclass->name);
+	free(bclass->super);
+	free(bclass->visibility_str);
+	free(bclass);
+}
+
+RZ_API RzList *rz_bin_dex_classes(RzBinDex *dex) {
+	rz_return_val_if_fail(dex, NULL);
+
+	DexClassDef *class_def;
+	RzBinClass *bclass = NULL;
+	RzList *classes = NULL;
+	RzListIter *it;
+
+	classes = rz_list_newf((RzListFree)free_rz_bin_class);
+	if (!classes) {
+		return NULL;
+	}
+
+	rz_list_foreach (dex->class_defs, it, class_def) {
+		bclass = RZ_NEW0(RzBinClass);
+		if (!bclass) {
+			rz_warn_if_reached();
+			break;
+		}
+
+		bclass->name = dex_resolve_type_id(dex, class_def->class_idx);
+		bclass->super = dex_resolve_type_id(dex, class_def->superclass_idx);
+		bclass->visibility = class_def->access_flags;
+		bclass->visibility_str = dex_access_flags_readable(class_def->access_flags);
+		bclass->index = class_def->class_idx;
+		bclass->addr = class_def->offset;
+		bclass->methods = dex_resolve_methods_in_class(dex, class_def);
+		bclass->fields = dex_resolve_fields_in_class(dex, class_def);
+
+		if (!rz_list_append(classes, bclass)) {
+			free_rz_bin_class(bclass);
+			break;
+		}
+	}
+
+	return classes;
+}
+
+static RzBinSection *section_new(const char* name, ut32 perm, ut32 size, ut64 address) {
+	RzBinSection *section = RZ_NEW0(RzBinSection);
+	if (!section) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+	section->name = strdup(name);
+	section->paddr = section->vaddr = address;
+	section->size = section->vsize = size;
+	section->perm = perm;
+	return section;
+}
+
+RZ_API RzList *rz_bin_dex_sections(RzBinDex *dex) {
+	rz_return_val_if_fail(dex, NULL);
+
+	DexMethodId *class_def;
+	RzBinSection *section;
+	RzList *sections = NULL;
+	RzListIter *it;
+
+	sections = rz_list_newf((RzListFree)rz_bin_section_free);
+	if (!sections) {
+		return NULL;
+	}
+/*
+	rz_list_foreach (dex->class_defs, it, class_def) {
+		section = RZ_NEW0(RzBinSection);
+		if (!section) {
+			rz_warn_if_reached();
+			break;
+		}
+		section->name = strdup(name);
+		section->paddr = section->vaddr = s.addr;
+		section->size = section->vsize = s.size;
+		section->perm = perm;
+		if (format) {
+			section->format = format;
+		}
+
+		if (!rz_list_append(sections, section)) {
+			rz_bin_section_free(section);
+			break;
+		}
+	}
+*/
+	section = section_new("data", RZ_PERM_R, dex->data_size, dex->data_offset);
+	if (section && !rz_list_append(sections, section)) {
+		rz_bin_section_free(section);
+	}
+	section = section_new("file", RZ_PERM_R, dex->file_size, dex->header_offset);
+	if (section && !rz_list_append(sections, section)) {
+		rz_bin_section_free(section);
+	}
+
+	return sections;
 }
 
 RZ_API void rz_bin_dex_checksum(RzBinDex *dex, RzBinHash *hash) {

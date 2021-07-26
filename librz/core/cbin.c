@@ -3506,20 +3506,39 @@ static void classdump_objc(RzCore *r, RzBinClass *c) {
 	rz_cons_printf("@end\n");
 }
 
+static inline char *demangle_class(const char *classname) {
+	if (!classname || classname[0] != 'L') {
+		return strdup("defpackage");
+	}
+	char *demangled = strdup(classname + 1);
+	rz_str_replace_ch(demangled, '/', '.', 1);
+	rz_str_replace_ch(demangled, '$', '.', 1);
+	demangled[strlen(demangled) - 1] = 0;
+	return demangled;
+}
+
 static void classdump_java(RzCore *r, RzBinClass *c) {
 	RzBinField *f;
 	RzListIter *iter2, *iter3;
 	RzBinSymbol *sym;
-	char *pn = strdup(c->name);
-	char *cn = (char *)rz_str_rchr(pn, NULL, '/');
-	if (cn) {
-		*cn = 0;
-		cn++;
-		rz_str_replace_char(pn, '/', '.');
+	char *package = NULL, *classname = NULL;;
+	const char *tmp = rz_str_rchr(c->name, NULL, '$');
+	if (!tmp) {
+		tmp = rz_str_rchr(c->name, NULL, '/');
 	}
-	rz_cons_printf("package %s;\n\n", pn);
-	rz_cons_printf("public class %s {\n", cn);
-	free(pn);
+	if (tmp) {
+		package = demangle_class(c->name);
+		classname = strdup(tmp + 1);
+		classname[strlen(classname) - 1] = 0;
+	} else {
+		package = strdup("defpackage");
+		classname = demangle_class(c->name);
+	}
+	
+	rz_cons_printf("package %s;\n\n", package);
+	rz_cons_printf("public class %s {\n", classname);
+	free(classname);
+	free(package);
 	rz_list_foreach (c->fields, iter2, f) {
 		if (f->name && rz_regex_match("ivar", "e", f->name)) {
 			rz_cons_printf("  public %s %s\n", f->type, f->name);
@@ -3527,11 +3546,11 @@ static void classdump_java(RzCore *r, RzBinClass *c) {
 	}
 	rz_list_foreach (c->methods, iter3, sym) {
 		const char *mn = sym->dname ? sym->dname : sym->name;
-		const char *ms = strstr(mn, "method.");
-		if (ms) {
-			mn = ms + strlen("method.");
-		}
-		rz_cons_printf("  public %s ();\n", mn);
+		const char *ac = sym->visibility_str ? sym->visibility_str : "public";
+		char *dem = rz_bin_demangle_java(mn);
+		rz_str_replace_ch(dem, '/', '.', 1);
+		rz_cons_printf("  %s %s;\n", ac, dem);
+		free(dem);
 	}
 	rz_cons_printf("}\n\n");
 }
