@@ -9,7 +9,7 @@ static bool check_buffer(RzBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
 	return true;
 }
 
