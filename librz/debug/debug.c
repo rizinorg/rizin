@@ -441,19 +441,6 @@ RZ_API RzDebug *rz_debug_free(RzDebug *dbg) {
 RZ_API int rz_debug_attach(RzDebug *dbg, int pid) {
 	int ret = false;
 	if (dbg && dbg->cur && dbg->cur->attach) {
-		if (dbg->cur->reg_profile) {
-			char *p = dbg->cur->reg_profile(dbg);
-			if (p) {
-				rz_reg_set_profile_string(dbg->reg, p);
-				if (dbg->analysis && dbg->reg != dbg->analysis->reg) {
-					rz_reg_free(dbg->analysis->reg);
-					dbg->analysis->reg = dbg->reg;
-				}
-				free(p);
-			} else {
-				eprintf("Cannot retrieve reg profile from debug plugin (%s)\n", dbg->cur->name);
-			}
-		}
 		ret = dbg->cur->attach(dbg, pid);
 		if (ret != -1) {
 			rz_debug_select(dbg, pid, ret); //dbg->pid, dbg->tid);

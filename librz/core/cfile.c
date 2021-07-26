@@ -697,12 +697,7 @@ static int rz_core_file_do_load_for_debug(RzCore *r, ut64 baseaddr, const char *
 #endif
 	}
 	rz_core_bin_apply_all_info(r, binfile);
-	if (r->dbg->cur->reg_profile) {
-		char *p = r->dbg->cur->reg_profile(r->dbg);
-		rz_reg_set_profile_string(r->dbg->reg, p);
-		rz_debug_reg_sync(r->dbg, RZ_REG_TYPE_ALL, 0);
-		free(p);
-	}
+	rz_debug_reg_profile_sync(r->dbg);
 	plugin = rz_bin_file_cur_plugin(binfile);
 	if (plugin && !strcmp(plugin->name, "any")) {
 		// set use of raw strings
