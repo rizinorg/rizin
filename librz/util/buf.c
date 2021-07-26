@@ -22,6 +22,17 @@ typedef enum {
 #include "buf_io.c"
 #include "buf_ref.c"
 
+static void buf_whole_buf_free(RzBuffer *b) {
+	// free the whole_buf only if it was initially allocated by the buf types
+	if (b->methods->get_whole_buf) {
+		if (b->methods->free_whole_buf) {
+			b->methods->free_whole_buf(b);
+		}
+	} else {
+		RZ_FREE(b->whole_buf);
+	}
+}
+
 static bool buf_init(RzBuffer *b, const void *user) {
 	rz_return_val_if_fail(b && b->methods, false);
 	return b->methods->init ? b->methods->init(b, user) : true;
@@ -44,7 +55,7 @@ static st64 buf_read(RzBuffer *b, ut8 *buf, size_t len) {
 
 static st64 buf_write(RzBuffer *b, const ut8 *buf, size_t len) {
 	rz_return_val_if_fail(b && b->methods, -1);
-	RZ_FREE(b->whole_buf);
+	buf_whole_buf_free(b);
 	return b->methods->write ? b->methods->write(b, buf, len) : -1;
 }
 
@@ -60,6 +71,7 @@ static bool buf_resize(RzBuffer *b, ut64 newsize) {
 
 static ut8 *get_whole_buf(RzBuffer *b, ut64 *sz) {
 	rz_return_val_if_fail(b && b->methods, NULL);
+	buf_whole_buf_free(b);
 	if (b->methods->get_whole_buf) {
 		return b->methods->get_whole_buf(b, sz);
 	}
@@ -68,7 +80,6 @@ static ut8 *get_whole_buf(RzBuffer *b, ut64 *sz) {
 	if (bsz == UT64_MAX) {
 		return NULL;
 	}
-	free(b->whole_buf);
 	b->whole_buf = RZ_NEWS(ut8, bsz);
 	if (!b->whole_buf) {
 		return NULL;
@@ -667,14 +678,7 @@ RZ_API bool rz_buf_fini(RzBuffer *b) {
 		return false;
 	}
 
-	// free the whole_buf only if it was initially allocated by the buf types
-	if (b->methods->get_whole_buf) {
-		if (b->methods->free_whole_buf) {
-			b->methods->free_whole_buf(b);
-		}
-	} else {
-		RZ_FREE(b->whole_buf);
-	}
+	buf_whole_buf_free(b);
 	return buf_fini(b);
 }
 

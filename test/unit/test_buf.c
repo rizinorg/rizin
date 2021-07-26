@@ -891,6 +891,7 @@ bool test_rz_buf_sparse_overlay(void) {
 		0x20, "overlay untouched");
 
 	rz_buf_free(b);
+	rz_buf_free(base);
 	mu_end;
 }
 
@@ -1109,6 +1110,7 @@ typedef struct {
 	int init_count;
 	int fini_count;
 	bool offset_fail;
+	ut8 *whole_buf;
 } CustomCtx;
 
 static bool custom_init(RzBuffer *b, const void *user) {
@@ -1169,6 +1171,51 @@ bool test_rz_buf_with_methods(void) {
 	mu_end;
 }
 
+bool test_rz_buf_whole_buf(void) {
+	RzBuffer *b = rz_buf_new_with_bytes((ut8 *)"AAA", 3);
+	const ut8 *bb1 = rz_buf_data(b, NULL);
+	mu_assert_notnull(bb1, "buf_data is not NULL");
+	const ut8 *bb2 = rz_buf_data(b, NULL);
+	mu_assert_notnull(bb2, "buf_data is not NULL");
+	rz_buf_free(b);
+	mu_end;
+}
+
+static ut8 *custom_whole_buf(RzBuffer *b, ut64 *sz) {
+	CustomCtx *ctx = b->priv;
+	ut8 *r = malloc(10);
+	ctx->whole_buf = r;
+	if (sz) {
+		*sz = 10;
+	}
+	return r;
+}
+
+static void custom_free_whole_buf(RzBuffer *b) {
+	CustomCtx *ctx = b->priv;
+	RZ_FREE(ctx->whole_buf);
+}
+
+const RzBufferMethods custom_methods2 = {
+	.init = custom_init,
+	.fini = custom_fini,
+	.read = custom_read,
+	.seek = custom_seek,
+	.get_whole_buf = custom_whole_buf,
+	.free_whole_buf = custom_free_whole_buf,
+};
+
+bool test_rz_buf_whole_buf_alloc(void) {
+	CustomCtx ctx = { 0 };
+	RzBuffer *b = rz_buf_new_with_methods(&custom_methods2, &ctx);
+	const ut8 *bb1 = rz_buf_data(b, NULL);
+	mu_assert_notnull(bb1, "buf_data is not NULL");
+	const ut8 *bb2 = rz_buf_data(b, NULL);
+	mu_assert_notnull(bb2, "buf_data is not NULL");
+	rz_buf_free(b);
+	mu_end;
+}
+
 int all_tests() {
 	time_t seed = time(0);
 	printf("Jamie Seed: %llu\n", (unsigned long long)seed);
@@ -1201,6 +1248,8 @@ int all_tests() {
 	mu_run_test(test_rz_buf_get_nstring);
 	mu_run_test(test_rz_buf_slice_too_big);
 	mu_run_test(test_rz_buf_with_methods);
+	mu_run_test(test_rz_buf_whole_buf);
+	mu_run_test(test_rz_buf_whole_buf_alloc);
 	return tests_passed != tests_run;
 }
 
