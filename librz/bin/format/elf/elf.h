@@ -107,8 +107,8 @@ typedef struct rz_bin_elf_symbol_t {
 	ut64 offset;
 	ut64 size;
 	ut32 ordinal;
-	RZ_BORROW const char *bind;
-	RZ_BORROW const char *type;
+	const char *bind;
+	const char *type;
 	RZ_OWN char *name;
 	bool is_vaddr; /* when true, offset is virtual address, otherwise it's physical */
 } RzBinElfSymbol;
@@ -218,7 +218,7 @@ bool Elf_(rz_bin_elf_has_imports)(RZ_NONNULL ELFOBJ *bin);
 // elf_info.c
 
 RZ_OWN RzList *Elf_(rz_bin_elf_get_libs)(RZ_NONNULL ELFOBJ *bin);
-RZ_OWN Sdb *Elf_(rz_bin_elf_get_version_info)(RZ_NONNULL ELFOBJ *bin);
+RZ_OWN Sdb *Elf_(rz_bin_elf_get_symbols_info)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN char *Elf_(rz_bin_elf_get_abi)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN char *Elf_(rz_bin_elf_get_arch)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN char *Elf_(rz_bin_elf_get_compiler)(RZ_NONNULL ELFOBJ *bin);

@@ -170,13 +170,6 @@ static Elf_(Word) get_number_of_symbols_from_heuristic_aux(ELFOBJ *bin, ut64 sym
 }
 
 static Elf_(Word) get_number_of_symbols_from_heuristic(ELFOBJ *bin) {
-	RzBinElfSection *dynsym_section = Elf_(rz_bin_elf_get_section_with_name)(bin, ".dynsym");
-	RzBinElfSection *dynstr_section = Elf_(rz_bin_elf_get_section_with_name)(bin, ".dynstr");
-
-	if (dynsym_section && dynstr_section) {
-		return get_number_of_symbols_from_heuristic_aux(bin, dynsym_section->offset, dynstr_section->offset);
-	}
-
 	ut64 symtab_addr;
 	ut64 strtab_addr;
 	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_SYMTAB, &symtab_addr) || !Elf_(rz_bin_elf_get_dt_info)(bin, DT_STRTAB, &strtab_addr)) {
@@ -190,6 +183,15 @@ static Elf_(Word) get_number_of_symbols_from_heuristic(ELFOBJ *bin) {
 	}
 
 	return get_number_of_symbols_from_heuristic_aux(bin, symtab_offset, strtab_offset);
+}
+
+static Elf_(Word) get_number_of_symbols_from_section(ELFOBJ *bin) {
+	RzBinElfSection *section = Elf_(rz_bin_elf_get_section_with_name)(bin, ".dynsym");
+	if (!section) {
+		return 0;
+	}
+
+	return section->size / sizeof(Elf_(Sym));
 }
 
 static bool is_special_arm_symbol(ELFOBJ *bin, Elf_(Sym) * sym, const char *name) {
@@ -245,26 +247,29 @@ static const char *symbol_bind_to_str(Elf_(Sym) * sym) {
 	return RZ_BIN_BIND_UNKNOWN_STR;
 }
 
-static bool get_symbol_entry(ELFOBJ *bin, ut64 offset, Elf_(Sym) * result) {
+static bool get_symbol_entry_aux(ELFOBJ *bin, ut64 offset, Elf_(Sym) * result) {
 #if RZ_BIN_ELF64
-	if (!Elf_(rz_bin_elf_read_word)(bin, &offset, &result->st_name) ||
-		!Elf_(rz_bin_elf_read_char)(bin, &offset, &result->st_info) ||
-		!Elf_(rz_bin_elf_read_char)(bin, &offset, &result->st_other) ||
-		!Elf_(rz_bin_elf_read_section)(bin, &offset, &result->st_shndx) ||
-		!Elf_(rz_bin_elf_read_addr)(bin, &offset, &result->st_value) ||
-		!Elf_(rz_bin_elf_read_xword)(bin, &offset, &result->st_size)) {
-		return false;
-	}
+	return Elf_(rz_bin_elf_read_word)(bin, &offset, &result->st_name) &&
+		Elf_(rz_bin_elf_read_char)(bin, &offset, &result->st_info) &&
+		Elf_(rz_bin_elf_read_char)(bin, &offset, &result->st_other) &&
+		Elf_(rz_bin_elf_read_section)(bin, &offset, &result->st_shndx) &&
+		Elf_(rz_bin_elf_read_addr)(bin, &offset, &result->st_value) &&
+		Elf_(rz_bin_elf_read_xword)(bin, &offset, &result->st_size);
 #else
-	if (!Elf_(rz_bin_elf_read_word)(bin, &offset, &result->st_name) ||
-		!Elf_(rz_bin_elf_read_addr)(bin, &offset, &result->st_value) ||
-		!Elf_(rz_bin_elf_read_word)(bin, &offset, &result->st_size) ||
-		!Elf_(rz_bin_elf_read_char)(bin, &offset, &result->st_info) ||
-		!Elf_(rz_bin_elf_read_char)(bin, &offset, &result->st_other) ||
-		!Elf_(rz_bin_elf_read_section)(bin, &offset, &result->st_shndx)) {
+	return Elf_(rz_bin_elf_read_word)(bin, &offset, &result->st_name) &&
+		Elf_(rz_bin_elf_read_addr)(bin, &offset, &result->st_value) &&
+		Elf_(rz_bin_elf_read_word)(bin, &offset, &result->st_size) &&
+		Elf_(rz_bin_elf_read_char)(bin, &offset, &result->st_info) &&
+		Elf_(rz_bin_elf_read_char)(bin, &offset, &result->st_other) &&
+		Elf_(rz_bin_elf_read_section)(bin, &offset, &result->st_shndx);
+#endif
+}
+
+static bool get_symbol_entry(ELFOBJ *bin, ut64 offset, Elf_(Sym) * result) {
+	if (!get_symbol_entry_aux(bin, offset, result)) {
+		RZ_LOG_WARN("Failed to read symbol entry at 0x%" PFMT64x ".\n", offset);
 		return false;
 	}
-#endif
 
 	return true;
 }
@@ -385,7 +390,7 @@ static bool compute_symbols_from_segment(ELFOBJ *bin, RzVector *result, struct s
 }
 
 static bool get_dynamic_elf_symbols(ELFOBJ *bin, RzVector *result, RzBinElfSymbolFilter filter, HtUU *set) {
-	if (!Elf_(rz_bin_elf_has_dt_dynamic)(bin)) {
+	if (!Elf_(rz_bin_elf_is_executable)(bin)) {
 		return true;
 	}
 
@@ -415,12 +420,9 @@ static bool get_dynamic_elf_symbols(ELFOBJ *bin, RzVector *result, RzBinElfSymbo
 }
 
 static bool get_section_elf_symbols(ELFOBJ *bin, RzVector *result, RzBinElfSymbolFilter filter, HtUU *set) {
-	if (!Elf_(rz_bin_elf_has_sections)(bin)) {
-		return true;
-	}
-
+	size_t i;
 	RzBinElfSection *section;
-	rz_bin_elf_foreach_sections(bin, section) {
+	rz_bin_elf_enumerate_sections(bin, section, i) {
 		if (!section->is_valid) {
 			continue;
 		}
@@ -430,19 +432,17 @@ static bool get_section_elf_symbols(ELFOBJ *bin, RzVector *result, RzBinElfSymbo
 		}
 
 		if (!section->link) {
-			RZ_LOG_WARN("section with null link %s", section->name);
+			RZ_LOG_WARN("The section %zu has a null link.\n", i);
 			continue;
 		}
 
 		RzBinElfSection *strtab_section = Elf_(rz_bin_elf_get_section)(bin, section->link);
 		if (!strtab_section) {
-			RZ_LOG_WARN("section with invalid link %s", section->name);
 			continue;
 		}
 
 		RzBinElfStrtab *strtab = Elf_(rz_bin_elf_strtab_new)(bin, strtab_section->offset, strtab_section->size);
 		if (!strtab) {
-			RZ_LOG_WARN("invalid strtab section %s", strtab_section->name);
 			continue;
 		}
 
@@ -512,7 +512,21 @@ Elf_(Word) Elf_(rz_bin_elf_get_number_of_dynamic_symbols)(RZ_NONNULL ELFOBJ *bin
 		return result;
 	}
 
-	return get_number_of_symbols_from_heuristic(bin);
+	RZ_LOG_WARN("Neither hash nor gnu_hash exist. Falling back to heuristics for deducing the number of dynamic symbols...\n");
+
+	result = get_number_of_symbols_from_section(bin);
+	if (result) {
+		return result;
+	}
+
+	result = get_number_of_symbols_from_heuristic(bin);
+	if (result) {
+		return result;
+	}
+
+	RZ_LOG_ERROR("Failed to determine the number of dynamic symbols from heuristics.\n");
+
+	return 0;
 }
 
 RZ_BORROW RzBinElfSymbol *Elf_(rz_bin_elf_get_symbol)(RZ_NONNULL ELFOBJ *bin, ut32 ordinal) {
@@ -529,7 +543,7 @@ RZ_BORROW RzBinElfSymbol *Elf_(rz_bin_elf_get_symbol)(RZ_NONNULL ELFOBJ *bin, ut
 }
 
 RZ_BORROW RzVector *Elf_(rz_bin_elf_get_symbols)(RZ_NONNULL ELFOBJ *bin) {
-	rz_return_val_if_fail(bin && bin->symbols, NULL);
+	rz_return_val_if_fail(bin, NULL);
 	return bin->symbols;
 }
 

@@ -1,10 +1,14 @@
 NAME=ELF: endbr-main-mov
 FILE=bins/elf/endbr-main
 CMDS=?v main
+ARGS=-e log.level=4
 EXPECT=<<EOF
 0x401126
 EOF
 EXPECT_ERR=<<EOF
+WARNING: Neither hash nor gnu_hash exist. Falling back to heuristics for deducing the number of dynamic symbols...
+WARNING: Neither hash nor gnu_hash exist. Falling back to heuristics for deducing the number of dynamic symbols...
+WARNING: Neither hash nor gnu_hash exist. Falling back to heuristics for deducing the number of dynamic symbols...
 EOF
 RUN
 

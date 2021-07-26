@@ -59,7 +59,6 @@ RZ_API bool rz_debug_use(RzDebug *dbg, const char *str) {
 				rz_reg_free(dbg->analysis->reg);
 				dbg->analysis->reg = dbg->reg;
 			}
-			rz_reg_set_profile_string(dbg->reg, p);
 			free(p);
 		} else {
 			eprintf("Cannot retrieve reg profile from debug plugin (%s)\n", dbg->cur->name);

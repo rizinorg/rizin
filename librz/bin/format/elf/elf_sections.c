@@ -68,7 +68,7 @@ static bool create_section_from_phdr(ELFOBJ *bin, RzVector *result, const char *
 
 	section.offset = Elf_(rz_bin_elf_v2p_new)(bin, addr);
 	if (section.offset == UT64_MAX) {
-		RZ_LOG_WARN("Invalid section offset.\n")
+		RZ_LOG_WARN("Failed to convert section virtual address to physical address.\n")
 		return false;
 	}
 
@@ -76,12 +76,10 @@ static bool create_section_from_phdr(ELFOBJ *bin, RzVector *result, const char *
 	section.size = sz;
 	section.name = strdup(name);
 	if (!section.name) {
-		RZ_LOG_WARN("Failed to allocate memory for the section name.")
 		return false;
 	}
 
 	if (!rz_vector_push(result, &section)) {
-		RZ_LOG_WARN("Failed to allocate memory for the section.")
 		return false;
 	}
 
@@ -127,10 +125,6 @@ static RzVector *get_sections_from_dt_dynamic(ELFOBJ *bin) {
 	ut64 addr;
 	ut64 size;
 
-	if (!Elf_(rz_bin_elf_has_dt_dynamic)(bin)) {
-		return NULL;
-	}
-
 	RzVector *result = rz_vector_new(sizeof(RzBinElfSection), rz_bin_elf_section_free, NULL);
 	if (!result) {
 		return NULL;
@@ -163,20 +157,30 @@ static RzVector *get_sections_from_dt_dynamic(ELFOBJ *bin) {
 		return NULL;
 	}
 
+	if (!rz_vector_len(result)) {
+		rz_vector_free(result);
+		return NULL;
+	}
+
 	return result;
 }
 
-static bool set_shdr_entry(ELFOBJ *bin, Elf_(Shdr) * section, ut64 offset) {
-	if (!Elf_(rz_bin_elf_read_word)(bin, &offset, &section->sh_name) ||
-		!Elf_(rz_bin_elf_read_word)(bin, &offset, &section->sh_type) ||
-		!Elf_(rz_bin_elf_read_word_xword)(bin, &offset, &section->sh_flags) ||
-		!Elf_(rz_bin_elf_read_addr)(bin, &offset, &section->sh_addr) ||
-		!Elf_(rz_bin_elf_read_off)(bin, &offset, &section->sh_offset) ||
-		!Elf_(rz_bin_elf_read_word_xword)(bin, &offset, &section->sh_size) ||
-		!Elf_(rz_bin_elf_read_word)(bin, &offset, &section->sh_link) ||
-		!Elf_(rz_bin_elf_read_word)(bin, &offset, &section->sh_info) ||
-		!Elf_(rz_bin_elf_read_word_xword)(bin, &offset, &section->sh_addralign) ||
-		!Elf_(rz_bin_elf_read_word_xword)(bin, &offset, &section->sh_entsize)) {
+static bool get_shdr_entry_aux(ELFOBJ *bin, Elf_(Shdr) * section, ut64 offset) {
+	return Elf_(rz_bin_elf_read_word)(bin, &offset, &section->sh_name) &&
+		Elf_(rz_bin_elf_read_word)(bin, &offset, &section->sh_type) &&
+		Elf_(rz_bin_elf_read_word_xword)(bin, &offset, &section->sh_flags) &&
+		Elf_(rz_bin_elf_read_addr)(bin, &offset, &section->sh_addr) &&
+		Elf_(rz_bin_elf_read_off)(bin, &offset, &section->sh_offset) &&
+		Elf_(rz_bin_elf_read_word_xword)(bin, &offset, &section->sh_size) &&
+		Elf_(rz_bin_elf_read_word)(bin, &offset, &section->sh_link) &&
+		Elf_(rz_bin_elf_read_word)(bin, &offset, &section->sh_info) &&
+		Elf_(rz_bin_elf_read_word_xword)(bin, &offset, &section->sh_addralign) &&
+		Elf_(rz_bin_elf_read_word_xword)(bin, &offset, &section->sh_entsize);
+}
+
+static bool get_shdr_entry(ELFOBJ *bin, Elf_(Shdr) * section, ut64 offset) {
+	if (!get_shdr_entry_aux(bin, section, offset)) {
+		RZ_LOG_WARN("Failed to read section entry at 0x%" PFMT64x ".\n", offset);
 		return false;
 	}
 
@@ -257,7 +261,7 @@ RZ_BORROW RzBinElfSection *Elf_(rz_bin_elf_get_section)(RZ_NONNULL ELFOBJ *bin, 
 }
 
 RZ_BORROW RzBinElfSection *Elf_(rz_bin_elf_get_section_with_name)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL const char *name) {
-	rz_return_val_if_fail(bin && bin->sections && name, NULL);
+	rz_return_val_if_fail(bin, NULL);
 
 	RzBinElfSection *section;
 	rz_bin_elf_foreach_sections(bin, section) {
@@ -284,7 +288,10 @@ RZ_OWN RzList *Elf_(rz_bin_elf_section_flag_to_rzlist)(ut64 flag) {
 
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(flag_translation_table); i++) {
 		if (flag & flag_translation_table[i].flag) {
-			rz_list_append(flag_list, flag_translation_table[i].name);
+			if (!rz_list_append(flag_list, flag_translation_table[i].name)) {
+				rz_list_free(flag_list);
+				return NULL;
+			}
 		}
 	}
 
@@ -296,7 +303,7 @@ static RzBinElfSection convert_elf_section(ELFOBJ *bin, Elf_(Shdr) * shdr, size_
 
 	section.is_valid = set_elf_section(bin, &section, shdr, pos) && verify_shdr_entry(bin, shdr);
 	if (!section.is_valid) {
-		RZ_LOG_WARN("Invalid section %zu at 0x%" PFMT64x "\n", pos, section.offset);
+		RZ_LOG_WARN("The section %zu at 0x%" PFMT64x " seems to be invalid.\n", pos, section.offset);
 	}
 
 	return section;
@@ -316,7 +323,10 @@ static RzVector *convert_sections_from_shdr(ELFOBJ *bin, RzVector *sections) {
 	Elf_(Shdr) * section;
 	rz_vector_enumerate(sections, section, i) {
 		RzBinElfSection tmp = convert_elf_section(bin, section, i);
-		rz_vector_push(result, &tmp);
+		if (!rz_vector_push(result, &tmp)) {
+			rz_vector_free(result);
+			return NULL;
+		}
 	}
 
 	return result;
@@ -355,6 +365,7 @@ RZ_OWN RzVector *Elf_(rz_bin_elf_sections_new)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
 	if (!Elf_(rz_bin_elf_check_array)(bin, bin->ehdr.e_shoff, bin->ehdr.e_shnum, sizeof(Elf_(Phdr)))) {
+		RZ_LOG_WARN("Invalid section header (check array failed).\n");
 		return NULL;
 	}
 
@@ -372,7 +383,7 @@ RZ_OWN RzVector *Elf_(rz_bin_elf_sections_new)(RZ_NONNULL ELFOBJ *bin) {
 			return NULL;
 		}
 
-		if (!set_shdr_entry(bin, section, offset)) {
+		if (!get_shdr_entry(bin, section, offset)) {
 			rz_vector_free(result);
 			return NULL;
 		}
