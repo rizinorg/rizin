@@ -1,9 +1,9 @@
 #if __WINDOWS__
 #define START_ENV_CHAR "%"
-#define END_ENV_CHAR "%"
+#define END_ENV_CHAR   "%"
 #else // __WINDOWS__
 #define START_ENV_CHAR "${"
-#define END_ENV_CHAR "}"
+#define END_ENV_CHAR   "}"
 #endif
 
 static char *config_path(RzCore *core) {
