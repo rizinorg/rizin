@@ -537,9 +537,9 @@ RZ_API void rz_core_sysenv_begin(RzCore *core) {
 	rz_sys_setenv("RZ_BIN_DEMANGLE", rz_config_get(core->config, "bin.demangle"));
 	rz_sys_setenv("RZ_ARCH", rz_config_get(core->config, "asm.arch"));
 	rz_sys_setenv("RZ_BITS", rz_config_get(core->config, "asm.bits"));
-	rz_sys_setenv("RZ_COLOR", rz_config_get(core->config, "scr.color"));
-	rz_sys_setenv("RZ_DEBUG", rz_config_get(core->config, "cfg.debug"));
-	rz_sys_setenv("RZ_IOVA", rz_config_get(core->config, "io.va"));
+	rz_sys_setenv("RZ_COLOR", rz_config_get_i(core->config, "scr.color") ? "1" : "0");
+	rz_sys_setenv("RZ_DEBUG", rz_config_get_b(core->config, "cfg.debug") ? "1" : "0");
+	rz_sys_setenv("RZ_IOVA", rz_config_get_i(core->config, "io.va") ? "1" : "0");
 	free(config_sdb_path);
 }
 
