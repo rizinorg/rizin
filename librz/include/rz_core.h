@@ -1044,6 +1044,11 @@ RZ_API void rz_core_task_list(RzCore *core, int mode);
 RZ_API bool rz_core_task_is_cmd(RzCore *core, int id);
 RZ_API void rz_core_task_del_all_done(RzCore *core);
 
+RZ_API RzCoreAutocomplete *rz_core_autocomplete_add(RzCoreAutocomplete *parent, const char *cmd, int type, bool lock);
+RZ_API void rz_core_autocomplete_free(RzCoreAutocomplete *obj);
+RZ_API void rz_core_autocomplete_reload(RzCore *core);
+RZ_API RzCoreAutocomplete *rz_core_autocomplete_find(RzCoreAutocomplete *parent, const char *cmd, bool exact);
+RZ_API bool rz_core_autocomplete_remove(RzCoreAutocomplete *parent, const char *cmd);
 RZ_API void rz_core_analysis_propagate_noreturn(RzCore *core, ut64 addr);
 
 /* PLUGINS */
