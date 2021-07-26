@@ -248,6 +248,9 @@ typedef struct rz_bin_file_load_options_t {
 	ut64 baseaddr; ///< where the linker maps the binary in memory
 	ut64 loadaddr; ///< starting physical address to read from the target file
 	bool patch_relocs; ///< ask the bin plugin to fill relocs with valid contents for analysis
+	bool elf_load_sections; ///< ELF specific, load or not ELF sections
+	bool elf_checks_sections; ///< ELF specific, checks or not ELF sections
+	bool elf_checks_segments; ///< ELF specific, checks or not ELF sections
 } RzBinObjectLoadOptions;
 
 typedef struct rz_bin_object_t {

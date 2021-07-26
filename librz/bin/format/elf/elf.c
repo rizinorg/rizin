@@ -416,7 +416,7 @@ static bool init(ELFOBJ *bin) {
 	return true;
 }
 
-RZ_OWN ELFOBJ *Elf_(rz_bin_elf_new_buf)(RZ_NONNULL RzBuffer *buf) {
+RZ_OWN ELFOBJ *Elf_(rz_bin_elf_new_buf)(RZ_NONNULL RzBuffer *buf, RZ_UNUSED RzBinObjectLoadOptions *options) {
 	rz_return_val_if_fail(buf, NULL);
 
 	ELFOBJ *bin = RZ_NEW0(ELFOBJ);

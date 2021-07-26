@@ -212,7 +212,7 @@ static Sdb *get_sdb(RzBinFile *bf) {
 }
 
 static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	ELFOBJ *res = Elf_(rz_bin_elf_new_buf)(buf);
+	ELFOBJ *res = Elf_(rz_bin_elf_new_buf)(buf, bf->o ? &bf->o->opts : NULL);
 	if (res) {
 		*bin_obj = res;
 		return true;

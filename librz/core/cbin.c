@@ -172,7 +172,20 @@ static ut64 rva(RzBinObject *o, ut64 paddr, ut64 vaddr, int va) {
 
 RZ_API void rz_core_bin_options_init(RzCore *core, RZ_OUT RzBinOptions *opts, int fd, ut64 baseaddr, ut64 loadaddr) {
 	rz_return_if_fail(core && opts);
-	rz_bin_options_init(opts, fd, baseaddr, loadaddr, rz_config_get_b(core->config, "bin.relocs"), core->bin->rawstr);
+
+	bool patch_relocs = rz_config_get_b(core->config, "bin.relocs");
+
+	rz_bin_options_init(
+		opts,
+		fd,
+		baseaddr,
+		loadaddr,
+		patch_relocs,
+		core->bin->rawstr);
+
+	opts->obj_opts.elf_load_sections = rz_config_get_b(core->config, "elf.load.sections");
+	opts->obj_opts.elf_checks_sections = rz_config_get_b(core->config, "elf.checks.sections");
+	opts->obj_opts.elf_checks_segments = rz_config_get_b(core->config, "elf.checks.segments");
 }
 
 RZ_API int rz_core_bin_set_by_fd(RzCore *core, ut64 bin_fd) {
