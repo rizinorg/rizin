@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2009-2020 nibble <nibble.ds@gmail.com>
 // SPDX-FileCopyrightText: 2021-2021 heersin <teablearcher@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
+
 #include <string.h>
 
 #include <rz_types.h>
@@ -241,6 +242,7 @@ RZ_IPI void rz_core_analysis_esil_init_mem_del(RzCore *core, const char *name, u
 	free(stack_name);
 	return;
 }
+
 /**
  * Initialize ESIL registers.
  *
