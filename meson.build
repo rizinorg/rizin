@@ -1,4 +1,4 @@
-project('rizin', 'c',
+project('rizin', 'cpp', 'c'
   version: 'v0.3.0-git',
   license: 'LGPL3',
   meson_version: '>=0.55.0',
@@ -345,7 +345,6 @@ foreach item : [
     ['sigaction', '#include <signal.h>', []],
     ['pipe', '#include <unistd.h>', []],
     ['execv', '#include <unistd.h>', []],
-    ['vec', '#include <vector>', []],
     ['execve', '#include <unistd.h>', []],
     ['execvp', '#include <unistd.h>', []],
     ['execl', '#include <unistd.h>', []],
