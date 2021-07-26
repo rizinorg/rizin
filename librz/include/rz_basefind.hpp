@@ -11,7 +11,7 @@
 //#include <fstream>
 //#include <map>
 //#include <unordered_set>
-//#include <vector>
+#include <vector>
 //static const size_t WORD_LEN = 4; //32-bit assumed in a few places below
 //
 //typedef uint32_t offset_t;

@@ -406,7 +406,6 @@ foreach item : [
     ['sigaction', '#include <signal.h>', []],
     ['pipe', '#include <unistd.h>', []],
     ['execv', '#include <unistd.h>', []],
-    ['vec', '#include <vector>', []],
     ['execve', '#include <unistd.h>', []],
     ['execvp', '#include <unistd.h>', []],
     ['execl', '#include <unistd.h>', []],
