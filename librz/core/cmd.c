@@ -2006,11 +2006,12 @@ static char *system_exec_stdin(int argc, char **argv, const ut8 *input, int inpu
 }
 
 /**
- * \brief Executes a rizin command and pipes the result to the stdin when calling execvp
+ * \brief Executes a rizin command and pipes the result to the stdin of the program specified in argc/argv
  *
- * Executes a rizin command and the raw bytes of the stdout is returned.
- * The output is then used as stdin for execvp.
- * The output of the execvp is then sent into RzCons.
+ * Executes a rizin command specified in \p rizin_cmd and pipe its stdout to the
+ * stdin of the system program specified in \p argc and \p argv arguments.
+ *
+ * The output of the second program is then sent into RzCons.
  * */
 RZ_API RzCmdStatus rz_core_cmd_pipe(RzCore *core, char *rizin_cmd, int argc, char **argv) {
 	int length = 0;
@@ -6417,48 +6418,43 @@ RZ_API char *rz_core_cmd_strf(RzCore *core, const char *fmt, ...) {
 	return ret;
 }
 
-/* return: pointer to a buffer with the output of the command */
-RZ_API char *rz_core_cmd_str(RzCore *core, const char *cmd) {
+static ut8 *core_cmd_raw(RzCore *core, const char *cmd, int *length) {
 	const char *static_str;
-	char *retstr = NULL;
+	ut8 *retstr = NULL;
 	rz_cons_push();
 	if (rz_core_cmd(core, cmd, 0) == -1) {
-		//eprintf ("Invalid command: %s\n", cmd);
 		rz_cons_pop();
 		return NULL;
 	}
 	rz_cons_filter();
 	static_str = rz_cons_get_buffer();
-	retstr = strdup(static_str ? static_str : "");
+	if (length) {
+		int len = rz_cons_get_buffer_len();
+		retstr = (ut8 *)rz_str_newlen(static_str, len);
+		*length = len;
+	} else {
+		retstr = (ut8 *)strdup(rz_str_get(static_str));
+	}
+
 	rz_cons_pop();
 	rz_cons_echo(NULL);
 	return retstr;
 }
 
 /**
- * \brief Executes a rizin command and returns the raw stdout and its length
- *
- * Executes a rizin command and returns the raw stdout and its length.
- * */
-RZ_API ut8 *rz_core_cmd_raw(RzCore *core, const char *cmd, int *length) {
-	const char *static_str;
-	ut8 *retstr = NULL;
-	rz_cons_push();
-	if (rz_core_cmd(core, cmd, 0) == -1) {
-		//eprintf ("Invalid command: %s\n", cmd);
-		return NULL;
-	}
-	rz_cons_filter();
-	static_str = rz_cons_get_buffer();
-	int len = rz_cons_get_buffer_len();
-	retstr = (ut8 *)rz_str_newlen(static_str, len);
-	if (length) {
-		*length = len;
-	}
+ * \brief Executes a rizin command and returns the stdout as a string
+ */
+RZ_API char *rz_core_cmd_str(RzCore *core, const char *cmd) {
+	rz_return_val_if_fail(core && cmd, NULL);
+	return (char *)core_cmd_raw(core, cmd, NULL);
+}
 
-	rz_cons_pop();
-	rz_cons_echo(NULL);
-	return retstr;
+/**
+ * \brief Executes a rizin command and returns the raw stdout and its length
+ */
+RZ_API ut8 *rz_core_cmd_raw(RzCore *core, const char *cmd, int *length) {
+	rz_return_val_if_fail(core && cmd && length, NULL);
+	return core_cmd_raw(core, cmd, length);
 }
 
 RZ_IPI int rz_cmd_ox(void *data, const char *input) {

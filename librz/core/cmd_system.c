@@ -59,9 +59,11 @@ static bool system_exec(RzCore *core, int argc, const char **argv, char **output
 	const char *scr_color = rz_config_get(core->config, "scr.color");
 	const char *endian = rz_str_bool(core->rasm->big_endian);
 	char *cfg_path = config_path(core);
-	snprintf(file_size, sizeof(file_size), "%" PFMT64u, core->file ? rz_io_fd_size(core->io, core->file->fd) : 0);
-	snprintf(core_offset, sizeof(core_offset), "%" PFMT64u, core->offset);
-	snprintf(block_size, sizeof(block_size), "%u", core->blocksize);
+	int ret = -1;
+
+	rz_strf(file_size, "%" PFMT64u, core->file ? rz_io_fd_size(core->io, core->file->fd) : 0);
+	rz_strf(core_offset, "%" PFMT64u, core->offset);
+	rz_strf(block_size, "%u", core->blocksize);
 
 	const char *envvars[] = {
 		"RZ_FILE",
@@ -93,33 +95,24 @@ static bool system_exec(RzCore *core, int argc, const char **argv, char **output
 		scr_color,
 		block_size,
 		cfg_debug,
-		cfg_path ? cfg_path : ""
+		rz_str_get(cfg_path)
 	};
 
 	RzList *alloc = rz_list_newf(free);
 	if (!alloc) {
 		RZ_LOG_ERROR("Cannot allocate list of allocated strings.\n");
-		rz_file_rm(cfg_path);
-		free(cfg_path);
-		return false;
+		goto alloc_err;
 	}
 
 	const char **args = RZ_NEWS0(const char *, argc);
 	if (!args) {
 		RZ_LOG_ERROR("Cannot allocate list of args.\n");
-		rz_list_free(alloc);
-		rz_file_rm(cfg_path);
-		free(cfg_path);
-		return false;
+		goto args_err;
 	}
 
 	if (!rz_subprocess_init()) {
 		RZ_LOG_ERROR("Cannot initialize subprocess.\n");
-		rz_list_free(alloc);
-		rz_file_rm(cfg_path);
-		free(cfg_path);
-		free(args);
-		return false;
+		goto subprocess_err;
 	}
 
 	for (int i = 0; i < argc; ++i) {
@@ -171,27 +164,26 @@ static bool system_exec(RzCore *core, int argc, const char **argv, char **output
 	RzSubprocess *proc = rz_subprocess_start_opt(&opt);
 	if (!proc) {
 		RZ_LOG_ERROR("Cannot start subprocess.\n");
-		rz_subprocess_fini();
-		rz_file_rm(cfg_path);
-		free(cfg_path);
-		rz_list_free(alloc);
-		free(args);
-		return false;
+		goto proc_start_err;
 	}
 
 	rz_subprocess_wait(proc, UT64_MAX);
-	int ret = rz_subprocess_ret(proc);
+	ret = rz_subprocess_ret(proc);
 
 	if (output) {
 		*output = rz_subprocess_out(proc, length);
 	}
 
 	rz_subprocess_free(proc);
+proc_start_err:
 	rz_subprocess_fini();
+subprocess_err:
+	free(args);
+args_err:
 	rz_list_free(alloc);
+alloc_err:
 	rz_file_rm(cfg_path);
 	free(cfg_path);
-	free(args);
 
 	return ret >= 0;
 }
