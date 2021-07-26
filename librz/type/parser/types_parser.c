@@ -197,9 +197,14 @@ int parse_sole_type_name(CParserState *state, TSNode node, const char *text, Par
 	// Do allow forward-looking definitions we just add the type into the forward hashtable
 	if (c_parser_forward_definition_store(state, real_type)) {
 		parser_debug(state, "Added forward definition of type: \"%s\"\n", real_type);
+		rz_type_base_type_free((*tpair)->btype);
+		(*tpair)->btype = NULL;
 		free(real_type);
 		return 0;
 	}
+	rz_type_free((*tpair)->type);
+	rz_type_base_type_free((*tpair)->btype);
+	RZ_FREE(*tpair);
 	free(real_type);
 	return -1;
 }
@@ -299,7 +304,7 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 		return -1;
 	}
 	// Name is optional, in abstract definitions or as the member of nested types
-	const char *name = NULL;
+	char *name = NULL;
 	TSNode struct_name = ts_node_child_by_field_name(node, "name", 4);
 	if (ts_node_is_null(struct_name)) {
 		parser_debug(state, "Anonymous struct\n");
@@ -328,18 +333,23 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 				parser_debug(state, "Structure \"%s\" was forward-defined before\n", name);
 				if (!(*tpair = c_parser_new_structure_naked_type(state, name))) {
 					parser_error(state, "Cannot create \"%s\" naked structure type in the context\n", name);
+					free(name);
 					return -1;
 				}
+				free(name);
 				return 0;
 			}
 			// We still could create the "forward looking struct declaration"
 			// The parser then can augment the definition
 			if (!(*tpair = c_parser_new_structure_forward_definition(state, name))) {
 				parser_error(state, "Cannot create \"%s\" forward structure definition in the context\n", name);
+				free(name);
 				return -1;
 			}
+			free(name);
 			return 0;
 		} else {
+			free(name);
 			return 0;
 		}
 	}
@@ -356,6 +366,7 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 	ParserTypePair *struct_pair = c_parser_new_structure_type(state, name, body_child_count);
 	if (!struct_pair) {
 		parser_error(state, "Error forming RzType and RzBaseType pair out of struct: \"%s\"\n", name);
+		free(name);
 		return -1;
 	}
 	int i;
@@ -370,6 +381,7 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 		TSNode first_leaf = ts_node_named_child(child, 0);
 		if (ts_node_is_null(first_leaf)) {
 			node_malformed_error(state, child, text, "field_declaration");
+			free(name);
 			return -1;
 		}
 		const char *leaf_type = ts_node_type(first_leaf);
@@ -389,6 +401,7 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 		if (strcmp(node_type, "field_declaration")) {
 			parser_error(state, "ERROR: Struct field AST should contain (field_declaration) node!\n");
 			node_malformed_error(state, child, text, "struct field");
+			free(name);
 			return -1;
 		}
 
@@ -398,6 +411,7 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 		if (ts_node_is_null(field_type) || ts_node_is_null(field_declarator)) {
 			parser_error(state, "ERROR: Struct field AST shoudl contain type and declarator items");
 			node_malformed_error(state, child, text, "struct field");
+			free(name);
 			return -1;
 		}
 		// Every field can be:
@@ -424,28 +438,33 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 			if (strcmp(ts_node_type(field_type), "primitive_type")) {
 				parser_error(state, "ERROR: Struct bitfield cannot contain non-primitive bitfield!\n");
 				node_malformed_error(state, child, text, "struct field");
+				free(name);
 				return -1;
 			}
 			const char *real_type = ts_node_sub_string(field_type, text);
 			if (!real_type) {
 				parser_error(state, "ERROR: Struct bitfield type should not be NULL!\n");
 				node_malformed_error(state, child, text, "struct field");
+				free(name);
 				return -1;
 			}
 			const char *real_identifier = ts_node_sub_string(field_declarator, text);
 			if (!real_identifier) {
 				parser_error(state, "ERROR: Struct bitfield identifier should not be NULL!\n");
 				node_malformed_error(state, child, text, "struct field");
+				free(name);
 				return -1;
 			}
 			if (ts_node_named_child_count(bitfield_clause) != 1) {
 				node_malformed_error(state, child, text, "struct field");
+				free(name);
 				return -1;
 			}
 			TSNode field_bits = ts_node_named_child(bitfield_clause, 0);
 			if (ts_node_is_null(field_bits)) {
 				parser_error(state, "ERROR: Struct bitfield bits AST node should not be NULL!\n");
 				node_malformed_error(state, child, text, "struct field");
+				free(name);
 				return -1;
 			}
 			const char *bits_str = ts_node_sub_string(field_bits, text);
@@ -455,6 +474,7 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 			if (parse_type_node_single(state, field_type, text, &membtpair, is_const)) {
 				parser_error(state, "ERROR: parsing bitfield struct member identifier\n");
 				node_malformed_error(state, child, text, "struct field");
+				free(name);
 				return -1;
 			}
 			// Then we augment resulting type field with the data from parsed declarator
@@ -462,6 +482,7 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 			if (parse_type_declarator_node(state, field_declarator, text, &membtpair, &membname)) {
 				parser_error(state, "ERROR: parsing bitfield struct member declarator\n");
 				node_malformed_error(state, child, text, "struct field");
+				free(name);
 				return -1;
 			}
 			// Add a struct member
@@ -475,6 +496,7 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 			void *element = rz_vector_push(members, &memb); // returns null if no space available
 			if (!element) {
 				parser_error(state, "Error appending bitfield struct member to the base type\n");
+				free(name);
 				return -1;
 			}
 		} else {
@@ -485,12 +507,14 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 			if (!real_type) {
 				parser_error(state, "ERROR: Struct field type should not be NULL!\n");
 				node_malformed_error(state, child, text, "struct field");
+				free(name);
 				return -1;
 			}
 			char *real_identifier = ts_node_sub_string(field_declarator, text);
 			if (!real_identifier) {
 				parser_error(state, "ERROR: Struct declarator should not be NULL!\n");
 				node_malformed_error(state, child, text, "struct field");
+				free(name);
 				return -1;
 			}
 			parser_debug(state, "field type: %s field_declarator: %s\n", real_type, real_identifier);
@@ -501,6 +525,7 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 				node_malformed_error(state, child, text, "struct field");
 				free(real_identifier);
 				free(real_type);
+				free(name);
 				return -1;
 			}
 			// Then we augment resulting type field with the data from parsed declarator
@@ -510,6 +535,7 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 				node_malformed_error(state, child, text, "struct field");
 				free(real_identifier);
 				free(real_type);
+				free(name);
 				return -1;
 			}
 			// Add a struct member
@@ -525,6 +551,7 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 				parser_error(state, "Error appending struct member to the base type\n");
 				free(real_identifier);
 				free(real_type);
+				free(name);
 				return -1;
 			}
 			parser_debug(state, "Appended member \"%s\" into struct \"%s\"\n", membname, name);
@@ -541,6 +568,7 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 		}
 	}
 	*tpair = struct_pair;
+	free(name);
 	return 0;
 }
 
@@ -818,7 +846,7 @@ int parse_enum_node(CParserState *state, TSNode node, const char *text, ParserTy
 		return -1;
 	}
 	// Name is optional, in abstract definitions or as the member of nested types
-	const char *name = NULL;
+	char *name = NULL;
 	TSNode enum_name = ts_node_child_by_field_name(node, "name", 4);
 	if (ts_node_is_null(enum_name)) {
 		parser_debug(state, "Anonymous enum\n");
@@ -847,18 +875,23 @@ int parse_enum_node(CParserState *state, TSNode node, const char *text, ParserTy
 				parser_debug(state, "Enum \"%s\" was forward-defined before\n", name);
 				if (!(*tpair = c_parser_new_enum_naked_type(state, name))) {
 					parser_error(state, "Cannot create \"%s\" naked enum type in the context\n", name);
+					free(name);
 					return -1;
 				}
+				free(name);
 				return 0;
 			}
 			// We still could create the "forward looking enum declaration"
 			// The parser then can augment the definition
 			if (!(*tpair = c_parser_new_enum_forward_definition(state, name))) {
 				parser_error(state, "Cannot create \"%s\" forward enum definition in the context\n", name);
+				free(name);
 				return -1;
 			}
+			free(name);
 			return 0;
 		} else {
+			free(name);
 			return 0;
 		}
 	}
@@ -870,6 +903,7 @@ int parse_enum_node(CParserState *state, TSNode node, const char *text, ParserTy
 	ParserTypePair *enum_pair = c_parser_new_enum_type(state, name, body_child_count);
 	if (!enum_pair) {
 		parser_error(state, "Error forming RzType and RzBaseType pair out of enum\n");
+		free(name);
 		return -1;
 	}
 	// Then we process all enumeration cases and add one by one
@@ -882,6 +916,7 @@ int parse_enum_node(CParserState *state, TSNode node, const char *text, ParserTy
 		if (strcmp(node_type, "enumerator")) {
 			parser_error(state, "ERROR: Enum member AST should contain (enumerator) node!\n");
 			node_malformed_error(state, child, text, "enum field");
+			free(name);
 			return -1;
 		}
 		// Every member node should have at least 1 child!
@@ -889,6 +924,7 @@ int parse_enum_node(CParserState *state, TSNode node, const char *text, ParserTy
 		if (member_child_count < 1 || member_child_count > 2) {
 			parser_error(state, "ERROR: enum member AST cannot contain less than 1 or more than 2 items");
 			node_malformed_error(state, child, text, "enum field");
+			free(name);
 			return -1;
 		}
 		// Every member can be:
@@ -910,6 +946,7 @@ int parse_enum_node(CParserState *state, TSNode node, const char *text, ParserTy
 			if (ts_node_is_null(member_identifier)) {
 				parser_error(state, "ERROR: Enum case identifier should not be NULL!\n");
 				node_malformed_error(state, child, text, "enum case");
+				free(name);
 				return -1;
 			}
 			char *real_identifier = ts_node_sub_string(member_identifier, text);
@@ -922,6 +959,7 @@ int parse_enum_node(CParserState *state, TSNode node, const char *text, ParserTy
 			if (ts_node_is_null(member_identifier) || ts_node_is_null(member_value)) {
 				parser_error(state, "ERROR: Enum case identifier and value should not be NULL!\n");
 				node_malformed_error(state, child, text, "enum case");
+				free(name);
 				return -1;
 			}
 			char *real_identifier = ts_node_sub_string(member_identifier, text);
@@ -939,6 +977,7 @@ int parse_enum_node(CParserState *state, TSNode node, const char *text, ParserTy
 			if (!element) {
 				parser_error(state, "Error appending enum case to the base type\n");
 				free(cas.name);
+				free(name);
 				return -1;
 			}
 		}
@@ -951,6 +990,7 @@ int parse_enum_node(CParserState *state, TSNode node, const char *text, ParserTy
 			c_parser_forward_definition_remove(state, name);
 		}
 	}
+	free(name);
 	*tpair = enum_pair;
 	return 0;
 }

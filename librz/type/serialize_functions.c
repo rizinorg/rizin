@@ -60,6 +60,7 @@ static RzCallable *get_callable_type(RzTypeDB *typedb, Sdb *sdb, const char *nam
 		goto error;
 	}
 
+	char arg_name[32];
 	int i;
 	for (i = 0; i < arguments; i++) {
 		char *values = sdb_get(sdb, rz_strf(key, "func.%s.arg.%d", name, i), NULL);
@@ -71,7 +72,7 @@ static RzCallable *get_callable_type(RzTypeDB *typedb, Sdb *sdb, const char *nam
 		char *argument_type = sdb_anext(values, &argument_name);
 		if (!argument_name) {
 			// Autoname unnamed arguments
-			argument_name = rz_str_newf("arg%d", i);
+			argument_name = rz_strf(arg_name, "arg%d", i);
 		}
 		char *error_msg = NULL;
 		RzType *ttype = parse_type_string_cached(typedb->parser, type_str_cache, argument_type, &error_msg, cache_newly_added);
@@ -80,9 +81,10 @@ static RzCallable *get_callable_type(RzTypeDB *typedb, Sdb *sdb, const char *nam
 			free(values);
 			goto error;
 		}
-		ht_pp_insert(type_str_cache, argument_type, ttype);
 		RzCallableArg *arg = RZ_NEW0(RzCallableArg);
 		if (!arg) {
+			free(values);
+			rz_type_free(ttype);
 			goto error;
 		}
 		arg->name = strdup(argument_name);
@@ -91,6 +93,7 @@ static RzCallable *get_callable_type(RzTypeDB *typedb, Sdb *sdb, const char *nam
 
 		void *element = rz_pvector_push(callable->args, arg); // returns null if no space available
 		if (!element) {
+			rz_type_callable_arg_free(arg);
 			goto error;
 		}
 	}
