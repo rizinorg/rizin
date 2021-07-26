@@ -316,6 +316,7 @@ struct rz_core_t {
 	bool fixedblock;
 	char *table_query;
 	struct rz_core_t *c2;
+	RzCoreAutocomplete *autocomplete;
 	int autocomplete_type;
 	int maxtab;
 	RzEvent *ev;
@@ -324,6 +325,7 @@ struct rz_core_t {
 	bool log_events; // core.c:cb_event_handler : log actions from events if cfg.log.events is set
 	RzList *ropchain;
 	bool use_tree_sitter_rzcmd;
+	bool use_rzshell_autocompletion;
 	RzCoreSeekHistory seek_history;
 
 	bool marks_init;
@@ -449,6 +451,7 @@ RZ_API int rz_core_is_valid_offset(RzCore *core, ut64 offset);
 RZ_API int rz_core_write_hexpair(RzCore *core, ut64 addr, const char *pairs);
 RZ_API int rz_core_write_assembly(RzCore *core, ut64 addr, const char *instructions, bool pretend, bool pad);
 RZ_API int rz_core_shift_block(RzCore *core, ut64 addr, ut64 b_size, st64 dist);
+RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *completion, RzLineBuffer *buf, RzLinePromptType prompt_type);
 RZ_API RzLineNSCompletionResult *rz_core_autocomplete_rzshell(RzCore *core, RzLineBuffer *buf, RzLinePromptType prompt_type);
 RZ_API void rz_core_print_scrollbar(RzCore *core);
 RZ_API void rz_core_print_scrollbar_bottom(RzCore *core);

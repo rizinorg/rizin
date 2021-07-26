@@ -2030,6 +2030,16 @@ static bool cb_scrcolumns(void *user, void *data) {
 	return true;
 }
 
+static bool cb_scrfgets(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	core->cons->user_fgets = node->i_value
+		? NULL
+		: (void *)rz_core_fgets;
+	core->cons->user_fgets_user = core;
+	return true;
+}
+
 static bool cb_scrhtml(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
 	rz_cons_singleton()->is_html = node->i_value;
@@ -2041,6 +2051,13 @@ static bool cb_oldshell(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
 	RzCore *core = (RzCore *)user;
 	core->use_tree_sitter_rzcmd = !node->i_value;
+	return true;
+}
+
+static bool cb_oldshell_autocompletion(void *user, void *data) {
+	RzConfigNode *node = (RzConfigNode *)data;
+	RzCore *core = (RzCore *)user;
+	core->use_rzshell_autocompletion = !node->i_value;
 	return true;
 }
 
@@ -3151,6 +3168,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	p = rz_sys_getenv("RZ_CFG_OLDSHELL");
 	SETCB("cfg.oldshell", p ? "true" : "false", &cb_oldshell, "Use old radare2 parser");
 	free(p);
+	SETCB("cfg.oldshell.autocompletion", "true", &cb_oldshell_autocompletion, "Use old radare2 autocompletion");
 	SETI("cfg.cpuaffinity", 0, "Run on cpuid");
 
 	/* log */
@@ -3439,6 +3457,12 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("esil.mdev.range", "", &cb_mdevrange, "Specify a range of memory to be handled by cmd.esil.mdev");
 
 	/* scr */
+#if __EMSCRIPTEN__
+	rz_config_set_cb(cfg, "scr.fgets", "true", cb_scrfgets);
+#else
+	rz_config_set_cb(cfg, "scr.fgets", "false", cb_scrfgets);
+#endif
+	rz_config_desc(cfg, "scr.fgets", "Use fgets() instead of dietline for prompt input");
 	SETCB("scr.echo", "false", &cb_screcho, "Show rcons output in realtime to stderr and buffer");
 	SETICB("scr.linesleep", 0, &cb_scrlinesleep, "Flush sleeping some ms in every line");
 	SETICB("scr.maxtab", 4096, &cb_completion_maxtab, "Change max number of auto completion suggestions");
