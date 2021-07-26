@@ -193,14 +193,12 @@ struct Elf_(rz_bin_elf_obj_t) {
 };
 
 // elf.c
-
-RZ_OWN ELFOBJ *Elf_(rz_bin_elf_new_buf)(RZ_NONNULL RzBuffer *buf);
+RZ_OWN ELFOBJ *Elf_(rz_bin_elf_new_buf)(RZ_NONNULL RzBuffer *buf, RzBinObjectLoadOptions *options);
 void Elf_(rz_bin_elf_free)(RZ_NONNULL ELFOBJ *bin);
 ut64 Elf_(rz_bin_elf_p2v_new)(RZ_NONNULL ELFOBJ *bin, ut64 paddr);
 ut64 Elf_(rz_bin_elf_v2p_new)(RZ_NONNULL ELFOBJ *bin, ut64 vaddr);
 
 // elf_corefile.c
-
 ut64 Elf_(rz_bin_elf_get_sp_val)(RZ_NONNULL ELFOBJ *bin);
 
 // elf_dynamic.c
@@ -216,7 +214,6 @@ RZ_OWN RzVector *Elf_(rz_bin_elf_analyse_imports)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_has_imports)(RZ_NONNULL ELFOBJ *bin);
 
 // elf_info.c
-
 RZ_OWN RzList *Elf_(rz_bin_elf_get_libs)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN Sdb *Elf_(rz_bin_elf_get_symbols_info)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN char *Elf_(rz_bin_elf_get_abi)(RZ_NONNULL ELFOBJ *bin);
@@ -247,13 +244,11 @@ ut64 Elf_(rz_bin_elf_get_init_offset)(RZ_NONNULL ELFOBJ *bin);
 ut64 Elf_(rz_bin_elf_get_main_offset)(RZ_NONNULL ELFOBJ *bin);
 
 // elf_notes.c
-
 RZ_BORROW RzBinElfPrStatusLayout *Elf_(rz_bin_elf_get_prstatus_layout)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN RzVector *Elf_(rz_bin_elf_notes_new)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_has_notes)(RZ_NONNULL ELFOBJ *bin);
 
 // elf_misc.c
-
 bool Elf_(rz_bin_elf_check_array)(RZ_NONNULL ELFOBJ *bin, Elf_(Off) offset, Elf_(Off) length, Elf_(Off) entry_size);
 bool Elf_(rz_bin_elf_read_addr)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RZ_INOUT ut64 *offset, RZ_NONNULL RZ_OUT Elf_(Addr) * result);
 bool Elf_(rz_bin_elf_read_char)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RZ_INOUT ut64 *offset, RZ_NONNULL RZ_OUT ut8 *result);
@@ -278,20 +273,17 @@ bool Elf_(rz_bin_elf_mul_addr)(Elf_(Addr) * result, Elf_(Addr) addr, Elf_(Addr) 
 bool Elf_(rz_bin_elf_mul_off)(Elf_(Off) * result, Elf_(Off) addr, Elf_(Off) value);
 
 // elf_relocs.c
-
 RZ_OWN RzVector *Elf_(rz_bin_elf_relocs_new)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_has_relocs)(RZ_NONNULL ELFOBJ *bin);
 size_t Elf_(rz_bin_elf_get_relocs_count)(RZ_NONNULL ELFOBJ *bin);
 ut64 Elf_(rz_bin_elf_get_num_relocs_dynamic_plt)(RZ_NONNULL ELFOBJ *bin);
 
 // elf_segments.c
-
 RZ_BORROW RzBinElfSegment *Elf_(rz_bin_elf_get_segment_with_type)(RZ_NONNULL ELFOBJ *bin, Elf_(Word) type);
 RZ_OWN RzVector *Elf_(rz_bin_elf_segments_new)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_has_segments)(RZ_NONNULL ELFOBJ *bin);
 
 // elf_sections.c
-
 RZ_BORROW RzBinElfSection *Elf_(rz_bin_elf_get_section)(RZ_NONNULL ELFOBJ *bin, Elf_(Half) index);
 RZ_BORROW RzBinElfSection *Elf_(rz_bin_elf_get_section_with_name)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL const char *name);
 RZ_OWN RzList *Elf_(rz_bin_elf_section_flag_to_rzlist)(ut64 flag);
@@ -301,7 +293,6 @@ RZ_OWN char *Elf_(rz_bin_elf_section_type_to_string)(ut64 type);
 bool Elf_(rz_bin_elf_has_sections)(RZ_NONNULL ELFOBJ *bin);
 
 // elf_strtab
-
 RZ_BORROW const char *Elf_(rz_bin_elf_strtab_get)(RZ_NONNULL RzBinElfStrtab *strtab, ut64 index);
 RZ_OWN RzBinElfStrtab *Elf_(rz_bin_elf_strtab_new)(RZ_NONNULL ELFOBJ *bin, ut64 offset, ut64 size);
 RZ_OWN char *Elf_(rz_bin_elf_strtab_get_dup)(RZ_NONNULL RzBinElfStrtab *strtab, ut64 index);

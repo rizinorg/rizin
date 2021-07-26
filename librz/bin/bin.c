@@ -234,9 +234,17 @@ RZ_API RzBinFile *rz_bin_open(RzBin *bin, const char *file, RzBinOptions *opt) {
 
 RZ_API RzBinFile *rz_bin_reload(RzBin *bin, RzBinFile *bf, ut64 baseaddr) {
 	rz_return_val_if_fail(bin && bf, NULL);
+
 	bool patch_relocs = bf->o ? bf->o->opts.patch_relocs : false;
+	bool elf_load_sections = bf->o ? bf->o->opts.elf_load_sections : false;
+	bool elf_checks_sections = bf->o ? bf->o->opts.elf_checks_sections : false;
+	bool elf_checks_segments = bf->o ? bf->o->opts.elf_checks_segments : false;
+
 	RzBinOptions opt;
 	rz_bin_options_init(&opt, bf->fd, baseaddr, bf->loadaddr, patch_relocs, bin->rawstr);
+	opt.obj_opts.elf_load_sections = elf_load_sections;
+	opt.obj_opts.elf_checks_sections = elf_checks_sections;
+	opt.obj_opts.elf_checks_segments = elf_checks_segments;
 	opt.filename = bf->file;
 	rz_buf_seek(bf->buf, 0, RZ_BUF_SET);
 	RzBinFile *nbf = rz_bin_open_buf(bin, bf->buf, &opt);
