@@ -118,8 +118,8 @@ static bool init_phdr_sdb(ELFOBJ *bin) {
 		sdb_set(bin->kv, "elf_phdr.format", sdb_elf_phdr_format, 0);
 }
 
-static bool init_phdr_aux(ELFOBJ *bin) {
-	bin->segments = Elf_(rz_bin_elf_segments_new)(bin);
+static bool init_phdr_aux(ELFOBJ *bin, RzBinObjectLoadOptions *options) {
+	bin->segments = Elf_(rz_bin_elf_segments_new)(bin, options);
 	if (!bin->segments) {
 		return false;
 	}
@@ -127,8 +127,8 @@ static bool init_phdr_aux(ELFOBJ *bin) {
 	return init_phdr_sdb(bin);
 }
 
-static void init_phdr(ELFOBJ *bin) {
-	if (!init_phdr_aux(bin)) {
+static void init_phdr(ELFOBJ *bin, RzBinObjectLoadOptions *options) {
+	if (!init_phdr_aux(bin, options)) {
 		RZ_LOG_WARN("Failed to initialize program header.\n");
 	}
 }
@@ -400,7 +400,7 @@ static bool init(ELFOBJ *bin, RzBinObjectLoadOptions *options) {
 	}
 
 	if (!Elf_(rz_bin_elf_is_relocatable)(bin)) {
-		init_phdr(bin);
+		init_phdr(bin, options);
 	}
 
 	if (bin->ehdr.e_type != ET_CORE) {

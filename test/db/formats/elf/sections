@@ -162,3 +162,25 @@ WARNING: Invalid strtab at 0x0 (check array failed).
 WARNING: Failed to initialize section string table.
 EOF
 RUN
+
+NAME=disable segments checks
+FILE=bins/elf/analysis/tiny.elf
+ARGS=-e log.level=4 -e elf.checks.segments=false
+CMDS=iS
+EXPECT=<<EOF
+[Sections]
+
+nth paddr  size vaddr  vsize perm name type flags 
+--------------------------------------------------
+
+EOF
+EXPECT_ERR=<<EOF
+WARNING: Failed to read ELF header (e_phnum).
+WARNING: Failed to read ELF header (e_shentsize).
+WARNING: Failed to read ELF header (e_shnum).
+WARNING: Failed to read ELF header (e_shstrndx).
+WARNING: The binary seems to be a tiny elf (45 bytes). Reload e_phnum value.
+WARNING: Invalid section header (check array failed).
+WARNING: Failed to initialize section header.
+EOF
+RUN
