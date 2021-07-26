@@ -635,7 +635,7 @@ static int rz_core_file_do_load_for_debug(RzCore *r, ut64 baseaddr, const char *
 	int fd = cf ? cf->fd : -1;
 
 	RzBinOptions opt;
-	rz_bin_options_init(&opt, fd, baseaddr, UT64_MAX, false, rz_config_get_i(r->config, "bin.rawstr"));
+	rz_bin_options_init(&opt, fd, baseaddr, UT64_MAX, false, false);
 	opt.obj_opts.elf_load_sections = rz_config_get_b(r->config, "elf.load.sections");
 	opt.obj_opts.elf_checks_sections = rz_config_get_b(r->config, "elf.checks.sections");
 	opt.obj_opts.elf_checks_segments = rz_config_get_b(r->config, "elf.checks.segments");
@@ -644,6 +644,12 @@ static int rz_core_file_do_load_for_debug(RzCore *r, ut64 baseaddr, const char *
 	if (!binfile) {
 		eprintf("RzBinLoad: Cannot open %s\n", filenameuri);
 		if (rz_config_get_i(r->config, "bin.rawstr")) {
+			rz_bin_options_init(&opt, fd, baseaddr, UT64_MAX, false, true);
+			opt.obj_opts.elf_load_sections = rz_config_get_b(r->config, "elf.load.sections");
+			opt.obj_opts.elf_checks_sections = rz_config_get_b(r->config, "elf.checks.sections");
+			opt.obj_opts.elf_checks_segments = rz_config_get_b(r->config, "elf.checks.segments");
+			opt.xtr_idx = xtr_idx;
+
 			binfile = rz_bin_open(r->bin, filenameuri, &opt);
 			if (!binfile) {
 				return false;

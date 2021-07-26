@@ -109,6 +109,7 @@ RZ_API void rz_bin_options_init(RzBinOptions *opt, int fd, ut64 baseaddr, ut64 l
 	opt->obj_opts.baseaddr = baseaddr;
 	opt->obj_opts.loadaddr = loadaddr;
 	opt->obj_opts.patch_relocs = patch_relocs;
+	opt->obj_opts.elf_load_sections = true;
 	opt->fd = fd;
 	opt->rawstr = rawstr;
 }
