@@ -106,3 +106,19 @@ nth paddr  size vaddr  vsize perm name type flags
 
 EOF
 RUN
+
+NAME=disable sections load
+FILE=bins/elf/analysis/hello-linux-x86_64
+ARGS=-e log.level=4 -e elf.load.sections=false
+CMDS=iS
+EXPECT=<<EOF
+[Sections]
+
+nth paddr       size vaddr       vsize perm name      type flags 
+-----------------------------------------------------------------
+0   0x000008d0   0x0 0x006008d0    0x0 ---- .got.plt  NULL 
+1   0x00000348  0x18 0x00400348   0x18 ---- .rela.dyn NULL 
+2   0x00000360  0x48 0x00400360   0x48 ---- .rela.plt NULL 
+
+EOF
+RUN
