@@ -1969,67 +1969,6 @@ RZ_API int rz_core_cmd_pipe_old(RzCore *core, char *rizin_cmd, char *shell_cmd) 
 	return ret;
 }
 
-static char *system_exec_stdin(int argc, char **argv, const ut8 *input, int input_len, int *length) {
-	char *output = NULL;
-	if (!rz_subprocess_init()) {
-		RZ_LOG_ERROR("Cannot initialize subprocess.\n");
-		return NULL;
-	}
-
-	RzSubprocessOpt opt = {
-		.file = argv[0],
-		.args = (const char **)&argv[1],
-		.args_size = argc - 1,
-		.envvars = NULL,
-		.envvals = NULL,
-		.env_size = 0,
-		.stdin_pipe = RZ_SUBPROCESS_PIPE_CREATE,
-		.stdout_pipe = RZ_SUBPROCESS_PIPE_CREATE,
-		.stderr_pipe = RZ_SUBPROCESS_PIPE_STDOUT,
-	};
-
-	RzSubprocess *proc = rz_subprocess_start_opt(&opt);
-	if (!proc) {
-		RZ_LOG_ERROR("Cannot start subprocess.\n");
-		rz_subprocess_fini();
-		return NULL;
-	}
-
-	rz_subprocess_stdin_write(proc, input, input_len);
-	rz_subprocess_wait(proc, UT64_MAX);
-
-	output = rz_subprocess_out(proc, length);
-	rz_subprocess_free(proc);
-	rz_subprocess_fini();
-
-	return output;
-}
-
-/**
- * \brief Executes a rizin command and pipes the result to the stdin of the program specified in argc/argv
- *
- * Executes a rizin command specified in \p rizin_cmd and pipe its stdout to the
- * stdin of the system program specified in \p argc and \p argv arguments.
- *
- * The output of the second program is then sent into RzCons.
- * */
-RZ_API RzCmdStatus rz_core_cmd_pipe(RzCore *core, char *rizin_cmd, int argc, char **argv) {
-	int length = 0;
-	ut8 *bytes = rz_core_cmd_raw(core, rizin_cmd, &length);
-	if (!bytes) {
-		return RZ_CMD_STATUS_ERROR;
-	}
-
-	char *out = system_exec_stdin(argc, argv, bytes, length, &length);
-	if (out) {
-		rz_cons_memcat(out, length);
-	}
-
-	free(bytes);
-	free(out);
-	return RZ_CMD_STATUS_OK;
-}
-
 static char *parse_tmp_evals(RzCore *core, const char *str) {
 	char *s = strdup(str);
 	int i, argc = rz_str_split(s, ',');
@@ -4140,6 +4079,87 @@ static RzCmdStatus handle_ts_stmt(struct tsr2cmd_state *state, TSNode node);
 static RzCmdStatus handle_ts_stmt_tmpseek(struct tsr2cmd_state *state, TSNode node);
 static RzCmdStatus core_cmd_tsrzcmd(RzCore *core, const char *cstr, bool split_lines, bool log);
 
+static char *system_exec_stdin(int argc, char **argv, const ut8 *input, int input_len, int *length) {
+	char *output = NULL;
+	if (!rz_subprocess_init()) {
+		RZ_LOG_ERROR("Cannot initialize subprocess.\n");
+		return NULL;
+	}
+
+	RzSubprocessOpt opt = {
+		.file = argv[0],
+		.args = (const char **)&argv[1],
+		.args_size = argc - 1,
+		.envvars = NULL,
+		.envvals = NULL,
+		.env_size = 0,
+		.stdin_pipe = RZ_SUBPROCESS_PIPE_CREATE,
+		.stdout_pipe = RZ_SUBPROCESS_PIPE_CREATE,
+		.stderr_pipe = RZ_SUBPROCESS_PIPE_STDOUT,
+	};
+
+	RzSubprocess *proc = rz_subprocess_start_opt(&opt);
+	if (!proc) {
+		RZ_LOG_ERROR("Cannot start subprocess.\n");
+		rz_subprocess_fini();
+		return NULL;
+	}
+
+	rz_subprocess_stdin_write(proc, input, input_len);
+	rz_subprocess_wait(proc, UT64_MAX);
+
+	output = rz_subprocess_out(proc, length);
+	rz_subprocess_free(proc);
+	rz_subprocess_fini();
+
+	return output;
+}
+
+static ut8 *core_cmd_raw_node(RzCore *core, struct tsr2cmd_state *state, TSNode rizin_cmd, int *length) {
+	const char *static_str;
+	ut8 *retstr = NULL;
+	rz_cons_push();
+	if (handle_ts_stmt(state, rizin_cmd) != RZ_CMD_STATUS_OK) {
+		rz_cons_pop();
+		return NULL;
+	}
+	rz_cons_filter();
+
+	static_str = rz_cons_get_buffer();
+	int len = rz_cons_get_buffer_len();
+	retstr = (ut8 *)rz_str_newlen(static_str, len);
+	*length = len;
+
+	rz_cons_pop();
+	rz_cons_echo(NULL);
+	return retstr;
+}
+
+/**
+ * \brief Executes a rizin command and pipes the result to the stdin of the program specified in argc/argv
+ *
+ * Executes a rizin command specified in \p rizin_cmd and pipe its stdout to the
+ * stdin of the system program specified in \p argc and \p argv arguments.
+ *
+ * The output of the second program is then sent into RzCons.
+ * */
+static RzCmdStatus core_cmd_pipe(RzCore *core, struct tsr2cmd_state *state, TSNode rizin_cmd, int argc, char **argv) {
+	int length = 0;
+	ut8 *bytes = core_cmd_raw_node(core, state, rizin_cmd, &length);
+	if (!bytes) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	char *out = system_exec_stdin(argc, argv, bytes, length, &length);
+	if (out) {
+		rz_cons_memcat(out, length);
+	}
+
+	free(bytes);
+	free(out);
+	return RZ_CMD_STATUS_OK;
+}
+
 DEFINE_IS_TS_FCN_AND_SYMBOL(fdn_redirect_operator)
 DEFINE_IS_TS_FCN_AND_SYMBOL(fdn_append_operator)
 DEFINE_IS_TS_FCN_AND_SYMBOL(html_redirect_operator)
@@ -5878,19 +5898,13 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(pipe_stmt) {
 	TSNode command_rizin = ts_node_named_child(node, 0);
 	TSNode command_pipe = ts_node_named_child(node, 1);
 
-	char *rz_cmd = ts_node_sub_string(command_rizin, state->input);
-	if (!rz_cmd) {
-		return RZ_CMD_STATUS_INVALID;
-	}
-
 	RzCmdStatus res = RZ_CMD_STATUS_INVALID;
 	RzCmdParsedArgs *a = ts_node_handle_arg_prargs(state, node, command_pipe, 1, true);
 	if (a && a->argc > 1) {
-		res = rz_core_cmd_pipe(state->core, rz_cmd, a->argc - 1, a->argv + 1);
+		res = core_cmd_pipe(state->core, state, command_rizin, a->argc - 1, a->argv + 1);
 	}
 
 	rz_cmd_parsed_args_free(a);
-	free(rz_cmd);
 	return res;
 }
 
