@@ -43,7 +43,7 @@ static const char *system_apply_env_var(const char *env, const char *value, cons
 	return *alloc_str;
 }
 
-static bool system_exec(RzCore *core, bool force_output, int argc, const char **argv, char **output, int *length) {
+static bool system_exec(RzCore *core, int argc, const char **argv, char **output, int *length) {
 	char file_size[32];
 	char core_offset[32];
 	char block_size[32];
@@ -143,7 +143,7 @@ static bool system_exec(RzCore *core, bool force_output, int argc, const char **
 		.envvals = envvals,
 		.env_size = RZ_ARRAY_SIZE(envvars),
 		.stdin_pipe = RZ_SUBPROCESS_PIPE_NONE,
-		.stdout_pipe = force_output || core->is_pipe ? RZ_SUBPROCESS_PIPE_CREATE : RZ_SUBPROCESS_PIPE_NONE,
+		.stdout_pipe = output ? RZ_SUBPROCESS_PIPE_CREATE : RZ_SUBPROCESS_PIPE_NONE,
 		.stderr_pipe = RZ_SUBPROCESS_PIPE_NONE,
 	};
 
@@ -156,7 +156,7 @@ static bool system_exec(RzCore *core, bool force_output, int argc, const char **
 	rz_subprocess_wait(proc, UT64_MAX);
 	ret = rz_subprocess_ret(proc);
 
-	if (force_output || core->is_pipe) {
+	if (output) {
 		*output = (char *)rz_subprocess_out(proc, length);
 	}
 
@@ -178,9 +178,10 @@ static RzCmdStatus system_common_handler(RzCore *core, bool force_rzcons, int ar
 	char *out = NULL;
 	int length = 0;
 	void *bed = rz_cons_sleep_begin();
-	bool ret = system_exec(core, force_rzcons, argc - 1, &argv[1], &out, &length);
+	bool need_rzcons = force_rzcons || core->is_pipe;
+	bool ret = system_exec(core, argc - 1, &argv[1], need_rzcons ? &out : NULL, &length);
 	rz_cons_sleep_end(bed);
-	if (force_rzcons || core->is_pipe) {
+	if (need_rzcons) {
 		rz_cons_memcat(out, length);
 	}
 	free(out);
