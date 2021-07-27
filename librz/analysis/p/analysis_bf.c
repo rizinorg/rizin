@@ -7,16 +7,6 @@
 #include <rz_asm.h>
 #include <rz_analysis.h>
 
-//static size_t countChar(const ut8 *buf, int len, char ch) {
-//	int i;
-//	for (i = 0; i < len; i++) {
-//		if (buf[i] != ch) {
-//			break;
-//		}
-//	}
-//	return i;
-//}
-
 static int getid(char ch) {
 	const char *keys = "[]<>+-,.";
 	const char *cidx = strchr(keys, ch);
@@ -480,35 +470,27 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 		rz_strbuf_set(&op->esil, "brk,--=,brk,[1],pc,=");
 		break;
 	case '>':
-                // FIXME : The original esil read multiple op at one
-                //      : by using countChar, and change op->size
-		//      : should we keep this hack ?
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
-		// op->size = countChar(buf, len, '>');
 		rz_strbuf_setf(&op->esil, "%d,ptr,+=", op->size);
 		oplist = bf_right_arrow(vm, op->id);
 		break;
 	case '<':
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
-		// op->size = countChar(buf, len, '<');
 		rz_strbuf_setf(&op->esil, "%d,ptr,-=", op->size);
 		oplist = bf_left_arrow(vm, op->id);
 		break;
 	case '+':
-		// op->size = countChar(buf, len, '+');
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		rz_strbuf_setf(&op->esil, "%d,ptr,+=[1]", op->size);
 		oplist = bf_inc(vm, op->id);
 		break;
 	case '-':
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
-		// op->size = countChar(buf, len, '-');
 		rz_strbuf_setf(&op->esil, "%d,ptr,-=[1]", op->size);
 		oplist = bf_dec(vm, op->id);
 		break;
 	case '.':
 		oplist = bf_out(vm, op->id);
-
 		// print element in stack to screen
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		rz_strbuf_set(&op->esil, "ptr,[1],scr,=[1],scr,++=");
