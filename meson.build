@@ -125,8 +125,6 @@ if is_static_build
   endif
 endif
 
-add_project_arguments('-lxc++', language: 'c')
-
 if cc.has_argument('--std=gnu99')
   add_project_arguments('--std=gnu99', language: ['c', 'cpp'])
 elif cc.has_argument('--std=c99')
