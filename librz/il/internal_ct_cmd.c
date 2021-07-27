@@ -179,7 +179,7 @@ RZ_API void rz_il_vm_list_step(RzILVM vm, RzPVector *op_list) {
 	void **iter;
 	RzILOp cur_op;
 
-        rz_il_vm_debug_print_ops(vm);
+	rz_il_vm_debug_print_ops(vm);
 	rz_il_print_vm_labels(vm);
 
 	rz_pvector_foreach (op_list, iter) {
@@ -201,7 +201,6 @@ RZ_API BitVector rz_il_ut64_addr_to_bv(ut64 addr) {
 
 RZ_API ut64 rz_il_bv_addr_to_ut64(BitVector addr) {
 	return rz_il_bv_to_ut64(addr);
-
 }
 
 RZ_API void rz_il_free_bv_addr(BitVector addr) {
@@ -403,10 +402,10 @@ RZ_API BitVector rz_il_vm_mem_load(RzILVM vm, int mem_index, BitVector key) {
 	Mem m;
 
 	if (vm && vm->mems) {
-                if (mem_index >= vm->mem_count || mem_index < 0) {
-                        return NULL;
-                }
-                m = vm->mems[mem_index];
+		if (mem_index >= vm->mem_count || mem_index < 0) {
+			return NULL;
+		}
+		m = vm->mems[mem_index];
 		return rz_il_mem_load(m, key);
 	}
 	return NULL;
@@ -424,4 +423,3 @@ RZ_API Mem rz_il_vm_mem_store(RzILVM vm, int mem_index, BitVector key, BitVector
 	}
 	return NULL;
 }
-

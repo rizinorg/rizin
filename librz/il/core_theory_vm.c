@@ -420,9 +420,8 @@ static bool print_vm_mem_callback(void *user, const void *k, const void *v) {
 static bool print_vm_op_callback(void *user, const void *k, const void *v) {
 	printf("[%d] : ", *(int *)user);
 	if (k && v) {
-                printf("[%lld] -- [%p] \n", rz_il_bv_to_ut64((BitVector)k), v);
-	}
-	else if (k){
+		printf("[%lld] -- [%p] \n", rz_il_bv_to_ut64((BitVector)k), v);
+	} else if (k) {
 		printf("[%lld] -- NULL \n", rz_il_bv_to_ut64((BitVector)k));
 	} else {
 		printf("[NULL] -- [NULL] \n");

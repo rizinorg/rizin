@@ -15,7 +15,6 @@ RZ_API Mem rz_il_vm_add_mem(RzILVM vm, int min_unit_size);
 RZ_API BitVector rz_il_vm_mem_load(RzILVM vm, int mem_index, BitVector key);
 RZ_API Mem rz_il_vm_mem_store(RzILVM vm, int mem_index, BitVector key, BitVector value);
 
-
 // utils
 RZ_API BitVector rz_il_ut64_addr_to_bv(ut64 addr);
 RZ_API ut64 rz_il_bv_addr_to_ut64(BitVector addr);
