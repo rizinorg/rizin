@@ -88,6 +88,7 @@ RZ_API void rz_il_empty_temp(RzILVM vm, int index);
 RZ_API RzPVector *rz_il_make_oplist(int num, ...);
 RZ_API void rz_il_vm_store_opcodes_to_addr(RzILVM vm, BitVector addr, RzPVector *oplist);
 RZ_API RzPVector *rz_il_vm_load_opcodes(RzILVM vm, BitVector addr);
+RZ_IPI RzPVector *rz_il_vm_load_opcodes_at_pc(RzILVM vm);
 RZ_API RzPVector *rz_il_make_oplist_with_id(ut64 id, int num, ...);
 
 // Handler for core theory opcode

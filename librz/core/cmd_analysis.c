@@ -5380,7 +5380,6 @@ static void cmd_rzil_mem(RzCore *core, const char *input) {
 }
 
 static void cmd_analysis_rzil(RzCore *core, const char *input) {
-	ut64 addr = core->offset;
 	char *n;
 	int off;
 	ut64 until_addr = UT64_MAX;
@@ -5430,7 +5429,7 @@ static void cmd_analysis_rzil(RzCore *core, const char *input) {
 		case ' ': //"aes?"
 			n = strchr(input, ' ');
 			if (!(n + 1)) {
-				rz_core_rzil_step(core, addr);
+				rz_core_rzil_step(core);
 				break;
 			}
 			off = rz_num_math(core->num, n + 1);
@@ -5439,7 +5438,7 @@ static void cmd_analysis_rzil(RzCore *core, const char *input) {
 		// default addr
 		default:
 			printf("[Default : Step]\n");
-			rz_core_rzil_step(core, addr);
+			rz_core_rzil_step(core);
 			break;
 		}
 		break;

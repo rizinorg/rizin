@@ -33,7 +33,7 @@ RZ_IPI void rz_core_analysis_rzil_init_mem(RzCore *core);
 RZ_IPI void core_rzil_init(RzCore *core);
 RZ_IPI void rz_core_analysis_rzil_init(RzCore *core);
 RZ_IPI void rz_core_analysis_rzil_reinit(RzCore *core);
-RZ_IPI void rz_core_rzil_step(RzCore *core, ut64 addr);
+RZ_IPI void rz_core_rzil_step(RzCore *core);
 
 RZ_IPI bool rz_core_analysis_var_rename(RzCore *core, const char *name, const char *newname);
 RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode, char *fcn_name);

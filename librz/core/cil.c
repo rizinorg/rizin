@@ -482,9 +482,8 @@ RZ_IPI void rz_core_analysis_rzil_reinit(RzCore *core) {
 }
 
 // step a list of ct_opcode at a given address
-RZ_IPI void rz_core_rzil_step(RzCore *core, ut64 addr) {
+RZ_IPI void rz_core_rzil_step(RzCore *core) {
 	RzPVector *oplist;
-	BitVector cur_addr;
 
 	if (!core->analysis || !core->analysis->rzil || !core->analysis->rzil->init_mem) {
 		return;
@@ -501,26 +500,19 @@ RZ_IPI void rz_core_rzil_step(RzCore *core, ut64 addr) {
 		return;
 	}
 
-	cur_addr = rz_il_ut64_addr_to_bv(addr);
-	rz_il_print_bv(cur_addr);
+	ut64 addr = rz_il_bv_to_ut64(vm->pc);
 
 	// try load from vm
 	// fetch and parse if no opcode
 	ut8 code[32];
-	oplist = rz_il_vm_load_opcodes(vm, cur_addr);
+	oplist = rz_il_vm_load_opcodes_at_pc(vm);
 	if (!oplist) {
 		// analysis current data to trigger rzil_set_op_code
 		(void)rz_io_read_at_mapped(core->io, addr, code, sizeof(code));
 		rz_analysis_op(analysis, &op, addr, code, sizeof(code), RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_HINT);
-		oplist = rz_il_vm_load_opcodes(vm, cur_addr);
+		oplist = rz_il_vm_load_opcodes_at_pc(vm);
 	}
 
-	rz_il_free_bv_addr(cur_addr);
 	rz_il_vm_list_step(vm, oplist);
-
-	// FIXME : How to change the pc address of analysis && core ?
-	ut64 new_addr = rz_il_bv_to_ut64(vm->pc);
-	core->offset = new_addr;
-
 	rz_il_clean_temps(vm);
 }

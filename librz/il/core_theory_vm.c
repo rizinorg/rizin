@@ -365,6 +365,10 @@ RZ_API void rz_il_vm_store_opcodes_to_addr(RzILVM vm, BitVector addr, RzPVector 
 	ht_pp_insert(vm->ct_opcodes, addr, oplist);
 }
 
+RZ_API RzPVector *rz_il_vm_load_opcodes_at_pc(RzILVM vm) {
+	return ht_pp_find(vm->ct_opcodes, vm->pc, NULL);
+}
+
 RZ_API RzPVector *rz_il_vm_load_opcodes(RzILVM vm, BitVector addr) {
 	return ht_pp_find(vm->ct_opcodes, addr, NULL);
 }
