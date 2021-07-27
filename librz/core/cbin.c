@@ -6,7 +6,7 @@
 #include <rz_config.h>
 #include "rz_util.h"
 #include "rz_util/rz_time.h"
-#include <rz_basefind.hpp>
+//#include <rz_basefind.h>
 #define is_in_range(at, from, sz) ((at) >= (from) && (at) < ((from) + (sz)))
 
 #define VA_FALSE    0
@@ -2807,7 +2807,8 @@ static int bin_symbols(RzCore *r, PJ *pj, int mode, int va, ut64 at, const char 
 }
 
 static int bin_basefind(RzCore *r, PJ *pj, int mode, int va, ut64 at, const char *name, bool exponly, const char *args) {
-	HtPP;
+	//rz_cons_printf(rz_bin_basefind());
+	//rz_bin_basefind();
 }
 static char *build_hash_string(PJ *pj, int mode, const char *chksum, ut8 *data, ut32 datalen) {
 	char *chkstr = NULL, *aux = NULL, *ret = NULL;
