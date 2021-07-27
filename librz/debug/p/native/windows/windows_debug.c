@@ -416,6 +416,21 @@ static void print_fpu_context(HANDLE th, CONTEXT *ctx) {
 	}
 }
 
+static HANDLE get_thread_handle_from_tid(RzDebug *dbg, int tid) {
+	rz_return_val_if_fail(dbg, NULL);
+	W32DbgWInst *wrap = dbg->plugin_data;
+	HANDLE th = NULL;
+	if (wrap->pi.dwThreadId == tid) {
+		th = wrap->pi.hThread;
+	} else {
+		PTHREAD_ITEM thread = find_thread(dbg, tid);
+		if (thread) {
+			th = thread->hThread;
+		}
+	}
+	return th;
+}
+
 int w32_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 	bool showfpu = false;
 	if (type < -1) {
@@ -424,7 +439,7 @@ int w32_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 	}
 	bool alive = is_thread_alive(dbg, dbg->tid);
 	W32DbgWInst *wrap = dbg->plugin_data;
-	HANDLE th = wrap->pi.hThread;
+	HANDLE th = get_thread_handle_from_tid(dbg, dbg->tid);
 	if (!th || th == INVALID_HANDLE_VALUE) {
 		return 0;
 	}
@@ -459,7 +474,7 @@ int w32_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 		return false;
 	}
 	W32DbgWInst *wrap = dbg->plugin_data;
-	HANDLE th = wrap->pi.hThread;
+	HANDLE th = get_thread_handle_from_tid(dbg, dbg->tid);
 	if (!th || th == INVALID_HANDLE_VALUE) {
 		return 0;
 	}

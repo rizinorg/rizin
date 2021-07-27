@@ -579,6 +579,7 @@ RZ_IPI void rz_core_debug_breakpoint_toggle(RzCore *core, ut64 addr) {
 }
 
 RZ_IPI void rz_core_debug_attach(RzCore *core, int pid) {
+	rz_debug_reg_profile_sync(core->dbg);
 	if (pid > 0) {
 		rz_debug_attach(core->dbg, pid);
 	} else {

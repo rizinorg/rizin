@@ -517,6 +517,7 @@ RZ_API int rz_debug_desc_write(RzDebug *dbg, int fd, ut64 addr, int len);
 RZ_API int rz_debug_desc_list(RzDebug *dbg, int rad);
 
 /* registers */
+RZ_API bool rz_debug_reg_profile_sync(RzDebug *dbg);
 RZ_API int rz_debug_reg_sync(RzDebug *dbg, int type, int write);
 RZ_API int rz_debug_reg_set(RzDebug *dbg, const char *name, ut64 num);
 RZ_API ut64 rz_debug_reg_get(RzDebug *dbg, const char *name);
