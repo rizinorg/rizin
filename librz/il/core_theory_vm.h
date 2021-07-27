@@ -4,8 +4,6 @@
 #include "definitions/wrapper.h"
 #include "core_theory_opcodes.h"
 
-// TODO replace with rz hash table
-// TODO find a proper way to handle var and val
 #define VM_MAX_VAR  2048
 #define VM_MAX_VAL  1024
 #define VM_MAX_LAB  1024

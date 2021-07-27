@@ -38,8 +38,8 @@ static int hook_NOP_mem_write(RzAnalysisRzil *rzil, ut64 addr, const ut8 *buf, i
 
 /**
  * Control Mem read only or not
- * @param rzil RzAnalysis* pointer to rzil
- * @param mem_readonly int, is memory read only ?
+ * \param rzil RzAnalysis* pointer to rzil
+ * \param mem_readonly int, is memory read only ?
  */
 RZ_API void rz_analysis_rzil_mem_ro(RzAnalysisRzil *rzil, int mem_readonly) {
 	if (mem_readonly) {
@@ -51,8 +51,8 @@ RZ_API void rz_analysis_rzil_mem_ro(RzAnalysisRzil *rzil, int mem_readonly) {
 
 /**
  * Control if we should track the stat changes
- * @param rzil RzAnalysisRzil* pointer to rzil
- * @param enable int, enable tracing or not
+ * \param rzil RzAnalysisRzil* pointer to rzil
+ * \param enable int, enable tracing or not
  */
 RZ_API void rz_analysis_rzil_stats(RzAnalysisRzil *rzil, int enable) {
 	if (!rzil) {

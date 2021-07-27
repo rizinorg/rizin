@@ -14,6 +14,12 @@ static void htup_vector_free(HtUPKv *kv) {
 	rz_vector_free(kv->value);
 }
 
+/**
+ * Create an empty rzil trace
+ * \param analysis RzAnalysis*, pointer to analysis
+ * \param rzil RzAnalysisRzil*, pointer to rzil
+ * \return RzAnalysisRzilTrace*, pointer to trace
+ */
 RZ_API RzAnalysisRzilTrace *rz_analysis_rzil_trace_new(RzAnalysis *analysis, RzAnalysisRzil *rzil) {
 	rz_return_val_if_fail(rzil && rzil->stack_addr && rzil->stack_size, NULL);
 	size_t i;
@@ -61,6 +67,10 @@ error:
 	return NULL;
 }
 
+/**
+ * Clean the trace instance
+ * \param trace RzAnalysisRzilTrace* pointer to trace instance
+ */
 RZ_API void rz_analysis_rzil_trace_free(RzAnalysisRzilTrace *trace) {
 	size_t i;
 	if (trace) {
@@ -189,6 +199,12 @@ static int trace_hook_mem_write(RzAnalysisRzil *rzil, ut64 addr, const ut8 *buf,
 	return ret;
 }
 
+/**
+ * trace op, set states of regs
+ * \param analysis RzAnalysis* pointer to RzAnalysis instance
+ * \param rzil RzAnalysisRzil* pointer to RzAnalysisRzil instance
+ * \param op RzAnalysisOp* pointer to opcode representation in rizin
+ */
 RZ_API void rz_analysis_rzil_trace_op(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzAnalysisOp *op) {
 	// TODO : refactorr some here
 	rz_return_if_fail(rzil && op);
@@ -271,6 +287,12 @@ static bool restore_register(RzAnalysisRzil *rzil, RzRegItem *ri, int idx, RzAna
 	return true;
 }
 
+/**
+ * Cancel change and restore trace status
+ * \param analysis RzAnalysis*, pointer to rizin's analysis
+ * \param rzil RzAnalysisRzil*, pointer to RzAnalysisRzil instance
+ * \param idx int, restore to `idx`th state
+ */
 RZ_API void rz_analysis_rzil_trace_restore(RzAnalysis *analysis, RzAnalysisRzil *rzil, int idx) {
 	size_t i;
 	RzAnalysisRzilTrace *trace = rzil->trace;
@@ -352,6 +374,11 @@ static int cmp_strings_by_leading_number(void *data1, void *data2) {
 	return 0;
 }
 
+/**
+ * analysis rzil trace list
+ * \param analysis RzAnalysis* pointer to analysis
+ * \param rzil RzAnalysisRzil* pointer to rzil
+ */
 RZ_API void rz_analysis_rzil_trace_list(RzAnalysis *analysis, RzAnalysisRzil *rzil) {
 	if (!rzil->trace) {
 		return;
@@ -368,6 +395,12 @@ RZ_API void rz_analysis_rzil_trace_list(RzAnalysis *analysis, RzAnalysisRzil *rz
 	ls_free(list);
 }
 
+/**
+ * print trace
+ * \param analysis RzAnalysis* pointer to analysis
+ * \param rzil RzAnalysisRzil* pointer to rzil
+ * \param idx int, the bound of trace
+ */
 RZ_API void rz_analysis_rzil_trace_show(RzAnalysis *analysis, RzAnalysisRzil *rzil, int idx) {
 	if (!rzil->trace) {
 		return;

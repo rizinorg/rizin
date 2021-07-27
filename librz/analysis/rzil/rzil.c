@@ -3,7 +3,7 @@
 /**
  * Create an empty RzAnalysisRzil instance
  * inner vm should be init in adaptive plugin
- * @return RzAnalysisRzil* a pointer to RzAnalysisRzil instance
+ * \return RzAnalysisRzil* a pointer to RzAnalysisRzil instance
  */
 RZ_API RzAnalysisRzil *rz_analysis_rzil_new() {
 	RzAnalysisRzil *rzil = RZ_NEW0(RzAnalysisRzil);
@@ -20,8 +20,8 @@ RZ_API RzAnalysisRzil *rz_analysis_rzil_new() {
 
 /**
  * Cleanup rzil instance : clean vm, clean arch-specific user_data, and rzil itself
- * @param analysis pointer to rizin's RzAnalysis
- * @param rzil pointer to RzAnalysisRzil
+ * \param analysis pointer to rizin's RzAnalysis
+ * \param rzil pointer to RzAnalysisRzil
  */
 RZ_API void rz_analysis_rzil_cleanup(RzAnalysis *analysis, RzAnalysisRzil *rzil) {
 	if (!rzil) {
@@ -40,9 +40,9 @@ RZ_API void rz_analysis_rzil_cleanup(RzAnalysis *analysis, RzAnalysisRzil *rzil)
 
 /**
  * Set pc of rzil
- * @param rzil RzAnalysis* pointer to RzAnalysisRzil instance
- * @param addr ut64 address of new pc
- * @return true if set successfully, else return false
+ * \param rzil RzAnalysis* pointer to RzAnalysisRzil instance
+ * \param addr ut64 address of new pc
+ * \return true if set successfully, else return false
  */
 RZ_API bool rz_analysis_rzil_set_pc(RzAnalysisRzil *rzil, ut64 addr) {
 	if (rzil) {
@@ -54,12 +54,12 @@ RZ_API bool rz_analysis_rzil_set_pc(RzAnalysisRzil *rzil, ut64 addr) {
 
 /**
  * Init an empty rzil
- * @param analysis RzAnalysis* pointer to RzAnalysis
- * @param rzil RzAnalysisRzil* pointer to RzAnalysisRzil
- * @param romem int is read only mem ?
- * @param stats int use stats ?
- * @param nonull int is pc cannot be null ?
- * @return true if setup, else return false
+ * \param analysis RzAnalysis* pointer to RzAnalysis
+ * \param rzil RzAnalysisRzil* pointer to RzAnalysisRzil
+ * \param romem int is read only mem ?
+ * \param stats int use stats ?
+ * \param nonull int is pc cannot be null ?
+ * \return true if setup, else return false
  */
 RZ_API bool rz_analysis_rzil_setup(RzAnalysis *analysis, RzAnalysisRzil *rzil, int romem, int stats, int nonull) {
 	rz_return_val_if_fail(rzil, false);
@@ -83,9 +83,9 @@ RZ_API bool rz_analysis_rzil_setup(RzAnalysis *analysis, RzAnalysisRzil *rzil, i
 
 /**
  * Set op at address in vm
- * @param rzil RzAnalysisRzil* pointer to RzAnalysisRzil
- * @param addr ut64 address of current pc
- * @param oplist RzPvector* vector of core theory opcodes
+ * \param rzil RzAnalysisRzil* pointer to RzAnalysisRzil
+ * \param addr ut64 address of current pc
+ * \param oplist RzPvector* vector of core theory opcodes
  */
 RZ_API void rz_analysis_set_rzil_op(RzAnalysisRzil *rzil, ut64 addr, RzPVector *oplist) {
 	if (!rzil) {
