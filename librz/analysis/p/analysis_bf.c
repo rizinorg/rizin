@@ -384,7 +384,7 @@ static void bf_init_rzil(RzAnalysis *analysis, ut64 addr) {
         // init
         rz_il_vm_init(rzil->vm, start_addr, addrsize, datasize);
         rz_il_vm_add_reg(rzil->vm, "ptr", rzil->vm->addr_size);
-        rz_analysis_rzil_setup(rzil, analysis, romem, stats, nonull);
+	rz_analysis_rzil_setup(analysis, rzil, romem, stats, nonull);
 	analysis->rzil = rzil;
 }
 

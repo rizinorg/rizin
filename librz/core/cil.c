@@ -462,7 +462,7 @@ RZ_IPI void core_rzil_init(RzCore *core) {
         core->analysis->rzil = rzil;
         // TODO : get registers info from rizin
         rz_il_vm_add_reg(rzil->vm, "ptr", rzil->vm->addr_size);
-	rz_analysis_rzil_setup(rzil, core->analysis, romem, stats, nonull);
+	rz_analysis_rzil_setup(core->analysis, rzil, romem, stats, nonull);
 }
 
 RZ_IPI void rz_core_analysis_rzil_init(RzCore *core) {
@@ -474,7 +474,7 @@ RZ_IPI void rz_core_analysis_rzil_init(RzCore *core) {
 
 RZ_IPI void rz_core_analysis_rzil_reinit(RzCore *core) {
         if (core->analysis->rzil) {
-                rz_analysis_rzil_cleanup(core->analysis->rzil, core->analysis);
+		rz_analysis_rzil_cleanup(core->analysis, core->analysis->rzil);
                 core->analysis->rzil = NULL;
         }
 

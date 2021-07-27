@@ -1554,8 +1554,8 @@ RZ_API void rz_analysis_esil_trace_restore(RzAnalysisEsil *esil, int idx);
 /* rzil : stats and trace */
 RZ_API RzAnalysisRzil *rz_analysis_rzil_new();
 RZ_API bool rz_analysis_rzil_set_pc(RzAnalysisRzil *rzil, ut64 addr);
-RZ_API bool rz_analysis_rzil_setup(RzAnalysisRzil *rzil, RzAnalysis *analysis, int romem, int stats, int nonull);
-RZ_API void rz_analysis_rzil_cleanup(RzAnalysisRzil *rzil, RzAnalysis *analysis);
+RZ_API bool rz_analysis_rzil_setup(RzAnalysis *analysis, RzAnalysisRzil *rzil, int romem, int stats, int nonull);
+RZ_API void rz_analysis_rzil_cleanup(RzAnalysis *analysis, RzAnalysisRzil *rzil);
 RZ_API void rz_analysis_set_rzil_op(RzAnalysisRzil *rzil, ut64 addr, RzPVector *oplist);
 
 /* stats */
@@ -1563,12 +1563,12 @@ RZ_API void rz_analysis_rzil_mem_ro(RzAnalysisRzil *rzil, int mem_readonly);
 RZ_API void rz_analysis_rzil_stats(RzAnalysisRzil *rzil, int enable);
 
 /* trace */
-RZ_API RzAnalysisRzilTrace *rz_analysis_rzil_trace_new(RzAnalysisRzil *rzil, RzAnalysis *analysis);
+RZ_API RzAnalysisRzilTrace *rz_analysis_rzil_trace_new(RzAnalysis *analysis, RzAnalysisRzil *rzil);
 RZ_API void rz_analysis_rzil_trace_free(RzAnalysisRzilTrace *trace);
-RZ_API void rz_analysis_rzil_trace_op(RzAnalysisRzil *rzil, RzAnalysisOp *op, RzAnalysis *analysis);
-RZ_API void rz_analysis_rzil_trace_list(RzAnalysisRzil *rzil, RzAnalysis *analysis);
-RZ_API void rz_analysis_rzil_trace_show(RzAnalysisRzil *rzil, int idx, RzAnalysis *analysis);
-RZ_API void rz_analysis_rzil_trace_restore(RzAnalysisRzil *rzil, int idx, RzAnalysis *analysis);
+RZ_API void rz_analysis_rzil_trace_op(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzAnalysisOp *op);
+RZ_API void rz_analysis_rzil_trace_list(RzAnalysis *analysis, RzAnalysisRzil *rzil);
+RZ_API void rz_analysis_rzil_trace_show(RzAnalysis *analysis, RzAnalysisRzil *rzil, int idx);
+RZ_API void rz_analysis_rzil_trace_restore(RzAnalysis *analysis, RzAnalysisRzil *rzil, int idx);
 
 /* pin */
 RZ_API void rz_analysis_pin_init(RzAnalysis *a);
