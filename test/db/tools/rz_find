@@ -61,7 +61,7 @@ RUN
 
 NAME=rz-find -h
 FILE==
-CMDS=!!rz-find -h | grep -c Usage
+CMDS=!rz-find -h | grep -c Usage
 EXPECT=<<EOF
 1
 EOF
@@ -69,7 +69,7 @@ RUN
 
 NAME=rz-find -v
 FILE==
-CMDS=!!rz-find -v | grep -c build
+CMDS=!rz-find -v | grep -c build
 EXPECT=<<EOF
 1
 EOF
