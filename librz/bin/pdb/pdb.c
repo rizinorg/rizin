@@ -31,7 +31,6 @@ typedef struct {
 	free_func free;
 } SStreamParseFunc;
 
-///////////////////////////////////////////////////////////////////////////////
 static void free_pdb_stream(void *stream) {
 	RZ_PDB_STREAM *pdb_stream = (RZ_PDB_STREAM *)stream;
 	if (pdb_stream) {
@@ -44,10 +43,10 @@ static void free_pdb_stream(void *stream) {
 }
 
 /**
- * @brief Create a type name from offset
+ * \brief Create a type name from offset
  * 
- * @param offset 
- * @return char* Name or NULL if error
+ * \param offset 
+ * \return char* Name or NULL if error
  */
 static char *create_type_name_from_offset(ut64 offset) {
 	int offset_length = snprintf(NULL, 0, "type_0x%" PFMT64x, offset);
@@ -56,18 +55,6 @@ static char *create_type_name_from_offset(ut64 offset) {
 	return str;
 }
 
-// static void pdb_stream_get_data(RZ_PDB_STREAM *pdb_stream, char *data)
-// {
-// int pos = stream_file_tell(&pdb_stream->stream_file);
-// stream_file_seek(&pdb_stream->stream_file, 0, 0);
-// stream_file_read(&pdb_stream->stream_file, -1, data);
-// stream_file_seek(&pdb_stream->stream_file, pos, 0);
-// }
-
-///////////////////////////////////////////////////////////////////////////////
-/// size - default value = -1
-/// page_size - default value = 0x1000
-///////////////////////////////////////////////////////////////////////////////
 static int init_r_pdb_stream(RZ_PDB_STREAM *pdb_stream, RzBuffer *buf /*FILE *fp*/, int *pages,
 	int pages_amount, int index, int size, int page_size) {
 	pdb_stream->buf = buf;
@@ -86,7 +73,6 @@ static int init_r_pdb_stream(RZ_PDB_STREAM *pdb_stream, RzBuffer *buf /*FILE *fp
 	return 1;
 }
 
-///////////////////////////////////////////////////////////////////////////////
 static int read_int_var(char *var_name, int *var, RzPdb *pdb) {
 	if (var) {
 		*var = 0;
@@ -99,7 +85,6 @@ static int read_int_var(char *var_name, int *var, RzPdb *pdb) {
 	return bytes_read;
 }
 
-///////////////////////////////////////////////////////////////////////////////
 static int count_pages(int length, int page_size) {
 	int num_pages = 0;
 	if (page_size > 0) {
@@ -111,7 +96,6 @@ static int count_pages(int length, int page_size) {
 	return num_pages;
 }
 
-///////////////////////////////////////////////////////////////////////////////
 static int init_pdb7_root_stream(RzPdb *pdb, int *root_page_list, int pages_amount,
 	EStream indx, int root_size, int page_size) {
 	RZ_PDB_STREAM *pdb_stream = 0;
@@ -177,9 +161,6 @@ static int init_pdb7_root_stream(RzPdb *pdb, int *root_page_list, int pages_amou
 		memcpy(sizes + i, &stream_size, 4);
 	}
 
-	// char *tmp_file_name = (char *) malloc(strlen("/root/test.pdb.000") + 1);
-	// short ii;
-	// FILE *tmp_file;
 	tmp_data = ((char *)data + num_streams * 4 + 4);
 	root_stream7->streams_list = rz_list_new();
 	RzList *pList = root_stream7->streams_list;
@@ -208,21 +189,13 @@ static int init_pdb7_root_stream(RzPdb *pdb, int *root_page_list, int pages_amou
 			}
 			memcpy(tmp, tmp_data + pos, num_pages * 4);
 			pos += size;
-			// sprintf(tmp_file_name, "%s%d", "/root/test.pdb", i);
-			// tmp_file = fopen(tmp_file_name, "wb");
-			// fwrite(tmp, num_pages * 4, 1, tmp_file);
-			// fclose(tmp_file);
 			page->stream_size = sizes[i];
-			if (sizes[i] == 0) {
-				//eprintf ("Warning: stream_size (%d) is 0\n", i);
-			}
 			page->stream_pages = tmp;
 			page->num_pages = num_pages;
 		} else {
 			page->stream_size = 0;
 			page->stream_pages = 0;
 			page->num_pages = 0;
-			//eprintf ("Warning: stream_size (%d) is 0\n", i);
 			free(tmp);
 		}
 
@@ -230,24 +203,9 @@ static int init_pdb7_root_stream(RzPdb *pdb, int *root_page_list, int pages_amou
 	}
 	free(sizes);
 	free(data);
-	// printf("init_pdb7_root_stream()\n");
 	return 1;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// static void init_parsed_pdb_stream(SParsedPDBStream *pdb_stream, FILE *fp, int *pages,
-// int pages_amount, int index, int size,
-// int page_size, f_load pLoad)
-// {
-// pdb_stream->pdb_stream = (RZ_PDB_STREAM *) malloc(sizeof(RZ_PDB_STREAM));
-// init_r_pdb_stream(pdb_stream->pdb_stream, fp, pages, pages_amount, index, size, page_size);
-// pdb_stream->load = pLoad;
-// if (pLoad != NULL) {
-// pLoad(pdb_stream, &(pdb_stream->pdb_stream->stream_file));
-// }
-// }
-
-///////////////////////////////////////////////////////////////////////////////
 static void parse_pdb_info_stream(void *parsed_pdb_stream, RZ_STREAM_FILE *stream) {
 	SPDBInfoStream *tmp = (SPDBInfoStream *)parsed_pdb_stream;
 
@@ -541,18 +499,14 @@ static void finish_pdb_parse(RzPdb *pdb) {
 	p->streams_list = 0;
 	free(p);
 	p = 0;
-	// end of free of RZ_PDB7_ROOT_STREAM
 
 	// TODO: maybe create some kind of destructor?
-	// free of pdb->pdb_streams
-	// SParsedPDBStream *parsed_pdb_stream = 0;
 	SPDBInfoStream *pdb_info_stream = 0;
 	STpiStream *tpi_stream = 0;
 	SDbiStream *dbi_stream = 0;
 	SStreamParseFunc *stream_parse_func;
 	RZ_PDB_STREAM *pdb_stream = 0;
 	int i = 0;
-#if 1
 	/* rz_list_free should be enough, all the items in a list should be freeable using a generic destructor
    hacking up things like that may only produce problems. so it is better to not assume that a specific
    element in a list is of a specific type and just store this info in the type struct or so.
@@ -588,12 +542,9 @@ static void finish_pdb_parse(RzPdb *pdb) {
 		}
 		i++;
 	}
-#endif
-	rz_list_free(pdb->pdb_streams);
-	// enf of free of pdb->pdb_streams
 
-#if 1
-	// start of free pdb->pdb_streams2
+	rz_list_free(pdb->pdb_streams);
+
 	rz_list_foreach (pdb->pdb_streams2, it, stream_parse_func) {
 		if (stream_parse_func->free) {
 			stream_parse_func->free(stream_parse_func->stream);
@@ -601,15 +552,11 @@ static void finish_pdb_parse(RzPdb *pdb) {
 		}
 		free(stream_parse_func);
 	}
-#endif
+
 	rz_list_free(pdb->pdb_streams2);
-	// end of free pdb->streams2
 
 	free(pdb->stream_map);
 	rz_buf_free(pdb->buf);
-
-	// fclose(pdb->fp);
-	// printf("finish_pdb_parse()\n");
 }
 
 static SimpleTypeMode get_simple_type_mode(PDB_SIMPLE_TYPES type) {
@@ -636,11 +583,11 @@ static SimpleTypeKind get_simple_type_kind(PDB_SIMPLE_TYPES type) {
 }
 
 /**
- * @brief Maps simple type into a format string for `pf`
+ * \brief Maps simple type into a format string for `pf`
  * 
- * @param simple_type
- * @param member_format pointer to assert member format to
- * @return int -1 if it's unparsable, -2 if it should be skipped, 0 if all is correct
+ * \param simple_type
+ * \param member_format pointer to assert member format to
+ * \return int -1 if it's unparsable, -2 if it should be skipped, 0 if all is correct
  */
 static int simple_type_to_format(const SLF_SIMPLE_TYPE *simple_type, char **member_format) {
 	SimpleTypeMode mode = get_simple_type_mode(simple_type->simple_type);
@@ -706,7 +653,6 @@ static int simple_type_to_format(const SLF_SIMPLE_TYPE *simple_type, char **memb
 		case PDB_BOOL128:
 			*member_format = "::::";
 			return -2;
-			////////////////////////////////////
 			// TODO these when formatting for them will exist
 			// I assume complex are made up by 2 floats
 		case PDB_COMPLEX16:
@@ -736,7 +682,6 @@ static int simple_type_to_format(const SLF_SIMPLE_TYPE *simple_type, char **memb
 		case PDB_FLOAT64:
 			*member_format = "F";
 			break;
-			////////////////////////////////////
 			// TODO these when formatting for them will exist
 		case PDB_FLOAT16:
 			*member_format = "..";
@@ -785,12 +730,12 @@ static int simple_type_to_format(const SLF_SIMPLE_TYPE *simple_type, char **memb
 }
 
 /**
- * @brief Creates the format string and puts it into format
+ * \brief Creates the format string and puts it into format
  * 
- * @param type_info Information about the member type
- * @param format buffer for the formatting string
- * @param names buffer for the member names
- * @return int -1 if it can't build the format
+ * \param type_info Information about the member type
+ * \param format buffer for the formatting string
+ * \param names buffer for the member names
+ * \return int -1 if it can't build the format
  */
 static int build_member_format(STypeInfo *type_info, RzStrBuf *format, RzStrBuf *names) {
 	rz_return_val_if_fail(type_info && format && names && type_info->type_info, -1);
@@ -811,16 +756,16 @@ static int build_member_format(STypeInfo *type_info, RzStrBuf *format, RzStrBuf 
 		type_info->leaf_type == eLF_NESTTYPE) {
 		switch (type_info->leaf_type) {
 		case eLF_NESTTYPE:
-			under_type = get_stype_by_index(((SLF_NESTTYPE *)(type_info->type_info))->index);
+			under_type = rz_bin_pdb_stype_by_index(((SLF_NESTTYPE *)(type_info->type_info))->index);
 			break;
 		case eLF_MEMBER:
-			under_type = get_stype_by_index(((SLF_MEMBER *)(type_info->type_info))->index);
+			under_type = rz_bin_pdb_stype_by_index(((SLF_MEMBER *)(type_info->type_info))->index);
 			break;
 		case eLF_ONEMETHOD:
-			under_type = get_stype_by_index(((SLF_ONEMETHOD *)(type_info->type_info))->index);
+			under_type = rz_bin_pdb_stype_by_index(((SLF_ONEMETHOD *)(type_info->type_info))->index);
 			break;
 		case eLF_VFUNCTAB:
-			under_type = get_stype_by_index(((SLF_VFUNCTAB *)(type_info->type_info))->index);
+			under_type = rz_bin_pdb_stype_by_index(((SLF_VFUNCTAB *)(type_info->type_info))->index);
 			break;
 		default:
 			rz_warn_if_reached();
@@ -927,15 +872,15 @@ static inline bool is_printable_type(ELeafType type) {
 }
 
 /**
- * @brief Gets the name of the enum base type
+ * \brief Gets the name of the enum base type
  * 
- * @param type_info Enum TypeInfo
- * @return char* name of the base type
+ * \param type_info Enum TypeInfo
+ * \return char* name of the base type
  */
 static char *get_enum_base_type_name(STypeInfo *type_info) {
 	char *base_type_name = NULL;
 	SType *base_type = NULL;
-	base_type = get_stype_by_index(((SLF_ENUM *)(type_info->type_info))->utype);
+	base_type = rz_bin_pdb_stype_by_index(((SLF_ENUM *)(type_info->type_info))->utype);
 	if (base_type && base_type->type_data.leaf_type == eLF_SIMPLE_TYPE) {
 		SLF_SIMPLE_TYPE *tmp = base_type->type_data.type_info;
 		base_type_name = tmp->type;
@@ -947,12 +892,12 @@ static char *get_enum_base_type_name(STypeInfo *type_info) {
 }
 
 /**
- * @brief Prints out structure and class leaf types
+ * \brief Prints out structure and class leaf types
  * 
- * @param name Name of the structure/class
- * @param size Size of the structure/class
- * @param members List of members
- * @param printf Print function
+ * \param name Name of the structure/class
+ * \param size Size of the structure/class
+ * \param members List of members
+ * \param printf Print function
  */
 static void print_struct(const char *name, const int size, const RzList *members, PrintfCallback printf) {
 	rz_return_if_fail(name && printf);
@@ -989,12 +934,12 @@ static void print_struct(const char *name, const int size, const RzList *members
 }
 
 /**
- * @brief Prints out union leaf type
+ * \brief Prints out union leaf type
  * 
- * @param name Name of the union
- * @param size Size of the union
- * @param members List of members
- * @param printf Print function
+ * \param name Name of the union
+ * \param size Size of the union
+ * \param members List of members
+ * \param printf Print function
  */
 static void print_union(const char *name, const int size, const RzList *members, PrintfCallback printf) {
 	rz_return_if_fail(name && printf);
@@ -1022,12 +967,12 @@ static void print_union(const char *name, const int size, const RzList *members,
 }
 
 /**
- * @brief Prints out enum leaf type
+ * \brief Prints out enum leaf type
  * 
- * @param name Name of the enum
- * @param type type of the enum
- * @param members List of cases
- * @param printf Print function
+ * \param name Name of the enum
+ * \param type type of the enum
+ * \param members List of cases
+ * \param printf Print function
  */
 static void print_enum(const char *name, const char *type, const RzList *members, PrintfCallback printf) {
 	rz_return_if_fail(name && printf);
@@ -1050,10 +995,10 @@ static void print_enum(const char *name, const char *type, const RzList *members
 }
 
 /**
- * @brief Prints out types in a default format "idpi" command
+ * \brief Prints out types in a default format "idpi" command
  * 
- * @param pdb pdb structure for printing function
- * @param types List of types
+ * \param pdb pdb structure for printing function
+ * \param types List of types
  */
 static void print_types_regular(const RzPdb *pdb, const RzList *types) {
 	rz_return_if_fail(pdb && types);
@@ -1109,10 +1054,10 @@ static void print_types_regular(const RzPdb *pdb, const RzList *types) {
 }
 
 /**
- * @brief Prints out types in a json format - "idpij" command
+ * \brief Prints out types in a json format - "idpij" command
  * 
- * @param pdb pdb structure for printing function
- * @param types List of types
+ * \param pdb pdb structure for printing function
+ * \param types List of types
  */
 static void print_types_json(const RzPdb *pdb, PJ *pj, const RzList *types) {
 	rz_return_if_fail(pdb && types && pj);
@@ -1227,10 +1172,10 @@ static void print_types_json(const RzPdb *pdb, PJ *pj, const RzList *types) {
 }
 
 /**
- * @brief Creates pf commands from PDB types - "idpi*" command
+ * \brief Creates pf commands from PDB types - "idpi*" command
  * 
- * @param pdb pdb structure for printing function
- * @param types List of types
+ * \param pdb pdb structure for printing function
+ * \param types List of types
  */
 static void print_types_format(const RzPdb *pdb, const RzList *types) {
 	rz_return_if_fail(pdb && types);
@@ -1315,10 +1260,10 @@ static void print_types_format(const RzPdb *pdb, const RzList *types) {
 }
 
 /**
- * @brief Prints out all the type information in regular,json or pf format
+ * \brief Prints out all the type information in regular,json or pf format
  * 
- * @param pdb PDB information
- * @param mode printing mode
+ * \param pdb PDB information
+ * \param mode printing mode
  */
 static void print_types(const RzPdb *pdb, PJ *pj, const int mode) {
 	RzList *plist = pdb->pdb_streams;
@@ -1335,7 +1280,6 @@ static void print_types(const RzPdb *pdb, PJ *pj, const int mode) {
 	}
 }
 
-///////////////////////////////////////////////////////////////////////////////
 static void print_gvars(RzPdb *pdb, ut64 img_base, PJ *pj, int format) {
 	SStreamParseFunc *omap = 0, *sctns = 0, *sctns_orig = 0, *gsym = 0, *tmp = 0;
 	SIMAGE_SECTION_HEADER *sctn_header = 0;
@@ -1429,7 +1373,6 @@ static void print_gvars(RzPdb *pdb, ut64 img_base, PJ *pj, int format) {
 	}
 }
 
-///////////////////////////////////////////////////////////////////////////////
 RZ_API bool init_pdb_parser_with_buf(RzPdb *pdb, RzBuffer *buf) {
 	char *signature = NULL;
 	int bytes_read = 0;
@@ -1473,7 +1416,6 @@ RZ_API bool init_pdb_parser_with_buf(RzPdb *pdb, RzBuffer *buf) {
 	pdb->finish_pdb_parse = finish_pdb_parse;
 	pdb->print_types = print_types;
 	pdb->print_gvars = print_gvars;
-	// printf("init_pdb_parser() finish with success\n");
 	return true;
 error:
 	RZ_FREE(signature);

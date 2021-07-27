@@ -28,6 +28,7 @@ static RzType *parse_enum(const RzTypeDB *typedb, SType *type);
 static RzTypeEnumCase *parse_enumerate(STypeInfo *type_info);
 
 static bool is_parsable_type(const ELeafType type) {
+	rz_return_val_if_fail(type, false);
 	return (type == eLF_STRUCTURE ||
 		type == eLF_UNION ||
 		type == eLF_ENUM ||
@@ -37,10 +38,10 @@ static bool is_parsable_type(const ELeafType type) {
 }
 
 /**
- * @brief Create a type name from offset
+ * \brief Create a type name from offset
  *
- * @param offset
- * @return char* Name or NULL if error
+ * \param offset
+ * \return char* Name or NULL if error
  */
 static char *create_type_name_from_offset(ut64 offset) {
 	int offset_length = snprintf(NULL, 0, "type_0x%" PFMT64x, offset);
@@ -50,33 +51,33 @@ static char *create_type_name_from_offset(ut64 offset) {
 }
 
 static RzType *parse_type_array(const RzTypeDB *typedb, STypeInfo *type) {
+	rz_return_val_if_fail(type && typedb, NULL);
 	SLF_ARRAY *lf_array = type->type_info;
+	SType *element = rz_bin_pdb_stype_by_index(lf_array->element_type);
+	if (!element) {
+		return NULL;
+	}
+	RzType *element_type = parse_type(typedb, element);
+	if (!element_type) {
+		return NULL;
+	}
 	RzType *typ = RZ_NEW0(RzType);
 	if (!typ) {
 		return NULL;
 	}
 	typ->kind = RZ_TYPE_KIND_ARRAY;
-	SType *element = get_stype_by_index(lf_array->element_type);
-	if (!element) {
-		rz_type_free(typ);
-		return NULL;
-	}
-	RzType *element_type = parse_type(typedb, element);
-	if (!element_type) {
-		rz_type_free(typ);
-		return NULL;
-	}
 	typ->array.type = element_type;
 	typ->array.count = type->get_val(type);
 	return typ;
 }
 
 static RzType *parse_regular_type(const RzTypeDB *typedb, SType *type) {
+	rz_return_val_if_fail(type && typedb, NULL);
 	STypeInfo *type_info = &type->type_data;
 	switch (type_info->leaf_type) {
 	case eLF_CLASS:
 	case eLF_CLASS_19:
-		// todo
+		// TODO: https://github.com/rizinorg/rizin/issues/1205
 		RZ_LOG_INFO("%s : LF_CLASS is not handled for now.\n", __FUNCTION__);
 		break;
 	case eLF_STRUCTURE:
@@ -87,7 +88,7 @@ static RzType *parse_regular_type(const RzTypeDB *typedb, SType *type) {
 	case eLF_ARRAY:
 		return parse_type_array(typedb, type_info);
 	case eLF_BITFIELD:
-		// TODO: we don't have BITFIELD type for now
+		// TODO: we don't have BITFIELD type for now https://github.com/rizinorg/rizin/issues/1240
 		RZ_LOG_INFO("%s : LF_BITFIELD is not handled for now.\n", __FUNCTION__);
 		break;
 	case eLF_POINTER:
@@ -106,8 +107,9 @@ static RzType *parse_regular_type(const RzTypeDB *typedb, SType *type) {
 }
 
 static RzType *parse_type_modifier(const RzTypeDB *typedb, STypeInfo *type) {
+	rz_return_val_if_fail(type && typedb, NULL);
 	SLF_MODIFIER *lf_modifier = type->type_info;
-	SType *m_utype = get_stype_by_index(lf_modifier->modified_type);
+	SType *m_utype = rz_bin_pdb_stype_by_index(lf_modifier->modified_type);
 	if (m_utype) {
 		RzType *typ = parse_type(typedb, m_utype);
 		if (typ && lf_modifier->umodifier.bits.const_) {
@@ -128,6 +130,7 @@ static RzType *parse_type_modifier(const RzTypeDB *typedb, STypeInfo *type) {
 }
 
 static RzType *parse_type_pointer(const RzTypeDB *typedb, SType *type) {
+	rz_return_val_if_fail(type && typedb, NULL);
 	STypeInfo *type_info = &type->type_data;
 	SLF_POINTER *lf_pointer = type_info->type_info;
 	RzType *typ = RZ_NEW0(RzType);
@@ -135,7 +138,7 @@ static RzType *parse_type_pointer(const RzTypeDB *typedb, SType *type) {
 		return NULL;
 	}
 	typ->kind = RZ_TYPE_KIND_POINTER;
-	SType *p_utype = get_stype_by_index(lf_pointer->utype);
+	SType *p_utype = rz_bin_pdb_stype_by_index(lf_pointer->utype);
 	if (p_utype) {
 		RzType *tmp = parse_regular_type(typedb, p_utype);
 		if (!tmp) {
@@ -149,6 +152,7 @@ static RzType *parse_type_pointer(const RzTypeDB *typedb, SType *type) {
 }
 
 static RzType *parse_type(const RzTypeDB *typedb, SType *type) {
+	rz_return_val_if_fail(type && typedb, NULL);
 	RzType *typ;
 	STypeInfo *type_info = &type->type_data;
 	if (type_info->leaf_type == eLF_SIMPLE_TYPE) {
@@ -157,6 +161,7 @@ static RzType *parse_type(const RzTypeDB *typedb, SType *type) {
 		typ = rz_type_parse_string_single(typedb->parser, simple_type->type, &error_msg);
 		if (error_msg) {
 			eprintf("%s : Error parsing complex type member \"%s\" type:\n%s\n", __FUNCTION__, simple_type->type, error_msg);
+			RZ_FREE(error_msg);
 		}
 		return typ;
 	} else {
@@ -169,12 +174,13 @@ static RzType *parse_type(const RzTypeDB *typedb, SType *type) {
 }
 
 static RzPVector *parse_type_arglist(const RzTypeDB *typedb, STypeInfo *arglist) {
+	rz_return_val_if_fail(arglist && typedb, NULL);
 	SLF_ARGLIST *lf_arglist = arglist->type_info;
 	RzPVector *vec = rz_pvector_new((RzPVectorFree)rz_type_callable_arg_free);
 	ut32 *ptr_types = lf_arglist->arg_type;
 	int i = 0;
 	for (; i < lf_arglist->count; i++, ptr_types++) {
-		SType *stype = get_stype_by_index(*ptr_types);
+		SType *stype = rz_bin_pdb_stype_by_index(*ptr_types);
 		if (!stype) {
 			continue;
 		}
@@ -183,9 +189,7 @@ static RzPVector *parse_type_arglist(const RzTypeDB *typedb, STypeInfo *arglist)
 			continue;
 		}
 		RzCallableArg *arg = RZ_NEW0(RzCallableArg);
-		if (type->kind == RZ_TYPE_KIND_IDENTIFIER) {
-			arg->name = strdup(type->identifier.name);
-		}
+		arg->name = rz_str_newf("arg%d", i);
 		arg->type = type;
 		rz_pvector_push(vec, arg);
 	}
@@ -193,6 +197,7 @@ static RzPVector *parse_type_arglist(const RzTypeDB *typedb, STypeInfo *arglist)
 }
 
 static RzType *parse_type_procedure(const RzTypeDB *typedb, SType *type) {
+	rz_return_val_if_fail(type && typedb, NULL);
 	STypeInfo *type_info = &type->type_data;
 	SLF_PROCEDURE *lf_procedure = type_info->type_info;
 	RzType *typ = RZ_NEW0(RzType);
@@ -203,9 +208,9 @@ static RzType *parse_type_procedure(const RzTypeDB *typedb, SType *type) {
 	typ->kind = RZ_TYPE_KIND_CALLABLE;
 	typ->callable = callable;
 	typ->callable->name = create_type_name_from_offset(type->tpi_idx);
-	typ->callable->cc = parse_calling_convention(lf_procedure->call_conv);
+	typ->callable->cc = rz_bin_pdb_calling_convention_as_string(lf_procedure->call_conv);
 	// parse return type
-	SType *ret_type = get_stype_by_index(lf_procedure->return_type);
+	SType *ret_type = rz_bin_pdb_stype_by_index(lf_procedure->return_type);
 	if (ret_type) {
 		typ->callable->ret = parse_type(typedb, ret_type);
 		if (!typ->callable->ret) {
@@ -213,7 +218,7 @@ static RzType *parse_type_procedure(const RzTypeDB *typedb, SType *type) {
 		}
 	}
 	// parse parameter list
-	SType *arglist = get_stype_by_index(lf_procedure->arg_list);
+	SType *arglist = rz_bin_pdb_stype_by_index(lf_procedure->arg_list);
 	if (arglist) {
 		typ->callable->args = parse_type_arglist(typedb, &arglist->type_data);
 	}
@@ -221,6 +226,7 @@ static RzType *parse_type_procedure(const RzTypeDB *typedb, SType *type) {
 }
 
 static RzType *parse_type_mfunction(const RzTypeDB *typedb, STypeInfo *type_info, char *name) {
+	rz_return_val_if_fail(type_info && typedb, NULL);
 	SLF_MFUNCTION *lf_mfunction = type_info->type_info;
 	RzType *type = RZ_NEW0(RzType);
 	RzCallable *callable = RZ_NEW0(RzCallable);
@@ -230,9 +236,9 @@ static RzType *parse_type_mfunction(const RzTypeDB *typedb, STypeInfo *type_info
 	type->kind = RZ_TYPE_KIND_CALLABLE;
 	type->callable = callable;
 	type->callable->name = strdup(name);
-	type->callable->cc = parse_calling_convention(lf_mfunction->call_conv);
+	type->callable->cc = rz_bin_pdb_calling_convention_as_string(lf_mfunction->call_conv);
 	// parse return type
-	SType *ret_type = get_stype_by_index(lf_mfunction->return_type);
+	SType *ret_type = rz_bin_pdb_stype_by_index(lf_mfunction->return_type);
 	if (ret_type) {
 		type->callable->ret = parse_type(typedb, ret_type);
 		if (!type->callable->ret) {
@@ -240,7 +246,7 @@ static RzType *parse_type_mfunction(const RzTypeDB *typedb, STypeInfo *type_info
 		}
 	}
 	// parse parameter list
-	SType *arglist = get_stype_by_index(lf_mfunction->arglist);
+	SType *arglist = rz_bin_pdb_stype_by_index(lf_mfunction->arglist);
 	if (arglist) {
 		type->callable->args = parse_type_arglist(typedb, &arglist->type_data);
 	}
@@ -248,9 +254,10 @@ static RzType *parse_type_mfunction(const RzTypeDB *typedb, STypeInfo *type_info
 }
 
 static RzType *parse_type_onemethod(const RzTypeDB *typedb, STypeInfo *type_info) {
+	rz_return_val_if_fail(type_info && typedb, NULL);
 	SLF_ONEMETHOD *lf_onemethod = type_info->type_info;
 	char *name = type_info->get_name(type_info);
-	SType *utype = get_stype_by_index(lf_onemethod->index);
+	SType *utype = rz_bin_pdb_stype_by_index(lf_onemethod->index);
 	if (!utype) {
 		return NULL;
 	}
@@ -262,8 +269,9 @@ static RzType *parse_type_onemethod(const RzTypeDB *typedb, STypeInfo *type_info
 }
 
 static RzType *parse_type_member(const RzTypeDB *typedb, STypeInfo *type_info) {
+	rz_return_val_if_fail(type_info && typedb, NULL);
 	SLF_MEMBER *lf_member = type_info->type_info;
-	SType *utype = get_stype_by_index(lf_member->index);
+	SType *utype = rz_bin_pdb_stype_by_index(lf_member->index);
 	if (!utype) {
 		return NULL;
 	}
@@ -271,8 +279,9 @@ static RzType *parse_type_member(const RzTypeDB *typedb, STypeInfo *type_info) {
 }
 
 static RzType *parse_type_nest(const RzTypeDB *typedb, STypeInfo *type_info) {
+	rz_return_val_if_fail(type_info && typedb, NULL);
 	SLF_NESTTYPE *lf_nest = type_info->type_info;
-	SType *utype = get_stype_by_index(lf_nest->index);
+	SType *utype = rz_bin_pdb_stype_by_index(lf_nest->index);
 	if (!utype) {
 		return NULL;
 	}
@@ -307,11 +316,11 @@ static RzType *parse_type_nest(const RzTypeDB *typedb, STypeInfo *type_info) {
 }
 
 /**
- * @brief Parses struct member
+ * \brief Parses struct member
  *
- * @param typedb Types DB instance
- * @param type_info Current type info (member)
- * @return RzTypeStructMember* parsed member, NULL if fail
+ * \param typedb Types DB instance
+ * \param type_info Current type info (member)
+ * \return RzTypeStructMember* parsed member, NULL if fail
  */
 static RzTypeStructMember *parse_struct_member(const RzTypeDB *typedb, STypeInfo *type_info) {
 	rz_return_val_if_fail(type_info, NULL);
@@ -366,10 +375,10 @@ cleanup:
 }
 
 /**
- * @brief Parses structures into BaseType and saves them into hashtable
+ * \brief Parses structures into BaseType and saves them into hashtable
  *
- * @param t RzTypeDB instance
- * @param type Current type
+ * \param t RzTypeDB instance
+ * \param type Current type
  */
 static RzType *parse_structure(const RzTypeDB *typedb, SType *type) {
 	rz_return_val_if_fail(typedb && type, NULL);
@@ -435,11 +444,11 @@ cleanup:
 }
 
 /**
- * @brief Parses union member
+ * \brief Parses union member
  *
- * @param typedb Types DB instance
- * @param type_info Current type info (member)
- * @return RzTypeUnionMember* parsed member, NULL if fail
+ * \param typedb Types DB instance
+ * \param type_info Current type info (member)
+ * \return RzTypeUnionMember* parsed member, NULL if fail
  */
 static RzTypeUnionMember *parse_union_member(const RzTypeDB *typedb, STypeInfo *type_info) {
 	rz_return_val_if_fail(type_info && typedb, NULL);
@@ -485,9 +494,9 @@ cleanup:
 }
 
 /**
- * @brief Parses union into BaseType and saves it into hashtable
+ * \brief Parses union into BaseType and saves it into hashtable
  *
- * @param type_info Current type info (enum case)
+ * \param type_info Current type info (enum case)
  */
 static RzType *parse_union(const RzTypeDB *typedb, SType *type) {
 	rz_return_val_if_fail(typedb && type, NULL);
@@ -551,10 +560,10 @@ cleanup:
 }
 
 /**
- * @brief Parse enum case
+ * \brief Parse enum case
  *
- * @param type_info Current type info (enum case)
- * @return RzTypeEnumCase* parsed enum case, NULL if fail
+ * \param type_info Current type info (enum case)
+ * \return RzTypeEnumCase* parsed enum case, NULL if fail
  */
 static RzTypeEnumCase *parse_enumerate(STypeInfo *type_info) {
 	rz_return_val_if_fail(type_info && type_info->leaf_type == eLF_ENUMERATE, NULL);
@@ -577,10 +586,10 @@ cleanup:
 }
 
 /**
- * @brief Parses enum into BaseType and saves it into SDB
+ * \brief Parses enum into BaseType and saves it into SDB
  *
- * @param t RzTypeDB instance
- * @param type Current type
+ * \param t RzTypeDB instance
+ * \param type Current type
  */
 static RzType *parse_enum(const RzTypeDB *typedb, SType *type) {
 	rz_return_val_if_fail(typedb && type, NULL);
@@ -610,7 +619,7 @@ static RzType *parse_enum(const RzTypeDB *typedb, SType *type) {
 		name = create_type_name_from_offset(type->tpi_idx);
 		to_free_name = true;
 	}
-	SType *utype = get_stype_by_index(lf_enum->utype);
+	SType *utype = rz_bin_pdb_stype_by_index(lf_enum->utype);
 	if (!utype) {
 		goto cleanup;
 	}
@@ -651,10 +660,10 @@ cleanup:
 }
 
 /**
- * @brief Delegate the type parsing to appropriate function
+ * \brief Delegate the type parsing to appropriate function
  *
- * @param t RzTypeDB instance
- * @param type Current type
+ * \param t RzTypeDB instance
+ * \param type Current type
  */
 static void parse_stypes(const RzTypeDB *typedb, SType *type) {
 	rz_return_if_fail(typedb && type);
@@ -687,10 +696,10 @@ static void parse_stypes(const RzTypeDB *typedb, SType *type) {
 }
 
 /**
- * @brief Saves PDB types from TPI stream into the SDB
+ * \brief Saves PDB types from TPI stream into the SDB
  *
- * @param t RzTypeDB instance
- * @param pdb PDB information
+ * \param t RzTypeDB instance
+ * \param pdb PDB information
  */
 RZ_API void rz_parse_pdb_types(const RzTypeDB *typedb, const RzPdb *pdb) {
 	rz_return_if_fail(typedb && pdb);

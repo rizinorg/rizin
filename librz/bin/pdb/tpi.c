@@ -5,6 +5,7 @@
 #include "tpi.h"
 #include "stream_file.h"
 
+// TODO: remove these global variables
 static unsigned int base_idx = 0;
 static RzList *p_types_list;
 
@@ -32,11 +33,11 @@ static int skip_padding(uint8_t *leaf_data, unsigned int *read_bytes, unsigned i
 }
 
 /**
- * @brief Parses calling convention
+ * \brief Parses calling convention type as string
  *
- * @param idx
+ * \param idx
  */
-RZ_API char *parse_calling_convention(ECV_CALL idx) {
+RZ_API char *rz_bin_pdb_calling_convention_as_string(ECV_CALL idx) {
 	switch (idx) {
 	case eNEAR_C:
 	case eFAR_C:
@@ -63,14 +64,14 @@ RZ_API char *parse_calling_convention(ECV_CALL idx) {
 }
 
 /**
- * @brief Parses simple type if the idx represents one
+ * \brief Parses simple type if the idx represents one
  *
- * @param idx
- * @return STypeInfo, leaf_type = 0 -> error
+ * \param idx
+ * \return STypeInfo, leaf_type = 0 -> error
  *  This can be made smarter by using the masks
  *  and splitting it on 2 parts, 1 mode, 1 type
  */
-RZ_API STypeInfo parse_simple_type(ut32 idx) {
+RZ_IPI STypeInfo parse_simple_type(ut32 idx) {
 	STypeInfo type = { 0 };
 	SLF_SIMPLE_TYPE *simple_type = RZ_NEW0(SLF_SIMPLE_TYPE);
 	if (!simple_type) {
@@ -100,7 +101,6 @@ RZ_API STypeInfo parse_simple_type(ut32 idx) {
 		simple_type->size = 8;
 		simple_type->type = strdup("void *");
 		break;
-
 	case eT_CHAR:
 		simple_type->size = 1;
 		simple_type->type = strdup("char");
@@ -120,7 +120,6 @@ RZ_API STypeInfo parse_simple_type(ut32 idx) {
 		simple_type->size = 8;
 		simple_type->type = strdup("uint8_t *");
 		break;
-
 	case eT_UCHAR:
 		simple_type->size = 1;
 		simple_type->type = strdup("uint8_t");
@@ -140,7 +139,6 @@ RZ_API STypeInfo parse_simple_type(ut32 idx) {
 		simple_type->size = 8;
 		simple_type->type = strdup("uint8_t *");
 		break;
-
 	case eT_RCHAR:
 		simple_type->size = 1;
 		simple_type->type = strdup("char");
@@ -160,7 +158,44 @@ RZ_API STypeInfo parse_simple_type(ut32 idx) {
 		simple_type->size = 8;
 		simple_type->type = strdup("char *");
 		break;
-
+	case eT_CHAR16:
+		simple_type->size = 1;
+		simple_type->type = strdup("char16_t");
+		break;
+	case eT_PCHAR16:
+		simple_type->size = 2;
+		simple_type->type = strdup("char16_t *");
+		break;
+	case eT_PFCHAR16:
+	case eT_PHCHAR16:
+	case eT_32PCHAR16:
+	case eT_32PFCHAR16:
+		simple_type->size = 4;
+		simple_type->type = strdup("char16_t *");
+		break;
+	case eT_64PCHAR16:
+		simple_type->size = 8;
+		simple_type->type = strdup("char16_t *");
+		break;
+	case eT_CHAR32:
+		simple_type->size = 1;
+		simple_type->type = strdup("char32_t");
+		break;
+	case eT_PCHAR32:
+		simple_type->size = 2;
+		simple_type->type = strdup("char32_t *");
+		break;
+	case eT_PFCHAR32:
+	case eT_PHCHAR32:
+	case eT_32PCHAR32:
+	case eT_32PFCHAR32:
+		simple_type->size = 4;
+		simple_type->type = strdup("char32_t *");
+		break;
+	case eT_64PCHAR32:
+		simple_type->size = 8;
+		simple_type->type = strdup("char32_t *");
+		break;
 	case eT_WCHAR:
 		simple_type->size = 4;
 		simple_type->type = strdup("wchar_t");
@@ -180,7 +215,6 @@ RZ_API STypeInfo parse_simple_type(ut32 idx) {
 		simple_type->size = 8;
 		simple_type->type = strdup("wchar_t *");
 		break;
-
 	case eT_BYTE:
 		simple_type->size = 1;
 		simple_type->type = strdup("char");
@@ -200,7 +234,6 @@ RZ_API STypeInfo parse_simple_type(ut32 idx) {
 		simple_type->size = 8;
 		simple_type->type = strdup("char *");
 		break;
-
 	case eT_UBYTE:
 		simple_type->size = 1;
 		simple_type->type = strdup("uint8_t");
@@ -220,7 +253,6 @@ RZ_API STypeInfo parse_simple_type(ut32 idx) {
 		simple_type->size = 8;
 		simple_type->type = strdup("uint8_t*");
 		break;
-
 	case eT_INT16: // 16 bit
 	case eT_SHORT: // 16 bit short
 		simple_type->size = 2;
@@ -247,7 +279,6 @@ RZ_API STypeInfo parse_simple_type(ut32 idx) {
 		simple_type->size = 8;
 		simple_type->type = strdup("uint16_t *");
 		break;
-
 	case eT_UINT16: // 16 bit
 	case eT_USHORT: // 16 bit short
 		simple_type->size = 2;
@@ -274,7 +305,6 @@ RZ_API STypeInfo parse_simple_type(ut32 idx) {
 		simple_type->size = 8;
 		simple_type->type = strdup("uint16_t *");
 		break;
-
 	case eT_LONG:
 	case eT_INT4:
 		simple_type->size = 4;
@@ -301,7 +331,6 @@ RZ_API STypeInfo parse_simple_type(ut32 idx) {
 		simple_type->size = 8;
 		simple_type->type = strdup("int32_t *");
 		break;
-
 	case eT_ULONG:
 	case eT_UINT4:
 		simple_type->size = 4;
@@ -328,7 +357,6 @@ RZ_API STypeInfo parse_simple_type(ut32 idx) {
 		simple_type->size = 8;
 		simple_type->type = strdup("uint32_t *");
 		break;
-
 	case eT_INT8:
 	case eT_QUAD:
 		simple_type->size = 8;
@@ -355,13 +383,11 @@ RZ_API STypeInfo parse_simple_type(ut32 idx) {
 		simple_type->size = 8;
 		simple_type->type = strdup("int64_t *");
 		break;
-
 	case eT_UQUAD:
 	case eT_UINT8:
 		simple_type->size = 8;
 		simple_type->type = strdup("uint64_t");
 		break;
-
 	case eT_PUQUAD:
 	case eT_PUINT8:
 		simple_type->size = 2;
@@ -409,7 +435,6 @@ RZ_API STypeInfo parse_simple_type(ut32 idx) {
 		simple_type->size = 8;
 		simple_type->type = strdup("int128_t *");
 		break;
-
 	case eT_UINT128:
 	case eT_UOCT:
 		simple_type->size = 16;
@@ -435,6 +460,25 @@ RZ_API STypeInfo parse_simple_type(ut32 idx) {
 	case eT_64PUOCT:
 		simple_type->size = 8;
 		simple_type->type = strdup("uint128_t *");
+		break;
+	case eT_REAL16:
+		simple_type->size = 2;
+		simple_type->type = strdup("float");
+		break;
+	case eT_PREAL16:
+		simple_type->size = 2;
+		simple_type->type = strdup("float *");
+		break;
+	case eT_PFREAL16:
+	case eT_PHREAL16:
+	case eT_32PREAL16:
+	case eT_32PFREAL16:
+		simple_type->size = 4;
+		simple_type->type = strdup("float *");
+		break;
+	case eT_64PREAL16:
+		simple_type->size = 8;
+		simple_type->type = strdup("float *");
 		break;
 	case eT_REAL32:
 		simple_type->size = 4;
@@ -493,7 +537,6 @@ RZ_API STypeInfo parse_simple_type(ut32 idx) {
 		simple_type->size = 8;
 		simple_type->type = strdup("long double *");
 		break;
-
 	case eT_REAL80:
 		simple_type->size = 10;
 		simple_type->type = strdup("long double");
@@ -513,7 +556,6 @@ RZ_API STypeInfo parse_simple_type(ut32 idx) {
 		simple_type->size = 8;
 		simple_type->type = strdup("long double *");
 		break;
-
 	case eT_REAL128:
 		simple_type->size = 16;
 		simple_type->type = strdup("long double");
@@ -533,7 +575,6 @@ RZ_API STypeInfo parse_simple_type(ut32 idx) {
 		simple_type->size = 8;
 		simple_type->type = strdup("long double *");
 		break;
-
 	case eT_CPLX32:
 		simple_type->size = 4;
 		simple_type->type = strdup("float _Complex");
@@ -553,7 +594,6 @@ RZ_API STypeInfo parse_simple_type(ut32 idx) {
 		simple_type->size = 8;
 		simple_type->type = strdup("float _Complex *");
 		break;
-
 	case eT_CPLX64:
 		simple_type->size = 8;
 		simple_type->type = strdup("double _Complex");
@@ -573,7 +613,6 @@ RZ_API STypeInfo parse_simple_type(ut32 idx) {
 		simple_type->size = 8;
 		simple_type->type = strdup("double _Complex *");
 		break;
-
 	case eT_CPLX80:
 		simple_type->size = 10;
 		simple_type->type = strdup("long double _Complex");
@@ -593,7 +632,6 @@ RZ_API STypeInfo parse_simple_type(ut32 idx) {
 		simple_type->size = 8;
 		simple_type->type = strdup("long double _Complex *");
 		break;
-
 	case eT_CPLX128:
 		simple_type->size = 16;
 		simple_type->type = strdup("long double _Complex");
@@ -613,105 +651,100 @@ RZ_API STypeInfo parse_simple_type(ut32 idx) {
 		simple_type->size = 8;
 		simple_type->type = strdup("long double _Complex *");
 		break;
-
 	case eT_BOOL08: // _Bool probably isn't ideal for bool > 08
 		simple_type->size = 1;
-		simple_type->type = strdup("_Bool");
+		simple_type->type = strdup("bool");
 		break;
 	case eT_PBOOL08:
 		simple_type->size = 2;
-		simple_type->type = strdup("_Bool *");
+		simple_type->type = strdup("bool *");
 		break;
 	case eT_PFBOOL08:
 	case eT_PHBOOL08:
 	case eT_32PBOOL08:
 	case eT_32PFBOOL08:
 		simple_type->size = 4;
-		simple_type->type = strdup("_Bool *");
+		simple_type->type = strdup("bool *");
 		break;
 	case eT_64PBOOL08:
 		simple_type->size = 8;
-		simple_type->type = strdup("_Bool *");
+		simple_type->type = strdup("bool *");
 		break;
-
 	case eT_BOOL16:
 		simple_type->size = 2;
-		simple_type->type = strdup("_Bool");
+		simple_type->type = strdup("bool");
 		break;
 	case eT_PBOOL16:
 		simple_type->size = 2;
-		simple_type->type = strdup("_Bool *");
+		simple_type->type = strdup("bool *");
 		break;
 	case eT_PFBOOL16:
 	case eT_PHBOOL16:
 	case eT_32PBOOL16:
 	case eT_32PFBOOL16:
 		simple_type->size = 4;
-		simple_type->type = strdup("_Bool *");
+		simple_type->type = strdup("bool *");
 		break;
 	case eT_64PBOOL16:
 		simple_type->size = 8;
-		simple_type->type = strdup("_Bool *");
+		simple_type->type = strdup("bool *");
 		break;
-
 	case eT_BOOL32:
 		simple_type->size = 4;
-		simple_type->type = strdup("_Bool");
+		simple_type->type = strdup("bool");
 		break;
 	case eT_PBOOL32:
 		simple_type->size = 2;
-		simple_type->type = strdup("_Bool *");
+		simple_type->type = strdup("bool *");
 		break;
 	case eT_PFBOOL32:
 	case eT_PHBOOL32:
 	case eT_32PBOOL32:
 	case eT_32PFBOOL32:
 		simple_type->size = 4;
-		simple_type->type = strdup("_Bool *");
+		simple_type->type = strdup("bool *");
 		break;
 	case eT_64PBOOL32:
 		simple_type->size = 8;
-		simple_type->type = strdup("_Bool *");
+		simple_type->type = strdup("bool *");
 		break;
-
 	case eT_BOOL64:
 		simple_type->size = 8;
-		simple_type->type = strdup("_Bool");
+		simple_type->type = strdup("bool");
 		break;
 	case eT_PBOOL64:
 		simple_type->size = 2;
-		simple_type->type = strdup("_Bool *");
+		simple_type->type = strdup("bool *");
 		break;
 	case eT_PFBOOL64:
 	case eT_PHBOOL64:
 	case eT_32PBOOL64:
 	case eT_32PFBOOL64:
 		simple_type->size = 4;
-		simple_type->type = strdup("_Bool *");
+		simple_type->type = strdup("bool *");
 		break;
 	case eT_64PBOOL64:
 		simple_type->size = 8;
-		simple_type->type = strdup("_Bool *");
+		simple_type->type = strdup("bool *");
 		break;
-
 	case eT_BOOL128:
 		simple_type->size = 16;
-		simple_type->type = strdup("_Bool");
+		simple_type->type = strdup("bool");
 		break;
 	case eT_PBOOL128:
 		simple_type->size = 2;
-		simple_type->type = strdup("_Bool *");
+		simple_type->type = strdup("bool *");
 		break;
 	case eT_PFBOOL128:
 	case eT_PHBOOL128:
 	case eT_32PBOOL128:
 	case eT_32PFBOOL128:
 		simple_type->size = 4;
-		simple_type->type = strdup("_Bool *");
+		simple_type->type = strdup("bool *");
 		break;
 	case eT_64PBOOL128:
 		simple_type->size = 8;
-		simple_type->type = strdup("_Bool *");
+		simple_type->type = strdup("bool *");
 		break;
 	default:
 		simple_type->size = 0;
@@ -772,6 +805,7 @@ static bool stype_is_fwdref(void *type) {
 }
 
 static RzList *get_type_members(void *type) {
+	rz_return_val_if_fail(type, NULL);
 	STypeInfo *t = (STypeInfo *)type;
 	SType *tmp = NULL;
 	switch (t->leaf_type) {
@@ -780,24 +814,24 @@ static RzList *get_type_members(void *type) {
 		return lf->substructs;
 	}
 	case eLF_UNION: {
-		tmp = get_stype_by_index(((SLF_UNION *)t->type_info)->field_list);
+		tmp = rz_bin_pdb_stype_by_index(((SLF_UNION *)t->type_info)->field_list);
 		SLF_FIELDLIST *lf_union = tmp ? tmp->type_data.type_info : NULL;
 		return lf_union ? lf_union->substructs : NULL;
 	}
 	case eLF_STRUCTURE:
 	case eLF_CLASS: {
-		tmp = get_stype_by_index(((SLF_STRUCTURE *)t->type_info)->field_list);
+		tmp = rz_bin_pdb_stype_by_index(((SLF_STRUCTURE *)t->type_info)->field_list);
 		SLF_FIELDLIST *lf_struct = tmp ? tmp->type_data.type_info : NULL;
 		return lf_struct ? lf_struct->substructs : NULL;
 	}
 	case eLF_STRUCTURE_19:
 	case eLF_CLASS_19: {
-		tmp = get_stype_by_index(((SLF_STRUCTURE_19 *)t->type_info)->field_list);
+		tmp = rz_bin_pdb_stype_by_index(((SLF_STRUCTURE_19 *)t->type_info)->field_list);
 		SLF_FIELDLIST *lf_struct19 = tmp ? tmp->type_data.type_info : NULL;
 		return lf_struct19 ? lf_struct19->substructs : NULL;
 	}
 	case eLF_ENUM: {
-		tmp = get_stype_by_index(((SLF_ENUM *)t->type_info)->field_list);
+		tmp = rz_bin_pdb_stype_by_index(((SLF_ENUM *)t->type_info)->field_list);
 		SLF_FIELDLIST *lf_enum = tmp ? tmp->type_data.type_info : NULL;
 		return lf_enum ? lf_enum->substructs : NULL;
 	}
@@ -807,6 +841,7 @@ static RzList *get_type_members(void *type) {
 }
 
 static char *get_type_name(void *type) {
+	rz_return_val_if_fail(type, NULL);
 	STypeInfo *t = (STypeInfo *)type;
 	switch (t->leaf_type) {
 	case eLF_MEMBER: {
@@ -857,6 +892,7 @@ static char *get_type_name(void *type) {
 }
 
 static ut64 get_type_val(void *type) {
+	rz_return_val_if_fail(type, -1);
 	STypeInfo *t = (STypeInfo *)type;
 	switch (t->leaf_type) {
 	case eLF_ONEMETHOD: {
@@ -915,6 +951,7 @@ static void free_snumeric(SNumeric *numeric) {
 }
 
 static void free_stype(void *type_info) {
+	rz_return_if_fail(type_info);
 	STypeInfo *typeInfo = (STypeInfo *)type_info;
 	switch (typeInfo->leaf_type) {
 	case eLF_ENUMERATE: {
@@ -1047,13 +1084,14 @@ static void free_tpi_stream(void *stream) {
 	rz_list_free(tpi_stream->types);
 }
 
+// TODO: remove these get_xxx_print_type
 static void get_array_print_type(void *type, char **name) {
 	STypeInfo *ti = (STypeInfo *)type;
 	char *tmp_name = NULL;
 	bool need_to_free = true;
 
 	SType *t = 0;
-	t = get_stype_by_index(((SLF_ARRAY *)(ti->type_info))->element_type);
+	t = rz_bin_pdb_stype_by_index(((SLF_ARRAY *)(ti->type_info))->element_type);
 	rz_return_if_fail(t); // t == NULL indicates malformed PDB ?
 	if (t->type_data.leaf_type == eLF_SIMPLE_TYPE) {
 		need_to_free = false;
@@ -1086,7 +1124,7 @@ static void get_pointer_print_type(void *type, char **name) {
 	char *tmp_name = NULL;
 	int need_to_free = 1;
 
-	t = get_stype_by_index(((SLF_POINTER *)(ti->type_info))->utype);
+	t = rz_bin_pdb_stype_by_index(((SLF_POINTER *)(ti->type_info))->utype);
 	rz_return_if_fail(t); // t == NULL indicates malformed PDB ?
 	if (t->type_data.leaf_type == eLF_SIMPLE_TYPE) {
 		need_to_free = false;
@@ -1117,7 +1155,7 @@ static void get_modifier_print_type(void *type, char **name) {
 	SType *stype = NULL;
 	char *tmp_name = NULL;
 
-	stype = get_stype_by_index(((SLF_MODIFIER *)(stype_info->type_info))->modified_type);
+	stype = rz_bin_pdb_stype_by_index(((SLF_MODIFIER *)(stype_info->type_info))->modified_type);
 	if (stype && stype->type_data.leaf_type == eLF_SIMPLE_TYPE) {
 		need_to_free = false;
 		SLF_SIMPLE_TYPE *base_type = stype->type_data.type_info;
@@ -1170,7 +1208,7 @@ static void get_bitfield_print_type(void *type, char **name) {
 	int need_to_free = 1;
 	SLF_BITFIELD *bitfeild_info = (SLF_BITFIELD *)ti->type_info;
 
-	t = get_stype_by_index(((SLF_BITFIELD *)(ti->type_info))->base_type);
+	t = rz_bin_pdb_stype_by_index(((SLF_BITFIELD *)(ti->type_info))->base_type);
 	if (t->type_data.leaf_type == eLF_SIMPLE_TYPE) {
 		need_to_free = false;
 		SLF_SIMPLE_TYPE *base_type = t->type_data.type_info;
@@ -1225,7 +1263,7 @@ static void get_enum_print_type(void *type, char **name) {
 	char *tmp_name = 0;
 	int need_to_free = 1;
 
-	t = get_stype_by_index(((SLF_ENUM *)(ti->type_info))->utype);
+	t = rz_bin_pdb_stype_by_index(((SLF_ENUM *)(ti->type_info))->utype);
 	rz_return_if_fail(t); // This shouldn't happen?, TODO explore this situation
 	if (t->type_data.leaf_type == eLF_SIMPLE_TYPE) { // BaseType
 		need_to_free = 0;
@@ -1335,7 +1373,6 @@ static void get_mfunction_print_type(void *type, char **name) {
 	strcpy(*name, "mfunction ");
 }
 
-///////////////////////////////////////////////////////////////////////////////
 static void get_union_print_type(void *type, char **name) {
 	STypeInfo *ti = (STypeInfo *)type;
 	//	ELeafType lt;
@@ -1411,7 +1448,7 @@ static void get_nesttype_print_type(void *type, char **name) {
 	int name_len = 0;
 	int need_to_free = 1;
 
-	t = get_stype_by_index(((SLF_NESTTYPE *)(ti->type_info))->index);
+	t = rz_bin_pdb_stype_by_index(((SLF_NESTTYPE *)(ti->type_info))->index);
 	if (t->type_data.leaf_type == eLF_SIMPLE_TYPE) {
 		need_to_free = false;
 		SLF_SIMPLE_TYPE *base_type = t->type_data.type_info;
@@ -1482,7 +1519,7 @@ static void get_member_print_type(void *type, char **name) {
 	SType *t = 0;
 	char *tmp_name = 0;
 
-	t = get_stype_by_index(((SLF_MEMBER *)(ti->type_info))->index);
+	t = rz_bin_pdb_stype_by_index(((SLF_MEMBER *)(ti->type_info))->index);
 	if (t->type_data.leaf_type == eLF_SIMPLE_TYPE) {
 		SLF_SIMPLE_TYPE *base_type = t->type_data.type_info;
 		tmp_name = base_type->type;
@@ -1502,7 +1539,7 @@ static void get_onemethod_print_type(void *type, char **name) {
 	int name_len = 0;
 	int need_to_free = 1;
 
-	t = get_stype_by_index(((SLF_ONEMETHOD *)(ti->type_info))->index);
+	t = rz_bin_pdb_stype_by_index(((SLF_ONEMETHOD *)(ti->type_info))->index);
 	if (t->type_data.leaf_type == eLF_SIMPLE_TYPE) {
 		need_to_free = false;
 		SLF_SIMPLE_TYPE *base_type = t->type_data.type_info;
@@ -1534,19 +1571,17 @@ static void get_onemethod_print_type(void *type, char **name) {
 	}
 }
 
-///////////////////////////////////////////////////////////////////////////////
 void init_scstring(SCString *cstr, unsigned int size, char *name) {
 	cstr->size = size;
 	cstr->name = strdup(name);
 }
 
-///////////////////////////////////////////////////////////////////////////////
 void deinit_scstring(SCString *cstr) {
 	free(cstr->name);
 }
 
-///////////////////////////////////////////////////////////////////////////////
 int parse_scstring(SCString *sctr, uint8_t *leaf_data, unsigned int *read_bytes, unsigned int len) {
+	rz_return_val_if_fail(sctr && leaf_data, -1);
 	unsigned int c = 0;
 	sctr->name = NULL;
 	sctr->size = 0;
@@ -1563,8 +1598,8 @@ int parse_scstring(SCString *sctr, uint8_t *leaf_data, unsigned int *read_bytes,
 	return 1;
 }
 
-///////////////////////////////////////////////////////////////////////////////
 static int parse_numeric(SNumeric *numeric, uint8_t *leaf_data, unsigned int *read_bytes, unsigned int len) {
+	rz_return_val_if_fail(numeric && leaf_data, -1);
 	numeric->data = 0;
 	numeric->is_integer = true;
 	READ2(*read_bytes, len, numeric->type_index, leaf_data, ut16);
@@ -1610,8 +1645,8 @@ static int parse_numeric(SNumeric *numeric, uint8_t *leaf_data, unsigned int *re
 	return 1;
 }
 
-///////////////////////////////////////////////////////////////////////////////
 static int parse_lf_enumerate(SLF_ENUMERATE *lf_enumerate, uint8_t *leaf_data, unsigned int *read_bytes, unsigned int len) {
+	rz_return_val_if_fail(lf_enumerate && leaf_data, -1);
 	unsigned int read_bytes_before = 0, tmp_read_bytes_before = 0;
 
 	read_bytes_before = *read_bytes;
@@ -1632,8 +1667,8 @@ static int parse_lf_enumerate(SLF_ENUMERATE *lf_enumerate, uint8_t *leaf_data, u
 	return (*read_bytes - read_bytes_before);
 }
 
-///////////////////////////////////////////////////////////////////////////////
 static int parse_lf_nesttype(SLF_NESTTYPE *lf_nesttype, uint8_t *leaf_data, unsigned int *read_bytes, unsigned int len) {
+	rz_return_val_if_fail(lf_nesttype && leaf_data, -1);
 	unsigned int read_bytes_before = *read_bytes;
 
 	lf_nesttype->name.name = 0;
@@ -1649,6 +1684,7 @@ static int parse_lf_nesttype(SLF_NESTTYPE *lf_nesttype, uint8_t *leaf_data, unsi
 }
 
 static int parse_lf_vfunctab(SLF_VFUNCTAB *lf_vfunctab, uint8_t *leaf_data, unsigned int *read_bytes, unsigned int len) {
+	rz_return_val_if_fail(lf_vfunctab && leaf_data, -1);
 	unsigned int read_bytes_before = *read_bytes;
 
 	READ2(*read_bytes, len, lf_vfunctab->pad, leaf_data, ut16);
@@ -1657,8 +1693,8 @@ static int parse_lf_vfunctab(SLF_VFUNCTAB *lf_vfunctab, uint8_t *leaf_data, unsi
 	return *read_bytes - read_bytes_before;
 }
 
-///////////////////////////////////////////////////////////////////////////////
 static int parse_lf_method(SLF_METHOD *lf_method, uint8_t *leaf_data, unsigned int *read_bytes, unsigned int len) {
+	rz_return_val_if_fail(lf_method && leaf_data, -1);
 	unsigned int read_bytes_before = *read_bytes, tmp_read_bytes_before = 0;
 
 	lf_method->name.name = 0;
@@ -1676,8 +1712,8 @@ static int parse_lf_method(SLF_METHOD *lf_method, uint8_t *leaf_data, unsigned i
 	return *read_bytes - read_bytes_before;
 }
 
-///////////////////////////////////////////////////////////////////////////////
 static int parse_lf_member(SLF_MEMBER *lf_member, uint8_t *leaf_data, unsigned int *read_bytes, unsigned int len) {
+	rz_return_val_if_fail(lf_member && leaf_data, -1);
 	int read_bytes_before = *read_bytes, tmp_read_bytes_before = 0;
 
 	READ2(*read_bytes, len, lf_member->fldattr.fldattr, leaf_data, ut16);
@@ -1698,14 +1734,12 @@ static int parse_lf_member(SLF_MEMBER *lf_member, uint8_t *leaf_data, unsigned i
 	return (*read_bytes - read_bytes_before);
 }
 
-///////////////////////////////////////////////////////////////////////////////
 static int parse_lf_onemethod(SLF_ONEMETHOD *lf_onemethod, uint8_t *leaf_data, unsigned int *read_bytes, unsigned int len) {
+	rz_return_val_if_fail(lf_onemethod && leaf_data, -1);
 	int read_bytes_before = *read_bytes, tmp_before_read_bytes = 0;
 
 	READ2(*read_bytes, len, lf_onemethod->fldattr.fldattr, leaf_data, ut16);
 	READ4(*read_bytes, len, lf_onemethod->index, leaf_data, ut32);
-
-	// lf_onemethod->fldattr.fldattr = SWAP_UINT16(lf_onemethod->fldattr.fldattr);
 
 	if ((lf_onemethod->fldattr.bits.mprop == eMTintro) ||
 		(lf_onemethod->fldattr.bits.mprop == eMTpureintro)) {
@@ -1723,6 +1757,7 @@ static int parse_lf_onemethod(SLF_ONEMETHOD *lf_onemethod, uint8_t *leaf_data, u
 }
 
 static int parse_lf_bclass(SLF_BCLASS *lf_bclass, uint8_t *leaf_data, unsigned int *read_bytes, unsigned int len) {
+	rz_return_val_if_fail(lf_bclass && leaf_data, -1);
 	int read_bytes_before = *read_bytes, tmp_before_read_bytes = 0;
 
 	READ2(*read_bytes, len, lf_bclass->fldattr.fldattr, leaf_data, ut16);
@@ -1742,6 +1777,7 @@ static int parse_lf_bclass(SLF_BCLASS *lf_bclass, uint8_t *leaf_data, unsigned i
 }
 
 static int parse_lf_vbclass(SLF_VBCLASS *lf_vbclass, uint8_t *leaf_data, unsigned int *read_bytes, unsigned int len) {
+	rz_return_val_if_fail(lf_vbclass && leaf_data, -1);
 	int read_bytes_before = *read_bytes, tmp_before_read_bytes = 0;
 
 	READ2(*read_bytes, len, lf_vbclass->fldattr.fldattr, leaf_data, ut16);
@@ -1766,7 +1802,6 @@ static int parse_lf_vbclass(SLF_VBCLASS *lf_vbclass, uint8_t *leaf_data, unsigne
 	return (*read_bytes - read_bytes_before);
 }
 
-///////////////////////////////////////////////////////////////////////////////
 static void init_stype_info(STypeInfo *type_info) {
 	type_info->free_ = 0;
 	type_info->get_members = 0;
@@ -1901,8 +1936,8 @@ static void init_stype_info(STypeInfo *type_info) {
 		rz_list_append(lf_fieldlist->substructs, type_info); \
 	}
 
-///////////////////////////////////////////////////////////////////////////////
 static int parse_lf_fieldlist(SLF_FIELDLIST *lf_fieldlist, uint8_t *leaf_data, unsigned int *read_bytes, unsigned int len) {
+	rz_return_val_if_fail(lf_fieldlist && leaf_data, -1);
 	ELeafType leaf_type;
 	int curr_read_bytes = 0;
 	uint8_t *p = leaf_data;
@@ -1951,8 +1986,8 @@ static int parse_lf_fieldlist(SLF_FIELDLIST *lf_fieldlist, uint8_t *leaf_data, u
 	return 0;
 }
 
-///////////////////////////////////////////////////////////////////////////////
 static int parse_lf_enum(SLF_ENUM *lf_enum, uint8_t *leaf_data, unsigned int *read_bytes, unsigned int len) {
+	rz_return_val_if_fail(lf_enum && leaf_data, -1);
 	unsigned int tmp_before_read_bytes = *read_bytes;
 	unsigned int before_read_bytes = 0;
 
@@ -1963,7 +1998,6 @@ static int parse_lf_enum(SLF_ENUM *lf_enum, uint8_t *leaf_data, unsigned int *re
 	READ4(*read_bytes, len, lf_enum->utype, leaf_data, ut32);
 	READ4(*read_bytes, len, lf_enum->field_list, leaf_data, ut32);
 
-	// lf_enum->prop.cv_property = SWAP_UINT16(lf_enum->prop.cv_property);
 	before_read_bytes = *read_bytes;
 	parse_scstring(&lf_enum->name, leaf_data, read_bytes, len);
 	leaf_data += (*read_bytes - before_read_bytes);
@@ -1974,9 +2008,8 @@ static int parse_lf_enum(SLF_ENUM *lf_enum, uint8_t *leaf_data, unsigned int *re
 	return *read_bytes - tmp_before_read_bytes;
 }
 
-///////////////////////////////////////////////////////////////////////////////
 static int parse_lf_structure(SLF_STRUCTURE *lf_structure, uint8_t *leaf_data, unsigned int *read_bytes, unsigned int len) {
-	//	SLF_STRUCTURE lf_structure;
+	rz_return_val_if_fail(lf_structure && leaf_data, -1);
 	unsigned int tmp_before_read_bytes = *read_bytes;
 	unsigned int before_read_bytes = 0;
 
@@ -1985,8 +2018,6 @@ static int parse_lf_structure(SLF_STRUCTURE *lf_structure, uint8_t *leaf_data, u
 	READ4(*read_bytes, len, lf_structure->field_list, leaf_data, ut32);
 	READ4(*read_bytes, len, lf_structure->derived, leaf_data, ut32);
 	READ4(*read_bytes, len, lf_structure->vshape, leaf_data, ut32);
-	// Why flipping ?? Works just right without it
-	// lf_structure->prop.cv_property = SWAP_UINT16(lf_structure->prop.cv_property);
 
 	before_read_bytes = *read_bytes;
 	parse_numeric(&lf_structure->size, leaf_data, read_bytes, len);
@@ -2004,7 +2035,7 @@ static int parse_lf_structure(SLF_STRUCTURE *lf_structure, uint8_t *leaf_data, u
 }
 
 static int parse_lf_structure_19(SLF_STRUCTURE_19 *lf_structure, uint8_t *leaf_data, unsigned int *read_bytes, unsigned int len) {
-	//	SLF_STRUCTURE lf_structure;
+	rz_return_val_if_fail(lf_structure && leaf_data, -1);
 	unsigned int tmp_before_read_bytes = *read_bytes;
 	unsigned int before_read_bytes = 0;
 
@@ -2014,8 +2045,6 @@ static int parse_lf_structure_19(SLF_STRUCTURE_19 *lf_structure, uint8_t *leaf_d
 	READ4(*read_bytes, len, lf_structure->derived, leaf_data, ut32);
 	READ4(*read_bytes, len, lf_structure->vshape, leaf_data, ut32);
 	READ2(*read_bytes, len, lf_structure->unknown1, leaf_data, st16);
-	// Why flipping ?? Works just right without it
-	// lf_structure->prop.cv_property = SWAP_UINT16(lf_structure->prop.cv_property);
 
 	before_read_bytes = *read_bytes;
 	parse_numeric(&lf_structure->size, leaf_data, read_bytes, len);
@@ -2032,14 +2061,12 @@ static int parse_lf_structure_19(SLF_STRUCTURE_19 *lf_structure, uint8_t *leaf_d
 	return *read_bytes - tmp_before_read_bytes;
 }
 
-///////////////////////////////////////////////////////////////////////////////
 static int parse_lf_pointer(SLF_POINTER *lf_pointer, uint8_t *leaf_data, unsigned int *read_bytes, unsigned int len) {
+	rz_return_val_if_fail(lf_pointer && leaf_data, -1);
 	unsigned int tmp_before_read_bytes = *read_bytes;
 
 	READ4(*read_bytes, len, lf_pointer->utype, leaf_data, ut32);
 	READ4(*read_bytes, len, lf_pointer->ptr_attr.ptr_attr, leaf_data, ut32);
-
-	// lf_pointer->ptr_attr.ptr_attr = SWAP_UINT32(lf_pointer->ptr_attr.ptr_attr);
 
 	PEEK_READ1(*read_bytes, len, lf_pointer->pad, leaf_data, ut8);
 	PAD_ALIGN(lf_pointer->pad, *read_bytes, leaf_data, len);
@@ -2047,8 +2074,8 @@ static int parse_lf_pointer(SLF_POINTER *lf_pointer, uint8_t *leaf_data, unsigne
 	return *read_bytes - tmp_before_read_bytes;
 }
 
-///////////////////////////////////////////////////////////////////////////////
 static int parse_lf_array(SLF_ARRAY *lf_array, uint8_t *leaf_data, unsigned int *read_bytes, unsigned int len) {
+	rz_return_val_if_fail(lf_array && leaf_data, -1);
 	unsigned int tmp_before_read_bytes = *read_bytes;
 	unsigned int before_read_bytes = 0;
 
@@ -2070,15 +2097,12 @@ static int parse_lf_array(SLF_ARRAY *lf_array, uint8_t *leaf_data, unsigned int 
 	return *read_bytes - tmp_before_read_bytes;
 }
 
-///////////////////////////////////////////////////////////////////////////////
 static int parse_lf_modifier(SLF_MODIFIER *lf_modifier, uint8_t *leaf_data, unsigned int *read_bytes, unsigned int len) {
+	rz_return_val_if_fail(lf_modifier && leaf_data, -1);
 	unsigned int tmp_before_read_bytes = *read_bytes;
 
 	READ4(*read_bytes, len, lf_modifier->modified_type, leaf_data, ut32);
 	READ2(*read_bytes, len, lf_modifier->umodifier.modifier, leaf_data, ut16);
-
-	// what is the reason for the swap vs modifying the bitfield so it is correct
-	// lf_modifier->umodifier.modifier = SWAP_UINT16(lf_modifier->umodifier.modifier);
 
 	PEEK_READ1(*read_bytes, len, lf_modifier->pad, leaf_data, ut8);
 	PAD_ALIGN(lf_modifier->pad, *read_bytes, leaf_data, len);
@@ -2086,8 +2110,8 @@ static int parse_lf_modifier(SLF_MODIFIER *lf_modifier, uint8_t *leaf_data, unsi
 	return *read_bytes - tmp_before_read_bytes;
 }
 
-///////////////////////////////////////////////////////////////////////////////
 static int parse_lf_arglist(SLF_ARGLIST *lf_arglist, uint8_t *leaf_data, unsigned int *read_bytes, unsigned int len) {
+	rz_return_val_if_fail(lf_arglist && leaf_data, -1);
 	unsigned int tmp_before_read_bytes = *read_bytes;
 
 	lf_arglist->arg_type = 0;
@@ -2108,8 +2132,8 @@ static int parse_lf_arglist(SLF_ARGLIST *lf_arglist, uint8_t *leaf_data, unsigne
 	return *read_bytes - tmp_before_read_bytes;
 }
 
-///////////////////////////////////////////////////////////////////////////////
 static int parse_lf_mfunction(SLF_MFUNCTION *lf_mfunction, uint8_t *leaf_data, unsigned int *read_bytes, unsigned int len) {
+	rz_return_val_if_fail(lf_mfunction && leaf_data, -1);
 	unsigned int tmp_before_read_bytes = *read_bytes;
 
 	READ4(*read_bytes, len, lf_mfunction->return_type, leaf_data, ut32);
@@ -2128,6 +2152,7 @@ static int parse_lf_mfunction(SLF_MFUNCTION *lf_mfunction, uint8_t *leaf_data, u
 }
 
 static int parse_lf_procedure(SLF_PROCEDURE *lf_procedure, uint8_t *leaf_data, unsigned int *read_bytes, unsigned int len) {
+	rz_return_val_if_fail(lf_procedure && leaf_data, -1);
 	unsigned int tmp_before_read_bytes = *read_bytes;
 
 	READ4(*read_bytes, len, lf_procedure->return_type, leaf_data, ut32);
@@ -2143,6 +2168,7 @@ static int parse_lf_procedure(SLF_PROCEDURE *lf_procedure, uint8_t *leaf_data, u
 }
 
 static int parse_lf_union(SLF_UNION *lf_union, uint8_t *leaf_data, unsigned int *read_bytes, unsigned int len) {
+	rz_return_val_if_fail(lf_union && leaf_data, -1);
 	unsigned int tmp_before_read_bytes = *read_bytes;
 	unsigned int before_read_bytes = 0;
 
@@ -2167,6 +2193,7 @@ static int parse_lf_union(SLF_UNION *lf_union, uint8_t *leaf_data, unsigned int 
 }
 
 static int parse_lf_bitfield(SLF_BITFIELD *lf_bitfield, uint8_t *leaf_data, unsigned int *read_bytes, unsigned int len) {
+	rz_return_val_if_fail(lf_bitfield && leaf_data, -1);
 	unsigned int tmp_before_read_bytes = *read_bytes;
 
 	READ4(*read_bytes, len, lf_bitfield->base_type, leaf_data, ut32);
@@ -2180,6 +2207,7 @@ static int parse_lf_bitfield(SLF_BITFIELD *lf_bitfield, uint8_t *leaf_data, unsi
 }
 
 static int parse_lf_vtshape(SLF_VTSHAPE *lf_vtshape, uint8_t *leaf_data, unsigned int *read_bytes, unsigned int len) {
+	rz_return_val_if_fail(lf_vtshape && leaf_data, -1);
 	unsigned int tmp_before_read_bytes = *read_bytes;
 	unsigned int size; // in bytes;
 
@@ -2214,7 +2242,6 @@ static int parse_lf_vtshape(SLF_VTSHAPE *lf_vtshape, uint8_t *leaf_data, unsigne
 		init_stype_info(&type->type_data); \
 	}
 
-///////////////////////////////////////////////////////////////////////////////
 static int parse_tpi_stypes(RZ_STREAM_FILE *stream, SType *type) {
 	uint8_t *leaf_data;
 	unsigned int read_bytes = 0;
@@ -2254,9 +2281,7 @@ static int parse_tpi_stypes(RZ_STREAM_FILE *stream, SType *type) {
 		parse_lf_pointer(lf, leaf_data + 2, &read_bytes, type->length);
 		type->type_data.type_info = (void *)lf;
 		init_stype_info(&type->type_data);
-	}
-	//		PARSE_LF(SLF_POINTER, lf_pointer);
-	break;
+	} break;
 	case eLF_ARRAY:
 		PARSE_LF(SLF_ARRAY, lf_array);
 		break;
@@ -2321,7 +2346,12 @@ int parse_tpi_stream(void *parsed_pdb_stream, RZ_STREAM_FILE *stream) {
 	return 1;
 }
 
-RZ_API SType *get_stype_by_index(ut32 index) {
+/**
+ * \brief Get SType that matches tpi stream index
+ *
+ * \param index TPI Stream Index
+ */
+RZ_API SType *rz_bin_pdb_stype_by_index(ut32 index) {
 	if (index == 0) {
 		return NULL;
 	}

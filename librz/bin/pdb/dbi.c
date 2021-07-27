@@ -8,7 +8,6 @@
 
 #define PDB_ALIGN 4
 
-///////////////////////////////////////////////////////////////////////////////
 static void free_dbi_stream(void *stream) {
 	SDbiStream *t = (SDbiStream *)stream;
 	SDBIExHeader *dbi_ex_header = 0;
@@ -23,7 +22,6 @@ static void free_dbi_stream(void *stream) {
 	rz_list_free(t->dbiexhdrs);
 }
 
-///////////////////////////////////////////////////////////////////////////////
 static void parse_dbi_header(SDBIHeader *dbi_header, RZ_STREAM_FILE *stream_file) {
 	stream_file_read(stream_file, sizeof(ut32), (char *)&dbi_header->magic);
 	stream_file_read(stream_file, sizeof(ut32), (char *)&dbi_header->version);
@@ -47,7 +45,6 @@ static void parse_dbi_header(SDBIHeader *dbi_header, RZ_STREAM_FILE *stream_file
 	stream_file_read(stream_file, sizeof(ut32), (char *)&dbi_header->resvd);
 }
 
-///////////////////////////////////////////////////////////////////////////////
 static int parse_ssymbol_range(char *data, int max_len, SSymbolRange *symbol_range) {
 	int read_bytes = 0;
 
@@ -66,7 +63,6 @@ static int parse_ssymbol_range(char *data, int max_len, SSymbolRange *symbol_ran
 	return read_bytes;
 }
 
-///////////////////////////////////////////////////////////////////////////////
 static int parse_dbi_ex_header(char *data, int max_len, SDBIExHeader *dbi_ex_header) {
 	ut32 read_bytes = 0, before_read_bytes = 0;
 
@@ -96,7 +92,6 @@ static int parse_dbi_ex_header(char *data, int max_len, SDBIExHeader *dbi_ex_hea
 	return read_bytes;
 }
 
-///////////////////////////////////////////////////////////////////////////////
 static void parse_dbg_header(SDbiDbgHeader *dbg_header, RZ_STREAM_FILE *stream_file) {
 	stream_file_read(stream_file, sizeof(short), (char *)&dbg_header->sn_fpo);
 	stream_file_read(stream_file, sizeof(short), (char *)&dbg_header->sn_exception);
@@ -111,12 +106,10 @@ static void parse_dbg_header(SDbiDbgHeader *dbg_header, RZ_STREAM_FILE *stream_f
 	stream_file_read(stream_file, sizeof(short), (char *)&dbg_header->sn_section_hdr_orig);
 }
 
-///////////////////////////////////////////////////////////////////////////////
 void init_dbi_stream(SDbiStream *dbi_stream) {
 	dbi_stream->free_ = free_dbi_stream;
 }
 
-///////////////////////////////////////////////////////////////////////////////
 void parse_dbi_stream(void *parsed_pdb_stream, RZ_STREAM_FILE *stream_file) {
 	SDbiStream *dbi_stream = (SDbiStream *)parsed_pdb_stream;
 	SDBIExHeader *dbi_ex_header = 0;

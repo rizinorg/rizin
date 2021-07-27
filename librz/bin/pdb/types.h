@@ -12,14 +12,12 @@
 
 // TODO: Move to a general macros in rz_util/rz_types
 
-///////////////////////////////////////////////////////////////////////////////
 #define GET_PAGE(pn, off, pos, page_size) \
 	{ \
 		(pn) = (pos) / (page_size); \
 		(off) = (pos) % (page_size); \
 	}
 
-///////////////////////////////////////////////////////////////////////////////
 #define READ_PAGES(start_indx, end_indx) \
 	{ \
 		for (i = start_indx; i < end_indx; i++) { \
@@ -29,13 +27,10 @@
 		} \
 	}
 
-///////////////////////////////////////////////////////////////////////////////
 #define SWAP_UINT16(x) (((x) >> 8) | ((x) << 8))
 
-///////////////////////////////////////////////////////////////////////////////
 #define SWAP_UINT32(x) (((x) >> 24) | (((x)&0x00FF0000) >> 8) | (((x)&0x0000FF00) << 8) | ((x) << 24))
 
-///////////////////////////////////////////////////////////////////////////////
 #define CAN_READ(curr_read_bytes, bytes_for_read, max_len) \
 	{ \
 		if ((((curr_read_bytes) + (bytes_for_read)) > (max_len))) { \
@@ -43,14 +38,12 @@
 		} \
 	}
 
-///////////////////////////////////////////////////////////////////////////////
 #define UPDATE_DATA(src, curr_read_bytes, bytes_for_read) \
 	{ \
 		(src) += (bytes_for_read); \
 		(curr_read_bytes) += (bytes_for_read); \
 	}
 
-///////////////////////////////////////////////////////////////////////////////
 #define PEEK_READ1(curr_read_bytes, max_len, dst, src, type_name) \
 	{ \
 		CAN_READ((curr_read_bytes), 1, (max_len)); \
@@ -71,7 +64,7 @@
 		CAN_READ((curr_read_bytes), 8, (max_len)); \
 		(dst) = (type_name)rz_read_le64(src); \
 	}
-///////////////////////////////////////////////////////////////////////////////
+
 #define READ1(curr_read_bytes, max_len, dst, src, type_name) \
 	{ \
 		PEEK_READ1((curr_read_bytes), (max_len), (dst), (src), type_name); \
@@ -96,7 +89,6 @@
 		UPDATE_DATA((src), (curr_read_bytes), 8); \
 	}
 
-///////////////////////////////////////////////////////////////////////////////
 #define PAD_ALIGN(pad, curr_read_bytes, src, max_len) \
 	{ \
 		int tmp = 0; \
@@ -216,6 +208,7 @@ typedef enum {
 	eT_NOTTRANS = 0x00000007,
 	eT_BIT = 0x00000060,
 	eT_PASCHAR = 0x00000061,
+	T_BOOL32FF = 0x00000062,
 
 	eT_CHAR = 0x00000010,
 	eT_PCHAR = 0x00000110,
@@ -248,6 +241,22 @@ typedef enum {
 	eT_32PWCHAR = 0x00000471,
 	eT_32PFWCHAR = 0x00000571,
 	eT_64PWCHAR = 0x00000671,
+
+	eT_CHAR16 = 0x0000007a, // 16-bit unicode char
+	eT_PCHAR16 = 0x0000017a, // 16 bit pointer to a 16-bit unicode char
+	eT_PFCHAR16 = 0x0000027a, // 16:16 far pointer to a 16-bit unicode char
+	eT_PHCHAR16 = 0x0000037a, // 16:16 huge pointer to a 16-bit unicode char
+	eT_32PCHAR16 = 0x0000047a, // 32 bit pointer to a 16-bit unicode char
+	eT_32PFCHAR16 = 0x0000057a, // 16:32 pointer to a 16-bit unicode char
+	eT_64PCHAR16 = 0x0000067a, // 64 bit pointer to a 16-bit unicode char
+
+	eT_CHAR32 = 0x0000007b, // 32-bit unicode char
+	eT_PCHAR32 = 0x0000017b, // 16 bit pointer to a 32-bit unicode char
+	eT_PFCHAR32 = 0x0000027b, // 16:16 far pointer to a 32-bit unicode char
+	eT_PHCHAR32 = 0x0000037b, // 16:16 huge pointer to a 32-bit unicode char
+	eT_32PCHAR32 = 0x0000047b, // 32 bit pointer to a 32-bit unicode char
+	eT_32PFCHAR32 = 0x0000057b, // 16:32 pointer to a 32-bit unicode char
+	eT_64PCHAR32 = 0x0000067b, // 64 bit pointer to a 32-bit unicode char
 
 	eT_BYTE = 0x00000068,
 	eT_PBYTE = 0x00000168,
@@ -393,6 +402,14 @@ typedef enum {
 	eT_32PFUINT128 = 0x00000579,
 	eT_64PUINT128 = 0x00000679,
 
+	eT_REAL16 = 0x00000046, // 16 bit real
+	eT_PREAL16 = 0x00000146, // 16 bit pointer to 16 bit real
+	eT_PFREAL16 = 0x00000246, // 16:16 far pointer to 16 bit real
+	eT_PHREAL16 = 0x00000346, // 16:16 huge pointer to 16 bit real
+	eT_32PREAL16 = 0x00000446, // 32 bit pointer to 16 bit real
+	eT_32PFREAL16 = 0x00000546, // 16:32 pointer to 16 bit real
+	eT_64PREAL16 = 0x00000646, // 64 bit pointer to 16 bit real
+
 	eT_REAL32 = 0x00000040,
 	eT_PREAL32 = 0x00000140,
 	eT_PFREAL32 = 0x00000240,
@@ -400,6 +417,14 @@ typedef enum {
 	eT_32PREAL32 = 0x00000440,
 	eT_32PFREAL32 = 0x00000540,
 	eT_64PREAL32 = 0x00000640,
+
+	eT_REAL32PP = 0x00000045, //PP real
+	eT_PREAL32PP = 0x00000145,
+	eT_PFREAL32PP = 0x00000245,
+	eT_PHREAL32PP = 0x00000345,
+	eT_32PREAL32PP = 0x00000445,
+	eT_32PFREAL32PP = 0x00000545,
+	eT_64PREAL32PP = 0x00000645,
 
 	eT_REAL48 = 0x00000044,
 	eT_PREAL48 = 0x00000144,
