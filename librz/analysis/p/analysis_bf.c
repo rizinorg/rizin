@@ -14,282 +14,282 @@ static int getid(char ch) {
 }
 
 /* New IL uplift bf */
-#define BF_ADDR_SIZE 64
+#define BF_ADDR_SIZE  64
 #define BF_ALIGN_SIZE 8
 
 struct bf_stack_t {
-        ut64 stack[32];
-        int sp;
+	ut64 stack[32];
+	int sp;
 };
 typedef struct bf_stack_t *BfStack;
 
 static void bf_syscall_read(RzILVM vm, RzILOp op) {
-        ut8 c = getc(stdin);
-        BitVector bv = rz_il_bv_new_from_ut32(BF_ALIGN_SIZE, c);
+	ut8 c = getc(stdin);
+	BitVector bv = rz_il_bv_new_from_ut32(BF_ALIGN_SIZE, c);
 
-        RzILVal ptr_val = rz_il_dump_value(rz_il_hash_find_val_by_name(vm, "ptr"));
+	RzILVal ptr_val = rz_il_dump_value(rz_il_hash_find_val_by_name(vm, "ptr"));
 
 	rz_il_vm_mem_store(vm, 0, ptr_val->data.bv, bv);
-        rz_il_free_value(ptr_val);
+	rz_il_free_value(ptr_val);
 }
 
 static void bf_syscall_write(RzILVM vm, RzILOp op) {
-        RzILVal ptr_val = rz_il_dump_value(rz_il_hash_find_val_by_name(vm, "ptr"));
+	RzILVal ptr_val = rz_il_dump_value(rz_il_hash_find_val_by_name(vm, "ptr"));
 
-        BitVector bv = rz_il_vm_mem_load(vm, 0, ptr_val->data.bv);
-        ut32 c = rz_il_bv_to_ut32(bv);
+	BitVector bv = rz_il_vm_mem_load(vm, 0, ptr_val->data.bv);
+	ut32 c = rz_il_bv_to_ut32(bv);
 
-        rz_il_free_value(ptr_val);
+	rz_il_free_value(ptr_val);
 	rz_il_bv_free(bv);
 
-        putchar(c);
+	putchar(c);
 }
 
 ut64 pop_astack(BfStack stack) {
-        if (stack->sp < 0) {
-                printf("Empty Stack\n");
-                return -1;
-        }
+	if (stack->sp < 0) {
+		printf("Empty Stack\n");
+		return -1;
+	}
 
-        ut64 ret = stack->stack[stack->sp];
-        stack->sp -= 1;
-        return ret;
+	ut64 ret = stack->stack[stack->sp];
+	stack->sp -= 1;
+	return ret;
 }
 
 void push_astack(BfStack stack, ut64 id) {
-        stack->sp += 1;
-        stack->stack[stack->sp] = id;
+	stack->sp += 1;
+	stack->stack[stack->sp] = id;
 }
 
 ut64 alloc_id(BfStack stack, ut64 addr) {
-        push_astack(stack, addr);
-        return addr;
+	push_astack(stack, addr);
+	return addr;
 }
 
 RzPVector *bf_right_arrow(RzILVM vm, ut64 id) {
-        // (set ptr (+ (val ptr) (int 1)))
-        RzILOp var = rz_il_new_op(RZIL_OP_VAR);
-        var->op.var->v = "ptr";
-        var->op.var->ret = 0;
+	// (set ptr (+ (val ptr) (int 1)))
+	RzILOp var = rz_il_new_op(RZIL_OP_VAR);
+	var->op.var->v = "ptr";
+	var->op.var->ret = 0;
 
-        RzILOp int_ = rz_il_new_op(RZIL_OP_INT);
-        int_->op.int_->length = BF_ADDR_SIZE;
-        int_->op.int_->value = 1;
-        int_->op.int_->ret = 1;
+	RzILOp int_ = rz_il_new_op(RZIL_OP_INT);
+	int_->op.int_->length = BF_ADDR_SIZE;
+	int_->op.int_->value = 1;
+	int_->op.int_->ret = 1;
 
-        RzILOp add = rz_il_new_op(RZIL_OP_ADD);
-        add->op.add->x = 0;
-        add->op.add->y = 1;
-        add->op.add->ret = 2;
+	RzILOp add = rz_il_new_op(RZIL_OP_ADD);
+	add->op.add->x = 0;
+	add->op.add->y = 1;
+	add->op.add->ret = 2;
 
-        RzILOp set = rz_il_new_op(RZIL_OP_SET);
-        set->op.set->x = 2;
-        set->op.set->v = "ptr";
-        set->op.set->ret = 3; // eff
+	RzILOp set = rz_il_new_op(RZIL_OP_SET);
+	set->op.set->x = 2;
+	set->op.set->v = "ptr";
+	set->op.set->ret = 3; // eff
 
-        RzILOp perform = rz_il_new_op(RZIL_OP_PERFORM);
-        perform->op.perform->eff = 3;
-        perform->op.perform->ret = -1; // no return;
+	RzILOp perform = rz_il_new_op(RZIL_OP_PERFORM);
+	perform->op.perform->eff = 3;
+	perform->op.perform->ret = -1; // no return;
 
-        RzPVector *oplist = rz_il_make_oplist_with_id(id, 5, var, int_, add, set, perform);
-        return oplist;
+	RzPVector *oplist = rz_il_make_oplist_with_id(id, 5, var, int_, add, set, perform);
+	return oplist;
 }
 
 RzPVector *bf_left_arrow(RzILVM vm, ut64 id) {
-        // (set ptr (- (val ptr) (int 1)))
-        RzILOp var = rz_il_new_op(RZIL_OP_VAR);
-        var->op.var->v = "ptr";
-        var->op.var->ret = 0;
+	// (set ptr (- (val ptr) (int 1)))
+	RzILOp var = rz_il_new_op(RZIL_OP_VAR);
+	var->op.var->v = "ptr";
+	var->op.var->ret = 0;
 
-        RzILOp int_ = rz_il_new_op(RZIL_OP_INT);
-        int_->op.int_->value = 1;
-        int_->op.int_->length = BF_ADDR_SIZE;
-        int_->op.int_->ret = 1;
+	RzILOp int_ = rz_il_new_op(RZIL_OP_INT);
+	int_->op.int_->value = 1;
+	int_->op.int_->length = BF_ADDR_SIZE;
+	int_->op.int_->ret = 1;
 
-        RzILOp sub = rz_il_new_op(RZIL_OP_SUB);
-        sub->op.add->x = 0;
-        sub->op.add->y = 1;
-        sub->op.add->ret = 2;
+	RzILOp sub = rz_il_new_op(RZIL_OP_SUB);
+	sub->op.add->x = 0;
+	sub->op.add->y = 1;
+	sub->op.add->ret = 2;
 
-        RzILOp set = rz_il_new_op(RZIL_OP_SET);
-        set->op.set->x = 2;
-        set->op.set->v = "ptr";
-        set->op.set->ret = 3; // eff
+	RzILOp set = rz_il_new_op(RZIL_OP_SET);
+	set->op.set->x = 2;
+	set->op.set->v = "ptr";
+	set->op.set->ret = 3; // eff
 
-        RzILOp perform = rz_il_new_op(RZIL_OP_PERFORM);
-        perform->op.perform->eff = 3;
-        perform->op.perform->ret = -1; // no return;
+	RzILOp perform = rz_il_new_op(RZIL_OP_PERFORM);
+	perform->op.perform->eff = 3;
+	perform->op.perform->ret = -1; // no return;
 
-        RzPVector *oplist = rz_il_make_oplist_with_id(id, 5, var, int_, sub, set, perform);
-        return oplist;
+	RzPVector *oplist = rz_il_make_oplist_with_id(id, 5, var, int_, sub, set, perform);
+	return oplist;
 }
 
 RzPVector *bf_inc(RzILVM vm, ut64 id) {
-        // (store mem (var ptr) (+ (load (var ptr)) (int 1)))
-        RzILOp var = rz_il_new_op(RZIL_OP_VAR);
-        var->op.var->v = "ptr";
-        var->op.var->ret = 0; // temp
+	// (store mem (var ptr) (+ (load (var ptr)) (int 1)))
+	RzILOp var = rz_il_new_op(RZIL_OP_VAR);
+	var->op.var->v = "ptr";
+	var->op.var->ret = 0; // temp
 
-        RzILOp load = rz_il_new_op(RZIL_OP_LOAD);
-        load->op.load->mem = 0; // the only mem in bf
-        load->op.load->key = 0;
-        load->op.load->ret = 1;
+	RzILOp load = rz_il_new_op(RZIL_OP_LOAD);
+	load->op.load->mem = 0; // the only mem in bf
+	load->op.load->key = 0;
+	load->op.load->ret = 1;
 
-        RzILOp int_ = rz_il_new_op(RZIL_OP_INT);
-        int_->op.int_->value = 1;
-        int_->op.int_->length = BF_ALIGN_SIZE;
-        int_->op.int_->ret = 2;
+	RzILOp int_ = rz_il_new_op(RZIL_OP_INT);
+	int_->op.int_->value = 1;
+	int_->op.int_->length = BF_ALIGN_SIZE;
+	int_->op.int_->ret = 2;
 
-        RzILOp add = rz_il_new_op(RZIL_OP_ADD);
-        add->op.add->x = 1;
-        add->op.add->y = 2;
-        add->op.add->ret = 3;
+	RzILOp add = rz_il_new_op(RZIL_OP_ADD);
+	add->op.add->x = 1;
+	add->op.add->y = 2;
+	add->op.add->ret = 3;
 
-        RzILOp var_2 = rz_il_new_op(RZIL_OP_VAR);
-        var_2->op.var->v = "ptr";
-        var_2->op.var->ret = 4;
+	RzILOp var_2 = rz_il_new_op(RZIL_OP_VAR);
+	var_2->op.var->v = "ptr";
+	var_2->op.var->ret = 4;
 
-        RzILOp store = rz_il_new_op(RZIL_OP_STORE);
-        store->op.store->mem = 0;
-        store->op.store->key = 4;
-        store->op.store->value = 3;
-        store->op.store->ret = -1;
+	RzILOp store = rz_il_new_op(RZIL_OP_STORE);
+	store->op.store->mem = 0;
+	store->op.store->key = 4;
+	store->op.store->value = 3;
+	store->op.store->ret = -1;
 
-        RzPVector *oplist = rz_il_make_oplist_with_id(id, 6, var, load, int_, add, var_2, store);
-        return oplist;
+	RzPVector *oplist = rz_il_make_oplist_with_id(id, 6, var, load, int_, add, var_2, store);
+	return oplist;
 }
 
 RzPVector *bf_dec(RzILVM vm, ut64 id) {
-        // (store mem (var ptr) (- (load (var ptr)) (int 1)))
-        RzILOp var = rz_il_new_op(RZIL_OP_VAR);
-        var->op.var->v = "ptr";
-        var->op.var->ret = 0; // temp
+	// (store mem (var ptr) (- (load (var ptr)) (int 1)))
+	RzILOp var = rz_il_new_op(RZIL_OP_VAR);
+	var->op.var->v = "ptr";
+	var->op.var->ret = 0; // temp
 
-        RzILOp load = rz_il_new_op(RZIL_OP_LOAD);
-        load->op.load->mem = 0; // the only mem in bf
-        load->op.load->key = 0;
-        load->op.load->ret = 1;
+	RzILOp load = rz_il_new_op(RZIL_OP_LOAD);
+	load->op.load->mem = 0; // the only mem in bf
+	load->op.load->key = 0;
+	load->op.load->ret = 1;
 
-        RzILOp int_ = rz_il_new_op(RZIL_OP_INT);
-        int_->op.int_->value = 1;
-        int_->op.int_->length = BF_ALIGN_SIZE;
-        int_->op.int_->ret = 2;
+	RzILOp int_ = rz_il_new_op(RZIL_OP_INT);
+	int_->op.int_->value = 1;
+	int_->op.int_->length = BF_ALIGN_SIZE;
+	int_->op.int_->ret = 2;
 
-        RzILOp sub = rz_il_new_op(RZIL_OP_SUB);
-        sub->op.sub->x = 1;
-        sub->op.sub->y = 2;
-        sub->op.sub->ret = 3;
+	RzILOp sub = rz_il_new_op(RZIL_OP_SUB);
+	sub->op.sub->x = 1;
+	sub->op.sub->y = 2;
+	sub->op.sub->ret = 3;
 
-        RzILOp var_2 = rz_il_new_op(RZIL_OP_VAR);
-        var_2->op.var->v = "ptr";
-        var_2->op.var->ret = 4;
+	RzILOp var_2 = rz_il_new_op(RZIL_OP_VAR);
+	var_2->op.var->v = "ptr";
+	var_2->op.var->ret = 4;
 
-        RzILOp store = rz_il_new_op(RZIL_OP_STORE);
-        store->op.store->mem = 0;
-        store->op.store->key = 4;
-        store->op.store->value = 3;
-        store->op.store->ret = -1;
+	RzILOp store = rz_il_new_op(RZIL_OP_STORE);
+	store->op.store->mem = 0;
+	store->op.store->key = 4;
+	store->op.store->value = 3;
+	store->op.store->ret = -1;
 
-        RzPVector *oplist = rz_il_make_oplist_with_id(id, 6, var, load, int_, sub, var_2, store);
-        return oplist;
+	RzPVector *oplist = rz_il_make_oplist_with_id(id, 6, var, load, int_, sub, var_2, store);
+	return oplist;
 }
 
 RzPVector *bf_out(RzILVM vm, ut64 id) {
-        // (goto write)
-        RzILOp goto_ = rz_il_new_op(RZIL_OP_GOTO);
-        RzILOp perform = rz_il_new_op(RZIL_OP_PERFORM);
-        goto_->op.goto_->ret_ctrl_eff = 0;
-        goto_->op.goto_->lbl = "write";
+	// (goto write)
+	RzILOp goto_ = rz_il_new_op(RZIL_OP_GOTO);
+	RzILOp perform = rz_il_new_op(RZIL_OP_PERFORM);
+	goto_->op.goto_->ret_ctrl_eff = 0;
+	goto_->op.goto_->lbl = "write";
 
-        perform->op.perform->eff = 0;
-        perform->op.perform->ret = -1;
+	perform->op.perform->eff = 0;
+	perform->op.perform->ret = -1;
 
-        RzPVector *oplist = rz_il_make_oplist_with_id(id, 2, goto_, perform);
-        return oplist;
+	RzPVector *oplist = rz_il_make_oplist_with_id(id, 2, goto_, perform);
+	return oplist;
 }
 
 RzPVector *bf_in(RzILVM vm, ut64 id) {
-        // (goto hook_read)
-        RzILOp goto_ = rz_il_new_op(RZIL_OP_GOTO);
-        goto_->op.goto_->ret_ctrl_eff = 0;
-        goto_->op.goto_->lbl = "read";
+	// (goto hook_read)
+	RzILOp goto_ = rz_il_new_op(RZIL_OP_GOTO);
+	goto_->op.goto_->ret_ctrl_eff = 0;
+	goto_->op.goto_->lbl = "read";
 
-        RzILOp perform = rz_il_new_op(RZIL_OP_PERFORM);
-        perform->op.perform->eff = 0;
-        perform->op.perform->ret = -1;
+	RzILOp perform = rz_il_new_op(RZIL_OP_PERFORM);
+	perform->op.perform->eff = 0;
+	perform->op.perform->ret = -1;
 
-        RzPVector *oplist = rz_il_make_oplist_with_id(id, 2, goto_, perform);
-        return oplist;
+	RzPVector *oplist = rz_il_make_oplist_with_id(id, 2, goto_, perform);
+	return oplist;
 }
 
 RzPVector *bf_llimit(RzILVM vm, BfStack assistant_stack, ut64 id, ut64 addr) {
-        // (perform (branch (load mem (var ptr))
-        //                  (do nothing)
-        //                  (goto ]))
-        string lbl_name;
-        EffectLabel target_label;
-        ut64 lable_count_id = alloc_id(assistant_stack, addr);
+	// (perform (branch (load mem (var ptr))
+	//                  (do nothing)
+	//                  (goto ]))
+	string lbl_name;
+	EffectLabel target_label;
+	ut64 lable_count_id = alloc_id(assistant_stack, addr);
 
-        // Create current label and goto target label
-        lbl_name = rz_str_newf("[%lld", lable_count_id);
+	// Create current label and goto target label
+	lbl_name = rz_str_newf("[%lld", lable_count_id);
 
 	// IMPORTANT : Analysis op will be entered multiple times
 	//           : prevent redundant operations
 	if (rz_il_vm_find_label_by_name(vm, lbl_name)) {
 		free(lbl_name);
 		return NULL;
-        }
+	}
 
 	// Normal create label
-        BitVector current_addr = rz_il_ut64_addr_to_bv(addr);
-        rz_il_vm_create_label(vm, lbl_name, current_addr);
-        free(lbl_name);
-        rz_il_free_bv_addr(current_addr);
+	BitVector current_addr = rz_il_ut64_addr_to_bv(addr);
+	rz_il_vm_create_label(vm, lbl_name, current_addr);
+	free(lbl_name);
+	rz_il_free_bv_addr(current_addr);
 
-        lbl_name = rz_str_newf("]%lld", lable_count_id);
-        target_label = rz_il_vm_create_label_lazy(vm, lbl_name);
-        free(lbl_name);
+	lbl_name = rz_str_newf("]%lld", lable_count_id);
+	target_label = rz_il_vm_create_label_lazy(vm, lbl_name);
+	free(lbl_name);
 
-        RzILOp var = rz_il_new_op(RZIL_OP_VAR);
-        RzILOp load = rz_il_new_op(RZIL_OP_LOAD);
-        RzILOp branch = rz_il_new_op(RZIL_OP_BRANCH);
-        RzILOp goto_ = rz_il_new_op(RZIL_OP_GOTO);
-        RzILOp perform = rz_il_new_op(RZIL_OP_PERFORM);
+	RzILOp var = rz_il_new_op(RZIL_OP_VAR);
+	RzILOp load = rz_il_new_op(RZIL_OP_LOAD);
+	RzILOp branch = rz_il_new_op(RZIL_OP_BRANCH);
+	RzILOp goto_ = rz_il_new_op(RZIL_OP_GOTO);
+	RzILOp perform = rz_il_new_op(RZIL_OP_PERFORM);
 
-        var->op.var->v = "ptr";
-        var->op.var->ret = 0;
+	var->op.var->v = "ptr";
+	var->op.var->ret = 0;
 
-        load->op.load->mem = 0;
-        load->op.load->key = 0;
-        load->op.load->ret = 1;
+	load->op.load->mem = 0;
+	load->op.load->key = 0;
+	load->op.load->ret = 1;
 
-        // goto ]
-        goto_->op.goto_->lbl = target_label->label_id;
-        goto_->op.goto_->ret_ctrl_eff = 2;
+	// goto ]
+	goto_->op.goto_->lbl = target_label->label_id;
+	goto_->op.goto_->ret_ctrl_eff = 2;
 
-        // branch
-        branch->op.branch->true_eff = -1; // do nothing
-        branch->op.branch->false_eff = 2; // goto ]
-        branch->op.branch->condition = 1; // (load mem (var ptr))
-        branch->op.branch->ret = 3;
+	// branch
+	branch->op.branch->true_eff = -1; // do nothing
+	branch->op.branch->false_eff = 2; // goto ]
+	branch->op.branch->condition = 1; // (load mem (var ptr))
+	branch->op.branch->ret = 3;
 
-        // perform
-        perform->op.perform->eff = 3;
-        perform->op.perform->ret = -1;
+	// perform
+	perform->op.perform->eff = 3;
+	perform->op.perform->ret = -1;
 
-        RzPVector *oplist = rz_il_make_oplist_with_id(id, 5, var, load, goto_, branch, perform);
-        return oplist;
+	RzPVector *oplist = rz_il_make_oplist_with_id(id, 5, var, load, goto_, branch, perform);
+	return oplist;
 }
 
 RzPVector *bf_rlimit(RzILVM vm, BfStack stack, ut64 id, ut64 addr) {
-        // (perform (branch (load mem (var ptr))
-        //                  (goto [)
-        //                  (do nothing))
-        string lbl_name;
-        EffectLabel target_label;
-        ut64 right_id = pop_astack(stack);
+	// (perform (branch (load mem (var ptr))
+	//                  (goto [)
+	//                  (do nothing))
+	string lbl_name;
+	EffectLabel target_label;
+	ut64 right_id = pop_astack(stack);
 
-        lbl_name = rz_str_newf("]%lld", right_id);
+	lbl_name = rz_str_newf("]%lld", right_id);
 
 	if (rz_il_hash_find_addr_by_lblname(vm, lbl_name)) {
 		// Has been created, do nothing
@@ -297,48 +297,48 @@ RzPVector *bf_rlimit(RzILVM vm, BfStack stack, ut64 id, ut64 addr) {
 		return NULL;
 	}
 
-        BitVector bv_addr = rz_il_ut64_addr_to_bv(addr);
-        rz_il_vm_update_label(vm, lbl_name, bv_addr); // this label has been created in previous
-        free(lbl_name);
-        rz_il_free_bv_addr(bv_addr);
+	BitVector bv_addr = rz_il_ut64_addr_to_bv(addr);
+	rz_il_vm_update_label(vm, lbl_name, bv_addr); // this label has been created in previous
+	free(lbl_name);
+	rz_il_free_bv_addr(bv_addr);
 
-        lbl_name = rz_str_newf("[%lld", right_id);
-        target_label = rz_il_vm_find_label_by_name(vm, lbl_name);
-        free(lbl_name);
+	lbl_name = rz_str_newf("[%lld", right_id);
+	target_label = rz_il_vm_find_label_by_name(vm, lbl_name);
+	free(lbl_name);
 
-        RzILOp var = rz_il_new_op(RZIL_OP_VAR);
-        RzILOp load = rz_il_new_op(RZIL_OP_LOAD);
-        RzILOp branch = rz_il_new_op(RZIL_OP_BRANCH);
-        RzILOp goto_ = rz_il_new_op(RZIL_OP_GOTO);
-        RzILOp perform = rz_il_new_op(RZIL_OP_PERFORM);
-        RzILOp inv = rz_il_new_op(RZIL_OP_INV);
+	RzILOp var = rz_il_new_op(RZIL_OP_VAR);
+	RzILOp load = rz_il_new_op(RZIL_OP_LOAD);
+	RzILOp branch = rz_il_new_op(RZIL_OP_BRANCH);
+	RzILOp goto_ = rz_il_new_op(RZIL_OP_GOTO);
+	RzILOp perform = rz_il_new_op(RZIL_OP_PERFORM);
+	RzILOp inv = rz_il_new_op(RZIL_OP_INV);
 
-        var->op.var->v = "ptr";
-        var->op.var->ret = 0;
+	var->op.var->v = "ptr";
+	var->op.var->ret = 0;
 
-        load->op.load->mem = 0;
-        load->op.load->key = 0;
-        load->op.load->ret = 1;
+	load->op.load->mem = 0;
+	load->op.load->key = 0;
+	load->op.load->ret = 1;
 
-        inv->op.inv->x = 1;
-        inv->op.inv->ret = 2;
+	inv->op.inv->x = 1;
+	inv->op.inv->ret = 2;
 
-        // goto [
-        goto_->op.goto_->lbl = target_label->label_id;
-        goto_->op.goto_->ret_ctrl_eff = 3;
+	// goto [
+	goto_->op.goto_->lbl = target_label->label_id;
+	goto_->op.goto_->ret_ctrl_eff = 3;
 
-        // branch
-        branch->op.branch->true_eff = -1; // do nothing
-        branch->op.branch->false_eff = 3; // goto [
-        branch->op.branch->condition = 2; // (inv (load mem (var ptr)))
-        branch->op.branch->ret = 4;
+	// branch
+	branch->op.branch->true_eff = -1; // do nothing
+	branch->op.branch->false_eff = 3; // goto [
+	branch->op.branch->condition = 2; // (inv (load mem (var ptr)))
+	branch->op.branch->ret = 4;
 
-        // perform
-        perform->op.perform->eff = 4;
-        perform->op.perform->ret = -1;
+	// perform
+	perform->op.perform->eff = 4;
+	perform->op.perform->ret = -1;
 
-        RzPVector *oplist = rz_il_make_oplist_with_id(id, 6, var, load, inv, goto_, branch, perform);
-        return oplist;
+	RzPVector *oplist = rz_il_make_oplist_with_id(id, 6, var, load, inv, goto_, branch, perform);
+	return oplist;
 }
 
 static int bf_vm_init(RzAnalysisRzil *rzil) {
@@ -346,17 +346,17 @@ static int bf_vm_init(RzAnalysisRzil *rzil) {
 
 	// load reg
 	// TODO use info of reg profile
-        rz_il_vm_add_reg(vm, "ptr", BF_ADDR_SIZE);
+	rz_il_vm_add_reg(vm, "ptr", BF_ADDR_SIZE);
 
-        BfStack astack = (BfStack)calloc(1, sizeof(struct bf_stack_t));
+	BfStack astack = (BfStack)calloc(1, sizeof(struct bf_stack_t));
 	rzil->user = astack;
 
-        EffectLabel read_label = rz_il_vm_create_label_lazy(vm, "read");
-        EffectLabel write_label = rz_il_vm_create_label_lazy(vm, "write");
-        read_label->addr = (void *)bf_syscall_read;
-        write_label->addr = (void *)bf_syscall_write;
-        read_label->type = EFFECT_LABEL_SYSCALL;
-        write_label->type = EFFECT_LABEL_HOOK;
+	EffectLabel read_label = rz_il_vm_create_label_lazy(vm, "read");
+	EffectLabel write_label = rz_il_vm_create_label_lazy(vm, "write");
+	read_label->addr = (void *)bf_syscall_read;
+	write_label->addr = (void *)bf_syscall_write;
+	read_label->type = EFFECT_LABEL_SYSCALL;
+	write_label->type = EFFECT_LABEL_HOOK;
 
 	return 0;
 }
@@ -369,21 +369,21 @@ static int bf_vm_fini(RzAnalysisRzil *rzil) {
 }
 
 static void bf_init_rzil(RzAnalysis *analysis, ut64 addr) {
-        int addrsize = 64;
-        int datasize = 8;
-        ut64 start_addr = addr;
+	int addrsize = 64;
+	int datasize = 8;
+	ut64 start_addr = addr;
 
-        int romem = true;
-        int stats = true;
-        int nonull = true;
+	int romem = true;
+	int stats = true;
+	int nonull = true;
 
-        RzAnalysisRzil *rzil;
-        if (!(rzil = rz_analysis_rzil_new())) {
-                return;
-        }
-        // init
-        rz_il_vm_init(rzil->vm, start_addr, addrsize, datasize);
-        rz_il_vm_add_reg(rzil->vm, "ptr", rzil->vm->addr_size);
+	RzAnalysisRzil *rzil;
+	if (!(rzil = rz_analysis_rzil_new())) {
+		return;
+	}
+	// init
+	rz_il_vm_init(rzil->vm, start_addr, addrsize, datasize);
+	rz_il_vm_add_reg(rzil->vm, "ptr", rzil->vm->addr_size);
 	rz_analysis_rzil_setup(analysis, rzil, romem, stats, nonull);
 	analysis->rzil = rzil;
 }
@@ -406,7 +406,7 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 	op->id = getid(buf[0]);
 	op->addr = addr;
 
-        BfStack stack_helper = analysis->rzil->user;
+	BfStack stack_helper = analysis->rzil->user;
 	RzILVM vm = analysis->rzil->vm;
 	RzPVector *oplist;
 
@@ -512,8 +512,8 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 		break;
 	}
 	if (oplist) {
-                rz_analysis_set_rzil_op(analysis->rzil, addr, oplist);
-        }
+		rz_analysis_set_rzil_op(analysis->rzil, addr, oplist);
+	}
 	return op->size;
 }
 
