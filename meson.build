@@ -7,7 +7,7 @@ project('rizin', 'c',
     'b_vscrt=from_buildtype',
   ]
 )
-
+add_project_arguments('-lxc++', language: 'c')
 py3_exe = import('python').find_installation()
 git_exe = find_program('git', required: false)
 pkgconfig_mod = import('pkgconfig')
@@ -124,6 +124,8 @@ if is_static_build
     endif
   endif
 endif
+
+add_project_arguments('-lxc++', language: 'c')
 
 if cc.has_argument('--std=gnu99')
   add_project_arguments('--std=gnu99', language: ['c', 'cpp'])

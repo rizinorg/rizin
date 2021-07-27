@@ -7,7 +7,7 @@
 #include <rz_demangler.h>
 #include <rz_util.h>
 #include <rz_util/rz_time.h>
-#include <rz_basefind.hpp>
+//#include <rz_basefind.h>
 #define is_in_range(at, from, sz) ((at) >= (from) && (at) < ((from) + (sz)))
 
 #define VA_FALSE    0
@@ -2439,7 +2439,7 @@ cleanup:
 	return result;
 }
 
-static void sections_headers_setup(RzCore *core, RzCmdStateOutput *state, RzList *hashes) {
+
 	RzListIter *iter;
 	char *hashname;
 
