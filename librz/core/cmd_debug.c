@@ -441,6 +441,11 @@ struct trace_node {
 	int refs;
 };
 
+static void htpp_string_free(HtPPKv *kv) {
+	free(kv->key);
+	free(kv->value);
+}
+
 // XXX those tmp files are never removed and we shuoldnt use files for this
 static void setRarunProfileString(RzCore *core, const char *str) {
 	char *file = rz_file_temp("rz-run");
@@ -4405,8 +4410,8 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 			case '-': // "dte-"
 				if (!strcmp(input + 3, "*")) {
 					if (core->analysis->esil) {
-						sdb_free(core->analysis->esil->trace->db);
-						core->analysis->esil->trace->db = sdb_new0();
+						ht_pp_free(core->analysis->esil->trace->ht_db);
+						core->analysis->esil->trace->ht_db = ht_pp_new((HtPPDupValue)strdup, htpp_string_free, (HtPPCalcSizeV)strlen);
 					}
 				} else {
 					eprintf("TODO: dte- cannot delete specific logs. Use dte-*\n");
@@ -4417,15 +4422,16 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 				rz_analysis_esil_trace_show(
 					core->analysis->esil, idx);
 			} break;
+			// FIXME : should we mark this deprecated ?
 			case 'k': // "dtek"
-				if (input[3] == ' ') {
-					char *s = sdb_querys(core->analysis->esil->trace->db,
-						NULL, 0, input + 4);
-					rz_cons_println(s);
-					free(s);
-				} else {
-					eprintf("Usage: dtek [query]\n");
-				}
+				//				if (input[3] == ' ') {
+				//					char *s = sdb_querys(core->analysis->esil->trace->db,
+				//						NULL, 0, input + 4);
+				//					rz_cons_println(s);
+				//					free(s);
+				//				} else {
+				//					eprintf("Usage: dtek [query]\n");
+				//				}
 				break;
 			default:
 				rz_core_cmd_help(core, help_msg_dte);
