@@ -4,7 +4,7 @@
 
 #include <rz_analysis.h>
 
-#define DB                   esil->trace->db
+#define DB                   esil->trace->ht_db
 #define KEY(x)               sdb_fmt("%d." x, esil->trace->idx)
 #define KEYAT(x, y)          sdb_fmt("%d." x ".0x%" PFMT64x, esil->trace->idx, y)
 #define KEYREG(x, y)         sdb_fmt("%d." x ".%s", esil->trace->idx, y)
@@ -18,9 +18,43 @@ static void htup_vector_free(HtUPKv *kv) {
 	rz_vector_free(kv->value);
 }
 
+static void htpp_string_free(HtPPKv *kv) {
+	free(kv->key);
+	free(kv->value);
+}
+
+RZ_API void ht_db_array_add(HtPP *db, const char *key, const char *val) {
+	;
+}
+
+RZ_API void ht_db_array_add_num(HtPP *db, const char *key, ut64 val) {
+	;
+}
+
+RZ_API void ht_db_num_set(HtPP *db, const char *key, ut64 v) {
+	;
+}
+
+RZ_API void ht_db_set(HtPP *db, const char *key, const char *val) {
+	;
+}
+
+RZ_API char *ht_db_const_get(HtPP *db, const char *key) {
+	return NULL;
+}
+
+RZ_API int ht_db_num_get(HtPP *db, const char *key) {
+	return 0;
+}
+
+RZ_API bool ht_db_array_contains(HtPP *db, const char *key, const char *val) {
+	return true;
+}
+
 RZ_API RzAnalysisEsilTrace *rz_analysis_esil_trace_new(RzAnalysisEsil *esil) {
 	rz_return_val_if_fail(esil && esil->stack_addr && esil->stack_size, NULL);
 	size_t i;
+	Sdb *sdb;
 	RzAnalysisEsilTrace *trace = RZ_NEW0(RzAnalysisEsilTrace);
 	if (!trace) {
 		return NULL;
@@ -33,8 +67,8 @@ RZ_API RzAnalysisEsilTrace *rz_analysis_esil_trace_new(RzAnalysisEsil *esil) {
 	if (!trace->memory) {
 		goto error;
 	}
-	trace->db = sdb_new0();
-	if (!trace->db) {
+	trace->ht_db = ht_pp_new((HtPPDupValue)strdup, htpp_string_free, (HtPPCalcSizeV)strlen);
+	if (!trace->ht_db) {
 		goto error;
 	}
 	// Save initial ESIL stack memory
@@ -74,7 +108,7 @@ RZ_API void rz_analysis_esil_trace_free(RzAnalysisEsilTrace *trace) {
 			rz_reg_arena_free(trace->arena[i]);
 		}
 		free(trace->stack_data);
-		sdb_free(trace->db);
+		ht_pp_free(trace->ht_db);
 		RZ_FREE(trace);
 	}
 }
@@ -126,8 +160,8 @@ static int trace_hook_reg_read(RzAnalysisEsil *esil, const char *name, ut64 *res
 	if (ret) {
 		ut64 val = *res;
 		//eprintf ("[ESIL] REG READ %s 0x%08"PFMT64x"\n", name, val);
-		sdb_array_add(DB, KEY("reg.read"), name, 0);
-		sdb_num_set(DB, KEYREG("reg.read", name), val, 0);
+		ht_db_array_add(DB, KEY("reg.read"), name);
+		ht_db_num_set(DB, KEYREG("reg.read", name), val);
 	} //else {
 	//eprintf ("[ESIL] REG READ %s FAILED\n", name);
 	//}
@@ -137,8 +171,9 @@ static int trace_hook_reg_read(RzAnalysisEsil *esil, const char *name, ut64 *res
 static int trace_hook_reg_write(RzAnalysisEsil *esil, const char *name, ut64 *val) {
 	int ret = 0;
 	//eprintf ("[ESIL] REG WRITE %s 0x%08"PFMT64x"\n", name, *val);
-	sdb_array_add(DB, KEY("reg.write"), name, 0);
-	sdb_num_set(DB, KEYREG("reg.write", name), *val, 0);
+	ht_db_array_add(DB, KEY("reg.write"), name);
+	ht_db_num_set(DB, KEYREG("reg.read", name), val);
+
 	RzRegItem *ri = rz_reg_get(esil->analysis->reg, name, -1);
 	add_reg_change(esil->trace, esil->trace->idx + 1, ri, *val);
 	if (ocbs.hook_reg_write) {
@@ -156,9 +191,11 @@ static int trace_hook_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int le
 	if (esil->cb.mem_read) {
 		ret = esil->cb.mem_read(esil, addr, buf, len);
 	}
-	sdb_array_add_num(DB, KEY("mem.read"), addr, 0);
+
+	ht_db_array_add_num(DB, KEY("mem.read"), addr);
 	rz_hex_bin2str(buf, len, hexbuf);
-	sdb_set(DB, KEYAT("mem.read.data", addr), hexbuf, 0);
+	ht_db_set(DB, KEYAT("mem.read.data", addr), hexbuf);
+
 	//eprintf ("[ESIL] MEM READ 0x%08"PFMT64x" %s\n", addr, hexbuf);
 	free(hexbuf);
 
@@ -175,9 +212,9 @@ static int trace_hook_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf,
 	size_t i;
 	int ret = 0;
 	char *hexbuf = malloc((1 + len) * 3);
-	sdb_array_add_num(DB, KEY("mem.write"), addr, 0);
+	ht_db_array_add_num(DB, KEY("mem.write"), addr);
 	rz_hex_bin2str(buf, len, hexbuf);
-	sdb_set(DB, KEYAT("mem.write.data", addr), hexbuf, 0);
+	ht_db_set(DB, KEYAT("mem.write.data", addr), hexbuf);
 	//eprintf ("[ESIL] MEM WRITE 0x%08"PFMT64x" %s\n", addr, hexbuf);
 	free(hexbuf);
 	for (i = 0; i < len; i++) {
@@ -218,8 +255,8 @@ RZ_API void rz_analysis_esil_trace_op(RzAnalysisEsil *esil, RzAnalysisOp *op) {
 	}
 	ocbs = esil->cb;
 	ocbs_set = true;
-	sdb_num_set(DB, "idx", esil->trace->idx, 0);
-	sdb_num_set(DB, KEY("addr"), op->addr, 0);
+	ht_db_num_set(DB, "idx", esil->trace->idx);
+	ht_db_num_set(DB, KEY("addr"), op->addr);
 	RzRegItem *pc_ri = rz_reg_get(esil->analysis->reg, "PC", -1);
 	add_reg_change(esil->trace, esil->trace->idx, pc_ri, op->addr);
 	//	sdb_set (DB, KEY ("opcode"), op->mnemonic, 0);
@@ -358,12 +395,14 @@ RZ_API void rz_analysis_esil_trace_list(RzAnalysisEsil *esil) {
 	PrintfCallback p = esil->analysis->cb_printf;
 	SdbKv *kv;
 	SdbListIter *iter;
-	SdbList *list = sdb_foreach_list(esil->trace->db, true);
-	ls_sort(list, (SdbListComparator)cmp_strings_by_leading_number);
-	ls_foreach (list, iter, kv) {
-		p("%s=%s\n", sdbkv_key(kv), sdbkv_value(kv));
-	}
-	ls_free(list);
+
+	// TODO : foreach the hash table and sort
+	// SdbList *list = sdb_foreach_list(esil->trace->db, true);
+	// ls_sort(list, (SdbListComparator)cmp_strings_by_leading_number);
+	// ls_foreach (list, iter, kv) {
+	// 	p("%s=%s\n", sdbkv_key(kv), sdbkv_value(kv));
+	// }
+	// ls_free(list);
 }
 
 RZ_API void rz_analysis_esil_trace_show(RzAnalysisEsil *esil, int idx) {
@@ -377,13 +416,13 @@ RZ_API void rz_analysis_esil_trace_show(RzAnalysisEsil *esil, int idx) {
 	int trace_idx = esil->trace->idx;
 	esil->trace->idx = idx;
 
-	str2 = sdb_const_get(DB, KEY("addr"), 0);
+	str2 = ht_db_const_get(DB, KEY("addr"));
 	if (!str2) {
 		return;
 	}
 	p("ar PC = %s\n", str2);
 	/* registers */
-	str = sdb_const_get(DB, KEY("reg.read"), 0);
+	str = ht_db_const_get(DB, KEY("reg.read"));
 	if (str) {
 		char regname[32];
 		const char *next, *ptr = str;
@@ -394,7 +433,7 @@ RZ_API void rz_analysis_esil_trace_show(RzAnalysisEsil *esil, int idx) {
 				if (len < sizeof(regname)) {
 					memcpy(regname, ptr, len);
 					regname[len] = 0;
-					str2 = sdb_const_get(DB, KEYREG("reg.read", regname), 0);
+					str2 = ht_db_const_get(DB, KEYREG("reg.read", regname));
 					p("ar %s = %s\n", regname, str2);
 				} else {
 					eprintf("Invalid entry in reg.read\n");
@@ -404,7 +443,7 @@ RZ_API void rz_analysis_esil_trace_show(RzAnalysisEsil *esil, int idx) {
 		}
 	}
 	/* memory */
-	str = sdb_const_get(DB, KEY("mem.read"), 0);
+	str = ht_db_const_get(DB, KEY("mem.read"));
 	if (str) {
 		char addr[64];
 		const char *next, *ptr = str;
@@ -415,7 +454,7 @@ RZ_API void rz_analysis_esil_trace_show(RzAnalysisEsil *esil, int idx) {
 				if (len < sizeof(addr)) {
 					memcpy(addr, ptr, len);
 					addr[len] = 0;
-					str2 = sdb_const_get(DB, KEYAT("mem.read.data", rz_num_get(NULL, addr)), 0);
+					str2 = ht_db_const_get(DB, KEYAT("mem.read.data", rz_num_get(NULL, addr)));
 					p("wx %s @ %s\n", str2, addr);
 				} else {
 					eprintf("Invalid entry in reg.read\n");
