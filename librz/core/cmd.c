@@ -4002,7 +4002,6 @@ struct tsr2cmd_state {
 	TSTree *saved_tree;
 	bool log;
 	bool split_lines;
-	bool is_last_cmd;
 	TSNode substitute_cmd;
 };
 
@@ -4079,7 +4078,7 @@ static RzCmdStatus handle_ts_stmt(struct tsr2cmd_state *state, TSNode node);
 static RzCmdStatus handle_ts_stmt_tmpseek(struct tsr2cmd_state *state, TSNode node);
 static RzCmdStatus core_cmd_tsrzcmd(RzCore *core, const char *cstr, bool split_lines, bool log);
 
-static char *system_exec_stdin(int argc, char **argv, const ut8 *input, int input_len, int *length) {
+static char *system_exec_stdin(bool is_pipe, int argc, char **argv, const ut8 *input, int input_len, int *length) {
 	char *output = NULL;
 	if (!rz_subprocess_init()) {
 		RZ_LOG_ERROR("Cannot initialize subprocess.\n");
@@ -4094,8 +4093,8 @@ static char *system_exec_stdin(int argc, char **argv, const ut8 *input, int inpu
 		.envvals = NULL,
 		.env_size = 0,
 		.stdin_pipe = RZ_SUBPROCESS_PIPE_CREATE,
-		.stdout_pipe = RZ_SUBPROCESS_PIPE_CREATE,
-		.stderr_pipe = RZ_SUBPROCESS_PIPE_STDOUT,
+		.stdout_pipe = is_pipe ? RZ_SUBPROCESS_PIPE_CREATE : RZ_SUBPROCESS_PIPE_NONE,
+		.stderr_pipe = is_pipe ? RZ_SUBPROCESS_PIPE_STDOUT : RZ_SUBPROCESS_PIPE_NONE,
 	};
 
 	RzSubprocess *proc = rz_subprocess_start_opt(&opt);
@@ -4145,12 +4144,15 @@ static ut8 *core_cmd_raw_node(RzCore *core, struct tsr2cmd_state *state, TSNode 
  * */
 static RzCmdStatus core_cmd_pipe(RzCore *core, struct tsr2cmd_state *state, TSNode rizin_cmd, int argc, char **argv) {
 	int length = 0;
+	bool is_pipe = core->is_pipe;
+	core->is_pipe = true;
 	ut8 *bytes = core_cmd_raw_node(core, state, rizin_cmd, &length);
+	core->is_pipe = is_pipe;
 	if (!bytes) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	char *out = system_exec_stdin(argc, argv, bytes, length, &length);
+	char *out = system_exec_stdin(core->is_pipe, argc, argv, bytes, length, &length);
 	if (out) {
 		rz_cons_memcat(out, length);
 	}
@@ -5851,7 +5853,10 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(grep_stmt) {
 	TSNode command = ts_node_child_by_field_name(node, "command", strlen("command"));
 	TSNode arg = ts_node_child_by_field_name(node, "specifier", strlen("specifier"));
 	char *arg_str = ts_node_handle_arg(state, node, arg, 1);
+	bool is_pipe = state->core->is_pipe;
+	state->core->is_pipe = true;
 	RzCmdStatus res = handle_ts_stmt(state, command);
+	state->core->is_pipe = is_pipe;
 	RZ_LOG_DEBUG("grep_stmt specifier: '%s'\n", arg_str);
 	RzStrBuf *sb = rz_strbuf_new(arg_str);
 	rz_strbuf_prepend(sb, "~");

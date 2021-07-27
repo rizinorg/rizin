@@ -308,6 +308,7 @@ struct rz_core_t {
 	char *cmdqueue;
 	char *lastcmd;
 	bool is_lastcmd;
+	bool is_pipe;
 	char *cmdlog;
 	int cmdrepeat; // cmd.repeat
 	const char *cmdtimes; // cmd.times
