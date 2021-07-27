@@ -42,6 +42,10 @@ static int hook_NOP_mem_write(RzAnalysisRzil *rzil, ut64 addr, const ut8 *buf, i
  * \param mem_readonly int, is memory read only ?
  */
 RZ_API void rz_analysis_rzil_mem_ro(RzAnalysisRzil *rzil, int mem_readonly) {
+	if (!rzil) {
+		return;
+	}
+
 	if (mem_readonly) {
 		rzil->cb.hook_mem_write = hook_NOP_mem_write;
 	} else {

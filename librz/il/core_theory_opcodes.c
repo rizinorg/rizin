@@ -12,6 +12,11 @@ RzILOp rz_il_new_empty_op(void) {
 	return ret;
 }
 
+/**
+ * Create an empty core theory op, argument of the op should be set in analysis_[arch]
+ * @param code CoreTheoryOPCode, enum to specify the op type
+ * @return RzILOp, a pointer to an empty opcode instance
+ */
 RZ_API RzILOp rz_il_new_op(CoreTheoryOPCode code) {
 	RzILOp ret = (RzILOp)malloc(sizeof(struct RzILOp_t));
 	// TODO : Instruction id
@@ -95,6 +100,10 @@ RZ_API RzILOp rz_il_new_op(CoreTheoryOPCode code) {
 	return ret;
 }
 
+/**
+ * Free core theory opcode instance
+ * @param op RzILOp, pointer to opcode instance
+ */
 RZ_API void rz_il_free_op(RzILOp op) {
 	switch (op->code) {
 	case RZIL_OP_VAR:

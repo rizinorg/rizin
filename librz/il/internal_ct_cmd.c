@@ -21,6 +21,13 @@ static void free_bind_var_val(HtPPKv *kv) {
 	free(kv->key);
 }
 
+/**
+ * initiate an empty vm
+ * \param vm RzILVM, pointer to an empty vm
+ * \param start_addr ut64, initiation pc address
+ * \param addr_size int, size of the address in vm
+ * \param data_size int, size of the minimal data unit in vm
+ */
 RZ_API void rz_il_vm_init(RzILVM vm, ut64 start_addr, int addr_size, int data_size) {
 	vm->addr_size = addr_size;
 	vm->data_size = data_size;
@@ -120,6 +127,10 @@ RZ_API void rz_il_vm_init(RzILVM vm, ut64 start_addr, int addr_size, int data_si
 	vm->easy_debug = 0;
 }
 
+/**
+ * Close and clean vm
+ * \param vm RzILVM pointer to vm
+ */
 RZ_API void rz_il_vm_close(RzILVM vm) {
 	RzILVar var;
 
@@ -174,7 +185,12 @@ void rz_il_vm_step(RzILVM vm, RzILOp op) {
 	handler(vm, op);
 }
 
-// Step on original instruction
+/**
+ * Step on the instruction of the original arch
+ * the instruction will be translated to a vector of core theory ops
+ * \param vm RzILVM, pointer to vm
+ * \param op_list RzPVector*, pointer to the vector of core theory ops
+ */
 RZ_API void rz_il_vm_list_step(RzILVM vm, RzPVector *op_list) {
 	void **iter;
 	RzILOp cur_op;
@@ -195,18 +211,40 @@ RZ_API void rz_il_vm_list_step(RzILVM vm, RzPVector *op_list) {
 	vm->pc = next_pc;
 }
 
+/**
+ * Convert to bitvector from ut64
+ * similar API in librz/il/definition/bitvector.h
+ * \param addr ut64, an address
+ * \return BitVector, 64-bit bitvector
+ */
 RZ_API BitVector rz_il_ut64_addr_to_bv(ut64 addr) {
 	return rz_il_bv_new_from_ut64(64, addr);
 }
 
+/**
+ * Convert to ut64 from bitvector
+ * similar API in librz/il/definition/bitvector.h
+ * \param addr BitVector, a bitvector address
+ * \return ut64, the value of bitvector
+ */
 RZ_API ut64 rz_il_bv_addr_to_ut64(BitVector addr) {
 	return rz_il_bv_to_ut64(addr);
 }
 
+/**
+ * the same as rz_il_bv_free, free a bitvector address
+ * \param addr BitVector, a bitvector to free
+ */
 RZ_API void rz_il_free_bv_addr(BitVector addr) {
 	rz_il_bv_free(addr);
 }
 
+/**
+ * Add a memory in vm. We design this to support multiple memory in the future
+ * \param vm RzILVM, pointer to vm
+ * \param min_unit_size int, size of minimal unit of the vm
+ * \return Mem memory, return a pointer to the newly created memory
+ */
 RZ_API Mem rz_il_vm_add_mem(RzILVM vm, int min_unit_size) {
 	Mem mem = rz_il_new_mem(min_unit_size);
 	vm->mems[vm->mem_count] = mem;
@@ -398,6 +436,13 @@ void rz_il_vm_list_printer_step(RzPVector *op_list) {
 	}
 }
 
+/**
+ * Load data from memory by given key
+ * \param vm RzILVM, pointer to vm
+ * \param mem_index int, index to choose a memory
+ * \param key BitVector, aka address, a key to load data from memory
+ * \return val Bitvector, data at the address, has `vm->min_unit_size` length
+ */
 RZ_API BitVector rz_il_vm_mem_load(RzILVM vm, int mem_index, BitVector key) {
 	Mem m;
 
@@ -411,6 +456,15 @@ RZ_API BitVector rz_il_vm_mem_load(RzILVM vm, int mem_index, BitVector key) {
 	return NULL;
 }
 
+/**
+ * Store data to memory by key, will create a key-value pair
+ * or update the key-value pair if key existed.
+ * \param vm RzILVM pointer to vm
+ * \param mem_index int, index to choose a memory
+ * \param key BitVector, aka address, a key to load data from memory
+ * \return val Bitvector, data at the address, must have `vm->min_unit_size` length
+ * \return mem Mem, the memory you store data to
+ */
 RZ_API Mem rz_il_vm_mem_store(RzILVM vm, int mem_index, BitVector key, BitVector value) {
 	Mem m;
 
