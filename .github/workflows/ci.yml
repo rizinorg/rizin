@@ -205,6 +205,8 @@ jobs:
       env:
         ASAN: ${{ matrix.asan }}
         ASAN_OPTIONS: ${{ matrix.asan_options }}
+    - name: tmate
+      uses: mxschmitt/action-tmate@v3
     - name: Run tests
       if: matrix.run_tests && matrix.enabled
       run: |
@@ -216,7 +218,7 @@ jobs:
           export ASAN=1
         fi
         cd test
-        rz-test -L -o results.json
+        rz-test -L -o results.json db/formats/pe/65535sects
       env:
         ASAN: ${{ matrix.asan }}
         ASAN_OPTIONS: ${{ matrix.asan_options }}
