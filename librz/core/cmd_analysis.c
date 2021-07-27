@@ -5196,8 +5196,6 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 		}
 		break;
 	case 't': // "aet"
-		// BUG : aet? have the output "Unknown command, use aetr"
-		//      but there is no aetr command
 		switch (input[1]) {
 		case 's': // "aets"
 			switch (input[2]) {
@@ -5235,7 +5233,7 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 			}
 			break;
 		default:
-			eprintf("Unknown command. Use `aetr`.\n");
+			eprintf("Unknown command. Use `aets?`.\n");
 			break;
 		}
 		break;
