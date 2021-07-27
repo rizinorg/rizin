@@ -1016,7 +1016,11 @@ RZ_API int rz_run_config_env(RzRunProfile *p) {
 #if __WINDOWS__
 		eprintf("rz-run: libpath unsupported for this platform\n");
 #elif __HAIKU__
-		rz_sys_setenv("LIBRARY_PATH", p->_libpath);
+		char *orig = rz_sys_getenv("LIBRARY_PATH");
+		char *newlib = rz_str_newf("%s:%s", p->_libpath, orig);
+		rz_sys_setenv("LIBRARY_PATH", newlib);
+		free(newlib);
+		free(orig);
 #elif __APPLE__
 		rz_sys_setenv("DYLD_LIBRARY_PATH", p->_libpath);
 #else
