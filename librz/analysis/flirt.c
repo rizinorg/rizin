@@ -281,9 +281,6 @@ static int header_size = 0;
    pattern_size     : number of the leading pattern bytes
  */
 
-// XXX need more infos on compression of version 5 sigs
-// rz_inflate doesn't work with them
-
 #define RZ_FLIRT_NAME_MAX 1024
 
 typedef struct RzFlirtTailByte {
