@@ -24,7 +24,7 @@ static const char *gzerr(int n) {
 }
 
 /**
- * @brief inflare zlib compressed or gzipped, automatically accepts either the zlib or gzip format, and use MAX_WBITS as the window size logarithm.
+ * @brief inflate zlib compressed or gzipped, automatically accepts either the zlib or gzip format, and use MAX_WBITS as the window size logarithm.
  * @see rz_inflatew()
  */
 RZ_API ut8 *rz_inflate(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen) {
@@ -32,7 +32,7 @@ RZ_API ut8 *rz_inflate(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen
 }
 
 /**
- * @brief inflare zlib compressed or gzipped. The input must be a raw stream with no header or trailer.
+ * @brief inflate zlib compressed or gzipped. The input must be a raw stream with no header or trailer.
  * @see rz_inflatew()
  */
 RZ_API ut8 *rz_inflate_ignore_header(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen) {
@@ -40,7 +40,7 @@ RZ_API ut8 *rz_inflate_ignore_header(const ut8 *src, int srcLen, int *srcConsume
 }
 
 /**
- * \brief inflare zlib compressed or gzipped.
+ * \brief inflate zlib compressed or gzipped.
  * \param src source compressed bytes
  * \param srcLen source bytes length
  * \param srcConsumed comsumed source bytes length
