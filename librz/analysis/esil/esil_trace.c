@@ -24,37 +24,77 @@ static void htpp_string_free(HtPPKv *kv) {
 }
 
 RZ_API void ht_db_array_add(HtPP *db, const char *key, const char *val) {
-	;
+	const char *array_val = ht_db_const_get(db, key);
+	char *new_array_val = NULL;
+	if (!array_val) {
+		return;
+	}
+
+	int array_len = strlen(array_val);
+	int val_len = strlen(val);
+
+        // 1 for ',', 1 for NUL
+        int new_len = array_len + val_len + 1 + 1;
+	new_array_val = RZ_NEWS0(char, new_len);
+
+	if (!new_array_val) {
+		return;
+	}
+
+	// warning
+	memcpy(new_array_val, array_val, array_len);
+	new_array_val[array_len] = ',';
+	memcpy(new_array_val + array_len + 1, val, val_len);
+
+	ht_db_set(db, key, new_array_val);
 }
 
 RZ_API void ht_db_array_add_num(HtPP *db, const char *key, ut64 val) {
-	;
+        char buf[SDB_NUM_BUFSZ];
+        char *v = sdb_itoa(val, buf, SDB_NUM_BASE);
+        if (!ht_db_array_contains(db, key, v)) {
+                if (val < 256) {
+                        char *v = sdb_itoa(val, buf, 10);
+                        return ht_db_array_add(db, key, v);
+                }
+        }
 }
 
 RZ_API void ht_db_num_set(HtPP *db, const char *key, ut64 v) {
-	;
+        char *val, b[SDB_NUM_BUFSZ];
+        int numbase = sdb_num_base(ht_db_const_get(db, key));
+        val = sdb_itoa(v, b, numbase);
+        return ht_db_set(db, key, val);
 }
 
 RZ_API void ht_db_set(HtPP *db, const char *key, const char *val) {
-	;
+	ht_pp_update(db, key, (char *)val);
 }
 
-RZ_API char *ht_db_const_get(HtPP *db, const char *key) {
-	return NULL;
+RZ_API const char *ht_db_const_get(HtPP *db, const char *key) {
+	const char *val = ht_pp_find(db, key, NULL);
+	return val;
 }
 
-RZ_API int ht_db_num_get(HtPP *db, const char *key) {
-	return 0;
+RZ_API ut64 ht_db_num_get(HtPP *db, const char *key) {
+	const char *v = ht_db_const_get(db, key);
+	return (!v || *v == '-') ? 0LL : sdb_atoi(v);
 }
 
 RZ_API bool ht_db_array_contains(HtPP *db, const char *key, const char *val) {
-	return true;
+	const char *array_val = ht_db_const_get(db, key);
+	const char *found_start = NULL;
+
+	found_start = strstr(array_val, val);
+	if (found_start) {
+		return true;
+	}
+	return false;
 }
 
 RZ_API RzAnalysisEsilTrace *rz_analysis_esil_trace_new(RzAnalysisEsil *esil) {
 	rz_return_val_if_fail(esil && esil->stack_addr && esil->stack_size, NULL);
 	size_t i;
-	Sdb *sdb;
 	RzAnalysisEsilTrace *trace = RZ_NEW0(RzAnalysisEsilTrace);
 	if (!trace) {
 		return NULL;
@@ -172,7 +212,7 @@ static int trace_hook_reg_write(RzAnalysisEsil *esil, const char *name, ut64 *va
 	int ret = 0;
 	//eprintf ("[ESIL] REG WRITE %s 0x%08"PFMT64x"\n", name, *val);
 	ht_db_array_add(DB, KEY("reg.write"), name);
-	ht_db_num_set(DB, KEYREG("reg.read", name), val);
+	ht_db_num_set(DB, KEYREG("reg.read", name), *val);
 
 	RzRegItem *ri = rz_reg_get(esil->analysis->reg, name, -1);
 	add_reg_change(esil->trace, esil->trace->idx + 1, ri, *val);
@@ -392,9 +432,9 @@ RZ_API void rz_analysis_esil_trace_list(RzAnalysisEsil *esil) {
 		return;
 	}
 
-	PrintfCallback p = esil->analysis->cb_printf;
-	SdbKv *kv;
-	SdbListIter *iter;
+//	PrintfCallback p = esil->analysis->cb_printf;
+//	SdbKv *kv;
+//	SdbListIter *iter;
 
 	// TODO : foreach the hash table and sort
 	// SdbList *list = sdb_foreach_list(esil->trace->db, true);

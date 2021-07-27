@@ -1441,8 +1441,8 @@ RZ_API void ht_db_array_add(HtPP *db, const char *key, const char *val);
 RZ_API void ht_db_array_add_num(HtPP *db, const char *key, ut64 val);
 RZ_API void ht_db_num_set(HtPP *db, const char *key, ut64 v);
 RZ_API void ht_db_set(HtPP *db, const char *key, const char *val);
-RZ_API char *ht_db_const_get(HtPP *db, const char *key);
-RZ_API int ht_db_num_get(HtPP *db, const char *key);
+RZ_API const char *ht_db_const_get(HtPP *db, const char *key);
+RZ_API ut64 ht_db_num_get(HtPP *db, const char *key);
 RZ_API bool ht_db_array_contains(HtPP *db, const char *key, const char *val);
 
 /* trace */
