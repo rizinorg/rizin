@@ -10,8 +10,8 @@
 static char tmp_path[1000];
 
 #if __WINDOWS__
-static char *remove_cr(char *str) {
-	char *start = str;
+static char *remove_cr(ut8 *str) {
+	char *start = (char *)str;
 	while (*str) {
 		if (str[0] == '\r' &&
 			!(str - start >= 4 && !strncmp(str - 4, RZ_CONS_CLEAR_SCREEN, 4))) {
@@ -23,7 +23,7 @@ static char *remove_cr(char *str) {
 	return start;
 }
 #else
-#define remove_cr(x) (x)
+#define remove_cr(x) ((char *)(x))
 #endif
 
 const char *get_auxiliary_path(const char *s) {
@@ -227,7 +227,7 @@ bool test_stdoutstderr(void) {
 	RzSubprocessOutput *spo = rz_subprocess_drain(sp);
 	mu_assert_strcontains(remove_cr(spo->out), "Hello World\n", "stdout should be captured in out");
 	mu_assert_strcontains(remove_cr(spo->out), "This is on err\n", "stderr should be captured in out");
-	mu_assert_streq(spo->err, "", "stderr should not be intercepted");
+	mu_assert_streq(remove_cr(spo->err), "", "stderr should not be intercepted");
 	mu_assert_eq(spo->ret, 0, "return value is 0");
 	rz_subprocess_output_free(spo);
 	rz_subprocess_free(sp);

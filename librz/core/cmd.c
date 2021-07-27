@@ -4108,7 +4108,7 @@ static char *system_exec_stdin(int argc, char **argv, const ut8 *input, int inpu
 	rz_subprocess_stdin_write(proc, input, input_len);
 	rz_subprocess_wait(proc, UT64_MAX);
 
-	output = rz_subprocess_out(proc, length);
+	output = (char *)rz_subprocess_out(proc, length);
 	rz_subprocess_free(proc);
 	rz_subprocess_fini();
 

@@ -5,8 +5,8 @@
 #include <rz_cons.h>
 
 #if __WINDOWS__
-static char *remove_cr(char *str) {
-	char *start = str;
+static ut8 *remove_cr(ut8 *str) {
+	char *start = (char *)str;
 	while (*str) {
 		if (str[0] == '\r' &&
 			!(str - start >= 4 && !strncmp(str - 4, RZ_CONS_CLEAR_SCREEN, 4))) {
@@ -15,7 +15,7 @@ static char *remove_cr(char *str) {
 		}
 		str++;
 	}
-	return start;
+	return (ut8 *)start;
 }
 #else
 #define remove_cr(x) (x)
@@ -35,10 +35,8 @@ static RzSubprocessOutput *subprocess_runner(const char *file, const char *args[
 	if (out) {
 		out->timeout = r == RZ_SUBPROCESS_TIMEDOUT;
 	}
-#if __WINDOWS__
 	out->out = remove_cr(out->out);
 	out->err = remove_cr(out->err);
-#endif
 	rz_subprocess_free(proc);
 	return out;
 }
@@ -206,12 +204,12 @@ RZ_API bool rz_test_check_cmd_test(RzSubprocessOutput *out, RzCmdTest *test) {
 	}
 	const char *expect_out = test->expect.value;
 	const char *regexp_out = test->regexp_out.value;
-	if (expect_out && !rz_test_cmp_cmd_output(out->out, expect_out, regexp_out)) {
+	if (expect_out && !rz_test_cmp_cmd_output((char *)out->out, expect_out, regexp_out)) {
 		return false;
 	}
 	const char *expect_err = test->expect_err.value;
 	const char *regexp_err = test->regexp_err.value;
-	if (expect_err && !rz_test_cmp_cmd_output(out->err, expect_err, regexp_err)) {
+	if (expect_err && !rz_test_cmp_cmd_output((char *)out->err, expect_err, regexp_err)) {
 		return false;
 	}
 	return true;
@@ -256,7 +254,7 @@ RZ_API bool rz_test_check_json_test(RzSubprocessOutput *out, RzJsonTest *test) {
 	}
 	const char *args[] = { "." };
 	RzSubprocess *proc = rz_subprocess_start(JQ_CMD, args, 1, NULL, NULL, 0);
-	rz_subprocess_stdin_write(proc, (const ut8 *)out->out, strlen(out->out));
+	rz_subprocess_stdin_write(proc, (const ut8 *)out->out, strlen((char *)out->out));
 	rz_subprocess_wait(proc, UT64_MAX);
 	bool ret = rz_subprocess_ret(proc) == 0;
 	rz_subprocess_free(proc);
@@ -311,7 +309,7 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 		if (rz_subprocess_ret(proc) != 0) {
 			goto rip;
 		}
-		char *hex = remove_cr(rz_subprocess_out(proc, NULL));
+		char *hex = (char *)remove_cr(rz_subprocess_out(proc, NULL));
 		size_t hexlen = strlen(hex);
 		if (!hexlen) {
 			goto rip;
@@ -345,7 +343,7 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 		if (rz_subprocess_ret(proc) != 0) {
 			goto ship;
 		}
-		char *disasm = remove_cr(rz_subprocess_out(proc, NULL));
+		char *disasm = (char *)remove_cr(rz_subprocess_out(proc, NULL));
 		rz_str_trim(disasm);
 		out->disasm = disasm;
 	ship:

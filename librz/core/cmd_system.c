@@ -157,7 +157,7 @@ static bool system_exec(RzCore *core, int argc, const char **argv, char **output
 	ret = rz_subprocess_ret(proc);
 
 	if (output) {
-		*output = rz_subprocess_out(proc, length);
+		*output = (char *)rz_subprocess_out(proc, length);
 	}
 
 	rz_subprocess_free(proc);

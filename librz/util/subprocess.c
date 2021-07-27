@@ -462,8 +462,8 @@ RZ_API RzSubprocessOutput *rz_subprocess_drain(RzSubprocess *proc) {
 	if (!out) {
 		return NULL;
 	}
-	out->out = rz_strbuf_drain_nofree(&proc->out);
-	out->err = rz_strbuf_drain_nofree(&proc->err);
+	out->out = rz_subprocess_out(proc, &out->out_len);
+	out->err = rz_subprocess_err(proc, &out->err_len);
 	out->ret = proc->ret;
 	return out;
 }
@@ -1026,8 +1026,8 @@ RZ_API RzSubprocessOutput *rz_subprocess_drain(RzSubprocess *proc) {
 	subprocess_lock();
 	RzSubprocessOutput *out = RZ_NEW(RzSubprocessOutput);
 	if (out) {
-		out->out = rz_strbuf_drain_nofree(&proc->out);
-		out->err = rz_strbuf_drain_nofree(&proc->err);
+		out->out = rz_subprocess_out(proc, &out->out_len);
+		out->err = rz_subprocess_err(proc, &out->err_len);
 		out->ret = proc->ret;
 		out->timeout = false;
 	}
@@ -1063,10 +1063,10 @@ RZ_API int rz_subprocess_ret(RzSubprocess *proc) {
 	return proc->ret;
 }
 
-RZ_API char *rz_subprocess_out(RzSubprocess *proc, int *length) {
+RZ_API ut8 *rz_subprocess_out(RzSubprocess *proc, int *length) {
 	int bin_len = 0;
 	const ut8 *bin = rz_strbuf_getbin(&proc->out, &bin_len);
-	char *buf = rz_str_newlen((const char *)bin, bin_len);
+	ut8 *buf = (ut8 *)rz_str_newlen((const char *)bin, bin_len);
 	if (length) {
 		*length = bin_len;
 	}
@@ -1074,10 +1074,10 @@ RZ_API char *rz_subprocess_out(RzSubprocess *proc, int *length) {
 	return buf;
 }
 
-RZ_API char *rz_subprocess_err(RzSubprocess *proc, int *length) {
+RZ_API ut8 *rz_subprocess_err(RzSubprocess *proc, int *length) {
 	int bin_len = 0;
 	const ut8 *bin = rz_strbuf_getbin(&proc->err, &bin_len);
-	char *buf = rz_str_newlen((const char *)bin, bin_len);
+	ut8 *buf = (ut8 *)rz_str_newlen((const char *)bin, bin_len);
 	if (length) {
 		*length = bin_len;
 	}
