@@ -1,11 +1,10 @@
 #include "bitvector.h"
 
-// Core idea : use ut8 to represent 8-bit long vector
-//           -> use ut8 array to implement bit vector
-
-// Assert 1 : only bitvector with the same length can be calculated together
-
-// init
+/**
+ * New a `length`-bits bitvector
+ * \param length int, the length of bitvector
+ * \return bv BitVector, pointer to the new bitvector instance
+ */
 RZ_API BitVector rz_il_bv_new(int length) {
 	BitVector ret = (BitVector)malloc(sizeof(struct bitvector_t));
 	if (ret == NULL) {
@@ -30,6 +29,10 @@ RZ_API BitVector rz_il_bv_new(int length) {
 	return ret;
 }
 
+/**
+ * Free a bitvector
+ * \param bv BitVector, pointer to the bitvector you want to free
+ */
 RZ_API void rz_il_bv_free(BitVector bv) {
 	if (bv && bv->bits) {
 		free(bv->bits);
@@ -40,6 +43,11 @@ RZ_API void rz_il_bv_free(BitVector bv) {
 	}
 }
 
+/**
+ * Dump a bitvector
+ * \param bv BitVector, pointer to the source bitvector
+ * \return dump BitVector, pointer to a new bitvector, which is a copy of source
+ */
 RZ_API BitVector rz_il_bv_dump(BitVector bv) {
 	// dump bv to a new one
 	if (!bv || !(bv->bits)) {
@@ -58,6 +66,13 @@ RZ_API BitVector rz_il_bv_dump(BitVector bv) {
 	return new_bv;
 }
 
+/**
+ * copy from source bitvector to destination bitvector
+ * the maximum copied size depends on MIN(src_len, dst_len)
+ * \param src BitVector, the source bitvector
+ * \param dst BitVector, the destination bitvector
+ * \return Actual size of copy
+ */
 RZ_API int rz_il_bv_copy(BitVector src, BitVector dst) {
 	if (!dst || !(dst->bits) || !src || !(src->bits)) {
 		return 0;
@@ -74,7 +89,15 @@ RZ_API int rz_il_bv_copy(BitVector src, BitVector dst) {
 	return dst->_elem_len;
 }
 
-// return copied size
+/**
+ * Copy n bits from start position of source to start position of dest
+ * \param src BitVector, data source
+ * \param src_start_pos int, start position in source bitvector of copy
+ * \param dst BitVector, destination of copy
+ * \param dst_start_pos int, start position in destination bitvector
+ * \param nbit int, control the size of copy (in bits)
+ * \return copied_size int, Actual copied size
+ */
 RZ_API int rz_il_bv_copy_nbits(
 	BitVector src, int src_start_pos,
 	BitVector dst, int dst_start_pos,
@@ -100,8 +123,13 @@ RZ_API int rz_il_bv_copy_nbits(
 	return nbit;
 }
 
-// Do not use this
-// use append/prepend/cuthead/cuttail instead
+/**
+ * Adjust bitvector to a new length
+ * TODO : remove this and replace with append/prepend/cut_head/cut_tail
+ * \param bv BitVector, pointer to bv need adjustment
+ * \param new_len int, target length
+ * \return ret BitVector, pointer to the new bitvector
+ */
 BitVector bv_adjust(BitVector bv, int new_len) {
 	if (!bv || !bv->bits) {
 		return NULL;
@@ -119,6 +147,12 @@ BitVector bv_adjust(BitVector bv, int new_len) {
 	return ret;
 }
 
+/**
+ * Prepend bv with n zero bits
+ * \param bv BitVector, pointer to bitvector instance
+ * \param delta_len int, the number of zero bits
+ * \return ret BitVector, pointer to the new bitvector instance
+ */
 RZ_API BitVector rz_il_bv_prepend_zero(BitVector bv, int delta_len) {
 	if (!bv || !bv->bits) {
 		return NULL;
@@ -137,6 +171,12 @@ RZ_API BitVector rz_il_bv_prepend_zero(BitVector bv, int delta_len) {
 	return ret;
 }
 
+/**
+ * Append bv with n zero bits
+ * \param bv BitVector, pointer to bitvector
+ * \param delta_len, the number of zero bits
+ * \return ret BitVector, pointert to the new btivector
+ */
 RZ_API BitVector rz_il_bv_append_zero(BitVector bv, int delta_len) {
 	if (!bv || !bv->bits) {
 		return NULL;
@@ -154,6 +194,12 @@ RZ_API BitVector rz_il_bv_append_zero(BitVector bv, int delta_len) {
 	return ret;
 }
 
+/**
+ * Cut n zero bits from head
+ * \param bv BitVector, pointer to bitvector
+ * \param delta_len, the number of zero bits
+ * \return ret BitVector, pointert to the new btivector
+ */
 RZ_API BitVector rz_il_bv_cut_head(BitVector bv, int delta_len) {
 	int new_len = bv->len - delta_len;
 	BitVector ret = rz_il_bv_new(new_len);
@@ -169,6 +215,12 @@ RZ_API BitVector rz_il_bv_cut_head(BitVector bv, int delta_len) {
 	return ret;
 }
 
+/**
+ * Cut n zero bits from tail
+ * \param bv BitVector, pointer to bitvector
+ * \param delta_len, the number of zero bits
+ * \return ret BitVector, pointert to the new btivector
+ */
 RZ_API BitVector rz_il_bv_cut_tail(BitVector bv, int delta_len) {
 	int new_len = bv->len - delta_len;
 	BitVector ret = rz_il_bv_new(new_len);
@@ -183,7 +235,12 @@ RZ_API BitVector rz_il_bv_cut_tail(BitVector bv, int delta_len) {
 	return ret;
 }
 
-// new_bv = bv1  bv2
+/**
+ * Concat bv1 and bv2 to get new bitvector
+ * \param bv1 BitVector
+ * \param bv2 BitVector
+ * \return ret BitVector, the new bitvector
+ */
 RZ_API BitVector rz_il_bv_concat(BitVector bv1, BitVector bv2) {
 	if (!bv1 || !bv2 || !bv1->bits || !bv2->bits) {
 		return NULL;
@@ -208,7 +265,13 @@ RZ_API BitVector rz_il_bv_concat(BitVector bv1, BitVector bv2) {
 	return ret;
 }
 
-// real set
+/**
+ * Set a bit at position to true or false
+ * \param bv BitVector, pointer to bv
+ * \param pos int, position
+ * \param b bit, true or false (set or unset)
+ * \return ret bool, bool value at `pos` after this operation
+ */
 RZ_API bool rz_il_bv_set(BitVector bv, int pos, bit b) {
 	if (b) {
 		(bv->bits)[pos / BV_ELEM_SIZE] |= (1u << (pos % BV_ELEM_SIZE));
@@ -219,6 +282,12 @@ RZ_API bool rz_il_bv_set(BitVector bv, int pos, bit b) {
 	return b;
 }
 
+/**
+ * Set all bits to true or false
+ * \param bv BitVector, pointer to bv
+ * \param b bit, true or false (set or unset)
+ * \return ret bool, bool value at every positions after this operation
+ */
 RZ_API bool rz_il_bv_set_all(BitVector bv, bit b) {
 	if (b) {
 		for (int i = 0; i < bv->len; ++i) {
@@ -233,6 +302,13 @@ RZ_API bool rz_il_bv_set_all(BitVector bv, bit b) {
 	return b;
 }
 
+/**
+ * Invert a bit at position
+ * \param bv BitVector, pointer to bv
+ * \param pos int, position
+ * \param b bit, true or false (set or unset)
+ * \return ret bool, bool value at `pos` after this operation
+ */
 RZ_API bool rz_il_bv_toggle(BitVector bv, int pos) {
 	bit cur_bit = rz_il_bv_get(bv, pos);
 	bit new_bit = cur_bit ? false : true;
@@ -240,6 +316,12 @@ RZ_API bool rz_il_bv_toggle(BitVector bv, int pos) {
 	return new_bit;
 }
 
+/**
+ * Invert every bits
+ * \param bv BitVector, pointer to bv
+ * \param b bit, true or false (set or unset)
+ * \return ret bool, bool value at every positions after this operation
+ */
 RZ_API bool rz_il_bv_toggle_all(BitVector bv) {
 	for (int i = 0; i < bv->_elem_len; ++i) {
 		(bv->bits)[i] = ~((bv->bits)[i]);
@@ -247,20 +329,46 @@ RZ_API bool rz_il_bv_toggle_all(BitVector bv) {
 	return true;
 }
 
+/**
+ * Get bit at position from bitvector
+ * \param bv BitVector, pointer to bv
+ * \param pos int, position
+ * \return ret bit, bool value of bit
+ */
 RZ_API bit rz_il_bv_get(BitVector bv, int pos) {
 	return ((bv->bits)[pos / BV_ELEM_SIZE] & (1u << (pos % BV_ELEM_SIZE))) ? true : false;
 }
 
-// logic operations
-
+/**
+ * Left shift bitvector (WARN : This operation will change the bitvector in argument)
+ * Fill with zero bits when shift
+ * \param bv BitVector, pointert to bv
+ * \param size int, shift bits
+ * \return flag bool, success or not
+ */
 RZ_API bool rz_il_bv_lshift(BitVector bv, int size) {
 	return rz_il_bv_lshift_fill(bv, size, false);
 }
 
+/**
+ * Right shift bitvector (WARN : This operation will change the bitvector in argument)
+ * Fill with zero bits when shift
+ * \param bv BitVector, pointert to bv
+ * \param size int, shift bits
+ * \return flag bool, success or not
+ */
 RZ_API bool rz_il_bv_rshift(BitVector bv, int size) {
 	return rz_il_bv_rshift_fill(bv, size, false);
 }
 
+/**
+ * Left shift bitvector (WARN : This operation will change the bitvector in argument)
+ * Fill the bitvector with `fill_bit`
+ * \param bv BitVector, pointert to bv
+ * \param size int, shift bits
+ * \param fill_bit bool, bit used in filling
+ * \return flag bool, success or not
+ */
 RZ_API bool rz_il_bv_lshift_fill(BitVector bv, int size, bool fill_bit) {
 	// left shift
 	if (size <= 0) {
@@ -289,6 +397,14 @@ RZ_API bool rz_il_bv_lshift_fill(BitVector bv, int size, bool fill_bit) {
 	return true;
 }
 
+/**
+ * Right shift bitvector (WARN : This operation will change the bitvector in argument)
+ * Fill the bitvector with `fill_bit`
+ * \param bv BitVector, pointert to bv
+ * \param size int, shift bits
+ * \param fill_bit bool, bit used in filling
+ * \return flag bool, success or not
+ */
 RZ_API bool rz_il_bv_rshift_fill(BitVector bv, int size, bool fill_bit) {
 	// left shift
 	if (size <= 0) {
@@ -317,6 +433,13 @@ RZ_API bool rz_il_bv_rshift_fill(BitVector bv, int size, bool fill_bit) {
 	return true;
 }
 
+/**
+ * Result of x AND y (`and` operation to every bits)
+ * x and y should have the same length
+ * \param x BitVector, operand
+ * \param y BitVector, operand
+ * \return ret BitVector, a new bitvector, which is the result of AND
+ */
 RZ_API BitVector rz_il_bv_and(BitVector x, BitVector y) {
 	if (x->len != y->len) {
 		return NULL;
@@ -329,6 +452,13 @@ RZ_API BitVector rz_il_bv_and(BitVector x, BitVector y) {
 	return ret;
 }
 
+/**
+ * Result of x OR y (`or` operation to every bits)
+ * x and y should have the same length
+ * \param x BitVector, operand
+ * \param y BitVector, operand
+ * \return ret BitVector, a new bitvector, which is the result of OR
+ */
 RZ_API BitVector rz_il_bv_or(BitVector x, BitVector y) {
 	if (x->len != y->len) {
 		return NULL;
@@ -341,6 +471,13 @@ RZ_API BitVector rz_il_bv_or(BitVector x, BitVector y) {
 	return ret;
 }
 
+/**
+ * Result of x XOR y (`xor` operation to every bits)
+ * x and y should have the same length
+ * \param x BitVector, operand
+ * \param y BitVector, operand
+ * \return ret BitVector, a new bitvector, which is the result of XOR
+ */
 RZ_API BitVector rz_il_bv_xor(BitVector x, BitVector y) {
 	if (x->len != y->len) {
 		return NULL;
@@ -353,6 +490,11 @@ RZ_API BitVector rz_il_bv_xor(BitVector x, BitVector y) {
 	return ret;
 }
 
+/**
+ * Get the 1's complement of bv
+ * \param bv BitVector, operand
+ * \return ret BitVector, a new bitvector, which is the 1's complement of bv
+ */
 RZ_API BitVector rz_il_bv_complement_1(BitVector bv) {
 	BitVector ret = rz_il_bv_new(bv->len);
 	int real_elem_cnt = bv->_elem_len;
@@ -362,6 +504,11 @@ RZ_API BitVector rz_il_bv_complement_1(BitVector bv) {
 	return ret;
 }
 
+/**
+ * Get the 2's complement of bv
+ * \param bv BitVector, operand
+ * \return ret BitVector, a new bitvector, which is the 2's complement of bv
+ */
 RZ_API BitVector rz_il_bv_complement_2(BitVector bv) {
 	// from right side to left, find the 1st 1 bit
 	// flip/toggle every bit before it
@@ -383,7 +530,12 @@ RZ_API BitVector rz_il_bv_complement_2(BitVector bv) {
 	return ret;
 }
 
-// arithmetic
+/**
+ * Result of (x + y) mod 2^length
+ * \param x BitVector, Operand
+ * \param y BitVector, Operand
+ * \return ret BitVector, point to the new bitvector
+ */
 RZ_API BitVector rz_il_bv_add(BitVector x, BitVector y) {
 	if (x->len != y->len) {
 		return NULL;
@@ -405,6 +557,12 @@ RZ_API BitVector rz_il_bv_add(BitVector x, BitVector y) {
 	return ret;
 }
 
+/**
+ * Result of (x - y) mod 2^length
+ * \param x BitVector, Operand
+ * \param y BitVector, Operand
+ * \return ret BitVector, point to the new bitvector
+ */
 RZ_API BitVector rz_il_bv_sub(BitVector x, BitVector y) {
 	BitVector ret;
 	BitVector neg_y;
@@ -415,6 +573,12 @@ RZ_API BitVector rz_il_bv_sub(BitVector x, BitVector y) {
 	return ret;
 }
 
+/**
+ * Result of (x * y) mod 2^length
+ * \param x BitVector, Operand
+ * \param y BitVector, Operand
+ * \return ret BitVector, point to the new bitvector
+ */
 RZ_API BitVector rz_il_bv_mul(BitVector x, BitVector y) {
 	BitVector result, dump, tmp;
 	bit cur_bit = false;
@@ -467,6 +631,12 @@ int bv_unsigned_cmp(BitVector x, BitVector y) {
 	return 0;
 }
 
+/**
+ * Result of (x / y) mod 2^length
+ * \param x BitVector, Operand
+ * \param y BitVector, Operand
+ * \return ret BitVector, point to the new bitvector
+ */
 RZ_API BitVector rz_il_bv_div(BitVector x, BitVector y) {
 	if (x->len != y->len) {
 		return NULL;
@@ -511,6 +681,12 @@ RZ_API BitVector rz_il_bv_div(BitVector x, BitVector y) {
 	return quotient;
 }
 
+/**
+ * Result of (x mod y) mod 2^length
+ * \param x BitVector, Operand
+ * \param y BitVector, Operand
+ * \return ret BitVector, point to the new bitvector
+ */
 RZ_API BitVector rz_il_bv_mod(BitVector x, BitVector y) {
 	if (x->len != y->len) {
 		return NULL;
@@ -548,17 +724,21 @@ RZ_API BitVector rz_il_bv_mod(BitVector x, BitVector y) {
 	return remainder;
 }
 
-/* *******************************************************************
- *                              /
-                             | div x y : if not mx /\ not my
-                             | neg (div (neg x) y) if mx /\ not my
-                 x sdiv y = <
-                             | neg (div x (neg y)) if not mx /\ my
-                             | div (neg x) (neg y) if mx /\ my
-                             \
-
-              where mx = msb x, and my = msb y.
- *********************************************************************/
+/**
+ * Result of (x / y) mod 2^length (signed algorithm)
+ *                               /
+ *                            | div x y : if not mx /\ not my
+ *                            | neg (div (neg x) y) if mx /\ not my
+ *                x sdiv y = <
+ *                            | neg (div x (neg y)) if not mx /\ my
+ *                            | div (neg x) (neg y) if mx /\ my
+ *                            \
+ *
+ *             where mx = msb x, and my = msb y.
+ * \param x BitVector, Operand
+ * \param y BitVector, Operand
+ * \return ret BitVector, point to the new bitvector
+ */
 RZ_API BitVector rz_il_bv_sdiv(BitVector x, BitVector y) {
 	bit mx = rz_il_bv_msb(x);
 	bit my = rz_il_bv_msb(y);
@@ -602,16 +782,21 @@ RZ_API BitVector rz_il_bv_sdiv(BitVector x, BitVector y) {
 	return NULL; // something wrong
 }
 
-/*
- *                            /
-                           | x % y : if not mx /\ not my
-                           | neg (neg x % y) if mx /\ not my
-            x smodulo y = <
-                           | neg (x % (neg y)) if not mx /\ my
-                           | neg (neg x % neg y) mod m if mx /\ my
-                           \
 
-            where mx = msb x  and my = msb y.
+/**
+ * Result of (x mod y) mod 2^length (signed algorithm)
+ *                            /
+ *                          | x % y : if not mx /\ not my
+ *                         | neg (neg x % y) if mx /\ not my
+ *           x smodulo y = <
+ *                          | neg (x % (neg y)) if not mx /\ my
+ *                          | neg (neg x % neg y) mod m if mx /\ my
+ *                          \
+ *
+ *           where mx = msb x  and my = msb y.
+ * \param x BitVector, Operand
+ * \param y BitVector, Operand
+ * \return ret BitVector, point to the new bitvector
  */
 RZ_API BitVector rz_il_bv_smod(BitVector x, BitVector y) {
 	bit mx = rz_il_bv_msb(x);
@@ -658,15 +843,24 @@ RZ_API BitVector rz_il_bv_smod(BitVector x, BitVector y) {
 	return NULL; // something wrong
 }
 
+/**
+ * Get the most significant bit of bitvector
+ * \param bv BitVector, operand
+ * \return b bit, bool value of MSB
+ */
 RZ_API bit rz_il_bv_msb(BitVector bv) {
 	return (bv->endian == BIG_ENDIAN ? rz_il_bv_get(bv, 0) : rz_il_bv_get(bv, bv->len - 1));
 }
 
+/**
+ * Get the least significant bit of bitvector
+ * \param bv BitVector, operand
+ * \return b bit, bool value of LSB
+ */
 RZ_API bit rz_il_bv_lsb(BitVector bv) {
 	return (bv->endian == BIG_ENDIAN ? rz_il_bv_get(bv, bv->len - 1) : rz_il_bv_get(bv, 0));
 }
 
-// we can use this to integerate with rizin's num
 char *bv_to_string(BitVector bv) {
 	char *ret = (char *)malloc(sizeof(char) * bv->len);
 	for (int i = 0; i < bv->len; ++i) {
@@ -675,6 +869,10 @@ char *bv_to_string(BitVector bv) {
 	return ret;
 }
 
+/**
+ * Print bitvector, debug function
+ * \param bv BitVector, pointer to bitvector
+ */
 RZ_API void rz_il_print_bv(BitVector bv) {
 	if (!bv) {
 		printf("Empty BV\n");
@@ -686,6 +884,11 @@ RZ_API void rz_il_print_bv(BitVector bv) {
 	putchar('\n');
 }
 
+/**
+ * Check if the bitvector is zero
+ * \param x BitVector, pointer to bv
+ * \return ret bool, return true if bv is a zero bitvector, false if not
+ */
 RZ_API bool rz_il_bv_is_zero_vector(BitVector x) {
 	for (int i = 0; i < x->_elem_len; ++i) {
 		if (x->bits[i] != 0) {
@@ -695,15 +898,47 @@ RZ_API bool rz_il_bv_is_zero_vector(BitVector x) {
 	return true;
 }
 
-// TODO : implement comparison
+/**
+ * Check if x <= y (as unsigned value)
+ * \param x BitVector, operand
+ * \param y BitVector, operand
+ * \return ret bool, return true if x <= y, else return false
+ */
 RZ_API bool rz_il_bv_ule(BitVector x, BitVector y) {
-	return true;
+	// x > y ? return false : return true
+	return bv_unsigned_cmp(x, y) > 0 ? false : true;
 }
 
+/**
+ * Check if x <= y (as signed value)
+ * \param x BitVector, operand
+ * \param y BitVector, operand
+ * \return ret bool, return true if x <= y, else return false
+ */
 RZ_API bool rz_il_bv_sle(BitVector x, BitVector y) {
-	return true;
+	int x_msb = rz_il_bv_msb(x);
+	int y_msb = rz_il_bv_lsb(y);
+
+	if (x_msb && y_msb) {
+		return !rz_il_bv_ule(x, y);
+	}
+
+	if (!x_msb && !y_msb) {
+		return rz_il_bv_ule(x, y);
+	}
+
+	// if x_msb set, y_msb unset => x < y
+	// if x_msb unset, y_msb set => x > y
+	// x != y when reaches here
+	return x_msb ? true : false;
 }
 
+/**
+ * Check if x equals to y
+ * \param x BitVector, operand
+ * \param y BitVector, operand
+ * \return ret int, return 1 if x != y, return 0 if x == y
+ */
 RZ_API int rz_il_bv_cmp(BitVector x, BitVector y) {
 	if (x->len != y->len) {
 		return 1;
@@ -718,10 +953,21 @@ RZ_API int rz_il_bv_cmp(BitVector x, BitVector y) {
 	return 0;
 }
 
+/**
+ * Get the length of bitvector
+ * \param bv BitVector
+ * \return len int, length of bitvector
+ */
 RZ_API int rz_il_bv_len(BitVector bv) {
 	return bv->len;
 }
 
+/**
+ * Convert ut32 to `length`-bits bitvector
+ * \param length int, length of bitvector
+ * \param value ut32, the value to convert
+ * \return bv BitVector, pointer to new bitvector
+ */
 RZ_API BitVector rz_il_bv_new_from_ut32(int length, ut32 value) {
 	BitVector bv = rz_il_bv_new(32);
 	BitVector ret;
@@ -751,6 +997,12 @@ RZ_API BitVector rz_il_bv_new_from_ut32(int length, ut32 value) {
 	return ret;
 }
 
+/**
+ * Convert ut64 to `length`-bits bitvector
+ * \param length int, length of bitvector
+ * \param value ut64, the value to convert
+ * \return bv BitVector, pointer to new bitvector
+ */
 RZ_API BitVector rz_il_bv_new_from_ut64(int length, ut64 value) {
 	BitVector bv = rz_il_bv_new(length);
 	BitVector ret;
@@ -807,6 +1059,11 @@ ut32 rz_il_bv_to_ut32(BitVector x) {
 	return ret;
 }
 
+/**
+ * Convert BitVector to ut64
+ * \param x BitVector, pointer to the bitvector
+ * \return ret ut64, num value of bitvector
+ */
 RZ_API ut64 rz_il_bv_to_ut64(BitVector x) {
 	ut64 ret = 0;
 	ut64 one = 0x1U;
