@@ -26,11 +26,11 @@ static bool check_buffer(RzBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	rz_return_val_if_fail(bf && bin_obj && buf, false);
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
+	rz_return_val_if_fail(bf && obj && buf, false);
 	rz_bin_le_obj_t *res = rz_bin_le_new_buf(buf);
 	if (res) {
-		*bin_obj = res;
+		obj->bin_obj = res;
 		return true;
 	}
 	return false;

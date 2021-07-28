@@ -268,7 +268,7 @@ RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *bf, RzBinPlugin *plugin, RzBinO
 	o->plugin = plugin;
 
 	if (plugin && plugin->load_buffer) {
-		if (!plugin->load_buffer(bf, &o->bin_obj, bf->buf, o->opts.loadaddr, sdb)) {
+		if (!plugin->load_buffer(bf, o, bf->buf, sdb)) {
 			if (bf->rbin->verbose) {
 				eprintf("Error in rz_bin_object_new: load_buffer failed for %s plugin\n", plugin->name);
 			}

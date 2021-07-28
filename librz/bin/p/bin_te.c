@@ -17,8 +17,8 @@ static Sdb *get_sdb(RzBinFile *bf) {
 	return bin ? bin->kv : NULL;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *b, ut64 loadaddr, Sdb *sdb) {
-	rz_return_val_if_fail(bf && bin_obj && b, false);
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *sdb) {
+	rz_return_val_if_fail(bf && obj && b, false);
 	ut64 sz = rz_buf_size(b);
 	if (sz == 0 || sz == UT64_MAX) {
 		return false;
@@ -27,7 +27,7 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *b, ut64 loadadd
 	if (res) {
 		sdb_ns_set(sdb, "info", res->kv);
 	}
-	*bin_obj = res;
+	obj->bin_obj = res;
 	return true;
 }
 

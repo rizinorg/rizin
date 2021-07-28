@@ -26,10 +26,10 @@ static bool check_buffer(RzBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *b, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *sdb) {
 	rz_buf_read_at(b, 0, (ut8 *)&loaded_header, sizeof(loaded_header));
-	*bin_obj = &loaded_header;
-	return (*bin_obj != NULL);
+	obj->bin_obj = &loaded_header;
+	return obj->bin_obj;
 }
 
 static ut64 baddr(RzBinFile *bf) {
