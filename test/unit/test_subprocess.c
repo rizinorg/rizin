@@ -11,14 +11,15 @@ static char tmp_path[1000];
 
 #if __WINDOWS__
 static char *remove_cr(ut8 *str) {
-	char *start = (char *)str;
-	while (*str) {
-		if (str[0] == '\r' &&
-			!(str - start >= 4 && !strncmp(str - 4, RZ_CONS_CLEAR_SCREEN, 4))) {
-			memmove(str, str + 1, strlen(str + 1) + 1);
+	char *s = (char *)str;
+	char *start = s;
+	while (*s) {
+		if (s[0] == '\r' &&
+			!(s - start >= 4 && !strncmp(s - 4, RZ_CONS_CLEAR_SCREEN, 4))) {
+			memmove(s, s + 1, strlen(s + 1) + 1);
 			continue;
 		}
-		str++;
+		s++;
 	}
 	return start;
 }
