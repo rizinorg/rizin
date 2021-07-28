@@ -367,6 +367,10 @@ RZ_IPI void rz_core_analysis_esil_emulate(RzCore *core, ut64 addr, ut64 until_ad
 
 RZ_IPI void rz_core_analysis_esil_emulate_bb(RzCore *core) {
 	RzAnalysisBlock *bb = rz_analysis_find_most_relevant_block_in(core->analysis, core->offset);
+	if (!bb) {
+		eprintf("Cannot find basic block for 0x%08" PFMT64x "\n", core->offset);
+		return;
+	}
 	rz_core_analysis_esil_emulate(core, bb->addr, UT64_MAX, bb->ninstr);
 }
 
