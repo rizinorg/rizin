@@ -177,7 +177,7 @@ static void rz_kernel_cache_free(RKernelCacheObj *obj);
 
 static RzList *pending_bin_files = NULL;
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, RzBinObject *o, RzBuffer *buf, Sdb *sdb) {
 	RzBuffer *fbuf = rz_buf_ref(buf);
 	struct MACH0_(opts_t) opts;
 	MACH0_(opts_set_default)
@@ -229,7 +229,7 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 	obj->pa2va_exec = prelink_range->pa2va_exec;
 	obj->pa2va_data = prelink_range->pa2va_data;
 
-	*bin_obj = obj;
+	o->bin_obj = obj;
 
 	rz_list_push(pending_bin_files, bf);
 

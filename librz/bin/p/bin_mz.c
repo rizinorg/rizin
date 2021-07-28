@@ -100,11 +100,11 @@ static bool check_buffer(RzBuffer *b) {
 	return true;
 }
 
-static bool load(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
 	struct rz_bin_mz_obj_t *mz_obj = rz_bin_mz_new_buf(buf);
 	if (mz_obj) {
 		sdb_ns_set(sdb, "info", mz_obj->kv);
-		*bin_obj = mz_obj;
+		obj->bin_obj = mz_obj;
 		return true;
 	}
 	return false;

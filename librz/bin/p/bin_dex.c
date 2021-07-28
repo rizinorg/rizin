@@ -709,9 +709,9 @@ static Sdb *get_sdb(RzBinFile *bf) {
 	return bin->kv;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	*bin_obj = rz_bin_dex_new_buf(buf);
-	return *bin_obj != NULL;
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
+	obj->bin_obj = rz_bin_dex_new_buf(buf);
+	return obj->bin_obj != NULL;
 }
 
 static ut64 baddr(RzBinFile *bf) {

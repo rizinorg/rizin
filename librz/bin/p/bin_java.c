@@ -36,12 +36,12 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return binfo;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	RzBinJavaClass *jclass = rz_bin_java_class_new(buf, loadaddr, sdb);
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
+	RzBinJavaClass *jclass = rz_bin_java_class_new(buf, obj->opts.loadaddr, sdb);
 	if (!jclass) {
 		return false;
 	}
-	*bin_obj = jclass;
+	obj->bin_obj = jclass;
 	return true;
 }
 
