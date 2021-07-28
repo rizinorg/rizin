@@ -59,12 +59,12 @@ typedef enum {
 	RZIL_OP_INVALID
 } CoreTheoryOPCode;
 
-// support core theory opcode
-/* define every CoreTheory opcode strucut ()*/
-// for example : ite in Ocaml
-//               val ite : bool -> 'a pure -> 'a pure -> 'a pure
-//               ite c x y is x if c evaluates to b1 else y.
-// they are defined in specific modules
+/// support core theory opcode
+/// define every CoreTheory opcode struct */
+/// for example : ite in Ocaml
+///               val ite : bool -> 'a pure -> 'a pure -> 'a pure
+///               ite c x y is x if c evaluates to b1 else y.
+/// they are defined in specific modules
 typedef struct rzil_op_ite_t *RzILOpIte;
 typedef struct rzil_op_var_t *RzILOpVar;
 typedef struct rzil_op_unk_t *RzILOpUnk;

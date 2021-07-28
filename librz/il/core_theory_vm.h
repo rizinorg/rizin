@@ -20,14 +20,14 @@ typedef void (*RzILVmHook)(RzILVM vm, RzILOp op);
 
 /**
  *  \struct rz_il_vm_t
- *  \brief core theory vm structure
+ *  \brief core theory VM structure
  */
 struct rz_il_vm_t {
 	RzILBag vm_global_value_set; ///< Store all RzILVal instance
 	RzILVar *vm_global_variable_list; ///< Store all RzILVar instance
 
-	Mem *mems; ///< Array of Memory, memory are actually hashmap in vm
-	int var_count, val_count, mem_count, lab_count; ///< count for vm predefined things
+	Mem *mems; ///< Array of Memory, memory are actually hashmap in VM
+	int var_count, val_count, mem_count, lab_count; ///< count for VM predefined things
 	int addr_size; ///< size of address
 	int data_size; ///< size of minimal data unit
 
@@ -38,7 +38,7 @@ struct rz_il_vm_t {
 
 	HtPP *ct_opcodes; ///< Hashtable to maintain address and opcodes
 
-	BitVector pc; ///< Program Counter of vm
+	BitVector pc; ///< Program Counter of VM
 
 	RzILOpHandler *op_handler_table; ///< Array of Handler, handler can be indexed by opcode
 

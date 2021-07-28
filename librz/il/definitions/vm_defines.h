@@ -8,8 +8,8 @@
 #include "bool.h"
 #include "rz_lib.h"
 
-// ========= Basic Struct ============
-// RzIL_PURE is only a mark to remind the developer
+/// The following RzIL_* is only a mark
+/// to remind developer the argument type in opcode struct
 #define RzIL_PURE_VAL
 #define RzIL_BITV
 #define RzIL_BOOL
@@ -51,6 +51,9 @@ typedef void (*RzILBagFreeFunc)(void *);
 /**
  *  \struct rz_il_bag_t
  *  \brief structure of RzILBag, used to store RzILVal instances and manage them
+ *
+ *  The main purpose of introducing RzILBag is to prevent excessive growth in the number of RzILVal
+ *  It's mainly used to clean up unused values during VM execution, and clean up values at the end
  */
 struct rz_il_bag_t {
 	void **data_list; ///< Space to carry pointers

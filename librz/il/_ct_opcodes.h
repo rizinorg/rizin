@@ -1,6 +1,31 @@
 // SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+/**
+ * @file _ct_opcodes.h
+ * @brief signatures of core theory opcodes
+ *
+ * Modular Hierarchy of the whole core theory
+ * (we implement the Minimal part only)
+ *                          o Core
+ *                            |
+ *             Trans o--------+--------o Float
+ *                            |        |
+ *                            o Basic  o FBasic
+ *                            |
+ *                            o Minimal
+ *                            |
+ *           +-------+--------+--------+-------+
+ *           |       |        |        |       |
+ *           o       o        o        o       o
+ *         Init    Bool     Bitv    Memory   Effect
+ *
+ * See also the references :
+ * 0. A gentle introduction to core theory http://binaryanalysisplatform.github.io/bap/api/odoc/bap-core-theory/Bap_core_theory/index.html
+ * 1. http://binaryanalysisplatform.github.io/bap/api/odoc/bap-core-theory/Bap_core_theory/Theory/index.html
+ * 2. For core and array theories https://smtlib.cs.uiowa.edu/theories.shtml
+ */
+
 #ifndef BUILD__CT_OPCODES_H
 #define BUILD__CT_OPCODES_H
 
