@@ -785,7 +785,6 @@ RZ_API BitVector rz_il_bv_sdiv(BitVector x, BitVector y) {
 	return NULL; // something wrong
 }
 
-
 /**
  * Result of (x mod y) mod 2^length (signed algorithm)
  *                            /

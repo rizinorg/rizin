@@ -10,11 +10,6 @@
 //      bool, RzILVal, BitVector => RzILVal array (the vm_global_value_list)
 //      RzVar => RzILVar array (vm_global_variable_list)
 //      DataEffect, CtrlEffect, Effect => Effect array (the vm_global_effects)
-
-// Bit Vector
-// What's the meaning of `int s x`
-// TODO : we can merge the structures which have the same
-//        members, and use the typedef to identify them
 struct rzil_op_int_t {
 	// int s x
 	int length; // sort (type) -- s

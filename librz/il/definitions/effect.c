@@ -118,9 +118,6 @@ void effect_free(Effect effect) {
 	free(effect);
 }
 
-// effect A <- effect B <- effect C <- NULL
-// if A then B else C
-// in MIPS will be
 void print_effect(Effect effect) {
 	if (!effect) {
 		return;

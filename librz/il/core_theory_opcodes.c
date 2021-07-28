@@ -5,7 +5,6 @@
 
 #define RZIL_OP_NEW(size) calloc(1, (size))
 
-// Opcode
 RzILOp rz_il_new_empty_op(void) {
 	RzILOp ret = (RzILOp)malloc(sizeof(struct RzILOp_t));
 	ret->id = 0;
@@ -22,7 +21,6 @@ RzILOp rz_il_new_empty_op(void) {
  */
 RZ_API RzILOp rz_il_new_op(CoreTheoryOPCode code) {
 	RzILOp ret = (RzILOp)malloc(sizeof(struct RzILOp_t));
-	// TODO : Instruction id
 	ret->id = 0;
 	ret->code = code;
 

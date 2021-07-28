@@ -449,7 +449,6 @@ RZ_API void rz_il_empty_temp(RzILVM vm, int index) {
  * \param vm, pointer to vm
  * \param temp, pointer to temporary value
  */
-// free the memory and empty it (set data to NULL)
 RZ_API void rz_il_clean_temp(RzILVM vm, RzILTemp temp) {
 	RZIL_TEMP_TYPE type = temp->type;
 	switch (type) {

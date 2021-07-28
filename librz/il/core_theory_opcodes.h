@@ -65,7 +65,6 @@ typedef enum {
 //               val ite : bool -> 'a pure -> 'a pure -> 'a pure
 //               ite c x y is x if c evaluates to b1 else y.
 // they are defined in specific modules
-// TODO : Add More
 typedef struct rzil_op_ite_t *RzILOpIte;
 typedef struct rzil_op_var_t *RzILOpVar;
 typedef struct rzil_op_unk_t *RzILOpUnk;

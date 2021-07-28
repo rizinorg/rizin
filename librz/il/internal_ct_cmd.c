@@ -122,8 +122,6 @@ RZ_API void rz_il_vm_init(RzILVM vm, ut64 start_addr, int addr_size, int data_si
 	vm->op_handler_table[RZIL_OP_BRANCH] = &rz_il_handler_branch;
 	vm->op_handler_table[RZIL_OP_SEQ] = &rz_il_handler_seq;
 
-	// TODO : Add More
-
 	vm->var_count = 0;
 	vm->val_count = 0;
 	vm->mem_count = 0;
