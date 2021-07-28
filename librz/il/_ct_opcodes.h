@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef BUILD__CT_OPCODES_H
 #define BUILD__CT_OPCODES_H
 

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef CORE_THEORY_VM_BITVECTOR_H
 #define CORE_THEORY_VM_BITVECTOR_H
 
@@ -11,10 +14,6 @@
 #define NELEM(N, ELEMPER) ((N + (ELEMPER)-1) / (ELEMPER))
 #define BV_ELEM_SIZE      sizeof(ut8)
 
-/***
- * this enum type will decide
- * the msb/lsb of a bitvector when needed
- */
 typedef enum {
 	BV_BIG_END, // first bit is the most significant bit (MSB)
 	BV_LITTLE_END // first bit is the less significant bit (LSB)
@@ -29,9 +28,6 @@ struct bitvector_t {
 
 typedef struct bitvector_t *BitVector;
 
-/*** ***************************
- * BV related operations and definitions
- * *******************************/
 // init
 RZ_API BitVector rz_il_bv_new(int length);
 RZ_API BitVector rz_il_bv_dump(BitVector bv);

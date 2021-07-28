@@ -1,11 +1,14 @@
+// SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include "vm_defines.h"
 #include <string.h>
 #include <stdlib.h>
 
 /**
  * New a variable with UNKOWN TYPE
- * @param name string, name of variable
- * @return var RzILVar, pointer to this variable
+ * \param name string, name of variable
+ * \return var RzILVar, pointer to this variable
  */
 RZ_API RzILVar rz_il_new_variable(string name) {
 	RzILVar ret;
@@ -19,7 +22,7 @@ RZ_API RzILVar rz_il_new_variable(string name) {
 
 /**
  * New an empty value
- * @return val RzILVal, pointer to this value
+ * \return val RzILVal, pointer to this value
  */
 RZ_API RzILVal rz_il_new_value(void) {
 	RzILVal ret;
@@ -31,8 +34,8 @@ RZ_API RzILVal rz_il_new_value(void) {
 
 /**
  * Dump (deep copy) a value
- * @param val RzILVal, pointer to the value you want to dump
- * @return dump RzILVal, pointer to the dumped value
+ * \param val RzILVal, pointer to the value you want to dump
+ * \return dump RzILVal, pointer to the dumped value
  */
 RZ_API RzILVal rz_il_dump_value(RzILVal val) {
 	RzILVal ret = rz_il_new_value();
@@ -56,7 +59,7 @@ RZ_API RzILVal rz_il_dump_value(RzILVal val) {
 
 /**
  * New an empty temporary value
- * @return temp RzILTemp, pointer to the new temporary value
+ * \return temp RzILTemp, pointer to the new temporary value
  */
 RZ_API RzILTemp rz_il_new_temp(void) {
 	RzILTemp temp = RZ_NEW0(struct rz_il_tempv_t);
@@ -67,7 +70,7 @@ RZ_API RzILTemp rz_il_new_temp(void) {
 
 /**
  * Free a temporary value
- * @param temp RzILTemp, pointer to the temporary value you want to free
+ * \param temp RzILTemp, pointer to the temporary value you want to free
  */
 RZ_API void rz_il_free_temp(RzILTemp temp) {
 	free(temp);
@@ -75,7 +78,7 @@ RZ_API void rz_il_free_temp(RzILTemp temp) {
 
 /**
  * Free a RzILVal value
- * @param val RzILVal, pointer to the RzILVal instance
+ * \param val RzILVal, pointer to the RzILVal instance
  */
 RZ_API void rz_il_free_value(RzILVal val) {
 	if (!val) {
@@ -100,7 +103,7 @@ RZ_API void rz_il_free_value(RzILVal val) {
 
 /**
  * Free variable
- * @param var RzILVar, pointer to RzILVar
+ * \param var RzILVar, pointer to RzILVar
  */
 RZ_API void rz_il_free_variable(RzILVar var) {
 	free(var->var_name);

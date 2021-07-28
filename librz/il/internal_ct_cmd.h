@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef BUILD_CORE_THEORY_CMDS_H
 #define BUILD_CORE_THEORY_CMDS_H
 #include "core_theory_vm.h"

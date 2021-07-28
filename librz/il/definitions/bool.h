@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef BUILD_BOOL_H
 #define BUILD_BOOL_H
 #include "common.h"

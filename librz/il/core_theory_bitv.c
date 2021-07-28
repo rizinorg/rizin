@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include "definitions/bitvector.h"
 #include "core_theory_opcodes.h"
 #include "core_theory_vm.h"

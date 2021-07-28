@@ -1,7 +1,7 @@
+// SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include "effect.h"
-/*** ***************************
- * Effect definitions
- * *******************************/
 
 DataEffect effect_new_data(void) {
 	DataEffect ret;

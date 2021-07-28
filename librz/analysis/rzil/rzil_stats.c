@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_analysis.h>
 
 static int hook_flag_read(RzAnalysisRzil *rzil, const char *flag, ut64 *num, RzAnalysis *analysis) {

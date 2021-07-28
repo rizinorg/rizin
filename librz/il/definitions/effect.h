@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef CORE_THEORY_VM_EFFECT_H
 #define CORE_THEORY_VM_EFFECT_H
 
@@ -7,9 +10,7 @@
 #include <rz_types.h>
 #include "common.h"
 #include "bitvector.h"
-/*** ***************************
- * Effect definitions
- * *******************************/
+
 typedef enum {
 	EFFECT_TYPE_NON, // perform none effect will not affect data / control, used for passing info
 	EFFECT_TYPE_DATA,

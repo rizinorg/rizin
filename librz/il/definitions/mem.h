@@ -1,12 +1,9 @@
+// SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef BUILD_MEM_H
 #define BUILD_MEM_H
 #include "bitvector.h"
-
-/***
- * Mem is a map
- *      Key : Bitvector ( with length A )
- *      Value : Bitvector ( with length B )
- */
 
 struct mem_t {
 	HtPP *kv_map;

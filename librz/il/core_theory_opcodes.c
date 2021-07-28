@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include "core_theory_opcodes.h"
 
 #define RZIL_OP_NEW(size) calloc(1, (size))
@@ -14,8 +17,8 @@ RzILOp rz_il_new_empty_op(void) {
 
 /**
  * Create an empty core theory op, argument of the op should be set in analysis_[arch]
- * @param code CoreTheoryOPCode, enum to specify the op type
- * @return RzILOp, a pointer to an empty opcode instance
+ * \param code CoreTheoryOPCode, enum to specify the op type
+ * \return RzILOp, a pointer to an empty opcode instance
  */
 RZ_API RzILOp rz_il_new_op(CoreTheoryOPCode code) {
 	RzILOp ret = (RzILOp)malloc(sizeof(struct RzILOp_t));
@@ -102,7 +105,7 @@ RZ_API RzILOp rz_il_new_op(CoreTheoryOPCode code) {
 
 /**
  * Free core theory opcode instance
- * @param op RzILOp, pointer to opcode instance
+ * \param op RzILOp, pointer to opcode instance
  */
 RZ_API void rz_il_free_op(RzILOp op) {
 	switch (op->code) {

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef CORE_THEORY_VM_WRAPPER_H
 #define CORE_THEORY_VM_WRAPPER_H
 

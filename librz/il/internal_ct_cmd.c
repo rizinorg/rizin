@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include "internal_ct_cmd.h"
 
 static void free_label_kv(HtPPKv *kv) {

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZIL_CORE_THEORY_DEFINITIONS_H
 #include "_ct_opcodes.h"
 
