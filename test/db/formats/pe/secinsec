@@ -1,6 +1,15 @@
 NAME=PE: corkami secinsec.exe - open
 FILE=bins/pe/secinsec.exe
-CMDS=q!
+CMDS=<<EOF
+pd 3
+ps @ section.sect_1
+EOF
 EXPECT=<<EOF
+            ;-- entry0:
+            ;-- section.sect_0:
+            0x00401000      push  0x401054                             ; [00] -rwx section size 4096 named sect_0
+            0x00401005      call  dword [sym.imp.msvcrt.dll_printf]    ; 0x4010e8 ; int printf(const char *format)
+            0x0040100b      add   esp, 4
+section
 EOF
 RUN

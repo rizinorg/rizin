@@ -790,8 +790,7 @@ RZ_API bool rz_core_bin_apply_maps(RzCore *core, RzBinFile *binfile, bool va) {
 
 	RzListIter *it;
 	RzBinMap *map;
-	// reverse because of the way io handles maps
-	rz_list_foreach_prev(maps, it, map) {
+	rz_list_foreach (maps, it, map) {
 		int va_map = va ? VA_TRUE : VA_FALSE;
 		if (va && !(map->perm & RZ_PERM_R)) {
 			va_map = VA_NOREBASE;
@@ -799,7 +798,6 @@ RZ_API bool rz_core_bin_apply_maps(RzCore *core, RzBinFile *binfile, bool va) {
 		ut64 addr = rva(o, map->paddr, map->vaddr, va_map);
 		add_map(core, cf, binfile, map, addr, binfile->fd);
 	}
-	rz_io_update(core->io);
 	return true;
 }
 
