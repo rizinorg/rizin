@@ -60,7 +60,6 @@ static RzCallable *get_callable_type(RzTypeDB *typedb, Sdb *sdb, const char *nam
 		goto error;
 	}
 
-	char arg_name[32];
 	int i;
 	for (i = 0; i < arguments; i++) {
 		char *values = sdb_get(sdb, rz_strf(key, "func.%s.arg.%d", name, i), NULL);
@@ -68,6 +67,7 @@ static RzCallable *get_callable_type(RzTypeDB *typedb, Sdb *sdb, const char *nam
 		if (!values) {
 			goto error;
 		}
+		char arg_name[32];
 		char *argument_name;
 		char *argument_type = sdb_anext(values, &argument_name);
 		if (!argument_name) {
