@@ -10,7 +10,7 @@ rz_core_sources = [
   'carg.c',
   'cautocmpl.c',
   'cbin.c',
- #'rz_basefind.cpp',
+  'rz_basefind.cpp',
   'cconfig.c',
   'cdebug.c',
   'cdwarf.c',
@@ -123,7 +123,7 @@ rz_core = library('rz_core', rz_core_sources,
   c_args: library_cflags,
   dependencies: rz_core_deps,
   install: true,
-  implilude -I../shlr/heap/include -Isubprojects/sdb -I../subprojects/sdb -Isubprojects/sdb/src -I../subprojects/sdb/src -I../shlr/spp -Ishlr -I../shlr -I../librz/asm/arch/inccit_include_directories: false,
+  implicit_include_directories: false,
   install_rpath: rpath_lib,
   soversion: rizin_libversion
 )

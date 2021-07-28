@@ -1,3 +1,4 @@
+add_project_arguments('-lstdc++', language: 'c')
 analysis_plugins = [
   '6502',
   '8051',
@@ -322,7 +323,7 @@ include_files =[
   'include/rz_analysis.h',
   'include/rz_arch.h',
   'include/rz_asm.h',
- #'include/rz_basefind.h',
+  'include/rz_basefind.h',
   'include/rz_bind.h',
   'include/rz_getopt.h',
   'include/rz_bin_dwarf.h',
