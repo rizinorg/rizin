@@ -3,9 +3,10 @@
 
 #include "crypto_aes_algo.h"
 
-#define Nb 4 //  number of columns in the state & expanded key
-#define Nr 16 // max number of rounds in encryption
-#define Nk 8 //  max number of columns in a key
+#define Nb   4 //  number of columns in the state & expanded key
+#define Nr   16 // max number of rounds in encryption
+#define Nk   8 //  max number of columns in a key
+#define U(x) ((ut32)(x))
 
 static const ut8 Rcon[30] = {
 	0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80,
@@ -43,10 +44,10 @@ void aes_expkey(const aes_state_t *st, expkey_t *ek) {
 
 	// Copy user material bytes into temporary ints
 	for (i = 0; i < st->columns; i++) {
-		tk[i] = *key++ << 24;
-		tk[i] |= *key++ << 16;
-		tk[i] |= *key++ << 8;
-		tk[i] |= *key++;
+		tk[i] = U(*key++) << 24;
+		tk[i] |= U(*key++) << 16;
+		tk[i] |= U(*key++) << 8;
+		tk[i] |= U(*key++);
 	}
 
 	// Copy values into round key arrays
@@ -58,8 +59,8 @@ void aes_expkey(const aes_state_t *st, expkey_t *ek) {
 	while (t < round_key_count) {
 		// Extrapolate using phi (the round key evolution function)
 		tt = tk[st->columns - 1];
-		tk[0] ^= Sbox[(ut8)(tt >> 16)] << 24 ^ Sbox[(ut8)(tt >> 8)] << 16 ^
-			Sbox[(ut8)tt] << 8 ^ Sbox[(ut8)(tt >> 24)] ^ Rcon[idx++] << 24;
+		tk[0] ^= U(Sbox[(ut8)(tt >> 16)]) << 24 ^ U(Sbox[(ut8)(tt >> 8)]) << 16 ^
+			U(Sbox[(ut8)tt]) << 8 ^ U(Sbox[(ut8)(tt >> 24)]) ^ U(Rcon[idx++]) << 24;
 
 		if (st->columns != 8) {
 			for (i = 1, j = 0; i < st->columns;) {
@@ -70,9 +71,9 @@ void aes_expkey(const aes_state_t *st, expkey_t *ek) {
 				tk[i++] ^= tk[j++];
 			}
 			tt = tk[st->columns / 2 - 1];
-			tk[st->columns / 2] ^= Sbox[(ut8)tt] ^ Sbox[(ut8)(tt >> 8)] << 8 ^
-				Sbox[(ut8)(tt >> 16)] << 16 ^
-				Sbox[(ut8)(tt >> 24)] << 24;
+			tk[st->columns / 2] ^= U(Sbox[(ut8)tt]) ^ U(Sbox[(ut8)(tt >> 8)]) << 8 ^
+				U(Sbox[(ut8)(tt >> 16)]) << 16 ^
+				U(Sbox[(ut8)(tt >> 24)]) << 24;
 			for (j = st->columns / 2, i = j + 1; i < st->columns;) {
 				tk[i++] ^= tk[j++];
 			}
@@ -106,28 +107,28 @@ void aes_encrypt(aes_state_t *st, ut8 *in, ut8 *result) {
 	ut32 t0, t1, t2, t3, tt;
 	ut32 a0, a1, a2, a3, r;
 
-	t0 = *in++ << 24;
-	t0 |= *in++ << 16;
-	t0 |= *in++ << 8;
-	t0 |= *in++;
+	t0 = U(*in++) << 24;
+	t0 |= U(*in++) << 16;
+	t0 |= U(*in++) << 8;
+	t0 |= U(*in++);
 	t0 ^= ek.key0[0][0];
 
-	t1 = *in++ << 24;
-	t1 |= *in++ << 16;
-	t1 |= *in++ << 8;
-	t1 |= *in++;
+	t1 = U(*in++) << 24;
+	t1 |= U(*in++) << 16;
+	t1 |= U(*in++) << 8;
+	t1 |= U(*in++);
 	t1 ^= ek.key0[0][1];
 
-	t2 = *in++ << 24;
-	t2 |= *in++ << 16;
-	t2 |= *in++ << 8;
-	t2 |= *in++;
+	t2 = U(*in++) << 24;
+	t2 |= U(*in++) << 16;
+	t2 |= U(*in++) << 8;
+	t2 |= U(*in++);
 	t2 ^= ek.key0[0][2];
 
-	t3 = *in++ << 24;
-	t3 |= *in++ << 16;
-	t3 |= *in++ << 8;
-	t3 |= *in++;
+	t3 = U(*in++) << 24;
+	t3 |= U(*in++) << 16;
+	t3 |= U(*in++) << 8;
+	t3 |= U(*in++);
 	t3 ^= ek.key0[0][3];
 
 	// Apply Round Transforms
@@ -185,28 +186,28 @@ void aes_decrypt(aes_state_t *st, ut8 *in, ut8 *result) {
 	ut32 t0, t1, t2, t3, tt;
 	ut32 a0, a1, a2, a3, r;
 
-	t0 = *in++ << 24;
-	t0 |= *in++ << 16;
-	t0 |= *in++ << 8;
-	t0 |= *in++;
+	t0 = U(*in++) << 24;
+	t0 |= U(*in++) << 16;
+	t0 |= U(*in++) << 8;
+	t0 |= U(*in++);
 	t0 ^= ek.key1[0][0];
 
-	t1 = *in++ << 24;
-	t1 |= *in++ << 16;
-	t1 |= *in++ << 8;
-	t1 |= *in++;
+	t1 = U(*in++) << 24;
+	t1 |= U(*in++) << 16;
+	t1 |= U(*in++) << 8;
+	t1 |= U(*in++);
 	t1 ^= ek.key1[0][1];
 
-	t2 = *in++ << 24;
-	t2 |= *in++ << 16;
-	t2 |= *in++ << 8;
-	t2 |= *in++;
+	t2 = U(*in++) << 24;
+	t2 |= U(*in++) << 16;
+	t2 |= U(*in++) << 8;
+	t2 |= U(*in++);
 	t2 ^= ek.key1[0][2];
 
-	t3 = *in++ << 24;
-	t3 |= *in++ << 16;
-	t3 |= *in++ << 8;
-	t3 |= *in++;
+	t3 = U(*in++) << 24;
+	t3 |= U(*in++) << 16;
+	t3 |= U(*in++) << 8;
+	t3 |= U(*in++);
 	t3 ^= ek.key1[0][3];
 
 	// Apply round transforms
