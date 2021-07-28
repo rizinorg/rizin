@@ -308,6 +308,7 @@ struct rz_core_t {
 	char *cmdqueue;
 	char *lastcmd;
 	bool is_lastcmd;
+	bool is_pipe;
 	char *cmdlog;
 	int cmdrepeat; // cmd.repeat
 	const char *cmdtimes; // cmd.times
@@ -442,8 +443,9 @@ RZ_API int rz_core_cmdf(RzCore *core, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3
 RZ_API int rz_core_flush(RzCore *core, const char *cmd);
 RZ_API int rz_core_cmd0(RzCore *core, const char *cmd);
 RZ_API void rz_core_cmd_init(RzCore *core);
-RZ_API int rz_core_cmd_pipe(RzCore *core, char *rizin_cmd, char *shell_cmd);
+RZ_API int rz_core_cmd_pipe_old(RzCore *core, char *rizin_cmd, char *shell_cmd);
 RZ_API char *rz_core_cmd_str(RzCore *core, const char *cmd);
+RZ_API ut8 *rz_core_cmd_raw(RzCore *core, const char *cmd, int *length);
 RZ_API char *rz_core_cmd_strf(RzCore *core, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
 RZ_API char *rz_core_cmd_str_pipe(RzCore *core, const char *cmd);
 RZ_API int rz_core_cmd_file(RzCore *core, const char *file);
@@ -769,8 +771,8 @@ RZ_API bool rz_core_gdiff_2_files(RzCore *core1, RzCore *core2);
 RZ_API bool rz_core_gdiff_function_1_file(RzCore *c, ut64 addr, ut64 addr2);
 RZ_API bool rz_core_gdiff_function_2_files(RzCore *core1, RzCore *core2, ut64 addr, ut64 addr2);
 
-RZ_API char *rz_core_sysenv_begin(RzCore *core, const char *cmd);
-RZ_API void rz_core_sysenv_end(RzCore *core, const char *cmd);
+RZ_API void rz_core_sysenv_begin(RzCore *core);
+RZ_API void rz_core_sysenv_end(RzCore *core);
 
 RZ_API void rz_core_recover_vars(RzCore *core, RzAnalysisFunction *fcn, bool argonly);
 

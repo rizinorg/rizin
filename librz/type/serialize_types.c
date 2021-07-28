@@ -77,12 +77,12 @@ static TypeFormatPair *get_enum_type(Sdb *sdb, const char *sname) {
 	free(members);
 
 	RzStrBuf key;
-	const char *format = sdb_get(sdb, rz_strbuf_initf(&key, "type.%s", sname), 0);
+	char *format = sdb_get(sdb, rz_strbuf_initf(&key, "type.%s", sname), 0);
 	rz_strbuf_fini(&key);
 
 	TypeFormatPair *tpair = RZ_NEW0(TypeFormatPair);
 	tpair->type = base_type;
-	tpair->format = format ? strdup(format) : NULL;
+	tpair->format = format;
 
 	return tpair;
 
@@ -252,6 +252,7 @@ static TypeFormatPair *get_typedef_type(RzTypeDB *typedb, Sdb *sdb, const char *
 	if (!ttype || error_msg) {
 		goto error;
 	}
+	free(type);
 
 	base_type->type = ttype;
 	if (!base_type->type) {
@@ -259,16 +260,17 @@ static TypeFormatPair *get_typedef_type(RzTypeDB *typedb, Sdb *sdb, const char *
 	}
 
 	RzStrBuf key;
-	const char *format = sdb_get(sdb, rz_strbuf_initf(&key, "type.%s", sname), 0);
+	char *format = sdb_get(sdb, rz_strbuf_initf(&key, "type.%s", sname), 0);
 	rz_strbuf_fini(&key);
 
 	TypeFormatPair *tpair = RZ_NEW0(TypeFormatPair);
 	tpair->type = base_type;
-	tpair->format = format ? strdup(format) : NULL;
+	tpair->format = format;
 
 	return tpair;
 
 error:
+	free(type);
 	rz_type_base_type_free(base_type);
 	return NULL;
 }

@@ -181,13 +181,11 @@ Examples:
 Environment:
 | RZ_FILE          # currently opened file name
 | RZ_OFFSET        # 10base offset 64bit value
-| RZ_BYTES         # TODO: variable with bytes in curblock
 | RZ_XOFFSET       # same as above, but in 16 base
 | RZ_BSIZE         # block size
 | RZ_ENDIAN        # 'big' or 'little'
 | RZ_IOVA          # is io.va true? virtual addressing (1,0)
 | RZ_DEBUG         # debug mode enabled? (1,0)
-| RZ_BLOCK         # TODO: dump current block to tmp file
 | RZ_SIZE          # file size
 | RZ_ARCH          # value of asm.arch
 | RZ_BITS          # arch reg size (8, 16, 32, 64)
