@@ -18,40 +18,31 @@ typedef struct rz_il_vm_t *RzILVM;
 typedef void (*RzILOpHandler)(RzILVM vm, RzILOp op);
 typedef void (*RzILVmHook)(RzILVM vm, RzILOp op);
 
-// Main structure of VM
+/**
+ *  \struct rz_il_vm_t
+ *  \brief core theory vm structure
+ */
 struct rz_il_vm_t {
-	// record the Var and Val in VM
-	// persistent Variable, Value and effects
-	RzILBag vm_global_value_set;
-	RzILVar *vm_global_variable_list;
+	RzILBag vm_global_value_set; ///< Store all RzILVal instance
+	RzILVar *vm_global_variable_list; ///< Store all RzILVar instance
 
-	// Memory : should support memory switch
-	Mem *mems;
-	int var_count, val_count, mem_count, lab_count;
-	int addr_size;
-	int data_size;
+	Mem *mems; ///< Array of Memory, memory are actually hashmap in vm
+	int var_count, val_count, mem_count, lab_count; ///< count for vm predefined things
+	int addr_size; ///< size of address
+	int data_size; ///< size of minimal data unit
 
-	RzILTemp *temp_value_list;
+	RzILTemp *temp_value_list; ///< Array of temporary values
 
-	// binding relationships
-	HtPP *vm_global_bind_table;
-	HtPP *vm_global_label_table; // [label->name]->label
+	HtPP *vm_global_bind_table; ///< Hashtable to record relationships between var and val
+	HtPP *vm_global_label_table; ///< Hashtable to maintain the label and address
 
-	// core theory opcodes
-	//      key : Address (BitVector)
-	//      val : opcode struct list (RzList of RzILOp)
-	HtPP *ct_opcodes;
+	HtPP *ct_opcodes; ///< Hashtable to maintain address and opcodes
 
-	// pc
-	BitVector pc;
+	BitVector pc; ///< Program Counter of vm
 
-	// op handler table
-	//      key : opcode
-	//      val : function pointer
-	RzILOpHandler *op_handler_table;
+	RzILOpHandler *op_handler_table; ///< Array of Handler, handler can be indexed by opcode
 
-	// locate position for debug
-	int easy_debug;
+	int easy_debug; ///< Debug only, used to locate the bug
 };
 
 // VM operations about Variable and Value

@@ -10,20 +10,25 @@
 #include <rz_types.h>
 #include "common.h"
 
-// can be replace with rizin's defs
 #define NELEM(N, ELEMPER) ((N + (ELEMPER)-1) / (ELEMPER))
 #define BV_ELEM_SIZE      sizeof(ut8)
 
 typedef enum {
-	BV_BIG_END, // first bit is the most significant bit (MSB)
-	BV_LITTLE_END // first bit is the less significant bit (LSB)
+	BV_BIG_END, ///< first bit is the most significant bit (MSB)
+	BV_LITTLE_END ///< first bit is the less significant bit (LSB)
 } BV_ENDIAN;
 
+/**
+ *  \struct bitvector_t
+ *  \brief structure for bitvector
+ *
+ *  Ref : https://web.cs.dal.ca/~jamie/UWO/BitVectors/README.html
+ */
 struct bitvector_t {
-	ut8 *bits;
-	int _elem_len; // length of ut8 array -- real / physical
-	int len; // length of bits -- virtual / logical
-	BV_ENDIAN endian;
+	ut8 *bits; ///< bits data
+	int _elem_len; ///< length of ut8 array -- real / physical
+	int len; ///< length of bits -- virtual / logical
+	BV_ENDIAN endian; ///< control endian
 };
 
 typedef struct bitvector_t *BitVector;

@@ -29,26 +29,37 @@ typedef union {
 	Bool b;
 } RzValUnion;
 
+/**
+ *  \struct rz_il_var_t
+ *  \brief structure of RzILVar
+ */
 struct rz_il_var_t {
-	string var_name;
-	RZIL_VAR_TYPE type;
+	string var_name; ///< name of variable
+	RZIL_VAR_TYPE type; ///< data type of variable
 };
 
+/**
+ *  \struct rz_il_val_t
+ *  \brief structure of RzILVal
+ */
 struct rz_il_val_t {
-	RZIL_VAR_TYPE type;
-	RzValUnion data;
+	RZIL_VAR_TYPE type; ///< type of value
+	RzValUnion data; ///< data pointer
 };
 
-// This structure used to store value instances
 typedef void (*RzILBagFreeFunc)(void *);
+/**
+ *  \struct rz_il_bag_t
+ *  \brief structure of RzILBag, used to store RzILVal instances and manage them
+ */
 struct rz_il_bag_t {
-	void **data_list;
-	int item_count;
-	int capcity;
-	int *next_pos_stack;
-	int next_pos;
-	int sp;
-	RzILBagFreeFunc free_func;
+	void **data_list; ///< Space to carry pointers
+	int item_count; ///< count current items
+	int capcity; ///< maximum size
+	int *next_pos_stack; ///< internal variable, used for managing space
+	int next_pos; ///< internal variable, used for managing space
+	int sp; ///< internal variable, used for managing space
+	RzILBagFreeFunc free_func; ///< Function pointer to free RzILVal
 };
 
 typedef struct rz_il_bag_t *RzILBag;
@@ -64,9 +75,15 @@ typedef enum {
 	RZIL_TEMP_EMPTY
 } RZIL_TEMP_TYPE;
 
+/**
+ *  \struct rz_il_tempv_t
+ *  \brief structure for RzIL Temporary
+ *
+ *  It's a container to carry BitVector/RzILVal/Bool/Effect temporarily
+ */
 struct rz_il_tempv_t {
-	void *data;
-	RZIL_TEMP_TYPE type;
+	void *data; ///< Pointer to the carried data
+	RZIL_TEMP_TYPE type; ///< Type of carried data
 };
 typedef struct rz_il_tempv_t *RzILTemp;
 

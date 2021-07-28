@@ -38,19 +38,20 @@ typedef enum {
 } DATA_EFF_OPERATION;
 
 struct effect_label_t {
-	string label_id;
-	BitVector addr;
-	EFFECT_LABEL_TYPE type;
+	string label_id; ///< Label name
+	BitVector addr; ///< BitVector address if EFFECT_LABEL_ADDR
+		///< Function pointer if EFFECT_LABEL_SYSCALL / EFFECT_LABEL_HOOK
+	EFFECT_LABEL_TYPE type; ///< type of label
 };
 
 struct control_effect_t {
-	BitVector pc;
+	BitVector pc; ///< New Program Counter
 };
 
 struct data_effect_t {
-	string var_name;
-	int val_index;
-	DATA_EFF_OPERATION operation;
+	string var_name; ///< Name of variable
+	int val_index; ///< index to the new value
+	DATA_EFF_OPERATION operation; ///< operation to value and variable
 };
 
 typedef struct control_effect_t *CtrlEffect;
@@ -58,13 +59,17 @@ typedef struct data_effect_t *DataEffect;
 typedef struct effect_label_t *EffectLabel;
 
 typedef struct effect_union_t *Effect;
+/**
+ *  \struct effect_union_t
+ *  \brief structure of data/control effect
+ */
 struct effect_union_t {
-	ut8 effect_type;
-	EFFECT_NOTATION notation;
-	Effect next_eff;
+	ut8 effect_type; ///< effect type
+	EFFECT_NOTATION notation; ///< Marks for carring additional info
+	Effect next_eff; ///< pointer to next effect, used in packed effect
 	union {
-		CtrlEffect ctrl_eff;
-		DataEffect data_eff;
+		CtrlEffect ctrl_eff; ///< pointer to ctrl effect
+		DataEffect data_eff; ///< pointer to data effect
 	};
 };
 
