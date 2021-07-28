@@ -673,14 +673,14 @@ static void print_result_diff(RzTestRunConfig *config, RzTestResultInfo *result)
 	case RZ_TEST_TYPE_CMD: {
 		rz_test_run_cmd_test(config, result->test->cmd_test, print_runner, NULL);
 		const char *expect = result->test->cmd_test->expect.value;
-		const char *out = result->proc_out->out;
+		const char *out = (const char *)result->proc_out->out;
 		const char *regexp_out = result->test->cmd_test->regexp_out.value;
 		if (expect && !rz_test_cmp_cmd_output(out, expect, regexp_out)) {
 			printf("-- stdout\n");
 			print_diff(out, expect, regexp_out);
 		}
 		expect = result->test->cmd_test->expect_err.value;
-		const char *err = result->proc_out->err;
+		const char *err = (const char *)result->proc_out->err;
 		const char *regexp_err = result->test->cmd_test->regexp_err.value;
 		if (expect && !rz_test_cmp_cmd_output(err, expect, regexp_err)) {
 			printf("-- stderr\n");
@@ -708,8 +708,8 @@ static void print_result_diff(RzTestRunConfig *config, RzTestResultInfo *result)
 		break;
 	case RZ_TEST_TYPE_FUZZ:
 		rz_test_run_fuzz_test(config, result->test->fuzz_test, print_runner, NULL);
-		printf("-- stdout\n%s\n", result->proc_out->out);
-		printf("-- stderr\n%s\n", result->proc_out->err);
+		printf("-- stdout\n%s\n", (const char *)result->proc_out->out);
+		printf("-- stderr\n%s\n", (const char *)result->proc_out->err);
 		printf("-- exit status: " Color_RED "%d" Color_RESET "\n", result->proc_out->ret);
 		break;
 	}
@@ -1002,10 +1002,10 @@ static void interact_fix(RzTestResultInfo *result, RzPVector *fixup_results) {
 	RzCmdTest *test = result->test->cmd_test;
 	RzSubprocessOutput *out = result->proc_out;
 	if (test->expect.value && out->out) {
-		replace_cmd_kv_file(result->test->path, test->expect.line_begin, test->expect.line_end, "EXPECT", out->out, fixup_results);
+		replace_cmd_kv_file(result->test->path, test->expect.line_begin, test->expect.line_end, "EXPECT", (char *)out->out, fixup_results);
 	}
 	if (test->expect_err.value && out->err) {
-		replace_cmd_kv_file(result->test->path, test->expect_err.line_begin, test->expect_err.line_end, "EXPECT_ERR", out->err, fixup_results);
+		replace_cmd_kv_file(result->test->path, test->expect_err.line_begin, test->expect_err.line_end, "EXPECT_ERR", (char *)out->err, fixup_results);
 	}
 }
 
