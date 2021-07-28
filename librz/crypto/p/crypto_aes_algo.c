@@ -71,9 +71,9 @@ void aes_expkey(const aes_state_t *st, expkey_t *ek) {
 				tk[i++] ^= tk[j++];
 			}
 			tt = tk[st->columns / 2 - 1];
-			tk[st->columns / 2] ^= Sbox[(ut8)tt] ^ Sbox[(ut8)(tt >> 8)] << 8 ^
-				Sbox[(ut8)(tt >> 16)] << 16 ^
-				Sbox[(ut8)(tt >> 24)] << 24;
+			tk[st->columns / 2] ^= U(Sbox[(ut8)tt]) ^ U(Sbox[(ut8)(tt >> 8)]) << 8 ^
+				U(Sbox[(ut8)(tt >> 16)]) << 16 ^
+				U(Sbox[(ut8)(tt >> 24)]) << 24;
 			for (j = st->columns / 2, i = j + 1; i < st->columns;) {
 				tk[i++] ^= tk[j++];
 			}
