@@ -707,7 +707,7 @@ RZ_API char *rz_str_new(const char *str) {
 // Returns a new heap-allocated copy of str, sets str[len] to '\0'.
 // If the input str is longer than len, it will be truncated.
 RZ_API char *rz_str_newlen(const char *str, int len) {
-	if (len < 1) {
+	if (len < 0) {
 		return NULL;
 	}
 	char *buf = malloc(len + 1);
