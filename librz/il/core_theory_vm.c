@@ -2,9 +2,9 @@
 
 /**
  * Create A new variable in vm
- * @param vm RzILVM, pointer to vm
- * @param name string, name of this variable
- * @return var RzILVar, pointer to the new variable in vm
+ * \param vm RzILVM, pointer to vm
+ * \param name string, name of this variable
+ * \return var RzILVar, pointer to the new variable in vm
  */
 RZ_API RzILVar rz_il_vm_create_variable(RzILVM vm, string name) {
 	if (vm->var_count >= VM_MAX_VAR) {
@@ -22,9 +22,9 @@ RZ_API RzILVar rz_il_vm_create_variable(RzILVM vm, string name) {
 
 /**
  * Create a new value in vm
- * @param vm RzILVM, pointer to vm
- * @param type RZIL_VAR_TYPE, enum to specify the type of this value
- * @return val RzILVal, pointer to the new value in vm
+ * \param vm RzILVM, pointer to vm
+ * \param type RZIL_VAR_TYPE, enum to specify the type of this value
+ * \return val RzILVal, pointer to the new value in vm
  */
 RZ_API RzILVal rz_il_vm_create_value(RzILVM vm, RZIL_VAR_TYPE type) {
 	if (vm->val_count >= VM_MAX_VAL) {
@@ -41,9 +41,9 @@ RZ_API RzILVal rz_il_vm_create_value(RzILVM vm, RZIL_VAR_TYPE type) {
 
 /**
  * Add a register in vm (create a variable and value, and then bind value to variable)
- * @param vm RzILVM, pointer to this vm
- * @param name string, the name of register
- * @param length int, width of register
+ * \param vm RzILVM, pointer to this vm
+ * \param name string, the name of register
+ * \param length int, width of register
  */
 RZ_API void rz_il_vm_add_reg(RzILVM vm, string name, int length) {
 	RzILVar var = rz_il_vm_create_variable(vm, name);
@@ -54,9 +54,9 @@ RZ_API void rz_il_vm_add_reg(RzILVM vm, string name, int length) {
 
 /**
  * Make a temporary value (type `RzILVal`) inside vm become a value store in vm
- * @param vm RzILVM, pointer to vm
- * @param temp_val_index int, the index of temporary value you attempt to fortify
- * @return val RzILVal, pointer to the fortified value
+ * \param vm RzILVM, pointer to vm
+ * \param temp_val_index int, the index of temporary value you attempt to fortify
+ * \return val RzILVal, pointer to the fortified value
  */
 RZ_API RzILVal rz_il_vm_fortify_val(RzILVM vm, int temp_val_index) {
 	RzILVal val = rz_il_get_val_temp(vm, temp_val_index);
@@ -68,9 +68,9 @@ RZ_API RzILVal rz_il_vm_fortify_val(RzILVM vm, int temp_val_index) {
 
 /**
  * Make a temporary value (type `BitVector`) inside vm become a value store in vm
- * @param vm RzILVM, pointer to vm
- * @param temp_val_index int, the index of temporary value you attempt to fortify
- * @return val RzILVal, pointer to the fortified value
+ * \param vm RzILVM, pointer to vm
+ * \param temp_val_index int, the index of temporary value you attempt to fortify
+ * \return val RzILVal, pointer to the fortified value
  */
 RZ_API RzILVal rz_il_vm_fortify_bitv(RzILVM vm, int temp_val_index) {
 	RzILVal val = rz_il_new_value();
@@ -84,9 +84,9 @@ RZ_API RzILVal rz_il_vm_fortify_bitv(RzILVM vm, int temp_val_index) {
 
 /**
  * Make a temporary value (type `Bool`) inside vm become a value store in vm
- * @param vm RzILVM, pointer to vm
- * @param temp_val_index int, the index of temporary value you attempt to fortify
- * @return val RzILVal, pointer to the fortified value
+ * \param vm RzILVM, pointer to vm
+ * \param temp_val_index int, the index of temporary value you attempt to fortify
+ * \return val RzILVal, pointer to the fortified value
  */
 RZ_API RzILVal rz_il_vm_fortify_bool(RzILVM vm, int temp_val_index) {
 	RzILVal val = rz_il_new_value();
@@ -100,9 +100,9 @@ RZ_API RzILVal rz_il_vm_fortify_bool(RzILVM vm, int temp_val_index) {
 
 /**
  * Find the value bind to the given variable
- * @param vm RzILVM, pointer to vm
- * @param var RzILVar, pointer to a variable
- * @return val RzILVal, pointer to the value of variable
+ * \param vm RzILVM, pointer to vm
+ * \param var RzILVar, pointer to a variable
+ * \return val RzILVal, pointer to the value of variable
  */
 RZ_API RzILVal rz_il_hash_find_val_by_var(RzILVM vm, RzILVar var) {
 	string var_name = var->var_name;
@@ -112,9 +112,9 @@ RZ_API RzILVal rz_il_hash_find_val_by_var(RzILVM vm, RzILVar var) {
 
 /**
  * Find the value by variable name
- * @param vm RzILVM, pointer to vm
- * @param var_name string, the name of variable
- * @return val RzILVal, pointer to the value of variable with name `var_name`
+ * \param vm RzILVM, pointer to vm
+ * \param var_name string, the name of variable
+ * \return val RzILVal, pointer to the value of variable with name `var_name`
  */
 RZ_API RzILVal rz_il_hash_find_val_by_name(RzILVM vm, string var_name) {
 	RzILVal ret = ht_pp_find(vm->vm_global_bind_table, var_name, NULL);
@@ -123,9 +123,9 @@ RZ_API RzILVal rz_il_hash_find_val_by_name(RzILVM vm, string var_name) {
 
 /**
  * Find the variable by variable name
- * @param vm RzILVM, pointer to vm
- * @param var_name string, the name of variable
- * @return var RzILVar, pointer to the variable
+ * \param vm RzILVM, pointer to vm
+ * \param var_name string, the name of variable
+ * \return var RzILVar, pointer to the variable
  */
 RZ_API RzILVar rz_il_find_var_by_name(RzILVM vm, string var_name) {
 	RzILVar var;
@@ -140,8 +140,8 @@ RZ_API RzILVar rz_il_find_var_by_name(RzILVM vm, string var_name) {
 
 /**
  * Cancel the binding between var and its val, make it available to bind another value
- * @param vm pointer to vm
- * @param var RzILVar, variable you want to cancel its original binding
+ * \param vm pointer to vm
+ * \param var RzILVar, variable you want to cancel its original binding
  */
 RZ_API void rz_il_hash_cancel_binding(RzILVM vm, RzILVar var) {
 	string var_id = var->var_name;
@@ -152,9 +152,9 @@ RZ_API void rz_il_hash_cancel_binding(RzILVM vm, RzILVar var) {
 
 /**
  * Bind variable and value
- * @param vm pointer to vm
- * @param var RzILVar, variable
- * @param val RzILVal, value
+ * \param vm pointer to vm
+ * \param var RzILVar, variable
+ * \param val RzILVal, value
  */
 RZ_API void rz_il_hash_bind(RzILVM vm, RzILVar var, RzILVal val) {
 	string var_id = var->var_name;
@@ -163,9 +163,9 @@ RZ_API void rz_il_hash_bind(RzILVM vm, RzILVar var, RzILVal val) {
 
 /**
  * Find the bitvector address by given name
- * @param vm RzILVM vm, pointer to vm
- * @param lbl_name string, the name of label
- * @return addr BitVector, address which has BitVector type
+ * \param vm RzILVM vm, pointer to vm
+ * \param lbl_name string, the name of label
+ * \return addr BitVector, address which has BitVector type
  */
 RZ_API BitVector rz_il_hash_find_addr_by_lblname(RzILVM vm, string lbl_name) {
 	HtPP *lbl_table = vm->vm_global_label_table;
@@ -182,9 +182,9 @@ RZ_API BitVector rz_il_hash_find_addr_by_lblname(RzILVM vm, string lbl_name) {
 
 /**
  * Find the label instance by name
- * @param vm RzILVM, pointer to vm
- * @param lbl_name string, the name of label
- * @return lbl EffectLabel, pointer to label instance
+ * \param vm RzILVM, pointer to vm
+ * \param lbl_name string, the name of label
+ * \return lbl EffectLabel, pointer to label instance
  */
 RZ_API EffectLabel rz_il_vm_find_label_by_name(RzILVM vm, string lbl_name) {
 	EffectLabel lbl = ht_pp_find(vm->vm_global_label_table, lbl_name, NULL);
@@ -193,10 +193,10 @@ RZ_API EffectLabel rz_il_vm_find_label_by_name(RzILVM vm, string lbl_name) {
 
 /**
  * Create a label in vm
- * @param vm RzILVM, pointer to vm
- * @param name string, name of label
- * @param addr BitVector, label address
- * @return lbl EffectLabel, pointer to label instance
+ * \param vm RzILVM, pointer to vm
+ * \param name string, name of label
+ * \param addr BitVector, label address
+ * \return lbl EffectLabel, pointer to label instance
  */
 RZ_API EffectLabel rz_il_vm_create_label(RzILVM vm, string name, BitVector addr) {
 	HtPP *lbl_table = vm->vm_global_label_table;
@@ -210,9 +210,9 @@ RZ_API EffectLabel rz_il_vm_create_label(RzILVM vm, string name, BitVector addr)
 
 /**
  * Create a label without address, use rz_il_vm_update_label to update address for it
- * @param vm RzILVM, pointer to vm
- * @param name string, name of this label
- * @return lbl EffectLabel, pointer to label instance
+ * \param vm RzILVM, pointer to vm
+ * \param name string, name of this label
+ * \return lbl EffectLabel, pointer to label instance
  */
 RZ_API EffectLabel rz_il_vm_create_label_lazy(RzILVM vm, string name) {
 	HtPP *lbl_table = vm->vm_global_label_table;
@@ -226,9 +226,9 @@ RZ_API EffectLabel rz_il_vm_create_label_lazy(RzILVM vm, string name) {
 
 /**
  * Update the address info of a label
- * @param vm RzILVM, pointer to vm
- * @param name string, name of this label
- * @return lbl EffectLabel, pointer to label instance
+ * \param vm RzILVM, pointer to vm
+ * \param name string, name of this label
+ * \return lbl EffectLabel, pointer to label instance
  */
 RZ_API EffectLabel rz_il_vm_update_label(RzILVM vm, string name, BitVector addr) {
 	EffectLabel lbl = ht_pp_find(vm->vm_global_label_table, name, NULL);
@@ -240,30 +240,61 @@ RZ_API EffectLabel rz_il_vm_update_label(RzILVM vm, string name, BitVector addr)
 	return lbl;
 }
 
+/**
+ * Make a bool type temporary value in vm and set index of it
+ * \param vm RzILVM, pointer to vm
+ * \param store_index int, index of temporary
+ * \param b Bool, pointer to Bool value instance
+ */
 RZ_API void rz_il_make_bool_temp(RzILVM vm, int store_index, Bool b) {
 	RzILTemp temp = vm->temp_value_list[store_index];
 	temp->data = b;
 	temp->type = RZIL_TEMP_BOOL;
 }
 
+/**
+ * Make a RzILVal type temporary value in vm and set index of it
+ * \param vm RzILVM, pointer to vm
+ * \param store_index int, index of temporary value
+ * \param val RzILVal, pointer to value instance
+ */
 RZ_API void rz_il_make_val_temp(RzILVM vm, int store_index, RzILVal val) {
 	RzILTemp temp = vm->temp_value_list[store_index];
 	temp->data = val;
 	temp->type = RZIL_TEMP_VAL;
 }
 
+/**
+ * Make a BitVector temporary value in vm and set index of it
+ * \param vm RzILVM, pointer to vm
+ * \param store_index int, index of temporary value
+ * \param bv BitVector, pointer to bitvector instance
+ */
 RZ_API void rz_il_make_bv_temp(RzILVM vm, int store_index, BitVector bv) {
 	RzILTemp temp = vm->temp_value_list[store_index];
 	temp->data = bv;
 	temp->type = RZIL_TEMP_BV;
 }
 
+/**
+ * Make an Effect temporary value in vm and set index of it
+ * \param vm RzILVM, pointer to vm
+ * \param store_index int, index of temporary value
+ * \param eff Effect, pointer to core theory effect instance
+ */
 RZ_API void rz_il_make_eff_temp(RzILVM vm, int store_index, Effect eff) {
 	RzILTemp temp = vm->temp_value_list[store_index];
 	temp->data = eff;
 	temp->type = RZIL_TEMP_EFF;
 }
 
+/**
+ * Get a pointer to temporary value from vm by specifying index
+ * return a void* pointer, this function cannot ensure you the temporary has the type you expect
+ * \param vm RzILVM, pointer to vm
+ * \param index int, index of temporary value
+ * \return temp void*, a pointer to temporary value
+ */
 RZ_API void *rz_il_get_temp(RzILVM vm, int index) {
 	RzILTemp temp = vm->temp_value_list[index];
 	if (temp->type != RZIL_TEMP_EMPTY) {
@@ -272,6 +303,13 @@ RZ_API void *rz_il_get_temp(RzILVM vm, int index) {
 	return NULL;
 }
 
+/**
+ * Get a pointer to temporary value by specifying index
+ * return a BitVector pointer, this function will ensure you get the BitVector value.
+ * \param vm RzILVM, pointer to vm
+ * \param index int, index of temporary value
+ * \return temp BitVector, a pointer to the bitvector instance at index
+ */
 RZ_API BitVector rz_il_get_bv_temp(RzILVM vm, int index) {
 	RzILTemp temp = vm->temp_value_list[index];
 	if (temp->type == RZIL_TEMP_BV) {
@@ -298,6 +336,13 @@ RZ_API BitVector rz_il_get_bv_temp(RzILVM vm, int index) {
 	return NULL;
 }
 
+/**
+ * Get a pointer to temporary value by specifying index
+ * return a Bool pointer, this function will ensure you get the Bool value.
+ * \param vm RzILVM, pointer to vm
+ * \param index int, index of temporary value
+ * \return temp Bool, a pointer to the bool instance at index
+ */
 RZ_API Bool rz_il_get_bool_temp(RzILVM vm, int index) {
 	RzILTemp temp = vm->temp_value_list[index];
 	if (temp->type == RZIL_TEMP_BOOL) {
@@ -343,6 +388,13 @@ RZ_API Bool rz_il_get_bool_temp(RzILVM vm, int index) {
 	return NULL;
 }
 
+/**
+ * Get a pointer to temporary value by specifying index
+ * return a RzILVal pointer, this function will ensure you get the RzILVal value.
+ * \param vm RzILVM, pointer to vm
+ * \param index int, index of temporary value
+ * \return temp RzILVal, a pointer to the rzil value instance at index
+ */
 RZ_API RzILVal rz_il_get_val_temp(RzILVM vm, int index) {
 	RzILTemp temp = vm->temp_value_list[index];
 	if (temp->type == RZIL_TEMP_VAL) {
@@ -373,7 +425,13 @@ RZ_API RzILVal rz_il_get_val_temp(RzILVM vm, int index) {
 	return NULL;
 }
 
-// simply set data to NULL
+/**
+ * Make the temporary value as an empty one without type info
+ * This function will set the data to NULL without free it
+ * The developer should manage the data manually before empty_temp
+ * \param vm RzILVM, pointer to vm
+ * \param index, index to get temporary value
+ */
 RZ_API void rz_il_empty_temp(RzILVM vm, int index) {
 	if (index < 0) {
 		return; // do nothing
@@ -383,6 +441,11 @@ RZ_API void rz_il_empty_temp(RzILVM vm, int index) {
 	temp->type = RZIL_TEMP_EMPTY;
 }
 
+/**
+ * Free a temporary value
+ * \param vm, pointer to vm
+ * \param temp, pointer to temporary value
+ */
 // free the memory and empty it (set data to NULL)
 RZ_API void rz_il_clean_temp(RzILVM vm, RzILTemp temp) {
 	RZIL_TEMP_TYPE type = temp->type;
@@ -407,7 +470,10 @@ RZ_API void rz_il_clean_temp(RzILVM vm, RzILTemp temp) {
 	temp->type = RZIL_TEMP_EMPTY;
 }
 
-// Clean temporary value, called after step out current instruction
+/**
+ * Free and clean the temporay values in vm
+ * \param vm RzILVM, pointer to vm
+ */
 RZ_API void rz_il_clean_temps(RzILVM vm) {
 	RzILTemp *temps = vm->temp_value_list;
 	for (int i = 0; i < VM_MAX_TEMP; ++i) {
@@ -417,7 +483,12 @@ RZ_API void rz_il_clean_temps(RzILVM vm) {
 	}
 }
 
-// Make a RzILOp list for a single instructions
+/**
+ * Make a core theory opcode vector
+ * \param num int, number of total opcodes
+ * \param ... op RzILOp, op will be pushed to vector one by one
+ * \return oplist RzPVector*, pointer to the opcode
+ */
 RZ_API RzPVector *rz_il_make_oplist(int num, ...) {
 	va_list args;
 	RzILOp cur_op;
@@ -433,6 +504,13 @@ RZ_API RzPVector *rz_il_make_oplist(int num, ...) {
 	return oplist;
 }
 
+/**
+ * Make a core theory opcode vector, and set id for every opcode
+ * \param id ut64, set id for every opcode in this list
+ * \param num int, number of total opcodes
+ * \param ... op RzILOp, op will be pushed to vector one by one
+ * \return oplist RzPVector*, pointer to the opcode
+ */
 RZ_API RzPVector *rz_il_make_oplist_with_id(ut64 id, int num, ...) {
 	va_list args;
 	RzILOp cur_op;
@@ -449,15 +527,31 @@ RZ_API RzPVector *rz_il_make_oplist_with_id(ut64 id, int num, ...) {
 	return oplist;
 }
 
-// Add binding of address and core theory opcodes
+/**
+ * Store an opcode list to address
+ * \param vm RzILVM, pointer to vm
+ * \param addr BitVector, address of this opcode list
+ * \param oplist RzPVector of RzILOp, core theory opcodes
+ */
 RZ_API void rz_il_vm_store_opcodes_to_addr(RzILVM vm, BitVector addr, RzPVector *oplist) {
 	ht_pp_insert(vm->ct_opcodes, addr, oplist);
 }
 
+/**
+ * Load an opcode list at current pc
+ * \param vm RzILVM, pointer to vm
+ * \return oplist RzPvector of RzILOp, core theory opcodes
+ */
 RZ_API RzPVector *rz_il_vm_load_opcodes_at_pc(RzILVM vm) {
 	return ht_pp_find(vm->ct_opcodes, vm->pc, NULL);
 }
 
+/**
+ * Load an opcode list at address
+ * \param vm RzILVM, pointer to vm
+ * \param addr BitVector, address to load ops
+ * \return oplist RzPvector of RzILOp, core theory opcodes
+ */
 RZ_API RzPVector *rz_il_vm_load_opcodes(RzILVM vm, BitVector addr) {
 	return ht_pp_find(vm->ct_opcodes, addr, NULL);
 }
