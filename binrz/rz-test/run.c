@@ -6,7 +6,7 @@
 
 #if __WINDOWS__
 static ut8 *remove_cr(ut8 *str) {
-	char *s = (char *s);
+	char *s = (char *)str;
 	char *start = s;
 	while (*s) {
 		if (s[0] == '\r' &&
