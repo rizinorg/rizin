@@ -39,15 +39,15 @@ static char *entitlements(RzBinFile *bf, bool json) {
 	}
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	rz_return_val_if_fail(bf && bin_obj && buf, false);
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
+	rz_return_val_if_fail(bf && obj && buf, false);
 	struct MACH0_(opts_t) opts;
 	MACH0_(opts_set_default)
 	(&opts, bf);
 	struct MACH0_(obj_t) *res = MACH0_(new_buf)(buf, &opts);
 	if (res) {
 		sdb_ns_set(sdb, "info", res->kv);
-		*bin_obj = res;
+		obj->bin_obj = res;
 		return true;
 	}
 	return false;

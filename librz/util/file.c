@@ -831,7 +831,9 @@ RZ_API bool rz_file_dump(const char *file, const ut8 *buf, int len, bool append)
 }
 
 RZ_API bool rz_file_rm(const char *file) {
-	rz_return_val_if_fail(!RZ_STR_ISEMPTY(file), false);
+	if (RZ_STR_ISEMPTY(file)) {
+		return false;
+	}
 	if (rz_file_is_directory(file)) {
 #if __WINDOWS__
 		LPTSTR file_ = rz_sys_conv_utf8_to_win(file);

@@ -34,11 +34,11 @@ static bool check_buffer(RzBuffer *buf) {
 	return bep == 0xea || bep == 0xe9;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
 	if (!check_buffer(buf)) {
 		return false;
 	}
-	*bin_obj = rz_buf_ref(buf);
+	obj->bin_obj = rz_buf_ref(buf);
 	return true;
 }
 

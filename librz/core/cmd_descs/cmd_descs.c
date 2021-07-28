@@ -7,10 +7,13 @@
 
 #include "cmd_descs.h"
 
+static const RzCmdDescDetail system_details[2];
+static const RzCmdDescDetail system_to_cons_details[2];
 static const RzCmdDescDetail hash_bang_details[2];
 static const RzCmdDescDetail pointer_details[2];
 static const RzCmdDescDetail eval_getset_details[2];
 static const RzCmdDescDetail env_details[3];
+static const RzCmdDescDetail history_list_or_exec_details[2];
 static const RzCmdDescDetail wB_details[2];
 static const RzCmdDescDetail wv_details[2];
 static const RzCmdDescDetail w1_details[2];
@@ -25,6 +28,8 @@ static const RzCmdDescDetail redirection_details[2];
 static const RzCmdDescDetail pipe_details[2];
 static const RzCmdDescDetail grep_details[5];
 static const RzCmdDescDetail specifiers_details[4];
+static const RzCmdDescArg system_args[3];
+static const RzCmdDescArg system_to_cons_args[3];
 static const RzCmdDescArg hash_bang_args[3];
 static const RzCmdDescArg tasks_args[2];
 static const RzCmdDescArg tasks_transient_args[2];
@@ -117,6 +122,7 @@ static const RzCmdDescArg eval_readonly_args[2];
 static const RzCmdDescArg eval_spaces_args[2];
 static const RzCmdDescArg eval_type_args[2];
 static const RzCmdDescArg env_args[3];
+static const RzCmdDescArg history_list_or_exec_args[2];
 static const RzCmdDescArg ls_args[2];
 static const RzCmdDescArg plugins_load_args[2];
 static const RzCmdDescArg plugins_unload_args[2];
@@ -220,8 +226,68 @@ static const RzCmdDescArg zign_space_add_args[2];
 static const RzCmdDescArg zign_space_rename_args[2];
 static const RzCmdDescArg zign_info_range_args[3];
 
-static const RzCmdDescHelp cmd_system_help = {
-	.summary = "Run given commands as in system(3)",
+static const RzCmdDescHelp escl__help = {
+	.summary = "Run given commands as in system(3) or shows command history",
+};
+static const RzCmdDescDetailEntry system_Examples_detail_entries[] = {
+	{ .text = "!", .arg_str = "ls", .comment = "executes the 'ls' command via system(3)" },
+	{ .text = "!", .arg_str = "echo $RZ_SIZE", .comment = "executes the 'echo' command via system(3) and shows the display file size" },
+	{ 0 },
+};
+static const RzCmdDescDetail system_details[] = {
+	{ .name = "Examples", .entries = system_Examples_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg system_args[] = {
+	{
+		.name = "command",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.no_space = true,
+
+	},
+	{
+		.name = "args",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_ARRAY,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp system_help = {
+	.summary = "Runs given commands in system(3)",
+	.details = system_details,
+	.args = system_args,
+};
+
+static const RzCmdDescDetailEntry system_to_cons_Examples_detail_entries[] = {
+	{ .text = "!!", .arg_str = "ls~txt", .comment = "executes the 'ls' command via system(3) and grep for 'txt'" },
+	{ 0 },
+};
+static const RzCmdDescDetail system_to_cons_details[] = {
+	{ .name = "Examples", .entries = system_to_cons_Examples_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg system_to_cons_args[] = {
+	{
+		.name = "command",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.no_space = true,
+
+	},
+	{
+		.name = "args",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_ARRAY,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp system_to_cons_help = {
+	.summary = "Runs a given commands in system(3) and pipes stdout to rizin",
+	.details = system_to_cons_details,
+	.args = system_to_cons_args,
 };
 
 static const RzCmdDescArg last_output_args[] = {
@@ -2173,14 +2239,11 @@ static const RzCmdDescDetailEntry env_Examples_detail_entries[] = {
 
 static const RzCmdDescDetailEntry env_Environment_detail_entries[] = {
 	{ .text = "RZ_FILE", .arg_str = NULL, .comment = "currently opened file name" },
-	{ .text = "RZ_OFFSET", .arg_str = NULL, .comment = "10base offset 64bit value" },
-	{ .text = "RZ_BYTES", .arg_str = NULL, .comment = "TODO: variable with bytes in curblock" },
-	{ .text = "RZ_XOFFSET", .arg_str = NULL, .comment = "same as above, but in 16 base" },
+	{ .text = "RZ_OFFSET", .arg_str = NULL, .comment = "current offset (64bit value)" },
 	{ .text = "RZ_BSIZE", .arg_str = NULL, .comment = "block size" },
 	{ .text = "RZ_ENDIAN", .arg_str = NULL, .comment = "'big' or 'little'" },
 	{ .text = "RZ_IOVA", .arg_str = NULL, .comment = "is io.va true? virtual addressing (1,0)" },
 	{ .text = "RZ_DEBUG", .arg_str = NULL, .comment = "debug mode enabled? (1,0)" },
-	{ .text = "RZ_BLOCK", .arg_str = NULL, .comment = "TODO: dump current block to tmp file" },
 	{ .text = "RZ_SIZE", .arg_str = NULL, .comment = "file size" },
 	{ .text = "RZ_ARCH", .arg_str = NULL, .comment = "value of asm.arch" },
 	{ .text = "RZ_BITS", .arg_str = NULL, .comment = "arch reg size (8, 16, 32, 64)" },
@@ -2231,6 +2294,49 @@ static const RzCmdDescHelp cmd_flag_help = {
 
 static const RzCmdDescHelp cmd_egg_help = {
 	.summary = "Generate shellcodes with rz_egg",
+};
+
+static const RzCmdDescHelp H_help = {
+	.summary = "Rizin history commands.",
+};
+static const RzCmdDescDetailEntry history_list_or_exec_Examples_detail_entries[] = {
+	{ .text = "H", .arg_str = "", .comment = "Shows the current session history" },
+	{ .text = "H", .arg_str = " 12", .comment = "Executes a history command with index value of 12" },
+	{ 0 },
+};
+static const RzCmdDescDetail history_list_or_exec_details[] = {
+	{ .name = "Examples", .entries = history_list_or_exec_Examples_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg history_list_or_exec_args[] = {
+	{
+		.name = "index",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp history_list_or_exec_help = {
+	.summary = "Shows the history in current session or executes an history command via its index.",
+	.details = history_list_or_exec_details,
+	.args = history_list_or_exec_args,
+};
+
+static const RzCmdDescArg history_clear_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp history_clear_help = {
+	.summary = "Clears the history in current session",
+	.args = history_clear_args,
+};
+
+static const RzCmdDescArg history_save_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp history_save_help = {
+	.summary = "Saves the history of the current session",
+	.args = history_save_args,
 };
 
 static const RzCmdDescHelp cmd_info_help = {
@@ -4725,8 +4831,10 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *root_cd = rz_cmd_get_root(core->rcmd);
 	rz_cmd_batch_start(core->rcmd);
 
-	RzCmdDesc *cmd_system_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "!", rz_cmd_system, &cmd_system_help);
-	rz_warn_if_fail(cmd_system_cd);
+	RzCmdDesc *escl__cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "!", rz_system_handler, &system_help, &escl__help);
+	rz_warn_if_fail(escl__cd);
+	RzCmdDesc *system_to_cons_cd = rz_cmd_desc_argv_new(core->rcmd, escl__cd, "!!", rz_system_to_cons_handler, &system_to_cons_help);
+	rz_warn_if_fail(system_to_cons_cd);
 
 	RzCmdDesc *last_output_cd = rz_cmd_desc_argv_new(core->rcmd, root_cd, "_", rz_last_output_handler, &last_output_help);
 	rz_warn_if_fail(last_output_cd);
@@ -5167,6 +5275,14 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_egg_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "g", rz_cmd_egg, &cmd_egg_help);
 	rz_warn_if_fail(cmd_egg_cd);
+
+	RzCmdDesc *H_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "H", rz_history_list_or_exec_handler, &history_list_or_exec_help, &H_help);
+	rz_warn_if_fail(H_cd);
+	RzCmdDesc *history_clear_cd = rz_cmd_desc_argv_new(core->rcmd, H_cd, "H-", rz_history_clear_handler, &history_clear_help);
+	rz_warn_if_fail(history_clear_cd);
+
+	RzCmdDesc *history_save_cd = rz_cmd_desc_argv_new(core->rcmd, H_cd, "H+", rz_history_save_handler, &history_save_help);
+	rz_warn_if_fail(history_save_cd);
 
 	RzCmdDesc *cmd_info_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "i", rz_cmd_info, &cmd_info_help);
 	rz_warn_if_fail(cmd_info_cd);

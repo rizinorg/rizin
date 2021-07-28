@@ -20,12 +20,12 @@ static Sdb *get_sdb(RzBinFile *bf) {
 	return bin ? bin->kv : NULL;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	rz_return_val_if_fail(bf && bin_obj && buf, false);
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
+	rz_return_val_if_fail(bf && obj && buf, false);
 	struct PE_(rz_bin_pe_obj_t) *res = PE_(rz_bin_pe_new_buf)(buf, bf->rbin->verbose);
 	if (res) {
 		sdb_ns_set(sdb, "info", res->kv);
-		*bin_obj = res;
+		obj->bin_obj = res;
 		return true;
 	}
 	return false;

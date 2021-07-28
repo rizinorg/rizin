@@ -24,11 +24,11 @@ static bool find_export(const ut32 *p, const RzBinWasmExportEntry *q) {
 	return q->index != (*p);
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
 	rz_return_val_if_fail(bf && buf && rz_buf_size(buf) != UT64_MAX, false);
 
 	if (check_buffer(buf)) {
-		*bin_obj = rz_bin_wasm_init(bf, buf);
+		obj->bin_obj = rz_bin_wasm_init(bf, buf);
 		return true;
 	}
 	return false;

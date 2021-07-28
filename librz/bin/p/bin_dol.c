@@ -54,7 +54,7 @@ static bool check_buffer(RzBuffer *buf) {
 	return false;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
 	if (rz_buf_size(buf) < sizeof(DolHeader)) {
 		return false;
 	}
@@ -73,7 +73,7 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 	}
 	free(lowername);
 	rz_buf_fread_at(bf->buf, 0, (void *)dol, "67I", 1);
-	*bin_obj = dol;
+	obj->bin_obj = dol;
 	return true;
 
 lowername_err:

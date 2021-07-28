@@ -118,8 +118,8 @@ static bool init_phdr_sdb(ELFOBJ *bin) {
 		sdb_set(bin->kv, "elf_phdr.format", sdb_elf_phdr_format, 0);
 }
 
-static bool init_phdr_aux(ELFOBJ *bin) {
-	bin->segments = Elf_(rz_bin_elf_segments_new)(bin);
+static bool init_phdr_aux(ELFOBJ *bin, RzBinObjectLoadOptions *options) {
+	bin->segments = Elf_(rz_bin_elf_segments_new)(bin, options);
 	if (!bin->segments) {
 		return false;
 	}
@@ -127,8 +127,8 @@ static bool init_phdr_aux(ELFOBJ *bin) {
 	return init_phdr_sdb(bin);
 }
 
-static void init_phdr(ELFOBJ *bin) {
-	if (!init_phdr_aux(bin)) {
+static void init_phdr(ELFOBJ *bin, RzBinObjectLoadOptions *options) {
+	if (!init_phdr_aux(bin, options)) {
 		RZ_LOG_WARN("Failed to initialize program header.\n");
 	}
 }
@@ -251,8 +251,8 @@ static bool init_shdr_sdb(ELFOBJ *bin) {
 		sdb_set(bin->kv, "elf_shdr.format", sdb_elf_shdr_format, 0);
 }
 
-static bool init_shdr_aux(ELFOBJ *bin, RzVector *sections) {
-	bin->sections = Elf_(rz_bin_elf_convert_sections)(bin, sections);
+static bool init_shdr_aux(ELFOBJ *bin, RzBinObjectLoadOptions *options, RzVector *sections) {
+	bin->sections = Elf_(rz_bin_elf_convert_sections)(bin, options, sections);
 	if (!bin->sections) {
 		return false;
 	}
@@ -260,8 +260,8 @@ static bool init_shdr_aux(ELFOBJ *bin, RzVector *sections) {
 	return init_shdr_sdb(bin);
 }
 
-static void init_shdr(ELFOBJ *bin, RzVector *sections) {
-	if (!init_shdr_aux(bin, sections)) {
+static void init_shdr(ELFOBJ *bin, RzBinObjectLoadOptions *options, RzVector *sections) {
+	if (!init_shdr_aux(bin, options, sections)) {
 		RZ_LOG_WARN("Failed to initialize section header.\n");
 	}
 }
@@ -273,7 +273,7 @@ static bool init_shstrtab_sdb(ELFOBJ *bin, ut64 offset, ut64 size) {
 
 static bool init_shstrtab_aux(ELFOBJ *bin, RzVector *sections) {
 	if (!sections) {
-		return false;
+		return true;
 	}
 
 	Elf_(Shdr) *section = rz_vector_index_ptr(sections, bin->ehdr.e_shstrndx);
@@ -373,11 +373,7 @@ static void init_symbols_info(ELFOBJ *bin) {
 	}
 }
 
-static void init_aux(ELFOBJ *bin) {
-	RzVector *sections = Elf_(rz_bin_elf_sections_new)(bin);
-
-	init_shstrtab(bin, sections);
-
+static void init_aux(ELFOBJ *bin, RzBinObjectLoadOptions *options) {
 	if (!Elf_(rz_bin_elf_is_relocatable)(bin) && !Elf_(rz_bin_elf_is_static)(bin)) {
 		init_dt_dynamic(bin);
 		init_dynstr(bin);
@@ -385,23 +381,30 @@ static void init_aux(ELFOBJ *bin) {
 	}
 
 	bin->baddr = Elf_(rz_bin_elf_get_baddr)(bin);
-	init_shdr(bin, sections);
+
+	RzVector *sections = NULL;
+	if (options->elf_load_sections) {
+		sections = Elf_(rz_bin_elf_sections_new)(bin);
+	}
+
+	init_shstrtab(bin, sections);
+	init_shdr(bin, options, sections);
 
 	rz_vector_free(sections);
 }
 
-static bool init(ELFOBJ *bin) {
+static bool init(ELFOBJ *bin, RzBinObjectLoadOptions *options) {
 	/* bin is not an ELF */
 	if (!init_ehdr(bin)) {
 		return false;
 	}
 
 	if (!Elf_(rz_bin_elf_is_relocatable)(bin)) {
-		init_phdr(bin);
+		init_phdr(bin, options);
 	}
 
 	if (bin->ehdr.e_type != ET_CORE) {
-		init_aux(bin);
+		init_aux(bin, options);
 	}
 
 	bin->boffset = Elf_(rz_bin_elf_get_boffset)(bin);
@@ -416,8 +419,8 @@ static bool init(ELFOBJ *bin) {
 	return true;
 }
 
-RZ_OWN ELFOBJ *Elf_(rz_bin_elf_new_buf)(RZ_NONNULL RzBuffer *buf) {
-	rz_return_val_if_fail(buf, NULL);
+RZ_OWN ELFOBJ *Elf_(rz_bin_elf_new_buf)(RZ_NONNULL RzBuffer *buf, RZ_NONNULL RzBinObjectLoadOptions *options) {
+	rz_return_val_if_fail(buf && options, NULL);
 
 	ELFOBJ *bin = RZ_NEW0(ELFOBJ);
 	if (!bin) {
@@ -429,7 +432,7 @@ RZ_OWN ELFOBJ *Elf_(rz_bin_elf_new_buf)(RZ_NONNULL RzBuffer *buf) {
 
 	bin->size = rz_buf_size(buf);
 
-	if (!init(bin)) {
+	if (!init(bin, options)) {
 		Elf_(rz_bin_elf_free)(bin);
 		return NULL;
 	}

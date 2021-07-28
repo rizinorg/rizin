@@ -377,7 +377,7 @@ static ut16 read_short(RzBuffer *b) {
 }
 
 static ut32 read_word(RzBuffer *b) {
-	ut32 r = (read_short(b) << 16);
+	ut32 r = ((ut32)(read_short(b)) << 16);
 	r += read_short(b);
 	return r;
 }
