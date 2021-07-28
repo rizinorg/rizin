@@ -7,7 +7,7 @@
 #include <rz_demangler.h>
 #include <rz_util.h>
 #include <rz_util/rz_time.h>
-//#include <rz_basefind.h>
+#include <rz_basefind.h>
 #define is_in_range(at, from, sz) ((at) >= (from) && (at) < ((from) + (sz)))
 
 #define VA_FALSE    0
@@ -2522,12 +2522,7 @@ err:
 	return res;
 }
 
-RZ_API bool rz_core_bin_cur_section_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, RzList *hashes) {
-	rz_return_val_if_fail(core && state, false);
 
-	RzCoreBinFilter filter = { 0 };
-	filter.offset = core->offset;
-	return rz_core_bin_sections_print(core, bf, state, &filter, hashes);
 }
 
 RZ_API bool rz_core_bin_segments_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, RzCoreBinFilter *filter, RzList *hashes) {

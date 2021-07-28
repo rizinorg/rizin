@@ -7,7 +7,7 @@ project('rizin', 'c',
     'b_vscrt=from_buildtype',
   ]
 )
-add_project_arguments('-lxc++', language: 'c')
+add_project_arguments('-lstdc++', language: 'c')
 py3_exe = import('python').find_installation()
 git_exe = find_program('git', required: false)
 pkgconfig_mod = import('pkgconfig')
