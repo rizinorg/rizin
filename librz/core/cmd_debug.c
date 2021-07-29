@@ -395,7 +395,6 @@ static const char *help_msg_dte[] = {
 	"dte", " [idx]", "Show commands for that index log",
 	"dte", "-*", "Delete all esil traces",
 	"dtei", "", "Esil trace log single instruction",
-	"dtek", " [sdb query]", "Esil trace log single instruction from sdb",
 	NULL
 };
 
@@ -4422,17 +4421,6 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 				rz_analysis_esil_trace_show(
 					core->analysis->esil, idx);
 			} break;
-			// FIXME : should we mark this deprecated ?
-			case 'k': // "dtek"
-				//				if (input[3] == ' ') {
-				//					char *s = sdb_querys(core->analysis->esil->trace->db,
-				//						NULL, 0, input + 4);
-				//					rz_cons_println(s);
-				//					free(s);
-				//				} else {
-				//					eprintf("Usage: dtek [query]\n");
-				//				}
-				break;
 			default:
 				rz_core_cmd_help(core, help_msg_dte);
 			}
