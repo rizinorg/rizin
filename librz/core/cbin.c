@@ -2523,6 +2523,35 @@ err:
 }
 
 
+static int bin_basefind(RzCore *r, PJ *pj, int mode, int va) {
+	const char *infile = r->bin->file;
+	char *s = rz_bin_basefind(infile);
+	rz_cons_printf("%s\n", s);
+}
+
+static char *build_hash_string(PJ *pj, int mode, const char *chksum, ut8 *data, ut32 datalen) {
+	char *chkstr = NULL, *aux = NULL, *ret = NULL;
+	RzList *hashlist = rz_str_split_duplist(chksum, ",", true);
+	RzListIter *iter;
+	char *hashname;
+	rz_list_foreach (hashlist, iter, hashname) {
+		chkstr = rz_msg_digest_calculate_small_block_string(hashname, data, datalen, NULL, false);
+		if (!chkstr) {
+			continue;
+		}
+		if (IS_MODE_SIMPLE(mode) || IS_MODE_NORMAL(mode)) {
+			aux = rz_str_newf(iter->n ? "%s " : "%s", chkstr);
+		} else if (IS_MODE_JSON(mode)) {
+			pj_ks(pj, hashname, chkstr);
+		} else {
+			aux = rz_str_newf("%s=%s ", hashname, chkstr);
+		}
+		ret = rz_str_append(ret, aux);
+		free(chkstr);
+		free(aux);
+	}
+	rz_list_free(hashlist);
+	return ret;
 }
 
 RZ_API bool rz_core_bin_segments_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, RzCoreBinFilter *filter, RzList *hashes) {

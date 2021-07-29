@@ -193,7 +193,6 @@ static int rabin_show_help(int v) {
 			" -Q              show load address used by dlopen (non-aslr libs)\n"
 			" -r              rizin output\n"
 			" -R              relocations\n"
-                        " -Y              basefind\n"
 			" -s              symbols\n"
 			" -S              sections\n"
 			" -SS             segments\n"
@@ -206,6 +205,7 @@ static int rabin_show_help(int v) {
 			" -w              display try/catch blocks\n"
 			" -x              extract bins contained in file\n"
 			" -X [fmt] [f] .. package in fat or zip the given files and bins contained in file\n"
+			" -Y [path file]  basefind\n"
 			" -z              strings (from data section)\n"
 			" -zz             strings (from raw bins [e bin.rawstr=1])\n"
 			" -zzz            dump raw strings to stdout (for huge files)\n"
@@ -874,7 +874,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		case 'M': set_action(RZ_BIN_REQ_MAIN); break;
 		case 'l': set_action(RZ_BIN_REQ_LIBS); break;
 		case 'R': set_action(RZ_BIN_REQ_RELOCS); break;
-                case 'Y': set_action(RZ_BIN_REQ_BASEFIND); break;
+		case 'Y': set_action(RZ_BIN_REQ_BASEFIND); break;
 		case 'x': set_action(RZ_BIN_REQ_EXTRACT); break;
 		case 'X': set_action(RZ_BIN_REQ_PACKAGE); break;
 		case 'O':
