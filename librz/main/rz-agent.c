@@ -95,7 +95,7 @@ RZ_API int rz_main_rz_agent(int argc, const char **argv) {
 	memorystatus_control(MEMORYSTATUS_CMD_SET_JETSAM_TASK_LIMIT, getpid(), 256, NULL, 0);
 #endif
 	if (dodaemon) {
-#if LIBC_HAVE_FORK
+#if HAVE_FORK
 		int pid = rz_sys_fork();
 		if (pid > 0) {
 			printf("%d\n", pid);
