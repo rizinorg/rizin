@@ -391,7 +391,6 @@ static void bf_init_rzil(RzAnalysis *analysis, ut64 addr) {
 
 #define BUFSIZE_INC 32
 static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
-	ut64 dst = 0LL;
 	if (!op) {
 		return 1;
 	}
@@ -402,7 +401,6 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 
 	/* Ayeeee! What's inside op? Do we have an initialized RzAnalysisOp? Are we going to have a leak here? :-( */
 	memset(op, 0, sizeof(RzAnalysisOp)); /* We need to refactorize this. Something like rz_analysis_op_init would be more appropriate */
-	rz_strbuf_init(&op->esil);
 	op->size = 1;
 	op->id = getid(buf[0]);
 	op->addr = addr;
@@ -417,89 +415,34 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		op->fail = addr + 1;
-		buf = rz_mem_dup((void *)buf, len);
-		if (!buf) {
-			break;
-		}
-		{
-			const ut8 *p = buf + 1;
-			int lev = 0, i = 1;
-			len--;
-			while (i < len && *p) {
-				if (*p == '[') {
-					lev++;
-				}
-				if (*p == ']') {
-					lev--;
-					if (lev == -1) {
-						dst = addr + (size_t)(p - buf);
-						dst++;
-						op->jump = dst;
-						rz_strbuf_setf(&op->esil,
-							"$$,brk,=[1],brk,++=,"
-							"ptr,[1],!,?{,0x%" PFMT64x ",pc,=,brk,--=,}",
-							dst);
-						goto beach;
-					}
-				}
-				if (*p == 0x00 || *p == 0xff) {
-					op->type = RZ_ANALYSIS_OP_TYPE_ILL;
-					goto beach;
-				}
-				if (i == len - 1 && analysis->read_at) {
-					int new_buf_len = len + 1 + BUFSIZE_INC;
-					ut8 *new_buf = calloc(new_buf_len, 1);
-					if (new_buf) {
-						free((ut8 *)buf);
-						(void)analysis->read_at(analysis, addr, new_buf, new_buf_len);
-						buf = new_buf;
-						p = buf + i;
-						len += BUFSIZE_INC;
-					}
-				}
-				p++;
-				i++;
-			}
-		}
-	beach:
-		free((ut8 *)buf);
 		break;
 	case ']':
 		oplist = bf_rlimit(vm, stack_helper, op->id, addr);
-		op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
-		// XXX This is wrong esil
-		rz_strbuf_set(&op->esil, "brk,--=,brk,[1],pc,=");
+		op->type = RZ_ANALYSIS_OP_TYPE_UCJMP;
 		break;
 	case '>':
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
-		rz_strbuf_setf(&op->esil, "%d,ptr,+=", op->size);
 		oplist = bf_right_arrow(vm, op->id);
 		break;
 	case '<':
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
-		rz_strbuf_setf(&op->esil, "%d,ptr,-=", op->size);
 		oplist = bf_left_arrow(vm, op->id);
 		break;
 	case '+':
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
-		rz_strbuf_setf(&op->esil, "%d,ptr,+=[1]", op->size);
 		oplist = bf_inc(vm, op->id);
 		break;
 	case '-':
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
-		rz_strbuf_setf(&op->esil, "%d,ptr,-=[1]", op->size);
 		oplist = bf_dec(vm, op->id);
 		break;
 	case '.':
 		oplist = bf_out(vm, op->id);
-		// print element in stack to screen
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
-		rz_strbuf_set(&op->esil, "ptr,[1],scr,=[1],scr,++=");
 		break;
 	case ',':
 		oplist = bf_in(vm, op->id);
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
-		rz_strbuf_set(&op->esil, "kbd,[1],ptr,=[1],kbd,++=");
 		break;
 	case 0x00:
 	case 0xff:
@@ -509,7 +452,6 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 	default:
 		oplist = NULL;
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
-		rz_strbuf_set(&op->esil, ",");
 		break;
 	}
 	if (oplist) {
