@@ -2806,19 +2806,12 @@ static int bin_symbols(RzCore *r, PJ *pj, int mode, int va, ut64 at, const char 
 	return true;
 }
 
-static int bin_basefind(RzCore *r, PJ *pj, int mode, int va, ut64 at, const char *name, bool exponly, const char *args) {
-	//rz_cons_printf(rz_bin_basefind());
-	//rz_bin_basefind();
-	//bool printHere = (args && *args == '.');
-	//rz_cons_printf("[Symbols!!]\n");
-	char *s = rz_bin_basefind();
+static int bin_basefind(RzCore *r, PJ *pj, int mode, int va) {
+	const char *infile = r->bin->file;
+	char *s = rz_bin_basefind(infile);
 	rz_cons_printf("%s\n", s);
-
-	//rz_cons_printf("[Symbols!]\n");
-	//rz_cons_printf(rz_bin_basefind());
-
-	//rz_bin_basefind("TEST");
 }
+
 static char *build_hash_string(PJ *pj, int mode, const char *chksum, ut8 *data, ut32 datalen) {
 	char *chkstr = NULL, *aux = NULL, *ret = NULL;
 	RzList *hashlist = rz_str_split_duplist(chksum, ",", true);
@@ -4313,9 +4306,11 @@ RZ_API int rz_core_bin_info(RzCore *core, int action, PJ *pj, int mode, int va, 
 	if ((action & RZ_CORE_BIN_ACC_SYMBOLS)) { // 6s
 		ret &= bin_symbols(core, pj, mode, va, at, name, false, chksum);
 	}
-	if ((action & RZ_CORE_BIN_ACC_BASEFIND)) { // 6s
-		ret &= bin_basefind(core, pj, mode, va, at, name, false, chksum);
+
+	if ((action & RZ_CORE_BIN_ACC_BASEFIND)) {
+		ret &= bin_basefind(core, pj, mode, va);
 	}
+
 	if ((action & RZ_CORE_BIN_ACC_CLASSES)) { // 6s
 		ret &= bin_classes(core, pj, mode);
 	}
