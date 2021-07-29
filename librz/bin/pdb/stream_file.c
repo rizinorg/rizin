@@ -4,10 +4,6 @@
 #include "types.h"
 #include "stream_file.h"
 
-///////////////////////////////////////////////////////////////////////////////
-/// size = -1 (default value)
-/// pages_size = 0x1000 (default value)
-////////////////////////////////////////////////////////////////////////////////
 int init_r_stream_file(RZ_STREAM_FILE *stream_file, RzBuffer *buf, int *pages, int pages_amount, int size, int page_size) {
 	stream_file->error = 0;
 	stream_file->buf = buf;
@@ -23,7 +19,6 @@ int init_r_stream_file(RZ_STREAM_FILE *stream_file, RzBuffer *buf, int *pages, i
 	return 1;
 }
 
-///////////////////////////////////////////////////////////////////////////////
 static void stream_file_read_pages(RZ_STREAM_FILE *stream_file, int start_indx, int end_indx, char *res) {
 	int i, page_offset;
 
@@ -45,8 +40,6 @@ static void stream_file_read_pages(RZ_STREAM_FILE *stream_file, int start_indx, 
 	}
 }
 
-// size by default = -1
-///////////////////////////////////////////////////////////////////////////////
 void stream_file_read(RZ_STREAM_FILE *stream_file, int size, char *res) {
 	size_t pn_start, off_start, pn_end, off_end;
 	if (size == -1) {
@@ -73,7 +66,6 @@ void stream_file_read(RZ_STREAM_FILE *stream_file, int size, char *res) {
 	}
 }
 
-///////////////////////////////////////////////////////////////////////////////
 void stream_file_seek(RZ_STREAM_FILE *stream_file, int offset, int whence) {
 	switch (whence) {
 	case 0:
@@ -96,12 +88,10 @@ void stream_file_seek(RZ_STREAM_FILE *stream_file, int offset, int whence) {
 	}
 }
 
-///////////////////////////////////////////////////////////////////////////////
 int stream_file_tell(RZ_STREAM_FILE *stream_file) {
 	return stream_file->pos;
 }
 
-///////////////////////////////////////////////////////////////////////////////
 void stream_file_get_data(RZ_STREAM_FILE *stream_file, char *data) {
 	int pos = stream_file_tell(stream_file);
 	stream_file_seek(stream_file, 0, 0);
@@ -109,7 +99,6 @@ void stream_file_get_data(RZ_STREAM_FILE *stream_file, char *data) {
 	stream_file_seek(stream_file, pos, 0);
 }
 
-///////////////////////////////////////////////////////////////////////////////
 void stream_file_get_size(RZ_STREAM_FILE *stream_file, int *data_size) {
 	int pn_start = 0, off_start = 0;
 	GET_PAGE(pn_start, off_start, stream_file->pos, stream_file->page_size);
