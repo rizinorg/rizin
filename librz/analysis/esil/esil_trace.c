@@ -432,7 +432,7 @@ static int cmp_strings_by_leading_number(void *data1, void *data2) {
 }
 
 static bool ht_pp_add_kv_to_list(void *user, void *key, void *val) {
-	RzList *list = (RzList*)user;
+	RzList *list = (RzList *)user;
 	HtPPKv *kv = RZ_NEW0(HtPPKv);
 	kv->key = key;
 	kv->value = val;
@@ -441,7 +441,7 @@ static bool ht_pp_add_kv_to_list(void *user, void *key, void *val) {
 }
 
 static void free_etrace_list_callback(void *data) {
-	free((HtPPKv*)data);
+	free((HtPPKv *)data);
 }
 
 RZ_API void rz_analysis_esil_trace_list(RzAnalysisEsil *esil) {
