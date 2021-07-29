@@ -8,9 +8,9 @@
 #include <rz_io.h>
 #include "bflt/bflt.h"
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	*bin_obj = rz_bin_bflt_new_buf(buf);
-	return *bin_obj;
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
+	obj->bin_obj = rz_bin_bflt_new_buf(buf);
+	return obj->bin_obj;
 }
 
 static RzList *entries(RzBinFile *bf) {

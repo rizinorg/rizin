@@ -40,7 +40,7 @@ static bool check_buffer(RzBuffer *b) {
 }
 
 // XXX b vs bf->buf
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *b, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *sdb) {
 	ut64 offset = 0;
 	struct rz_bin_vsf_obj *res = NULL;
 	if (check_buffer(bf->buf)) {
@@ -110,7 +110,7 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *b, ut64 loadadd
 		res->kv = sdb_new0();
 		sdb_ns_set(sdb, "info", res->kv);
 	}
-	*bin_obj = res;
+	obj->bin_obj = res;
 	return true;
 }
 

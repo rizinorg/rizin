@@ -12,6 +12,7 @@ bool test_rz_bin(void) {
 	rz_io_bind(io, &bin->iob);
 
 	RzBinOptions opt = { 0 };
+	rz_bin_options_init(&opt, 0, 0, 0, false, false);
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/ioli/crackme0x00", &opt);
 	mu_assert_notnull(bf, "crackme0x00 binary could not be opened");
 	mu_assert_notnull(bf->o, "bin object");

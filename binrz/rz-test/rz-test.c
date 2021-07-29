@@ -76,6 +76,7 @@ static int help(bool verbose) {
 }
 
 static void path_left_free_kv(HtPPKv *kv) {
+	free(kv->key);
 	free(kv->value);
 }
 
@@ -510,6 +511,7 @@ coast:
 	rz_test_test_database_free(state.db);
 	rz_th_lock_free(state.lock);
 	rz_th_cond_free(state.cond);
+	ht_pp_free(state.path_left);
 beach:
 	free(output_file);
 	free(rizin_cmd);

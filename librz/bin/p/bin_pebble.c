@@ -46,7 +46,7 @@ static bool check_buffer(RzBuffer *b) {
 	return !memcmp(magic, "PBLAPP\x00\x00", 8);
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *b, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *sdb) {
 	return check_buffer(b);
 }
 

@@ -1294,6 +1294,9 @@ static bool get_bin_info(RzCore *core, const char *file, ut64 baseaddr, PJ *pj, 
 		return false;
 	}
 	RzBinOptions opt = { 0 };
+	opt.obj_opts.elf_load_sections = true;
+	opt.obj_opts.elf_checks_sections = true;
+	opt.obj_opts.elf_checks_segments = true;
 	opt.fd = fd;
 	opt.sz = rz_io_fd_size(core->io, fd);
 	opt.obj_opts.baseaddr = baseaddr;

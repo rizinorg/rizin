@@ -86,49 +86,14 @@ typedef enum {
 #define RZ_PERM_ACCESS 32
 #define RZ_PERM_CREAT  64
 
-// HACK to fix capstone-android-mips build
-#undef mips
-#define mips mips
-
 #if defined(__powerpc) || defined(__powerpc__)
 #undef __POWERPC__
 #define __POWERPC__ 1
 #endif
 
-#if __IPHONE_8_0 && defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
-#define LIBC_HAVE_SYSTEM 0
-#else
-#define LIBC_HAVE_SYSTEM 1
-#endif
-
-#if APPLE_SDK_IPHONEOS || APPLE_SDK_APPLETVOS || APPLE_SDK_WATCHOS || APPLE_SDK_APPLETVSIMULATOR || APPLE_SDK_WATCHSIMULATOR
-#define LIBC_HAVE_PTRACE 0
-#else
-#define LIBC_HAVE_PTRACE 1
-#endif
-
-#if HAVE_FORK
-#define LIBC_HAVE_FORK 1
-#else
-#define LIBC_HAVE_FORK 0
-#endif
-
 #if defined(__OpenBSD__)
 #include <sys/param.h>
 #undef MAXCOMLEN /* redefined in zipint.h */
-#endif
-
-/* release >= 5.9 */
-#if __OpenBSD__ && OpenBSD >= 201605
-#define LIBC_HAVE_PLEDGE 1
-#else
-#define LIBC_HAVE_PLEDGE 0
-#endif
-
-#if __sun
-#define LIBC_HAVE_PRIV_SET 1
-#else
-#define LIBC_HAVE_PRIV_SET 0
 #endif
 
 #ifdef __GNUC__
@@ -212,14 +177,6 @@ typedef int socklen_t;
 #define FUNC_ATTR_USED                  __attribute__((used))
 #define FUNC_ATTR_WARN_UNUSED_RESULT    __attribute__((warn_unused_result))
 #define FUNC_ATTR_ALWAYS_INLINE         __attribute__((always_inline))
-
-#ifdef __clang__
-// clang only
-#elif defined(__INTEL_COMPILER)
-// intel only
-#else
-// gcc only
-#endif
 #else
 #define FUNC_ATTR_MALLOC
 #define FUNC_ATTR_ALLOC_SIZE(x)

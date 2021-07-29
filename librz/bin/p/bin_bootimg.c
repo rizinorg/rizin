@@ -85,7 +85,7 @@ static Sdb *get_sdb(RzBinFile *bf) {
 	return ao ? ao->kv : NULL;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
 	BootImageObj *bio = RZ_NEW0(BootImageObj);
 	if (!bio) {
 		return false;
@@ -101,7 +101,7 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 		return false;
 	}
 	sdb_ns_set(sdb, "info", bio->kv);
-	*bin_obj = bio;
+	obj->bin_obj = bio;
 	return true;
 }
 
