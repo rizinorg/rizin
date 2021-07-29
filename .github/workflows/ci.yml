@@ -201,6 +201,7 @@ jobs:
         /usr/libexec/PlistBuddy -c 'Set :authenticate-user false' ./taskport.plist
         sudo security authorizationdb write system.privilege.taskport < taskport.plist
     - name: Run unit tests (meson)
+      continue-on-error: ${{ matrix.allow_failure }}
       if: matrix.build_system == 'meson' && matrix.enabled
       run: |
         export PATH=${HOME}/bin:${HOME}/Library/Python/3.8/bin:${HOME}/Library/Python/3.9/bin:${HOME}/.local/bin:${PATH}
