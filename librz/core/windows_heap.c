@@ -1422,6 +1422,7 @@ static RzList *rz_heap_blocks_list(RzCore *core) {
 				heap_block->size = block->dwSize;
 				strcpy(heap_block->type, type);
 				heap_block->unusedBytes = unusedBytes;
+				heap_block->granularity = granularity;
 
 				rz_list_append(blocks_list, heap_block);
 			} while (GetNextHeapBlock(&heapInfo->heaps[i], block));

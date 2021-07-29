@@ -366,6 +366,7 @@ include_files =[
   'include/rz_type.h',
   'include/rz_util.h',
   'include/rz_vector.h',
+  'include/rz_windows_heap.h',
   'include/rz_skyline.h',
 ]
 install_headers(include_files, install_dir: rizin_incdir)
