@@ -46,9 +46,11 @@ jobs:
     needs: changes
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.can_fail }}
     timeout-minutes: ${{ matrix.timeout }}
     strategy:
       fail-fast: false
+      can_fail: [false]
       matrix:
         name: [
           linux-meson-clang-tests,
@@ -124,6 +126,7 @@ jobs:
             enabled: ${{ (github.event_name != 'pull_request' || contains(github.head_ref, 'capstone')) && needs.changes.outputs.edited == 'true' }}
             timeout: 45
             cflags: '-Wno-cpp'
+            can_fail: true
 
     steps:
     - uses: actions/checkout@v2
