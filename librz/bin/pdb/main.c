@@ -7,7 +7,6 @@
 #include <string.h>
 #include <getopt.h>
 
-///////////////////////////////////////////////////////////////////////////////
 static void print_usage(void) {
 	printf("pdb_parser -f pdb_file [option]\n");
 	printf("\t -f, --pdb_file : set pdb file to parse\n");
@@ -16,7 +15,6 @@ static void print_usage(void) {
 	printf("\t -g, --print_globals : print all globals functions/variables parsed in pdb file\n");
 }
 
-///////////////////////////////////////////////////////////////////////////////
 int main(int argc, char **argv) {
 	RzPdb pdb;
 

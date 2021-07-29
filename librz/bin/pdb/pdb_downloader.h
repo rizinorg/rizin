@@ -33,21 +33,22 @@ typedef struct SPDBDownloader {
 	int (*download)(struct SPDBDownloader *pdb_downloader);
 } SPDBDownloader;
 
-///
-/// \brief initialization of pdb downloader by SPDBDownloaderOpt
-/// \param opt PDB options
-/// \param pdb_downloader PDB downloader that will be init
-///
+/**
+ * \brief initialization of pdb downloader by SPDBDownloaderOpt
+ * 
+ * \param opt PDB options
+ * \param pdb_downloader PDB downloader that will be init
+ */
 void init_pdb_downloader(SPDBDownloaderOpt *opt, SPDBDownloader *pdb_downloader);
-
-///
-/// \brief deinitialization of PDB downloader
-/// \param pdb_downloader PDB downloader that will be deinit
-///
+/**
+ * \brief deinitialization of PDB downloader
+ * 
+ * \param pdb_downloader PDB downloader that will be deinit
+ */
 void deinit_pdb_downloader(SPDBDownloader *pdb_downloader);
-
-///
-/// \brief download PDB file
+/**
+ * \brief download PDB file
+ */
 RZ_API int rz_bin_pdb_download(RzCore *core, PJ *pj, int isradjson, SPDBOptions *options);
 
 #ifdef __cplusplus

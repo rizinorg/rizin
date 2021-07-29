@@ -5,7 +5,6 @@
 #include "stream_pe.h"
 #include "stream_file.h"
 
-///////////////////////////////////////////////////////////////////////////////
 void parse_pe_stream(void *stream, RZ_STREAM_FILE *stream_file) {
 	int data_size = 0;
 	char *data = 0, *ptmp = 0;
@@ -38,7 +37,6 @@ void parse_pe_stream(void *stream, RZ_STREAM_FILE *stream_file) {
 	free(data);
 }
 
-///////////////////////////////////////////////////////////////////////////////
 void free_pe_stream(void *stream) {
 	SPEStream *pe_stream = (SPEStream *)stream;
 	SIMAGE_SECTION_HEADER *sctn_header = 0;
