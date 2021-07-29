@@ -826,6 +826,7 @@ static char *type_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *typ
 		rz_strbuf_append(buf, rz_type_callable_as_string(typedb, type->callable));
 		break;
 	}
+
 	char *result = rz_strbuf_drain(buf);
 	return result;
 }
