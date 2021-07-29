@@ -23,6 +23,17 @@ static void htpp_string_free(HtPPKv *kv) {
 	free(kv->value);
 }
 
+static bool dbg_print_ht_callback(void *user, const void *key, const void *val) {
+	printf("<%d> %s ----> %s\n", *(int *)user, key, val);
+	*(int *)user += 1;
+}
+
+RZ_API void dbg_print_ht_db(HtPP *db) {
+	int count = 0;
+	printf("Ht Size : %d\n", db->size);
+	ht_pp_foreach(db, dbg_print_ht_callback, &count);
+}
+
 RZ_API void ht_db_array_add(HtPP *db, const char *key, const char *val) {
 	const char *array_val = ht_db_const_get(db, key);
 	char *new_array_val = NULL;
@@ -33,8 +44,8 @@ RZ_API void ht_db_array_add(HtPP *db, const char *key, const char *val) {
 	int array_len = strlen(array_val);
 	int val_len = strlen(val);
 
-        // 1 for ',', 1 for NUL
-        int new_len = array_len + val_len + 1 + 1;
+	// 1 for ',', 1 for NUL
+	int new_len = array_len + val_len + 1 + 1;
 	new_array_val = RZ_NEWS0(char, new_len);
 
 	if (!new_array_val) {
@@ -50,21 +61,21 @@ RZ_API void ht_db_array_add(HtPP *db, const char *key, const char *val) {
 }
 
 RZ_API void ht_db_array_add_num(HtPP *db, const char *key, ut64 val) {
-        char buf[SDB_NUM_BUFSZ];
-        char *v = sdb_itoa(val, buf, SDB_NUM_BASE);
-        if (!ht_db_array_contains(db, key, v)) {
-                if (val < 256) {
-                        char *v = sdb_itoa(val, buf, 10);
-                        return ht_db_array_add(db, key, v);
-                }
-        }
+	char buf[SDB_NUM_BUFSZ];
+	char *v = sdb_itoa(val, buf, SDB_NUM_BASE);
+	if (!ht_db_array_contains(db, key, v)) {
+		if (val < 256) {
+			char *v = sdb_itoa(val, buf, 10);
+			return ht_db_array_add(db, key, v);
+		}
+	}
 }
 
 RZ_API void ht_db_num_set(HtPP *db, const char *key, ut64 v) {
-        char *val, b[SDB_NUM_BUFSZ];
-        int numbase = sdb_num_base(ht_db_const_get(db, key));
-        val = sdb_itoa(v, b, numbase);
-        return ht_db_set(db, key, val);
+	char *val, b[SDB_NUM_BUFSZ];
+	int numbase = sdb_num_base(ht_db_const_get(db, key));
+	val = sdb_itoa(v, b, numbase);
+	return ht_db_set(db, key, val);
 }
 
 RZ_API void ht_db_set(HtPP *db, const char *key, const char *val) {
@@ -84,6 +95,10 @@ RZ_API ut64 ht_db_num_get(HtPP *db, const char *key) {
 RZ_API bool ht_db_array_contains(HtPP *db, const char *key, const char *val) {
 	const char *array_val = ht_db_const_get(db, key);
 	const char *found_start = NULL;
+
+	if (!array_val) {
+		return false;
+	}
 
 	found_start = strstr(array_val, val);
 	if (found_start) {
@@ -432,9 +447,9 @@ RZ_API void rz_analysis_esil_trace_list(RzAnalysisEsil *esil) {
 		return;
 	}
 
-//	PrintfCallback p = esil->analysis->cb_printf;
-//	SdbKv *kv;
-//	SdbListIter *iter;
+	//	PrintfCallback p = esil->analysis->cb_printf;
+	//	SdbKv *kv;
+	//	SdbListIter *iter;
 
 	// TODO : foreach the hash table and sort
 	// SdbList *list = sdb_foreach_list(esil->trace->db, true);
