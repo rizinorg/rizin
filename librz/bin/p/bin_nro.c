@@ -39,7 +39,7 @@ static bool check_buffer(RzBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *b, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *sdb) {
 	// XX bf->buf vs b :D this load_b
 	RzBinNXOObj *bin = RZ_NEW0(RzBinNXOObj);
 	if (bin) {
@@ -49,7 +49,7 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *b, ut64 loadadd
 		bin->classes_list = rz_list_newf((RzListFree)free);
 		ut32 mod0 = rz_buf_read_le32_at(b, NRO_OFFSET_MODMEMOFF);
 		parseMod(b, bin, mod0, ba);
-		*bin_obj = bin;
+		obj->bin_obj = bin;
 	}
 	return true;
 }

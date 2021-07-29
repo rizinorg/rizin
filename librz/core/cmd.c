@@ -100,6 +100,8 @@ static bool lastcmd_repeat(RzCore *core, int next);
 #include "cmd_help.c"
 #include "cmd_remote.c"
 #include "cmd_tasks.c"
+#include "cmd_system.c"
+#include "cmd_history.c"
 #include "cmd_linux_heap_glibc.c"
 
 static const char *help_msg_dollar[] = {
@@ -252,18 +254,6 @@ static const char *help_msg_y[] = {
 	"yx", "", "print contents of clipboard in hexadecimal",
 	"yy", " 0x3344", "paste clipboard",
 	"yz", " [len]", "copy nul-terminated string (up to blocksize) into clipboard",
-	NULL
-};
-
-static const char *help_msg_triple_exclamation[] = {
-	"Usage:", "!!![-*][cmd] [arg|$type...]", " # user-defined autocompletion for commands",
-	"!!!", "", "list all autocompletions",
-	"!!!?", "", "show this help",
-	"!!!", "-*", "remove all user-defined autocompletions",
-	"!!!", "-\\*", "remove autocompletions matching this glob expression",
-	"!!!", "-foo", "remove autocompletion named 'foo'",
-	"!!!", "foo", "add 'foo' for autocompletion",
-	"!!!", "bar $flag", "add 'bar' for autocompletion with $flag as argument",
 	NULL
 };
 
@@ -682,7 +672,7 @@ RZ_IPI int rz_cmd_yank(void *data, const char *input) {
 }
 
 static int lang_run_file(RzCore *core, RzLang *lang, const char *file) {
-	rz_core_sysenv_begin(core, NULL);
+	rz_core_sysenv_begin(core);
 	return rz_lang_run_file(core->lang, file);
 }
 
@@ -1758,99 +1748,6 @@ static inline void print_dict(RzCoreAutocomplete *a, int sub) {
 	}
 }
 
-static int autocomplete_type(const char *strflag) {
-	int i;
-	for (i = 0; i < RZ_CORE_AUTOCMPLT_END; i++) {
-		if (autocomplete_flags[i].desc && !strncmp(strflag, autocomplete_flags[i].name, 5)) {
-			return autocomplete_flags[i].type;
-		}
-	}
-	eprintf("Invalid flag '%s'\n", strflag);
-	return RZ_CORE_AUTOCMPLT_END;
-}
-
-static void cmd_autocomplete(RzCore *core, const char *input) {
-	RzCoreAutocomplete *b = core->autocomplete;
-	input = rz_str_trim_head_ro(input);
-	char arg[256];
-	if (!*input) {
-		print_dict(core->autocomplete, 0);
-		return;
-	}
-	if (*input == '?') {
-		rz_core_cmd_help(core, help_msg_triple_exclamation);
-		int i;
-		rz_cons_printf("|Types:\n");
-		for (i = 0; i < RZ_CORE_AUTOCMPLT_END; i++) {
-			if (autocomplete_flags[i].desc) {
-				rz_cons_printf("| %s     %s\n",
-					autocomplete_flags[i].name,
-					autocomplete_flags[i].desc);
-			}
-		}
-		return;
-	}
-	if (*input == '-') {
-		const char *arg = input + 1;
-		if (!*input) {
-			eprintf("Use !!!-* or !!!-<cmd>\n");
-			return;
-		}
-		rz_core_autocomplete_remove(b, arg);
-		return;
-	}
-	while (b) {
-		const char *end = rz_str_trim_head_wp(input);
-		if (!end) {
-			break;
-		}
-		if ((end - input) >= sizeof(arg)) {
-			eprintf("Exceeded the max arg length (255).\n");
-			return;
-		}
-		if (end == input) {
-			break;
-		}
-		memcpy(arg, input, end - input);
-		arg[end - input] = 0;
-		RzCoreAutocomplete *a = rz_core_autocomplete_find(b, arg, true);
-		input = rz_str_trim_head_ro(end);
-		if (input && *input && !a) {
-			if (b->type == RZ_CORE_AUTOCMPLT_DFLT && !(b = rz_core_autocomplete_add(b, arg, RZ_CORE_AUTOCMPLT_DFLT, false))) {
-				eprintf("ENOMEM\n");
-				return;
-			} else if (b->type != RZ_CORE_AUTOCMPLT_DFLT) {
-				eprintf("Cannot add autocomplete to '%s'. type not $dflt\n", b->cmd);
-				return;
-			}
-		} else if ((!input || !*input) && !a) {
-			if (arg[0] == '$') {
-				int type = autocomplete_type(arg);
-				if (type != RZ_CORE_AUTOCMPLT_END && !b->locked && !b->n_subcmds) {
-					b->type = type;
-				} else if (b->locked || b->n_subcmds) {
-					if (!b->cmd) {
-						return;
-					}
-					eprintf("Changing type of '%s' is forbidden.\n", b->cmd);
-				}
-			} else {
-				if (!rz_core_autocomplete_add(b, arg, RZ_CORE_AUTOCMPLT_DFLT, false)) {
-					eprintf("ENOMEM\n");
-					return;
-				}
-			}
-			return;
-		} else if ((!input || !*input) && a) {
-			// eprintf ("Cannot add '%s'. Already exists.\n", arg);
-			return;
-		} else {
-			b = a;
-		}
-	}
-	eprintf("Invalid usage of !!!\n");
-}
-
 RZ_IPI RzCmdStatus rz_cmd_exit_handler(RzCore *core, int argc, const char **argv) {
 	core->num->value = 0LL;
 	return RZ_CMD_STATUS_EXIT;
@@ -1870,97 +1767,6 @@ RZ_IPI int rz_cmd_last(void *data, const char *input) {
 RZ_IPI RzCmdStatus rz_last_output_handler(RzCore *core, int argc, const char **argv) {
 	rz_cons_last();
 	return RZ_CMD_STATUS_OK;
-}
-
-RZ_IPI int rz_cmd_system(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	ut64 n;
-	int ret = 0;
-	switch (*input) {
-	case '-': //!-
-		if (input[1]) {
-			rz_line_hist_free();
-			rz_line_hist_save(RZ_HOME_HISTORY);
-		} else {
-			rz_line_hist_free();
-		}
-		break;
-	case '=': //!=
-		if (input[1] == '?') {
-			rz_cons_printf("Usage: !=[!]  - enable/disable remote commands\n");
-		} else {
-			RZ_FREE(core->cmdremote);
-		}
-		break;
-	case '!': //!!
-		if (input[1] == '!') { // !!! & !!!-
-			cmd_autocomplete(core, input + 2);
-		} else if (input[1] == '?') {
-			cmd_help_exclamation(core);
-		} else if (input[1] == '*') {
-			char *cmd = rz_str_trim_dup(input + 1);
-			(void)rz_core_cmdf(core, "\"#!pipe %s\"", cmd);
-			free(cmd);
-		} else {
-			if (input[1]) {
-				int olen;
-				char *out = NULL;
-				char *cmd = rz_core_sysenv_begin(core, input);
-				if (cmd) {
-					void *bed = rz_cons_sleep_begin();
-					ret = rz_sys_cmd_str_full(cmd + 1, NULL, &out, &olen, NULL);
-					rz_cons_sleep_end(bed);
-					rz_core_sysenv_end(core, input);
-					rz_cons_memcat(out, olen);
-					free(out);
-					free(cmd);
-				} //else eprintf ("Error setting up system environment\n");
-			} else {
-				eprintf("History saved to " RZ_HOME_HISTORY "\n");
-				rz_line_hist_save(RZ_HOME_HISTORY);
-			}
-		}
-		break;
-	case '\0':
-		rz_line_hist_list();
-		break;
-	case '?': //!?
-		cmd_help_exclamation(core);
-		break;
-	case '*':
-		// TODO: use the api
-		{
-			char *cmd = rz_str_trim_dup(input + 1);
-			cmd = rz_str_replace(cmd, " ", "\\ ", true);
-			cmd = rz_str_replace(cmd, "\\ ", " ", false);
-			cmd = rz_str_replace(cmd, "\"", "'", false);
-			ret = rz_core_cmdf(core, "\"#!pipe %s\"", cmd);
-			free(cmd);
-		}
-		break;
-	default:
-		n = atoi(input);
-		if (*input == '0' || n > 0) {
-			const char *cmd = rz_line_hist_get(n);
-			if (cmd) {
-				rz_core_cmd0(core, cmd);
-			}
-			//else eprintf ("Error setting up system environment\n");
-		} else {
-			char *cmd = rz_core_sysenv_begin(core, input);
-			if (cmd) {
-				void *bed = rz_cons_sleep_begin();
-				ret = rz_sys_system(cmd);
-				rz_cons_sleep_end(bed);
-				rz_core_sysenv_end(core, input);
-				free(cmd);
-			} else {
-				eprintf("Error setting up system environment\n");
-			}
-		}
-		break;
-	}
-	return ret;
 }
 
 #if __WINDOWS__
@@ -2087,7 +1893,7 @@ err_r_w32_cmd_pipe:
 #undef __CLOSE_DUPPED_PIPES
 #endif
 
-RZ_API int rz_core_cmd_pipe(RzCore *core, char *rizin_cmd, char *shell_cmd) {
+RZ_API int rz_core_cmd_pipe_old(RzCore *core, char *rizin_cmd, char *shell_cmd) {
 #if __UNIX__
 	int stdout_fd, fds[2];
 	int child;
@@ -2550,7 +2356,7 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 			line = rz_str_replace(line, "\\\"", "\"", true);
 			if (p && *p && p[1] == '|') {
 				str = (char *)rz_str_trim_head_ro(p + 2);
-				rz_core_cmd_pipe(core, cmd, str);
+				rz_core_cmd_pipe_old(core, cmd, str);
 			} else {
 				rz_cmd_call(core->rcmd, line);
 			}
@@ -2664,7 +2470,7 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 				} else if (ptr[1]) { // "| grep .."
 					int value = core->num->value;
 					if (*cmd) {
-						rz_core_cmd_pipe(core, cmd, ptr + 1);
+						rz_core_cmd_pipe_old(core, cmd, ptr + 1);
 					} else {
 						char *res = rz_io_system(core->io, ptr + 1);
 						if (res) {
@@ -4196,7 +4002,6 @@ struct tsr2cmd_state {
 	TSTree *saved_tree;
 	bool log;
 	bool split_lines;
-	bool is_last_cmd;
 	TSNode substitute_cmd;
 };
 
@@ -4272,6 +4077,90 @@ static char *ts_node_sub_parent_string(TSNode parent, TSNode node, const char *c
 static RzCmdStatus handle_ts_stmt(struct tsr2cmd_state *state, TSNode node);
 static RzCmdStatus handle_ts_stmt_tmpseek(struct tsr2cmd_state *state, TSNode node);
 static RzCmdStatus core_cmd_tsrzcmd(RzCore *core, const char *cstr, bool split_lines, bool log);
+
+static char *system_exec_stdin(bool is_pipe, int argc, char **argv, const ut8 *input, int input_len, int *length) {
+	char *output = NULL;
+	if (!rz_subprocess_init()) {
+		RZ_LOG_ERROR("Cannot initialize subprocess.\n");
+		return NULL;
+	}
+
+	RzSubprocessOpt opt = {
+		.file = argv[0],
+		.args = (const char **)&argv[1],
+		.args_size = argc - 1,
+		.envvars = NULL,
+		.envvals = NULL,
+		.env_size = 0,
+		.stdin_pipe = RZ_SUBPROCESS_PIPE_CREATE,
+		.stdout_pipe = is_pipe ? RZ_SUBPROCESS_PIPE_CREATE : RZ_SUBPROCESS_PIPE_NONE,
+		.stderr_pipe = is_pipe ? RZ_SUBPROCESS_PIPE_STDOUT : RZ_SUBPROCESS_PIPE_NONE,
+	};
+
+	RzSubprocess *proc = rz_subprocess_start_opt(&opt);
+	if (!proc) {
+		RZ_LOG_ERROR("Cannot start subprocess.\n");
+		rz_subprocess_fini();
+		return NULL;
+	}
+
+	rz_subprocess_stdin_write(proc, input, input_len);
+	rz_subprocess_wait(proc, UT64_MAX);
+
+	output = (char *)rz_subprocess_out(proc, length);
+	rz_subprocess_free(proc);
+	rz_subprocess_fini();
+
+	return output;
+}
+
+static ut8 *core_cmd_raw_node(RzCore *core, struct tsr2cmd_state *state, TSNode rizin_cmd, int *length) {
+	const char *static_str;
+	ut8 *retstr = NULL;
+	rz_cons_push();
+	if (handle_ts_stmt(state, rizin_cmd) != RZ_CMD_STATUS_OK) {
+		rz_cons_pop();
+		return NULL;
+	}
+	rz_cons_filter();
+
+	static_str = rz_cons_get_buffer();
+	int len = rz_cons_get_buffer_len();
+	retstr = (ut8 *)rz_str_newlen(static_str, len);
+	*length = len;
+
+	rz_cons_pop();
+	rz_cons_echo(NULL);
+	return retstr;
+}
+
+/**
+ * \brief Executes a rizin command and pipes the result to the stdin of the program specified in argc/argv
+ *
+ * Executes a rizin command specified in \p rizin_cmd and pipe its stdout to the
+ * stdin of the system program specified in \p argc and \p argv arguments.
+ *
+ * The output of the second program is then sent into RzCons.
+ * */
+static RzCmdStatus core_cmd_pipe(RzCore *core, struct tsr2cmd_state *state, TSNode rizin_cmd, int argc, char **argv) {
+	int length = 0;
+	bool is_pipe = core->is_pipe;
+	core->is_pipe = true;
+	ut8 *bytes = core_cmd_raw_node(core, state, rizin_cmd, &length);
+	core->is_pipe = is_pipe;
+	if (!bytes) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	char *out = system_exec_stdin(core->is_pipe, argc, argv, bytes, length, &length);
+	if (out) {
+		rz_cons_memcat(out, length);
+	}
+
+	free(bytes);
+	free(out);
+	return RZ_CMD_STATUS_OK;
+}
 
 DEFINE_IS_TS_FCN_AND_SYMBOL(fdn_redirect_operator)
 DEFINE_IS_TS_FCN_AND_SYMBOL(fdn_append_operator)
@@ -5964,7 +5853,10 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(grep_stmt) {
 	TSNode command = ts_node_child_by_field_name(node, "command", strlen("command"));
 	TSNode arg = ts_node_child_by_field_name(node, "specifier", strlen("specifier"));
 	char *arg_str = ts_node_handle_arg(state, node, arg, 1);
+	bool is_pipe = state->core->is_pipe;
+	state->core->is_pipe = true;
 	RzCmdStatus res = handle_ts_stmt(state, command);
+	state->core->is_pipe = is_pipe;
 	RZ_LOG_DEBUG("grep_stmt specifier: '%s'\n", arg_str);
 	RzStrBuf *sb = rz_strbuf_new(arg_str);
 	rz_strbuf_prepend(sb, "~");
@@ -6008,17 +5900,16 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(html_enable_stmt) {
 }
 
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(pipe_stmt) {
-	TSNode first_cmd = ts_node_named_child(node, 0);
-	rz_return_val_if_fail(!ts_node_is_null(first_cmd), false);
-	TSNode second_cmd = ts_node_named_child(node, 1);
-	rz_return_val_if_fail(!ts_node_is_null(second_cmd), false);
-	char *first_str = ts_node_sub_string(first_cmd, state->input);
-	char *second_str = ts_node_sub_string(second_cmd, state->input);
-	int value = state->core->num->value;
-	RzCmdStatus res = rz_cmd_int2status(rz_core_cmd_pipe(state->core, first_str, second_str));
-	state->core->num->value = value;
-	free(first_str);
-	free(second_str);
+	TSNode command_rizin = ts_node_named_child(node, 0);
+	TSNode command_pipe = ts_node_named_child(node, 1);
+
+	RzCmdStatus res = RZ_CMD_STATUS_INVALID;
+	RzCmdParsedArgs *a = ts_node_handle_arg_prargs(state, node, command_pipe, 1, true);
+	if (a && a->argc > 1) {
+		res = core_cmd_pipe(state->core, state, command_rizin, a->argc - 1, a->argv + 1);
+	}
+
+	rz_cmd_parsed_args_free(a);
 	return res;
 }
 
@@ -6422,14 +6313,13 @@ RZ_API int rz_core_cmd_file(RzCore *core, const char *file) {
 RZ_API int rz_core_cmd_command(RzCore *core, const char *command) {
 	int ret, len;
 	char *buf, *rcmd;
-	char *cmd = rz_core_sysenv_begin(core, command);
-	rcmd = buf = rz_sys_cmd_str(cmd, 0, &len);
+	rz_core_sysenv_begin(core);
+	rcmd = buf = rz_sys_cmd_str(command, 0, &len);
 	if (!buf) {
-		free(cmd);
 		return -1;
 	}
 	ret = rz_core_cmd(core, rcmd, 0);
-	rz_core_sysenv_end(core, command);
+	rz_core_sysenv_end(core);
 	free(buf);
 	return ret;
 }
@@ -6547,22 +6437,43 @@ RZ_API char *rz_core_cmd_strf(RzCore *core, const char *fmt, ...) {
 	return ret;
 }
 
-/* return: pointer to a buffer with the output of the command */
-RZ_API char *rz_core_cmd_str(RzCore *core, const char *cmd) {
+static ut8 *core_cmd_raw(RzCore *core, const char *cmd, int *length) {
 	const char *static_str;
-	char *retstr = NULL;
+	ut8 *retstr = NULL;
 	rz_cons_push();
 	if (rz_core_cmd(core, cmd, 0) == -1) {
-		//eprintf ("Invalid command: %s\n", cmd);
 		rz_cons_pop();
 		return NULL;
 	}
 	rz_cons_filter();
 	static_str = rz_cons_get_buffer();
-	retstr = strdup(static_str ? static_str : "");
+	if (length) {
+		int len = rz_cons_get_buffer_len();
+		retstr = (ut8 *)rz_str_newlen(static_str, len);
+		*length = len;
+	} else {
+		retstr = (ut8 *)strdup(rz_str_get(static_str));
+	}
+
 	rz_cons_pop();
 	rz_cons_echo(NULL);
 	return retstr;
+}
+
+/**
+ * \brief Executes a rizin command and returns the stdout as a string
+ */
+RZ_API char *rz_core_cmd_str(RzCore *core, const char *cmd) {
+	rz_return_val_if_fail(core && cmd, NULL);
+	return (char *)core_cmd_raw(core, cmd, NULL);
+}
+
+/**
+ * \brief Executes a rizin command and returns the raw stdout and its length
+ */
+RZ_API ut8 *rz_core_cmd_raw(RzCore *core, const char *cmd, int *length) {
+	rz_return_val_if_fail(core && cmd && length, NULL);
+	return core_cmd_raw(core, cmd, length);
 }
 
 RZ_IPI int rz_cmd_ox(void *data, const char *input) {
@@ -6618,7 +6529,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		const char *description;
 		RzCmdCb cb;
 	} cmds[] = {
-		{ "!", "run system command", rz_cmd_system },
 		{ "_", "print last output", rz_cmd_last },
 		{ "#", "calculate hash", rz_cmd_hash },
 		{ "$", "alias", rz_cmd_alias },

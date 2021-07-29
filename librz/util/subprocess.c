@@ -26,7 +26,7 @@ static bool create_pipe_overlap(HANDLE *pipe_read, HANDLE *pipe_write, LPSECURIT
 		sz = 4096;
 	}
 	char name[MAX_PATH];
-	snprintf(name, sizeof(name), "\\\\.\\pipe\\rz_test-subproc.%d.%ld", (int)GetCurrentProcessId(), (long)InterlockedIncrement(&pipe_id));
+	snprintf(name, sizeof(name), "\\\\.\\pipe\\rz-pipe-subproc.%d.%ld", (int)GetCurrentProcessId(), (long)InterlockedIncrement(&pipe_id));
 	*pipe_read = CreateNamedPipeA(name, PIPE_ACCESS_INBOUND | read_mode, PIPE_TYPE_BYTE | PIPE_WAIT, 1, sz, sz, 120 * 1000, attrs);
 	if (!*pipe_read) {
 		return FALSE;
@@ -36,13 +36,17 @@ static bool create_pipe_overlap(HANDLE *pipe_read, HANDLE *pipe_write, LPSECURIT
 		CloseHandle(*pipe_read);
 		return FALSE;
 	}
+
+	SetEnvironmentVariable(TEXT("RZ_PIPE_PATH"), name);
 	return true;
 }
 
 RZ_API bool rz_subprocess_init(void) {
 	return true;
 }
-RZ_API void rz_subprocess_fini(void) {}
+RZ_API void rz_subprocess_fini(void) {
+	SetEnvironmentVariable(TEXT("RZ_PIPE_PATH"), NULL);
+}
 
 // Create an env block that inherits the current vars but overrides the given ones
 static LPWCH override_env(const char *envvars[], const char *envvals[], size_t env_size) {
@@ -132,29 +136,29 @@ error:
 	return ret;
 }
 
-static void remove_cr(char *str) {
-	char *start = str;
-	while (*str) {
-		if (str[0] == '\r' &&
-			!(str - start >= 4 && !strncmp(str - 4, RZ_CONS_CLEAR_SCREEN, 4))) {
-			memmove(str, str + 1, strlen(str + 1) + 1);
-			continue;
-		}
-		str++;
-	}
-}
-
 RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 	RzSubprocess *proc = NULL;
-	HANDLE stdin_read = NULL;
-	HANDLE stdout_write = NULL;
-	HANDLE stderr_write = NULL;
+	HANDLE stdin_read = GetStdHandle(STD_INPUT_HANDLE);
+	HANDLE stdout_write = GetStdHandle(STD_OUTPUT_HANDLE);
+	HANDLE stderr_write = GetStdHandle(STD_ERROR_HANDLE);
+	LPSTR lpFilePart;
+	char cmd_exe[MAX_PATH];
+
+	if (!rz_file_exists(opt->file) && NeedCurrentDirectoryForExePathA(opt->file)) {
+		DWORD len;
+		if ((len = SearchPath(NULL, opt->file, ".exe", sizeof(cmd_exe), cmd_exe, &lpFilePart)) < 1) {
+			RZ_LOG_DEBUG("SearchPath failed for %s\n", opt->file);
+			return NULL;
+		}
+	} else {
+		snprintf(cmd_exe, sizeof(cmd_exe), "%s", opt->file);
+	}
 
 	char **argv = calloc(opt->args_size + 1, sizeof(char *));
 	if (!argv) {
 		return NULL;
 	}
-	argv[0] = (char *)opt->file;
+	argv[0] = ""; // a space is required to work correctly.
 	if (opt->args_size) {
 		memcpy(argv + 1, opt->args, sizeof(char *) * opt->args_size);
 	}
@@ -199,6 +203,7 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 		proc->stderr_read = proc->stdout_read;
 		stderr_write = stdout_write;
 	}
+
 	if (opt->stdin_pipe == RZ_SUBPROCESS_PIPE_CREATE) {
 		if (!CreatePipe(&stdin_read, &proc->stdin_write, &sattrs, 0)) {
 			stdin_read = proc->stdin_write = NULL;
@@ -215,14 +220,28 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 	start_info.hStdError = stderr_write;
 	start_info.hStdOutput = stdout_write;
 	start_info.hStdInput = stdin_read;
-	start_info.dwFlags |= STARTF_USESTDHANDLES;
+	start_info.dwFlags = STARTF_USESTDHANDLES;
 
 	LPWSTR env = override_env(opt->envvars, opt->envvals, opt->env_size);
-	if (!CreateProcessA(NULL, cmdline,
-		    NULL, NULL, TRUE, CREATE_UNICODE_ENVIRONMENT, env,
-		    NULL, &start_info, &proc_info)) {
+	RZ_LOG_DEBUG("%s%s\n", cmd_exe, cmdline);
+	if (!CreateProcessA(
+		    cmd_exe, // exe
+		    cmdline, // command line
+		    NULL, // process security attributes
+		    NULL, // primary thread security attributes
+		    TRUE, // handles are inherited
+		    CREATE_UNICODE_ENVIRONMENT, // creation flags
+		    env, // use parent's environment
+		    NULL, // use parent's current directory
+		    &start_info, // STARTUPINFO pointer
+		    &proc_info)) { // receives PROCESS_INFORMATION
 		free(env);
-		eprintf("CreateProcess failed: %#x\n", (int)GetLastError());
+		char err_msg[256];
+		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+			NULL, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+			err_msg, sizeof(err_msg), NULL);
+
+		RZ_LOG_ERROR("CreateProcess failed: %#x %s\n", (int)GetLastError(), err_msg);
 		goto error;
 	}
 	free(env);
@@ -231,13 +250,14 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 	proc->proc = proc_info.hProcess;
 
 beach:
-	if (stdin_read) {
+
+	if (stdin_read != GetStdHandle(STD_INPUT_HANDLE)) {
 		CloseHandle(stdin_read);
 	}
-	if (stderr_write && stderr_write != stdout_write) {
+	if (stderr_write != GetStdHandle(STD_ERROR_HANDLE) && stderr_write != stdout_write) {
 		CloseHandle(stderr_write);
 	}
-	if (stdout_write) {
+	if (stdout_write != GetStdHandle(STD_OUTPUT_HANDLE)) {
 		CloseHandle(stdout_write);
 	}
 	free(cmdline);
@@ -311,7 +331,7 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
 
 	RzVector handles;
 	rz_vector_init(&handles, sizeof(HANDLE), NULL, NULL);
-	while (!bytes_enabled || n_bytes) {
+	while ((!bytes_enabled || n_bytes) && !child_dead) {
 		rz_vector_clear(&handles);
 		size_t stdout_index = 0;
 		size_t stderr_index = 0;
@@ -345,9 +365,7 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
 				stdout_eof = true;
 				continue;
 			}
-			stdout_buf[r] = '\0';
-			remove_cr(stdout_buf);
-			rz_strbuf_append(&proc->out, (const char *)stdout_buf);
+			rz_strbuf_append_n(&proc->out, (const char *)stdout_buf, r);
 			ResetEvent(stdout_overlapped.hEvent);
 			if (r >= 0 && n_bytes) {
 				n_bytes -= r;
@@ -365,9 +383,7 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
 				stderr_eof = true;
 				continue;
 			}
-			stderr_buf[r] = '\0';
-			remove_cr(stderr_buf);
-			rz_strbuf_append(&proc->err, (const char *)stderr_buf);
+			rz_strbuf_append_n(&proc->err, (const char *)stderr_buf, r);
 			if (r >= 0 && n_bytes) {
 				n_bytes -= r;
 				if (n_bytes <= 0) {
@@ -446,8 +462,8 @@ RZ_API RzSubprocessOutput *rz_subprocess_drain(RzSubprocess *proc) {
 	if (!out) {
 		return NULL;
 	}
-	out->out = rz_strbuf_drain_nofree(&proc->out);
-	out->err = rz_strbuf_drain_nofree(&proc->err);
+	out->out = rz_subprocess_out(proc, &out->out_len);
+	out->err = rz_subprocess_err(proc, &out->err_len);
 	out->ret = proc->ret;
 	return out;
 }
@@ -467,18 +483,6 @@ RZ_API void rz_subprocess_free(RzSubprocess *proc) {
 	}
 	CloseHandle(proc->proc);
 	free(proc);
-}
-
-RZ_API int rz_subprocess_ret(RzSubprocess *proc) {
-	return proc->ret;
-}
-
-RZ_API char *rz_subprocess_out(RzSubprocess *proc) {
-	return rz_strbuf_drain_nofree(&proc->out);
-}
-
-RZ_API char *rz_subprocess_err(RzSubprocess *proc) {
-	return rz_strbuf_drain_nofree(&proc->err);
 }
 #else // __WINDOWS__
 
@@ -632,7 +636,7 @@ static char **create_child_env(const char *envvars[], const char *envvals[], siz
 	for (size_t i = 0; i < size; i++) {
 		new_env[i] = strdup(environ[i]);
 	}
-	for (size_t i = 0; i <= env_size; i++) {
+	for (size_t i = 0; i <= new_env_size; i++) {
 		new_env[size + i] = NULL;
 	}
 
@@ -1022,8 +1026,8 @@ RZ_API RzSubprocessOutput *rz_subprocess_drain(RzSubprocess *proc) {
 	subprocess_lock();
 	RzSubprocessOutput *out = RZ_NEW(RzSubprocessOutput);
 	if (out) {
-		out->out = rz_strbuf_drain_nofree(&proc->out);
-		out->err = rz_strbuf_drain_nofree(&proc->err);
+		out->out = rz_subprocess_out(proc, &out->out_len);
+		out->err = rz_subprocess_err(proc, &out->err_len);
 		out->ret = proc->ret;
 		out->timeout = false;
 	}
@@ -1053,19 +1057,33 @@ RZ_API void rz_subprocess_free(RzSubprocess *proc) {
 	}
 	free(proc);
 }
+#endif
 
 RZ_API int rz_subprocess_ret(RzSubprocess *proc) {
 	return proc->ret;
 }
 
-RZ_API char *rz_subprocess_out(RzSubprocess *proc) {
-	return rz_strbuf_drain_nofree(&proc->out);
+RZ_API ut8 *rz_subprocess_out(RzSubprocess *proc, int *length) {
+	int bin_len = 0;
+	const ut8 *bin = rz_strbuf_getbin(&proc->out, &bin_len);
+	ut8 *buf = (ut8 *)rz_str_newlen((const char *)bin, bin_len);
+	if (length) {
+		*length = bin_len;
+	}
+	rz_strbuf_fini(&proc->out);
+	return buf;
 }
 
-RZ_API char *rz_subprocess_err(RzSubprocess *proc) {
-	return rz_strbuf_drain_nofree(&proc->err);
+RZ_API ut8 *rz_subprocess_err(RzSubprocess *proc, int *length) {
+	int bin_len = 0;
+	const ut8 *bin = rz_strbuf_getbin(&proc->err, &bin_len);
+	ut8 *buf = (ut8 *)rz_str_newlen((const char *)bin, bin_len);
+	if (length) {
+		*length = bin_len;
+	}
+	rz_strbuf_fini(&proc->err);
+	return buf;
 }
-#endif
 
 RZ_API void rz_subprocess_output_free(RzSubprocessOutput *out) {
 	if (!out) {

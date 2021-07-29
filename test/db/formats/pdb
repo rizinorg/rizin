@@ -13,7 +13,7 @@ NAME=PDB downloader json
 FILE==
 CMDS=<<EOF
 %RZ_CURL=1
-!!rz-bin -PPj bins/pdb/user32.dll
+!rz-bin -PPj bins/pdb/user32.dll
 EOF
 EXPECT=<<EOF
 {"pdb":{"file":"user32.pdb","download":true},"pdb":false}

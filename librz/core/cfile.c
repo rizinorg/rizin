@@ -494,19 +494,9 @@ RZ_API bool rz_core_file_resize_delta(RzCore *core, st64 delta) {
 	return file_resize(core, 0, delta);
 }
 
-RZ_API void rz_core_sysenv_end(RzCore *core, const char *cmd) {
-	// TODO: remove tmpfilez
-	if (strstr(cmd, "RZ_BLOCK")) {
-		// remove temporary BLOCK file
-		char *f = rz_sys_getenv("RZ_BLOCK");
-		if (f) {
-			rz_file_rm(f);
-			rz_sys_setenv("RZ_BLOCK", NULL);
-			free(f);
-		}
-	}
+RZ_API void rz_core_sysenv_end(RzCore *core) {
+	// This will be deprecated when moving the . commands to newshell
 	rz_sys_setenv("RZ_FILE", NULL);
-	rz_sys_setenv("RZ_BYTES", NULL);
 	rz_sys_setenv("RZ_OFFSET", NULL);
 
 	// remove temporary RZ_CONFIG file
@@ -518,33 +508,13 @@ RZ_API void rz_core_sysenv_end(RzCore *core, const char *cmd) {
 	}
 }
 
-#if DISCUSS
-EDITOR rz_sys_setenv("EDITOR", rz_config_get(core->config, "cfg.editor"));
-CURSOR cursor position(offset from curseek)
-	VERBOSE cfg.verbose
-#endif
-
-	RZ_API char *rz_core_sysenv_begin(RzCore *core, const char *cmd) {
-	char *f, *ret = cmd ? strdup(cmd) : NULL;
+RZ_API void rz_core_sysenv_begin(RzCore *core) {
+	// This will be deprecated when moving the . commands to newshell
 	RzIODesc *desc = core->file ? rz_io_desc_get(core->io, core->file->fd) : NULL;
-	if (cmd && strstr(cmd, "RZ_BYTES")) {
-		char *s = rz_hex_bin2strdup(core->block, core->blocksize);
-		rz_sys_setenv("RZ_BYTES", s);
-		free(s);
-	}
 	rz_sys_setenv("RZ_BIN_PDBSERVER", rz_config_get(core->config, "pdb.server"));
 	if (desc && desc->name) {
 		rz_sys_setenv("RZ_FILE", desc->name);
 		rz_sys_setenv("RZ_SIZE", sdb_fmt("%" PFMT64d, rz_io_desc_size(desc)));
-		if (cmd && strstr(cmd, "RZ_BLOCK")) {
-			// replace BLOCK in RET string
-			if ((f = rz_file_temp("r2block"))) {
-				if (rz_file_dump(f, core->block, core->blocksize, 0)) {
-					rz_sys_setenv("RZ_BLOCK", f);
-				}
-				free(f);
-			}
-		}
 	}
 	rz_sys_setenv("RZ_OFFSET", sdb_fmt("%" PFMT64d, core->offset));
 	rz_sys_setenv("RZ_XOFFSET", sdb_fmt("0x%08" PFMT64x, core->offset));
@@ -563,16 +533,14 @@ CURSOR cursor position(offset from curseek)
 	sdb_sync(config_sdb);
 	sdb_free(config_sdb);
 	rz_sys_setenv("RZ_CONFIG", config_sdb_path);
-
 	rz_sys_setenv("RZ_BIN_LANG", rz_config_get(core->config, "bin.lang"));
 	rz_sys_setenv("RZ_BIN_DEMANGLE", rz_config_get(core->config, "bin.demangle"));
 	rz_sys_setenv("RZ_ARCH", rz_config_get(core->config, "asm.arch"));
-	rz_sys_setenv("RZ_BITS", sdb_fmt("%" PFMT64u, rz_config_get_i(core->config, "asm.bits")));
+	rz_sys_setenv("RZ_BITS", rz_config_get(core->config, "asm.bits"));
 	rz_sys_setenv("RZ_COLOR", rz_config_get_i(core->config, "scr.color") ? "1" : "0");
 	rz_sys_setenv("RZ_DEBUG", rz_config_get_b(core->config, "cfg.debug") ? "1" : "0");
 	rz_sys_setenv("RZ_IOVA", rz_config_get_i(core->config, "io.va") ? "1" : "0");
 	free(config_sdb_path);
-	return ret;
 }
 
 #if !__linux__ && !__WINDOWS__
@@ -665,15 +633,23 @@ static int rz_core_file_do_load_for_debug(RzCore *r, ut64 baseaddr, const char *
 	}
 #endif
 	int fd = cf ? cf->fd : -1;
+
 	RzBinOptions opt;
 	rz_bin_options_init(&opt, fd, baseaddr, UT64_MAX, false, false);
+	opt.obj_opts.elf_load_sections = rz_config_get_b(r->config, "elf.load.sections");
+	opt.obj_opts.elf_checks_sections = rz_config_get_b(r->config, "elf.checks.sections");
+	opt.obj_opts.elf_checks_segments = rz_config_get_b(r->config, "elf.checks.segments");
 	opt.xtr_idx = xtr_idx;
 	RzBinFile *binfile = rz_bin_open(r->bin, filenameuri, &opt);
 	if (!binfile) {
 		eprintf("RzBinLoad: Cannot open %s\n", filenameuri);
 		if (rz_config_get_i(r->config, "bin.rawstr")) {
 			rz_bin_options_init(&opt, fd, baseaddr, UT64_MAX, false, true);
+			opt.obj_opts.elf_load_sections = rz_config_get_b(r->config, "elf.load.sections");
+			opt.obj_opts.elf_checks_sections = rz_config_get_b(r->config, "elf.checks.sections");
+			opt.obj_opts.elf_checks_segments = rz_config_get_b(r->config, "elf.checks.segments");
 			opt.xtr_idx = xtr_idx;
+
 			binfile = rz_bin_open(r->bin, filenameuri, &opt);
 			if (!binfile) {
 				return false;

@@ -372,7 +372,9 @@ RZ_API RZ_OWN RzType *rz_type_parse_string_single(RzTypeParser *parser, const ch
 	ts_tree_delete(tree);
 	ts_parser_delete(tsparser);
 	free(patched_code);
-	return tpair ? tpair->type : NULL;
+	RzType *ret = tpair ? tpair->type : NULL;
+	free(tpair);
+	return ret;
 }
 
 /**
