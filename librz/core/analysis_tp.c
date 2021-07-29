@@ -746,6 +746,7 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn) {
 	ht_pp_free(etracedb);
 	etracedb = ht_pp_new_size(fcn->ninstr * 0xf, opt.dupvalue, opt.freefn, opt.calcsizeV);
 	etracedb->opt = opt;
+	core->analysis->esil->trace->ht_db = etracedb;
 
 	// TODO : migrate dtrace from sdb to ht
 	RzDebugTrace *dtrace = core->dbg->trace;
