@@ -1437,7 +1437,6 @@ RZ_API void rz_analysis_esil_mem_ro(RzAnalysisEsil *esil, int mem_readonly);
 RZ_API void rz_analysis_esil_stats(RzAnalysisEsil *esil, int enable);
 
 /* Ht db */
-RZ_API void dbg_print_ht_db(HtPP *db);
 RZ_API void ht_db_array_add(HtPP *db, const char *key, const char *val);
 RZ_API void ht_db_array_add_num(HtPP *db, const char *key, ut64 val);
 RZ_API void ht_db_num_set(HtPP *db, const char *key, ut64 v);

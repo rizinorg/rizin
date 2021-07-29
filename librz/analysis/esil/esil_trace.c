@@ -23,17 +23,6 @@ static void htpp_string_free(HtPPKv *kv) {
 	free(kv->value);
 }
 
-static bool dbg_print_ht_callback(void *user, const void *key, const void *val) {
-	printf("<%d> %s ----> %s\n", *(int *)user, key, val);
-	*(int *)user += 1;
-}
-
-RZ_API void dbg_print_ht_db(HtPP *db) {
-	int count = 0;
-	printf("Ht Size : %d\n", db->size);
-	ht_pp_foreach(db, dbg_print_ht_callback, &count);
-}
-
 RZ_API void ht_db_array_add(HtPP *db, const char *key, const char *val) {
 	const char *array_val = ht_db_const_get(db, key);
 	char *new_array_val = NULL;
@@ -391,8 +380,8 @@ RZ_API void rz_analysis_esil_trace_restore(RzAnalysisEsil *esil, int idx) {
 }
 
 static int cmp_strings_by_leading_number(void *data1, void *data2) {
-	const char *a = sdbkv_key((const SdbKv *)data1);
-	const char *b = sdbkv_key((const SdbKv *)data2);
+	const char *a = ((const HtPPKv *)data1)->key;
+	const char *b = ((const HtPPKv *)data2)->key;
 	int i = 0;
 	int j = 0;
 	int k = 0;
@@ -442,22 +431,37 @@ static int cmp_strings_by_leading_number(void *data1, void *data2) {
 	return 0;
 }
 
+static bool ht_pp_add_kv_to_list(void *user, void *key, void *val) {
+	RzList *list = (RzList*)user;
+	HtPPKv *kv = RZ_NEW0(HtPPKv);
+	kv->key = key;
+	kv->value = val;
+	rz_list_append(list, kv);
+	return true;
+}
+
+static void free_etrace_list_callback(void *data) {
+	free((HtPPKv*)data);
+}
+
 RZ_API void rz_analysis_esil_trace_list(RzAnalysisEsil *esil) {
 	if (!esil->trace) {
 		return;
 	}
 
-	//	PrintfCallback p = esil->analysis->cb_printf;
-	//	SdbKv *kv;
-	//	SdbListIter *iter;
+	PrintfCallback p = esil->analysis->cb_printf;
+	HtPPKv *kv;
+	RzListIter *iter;
+	RzList *list;
 
-	// TODO : foreach the hash table and sort
-	// SdbList *list = sdb_foreach_list(esil->trace->db, true);
-	// ls_sort(list, (SdbListComparator)cmp_strings_by_leading_number);
-	// ls_foreach (list, iter, kv) {
-	// 	p("%s=%s\n", sdbkv_key(kv), sdbkv_value(kv));
-	// }
-	// ls_free(list);
+	list = rz_list_newf(free_etrace_list_callback);
+	ht_pp_foreach(esil->trace->ht_db, (HtPPForeachCallback)ht_pp_add_kv_to_list, list);
+	rz_list_sort(list, (RzListComparator)cmp_strings_by_leading_number);
+	rz_list_foreach_iter(list, iter) {
+		kv = iter->data;
+		p("%s=%s\n", (const char *)kv->key, (const char *)kv->value);
+	}
+	rz_list_free(list);
 }
 
 RZ_API void rz_analysis_esil_trace_show(RzAnalysisEsil *esil, int idx) {
