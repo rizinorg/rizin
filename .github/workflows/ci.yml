@@ -46,11 +46,10 @@ jobs:
     needs: changes
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
-    continue-on-error: ${{ matrix.can_fail }}
+    continue-on-error: ${{ matrix.allow_failure }}
     timeout-minutes: ${{ matrix.timeout }}
     strategy:
       fail-fast: false
-      can_fail: [false]
       matrix:
         name: [
           linux-meson-clang-tests,
@@ -70,6 +69,7 @@ jobs:
             meson_options: -Dbuildtype=release
             enabled: ${{ github.event_name != 'pull_request' && needs.changes.outputs.edited == 'true' }}
             timeout: 45
+            allow_failure: false
           - name: linux-meson-gcc-tests
             os: ubuntu-20.04
             build_system: meson
@@ -79,6 +79,7 @@ jobs:
             enabled: ${{ needs.changes.outputs.edited == 'true' }}
             timeout: 45
             cflags: '-DRZ_ASSERT_STDOUT=1 -Wno-cpp'
+            allow_failure: false
           - name: macos-meson-clang-tests
             os: macos-latest
             build_system: meson
@@ -87,6 +88,7 @@ jobs:
             meson_options: -Dbuildtype=release -Duse_webui=true
             enabled: ${{ needs.changes.outputs.edited == 'true' }}
             timeout: 60
+            allow_failure: false
           - name: linux-gcc-tests-asan
             os: ubuntu-20.04
             build_system: meson
@@ -98,6 +100,7 @@ jobs:
             run_tests: true
             enabled: ${{ (github.event_name != 'pull_request' || contains(github.head_ref, 'asan') || contains(github.head_ref, 'import')) && needs.changes.outputs.edited == 'true' }}
             timeout: 100
+            allow_failure: false
           - name: linux-gcc-tests-codecov
             os: ubuntu-20.04
             build_system: meson
@@ -108,6 +111,7 @@ jobs:
             enabled: ${{ github.event_name != 'pull_request' && needs.changes.outputs.edited == 'true' }}
             timeout: 60
             cflags: '-Wno-cpp'
+            allow_failure: false
           - name: capstone-v3
             os: ubuntu-20.04
             build_system: meson
@@ -117,6 +121,7 @@ jobs:
             enabled: ${{ (github.event_name != 'pull_request' || contains(github.head_ref, 'capstone')) && needs.changes.outputs.edited == 'true' }}
             timeout: 45
             cflags: '-Wno-cpp'
+            allow_failure: false
           - name: capstone-next
             os: ubuntu-20.04
             build_system: meson
@@ -126,7 +131,7 @@ jobs:
             enabled: ${{ (github.event_name != 'pull_request' || contains(github.head_ref, 'capstone')) && needs.changes.outputs.edited == 'true' }}
             timeout: 45
             cflags: '-Wno-cpp'
-            can_fail: true
+            allow_failure: true
 
     steps:
     - uses: actions/checkout@v2
