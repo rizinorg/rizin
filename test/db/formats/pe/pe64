@@ -21,3 +21,11 @@ EXPECT=<<EOF
 ms
 EOF
 RUN
+
+NAME=pe64 msvc vs2019 debug main
+FILE=bins/pe/rizin_vs2019_debug.exe
+CMDS=iM~addr
+EXPECT=<<EOF
+vaddr=0x140001620 paddr=0x00000a20
+EOF
+RUN

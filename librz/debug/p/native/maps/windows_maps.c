@@ -251,7 +251,7 @@ RZ_API RzList *rz_w32_dbg_maps(RzDebug *dbg) {
 	MEMORY_BASIC_INFORMATION mbi;
 	RWinModInfo mod_inf = { 0 };
 	RzList *map_list = rz_list_newf((RzListFree)rz_debug_map_free), *mod_list = NULL;
-	W32DbgWInst *wrap = dbg->user;
+	W32DbgWInst *wrap = dbg->plugin_data;
 
 	GetSystemInfo(&si);
 	cur_addr = si.lpMinimumApplicationAddress;

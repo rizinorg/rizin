@@ -1049,6 +1049,9 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 
 	RzBinOptions bo;
 	rz_bin_options_init(&bo, fd, baddr, laddr, false, rawstr);
+	bo.obj_opts.elf_load_sections = rz_config_get_b(core.config, "elf.load.sections");
+	bo.obj_opts.elf_checks_sections = rz_config_get_b(core.config, "elf.checks.sections");
+	bo.obj_opts.elf_checks_segments = rz_config_get_b(core.config, "elf.checks.segments");
 	bo.xtr_idx = xtr_idx;
 
 	RzBinFile *bf = rz_bin_open(bin, file, &bo);

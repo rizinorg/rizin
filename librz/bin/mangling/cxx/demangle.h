@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 1992-2018 Free Software Foundation, Inc.
+// SPDX-License-Identifier: LGPL-2.0-or-later
+
 /* Defs for interface to demanglers.
    Copyright (C) 1992-2018 Free Software Foundation, Inc.
 

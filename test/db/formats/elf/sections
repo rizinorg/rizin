@@ -94,3 +94,93 @@ EXPECT=<<EOF
  1 fd: 3 +0x00000000 0x08000000 - 0x08000033 r-- fmap.ehdr
 EOF
 RUN
+
+NAME=true binary invalid section offset
+FILE=bins/elf/true-invalid-section-offset
+CMDS=iS
+EXPECT=<<EOF
+[Sections]
+
+nth paddr  size vaddr  vsize perm name type flags 
+--------------------------------------------------
+
+EOF
+RUN
+
+NAME=disable sections load
+FILE=bins/elf/analysis/hello-linux-x86_64
+ARGS=-e log.level=4 -e elf.load.sections=false
+CMDS=iS
+EXPECT=<<EOF
+[Sections]
+
+nth paddr       size vaddr       vsize perm name      type flags 
+-----------------------------------------------------------------
+0   0x000008d0   0x0 0x006008d0    0x0 ---- .got.plt  NULL 
+1   0x00000348  0x18 0x00400348   0x18 ---- .rela.dyn NULL 
+2   0x00000360  0x48 0x00400360   0x48 ---- .rela.plt NULL 
+
+EOF
+RUN
+
+NAME=disable sections checks
+FILE=bins/elf/libmemalloc-dump-mem
+ARGS=-e log.level=4 -e elf.checks.sections=false
+CMDS=iS
+EXPECT=<<EOF
+[Sections]
+
+nth paddr             size vaddr            vsize perm name      type              flags                                                                    
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+0   0x67006570  0x6d007570 0x79742e6e  0x6d007570 --w- invalid0  LOPROC+0x036f706d write,strings,info,TLS
+1   0x6568206d  0x6c007061 0x65747379  0x6c007061 ---x invalid1  0x206b6361        execute,merge,strings,info,extra_os_processing_reqd,group,TLS,compressed
+2   0x61705f65  0x6e696464 0x63616672  0x6e696464 --wx invalid2  LOPROC+0x0475706d write,execute,strings,info,extra_os_processing_reqd,group,TLS,compressed
+3   0x65757274  0x6f207700 0x00310079  0x6f207700 --wx invalid3  0x6d5f6266        write,execute,strings,info,extra_os_processing_reqd,TLS,compressed
+4   0x68746469  0x20736920 0x77007461  0x20736920 -r-x invalid4  0x20323156        alloc,execute,strings,info,extra_os_processing_reqd,group,TLS,compressed
+5   0x66754220  0x73726566 0x3a732500  0x73726566 -r-- invalid5  0x6f662050        alloc,merge,strings,info,extra_os_processing_reqd,TLS,compressed
+6   0x2020424f  0x20202020 0x4c425f54  0x20202020 -rwx invalid6  0x465f4c45        write,alloc,execute,info,group
+7   0x313d3d74  0x6e750020 0x68676965  0x6e750020 -r-x invalid7  0x61682074        alloc,execute,merge,strings,info,extra_os_processing_reqd,TLS
+8   0x6c61203a  0x61636f6c 0x73250078  0x61636f6c ---- invalid8  0x3a74616d        strings
+9   0x69537265  0x6e41657a 0x66667542  0x6e41657a -r-- invalid9  0x300726f         alloc,extra_os_processing_reqd,group,TLS
+10  0x00000000         0x0 0x00000000         0x0 ---- invalid10 LOPROC+0x02656666 
+11  0x00000000         0x0 0x00000000         0x0 ---- invalid11 NULL              
+12  0x00000000         0x0 0x00000000         0x0 ---- invalid12 NULL              
+13  0x00000000         0x0 0x00000000         0x0 ---- invalid13 NULL              
+14  0x00000000         0x0 0x00000000         0x0 ---- invalid14 NULL              
+15  0x00000000         0x0 0x00000000         0x0 ---- invalid15 NULL              
+16  0x00000000         0x0 0x00000000         0x0 ---- invalid16 NULL              
+17  0x00000000         0x0 0x00000000         0x0 ---- invalid17 NULL              
+18  0x00000000         0x0 0x00000000         0x0 ---- invalid18 NULL              
+19  0x00000000         0x0 0x00000000         0x0 ---- invalid19 NULL              
+20  0x00000000         0x0 0x00000000         0x0 ---- invalid20 NULL              
+21  0x00000000         0x0 0x00000000         0x0 ---- invalid21 NULL              
+22  0x00000000         0x0 0x00000000         0x0 ---- invalid22 NULL              
+
+EOF
+EXPECT_ERR=<<EOF
+WARNING: Invalid strtab at 0x0 (check array failed).
+WARNING: Failed to initialize section string table.
+EOF
+RUN
+
+NAME=disable segments checks
+FILE=bins/elf/analysis/tiny.elf
+ARGS=-e log.level=4 -e elf.checks.segments=false
+CMDS=iS
+EXPECT=<<EOF
+[Sections]
+
+nth paddr  size vaddr  vsize perm name type flags 
+--------------------------------------------------
+
+EOF
+EXPECT_ERR=<<EOF
+WARNING: Failed to read ELF header (e_phnum).
+WARNING: Failed to read ELF header (e_shentsize).
+WARNING: Failed to read ELF header (e_shnum).
+WARNING: Failed to read ELF header (e_shstrndx).
+WARNING: The binary seems to be a tiny elf (45 bytes). Reload e_phnum value.
+WARNING: Invalid section header (check array failed).
+WARNING: Failed to initialize section header.
+EOF
+RUN

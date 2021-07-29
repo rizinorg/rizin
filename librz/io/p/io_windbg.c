@@ -569,7 +569,7 @@ static RzIODesc *windbg_open(RzIO *io, const char *uri, int perm, int mode) {
 remote_client:
 	fd = rz_io_desc_new(io, &rz_io_plugin_windbg, uri, perm | RZ_PERM_X, mode, idbg);
 	fd->name = strdup(args);
-	core->dbg->user = idbg;
+	core->dbg->plugin_data = idbg;
 	io->corebind.cmd(io->corebind.core, "dL windbg");
 	return fd;
 }
@@ -585,7 +585,7 @@ static int windbg_close(RzIODesc *fd) {
 		ITHISCALL(dbgClient, EndSession, DEBUG_END_PASSIVE);
 	}
 	__free_context(idbg);
-	core->dbg->user = NULL;
+	core->dbg->plugin_data = NULL;
 	return 1;
 }
 

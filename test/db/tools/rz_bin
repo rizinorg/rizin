@@ -50,9 +50,13 @@ RUN
 NAME=rz-bin -k file
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=!rz-bin -k ${RZ_FILE}
+ARGS=-e log.level=4
 EXPECT=<<EOF
 EOF
 EXPECT_ERR=<<EOF
+WARNING: Neither hash nor gnu_hash exist. Falling back to heuristics for deducing the number of dynamic symbols...
+WARNING: Neither hash nor gnu_hash exist. Falling back to heuristics for deducing the number of dynamic symbols...
+WARNING: Neither hash nor gnu_hash exist. Falling back to heuristics for deducing the number of dynamic symbols...
 Missing file.
 EOF
 RUN
@@ -86,7 +90,7 @@ NAME=rz-bin -s file elf
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=!rz-bin -s ${RZ_FILE}|wc -l|awk "{print \$1}"
 EXPECT=<<EOF
-69
+70
 EOF
 RUN
 
@@ -355,8 +359,8 @@ RUN
 NAME=rz-bin -qqzz
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=<<EOF
-!!rz-bin -qqzz ${RZ_FILE}~do_global_dtors_aux_fini_array_entry
-!!rz-bin -qqzz ${RZ_FILE}~?
+!rz-bin -qqzz ${RZ_FILE}~do_global_dtors_aux_fini_array_entry
+!rz-bin -qqzz ${RZ_FILE}~?
 EOF
 EXPECT=<<EOF
 __do_global_dtors_aux_fini_array_entry
@@ -367,8 +371,8 @@ RUN
 NAME=rz-bin -qqzzz
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=<<EOF
-!!rz-bin -qqzzz ${RZ_FILE}~do_global_dtors_aux_fini_array_entry
-!!rz-bin -qqzzz ${RZ_FILE}~?
+!rz-bin -qqzzz ${RZ_FILE}~do_global_dtors_aux_fini_array_entry
+!rz-bin -qqzzz ${RZ_FILE}~?
 EOF
 EXPECT=<<EOF
 __do_global_dtors_aux_fini_array_entry
@@ -388,7 +392,7 @@ RUN
 
 NAME=rz-bin -ee -j
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=!!rz-bin -ee -j ${RZ_FILE}~{}
+CMDS=!rz-bin -ee -j ${RZ_FILE}~{}
 EXPECT=<<EOF
 {
   "initfini": [
@@ -556,6 +560,7 @@ nth paddr      vaddr      bind   type   size lib name
 52  0x00000494 0x08048494 GLOBAL FUNC   0        _fini
 53  0x000006ac 0x080496ac GLOBAL NOTYPE 0        __data_start
 56  0x000006b0 0x080496b0 GLOBAL OBJ    0        __dso_handle
+57  0x000004ac 0x080484ac GLOBAL OBJ    4        _IO_stdin_used
 59  0x00000420 0x08048420 GLOBAL FUNC   97       __libc_csu_init
 60  ---------- 0x080496b8 GLOBAL NOTYPE 0        _end
 61  0x00000300 0x08048300 GLOBAL FUNC   0        _start
@@ -1034,7 +1039,7 @@ RUN
 
 NAME=rz-bin -Pj
 FILE=bins/pdb/minimal.pdb
-CMDS=!!rz-bin -Pj ${RZ_FILE}~{}
+CMDS=!rz-bin -Pj ${RZ_FILE}~{}
 EXPECT=<<EOF
 {
   "pdb": {
@@ -1101,17 +1106,17 @@ EXPECT=<<EOF
         "size": 1,
         "members": [
           {
-            "member_type": "bitfield uint8_t : 1",
+            "member_type": "uint8_t /*bitfield:1*/",
             "member_name": "a",
             "offset": 0
           },
           {
-            "member_type": "bitfield uint8_t : 2",
+            "member_type": "uint8_t /*bitfield:2*/",
             "member_name": "b",
             "offset": 0
           },
           {
-            "member_type": "bitfield uint8_t : 3",
+            "member_type": "uint8_t /*bitfield:3*/",
             "member_name": "c",
             "offset": 0
           }

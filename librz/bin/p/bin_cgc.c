@@ -7,6 +7,10 @@
 
 extern struct rz_bin_dbginfo_t rz_bin_dbginfo_elf;
 
+static void destroy(RzBinFile *bf) {
+	Elf_(rz_bin_elf_free)(bf->o->bin_obj);
+}
+
 static bool check_buffer(RzBuffer *buf) {
 	ut8 tmp[SCGCMAG + 1];
 	int r = rz_buf_read_at(buf, 0, tmp, sizeof(tmp));
@@ -106,7 +110,6 @@ RzBinPlugin rz_bin_plugin_cgc = {
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
 	.load_buffer = load_buffer,
-	.destroy = &destroy,
 	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.boffset = &boffset,
@@ -128,4 +131,5 @@ RzBinPlugin rz_bin_plugin_cgc = {
 	.regstate = regstate,
 	.section_type_to_string = &Elf_(rz_bin_elf_section_type_to_string),
 	.section_flag_to_rzlist = &Elf_(rz_bin_elf_section_flag_to_rzlist),
+	.destroy = destroy
 };

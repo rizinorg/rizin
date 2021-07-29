@@ -15,7 +15,7 @@
 #define BUFFER_SIZE 4096
 
 RZ_API struct rz_socket_proc_t *rz_socket_proc_open(char *const argv[]) {
-#if __UNIX__ && LIBC_HAVE_FORK
+#if __UNIX__ && HAVE_FORK
 	RzSocketProc *sp = RZ_NEW(RzSocketProc);
 
 	if (!sp) {

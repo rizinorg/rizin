@@ -6,6 +6,7 @@
 #include <rz_io.h>
 #include <rz_cons.h>
 #include <rz_list.h>
+#include <ht_pu.h>
 
 typedef struct rz_bin_t RzBin;
 typedef struct rz_bin_file_t RzBinFile;
@@ -248,6 +249,9 @@ typedef struct rz_bin_file_load_options_t {
 	ut64 baseaddr; ///< where the linker maps the binary in memory
 	ut64 loadaddr; ///< starting physical address to read from the target file
 	bool patch_relocs; ///< ask the bin plugin to fill relocs with valid contents for analysis
+	bool elf_load_sections; ///< ELF specific, load or not ELF sections
+	bool elf_checks_sections; ///< ELF specific, checks or not ELF sections
+	bool elf_checks_segments; ///< ELF specific, checks or not ELF sections
 } RzBinObjectLoadOptions;
 
 typedef struct rz_bin_object_t {
@@ -517,10 +521,8 @@ typedef struct rz_bin_plugin_t {
 	char *author;
 	char *version;
 	char *license;
-	int (*init)(void *user);
-	int (*fini)(void *user);
 	RZ_DEPRECATE Sdb *(*get_sdb)(RzBinFile *obj); ///< deprecated, put info in C structures instead of this
-	bool (*load_buffer)(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb);
+	bool (*load_buffer)(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb);
 	ut64 (*size)(RzBinFile *bin);
 	void (*destroy)(RzBinFile *bf);
 	bool (*check_bytes)(const ut8 *buf, ut64 length);
@@ -965,7 +967,7 @@ RZ_API RzList *rz_bin_get_mem(RzBin *bin);
 RZ_API void rz_bin_load_filter(RzBin *bin, ut64 rules);
 RZ_API void rz_bin_filter_symbols(RzBinFile *bf, RzList *list);
 RZ_API void rz_bin_filter_sections(RzBinFile *bf, RzList *list);
-RZ_API char *rz_bin_filter_name(RzBinFile *bf, Sdb *db, ut64 addr, char *name);
+RZ_API char *rz_bin_filter_name(RzBinFile *bf, HtPU *db, ut64 addr, char *name);
 RZ_API void rz_bin_filter_sym(RzBinFile *bf, HtPP *ht, ut64 vaddr, RzBinSymbol *sym);
 RZ_API bool rz_bin_strpurge(RzBin *bin, const char *str, ut64 addr);
 RZ_API bool rz_bin_string_filter(RzBin *bin, const char *str, int len, ut64 addr);
