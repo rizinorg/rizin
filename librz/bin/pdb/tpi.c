@@ -23,9 +23,10 @@ static bool is_simple_type(int idx) {
 
 static int skip_padding(uint8_t *leaf_data, unsigned int *read_bytes, unsigned int len) {
 	unsigned int c = 0;
+	CAN_READ(*read_bytes, 1, len);
 	while ((*leaf_data & 0xf0) == 0xf0) {
-		CAN_READ((*read_bytes + c), 1, len);
 		c++;
+		CAN_READ((*read_bytes + c), 1, len);
 		leaf_data++;
 	}
 	(*read_bytes) += (c);
