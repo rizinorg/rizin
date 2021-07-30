@@ -66,6 +66,16 @@ static size_t RtlpLFHKeyOffset = 0;
 		return; \
 	}
 
+#define CHECK_INFO_RETURN_NULL(heapInfo) \
+	if (!heapInfo) { \
+		eprintf("It wasn't possible to get the heap information\n"); \
+		return NULL; \
+	} \
+	if (!heapInfo->count) { \
+		rz_cons_print("No heaps for this process\n"); \
+		return NULL; \
+	}
+
 #define UPDATE_FLAGS(hb, flags) \
 	if (((flags)&0xf1) || ((flags)&0x0200)) { \
 		hb->dwFlags = LF32_FIXED; \
@@ -1395,7 +1405,7 @@ static RzList *rz_heap_blocks_list(RzCore *core) {
 	}
 
 	PHeapInformation heapInfo = db->HeapInformation;
-	CHECK_INFO(heapInfo);
+	CHECK_INFO_RETURN_NULL(heapInfo);
 	HeapBlock *block = malloc(sizeof(HeapBlock));
 	for (int i = 0; i < heapInfo->count; i++) {
 		bool go = true;
@@ -1451,9 +1461,9 @@ static RzList *rz_heap_list(RzCore *core) {
 		}
 	}
 
-	RzList *heaps_list = rz_list_new(free);
+	RzList *heaps_list = rz_list_newf(free);
 	PHeapInformation heapInfo = db->HeapInformation;
-	CHECK_INFO(heapInfo);
+	CHECK_INFO_RETURN_NULL(heapInfo);
 	for (int i = 0; i < heapInfo->count; i++) {
 		DEBUG_HEAP_INFORMATION heap = heapInfo->heaps[i];
 		// add heaps to list
@@ -1463,10 +1473,10 @@ static RzList *rz_heap_list(RzCore *core) {
 			RtlDestroyQueryDebugBuffer(db);
 			return NULL;
 		}
-		rzHeapInfo->base = heap.Base;
-		rzHeapInfo->blockCount = heap.BlockCount;
-		rzHeapInfo->allocated = heap.Allocated;
-		rzHeapInfo->committed = heap.Committed;
+		rzHeapInfo->base = (ut64)heap.Base;
+		rzHeapInfo->blockCount = (ut64)heap.BlockCount;
+		rzHeapInfo->allocated = (ut64)heap.Allocated;
+		rzHeapInfo->committed = (ut64)heap.Committed;
 
 		rz_list_append(heaps_list, rzHeapInfo);
 
