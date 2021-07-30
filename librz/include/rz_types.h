@@ -565,12 +565,6 @@ typedef enum {
 	RZ_SYS_ARCH_RISCV
 } RzSysArch;
 
-#if HAVE_CLOCK_NANOSLEEP && defined(CLOCK_MONOTONIC) && (__linux__ || (__FreeBSD__ && __FreeBSD_version >= 1101000) || (__NetBSD__ && __NetBSD_Version__ >= 700000000))
-#define HAS_CLOCK_NANOSLEEP 1
-#else
-#define HAS_CLOCK_NANOSLEEP 0
-#endif
-
 /* os */
 #if defined(__QNX__)
 #define RZ_SYS_OS "qnx"
