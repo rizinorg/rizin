@@ -225,6 +225,7 @@ static RzType *parse_type_procedure(const RzTypeDB *typedb, SType *type) {
 	if (arglist) {
 		typ->callable->args = parse_type_arglist(typedb, &arglist->type_data);
 	}
+	rz_type_func_save((RzTypeDB *)typedb, callable);
 	return typ;
 }
 
@@ -253,6 +254,7 @@ static RzType *parse_type_mfunction(const RzTypeDB *typedb, STypeInfo *type_info
 	if (arglist) {
 		type->callable->args = parse_type_arglist(typedb, &arglist->type_data);
 	}
+	rz_type_func_save((RzTypeDB *)typedb, callable);
 	return type;
 }
 
