@@ -251,9 +251,6 @@ RZ_API void rz_analysis_rzil_trace_op(RzAnalysis *analysis, RzAnalysisRzil *rzil
 	rzil->cb.hook_mem_write = trace_hook_mem_write;
 
 	/* evaluate esil expression */
-	// TODO : implement rzil_parse rzil_free
-	// rz_analysis_rzil_parse(rzil, expr);
-	// rz_analysis_rzil_stack_free();
 
 	/* restore hooks */
 	rzil->cb = ocbs;
@@ -264,9 +261,10 @@ RZ_API void rz_analysis_rzil_trace_op(RzAnalysis *analysis, RzAnalysisRzil *rzil
 	rzil->trace->end_idx++;
 }
 
-static bool restore_memory_cb(void *user, const ut64 key, const void *value, RzAnalysis *analysis) {
+static bool restore_memory_cb(void *user, const ut64 key, const void *value) {
 	size_t index;
-	RzAnalysisRzil *rzil = user;
+	RzAnalysis *analysis = user;
+	RzAnalysisRzil *rzil = analysis->rzil;
 	RzVector *vmem = (RzVector *)value;
 
 	rz_vector_upper_bound(vmem, rzil->trace->idx, index, CMP_MEM_CHANGE);
@@ -320,9 +318,7 @@ RZ_API void rz_analysis_rzil_trace_restore(RzAnalysis *analysis, RzAnalysisRzil 
 	rz_list_foreach (analysis->reg->allregs, iter, ri) {
 		restore_register(rzil, ri, idx, analysis);
 	}
-	// TODO : restore_memory_cb requires analysis as argument
-	//      : while foreach support *user only
-	// ht_up_foreach(trace->memory, restore_memory_cb, rzil);
+	ht_up_foreach(trace->memory, restore_memory_cb, analysis);
 }
 
 static int cmp_strings_by_leading_number(void *data1, void *data2) {

@@ -306,7 +306,7 @@ struct rzil_op_inv_t {
  *  load m k is the value associated with the key k in the memory m.
  */
 struct rzil_op_load_t {
-	RzIL_MEM int mem; ///< index of the memory in vm (different from the temp_val_list)
+	RzIL_MEM int mem; ///< index of the memory in VM (different from the temp_val_list)
 	RzIL_BITV int key; ///< index of the BitVector key (address)
 	RzIL_BITV int ret; ///< index of store the data loaded from memory
 };
@@ -318,7 +318,7 @@ struct rzil_op_load_t {
  *  store m k x a memory m in which the key k is associated with the word x.
  */
 struct rzil_op_store_t {
-	RzIL_MEM int mem; ///< index of memory in vm
+	RzIL_MEM int mem; ///< index of memory in VM
 	RzIL_BITV int key; ///< index of the BitVector key (address)
 	RzIL_BITV int value; ///< index of the RzILVal value (data) to store
 	RzIL_MEM int ret; ///< The returned Mem index.

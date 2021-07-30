@@ -5,7 +5,7 @@
 
 /**
  * Create an empty RzAnalysisRzil instance
- * inner vm should be init in adaptive plugin
+ * inner VM should be init in adaptive plugin
  * \return RzAnalysisRzil* a pointer to RzAnalysisRzil instance
  */
 RZ_API RzAnalysisRzil *rz_analysis_rzil_new() {
@@ -22,7 +22,7 @@ RZ_API RzAnalysisRzil *rz_analysis_rzil_new() {
 }
 
 /**
- * Cleanup rzil instance : clean vm, clean arch-specific user_data, and rzil itself
+ * Cleanup rzil instance : clean VM, clean arch-specific user_data, and rzil itself
  * \param analysis pointer to rizin's RzAnalysis
  * \param rzil pointer to RzAnalysisRzil
  */
@@ -74,9 +74,6 @@ RZ_API bool rz_analysis_rzil_setup(RzAnalysis *analysis, RzAnalysisRzil *rzil, i
 	rz_analysis_rzil_mem_ro(rzil, romem);
 	rz_analysis_rzil_stats(rzil, stats);
 
-	// set up op types
-	// TODO change analsis->cur and add `rzil_init`
-	//      as `esil_init` in analysis_plugin
 	if (analysis && analysis->cur && analysis->cur->rzil_init) {
 		analysis->cur->rzil_init(rzil);
 	}
@@ -85,7 +82,7 @@ RZ_API bool rz_analysis_rzil_setup(RzAnalysis *analysis, RzAnalysisRzil *rzil, i
 }
 
 /**
- * Set op at address in vm
+ * Set op at address in VM
  * \param rzil RzAnalysisRzil* pointer to RzAnalysisRzil
  * \param addr ut64 address of current pc
  * \param oplist RzPvector* vector of core theory opcodes
