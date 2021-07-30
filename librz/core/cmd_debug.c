@@ -440,9 +440,8 @@ struct trace_node {
 	int refs;
 };
 
-static void htpp_string_free(HtPPKv *kv) {
-	free(kv->key);
-	free(kv->value);
+static void htpp_vector_free(HtPPKv *kv) {
+	rz_pvector_free(kv->value);
 }
 
 // XXX those tmp files are never removed and we shuoldnt use files for this
@@ -4410,7 +4409,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 				if (!strcmp(input + 3, "*")) {
 					if (core->analysis->esil) {
 						ht_pp_free(core->analysis->esil->trace->ht_db);
-						core->analysis->esil->trace->ht_db = ht_pp_new((HtPPDupValue)strdup, htpp_string_free, (HtPPCalcSizeV)strlen);
+						core->analysis->esil->trace->ht_db = ht_pp_new(NULL, htpp_vector_free, NULL);
 					}
 				} else {
 					eprintf("TODO: dte- cannot delete specific logs. Use dte-*\n");
