@@ -982,7 +982,6 @@ static void free_stype(void *type_info) {
 		RzListIter *it;
 		STypeInfo *type_info = 0;
 		rz_list_foreach (lf_fieldlist->substructs, it, type_info) {
-			type_info = (STypeInfo *)rz_list_iter_get(it);
 			if (type_info->free_) {
 				type_info->free_(type_info);
 			}
@@ -1053,6 +1052,7 @@ static void free_stype(void *type_info) {
 		SLF_VTSHAPE *lf_vtshape = (SLF_VTSHAPE *)typeInfo->type_info;
 		RZ_FREE(lf_vtshape->vt_descriptors);
 		lf_vtshape->vt_descriptors = 0;
+		break;
 	}
 	default:
 		rz_warn_if_reached();

@@ -140,7 +140,7 @@ static RzType *parse_type_pointer(const RzTypeDB *typedb, SType *type) {
 	typ->kind = RZ_TYPE_KIND_POINTER;
 	SType *p_utype = rz_bin_pdb_stype_by_index(lf_pointer->utype);
 	if (p_utype) {
-		RzType *tmp = parse_regular_type(typedb, p_utype);
+		RzType *tmp = parse_type(typedb, p_utype);
 		if (!tmp) {
 			return NULL;
 		}
@@ -163,6 +163,9 @@ static RzType *parse_type(const RzTypeDB *typedb, SType *type) {
 			eprintf("%s : Error parsing complex type member \"%s\" type:\n%s\n", __FUNCTION__, simple_type->type, error_msg);
 			RZ_FREE(error_msg);
 		}
+		RZ_FREE(simple_type->type);
+		RZ_FREE(type->type_data.type_info);
+		RZ_FREE(type);
 		return typ;
 	} else {
 		if (type_info->leaf_type == eLF_POINTER) {
@@ -429,7 +432,9 @@ static RzType *parse_structure(const RzTypeDB *typedb, SType *type) {
 		}
 		void *element = rz_vector_push(&base_type->struct_data.members, struct_member);
 		if (!element) {
+			rz_type_base_struct_member_free(struct_member, NULL);
 			rz_type_base_type_free(base_type);
+			base_type = NULL;
 			goto cleanup;
 		}
 	}
@@ -544,7 +549,9 @@ static RzType *parse_union(const RzTypeDB *typedb, SType *type) {
 		}
 		void *element = rz_vector_push(&base_type->union_data.members, union_member);
 		if (!element) {
+			rz_type_base_union_member_free(union_member, NULL);
 			rz_type_base_type_free(base_type);
+			base_type = NULL;
 			goto cleanup;
 		}
 	}
@@ -643,7 +650,9 @@ static RzType *parse_enum(const RzTypeDB *typedb, SType *type) {
 		}
 		void *element = rz_vector_push(&base_type->struct_data.members, enum_case);
 		if (!element) {
+			rz_type_base_enum_case_free(enum_case, NULL);
 			rz_type_base_type_free(base_type);
+			base_type = NULL;
 			goto cleanup;
 		}
 	}
