@@ -522,6 +522,7 @@ static void finish_pdb_parse(RzPdb *pdb) {
 			break;
 		case 2:
 			tpi_stream = (STpiStream *)rz_list_iter_get(it);
+			tpi_stream->free_(tpi_stream);
 			free_pdb_stream(tpi_stream);
 			free(tpi_stream);
 			break;
