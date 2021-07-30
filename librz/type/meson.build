@@ -33,6 +33,7 @@ rz_type = library('rz_type', rz_type_sources,
     rz_util_dep,
     tree_sitter_dep,
     tree_sitter_c_dep,
+    lrt
   ],
   install: true,
   implicit_include_directories: false,
