@@ -18,36 +18,24 @@ static void htup_vector_free(HtUPKv *kv) {
 	rz_vector_free(kv->value);
 }
 
-static void htpp_string_free(HtPPKv *kv) {
-	free(kv->key);
-	free(kv->value);
+RZ_API RzPVector* ht_db_get(HtPP *db, const char *key) {
+	return ht_pp_find(db, key, NULL);
+}
+
+static void htpp_vector_free(HtPPKv *kv) {
+	rz_vector_free(kv->value);
 }
 
 RZ_API void ht_db_array_add(HtPP *db, const char *key, const char *val) {
-	const char *array_val = ht_db_const_get(db, key);
-	char *new_array_val = NULL;
-	if (!array_val) {
+	RzPVector *array = ht_db_get(db, key);
+	if (!array) {
+		// no corresponding value, create one in hash table
 		ht_db_set(db, key, val);
 		return;
 	}
 
-	int array_len = strlen(array_val);
-	int val_len = strlen(val);
-
-	// 1 for ',', 1 for NUL
-	int new_len = array_len + val_len + 1 + 1;
-	new_array_val = RZ_NEWS0(char, new_len);
-
-	if (!new_array_val) {
-		return;
-	}
-
-	// warning
-	memcpy(new_array_val, array_val, array_len);
-	new_array_val[array_len] = ',';
-	memcpy(new_array_val + array_len + 1, val, val_len);
-
-	ht_db_set(db, key, new_array_val);
+	// add to the vector
+	rz_pvector_push(array, val);
 }
 
 RZ_API void ht_db_array_add_num(HtPP *db, const char *key, ut64 val) {
@@ -69,12 +57,45 @@ RZ_API void ht_db_num_set(HtPP *db, const char *key, ut64 v) {
 }
 
 RZ_API void ht_db_set(HtPP *db, const char *key, const char *val) {
-	ht_pp_update(db, key, (char *)val);
+	RzPVector *new_array = rz_pvector_new(NULL);
+	if (!new_array) {
+		eprintf("cannot create vector\n");
+		return;
+	}
+        rz_pvector_push(new_array, val);
+	ht_pp_insert(db, key, new_array);
+}
+
+static char *ht_db_array_to_string(RzPVector *array) {
+	void **iter;
+	char *elem;
+	char *ret;
+	int len = 0;
+
+	rz_pvector_foreach(array, iter) {
+		elem = *iter;
+		len += strlen(elem);
+		len += 1;
+	}
+
+	ret = (char *)malloc(len);
+	ret[len] = '\0';
+	rz_pvector_foreach(array, iter) {
+		elem = *iter;
+		strcat(ret, elem);
+	}
+
+	return ret;
 }
 
 RZ_API const char *ht_db_const_get(HtPP *db, const char *key) {
-	const char *val = ht_pp_find(db, key, NULL);
-	return val;
+	RzPVector *array = ht_db_get(db, key);
+	if (!array) {
+		return NULL;
+	}
+
+	char *array_string = ht_db_array_to_string(array);
+	return array_string;
 }
 
 RZ_API ut64 ht_db_num_get(HtPP *db, const char *key) {
@@ -83,17 +104,22 @@ RZ_API ut64 ht_db_num_get(HtPP *db, const char *key) {
 }
 
 RZ_API bool ht_db_array_contains(HtPP *db, const char *key, const char *val) {
-	const char *array_val = ht_db_const_get(db, key);
-	const char *found_start = NULL;
+	RzPVector *array = ht_db_get(db, key);
 
-	if (!array_val) {
+	if (!array) {
+		// not in db
 		return false;
 	}
 
-	found_start = strstr(array_val, val);
-	if (found_start) {
-		return true;
+	void **iter;
+	void *elem;
+	rz_pvector_foreach(array, iter) {
+		elem = *iter;
+		if (strcmp(elem, val) == 0) {
+			return true;
+		}
 	}
+
 	return false;
 }
 
@@ -112,7 +138,7 @@ RZ_API RzAnalysisEsilTrace *rz_analysis_esil_trace_new(RzAnalysisEsil *esil) {
 	if (!trace->memory) {
 		goto error;
 	}
-	trace->ht_db = ht_pp_new((HtPPDupValue)strdup, htpp_string_free, (HtPPCalcSizeV)strlen);
+	trace->ht_db = ht_pp_new(NULL, htpp_vector_free, NULL);
 	if (!trace->ht_db) {
 		goto error;
 	}
