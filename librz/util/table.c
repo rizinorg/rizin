@@ -102,7 +102,23 @@ RZ_API void rz_table_free(RzTable *t) {
 	free(t);
 }
 
+static bool column_exists(RzTable *t, const char *name) {
+	RzListIter *it;
+	RzTableColumn *c;
+
+	rz_list_foreach (t->cols, it, c) {
+		if (!strcmp(c->name, name)) {
+			return true;
+		}
+	}
+	return false;
+}
+
 RZ_API void rz_table_add_column(RzTable *t, RzTableColumnType *type, const char *name, int maxWidth) {
+	if (column_exists(t, name)) {
+		return;
+	}
+
 	RzTableColumn *c = RZ_NEW0(RzTableColumn);
 	if (c) {
 		c->name = strdup(name);
