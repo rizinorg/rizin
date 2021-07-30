@@ -27,6 +27,7 @@ RZ_API void ht_db_array_add(HtPP *db, const char *key, const char *val) {
 	const char *array_val = ht_db_const_get(db, key);
 	char *new_array_val = NULL;
 	if (!array_val) {
+		ht_db_set(db, key, val);
 		return;
 	}
 
