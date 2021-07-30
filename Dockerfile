@@ -75,7 +75,6 @@ RUN meson --prefix=/usr /tmp/build
 RUN meson compile -C /tmp/build
 RUN meson install --destdir /tmp/rizin-install -C /tmp/build
 
-
 FROM debian:10
 ENV RZ_ARM64_AS=${with_arm64_as:+aarch64-linux-gnu-as}
 ENV RZ_ARM32_AS=${with_arm32_as:+arm-linux-gnueabi-as}
