@@ -36,6 +36,7 @@
 #define RZ_IS_PORTABLE @IS_PORTABLE@
 
 #define RZ_PREFIX  "@PREFIX@"
+#define RZ_BINDIR  "@BINDIR@"
 #define RZ_LIBDIR  "@LIBDIR@"
 #define RZ_INCDIR  "@INCLUDEDIR@"
 #define RZ_DATDIR  "@DATADIR@"
