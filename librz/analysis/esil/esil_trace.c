@@ -18,7 +18,7 @@ static void htup_vector_free(HtUPKv *kv) {
 	rz_vector_free(kv->value);
 }
 
-RZ_API RzPVector* ht_db_get(HtPP *db, const char *key) {
+RZ_API RzPVector *ht_db_get(HtPP *db, const char *key) {
 	return ht_pp_find(db, key, NULL);
 }
 
@@ -62,7 +62,7 @@ RZ_API void ht_db_set(HtPP *db, const char *key, const char *val) {
 		eprintf("cannot create vector\n");
 		return;
 	}
-        rz_pvector_push(new_array, val);
+	rz_pvector_push(new_array, val);
 	ht_pp_insert(db, key, new_array);
 }
 
@@ -72,7 +72,7 @@ static char *ht_db_array_to_string(RzPVector *array) {
 	char *ret;
 	int len = 0;
 
-	rz_pvector_foreach(array, iter) {
+	rz_pvector_foreach (array, iter) {
 		elem = *iter;
 		len += strlen(elem);
 		len += 1;
@@ -80,7 +80,7 @@ static char *ht_db_array_to_string(RzPVector *array) {
 
 	ret = (char *)malloc(len);
 	ret[len] = '\0';
-	rz_pvector_foreach(array, iter) {
+	rz_pvector_foreach (array, iter) {
 		elem = *iter;
 		strcat(ret, elem);
 	}
@@ -113,7 +113,7 @@ RZ_API bool ht_db_array_contains(HtPP *db, const char *key, const char *val) {
 
 	void **iter;
 	void *elem;
-	rz_pvector_foreach(array, iter) {
+	rz_pvector_foreach (array, iter) {
 		elem = *iter;
 		if (strcmp(elem, val) == 0) {
 			return true;
