@@ -26,9 +26,9 @@ NAME=nso maps
 FILE=bins/nso/application.nso
 CMDS=om
 EXPECT=<<EOF
- 3 fd: 4 +0x00000000 0x08000000 - 0x08020e17 r-x vmap.text
+ 1 fd: 4 +0x00000000 0x08000000 - 0x08020e17 r-x vmap.text
  2 fd: 4 +0x00020e18 0x08021000 - 0x0802eb0b r-- vmap.ro
- 1 fd: 4 +0x0002e924 0x0802f000 - 0x08033217 r-- vmap.data
+ 3 fd: 4 +0x0002e924 0x0802f000 - 0x08033217 r-- vmap.data
 EOF
 RUN
 

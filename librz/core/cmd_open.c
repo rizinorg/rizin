@@ -395,7 +395,7 @@ static void map_list(RzIO *io, int mode, RzPrint *print, int fd) {
 
 	void **it;
 	RzPVector *maps = rz_io_maps(io);
-	rz_pvector_foreach_prev(maps, it) { //this must be prev (LIFO)
+	rz_pvector_foreach (maps, it) {
 		RzIOMap *map = *it;
 		if (fd >= 0 && map->fd != fd) {
 			continue;

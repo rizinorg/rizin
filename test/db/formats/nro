@@ -27,9 +27,9 @@ NAME=nro maps
 FILE=bins/nro/appstore.nro
 CMDS=om
 EXPECT=<<EOF
- 3 fd: 3 +0x00000000 0x00000000 - 0x001b3fff r-x fmap.text
+ 1 fd: 3 +0x00000000 0x00000000 - 0x001b3fff r-x fmap.text
  2 fd: 3 +0x001b4000 0x001b4000 - 0x0020dfff r-- fmap.ro
- 1 fd: 3 +0x0020e000 0x0020e000 - 0x0021cfff r-- fmap.data
+ 3 fd: 3 +0x0020e000 0x0020e000 - 0x0021cfff r-- fmap.data
 EOF
 RUN
 

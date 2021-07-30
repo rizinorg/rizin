@@ -485,7 +485,7 @@ EXPECT=<<EOF
             ;-- section.class.methods.main.attr.0.code:
             ;-- sym.Test.Test.main:
 / method.Test.Test.main ();
-|           0x00000120      getstatic java.lang.System:out:Ljava.io.PrintStream; ; [01] -r-x section size 17 named class.methods.main.attr.0.code
+|           0x00000120      getstatic java.lang.System:out:Ljava.io.PrintStream; ; [03] -r-x section size 17 named class.methods.main.attr.0.code
 |           0x00000123      ldc   "See if you can decompile/disassemble me!"
 |           0x00000125      invokevirtual void java.io.PrintStream:println: (short, java.lang.String)
 \           0x00000128      return
@@ -1527,7 +1527,7 @@ EXPECT=<<EOF
             ;-- section.class.methods._init_.attr.0.code:
             ;-- sym.Main.Main._init:
 / method.Main.Main._init ();
-|           0x00000383      aload_0                                    ; [01] -r-x section size 29 named class.methods._init_.attr.0.code
+|           0x00000383      aload_0                                    ; [03] -r-x section size 29 named class.methods._init_.attr.0.code
 |           0x00000384      invokespecial void java.lang.Object:<init>: ()
 \           0x00000387      return
 EOF
@@ -1542,7 +1542,7 @@ EXPECT=<<EOF
             ;-- section.class.methods._init_.attr.0.code:
             ;-- sym.Main.Main._init:
 / method.Main.Main._init ();
-|           0x00000383      aload_0                                    ; [01] -r-x section size 29 named class.methods._init_.attr.0.code
+|           0x00000383      aload_0                                    ; [03] -r-x section size 29 named class.methods._init_.attr.0.code
 |           0x00000384      invokespecial void java.lang.Object:<init>: ()
 \           0x00000387      return
 EOF
@@ -1557,7 +1557,7 @@ EXPECT=<<EOF
             ;-- section.class.methods._init_.attr.0.code:
             ;-- sym.Main.Main._init:
 / method.Main.Main._init ();
-|           0x000004a4      aload_0                                    ; [01] -r-x section size 29 named class.methods._init_.attr.0.code
+|           0x000004a4      aload_0                                    ; [03] -r-x section size 29 named class.methods._init_.attr.0.code
 |           0x000004a5      invokespecial void java.lang.Object:<init>: ()
 \           0x000004a8      return
 EOF
@@ -1572,7 +1572,7 @@ EXPECT=<<EOF
             ;-- section.class.methods._init_.attr.0.code:
             ;-- sym.Main.Main._init:
 / method.Main.Main._init ();
-|           0x000004a4      aload_0                                    ; [01] -r-x section size 29 named class.methods._init_.attr.0.code
+|           0x000004a4      aload_0                                    ; [03] -r-x section size 29 named class.methods._init_.attr.0.code
 |           0x000004a5      invokespecial void java.lang.Object:<init>: ()
 \           0x000004a8      return
 EOF
@@ -1587,7 +1587,7 @@ EXPECT=<<EOF
             ;-- section.class.methods._init_.attr.0.code:
             ;-- sym.Main.Main._init:
 / method.Main.Main._init ();
-|           0x000004a4      aload_0                                    ; [01] -r-x section size 29 named class.methods._init_.attr.0.code
+|           0x000004a4      aload_0                                    ; [03] -r-x section size 29 named class.methods._init_.attr.0.code
 |           0x000004a5      invokespecial void java.lang.Object:<init>: ()
 \           0x000004a8      return
 EOF
@@ -1602,7 +1602,7 @@ EXPECT=<<EOF
             ;-- section.class.methods._init_.attr.0.code:
             ;-- sym.Main.Main._init:
 / method.Main.Main._init ();
-|           0x000004a4      aload_0                                    ; [01] -r-x section size 29 named class.methods._init_.attr.0.code
+|           0x000004a4      aload_0                                    ; [03] -r-x section size 29 named class.methods._init_.attr.0.code
 |           0x000004a5      invokespecial void java.lang.Object:<init>: ()
 \           0x000004a8      return
 EOF
@@ -1617,7 +1617,7 @@ EXPECT=<<EOF
             ;-- section.class.methods._init_.attr.0.code:
             ;-- sym.Main.Main._init:
 / method.Main.Main._init ();
-|           0x000004a4      aload_0                                    ; [01] -r-x section size 29 named class.methods._init_.attr.0.code
+|           0x000004a4      aload_0                                    ; [03] -r-x section size 29 named class.methods._init_.attr.0.code
 |           0x000004a5      invokespecial void java.lang.Object:<init>: ()
 \           0x000004a8      return
 EOF
@@ -1632,7 +1632,7 @@ EXPECT=<<EOF
             ;-- section.class.methods._init_.attr.0.code:
             ;-- sym.Main.Main._init:
 / method.Main.Main._init ();
-|           0x000004a4      aload_0                                    ; [01] -r-x section size 29 named class.methods._init_.attr.0.code
+|           0x000004a4      aload_0                                    ; [03] -r-x section size 29 named class.methods._init_.attr.0.code
 |           0x000004a5      invokespecial void java.lang.Object:<init>: ()
 \           0x000004a8      return
 EOF
@@ -1647,7 +1647,7 @@ EXPECT=<<EOF
             ;-- section.class.methods._init_.attr.0.code:
             ;-- sym.Main.Main._init:
 / method.Main.Main._init ();
-|           0x000004a4      aload_0                                    ; [01] -r-x section size 29 named class.methods._init_.attr.0.code
+|           0x000004a4      aload_0                                    ; [03] -r-x section size 29 named class.methods._init_.attr.0.code
 |           0x000004a5      invokespecial void java.lang.Object:<init>: ()
 \           0x000004a8      return
 EOF

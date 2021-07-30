@@ -5,8 +5,8 @@ om
 s
 EOF
 EXPECT=<<EOF
- 2 fd: 3 +0x0000035d 0x0000035d - 0x00000368 r-x fmap.code
  1 fd: 3 +0x00000000 0x00000000 - 0x0000041b r-- fmap.file
+ 2 fd: 3 +0x0000035d 0x0000035d - 0x00000368 r-x fmap.code
 0x35d
 EOF
 RUN
@@ -1445,10 +1445,10 @@ om
 o
 EOF
 EXPECT=<<EOF
- 4 fd: 3 +0x00000194 0x00200194 - 0x0020021d r-x fmap.code
- 3 fd: 3 +0x00000000 0x00200000 - 0x002007ff r-- fmap.file
- 2 fd: 4 +0x00000194 0x00000194 - 0x0000021d r-x fmap.code
  1 fd: 4 +0x00000000 0x00000000 - 0x000003e7 r-- fmap.file
+ 2 fd: 4 +0x00000194 0x00000194 - 0x0000021d r-x fmap.code
+ 3 fd: 3 +0x00000000 0x00200000 - 0x002007ff r-- fmap.file
+ 4 fd: 3 +0x00000194 0x00200194 - 0x0020021d r-x fmap.code
  3 - r-x 0x00000800 classes2.dex
  4 * r-x 0x000003e8 classes.dex
 EOF
