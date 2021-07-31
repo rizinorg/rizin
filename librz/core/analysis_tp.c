@@ -807,7 +807,7 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn) {
 			if (loop_count > LOOP_MAX || aop->type == RZ_ANALYSIS_OP_TYPE_RET) {
 				break;
 			}
-			ht_db_num_get(analysis->esil->trace->ht_db, sdb_fmt("0x%" PFMT64x ".count", addr));
+			ht_db_num_set(analysis->esil->trace->ht_db, sdb_fmt("0x%" PFMT64x ".count", addr), loop_count + 1);
 			if (rz_analysis_op_nonlinear(aop->type)) { // skip the instr
 				rz_reg_set_value(core->dbg->reg, r, addr + aop->size);
 			} else {
