@@ -42,6 +42,21 @@
 #define ELF_M_INFO        ELF32_M_INFO
 #endif
 
+#define E_IDENT_OFFSET      offsetof(Elf_(Ehdr), e_ident)
+#define E_TYPE_OFFSET       offsetof(Elf_(Ehdr), e_type)
+#define E_MACHINE_OFFSET    offsetof(Elf_(Ehdr), e_machine)
+#define E_VERSION_OFFSET    offsetof(Elf_(Ehdr), e_version)
+#define E_ENTRYPOINT_OFFSET offsetof(Elf_(Ehdr), e_entry)
+#define E_PHOFF_OFFSET      offsetof(Elf_(Ehdr), e_phoff)
+#define E_SHOFF_OFFSET      offsetof(Elf_(Ehdr), e_shoff)
+#define E_FLAGS_OFFSET      offsetof(Elf_(Ehdr), e_flags)
+#define E_EHSIZE_OFFSET     offsetof(Elf_(Ehdr), e_ehsize)
+#define E_PHENTSIZE_OFFSET  offsetof(Elf_(Ehdr), e_phentsize)
+#define E_PHNUM_OFFSET      offsetof(Elf_(Ehdr), e_phnum)
+#define E_SHENTSIZE_OFFSET  offsetof(Elf_(Ehdr), e_shentsize)
+#define E_SHNUM_OFFSET      offsetof(Elf_(Ehdr), e_shnum)
+#define E_SHSTRNDX_OFFSET   offsetof(Elf_(Ehdr), e_shstrndx)
+
 /* MingW doesn't define __BEGIN_DECLS / __END_DECLS. */
 #ifndef __BEGIN_DECLS
 #ifdef __cplusplus
