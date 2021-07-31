@@ -19,7 +19,13 @@ static void htup_vector_free(HtUPKv *kv) {
 }
 
 RZ_API RzPVector *ht_db_get(HtPP *db, const char *key) {
-	return ht_pp_find(db, key, NULL);
+	RzPVector *vec = ht_pp_find(db, key, NULL);
+
+	if (!vec) {
+		return NULL;
+	}
+
+	return vec;
 }
 
 static void htpp_vector_free(HtPPKv *kv) {
@@ -34,19 +40,24 @@ RZ_API void ht_db_array_add(HtPP *db, const char *key, const char *val) {
 		return;
 	}
 
+	if (ht_db_array_contains(db, key, val)) {
+		// already in db_array
+		return;
+	}
+
 	// add to the vector
-	rz_pvector_push(array, val);
+	rz_pvector_push(array, strdup((char *)val));
 }
 
 RZ_API void ht_db_array_add_num(HtPP *db, const char *key, ut64 val) {
 	char buf[SDB_NUM_BUFSZ];
 	char *v = sdb_itoa(val, buf, SDB_NUM_BASE);
-	if (!ht_db_array_contains(db, key, v)) {
-		if (val < 256) {
-			char *v = sdb_itoa(val, buf, 10);
-			return ht_db_array_add(db, key, v);
-		}
+
+	// printf("Add %s = %s\n", key, v);
+	if (val < 256) {
+		v = sdb_itoa(val, buf, 10);
 	}
+	return ht_db_array_add(db, key, v);
 }
 
 RZ_API void ht_db_num_set(HtPP *db, const char *key, ut64 v) {
@@ -58,33 +69,34 @@ RZ_API void ht_db_num_set(HtPP *db, const char *key, ut64 v) {
 
 RZ_API void ht_db_set(HtPP *db, const char *key, const char *val) {
 	RzPVector *new_array = rz_pvector_new(NULL);
+
 	if (!new_array) {
 		eprintf("cannot create vector\n");
 		return;
 	}
-	rz_pvector_push(new_array, val);
-	ht_pp_insert(db, key, new_array);
+
+	rz_pvector_push(new_array, strdup((char *)val));
+	ht_pp_update(db, key, new_array);
 }
 
 static char *ht_db_array_to_string(RzPVector *array) {
-	void **iter;
-	char *elem;
-	char *ret;
-	int len = 0;
-
-	rz_pvector_foreach (array, iter) {
-		elem = *iter;
-		len += strlen(elem);
-		len += 1;
+	if (!array) {
+		return NULL;
 	}
 
-	ret = (char *)malloc(len);
-	ret[len] = '\0';
-	rz_pvector_foreach (array, iter) {
-		elem = *iter;
-		strcat(ret, elem);
+	RzStrBuf *sbuf = rz_strbuf_new("");
+	size_t n = array->v.len;
+
+	if (n > 0) {
+		rz_strbuf_append(sbuf, rz_pvector_at(array, 0));
 	}
 
+	for (size_t i = 1; i < n; ++i) {
+		rz_strbuf_append(sbuf, ",");
+		rz_strbuf_append(sbuf, rz_pvector_at(array, i));
+	}
+
+	char *ret = rz_strbuf_drain(sbuf);
 	return ret;
 }
 
@@ -112,9 +124,8 @@ RZ_API bool ht_db_array_contains(HtPP *db, const char *key, const char *val) {
 	}
 
 	void **iter;
-	void *elem;
 	rz_pvector_foreach (array, iter) {
-		elem = *iter;
+		char *elem = *iter;
 		if (strcmp(elem, val) == 0) {
 			return true;
 		}
@@ -262,7 +273,6 @@ static int trace_hook_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int le
 	if (esil->cb.mem_read) {
 		ret = esil->cb.mem_read(esil, addr, buf, len);
 	}
-
 	ht_db_array_add_num(DB, KEY("mem.read"), addr);
 	rz_hex_bin2str(buf, len, hexbuf);
 	ht_db_set(DB, KEYAT("mem.read.data", addr), hexbuf);
