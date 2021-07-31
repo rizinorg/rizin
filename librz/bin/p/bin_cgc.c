@@ -7,10 +7,6 @@
 
 extern struct rz_bin_dbginfo_t rz_bin_dbginfo_elf;
 
-static void destroy(RzBinFile *bf) {
-	Elf_(rz_bin_elf_free)(bf->o->bin_obj);
-}
-
 static bool check_buffer(RzBuffer *buf) {
 	ut8 tmp[SCGCMAG + 1];
 	int r = rz_buf_read_at(buf, 0, tmp, sizeof(tmp));
