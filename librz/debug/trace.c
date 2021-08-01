@@ -175,35 +175,11 @@ RZ_API int rz_debug_trace_pc(RzDebug *dbg, ut64 pc) {
 	return true;
 }
 
-static bool trace_foreach_callback(void *user, void *key, void *val) {
-        int *count = user;
-        printf("[%d] %s=",*(int*)user, (char *)key);
-        *count += 1;
-
-	RzPVector *vec = val;
-	void **iter;
-	char *elem;
-	rz_pvector_foreach(vec, iter) {
-		elem = *iter;
-		printf("%s,", elem);
-	}
-
-	printf("\n");
-}
-
-void dbg_print_trace(RzAnalysisEsilTrace *trace) {
-        int count = 0;
-        printf("Trace idx : %d\n", trace->idx);
-        ht_pp_foreach(trace->ht_db, (HtPPForeachCallback)trace_foreach_callback, &count);
-}
-
-
 RZ_API void rz_debug_trace_op(RzDebug *dbg, RzAnalysisOp *op) {
 	static ut64 oldpc = UT64_MAX; // Must trace the previously traced instruction
 	if (dbg->trace->enabled) {
 		if (dbg->analysis->esil) {
 			rz_analysis_esil_trace_op(dbg->analysis->esil, op);
-			dbg_print_trace(dbg->analysis->esil->trace);
 		} else {
 			if (dbg->verbose) {
 				eprintf("Run aeim to get dbg->analysis->esil initialized\n");
