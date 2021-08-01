@@ -1437,14 +1437,14 @@ RZ_API void rz_analysis_esil_mem_ro(RzAnalysisEsil *esil, int mem_readonly);
 RZ_API void rz_analysis_esil_stats(RzAnalysisEsil *esil, int enable);
 
 /* Ht db */
-RZ_API RzPVector *ht_db_get(HtPP *db, const char *key);
-RZ_API void ht_db_array_add(HtPP *db, const char *key, const char *val);
-RZ_API void ht_db_array_add_num(HtPP *db, const char *key, ut64 val);
-RZ_API void ht_db_num_set(HtPP *db, const char *key, ut64 v);
-RZ_API void ht_db_set(HtPP *db, const char *key, const char *val);
-RZ_API const char *ht_db_const_get(HtPP *db, const char *key);
-RZ_API ut64 ht_db_num_get(HtPP *db, const char *key);
-RZ_API bool ht_db_array_contains(HtPP *db, const char *key, const char *val);
+RZ_API RzPVector *rz_analysis_esil_trace_db_get(HtPP *db, const char *key);
+RZ_API void rz_analysis_esil_trace_db_array_add(HtPP *db, const char *key, const char *val);
+RZ_API void rz_analysis_esil_trace_db_array_add_num(HtPP *db, const char *key, ut64 val);
+RZ_API void rz_analysis_esil_trace_db_num_set(HtPP *db, const char *key, ut64 v);
+RZ_API void rz_analysis_esil_trace_db_set(HtPP *db, const char *key, const char *val);
+RZ_API const char *rz_analysis_esil_trace_db_const_get(HtPP *db, const char *key);
+RZ_API ut64 rz_analysis_esil_trace_db_num_get(HtPP *db, const char *key);
+RZ_API bool rz_analysis_esil_trace_db_array_contains(HtPP *db, const char *key, const char *val);
 
 /* trace */
 RZ_API RzAnalysisEsilTrace *rz_analysis_esil_trace_new(RzAnalysisEsil *esil);
