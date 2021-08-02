@@ -999,8 +999,6 @@ typedef struct rz_analysis_esil_trace_t {
 	ut64 stack_addr;
 	ut64 stack_size;
 	ut8 *stack_data;
-	//TODO remove `db` and reuse info above
-	// Sdb *db;
 	HtPP *ht_db;
 } RzAnalysisEsilTrace;
 
