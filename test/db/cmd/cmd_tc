@@ -378,3 +378,17 @@ union Data {
 };
 EOF
 RUN
+
+NAME=test cmd tsj
+FILE==
+CMDS=<<EOF
+td "struct foo {};"
+tsj foo
+td "struct foo2 {int a; int b;};"
+tsj foo2
+EOF
+EXPECT=<<EOF
+{"name":"foo","members":{}}
+{"name":"foo2","members":{"a":"int","b":"int"}}
+EOF
+RUN
