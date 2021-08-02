@@ -64,13 +64,6 @@ RZ_IPI RzCmdStatus rz_interpret_pipe_handler(RzCore *core, int argc, const char 
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_interpret_system_handler(RzCore *core, int argc, const char **argv) {
-	char *args = rz_str_array_join(argv + 1, argc - 1, " ");
-	rz_core_cmd_command(core, args);
-	free(args);
-	return RZ_CMD_STATUS_OK;
-}
-
 RZ_IPI RzCmdStatus rz_interpret_macro_handler(RzCore *core, int argc, const char **argv) {
 	rz_cmd_macro_call(&core->rcmd->macro, argv[1]);
 	return RZ_CMD_STATUS_OK;

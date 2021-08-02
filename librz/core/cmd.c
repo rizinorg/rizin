@@ -6442,10 +6442,14 @@ static ut8 *core_cmd_raw(RzCore *core, const char *cmd, int *length) {
 	const char *static_str;
 	ut8 *retstr = NULL;
 	rz_cons_push();
+	bool is_pipe = core->is_pipe;
+	core->is_pipe = true;
 	if (rz_core_cmd(core, cmd, 0) == -1) {
+		core->is_pipe = is_pipe;
 		rz_cons_pop();
 		return NULL;
 	}
+	core->is_pipe = is_pipe;
 	rz_cons_filter();
 	static_str = rz_cons_get_buffer();
 	if (length) {

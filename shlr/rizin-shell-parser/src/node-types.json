@@ -72,10 +72,6 @@
             "named": true
           },
           {
-            "type": "interpret_arg",
-            "named": true
-          },
-          {
             "type": "iter_bbs_stmt",
             "named": true
           },
@@ -1295,11 +1291,6 @@
         ]
       }
     }
-  },
-  {
-    "type": "interpret_arg",
-    "named": true,
-    "fields": {}
   },
   {
     "type": "iter_bbs_stmt",
