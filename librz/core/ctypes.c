@@ -309,13 +309,11 @@ static void core_types_struct_print(RzCore *core, RzBaseType *btype, RzOutputMod
 		pj_ks(pj, "name", btype->name);
 		pj_k(pj, "members");
 		pj_o(pj);
-		if (!rz_vector_empty(&btype->struct_data.members)) {
-			RzTypeStructMember *memb;
-			rz_vector_foreach(&btype->struct_data.members, memb) {
-				char *mtype = rz_type_as_string(core->analysis->typedb, memb->type);
-				pj_ks(pj, memb->name, mtype);
-				free(mtype);
-			}
+		RzTypeStructMember *memb;
+		rz_vector_foreach(&btype->struct_data.members, memb) {
+			char *mtype = rz_type_as_string(core->analysis->typedb, memb->type);
+			pj_ks(pj, memb->name, mtype);
+			free(mtype);
 		}
 		pj_end(pj);
 		pj_end(pj);
