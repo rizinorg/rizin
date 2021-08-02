@@ -42,7 +42,6 @@ static const RzCmdDescArg interpret_args[2];
 static const RzCmdDescArg interpret_script_args[2];
 static const RzCmdDescArg interpret_output_args[2];
 static const RzCmdDescArg interpret_pipe_args[2];
-static const RzCmdDescArg interpret_system_args[3];
 static const RzCmdDescArg interpret_macro_args[4];
 static const RzCmdDescArg remote_args[3];
 static const RzCmdDescArg remote_send_args[3];
@@ -549,27 +548,6 @@ static const RzCmdDescArg interpret_pipe_args[] = {
 static const RzCmdDescHelp interpret_pipe_help = {
 	.summary = "Same as #!pipe open cfg.editor and interpret tmp file",
 	.args = interpret_pipe_args,
-};
-
-static const RzCmdDescArg interpret_system_args[] = {
-	{
-		.name = "bin",
-		.type = RZ_CMD_ARG_TYPE_FILE,
-		.no_space = true,
-
-	},
-	{
-		.name = "arg",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_ARRAY,
-		.optional = true,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp interpret_system_help = {
-	.summary = "Interpret output of command",
-	.args = interpret_system_args,
 };
 
 static const RzCmdDescArg interpret_macro_args[] = {
@@ -4920,9 +4898,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *interpret_pipe_cd = rz_cmd_desc_argv_new(core->rcmd, dot__cd, ".*", rz_interpret_pipe_handler, &interpret_pipe_help);
 	rz_warn_if_fail(interpret_pipe_cd);
-
-	RzCmdDesc *interpret_system_cd = rz_cmd_desc_argv_new(core->rcmd, dot__cd, ".!", rz_interpret_system_handler, &interpret_system_help);
-	rz_warn_if_fail(interpret_system_cd);
 
 	RzCmdDesc *interpret_macro_cd = rz_cmd_desc_argv_new(core->rcmd, dot__cd, ".(", rz_interpret_macro_handler, &interpret_macro_help);
 	rz_warn_if_fail(interpret_macro_cd);

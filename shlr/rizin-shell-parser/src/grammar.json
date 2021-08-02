@@ -1872,32 +1872,6 @@
                   "type": "ALIAS",
                   "content": {
                     "type": "STRING",
-                    "value": ".!"
-                  },
-                  "named": true,
-                  "value": "cmd_identifier"
-                }
-              },
-              {
-                "type": "FIELD",
-                "name": "args",
-                "content": {
-                  "type": "SYMBOL",
-                  "name": "interpret_arg"
-                }
-              }
-            ]
-          },
-          {
-            "type": "SEQ",
-            "members": [
-              {
-                "type": "FIELD",
-                "name": "command",
-                "content": {
-                  "type": "ALIAS",
-                  "content": {
-                    "type": "STRING",
                     "value": ".("
                   },
                   "named": true,

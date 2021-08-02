@@ -190,7 +190,11 @@ pd 10 |.
     args: (args (arg (arg_identifier))))
   (arged_stmt
     command: (cmd_identifier)
-    args: (interpret_arg))
+    args: (arged_stmt command: (system_identifier)
+            args: (args
+                    (arg (arg_identifier))
+                    (arg (arg_identifier))
+                    (arg (arg_identifier)))))
   (arged_stmt
     command: (cmd_identifier)
     args: (macro_call_content

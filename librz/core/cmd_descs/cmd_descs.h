@@ -32,7 +32,6 @@ RZ_IPI RzCmdStatus rz_repeat_forward_handler(RzCore *core, int argc, const char 
 RZ_IPI RzCmdStatus rz_interpret_output_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_interpret_editor_2_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_interpret_pipe_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI RzCmdStatus rz_interpret_system_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_interpret_macro_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_cmd_search(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_remote_handler(RzCore *core, int argc, const char **argv);
