@@ -1214,7 +1214,7 @@ static RzTable *__new_heapblock_tbl(void) {
 	return tbl;
 }
 
-static void w32_list_heaps(RzCore *core, RzOutputMode mode) {
+RZ_IPI void rz_heap_list_w32(RzCore *core, RzOutputMode mode) {
 	initialize_windows_ntdll_query_api_functions();
 	ULONG pid = core->dbg->pid;
 	PDEBUG_BUFFER db = InitHeapInfo(core->dbg, PDI_HEAPS | PDI_HEAP_BLOCKS);
@@ -1347,7 +1347,7 @@ static void w32_list_heaps_blocks(RzCore *core, RzOutputMode mode, bool flag) {
 	RtlDestroyQueryDebugBuffer(db);
 }
 
-static void cmd_debug_map_heap_block_win(RzCore *core, const char *addr, RzOutputMode mode, bool flag) {
+RZ_IPI void rz_heap_debug_block_win(RzCore *core, const char *addr, RzOutputMode mode, bool flag) {
 	initialize_windows_ntdll_query_api_functions();
 	ut64 off = 0;
 	if (!addr) {
@@ -1389,7 +1389,7 @@ static void cmd_debug_map_heap_block_win(RzCore *core, const char *addr, RzOutpu
 	pj_free(pj);
 }
 
-static RzList *rz_heap_blocks_list(RzCore *core) {
+RZ_IPI RzList *rz_heap_blocks_list(RzCore *core) {
 	initialize_windows_ntdll_query_api_functions();
 	DWORD pid = core->dbg->pid;
 	PDEBUG_BUFFER db;
@@ -1447,7 +1447,7 @@ static RzList *rz_heap_blocks_list(RzCore *core) {
 	return blocks_list;
 }
 
-static RzList *rz_heap_list(RzCore *core) {
+RZ_IPI RzList *rz_heap_list(RzCore *core) {
 	initialize_windows_ntdll_query_api_functions();
 	ULONG pid = core->dbg->pid;
 	PDEBUG_BUFFER db = InitHeapInfo(core->dbg, PDI_HEAPS | PDI_HEAP_BLOCKS);
