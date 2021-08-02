@@ -5,6 +5,10 @@
 #define RZ_BIN_ELF64 1
 #include "bin_elf.inc"
 
+static void destroy(RzBinFile *bf) {
+	Elf_(rz_bin_elf_free)(bf->o->bin_obj);
+}
+
 static bool check_buffer(RzBuffer *b) {
 	ut8 buf[5] = { 0 };
 	if (rz_buf_size(b) > 4) {
@@ -155,6 +159,7 @@ RzBinPlugin rz_bin_plugin_elf64 = {
 	.regstate = &regstate,
 	.section_type_to_string = &Elf_(rz_bin_elf_section_type_to_string),
 	.section_flag_to_rzlist = &Elf_(rz_bin_elf_section_flag_to_rzlist),
+	.destroy = destroy,
 };
 
 #ifndef RZ_PLUGIN_INCORE

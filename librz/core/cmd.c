@@ -103,6 +103,7 @@ static bool lastcmd_repeat(RzCore *core, int next);
 #include "cmd_system.c"
 #include "cmd_history.c"
 #include "cmd_linux_heap_glibc.c"
+#include "cmd_windows_heap.c"
 
 static const char *help_msg_dollar[] = {
 	"Usage:", "$alias[=cmd] [args...]", "Alias commands and strings (See ?$? for help on $variables)",
