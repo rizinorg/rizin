@@ -764,10 +764,8 @@ RZ_API size_t rz_str_ncpy(char *dst, const char *src, size_t n) {
 	}
 
 	n--;
-	for (i = 0; src[i] && n > 0; i++, n--) {
-		dst[i] = src[i];
-	}
-	dst[i] = 0;
+	memcpy(dst, src, n);
+	dst[n] = '\0';
 	return i;
 }
 
