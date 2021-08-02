@@ -25,13 +25,7 @@ static void htup_vector_free(HtUPKv *kv) {
  * @return vec RzPVector of char *, contains the address of read/write
  */
 RZ_API RzPVector *rz_analysis_esil_trace_db_get(HtPP *db, const char *key) {
-	RzPVector *vec = ht_pp_find(db, key, NULL);
-
-	if (!vec) {
-		return NULL;
-	}
-
-	return vec;
+	return ht_pp_find(db, key, NULL);
 }
 
 static void htpp_vector_free(HtPPKv *kv) {
@@ -53,7 +47,7 @@ RZ_API void rz_analysis_esil_trace_db_array_add(HtPP *db, const char *key, const
 	}
 
 	if (rz_analysis_esil_trace_db_array_contains(db, key, val)) {
-		// already in db_array
+		// val already in db_array
 		return;
 	}
 
@@ -141,9 +135,7 @@ RZ_API const char *rz_analysis_esil_trace_db_const_get(HtPP *db, const char *key
 	if (!array) {
 		return NULL;
 	}
-
-	char *array_string = ht_db_array_to_string(array);
-	return array_string;
+	return ht_db_array_to_string(array);
 }
 
 /**
