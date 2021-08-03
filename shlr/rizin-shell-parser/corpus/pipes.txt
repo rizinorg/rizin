@@ -1,30 +1,4 @@
 ======================
-Disable html and color
-======================
-
-p8 10 |
-
----
-
-(statements
-  (html_disable_stmt
-    (arged_stmt (cmd_identifier)
-      (args (arg (arg_identifier))))))
-
-======================
-Enable html and color
-======================
-
-p8 10 |H
-
----
-
-(statements
-  (html_enable_stmt
-    (arged_stmt (cmd_identifier)
-      (args (arg (arg_identifier))))))
-
-======================
 Pipe to another command
 ======================
 

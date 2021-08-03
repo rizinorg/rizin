@@ -28,21 +28,6 @@ afl 2> /tmp/test.txt
     (arg (arg_identifier))))
 
 
-=============
-Redirect HTML
-=============
-
-afl H> /tmp/test.txt
-
----
-
-(statements
-  (redirect_stmt
-    (arged_stmt (cmd_identifier))
-    (html_redirect_operator)
-    (arg (arg_identifier))))
-
-
 ===============
 Append to file
 ===============
