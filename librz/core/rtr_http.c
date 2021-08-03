@@ -111,10 +111,6 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 	core->config = newcfg;
 
 	rz_config_set(core->config, "asm.cmt.right", "false");
-#if 0
-	// WHY
-	rz_config_set (core->config, "scr.html", "true");
-#endif
 	rz_config_set_i(core->config, "scr.color", COLOR_MODE_DISABLED);
 	rz_config_set(core->config, "asm.bytes", "false");
 	rz_config_set(core->config, "scr.interactive", "false");
@@ -142,7 +138,6 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 	while (!rz_cons_is_breaked()) {
 		/* restore environment */
 		core->config = origcfg;
-		rz_config_set(origcfg, "scr.html", rz_config_get(origcfg, "scr.html"));
 		rz_config_set_i(origcfg, "scr.color", rz_config_get_i(origcfg, "scr.color"));
 		rz_config_set(origcfg, "scr.interactive", rz_config_get(origcfg, "scr.interactive"));
 		core->http_up = 0; // DAT IS NOT TRUE AT ALL.. but its the way to enable visual
@@ -174,7 +169,6 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 		// backup and restore offset and blocksize
 		core->http_up = 1;
 		core->config = newcfg;
-		rz_config_set(newcfg, "scr.html", rz_config_get(newcfg, "scr.html"));
 		rz_config_set_i(newcfg, "scr.color", rz_config_get_i(newcfg, "scr.color"));
 		rz_config_set(newcfg, "scr.interactive", rz_config_get(newcfg, "scr.interactive"));
 
@@ -482,7 +476,6 @@ the_end : {
 	rz_socket_free(s);
 	rz_config_free(newcfg);
 	/* refresh settings - run callbacks */
-	rz_config_set(origcfg, "scr.html", rz_config_get(origcfg, "scr.html"));
 	rz_config_set_i(origcfg, "scr.color", rz_config_get_i(origcfg, "scr.color"));
 	rz_config_set(origcfg, "scr.interactive", rz_config_get(origcfg, "scr.interactive"));
 	return ret;

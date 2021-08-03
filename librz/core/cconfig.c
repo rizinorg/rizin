@@ -2040,13 +2040,6 @@ static bool cb_scrfgets(void *user, void *data) {
 	return true;
 }
 
-static bool cb_scrhtml(void *user, void *data) {
-	RzConfigNode *node = (RzConfigNode *)data;
-	rz_cons_singleton()->is_html = node->i_value;
-	// TODO: control error and restore old value (return false?) show errormsg?
-	return true;
-}
-
 static bool cb_oldshell(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
 	RzCore *core = (RzCore *)user;
@@ -3506,7 +3499,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("scr.interactive", "true", &cb_scrint, "Start in interactive mode");
 	SETCB("scr.bgfill", "false", &cb_scr_bgfill, "Fill background for ascii art when possible");
 	SETI("scr.feedback", 1, "Set visual feedback level (1=arrow on jump, 2=every key (useful for videos))");
-	SETCB("scr.html", "false", &cb_scrhtml, "Disassembly uses HTML syntax");
 	n = NODECB("scr.nkey", "flag", &cb_scrnkey);
 	SETDESC(n, "Select visual seek mode (affects n/N visual commands)");
 	SETOPTIONS(n, "fun", "hit", "flag", NULL);

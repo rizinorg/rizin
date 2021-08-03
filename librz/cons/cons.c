@@ -770,21 +770,6 @@ RZ_API void rz_cons_filter(void) {
 		(void)rz_cons_grepbuf();
 		I.filter = false;
 	}
-	/* html */
-	if (I.is_html) {
-		int newlen = 0;
-		char *input = rz_str_ndup(I.context->buffer, I.context->buffer_len);
-		char *res = rz_cons_html_filter(input, &newlen);
-		free(I.context->buffer);
-		I.context->buffer = res;
-		I.context->buffer_len = newlen;
-		I.context->buffer_sz = newlen;
-		free(input);
-	}
-	if (I.was_html) {
-		I.is_html = true;
-		I.was_html = false;
-	}
 }
 
 RZ_API void rz_cons_push(void) {
@@ -863,7 +848,7 @@ RZ_API void rz_cons_last(void) {
 }
 
 static bool lastMatters(void) {
-	return (I.context->buffer_len > 0) && (CTX(lastEnabled) && !I.filter && I.context->grep.nstrings < 1 && !I.context->grep.tokens_used && !I.context->grep.less && !I.context->grep.json && !I.is_html);
+	return (I.context->buffer_len > 0) && (CTX(lastEnabled) && !I.filter && I.context->grep.nstrings < 1 && !I.context->grep.tokens_used && !I.context->grep.less && !I.context->grep.json);
 }
 
 RZ_API void rz_cons_echo(const char *msg) {
@@ -959,7 +944,6 @@ RZ_API void rz_cons_flush(void) {
 	}
 	rz_cons_highlight(I.highlight);
 
-	// is_html must be a filter, not a write endpoint
 	if (rz_cons_is_interactive()) {
 		if (I.linesleep > 0 && I.linesleep < 1000) {
 			int i = 0;
@@ -1250,7 +1234,6 @@ now the console color is reset with each \n (same stuff do it here but in correc
 #else
 	rz_cons_strcat (Color_RESET_ALL"\n");
 #endif
-	if (I.is_html) rz_cons_strcat ("<br />\n");
 #endif
 }
 

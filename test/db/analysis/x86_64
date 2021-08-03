@@ -3076,7 +3076,7 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 e asm.os=linux
-a8 55|
+a8 55
 EOF
 EXPECT=<<EOF
 address: 0x0

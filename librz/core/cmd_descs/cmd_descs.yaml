@@ -471,11 +471,6 @@ commands:
             comment:
               Redirect STDERR of <cmd> to <file> or save it to an alias (see
               $?)
-          - text: "<cmd> H>"
-            arg_str: " <file>|<$alias>"
-            comment:
-              Redirect HTML output of <cmd> to <file> or save it to an alias
-              (see $?)
   - name: "|"
     cname: pipe
     options: "[?]"
@@ -486,9 +481,7 @@ commands:
       - name: ""
         entries:
           - text: "<cmd> |"
-            comment: "Disable scr.html and scr.color"
-          - text: "<cmd> |H"
-            comment: "Enable scr.html, respect scr.color"
+            comment: "Disable scr.color"
           - text: "<cmd> |"
             arg_str: " <program>"
             comment: "Pipe output of command to program"

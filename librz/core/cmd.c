@@ -261,8 +261,7 @@ static const char *help_msg_y[] = {
 static const char *help_msg_vertical_bar[] = {
 	"Usage:", "[cmd] | [program|H|T|.|]", "",
 	"", "[cmd] |?", "show this help",
-	"", "[cmd] |", "disable scr.html and scr.color",
-	"", "[cmd] |H", "enable scr.html, respect scr.color",
+	"", "[cmd] |", "disable scr.color",
 	"", "[cmd] | [program]", "pipe output of command to program",
 	"", "[cmd] |.", "alias for .[cmd]",
 	NULL
@@ -1035,10 +1034,7 @@ RZ_IPI int rz_cmd_interpret(void *data, const char *input) {
 		if (filter) {
 			*filter = 0;
 		}
-		int tmp_html = rz_cons_singleton()->is_html;
-		rz_cons_singleton()->is_html = 0;
 		ptr = str = rz_core_cmd_str(core, inp);
-		rz_cons_singleton()->is_html = tmp_html;
 
 		if (filter) {
 			*filter = '~';
@@ -2251,7 +2247,6 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 	int pamode = !core->io->va;
 	int i, ret = 0, pipefd;
 	bool usemyblock = false;
-	int scr_html = -1;
 	int scr_color = -1;
 	bool eos = false;
 	bool haveQuote = false;
@@ -2461,9 +2456,6 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 					rz_core_cmd_help(core, help_msg_vertical_bar);
 					rz_list_free(tmpenvs);
 					return ret;
-				} else if (!strncmp(ptr + 1, "H", 1)) { // "|H"
-					scr_html = rz_config_get_i(core->config, "scr.html");
-					rz_config_set_i(core->config, "scr.html", true);
 				} else if (!strcmp(ptr + 1, ".")) { // "|."
 					ret = *cmd ? rz_core_cmdf(core, ".%s", cmd) : 0;
 					rz_list_free(tmpenvs);
@@ -2483,8 +2475,6 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 					rz_list_free(tmpenvs);
 					return 0;
 				} else { // "|"
-					scr_html = rz_config_get_i(core->config, "scr.html");
-					rz_config_set_i(core->config, "scr.html", 0);
 					scr_color = rz_config_get_i(core->config, "scr.color");
 					rz_config_set_i(core->config, "scr.color", COLOR_MODE_DISABLED);
 				}
@@ -2502,9 +2492,6 @@ escape_pipe:
 		ret = rz_cmd_call(core->rcmd, cmd);
 		if (ret == -1) {
 			eprintf("command error(%s)\n", cmd);
-			if (scr_html != -1) {
-				rz_config_set_i(core->config, "scr.html", scr_html);
-			}
 			if (scr_color != -1) {
 				rz_config_set_i(core->config, "scr.color", scr_color);
 			}
@@ -2532,9 +2519,6 @@ escape_pipe:
 			recursive_help(core, detail, cmd);
 			rz_cons_break_pop();
 			rz_cons_grep_parsecmd(ptr + 2, "`");
-			if (scr_html != -1) {
-				rz_config_set_i(core->config, "scr.html", scr_html);
-			}
 			if (scr_color != -1) {
 				rz_config_set_i(core->config, "scr.color", scr_color);
 			}
@@ -2575,17 +2559,10 @@ escape_pipe:
 		 * with piping to a file. Disable it while piping. */
 		if (ptr > (cmd + 1) && IS_WHITECHAR(ptr[-2])) {
 			char *fdnum = ptr - 1;
-			if (*fdnum == 'H') { // "H>"
-				scr_html = rz_config_get_i(core->config, "scr.html");
-				rz_config_set_i(core->config, "scr.html", true);
-				pipecolor = true;
-				*fdnum = 0;
-			} else {
-				if (IS_DIGIT(*fdnum)) {
-					fdn = *fdnum - '0';
-				}
-				*fdnum = 0;
+			if (IS_DIGIT(*fdnum)) {
+				fdn = *fdnum - '0';
 			}
+			*fdnum = 0;
 		}
 		rz_cons_set_interactive(false);
 		if (!strcmp(str, "-")) {
@@ -2644,9 +2621,6 @@ escape_pipe:
 			}
 			rz_config_set_i(core->config, "scr.color", ocolor);
 			free(str);
-		}
-		if (scr_html != -1) {
-			rz_config_set_i(core->config, "scr.html", scr_html);
 		}
 		if (scr_color != -1) {
 			rz_config_set_i(core->config, "scr.color", scr_color);
@@ -2715,9 +2689,6 @@ next2:
 			core->num->value = value;
 			ret = rz_core_cmd_subst(core, cmd);
 			free(cmd);
-			if (scr_html != -1) {
-				rz_config_set_i(core->config, "scr.html", scr_html);
-			}
 			free(str);
 			rz_list_free(tmpenvs);
 			return ret;
@@ -3234,10 +3205,6 @@ beach:
 		free(old_grep);
 	}
 	rz_cons_grep_process(grep);
-	if (scr_html != -1) {
-		rz_cons_flush();
-		rz_config_set_i(core->config, "scr.html", scr_html);
-	}
 	if (scr_color != -1) {
 		rz_config_set_i(core->config, "scr.color", scr_color);
 	}
@@ -4165,8 +4132,6 @@ static RzCmdStatus core_cmd_pipe(RzCore *core, struct tsr2cmd_state *state, TSNo
 
 DEFINE_IS_TS_FCN_AND_SYMBOL(fdn_redirect_operator)
 DEFINE_IS_TS_FCN_AND_SYMBOL(fdn_append_operator)
-DEFINE_IS_TS_FCN_AND_SYMBOL(html_redirect_operator)
-DEFINE_IS_TS_FCN_AND_SYMBOL(html_append_operator)
 DEFINE_IS_TS_FCN_AND_SYMBOL(cmd_substitution_arg)
 DEFINE_IS_TS_FCN_AND_SYMBOL(args)
 DEFINE_IS_TS_FCN_AND_SYMBOL(arg)
@@ -4589,36 +4554,24 @@ err:
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(redirect_stmt) {
 	int pipecolor = rz_config_get_i(state->core->config, "scr.color.pipe");
 	int ocolor = rz_config_get_i(state->core->config, "scr.color");
-	int scr_html = -1;
-	RzCmdStatus res = RZ_CMD_STATUS_INVALID, is_append = false, is_html = false;
+	RzCmdStatus res = RZ_CMD_STATUS_INVALID, is_append = false;
 	int fdn = 1;
 
 	TSNode redirect_op = ts_node_child_by_field_name(node, "redirect_operator", strlen("redirect_operator"));
 	if (is_ts_fdn_redirect_operator(redirect_op)) {
-		// this is the default operation, no html and no append
+		// this is the default operation, no append
 	} else if (is_ts_fdn_append_operator(redirect_op)) {
-		is_append = true;
-	} else if (is_ts_html_redirect_operator(redirect_op)) {
-		is_html = true;
-	} else if (is_ts_html_append_operator(redirect_op)) {
-		is_html = true;
 		is_append = true;
 	} else {
 		RZ_LOG_ERROR("This should never happen, redirect_operator is no known type");
 		rz_warn_if_reached();
 	}
 
-	if (is_html) {
-		scr_html = rz_config_get_i(state->core->config, "scr.html");
-		rz_config_set_i(state->core->config, "scr.html", true);
-		pipecolor = true;
-	} else {
-		TSNode fd_desc = ts_node_named_child(redirect_op, 0);
-		if (!ts_node_is_null(fd_desc)) {
-			char *fd_str = ts_node_sub_string(fd_desc, state->input);
-			fdn = atoi(fd_str);
-			free(fd_str);
-		}
+	TSNode fd_desc = ts_node_named_child(redirect_op, 0);
+	if (!ts_node_is_null(fd_desc)) {
+		char *fd_str = ts_node_sub_string(fd_desc, state->input);
+		fdn = atoi(fd_str);
+		free(fd_str);
 	}
 
 	rz_cons_set_interactive(false);
@@ -4668,9 +4621,6 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(redirect_stmt) {
 	rz_cons_set_last_interactive();
 	if (!pipecolor) {
 		rz_config_set_i(state->core->config, "scr.color", ocolor);
-	}
-	if (scr_html != -1) {
-		rz_config_set_i(state->core->config, "scr.html", scr_html);
 	}
 	return res;
 }
@@ -5868,35 +5818,6 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(grep_stmt) {
 	rz_cons_grep_process(specifier_str);
 	free(specifier_str_es);
 	free(arg_str);
-	return res;
-}
-
-DEFINE_HANDLE_TS_FCN_AND_SYMBOL(html_disable_stmt) {
-	TSNode command = ts_node_child_by_field_name(node, "command", strlen("command"));
-	int scr_html = rz_config_get_i(state->core->config, "scr.html");
-	rz_config_set_i(state->core->config, "scr.html", 0);
-	int scr_color = rz_config_get_i(state->core->config, "scr.color");
-	rz_config_set_i(state->core->config, "scr.color", COLOR_MODE_DISABLED);
-	RzCmdStatus res = handle_ts_stmt(state, command);
-	if (scr_html != -1) {
-		rz_cons_flush();
-		rz_config_set_i(state->core->config, "scr.html", scr_html);
-	}
-	if (scr_color != -1) {
-		rz_config_set_i(state->core->config, "scr.color", scr_color);
-	}
-	return res;
-}
-
-DEFINE_HANDLE_TS_FCN_AND_SYMBOL(html_enable_stmt) {
-	TSNode command = ts_node_child_by_field_name(node, "command", strlen("command"));
-	int scr_html = rz_config_get_i(state->core->config, "scr.html");
-	rz_config_set_i(state->core->config, "scr.html", true);
-	RzCmdStatus res = handle_ts_stmt(state, command);
-	if (scr_html != -1) {
-		rz_cons_flush();
-		rz_config_set_i(state->core->config, "scr.html", scr_html);
-	}
 	return res;
 }
 

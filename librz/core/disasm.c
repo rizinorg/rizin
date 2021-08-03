@@ -1265,14 +1265,7 @@ static void ds_begin_line(RDisasmState *ds) {
 
 static void ds_newline(RDisasmState *ds) {
 	if (ds->pj) {
-		const bool is_html = rz_config_get_b(ds->core->config, "scr.html");
-		if (is_html) {
-			char *s = rz_cons_html_filter(rz_cons_get_buffer(), NULL);
-			pj_s(ds->pj, s);
-			free(s);
-		} else {
-			pj_s(ds->pj, rz_cons_get_buffer());
-		}
+		pj_s(ds->pj, rz_cons_get_buffer());
 		rz_cons_reset();
 		pj_end(ds->pj);
 	} else {

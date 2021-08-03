@@ -2152,14 +2152,11 @@ static char *get_body(RzCore *core, ut64 addr, int size, int opts) {
 		rz_config_set_i(core->config, "asm.offset", false);
 	}
 
-	bool html = rz_config_get_i(core->config, "scr.html");
-	rz_config_set_i(core->config, "scr.html", 0);
 	if (rz_config_get_i(core->config, "graph.aeab")) {
 		body = rz_core_cmd_strf(core, "%s 0x%08" PFMT64x, "aeab", addr);
 	} else {
 		body = rz_core_cmd_strf(core, "%s %d @ 0x%08" PFMT64x, cmd, size, addr);
 	}
-	rz_config_set_i(core->config, "scr.html", html);
 
 	// restore original options
 	core->print->cur_enabled = o_cursor;

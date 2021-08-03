@@ -484,8 +484,6 @@ typedef struct rz_cons_context_t {
 typedef struct rz_cons_t {
 	RzConsContext *context;
 	char *lastline;
-	bool is_html;
-	bool was_html;
 	int lines;
 	int rows;
 	int echo; // dump to stdout in realtime
@@ -961,7 +959,6 @@ RZ_API int rz_cons_get_size(int *rows);
 RZ_API bool rz_cons_isatty(void);
 RZ_API int rz_cons_get_cursor(int *rows);
 RZ_API int rz_cons_arrow_to_hjkl(int ch);
-RZ_API char *rz_cons_html_filter(const char *ptr, int *newlen);
 RZ_API char *rz_cons_rainbow_get(int idx, int last, bool bg);
 RZ_API void rz_cons_rainbow_free(RzConsContext *ctx);
 RZ_API void rz_cons_rainbow_new(RzConsContext *ctx, int sz);

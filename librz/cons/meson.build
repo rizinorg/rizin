@@ -2,7 +2,6 @@ rz_cons_sources = [
   'canvas.c',
   'canvas_line.c',
   'cons.c',
-  'html.c',
   # 'dietline.c',
   'editor.c',
   'grep.c',

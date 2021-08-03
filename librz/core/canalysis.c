@@ -1601,7 +1601,6 @@ RZ_API void rz_core_analysis_hint_print(RzAnalysis *a, ut64 addr, int mode) {
 }
 
 static char *core_analysis_graph_label(RzCore *core, RzAnalysisBlock *bb, int opts) {
-	int is_html = rz_cons_singleton()->is_html;
 	int is_json = opts & RZ_CORE_ANALYSIS_JSON;
 	char cmd[1024], file[1024], *cmdstr = NULL, *filestr = NULL, *str = NULL;
 	int line = 0, oline = 0, idx = 0;
@@ -1620,9 +1619,6 @@ static char *core_analysis_graph_label(RzCore *core, RzAnalysisBlock *bb, int op
 					if (is_json) {
 						strcpy(cmdstr + idx, "\\n");
 						idx += 2;
-					} else if (is_html) {
-						strcpy(cmdstr + idx, "<br />");
-						idx += 6;
 					} else {
 						strcpy(cmdstr + idx, "\\l");
 						idx += 2;
@@ -1678,7 +1674,6 @@ static int core_analysis_graph_construct_edges(RzCore *core, RzAnalysisFunction 
 	int is_keva = opts & RZ_CORE_ANALYSIS_KEYVALUE;
 	int is_star = opts & RZ_CORE_ANALYSIS_STAR;
 	int is_json = opts & RZ_CORE_ANALYSIS_JSON;
-	int is_html = rz_cons_singleton()->is_html;
 	char *pal_jump = palColorFor("graph.true");
 	char *pal_fail = palColorFor("graph.false");
 	char *pal_trfa = palColorFor("graph.ujump");
@@ -1698,10 +1693,6 @@ static int core_analysis_graph_construct_edges(RzCore *core, RzAnalysisFunction 
 				}
 				// bb.<addr>.to=<jump>,<fail>
 				sdb_set(DB, key, val, 0);
-			} else if (is_html) {
-				rz_cons_printf("<div class=\"connector _0x%08" PFMT64x " _0x%08" PFMT64x "\">\n"
-					       "  <img class=\"connector-end\" src=\"img/arrow.gif\" /></div>\n",
-					bbi->addr, bbi->jump);
 			} else if (!is_json && !is_keva) {
 				if (is_star) {
 					char *from = get_title(bbi->addr);
@@ -1720,11 +1711,7 @@ static int core_analysis_graph_construct_edges(RzCore *core, RzAnalysisFunction 
 		}
 		if (bbi->fail != -1) {
 			nodes++;
-			if (is_html) {
-				rz_cons_printf("<div class=\"connector _0x%08" PFMT64x " _0x%08" PFMT64x "\">\n"
-					       "  <img class=\"connector-end\" src=\"img/arrow.gif\"/></div>\n",
-					bbi->addr, bbi->fail);
-			} else if (!is_keva && !is_json) {
+			if (!is_keva && !is_json) {
 				if (is_star) {
 					char *from = get_title(bbi->addr);
 					char *to = get_title(bbi->fail);
@@ -1744,11 +1731,7 @@ static int core_analysis_graph_construct_edges(RzCore *core, RzAnalysisFunction 
 			RzListIter *iter;
 
 			if (bbi->fail != UT64_MAX) {
-				if (is_html) {
-					rz_cons_printf("<div class=\"connector _0x%08" PFMT64x " _0x%08" PFMT64x "\">\n"
-						       "  <img class=\"connector-end\" src=\"img/arrow.gif\"/></div>\n",
-						bbi->addr, bbi->fail);
-				} else if (!is_keva && !is_json) {
+				if (!is_keva && !is_json) {
 					if (is_star) {
 						char *from = get_title(bbi->addr);
 						char *to = get_title(bbi->fail);
@@ -1774,10 +1757,6 @@ static int core_analysis_graph_construct_edges(RzCore *core, RzAnalysisFunction 
 					snprintf(key, sizeof(key),
 						"bb.0x%08" PFMT64x ".switch", bbi->addr);
 					sdb_array_add_num(DB, key, caseop->value, 0);
-				} else if (is_html) {
-					rz_cons_printf("<div class=\"connector _0x%08" PFMT64x " _0x%08" PFMT64x "\">\n"
-						       "  <img class=\"connector-end\" src=\"img/arrow.gif\"/></div>\n",
-						caseop->addr, caseop->jump);
 				} else if (!is_json && !is_keva) {
 					if (is_star) {
 						char *from = get_title(caseop->addr);
@@ -1807,9 +1786,6 @@ static int core_analysis_graph_construct_nodes(RzCore *core, RzAnalysisFunction 
 	int is_keva = opts & RZ_CORE_ANALYSIS_KEYVALUE;
 	int is_star = opts & RZ_CORE_ANALYSIS_STAR;
 	int is_json = opts & RZ_CORE_ANALYSIS_JSON;
-	int is_html = rz_cons_singleton()->is_html;
-	int left = 300;
-	int top = 0;
 
 	int is_json_format_disasm = opts & RZ_CORE_ANALYSIS_JSON_FORMAT_DISASM;
 	char *pal_curr = palColorFor("graph.current");
@@ -1998,17 +1974,7 @@ static int core_analysis_graph_construct_nodes(RzCore *core, RzAnalysisFunction 
 					rz_config_hold_free(hc);
 				}
 			} else {
-				if (is_html) {
-					nodes++;
-					rz_cons_printf("<p class=\"block draggable\" style=\""
-						       "top: %dpx; left: %dpx; width: 400px;\" id=\""
-						       "_0x%08" PFMT64x "\">\n%s</p>\n",
-						top, left, bbi->addr, str);
-					left = left ? 0 : 600;
-					if (!left) {
-						top += 250;
-					}
-				} else if (!is_json && !is_keva) {
+				if (!is_json && !is_keva) {
 					bool current = rz_analysis_block_contains(bbi, core->offset);
 					const char *label_color = bbi->traced
 						? pal_traced
@@ -2573,7 +2539,6 @@ static int RzAnalysisRef_cmp(const RzAnalysisXRef *xref1, const RzAnalysisXRef *
 
 RZ_API void rz_core_analysis_callgraph(RzCore *core, ut64 addr, int fmt) {
 	const char *font = rz_config_get(core->config, "graph.font");
-	int is_html = rz_cons_singleton()->is_html;
 	bool refgraph = rz_config_get_i(core->config, "graph.refs");
 	RzListIter *iter, *iter2;
 	int usenames = rz_config_get_i(core->config, "graph.json.usenames");
@@ -2600,37 +2565,36 @@ RZ_API void rz_core_analysis_callgraph(RzCore *core, ut64 addr, int fmt) {
 			       "label  \"\"\n"
 			       "directed  1\n");
 		break;
-	case RZ_GRAPH_FORMAT_DOT:
-		if (!is_html) {
-			const char *gv_edge = rz_config_get(core->config, "graph.gv.edge");
-			char *gv_node = strdup(rz_config_get(core->config, "graph.gv.node"));
-			const char *gv_grph = rz_config_get(core->config, "graph.gv.graph");
-			const char *gv_spline = rz_config_get(core->config, "graph.gv.spline");
-			if (!gv_edge || !*gv_edge) {
-				gv_edge = "arrowhead=\"normal\" style=bold weight=2";
-			}
-			if (!gv_node || !*gv_node) {
-				free(gv_node);
-				gv_node = rz_str_newf("penwidth=4 fillcolor=white style=filled fontname=\"%s Bold\" fontsize=14 shape=box", font);
-			}
-			if (!gv_grph || !*gv_grph) {
-				gv_grph = "bgcolor=azure";
-			}
-			if (!gv_spline || !*gv_spline) {
-				// ortho for bbgraph and curved for callgraph
-				gv_spline = "splines=\"curved\"";
-			}
-			rz_cons_printf("digraph code {\n"
-				       "rankdir=LR;\n"
-				       "outputorder=edgesfirst;\n"
-				       "graph [%s fontname=\"%s\" %s];\n"
-				       "node [%s];\n"
-				       "edge [%s];\n",
-				gv_grph, font, gv_spline,
-				gv_node, gv_edge);
-			free(gv_node);
+	case RZ_GRAPH_FORMAT_DOT: {
+		const char *gv_edge = rz_config_get(core->config, "graph.gv.edge");
+		char *gv_node = strdup(rz_config_get(core->config, "graph.gv.node"));
+		const char *gv_grph = rz_config_get(core->config, "graph.gv.graph");
+		const char *gv_spline = rz_config_get(core->config, "graph.gv.spline");
+		if (!gv_edge || !*gv_edge) {
+			gv_edge = "arrowhead=\"normal\" style=bold weight=2";
 		}
+		if (!gv_node || !*gv_node) {
+			free(gv_node);
+			gv_node = rz_str_newf("penwidth=4 fillcolor=white style=filled fontname=\"%s Bold\" fontsize=14 shape=box", font);
+		}
+		if (!gv_grph || !*gv_grph) {
+			gv_grph = "bgcolor=azure";
+		}
+		if (!gv_spline || !*gv_spline) {
+			// ortho for bbgraph and curved for callgraph
+			gv_spline = "splines=\"curved\"";
+		}
+		rz_cons_printf("digraph code {\n"
+			       "rankdir=LR;\n"
+			       "outputorder=edgesfirst;\n"
+			       "graph [%s fontname=\"%s\" %s];\n"
+			       "node [%s];\n"
+			       "edge [%s];\n",
+			gv_grph, font, gv_spline,
+			gv_node, gv_edge);
+		free(gv_node);
 		break;
+	}
 	}
 	ut64 base = UT64_MAX;
 	int iteration = 0;
@@ -3846,7 +3810,6 @@ RZ_API bool rz_core_analysis_graph(RzCore *core, ut64 addr, int opts) {
 	ut64 from = rz_config_get_i(core->config, "graph.from");
 	ut64 to = rz_config_get_i(core->config, "graph.to");
 	const char *font = rz_config_get(core->config, "graph.font");
-	int is_html = rz_cons_singleton()->is_html;
 	int is_json = opts & RZ_CORE_ANALYSIS_JSON;
 	int is_json_format_disasm = opts & RZ_CORE_ANALYSIS_JSON_FORMAT_DISASM;
 	int is_keva = opts & RZ_CORE_ANALYSIS_KEYVALUE;
@@ -3876,7 +3839,7 @@ RZ_API bool rz_core_analysis_graph(RzCore *core, ut64 addr, int opts) {
 		rz_config_hold_i(hc, "asm.bytes", NULL);
 		rz_config_set_i(core->config, "asm.bytes", 0);
 	}
-	if (!is_html && !is_json && !is_keva && !is_star) {
+	if (!is_json && !is_keva && !is_star) {
 		const char *gv_edge = rz_config_get(core->config, "graph.gv.edge");
 		const char *gv_node = rz_config_get(core->config, "graph.gv.node");
 		const char *gv_spline = rz_config_get(core->config, "graph.gv.spline");
@@ -3919,7 +3882,7 @@ RZ_API bool rz_core_analysis_graph(RzCore *core, ut64 addr, int opts) {
 		}
 	}
 	if (!nodes) {
-		if (!is_html && !is_json && !is_keva) {
+		if (!is_json && !is_keva) {
 			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, 0);
 			if (is_star) {
 				char *name = get_title(fcn ? fcn->addr : addr);
@@ -3929,7 +3892,7 @@ RZ_API bool rz_core_analysis_graph(RzCore *core, ut64 addr, int opts) {
 			}
 		}
 	}
-	if (!is_keva && !is_html && !is_json && !is_star && !is_json_format_disasm) {
+	if (!is_keva && !is_json && !is_star && !is_json_format_disasm) {
 		rz_cons_printf("}\n");
 	}
 	if (is_json) {

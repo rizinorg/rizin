@@ -4866,7 +4866,6 @@ static const RzCmdDescHelp iterators_help = {
 static const RzCmdDescDetailEntry redirection_empty_detail_entries[] = {
 	{ .text = "<cmd> >", .arg_str = " <file>|<$alias>", .comment = "Redirect STDOUT of <cmd> to <file> or save it to an alias (see $?)" },
 	{ .text = "<cmd> 2>", .arg_str = " <file>|<$alias>", .comment = "Redirect STDERR of <cmd> to <file> or save it to an alias (see $?)" },
-	{ .text = "<cmd> H>", .arg_str = " <file>|<$alias>", .comment = "Redirect HTML output of <cmd> to <file> or save it to an alias (see $?)" },
 	{ 0 },
 };
 static const RzCmdDescDetail redirection_details[] = {
@@ -4881,8 +4880,7 @@ static const RzCmdDescHelp redirection_help = {
 };
 
 static const RzCmdDescDetailEntry pipe_empty_detail_entries[] = {
-	{ .text = "<cmd> |", .arg_str = NULL, .comment = "Disable scr.html and scr.color" },
-	{ .text = "<cmd> |H", .arg_str = NULL, .comment = "Enable scr.html, respect scr.color" },
+	{ .text = "<cmd> |", .arg_str = NULL, .comment = "Disable scr.color" },
 	{ .text = "<cmd> |", .arg_str = " <program>", .comment = "Pipe output of command to program" },
 	{ .text = "<cmd> |.", .arg_str = NULL, .comment = "Alias for .<cmd>" },
 	{ 0 },

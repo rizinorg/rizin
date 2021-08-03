@@ -1426,22 +1426,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pdJ asm.cmt.right=0 + html
-FILE=bins/elf/crackme0x05
-CMDS=<<EOF
-aaa
-e asm.bytes=true
-e asm.cmt.right=0
-e scr.colors=1
-e scr.html=1
-e str.escbslash=1
-pdJ 1 @ 0x08048532
-EOF
-EXPECT=<<EOF
-[{"offset":134513970,"text":"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;&nbsp;[0x8048679:4]=0x73736150"},{"offset":134513970,"text":"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;&nbsp;\"Password&nbsp;Incorrect!\\n\""},{"offset":134513970,"text":"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0x08048532&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;c70424798604.&nbsp;&nbsp;mov&nbsp;dword&nbsp;[esp],&nbsp;str.Password_Incorrect"}]
-EOF
-RUN
-
 NAME=pdJ asm.cmt.right=0 fcn name
 FILE=bins/elf/crackme0x05
 CMDS=<<EOF
