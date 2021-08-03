@@ -484,14 +484,16 @@ RZ_API RzTypeCond rz_type_cond_invert(RzTypeCond cond) {
 		return RZ_TYPE_COND_LT;
 	case RZ_TYPE_COND_GT:
 		return RZ_TYPE_COND_LE;
+	case RZ_TYPE_COND_AL:
+		return RZ_TYPE_COND_NV;
 	default:
-		RZ_LOG_INFO("Unhandled conditional swap\n");
+		rz_warn_if_reached();
 		break;
 	}
 	return 0;
 }
 /**
- * \brief return bool based on type condition
+ * \brief evaluate the type condition on the arguments and return a bool accordingly.
  * 
  * \param cond RzTypeCond
  * \param arg0 
@@ -512,7 +514,7 @@ RZ_API bool rz_type_cond_eval(RzTypeCond cond, st64 arg0, st64 arg1) {
 }
 
 /**
- * \brief return bool based on type condition
+ * \brief Same as rz_type_cond_eval, but it assumes \p arg1 to be 0.
  * 
  * \param cond RzTypeCond
  * \param arg0 

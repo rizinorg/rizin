@@ -179,22 +179,22 @@ typedef struct rz_type_path_t {
  * \brief Type Conditions
  */
 typedef enum {
-	RZ_TYPE_COND_AL = 0, // Always executed (no condition)
-	RZ_TYPE_COND_EQ, // Equal
-	RZ_TYPE_COND_NE, // Not equal
-	RZ_TYPE_COND_GE, // Greater or equal
-	RZ_TYPE_COND_GT, // Greater than
-	RZ_TYPE_COND_LE, // Less or equal
-	RZ_TYPE_COND_LT, // Less than
-	RZ_TYPE_COND_NV, // Never executed             must be a nop? :D
-	RZ_TYPE_COND_HS, // Carry set                  >, ==, or unordered
-	RZ_TYPE_COND_LO, // Carry clear                Less than
-	RZ_TYPE_COND_MI, // Minus, negative            Less than
-	RZ_TYPE_COND_PL, // Plus, positive or zero     >, ==, or unordered
-	RZ_TYPE_COND_VS, // Overflow                   Unordered
-	RZ_TYPE_COND_VC, // No overflow                Not unordered
-	RZ_TYPE_COND_HI, // Unsigned higher            Greater than, or unordered
-	RZ_TYPE_COND_LS // Unsigned lower or same     Less than or equal
+	RZ_TYPE_COND_AL = 0, ///< Always executed (no condition)
+	RZ_TYPE_COND_EQ, ///< Equal
+	RZ_TYPE_COND_NE, ///< Not equal
+	RZ_TYPE_COND_GE, ///< Greater or equal
+	RZ_TYPE_COND_GT, ///< Greater than
+	RZ_TYPE_COND_LE, ///< Less or equal
+	RZ_TYPE_COND_LT, ///< Less than
+	RZ_TYPE_COND_NV, ///< Never executed             must be a nop? :D
+	RZ_TYPE_COND_HS, ///< Carry set                  >, ==, or unordered
+	RZ_TYPE_COND_LO, ///< Carry clear                Less than
+	RZ_TYPE_COND_MI, ///< Minus, negative            Less than
+	RZ_TYPE_COND_PL, ///< Plus, positive or zero     >, ==, or unordered
+	RZ_TYPE_COND_VS, ///< Overflow                   Unordered
+	RZ_TYPE_COND_VC, ///< No overflow                Not unordered
+	RZ_TYPE_COND_HI, ///< Unsigned higher            Greater than, or unordered
+	RZ_TYPE_COND_LS ///< Unsigned lower or same     Less than or equal
 } RzTypeCond;
 
 /**
