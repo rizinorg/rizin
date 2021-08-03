@@ -757,6 +757,10 @@ RZ_API char *rz_str_newf(const char *fmt, ...) {
 RZ_API size_t rz_str_ncpy(char *dst, const char *src, size_t n) {
 	rz_return_val_if_fail(dst && src, 0);
 
+	// do not do anything if n is 0
+	if (n == 0) {
+		return 0;
+	}
 	memcpy(dst, src, n);
 	dst[n - 1] = '\0';
 
