@@ -176,7 +176,7 @@
         },
         {
           "type": "SYMBOL",
-          "name": "_pipe_stmt"
+          "name": "pipe_stmt"
         },
         {
           "type": "SYMBOL",
@@ -362,23 +362,6 @@
         }
       ]
     },
-    "_pipe_stmt": {
-      "type": "CHOICE",
-      "members": [
-        {
-          "type": "SYMBOL",
-          "name": "html_disable_stmt"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "html_enable_stmt"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "pipe_stmt"
-        }
-      ]
-    },
     "grep_stmt": {
       "type": "SEQ",
       "members": [
@@ -484,48 +467,6 @@
             },
             "named": true,
             "value": "grep_specifier_identifier"
-          }
-        ]
-      }
-    },
-    "html_disable_stmt": {
-      "type": "PREC_RIGHT",
-      "value": 1,
-      "content": {
-        "type": "SEQ",
-        "members": [
-          {
-            "type": "FIELD",
-            "name": "command",
-            "content": {
-              "type": "SYMBOL",
-              "name": "_simple_stmt"
-            }
-          },
-          {
-            "type": "STRING",
-            "value": "|"
-          }
-        ]
-      }
-    },
-    "html_enable_stmt": {
-      "type": "PREC_RIGHT",
-      "value": 1,
-      "content": {
-        "type": "SEQ",
-        "members": [
-          {
-            "type": "FIELD",
-            "name": "command",
-            "content": {
-              "type": "SYMBOL",
-              "name": "_simple_stmt"
-            }
-          },
-          {
-            "type": "STRING",
-            "value": "|H"
           }
         ]
       }
@@ -2939,14 +2880,6 @@
         {
           "type": "SYMBOL",
           "name": "fdn_append_operator"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "html_redirect_operator"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "html_append_operator"
         }
       ]
     },
@@ -2991,14 +2924,6 @@
           "value": ">>"
         }
       ]
-    },
-    "html_redirect_operator": {
-      "type": "STRING",
-      "value": "H>"
-    },
-    "html_append_operator": {
-      "type": "STRING",
-      "value": "H>>"
     },
     "_arg_with_paren": {
       "type": "SEQ",

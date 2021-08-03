@@ -64,14 +64,6 @@
             "named": true
           },
           {
-            "type": "html_disable_stmt",
-            "named": true
-          },
-          {
-            "type": "html_enable_stmt",
-            "named": true
-          },
-          {
             "type": "iter_bbs_stmt",
             "named": true
           },
@@ -350,14 +342,6 @@
         },
         {
           "type": "help_stmt",
-          "named": true
-        },
-        {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
           "named": true
         },
         {
@@ -663,14 +647,6 @@
             "named": true
           },
           {
-            "type": "html_disable_stmt",
-            "named": true
-          },
-          {
-            "type": "html_enable_stmt",
-            "named": true
-          },
-          {
             "type": "iter_bbs_stmt",
             "named": true
           },
@@ -877,422 +853,6 @@
     }
   },
   {
-    "type": "html_disable_stmt",
-    "named": true,
-    "fields": {
-      "command": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "arged_stmt",
-            "named": true
-          },
-          {
-            "type": "grep_stmt",
-            "named": true
-          },
-          {
-            "type": "help_stmt",
-            "named": true
-          },
-          {
-            "type": "html_disable_stmt",
-            "named": true
-          },
-          {
-            "type": "html_enable_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_bbs_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_comment_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_dbgmap_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_dbta_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_dbtb_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_dbts_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_file_lines_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_flags_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_function_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_hit_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_import_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_instrs_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_interpret_offsetssizes_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_interpret_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_iomap_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_offsets_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_offsetssizes_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_register_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_sections_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_segments_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_step_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_string_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_symbol_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_threads_stmt",
-            "named": true
-          },
-          {
-            "type": "legacy_quoted_stmt",
-            "named": true
-          },
-          {
-            "type": "number_stmt",
-            "named": true
-          },
-          {
-            "type": "pipe_stmt",
-            "named": true
-          },
-          {
-            "type": "repeat_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_arch_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_bits_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_blksz_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_eval_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_fd_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_file_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_fromto_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_fs_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_hex_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_kuery_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_nthi_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_reg_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_reli_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_seek_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_string_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_value_stmt",
-            "named": true
-          }
-        ]
-      }
-    }
-  },
-  {
-    "type": "html_enable_stmt",
-    "named": true,
-    "fields": {
-      "command": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "arged_stmt",
-            "named": true
-          },
-          {
-            "type": "grep_stmt",
-            "named": true
-          },
-          {
-            "type": "help_stmt",
-            "named": true
-          },
-          {
-            "type": "html_disable_stmt",
-            "named": true
-          },
-          {
-            "type": "html_enable_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_bbs_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_comment_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_dbgmap_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_dbta_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_dbtb_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_dbts_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_file_lines_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_flags_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_function_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_hit_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_import_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_instrs_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_interpret_offsetssizes_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_interpret_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_iomap_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_offsets_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_offsetssizes_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_register_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_sections_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_segments_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_step_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_string_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_symbol_stmt",
-            "named": true
-          },
-          {
-            "type": "iter_threads_stmt",
-            "named": true
-          },
-          {
-            "type": "legacy_quoted_stmt",
-            "named": true
-          },
-          {
-            "type": "number_stmt",
-            "named": true
-          },
-          {
-            "type": "pipe_stmt",
-            "named": true
-          },
-          {
-            "type": "repeat_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_arch_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_bits_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_blksz_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_eval_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_fd_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_file_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_fromto_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_fs_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_hex_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_kuery_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_nthi_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_reg_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_reli_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_seek_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_string_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_value_stmt",
-            "named": true
-          }
-        ]
-      }
-    }
-  },
-  {
     "type": "iter_bbs_stmt",
     "named": true,
     "fields": {},
@@ -1310,14 +870,6 @@
         },
         {
           "type": "help_stmt",
-          "named": true
-        },
-        {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
           "named": true
         },
         {
@@ -1524,14 +1076,6 @@
           "named": true
         },
         {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
-          "named": true
-        },
-        {
           "type": "iter_bbs_stmt",
           "named": true
         },
@@ -1728,14 +1272,6 @@
         },
         {
           "type": "help_stmt",
-          "named": true
-        },
-        {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
           "named": true
         },
         {
@@ -1938,14 +1474,6 @@
           "named": true
         },
         {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
-          "named": true
-        },
-        {
           "type": "iter_bbs_stmt",
           "named": true
         },
@@ -2145,14 +1673,6 @@
           "named": true
         },
         {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
-          "named": true
-        },
-        {
           "type": "iter_bbs_stmt",
           "named": true
         },
@@ -2349,14 +1869,6 @@
         },
         {
           "type": "help_stmt",
-          "named": true
-        },
-        {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
           "named": true
         },
         {
@@ -2563,14 +2075,6 @@
           "named": true
         },
         {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
-          "named": true
-        },
-        {
           "type": "iter_bbs_stmt",
           "named": true
         },
@@ -2771,14 +2275,6 @@
         },
         {
           "type": "help_stmt",
-          "named": true
-        },
-        {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
           "named": true
         },
         {
@@ -2985,14 +2481,6 @@
           "named": true
         },
         {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
-          "named": true
-        },
-        {
           "type": "iter_bbs_stmt",
           "named": true
         },
@@ -3189,14 +2677,6 @@
         },
         {
           "type": "help_stmt",
-          "named": true
-        },
-        {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
           "named": true
         },
         {
@@ -3399,14 +2879,6 @@
           "named": true
         },
         {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
-          "named": true
-        },
-        {
           "type": "iter_bbs_stmt",
           "named": true
         },
@@ -3603,14 +3075,6 @@
         },
         {
           "type": "help_stmt",
-          "named": true
-        },
-        {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
           "named": true
         },
         {
@@ -3813,14 +3277,6 @@
           "named": true
         },
         {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
-          "named": true
-        },
-        {
           "type": "iter_bbs_stmt",
           "named": true
         },
@@ -4020,14 +3476,6 @@
           "named": true
         },
         {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
-          "named": true
-        },
-        {
           "type": "iter_bbs_stmt",
           "named": true
         },
@@ -4224,14 +3672,6 @@
         },
         {
           "type": "help_stmt",
-          "named": true
-        },
-        {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
           "named": true
         },
         {
@@ -4438,14 +3878,6 @@
           "named": true
         },
         {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
-          "named": true
-        },
-        {
           "type": "iter_bbs_stmt",
           "named": true
         },
@@ -4649,14 +4081,6 @@
           "named": true
         },
         {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
-          "named": true
-        },
-        {
           "type": "iter_bbs_stmt",
           "named": true
         },
@@ -4853,14 +4277,6 @@
         },
         {
           "type": "help_stmt",
-          "named": true
-        },
-        {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
           "named": true
         },
         {
@@ -5063,14 +4479,6 @@
           "named": true
         },
         {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
-          "named": true
-        },
-        {
           "type": "iter_bbs_stmt",
           "named": true
         },
@@ -5267,14 +4675,6 @@
         },
         {
           "type": "help_stmt",
-          "named": true
-        },
-        {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
           "named": true
         },
         {
@@ -5481,14 +4881,6 @@
           "named": true
         },
         {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
-          "named": true
-        },
-        {
           "type": "iter_bbs_stmt",
           "named": true
         },
@@ -5685,14 +5077,6 @@
         },
         {
           "type": "help_stmt",
-          "named": true
-        },
-        {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
           "named": true
         },
         {
@@ -5895,14 +5279,6 @@
           "named": true
         },
         {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
-          "named": true
-        },
-        {
           "type": "iter_bbs_stmt",
           "named": true
         },
@@ -6099,14 +5475,6 @@
         },
         {
           "type": "help_stmt",
-          "named": true
-        },
-        {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
           "named": true
         },
         {
@@ -6375,14 +5743,6 @@
         },
         {
           "type": "help_stmt",
-          "named": true
-        },
-        {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
           "named": true
         },
         {
@@ -6711,14 +6071,6 @@
           "named": true
         },
         {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
-          "named": true
-        },
-        {
           "type": "iter_bbs_stmt",
           "named": true
         },
@@ -6928,14 +6280,6 @@
             "named": true
           },
           {
-            "type": "html_disable_stmt",
-            "named": true
-          },
-          {
-            "type": "html_enable_stmt",
-            "named": true
-          },
-          {
             "type": "iter_bbs_stmt",
             "named": true
           },
@@ -7124,14 +6468,6 @@
           {
             "type": "fdn_redirect_operator",
             "named": true
-          },
-          {
-            "type": "html_append_operator",
-            "named": true
-          },
-          {
-            "type": "html_redirect_operator",
-            "named": true
           }
         ]
       }
@@ -7165,14 +6501,6 @@
           },
           {
             "type": "help_stmt",
-            "named": true
-          },
-          {
-            "type": "html_disable_stmt",
-            "named": true
-          },
-          {
-            "type": "html_enable_stmt",
             "named": true
           },
           {
@@ -7396,14 +6724,6 @@
           "named": true
         },
         {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
-          "named": true
-        },
-        {
           "type": "iter_bbs_stmt",
           "named": true
         },
@@ -7611,14 +6931,6 @@
           "named": true
         },
         {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
-          "named": true
-        },
-        {
           "type": "iter_bbs_stmt",
           "named": true
         },
@@ -7822,14 +7134,6 @@
           "named": true
         },
         {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
-          "named": true
-        },
-        {
           "type": "iter_bbs_stmt",
           "named": true
         },
@@ -8030,14 +7334,6 @@
         },
         {
           "type": "help_stmt",
-          "named": true
-        },
-        {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
           "named": true
         },
         {
@@ -8260,14 +7556,6 @@
           "named": true
         },
         {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
-          "named": true
-        },
-        {
           "type": "iter_bbs_stmt",
           "named": true
         },
@@ -8475,14 +7763,6 @@
           "named": true
         },
         {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
-          "named": true
-        },
-        {
           "type": "iter_bbs_stmt",
           "named": true
         },
@@ -8683,14 +7963,6 @@
         },
         {
           "type": "help_stmt",
-          "named": true
-        },
-        {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
           "named": true
         },
         {
@@ -8897,14 +8169,6 @@
           "named": true
         },
         {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
-          "named": true
-        },
-        {
           "type": "iter_bbs_stmt",
           "named": true
         },
@@ -9105,14 +8369,6 @@
         },
         {
           "type": "help_stmt",
-          "named": true
-        },
-        {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
           "named": true
         },
         {
@@ -9319,14 +8575,6 @@
           "named": true
         },
         {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
-          "named": true
-        },
-        {
           "type": "iter_bbs_stmt",
           "named": true
         },
@@ -9527,14 +8775,6 @@
         },
         {
           "type": "help_stmt",
-          "named": true
-        },
-        {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
           "named": true
         },
         {
@@ -9741,14 +8981,6 @@
           "named": true
         },
         {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
-          "named": true
-        },
-        {
           "type": "iter_bbs_stmt",
           "named": true
         },
@@ -9949,14 +9181,6 @@
         },
         {
           "type": "help_stmt",
-          "named": true
-        },
-        {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
           "named": true
         },
         {
@@ -10163,14 +9387,6 @@
           "named": true
         },
         {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
-          "named": true
-        },
-        {
           "type": "iter_bbs_stmt",
           "named": true
         },
@@ -10371,14 +9587,6 @@
         },
         {
           "type": "help_stmt",
-          "named": true
-        },
-        {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
           "named": true
         },
         {
@@ -10585,14 +9793,6 @@
           "named": true
         },
         {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
-          "named": true
-        },
-        {
           "type": "iter_bbs_stmt",
           "named": true
         },
@@ -10793,14 +9993,6 @@
         },
         {
           "type": "help_stmt",
-          "named": true
-        },
-        {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
           "named": true
         },
         {
@@ -11239,14 +10431,6 @@
     "named": true
   },
   {
-    "type": "html_append_operator",
-    "named": true
-  },
-  {
-    "type": "html_redirect_operator",
-    "named": true
-  },
-  {
     "type": "system_identifier",
     "named": true
   },
@@ -11256,10 +10440,6 @@
   },
   {
     "type": "|.",
-    "named": false
-  },
-  {
-    "type": "|H",
     "named": false
   },
   {

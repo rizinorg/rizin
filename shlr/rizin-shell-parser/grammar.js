@@ -89,7 +89,7 @@ module.exports = grammar({
         $.number_stmt,
         $._tmp_stmt,
         $._iter_stmt,
-        $._pipe_stmt,
+        $.pipe_stmt,
         $.grep_stmt,
         $.legacy_quoted_stmt,
         $._pf_stmts
@@ -143,8 +143,6 @@ module.exports = grammar({
         $.iter_step_stmt
       ),
 
-    _pipe_stmt: ($) => choice($.html_disable_stmt, $.html_enable_stmt, $.pipe_stmt),
-
     grep_stmt: ($) => seq(field("command", $._simple_stmt), "~", field("specifier", $.grep_specifier)),
     // FIXME: improve parser for grep specifier
     // grep_specifier_identifier also includes ~ because r2 does not support nested grep statements yet
@@ -160,8 +158,6 @@ module.exports = grammar({
         )
       ),
 
-    html_disable_stmt: ($) => prec.right(1, seq(field("command", $._simple_stmt), "|")),
-    html_enable_stmt: ($) => prec.right(1, seq(field("command", $._simple_stmt), "|H")),
     pipe_stmt: ($) => seq($._simple_stmt, "|", $.args),
     pipe_second_stmt: ($) => /[^|\r\n;]+/,
 
@@ -375,11 +371,9 @@ module.exports = grammar({
         seq(field("command", $._simple_stmt), field("redirect_operator", $._redirect_operator), field("arg", $.arg))
       ),
     _redirect_operator: ($) =>
-      choice($.fdn_redirect_operator, $.fdn_append_operator, $.html_redirect_operator, $.html_append_operator),
+      choice($.fdn_redirect_operator, $.fdn_append_operator),
     fdn_redirect_operator: ($) => seq(optional($.file_descriptor), ">"),
     fdn_append_operator: ($) => seq(optional($.file_descriptor), ">>"),
-    html_redirect_operator: ($) => "H>",
-    html_append_operator: ($) => "H>>",
 
     _arg_with_paren: ($) => seq(alias("(", $.arg_identifier), $.args, alias(")", $.arg_identifier)),
     _arg: ($) =>
