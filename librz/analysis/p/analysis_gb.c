@@ -51,7 +51,7 @@ static inline void gb_analysis_esil_ccall(RzAnalysisOp *op, const ut8 data) {
 	default:
 		cond = 'C';
 	}
-	if (op->cond == RZ_ANALYSIS_COND_EQ) {
+	if (op->cond == RZ_TYPE_COND_EQ) {
 		rz_strbuf_setf(&op->esil, "%c,?{,2,sp,-=,pc,sp,=[2],%" PFMT64d ",pc,:=,}", cond, (op->jump & 0xffff));
 	} else {
 		rz_strbuf_setf(&op->esil, "%c,!,?{,2,sp,-=,pc,sp,=[2],%" PFMT64d ",pc,:=,}", cond, (op->jump & 0xffff));
@@ -69,7 +69,7 @@ static inline void gb_analysis_esil_cret(RzAnalysisOp *op, const ut8 data) {
 	} else {
 		cond = 'Z';
 	}
-	if (op->cond == RZ_ANALYSIS_COND_EQ) {
+	if (op->cond == RZ_TYPE_COND_EQ) {
 		rz_strbuf_setf(&op->esil, "%c,?{,sp,[2],pc,:=,2,sp,+=,}", cond);
 	} else {
 		rz_strbuf_setf(&op->esil, "%c,!,?{,sp,[2],pc,:=,2,sp,+=,}", cond);
@@ -88,7 +88,7 @@ static inline void gb_analysis_esil_cjmp(RzAnalysisOp *op, const ut8 data) {
 	default:
 		cond = 'C';
 	}
-	if (op->cond == RZ_ANALYSIS_COND_EQ) {
+	if (op->cond == RZ_TYPE_COND_EQ) {
 		rz_strbuf_setf(&op->esil, "%c,?{,0x%" PFMT64x ",pc,:=,}", cond, (op->jump & 0xffff));
 	} else {
 		rz_strbuf_setf(&op->esil, "%c,!,?{,0x%" PFMT64x ",pc,:=,}", cond, (op->jump & 0xffff));
@@ -248,9 +248,9 @@ static inline void gb_analysis_cond(RzReg *reg, RzAnalysisOp *op, const ut8 data
 	op->src[0] = rz_analysis_value_new();
 	op->src[0]->imm = 1;
 	if (data & 0x8) {
-		op->cond = RZ_ANALYSIS_COND_EQ;
+		op->cond = RZ_TYPE_COND_EQ;
 	} else {
-		op->cond = RZ_ANALYSIS_COND_NE;
+		op->cond = RZ_TYPE_COND_NE;
 	}
 	switch (data) {
 	case 0x20:

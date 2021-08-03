@@ -439,3 +439,92 @@ RZ_API bool rz_type_integral_set_sign(const RzTypeDB *typedb, RZ_NONNULL RzType 
 	}
 	return false;
 }
+
+/**
+ * \brief RzTypeCond enum to string
+ * 
+ * \param cc RzTypeCond
+ * \return const char *
+ */
+RZ_API const char *rz_type_cond_tostring(RzTypeCond cc) {
+	switch (cc) {
+	case RZ_TYPE_COND_EQ: return "eq";
+	case RZ_TYPE_COND_NV: return "nv";
+	case RZ_TYPE_COND_NE: return "ne";
+	case RZ_TYPE_COND_HS: return "hs";
+	case RZ_TYPE_COND_LO: return "lo";
+	case RZ_TYPE_COND_MI: return "mi";
+	case RZ_TYPE_COND_PL: return "pl";
+	case RZ_TYPE_COND_VS: return "vs";
+	case RZ_TYPE_COND_VC: return "vc";
+	case RZ_TYPE_COND_HI: return "hi";
+	case RZ_TYPE_COND_LS: return "ls";
+	case RZ_TYPE_COND_GE: return "ge";
+	case RZ_TYPE_COND_LT: return "lt";
+	case RZ_TYPE_COND_GT: return "gt";
+	case RZ_TYPE_COND_LE: return "le";
+	case RZ_TYPE_COND_AL: return "al";
+	}
+	return "??";
+}
+
+/**
+ * \brief return the inverted condition
+ * 
+ * \param cond RzTypeCond
+ * \return RzTypeCond
+ */
+RZ_API RzTypeCond rz_type_cond_invert(RzTypeCond cond) {
+	switch (cond) {
+	case RZ_TYPE_COND_LE:
+		return RZ_TYPE_COND_GT;
+	case RZ_TYPE_COND_LT:
+		return RZ_TYPE_COND_GE;
+	case RZ_TYPE_COND_GE:
+		return RZ_TYPE_COND_LT;
+	case RZ_TYPE_COND_GT:
+		return RZ_TYPE_COND_LE;
+	default:
+		RZ_LOG_INFO("Unhandled conditional swap\n");
+		break;
+	}
+	return 0;
+}
+/**
+ * \brief return bool based on type condition
+ * 
+ * \param cond RzTypeCond
+ * \param arg0 
+ * \param arg1 
+ * \return bool 
+ */
+RZ_API bool rz_type_cond_eval(RzTypeCond cond, st64 arg0, st64 arg1) {
+	switch (cond) {
+	case RZ_TYPE_COND_EQ: return arg0 == arg1;
+	case RZ_TYPE_COND_NE: return arg0 != arg1;
+	case RZ_TYPE_COND_GE: return arg0 >= arg1;
+	case RZ_TYPE_COND_GT: return arg0 > arg1;
+	case RZ_TYPE_COND_LE: return arg0 <= arg1;
+	case RZ_TYPE_COND_LT: return arg0 < arg1;
+	}
+	return false;
+}
+
+/**
+ * \brief return bool based on type condition
+ * 
+ * \param cond RzTypeCond
+ * \param arg0 
+ * \return bool 
+ */
+RZ_API bool rz_type_cond_eval_single(RzTypeCond cond, st64 arg0) {
+	switch (cond) {
+	case RZ_TYPE_COND_EQ: return !arg0;
+	case RZ_TYPE_COND_NE: return arg0;
+	case RZ_TYPE_COND_GT: return arg0 > 0;
+	case RZ_TYPE_COND_GE: return arg0 >= 0;
+	case RZ_TYPE_COND_LT: return arg0 < 0;
+	case RZ_TYPE_COND_LE: return arg0 <= 0;
+	}
+	return false;
+}

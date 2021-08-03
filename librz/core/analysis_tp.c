@@ -79,8 +79,8 @@ static void var_rename(RzAnalysis *analysis, RzAnalysisVar *v, const char *name,
 static void var_type_set_sign(RzAnalysis *analysis, RzAnalysisVar *var, bool sign) {
 	rz_return_if_fail(analysis && var);
 	// Check if it's integral number first
-	if (rz_type_is_integral(analysis->typedb, var->type)) {
-		rz_type_integral_set_sign(analysis->typedb, &var->type, sign);
+	if (rz_type_is_integral(analysis->typedb, var->contype->type)) {
+		rz_type_integral_set_sign(analysis->typedb, &var->contype->type, sign);
 	}
 }
 
@@ -105,7 +105,7 @@ static void var_type_set(RzAnalysis *analysis, RzAnalysisVar *var, RZ_BORROW RzT
 		// default or void (not void* !) type
 		return;
 	}
-	if (!rz_type_is_default(typedb, var->type) && !rz_type_is_void_ptr(var->type) && !var_type_simple_to_complex(typedb, var->type, type)) {
+	if (!rz_type_is_default(typedb, var->contype->type) && !rz_type_is_void_ptr(var->contype->type) && !var_type_simple_to_complex(typedb, var->contype->type, type)) {
 		// return since type is already propagated
 		// except for "void *", since "void *" => "char *" is possible
 		// except for simple types to the more complex types
@@ -179,27 +179,6 @@ static ut64 get_addr(Sdb *trace, const char *regname, int idx) {
 	}
 	const char *query = sdb_fmt("%d.reg.read.%s", idx, regname);
 	return rz_num_math(NULL, sdb_const_get(trace, query, 0));
-}
-
-static _RzAnalysisCond cond_invert(RzAnalysis *analysis, _RzAnalysisCond cond) {
-	switch (cond) {
-	case RZ_ANALYSIS_COND_LE:
-		return RZ_ANALYSIS_COND_GT;
-	case RZ_ANALYSIS_COND_LT:
-		return RZ_ANALYSIS_COND_GE;
-	case RZ_ANALYSIS_COND_GE:
-		return RZ_ANALYSIS_COND_LT;
-	case RZ_ANALYSIS_COND_GT:
-		return RZ_ANALYSIS_COND_LE;
-	default:
-		if (analysis->verbose) {
-			eprintf("Unhandled conditional swap\n");
-		}
-		break;
-	}
-	return 0; // 0 is COND_ALways...
-	/* I haven't looked into it but I suspect that this might be confusing:
-	the opposite of any condition not in the list above is "always"? */
 }
 
 static RzList *parse_format(RzCore *core, char *fmt) {
@@ -426,7 +405,7 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 						var_rename(analysis, var, name, addr);
 					} else {
 						// callee is a userfunction, propagate our variable's type into the callee's args
-						retype_callee_arg(analysis, fcn_name, in_stack, place, size, var->type);
+						retype_callee_arg(analysis, fcn_name, in_stack, place, size, var->contype->type);
 					}
 					res = true;
 				} else {
@@ -443,7 +422,7 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 						var_rename(analysis, var, name, addr);
 					} else {
 						// callee is a userfunction, propagate our variable's type into the callee's args
-						retype_callee_arg(analysis, fcn_name, in_stack, place, size, var->type);
+						retype_callee_arg(analysis, fcn_name, in_stack, place, size, var->contype->type);
 					}
 					res = true;
 				} else {
@@ -690,8 +669,8 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, Sdb *tra
 					jmp_addr += jmp_op->size;
 					rz_analysis_op_free(jmp_op);
 				}
-				RzAnalysisVarConstraint constr = {
-					.cond = jmp ? cond_invert(core->analysis, next_op->cond) : next_op->cond,
+				RzTypeVarConstraint constr = {
+					.cond = jmp ? rz_type_cond_invert(next_op->cond) : next_op->cond,
 					.val = aop->val
 				};
 				rz_analysis_var_add_constraint(var, &constr);
@@ -730,7 +709,7 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, Sdb *tra
 				if (ctx->str_flag) {
 					var_type_set_str(core->analysis, var, "const char *", false);
 				}
-				prev_type = var->type;
+				prev_type = var->contype->type;
 				prop = true;
 			}
 		}
@@ -861,9 +840,9 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn) {
 			// due to the overlaps resolution
 			if (lvar) {
 				// Propagate local var type = to => register-based var
-				var_type_set(analysis, rvar, lvar->type, false);
+				var_type_set(analysis, rvar, lvar->contype->type, false);
 				// Propagate local var type <= from = register-based var
-				var_type_set(analysis, lvar, rvar->type, false);
+				var_type_set(analysis, lvar, rvar->contype->type, false);
 			}
 		}
 	}

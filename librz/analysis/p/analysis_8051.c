@@ -1125,24 +1125,24 @@ static int i8051_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 
 	switch (_8051_ops[i].instr) {
 	default:
-		op->cond = RZ_ANALYSIS_COND_AL;
+		op->cond = RZ_TYPE_COND_AL;
 		break;
 	case OP_CJNE:
 	case OP_DJNZ:
 	case OP_JB:
 	case OP_JBC:
 	case OP_JNZ:
-		op->cond = RZ_ANALYSIS_COND_NE;
+		op->cond = RZ_TYPE_COND_NE;
 		break;
 	case OP_JNB:
 	case OP_JZ:
-		op->cond = RZ_ANALYSIS_COND_EQ;
+		op->cond = RZ_TYPE_COND_EQ;
 		break;
 	case OP_JC:
-		op->cond = RZ_ANALYSIS_COND_HS;
+		op->cond = RZ_TYPE_COND_HS;
 		break;
 	case OP_JNC:
-		op->cond = RZ_ANALYSIS_COND_LO;
+		op->cond = RZ_TYPE_COND_LO;
 	}
 
 	switch (_8051_ops[i].instr) {

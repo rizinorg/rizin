@@ -175,6 +175,44 @@ typedef struct rz_type_path_t {
 	char *path;
 } RzTypePath;
 
+/**
+ * \brief Type Conditions
+ */
+typedef enum {
+	RZ_TYPE_COND_AL = 0, // Always executed (no condition)
+	RZ_TYPE_COND_EQ, // Equal
+	RZ_TYPE_COND_NE, // Not equal
+	RZ_TYPE_COND_GE, // Greater or equal
+	RZ_TYPE_COND_GT, // Greater than
+	RZ_TYPE_COND_LE, // Less or equal
+	RZ_TYPE_COND_LT, // Less than
+	RZ_TYPE_COND_NV, // Never executed             must be a nop? :D
+	RZ_TYPE_COND_HS, // Carry set                  >, ==, or unordered
+	RZ_TYPE_COND_LO, // Carry clear                Less than
+	RZ_TYPE_COND_MI, // Minus, negative            Less than
+	RZ_TYPE_COND_PL, // Plus, positive or zero     >, ==, or unordered
+	RZ_TYPE_COND_VS, // Overflow                   Unordered
+	RZ_TYPE_COND_VC, // No overflow                Not unordered
+	RZ_TYPE_COND_HI, // Unsigned higher            Greater than, or unordered
+	RZ_TYPE_COND_LS // Unsigned lower or same     Less than or equal
+} RzTypeCond;
+
+/**
+ * \brief Variable constrained by the type conditions
+ */
+typedef struct rz_type_var_constraint_t {
+	RzTypeCond cond;
+	ut64 val;
+} RzTypeVarConstraint;
+
+/**
+ * \brief Wrapper of RzType and RzTypeVarConstraint
+ */
+typedef struct rz_constrained_type_t {
+	RzVector /*<RzTypeVarConstraint>*/ constraints;
+	RzType *type;
+} RzConstrainedType;
+
 #ifdef RZ_API
 
 RZ_API RzTypeDB *rz_type_db_new();
@@ -388,6 +426,11 @@ RZ_API bool rz_serialize_types_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzTypeDB *typ
 RZ_API void rz_serialize_callables_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzTypeDB *typedb);
 RZ_API bool rz_serialize_callables_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzTypeDB *typedb, RZ_NULLABLE RzSerializeResultInfo *res);
 
+// Constrained Type
+RZ_API const char *rz_type_cond_tostring(RzTypeCond cc);
+RZ_API RzTypeCond rz_type_cond_invert(RzTypeCond cond);
+RZ_API bool rz_type_cond_eval(RzTypeCond cond, st64 arg0, st64 arg1);
+RZ_API bool rz_type_cond_eval_single(RzTypeCond cond, st64 arg0);
 #endif
 
 #ifdef __cplusplus

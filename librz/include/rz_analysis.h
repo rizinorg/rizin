@@ -447,26 +447,6 @@ typedef enum {
 	RZ_ANALYSIS_OP_MASK_ALL = 1 | 2 | 4 | 8 | 16
 } RzAnalysisOpMask;
 
-/* TODO: what to do with signed/unsigned conditionals? */
-typedef enum {
-	RZ_ANALYSIS_COND_AL = 0, // Always executed (no condition)
-	RZ_ANALYSIS_COND_EQ, // Equal
-	RZ_ANALYSIS_COND_NE, // Not equal
-	RZ_ANALYSIS_COND_GE, // Greater or equal
-	RZ_ANALYSIS_COND_GT, // Greater than
-	RZ_ANALYSIS_COND_LE, // Less or equal
-	RZ_ANALYSIS_COND_LT, // Less than
-	RZ_ANALYSIS_COND_NV, // Never executed             must be a nop? :D
-	RZ_ANALYSIS_COND_HS, // Carry set                  >, ==, or unordered
-	RZ_ANALYSIS_COND_LO, // Carry clear                Less than
-	RZ_ANALYSIS_COND_MI, // Minus, negative            Less than
-	RZ_ANALYSIS_COND_PL, // Plus, positive or zero     >, ==, or unordered
-	RZ_ANALYSIS_COND_VS, // Overflow                   Unordered
-	RZ_ANALYSIS_COND_VC, // No overflow                Not unordered
-	RZ_ANALYSIS_COND_HI, // Unsigned higher            Greater than, or unordered
-	RZ_ANALYSIS_COND_LS // Unsigned lower or same     Less than or equal
-} _RzAnalysisCond;
-
 typedef enum {
 	RZ_ANALYSIS_VAR_SCOPE_LOCAL = 0x01
 } _RzAnalysisVarScope;
@@ -739,23 +719,17 @@ typedef struct rz_analysis_var_access_t {
 	ut8 type; // RzAnalysisVarAccessType bits
 } RzAnalysisVarAccess;
 
-typedef struct rz_analysis_var_constraint_t {
-	_RzAnalysisCond cond;
-	ut64 val;
-} RzAnalysisVarConstraint;
-
 // generic for args and locals
 typedef struct rz_analysis_var_t {
 	RzAnalysisFunction *fcn;
 	char *name; // name of the variable
-	RzType *type; // type of the variable
 	RzAnalysisVarKind kind;
 	bool isarg;
 	int delta; /* delta offset inside stack frame */
 	char *regname; // name of the register
 	RzVector /*<RzAnalysisVarAccess>*/ accesses; // ordered by offset, touch this only through API or expect uaf
 	char *comment;
-	RzVector /*<RzAnalysisVarConstraint>*/ constraints;
+	RzConstrainedType *contype; // constrained type
 
 	// below members are just for caching, TODO: remove them and do it better
 	int argnum;
@@ -822,7 +796,7 @@ typedef struct rz_analysis_op_t {
 	RzAnalysisOpPrefix prefix; /* type of opcode prefix (rep,lock,..) */
 	ut32 type2; /* used by java */
 	RzAnalysisStackOp stackop; /* operation on stack? */
-	_RzAnalysisCond cond; /* condition type */
+	RzTypeCond cond; /* condition type */
 	int size; /* size in bytes of opcode */
 	int nopcode; /* number of bytes representing the opcode (not the arguments) TODO: find better name */
 	int cycles; /* cpu-cycles taken by instruction */
@@ -855,10 +829,10 @@ typedef struct rz_analysis_op_t {
 	RzAnalysisDataType datatype;
 } RzAnalysisOp;
 
-#define RZ_ANALYSIS_COND_SINGLE(x) (!x->arg[1] || x->arg[0] == x->arg[1])
+#define RZ_TYPE_COND_SINGLE(x) (!x->arg[1] || x->arg[0] == x->arg[1])
 
 typedef struct rz_analysis_cond_t {
-	int type; // filled by CJMP opcode
+	RzTypeCond type; // filled by CJMP opcode
 	RzAnalysisValue *arg[2]; // filled by CMP opcode
 } RzAnalysisCond;
 
@@ -1568,7 +1542,7 @@ RZ_API ut64 rz_analysis_var_addr(RzAnalysisVar *var);
 RZ_API void rz_analysis_var_set_access(RzAnalysisVar *var, const char *reg, ut64 access_addr, int access_type, st64 stackptr);
 RZ_API void rz_analysis_var_remove_access_at(RzAnalysisVar *var, ut64 address);
 RZ_API void rz_analysis_var_clear_accesses(RzAnalysisVar *var);
-RZ_API void rz_analysis_var_add_constraint(RzAnalysisVar *var, RZ_BORROW RzAnalysisVarConstraint *constraint);
+RZ_API void rz_analysis_var_add_constraint(RzAnalysisVar *var, RZ_BORROW RzTypeVarConstraint *constraint);
 RZ_API char *rz_analysis_var_get_constraints_readable(RzAnalysisVar *var);
 
 // Get the access to var at exactly addr if there is one
@@ -1642,7 +1616,6 @@ RZ_API void rz_analysis_cond_free(RzAnalysisCond *c);
 RZ_API char *rz_analysis_cond_to_string(RzAnalysisCond *cond);
 RZ_API int rz_analysis_cond_eval(RzAnalysis *analysis, RzAnalysisCond *cond);
 RZ_API RzAnalysisCond *rz_analysis_cond_new_from_string(const char *str);
-RZ_API const char *rz_analysis_cond_tostring(int cc);
 
 /* jmptbl */
 RZ_API bool rz_analysis_jmptbl(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysisBlock *block, ut64 jmpaddr, ut64 table, ut64 tablesize, ut64 default_addr);

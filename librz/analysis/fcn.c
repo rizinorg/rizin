@@ -272,7 +272,7 @@ static ut64 try_get_cmpval_from_parents(RzAnalysis *analysis, RzAnalysisFunction
 		if (tmp_bb->jump == my_bb->addr || tmp_bb->fail == my_bb->addr) {
 			if (tmp_bb->cmpreg == cmp_reg) {
 				if (tmp_bb->cond) {
-					if (tmp_bb->cond->type == RZ_ANALYSIS_COND_HI || tmp_bb->cond->type == RZ_ANALYSIS_COND_GT) {
+					if (tmp_bb->cond->type == RZ_TYPE_COND_HI || tmp_bb->cond->type == RZ_TYPE_COND_GT) {
 						return tmp_bb->cmpval + 1;
 					}
 				}
@@ -439,7 +439,7 @@ static bool fcn_takeover_block_recursive_followthrough_cb(RzAnalysisBlock *block
 					: other_var->delta + (other_fcn->bp_off - our_fcn->bp_off);
 				RzAnalysisVar *our_var = rz_analysis_function_get_var(our_fcn, other_var->kind, actual_delta);
 				if (!our_var) {
-					our_var = rz_analysis_function_set_var(our_fcn, actual_delta, other_var->kind, other_var->type, 0, other_var->isarg, other_var->name);
+					our_var = rz_analysis_function_set_var(our_fcn, actual_delta, other_var->kind, other_var->contype->type, 0, other_var->isarg, other_var->name);
 				}
 				if (our_var) {
 					RzAnalysisVarAccess *acc = rz_analysis_var_get_access_at(other_var, addr);
@@ -1866,8 +1866,8 @@ RZ_API bool rz_analysis_function_set_type(RzAnalysis *a, RZ_NONNULL RzAnalysisFu
 				if (arg->name) {
 					var->name = strdup(arg->name);
 				}
-				rz_type_free(var->type);
-				var->type = rz_type_clone(arg->type);
+				rz_type_free(var->contype->type);
+				var->contype->type = rz_type_clone(arg->type);
 			}
 			index++;
 		} else {
@@ -2467,7 +2467,7 @@ RZ_API RZ_OWN RzList /* RzType */ *rz_analysis_types_from_fcn(RzAnalysis *analys
 	RzList *list = rz_analysis_var_all_list(analysis, fcn);
 	RzList *type_used = rz_list_new();
 	rz_list_foreach (list, iter, var) {
-		rz_list_append(type_used, var->type);
+		rz_list_append(type_used, var->contype->type);
 	}
 	RzList *uniq = rz_list_uniq(type_used, typecmp);
 	rz_list_free(type_used);
@@ -2523,7 +2523,7 @@ RZ_API RZ_OWN RzCallable *rz_analysis_function_derive_type(RzAnalysis *analysis,
 			// TODO: maybe create a stub void arg here?
 			continue;
 		}
-		RzCallableArg *arg = rz_type_callable_arg_new(analysis->typedb, var->name, var->type);
+		RzCallableArg *arg = rz_type_callable_arg_new(analysis->typedb, var->name, var->contype->type);
 		if (!arg) {
 			rz_pvector_free(args);
 			return NULL;

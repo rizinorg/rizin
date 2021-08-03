@@ -578,10 +578,10 @@ bool test_analysis_var_save() {
 	rz_analysis_var_set_access(v, "rcx", 1360, RZ_ANALYSIS_VAR_ACCESS_TYPE_WRITE, 123);
 
 	ut64 val = 0;
-	_RzAnalysisCond cond;
-	for (cond = RZ_ANALYSIS_COND_AL; cond <= RZ_ANALYSIS_COND_LS; cond++) {
+	RzTypeCond cond;
+	for (cond = RZ_TYPE_COND_AL; cond <= RZ_TYPE_COND_LS; cond++) {
 		val += 42;
-		RzAnalysisVarConstraint constr = {
+		RzTypeVarConstraint constr = {
 			.cond = cond,
 			.val = val
 		};
@@ -635,7 +635,7 @@ bool test_analysis_var_load() {
 	mu_assert_notnull(v, "var");
 	mu_assert_streq(v->regname, "rax", "var regname");
 	mu_assert_streq(v->name, "arg_rax", "var name");
-	mu_assert_true(rz_type_atomic_str_eq(analysis->typedb, v->type, "int64_t"), "var type");
+	mu_assert_true(rz_type_atomic_str_eq(analysis->typedb, v->contype->type, "int64_t"), "var type");
 	mu_assert("var arg", v->isarg);
 
 	mu_assert_eq(v->accesses.len, 3, "accesses count");
@@ -654,12 +654,12 @@ bool test_analysis_var_load() {
 	RzPVector *used = rz_analysis_function_get_vars_used_at(f, 1340);
 	mu_assert("var used", rz_pvector_contains(used, v));
 
-	mu_assert_eq(v->constraints.len, RZ_ANALYSIS_COND_LS + 1, "constraints count");
+	mu_assert_eq(v->contype->constraints.len, RZ_TYPE_COND_LS + 1, "constraints count");
 	ut64 val = 0;
-	_RzAnalysisCond cond;
-	for (cond = RZ_ANALYSIS_COND_AL; cond <= RZ_ANALYSIS_COND_LS; cond++) {
+	RzTypeCond cond;
+	for (cond = RZ_TYPE_COND_AL; cond <= RZ_TYPE_COND_LS; cond++) {
 		val += 42;
-		RzAnalysisVarConstraint *constr = rz_vector_index_ptr(&v->constraints, (size_t)(cond - RZ_ANALYSIS_COND_AL));
+		RzTypeVarConstraint *constr = rz_vector_index_ptr(&v->contype->constraints, (size_t)(cond - RZ_TYPE_COND_AL));
 		mu_assert_eq(constr->cond, cond, "constraint cond");
 		mu_assert_eq(constr->val, val, "constraint val");
 	}
@@ -667,12 +667,12 @@ bool test_analysis_var_load() {
 	v = rz_analysis_function_get_var(f, RZ_ANALYSIS_VAR_KIND_SPV, 0x10);
 	mu_assert_notnull(v, "var");
 	mu_assert_streq(v->name, "var_sp", "var name");
-	mu_assert_eq(v->type->kind, RZ_TYPE_KIND_POINTER, "var type");
-	mu_assert_notnull(v->type->pointer.type, "var type");
-	mu_assert_eq(v->type->pointer.type->kind, RZ_TYPE_KIND_IDENTIFIER, "var type");
-	eprintf("var type is \"%s\"\n", rz_type_as_string(analysis->typedb, v->type));
-	mu_assert_true(v->type->pointer.type->identifier.is_const, "var type");
-	mu_assert_true(rz_type_atomic_str_eq(analysis->typedb, v->type->pointer.type, "char"), "var type");
+	mu_assert_eq(v->contype->type->kind, RZ_TYPE_KIND_POINTER, "var type");
+	mu_assert_notnull(v->contype->type->pointer.type, "var type");
+	mu_assert_eq(v->contype->type->pointer.type->kind, RZ_TYPE_KIND_IDENTIFIER, "var type");
+	eprintf("var type is \"%s\"\n", rz_type_as_string(analysis->typedb, v->contype->type));
+	mu_assert_true(v->contype->type->pointer.type->identifier.is_const, "var type");
+	mu_assert_true(rz_type_atomic_str_eq(analysis->typedb, v->contype->type->pointer.type, "char"), "var type");
 	mu_assert("var arg", !v->isarg);
 	mu_assert_eq(v->accesses.len, 1, "accesses count");
 	acc = rz_vector_index_ptr(&v->accesses, 0);
@@ -685,16 +685,16 @@ bool test_analysis_var_load() {
 	v = rz_analysis_function_get_var(f, RZ_ANALYSIS_VAR_KIND_BPV, -0x10);
 	mu_assert_notnull(v, "var");
 	mu_assert_streq(v->name, "var_bp", "var name");
-	mu_assert_eq(v->type->kind, RZ_TYPE_KIND_IDENTIFIER, "var type");
-	mu_assert_eq(v->type->identifier.kind, RZ_TYPE_IDENTIFIER_KIND_STRUCT, "var type");
-	mu_assert_streq(v->type->identifier.name, "something", "var type");
+	mu_assert_eq(v->contype->type->kind, RZ_TYPE_KIND_IDENTIFIER, "var type");
+	mu_assert_eq(v->contype->type->identifier.kind, RZ_TYPE_IDENTIFIER_KIND_STRUCT, "var type");
+	mu_assert_streq(v->contype->type->identifier.name, "something", "var type");
 	mu_assert("var arg", !v->isarg);
 	mu_assert_eq(v->accesses.len, 0, "accesses count");
 
 	v = rz_analysis_function_get_var(f, RZ_ANALYSIS_VAR_KIND_BPV, 0x10);
 	mu_assert_notnull(v, "var");
 	mu_assert_streq(v->name, "arg_bp", "var name");
-	mu_assert_true(rz_type_atomic_str_eq(analysis->typedb, v->type, "uint64_t"), "var type");
+	mu_assert_true(rz_type_atomic_str_eq(analysis->typedb, v->contype->type, "uint64_t"), "var type");
 	mu_assert("var arg", v->isarg);
 	mu_assert_eq(v->accesses.len, 0, "accesses count");
 	mu_assert_streq(v->comment, "I have no idea what this var does", "var comment");
