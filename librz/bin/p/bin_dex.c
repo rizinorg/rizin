@@ -1974,6 +1974,15 @@ static RzList *maps(RzBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
+	// map the entire rest of the file with r-- perms and lower prio
+	RzBinMap *map = RZ_NEW0(RzBinMap);
+	if (!map) {
+		return ret;
+	}
+	map->psize = map->vsize = bs;
+	map->perm = RZ_PERM_R;
+	map->name = strdup("file");
+	rz_list_push(ret, map);
 	// map code specifically with r-x perms
 	ut64 addr = bin->code_from;
 	if (addr < bs) {
@@ -1989,15 +1998,6 @@ static RzList *maps(RzBinFile *bf) {
 		map->name = strdup("code");
 		rz_list_push(ret, map);
 	}
-	// map the entire rest of the file with r-- perms and lower prio
-	RzBinMap *map = RZ_NEW0(RzBinMap);
-	if (!map) {
-		return ret;
-	}
-	map->psize = map->vsize = bs;
-	map->perm = RZ_PERM_R;
-	map->name = strdup("file");
-	rz_list_push(ret, map);
 	return ret;
 }
 

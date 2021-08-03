@@ -58,9 +58,9 @@ NAME=tiny coff
 FILE=bins/coff/coff.obj
 CMDS=om;is;ir
 EXPECT=<<EOF
- 3 fd: 5 +0x00000000 0x00000058 - 0x00000067 r-- vmap.reloc-targets
- 2 fd: 4 +0x00000064 0x00000000 - 0x00000026 r-x vmap..text
- 1 fd: 3 +0x0000008b 0x00000030 - 0x0000004b r-- fmap..data
+ 1 fd: 4 +0x00000000 0x00000058 - 0x00000067 r-- vmap.reloc-targets
+ 2 fd: 5 +0x00000064 0x00000000 - 0x00000026 r-x vmap..text
+ 3 fd: 3 +0x0000008b 0x00000030 - 0x0000004b r-- fmap..data
 [Symbols]
 
 nth paddr      vaddr      bind   type size lib name            
@@ -95,16 +95,16 @@ s sym.__1FooBar__QAE_XZ
 pd 2
 EOF
 EXPECT=<<EOF
-10 fd: 5 +0x00000000 0x00000e60 - 0x00000e6f r-- vmap.reloc-targets
- 9 fd: 3 +0x0000017c 0x00000000 - 0x000000ee --- fmap..drectve
- 8 fd: 3 +0x0000026b 0x000000f0 - 0x00000b9f r-- fmap..debug$S
- 7 fd: 3 +0x00000d1b 0x00000ba0 - 0x00000c13 r-- fmap..debug$T
- 6 fd: 3 +0x00000d8f 0x00000c20 - 0x00000c4c r-x fmap..text$mn
- 5 fd: 4 +0x00000dbc 0x00000c50 - 0x00000d23 r-- vmap..debug$S
- 4 fd: 3 +0x00000ec2 0x00000d30 - 0x00000d59 r-x fmap..text$mn
- 3 fd: 4 +0x00000eec 0x00000d60 - 0x00000e33 r-- vmap..debug$S
- 2 fd: 4 +0x00000ff2 0x00000e40 - 0x00000e43 r-- vmap..rtc$IMZ
- 1 fd: 4 +0x00001000 0x00000e50 - 0x00000e53 r-- vmap..rtc$TMZ
+ 1 fd: 4 +0x00000000 0x00000e60 - 0x00000e6f r-- vmap.reloc-targets
+ 2 fd: 3 +0x0000017c 0x00000000 - 0x000000ee --- fmap..drectve
+ 3 fd: 3 +0x0000026b 0x000000f0 - 0x00000b9f r-- fmap..debug$S
+ 4 fd: 3 +0x00000d1b 0x00000ba0 - 0x00000c13 r-- fmap..debug$T
+ 5 fd: 3 +0x00000d8f 0x00000c20 - 0x00000c4c r-x fmap..text$mn
+ 6 fd: 5 +0x00000dbc 0x00000c50 - 0x00000d23 r-- vmap..debug$S
+ 7 fd: 3 +0x00000ec2 0x00000d30 - 0x00000d59 r-x fmap..text$mn
+ 8 fd: 5 +0x00000eec 0x00000d60 - 0x00000e33 r-- vmap..debug$S
+ 9 fd: 5 +0x00000ff2 0x00000e40 - 0x00000e43 r-- vmap..rtc$IMZ
+10 fd: 5 +0x00001000 0x00000e50 - 0x00000e53 r-- vmap..rtc$TMZ
 [Sections]
 
 nth paddr        size vaddr       vsize perm name       

@@ -1587,6 +1587,12 @@ RZ_API RzList *rz_bin_java_class_as_sections(RzBinJavaClass *bin) {
 				RZ_PERM_R));
 	}
 	if (bin->methods) {
+		rz_list_append(sections,
+			new_section("class.methods",
+				bin->methods_offset,
+				bin->attributes_offset,
+				RZ_PERM_R));
+
 		for (ut32 i = 0; i < bin->methods_count; ++i) {
 			Method *method = bin->methods[i];
 			if (!method || method->attributes_count < 1) {
@@ -1602,10 +1608,23 @@ RZ_API RzList *rz_bin_java_class_as_sections(RzBinJavaClass *bin) {
 				snprintf(secname, sizeof(secname), "class.methods.%s_%d.attr", tmp, iname);
 			}
 
+			if ((i + 1) < bin->methods_count && bin->methods[i + 1]) {
+				end_offset = bin->methods[i + 1]->offset;
+			} else {
+				end_offset = bin->attributes_offset;
+			}
+			if (iname > 0) {
+				snprintf(secname, sizeof(secname), "class.methods.%s_%d.attr", tmp, iname);
+			} else {
+				snprintf(secname, sizeof(secname), "class.methods.%s.attr", tmp);
+			}
+			rz_list_append(sections, new_section(secname, method->offset, end_offset, RZ_PERM_R));
+
 			if (!method->attributes) {
 				free(tmp);
 				continue;
 			}
+
 			for (ut32 k = 0; k < method->attributes_count; ++k) {
 				Attribute *attr = method->attributes[k];
 				if (attr && attr->type == ATTRIBUTE_TYPE_CODE) {
@@ -1620,25 +1639,8 @@ RZ_API RzList *rz_bin_java_class_as_sections(RzBinJavaClass *bin) {
 					break;
 				}
 			}
-
-			if ((i + 1) < bin->methods_count && bin->methods[i + 1]) {
-				end_offset = bin->methods[i + 1]->offset;
-			} else {
-				end_offset = bin->attributes_offset;
-			}
-			if (iname > 0) {
-				snprintf(secname, sizeof(secname), "class.methods.%s_%d.attr", tmp, iname);
-			} else {
-				snprintf(secname, sizeof(secname), "class.methods.%s.attr", tmp);
-			}
-			rz_list_append(sections, new_section(secname, method->offset, end_offset, RZ_PERM_R));
 			free(tmp);
 		}
-		rz_list_append(sections,
-			new_section("class.methods",
-				bin->methods_offset,
-				bin->attributes_offset,
-				RZ_PERM_R));
 	}
 	if (bin->attributes) {
 		rz_list_append(sections,
