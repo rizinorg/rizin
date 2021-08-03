@@ -506,6 +506,7 @@ RZ_API bool rz_type_cond_eval(RzTypeCond cond, st64 arg0, st64 arg1) {
 	case RZ_TYPE_COND_GT: return arg0 > arg1;
 	case RZ_TYPE_COND_LE: return arg0 <= arg1;
 	case RZ_TYPE_COND_LT: return arg0 < arg1;
+	default: return false;
 	}
 	return false;
 }
@@ -525,6 +526,7 @@ RZ_API bool rz_type_cond_eval_single(RzTypeCond cond, st64 arg0) {
 	case RZ_TYPE_COND_GE: return arg0 >= 0;
 	case RZ_TYPE_COND_LT: return arg0 < 0;
 	case RZ_TYPE_COND_LE: return arg0 <= 0;
+	default: return false;
 	}
 	return false;
 }
