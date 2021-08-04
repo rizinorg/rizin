@@ -58,6 +58,7 @@ static const char *const config_exclude[] = {
 	"scr.color.ops",
 	"scr.color.pipe",
 	"scr.interactive", // especially relevant for Cutter since it needs this to be false
+	"scr.prompt", // especially relevant for rzpipe, otherwise loading a project might break the pipe
 	"scr.rainbow",
 	"scr.utf8",
 	"scr.utf8.curvy",
