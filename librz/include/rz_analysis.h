@@ -729,7 +729,8 @@ typedef struct rz_analysis_var_t {
 	char *regname; // name of the register
 	RzVector /*<RzAnalysisVarAccess>*/ accesses; // ordered by offset, touch this only through API or expect uaf
 	char *comment;
-	RzConstrainedType *contype; // constrained type
+	RzVector /*<RzTypeConstraint>*/ constraints;
+	RzType *type; // var type
 
 	// below members are just for caching, TODO: remove them and do it better
 	int argnum;
@@ -1542,7 +1543,7 @@ RZ_API ut64 rz_analysis_var_addr(RzAnalysisVar *var);
 RZ_API void rz_analysis_var_set_access(RzAnalysisVar *var, const char *reg, ut64 access_addr, int access_type, st64 stackptr);
 RZ_API void rz_analysis_var_remove_access_at(RzAnalysisVar *var, ut64 address);
 RZ_API void rz_analysis_var_clear_accesses(RzAnalysisVar *var);
-RZ_API void rz_analysis_var_add_constraint(RzAnalysisVar *var, RZ_BORROW RzTypeVarConstraint *constraint);
+RZ_API void rz_analysis_var_add_constraint(RzAnalysisVar *var, RZ_BORROW RzTypeConstraint *constraint);
 RZ_API char *rz_analysis_var_get_constraints_readable(RzAnalysisVar *var);
 
 // Get the access to var at exactly addr if there is one

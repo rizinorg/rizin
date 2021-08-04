@@ -198,20 +198,12 @@ typedef enum {
 } RzTypeCond;
 
 /**
- * \brief Variable constrained by the type conditions
+ * \brief type constrained by the type conditions
  */
-typedef struct rz_type_var_constraint_t {
+typedef struct rz_type_constraint_t {
 	RzTypeCond cond;
 	ut64 val;
-} RzTypeVarConstraint;
-
-/**
- * \brief Wrapper of RzType and RzTypeVarConstraint
- */
-typedef struct rz_constrained_type_t {
-	RzVector /*<RzTypeVarConstraint>*/ constraints;
-	RzType *type;
-} RzConstrainedType;
+} RzTypeConstraint;
 
 #ifdef RZ_API
 
@@ -427,7 +419,7 @@ RZ_API void rz_serialize_callables_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzTypeDB 
 RZ_API bool rz_serialize_callables_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzTypeDB *typedb, RZ_NULLABLE RzSerializeResultInfo *res);
 
 // Constrained Type
-RZ_API const char *rz_type_cond_tostring(RzTypeCond cc);
+RZ_API RZ_BORROW const char *rz_type_cond_tostring(RzTypeCond cc);
 RZ_API RzTypeCond rz_type_cond_invert(RzTypeCond cond);
 RZ_API bool rz_type_cond_eval(RzTypeCond cond, st64 arg0, st64 arg1);
 RZ_API bool rz_type_cond_eval_single(RzTypeCond cond, st64 arg0);

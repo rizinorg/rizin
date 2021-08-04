@@ -79,8 +79,8 @@ static void var_rename(RzAnalysis *analysis, RzAnalysisVar *v, const char *name,
 static void var_type_set_sign(RzAnalysis *analysis, RzAnalysisVar *var, bool sign) {
 	rz_return_if_fail(analysis && var);
 	// Check if it's integral number first
-	if (rz_type_is_integral(analysis->typedb, var->contype->type)) {
-		rz_type_integral_set_sign(analysis->typedb, &var->contype->type, sign);
+	if (rz_type_is_integral(analysis->typedb, var->type)) {
+		rz_type_integral_set_sign(analysis->typedb, &var->type, sign);
 	}
 }
 
@@ -105,7 +105,7 @@ static void var_type_set(RzAnalysis *analysis, RzAnalysisVar *var, RZ_BORROW RzT
 		// default or void (not void* !) type
 		return;
 	}
-	if (!rz_type_is_default(typedb, var->contype->type) && !rz_type_is_void_ptr(var->contype->type) && !var_type_simple_to_complex(typedb, var->contype->type, type)) {
+	if (!rz_type_is_default(typedb, var->type) && !rz_type_is_void_ptr(var->type) && !var_type_simple_to_complex(typedb, var->type, type)) {
 		// return since type is already propagated
 		// except for "void *", since "void *" => "char *" is possible
 		// except for simple types to the more complex types
@@ -405,7 +405,7 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 						var_rename(analysis, var, name, addr);
 					} else {
 						// callee is a userfunction, propagate our variable's type into the callee's args
-						retype_callee_arg(analysis, fcn_name, in_stack, place, size, var->contype->type);
+						retype_callee_arg(analysis, fcn_name, in_stack, place, size, var->type);
 					}
 					res = true;
 				} else {
@@ -422,7 +422,7 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 						var_rename(analysis, var, name, addr);
 					} else {
 						// callee is a userfunction, propagate our variable's type into the callee's args
-						retype_callee_arg(analysis, fcn_name, in_stack, place, size, var->contype->type);
+						retype_callee_arg(analysis, fcn_name, in_stack, place, size, var->type);
 					}
 					res = true;
 				} else {
@@ -669,7 +669,7 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, Sdb *tra
 					jmp_addr += jmp_op->size;
 					rz_analysis_op_free(jmp_op);
 				}
-				RzTypeVarConstraint constr = {
+				RzTypeConstraint constr = {
 					.cond = jmp ? rz_type_cond_invert(next_op->cond) : next_op->cond,
 					.val = aop->val
 				};
@@ -709,7 +709,7 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, Sdb *tra
 				if (ctx->str_flag) {
 					var_type_set_str(core->analysis, var, "const char *", false);
 				}
-				prev_type = var->contype->type;
+				prev_type = var->type;
 				prop = true;
 			}
 		}
@@ -840,9 +840,9 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn) {
 			// due to the overlaps resolution
 			if (lvar) {
 				// Propagate local var type = to => register-based var
-				var_type_set(analysis, rvar, lvar->contype->type, false);
+				var_type_set(analysis, rvar, lvar->type, false);
 				// Propagate local var type <= from = register-based var
-				var_type_set(analysis, lvar, rvar->contype->type, false);
+				var_type_set(analysis, lvar, rvar->type, false);
 			}
 		}
 	}

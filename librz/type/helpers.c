@@ -446,7 +446,7 @@ RZ_API bool rz_type_integral_set_sign(const RzTypeDB *typedb, RZ_NONNULL RzType 
  * \param cc RzTypeCond
  * \return const char *
  */
-RZ_API const char *rz_type_cond_tostring(RzTypeCond cc) {
+RZ_API RZ_BORROW const char *rz_type_cond_tostring(RzTypeCond cc) {
 	switch (cc) {
 	case RZ_TYPE_COND_EQ: return "eq";
 	case RZ_TYPE_COND_NV: return "nv";

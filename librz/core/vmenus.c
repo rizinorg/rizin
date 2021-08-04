@@ -2330,7 +2330,7 @@ static ut64 var_variables_show(RzCore *core, int idx, int *vindex, int show, int
 				break;
 			}
 			if (show) {
-				char *vartype = rz_type_as_string(core->analysis->typedb, var->contype->type);
+				char *vartype = rz_type_as_string(core->analysis->typedb, var->type);
 				switch (var->kind & 0xff) {
 				case 'r': {
 					RzRegItem *r = rz_reg_index_get(core->analysis->reg, var->delta);

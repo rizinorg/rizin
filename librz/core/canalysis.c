@@ -6293,7 +6293,7 @@ RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode
 				nargs++;
 				pj_o(j);
 				pj_ks(j, "name", var->name);
-				char *vartype = rz_type_as_string(core->analysis->typedb, var->contype->type);
+				char *vartype = rz_type_as_string(core->analysis->typedb, var->type);
 				pj_ks(j, "type", vartype);
 				pj_end(j);
 				free(vartype);
@@ -6305,7 +6305,7 @@ RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode
 				nargs++;
 				pj_o(j);
 				pj_ks(j, "name", var->name);
-				char *vartype = rz_type_as_string(core->analysis->typedb, var->contype->type);
+				char *vartype = rz_type_as_string(core->analysis->typedb, var->type);
 				pj_ks(j, "type", vartype);
 				pj_end(j);
 				free(vartype);
@@ -6317,7 +6317,7 @@ RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode
 				nargs++;
 				pj_o(j);
 				pj_ks(j, "name", var->name);
-				char *vartype = rz_type_as_string(core->analysis->typedb, var->contype->type);
+				char *vartype = rz_type_as_string(core->analysis->typedb, var->type);
 				pj_ks(j, "type", vartype);
 				pj_end(j);
 				free(vartype);
@@ -6797,7 +6797,7 @@ RZ_IPI bool rz_core_analysis_function_delete_var(RzCore *core, RzAnalysisFunctio
 RZ_IPI char *rz_core_analysis_var_display(RzCore *core, RzAnalysisVar *var, bool add_name) {
 	RzAnalysis *analysis = core->analysis;
 	RzStrBuf *sb = rz_strbuf_new(NULL);
-	char *vartype = rz_type_as_string(core->analysis->typedb, var->contype->type);
+	char *vartype = rz_type_as_string(core->analysis->typedb, var->type);
 	const char *fmt = rz_type_format(analysis->typedb, vartype);
 	RzRegItem *i;
 	if (!fmt) {

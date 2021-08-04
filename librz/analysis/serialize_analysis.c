@@ -559,7 +559,7 @@ RZ_API bool rz_serialize_analysis_blocks_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzA
 
 RZ_API void rz_serialize_analysis_var_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalysisVar *var) {
 	rz_return_if_fail(j && var);
-	char *vartype = rz_type_as_string(var->fcn->analysis->typedb, var->contype->type);
+	char *vartype = rz_type_as_string(var->fcn->analysis->typedb, var->type);
 	if (!vartype) {
 		eprintf("Variable \"%s\" has undefined type\n", var->name);
 		return;
@@ -620,10 +620,10 @@ RZ_API void rz_serialize_analysis_var_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalys
 		}
 		pj_end(j);
 	}
-	if (!rz_vector_empty(&var->contype->constraints)) {
+	if (!rz_vector_empty(&var->constraints)) {
 		pj_ka(j, "constrs");
-		RzTypeVarConstraint *constr;
-		rz_vector_foreach(&var->contype->constraints, constr) {
+		RzTypeConstraint *constr;
+		rz_vector_foreach(&var->constraints, constr) {
 			pj_i(j, (int)constr->cond);
 			pj_n(j, constr->val);
 		}
@@ -679,7 +679,7 @@ RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_analysis_var_load(RZ_NONNULL RzAn
 	RzVector accesses;
 	rz_vector_init(&accesses, sizeof(RzAnalysisVarAccess), NULL, NULL);
 	RzVector constraints;
-	rz_vector_init(&constraints, sizeof(RzTypeVarConstraint), NULL, NULL);
+	rz_vector_init(&constraints, sizeof(RzTypeConstraint), NULL, NULL);
 
 	RzAnalysisVar *ret = NULL;
 
@@ -805,7 +805,7 @@ RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_analysis_var_load(RZ_NONNULL RzAn
 				if (!sibling || sibling->type != RZ_JSON_INTEGER) {
 					break;
 				}
-				RzTypeVarConstraint constr;
+				RzTypeConstraint constr;
 				constr.cond = (RzTypeCond)baby->num.s_value;
 				constr.val = sibling->num.u_value;
 				if (constr.cond < RZ_TYPE_COND_AL || constr.cond > RZ_TYPE_COND_LS) {
@@ -853,7 +853,7 @@ RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_analysis_var_load(RZ_NONNULL RzAn
 	rz_vector_foreach(&accesses, acc) {
 		rz_analysis_var_set_access(ret, acc->reg, fcn->addr + acc->offset, acc->type, acc->stackptr);
 	}
-	RzTypeVarConstraint *constr;
+	RzTypeConstraint *constr;
 	rz_vector_foreach(&constraints, constr) {
 		rz_analysis_var_add_constraint(ret, constr);
 	}

@@ -1067,7 +1067,7 @@ static void __cmd_afvf(RzCore *core, const char *input) {
 			continue;
 		}
 		const char *pad = rz_str_pad(' ', 10 - strlen(p->name));
-		char *ptype = rz_type_as_string(core->analysis->typedb, p->contype->type);
+		char *ptype = rz_type_as_string(core->analysis->typedb, p->type);
 		rz_cons_printf("0x%08" PFMT64x "  %s:%s%s\n", (ut64)-p->delta, p->name, pad, ptype);
 		free(ptype);
 	}
@@ -1078,7 +1078,7 @@ static void __cmd_afvf(RzCore *core, const char *input) {
 		}
 		// TODO: only stack vars if (p->kind == 's') { }
 		const char *pad = rz_str_pad(' ', 10 - strlen(p->name));
-		char *ptype = rz_type_as_string(core->analysis->typedb, p->contype->type);
+		char *ptype = rz_type_as_string(core->analysis->typedb, p->type);
 		// XXX this 0x6a is a hack
 		rz_cons_printf("0x%08" PFMT64x "  %s:%s%s\n", ((ut64)p->delta) - 0x6a, p->name, pad, ptype);
 		free(ptype);
