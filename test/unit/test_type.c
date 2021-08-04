@@ -488,6 +488,62 @@ static bool test_struct_func_types(void) {
 	mu_end;
 }
 
+static bool test_struct_identifier_without_specifier(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
+	const char *dir_prefix = rz_sys_prefix(NULL);
+	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
+
+	char *error_msg = NULL;
+	int r = rz_type_parse_string(typedb, "struct bla { int a; };", &error_msg);
+	mu_assert_eq(r, 0, "parse struct definition");
+
+	// After defining a struct `struct bla` we also want to be able to refer to
+	// it by just `bla` rather than `struct bla`
+
+	RzType *ttype = rz_type_parse_string_single(typedb->parser, "bla *", &error_msg);
+	mu_assert_notnull(ttype, "type parse successfull");
+	mu_assert_eq(ttype->kind, RZ_TYPE_KIND_POINTER, "is pointer");
+	mu_assert_notnull(ttype->pointer.type, "pointed type");
+	mu_assert_eq(ttype->pointer.type->kind, RZ_TYPE_KIND_IDENTIFIER, "pointing to identifier");
+	mu_assert_false(ttype->pointer.type->identifier.is_const, "identifier not const");
+	mu_assert_streq(ttype->pointer.type->identifier.name, "bla", "bla struct");
+
+	rz_type_free(ttype);
+
+	rz_type_db_free(typedb);
+	mu_end;
+}
+
+static bool test_union_identifier_without_specifier(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
+	const char *dir_prefix = rz_sys_prefix(NULL);
+	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
+
+	char *error_msg = NULL;
+	int r = rz_type_parse_string(typedb, "union bla { int a; };", &error_msg);
+	mu_assert_eq(r, 0, "parse union definition");
+
+	// After defining a union `union bla` we also want to be able to refer to
+	// it by just `bla` rather than `union bla`
+
+	RzType *ttype = rz_type_parse_string_single(typedb->parser, "bla *", &error_msg);
+	mu_assert_notnull(ttype, "type parse successfull");
+	mu_assert_eq(ttype->kind, RZ_TYPE_KIND_POINTER, "is pointer");
+	mu_assert_notnull(ttype->pointer.type, "pointed type");
+	mu_assert_eq(ttype->pointer.type->kind, RZ_TYPE_KIND_IDENTIFIER, "pointing to identifier");
+	mu_assert_false(ttype->pointer.type->identifier.is_const, "identifier not const");
+	mu_assert_streq(ttype->pointer.type->identifier.name, "bla", "bla union");
+
+	rz_type_free(ttype);
+
+	rz_type_db_free(typedb);
+	mu_end;
+}
+
 /* references */
 typedef struct {
 	const char *name;
@@ -536,6 +592,8 @@ int all_tests() {
 	mu_run_test(test_const_types);
 	mu_run_test(test_array_types);
 	mu_run_test(test_struct_func_types);
+	mu_run_test(test_struct_identifier_without_specifier);
+	mu_run_test(test_union_identifier_without_specifier);
 	mu_run_test(test_references);
 	return tests_passed != tests_run;
 }
