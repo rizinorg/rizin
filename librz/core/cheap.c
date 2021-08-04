@@ -3,20 +3,30 @@
 
 /* API calls of windows heap for Cutter */
 #if __WINDOWS__
-RZ_API RzList *rz_heap_windows_blocks_list(RzCore *core) {
+/**
+ * \brief Get a list of heap blocks (Windows heap)
+ * \param core RzCore Pointer
+ * \return RzList of RzWindowsHeapBlock structs
+ */
+RZ_API RZ_OWN RzList *rz_heap_windows_blocks_list(RzCore *core) {
 	return rz_heap_blocks_list(core);
 }
 
-RZ_API RzList *rz_heap_windows_heap_list(RzCore *core) {
+/**
+ * \brief Get a list of heaps (Windows heap)
+ * \param core RzCore Pointer
+ * \return RzList of RzWindowsHeapInfo structs
+ */
+RZ_API RZ_OWN RzList *rz_heap_windows_heap_list(RzCore *core) {
 	return rz_heap_list(core);
 }
 #else
 
-RZ_API RzList *rz_heap_windows_blocks_list(RzCore *core) {
+RZ_API RZ_OWN RzList *rz_heap_windows_blocks_list(RzCore *core) {
 	return NULL;
 }
 
-RZ_API RzList *rz_heap_windows_heap_list(RzCore *core) {
+RZ_API RZ_OWN RzList *rz_heap_windows_heap_list(RzCore *core) {
 	return NULL;
 }
 

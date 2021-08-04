@@ -788,8 +788,8 @@ RZ_API RzList *rz_heap_tcache_content(RzCore *core, ut64 arena_base);
 RZ_API bool rz_heap_write_chunk(RzCore *core, RzHeapChunkSimple *chunk_simple);
 
 /* cmd_windows_heap.c */
-RZ_API RzList *rz_heap_windows_blocks_list(RzCore *core);
-RZ_API RzList *rz_heap_windows_heap_list(RzCore *core);
+RZ_API RZ_OWN RzList *rz_heap_windows_blocks_list(RzCore *core);
+RZ_API RZ_OWN RzList *rz_heap_windows_heap_list(RzCore *core);
 
 // XXX dupe from rz_bin.h
 /* bin.c */
