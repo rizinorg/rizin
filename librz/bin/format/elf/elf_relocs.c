@@ -265,3 +265,14 @@ ut64 Elf_(rz_bin_elf_get_num_relocs_dynamic_plt)(RZ_NONNULL ELFOBJ *bin) {
 	ut64 entry_size = get_size_rel_mode(dt_pltrel);
 	return size / entry_size;
 }
+
+ut64 Elf_(rz_bin_elf_get_reloc_size_as_byte)(RZ_NONNULL ELFOBJ *bin) {
+	rz_return_val_if_fail(bin, 0);
+
+	ut64 bits = Elf_(rz_bin_elf_get_bits)(bin);
+	if (!bits) {
+		return 0;
+	}
+
+	return bits / 8;
+}

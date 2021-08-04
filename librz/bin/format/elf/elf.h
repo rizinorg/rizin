@@ -207,8 +207,6 @@ struct Elf_(rz_bin_elf_obj_t) {
 	RzBinElfStrtab *shstrtab; // should be use with elf_strtab.c
 
 	RzVector *relocs; // should be use with elf_relocs.c
-	bool reloc_targets_map_base_calculated;
-	bool relocs_patched;
 	ut64 reloc_targets_map_base;
 
 	// This is RzVector of note segment reprensented as RzVector<RzBinElfNote>
@@ -308,6 +306,9 @@ RZ_BORROW RzBinElfPrStatusLayout *Elf_(rz_bin_elf_get_prstatus_layout)(RZ_NONNUL
 RZ_OWN RzVector *Elf_(rz_bin_elf_notes_new)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_has_notes)(RZ_NONNULL ELFOBJ *bin);
 
+// elf_patch.c
+RZ_OWN RzBuffer *Elf_(rz_bin_elf_patch_relocs)(ELFOBJ *bin);
+
 // elf_misc.c
 bool Elf_(rz_bin_elf_check_array)(RZ_NONNULL ELFOBJ *bin, Elf_(Off) offset, Elf_(Off) length, Elf_(Off) entry_size);
 bool Elf_(rz_bin_elf_read_addr)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RZ_INOUT ut64 *offset, RZ_NONNULL RZ_OUT Elf_(Addr) * result);
@@ -337,6 +338,7 @@ RZ_OWN RzVector *Elf_(rz_bin_elf_relocs_new)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_has_relocs)(RZ_NONNULL ELFOBJ *bin);
 size_t Elf_(rz_bin_elf_get_relocs_count)(RZ_NONNULL ELFOBJ *bin);
 ut64 Elf_(rz_bin_elf_get_num_relocs_dynamic_plt)(RZ_NONNULL ELFOBJ *bin);
+ut64 Elf_(rz_bin_elf_get_reloc_size_as_byte)(RZ_NONNULL ELFOBJ *obj);
 
 // elf_segments.c
 RZ_BORROW RzBinElfSegment *Elf_(rz_bin_elf_get_segment_with_type)(RZ_NONNULL ELFOBJ *bin, Elf_(Word) type);
