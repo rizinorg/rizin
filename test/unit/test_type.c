@@ -499,7 +499,7 @@ static bool test_struct_identifier_without_specifier(void) {
 	int r = rz_type_parse_string(typedb, "struct bla { int a; };", &error_msg);
 	mu_assert_eq(r, 0, "parse struct definition");
 
-	// After definin a struct `struct bla` we also want to be able to refer to
+	// After defining a struct `struct bla` we also want to be able to refer to
 	// it by just `bla` rather than `struct bla`
 
 	RzType *ttype = rz_type_parse_string_single(typedb->parser, "bla *", &error_msg);
@@ -527,7 +527,7 @@ static bool test_union_identifier_without_specifier(void) {
 	int r = rz_type_parse_string(typedb, "union bla { int a; };", &error_msg);
 	mu_assert_eq(r, 0, "parse union definition");
 
-	// After definin a union `union bla` we also want to be able to refer to
+	// After defining a union `union bla` we also want to be able to refer to
 	// it by just `bla` rather than `union bla`
 
 	RzType *ttype = rz_type_parse_string_single(typedb->parser, "bla *", &error_msg);
