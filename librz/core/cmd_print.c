@@ -893,7 +893,11 @@ static void cmd_prc(RzCore *core, const ut8 *block, int len) {
 			}
 			if (show_color) {
 				ut32 color_val = colormap[block[j]];
-				int brightness = ((color_val & 0xff0000) >> 16) + 2 * ((color_val & 0xff00) >> 8) + (color_val & 0xff) / 2;
+				// Brightness weights are based on
+				// https://twitter.com/DanHollick/status/1417895189239123968
+				// (normalized to red). I'm aware that max
+				// brightness is greater than 255 * 3.
+				int brightness = ((color_val & 0xff0000) >> 16) + 2 * ((color_val & 0xff00) >> 8) + (color_val & 0xff) / 3;
 				char *str = rz_str_newf("rgb:%s rgb:%06x",
 					brightness <= 0x7f * 3 ? "fff" : "000", color_val);
 				color = rz_cons_pal_parse(str, NULL);
