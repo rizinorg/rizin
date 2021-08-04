@@ -20,9 +20,9 @@ static void htup_vector_free(HtUPKv *kv) {
 
 /**
  * Get Vector from esil trace db
- * @param db HtPP* esil->trace->ht_db
- * @param key const char* behavior string (read/write)
- * @return vec RzPVector of char *, contains the address of read/write
+ * \param db HtPP* esil->trace->ht_db
+ * \param key const char* behavior string (read/write)
+ * \return vec RzPVector of char *, contains the address of read/write
  */
 RZ_API RzPVector *rz_analysis_esil_trace_db_get(HtPP *db, const char *key) {
 	return ht_pp_find(db, key, NULL);
@@ -34,9 +34,9 @@ static void htpp_vector_free(HtPPKv *kv) {
 
 /**
  * Add a new place of read/write to vector
- * @param db HtPP* esil->trace->ht_db
- * @param key const char* behavior string (read/write)
- * @param val const char* address/reg/idx
+ * \param db HtPP* esil->trace->ht_db
+ * \param key const char* behavior string (read/write)
+ * \param val const char* address/reg/idx
  */
 RZ_API void rz_analysis_esil_trace_db_array_add(HtPP *db, const char *key, const char *val) {
 	RzPVector *array = rz_analysis_esil_trace_db_get(db, key);
@@ -57,9 +57,9 @@ RZ_API void rz_analysis_esil_trace_db_array_add(HtPP *db, const char *key, const
 
 /**
  * Add a num to array
- * @param db HtPP* esil->trace->ht_db
- * @param key const char* behavior string (read/write)
- * @param val ut64 address/reg/idx
+ * \param db HtPP* esil->trace->ht_db
+ * \param key const char* behavior string (read/write)
+ * \param val ut64 address/reg/idx
  */
 RZ_API void rz_analysis_esil_trace_db_array_add_num(HtPP *db, const char *key, ut64 val) {
 	char buf[SDB_NUM_BUFSZ];
@@ -74,9 +74,9 @@ RZ_API void rz_analysis_esil_trace_db_array_add_num(HtPP *db, const char *key, u
 
 /**
  * Set a single num
- * @param db HtPP* esil->trace->ht_db
- * @param key const char* behavior string (read/write)
- * @param val ut64 address/reg/idx
+ * \param db HtPP* esil->trace->ht_db
+ * \param key const char* behavior string (read/write)
+ * \param val ut64 address/reg/idx
  */
 RZ_API void rz_analysis_esil_trace_db_num_set(HtPP *db, const char *key, ut64 v) {
 	char *val, b[SDB_NUM_BUFSZ];
@@ -87,9 +87,9 @@ RZ_API void rz_analysis_esil_trace_db_num_set(HtPP *db, const char *key, ut64 v)
 
 /**
  * Set a single string
- * @param db HtPP* esil->trace->ht_db
- * @param key const char* behavior string (read/write)
- * @param val const char* address/reg/idx
+ * \param db HtPP* esil->trace->ht_db
+ * \param key const char* behavior string (read/write)
+ * \param val const char* address/reg/idx
  */
 RZ_API void rz_analysis_esil_trace_db_set(HtPP *db, const char *key, const char *val) {
 	RzPVector *new_array = rz_pvector_new(NULL);
@@ -126,9 +126,9 @@ static char *ht_db_array_to_string(RzPVector *array) {
 
 /**
  * Get trace string from hash table
- * @param db HtPP* esil->trace->ht_db
- * @param key const char* behavior string (read/write)
- * @return val const char* address/reg/idx
+ * \param db HtPP* esil->trace->ht_db
+ * \param key const char* behavior string (read/write)
+ * \return val const char* address/reg/idx
  */
 RZ_API const char *rz_analysis_esil_trace_db_const_get(HtPP *db, const char *key) {
 	RzPVector *array = rz_analysis_esil_trace_db_get(db, key);
@@ -140,9 +140,9 @@ RZ_API const char *rz_analysis_esil_trace_db_const_get(HtPP *db, const char *key
 
 /**
  * Get trace address from hash table
- * @param db HtPP* esil->trace->ht_db
- * @param key const char* behavior string (read/write)
- * @return val ut64 address/reg/idx
+ * \param db HtPP* esil->trace->ht_db
+ * \param key const char* behavior string (read/write)
+ * \return val ut64 address/reg/idx
  */
 RZ_API ut64 rz_analysis_esil_trace_db_num_get(HtPP *db, const char *key) {
 	const char *v = rz_analysis_esil_trace_db_const_get(db, key);
@@ -151,10 +151,10 @@ RZ_API ut64 rz_analysis_esil_trace_db_num_get(HtPP *db, const char *key) {
 
 /**
  * Check if current value (val) is in corresponding esil trace
- * @param db HtPP* esil->trace->ht_db
- * @param key const char* behavior string (read/write)
- * @param val const char* current value to trace
- * @return ret bool, true of false
+ * \param db HtPP* esil->trace->ht_db
+ * \param key const char* behavior string (read/write)
+ * \param val const char* current value to trace
+ * \return ret bool, true of false
  *
  */
 RZ_API bool rz_analysis_esil_trace_db_array_contains(HtPP *db, const char *key, const char *val) {
