@@ -186,6 +186,18 @@ int parse_sole_type_name(CParserState *state, TSNode node, const char *text, Par
 		free(real_type);
 		return 0;
 	}
+	// Before resorting to create a new forward type, check if there is some union or struct with the same name already.
+	// This will e.g. catch cases like referring to `struct MyStruct` by just `MyStruct`.
+	if ((*tpair = c_parser_get_structure_type(state, real_type))) {
+		parser_debug(state, "Fetched type as struct: \"%s\"\n", real_type);
+		free(real_type);
+		return 0;
+	}
+	if ((*tpair = c_parser_get_union_type(state, real_type))) {
+		parser_debug(state, "Fetched type as union: \"%s\"\n", real_type);
+		free(real_type);
+		return 0;
+	}
 	// If not - we form both RzType and RzBaseType to store in the Types database
 	// as a forward-looking definition
 	*tpair = c_parser_new_primitive_type(state, real_type, is_const);
