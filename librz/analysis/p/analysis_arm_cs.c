@@ -2616,23 +2616,23 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 
 static int cond_cs2r2(int cc) {
 	if (cc == ARM_CC_AL || cc < 0) {
-		cc = RZ_ANALYSIS_COND_AL;
+		cc = RZ_TYPE_COND_AL;
 	} else {
 		switch (cc) {
-		case ARM_CC_EQ: cc = RZ_ANALYSIS_COND_EQ; break;
-		case ARM_CC_NE: cc = RZ_ANALYSIS_COND_NE; break;
-		case ARM_CC_HS: cc = RZ_ANALYSIS_COND_HS; break;
-		case ARM_CC_LO: cc = RZ_ANALYSIS_COND_LO; break;
-		case ARM_CC_MI: cc = RZ_ANALYSIS_COND_MI; break;
-		case ARM_CC_PL: cc = RZ_ANALYSIS_COND_PL; break;
-		case ARM_CC_VS: cc = RZ_ANALYSIS_COND_VS; break;
-		case ARM_CC_VC: cc = RZ_ANALYSIS_COND_VC; break;
-		case ARM_CC_HI: cc = RZ_ANALYSIS_COND_HI; break;
-		case ARM_CC_LS: cc = RZ_ANALYSIS_COND_LS; break;
-		case ARM_CC_GE: cc = RZ_ANALYSIS_COND_GE; break;
-		case ARM_CC_LT: cc = RZ_ANALYSIS_COND_LT; break;
-		case ARM_CC_GT: cc = RZ_ANALYSIS_COND_GT; break;
-		case ARM_CC_LE: cc = RZ_ANALYSIS_COND_LE; break;
+		case ARM_CC_EQ: cc = RZ_TYPE_COND_EQ; break;
+		case ARM_CC_NE: cc = RZ_TYPE_COND_NE; break;
+		case ARM_CC_HS: cc = RZ_TYPE_COND_HS; break;
+		case ARM_CC_LO: cc = RZ_TYPE_COND_LO; break;
+		case ARM_CC_MI: cc = RZ_TYPE_COND_MI; break;
+		case ARM_CC_PL: cc = RZ_TYPE_COND_PL; break;
+		case ARM_CC_VS: cc = RZ_TYPE_COND_VS; break;
+		case ARM_CC_VC: cc = RZ_TYPE_COND_VC; break;
+		case ARM_CC_HI: cc = RZ_TYPE_COND_HI; break;
+		case ARM_CC_LS: cc = RZ_TYPE_COND_LS; break;
+		case ARM_CC_GE: cc = RZ_TYPE_COND_GE; break;
+		case ARM_CC_LT: cc = RZ_TYPE_COND_LT; break;
+		case ARM_CC_GT: cc = RZ_TYPE_COND_GT; break;
+		case ARM_CC_LE: cc = RZ_TYPE_COND_LE; break;
 		}
 	}
 	return cc;
@@ -2660,7 +2660,7 @@ static void anop64(ArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 	}
 
 	op->cond = cond_cs2r2(insn->detail->arm64.cc);
-	if (op->cond == RZ_ANALYSIS_COND_NV) {
+	if (op->cond == RZ_TYPE_COND_NV) {
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		return;
 	}
@@ -3114,7 +3114,7 @@ static void anop32(RzAnalysis *a, csh handle, RzAnalysisOp *op, cs_insn *insn, b
 	ut64 itcond;
 
 	op->cond = cond_cs2r2(insn->detail->arm.cc);
-	if (op->cond == RZ_ANALYSIS_COND_NV) {
+	if (op->cond == RZ_TYPE_COND_NV) {
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		return;
 	}

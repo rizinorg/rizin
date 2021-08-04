@@ -440,7 +440,7 @@ static int analop_vle(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			op->fail = addr + op->size;
 			break;
 		case RZ_ANALYSIS_OP_TYPE_CJMP:
-			op->cond = instr->cond; //RZ_ANALYSIS_COND_NE;
+			op->cond = instr->cond; //RZ_TYPE_COND_NE;
 			op->eob = true;
 			op->jump = addr + instr->fields[instr->n - 1].value;
 			op->fail = addr + op->size;

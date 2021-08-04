@@ -330,14 +330,14 @@ static int snes_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut
 		break;
 	case 0xd0: // bne
 		op->eob = true;
-		op->cond = RZ_ANALYSIS_COND_NE;
+		op->cond = RZ_TYPE_COND_NE;
 		op->jump = addr + 2 + (st8)data[1];
 		op->fail = addr + 2;
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		break;
 	case 0xf0: // beq
 		op->eob = true;
-		op->cond = RZ_ANALYSIS_COND_EQ;
+		op->cond = RZ_TYPE_COND_EQ;
 		op->jump = addr + 2 + (st8)data[1];
 		op->fail = addr + 2;
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;

@@ -69,28 +69,28 @@ static int sign_ext(int bits, int imm) {
 
 static int map_cond2rizin(ut8 cond) {
 	switch (cond) {
-	case 0: return RZ_ANALYSIS_COND_AL;
-	case 1: return RZ_ANALYSIS_COND_EQ;
-	case 2: return RZ_ANALYSIS_COND_NE;
-	case 3: return RZ_ANALYSIS_COND_PL;
-	case 4: return RZ_ANALYSIS_COND_MI;
-	case 7: return RZ_ANALYSIS_COND_VS;
-	case 8: return RZ_ANALYSIS_COND_VC;
-	case 9: return RZ_ANALYSIS_COND_GT;
-	case 0xa: return RZ_ANALYSIS_COND_GE;
-	case 0xb: return RZ_ANALYSIS_COND_LT;
-	case 0xc: return RZ_ANALYSIS_COND_LE;
-	case 0xd: return RZ_ANALYSIS_COND_HI;
-	case 0xe: return RZ_ANALYSIS_COND_LS;
+	case 0: return RZ_TYPE_COND_AL;
+	case 1: return RZ_TYPE_COND_EQ;
+	case 2: return RZ_TYPE_COND_NE;
+	case 3: return RZ_TYPE_COND_PL;
+	case 4: return RZ_TYPE_COND_MI;
+	case 7: return RZ_TYPE_COND_VS;
+	case 8: return RZ_TYPE_COND_VC;
+	case 9: return RZ_TYPE_COND_GT;
+	case 0xa: return RZ_TYPE_COND_GE;
+	case 0xb: return RZ_TYPE_COND_LT;
+	case 0xc: return RZ_TYPE_COND_LE;
+	case 0xd: return RZ_TYPE_COND_HI;
+	case 0xe: return RZ_TYPE_COND_LS;
 #if 0
 	/* TODO: */
-	/* - rizin defines RZ_ANALYSIS_COND_LO as carry clear and _HS as carry set */
+	/* - rizin defines RZ_TYPE_COND_LO as carry clear and _HS as carry set */
 	/*   which appears different to the ARC definitions. */
 	/*   Need to do some math and double check the details */
-	case 5: return RZ_ANALYSIS_COND_?? - CS,C,LO - Carry set & LO
-	case 6: return RZ_ANALYSIS_COND_?? - CC,NC,HS - Carry clear & HS
+	case 5: return RZ_TYPE_COND_?? - CS,C,LO - Carry set & LO
+	case 6: return RZ_TYPE_COND_?? - CC,NC,HS - Carry clear & HS
 	/* - Positive non-zero doesnt map to any Radare cond code.  Perhaps just add it? */
-	case 0xf: return RZ_ANALYSIS_COND_?? - PNZ - Positive non-zero
+	case 0xf: return RZ_TYPE_COND_?? - PNZ - Positive non-zero
 #endif
 	}
 	return -1;
@@ -738,7 +738,7 @@ static int arcompact_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const
 				op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 				break;
 			case 6: /* SUB_S.NE [b] */
-				op->cond = RZ_ANALYSIS_COND_NE;
+				op->cond = RZ_TYPE_COND_NE;
 				op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 				break;
 			case 7: /* Zero Operand Instructions, 0x0F, [0x00, 0x07, 0x00 - 0x07] */
@@ -753,11 +753,11 @@ static int arcompact_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const
 					op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 					break;
 				case 4: /* JEQ_S [blink] */
-					op->cond = RZ_ANALYSIS_COND_EQ;
+					op->cond = RZ_TYPE_COND_EQ;
 					op->type = RZ_ANALYSIS_OP_TYPE_CRET;
 					break;
 				case 5: /* JNE_S [blink] */
-					op->cond = RZ_ANALYSIS_COND_NE;
+					op->cond = RZ_TYPE_COND_NE;
 					op->type = RZ_ANALYSIS_OP_TYPE_CRET;
 					break;
 				case 7: /* J_S.D [blink] */
@@ -989,11 +989,11 @@ static int arcompact_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const
 			op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 			break;
 		case 1: /* BEQ_S */
-			op->cond = RZ_ANALYSIS_COND_EQ;
+			op->cond = RZ_TYPE_COND_EQ;
 			op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 			break;
 		case 2: /* BNE_S */
-			op->cond = RZ_ANALYSIS_COND_NE;
+			op->cond = RZ_TYPE_COND_NE;
 			op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 			break;
 		case 3: /* Bcc_S */

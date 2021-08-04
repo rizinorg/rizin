@@ -142,7 +142,7 @@ RZ_API RzAnalysisVar *rz_analysis_function_set_var(RzAnalysisFunction *fcn, int 
 		rz_pvector_push(&fcn->vars, var);
 		var->fcn = fcn;
 		rz_vector_init(&var->accesses, sizeof(RzAnalysisVarAccess), NULL, NULL);
-		rz_vector_init(&var->constraints, sizeof(RzAnalysisVarConstraint), NULL, NULL);
+		rz_vector_init(&var->constraints, sizeof(RzTypeConstraint), NULL, NULL);
 	} else {
 		free(var->name);
 		free(var->regname);
@@ -517,7 +517,7 @@ RZ_API RzAnalysisVarAccess *rz_analysis_var_get_access_at(RzAnalysisVar *var, ut
 	return NULL;
 }
 
-RZ_API void rz_analysis_var_add_constraint(RzAnalysisVar *var, RZ_BORROW RzAnalysisVarConstraint *constraint) {
+RZ_API void rz_analysis_var_add_constraint(RzAnalysisVar *var, RZ_BORROW RzTypeConstraint *constraint) {
 	rz_vector_push(&var->constraints, constraint);
 }
 
@@ -531,27 +531,27 @@ RZ_API char *rz_analysis_var_get_constraints_readable(RzAnalysisVar *var) {
 	rz_strbuf_init(&sb);
 	size_t i;
 	for (i = 0; i < n; i += 1) {
-		RzAnalysisVarConstraint *constr = rz_vector_index_ptr(&var->constraints, i);
+		RzTypeConstraint *constr = rz_vector_index_ptr(&var->constraints, i);
 		switch (constr->cond) {
-		case RZ_ANALYSIS_COND_LE:
+		case RZ_TYPE_COND_LE:
 			if (high) {
 				rz_strbuf_append(&sb, " && ");
 			}
 			rz_strbuf_appendf(&sb, "<= 0x%" PFMT64x "", constr->val);
 			low = true;
 			break;
-		case RZ_ANALYSIS_COND_LT:
+		case RZ_TYPE_COND_LT:
 			if (high) {
 				rz_strbuf_append(&sb, " && ");
 			}
 			rz_strbuf_appendf(&sb, "< 0x%" PFMT64x "", constr->val);
 			low = true;
 			break;
-		case RZ_ANALYSIS_COND_GE:
+		case RZ_TYPE_COND_GE:
 			rz_strbuf_appendf(&sb, ">= 0x%" PFMT64x "", constr->val);
 			high = true;
 			break;
-		case RZ_ANALYSIS_COND_GT:
+		case RZ_TYPE_COND_GT:
 			rz_strbuf_appendf(&sb, "> 0x%" PFMT64x "", constr->val);
 			high = true;
 			break;

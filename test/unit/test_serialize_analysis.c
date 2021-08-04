@@ -578,10 +578,10 @@ bool test_analysis_var_save() {
 	rz_analysis_var_set_access(v, "rcx", 1360, RZ_ANALYSIS_VAR_ACCESS_TYPE_WRITE, 123);
 
 	ut64 val = 0;
-	_RzAnalysisCond cond;
-	for (cond = RZ_ANALYSIS_COND_AL; cond <= RZ_ANALYSIS_COND_LS; cond++) {
+	RzTypeCond cond;
+	for (cond = RZ_TYPE_COND_AL; cond <= RZ_TYPE_COND_LS; cond++) {
 		val += 42;
-		RzAnalysisVarConstraint constr = {
+		RzTypeConstraint constr = {
 			.cond = cond,
 			.val = val
 		};
@@ -654,12 +654,12 @@ bool test_analysis_var_load() {
 	RzPVector *used = rz_analysis_function_get_vars_used_at(f, 1340);
 	mu_assert("var used", rz_pvector_contains(used, v));
 
-	mu_assert_eq(v->constraints.len, RZ_ANALYSIS_COND_LS + 1, "constraints count");
+	mu_assert_eq(v->constraints.len, RZ_TYPE_COND_LS + 1, "constraints count");
 	ut64 val = 0;
-	_RzAnalysisCond cond;
-	for (cond = RZ_ANALYSIS_COND_AL; cond <= RZ_ANALYSIS_COND_LS; cond++) {
+	RzTypeCond cond;
+	for (cond = RZ_TYPE_COND_AL; cond <= RZ_TYPE_COND_LS; cond++) {
 		val += 42;
-		RzAnalysisVarConstraint *constr = rz_vector_index_ptr(&v->constraints, (size_t)(cond - RZ_ANALYSIS_COND_AL));
+		RzTypeConstraint *constr = rz_vector_index_ptr(&v->constraints, (size_t)(cond - RZ_TYPE_COND_AL));
 		mu_assert_eq(constr->cond, cond, "constraint cond");
 		mu_assert_eq(constr->val, val, "constraint val");
 	}

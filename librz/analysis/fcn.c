@@ -272,7 +272,7 @@ static ut64 try_get_cmpval_from_parents(RzAnalysis *analysis, RzAnalysisFunction
 		if (tmp_bb->jump == my_bb->addr || tmp_bb->fail == my_bb->addr) {
 			if (tmp_bb->cmpreg == cmp_reg) {
 				if (tmp_bb->cond) {
-					if (tmp_bb->cond->type == RZ_ANALYSIS_COND_HI || tmp_bb->cond->type == RZ_ANALYSIS_COND_GT) {
+					if (tmp_bb->cond->type == RZ_TYPE_COND_HI || tmp_bb->cond->type == RZ_TYPE_COND_GT) {
 						return tmp_bb->cmpval + 1;
 					}
 				}

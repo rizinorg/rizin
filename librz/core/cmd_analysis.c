@@ -1736,7 +1736,7 @@ static void core_analysis_bytes(RzCore *core, const ut8 *buf, int len, int nops,
 			}
 			pj_kn(pj, "stackptr", op.stackptr);
 			const char *arg = (op.type & RZ_ANALYSIS_OP_TYPE_COND)
-				? rz_analysis_cond_tostring(op.cond)
+				? rz_type_cond_tostring(op.cond)
 				: NULL;
 			if (arg) {
 				pj_ks(pj, "cond", arg);
@@ -1902,7 +1902,7 @@ static void core_analysis_bytes(RzCore *core, const ut8 *buf, int len, int nops,
 				printline("delay", "%d\n", op.delay);
 			}
 			{
-				const char *arg = (op.type & RZ_ANALYSIS_OP_TYPE_COND) ? rz_analysis_cond_tostring(op.cond) : NULL;
+				const char *arg = (op.type & RZ_ANALYSIS_OP_TYPE_COND) ? rz_type_cond_tostring(op.cond) : NULL;
 				if (arg) {
 					printline("cond", "%s\n", arg);
 				}

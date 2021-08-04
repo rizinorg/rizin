@@ -181,27 +181,6 @@ static ut64 get_addr(Sdb *trace, const char *regname, int idx) {
 	return rz_num_math(NULL, sdb_const_get(trace, query, 0));
 }
 
-static _RzAnalysisCond cond_invert(RzAnalysis *analysis, _RzAnalysisCond cond) {
-	switch (cond) {
-	case RZ_ANALYSIS_COND_LE:
-		return RZ_ANALYSIS_COND_GT;
-	case RZ_ANALYSIS_COND_LT:
-		return RZ_ANALYSIS_COND_GE;
-	case RZ_ANALYSIS_COND_GE:
-		return RZ_ANALYSIS_COND_LT;
-	case RZ_ANALYSIS_COND_GT:
-		return RZ_ANALYSIS_COND_LE;
-	default:
-		if (analysis->verbose) {
-			eprintf("Unhandled conditional swap\n");
-		}
-		break;
-	}
-	return 0; // 0 is COND_ALways...
-	/* I haven't looked into it but I suspect that this might be confusing:
-	the opposite of any condition not in the list above is "always"? */
-}
-
 static RzList *parse_format(RzCore *core, char *fmt) {
 	if (!fmt || !*fmt) {
 		return NULL;
@@ -690,8 +669,8 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, Sdb *tra
 					jmp_addr += jmp_op->size;
 					rz_analysis_op_free(jmp_op);
 				}
-				RzAnalysisVarConstraint constr = {
-					.cond = jmp ? cond_invert(core->analysis, next_op->cond) : next_op->cond,
+				RzTypeConstraint constr = {
+					.cond = jmp ? rz_type_cond_invert(next_op->cond) : next_op->cond,
 					.val = aop->val
 				};
 				rz_analysis_var_add_constraint(var, &constr);
