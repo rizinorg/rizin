@@ -115,7 +115,7 @@ RZ_OWN RzVector *Elf_(rz_bin_elf_segments_new)(RZ_NONNULL ELFOBJ *bin, RZ_NONNUL
 	rz_return_val_if_fail(bin && options, NULL);
 
 	if (!Elf_(rz_bin_elf_check_array)(bin, bin->ehdr.e_phoff, bin->ehdr.e_phnum, sizeof(Elf_(Phdr)))) {
-		RZ_LOG_WARN("Invalid segment header (check array failed).\n");
+		RZ_LOG_WARN("Invalid program header (check array failed).\n");
 		return NULL;
 	}
 

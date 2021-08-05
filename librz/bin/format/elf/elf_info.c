@@ -290,7 +290,11 @@ static ut64 get_main_offset_from_symbol(ELFOBJ *bin) {
 	RzBinElfSymbol *symbol;
 	rz_bin_elf_foreach_symbols(bin, symbol) {
 		if (symbol->name && !strcmp(symbol->name, "main")) {
-			return symbol->offset;
+			if (symbol->paddr != UT64_MAX) {
+				return symbol->paddr;
+			}
+
+			return symbol->vaddr;
 		}
 	}
 
@@ -570,7 +574,7 @@ static int get_bits_common(ELFOBJ *bin) {
 static bool has_thumb_symbol(ELFOBJ *bin) {
 	RzBinElfSymbol *symbol;
 	rz_bin_elf_foreach_symbols(bin, symbol) {
-		if (symbol->offset & 1) {
+		if (symbol->paddr & 1) {
 			return true;
 		}
 	}

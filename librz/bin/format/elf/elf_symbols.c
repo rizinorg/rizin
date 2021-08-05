@@ -312,27 +312,23 @@ static bool set_elf_symbol_name(ELFOBJ *bin, struct symbols_segment *segment, Rz
 static bool convert_elf_symbol_entry(ELFOBJ *bin, struct symbols_segment *segment, RzBinElfSymbol *elf_symbol, Elf_(Sym) * symbol, size_t ordinal) {
 	RzBinElfSection *section = Elf_(rz_bin_elf_get_section)(bin, symbol->st_shndx);
 
-	elf_symbol->offset = symbol->st_value;
 	elf_symbol->size = symbol->st_size;
 	elf_symbol->ordinal = ordinal;
 	elf_symbol->bind = symbol_bind_to_str(symbol);
+
+	if (Elf_(rz_bin_elf_is_relocatable)(bin) && section) {
+		elf_symbol->paddr = section->offset + symbol->st_value;
+		elf_symbol->vaddr = Elf_(rz_bin_elf_p2v_new)(bin, elf_symbol->paddr);
+	} else {
+		elf_symbol->vaddr = symbol->st_value;
+		elf_symbol->paddr = Elf_(rz_bin_elf_v2p_new)(bin, elf_symbol->vaddr);
+	}
 
 	if (!set_elf_symbol_name(bin, segment, elf_symbol, symbol, section)) {
 		return false;
 	}
 
 	elf_symbol->type = symbol_type_to_str(bin, elf_symbol, symbol);
-
-	if (Elf_(rz_bin_elf_is_relocatable)(bin) && section) {
-		elf_symbol->offset = symbol->st_value + section->offset;
-	} else {
-		ut64 tmp = Elf_(rz_bin_elf_v2p_new)(bin, elf_symbol->offset);
-		if (tmp == UT64_MAX) {
-			elf_symbol->is_vaddr = true;
-		} else {
-			elf_symbol->offset = tmp;
-		}
-	}
 
 	return true;
 }
