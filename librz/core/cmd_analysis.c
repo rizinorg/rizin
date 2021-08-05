@@ -8088,6 +8088,111 @@ RZ_IPI RzCmdStatus rz_analysis_rtti_demangle_class_name_handler(RzCore *core, in
 	return RZ_CMD_STATUS_ERROR;
 }
 
+RZ_IPI RzCmdStatus rz_analysis_print_global_variable_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	char *var_name = NULL;
+	if (argc == 2) {
+		var_name = (char *)argv[1];
+	}
+	rz_analysis_var_global_list_show(core->analysis, state, var_name);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_global_variable_add_handler(RzCore *core, int argc, const char **argv) {
+	if (argc < 4) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	char *var_name = (char *)argv[1];
+	ut64 addr = rz_num_math(core->num, (char *)argv[2]);
+	char *type = (char *)argv[3];
+	char *comment = NULL;
+	if (argc == 5) {
+		comment = (char *)argv[4];
+	}
+
+	RzTypeParser *parser = rz_type_parser_new();
+	char *errmsg = NULL;
+	RzType *typ = rz_type_parse_string_single(parser, type, &errmsg);
+	if (errmsg) {
+		eprintf("%s : Error parsing type: \"%s\" message:\n%s\n", __FUNCTION__, type, errmsg);
+		free(errmsg);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzAnalysisVarGlobal *glob = rz_analysis_var_global_new(var_name, addr, comment);
+	if (!glob) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_analysis_var_global_set_type(glob, typ);
+	if (rz_analysis_var_global_add(core->analysis, glob)) {
+		return RZ_CMD_STATUS_OK;
+	}
+	rz_analysis_var_global_free(glob);
+	return RZ_CMD_STATUS_ERROR;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_global_variable_delete_handler(RzCore *core, int argc, const char **argv) {
+	if (argc == 2) {
+		ut64 addr = rz_num_math(core->num, (char *)argv[1]);
+		if (rz_analysis_var_global_delete_byaddr(core->analysis, addr)) {
+			return RZ_CMD_STATUS_OK;
+		} else {
+			return RZ_CMD_STATUS_ERROR;
+		}
+	}
+	return RZ_CMD_STATUS_WRONG_ARGS;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_global_variable_rename_handler(RzCore *core, int argc, const char **argv) {
+	if (argc == 3) {
+		char *oldname = (char *)argv[1];
+		char *newname = (char *)argv[2];
+		if (rz_analysis_var_global_rename(core->analysis, oldname, newname)) {
+			return RZ_CMD_STATUS_OK;
+		} else {
+			return RZ_CMD_STATUS_ERROR;
+		}
+	}
+	return RZ_CMD_STATUS_WRONG_ARGS;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_global_variable_retype_handler(RzCore *core, int argc, const char **argv) {
+	if (argc == 3) {
+		char *name = (char *)argv[1];
+		char *type = (char *)argv[2];
+		RzAnalysisVarGlobal *glob = rz_analysis_var_global_get_byname(core->analysis, name);
+		if (!glob) {
+			eprintf("No such global variable!\n");
+			return RZ_CMD_STATUS_ERROR;
+		}
+		RzTypeParser *parser = rz_type_parser_new();
+		char *errmsg = NULL;
+		RzType *typ = rz_type_parse_string_single(parser, type, &errmsg);
+		if (errmsg) {
+			eprintf("%s : Error parsing type: \"%s\" message:\n%s\n", __FUNCTION__, type, errmsg);
+			free(errmsg);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		rz_type_free(glob->type);
+		rz_analysis_var_global_set_type(glob, typ);
+		return RZ_CMD_STATUS_OK;
+	}
+	return RZ_CMD_STATUS_WRONG_ARGS;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_global_variable_recomment_handler(RzCore *core, int argc, const char **argv) {
+	if (argc == 3) {
+		char *name = (char *)argv[1];
+		char *comment = (char *)argv[2];
+		RzAnalysisVarGlobal *glob = rz_analysis_var_global_get_byname(core->analysis, name);
+		if (!glob) {
+			eprintf("No such global variable!\n");
+			return RZ_CMD_STATUS_ERROR;
+		}
+		rz_analysis_var_global_set_comment(core->analysis, name, comment);
+		return RZ_CMD_STATUS_OK;
+	}
+	return RZ_CMD_STATUS_WRONG_ARGS;
+}
+
 static void cmd_analysis_class_method(RzCore *core, const char *input) {
 	RzAnalysisClassErr err = RZ_ANALYSIS_CLASS_ERR_SUCCESS;
 	char c = input[0];

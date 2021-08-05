@@ -143,6 +143,7 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 			rz_analysis_add(analysis, analysis_static_plugins[i]);
 		}
 	}
+	analysis->ht_global_var = ht_pp_new0();
 	return analysis;
 }
 
@@ -194,6 +195,8 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 	free(a->last_disasm_reg);
 	rz_list_free(a->imports);
 	rz_str_constpool_fini(&a->constpool);
+	rz_analysis_var_global_delete_all(a);
+	ht_pp_free(a->ht_global_var);
 	free(a);
 	return NULL;
 }

@@ -394,6 +394,68 @@ commands:
           - RZ_OUTPUT_MODE_RIZIN
           - RZ_OUTPUT_MODE_JSON
         args: []
+      - name: avg
+        summary: Global variables
+        subcommands:
+          - name: avg
+            summary: show global variables
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            cname: analysis_print_global_variable
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+            args:
+              - name: var_name
+                type: RZ_CMD_ARG_TYPE_STRING
+                optional: true
+          - name: avga
+            summary: add global variable manually
+            type: RZ_CMD_DESC_TYPE_ARGV
+            cname: analysis_global_variable_add
+            args:
+              - name: var_name
+                type: RZ_CMD_ARG_TYPE_STRING
+              - name: addr
+                type: RZ_CMD_ARG_TYPE_RZNUM
+              - name: type
+                type: RZ_CMD_ARG_TYPE_STRING
+              - name: comment
+                type: RZ_CMD_ARG_TYPE_STRING
+                optional: true
+          - name: avgc
+            summary: change the global variable comment
+            type: RZ_CMD_DESC_TYPE_ARGV
+            cname: analysis_global_variable_recomment
+            args:
+              - name: var_name
+                type: RZ_CMD_ARG_TYPE_STRING
+              - name: comment
+                type: RZ_CMD_ARG_TYPE_STRING
+          - name: avgd
+            summary: delete the global variable at the addr
+            type: RZ_CMD_DESC_TYPE_ARGV
+            cname: analysis_global_variable_delete
+            args:
+              - name: addr
+                type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: avgn
+            summary: rename the global variable
+            type: RZ_CMD_DESC_TYPE_ARGV
+            cname: analysis_global_variable_rename
+            args:
+              - name: old_var_name
+                type: RZ_CMD_ARG_TYPE_STRING
+              - name: new_var_name
+                type: RZ_CMD_ARG_TYPE_STRING
+          - name: avgt
+            summary: change the global variable type
+            type: RZ_CMD_DESC_TYPE_ARGV
+            cname: analysis_global_variable_retype
+            args:
+              - name: var_name
+                type: RZ_CMD_ARG_TYPE_STRING
+              - name: type
+                type: RZ_CMD_ARG_TYPE_STRING
       - name: avr
         summary: try to parse RTTI at vtable addr (see analysis.cpp.abi)
         type: RZ_CMD_DESC_TYPE_ARGV_MODES
