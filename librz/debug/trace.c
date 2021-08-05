@@ -48,78 +48,22 @@ RZ_API void rz_analysis_il_trace_instruction_free(RzILTraceInstruction *instruct
 	RZ_FREE(instruction);
 }
 
-RZ_API RzAnalysisILTrace *rz_analysis_il_trace_new(RzAnalysis *analysis) {
-	rz_return_val_if_fail(analysis, NULL);
-	size_t i;
-	RzAnalysisILTrace *trace = RZ_NEW0(RzAnalysisILTrace);
-	if (!trace) {
-		return NULL;
-	}
-	trace->registers = ht_up_new(NULL, htup_vector_free, NULL);
-	if (!trace->registers) {
-		goto error;
-	}
-	trace->memory = ht_up_new(NULL, htup_vector_free, NULL);
-	if (!trace->memory) {
-		goto error;
-	}
-	trace->instructions = rz_vector_new(0, (RzVectorFree)rz_analysis_il_trace_instruction_free, NULL);
-	if (!trace->instructions) {
-		goto error;
-	}
-
-	// Save initial register arenas
-	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
-		RzRegArena *a = analysis->reg->regset[i].arena;
-		RzRegArena *b = rz_reg_arena_new(a->size);
-		if (!b) {
-			goto error;
-		}
-		if (b->bytes && a->bytes && b->size > 0) {
-			memcpy(b->bytes, a->bytes, b->size);
-		}
-		trace->arena[i] = b;
-	}
-	return trace;
-
-error:
-	eprintf("Error\n");
-	rz_analysis_il_trace_free(trace);
-	return NULL;
-}
-
-RZ_API void rz_analysis_il_trace_free(RzAnalysisILTrace *trace) {
-	if (trace) {
-		ht_up_free(trace->registers);
-		ht_up_free(trace->memory);
-		for (size_t i = 0; i < RZ_REG_TYPE_LAST; ++i) {
-			rz_reg_arena_free(trace->arena[i]);
-		}
-		rz_vector_free(trace->instructions);
-		RZ_FREE(trace);
-	}
-}
-
 /* Trace operations */
-RZ_API void rz_analysis_il_trace_add_mem_write(RzAnalysisILTrace *trace, ut64 addr, ut64 val) {
-	RzILTraceInstruction *instruction_trace = rz_vector_index_ptr(trace->instructions, trace->idx);
+RZ_API void rz_analysis_ins_trace_add_mem_write(RzILTraceInstruction *instruction_trace, ut64 addr, ut64 val) {
+        RzILTraceMemOp *mem_op = RZ_NEW0(RzILTraceMemOp);
+        if (!mem_op) {
+                eprintf("Cannot trace mem write\n");
+                return;
+        }
+        mem_op->addr = addr;
+        // FIXME : is it enough for ut64 to represent a data ?
+        mem_op->value = 0;
+        mem_op->behavior = TRACE_WRITE;
 
-	RzILTraceMemOp *mem_op = RZ_NEW0(RzILTraceMemOp);
-	if (!mem_op) {
-		eprintf("Cannot trace mem write\n");
-		return;
-	}
-	mem_op->addr = addr;
-	// FIXME : is it enough for ut64 to represent a data ?
-	mem_op->value = 0;
-	mem_op->behavior = TRACE_WRITE;
-
-	rz_vector_push(instruction_trace->write_mem_ops, mem_op);
+        rz_vector_push(instruction_trace->write_mem_ops, mem_op);
 }
 
-RZ_API void rz_analysis_il_trace_add_mem_read(RzAnalysisILTrace *trace, ut64 addr, ut64 val) {
-	RzILTraceInstruction *instruction_trace = rz_vector_index_ptr(trace->instructions, trace->idx);
-
+RZ_API void rz_analysis_ins_trace_add_mem_read(RzILTraceInstruction *instruction_trace, ut64 addr, ut64 val) {
         RzILTraceMemOp *mem_op = RZ_NEW0(RzILTraceMemOp);
         if (!mem_op) {
                 eprintf("Cannot trace mem write\n");
@@ -133,9 +77,7 @@ RZ_API void rz_analysis_il_trace_add_mem_read(RzAnalysisILTrace *trace, ut64 add
         rz_vector_push(instruction_trace->read_mem_ops, mem_op);
 }
 
-RZ_API void rz_analysis_il_trace_add_reg_read(RzAnalysisILTrace *trace, char *regname, ut64 val) {
-        RzILTraceInstruction *instruction_trace = rz_vector_index_ptr(trace->instructions, trace->idx);
-
+RZ_API void rz_analysis_ins_trace_add_reg_read(RzILTraceInstruction *instruction_trace, const char *regname, ut64 val) {
         RzILTraceRegOp *reg_op = RZ_NEW0(RzILTraceRegOp);
         if (!reg_op) {
                 eprintf("Cannot trace reg read\n");
@@ -148,9 +90,7 @@ RZ_API void rz_analysis_il_trace_add_reg_read(RzAnalysisILTrace *trace, char *re
         rz_vector_push(instruction_trace->read_reg_ops, reg_op);
 }
 
-RZ_API void rz_analysis_il_trace_add_reg_write(RzAnalysisILTrace *trace, char *regname, ut64 val) {
-        RzILTraceInstruction *instruction_trace = rz_vector_index_ptr(trace->instructions, trace->idx);
-
+RZ_API void rz_analysis_ins_trace_add_reg_write(RzILTraceInstruction *instruction_trace, const char *regname, ut64 val) {
         RzILTraceRegOp *reg_op = RZ_NEW0(RzILTraceRegOp);
         if (!reg_op) {
                 eprintf("Cannot trace reg write\n");
@@ -161,6 +101,60 @@ RZ_API void rz_analysis_il_trace_add_reg_write(RzAnalysisILTrace *trace, char *r
         reg_op->behavior = TRACE_WRITE;
 
         rz_vector_push(instruction_trace->write_reg_ops, reg_op);
+}
+
+RZ_API RzILTraceMemOp *rz_analysis_il_get_mem_op_trace(RzILTraceInstruction *trace, ut64 addr, bool is_write) {
+	if (!trace) {
+		return NULL;
+	}
+
+	RzVector *mem_ops;
+	RzILTraceMemOp *mem_op;
+	if (is_write) {
+		mem_ops = trace->write_mem_ops;
+	}
+	else {
+		mem_ops = trace->read_mem_ops;
+	}
+
+	rz_vector_foreach(mem_ops, mem_op) {
+		if (mem_op->addr == addr) {
+			return mem_op;
+		}
+	}
+
+	return NULL;
+}
+
+RZ_API RzILTraceRegOp *rz_analysis_il_get_reg_op_trace(RzILTraceInstruction *trace, const char *regname, bool is_write) {
+	if (!trace) {
+		return NULL;
+	}
+
+	RzVector *reg_ops;
+	RzILTraceRegOp *reg_op;
+	if (is_write) {
+		reg_ops = trace->write_reg_ops;
+	}
+	else {
+		reg_ops = trace->read_reg_ops;
+	}
+
+	rz_vector_foreach(reg_ops, reg_op) {
+		if (strcmp(reg_op->reg_name, regname) == 0) {
+			return reg_op;
+		}
+	}
+
+	return NULL;
+}
+
+RZ_API bool rz_analysis_il_mem_trace_contains(RzILTraceInstruction *trace, ut64 addr, bool is_write) {
+	return rz_analysis_il_get_mem_op_trace(trace, addr, is_write) ? true : false;
+}
+
+RZ_API bool rz_analysis_il_reg_trace_contains(RzILTraceInstruction *trace, const char *regname, bool is_write) {
+	return rz_analysis_il_get_reg_op_trace(trace, regname, is_write) ? true : false;
 }
 
 /* Old debug trace implementation */

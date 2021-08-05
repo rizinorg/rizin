@@ -999,11 +999,9 @@ typedef struct rz_analysis_esil_trace_t {
 	ut64 stack_addr;
 	ut64 stack_size;
 	ut8 *stack_data;
-	HtPP *ht_db;
+        // RzVector<RzILTraceInstruction>
+        RzVector *instructions;
 } RzAnalysisEsilTrace;
-
-/* Define il trace first */
-typedef struct rz_analysis_il_trace_t RzAnalysisILTrace;
 
 typedef int (*RzAnalysisEsilHookRegWriteCB)(ESIL *esil, const char *name, ut64 *val);
 
@@ -1072,7 +1070,6 @@ typedef struct rz_analysis_esil_t {
 	bool (*cmd)(ESIL *esil, const char *name, ut64 a0, ut64 a1);
 	void *user;
 	int stack_fd; // ahem, let's not do this
-	RzAnalysisILTrace *il_traces;
 } RzAnalysisEsil;
 
 #undef ESIL
@@ -1468,40 +1465,22 @@ typedef struct {
 	RzVector *read_reg_ops;
 } RzILTraceInstruction;
 
-struct rz_analysis_il_trace_t {
-	int idx;
-	int end_idx;
-	HtUP *registers;
-	HtUP *memory;
-	RzRegArena *arena[RZ_REG_TYPE_LAST];
-	ut64 stack_addr;
-	ut64 stack_size;
-	ut8 *stack_data;
-
-	// RzVector<RzILTraceInstruction>
-	RzVector *instructions;
-};
-
+/* Independent Trace Functions */
 RZ_API RzILTraceInstruction *rz_analysis_il_trace_instruction_new(ut64 addr);
 RZ_API void rz_analysis_il_trace_instruction_free(RzILTraceInstruction *instruction);
-RZ_API RzAnalysisILTrace *rz_analysis_il_trace_new(RzAnalysis *analysis);
-RZ_API void rz_analysis_il_trace_free(RzAnalysisILTrace *trace);
+RZ_API void rz_analysis_ins_trace_add_mem_write(RzILTraceInstruction *trace, ut64 addr, ut64 val);
+RZ_API void rz_analysis_ins_trace_add_mem_read(RzILTraceInstruction *trace, ut64 addr, ut64 val);
+RZ_API void rz_analysis_ins_trace_add_reg_read(RzILTraceInstruction *trace, const char *regname, ut64 val);
+RZ_API void rz_analysis_ins_trace_add_reg_write(RzILTraceInstruction *trace, const char *regname, ut64 val);
 
-RZ_API void rz_analysis_il_trace_add_mem_write(RzAnalysisILTrace *trace, ut64 addr, ut64 val);
-RZ_API void rz_analysis_il_trace_add_mem_read(RzAnalysisILTrace *trace, ut64 addr, ut64 val);
-RZ_API void rz_analysis_il_trace_add_reg_read(RzAnalysisILTrace *trace, char *regname, ut64 val);
-RZ_API void rz_analysis_il_trace_add_reg_write(RzAnalysisILTrace *trace, char *regname, ut64 val);
+RZ_API RzILTraceMemOp *rz_analysis_il_get_mem_op_trace(RzILTraceInstruction *trace, ut64 addr, bool is_write);
+RZ_API RzILTraceRegOp *rz_analysis_il_get_reg_op_trace(RzILTraceInstruction *trace, const char *regname, bool is_write);
 
-RZ_API RzPVector *rz_analysis_esil_trace_db_get(HtPP *db, const char *key);
-RZ_API void rz_analysis_esil_trace_db_array_add(HtPP *db, const char *key, const char *val);
-RZ_API void rz_analysis_esil_trace_db_array_add_num(HtPP *db, const char *key, ut64 val);
-RZ_API void rz_analysis_esil_trace_db_num_set(HtPP *db, const char *key, ut64 v);
-RZ_API void rz_analysis_esil_trace_db_set(HtPP *db, const char *key, const char *val);
-RZ_API const char *rz_analysis_esil_trace_db_const_get(HtPP *db, const char *key);
-RZ_API ut64 rz_analysis_esil_trace_db_num_get(HtPP *db, const char *key);
-RZ_API bool rz_analysis_esil_trace_db_array_contains(HtPP *db, const char *key, const char *val);
+RZ_API bool rz_analysis_il_mem_trace_contains(RzILTraceInstruction *trace, ut64 addr, bool is_write);
+RZ_API bool rz_analysis_il_reg_trace_contains(RzILTraceInstruction *trace, const char *regname, bool is_write);
 
-/* trace */
+/* esil trace */
+RZ_API RzILTraceInstruction *rz_analysis_esil_get_instruction_trace(RzAnalysisEsil *esil, int idx);
 RZ_API RzAnalysisEsilTrace *rz_analysis_esil_trace_new(RzAnalysisEsil *esil);
 RZ_API void rz_analysis_esil_trace_free(RzAnalysisEsilTrace *trace);
 RZ_API void rz_analysis_esil_trace_op(RzAnalysisEsil *esil, RzAnalysisOp *op);
