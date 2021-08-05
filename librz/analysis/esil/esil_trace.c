@@ -40,7 +40,7 @@ RZ_API RzAnalysisEsilTrace *rz_analysis_esil_trace_new(RzAnalysisEsil *esil) {
 	if (!trace->memory) {
 		goto error;
 	}
-	trace->instructions = rz_vector_new(0, (RzVectorFree)rz_analysis_il_trace_instruction_free, NULL);
+	trace->instructions = rz_vector_new(sizeof(RzILTraceInstruction), (RzVectorFree)rz_analysis_il_trace_instruction_free, NULL);
 	if (!trace->instructions) {
 		goto error;
 	}
@@ -281,10 +281,8 @@ RZ_API void rz_analysis_esil_trace_op(RzAnalysisEsil *esil, RzAnalysisOp *op) {
 	rz_vector_push(esil->trace->instructions, instruction);
 
 	printf("Create Instruction : %p\n", instruction);
-	dbg_print_il_instr_trace(instruction, -1);
 
-	RzILTraceInstruction *get_ins = rz_vector_index_ptr(esil->trace->instructions, 1);
-        dbg_print_il_instr_trace(instruction, 0);
+	RzILTraceInstruction *get_ins = rz_vector_index_ptr(esil->trace->instructions, 0);
         printf("Fetched from vector : %p\n", get_ins);
 
 	printf("Trace Op : init instruction\n");

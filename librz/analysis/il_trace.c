@@ -20,10 +20,10 @@ RZ_API RzILTraceInstruction *rz_analysis_il_trace_instruction_new(ut64 addr) {
 
 	instruction_trace->addr = addr;
 
-	instruction_trace->read_mem_ops = rz_vector_new(1, (RzVectorFree)free, NULL);
-	instruction_trace->read_reg_ops = rz_vector_new(1, (RzVectorFree)free, NULL);
-	instruction_trace->write_mem_ops = rz_vector_new(1, (RzVectorFree)free, NULL);
-	instruction_trace->write_reg_ops = rz_vector_new(1, (RzVectorFree)free, NULL);
+	instruction_trace->read_mem_ops = rz_vector_new(sizeof(RzILTraceMemOp), (RzVectorFree)free, NULL);
+	instruction_trace->read_reg_ops = rz_vector_new(sizeof(RzILTraceRegOp), (RzVectorFree)free, NULL);
+	instruction_trace->write_mem_ops = rz_vector_new(sizeof(RzILTraceMemOp), (RzVectorFree)free, NULL);
+	instruction_trace->write_reg_ops = rz_vector_new(sizeof(RzILTraceRegOp), (RzVectorFree)free, NULL);
 	// TODO : handle error
 	return instruction_trace;
 }
