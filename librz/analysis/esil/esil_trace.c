@@ -4,10 +4,6 @@
 
 #include <rz_analysis.h>
 
-#define DB                   esil->trace->ht_db
-#define KEY(x)               sdb_fmt("%d." x, esil->trace->idx)
-#define KEYAT(x, y)          sdb_fmt("%d." x ".0x%" PFMT64x, esil->trace->idx, y)
-#define KEYREG(x, y)         sdb_fmt("%d." x ".%s", esil->trace->idx, y)
 #define CMP_REG_CHANGE(x, y) ((x) - ((RzAnalysisEsilRegChange *)y)->idx)
 #define CMP_MEM_CHANGE(x, y) ((x) - ((RzAnalysisEsilMemChange *)y)->idx)
 
@@ -18,162 +14,8 @@ static void htup_vector_free(HtUPKv *kv) {
 	rz_vector_free(kv->value);
 }
 
-/**
- * Get Vector from esil trace db
- * \param db HtPP* esil->trace->ht_db
- * \param key const char* behavior string (read/write)
- * \return vec RzPVector of char *, contains the address of read/write
- */
-RZ_API RzPVector *rz_analysis_esil_trace_db_get(HtPP *db, const char *key) {
-	return ht_pp_find(db, key, NULL);
-}
-
 static void htpp_vector_free(HtPPKv *kv) {
 	rz_vector_free(kv->value);
-}
-
-/**
- * Add a new place of read/write to vector
- * \param db HtPP* esil->trace->ht_db
- * \param key const char* behavior string (read/write)
- * \param val const char* address/reg/idx
- */
-RZ_API void rz_analysis_esil_trace_db_array_add(HtPP *db, const char *key, const char *val) {
-	RzPVector *array = rz_analysis_esil_trace_db_get(db, key);
-	if (!array) {
-		// no corresponding value, create one in hash table
-		rz_analysis_esil_trace_db_set(db, key, val);
-		return;
-	}
-
-	if (rz_analysis_esil_trace_db_array_contains(db, key, val)) {
-		// val already in db_array
-		return;
-	}
-
-	// add to the vector
-	rz_pvector_push(array, strdup((char *)val));
-}
-
-/**
- * Add a num to array
- * \param db HtPP* esil->trace->ht_db
- * \param key const char* behavior string (read/write)
- * \param val ut64 address/reg/idx
- */
-RZ_API void rz_analysis_esil_trace_db_array_add_num(HtPP *db, const char *key, ut64 val) {
-	char buf[SDB_NUM_BUFSZ];
-	char *v = sdb_itoa(val, buf, SDB_NUM_BASE);
-
-	// printf("Add %s = %s\n", key, v);
-	if (val < 256) {
-		v = sdb_itoa(val, buf, 10);
-	}
-	return rz_analysis_esil_trace_db_array_add(db, key, v);
-}
-
-/**
- * Set a single num
- * \param db HtPP* esil->trace->ht_db
- * \param key const char* behavior string (read/write)
- * \param val ut64 address/reg/idx
- */
-RZ_API void rz_analysis_esil_trace_db_num_set(HtPP *db, const char *key, ut64 v) {
-	char *val, b[SDB_NUM_BUFSZ];
-	int numbase = sdb_num_base(rz_analysis_esil_trace_db_const_get(db, key));
-	val = sdb_itoa(v, b, numbase);
-	return rz_analysis_esil_trace_db_set(db, key, val);
-}
-
-/**
- * Set a single string
- * \param db HtPP* esil->trace->ht_db
- * \param key const char* behavior string (read/write)
- * \param val const char* address/reg/idx
- */
-RZ_API void rz_analysis_esil_trace_db_set(HtPP *db, const char *key, const char *val) {
-	RzPVector *new_array = rz_pvector_new(NULL);
-
-	if (!new_array) {
-		eprintf("cannot create vector\n");
-		return;
-	}
-
-	rz_pvector_push(new_array, strdup((char *)val));
-	ht_pp_update(db, key, new_array);
-}
-
-static char *ht_db_array_to_string(RzPVector *array) {
-	if (!array) {
-		return NULL;
-	}
-
-	RzStrBuf *sbuf = rz_strbuf_new("");
-	size_t n = array->v.len;
-
-	if (n > 0) {
-		rz_strbuf_append(sbuf, rz_pvector_at(array, 0));
-	}
-
-	for (size_t i = 1; i < n; ++i) {
-		rz_strbuf_append(sbuf, ",");
-		rz_strbuf_append(sbuf, rz_pvector_at(array, i));
-	}
-
-	char *ret = rz_strbuf_drain(sbuf);
-	return ret;
-}
-
-/**
- * Get trace string from hash table
- * \param db HtPP* esil->trace->ht_db
- * \param key const char* behavior string (read/write)
- * \return val const char* address/reg/idx
- */
-RZ_API const char *rz_analysis_esil_trace_db_const_get(HtPP *db, const char *key) {
-	RzPVector *array = rz_analysis_esil_trace_db_get(db, key);
-	if (!array) {
-		return NULL;
-	}
-	return ht_db_array_to_string(array);
-}
-
-/**
- * Get trace address from hash table
- * \param db HtPP* esil->trace->ht_db
- * \param key const char* behavior string (read/write)
- * \return val ut64 address/reg/idx
- */
-RZ_API ut64 rz_analysis_esil_trace_db_num_get(HtPP *db, const char *key) {
-	const char *v = rz_analysis_esil_trace_db_const_get(db, key);
-	return (!v || *v == '-') ? 0LL : sdb_atoi(v);
-}
-
-/**
- * Check if current value (val) is in corresponding esil trace
- * \param db HtPP* esil->trace->ht_db
- * \param key const char* behavior string (read/write)
- * \param val const char* current value to trace
- * \return ret bool, true of false
- *
- */
-RZ_API bool rz_analysis_esil_trace_db_array_contains(HtPP *db, const char *key, const char *val) {
-	RzPVector *array = rz_analysis_esil_trace_db_get(db, key);
-
-	if (!array) {
-		// not in db
-		return false;
-	}
-
-	void **iter;
-	rz_pvector_foreach (array, iter) {
-		char *elem = *iter;
-		if (strcmp(elem, val) == 0) {
-			return true;
-		}
-	}
-
-	return false;
 }
 
 RZ_API RzAnalysisEsilTrace *rz_analysis_esil_trace_new(RzAnalysisEsil *esil) {
@@ -191,8 +33,8 @@ RZ_API RzAnalysisEsilTrace *rz_analysis_esil_trace_new(RzAnalysisEsil *esil) {
 	if (!trace->memory) {
 		goto error;
 	}
-	trace->ht_db = ht_pp_new(NULL, htpp_vector_free, NULL);
-	if (!trace->ht_db) {
+	trace->instructions = rz_vector_new(0, (RzVectorFree)free, NULL);
+	if (!trace->instructions) {
 		goto error;
 	}
 	// Save initial ESIL stack memory
@@ -232,7 +74,7 @@ RZ_API void rz_analysis_esil_trace_free(RzAnalysisEsilTrace *trace) {
 			rz_reg_arena_free(trace->arena[i]);
 		}
 		free(trace->stack_data);
-		ht_pp_free(trace->ht_db);
+		rz_vector_free(trace->instructions);
 		RZ_FREE(trace);
 	}
 }
@@ -283,20 +125,18 @@ static int trace_hook_reg_read(RzAnalysisEsil *esil, const char *name, ut64 *res
 	}
 	if (ret) {
 		ut64 val = *res;
-		//eprintf ("[ESIL] REG READ %s 0x%08"PFMT64x"\n", name, val);
-		rz_analysis_esil_trace_db_array_add(DB, KEY("reg.read"), name);
-		rz_analysis_esil_trace_db_num_set(DB, KEYREG("reg.read", name), val);
-	} //else {
-	//eprintf ("[ESIL] REG READ %s FAILED\n", name);
-	//}
+                RzILTraceInstruction *instruction_trace = rz_analysis_esil_get_instruction_trace(esil, esil->trace->idx);
+                rz_analysis_ins_trace_add_reg_read(instruction_trace, name, val);
+	}
 	return ret;
 }
 
 static int trace_hook_reg_write(RzAnalysisEsil *esil, const char *name, ut64 *val) {
 	int ret = 0;
-	//eprintf ("[ESIL] REG WRITE %s 0x%08"PFMT64x"\n", name, *val);
-	rz_analysis_esil_trace_db_array_add(DB, KEY("reg.write"), name);
-	rz_analysis_esil_trace_db_num_set(DB, KEYREG("reg.read", name), *val);
+
+	// add reg write to trace
+        RzILTraceInstruction *instruction_trace = rz_analysis_esil_get_instruction_trace(esil, esil->trace->idx);
+        rz_analysis_ins_trace_add_reg_write(instruction_trace, name, *val);
 
 	RzRegItem *ri = rz_reg_get(esil->analysis->reg, name, -1);
 	add_reg_change(esil->trace, esil->trace->idx + 1, ri, *val);
@@ -315,11 +155,14 @@ static int trace_hook_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int le
 	if (esil->cb.mem_read) {
 		ret = esil->cb.mem_read(esil, addr, buf, len);
 	}
-	rz_analysis_esil_trace_db_array_add_num(DB, KEY("mem.read"), addr);
-	rz_hex_bin2str(buf, len, hexbuf);
-	rz_analysis_esil_trace_db_set(DB, KEYAT("mem.read.data", addr), hexbuf);
 
-	//eprintf ("[ESIL] MEM READ 0x%08"PFMT64x" %s\n", addr, hexbuf);
+	// convert data to ut64
+	// FIXME : a better way to convert between them or change the argument
+	rz_hex_bin2str(buf, len, hexbuf);
+	ut64 val = strtol(hexbuf, NULL, 16);
+
+        RzILTraceInstruction *instruction_trace = rz_analysis_esil_get_instruction_trace(esil, esil->trace->idx);
+        rz_analysis_ins_trace_add_mem_read(instruction_trace, addr, val);
 	free(hexbuf);
 
 	if (ocbs.hook_mem_read) {
@@ -335,11 +178,19 @@ static int trace_hook_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf,
 	size_t i;
 	int ret = 0;
 	char *hexbuf = malloc((1 + len) * 3);
-	rz_analysis_esil_trace_db_array_add_num(DB, KEY("mem.write"), addr);
-	rz_hex_bin2str(buf, len, hexbuf);
-	rz_analysis_esil_trace_db_set(DB, KEYAT("mem.write.data", addr), hexbuf);
-	//eprintf ("[ESIL] MEM WRITE 0x%08"PFMT64x" %s\n", addr, hexbuf);
+
+        // convert data to ut64
+        // FIXME : a better way to convert between them or change the argument
+        rz_hex_bin2str(buf, len, hexbuf);
+	ut64 val = strtol(hexbuf, NULL, 16);
+
+	// get current instruction trace
+	RzILTraceInstruction *instruction_trace = rz_analysis_esil_get_instruction_trace(esil, esil->trace->idx);
+	rz_analysis_ins_trace_add_mem_write(instruction_trace, addr, val);
+
+	// clean the hex buffer
 	free(hexbuf);
+
 	for (i = 0; i < len; i++) {
 		add_mem_change(esil->trace, esil->trace->idx + 1, addr + i, buf[i]);
 	}
@@ -351,6 +202,10 @@ static int trace_hook_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf,
 		esil->cb = cbs;
 	}
 	return ret;
+}
+
+RZ_API RzILTraceInstruction *rz_analysis_esil_get_instruction_trace(RzAnalysisEsil *esil, int idx) {
+	return rz_vector_index_ptr(esil->trace->instructions, idx);
 }
 
 RZ_API void rz_analysis_esil_trace_op(RzAnalysisEsil *esil, RzAnalysisOp *op) {
@@ -378,8 +233,10 @@ RZ_API void rz_analysis_esil_trace_op(RzAnalysisEsil *esil, RzAnalysisOp *op) {
 	}
 	ocbs = esil->cb;
 	ocbs_set = true;
-	rz_analysis_esil_trace_db_num_set(DB, "idx", esil->trace->idx);
-	rz_analysis_esil_trace_db_num_set(DB, KEY("addr"), op->addr);
+
+	RzILTraceInstruction *instruction = rz_analysis_il_trace_instruction_new(op->addr);
+	rz_vector_push(esil->trace->instructions, instruction);
+
 	RzRegItem *pc_ri = rz_reg_get(esil->analysis->reg, "PC", -1);
 	add_reg_change(esil->trace, esil->trace->idx, pc_ri, op->addr);
 	//	sdb_set (DB, KEY ("opcode"), op->mnemonic, 0);
@@ -458,69 +315,8 @@ RZ_API void rz_analysis_esil_trace_restore(RzAnalysisEsil *esil, int idx) {
 	ht_up_foreach(trace->memory, restore_memory_cb, esil);
 }
 
-static int cmp_strings_by_leading_number(void *data1, void *data2) {
-	const char *a = ((const HtPPKv *)data1)->key;
-	const char *b = ((const HtPPKv *)data2)->key;
-	int i = 0;
-	int j = 0;
-	int k = 0;
-	while (a[i] >= '0' && a[i] <= '9') {
-		i++;
-	}
-	while (b[j] >= '0' && b[j] <= '9') {
-		j++;
-	}
-	if (!i) {
-		return 1;
-	}
-	if (!j) {
-		return -1;
-	}
-	i--;
-	j--;
-	if (i > j) {
-		return 1;
-	}
-	if (j > i) {
-		return -1;
-	}
-	while (k <= i) {
-		if (a[k] < b[k]) {
-			return -1;
-		}
-		if (a[k] > b[k]) {
-			return 1;
-		}
-		k++;
-	}
-	for (; a[i] && b[i]; i++) {
-		if (a[i] > b[i]) {
-			return 1;
-		}
-		if (a[i] < b[i]) {
-			return -1;
-		}
-	}
-	if (!a[i] && b[i]) {
-		return -1;
-	}
-	if (!b[i] && a[i]) {
-		return 1;
-	}
-	return 0;
-}
-
-static bool ht_pp_add_kv_to_list(void *user, void *key, void *val) {
-	RzList *list = (RzList *)user;
-	HtPPKv *kv = RZ_NEW0(HtPPKv);
-	kv->key = key;
-	kv->value = val;
-	rz_list_append(list, kv);
-	return true;
-}
-
-static void free_etrace_list_callback(void *data) {
-	free((HtPPKv *)data);
+static void print_instructino_trace(RzILTraceInstruction *instruction) {
+	printf("instruction addr -> %lld\n", instruction->addr);
 }
 
 RZ_API void rz_analysis_esil_trace_list(RzAnalysisEsil *esil) {
@@ -528,79 +324,23 @@ RZ_API void rz_analysis_esil_trace_list(RzAnalysisEsil *esil) {
 		return;
 	}
 
-	PrintfCallback p = esil->analysis->cb_printf;
-	HtPPKv *kv;
-	RzListIter *iter;
-	RzList *list;
-
-	list = rz_list_newf(free_etrace_list_callback);
-	ht_pp_foreach(esil->trace->ht_db, (HtPPForeachCallback)ht_pp_add_kv_to_list, list);
-	rz_list_sort(list, (RzListComparator)cmp_strings_by_leading_number);
-	rz_list_foreach_iter(list, iter) {
-		kv = iter->data;
-		p("%s=%s\n", (const char *)kv->key, (const char *)kv->value);
+	RzILTraceInstruction *instruction_trace;
+	rz_vector_foreach(esil->trace->instructions, instruction_trace) {
+		print_instructino_trace(instruction_trace);
 	}
-	rz_list_free(list);
 }
 
 RZ_API void rz_analysis_esil_trace_show(RzAnalysisEsil *esil, int idx) {
+	printf("Trace Show : WIP\n");
+
 	if (!esil->trace) {
 		return;
 	}
 
-	PrintfCallback p = esil->analysis->cb_printf;
-	const char *str2;
-	const char *str;
-	int trace_idx = esil->trace->idx;
-	esil->trace->idx = idx;
-
-	str2 = rz_analysis_esil_trace_db_const_get(DB, KEY("addr"));
-	if (!str2) {
-		return;
-	}
-	p("ar PC = %s\n", str2);
-	/* registers */
-	str = rz_analysis_esil_trace_db_const_get(DB, KEY("reg.read"));
-	if (str) {
-		char regname[32];
-		const char *next, *ptr = str;
-		if (ptr && *ptr) {
-			do {
-				next = sdb_const_anext(ptr);
-				int len = next ? (int)(size_t)(next - ptr) - 1 : strlen(ptr);
-				if (len < sizeof(regname)) {
-					memcpy(regname, ptr, len);
-					regname[len] = 0;
-					str2 = rz_analysis_esil_trace_db_const_get(DB, KEYREG("reg.read", regname));
-					p("ar %s = %s\n", regname, str2);
-				} else {
-					eprintf("Invalid entry in reg.read\n");
-				}
-				ptr = next;
-			} while (next);
-		}
-	}
-	/* memory */
-	str = rz_analysis_esil_trace_db_const_get(DB, KEY("mem.read"));
-	if (str) {
-		char addr[64];
-		const char *next, *ptr = str;
-		if (ptr && *ptr) {
-			do {
-				next = sdb_const_anext(ptr);
-				int len = next ? (int)(size_t)(next - ptr) - 1 : strlen(ptr);
-				if (len < sizeof(addr)) {
-					memcpy(addr, ptr, len);
-					addr[len] = 0;
-					str2 = rz_analysis_esil_trace_db_const_get(DB, KEYAT("mem.read.data", rz_num_get(NULL, addr)));
-					p("wx %s @ %s\n", str2, addr);
-				} else {
-					eprintf("Invalid entry in reg.read\n");
-				}
-				ptr = next;
-			} while (next);
-		}
+	RzILTraceInstruction *instruction = rz_vector_index_ptr(esil->trace->instructions, idx);
+	if (!instruction) {
+		printf("Invalid trace id : %d\n", idx);
 	}
 
-	esil->trace->idx = trace_idx;
+	print_instructino_trace(instruction);
 }

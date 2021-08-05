@@ -41,16 +41,29 @@ static void analysis_emul_restore(RzCore *core, RzConfigHold *hc, RzDebugTrace *
 	core->dbg->trace = dt;
 }
 
-#define HT_DB_CONTAINS(i, s) rz_analysis_esil_trace_db_array_contains(trace, sdb_fmt("%d.reg.write", i), s)
+#define REG_WRITE_CONTAINS(i, s) rz_analysis_il_reg_trace_contains(instruction_trace, place, true)
+
+static ut64 esil_get_first_mem_write_addr(RzAnalysisEsil *esil, int idx) {
+	RzILTraceInstruction *instruction_trace = rz_analysis_esil_get_instruction_trace(esil, idx);
+	// assumes it haves only one write.mem operation
+	RzILTraceMemOp *mem_op = rz_vector_index_ptr(instruction_trace->write_mem_ops, 0);
+	return mem_op->addr;
+}
 
 static bool type_pos_hit(RzAnalysis *analysis, HtPP *trace, bool in_stack, int idx, int size, const char *place) {
 	if (in_stack) {
 		const char *sp_name = rz_reg_get_name(analysis->reg, RZ_REG_NAME_SP);
 		ut64 sp = rz_reg_getv(analysis->reg, sp_name);
-		ut64 write_addr = rz_analysis_esil_trace_db_num_get(trace, sdb_fmt("%d.mem.write", idx));
+
+		// TODO : This assumes an op will only write to memory once
+		//      : which may be wrong in some archs. this is only a temporary solution
+		ut64 write_addr = esil_get_first_mem_write_addr(analysis->esil, idx);
 		return (write_addr == sp + size);
 	}
-	return HT_DB_CONTAINS(idx, place);
+
+	// CHECK_ME : what's place
+	RzILTraceInstruction *instruction_trace = rz_analysis_esil_get_instruction_trace(analysis->esil, idx);
+	return rz_analysis_il_reg_trace_contains(instruction_trace, place, true);
 }
 
 static void var_rename(RzAnalysis *analysis, RzAnalysisVar *v, const char *name, ut64 addr) {
@@ -173,12 +186,14 @@ static void get_src_regname(RzCore *core, ut64 addr, char *regname, int size) {
 	rz_analysis_op_free(op);
 }
 
-static ut64 get_addr(HtPP *trace, const char *regname, int idx) {
+static ut64 get_addr(RzVector *trace, const char *regname, int idx) {
 	if (!regname || !*regname) {
 		return UT64_MAX;
 	}
-	const char *query = sdb_fmt("%d.reg.read.%s", idx, regname);
-	return rz_num_math(NULL, rz_analysis_esil_trace_db_const_get(trace, query));
+	RzILTraceInstruction *instruction_trace = rz_vector_index_ptr(trace, idx);
+	RzILTraceRegOp *reg_op = rz_analysis_il_get_reg_op_trace(instruction_trace, regname, false);
+
+	return reg_op->value;
 }
 
 static RzList *parse_format(RzCore *core, char *fmt) {
@@ -274,11 +289,14 @@ RzAnalysisOp *op_cache_get(HtUP *cache, RzCore *core, ut64 addr) {
  */
 static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, const char *cc,
 	int prev_idx, bool userfnc, ut64 caddr, HtUP *op_cache) {
-	HtPP *trace = core->analysis->esil->trace->ht_db;
+	RzVector *trace = core->analysis->esil->trace->instructions;
 	RzTypeDB *typedb = core->analysis->typedb;
 	RzAnalysis *analysis = core->analysis;
 	RzList *types = NULL;
-	int idx = rz_analysis_esil_trace_db_num_get(trace, "idx");
+
+	// CHECK_ME : why use sdb to store idx before ?
+	int idx = rz_vector_len(trace);
+
 	bool verbose = rz_config_get_i(core->config, "analysis.types.verbose");
 	bool stack_rev = false, in_stack = false, format = false;
 
@@ -357,7 +375,8 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 		bool res = false;
 		// Backtrace instruction from source sink to prev source sink
 		for (j = idx; j >= prev_idx; j--) {
-			ut64 instr_addr = rz_analysis_esil_trace_db_num_get(trace, sdb_fmt("%d.addr", j));
+			RzILTraceInstruction *instr_trace = rz_analysis_esil_get_instruction_trace(analysis->esil, j);
+			ut64 instr_addr = instr_trace->addr;
 			if (instr_addr < baddr) {
 				break;
 			}
@@ -370,8 +389,10 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 				break;
 			}
 			RzAnalysisVar *var = rz_analysis_get_used_function_var(analysis, op->addr);
-			const char *query = sdb_fmt("%d.mem.read", j);
-			if (op->type == RZ_ANALYSIS_OP_TYPE_MOV && rz_analysis_esil_trace_db_const_get(trace, query)) {
+
+			// FIXME : It seems also assume only read memory once ?
+			// const char *query = sdb_fmt("%d.mem.read", j);
+			if (op->type == RZ_ANALYSIS_OP_TYPE_MOV && ) {
 				memref = !(!memref && var && (var->kind != RZ_ANALYSIS_VAR_KIND_REG));
 			}
 			// Match type from function param to instr
