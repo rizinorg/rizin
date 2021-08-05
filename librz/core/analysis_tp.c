@@ -41,29 +41,26 @@ static void analysis_emul_restore(RzCore *core, RzConfigHold *hc, RzDebugTrace *
 	core->dbg->trace = dt;
 }
 
-#define REG_WRITE_CONTAINS(i, s) rz_analysis_il_reg_trace_contains(instruction_trace, place, true)
-
-static ut64 esil_get_first_mem_write_addr(RzAnalysisEsil *esil, int idx) {
-	RzILTraceInstruction *instruction_trace = rz_analysis_esil_get_instruction_trace(esil, idx);
-	// assumes it haves only one write.mem operation
-	RzILTraceMemOp *mem_op = rz_vector_index_ptr(instruction_trace->write_mem_ops, 0);
-	return mem_op->addr;
-}
-
-static bool type_pos_hit(RzAnalysis *analysis, HtPP *trace, bool in_stack, int idx, int size, const char *place) {
+static bool type_pos_hit(RzAnalysis *analysis, RzILTraceInstruction *instr_trace, bool in_stack, int size, const char *place) {
 	if (in_stack) {
 		const char *sp_name = rz_reg_get_name(analysis->reg, RZ_REG_NAME_SP);
 		ut64 sp = rz_reg_getv(analysis->reg, sp_name);
 
-		// TODO : This assumes an op will only write to memory once
-		//      : which may be wrong in some archs. this is only a temporary solution
-		ut64 write_addr = esil_get_first_mem_write_addr(analysis->esil, idx);
+		RzVector *write_mems = instr_trace->write_mem_ops;
+		ut64 write_addr = 0LL;
+		if (instr_trace->stats & TRACE_INS_HAS_MEM_W) {
+                        // TODO : This assumes an op will only write to memory once
+                        //      : which may be wrong in some archs. this is only a temporary solution
+                        RzILTraceMemOp *mem = rz_vector_index_ptr(write_mems, 0);
+			write_addr = mem->addr;
+		} else {
+			// no reg write
+			write_addr = 0LL;
+		}
 		return (write_addr == sp + size);
 	}
 
-	// CHECK_ME : what's place
-	RzILTraceInstruction *instruction_trace = rz_analysis_esil_get_instruction_trace(analysis->esil, idx);
-	return rz_analysis_il_reg_trace_contains(instruction_trace, place, true);
+	return rz_analysis_il_reg_trace_contains(instr_trace, place, true);
 }
 
 static void var_rename(RzAnalysis *analysis, RzAnalysisVar *v, const char *name, ut64 addr) {
@@ -289,13 +286,13 @@ RzAnalysisOp *op_cache_get(HtUP *cache, RzCore *core, ut64 addr) {
  */
 static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, const char *cc,
 	int prev_idx, bool userfnc, ut64 caddr, HtUP *op_cache) {
-	RzVector *trace = core->analysis->esil->trace->instructions;
+	RzAnalysisEsilTrace *etrace = core->analysis->esil->trace;
 	RzTypeDB *typedb = core->analysis->typedb;
 	RzAnalysis *analysis = core->analysis;
 	RzList *types = NULL;
 
 	// CHECK_ME : why use sdb to store idx before ?
-	int idx = rz_vector_len(trace);
+	int idx = rz_vector_len(etrace->instructions);
 
 	bool verbose = rz_config_get_i(core->config, "analysis.types.verbose");
 	bool stack_rev = false, in_stack = false, format = false;
@@ -375,7 +372,7 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 		bool res = false;
 		// Backtrace instruction from source sink to prev source sink
 		for (j = idx; j >= prev_idx; j--) {
-			RzILTraceInstruction *instr_trace = rz_analysis_esil_get_instruction_trace(analysis->esil, j);
+			RzILTraceInstruction *instr_trace = rz_analysis_esil_get_instruction_trace(etrace, j);
 			ut64 instr_addr = instr_trace->addr;
 			if (instr_addr < baddr) {
 				break;
@@ -391,12 +388,11 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 			RzAnalysisVar *var = rz_analysis_get_used_function_var(analysis, op->addr);
 
 			// FIXME : It seems also assume only read memory once ?
-			// const char *query = sdb_fmt("%d.mem.read", j);
-			if (op->type == RZ_ANALYSIS_OP_TYPE_MOV && ) {
+			if (op->type == RZ_ANALYSIS_OP_TYPE_MOV && (instr_trace->stats & TRACE_INS_HAS_MEM_R)) {
 				memref = !(!memref && var && (var->kind != RZ_ANALYSIS_VAR_KIND_REG));
 			}
 			// Match type from function param to instr
-			if (type_pos_hit(analysis, trace, in_stack, j, size, place)) {
+			if (type_pos_hit(analysis, instr_trace, in_stack, size, place)) {
 				if (!cmt_set && type && name) {
 					char *typestr = rz_type_as_string(analysis->typedb, type);
 					const char *maybe_space = type->kind == RZ_TYPE_KIND_POINTER ? "" : " ";
@@ -431,11 +427,11 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 					res = true;
 				} else {
 					get_src_regname(core, instr_addr, regname, sizeof(regname));
-					xaddr = get_addr(trace, regname, j);
+					xaddr = get_addr(etrace->instructions, regname, j);
 				}
 			}
 			// Type propagate by following source reg
-			if (!res && *regname && HT_DB_CONTAINS(j, regname)) {
+			if (!res && *regname && rz_analysis_il_get_reg_op_trace(instr_trace, regname, true)) {
 				if (var) {
 					if (!userfnc) {
 						// not a userfunction, propagate the callee's arg types into our function's vars
@@ -462,7 +458,7 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 			} else if (var && res && xaddr && (xaddr != UT64_MAX)) { // Type progation using value
 				char tmp[REGNAME_SIZE] = { 0 };
 				get_src_regname(core, instr_addr, tmp, sizeof(tmp));
-				ut64 ptr = get_addr(trace, tmp, j);
+				ut64 ptr = get_addr(etrace->instructions, tmp, j);
 				if (ptr == xaddr) {
 					if (type) {
 						var_type_set(analysis, var, type, memref);
@@ -487,9 +483,8 @@ void free_op_cache_kv(HtUPKv *kv) {
 	rz_analysis_op_free(kv->value);
 }
 
-void handle_stack_canary(RzCore *core, HtPP *trace, RzAnalysisOp *aop, int cur_idx) {
-	const char *query = sdb_fmt("%d.addr", cur_idx - 1);
-	ut64 mov_addr = rz_analysis_esil_trace_db_num_get(trace, query);
+void handle_stack_canary(RzCore *core, RzILTraceInstruction *trace, RzAnalysisOp *aop) {
+	ut64 mov_addr = trace->addr;
 	RzAnalysisOp *mop = rz_core_analysis_op(core, mov_addr, RZ_ANALYSIS_OP_MASK_VAL | RZ_ANALYSIS_OP_MASK_BASIC);
 	if (mop) {
 		RzAnalysisVar *mopvar = rz_analysis_get_used_function_var(core->analysis, mop->addr);
@@ -529,11 +524,16 @@ static void propagate_return_type_pointer(RzCore *core, RzAnalysisOp *aop, RzPVe
 }
 
 // Forward propagation of function return type
-static void propagate_return_type(RzCore *core, RzAnalysisOp *aop, RzAnalysisOp *next_op, HtPP *trace, struct ReturnTypeAnalysisCtx *ctx, int cur_idx, RzPVector *used_vars) {
+static void propagate_return_type(RzCore *core, RzAnalysisOp *aop, RzAnalysisOp *next_op, RzILTraceInstruction *trace, struct ReturnTypeAnalysisCtx *ctx, RzPVector *used_vars) {
 	char src[REGNAME_SIZE] = { 0 };
 	void **uvit;
-	const char *query = sdb_fmt("%d.reg.write", cur_idx);
-	const char *cur_dest = rz_analysis_esil_trace_db_const_get(trace, query);
+
+	RzVector *write_regs = trace->write_reg_ops;
+	bool has_write_regs = trace->stats & TRACE_INS_HAS_REG_W;
+
+	// TODO : handle multiple registers case
+	RzILTraceRegOp *single_reg = rz_vector_index_ptr(write_regs, 0);
+
 	get_src_regname(core, aop->addr, src, sizeof(src));
 	ut32 type = aop->type & RZ_ANALYSIS_OP_TYPE_MASK;
 	if (ctx->ret_reg && *src && strstr(ctx->ret_reg, src)) {
@@ -545,24 +545,20 @@ static void propagate_return_type(RzCore *core, RzAnalysisOp *aop, RzAnalysisOp 
 			ctx->resolved = true;
 		} else if (type == RZ_ANALYSIS_OP_TYPE_MOV) {
 			RZ_FREE(ctx->ret_reg);
-			if (cur_dest) {
-				ctx->ret_reg = strdup(cur_dest);
+			if (single_reg && single_reg->reg_name) {
+				ctx->ret_reg = strdup(single_reg->reg_name);
 			}
 		}
-	} else if (cur_dest) {
-		char *foo = strdup(cur_dest);
-		char *tmp = strchr(foo, ',');
-		if (tmp) {
-			*tmp++ = '\0';
-		}
-		if (ctx->ret_reg && (strstr(ctx->ret_reg, foo) || (tmp && strstr(ctx->ret_reg, tmp)))) {
+	} else if (has_write_regs) {
+		if (ctx->ret_reg &&
+			(single_reg && single_reg->reg_name
+				&& strstr(ctx->ret_reg, single_reg->reg_name))) {
 			ctx->resolved = true;
 		} else if (type == RZ_ANALYSIS_OP_TYPE_MOV &&
 			(next_op && next_op->type == RZ_ANALYSIS_OP_TYPE_MOV)) {
 			// Progate return type passed using pointer
 			propagate_return_type_pointer(core, aop, used_vars, next_op->addr, ctx);
 		}
-		free(foo);
 	}
 }
 
@@ -573,7 +569,7 @@ struct TypeAnalysisCtx {
 	bool str_flag;
 };
 
-void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, HtPP *trace, RzAnalysisFunction *fcn, RzAnalysisBlock *bb, RzAnalysisOp *aop, struct TypeAnalysisCtx *ctx) {
+void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, RzVector *instr_traces, RzAnalysisFunction *fcn, RzAnalysisBlock *bb, RzAnalysisOp *aop, struct TypeAnalysisCtx *ctx) {
 	RzPVector *used_vars = rz_analysis_function_get_vars_used_at(fcn, aop->addr);
 	bool chk_constraint = rz_config_get_b(core->config, "analysis.types.constraint");
 	RzAnalysisOp *next_op = op_cache_get(op_cache, core, aop->addr + aop->size);
@@ -585,6 +581,8 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, HtPP *tr
 	bool userfnc = false;
 	bool prop = false;
 	ut32 type = aop->type & RZ_ANALYSIS_OP_TYPE_MASK;
+	RzILTraceInstruction *cur_instr_trace = rz_vector_index_ptr(instr_traces, ctx->cur_idx);
+
 	if (aop->type == RZ_ANALYSIS_OP_TYPE_CALL || aop->type & RZ_ANALYSIS_OP_TYPE_UCALL) {
 		char *full_name = NULL;
 		ut64 callee_addr;
@@ -628,13 +626,13 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, HtPP *tr
 				free(cc);
 			}
 			if (!strcmp(fcn_name, "__stack_chk_fail")) {
-				handle_stack_canary(core, trace, aop, ctx->cur_idx);
+				handle_stack_canary(core, cur_instr_trace, aop);
 			}
 			free(fcn_name);
 		}
 	} else if (return_type_analysis_context_unresolved(ctx->retctx)) {
 		// Forward propagation of function return type
-		propagate_return_type(core, aop, next_op, trace, ctx->retctx, ctx->cur_idx, used_vars);
+		propagate_return_type(core, aop, next_op, cur_instr_trace, ctx->retctx, used_vars);
 	}
 	// Type propagation using instruction access pattern
 	if (used_vars && !rz_pvector_empty(used_vars)) {
@@ -721,8 +719,12 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, HtPP *tr
 				ctx->str_flag = true;
 			}
 		}
-		const char *query = sdb_fmt("%d.reg.write", ctx->cur_idx);
-		ctx->prev_dest = rz_analysis_esil_trace_db_const_get(trace, query);
+
+		// Assert : reg write only once here
+		RzVector *write_regs = cur_instr_trace->write_reg_ops;
+		RzILTraceRegOp *w_reg = rz_vector_index_ptr(write_regs, 0);
+		ctx->prev_dest = w_reg->reg_name;
+
 		if (used_vars && !rz_pvector_empty(used_vars)) {
 			rz_pvector_foreach (used_vars, uvit) {
 				RzAnalysisVar *var = *uvit;
@@ -737,7 +739,7 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, HtPP *tr
 	}
 }
 
-RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn) {
+RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, HtUP *loop_table) {
 	RzListIter *it;
 
 	rz_return_if_fail(core && core->analysis && fcn);
@@ -762,18 +764,15 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn) {
 	}
 
 	// Reserve bigger ht to avoid rehashing
-	HtPP *etracedb = core->analysis->esil->trace->ht_db;
-	HtPPOptions opt = etracedb->opt;
-	ht_pp_free(etracedb);
-	etracedb = ht_pp_new_size(fcn->ninstr * 0xf, opt.dupvalue, opt.freefn, opt.calcsizeV);
-	etracedb->opt = opt;
-	core->analysis->esil->trace->ht_db = etracedb;
-
+	HtPPOptions opt;
 	RzDebugTrace *dtrace = core->dbg->trace;
 	opt = dtrace->ht->opt;
 	ht_pp_free(dtrace->ht);
 	dtrace->ht = ht_pp_new_size(fcn->ninstr, opt.dupvalue, opt.freefn, opt.calcsizeV);
 	dtrace->ht->opt = opt;
+
+	// Get esil trace
+	RzAnalysisEsilTrace *etrace = core->analysis->esil->trace;
 
 	HtUP *op_cache = NULL;
 	const char *pc = rz_reg_get_name(core->dbg->reg, RZ_REG_NAME_PC);
@@ -824,18 +823,33 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn) {
 				addr += minopcode;
 				continue;
 			}
-			int loop_count = rz_analysis_esil_trace_db_num_get(analysis->esil->trace->ht_db, sdb_fmt("0x%" PFMT64x ".count", addr));
-			if (loop_count > LOOP_MAX || aop->type == RZ_ANALYSIS_OP_TYPE_RET) {
-				break;
-			}
-			rz_analysis_esil_trace_db_num_set(analysis->esil->trace->ht_db, sdb_fmt("0x%" PFMT64x ".count", addr), loop_count + 1);
+
+			// CHECK_ME : why we hold a loop_count here ?
+			//          : can we remove it ?
+			// when set null, do not track loop count
+			if (loop_table) {
+                                void *loop_count_raw = ht_up_find(loop_table, addr, NULL);
+                                ut64 loop_count = 0;
+                                if (loop_count_raw) {
+                                        // FIXME : htuu not found, have to use cast for now
+                                        loop_count = (ut64)loop_count_raw;
+                                }
+                                if (loop_count > LOOP_MAX || aop->type == RZ_ANALYSIS_OP_TYPE_RET) {
+                                        break;
+                                }
+                                loop_count += 1;
+                                ht_up_update(loop_table, addr, (void *)loop_count);
+                        }
+
 			if (rz_analysis_op_nonlinear(aop->type)) { // skip the instr
 				rz_reg_set_value(core->dbg->reg, r, addr + aop->size);
 			} else {
 				rz_core_esil_step(core, UT64_MAX, NULL, NULL, false);
 			}
-			HtPP *trace = analysis->esil->trace->ht_db;
-			ctx.cur_idx = rz_analysis_esil_trace_db_num_get(trace, "idx");
+
+			// CHECK_ME : previous idx ?
+			RzVector *ins_traces = analysis->esil->trace->instructions;
+			ctx.cur_idx = ins_traces->len - 1;
 			RzList *fcns = rz_analysis_get_functions_in(analysis, aop->addr);
 			if (!fcns) {
 				break;
@@ -843,7 +857,7 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn) {
 			RzListIter *it;
 			RzAnalysisFunction *fcn;
 			rz_list_foreach (fcns, it, fcn) {
-				propagate_types_among_used_variables(core, op_cache, trace, fcn, bb, aop, &ctx);
+				propagate_types_among_used_variables(core, op_cache, etrace->instructions, fcn, bb, aop, &ctx);
 			}
 			addr += aop->size;
 		}

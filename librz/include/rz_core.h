@@ -685,7 +685,7 @@ RZ_API void rz_cmd_analysis_calls(RzCore *core, const char *input, bool printCom
 RZ_API int rz_core_get_stacksz(RzCore *core, ut64 from, ut64 to);
 
 /*tp.c*/
-RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn);
+RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, HtUP *addr_loop_table);
 
 /* asm.c */
 #define RZ_MIDFLAGS_HIDE     0

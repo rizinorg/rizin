@@ -4,11 +4,22 @@
 
 #include <rz_analysis.h>
 
-#define CMP_REG_CHANGE(x, y) ((x) - ((RzAnalysisEsilRegChange *)y)->idx)
-#define CMP_MEM_CHANGE(x, y) ((x) - ((RzAnalysisEsilMemChange *)y)->idx)
+#define CMP_REG_CHANGE(x, y) ((x) - ((RzAnalysisEsilRegChange *)(y))->idx)
+#define CMP_MEM_CHANGE(x, y) ((x) - ((RzAnalysisEsilMemChange *)(y))->idx)
 
 static int ocbs_set = false;
 static RzAnalysisEsilCallbacks ocbs = { 0 };
+
+// il trace wrapper of esil
+static inline void esil_add_mem_trace(RzAnalysisEsilTrace *etrace, RzILTraceMemOp *mem) {
+	RzILTraceInstruction *instr_trace = rz_analysis_esil_get_instruction_trace(etrace, etrace->idx);
+	rz_analysis_il_trace_add_mem(instr_trace, mem);
+}
+
+static inline void esil_add_reg_trace(RzAnalysisEsilTrace *etrace, RzILTraceRegOp *reg) {
+        RzILTraceInstruction *instr_trace = rz_analysis_esil_get_instruction_trace(etrace, etrace->idx);
+        rz_analysis_il_trace_add_reg(instr_trace, reg);
+}
 
 static void htup_vector_free(HtUPKv *kv) {
 	rz_vector_free(kv->value);
@@ -33,7 +44,7 @@ RZ_API RzAnalysisEsilTrace *rz_analysis_esil_trace_new(RzAnalysisEsil *esil) {
 	if (!trace->memory) {
 		goto error;
 	}
-	trace->instructions = rz_vector_new(0, (RzVectorFree)free, NULL);
+	trace->instructions = rz_vector_new(0, (RzVectorFree)rz_analysis_il_trace_instruction_free, NULL);
 	if (!trace->instructions) {
 		goto error;
 	}
@@ -124,9 +135,12 @@ static int trace_hook_reg_read(RzAnalysisEsil *esil, const char *name, ut64 *res
 		ret = esil->cb.reg_read(esil, name, res, size);
 	}
 	if (ret) {
-		ut64 val = *res;
-                RzILTraceInstruction *instruction_trace = rz_analysis_esil_get_instruction_trace(esil, esil->trace->idx);
-                rz_analysis_ins_trace_add_reg_read(instruction_trace, name, val);
+		// Trace reg read behavior
+		RzILTraceRegOp *reg_read = RZ_NEW0(RzILTraceRegOp);
+		reg_read->reg_name = (char *)name;
+		reg_read->behavior = TRACE_READ;
+		reg_read->value = *res;
+		esil_add_reg_trace(esil->trace, reg_read);
 	}
 	return ret;
 }
@@ -135,8 +149,11 @@ static int trace_hook_reg_write(RzAnalysisEsil *esil, const char *name, ut64 *va
 	int ret = 0;
 
 	// add reg write to trace
-        RzILTraceInstruction *instruction_trace = rz_analysis_esil_get_instruction_trace(esil, esil->trace->idx);
-        rz_analysis_ins_trace_add_reg_write(instruction_trace, name, *val);
+	RzILTraceRegOp *reg_write = RZ_NEW0(RzILTraceRegOp);
+	reg_write->reg_name = (char *)name;
+	reg_write->behavior = TRACE_WRITE;
+	reg_write->value = *val;
+	esil_add_reg_trace(esil->trace, reg_write);
 
 	RzRegItem *ri = rz_reg_get(esil->analysis->reg, name, -1);
 	add_reg_change(esil->trace, esil->trace->idx + 1, ri, *val);
@@ -161,8 +178,13 @@ static int trace_hook_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int le
 	rz_hex_bin2str(buf, len, hexbuf);
 	ut64 val = strtol(hexbuf, NULL, 16);
 
-        RzILTraceInstruction *instruction_trace = rz_analysis_esil_get_instruction_trace(esil, esil->trace->idx);
-        rz_analysis_ins_trace_add_mem_read(instruction_trace, addr, val);
+	// Trace memory read behavior
+	RzILTraceMemOp *mem_read = RZ_NEW0(RzILTraceMemOp);
+	mem_read->value = val;
+	mem_read->behavior = TRACE_READ;
+	mem_read->addr = addr;
+	esil_add_mem_trace(esil->trace, mem_read);
+
 	free(hexbuf);
 
 	if (ocbs.hook_mem_read) {
@@ -184,9 +206,12 @@ static int trace_hook_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf,
         rz_hex_bin2str(buf, len, hexbuf);
 	ut64 val = strtol(hexbuf, NULL, 16);
 
-	// get current instruction trace
-	RzILTraceInstruction *instruction_trace = rz_analysis_esil_get_instruction_trace(esil, esil->trace->idx);
-	rz_analysis_ins_trace_add_mem_write(instruction_trace, addr, val);
+        // Trace memory read behavior
+        RzILTraceMemOp *mem_write = RZ_NEW0(RzILTraceMemOp);
+        mem_write->value = val;
+        mem_write->behavior = TRACE_WRITE;
+        mem_write->addr = addr;
+        esil_add_mem_trace(esil->trace, mem_write);
 
 	// clean the hex buffer
 	free(hexbuf);
@@ -204,8 +229,8 @@ static int trace_hook_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf,
 	return ret;
 }
 
-RZ_API RzILTraceInstruction *rz_analysis_esil_get_instruction_trace(RzAnalysisEsil *esil, int idx) {
-	return rz_vector_index_ptr(esil->trace->instructions, idx);
+RZ_API RzILTraceInstruction *rz_analysis_esil_get_instruction_trace(RzAnalysisEsilTrace *etrace, int idx) {
+	return rz_vector_index_ptr(etrace->instructions, idx);
 }
 
 RZ_API void rz_analysis_esil_trace_op(RzAnalysisEsil *esil, RzAnalysisOp *op) {
