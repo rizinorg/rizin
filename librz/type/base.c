@@ -207,7 +207,7 @@ RZ_API RZ_OWN char *rz_type_db_base_type_as_string(const RzTypeDB *typedb, RZ_NO
 		RzTypeUnionMember *memb;
 		rz_vector_foreach(&type->union_data.members, memb) {
 			char *declaration = rz_type_identifier_declaration_as_string(typedb, memb->type, memb->name);
-			rz_strbuf_appendf(buf, "%s; ", declaration);
+			rz_strbuf_appendf(buf, "%s %s; ", declaration, memb->name);
 			free(declaration);
 		}
 		rz_strbuf_append(buf, " }");
