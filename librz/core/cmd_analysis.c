@@ -702,18 +702,6 @@ static const char *help_msg_as[] = {
 	NULL
 };
 
-static const char *help_msg_av[] = {
-	"Usage:", "av[?jr*]", " C++ vtables and RTTI",
-	"av", "", "search for vtables in data sections and show results",
-	"avj", "", "like av, but as json",
-	"av*", "", "like av, but as rizin commands",
-	"avr", "[j@addr]", "try to parse RTTI at vtable addr (see analysis.cpp.abi)",
-	"avra", "[j]", "search for vtables and try to parse RTTI at each of them",
-	"avrr", "", "recover class info from all findable RTTI (see ac)",
-	"avrD", " [classname]", "demangle a class name from RTTI",
-	NULL
-};
-
 static const char *help_msg_ax[] = {
 	"Usage:", "ax[?d-l*]", " # see also 'afx?'",
 	"ax", "", "list refs",
@@ -8067,48 +8055,37 @@ static bool analysis_fcn_data_gaps(RzCore *core, const char *input) {
 	return true;
 }
 
-static void cmd_analysis_rtti(RzCore *core, const char *input) {
-	switch (input[0]) {
-	case '\0': // "avr"
-	case 'j': // "avrj"
-		rz_analysis_rtti_print_at_vtable(core->analysis, core->offset, input[0]);
-		break;
-	case 'a': // "avra"
-		rz_analysis_rtti_print_all(core->analysis, input[1]);
-		break;
-	case 'r': // "avrr"
-		rz_analysis_rtti_recover_all(core->analysis);
-		break;
-	case 'D': { // "avrD"
-		char *name = rz_str_trim_dup(input + 1);
-		char *demangled = rz_analysis_rtti_demangle_class_name(core->analysis, name);
-		free(name);
+RZ_IPI RzCmdStatus rz_analysis_list_vtables_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	rz_analysis_list_vtables(core->analysis, mode);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_print_rtti_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	rz_analysis_rtti_print_at_vtable(core->analysis, core->offset, mode);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_print_rtti_all_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	rz_analysis_rtti_print_all(core->analysis, mode);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_recover_rtti_all_handler(RzCore *core, int argc, const char **argv) {
+	rz_analysis_rtti_recover_all(core->analysis);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_rtti_demangle_class_name_handler(RzCore *core, int argc, const char **argv) {
+	if (argc == 2) {
+		char *classname = (char *)argv[1];
+		char *demangled = rz_analysis_rtti_demangle_class_name(core->analysis, classname);
 		if (demangled) {
 			rz_cons_println(demangled);
 			free(demangled);
 		}
-		break;
+		return RZ_CMD_STATUS_OK;
 	}
-	default:
-		rz_core_cmd_help(core, help_msg_av);
-		break;
-	}
-}
-
-static void cmd_analysis_virtual_functions(RzCore *core, const char *input) {
-	switch (input[0]) {
-	case '\0': // "av"
-	case '*': // "av*"
-	case 'j': // "avj"
-		rz_analysis_list_vtables(core->analysis, input[0]);
-		break;
-	case 'r': // "avr"
-		cmd_analysis_rtti(core, input + 1);
-		break;
-	default:
-		rz_core_cmd_help(core, help_msg_av);
-		break;
-	}
+	return RZ_CMD_STATUS_ERROR;
 }
 
 static void cmd_analysis_class_method(RzCore *core, const char *input) {
@@ -8805,9 +8782,6 @@ RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
 		break;
 	case 's': // "as"
 		cmd_analysis_syscall(core, input + 1);
-		break;
-	case 'v': // "av"
-		cmd_analysis_virtual_functions(core, input + 1);
 		break;
 	case 'x': // "ax"
 		if (!cmd_analysis_refs(core, input + 1)) {

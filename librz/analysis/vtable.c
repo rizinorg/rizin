@@ -285,7 +285,7 @@ RZ_API RzList *rz_analysis_vtable_search(RVTableContext *context) {
 	return vtables;
 }
 
-RZ_API void rz_analysis_list_vtables(RzAnalysis *analysis, int rad) {
+RZ_API void rz_analysis_list_vtables(RzAnalysis *analysis, RzOutputMode mode) {
 	RVTableContext context;
 	rz_analysis_vtable_begin(analysis, &context);
 
@@ -296,7 +296,7 @@ RZ_API void rz_analysis_list_vtables(RzAnalysis *analysis, int rad) {
 
 	RzList *vtables = rz_analysis_vtable_search(&context);
 
-	if (rad == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		PJ *pj = pj_new();
 		if (!pj) {
 			rz_list_free(vtables);
@@ -321,7 +321,7 @@ RZ_API void rz_analysis_list_vtables(RzAnalysis *analysis, int rad) {
 		pj_end(pj);
 		rz_cons_println(pj_string(pj));
 		pj_free(pj);
-	} else if (rad == '*') {
+	} else if (mode == RZ_OUTPUT_MODE_RIZIN) {
 		rz_list_foreach (vtables, vtableIter, table) {
 			rz_cons_printf("f vtable.0x%08" PFMT64x " %" PFMT64d " @ 0x%08" PFMT64x "\n",
 				table->saddr,

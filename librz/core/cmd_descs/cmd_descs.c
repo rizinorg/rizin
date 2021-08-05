@@ -89,6 +89,7 @@ static const RzCmdDescArg analysis_function_vars_sp_args[4];
 static const RzCmdDescArg analysis_function_vars_sp_del_args[2];
 static const RzCmdDescArg analysis_function_vars_sp_getref_args[3];
 static const RzCmdDescArg analysis_function_vars_sp_setref_args[3];
+static const RzCmdDescArg analysis_rtti_demangle_class_name_args[2];
 static const RzCmdDescArg cmd_debug_continue_execution_args[2];
 static const RzCmdDescArg cmd_debug_continue_send_signal_args[3];
 static const RzCmdDescArg cmd_debug_continue_traptrace_args[2];
@@ -1483,6 +1484,55 @@ static const RzCmdDescArg analysis_function_vars_sp_setref_args[] = {
 static const RzCmdDescHelp analysis_function_vars_sp_setref_help = {
 	.summary = "Define var set reference",
 	.args = analysis_function_vars_sp_setref_args,
+};
+
+static const RzCmdDescHelp av_help = {
+	.summary = "C++ vtables and RTTI",
+};
+static const RzCmdDescArg analysis_list_vtables_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_list_vtables_help = {
+	.summary = "search for vtables in data sections and show results",
+	.args = analysis_list_vtables_args,
+};
+
+static const RzCmdDescArg analysis_print_rtti_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_print_rtti_help = {
+	.summary = "try to parse RTTI at vtable addr (see analysis.cpp.abi)",
+	.args = analysis_print_rtti_args,
+};
+
+static const RzCmdDescArg analysis_print_rtti_all_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_print_rtti_all_help = {
+	.summary = "search for vtables and try to parse RTTI at each of them",
+	.args = analysis_print_rtti_all_args,
+};
+
+static const RzCmdDescArg analysis_recover_rtti_all_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_recover_rtti_all_help = {
+	.summary = "recover class info from all findable RTTI (see ac)",
+	.args = analysis_recover_rtti_all_args,
+};
+
+static const RzCmdDescArg analysis_rtti_demangle_class_name_args[] = {
+	{
+		.name = "classname",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_rtti_demangle_class_name_help = {
+	.summary = "demangle a class name from RTTI",
+	.args = analysis_rtti_demangle_class_name_args,
 };
 
 static const RzCmdDescHelp cmd_bsize_help = {
@@ -5080,6 +5130,20 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *analysis_function_vars_sp_setref_cd = rz_cmd_desc_argv_new(core->rcmd, afvs_cd, "afvss", rz_analysis_function_vars_sp_setref_handler, &analysis_function_vars_sp_setref_help);
 	rz_warn_if_fail(analysis_function_vars_sp_setref_cd);
+
+	RzCmdDesc *av_cd = rz_cmd_desc_group_modes_new(core->rcmd, cmd_analysis_cd, "av", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_analysis_list_vtables_handler, &analysis_list_vtables_help, &av_help);
+	rz_warn_if_fail(av_cd);
+	RzCmdDesc *analysis_print_rtti_cd = rz_cmd_desc_argv_modes_new(core->rcmd, av_cd, "avr", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_print_rtti_handler, &analysis_print_rtti_help);
+	rz_warn_if_fail(analysis_print_rtti_cd);
+
+	RzCmdDesc *analysis_print_rtti_all_cd = rz_cmd_desc_argv_modes_new(core->rcmd, av_cd, "avra", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_print_rtti_all_handler, &analysis_print_rtti_all_help);
+	rz_warn_if_fail(analysis_print_rtti_all_cd);
+
+	RzCmdDesc *analysis_recover_rtti_all_cd = rz_cmd_desc_argv_new(core->rcmd, av_cd, "avrr", rz_analysis_recover_rtti_all_handler, &analysis_recover_rtti_all_help);
+	rz_warn_if_fail(analysis_recover_rtti_all_cd);
+
+	RzCmdDesc *analysis_rtti_demangle_class_name_cd = rz_cmd_desc_argv_new(core->rcmd, av_cd, "avrD", rz_analysis_rtti_demangle_class_name_handler, &analysis_rtti_demangle_class_name_help);
+	rz_warn_if_fail(analysis_rtti_demangle_class_name_cd);
 
 	RzCmdDesc *cmd_bsize_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "b", rz_cmd_bsize, &cmd_bsize_help);
 	rz_warn_if_fail(cmd_bsize_cd);

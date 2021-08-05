@@ -498,7 +498,7 @@ RZ_API void rz_analysis_rtti_msvc_print_base_class_descriptor(RVTableContext *co
 	}
 }
 
-static bool rtti_msvc_print_complete_object_locator_recurse(RVTableContext *context, ut64 atAddress, int mode, bool strict) {
+static bool rtti_msvc_print_complete_object_locator_recurse(RVTableContext *context, ut64 atAddress, RzOutputMode mode, bool strict) {
 	ut64 colRefAddr = atAddress - context->word_size;
 	ut64 colAddr;
 	if (!context->read_addr(context->analysis, colRefAddr, &colAddr)) {
@@ -552,7 +552,7 @@ static bool rtti_msvc_print_complete_object_locator_recurse(RVTableContext *cont
 	}
 
 	// print
-	bool use_json = mode == 'j';
+	bool use_json = mode == RZ_OUTPUT_MODE_JSON;
 	PJ *pj = NULL;
 	if (use_json) {
 		pj = pj_new();
@@ -616,7 +616,7 @@ static bool rtti_msvc_print_complete_object_locator_recurse(RVTableContext *cont
 	return true;
 }
 
-RZ_API bool rz_analysis_rtti_msvc_print_at_vtable(RVTableContext *context, ut64 addr, int mode, bool strict) {
+RZ_API bool rz_analysis_rtti_msvc_print_at_vtable(RVTableContext *context, ut64 addr, RzOutputMode mode, bool strict) {
 	return rtti_msvc_print_complete_object_locator_recurse(context, addr, mode, strict);
 }
 
