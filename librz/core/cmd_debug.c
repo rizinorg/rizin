@@ -4408,8 +4408,8 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 			case '-': // "dte-"
 				if (!strcmp(input + 3, "*")) {
 					if (core->analysis->esil) {
-						ht_pp_free(core->analysis->esil->trace->ht_db);
-						core->analysis->esil->trace->ht_db = ht_pp_new(NULL, htpp_vector_free, NULL);
+						rz_vector_free(core->analysis->esil->trace->instructions);
+						core->analysis->esil->trace->instructions = rz_vector_new(0, (RzVectorFree)rz_analysis_il_trace_instruction_free, NULL);
 					}
 				} else {
 					eprintf("TODO: dte- cannot delete specific logs. Use dte-*\n");
