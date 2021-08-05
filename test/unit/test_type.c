@@ -88,7 +88,7 @@ static bool test_types_get_base_type_struct(void) {
 	mu_assert_eq(member->offset, 4, "Incorrect offset for struct member");
 	mu_assert_true(rz_type_atomic_str_eq(typedb, member->type, "int32_t"), "Incorrect type for struct member");
 	mu_assert_streq(member->name, "cow", "Incorrect name for struct member");
-
+	mu_assert_streq(rz_type_db_base_type_as_string(typedb, base), "struct kappa { int32_t bar; int32_t cow;  }", "Incorrect conversion of struct to string");
 	rz_type_db_free(typedb);
 	mu_end;
 }
