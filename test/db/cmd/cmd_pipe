@@ -33,3 +33,16 @@ Disassembly of entry0:
 
 EOF
 RUN
+
+NAME=rzpipe load project
+FILE=--
+CMDS=<<EOF
+?q `env~?^ASAN=1$`
+?+ env LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
+!python3 -c 'import rzpipe;rz=rzpipe.open("--");rz.cmd("Po bins/other/ls.rzdb");print(rz.cmd("?v custom_main"))'
+EOF
+EXPECT=<<EOF
+0x4070
+
+EOF
+RUN
