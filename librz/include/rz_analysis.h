@@ -1453,9 +1453,16 @@ typedef struct {
 	ut64 value; ///< data either written to or read from
 } RzILTraceRegOp;
 
+enum {
+	TRACE_INS_HAS_MEM_R = 0x1U,
+	TRACE_INS_HAS_MEM_W = 0x2U,
+	TRACE_INS_HAS_REG_R = 0x4U,
+	TRACE_INS_HAS_REG_W = 0x8U
+};
+
 typedef struct {
 	ut64 addr;
-
+	ut32 stats;
 	// Vector<RzILTraceRegOp>
 	RzVector *write_mem_ops;
 	RzVector *read_mem_ops;
@@ -1468,19 +1475,15 @@ typedef struct {
 /* Independent Trace Functions */
 RZ_API RzILTraceInstruction *rz_analysis_il_trace_instruction_new(ut64 addr);
 RZ_API void rz_analysis_il_trace_instruction_free(RzILTraceInstruction *instruction);
-RZ_API void rz_analysis_ins_trace_add_mem_write(RzILTraceInstruction *trace, ut64 addr, ut64 val);
-RZ_API void rz_analysis_ins_trace_add_mem_read(RzILTraceInstruction *trace, ut64 addr, ut64 val);
-RZ_API void rz_analysis_ins_trace_add_reg_read(RzILTraceInstruction *trace, const char *regname, ut64 val);
-RZ_API void rz_analysis_ins_trace_add_reg_write(RzILTraceInstruction *trace, const char *regname, ut64 val);
-
+RZ_API void rz_analysis_il_trace_add_mem(RzILTraceInstruction *trace, RzILTraceMemOp *mem);
+RZ_API void rz_analysis_il_trace_add_reg(RzILTraceInstruction *trace, RzILTraceRegOp *reg);
 RZ_API RzILTraceMemOp *rz_analysis_il_get_mem_op_trace(RzILTraceInstruction *trace, ut64 addr, bool is_write);
 RZ_API RzILTraceRegOp *rz_analysis_il_get_reg_op_trace(RzILTraceInstruction *trace, const char *regname, bool is_write);
-
 RZ_API bool rz_analysis_il_mem_trace_contains(RzILTraceInstruction *trace, ut64 addr, bool is_write);
 RZ_API bool rz_analysis_il_reg_trace_contains(RzILTraceInstruction *trace, const char *regname, bool is_write);
 
 /* esil trace */
-RZ_API RzILTraceInstruction *rz_analysis_esil_get_instruction_trace(RzAnalysisEsil *esil, int idx);
+RZ_API RzILTraceInstruction *rz_analysis_esil_get_instruction_trace(RzAnalysisEsilTrace *trace, int idx);
 RZ_API RzAnalysisEsilTrace *rz_analysis_esil_trace_new(RzAnalysisEsil *esil);
 RZ_API void rz_analysis_esil_trace_free(RzAnalysisEsilTrace *trace);
 RZ_API void rz_analysis_esil_trace_op(RzAnalysisEsil *esil, RzAnalysisOp *op);

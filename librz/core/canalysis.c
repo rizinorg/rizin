@@ -389,7 +389,6 @@ RZ_IPI void rz_core_analysis_bbs_asciiart(RzCore *core, RzAnalysisFunction *fcn)
 	rz_cons_printf("\n%s\n", rz_table_tostring(table));
 	rz_table_free(table);
 	rz_list_free(flist);
-	return;
 }
 
 RZ_IPI void rz_core_analysis_fcn_returns(RzCore *core, RzAnalysisFunction *fcn) {
@@ -6937,6 +6936,13 @@ RZ_IPI bool rz_core_analysis_types_propagation(RzCore *core) {
 	rz_core_analysis_esil_init(core);
 	rz_core_analysis_esil_init_mem(core, NULL, UT64_MAX, UT32_MAX);
 	ut8 *saved_arena = rz_reg_arena_peek(core->analysis->reg);
+
+	// loop count of rz_core_analysis_type_match
+	// TODO : figure out the reason to hold a `LOOP COUNT` in type_match
+	// HtUP <addr->loop_count>
+	// mimic a htuu table
+	HtUP *loop_table = ht_up_new(NULL, NULL, NULL);
+
 	// Iterating Reverse so that we get function in top-bottom call order
 	rz_list_foreach_prev(core->analysis->fcns, it, fcn) {
 		int ret = rz_core_seek(core, fcn->addr, true);
@@ -6945,7 +6951,7 @@ RZ_IPI bool rz_core_analysis_types_propagation(RzCore *core) {
 		}
 		rz_reg_arena_poke(core->analysis->reg, saved_arena);
 		rz_analysis_esil_set_pc(core->analysis->esil, fcn->addr);
-		rz_core_analysis_type_match(core, fcn);
+		rz_core_analysis_type_match(core, fcn, loop_table);
 		if (rz_cons_is_breaked()) {
 			break;
 		}
@@ -6959,6 +6965,7 @@ RZ_IPI bool rz_core_analysis_types_propagation(RzCore *core) {
 	rz_config_hold_restore(hold);
 	rz_config_hold_free(hold);
 	free(saved_arena);
+	ht_up_free(loop_table);
 	return true;
 }
 

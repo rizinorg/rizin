@@ -779,7 +779,7 @@ static void type_cmd(RzCore *core, const char *input) {
 	case '\0': // "aft"
 		seek = core->offset;
 		rz_analysis_esil_set_pc(core->analysis->esil, fcn ? fcn->addr : core->offset);
-		rz_core_analysis_type_match(core, fcn);
+		rz_core_analysis_type_match(core, fcn, NULL);
 		rz_core_seek(core, seek, true);
 		break;
 	case '?': // "aft?"
