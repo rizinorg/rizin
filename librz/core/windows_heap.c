@@ -66,6 +66,16 @@ static size_t RtlpLFHKeyOffset = 0;
 		return; \
 	}
 
+#define CHECK_INFO_RETURN_NULL(heapInfo) \
+	if (!heapInfo) { \
+		eprintf("It wasn't possible to get the heap information\n"); \
+		return NULL; \
+	} \
+	if (!heapInfo->count) { \
+		rz_cons_print("No heaps for this process\n"); \
+		return NULL; \
+	}
+
 #define UPDATE_FLAGS(hb, flags) \
 	if (((flags)&0xf1) || ((flags)&0x0200)) { \
 		hb->dwFlags = LF32_FIXED; \
@@ -1204,7 +1214,7 @@ static RzTable *__new_heapblock_tbl(void) {
 	return tbl;
 }
 
-static void w32_list_heaps(RzCore *core, RzOutputMode mode) {
+RZ_IPI void rz_heap_list_w32(RzCore *core, RzOutputMode mode) {
 	initialize_windows_ntdll_query_api_functions();
 	ULONG pid = core->dbg->pid;
 	PDEBUG_BUFFER db = InitHeapInfo(core->dbg, PDI_HEAPS | PDI_HEAP_BLOCKS);
@@ -1337,7 +1347,7 @@ static void w32_list_heaps_blocks(RzCore *core, RzOutputMode mode, bool flag) {
 	RtlDestroyQueryDebugBuffer(db);
 }
 
-static void cmd_debug_map_heap_block_win(RzCore *core, const char *addr, RzOutputMode mode, bool flag) {
+RZ_IPI void rz_heap_debug_block_win(RzCore *core, const char *addr, RzOutputMode mode, bool flag) {
 	initialize_windows_ntdll_query_api_functions();
 	ut64 off = 0;
 	if (!addr) {
@@ -1377,4 +1387,105 @@ static void cmd_debug_map_heap_block_win(RzCore *core, const char *addr, RzOutpu
 	free(hb);
 	rz_table_free(tbl);
 	pj_free(pj);
+}
+
+RZ_IPI RzList *rz_heap_blocks_list(RzCore *core) {
+	initialize_windows_ntdll_query_api_functions();
+	DWORD pid = core->dbg->pid;
+	PDEBUG_BUFFER db;
+	RzList *blocks_list = rz_list_newf(free);
+	if (__is_windows_ten()) {
+		db = GetHeapBlocks(pid, core->dbg);
+	} else {
+		db = InitHeapInfo(core->dbg, PDI_HEAPS | PDI_HEAP_BLOCKS);
+	}
+	if (!db) {
+		eprintf("Couldn't get heap info.\n");
+		return blocks_list;
+	}
+
+	PHeapInformation heapInfo = db->HeapInformation;
+	CHECK_INFO_RETURN_NULL(heapInfo);
+	HeapBlock *block = malloc(sizeof(HeapBlock));
+	for (int i = 0; i < heapInfo->count; i++) {
+		bool go = true;
+		char *type;
+		if (GetFirstHeapBlock(&heapInfo->heaps[i], block) & go) {
+			do {
+				type = get_type(block->dwFlags);
+				if (!type) {
+					type = "";
+				}
+				ut64 granularity = block->extraInfo ? block->extraInfo->granularity : heapInfo->heaps[i].Granularity;
+				ut64 address = (ut64)block->dwAddress - granularity;
+				ut64 unusedBytes = block->extraInfo ? block->extraInfo->unusedBytes : 0;
+
+				// add blocks to list
+				RzWindowsHeapBlock *heap_block = RZ_NEW0(RzWindowsHeapBlock);
+				if (!heap_block) {
+					rz_list_free(blocks_list);
+					RtlDestroyQueryDebugBuffer(db);
+					return NULL;
+				}
+				heap_block->headerAddress = address;
+				heap_block->userAddress = (ut64)block->dwAddress;
+				heap_block->size = block->dwSize;
+				strcpy(heap_block->type, type);
+				heap_block->unusedBytes = unusedBytes;
+				heap_block->granularity = granularity;
+
+				rz_list_append(blocks_list, heap_block);
+			} while (GetNextHeapBlock(&heapInfo->heaps[i], block));
+		}
+		if (!(db->InfoClassMask & PDI_HEAP_BLOCKS)) {
+			// RtlDestroyQueryDebugBuffer wont free this for some reason
+			free_extra_info(&heapInfo->heaps[i]);
+			RZ_FREE(heapInfo->heaps[i].Blocks);
+		}
+	}
+	RtlDestroyQueryDebugBuffer(db);
+	return blocks_list;
+}
+
+RZ_IPI RzList *rz_heap_list(RzCore *core) {
+	initialize_windows_ntdll_query_api_functions();
+	ULONG pid = core->dbg->pid;
+	PDEBUG_BUFFER db = InitHeapInfo(core->dbg, PDI_HEAPS | PDI_HEAP_BLOCKS);
+	if (!db) {
+		if (__is_windows_ten()) {
+			db = GetHeapBlocks(pid, core->dbg);
+		}
+		if (!db) {
+			eprintf("Couldn't get heap info.\n");
+			return NULL;
+		}
+	}
+
+	RzList *heaps_list = rz_list_newf(free);
+	PHeapInformation heapInfo = db->HeapInformation;
+	CHECK_INFO_RETURN_NULL(heapInfo);
+	for (int i = 0; i < heapInfo->count; i++) {
+		DEBUG_HEAP_INFORMATION heap = heapInfo->heaps[i];
+		// add heaps to list
+		RzWindowsHeapInfo *rzHeapInfo = RZ_NEW0(RzWindowsHeapInfo);
+		if (!rzHeapInfo) {
+			rz_list_free(heaps_list);
+			RtlDestroyQueryDebugBuffer(db);
+			return NULL;
+		}
+		rzHeapInfo->base = (ut64)heap.Base;
+		rzHeapInfo->blockCount = (ut64)heap.BlockCount;
+		rzHeapInfo->allocated = (ut64)heap.Allocated;
+		rzHeapInfo->committed = (ut64)heap.Committed;
+
+		rz_list_append(heaps_list, rzHeapInfo);
+
+		if (!(db->InfoClassMask & PDI_HEAP_BLOCKS)) {
+			free_extra_info(&heap);
+			RZ_FREE(heap.Blocks);
+		}
+	}
+
+	RtlDestroyQueryDebugBuffer(db);
+	return heaps_list;
 }

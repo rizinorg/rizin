@@ -1715,9 +1715,6 @@ RZ_IPI int rz_cmd_debug_heap_jemalloc(void *data, const char *input) {
 }
 
 #include "linux_heap_glibc.c"
-#if __WINDOWS__
-#include "windows_heap.c"
-#endif
 
 static void foreach_reg_set_or_clear(RzCore *core, bool set) {
 	RzReg *reg = rz_config_get_b(core->config, "cfg.debug")

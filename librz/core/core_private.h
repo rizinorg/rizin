@@ -131,4 +131,13 @@ RZ_IPI void rz_core_flag_describe(RzCore *core, ut64 addr, bool strict_offset, R
 /* cmd_debug.c */
 RZ_IPI void rz_core_dbg_follow_seek_register(RzCore *core);
 RZ_IPI void rz_core_static_debug_stop(void *u);
+
+#if __WINDOWS__
+/* windows_heap.c */
+RZ_IPI RzList *rz_heap_blocks_list(RzCore *core);
+RZ_IPI RzList *rz_heap_list(RzCore *core);
+RZ_IPI void rz_heap_debug_block_win(RzCore *core, const char *addr, RzOutputMode mode, bool flag);
+RZ_IPI void rz_heap_list_w32(RzCore *core, RzOutputMode mode);
+#endif
+
 #endif
