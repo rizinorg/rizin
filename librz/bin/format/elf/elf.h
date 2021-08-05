@@ -104,13 +104,13 @@ typedef struct Elf_(rz_bin_elf_segment_t) {
 RzBinElfSegment;
 
 typedef struct rz_bin_elf_symbol_t {
-	ut64 offset;
+	ut64 paddr;
+	ut64 vaddr;
 	ut64 size;
 	ut32 ordinal;
 	const char *bind;
 	const char *type;
 	RZ_OWN char *name;
-	bool is_vaddr; /* when true, offset is virtual address, otherwise it's physical */
 } RzBinElfSymbol;
 
 typedef struct rz_bin_elf_reloc_t {

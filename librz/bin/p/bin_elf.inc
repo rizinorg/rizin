@@ -77,6 +77,8 @@ static void set_arm_symbol_bits(ELFOBJ *bin, RzBinSymbol *symbol) {
 }
 
 static void set_common_parameter(RzBinElfSymbol *elf_symbol, RzBinSymbol *symbol) {
+	symbol->paddr = elf_symbol->paddr;
+	symbol->vaddr = elf_symbol->vaddr;
 	symbol->name = rz_str_new(elf_symbol->name);
 	symbol->forwarder = "NONE";
 	symbol->bind = elf_symbol->bind;
@@ -89,30 +91,11 @@ static bool is_arm_symbol(ELFOBJ *bin, RzBinElfSymbol *symbol) {
 	return bin->ehdr.e_machine == EM_ARM && symbol->name;
 }
 
-static ut64 get_paddr_parameter(ELFOBJ *bin, RzBinElfSymbol *symbol) {
-	if (symbol->is_vaddr) {
-		return UT64_MAX;
-	} else {
-		return symbol->offset;
-	}
-}
-
-static ut64 get_vaddr_parameter(ELFOBJ *bin, RzBinElfSymbol *symbol) {
-	if (symbol->is_vaddr) {
-		return symbol->offset;
-	} else {
-		return Elf_(rz_bin_elf_p2v_new)(bin, symbol->offset);
-	}
-}
-
 static RzBinSymbol *convert_symbol(ELFOBJ *bin, RzBinElfSymbol *elf_symbol) {
 	RzBinSymbol *result = RZ_NEW0(RzBinSymbol);
 	if (!result) {
 		return NULL;
 	}
-
-	result->paddr = get_paddr_parameter(bin, elf_symbol);
-	result->vaddr = get_vaddr_parameter(bin, elf_symbol);
 
 	set_common_parameter(elf_symbol, result);
 
@@ -1170,8 +1153,8 @@ static RzList *entries(RzBinFile *bf) {
 				if (!(ptr = RZ_NEW0(RzBinAddr))) {
 					return ret;
 				}
-				ptr->paddr = symbol->offset;
-				ptr->vaddr = Elf_(rz_bin_elf_p2v_new)(obj, ptr->paddr);
+				ptr->paddr = symbol->paddr;
+				ptr->vaddr = symbol->vaddr;
 				ptr->hpaddr = UT64_MAX;
 				ptr->type = RZ_BIN_ENTRY_TYPE_INIT;
 				rz_list_append(ret, ptr);

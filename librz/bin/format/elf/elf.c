@@ -128,6 +128,11 @@ static bool init_phdr_aux(ELFOBJ *bin, RzBinObjectLoadOptions *options) {
 }
 
 static void init_phdr(ELFOBJ *bin, RzBinObjectLoadOptions *options) {
+	if (!bin->ehdr.e_phnum) {
+		RZ_LOG_WARN("There is no program header.\n");
+		return;
+	}
+
 	if (!init_phdr_aux(bin, options)) {
 		RZ_LOG_WARN("Failed to initialize program header.\n");
 	}
