@@ -419,6 +419,7 @@ static bool init(ELFOBJ *bin, RzBinObjectLoadOptions *options) {
 	bin->notes = Elf_(rz_bin_elf_notes_new)(bin);
 
 	bin->symbols = Elf_(rz_bin_elf_symbols_new)(bin);
+	bin->bits = Elf_(rz_bin_elf_get_bits)(bin);
 	bin->imports = Elf_(rz_bin_elf_analyse_imports)(bin);
 
 	return true;
