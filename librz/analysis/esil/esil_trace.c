@@ -25,10 +25,6 @@ static void htup_vector_free(HtUPKv *kv) {
 	rz_vector_free(kv->value);
 }
 
-static void htpp_vector_free(HtPPKv *kv) {
-	rz_vector_free(kv->value);
-}
-
 RZ_API RzAnalysisEsilTrace *rz_analysis_esil_trace_new(RzAnalysisEsil *esil) {
 	rz_return_val_if_fail(esil && esil->stack_addr && esil->stack_size, NULL);
 	size_t i;
@@ -233,6 +229,28 @@ RZ_API RzILTraceInstruction *rz_analysis_esil_get_instruction_trace(RzAnalysisEs
 	return rz_vector_index_ptr(etrace->instructions, idx);
 }
 
+static void dbg_print_il_instr_trace(RzILTraceInstruction *instr, int idx) {
+        if (instr) {
+                printf("======== [%d] ========\n", idx);
+                printf("instruction addr : %lld\n", instr->addr);
+                printf("mem_read : %p\nmem_write : %p\nreg_read : %p\nreg_write : %p\n",
+                       instr->read_mem_ops,
+                       instr->write_mem_ops,
+                       instr->read_reg_ops,
+                       instr->write_reg_ops);
+        }
+
+        printf("No Instruction in [%d]\n", idx);
+}
+
+static void dbg_print_esil_trace(RzAnalysisEsilTrace *etrace) {
+        if (etrace && etrace->instructions) {
+                for (int i = 0; i < etrace->instructions->len; ++i) {
+                        dbg_print_il_instr_trace(rz_vector_index_ptr(etrace->instructions, i), i);
+                }
+        }
+}
+
 RZ_API void rz_analysis_esil_trace_op(RzAnalysisEsil *esil, RzAnalysisOp *op) {
 	rz_return_if_fail(esil && op);
 	const char *expr = rz_strbuf_get(&op->esil);
@@ -262,6 +280,16 @@ RZ_API void rz_analysis_esil_trace_op(RzAnalysisEsil *esil, RzAnalysisOp *op) {
 	RzILTraceInstruction *instruction = rz_analysis_il_trace_instruction_new(op->addr);
 	rz_vector_push(esil->trace->instructions, instruction);
 
+	printf("Create Instruction : %p\n", instruction);
+	dbg_print_il_instr_trace(instruction, -1);
+
+	RzILTraceInstruction *get_ins = rz_vector_index_ptr(esil->trace->instructions, 1);
+        dbg_print_il_instr_trace(instruction, 0);
+        printf("Fetched from vector : %p\n", get_ins);
+
+	printf("Trace Op : init instruction\n");
+	dbg_print_esil_trace(esil->trace);
+
 	RzRegItem *pc_ri = rz_reg_get(esil->analysis->reg, "PC", -1);
 	add_reg_change(esil->trace, esil->trace->idx, pc_ri, op->addr);
 	//	sdb_set (DB, KEY ("opcode"), op->mnemonic, 0);
@@ -275,7 +303,11 @@ RZ_API void rz_analysis_esil_trace_op(RzAnalysisEsil *esil, RzAnalysisOp *op) {
 	esil->cb.hook_reg_write = trace_hook_reg_write;
 	esil->cb.hook_mem_read = trace_hook_mem_read;
 	esil->cb.hook_mem_write = trace_hook_mem_write;
-	/* evaluate esil expression */
+
+        printf("Trace Op : Before Parse\n");
+        dbg_print_esil_trace(esil->trace);
+
+        /* evaluate esil expression */
 	rz_analysis_esil_parse(esil, expr);
 	rz_analysis_esil_stack_free(esil);
 	/* restore hooks */
