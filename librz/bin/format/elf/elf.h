@@ -307,7 +307,8 @@ RZ_OWN RzVector *Elf_(rz_bin_elf_notes_new)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_has_notes)(RZ_NONNULL ELFOBJ *bin);
 
 // elf_patch.c
-RZ_OWN RzBuffer *Elf_(rz_bin_elf_patch_relocs)(ELFOBJ *bin);
+RZ_OWN RzBuffer *Elf_(rz_bin_elf_patch_relocs)(RZ_NONNULL ELFOBJ *bin);
+ut64 Elf_(rz_bin_elf_get_reloc_target_map)(RZ_NONNULL ELFOBJ *bin) {
 
 // elf_misc.c
 bool Elf_(rz_bin_elf_check_array)(RZ_NONNULL ELFOBJ *bin, Elf_(Off) offset, Elf_(Off) length, Elf_(Off) entry_size);
@@ -338,7 +339,6 @@ RZ_OWN RzVector *Elf_(rz_bin_elf_relocs_new)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_has_relocs)(RZ_NONNULL ELFOBJ *bin);
 size_t Elf_(rz_bin_elf_get_relocs_count)(RZ_NONNULL ELFOBJ *bin);
 ut64 Elf_(rz_bin_elf_get_num_relocs_dynamic_plt)(RZ_NONNULL ELFOBJ *bin);
-ut64 Elf_(rz_bin_elf_get_reloc_size_as_byte)(RZ_NONNULL ELFOBJ *obj);
 
 // elf_segments.c
 RZ_BORROW RzBinElfSegment *Elf_(rz_bin_elf_get_segment_with_type)(RZ_NONNULL ELFOBJ *bin, Elf_(Word) type);
