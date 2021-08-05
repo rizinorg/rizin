@@ -16,10 +16,6 @@
 #define COMPUTE_PLTGOT_POSITION(rel, pltgot_addr, n_initial_unused_entries) \
 	((rel->vaddr - pltgot_addr - n_initial_unused_entries * sizeof(Elf_(Addr))) / sizeof(Elf_(Addr)))
 
-static bool is_thumb_symbol(ut64 plt_addr) {
-	return plt_addr & 1;
-}
-
 static ut64 get_got_entry(ELFOBJ *bin, RzBinElfReloc *rel) {
 	Elf_(Addr) addr;
 
@@ -218,7 +214,7 @@ static ut64 get_import_addr_arm(ELFOBJ *bin, RzBinElfReloc *rel) {
 	switch (rel->type) {
 	case RZ_ARM_JUMP_SLOT:
 		plt_addr += pos * 12 + 20;
-		if (is_thumb_symbol(plt_addr)) {
+		if (Elf_(rz_bin_elf_is_thumb_addr)(plt_addr)) {
 			plt_addr--;
 		}
 		return plt_addr;

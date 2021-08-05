@@ -73,6 +73,8 @@ rz_bin_sources = [
   'format/dmp/dmp64.c',
   'format/elf/elf.c',
   'format/elf/elf64.c',
+  'format/elf/elf_arm.c',
+  'format/elf/elf64_arm.c',
   'format/elf/elf_corefile.c',
   'format/elf/elf64_corefile.c',
   'format/elf/elf_dynamic.c',

@@ -463,7 +463,7 @@ static ut64 get_main_offset_arm_glibc_non_thumb(ELFOBJ *bin, ut64 entry, ut8 *bu
 
 static ut64 get_main_offset_arm_glibc(ELFOBJ *bin, ut64 entry, ut8 *buf) {
 	// ARM Glibc
-	if (entry & 1) {
+	if (Elf_(rz_bin_elf_is_thumb_addr)(entry)) {
 		return get_main_offset_arm_glibc_thumb(bin, entry, buf);
 	} else {
 		return get_main_offset_arm_glibc_non_thumb(bin, entry, buf);
@@ -574,16 +574,12 @@ static int get_bits_common(ELFOBJ *bin) {
 static bool has_thumb_symbol(ELFOBJ *bin) {
 	RzBinElfSymbol *symbol;
 	rz_bin_elf_foreach_symbols(bin, symbol) {
-		if (symbol->paddr & 1) {
+		if (Elf_(rz_bin_elf_is_thumb_addr)(symbol->paddr) || Elf_(rz_bin_elf_is_thumb_addr)(symbol->vaddr)) {
 			return true;
 		}
 	}
 
 	return false;
-}
-
-static bool arch_is_arm(ELFOBJ *bin) {
-	return bin->ehdr.e_machine == EM_ARM;
 }
 
 static int get_bits_mips_common(Elf_(Word) mips_type) {
@@ -1699,12 +1695,13 @@ int Elf_(rz_bin_elf_get_bits)(RZ_NONNULL ELFOBJ *bin) {
 	}
 
 	/* Hack for Thumb */
-	if (arch_is_arm(bin)) {
-		if (bin->ehdr.e_type != ET_EXEC && has_thumb_symbol(bin)) {
+	if (Elf_(rz_bin_elf_is_arm_binary_supporting_thumb)(bin)) {
+		if (!Elf_(rz_bin_elf_is_static)(bin) && has_thumb_symbol(bin)) {
 			return 16;
 		}
 
-		if (Elf_(rz_bin_elf_get_entry_offset)(bin) & 1) {
+		ut64 entry = Elf_(rz_bin_elf_get_entry_offset)(bin);
+		if (Elf_(rz_bin_elf_is_thumb_addr)(entry)) {
 			return 16;
 		}
 	}

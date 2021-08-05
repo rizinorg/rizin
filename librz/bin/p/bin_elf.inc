@@ -20,87 +20,24 @@ static RzBinInfo *info(RzBinFile *bf);
 static void patch_relocs(RzBinFile *bf, struct Elf_(rz_bin_elf_obj_t) * bin);
 static RzList *imports(RzBinFile *bf);
 
-static void fix_thumb_symbol(RzBinSymbol *symbol) {
-	symbol->bits = 16;
-
-	if (symbol->vaddr & 1) {
-		symbol->vaddr--;
-	}
-
-	if (symbol->paddr & 1) {
-		symbol->paddr--;
-	}
-}
-
-static bool start_a_sequence_of_instruction(const char *name) {
-	return strlen(name) > 3 && rz_str_startswith(name, "$a.");
-}
-
-static bool start_a_sequence_of_thumb_instruction(const char *name) {
-	return strlen(name) > 3 && rz_str_startswith(name, "$t.");
-}
-
-static bool start_a_sequence_of_data(const char *name) {
-	return strlen(name) > 3 && rz_str_startswith(name, "$d.");
-}
-
-static void set_arm_basic_symbol_bits(ELFOBJ *bin, RzBinSymbol *symbol) {
-	int bin_bits = Elf_(rz_bin_elf_get_bits)(bin);
-	symbol->bits = bin_bits;
-
-	if (bin_bits != 64) {
-		symbol->bits = 32;
-
-		if (symbol->paddr != UT64_MAX) {
-			if (symbol->vaddr & 1) {
-				symbol->vaddr--;
-				symbol->bits = 16;
-			}
-			if (symbol->paddr & 1) {
-				symbol->paddr--;
-				symbol->bits = 16;
-			}
-		}
-	}
-}
-
-static void set_arm_symbol_bits(ELFOBJ *bin, RzBinSymbol *symbol) {
-	const char *name = symbol->name;
-
-	if (start_a_sequence_of_instruction(name)) {
-		symbol->bits = 32;
-	} else if (start_a_sequence_of_thumb_instruction(name)) {
-		fix_thumb_symbol(symbol);
-	} else if (!start_a_sequence_of_data(name)) {
-		set_arm_basic_symbol_bits(bin, symbol);
-	}
-}
-
-static void set_common_parameter(RzBinElfSymbol *elf_symbol, RzBinSymbol *symbol) {
-	symbol->paddr = elf_symbol->paddr;
-	symbol->vaddr = elf_symbol->vaddr;
-	symbol->name = rz_str_new(elf_symbol->name);
-	symbol->forwarder = "NONE";
-	symbol->bind = elf_symbol->bind;
-	symbol->type = elf_symbol->type;
-	symbol->size = elf_symbol->size;
-	symbol->ordinal = elf_symbol->ordinal;
-}
-
-static bool is_arm_symbol(ELFOBJ *bin, RzBinElfSymbol *symbol) {
-	return bin->ehdr.e_machine == EM_ARM && symbol->name;
-}
-
 static RzBinSymbol *convert_symbol(ELFOBJ *bin, RzBinElfSymbol *elf_symbol) {
 	RzBinSymbol *result = RZ_NEW0(RzBinSymbol);
 	if (!result) {
 		return NULL;
 	}
 
-	set_common_parameter(elf_symbol, result);
+	result->paddr = elf_symbol->paddr;
+	result->vaddr = elf_symbol->vaddr;
+	result->name = rz_str_new(elf_symbol->name);
+	result->forwarder = "NONE";
+	result->bind = elf_symbol->bind;
+	result->type = elf_symbol->type;
+	result->size = elf_symbol->size;
+	result->ordinal = elf_symbol->ordinal;
+	result->bits = bin->bits;
 
-	if (is_arm_symbol(bin, elf_symbol)) {
-		set_arm_symbol_bits(bin, result);
+	if (Elf_(rz_bin_elf_is_arm_binary_supporting_thumb)(bin)) {
+		Elf_(rz_bin_elf_fix_arm_thumb_symbol)(result);
 	}
 
 	return result;
@@ -235,16 +172,14 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol sym) {
 	}
 	if (addr && addr != UT64_MAX && (ret = RZ_NEW0(RzBinAddr))) {
 		struct Elf_(rz_bin_elf_obj_t) *bin = bf->o->bin_obj;
-		bool is_arm = bin->ehdr.e_machine == EM_ARM;
 		ret->paddr = addr;
 		ret->vaddr = Elf_(rz_bin_elf_p2v_new)(obj, addr);
+		ret->bits = obj->bits;
 		if (ret->vaddr == UT64_MAX) {
 			ret->vaddr = addr;
 		}
-		if (is_arm && addr & 1) {
-			ret->bits = 16;
-			ret->vaddr--;
-			ret->paddr--;
+		if (Elf_(rz_bin_elf_is_arm_binary_supporting_thumb)(bin)) {
+			rz_bin_elf_fix_arm_thumb_object_dispatch(ret);
 		}
 	}
 	return ret;
@@ -774,13 +709,14 @@ static void patch_relocs(RzBinFile *bf, ELFOBJ *bin) {
 					plt_entry_addr = sym_addr;
 				}
 			} else {
-				RzBinSymbol *symbol = get_symbol(bin, reloc->sym);
+				RzBinElfSymbol *symbol = Elf_(rz_bin_elf_get_symbol)(bin, reloc->sym);
 				if (symbol) {
 					sym_addr = symbol->vaddr;
+					if (Elf_(rz_bin_elf_is_arm_binary_supporting_thumb)(bin) && Elf_(rz_bin_elf_is_thumb_addr)(sym_addr)) {
+						Elf_(rz_bin_elf_fix_arm_thumb_addr)(&sym_addr);
+					}
 					plt_entry_addr = sym_addr;
 				}
-
-				rz_bin_symbol_free(symbol);
 			}
 		}
 		// TODO relocation types B, L
@@ -1037,7 +973,7 @@ static RzBinAddr *newEntry(RzBinFile *bf, ut64 hpaddr, ut64 hvaddr, ut64 vaddr, 
 		ptr->bits = bits;
 		ptr->type = type;
 		//realign due to thumb
-		if (bits == 16 && ptr->vaddr & 1) {
+		if (bits == 16 && Elf_(rz_bin_elf_is_thumb_addr)(ptr->vaddr)) {
 			ptr->paddr--;
 			ptr->vaddr--;
 		}
@@ -1108,6 +1044,7 @@ static RzList *entries(RzBinFile *bf) {
 		ptr->vaddr = Elf_(rz_bin_elf_p2v_new)(obj, ptr->paddr);
 		ptr->hpaddr = 0x18; // e_entry offset in ELF header
 		ptr->hvaddr = UT64_MAX;
+		ptr->bits = obj->bits;
 
 		if (ptr->vaddr != (ut64)obj->ehdr.e_entry && Elf_(rz_bin_elf_is_executable)(obj)) {
 			eprintf("Cannot determine entrypoint, using 0x%08" PFMT64x ".\n", ptr->vaddr);
@@ -1123,20 +1060,11 @@ static RzList *entries(RzBinFile *bf) {
 				}
 			}
 		}
-		if (obj->ehdr.e_machine == EM_ARM) {
-			int bin_bits = Elf_(rz_bin_elf_get_bits)(obj);
-			if (bin_bits != 64) {
-				ptr->bits = 32;
-				if (ptr->vaddr & 1) {
-					ptr->vaddr--;
-					ptr->bits = 16;
-				}
-				if (ptr->paddr & 1) {
-					ptr->paddr--;
-					ptr->bits = 16;
-				}
-			}
+
+		if (Elf_(rz_bin_elf_is_arm_binary_supporting_thumb)(obj)) {
+			rz_bin_elf_fix_arm_thumb_object_dispatch(ptr);
 		}
+
 		rz_list_append(ret, ptr);
 	}
 

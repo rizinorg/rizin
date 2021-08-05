@@ -312,9 +312,9 @@ static bool set_elf_symbol_name(ELFOBJ *bin, struct symbols_segment *segment, Rz
 static bool convert_elf_symbol_entry(ELFOBJ *bin, struct symbols_segment *segment, RzBinElfSymbol *elf_symbol, Elf_(Sym) * symbol, size_t ordinal) {
 	RzBinElfSection *section = Elf_(rz_bin_elf_get_section)(bin, symbol->st_shndx);
 
-	elf_symbol->size = symbol->st_size;
-	elf_symbol->ordinal = ordinal;
 	elf_symbol->bind = symbol_bind_to_str(symbol);
+	elf_symbol->ordinal = ordinal;
+	elf_symbol->size = symbol->st_size;
 
 	if (Elf_(rz_bin_elf_is_relocatable)(bin) && section) {
 		elf_symbol->paddr = section->offset + symbol->st_value;
@@ -457,40 +457,6 @@ static bool get_section_elf_symbols(ELFOBJ *bin, RzVector *result, RzBinElfSymbo
 	return true;
 }
 
-RZ_OWN RzVector *Elf_(rz_bin_elf_compute_symbols)(ELFOBJ *bin, RzBinElfSymbolFilter filter) {
-	RzVector *result = rz_vector_new(sizeof(RzBinElfSymbol), elf_symbol_fini, NULL);
-	if (!result) {
-		return NULL;
-	}
-
-	HtUU *set = ht_uu_new0();
-	if (!set) {
-		rz_vector_free(result);
-		return NULL;
-	}
-
-	if (!get_dynamic_elf_symbols(bin, result, filter, set)) {
-		rz_vector_free(result);
-		ht_uu_free(set);
-		return NULL;
-	}
-
-	if (!get_section_elf_symbols(bin, result, filter, set)) {
-		rz_vector_free(result);
-		ht_uu_free(set);
-		return NULL;
-	}
-
-	ht_uu_free(set);
-
-	if (!rz_vector_len(result)) {
-		rz_vector_free(result);
-		return NULL;
-	}
-
-	return result;
-}
-
 static bool filter_symbol(RZ_UNUSED ELFOBJ *bin, Elf_(Sym) * symbol, RZ_UNUSED bool is_dynamic) {
 	return symbol->st_shndx != SHT_NULL;
 }
@@ -538,9 +504,38 @@ RZ_BORROW RzBinElfSymbol *Elf_(rz_bin_elf_get_symbol)(RZ_NONNULL ELFOBJ *bin, ut
 	return NULL;
 }
 
-RZ_BORROW RzVector *Elf_(rz_bin_elf_get_symbols)(RZ_NONNULL ELFOBJ *bin) {
-	rz_return_val_if_fail(bin, NULL);
-	return bin->symbols;
+RZ_OWN RzVector *Elf_(rz_bin_elf_compute_symbols)(ELFOBJ *bin, RzBinElfSymbolFilter filter) {
+	RzVector *result = rz_vector_new(sizeof(RzBinElfSymbol), elf_symbol_fini, NULL);
+	if (!result) {
+		return NULL;
+	}
+
+	HtUU *set = ht_uu_new0();
+	if (!set) {
+		rz_vector_free(result);
+		return NULL;
+	}
+
+	if (!get_dynamic_elf_symbols(bin, result, filter, set)) {
+		rz_vector_free(result);
+		ht_uu_free(set);
+		return NULL;
+	}
+
+	if (!get_section_elf_symbols(bin, result, filter, set)) {
+		rz_vector_free(result);
+		ht_uu_free(set);
+		return NULL;
+	}
+
+	ht_uu_free(set);
+
+	if (!rz_vector_len(result)) {
+		rz_vector_free(result);
+		return NULL;
+	}
+
+	return result;
 }
 
 RZ_OWN RzVector *Elf_(rz_bin_elf_symbols_new)(RZ_NONNULL ELFOBJ *bin) {
