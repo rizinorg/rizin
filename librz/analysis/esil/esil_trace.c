@@ -40,7 +40,7 @@ RZ_API RzAnalysisEsilTrace *rz_analysis_esil_trace_new(RzAnalysisEsil *esil) {
 	if (!trace->memory) {
 		goto error;
 	}
-	trace->instructions = rz_vector_new(sizeof(RzILTraceInstruction), (RzVectorFree)rz_analysis_il_trace_instruction_free, NULL);
+	trace->instructions = rz_pvector_new((RzPVectorFree)rz_analysis_il_trace_instruction_free);
 	if (!trace->instructions) {
 		goto error;
 	}
@@ -81,7 +81,10 @@ RZ_API void rz_analysis_esil_trace_free(RzAnalysisEsilTrace *trace) {
 			rz_reg_arena_free(trace->arena[i]);
 		}
 		free(trace->stack_data);
-		rz_vector_free(trace->instructions);
+		if (trace->instructions) {
+                        rz_pvector_free(trace->instructions);
+			trace->instructions = NULL;
+                }
 		RZ_FREE(trace);
 	}
 }
@@ -226,7 +229,7 @@ static int trace_hook_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf,
 }
 
 RZ_API RzILTraceInstruction *rz_analysis_esil_get_instruction_trace(RzAnalysisEsilTrace *etrace, int idx) {
-	return rz_vector_index_ptr(etrace->instructions, idx);
+	return rz_pvector_at(etrace->instructions, idx);
 }
 
 static void dbg_print_il_instr_trace(RzILTraceInstruction *instr, int idx) {
@@ -245,10 +248,16 @@ static void dbg_print_il_instr_trace(RzILTraceInstruction *instr, int idx) {
 
 static void dbg_print_esil_trace(RzAnalysisEsilTrace *etrace) {
         if (etrace && etrace->instructions) {
-                for (int i = 0; i < etrace->instructions->len; ++i) {
-                        dbg_print_il_instr_trace(rz_vector_index_ptr(etrace->instructions, i), i);
-                }
-        }
+
+		void **iter;
+		RzILTraceInstruction *cur_ins;
+		int i = 0;
+		rz_pvector_foreach(etrace->instructions, iter) {
+			cur_ins = *iter;
+			dbg_print_il_instr_trace(cur_ins, i);
+			++i;
+		}
+	}
 }
 
 RZ_API void rz_analysis_esil_trace_op(RzAnalysisEsil *esil, RzAnalysisOp *op) {
@@ -278,11 +287,11 @@ RZ_API void rz_analysis_esil_trace_op(RzAnalysisEsil *esil, RzAnalysisOp *op) {
 	ocbs_set = true;
 
 	RzILTraceInstruction *instruction = rz_analysis_il_trace_instruction_new(op->addr);
-	rz_vector_push(esil->trace->instructions, instruction);
+	rz_pvector_push(esil->trace->instructions, instruction);
 
 	printf("Create Instruction : %p\n", instruction);
 
-	RzILTraceInstruction *get_ins = rz_vector_index_ptr(esil->trace->instructions, 0);
+	RzILTraceInstruction *get_ins = rz_pvector_at(esil->trace->instructions, 0);
         printf("Fetched from vector : %p\n", get_ins);
 
 	printf("Trace Op : init instruction\n");
@@ -380,7 +389,9 @@ RZ_API void rz_analysis_esil_trace_list(RzAnalysisEsil *esil) {
 	}
 
 	RzILTraceInstruction *instruction_trace;
-	rz_vector_foreach(esil->trace->instructions, instruction_trace) {
+	void **iter;
+	rz_pvector_foreach(esil->trace->instructions, iter) {
+		instruction_trace = *iter;
 		print_instructino_trace(instruction_trace);
 	}
 }
@@ -392,7 +403,7 @@ RZ_API void rz_analysis_esil_trace_show(RzAnalysisEsil *esil, int idx) {
 		return;
 	}
 
-	RzILTraceInstruction *instruction = rz_vector_index_ptr(esil->trace->instructions, idx);
+	RzILTraceInstruction *instruction = rz_pvector_at(esil->trace->instructions, idx);
 	if (!instruction) {
 		printf("Invalid trace id : %d\n", idx);
 	}
