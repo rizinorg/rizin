@@ -738,7 +738,7 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, RzPVecto
 			if (cur_instr_trace->stats & TRACE_INS_HAS_REG_W) {
 				w_reg = rz_pvector_at(cur_instr_trace->write_reg_ops, 0);
 				if (w_reg) {
-					ctx->prev_dest = w_reg->reg_name;
+					ctx->prev_dest = strdup(w_reg->reg_name);
 				}
 			}
 		}
