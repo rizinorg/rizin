@@ -34,7 +34,7 @@ ut64 Elf_(rz_bin_elf_get_sp_val)(RZ_NONNULL ELFOBJ *bin) {
 				return UT64_MAX;
 			}
 
-			return rz_read_ble(note->regstate + layout->sp_offset, bin->endian, layout->sp_size);
+			return rz_read_ble(note->regstate + layout->sp_offset, bin->big_endian, layout->sp_size);
 		}
 	}
 

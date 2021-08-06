@@ -168,7 +168,7 @@ static bool init_ehdr_ident(ELFOBJ *bin) {
 		return false;
 	}
 
-	bin->endian = bin->ehdr.e_ident[EI_DATA] == ELFDATA2MSB ? 1 : 0;
+	bin->big_endian = bin->ehdr.e_ident[EI_DATA] == ELFDATA2MSB;
 
 	return true;
 }
