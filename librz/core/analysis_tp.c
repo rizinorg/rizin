@@ -46,12 +46,12 @@ static bool type_pos_hit(RzAnalysis *analysis, RzILTraceInstruction *instr_trace
 		const char *sp_name = rz_reg_get_name(analysis->reg, RZ_REG_NAME_SP);
 		ut64 sp = rz_reg_getv(analysis->reg, sp_name);
 
-		RzPVector *write_mems = instr_trace->write_mem_ops;
 		ut64 write_addr = 0LL;
-		if (instr_trace->stats & TRACE_INS_HAS_MEM_W) {
+		if (instr_trace && (instr_trace->stats & TRACE_INS_HAS_MEM_W)) {
 			// TODO : This assumes an op will only write to memory once
 			//      : which may be wrong in some archs. this is only a temporary solution
-			RzILTraceMemOp *mem = rz_pvector_at(write_mems, 0);
+			printf("mem write\n");
+			RzILTraceMemOp *mem = rz_pvector_at(instr_trace->write_mem_ops, 0);
 			write_addr = mem->addr;
 		} else {
 			// no reg write
@@ -185,6 +185,10 @@ static void get_src_regname(RzCore *core, ut64 addr, char *regname, int size) {
 
 static ut64 get_addr(RzPVector *trace, const char *regname, int idx) {
 	if (!regname || !*regname) {
+		return UT64_MAX;
+	}
+	if (idx >= rz_pvector_len(trace)) {
+		// CHECK_ME : should I return a 0 ?
 		return UT64_MAX;
 	}
 	RzILTraceInstruction *instruction_trace = rz_pvector_at(trace, idx);
@@ -484,7 +488,13 @@ void free_op_cache_kv(HtUPKv *kv) {
 }
 
 void handle_stack_canary(RzCore *core, RzILTraceInstruction *trace, RzAnalysisOp *aop) {
-	ut64 mov_addr = trace->addr;
+	ut64 mov_addr;
+	if (trace) {
+		mov_addr = trace->addr;
+	} else {
+		mov_addr = UT64_MAX;
+	}
+
 	RzAnalysisOp *mop = rz_core_analysis_op(core, mov_addr, RZ_ANALYSIS_OP_MASK_VAL | RZ_ANALYSIS_OP_MASK_BASIC);
 	if (mop) {
 		RzAnalysisVar *mopvar = rz_analysis_get_used_function_var(core->analysis, mop->addr);
@@ -528,11 +538,12 @@ static void propagate_return_type(RzCore *core, RzAnalysisOp *aop, RzAnalysisOp 
 	char src[REGNAME_SIZE] = { 0 };
 	void **uvit;
 
-	RzPVector *write_regs = trace->write_reg_ops;
-	bool has_write_regs = trace->stats & TRACE_INS_HAS_REG_W;
-
-	// TODO : handle multiple registers case
-	RzILTraceRegOp *single_reg = rz_pvector_at(write_regs, 0);
+	// TODO : handle multiple registers case, this is a temporary solution
+	RzILTraceRegOp *single_write_reg = NULL;
+	if (trace && (trace->stats & TRACE_INS_HAS_REG_W)) {
+		printf("Single Write Reg In Propagation");
+		single_write_reg = rz_pvector_at(trace->write_reg_ops, 0);
+	}
 
 	get_src_regname(core, aop->addr, src, sizeof(src));
 	ut32 type = aop->type & RZ_ANALYSIS_OP_TYPE_MASK;
@@ -545,13 +556,13 @@ static void propagate_return_type(RzCore *core, RzAnalysisOp *aop, RzAnalysisOp 
 			ctx->resolved = true;
 		} else if (type == RZ_ANALYSIS_OP_TYPE_MOV) {
 			RZ_FREE(ctx->ret_reg);
-			if (single_reg && single_reg->reg_name) {
-				ctx->ret_reg = strdup(single_reg->reg_name);
+			if (single_write_reg && single_write_reg->reg_name) {
+				ctx->ret_reg = strdup(single_write_reg->reg_name);
 			}
 		}
-	} else if (has_write_regs) {
+	} else if (single_write_reg) {
 		if (ctx->ret_reg &&
-			(single_reg && single_reg->reg_name && strstr(ctx->ret_reg, single_reg->reg_name))) {
+			(single_write_reg->reg_name && strstr(ctx->ret_reg, single_write_reg->reg_name))) {
 			ctx->resolved = true;
 		} else if (type == RZ_ANALYSIS_OP_TYPE_MOV &&
 			(next_op && next_op->type == RZ_ANALYSIS_OP_TYPE_MOV)) {
@@ -580,7 +591,11 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, RzPVecto
 	bool userfnc = false;
 	bool prop = false;
 	ut32 type = aop->type & RZ_ANALYSIS_OP_TYPE_MASK;
-	RzILTraceInstruction *cur_instr_trace = rz_pvector_at(instr_traces, ctx->cur_idx);
+
+	RzILTraceInstruction *cur_instr_trace = NULL;
+	if (ctx->cur_idx < rz_pvector_len(instr_traces)) {
+		cur_instr_trace = rz_pvector_at(instr_traces, ctx->cur_idx);
+	}
 
 	if (aop->type == RZ_ANALYSIS_OP_TYPE_CALL || aop->type & RZ_ANALYSIS_OP_TYPE_UCALL) {
 		char *full_name = NULL;
@@ -720,9 +735,15 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, RzPVecto
 		}
 
 		// Assert : reg write only once here
-		RzPVector *write_regs = cur_instr_trace->write_reg_ops;
-		RzILTraceRegOp *w_reg = rz_pvector_at(write_regs, 0);
-		ctx->prev_dest = w_reg->reg_name;
+		RzILTraceRegOp *w_reg = NULL;
+		if (cur_instr_trace) {
+			if (cur_instr_trace->stats & TRACE_INS_HAS_REG_W) {
+				w_reg = rz_pvector_at(cur_instr_trace->write_reg_ops, 0);
+				if (w_reg) {
+					ctx->prev_dest = w_reg->reg_name;
+				}
+			}
+		}
 
 		if (used_vars && !rz_pvector_empty(used_vars)) {
 			rz_pvector_foreach (used_vars, uvit) {
