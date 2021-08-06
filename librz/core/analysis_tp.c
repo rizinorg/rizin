@@ -49,9 +49,9 @@ static bool type_pos_hit(RzAnalysis *analysis, RzILTraceInstruction *instr_trace
 		RzPVector *write_mems = instr_trace->write_mem_ops;
 		ut64 write_addr = 0LL;
 		if (instr_trace->stats & TRACE_INS_HAS_MEM_W) {
-                        // TODO : This assumes an op will only write to memory once
-                        //      : which may be wrong in some archs. this is only a temporary solution
-                        RzILTraceMemOp *mem = rz_pvector_at(write_mems, 0);
+			// TODO : This assumes an op will only write to memory once
+			//      : which may be wrong in some archs. this is only a temporary solution
+			RzILTraceMemOp *mem = rz_pvector_at(write_mems, 0);
 			write_addr = mem->addr;
 		} else {
 			// no reg write
@@ -551,8 +551,7 @@ static void propagate_return_type(RzCore *core, RzAnalysisOp *aop, RzAnalysisOp 
 		}
 	} else if (has_write_regs) {
 		if (ctx->ret_reg &&
-			(single_reg && single_reg->reg_name
-				&& strstr(ctx->ret_reg, single_reg->reg_name))) {
+			(single_reg && single_reg->reg_name && strstr(ctx->ret_reg, single_reg->reg_name))) {
 			ctx->resolved = true;
 		} else if (type == RZ_ANALYSIS_OP_TYPE_MOV &&
 			(next_op && next_op->type == RZ_ANALYSIS_OP_TYPE_MOV)) {
@@ -828,18 +827,18 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 			//          : can we remove it ?
 			// when set null, do not track loop count
 			if (loop_table) {
-                                void *loop_count_raw = ht_up_find(loop_table, addr, NULL);
-                                ut64 loop_count = 0;
-                                if (loop_count_raw) {
-                                        // FIXME : htuu not found, have to use cast for now
-                                        loop_count = (ut64)loop_count_raw;
-                                }
-                                if (loop_count > LOOP_MAX || aop->type == RZ_ANALYSIS_OP_TYPE_RET) {
-                                        break;
-                                }
-                                loop_count += 1;
-                                ht_up_update(loop_table, addr, (void *)loop_count);
-                        }
+				void *loop_count_raw = ht_up_find(loop_table, addr, NULL);
+				ut64 loop_count = 0;
+				if (loop_count_raw) {
+					// FIXME : htuu not found, have to use cast for now
+					loop_count = (ut64)loop_count_raw;
+				}
+				if (loop_count > LOOP_MAX || aop->type == RZ_ANALYSIS_OP_TYPE_RET) {
+					break;
+				}
+				loop_count += 1;
+				ht_up_update(loop_table, addr, (void *)loop_count);
+			}
 
 			if (rz_analysis_op_nonlinear(aop->type)) { // skip the instr
 				rz_reg_set_value(core->dbg->reg, r, addr + aop->size);
