@@ -15,7 +15,7 @@ CMDDESCS_C_TEMPLATE = """// SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re
 // modify it manually. Look at cmd_descs.yaml if you want to update commands.
 //
 
-#include "cmd_descs.h"
+#include <cmd_descs.h>
 
 {helps_declarations}
 

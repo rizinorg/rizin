@@ -20,7 +20,7 @@ rz_core_sources = [
   'clang.c',
   'cparser.c',
   'cmd.c',
-  cmd_descs_c,
+  cmd_descs_ch,
   #'cmd_analysis.c',
   'cmd_api.c',
   #'cmd_cmp.c',
@@ -83,7 +83,7 @@ else
   rz_core_sources += 'windows_heap.c'
   rz_core_inc += ['../../shlr/heap/include/rz_windows']
 endif
-rz_core_inc = [platform_inc, include_directories(rz_core_inc)]
+rz_core_inc = [platform_inc, include_directories(rz_core_inc), 'cmd_descs']
 
 rz_core_deps = [
   rz_util_dep,
