@@ -50,7 +50,6 @@ static bool type_pos_hit(RzAnalysis *analysis, RzILTraceInstruction *instr_trace
 		if (instr_trace && (instr_trace->stats & TRACE_INS_HAS_MEM_W)) {
 			// TODO : This assumes an op will only write to memory once
 			//      : which may be wrong in some archs. this is only a temporary solution
-			printf("mem write\n");
 			RzILTraceMemOp *mem = rz_pvector_at(instr_trace->write_mem_ops, 0);
 			write_addr = mem->addr;
 		} else {
@@ -541,7 +540,6 @@ static void propagate_return_type(RzCore *core, RzAnalysisOp *aop, RzAnalysisOp 
 	// TODO : handle multiple registers case, this is a temporary solution
 	RzILTraceRegOp *single_write_reg = NULL;
 	if (trace && (trace->stats & TRACE_INS_HAS_REG_W)) {
-		printf("Single Write Reg In Propagation");
 		single_write_reg = rz_pvector_at(trace->write_reg_ops, 0);
 	}
 
