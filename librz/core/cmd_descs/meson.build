@@ -19,17 +19,17 @@ cmd_descs_yaml = files(
   'cmd_write.yaml',
   'cmd_zign.yaml',
 )
-cmd_descs_src_c = files('cmd_descs.c')
+cmd_descs_src_c = files('cmd_descs.c', 'cmd_descs.h')
 
 r = run_command(py3_exe, '-c', 'import yaml')
 if r.returncode() == 0
-  cmd_descs_c = custom_target(
-    'cmd_descs.c',
-    output: ['cmd_descs.c'],
-    input: [cmd_descs_generate_py, cmd_descs_yaml],
-    command: [py3_exe, cmd_descs_generate_py, '--output-dir', '@OUTDIR@', '--src-output-dir', meson.current_source_dir(), cmd_descs_yaml]
+  cmd_descs_ch = custom_target(
+    'cmd_descs.[ch]',
+    output: ['cmd_descs.c', 'cmd_descs.h'],
+    input: cmd_descs_yaml,
+    command: [py3_exe, cmd_descs_generate_py, '--output-dir', '@OUTDIR@', '--src-output-dir', meson.current_source_dir(), '@INPUT@']
   )
 else
   warning('PyYAML python module was not found, using cmd_descs.c/cmd_descs.h from source directory. Install PyYAML (either from your package manager or through pip) if you need to modify cmd_descs files.')
-  cmd_descs_c = cmd_descs_src_c
+  cmd_descs_ch = cmd_descs_src_c
 endif
