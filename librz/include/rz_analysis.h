@@ -999,8 +999,8 @@ typedef struct rz_analysis_esil_trace_t {
 	ut64 stack_addr;
 	ut64 stack_size;
 	ut8 *stack_data;
-        // RzVector<RzILTraceInstruction>
-        RzPVector *instructions;
+	// RzVector<RzILTraceInstruction>
+	RzPVector *instructions;
 } RzAnalysisEsilTrace;
 
 typedef int (*RzAnalysisEsilHookRegWriteCB)(ESIL *esil, const char *name, ut64 *val);
@@ -1437,39 +1437,38 @@ RZ_API void rz_analysis_esil_stats(RzAnalysisEsil *esil, int enable);
 
 /* new trace implementation */
 typedef enum {
-	TRACE_READ,
-	TRACE_WRITE
+	TRACE_READ, ///< read
+	TRACE_WRITE ///< write
 } TRACE_OPERATION;
 
 typedef struct {
-	ut64 addr;                ///< memory address
-	TRACE_OPERATION behavior; ///< read or write
-	ut64 value;              ///< data either written to or read from
+	ut64 addr; ///< memory address
+	TRACE_OPERATION behavior; ///< read or write, see TRACE_OPERATION enums
+	ut64 value; ///< data either written to or read from
 } RzILTraceMemOp;
 
 typedef struct {
 	char *reg_name; ///< name of register
-	TRACE_OPERATION behavior; ///< true if write, false if read
+	TRACE_OPERATION behavior; ///< READ or WRITE, see TRACE_OPERATION enums
 	ut64 value; ///< data either written to or read from
 } RzILTraceRegOp;
 
 enum {
-	TRACE_INS_HAS_MEM_R = 0x1U,
-	TRACE_INS_HAS_MEM_W = 0x2U,
-	TRACE_INS_HAS_REG_R = 0x4U,
-	TRACE_INS_HAS_REG_W = 0x8U
+	TRACE_INS_HAS_MEM_R = 0x1U, ///< instruction include memory read
+	TRACE_INS_HAS_MEM_W = 0x2U, ///< instruction include memory write
+	TRACE_INS_HAS_REG_R = 0x4U, ///< instruction include register read
+	TRACE_INS_HAS_REG_W = 0x8U ///< instruction include register write
 };
 
 typedef struct {
-	ut64 addr;
-	ut32 stats;
-	// Vector<RzILTraceRegOp>
-	RzPVector *write_mem_ops;
-	RzPVector *read_mem_ops;
+	ut64 addr; ///< Address of instruction
+	ut32 stats; ///< Has write/read to reg/mem ? see TRACE_INS_HAS_* enums
 
-	// Vector<RzILTraceRegOp>
-	RzPVector *write_reg_ops;
-	RzPVector *read_reg_ops;
+	RzPVector *write_mem_ops; ///< Vector<RzILTraceRegOp>
+	RzPVector *read_mem_ops; ///< Vector<RzILTraceRegOp>
+
+	RzPVector *write_reg_ops; ///< Vector<RzILTraceRegOp>
+	RzPVector *read_reg_ops; ///< Vector<RzILTraceRegOp>
 } RzILTraceInstruction;
 
 /* Independent Trace Functions */
@@ -1529,7 +1528,7 @@ RZ_API int rz_analysis_run_tasks(RZ_NONNULL RzVector *tasks);
 
 #define RZ_ANALYSIS_FCN_VARKIND_LOCAL 'v'
 
-RZ_API int rz_analysis_fcn_var_del_byindex(RzAnalysis *a, ut64 fna, const char kind, int scope, ut32 idx);
+RZ_API int rz_analysis_fcn_var_del_byindex(RzAnalysis *a, ut64 fna, char kind, int scope, ut32 idx);
 /* args */
 RZ_API int rz_analysis_var_count(RzAnalysis *a, RzAnalysisFunction *fcn, int kind, int type);
 
