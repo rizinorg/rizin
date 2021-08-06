@@ -368,6 +368,7 @@ foreach item : [
     ['execl', '#include <unistd.h>', []],
     ['system', '#include <stdlib.h>', []],
     ['fork', '#include <unistd.h>', []],
+    ['nice', '#include <unistd.h>', []],
     ['pipe2', '#define _GNU_SOURCE\n#include <fcntl.h>\n#include <unistd.h>', []]
   ]
   func = item[0]

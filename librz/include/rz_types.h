@@ -349,11 +349,6 @@ static inline void *rz_new_copy(int size, void *data) {
 #include <dirent.h>
 #include <unistd.h>
 #include <sys/time.h>
-#ifdef __HAIKU__
-// Original macro cast it to clockid_t
-#undef CLOCK_MONOTONIC
-#define CLOCK_MONOTONIC 0
-#endif
 #endif
 
 #ifndef HAVE_EPRINTF

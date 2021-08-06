@@ -1217,7 +1217,7 @@ RZ_API int rz_run_start(RzRunProfile *p) {
 #endif
 
 		if (p->_nice) {
-#if __UNIX__ && !defined(__HAIKU__)
+#if HAVE_NICE
 			if (nice(p->_nice) == -1) {
 				return 1;
 			}
