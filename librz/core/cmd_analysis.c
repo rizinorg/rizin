@@ -8098,8 +8098,8 @@ RZ_IPI RzCmdStatus rz_analysis_print_global_variable_handler(RzCore *core, int a
 }
 
 RZ_IPI RzCmdStatus rz_analysis_global_variable_add_handler(RzCore *core, int argc, const char **argv) {
-	if (argc < 4) {
-		return RZ_CMD_STATUS_ERROR;
+	if (argc < 4 || argc > 5) {
+		return RZ_CMD_STATUS_WRONG_ARGS;
 	}
 	char *var_name = (char *)argv[1];
 	ut64 addr = rz_num_math(core->num, (char *)argv[2]);

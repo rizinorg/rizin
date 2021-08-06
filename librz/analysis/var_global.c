@@ -4,7 +4,15 @@
 #include <rz_analysis.h>
 #include <rz_list.h>
 
-RZ_API RzAnalysisVarGlobal *rz_analysis_var_global_new(char *name, ut64 addr, char *comment) {
+/**
+ * \brief Create a new instance of global variable
+ * 
+ * \param name variable name
+ * \param addr variable address
+ * \param comment variable comment
+ * \return RzAnalysisVarGlobal *
+ */
+RZ_API RZ_OWN RzAnalysisVarGlobal *rz_analysis_var_global_new(RZ_NONNULL const char *name, ut64 addr, const char *comment) {
 	rz_return_val_if_fail(name && addr, NULL);
 	RzAnalysisVarGlobal *glob = RZ_NEW0(RzAnalysisVarGlobal);
 	if (!glob) {
@@ -18,7 +26,14 @@ RZ_API RzAnalysisVarGlobal *rz_analysis_var_global_new(char *name, ut64 addr, ch
 	return glob;
 }
 
-RZ_API bool rz_analysis_var_global_add(RzAnalysis *analysis, RzAnalysisVarGlobal *global_var) {
+/**
+ * \brief Add the global variable into hashtable
+ * 
+ * \param analysis RzAnalysis
+ * \param global_var Global variable instance
+ * \return true if succeed
+ */
+RZ_API RZ_OWN bool rz_analysis_var_global_add(RzAnalysis *analysis, RzAnalysisVarGlobal *global_var) {
 	rz_return_val_if_fail(analysis && global_var, false);
 	if (rz_analysis_var_global_get_byaddr(analysis, global_var->addr)) {
 		eprintf("Global variable at 0x%" PFMT64x " is already exist!\n", global_var->addr);
@@ -27,19 +42,33 @@ RZ_API bool rz_analysis_var_global_add(RzAnalysis *analysis, RzAnalysisVarGlobal
 	return ht_pp_insert(analysis->ht_global_var, global_var->name, global_var);
 }
 
+/**
+ * \brief Free the global variable instance
+ * 
+ * \param glob Global variable instance
+ * \return void
+ */
 RZ_API void rz_analysis_var_global_free(RzAnalysisVarGlobal *glob) {
-	rz_return_if_fail(glob);
-	RZ_FREE(glob->name);
-	if (glob->comment) {
-		RZ_FREE(glob->comment);
+	if (!glob) {
+		return;
 	}
+
+	RZ_FREE(glob->name);
+	RZ_FREE(glob->comment);
 	rz_type_free(glob->type);
 	rz_analysis_var_global_clear_accesses(glob);
 	rz_vector_fini(&glob->constraints);
 	RZ_FREE(glob);
 }
 
-RZ_API bool rz_analysis_var_global_delete_byname(RzAnalysis *analysis, char *name) {
+/**
+ * \brief Delete and free the global variable by its name
+ * 
+ * \param analysis RzAnalysis
+ * \param name Global Variable name
+ * \return true if succeed
+ */
+RZ_API bool rz_analysis_var_global_delete_byname(RzAnalysis *analysis, const char *name) {
 	rz_return_val_if_fail(analysis && name, false);
 	RzAnalysisVarGlobal *glob = rz_analysis_var_global_get_byname(analysis, name);
 	if (!glob) {
@@ -50,6 +79,13 @@ RZ_API bool rz_analysis_var_global_delete_byname(RzAnalysis *analysis, char *nam
 	return ht_pp_delete(analysis->ht_global_var, name);
 }
 
+/**
+ * \brief Same as rz_analysis_var_global_delete_byname but by its address
+ * 
+ * \param analysis RzAnalysis
+ * \param addr Global Variable address
+ * \return true if succeed
+ */
 RZ_API bool rz_analysis_var_global_delete_byaddr(RzAnalysis *analysis, ut64 addr) {
 	rz_return_val_if_fail(analysis, false);
 	RzAnalysisVarGlobal *glob = rz_analysis_var_global_get_byaddr(analysis, addr);
@@ -62,21 +98,14 @@ RZ_API bool rz_analysis_var_global_delete_byaddr(RzAnalysis *analysis, ut64 addr
 	return deleted ? true : false;
 }
 
-RZ_API void rz_analysis_var_global_delete_all(RzAnalysis *analysis) {
-	rz_return_if_fail(analysis);
-	RzList *globals = rz_analysis_var_global_get_all(analysis);
-	if (!globals) {
-		return;
-	}
-	RzListIter *it;
-	RzAnalysisVarGlobal *glob;
-	rz_list_foreach (globals, it, glob) {
-		ht_pp_delete(analysis->ht_global_var, glob->name);
-		rz_analysis_var_global_free(glob);
-	}
-}
-
-RZ_API RzAnalysisVarGlobal *rz_analysis_var_global_get_byname(RzAnalysis *analysis, char *name) {
+/**
+ * \brief Get the instance of global variable by its name
+ * 
+ * \param analysis RzAnalysis
+ * \param name Global variable name
+ * \return RzAnalysisVarGlobal *
+ */
+RZ_API RZ_BORROW RzAnalysisVarGlobal *rz_analysis_var_global_get_byname(RzAnalysis *analysis, const char *name) {
 	rz_return_val_if_fail(analysis && name, NULL);
 	RzAnalysisVarGlobal *glob;
 	bool found;
@@ -98,7 +127,14 @@ static bool global_var_collect_addr_cb(void *user, const void *k, const void *v)
 	return true;
 }
 
-RZ_API RzAnalysisVarGlobal *rz_analysis_var_global_get_byaddr(RzAnalysis *analysis, ut64 addr) {
+/**
+ * \brief Same as rz_analysis_var_global_get_byname but by its address
+ * 
+ * \param analysis RzAnalysis
+ * \param addr Global variable address
+ * \return RzAnalysisVarGlobal *
+ */
+RZ_API RZ_BORROW RzAnalysisVarGlobal *rz_analysis_var_global_get_byaddr(RzAnalysis *analysis, ut64 addr) {
 	rz_return_val_if_fail(analysis, NULL);
 	RzList *list = rz_list_new();
 	struct list_addr l = { list, addr };
@@ -119,14 +155,28 @@ static bool global_var_collect_cb(void *user, const void *k, const void *v) {
 	return true;
 }
 
-RZ_API RzList *rz_analysis_var_global_get_all(RzAnalysis *analysis) {
+/**
+ * \brief Get all of the added global variables
+ * 
+ * \param analysis RzAnalysis
+ * \return RzList *
+ */
+RZ_API RZ_OWN RzList *rz_analysis_var_global_get_all(RzAnalysis *analysis) {
 	rz_return_val_if_fail(analysis, NULL);
 	RzList *globals = rz_list_new();
 	ht_pp_foreach(analysis->ht_global_var, global_var_collect_cb, globals);
 	return globals;
 }
 
-RZ_API bool rz_analysis_var_global_rename(RzAnalysis *analysis, char *old_name, char *newname) {
+/**
+ * \brief Rename the global variable
+ * 
+ * \param analysis RzAnalysis
+ * \param old_name The old name of the global variable
+ * \param newname The new name of the global variable
+ * \return true if succeed
+ */
+RZ_API bool rz_analysis_var_global_rename(RzAnalysis *analysis, const char *old_name, RZ_NONNULL const char *newname) {
 	rz_return_val_if_fail(analysis && old_name && newname, false);
 	RzAnalysisVarGlobal *glob = rz_analysis_var_global_get_byname(analysis, old_name);
 	if (!glob) {
@@ -138,19 +188,32 @@ RZ_API bool rz_analysis_var_global_rename(RzAnalysis *analysis, char *old_name, 
 	return ht_pp_update_key(analysis->ht_global_var, old_name, newname);
 }
 
-RZ_API bool rz_analysis_var_global_set_comment(RzAnalysis *analysis, char *name, char *comment) {
+/**
+ * \brief Set the comment of the global variable
+ * 
+ * \param analysis RzAnalysis
+ * \param name The name of the global variable to set
+ * \param comment The comment to set
+ * \return true if succeed
+ */
+RZ_API bool rz_analysis_var_global_set_comment(RzAnalysis *analysis, const char *name, RZ_NONNULL const char *comment) {
 	rz_return_val_if_fail(analysis && name && comment, false);
 	RzAnalysisVarGlobal *glob = rz_analysis_var_global_get_byname(analysis, name);
 	if (!glob) {
 		return false;
 	}
-	if (glob->comment) {
-		RZ_FREE(glob->comment);
-	}
+	RZ_FREE(glob->comment);
 	glob->comment = strdup(comment);
 	return true;
 }
 
+/**
+ * \brief Set the type of the global variable
+ * 
+ * \param glob Global variable instance
+ * \param type The type to set. RzType*
+ * \return void
+ */
 RZ_API void rz_analysis_var_global_set_type(RzAnalysisVarGlobal *glob, RzType *type) {
 	rz_return_if_fail(glob && type);
 	glob->type = type;
@@ -160,6 +223,17 @@ static st64 var_access_cmp(ut64 x, char *y) {
 	return x - (ut64)((RzAnalysisVarGlobal *)y)->addr;
 }
 
+/**
+ * \brief Set the accesses of the global variable
+ * 
+ * \param analysis RzAnalysis
+ * \param glob Global variable instance
+ * \param reg Register
+ * \param access_addr Address of access
+ * \param access_type Type of access
+ * \param stackptr Stack pointer
+ * \return void
+ */
 RZ_API void rz_analysis_var_global_set_access(RzAnalysis *analysis, RzAnalysisVarGlobal *glob, const char *reg, ut64 access_addr, int access_type, st64 stackptr) {
 	rz_return_if_fail(glob);
 	st64 offset = (st64)access_addr - (st64)glob->addr;
@@ -182,6 +256,13 @@ RZ_API void rz_analysis_var_global_set_access(RzAnalysis *analysis, RzAnalysisVa
 	acc->reg = rz_str_constpool_get(&analysis->constpool, reg);
 }
 
+/**
+ * \brief Remove the access at the address of global variable
+ * 
+ * \param glob Global variable instance
+ * \param address Where to delete
+ * \return void
+ */
 RZ_API void rz_analysis_var_global_remove_access_at(RzAnalysisVarGlobal *glob, ut64 address) {
 	rz_return_if_fail(glob);
 	st64 offset = (st64)address - (st64)glob->addr;
@@ -196,16 +277,35 @@ RZ_API void rz_analysis_var_global_remove_access_at(RzAnalysisVarGlobal *glob, u
 	}
 }
 
+/**
+ * \brief Clear all the accesses of global variable
+ * 
+ * \param glob Global variable instance
+ * \return void
+ */
 RZ_API void rz_analysis_var_global_clear_accesses(RzAnalysisVarGlobal *glob) {
 	rz_return_if_fail(glob);
 	rz_vector_clear(&glob->accesses);
 }
 
+/**
+ * \brief Add a constaint to global variable
+ * 
+ * \param glob Global variable instance
+ * \param constraint RzTypeConstraint
+ * \return void
+ */
 RZ_API void rz_analysis_var_global_add_constraint(RzAnalysisVarGlobal *glob, RzTypeConstraint *constraint) {
 	rz_return_if_fail(glob && constraint);
 	rz_vector_push(&glob->constraints, constraint);
 }
 
+/**
+ * \brief Get the pritable string of global variable constraints
+ * 
+ * \param glob Global variable instance
+ * \return char *
+ */
 RZ_API char *rz_analysis_var_global_get_constraints_readable(RzAnalysisVarGlobal *glob) {
 	size_t n = glob->constraints.len;
 	if (!n) {
@@ -252,7 +352,15 @@ RZ_API char *rz_analysis_var_global_get_constraints_readable(RzAnalysisVarGlobal
 	return rz_strbuf_drain_nofree(&sb);
 }
 
-RZ_API void rz_analysis_var_global_list_show(RzAnalysis *analysis, RzCmdStateOutput *state, char *name) {
+/**
+ * \brief Print out the global variables
+ * 
+ * \param analysis RzAnalysis
+ * \param state RzCmdStateOutput *
+ * \param name Which one to print
+ * \return void
+ */
+RZ_API void rz_analysis_var_global_list_show(RzAnalysis *analysis, RzCmdStateOutput *state, RZ_NULLABLE const char *name) {
 	rz_return_if_fail(analysis && state);
 	RzList *global_vars = NULL;
 	RzAnalysisVarGlobal *glob = NULL;
