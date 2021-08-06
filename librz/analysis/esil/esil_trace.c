@@ -212,7 +212,6 @@ static int trace_hook_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf,
 	mem_write->addr = addr;
 	esil_add_mem_trace(esil->trace, mem_write);
 
-	// clean the hex buffer
 	free(hexbuf);
 
 	for (i = 0; i < len; i++) {
@@ -377,7 +376,7 @@ RZ_API void rz_analysis_esil_trace_show(RzAnalysisEsil *esil, int idx) {
 
 	RzILTraceInstruction *instruction = rz_analysis_esil_get_instruction_trace(esil->trace, idx);
 	if (!instruction) {
-		printf("Invalid trace id : %d\n", idx);
+		RZ_LOG_ERROR("Invalid trace id : %d\n", idx);
 	}
 
 	print_instructino_trace(instruction, idx);
