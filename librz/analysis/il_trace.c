@@ -20,32 +20,36 @@ RZ_API RzILTraceInstruction *rz_analysis_il_trace_instruction_new(ut64 addr) {
 
 	instruction_trace->addr = addr;
 
-	instruction_trace->read_mem_ops = rz_vector_new(sizeof(RzILTraceMemOp), (RzVectorFree)free, NULL);
-	instruction_trace->read_reg_ops = rz_vector_new(sizeof(RzILTraceRegOp), (RzVectorFree)free, NULL);
-	instruction_trace->write_mem_ops = rz_vector_new(sizeof(RzILTraceMemOp), (RzVectorFree)free, NULL);
-	instruction_trace->write_reg_ops = rz_vector_new(sizeof(RzILTraceRegOp), (RzVectorFree)free, NULL);
+	instruction_trace->read_mem_ops = rz_pvector_new((RzPVectorFree)free);
+	instruction_trace->read_reg_ops = rz_pvector_new((RzPVectorFree)free);
+	instruction_trace->write_mem_ops = rz_pvector_new((RzPVectorFree)free);
+	instruction_trace->write_reg_ops = rz_pvector_new((RzPVectorFree)free);
 	// TODO : handle error
 	return instruction_trace;
 }
 
 RZ_API void rz_analysis_il_trace_instruction_free(RzILTraceInstruction *instruction) {
 	if (instruction->write_reg_ops) {
-		rz_vector_free(instruction->write_reg_ops);
+		rz_pvector_free(instruction->write_reg_ops);
+		instruction->write_reg_ops = NULL;
 	}
 
 	if (instruction->read_reg_ops) {
-		rz_vector_free(instruction->read_reg_ops);
+		rz_pvector_free(instruction->read_reg_ops);
+		instruction->read_reg_ops = NULL;
 	}
 
 	if (instruction->write_mem_ops) {
-		rz_vector_free(instruction->write_mem_ops);
+		rz_pvector_free(instruction->write_mem_ops);
+		instruction->write_mem_ops = NULL;
 	}
 
 	if (instruction->read_mem_ops) {
-		rz_vector_free(instruction->read_mem_ops);
+		rz_pvector_free(instruction->read_mem_ops);
+		instruction->read_mem_ops = NULL;
 	}
 
-	RZ_FREE(instruction);
+//	RZ_FREE(instruction);
 }
 
 /* Trace operations */
@@ -60,10 +64,10 @@ RZ_API void rz_analysis_il_trace_add_mem(RzILTraceInstruction *trace, RzILTraceM
 	}
 
 	if (is_write) {
-		rz_vector_push(trace->write_mem_ops, mem);
+		rz_pvector_push(trace->write_mem_ops, mem);
 		trace->stats |= TRACE_INS_HAS_MEM_W;
 	} else {
-		rz_vector_push(trace->read_mem_ops, mem);
+		rz_pvector_push(trace->read_mem_ops, mem);
 		trace->stats |= TRACE_INS_HAS_MEM_R;
 	}
 }
@@ -79,10 +83,10 @@ RZ_API void rz_analysis_il_trace_add_reg(RzILTraceInstruction *trace, RzILTraceR
 	}
 
 	if (is_write) {
-		rz_vector_push(trace->write_reg_ops, reg);
+		rz_pvector_push(trace->write_reg_ops, reg);
 		trace->stats |= TRACE_INS_HAS_REG_W;
 	} else {
-		rz_vector_push(trace->read_reg_ops, reg);
+		rz_pvector_push(trace->read_reg_ops, reg);
 		trace->stats |= TRACE_INS_HAS_REG_R;
 	}
 }
@@ -92,7 +96,7 @@ RZ_API RzILTraceMemOp *rz_analysis_il_get_mem_op_trace(RzILTraceInstruction *tra
 		return NULL;
 	}
 
-	RzVector *mem_ops;
+	RzPVector *mem_ops;
 	RzILTraceMemOp *mem_op;
 	if (is_write) {
 		mem_ops = trace->write_mem_ops;
@@ -100,7 +104,9 @@ RZ_API RzILTraceMemOp *rz_analysis_il_get_mem_op_trace(RzILTraceInstruction *tra
 		mem_ops = trace->read_mem_ops;
 	}
 
-	rz_vector_foreach(mem_ops, mem_op) {
+	void **iter;
+	rz_pvector_foreach(mem_ops, iter) {
+		mem_op = *iter;
 		if (mem_op->addr == addr) {
 			return mem_op;
 		}
@@ -114,7 +120,7 @@ RZ_API RzILTraceRegOp *rz_analysis_il_get_reg_op_trace(RzILTraceInstruction *tra
 		return NULL;
 	}
 
-	RzVector *reg_ops;
+	RzPVector *reg_ops;
 	RzILTraceRegOp *reg_op;
 	if (is_write) {
 		reg_ops = trace->write_reg_ops;
@@ -122,7 +128,9 @@ RZ_API RzILTraceRegOp *rz_analysis_il_get_reg_op_trace(RzILTraceInstruction *tra
 		reg_ops = trace->read_reg_ops;
 	}
 
-	rz_vector_foreach(reg_ops, reg_op) {
+	void **iter;
+	rz_pvector_foreach(reg_ops, iter) {
+		reg_op = *iter;
 		if (strcmp(reg_op->reg_name, regname) == 0) {
 			return reg_op;
 		}

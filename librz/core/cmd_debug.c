@@ -440,10 +440,6 @@ struct trace_node {
 	int refs;
 };
 
-static void htpp_vector_free(HtPPKv *kv) {
-	rz_pvector_free(kv->value);
-}
-
 // XXX those tmp files are never removed and we shuoldnt use files for this
 static void setRarunProfileString(RzCore *core, const char *str) {
 	char *file = rz_file_temp("rz-run");
@@ -4408,8 +4404,8 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 			case '-': // "dte-"
 				if (!strcmp(input + 3, "*")) {
 					if (core->analysis->esil) {
-						rz_vector_free(core->analysis->esil->trace->instructions);
-						core->analysis->esil->trace->instructions = rz_vector_new(0, (RzVectorFree)rz_analysis_il_trace_instruction_free, NULL);
+						rz_pvector_free(core->analysis->esil->trace->instructions);
+						core->analysis->esil->trace->instructions = rz_pvector_new((RzPVectorFree)rz_analysis_il_trace_instruction_free);
 					}
 				} else {
 					eprintf("TODO: dte- cannot delete specific logs. Use dte-*\n");

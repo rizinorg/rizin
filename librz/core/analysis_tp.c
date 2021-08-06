@@ -46,12 +46,12 @@ static bool type_pos_hit(RzAnalysis *analysis, RzILTraceInstruction *instr_trace
 		const char *sp_name = rz_reg_get_name(analysis->reg, RZ_REG_NAME_SP);
 		ut64 sp = rz_reg_getv(analysis->reg, sp_name);
 
-		RzVector *write_mems = instr_trace->write_mem_ops;
+		RzPVector *write_mems = instr_trace->write_mem_ops;
 		ut64 write_addr = 0LL;
 		if (instr_trace->stats & TRACE_INS_HAS_MEM_W) {
                         // TODO : This assumes an op will only write to memory once
                         //      : which may be wrong in some archs. this is only a temporary solution
-                        RzILTraceMemOp *mem = rz_vector_index_ptr(write_mems, 0);
+                        RzILTraceMemOp *mem = rz_pvector_at(write_mems, 0);
 			write_addr = mem->addr;
 		} else {
 			// no reg write
@@ -183,11 +183,11 @@ static void get_src_regname(RzCore *core, ut64 addr, char *regname, int size) {
 	rz_analysis_op_free(op);
 }
 
-static ut64 get_addr(RzVector *trace, const char *regname, int idx) {
+static ut64 get_addr(RzPVector *trace, const char *regname, int idx) {
 	if (!regname || !*regname) {
 		return UT64_MAX;
 	}
-	RzILTraceInstruction *instruction_trace = rz_vector_index_ptr(trace, idx);
+	RzILTraceInstruction *instruction_trace = rz_pvector_at(trace, idx);
 	RzILTraceRegOp *reg_op = rz_analysis_il_get_reg_op_trace(instruction_trace, regname, false);
 
 	return reg_op->value;
@@ -292,7 +292,7 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 	RzList *types = NULL;
 
 	// CHECK_ME : why use sdb to store idx before ?
-	int idx = rz_vector_len(etrace->instructions);
+	int idx = rz_pvector_len(etrace->instructions) - 1;
 
 	bool verbose = rz_config_get_i(core->config, "analysis.types.verbose");
 	bool stack_rev = false, in_stack = false, format = false;
@@ -528,11 +528,11 @@ static void propagate_return_type(RzCore *core, RzAnalysisOp *aop, RzAnalysisOp 
 	char src[REGNAME_SIZE] = { 0 };
 	void **uvit;
 
-	RzVector *write_regs = trace->write_reg_ops;
+	RzPVector *write_regs = trace->write_reg_ops;
 	bool has_write_regs = trace->stats & TRACE_INS_HAS_REG_W;
 
 	// TODO : handle multiple registers case
-	RzILTraceRegOp *single_reg = rz_vector_index_ptr(write_regs, 0);
+	RzILTraceRegOp *single_reg = rz_pvector_at(write_regs, 0);
 
 	get_src_regname(core, aop->addr, src, sizeof(src));
 	ut32 type = aop->type & RZ_ANALYSIS_OP_TYPE_MASK;
@@ -569,7 +569,7 @@ struct TypeAnalysisCtx {
 	bool str_flag;
 };
 
-void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, RzVector *instr_traces, RzAnalysisFunction *fcn, RzAnalysisBlock *bb, RzAnalysisOp *aop, struct TypeAnalysisCtx *ctx) {
+void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, RzPVector *instr_traces, RzAnalysisFunction *fcn, RzAnalysisBlock *bb, RzAnalysisOp *aop, struct TypeAnalysisCtx *ctx) {
 	RzPVector *used_vars = rz_analysis_function_get_vars_used_at(fcn, aop->addr);
 	bool chk_constraint = rz_config_get_b(core->config, "analysis.types.constraint");
 	RzAnalysisOp *next_op = op_cache_get(op_cache, core, aop->addr + aop->size);
@@ -581,7 +581,7 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, RzVector
 	bool userfnc = false;
 	bool prop = false;
 	ut32 type = aop->type & RZ_ANALYSIS_OP_TYPE_MASK;
-	RzILTraceInstruction *cur_instr_trace = rz_vector_index_ptr(instr_traces, ctx->cur_idx);
+	RzILTraceInstruction *cur_instr_trace = rz_pvector_at(instr_traces, ctx->cur_idx);
 
 	if (aop->type == RZ_ANALYSIS_OP_TYPE_CALL || aop->type & RZ_ANALYSIS_OP_TYPE_UCALL) {
 		char *full_name = NULL;
@@ -721,8 +721,8 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, RzVector
 		}
 
 		// Assert : reg write only once here
-		RzVector *write_regs = cur_instr_trace->write_reg_ops;
-		RzILTraceRegOp *w_reg = rz_vector_index_ptr(write_regs, 0);
+		RzPVector *write_regs = cur_instr_trace->write_reg_ops;
+		RzILTraceRegOp *w_reg = rz_pvector_at(write_regs, 0);
 		ctx->prev_dest = w_reg->reg_name;
 
 		if (used_vars && !rz_pvector_empty(used_vars)) {
@@ -848,8 +848,8 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 			}
 
 			// CHECK_ME : previous idx ?
-			RzVector *ins_traces = analysis->esil->trace->instructions;
-			ctx.cur_idx = ins_traces->len - 1;
+			RzPVector *ins_traces = analysis->esil->trace->instructions;
+			ctx.cur_idx = rz_pvector_len(ins_traces) - 1;
 			RzList *fcns = rz_analysis_get_functions_in(analysis, aop->addr);
 			if (!fcns) {
 				break;
