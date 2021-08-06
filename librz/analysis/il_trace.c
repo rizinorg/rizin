@@ -3,9 +3,9 @@
 
 /**
  * \file il_trace.c
- * \brief new rizin il trace implementation
+ * \brief new rizin IL trace implementation
  *
- * provide operations to new il trace structure to record
+ * provide operations to new IL trace structure to record
  * the memory changes and register changes.
  * TODO : Should be moved to librz/il after integrations with new il
  *      : should move the prototypes and trace structure to new header, too
