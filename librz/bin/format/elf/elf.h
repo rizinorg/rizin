@@ -165,6 +165,7 @@ struct Elf_(rz_bin_elf_obj_t) {
 	ut64 size;
 
 	bool big_endian;
+	int bits;
 	ut64 baddr;
 	ut64 boffset;
 
