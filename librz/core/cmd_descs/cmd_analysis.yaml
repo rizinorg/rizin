@@ -382,3 +382,43 @@ commands:
                     type: RZ_CMD_ARG_TYPE_RZNUM
                   - name: addr
                     type: RZ_CMD_ARG_TYPE_RZNUM
+  - name: av
+    summary: C++ vtables and RTTI
+    subcommands:
+      - name: av
+        summary: search for vtables in data sections and show results
+        type: RZ_CMD_DESC_TYPE_ARGV_MODES
+        cname: analysis_list_vtables
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: avr
+        summary: try to parse RTTI at vtable addr (see analysis.cpp.abi)
+        type: RZ_CMD_DESC_TYPE_ARGV_MODES
+        cname: analysis_print_rtti
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: avra
+        summary: search for vtables and try to parse RTTI at each of them
+        type: RZ_CMD_DESC_TYPE_ARGV_MODES
+        cname: analysis_print_rtti_all
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: avrr
+        summary: recover class info from all findable RTTI (see ac)
+        type: RZ_CMD_DESC_TYPE_ARGV
+        cname: analysis_recover_rtti_all
+        args: []
+      - name: avrD
+        summary: demangle a class name from RTTI
+        type: RZ_CMD_DESC_TYPE_ARGV
+        cname: analysis_rtti_demangle_class_name
+        args:
+          - name: classname
+            type: RZ_CMD_ARG_TYPE_STRING
