@@ -14,6 +14,11 @@ static void setup_sdb_for_struct(Sdb *res) {
 	sdb_set(res, "struct.kappa", "bar,cow", 0);
 	sdb_set(res, "struct.kappa.bar", "int32_t,0,0", 0);
 	sdb_set(res, "struct.kappa.cow", "int32_t,4,0", 0);
+
+	sdb_set(res, "lappa", "struct", 0);
+	sdb_set(res, "struct.lappa", "bar,cow", 0);
+	sdb_set(res, "struct.lappa.bar", "int32_t,0,0", 0);
+	sdb_set(res, "struct.lappa.cow", "struct kappa,4,0", 0);
 }
 
 static void setup_sdb_for_union(Sdb *res) {
@@ -22,6 +27,11 @@ static void setup_sdb_for_union(Sdb *res) {
 	sdb_set(res, "union.kappa", "bar,cow", 0);
 	sdb_set(res, "union.kappa.bar", "int32_t,0,0", 0);
 	sdb_set(res, "union.kappa.cow", "int32_t,0,0", 0);
+
+	sdb_set(res, "lappa", "union", 0);
+	sdb_set(res, "union.lappa", "bar,cow", 0);
+	sdb_set(res, "union.lappa.bar", "int32_t,0,0", 0);
+	sdb_set(res, "union.lappa.cow", "union kappa,0,0", 0);
 }
 
 static void setup_sdb_for_enum(Sdb *res) {
@@ -89,6 +99,15 @@ static bool test_types_get_base_type_struct(void) {
 	mu_assert_true(rz_type_atomic_str_eq(typedb, member->type, "int32_t"), "Incorrect type for struct member");
 	mu_assert_streq(member->name, "cow", "Incorrect name for struct member");
 
+	mu_assert_streq(rz_type_db_base_type_as_string(typedb, base), "struct kappa { int32_t bar; int32_t cow;  }", "Incorrect conversion of struct to string");
+
+	RzBaseType *base2 = rz_type_db_get_base_type(typedb, "lappa");
+	mu_assert_notnull(base2, "Couldn't create get base type of struct \"lappa\"");
+
+	mu_assert_eq(RZ_BASE_TYPE_KIND_STRUCT, base2->kind, "Wrong base type");
+	mu_assert_streq(base2->name, "lappa", "type name");
+	mu_assert_streq(rz_type_db_base_type_as_string(typedb, base2), "struct lappa { int32_t bar; struct kappa cow;  }", "Incorrect conversion of struct to string");
+
 	rz_type_db_free(typedb);
 	mu_end;
 }
@@ -118,6 +137,14 @@ static bool test_types_get_base_type_union(void) {
 	member = rz_vector_index_ptr(&base->union_data.members, 1);
 	mu_assert_true(rz_type_atomic_str_eq(typedb, member->type, "int32_t"), "Incorrect type for union member");
 	mu_assert_streq(member->name, "cow", "Incorrect name for union member");
+
+	mu_assert_streq(rz_type_db_base_type_as_string(typedb, base), "union kappa { int32_t bar; int32_t cow;  }", "Incorrect conversion of union to string");
+
+	RzBaseType *base2 = rz_type_db_get_base_type(typedb, "lappa");
+	mu_assert_notnull(base2, "Couldn't create get base type of union \"lappa\"");
+	mu_assert_eq(RZ_BASE_TYPE_KIND_UNION, base2->kind, "Wrong base type");
+	mu_assert_streq(base2->name, "lappa", "type name");
+	mu_assert_streq(rz_type_db_base_type_as_string(typedb, base2), "union lappa { int32_t bar; union kappa cow;  }", "Incorrect conversion of union to string");
 
 	rz_type_db_free(typedb);
 	mu_end;
