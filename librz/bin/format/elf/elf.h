@@ -162,13 +162,11 @@ struct Elf_(rz_bin_elf_obj_t) {
 
 	Sdb *kv;
 
-	const char *file;
 	ut64 size;
 
+	bool big_endian;
 	ut64 baddr;
 	ut64 boffset;
-	int endian;
-	int bss;
 
 	Elf_(Ehdr) ehdr;
 

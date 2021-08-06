@@ -17,7 +17,7 @@ static bool buffer_read_8(ELFOBJ *bin, ut64 *offset, ut8 *result) {
 }
 
 static bool buffer_read_16(ELFOBJ *bin, ut64 *offset, ut16 *result) {
-	ut16 tmp = rz_buf_read_ble16_at(bin->b, *offset, bin->endian);
+	ut16 tmp = rz_buf_read_ble16_at(bin->b, *offset, bin->big_endian);
 	if (tmp == UT16_MAX) {
 		return false;
 	}
@@ -29,7 +29,7 @@ static bool buffer_read_16(ELFOBJ *bin, ut64 *offset, ut16 *result) {
 }
 
 static bool buffer_read_32(ELFOBJ *bin, ut64 *offset, ut32 *result) {
-	ut32 tmp = rz_buf_read_ble32_at(bin->b, *offset, bin->endian);
+	ut32 tmp = rz_buf_read_ble32_at(bin->b, *offset, bin->big_endian);
 	if (tmp == UT32_MAX) {
 		return false;
 	}
@@ -53,7 +53,7 @@ static bool buffer_read_32_signed(ELFOBJ *bin, ut64 *offset, st32 *result) {
 }
 
 static bool buffer_read_64(ELFOBJ *bin, ut64 *offset, ut64 *result) {
-	ut64 tmp = rz_buf_read_ble64_at(bin->b, *offset, bin->endian);
+	ut64 tmp = rz_buf_read_ble64_at(bin->b, *offset, bin->big_endian);
 	if (tmp == UT64_MAX) {
 		return false;
 	}

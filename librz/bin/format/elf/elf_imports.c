@@ -95,7 +95,7 @@ static ut64 get_import_addr_ppc(ELFOBJ *bin, RzBinElfReloc *rel) {
 		return UT64_MAX;
 	}
 
-	ut64 base = rz_buf_read_ble32_at(bin->b, p_plt_addr, bin->endian);
+	ut64 base = rz_buf_read_ble32_at(bin->b, p_plt_addr, bin->big_endian);
 	if (base == UT32_MAX) {
 		return UT64_MAX;
 	}
@@ -103,7 +103,7 @@ static ut64 get_import_addr_ppc(ELFOBJ *bin, RzBinElfReloc *rel) {
 	ut64 nrel = Elf_(rz_bin_elf_get_num_relocs_dynamic_plt)(bin);
 	ut64 pos = COMPUTE_PLTGOT_POSITION(rel, plt_addr, 0x0);
 
-	if (bin->endian) {
+	if (bin->big_endian) {
 		base -= (nrel * 16);
 		base += (pos * 16);
 		return base;
