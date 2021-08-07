@@ -193,6 +193,10 @@ static ut64 get_addr(RzPVector *trace, const char *regname, int idx) {
 	RzILTraceInstruction *instruction_trace = rz_pvector_at(trace, idx);
 	RzILTraceRegOp *reg_op = rz_analysis_il_get_reg_op_trace(instruction_trace, regname, false);
 
+	if (!reg_op) {
+		return UT64_MAX;
+	}
+
 	return reg_op->value;
 }
 
