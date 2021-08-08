@@ -495,7 +495,7 @@ void handle_stack_canary(RzCore *core, RzAnalysisOp *aop, int cur_idx) {
 		rz_analysis_esil_get_instruction_trace(
 			core->analysis->esil->trace,
 			cur_idx - 1);
-        ut64 mov_addr;
+	ut64 mov_addr;
 
 	if (prev_trace) {
 		mov_addr = prev_trace->addr;
