@@ -1437,19 +1437,19 @@ RZ_API void rz_analysis_esil_stats(RzAnalysisEsil *esil, int enable);
 
 /* new trace implementation */
 typedef enum {
-	TRACE_READ, ///< read
-	TRACE_WRITE ///< write
-} TRACE_OPERATION;
+	RZ_IL_TRACE_OP_READ, ///< read
+	RZ_IL_TRACE_OP_WRITE ///< write
+} RzILTraceOpType;
 
 typedef struct {
 	ut64 addr; ///< memory address
-	TRACE_OPERATION behavior; ///< read or write, see TRACE_OPERATION enums
+	RzILTraceOpType behavior; ///< read or write, see TRACE_OPERATION enums
 	ut64 value; ///< data either written to or read from
 } RzILTraceMemOp;
 
 typedef struct {
 	char *reg_name; ///< name of register
-	TRACE_OPERATION behavior; ///< READ or WRITE, see TRACE_OPERATION enums
+	RzILTraceOpType behavior; ///< READ or WRITE, see TRACE_OPERATION enums
 	ut64 value; ///< data either written to or read from
 } RzILTraceRegOp;
 
@@ -1476,10 +1476,10 @@ RZ_API RzILTraceInstruction *rz_analysis_il_trace_instruction_new(ut64 addr);
 RZ_API void rz_analysis_il_trace_instruction_free(RzILTraceInstruction *instruction);
 RZ_API void rz_analysis_il_trace_add_mem(RzILTraceInstruction *trace, RzILTraceMemOp *mem);
 RZ_API void rz_analysis_il_trace_add_reg(RzILTraceInstruction *trace, RzILTraceRegOp *reg);
-RZ_API RzILTraceMemOp *rz_analysis_il_get_mem_op_trace(RzILTraceInstruction *trace, ut64 addr, bool is_write);
-RZ_API RzILTraceRegOp *rz_analysis_il_get_reg_op_trace(RzILTraceInstruction *trace, const char *regname, bool is_write);
-RZ_API bool rz_analysis_il_mem_trace_contains(RzILTraceInstruction *trace, ut64 addr, bool is_write);
-RZ_API bool rz_analysis_il_reg_trace_contains(RzILTraceInstruction *trace, const char *regname, bool is_write);
+RZ_API RzILTraceMemOp *rz_analysis_il_get_mem_op_trace(RzILTraceInstruction *trace, ut64 addr, RzILTraceOpType op_type);
+RZ_API RzILTraceRegOp *rz_analysis_il_get_reg_op_trace(RzILTraceInstruction *trace, const char *regname, RzILTraceOpType op_type);
+RZ_API bool rz_analysis_il_mem_trace_contains(RzILTraceInstruction *trace, ut64 addr, RzILTraceOpType op_type);
+RZ_API bool rz_analysis_il_reg_trace_contains(RzILTraceInstruction *trace, const char *regname, RzILTraceOpType op_type);
 
 /* esil trace */
 RZ_API RzILTraceInstruction *rz_analysis_esil_get_instruction_trace(RzAnalysisEsilTrace *trace, int idx);
