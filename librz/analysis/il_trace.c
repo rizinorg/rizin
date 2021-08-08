@@ -177,6 +177,9 @@ RZ_API RzILTraceRegOp *rz_analysis_il_get_reg_op_trace(RzILTraceInstruction *tra
 	void **iter;
 	rz_pvector_foreach (reg_ops, iter) {
 		reg_op = *iter;
+		if (regname == NULL) {
+			return NULL;
+		}
 		if (strcmp(reg_op->reg_name, regname) == 0) {
 			return reg_op;
 		}
