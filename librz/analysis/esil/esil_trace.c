@@ -81,10 +81,8 @@ RZ_API void rz_analysis_esil_trace_free(RzAnalysisEsilTrace *trace) {
 			rz_reg_arena_free(trace->arena[i]);
 		}
 		free(trace->stack_data);
-		if (trace->instructions) {
-			rz_pvector_free(trace->instructions);
-			trace->instructions = NULL;
-		}
+		rz_pvector_free(trace->instructions);
+		trace->instructions = NULL;
 		RZ_FREE(trace);
 	}
 }
@@ -137,7 +135,7 @@ static int trace_hook_reg_read(RzAnalysisEsil *esil, const char *name, ut64 *res
 		// Trace reg read behavior
 		RzILTraceRegOp *reg_read = RZ_NEW0(RzILTraceRegOp);
 		reg_read->reg_name = strdup(name);
-		reg_read->behavior = TRACE_READ;
+		reg_read->behavior = RZ_IL_TRACE_OP_READ;
 		reg_read->value = *res;
 		esil_add_reg_trace(esil->trace, reg_read);
 	}
@@ -150,7 +148,7 @@ static int trace_hook_reg_write(RzAnalysisEsil *esil, const char *name, ut64 *va
 	// add reg write to trace
 	RzILTraceRegOp *reg_write = RZ_NEW0(RzILTraceRegOp);
 	reg_write->reg_name = strdup(name);
-	reg_write->behavior = TRACE_WRITE;
+	reg_write->behavior = RZ_IL_TRACE_OP_WRITE;
 	reg_write->value = *val;
 	esil_add_reg_trace(esil->trace, reg_write);
 
@@ -180,7 +178,7 @@ static int trace_hook_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int le
 	// Trace memory read behavior
 	RzILTraceMemOp *mem_read = RZ_NEW0(RzILTraceMemOp);
 	mem_read->value = val;
-	mem_read->behavior = TRACE_READ;
+	mem_read->behavior = RZ_IL_TRACE_OP_READ;
 	mem_read->addr = addr;
 	esil_add_mem_trace(esil->trace, mem_read);
 
@@ -208,7 +206,7 @@ static int trace_hook_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf,
 	// Trace memory read behavior
 	RzILTraceMemOp *mem_write = RZ_NEW0(RzILTraceMemOp);
 	mem_write->value = val;
-	mem_write->behavior = TRACE_WRITE;
+	mem_write->behavior = RZ_IL_TRACE_OP_WRITE;
 	mem_write->addr = addr;
 	esil_add_mem_trace(esil->trace, mem_write);
 
