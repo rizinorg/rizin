@@ -490,10 +490,15 @@ void free_op_cache_kv(HtUPKv *kv) {
 	rz_analysis_op_free(kv->value);
 }
 
-void handle_stack_canary(RzCore *core, RzILTraceInstruction *trace, RzAnalysisOp *aop) {
-	ut64 mov_addr;
-	if (trace) {
-		mov_addr = trace->addr;
+void handle_stack_canary(RzCore *core, RzAnalysisOp *aop, int cur_idx) {
+	RzILTraceInstruction *prev_trace =
+		rz_analysis_esil_get_instruction_trace(
+			core->analysis->esil->trace,
+			cur_idx - 1);
+        ut64 mov_addr;
+
+	if (prev_trace) {
+		mov_addr = prev_trace->addr;
 	} else {
 		mov_addr = UT64_MAX;
 	}
@@ -642,7 +647,7 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, RzPVecto
 				free(cc);
 			}
 			if (!strcmp(fcn_name, "__stack_chk_fail")) {
-				handle_stack_canary(core, cur_instr_trace, aop);
+				handle_stack_canary(core, aop, ctx->cur_idx);
 			}
 			free(fcn_name);
 		}
