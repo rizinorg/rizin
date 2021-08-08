@@ -52,27 +52,12 @@ RZ_API RzILTraceInstruction *rz_analysis_il_trace_instruction_new(ut64 addr) {
  * \param instruction RzILTraceInstruction, trace to be cleaned
  */
 RZ_API void rz_analysis_il_trace_instruction_free(RzILTraceInstruction *instruction) {
-	if (instruction->write_reg_ops) {
-		rz_pvector_free(instruction->write_reg_ops);
-		instruction->write_reg_ops = NULL;
-	}
-
-	if (instruction->read_reg_ops) {
-		rz_pvector_free(instruction->read_reg_ops);
-		instruction->read_reg_ops = NULL;
-	}
-
-	if (instruction->write_mem_ops) {
-		rz_pvector_free(instruction->write_mem_ops);
-		instruction->write_mem_ops = NULL;
-	}
-
-	if (instruction->read_mem_ops) {
-		rz_pvector_free(instruction->read_mem_ops);
-		instruction->read_mem_ops = NULL;
-	}
-
-	RZ_FREE(instruction);
+	rz_return_if_fail(instruction);
+	rz_pvector_free(instruction->write_reg_ops);
+	rz_pvector_free(instruction->read_reg_ops);
+	rz_pvector_free(instruction->write_mem_ops);
+	rz_pvector_free(instruction->read_mem_ops);
+	free(instruction);
 }
 
 /**
@@ -81,21 +66,23 @@ RZ_API void rz_analysis_il_trace_instruction_free(RzILTraceInstruction *instruct
  * \param mem RzILTraceMemOp *, info of memory change
  */
 RZ_API void rz_analysis_il_trace_add_mem(RzILTraceInstruction *trace, RzILTraceMemOp *mem) {
-	if (!trace || !mem) {
+	rz_return_if_fail(trace && mem);
+
+	if (rz_analysis_il_mem_trace_contains(trace, mem->addr, mem->behavior)) {
 		return;
 	}
 
-	int is_write = mem->behavior;
-	if (rz_analysis_il_mem_trace_contains(trace, mem->addr, is_write)) {
-		return;
-	}
-
-	if (is_write) {
+	switch (mem->behavior) {
+	case RZ_IL_TRACE_OP_WRITE:
 		rz_pvector_push(trace->write_mem_ops, mem);
 		trace->stats |= TRACE_INS_HAS_MEM_W;
-	} else {
+		break;
+	case RZ_IL_TRACE_OP_READ:
 		rz_pvector_push(trace->read_mem_ops, mem);
 		trace->stats |= TRACE_INS_HAS_MEM_R;
+		break;
+	default:
+		rz_warn_if_reached();
 	}
 }
 
@@ -105,21 +92,24 @@ RZ_API void rz_analysis_il_trace_add_mem(RzILTraceInstruction *trace, RzILTraceM
  * \param mem RzILTraceRegOp *, info of register change
  */
 RZ_API void rz_analysis_il_trace_add_reg(RzILTraceInstruction *trace, RzILTraceRegOp *reg) {
-	if (!trace || !reg) {
+	rz_return_if_fail(trace && reg);
+
+	if (rz_analysis_il_reg_trace_contains(trace, reg->reg_name, reg->behavior)) {
 		return;
 	}
 
-	int is_write = reg->behavior;
-	if (rz_analysis_il_reg_trace_contains(trace, reg->reg_name, is_write)) {
-		return;
-	}
-
-	if (is_write) {
+	switch (reg->behavior) {
+	case RZ_IL_TRACE_OP_WRITE:
 		rz_pvector_push(trace->write_reg_ops, reg);
 		trace->stats |= TRACE_INS_HAS_REG_W;
-	} else {
+		break;
+	case RZ_IL_TRACE_OP_READ:
 		rz_pvector_push(trace->read_reg_ops, reg);
 		trace->stats |= TRACE_INS_HAS_REG_R;
+		break;
+	default:
+		rz_warn_if_reached();
+		break;
 	}
 }
 
@@ -130,17 +120,21 @@ RZ_API void rz_analysis_il_trace_add_reg(RzILTraceInstruction *trace, RzILTraceR
  * \param is_write bool, true if you want to find a write operation to address, else find a read operation
  * \return RzILTraceMemOp *, info of memory change
  */
-RZ_API RzILTraceMemOp *rz_analysis_il_get_mem_op_trace(RzILTraceInstruction *trace, ut64 addr, bool is_write) {
-	if (!trace) {
-		return NULL;
-	}
+RZ_API RzILTraceMemOp *rz_analysis_il_get_mem_op_trace(RzILTraceInstruction *trace, ut64 addr, RzILTraceOpType op_type) {
+	rz_return_val_if_fail(trace, NULL);
 
 	RzPVector *mem_ops;
 	RzILTraceMemOp *mem_op;
-	if (is_write) {
+	switch (op_type) {
+	case RZ_IL_TRACE_OP_WRITE:
 		mem_ops = trace->write_mem_ops;
-	} else {
+		break;
+	case RZ_IL_TRACE_OP_READ:
 		mem_ops = trace->read_mem_ops;
+		break;
+	default:
+		rz_warn_if_reached();
+		return NULL;
 	}
 
 	void **iter;
@@ -161,25 +155,26 @@ RZ_API RzILTraceMemOp *rz_analysis_il_get_mem_op_trace(RzILTraceInstruction *tra
  * \param is_write bool, true if you want to find a write operation to register, else find a read operation
  * \return RzILTraceRegOp *, info of register change
  */
-RZ_API RzILTraceRegOp *rz_analysis_il_get_reg_op_trace(RzILTraceInstruction *trace, const char *regname, bool is_write) {
-	if (!trace) {
-		return NULL;
-	}
+RZ_API RzILTraceRegOp *rz_analysis_il_get_reg_op_trace(RzILTraceInstruction *trace, const char *regname, RzILTraceOpType op_type) {
+	rz_return_val_if_fail(trace && regname, NULL);
 
 	RzPVector *reg_ops;
 	RzILTraceRegOp *reg_op;
-	if (is_write) {
+	switch (op_type) {
+	case RZ_IL_TRACE_OP_WRITE:
 		reg_ops = trace->write_reg_ops;
-	} else {
+		break;
+	case RZ_IL_TRACE_OP_READ:
 		reg_ops = trace->read_reg_ops;
+		break;
+	default:
+		rz_warn_if_reached();
+		return NULL;
 	}
 
 	void **iter;
 	rz_pvector_foreach (reg_ops, iter) {
 		reg_op = *iter;
-		if (regname == NULL) {
-			return NULL;
-		}
 		if (strcmp(reg_op->reg_name, regname) == 0) {
 			return reg_op;
 		}
@@ -195,8 +190,8 @@ RZ_API RzILTraceRegOp *rz_analysis_il_get_reg_op_trace(RzILTraceInstruction *tra
  * \param is_write bool, set true to find if it contains a write to address, else read
  * \return bool, true if contains, else return a false
  */
-RZ_API bool rz_analysis_il_mem_trace_contains(RzILTraceInstruction *trace, ut64 addr, bool is_write) {
-	return rz_analysis_il_get_mem_op_trace(trace, addr, is_write) ? true : false;
+RZ_API bool rz_analysis_il_mem_trace_contains(RzILTraceInstruction *trace, ut64 addr, RzILTraceOpType op_type) {
+	return rz_analysis_il_get_mem_op_trace(trace, addr, op_type) ? true : false;
 }
 
 /**
@@ -206,6 +201,6 @@ RZ_API bool rz_analysis_il_mem_trace_contains(RzILTraceInstruction *trace, ut64 
  * \param is_write bool, set true to find if it contains a write to the register, else read
  * \return bool, true if contains, else return a false
  */
-RZ_API bool rz_analysis_il_reg_trace_contains(RzILTraceInstruction *trace, const char *regname, bool is_write) {
-	return rz_analysis_il_get_reg_op_trace(trace, regname, is_write) ? true : false;
+RZ_API bool rz_analysis_il_reg_trace_contains(RzILTraceInstruction *trace, const char *regname, RzILTraceOpType op_type) {
+	return rz_analysis_il_get_reg_op_trace(trace, regname, op_type) ? true : false;
 }
