@@ -19,6 +19,7 @@ if get_option('enable_tests')
     'analysis_hints',
     'analysis_meta',
     'analysis_var',
+    'analysis_global_var',
     'analysis_xrefs',
     'annotated_code',
     'autocmplt',
