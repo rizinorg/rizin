@@ -18,9 +18,7 @@
 
 static void free_reg_op(RzILTraceRegOp *reg_op) {
 	if (reg_op) {
-		if (reg_op->reg_name) {
-			free(reg_op->reg_name);
-		}
+		free(reg_op->reg_name);
 		RZ_FREE(reg_op);
 	}
 }
@@ -87,6 +85,7 @@ RZ_API void rz_analysis_il_trace_add_mem(RzILTraceInstruction *trace, RzILTraceM
 		break;
 	default:
 		rz_warn_if_reached();
+		break;
 	}
 }
 

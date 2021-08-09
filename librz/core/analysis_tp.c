@@ -182,15 +182,13 @@ static void get_src_regname(RzCore *core, ut64 addr, char *regname, int size) {
 	rz_analysis_op_free(op);
 }
 
-static ut64 get_addr(RzPVector *trace, const char *regname, int idx) {
+static ut64 get_addr(RzAnalysis *analysis, const char *regname, int idx) {
 	if (!regname || !*regname) {
 		return UT64_MAX;
 	}
-	if (idx >= rz_pvector_len(trace)) {
-		// CHECK_ME : should I return a 0 ?
-		return UT64_MAX;
-	}
-	RzILTraceInstruction *instruction_trace = rz_pvector_at(trace, idx);
+
+	RzAnalysisEsilTrace *etrace = analysis->esil->trace;
+	RzILTraceInstruction *instruction_trace = rz_analysis_esil_get_instruction_trace(etrace, idx);
 	RzILTraceRegOp *reg_op = rz_analysis_il_get_reg_op_trace(instruction_trace, regname, false);
 
 	if (!reg_op) {
@@ -434,7 +432,7 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 					res = true;
 				} else {
 					get_src_regname(core, instr_addr, regname, sizeof(regname));
-					xaddr = get_addr(etrace->instructions, regname, j);
+					xaddr = get_addr(analysis, regname, j);
 				}
 			}
 			// Type propagate by following source reg
@@ -465,7 +463,7 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 			} else if (var && res && xaddr && (xaddr != UT64_MAX)) { // Type progation using value
 				char tmp[REGNAME_SIZE] = { 0 };
 				get_src_regname(core, instr_addr, tmp, sizeof(tmp));
-				ut64 ptr = get_addr(etrace->instructions, tmp, j);
+				ut64 ptr = get_addr(analysis, tmp, j);
 				if (ptr == xaddr) {
 					if (type) {
 						var_type_set(analysis, var, type, memref);
@@ -491,16 +489,15 @@ void free_op_cache_kv(HtUPKv *kv) {
 }
 
 void handle_stack_canary(RzCore *core, RzAnalysisOp *aop, int cur_idx) {
-	RzILTraceInstruction *prev_trace =
-		rz_analysis_esil_get_instruction_trace(
-			core->analysis->esil->trace,
-			cur_idx - 1);
-	ut64 mov_addr;
+	RzILTraceInstruction *prev_trace = rz_analysis_esil_get_instruction_trace(
+		core->analysis->esil->trace,
+		cur_idx - 1);
 
+	ut64 mov_addr;
 	if (prev_trace) {
 		mov_addr = prev_trace->addr;
 	} else {
-		mov_addr = UT64_MAX;
+		return;
 	}
 
 	RzAnalysisOp *mop = rz_core_analysis_op(core, mov_addr, RZ_ANALYSIS_OP_MASK_VAL | RZ_ANALYSIS_OP_MASK_BASIC);
@@ -586,7 +583,7 @@ struct TypeAnalysisCtx {
 	bool str_flag;
 };
 
-void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, RzPVector *instr_traces, RzAnalysisFunction *fcn, RzAnalysisBlock *bb, RzAnalysisOp *aop, struct TypeAnalysisCtx *ctx) {
+void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, RzAnalysisFunction *fcn, RzAnalysisBlock *bb, RzAnalysisOp *aop, struct TypeAnalysisCtx *ctx) {
 	RzPVector *used_vars = rz_analysis_function_get_vars_used_at(fcn, aop->addr);
 	bool chk_constraint = rz_config_get_b(core->config, "analysis.types.constraint");
 	RzAnalysisOp *next_op = op_cache_get(op_cache, core, aop->addr + aop->size);
@@ -599,10 +596,8 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, RzPVecto
 	bool prop = false;
 	ut32 type = aop->type & RZ_ANALYSIS_OP_TYPE_MASK;
 
-	RzILTraceInstruction *cur_instr_trace = NULL;
-	if (ctx->cur_idx < rz_pvector_len(instr_traces)) {
-		cur_instr_trace = rz_pvector_at(instr_traces, ctx->cur_idx);
-	}
+	RzAnalysisEsilTrace *etrace = core->analysis->esil->trace;
+	RzILTraceInstruction *cur_instr_trace = rz_analysis_esil_get_instruction_trace(etrace, ctx->cur_idx);
 
 	if (aop->type == RZ_ANALYSIS_OP_TYPE_CALL || aop->type & RZ_ANALYSIS_OP_TYPE_UCALL) {
 		char *full_name = NULL;
@@ -798,9 +793,6 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 	dtrace->ht = ht_pp_new_size(fcn->ninstr, opt.dupvalue, opt.freefn, opt.calcsizeV);
 	dtrace->ht->opt = opt;
 
-	// Get esil trace
-	RzAnalysisEsilTrace *etrace = core->analysis->esil->trace;
-
 	HtUP *op_cache = NULL;
 	const char *pc = rz_reg_get_name(core->dbg->reg, RZ_REG_NAME_PC);
 	if (!pc) {
@@ -858,7 +850,6 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 				void *loop_count_raw = ht_up_find(loop_table, addr, NULL);
 				ut64 loop_count = 0;
 				if (loop_count_raw) {
-					// FIXME : htuu not found, have to use cast for now
 					loop_count = (ut64)loop_count_raw;
 				}
 				if (loop_count > LOOP_MAX || aop->type == RZ_ANALYSIS_OP_TYPE_RET) {
@@ -874,7 +865,6 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 				rz_core_esil_step(core, UT64_MAX, NULL, NULL, false);
 			}
 
-			// CHECK_ME : previous idx ?
 			RzPVector *ins_traces = analysis->esil->trace->instructions;
 			ctx.cur_idx = rz_pvector_len(ins_traces) - 1;
 			RzList *fcns = rz_analysis_get_functions_in(analysis, aop->addr);
@@ -884,7 +874,7 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 			RzListIter *it;
 			RzAnalysisFunction *fcn;
 			rz_list_foreach (fcns, it, fcn) {
-				propagate_types_among_used_variables(core, op_cache, etrace->instructions, fcn, bb, aop, &ctx);
+				propagate_types_among_used_variables(core, op_cache, fcn, bb, aop, &ctx);
 			}
 			addr += aop->size;
 		}

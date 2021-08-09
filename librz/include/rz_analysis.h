@@ -1443,13 +1443,13 @@ typedef enum {
 
 typedef struct {
 	ut64 addr; ///< memory address
-	RzILTraceOpType behavior; ///< read or write, see TRACE_OPERATION enums
+	RzILTraceOpType behavior; ///< read or write, see RzILTraceOpType enums
 	ut64 value; ///< data either written to or read from
 } RzILTraceMemOp;
 
 typedef struct {
 	char *reg_name; ///< name of register
-	RzILTraceOpType behavior; ///< READ or WRITE, see TRACE_OPERATION enums
+	RzILTraceOpType behavior; ///< READ or WRITE, see RzILTraceOpType enums
 	ut64 value; ///< data either written to or read from
 } RzILTraceRegOp;
 
