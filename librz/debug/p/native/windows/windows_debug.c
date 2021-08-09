@@ -274,6 +274,22 @@ static int get_thread_context(HANDLE th, ut8 *buf, int size, int bits) {
 	return ret;
 }
 
+#if __i386__ || __x86_64__
+
+int w32_step(RzDebug *dbg) {
+	/* set TRAP flag */
+	CONTEXT ctx;
+	if (!w32_reg_read(dbg, RZ_REG_TYPE_GPR, (ut8 *)&ctx, sizeof(ctx))) {
+		return false;
+	}
+	ctx.EFlags |= 0x100;
+	if (!w32_reg_write(dbg, RZ_REG_TYPE_GPR, (ut8 *)&ctx, sizeof(ctx))) {
+		return false;
+	}
+	return w32_continue(dbg, dbg->pid, dbg->tid, dbg->reason.signum);
+	// (void)rz_debug_handle_signals (dbg);
+}
+
 static int get_avx(HANDLE th, ut128 xmm[16], ut128 ymm[16]) {
 	int nregs = 0, index = 0;
 	DWORD ctxsize = 0;
@@ -416,6 +432,33 @@ static void print_fpu_context(HANDLE th, CONTEXT *ctx) {
 	}
 }
 
+static void transfer_drx(RzDebug *dbg, const ut8 *buf) {
+	CONTEXT cur_ctx;
+	if (w32_reg_read(dbg, RZ_REG_TYPE_ANY, (ut8 *)&cur_ctx, sizeof(CONTEXT))) {
+		CONTEXT *new_ctx = (CONTEXT *)buf;
+		size_t drx_size = offsetof(CONTEXT, Dr7) - offsetof(CONTEXT, Dr0) + sizeof(new_ctx->Dr7);
+		memcpy(&cur_ctx.Dr0, &new_ctx->Dr0, drx_size);
+		*new_ctx = cur_ctx;
+	}
+}
+
+#else
+
+static void transfer_drx(RzDebug *dbg, const ut8 *buf) {
+	// Do nothing (not supported)
+}
+
+static void print_fpu_context(HANDLE th, CONTEXT *buf) {
+	// TODO
+}
+
+int w32_step(RzDebug *dbg) {
+	// Do nothing (not supported)
+	return 0;
+}
+
+#endif
+
 static HANDLE get_thread_handle_from_tid(RzDebug *dbg, int tid) {
 	rz_return_val_if_fail(dbg, NULL);
 	W32DbgWInst *wrap = dbg->plugin_data;
@@ -455,16 +498,6 @@ int w32_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 		size = 0;
 	}
 	return size;
-}
-
-static void transfer_drx(RzDebug *dbg, const ut8 *buf) {
-	CONTEXT cur_ctx;
-	if (w32_reg_read(dbg, RZ_REG_TYPE_ANY, (ut8 *)&cur_ctx, sizeof(CONTEXT))) {
-		CONTEXT *new_ctx = (CONTEXT *)buf;
-		size_t drx_size = offsetof(CONTEXT, Dr7) - offsetof(CONTEXT, Dr0) + sizeof(new_ctx->Dr7);
-		memcpy(&cur_ctx.Dr0, &new_ctx->Dr0, drx_size);
-		*new_ctx = cur_ctx;
-	}
 }
 
 int w32_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
@@ -1022,7 +1055,6 @@ int w32_dbg_wait(RzDebug *dbg, int pid) {
 		case UNLOAD_DLL_DEBUG_EVENT: {
 			PLIB_ITEM lib = (PLIB_ITEM)find_library(de.u.UnloadDll.lpBaseOfDll);
 			if (lib) {
-				CloseHandle(lib->hFile);
 				remove_library(lib);
 			}
 			ret = RZ_DEBUG_REASON_EXIT_LIB;
@@ -1114,20 +1146,6 @@ end:
 	}
 	rz_cons_break_pop();
 	return ret;
-}
-
-int w32_step(RzDebug *dbg) {
-	/* set TRAP flag */
-	CONTEXT ctx;
-	if (!w32_reg_read(dbg, RZ_REG_TYPE_GPR, (ut8 *)&ctx, sizeof(ctx))) {
-		return false;
-	}
-	ctx.EFlags |= 0x100;
-	if (!w32_reg_write(dbg, RZ_REG_TYPE_GPR, (ut8 *)&ctx, sizeof(ctx))) {
-		return false;
-	}
-	return w32_continue(dbg, dbg->pid, dbg->tid, dbg->reason.signum);
-	// (void)rz_debug_handle_signals (dbg);
 }
 
 int w32_continue(RzDebug *dbg, int pid, int tid, int sig) {
@@ -1222,6 +1240,19 @@ int w32_map_protect(RzDebug *dbg, ut64 addr, int size, int perms) {
 		size, io_perms_to_prot(perms), &old);
 }
 
+static inline ut64 pc_from_context(CONTEXT *ctx) {
+#if __x86_64__
+	return ctx->Rip;
+#elif __arm__ || __arm64__
+	return ctx->Pc;
+#elif __i386__
+	return ctx->Eip;
+#else
+#pragma warning("platform not supported")
+	return 0;
+#endif
+}
+
 RzList *w32_thread_list(RzDebug *dbg, int pid, RzList *list) {
 	// pid is not respected for TH32CS_SNAPTHREAD flag
 	HANDLE th = w32_CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
@@ -1257,11 +1288,7 @@ RzList *w32_thread_list(RzDebug *dbg, int pid, RzList *list) {
 					dbg->tid = te.th32ThreadID;
 					w32_reg_read(dbg, RZ_REG_TYPE_GPR, (ut8 *)&ctx, sizeof(ctx));
 					// TODO: is needed check context for x32 and x64??
-#if _WIN64
-					pc = ctx.Rip;
-#else
-					pc = ctx.Eip;
-#endif
+					pc = pc_from_context(&ctx);
 					PTHREAD_ITEM pthread = find_thread(dbg, te.th32ThreadID);
 					if (pthread) {
 						if (pthread->bFinished) {
@@ -1404,6 +1431,7 @@ static RzDebugPid *build_debug_pid(int pid, int ppid, HANDLE ph, const TCHAR *na
 }
 
 RzList *w32_pid_list(RzDebug *dbg, int pid, RzList *list) {
+	W32DbgWInst *wrap = dbg->plugin_data;
 	HANDLE sh = w32_CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, pid);
 	if (sh == INVALID_HANDLE_VALUE) {
 		rz_sys_perror("CreateToolhelp32Snapshot");
@@ -1412,7 +1440,6 @@ RzList *w32_pid_list(RzDebug *dbg, int pid, RzList *list) {
 	PROCESSENTRY32 pe;
 	pe.dwSize = sizeof(pe);
 	if (Process32First(sh, &pe)) {
-		W32DbgWInst *wrap = dbg->plugin_data;
 		bool all = pid == 0;
 		do {
 			if (all || pe.th32ProcessID == pid || pe.th32ParentProcessID == pid) {

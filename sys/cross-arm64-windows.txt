@@ -1,0 +1,11 @@
+[binaries]
+c = 'cl'
+cpp = 'cl'
+ar = 'lib'
+windres = 'rc'
+
+[host_machine]
+system = 'windows'
+cpu_family = 'aarch64'
+cpu = 'armv8'
+endian = 'little'
