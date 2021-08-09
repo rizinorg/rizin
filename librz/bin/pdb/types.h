@@ -5,7 +5,6 @@
 #ifndef PDB_TYPES_H
 #define PDB_TYPES_H
 
-#define _R_LIST_C
 #include <rz_util.h>
 
 #define READ_PAGE_FAIL 0x01

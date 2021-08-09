@@ -1,11 +1,8 @@
 // SPDX-FileCopyrightText: 2007-2019 pancake <pancake@nopcode.org>
 // SPDX-FileCopyrightText: 2007-2019 alvarofe <alvaro.felipe91@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
-// TODO: RRef - reference counting
 
 #include <stdio.h>
-
-#define _R_LIST_C_
 #include "rz_util.h"
 
 inline RzListIter *rz_list_iter_new(void) {
