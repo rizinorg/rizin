@@ -53,14 +53,11 @@ commands:
     cname: cmd_print_default
     subcommands:
       - name: ph
-        summary: Prints a hash/message digest or entropy
+        summary: Prints a hash/message digest or entropy (use @! to change the block size)
         cname: cmd_print_msg_digest
         args:
           - name: algo
             type: RZ_CMD_ARG_TYPE_STRING
-          - name: length
-            type: RZ_CMD_ARG_TYPE_NUM
-            optional: true
       - name: phl
         summary: Lists all the supported algorithms
         cname: cmd_print_msg_digest_algo_list

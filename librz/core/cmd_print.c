@@ -3208,40 +3208,19 @@ restore_conf:
 }
 
 RZ_IPI RzCmdStatus rz_cmd_print_msg_digest_handler(RzCore *core, int argc, const char **argv) {
-	const RzMsgDigestPlugin *plugin = NULL;
-
-	ut32 old_blocksize = core->blocksize;
-	ut32 new_blocksize = old_blocksize;
-
-	if (RZ_STR_ISNOTEMPTY(argv[1])) {
-		plugin = rz_msg_digest_plugin_by_name(argv[1]);
-	}
+	const RzMsgDigestPlugin *plugin = rz_msg_digest_plugin_by_name(argv[1]);
 
 	if (!plugin) {
 		RZ_LOG_ERROR("algorithm '%s' does not exists\n", argv[1]);
-		return RZ_CMD_STATUS_INVALID;
-	}
-
-	if (argc == 3) {
-		if (!rz_num_is_valid_input(core->num, argv[2])) {
-			return RZ_CMD_STATUS_INVALID;
-		}
-		new_blocksize = rz_num_math(core->num, argv[2]);
-
-		if (!rz_core_block_size(core, new_blocksize)) {
-			rz_core_block_size(core, old_blocksize);
-			return RZ_CMD_STATUS_ERROR;
-		}
-		rz_core_block_read(core);
+		return RZ_CMD_STATUS_ERROR;
 	}
 
 	if (!strncmp(plugin->name, "entropy", 7)) {
-		handle_entropy(plugin->name, core->block, new_blocksize);
+		handle_entropy(plugin->name, core->block, core->blocksize);
 	} else {
-		handle_msg_digest(plugin->name, core->block, new_blocksize);
+		handle_msg_digest(plugin->name, core->block, core->blocksize);
 	}
 
-	rz_core_block_size(core, old_blocksize);
 	return RZ_CMD_STATUS_OK;
 }
 

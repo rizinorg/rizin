@@ -131,7 +131,7 @@ static const RzCmdDescArg plugins_debug_print_args[2];
 static const RzCmdDescArg plugins_io_print_args[2];
 static const RzCmdDescArg cmd_print_gadget_add_args[6];
 static const RzCmdDescArg cmd_print_gadget_move_args[6];
-static const RzCmdDescArg cmd_print_msg_digest_args[3];
+static const RzCmdDescArg cmd_print_msg_digest_args[2];
 static const RzCmdDescArg project_save_args[2];
 static const RzCmdDescArg project_open_args[2];
 static const RzCmdDescArg project_open_no_bin_io_args[2];
@@ -2635,18 +2635,13 @@ static const RzCmdDescArg cmd_print_msg_digest_args[] = {
 	{
 		.name = "algo",
 		.type = RZ_CMD_ARG_TYPE_STRING,
-
-	},
-	{
-		.name = "length",
-		.type = RZ_CMD_ARG_TYPE_NUM,
-		.optional = true,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 
 	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_msg_digest_help = {
-	.summary = "Prints a hash/message digest or entropy",
+	.summary = "Prints a hash/message digest or entropy (use @! to change the block size)",
 	.args = cmd_print_msg_digest_args,
 };
 
