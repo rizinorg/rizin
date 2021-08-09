@@ -90,8 +90,7 @@ static const RzCmdDescArg analysis_function_vars_sp_del_args[2];
 static const RzCmdDescArg analysis_function_vars_sp_getref_args[3];
 static const RzCmdDescArg analysis_function_vars_sp_setref_args[3];
 static const RzCmdDescArg analysis_print_global_variable_args[2];
-static const RzCmdDescArg analysis_global_variable_add_args[5];
-static const RzCmdDescArg analysis_global_variable_recomment_args[3];
+static const RzCmdDescArg analysis_global_variable_add_args[4];
 static const RzCmdDescArg analysis_global_variable_delete_args[2];
 static const RzCmdDescArg analysis_global_variable_rename_args[3];
 static const RzCmdDescArg analysis_global_variable_retype_args[3];
@@ -1535,14 +1534,7 @@ static const RzCmdDescArg analysis_global_variable_add_args[] = {
 	},
 	{
 		.name = "type",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-
-	},
-	{
-		.name = "comment",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
+		.type = RZ_CMD_ARG_TYPE_ANY_TYPE,
 
 	},
 	{ 0 },
@@ -1550,25 +1542,6 @@ static const RzCmdDescArg analysis_global_variable_add_args[] = {
 static const RzCmdDescHelp analysis_global_variable_add_help = {
 	.summary = "add global variable manually",
 	.args = analysis_global_variable_add_args,
-};
-
-static const RzCmdDescArg analysis_global_variable_recomment_args[] = {
-	{
-		.name = "var_name",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-
-	},
-	{
-		.name = "comment",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp analysis_global_variable_recomment_help = {
-	.summary = "change the global variable comment",
-	.args = analysis_global_variable_recomment_args,
 };
 
 static const RzCmdDescArg analysis_global_variable_delete_args[] = {
@@ -1612,8 +1585,7 @@ static const RzCmdDescArg analysis_global_variable_retype_args[] = {
 	},
 	{
 		.name = "type",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.type = RZ_CMD_ARG_TYPE_ANY_TYPE,
 
 	},
 	{ 0 },
@@ -5288,9 +5260,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(avg_cd);
 	RzCmdDesc *analysis_global_variable_add_cd = rz_cmd_desc_argv_new(core->rcmd, avg_cd, "avga", rz_analysis_global_variable_add_handler, &analysis_global_variable_add_help);
 	rz_warn_if_fail(analysis_global_variable_add_cd);
-
-	RzCmdDesc *analysis_global_variable_recomment_cd = rz_cmd_desc_argv_new(core->rcmd, avg_cd, "avgc", rz_analysis_global_variable_recomment_handler, &analysis_global_variable_recomment_help);
-	rz_warn_if_fail(analysis_global_variable_recomment_cd);
 
 	RzCmdDesc *analysis_global_variable_delete_cd = rz_cmd_desc_argv_new(core->rcmd, avg_cd, "avgd", rz_analysis_global_variable_delete_handler, &analysis_global_variable_delete_help);
 	rz_warn_if_fail(analysis_global_variable_delete_cd);

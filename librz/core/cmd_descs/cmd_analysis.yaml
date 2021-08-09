@@ -418,19 +418,7 @@ commands:
               - name: addr
                 type: RZ_CMD_ARG_TYPE_RZNUM
               - name: type
-                type: RZ_CMD_ARG_TYPE_STRING
-              - name: comment
-                type: RZ_CMD_ARG_TYPE_STRING
-                optional: true
-          - name: avgc
-            summary: change the global variable comment
-            type: RZ_CMD_DESC_TYPE_ARGV
-            cname: analysis_global_variable_recomment
-            args:
-              - name: var_name
-                type: RZ_CMD_ARG_TYPE_STRING
-              - name: comment
-                type: RZ_CMD_ARG_TYPE_STRING
+                type: RZ_CMD_ARG_TYPE_ANY_TYPE
           - name: avgd
             summary: delete the global variable at the addr
             type: RZ_CMD_DESC_TYPE_ARGV
@@ -455,7 +443,7 @@ commands:
               - name: var_name
                 type: RZ_CMD_ARG_TYPE_STRING
               - name: type
-                type: RZ_CMD_ARG_TYPE_STRING
+                type: RZ_CMD_ARG_TYPE_ANY_TYPE
       - name: avr
         summary: try to parse RTTI at vtable addr (see analysis.cpp.abi)
         type: RZ_CMD_DESC_TYPE_ARGV_MODES

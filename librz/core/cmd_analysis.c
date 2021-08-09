@@ -8089,25 +8089,14 @@ RZ_IPI RzCmdStatus rz_analysis_rtti_demangle_class_name_handler(RzCore *core, in
 }
 
 RZ_IPI RzCmdStatus rz_analysis_print_global_variable_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	char *var_name = NULL;
-	if (argc == 2) {
-		var_name = (char *)argv[1];
-	}
-	rz_analysis_var_global_list_show(core->analysis, state, var_name);
+	rz_analysis_var_global_list_show(core->analysis, state, argv[1]);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_analysis_global_variable_add_handler(RzCore *core, int argc, const char **argv) {
-	if (argc < 4 || argc > 5) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
-	char *var_name = (char *)argv[1];
-	ut64 addr = rz_num_math(core->num, (char *)argv[2]);
-	char *type = (char *)argv[3];
-	char *comment = NULL;
-	if (argc == 5) {
-		comment = (char *)argv[4];
-	}
+	const char *var_name = argv[1];
+	ut64 addr = rz_num_math(core->num, argv[2]);
+	const char *type = argv[3];
 
 	RzTypeParser *parser = rz_type_parser_new();
 	if (!parser) {
@@ -8120,23 +8109,20 @@ RZ_IPI RzCmdStatus rz_analysis_global_variable_add_handler(RzCore *core, int arg
 		free(errmsg);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	RzAnalysisVarGlobal *glob = rz_analysis_var_global_new(var_name, addr, comment);
+	RzAnalysisVarGlobal *glob = rz_analysis_var_global_new(var_name, addr);
 	if (!glob) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_analysis_var_global_set_type(glob, typ);
-	if (rz_analysis_var_global_add(core->analysis, glob)) {
-		return RZ_CMD_STATUS_OK;
+	if (!rz_analysis_var_global_add(core->analysis, glob)) {
+		rz_analysis_var_global_free(glob);
+		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_analysis_var_global_free(glob);
-	return RZ_CMD_STATUS_ERROR;
+	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_analysis_global_variable_delete_handler(RzCore *core, int argc, const char **argv) {
-	if (argc != 2) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
-	ut64 addr = rz_num_math(core->num, (char *)argv[1]);
+	ut64 addr = rz_num_math(core->num, argv[1]);
 	if (!rz_analysis_var_global_delete_byaddr(core->analysis, addr)) {
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -8144,11 +8130,8 @@ RZ_IPI RzCmdStatus rz_analysis_global_variable_delete_handler(RzCore *core, int 
 }
 
 RZ_IPI RzCmdStatus rz_analysis_global_variable_rename_handler(RzCore *core, int argc, const char **argv) {
-	if (argc != 3) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
-	char *oldname = (char *)argv[1];
-	char *newname = (char *)argv[2];
+	const char *oldname = argv[1];
+	const char *newname = argv[2];
 	if (!rz_analysis_var_global_rename(core->analysis, oldname, newname)) {
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -8156,11 +8139,8 @@ RZ_IPI RzCmdStatus rz_analysis_global_variable_rename_handler(RzCore *core, int 
 }
 
 RZ_IPI RzCmdStatus rz_analysis_global_variable_retype_handler(RzCore *core, int argc, const char **argv) {
-	if (argc != 3) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
-	char *name = (char *)argv[1];
-	char *type = (char *)argv[2];
+	const char *name = argv[1];
+	const char *type = argv[2];
 	RzAnalysisVarGlobal *glob = rz_analysis_var_global_get_byname(core->analysis, name);
 	if (!glob) {
 		RZ_LOG_ERROR("No such global variable!\n");
@@ -8179,21 +8159,6 @@ RZ_IPI RzCmdStatus rz_analysis_global_variable_retype_handler(RzCore *core, int 
 	}
 	rz_type_free(glob->type);
 	rz_analysis_var_global_set_type(glob, typ);
-	return RZ_CMD_STATUS_OK;
-}
-
-RZ_IPI RzCmdStatus rz_analysis_global_variable_recomment_handler(RzCore *core, int argc, const char **argv) {
-	if (argc != 3) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
-	char *name = (char *)argv[1];
-	char *comment = (char *)argv[2];
-	RzAnalysisVarGlobal *glob = rz_analysis_var_global_get_byname(core->analysis, name);
-	if (!glob) {
-		RZ_LOG_ERROR("No such global variable!\n");
-		return RZ_CMD_STATUS_ERROR;
-	}
-	rz_analysis_var_global_set_comment(core->analysis, name, comment);
 	return RZ_CMD_STATUS_OK;
 }
 

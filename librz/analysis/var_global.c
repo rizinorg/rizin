@@ -12,17 +12,14 @@
  * \param comment variable comment
  * \return RzAnalysisVarGlobal *
  */
-RZ_API RZ_OWN RzAnalysisVarGlobal *rz_analysis_var_global_new(RZ_NONNULL const char *name, ut64 addr, RZ_NULLABLE const char *comment) {
-	rz_return_val_if_fail(name && addr, NULL);
+RZ_API RZ_OWN RzAnalysisVarGlobal *rz_analysis_var_global_new(RZ_NONNULL const char *name, ut64 addr) {
+	rz_return_val_if_fail(name, NULL);
 	RzAnalysisVarGlobal *glob = RZ_NEW0(RzAnalysisVarGlobal);
 	if (!glob) {
 		return NULL;
 	}
 	glob->name = strdup(name);
 	glob->addr = addr;
-	if (comment) {
-		glob->comment = strdup(comment);
-	}
 	return glob;
 }
 
@@ -86,9 +83,7 @@ RZ_API void rz_analysis_var_global_free(RzAnalysisVarGlobal *glob) {
 	}
 
 	RZ_FREE(glob->name);
-	RZ_FREE(glob->comment);
 	rz_type_free(glob->type);
-	rz_analysis_var_global_clear_accesses(glob);
 	rz_vector_fini(&glob->constraints);
 	RZ_FREE(glob);
 }
@@ -104,10 +99,8 @@ RZ_API bool rz_analysis_var_global_delete_byname(RzAnalysis *analysis, const cha
 	rz_return_val_if_fail(analysis && name, false);
 	RzAnalysisVarGlobal *glob = rz_analysis_var_global_get_byname(analysis, name);
 	if (!glob) {
-		RZ_LOG_ERROR("No such global variable!\n");
 		return false;
 	}
-	rz_analysis_var_global_free(glob);
 	rz_rbtree_delete(&analysis->global_var_tree, &glob->addr, global_var_node_cmp, NULL, NULL, NULL);
 	return ht_pp_delete(analysis->ht_global_var, name);
 }
@@ -123,13 +116,11 @@ RZ_API bool rz_analysis_var_global_delete_byaddr(RzAnalysis *analysis, ut64 addr
 	rz_return_val_if_fail(analysis, false);
 	RzAnalysisVarGlobal *glob = rz_analysis_var_global_get_byaddr(analysis, addr);
 	if (!glob) {
-		RZ_LOG_ERROR("No such global variable!\n");
 		return false;
 	}
 	bool deleted = ht_pp_delete(analysis->ht_global_var, glob->name);
 	if (deleted) {
 		rz_rbtree_delete(&analysis->global_var_tree, &glob->addr, global_var_node_cmp, NULL, NULL, NULL);
-		rz_analysis_var_global_free(glob);
 	}
 	return deleted;
 }
@@ -233,32 +224,11 @@ RZ_API bool rz_analysis_var_global_rename(RzAnalysis *analysis, const char *old_
 	rz_return_val_if_fail(analysis && old_name && newname, false);
 	RzAnalysisVarGlobal *glob = rz_analysis_var_global_get_byname(analysis, old_name);
 	if (!glob) {
-		RZ_LOG_ERROR("No such global variable!\n");
 		return false;
 	}
 	RZ_FREE(glob->name);
 	glob->name = strdup(newname);
 	return ht_pp_update_key(analysis->ht_global_var, old_name, newname);
-}
-
-/**
- * \brief Set the comment of the global variable
- * 
- * \param analysis RzAnalysis
- * \param name The name of the global variable to set
- * \param comment The comment to set
- * \return true if succeed
- */
-RZ_API bool rz_analysis_var_global_set_comment(RzAnalysis *analysis, const char *name, RZ_NONNULL const char *comment) {
-	rz_return_val_if_fail(analysis && name && comment, false);
-	RzAnalysisVarGlobal *glob = rz_analysis_var_global_get_byname(analysis, name);
-	if (!glob) {
-		RZ_LOG_ERROR("No such global variable!\n");
-		return false;
-	}
-	RZ_FREE(glob->comment);
-	glob->comment = strdup(comment);
-	return true;
 }
 
 /**
@@ -271,78 +241,6 @@ RZ_API bool rz_analysis_var_global_set_comment(RzAnalysis *analysis, const char 
 RZ_API void rz_analysis_var_global_set_type(RzAnalysisVarGlobal *glob, RzType *type) {
 	rz_return_if_fail(glob && type);
 	glob->type = type;
-}
-
-static st64 var_access_cmp(st64 x, char *y) {
-	return x - (st64)((RzAnalysisVarGlobal *)y)->addr;
-}
-
-/**
- * \brief Set the accesses of the global variable
- * 
- * \param analysis RzAnalysis
- * \param glob Global variable instance
- * \param reg Register
- * \param access_addr Address of access
- * \param access_type Type of access
- * \param stackptr Stack pointer
- * \return void
- */
-RZ_API void rz_analysis_var_global_set_access(RzAnalysis *analysis, RzAnalysisVarGlobal *glob, const char *reg, ut64 access_addr, int access_type, st64 stackptr) {
-	rz_return_if_fail(glob);
-	st64 offset = (st64)access_addr - (st64)glob->addr;
-
-	// accesses are stored ordered by offset, use binary search to get the matching existing or the index to insert a new one
-	size_t index;
-	rz_vector_lower_bound(&glob->accesses, offset, index, var_access_cmp);
-	RzAnalysisVarAccess *acc = NULL;
-	if (index < glob->accesses.len) {
-		acc = rz_vector_index_ptr(&glob->accesses, index);
-	}
-	if (!acc || acc->offset != offset) {
-		acc = rz_vector_insert(&glob->accesses, index, NULL);
-		if (!acc) {
-			return;
-		}
-		acc->offset = offset;
-		acc->type = 0;
-	}
-
-	acc->type |= (ut8)access_type;
-	acc->stackptr = stackptr;
-	acc->reg = rz_str_constpool_get(&analysis->constpool, reg);
-}
-
-/**
- * \brief Remove the access at the address of global variable
- * 
- * \param glob Global variable instance
- * \param address Where to delete
- * \return void
- */
-RZ_API void rz_analysis_var_global_remove_access_at(RzAnalysisVarGlobal *glob, ut64 address) {
-	rz_return_if_fail(glob);
-	st64 offset = (st64)address - (st64)glob->addr;
-	size_t index;
-	rz_vector_lower_bound(&glob->accesses, offset, index, var_access_cmp);
-	if (index >= glob->accesses.len) {
-		return;
-	}
-	RzAnalysisVarAccess *acc = rz_vector_index_ptr(&glob->accesses, index);
-	if (acc && acc->offset == offset) {
-		rz_vector_remove_at(&glob->accesses, index, NULL);
-	}
-}
-
-/**
- * \brief Clear all the accesses of global variable
- * 
- * \param glob Global variable instance
- * \return void
- */
-RZ_API void rz_analysis_var_global_clear_accesses(RzAnalysisVarGlobal *glob) {
-	rz_return_if_fail(glob);
-	rz_vector_clear(&glob->accesses);
 }
 
 /**
@@ -363,7 +261,7 @@ RZ_API void rz_analysis_var_global_add_constraint(RzAnalysisVarGlobal *glob, RzT
  * \param glob Global variable instance
  * \return char *
  */
-RZ_API char *rz_analysis_var_global_get_constraints_readable(RzAnalysisVarGlobal *glob) {
+RZ_API RZ_OWN char *rz_analysis_var_global_get_constraints_readable(RzAnalysisVarGlobal *glob) {
 	size_t n = glob->constraints.len;
 	if (!n) {
 		return NULL;
@@ -437,7 +335,6 @@ RZ_API void rz_analysis_var_global_list_show(RzAnalysis *analysis, RzCmdStateOut
 
 	RzListIter *it = NULL;
 	char *var_type = NULL;
-	char *comment = NULL;
 	bool json = state->mode == RZ_OUTPUT_MODE_JSON;
 	PJ *pj = json ? state->d.pj : NULL;
 	// to use rz_cmd_state_output_array_start we need to set RzCore as the dependency of RzAnalysis, which is impossible
@@ -450,23 +347,16 @@ RZ_API void rz_analysis_var_global_list_show(RzAnalysis *analysis, RzCmdStateOut
 	}
 	rz_list_foreach (global_vars, it, glob) {
 		var_type = rz_type_as_string(analysis->typedb, glob->type);
-		if (!glob->comment) {
-			comment = "";
-		} else {
-			comment = glob->comment;
-		}
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_STANDARD:
-			analysis->cb_printf("global %s %s @ 0x%" PFMT64x " ;%s\n",
-				var_type, glob->name,
-				glob->addr, comment);
+			analysis->cb_printf("global %s %s @ 0x%" PFMT64x "\n",
+				var_type, glob->name, glob->addr);
 			break;
 		case RZ_OUTPUT_MODE_JSON:
 			pj_o(pj);
 			pj_ks(pj, "name", glob->name);
 			pj_ks(pj, "type", var_type);
 			pj_ks(pj, "addr", rz_str_newf("0x%" PFMT64x, glob->addr));
-			pj_ks(pj, "comment", comment);
 			pj_end(pj);
 			break;
 		default:
