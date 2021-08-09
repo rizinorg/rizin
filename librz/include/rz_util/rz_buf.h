@@ -91,43 +91,44 @@ RZ_API RzBuffer *rz_buf_new_with_pointers(const ut8 *bytes, ut64 len, bool steal
 RZ_API RzBuffer *rz_buf_new_with_string(RZ_NONNULL const char *msg);
 
 /* methods */
-RZ_API bool rz_buf_dump(RzBuffer *buf, const char *file);
-RZ_API bool rz_buf_set_bytes(RzBuffer *b, const ut8 *buf, ut64 length);
-RZ_API void rz_buf_set_overflow_byte(RzBuffer *b, ut8 Oxff);
-RZ_API st64 rz_buf_append_string(RzBuffer *b, const char *str);
-RZ_API bool rz_buf_append_buf(RzBuffer *b, RzBuffer *a);
-RZ_API bool rz_buf_append_bytes(RzBuffer *b, const ut8 *buf, ut64 length);
-RZ_API bool rz_buf_append_nbytes(RzBuffer *b, ut64 length);
-RZ_API bool rz_buf_append_ut16(RzBuffer *b, ut16 n);
-RZ_API bool rz_buf_append_buf_slice(RzBuffer *b, RzBuffer *a, ut64 offset, ut64 size);
-RZ_API bool rz_buf_append_ut32(RzBuffer *b, ut32 n);
-RZ_API bool rz_buf_append_ut64(RzBuffer *b, ut64 n);
-RZ_API bool rz_buf_prepend_bytes(RzBuffer *b, const ut8 *buf, ut64 length);
-RZ_API st64 rz_buf_insert_bytes(RzBuffer *b, ut64 addr, const ut8 *buf, ut64 length);
-RZ_API char *rz_buf_to_string(RzBuffer *b);
-RZ_API char *rz_buf_get_string(RzBuffer *b, ut64 addr);
-RZ_API char *rz_buf_get_nstring(RzBuffer *b, ut64 addr, size_t size);
-RZ_API st64 rz_buf_read(RzBuffer *b, ut8 *buf, ut64 len);
-RZ_API ut8 rz_buf_read8(RzBuffer *b);
-RZ_API st64 rz_buf_fread(RzBuffer *b, ut8 *buf, const char *fmt, int n);
-RZ_API st64 rz_buf_read_at(RzBuffer *b, ut64 addr, ut8 *buf, ut64 len);
+RZ_API RzBuffer *rz_buf_ref(RzBuffer *b);
+RZ_API bool rz_buf_append_buf(RZ_NONNULL RzBuffer *b, RZ_NONNULL RzBuffer *a);
+RZ_API bool rz_buf_append_buf_slice(RZ_NONNULL RzBuffer *b, RZ_NONNULL RzBuffer *a, ut64 offset, ut64 size);
+RZ_API bool rz_buf_append_bytes(RZ_NONNULL RzBuffer *b, RZ_NONNULL const ut8 *buf, ut64 length);
+RZ_API bool rz_buf_append_nbytes(RZ_NONNULL RzBuffer *b, ut64 length);
+RZ_API bool rz_buf_append_ut16(RZ_NONNULL RzBuffer *b, ut16 n);
+RZ_API bool rz_buf_append_ut32(RZ_NONNULL RzBuffer *b, ut32 n);
+RZ_API bool rz_buf_append_ut64(RZ_NONNULL RzBuffer *b, ut64 n);
+RZ_API bool rz_buf_dump(RZ_NONNULL RzBuffer *buf, RZ_NONNULL const char *file);
+RZ_API bool rz_buf_fini(RzBuffer *b);
+RZ_API bool rz_buf_prepend_bytes(RZ_NONNULL RzBuffer *b, RZ_NONNULL const ut8 *buf, ut64 length);
+RZ_API bool rz_buf_resize(RZ_NONNULL RzBuffer *b, ut64 newsize);
+RZ_API bool rz_buf_set_bytes(RZ_NONNULL RzBuffer *b, RZ_NONNULL const ut8 *buf, ut64 length);
+RZ_API char *rz_buf_get_nstring(RZ_NONNULL RzBuffer *b, ut64 addr, size_t size);
+RZ_API char *rz_buf_get_string(RZ_NONNULL RzBuffer *b, ut64 addr);
+RZ_API char *rz_buf_to_string(RZ_NONNULL RzBuffer *b);
+RZ_API st64 rz_buf_append_string(RZ_NONNULL RzBuffer *b, RZ_NONNULL const char *str);
+RZ_API st64 rz_buf_fread(RZ_NONNULL RzBuffer *b, RZ_NONNULL ut8 *buf, RZ_NONNULL const char *fmt, int n);
+RZ_API st64 rz_buf_fread_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL ut8 *buf, RZ_NONNULL const char *fmt, int n);
+RZ_API st64 rz_buf_fwrite(RZ_NONNULL RzBuffer *b, RZ_NONNULL const ut8 *buf, RZ_NONNULL const char *fmt, int n);
+RZ_API st64 rz_buf_fwrite_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL const ut8 *buf, RZ_NONNULL const char *fmt, int n);
+RZ_API st64 rz_buf_insert_bytes(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL const ut8 *buf, ut64 length);
+RZ_API st64 rz_buf_read(RZ_NONNULL RzBuffer *b, RZ_NONNULL ut8 *buf, ut64 len);
+RZ_API st64 rz_buf_read_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL ut8 *buf, ut64 len);
+RZ_API st64 rz_buf_seek(RZ_NONNULL RzBuffer *b, st64 addr, int whence);
+RZ_API st64 rz_buf_write(RZ_NONNULL RzBuffer *b, RZ_NONNULL const ut8 *buf, ut64 len);
+RZ_API st64 rz_buf_write_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL const ut8 *buf, ut64 len);
+RZ_API ut64 rz_buf_size(RZ_NONNULL RzBuffer *b);
+RZ_API ut64 rz_buf_tell(RZ_NONNULL RzBuffer *b);
+RZ_API ut8 rz_buf_read8(RZ_NONNULL RzBuffer *b);
 RZ_API ut8 rz_buf_read8_at(RzBuffer *b, ut64 addr);
-RZ_API ut64 rz_buf_tell(RzBuffer *b);
-RZ_API st64 rz_buf_seek(RzBuffer *b, st64 addr, int whence);
-RZ_API st64 rz_buf_fread_at(RzBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n);
-RZ_API st64 rz_buf_write(RzBuffer *b, const ut8 *buf, ut64 len);
-RZ_API st64 rz_buf_fwrite(RzBuffer *b, const ut8 *buf, const char *fmt, int n);
-RZ_API st64 rz_buf_write_at(RzBuffer *b, ut64 addr, const ut8 *buf, ut64 len);
-RZ_API st64 rz_buf_fwrite_at(RzBuffer *b, ut64 addr, const ut8 *buf, const char *fmt, int n);
+RZ_API void rz_buf_free(RzBuffer *b);
+RZ_API void rz_buf_set_overflow_byte(RZ_NONNULL RzBuffer *b, ut8 Oxff);
+
 // WARNING: this function should be used with care because it may allocate the
 // entire buffer in memory. Consider using the rz_buf_read* APIs instead and read
 // only the chunks you need.
-RZ_DEPRECATE RZ_API const ut8 *rz_buf_data(RzBuffer *b, ut64 *size);
-RZ_API ut64 rz_buf_size(RzBuffer *b);
-RZ_API bool rz_buf_resize(RzBuffer *b, ut64 newsize);
-RZ_API RzBuffer *rz_buf_ref(RzBuffer *b);
-RZ_API void rz_buf_free(RzBuffer *b);
-RZ_API bool rz_buf_fini(RzBuffer *b);
+RZ_DEPRECATE RZ_API const ut8 *rz_buf_data(RZ_NONNULL RzBuffer *b, ut64 *size);
 
 static inline ut16 rz_buf_read_be16(RzBuffer *b) {
 	ut8 buf[sizeof(ut16)];
