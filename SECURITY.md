@@ -19,3 +19,5 @@ If you have not received a reply to your email within 48 hours, or have not hear
 - Inform the team over the [public chats](https://rizin.re/#community) that you sent a message regarding a security issue.
 
 **Important:** Don't disclose any information regarding the issue itself in the public chats.
+
+While analysing reports, we consider the main usage of Rizin nowadays as a user-space Command Line Interface (CLI) tool and not as a service or as a library. For this reason the security team does not consider as vulnerabilities those issues that simply crash rizin or one of the other tools (e.g. NULL pointer dereferences, memory exhaustion or in general those flaws that only impact a service availability). Issues that can leak non-sensitive memory contents (e.g. memory addresses/memory values that are not files, private keys, etc.) will be considered on a case by case and they should be demonstrated to be somehow usable by an attacker. Please try to always include in your report an attack scenario, showing how the issue can affect Rizin users. 
