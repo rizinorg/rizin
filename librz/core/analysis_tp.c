@@ -5,6 +5,7 @@
 
 #include <rz_analysis.h>
 #include <rz_util.h>
+#include <ht_uu.h>
 #include <rz_core.h>
 #define LOOP_MAX 10
 
@@ -761,7 +762,7 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, RzAnalys
 	}
 }
 
-RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, HtUP *loop_table) {
+RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, HtUU *loop_table) {
 	RzListIter *it;
 
 	rz_return_if_fail(core && core->analysis && fcn);
@@ -847,16 +848,12 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 			//          : can we remove it ?
 			// when set null, do not track loop count
 			if (loop_table) {
-				void *loop_count_raw = ht_up_find(loop_table, addr, NULL);
-				ut64 loop_count = 0;
-				if (loop_count_raw) {
-					loop_count = (ut64)loop_count_raw;
-				}
+				ut64 loop_count = ht_uu_find(loop_table, addr, NULL);
 				if (loop_count > LOOP_MAX || aop->type == RZ_ANALYSIS_OP_TYPE_RET) {
 					break;
 				}
 				loop_count += 1;
-				ht_up_update(loop_table, addr, (void *)loop_count);
+				ht_uu_update(loop_table, addr, loop_count);
 			}
 
 			if (rz_analysis_op_nonlinear(aop->type)) { // skip the instr

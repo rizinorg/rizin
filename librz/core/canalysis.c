@@ -6941,7 +6941,7 @@ RZ_IPI bool rz_core_analysis_types_propagation(RzCore *core) {
 	// TODO : figure out the reason to hold a `LOOP COUNT` in type_match
 	// HtUP <addr->loop_count>
 	// mimic a htuu table
-	HtUP *loop_table = ht_up_new(NULL, NULL, NULL);
+	HtUU *loop_table = ht_uu_new0();
 
 	// Iterating Reverse so that we get function in top-bottom call order
 	rz_list_foreach_prev(core->analysis->fcns, it, fcn) {
@@ -6965,7 +6965,7 @@ RZ_IPI bool rz_core_analysis_types_propagation(RzCore *core) {
 	rz_config_hold_restore(hold);
 	rz_config_hold_free(hold);
 	free(saved_arena);
-	ht_up_free(loop_table);
+	ht_uu_free(loop_table);
 	return true;
 }
 
