@@ -244,7 +244,7 @@ static bool is_process_alive(HANDLE ph) {
 	return false;
 }
 
-static int set_thread_context(HANDLE th, const ut8 *buf, int size, int bits) {
+static int set_thread_context(HANDLE th, const ut8 *buf, int size) {
 	bool ret;
 	CONTEXT ctx = { 0 };
 	size = RZ_MIN(size, sizeof(ctx));
@@ -255,11 +255,11 @@ static int set_thread_context(HANDLE th, const ut8 *buf, int size, int bits) {
 	return ret;
 }
 
-static int get_thread_context(HANDLE th, ut8 *buf, int size, int bits) {
+static int get_thread_context(HANDLE th, ut8 *buf, int size, DWORD context_flags) {
 	int ret = 0;
 	CONTEXT ctx = { 0 };
 	// TODO: support various types?
-	ctx.ContextFlags = CONTEXT_ALL;
+	ctx.ContextFlags = context_flags;
 	if (GetThreadContext(th, &ctx)) {
 		if (size > sizeof(ctx)) {
 			size = sizeof(ctx);
@@ -457,6 +457,133 @@ int w32_step(RzDebug *dbg) {
 	return 0;
 }
 
+static inline void get_arm_hwbp_values(ut64 address, ut32 *control, ut64 *value) {
+	const ut32 type = 0b0100 << 20; // match
+	const ut32 bas = 0xF << 5; // match a64 and a32
+	const ut32 priv = 1 << 2;
+	const ut32 enable = 1;
+	*control = type | bas | priv | enable;
+	*value = address;
+}
+
+static inline void get_arm64_hwwp_values(ut64 address, int size, int rw, ut32 *control, ut64 *value) {
+	const unsigned int offset = address % 8;
+	const ut32 byte_mask = ((1 << size) - 1) << offset;
+	const ut32 priv = 1 << 2;
+	const ut32 enable = 1;
+	ut32 load_store = 0;
+	switch (rw) {
+	case RZ_BP_PROT_READ:
+		load_store = 1;
+		break;
+	case RZ_BP_PROT_WRITE:
+		load_store = 2;
+		break;
+	case RZ_BP_PROT_ACCESS:
+		load_store = 3;
+		break;
+	}
+	*control = byte_mask << 5 | load_store << 3 | priv | enable;
+	*value = address - offset;
+}
+
+static inline bool is_watchpoint(RzBreakpointItem *b) {
+	return b->perm & (RZ_BP_PROT_ACCESS | RZ_BP_PROT_READ | RZ_BP_PROT_WRITE);
+}
+
+static inline bool is_breakpoint(RzBreakpointItem *b) {
+	return b->perm & RZ_BP_PROT_EXEC;
+}
+
+int w32_hwbp_arm_add(RzDebug *dbg, RzBreakpoint *bp, RzBreakpointItem *b) {
+	rz_return_val_if_fail(dbg && bp && b, 0);
+	W32DbgWInst *wrap = dbg->plugin_data;
+	CONTEXT ctx;
+	const bool alive = is_thread_alive(dbg, wrap->pi.dwThreadId);
+	if (alive && suspend_thread(wrap->pi.hThread, dbg->bits) == -1) {
+		return 0;
+	}
+	get_thread_context(wrap->pi.hThread, (ut8 *)&ctx, sizeof(CONTEXT), CONTEXT_DEBUG_REGISTERS);
+	ut32 control;
+	ut64 value;
+	int i;
+	if (is_watchpoint(b)) {
+		get_arm64_hwwp_values(b->addr, b->size, b->perm, &control, &value);
+		for (i = 0; i < ARM64_MAX_WATCHPOINTS; i++) {
+			if (!ctx.Wvr[i] || ctx.Wvr[i] == value) {
+				break;
+			}
+		}
+		if (i < ARM64_MAX_WATCHPOINTS) {
+			ctx.Wcr[i] = control;
+			ctx.Wvr[i] = value;
+		} else {
+			eprintf("Too many hardware watchpoints\n");
+		}
+	}
+	if (is_breakpoint(b)) {
+		get_arm_hwbp_values(b->addr, &control, &value);
+		for (i = 0; i < ARM64_MAX_BREAKPOINTS; i++) {
+			if (!ctx.Bvr[i] || ctx.Bvr[i] == value) {
+				break;
+			}
+		}
+		if (i < ARM64_MAX_BREAKPOINTS) {
+			ctx.Bcr[i] = control;
+			ctx.Bvr[i] = value;
+		} else {
+			eprintf("Too many hardware breakpoints\n");
+		}
+	}
+	set_thread_context(wrap->pi.hThread, (ut8 *)&ctx, sizeof(CONTEXT));
+	if (alive && resume_thread(wrap->pi.hThread, dbg->bits) == -1) {
+		return 0;
+	}
+	return 1;
+}
+
+int w32_hwbp_arm_del(RzDebug *dbg, RzBreakpoint *bp, RzBreakpointItem *b) {
+	W32DbgWInst *wrap = dbg->plugin_data;
+	CONTEXT ctx;
+	const bool alive = is_thread_alive(dbg, wrap->pi.dwThreadId);
+	if (alive && suspend_thread(wrap->pi.hThread, dbg->bits) == -1) {
+		return 0;
+	}
+	get_thread_context(wrap->pi.hThread, (ut8 *)&ctx, sizeof(CONTEXT), CONTEXT_DEBUG_REGISTERS);
+	ut32 control;
+	ut64 value;
+	int i;
+	if (is_watchpoint(b)) {
+		get_arm64_hwwp_values(b->addr, b->size, b->perm, &control, &value);
+		for (i = 0; i < ARM64_MAX_WATCHPOINTS; i++) {
+			if (ctx.Wcr[i] == control && ctx.Wvr[i] == value) {
+				break;
+			}
+		}
+		if (i < ARM64_MAX_WATCHPOINTS) {
+			ctx.Wcr[i] = 0;
+			ctx.Wvr[i] = 0;
+		}
+	}
+	if (is_breakpoint(b)) {
+		get_arm_hwbp_values(b->addr, &control, &value);
+		for (i = 0; i < ARM64_MAX_BREAKPOINTS; i++) {
+			if (ctx.Bvr[i] == value) {
+				break;
+			}
+		}
+		if (i < ARM64_MAX_BREAKPOINTS) {
+			ctx.Bcr[i] = 0;
+			ctx.Bvr[i] = 0;
+		}
+	}
+	set_thread_context(wrap->pi.hThread, (ut8 *)&ctx, sizeof(CONTEXT));
+	if (alive && resume_thread(wrap->pi.hThread, dbg->bits) == -1) {
+		return 0;
+	}
+	return 1;
+}
+
 #endif
 
 static HANDLE get_thread_handle_from_tid(RzDebug *dbg, int tid) {
@@ -489,7 +616,7 @@ int w32_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 	if (alive && suspend_thread(th, dbg->bits) == -1) {
 		return 0;
 	}
-	size = get_thread_context(th, buf, size, dbg->bits);
+	size = get_thread_context(th, buf, size, CONTEXT_ALL);
 	if (showfpu) {
 		print_fpu_context(th, (CONTEXT *)buf);
 	}
@@ -516,7 +643,7 @@ int w32_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 	if (type == RZ_REG_TYPE_DRX) {
 		transfer_drx(dbg, buf);
 	}
-	bool ret = set_thread_context(th, buf, size, dbg->bits);
+	bool ret = set_thread_context(th, buf, size);
 	// Always resume
 	if (resume_thread(th, dbg->bits) == -1) {
 		ret = false;
@@ -1105,6 +1232,11 @@ int w32_dbg_wait(RzDebug *dbg, int pid) {
 				next_event = 0;
 				break;
 			default:
+				if (rz_bp_get_at(dbg->bp, (size_t)de.u.Exception.ExceptionRecord.ExceptionAddress)) {
+					ret = RZ_DEBUG_REASON_BREAKPOINT;
+					next_event = 0;
+					break;
+				}
 				print_exception_event(&de);
 				if (is_exception_fatal(de.u.Exception.ExceptionRecord.ExceptionCode)) {
 					next_event = 0;

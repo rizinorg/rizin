@@ -129,9 +129,10 @@ static int rz_debug_native_step(RzDebug *dbg) {
 		return false;
 	}
 	return true;
-#else // linux
+#elif __linux__
 	return linux_step(dbg);
 #endif
+	return 0;
 }
 
 // return thread id
@@ -1302,10 +1303,8 @@ static int rz_debug_native_drx(RzDebug *dbg, int n, ut64 addr, int sz, int rwx, 
 	set_drx_regs(dbg, regs, NUM_DRX_REGISTERS);
 
 	return retval;
-#else
-	eprintf("drx: Unsupported platform\n");
 #endif
-	return false;
+	return -1;
 }
 
 #if __linux__
@@ -1434,6 +1433,10 @@ static int rz_debug_native_bp(RzBreakpoint *bp, RzBreakpointItem *b, bool set) {
 		return set
 			? arm64_hwbp_add(dbg, bp, b)
 			: arm64_hwbp_del(dbg, bp, b);
+#elif __WINDOWS__
+		return set
+			? w32_hwbp_arm_add(dbg, bp, b)
+			: w32_hwbp_arm_del(dbg, bp, b);
 #elif __arm__ && __linux__
 		return set
 			? arm32_hwbp_add(dbg, bp, b)
@@ -1602,7 +1605,11 @@ RzDebugPlugin rz_debug_plugin_native = {
 #elif __aarch64__ || __arm64__
 	.bits = RZ_SYS_BITS_16 | RZ_SYS_BITS_32 | RZ_SYS_BITS_64,
 	.arch = "arm",
+#if __WINDOWS__
+	.canstep = 0,
+#else
 	.canstep = 1,
+#endif
 #elif __arm__
 	.bits = RZ_SYS_BITS_16 | RZ_SYS_BITS_32 | RZ_SYS_BITS_64,
 	.arch = "arm",
