@@ -144,6 +144,7 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 		}
 	}
 	analysis->ht_global_var = ht_pp_new0();
+	analysis->global_var_tree = NULL;
 	return analysis;
 }
 

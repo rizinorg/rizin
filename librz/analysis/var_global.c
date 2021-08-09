@@ -26,6 +26,23 @@ RZ_API RZ_OWN RzAnalysisVarGlobal *rz_analysis_var_global_new(RZ_NONNULL const c
 	return glob;
 }
 
+typedef struct {
+	RBNode rb;
+	ut64 addr;
+	ut64 size;
+} GlobalVarNode;
+
+int global_var_node_cmp(const void *incoming, const RBNode *in_tree, void *user) {
+	ut64 ia = *(ut64 *)incoming;
+	ut64 ta = container_of(in_tree, const GlobalVarNode, rb)->addr;
+	if (ia < ta) {
+		return -1;
+	} else if (ia > ta) {
+		return 1;
+	}
+	return 0;
+}
+
 /**
  * \brief Add the global variable into hashtable
  * 
@@ -36,10 +53,25 @@ RZ_API RZ_OWN RzAnalysisVarGlobal *rz_analysis_var_global_new(RZ_NONNULL const c
 RZ_API RZ_OWN bool rz_analysis_var_global_add(RzAnalysis *analysis, RzAnalysisVarGlobal *global_var) {
 	rz_return_val_if_fail(analysis && global_var, false);
 	if (rz_analysis_var_global_get_byaddr(analysis, global_var->addr)) {
-		RZ_LOG_ERROR("Global variable at 0x%" PFMT64x " is already exist!\n", global_var->addr);
+		RZ_LOG_ERROR("Global variable %s at 0x%" PFMT64x " already exists!\n", global_var->name, global_var->addr);
+		return false;
+	} else if (ht_pp_find(analysis->ht_global_var, global_var->name, NULL)) {
+		RZ_LOG_ERROR("Global variable %s already exists!\n", global_var->name);
 		return false;
 	}
-	return ht_pp_insert(analysis->ht_global_var, global_var->name, global_var);
+	if (!ht_pp_insert(analysis->ht_global_var, global_var->name, global_var)) {
+		return false;
+	}
+	GlobalVarNode *node = RZ_NEW0(GlobalVarNode);
+	node->addr = global_var->addr;
+	node->size = 0;
+	if (global_var->type) {
+		node->size = rz_type_db_get_bitsize(analysis->typedb, global_var->type) / 8;
+	}
+	if (!rz_rbtree_aug_insert(&analysis->global_var_tree, &node->addr, &node->rb, global_var_node_cmp, NULL, NULL)) {
+		return false;
+	}
+	return true;
 }
 
 /**
@@ -76,6 +108,7 @@ RZ_API bool rz_analysis_var_global_delete_byname(RzAnalysis *analysis, const cha
 		return false;
 	}
 	rz_analysis_var_global_free(glob);
+	rz_rbtree_delete(&analysis->global_var_tree, &glob->addr, global_var_node_cmp, NULL, NULL, NULL);
 	return ht_pp_delete(analysis->ht_global_var, name);
 }
 
@@ -95,6 +128,7 @@ RZ_API bool rz_analysis_var_global_delete_byaddr(RzAnalysis *analysis, ut64 addr
 	}
 	bool deleted = ht_pp_delete(analysis->ht_global_var, glob->name);
 	if (deleted) {
+		rz_rbtree_delete(&analysis->global_var_tree, &glob->addr, global_var_node_cmp, NULL, NULL, NULL);
 		rz_analysis_var_global_free(glob);
 	}
 	return deleted;
@@ -135,11 +169,25 @@ static bool global_var_collect_addr_cb(void *user, const void *k, const void *v)
  */
 RZ_API RZ_BORROW RzAnalysisVarGlobal *rz_analysis_var_global_get_byaddr(RzAnalysis *analysis, ut64 addr) {
 	rz_return_val_if_fail(analysis, NULL);
+	RBIter it;
+	GlobalVarNode *node, *tmp = NULL;
+	rz_rbtree_foreach (analysis->global_var_tree, it, node, GlobalVarNode, rb) {
+		if (node->addr > addr) { // get the highest variable
+			break;
+		}
+		if (addr <= node->addr + node->size - 1) { // check if the givin address is in the global variable
+			tmp = node;
+		}
+	}
+	if (!tmp) {
+		return NULL;
+	}
+
 	RzList *list = rz_list_new();
 	if (!list) {
 		return NULL;
 	}
-	struct list_addr l = { list, addr };
+	struct list_addr l = { list, tmp->addr };
 	ht_pp_foreach(analysis->ht_global_var, global_var_collect_addr_cb, &l);
 	if (rz_list_length(list) != 1) {
 		rz_list_free(list);
