@@ -607,20 +607,46 @@ static RzList *kexts_from_load_commands(RKernelCacheObj *obj) {
 		return NULL;
 	}
 
-	ut32 i, ncmds = rz_buf_read_le32_at(obj->cache_buf, 16);
+	ut32 i;
+	ut32 ncmds;
+	if (!rz_buf_read_le32_at(obj->cache_buf, 16, &ncmds)) {
+		rz_list_free(kexts);
+		return NULL;
+	}
+
 	ut64 length = rz_buf_size(obj->cache_buf);
 
 	ut32 cursor = sizeof(struct MACH0_(mach_header));
 	for (i = 0; i < ncmds && cursor < length; i++) {
-		ut32 cmdtype = rz_buf_read_le32_at(obj->cache_buf, cursor);
-		ut32 cmdsize = rz_buf_read_le32_at(obj->cache_buf, cursor + 4);
+		ut32 cmdtype;
+		if (!rz_buf_read_le32_at(obj->cache_buf, cursor, &cmdtype)) {
+			rz_list_free(kexts);
+			return NULL;
+		}
+
+		ut32 cmdsize;
+		if (!rz_buf_read_le32_at(obj->cache_buf, cursor + 4, &cmdsize)) {
+			rz_list_free(kexts);
+			return NULL;
+		}
+
 		if (cmdtype != LC_KEXT) {
 			cursor += cmdsize;
 			continue;
 		}
 
-		ut64 vaddr = rz_buf_read_le64_at(obj->cache_buf, cursor + 8);
-		ut64 paddr = rz_buf_read_le64_at(obj->cache_buf, cursor + 16);
+		ut64 vaddr;
+		if (!rz_buf_read_le64_at(obj->cache_buf, cursor + 8, &vaddr)) {
+			rz_list_free(kexts);
+			return NULL;
+		}
+
+		ut64 paddr;
+		if (!rz_buf_read_le64_at(obj->cache_buf, cursor + 16, &paddr)) {
+			rz_list_free(kexts);
+			return NULL;
+		}
+
 		st32 padded_name_length = (st32)cmdsize - 32;
 		if (padded_name_length <= 0) {
 			cursor += cmdsize;

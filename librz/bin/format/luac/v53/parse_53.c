@@ -51,7 +51,11 @@ static ut64 lua_parse_line_defined(LuaProto *proto, RzBuffer *buffer, ut64 offse
 }
 
 static ut64 lua_parse_string(RzBuffer *buffer, ut8 **dest, int *str_len, ut64 offset, ut64 data_size) {
-	int string_buf_size = rz_buf_read8_at(buffer, offset);
+	ut8 string_buf_size;
+	if (!rz_buf_read8_at(buffer, offset, &string_buf_size)) {
+		return 0;
+	}
+
 	int len = 0;
 	ut64 base_offset = 0;
 	ut64 size_offset = 1;
@@ -62,7 +66,9 @@ static ut64 lua_parse_string(RzBuffer *buffer, ut8 **dest, int *str_len, ut64 of
 	// Long string
 	if (string_buf_size == 0xFF) {
 		offset += size_offset;
-		string_buf_size = rz_buf_read8_at(buffer, offset);
+		if (!rz_buf_read8_at(buffer, offset, &string_buf_size)) {
+			return 0;
+		}
 		size_offset = 1;
 	}
 
@@ -135,8 +141,12 @@ static ut64 lua_parse_const_entry(LuaProto *proto, RzBuffer *buffer, ut64 offset
 	if (offset + 1 > data_size) {
 		return 0;
 	}
-	current_entry->tag = rz_buf_read8_at(buffer, offset);
+	if (!rz_buf_read8_at(buffer, offset, &current_entry->tag)) {
+		return 0;
+	}
 	offset += 1;
+
+	ut8 tmp;
 
 	/* read data */
 	// TODO : check tag Macro
@@ -169,7 +179,11 @@ static ut64 lua_parse_const_entry(LuaProto *proto, RzBuffer *buffer, ut64 offset
 		break;
 	// BOOLEAN
 	case LUA_TBOOLEAN:
-		current_entry->tag = (rz_buf_read8_at(buffer, offset) == 0 ? LUA_VFALSE : LUA_VTRUE);
+		if (!rz_buf_read8_at(buffer, offset, &tmp)) {
+			return 0;
+		}
+
+		current_entry->tag = tmp == 0 ? LUA_VFALSE : LUA_VTRUE;
 		recv_data = NULL;
 		data_len = 0;
 		delta_offset = 1;
@@ -236,8 +250,10 @@ static ut64 lua_parse_upvalue_entry(LuaProto *proto, RzBuffer *buffer, ut64 offs
 
 	/* read instack/idx attr */
 	// no kind in lua 5.3
-	current_entry->instack = rz_buf_read8_at(buffer, offset + 0);
-	current_entry->idx = rz_buf_read8_at(buffer, offset + 1);
+	if (!rz_buf_read8_at(buffer, offset + 0, &current_entry->instack) ||
+		!rz_buf_read8_at(buffer, offset + 1, &current_entry->idx)) {
+		return 0;
+	}
 	current_entry->kind = 0;
 
 	offset += 2;
@@ -418,9 +434,12 @@ LuaProto *lua_parse_body_53(RzBuffer *buffer, ut64 base_offset, ut64 data_size) 
 		lua_free_proto_entry(ret_proto);
 		return NULL;
 	}
-	ret_proto->num_params = rz_buf_read8_at(buffer, offset + 0);
-	ret_proto->is_vararg = rz_buf_read8_at(buffer, offset + 1);
-	ret_proto->max_stack_size = rz_buf_read8_at(buffer, offset + 2);
+	if (!rz_buf_read8_at(buffer, offset + 0, &ret_proto->num_params) ||
+		!rz_buf_read8_at(buffer, offset + 1, &ret_proto->is_vararg) ||
+		!rz_buf_read8_at(buffer, offset + 2, &ret_proto->max_stack_size)) {
+		lua_free_proto_entry(ret_proto);
+		return NULL;
+	}
 	offset += 3;
 
 	/* parse code */
@@ -473,12 +492,30 @@ RzBinInfo *lua_parse_header_53(RzBinFile *bf, st32 major, st32 minor) {
 	buffer = bf->buf;
 
 	/* read header members from work buffer */
-	ut8 luac_format = rz_buf_read8_at(buffer, LUAC_53_FORMAT_OFFSET);
-	ut8 int_size = rz_buf_read8_at(buffer, LUAC_53_INT_SIZE_OFFSET);
-	ut8 sizet_size = rz_buf_read8_at(buffer, LUAC_53_SIZET_SIZE_OFFSET);
-	ut8 instruction_size = rz_buf_read8_at(buffer, LUAC_53_INSTRUCTION_SIZE_OFFSET);
-	ut8 integer_size = rz_buf_read8_at(buffer, LUAC_53_INTEGER_SIZE_OFFSET);
-	ut8 number_size = rz_buf_read8_at(buffer, LUAC_53_NUMBER_SIZE_OFFSET);
+	ut8 luac_format;
+	if (!rz_buf_read8_at(buffer, LUAC_53_FORMAT_OFFSET, &luac_format)) {
+		return NULL;
+	}
+	ut8 int_size;
+	if (!rz_buf_read8_at(buffer, LUAC_53_INT_SIZE_OFFSET, &int_size)) {
+		return NULL;
+	}
+	ut8 sizet_size;
+	if (!rz_buf_read8_at(buffer, LUAC_53_SIZET_SIZE_OFFSET, &sizet_size)) {
+		return NULL;
+	}
+	ut8 instruction_size;
+	if (!rz_buf_read8_at(buffer, LUAC_53_INSTRUCTION_SIZE_OFFSET, &instruction_size)) {
+		return NULL;
+	}
+	ut8 integer_size;
+	if (!rz_buf_read8_at(buffer, LUAC_53_INTEGER_SIZE_OFFSET, &integer_size)) {
+		return NULL;
+	}
+	ut8 number_size;
+	if (!rz_buf_read8_at(buffer, LUAC_53_NUMBER_SIZE_OFFSET, &number_size)) {
+		return NULL;
+	}
 	ut64 integer_valid = lua_load_integer(buffer, LUAC_53_INTEGER_VALID_OFFSET);
 	double number_valid = lua_load_number(buffer, LUAC_53_NUMBER_VALID_OFFSET);
 

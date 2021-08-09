@@ -5,7 +5,11 @@
 #include <rz_asm.h>
 
 int rz_bin_p9_get_arch(RzBuffer *b, int *bits, int *big_endian) {
-	st32 a = (st32)rz_buf_read_be32_at(b, 0);
+	ut32 a;
+	if (!rz_buf_read_be32_at(b, 0, &a)) {
+		return 0;
+	}
+
 	if (bits) {
 		*bits = 32;
 	}

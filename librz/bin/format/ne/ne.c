@@ -36,7 +36,10 @@ static int __translate_perms(int flags) {
 }
 
 static char *__read_nonnull_str_at(RzBuffer *buf, ut64 offset) {
-	ut8 sz = rz_buf_read8_at(buf, offset);
+	ut8 sz;
+	if (!rz_buf_read8_at(buf, offset, &sz)) {
+		return NULL;
+	}
 	if (!sz) {
 		return NULL;
 	}
@@ -113,13 +116,18 @@ RzList *rz_bin_ne_get_symbols(rz_bin_ne_obj_t *bin) {
 	RzList *entries = rz_bin_ne_get_entrypoints(bin);
 	bool resident = true, first = true;
 	while (true) {
-		ut8 sz = rz_buf_read8_at(bin->buf, off);
+		ut8 sz;
+		if (!rz_buf_read8_at(bin->buf, off, &sz)) {
+			break;
+		}
 		if (!sz) {
 			first = true;
 			if (resident) {
 				resident = false;
 				off = bin->ne_header->OffStartNonResTab;
-				sz = rz_buf_read8_at(bin->buf, off);
+				if (!rz_buf_read8_at(bin->buf, off, &sz)) {
+					break;
+				}
 				if (!sz) {
 					break;
 				}
@@ -143,7 +151,10 @@ RzList *rz_bin_ne_get_symbols(rz_bin_ne_obj_t *bin) {
 		if (!first) {
 			sym->bind = RZ_BIN_BIND_GLOBAL_STR;
 		}
-		ut16 entry_off = rz_buf_read_le16_at(bin->buf, off);
+		ut16 entry_off;
+		if (!rz_buf_read_le16_at(bin->buf, off, &entry_off)) {
+			break;
+		}
 		off += 2;
 		RzBinAddr *entry = rz_list_get_n(entries, entry_off);
 		if (entry) {
@@ -269,7 +280,12 @@ static bool __ne_get_resources(rz_bin_ne_obj_t *bin) {
 		bin->resources = rz_list_newf(__free_resource);
 	}
 	ut16 resoff = bin->ne_header->ResTableOffset + bin->header_offset;
-	ut16 alignment = rz_buf_read_le16_at(bin->buf, resoff);
+
+	ut16 alignment;
+	if (!rz_buf_read_le16_at(bin->buf, resoff, &alignment)) {
+		return false;
+	}
+
 	ut32 off = resoff + 2;
 	while (true) {
 		NE_image_typeinfo_entry ti = { 0 };
@@ -327,7 +343,10 @@ RzList *rz_bin_ne_get_imports(rz_bin_ne_obj_t *bin) {
 		if (!imp) {
 			break;
 		}
-		ut8 sz = rz_buf_read8_at(bin->buf, off);
+		ut8 sz;
+		if (!rz_buf_read8_at(bin->buf, off, &sz)) {
+			break;
+		}
 		if (!sz) {
 			rz_bin_import_free(imp);
 			break;
@@ -448,7 +467,11 @@ RzList *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 		if ((ut64)off + 2 > bufsz) {
 			continue;
 		}
-		ut16 length = rz_buf_read_le16_at(bin->buf, off);
+		ut16 length;
+		if (!rz_buf_read_le16_at(bin->buf, off, &length)) {
+			continue;
+		}
+
 		if (!length) {
 			continue;
 		}
@@ -539,7 +562,13 @@ RzList *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 				do {
 					rz_list_append(relocs, reloc);
 
-					offset = rz_buf_read_le16_at(bin->buf, reloc->paddr);
+					ut16 tmp_offset;
+					if (!rz_buf_read_le16_at(bin->buf, reloc->paddr, &tmp_offset)) {
+						break;
+					}
+
+					offset = tmp_offset;
+
 					RzBinReloc *tmp = reloc;
 					reloc = RZ_NEW0(RzBinReloc);
 					if (!reloc) {
@@ -559,7 +588,10 @@ RzList *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 }
 
 void __init(RzBuffer *buf, rz_bin_ne_obj_t *bin) {
-	bin->header_offset = rz_buf_read_le16_at(buf, 0x3c);
+	if (!rz_buf_read_le16_at(buf, 0x3c, &bin->header_offset)) {
+		return;
+	}
+
 	bin->ne_header = RZ_NEW0(NE_image_header);
 	if (!bin->ne_header) {
 		return;

@@ -84,7 +84,7 @@ static RSepSlice64 *sep64_xtr_ctx_get_slice(RSepXtr64Ctx *ctx, RzBuffer *whole, 
 static RSepMachoInfo *mach0_info_new(RzBuffer *buf, ut64 at, ut64 max_size);
 static void mach0_info_free(RSepMachoInfo *info);
 
-static ut32 read_arm64_ins(RzBuffer *b, int idx);
+static bool read_arm64_ins(RzBuffer *b, int idx, ut64 *result);
 static char *get_proper_name(const char *app_name);
 static RzBuffer *extract_slice(RzBuffer *whole, RSepMachoInfo *info);
 static inline void fill_metadata_info_from_hdr(RzBinXtrMetadata *meta, struct MACH0_(mach_header) * hdr);
@@ -99,36 +99,68 @@ static bool check_buffer(RzBuffer *b) {
 		return false;
 	}
 
-	ut32 msr_vbar_el1 = read_arm64_ins(b, 2);
+	ut64 msr_vbar_el1;
+	if (!read_arm64_ins(b, 2, &msr_vbar_el1)) {
+		return false;
+	}
+
 	if (msr_vbar_el1 != 0xd518c002) {
 		return false;
 	}
-	ut32 adr = read_arm64_ins(b, 1);
+
+	ut64 adr;
+	if (!read_arm64_ins(b, 1, &adr)) {
+		return false;
+	}
+
 	if (adr != 0x10003fe2) {
 		return false;
 	}
 
-	/* check exception vector */
-	if (read_arm64_ins(b, 512) != 0x14000000) {
+	ut64 tmp;
+	if (!read_arm64_ins(b, 512, &tmp)) {
 		return false;
 	}
-	if (read_arm64_ins(b, 1023) != 0x14000000) {
+
+	/* check exception vector */
+	if (tmp != 0x14000000) {
+		return false;
+	}
+
+	if (!read_arm64_ins(b, 1023, &tmp)) {
+		return false;
+	}
+
+	if (tmp != 0x14000000) {
+		return false;
+	}
+
+	if (!read_arm64_ins(b, 1028, &tmp)) {
 		return false;
 	}
 
 	/* legion2 */
-	if (read_arm64_ins(b, 1028) != 0x326e6f69) {
+	if (tmp != 0x326e6f69) {
 		return false;
 	}
 
 	/* data header start */
-	ut64 hdr_offset = read_arm64_ins(b, 1029);
+	ut64 hdr_offset;
+	if (!read_arm64_ins(b, 1029, &hdr_offset)) {
+		return false;
+	};
+
 	if (hdr_offset >= sz) {
 		return false;
 	}
 
+	ut64 size;
+	if (!rz_buf_read_le64_at(b, hdr_offset + 56, &size)) {
+		return false;
+	}
+
 	/* check size */
-	if (rz_buf_read_le64_at(b, hdr_offset + 56) != sz) {
+	if (size != sz) {
 		return false;
 	}
 
@@ -189,7 +221,11 @@ static RSepXtr64Ctx *sep64_xtr_ctx_new(RzBuffer *buf) {
 	RSepApp64 *apps = NULL;
 	RSepXtr64Ctx *ctx = NULL;
 
-	ut64 hdr_offset = rz_buf_read_le64_at(buf, 0x1014);
+	ut64 hdr_offset;
+	if (!rz_buf_read_le64_at(buf, 0x1014, &hdr_offset)) {
+		goto beach;
+	}
+
 	if (hdr_offset == UT64_MAX) {
 		goto beach;
 	}
@@ -469,8 +505,16 @@ static char *get_proper_name(const char *app_name) {
 	return proper_name;
 }
 
-static ut32 read_arm64_ins(RzBuffer *b, int idx) {
-	return rz_buf_read_le32_at(b, idx * 4);
+static bool read_arm64_ins(RzBuffer *b, int idx, ut64 *result) {
+	ut32 tmp;
+
+	bool res = rz_buf_read_le32_at(b, idx * 4, &tmp);
+	if (!res) {
+		return false;
+	}
+
+	*result = tmp;
+	return res;
 }
 
 RzBinXtrPlugin rz_bin_xtr_plugin_xtr_sep64 = {

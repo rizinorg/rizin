@@ -29,7 +29,10 @@ ConstPool *java_constant_pool_new(RzBuffer *buf, ut64 offset) {
 	rz_return_val_if_fail(cpool, NULL);
 
 	cpool->offset = offset;
-	cpool->tag = rz_buf_read8(buf);
+	if (!rz_buf_read8(buf, &cpool->tag)) {
+		free(cpool);
+		return NULL;
+	}
 
 	ut16 string_len;
 
@@ -38,7 +41,10 @@ ConstPool *java_constant_pool_new(RzBuffer *buf, ut64 offset) {
 		return cpool;
 	case CONSTANT_POOL_UTF8:
 	case CONSTANT_POOL_UNICODE:
-		string_len = rz_buf_read_be16(buf);
+		if (!rz_buf_read_be16(buf, &string_len)) {
+			free(cpool);
+			return NULL;
+		}
 		return constant_pool_copy_from_buffer(buf, cpool, string_len);
 	case CONSTANT_POOL_LONG:
 	case CONSTANT_POOL_DOUBLE:

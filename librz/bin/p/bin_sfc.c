@@ -7,7 +7,6 @@
 #include <rz_endian.h>
 
 static bool check_buffer(RzBuffer *b) {
-	ut16 cksum1, cksum2;
 	ut64 length = rz_buf_size(b);
 	// FIXME: this was commented out because it always evaluates to false.
 	//        Need to be fixed by someone with SFC knowledge
@@ -18,8 +17,15 @@ static bool check_buffer(RzBuffer *b) {
 		return false;
 	}
 	//determine if ROM is headered, and add a 0x200 gap if so.
-	cksum1 = rz_buf_read_le16_at(b, 0x7fdc);
-	cksum2 = rz_buf_read_le16_at(b, 0x7fde);
+	ut16 cksum1;
+	if (!rz_buf_read_le16_at(b, 0x7fdc, &cksum1)) {
+		return false;
+	}
+
+	ut16 cksum2;
+	if (!rz_buf_read_le16_at(b, 0x7fde, &cksum2)) {
+		return false;
+	}
 
 	if (cksum1 == (ut16)~cksum2) {
 		return true;
@@ -27,8 +33,15 @@ static bool check_buffer(RzBuffer *b) {
 	if (length < 0xffee) {
 		return false;
 	}
-	cksum1 = rz_buf_read_le16_at(b, 0xffdc);
-	cksum2 = rz_buf_read_le16_at(b, 0xffde);
+
+	if (!rz_buf_read_le16_at(b, 0xffdc, &cksum1)) {
+		return false;
+	}
+
+	if (!rz_buf_read_le16_at(b, 0xffde, &cksum2)) {
+		return false;
+	}
+
 	return (cksum1 == (ut16)~cksum2);
 }
 

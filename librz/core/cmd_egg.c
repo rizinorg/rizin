@@ -43,7 +43,11 @@ static void showBuffer(RzBuffer *b) {
 	if (b && rz_buf_size(b) > 0) {
 		rz_buf_seek(b, 0, RZ_BUF_SET);
 		for (i = 0; i < rz_buf_size(b); i++) {
-			rz_cons_printf("%02x", rz_buf_read8(b));
+			ut8 tmp;
+			if (!rz_buf_read8(b, &tmp)) {
+				return;
+			}
+			rz_cons_printf("%02x", tmp);
 		}
 		rz_cons_newline();
 	}

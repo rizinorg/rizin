@@ -34,6 +34,133 @@ void rz_bin_dex_free(RzBinDexObj *dex) {
 	free(dex);
 }
 
+static bool dex_new_buf_aux(RzBinDexObj *bin, struct dex_header_t *dexhdr) {
+	ut32 value;
+	if (!rz_buf_read_le32(bin->b, &value)) {
+		return false;
+	}
+
+	dexhdr->size = value;
+
+	if (!rz_buf_read_le32(bin->b, &value)) {
+		return false;
+	}
+
+	dexhdr->header_size = value;
+
+	if (!rz_buf_read_le32(bin->b, &value)) {
+		return false;
+	}
+
+	dexhdr->endian = value;
+
+	// TODO: this offsets and size will be used for checking,
+	// so they should be checked. Check overlap, < 0, > bin.size
+	if (!rz_buf_read_le32(bin->b, &value)) {
+		return false;
+	}
+
+	dexhdr->linksection_size = value;
+
+	if (!rz_buf_read_le32(bin->b, &value)) {
+		return false;
+	}
+
+	dexhdr->linksection_offset = value;
+
+	if (!rz_buf_read_le32(bin->b, &value)) {
+		return false;
+	}
+
+	dexhdr->map_offset = value;
+
+	if (!rz_buf_read_le32(bin->b, &value)) {
+		return false;
+	}
+
+	dexhdr->strings_size = value;
+
+	if (!rz_buf_read_le32(bin->b, &value)) {
+		return false;
+	}
+
+	dexhdr->strings_offset = value;
+
+	if (!rz_buf_read_le32(bin->b, &value)) {
+		return false;
+	}
+
+	dexhdr->types_size = value;
+
+	if (!rz_buf_read_le32(bin->b, &value)) {
+		return false;
+	}
+
+	dexhdr->types_offset = value;
+
+	if (!rz_buf_read_le32(bin->b, &value)) {
+		return false;
+	}
+
+	dexhdr->prototypes_size = value;
+
+	if (!rz_buf_read_le32(bin->b, &value)) {
+		return false;
+	}
+
+	dexhdr->prototypes_offset = value;
+
+	if (!rz_buf_read_le32(bin->b, &value)) {
+		return false;
+	}
+
+	dexhdr->fields_size = value;
+
+	if (!rz_buf_read_le32(bin->b, &value)) {
+		return false;
+	}
+
+	dexhdr->fields_offset = value;
+
+	if (!rz_buf_read_le32(bin->b, &value)) {
+		return false;
+	}
+
+	dexhdr->method_size = value;
+
+	if (!rz_buf_read_le32(bin->b, &value)) {
+		return false;
+	}
+
+	dexhdr->method_offset = value;
+
+	if (!rz_buf_read_le32(bin->b, &value)) {
+		return false;
+	}
+
+	dexhdr->class_size = value;
+
+	if (!rz_buf_read_le32(bin->b, &value)) {
+		return false;
+	}
+
+	dexhdr->class_offset = value;
+
+	if (!rz_buf_read_le32(bin->b, &value)) {
+		return false;
+	}
+
+	dexhdr->data_size = value;
+
+	if (!rz_buf_read_le32(bin->b, &value)) {
+		return false;
+	}
+
+	dexhdr->data_offset = value;
+
+	return true;
+}
+
 RzBinDexObj *rz_bin_dex_new_buf(RzBuffer *buf) {
 	rz_return_val_if_fail(buf, NULL);
 	RzBinDexObj *bin = RZ_NEW0(RzBinDexObj);
@@ -56,30 +183,19 @@ RzBinDexObj *rz_bin_dex_new_buf(RzBuffer *buf) {
 
 	rz_buf_seek(bin->b, 0, RZ_BUF_SET);
 	rz_buf_read(bin->b, (ut8 *)&dexhdr->magic, 8);
-	dexhdr->checksum = rz_buf_read_le32(bin->b);
+
+	ut32 tmp;
+	if (!rz_buf_read_le32(bin->b, &tmp)) {
+		goto fail;
+	}
+
+	dexhdr->checksum = tmp;
+
 	rz_buf_read(bin->b, (ut8 *)&dexhdr->signature, 20);
-	dexhdr->size = rz_buf_read_le32(bin->b);
-	dexhdr->header_size = rz_buf_read_le32(bin->b);
-	dexhdr->endian = rz_buf_read_le32(bin->b);
-	// TODO: this offsets and size will be used for checking,
-	// so they should be checked. Check overlap, < 0, > bin.size
-	dexhdr->linksection_size = rz_buf_read_le32(bin->b);
-	dexhdr->linksection_offset = rz_buf_read_le32(bin->b);
-	dexhdr->map_offset = rz_buf_read_le32(bin->b);
-	dexhdr->strings_size = rz_buf_read_le32(bin->b);
-	dexhdr->strings_offset = rz_buf_read_le32(bin->b);
-	dexhdr->types_size = rz_buf_read_le32(bin->b);
-	dexhdr->types_offset = rz_buf_read_le32(bin->b);
-	dexhdr->prototypes_size = rz_buf_read_le32(bin->b);
-	dexhdr->prototypes_offset = rz_buf_read_le32(bin->b);
-	dexhdr->fields_size = rz_buf_read_le32(bin->b);
-	dexhdr->fields_offset = rz_buf_read_le32(bin->b);
-	dexhdr->method_size = rz_buf_read_le32(bin->b);
-	dexhdr->method_offset = rz_buf_read_le32(bin->b);
-	dexhdr->class_size = rz_buf_read_le32(bin->b);
-	dexhdr->class_offset = rz_buf_read_le32(bin->b);
-	dexhdr->data_size = rz_buf_read_le32(bin->b);
-	dexhdr->data_offset = rz_buf_read_le32(bin->b);
+
+	if (!dex_new_buf_aux(bin, dexhdr)) {
+		goto fail;
+	}
 
 /* strings */
 #define STRINGS_SIZE ((dexhdr->strings_size + 1) * sizeof(ut32))
@@ -121,14 +237,63 @@ RzBinDexObj *rz_bin_dex_new_buf(RzBuffer *buf) {
 			goto fail;
 		}
 		rz_buf_seek(bin->b, offset, RZ_BUF_SET);
-		bin->classes[i].class_id = rz_buf_read_le32(bin->b);
-		bin->classes[i].access_flags = rz_buf_read_le32(bin->b);
-		bin->classes[i].super_class = rz_buf_read_le32(bin->b);
-		bin->classes[i].interfaces_offset = rz_buf_read_le32(bin->b);
-		bin->classes[i].source_file = rz_buf_read_le32(bin->b);
-		bin->classes[i].anotations_offset = rz_buf_read_le32(bin->b);
-		bin->classes[i].class_data_offset = rz_buf_read_le32(bin->b);
-		bin->classes[i].static_values_offset = rz_buf_read_le32(bin->b);
+
+		ut32 value;
+		if (!rz_buf_read_le32(bin->b, &value)) {
+			free(bin->strings);
+			free(bin->classes);
+			goto fail;
+		}
+		bin->classes[i].class_id = value;
+
+		if (!rz_buf_read_le32(bin->b, &value)) {
+			free(bin->strings);
+			free(bin->classes);
+			goto fail;
+		}
+		bin->classes[i].access_flags = value;
+
+		if (!rz_buf_read_le32(bin->b, &value)) {
+			free(bin->strings);
+			free(bin->classes);
+			goto fail;
+		}
+		bin->classes[i].super_class = value;
+
+		if (!rz_buf_read_le32(bin->b, &value)) {
+			free(bin->strings);
+			free(bin->classes);
+			goto fail;
+		}
+		bin->classes[i].interfaces_offset = value;
+
+		if (!rz_buf_read_le32(bin->b, &value)) {
+			free(bin->strings);
+			free(bin->classes);
+			goto fail;
+		}
+		bin->classes[i].source_file = value;
+
+		if (!rz_buf_read_le32(bin->b, &value)) {
+			free(bin->strings);
+			free(bin->classes);
+			goto fail;
+		}
+		bin->classes[i].anotations_offset = value;
+
+		if (!rz_buf_read_le32(bin->b, &value)) {
+			free(bin->strings);
+			free(bin->classes);
+			goto fail;
+		}
+		bin->classes[i].class_data_offset = value;
+
+		if (!rz_buf_read_le32(bin->b, &value)) {
+			free(bin->strings);
+			free(bin->classes);
+			goto fail;
+		}
+		bin->classes[i].static_values_offset = value;
 	}
 
 	/* methods */
@@ -151,9 +316,23 @@ RzBinDexObj *rz_bin_dex_new_buf(RzBuffer *buf) {
 			goto fail;
 		}
 		rz_buf_seek(bin->b, offset, RZ_BUF_SET);
-		bin->methods[i].class_id = rz_buf_read_le16(bin->b);
-		bin->methods[i].proto_id = rz_buf_read_le16(bin->b);
-		bin->methods[i].name_id = rz_buf_read_le32(bin->b);
+
+		ut16 tmp;
+		if (!rz_buf_read_le16(bin->b, &tmp)) {
+			goto fail;
+		}
+		bin->methods[i].class_id = tmp;
+
+		if (!rz_buf_read_le16(bin->b, &tmp)) {
+			goto fail;
+		}
+		bin->methods[i].proto_id = tmp;
+
+		ut32 value;
+		if (!rz_buf_read_le32(bin->b, &value)) {
+			goto fail;
+		}
+		bin->methods[i].name_id = value;
 	}
 
 	/* types */
@@ -172,7 +351,10 @@ RzBinDexObj *rz_bin_dex_new_buf(RzBuffer *buf) {
 			free(bin->types);
 			goto fail;
 		}
-		bin->types[i].descriptor_id = rz_buf_read_le32_at(bin->b, offset);
+
+		if (!rz_buf_read_le32_at(bin->b, offset, &bin->types[i].descriptor_id)) {
+			goto fail;
+		}
 	}
 
 	/* fields */
@@ -197,9 +379,12 @@ RzBinDexObj *rz_bin_dex_new_buf(RzBuffer *buf) {
 			goto fail;
 		}
 		rz_buf_seek(bin->b, offset, RZ_BUF_SET);
-		bin->fields[i].class_id = rz_buf_read_le16(bin->b);
-		bin->fields[i].type_id = rz_buf_read_le16(bin->b);
-		bin->fields[i].name_id = rz_buf_read_le32(bin->b);
+
+		if (!rz_buf_read_le16(bin->b, &bin->fields[i].class_id) ||
+			!rz_buf_read_le16(bin->b, &bin->fields[i].type_id) ||
+			!rz_buf_read_le32(bin->b, &bin->fields[i].name_id)) {
+			goto fail;
+		}
 	}
 
 	/* proto */
@@ -224,10 +409,28 @@ RzBinDexObj *rz_bin_dex_new_buf(RzBuffer *buf) {
 			free(bin->protos);
 			goto fail;
 		}
-		rz_buf_seek(bin->b, offset, RZ_BUF_SET);
-		bin->protos[i].shorty_id = rz_buf_read_le32(bin->b);
-		bin->protos[i].return_type_id = rz_buf_read_le32(bin->b);
-		bin->protos[i].parameters_off = rz_buf_read_le32(bin->b);
+
+		if (rz_buf_seek(bin->b, offset, RZ_BUF_SET) < 0) {
+			goto fail;
+		}
+
+		ut32 shorty_id;
+		if (!rz_buf_read_le32(bin->b, &shorty_id)) {
+			goto fail;
+		}
+		bin->protos[i].shorty_id = shorty_id;
+
+		ut32 return_type_id;
+		if (!rz_buf_read_le32(bin->b, &return_type_id)) {
+			goto fail;
+		}
+		bin->protos[i].return_type_id = return_type_id;
+
+		ut32 parameters_off;
+		if (!rz_buf_read_le32(bin->b, &parameters_off)) {
+			goto fail;
+		}
+		bin->protos[i].parameters_off = parameters_off;
 	}
 	return bin;
 fail:

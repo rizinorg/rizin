@@ -39,7 +39,13 @@ static ut64 lua_parse_szint(RzBuffer *buffer, int *size, ut64 offset, ut64 data_
 	}
 
 	do {
-		b = rz_buf_read8_at(buffer, offset + i);
+		ut8 tmp;
+		if (!rz_buf_read8_at(buffer, offset + i, &tmp)) {
+			return 0;
+		}
+
+		b = tmp;
+
 		i += 1;
 		if (x >= limit) {
 			eprintf("integer overflow\n");
@@ -151,7 +157,11 @@ static ut64 lua_parse_const_entry(LuaProto *proto, RzBuffer *buffer, ut64 offset
 	if (offset + 1 > data_size) {
 		return 0;
 	}
-	current_entry->tag = rz_buf_read8_at(buffer, offset);
+
+	if (!rz_buf_read8_at(buffer, offset, &current_entry->tag)) {
+		return 0;
+	}
+
 	offset += 1;
 
 	/* read data */
@@ -230,9 +240,17 @@ static ut64 lua_parse_upvalue_entry(LuaProto *proto, RzBuffer *buffer, ut64 offs
 	}
 
 	/* read instack/idx/kind attr */
-	current_entry->instack = rz_buf_read8_at(buffer, offset + 0);
-	current_entry->idx = rz_buf_read8_at(buffer, offset + 1);
-	current_entry->kind = rz_buf_read8_at(buffer, offset + 2);
+	if (!rz_buf_read8_at(buffer, offset + 0, &current_entry->instack)) {
+		return 0;
+	}
+
+	if (!rz_buf_read8_at(buffer, offset + 1, &current_entry->idx)) {
+		return 0;
+	}
+
+	if (!rz_buf_read8_at(buffer, offset + 2, &current_entry->kind)) {
+		return 0;
+	}
 
 	offset += 3;
 
@@ -281,7 +299,11 @@ static ut64 lua_parse_debug(LuaProto *proto, RzBuffer *buffer, ut64 offset, ut64
 	for (i = 0; i < entries_cnt; ++i) {
 		info_entry = lua_new_lineinfo_entry();
 		info_entry->offset = offset;
-		info_entry->info_data = rz_buf_read8_at(buffer, offset);
+		ut8 tmp;
+		if (!rz_buf_read8_at(buffer, offset, &tmp)) {
+			return 0;
+		}
+		info_entry->info_data = tmp;
 		rz_list_append(proto->line_info_entries, info_entry);
 		offset += 1;
 	}
@@ -411,9 +433,13 @@ LuaProto *lua_parse_body_54(RzBuffer *buffer, ut64 base_offset, ut64 data_size) 
 		lua_free_proto_entry(ret_proto);
 		return NULL;
 	}
-	ret_proto->num_params = rz_buf_read8_at(buffer, offset + 0);
-	ret_proto->is_vararg = rz_buf_read8_at(buffer, offset + 1);
-	ret_proto->max_stack_size = rz_buf_read8_at(buffer, offset + 2);
+
+	if (!rz_buf_read8_at(buffer, offset + 0, &ret_proto->num_params) ||
+		!rz_buf_read8_at(buffer, offset + 1, &ret_proto->is_vararg) ||
+		!rz_buf_read8_at(buffer, offset + 2, &ret_proto->max_stack_size)) {
+		lua_free_proto_entry(ret_proto);
+		return NULL;
+	}
 	offset += 3;
 
 	/* parse code */
@@ -466,10 +492,26 @@ RzBinInfo *lua_parse_header_54(RzBinFile *bf, st32 major, st32 minor) {
 	buffer = bf->buf;
 
 	/* read header members from work buffer */
-	ut8 luac_format = rz_buf_read8_at(buffer, LUAC_54_FORMAT_OFFSET);
-	ut8 instruction_size = rz_buf_read8_at(buffer, LUAC_54_INSTRUCTION_SIZE_OFFSET);
-	ut8 integer_size = rz_buf_read8_at(buffer, LUAC_54_INTEGER_SIZE_OFFSET);
-	ut8 number_size = rz_buf_read8_at(buffer, LUAC_54_NUMBER_SIZE_OFFSET);
+	ut8 luac_format;
+	if (!rz_buf_read8_at(buffer, LUAC_54_FORMAT_OFFSET, &luac_format)) {
+		return NULL;
+	}
+
+	ut8 instruction_size;
+	if (!rz_buf_read8_at(buffer, LUAC_54_INSTRUCTION_SIZE_OFFSET, &instruction_size)) {
+		return NULL;
+	}
+
+	ut8 integer_size;
+	if (!rz_buf_read8_at(buffer, LUAC_54_INTEGER_SIZE_OFFSET, &integer_size)) {
+		return NULL;
+	}
+
+	ut8 number_size;
+	if (!rz_buf_read8_at(buffer, LUAC_54_NUMBER_SIZE_OFFSET, &number_size)) {
+		return NULL;
+	}
+
 	ut64 int_valid = lua_load_integer(buffer, LUAC_54_INTEGER_VALID_OFFSET);
 	double number_valid = lua_load_number(buffer, LUAC_54_NUMBER_VALID_OFFSET);
 

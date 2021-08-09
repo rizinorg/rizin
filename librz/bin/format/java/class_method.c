@@ -44,15 +44,23 @@ char *java_method_access_flags_readable(const Method *method) {
 	return sb ? rz_strbuf_drain(sb) : NULL;
 }
 
+static bool java_method_new_aux(RzBuffer *buf, Method *method) {
+	return rz_buf_read_be16(buf, &method->access_flags) &&
+		rz_buf_read_be16(buf, &method->name_index) &&
+		rz_buf_read_be16(buf, &method->descriptor_index) &&
+		rz_buf_read_be16(buf, &method->attributes_count);
+}
+
 Method *java_method_new(ConstPool **pool, ut32 poolsize, RzBuffer *buf, ut64 offset, bool is_oak) {
 	Method *method = RZ_NEW0(Method);
 	rz_return_val_if_fail(method, NULL);
 	method->offset = offset;
 	ut64 base = offset - rz_buf_tell(buf);
-	method->access_flags = rz_buf_read_be16(buf);
-	method->name_index = rz_buf_read_be16(buf);
-	method->descriptor_index = rz_buf_read_be16(buf);
-	method->attributes_count = rz_buf_read_be16(buf);
+
+	if (!java_method_new_aux(buf, method)) {
+		free(method);
+		return NULL;
+	}
 
 	if (method->attributes_count < 1) {
 		return method;

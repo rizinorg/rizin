@@ -9,7 +9,12 @@ static bool check_buffer(RzBuffer *b) {
 	if (length < 2) {
 		return false;
 	}
-	ut16 idx = rz_buf_read_le16_at(b, 0x3c);
+
+	ut16 idx;
+	if (!rz_buf_read_le16_at(b, 0x3c, &idx)) {
+		return false;
+	}
+
 	if ((ut64)idx + 26 < length) {
 		ut8 buf[2];
 		rz_buf_read_at(b, 0, buf, sizeof(buf));

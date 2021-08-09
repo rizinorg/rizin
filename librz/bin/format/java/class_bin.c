@@ -65,15 +65,17 @@ static bool java_class_parse(RzBinJavaClass *bin, ut64 base, Sdb *kv, RzBuffer *
 		goto java_class_parse_bad;
 	}
 
-	bin->magic = rz_buf_read_be32(buf);
-	bin->minor_version = rz_buf_read_be16(buf);
-	bin->major_version = rz_buf_read_be16(buf);
+	if (!rz_buf_read_be32(buf, &bin->magic) ||
+		!rz_buf_read_be16(buf, &bin->minor_version) ||
+		!rz_buf_read_be16(buf, &bin->major_version) ||
+		!rz_buf_read_be16(buf, &bin->constant_pool_count)) {
+		goto java_class_parse_bad;
+	}
 
 	// Before version 1.0.2 it was called oak
 	// which uses a different file structure.
 	bool is_oak = java_class_is_oak(bin);
 
-	bin->constant_pool_count = rz_buf_read_be16(buf);
 	bin->constant_pool_count = sanitize_size(buffer_size - rz_buf_tell(buf), bin->constant_pool_count, 3);
 	bin->constant_pool_offset = base + rz_buf_tell(buf);
 
@@ -100,11 +102,14 @@ static bool java_class_parse(RzBinJavaClass *bin, ut64 base, Sdb *kv, RzBuffer *
 			goto java_class_parse_bad;
 		}
 	}
-	bin->access_flags = rz_buf_read_be16(buf);
-	bin->this_class = rz_buf_read_be16(buf);
-	bin->super_class = rz_buf_read_be16(buf);
 
-	bin->interfaces_count = rz_buf_read_be16(buf);
+	if (!rz_buf_read_be16(buf, &bin->access_flags) ||
+		!rz_buf_read_be16(buf, &bin->this_class) ||
+		!rz_buf_read_be16(buf, &bin->super_class) ||
+		!rz_buf_read_be16(buf, &bin->interfaces_count)) {
+		goto java_class_parse_bad;
+	}
+
 	bin->interfaces_count = sanitize_size(buffer_size - rz_buf_tell(buf), bin->interfaces_count, 2);
 	bin->interfaces_offset = base + rz_buf_tell(buf);
 
@@ -123,7 +128,10 @@ static bool java_class_parse(RzBinJavaClass *bin, ut64 base, Sdb *kv, RzBuffer *
 		}
 	}
 
-	bin->fields_count = rz_buf_read_be16(buf);
+	if (!rz_buf_read_be16(buf, &bin->fields_count)) {
+		goto java_class_parse_bad;
+	}
+
 	bin->fields_count = sanitize_size(buffer_size - rz_buf_tell(buf), bin->fields_count, 8);
 	bin->fields_offset = base + rz_buf_tell(buf);
 
@@ -143,7 +151,9 @@ static bool java_class_parse(RzBinJavaClass *bin, ut64 base, Sdb *kv, RzBuffer *
 		}
 	}
 
-	bin->methods_count = rz_buf_read_be16(buf);
+	if (!rz_buf_read_be16(buf, &bin->methods_count)) {
+		goto java_class_parse_bad;
+	}
 	bin->methods_count = sanitize_size(buffer_size - rz_buf_tell(buf), bin->methods_count, 8);
 	bin->methods_offset = base + rz_buf_tell(buf);
 
@@ -163,7 +173,10 @@ static bool java_class_parse(RzBinJavaClass *bin, ut64 base, Sdb *kv, RzBuffer *
 		}
 	}
 
-	bin->attributes_count = rz_buf_read_be16(buf);
+	if (!rz_buf_read_be16(buf, &bin->attributes_count)) {
+		goto java_class_parse_bad;
+	}
+
 	bin->attributes_count = sanitize_size(buffer_size - rz_buf_tell(buf), bin->attributes_count, 6);
 	bin->attributes_offset = base + rz_buf_tell(buf);
 
