@@ -52,7 +52,9 @@ RZ_API RzILTraceInstruction *rz_analysis_il_trace_instruction_new(ut64 addr) {
  * \param instruction RzILTraceInstruction, trace to be cleaned
  */
 RZ_API void rz_analysis_il_trace_instruction_free(RzILTraceInstruction *instruction) {
-	rz_return_if_fail(instruction);
+	if (!instruction) {
+		return;
+	}
 	rz_pvector_free(instruction->write_reg_ops);
 	rz_pvector_free(instruction->read_reg_ops);
 	rz_pvector_free(instruction->write_mem_ops);
@@ -66,7 +68,9 @@ RZ_API void rz_analysis_il_trace_instruction_free(RzILTraceInstruction *instruct
  * \param mem RzILTraceMemOp *, info of memory change
  */
 RZ_API void rz_analysis_il_trace_add_mem(RzILTraceInstruction *trace, RzILTraceMemOp *mem) {
-	rz_return_if_fail(trace && mem);
+	if (!(trace && mem)) {
+		return;
+	}
 
 	if (rz_analysis_il_mem_trace_contains(trace, mem->addr, mem->behavior)) {
 		return;
@@ -92,7 +96,9 @@ RZ_API void rz_analysis_il_trace_add_mem(RzILTraceInstruction *trace, RzILTraceM
  * \param mem RzILTraceRegOp *, info of register change
  */
 RZ_API void rz_analysis_il_trace_add_reg(RzILTraceInstruction *trace, RzILTraceRegOp *reg) {
-	rz_return_if_fail(trace && reg);
+	if (!(trace && reg)) {
+		return;
+	}
 
 	if (rz_analysis_il_reg_trace_contains(trace, reg->reg_name, reg->behavior)) {
 		return;
@@ -121,7 +127,9 @@ RZ_API void rz_analysis_il_trace_add_reg(RzILTraceInstruction *trace, RzILTraceR
  * \return RzILTraceMemOp *, info of memory change
  */
 RZ_API RzILTraceMemOp *rz_analysis_il_get_mem_op_trace(RzILTraceInstruction *trace, ut64 addr, RzILTraceOpType op_type) {
-	rz_return_val_if_fail(trace, NULL);
+	if (!trace) {
+		return NULL;
+	}
 
 	RzPVector *mem_ops;
 	RzILTraceMemOp *mem_op;
@@ -156,7 +164,9 @@ RZ_API RzILTraceMemOp *rz_analysis_il_get_mem_op_trace(RzILTraceInstruction *tra
  * \return RzILTraceRegOp *, info of register change
  */
 RZ_API RzILTraceRegOp *rz_analysis_il_get_reg_op_trace(RzILTraceInstruction *trace, const char *regname, RzILTraceOpType op_type) {
-	rz_return_val_if_fail(trace && regname, NULL);
+	if (!(trace && regname)) {
+		return NULL;
+	}
 
 	RzPVector *reg_ops;
 	RzILTraceRegOp *reg_op;
