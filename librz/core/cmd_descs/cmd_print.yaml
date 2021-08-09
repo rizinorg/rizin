@@ -48,6 +48,29 @@ commands:
             type: RZ_CMD_ARG_TYPE_NUM
           - name: h
             type: RZ_CMD_ARG_TYPE_NUM
+  - name: ph
+    summary: Print hash/message digest or entropy
+    cname: cmd_print_default
+    subcommands:
+      - name: ph
+        summary: Prints a hash/message digest or entropy
+        cname: cmd_print_msg_digest
+        args:
+          - name: algo
+            type: RZ_CMD_ARG_TYPE_STRING
+          - name: length
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: phl
+        summary: Lists all the supported algorithms
+        cname: cmd_print_msg_digest_algo_list
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+        args: []
   - name: pt
     summary: Print timestamps
     cname: cmd_print_timestamp

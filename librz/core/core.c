@@ -2836,38 +2836,31 @@ RZ_API int rz_core_prompt_exec(RzCore *r) {
 	return ret;
 }
 
-RZ_API int rz_core_block_size(RzCore *core, int bsize) {
+RZ_API bool rz_core_block_size(RzCore *core, ut32 bsize) {
 	ut8 *bump;
-	int ret = false;
-	if (bsize < 0) {
-		return false;
-	}
 	if (bsize == core->blocksize) {
 		return true;
 	}
 	if (bsize > core->blocksize_max) {
-		eprintf("Block size %d is too big\n", bsize);
+		RZ_LOG_ERROR("Block size %d is too big\n", bsize);
 		return false;
 	}
 	if (bsize < 1) {
 		bsize = 1;
 	} else if (core->blocksize_max && bsize > core->blocksize_max) {
-		eprintf("bsize is bigger than `bm`. dimmed to 0x%x > 0x%x\n",
-			bsize, core->blocksize_max);
+		RZ_LOG_ERROR("block size is bigger than its max (check `bm` command). set to 0x%x\n", core->blocksize_max);
 		bsize = core->blocksize_max;
 	}
 	bump = realloc(core->block, bsize + 1);
 	if (!bump) {
-		eprintf("Oops. cannot allocate that much (%u)\n", bsize);
-		ret = false;
-	} else {
-		ret = true;
-		core->block = bump;
-		core->blocksize = bsize;
-		memset(core->block, 0xff, core->blocksize);
-		rz_core_seek(core, core->offset, true);
+		RZ_LOG_ERROR("Oops. cannot allocate that much (%u)\n", bsize);
+		return false;
 	}
-	return ret;
+	core->block = bump;
+	core->blocksize = bsize;
+	memset(core->block, 0xff, core->blocksize);
+	rz_core_seek(core, core->offset, true);
+	return true;
 }
 
 RZ_API char *rz_core_op_str(RzCore *core, ut64 addr) {
