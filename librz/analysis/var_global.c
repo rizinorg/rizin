@@ -12,7 +12,7 @@
  * \param comment variable comment
  * \return RzAnalysisVarGlobal *
  */
-RZ_API RZ_OWN RzAnalysisVarGlobal *rz_analysis_var_global_new(RZ_NONNULL const char *name, ut64 addr, const char *comment) {
+RZ_API RZ_OWN RzAnalysisVarGlobal *rz_analysis_var_global_new(RZ_NONNULL const char *name, ut64 addr, RZ_NULLABLE const char *comment) {
 	rz_return_val_if_fail(name && addr, NULL);
 	RzAnalysisVarGlobal *glob = RZ_NEW0(RzAnalysisVarGlobal);
 	if (!glob) {
@@ -36,7 +36,7 @@ RZ_API RZ_OWN RzAnalysisVarGlobal *rz_analysis_var_global_new(RZ_NONNULL const c
 RZ_API RZ_OWN bool rz_analysis_var_global_add(RzAnalysis *analysis, RzAnalysisVarGlobal *global_var) {
 	rz_return_val_if_fail(analysis && global_var, false);
 	if (rz_analysis_var_global_get_byaddr(analysis, global_var->addr)) {
-		eprintf("Global variable at 0x%" PFMT64x " is already exist!\n", global_var->addr);
+		RZ_LOG_ERROR("Global variable at 0x%" PFMT64x " is already exist!\n", global_var->addr);
 		return false;
 	}
 	return ht_pp_insert(analysis->ht_global_var, global_var->name, global_var);
@@ -72,8 +72,8 @@ RZ_API bool rz_analysis_var_global_delete_byname(RzAnalysis *analysis, const cha
 	rz_return_val_if_fail(analysis && name, false);
 	RzAnalysisVarGlobal *glob = rz_analysis_var_global_get_byname(analysis, name);
 	if (!glob) {
-		eprintf("No such global variable!\n");
-		return true;
+		RZ_LOG_ERROR("No such global variable!\n");
+		return false;
 	}
 	rz_analysis_var_global_free(glob);
 	return ht_pp_delete(analysis->ht_global_var, name);
@@ -90,12 +90,14 @@ RZ_API bool rz_analysis_var_global_delete_byaddr(RzAnalysis *analysis, ut64 addr
 	rz_return_val_if_fail(analysis, false);
 	RzAnalysisVarGlobal *glob = rz_analysis_var_global_get_byaddr(analysis, addr);
 	if (!glob) {
-		eprintf("No such global variable!\n");
-		return true;
+		RZ_LOG_ERROR("No such global variable!\n");
+		return false;
 	}
 	bool deleted = ht_pp_delete(analysis->ht_global_var, glob->name);
-	rz_analysis_var_global_free(glob);
-	return deleted ? true : false;
+	if (deleted) {
+		rz_analysis_var_global_free(glob);
+	}
+	return deleted;
 }
 
 /**
@@ -107,10 +109,7 @@ RZ_API bool rz_analysis_var_global_delete_byaddr(RzAnalysis *analysis, ut64 addr
  */
 RZ_API RZ_BORROW RzAnalysisVarGlobal *rz_analysis_var_global_get_byname(RzAnalysis *analysis, const char *name) {
 	rz_return_val_if_fail(analysis && name, NULL);
-	RzAnalysisVarGlobal *glob;
-	bool found;
-	glob = ht_pp_find(analysis->ht_global_var, name, &found);
-	return found ? glob : NULL;
+	return (RzAnalysisVarGlobal *)ht_pp_find(analysis->ht_global_var, name, NULL);
 }
 
 struct list_addr {
@@ -137,6 +136,9 @@ static bool global_var_collect_addr_cb(void *user, const void *k, const void *v)
 RZ_API RZ_BORROW RzAnalysisVarGlobal *rz_analysis_var_global_get_byaddr(RzAnalysis *analysis, ut64 addr) {
 	rz_return_val_if_fail(analysis, NULL);
 	RzList *list = rz_list_new();
+	if (!list) {
+		return NULL;
+	}
 	struct list_addr l = { list, addr };
 	ht_pp_foreach(analysis->ht_global_var, global_var_collect_addr_cb, &l);
 	if (rz_list_length(list) != 1) {
@@ -164,6 +166,9 @@ static bool global_var_collect_cb(void *user, const void *k, const void *v) {
 RZ_API RZ_OWN RzList *rz_analysis_var_global_get_all(RzAnalysis *analysis) {
 	rz_return_val_if_fail(analysis, NULL);
 	RzList *globals = rz_list_new();
+	if (!globals) {
+		return NULL;
+	}
 	ht_pp_foreach(analysis->ht_global_var, global_var_collect_cb, globals);
 	return globals;
 }
@@ -180,7 +185,7 @@ RZ_API bool rz_analysis_var_global_rename(RzAnalysis *analysis, const char *old_
 	rz_return_val_if_fail(analysis && old_name && newname, false);
 	RzAnalysisVarGlobal *glob = rz_analysis_var_global_get_byname(analysis, old_name);
 	if (!glob) {
-		eprintf("No such global variable!\n");
+		RZ_LOG_ERROR("No such global variable!\n");
 		return false;
 	}
 	RZ_FREE(glob->name);
@@ -200,6 +205,7 @@ RZ_API bool rz_analysis_var_global_set_comment(RzAnalysis *analysis, const char 
 	rz_return_val_if_fail(analysis && name && comment, false);
 	RzAnalysisVarGlobal *glob = rz_analysis_var_global_get_byname(analysis, name);
 	if (!glob) {
+		RZ_LOG_ERROR("No such global variable!\n");
 		return false;
 	}
 	RZ_FREE(glob->comment);
@@ -219,8 +225,8 @@ RZ_API void rz_analysis_var_global_set_type(RzAnalysisVarGlobal *glob, RzType *t
 	glob->type = type;
 }
 
-static st64 var_access_cmp(ut64 x, char *y) {
-	return x - (ut64)((RzAnalysisVarGlobal *)y)->addr;
+static st64 var_access_cmp(st64 x, char *y) {
+	return x - (st64)((RzAnalysisVarGlobal *)y)->addr;
 }
 
 /**
@@ -247,6 +253,9 @@ RZ_API void rz_analysis_var_global_set_access(RzAnalysis *analysis, RzAnalysisVa
 	}
 	if (!acc || acc->offset != offset) {
 		acc = rz_vector_insert(&glob->accesses, index, NULL);
+		if (!acc) {
+			return;
+		}
 		acc->offset = offset;
 		acc->type = 0;
 	}
@@ -272,7 +281,7 @@ RZ_API void rz_analysis_var_global_remove_access_at(RzAnalysisVarGlobal *glob, u
 		return;
 	}
 	RzAnalysisVarAccess *acc = rz_vector_index_ptr(&glob->accesses, index);
-	if (acc->offset == offset) {
+	if (acc && acc->offset == offset) {
 		rz_vector_remove_at(&glob->accesses, index, NULL);
 	}
 }
@@ -366,6 +375,9 @@ RZ_API void rz_analysis_var_global_list_show(RzAnalysis *analysis, RzCmdStateOut
 	RzAnalysisVarGlobal *glob = NULL;
 	if (name) {
 		global_vars = rz_list_new();
+		if (!global_vars) {
+			return;
+		}
 		glob = rz_analysis_var_global_get_byname(analysis, name);
 		if (!glob) {
 			return;
@@ -380,6 +392,7 @@ RZ_API void rz_analysis_var_global_list_show(RzAnalysis *analysis, RzCmdStateOut
 	char *comment = NULL;
 	bool json = state->mode == RZ_OUTPUT_MODE_JSON;
 	PJ *pj = json ? state->d.pj : NULL;
+	// to use rz_cmd_state_output_array_start we need to set RzCore as the dependency of RzAnalysis, which is impossible
 	if (json) {
 		pj_a(pj);
 	}
@@ -396,7 +409,7 @@ RZ_API void rz_analysis_var_global_list_show(RzAnalysis *analysis, RzCmdStateOut
 		}
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_STANDARD:
-			analysis->cb_printf("global %s %s @ 0x%" PFMT64x " %s\n",
+			analysis->cb_printf("global %s %s @ 0x%" PFMT64x " ;%s\n",
 				var_type, glob->name,
 				glob->addr, comment);
 			break;

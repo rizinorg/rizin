@@ -1631,7 +1631,7 @@ RZ_API char *rz_analysis_fcn_format_sig(RZ_NONNULL RzAnalysis *analysis, RZ_NONN
 RZ_API void rz_analysis_fcn_vars_add_types(RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn);
 
 // Global vars
-RZ_API RZ_OWN RzAnalysisVarGlobal *rz_analysis_var_global_new(RZ_NONNULL const char *name, ut64 addr, const char *comment);
+RZ_API RZ_OWN RzAnalysisVarGlobal *rz_analysis_var_global_new(RZ_NONNULL const char *name, ut64 addr, RZ_NULLABLE const char *comment);
 RZ_API RZ_OWN bool rz_analysis_var_global_add(RzAnalysis *analysis, RzAnalysisVarGlobal *global_var);
 RZ_API void rz_analysis_var_global_free(RzAnalysisVarGlobal *glob);
 RZ_API bool rz_analysis_var_global_delete_byname(RzAnalysis *analysis, const char *name);
