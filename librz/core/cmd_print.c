@@ -3207,59 +3207,25 @@ restore_conf:
 	rz_config_set_i(core->config, "emu.str", emu_str);
 }
 
-static bool cmd_print_ph(RzCore *core, const char *input) {
-	char algo[128];
-	ut32 osize = 0, len = core->blocksize;
-	const char *ptr;
-	bool handled_cmd = false;
-	const RzMsgDigestPlugin *plugin = NULL;
-	RzCmdStateOutput state = { 0 };
-	if (!*input || *input == '?') {
-		state.mode = RZ_OUTPUT_MODE_QUIET;
+RZ_IPI RzCmdStatus rz_cmd_print_msg_digest_handler(RzCore *core, int argc, const char **argv) {
+	const RzMsgDigestPlugin *plugin = rz_msg_digest_plugin_by_name(argv[1]);
+
+	if (!plugin) {
+		RZ_LOG_ERROR("algorithm '%s' does not exists\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
 	}
-	if (*input == '=') {
-		state.mode = RZ_OUTPUT_MODE_STANDARD;
+
+	if (!strncmp(plugin->name, "entropy", 7)) {
+		handle_entropy(plugin->name, core->block, core->blocksize);
+	} else {
+		handle_msg_digest(plugin->name, core->block, core->blocksize);
 	}
-	if (state.mode) {
-		return rz_core_hash_plugins_print(&state) ? true : false;
-	}
-	input = rz_str_trim_head_ro(input);
-	ptr = strchr(input, ' ');
-	sscanf(input, "%31s", algo);
-	if (ptr && ptr[1]) { // && rz_num_is_valid_input (core->num, ptr + 1)) {
-		int nlen = rz_num_math(core->num, ptr + 1);
-		if (nlen > 0) {
-			len = nlen;
-		}
-		osize = core->blocksize;
-		if (nlen > core->blocksize) {
-			rz_core_block_size(core, nlen);
-			if (nlen != core->blocksize) {
-				eprintf("Invalid block size\n");
-				rz_core_block_size(core, osize);
-				return false;
-			}
-			rz_core_block_read(core);
-		}
-	} else if (!ptr || !*(ptr + 1)) {
-		osize = len;
-	}
-	/* TODO: Simplify this spaguetti monster */
-	for (size_t j = 0; osize > 0 && (plugin = rz_msg_digest_plugin_by_index(j)); ++j) {
-		if (!rz_str_ccmp(plugin->name, input, ' ')) {
-			if (!strncmp(plugin->name, "entropy", 7)) {
-				handle_entropy(plugin->name, core->block, len);
-			} else {
-				handle_msg_digest(plugin->name, core->block, len);
-			}
-			handled_cmd = true;
-			break;
-		}
-	}
-	if (osize) {
-		rz_core_block_size(core, osize);
-	}
-	return handled_cmd;
+
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_print_msg_digest_algo_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	return rz_core_hash_plugins_print(state);
 }
 
 // XXX blocksize is missing
@@ -5050,9 +5016,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				free(res);
 			}
 		}
-		break;
-	case 'h': // "ph"
-		cmd_print_ph(core, input + 1);
 		break;
 	case 'v': // "pv"
 		cmd_print_pv(core, input + 1, false);
