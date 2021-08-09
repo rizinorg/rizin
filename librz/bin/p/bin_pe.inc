@@ -227,16 +227,28 @@ static void find_pe_overlay(RzBinFile *bf) {
 	}
 }
 
+static inline bool is_thumb(struct PE_(rz_bin_pe_obj_t) * bin, ut64 address) {
+	switch (bin->nt_headers->file_header.Machine) {
+	case PE_IMAGE_FILE_MACHINE_ARM:
+	case PE_IMAGE_FILE_MACHINE_ARMNT:
+		return address & 1;
+	default:
+		return false;
+	}
+}
+
 static RzList *symbols(RzBinFile *bf) {
 	RzList *ret = NULL;
 	RzBinSymbol *ptr = NULL;
 	struct rz_bin_pe_export_t *symbols = NULL;
 	struct rz_bin_pe_import_t *imports = NULL;
+	struct PE_(rz_bin_pe_obj_t) *bin = bf->o->bin_obj;
 	int i;
 
 	if (!(ret = rz_list_newf((RzListFree)rz_bin_symbol_free))) {
 		return NULL;
 	}
+	int file_bits = PE_(rz_bin_pe_get_bits(bin));
 	if ((symbols = PE_(rz_bin_pe_get_exports)(bf->o->bin_obj))) {
 		for (i = 0; !symbols[i].last; i++) {
 			if (!(ptr = RZ_NEW0(RzBinSymbol))) {
@@ -249,8 +261,15 @@ static RzList *symbols(RzBinFile *bf) {
 			ptr->bind = RZ_BIN_BIND_GLOBAL_STR;
 			ptr->type = RZ_BIN_TYPE_FUNC_STR;
 			ptr->size = 0;
-			ptr->vaddr = symbols[i].vaddr;
-			ptr->paddr = symbols[i].paddr;
+			if (is_thumb(bin, symbols[i].vaddr)) {
+				ptr->bits = 16;
+				ptr->vaddr = symbols[i].vaddr - 1;
+				ptr->paddr = symbols[i].paddr - 1;
+			} else {
+				ptr->bits = file_bits;
+				ptr->vaddr = symbols[i].vaddr;
+				ptr->paddr = symbols[i].paddr;
+			}
 			ptr->ordinal = symbols[i].ordinal;
 			rz_list_append(ret, ptr);
 		}
