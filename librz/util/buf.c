@@ -91,19 +91,6 @@ static ut8 *get_whole_buf(RzBuffer *b, ut64 *sz) {
 	return b->whole_buf;
 }
 
-RZ_API RzBuffer *rz_buf_new_with_methods(RZ_NONNULL const RzBufferMethods *methods, void *init_user) {
-	RzBuffer *b = RZ_NEW0(RzBuffer);
-	if (!b) {
-		return NULL;
-	}
-	b->methods = methods;
-	if (!buf_init(b, init_user)) {
-		free(b);
-		return NULL;
-	}
-	return b;
-}
-
 static RzBuffer *new_buffer(RzBufferType type, void *user) {
 	const RzBufferMethods *methods = NULL;
 	switch (type) {
@@ -132,27 +119,6 @@ static RzBuffer *new_buffer(RzBufferType type, void *user) {
 	return rz_buf_new_with_methods(methods, user);
 }
 
-// TODO: Optimize to use memcpy when buffers are not in range..
-// check buf boundaries and offsets and use memcpy or memmove
-
-// copied from librz/io/cache.c:rz_io_cache_read
-// ret # of bytes copied
-RZ_API RzBuffer *rz_buf_new_with_io(void *iob, int fd) {
-	rz_return_val_if_fail(iob && fd >= 0, NULL);
-	struct buf_io_user u = { 0 };
-	u.iob = (RzIOBind *)iob;
-	u.fd = fd;
-	return new_buffer(RZ_BUFFER_IO, &u);
-}
-
-RZ_API RzBuffer *rz_buf_new_with_pointers(const ut8 *bytes, ut64 len, bool steal) {
-	struct buf_bytes_user u = { 0 };
-	u.data_steal = bytes;
-	u.length = len;
-	u.steal = steal;
-	return new_buffer(RZ_BUFFER_BYTES, &u);
-}
-
 RZ_API RzBuffer *rz_buf_new_empty(ut64 len) {
 	ut8 *buf = RZ_NEWS0(ut8, len);
 	if (!buf) {
@@ -163,84 +129,44 @@ RZ_API RzBuffer *rz_buf_new_empty(ut64 len) {
 	u.data_steal = buf;
 	u.length = len;
 	u.steal = true;
+
 	RzBuffer *res = new_buffer(RZ_BUFFER_BYTES, &u);
 	if (!res) {
 		free(buf);
 	}
+
 	return res;
-}
-
-RZ_API RzBuffer *rz_buf_new_with_bytes(RZ_NULLABLE const ut8 *bytes, ut64 len) {
-	rz_return_val_if_fail(bytes || !len, NULL); // if bytes == NULL, then len must be 0
-	struct buf_bytes_user u = { 0 };
-	u.data = bytes;
-	u.length = len;
-	return new_buffer(RZ_BUFFER_BYTES, &u);
-}
-
-RZ_API RzBuffer *rz_buf_new_slice(RzBuffer *b, ut64 offset, ut64 size) {
-	struct buf_ref_user u = { 0 };
-	u.parent = b;
-	u.offset = offset;
-	u.size = size;
-	return new_buffer(RZ_BUFFER_REF, &u);
-}
-
-RZ_API RzBuffer *rz_buf_new_with_string(const char *msg) {
-	return rz_buf_new_with_bytes((const ut8 *)msg, (ut64)strlen(msg));
-}
-
-RZ_API RzBuffer *rz_buf_new_with_buf(RzBuffer *b) {
-	ut64 sz = 0;
-	const ut8 *tmp = rz_buf_data(b, &sz);
-	return rz_buf_new_with_bytes(tmp, sz);
-}
-
-/// create a new sparse RzBuffer where unpopulated bytes are filled with Oxff
-RZ_API RzBuffer *rz_buf_new_sparse(ut8 Oxff) {
-	RzBuffer *b = new_buffer(RZ_BUFFER_SPARSE, NULL);
-	if (b) {
-		b->Oxff_priv = Oxff;
-	}
-	return b;
-}
-
-/// create a new sparse RzBuffer where unpopulated bytes are taken as-is from b
-RZ_API RzBuffer *rz_buf_new_sparse_overlay(RzBuffer *b, RzBufferSparseWriteMode write_mode) {
-	rz_return_val_if_fail(b, NULL);
-	SparseInitConfig cfg = {
-		.base = b,
-		.write_mode = write_mode
-	};
-	return new_buffer(RZ_BUFFER_SPARSE, &cfg);
-}
-
-RZ_DEPRECATE RZ_API const ut8 *rz_buf_data(RzBuffer *b, ut64 *size) {
-	rz_return_val_if_fail(b, NULL);
-	b->whole_buf = get_whole_buf(b, size);
-	return b->whole_buf;
-}
-
-RZ_API ut64 rz_buf_size(RzBuffer *b) {
-	rz_return_val_if_fail(b, 0);
-	return buf_get_size(b);
-}
-
-RZ_API RzBuffer *rz_buf_new_mmap(const char *filename, int perm, int mode) {
-	rz_return_val_if_fail(filename, NULL);
-	struct buf_mmap_user u = { 0 };
-	u.filename = filename;
-	u.perm = perm;
-	u.mode = mode;
-	return new_buffer(RZ_BUFFER_MMAP, &u);
 }
 
 RZ_API RzBuffer *rz_buf_new_file(const char *file, int perm, int mode) {
 	struct buf_file_user u = { 0 };
+
 	u.file = file;
 	u.perm = perm;
 	u.mode = mode;
+
 	return new_buffer(RZ_BUFFER_FILE, &u);
+}
+
+RZ_API RzBuffer *rz_buf_new_mmap(const char *filename, int perm, int mode) {
+	rz_return_val_if_fail(filename, NULL);
+
+	struct buf_mmap_user u = { 0 };
+	u.filename = filename;
+	u.perm = perm;
+	u.mode = mode;
+
+	return new_buffer(RZ_BUFFER_MMAP, &u);
+}
+
+RZ_API RzBuffer *rz_buf_new_slice(RzBuffer *b, ut64 offset, ut64 size) {
+	struct buf_ref_user u = { 0 };
+
+	u.parent = b;
+	u.offset = offset;
+	u.size = size;
+
+	return new_buffer(RZ_BUFFER_REF, &u);
 }
 
 // TODO: rename to new_from_file ?
@@ -252,10 +178,108 @@ RZ_API RzBuffer *rz_buf_new_slurp(const char *file) {
 	}
 
 	struct buf_bytes_user u = { 0 };
+
 	u.data_steal = (ut8 *)tmp;
 	u.length = (ut64)len;
 	u.steal = true;
+
 	return new_buffer(RZ_BUFFER_BYTES, &u);
+}
+
+/// create a new sparse RzBuffer where unpopulated bytes are filled with Oxff
+RZ_API RzBuffer *rz_buf_new_sparse(ut8 Oxff) {
+	RzBuffer *b = new_buffer(RZ_BUFFER_SPARSE, NULL);
+	if (b) {
+		b->Oxff_priv = Oxff;
+	}
+
+	return b;
+}
+
+/// create a new sparse RzBuffer where unpopulated bytes are taken as-is from b
+RZ_API RzBuffer *rz_buf_new_sparse_overlay(RzBuffer *b, RzBufferSparseWriteMode write_mode) {
+	rz_return_val_if_fail(b, NULL);
+
+	SparseInitConfig cfg = {
+		.base = b,
+		.write_mode = write_mode
+	};
+
+	return new_buffer(RZ_BUFFER_SPARSE, &cfg);
+}
+
+RZ_API RzBuffer *rz_buf_new_with_buf(RzBuffer *b) {
+	ut64 size = 0;
+	const ut8 *tmp = get_whole_buf(b, &size);
+
+	return rz_buf_new_with_bytes(tmp, size);
+}
+
+RZ_API RzBuffer *rz_buf_new_with_bytes(RZ_NULLABLE const ut8 *bytes, ut64 len) {
+	rz_return_val_if_fail(bytes || !len, NULL); // if bytes == NULL, then len must be 0
+
+	struct buf_bytes_user u = { 0 };
+	u.data = bytes;
+	u.length = len;
+
+	return new_buffer(RZ_BUFFER_BYTES, &u);
+}
+
+// TODO: Optimize to use memcpy when buffers are not in range..
+// check buf boundaries and offsets and use memcpy or memmove
+
+// copied from librz/io/cache.c:rz_io_cache_read
+// ret # of bytes copied
+RZ_API RzBuffer *rz_buf_new_with_io(RZ_NONNULL void *iob, int fd) {
+	rz_return_val_if_fail(iob && fd >= 0, NULL);
+
+	struct buf_io_user u = { 0 };
+
+	u.iob = (RzIOBind *)iob;
+	u.fd = fd;
+
+	return new_buffer(RZ_BUFFER_IO, &u);
+}
+
+RZ_API RzBuffer *rz_buf_new_with_methods(RZ_NONNULL const RzBufferMethods *methods, void *init_user) {
+	RzBuffer *b = RZ_NEW0(RzBuffer);
+	if (!b) {
+		return NULL;
+	}
+
+	b->methods = methods;
+
+	if (!buf_init(b, init_user)) {
+		free(b);
+		return NULL;
+	}
+
+	return b;
+}
+
+RZ_API RzBuffer *rz_buf_new_with_pointers(const ut8 *bytes, ut64 len, bool steal) {
+	struct buf_bytes_user u = { 0 };
+
+	u.data_steal = bytes;
+	u.length = len;
+	u.steal = steal;
+
+	return new_buffer(RZ_BUFFER_BYTES, &u);
+}
+
+RZ_API RzBuffer *rz_buf_new_with_string(RZ_NONNULL const char *msg) {
+	return rz_buf_new_with_bytes((const ut8 *)msg, (ut64)strlen(msg));
+}
+
+RZ_DEPRECATE RZ_API const ut8 *rz_buf_data(RzBuffer *b, ut64 *size) {
+	rz_return_val_if_fail(b, NULL);
+	b->whole_buf = get_whole_buf(b, size);
+	return b->whole_buf;
+}
+
+RZ_API ut64 rz_buf_size(RzBuffer *b) {
+	rz_return_val_if_fail(b, 0);
+	return buf_get_size(b);
 }
 
 RZ_API bool rz_buf_dump(RzBuffer *b, const char *file) {

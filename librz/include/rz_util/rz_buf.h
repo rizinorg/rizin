@@ -76,19 +76,19 @@ static inline ut64 rz_seek_offset(ut64 cur, ut64 length, st64 addr, int whence) 
 }
 
 /* constructors */
-RZ_API RzBuffer *rz_buf_new_with_methods(RZ_NONNULL const RzBufferMethods *methods, void *init_user);
-RZ_API RzBuffer *rz_buf_new_with_io(void *iob, int fd);
-RZ_API RzBuffer *rz_buf_new_with_bytes(RZ_NULLABLE const ut8 *bytes, ut64 len);
-RZ_API RzBuffer *rz_buf_new_with_string(const char *msg);
-RZ_API RzBuffer *rz_buf_new_with_pointers(const ut8 *bytes, ut64 len, bool steal);
-RZ_API RzBuffer *rz_buf_new_file(const char *file, int perm, int mode);
-RZ_API RzBuffer *rz_buf_new_with_buf(RzBuffer *b);
-RZ_API RzBuffer *rz_buf_new_slurp(const char *file);
-RZ_API RzBuffer *rz_buf_new_slice(RzBuffer *b, ut64 offset, ut64 size);
 RZ_API RzBuffer *rz_buf_new_empty(ut64 len);
+RZ_API RzBuffer *rz_buf_new_file(const char *file, int perm, int mode);
 RZ_API RzBuffer *rz_buf_new_mmap(const char *file, int flags, int mode);
+RZ_API RzBuffer *rz_buf_new_slice(RzBuffer *b, ut64 offset, ut64 size);
+RZ_API RzBuffer *rz_buf_new_slurp(const char *file);
 RZ_API RzBuffer *rz_buf_new_sparse(ut8 Oxff);
 RZ_API RzBuffer *rz_buf_new_sparse_overlay(RzBuffer *b, RzBufferSparseWriteMode write_mode);
+RZ_API RzBuffer *rz_buf_new_with_buf(RzBuffer *b);
+RZ_API RzBuffer *rz_buf_new_with_bytes(RZ_NULLABLE const ut8 *bytes, ut64 len);
+RZ_API RzBuffer *rz_buf_new_with_io(RZ_NONNULL void *iob, int fd);
+RZ_API RzBuffer *rz_buf_new_with_methods(RZ_NONNULL const RzBufferMethods *methods, void *init_user);
+RZ_API RzBuffer *rz_buf_new_with_pointers(const ut8 *bytes, ut64 len, bool steal);
+RZ_API RzBuffer *rz_buf_new_with_string(RZ_NONNULL const char *msg);
 
 /* methods */
 RZ_API bool rz_buf_dump(RzBuffer *buf, const char *file);
