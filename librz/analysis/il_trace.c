@@ -7,7 +7,7 @@
  *
  * provide operations to new IL trace structure to record
  * the memory changes and register changes.
- * TODO : Should be moved to librz/il after integrations with new il
+ * TODO : Should be moved to librz/il after integrations with new IL
  *      : should move the prototypes and trace structure to new header, too
  * prototypes in <rz_analysis.h>
  * Used by : analysis_tp.c, debug/trace.c
@@ -17,10 +17,11 @@
 #include <rz_analysis.h>
 
 static void free_reg_op(RzILTraceRegOp *reg_op) {
-	if (reg_op) {
-		free(reg_op->reg_name);
-		RZ_FREE(reg_op);
+	if (!reg_op) {
+		return;
 	}
+	free(reg_op->reg_name);
+	RZ_FREE(reg_op);
 }
 
 /**
@@ -46,7 +47,7 @@ RZ_API RzILTraceInstruction *rz_analysis_il_trace_instruction_new(ut64 addr) {
 }
 
 /**
- * clean an il trace
+ * clean an IL trace
  * \param instruction RzILTraceInstruction, trace to be cleaned
  */
 RZ_API void rz_analysis_il_trace_instruction_free(RzILTraceInstruction *instruction) {

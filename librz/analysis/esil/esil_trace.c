@@ -10,7 +10,7 @@
 static int ocbs_set = false;
 static RzAnalysisEsilCallbacks ocbs = { 0 };
 
-// il trace wrapper of esil
+// IL trace wrapper of esil
 static inline void esil_add_mem_trace(RzAnalysisEsilTrace *etrace, RzILTraceMemOp *mem) {
 	RzILTraceInstruction *instr_trace = rz_analysis_esil_get_instruction_trace(etrace, etrace->idx);
 	rz_analysis_il_trace_add_mem(instr_trace, mem);
@@ -226,8 +226,8 @@ static int trace_hook_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf,
 }
 
 /**
- * Get instruction trace from esil trace by index
- * \param etrace RzAnalysisEsilTrace *, esil trace
+ * Get instruction trace from ESIL trace by index
+ * \param etrace RzAnalysisEsilTrace *, ESIL trace
  * \param idx int, index of instruction
  * \return RzILTraceInstruction *, instruction trace at index
  */
@@ -341,13 +341,13 @@ RZ_API void rz_analysis_esil_trace_restore(RzAnalysisEsil *esil, int idx) {
 	ht_up_foreach(trace->memory, restore_memory_cb, esil);
 }
 
-static void print_instructino_trace(RzILTraceInstruction *instruction, int idx) {
+static void print_instruction_trace(RzILTraceInstruction *instruction, int idx) {
 	printf("[%d]instruction addr -> %lld\n", idx, instruction->addr);
 }
 
 /**
  * List all traces
- * \param esil RzAnalysisEsil *, esil
+ * \param esil RzAnalysisEsil *, ESIL instance
  */
 RZ_API void rz_analysis_esil_trace_list(RzAnalysisEsil *esil) {
 	if (!esil->trace) {
@@ -359,14 +359,14 @@ RZ_API void rz_analysis_esil_trace_list(RzAnalysisEsil *esil) {
 	void **iter;
 	rz_pvector_foreach (esil->trace->instructions, iter) {
 		instruction_trace = *iter;
-		print_instructino_trace(instruction_trace, idx);
+		print_instruction_trace(instruction_trace, idx);
 		idx++;
 	}
 }
 
 /**
- * Display an esil trace at index `idx`
- * \param esil RzAnalysisEsil *, esil
+ * Display an ESIL trace at index `idx`
+ * \param esil RzAnalysisEsil *, ESIL instance
  * \param idx int, index of trace
  */
 RZ_API void rz_analysis_esil_trace_show(RzAnalysisEsil *esil, int idx) {
@@ -380,5 +380,5 @@ RZ_API void rz_analysis_esil_trace_show(RzAnalysisEsil *esil, int idx) {
 		RZ_LOG_ERROR("Invalid trace id : %d\n", idx);
 	}
 
-	print_instructino_trace(instruction, idx);
+	print_instruction_trace(instruction, idx);
 }
