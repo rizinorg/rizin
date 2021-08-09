@@ -34,7 +34,15 @@ RZ_API RzILTraceInstruction *rz_analysis_il_trace_instruction_new(ut64 addr) {
 	instruction_trace->read_reg_ops = rz_pvector_new((RzPVectorFree)free);
 	instruction_trace->write_mem_ops = rz_pvector_new((RzPVectorFree)free);
 	instruction_trace->write_reg_ops = rz_pvector_new((RzPVectorFree)free);
-	// TODO : handle error
+
+	if (!(instruction_trace->read_reg_ops &&
+		    instruction_trace->read_mem_ops &&
+		    instruction_trace->write_reg_ops &&
+		    instruction_trace->write_mem_ops)) {
+		rz_analysis_il_trace_instruction_free(instruction_trace);
+		return NULL;
+	}
+
 	return instruction_trace;
 }
 
