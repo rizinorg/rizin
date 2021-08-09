@@ -16,14 +16,6 @@
 #include <rz_util.h>
 #include <rz_analysis.h>
 
-static void free_reg_op(RzILTraceRegOp *reg_op) {
-	if (!reg_op) {
-		return;
-	}
-	free(reg_op->reg_name);
-	RZ_FREE(reg_op);
-}
-
 /**
  * create and init a trace structure for an instruction at address
  * \param addr ut64, address of instruction
@@ -39,9 +31,9 @@ RZ_API RzILTraceInstruction *rz_analysis_il_trace_instruction_new(ut64 addr) {
 	instruction_trace->addr = addr;
 
 	instruction_trace->read_mem_ops = rz_pvector_new((RzPVectorFree)free);
-	instruction_trace->read_reg_ops = rz_pvector_new((RzPVectorFree)free_reg_op);
+	instruction_trace->read_reg_ops = rz_pvector_new((RzPVectorFree)free);
 	instruction_trace->write_mem_ops = rz_pvector_new((RzPVectorFree)free);
-	instruction_trace->write_reg_ops = rz_pvector_new((RzPVectorFree)free_reg_op);
+	instruction_trace->write_reg_ops = rz_pvector_new((RzPVectorFree)free);
 	// TODO : handle error
 	return instruction_trace;
 }

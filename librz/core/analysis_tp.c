@@ -595,6 +595,7 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, RzAnalys
 	bool userfnc = false;
 	bool prop = false;
 	ut32 type = aop->type & RZ_ANALYSIS_OP_TYPE_MASK;
+	RzAnalysis *analysis = core->analysis;
 
 	RzAnalysisEsilTrace *etrace = core->analysis->esil->trace;
 	RzILTraceInstruction *cur_instr_trace = rz_analysis_esil_get_instruction_trace(etrace, ctx->cur_idx);
@@ -742,7 +743,7 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, RzAnalys
 			if (cur_instr_trace->stats & TRACE_INS_HAS_REG_W) {
 				w_reg = rz_pvector_at(cur_instr_trace->write_reg_ops, 0);
 				if (w_reg) {
-					ctx->prev_dest = strdup(w_reg->reg_name);
+					ctx->prev_dest = rz_str_constpool_get(&analysis->constpool, w_reg->reg_name);
 				}
 			}
 		}
