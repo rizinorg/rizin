@@ -1444,7 +1444,7 @@ typedef enum {
 typedef struct {
 	ut64 addr; ///< memory address
 	RzILTraceOpType behavior; ///< read or write, see RzILTraceOpType enums
-	ut64 value; ///< data either written to or read from
+	ut8 data_buf[32]; ///< data either written to or read from, big endian in ESIL
 } RzILTraceMemOp;
 
 typedef struct {
@@ -1481,7 +1481,7 @@ RZ_API RzILTraceRegOp *rz_analysis_il_get_reg_op_trace(RzILTraceInstruction *tra
 RZ_API bool rz_analysis_il_mem_trace_contains(RzILTraceInstruction *trace, ut64 addr, RzILTraceOpType op_type);
 RZ_API bool rz_analysis_il_reg_trace_contains(RzILTraceInstruction *trace, const char *regname, RzILTraceOpType op_type);
 
-/* esil trace */
+/* ESIL trace */
 RZ_API RzILTraceInstruction *rz_analysis_esil_get_instruction_trace(RzAnalysisEsilTrace *trace, int idx);
 RZ_API RzAnalysisEsilTrace *rz_analysis_esil_trace_new(RzAnalysisEsil *esil);
 RZ_API void rz_analysis_esil_trace_free(RzAnalysisEsilTrace *trace);

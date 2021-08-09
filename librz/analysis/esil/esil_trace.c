@@ -164,25 +164,22 @@ static int trace_hook_reg_write(RzAnalysisEsil *esil, const char *name, ut64 *va
 }
 
 static int trace_hook_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int len) {
-	char *hexbuf = calloc((1 + len), 4);
 	int ret = 0;
 	if (esil->cb.mem_read) {
 		ret = esil->cb.mem_read(esil, addr, buf, len);
 	}
 
-	// convert data to ut64
-	// FIXME : a better way to convert between them or change the argument
-	rz_hex_bin2str(buf, len, hexbuf);
-	ut64 val = strtol(hexbuf, NULL, 16);
-
 	// Trace memory read behavior
 	RzILTraceMemOp *mem_read = RZ_NEW0(RzILTraceMemOp);
-	mem_read->value = val;
+	if (len > sizeof(mem_read->data_buf)) {
+		RZ_LOG_ERROR("read memory more than 32 bytes, cannot trace\n");
+		return 0;
+	}
+
+	rz_mem_copy(mem_read->data_buf, sizeof(mem_read->data_buf), buf, len);
 	mem_read->behavior = RZ_IL_TRACE_OP_READ;
 	mem_read->addr = addr;
 	esil_add_mem_trace(esil->trace, mem_read);
-
-	free(hexbuf);
 
 	if (ocbs.hook_mem_read) {
 		RzAnalysisEsilCallbacks cbs = esil->cb;
@@ -196,21 +193,18 @@ static int trace_hook_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int le
 static int trace_hook_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf, int len) {
 	size_t i;
 	int ret = 0;
-	char *hexbuf = malloc((1 + len) * 3);
-
-	// convert data to ut64
-	// FIXME : a better way to convert between them or change the argument
-	rz_hex_bin2str(buf, len, hexbuf);
-	ut64 val = strtol(hexbuf, NULL, 16);
 
 	// Trace memory read behavior
 	RzILTraceMemOp *mem_write = RZ_NEW0(RzILTraceMemOp);
-	mem_write->value = val;
+	if (len > sizeof(mem_write->data_buf)) {
+		RZ_LOG_ERROR("write memory more than 32 bytes, cannot trace\n");
+		return 0;
+	}
+
+	rz_mem_copy(mem_write->data_buf, sizeof(mem_write->data_buf), buf, len);
 	mem_write->behavior = RZ_IL_TRACE_OP_WRITE;
 	mem_write->addr = addr;
 	esil_add_mem_trace(esil->trace, mem_write);
-
-	free(hexbuf);
 
 	for (i = 0; i < len; i++) {
 		add_mem_change(esil->trace, esil->trace->idx + 1, addr + i, buf[i]);
