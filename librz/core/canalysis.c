@@ -6939,8 +6939,7 @@ RZ_IPI bool rz_core_analysis_types_propagation(RzCore *core) {
 
 	// loop count of rz_core_analysis_type_match
 	// TODO : figure out the reason to hold a `LOOP COUNT` in type_match
-	// HtUP <addr->loop_count>
-	// mimic a htuu table
+	// HtUU <addr->loop_count>
 	HtUU *loop_table = ht_uu_new0();
 
 	// Iterating Reverse so that we get function in top-bottom call order

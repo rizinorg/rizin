@@ -297,7 +297,6 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 	RzAnalysis *analysis = core->analysis;
 	RzList *types = NULL;
 
-	// CHECK_ME : why use sdb to store idx before ?
 	int idx = rz_pvector_len(etrace->instructions) - 1;
 
 	bool verbose = rz_config_get_i(core->config, "analysis.types.verbose");
