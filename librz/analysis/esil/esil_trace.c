@@ -134,7 +134,7 @@ static int trace_hook_reg_read(RzAnalysisEsil *esil, const char *name, ut64 *res
 	if (ret) {
 		// Trace reg read behavior
 		RzILTraceRegOp *reg_read = RZ_NEW0(RzILTraceRegOp);
-		reg_read->reg_name = strdup(name);
+		reg_read->reg_name = rz_str_constpool_get(&esil->analysis->constpool, name);
 		reg_read->behavior = RZ_IL_TRACE_OP_READ;
 		reg_read->value = *res;
 		esil_add_reg_trace(esil->trace, reg_read);
@@ -147,7 +147,7 @@ static int trace_hook_reg_write(RzAnalysisEsil *esil, const char *name, ut64 *va
 
 	// add reg write to trace
 	RzILTraceRegOp *reg_write = RZ_NEW0(RzILTraceRegOp);
-	reg_write->reg_name = strdup(name);
+	reg_write->reg_name = rz_str_constpool_get(&esil->analysis->constpool, name);
 	reg_write->behavior = RZ_IL_TRACE_OP_WRITE;
 	reg_write->value = *val;
 	esil_add_reg_trace(esil->trace, reg_write);

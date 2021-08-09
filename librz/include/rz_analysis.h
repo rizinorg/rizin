@@ -1448,7 +1448,7 @@ typedef struct {
 } RzILTraceMemOp;
 
 typedef struct {
-	char *reg_name; ///< name of register
+	const char *reg_name; ///< name of register
 	RzILTraceOpType behavior; ///< READ or WRITE, see RzILTraceOpType enums
 	ut64 value; ///< data either written to or read from
 } RzILTraceRegOp;
