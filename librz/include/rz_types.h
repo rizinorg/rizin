@@ -93,7 +93,6 @@ typedef enum {
 
 #if defined(__OpenBSD__)
 #include <sys/param.h>
-#undef MAXCOMLEN /* redefined in zipint.h */
 #endif
 
 #ifdef __GNUC__
@@ -379,12 +378,6 @@ static inline void *rz_new_copy(int size, void *data) {
 	}
 
 #if __WINDOWS__
-#define HAVE_REGEXP 0
-#else
-#define HAVE_REGEXP 1
-#endif
-
-#if __WINDOWS__
 #define PFMT64x "I64x"
 #define PFMT64d "I64d"
 #define PFMT64u "I64u"
@@ -648,7 +641,7 @@ static inline void rz_run_call10(void *fcn, void *arg1, void *arg2, void *arg3, 
 #endif
 
 // reference counter
-typedef int RRef;
+typedef int RzRef;
 
 #define RZ_REF_NAME    refcount
 #define rz_ref(x)      x->RZ_REF_NAME++;
@@ -661,7 +654,7 @@ typedef int RRef;
 		} \
 	}
 
-#define RZ_REF_TYPE RRef RZ_REF_NAME
+#define RZ_REF_TYPE RzRef RZ_REF_NAME
 #define RZ_REF_FUNCTIONS(s, n) \
 	static inline void n##_ref(s *x) { x->RZ_REF_NAME++; } \
 	static inline void n##_unref(s *x) { rz_unref(x, n##_free); }
