@@ -42,6 +42,14 @@ bool test_rz_str_replace(void) {
 	mu_end;
 }
 
+bool test_rz_str_ncpy(void) {
+	char *str = strdup("hello world");
+	char buf[10];
+	rz_str_ncpy (buf, str, 3);
+	mu_assert_streq(buf, "hel", "error, while copying n bytes");
+	mu_end;
+}
+
 bool test_rz_str_replace_char(void) {
 	char *str = strdup("hello world");
 	(void)rz_str_replace_char(str, 'l', 'x');
@@ -657,6 +665,7 @@ bool test_rz_str_ndup(void) {
 bool all_tests() {
 	mu_run_test(test_rz_str_newf);
 	mu_run_test(test_rz_str_replace_char_once);
+	mu_run_test(test_rz_str_ncpy);
 	mu_run_test(test_rz_str_replace_char);
 	mu_run_test(test_rz_str_replace);
 	mu_run_test(test_rz_str_bits64);
