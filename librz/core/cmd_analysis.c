@@ -8157,7 +8157,6 @@ RZ_IPI RzCmdStatus rz_analysis_global_variable_retype_handler(RzCore *core, int 
 		free(errmsg);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_type_free(glob->type);
 	rz_analysis_var_global_set_type(glob, typ);
 	return RZ_CMD_STATUS_OK;
 }

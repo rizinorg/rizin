@@ -130,7 +130,7 @@ struct list_addr {
 };
 
 /**
- * \brief Same as rz_analysis_var_global_get_byname but by its address
+ * \brief Get the instance of global variable by its address
  * 
  * \param analysis RzAnalysis
  * \param addr Global variable address
@@ -205,6 +205,7 @@ RZ_API bool rz_analysis_var_global_rename(RzAnalysis *analysis, RZ_NONNULL const
  */
 RZ_API void rz_analysis_var_global_set_type(RzAnalysisVarGlobal *glob, RZ_NONNULL RZ_BORROW RzType *type) {
 	rz_return_if_fail(glob && type);
+	rz_type_free(glob->type);
 	glob->type = type;
 }
 
@@ -270,66 +271,4 @@ RZ_API RZ_OWN char *rz_analysis_var_global_get_constraints_readable(RzAnalysisVa
 		}
 	}
 	return rz_strbuf_drain_nofree(&sb);
-}
-
-/**
- * \brief Print out the global variables
- * 
- * \param analysis RzAnalysis
- * \param state RzCmdStateOutput *
- * \param name Which one to print
- * \return void
- */
-RZ_API void rz_analysis_var_global_list_show(RzAnalysis *analysis, RzCmdStateOutput *state, RZ_NULLABLE const char *name) {
-	rz_return_if_fail(analysis && state);
-	RzList *global_vars = NULL;
-	RzAnalysisVarGlobal *glob = NULL;
-	if (name) {
-		global_vars = rz_list_new();
-		if (!global_vars) {
-			return;
-		}
-		glob = rz_analysis_var_global_get_byname(analysis, name);
-		if (!glob) {
-			return;
-		}
-		rz_list_append(global_vars, glob);
-	} else {
-		global_vars = rz_analysis_var_global_get_all(analysis);
-	}
-
-	RzListIter *it = NULL;
-	char *var_type = NULL;
-	bool json = state->mode == RZ_OUTPUT_MODE_JSON;
-	PJ *pj = json ? state->d.pj : NULL;
-	// to use rz_cmd_state_output_array_start we need to set RzCore as the dependency of RzAnalysis, which is impossible
-	if (json) {
-		pj_a(pj);
-	}
-	if (!global_vars && json) {
-		pj_end(pj);
-		return;
-	}
-	rz_list_foreach (global_vars, it, glob) {
-		var_type = rz_type_as_string(analysis->typedb, glob->type);
-		switch (state->mode) {
-		case RZ_OUTPUT_MODE_STANDARD:
-			analysis->cb_printf("global %s %s @ 0x%" PFMT64x "\n",
-				var_type, glob->name, glob->addr);
-			break;
-		case RZ_OUTPUT_MODE_JSON:
-			pj_o(pj);
-			pj_ks(pj, "name", glob->name);
-			pj_ks(pj, "type", var_type);
-			pj_ks(pj, "addr", rz_str_newf("0x%" PFMT64x, glob->addr));
-			pj_end(pj);
-			break;
-		default:
-			break;
-		}
-	}
-	if (json) {
-		pj_end(pj);
-	}
-	rz_list_free(global_vars);
 }
