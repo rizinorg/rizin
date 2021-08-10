@@ -39,7 +39,7 @@ $ sudo ninja -C build install
 
 Now you can use `rizin`:
 ```
-$ rizin --
+$ rizin
  -- Thank you for using rizin. Have a nice night!
 [0x00000000]>
 
