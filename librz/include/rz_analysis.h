@@ -2084,6 +2084,12 @@ RZ_API void rz_serialize_analysis_blocks_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzA
 RZ_API void rz_serialize_typelinks_save(RZ_NONNULL Sdb *db, RZ_NONNULL const RzAnalysis *analysis);
 RZ_API bool rz_serialize_typelinks_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res);
 
+typedef void *RzSerializeAnalGlobalVarParser;
+RZ_API void rz_serialize_analysis_global_var_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *anal);
+RZ_API RzSerializeAnalGlobalVarParser rz_serialize_analysis_global_var_parser_new(void);
+RZ_API void rz_serialize_analysis_global_var_parser_free(RzSerializeAnalGlobalVarParser parser);
+RZ_API bool rz_serialize_analysis_global_var_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res);
+
 /**
  * RzAnalysis must not contain any blocks when calling this function!
  * All loaded blocks will have a ref of 1 after this function and should be unrefd once after loading functions.

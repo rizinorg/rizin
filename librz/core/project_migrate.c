@@ -131,11 +131,22 @@ RZ_API bool rz_project_migrate_v2_v3(RzProject *prj, RzSerializeResultInfo *res)
 	return true;
 }
 
+RZ_API bool rz_project_migrate_v3_v4(RzProject *prj, RzSerializeResultInfo *res) {
+	Sdb *core_db;
+	RZ_SERIALIZE_SUB(prj, core_db, res, "core", return false;);
+	Sdb *analysis_db;
+	RZ_SERIALIZE_SUB(core_db, analysis_db, res, "analysis", return false;);
+	// We only need to create a namespace because we didn't have global variables before.
+	sdb_ns(analysis_db, "vars", true);
+	return true;
+}
+
 // --
 
 static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = {
 	rz_project_migrate_v1_v2,
-	rz_project_migrate_v2_v3
+	rz_project_migrate_v2_v3,
+	rz_project_migrate_v3_v4
 };
 
 /// Migrate the given project to the current version in-place
