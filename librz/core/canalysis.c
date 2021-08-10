@@ -6890,12 +6890,10 @@ RZ_IPI void rz_analysis_var_global_list_show(RzAnalysis *analysis, RzCmdStateOut
 	char *var_type = NULL;
 	bool json = state->mode == RZ_OUTPUT_MODE_JSON;
 	PJ *pj = json ? state->d.pj : NULL;
-	// to use rz_cmd_state_output_array_start we need to set RzCore as the dependency of RzAnalysis, which is impossible
-	if (json) {
-		pj_a(pj);
-	}
-	if (!global_vars && json) {
-		pj_end(pj);
+
+	rz_cmd_state_output_array_start(state);
+	if (!global_vars) {
+		rz_cmd_state_output_array_end(state);
 		return;
 	}
 	rz_list_foreach (global_vars, it, glob) {
@@ -6916,9 +6914,7 @@ RZ_IPI void rz_analysis_var_global_list_show(RzAnalysis *analysis, RzCmdStateOut
 			break;
 		}
 	}
-	if (json) {
-		pj_end(pj);
-	}
+	rz_cmd_state_output_array_end(state);
 	rz_list_free(global_vars);
 }
 
