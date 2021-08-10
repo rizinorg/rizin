@@ -23,15 +23,9 @@ RZ_API RZ_OWN RzAnalysisVarGlobal *rz_analysis_var_global_new(RZ_NONNULL const c
 	return glob;
 }
 
-typedef struct {
-	RBNode rb;
-	ut64 addr;
-	ut64 size;
-} GlobalVarNode;
-
 int global_var_node_cmp(const void *incoming, const RBNode *in_tree, void *user) {
 	ut64 ia = *(ut64 *)incoming;
-	ut64 ta = container_of(in_tree, const GlobalVarNode, rb)->addr;
+	ut64 ta = container_of(in_tree, const RzAnalysisVarGlobal, rb)->addr;
 	if (ia < ta) {
 		return -1;
 	} else if (ia > ta) {
@@ -47,25 +41,19 @@ int global_var_node_cmp(const void *incoming, const RBNode *in_tree, void *user)
  * \param global_var Global variable instance
  * \return true if succeed
  */
-RZ_API RZ_OWN bool rz_analysis_var_global_add(RzAnalysis *analysis, RzAnalysisVarGlobal *global_var) {
+RZ_API RZ_OWN bool rz_analysis_var_global_add(RzAnalysis *analysis, RZ_NONNULL RzAnalysisVarGlobal *global_var) {
 	rz_return_val_if_fail(analysis && global_var, false);
 	if (rz_analysis_var_global_get_byaddr(analysis, global_var->addr)) {
 		RZ_LOG_ERROR("Global variable %s at 0x%" PFMT64x " already exists!\n", global_var->name, global_var->addr);
-		return false;
-	} else if (ht_pp_find(analysis->ht_global_var, global_var->name, NULL)) {
-		RZ_LOG_ERROR("Global variable %s already exists!\n", global_var->name);
 		return false;
 	}
 	if (!ht_pp_insert(analysis->ht_global_var, global_var->name, global_var)) {
 		return false;
 	}
-	GlobalVarNode *node = RZ_NEW0(GlobalVarNode);
-	node->addr = global_var->addr;
-	node->size = 0;
 	if (global_var->type) {
-		node->size = rz_type_db_get_bitsize(analysis->typedb, global_var->type) / 8;
+		global_var->size = rz_type_db_get_bitsize(analysis->typedb, global_var->type) / 8;
 	}
-	if (!rz_rbtree_aug_insert(&analysis->global_var_tree, &node->addr, &node->rb, global_var_node_cmp, NULL, NULL)) {
+	if (!rz_rbtree_aug_insert(&analysis->global_var_tree, &global_var->addr, &global_var->rb, global_var_node_cmp, NULL, NULL)) {
 		return false;
 	}
 	return true;
@@ -95,14 +83,15 @@ RZ_API void rz_analysis_var_global_free(RzAnalysisVarGlobal *glob) {
  * \param name Global Variable name
  * \return true if succeed
  */
-RZ_API bool rz_analysis_var_global_delete_byname(RzAnalysis *analysis, const char *name) {
+RZ_API bool rz_analysis_var_global_delete_byname(RzAnalysis *analysis, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(analysis && name, false);
 	RzAnalysisVarGlobal *glob = rz_analysis_var_global_get_byname(analysis, name);
 	if (!glob) {
 		return false;
 	}
-	rz_rbtree_delete(&analysis->global_var_tree, &glob->addr, global_var_node_cmp, NULL, NULL, NULL);
-	return ht_pp_delete(analysis->ht_global_var, name);
+	// We need to delete RBTree first because ht_pp_delete will free its member
+	bool deleted = rz_rbtree_delete(&analysis->global_var_tree, &glob->addr, global_var_node_cmp, NULL, NULL, NULL);
+	return deleted ? ht_pp_delete(analysis->ht_global_var, name) : deleted;
 }
 
 /**
@@ -118,11 +107,9 @@ RZ_API bool rz_analysis_var_global_delete_byaddr(RzAnalysis *analysis, ut64 addr
 	if (!glob) {
 		return false;
 	}
-	bool deleted = ht_pp_delete(analysis->ht_global_var, glob->name);
-	if (deleted) {
-		rz_rbtree_delete(&analysis->global_var_tree, &glob->addr, global_var_node_cmp, NULL, NULL, NULL);
-	}
-	return deleted;
+	// We need to delete RBTree first because ht_pp_delete will free its member
+	bool deleted = rz_rbtree_delete(&analysis->global_var_tree, &glob->addr, global_var_node_cmp, NULL, NULL, NULL);
+	return deleted ? ht_pp_delete(analysis->ht_global_var, glob->name) : deleted;
 }
 
 /**
@@ -132,7 +119,7 @@ RZ_API bool rz_analysis_var_global_delete_byaddr(RzAnalysis *analysis, ut64 addr
  * \param name Global variable name
  * \return RzAnalysisVarGlobal *
  */
-RZ_API RZ_BORROW RzAnalysisVarGlobal *rz_analysis_var_global_get_byname(RzAnalysis *analysis, const char *name) {
+RZ_API RZ_BORROW RzAnalysisVarGlobal *rz_analysis_var_global_get_byname(RzAnalysis *analysis, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(analysis && name, NULL);
 	return (RzAnalysisVarGlobal *)ht_pp_find(analysis->ht_global_var, name, NULL);
 }
@@ -141,15 +128,6 @@ struct list_addr {
 	RzList /* <RzAnalysisVarGlobal> */ *list;
 	ut64 addr;
 };
-
-static bool global_var_collect_addr_cb(void *user, const void *k, const void *v) {
-	struct list_addr *l = user;
-	RzAnalysisVarGlobal *glob = (RzAnalysisVarGlobal *)v;
-	if (glob->addr == l->addr) {
-		rz_list_append(l->list, glob);
-	}
-	return true;
-}
 
 /**
  * \brief Same as rz_analysis_var_global_get_byname but by its address
@@ -161,8 +139,8 @@ static bool global_var_collect_addr_cb(void *user, const void *k, const void *v)
 RZ_API RZ_BORROW RzAnalysisVarGlobal *rz_analysis_var_global_get_byaddr(RzAnalysis *analysis, ut64 addr) {
 	rz_return_val_if_fail(analysis, NULL);
 	RBIter it;
-	GlobalVarNode *node, *tmp = NULL;
-	rz_rbtree_foreach (analysis->global_var_tree, it, node, GlobalVarNode, rb) {
+	RzAnalysisVarGlobal *node, *tmp = NULL;
+	rz_rbtree_foreach (analysis->global_var_tree, it, node, RzAnalysisVarGlobal, rb) {
 		if (node->addr > addr) { // get the highest variable
 			break;
 		}
@@ -173,20 +151,7 @@ RZ_API RZ_BORROW RzAnalysisVarGlobal *rz_analysis_var_global_get_byaddr(RzAnalys
 	if (!tmp) {
 		return NULL;
 	}
-
-	RzList *list = rz_list_new();
-	if (!list) {
-		return NULL;
-	}
-	struct list_addr l = { list, tmp->addr };
-	ht_pp_foreach(analysis->ht_global_var, global_var_collect_addr_cb, &l);
-	if (rz_list_length(list) != 1) {
-		rz_list_free(list);
-		return NULL;
-	}
-	RzAnalysisVarGlobal *glob = (RzAnalysisVarGlobal *)rz_list_first(list);
-	rz_list_free(list);
-	return glob;
+	return tmp;
 }
 
 static bool global_var_collect_cb(void *user, const void *k, const void *v) {
@@ -220,7 +185,7 @@ RZ_API RZ_OWN RzList *rz_analysis_var_global_get_all(RzAnalysis *analysis) {
  * \param newname The new name of the global variable
  * \return true if succeed
  */
-RZ_API bool rz_analysis_var_global_rename(RzAnalysis *analysis, const char *old_name, RZ_NONNULL const char *newname) {
+RZ_API bool rz_analysis_var_global_rename(RzAnalysis *analysis, RZ_NONNULL const char *old_name, RZ_NONNULL const char *newname) {
 	rz_return_val_if_fail(analysis && old_name && newname, false);
 	RzAnalysisVarGlobal *glob = rz_analysis_var_global_get_byname(analysis, old_name);
 	if (!glob) {
@@ -238,7 +203,7 @@ RZ_API bool rz_analysis_var_global_rename(RzAnalysis *analysis, const char *old_
  * \param type The type to set. RzType*
  * \return void
  */
-RZ_API void rz_analysis_var_global_set_type(RzAnalysisVarGlobal *glob, RzType *type) {
+RZ_API void rz_analysis_var_global_set_type(RzAnalysisVarGlobal *glob, RZ_NONNULL RZ_BORROW RzType *type) {
 	rz_return_if_fail(glob && type);
 	glob->type = type;
 }

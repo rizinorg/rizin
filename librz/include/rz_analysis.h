@@ -743,9 +743,11 @@ typedef struct rz_analysis_var_t {
  * \brief Global variables
  */
 typedef struct rz_analysis_var_global_t {
+	RBNode rb; ///< RBTree node for address management
 	char *name; ///< name of the variable
 	ut64 addr; ///< address of the global variable
 	RzType *type; ///< type of the variable
+	ut64 size; ///< size of the variable
 	RzVector /*<RzTypeConstraint>*/ constraints;
 } RzAnalysisVarGlobal;
 
@@ -1634,15 +1636,15 @@ RZ_API void rz_analysis_fcn_vars_add_types(RzAnalysis *analysis, RZ_NONNULL RzAn
 
 // Global vars
 RZ_API RZ_OWN RzAnalysisVarGlobal *rz_analysis_var_global_new(RZ_NONNULL const char *name, ut64 addr);
-RZ_API RZ_OWN bool rz_analysis_var_global_add(RzAnalysis *analysis, RzAnalysisVarGlobal *global_var);
+RZ_API RZ_OWN bool rz_analysis_var_global_add(RzAnalysis *analysis, RZ_NONNULL RzAnalysisVarGlobal *global_var);
 RZ_API void rz_analysis_var_global_free(RzAnalysisVarGlobal *glob);
-RZ_API bool rz_analysis_var_global_delete_byname(RzAnalysis *analysis, const char *name);
+RZ_API bool rz_analysis_var_global_delete_byname(RzAnalysis *analysis, RZ_NONNULL const char *name);
 RZ_API bool rz_analysis_var_global_delete_byaddr(RzAnalysis *analysis, ut64 addr);
-RZ_API RZ_BORROW RzAnalysisVarGlobal *rz_analysis_var_global_get_byname(RzAnalysis *analysis, const char *name);
+RZ_API RZ_BORROW RzAnalysisVarGlobal *rz_analysis_var_global_get_byname(RzAnalysis *analysis, RZ_NONNULL const char *name);
 RZ_API RZ_BORROW RzAnalysisVarGlobal *rz_analysis_var_global_get_byaddr(RzAnalysis *analysis, ut64 addr);
 RZ_API RZ_OWN RzList *rz_analysis_var_global_get_all(RzAnalysis *analysis);
-RZ_API bool rz_analysis_var_global_rename(RzAnalysis *analysis, const char *old_name, RZ_NONNULL const char *newname);
-RZ_API void rz_analysis_var_global_set_type(RzAnalysisVarGlobal *glob, RzType *type);
+RZ_API bool rz_analysis_var_global_rename(RzAnalysis *analysis, RZ_NONNULL const char *old_name, RZ_NONNULL const char *newname);
+RZ_API void rz_analysis_var_global_set_type(RzAnalysisVarGlobal *glob, RZ_NONNULL RZ_BORROW RzType *type);
 RZ_API void rz_analysis_var_global_add_constraint(RzAnalysisVarGlobal *glob, RzTypeConstraint *constraint);
 RZ_API RZ_OWN char *rz_analysis_var_global_get_constraints_readable(RzAnalysisVarGlobal *glob);
 RZ_API void rz_analysis_var_global_list_show(RzAnalysis *analysis, RzCmdStateOutput *state, RZ_NULLABLE const char *name);
