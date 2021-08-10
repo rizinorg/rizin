@@ -134,6 +134,10 @@ static int trace_hook_reg_read(RzAnalysisEsil *esil, const char *name, ut64 *res
 	if (ret) {
 		// Trace reg read behavior
 		RzILTraceRegOp *reg_read = RZ_NEW0(RzILTraceRegOp);
+		if (!reg_read) {
+			RZ_LOG_ERROR("failed to init reg read trace\n");
+			return 0;
+		}
 		reg_read->reg_name = rz_str_constpool_get(&esil->analysis->constpool, name);
 		reg_read->behavior = RZ_IL_TRACE_OP_READ;
 		reg_read->value = *res;
@@ -147,6 +151,10 @@ static int trace_hook_reg_write(RzAnalysisEsil *esil, const char *name, ut64 *va
 
 	// add reg write to trace
 	RzILTraceRegOp *reg_write = RZ_NEW0(RzILTraceRegOp);
+	if (!reg_write) {
+		RZ_LOG_ERROR("failed to init reg write\n");
+		return ret;
+	}
 	reg_write->reg_name = rz_str_constpool_get(&esil->analysis->constpool, name);
 	reg_write->behavior = RZ_IL_TRACE_OP_WRITE;
 	reg_write->value = *val;
@@ -171,6 +179,11 @@ static int trace_hook_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int le
 
 	// Trace memory read behavior
 	RzILTraceMemOp *mem_read = RZ_NEW0(RzILTraceMemOp);
+	if (!mem_read) {
+		RZ_LOG_ERROR("fail to init memory read trace\n");
+		return 0;
+	}
+
 	if (len > sizeof(mem_read->data_buf)) {
 		RZ_LOG_ERROR("read memory more than 32 bytes, cannot trace\n");
 		return 0;
@@ -196,6 +209,11 @@ static int trace_hook_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf,
 
 	// Trace memory read behavior
 	RzILTraceMemOp *mem_write = RZ_NEW0(RzILTraceMemOp);
+	if (!mem_write) {
+		RZ_LOG_ERROR("fail to init memory write trace\n");
+		return 0;
+	}
+
 	if (len > sizeof(mem_write->data_buf)) {
 		RZ_LOG_ERROR("write memory more than 32 bytes, cannot trace\n");
 		return 0;
@@ -336,7 +354,7 @@ RZ_API void rz_analysis_esil_trace_restore(RzAnalysisEsil *esil, int idx) {
 }
 
 static void print_instruction_trace(RzILTraceInstruction *instruction, int idx) {
-	printf("[%d]instruction addr -> %lld\n", idx, instruction->addr);
+	printf("[%d]instruction addr -> %" PFMT64x "\n", idx, instruction->addr);
 }
 
 /**
@@ -372,6 +390,7 @@ RZ_API void rz_analysis_esil_trace_show(RzAnalysisEsil *esil, int idx) {
 	RzILTraceInstruction *instruction = rz_analysis_esil_get_instruction_trace(esil->trace, idx);
 	if (!instruction) {
 		RZ_LOG_ERROR("Invalid trace id : %d\n", idx);
+		return;
 	}
 
 	print_instruction_trace(instruction, idx);

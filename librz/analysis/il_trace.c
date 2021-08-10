@@ -24,7 +24,7 @@
 RZ_API RzILTraceInstruction *rz_analysis_il_trace_instruction_new(ut64 addr) {
 	RzILTraceInstruction *instruction_trace = RZ_NEW0(RzILTraceInstruction);
 	if (!instruction_trace) {
-		eprintf("Cannot create instruction trace\n");
+		RZ_LOG_ERROR("Cannot create instruction trace\n");
 		return NULL;
 	}
 
