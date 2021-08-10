@@ -374,5 +374,7 @@ RZ_API RZ_OWN RzBaseType *rz_type_typeclass_get_default_sized(const RzTypeDB *ty
 	if (!l || rz_list_empty(l)) {
 		return NULL;
 	}
-	return rz_list_get_top(l);
+	RzBaseType *ret = rz_list_pop(l);
+	rz_list_free(l);
+	return ret;
 }
