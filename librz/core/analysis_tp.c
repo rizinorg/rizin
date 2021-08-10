@@ -874,6 +874,7 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 				propagate_types_among_used_variables(core, op_cache, fcn, bb, aop, &ctx);
 			}
 			addr += aop->size;
+			rz_list_free(fcns);
 		}
 	}
 	// Type propagation for register based args
