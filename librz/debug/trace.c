@@ -3,8 +3,7 @@
 
 #include <rz_debug.h>
 
-// DO IT WITH SDB
-
+/* Old debug trace implementation */
 RZ_API RzDebugTrace *rz_debug_trace_new(void) {
 	RzDebugTrace *t = RZ_NEW0(RzDebugTrace);
 	if (!t) {

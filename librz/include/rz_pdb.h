@@ -1,7 +1,6 @@
 #ifndef RZ_PDB_H
 #define RZ_PDB_H
 
-#define _R_LIST_C
 #include "rz_util.h"
 #include <stdio.h>
 

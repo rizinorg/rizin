@@ -19,6 +19,7 @@ rz_analysis_sources = [
   'fcn.c',
   'flirt.c',
   'hint.c',
+  'il_trace.c',
   'labels.c',
   'meta.c',
   'op.c',
