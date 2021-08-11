@@ -195,6 +195,7 @@ int all_tests() {
 	mu_run_test(test_load_v1_noreturn);
 	mu_run_test(test_load_v1_noreturn_empty);
 	mu_run_test(test_load_v2_callables);
+	mu_run_test(test_load_v2_typelink);
 	return tests_passed != tests_run;
 }
 
