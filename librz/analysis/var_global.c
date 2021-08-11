@@ -184,7 +184,7 @@ RZ_API RZ_BORROW RzAnalysisVarGlobal *rz_analysis_var_global_get_byaddr_in(RzAna
 		return NULL;
 	}
 	ut64 size = rz_type_db_get_bitsize(analysis->typedb, var->type) / 8;
-	if (addr > (var->addr + size - 1) || addr < var->addr) {
+	if (addr >= var->addr + size) {
 		return NULL;
 	}
 	return var;

@@ -132,6 +132,7 @@ RZ_API bool rz_project_migrate_v2_v3(RzProject *prj, RzSerializeResultInfo *res)
 	return true;
 }
 
+#if 0
 typedef struct {
 	RzList /*<char *>*/ *moved_keys; ///< deferred for deletion from the old sdb
 	Sdb *global_vars_db;
@@ -154,12 +155,16 @@ bool v3_v4_types_foreach_cb(void *user, const char *k, const char *v) {
 	}
 	return true;
 }
+#endif
 
 RZ_API bool rz_project_migrate_v3_v4(RzProject *prj, RzSerializeResultInfo *res) {
 	Sdb *core_db;
 	RZ_SERIALIZE_SUB(prj, core_db, res, "core", return false;);
 	Sdb *analysis_db;
 	RZ_SERIALIZE_SUB(core_db, analysis_db, res, "analysis", return false;);
+	// Kill me in the future
+	sdb_ns(analysis_db, "vars", true);
+#if 0
 	V3V4TypesCtx ctx = {
 		.moved_keys = rz_list_newf(free),
 		.global_vars_db = sdb_ns(analysis_db, "vars", true)
@@ -176,6 +181,7 @@ RZ_API bool rz_project_migrate_v3_v4(RzProject *prj, RzSerializeResultInfo *res)
 		sdb_unset(typelinks_db, s, 0);
 	}
 	rz_list_free(ctx.moved_keys);
+#endif
 	return true;
 }
 
