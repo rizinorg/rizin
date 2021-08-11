@@ -76,7 +76,7 @@ RZ_API void rz_vlog(const char *funcname, const char *filename,
 	va_copy(args_copy, args);
 
 	if (level < cfg_loglvl && level < cfg_logtraplvl) {
-		// Don't print if output level is lower than current level
+		// Don't print if output level is lower than current level
 		// Don't ignore fatal/trap errors
 		va_end(args_copy);
 		return;

@@ -3549,6 +3549,7 @@ static void classdump_java(RzCore *r, RzBinClass *c) {
 		const char *ac = sym->visibility_str ? sym->visibility_str : "public";
 		char *dem = rz_bin_demangle_java(mn);
 		rz_str_replace_ch(dem, '/', '.', 1);
+		dem = rz_str_replace(dem, "java.lang.", "", 1);
 		rz_cons_printf("  %s %s;\n", ac, dem);
 		free(dem);
 	}
