@@ -50,9 +50,6 @@ RZ_API RZ_OWN bool rz_analysis_var_global_add(RzAnalysis *analysis, RZ_NONNULL R
 	if (!ht_pp_insert(analysis->ht_global_var, global_var->name, global_var)) {
 		return false;
 	}
-	if (global_var->type) {
-		global_var->size = rz_type_db_get_bitsize(analysis->typedb, global_var->type) / 8;
-	}
 	if (!rz_rbtree_aug_insert(&analysis->global_var_tree, &global_var->addr, &global_var->rb, global_var_node_cmp, NULL, NULL)) {
 		return false;
 	}
@@ -186,7 +183,8 @@ RZ_API RZ_BORROW RzAnalysisVarGlobal *rz_analysis_var_global_get_byaddr_in(RzAna
 	if (!var) {
 		return NULL;
 	}
-	if (addr > (var->addr + var->size - 1) || addr < var->addr) {
+	ut64 size = rz_type_db_get_bitsize(analysis->typedb, var->type) / 8;
+	if (addr > (var->addr + size - 1) || addr < var->addr) {
 		return NULL;
 	}
 	return var;

@@ -747,7 +747,6 @@ typedef struct rz_analysis_var_global_t {
 	char *name; ///< name of the variable
 	ut64 addr; ///< address of the global variable
 	RzType *type; ///< type of the variable
-	ut64 size; ///< size of the variable
 	RzVector /*<RzTypeConstraint>*/ constraints;
 } RzAnalysisVarGlobal;
 

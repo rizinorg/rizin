@@ -889,7 +889,6 @@ RZ_API void rz_serialize_analysis_global_var_save(RZ_NONNULL Sdb *db, RZ_NONNULL
 		pj_ks(j, "name", var->name);
 		pj_ks(j, "addr", addr);
 		pj_ks(j, "type", vartype);
-		//We do not need to serialize size here because it can be got from type
 		if (!rz_vector_empty(&var->constraints)) {
 			pj_ka(j, "constrs");
 			RzTypeConstraint *constr;
@@ -1025,7 +1024,6 @@ static bool global_var_load_cb(void *user, const char *k, const char *v) {
 		goto beach;
 	}
 	rz_analysis_var_global_set_type(glob, vartype);
-	glob->size = rz_type_db_get_bitsize(ctx->analysis->typedb, vartype) / 8;
 
 	RzTypeConstraint *constr;
 	rz_vector_foreach(&constraints, constr) {
