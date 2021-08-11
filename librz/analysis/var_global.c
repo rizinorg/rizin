@@ -43,7 +43,7 @@ int global_var_node_cmp(const void *incoming, const RBNode *in_tree, void *user)
  */
 RZ_API RZ_OWN bool rz_analysis_var_global_add(RzAnalysis *analysis, RZ_NONNULL RzAnalysisVarGlobal *global_var) {
 	rz_return_val_if_fail(analysis && global_var, false);
-	if (rz_analysis_var_global_get_byaddr(analysis, global_var->addr)) {
+	if (rz_analysis_var_global_get_byaddr_in(analysis, global_var->addr)) {
 		RZ_LOG_ERROR("Global variable %s at 0x%" PFMT64x " already exists!\n", global_var->name, global_var->addr);
 		return false;
 	}
@@ -95,15 +95,33 @@ RZ_API bool rz_analysis_var_global_delete_byname(RzAnalysis *analysis, RZ_NONNUL
 }
 
 /**
- * \brief Same as rz_analysis_var_global_delete_byname but by its address
+ * \brief Same as rz_analysis_var_global_delete_byname at the address
  * 
  * \param analysis RzAnalysis
  * \param addr Global Variable address
  * \return true if succeed
  */
-RZ_API bool rz_analysis_var_global_delete_byaddr(RzAnalysis *analysis, ut64 addr) {
+RZ_API bool rz_analysis_var_global_delete_byaddr_at(RzAnalysis *analysis, ut64 addr) {
 	rz_return_val_if_fail(analysis, false);
-	RzAnalysisVarGlobal *glob = rz_analysis_var_global_get_byaddr(analysis, addr);
+	RzAnalysisVarGlobal *glob = rz_analysis_var_global_get_byaddr_at(analysis, addr);
+	if (!glob) {
+		return false;
+	}
+	// We need to delete RBTree first because ht_pp_delete will free its member
+	bool deleted = rz_rbtree_delete(&analysis->global_var_tree, &glob->addr, global_var_node_cmp, NULL, NULL, NULL);
+	return deleted ? ht_pp_delete(analysis->ht_global_var, glob->name) : deleted;
+}
+
+/**
+ * \brief Same as rz_analysis_var_global_delete_byname in the address
+ * 
+ * \param analysis RzAnalysis
+ * \param addr Global Variable address
+ * \return true if succeed
+ */
+RZ_API bool rz_analysis_var_global_delete_byaddr_in(RzAnalysis *analysis, ut64 addr) {
+	rz_return_val_if_fail(analysis, false);
+	RzAnalysisVarGlobal *glob = rz_analysis_var_global_get_byaddr_in(analysis, addr);
 	if (!glob) {
 		return false;
 	}
@@ -130,28 +148,48 @@ struct list_addr {
 };
 
 /**
- * \brief Get the instance of global variable by its address
+ * \brief Get the instance of global variable at the address
  * 
  * \param analysis RzAnalysis
  * \param addr Global variable address
  * \return RzAnalysisVarGlobal *
  */
-RZ_API RZ_BORROW RzAnalysisVarGlobal *rz_analysis_var_global_get_byaddr(RzAnalysis *analysis, ut64 addr) {
+RZ_API RZ_BORROW RzAnalysisVarGlobal *rz_analysis_var_global_get_byaddr_at(RzAnalysis *analysis, ut64 addr) {
 	rz_return_val_if_fail(analysis, NULL);
-	RBIter it;
-	RzAnalysisVarGlobal *node, *tmp = NULL;
-	rz_rbtree_foreach (analysis->global_var_tree, it, node, RzAnalysisVarGlobal, rb) {
-		if (node->addr > addr) { // get the highest variable
-			break;
-		}
-		if (addr <= node->addr + node->size - 1) { // check if the givin address is in the global variable
-			tmp = node;
-		}
-	}
-	if (!tmp) {
+
+	RBNode *node = rz_rbtree_find(analysis->global_var_tree, &addr, global_var_node_cmp, NULL);
+	if (!node) {
 		return NULL;
 	}
-	return tmp;
+	RzAnalysisVarGlobal *var = (RzAnalysisVarGlobal *)container_of(node, RzAnalysisVarGlobal, rb);
+	if (!var) {
+		return NULL;
+	}
+	return var;
+}
+
+/**
+ * \brief Get the instance of global variable contains the address
+ * 
+ * \param analysis RzAnalysis
+ * \param addr Global variable address
+ * \return RzAnalysisVarGlobal *
+ */
+RZ_API RZ_BORROW RzAnalysisVarGlobal *rz_analysis_var_global_get_byaddr_in(RzAnalysis *analysis, ut64 addr) {
+	rz_return_val_if_fail(analysis, NULL);
+
+	RBNode *node = rz_rbtree_upper_bound(analysis->global_var_tree, &addr, global_var_node_cmp, NULL);
+	if (!node) {
+		return NULL;
+	}
+	RzAnalysisVarGlobal *var = (RzAnalysisVarGlobal *)container_of(node, RzAnalysisVarGlobal, rb);
+	if (!var) {
+		return NULL;
+	}
+	if (addr > (var->addr + var->size - 1) || addr < var->addr) {
+		return NULL;
+	}
+	return var;
 }
 
 static bool global_var_collect_cb(void *user, const void *k, const void *v) {

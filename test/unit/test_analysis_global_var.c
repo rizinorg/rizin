@@ -23,7 +23,7 @@ bool test_rz_analysis_global_var() {
 	mu_assert_true(added, "add global var");
 
 	glob = NULL;
-	glob = rz_analysis_var_global_get_byaddr(analysis, 0x1337);
+	glob = rz_analysis_var_global_get_byaddr_at(analysis, 0x1337);
 	mu_assert_notnull(glob, "get global var by addr");
 	mu_assert_streq(glob->name, "foo", "global var name");
 	mu_assert_eq(glob->addr, 0x1337, "global var address");
@@ -37,7 +37,7 @@ bool test_rz_analysis_global_var() {
 	mu_assert_streq(glob->type->identifier.name, "int", "global var type");
 
 	glob = NULL;
-	glob = rz_analysis_var_global_get_byaddr(analysis, 0x1339); // test RBTree
+	glob = rz_analysis_var_global_get_byaddr_in(analysis, 0x1339); // test RBTree
 	mu_assert_notnull(glob, "get global var by addr");
 	mu_assert_streq(glob->name, "foo", "global var name");
 	mu_assert_eq(glob->addr, 0x1337, "global var address");
@@ -50,10 +50,10 @@ bool test_rz_analysis_global_var() {
 	mu_assert_notnull(glob, "get global var by addr");
 	mu_assert_streq(glob->name, "bar", "global var name");
 
-	bool deleted = rz_analysis_var_global_delete_byaddr(analysis, 0x1337);
+	bool deleted = rz_analysis_var_global_delete_byaddr_at(analysis, 0x1337);
 	mu_assert_true(deleted, "delete global var");
 	glob = NULL;
-	glob = rz_analysis_var_global_get_byaddr(analysis, 0x1337);
+	glob = rz_analysis_var_global_get_byaddr_at(analysis, 0x1337);
 	mu_assert_null(glob, "get deleted global var");
 
 	// re add
@@ -71,13 +71,13 @@ bool test_rz_analysis_global_var() {
 	mu_assert_true(added, "add global var");
 
 	glob = NULL;
-	glob = rz_analysis_var_global_get_byaddr(analysis, 0x1337);
+	glob = rz_analysis_var_global_get_byaddr_at(analysis, 0x1337);
 	mu_assert_notnull(glob, "get readded global var");
 
-	deleted = rz_analysis_var_global_delete_byaddr(analysis, 0x133A); //test RBTree again
+	deleted = rz_analysis_var_global_delete_byaddr_in(analysis, 0x133A); //test RBTree again
 	mu_assert_true(deleted, "delete global var");
 	glob = NULL;
-	glob = rz_analysis_var_global_get_byaddr(analysis, 0x133A);
+	glob = rz_analysis_var_global_get_byaddr_in(analysis, 0x133A);
 	mu_assert_null(glob, "get deleted global var");
 
 	// re add

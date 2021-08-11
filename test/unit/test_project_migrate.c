@@ -194,7 +194,6 @@ int all_tests() {
 	mu_run_test(test_migrate_v2_v3);
 	mu_run_test(test_load_v1_noreturn);
 	mu_run_test(test_load_v1_noreturn_empty);
-	mu_run_test(test_load_v2_typelink);
 	mu_run_test(test_load_v2_callables);
 	return tests_passed != tests_run;
 }

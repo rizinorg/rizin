@@ -2,9 +2,11 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util/rz_serialize.h>
+#include <rz_util/rz_num.h>
 #include <rz_vector.h>
 #include <rz_type.h>
 #include <rz_analysis.h>
+#include <rz_core.h>
 
 #include <errno.h>
 
@@ -866,33 +868,28 @@ beach:
 
 RZ_API void rz_serialize_analysis_global_var_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *anal) {
 	rz_return_if_fail(db && anal);
-	RzList *l = rz_analysis_var_global_get_all(anal);
-	if (!l) {
-		return;
-	}
-	RzListIter *it;
-	RzAnalysisVarGlobal *var;
-	RzStrBuf key;
-	char *vartype;
+
 	PJ *j = pj_new();
 	if (!j) {
 		return;
 	}
-	rz_list_foreach (l, it, var) {
-		rz_strbuf_init(&key);
-		rz_strbuf_setf(&key, "0x%" PFMT64x, var->addr);
-		pj_o(j);
+	RBIter it;
+	RzAnalysisVarGlobal *var;
+	char *vartype;
+	rz_rbtree_foreach (anal->global_var_tree, it, var, RzAnalysisVarGlobal, rb) {
 		vartype = rz_type_as_string(anal->typedb, var->type);
 		if (!vartype) {
 			eprintf("Global variable \"%s\" has undefined type\n", var->name);
 			pj_free(j);
 			return;
 		}
+		char addr[32];
+		rz_strf(addr, "0x%" PFMT64x, var->addr);
 		pj_o(j);
 		pj_ks(j, "name", var->name);
-		pj_kn(j, "addr", var->addr);
+		pj_ks(j, "addr", addr);
 		pj_ks(j, "type", vartype);
-		pj_kn(j, "size", var->size);
+		//We do not need to serialize size here because it can be got from type
 		if (!rz_vector_empty(&var->constraints)) {
 			pj_ka(j, "constrs");
 			RzTypeConstraint *constr;
@@ -903,18 +900,17 @@ RZ_API void rz_serialize_analysis_global_var_save(RZ_NONNULL Sdb *db, RZ_NONNULL
 			pj_end(j);
 		}
 		pj_end(j);
-		sdb_set(db, rz_strbuf_get(&key), pj_string(j), 0);
+
+		sdb_set(db, addr, pj_string(j), 0);
 		pj_reset(j);
 	}
 	pj_free(j);
-	rz_list_free(l);
 }
 
 enum {
 	GLOBAL_VAR_FIELD_NAME,
 	GLOBAL_VAR_FIELD_ADDR,
 	GLOBAL_VAR_FIELD_TYPE,
-	GLOBAL_VAR_FIELD_SIZE,
 	GLOBAL_VAR_FIELD_CONSTRS
 };
 
@@ -926,7 +922,6 @@ RZ_API RzSerializeAnalGlobalVarParser rz_serialize_analysis_global_var_parser_ne
 	rz_key_parser_add(parser, "name", GLOBAL_VAR_FIELD_NAME);
 	rz_key_parser_add(parser, "addr", GLOBAL_VAR_FIELD_ADDR);
 	rz_key_parser_add(parser, "type", GLOBAL_VAR_FIELD_TYPE);
-	rz_key_parser_add(parser, "size", GLOBAL_VAR_FIELD_SIZE);
 	rz_key_parser_add(parser, "constrs", GLOBAL_VAR_FIELD_CONSTRS);
 	return parser;
 }
@@ -955,8 +950,8 @@ static bool global_var_load_cb(void *user, const char *k, const char *v) {
 
 	const char *name = NULL;
 	const char *type = NULL;
+	const char *addr_s = NULL;
 	ut64 addr = 0;
-	ut64 size = 0;
 	RzVector constraints;
 	rz_vector_init(&constraints, sizeof(RzTypeConstraint), NULL, NULL);
 
@@ -970,24 +965,16 @@ static bool global_var_load_cb(void *user, const char *k, const char *v) {
 			name = child->str_value;
 			break;
 		case GLOBAL_VAR_FIELD_ADDR:
-			if (child->type != RZ_JSON_INTEGER) {
-				eprintf("addr nop\n");
+			if (child->type != RZ_JSON_STRING) {
 				break;
 			}
-			addr = child->num.s_value;
+			addr_s = child->str_value;
 			break;
 		case GLOBAL_VAR_FIELD_TYPE:
 			if (child->type != RZ_JSON_STRING) {
 				break;
 			}
 			type = child->str_value;
-			break;
-		case GLOBAL_VAR_FIELD_SIZE:
-			if (child->type != RZ_JSON_INTEGER) {
-				eprintf("size nop\n");
-				break;
-			}
-			size = child->num.s_value;
 			break;
 		case VAR_FIELD_CONSTRS: {
 			if (child->type != RZ_JSON_ARRAY) {
@@ -1031,12 +1018,14 @@ static bool global_var_load_cb(void *user, const char *k, const char *v) {
 		eprintf("Fail to parse the function variable (\"%s\") type: %s\n", name, type);
 		goto beach;
 	}
+	RzCore *core = ctx->analysis->core;
+	addr = rz_num_math(core->num, addr_s);
 	glob = rz_analysis_var_global_new(name, addr);
 	if (!glob) {
 		goto beach;
 	}
 	rz_analysis_var_global_set_type(glob, vartype);
-	glob->size = size;
+	glob->size = rz_type_db_get_bitsize(ctx->analysis->typedb, vartype) / 8;
 
 	RzTypeConstraint *constr;
 	rz_vector_foreach(&constraints, constr) {

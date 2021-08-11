@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_project.h>
+#include <rz_util/pj.h>
 
 /**
  * \file
@@ -131,13 +132,50 @@ RZ_API bool rz_project_migrate_v2_v3(RzProject *prj, RzSerializeResultInfo *res)
 	return true;
 }
 
+typedef struct {
+	RzList /*<char *>*/ *moved_keys; ///< deferred for deletion from the old sdb
+	Sdb *global_vars_db;
+} V3V4TypesCtx;
+
+bool v3_v4_types_foreach_cb(void *user, const char *k, const char *v) {
+	V3V4TypesCtx *ctx = user;
+	if (rz_str_startswith(k, "0x")) {
+		char name[32];
+		PJ *j = pj_new();
+		pj_o(j);
+		pj_ks(j, "name", rz_strf(name, "gvar_%s", k));
+		pj_ks(j, "type", v);
+		pj_ks(j, "addr", k);
+		// We don't have constraints for typelink here.
+		pj_end(j);
+		sdb_set(ctx->global_vars_db, k, pj_string(j), 0);
+		pj_free(j);
+		rz_list_push(ctx->moved_keys, strdup(k));
+	}
+	return true;
+}
+
 RZ_API bool rz_project_migrate_v3_v4(RzProject *prj, RzSerializeResultInfo *res) {
 	Sdb *core_db;
 	RZ_SERIALIZE_SUB(prj, core_db, res, "core", return false;);
 	Sdb *analysis_db;
 	RZ_SERIALIZE_SUB(core_db, analysis_db, res, "analysis", return false;);
-	// We only need to create a namespace because we didn't have global variables before.
-	sdb_ns(analysis_db, "vars", true);
+	V3V4TypesCtx ctx = {
+		.moved_keys = rz_list_newf(free),
+		.global_vars_db = sdb_ns(analysis_db, "vars", true)
+	};
+
+	if (!ctx.moved_keys || !ctx.global_vars_db) {
+		return false;
+	}
+	Sdb *typelinks_db = sdb_ns(analysis_db, "typelinks", true);
+	sdb_foreach(typelinks_db, v3_v4_types_foreach_cb, &ctx);
+	RzListIter *it;
+	char *s;
+	rz_list_foreach (ctx.moved_keys, it, s) {
+		sdb_unset(typelinks_db, s, 0);
+	}
+	rz_list_free(ctx.moved_keys);
 	return true;
 }
 

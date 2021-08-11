@@ -8123,7 +8123,7 @@ RZ_IPI RzCmdStatus rz_analysis_global_variable_add_handler(RzCore *core, int arg
 
 RZ_IPI RzCmdStatus rz_analysis_global_variable_delete_handler(RzCore *core, int argc, const char **argv) {
 	ut64 addr = rz_num_math(core->num, argv[1]);
-	if (!rz_analysis_var_global_delete_byaddr(core->analysis, addr)) {
+	if (!rz_analysis_var_global_delete_byaddr_in(core->analysis, addr)) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	return RZ_CMD_STATUS_OK;
