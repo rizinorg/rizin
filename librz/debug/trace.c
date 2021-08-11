@@ -178,12 +178,17 @@ RZ_API void rz_debug_trace_op(RzDebug *dbg, RzAnalysisOp *op) {
 	static ut64 oldpc = UT64_MAX; // Must trace the previously traced instruction
 	if (dbg->trace->enabled) {
 		if (dbg->analysis->esil) {
-			rz_analysis_rzil_trace_op(dbg->analysis, dbg->analysis->rzil, op);
 			rz_analysis_esil_trace_op(dbg->analysis->esil, op);
 		} else {
 			if (dbg->verbose) {
 				eprintf("Run aeim to get dbg->analysis->esil initialized\n");
 			}
+		}
+
+		if (dbg->analysis->rzil) {
+			rz_analysis_rzil_collect_info(dbg->analysis, dbg->analysis->rzil, op, false);
+		} else {
+			RZ_LOG_ERROR("Run aeim to get RZIL initialized\n");
 		}
 	}
 	if (oldpc != UT64_MAX) {

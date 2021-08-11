@@ -404,10 +404,12 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 	op->size = 1;
 	op->id = getid(buf[0]);
 	op->addr = addr;
+	op->rzil_op = NULL;
 
 	BfStack stack_helper = analysis->rzil->user;
 	RzILVM vm = analysis->rzil->vm;
 	RzPVector *oplist;
+	op->rzil_op = RZ_NEW0(RzAnalysisRzilOp);
 
 	switch (buf[0]) {
 	case '[':
@@ -455,6 +457,8 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 		break;
 	}
 	if (oplist) {
+		op->rzil_op->ops = oplist;
+		op->rzil_op->root_node = NULL;
 		rz_analysis_set_rzil_op(analysis->rzil, addr, oplist);
 	}
 	return op->size;

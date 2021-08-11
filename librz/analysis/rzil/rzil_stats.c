@@ -3,87 +3,156 @@
 
 #include <rz_analysis.h>
 
-static int hook_flag_read(RzAnalysisRzil *rzil, const char *flag, ut64 *num, RzAnalysis *analysis) {
-	sdb_array_add(rzil->stats, "flg.read", flag, 0);
-	return 0;
-}
-
-static int hook_command(RzAnalysisRzil *rzil, const char *op, RzAnalysis *analysis) {
-	sdb_array_add(rzil->stats, "ops.list", op, 0);
-	return 0;
-}
-
-static int hook_mem_read(RzAnalysisRzil *rzil, ut64 addr, ut8 *buf, int len, RzAnalysis *analysis) {
-	sdb_array_add_num(rzil->stats, "mem.read", addr, 0);
-	return 0;
-}
-
-static int hook_mem_write(RzAnalysisRzil *rzil, ut64 addr, const ut8 *buf, int len, RzAnalysis *analysis) {
-	sdb_array_add_num(rzil->stats, "mem.write", addr, 0);
-	return 0;
-}
-
-static int hook_reg_read(RzAnalysisRzil *rzil, const char *name, ut64 *res, int *size, RzAnalysis *analysis) {
-	const char *key = (*name >= '0' && *name <= '9') ? "num.load" : "reg.read";
-	sdb_array_add(rzil->stats, key, name, 0);
-	return 0;
-}
-
-static int hook_reg_write(RzAnalysisRzil *rzil, const char *name, ut64 *val, RzAnalysis *analysis) {
-	sdb_array_add(rzil->stats, "reg.write", name, 0);
-	return 0;
-}
-
-static int hook_NOP_mem_write(RzAnalysisRzil *rzil, ut64 addr, const ut8 *buf, int len, RzAnalysis *analysis) {
-	eprintf("NOP WRITE AT 0x%08" PFMT64x "\n", addr);
-	return 1; // override
-}
-
 /**
- * Control Mem read only or not
- * \param rzil RzAnalysis* pointer to rzil
- * \param mem_readonly int, is memory read only ?
- */
-RZ_API void rz_analysis_rzil_mem_ro(RzAnalysisRzil *rzil, int mem_readonly) {
-	if (!rzil) {
-		return;
-	}
+ * In ESIL, stats is used to collect these info :
+ * 1: ops.list : ESIL op
+ * 2: flg.read : List<flag> list of flag been read from
+ * 3: flg.write : List<flag> list of flags been written to
+ * 4: mem.read : List<memory address> list of memory address
+ * 5: mem.write : List<memory address> list of memory address
+ * 6: reg.read : List<register names> list of register names
+ * 7: reg.write : List<register names> list of register names
+ * These infos seems be used in `cmd_search_rop.c` only
+ *
+ * In the New IL, we should have the similar behavior at first
+ *
+ * CHECK_ME : flag read and write never been called in ESIL ??
+*/
 
-	if (mem_readonly) {
-		rzil->cb.hook_mem_write = hook_NOP_mem_write;
-	} else {
-		rzil->cb.hook_mem_write = NULL;
+static bool is_flag_reg(RzAnalysis *analysis, const char *reg_name) {
+	return false;
+}
+
+static char *opcode_to_str(CoreTheoryOPCode opcode) {
+	return "OP_NOP";
+}
+
+static void stats_add_mem(RzAnalysisRzil *rzil, ut64 addr, RzILTraceOpType type) {
+	switch (type) {
+	case RZ_IL_TRACE_OP_WRITE:
+		sdb_array_add_num(rzil->stats, "mem.write", addr, 0);
+		break;
+	case RZ_IL_TRACE_OP_READ:
+		sdb_array_add_num(rzil->stats, "mem.read", addr, 0);
+		break;
+	default:
+		rz_warn_if_reached();
+		break;
 	}
 }
 
-/**
- * Control if we should track the stat changes
- * \param rzil RzAnalysisRzil* pointer to rzil
- * \param enable int, enable tracing or not
- */
-RZ_API void rz_analysis_rzil_stats(RzAnalysisRzil *rzil, int enable) {
-	if (!rzil) {
-		eprintf("Rzil is NULL, cannot set stats\n");
-		return;
+static void stats_add_reg(RzAnalysisRzil *rzil, const char *regname, RzILTraceOpType type) {
+	switch (type) {
+	case RZ_IL_TRACE_OP_WRITE:
+		sdb_array_add(rzil->stats, "reg.read", regname, 0);
+		break;
+	case RZ_IL_TRACE_OP_READ:
+		sdb_array_add(rzil->stats, "reg.write", regname, 0);
+		break;
+	default:
+		rz_warn_if_reached();
+		break;
 	}
-	if (enable) {
-		if (rzil->stats) {
-			sdb_reset(rzil->stats);
-		} else {
-			rzil->stats = sdb_new0();
-		}
-		// reset
-		rzil->cb.reg_read = hook_reg_read;
-		rzil->cb.hook_mem_read = hook_mem_read;
-		rzil->cb.hook_mem_write = hook_mem_write;
-		rzil->cb.hook_reg_write = hook_reg_write;
-		rzil->cb.hook_flag_read = hook_flag_read;
-		rzil->cb.hook_command = hook_command;
-	} else {
-		rzil->cb.hook_mem_write = NULL;
-		rzil->cb.hook_flag_read = NULL;
-		rzil->cb.hook_command = NULL;
-		sdb_free(rzil->stats);
-		rzil->stats = NULL;
+}
+
+static void stats_add_flg(RzAnalysisRzil *rzil, const char *flg, RzILTraceOpType type) {
+	switch (type) {
+	case RZ_IL_TRACE_OP_WRITE:
+		sdb_array_add(rzil->stats, "flg.read", flg, 0);
+		break;
+	case RZ_IL_TRACE_OP_READ:
+		sdb_array_add(rzil->stats, "flg.write", flg, 0);
+		break;
+	default:
+		rz_warn_if_reached();
+		break;
+	}
+}
+
+static void stats_parse_and_add_flgs() {
+	RZ_LOG_ERROR("TODO : parse and add flgs\n");
+	// call add flg here
+}
+
+static void stats_add_op(RzAnalysisRzil *rzil, CoreTheoryOPCode opcode) {
+	const char *op_name = opcode_to_str(opcode);
+	sdb_array_add(rzil->stats, "ops.list", op_name, 0);
+}
+
+static void rz_analysis_rzil_stats_focus_mem_read(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzILOp single_op) {
+	RzILOpLoad op_load = single_op->op.load;
+	RzILVM vm = rzil->vm;
+
+	ut64 addr = rz_il_bv_to_ut64(rz_il_get_bv_temp(vm, op_load->key));
+	stats_add_mem(rzil, addr, RZ_IL_TRACE_OP_READ);
+}
+
+static void rz_analysis_rzil_stats_focus_mem_write(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzILOp single_op) {
+	RzILOpStore op_store = single_op->op.store;
+	RzILVM vm = rzil->vm;
+
+	ut64 addr = rz_il_bv_to_ut64(rz_il_get_bv_temp(vm, op_store->key));
+	stats_add_mem(rzil, addr, RZ_IL_TRACE_OP_WRITE);
+}
+
+static void rz_analysis_rzil_stats_focus_reg_read(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzILOp single_op) {
+	RzILOpVar op_var = single_op->op.var;
+
+	const char *reg_name = rz_str_constpool_get(&analysis->constpool, op_var->v);
+
+	// add flag stats
+	if (is_flag_reg(analysis, reg_name)) {
+		stats_parse_and_add_flgs();
+	}
+
+	// add register stats
+	stats_add_reg(rzil, reg_name, RZ_IL_TRACE_OP_READ);
+}
+
+static void rz_analysis_rzil_stats_focus_reg_write(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzILOp single_op) {
+	RzILOpSet op_set = single_op->op.set;
+
+	const char *reg_name = rz_str_constpool_get(&analysis->constpool, op_set->v);
+
+	// add flag stats
+	if (is_flag_reg(analysis, reg_name)) {
+		stats_parse_and_add_flgs();
+	}
+
+	// add register stats
+	stats_add_reg(rzil, reg_name, RZ_IL_TRACE_OP_WRITE);
+}
+
+static void rz_analysis_rzil_stats_focus(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzILOp single_op) {
+	// focus those op only
+	// flags treated as register
+	stats_add_op(rzil, single_op->code);
+	switch (single_op->code) {
+	case RZIL_OP_LOAD:
+		rz_analysis_rzil_stats_focus_mem_read(analysis, rzil, single_op);
+		break;
+	case RZIL_OP_STORE:
+		rz_analysis_rzil_stats_focus_mem_write(analysis, rzil, single_op);
+		break;
+	case RZIL_OP_SET:
+		rz_analysis_rzil_stats_focus_reg_write(analysis, rzil, single_op);
+		break;
+	case RZIL_OP_VAR:
+		rz_analysis_rzil_stats_focus_reg_read(analysis, rzil, single_op);
+		break;
+	default:
+		// don't need to trace info
+		break;
+	}
+}
+
+RZ_API void rz_analysis_rzil_record_stats(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzAnalysisRzilOp *op) {
+	// TODO : rewrite this file when migrate to new op structure
+	RzPVector *op_list = op->ops;
+
+	void **iter;
+	rz_pvector_foreach (op_list, iter) {
+		RzILOp single_op = *iter;
+		rz_analysis_rzil_stats_focus(analysis, rzil, single_op);
 	}
 }

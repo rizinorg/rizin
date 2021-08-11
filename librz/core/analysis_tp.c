@@ -9,14 +9,17 @@
 #include <rz_core.h>
 #define LOOP_MAX 10
 
-static bool analysis_emul_init(RzCore *core, RzConfigHold *hc, RzDebugTrace **dt, RzAnalysisEsilTrace **et) {
-	if (!core->analysis->esil) {
+static bool analysis_emul_init(RzCore *core, RzConfigHold *hc, RzDebugTrace **dt, RzAnalysisEsilTrace **et, RzAnalysisRzilTrace **rt) {
+	if (!core->analysis->esil || !core->analysis->rzil) {
 		return false;
 	}
 	*dt = core->dbg->trace;
 	*et = core->analysis->esil->trace;
+
 	core->dbg->trace = rz_debug_trace_new();
 	core->analysis->esil->trace = rz_analysis_esil_trace_new(core->analysis->esil);
+	core->analysis->rzil->trace = rz_analysis_rzil_trace_new(core->analysis, core->analysis->rzil);
+
 	rz_config_hold_i(hc, "esil.romem", "dbg.trace",
 		"esil.nonull", "dbg.follow", NULL);
 	rz_config_set(core->config, "esil.romem", "true");
@@ -33,11 +36,13 @@ static bool analysis_emul_init(RzCore *core, RzConfigHold *hc, RzDebugTrace **dt
 	return (core->dbg->trace && core->analysis->esil->trace);
 }
 
-static void analysis_emul_restore(RzCore *core, RzConfigHold *hc, RzDebugTrace *dt, RzAnalysisEsilTrace *et) {
+static void analysis_emul_restore(RzCore *core, RzConfigHold *hc, RzDebugTrace *dt, RzAnalysisEsilTrace *et, RzAnalysisRzilTrace *rt) {
 	rz_config_hold_restore(hc);
 	rz_config_hold_free(hc);
 	rz_debug_trace_free(core->dbg->trace);
 	rz_analysis_esil_trace_free(core->analysis->esil->trace);
+	rz_analysis_rzil_trace_free(core->analysis->rzil->trace);
+	core->analysis->rzil->trace = rt;
 	core->analysis->esil->trace = et;
 	core->dbg->trace = dt;
 }
@@ -781,8 +786,9 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 	}
 	RzDebugTrace *dt = NULL;
 	RzAnalysisEsilTrace *et = NULL;
-	if (!analysis_emul_init(core, hc, &dt, &et) || !fcn) {
-		analysis_emul_restore(core, hc, dt, et);
+	RzAnalysisRzilTrace *rt = NULL;
+	if (!analysis_emul_init(core, hc, &dt, &et, &rt) || !fcn) {
+		analysis_emul_restore(core, hc, dt, et, rt);
 		return;
 	}
 
@@ -901,5 +907,5 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 out_function:
 	ht_up_free(op_cache);
 	rz_cons_break_pop();
-	analysis_emul_restore(core, hc, dt, et);
+	analysis_emul_restore(core, hc, dt, et, rt);
 }

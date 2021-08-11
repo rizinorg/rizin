@@ -806,6 +806,13 @@ typedef enum rz_analysis_data_type_t {
 	RZ_ANALYSIS_DATATYPE_FLOAT,
 } RzAnalysisDataType;
 
+// For switchting to AST-like approach in the future
+typedef struct rz_analysis_rzil_op_t {
+	RzPVector *ops;
+	// TODO : use root approach in the future
+	RzILOp *root_node;
+} RzAnalysisRzilOp;
+
 typedef struct rz_analysis_op_t {
 	char *mnemonic; /* mnemonic.. it actually contains the args too, we should replace rasm with this */
 	ut64 addr; /* address */
@@ -837,6 +844,7 @@ typedef struct rz_analysis_op_t {
 	RzList *access; /* RzAnalysisValue access information */
 	RzStrBuf esil;
 	RzStrBuf opex;
+	RzAnalysisRzilOp *rzil_op;
 	const char *reg; /* destination register */
 	const char *ireg; /* register used for indirect memory computation*/
 	int scale;
@@ -1557,18 +1565,13 @@ RZ_API bool rz_analysis_rzil_set_pc(RzAnalysisRzil *rzil, ut64 addr);
 RZ_API bool rz_analysis_rzil_setup(RzAnalysis *analysis, RzAnalysisRzil *rzil, int romem, int stats, int nonull);
 RZ_API void rz_analysis_rzil_cleanup(RzAnalysis *analysis, RzAnalysisRzil *rzil);
 RZ_API void rz_analysis_set_rzil_op(RzAnalysisRzil *rzil, ut64 addr, RzPVector *oplist);
-
-/* stats */
-RZ_API void rz_analysis_rzil_mem_ro(RzAnalysisRzil *rzil, int mem_readonly);
-RZ_API void rz_analysis_rzil_stats(RzAnalysisRzil *rzil, int enable);
+RZ_API void rz_analysis_rzil_record_stats(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzAnalysisRzilOp *op);
 
 /* trace */
 RZ_API RzAnalysisRzilTrace *rz_analysis_rzil_trace_new(RzAnalysis *analysis, RzAnalysisRzil *rzil);
 RZ_API void rz_analysis_rzil_trace_free(RzAnalysisRzilTrace *trace);
-RZ_API void rz_analysis_rzil_trace_op(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzAnalysisOp *op);
-RZ_API void rz_analysis_rzil_trace_list(RzAnalysis *analysis, RzAnalysisRzil *rzil);
-RZ_API void rz_analysis_rzil_trace_show(RzAnalysis *analysis, RzAnalysisRzil *rzil, int idx);
-RZ_API void rz_analysis_rzil_trace_restore(RzAnalysis *analysis, RzAnalysisRzil *rzil, int idx);
+RZ_API void rz_analysis_rzil_trace_op(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzAnalysisRzilOp *op);
+RZ_API void rz_analysis_rzil_collect_info(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzAnalysisOp *op, bool use_new);
 
 /* pin */
 RZ_API void rz_analysis_pin_init(RzAnalysis *a);
