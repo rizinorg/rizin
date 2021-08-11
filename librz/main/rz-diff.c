@@ -1698,8 +1698,8 @@ static bool rz_diff_draw_tui(DiffHexView *hview, bool show_help) {
 	rz_cons_canvas_write(canvas, line);
 
 	if (show_help) {
-		rz_cons_canvas_fill(canvas, 4, 2, 56, 14, ' ');
-		rz_cons_canvas_box(canvas, 4, 2, 56, 14, legenda);
+		rz_cons_canvas_fill(canvas, 4, 2, 56, 16, ' ');
+		rz_cons_canvas_box(canvas, 4, 2, 56, 16, legenda);
 
 		snprintf(line, lsize, "%sHelp page%s\n", legenda, reset);
 		rz_cons_canvas_gotoxy(canvas, 6, 3);
@@ -1743,6 +1743,14 @@ static bool rz_diff_draw_tui(DiffHexView *hview, bool show_help) {
 
 		snprintf(line, lsize, "%s:%s     seek at offset (relative via +-)\n", legenda, reset);
 		rz_cons_canvas_gotoxy(canvas, 6, 14);
+		rz_cons_canvas_write(canvas, line);
+
+		snprintf(line, lsize, "%s3%s     file0 seek at offset (relative via +-)\n", legenda, reset);
+		rz_cons_canvas_gotoxy(canvas, 6, 15);
+		rz_cons_canvas_write(canvas, line);
+
+		snprintf(line, lsize, "%s4%s     file1 seek at offset (relative via +-)\n", legenda, reset);
+		rz_cons_canvas_gotoxy(canvas, 6, 16);
 		rz_cons_canvas_write(canvas, line);
 	}
 
@@ -1803,6 +1811,50 @@ static void prompt_offset_and_seek(DiffHexView *hview, ut64 minseek) {
 		} else {
 			hview->offset_a = RZ_MIN(number, hview->io_a->filesize - minseek);
 			hview->offset_b = RZ_MIN(number, hview->io_b->filesize - minseek);
+		}
+	}
+	free(value);
+}
+
+static void prompt_offset_and_seek_file(DiffHexView *hview, ut64 minseek, bool is_file0) {
+	char *value = visual_prompt(hview, " you can input an absolute offset or a relative offset by adding the prefix + or -\n offset");
+	if (value) {
+		const char *p = rz_str_trim_head_ro(value);
+		if (!IS_DIGIT(*p) && *p != '-' && *p != '+') {
+			free(value);
+			return;
+		}
+		st64 number = strtoll((*p == '+') ? p + 1 : p, NULL, 0);
+		if (*p == '-') {
+			if (is_file0) {
+				if ((hview->offset_a - number) < hview->offset_a) {
+					hview->offset_a -= number;
+				} else if (hview->offset_a != hview->offset_b) {
+					hview->offset_a = RZ_MIN(hview->offset_a, hview->offset_b);
+				} else {
+					hview->offset_a = 0;
+				}
+			} else {
+				if ((hview->offset_b - number) < hview->offset_b) {
+					hview->offset_b -= number;
+				} else if (hview->offset_a != hview->offset_b) {
+					hview->offset_b = RZ_MIN(hview->offset_a, hview->offset_b);
+				} else {
+					hview->offset_b = 0;
+				}
+			}
+		} else if (*p == '+') {
+			if (is_file0 && (hview->offset_a + number) < hview->io_a->filesize) {
+				hview->offset_a += number;
+			} else if (!is_file0 && (hview->offset_b + number) < hview->io_b->filesize) {
+				hview->offset_b += number;
+			}
+		} else {
+			if (is_file0) {
+				hview->offset_a = RZ_MIN(number, hview->io_a->filesize - minseek);
+			} else {
+				hview->offset_b = RZ_MIN(number, hview->io_b->filesize - minseek);
+			}
 		}
 	}
 	free(value);
@@ -2050,6 +2102,12 @@ static bool rz_diff_hex_visual(DiffContext *ctx) {
 			break;
 		case ':':
 			prompt_offset_and_seek(&hview, seekmin);
+			break;
+		case '3':
+			prompt_offset_and_seek_file(&hview, seekmin, true);
+			break;
+		case '4':
+			prompt_offset_and_seek_file(&hview, seekmin, false);
 			break;
 		case '9':
 			hview.offset_a = hview.offset_b = RZ_MIN(hview.offset_a, hview.offset_b);
