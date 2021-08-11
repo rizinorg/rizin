@@ -8098,12 +8098,8 @@ RZ_IPI RzCmdStatus rz_analysis_global_variable_add_handler(RzCore *core, int arg
 	ut64 addr = rz_num_math(core->num, argv[2]);
 	const char *type = argv[3];
 
-	RzTypeParser *parser = rz_type_parser_new();
-	if (!parser) {
-		return RZ_CMD_STATUS_ERROR;
-	}
 	char *errmsg = NULL;
-	RzType *typ = rz_type_parse_string_single(parser, type, &errmsg);
+	RzType *typ = rz_type_parse_string_single(core->analysis->typedb->parser, type, &errmsg);
 	if (errmsg) {
 		RZ_LOG_ERROR("%s : Error parsing type: \"%s\" message:\n%s\n", __FUNCTION__, type, errmsg);
 		free(errmsg);
