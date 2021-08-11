@@ -119,8 +119,9 @@ static DexProtoId *dex_proto_id_new(RzBuffer *buf, ut64 offset) {
 			goto dex_proto_id_new_fail;
 		}
 
-		for (ut32 i = 0; i < count; ++i) {
-			proto_id->type_list[i] = rz_buf_read_le16(buf);
+		parameters_offset += sizeof(ut32);
+		for (ut32 i = 0; i < count; ++i, parameters_offset += sizeof(ut16)) {
+			proto_id->type_list[i] = rz_buf_read_le16_at(buf, parameters_offset);
 		}
 	}
 
@@ -637,14 +638,14 @@ static char *dex_resolve_proto_id(RzBinDex *dex, const char* name, ut32 proto_id
 		return NULL;
 	}
 
-	RzStrBuf *sb = rz_strbuf_new(name);
-	if (!sb) {
-		rz_warn_if_reached();
+	if (proto_id->return_type_idx >= dex->type_ids_size) {
+		RZ_LOG_ERROR("cannot find return type id with index %u\n", proto_id->return_type_idx);
 		return NULL;
 	}
 
-	if (proto_id->return_type_idx >= dex->type_ids_size) {
-		RZ_LOG_ERROR("cannot find return type id with index %u\n", proto_id->return_type_idx);
+	RzStrBuf *sb = rz_strbuf_new(name);
+	if (!sb) {
+		rz_warn_if_reached();
 		return NULL;
 	}
 
@@ -657,8 +658,8 @@ static char *dex_resolve_proto_id(RzBinDex *dex, const char* name, ut32 proto_id
 
 	rz_strbuf_append(sb, "(");
 	for (ut32 i = 0; i < proto_id->type_list_size; ++i) {
-		ut16 type_idx = proto_id->type_list[i];
-		DexString *param = (DexString *)rz_list_get_n(dex->strings, dex->types[type_idx]);
+		ut32 type_idx = proto_id->type_list[i];
+		const DexString *param = (const DexString *)rz_list_get_n(dex->strings, dex->types[type_idx]);
 		if (!param) {
 			RZ_LOG_INFO("cannot find param string with index %d\n", dex->types[type_idx]);
 			rz_strbuf_free(sb);
