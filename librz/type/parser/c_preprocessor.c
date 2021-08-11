@@ -182,7 +182,7 @@ static BufferedFile *preprocessor_close_file(BufferedFile *bf) {
 
 long long expr_const(CPreprocessorState *state);
 static char *get_tok_str(CPreprocessorState *state, int v, CValue *cv);
-static void next(CPreprocessorState *state);
+void next(CPreprocessorState *state);
 static void next_nomacro_spc(CPreprocessorState *state);
 static void next_nomacro(CPreprocessorState *state);
 
@@ -205,7 +205,7 @@ static inline void expect(CPreprocessorState *state, const char *msg) {
 	preprocessor_error(state, "%s expected", msg);
 }
 
-static inline int tcc_nerr(CPreprocessorState *state) {
+static inline int pp_nerr(CPreprocessorState *state) {
 	return state->nb_errors;
 }
 
@@ -994,7 +994,7 @@ static inline int check_space(int t, int *spc) {
 static uint8_t *parse_pp_string(CPreprocessorState *state, uint8_t *p, int sep, CString *str) {
 	int c;
 	p++;
-	while (tcc_nerr(state) == 0) {
+	while (pp_nerr(state) == 0) {
 		c = *p;
 		if (c == sep) {
 			break;
@@ -1070,7 +1070,7 @@ static void preprocess_skip(CPreprocessorState *state) {
 redo_start:
 	start_of_line = 1;
 	in_warn_or_error = 0;
-	while (tcc_nerr(state) == 0) {
+	while (pp_nerr(state) == 0) {
 	redo_no_start:
 		c = *p;
 		switch (c) {
@@ -2723,7 +2723,7 @@ static void next_nomacro_spc(CPreprocessorState *state) {
 static void next_nomacro(CPreprocessorState *state) {
 	do {
 		next_nomacro_spc(state);
-	} while (tcc_nerr(state) == 0 && is_space(state->cur->tok));
+	} while (pp_nerr(state) == 0 && is_space(state->cur->tok));
 }
 
 /* substitute args in macro_str and return allocated string */
@@ -2738,7 +2738,7 @@ static int *macro_arg_subst(CPreprocessorState *state, Sym **nested_list, const 
 
 	tok_str_new(&str);
 	last_tok = 0;
-	while (tcc_nerr(state) == 0) {
+	while (pp_nerr(state) == 0) {
 		TOK_GET(&t, &macro_str, &cval);
 		if (!t) {
 			break;
@@ -2933,7 +2933,7 @@ static int macro_subst_tok(CPreprocessorState *state, TokenString *tok_str,
 			args = NULL;
 			sa = s->next;
 			/* NOTE: empty args are allowed, except if no args */
-			while (tcc_nerr(state) == 0) {
+			while (pp_nerr(state) == 0) {
 				/* handle '()' case */
 				if (!args && !sa && cur->tok == ')') {
 					break;
@@ -3076,7 +3076,7 @@ static inline int *macro_twosharps(CPreprocessorState *state, const int *macro_s
 
 				c_preprocessor_open_string(state, ":paste:", cstr.size);
 				memcpy(file->buffer, cstr.data, cstr.size);
-				while (tcc_nerr(state) == 0) {
+				while (pp_nerr(state) == 0) {
 					next_nomacro1(state);
 					if (0 == *file->buf_ptr) {
 						break;
@@ -3122,7 +3122,7 @@ static void macro_subst(CPreprocessorState *state, TokenString *tok_str, Sym **n
 	spc = 0;
 	force_blank = 0;
 
-	while (tcc_nerr(state) == 0) {
+	while (pp_nerr(state) == 0) {
 		/* NOTE: ptr == NULL can only happen if tokens are read from
 		   file stream due to a macro function call */
 		if (ptr == NULL) {
@@ -3182,7 +3182,7 @@ static void macro_subst(CPreprocessorState *state, TokenString *tok_str, Sym **n
 }
 
 /* return next token with macro substitution */
-static void next(CPreprocessorState *state) {
+void next(CPreprocessorState *state) {
 	Sym *nested_list, *s;
 	TokenString str;
 	struct macro_level *ml;
@@ -3291,17 +3291,8 @@ void preprocess_new(CPreprocessorState *state) {
 	tok_ident = TOK_IDENT;
 
 	// Skip all C keywords here
-	p = preprocessor_tokens;
-	while (*p) {
-		r = p;
-		for (;;) {
-			c = *r++;
-			if (c == '\0') {
-				break;
-			}
-		}
-		tok_alloc(state, p, r - p - 1);
-		p = r;
+	for (i = 0; i < sizeof(preprocessor_tokens); i++) {
+		tok_alloc(state, preprocessor_tokens[i], strlen(preprocessor_tokens[i]));
 	}
 }
 
@@ -3344,6 +3335,7 @@ static void preprocessor_undefine_symbol(CPreprocessorState *state, const char *
 }
 
 /* Preprocess the current file */
+// TODO: Add an output file/stream?
 int c_preprocess_string(CPreprocessorState *state, const char *code) {
 	rz_return_val_if_fail(state && code, -1);
 	if (!code) {
@@ -3373,7 +3365,7 @@ int c_preprocess_string(CPreprocessorState *state, const char *code) {
 	file_ref = NULL;
 	iptr = state->include_stack_ptr;
 
-	while (tcc_nerr(state) == 0) {
+	while (pp_nerr(state) == 0) {
 		next(state);
 		if (cur->tok == TOK_EOF) {
 			break;
@@ -3395,10 +3387,11 @@ int c_preprocess_string(CPreprocessorState *state, const char *code) {
 					: iptr_new > state->include_stack ? " 3"
 									  : "";
 				iptr = iptr_new;
-				fprintf(state->ppfp, "# %d \"%s\"%s\n", file->line_num, file->filename, s);
+				preprocessor_debug(state, "# %d \"%s\"%s\n", file->line_num, file->filename, s);
 			} else {
-				while (d)
-					fputs("\n", state->ppfp), --d;
+				while (d) {
+					preprocessor_debug(state, "\n"), --d;
+				}
 			}
 			line_ref = (file_ref = file)->line_num;
 			token_seen = cur->tok != TOK_LINEFEED;
@@ -3406,7 +3399,7 @@ int c_preprocess_string(CPreprocessorState *state, const char *code) {
 				continue;
 			}
 		}
-		fputs(get_tok_str(state, cur->tok, &cur->tokc), state->ppfp);
+		preprocessor_debug(state, get_tok_str(state, cur->tok, &cur->tokc));
 	}
 	// Purge everything after the start
 	free_defines(state, define_start);

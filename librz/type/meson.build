@@ -10,6 +10,7 @@ rz_type_sources = [
   'typeclass.c',
   'parser/c_cpp_parser.c',
   'parser/c_preprocessor.c',
+  'parser/c_preprocessor_expressions.c',
   'parser/types_parser.c',
   'parser/types_storage.c',
 ]
