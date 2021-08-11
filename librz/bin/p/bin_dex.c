@@ -4,7 +4,7 @@
 
 #include <rz_bin.h>
 #include "dex/dex.h"
-
+/*
 static ut32 __adler32(const ut8 *data, int len) {
 	ut32 a = 1, b = 0;
 	for (int i = 0; i < len; i++) {
@@ -13,7 +13,7 @@ static ut32 __adler32(const ut8 *data, int len) {
 	}
 	return (b << 16) | a;
 }
-
+*/
 #define rz_bin_file_get_dex(bf) ((RzBinDex *)bf->o->bin_obj)
 
 static RzBinInfo *info(RzBinFile *bf) {
@@ -47,12 +47,12 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return binfo;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	RzBinDex *dex = rz_bin_dex_new(buf, loadaddr, sdb);
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
+	RzBinDex *dex = rz_bin_dex_new(buf, obj->opts.loadaddr, sdb);
 	if (!dex) {
 		return false;
 	}
-	*bin_obj = dex;
+	obj->bin_obj = dex;
 	return true;
 }
 
@@ -62,7 +62,7 @@ static void destroy(RzBinFile *bf) {
 
 static bool check_buffer(RzBuffer *b) {
 	if (rz_buf_size(b) > 32) {
-		ut8 buf[4];
+		ut8 buf[4] = {0};
 		rz_buf_read_at(b, 0, buf, sizeof(buf));
 		return !memcmp(buf, "dex\n", 4);
 	}
