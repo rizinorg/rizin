@@ -101,9 +101,7 @@ static Elf_(Word) get_index_from_buckets(ELFOBJ *bin, ut64 *bucket_offset, Elf_(
 }
 
 static Elf_(Word) get_index_from_chain(ELFOBJ *bin, ut64 bucket_offset, Elf_(Word) symbol_base, Elf_(Word) index) {
-	Elf_(Word) tmp;
-
-	if (index <= symbol_base) {
+	if (index < symbol_base) {
 		return 0;
 	}
 
@@ -112,6 +110,8 @@ static Elf_(Word) get_index_from_chain(ELFOBJ *bin, ut64 bucket_offset, Elf_(Wor
 
 	while (1) {
 		index++;
+
+		Elf_(Word) tmp;
 		if (!Elf_(rz_bin_elf_read_word)(bin, &chain_offset, &tmp)) {
 			return 0;
 		}
@@ -126,10 +126,6 @@ static Elf_(Word) get_index_from_chain(ELFOBJ *bin, ut64 bucket_offset, Elf_(Wor
 
 static Elf_(Word) get_number_of_symbols_from_gnu_hash(ELFOBJ *bin) {
 	ut64 hash_addr;
-	Elf_(Word) number_of_bucket;
-	Elf_(Word) symbol_base;
-	Elf_(Word) bitmask_nwords;
-
 	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_GNU_HASH, &hash_addr)) {
 		return 0;
 	}
@@ -141,14 +137,17 @@ static Elf_(Word) get_number_of_symbols_from_gnu_hash(ELFOBJ *bin) {
 
 	ut64 pos = hash_offset;
 
+	Elf_(Word) number_of_bucket;
 	if (!Elf_(rz_bin_elf_read_word)(bin, &pos, &number_of_bucket)) {
 		return 0;
 	}
 
+	Elf_(Word) symbol_base;
 	if (!Elf_(rz_bin_elf_read_word)(bin, &pos, &symbol_base)) {
 		return 0;
 	}
 
+	Elf_(Word) bitmask_nwords;
 	if (!Elf_(rz_bin_elf_read_word)(bin, &pos, &bitmask_nwords)) {
 		return 0;
 	}
