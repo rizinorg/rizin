@@ -33,6 +33,7 @@ rz_analysis_sources = [
   'dwarf_process.c',
   'value.c',
   'var.c',
+  'var_global.c',
   'vtable.c',
   'xrefs.c',
   'serialize_analysis.c',

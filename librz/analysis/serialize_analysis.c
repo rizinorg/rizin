@@ -2,9 +2,11 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util/rz_serialize.h>
+#include <rz_util/rz_num.h>
 #include <rz_vector.h>
 #include <rz_type.h>
 #include <rz_analysis.h>
+#include <rz_core.h>
 
 #include <errno.h>
 
@@ -861,6 +863,197 @@ RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_analysis_var_load(RZ_NONNULL RzAn
 beach:
 	rz_vector_fini(&accesses);
 	rz_vector_fini(&constraints);
+	return ret;
+}
+
+RZ_API void rz_serialize_analysis_global_var_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *anal) {
+	rz_return_if_fail(db && anal);
+
+	PJ *j = pj_new();
+	if (!j) {
+		return;
+	}
+	RBIter it;
+	RzAnalysisVarGlobal *var;
+	char *vartype;
+	rz_rbtree_foreach (anal->global_var_tree, it, var, RzAnalysisVarGlobal, rb) {
+		vartype = rz_type_as_string(anal->typedb, var->type);
+		if (!vartype) {
+			eprintf("Global variable \"%s\" has undefined type\n", var->name);
+			pj_free(j);
+			return;
+		}
+		char addr[32];
+		rz_strf(addr, "0x%" PFMT64x, var->addr);
+		pj_o(j);
+		pj_ks(j, "name", var->name);
+		pj_ks(j, "addr", addr);
+		pj_ks(j, "type", vartype);
+		if (!rz_vector_empty(&var->constraints)) {
+			pj_ka(j, "constrs");
+			RzTypeConstraint *constr;
+			rz_vector_foreach(&var->constraints, constr) {
+				pj_i(j, (int)constr->cond);
+				pj_n(j, constr->val);
+			}
+			pj_end(j);
+		}
+		pj_end(j);
+
+		sdb_set(db, addr, pj_string(j), 0);
+		pj_reset(j);
+	}
+	pj_free(j);
+}
+
+enum {
+	GLOBAL_VAR_FIELD_NAME,
+	GLOBAL_VAR_FIELD_ADDR,
+	GLOBAL_VAR_FIELD_TYPE,
+	GLOBAL_VAR_FIELD_CONSTRS
+};
+
+RZ_API RzSerializeAnalGlobalVarParser rz_serialize_analysis_global_var_parser_new(void) {
+	RzSerializeAnalDiffParser parser = rz_key_parser_new();
+	if (!parser) {
+		return NULL;
+	}
+	rz_key_parser_add(parser, "name", GLOBAL_VAR_FIELD_NAME);
+	rz_key_parser_add(parser, "addr", GLOBAL_VAR_FIELD_ADDR);
+	rz_key_parser_add(parser, "type", GLOBAL_VAR_FIELD_TYPE);
+	rz_key_parser_add(parser, "constrs", GLOBAL_VAR_FIELD_CONSTRS);
+	return parser;
+}
+
+RZ_API void rz_serialize_analysis_global_var_parser_free(RzSerializeAnalGlobalVarParser parser) {
+	rz_key_parser_free(parser);
+}
+
+typedef struct {
+	RzAnalysis *analysis;
+	RzKeyParser *parser;
+} GlobalVarCtx;
+
+static bool global_var_load_cb(void *user, const char *k, const char *v) {
+	GlobalVarCtx *ctx = user;
+
+	char *json_str = strdup(v);
+	if (!json_str) {
+		return true;
+	}
+	RzJson *json = rz_json_parse(json_str);
+	if (!json || json->type != RZ_JSON_OBJECT) {
+		free(json_str);
+		return false;
+	}
+
+	const char *name = NULL;
+	const char *type = NULL;
+	const char *addr_s = NULL;
+	ut64 addr = 0;
+	RzVector constraints;
+	rz_vector_init(&constraints, sizeof(RzTypeConstraint), NULL, NULL);
+
+	RzAnalysisVarGlobal *glob = NULL;
+
+	RZ_KEY_PARSER_JSON(ctx->parser, json, child, {
+		case GLOBAL_VAR_FIELD_NAME:
+			if (child->type != RZ_JSON_STRING) {
+				break;
+			}
+			name = child->str_value;
+			break;
+		case GLOBAL_VAR_FIELD_ADDR:
+			if (child->type != RZ_JSON_STRING) {
+				break;
+			}
+			addr_s = child->str_value;
+			break;
+		case GLOBAL_VAR_FIELD_TYPE:
+			if (child->type != RZ_JSON_STRING) {
+				break;
+			}
+			type = child->str_value;
+			break;
+		case VAR_FIELD_CONSTRS: {
+			if (child->type != RZ_JSON_ARRAY) {
+				break;
+			}
+			RzJson *baby;
+			for (baby = child->children.first; baby; baby = baby->next) {
+				if (baby->type != RZ_JSON_INTEGER) {
+					break;
+				}
+				RzJson *sibling = baby->next;
+				if (!sibling || sibling->type != RZ_JSON_INTEGER) {
+					break;
+				}
+				RzTypeConstraint constr;
+				constr.cond = (RzTypeCond)baby->num.s_value;
+				constr.val = sibling->num.u_value;
+				if (constr.cond < RZ_TYPE_COND_AL || constr.cond > RZ_TYPE_COND_LS) {
+					baby = sibling;
+					continue;
+				}
+				rz_vector_push(&constraints, &constr);
+				baby = sibling;
+			}
+			break;
+		}
+		default:
+			break;
+	})
+
+	if (!name || !type) {
+		goto beach;
+	}
+	char *error_msg = NULL;
+	RzTypeParser *parser = rz_type_parser_new();
+	if (!parser) {
+		goto beach;
+	}
+	RzType *vartype = rz_type_parse_string_single(parser, type, &error_msg);
+	if (error_msg) {
+		eprintf("Fail to parse the function variable (\"%s\") type: %s\n", name, type);
+		goto beach;
+	}
+	RzCore *core = ctx->analysis->core;
+	addr = rz_num_math(core->num, addr_s);
+	glob = rz_analysis_var_global_new(name, addr);
+	if (!glob) {
+		goto beach;
+	}
+	rz_analysis_var_global_set_type(glob, vartype);
+
+	RzTypeConstraint *constr;
+	rz_vector_foreach(&constraints, constr) {
+		rz_analysis_var_global_add_constraint(glob, constr);
+	}
+	rz_type_parser_free(parser);
+	return rz_analysis_var_global_add(ctx->analysis, glob);
+
+beach:
+	rz_vector_fini(&constraints);
+	return false;
+}
+
+RZ_API bool rz_serialize_analysis_global_var_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res) {
+	GlobalVarCtx ctx = {
+		.analysis = analysis,
+		.parser = rz_serialize_analysis_global_var_parser_new(),
+	};
+	bool ret;
+	if (!ctx.parser) {
+		RZ_SERIALIZE_ERR(res, "parser init failed");
+		ret = false;
+		goto beach;
+	}
+	ret = sdb_foreach(db, global_var_load_cb, &ctx);
+	if (!ret) {
+		RZ_SERIALIZE_ERR(res, "functions parsing failed");
+	}
+beach:
+	rz_key_parser_free(ctx.parser);
 	return ret;
 }
 
@@ -2049,6 +2242,7 @@ RZ_API void rz_serialize_analysis_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis
 	rz_serialize_analysis_imports_save(sdb_ns(db, "imports", true), analysis);
 	rz_serialize_analysis_pin_save(sdb_ns(db, "pins", true), analysis);
 	rz_serialize_analysis_cc_save(sdb_ns(db, "cc", true), analysis);
+	rz_serialize_analysis_global_var_save(sdb_ns(db, "vars", true), analysis);
 }
 
 RZ_API bool rz_serialize_analysis_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res) {
@@ -2095,6 +2289,7 @@ RZ_API bool rz_serialize_analysis_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis
 	SUB("imports", rz_serialize_analysis_imports_load(subdb, analysis, res));
 	SUB("pins", rz_serialize_analysis_pin_load(subdb, analysis, res));
 	SUB("cc", rz_serialize_analysis_cc_load(subdb, analysis, res));
+	SUB("vars", rz_serialize_analysis_global_var_load(subdb, analysis, res));
 
 	ret = true;
 beach:

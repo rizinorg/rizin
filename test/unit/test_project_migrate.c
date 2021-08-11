@@ -95,9 +95,10 @@ bool test_load_v1_noreturn() {
 	mu_assert_notnull(res, "result info new");
 	RzProjectErr err = rz_project_load_file(core, "prj/v1-noreturn.rzdb", true, res);
 	mu_assert_eq(err, RZ_PROJECT_ERR_SUCCESS, "project load err");
-	mu_assert_eq(rz_list_length(res), 2, "info");
+	mu_assert_eq(rz_list_length(res), 3, "info");
 	mu_assert_streq(rz_list_get_n(res, 0), "project migrated from version 1 to 2.", "info");
 	mu_assert_streq(rz_list_get_n(res, 1), "project migrated from version 2 to 3.", "info");
+	mu_assert_streq(rz_list_get_n(res, 2), "project migrated from version 3 to 4.", "info");
 
 	mu_assert_true(rz_analysis_noreturn_at_addr(core->analysis, 0x4242), "noreturn");
 	mu_assert_true(rz_analysis_noreturn_at_addr(core->analysis, 0x1337), "noreturn");
@@ -115,9 +116,10 @@ bool test_load_v1_noreturn_empty() {
 	mu_assert_notnull(res, "result info new");
 	RzProjectErr err = rz_project_load_file(core, "prj/v1-noreturn-empty.rzdb", true, res);
 	mu_assert_eq(err, RZ_PROJECT_ERR_SUCCESS, "project load err");
-	mu_assert_eq(rz_list_length(res), 2, "info");
+	mu_assert_eq(rz_list_length(res), 3, "info");
 	mu_assert_streq(rz_list_get_n(res, 0), "project migrated from version 1 to 2.", "info");
 	mu_assert_streq(rz_list_get_n(res, 1), "project migrated from version 2 to 3.", "info");
+	mu_assert_streq(rz_list_get_n(res, 2), "project migrated from version 3 to 4.", "info");
 
 	mu_assert_false(rz_analysis_noreturn_at_addr(core->analysis, 0x4242), "nono");
 	mu_assert_false(rz_analysis_noreturn_at_addr(core->analysis, 0x1337), "nono");
@@ -135,8 +137,9 @@ bool test_load_v2_typelink() {
 	mu_assert_notnull(res, "result info new");
 	RzProjectErr err = rz_project_load_file(core, "prj/v2-typelink-callables.rzdb", true, res);
 	mu_assert_eq(err, RZ_PROJECT_ERR_SUCCESS, "project load err");
-	mu_assert_eq(rz_list_length(res), 1, "info");
+	mu_assert_eq(rz_list_length(res), 2, "info");
 	mu_assert_streq(rz_list_get_n(res, 0), "project migrated from version 2 to 3.", "info");
+	mu_assert_streq(rz_list_get_n(res, 1), "project migrated from version 3 to 4.", "info");
 
 	mu_assert_true(rz_analysis_type_link_exists(core->analysis, 0x80484b0), "has typelink");
 	RzType *typelink = rz_analysis_type_link_at(core->analysis, 0x80484b0);
@@ -156,8 +159,9 @@ bool test_load_v2_callables() {
 	mu_assert_notnull(res, "result info new");
 	RzProjectErr err = rz_project_load_file(core, "prj/v2-typelink-callables.rzdb", true, res);
 	mu_assert_eq(err, RZ_PROJECT_ERR_SUCCESS, "project load err");
-	mu_assert_eq(rz_list_length(res), 1, "info");
+	mu_assert_eq(rz_list_length(res), 2, "info");
 	mu_assert_streq(rz_list_get_n(res, 0), "project migrated from version 2 to 3.", "info");
+	mu_assert_streq(rz_list_get_n(res, 1), "project migrated from version 3 to 4.", "info");
 
 	RzAnalysisFunction *fcn = rz_analysis_get_function_byname(core->analysis, "entry0");
 	mu_assert_notnull(fcn, "find \"entry0\" function");
@@ -190,8 +194,8 @@ int all_tests() {
 	mu_run_test(test_migrate_v2_v3);
 	mu_run_test(test_load_v1_noreturn);
 	mu_run_test(test_load_v1_noreturn_empty);
-	mu_run_test(test_load_v2_typelink);
 	mu_run_test(test_load_v2_callables);
+	mu_run_test(test_load_v2_typelink);
 	return tests_passed != tests_run;
 }
 

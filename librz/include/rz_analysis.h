@@ -623,6 +623,8 @@ typedef struct rz_analysis_t {
 	RzList *leaddrs;
 	RzArchTarget *arch_target;
 	RzArchPlatformTarget *platform_target;
+	HtPP *ht_global_var; // global variables
+	RBTree global_var_tree; // global variables by address. must not overlap
 } RzAnalysis;
 
 typedef enum rz_analysis_addr_hint_type_t {
@@ -736,6 +738,17 @@ typedef struct rz_analysis_var_t {
 	// below members are just for caching, TODO: remove them and do it better
 	int argnum;
 } RzAnalysisVar;
+
+/**
+ * \brief Global variables
+ */
+typedef struct rz_analysis_var_global_t {
+	RBNode rb; ///< RBTree node for address management
+	char *name; ///< name of the variable
+	ut64 addr; ///< address of the global variable
+	RzType *type; ///< type of the variable
+	RzVector /*<RzTypeConstraint>*/ constraints;
+} RzAnalysisVarGlobal;
 
 // Refers to a variable or a struct field inside a variable, only for varsub
 RZ_DEPRECATE typedef struct rz_analysis_var_field_t {
@@ -1620,6 +1633,22 @@ RZ_API char *rz_analysis_fcn_format_sig(RZ_NONNULL RzAnalysis *analysis, RZ_NONN
 
 RZ_API void rz_analysis_fcn_vars_add_types(RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn);
 
+// Global vars
+RZ_API RZ_OWN RzAnalysisVarGlobal *rz_analysis_var_global_new(RZ_NONNULL const char *name, ut64 addr);
+RZ_API RZ_OWN bool rz_analysis_var_global_add(RzAnalysis *analysis, RZ_NONNULL RzAnalysisVarGlobal *global_var);
+RZ_API void rz_analysis_var_global_free(RzAnalysisVarGlobal *glob);
+RZ_API bool rz_analysis_var_global_delete_byname(RzAnalysis *analysis, RZ_NONNULL const char *name);
+RZ_API bool rz_analysis_var_global_delete_byaddr_at(RzAnalysis *analysis, ut64 addr);
+RZ_API bool rz_analysis_var_global_delete_byaddr_in(RzAnalysis *analysis, ut64 addr);
+RZ_API RZ_BORROW RzAnalysisVarGlobal *rz_analysis_var_global_get_byname(RzAnalysis *analysis, RZ_NONNULL const char *name);
+RZ_API RZ_BORROW RzAnalysisVarGlobal *rz_analysis_var_global_get_byaddr_at(RzAnalysis *analysis, ut64 addr);
+RZ_API RZ_BORROW RzAnalysisVarGlobal *rz_analysis_var_global_get_byaddr_in(RzAnalysis *analysis, ut64 addr);
+RZ_API RZ_OWN RzList *rz_analysis_var_global_get_all(RzAnalysis *analysis);
+RZ_API bool rz_analysis_var_global_rename(RzAnalysis *analysis, RZ_NONNULL const char *old_name, RZ_NONNULL const char *newname);
+RZ_API void rz_analysis_var_global_set_type(RzAnalysisVarGlobal *glob, RZ_NONNULL RZ_BORROW RzType *type);
+RZ_API void rz_analysis_var_global_add_constraint(RzAnalysisVarGlobal *glob, RzTypeConstraint *constraint);
+RZ_API RZ_OWN char *rz_analysis_var_global_get_constraints_readable(RzAnalysisVarGlobal *glob);
+
 // Maintaining type links
 RZ_API bool rz_analysis_type_link_exists(RzAnalysis *analysis, ut64 addr);
 RZ_API RZ_BORROW RzType *rz_analysis_type_link_at(RzAnalysis *analysis, ut64 addr);
@@ -2054,6 +2083,12 @@ RZ_API void rz_serialize_analysis_blocks_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzA
 
 RZ_API void rz_serialize_typelinks_save(RZ_NONNULL Sdb *db, RZ_NONNULL const RzAnalysis *analysis);
 RZ_API bool rz_serialize_typelinks_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res);
+
+typedef void *RzSerializeAnalGlobalVarParser;
+RZ_API void rz_serialize_analysis_global_var_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *anal);
+RZ_API RzSerializeAnalGlobalVarParser rz_serialize_analysis_global_var_parser_new(void);
+RZ_API void rz_serialize_analysis_global_var_parser_free(RzSerializeAnalGlobalVarParser parser);
+RZ_API bool rz_serialize_analysis_global_var_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res);
 
 /**
  * RzAnalysis must not contain any blocks when calling this function!

@@ -78,6 +78,11 @@ static void rz_meta_item_free(void *_item) {
 	}
 }
 
+static void global_kv_free(HtPPKv *kv) {
+	free(kv->key);
+	rz_analysis_var_global_free(kv->value);
+}
+
 RZ_API RzAnalysis *rz_analysis_new(void) {
 	int i;
 	RzAnalysis *analysis = RZ_NEW0(RzAnalysis);
@@ -143,6 +148,8 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 			rz_analysis_add(analysis, analysis_static_plugins[i]);
 		}
 	}
+	analysis->ht_global_var = ht_pp_new(NULL, global_kv_free, NULL);
+	analysis->global_var_tree = NULL;
 	return analysis;
 }
 
@@ -194,6 +201,7 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 	free(a->last_disasm_reg);
 	rz_list_free(a->imports);
 	rz_str_constpool_fini(&a->constpool);
+	ht_pp_free(a->ht_global_var);
 	free(a);
 	return NULL;
 }

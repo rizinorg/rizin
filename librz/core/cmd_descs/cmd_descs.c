@@ -89,6 +89,11 @@ static const RzCmdDescArg analysis_function_vars_sp_args[4];
 static const RzCmdDescArg analysis_function_vars_sp_del_args[2];
 static const RzCmdDescArg analysis_function_vars_sp_getref_args[3];
 static const RzCmdDescArg analysis_function_vars_sp_setref_args[3];
+static const RzCmdDescArg analysis_print_global_variable_args[2];
+static const RzCmdDescArg analysis_global_variable_add_args[4];
+static const RzCmdDescArg analysis_global_variable_delete_args[2];
+static const RzCmdDescArg analysis_global_variable_rename_args[3];
+static const RzCmdDescArg analysis_global_variable_retype_args[3];
 static const RzCmdDescArg analysis_rtti_demangle_class_name_args[2];
 static const RzCmdDescArg cmd_debug_continue_execution_args[2];
 static const RzCmdDescArg cmd_debug_continue_send_signal_args[3];
@@ -1496,6 +1501,98 @@ static const RzCmdDescArg analysis_list_vtables_args[] = {
 static const RzCmdDescHelp analysis_list_vtables_help = {
 	.summary = "search for vtables in data sections and show results",
 	.args = analysis_list_vtables_args,
+};
+
+static const RzCmdDescHelp avg_help = {
+	.summary = "Global variables",
+};
+static const RzCmdDescArg analysis_print_global_variable_args[] = {
+	{
+		.name = "var_name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_print_global_variable_help = {
+	.summary = "show global variables",
+	.args = analysis_print_global_variable_args,
+};
+
+static const RzCmdDescArg analysis_global_variable_add_args[] = {
+	{
+		.name = "var_name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "type",
+		.type = RZ_CMD_ARG_TYPE_ANY_TYPE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_global_variable_add_help = {
+	.summary = "add global variable manually",
+	.args = analysis_global_variable_add_args,
+};
+
+static const RzCmdDescArg analysis_global_variable_delete_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_global_variable_delete_help = {
+	.summary = "delete the global variable at the addr",
+	.args = analysis_global_variable_delete_args,
+};
+
+static const RzCmdDescArg analysis_global_variable_rename_args[] = {
+	{
+		.name = "old_var_name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "new_var_name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_global_variable_rename_help = {
+	.summary = "rename the global variable",
+	.args = analysis_global_variable_rename_args,
+};
+
+static const RzCmdDescArg analysis_global_variable_retype_args[] = {
+	{
+		.name = "var_name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "type",
+		.type = RZ_CMD_ARG_TYPE_ANY_TYPE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_global_variable_retype_help = {
+	.summary = "change the global variable type",
+	.args = analysis_global_variable_retype_args,
 };
 
 static const RzCmdDescArg analysis_print_rtti_args[] = {
@@ -5159,6 +5256,20 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *av_cd = rz_cmd_desc_group_modes_new(core->rcmd, cmd_analysis_cd, "av", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_analysis_list_vtables_handler, &analysis_list_vtables_help, &av_help);
 	rz_warn_if_fail(av_cd);
+	RzCmdDesc *avg_cd = rz_cmd_desc_group_state_new(core->rcmd, av_cd, "avg", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_print_global_variable_handler, &analysis_print_global_variable_help, &avg_help);
+	rz_warn_if_fail(avg_cd);
+	RzCmdDesc *analysis_global_variable_add_cd = rz_cmd_desc_argv_new(core->rcmd, avg_cd, "avga", rz_analysis_global_variable_add_handler, &analysis_global_variable_add_help);
+	rz_warn_if_fail(analysis_global_variable_add_cd);
+
+	RzCmdDesc *analysis_global_variable_delete_cd = rz_cmd_desc_argv_new(core->rcmd, avg_cd, "avgd", rz_analysis_global_variable_delete_handler, &analysis_global_variable_delete_help);
+	rz_warn_if_fail(analysis_global_variable_delete_cd);
+
+	RzCmdDesc *analysis_global_variable_rename_cd = rz_cmd_desc_argv_new(core->rcmd, avg_cd, "avgn", rz_analysis_global_variable_rename_handler, &analysis_global_variable_rename_help);
+	rz_warn_if_fail(analysis_global_variable_rename_cd);
+
+	RzCmdDesc *analysis_global_variable_retype_cd = rz_cmd_desc_argv_new(core->rcmd, avg_cd, "avgt", rz_analysis_global_variable_retype_handler, &analysis_global_variable_retype_help);
+	rz_warn_if_fail(analysis_global_variable_retype_cd);
+
 	RzCmdDesc *analysis_print_rtti_cd = rz_cmd_desc_argv_modes_new(core->rcmd, av_cd, "avr", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_print_rtti_handler, &analysis_print_rtti_help);
 	rz_warn_if_fail(analysis_print_rtti_cd);
 

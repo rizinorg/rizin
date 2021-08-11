@@ -1581,6 +1581,7 @@ Sdb *analysis_ref_db() {
 	sdb_ns(db, "types", true);
 	sdb_ns(db, "callables", true);
 	sdb_ns(db, "typelinks", true);
+	sdb_ns(db, "vars", true);
 
 	return db;
 }
