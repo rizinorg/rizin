@@ -3344,6 +3344,7 @@ static void preprocessor_undefine_symbol(CPreprocessorState *state, const char *
 }
 
 /* Preprocess the current file */
+// TODO: Add an output file/stream?
 int c_preprocess_string(CPreprocessorState *state, const char *code) {
 	rz_return_val_if_fail(state && code, -1);
 	if (!code) {
@@ -3395,10 +3396,11 @@ int c_preprocess_string(CPreprocessorState *state, const char *code) {
 					: iptr_new > state->include_stack ? " 3"
 									  : "";
 				iptr = iptr_new;
-				fprintf(state->ppfp, "# %d \"%s\"%s\n", file->line_num, file->filename, s);
+				preprocessor_debug(state, "# %d \"%s\"%s\n", file->line_num, file->filename, s);
 			} else {
-				while (d)
-					fputs("\n", state->ppfp), --d;
+				while (d) {
+					preprocessor_debug(state, "\n"), --d;
+				}
 			}
 			line_ref = (file_ref = file)->line_num;
 			token_seen = cur->tok != TOK_LINEFEED;
@@ -3406,7 +3408,7 @@ int c_preprocess_string(CPreprocessorState *state, const char *code) {
 				continue;
 			}
 		}
-		fputs(get_tok_str(state, cur->tok, &cur->tokc), state->ppfp);
+		preprocessor_debug(state, get_tok_str(state, cur->tok, &cur->tokc));
 	}
 	// Purge everything after the start
 	free_defines(state, define_start);
