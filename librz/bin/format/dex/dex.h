@@ -39,7 +39,7 @@ typedef enum {
 	ACCESS_FLAG_PROTECTED /*            */ = 0x00004,
 	ACCESS_FLAG_STATIC /*               */ = 0x00008,
 	ACCESS_FLAG_FINAL /*                */ = 0x00010,
-	ACCESS_FLAG_SYNCHRONIZED /*         */ = 0x00008,
+	ACCESS_FLAG_SYNCHRONIZED /*         */ = 0x00020,
 	ACCESS_FLAG_BRIDGE /*               */ = 0x00040,
 	ACCESS_FLAG_VARARGS /*              */ = 0x00080,
 	ACCESS_FLAG_NATIVE /*               */ = 0x00100,
@@ -100,7 +100,7 @@ typedef struct dex_method_id_t {
 
 typedef struct dex_encoded_field_t {
 	ut64 offset;
-	ut64 field_idx_diff;
+	ut64 field_idx;
 	ut64 access_flags;
 } DexEncodedField;
 
