@@ -188,6 +188,9 @@ RZ_API RzList /*<RzBinField*>*/ *rz_bin_dex_fields(RzBinDex *dex);
 RZ_API RzList /*<RzBinSection*>*/ *rz_bin_dex_sections(RzBinDex *dex);
 RZ_API RzList /*<RzBinSymbol*>*/ *rz_bin_dex_symbols(RzBinDex *dex);
 RZ_API RzList /*<RzBinSymbol*>*/ *rz_bin_dex_imports(RzBinDex *dex);
+RZ_API RzList /*<char*>*/ *rz_bin_dex_libraries(RzBinDex *dex);
+RZ_API RzBinAddr *rz_bin_dex_resolve_symbol(RzBinDex *dex, RzBinSpecialSymbol resolve);
+RZ_API RzList /*<RzBinAddr*>*/ *rz_bin_dex_entrypoints(RzBinDex *dex);
 
 
 RZ_API void rz_bin_dex_checksum(RzBinDex *dex, RzBinHash *hash);

@@ -122,40 +122,32 @@ static RzList *fields(RzBinFile *bf) {
 	return rz_bin_dex_fields(dex);
 }
 
-static RzList *libs(RzBinFile *bf) {
-	return NULL;
-	/*
+static RzList *libraries(RzBinFile *bf) {
 	RzBinDex *dex = rz_bin_file_get_dex(bf);
 	if (!dex) {
 		return NULL;
 	}
 
-	return rz_bin_java_class_as_libraries(dex);
-	*/
+	return rz_bin_dex_libraries(dex);
 }
 
 static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol sym) {
-	return NULL;
-	/*
 	RzBinDex *dex = rz_bin_file_get_dex(bf);
 	if (!dex) {
 		return NULL;
 	}
 
-	return rz_bin_java_class_resolve_symbol(dex, sym);
-	*/
+	return rz_bin_dex_resolve_symbol(dex, sym);
 }
 
 static RzList *entrypoints(RzBinFile *bf) {
-	return NULL;
-	/*
 	RzBinDex *dex = rz_bin_file_get_dex(bf);
 	if (!dex) {
 		return NULL;
 	}
 
-	return rz_bin_java_class_entrypoints(dex);
-	*/
+	//return rz_bin_java_class_entrypoints(dex);
+	return rz_bin_dex_entrypoints(dex);
 }
 
 static RzList *strings(RzBinFile *bf) {
@@ -225,7 +217,7 @@ RzBinPlugin rz_bin_plugin_dex = {
 	.enrich_asm = &enrich_asm,
 	.info = &info,
 	.fields = fields,
-	.libs = libs,
+	.libs = libraries,
 	.classes = classes,
 	.demangle_type = demangle_type,
 	.minstrlen = 0,
