@@ -62,7 +62,7 @@ static void destroy(RzBinFile *bf) {
 
 static bool check_buffer(RzBuffer *b) {
 	if (rz_buf_size(b) > 32) {
-		ut8 buf[4] = {0};
+		ut8 buf[4] = { 0 };
 		rz_buf_read_at(b, 0, buf, sizeof(buf));
 		return !memcmp(buf, "dex\n", 4);
 	}
@@ -163,38 +163,79 @@ static int demangle_type(const char *str) {
 	return RZ_BIN_NM_JAVA;
 }
 
-static char *enrich_asm(RzBinFile *bf, const char *asm_str, int asm_len) {
-	return NULL;
+static int get_offset(RzBinFile *bf, int type, int index) {
+	RzBinDex *dex = rz_bin_file_get_dex(bf);
+	if (!dex) {
+		return -1;
+	}
+
+	switch (type) {
+	case 'm': // method
+	case 'f': // field
+	case 'o': // object
+	case 's': // string
+	case 't': // type
+	case 'c': // class
+	default:
+		return -1;
+	}
 	/*
+	struct rz_bin_dex_obj_t *dex = bf->o->bin_obj;
+	switch (type) {
+	case 'm': // methods
+		// TODO: ADD CHECK
+		return offset_of_method_idx(bf, dex, idx);
+	case 'f':
+		return dex_field_offset(dex, idx);
+	case 'o': // objects
+		eprintf("TODO: getoffset object\n");
+		return 0; // //chdex_object_offset (dex, idx);
+	case 's': // strings
+		if (dex->header.strings_size > idx) {
+			if (dex->strings) {
+				return dex->strings[idx];
+			}
+		}
+		break;
+	case 't': // type
+		return dex_get_type_offset(bf, idx);
+	case 'c': // class
+		return dex_get_type_offset(bf, idx);
+	}
+	*/
+}
+
+static char *get_name(RzBinFile *bf, int type, int index, bool pseudo) {
 	RzBinDex *dex = rz_bin_file_get_dex(bf);
 	if (!dex) {
 		return NULL;
 	}
-	for (int i = 0; i < asm_len; ++i) {
-		if (!strncmp(asm_str + i, JAVA_ASM_CONSTANT_POOL_STR, strlen(JAVA_ASM_CONSTANT_POOL_STR))) {
-			const char *snum = asm_str + i + strlen(JAVA_ASM_CONSTANT_POOL_STR);
-			if (!IS_DIGIT(*snum)) {
-				rz_warn_if_reached();
-				continue;
-			}
-			int index = atoi(snum);
-			char *tmp = rz_bin_java_class_const_pool_resolve_index(dex, index);
-			if (!tmp) {
-				rz_warn_if_reached();
-				return NULL;
-			}
-			char *dem = rz_bin_demangle_java(tmp);
-			if (!dem) {
-				dem = tmp;
-			} else {
-				free(tmp);
-			}
-			char *result = rz_str_newf("%.*s%s", i, asm_str, dem);
-			free(dem);
-			return result;
-		}
+	switch (type) {
+	case 'm': // method
+		return rz_bin_dex_resolve_method_by_idx(dex, index);
+	case 'f': // field
+		return rz_bin_dex_resolve_field_by_idx(dex, index);
+	case 's': // string
+		return rz_bin_dex_resolve_string_by_idx(dex, index);
+	case 'c': // class
+		return rz_bin_dex_resolve_class_by_idx(dex, index);
+	case 'p': // proto
+	default:
+		return NULL;
 	}
-	return NULL;
+	/*
+	simplifiedDemangling = sd; // XXX remove globals
+	struct rz_bin_dex_obj_t *dex = bf->o->bin_obj;
+	switch (type) {
+	case 'm': // methods
+		return dex_method_fullname(dex, idx);
+	case 'c': // classes
+		return dex_class_name_byid(dex, idx);
+	case 'f': // fields
+		return dex_field_name(dex, idx);
+	case 'p': // proto
+		return dex_get_proto(dex, idx);
+	}
 	*/
 }
 
@@ -214,7 +255,8 @@ RzBinPlugin rz_bin_plugin_dex = {
 	.symbols = symbols,
 	.imports = &imports,
 	.strings = &strings,
-	.enrich_asm = &enrich_asm,
+	.get_offset = &get_offset,
+	.get_name = &get_name,
 	.info = &info,
 	.fields = fields,
 	.libs = libraries,

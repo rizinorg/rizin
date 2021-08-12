@@ -192,6 +192,10 @@ RZ_API RzList /*<char*>*/ *rz_bin_dex_libraries(RzBinDex *dex);
 RZ_API RzBinAddr *rz_bin_dex_resolve_symbol(RzBinDex *dex, RzBinSpecialSymbol resolve);
 RZ_API RzList /*<RzBinAddr*>*/ *rz_bin_dex_entrypoints(RzBinDex *dex);
 
+RZ_API char *rz_bin_dex_resolve_method_by_idx(RzBinDex *dex, ut32 method_idx);
+RZ_API char *rz_bin_dex_resolve_field_by_idx(RzBinDex *dex, ut32 field_idx);
+RZ_API char *rz_bin_dex_resolve_class_by_idx(RzBinDex *dex, ut32 method_idx);
+RZ_API char *rz_bin_dex_resolve_string_by_idx(RzBinDex *dex, ut32 field_idx);
 
 RZ_API void rz_bin_dex_checksum(RzBinDex *dex, RzBinHash *hash);
 RZ_API void rz_bin_dex_sha1(RzBinDex *dex, RzBinHash *hash);

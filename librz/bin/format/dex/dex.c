@@ -1496,7 +1496,6 @@ RZ_API RzBinAddr *rz_bin_dex_resolve_symbol(RzBinDex *dex, RzBinSpecialSymbol re
 	}
 	ret->paddr = UT64_MAX;
 
-
 	rz_list_foreach (dex->class_defs, it, class_def) {
 		if (dex_resolve_symbol_in_class_methods(dex, class_def, resolve, &ret->paddr)) {
 			break;
@@ -1506,11 +1505,95 @@ RZ_API RzBinAddr *rz_bin_dex_resolve_symbol(RzBinDex *dex, RzBinSpecialSymbol re
 	return ret;
 }
 
+static RzList /*<RzBinAddr*>*/ *dex_resolve_entrypoints_in_class(RzBinDex *dex, DexClassDef *class_def) {
+	RzListIter *it;
+	DexEncodedMethod *encoded_method = NULL;
+	RzList *entrypoints = NULL;
+
+	entrypoints = rz_list_newf((RzListFree)free);
+	if (!entrypoints) {
+		return NULL;
+	}
+
+	rz_list_foreach (class_def->direct_methods, it, encoded_method) {
+		if (!dex_is_static(encoded_method->access_flags)) {
+			// entrypoints are static
+			continue;
+		}
+
+		DexMethodId *method_id = (DexMethodId *)rz_list_get_n(dex->method_ids, encoded_method->method_idx);
+		if (!method_id) {
+			RZ_LOG_INFO("cannot find direct method with index %" PFMT64u "\n", encoded_method->method_idx);
+			continue;
+		}
+
+		char *name = dex_resolve_string_id(dex, method_id->name_idx);
+		if (!name) {
+			continue;
+		}
+
+		if (strcmp(name, "main") != 0 && strcmp(name, "<init>") != 0 && strcmp(name, "<clinit>") != 0) {
+			free(name);
+			continue;
+		}
+		free(name);
+
+		RzBinAddr *entrypoint = RZ_NEW0(RzBinAddr);
+		if (!entrypoint) {
+			rz_warn_if_reached();
+			break;
+		}
+		entrypoint->vaddr = entrypoint->paddr = encoded_method->code_offset;
+		if (entrypoint && !rz_list_append(entrypoints, entrypoint)) {
+			free(entrypoint);
+		}
+	}
+
+	rz_list_foreach (class_def->virtual_methods, it, encoded_method) {
+		if (!dex_is_static(encoded_method->access_flags)) {
+			// entrypoints are static
+			continue;
+		} else if (encoded_method->code_offset < 1) {
+			// if there is no code, skip
+			continue;
+		}
+
+		DexMethodId *method_id = (DexMethodId *)rz_list_get_n(dex->method_ids, encoded_method->method_idx);
+		if (!method_id) {
+			RZ_LOG_INFO("cannot find direct method with index %" PFMT64u "\n", encoded_method->method_idx);
+			continue;
+		}
+
+		char *name = dex_resolve_string_id(dex, method_id->name_idx);
+		if (!name) {
+			continue;
+		}
+
+		if (strcmp(name, "main") != 0 && strcmp(name, "<init>") != 0 && strcmp(name, "<clinit>") != 0) {
+			free(name);
+			continue;
+		}
+		free(name);
+
+		RzBinAddr *entrypoint = RZ_NEW0(RzBinAddr);
+		if (!entrypoint) {
+			rz_warn_if_reached();
+			break;
+		}
+		entrypoint->vaddr = entrypoint->paddr = encoded_method->code_offset;
+		if (entrypoint && !rz_list_append(entrypoints, entrypoint)) {
+			free(entrypoint);
+		}
+	}
+
+	return entrypoints;
+}
+
 RZ_API RzList /*<RzBinAddr*>*/ *rz_bin_dex_entrypoints(RzBinDex *dex) {
 	rz_return_val_if_fail(dex, NULL);
 
 	DexClassDef *class_def;
-	RzList *class_symbols = NULL;
+	RzList *list = NULL;
 	RzList *entrypoints = NULL;
 	RzListIter *it;
 
@@ -1520,14 +1603,60 @@ RZ_API RzList /*<RzBinAddr*>*/ *rz_bin_dex_entrypoints(RzBinDex *dex) {
 	}
 
 	rz_list_foreach (dex->class_defs, it, class_def) {
-		class_entrypoints = dex_resolve_entrypoints_in_class(dex, class_def);
-		if (class_entrypoints) {
-			rz_list_join(entrypoints, class_entrypoints);
-			rz_list_free(class_entrypoints);
+		list = dex_resolve_entrypoints_in_class(dex, class_def);
+		if (list) {
+			rz_list_join(entrypoints, list);
+			rz_list_free(list);
 		}
 	}
 
 	return entrypoints;
+}
+
+RZ_API char *rz_bin_dex_resolve_method_by_idx(RzBinDex *dex, ut32 method_idx) {
+	DexMethodId *method_id = (DexMethodId *)rz_list_get_n(dex->method_ids, method_idx);
+	if (!method_id) {
+		return NULL;
+	}
+
+	char *name = dex_resolve_string_id(dex, method_id->name_idx);
+	if (!name) {
+		return NULL;
+	}
+
+	char *proto = dex_resolve_proto_id(dex, name, method_id->proto_idx, false);
+	RZ_FREE(name);
+	if (!proto) {
+		return NULL;
+	}
+
+	name = dex_resolve_type_id(dex, method_id->class_idx);
+	if (!name) {
+		free(proto);
+		return NULL;
+	}
+
+	char *method = rz_str_newf("%s.%s", name, proto);
+	free(name);
+	free(proto);
+	return method;
+}
+
+RZ_API char *rz_bin_dex_resolve_field_by_idx(RzBinDex *dex, ut32 field_idx) {
+	DexFieldId *field_id = (DexFieldId *)rz_list_get_n(dex->field_ids, field_idx);
+	if (!field_id) {
+		return NULL;
+	}
+
+	return dex_resolve_string_id(dex, field_id->name_idx);
+}
+
+RZ_API char *rz_bin_dex_resolve_string_by_idx(RzBinDex *dex, ut32 string_idx) {
+	return dex_resolve_string_id(dex, string_idx);
+}
+
+RZ_API char *rz_bin_dex_resolve_class_by_idx(RzBinDex *dex, ut32 class_idx) {
+	return dex_resolve_type_id(dex, class_idx);
 }
 
 RZ_API void rz_bin_dex_checksum(RzBinDex *dex, RzBinHash *hash) {
