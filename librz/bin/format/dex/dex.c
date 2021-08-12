@@ -1285,7 +1285,7 @@ RZ_API RzList /*<RzBinImport*>*/ *rz_bin_dex_imports(RzBinDex *dex) {
 		rz_str_replace_char(object, '$', '.');
 		rz_str_replace_char(object, ';', 0);
 
-		char *class_name = rz_str_rchr(object, NULL, '/');
+		char *class_name = (char *)rz_str_rchr(object, NULL, '/');
 		if (class_name) {
 			class_name[0] = 0;
 			class_name++;
@@ -1332,7 +1332,7 @@ RZ_API RzList /*<RzBinImport*>*/ *rz_bin_dex_imports(RzBinDex *dex) {
 		rz_str_replace_char(object, '$', '.');
 		rz_str_replace_char(object, ';', 0);
 
-		char *class_name = rz_str_rchr(object, NULL, '/');
+		char *class_name = (char *)rz_str_rchr(object, NULL, '/');
 		if (class_name) {
 			class_name[0] = 0;
 			class_name++;
@@ -1358,6 +1358,176 @@ RZ_API RzList /*<RzBinImport*>*/ *rz_bin_dex_imports(RzBinDex *dex) {
 
 	free(class_ids);
 	return imports;
+}
+
+static int compare_strings(const void *a, const void *b) {
+	return strcmp((const char *)a, (const char *)b);
+}
+
+RZ_API RzList /*<char*>*/ *rz_bin_dex_libraries(RzBinDex *dex) {
+	rz_return_val_if_fail(dex, NULL);
+
+	DexMethodId *method_id;
+	DexClassDef *class_def;
+	RzList *libraries = NULL;
+	ut32 *class_ids = NULL;
+	RzListIter *it;
+
+	ut32 n_classes = rz_list_length(dex->class_defs);
+	if (n_classes < 1) {
+		return rz_list_newf((RzListFree)free);
+	}
+
+	class_ids = RZ_NEWS0(ut32, n_classes);
+	if (!class_ids) {
+		return NULL;
+	}
+
+	ut32 j = 0;
+	rz_list_foreach (dex->class_defs, it, class_def) {
+		class_ids[j] = class_def->class_idx;
+		j++;
+	}
+
+	libraries = rz_list_newf((RzListFree)free);
+	if (!libraries) {
+		free(class_ids);
+		return NULL;
+	}
+
+	rz_list_foreach (dex->method_ids, it, method_id) {
+		bool class_found = false;
+		for (ut32 i = 0; i < n_classes; ++i) {
+			if (method_id->class_idx == class_ids[i]) {
+				class_found = true;
+				break;
+			}
+		}
+		if (class_found) {
+			continue;
+		}
+
+		char *object = dex_resolve_type_id(dex, method_id->class_idx);
+		if (RZ_STR_ISEMPTY(object) || rz_list_find(libraries, object, compare_strings)) {
+			free(object);
+			continue;
+		}
+		if (!rz_list_append(libraries, object)) {
+			free(object);
+			break;
+		}
+	}
+
+	free(class_ids);
+	return libraries;
+}
+
+static bool dex_resolve_symbol_in_class_methods(RzBinDex *dex, DexClassDef *class_def, RzBinSpecialSymbol resolve, ut64 *address) {
+	RzListIter *it;
+	DexEncodedMethod *encoded_method = NULL;
+
+	rz_list_foreach (class_def->direct_methods, it, encoded_method) {
+		DexMethodId *method_id = (DexMethodId *)rz_list_get_n(dex->method_ids, encoded_method->method_idx);
+		if (!method_id) {
+			RZ_LOG_INFO("cannot find direct method with index %" PFMT64u "\n", encoded_method->method_idx);
+			continue;
+		}
+
+		char *name = dex_resolve_string_id(dex, method_id->name_idx);
+		if (!name) {
+			continue;
+		}
+		if (resolve == RZ_BIN_SPECIAL_SYMBOL_ENTRY || resolve == RZ_BIN_SPECIAL_SYMBOL_INIT) {
+			if (strcmp(name, "<init>") != 0 && strcmp(name, "<clinit>") != 0) {
+				free(name);
+				continue;
+			}
+		} else if (resolve == RZ_BIN_SPECIAL_SYMBOL_MAIN) {
+			if (strcmp(name, "main") != 0) {
+				free(name);
+				continue;
+			}
+		}
+		free(name);
+
+		*address = encoded_method->code_offset;
+		return true;
+	}
+
+	rz_list_foreach (class_def->virtual_methods, it, encoded_method) {
+		DexMethodId *method_id = (DexMethodId *)rz_list_get_n(dex->method_ids, encoded_method->method_idx);
+		if (!method_id) {
+			RZ_LOG_INFO("cannot find direct method with index %" PFMT64u "\n", encoded_method->method_idx);
+			continue;
+		}
+
+		char *name = dex_resolve_string_id(dex, method_id->name_idx);
+		if (!name) {
+			continue;
+		}
+		if (resolve == RZ_BIN_SPECIAL_SYMBOL_ENTRY || resolve == RZ_BIN_SPECIAL_SYMBOL_INIT) {
+			if (strcmp(name, "<init>") != 0 && strcmp(name, "<clinit>") != 0) {
+				free(name);
+				continue;
+			}
+		} else if (resolve == RZ_BIN_SPECIAL_SYMBOL_MAIN) {
+			if (strcmp(name, "main") != 0) {
+				free(name);
+				continue;
+			}
+		}
+		free(name);
+
+		*address = encoded_method->code_offset;
+		return true;
+	}
+	return false;
+}
+
+RZ_API RzBinAddr *rz_bin_dex_resolve_symbol(RzBinDex *dex, RzBinSpecialSymbol resolve) {
+	rz_return_val_if_fail(dex, NULL);
+
+	DexClassDef *class_def;
+	RzListIter *it;
+
+	RzBinAddr *ret = RZ_NEW0(RzBinAddr);
+	if (!ret) {
+		return NULL;
+	}
+	ret->paddr = UT64_MAX;
+
+
+	rz_list_foreach (dex->class_defs, it, class_def) {
+		if (dex_resolve_symbol_in_class_methods(dex, class_def, resolve, &ret->paddr)) {
+			break;
+		}
+	}
+
+	return ret;
+}
+
+RZ_API RzList /*<RzBinAddr*>*/ *rz_bin_dex_entrypoints(RzBinDex *dex) {
+	rz_return_val_if_fail(dex, NULL);
+
+	DexClassDef *class_def;
+	RzList *class_symbols = NULL;
+	RzList *entrypoints = NULL;
+	RzListIter *it;
+
+	entrypoints = rz_list_newf((RzListFree)free);
+	if (!entrypoints) {
+		return NULL;
+	}
+
+	rz_list_foreach (dex->class_defs, it, class_def) {
+		class_entrypoints = dex_resolve_entrypoints_in_class(dex, class_def);
+		if (class_entrypoints) {
+			rz_list_join(entrypoints, class_entrypoints);
+			rz_list_free(class_entrypoints);
+		}
+	}
+
+	return entrypoints;
 }
 
 RZ_API void rz_bin_dex_checksum(RzBinDex *dex, RzBinHash *hash) {
