@@ -3518,7 +3518,6 @@ static inline char *demangle_class(const char *classname) {
 	}
 	char *demangled = strdup(classname + 1);
 	rz_str_replace_ch(demangled, '/', '.', 1);
-	rz_str_replace_ch(demangled, '$', '.', 1);
 	demangled[strlen(demangled) - 1] = 0;
 	return demangled;
 }
@@ -3528,7 +3527,7 @@ static inline char *demangle_type(const char *any) {
 		return strdup("unknown");
 	}
 	switch (any[0]) {
-	case 'L': return demangle_class(any);
+	case 'L': return rz_bin_demangle_java(any);
 	case 'B': return strdup("byte");
 	case 'C': return strdup("char");
 	case 'D': return strdup("double");
@@ -3550,27 +3549,23 @@ static void classdump_java(RzCore *r, RzBinClass *c) {
 	RzBinField *f;
 	RzListIter *iter2, *iter3;
 	RzBinSymbol *sym;
+	bool simplify = false;
 	char *package = NULL, *classname = NULL;
-	;
-	const char *tmp = rz_str_rchr(c->name, NULL, '$');
-	if (!tmp) {
-		tmp = rz_str_rchr(c->name, NULL, '/');
-	}
+	char *tmp = (char *)rz_str_rchr(c->name, NULL, '/');
 	if (tmp) {
 		package = demangle_class(c->name);
 		classname = strdup(tmp + 1);
 		classname[strlen(classname) - 1] = 0;
+		simplify = true;
 	} else {
 		package = strdup("defpackage");
 		classname = demangle_class(c->name);
 	}
 
 	rz_cons_printf("package %s;\n\n", package);
-	RZ_FREE(package);
 
 	const char *visibility = resolve_visibility(c->visibility_str);
 	rz_cons_printf("%s class %s {\n", visibility, classname);
-	RZ_FREE(classname);
 	rz_list_foreach (c->fields, iter2, f) {
 		visibility = resolve_visibility(f->visibility_str);
 		char *ftype = demangle_type(f->type);
@@ -3580,15 +3575,21 @@ static void classdump_java(RzCore *r, RzBinClass *c) {
 	if (!rz_list_empty(c->fields)) {
 		rz_cons_newline();
 	}
+
 	rz_list_foreach (c->methods, iter3, sym) {
 		const char *mn = sym->dname ? sym->dname : sym->name;
 		visibility = resolve_visibility(sym->visibility_str);
 		char *dem = rz_bin_demangle_java(mn);
 		rz_str_replace_ch(dem, '/', '.', 1);
 		dem = rz_str_replace(dem, "java.lang.", "", 1);
+		if (simplify) {
+			dem = rz_str_replace(dem, package, classname, 1);
+		}
 		rz_cons_printf("  %s %s;\n", visibility, dem);
 		free(dem);
 	}
+	RZ_FREE(package);
+	RZ_FREE(classname);
 	rz_cons_printf("}\n\n");
 }
 
