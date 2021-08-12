@@ -1222,7 +1222,8 @@ static void sym_name_init(RzCore *r, SymName *sn, RzBinSymbol *sym, const char *
 	}
 	int bin_demangle = lang != NULL;
 	bool keep_lib = rz_config_get_i(r->config, "bin.demangle.libs");
-	sn->name = rz_str_newf("%s%s", sym->is_imported ? "imp." : "", sym->name);
+	const char *name = sym->dname ? sym->dname : sym->name;
+	sn->name = rz_str_newf("%s%s", sym->is_imported ? "imp." : "", name);
 	sn->libname = sym->libname ? strdup(sym->libname) : NULL;
 	const char *pfx = get_prefix_for_sym(sym);
 	sn->nameflag = construct_symbol_flagname(pfx, sym->libname, rz_bin_symbol_name(sym), MAXFLAG_LEN_DEFAULT);
@@ -1230,7 +1231,6 @@ static void sym_name_init(RzCore *r, SymName *sn, RzBinSymbol *sym, const char *
 		sn->classname = strdup(sym->classname);
 		sn->classflag = rz_str_newf("sym.%s.%s", sn->classname, sn->name);
 		rz_name_filter(sn->classflag, MAXFLAG_LEN_DEFAULT, true);
-		const char *name = sym->dname ? sym->dname : sym->name;
 		sn->methname = rz_str_newf("%s::%s", sn->classname, name);
 		sn->methflag = rz_str_newf("sym.%s.%s", sn->classname, name);
 		rz_name_filter(sn->methflag, strlen(sn->methflag), true);
