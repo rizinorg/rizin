@@ -1217,15 +1217,15 @@ static RzTable *__new_heapblock_tbl(void) {
 RZ_IPI void rz_heap_list_w32(RzCore *core, RzOutputMode mode) {
 	initialize_windows_ntdll_query_api_functions();
 	ULONG pid = core->dbg->pid;
-	PDEBUG_BUFFER db = InitHeapInfo(core->dbg, PDI_HEAPS | PDI_HEAP_BLOCKS);
+	PDEBUG_BUFFER db;
+	if (__is_windows_ten()) {
+		db = GetHeapBlocks(pid, core->dbg);
+	} else {
+		db = InitHeapInfo(core->dbg, PDI_HEAPS | PDI_HEAP_BLOCKS);
+	}
 	if (!db) {
-		if (__is_windows_ten()) {
-			db = GetHeapBlocks(pid, core->dbg);
-		}
-		if (!db) {
-			eprintf("Couldn't get heap info.\n");
-			return;
-		}
+		eprintf("Couldn't get heap info.\n");
+		return;
 	}
 	PHeapInformation heapInfo = db->HeapInformation;
 	CHECK_INFO(heapInfo);
