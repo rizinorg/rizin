@@ -269,11 +269,11 @@ static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 			vA = (int)buf[1];
 			vB = (buf[3] << 8) | buf[2];
 			if (buf[0] == 0x1a) {
-				offset = RZ_ASM_GET_OFFSET(a, 's', vB);
-				if (offset == -1) {
+				flag_str = RZ_ASM_GET_NAME(a, 's', vB);
+				if (!flag_str) {
 					snprintf(str, sizeof(str), " v%i, string+%i", vA, vB);
 				} else {
-					snprintf(str, sizeof(str), " v%i, 0x%" PFMT64x, vA, offset);
+					snprintf(str, sizeof(str), " v%i, \"%s\"", vA, flag_str);
 				}
 			} else if (buf[0] == 0x1c || buf[0] == 0x1f || buf[0] == 0x22) {
 				flag_str = RZ_ASM_GET_NAME(a, 'c', vB);
@@ -339,11 +339,11 @@ static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		case fmtopvAAtBBBBBBBB:
 			vA = (int)buf[1];
 			vB = (int)(buf[5] | (buf[4] << 8) | (buf[3] << 16) | (buf[2] << 24));
-			offset = RZ_ASM_GET_OFFSET(a, 's', vB);
-			if (offset == -1) {
-				snprintf(str, sizeof(str), " v%i, string+%i", vA, vB);
+			flag_str = RZ_ASM_GET_NAME(a, 's', vB);
+			if (flag_str) {
+				snprintf(str, sizeof(str), " v%i, \"%s\"", vA, flag_str);
 			} else {
-				snprintf(str, sizeof(str), " v%i, 0x%" PFMT64x, vA, offset);
+				snprintf(str, sizeof(str), " v%i, string+%i", vA, vB);
 			}
 			strasm = rz_str_append(strasm, str);
 			break;
@@ -404,21 +404,21 @@ static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 			if (buf[0] == 0x24) { // filled-new-array
 				flag_str = RZ_ASM_GET_NAME(a, 'c', vB);
 				if (flag_str) {
-					snprintf(str, sizeof(str), ", %s ; 0x%x", flag_str, vB);
+					snprintf(str, sizeof(str), ", %s", flag_str);
 				} else {
 					snprintf(str, sizeof(str), ", class+%i", vB);
 				}
 			} else if (buf[0] == 0xfc) { // invoke-custom
 				flag_str = RZ_ASM_GET_NAME(a, 's', vB);
 				if (flag_str) {
-					snprintf(str, sizeof(str), ", %s ; 0x%x", flag_str, vB);
+					snprintf(str, sizeof(str), ", %s", flag_str);
 				} else {
 					snprintf(str, sizeof(str), ", call_site+%i", vB);
 				}
 			} else { // invoke-kind
 				flag_str = RZ_ASM_GET_NAME(a, 'm', vB);
 				if (flag_str) {
-					snprintf(str, sizeof(str), ", %s ; 0x%x", flag_str, vB);
+					snprintf(str, sizeof(str), ", %s", flag_str);
 				} else {
 					snprintf(str, sizeof(str), ", method+%i", vB);
 				}
