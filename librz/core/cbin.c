@@ -3569,6 +3569,10 @@ static void classdump_java(RzCore *r, RzBinClass *c) {
 	rz_list_foreach (c->fields, iter2, f) {
 		visibility = resolve_visibility(f->visibility_str);
 		char *ftype = demangle_type(f->type);
+		if (simplify) {
+			// hide the current package in the demangled value.
+			ftype = rz_str_replace(ftype, package, classname, 1);
+		}
 		rz_cons_printf("  %s %s %s;\n", visibility, ftype, f->name);
 		free(ftype);
 	}
@@ -3581,15 +3585,17 @@ static void classdump_java(RzCore *r, RzBinClass *c) {
 		visibility = resolve_visibility(sym->visibility_str);
 		char *dem = rz_bin_demangle_java(mn);
 		rz_str_replace_ch(dem, '/', '.', 1);
-		dem = rz_str_replace(dem, "java.lang.", "", 1);
 		if (simplify) {
+			// hide the current package in the demangled value.
 			dem = rz_str_replace(dem, package, classname, 1);
 		}
+		// rename all <init> to class name
+		dem = rz_str_replace(dem, "<init>", classname, 1);
 		rz_cons_printf("  %s %s;\n", visibility, dem);
 		free(dem);
 	}
-	RZ_FREE(package);
-	RZ_FREE(classname);
+	free(package);
+	free(classname);
 	rz_cons_printf("}\n\n");
 }
 
