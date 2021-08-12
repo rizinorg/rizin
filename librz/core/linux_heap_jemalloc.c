@@ -27,17 +27,12 @@
 #endif
 
 #if __linux__
-// TODO: provide proper api in cbin to resolve symbols and load libraries from debug maps and such
-// this is, provide a programmatic api for the slow dmi command
-static GHT GH(je_get_va_symbol)(const char *path, const char *symname) {
+static GHT GH(je_get_va_symbol)(RzCore *core, const char *path, const char *sym_name) {
+	GHT vaddr = GHT_MAX;
+	RzBin *bin = core->bin;
+	RzBinFile *current_bf = rz_bin_cur(bin);
 	RzListIter *iter;
 	RzBinSymbol *s;
-	RzCore *core = rz_core_new();
-	GHT vaddr = 0LL;
-
-	if (!core) {
-		return GHT_MAX;
-	}
 
 	RzBinOptions opt;
 	rz_bin_options_init(&opt, -1, 0, 0, false, false);
@@ -45,20 +40,21 @@ static GHT GH(je_get_va_symbol)(const char *path, const char *symname) {
 	opt.obj_opts.elf_checks_sections = rz_config_get_b(core->config, "elf.checks.sections");
 	opt.obj_opts.elf_checks_segments = rz_config_get_b(core->config, "elf.checks.segments");
 
-	if (rz_bin_open(core->bin, path, &opt)) {
-		RzList *syms = rz_bin_get_symbols(core->bin);
-		if (!syms) {
-			rz_core_free(core);
-			return GHT_MAX;
-		}
-		rz_list_foreach (syms, iter, s) {
-			if (!strcmp(s->name, symname)) {
-				vaddr = s->vaddr;
-				break;
-			}
+	RzBinFile *libc_bf = rz_bin_open(bin, path, &opt);
+	if (!libc_bf) {
+		return vaddr;
+	}
+
+	RzList *syms = rz_bin_get_symbols(bin);
+	rz_list_foreach (syms, iter, s) {
+		if (!strcmp(s->name, sym_name)) {
+			vaddr = s->vaddr;
+			break;
 		}
 	}
-	rz_core_free(core);
+
+	rz_bin_file_delete(bin, libc_bf);
+	rz_bin_file_set_cur_binfile(bin, current_bf);
 	return vaddr;
 }
 
@@ -98,7 +94,7 @@ static bool GH(rz_resolve_jemalloc)(RzCore *core, char *symname, ut64 *symbol) {
 	}
 	char *path = rz_str_newf("%s", jemalloc_ver_end);
 	if (rz_file_exists(path)) {
-		ut64 vaddr = GH(je_get_va_symbol)(path, symname);
+		ut64 vaddr = GH(je_get_va_symbol)(core, path, symname);
 		if (jemalloc_addr != GHT_MAX && vaddr != 0) {
 			*symbol = jemalloc_addr + vaddr;
 			free(path);
