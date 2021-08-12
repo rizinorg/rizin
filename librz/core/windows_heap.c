@@ -1450,17 +1450,16 @@ RZ_IPI RzList *rz_heap_blocks_list(RzCore *core) {
 RZ_IPI RzList *rz_heap_list(RzCore *core) {
 	initialize_windows_ntdll_query_api_functions();
 	ULONG pid = core->dbg->pid;
-	PDEBUG_BUFFER db = InitHeapInfo(core->dbg, PDI_HEAPS | PDI_HEAP_BLOCKS);
-	if (!db) {
-		if (__is_windows_ten()) {
-			db = GetHeapBlocks(pid, core->dbg);
-		}
-		if (!db) {
-			eprintf("Couldn't get heap info.\n");
-			return NULL;
-		}
+	PDEBUG_BUFFER db;
+	if (__is_windows_ten()) {
+		db = GetHeapBlocks(pid, core->dbg);
+	} else {
+		db = InitHeapInfo(core->dbg, PDI_HEAPS | PDI_HEAP_BLOCKS);
 	}
-
+	if (!db) {
+		eprintf("Couldn't get heap info.\n");
+		return NULL;
+	}
 	RzList *heaps_list = rz_list_newf(free);
 	PHeapInformation heapInfo = db->HeapInformation;
 	CHECK_INFO_RETURN_NULL(heapInfo);
