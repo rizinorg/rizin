@@ -1,19 +1,10 @@
-// SPDX-FileCopyrightText: 2011-2021 pancake <pancake@nopcode.org>
-// SPDX-FileCopyrightText: 2011-2021 h4ng3r
+// SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bin.h>
 #include "dex/dex.h"
-/*
-static ut32 __adler32(const ut8 *data, int len) {
-	ut32 a = 1, b = 0;
-	for (int i = 0; i < len; i++) {
-		a = (a + data[i]) % 65521;
-		b = (b + a) % 65521;
-	}
-	return (b << 16) | a;
-}
-*/
+
 #define rz_bin_file_get_dex(bf) ((RzBinDex *)bf->o->bin_obj)
 
 static RzBinInfo *info(RzBinFile *bf) {
@@ -30,7 +21,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	binfo->lang = "dalvik"; // rz_bin_dex_language(dex);
 	binfo->file = strdup(bf->file);
 	binfo->type = strdup("DEX CLASS");
-	binfo->bclass = strdup("?"); // rz_bin_dex_version(dex);
+	binfo->bclass = rz_bin_dex_version(dex);
 	binfo->has_va = false;
 	binfo->rclass = strdup("class");
 	binfo->os = strdup("linux");
@@ -163,48 +154,6 @@ static int demangle_type(const char *str) {
 	return RZ_BIN_NM_JAVA;
 }
 
-static int get_offset(RzBinFile *bf, int type, int index) {
-	RzBinDex *dex = rz_bin_file_get_dex(bf);
-	if (!dex) {
-		return -1;
-	}
-
-	switch (type) {
-	case 'm': // method
-	case 'f': // field
-	case 'o': // object
-	case 's': // string
-	case 't': // type
-	case 'c': // class
-	default:
-		return -1;
-	}
-	/*
-	struct rz_bin_dex_obj_t *dex = bf->o->bin_obj;
-	switch (type) {
-	case 'm': // methods
-		// TODO: ADD CHECK
-		return offset_of_method_idx(bf, dex, idx);
-	case 'f':
-		return dex_field_offset(dex, idx);
-	case 'o': // objects
-		eprintf("TODO: getoffset object\n");
-		return 0; // //chdex_object_offset (dex, idx);
-	case 's': // strings
-		if (dex->header.strings_size > idx) {
-			if (dex->strings) {
-				return dex->strings[idx];
-			}
-		}
-		break;
-	case 't': // type
-		return dex_get_type_offset(bf, idx);
-	case 'c': // class
-		return dex_get_type_offset(bf, idx);
-	}
-	*/
-}
-
 static char *get_name(RzBinFile *bf, int type, int index, bool pseudo) {
 	RzBinDex *dex = rz_bin_file_get_dex(bf);
 	if (!dex) {
@@ -220,23 +169,10 @@ static char *get_name(RzBinFile *bf, int type, int index, bool pseudo) {
 	case 'c': // class
 		return rz_bin_dex_resolve_class_by_idx(dex, index);
 	case 'p': // proto
+		return rz_bin_dex_resolve_proto_by_idx(dex, index);
 	default:
 		return NULL;
 	}
-	/*
-	simplifiedDemangling = sd; // XXX remove globals
-	struct rz_bin_dex_obj_t *dex = bf->o->bin_obj;
-	switch (type) {
-	case 'm': // methods
-		return dex_method_fullname(dex, idx);
-	case 'c': // classes
-		return dex_class_name_byid(dex, idx);
-	case 'f': // fields
-		return dex_field_name(dex, idx);
-	case 'p': // proto
-		return dex_get_proto(dex, idx);
-	}
-	*/
 }
 
 RzBinPlugin rz_bin_plugin_dex = {
@@ -255,7 +191,6 @@ RzBinPlugin rz_bin_plugin_dex = {
 	.symbols = symbols,
 	.imports = &imports,
 	.strings = &strings,
-	.get_offset = &get_offset,
 	.get_name = &get_name,
 	.info = &info,
 	.fields = fields,

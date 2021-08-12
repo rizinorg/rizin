@@ -182,6 +182,9 @@ typedef struct dex_t {
 
 RZ_API RzBinDex *rz_bin_dex_new(RzBuffer *buf, ut64 base, Sdb *kv);
 RZ_API void rz_bin_dex_free(RzBinDex *dex);
+
+RZ_API char *rz_bin_dex_version(RzBinDex *dex);
+
 RZ_API RzList /*<RzBinString*>*/ *rz_bin_dex_strings(RzBinDex *dex);
 RZ_API RzList /*<RzBinClass*>*/ *rz_bin_dex_classes(RzBinDex *dex);
 RZ_API RzList /*<RzBinField*>*/ *rz_bin_dex_fields(RzBinDex *dex);
@@ -194,8 +197,9 @@ RZ_API RzList /*<RzBinAddr*>*/ *rz_bin_dex_entrypoints(RzBinDex *dex);
 
 RZ_API char *rz_bin_dex_resolve_method_by_idx(RzBinDex *dex, ut32 method_idx);
 RZ_API char *rz_bin_dex_resolve_field_by_idx(RzBinDex *dex, ut32 field_idx);
-RZ_API char *rz_bin_dex_resolve_class_by_idx(RzBinDex *dex, ut32 method_idx);
-RZ_API char *rz_bin_dex_resolve_string_by_idx(RzBinDex *dex, ut32 field_idx);
+RZ_API char *rz_bin_dex_resolve_class_by_idx(RzBinDex *dex, ut32 class_idx);
+RZ_API char *rz_bin_dex_resolve_string_by_idx(RzBinDex *dex, ut32 string_idx);
+RZ_API char *rz_bin_dex_resolve_proto_by_idx(RzBinDex *dex, ut32 proto_idx);
 
 RZ_API void rz_bin_dex_checksum(RzBinDex *dex, RzBinHash *hash);
 RZ_API void rz_bin_dex_sha1(RzBinDex *dex, RzBinHash *hash);

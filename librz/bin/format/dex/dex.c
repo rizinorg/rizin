@@ -1201,16 +1201,33 @@ RZ_API RzList /*<RzBinSymbol*>*/ *rz_bin_dex_symbols(RzBinDex *dex) {
 	rz_return_val_if_fail(dex, NULL);
 
 	DexClassDef *class_def;
+	DexFieldId *field_id;
+	DexMethodId *method_id;
 	RzList *class_symbols = NULL;
 	RzList *symbols = NULL;
 	RzListIter *it;
+	ut32 *class_ids = NULL;
+	ut32 n_classes = rz_list_length(dex->class_defs);
+	if (n_classes < 1) {
+		return rz_list_newf((RzListFree)rz_bin_import_free);
+	}
 
-	symbols = rz_list_newf((RzListFree)rz_bin_symbol_free);
-	if (!symbols) {
+	class_ids = RZ_NEWS0(ut32, n_classes);
+	if (!class_ids) {
 		return NULL;
 	}
 
+	symbols = rz_list_newf((RzListFree)rz_bin_symbol_free);
+	if (!symbols) {
+		free(class_ids);
+		return NULL;
+	}
+
+	ut32 j = 0;
 	rz_list_foreach (dex->class_defs, it, class_def) {
+		class_ids[j] = class_def->class_idx;
+		j++;
+
 		class_symbols = dex_resolve_fields_in_class_as_symbols(dex, class_def);
 		if (class_symbols) {
 			rz_list_join(symbols, class_symbols);
@@ -1221,6 +1238,71 @@ RZ_API RzList /*<RzBinSymbol*>*/ *rz_bin_dex_symbols(RzBinDex *dex) {
 		if (class_symbols) {
 			rz_list_join(symbols, class_symbols);
 			rz_list_free(class_symbols);
+		}
+	}
+
+	rz_list_foreach (dex->field_ids, it, field_id) {
+		bool class_found = false;
+		for (ut32 i = 0; i < n_classes; ++i) {
+			if (field_id->class_idx == class_ids[i]) {
+				class_found = true;
+				break;
+			}
+		}
+		if (class_found) {
+			continue;
+		}
+
+		RzBinSymbol *field = RZ_NEW0(RzBinSymbol);
+		if (!field) {
+			rz_warn_if_reached();
+			break;
+		}
+
+		field->name = dex_resolve_string_id(dex, field_id->name_idx);
+		field->classname = dex_resolve_type_id(dex, field_id->class_idx);
+		field->libname = dex_resolve_library(field->classname);
+		field->bind = RZ_BIN_BIND_WEAK_STR;
+		field->type = RZ_BIN_TYPE_FIELD_STR;
+		field->is_imported = true;
+
+		if (!rz_list_append(symbols, field)) {
+			rz_bin_symbol_free(field);
+			rz_warn_if_reached();
+			break;
+		}
+	}
+
+	rz_list_foreach (dex->method_ids, it, method_id) {
+		bool class_found = false;
+		for (ut32 i = 0; i < n_classes; ++i) {
+			if (method_id->class_idx == class_ids[i]) {
+				class_found = true;
+				break;
+			}
+		}
+		if (class_found) {
+			continue;
+		}
+
+		RzBinSymbol *method = RZ_NEW0(RzBinSymbol);
+		if (!method) {
+			rz_warn_if_reached();
+			break;
+		}
+
+		method->name = dex_resolve_string_id(dex, method_id->name_idx);
+		method->classname = dex_resolve_type_id(dex, method_id->class_idx);
+		method->libname = dex_resolve_library(method->classname);
+		method->dname = dex_resolve_proto_id(dex, method->name, method_id->proto_idx, false);
+		method->bind = RZ_BIN_BIND_WEAK_STR;
+		method->is_imported = true;
+		method->type = RZ_BIN_TYPE_METH_STR;
+
+		if (!rz_list_append(symbols, method)) {
+			rz_bin_symbol_free(method);
+			rz_warn_if_reached();
+			break;
 		}
 	}
 
@@ -1648,7 +1730,30 @@ RZ_API char *rz_bin_dex_resolve_field_by_idx(RzBinDex *dex, ut32 field_idx) {
 		return NULL;
 	}
 
-	return dex_resolve_string_id(dex, field_id->name_idx);
+	char *class_name = dex_resolve_type_id(dex, field_id->class_idx);
+	if (!class_name) {
+		return NULL;
+	}
+
+	char *name = dex_resolve_string_id(dex, field_id->name_idx);
+	if (!name) {
+		free(class_name);
+		return NULL;
+	}
+
+	char *type = dex_resolve_type_id(dex, field_id->type_idx);
+	if (!type) {
+		free(class_name);
+		free(name);
+		return NULL;
+	}
+
+	char *method = rz_str_newf("%s->%s %s", class_name, name, type);
+
+	free(type);
+	free(class_name);
+	free(name);
+	return method;
 }
 
 RZ_API char *rz_bin_dex_resolve_string_by_idx(RzBinDex *dex, ut32 string_idx) {
@@ -1657,6 +1762,10 @@ RZ_API char *rz_bin_dex_resolve_string_by_idx(RzBinDex *dex, ut32 string_idx) {
 
 RZ_API char *rz_bin_dex_resolve_class_by_idx(RzBinDex *dex, ut32 class_idx) {
 	return dex_resolve_type_id(dex, class_idx);
+}
+
+RZ_API char *rz_bin_dex_resolve_proto_by_idx(RzBinDex *dex, ut32 proto_idx) {
+	return dex_resolve_proto_id(dex, "", proto_idx, false);
 }
 
 RZ_API void rz_bin_dex_checksum(RzBinDex *dex, RzBinHash *hash) {
@@ -1677,4 +1786,25 @@ RZ_API void rz_bin_dex_sha1(RzBinDex *dex, RzBinHash *hash) {
 	hash->from = dex->signature_offset + sizeof(dex->signature);
 	hash->to = dex->file_size - hash->from;
 	memcpy(hash->buf, dex->signature, sizeof(dex->signature));
+}
+
+RZ_API char *rz_bin_dex_version(RzBinDex *dex) {
+	// https://cs.android.com/android/platform/superproject/+/master:dalvik/dx/src/com/android/dex/DexFormat.java;l=55;bpv=1;bpt=0
+	// https://developer.android.com/studio/releases/platforms
+	if (!strncmp((char *)dex->version, "009", 3)) {
+		return strdup("Android M3 release (Nov-Dec 2007)");
+	} else if (!strncmp((char *)dex->version, "013", 3)) {
+		return strdup("Android M5 release (Feb-Mar 2008)");
+	} else if (!strncmp((char *)dex->version, "035", 3)) {
+		return strdup("Android 3.2 (API level 13 and earlier)");
+	} else if (!strncmp((char *)dex->version, "037", 3)) {
+		return strdup("Android 7 (API level 24 and earlier)");
+	} else if (!strncmp((char *)dex->version, "038", 3)) {
+		return strdup("Android 8 (API level 26 and earlier)");
+	} else if (!strncmp((char *)dex->version, "039", 3)) {
+		return strdup("Android 9 (API level 28 and earlier)");
+	} else if (!strncmp((char *)dex->version, "040", 3)) {
+		return strdup("Android 10+ (Aug 2019)");
+	}
+	return NULL;
 }
