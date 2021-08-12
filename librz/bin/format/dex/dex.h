@@ -184,6 +184,7 @@ RZ_API RzBinDex *rz_bin_dex_new(RzBuffer *buf, ut64 base, Sdb *kv);
 RZ_API void rz_bin_dex_free(RzBinDex *dex);
 
 RZ_API char *rz_bin_dex_version(RzBinDex *dex);
+RZ_API ut64 rz_bin_dex_debug_info(RzBinDex *dex);
 
 RZ_API RzList /*<RzBinString*>*/ *rz_bin_dex_strings(RzBinDex *dex);
 RZ_API RzList /*<RzBinClass*>*/ *rz_bin_dex_classes(RzBinDex *dex);
