@@ -2527,7 +2527,14 @@ static int bin_imports(RzCore *r, PJ *pj, int mode, int va, const char *name) {
 		if (!import->name || (name && strcmp(import->name, name))) {
 			continue;
 		}
-		char *symname = import->name ? strdup(import->name) : NULL;
+		char *symname = NULL;
+		if (RZ_STR_ISNOTEMPTY(import->name)) {
+			if (RZ_STR_ISNOTEMPTY(import->classname)) {
+				symname = rz_str_newf("%s.%s", import->classname, import->name);
+			} else {
+				symname = strdup(import->name);
+			}
+		}
 		char *libname = import->libname ? strdup(import->libname) : NULL;
 		RzBinSymbol *sym = rz_bin_object_get_symbol_of_import(o, import);
 		ut64 addr = sym ? rva(o, sym->paddr, sym->vaddr, va) : UT64_MAX;
@@ -2535,8 +2542,7 @@ static int bin_imports(RzCore *r, PJ *pj, int mode, int va, const char *name) {
 			char *dname = rz_bin_demangle(r->bin->cur, NULL, symname, addr, keep_lib);
 			if (dname) {
 				free(symname);
-				symname = rz_str_newf("sym.imp.%s", dname);
-				free(dname);
+				symname = dname;
 			}
 		}
 		if (r->bin->prefix) {
@@ -2575,9 +2581,9 @@ static int bin_imports(RzCore *r, PJ *pj, int mode, int va, const char *name) {
 			const char *bind = import->bind ? import->bind : "NONE";
 			const char *type = import->type ? import->type : "NONE";
 			if (import->classname && import->classname[0]) {
-				rz_table_add_rowf(table, "nXssss", (ut64)import->ordinal, addr, bind, type, libname ? libname : "", sdb_fmt("%s.%s", import->classname, symname));
+				rz_table_add_rowf(table, "nXssss", (ut64)import->ordinal, addr, bind, type, rz_str_get(libname), symname);
 			} else {
-				rz_table_add_rowf(table, "nXssss", (ut64)import->ordinal, addr, bind, type, libname ? libname : "", symname);
+				rz_table_add_rowf(table, "nXssss", (ut64)import->ordinal, addr, bind, type, rz_str_get(libname), symname);
 			}
 
 			if (!IS_MODE_NORMAL(mode)) {

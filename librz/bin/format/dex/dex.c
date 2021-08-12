@@ -5,7 +5,7 @@
 #include "dex.h"
 #include <rz_util.h>
 
-#define DEX_INVALID_CLASS "Lunknown_class;"
+#define DEX_INVALID_CLASS  "Lunknown_class;"
 #define DEX_INVALID_METHOD "unknown_method"
 
 typedef struct dex_access_flags_readable_t {
@@ -532,6 +532,7 @@ RZ_API void rz_bin_dex_free(RzBinDex *dex) {
 	rz_list_free(dex->map_items);
 	rz_list_free(dex->strings);
 	rz_list_free(dex->proto_ids);
+	rz_list_free(dex->field_ids);
 	rz_list_free(dex->method_ids);
 	rz_list_free(dex->class_defs);
 
@@ -1170,7 +1171,7 @@ RZ_API RzList /*<RzBinField*>*/ *rz_bin_dex_fields(RzBinDex *dex) {
 	RzList *fields = NULL;
 	RzListIter *it;
 
-	fields = rz_list_newf((RzListFree)free_rz_bin_class);
+	fields = rz_list_newf((RzListFree)rz_bin_field_free);
 	if (!fields) {
 		return NULL;
 	}
@@ -1194,7 +1195,7 @@ RZ_API RzList /*<RzBinSymbol*>*/ *rz_bin_dex_symbols(RzBinDex *dex) {
 	RzList *symbols = NULL;
 	RzListIter *it;
 
-	symbols = rz_list_newf((RzListFree)free_rz_bin_class);
+	symbols = rz_list_newf((RzListFree)rz_bin_symbol_free);
 	if (!symbols) {
 		return NULL;
 	}
@@ -1214,16 +1215,16 @@ RZ_API RzList /*<RzBinSymbol*>*/ *rz_bin_dex_symbols(RzBinDex *dex) {
 	}
 
 	return symbols;
-	
 }
 
 RZ_API RzList /*<RzBinImport*>*/ *rz_bin_dex_imports(RzBinDex *dex) {
 	rz_return_val_if_fail(dex, NULL);
 
-	DexString *string;
+	DexFieldId *field_id;
+	DexMethodId *method_id;
 	DexClassDef *class_def;
 	RzList *imports = NULL;
-	DexTypeId *class_ids = NULL;
+	ut32 *class_ids = NULL;
 	RzListIter *it;
 
 	ut32 n_classes = rz_list_length(dex->class_defs);
@@ -1231,19 +1232,15 @@ RZ_API RzList /*<RzBinImport*>*/ *rz_bin_dex_imports(RzBinDex *dex) {
 		return rz_list_newf((RzListFree)rz_bin_import_free);
 	}
 
-	class_ids = RZ_NEWS0(DexTypeId, n_classes);
+	class_ids = RZ_NEWS0(ut32, n_classes);
 	if (!class_ids) {
 		return NULL;
 	}
 
-	ut32 string_idx = 0;
+	ut32 j = 0;
 	rz_list_foreach (dex->class_defs, it, class_def) {
-		if (class_def->class_idx >= dex->type_ids_size) {
-			class_ids[string_idx] = UT32_MAX;
-		} else {
-			class_ids[string_idx] = dex->types[class_def->class_idx];
-		}
-		string_idx++;
+		class_ids[j] = class_def->class_idx;
+		j++;
 	}
 
 	imports = rz_list_newf((RzListFree)rz_bin_import_free);
@@ -1253,37 +1250,17 @@ RZ_API RzList /*<RzBinImport*>*/ *rz_bin_dex_imports(RzBinDex *dex) {
 	}
 
 	ut32 ordinal = 0;
-	string_idx = 0;
-	rz_list_foreach (dex->strings, it, string) {
-		if (!string->data || string->data[0] != 'L' || string->data[string->size - 1] != ';') {
-			string_idx++;
-			continue;
-		}
-
-		bool is_class = false;
+	rz_list_foreach (dex->field_ids, it, field_id) {
+		bool class_found = false;
 		for (ut32 i = 0; i < n_classes; ++i) {
-			if (string_idx == class_ids[i]) {
-				is_class = true;
+			if (field_id->class_idx == class_ids[i]) {
+				class_found = true;
 				break;
 			}
 		}
-		if (is_class) {
-			string_idx++;
+		if (class_found) {
 			continue;
 		}
-
-		char *object = rz_str_ndup(string->data + 1, string->size - 2);
-		if (!object) {
-			break;
-		}
-		rz_str_replace_char(object, '$', '.');
-
-		char *class_name = rz_str_rchr(object, NULL, '/');
-		if (class_name) {
-			class_name[0] = 0;
-			class_name++;
-		}
-		rz_str_replace_char(object, '/', '.');
 
 		RzBinImport *import = RZ_NEW0(RzBinImport);
 		if (!import) {
@@ -1291,20 +1268,82 @@ RZ_API RzList /*<RzBinImport*>*/ *rz_bin_dex_imports(RzBinDex *dex) {
 			break;
 		}
 
-		import->libname = class_name ? strdup(object) : NULL;
-		import->classname = strdup(class_name ? class_name : object);
-		import->name = strdup("*");
-		import->bind = RZ_BIN_BIND_WEAK_STR;
-		import->type = RZ_BIN_TYPE_NOTYPE_STR;
-		import->ordinal = ordinal;
+		char *object = dex_resolve_type_id(dex, field_id->class_idx);
+		if (!object) {
+			break;
+		}
+		rz_str_replace_char(object, '$', '.');
+		rz_str_replace_char(object, ';', 0);
 
+		char *class_name = rz_str_rchr(object, NULL, '/');
+		if (class_name) {
+			class_name[0] = 0;
+			class_name++;
+		}
+		rz_str_replace_ch(object, '/', '.', 1);
+
+		import->name = dex_resolve_string_id(dex, field_id->name_idx);
+		import->libname = class_name ? strdup(object + 1) : NULL;
+		import->classname = strdup(class_name ? class_name : object + 1);
+		import->bind = RZ_BIN_BIND_WEAK_STR;
+		import->type = RZ_BIN_TYPE_FIELD_STR;
+		import->ordinal = ordinal;
 		free(object);
+
 		if (!rz_list_append(imports, import)) {
 			rz_bin_import_free(import);
 			break;
 		}
 		ordinal++;
-		string_idx++;
+	}
+
+	rz_list_foreach (dex->method_ids, it, method_id) {
+		bool class_found = false;
+		for (ut32 i = 0; i < n_classes; ++i) {
+			if (method_id->class_idx == class_ids[i]) {
+				class_found = true;
+				break;
+			}
+		}
+		if (class_found) {
+			continue;
+		}
+
+		RzBinImport *import = RZ_NEW0(RzBinImport);
+		if (!import) {
+			rz_warn_if_reached();
+			break;
+		}
+
+		char *object = dex_resolve_type_id(dex, method_id->class_idx);
+		if (!object) {
+			break;
+		}
+		rz_str_replace_char(object, '$', '.');
+		rz_str_replace_char(object, ';', 0);
+
+		char *class_name = rz_str_rchr(object, NULL, '/');
+		if (class_name) {
+			class_name[0] = 0;
+			class_name++;
+		}
+		rz_str_replace_ch(object, '/', '.', 1);
+
+		char *name = dex_resolve_string_id(dex, method_id->name_idx);
+		import->name = dex_resolve_proto_id(dex, name, method_id->proto_idx);
+		import->libname = class_name ? strdup(object + 1) : NULL;
+		import->classname = strdup(class_name ? class_name : object + 1);
+		import->bind = RZ_BIN_BIND_WEAK_STR;
+		import->type = RZ_BIN_TYPE_FUNC_STR;
+		import->ordinal = ordinal;
+		free(name);
+		free(object);
+
+		if (!rz_list_append(imports, import)) {
+			rz_bin_import_free(import);
+			break;
+		}
+		ordinal++;
 	}
 
 	free(class_ids);

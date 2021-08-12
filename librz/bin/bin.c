@@ -199,6 +199,7 @@ RZ_API void rz_bin_symbol_free(RzBinSymbol *sym) {
 	}
 
 	free(sym->name);
+	free(sym->dname);
 	free(sym->libname);
 	free(sym->classname);
 	free(sym->visibility_str);
@@ -1227,6 +1228,8 @@ RZ_API RzBinField *rz_bin_field_new(ut64 paddr, ut64 vaddr, int size, const char
 RZ_API void rz_bin_field_free(RzBinField *field) {
 	if (field) {
 		free(field->name);
+		free(field->visibility_str);
+		free(field->type);
 		free(field->comment);
 		free(field->format);
 		free(field);
