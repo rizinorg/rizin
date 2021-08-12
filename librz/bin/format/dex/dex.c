@@ -13,7 +13,8 @@ typedef struct dex_access_flags_readable_t {
 	const char *readable;
 } DexAccessFlagsReadable;
 
-#define dex_is_static(a) (a & ACCESS_FLAG_STATIC)
+#define dex_is_static(a)  (a & ACCESS_FLAG_STATIC)
+#define dex_is_varargs(a) (a & ACCESS_FLAG_VARARGS)
 
 #define dex_fail_if_eof(b, o, s, g) \
 	do { \
@@ -51,7 +52,7 @@ static const DexAccessFlagsReadable access_flags_list[CLASS_ACCESS_FLAGS_SIZE] =
 	{ ACCESS_FLAG_ENUM /*                 */, "enum" },
 	{ ACCESS_FLAG_MODULE /*               */, "module" },
 	{ ACCESS_FLAG_CONSTRUCTOR /*          */, "constructor" },
-	{ ACCESS_FLAG_DECLARED_SYNCHRONIZED /**/, "declared_synchronized" },
+	{ ACCESS_FLAG_DECLARED_SYNCHRONIZED /**/, "synchronized" },
 };
 
 static void dex_string_free(DexString *string) {
@@ -586,6 +587,9 @@ static char *dex_access_flags_readable(ut32 access_flags) {
 	RzStrBuf *sb = NULL;
 	for (ut32 i = 0; i < CLASS_ACCESS_FLAGS_SIZE; ++i) {
 		const DexAccessFlagsReadable *afr = &access_flags_list[i];
+		if (afr->flag == ACCESS_FLAG_VARARGS) {
+			continue;
+		}
 		if (access_flags & afr->flag) {
 			if (!sb) {
 				sb = rz_strbuf_new(afr->readable);
@@ -650,7 +654,7 @@ static char *dex_resolve_type_id(RzBinDex *dex, ut32 type_idx) {
 	return dex_resolve_string_id(dex, type_id);
 }
 
-static char *dex_resolve_proto_id(RzBinDex *dex, const char *name, ut32 proto_idx) {
+static char *dex_resolve_proto_id(RzBinDex *dex, const char *name, ut32 proto_idx, bool varargs) {
 	DexProtoId *proto_id = (DexProtoId *)rz_list_get_n(dex->proto_ids, proto_idx);
 	if (!proto_id) {
 		RZ_LOG_ERROR("cannot find proto_id with index %u out of %u\n", proto_idx, rz_list_length(dex->proto_ids));
@@ -683,6 +687,9 @@ static char *dex_resolve_proto_id(RzBinDex *dex, const char *name, ut32 proto_id
 			RZ_LOG_INFO("cannot find param string with index %d\n", dex->types[type_idx]);
 			rz_strbuf_free(sb);
 			return NULL;
+		}
+		if (varargs && (i + 1) >= proto_id->type_list_size) {
+			rz_strbuf_append(sb, "...");
 		}
 		rz_strbuf_append_n(sb, param->data, param->size);
 	}
@@ -760,7 +767,6 @@ static char *dex_resolve_library(const char *library) {
 	}
 	char *demangled = strdup(library + 1);
 	rz_str_replace_ch(demangled, '/', '.', 1);
-	rz_str_replace_ch(demangled, '$', '.', 1);
 	demangled[strlen(demangled) - 1] = 0;
 	return demangled;
 }
@@ -770,6 +776,7 @@ static RzList /*<RzBinSymbol*>*/ *dex_resolve_methods_in_class(RzBinDex *dex, De
 	if (!methods) {
 		return NULL;
 	}
+	bool varargs = false;
 	DexMethodId *method_id = NULL;
 	DexEncodedMethod *encoded_method = NULL;
 	RzListIter *it = NULL;
@@ -787,10 +794,11 @@ static RzList /*<RzBinSymbol*>*/ *dex_resolve_methods_in_class(RzBinDex *dex, De
 			break;
 		}
 
+		varargs = dex_is_varargs(encoded_method->access_flags);
 		symbol->name = dex_resolve_string_id(dex, method_id->name_idx);
 		symbol->classname = dex_resolve_type_id(dex, method_id->class_idx);
 		symbol->libname = dex_resolve_library(symbol->classname);
-		symbol->dname = dex_resolve_proto_id(dex, symbol->name, method_id->proto_idx);
+		symbol->dname = dex_resolve_proto_id(dex, symbol->name, method_id->proto_idx, varargs);
 		symbol->bind = dex_is_static(encoded_method->access_flags) ? RZ_BIN_BIND_GLOBAL_STR : RZ_BIN_BIND_LOCAL_STR;
 		symbol->is_imported = false;
 		symbol->visibility = encoded_method->access_flags & UT32_MAX;
@@ -821,10 +829,12 @@ static RzList /*<RzBinSymbol*>*/ *dex_resolve_methods_in_class(RzBinDex *dex, De
 			rz_warn_if_reached();
 			break;
 		}
+
+		varargs = dex_is_varargs(encoded_method->access_flags);
 		symbol->name = dex_resolve_string_id(dex, method_id->name_idx);
 		symbol->classname = dex_resolve_type_id(dex, method_id->class_idx);
 		symbol->libname = dex_resolve_library(symbol->classname);
-		symbol->dname = dex_resolve_proto_id(dex, symbol->name, method_id->proto_idx);
+		symbol->dname = dex_resolve_proto_id(dex, symbol->name, method_id->proto_idx, varargs);
 		symbol->bind = dex_is_static(encoded_method->access_flags) ? RZ_BIN_BIND_GLOBAL_STR : RZ_BIN_BIND_LOCAL_STR;
 		symbol->is_imported = false;
 		symbol->visibility = encoded_method->access_flags & UT32_MAX;
@@ -1330,7 +1340,7 @@ RZ_API RzList /*<RzBinImport*>*/ *rz_bin_dex_imports(RzBinDex *dex) {
 		rz_str_replace_ch(object, '/', '.', 1);
 
 		char *name = dex_resolve_string_id(dex, method_id->name_idx);
-		import->name = dex_resolve_proto_id(dex, name, method_id->proto_idx);
+		import->name = dex_resolve_proto_id(dex, name, method_id->proto_idx, false);
 		import->libname = class_name ? strdup(object + 1) : NULL;
 		import->classname = strdup(class_name ? class_name : object + 1);
 		import->bind = RZ_BIN_BIND_WEAK_STR;
