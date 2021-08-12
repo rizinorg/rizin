@@ -1789,6 +1789,7 @@ RZ_API void rz_bin_dex_sha1(RzBinDex *dex, RzBinHash *hash) {
 }
 
 RZ_API char *rz_bin_dex_version(RzBinDex *dex) {
+	rz_return_val_if_fail(dex, NULL);
 	// https://cs.android.com/android/platform/superproject/+/master:dalvik/dx/src/com/android/dex/DexFormat.java;l=55;bpv=1;bpt=0
 	// https://developer.android.com/studio/releases/platforms
 	if (!strncmp((char *)dex->version, "009", 3)) {
@@ -1807,4 +1808,10 @@ RZ_API char *rz_bin_dex_version(RzBinDex *dex) {
 		return strdup("Android 10+ (Aug 2019)");
 	}
 	return NULL;
+}
+
+RZ_API ut64 rz_bin_dex_debug_info(RzBinDex *dex) {
+	rz_return_val_if_fail(dex, 0);
+	//TODO
+	return 0;
 }

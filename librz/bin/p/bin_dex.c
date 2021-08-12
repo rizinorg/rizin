@@ -18,19 +18,19 @@ static RzBinInfo *info(RzBinFile *bf) {
 		return NULL;
 	}
 
-	binfo->lang = "dalvik"; // rz_bin_dex_language(dex);
+	binfo->lang = "dalvik";
 	binfo->file = strdup(bf->file);
 	binfo->type = strdup("DEX CLASS");
 	binfo->bclass = rz_bin_dex_version(dex);
 	binfo->has_va = false;
 	binfo->rclass = strdup("class");
 	binfo->os = strdup("linux");
-	binfo->subsystem = strdup("any"); // rz_bin_dex_subsystem(dex);
+	binfo->subsystem = strdup("any");
 	binfo->machine = strdup("Dalvik VM");
 	binfo->arch = strdup("dalvik");
 	binfo->bits = 32;
 	binfo->big_endian = false;
-	binfo->dbg_info = 0; // rz_bin_dex_debug_info(dex);
+	binfo->dbg_info = rz_bin_dex_debug_info(dex);
 
 	rz_bin_dex_checksum(dex, &binfo->sum[0]);
 	rz_bin_dex_sha1(dex, &binfo->sum[1]);
