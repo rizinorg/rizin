@@ -182,9 +182,13 @@ typedef struct dex_t {
 
 RZ_API RzBinDex *rz_bin_dex_new(RzBuffer *buf, ut64 base, Sdb *kv);
 RZ_API void rz_bin_dex_free(RzBinDex *dex);
-RZ_API RzList *rz_bin_dex_strings(RzBinDex *dex);
-RZ_API RzList *rz_bin_dex_classes(RzBinDex *dex);
-RZ_API RzList *rz_bin_dex_sections(RzBinDex *dex);
+RZ_API RzList /*<RzBinString*>*/ *rz_bin_dex_strings(RzBinDex *dex);
+RZ_API RzList /*<RzBinClass*>*/ *rz_bin_dex_classes(RzBinDex *dex);
+RZ_API RzList /*<RzBinField*>*/ *rz_bin_dex_fields(RzBinDex *dex);
+RZ_API RzList /*<RzBinSection*>*/ *rz_bin_dex_sections(RzBinDex *dex);
+RZ_API RzList /*<RzBinSymbol*>*/ *rz_bin_dex_symbols(RzBinDex *dex);
+RZ_API RzList /*<RzBinSymbol*>*/ *rz_bin_dex_imports(RzBinDex *dex);
+
 
 RZ_API void rz_bin_dex_checksum(RzBinDex *dex, RzBinHash *hash);
 RZ_API void rz_bin_dex_sha1(RzBinDex *dex, RzBinHash *hash);

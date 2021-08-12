@@ -113,6 +113,7 @@ RZ_LIB_VERSION_HEADER(rz_bin);
 #define RZ_BIN_TYPE_NOTYPE_STR      "NOTYPE"
 #define RZ_BIN_TYPE_OBJECT_STR      "OBJ"
 #define RZ_BIN_TYPE_FUNC_STR        "FUNC"
+#define RZ_BIN_TYPE_FIELD_STR       "FIELD"
 #define RZ_BIN_TYPE_IFACE_STR       "IFACE"
 #define RZ_BIN_TYPE_METH_STR        "METH"
 #define RZ_BIN_TYPE_STATIC_STR      "STATIC"

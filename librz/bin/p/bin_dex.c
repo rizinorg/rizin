@@ -87,15 +87,12 @@ static RzList *classes(RzBinFile *bf) {
 }
 
 static RzList *imports(RzBinFile *bf) {
-	return NULL;
-	/*
 	RzBinDex *dex = rz_bin_file_get_dex(bf);
 	if (!dex) {
 		return NULL;
 	}
 
-	return rz_bin_java_class_const_pool_as_imports(dex);
-	*/
+	return rz_bin_dex_imports(dex);
 }
 
 static RzList *sections(RzBinFile *bf) {
@@ -108,40 +105,21 @@ static RzList *sections(RzBinFile *bf) {
 }
 
 static RzList *symbols(RzBinFile *bf) {
-	return NULL;
-	/*
-	RzList *tmp;
 	RzBinDex *dex = rz_bin_file_get_dex(bf);
 	if (!dex) {
 		return NULL;
 	}
 
-	RzList *list = rz_bin_java_class_methods_as_symbols(dex);
-	if (!list) {
-		return NULL;
-	}
-
-	tmp = rz_bin_java_class_fields_as_symbols(dex);
-	rz_list_join(list, tmp);
-	rz_list_free(tmp);
-
-	tmp = rz_bin_java_class_const_pool_as_symbols(dex);
-	rz_list_join(list, tmp);
-	rz_list_free(tmp);
-	return list;
-	*/
+	return rz_bin_dex_symbols(dex);
 }
 
 static RzList *fields(RzBinFile *bf) {
-	return NULL;
-	/*
 	RzBinDex *dex = rz_bin_file_get_dex(bf);
 	if (!dex) {
 		return NULL;
 	}
 
-	return rz_bin_java_class_fields_as_binfields(dex);
-	*/
+	return rz_bin_dex_fields(dex);
 }
 
 static RzList *libs(RzBinFile *bf) {
