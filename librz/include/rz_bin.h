@@ -762,6 +762,7 @@ typedef struct rz_bin_field_t {
 	ut32 visibility;
 	char *name;
 	char *type;
+	char *visibility_str;
 	char *comment;
 	char *format;
 	bool format_named; // whether format is the name of a format or a raw pf format string

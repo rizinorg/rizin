@@ -181,6 +181,7 @@ static DexClassDef *dex_class_def_new(RzBuffer *buf, ut64 offset, ut64 base) {
 	ut64 instance_fields_size = 0;
 	ut64 direct_methods_size = 0;
 	ut64 virtual_methods_size = 0;
+	ut64 diff_value;
 	ut64 diff_value_prev;
 	ut64 code_offset;
 
@@ -217,8 +218,16 @@ static DexClassDef *dex_class_def_new(RzBuffer *buf, ut64 offset, ut64 base) {
 		}
 
 		encoded_field->offset = rz_buf_tell(buf) + base;
-		rz_buf_uleb128(buf, &encoded_field->field_idx_diff);
+		rz_buf_uleb128(buf, &diff_value);
 		rz_buf_uleb128(buf, &encoded_field->access_flags);
+
+		if (i < 1) {
+			encoded_field->field_idx = diff_value;
+			diff_value_prev = diff_value;
+		} else {
+			encoded_field->field_idx = diff_value_prev + diff_value;
+			diff_value_prev = encoded_field->field_idx;
+		}
 
 		if (!rz_list_append(class_def->static_fields, encoded_field)) {
 			free(encoded_field);
@@ -235,8 +244,16 @@ static DexClassDef *dex_class_def_new(RzBuffer *buf, ut64 offset, ut64 base) {
 		}
 
 		encoded_field->offset = rz_buf_tell(buf) + base;
-		rz_buf_uleb128(buf, &encoded_field->field_idx_diff);
+		rz_buf_uleb128(buf, &diff_value);
 		rz_buf_uleb128(buf, &encoded_field->access_flags);
+
+		if (i < 1) {
+			encoded_field->field_idx = diff_value;
+			diff_value_prev = diff_value;
+		} else {
+			encoded_field->field_idx = diff_value_prev + diff_value;
+			diff_value_prev = encoded_field->field_idx;
+		}
 
 		if (!rz_list_append(class_def->instance_fields, encoded_field)) {
 			free(encoded_field);
@@ -245,7 +262,6 @@ static DexClassDef *dex_class_def_new(RzBuffer *buf, ut64 offset, ut64 base) {
 		}
 	}
 
-	ut64 diff_value;
 	for (ut64 i = 0; i < direct_methods_size; ++i) {
 		DexEncodedMethod *encoded_method = RZ_NEW0(DexEncodedMethod);
 		if (!encoded_method) {
@@ -265,7 +281,6 @@ static DexClassDef *dex_class_def_new(RzBuffer *buf, ut64 offset, ut64 base) {
 			encoded_method->method_idx = diff_value_prev + diff_value;
 			diff_value_prev = encoded_method->method_idx;
 		}
-
 
 		if (code_offset > 0) {
 			encoded_method->registers_size = /*   */ rz_buf_read_le16_at(buf, code_offset);
@@ -631,7 +646,7 @@ static char *dex_resolve_type_id(RzBinDex *dex, ut32 type_idx) {
 	return dex_resolve_string_id(dex, type_id);
 }
 
-static char *dex_resolve_proto_id(RzBinDex *dex, const char* name, ut32 proto_idx) {
+static char *dex_resolve_proto_id(RzBinDex *dex, const char *name, ut32 proto_idx) {
 	DexProtoId *proto_id = (DexProtoId *)rz_list_get_n(dex->proto_ids, proto_idx);
 	if (!proto_id) {
 		RZ_LOG_ERROR("cannot find proto_id with index %u out of %u\n", proto_idx, rz_list_length(dex->proto_ids));
@@ -672,7 +687,7 @@ static char *dex_resolve_proto_id(RzBinDex *dex, const char* name, ut32 proto_id
 	return rz_strbuf_drain(sb);
 }
 
-static ut64 dex_access_flags_to_method_flags(ut64 access_flags) {
+static ut64 dex_access_flags_to_bin_flags(ut64 access_flags) {
 	ut64 flags = 0;
 	if (access_flags & ACCESS_FLAG_PUBLIC) {
 		flags |= RZ_BIN_METH_PUBLIC;
@@ -747,7 +762,7 @@ static RzList /*<RzBinSymbol>*/ *dex_resolve_methods_in_class(RzBinDex *dex, Dex
 	rz_list_foreach (class_def->direct_methods, it, encoded_method) {
 		method_id = (DexMethodId *)rz_list_get_n(dex->method_ids, encoded_method->method_idx);
 		if (!method_id) {
-			RZ_LOG_INFO("cannot find method with index %u\n", encoded_method->method_idx);
+			RZ_LOG_INFO("cannot find direct method with index %" PFMT64u "\n", encoded_method->method_idx);
 			continue;
 		}
 
@@ -759,12 +774,8 @@ static RzList /*<RzBinSymbol>*/ *dex_resolve_methods_in_class(RzBinDex *dex, Dex
 
 		symbol->name = dex_resolve_string_id(dex, method_id->name_idx);
 		symbol->dname = dex_resolve_proto_id(dex, symbol->name, method_id->proto_idx);
-		//symbol->libname = ;
 		symbol->classname = dex_resolve_type_id(dex, method_id->class_idx);
-		//const char *forwarder;
 		symbol->bind = dex_is_static(encoded_method->access_flags) ? RZ_BIN_BIND_GLOBAL_STR : RZ_BIN_BIND_LOCAL_STR;
-		//const char *type;
-		//const char *rtype;
 		symbol->is_imported = false;
 		symbol->visibility = encoded_method->access_flags & UT32_MAX;
 		symbol->visibility_str = dex_access_flags_readable(symbol->visibility);
@@ -772,7 +783,7 @@ static RzList /*<RzBinSymbol>*/ *dex_resolve_methods_in_class(RzBinDex *dex, Dex
 		symbol->paddr = encoded_method->code_offset;
 		symbol->size = encoded_method->code_size;
 		symbol->ordinal = encoded_method->method_idx;
-		symbol->method_flags = dex_access_flags_to_method_flags(encoded_method->access_flags);
+		symbol->method_flags = dex_access_flags_to_bin_flags(encoded_method->access_flags);
 
 		if (!rz_list_append(methods, symbol)) {
 			rz_bin_symbol_free(symbol);
@@ -784,7 +795,7 @@ static RzList /*<RzBinSymbol>*/ *dex_resolve_methods_in_class(RzBinDex *dex, Dex
 	rz_list_foreach (class_def->virtual_methods, it, encoded_method) {
 		method_id = (DexMethodId *)rz_list_get_n(dex->method_ids, encoded_method->method_idx);
 		if (!method_id) {
-			RZ_LOG_INFO("cannot find method with index %u\n", encoded_method->method_idx);
+			RZ_LOG_INFO("cannot find virtual method with index %" PFMT64u "\n", encoded_method->method_idx);
 			continue;
 		}
 
@@ -795,20 +806,16 @@ static RzList /*<RzBinSymbol>*/ *dex_resolve_methods_in_class(RzBinDex *dex, Dex
 		}
 		symbol->name = dex_resolve_string_id(dex, method_id->name_idx);
 		symbol->dname = dex_resolve_proto_id(dex, symbol->name, method_id->proto_idx);
-		//symbol->libname = ;
 		symbol->classname = dex_resolve_type_id(dex, method_id->class_idx);
-		//const char *forwarder;
 		symbol->bind = dex_is_static(encoded_method->access_flags) ? RZ_BIN_BIND_GLOBAL_STR : RZ_BIN_BIND_LOCAL_STR;
-		//const char *type;
-		//const char *rtype;
 		symbol->is_imported = false;
 		symbol->visibility = encoded_method->access_flags & UT32_MAX;
-		symbol->visibility_str = dex_access_flags_readable(symbol->visibility);
+		symbol->visibility_str = dex_access_flags_readable(encoded_method->access_flags);
 		symbol->vaddr = encoded_method->code_offset;
 		symbol->paddr = encoded_method->code_offset;
 		symbol->size = encoded_method->code_size;
 		symbol->ordinal = encoded_method->method_idx;
-		symbol->method_flags = dex_access_flags_to_method_flags(encoded_method->access_flags);
+		symbol->method_flags = dex_access_flags_to_bin_flags(encoded_method->access_flags);
 
 		if (!rz_list_append(methods, symbol)) {
 			rz_bin_symbol_free(symbol);
@@ -828,16 +835,54 @@ static RzList /*<RzBinField>*/ *dex_resolve_fields_in_class(RzBinDex *dex, DexCl
 	DexEncodedField *encoded_field = NULL;
 	RzListIter *it = NULL;
 
-	//class_def->static_fields
-	//class_def->instance_fields
+	rz_list_foreach (class_def->static_fields, it, encoded_field) {
+		field_id = (DexFieldId *)rz_list_get_n(dex->field_ids, encoded_field->field_idx);
+		if (!field_id) {
+			RZ_LOG_INFO("cannot find static field with index %" PFMT64u "\n", encoded_field->field_idx);
+			continue;
+		}
 
-	rz_list_foreach(class_def->static_fields, it, encoded_field) {
 		RzBinField *field = RZ_NEW0(RzBinField);
 		if (!field) {
 			rz_warn_if_reached();
 			break;
 		}
 
+		field->vaddr = encoded_field->offset;
+		field->paddr = encoded_field->offset;
+		field->visibility = encoded_field->access_flags & UT32_MAX;
+		field->visibility_str = dex_access_flags_readable(encoded_field->access_flags | ACCESS_FLAG_STATIC);
+		field->name = dex_resolve_string_id(dex, field_id->name_idx);
+		field->type = dex_resolve_type_id(dex, field_id->type_idx);
+		field->flags = dex_access_flags_to_bin_flags(encoded_field->access_flags | ACCESS_FLAG_STATIC);
+
+		if (!rz_list_append(fields, field)) {
+			rz_bin_field_free(field);
+			rz_warn_if_reached();
+			break;
+		}
+	}
+
+	rz_list_foreach (class_def->instance_fields, it, encoded_field) {
+		field_id = (DexFieldId *)rz_list_get_n(dex->field_ids, encoded_field->field_idx);
+		if (!field_id) {
+			RZ_LOG_INFO("cannot find instance field with index %" PFMT64u "\n", encoded_field->field_idx);
+			continue;
+		}
+
+		RzBinField *field = RZ_NEW0(RzBinField);
+		if (!field) {
+			rz_warn_if_reached();
+			break;
+		}
+
+		field->vaddr = encoded_field->offset;
+		field->paddr = encoded_field->offset;
+		field->visibility = encoded_field->access_flags & UT32_MAX;
+		field->visibility_str = dex_access_flags_readable(encoded_field->access_flags);
+		field->name = dex_resolve_string_id(dex, field_id->name_idx);
+		field->type = dex_resolve_type_id(dex, field_id->type_idx);
+		field->flags = dex_access_flags_to_bin_flags(encoded_field->access_flags);
 
 		if (!rz_list_append(fields, field)) {
 			rz_bin_field_free(field);
@@ -898,7 +943,7 @@ RZ_API RzList *rz_bin_dex_classes(RzBinDex *dex) {
 	return classes;
 }
 
-static RzBinSection *section_new(const char* name, ut32 perm, ut32 size, ut64 address) {
+static RzBinSection *section_new(const char *name, ut32 perm, ut32 size, ut64 address) {
 	RzBinSection *section = RZ_NEW0(RzBinSection);
 	if (!section) {
 		rz_warn_if_reached();
@@ -911,10 +956,87 @@ static RzBinSection *section_new(const char* name, ut32 perm, ut32 size, ut64 ad
 	return section;
 }
 
+static void dex_resolve_code_section_in_class(RzBinDex *dex, DexClassDef *class_def, RzList *sections) {
+	DexEncodedMethod *encoded_method = NULL;
+	DexMethodId *method_id = NULL;
+	RzListIter *it = NULL;
+	RzBinSection *section;
+
+	rz_list_foreach (class_def->direct_methods, it, encoded_method) {
+		method_id = (DexMethodId *)rz_list_get_n(dex->method_ids, encoded_method->method_idx);
+		if (!method_id) {
+			RZ_LOG_INFO("cannot find direct method with index %" PFMT64u "\n", encoded_method->method_idx);
+			continue;
+		}
+
+		char *class_name = dex_resolve_type_id(dex, class_def->class_idx);
+		if (!class_name) {
+			class_name = strdup("Lunknown_class");
+		} else {
+			class_name = rz_str_replace(class_name, ";", "", 1);
+			rz_str_replace_ch(class_name, '/', '.', 1);
+		}
+		char *method_name = dex_resolve_string_id(dex, method_id->name_idx);
+		if (!method_name) {
+			method_name = strdup("unknown_method");
+		}
+
+		// skipping the L in 'L<class>;' mangled name
+		char *section_name = rz_str_newf("code.%s.%s", class_name + 1, method_name);
+		if (!section_name) {
+			rz_warn_if_reached();
+			break;
+		}
+
+		section = section_new(section_name, RZ_PERM_RX, encoded_method->code_size, encoded_method->code_offset);
+		if (section && !rz_list_append(sections, section)) {
+			rz_bin_section_free(section);
+		}
+		free(section_name);
+		free(method_name);
+		free(class_name);
+	}
+
+	rz_list_foreach (class_def->virtual_methods, it, encoded_method) {
+		method_id = (DexMethodId *)rz_list_get_n(dex->method_ids, encoded_method->method_idx);
+		if (!method_id) {
+			RZ_LOG_INFO("cannot find virtual method with index %" PFMT64u "\n", encoded_method->method_idx);
+			continue;
+		}
+
+		char *class_name = dex_resolve_type_id(dex, class_def->class_idx);
+		if (!class_name) {
+			class_name = strdup("Lunknown_class");
+		} else {
+			class_name = rz_str_replace(class_name, ";", "", 1);
+			rz_str_replace_ch(class_name, '/', '.', 1);
+		}
+		char *method_name = dex_resolve_string_id(dex, method_id->name_idx);
+		if (!method_name) {
+			method_name = strdup("unknown_method");
+		}
+
+		// skipping the L in 'L<class>;' mangled name
+		char *section_name = rz_str_newf("code.%s.%s", class_name + 1, method_name);
+		if (!section_name) {
+			rz_warn_if_reached();
+			break;
+		}
+
+		section = section_new(section_name, RZ_PERM_RX, encoded_method->code_size, encoded_method->code_offset);
+		if (section && !rz_list_append(sections, section)) {
+			rz_bin_section_free(section);
+		}
+		free(section_name);
+		free(method_name);
+		free(class_name);
+	}
+}
+
 RZ_API RzList *rz_bin_dex_sections(RzBinDex *dex) {
 	rz_return_val_if_fail(dex, NULL);
 
-	DexMethodId *class_def;
+	DexClassDef *class_def;
 	RzBinSection *section;
 	RzList *sections = NULL;
 	RzListIter *it;
@@ -923,27 +1045,9 @@ RZ_API RzList *rz_bin_dex_sections(RzBinDex *dex) {
 	if (!sections) {
 		return NULL;
 	}
-/*
 	rz_list_foreach (dex->class_defs, it, class_def) {
-		section = RZ_NEW0(RzBinSection);
-		if (!section) {
-			rz_warn_if_reached();
-			break;
-		}
-		section->name = strdup(name);
-		section->paddr = section->vaddr = s.addr;
-		section->size = section->vsize = s.size;
-		section->perm = perm;
-		if (format) {
-			section->format = format;
-		}
-
-		if (!rz_list_append(sections, section)) {
-			rz_bin_section_free(section);
-			break;
-		}
+		dex_resolve_code_section_in_class(dex, class_def, sections);
 	}
-*/
 	section = section_new("data", RZ_PERM_R, dex->data_size, dex->data_offset);
 	if (section && !rz_list_append(sections, section)) {
 		rz_bin_section_free(section);

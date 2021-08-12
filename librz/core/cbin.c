@@ -3517,11 +3517,35 @@ static inline char *demangle_class(const char *classname) {
 	return demangled;
 }
 
+static inline char *demangle_type(const char *any) {
+	if (!any) {
+		return strdup("unknown");
+	}
+	switch (any[0]) {
+	case 'L': return demangle_class(any);
+	case 'B': return strdup("byte");
+	case 'C': return strdup("char");
+	case 'D': return strdup("double");
+	case 'F': return strdup("float");
+	case 'I': return strdup("int");
+	case 'J': return strdup("long");
+	case 'S': return strdup("short");
+	case 'V': return strdup("void");
+	case 'Z': return strdup("boolean");
+	default: return strdup("unknown");
+	}
+}
+
+static inline const char *resolve_visibility(const char *v) {
+	return v ? v : "public";
+}
+
 static void classdump_java(RzCore *r, RzBinClass *c) {
 	RzBinField *f;
 	RzListIter *iter2, *iter3;
 	RzBinSymbol *sym;
-	char *package = NULL, *classname = NULL;;
+	char *package = NULL, *classname = NULL;
+	;
 	const char *tmp = rz_str_rchr(c->name, NULL, '$');
 	if (!tmp) {
 		tmp = rz_str_rchr(c->name, NULL, '/');
@@ -3534,23 +3558,29 @@ static void classdump_java(RzCore *r, RzBinClass *c) {
 		package = strdup("defpackage");
 		classname = demangle_class(c->name);
 	}
-	
+
 	rz_cons_printf("package %s;\n\n", package);
-	rz_cons_printf("public class %s {\n", classname);
-	free(classname);
-	free(package);
+	RZ_FREE(package);
+
+	const char *visibility = resolve_visibility(c->visibility_str);
+	rz_cons_printf("%s class %s {\n", visibility, classname);
+	RZ_FREE(classname);
 	rz_list_foreach (c->fields, iter2, f) {
-		if (f->name && rz_regex_match("ivar", "e", f->name)) {
-			rz_cons_printf("  public %s %s\n", f->type, f->name);
-		}
+		visibility = resolve_visibility(f->visibility_str);
+		char *ftype = demangle_type(f->type);
+		rz_cons_printf("  %s %s %s;\n", visibility, ftype, f->name);
+		free(ftype);
+	}
+	if (!rz_list_empty(c->fields)) {
+		rz_cons_newline();
 	}
 	rz_list_foreach (c->methods, iter3, sym) {
 		const char *mn = sym->dname ? sym->dname : sym->name;
-		const char *ac = sym->visibility_str ? sym->visibility_str : "public";
+		visibility = resolve_visibility(sym->visibility_str);
 		char *dem = rz_bin_demangle_java(mn);
 		rz_str_replace_ch(dem, '/', '.', 1);
 		dem = rz_str_replace(dem, "java.lang.", "", 1);
-		rz_cons_printf("  %s %s;\n", ac, dem);
+		rz_cons_printf("  %s %s;\n", visibility, dem);
 		free(dem);
 	}
 	rz_cons_printf("}\n\n");
@@ -3624,17 +3654,32 @@ static int bin_classes(RzCore *r, PJ *pj, int mode) {
 				}
 			}
 		} else if (IS_MODE_RZCMD(mode)) {
-			char *n = __filterShell(name);
-			rz_cons_printf("\"f class.%s = 0x%" PFMT64x "\"\n", n, at_min);
-			free(n);
-			if (c->super) {
-				char *cn = c->name; // __filterShell (c->name);
-				char *su = c->super; // __filterShell (c->super);
-				rz_cons_printf("\"f super.%s.%s = %d\"\n",
-					cn, su, c->index);
-				// free (cn);
-				// free (su);
+			RzBinFile *bf = rz_bin_cur(r->bin);
+
+			// class
+			char *fn = rz_core_bin_class_build_flag_name(c);
+			if (fn) {
+				rz_cons_printf("\"f %s = 0x%" PFMT64x "\"\n", fn, at_min);
+				free(fn);
 			}
+
+			// super class
+			fn = rz_core_bin_super_build_flag_name(c);
+			if (fn) {
+				rz_cons_printf("\"f %s = %d\"\n", fn, c->index);
+				free(fn);
+			}
+
+			// class fields
+			rz_list_foreach (c->fields, iter2, f) {
+				char *fn = rz_core_bin_field_build_flag_name(c, f);
+				if (fn) {
+					rz_cons_printf("\"f %s = 0x%08" PFMT64x "\"\n", fn, f->vaddr);
+					free(fn);
+				}
+			}
+
+			// class methods
 			rz_list_foreach (c->methods, iter2, sym) {
 				char *fn = rz_core_bin_method_build_flag_name(c, sym);
 				if (fn) {
@@ -3642,29 +3687,25 @@ static int bin_classes(RzCore *r, PJ *pj, int mode) {
 					free(fn);
 				}
 			}
-			rz_list_foreach (c->fields, iter2, f) {
-				char *fn = rz_str_newf("field.%s.%s", c->name, f->name);
-				ut64 at = f->vaddr; //  sym->vaddr + (f->vaddr &  0xffff);
-				rz_cons_printf("\"f %s = 0x%08" PFMT64x "\"\n", fn, at);
-				free(fn);
-			}
 
 			// C struct
-			rz_cons_printf("td \"struct %s {", c->name);
-			if (rz_list_empty(c->fields)) {
-				// XXX workaround because we cant register empty structs yet
-				// XXX https://github.com/rizinorg/rizin/issues/16342
-				rz_cons_printf(" char empty[0];");
-			} else {
-				rz_list_foreach (c->fields, iter2, f) {
-					char *n = objc_name_toc(f->name);
-					char *t = objc_type_toc(f->type);
-					rz_cons_printf(" %s %s;", t, n);
-					free(t);
-					free(n);
+			if (!(bf->o->lang == RZ_BIN_NM_JAVA || (bf->o->info && bf->o->info->lang && strstr(bf->o->info->lang, "dalvik")))) {
+				rz_cons_printf("td \"struct %s {", c->name);
+				if (rz_list_empty(c->fields)) {
+					// XXX workaround because we cant register empty structs yet
+					// XXX https://github.com/rizinorg/rizin/issues/16342
+					rz_cons_printf(" char empty[0];");
+				} else {
+					rz_list_foreach (c->fields, iter2, f) {
+						char *n = objc_name_toc(f->name);
+						char *t = objc_type_toc(f->type);
+						rz_cons_printf(" %s %s;", t, n);
+						free(t);
+						free(n);
+					}
 				}
+				rz_cons_printf("};\"\n");
 			}
-			rz_cons_printf("};\"\n");
 		} else if (IS_MODE_JSON(mode)) {
 			pj_o(pj);
 			pj_ks(pj, "classname", c->name);
@@ -4528,6 +4569,56 @@ RZ_API int rz_core_bin_list(RzCore *core, int mode) {
 	return count;
 }
 
+static void resolve_method_flags(RzStrBuf *buf, ut64 flags) {
+	for (int i = 0; flags; flags >>= 1, i++) {
+		if (!(flags & 1)) {
+			continue;
+		}
+		const char *flag_string = rz_bin_get_meth_flag_string(1ULL << i, false);
+		if (flag_string) {
+			rz_strbuf_appendf(buf, ".%s", flag_string);
+		}
+	}
+}
+
+RZ_API char *rz_core_bin_class_build_flag_name(RzBinClass *cls) {
+	rz_return_val_if_fail(cls, NULL);
+	char *ret = NULL;
+	if (!cls->name) {
+		return NULL;
+	}
+
+	if (cls->visibility_str) {
+		char *copy = strdup(cls->visibility_str);
+		rz_str_replace_ch(copy, ' ', '.', 1);
+		ret = rz_str_newf("class.%s.%s", copy, cls->name);
+		free(copy);
+	} else {
+		ret = rz_str_newf("class.public.%s", cls->name);
+	}
+	rz_name_filter(ret, -1, true);
+	return ret;
+}
+
+RZ_API char *rz_core_bin_super_build_flag_name(RzBinClass *cls) {
+	rz_return_val_if_fail(cls, NULL);
+	char *ret = NULL;
+	if (!cls->name || !cls->super) {
+		return NULL;
+	}
+
+	if (cls->visibility_str) {
+		char *copy = strdup(cls->visibility_str);
+		rz_str_replace_ch(copy, ' ', '.', 1);
+		ret = rz_str_newf("super.%s.%s.%s", copy, cls->name, cls->super);
+		free(copy);
+	} else {
+		ret = rz_str_newf("super.public.%s.%s", cls->name, cls->super);
+	}
+	rz_name_filter(ret, -1, true);
+	return ret;
+}
+
 RZ_API char *rz_core_bin_method_build_flag_name(RzBinClass *cls, RzBinSymbol *meth) {
 	rz_return_val_if_fail(cls && meth, NULL);
 	if (!cls->name || !meth->name) {
@@ -4537,22 +4628,41 @@ RZ_API char *rz_core_bin_method_build_flag_name(RzBinClass *cls, RzBinSymbol *me
 	RzStrBuf buf;
 	rz_strbuf_initf(&buf, "method");
 
-	ut64 flags = meth->method_flags;
-	for (int i = 0; flags; flags >>= 1, i++) {
-		if (!(flags & 1)) {
-			continue;
-		}
-		const char *flag_string = rz_bin_get_meth_flag_string(1ULL << i, false);
-		if (flag_string) {
-			rz_strbuf_appendf(&buf, ".%s", flag_string);
-		}
+	if (meth->visibility_str) {
+		char *copy = strdup(meth->visibility_str);
+		rz_str_replace_ch(copy, ' ', '.', 1);
+		rz_strbuf_appendf(&buf, ".%s", copy);
+		free(copy);
+	} else {
+		resolve_method_flags(&buf, meth->method_flags);
+	}
+	const char *mn = meth->dname ? meth->dname : meth->name;
+	rz_strbuf_appendf(&buf, ".%s.%s", cls->name, mn);
+	char *ret = rz_strbuf_drain_nofree(&buf);
+	rz_name_filter(ret, -1, true);
+	return ret;
+}
+
+RZ_API char *rz_core_bin_field_build_flag_name(RzBinClass *cls, RzBinField *field) {
+	rz_return_val_if_fail(cls && field, NULL);
+	if (!cls->name || !field->name) {
+		return NULL;
 	}
 
-	rz_strbuf_appendf(&buf, ".%s.%s", cls->name, meth->name);
-	char *ret = rz_strbuf_drain_nofree(&buf);
-	if (ret) {
-		rz_name_filter(ret, -1, true);
+	RzStrBuf buf;
+	rz_strbuf_initf(&buf, "field");
+
+	if (field->visibility_str) {
+		char *copy = strdup(field->visibility_str);
+		rz_str_replace_ch(copy, ' ', '.', 1);
+		rz_strbuf_appendf(&buf, ".%s", copy);
+		free(copy);
+	} else {
+		resolve_method_flags(&buf, field->flags);
 	}
+	rz_strbuf_appendf(&buf, ".%s.%s", cls->name, field->name);
+	char *ret = rz_strbuf_drain_nofree(&buf);
+	rz_name_filter(ret, -1, true);
 	return ret;
 }
 
