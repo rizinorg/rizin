@@ -31,7 +31,6 @@ RZ_IPI void rz_core_analysis_esil_default(RzCore *core);
 
 RZ_IPI void rz_core_analysis_rzil_init_mem(RzCore *core);
 RZ_IPI void core_rzil_init(RzCore *core);
-RZ_IPI void rz_core_analysis_rzil_init(RzCore *core);
 RZ_IPI void rz_core_analysis_rzil_reinit(RzCore *core);
 RZ_IPI void rz_core_rzil_step(RzCore *core);
 

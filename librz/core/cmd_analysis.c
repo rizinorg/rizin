@@ -5368,8 +5368,9 @@ static void cmd_rzil_mem(RzCore *core, const char *input) {
 		eprintf("[WIP] Add Mem or Remove Mem\n");
 		break;
 	case '\0':
-		rz_core_analysis_rzil_init_mem(core);
-		core->analysis->rzil->init_mem = true;
+		eprintf("[DEAD] MOVE TO RZIL_INIT\n");
+		// rz_core_analysis_rzil_init_mem(core);
+		// core->analysis->rzil->init_mem = true;
 		break;
 	default:
 		eprintf("Usage: aeim [addr] [size] [name] - initialize ESIL VM stack\n");

@@ -31,7 +31,7 @@ static void free_bind_var_val(HtPPKv *kv) {
  * \param addr_size int, size of the address in VM
  * \param data_size int, size of the minimal data unit in VM
  */
-RZ_API void rz_il_vm_init(RzILVM vm, ut64 start_addr, int addr_size, int data_size) {
+RZ_API bool rz_il_vm_init(RzILVM vm, ut64 start_addr, int addr_size, int data_size) {
 	vm->addr_size = addr_size;
 	vm->data_size = data_size;
 
@@ -126,6 +126,8 @@ RZ_API void rz_il_vm_init(RzILVM vm, ut64 start_addr, int addr_size, int data_si
 	vm->val_count = 0;
 	vm->mem_count = 0;
 	vm->easy_debug = 0;
+
+	return true;
 }
 
 /**
@@ -196,12 +198,14 @@ RZ_API void rz_il_vm_list_step(RzILVM vm, RzPVector *op_list) {
 	void **iter;
 	RzILOp cur_op;
 
-	rz_il_vm_debug_print_ops(vm);
-	rz_il_print_vm_labels(vm);
+	// rz_il_vm_debug_print_ops(vm);
+	// rz_il_print_vm_labels(vm);
 
 	rz_pvector_foreach (op_list, iter) {
 		cur_op = *iter;
 		rz_il_vm_step(vm, cur_op);
+		printf(">>>> %s\n",rz_il_op2str(cur_op->code));
+		rz_il_print_vm_temps(vm);
 	}
 
 	BitVector one = rz_il_bv_new(vm->pc->len);
@@ -253,7 +257,7 @@ RZ_API Mem rz_il_vm_add_mem(RzILVM vm, int min_unit_size) {
 	return mem;
 }
 
-const string op2str(RzILOp op) {
+RZ_API string rz_il_op2str(CoreTheoryOPCode opcode) {
 	char *ctops[64] = {
 		"VAR",
 		"UNK",
@@ -297,7 +301,7 @@ const string op2str(RzILOp op) {
 		"BRANCH",
 		"INVALID",
 	};
-	return ctops[op->code];
+	return ctops[opcode];
 }
 
 // create string for single core theory opcode
@@ -310,37 +314,37 @@ int rz_il_vm_printer_step(RzILOp op, string *helper) {
 	// tricky approach
 	// Handle Special Opcode First
 	case RZIL_OP_VAR:
-		cur_op_str = rz_str_newf("(%s %s)", op2str(op), op->op.var->v);
+		cur_op_str = rz_str_newf("(%s %s)", rz_il_op2str(op->code), op->op.var->v);
 		helper[op->op.var->ret] = cur_op_str;
 		ret = op->op.var->ret;
 		break;
 	case RZIL_OP_SET:
 		arg1 = helper[op->op.set->x];
-		cur_op_str = rz_str_newf("(%s %s %s)", op2str(op), op->op.set->v, arg1);
+		cur_op_str = rz_str_newf("(%s %s %s)", rz_il_op2str(op->code), op->op.set->v, arg1);
 		helper[op->op.set->ret] = cur_op_str;
 		ret = op->op.set->ret;
 		break;
 	case RZIL_OP_GOTO:
-		cur_op_str = rz_str_newf("(%s %s)", op2str(op), op->op.goto_->lbl);
+		cur_op_str = rz_str_newf("(%s %s)", rz_il_op2str(op->code), op->op.goto_->lbl);
 		helper[op->op.goto_->ret_ctrl_eff] = cur_op_str;
 		ret = op->op.goto_->ret_ctrl_eff;
 		break;
 		// 4 Int memebers
 	case RZIL_OP_INT:
-		cur_op_str = rz_str_newf("(%s %d)", op2str(op), op->op.int_->value);
+		cur_op_str = rz_str_newf("(%s %d)", rz_il_op2str(op->code), op->op.int_->value);
 		helper[op->op.int_->ret] = cur_op_str;
 		ret = op->op.int_->ret;
 		break;
 	case RZIL_OP_STORE:
 		arg1 = helper[op->op.store->key];
 		arg2 = helper[op->op.store->value];
-		cur_op_str = rz_str_newf("(%s %s %s)", op2str(op), arg1, arg2);
+		cur_op_str = rz_str_newf("(%s %s %s)", rz_il_op2str(op->code), arg1, arg2);
 		helper[VM_MAX_TEMP - 1] = cur_op_str; // op_store->ret == -1
 		ret = VM_MAX_TEMP - 1;
 		break;
 	case RZIL_OP_LOAD:
 		arg1 = helper[op->op.load->key];
-		cur_op_str = rz_str_newf("(%s %s)", op2str(op), arg1);
+		cur_op_str = rz_str_newf("(%s %s)", rz_il_op2str(op->code), arg1);
 		helper[op->op.load->ret] = cur_op_str;
 		ret = op->op.load->ret;
 		break;
@@ -350,14 +354,14 @@ int rz_il_vm_printer_step(RzILOp op, string *helper) {
 		arg1 = helper[op->op.branch->condition];
 		arg2 = (op->op.branch->true_eff == -1) ? "<NOP>" : helper[op->op.branch->true_eff];
 		arg3 = (op->op.branch->false_eff == -1) ? "<NOP>" : helper[op->op.branch->false_eff];
-		cur_op_str = rz_str_newf("(%s %s %s %s)", op2str(op), arg1, arg2, arg3);
+		cur_op_str = rz_str_newf("(%s %s %s %s)", rz_il_op2str(op->code), arg1, arg2, arg3);
 		helper[op->op.branch->ret] = cur_op_str;
 		ret = op->op.branch->ret;
 		break;
 	case RZIL_OP_UNK:
 	case RZIL_OP_B0:
 	case RZIL_OP_B1:
-		cur_op_str = rz_str_newf("%s", op2str(op));
+		cur_op_str = rz_str_newf("%s", rz_il_op2str(op->code));
 		helper[op->op.unk->ret] = cur_op_str;
 		ret = op->op.unk->ret;
 		break;
@@ -367,7 +371,7 @@ int rz_il_vm_printer_step(RzILOp op, string *helper) {
 		arg1 = helper[op->op.ite->condition];
 		arg2 = helper[op->op.ite->x];
 		arg3 = helper[op->op.ite->y];
-		cur_op_str = rz_str_newf("(%s %s %s %s)", op2str(op), arg1, arg2, arg3);
+		cur_op_str = rz_str_newf("(%s %s %s %s)", rz_il_op2str(op->code), arg1, arg2, arg3);
 		helper[op->op.ite->ret] = cur_op_str;
 		ret = op->op.ite->ret;
 		break;
@@ -390,7 +394,7 @@ int rz_il_vm_printer_step(RzILOp op, string *helper) {
 	case RZIL_OP_OR_:
 		arg1 = helper[op->op.add->x];
 		arg2 = helper[op->op.add->y];
-		cur_op_str = rz_str_newf("(%s %s %s)", op2str(op), arg1, arg2);
+		cur_op_str = rz_str_newf("(%s %s %s)", rz_il_op2str(op->code), arg1, arg2);
 		helper[op->op.add->ret] = cur_op_str;
 		ret = op->op.add->ret;
 		break;
@@ -401,7 +405,7 @@ int rz_il_vm_printer_step(RzILOp op, string *helper) {
 	case RZIL_OP_JMP:
 	case RZIL_OP_INV:
 		arg1 = helper[op->op.inv->x];
-		cur_op_str = rz_str_newf("(%s %s)", op2str(op), arg1);
+		cur_op_str = rz_str_newf("(%s %s)", rz_il_op2str(op->code), arg1);
 		helper[op->op.inv->ret] = cur_op_str;
 		ret = op->op.inv->ret;
 		break;

@@ -24,6 +24,11 @@ struct bf_stack_t {
 };
 typedef struct bf_stack_t *BfStack;
 
+typedef struct bf_context_t {
+	BfStack stack;
+	ut64 op_count;
+} BfContext;
+
 static void bf_syscall_read(RzILVM vm, RzILOp op) {
 	ut8 c = getc(stdin);
 	BitVector bv = rz_il_bv_new_from_ut32(BF_ALIGN_SIZE, c);
@@ -342,15 +347,13 @@ RzPVector *bf_rlimit(RzILVM vm, BfStack stack, ut64 id, ut64 addr) {
 	return oplist;
 }
 
-static int bf_vm_init(RzAnalysisRzil *rzil) {
+
+static bool bf_specific_init(RzAnalysisRzil *rzil) {
 	RzILVM vm = rzil->vm;
 
 	// load reg
 	// TODO use info of reg profile
 	rz_il_vm_add_reg(vm, "ptr", BF_ADDR_SIZE);
-
-	BfStack astack = (BfStack)calloc(1, sizeof(struct bf_stack_t));
-	rzil->user = astack;
 
 	EffectLabel read_label = rz_il_vm_create_label_lazy(vm, "read");
 	EffectLabel write_label = rz_il_vm_create_label_lazy(vm, "write");
@@ -359,44 +362,70 @@ static int bf_vm_init(RzAnalysisRzil *rzil) {
 	read_label->type = EFFECT_LABEL_SYSCALL;
 	write_label->type = EFFECT_LABEL_HOOK;
 
-	return 0;
+	// init mem
+	rz_il_vm_add_mem(vm, vm->data_size);
+
+	return true;
 }
 
-static int bf_vm_fini(RzAnalysisRzil *rzil) {
+static bool bf_fini_rzil(RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis && analysis->rzil, false);
+
+	RzAnalysisRzil *rzil = analysis->rzil;
 	if (rzil->user) {
-		free(rzil->user);
+		BfContext *ctx = rzil->user;
+		free(ctx->stack);
+		free(ctx);
+		rzil->user = NULL;
 	}
-	return 0;
+
+	if (rzil->vm) {
+		rz_il_vm_close(rzil->vm);
+		rzil->vm = NULL;
+	}
+
+	rzil->inited = false;
+	return true;
 }
 
-static void bf_init_rzil(RzAnalysis *analysis, ut64 addr) {
+static bool bf_init_rzil(RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis && analysis->rzil, false);
+	RzAnalysisRzil *rzil = analysis->rzil;
+
+	if (rzil->inited) {
+		return true;
+	}
+
+	// TODO : get some arguments from rizin, predefined some for now.
 	int addrsize = 64;
 	int datasize = 8;
-	ut64 start_addr = addr;
+	ut64 start_addr = 0;
 
-	int romem = true;
-	int stats = true;
-	int nonull = true;
-
-	RzAnalysisRzil *rzil;
-	if (!(rzil = rz_analysis_rzil_new())) {
-		return;
+	// create core theory VM
+	if (!rz_il_vm_init(rzil->vm, start_addr, addrsize, datasize)) {
+		RZ_LOG_ERROR("RZIL : Init VM failed\n");
+		return false;
 	}
-	// init
-	rz_il_vm_init(rzil->vm, start_addr, addrsize, datasize);
-	rz_il_vm_add_reg(rzil->vm, "ptr", rzil->vm->addr_size);
-	rz_analysis_rzil_setup(analysis, rzil, romem, stats, nonull);
-	analysis->rzil = rzil;
+
+	// init bf RZIL user-defined context
+	BfStack astack = (BfStack)calloc(1, sizeof(struct bf_stack_t));
+	BfContext *context = RZ_NEW0(BfContext);
+	context->stack = astack;
+	context->op_count = 0;
+	rzil->user = context;
+
+	// bf specific init things
+	return bf_specific_init(rzil);
 }
 
-#define BUFSIZE_INC 32
 static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	if (!op) {
 		return 1;
 	}
 
 	if (!analysis->rzil) {
-		bf_init_rzil(analysis, addr);
+		printf("Rzil Haven't been initialized\n");
+		return 1;
 	}
 
 	/* Ayeeee! What's inside op? Do we have an initialized RzAnalysisOp? Are we going to have a leak here? :-( */
@@ -406,7 +435,8 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 	op->addr = addr;
 	op->rzil_op = NULL;
 
-	BfStack stack_helper = analysis->rzil->user;
+	BfContext *ctx = analysis->rzil->user;
+	BfStack stack_helper = ctx->stack;
 	RzILVM vm = analysis->rzil->vm;
 	RzPVector *oplist;
 	op->rzil_op = RZ_NEW0(RzAnalysisRzilOp);
@@ -461,6 +491,7 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 		op->rzil_op->root_node = NULL;
 		rz_analysis_set_rzil_op(analysis->rzil, addr, oplist);
 	}
+	ctx->op_count++;
 	return op->size;
 }
 
@@ -490,8 +521,8 @@ RzAnalysisPlugin rz_analysis_plugin_bf = {
 	.esil = true,
 	.op = &bf_op,
 	.get_reg_profile = get_reg_profile,
-	.rzil_init = bf_vm_init,
-	.rzil_fini = bf_vm_fini
+	.rzil_init = bf_init_rzil,
+	.rzil_fini = bf_fini_rzil
 };
 
 #ifndef RZ_PLUGIN_INCORE

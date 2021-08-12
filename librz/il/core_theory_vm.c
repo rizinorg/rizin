@@ -66,6 +66,7 @@ RZ_API RzILVal rz_il_vm_fortify_val(RzILVM vm, int temp_val_index) {
 	rz_il_add_to_bag(vm->vm_global_value_set, val);
 
 	rz_il_empty_temp(vm, temp_val_index);
+	rz_il_make_val_temp(vm, temp_val_index, rz_il_dump_value(val));
 	return val;
 }
 
@@ -315,6 +316,12 @@ RZ_API void *rz_il_get_temp(RzILVM vm, int index) {
  */
 RZ_API BitVector rz_il_get_bv_temp(RzILVM vm, int index) {
 	RzILTemp temp = vm->temp_value_list[index];
+
+	if (index == -1) {
+		eprintf("Please Tell Why\n");
+		return NULL;
+	}
+
 	if (temp->type == RZIL_TEMP_BV) {
 		return temp->data;
 	}
@@ -654,10 +661,10 @@ void rz_il_vm_debug_print_ops(RzILVM vm) {
 	ht_pp_foreach(vm->ct_opcodes, print_vm_op_callback, &count);
 }
 
-void rz_il_print_vm_temps(RzILVM vm) {
+RZ_API void rz_il_print_vm_temps(RzILVM vm) {
 	int i = 0;
 	RzILTemp cur;
-	for (i = 0; i < VM_MAX_TEMP; ++i) {
+	for (i = 0; i < 8; ++i) {
 		cur = vm->temp_value_list[i];
 		if (cur) {
 			printf("[TEMP-%d] -> ", i);
@@ -679,12 +686,12 @@ void rz_il_print_vm_temps(RzILVM vm) {
 			}
 
 			if (cur->type == RZIL_TEMP_VAL) {
-				printf("[VAL] TYPE-%d\n", ((RzILVal)cur)->type);
+				printf("[VAL] TYPE-%d\n", ((RzILVal)cur->data)->type);
 				continue;
 			}
 
 			if (cur->type == RZIL_TEMP_EFF) {
-				printf("[EFF] TYPE-%d\n", ((Effect)cur)->effect_type);
+				printf("[EFF] TYPE-%d\n", ((Effect)cur->data)->effect_type);
 				continue;
 			}
 		}

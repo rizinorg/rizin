@@ -1134,7 +1134,7 @@ typedef struct rz_analysis_rzil_t {
 
 	int verbose;
 	void *user; // store data for architecture specified plugin
-	bool init_mem;
+	bool inited;
 } RzAnalysisRzil;
 
 #undef ESIL
@@ -1197,7 +1197,7 @@ typedef int (*RzAnalysisDiffFcnCallback)(RzAnalysis *analysis, RzList *fcns, RzL
 typedef int (*RzAnalysisDiffEvalCallback)(RzAnalysis *analysis);
 
 typedef int (*RzAnalysisEsilCB)(RzAnalysisEsil *esil);
-typedef int (*RzAnalysisRzilCB)(RzAnalysisRzil *rzil);
+typedef bool (*RzAnalysisRzilCB)(RzAnalysis *analysis);
 typedef int (*RzAnalysisEsilLoopCB)(RzAnalysisEsil *esil, RzAnalysisOp *op);
 typedef int (*RzAnalysisEsilTrapCB)(RzAnalysisEsil *esil, int trap_type, int trap_code);
 
@@ -1562,7 +1562,7 @@ RZ_API void rz_analysis_esil_trace_restore(RzAnalysisEsil *esil, int idx);
 /* rzil : stats and trace */
 RZ_API RzAnalysisRzil *rz_analysis_rzil_new();
 RZ_API bool rz_analysis_rzil_set_pc(RzAnalysisRzil *rzil, ut64 addr);
-RZ_API bool rz_analysis_rzil_setup(RzAnalysis *analysis, RzAnalysisRzil *rzil, int romem, int stats, int nonull);
+RZ_API bool rz_analysis_rzil_setup(RzAnalysis *analysis);
 RZ_API void rz_analysis_rzil_cleanup(RzAnalysis *analysis, RzAnalysisRzil *rzil);
 RZ_API void rz_analysis_set_rzil_op(RzAnalysisRzil *rzil, ut64 addr, RzPVector *oplist);
 RZ_API void rz_analysis_rzil_record_stats(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzAnalysisRzilOp *op);

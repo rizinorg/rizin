@@ -31,14 +31,11 @@ RZ_API void rz_analysis_rzil_cleanup(RzAnalysis *analysis, RzAnalysisRzil *rzil)
 		eprintf("uninitialized rzil\n");
 		return;
 	}
-	if (rzil->vm) {
-		rz_il_vm_close(rzil->vm);
-		rzil->vm = NULL;
-	}
 	if (analysis && analysis->cur && analysis->cur->rzil_fini) {
-		analysis->cur->rzil_fini(rzil);
+		analysis->cur->rzil_fini(analysis);
 	}
 	free(rzil);
+	analysis->rzil = NULL;
 }
 
 /**
@@ -64,11 +61,16 @@ RZ_API bool rz_analysis_rzil_set_pc(RzAnalysisRzil *rzil, ut64 addr) {
  * \param nonull int is pc cannot be null ?
  * \return true if setup, else return false
  */
-RZ_API bool rz_analysis_rzil_setup(RzAnalysis *analysis, RzAnalysisRzil *rzil, int romem, int stats, int nonull) {
-	rz_return_val_if_fail(rzil, false);
+RZ_API bool rz_analysis_rzil_setup(RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, false);
 
-	if (analysis && analysis->cur && analysis->cur->rzil_init) {
-		analysis->cur->rzil_init(rzil);
+	RzAnalysisRzil *rzil = rz_analysis_rzil_new();
+	rz_return_val_if_fail(rzil, false);
+	analysis->rzil = rzil;
+
+	// init RZIL according to different archs
+	if (analysis->cur && analysis->cur->rzil_init) {
+		analysis->cur->rzil_init(analysis);
 	}
 
 	return true;
@@ -96,15 +98,19 @@ static void rz_analysis_rzil_parse_pvector(RzAnalysis *analysis, RzAnalysisRzil 
 	RzPVector *op_list = ops->ops;
 	// 1. step exec the op
 	rz_il_vm_list_step(vm, op_list);
+	printf("[DEBUG] : AFTER STEP\n");
 
 	// 2. call trace to collect trace info
 	rz_analysis_rzil_trace_op(analysis, rzil, ops);
+	printf("[DEBUG] : COLLECT TRACE\n");
 
 	// 3. call stats to collect stats info
 	rz_analysis_rzil_record_stats(analysis, rzil, ops);
+	printf("[DEBUG] : COLLECT STATS\n");
 
 	// 4. clean the temp
 	rz_il_clean_temps(vm);
+	printf("[DEBUG] : CLEAN TEMPS\n");
 }
 
 /**
@@ -132,6 +138,11 @@ RZ_API void rz_analysis_rzil_collect_info(RzAnalysis *analysis, RzAnalysisRzil *
 	if (rzil->trace->idx != rzil->trace->end_idx) {
 		RZ_LOG_DEBUG("Restore WIP\n");
 		return;
+	}
+
+	const char* charset = "[]<>+-,.";
+	if (op->id > 0) {
+		printf("op : {%c}\n", charset[op->id - 1]);
 	}
 
 	// Create instruction trace for current instruction

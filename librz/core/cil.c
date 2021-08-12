@@ -442,34 +442,7 @@ RZ_IPI void rz_core_analysis_rzil_init_mem(RzCore *core) {
 }
 
 RZ_IPI void core_rzil_init(RzCore *core) {
-	// real init;
-	// TODO : get args from config
-	//      currently it's bf specific
-	int addrsize = 64;
-	int datasize = 8;
-	ut64 start_addr = core->offset;
-
-	int romem = true;
-	int stats = true;
-	int nonull = true;
-
-	RzAnalysisRzil *rzil;
-	if (!(rzil = rz_analysis_rzil_new())) {
-		return;
-	}
-	// init
-	rz_il_vm_init(rzil->vm, start_addr, addrsize, datasize);
-	core->analysis->rzil = rzil;
-	// TODO : get registers info from rizin
-	rz_il_vm_add_reg(rzil->vm, "ptr", rzil->vm->addr_size);
-	rz_analysis_rzil_setup(core->analysis, rzil, romem, stats, nonull);
-}
-
-RZ_IPI void rz_core_analysis_rzil_init(RzCore *core) {
-	if (core->analysis->rzil) {
-		return;
-	}
-	core_rzil_init(core);
+	rz_analysis_rzil_setup(core->analysis);
 }
 
 RZ_IPI void rz_core_analysis_rzil_reinit(RzCore *core) {
@@ -485,7 +458,8 @@ RZ_IPI void rz_core_analysis_rzil_reinit(RzCore *core) {
 RZ_IPI void rz_core_rzil_step(RzCore *core) {
 	RzPVector *oplist;
 
-	if (!core->analysis || !core->analysis->rzil || !core->analysis->rzil->init_mem) {
+	if (!core->analysis || !core->analysis->rzil || !core->analysis->rzil->inited) {
+		RZ_LOG_ERROR("Please aei to init RZIL First\n");
 		return;
 	}
 

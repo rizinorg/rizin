@@ -11,59 +11,12 @@
  * 4. reg.write name & data
 **/
 
-const string op2str(RzILOp op) {
-        char *ctops[64] = {
-                "VAR",
-                "UNK",
-                "ITE",
-                "B0",
-                "B1",
-                "INV",
-                "AND_",
-                "OR_",
-                "INT",
-                "MSB",
-                "LSB",
-                "NEG",
-                "NOT",
-                "ADD",
-                "SUB",
-                "MUL",
-                "DIV",
-                "SDIV",
-                "MOD",
-                "SMOD",
-                "LOGAND",
-                "LOGOR",
-                "LOGXOR",
-                "SHIFTR",
-                "SHIFTL",
-                "SLE",
-                "ULE",
-                "CAST",
-                "CONCAT",
-                "APPEND",
-                "LOAD",
-                "STORE",
-                "PERFORM",
-                "SET",
-                "JMP",
-                "GOTO",
-                "SEQ",
-                "BLK",
-                "REPEAT",
-                "BRANCH",
-                "INVALID",
-        };
-        return ctops[op->code];
-}
-
 static void htup_vector_free(HtUPKv *kv) {
 	rz_vector_free(kv->value);
 }
 
 RZ_API RzAnalysisRzilTrace *rz_analysis_rzil_trace_new(RzAnalysis *analysis, RzAnalysisRzil *rzil) {
-	rz_return_val_if_fail(rzil && rzil->stack_addr && rzil->stack_size, NULL);
+	rz_return_val_if_fail(rzil, NULL);
 	size_t i;
 	RzAnalysisEsilTrace *trace = RZ_NEW0(RzAnalysisEsilTrace);
 	if (!trace) {
@@ -132,11 +85,11 @@ static inline void rzil_add_reg_trace(RzAnalysisRzilTrace *rtrace, RzILTraceRegO
 
 // buf limit 32
 static void bv_to_databuf(ut8 *buf, BitVector bv) {
-	rz_il_bv_prepend_zero(bv, 128 - bv->len);
-	if (bv->_elem_len != 16) {
-		RZ_LOG_ERROR("BAD SIZE\n");
-		return;
-	}
+	// rz_il_bv_prepend_zero(bv, 128 - bv->len);
+//	if (bv->_elem_len != 16) {
+//		RZ_LOG_ERROR("BAD SIZE\n");
+//		return;
+//	}
 }
 
 static void rz_analysis_rzil_trace_focus_mem_read(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzILOp single_op) {
@@ -166,7 +119,7 @@ static void rz_analysis_rzil_trace_focus_mem_write(RzAnalysis *analysis, RzAnaly
 	RzILOpStore op_store = single_op->op.store;
 
 	BitVector addr = rz_il_get_bv_temp(rzil->vm, op_store->key);
-	BitVector data = rz_il_get_bv_temp(rzil->vm, op_store->ret);
+	BitVector data = rz_il_get_bv_temp(rzil->vm, op_store->value);
 
 	if (data->len > 128) {
 		RZ_LOG_ERROR("RZIL memory write more than 128 bits\n");
@@ -209,6 +162,7 @@ static void rz_analysis_rzil_trace_focus_reg_write(RzAnalysis *analysis, RzAnaly
 	RzILVM vm = rzil->vm;
 
 	const char *reg_name = rz_str_constpool_get(&analysis->constpool, op_set->v);
+	printf("[DEBUG] Reg Name : %s, op_set->x = %d\n", reg_name, op_set->x);
 	ut64 data = rz_il_bv_to_ut64(rz_il_get_bv_temp(vm, op_set->x));
 
 	RzILTraceRegOp *reg_write = RZ_NEW0(RzILTraceRegOp);
