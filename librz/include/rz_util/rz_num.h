@@ -18,6 +18,8 @@ typedef enum {
 	RNCEND,
 	RNCINC,
 	RNCDEC,
+	RNCLT, // comparison operator <
+	RNCGT, // comparison operator >
 	RNCPLUS = '+',
 	RNCMINUS = '-',
 	RNCMUL = '*',
