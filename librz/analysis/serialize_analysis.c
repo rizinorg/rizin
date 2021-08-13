@@ -1008,15 +1008,12 @@ static bool global_var_load_cb(void *user, const char *k, const char *v) {
 		goto beach;
 	}
 	char *error_msg = NULL;
-	RzTypeParser *parser = rz_type_parser_new();
-	if (!parser) {
-		goto beach;
-	}
-	RzType *vartype = rz_type_parse_string_single(parser, type, &error_msg);
+	RzType *vartype = rz_type_parse_string_single(ctx->analysis->typedb->parser, type, &error_msg);
 	if (error_msg) {
 		eprintf("Fail to parse the function variable (\"%s\") type: %s\n", name, type);
 		goto beach;
 	}
+	RZ_FREE(error_msg);
 	RzCore *core = ctx->analysis->core;
 	addr = rz_num_math(core->num, addr_s);
 	glob = rz_analysis_var_global_new(name, addr);
@@ -1029,7 +1026,6 @@ static bool global_var_load_cb(void *user, const char *k, const char *v) {
 	rz_vector_foreach(&constraints, constr) {
 		rz_analysis_var_global_add_constraint(glob, constr);
 	}
-	rz_type_parser_free(parser);
 	return rz_analysis_var_global_add(ctx->analysis, glob);
 
 beach:
