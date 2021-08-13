@@ -15,7 +15,7 @@ librz/bin/format/objc/ @wargio
 librz/bin/format/wasm/ @wargio
 librz/config/ @wargio @ret2libc
 librz/cons/ @thestr4ng3r @wargio
-librz/core/cmd.c @ret2libc @wargio 
+librz/core/cmd.c @ret2libc @wargio
 librz/debug/ @yossizap @wargio
 librz/egg/ @wargio
 librz/flag/ @ret2libc @wargio
@@ -27,10 +27,10 @@ librz/parse/ @ret2libc @wargio
 librz/reg/ @XVilka @wargio
 librz/socket/ @XVilka @yossizap
 librz/syscall/ @ret2libc @wargio
+librz/type/ @XVilka
 librz/util/ @ret2libc @thestr4ng3r
 shlr/gdb/ @yossizap
 shlr/ptrace-wrap/ @thestr4ng3r
 shlr/rizin-shell-parser/ @ret2libc
-shlr/tcc/ @XVilka @wargio
 shlr/w32dbg_wrap/ @yossizap
 shlr/winkd/ @yossizap
