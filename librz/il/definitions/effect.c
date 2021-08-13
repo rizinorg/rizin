@@ -1,27 +1,27 @@
 // SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "effect.h"
+#include <rz_il/definitions/effect.h>
 
-DataEffect effect_new_data(void) {
-	DataEffect ret;
-	ret = (DataEffect)malloc(sizeof(struct data_effect_t));
+RZ_API RzILDataEffect effect_new_data(void) {
+	RzILDataEffect ret;
+	ret = (RzILDataEffect)malloc(sizeof(struct rzil_data_effect_t));
 	ret->operation = 0;
 	ret->var_name = NULL;
 	ret->val_index = -1;
 	return ret;
 }
 
-CtrlEffect effect_new_ctrl(void) {
-	CtrlEffect ret;
-	ret = (CtrlEffect)malloc(sizeof(struct control_effect_t));
+RZ_API RzILCtrlEffect effect_new_ctrl(void) {
+	RzILCtrlEffect ret;
+	ret = (RzILCtrlEffect)malloc(sizeof(struct rzil_control_effect_t));
 	ret->pc = 0;
 	return ret;
 }
 
-Effect wrap_ctrl_effect(CtrlEffect eff) {
-	Effect ret;
-	ret = (Effect)malloc(sizeof(struct effect_union_t));
+RZ_API RzILEffect wrap_ctrl_effect(RzILCtrlEffect eff) {
+	RzILEffect ret;
+	ret = (RzILEffect)malloc(sizeof(struct rzil_effect_union_t));
 	ret->effect_type = EFFECT_TYPE_CTRL;
 	ret->ctrl_eff = eff;
 	ret->notation = 0;
@@ -29,9 +29,9 @@ Effect wrap_ctrl_effect(CtrlEffect eff) {
 	return ret;
 }
 
-Effect wrap_data_effect(DataEffect eff) {
-	Effect ret;
-	ret = (Effect)malloc(sizeof(struct effect_union_t));
+RZ_API RzILEffect wrap_data_effect(RzILDataEffect eff) {
+	RzILEffect ret;
+	ret = (RzILEffect)malloc(sizeof(struct rzil_effect_union_t));
 	ret->effect_type = EFFECT_TYPE_DATA;
 	ret->data_eff = eff;
 	ret->notation = 0;
@@ -39,36 +39,37 @@ Effect wrap_data_effect(DataEffect eff) {
 	return ret;
 }
 
-void effect_free_ctrl(CtrlEffect eff) {
+RZ_API void effect_free_ctrl(RzILCtrlEffect eff) {
 	if (!eff) {
 		return;
 	}
 	free(eff);
 }
 
-void effect_free_data(DataEffect eff) {
+RZ_API void effect_free_data(RzILDataEffect eff) {
 	if (!eff) {
 		return;
 	}
 	free(eff);
 }
 
-void print_ctrl_effect(CtrlEffect eff) {
+RZ_API void print_ctrl_effect(RzILCtrlEffect eff) {
 	if (!eff) {
 		return;
 	}
 	printf("[Ctrl Eff] pc : \n");
 	rz_il_print_bv(eff->pc);
 }
-void print_data_effect(DataEffect eff) {
+
+RZ_API void print_data_effect(RzILDataEffect eff) {
 	if (!eff) {
 		return;
 	}
 	printf("[Data Eff] varname A: %s, valindex : %d\n", eff->var_name, eff->val_index);
 }
 
-Effect effect_new(EFFECT_TYPE type) {
-	Effect ret;
+RZ_API RzILEffect effect_new(EFFECT_TYPE type) {
+	RzILEffect ret;
 
 	// can only be data or ctrl
 	switch (type) {
@@ -79,7 +80,7 @@ Effect effect_new(EFFECT_TYPE type) {
 		ret = wrap_data_effect(effect_new_data());
 		break;
 	case EFFECT_TYPE_NON:
-		ret = (Effect)malloc(sizeof(struct effect_union_t));
+		ret = (RzILEffect)malloc(sizeof(struct rzil_effect_union_t));
 		ret->effect_type = EFFECT_TYPE_NON;
 		ret->notation = EFFECT_NOTATION_NON;
 		ret->next_eff = NULL;
@@ -93,7 +94,7 @@ Effect effect_new(EFFECT_TYPE type) {
 	return ret;
 }
 
-void effect_free(Effect effect) {
+RZ_API void effect_free(RzILEffect effect) {
 	if (!effect) {
 		return;
 	}
@@ -118,7 +119,7 @@ void effect_free(Effect effect) {
 	free(effect);
 }
 
-void print_effect(Effect effect) {
+RZ_API void print_effect(RzILEffect effect) {
 	if (!effect) {
 		return;
 	}
@@ -156,8 +157,8 @@ void print_effect(Effect effect) {
 	printf("\n");
 }
 
-EffectLabel effect_new_label(string name, EFFECT_LABEL_TYPE type) {
-	EffectLabel lbl = (EffectLabel)RZ_NEW0(struct effect_label_t);
+RZ_API RzILEffectLabel effect_new_label(char *name, EFFECT_LABEL_TYPE type) {
+	RzILEffectLabel lbl = (RzILEffectLabel)RZ_NEW0(struct rzil_effect_label_t);
 	lbl->label_id = strdup(name);
 	lbl->type = type;
 	return lbl;

@@ -118,6 +118,12 @@ documentation:
 
 ESIL:
   - librz/analysis/esil/*
+  - librz/core/cil.c
+
+RZIL:
+  - librz/analysis/rzil/*
+  - librz/il/**/*
+  - librz/core/cil.c
 
 gdb:
   - shlr/gdb/**/*

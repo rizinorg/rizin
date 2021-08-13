@@ -4857,81 +4857,47 @@ static void cmd_rzil_mem(RzCore *core, const char *input) {
 
 static void cmd_analysis_rzil(RzCore *core, const char *input) {
 	char *n;
-	int off;
-	ut64 until_addr = UT64_MAX;
-	const char *until_expr = NULL;
+	int repeat_times;
 
 	switch (input[0]) {
-	case 'r': // "aer"
+	case 'r': // "aezr"
 		// 'aer' is an alias for 'ar'
 		// cmd_analysis_reg(core, input + 1);
 		eprintf("[WIP] Remove it or replace it ?");
 		break;
-	case 's': // "aes"
+	case 's': // "aezs"
 		switch (input[1]) {
-		case '?': // "ae?"
+		case '?': // "aez?"
 			rz_core_cmd0(core, "ae?~aes");
 			break;
-		case 'u': // "aesu [addr]"
-			until_expr = NULL;
-			until_addr = UT64_MAX;
-			if (rz_str_endswith(input, "?")) {
-				rz_core_cmd0(core, "ae?~aesu");
-			} else
-				switch (input[2]) {
-				case ' ': // "aesu"
-					// TODO : until address
-					until_addr = rz_num_math(core->num, input + 2);
-					break;
-				case 'o': { // "aesuo, until given opcode type"
-					// TODO : implement until type
-					break;
-				}
-				default:
-					rz_core_cmd0(core, "ae?~aesu");
-					break;
-				}
-
-			// step until
-			if (until_expr || until_addr != UT64_MAX) {
-				// TODO : replace with rzil_step
-				rz_core_esil_step(core, until_addr, until_expr, NULL, false);
-			}
-			// TODO : figure out regs2flags
-			// rz_core_regs2flags(core);
-			break;
-		case 'p': // "aesp" print
-			break;
-		case ' ': //"aes?"
+		case ' ': //"aezs [repeat num]"
 			n = strchr(input, ' ');
-			if (!(n + 1)) {
-				rz_core_rzil_step(core);
-				break;
+			if (!(*(n + 1))) {
+				repeat_times = 1;
+			} else {
+				repeat_times = rz_num_math(core->num, n + 1);
 			}
-			off = rz_num_math(core->num, n + 1);
-			rz_core_analysis_esil_emulate(core, -1, -1, off);
+			for (int i = 0; i < repeat_times; ++i) {
+				rz_core_rzil_step(core);
+			}
 			break;
 		// default addr
 		default:
-			printf("[Default : Step]\n");
 			rz_core_rzil_step(core);
 			break;
 		}
 		break;
-	case 'i': // "aei"
+	case 'i': // "aezi"
 		switch (input[1]) {
-		case 'm': // "aeim"
-			cmd_rzil_mem(core, input + 2);
-			break;
-		case '?': // "aei?"
+		case '?': // "aezi?"
 			cmd_rzil_mem(core, "?");
 			break;
-		case 0: // "aei"
+		case 0: // "aezi"
 			rz_core_analysis_rzil_reinit(core);
 			break;
 		}
 		break;
-	case '?': // "ae?"
+	case '?': // "aez?"
 		if (input[1] == '?') {
 			rz_core_cmd_help(core, help_detail_ae);
 			break;
@@ -5301,7 +5267,6 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 		}
 		break;
 	case 'b': // "aeb"
-		// BUG : aeb causes SEGMENT FAULT
 		rz_core_analysis_esil_emulate_bb(core);
 		break;
 	case 'f': // "aef"

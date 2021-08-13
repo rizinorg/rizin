@@ -810,53 +810,6 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, RzAnalys
 	}
 }
 
-static void h_debug_single_ins(RzILTraceInstruction *ins) {
-	void **iter;
-	RzILTraceMemOp *mem;
-	RzILTraceRegOp *reg;
-	int count = 0;
-
-	eprintf("[DEBUG] Reg Write : >>>>>\n");
-	rz_pvector_foreach (ins->write_reg_ops, iter) {
-		reg = *iter;
-		eprintf("%s=%lld,  ", reg->reg_name, reg->value);
-	}
-	puts("\n");
-
-	eprintf("[DEBUG] Reg Read : >>>>>\n");
-	rz_pvector_foreach (ins->read_reg_ops, iter) {
-		reg = *iter;
-		eprintf("%s=%lld,  ", reg->reg_name, reg->value);
-	}
-	puts("\n");
-
-	eprintf("[DEBUG] Mem Read : >>>>>\n");
-	rz_pvector_foreach (ins->read_mem_ops, iter) {
-		mem = *iter;
-		eprintf("%lld, ", mem->addr);
-	}
-	puts("\n");
-
-	eprintf("[DEBUG] Mem Write : >>>>>\n");
-	rz_pvector_foreach (ins->write_mem_ops, iter) {
-		mem = *iter;
-		eprintf("%lld, ", mem->addr);
-	}
-	puts("\n");
-}
-
-static void h_debug_trace_db(RzAnalysisEsilTrace *etrace) {
-	eprintf("========== [DEBUG] ===========\n");
-	eprintf("Cur : %d/%d\n", etrace->idx, etrace->end_idx);
-	RzPVector *instructions = etrace->instructions;
-	void **iter;
-	RzILTraceInstruction *ins;
-	rz_pvector_foreach (instructions, iter) {
-		ins = *iter;
-		h_debug_single_ins(ins);
-	}
-}
-
 RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, HtUU *loop_table) {
 	RzListIter *it;
 

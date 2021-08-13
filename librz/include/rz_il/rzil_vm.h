@@ -1,18 +1,18 @@
 // SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#ifndef BUILD_CORE_THEORY_VM_H
-#define BUILD_CORE_THEORY_VM_H
+#ifndef RZIL_VM_H
+#define RZIL_VM_H
 
-#include "definitions/wrapper.h"
-#include "core_theory_opcodes.h"
+#include "definitions/definitions.h"
+#include "rzil_opcodes.h"
 
-#define VM_MAX_VAR  2048
-#define VM_MAX_VAL  1024
-#define VM_MAX_LAB  1024
-#define VM_MAX_EFF  1024
-#define VM_MAX_FLG  1024
-#define VM_MAX_TEMP 32
+#define RZ_IL_VM_MAX_VAR  2048
+#define RZ_IL_VM_MAX_VAL  1024
+#define RZ_IL_VM_MAX_LAB  1024
+#define RZ_IL_VM_MAX_EFF  1024
+#define RZ_IL_VM_MAX_FLG  1024
+#define RZ_IL_VM_MAX_TEMP 32
 
 typedef struct rz_il_vm_t *RzILVM;
 typedef void (*RzILOpHandler)(RzILVM vm, RzILOp op);
@@ -26,7 +26,7 @@ struct rz_il_vm_t {
 	RzILBag vm_global_value_set; ///< Store all RzILVal instance
 	RzILVar *vm_global_variable_list; ///< Store all RzILVar instance
 
-	Mem *mems; ///< Array of Memory, memory are actually hashmap in VM
+	RzILMem *mems; ///< Array of Memory, memory are actually hashmap in VM
 	int var_count, val_count, mem_count, lab_count; ///< count for VM predefined things
 	int addr_size; ///< size of address
 	int data_size; ///< size of minimal data unit
@@ -38,7 +38,7 @@ struct rz_il_vm_t {
 
 	HtPP *ct_opcodes; ///< Hashtable to maintain address and opcodes
 
-	BitVector pc; ///< Program Counter of VM
+	RzILBitVector pc; ///< Program Counter of VM
 
 	RzILOpHandler *op_handler_table; ///< Array of Handler, handler can be indexed by opcode
 
@@ -46,31 +46,31 @@ struct rz_il_vm_t {
 };
 
 // VM operations about Variable and Value
-RZ_API BitVector rz_il_hash_find_addr_by_lblname(RzILVM vm, string lbl_name);
-RZ_API EffectLabel rz_il_vm_find_label_by_name(RzILVM vm, string lbl_name);
-RZ_API EffectLabel rz_il_vm_create_label(RzILVM vm, string name, BitVector addr);
-RZ_API EffectLabel rz_il_vm_create_label_lazy(RzILVM vm, string name);
-RZ_API EffectLabel rz_il_vm_update_label(RzILVM vm, string name, BitVector addr);
+RZ_API RzILBitVector rz_il_hash_find_addr_by_lblname(RzILVM vm, const char *lbl_name);
+RZ_API RzILEffectLabel rz_il_vm_find_label_by_name(RzILVM vm, const char *lbl_name);
+RZ_API RzILEffectLabel rz_il_vm_create_label(RzILVM vm, char *name, RzILBitVector addr);
+RZ_API RzILEffectLabel rz_il_vm_create_label_lazy(RzILVM vm, char *name);
+RZ_API RzILEffectLabel rz_il_vm_update_label(RzILVM vm, char *name, RzILBitVector addr);
 RZ_API RzILVal rz_il_hash_find_val_by_var(RzILVM vm, RzILVar var);
-RZ_API RzILVal rz_il_hash_find_val_by_name(RzILVM vm, string var_name);
-RZ_API RzILVar rz_il_find_var_by_name(RzILVM vm, string var_name);
+RZ_API RzILVal rz_il_hash_find_val_by_name(RzILVM vm, const char *var_name);
+RZ_API RzILVar rz_il_find_var_by_name(RzILVM vm, const char *var_name);
 
-RZ_API RzILVar rz_il_vm_create_variable(RzILVM vm, string name);
+RZ_API RzILVar rz_il_vm_create_variable(RzILVM vm, char *name);
 RZ_API RzILVal rz_il_vm_create_value(RzILVM vm, RZIL_VAR_TYPE type);
-RZ_API void rz_il_vm_add_reg(RzILVM vm, string name, int length);
+RZ_API void rz_il_vm_add_reg(RzILVM vm, char *name, int length);
 RZ_API RzILVal rz_il_vm_fortify_val(RzILVM vm, int temp_val_index);
 RZ_API RzILVal rz_il_vm_fortify_bitv(RzILVM vm, int temp_val_index);
 RZ_API RzILVal rz_il_vm_fortify_bool(RzILVM vm, int temp_val_index);
 RZ_API void rz_il_hash_bind(RzILVM vm, RzILVar var, RzILVal val);
 RZ_API void rz_il_hash_cancel_binding(RzILVM vm, RzILVar var);
 
-RZ_API void rz_il_make_bool_temp(RzILVM vm, int store_index, Bool b);
+RZ_API void rz_il_make_bool_temp(RzILVM vm, int store_index, RzILBool b);
 RZ_API void rz_il_make_val_temp(RzILVM vm, int store_index, RzILVal val);
-RZ_API void rz_il_make_bv_temp(RzILVM vm, int store_index, BitVector bv);
-RZ_API void rz_il_make_eff_temp(RzILVM vm, int store_index, Effect eff);
+RZ_API void rz_il_make_bv_temp(RzILVM vm, int store_index, RzILBitVector bv);
+RZ_API void rz_il_make_eff_temp(RzILVM vm, int store_index, RzILEffect eff);
 RZ_API void *rz_il_get_temp(RzILVM vm, int index);
-RZ_API BitVector rz_il_get_bv_temp(RzILVM vm, int index);
-RZ_API Bool rz_il_get_bool_temp(RzILVM vm, int index);
+RZ_API RzILBitVector rz_il_get_bv_temp(RzILVM vm, int index);
+RZ_API RzILBool rz_il_get_bool_temp(RzILVM vm, int index);
 RZ_API RzILVal rz_il_get_val_temp(RzILVM vm, int index);
 RZ_API void rz_il_clean_temp(RzILVM vm, RzILTemp temp);
 RZ_API void rz_il_clean_temps(RzILVM vm);
@@ -78,9 +78,9 @@ RZ_API void rz_il_empty_temp(RzILVM vm, int index);
 
 // VM store and load core theory opcodes
 RZ_API RzPVector *rz_il_make_oplist(int num, ...);
-RZ_API void rz_il_vm_store_opcodes_to_addr(RzILVM vm, BitVector addr, RzPVector *oplist);
-RZ_API RzPVector *rz_il_vm_load_opcodes(RzILVM vm, BitVector addr);
-RZ_IPI RzPVector *rz_il_vm_load_opcodes_at_pc(RzILVM vm);
+RZ_API void rz_il_vm_store_opcodes_to_addr(RzILVM vm, RzILBitVector addr, RzPVector *oplist);
+RZ_API RzPVector *rz_il_vm_load_opcodes(RzILVM vm, RzILBitVector addr);
+RZ_API RzPVector *rz_il_vm_load_opcodes_at_pc(RzILVM vm);
 RZ_API RzPVector *rz_il_make_oplist_with_id(ut64 id, int num, ...);
 
 // Handler for core theory opcode
@@ -131,5 +131,6 @@ RZ_API void rz_il_print_vm_temps(RzILVM vm);
 void rz_il_print_vm_labels(RzILVM vm);
 void rz_il_vm_debug_easy(RzILVM vm);
 void rz_il_vm_debug_print_ops(RzILVM vm);
+void rz_il_print_vm_vars(RzILVM vm);
 
-#endif //BUILD_CORE_THEORY_VM_H
+#endif // RZIL_VM_H

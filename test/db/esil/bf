@@ -5,29 +5,12 @@ CMDS=<<EOF
 e asm.arch=bf
 e asm.bytes=true
 e analysis.arch=bf
-f input 128 0x3000
-o malloc://128 0x3000~z
-f screen 80*25 0x4000
-o malloc://80*25 0x4000~z
-f stack 0x200 0x5000
-o malloc://0x200 0x5000~z
-f data 0x1000 0x6000
-o malloc://0x1000 0x6000~z
-ar > /dev/null
-ar brk=stack
-ar scr=screen
-ar kbd=input
-ar ptr=data
 s 0
-150aes
-ps 12 @ screen
-pd 3 @ 0xa
+aezi
+aezs 390
 EOF
 EXPECT=<<EOF
 Hello World!
-        ,=< 0x0000000a      5b             while [ptr]
-        |   0x0000000b      3e             inc   ptr
-        |   0x0000000c      2b2b2b2b2b2b.  add   [ptr], 7
 EOF
 RUN
 
@@ -38,26 +21,14 @@ CMDS=<<EOF
 e asm.arch=bf
 e asm.bytes=true
 e analysis.arch=bf
-f input 128 0x3000
-o malloc://128 0x3000~z
-f screen 80*25 0x4000
-o malloc://80*25 0x4000~z
-f stack 0x200 0x5000
-o malloc://0x200 0x5000~z
-f data 0x1000 0x6000
-o malloc://0x1000 0x6000~z
-ar > /dev/null
-ar brk=stack
-ar scr=screen
-ar kbd=input
-ar ptr=data
+e scr.utf8=false
 s 0
 pd 3 @ 0xa
 EOF
 EXPECT=<<EOF
             0x0000000a      5b             while [ptr]
             0x0000000b      3e             inc   ptr
-            0x0000000c      2b2b2b2b2b2b.  add   [ptr], 7
+            0x0000000c      2b             inc   [ptr]
 EOF
 RUN
 
@@ -65,24 +36,9 @@ NAME=loopy hello world
 FILE=bins/bf/hello-loops.bf
 ARGS=-b32
 CMDS=<<EOF
-e asm.arch=bf
-e analysis.arch=bf
-f input 128 0x3000
-o malloc://128 0x3000~z
-f screen 80*25 0x4000
-o malloc://80*25 0x4000~z
-f stack 0x200 0x5000
-o malloc://0x200 0x5000~z
-f data 0x1000 0x6000
-o malloc://0x1000 0x6000~z
-ar > /dev/null
-ar brk=stack
-ar scr=screen
-ar kbd=input
-ar ptr=data
 s 0
-700aes
-ps 12 @ screen
+aezi
+aezs 906
 EOF
 EXPECT=<<EOF
 Hello World!

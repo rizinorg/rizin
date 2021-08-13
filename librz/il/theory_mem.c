@@ -1,19 +1,19 @@
 // SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "core_theory_vm.h"
-#include "core_theory_opcodes.h"
+#include <rz_il/rzil_vm.h>
+#include <rz_il/rzil_opcodes.h>
 
 void rz_il_handler_load(RzILVM vm, RzILOp op) {
 	RzILOpLoad op_load = op->op.load;
-	Mem m = vm->mems[op_load->mem];
+	RzILMem m = vm->mems[op_load->mem];
 
-	BitVector addr = rz_il_get_bv_temp(vm, op_load->key);
-	BitVector ret = rz_il_mem_load(m, addr);
+	RzILBitVector addr = rz_il_get_bv_temp(vm, op_load->key);
+	RzILBitVector ret = rz_il_mem_load(m, addr);
 	if (ret == NULL) {
 		// empty address --> first access
 		// assume it's empty
-		BitVector empty = rz_il_bv_new(m->min_unit_size);
+		RzILBitVector empty = rz_il_bv_new0(m->min_unit_size);
 		rz_il_mem_store(m, addr, empty);
 		ret = empty;
 	}
@@ -22,10 +22,10 @@ void rz_il_handler_load(RzILVM vm, RzILOp op) {
 
 void rz_il_handler_store(RzILVM vm, RzILOp op) {
 	RzILOpStore op_store = op->op.store;
-	Mem m = vm->mems[op_store->mem];
+	RzILMem m = vm->mems[op_store->mem];
 
-	BitVector addr = rz_il_get_bv_temp(vm, op_store->key);
-	BitVector value = rz_il_get_bv_temp(vm, op_store->value);
+	RzILBitVector addr = rz_il_get_bv_temp(vm, op_store->key);
+	RzILBitVector value = rz_il_get_bv_temp(vm, op_store->value);
 
 	rz_il_mem_store(m, addr, value);
 

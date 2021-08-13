@@ -1,11 +1,10 @@
 // SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "core_theory_opcodes.h"
-#include "core_theory_vm.h"
-#include "definitions/effect.h"
+#include <rz_il/rzil_opcodes.h>
+#include <rz_il/rzil_vm.h>
 
-void rz_il_perform_data(RzILVM vm, Effect eff) {
+void rz_il_perform_data(RzILVM vm, RzILEffect eff) {
 	RzILVar var;
 	RzILVal val;
 
@@ -16,12 +15,12 @@ void rz_il_perform_data(RzILVM vm, Effect eff) {
 	rz_il_vm_fortify_val(vm, eff->data_eff->val_index);
 }
 
-void rz_il_perform_ctrl(RzILVM vm, Effect eff) {
+void rz_il_perform_ctrl(RzILVM vm, RzILEffect eff) {
 	if (eff->notation & (EFFECT_NOTATION_GOTO_HOOK | EFFECT_NOTATION_GOTO_SYS)) {
 		RzILOp goto_op = (RzILOp)eff->ctrl_eff;
 		eff->ctrl_eff = NULL;
 
-		EffectLabel label = rz_il_vm_find_label_by_name(vm, goto_op->op.goto_->lbl);
+		RzILEffectLabel label = rz_il_vm_find_label_by_name(vm, goto_op->op.goto_->lbl);
 		RzILVmHook internal_hook = (RzILVmHook)label->addr;
 
 		internal_hook(vm, goto_op);
@@ -29,7 +28,7 @@ void rz_il_perform_ctrl(RzILVM vm, Effect eff) {
 	}
 
 	// Normal
-	BitVector new_addr = rz_il_bv_dump(eff->ctrl_eff->pc);
+	RzILBitVector new_addr = rz_il_bv_dup(eff->ctrl_eff->pc);
 	rz_il_bv_free(vm->pc);
 	vm->pc = new_addr;
 }
@@ -38,7 +37,7 @@ void rz_il_handler_perform(RzILVM vm, RzILOp op) {
 	// printf("[Perform effect]\n");
 	RzILOpPerform perform_op = op->op.perform;
 
-	Effect eff = rz_il_get_temp(vm, perform_op->eff);
+	RzILEffect eff = rz_il_get_temp(vm, perform_op->eff);
 
 	do {
 		if (eff->effect_type == EFFECT_TYPE_DATA) {
@@ -56,7 +55,7 @@ void rz_il_handler_perform(RzILVM vm, RzILOp op) {
 void rz_il_handler_set(RzILVM vm, RzILOp op) {
 	RzILOpSet set_op = op->op.set;
 
-	Effect eff = effect_new(EFFECT_TYPE_DATA);
+	RzILEffect eff = effect_new(EFFECT_TYPE_DATA);
 	eff->data_eff->var_name = set_op->v;
 	eff->data_eff->val_index = set_op->x;
 
@@ -66,20 +65,20 @@ void rz_il_handler_set(RzILVM vm, RzILOp op) {
 
 void rz_il_handler_jmp(RzILVM vm, RzILOp op) {
 	RzILOpJmp op_jmp = op->op.jmp;
-	BitVector addr = rz_il_get_bv_temp(vm, op_jmp->dst);
-	Effect eff = effect_new(EFFECT_TYPE_CTRL);
+	RzILBitVector addr = rz_il_get_bv_temp(vm, op_jmp->dst);
+	RzILEffect eff = effect_new(EFFECT_TYPE_CTRL);
 
-	eff->ctrl_eff->pc = rz_il_bv_dump(addr);
+	eff->ctrl_eff->pc = rz_il_bv_dup(addr);
 
 	rz_il_make_eff_temp(vm, op_jmp->ret_ctrl_eff, eff);
 }
 
 void rz_il_handler_goto(RzILVM vm, RzILOp op) {
 	RzILOpGoto op_goto = op->op.goto_;
-	string lname = op_goto->lbl;
-	Effect eff = effect_new(EFFECT_TYPE_CTRL);
+	const char *lname = op_goto->lbl;
+	RzILEffect eff = effect_new(EFFECT_TYPE_CTRL);
 
-	EffectLabel label = rz_il_vm_find_label_by_name(vm, lname);
+	RzILEffectLabel label = rz_il_vm_find_label_by_name(vm, lname);
 	if (label->type == EFFECT_LABEL_SYSCALL) {
 		effect_free_ctrl(eff->ctrl_eff);
 		eff->notation = EFFECT_NOTATION_GOTO_SYS;
@@ -101,10 +100,10 @@ void rz_il_handler_goto(RzILVM vm, RzILOp op) {
 void rz_il_handler_seq(RzILVM vm, RzILOp op) {
 	RzILOpSeq op_seq = op->op.seq;
 
-	Effect eff_x = rz_il_get_temp(vm, op_seq->x);
-	Effect eff_y = rz_il_get_temp(vm, op_seq->y);
+	RzILEffect eff_x = rz_il_get_temp(vm, op_seq->x);
+	RzILEffect eff_y = rz_il_get_temp(vm, op_seq->y);
 
-	Effect eff_uni = eff_x;
+	RzILEffect eff_uni = eff_x;
 	eff_uni->next_eff = eff_y;
 	rz_il_make_eff_temp(vm, op_seq->ret, eff_uni);
 
@@ -127,8 +126,8 @@ void rz_il_handler_repeat(RzILVM vm, RzILOp op) {
 void rz_il_handler_branch(RzILVM vm, RzILOp op) {
 	RzILOpBranch op_branch = op->op.branch;
 
-	Bool condition = rz_il_get_bool_temp(vm, op_branch->condition);
-	Effect true_branch, false_branch;
+	RzILBool condition = rz_il_get_bool_temp(vm, op_branch->condition);
+	RzILEffect true_branch, false_branch;
 
 	if (condition->b) {
 		true_branch = (op_branch->true_eff == -1) ? effect_new(EFFECT_TYPE_NON) : rz_il_get_temp(vm, op_branch->true_eff);

@@ -4,7 +4,7 @@
 #include <rz_analysis.h>
 
 /**
- * Rzil trace should also these info
+ * RZIL trace should also these info
  * 1. mem.read address & data
  * 2. mem.write address & data
  * 3. reg.read name & data
@@ -37,7 +37,7 @@ RZ_API RzAnalysisRzilTrace *rz_analysis_rzil_trace_new(RzAnalysis *analysis, RzA
 		goto error;
 	}
 
-	// TODO : Integrate with stack pannel in the future
+	// TODO : Integrate with stack panel in the future
 
 	// Save initial registers arenas
 	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
@@ -53,7 +53,7 @@ RZ_API RzAnalysisRzilTrace *rz_analysis_rzil_trace_new(RzAnalysis *analysis, RzA
 	}
 	return trace;
 error:
-	eprintf("error\n");
+	eprintf("Fail to init RZIL trace\n");
 	rz_analysis_esil_trace_free(trace);
 	return NULL;
 }
@@ -72,7 +72,7 @@ RZ_API void rz_analysis_rzil_trace_free(RzAnalysisEsilTrace *trace) {
 	}
 }
 
-// IL trace wrapper of esil
+// IL trace wrapper of ESIL
 static inline void rzil_add_mem_trace(RzAnalysisRzilTrace *rtrace, RzILTraceMemOp *mem) {
 	RzILTraceInstruction *instr_trace = rz_analysis_esil_get_instruction_trace(rtrace, rtrace->idx);
 	rz_analysis_il_trace_add_mem(instr_trace, mem);
@@ -84,7 +84,7 @@ static inline void rzil_add_reg_trace(RzAnalysisRzilTrace *rtrace, RzILTraceRegO
 }
 
 // buf limit 32
-static void bv_to_databuf(ut8 *buf, BitVector bv) {
+static void bv_to_databuf(ut8 *buf, RzILBitVector bv) {
 	// rz_il_bv_prepend_zero(bv, 128 - bv->len);
 	//	if (bv->_elem_len != 16) {
 	//		RZ_LOG_ERROR("BAD SIZE\n");
@@ -93,10 +93,11 @@ static void bv_to_databuf(ut8 *buf, BitVector bv) {
 }
 
 static void rz_analysis_rzil_trace_focus_mem_read(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzILOp single_op) {
+	rz_return_if_fail(rzil);
 	RzILOpLoad op_load = single_op->op.load;
 
-	BitVector addr = rz_il_get_bv_temp(rzil->vm, op_load->key);
-	BitVector data = rz_il_get_bv_temp(rzil->vm, op_load->ret);
+	RzILBitVector addr = rz_il_get_bv_temp(rzil->vm, op_load->key);
+	RzILBitVector data = rz_il_get_bv_temp(rzil->vm, op_load->ret);
 
 	if (data->len > 128) {
 		RZ_LOG_ERROR("RZIL memory read more than 128 bits\n");
@@ -116,10 +117,11 @@ static void rz_analysis_rzil_trace_focus_mem_read(RzAnalysis *analysis, RzAnalys
 }
 
 static void rz_analysis_rzil_trace_focus_mem_write(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzILOp single_op) {
+	rz_return_if_fail(rzil);
 	RzILOpStore op_store = single_op->op.store;
 
-	BitVector addr = rz_il_get_bv_temp(rzil->vm, op_store->key);
-	BitVector data = rz_il_get_bv_temp(rzil->vm, op_store->value);
+	RzILBitVector addr = rz_il_get_bv_temp(rzil->vm, op_store->key);
+	RzILBitVector data = rz_il_get_bv_temp(rzil->vm, op_store->value);
 
 	if (data->len > 128) {
 		RZ_LOG_ERROR("RZIL memory write more than 128 bits\n");
@@ -139,6 +141,7 @@ static void rz_analysis_rzil_trace_focus_mem_write(RzAnalysis *analysis, RzAnaly
 }
 
 static void rz_analysis_rzil_trace_focus_reg_read(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzILOp single_op) {
+	rz_return_if_fail(rzil);
 	RzILOpVar op_var = single_op->op.var;
 	RzILVM vm = rzil->vm;
 
@@ -158,6 +161,7 @@ static void rz_analysis_rzil_trace_focus_reg_read(RzAnalysis *analysis, RzAnalys
 }
 
 static void rz_analysis_rzil_trace_focus_reg_write(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzILOp single_op) {
+	rz_return_if_fail(rzil);
 	RzILOpSet op_set = single_op->op.set;
 	RzILVM vm = rzil->vm;
 
@@ -200,9 +204,9 @@ static void rz_analysis_rzil_trace_focus(RzAnalysis *analysis, RzAnalysisRzil *r
 /**
  * This function should be called after executing the RZIL op
  * Collect trace info (target and data of mem/reg read/write)
- * @param analysis
- * @param rzil
- * @param op
+ * \param analysis
+ * \param rzil
+ * \param op
  */
 RZ_API void rz_analysis_rzil_trace_op(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzAnalysisRzilOp *op) {
 	// TODO : rewrite this file when migrate to new op structure
