@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Pulak Malhotra <pulakmalhotra2000@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_core.h>
 #include "core_private.h"
 
