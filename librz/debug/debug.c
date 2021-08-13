@@ -878,7 +878,11 @@ RZ_API int rz_debug_step_soft(RzDebug *dbg) {
 		break;
 	}
 
+	const int align = rz_analysis_archinfo(dbg->analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
 	for (i = 0; i < br; i++) {
+		if (align > 1) {
+			next[i] = next[i] - (next[i] % align);
+		}
 		RzBreakpointItem *bpi = rz_bp_add_sw(dbg->bp, next[i], dbg->bpsize, RZ_BP_PROT_EXEC);
 		if (bpi) {
 			bpi->swstep = true;
