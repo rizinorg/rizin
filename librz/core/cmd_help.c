@@ -629,9 +629,9 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 				rz_num_to_trits(out, n);
 				pj_ks(pj, "trits", sdb_fmt("0t%s", out));
 			} else {
-				rz_cons_printf("fvalue: %.1lf\n", core->num->fvalue);
-				rz_cons_printf("float:  %ff\n", f);
-				rz_cons_printf("double: %lf\n", d);
+				rz_cons_printf("fvalue  %.1lf\n", core->num->fvalue);
+				rz_cons_printf("float   %ff\n", f);
+				rz_cons_printf("double  %lf\n", d);
 				rz_cons_printf("binary  0b%s\n", out);
 
 				/* ternary */
