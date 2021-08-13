@@ -486,7 +486,7 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 				eprintf("Usage: ?btw num|(expr) num|(expr) num|(expr)\n");
 			}
 		} else {
-			n = rz_num_get(core->num, input + 1);
+			n = rz_num_math(core->num, input + 1);
 			rz_num_to_bits(out, n);
 			rz_cons_printf("%sb\n", out);
 		}
