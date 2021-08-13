@@ -6908,7 +6908,7 @@ RZ_IPI void rz_analysis_var_global_list_show(RzAnalysis *analysis, RzCmdStateOut
 			pj_o(pj);
 			pj_ks(pj, "name", glob->name);
 			pj_ks(pj, "type", var_type);
-			char *addr[32];
+			char addr[32];
 			rz_strf(addr, "0x%" PFMT64x, glob->addr);
 			pj_ks(pj, "addr", addr);
 			pj_end(pj);
