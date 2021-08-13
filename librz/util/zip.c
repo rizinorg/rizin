@@ -24,18 +24,18 @@ static const char *gzerr(int n) {
 }
 
 /**
- * @brief inflate zlib compressed or gzipped, automatically accepts either the zlib or gzip format, and use MAX_WBITS as the window size logarithm.
- * @see rz_inflatew()
+ * \brief inflate zlib compressed or gzipped, automatically accepts either the zlib or gzip format, and use MAX_WBITS as the window size logarithm.
+ * \see rz_inflatew()
  */
-RZ_API ut8 *rz_inflate(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen) {
+RZ_API ut8 *rz_inflate(RZ_NONNULL const ut8 *src, int srcLen, int *srcConsumed, int *dstLen) {
 	return rz_inflatew(src, srcLen, srcConsumed, dstLen, MAX_WBITS + 32);
 }
 
 /**
- * @brief inflate zlib compressed or gzipped. The input must be a raw stream with no header or trailer.
- * @see rz_inflatew()
+ * \brief inflate zlib compressed or gzipped. The input must be a raw stream with no header or trailer.
+ * \see rz_inflatew()
  */
-RZ_API ut8 *rz_inflate_ignore_header(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen) {
+RZ_API ut8 *rz_inflate_ignore_header(RZ_NONNULL const ut8 *src, int srcLen, int *srcConsumed, int *dstLen) {
 	return rz_inflatew(src, srcLen, srcConsumed, dstLen, -MAX_WBITS);
 }
 
@@ -48,7 +48,9 @@ RZ_API ut8 *rz_inflate_ignore_header(const ut8 *src, int srcLen, int *srcConsume
  * \param controls the size of the history buffer (or “window size”), and what header and trailer format is expected.
  * \return ptr to uncompressed
  */
-RZ_API ut8 *rz_inflatew(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen, int wbits) {
+RZ_API ut8 *rz_inflatew(RZ_NONNULL const ut8 *src, int srcLen, int *srcConsumed, int *dstLen, int wbits) {
+	rz_return_val_if_fail(src, NULL);
+
 	int err = 0;
 	int out_size = 0;
 	ut8 *dst = NULL;
@@ -109,10 +111,10 @@ err_exit:
 }
 
 /**
- * @brief deflate uncompressed data to zlib or gzipped, use MAX_WBITS as the window size logarithm.
- * @see rz_deflatew()
+ * \brief deflate uncompressed data to zlib or gzipped, use MAX_WBITS as the window size logarithm.
+ * \see rz_deflatew()
  */
-RZ_API ut8 *rz_deflate(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen) {
+RZ_API ut8 *rz_deflate(RZ_NONNULL const ut8 *src, int srcLen, int *srcConsumed, int *dstLen) {
 	return rz_deflatew(src, srcLen, srcConsumed, dstLen, MAX_WBITS + 32);
 }
 
@@ -125,7 +127,9 @@ RZ_API ut8 *rz_deflate(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen
  * \param controls the size of the history buffer (or “window size”), and what header and trailer format is expected.
  * \return ptr to compressed
  */
-RZ_API ut8 *rz_deflatew(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen, int wbits) {
+RZ_API ut8 *rz_deflatew(RZ_NONNULL const ut8 *src, int srcLen, int *srcConsumed, int *dstLen, int wbits) {
+	rz_return_val_if_fail(src, NULL);
+
 	int err = 0;
 	int out_size = 0;
 	ut8 *dst = NULL;
@@ -182,7 +186,5 @@ RZ_API ut8 *rz_deflatew(const ut8 *src, int srcLen, int *srcConsumed, int *dstLe
 err_exit:
 	deflateEnd(&stream);
 	free(dst);
-	return NULL;
-
 	return NULL;
 }
