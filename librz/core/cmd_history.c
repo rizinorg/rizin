@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 RZ_IPI RzCmdStatus rz_history_list_or_exec_handler(RzCore *core, int argc, const char **argv) {
 	if (argc == 1) {
 		rz_line_hist_list();

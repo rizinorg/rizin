@@ -1,3 +1,8 @@
+// SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
+// SPDX-FileCopyrightText: 2021 ret2libc <sirmy15@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #if __WINDOWS__
 #define START_ENV_CHAR "%"
 #define END_ENV_CHAR   "%"
