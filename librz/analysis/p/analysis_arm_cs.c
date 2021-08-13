@@ -3539,6 +3539,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		if (ISREG(0)) {
 			/* blx reg */
 			op->type = RZ_ANALYSIS_OP_TYPE_RCALL;
+			op->reg = cs_reg_name(handle, REGID(0));
 		} else {
 			/* blx label */
 			op->type = RZ_ANALYSIS_OP_TYPE_CALL;
@@ -3589,21 +3590,22 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_BXJ:
 		/* bx reg */
 		op->cycles = 4;
+		op->reg = cs_reg_name(handle, REGID(0));
 		switch (REGID(0)) {
 		case ARM_REG_LR:
 			op->type = RZ_ANALYSIS_OP_TYPE_RET;
 			break;
 		case ARM_REG_IP:
-			op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
+			op->type = RZ_ANALYSIS_OP_TYPE_RJMP;
 			break;
 		case ARM_REG_PC:
 			// bx pc is well known without ESIL
-			op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
+			op->type = RZ_ANALYSIS_OP_TYPE_RJMP;
 			op->jump = (addr & ~3LL) + pcdelta;
 			op->hint.new_bits = 32;
 			break;
 		default:
-			op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
+			op->type = RZ_ANALYSIS_OP_TYPE_RJMP;
 			op->eob = true;
 			break;
 		}

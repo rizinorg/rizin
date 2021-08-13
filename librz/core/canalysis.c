@@ -5060,8 +5060,8 @@ static int esilbreak_reg_write(RzAnalysisEsil *esil, const char *name, ut64 *val
 		if (analysis->cur && analysis->cur->arch && analysis->bits < 33 &&
 			strstr(analysis->cur->arch, "arm") && !strcmp(name, "pc") && op) {
 			switch (op->type) {
-			case RZ_ANALYSIS_OP_TYPE_UCALL: // BLX
-			case RZ_ANALYSIS_OP_TYPE_UJMP: // BX
+			case RZ_ANALYSIS_OP_TYPE_RCALL: // BLX
+			case RZ_ANALYSIS_OP_TYPE_RJMP: // BX
 				// maybe UJMP/UCALL is enough here
 				if (!(*val & 1)) {
 					rz_analysis_hint_set_bits(analysis, *val, 32);
@@ -5390,7 +5390,7 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 
 	int arch = -1;
 	if (!strcmp(core->analysis->cur->arch, "arm")) {
-		switch (core->analysis->cur->bits) {
+		switch (core->analysis->bits) {
 		case 64: arch = RZ_ARCH_ARM64; break;
 		case 32: arch = RZ_ARCH_ARM32; break;
 		case 16: arch = RZ_ARCH_THUMB; break;
@@ -5640,6 +5640,7 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 			}
 		} break;
 		case RZ_ANALYSIS_OP_TYPE_UJMP:
+		case RZ_ANALYSIS_OP_TYPE_RJMP:
 		case RZ_ANALYSIS_OP_TYPE_UCALL:
 		case RZ_ANALYSIS_OP_TYPE_ICALL:
 		case RZ_ANALYSIS_OP_TYPE_RCALL:
