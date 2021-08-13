@@ -302,7 +302,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-
 NAME=old recursive help
 FILE==
 CMDS=<<EOF
@@ -326,4 +325,3 @@ EXPECT=<<EOF
 {"zi":{"cmd":"zi","type":"argv_modes","args_str":"","args":[],"description":"","summary":"Show zignatures matching information"},"zij":{"cmd":"zij","type":"argv_modes","args_str":"","args":[],"description":"","summary":"Show zignatures matching information (JSON mode)"},"zi*":{"cmd":"zi*","type":"argv_modes","args_str":"","args":[],"description":"","summary":"Show zignatures matching information (rizin mode)"},"ziq":{"cmd":"ziq","type":"argv_modes","args_str":"","args":[],"description":"","summary":"Show zignatures matching information (quiet mode)"},"zii":{"cmd":"zii","type":"argv","args_str":" <from> <to>","args":[{"type":"number","name":"from","required":true},{"type":"number","name":"to","required":true}],"description":"","summary":"Show zignatures matching information in range"}}
 EOF
 RUN
-
