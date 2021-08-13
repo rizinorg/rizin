@@ -28,6 +28,7 @@ static const char *gzerr(int n) {
  * \see rz_inflatew()
  */
 RZ_API ut8 *rz_inflate(RZ_NONNULL const ut8 *src, int srcLen, int *srcConsumed, int *dstLen) {
+	rz_return_val_if_fail(src, NULL);
 	return rz_inflatew(src, srcLen, srcConsumed, dstLen, MAX_WBITS + 32);
 }
 
@@ -36,6 +37,7 @@ RZ_API ut8 *rz_inflate(RZ_NONNULL const ut8 *src, int srcLen, int *srcConsumed, 
  * \see rz_inflatew()
  */
 RZ_API ut8 *rz_inflate_ignore_header(RZ_NONNULL const ut8 *src, int srcLen, int *srcConsumed, int *dstLen) {
+	rz_return_val_if_fail(src, NULL);
 	return rz_inflatew(src, srcLen, srcConsumed, dstLen, -MAX_WBITS);
 }
 
@@ -115,6 +117,7 @@ err_exit:
  * \see rz_deflatew()
  */
 RZ_API ut8 *rz_deflate(RZ_NONNULL const ut8 *src, int srcLen, int *srcConsumed, int *dstLen) {
+	rz_return_val_if_fail(src, NULL);
 	return rz_deflatew(src, srcLen, srcConsumed, dstLen, MAX_WBITS + 32);
 }
 
