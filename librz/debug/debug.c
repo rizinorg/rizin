@@ -461,6 +461,11 @@ RZ_API int rz_debug_stop(RzDebug *dbg) {
 RZ_API bool rz_debug_set_arch(RzDebug *dbg, const char *arch, int bits) {
 	if (arch && dbg && dbg->cur) {
 		switch (bits) {
+		case 16:
+			if (dbg->cur->bits & RZ_SYS_BITS_16) {
+				dbg->bits = RZ_SYS_BITS_16;
+			}
+			break;
 		case 27:
 			if (dbg->cur->bits == 27) {
 				dbg->bits = 27;
