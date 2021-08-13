@@ -26,7 +26,7 @@ return strdup(
 	"gpr     r9      .32     40     0\n"
 	"gpr     r10     .32     44     0\n"
 	"gpr     r11     .32     48     0\n"
-	"gpr     r12     .32     52     0\n"
+	"gpr     ip      .32     52     0\n"
 	"gpr     sp      .32     56     0\n"
 	"gpr     lr      .32     60     0\n"
 	"gpr     pc      .32     64     0\n"
