@@ -12,18 +12,14 @@ static char *rz_debug_native_reg_profile(RzDebug *dbg) {
  |   |   |
  |___|___|
 */
-#if defined(_M_ARM64) || defined(_M_ARM)
-	if (dbg->bits & RZ_SYS_BITS_64) {
+#if defined(__arm64__)
 #include "reg/windows-arm64.h"
-	} else {
+#elif defined(__arm__)
 #include "reg/windows-arm.h"
-	}
-#else
-	if (dbg->bits & RZ_SYS_BITS_64) {
+#elif defined(__x86_64__)
 #include "reg/windows-x64.h"
-	} else {
+#elif defined(__i386__)
 #include "reg/windows-x86.h"
-	}
 #endif
 #elif (__OpenBSD__ || __NetBSD__)
 /*                           __.--..__
