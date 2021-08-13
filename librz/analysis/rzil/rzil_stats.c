@@ -23,7 +23,7 @@ static bool is_flag_reg(RzAnalysis *analysis, const char *reg_name) {
 	return false;
 }
 
-static char *opcode_to_str(CoreTheoryOPCode opcode) {
+static char *opcode_to_str(RzILOPCode opcode) {
 	return "OP_NOP";
 }
 
@@ -70,11 +70,14 @@ static void stats_add_flg(RzAnalysisRzil *rzil, const char *flg, RzILTraceOpType
 }
 
 static void stats_parse_and_add_flgs() {
-	RZ_LOG_ERROR("TODO : parse and add flgs\n");
+	eprintf("TODO : parse and add flgs\n");
+	stats_add_flg(NULL, NULL, RZ_IL_TRACE_OP_WRITE);
+	stats_add_flg(NULL, NULL, RZ_IL_TRACE_OP_READ);
+	rz_warn_if_reached();
 	// call add flg here
 }
 
-static void stats_add_op(RzAnalysisRzil *rzil, CoreTheoryOPCode opcode) {
+static void stats_add_op(RzAnalysisRzil *rzil, RzILOPCode opcode) {
 	const char *op_name = opcode_to_str(opcode);
 	sdb_array_add(rzil->stats, "ops.list", op_name, 0);
 }
@@ -105,7 +108,7 @@ static void rz_analysis_rzil_stats_focus_reg_read(RzAnalysis *analysis, RzAnalys
 		stats_parse_and_add_flgs();
 	}
 
-	// add register stats
+	// add register statsst
 	stats_add_reg(rzil, reg_name, RZ_IL_TRACE_OP_READ);
 }
 

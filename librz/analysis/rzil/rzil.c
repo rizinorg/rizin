@@ -65,7 +65,9 @@ RZ_API bool rz_analysis_rzil_setup(RzAnalysis *analysis) {
 	rz_return_val_if_fail(analysis, false);
 
 	RzAnalysisRzil *rzil = rz_analysis_rzil_new();
-	rz_return_val_if_fail(rzil, false);
+	if (!rzil) {
+		return false;
+	}
 	analysis->rzil = rzil;
 
 	// init RZIL according to different archs
@@ -87,7 +89,7 @@ RZ_API void rz_analysis_set_rzil_op(RzAnalysisRzil *rzil, ut64 addr, RzPVector *
 		eprintf("uninitialized rzil, cannot set op\n");
 		return;
 	}
-	BitVector bv_addr = rz_il_ut64_addr_to_bv(addr);
+	RzILBitVector bv_addr = rz_il_ut64_addr_to_bv(addr);
 	rz_il_vm_store_opcodes_to_addr(rzil->vm, bv_addr, oplist);
 	rz_il_free_bv_addr(bv_addr);
 }
@@ -122,9 +124,9 @@ static void rz_analysis_rzil_parse_pvector(RzAnalysis *analysis, RzAnalysisRzil 
 
 /**
  * Collect both `trace` and `stats` info of an instruction
- * @param analysis
- * @param rzil
- * @param op
+ * \param analysis
+ * \param rzil
+ * \param op
  */
 RZ_API void rz_analysis_rzil_collect_info(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzAnalysisOp *op, bool use_new) {
 	rz_return_if_fail(analysis && rzil && op);

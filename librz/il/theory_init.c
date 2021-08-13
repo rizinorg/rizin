@@ -1,13 +1,13 @@
 // SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "core_theory_opcodes.h"
-#include "core_theory_vm.h"
+#include <rz_il/rzil_opcodes.h>
+#include <rz_il/rzil_vm.h>
 
 void rz_il_handler_ite(RzILVM vm, RzILOp op) {
 	RzILOpIte op_ite = op->op.ite;
 
-	Bool condition = rz_il_get_bool_temp(vm, op_ite->condition);
+	RzILBool condition = rz_il_get_bool_temp(vm, op_ite->condition);
 	RzILVal true_branch = rz_il_get_val_temp(vm, op_ite->x);
 	RzILVal false_branch = rz_il_get_val_temp(vm, op_ite->y);
 

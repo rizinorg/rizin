@@ -123,6 +123,15 @@ command:
 documentation:
   - doc/**/*
 
+RZIL:
+  - librz/analysis/rzil/*
+  - librz/il/**/*
+  - librz/core/cil.c
+
+gdb:
+  - shlr/gdb/**/*
+  - librz/io/p/io_gdb.c
+
 infrastructure:
   - .appveyor.yml
   - .travis.yml
@@ -172,6 +181,7 @@ ESIL:
   - librz/analysis/esil/*
   - librz/debug/p/debug_esil.c
   - librz/debug/desil.c
+  - librz/core/cil.c
 
 GDB:
   - shlr/gdb/**/*
