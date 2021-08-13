@@ -1,0 +1,91 @@
+// SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
+#ifndef CORE_THEORY_VM_EFFECT_H
+#define CORE_THEORY_VM_EFFECT_H
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <rz_util.h>
+#include <rz_types.h>
+#include "common.h"
+#include "bitvector.h"
+
+typedef enum {
+	EFFECT_TYPE_NON, // perform none effect will not affect data / control, used for passing info
+	EFFECT_TYPE_DATA,
+	EFFECT_TYPE_CTRL,
+} EFFECT_TYPE;
+
+typedef enum {
+	EFFECT_NOTATION_NON = 0x0,
+	EFFECT_NOTATION_GOTO_SYS = 0x1,
+	EFFECT_NOTATION_GOTO_HOOK = 0x2
+} EFFECT_NOTATION;
+
+typedef enum {
+	EFFECT_LABEL_ADDR,
+	EFFECT_LABEL_SYSCALL,
+	EFFECT_LABEL_HOOK
+	// more
+} EFFECT_LABEL_TYPE;
+
+typedef enum {
+	DATA_EFF_NON,
+	DATA_EFF_ASSIGN,
+	DATA_EFF_INC
+	// maybe more
+} DATA_EFF_OPERATION;
+
+struct effect_label_t {
+	string label_id; ///< Label name
+	BitVector addr; ///< BitVector address if EFFECT_LABEL_ADDR
+		///< Function pointer if EFFECT_LABEL_SYSCALL / EFFECT_LABEL_HOOK
+	EFFECT_LABEL_TYPE type; ///< type of label
+};
+
+struct control_effect_t {
+	BitVector pc; ///< New Program Counter
+};
+
+struct data_effect_t {
+	string var_name; ///< Name of variable
+	int val_index; ///< index to the new value
+	DATA_EFF_OPERATION operation; ///< operation to value and variable
+};
+
+typedef struct control_effect_t *CtrlEffect;
+typedef struct data_effect_t *DataEffect;
+typedef struct effect_label_t *EffectLabel;
+
+typedef struct effect_union_t *Effect;
+/**
+ *  \struct effect_union_t
+ *  \brief structure of data/control effect
+ */
+struct effect_union_t {
+	ut8 effect_type; ///< effect type
+	EFFECT_NOTATION notation; ///< Marks for carring additional info
+	Effect next_eff; ///< pointer to next effect, used in packed effect
+	union {
+		CtrlEffect ctrl_eff; ///< pointer to ctrl effect
+		DataEffect data_eff; ///< pointer to data effect
+	};
+};
+
+// a chain off effects
+// should use something like rz_vector / rz_list
+Effect effect_new(EFFECT_TYPE type);
+DataEffect effect_new_data(void);
+CtrlEffect effect_new_ctrl(void);
+Effect wrap_ctrl_effect(CtrlEffect eff);
+Effect wrap_data_effect(DataEffect eff);
+EffectLabel effect_new_label(string name, EFFECT_LABEL_TYPE type);
+void effect_free(Effect effect);
+void effect_free_ctrl(CtrlEffect eff);
+void effect_free_data(DataEffect eff);
+void print_effect(Effect effect);
+void print_ctrl_effect(CtrlEffect eff);
+void print_data_effect(DataEffect eff);
+
+#endif //CORE_THEORY_VM_EFFECT_H

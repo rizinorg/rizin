@@ -9,14 +9,17 @@
 #include <rz_core.h>
 #define LOOP_MAX 10
 
-static bool analysis_emul_init(RzCore *core, RzConfigHold *hc, RzDebugTrace **dt, RzAnalysisEsilTrace **et) {
-	if (!core->analysis->esil) {
+static bool analysis_emul_init(RzCore *core, RzConfigHold *hc, RzDebugTrace **dt, RzAnalysisEsilTrace **et, RzAnalysisRzilTrace **rt) {
+	if (!core->analysis->esil || !core->analysis->rzil) {
 		return false;
 	}
 	*dt = core->dbg->trace;
 	*et = core->analysis->esil->trace;
+
 	core->dbg->trace = rz_debug_trace_new();
 	core->analysis->esil->trace = rz_analysis_esil_trace_new(core->analysis->esil);
+	core->analysis->rzil->trace = rz_analysis_rzil_trace_new(core->analysis, core->analysis->rzil);
+
 	rz_config_hold_i(hc, "esil.romem", "dbg.trace",
 		"esil.nonull", "dbg.follow", NULL);
 	rz_config_set(core->config, "esil.romem", "true");
@@ -33,11 +36,21 @@ static bool analysis_emul_init(RzCore *core, RzConfigHold *hc, RzDebugTrace **dt
 	return (core->dbg->trace && core->analysis->esil->trace);
 }
 
-static void analysis_emul_restore(RzCore *core, RzConfigHold *hc, RzDebugTrace *dt, RzAnalysisEsilTrace *et) {
+static void analysis_emul_restore(RzCore *core, RzConfigHold *hc, RzDebugTrace *dt, RzAnalysisEsilTrace *et, RzAnalysisRzilTrace *rt) {
 	rz_config_hold_restore(hc);
 	rz_config_hold_free(hc);
 	rz_debug_trace_free(core->dbg->trace);
 	rz_analysis_esil_trace_free(core->analysis->esil->trace);
+	if (!core->analysis->rzil) {
+		// not enable rzil or be freed ?
+		if (core->analysis->cur->rzil_init) {
+			// enable but be freed ??
+			rz_warn_if_reached();
+		}
+	} else {
+		rz_analysis_rzil_trace_free(core->analysis->rzil->trace);
+		core->analysis->rzil->trace = rt;
+	}
 	core->analysis->esil->trace = et;
 	core->dbg->trace = dt;
 }
@@ -394,7 +407,7 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 			continue;
 		}
 		if (!in_stack) {
-			//XXX: param arg_num must be fixed to support floating point register
+			// XXX: param arg_num must be fixed to support floating point register
 			place = rz_analysis_cc_arg(analysis, cc, arg_num);
 			if (place && rz_str_startswith("stack", place)) {
 				in_stack = true;
@@ -797,6 +810,53 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, RzAnalys
 	}
 }
 
+static void h_debug_single_ins(RzILTraceInstruction *ins) {
+	void **iter;
+	RzILTraceMemOp *mem;
+	RzILTraceRegOp *reg;
+	int count = 0;
+
+	eprintf("[DEBUG] Reg Write : >>>>>\n");
+	rz_pvector_foreach (ins->write_reg_ops, iter) {
+		reg = *iter;
+		eprintf("%s=%lld,  ", reg->reg_name, reg->value);
+	}
+	puts("\n");
+
+	eprintf("[DEBUG] Reg Read : >>>>>\n");
+	rz_pvector_foreach (ins->read_reg_ops, iter) {
+		reg = *iter;
+		eprintf("%s=%lld,  ", reg->reg_name, reg->value);
+	}
+	puts("\n");
+
+	eprintf("[DEBUG] Mem Read : >>>>>\n");
+	rz_pvector_foreach (ins->read_mem_ops, iter) {
+		mem = *iter;
+		eprintf("%lld, ", mem->addr);
+	}
+	puts("\n");
+
+	eprintf("[DEBUG] Mem Write : >>>>>\n");
+	rz_pvector_foreach (ins->write_mem_ops, iter) {
+		mem = *iter;
+		eprintf("%lld, ", mem->addr);
+	}
+	puts("\n");
+}
+
+static void h_debug_trace_db(RzAnalysisEsilTrace *etrace) {
+	eprintf("========== [DEBUG] ===========\n");
+	eprintf("Cur : %d/%d\n", etrace->idx, etrace->end_idx);
+	RzPVector *instructions = etrace->instructions;
+	void **iter;
+	RzILTraceInstruction *ins;
+	rz_pvector_foreach (instructions, iter) {
+		ins = *iter;
+		h_debug_single_ins(ins);
+	}
+}
+
 RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, HtUU *loop_table) {
 	RzListIter *it;
 
@@ -816,8 +876,9 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 	}
 	RzDebugTrace *dt = NULL;
 	RzAnalysisEsilTrace *et = NULL;
-	if (!analysis_emul_init(core, hc, &dt, &et) || !fcn) {
-		analysis_emul_restore(core, hc, dt, et);
+	RzAnalysisRzilTrace *rt = NULL;
+	if (!analysis_emul_init(core, hc, &dt, &et, &rt) || !fcn) {
+		analysis_emul_restore(core, hc, dt, et, rt);
 		return;
 	}
 
@@ -912,9 +973,10 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 			rz_list_free(fcns);
 		}
 	}
+	//	h_debug_trace_db(core->analysis->esil->trace);
 	// Type propagation for register based args
 	void **vit;
-	//RzPVector *cloned_vars = (RzPVector *)rz_vector_clone((RzVector *)&fcn->vars);
+	// RzPVector *cloned_vars = (RzPVector *)rz_vector_clone((RzVector *)&fcn->vars);
 	rz_pvector_foreach (&fcn->vars, vit) {
 		RzAnalysisVar *rvar = *vit;
 		if (rvar->kind == RZ_ANALYSIS_VAR_KIND_REG) {
@@ -937,5 +999,5 @@ out_function:
 	free(retctx.ret_reg);
 	ht_up_free(op_cache);
 	rz_cons_break_pop();
-	analysis_emul_restore(core, hc, dt, et);
+	analysis_emul_restore(core, hc, dt, et, rt);
 }

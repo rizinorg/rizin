@@ -64,6 +64,7 @@ static void zign_rename_for(RzEvent *ev, int type, void *user, void *data) {
 }
 
 void rz_analysis_hint_storage_init(RzAnalysis *a);
+
 void rz_analysis_hint_storage_fini(RzAnalysis *a);
 
 static void rz_meta_item_fini(RzAnalysisMetaItem *item) {
@@ -227,6 +228,14 @@ RZ_API bool rz_analysis_use(RzAnalysis *analysis, const char *name) {
 				return false;
 			}
 			rz_analysis_set_reg_profile(analysis);
+
+			// default : init and enable RZIL if defined rzil_init
+			if (h->rzil_init) {
+				rz_analysis_rzil_setup(analysis);
+			} else {
+				// create it to make analysis_tp go right
+				analysis->rzil = rz_analysis_rzil_new();
+			}
 			return true;
 		}
 	}
@@ -509,7 +518,7 @@ RZ_API bool rz_analysis_noreturn_add(RzAnalysis *analysis, const char *name, ut6
 		} else {
 			eprintf("Can't find prototype for: %s\n", tmp_name);
 		}
-		//return false;
+		// return false;
 	}
 	if (fnl_name) {
 		sdb_bool_set(NDB, K_NORET_FUNC(fnl_name), true, 0);
@@ -573,7 +582,8 @@ static bool noreturn_recurse(RzAnalysis *analysis, ut64 addr) {
 		eprintf("Couldn't read buffer\n");
 		return false;
 	}
-	if (rz_analysis_op(analysis, &op, addr, bbuf, sizeof(bbuf), RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_VAL) < 1) {
+	if (rz_analysis_op(analysis, &op, addr, bbuf, sizeof(bbuf), RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_VAL) <
+		1) {
 		return false;
 	}
 	switch (op.type & RZ_ANALYSIS_OP_TYPE_MASK) {

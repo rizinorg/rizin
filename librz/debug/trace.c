@@ -184,6 +184,12 @@ RZ_API void rz_debug_trace_op(RzDebug *dbg, RzAnalysisOp *op) {
 				eprintf("Run aeim to get dbg->analysis->esil initialized\n");
 			}
 		}
+
+		if (dbg->analysis->rzil) {
+			rz_analysis_rzil_collect_info(dbg->analysis, dbg->analysis->rzil, op, false);
+		} else {
+			RZ_LOG_ERROR("Run aeim to get RZIL initialized\n");
+		}
 	}
 	if (oldpc != UT64_MAX) {
 		rz_debug_trace_add(dbg, oldpc, op->size); //XXX review what this line really do
