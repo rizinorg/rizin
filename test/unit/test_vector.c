@@ -716,6 +716,29 @@ static bool test_vector_bounds(void) {
 	mu_end;
 }
 
+static bool test_vector_tips(void) {
+	RzVector v;
+	st64 t;
+	rz_vector_init(&v, sizeof(st64), NULL, NULL);
+	st64 a = 42;
+	rz_vector_insert(&v, 0, &a);
+	t = *(st64 *)rz_vector_head(&v);
+	mu_assert_eq(t, 42, "head_same");
+	t = *(st64 *)rz_vector_tail(&v);
+	mu_assert_eq(t, 42, "tail_same");
+	rz_vector_clear(&v);
+
+	rz_vector_init(&v, sizeof(st64), NULL, NULL);
+	st64 b[] = { 0, 2, 4, 6, 8 };
+	rz_vector_insert_range(&v, 0, b, 5);
+	t = *(st64 *)rz_vector_head(&v);
+	mu_assert_eq(t, 0, "head");
+	t = *(st64 *)rz_vector_tail(&v);
+	mu_assert_eq(t, 8, "tail");
+	rz_vector_clear(&v);
+	mu_end;
+}
+
 static bool test_pvector_init(void) {
 	RzPVector v;
 	rz_pvector_init(&v, (void *)1337);
@@ -1175,6 +1198,32 @@ static bool test_pvector_bounds(void) {
 	mu_end;
 }
 
+static bool test_pvector_tips(void) {
+	RzPVector v;
+	void *t;
+	rz_pvector_init(&v, NULL);
+	rz_pvector_push(&v, (void *)42);
+	t = rz_pvector_head(&v);
+	mu_assert_eq(t, (void *)42, "head_same");
+	t = rz_pvector_tail(&v);
+	mu_assert_eq(t, (void *)42, "tail_same");
+	rz_pvector_clear(&v);
+
+	rz_pvector_init(&v, NULL);
+	void *b[] = { (void *)0, (void *)2, (void *)4, (void *)6, (void *)8 };
+	v.v.a = malloc(sizeof(void *) * 5);
+	v.v.capacity = 5;
+	memcpy(v.v.a, b, sizeof(void *) * 5);
+	v.v.len = 5;
+
+	t = rz_pvector_head(&v);
+	mu_assert_eq(t, (void *)0, "head");
+	t = rz_pvector_tail(&v);
+	mu_assert_eq(t, (void *)8, "tail");
+	rz_pvector_clear(&v);
+	mu_end;
+}
+
 static size_t lower_bound_slow(st64 *a, size_t count, st64 v) {
 	size_t i;
 	for (i = 0; i < count; i++) {
@@ -1249,6 +1298,7 @@ static int all_tests(void) {
 	mu_run_test(test_vector_flush);
 	mu_run_test(test_vector_foreach);
 	mu_run_test(test_vector_bounds);
+	mu_run_test(test_vector_tips);
 
 	mu_run_test(test_pvector_init);
 	mu_run_test(test_pvector_new);
@@ -1267,6 +1317,7 @@ static int all_tests(void) {
 	mu_run_test(test_pvector_sort);
 	mu_run_test(test_pvector_foreach);
 	mu_run_test(test_pvector_bounds);
+	mu_run_test(test_pvector_tips);
 
 	mu_run_test(test_array_bounds_fuzz);
 
