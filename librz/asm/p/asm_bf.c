@@ -5,15 +5,6 @@
 #include <rz_asm.h>
 
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-	const ut8 *b;
-	int rep = 1;
-
-	/* Count repetitions of the current instruction, unless it's a trap. */
-	if (*buf != 0x00 && *buf != 0xff) {
-		for (b = &buf[1]; b < buf + len && *b == *buf; b++) {
-			rep++;
-		}
-	}
 	const char *buf_asm = "invalid";
 	switch (*buf) {
 	case '[':
@@ -23,16 +14,16 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		buf_asm = "loop";
 		break;
 	case '>':
-		buf_asm = (rep > 1) ? "add ptr" : "inc ptr";
+		buf_asm = "inc ptr";
 		break;
 	case '<':
-		buf_asm = (rep > 1) ? "sub ptr" : "dec ptr";
+		buf_asm = "dec ptr";
 		break;
 	case '+':
-		buf_asm = (rep > 1) ? "add [ptr]" : "inc [ptr]";
+		buf_asm = "inc [ptr]";
 		break;
 	case '-':
-		buf_asm = (rep > 1) ? "sub [ptr]" : "dec [ptr]";
+		buf_asm = "dec [ptr]";
 		break;
 	case ',':
 		buf_asm = "in [ptr]";
@@ -49,15 +40,9 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		break;
 	}
 
-	if (rep > 1) {
-		/* Note: snprintf's source and destination buffers may not
-		* overlap. */
-		const char *fmt = strchr(buf_asm, ' ') ? "%s, %d" : "%s %d";
-		buf_asm = sdb_fmt(fmt, buf_asm, rep);
-	}
 	rz_strbuf_set(&op->buf_asm, buf_asm);
-	op->size = rep;
-	return rep;
+	op->size = 1;
+	return op->size;
 }
 
 static bool _write_asm(RzAsmOp *op, int value, int n) {

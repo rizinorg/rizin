@@ -428,3 +428,65 @@ RZ_IPI void rz_core_analysis_esil_default(RzCore *core) {
 	}
 	rz_core_seek(core, at, true);
 }
+
+/**********
+ * New Rizin IL Core (rzil) related things
+ *********/
+RZ_IPI void rz_core_analysis_rzil_init_mem(RzCore *core) {
+	RzILVM vm;
+	printf("[Init RzilVM memory\n");
+	if (core->analysis->rzil && core->analysis->rzil->vm) {
+		vm = core->analysis->rzil->vm;
+		rz_il_vm_add_mem(vm, vm->data_size);
+	}
+}
+
+RZ_IPI void core_rzil_init(RzCore *core) {
+	rz_analysis_rzil_setup(core->analysis);
+}
+
+RZ_IPI void rz_core_analysis_rzil_reinit(RzCore *core) {
+	if (core->analysis->rzil) {
+		rz_analysis_rzil_cleanup(core->analysis, core->analysis->rzil);
+		core->analysis->rzil = NULL;
+	}
+
+	core_rzil_init(core);
+}
+
+// step a list of ct_opcode at a given address
+RZ_IPI void rz_core_rzil_step(RzCore *core) {
+	RzPVector *oplist;
+
+	if (!core->analysis || !core->analysis->rzil || !core->analysis->rzil->inited) {
+		RZ_LOG_ERROR("Please aei to init RZIL First\n");
+		return;
+	}
+
+	RzAnalysis *analysis = core->analysis;
+	RzAnalysisRzil *rzil = analysis->rzil;
+	RzILVM vm = rzil->vm;
+	RzAnalysisPlugin *cur = analysis->cur;
+	RzAnalysisOp op = { 0 };
+
+	if (!cur) {
+		// No analysis plugin
+		return;
+	}
+
+	ut64 addr = rz_il_bv_to_ut64(vm->pc);
+
+	// try load from vm
+	// fetch and parse if no opcode
+	ut8 code[32];
+	oplist = rz_il_vm_load_opcodes_at_pc(vm);
+	if (!oplist) {
+		// analysis current data to trigger rzil_set_op_code
+		(void)rz_io_read_at_mapped(core->io, addr, code, sizeof(code));
+		rz_analysis_op(analysis, &op, addr, code, sizeof(code), RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_HINT);
+		oplist = rz_il_vm_load_opcodes_at_pc(vm);
+	}
+
+	rz_il_vm_list_step(vm, oplist);
+	rz_il_clean_temps(vm);
+}

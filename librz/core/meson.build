@@ -104,6 +104,7 @@ rz_core_deps = [
   rz_asm_dep,
   rz_egg_dep,
   rz_search_dep,
+  rz_il_dep,
   rz_analysis_dep,
   rz_type_dep,
   rz_debug_dep,
@@ -162,7 +163,8 @@ pkgconfig_mod.generate(
     'rz_config',
     'rz_bin',
     'rz_asm',
-    'rz_bp'
+    'rz_bp',
+    'rz_il'
   ],
   description: 'rizin foundation libraries'
 )
