@@ -6,7 +6,7 @@
 
 static char *rz_debug_native_reg_profile(RzDebug *dbg) {
 #if __WINDOWS__
-	/*_______
+/*_______
  |   |   |
  |___|___|
  |   |   |

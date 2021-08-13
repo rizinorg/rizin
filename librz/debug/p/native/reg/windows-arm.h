@@ -5,6 +5,7 @@ return strdup(
 	"=PC     pc\n"
 	"=SP     sp\n"
 	"=BP     fp\n"
+	"=LR     lr\n"
 	"=A0     r0\n"
 	"=A1     r1\n"
 	"=A2     r2\n"

@@ -790,6 +790,8 @@ RZ_API int rz_debug_step_soft(RzDebug *dbg) {
 		ut32 r32[2];
 	} memval;
 
+	const bool has_lr_reg = rz_reg_get_name(dbg->reg, RZ_REG_NAME_LR);
+
 	if (dbg->recoil_mode == RZ_DBG_RECOIL_NONE) {
 		dbg->recoil_mode = RZ_DBG_RECOIL_STEP;
 	}
@@ -815,8 +817,12 @@ RZ_API int rz_debug_step_soft(RzDebug *dbg) {
 	}
 	switch (op.type) {
 	case RZ_ANALYSIS_OP_TYPE_RET:
-		dbg->iob.read_at(dbg->iob.io, sp, (ut8 *)&sp_top, 8);
-		next[0] = (dbg->bits == RZ_SYS_BITS_32) ? sp_top.r32[0] : sp_top.r64;
+		if (has_lr_reg) {
+			next[0] = rz_debug_reg_get(dbg, dbg->reg->name[RZ_REG_NAME_LR]);
+		} else {
+			dbg->iob.read_at(dbg->iob.io, sp, (ut8 *)&sp_top, 8);
+			next[0] = (dbg->bits == RZ_SYS_BITS_32) ? sp_top.r32[0] : sp_top.r64;
+		}
 		br = 1;
 		break;
 	case RZ_ANALYSIS_OP_TYPE_CJMP:
