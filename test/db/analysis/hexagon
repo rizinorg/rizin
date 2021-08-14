@@ -3,17 +3,26 @@ FILE=bins/elf/analysis/hexagon-hello-loop
 CMDS=<<EOF
 s sym.main
 af
+aar
 afx
-pifc
+s 0x000050e4
+pi 2
+s 0x0000539c
+pi 4
 EOF
 EXPECT=<<EOF
-c 0x00005124 -> 0x00005128 jump 0x5128
-c 0x00005134 -> 0x00005138 jump 0x5138
-C 0x00005138 -> 0x000050e0 call sym.pHello
-C 0x0000513c -> 0x000050f8 call sym.pWorld
-c 0x00005140 -> 0x00005144 jump 0x5144
-c 0x00005150 -> 0x00005128 jump 0x5128
-call sym.pHello
-call sym.pWorld
+c 0x00005124 -> 0x00005128 [     jump 0x5128 
+c 0x00005130 -> 0x00005154 [     if (P0) jump:nt 0x5154 
+c 0x00005134 -> 0x00005138 [     jump 0x5138 
+C 0x00005138 -> 0x000050e0 [     call sym.pHello 
+C 0x0000513c -> 0x000050f8 [     call sym.pWorld 
+c 0x00005140 -> 0x00005144 [     jump 0x5144 
+c 0x00005150 -> 0x00005128 [     jump 0x5128 
+/ immext(##0xb0c0) 
+\ R0 = ##0xb0d0 
+/ immext(##0xd180) 
+| R2 = ##0xd1ac 
+| immext(##0xfe105000) 
+\ R3 = ##-0x1efb000 
 EOF
 RUN
