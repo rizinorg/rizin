@@ -45,7 +45,7 @@ bool test_rz_str_replace(void) {
 bool test_rz_str_ncpy(void) {
 	char *str = strdup("hello world");
 	char buf[10];
-	rz_str_ncpy (buf, str, 3);
+	rz_str_ncpy(buf, str, 3);
 	mu_assert_streq(buf, "hel", "error, while copying n bytes");
 	mu_end;
 }

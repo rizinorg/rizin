@@ -761,12 +761,12 @@ RZ_API size_t rz_str_ncpy(char *dst, const char *src, size_t n) {
 	if (n == 0) {
 		return 0;
 	}
-	#if HAVE_STRLCPY
-		strlcpy(dst, src, n);
-	#else
-		strncpy(dst, src, n);
-		dst[n] = '\0';
-	#endif
+#if HAVE_STRLCPY
+	strlcpy(dst, src, n);
+#else
+	strncpy(dst, src, n);
+	dst[n] = '\0';
+#endif
 
 	return n;
 }
