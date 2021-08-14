@@ -51,6 +51,33 @@
 	if (Elf_(rz_bin_elf_has_imports)(bin)) \
 	rz_vector_foreach(bin->imports, import)
 
+struct gnu_hash_table { // DT_GNU_HASH
+	Elf_(Word) nbuckets;
+	Elf_(Word) symoffset;
+	Elf_(Word) bloom_size;
+	Elf_(Word) bloom_shift;
+	//	Elf_(Addr) boom[bloom_size];
+	//	Elf_(Word) buckets[nbuckets];
+	//	Elf_(Word) chains[];
+};
+
+typedef struct rz_bin_elf_gnu_hash_table_t {
+	ut64 offset; /*!< offset of the dt_gnu_hash struct in memory */
+	struct gnu_hash_table data;
+} RzBinElfGnuHashTable;
+
+struct elf_hash_table { // DT_HASH
+	Elf_(Word) nbuckets;
+	Elf_(Word) nchains;
+	//	Elf_(Word) buckets[nbuckets];
+	//	Elf_(Word) chains[nchains];
+};
+
+typedef struct rz_bin_elf_hash_table_ {
+	ut64 offset; /*!< offset of the dt_hash struct in memory */
+	struct elf_hash_table data;
+} RzBinElfHashTable;
+
 /// Information about the binary layout in a NT_PRSTATUS note for core files of a certain architecture and os
 typedef struct prstatus_layout_t {
 	ut64 regsize;
@@ -216,6 +243,12 @@ RZ_OWN RzBinElfDtDynamic *Elf_(rz_bin_elf_dt_dynamic_new)(RZ_NONNULL ELFOBJ *bin
 bool Elf_(rz_bin_elf_get_dt_info)(RZ_NONNULL ELFOBJ *bin, ut64 key, RZ_OUT ut64 *info);
 bool Elf_(rz_bin_elf_has_dt_dynamic)(RZ_NONNULL ELFOBJ *bin);
 void Elf_(rz_bin_elf_dt_dynamic_free)(RzBinElfDtDynamic *ptr);
+
+// elf_hash.c
+bool Elf_(rz_bin_elf_get_gnu_hash_table)(RZ_NONNULL ELFOBJ *bin, RzBinElfGnuHashTable *result);
+bool Elf_(rz_bin_elf_get_hash_table)(RZ_NONNULL ELFOBJ *bin, RzBinElfHashTable *result);
+size_t Elf_(rz_bin_elf_get_number_of_symbols_from_gnu_hash_table)(RZ_NONNULL ELFOBJ *bin);
+size_t Elf_(rz_bin_elf_get_number_of_symbols_from_hash_table)(RZ_NONNULL ELFOBJ *bin);
 
 // elf_imports.c
 RZ_BORROW RzBinElfSymbol *Elf_(rz_bin_elf_get_import)(RZ_NONNULL ELFOBJ *bin, ut32 ordinal);
