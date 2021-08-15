@@ -3768,7 +3768,7 @@ static int bin_classes(RzCore *r, PJ *pj, int mode) {
 			}
 			rz_list_foreach (c->fields, iter2, f) {
 				char *mflags = rz_core_bin_method_flags_str(f->flags, mode);
-				rz_cons_printf("0x%08" PFMT64x " method %d %s %s\n", f->vaddr, m, mflags, f->name);
+				rz_cons_printf("0x%08" PFMT64x " field  %d %s %s\n", f->vaddr, m, mflags, f->name);
 				free(mflags);
 				m++;
 			}
