@@ -430,9 +430,6 @@ RZ_API char *rz_bin_java_class_access_flags_readable(RzBinJavaClass *bin, ut16 m
 
 	for (ut32 i = 0; i < CLASS_ACCESS_FLAGS_SIZE; ++i) {
 		const AccessFlagsReadable *afr = &access_flags_list[i];
-		if (afr->flag == ACCESS_FLAG_SUPER) {
-			continue;
-		}
 		if (access_flags & afr->flag) {
 			if (!sb) {
 				sb = rz_strbuf_new(afr->readable);
