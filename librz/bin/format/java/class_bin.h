@@ -32,7 +32,7 @@ typedef enum {
 	ACCESS_FLAG_MODULE /*    */ = 0x8000
 } ClassAccessFlag;
 
-#define ACCESS_FLAG_MASK_ALL (0xFFFF)
+#define ACCESS_FLAG_MASK_ALL          (0xFFFF)
 #define ACCESS_FLAG_MASK_ALL_NO_SUPER ((~ACCESS_FLAG_SUPER) & ACCESS_FLAG_MASK_ALL)
 
 typedef struct java_class_t {
