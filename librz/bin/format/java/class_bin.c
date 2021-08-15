@@ -388,7 +388,10 @@ RZ_API char *rz_bin_java_class_name(RzBinJavaClass *bin) {
 		return strdup("unknown_class");
 	}
 
-	return java_class_constant_pool_stringify_at(bin, index);
+	char *tmp = java_class_constant_pool_stringify_at(bin, index);
+	char *class_name = rz_str_newf("L%s;", tmp);
+	free(tmp);
+	return class_name;
 }
 
 RZ_API char *rz_bin_java_class_super(RzBinJavaClass *bin) {
@@ -414,6 +417,9 @@ RZ_API char *rz_bin_java_class_access_flags_readable(RzBinJavaClass *bin, ut16 m
 
 	for (ut32 i = 0; i < CLASS_ACCESS_FLAGS_SIZE; ++i) {
 		const AccessFlagsReadable *afr = &access_flags_list[i];
+		if (afr->flag == ACCESS_FLAG_SUPER) {
+			continue;
+		}
 		if (access_flags & afr->flag) {
 			if (!sb) {
 				sb = rz_strbuf_new(afr->readable);
@@ -575,8 +581,9 @@ RZ_API char *rz_bin_java_class_const_pool_resolve_index(RzBinJavaClass *bin, st3
 			return NULL;
 		}
 		tmp = rz_bin_java_class_const_pool_resolve_index(bin, arg0);
-		rz_str_replace_char(tmp, '/', '.');
-		return tmp;
+		char *res = rz_str_newf("L%s;", tmp);
+		free(tmp);
+		return res;
 	} else if (cpool->tag == CONSTANT_POOL_STRING) {
 		if (java_constant_pool_resolve(cpool, &arg0, NULL) != 1) {
 			RZ_LOG_ERROR("java bin: can't resolve constant pool index %u\n", index);
@@ -600,11 +607,13 @@ RZ_API char *rz_bin_java_class_const_pool_resolve_index(RzBinJavaClass *bin, st3
 			return NULL;
 		}
 		if (!arg0) {
-			rz_str_replace_char(s1, '/', '.');
 			return s1;
 		}
-		tmp = rz_str_newf("%s:%s", s0, s1);
-		rz_str_replace_char(tmp, '/', '.');
+		if (s1[0] == '(') {
+			tmp = rz_str_newf("%s%s", s0, s1);
+		} else {
+			tmp = rz_str_newf("%s.%s", s0, s1);
+		}
 		free(s0);
 		free(s1);
 		return tmp;
@@ -615,7 +624,8 @@ RZ_API char *rz_bin_java_class_const_pool_resolve_index(RzBinJavaClass *bin, st3
 RZ_API void rz_bin_java_class_as_source_code(RzBinJavaClass *bin, RzStrBuf *sb) {
 	rz_return_if_fail(bin && sb);
 
-	char *tmp;
+	char *dem = NULL;
+	char *tmp = NULL;
 	ut16 index;
 
 	RzListIter *iter;
@@ -638,14 +648,20 @@ RZ_API void rz_bin_java_class_as_source_code(RzBinJavaClass *bin, RzStrBuf *sb) 
 	}
 
 	tmp = rz_bin_java_class_name(bin);
-	rz_str_replace_char(tmp, '/', '.');
-	rz_strbuf_appendf(sb, " %s", tmp);
+	dem = rz_bin_demangle_java(tmp);
+	if (dem) {
+		rz_strbuf_appendf(sb, " %s", dem);
+		RZ_FREE(dem);
+	} else {
+		rz_strbuf_appendf(sb, " %s", tmp);
+	}
+
 	free(tmp);
 
 	if (bin->access_flags & ACCESS_FLAG_SUPER) {
 		tmp = rz_bin_java_class_super(bin);
-		rz_str_replace_char(tmp, '/', '.');
-		if (strcmp(tmp, "java.lang.Object") != 0) {
+		if (strcmp(tmp, "java/lang/Object") != 0) {
+			rz_str_replace_char(tmp, '/', '.');
 			rz_strbuf_appendf(sb, " extends %s", tmp);
 		}
 		free(tmp);
@@ -664,7 +680,10 @@ RZ_API void rz_bin_java_class_as_source_code(RzBinJavaClass *bin, RzStrBuf *sb) 
 				break;
 			}
 			tmp = java_class_constant_pool_stringify_at(bin, index);
-			rz_str_replace_char(tmp, '/', '.');
+			if ((dem = rz_bin_demangle_java(tmp))) {
+				free(tmp);
+				tmp = dem;
+			}
 			if (k > 0) {
 				rz_strbuf_appendf(sb, ", %s", tmp);
 			} else {
@@ -694,38 +713,27 @@ RZ_API void rz_bin_java_class_as_source_code(RzBinJavaClass *bin, RzStrBuf *sb) 
 				free(tmp);
 			}
 
-			tmp = java_class_constant_pool_stringify_at(bin, method->descriptor_index);
-			rz_str_replace_char(tmp, '/', '.');
-			char *dem = rz_bin_demangle_java(tmp);
-			if (!dem) {
-				dem = tmp;
-				tmp = java_class_constant_pool_stringify_at(bin, method->name_index);
-				if (tmp) {
-					rz_str_replace_char(tmp, '/', '.');
-					rz_strbuf_appendf(sb, "%s ", tmp);
-					free(tmp);
-				}
-				rz_strbuf_append(sb, dem);
-			} else {
-				free(tmp);
-				tmp = java_class_constant_pool_stringify_at(bin, method->name_index);
-				if (tmp) {
-					rz_str_replace_char(tmp, '/', '.');
-
-					char *ptr = strchr(dem, '(');
-					if (ptr) {
-						*(ptr - 1) = 0;
-						rz_strbuf_append(sb, dem);
-						rz_strbuf_append(sb, tmp);
-						rz_strbuf_append(sb, ptr);
-					} else {
-						rz_strbuf_append(sb, dem);
-						rz_strbuf_append(sb, tmp);
-					}
-					free(tmp);
-				}
+			char *name = java_class_constant_pool_stringify_at(bin, method->name_index);
+			if (!name) {
+				name = strdup("?");
 			}
-			free(dem);
+			char *desc = java_class_constant_pool_stringify_at(bin, method->descriptor_index);
+			if (!desc) {
+				desc = strdup("(?)V");
+			}
+
+			tmp = rz_str_newf("%s%s", name, desc);
+			free(desc);
+			free(name);
+
+			dem = rz_bin_demangle_java(tmp);
+			if (!dem) {
+				rz_strbuf_append(sb, tmp);
+			} else {
+				rz_strbuf_append(sb, dem);
+				RZ_FREE(dem);
+			}
+			free(tmp);
 			rz_strbuf_append(sb, ";\n");
 		}
 	}
@@ -942,7 +950,6 @@ static char *add_class_name_to_name(char *name, char *classname) {
 			return name;
 		}
 		free(name);
-		rz_str_replace_char(tmp, '/', '.');
 		return tmp;
 	}
 	return name;
@@ -956,7 +963,7 @@ RZ_API RzList *rz_bin_java_class_methods_as_symbols(RzBinJavaClass *bin) {
 		return NULL;
 	}
 
-	char *sym = NULL;
+	char *method_name = NULL;
 	if (bin->methods) {
 		for (ut32 i = 0; i < bin->methods_count; ++i) {
 			const Method *method = bin->methods[i];
@@ -969,8 +976,8 @@ RZ_API RzList *rz_bin_java_class_methods_as_symbols(RzBinJavaClass *bin) {
 				RZ_LOG_ERROR("java bin: can't resolve method with constant pool index %u\n", method->name_index);
 				continue;
 			}
-			sym = java_constant_pool_stringify(cpool);
-			if (!sym) {
+			method_name = java_constant_pool_stringify(cpool);
+			if (!method_name) {
 				continue;
 			}
 			ut64 size = 0;
@@ -987,17 +994,24 @@ RZ_API RzList *rz_bin_java_class_methods_as_symbols(RzBinJavaClass *bin) {
 			RzBinSymbol *symbol = rz_bin_symbol_new(NULL, addr, addr);
 			if (!symbol) {
 				rz_warn_if_reached();
-				free(sym);
+				free(method_name);
 				continue;
 			}
+			char *desc = java_class_constant_pool_stringify_at(bin, method->descriptor_index);
+			if (!desc) {
+				desc = strdup("(?)V");
+			}
+
 			symbol->classname = rz_bin_java_class_name(bin);
-			symbol->name = add_class_name_to_name(sym, symbol->classname);
+			symbol->dname = rz_str_newf("%s%s", method_name, desc);
+			symbol->name = add_class_name_to_name(method_name, symbol->classname);
 			symbol->size = size;
 			symbol->bind = java_method_is_global(method) ? RZ_BIN_BIND_GLOBAL_STR : RZ_BIN_BIND_LOCAL_STR;
 			symbol->type = RZ_BIN_TYPE_FUNC_STR;
 			symbol->ordinal = rz_list_length(list);
 			symbol->visibility = method->access_flags;
 			symbol->visibility_str = java_method_access_flags_readable(method);
+			free(desc);
 			rz_list_append(list, symbol);
 		}
 	}
@@ -1388,7 +1402,6 @@ RZ_API RzList *rz_bin_java_class_const_pool_as_imports(RzBinJavaClass *bin) {
 				continue;
 			}
 			import->classname = java_class_constant_pool_stringify_at(bin, class_name_index);
-			rz_str_replace_char(import->classname, '/', '.');
 			import->name = java_class_constant_pool_stringify_at(bin, name_index);
 			is_main = import->name && !strcmp(import->name, "main");
 			import->bind = is_main ? RZ_BIN_BIND_GLOBAL_STR : NULL;
@@ -1418,7 +1431,6 @@ RZ_API RzList *rz_bin_java_class_const_pool_as_imports(RzBinJavaClass *bin) {
 			}
 
 			import->classname = java_class_constant_pool_stringify_at(bin, class_index);
-			rz_str_replace_char(import->classname, '/', '.');
 			import->name = strdup("*");
 			import->bind = RZ_BIN_BIND_WEAK_STR;
 			import->type = RZ_BIN_TYPE_IFACE_STR;
