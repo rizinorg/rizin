@@ -340,7 +340,7 @@ static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 			vA = (int)buf[1];
 			vB = (int)(buf[5] | (buf[4] << 8) | (buf[3] << 16) | (buf[2] << 24));
 			offset = RZ_ASM_GET_OFFSET(a, 's', vB);
-			if (offset < 1) {
+			if (offset == UT64_MAX) {
 				rz_strf(str, " v%i, string+%i", vA, vB);
 			} else {
 				rz_strf(str, " v%i, 0x%" PFMT64x, vA, offset);
