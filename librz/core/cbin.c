@@ -3514,9 +3514,12 @@ static void classdump_objc(RzCore *r, RzBinClass *c) {
 
 static inline char *demangle_class(const char *classname) {
 	if (!classname || classname[0] != 'L') {
-		return strdup("defpackage");
+		return strdup(classname ? classname : "?");
 	}
 	char *demangled = strdup(classname + 1);
+	if (!demangled) {
+		return strdup(classname);
+	}
 	rz_str_replace_ch(demangled, '/', '.', 1);
 	demangled[strlen(demangled) - 1] = 0;
 	return demangled;
@@ -3584,7 +3587,6 @@ static void classdump_java(RzCore *r, RzBinClass *c) {
 		const char *mn = sym->dname ? sym->dname : sym->name;
 		visibility = resolve_visibility(sym->visibility_str);
 		char *dem = rz_bin_demangle_java(mn);
-		rz_str_replace_ch(dem, '/', '.', 1);
 		if (simplify) {
 			// hide the current package in the demangled value.
 			dem = rz_str_replace(dem, package, classname, 1);
@@ -3597,6 +3599,18 @@ static void classdump_java(RzCore *r, RzBinClass *c) {
 	free(package);
 	free(classname);
 	rz_cons_printf("}\n\n");
+}
+
+static inline bool is_java_lang(RzBinFile *bf) {
+	if (!bf || !bf->o) {
+		return false;
+	} else if (bf->o->lang == RZ_BIN_NM_JAVA) {
+		return true;
+	} else if (!bf->o->info || !bf->o->info->lang) {
+		return false;
+	}
+	const char *lang = bf->o->info->lang;
+	return strstr(lang, "dalvik") || strstr(lang, "java") || strstr(lang, "kotlin");
 }
 
 static int bin_classes(RzCore *r, PJ *pj, int mode) {
@@ -3654,14 +3668,10 @@ static int bin_classes(RzCore *r, PJ *pj, int mode) {
 		} else if (IS_MODE_CLASSDUMP(mode)) {
 			if (c) {
 				RzBinFile *bf = rz_bin_cur(r->bin);
-				if (bf && bf->o) {
-					if (IS_MODE_RZCMD(mode)) {
-						classdump_c(r, c);
-					} else if (bf->o->lang == RZ_BIN_NM_JAVA || (bf->o->info && bf->o->info->lang && strstr(bf->o->info->lang, "dalvik"))) {
-						classdump_java(r, c);
-					} else {
-						classdump_objc(r, c);
-					}
+				if (IS_MODE_RZCMD(mode)) {
+					classdump_c(r, c);
+				} else if (is_java_lang(bf)) {
+					classdump_java(r, c);
 				} else {
 					classdump_objc(r, c);
 				}

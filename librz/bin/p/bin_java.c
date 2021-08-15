@@ -220,14 +220,8 @@ static char *enrich_asm(RzBinFile *bf, const char *asm_str, int asm_len) {
 				rz_warn_if_reached();
 				return NULL;
 			}
-			char *dem = rz_bin_demangle_java(tmp);
-			if (!dem) {
-				dem = tmp;
-			} else {
-				free(tmp);
-			}
-			char *result = rz_str_newf("%.*s%s", i, asm_str, dem);
-			free(dem);
+			char *result = rz_str_newf("%.*s%s", i, asm_str, tmp);
+			free(tmp);
 			return result;
 		}
 	}
