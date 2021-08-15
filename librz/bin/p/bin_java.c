@@ -101,7 +101,7 @@ static RzList *classes(RzBinFile *bf) {
 	bclass->name = rz_bin_java_class_name(jclass);
 	bclass->super = rz_bin_java_class_super(jclass);
 	bclass->visibility = rz_bin_java_class_access_flags(jclass);
-	bclass->visibility_str = rz_bin_java_class_access_flags_readable(jclass, ACCESS_FLAG_MASK_ALL);
+	bclass->visibility_str = rz_bin_java_class_access_flags_readable(jclass, ACCESS_FLAG_MASK_ALL_NO_SUPER);
 
 	bclass->methods = rz_bin_java_class_methods_as_symbols(jclass);
 	bclass->fields = rz_bin_java_class_fields_as_binfields(jclass);
