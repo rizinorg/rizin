@@ -1377,7 +1377,6 @@ RZ_API RzList /*<RzBinImport*>*/ *rz_bin_dex_imports(RzBinDex *dex) {
 		if (!object) {
 			break;
 		}
-		rz_str_replace_char(object, '$', '.');
 		rz_str_replace_char(object, ';', 0);
 
 		char *class_name = (char *)rz_str_rchr(object, NULL, '/');
@@ -1424,7 +1423,6 @@ RZ_API RzList /*<RzBinImport*>*/ *rz_bin_dex_imports(RzBinDex *dex) {
 		if (!object) {
 			break;
 		}
-		rz_str_replace_char(object, '$', '.');
 		rz_str_replace_char(object, ';', 0);
 
 		char *class_name = (char *)rz_str_rchr(object, NULL, '/');
