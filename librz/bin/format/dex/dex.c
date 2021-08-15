@@ -651,7 +651,7 @@ RZ_API RzList /*<RzBinString*>*/ *rz_bin_dex_strings(RzBinDex *dex) {
 static char *dex_resolve_string_id(RzBinDex *dex, ut32 string_idx) {
 	DexString *string = (DexString *)rz_list_get_n(dex->strings, string_idx);
 	if (!string) {
-		RZ_LOG_ERROR("cannot find string with index %u\n", string_idx);
+		RZ_LOG_INFO("cannot find string with index %u\n", string_idx);
 		return NULL;
 	}
 	return rz_str_ndup(string->data, string->size);
@@ -659,7 +659,7 @@ static char *dex_resolve_string_id(RzBinDex *dex, ut32 string_idx) {
 
 static char *dex_resolve_type_id(RzBinDex *dex, ut32 type_idx) {
 	if (type_idx >= dex->type_ids_size) {
-		RZ_LOG_ERROR("cannot find type_id with index %u\n", type_idx);
+		RZ_LOG_INFO("cannot find type_id with index %u\n", type_idx);
 		return NULL;
 	}
 	DexTypeId type_id = dex->types[type_idx];
@@ -669,12 +669,12 @@ static char *dex_resolve_type_id(RzBinDex *dex, ut32 type_idx) {
 static char *dex_resolve_proto_id(RzBinDex *dex, const char *name, ut32 proto_idx, bool varargs) {
 	DexProtoId *proto_id = (DexProtoId *)rz_list_get_n(dex->proto_ids, proto_idx);
 	if (!proto_id) {
-		RZ_LOG_ERROR("cannot find proto_id with index %u out of %u\n", proto_idx, rz_list_length(dex->proto_ids));
+		RZ_LOG_INFO("cannot find proto_id with index %u out of %u\n", proto_idx, rz_list_length(dex->proto_ids));
 		return NULL;
 	}
 
 	if (proto_id->return_type_idx >= dex->type_ids_size) {
-		RZ_LOG_ERROR("cannot find return type id with index %u\n", proto_id->return_type_idx);
+		RZ_LOG_INFO("cannot find return type id with index %u\n", proto_id->return_type_idx);
 		return NULL;
 	}
 
@@ -686,7 +686,7 @@ static char *dex_resolve_proto_id(RzBinDex *dex, const char *name, ut32 proto_id
 
 	DexString *return_type = (DexString *)rz_list_get_n(dex->strings, dex->types[proto_id->return_type_idx]);
 	if (!return_type) {
-		RZ_LOG_ERROR("cannot find return type string with index %u\n", proto_id->return_type_idx);
+		RZ_LOG_INFO("cannot find return type string with index %u\n", proto_id->return_type_idx);
 		rz_strbuf_free(sb);
 		return NULL;
 	}
@@ -1318,6 +1318,7 @@ RZ_API RzList /*<RzBinSymbol*>*/ *rz_bin_dex_symbols(RzBinDex *dex) {
 		}
 	}
 
+	free(class_ids);
 	return symbols;
 }
 
@@ -1771,7 +1772,7 @@ RZ_API char *rz_bin_dex_resolve_field_by_idx(RzBinDex *dex, ut32 field_idx) {
 RZ_API ut64 rz_bin_dex_resolve_string_offset_by_idx(RzBinDex *dex, ut32 string_idx) {
 	DexString *string = (DexString *)rz_list_get_n(dex->strings, string_idx);
 	if (!string) {
-		RZ_LOG_ERROR("cannot find string with index %u\n", string_idx);
+		RZ_LOG_INFO("cannot find string with index %u\n", string_idx);
 		return UT64_MAX;
 	}
 	return string->offset;
@@ -1779,7 +1780,7 @@ RZ_API ut64 rz_bin_dex_resolve_string_offset_by_idx(RzBinDex *dex, ut32 string_i
 
 RZ_API ut64 rz_bin_dex_resolve_type_id_offset_by_idx(RzBinDex *dex, ut32 type_idx) {
 	if (type_idx >= dex->type_ids_size) {
-		RZ_LOG_ERROR("cannot find type_id with index %u\n", type_idx);
+		RZ_LOG_INFO("cannot find type_id with index %u\n", type_idx);
 		return UT64_MAX;
 	}
 	DexTypeId type_id = dex->types[type_idx];
@@ -1789,7 +1790,7 @@ RZ_API ut64 rz_bin_dex_resolve_type_id_offset_by_idx(RzBinDex *dex, ut32 type_id
 RZ_API ut64 rz_bin_dex_resolve_method_offset_by_idx(RzBinDex *dex, ut32 method_idx) {
 	DexMethodId *method = (DexMethodId *)rz_list_get_n(dex->method_ids, method_idx);
 	if (!method) {
-		RZ_LOG_ERROR("cannot find method with index %u\n", method_idx);
+		RZ_LOG_INFO("cannot find method with index %u\n", method_idx);
 		return UT64_MAX;
 	}
 	return method->code_offset;
