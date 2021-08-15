@@ -95,6 +95,9 @@ typedef struct dex_method_id_t {
 	ut16 proto_idx;
 	ut32 name_idx;
 	ut64 offset;
+	/* code_* values are filled when parsing EncodedMethod */
+	ut64 code_offset;
+	ut64 code_size;
 } DexMethodId;
 #define DEX_METHOD_ID_SIZE (8)
 
@@ -201,6 +204,10 @@ RZ_API char *rz_bin_dex_resolve_field_by_idx(RzBinDex *dex, ut32 field_idx);
 RZ_API char *rz_bin_dex_resolve_class_by_idx(RzBinDex *dex, ut32 class_idx);
 RZ_API char *rz_bin_dex_resolve_string_by_idx(RzBinDex *dex, ut32 string_idx);
 RZ_API char *rz_bin_dex_resolve_proto_by_idx(RzBinDex *dex, ut32 proto_idx);
+
+RZ_API ut64 rz_bin_dex_resolve_string_offset_by_idx(RzBinDex *dex, ut32 string_idx);
+RZ_API ut64 rz_bin_dex_resolve_type_id_offset_by_idx(RzBinDex *dex, ut32 type_idx);
+RZ_API ut64 rz_bin_dex_resolve_method_offset_by_idx(RzBinDex *dex, ut32 method_idx);
 
 RZ_API void rz_bin_dex_checksum(RzBinDex *dex, RzBinHash *hash);
 RZ_API void rz_bin_dex_sha1(RzBinDex *dex, RzBinHash *hash);

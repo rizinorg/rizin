@@ -18,7 +18,7 @@ static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	int vA, vB, vC, vD, vE, vF, vG, vH, payload = 0, i = (int)buf[0];
 	int size = dalvik_opcodes[i].len;
 	char str[1024], *strasm = NULL;
-	ut64 offset;
+	ut64 offset = 0;
 	const char *flag_str;
 	a->dataalign = 2;
 
@@ -269,11 +269,11 @@ static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 			vA = (int)buf[1];
 			vB = (buf[3] << 8) | buf[2];
 			if (buf[0] == 0x1a) {
-				flag_str = RZ_ASM_GET_NAME(a, 's', vB);
-				if (!flag_str) {
+				offset = RZ_ASM_GET_OFFSET(a, 's', vB);
+				if (offset == UT64_MAX) {
 					snprintf(str, sizeof(str), " v%i, string+%i", vA, vB);
 				} else {
-					snprintf(str, sizeof(str), " v%i, \"%s\"", vA, flag_str);
+					snprintf(str, sizeof(str), " v%i, 0x%" PFMT64x, vA, offset);
 				}
 			} else if (buf[0] == 0x1c || buf[0] == 0x1f || buf[0] == 0x22) {
 				flag_str = RZ_ASM_GET_NAME(a, 'c', vB);
@@ -297,7 +297,7 @@ static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 			vB = (buf[1] & 0xf0) >> 4;
 			vC = (buf[3] << 8) | buf[2];
 			offset = RZ_ASM_GET_OFFSET(a, 'o', vC);
-			if (offset == -1) {
+			if (offset == UT64_MAX) {
 				snprintf(str, sizeof(str), " v%i, v%i, [obj+%04x]", vA, vB, vC);
 			} else {
 				snprintf(str, sizeof(str), " v%i, v%i, [0x%" PFMT64x "]", vA, vB, offset);
@@ -308,7 +308,7 @@ static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 			vA = (int)buf[1];
 			vB = (buf[3] << 8) | buf[2];
 			offset = RZ_ASM_GET_OFFSET(a, 't', vB);
-			if (offset == -1) {
+			if (offset == UT64_MAX) {
 				snprintf(str, sizeof(str), " v%i, thing+%i", vA, vB);
 			} else {
 				snprintf(str, sizeof(str), " v%i, 0x%" PFMT64x, vA, offset);
@@ -339,11 +339,11 @@ static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		case fmtopvAAtBBBBBBBB:
 			vA = (int)buf[1];
 			vB = (int)(buf[5] | (buf[4] << 8) | (buf[3] << 16) | (buf[2] << 24));
-			flag_str = RZ_ASM_GET_NAME(a, 's', vB);
-			if (RZ_STR_ISNOTEMPTY(flag_str)) {
-				snprintf(str, sizeof(str), " v%i, \"%s\"", vA, flag_str);
-			} else {
+			offset = RZ_ASM_GET_OFFSET(a, 's', vB);
+			if (offset < 1) {
 				snprintf(str, sizeof(str), " v%i, string+%i", vA, vB);
+			} else {
+				snprintf(str, sizeof(str), " v%i, 0x%" PFMT64x, vA, offset);
 			}
 			strasm = rz_str_append(strasm, str);
 			break;
