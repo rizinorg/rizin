@@ -198,6 +198,8 @@ RELROCS  false
 NX       false
 --
 0x182068040 [0x1800189f8 - 0x180018b90]    408 class 0 Test :: NSObject
+0x00000000 field  0      isa
+0x182068038 field  1      Test::(ivar)someField
 0x1800189f8 method 0      init
 0x180018a58 method 1      methodWithoutArgs
 0x180018ab0 method 2      methodWithOneArg:
@@ -205,6 +207,8 @@ NX       false
 0x180018b90 method 4      methodWithReturn
 0x180018a1c method 5 c    someStaticMethod
 0x18206a028 [0x18003aa78 - 0x18003aa94]     28 class 0 Object :: Object
+0x00000000 field  0      isa
+0x1820691c0 field  1      Object::(ivar)isa
 0x18003aa78 method 0      retain
 0x18003aa7c method 1      release
 0x18003aa80 method 2      autorelease
@@ -226,6 +230,12 @@ NX       false
 0x18003e8e0 method 1      release
 0x18003e8e4 method 2      autorelease
 0x18206a0f0 [0x18003cfc4 - 0x18003d788]   1988 class 0 NSObject :: NSObject
+0x00000000 field  0      isa
+0x1820691c4 field  1      NSObject::(ivar)isa
+0x00000000 field  2      NSObject::(property)hash
+0x00000000 field  3      NSObject::(property)superclass
+0x00000000 field  4      NSObject::(property)description
+0x00000000 field  5      NSObject::(property)debugDescription
 0x18003d768 method 0      init
 0x18003d700 method 1      retain
 0x18003d75c method 2      release
@@ -365,6 +375,8 @@ RELROCS  false
 NX       false
 --
 0x184078000 [0x180018a14 - 0x180018bbc]    424 class 0 Test :: NSObject
+0x00000000 field  0      isa
+0x18206c038 field  1      Test::(ivar)someField
 0x180018a14 method 0      init
 0x180018a78 method 1      methodWithoutArgs
 0x180018ad4 method 2      methodWithOneArg:
@@ -372,6 +384,8 @@ NX       false
 0x180018bbc method 4      methodWithReturn
 0x180018a38 method 5 c    someStaticMethod
 0x184079098 [0x18003e224 - 0x18003e240]     28 class 0 Object :: Object
+0x00000000 field  0      isa
+0x18206d1c0 field  1      Object::(ivar)isa
 0x18003e22c method 0      retain
 0x18003e228 method 1      release
 0x18003e224 method 2      autorelease
@@ -393,6 +407,12 @@ NX       false
 0x180042acc method 1      release
 0x180042ac8 method 2      autorelease
 0x184079160 [0x180040eb8 - 0x180042ac4]   7180 class 0 NSObject :: NSObject
+0x00000000 field  0      isa
+0x18206d1c4 field  1      NSObject::(ivar)isa
+0x00000000 field  2      NSObject::(property)hash
+0x00000000 field  3      NSObject::(property)superclass
+0x00000000 field  4      NSObject::(property)description
+0x00000000 field  5      NSObject::(property)debugDescription
 0x18004144c method 0      init
 0x180042658 method 1      retain
 0x180041adc method 2      release

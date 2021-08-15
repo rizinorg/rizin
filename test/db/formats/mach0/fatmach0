@@ -245,10 +245,22 @@ EXPECT=<<EOF
 0x100009298 [0x100001e90 - 0x100001e90]      0 class 0 ViewController
 0x100001e90 method 0      viewDidLoad
 0x1000092c0 [0x100001ee4 - 0x1000020a4]    448 class 0 AppDelegate
+0x00000000 field  0      AppDelegate::(property)window
+0x00000000 field  1      AppDelegate::(property)hash
+0x00000000 field  2      AppDelegate::(property)superclass
+0x00000000 field  3      AppDelegate::(property)description
+0x00000000 field  4      AppDelegate::(property)debugDescription
 0x100001ee4 method 0      application:didFinishLaunchingWithOptions:
 0x100001f74 method 1      application:configurationForConnectingSceneSession:options:
 0x1000020a4 method 2      application:didDiscardSceneSessions:
 0x100009310 [0x1000021d0 - 0x100002494]    708 class 0 SceneDelegate
+0x00000000 field  0      isa
+0x100009268 field  1      SceneDelegate::(ivar)_window
+0x00000000 field  2      SceneDelegate::(property)window
+0x00000000 field  3      SceneDelegate::(property)hash
+0x00000000 field  4      SceneDelegate::(property)superclass
+0x00000000 field  5      SceneDelegate::(property)description
+0x00000000 field  6      SceneDelegate::(property)debugDescription
 0x1000021d0 method 0      scene:willConnectToSession:options:
 0x100002280 method 1      sceneDidDisconnect:
 0x1000022d4 method 2      sceneDidBecomeActive:

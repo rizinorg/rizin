@@ -837,6 +837,9 @@ FILE=bins/java/test.class
 CMDS=!rz-bin -c ${RZ_FILE}
 EXPECT=<<EOF
 0x00000000 [0x000008f9 - 0x00000bcd]    724 class 0 test :: groovy/lang/Script
+0x000008c9 method 0      $staticClassInfo
+0x000008d1 method 1      __$stMC
+0x000008d9 method 2      $callSiteArray
 0x000008f9 method 0      test.<init>
 0x0000092e method 1      test.<init>
 0x0000096e method 2      test.main

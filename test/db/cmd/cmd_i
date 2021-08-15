@@ -469,10 +469,10 @@ RELROCS  false
 NX       false
   ;-- entry1:
   ;-- section.class.methods.TestMultipleVariable.attr.0.code:
-  ;-- sym.TestVariableSwitchUp.TestVariableSwitchUp.TestMultipleVariable:
-/ method.TestVariableSwitchUp.TestVariableSwitchUp.TestMultipleVariable ();
+  ;-- sym.LTestVariableSwitchUp_.TestMultipleVariable__V:
+/ method.static.LTestVariableSwitchUp_.TestMultipleVariable__V ();
 | 0x000002fd      1064           bipush 100
-| 0x000002ff      b8000f         invokestatic java.lang.Integer java.lang.Integer:valueOf: (int, int)
+| 0x000002ff      b8000f         invokestatic Ljava/lang/Integer;.valueOf(I)Ljava/lang/Integer;
 | 0x00000302      4b             astore_0
 | 0x00000303      1064           bipush 100
 | 0x00000305      3c             istore_1
@@ -480,15 +480,15 @@ NX       false
 | 0x00000308      4d             astore_2
 | 0x00000309      03             iconst_0
 | 0x0000030a      3e             istore_3
-| 0x0000030b      b20017         getstatic java.lang.System:out:Ljava.io.PrintStream;
-| 0x0000030e      bb001d         new   java.lang.StringBuilder
+| 0x0000030b      b20017         getstatic Ljava/lang/System;.out.Ljava/io/PrintStream;
+| 0x0000030e      bb001d         new   Ljava/lang/StringBuilder;
 | 0x00000311      59             dup
 | 0x00000312      121f           ldc   "Attempting print "
-| 0x00000314      b70021         invokespecial void java.lang.StringBuilder:<init>: (short, byte, java.lang.String)
+| 0x00000314      b70021         invokespecial Ljava/lang/StringBuilder;.<init>(Ljava/lang/String;)V
 | 0x00000317      2c             aload_2
-| 0x00000318      b60024         invokevirtual java.lang.StringBuilder java.lang.StringBuilder:append: (short, byte, java.lang.String)
-| 0x0000031b      b60028         invokevirtual java.lang.String java.lang.StringBuilder:toString: (short, byte, short)
-| 0x0000031e      b6002c         invokevirtual void java.io.PrintStream:print: (short, java.lang.String)
+| 0x00000318      b60024         invokevirtual Ljava/lang/StringBuilder;.append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+| 0x0000031b      b60028         invokevirtual Ljava/lang/StringBuilder;.toString()Ljava/lang/String;
+| 0x0000031e      b6002c         invokevirtual Ljava/io/PrintStream;.print(Ljava/lang/String;)V
 \ 0x00000321      b1             return
 EOF
 
@@ -1047,7 +1047,7 @@ FILE=bins/elf/libmagic.so
 CMDS=ic*
 EXPECT=<<EOF
 fs classes
-"f class.JNIEnv = 0x6060"
+"f class.public._JNIEnv = 0x6060"
 "f method._JNIEnv.FindClass_char_const = 0x6060"
 "f method._JNIEnv.DeleteLocalRef__jobject = 0x606a"
 "f method._JNIEnv.NewObject__jclass____jmethodID___... = 0x6074"
@@ -1060,7 +1060,7 @@ fs classes
 "f method._JNIEnv.CallStaticIntMethod__jclass____jmethodID___... = 0x695e"
 "f method._JNIEnv.CallStaticVoidMethod__jclass____jmethodID___... = 0x697c"
 td "struct _JNIEnv { char empty[0];};"
-"f class.SystemClassLoaderInjector = 0x699c"
+"f class.public.SystemClassLoaderInjector = 0x699c"
 "f method.SystemClassLoaderInjector.inject__JNIEnv____jobject____jstring____jstring = 0x74f8"
 "f method.SystemClassLoaderInjector.findBaseDexClassloader__JNIEnv____jobject = 0x699c"
 "f method.SystemClassLoaderInjector.getField__JNIEnv____jobject____jobject____jstring = 0x6a2c"
@@ -1073,38 +1073,38 @@ td "struct _JNIEnv { char empty[0];};"
 "f method.SystemClassLoaderInjector.injectInAliyunOs__JNIEnv____jobject____jstring____jstring = 0x6f68"
 "f method.SystemClassLoaderInjector.injectBelowApiLevel14__JNIEnv____jobject____jstring____jstring = 0x720c"
 td "struct SystemClassLoaderInjector { char empty[0];};"
-"f class.std = 0x886c"
+"f class.public.std = 0x886c"
 "f method.std.terminate = 0x9470"
 "f method.std.uncaught_exception = 0x886c"
 "f method.std.unexpected = 0x9494"
 "f method.std.set_terminate_void = 0x94ac"
 "f method.std.set_unexpected_void = 0x94c8"
 td "struct std { char empty[0];};"
-"f class.std::exception = 0x8884"
+"f class.public.std::exception = 0x8884"
 "f method.std::exception._exception = 0x8884"
 "f method.std::exception.what___const = 0x88f4"
 td "struct std::exception { char empty[0];};"
-"f class.std::bad_exception = 0x889c"
+"f class.public.std::bad_exception = 0x889c"
 "f method.std::bad_exception._bad_exception = 0x889c"
 "f method.std::bad_exception.what___const = 0x8904"
 td "struct std::bad_exception { char empty[0];};"
-"f class.cxxabiv1::__forced_unwind = 0x88c4"
+"f class.public.__cxxabiv1::__forced_unwind = 0x88c4"
 "f method.__cxxabiv1::__forced_unwind.___forced_unwind = 0x88c4"
 td "struct __cxxabiv1::__forced_unwind { char empty[0];};"
-"f class.cxxabiv1::__foreign_exception = 0x88dc"
+"f class.public.__cxxabiv1::__foreign_exception = 0x88dc"
 "f method.__cxxabiv1::__foreign_exception.___foreign_exception = 0x88dc"
 td "struct __cxxabiv1::__foreign_exception { char empty[0];};"
-"f class.eh_globals_init = 0x8984"
+"f class.public.__eh_globals_init = 0x8984"
 "f method.__eh_globals_init.___eh_globals_init = 0x8984"
 td "struct __eh_globals_init { char empty[0];};"
-"f class.cxxabiv1 = 0x943c"
+"f class.public.__cxxabiv1 = 0x943c"
 "f method.__cxxabiv1.__terminate_void = 0x943c"
 "f method.__cxxabiv1.__unexpected_void = 0x9488"
 td "struct __cxxabiv1 { char empty[0];};"
-"f class.cxxabiv1::__fundamental_type_info = 0x94e4"
+"f class.public.__cxxabiv1::__fundamental_type_info = 0x94e4"
 "f method.__cxxabiv1::__fundamental_type_info.___fundamental_type_info = 0x94e4"
 td "struct __cxxabiv1::__fundamental_type_info { char empty[0];};"
-"f class.std::type_info = 0x97bc"
+"f class.public.std::type_info = 0x97bc"
 "f method.std::type_info._type_info = 0x97bc"
 "f method.std::type_info.__is_pointer_p___const = 0x97d4"
 "f method.std::type_info.__is_function_p___const = 0x97dc"
@@ -1112,23 +1112,23 @@ td "struct __cxxabiv1::__fundamental_type_info { char empty[0];};"
 "f method.std::type_info.__do_upcast___cxxabiv1::__class_type_info_const___void____const = 0x97e4"
 "f method.std::type_info.operator___std::type_info_const___const = 0x9808"
 td "struct std::type_info { char empty[0];};"
-"f class.cxxabiv1::__pointer_type_info = 0x9528"
+"f class.public.__cxxabiv1::__pointer_type_info = 0x9528"
 "f method.__cxxabiv1::__pointer_type_info.__is_pointer_p___const = 0x9528"
 "f method.__cxxabiv1::__pointer_type_info.___pointer_type_info = 0x9530"
 "f method.__cxxabiv1::__pointer_type_info.__pointer_catch___cxxabiv1::__pbase_type_info_const___void____unsigned_int__const = 0x9574"
 td "struct __cxxabiv1::__pointer_type_info { char empty[0];};"
-"f class.cxxabiv1::__pbase_type_info = 0x9dd0"
+"f class.public.__cxxabiv1::__pbase_type_info = 0x9dd0"
 "f method.__cxxabiv1::__pbase_type_info.___pbase_type_info = 0x9df0"
 "f method.__cxxabiv1::__pbase_type_info.__do_catch_std::type_info_const___void____unsigned_int__const = 0x9e34"
 "f method.__cxxabiv1::__pbase_type_info.__pointer_catch___cxxabiv1::__pbase_type_info_const___void____unsigned_int__const = 0x9dd0"
 td "struct __cxxabiv1::__pbase_type_info { char empty[0];};"
-"f class.cxxabiv1::__si_class_type_info = 0x95f4"
+"f class.public.__cxxabiv1::__si_class_type_info = 0x95f4"
 "f method.__cxxabiv1::__si_class_type_info.___si_class_type_info = 0x95f4"
 "f method.__cxxabiv1::__si_class_type_info.__do_find_public_src_int__void_const_____cxxabiv1::__class_type_info_const___void_const___const = 0x9638"
 "f method.__cxxabiv1::__si_class_type_info.__do_dyncast_int____cxxabiv1::__class_type_info::__sub_kind____cxxabiv1::__class_type_info_const___void_const_____cxxabiv1::__class_type_info_const___void_const_____cxxabiv1::__class_type_info::__dyncast_result___const = 0x969c"
 "f method.__cxxabiv1::__si_class_type_info.__do_upcast___cxxabiv1::__class_type_info_const___void_const_____cxxabiv1::__class_type_info::__upcast_result___const = 0x977c"
 td "struct __cxxabiv1::__si_class_type_info { char empty[0];};"
-"f class.cxxabiv1::__class_type_info = 0x9868"
+"f class.public.__cxxabiv1::__class_type_info = 0x9868"
 "f method.__cxxabiv1::__class_type_info.___class_type_info = 0x98d8"
 "f method.__cxxabiv1::__class_type_info.__do_upcast___cxxabiv1::__class_type_info_const___void_const_____cxxabiv1::__class_type_info::__upcast_result___const = 0x991c"
 "f method.__cxxabiv1::__class_type_info.__do_catch_std::type_info_const___void____unsigned_int__const = 0x9948"
@@ -1136,24 +1136,24 @@ td "struct __cxxabiv1::__si_class_type_info { char empty[0];};"
 "f method.__cxxabiv1::__class_type_info.__do_find_public_src_int__void_const_____cxxabiv1::__class_type_info_const___void_const___const = 0x98c4"
 "f method.__cxxabiv1::__class_type_info.__do_dyncast_int____cxxabiv1::__class_type_info::__sub_kind____cxxabiv1::__class_type_info_const___void_const_____cxxabiv1::__class_type_info_const___void_const_____cxxabiv1::__class_type_info::__dyncast_result___const = 0x998c"
 td "struct __cxxabiv1::__class_type_info { char empty[0];};"
-"f class.gnu_cxx = 0x9ec4"
+"f class.public.__gnu_cxx = 0x9ec4"
 "f method.__gnu_cxx.__verbose_terminate_handler = 0x9ec4"
 "f method.__gnu_cxx.__throw_concurrence_lock_error = 0x12780"
 "f method.__gnu_cxx.__throw_concurrence_unlock_error = 0x127c8"
 td "struct __gnu_cxx { char empty[0];};"
-"f class.gnu_cxx::__concurrence_lock_error = 0x126b0"
+"f class.public.__gnu_cxx::__concurrence_lock_error = 0x126b0"
 "f method.__gnu_cxx::__concurrence_lock_error.what___const = 0x126b0"
 "f method.__gnu_cxx::__concurrence_lock_error.___concurrence_lock_error = 0x126f8"
 td "struct __gnu_cxx::__concurrence_lock_error { char empty[0];};"
-"f class.gnu_cxx::__concurrence_unlock_error = 0x126c0"
+"f class.public.__gnu_cxx::__concurrence_unlock_error = 0x126c0"
 "f method.__gnu_cxx::__concurrence_unlock_error.what___const = 0x126c0"
 "f method.__gnu_cxx::__concurrence_unlock_error.___concurrence_unlock_error = 0x126d0"
 td "struct __gnu_cxx::__concurrence_unlock_error { char empty[0];};"
-"f class.std::bad_cast = 0x12bc8"
+"f class.public.std::bad_cast = 0x12bc8"
 "f method.std::bad_cast._bad_cast = 0x12bd8"
 "f method.std::bad_cast.what___const = 0x12bc8"
 td "struct std::bad_cast { char empty[0];};"
-"f class.std::bad_typeid = 0x12c1c"
+"f class.public.std::bad_typeid = 0x12c1c"
 "f method.std::bad_typeid._bad_typeid = 0x12c2c"
 "f method.std::bad_typeid.what___const = 0x12c1c"
 td "struct std::bad_typeid { char empty[0];};"
@@ -1294,7 +1294,7 @@ __stack_chk_fail
 __stack_chk_guard
 __gnu_Unwind_Find_exidx
 abort
-sym.imp.operator delete(void*)
+operator delete(void*)
 __cxa_pure_virtual
 pthread_key_delete
 pthread_getspecific
@@ -4642,10 +4642,11 @@ NAME=ic (file Java)
 FILE=bins/java/Hello.class
 CMDS=ic
 EXPECT=<<EOF
-0x00000000 [0x0000022b - 0x000002d3]    168 class 0 Hello :: java/lang/Object
-0x0000022b method 0      Hello.<init>
-0x00000263 method 1      Hello.say
-0x000002aa method 2      Hello.main
+0x00000000 [0x0000022b - 0x000002d3]    168 class 0 LHello; :: java/lang/Object
+0x0000020b field  0      who
+0x0000022b method 0      <init>(Ljava/lang/String;)V
+0x00000263 method 1      say()V
+0x000002aa method 2      main([Ljava/lang/String;)V
 EOF
 RUN
 
@@ -4653,7 +4654,7 @@ NAME=icq (file Java)
 FILE=bins/java/Hello.class
 CMDS=icq
 EXPECT=<<EOF
-0x00000000 [0x0000022b - 0x000002d3] Hello java/lang/Object
+0x00000000 [0x0000022b - 0x000002d3] LHello; java/lang/Object
 EOF
 RUN
 
@@ -4661,7 +4662,7 @@ NAME=icqq (file Java)
 FILE=bins/java/Hello.class
 CMDS=icqq
 EXPECT=<<EOF
-Hello
+LHello;
 EOF
 RUN
 
@@ -4677,7 +4678,7 @@ BROKEN=1
 FILE=bins/java/Hello.class
 CMDS=iqqc
 EXPECT=<<EOF
-Hello
+LHello;
 EOF
 RUN
 
