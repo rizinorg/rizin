@@ -36,20 +36,20 @@ static RzBinPlugin *bin_static_plugins[] = { RZ_BIN_STATIC_PLUGINS, NULL };
 static RzBinXtrPlugin *bin_xtr_static_plugins[] = { RZ_BIN_XTR_STATIC_PLUGINS, NULL };
 static RzBinLdrPlugin *bin_ldr_static_plugins[] = { RZ_BIN_LDR_STATIC_PLUGINS, NULL };
 
-static int __getoffset(RzBin *bin, int type, int idx) {
+static ut64 __getoffset(RzBin *bin, int type, int idx) {
 	RzBinFile *a = rz_bin_cur(bin);
 	RzBinPlugin *plugin = rz_bin_file_cur_plugin(a);
 	if (plugin && plugin->get_offset) {
 		return plugin->get_offset(a, type, idx);
 	}
-	return -1;
+	return UT64_MAX;
 }
 
-static const char *__getname(RzBin *bin, int type, int idx, bool sd) {
+static char *__getname(RzBin *bin, int type, int idx) {
 	RzBinFile *a = rz_bin_cur(bin);
 	RzBinPlugin *plugin = rz_bin_file_cur_plugin(a);
 	if (plugin && plugin->get_name) {
-		return plugin->get_name(a, type, idx, sd);
+		return plugin->get_name(a, type, idx);
 	}
 	return NULL;
 }

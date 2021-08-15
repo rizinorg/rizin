@@ -551,8 +551,8 @@ typedef struct rz_bin_plugin_t {
 	char *(*signature)(RzBinFile *bf, bool json);
 	int (*demangle_type)(const char *str);
 	char *(*enrich_asm)(RzBinFile *bf, const char *asm_str, int asm_len);
-	int (*get_offset)(RzBinFile *bf, int type, int idx);
-	char *(*get_name)(RzBinFile *bf, int type, int idx, bool simplified);
+	ut64 (*get_offset)(RzBinFile *bf, int type, int idx);
+	char *(*get_name)(RzBinFile *bf, int type, int idx);
 	ut64 (*get_vaddr)(RzBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr);
 	char *(*section_type_to_string)(ut64 type);
 	RzList *(*section_flag_to_rzlist)(ut64 flag);
@@ -784,8 +784,8 @@ typedef struct rz_bin_mem_t {
 // TODO: deprecate rz_bin_is_big_endian
 // TODO: has_dbg_syms... maybe flags?
 
-typedef int (*RzBinGetOffset)(RzBin *bin, int type, int idx);
-typedef const char *(*RzBinGetName)(RzBin *bin, int type, int idx, bool sd);
+typedef ut64 (*RzBinGetOffset)(RzBin *bin, int type, int idx);
+typedef char *(*RzBinGetName)(RzBin *bin, int type, int idx);
 typedef RzList *(*RzBinGetSections)(RzBin *bin);
 typedef RzBinSection *(*RzBinGetSectionAt)(RzBin *bin, ut64 addr);
 typedef char *(*RzBinDemangle)(RzBinFile *bf, const char *def, const char *str, ut64 vaddr, bool libs);

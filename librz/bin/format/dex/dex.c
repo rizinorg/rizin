@@ -175,7 +175,7 @@ static void dex_class_def_free(DexClassDef *class_def) {
 	free(class_def);
 }
 
-static DexClassDef *dex_class_def_new(RzBuffer *buf, ut64 offset, ut64 base) {
+static DexClassDef *dex_class_def_new(RzBuffer *buf, ut64 offset, ut64 base, RzList *method_ids) {
 	DexClassDef *class_def = RZ_NEW0(DexClassDef);
 	if (!class_def) {
 		return NULL;
@@ -295,6 +295,12 @@ static DexClassDef *dex_class_def_new(RzBuffer *buf, ut64 offset, ut64 base) {
 			encoded_method->code_size = /*        */ rz_buf_read_le32_at(buf, code_offset + 12);
 			encoded_method->code_size *= sizeof(ut16); // code ushort[insns_size]
 			encoded_method->code_offset = code_offset + 16 + base;
+
+			DexMethodId *method_id = rz_list_get_n(method_ids, encoded_method->method_idx);
+			if (method_id) {
+				method_id->code_offset = encoded_method->code_offset;
+				method_id->code_size = encoded_method->code_size;
+			}
 		}
 
 		if (!rz_list_append(class_def->direct_methods, encoded_method)) {
@@ -333,6 +339,12 @@ static DexClassDef *dex_class_def_new(RzBuffer *buf, ut64 offset, ut64 base) {
 			encoded_method->code_size = /*        */ rz_buf_read_le32_at(buf, code_offset + 12);
 			encoded_method->code_size *= sizeof(ut16); // code ushort[insns_size]
 			encoded_method->code_offset = code_offset + 16 + base;
+
+			DexMethodId *method_id = rz_list_get_n(method_ids, encoded_method->method_idx);
+			if (method_id) {
+				method_id->code_offset = encoded_method->code_offset;
+				method_id->code_size = encoded_method->code_size;
+			}
 		}
 
 		if (!rz_list_append(class_def->virtual_methods, encoded_method)) {
@@ -506,7 +518,7 @@ static bool dex_parse(RzBinDex *dex, ut64 base, RzBuffer *buf) {
 			rz_warn_if_reached();
 			goto dex_parse_bad;
 		}
-		DexClassDef *class_def = dex_class_def_new(buf, base + offset, base);
+		DexClassDef *class_def = dex_class_def_new(buf, base + offset, base, dex->method_ids);
 		if (!class_def) {
 			rz_warn_if_reached();
 			goto dex_parse_bad;
@@ -1754,6 +1766,33 @@ RZ_API char *rz_bin_dex_resolve_field_by_idx(RzBinDex *dex, ut32 field_idx) {
 	free(class_name);
 	free(name);
 	return method;
+}
+
+RZ_API ut64 rz_bin_dex_resolve_string_offset_by_idx(RzBinDex *dex, ut32 string_idx) {
+	DexString *string = (DexString *)rz_list_get_n(dex->strings, string_idx);
+	if (!string) {
+		RZ_LOG_ERROR("cannot find string with index %u\n", string_idx);
+		return UT64_MAX;
+	}
+	return string->offset;
+}
+
+RZ_API ut64 rz_bin_dex_resolve_type_id_offset_by_idx(RzBinDex *dex, ut32 type_idx) {
+	if (type_idx >= dex->type_ids_size) {
+		RZ_LOG_ERROR("cannot find type_id with index %u\n", type_idx);
+		return UT64_MAX;
+	}
+	DexTypeId type_id = dex->types[type_idx];
+	return rz_bin_dex_resolve_string_offset_by_idx(dex, type_id);
+}
+
+RZ_API ut64 rz_bin_dex_resolve_method_offset_by_idx(RzBinDex *dex, ut32 method_idx) {
+	DexMethodId *method = (DexMethodId *)rz_list_get_n(dex->method_ids, method_idx);
+	if (!method) {
+		RZ_LOG_ERROR("cannot find method with index %u\n", method_idx);
+		return UT64_MAX;
+	}
+	return method->code_offset;
 }
 
 RZ_API char *rz_bin_dex_resolve_string_by_idx(RzBinDex *dex, ut32 string_idx) {

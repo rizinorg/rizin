@@ -154,7 +154,7 @@ static int demangle_type(const char *str) {
 	return RZ_BIN_NM_JAVA;
 }
 
-static char *get_name(RzBinFile *bf, int type, int index, bool pseudo) {
+static char *get_name(RzBinFile *bf, int type, int index) {
 	RzBinDex *dex = rz_bin_file_get_dex(bf);
 	if (!dex) {
 		return NULL;
@@ -175,6 +175,26 @@ static char *get_name(RzBinFile *bf, int type, int index, bool pseudo) {
 	}
 }
 
+static ut64 get_offset(RzBinFile *bf, int type, int index) {
+	RzBinDex *dex = rz_bin_file_get_dex(bf);
+	if (!dex) {
+		return -1;
+	}
+	switch (type) {
+	case 'm': // strings
+		return rz_bin_dex_resolve_method_offset_by_idx(dex, index);
+	case 's': // strings
+		return (int)rz_bin_dex_resolve_string_offset_by_idx(dex, index);
+	case 't': // type
+		return rz_bin_dex_resolve_type_id_offset_by_idx(dex, index);
+	case 'c': // class
+		return rz_bin_dex_resolve_type_id_offset_by_idx(dex, index);
+	case 'o': // objects
+	default:
+		return -1;
+	}
+}
+
 RzBinPlugin rz_bin_plugin_dex = {
 	.name = "dex",
 	.desc = "dex bin plugin",
@@ -192,6 +212,7 @@ RzBinPlugin rz_bin_plugin_dex = {
 	.imports = &imports,
 	.strings = &strings,
 	.get_name = &get_name,
+	.get_offset = &get_offset,
 	.info = &info,
 	.fields = fields,
 	.libs = libraries,
