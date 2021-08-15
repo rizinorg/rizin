@@ -622,7 +622,7 @@ RZ_API char *rz_bin_java_class_const_pool_resolve_index(RzBinJavaClass *bin, st3
 		if (s1[0] == '(') {
 			tmp = rz_str_newf("%s%s", s0, s1);
 		} else {
-			tmp = rz_str_newf("%s:%s", s0, s1);
+			tmp = rz_str_newf("%s.%s", s0, s1);
 		}
 		free(s0);
 		free(s1);
@@ -1430,13 +1430,25 @@ RZ_API RzList *rz_bin_java_class_const_pool_as_imports(RzBinJavaClass *bin) {
 				rz_warn_if_reached();
 				continue;
 			}
-			import->classname = java_class_constant_pool_stringify_at(bin, class_name_index);
+
+			char *object = java_class_constant_pool_stringify_at(bin, class_name_index);
+
+			char *class_name = (char *)rz_str_rchr(object, NULL, '/');
+			if (class_name) {
+				class_name[0] = 0;
+				class_name++;
+			}
+			rz_str_replace_ch(object, '/', '.', 1);
+
+			import->classname = strdup(class_name ? class_name : object);
+			import->libname = class_name ? strdup(object) : NULL;
 			import->name = java_class_constant_pool_stringify_at(bin, name_index);
 			is_main = import->name && !strcmp(import->name, "main");
 			import->bind = is_main ? RZ_BIN_BIND_GLOBAL_STR : NULL;
 			import->type = is_main ? RZ_BIN_TYPE_FUNC_STR : import_type(cpool);
 			import->descriptor = java_class_constant_pool_stringify_at(bin, descriptor_index);
 			import->ordinal = i;
+			free(object);
 			rz_list_append(imports, import);
 		}
 	}
