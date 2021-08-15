@@ -622,7 +622,7 @@ RZ_API char *rz_bin_java_class_const_pool_resolve_index(RzBinJavaClass *bin, st3
 		if (s1[0] == '(') {
 			tmp = rz_str_newf("%s%s", s0, s1);
 		} else {
-			tmp = rz_str_newf("%s.%s", s0, s1);
+			tmp = rz_str_newf("%s:%s", s0, s1);
 		}
 		free(s0);
 		free(s1);
@@ -732,7 +732,11 @@ RZ_API void rz_bin_java_class_as_source_code(RzBinJavaClass *bin, RzStrBuf *sb) 
 				desc = strdup("(?)V");
 			}
 
-			tmp = rz_str_newf("%s%s", name, desc);
+			if (desc[0] == '(') {
+				tmp = rz_str_newf("%s%s", name, desc);
+			} else {
+				tmp = strdup(name);
+			}
 			free(desc);
 			free(name);
 
@@ -1021,6 +1025,7 @@ RZ_API RzList *rz_bin_java_class_methods_as_symbols(RzBinJavaClass *bin) {
 			symbol->ordinal = rz_list_length(list);
 			symbol->visibility = method->access_flags;
 			symbol->visibility_str = java_method_access_flags_readable(method);
+			symbol->libname = rz_bin_demangle_java(symbol->classname);
 			free(desc);
 			rz_list_append(list, symbol);
 		}
@@ -1328,7 +1333,7 @@ RZ_API RzList *rz_bin_java_class_const_pool_as_symbols(RzBinJavaClass *bin) {
 	if (!list) {
 		return NULL;
 	}
-	char *sym, *classname;
+	char *method_name, *classname;
 	bool is_main;
 	ut16 class_index, name_and_type_index, name_index, descriptor_index, class_name_index;
 	if (bin->constant_pool) {
@@ -1358,15 +1363,29 @@ RZ_API RzList *rz_bin_java_class_const_pool_as_symbols(RzBinJavaClass *bin) {
 				rz_warn_if_reached();
 				break;
 			}
-			sym = java_class_constant_pool_stringify_at(bin, name_index);
-			is_main = sym && !strcmp(sym, "main");
+
+			char *desc = java_class_constant_pool_stringify_at(bin, descriptor_index);
+			if (!desc) {
+				desc = strdup("(?)V");
+			}
+
+			method_name = java_class_constant_pool_stringify_at(bin, name_index);
+			is_main = method_name && !strcmp(method_name, "main");
 			classname = java_class_constant_pool_stringify_at(bin, class_name_index);
-			symbol->name = add_class_name_to_name(sym, classname);
-			symbol->classname = classname;
+			symbol->name = add_class_name_to_name(method_name, symbol->classname);
+			if (desc[0] == '(') {
+				symbol->dname = rz_str_newf("%s%s", method_name, desc);
+			} else {
+				symbol->dname = strdup(method_name);
+			}
+			symbol->classname = rz_str_newf("L%s;", classname);
+			symbol->libname = classname;
+			rz_str_replace_ch(symbol->libname, '/', '.', 1);
 			symbol->bind = RZ_BIN_BIND_IMPORT_STR;
 			symbol->type = is_main ? RZ_BIN_TYPE_FUNC_STR : import_type(cpool);
 			symbol->ordinal = i;
 			symbol->is_imported = true;
+			free(desc);
 			rz_list_append(list, symbol);
 		}
 	}
