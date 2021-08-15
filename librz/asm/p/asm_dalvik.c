@@ -19,7 +19,7 @@ static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	int size = dalvik_opcodes[i].len;
 	char str[1024], *strasm = NULL;
 	ut64 offset = 0;
-	const char *flag_str;
+	char *flag_str;
 	a->dataalign = 2;
 
 	const char *buf_asm = NULL;
@@ -423,6 +423,7 @@ static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 					snprintf(str, sizeof(str), ", method+%i", vB);
 				}
 			}
+			free(flag_str);
 			strasm = rz_str_append(strasm, str);
 			break;
 		case fmtop45CC:
