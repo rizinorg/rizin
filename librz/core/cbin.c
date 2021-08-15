@@ -1220,9 +1220,11 @@ static void sym_name_init(RzCore *r, SymName *sn, RzBinSymbol *sym, const char *
 	if (!r || !sym || !sym->name) {
 		return;
 	}
-	int bin_demangle = lang != NULL;
-	bool keep_lib = rz_config_get_i(r->config, "bin.demangle.libs");
-	const char *name = sym->dname ? sym->dname : sym->name;
+
+	bool demangle = rz_config_get_b(r->config, "bin.demangle");
+	bool keep_lib = rz_config_get_b(r->config, "bin.demangle.libs");
+
+	const char *name = sym->dname && demangle ? sym->dname : sym->name;
 	sn->name = rz_str_newf("%s%s", sym->is_imported ? "imp." : "", name);
 	sn->libname = sym->libname ? strdup(sym->libname) : NULL;
 	const char *pfx = get_prefix_for_sym(sym);
@@ -1242,7 +1244,7 @@ static void sym_name_init(RzCore *r, SymName *sn, RzBinSymbol *sym, const char *
 	}
 	sn->demname = NULL;
 	sn->demflag = NULL;
-	if (bin_demangle && sym->paddr) {
+	if (demangle && sym->paddr && lang) {
 		sn->demname = rz_bin_demangle(r->bin->cur, lang, sn->name, sym->vaddr, keep_lib);
 		if (sn->demname) {
 			sn->demflag = construct_symbol_flagname(pfx, sym->libname, sn->demname, -1);
@@ -2630,7 +2632,6 @@ static int bin_symbols(RzCore *r, PJ *pj, int mode, int va, ut64 at, const char 
 
 	int i = 0, lastfs = 's';
 	RzTable *table = rz_core_table(r);
-	bool bin_demangle = rz_config_get_i(r->config, "bin.demangle");
 	if (IS_MODE_JSON(mode)) {
 		if (!printHere) {
 			pj_a(pj);
@@ -2647,7 +2648,7 @@ static int bin_symbols(RzCore *r, PJ *pj, int mode, int va, ut64 at, const char 
 		return 0;
 	}
 
-	const char *lang = bin_demangle ? rz_config_get(r->config, "bin.lang") : NULL;
+	const char *lang = rz_config_get(r->config, "bin.lang");
 
 	RzList *symbols = rz_bin_get_symbols(r->bin);
 
