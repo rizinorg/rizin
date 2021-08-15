@@ -134,7 +134,7 @@ CMDS=<<EOF
 wx 00000000
 e asm.bits=16
 e asm.arch=arm
-pi 1 @ 1
+pi 1 @ 1
 EOF
 EXPECT=<<EOF
 unaligned
@@ -147,7 +147,7 @@ CMDS=<<EOF
 wx 00000000
 e asm.bits=32
 e asm.arch=arm
-pi 1 @ 2
+pi 1 @ 2
 EOF
 EXPECT=<<EOF
 unaligned
@@ -162,7 +162,7 @@ e asm.arch=arm
 e asm.bits=16
 pi 2
 e asm.arch=x86
-pi 1 @ 1
+pi 1 @ 1
 EOF
 EXPECT=<<EOF
 movs r0, r0
