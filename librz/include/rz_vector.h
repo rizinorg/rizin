@@ -89,6 +89,18 @@ static inline void *rz_vector_index_ptr(RzVector *vec, size_t index) {
 	return (char *)vec->a + vec->elem_size * index;
 }
 
+// returns a pointer to the first element of the vector
+static inline void *rz_vector_head(RzVector *vec) {
+	rz_return_val_if_fail(vec, NULL);
+	return (void *)vec->a;
+}
+
+// returns a pointer to the last element of the vector
+static inline void *rz_vector_tail(RzVector *vec) {
+	rz_return_val_if_fail(vec, NULL);
+	return (char *)vec->a + vec->elem_size * (vec->len - 1);
+}
+
 // helper function to assign an element of size vec->elem_size from elem to p.
 // elem is a pointer to the actual data to assign!
 RZ_API void rz_vector_assign(RzVector *vec, void *p, void *elem);
@@ -241,6 +253,18 @@ static inline void **rz_pvector_index_ptr(RzPVector *vec, size_t index) {
 static inline void **rz_pvector_data(RzPVector *vec) {
 	rz_return_val_if_fail(vec, NULL);
 	return (void **)vec->v.a;
+}
+
+// returns the first element of the vector
+static inline void *rz_pvector_head(RzPVector *vec) {
+	rz_return_val_if_fail(vec, NULL);
+	return ((void **)vec->v.a)[0];
+}
+
+// returns the last element of the vector
+static inline void *rz_pvector_tail(RzPVector *vec) {
+	rz_return_val_if_fail(vec, NULL);
+	return ((void **)vec->v.a)[vec->v.len - 1];
 }
 
 // returns the respective pointer inside the vector if x is found or NULL otherwise.
