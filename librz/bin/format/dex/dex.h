@@ -183,33 +183,33 @@ typedef struct dex_t {
 	DexTypeId *types;
 } RzBinDex;
 
-RZ_API RzBinDex *rz_bin_dex_new(RzBuffer *buf, ut64 base, Sdb *kv);
-RZ_API void rz_bin_dex_free(RzBinDex *dex);
+RZ_API RZ_OWN RzBinDex *rz_bin_dex_new(RZ_NONNULL RzBuffer *buf, ut64 base, RZ_NONNULL Sdb *kv);
+RZ_API void rz_bin_dex_free(RZ_NONNULL RzBinDex *dex);
 
-RZ_API char *rz_bin_dex_version(RzBinDex *dex);
-RZ_API ut64 rz_bin_dex_debug_info(RzBinDex *dex);
+RZ_API RZ_OWN char *rz_bin_dex_version(RZ_NONNULL RzBinDex *dex);
+RZ_API ut64 rz_bin_dex_debug_info(RZ_NONNULL RzBinDex *dex);
 
-RZ_API RzList /*<RzBinString*>*/ *rz_bin_dex_strings(RzBinDex *dex);
-RZ_API RzList /*<RzBinClass*>*/ *rz_bin_dex_classes(RzBinDex *dex);
-RZ_API RzList /*<RzBinField*>*/ *rz_bin_dex_fields(RzBinDex *dex);
-RZ_API RzList /*<RzBinSection*>*/ *rz_bin_dex_sections(RzBinDex *dex);
-RZ_API RzList /*<RzBinSymbol*>*/ *rz_bin_dex_symbols(RzBinDex *dex);
-RZ_API RzList /*<RzBinSymbol*>*/ *rz_bin_dex_imports(RzBinDex *dex);
-RZ_API RzList /*<char*>*/ *rz_bin_dex_libraries(RzBinDex *dex);
-RZ_API RzBinAddr *rz_bin_dex_resolve_symbol(RzBinDex *dex, RzBinSpecialSymbol resolve);
-RZ_API RzList /*<RzBinAddr*>*/ *rz_bin_dex_entrypoints(RzBinDex *dex);
+RZ_API RZ_OWN RzList /*<RzBinString*>*/ *rz_bin_dex_strings(RZ_NONNULL RzBinDex *dex);
+RZ_API RZ_OWN RzList /*<RzBinClass*>*/ *rz_bin_dex_classes(RZ_NONNULL RzBinDex *dex);
+RZ_API RZ_OWN RzList /*<RzBinField*>*/ *rz_bin_dex_fields(RZ_NONNULL RzBinDex *dex);
+RZ_API RZ_OWN RzList /*<RzBinSection*>*/ *rz_bin_dex_sections(RZ_NONNULL RzBinDex *dex);
+RZ_API RZ_OWN RzList /*<RzBinSymbol*>*/ *rz_bin_dex_symbols(RZ_NONNULL RzBinDex *dex);
+RZ_API RZ_OWN RzList /*<RzBinSymbol*>*/ *rz_bin_dex_imports(RZ_NONNULL RzBinDex *dex);
+RZ_API RZ_OWN RzList /*<char*>*/ *rz_bin_dex_libraries(RZ_NONNULL RzBinDex *dex);
+RZ_API RZ_OWN RzBinAddr *rz_bin_dex_resolve_symbol(RZ_NONNULL RzBinDex *dex, RzBinSpecialSymbol resolve);
+RZ_API RZ_OWN RzList /*<RzBinAddr*>*/ *rz_bin_dex_entrypoints(RZ_NONNULL RzBinDex *dex);
 
-RZ_API char *rz_bin_dex_resolve_method_by_idx(RzBinDex *dex, ut32 method_idx);
-RZ_API char *rz_bin_dex_resolve_field_by_idx(RzBinDex *dex, ut32 field_idx);
-RZ_API char *rz_bin_dex_resolve_class_by_idx(RzBinDex *dex, ut32 class_idx);
-RZ_API char *rz_bin_dex_resolve_string_by_idx(RzBinDex *dex, ut32 string_idx);
-RZ_API char *rz_bin_dex_resolve_proto_by_idx(RzBinDex *dex, ut32 proto_idx);
+RZ_API RZ_OWN char *rz_bin_dex_resolve_method_by_idx(RZ_NONNULL RzBinDex *dex, ut32 method_idx);
+RZ_API RZ_OWN char *rz_bin_dex_resolve_field_by_idx(RZ_NONNULL RzBinDex *dex, ut32 field_idx);
+RZ_API RZ_OWN char *rz_bin_dex_resolve_class_by_idx(RZ_NONNULL RzBinDex *dex, ut32 class_idx);
+RZ_API RZ_OWN char *rz_bin_dex_resolve_string_by_idx(RZ_NONNULL RzBinDex *dex, ut32 string_idx);
+RZ_API RZ_OWN char *rz_bin_dex_resolve_proto_by_idx(RZ_NONNULL RzBinDex *dex, ut32 proto_idx);
 
-RZ_API ut64 rz_bin_dex_resolve_string_offset_by_idx(RzBinDex *dex, ut32 string_idx);
-RZ_API ut64 rz_bin_dex_resolve_type_id_offset_by_idx(RzBinDex *dex, ut32 type_idx);
-RZ_API ut64 rz_bin_dex_resolve_method_offset_by_idx(RzBinDex *dex, ut32 method_idx);
+RZ_API ut64 rz_bin_dex_resolve_string_offset_by_idx(RZ_NONNULL RzBinDex *dex, ut32 string_idx);
+RZ_API ut64 rz_bin_dex_resolve_type_id_offset_by_idx(RZ_NONNULL RzBinDex *dex, ut32 type_idx);
+RZ_API ut64 rz_bin_dex_resolve_method_offset_by_idx(RZ_NONNULL RzBinDex *dex, ut32 method_idx);
 
-RZ_API void rz_bin_dex_checksum(RzBinDex *dex, RzBinHash *hash);
-RZ_API void rz_bin_dex_sha1(RzBinDex *dex, RzBinHash *hash);
+RZ_API void rz_bin_dex_checksum(RZ_NONNULL RzBinDex *dex, RZ_NONNULL RzBinHash *hash);
+RZ_API void rz_bin_dex_sha1(RZ_NONNULL RzBinDex *dex, RZ_NONNULL RzBinHash *hash);
 
 #endif /* RZ_DEX_H */
