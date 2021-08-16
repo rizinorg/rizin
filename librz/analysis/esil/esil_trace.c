@@ -243,7 +243,8 @@ static int trace_hook_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf,
  * \param idx int, index of instruction
  * \return RzILTraceInstruction *, instruction trace at index
  */
-RZ_API RzILTraceInstruction *rz_analysis_esil_get_instruction_trace(RzAnalysisEsilTrace *etrace, int idx) {
+RZ_API RZ_BORROW RzILTraceInstruction *rz_analysis_esil_get_instruction_trace(RZ_NONNULL RzAnalysisEsilTrace *etrace, int idx) {
+	rz_return_val_if_fail(etrace, NULL);
 	if (idx < 0 || idx >= rz_pvector_len(etrace->instructions)) {
 		return NULL;
 	}
