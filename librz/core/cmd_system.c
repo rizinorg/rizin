@@ -23,6 +23,7 @@ static char *config_path(RzCore *core) {
 
 	Sdb *sdb = sdb_new(NULL, path, 0);
 	if (!sdb) {
+		free(path);
 		return NULL;
 	}
 	rz_config_serialize(core->config, sdb);

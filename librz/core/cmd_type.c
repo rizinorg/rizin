@@ -117,6 +117,7 @@ static RzCmdStatus type_format_print(RzCore *core, const char *type, ut64 addres
 	char *fmt = rz_type_format(core->analysis->typedb, type);
 	if (RZ_STR_ISEMPTY(fmt)) {
 		eprintf("Cannot find type %s\n", type);
+		free(fmt);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_core_cmdf(core, "pf %s @ 0x%08" PFMT64x "\n", fmt, address);
@@ -128,6 +129,7 @@ static RzCmdStatus type_format_print_variable(RzCore *core, const char *type, co
 	char *fmt = rz_type_format(core->analysis->typedb, type);
 	if (RZ_STR_ISEMPTY(fmt)) {
 		eprintf("Cannot find type \"%s\"\n", type);
+		free(fmt);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
@@ -152,6 +154,7 @@ static RzCmdStatus type_format_print_value(RzCore *core, const char *type, ut64 
 	char *fmt = rz_type_format(core->analysis->typedb, type);
 	if (RZ_STR_ISEMPTY(fmt)) {
 		eprintf("Cannot find type %s\n", type);
+		free(fmt);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_core_cmdf(core, "pf %s @v:0x%08" PFMT64x "\n", fmt, val);
@@ -163,6 +166,7 @@ static RzCmdStatus type_format_print_hexstring(RzCore *core, const char *type, c
 	char *fmt = rz_type_format(core->analysis->typedb, type);
 	if (RZ_STR_ISEMPTY(fmt)) {
 		eprintf("Cannot find type %s\n", type);
+		free(fmt);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_core_cmdf(core, "pf %s @x:%s", fmt, hexpairs);

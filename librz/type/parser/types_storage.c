@@ -772,6 +772,7 @@ RZ_OWN RzType *c_parser_new_naked_callable(CParserState *state) {
 	}
 	RzCallable *callable = RZ_NEW0(RzCallable);
 	if (!callable) {
+		free(type);
 		return NULL;
 	}
 	callable->name = NULL;
@@ -807,6 +808,7 @@ RZ_OWN RzType *c_parser_new_callable(CParserState *state, RZ_NONNULL const char 
 		// If not found - create a new one
 		callable = RZ_NEW0(RzCallable);
 		if (!callable) {
+			free(type);
 			return NULL;
 		}
 		callable->name = strdup(name);

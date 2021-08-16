@@ -618,6 +618,7 @@ RZ_IPI void rz_core_types_show_format(RzCore *core, const char *name, RzOutputMo
 		case RZ_OUTPUT_MODE_JSON: {
 			PJ *pj = pj_new();
 			if (!pj) {
+				free(fmt);
 				return;
 			}
 			pj_o(pj);
