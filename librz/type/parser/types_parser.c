@@ -1217,6 +1217,7 @@ int parse_parameter_list(CParserState *state, TSNode paramlist, const char *text
 		parser_debug(state, "Adding \"%s\" parameter\n", identifier);
 		if (!c_parser_new_callable_argument(state, (*tpair)->type->callable, identifier, argtpair->type)) {
 			parser_error(state, "ERROR: Cannot add the parameter to the function!\n");
+			free(identifier);
 			return -1;
 		}
 	}
