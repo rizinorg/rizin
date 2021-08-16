@@ -1132,7 +1132,7 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 				} else if (input[1] == ' ' && rizin) {
 					bool rizin = strstr(input, "**") != NULL;
 					if (rizin) {
-						input+=2;
+						input += 2;
 					}
 					rz_list_foreach (obj->classes, iter, cls) {
 						rz_cons_printf("ac %s\n", cls->name);
