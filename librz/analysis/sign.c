@@ -106,6 +106,7 @@ RZ_API RzList *rz_sign_fcn_types(RzAnalysis *a, RzAnalysisFunction *fcn) {
 		free(arg_type_str);
 	}
 
+	rz_type_callable_free(callable);
 	return ret;
 }
 
