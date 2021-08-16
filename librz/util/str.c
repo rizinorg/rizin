@@ -753,7 +753,11 @@ RZ_API char *rz_str_newf(const char *fmt, ...) {
 	return p;
 }
 
-// Secure string copy with null terminator (like strlcpy or strscpy but ours)
+/**
+ * \brief Secure string copy with null terminator
+ *
+ * 	This API behaves like strlcpy or strscpy.
+ */
 RZ_API size_t rz_str_ncpy(char *dst, const char *src, size_t n) {
 	rz_return_val_if_fail(dst && src, 0);
 
@@ -762,7 +766,7 @@ RZ_API size_t rz_str_ncpy(char *dst, const char *src, size_t n) {
 		return 0;
 	}
 #if HAVE_STRLCPY
-	strlcpy(dst, src, n);
+	return strlcpy(dst, src, n);
 #else
 	strncpy(dst, src, n);
 	dst[n] = '\0';

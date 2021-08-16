@@ -47,6 +47,27 @@ bool test_rz_str_ncpy(void) {
 	char buf[10];
 	rz_str_ncpy(buf, str, 3);
 	mu_assert_streq(buf, "hel", "error, while copying n bytes");
+
+	rz_str_ncpy(buf, str, 1);
+	mu_assert_streq(buf, "h", "error, while copying 1 bytes");
+
+	int size = sizeof(buf) - 1;
+	rz_str_ncpy(buf, str, size);
+	mu_assert_streq(buf, "hello wor", "error, while size = sizeof(buf) - 1");
+
+	char src[] = "This is my text";
+	buf[0] = '\0';
+	rz_str_ncpy(buf, src, 100);
+	mu_assert_streq("This is my text", buf, "rz_str_ncpy (n > src length)");
+
+	size = sizeof(buf);
+	rz_str_ncpy(buf, str, size);
+	mu_assert_streq(buf, "hello worl", "error, while size = sizeof(buf)");
+
+	rz_str_ncpy(buf, "h", 1);
+	mu_assert_streq(buf, "h", "error, while copying string of length 1");
+
+	free(str);
 	mu_end;
 }
 
