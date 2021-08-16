@@ -260,6 +260,8 @@ RZ_API void rz_table_set_columnsf(RzTable *t, const char *fmt, ...) {
  * Add some columns values to the last created row, if any, or create a new row otherwise.
  */
 RZ_API void rz_table_add_row_columnsf(RzTable *t, const char *fmt, ...) {
+	rz_return_if_fail(t && fmt);
+
 	va_list ap;
 	va_start(ap, fmt);
 	RzTableRow *row = rz_list_last(t->rows);
@@ -285,6 +287,8 @@ RZ_API void rz_table_add_row_columnsf(RzTable *t, const char *fmt, ...) {
  * Add a new row with the specified columns values.
  */
 RZ_API void rz_table_add_rowf(RzTable *t, const char *fmt, ...) {
+	rz_return_if_fail(t && fmt);
+
 	va_list ap;
 	va_start(ap, fmt);
 	RzList *list = rz_list_newf(free);
