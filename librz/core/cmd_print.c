@@ -1957,6 +1957,7 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block,
 		if (!args) {
 			rz_cons_printf("Error: Mem Allocation.");
 			free(args);
+			free(buf);
 			goto stage_left;
 		}
 		const char *arg1 = strtok(args, " ");
