@@ -47,7 +47,6 @@ static RzList *entries(RzBinFile *bf) {
 static RzList *sections(RzBinFile *bf) {
 	RzList *ret = NULL;
 	RzBinSection *ptr = NULL;
-	ut64 textsize, datasize, symssize, spszsize, pcszsize;
 	if (!bf->o->info) {
 		return NULL;
 	}
@@ -60,7 +59,12 @@ static RzList *sections(RzBinFile *bf) {
 		return NULL;
 	}
 	// add text segment
-	textsize = rz_buf_read_le32_at(bf->buf, 4);
+	ut32 textsize;
+	if (!rz_buf_read_le32_at(bf->buf, 4, &textsize)) {
+		rz_list_free(ret);
+		return NULL;
+	}
+
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		rz_list_free(ret);
 		return NULL;
@@ -73,7 +77,11 @@ static RzList *sections(RzBinFile *bf) {
 	ptr->perm = RZ_PERM_RX; // r-x
 	rz_list_append(ret, ptr);
 	// add data segment
-	datasize = rz_buf_read_le32_at(bf->buf, 8);
+	ut32 datasize;
+	if (!rz_buf_read_le32_at(bf->buf, 8, &datasize)) {
+		rz_list_free(ret);
+		return NULL;
+	}
 	if (datasize > 0) {
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			return ret;
@@ -88,7 +96,12 @@ static RzList *sections(RzBinFile *bf) {
 	}
 	// ignore bss or what
 	// add syms segment
-	symssize = rz_buf_read_le32_at(bf->buf, 16);
+	ut32 symssize;
+	if (!rz_buf_read_le32_at(bf->buf, 16, &symssize)) {
+		rz_list_free(ret);
+		return NULL;
+	}
+
 	if (symssize) {
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			return ret;
@@ -102,7 +115,11 @@ static RzList *sections(RzBinFile *bf) {
 		rz_list_append(ret, ptr);
 	}
 	// add spsz segment
-	spszsize = rz_buf_read_le32_at(bf->buf, 24);
+	ut32 spszsize;
+	if (!rz_buf_read_le32_at(bf->buf, 24, &spszsize)) {
+		rz_list_free(ret);
+		return NULL;
+	}
 	if (spszsize) {
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			return ret;
@@ -115,8 +132,14 @@ static RzList *sections(RzBinFile *bf) {
 		ptr->perm = RZ_PERM_R; // r--
 		rz_list_append(ret, ptr);
 	}
+
 	// add pcsz segment
-	pcszsize = rz_buf_read_le32_at(bf->buf, 24);
+	ut32 pcszsize;
+	if (!rz_buf_read_le32_at(bf->buf, 24, &pcszsize)) {
+		rz_list_free(ret);
+		return NULL;
+	}
+
 	if (pcszsize) {
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			return ret;
@@ -171,7 +194,6 @@ static RzBinInfo *info(RzBinFile *bf) {
 }
 
 static ut64 size(RzBinFile *bf) {
-	ut64 text, data, syms, spsz;
 	if (!bf) {
 		return 0;
 	}
@@ -185,10 +207,27 @@ static ut64 size(RzBinFile *bf) {
 	if (rz_buf_size(bf->buf) < 28) {
 		return 0;
 	}
-	text = rz_buf_read_le32_at(bf->buf, 4);
-	data = rz_buf_read_le32_at(bf->buf, 8);
-	syms = rz_buf_read_le32_at(bf->buf, 16);
-	spsz = rz_buf_read_le32_at(bf->buf, 24);
+
+	ut32 text;
+	if (!rz_buf_read_le32_at(bf->buf, 4, &text)) {
+		return 0;
+	}
+
+	ut32 data;
+	if (!rz_buf_read_le32_at(bf->buf, 8, &data)) {
+		return 0;
+	}
+
+	ut32 syms;
+	if (!rz_buf_read_le32_at(bf->buf, 16, &syms)) {
+		return 0;
+	}
+
+	ut32 spsz;
+	if (!rz_buf_read_le32_at(bf->buf, 24, &spsz)) {
+		return 0;
+	}
+
 	return text + data + syms + spsz + (6 * 4);
 }
 

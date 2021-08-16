@@ -44,10 +44,13 @@ Field *java_field_new(ConstPool **pool, ut32 poolsize, RzBuffer *buf, ut64 offse
 	field->offset = offset;
 	ut64 base = offset - rz_buf_tell(buf);
 
-	field->access_flags = rz_buf_read_be16(buf);
-	field->name_index = rz_buf_read_be16(buf);
-	field->descriptor_index = rz_buf_read_be16(buf);
-	field->attributes_count = rz_buf_read_be16(buf);
+	if (!rz_buf_read_be16(buf, &field->access_flags) ||
+		!rz_buf_read_be16(buf, &field->name_index) ||
+		!rz_buf_read_be16(buf, &field->descriptor_index) ||
+		!rz_buf_read_be16(buf, &field->attributes_count)) {
+		free(field);
+		return NULL;
+	}
 
 	if (field->attributes_count < 1) {
 		return field;

@@ -1380,50 +1380,159 @@ static RzList *fields(RzBinFile *bf) {
 		return NULL;
 	}
 
-#define ROW(nam, siz, val, fmt) \
-	rz_list_append(ret, rz_bin_field_new(addr, addr, siz, nam, sdb_fmt("0x%08" PFMT64x, (ut64)val), fmt, false));
+#define ROW(name, siz, val, fmt) \
+	rz_list_append(ret, rz_bin_field_new(addr, addr, siz, name, sdb_fmt("0x%08" PFMT64x, (ut64)val), fmt, false));
+
 	if (rz_buf_size(bf->buf) < sizeof(Elf_(Ehdr))) {
 		return ret;
 	}
-	ut64 addr = 0;
-	ROW("ELF", 4, rz_buf_read_le32_at(bf->buf, addr), "x");
-	addr += 0x10;
-	ROW("Type", 2, rz_buf_read_le16_at(bf->buf, addr), "x");
-	addr += 0x2;
-	ROW("Machine", 2, rz_buf_read_le16_at(bf->buf, addr), "x");
-	addr += 0x2;
-	ROW("Version", 4, rz_buf_read_le32_at(bf->buf, addr), "x");
-	addr += 0x4;
 
-	if (rz_buf_read8_at(bf->buf, 0x04) == 1) {
-		ROW("Entry point", 4, rz_buf_read_le32_at(bf->buf, addr), "x");
+	ut32 magic;
+	ut64 addr = 0;
+	if (!rz_buf_read_le32_at(bf->buf, addr, &magic)) {
+		rz_list_free(ret);
+		return NULL;
+	}
+	ROW("ELF", 4, magic, "x");
+
+	ut16 type;
+	addr += 0x10;
+	if (!rz_buf_read_le16_at(bf->buf, addr, &type)) {
+		rz_list_free(ret);
+		return NULL;
+	}
+	ROW("Type", 2, type, "x");
+
+	ut16 machine;
+	addr += 0x2;
+	if (!rz_buf_read_le16_at(bf->buf, addr, &machine)) {
+		rz_list_free(ret);
+		return NULL;
+	}
+	ROW("Machine", 2, machine, "x");
+
+	ut32 version;
+	addr += 0x2;
+	if (!rz_buf_read_le32_at(bf->buf, addr, &version)) {
+		rz_list_free(ret);
+		return NULL;
+	}
+	ROW("Version", 4, version, "x");
+
+	ut8 tmp;
+	if (!rz_buf_read8_at(bf->buf, 0x04, &tmp)) {
+		rz_list_free(ret);
+		return NULL;
+	}
+
+	if (tmp == 1) {
+		ut32 entry;
 		addr += 0x4;
-		ROW("PhOff", 4, rz_buf_read_le32_at(bf->buf, addr), "x");
+		if (!rz_buf_read_le32_at(bf->buf, addr, &entry)) {
+			rz_list_free(ret);
+			return NULL;
+		}
+		ROW("Entry point", 4, entry, "x");
+
+		ut32 phoff;
 		addr += 0x4;
-		ROW("ShOff", 4, rz_buf_read_le32_at(bf->buf, addr), "x");
+		if (!rz_buf_read_le32_at(bf->buf, addr, &phoff)) {
+			rz_list_free(ret);
+			return NULL;
+		}
+		ROW("PhOff", 4, phoff, "x");
+
+		ut32 shoff;
+		addr += 0x4;
+		if (!rz_buf_read_le32_at(bf->buf, addr, &shoff)) {
+			rz_list_free(ret);
+			return NULL;
+		}
+		ROW("ShOff", 4, shoff, "x");
+
 		addr += 0x4;
 	} else {
-		ROW("Entry point", 8, rz_buf_read_le64_at(bf->buf, addr), "x");
+		ut64 entry;
+		addr += 0x4;
+		if (!rz_buf_read_le64_at(bf->buf, addr, &entry)) {
+			rz_list_free(ret);
+			return NULL;
+		}
+		ROW("Entry point", 8, entry, "x");
+
+		ut64 phoff;
 		addr += 0x8;
-		ROW("PhOff", 8, rz_buf_read_le64_at(bf->buf, addr), "x");
+		if (!rz_buf_read_le64_at(bf->buf, addr, &phoff)) {
+			rz_list_free(ret);
+			return NULL;
+		}
+		ROW("PhOff", 8, phoff, "x");
+
+		ut64 shoff;
 		addr += 0x8;
-		ROW("ShOff", 8, rz_buf_read_le64_at(bf->buf, addr), "x");
+		if (!rz_buf_read_le64_at(bf->buf, addr, &shoff)) {
+			rz_list_free(ret);
+			return NULL;
+		}
+		ROW("ShOff", 8, shoff, "x");
+
 		addr += 0x8;
 	}
 
-	ROW("Flags", 4, rz_buf_read_le32_at(bf->buf, addr), "x");
+	ut32 flags;
+	if (!rz_buf_read_le32_at(bf->buf, addr, &flags)) {
+		rz_list_free(ret);
+		return NULL;
+	}
+	ROW("Flags", 4, flags, "x");
+
+	ut16 ehsize;
 	addr += 0x4;
-	ROW("EhSize", 2, rz_buf_read_le16_at(bf->buf, addr), "x");
+	if (!rz_buf_read_le16_at(bf->buf, addr, &ehsize)) {
+		rz_list_free(ret);
+		return NULL;
+	}
+	ROW("EhSize", 2, ehsize, "x");
+
+	ut16 phentsize;
 	addr += 0x2;
-	ROW("PhentSize", 2, rz_buf_read_le16_at(bf->buf, addr), "x");
+	if (!rz_buf_read_le16_at(bf->buf, addr, &phentsize)) {
+		rz_list_free(ret);
+		return NULL;
+	}
+	ROW("PhentSize", 2, phentsize, "x");
+
+	ut16 phnum;
 	addr += 0x2;
-	ROW("PhNum", 2, rz_buf_read_le16_at(bf->buf, addr), "x");
+	if (!rz_buf_read_le16_at(bf->buf, addr, &phnum)) {
+		rz_list_free(ret);
+		return NULL;
+	}
+	ROW("PhNum", 2, phnum, "x");
+
+	ut16 shentsize;
 	addr += 0x2;
-	ROW("ShentSize", 2, rz_buf_read_le16_at(bf->buf, addr), "x");
+	if (!rz_buf_read_le16_at(bf->buf, addr, &shentsize)) {
+		rz_list_free(ret);
+		return NULL;
+	}
+	ROW("ShentSize", 2, shentsize, "x");
+
+	ut16 shnum;
 	addr += 0x2;
-	ROW("ShNum", 2, rz_buf_read_le16_at(bf->buf, addr), "x");
+	if (!rz_buf_read_le16_at(bf->buf, addr, &shnum)) {
+		rz_list_free(ret);
+		return NULL;
+	}
+	ROW("ShNum", 2, shnum, "x");
+
+	ut16 shrstrndx;
 	addr += 0x2;
-	ROW("ShrStrndx", 2, rz_buf_read_le16_at(bf->buf, addr), "x");
+	if (!rz_buf_read_le16_at(bf->buf, addr, &shrstrndx)) {
+		rz_list_free(ret);
+		return NULL;
+	}
+	ROW("ShrStrndx", 2, shrstrndx, "x");
 
 	return ret;
 }

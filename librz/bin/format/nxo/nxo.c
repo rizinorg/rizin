@@ -42,10 +42,20 @@ static void walkSymbols(RzBuffer *buf, RzBinNXOObj *bin, ut64 symtab, ut64 strta
 	RzBinSymbol *sym;
 	RzBinImport *imp;
 	for (i = 8; i < 99999; i++) {
-		ut64 addr = rz_buf_read_le64_at(buf, symtab + i);
-		ut64 size = rz_buf_read_le64_at(buf, symtab + i + 8);
+		ut64 addr;
+		if (!rz_buf_read_le64_at(buf, symtab + i, &addr)) {
+			break;
+		}
+		ut64 size;
+		if (!rz_buf_read_le64_at(buf, symtab + i + 8, &size)) {
+			break;
+		}
+
 		i += 16; // NULL, NULL
-		ut64 name = rz_buf_read_le32_at(buf, symtab + i);
+		ut32 name;
+		if (!rz_buf_read_le32_at(buf, symtab + i, &name)) {
+			break;
+		}
 		//ut64 type = rz_buf_read_le32_at (buf, symtab + i + 4);
 		char *symName = readString(buf, strtab + name);
 		if (!symName) {
@@ -62,7 +72,10 @@ static void walkSymbols(RzBuffer *buf, RzBinNXOObj *bin, ut64 symtab, ut64 strta
 
 		if (addr == 0) {
 			import++;
-			ut64 pltSym = rz_buf_read_le64_at(buf, relplt + (import * 24));
+			ut64 pltSym;
+			if (!rz_buf_read_le64_at(buf, relplt + (import * 24), &pltSym)) {
+				break;
+			}
 			imp = RZ_NEW0(RzBinImport);
 			if (!imp) {
 				RZ_FREE(sym);
@@ -113,19 +126,24 @@ out_walk_symbol:
 }
 
 void parseMod(RzBuffer *buf, RzBinNXOObj *bin, ut32 mod0, ut64 baddr) {
-	ut32 ptr = rz_buf_read_le32_at(buf, mod0);
+	ut32 ptr;
+	if (!rz_buf_read_le32_at(buf, mod0, &ptr)) {
+		return;
+	}
+
 	eprintf("magic %x at 0x%x\n", ptr, mod0);
 	if (ptr == 0x30444f4d) { // MOD0
 		eprintf("is mode0\n");
-		MODHeader mh = {
-			.magic = rz_buf_read_le32_at(buf, mod0),
-			.dynamic = rz_buf_read_le32_at(buf, mod0 + 4),
-			.bss_start = rz_buf_read_le32_at(buf, mod0 + 8),
-			.bss_end = rz_buf_read_le32_at(buf, mod0 + 12),
-			.unwind_start = rz_buf_read_le32_at(buf, mod0 + 16),
-			.unwind_end = rz_buf_read_le32_at(buf, mod0 + 20),
-			.mod_object = rz_buf_read_le32_at(buf, mod0 + 24),
-		};
+		MODHeader mh = { 0 };
+		if (!rz_buf_read_le32_at(buf, mod0, &mh.magic) ||
+			!rz_buf_read_le32_at(buf, mod0 + 4, &mh.dynamic) ||
+			!rz_buf_read_le32_at(buf, mod0 + 8, &mh.bss_start) ||
+			!rz_buf_read_le32_at(buf, mod0 + 12, &mh.bss_end) ||
+			!rz_buf_read_le32_at(buf, mod0 + 16, &mh.unwind_start) ||
+			!rz_buf_read_le32_at(buf, mod0 + 20, &mh.unwind_end) ||
+			!rz_buf_read_le32_at(buf, mod0 + 24, &mh.mod_object)) {
+			return;
+		}
 		mh.mod_object += mod0;
 		eprintf("magic 0x%x\n", mh.magic);
 		eprintf("dynamic 0x%x\n", mh.dynamic);
@@ -133,23 +151,14 @@ void parseMod(RzBuffer *buf, RzBinNXOObj *bin, ut32 mod0, ut64 baddr) {
 		eprintf("unwind 0x%x 0x%x\n", mh.unwind_start, mh.unwind_end);
 		eprintf("-------------\n");
 		eprintf("mod 0x%x\n", mh.mod_object);
-#define MO_(x) rz_buf_read_le64_at(buf, mh.mod_object + rz_offsetof(MODObject, x))
-		MODObject mo = {
-			.next = MO_(next),
-			.prev = MO_(prev),
-			.relplt = MO_(relplt),
-			.reldyn = MO_(reldyn),
-			.base = MO_(base),
-			.dynamic = MO_(dynamic),
-			.is_rela = MO_(is_rela),
-			.relplt_size = MO_(relplt_size),
-			.init = MO_(init),
-			.fini = MO_(fini),
-			.bucket = MO_(bucket),
-			.chain = MO_(chain),
-			.strtab = MO_(strtab),
-			.symtab = MO_(symtab),
-			.strtab_size = MO_(strtab_size)
+#define MO_(x) rz_buf_read_le64_at(buf, mh.mod_object + rz_offsetof(MODObject, x), &mo.x)
+		MODObject mo = { 0 };
+		if (!MO_(next) || !MO_(prev) || !MO_(relplt) || !MO_(reldyn) ||
+			!MO_(base) || !MO_(dynamic) || !MO_(is_rela) ||
+			!MO_(relplt_size) || !MO_(init) || !MO_(fini) ||
+			!MO_(bucket) || !MO_(chain) || !MO_(strtab) ||
+			!MO_(symtab) || !MO_(strtab_size)) {
+			return;
 		};
 		eprintf("next 0x%" PFMT64x "\n", mo.next);
 		eprintf("prev 0x%" PFMT64x "\n", mo.prev);

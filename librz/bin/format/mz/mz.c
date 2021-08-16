@@ -101,7 +101,10 @@ RzList *rz_bin_mz_get_segments(const struct rz_bin_mz_obj_t *bin) {
 		if (rz_buf_size(bin->b) < paddr + 2) {
 			continue;
 		}
-		curr_seg = rz_buf_read_le16_at(bin->b, paddr);
+
+		if (!rz_buf_read_le16_at(bin->b, paddr, &curr_seg)) {
+			continue;
+		}
 
 		section_laddr = rz_bin_mz_va_to_la(curr_seg, 0);
 		if (section_laddr > bin->load_module_size) {

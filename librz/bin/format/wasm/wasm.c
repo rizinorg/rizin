@@ -95,9 +95,14 @@ static size_t consume_init_expr_r(RzBuffer *b, ut64 max, ut8 eoc, void *out) {
 		return 0;
 	}
 	size_t res = 0;
-	ut8 cur = rz_buf_read8(b);
+	ut8 cur;
+	if (!rz_buf_read8(b, &cur)) {
+		return 0;
+	}
 	while (rz_buf_tell(b) <= max && cur != eoc) {
-		cur = rz_buf_read8(b);
+		if (!rz_buf_read8(b, &cur)) {
+			return 0;
+		}
 		res++;
 	}
 	if (cur != eoc) {

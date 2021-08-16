@@ -731,12 +731,13 @@ static RzDyldRebaseInfos *get_rebase_infos(RzDyldCache *cache) {
 	}
 
 	if (!cache->hdr->slideInfoOffset || !cache->hdr->slideInfoSize) {
-		ut64 slide_infos_offset;
-		size_t n_slide_infos;
-		if ((slide_infos_offset = rz_buf_read_le32_at(cache_buf, 0x138)) == UT32_MAX) {
+		ut32 slide_infos_offset;
+		if (!rz_buf_read_le32_at(cache_buf, 0x138, &slide_infos_offset)) {
 			goto beach;
 		}
-		if ((n_slide_infos = rz_buf_read_le32_at(cache_buf, 0x13c)) == UT32_MAX) {
+
+		ut32 n_slide_infos;
+		if (!rz_buf_read_le32_at(cache_buf, 0x13c, &n_slide_infos)) {
 			goto beach;
 		}
 

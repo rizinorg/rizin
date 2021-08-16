@@ -5,61 +5,53 @@
 #include "elf.h"
 
 static bool buffer_read_8(ELFOBJ *bin, ut64 *offset, ut8 *result) {
-	ut8 tmp = rz_buf_read8_at(bin->b, *offset);
-	if (tmp == UT8_MAX) {
+	if (!rz_buf_read8_at(bin->b, *offset, result)) {
 		return false;
 	}
 
-	*offset += sizeof(ut8);
-	*result = tmp;
+	*offset += 1;
 
 	return true;
 }
 
 static bool buffer_read_16(ELFOBJ *bin, ut64 *offset, ut16 *result) {
-	ut16 tmp = rz_buf_read_ble16_at(bin->b, *offset, bin->big_endian);
-	if (tmp == UT16_MAX) {
+	if (!rz_buf_read_ble16_at(bin->b, *offset, bin->big_endian, result)) {
 		return false;
 	}
 
-	*offset += sizeof(ut16);
-	*result = tmp;
+	*offset += 2;
 
 	return true;
 }
 
 static bool buffer_read_32(ELFOBJ *bin, ut64 *offset, ut32 *result) {
-	ut32 tmp = rz_buf_read_ble32_at(bin->b, *offset, bin->big_endian);
-	if (tmp == UT32_MAX) {
+	if (!rz_buf_read_ble32_at(bin->b, *offset, bin->big_endian, result)) {
 		return false;
 	}
 
-	*offset += sizeof(ut32);
-	*result = tmp;
+	*offset += 4;
+
+	return true;
+}
+
+static bool buffer_read_64(ELFOBJ *bin, ut64 *offset, ut64 *result) {
+	if (!rz_buf_read_ble64_at(bin->b, *offset, bin->big_endian, result)) {
+		return false;
+	}
+
+	*offset += 8;
 
 	return true;
 }
 
 static bool buffer_read_32_signed(ELFOBJ *bin, ut64 *offset, st32 *result) {
 	ut32 tmp;
-
-	if (!buffer_read_32(bin, offset, &tmp)) {
+	if (!rz_buf_read_ble32_at(bin->b, *offset, bin->big_endian, &tmp)) {
 		return false;
 	}
 
 	*result = convert_to_two_complement_32(tmp);
-
-	return true;
-}
-
-static bool buffer_read_64(ELFOBJ *bin, ut64 *offset, ut64 *result) {
-	ut64 tmp = rz_buf_read_ble64_at(bin->b, *offset, bin->big_endian);
-	if (tmp == UT64_MAX) {
-		return false;
-	}
-
-	*offset += sizeof(ut64);
-	*result = tmp;
+	*offset += 4;
 
 	return true;
 }
@@ -67,11 +59,12 @@ static bool buffer_read_64(ELFOBJ *bin, ut64 *offset, ut64 *result) {
 static bool buffer_read_64_signed(ELFOBJ *bin, ut64 *offset, st64 *result) {
 	ut64 tmp;
 
-	if (!buffer_read_64(bin, offset, &tmp)) {
+	if (!rz_buf_read_ble64_at(bin->b, *offset, bin->big_endian, &tmp)) {
 		return false;
 	}
 
 	*result = convert_to_two_complement_64(tmp);
+	*offset += 8;
 
 	return true;
 }
