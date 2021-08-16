@@ -788,6 +788,7 @@ static char *type_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *typ
 		// Here it can be any of the RzBaseType
 		RzBaseType *btype = rz_type_db_get_base_type(typedb, type->identifier.name);
 		if (!btype) {
+			rz_strbuf_free(buf);
 			return NULL;
 		}
 		if (type->identifier.is_const) {
