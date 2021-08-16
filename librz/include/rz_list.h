@@ -19,7 +19,7 @@ typedef struct rz_list_t {
 	RzListIter *head;
 	RzListIter *tail;
 	RzListFree free;
-	int length;
+	ut32 length;
 	bool sorted;
 } RzList;
 
