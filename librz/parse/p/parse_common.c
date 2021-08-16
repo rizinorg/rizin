@@ -171,12 +171,13 @@ static bool rz_pseudo_convert(const RzPseudoConfig *config, const char *assembly
 		rz_strbuf_append_n(sb, gr->grammar + i, p - i);
 	}
 
-	char *result = rz_strbuf_get(sb);
+	char *result = rz_strbuf_drain_nofree(sb);
 	for (int i = 0; i < config->replace_length; ++i) {
 		rp = &config->replace[i];
 		result = rz_str_replace(result, rp->expected, rp->replace, rp->flag);
 	}
-	sb->ptr = result;
+	rz_strbuf_set(sb, result);
+	free(result);
 
 	rz_list_free(tokens);
 	return true;
