@@ -73,18 +73,19 @@ error:
 }
 
 RZ_API void rz_analysis_esil_trace_free(RzAnalysisEsilTrace *trace) {
-	size_t i;
-	if (trace) {
-		ht_up_free(trace->registers);
-		ht_up_free(trace->memory);
-		for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
-			rz_reg_arena_free(trace->arena[i]);
-		}
-		free(trace->stack_data);
-		rz_pvector_free(trace->instructions);
-		trace->instructions = NULL;
-		RZ_FREE(trace);
+	if (!trace) {
+		return;
 	}
+	size_t i;
+	ht_up_free(trace->registers);
+	ht_up_free(trace->memory);
+	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
+		rz_reg_arena_free(trace->arena[i]);
+	}
+	free(trace->stack_data);
+	rz_pvector_free(trace->instructions);
+	trace->instructions = NULL;
+	RZ_FREE(trace);
 }
 
 static void add_reg_change(RzAnalysisEsilTrace *trace, int idx, RzRegItem *ri, ut64 data) {
@@ -251,7 +252,7 @@ RZ_API RZ_BORROW RzILTraceInstruction *rz_analysis_esil_get_instruction_trace(RZ
 	return rz_pvector_at(etrace->instructions, idx);
 }
 
-RZ_API void rz_analysis_esil_trace_op(RzAnalysisEsil *esil, RzAnalysisOp *op) {
+RZ_API void rz_analysis_esil_trace_op(RzAnalysisEsil *esil, RZ_NONNULL RzAnalysisOp *op) {
 	rz_return_if_fail(esil && op);
 	const char *expr = rz_strbuf_get(&op->esil);
 	if (RZ_STR_ISEMPTY(expr)) {
@@ -328,6 +329,7 @@ static bool restore_register(RzAnalysisEsil *esil, RzRegItem *ri, int idx) {
 }
 
 RZ_API void rz_analysis_esil_trace_restore(RzAnalysisEsil *esil, int idx) {
+	rz_return_if_fail(esil);
 	size_t i;
 	RzAnalysisEsilTrace *trace = esil->trace;
 	// Restore initial state when going backward
@@ -363,6 +365,7 @@ static void print_instruction_trace(RzILTraceInstruction *instruction, int idx) 
  * \param esil RzAnalysisEsil *, ESIL instance
  */
 RZ_API void rz_analysis_esil_trace_list(RzAnalysisEsil *esil) {
+	rz_return_if_fail(esil);
 	if (!esil->trace) {
 		return;
 	}
@@ -383,6 +386,7 @@ RZ_API void rz_analysis_esil_trace_list(RzAnalysisEsil *esil) {
  * \param idx int, index of trace
  */
 RZ_API void rz_analysis_esil_trace_show(RzAnalysisEsil *esil, int idx) {
+	rz_return_if_fail(esil);
 	printf("Trace Show : WIP\n");
 	if (!esil->trace) {
 		return;

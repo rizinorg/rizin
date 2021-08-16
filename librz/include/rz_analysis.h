@@ -1498,7 +1498,7 @@ RZ_API bool rz_analysis_il_reg_trace_contains(RzILTraceInstruction *trace, const
 RZ_API RZ_BORROW RzILTraceInstruction *rz_analysis_esil_get_instruction_trace(RZ_NONNULL RzAnalysisEsilTrace *etrace, int idx);
 RZ_API RzAnalysisEsilTrace *rz_analysis_esil_trace_new(RzAnalysisEsil *esil);
 RZ_API void rz_analysis_esil_trace_free(RzAnalysisEsilTrace *trace);
-RZ_API void rz_analysis_esil_trace_op(RzAnalysisEsil *esil, RzAnalysisOp *op);
+RZ_API void rz_analysis_esil_trace_op(RzAnalysisEsil *esil, RZ_NONNULL RzAnalysisOp *op);
 RZ_API void rz_analysis_esil_trace_list(RzAnalysisEsil *esil);
 RZ_API void rz_analysis_esil_trace_show(RzAnalysisEsil *esil, int idx);
 RZ_API void rz_analysis_esil_trace_restore(RzAnalysisEsil *esil, int idx);
