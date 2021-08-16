@@ -362,8 +362,9 @@ RZ_API RZ_OWN RzType *rz_type_parse_string_single(RzTypeParser *parser, const ch
 		}
 	}
 	if (parser->state->verbose) {
-		const char *debug_msgs = rz_strbuf_drain_nofree(parser->state->debug);
+		char *debug_msgs = rz_strbuf_drain_nofree(parser->state->debug);
 		RZ_LOG_DEBUG("%s", debug_msgs);
+		free(debug_msgs);
 	}
 
 	// After everything parsed, we should preserve the base type database
