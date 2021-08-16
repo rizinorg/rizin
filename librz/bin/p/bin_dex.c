@@ -1203,6 +1203,11 @@ static void parse_dex_class_method(RzBinFile *bf, RzBinDexClass *c, RzBinClass *
 				RZ_FREE(signature);
 				break;
 			}
+			if (regsz == UT16_MAX || ins_size == UT16_MAX || tries_size == UT16_MAX) {
+				RZ_FREE(flag_name);
+				RZ_FREE(signature);
+				break;
+			}
 			int padd = 0;
 			if (tries_size > 0 && insns_size % 2) {
 				padd = 2;
