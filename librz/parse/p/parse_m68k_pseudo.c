@@ -90,10 +90,10 @@ static bool parse(RzParse *parse, const char *assembly, RzStrBuf *sb) {
 		rz_strbuf_setf(sb, "asm(\"%s\")", assembly);
 		return true;
 	}
-	rz_str_replace(copy, ".l", "", 0);
-	rz_str_replace(copy, ".w", "", 0);
-	rz_str_replace(copy, ".d", "", 0);
-	rz_str_replace(copy, ".b", "", 0);
+	copy = rz_str_replace(copy, ".l", "", 0);
+	copy = rz_str_replace(copy, ".w", "", 0);
+	copy = rz_str_replace(copy, ".d", "", 0);
+	copy = rz_str_replace(copy, ".b", "", 0);
 	bool res = rz_pseudo_convert(&m68k_config, copy, sb);
 	free(copy);
 	return res;

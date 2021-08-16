@@ -211,7 +211,7 @@ static bool parse(RzParse *p, const char *data, RzStrBuf *sb) {
 		char *s = strdup(str);
 		s = rz_str_replace(s, "+ -", "- ", 1);
 		s = rz_str_replace(s, "- -", "+ ", 1);
-		strcpy(str, s);
+		rz_strf(str, "%s", s);
 		free(s);
 	}
 	free(buf);
