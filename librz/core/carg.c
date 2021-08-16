@@ -199,6 +199,7 @@ RZ_API void rz_core_print_func_args(RzCore *core) {
 			//	print_arg_str (0, "void", color);
 			//}
 		}
+		rz_list_free(list);
 	}
 	rz_analysis_op_fini(op);
 }
