@@ -104,6 +104,7 @@ static void resolve_var_overlaps(RzAnalysisVar *var) {
 			rz_analysis_var_delete(other);
 		}
 	}
+	rz_pvector_free(cloned_vars);
 }
 
 RZ_API RzAnalysisVar *rz_analysis_function_set_var(RzAnalysisFunction *fcn, int delta, char kind, RZ_BORROW RZ_NULLABLE const RzType *type, int size, bool isarg, RZ_NONNULL const char *name) {
