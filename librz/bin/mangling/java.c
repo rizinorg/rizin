@@ -3,7 +3,8 @@
 
 #include <rz_util.h>
 
-#define is_varargs(x) ((x)[0] == '.' && (x)[1] == '.' && (x)[2] == '.')
+#define is_native_type(x) ((x) && !IS_UPPER(x))
+#define is_varargs(x)     ((x)[0] == '.' && (x)[1] == '.' && (x)[2] == '.')
 
 static inline bool demangle_type(char *type, RzStrBuf *sb, size_t *used) {
 	bool array = false, varargs = false;
@@ -29,30 +30,57 @@ static inline bool demangle_type(char *type, RzStrBuf *sb, size_t *used) {
 		type_len++;
 		break;
 	case 'B':
+		if (is_native_type(type[1])) {
+			return false;
+		}
 		rz_strbuf_append(sb, "byte");
 		break;
 	case 'C':
+		if (is_native_type(type[1])) {
+			return false;
+		}
 		rz_strbuf_append(sb, "char");
 		break;
 	case 'D':
+		if (is_native_type(type[1])) {
+			return false;
+		}
 		rz_strbuf_append(sb, "double");
 		break;
 	case 'F':
+		if (is_native_type(type[1])) {
+			return false;
+		}
 		rz_strbuf_append(sb, "float");
 		break;
 	case 'I':
+		if (is_native_type(type[1])) {
+			return false;
+		}
 		rz_strbuf_append(sb, "int");
 		break;
 	case 'J':
+		if (is_native_type(type[1])) {
+			return false;
+		}
 		rz_strbuf_append(sb, "long");
 		break;
 	case 'S':
+		if (is_native_type(type[1])) {
+			return false;
+		}
 		rz_strbuf_append(sb, "short");
 		break;
 	case 'V':
+		if (is_native_type(type[1])) {
+			return false;
+		}
 		rz_strbuf_append(sb, "void");
 		break;
 	case 'Z':
+		if (is_native_type(type[1])) {
+			return false;
+		}
 		rz_strbuf_append(sb, "boolean");
 		break;
 	default:
@@ -111,7 +139,6 @@ static char *demangle_method(char *name, char *arguments, char *return_type) {
 
 	rz_strbuf_append(sb, "(");
 	for (size_t pos = 0, used = 0; pos < args_length;) {
-		eprintf("'%s' -> '%s'\n", rz_strbuf_get(sb), arguments + pos);
 		if (!demangle_type(arguments + pos, sb, &used)) {
 			rz_warn_if_reached();
 			goto demangle_method_bad;

@@ -196,7 +196,7 @@ nth paddr      vaddr      bind   type  size lib                     name
 0   0x0000022b 0x0000022b LOCAL  FUNC  42   Hello                   void <init>(String)
 1   0x00000263 0x00000263 LOCAL  FUNC  57   Hello                   void say()
 2   0x000002aa 0x000002aa LOCAL  FUNC  41   Hello                   void main(String[])
-0   0x0000020b 0x0000020b LOCAL  OBJ   0                            Hello
+0   0x0000020b 0x0000020b LOCAL  OBJ   0                            Hello.who
 1   0x0000000a 0x0000000a IMPORT METH  0    java.lang.Object        void <init>()
 2   0x0000000f 0x0000000f IMPORT FIELD 0    Hello                   imp.who
 3   0x00000014 0x00000014 IMPORT FIELD 0    java.lang.System        imp.out
@@ -293,16 +293,16 @@ nth paddr      vaddr      bind   type  size lib                                 
 18  0x0000291f 0x0000291f LOCAL  FUNC  59   org.radare2.installer.MainActivity   Thread access$602(org.radare2.installer.MainActivity, Thread)
 19  0x00002968 0x00002968 LOCAL  FUNC  47   org.radare2.installer.MainActivity   android.os.Handler access$700(org.radare2.installer.MainActivity)
 20  0x000029a5 0x000029a5 LOCAL  FUNC  69   org.radare2.installer.MainActivity   boolean access$800(org.radare2.installer.MainActivity, String, String)
-0   0x00001c1f 0x00001c1f LOCAL  OBJ   0                                         org.radare2.installer.MainActivity
-1   0x00001c27 0x00001c27 LOCAL  OBJ   0                                         org.radare2.installer.MainActivity
-2   0x00001c2f 0x00001c2f LOCAL  OBJ   0                                         org.radare2.installer.MainActivity
-3   0x00001c37 0x00001c37 LOCAL  OBJ   0                                         org.radare2.installer.MainActivity
-4   0x00001c3f 0x00001c3f LOCAL  OBJ   0                                         org.radare2.installer.MainActivity
-5   0x00001c47 0x00001c47 LOCAL  OBJ   0                                         org.radare2.installer.MainActivity
-6   0x00001c4f 0x00001c4f LOCAL  OBJ   0                                         org.radare2.installer.MainActivity
-7   0x00001c57 0x00001c57 LOCAL  OBJ   0                                         org.radare2.installer.MainActivity
-8   0x00001c5f 0x00001c5f LOCAL  OBJ   0                                         org.radare2.installer.MainActivity
-9   0x00001c67 0x00001c67 LOCAL  OBJ   0                                         org.radare2.installer.MainActivity
+0   0x00001c1f 0x00001c1f LOCAL  OBJ   0                                         org.radare2.installer.MainActivity.outputView
+1   0x00001c27 0x00001c27 LOCAL  OBJ   0                                         org.radare2.installer.MainActivity.handler
+2   0x00001c2f 0x00001c2f LOCAL  OBJ   0                                         org.radare2.installer.MainActivity.remoteRunButton
+3   0x00001c37 0x00001c37 LOCAL  OBJ   0                                         org.radare2.installer.MainActivity.localRunButton
+4   0x00001c3f 0x00001c3f LOCAL  OBJ   0                                         org.radare2.installer.MainActivity.context
+5   0x00001c47 0x00001c47 LOCAL  OBJ   0                                         org.radare2.installer.MainActivity.mUtils
+6   0x00001c4f 0x00001c4f LOCAL  OBJ   0                                         org.radare2.installer.MainActivity.http_url_default
+7   0x00001c57 0x00001c57 LOCAL  OBJ   0                                         org.radare2.installer.MainActivity.onLocalRunButtonClick
+8   0x00001c5f 0x00001c5f LOCAL  OBJ   0                                         org.radare2.installer.MainActivity.thread
+9   0x00001c67 0x00001c67 LOCAL  OBJ   0                                         org.radare2.installer.MainActivity.onRemoteRunButtonClick
 1   0x0000000a 0x0000000a IMPORT METH  0    org.radare2.installer.MainActivity   boolean download(String, String)
 2   0x0000000f 0x0000000f IMPORT FIELD 0    org.radare2.installer.MainActivity   imp.handler
 3   0x00000014 0x00000014 IMPORT FIELD 0    org.radare2.installer.MainActivity   imp.thread
@@ -446,9 +446,9 @@ nth paddr      vaddr      bind   type  size lib                                 
 5   0x00000afb 0x00000afb LOCAL  FUNC  97   test                                               void $createCallSiteArray_1(String[])
 6   0x00000b6a 0x00000b6a LOCAL  FUNC  33   test                                               org.codehaus.groovy.runtime.callsite.CallSiteArray $createCallSiteArray()
 7   0x00000b99 0x00000b99 LOCAL  FUNC  52   test                                               org.codehaus.groovy.runtime.callsite.CallSite[] $getCallSiteArray()
-0   0x000008c9 0x000008c9 LOCAL  OBJ   0                                                       test
-1   0x000008d1 0x000008d1 LOCAL  OBJ   0                                                       test
-2   0x000008d9 0x000008d9 LOCAL  OBJ   0                                                       test
+0   0x000008c9 0x000008c9 LOCAL  OBJ   0                                                       test.$staticClassInfo
+1   0x000008d1 0x000008d1 LOCAL  OBJ   0                                                       test.__$stMC
+2   0x000008d9 0x000008d9 LOCAL  OBJ   0                                                       test.$callSiteArray
 13  0x0000009c 0x0000009c IMPORT METH  0    groovy.lang.Script                                 void <init>()
 17  0x000000ef 0x000000ef IMPORT METH  0    test                                               org.codehaus.groovy.runtime.callsite.CallSite[] $getCallSiteArray()
 22  0x00000124 0x00000124 IMPORT METH  0    groovy.lang.Script                                 void <init>(groovy.lang.Binding)
@@ -491,8 +491,8 @@ nth paddr      vaddr      bind   type  size  lib                        name
 5   0x0000051d 0x0000051d LOCAL  FUNC  23    TryWithResources           void main(String[])
 6   0x0000054c 0x0000054c LOCAL  FUNC  18879 TryWithResources           main([[Ljava/lang/String;)V
 7   0x00004f19 0x00004f19 LOCAL  FUNC  24    TryWithResources           void <clinit>()
-0   0x000003f9 0x000003f9 LOCAL  OBJ   0                                TryWithResources
-1   0x00000401 0x00000401 LOCAL  OBJ   0                                TryWithResources
+0   0x000003f9 0x000003f9 LOCAL  OBJ   0                                TryWithResources.$
+1   0x00000401 0x00000401 LOCAL  OBJ   0                                TryWithResources.i
 2   0x0000000d 0x0000000d IMPORT METH  0     TryWithResources           void <init>(int)
 3   0x00000012 0x00000012 IMPORT METH  0     java.lang.RuntimeException void <init>()
 4   0x00000017 0x00000017 IMPORT FIELD 0     java.lang.System           imp.out
