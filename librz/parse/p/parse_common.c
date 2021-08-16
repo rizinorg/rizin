@@ -4,27 +4,27 @@
 /** \file parse_common.c
  * This file contains a common code that can be used to convert any asm code
  * into a pseudo code, via a generic grammar.
- * 
+ *
  * The grammar is quite simple; Let's take a simple example
- * 
+ *
  * Let's take the following assembly
  * ; intel x86 asm
  * ; rax = rax + 10
  *   add rax, 10
- * 
+ *
  * The associated grammar will be "1 += 2" the number 1 will be changed to "rax" and 2 with "10"
- * 
+ *
  * another example:
- * 
+ *
  * ; mips asm
  * ; t0 = 4097 << 16
  *   lui t0, 4097
- * 
+ *
  * The associated grammar will be "1 = 2 << #16" to notice the `#` symbol.
  * The `#` symbol is used to ignore any set of chars after this till next whitespace/end of the line
- * 
+ *
  * the developer has to provide a tokenize method to split the assembly in various token strings
- * and 
+ * and
  */
 
 typedef struct {

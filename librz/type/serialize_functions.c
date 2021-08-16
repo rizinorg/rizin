@@ -108,6 +108,7 @@ static RzCallable *get_callable_type(RzTypeDB *typedb, Sdb *sdb, const char *nam
 	RzType *ttype = parse_type_string_cached(typedb->parser, type_str_cache, rettype, &error_msg, cache_newly_added);
 	if (!ttype || error_msg) {
 		eprintf("error parsing \"%s\" func return type \"%s\": %s \n", name, rettype, error_msg);
+		free(error_msg);
 		goto error;
 	}
 	callable->ret = ttype;

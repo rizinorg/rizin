@@ -2441,7 +2441,7 @@ RZ_API RZ_OWN RzPVector *rz_analysis_function_args(RzAnalysis *a, RzAnalysisFunc
 			// where each var is assigned at its argnum
 			if (argnum >= rz_pvector_len(args)) {
 				if (!rz_pvector_reserve(args, argnum + 1)) {
-					return args;
+					goto cleanup;
 				}
 				while (argnum >= rz_pvector_len(args)) {
 					rz_pvector_push(args, NULL);
@@ -2451,6 +2451,7 @@ RZ_API RZ_OWN RzPVector *rz_analysis_function_args(RzAnalysis *a, RzAnalysisFunc
 			fcn->argnum++;
 		}
 	}
+cleanup:
 	rz_pvector_free(tmp);
 	return args;
 }

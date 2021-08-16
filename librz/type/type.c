@@ -788,6 +788,7 @@ static char *type_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *typ
 		// Here it can be any of the RzBaseType
 		RzBaseType *btype = rz_type_db_get_base_type(typedb, type->identifier.name);
 		if (!btype) {
+			rz_strbuf_free(buf);
 			return NULL;
 		}
 		if (type->identifier.is_const) {
@@ -904,13 +905,14 @@ static char *type_as_string_identifier_decl(const RzTypeDB *typedb, RZ_NONNULL c
 		// If the structure/union is anonymous, then we put declaration inline,
 		// if not - just the name
 		if (!strncmp(type->identifier.name, "anonymous ", 10)) {
-			const char *btypestr = btype->kind == RZ_BASE_TYPE_KIND_TYPEDEF ? btype->name : rz_type_db_base_type_as_string(typedb, btype);
+			char *btypestr = btype->kind == RZ_BASE_TYPE_KIND_TYPEDEF ? strdup(btype->name) : rz_type_db_base_type_as_string(typedb, btype);
 			if (type->identifier.is_const) {
 				rz_strbuf_appendf(buf, "const %s%s", btypestr, separator);
 			} else {
 				rz_strbuf_append(buf, btypestr);
 				rz_strbuf_append(buf, separator);
 			}
+			free(btypestr);
 		} else {
 			if (type->identifier.is_const) {
 				rz_strbuf_append(buf, "const ");

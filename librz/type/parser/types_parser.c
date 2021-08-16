@@ -725,31 +725,38 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 				node_malformed_error(state, child, text, "union field");
 				return -1;
 			}
-			const char *real_type = ts_node_sub_string(field_type, text);
+			char *real_type = ts_node_sub_string(field_type, text);
 			if (!real_type) {
 				parser_error(state, "ERROR: Union bitfield type should not be NULL!\n");
 				node_malformed_error(state, child, text, "union field");
 				return -1;
 			}
-			const char *real_identifier = ts_node_sub_string(field_declarator, text);
+			char *real_identifier = ts_node_sub_string(field_declarator, text);
 			if (!real_identifier) {
 				parser_error(state, "ERROR: Union bitfield identifier should not be NULL!\n");
 				node_malformed_error(state, child, text, "union field");
+				free(real_type);
 				return -1;
 			}
 			if (ts_node_named_child_count(bitfield_clause) != 1) {
 				node_malformed_error(state, child, text, "union field");
+				free(real_type);
+				free(real_identifier);
 				return -1;
 			}
 			TSNode field_bits = ts_node_named_child(bitfield_clause, 0);
 			if (ts_node_is_null(field_bits)) {
 				parser_error(state, "ERROR: Union bitfield bits AST node should not be NULL!\n");
 				node_malformed_error(state, child, text, "union field");
+				free(real_type);
+				free(real_identifier);
 				return -1;
 			}
 			const char *bits_str = ts_node_sub_string(field_bits, text);
 			int bits = rz_num_get(NULL, bits_str);
 			parser_debug(state, "field type: %s field_identifier: %s bits: %d\n", real_type, real_identifier, bits);
+			free(real_type);
+			free(real_identifier);
 			ParserTypePair *membtpair = NULL;
 			if (parse_type_node_single(state, field_type, text, &membtpair, is_const)) {
 				parser_error(state, "ERROR: parsing union member identifier\n");
@@ -925,6 +932,7 @@ int parse_enum_node(CParserState *state, TSNode node, const char *text, ParserTy
 		if (strcmp(node_type, "enumerator")) {
 			parser_error(state, "ERROR: Enum member AST should contain (enumerator) node!\n");
 			node_malformed_error(state, child, text, "enum field");
+			free(enum_pair);
 			result = -1;
 			goto rexit;
 		}
@@ -933,6 +941,7 @@ int parse_enum_node(CParserState *state, TSNode node, const char *text, ParserTy
 		if (member_child_count < 1 || member_child_count > 2) {
 			parser_error(state, "ERROR: enum member AST cannot contain less than 1 or more than 2 items");
 			node_malformed_error(state, child, text, "enum field");
+			free(enum_pair);
 			result = -1;
 			goto rexit;
 		}
@@ -941,13 +950,14 @@ int parse_enum_node(CParserState *state, TSNode node, const char *text, ParserTy
 		// - atomic: "1"
 		// - expression: "1 << 2"
 		if (state->verbose) {
-			const char *membertext = ts_node_sub_string(child, text);
+			char *membertext = ts_node_sub_string(child, text);
 			char *nodeast = ts_node_string(child);
 			if (membertext && nodeast) {
 				parser_debug(state, "member text: %s\n", membertext);
 				parser_debug(state, "member ast: %s\n", nodeast);
 			}
 			free(nodeast);
+			free(membertext);
 		}
 		if (member_child_count == 1) {
 			// It's an empty field, like just "A,"
@@ -955,6 +965,7 @@ int parse_enum_node(CParserState *state, TSNode node, const char *text, ParserTy
 			if (ts_node_is_null(member_identifier)) {
 				parser_error(state, "ERROR: Enum case identifier should not be NULL!\n");
 				node_malformed_error(state, child, text, "enum case");
+				free(enum_pair);
 				result = -1;
 				goto rexit;
 			}
@@ -968,6 +979,7 @@ int parse_enum_node(CParserState *state, TSNode node, const char *text, ParserTy
 			if (ts_node_is_null(member_identifier) || ts_node_is_null(member_value)) {
 				parser_error(state, "ERROR: Enum case identifier and value should not be NULL!\n");
 				node_malformed_error(state, child, text, "enum case");
+				free(enum_pair);
 				result = -1;
 				goto rexit;
 			}
@@ -986,6 +998,7 @@ int parse_enum_node(CParserState *state, TSNode node, const char *text, ParserTy
 			if (!element) {
 				parser_error(state, "Error appending enum case to the base type\n");
 				free(cas.name);
+				free(enum_pair);
 				result = -1;
 				goto rexit;
 			}
@@ -1209,6 +1222,7 @@ int parse_parameter_list(CParserState *state, TSNode paramlist, const char *text
 		parser_debug(state, "Adding \"%s\" parameter\n", identifier);
 		if (!c_parser_new_callable_argument(state, (*tpair)->type->callable, identifier, argtpair->type)) {
 			parser_error(state, "ERROR: Cannot add the parameter to the function!\n");
+			free(identifier);
 			return -1;
 		}
 	}
@@ -1322,6 +1336,7 @@ int parse_type_abstract_declarator_node(CParserState *state, TSNode node, const 
 			char *real_array_size = ts_node_sub_string(array_size, text);
 			if (!real_array_size) {
 				node_malformed_error(state, array_size, text, "abstract array size");
+				free(type);
 				return -1;
 			}
 			int array_sz = rz_num_get(NULL, real_array_size);
@@ -1491,6 +1506,7 @@ int parse_type_declarator_node(CParserState *state, TSNode node, const char *tex
 	} else if (!strcmp(node_type, "array_declarator")) {
 		char *real_ident = ts_node_sub_string(node, text);
 		parser_debug(state, "array declarator: %s\n", real_ident);
+		free(real_ident);
 
 		// Every array declarator should have at least declarator field
 		// The size field is optional
@@ -1521,6 +1537,7 @@ int parse_type_declarator_node(CParserState *state, TSNode node, const char *tex
 			char *real_array_size = ts_node_sub_string(array_size, text);
 			if (!real_array_size) {
 				node_malformed_error(state, array_size, text, "array size");
+				free(type);
 				return -1;
 			}
 			int array_sz = rz_num_get(NULL, real_array_size);
@@ -1539,6 +1556,7 @@ int parse_type_declarator_node(CParserState *state, TSNode node, const char *tex
 	} else if (!strcmp(node_type, "function_declarator")) {
 		char *real_ident = ts_node_sub_string(node, text);
 		parser_debug(state, "function declarator: %s\n", real_ident);
+		free(real_ident);
 		// It can only contain two nodes:
 		// - declarator
 		// - parameters

@@ -35,6 +35,7 @@ static RZ_OWN RzType *var_type_clone_or_default_type(RzAnalysis *analysis, RZ_BO
 	RzType *result = rz_type_parse_string_single(analysis->typedb->parser, typestr, &error_msg);
 	if (!result || error_msg) {
 		eprintf("Invalid var type: %s\n%s", typestr, error_msg);
+		free(error_msg);
 		return NULL;
 	}
 	return result;
@@ -104,6 +105,7 @@ static void resolve_var_overlaps(RzAnalysisVar *var) {
 			rz_analysis_var_delete(other);
 		}
 	}
+	rz_pvector_free(cloned_vars);
 }
 
 RZ_API RzAnalysisVar *rz_analysis_function_set_var(RzAnalysisFunction *fcn, int delta, char kind, RZ_BORROW RZ_NULLABLE const RzType *type, int size, bool isarg, RZ_NONNULL const char *name) {

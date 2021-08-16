@@ -390,6 +390,7 @@ RzList *rz_bin_le_get_sections(rz_bin_le_obj_t *bin) {
 			int r = rz_buf_read_at(bin->buf, page_entry_off, (ut8 *)&page, sizeof(page));
 			if (r < sizeof(page)) {
 				RZ_LOG_WARN("Cannot read out of bounds page table entry.\n");
+				rz_bin_section_free(s);
 				break;
 			}
 			if (cur_idx < next_idx) { // If not true rest of pages will be zeroes
