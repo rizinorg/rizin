@@ -13,16 +13,27 @@ typedef struct dex_access_flags_readable_t {
 	const char *readable;
 } DexAccessFlagsReadable;
 
-#define dex_is_static(a)  (a & ACCESS_FLAG_STATIC)
-#define dex_is_varargs(a) (a & ACCESS_FLAG_VARARGS)
-
-#define dex_fail_if_eof(b, o, s, g) \
+#define read_le_bits_or_fail(bits, buf, val, fail) \
 	do { \
-		(o) = rz_buf_tell((b)); \
-		if ((o) >= (s)) { \
-			goto g; \
+		if (!rz_buf_read_le##bits(buf, &val)) { \
+			goto fail; \
 		} \
 	} while (0)
+
+#define read_le_at_bits_or_fail(bits, buf, val, offset, fail) \
+	do { \
+		if (!rz_buf_read_le##bits##_at(buf, offset, &val)) { \
+			goto fail; \
+		} \
+	} while (0)
+
+#define read_le32_or_fail(buf, val, fail)            read_le_bits_or_fail(32, buf, val, fail)
+#define read_le16_or_fail(buf, val, fail)            read_le_bits_or_fail(16, buf, val, fail)
+#define read_le32_at_or_fail(buf, val, offset, fail) read_le_at_bits_or_fail(32, buf, val, offset, fail)
+#define read_le16_at_or_fail(buf, val, offset, fail) read_le_at_bits_or_fail(16, buf, val, offset, fail)
+
+#define dex_is_static(a)  (a & ACCESS_FLAG_STATIC)
+#define dex_is_varargs(a) (a & ACCESS_FLAG_VARARGS)
 
 #define dex_fail_if_bad_ids(name, z, s, g) \
 	do { \
@@ -72,7 +83,6 @@ static DexString *dex_string_new(RzBuffer *buf, ut64 offset, st64 *pread) {
 	read = rz_buf_uleb128(buf, &size);
 	data = malloc(size + 1);
 	if (!data || rz_buf_read(buf, (ut8 *)data, size) != size) {
-		rz_warn_if_reached();
 		free(data);
 		return NULL;
 	}
@@ -80,7 +90,6 @@ static DexString *dex_string_new(RzBuffer *buf, ut64 offset, st64 *pread) {
 
 	string = RZ_NEW0(DexString);
 	if (!string) {
-		rz_warn_if_reached();
 		free(data);
 		return NULL;
 	}
@@ -107,25 +116,24 @@ static DexProtoId *dex_proto_id_new(RzBuffer *buf, ut64 offset) {
 	}
 
 	ut32 parameters_offset = 0;
-
-	proto_id->shorty_idx = /*       */ rz_buf_read_le32(buf);
-	proto_id->return_type_idx = /*  */ rz_buf_read_le32(buf);
 	proto_id->offset = offset;
+	read_le32_or_fail(buf, proto_id->shorty_idx, dex_proto_id_new_fail);
+	read_le32_or_fail(buf, proto_id->return_type_idx, dex_proto_id_new_fail);
 
-	parameters_offset = rz_buf_read_le32(buf);
+	read_le32_or_fail(buf, parameters_offset, dex_proto_id_new_fail);
 	if (parameters_offset > 0) {
-		ut32 count = rz_buf_read_le32_at(buf, parameters_offset);
+		ut32 count = 0;
+		read_le32_at_or_fail(buf, count, parameters_offset, dex_proto_id_new_fail);
 
 		proto_id->type_list_size = count;
 		proto_id->type_list = RZ_NEWS(ut16, count);
 		if (!proto_id->type_list) {
-			rz_warn_if_reached();
 			goto dex_proto_id_new_fail;
 		}
 
 		parameters_offset += sizeof(ut32);
 		for (ut32 i = 0; i < count; ++i, parameters_offset += sizeof(ut16)) {
-			proto_id->type_list[i] = rz_buf_read_le16_at(buf, parameters_offset);
+			read_le16_at_or_fail(buf, proto_id->type_list[i], parameters_offset, dex_proto_id_new_fail);
 		}
 	}
 
@@ -143,11 +151,15 @@ static DexFieldId *dex_field_id_new(RzBuffer *buf, ut64 offset) {
 		return NULL;
 	}
 
-	field_id->class_idx = /**/ rz_buf_read_le16(buf);
-	field_id->type_idx = /* */ rz_buf_read_le16(buf);
-	field_id->name_idx = /* */ rz_buf_read_le32(buf);
+	read_le16_or_fail(buf, field_id->class_idx, dex_field_id_new_fail);
+	read_le16_or_fail(buf, field_id->type_idx, dex_field_id_new_fail);
+	read_le32_or_fail(buf, field_id->name_idx, dex_field_id_new_fail);
 	field_id->offset = offset;
 	return field_id;
+
+dex_field_id_new_fail:
+	free(field_id);
+	return NULL;
 }
 
 #define dex_method_id_free free
@@ -157,11 +169,15 @@ static DexMethodId *dex_method_id_new(RzBuffer *buf, ut64 offset) {
 		return NULL;
 	}
 
-	method_id->class_idx = /**/ rz_buf_read_le16(buf);
-	method_id->proto_idx = /**/ rz_buf_read_le16(buf);
-	method_id->name_idx = /* */ rz_buf_read_le32(buf);
+	read_le16_or_fail(buf, method_id->class_idx, dex_method_id_new_fail);
+	read_le16_or_fail(buf, method_id->proto_idx, dex_method_id_new_fail);
+	read_le32_or_fail(buf, method_id->name_idx, dex_method_id_new_fail);
 	method_id->offset = offset;
 	return method_id;
+
+dex_method_id_new_fail:
+	free(method_id);
+	return NULL;
 }
 
 static void dex_class_def_free(DexClassDef *class_def) {
@@ -175,6 +191,71 @@ static void dex_class_def_free(DexClassDef *class_def) {
 	free(class_def);
 }
 
+static DexEncodedField *dex_new_encoded_field(RzBuffer *buf, ut64 base, ut64 *diff_value_prev, bool first) {
+	DexEncodedField *encoded_field = RZ_NEW0(DexEncodedField);
+	if (!encoded_field) {
+		return NULL;
+	}
+	ut64 diff_value = 0;
+
+	encoded_field->offset = rz_buf_tell(buf) + base;
+	rz_buf_uleb128(buf, &diff_value);
+	rz_buf_uleb128(buf, &encoded_field->access_flags);
+
+	if (first) {
+		encoded_field->field_idx = diff_value;
+		*diff_value_prev = diff_value;
+	} else {
+		encoded_field->field_idx = *diff_value_prev + diff_value;
+		*diff_value_prev = encoded_field->field_idx;
+	}
+	return encoded_field;
+}
+
+static DexEncodedMethod *dex_new_encoded_method(RzBuffer *buf, ut64 base, ut64 *diff_value_prev, bool first, RzList *method_ids) {
+	DexEncodedMethod *encoded_method = RZ_NEW0(DexEncodedMethod);
+	if (!encoded_method) {
+		return NULL;
+	}
+	ut64 diff_value = 0;
+	ut64 code_offset = 0;
+
+	encoded_method->offset = rz_buf_tell(buf) + base;
+	rz_buf_uleb128(buf, &diff_value);
+	rz_buf_uleb128(buf, &encoded_method->access_flags);
+	rz_buf_uleb128(buf, &code_offset);
+
+	if (first) {
+		encoded_method->method_idx = diff_value;
+		*diff_value_prev = diff_value;
+	} else {
+		encoded_method->method_idx = *diff_value_prev + diff_value;
+		*diff_value_prev = encoded_method->method_idx;
+	}
+
+	if (code_offset > 0) {
+		read_le16_at_or_fail(buf, encoded_method->registers_size, code_offset, dex_new_encoded_method_fail);
+		read_le16_at_or_fail(buf, encoded_method->ins_size, code_offset + 2, dex_new_encoded_method_fail);
+		read_le16_at_or_fail(buf, encoded_method->outs_size, code_offset + 4, dex_new_encoded_method_fail);
+		read_le16_at_or_fail(buf, encoded_method->tries_size, code_offset + 6, dex_new_encoded_method_fail);
+		read_le32_at_or_fail(buf, encoded_method->debug_info_offset, code_offset + 8, dex_new_encoded_method_fail);
+		read_le32_at_or_fail(buf, encoded_method->code_size, code_offset + 12, dex_new_encoded_method_fail);
+		encoded_method->code_size *= sizeof(ut16); // code ushort[insns_size]
+		encoded_method->code_offset = code_offset + 16 + base;
+
+		DexMethodId *method_id = rz_list_get_n(method_ids, encoded_method->method_idx);
+		if (method_id) {
+			method_id->code_offset = encoded_method->code_offset;
+			method_id->code_size = encoded_method->code_size;
+		}
+	}
+	return encoded_method;
+
+dex_new_encoded_method_fail:
+	free(encoded_method);
+	return NULL;
+}
+
 static DexClassDef *dex_class_def_new(RzBuffer *buf, ut64 offset, ut64 base, RzList *method_ids) {
 	DexClassDef *class_def = RZ_NEW0(DexClassDef);
 	if (!class_def) {
@@ -185,27 +266,24 @@ static DexClassDef *dex_class_def_new(RzBuffer *buf, ut64 offset, ut64 base, RzL
 	ut64 instance_fields_size = 0;
 	ut64 direct_methods_size = 0;
 	ut64 virtual_methods_size = 0;
-	ut64 diff_value;
 	ut64 diff_value_prev;
-	ut64 code_offset;
 
 	class_def->static_fields = /*  */ rz_list_newf((RzListFree)free);
 	class_def->instance_fields = /**/ rz_list_newf((RzListFree)free);
 	class_def->direct_methods = /* */ rz_list_newf((RzListFree)free);
 	class_def->virtual_methods = /**/ rz_list_newf((RzListFree)free);
 
-	class_def->class_idx = /*           */ rz_buf_read_le32(buf);
-	class_def->access_flags = /*        */ rz_buf_read_le32(buf);
-	class_def->superclass_idx = /*      */ rz_buf_read_le32(buf);
-	class_def->interfaces_offset = /*   */ rz_buf_read_le32(buf);
-	class_def->source_file_idx = /*     */ rz_buf_read_le32(buf);
-	class_def->annotations_offset = /*  */ rz_buf_read_le32(buf);
-	class_def->class_data_offset = /*   */ rz_buf_read_le32(buf);
-	class_def->static_values_offset = /**/ rz_buf_read_le32(buf);
+	read_le32_or_fail(buf, class_def->class_idx, dex_class_def_new_fail);
+	read_le32_or_fail(buf, class_def->access_flags, dex_class_def_new_fail);
+	read_le32_or_fail(buf, class_def->superclass_idx, dex_class_def_new_fail);
+	read_le32_or_fail(buf, class_def->interfaces_offset, dex_class_def_new_fail);
+	read_le32_or_fail(buf, class_def->source_file_idx, dex_class_def_new_fail);
+	read_le32_or_fail(buf, class_def->annotations_offset, dex_class_def_new_fail);
+	read_le32_or_fail(buf, class_def->class_data_offset, dex_class_def_new_fail);
+	read_le32_or_fail(buf, class_def->static_values_offset, dex_class_def_new_fail);
 	class_def->offset = offset;
 
 	if (rz_buf_seek(buf, class_def->class_data_offset, RZ_BUF_SET) < 0) {
-		rz_warn_if_reached();
 		goto dex_class_def_new_fail;
 	}
 
@@ -215,141 +293,33 @@ static DexClassDef *dex_class_def_new(RzBuffer *buf, ut64 offset, ut64 base, RzL
 	rz_buf_uleb128(buf, &virtual_methods_size);
 
 	for (ut64 i = 0; i < static_fields_size; ++i) {
-		DexEncodedField *encoded_field = RZ_NEW0(DexEncodedField);
-		if (!encoded_field) {
-			rz_warn_if_reached();
-			goto dex_class_def_new_fail;
-		}
-
-		encoded_field->offset = rz_buf_tell(buf) + base;
-		rz_buf_uleb128(buf, &diff_value);
-		rz_buf_uleb128(buf, &encoded_field->access_flags);
-
-		if (i < 1) {
-			encoded_field->field_idx = diff_value;
-			diff_value_prev = diff_value;
-		} else {
-			encoded_field->field_idx = diff_value_prev + diff_value;
-			diff_value_prev = encoded_field->field_idx;
-		}
-
-		if (!rz_list_append(class_def->static_fields, encoded_field)) {
+		DexEncodedField *encoded_field = dex_new_encoded_field(buf, base, &diff_value_prev, i < 1);
+		if (!encoded_field || !rz_list_append(class_def->static_fields, encoded_field)) {
 			free(encoded_field);
-			rz_warn_if_reached();
 			goto dex_class_def_new_fail;
 		}
 	}
 
 	for (ut64 i = 0; i < instance_fields_size; ++i) {
-		DexEncodedField *encoded_field = RZ_NEW0(DexEncodedField);
-		if (!encoded_field) {
-			rz_warn_if_reached();
-			goto dex_class_def_new_fail;
-		}
-
-		encoded_field->offset = rz_buf_tell(buf) + base;
-		rz_buf_uleb128(buf, &diff_value);
-		rz_buf_uleb128(buf, &encoded_field->access_flags);
-
-		if (i < 1) {
-			encoded_field->field_idx = diff_value;
-			diff_value_prev = diff_value;
-		} else {
-			encoded_field->field_idx = diff_value_prev + diff_value;
-			diff_value_prev = encoded_field->field_idx;
-		}
-
-		if (!rz_list_append(class_def->instance_fields, encoded_field)) {
+		DexEncodedField *encoded_field = dex_new_encoded_field(buf, base, &diff_value_prev, i < 1);
+		if (!encoded_field || !rz_list_append(class_def->instance_fields, encoded_field)) {
 			free(encoded_field);
-			rz_warn_if_reached();
 			goto dex_class_def_new_fail;
 		}
 	}
 
 	for (ut64 i = 0; i < direct_methods_size; ++i) {
-		DexEncodedMethod *encoded_method = RZ_NEW0(DexEncodedMethod);
-		if (!encoded_method) {
-			rz_warn_if_reached();
-			goto dex_class_def_new_fail;
-		}
-
-		encoded_method->offset = rz_buf_tell(buf) + base;
-		rz_buf_uleb128(buf, &diff_value);
-		rz_buf_uleb128(buf, &encoded_method->access_flags);
-		rz_buf_uleb128(buf, &code_offset);
-
-		if (i < 1) {
-			encoded_method->method_idx = diff_value;
-			diff_value_prev = diff_value;
-		} else {
-			encoded_method->method_idx = diff_value_prev + diff_value;
-			diff_value_prev = encoded_method->method_idx;
-		}
-
-		if (code_offset > 0) {
-			encoded_method->registers_size = /*   */ rz_buf_read_le16_at(buf, code_offset);
-			encoded_method->ins_size = /*         */ rz_buf_read_le16_at(buf, code_offset + 2);
-			encoded_method->outs_size = /*        */ rz_buf_read_le16_at(buf, code_offset + 4);
-			encoded_method->tries_size = /*       */ rz_buf_read_le16_at(buf, code_offset + 6);
-			encoded_method->debug_info_offset = /**/ rz_buf_read_le32_at(buf, code_offset + 8);
-			encoded_method->code_size = /*        */ rz_buf_read_le32_at(buf, code_offset + 12);
-			encoded_method->code_size *= sizeof(ut16); // code ushort[insns_size]
-			encoded_method->code_offset = code_offset + 16 + base;
-
-			DexMethodId *method_id = rz_list_get_n(method_ids, encoded_method->method_idx);
-			if (method_id) {
-				method_id->code_offset = encoded_method->code_offset;
-				method_id->code_size = encoded_method->code_size;
-			}
-		}
-
-		if (!rz_list_append(class_def->direct_methods, encoded_method)) {
+		DexEncodedMethod *encoded_method = dex_new_encoded_method(buf, base, &diff_value_prev, i < 1, method_ids);
+		if (!encoded_method || !rz_list_append(class_def->direct_methods, encoded_method)) {
 			free(encoded_method);
-			rz_warn_if_reached();
 			goto dex_class_def_new_fail;
 		}
 	}
 
 	for (ut64 i = 0; i < virtual_methods_size; ++i) {
-		DexEncodedMethod *encoded_method = RZ_NEW0(DexEncodedMethod);
-		if (!encoded_method) {
-			rz_warn_if_reached();
-			goto dex_class_def_new_fail;
-		}
-
-		encoded_method->offset = rz_buf_tell(buf) + base;
-		rz_buf_uleb128(buf, &diff_value);
-		rz_buf_uleb128(buf, &encoded_method->access_flags);
-		rz_buf_uleb128(buf, &code_offset);
-
-		if (i < 1) {
-			encoded_method->method_idx = diff_value;
-			diff_value_prev = diff_value;
-		} else {
-			encoded_method->method_idx = diff_value_prev + diff_value;
-			diff_value_prev = encoded_method->method_idx;
-		}
-
-		if (code_offset > 0) {
-			encoded_method->registers_size = /*   */ rz_buf_read_le16_at(buf, code_offset);
-			encoded_method->ins_size = /*         */ rz_buf_read_le16_at(buf, code_offset + 2);
-			encoded_method->outs_size = /*        */ rz_buf_read_le16_at(buf, code_offset + 4);
-			encoded_method->tries_size = /*       */ rz_buf_read_le16_at(buf, code_offset + 6);
-			encoded_method->debug_info_offset = /**/ rz_buf_read_le32_at(buf, code_offset + 8);
-			encoded_method->code_size = /*        */ rz_buf_read_le32_at(buf, code_offset + 12);
-			encoded_method->code_size *= sizeof(ut16); // code ushort[insns_size]
-			encoded_method->code_offset = code_offset + 16 + base;
-
-			DexMethodId *method_id = rz_list_get_n(method_ids, encoded_method->method_idx);
-			if (method_id) {
-				method_id->code_offset = encoded_method->code_offset;
-				method_id->code_size = encoded_method->code_size;
-			}
-		}
-
-		if (!rz_list_append(class_def->virtual_methods, encoded_method)) {
+		DexEncodedMethod *encoded_method = dex_new_encoded_method(buf, base, &diff_value_prev, i < 1, method_ids);
+		if (!encoded_method || !rz_list_append(class_def->virtual_methods, encoded_method)) {
 			free(encoded_method);
-			rz_warn_if_reached();
 			goto dex_class_def_new_fail;
 		}
 	}
@@ -375,66 +345,59 @@ static bool dex_parse(RzBinDex *dex, ut64 base, RzBuffer *buf) {
 	rz_buf_read(buf, dex->magic, sizeof(dex->magic));
 	rz_buf_read(buf, dex->version, sizeof(dex->version));
 	dex->checksum_offset = rz_buf_tell(buf) + base;
-	dex->checksum = rz_buf_read_le32(buf);
+	read_le32_or_fail(buf, dex->checksum, dex_parse_bad);
 	dex->signature_offset = rz_buf_tell(buf) + base;
 	rz_buf_read(buf, dex->signature, sizeof(dex->signature));
-	dex->file_size = /*        */ rz_buf_read_le32(buf);
-	dex->header_size = /*      */ rz_buf_read_le32(buf);
-	dex->endian_tag = /*       */ rz_buf_read_le32(buf);
+	read_le32_or_fail(buf, dex->file_size, dex_parse_bad);
+	read_le32_or_fail(buf, dex->header_size, dex_parse_bad);
+	read_le32_or_fail(buf, dex->endian_tag, dex_parse_bad);
 
-	dex->link_size = /*        */ rz_buf_read_le32(buf);
-	dex->link_offset = /*      */ rz_buf_read_le32(buf);
-	//dex_fail_if_bad_ids(dex->link, sizeof(ut32), buffer_size, dex_parse_bad);
+	read_le32_or_fail(buf, dex->link_size, dex_parse_bad);
+	read_le32_or_fail(buf, dex->link_offset, dex_parse_bad);
 
-	dex->map_offset = /*       */ rz_buf_read_le32(buf);
+	read_le32_or_fail(buf, dex->map_offset, dex_parse_bad);
 
-	dex->string_ids_size = /*  */ rz_buf_read_le32(buf);
-	dex->string_ids_offset = /**/ rz_buf_read_le32(buf);
+	read_le32_or_fail(buf, dex->string_ids_size, dex_parse_bad);
+	read_le32_or_fail(buf, dex->string_ids_offset, dex_parse_bad);
 	// string_ids points to an array of offsets.
 	dex_fail_if_bad_ids(dex->string_ids, sizeof(ut32), buffer_size, dex_parse_bad);
 
-	dex->type_ids_size = /*    */ rz_buf_read_le32(buf);
-	dex->type_ids_offset = /*  */ rz_buf_read_le32(buf);
+	read_le32_or_fail(buf, dex->type_ids_size, dex_parse_bad);
+	read_le32_or_fail(buf, dex->type_ids_offset, dex_parse_bad);
 	dex_fail_if_bad_ids(dex->type_ids, DEX_TYPE_ID_SIZE, buffer_size, dex_parse_bad);
 
-	dex->proto_ids_size = /*   */ rz_buf_read_le32(buf);
-	dex->proto_ids_offset = /* */ rz_buf_read_le32(buf);
+	read_le32_or_fail(buf, dex->proto_ids_size, dex_parse_bad);
+	read_le32_or_fail(buf, dex->proto_ids_offset, dex_parse_bad);
 	dex_fail_if_bad_ids(dex->proto_ids, DEX_PROTO_ID_SIZE, buffer_size, dex_parse_bad);
 
-	dex->field_ids_size = /*   */ rz_buf_read_le32(buf);
-	dex->field_ids_offset = /* */ rz_buf_read_le32(buf);
+	read_le32_or_fail(buf, dex->field_ids_size, dex_parse_bad);
+	read_le32_or_fail(buf, dex->field_ids_offset, dex_parse_bad);
 	dex_fail_if_bad_ids(dex->field_ids, DEX_FIELD_ID_SIZE, buffer_size, dex_parse_bad);
 
-	dex->method_ids_size = /*  */ rz_buf_read_le32(buf);
-	dex->method_ids_offset = /**/ rz_buf_read_le32(buf);
+	read_le32_or_fail(buf, dex->method_ids_size, dex_parse_bad);
+	read_le32_or_fail(buf, dex->method_ids_offset, dex_parse_bad);
 	dex_fail_if_bad_ids(dex->method_ids, DEX_METHOD_ID_SIZE, buffer_size, dex_parse_bad);
 
-	dex->class_defs_size = /*  */ rz_buf_read_le32(buf);
-	dex->class_defs_offset = /**/ rz_buf_read_le32(buf);
-	//dex_fail_if_bad_ids(dex->class_defs, sizeof(ut32), buffer_size, dex_parse_bad);
+	read_le32_or_fail(buf, dex->class_defs_size, dex_parse_bad);
+	read_le32_or_fail(buf, dex->class_defs_offset, dex_parse_bad);
 
-	dex->data_size = /*        */ rz_buf_read_le32(buf);
-	dex->data_offset = /*      */ rz_buf_read_le32(buf);
-	//dex_fail_if_bad_ids(dex->data, sizeof(ut32), buffer_size, dex_parse_bad);
-
-	dex_fail_if_eof(buf, offset, buffer_size, dex_parse_bad);
+	read_le32_or_fail(buf, dex->data_size, dex_parse_bad);
+	read_le32_or_fail(buf, dex->data_offset, dex_parse_bad);
 
 	/* Strings */
 	offset = dex->string_ids_offset;
 	for (ut32 i = 0; i < dex->string_ids_size; ++i, offset += sizeof(ut32)) {
-		ut32 string_offset = rz_buf_read_le32_at(buf, offset);
+		ut32 string_offset = 0;
+		read_le32_at_or_fail(buf, string_offset, offset, dex_parse_bad);
 
 		if (rz_buf_seek(buf, string_offset, RZ_BUF_SET) < 0) {
-			rz_warn_if_reached();
 			goto dex_parse_bad;
 		}
 		DexString *string = dex_string_new(buf, base + string_offset, &read);
 		if (!string) {
-			rz_warn_if_reached();
 			goto dex_parse_bad;
 		}
 		if (!rz_list_append(dex->strings, string)) {
-			rz_warn_if_reached();
 			dex_string_free(string);
 			goto dex_parse_bad;
 		}
@@ -443,31 +406,26 @@ static bool dex_parse(RzBinDex *dex, ut64 base, RzBuffer *buf) {
 	/* Type Ids */
 	dex->types = RZ_NEWS0(DexTypeId, dex->type_ids_size);
 	if (!dex->types) {
-		rz_warn_if_reached();
 		goto dex_parse_bad;
 	}
 	if (rz_buf_seek(buf, dex->type_ids_offset, RZ_BUF_SET) < 0) {
-		rz_warn_if_reached();
 		goto dex_parse_bad;
 	}
 	for (ut32 i = 0; i < dex->type_ids_size; ++i) {
-		dex->types[i] = rz_buf_read_le32(buf);
+		read_le32_or_fail(buf, dex->types[i], dex_parse_bad);
 	}
 
 	/* Proto Ids */
 	offset = dex->proto_ids_offset;
 	for (ut32 i = 0; i < dex->proto_ids_size; ++i, offset += DEX_PROTO_ID_SIZE) {
 		if (rz_buf_seek(buf, offset, RZ_BUF_SET) < 0) {
-			rz_warn_if_reached();
 			goto dex_parse_bad;
 		}
 		DexProtoId *proto_id = dex_proto_id_new(buf, base + offset);
 		if (!proto_id) {
-			rz_warn_if_reached();
 			goto dex_parse_bad;
 		}
 		if (!rz_list_append(dex->proto_ids, proto_id)) {
-			rz_warn_if_reached();
 			dex_proto_id_free(proto_id);
 			goto dex_parse_bad;
 		}
@@ -477,16 +435,13 @@ static bool dex_parse(RzBinDex *dex, ut64 base, RzBuffer *buf) {
 	offset = dex->field_ids_offset;
 	for (ut32 i = 0; i < dex->field_ids_size; ++i, offset += DEX_FIELD_ID_SIZE) {
 		if (rz_buf_seek(buf, offset, RZ_BUF_SET) < 0) {
-			rz_warn_if_reached();
 			goto dex_parse_bad;
 		}
 		DexFieldId *field_id = dex_field_id_new(buf, base + offset);
 		if (!field_id) {
-			rz_warn_if_reached();
 			goto dex_parse_bad;
 		}
 		if (!rz_list_append(dex->field_ids, field_id)) {
-			rz_warn_if_reached();
 			dex_field_id_free(field_id);
 			goto dex_parse_bad;
 		}
@@ -496,16 +451,13 @@ static bool dex_parse(RzBinDex *dex, ut64 base, RzBuffer *buf) {
 	offset = dex->method_ids_offset;
 	for (ut32 i = 0; i < dex->method_ids_size; ++i, offset += DEX_METHOD_ID_SIZE) {
 		if (rz_buf_seek(buf, offset, RZ_BUF_SET) < 0) {
-			rz_warn_if_reached();
 			goto dex_parse_bad;
 		}
 		DexMethodId *method_id = dex_method_id_new(buf, base + offset);
 		if (!method_id) {
-			rz_warn_if_reached();
 			goto dex_parse_bad;
 		}
 		if (!rz_list_append(dex->method_ids, method_id)) {
-			rz_warn_if_reached();
 			dex_method_id_free(method_id);
 			goto dex_parse_bad;
 		}
@@ -515,16 +467,13 @@ static bool dex_parse(RzBinDex *dex, ut64 base, RzBuffer *buf) {
 	offset = dex->class_defs_offset;
 	for (ut32 i = 0; i < dex->class_defs_size; ++i, offset += DEX_CLASS_DEF_SIZE) {
 		if (rz_buf_seek(buf, offset, RZ_BUF_SET) < 0) {
-			rz_warn_if_reached();
 			goto dex_parse_bad;
 		}
 		DexClassDef *class_def = dex_class_def_new(buf, base + offset, base, dex->method_ids);
 		if (!class_def) {
-			rz_warn_if_reached();
 			goto dex_parse_bad;
 		}
 		if (!rz_list_append(dex->class_defs, class_def)) {
-			rz_warn_if_reached();
 			dex_class_def_free(class_def);
 			goto dex_parse_bad;
 		}
@@ -631,7 +580,6 @@ RZ_API RzList /*<RzBinString*>*/ *rz_bin_dex_strings(RzBinDex *dex) {
 	rz_list_foreach (dex->strings, it, string) {
 		RzBinString *bstr = RZ_NEW0(RzBinString);
 		if (!bstr) {
-			rz_warn_if_reached();
 			continue;
 		}
 		bstr->paddr = string->offset;
@@ -680,7 +628,6 @@ static char *dex_resolve_proto_id(RzBinDex *dex, const char *name, ut32 proto_id
 
 	RzStrBuf *sb = rz_strbuf_new(name);
 	if (!sb) {
-		rz_warn_if_reached();
 		return NULL;
 	}
 
@@ -802,7 +749,6 @@ static RzList /*<RzBinSymbol*>*/ *dex_resolve_methods_in_class(RzBinDex *dex, De
 
 		RzBinSymbol *symbol = RZ_NEW0(RzBinSymbol);
 		if (!symbol) {
-			rz_warn_if_reached();
 			break;
 		}
 
@@ -824,7 +770,6 @@ static RzList /*<RzBinSymbol*>*/ *dex_resolve_methods_in_class(RzBinDex *dex, De
 
 		if (!rz_list_append(methods, symbol)) {
 			rz_bin_symbol_free(symbol);
-			rz_warn_if_reached();
 			break;
 		}
 	}
@@ -838,7 +783,6 @@ static RzList /*<RzBinSymbol*>*/ *dex_resolve_methods_in_class(RzBinDex *dex, De
 
 		RzBinSymbol *symbol = RZ_NEW0(RzBinSymbol);
 		if (!symbol) {
-			rz_warn_if_reached();
 			break;
 		}
 
@@ -860,7 +804,6 @@ static RzList /*<RzBinSymbol*>*/ *dex_resolve_methods_in_class(RzBinDex *dex, De
 
 		if (!rz_list_append(methods, symbol)) {
 			rz_bin_symbol_free(symbol);
-			rz_warn_if_reached();
 			break;
 		}
 	}
@@ -885,7 +828,6 @@ static RzList /*<RzBinField*>*/ *dex_resolve_fields_in_class(RzBinDex *dex, DexC
 
 		RzBinField *field = RZ_NEW0(RzBinField);
 		if (!field) {
-			rz_warn_if_reached();
 			break;
 		}
 
@@ -899,7 +841,6 @@ static RzList /*<RzBinField*>*/ *dex_resolve_fields_in_class(RzBinDex *dex, DexC
 
 		if (!rz_list_append(fields, field)) {
 			rz_bin_field_free(field);
-			rz_warn_if_reached();
 			break;
 		}
 	}
@@ -913,7 +854,6 @@ static RzList /*<RzBinField*>*/ *dex_resolve_fields_in_class(RzBinDex *dex, DexC
 
 		RzBinField *field = RZ_NEW0(RzBinField);
 		if (!field) {
-			rz_warn_if_reached();
 			break;
 		}
 
@@ -927,7 +867,6 @@ static RzList /*<RzBinField*>*/ *dex_resolve_fields_in_class(RzBinDex *dex, DexC
 
 		if (!rz_list_append(fields, field)) {
 			rz_bin_field_free(field);
-			rz_warn_if_reached();
 			break;
 		}
 	}
@@ -952,7 +891,6 @@ static RzList /*<RzBinSymbol*>*/ *dex_resolve_fields_in_class_as_symbols(RzBinDe
 
 		RzBinSymbol *field = RZ_NEW0(RzBinSymbol);
 		if (!field) {
-			rz_warn_if_reached();
 			break;
 		}
 
@@ -971,7 +909,6 @@ static RzList /*<RzBinSymbol*>*/ *dex_resolve_fields_in_class_as_symbols(RzBinDe
 
 		if (!rz_list_append(fields, field)) {
 			rz_bin_symbol_free(field);
-			rz_warn_if_reached();
 			break;
 		}
 	}
@@ -985,7 +922,6 @@ static RzList /*<RzBinSymbol*>*/ *dex_resolve_fields_in_class_as_symbols(RzBinDe
 
 		RzBinSymbol *field = RZ_NEW0(RzBinSymbol);
 		if (!field) {
-			rz_warn_if_reached();
 			break;
 		}
 
@@ -1004,7 +940,6 @@ static RzList /*<RzBinSymbol*>*/ *dex_resolve_fields_in_class_as_symbols(RzBinDe
 
 		if (!rz_list_append(fields, field)) {
 			rz_bin_symbol_free(field);
-			rz_warn_if_reached();
 			break;
 		}
 	}
@@ -1039,7 +974,6 @@ RZ_API RzList /*<RzBinClass*>*/ *rz_bin_dex_classes(RzBinDex *dex) {
 	rz_list_foreach (dex->class_defs, it, class_def) {
 		bclass = RZ_NEW0(RzBinClass);
 		if (!bclass) {
-			rz_warn_if_reached();
 			break;
 		}
 
@@ -1064,7 +998,6 @@ RZ_API RzList /*<RzBinClass*>*/ *rz_bin_dex_classes(RzBinDex *dex) {
 static RzBinSection *section_new(const char *name, ut32 perm, ut32 size, ut64 address) {
 	RzBinSection *section = RZ_NEW0(RzBinSection);
 	if (!section) {
-		rz_warn_if_reached();
 		return NULL;
 	}
 	section->name = strdup(name);
@@ -1106,7 +1039,6 @@ static void dex_resolve_code_section_in_class(RzBinDex *dex, DexClassDef *class_
 		// skipping the L in 'L<class>;' mangled name
 		char *section_name = rz_str_newf("code.%s.%s", class_name + 1, method_name);
 		if (!section_name) {
-			rz_warn_if_reached();
 			break;
 		}
 
@@ -1145,7 +1077,6 @@ static void dex_resolve_code_section_in_class(RzBinDex *dex, DexClassDef *class_
 		// skipping the L in 'L<class>;' mangled name
 		char *section_name = rz_str_newf("code.%s.%s", class_name + 1, method_name);
 		if (!section_name) {
-			rz_warn_if_reached();
 			break;
 		}
 
@@ -1267,7 +1198,6 @@ RZ_API RzList /*<RzBinSymbol*>*/ *rz_bin_dex_symbols(RzBinDex *dex) {
 
 		RzBinSymbol *field = RZ_NEW0(RzBinSymbol);
 		if (!field) {
-			rz_warn_if_reached();
 			break;
 		}
 
@@ -1280,7 +1210,6 @@ RZ_API RzList /*<RzBinSymbol*>*/ *rz_bin_dex_symbols(RzBinDex *dex) {
 
 		if (!rz_list_append(symbols, field)) {
 			rz_bin_symbol_free(field);
-			rz_warn_if_reached();
 			break;
 		}
 	}
@@ -1299,7 +1228,6 @@ RZ_API RzList /*<RzBinSymbol*>*/ *rz_bin_dex_symbols(RzBinDex *dex) {
 
 		RzBinSymbol *method = RZ_NEW0(RzBinSymbol);
 		if (!method) {
-			rz_warn_if_reached();
 			break;
 		}
 
@@ -1313,7 +1241,6 @@ RZ_API RzList /*<RzBinSymbol*>*/ *rz_bin_dex_symbols(RzBinDex *dex) {
 
 		if (!rz_list_append(symbols, method)) {
 			rz_bin_symbol_free(method);
-			rz_warn_if_reached();
 			break;
 		}
 	}
@@ -1369,7 +1296,6 @@ RZ_API RzList /*<RzBinImport*>*/ *rz_bin_dex_imports(RzBinDex *dex) {
 
 		RzBinImport *import = RZ_NEW0(RzBinImport);
 		if (!import) {
-			rz_warn_if_reached();
 			break;
 		}
 
@@ -1415,7 +1341,6 @@ RZ_API RzList /*<RzBinImport*>*/ *rz_bin_dex_imports(RzBinDex *dex) {
 
 		RzBinImport *import = RZ_NEW0(RzBinImport);
 		if (!import) {
-			rz_warn_if_reached();
 			break;
 		}
 
@@ -1633,7 +1558,6 @@ static RzList /*<RzBinAddr*>*/ *dex_resolve_entrypoints_in_class(RzBinDex *dex, 
 
 		RzBinAddr *entrypoint = RZ_NEW0(RzBinAddr);
 		if (!entrypoint) {
-			rz_warn_if_reached();
 			break;
 		}
 		entrypoint->vaddr = entrypoint->paddr = encoded_method->code_offset;
@@ -1670,7 +1594,6 @@ static RzList /*<RzBinAddr*>*/ *dex_resolve_entrypoints_in_class(RzBinDex *dex, 
 
 		RzBinAddr *entrypoint = RZ_NEW0(RzBinAddr);
 		if (!entrypoint) {
-			rz_warn_if_reached();
 			break;
 		}
 		entrypoint->vaddr = entrypoint->paddr = encoded_method->code_offset;
