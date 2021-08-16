@@ -117,6 +117,7 @@ static RzCmdStatus type_format_print(RzCore *core, const char *type, ut64 addres
 	char *fmt = rz_type_format(core->analysis->typedb, type);
 	if (RZ_STR_ISEMPTY(fmt)) {
 		eprintf("Cannot find type %s\n", type);
+		free(fmt);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_core_cmdf(core, "pf %s @ 0x%08" PFMT64x "\n", fmt, address);
