@@ -589,8 +589,8 @@ RZ_API void *rz_list_get_n(const RzList *list, ut32 n) {
  *
  * Returns the RzListIter of the given pointer, if found
  * */
-RZ_API RzListIter *rz_list_contains(const RzList *list, const void *p) {
-	return rz_list_find_ptr(list, p);
+RZ_API RzListIter *rz_list_contains(const RzList *list, const void *ptr) {
+	return rz_list_find_ptr(list, ptr);
 }
 
 /**
@@ -598,7 +598,7 @@ RZ_API RzListIter *rz_list_contains(const RzList *list, const void *p) {
  *
  * Returns the RzListIter of the given pointer, if found
  * */
-RZ_API RzListIter *rz_list_find_ptr(RzList *list, void *ptr) {
+RZ_API RzListIter *rz_list_find_ptr(const RzList *list, const void *ptr) {
 	rz_return_val_if_fail(list, NULL);
 	void *p;
 	RzListIter *iter;

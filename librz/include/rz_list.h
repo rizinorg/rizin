@@ -71,12 +71,12 @@ RZ_API RzList *rz_list_new(void);
 RZ_API RzList *rz_list_newf(RzListFree f);
 RZ_API RzList *rz_list_new_from_array(const void **arr, size_t arr_size);
 RZ_API RzListIter *rz_list_iter_get_next(RzListIter *list);
-RZ_API int rz_list_set_n(RzList *list, int n, void *p);
+RZ_API ut32 rz_list_set_n(RzList *list, ut32 n, void *p);
 RZ_API void *rz_list_iter_get_data(RzListIter *list);
 RZ_API RzListIter *rz_list_append(RzList *list, void *data);
 RZ_API RzListIter *rz_list_prepend(RzList *list, void *data);
-RZ_API RzListIter *rz_list_insert(RzList *list, int n, void *data);
-RZ_API int rz_list_length(const RzList *list);
+RZ_API RzListIter *rz_list_insert(RzList *list, ut32 n, void *data);
+RZ_API ut32 rz_list_length(const RzList *list);
 RZ_API void *rz_list_first(const RzList *list);
 RZ_API void *rz_list_last(const RzList *list);
 RZ_API RzListIter *rz_list_add_sorted(RzList *list, void *data, RzListComparator cmp);
@@ -93,9 +93,9 @@ RZ_API void rz_list_free(RzList *list);
 RZ_API RzListIter *rz_list_item_new(void *data);
 RZ_API void rz_list_split(RzList *list, void *ptr);
 RZ_API void rz_list_split_iter(RzList *list, RzListIter *iter);
-RZ_API int rz_list_join(RzList *list1, RzList *list2);
-RZ_API void *rz_list_get_n(const RzList *list, int n);
-RZ_API int rz_list_del_n(RzList *list, int n);
+RZ_API bool rz_list_join(RzList *list1, RzList *list2);
+RZ_API void *rz_list_get_n(const RzList *list, ut32 n);
+RZ_API ut32 rz_list_del_n(RzList *list, ut32 n);
 RZ_API void *rz_list_get_top(const RzList *list);
 RZ_API void *rz_list_get_bottom(const RzList *list);
 RZ_API RzListIter *rz_list_iterator(const RzList *list);
@@ -108,8 +108,8 @@ RZ_API char *rz_list_to_str(RzList *list, char ch);
 RZ_API RzList *rz_list_of_sdblist(SdbList *sl);
 
 /* hashlike api */
-RZ_API RzListIter *rz_list_contains(const RzList *list, const void *p);
-RZ_API RzListIter *rz_list_find_ptr(RzList *list, void *ptr);
+RZ_API RzListIter *rz_list_contains(const RzList *list, const void *ptr);
+RZ_API RzListIter *rz_list_find_ptr(const RzList *list, const void *ptr);
 RZ_API RzListIter *rz_list_find(const RzList *list, const void *p, RzListComparator cmp);
 
 #ifdef __cplusplus
