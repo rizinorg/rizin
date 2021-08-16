@@ -932,6 +932,7 @@ int parse_enum_node(CParserState *state, TSNode node, const char *text, ParserTy
 		if (strcmp(node_type, "enumerator")) {
 			parser_error(state, "ERROR: Enum member AST should contain (enumerator) node!\n");
 			node_malformed_error(state, child, text, "enum field");
+			free(enum_pair);
 			result = -1;
 			goto rexit;
 		}
@@ -940,6 +941,7 @@ int parse_enum_node(CParserState *state, TSNode node, const char *text, ParserTy
 		if (member_child_count < 1 || member_child_count > 2) {
 			parser_error(state, "ERROR: enum member AST cannot contain less than 1 or more than 2 items");
 			node_malformed_error(state, child, text, "enum field");
+			free(enum_pair);
 			result = -1;
 			goto rexit;
 		}
@@ -963,6 +965,7 @@ int parse_enum_node(CParserState *state, TSNode node, const char *text, ParserTy
 			if (ts_node_is_null(member_identifier)) {
 				parser_error(state, "ERROR: Enum case identifier should not be NULL!\n");
 				node_malformed_error(state, child, text, "enum case");
+				free(enum_pair);
 				result = -1;
 				goto rexit;
 			}
@@ -976,6 +979,7 @@ int parse_enum_node(CParserState *state, TSNode node, const char *text, ParserTy
 			if (ts_node_is_null(member_identifier) || ts_node_is_null(member_value)) {
 				parser_error(state, "ERROR: Enum case identifier and value should not be NULL!\n");
 				node_malformed_error(state, child, text, "enum case");
+				free(enum_pair);
 				result = -1;
 				goto rexit;
 			}
@@ -994,6 +998,7 @@ int parse_enum_node(CParserState *state, TSNode node, const char *text, ParserTy
 			if (!element) {
 				parser_error(state, "Error appending enum case to the base type\n");
 				free(cas.name);
+				free(enum_pair);
 				result = -1;
 				goto rexit;
 			}
