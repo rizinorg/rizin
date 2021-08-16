@@ -24,6 +24,19 @@ jump: 0x00002016
 EOF
 RUN
 
+NAME=avr adiw/sbiw
+FILE=malloc://4096
+CMDS=<<EOF
+e asm.arch=avr
+wx 2a961a97
+pd 2
+EOF
+EXPECT=<<EOF
+            0x00000000      adiw  r28, 0x0a
+            0x00000002      sbiw  r26, 0x0a
+EOF
+RUN
+
 NAME=avr DISasm: [sts] - jump check
 FILE=malloc://4096
 CMDS=<<EOF
