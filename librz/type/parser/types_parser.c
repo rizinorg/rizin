@@ -1330,6 +1330,7 @@ int parse_type_abstract_declarator_node(CParserState *state, TSNode node, const 
 			char *real_array_size = ts_node_sub_string(array_size, text);
 			if (!real_array_size) {
 				node_malformed_error(state, array_size, text, "abstract array size");
+				free(type);
 				return -1;
 			}
 			int array_sz = rz_num_get(NULL, real_array_size);
