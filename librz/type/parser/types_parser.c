@@ -941,13 +941,14 @@ int parse_enum_node(CParserState *state, TSNode node, const char *text, ParserTy
 		// - atomic: "1"
 		// - expression: "1 << 2"
 		if (state->verbose) {
-			const char *membertext = ts_node_sub_string(child, text);
+			char *membertext = ts_node_sub_string(child, text);
 			char *nodeast = ts_node_string(child);
 			if (membertext && nodeast) {
 				parser_debug(state, "member text: %s\n", membertext);
 				parser_debug(state, "member ast: %s\n", nodeast);
 			}
 			free(nodeast);
+			free(membertext);
 		}
 		if (member_child_count == 1) {
 			// It's an empty field, like just "A,"
