@@ -174,8 +174,9 @@ static bool rz_pseudo_convert(const RzPseudoConfig *config, const char *assembly
 	char *result = rz_strbuf_get(sb);
 	for (int i = 0; i < config->replace_length; ++i) {
 		rp = &config->replace[i];
-		rz_str_replace(result, rp->expected, rp->replace, rp->flag);
+		result = rz_str_replace(result, rp->expected, rp->replace, rp->flag);
 	}
+	sb->ptr = result;
 
 	rz_list_free(tokens);
 	return true;
