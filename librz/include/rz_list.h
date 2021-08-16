@@ -67,50 +67,50 @@ typedef struct rz_oflist_t {
 #define rz_list_iter_next(x) (x ? 1 : 0)
 #define rz_list_iter_cur(x)  x->p
 
-RZ_API RzList *rz_list_new(void);
-RZ_API RzList *rz_list_newf(RzListFree f);
-RZ_API RzList *rz_list_new_from_array(const void **arr, size_t arr_size);
-RZ_API RzListIter *rz_list_iter_get_next(RzListIter *list);
-RZ_API ut32 rz_list_set_n(RzList *list, ut32 n, void *p);
+RZ_API RZ_OWN RzList *rz_list_new(void);
+RZ_API RZ_OWN RzList *rz_list_newf(RzListFree f);
+RZ_API RZ_OWN RzList *rz_list_new_from_array(RZ_NONNULL const void **arr, size_t arr_size);
+RZ_API RZ_BORROW RzListIter *rz_list_iter_get_next(RzListIter *list);
+RZ_API ut32 rz_list_set_n(RZ_NONNULL RzList *list, ut32 n, void *p);
 RZ_API void *rz_list_iter_get_data(RzListIter *list);
-RZ_API RzListIter *rz_list_append(RzList *list, void *data);
-RZ_API RzListIter *rz_list_prepend(RzList *list, void *data);
-RZ_API RzListIter *rz_list_insert(RzList *list, ut32 n, void *data);
-RZ_API ut32 rz_list_length(const RzList *list);
-RZ_API void *rz_list_first(const RzList *list);
-RZ_API void *rz_list_last(const RzList *list);
-RZ_API RzListIter *rz_list_add_sorted(RzList *list, void *data, RzListComparator cmp);
-RZ_API void rz_list_sort(RzList *list, RzListComparator cmp);
-RZ_API void rz_list_merge_sort(RzList *list, RzListComparator cmp);
-RZ_API void rz_list_insertion_sort(RzList *list, RzListComparator cmp);
-RZ_API RzList *rz_list_uniq(const RzList *list, RzListComparator cmp);
-RZ_API void rz_list_init(RzList *list);
-RZ_API void rz_list_delete(RzList *list, RzListIter *iter);
-RZ_API bool rz_list_delete_data(RzList *list, void *ptr);
-RZ_API void rz_list_iter_init(RzListIter *iter, RzList *list);
-RZ_API void rz_list_purge(RzList *list);
-RZ_API void rz_list_free(RzList *list);
-RZ_API RzListIter *rz_list_item_new(void *data);
-RZ_API void rz_list_split(RzList *list, void *ptr);
-RZ_API void rz_list_split_iter(RzList *list, RzListIter *iter);
-RZ_API bool rz_list_join(RzList *list1, RzList *list2);
-RZ_API void *rz_list_get_n(const RzList *list, ut32 n);
-RZ_API ut32 rz_list_del_n(RzList *list, ut32 n);
-RZ_API void *rz_list_get_top(const RzList *list);
-RZ_API void *rz_list_get_bottom(const RzList *list);
-RZ_API RzListIter *rz_list_iterator(const RzList *list);
-RZ_API RzListIter *rz_list_push(RzList *list, void *item);
-RZ_API void *rz_list_pop(RzList *list);
-RZ_API void *rz_list_pop_head(RzList *list);
-RZ_API void rz_list_reverse(RzList *list);
-RZ_API RzList *rz_list_clone(const RzList *list);
-RZ_API char *rz_list_to_str(RzList *list, char ch);
-RZ_API RzList *rz_list_of_sdblist(SdbList *sl);
+RZ_API RZ_BORROW RzListIter *rz_list_append(RZ_NONNULL RzList *list, void *data);
+RZ_API RZ_BORROW RzListIter *rz_list_prepend(RZ_NONNULL RzList *list, void *data);
+RZ_API RZ_BORROW RzListIter *rz_list_insert(RZ_NONNULL RzList *list, ut32 n, void *data);
+RZ_API ut32 rz_list_length(RZ_NONNULL const RzList *list);
+RZ_API RZ_BORROW void *rz_list_first(RZ_NONNULL const RzList *list);
+RZ_API RZ_BORROW void *rz_list_last(RZ_NONNULL const RzList *list);
+RZ_API RZ_BORROW RzListIter *rz_list_add_sorted(RZ_NONNULL RzList *list, void *data, RZ_NONNULL RzListComparator cmp);
+RZ_API void rz_list_sort(RZ_NONNULL RzList *list, RZ_NONNULL RzListComparator cmp);
+RZ_API void rz_list_merge_sort(RZ_NONNULL RzList *list, RZ_NONNULL RzListComparator cmp);
+RZ_API void rz_list_insertion_sort(RZ_NONNULL RzList *list, RZ_NONNULL RzListComparator cmp);
+RZ_API RZ_OWN RzList *rz_list_uniq(RZ_NONNULL const RzList *list, RZ_NONNULL RzListComparator cmp);
+RZ_API void rz_list_init(RZ_NONNULL RzList *list);
+RZ_API void rz_list_delete(RZ_NONNULL RzList *list, RZ_NONNULL RzListIter *iter);
+RZ_API bool rz_list_delete_data(RZ_NONNULL RzList *list, void *ptr);
+RZ_API void rz_list_iter_init(RZ_NONNULL RzListIter *iter, RZ_NONNULL RzList *list);
+RZ_API void rz_list_purge(RZ_NONNULL RzList *list);
+RZ_API void rz_list_free(RZ_NONNULL RzList *list);
+RZ_API RZ_OWN RzListIter *rz_list_item_new(void *data);
+RZ_API void rz_list_split(RZ_NONNULL RzList *list, void *ptr);
+RZ_API void rz_list_split_iter(RZ_NONNULL RzList *list, RZ_NONNULL RzListIter *iter);
+RZ_API bool rz_list_join(RZ_NONNULL RzList *list1, RZ_NONNULL RzList *list2);
+RZ_API RZ_BORROW void *rz_list_get_n(RZ_NONNULL const RzList *list, ut32 n);
+RZ_API ut32 rz_list_del_n(RZ_NONNULL RzList *list, ut32 n);
+RZ_API RZ_BORROW void *rz_list_get_top(RZ_NONNULL const RzList *list);
+RZ_API RZ_BORROW void *rz_list_get_bottom(RZ_NONNULL const RzList *list);
+RZ_API RZ_BORROW RzListIter *rz_list_iterator(const RzList *list);
+RZ_API RZ_BORROW RzListIter *rz_list_push(RZ_NONNULL RzList *list, void *item);
+RZ_API RZ_OWN void *rz_list_pop(RZ_NONNULL RzList *list);
+RZ_API RZ_OWN void *rz_list_pop_head(RZ_NONNULL RzList *list);
+RZ_API void rz_list_reverse(RZ_NONNULL RzList *list);
+RZ_API RZ_OWN RzList *rz_list_clone(RZ_NONNULL const RzList *list);
+RZ_API RZ_OWN char *rz_list_to_str(RZ_NONNULL RzList *list, char ch);
+RZ_API RZ_OWN RzList *rz_list_of_sdblist(SdbList *sl);
 
 /* hashlike api */
-RZ_API RzListIter *rz_list_contains(const RzList *list, const void *ptr);
-RZ_API RzListIter *rz_list_find_ptr(const RzList *list, const void *ptr);
-RZ_API RzListIter *rz_list_find(const RzList *list, const void *p, RzListComparator cmp);
+RZ_API RZ_BORROW RzListIter *rz_list_contains(RZ_NONNULL const RzList *list, RZ_NONNULL const void *ptr);
+RZ_API RZ_BORROW RzListIter *rz_list_find_ptr(RZ_NONNULL const RzList *list, RZ_NONNULL const void *ptr);
+RZ_API RZ_BORROW RzListIter *rz_list_find(RZ_NONNULL const RzList *list, const void *p, RZ_NONNULL RzListComparator cmp);
 
 #ifdef __cplusplus
 }
