@@ -128,6 +128,7 @@ static RzCmdStatus type_format_print_variable(RzCore *core, const char *type, co
 	char *fmt = rz_type_format(core->analysis->typedb, type);
 	if (RZ_STR_ISEMPTY(fmt)) {
 		eprintf("Cannot find type \"%s\"\n", type);
+		free(fmt);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
