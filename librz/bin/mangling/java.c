@@ -81,6 +81,7 @@ RZ_API char *rz_bin_demangle_java(const char *mangled) {
 	char *name = NULL;
 	char *arguments = NULL;
 	char *return_type = NULL;
+	bool dots = false;
 
 	sb = rz_strbuf_new("");
 	if (!sb) {
@@ -97,8 +98,24 @@ RZ_API char *rz_bin_demangle_java(const char *mangled) {
 
 	arguments = strchr(name, '(');
 	if (!arguments) {
+		arguments = strchr(name, '.');
+		// check for `<object>.<field>.<return type>`
+		if (arguments && !strchr(arguments + 1, '.')) {
+			arguments[0] = 0;
+			arguments++;
+			// check for `<field>.<return type>`
+			rz_strbuf_appendf(sb, "%s:", name);
+			if ((arguments[0] != 'L' || arguments[0] != '[') && demangle_type(arguments, sb, NULL)) {
+				goto rz_bin_demangle_java_end;
+			}
+			goto rz_bin_demangle_java_bad;
+		} else {
+			dots = true;
+		}
+	}
+	if (!arguments) {
 		// probably demangling only a type
-		if (name[0] != 'L' || !demangle_type(name, sb, NULL)) {
+		if ((name[0] != 'L' && name[0] != '[') || !demangle_type(name, sb, NULL)) {
 			goto rz_bin_demangle_java_bad;
 		}
 		goto rz_bin_demangle_java_end;
@@ -108,6 +125,9 @@ RZ_API char *rz_bin_demangle_java(const char *mangled) {
 	arguments++;
 
 	return_type = strchr(arguments, ')');
+	if (!return_type) {
+		return_type = strchr(arguments, '.');
+	}
 	if (!return_type || RZ_STR_ISEMPTY(return_type + 1)) {
 		goto rz_bin_demangle_java_bad;
 	}
@@ -127,18 +147,22 @@ RZ_API char *rz_bin_demangle_java(const char *mangled) {
 		rz_strbuf_append(sb, name);
 	}
 
-	rz_strbuf_append(sb, "(");
-
-	for (size_t pos = 0, used = 0; pos < args_length;) {
-		if (!demangle_type(arguments + pos, sb, &used)) {
-			goto rz_bin_demangle_java_bad;
+	if (dots) {
+		rz_strbuf_appendf(sb, ".%s", arguments);
+	} else {
+		rz_strbuf_append(sb, "(");
+		for (size_t pos = 0, used = 0; pos < args_length;) {
+			if (!demangle_type(arguments + pos, sb, &used)) {
+				goto rz_bin_demangle_java_bad;
+			}
+			pos += used;
+			if (pos < args_length) {
+				rz_strbuf_append(sb, ", ");
+			}
 		}
-		pos += used;
-		if (pos < args_length) {
-			rz_strbuf_append(sb, ", ");
-		}
+		rz_strbuf_append(sb, ")");
 	}
-	rz_strbuf_append(sb, ")");
+
 
 rz_bin_demangle_java_end:
 	free(name);
