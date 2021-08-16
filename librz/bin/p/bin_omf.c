@@ -30,7 +30,12 @@ static bool check_buffer(RzBuffer *b) {
 	if (ch != 0x80 && ch != 0x82) {
 		return false;
 	}
-	ut16 rec_size = rz_buf_read_le16_at(b, 1);
+
+	ut16 rec_size;
+	if (!rz_buf_read_le16_at(b, 1, &rec_size)) {
+		return false;
+	}
+
 	ut8 str_size;
 	(void)rz_buf_read_at(b, 3, &str_size, 1);
 	ut64 length = rz_buf_size(b);

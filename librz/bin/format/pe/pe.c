@@ -469,8 +469,7 @@ static int bin_pe_parse_imports(struct PE_(rz_bin_pe_obj_t) * bin,
 		if (off + i * sizeof(PE_DWord) > bin->size) {
 			break;
 		}
-		import_table = RZ_BUF_READ_PE_DWORD_AT(bin->b, off + i * sizeof(PE_DWord));
-		if (import_table == PE_DWORD_MAX) {
+		if (!RZ_BUF_READ_PE_DWORD_AT(bin->b, off + i * sizeof(PE_DWord), &import_table)) {
 			bprintf("Warning: read (import table)\n");
 			goto error;
 		} else if (import_table) {
@@ -525,8 +524,7 @@ static int bin_pe_parse_imports(struct PE_(rz_bin_pe_obj_t) * bin,
 					bprintf("Warning: off > bin->size\n");
 					goto error;
 				}
-				import_hint = rz_buf_read_le16_at(bin->b, off);
-				if (import_hint == UT16_MAX) {
+				if (!rz_buf_read_le16_at(bin->b, off, &import_hint)) {
 					bprintf("Warning: read import hint at 0x%08" PFMT64x "\n", off);
 					goto error;
 				}
@@ -582,103 +580,144 @@ error:
 	return false;
 }
 
+static bool read_dos_header_aux(RzBuffer *b, PE_(image_dos_header) * header) {
+	return rz_buf_read_le16(b, &header->e_magic) &&
+		rz_buf_read_le16(b, &header->e_cblp) &&
+		rz_buf_read_le16(b, &header->e_cp) &&
+		rz_buf_read_le16(b, &header->e_crlc) &&
+		rz_buf_read_le16(b, &header->e_cparhdr) &&
+		rz_buf_read_le16(b, &header->e_minalloc) &&
+		rz_buf_read_le16(b, &header->e_maxalloc) &&
+		rz_buf_read_le16(b, &header->e_ss) &&
+		rz_buf_read_le16(b, &header->e_sp) &&
+		rz_buf_read_le16(b, &header->e_csum) &&
+		rz_buf_read_le16(b, &header->e_ip) &&
+		rz_buf_read_le16(b, &header->e_cs) &&
+		rz_buf_read_le16(b, &header->e_lfarlc) &&
+		rz_buf_read_le16(b, &header->e_ovno);
+}
+
 int PE_(read_dos_header)(RzBuffer *b, PE_(image_dos_header) * header) {
-	st64 o_addr = rz_buf_seek(b, 0, RZ_BUF_CUR);
+	st64 tmp = rz_buf_seek(b, 0, RZ_BUF_CUR);
+	if (tmp < 0) {
+		return -1;
+	}
+
 	if (rz_buf_seek(b, 0, RZ_BUF_SET) < 0) {
 		return -1;
 	}
-	header->e_magic = rz_buf_read_le16(b);
-	header->e_cblp = rz_buf_read_le16(b);
-	header->e_cp = rz_buf_read_le16(b);
-	header->e_crlc = rz_buf_read_le16(b);
-	header->e_cparhdr = rz_buf_read_le16(b);
-	header->e_minalloc = rz_buf_read_le16(b);
-	header->e_maxalloc = rz_buf_read_le16(b);
-	header->e_ss = rz_buf_read_le16(b);
-	header->e_sp = rz_buf_read_le16(b);
-	header->e_csum = rz_buf_read_le16(b);
-	header->e_ip = rz_buf_read_le16(b);
-	header->e_cs = rz_buf_read_le16(b);
-	header->e_lfarlc = rz_buf_read_le16(b);
-	header->e_ovno = rz_buf_read_le16(b);
-	int i;
-	for (i = 0; i < 4; i++) {
-		header->e_res[i] = rz_buf_read_le16(b);
-	}
-	header->e_oemid = rz_buf_read_le16(b);
-	header->e_oeminfo = rz_buf_read_le16(b);
-	for (i = 0; i < 10; i++) {
-		header->e_res2[i] = rz_buf_read_le16(b);
-	}
-	header->e_lfanew = rz_buf_read_le32(b);
-	if (rz_buf_seek(b, o_addr, RZ_BUF_SET) < 0) {
+
+	if (!read_dos_header_aux(b, header)) {
 		return -1;
 	}
+
+	for (size_t i = 0; i < 4; i++) {
+		if (!rz_buf_read_le16(b, &header->e_res[i])) {
+			return -1;
+		}
+	}
+
+	if (!rz_buf_read_le16(b, &header->e_oemid)) {
+		return -1;
+	}
+
+	if (!rz_buf_read_le16(b, &header->e_oeminfo)) {
+		return -1;
+	}
+
+	for (size_t i = 0; i < 10; i++) {
+		if (!rz_buf_read_le16(b, &header->e_res2[i])) {
+			return -1;
+		}
+	}
+
+	if (!rz_buf_read_le32(b, &header->e_lfanew)) {
+		return -1;
+	}
+
+	if (rz_buf_seek(b, tmp, RZ_BUF_SET) < 0) {
+		return -1;
+	}
+
 	return sizeof(PE_(image_dos_header));
 }
 
+static bool read_nt_headers_aux(RzBuffer *b, PE_(image_nt_headers) * headers) {
+	return rz_buf_read_le32(b, &headers->Signature) &&
+		rz_buf_read_le16(b, &headers->file_header.Machine) &&
+		rz_buf_read_le16(b, &headers->file_header.NumberOfSections) &&
+		rz_buf_read_le32(b, &headers->file_header.TimeDateStamp) &&
+		rz_buf_read_le32(b, &headers->file_header.PointerToSymbolTable) &&
+		rz_buf_read_le32(b, &headers->file_header.NumberOfSymbols) &&
+		rz_buf_read_le16(b, &headers->file_header.SizeOfOptionalHeader) &&
+		rz_buf_read_le16(b, &headers->file_header.Characteristics) &&
+		rz_buf_read_le16(b, &headers->optional_header.Magic) &&
+		rz_buf_read8(b, &headers->optional_header.MajorLinkerVersion) &&
+		rz_buf_read8(b, &headers->optional_header.MinorLinkerVersion) &&
+		rz_buf_read_le32(b, &headers->optional_header.SizeOfCode) &&
+		rz_buf_read_le32(b, &headers->optional_header.SizeOfInitializedData) &&
+		rz_buf_read_le32(b, &headers->optional_header.SizeOfUninitializedData) &&
+		rz_buf_read_le32(b, &headers->optional_header.AddressOfEntryPoint) &&
+		rz_buf_read_le32(b, &headers->optional_header.BaseOfCode) &&
+#ifdef RZ_BIN_PE64
+		rz_buf_read_le64(b, &headers->optional_header.ImageBase) &&
+#else
+		rz_buf_read_le32(b, &headers->optional_header.BaseOfData) &&
+		rz_buf_read_le32(b, &headers->optional_header.ImageBase) &&
+#endif
+		rz_buf_read_le32(b, &headers->optional_header.SectionAlignment) &&
+		rz_buf_read_le32(b, &headers->optional_header.FileAlignment) &&
+		rz_buf_read_le16(b, &headers->optional_header.MajorOperatingSystemVersion) &&
+		rz_buf_read_le16(b, &headers->optional_header.MinorOperatingSystemVersion) &&
+		rz_buf_read_le16(b, &headers->optional_header.MajorImageVersion) &&
+		rz_buf_read_le16(b, &headers->optional_header.MinorImageVersion) &&
+		rz_buf_read_le16(b, &headers->optional_header.MajorSubsystemVersion) &&
+		rz_buf_read_le16(b, &headers->optional_header.MinorSubsystemVersion) &&
+		rz_buf_read_le32(b, &headers->optional_header.Win32VersionValue) &&
+		rz_buf_read_le32(b, &headers->optional_header.SizeOfImage) &&
+		rz_buf_read_le32(b, &headers->optional_header.SizeOfHeaders) &&
+		rz_buf_read_le32(b, &headers->optional_header.CheckSum) &&
+		rz_buf_read_le16(b, &headers->optional_header.Subsystem) &&
+		rz_buf_read_le16(b, &headers->optional_header.DllCharacteristics) &&
+#ifdef RZ_BIN_PE64
+		rz_buf_read_le64(b, &headers->optional_header.SizeOfStackReserve) &&
+		rz_buf_read_le64(b, &headers->optional_header.SizeOfStackCommit) &&
+		rz_buf_read_le64(b, &headers->optional_header.SizeOfHeapReserve) &&
+		rz_buf_read_le64(b, &headers->optional_header.SizeOfHeapCommit) &&
+#else
+		rz_buf_read_le32(b, &headers->optional_header.SizeOfStackReserve) &&
+		rz_buf_read_le32(b, &headers->optional_header.SizeOfStackCommit) &&
+		rz_buf_read_le32(b, &headers->optional_header.SizeOfHeapReserve) &&
+		rz_buf_read_le32(b, &headers->optional_header.SizeOfHeapCommit) &&
+#endif
+		rz_buf_read_le32(b, &headers->optional_header.LoaderFlags) &&
+		rz_buf_read_le32(b, &headers->optional_header.NumberOfRvaAndSizes);
+}
+
 int PE_(read_nt_headers)(RzBuffer *b, ut64 addr, PE_(image_nt_headers) * headers) {
-	st64 o_addr = rz_buf_seek(b, 0, RZ_BUF_CUR);
+	st64 tmp = rz_buf_seek(b, 0, RZ_BUF_CUR);
+	if (tmp < 0) {
+		return -1;
+	}
+
 	if (rz_buf_seek(b, addr, RZ_BUF_SET) < 0) {
 		return -1;
 	}
-	headers->Signature = rz_buf_read_le32(b);
-	headers->file_header.Machine = rz_buf_read_le16(b);
-	headers->file_header.NumberOfSections = rz_buf_read_le16(b);
-	headers->file_header.TimeDateStamp = rz_buf_read_le32(b);
-	headers->file_header.PointerToSymbolTable = rz_buf_read_le32(b);
-	headers->file_header.NumberOfSymbols = rz_buf_read_le32(b);
-	headers->file_header.SizeOfOptionalHeader = rz_buf_read_le16(b);
-	headers->file_header.Characteristics = rz_buf_read_le16(b);
-	headers->optional_header.Magic = rz_buf_read_le16(b);
-	headers->optional_header.MajorLinkerVersion = rz_buf_read8(b);
-	headers->optional_header.MinorLinkerVersion = rz_buf_read8(b);
-	headers->optional_header.SizeOfCode = rz_buf_read_le32(b);
-	headers->optional_header.SizeOfInitializedData = rz_buf_read_le32(b);
-	headers->optional_header.SizeOfUninitializedData = rz_buf_read_le32(b);
-	headers->optional_header.AddressOfEntryPoint = rz_buf_read_le32(b);
-	headers->optional_header.BaseOfCode = rz_buf_read_le32(b);
-#ifdef RZ_BIN_PE64
-	headers->optional_header.ImageBase = rz_buf_read_le64(b);
-#else
-	headers->optional_header.BaseOfData = rz_buf_read_le32(b);
-	headers->optional_header.ImageBase = rz_buf_read_le32(b);
-#endif
-	headers->optional_header.SectionAlignment = rz_buf_read_le32(b);
-	headers->optional_header.FileAlignment = rz_buf_read_le32(b);
-	headers->optional_header.MajorOperatingSystemVersion = rz_buf_read_le16(b);
-	headers->optional_header.MinorOperatingSystemVersion = rz_buf_read_le16(b);
-	headers->optional_header.MajorImageVersion = rz_buf_read_le16(b);
-	headers->optional_header.MinorImageVersion = rz_buf_read_le16(b);
-	headers->optional_header.MajorSubsystemVersion = rz_buf_read_le16(b);
-	headers->optional_header.MinorSubsystemVersion = rz_buf_read_le16(b);
-	headers->optional_header.Win32VersionValue = rz_buf_read_le32(b);
-	headers->optional_header.SizeOfImage = rz_buf_read_le32(b);
-	headers->optional_header.SizeOfHeaders = rz_buf_read_le32(b);
-	headers->optional_header.CheckSum = rz_buf_read_le32(b);
-	headers->optional_header.Subsystem = rz_buf_read_le16(b);
-	headers->optional_header.DllCharacteristics = rz_buf_read_le16(b);
-#ifdef RZ_BIN_PE64
-	headers->optional_header.SizeOfStackReserve = rz_buf_read_le64(b);
-	headers->optional_header.SizeOfStackCommit = rz_buf_read_le64(b);
-	headers->optional_header.SizeOfHeapReserve = rz_buf_read_le64(b);
-	headers->optional_header.SizeOfHeapCommit = rz_buf_read_le64(b);
-#else
-	headers->optional_header.SizeOfStackReserve = rz_buf_read_le32(b);
-	headers->optional_header.SizeOfStackCommit = rz_buf_read_le32(b);
-	headers->optional_header.SizeOfHeapReserve = rz_buf_read_le32(b);
-	headers->optional_header.SizeOfHeapCommit = rz_buf_read_le32(b);
-#endif
-	headers->optional_header.LoaderFlags = rz_buf_read_le32(b);
-	headers->optional_header.NumberOfRvaAndSizes = rz_buf_read_le32(b);
-	int i;
-	for (i = 0; i < PE_IMAGE_DIRECTORY_ENTRIES; i++) {
-		headers->optional_header.DataDirectory[i].VirtualAddress = rz_buf_read_le32(b);
-		headers->optional_header.DataDirectory[i].Size = rz_buf_read_le32(b);
-	}
-	if (rz_buf_seek(b, o_addr, RZ_BUF_SET) < 0) {
+
+	if (!read_nt_headers_aux(b, headers)) {
 		return -1;
 	}
+
+	for (size_t i = 0; i < PE_IMAGE_DIRECTORY_ENTRIES; i++) {
+		if (!rz_buf_read_le32(b, &headers->optional_header.DataDirectory[i].VirtualAddress) || !rz_buf_read_le32(b, &headers->optional_header.DataDirectory[i].Size)) {
+			return false;
+		}
+	}
+
+	if (rz_buf_seek(b, tmp, RZ_BUF_SET) < 0) {
+		return -1;
+	}
+
 	return sizeof(PE_(image_nt_headers));
 }
 
@@ -1050,10 +1089,18 @@ int PE_(bin_pe_get_actual_checksum)(struct PE_(rz_bin_pe_obj_t) * bin) {
 	remaining_bytes = bin->size % 4;
 	i = i * 4;
 	if (remaining_bytes != 0) {
-		cur = rz_buf_read8_at(bin->b, i);
+		ut8 tmp;
+		if (!rz_buf_read8_at(bin->b, i, &tmp)) {
+			return 0;
+		}
+		cur = tmp;
+
 		shift = 8;
 		for (j = 1; j < remaining_bytes; j++, shift += 8) {
-			cur |= rz_buf_read8_at(bin->b, i + j) << shift;
+			if (!rz_buf_read8_at(bin->b, i + j, &tmp)) {
+				return 0;
+			}
+			cur |= tmp << shift;
 		}
 		computed_cs = (computed_cs & 0xFFFFFFFF) + cur + (computed_cs >> 32);
 		if (computed_cs >> 32) {
@@ -1201,7 +1248,11 @@ int PE_(bin_pe_get_overlay)(struct PE_(rz_bin_pe_obj_t) * bin, ut64 *size) {
 static int bin_pe_read_metadata_string(char *to, RzBuffer *frombuf, int fromoff) {
 	int covered = 0;
 	while (covered < MAX_METADATA_STRING_LENGTH) {
-		char covch = rz_buf_read8_at(frombuf, covered);
+		ut8 covch;
+		if (!rz_buf_read8_at(frombuf, covered, &covch)) {
+			return 0;
+		}
+
 		to[covered] = covch;
 		if (covch == '\0') {
 			covered += 1;
@@ -1602,18 +1653,33 @@ static void _free_resource(rz_pe_resource *rs) {
 	}
 }
 
+static bool read_image_resource_directory_aux(RzBuffer *b, Pe_image_resource_directory *dir) {
+	return rz_buf_read_le32(b, &dir->Characteristics) &&
+		rz_buf_read_le32(b, &dir->TimeDateStamp) &&
+		rz_buf_read_le16(b, &dir->MajorVersion) &&
+		rz_buf_read_le16(b, &dir->MinorVersion) &&
+		rz_buf_read_le16(b, &dir->NumberOfNamedEntries) &&
+		rz_buf_read_le16(b, &dir->NumberOfIdEntries);
+}
+
 static int read_image_resource_directory(RzBuffer *b, ut64 addr, Pe_image_resource_directory *dir) {
-	st64 o_addr = rz_buf_seek(b, 0, RZ_BUF_CUR);
+	st64 tmp = rz_buf_seek(b, 0, RZ_BUF_CUR);
+	if (tmp < 0) {
+		return -1;
+	}
+
 	if (rz_buf_seek(b, addr, RZ_BUF_SET) < 0) {
 		return -1;
 	}
-	dir->Characteristics = rz_buf_read_le32(b);
-	dir->TimeDateStamp = rz_buf_read_le32(b);
-	dir->MajorVersion = rz_buf_read_le16(b);
-	dir->MinorVersion = rz_buf_read_le16(b);
-	dir->NumberOfNamedEntries = rz_buf_read_le16(b);
-	dir->NumberOfIdEntries = rz_buf_read_le16(b);
-	rz_buf_seek(b, o_addr, RZ_BUF_SET);
+
+	if (!read_image_resource_directory_aux(b, dir)) {
+		return -1;
+	}
+
+	if (rz_buf_seek(b, tmp, RZ_BUF_SET) < 0) {
+		return -1;
+	}
+
 	return sizeof(Pe_image_resource_directory);
 }
 
@@ -1648,8 +1714,7 @@ static void bin_pe_store_tls_callbacks(struct PE_(rz_bin_pe_obj_t) * bin, PE_DWo
 	char *key;
 
 	while (addressOfTLSCallback != 0) {
-		addressOfTLSCallback = RZ_BUF_READ_PE_DWORD_AT(bin->b, callbacks);
-		if (addressOfTLSCallback == PE_DWORD_MAX) {
+		if (!RZ_BUF_READ_PE_DWORD_AT(bin->b, callbacks, &addressOfTLSCallback)) {
 			bprintf("Warning: read (tls_callback)\n");
 			return;
 		}
@@ -1675,18 +1740,33 @@ static void bin_pe_store_tls_callbacks(struct PE_(rz_bin_pe_obj_t) * bin, PE_DWo
 	}
 }
 
+static bool read_tls_directory_aux(RzBuffer *b, PE_(image_tls_directory) * tls_directory) {
+	return rz_buf_read_le32(b, &tls_directory->StartAddressOfRawData) &&
+		rz_buf_read_le32(b, &tls_directory->EndAddressOfRawData) &&
+		rz_buf_read_le32(b, &tls_directory->AddressOfIndex) &&
+		rz_buf_read_le32(b, &tls_directory->AddressOfCallBacks) &&
+		rz_buf_read_le32(b, &tls_directory->SizeOfZeroFill) &&
+		rz_buf_read_le32(b, &tls_directory->Characteristics);
+}
+
 static int read_tls_directory(RzBuffer *b, ut64 addr, PE_(image_tls_directory) * tls_directory) {
-	st64 o_addr = rz_buf_seek(b, 0, RZ_BUF_CUR);
+	st64 tmp = rz_buf_seek(b, 0, RZ_BUF_CUR);
+	if (tmp < 0) {
+		return -1;
+	}
+
 	if (rz_buf_seek(b, addr, RZ_BUF_SET) < 0) {
 		return -1;
 	}
-	tls_directory->StartAddressOfRawData = rz_buf_read_le32(b);
-	tls_directory->EndAddressOfRawData = rz_buf_read_le32(b);
-	tls_directory->AddressOfIndex = rz_buf_read_le32(b);
-	tls_directory->AddressOfCallBacks = rz_buf_read_le32(b);
-	tls_directory->SizeOfZeroFill = rz_buf_read_le32(b);
-	tls_directory->Characteristics = rz_buf_read_le32(b);
-	rz_buf_seek(b, o_addr, RZ_BUF_SET);
+
+	if (!read_tls_directory_aux(b, tls_directory)) {
+		return -1;
+	}
+
+	if (rz_buf_seek(b, tmp, RZ_BUF_SET) < 0) {
+		return -1;
+	}
+
 	return sizeof(PE_(image_tls_directory));
 }
 
@@ -1793,19 +1873,19 @@ static Var *Pe_r_bin_pe_parse_var(struct PE_(rz_bin_pe_obj_t) * bin, PE_DWord *c
 		bprintf("Warning: calloc (Var)\n");
 		return NULL;
 	}
-	if ((var->wLength = rz_buf_read_le16_at(bin->b, *curAddr)) == UT16_MAX) {
+	if (!rz_buf_read_le16_at(bin->b, *curAddr, &var->wLength)) {
 		bprintf("Warning: read (Var wLength)\n");
 		free_Var(var);
 		return NULL;
 	}
 	*curAddr += sizeof(var->wLength);
-	if ((var->wValueLength = rz_buf_read_le16_at(bin->b, *curAddr)) == UT16_MAX) {
+	if (!rz_buf_read_le16_at(bin->b, *curAddr, &var->wValueLength)) {
 		bprintf("Warning: read (Var wValueLength)\n");
 		free_Var(var);
 		return NULL;
 	}
 	*curAddr += sizeof(var->wValueLength);
-	if ((var->wType = rz_buf_read_le16_at(bin->b, *curAddr)) == UT16_MAX) {
+	if (!rz_buf_read_le16_at(bin->b, *curAddr, &var->wType)) {
 		bprintf("Warning: read (Var wType)\n");
 		free_Var(var);
 		return NULL;
@@ -1863,14 +1943,14 @@ static VarFileInfo *Pe_r_bin_pe_parse_var_file_info(struct PE_(rz_bin_pe_obj_t) 
 		return NULL;
 	}
 	PE_DWord startAddr = *curAddr;
-	if ((varFileInfo->wLength = rz_buf_read_le16_at(bin->b, *curAddr)) == UT16_MAX) {
+	if (!rz_buf_read_le16_at(bin->b, *curAddr, &varFileInfo->wLength)) {
 		bprintf("Warning: read (VarFileInfo wLength)\n");
 		free_VarFileInfo(varFileInfo);
 		return NULL;
 	}
 	*curAddr += sizeof(varFileInfo->wLength);
 
-	if ((varFileInfo->wValueLength = rz_buf_read_le16_at(bin->b, *curAddr)) == UT16_MAX) {
+	if (!rz_buf_read_le16_at(bin->b, *curAddr, &varFileInfo->wValueLength)) {
 		bprintf("Warning: read (VarFileInfo wValueLength)\n");
 		free_VarFileInfo(varFileInfo);
 		return NULL;
@@ -1883,7 +1963,7 @@ static VarFileInfo *Pe_r_bin_pe_parse_var_file_info(struct PE_(rz_bin_pe_obj_t) 
 		return NULL;
 	}
 
-	if ((varFileInfo->wType = rz_buf_read_le16_at(bin->b, *curAddr)) == UT16_MAX) {
+	if (!rz_buf_read_le16_at(bin->b, *curAddr, &varFileInfo->wType)) {
 		bprintf("Warning: read (VarFileInfo wType)\n");
 		free_VarFileInfo(varFileInfo);
 		return NULL;
@@ -1947,7 +2027,7 @@ static String *Pe_r_bin_pe_parse_string(struct PE_(rz_bin_pe_obj_t) * bin, PE_DW
 		free_String(string);
 		return NULL;
 	}
-	if ((string->wLength = rz_buf_read_le16_at(bin->b, *curAddr)) == UT16_MAX) {
+	if (!rz_buf_read_le16_at(bin->b, *curAddr, &string->wLength)) {
 		bprintf("Warning: read (String wLength)\n");
 		goto out_error;
 	}
@@ -1955,7 +2035,7 @@ static String *Pe_r_bin_pe_parse_string(struct PE_(rz_bin_pe_obj_t) * bin, PE_DW
 	if (*curAddr > bin->size || *curAddr + sizeof(string->wValueLength) > bin->size) {
 		goto out_error;
 	}
-	if ((string->wValueLength = rz_buf_read_le16_at(bin->b, *curAddr)) == UT16_MAX) {
+	if (!rz_buf_read_le16_at(bin->b, *curAddr, &string->wValueLength)) {
 		bprintf("Warning: read (String wValueLength)\n");
 		goto out_error;
 	}
@@ -1964,7 +2044,7 @@ static String *Pe_r_bin_pe_parse_string(struct PE_(rz_bin_pe_obj_t) * bin, PE_DW
 	if (*curAddr > bin->size || *curAddr + sizeof(string->wType) > bin->size) {
 		goto out_error;
 	}
-	if ((string->wType = rz_buf_read_le16_at(bin->b, *curAddr)) == UT16_MAX) {
+	if (!rz_buf_read_le16_at(bin->b, *curAddr, &string->wType)) {
 		bprintf("Warning: read (String wType)\n");
 		goto out_error;
 	}
@@ -2030,14 +2110,14 @@ static StringTable *Pe_r_bin_pe_parse_string_table(struct PE_(rz_bin_pe_obj_t) *
 	}
 
 	PE_DWord startAddr = *curAddr;
-	if ((stringTable->wLength = rz_buf_read_le16_at(bin->b, *curAddr)) == UT16_MAX) {
+	if (!rz_buf_read_le16_at(bin->b, *curAddr, &stringTable->wLength)) {
 		bprintf("Warning: read (StringTable wLength)\n");
 		free_StringTable(stringTable);
 		return NULL;
 	}
 	*curAddr += sizeof(stringTable->wLength);
 
-	if ((stringTable->wValueLength = rz_buf_read_le16_at(bin->b, *curAddr)) == UT16_MAX) {
+	if (!rz_buf_read_le16_at(bin->b, *curAddr, &stringTable->wValueLength)) {
 		bprintf("Warning: read (StringTable wValueLength)\n");
 		free_StringTable(stringTable);
 		return NULL;
@@ -2050,7 +2130,7 @@ static StringTable *Pe_r_bin_pe_parse_string_table(struct PE_(rz_bin_pe_obj_t) *
 		return NULL;
 	}
 
-	if ((stringTable->wType = rz_buf_read_le16_at(bin->b, *curAddr)) == UT16_MAX) {
+	if (!rz_buf_read_le16_at(bin->b, *curAddr, &stringTable->wType)) {
 		bprintf("Warning: read (StringTable wType)\n");
 		free_StringTable(stringTable);
 		return NULL;
@@ -2110,14 +2190,14 @@ static StringFileInfo *Pe_r_bin_pe_parse_string_file_info(struct PE_(rz_bin_pe_o
 
 	PE_DWord startAddr = *curAddr;
 
-	if ((stringFileInfo->wLength = rz_buf_read_le16_at(bin->b, *curAddr)) == UT16_MAX) {
+	if (!rz_buf_read_le16_at(bin->b, *curAddr, &stringFileInfo->wLength)) {
 		bprintf("Warning: read (StringFileInfo wLength)\n");
 		free_StringFileInfo(stringFileInfo);
 		return NULL;
 	}
 	*curAddr += sizeof(stringFileInfo->wLength);
 
-	if ((stringFileInfo->wValueLength = rz_buf_read_le16_at(bin->b, *curAddr)) == UT16_MAX) {
+	if (!rz_buf_read_le16_at(bin->b, *curAddr, &stringFileInfo->wValueLength)) {
 		bprintf("Warning: read (StringFileInfo wValueLength)\n");
 		free_StringFileInfo(stringFileInfo);
 		return NULL;
@@ -2130,7 +2210,7 @@ static StringFileInfo *Pe_r_bin_pe_parse_string_file_info(struct PE_(rz_bin_pe_o
 		return NULL;
 	}
 
-	if ((stringFileInfo->wType = rz_buf_read_le16_at(bin->b, *curAddr)) == UT16_MAX) {
+	if (!rz_buf_read_le16_at(bin->b, *curAddr, &stringFileInfo->wType)) {
 		bprintf("Warning: read (StringFileInfo wType)\n");
 		free_StringFileInfo(stringFileInfo);
 		return NULL;
@@ -2210,19 +2290,19 @@ static PE_VS_VERSIONINFO *Pe_r_bin_pe_parse_version_info(struct PE_(rz_bin_pe_ob
 	//Mb we are in subsequent version resource data and not aligned.
 	sz = sizeof(ut16);
 	EXIT_ON_OVERFLOW(sz);
-	if ((vs_VersionInfo->wLength = rz_buf_read_le16_at(bin->b, curAddr)) == UT16_MAX) {
+	if (!rz_buf_read_le16_at(bin->b, curAddr, &vs_VersionInfo->wLength)) {
 		bprintf("Warning: read (VS_VERSIONINFO wLength)\n");
 		goto out_error;
 	}
 	curAddr += sz;
 	EXIT_ON_OVERFLOW(sz);
-	if ((vs_VersionInfo->wValueLength = rz_buf_read_le16_at(bin->b, curAddr)) == UT16_MAX) {
+	if (!rz_buf_read_le16_at(bin->b, curAddr, &vs_VersionInfo->wValueLength)) {
 		bprintf("Warning: read (VS_VERSIONINFO wValueLength)\n");
 		goto out_error;
 	}
 	curAddr += sz;
 	EXIT_ON_OVERFLOW(sz);
-	if ((vs_VersionInfo->wType = rz_buf_read_le16_at(bin->b, curAddr)) == UT16_MAX) {
+	if (!rz_buf_read_le16_at(bin->b, curAddr, &vs_VersionInfo->wType)) {
 		bprintf("Warning: read (VS_VERSIONINFO wType)\n");
 		goto out_error;
 	}
@@ -2736,24 +2816,36 @@ static void bin_pe_init_rich_info(struct PE_(rz_bin_pe_obj_t) * bin) {
 	bin->rich_header_offset = bin->nt_header_offset;
 	ut64 off = bin->nt_header_offset - sizeof(ut32);
 	ut32 magic = 0x68636952; // Rich
-	while ((rz_buf_read_le32_at(bin->b, off) != magic) && off) {
+
+	ut32 tmp;
+	while (rz_buf_read_le32_at(bin->b, off, &tmp) && tmp != magic && off) {
 		off -= sizeof(ut32);
 	}
+
 	if (!off) {
 		return;
 	}
-	ut32 mask = rz_buf_read_le32_at(bin->b, off + sizeof(ut32));
+
+	ut32 mask;
+	if (!rz_buf_read_le32_at(bin->b, off + sizeof(ut32), &mask)) {
+		return;
+	}
+
 	magic = 0x536E6144; // DanS
-	int data;
 	off -= sizeof(ut32);
-	while (((data = rz_buf_read_le32_at(bin->b, off)) != magic) && data ^ mask && off > 0x80) {
+
+	ut32 data;
+	while (rz_buf_read_le32_at(bin->b, off, &data) && data != magic && data ^ mask && off > 0x80) {
 		Pe_image_rich_entry *entry = RZ_NEW0(Pe_image_rich_entry);
 		if (!entry) {
 			return;
 		}
 		entry->timesUsed = data ^ mask;
 		off -= sizeof(ut32);
-		data = rz_buf_read_le32_at(bin->b, off) ^ mask;
+		if (!rz_buf_read_le32_at(bin->b, off, &data)) {
+			return;
+		}
+		data ^= mask;
 		entry->productId = data >> 16;
 		entry->minVersion = data & 0xFFFF;
 		entry->productName = _known_product_ids(entry->productId);
@@ -2934,13 +3026,23 @@ static char *_resource_type_str(int type) {
 }
 
 static int read_image_resource_directory_entry(RzBuffer *b, ut64 addr, Pe_image_resource_directory_entry *entry) {
-	st64 o_addr = rz_buf_seek(b, 0, RZ_BUF_CUR);
+	st64 tmp = rz_buf_seek(b, 0, RZ_BUF_CUR);
+	if (tmp < 0) {
+		return -1;
+	}
+
 	if (rz_buf_seek(b, addr, RZ_BUF_SET) < 0) {
 		return -1;
 	}
-	entry->u1.Name = rz_buf_read_le32(b);
-	entry->u2.OffsetToData = rz_buf_read_le32(b);
-	rz_buf_seek(b, o_addr, RZ_BUF_SET);
+
+	if (!rz_buf_read_le32(b, &entry->u1.Name) || !rz_buf_read_le32(b, &entry->u2.OffsetToData)) {
+		return -1;
+	}
+
+	if (rz_buf_seek(b, tmp, RZ_BUF_SET) < 0) {
+		return -1;
+	}
+
 	return sizeof(Pe_image_resource_directory_entry);
 }
 
@@ -3205,15 +3307,21 @@ static int bin_pe_init_security(struct PE_(rz_bin_pe_obj_t) * bin) {
 		if (!cert) {
 			return false;
 		}
-		cert->dwLength = rz_buf_read_le32_at(bin->b, offset);
+		if (!rz_buf_read_le32_at(bin->b, offset, &cert->dwLength)) {
+			return false;
+		}
 		cert->dwLength += (8 - (cert->dwLength & 7)) & 7; // align32
 		if (offset + cert->dwLength > paddr + size) {
 			bprintf("Invalid certificate entry");
 			RZ_FREE(cert);
 			return false;
 		}
-		cert->wRevision = rz_buf_read_le16_at(bin->b, offset + 4);
-		cert->wCertificateType = rz_buf_read_le16_at(bin->b, offset + 6);
+		if (!rz_buf_read_le16_at(bin->b, offset + 4, &cert->wRevision)) {
+			return false;
+		}
+		if (!rz_buf_read_le16_at(bin->b, offset + 6, &cert->wCertificateType)) {
+			return false;
+		}
 		if (cert->dwLength < 6) {
 			eprintf("Cert.dwLength must be > 6\n");
 			RZ_FREE(cert);
@@ -3501,7 +3609,9 @@ struct rz_bin_pe_export_t *PE_(rz_bin_pe_get_exports)(struct PE_(rz_bin_pe_obj_t
 					if (i == fo) {
 						function_ordinal = fo;
 						// get the VA of export name  from AddressOfNames
-						name_vaddr = rz_buf_read_le32_at(bin->b, names_paddr + n * sizeof(PE_VWord));
+						if (!rz_buf_read_le32_at(bin->b, names_paddr + n * sizeof(PE_VWord), &name_vaddr)) {
+							goto beach;
+						}
 						break;
 					}
 				}

@@ -45,9 +45,11 @@ bool test_bin_vfiles() {
 	mu_assert_neq(reloc->target_vaddr, UT64_MAX, "target not UT64_MAX");
 
 	// 4. Check the contents of the original buf and the vfile against the data in the reloc
-	ut64 val = rz_buf_read_le64_at(buf, reloc->paddr);
+	ut64 val;
+	mu_assert_true(rz_buf_read_le64_at(buf, reloc->paddr, &val), "failed to read");
+
 	mu_assert_eq(val, 0, "original buf has nothing patched");
-	val = rz_buf_read_le64_at(patched->buf, reloc->paddr);
+	mu_assert_true(rz_buf_read_le64_at(patched->buf, reloc->paddr, &val), "failed to read");
 	mu_assert_eq(val, reloc->target_vaddr, "read patched target from vfile");
 
 	// 5. Exit

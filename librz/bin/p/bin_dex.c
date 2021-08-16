@@ -786,7 +786,11 @@ static RzBinInfo *info(RzBinFile *bf) {
 	// not sure if we want to expose the computed checksum everytime we open the file
 	// also the checksum is computed by other methods in RzBin, so maybe good to generalize
 	{
-		ut32 fc = rz_buf_read_le32_at(bf->buf, 8);
+		ut32 fc;
+		if (!rz_buf_read_le32_at(bf->buf, 8, &fc)) {
+			free(ret);
+			return NULL;
+		}
 		ut64 tmpsz;
 		const ut8 *tmp = rz_buf_data(bf->buf, &tmpsz);
 		ut32 cc = __adler32(tmp + 12, tmpsz - 12);
@@ -1121,7 +1125,8 @@ static void parse_dex_class_method(RzBinFile *bf, RzBinDexClass *c, RzBinClass *
 	ut64 omi = 0;
 	bool catchAll;
 	ut16 regsz = 0, ins_size = 0, outs_size = 0, tries_size = 0;
-	ut16 start_addr, insn_count = 0;
+	ut16 insn_count = 0;
+	ut32 start_addr;
 	ut32 debug_info_off = 0, insns_size = 0;
 
 	if (!dex->trycatch_list) {
@@ -1188,27 +1193,21 @@ static void parse_dex_class_method(RzBinFile *bf, RzBinDexClass *c, RzBinClass *
 				RZ_FREE(signature);
 				continue;
 			}
-			regsz = rz_buf_read_le16_at(bf->buf, MC);
-			if (regsz == UT16_MAX) {
+			if (!rz_buf_read_le16_at(bf->buf, MC, &regsz) ||
+				!rz_buf_read_le16_at(bf->buf, MC + 2, &ins_size) ||
+				!rz_buf_read_le16_at(bf->buf, MC + 4, &outs_size) ||
+				!rz_buf_read_le16_at(bf->buf, MC + 6, &tries_size) ||
+				!rz_buf_read_le32_at(bf->buf, MC + 8, &debug_info_off) ||
+				!rz_buf_read_le32_at(bf->buf, MC + 12, &insns_size)) {
 				RZ_FREE(flag_name);
 				RZ_FREE(signature);
 				break;
 			}
-			ins_size = rz_buf_read_le16_at(bf->buf, MC + 2);
-			if (ins_size == UT16_MAX) {
+			if (regsz == UT16_MAX || ins_size == UT16_MAX || tries_size == UT16_MAX) {
 				RZ_FREE(flag_name);
 				RZ_FREE(signature);
 				break;
 			}
-			outs_size = rz_buf_read_le16_at(bf->buf, MC + 4);
-			tries_size = rz_buf_read_le16_at(bf->buf, MC + 6);
-			if (tries_size == UT16_MAX) {
-				RZ_FREE(flag_name);
-				RZ_FREE(signature);
-				break;
-			}
-			debug_info_off = rz_buf_read_le32_at(bf->buf, MC + 8);
-			insns_size = rz_buf_read_le32_at(bf->buf, MC + 12);
 			int padd = 0;
 			if (tries_size > 0 && insns_size % 2) {
 				padd = 2;
@@ -1253,14 +1252,24 @@ static void parse_dex_class_method(RzBinFile *bf, RzBinDexClass *c, RzBinClass *
 					}
 					// start address of the block of code covered by this entry.
 					// The address is a count of 16-bit code units to the start of the first covered instruction.
-					start_addr = rz_buf_read_le32_at(bf->buf, offset);
+					if (!rz_buf_read_le32_at(bf->buf, offset, &start_addr)) {
+						RZ_FREE(signature);
+						break;
+					}
 					// number of 16-bit code units covered by this entry.
 					// The last code unit covered (inclusive) is start_addr + insn_count - 1.
-					insn_count = rz_buf_read_le16_at(bf->buf, offset + 4);
+					if (!rz_buf_read_le16_at(bf->buf, offset + 4, &insn_count)) {
+						RZ_FREE(signature);
+						break;
+					}
 					// offset in bytes from the start of the associated encoded_catch_hander_list
 					// to the encoded_catch_handler for this entry.
 					// This must be an offset to the start of an encoded_catch_handler.
-					ut64 handler_off = rz_buf_read_le16_at(bf->buf, offset + 6);
+					ut16 handler_off;
+					if (!rz_buf_read_le16_at(bf->buf, offset + 6, &handler_off)) {
+						RZ_FREE(signature);
+						break;
+					}
 
 					ut64 method_offset = MC + 16;
 					ut64 try_from = (start_addr * 2) + method_offset;
@@ -1371,8 +1380,18 @@ static void parse_dex_class_method(RzBinFile *bf, RzBinDexClass *c, RzBinClass *
 					RZ_FREE(signature);
 					continue;
 				}
-				ut16 tries_size = rz_buf_read_le16_at(bf->buf, MC + 6);
-				ut32 insns_size = rz_buf_read_le32_at(bf->buf, MC + 12);
+				ut16 tries_size;
+				if (!rz_buf_read_le16_at(bf->buf, MC + 6, &tries_size)) {
+					RZ_FREE(sym);
+					RZ_FREE(signature);
+					continue;
+				}
+				ut32 insns_size;
+				if (!rz_buf_read_le32_at(bf->buf, MC + 12, &insns_size)) {
+					RZ_FREE(sym);
+					RZ_FREE(signature);
+					continue;
+				}
 				ut64 prolog_size = 2 + 2 + 2 + 2 + 4 + 4;
 				if (tries_size > 0) {
 					//prolog_size += 2 + 8*tries_size; // we need to parse all so the catch info...
@@ -1481,7 +1500,10 @@ static void parse_class(RzBinFile *bf, RzBinDexClass *c, int class_index, int *m
 	if (c->interfaces_offset > 0 &&
 		dex->header.data_offset < c->interfaces_offset &&
 		c->interfaces_offset < dex->header.data_offset + dex->header.data_size) {
-		int types_list_size = rz_buf_read_le32_at(bf->buf, c->interfaces_offset);
+		ut32 types_list_size;
+		if (!rz_buf_read_le32_at(bf->buf, c->interfaces_offset, &types_list_size)) {
+			goto beach;
+		}
 		if (types_list_size < 0 || types_list_size >= dex->header.types_size) {
 			goto beach;
 		}
@@ -2101,25 +2123,56 @@ static RzList *dex_fields(RzBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
+
 	ut64 addr = 0;
 
 #define ROW(nam, siz, val, fmt) \
 	rz_list_append(ret, rz_bin_field_new(addr, addr, siz, nam, sdb_fmt("0x%08" PFMT64x, (ut64)val), fmt, false)); \
 	addr += siz;
 
-	rz_buf_seek(bf->buf, 0, RZ_BUF_SET);
-	ut64 magic = rz_buf_read_le64(bf->buf);
+	if (rz_buf_seek(bf->buf, 0, RZ_BUF_SET) < 0) {
+		rz_list_free(ret);
+		return NULL;
+	}
+
+	ut64 magic;
+	if (!rz_buf_read_le64(bf->buf, &magic)) {
+		rz_list_free(ret);
+		return NULL;
+	}
 	ROW("dex_magic", 8, magic, "[8]c");
-	ut32 checksum = rz_buf_read_le32(bf->buf);
+
+	ut32 checksum;
+	if (!rz_buf_read_le32(bf->buf, &checksum)) {
+		rz_list_free(ret);
+		return NULL;
+	}
 	ROW("dex_checksum", 4, checksum, "x");
+
 	ut8 signature[20];
 	ROW("dex_signature", 8, signature, "[20]c");
-	ut32 size = rz_buf_read_le32(bf->buf);
+
+	ut32 size;
+	if (!rz_buf_read_le32(bf->buf, &size)) {
+		rz_list_free(ret);
+		return NULL;
+	}
 	ROW("dex_size", 4, size, "x");
-	ut32 header_size = rz_buf_read_le32(bf->buf);
+
+	ut32 header_size;
+	if (!rz_buf_read_le32(bf->buf, &header_size)) {
+		rz_list_free(ret);
+		return NULL;
+	}
 	ROW("dex_header_size", 4, header_size, "x");
-	ut32 endian = rz_buf_read_le32(bf->buf);
+
+	ut32 endian;
+	if (!rz_buf_read_le32(bf->buf, &endian)) {
+		rz_list_free(ret);
+		return NULL;
+	}
 	ROW("dex_endian", 4, endian, "x");
+
 	/*
 	ROW ("hdr.cputype", 4, mh->cputype, "x");
 	ROW ("hdr.cpusubtype", 4, mh->cpusubtype, "x");

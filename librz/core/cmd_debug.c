@@ -4236,7 +4236,11 @@ static void consumeBuffer(RzBuffer *buf, const char *cmd, const char *errmsg) {
 	int i;
 	rz_buf_seek(buf, 0, RZ_BUF_SET);
 	for (i = 0; i < rz_buf_size(buf); i++) {
-		rz_cons_printf("%02x", rz_buf_read8(buf));
+		ut8 tmp;
+		if (!rz_buf_read8(buf, &tmp)) {
+			return;
+		}
+		rz_cons_printf("%02x", tmp);
 	}
 	rz_cons_printf("\n");
 }

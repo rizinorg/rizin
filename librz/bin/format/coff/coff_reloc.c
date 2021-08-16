@@ -95,8 +95,8 @@ static void relocs_foreach(struct rz_bin_coff_obj *bin, RelocsForeachCb cb, void
 					case COFF_REL_I386_REL32:
 						reloc.type = RZ_BIN_RELOC_32;
 						reloc.additive = 1;
-						ut64 data = rz_buf_read_le32_at(bin->b, reloc.paddr);
-						if (data == UT32_MAX) {
+						ut32 data;
+						if (!rz_buf_read_le32_at(bin->b, reloc.paddr, &data)) {
 							break;
 						}
 						reloc.addend = data;
@@ -111,8 +111,8 @@ static void relocs_foreach(struct rz_bin_coff_obj *bin, RelocsForeachCb cb, void
 					case COFF_REL_AMD64_REL32:
 						reloc.type = RZ_BIN_RELOC_32;
 						reloc.additive = 1;
-						ut64 data = rz_buf_read_le32_at(bin->b, reloc.paddr);
-						if (data == UT32_MAX) {
+						ut32 data;
+						if (!rz_buf_read_le32_at(bin->b, reloc.paddr, &data)) {
 							break;
 						}
 						reloc.addend = data;
@@ -127,12 +127,12 @@ static void relocs_foreach(struct rz_bin_coff_obj *bin, RelocsForeachCb cb, void
 					case COFF_REL_ARM_BRANCH24T:
 					case COFF_REL_ARM_BLX23T:
 						reloc.type = RZ_BIN_RELOC_32;
-						ut16 hiword = rz_buf_read_le16_at(bin->b, reloc.paddr);
-						if (hiword == UT16_MAX) {
+						ut16 hiword;
+						if (!rz_buf_read_le16_at(bin->b, reloc.paddr, &hiword)) {
 							break;
 						}
-						ut16 loword = rz_buf_read_le16_at(bin->b, reloc.paddr + 2);
-						if (loword == UT16_MAX) {
+						ut16 loword;
+						if (!rz_buf_read_le16_at(bin->b, reloc.paddr + 2, &loword)) {
 							break;
 						}
 						ut64 dst = sym_vaddr - reloc.vaddr - 4;
@@ -151,8 +151,8 @@ static void relocs_foreach(struct rz_bin_coff_obj *bin, RelocsForeachCb cb, void
 					switch (rel[j].rz_type) {
 					case COFF_REL_ARM64_BRANCH26:
 						reloc.type = RZ_BIN_RELOC_32;
-						ut32 data = rz_buf_read_le32_at(bin->b, reloc.paddr);
-						if (data == UT32_MAX) {
+						ut32 data;
+						if (!rz_buf_read_le32_at(bin->b, reloc.paddr, &data)) {
 							break;
 						}
 						ut64 dst = sym_vaddr - reloc.vaddr;

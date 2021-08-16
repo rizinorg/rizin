@@ -9,7 +9,12 @@ static bool check_buffer(RzBuffer *b) {
 	if (length <= 0x3d) {
 		return false;
 	}
-	ut16 idx = rz_buf_read_le16_at(b, 0x3c);
+
+	ut16 idx;
+	if (!rz_buf_read_le16_at(b, 0x3c, &idx)) {
+		return false;
+	}
+
 	if (idx + 26 < length) {
 		/* Here PE signature for usual PE files
 		 * and PL signature for Phar Lap TNT DOS extender 32bit executables
