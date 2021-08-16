@@ -772,6 +772,7 @@ RZ_OWN RzType *c_parser_new_naked_callable(CParserState *state) {
 	}
 	RzCallable *callable = RZ_NEW0(RzCallable);
 	if (!callable) {
+		free(type);
 		return NULL;
 	}
 	callable->name = NULL;
