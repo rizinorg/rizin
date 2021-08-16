@@ -74,104 +74,169 @@ static inline bool demangle_type(char *type, RzStrBuf *sb, size_t *used) {
 	return true;
 }
 
-RZ_API char *rz_bin_demangle_java(const char *mangled) {
-	rz_return_val_if_fail(mangled, NULL);
-	size_t args_length = 0;
+static char *demangle_method(char *name, char *arguments, char *return_type) {
+	// example: Lsome/class/Object;.myMethod([F)I
+	// name = Lsome/class/Object;.myMethod
+	// args = [F
+	// rett = I
 	RzStrBuf *sb = NULL;
-	char *name = NULL;
-	char *arguments = NULL;
-	char *return_type = NULL;
-	bool dots = false;
+	size_t args_length = 0;
 
 	sb = rz_strbuf_new("");
 	if (!sb) {
-		goto rz_bin_demangle_java_bad;
-	}
-
-	name = strdup(mangled);
-	if (!name) {
-		goto rz_bin_demangle_java_bad;
-	}
-	rz_str_trim(name);
-	// removes any obvious class like java.lang.String
-	rz_str_replace(name, "java/lang/", "", 1);
-
-	arguments = strchr(name, '(');
-	if (!arguments) {
-		arguments = strchr(name, '.');
-		// check for `<object>.<field>.<return type>`
-		if (arguments && !strchr(arguments + 1, '.')) {
-			arguments[0] = 0;
-			arguments++;
-			// check for `<field>.<return type>`
-			rz_strbuf_appendf(sb, "%s:", name);
-			if ((arguments[0] != 'L' || arguments[0] != '[') && demangle_type(arguments, sb, NULL)) {
-				goto rz_bin_demangle_java_end;
-			}
-			goto rz_bin_demangle_java_bad;
-		} else {
-			dots = true;
-		}
-	}
-	if (!arguments) {
-		// probably demangling only a type
-		if ((name[0] != 'L' && name[0] != '[') || !demangle_type(name, sb, NULL)) {
-			goto rz_bin_demangle_java_bad;
-		}
-		goto rz_bin_demangle_java_end;
+		goto demangle_method_bad;
 	}
 
 	arguments[0] = 0;
 	arguments++;
-
-	return_type = strchr(arguments, ')');
-	if (!return_type) {
-		return_type = strchr(arguments, '.');
-	}
-	if (!return_type || RZ_STR_ISEMPTY(return_type + 1)) {
-		goto rz_bin_demangle_java_bad;
-	}
 	args_length = return_type - arguments;
 
 	return_type[0] = 0;
 	return_type++;
 
 	if (!demangle_type(return_type, sb, NULL)) {
-		goto rz_bin_demangle_java_bad;
+		goto demangle_method_bad;
 	}
 
 	rz_strbuf_append(sb, " ");
 
-	if (name[0] != 'L' || !demangle_type(name, sb, NULL)) {
-		//name might contain a object name
+	const char *t = NULL;
+	if (name[0] == 'L' && (t = strchr(name, ';')) && !demangle_type(name, sb, NULL)) {
+		goto demangle_method_bad;
+	} else if (name[0] == 'L') {
+		rz_strbuf_append(sb, t + 1);
+	} else {
 		rz_strbuf_append(sb, name);
 	}
 
-	if (dots) {
-		rz_strbuf_appendf(sb, ".%s", arguments);
-	} else {
-		rz_strbuf_append(sb, "(");
-		for (size_t pos = 0, used = 0; pos < args_length;) {
-			if (!demangle_type(arguments + pos, sb, &used)) {
-				goto rz_bin_demangle_java_bad;
-			}
-			pos += used;
-			if (pos < args_length) {
-				rz_strbuf_append(sb, ", ");
-			}
+	rz_strbuf_append(sb, "(");
+	for (size_t pos = 0, used = 0; pos < args_length;) {
+		eprintf("'%s' -> '%s'\n", rz_strbuf_get(sb), arguments + pos);
+		if (!demangle_type(arguments + pos, sb, &used)) {
+			rz_warn_if_reached();
+			goto demangle_method_bad;
 		}
-		rz_strbuf_append(sb, ")");
+		pos += used;
+		if (pos < args_length) {
+			rz_strbuf_append(sb, ", ");
+		}
 	}
+	rz_strbuf_append(sb, ")");
 
-
-rz_bin_demangle_java_end:
 	free(name);
-	char *demangled = rz_strbuf_drain(sb);
-	rz_str_replace_ch(demangled, '/', '.', 1);
-	return demangled;
+	rz_str_replace_ch(rz_strbuf_get(sb), '/', '.', 1);
+	return rz_strbuf_drain(sb);
 
-rz_bin_demangle_java_bad:
+demangle_method_bad:
 	rz_strbuf_free(sb);
 	free(name);
 	return NULL;
+}
+
+static char *demangle_class_object(char *object, char *name) {
+	// example: Lsome/class/Object;.myMethod.I
+	// object = Lsome/class/Object;
+	// name   = myMethod.I
+	RzStrBuf *sb = NULL;
+	char *type = NULL;
+
+	sb = rz_strbuf_new("");
+	if (!sb) {
+		goto demangle_class_object_bad;
+	}
+
+	name[0] = 0;
+	name++;
+
+	type = strchr(name, '.');
+
+	if (!demangle_type(object, sb, NULL)) {
+		goto demangle_class_object_bad;
+	}
+
+	if (type) {
+		type[0] = 0;
+		type++;
+		rz_strbuf_appendf(sb, ".%s:", name);
+		if (!demangle_type(type, sb, NULL)) {
+			goto demangle_class_object_bad;
+		}
+	} else {
+		rz_strbuf_appendf(sb, ".%s", name);
+	}
+
+	free(object);
+	rz_str_replace_ch(rz_strbuf_get(sb), '/', '.', 1);
+	return rz_strbuf_drain(sb);
+
+demangle_class_object_bad:
+	rz_strbuf_free(sb);
+	free(object);
+	return NULL;
+}
+
+static char *demangle_object_with_type(char *name, char *object) {
+	RzStrBuf *sb = rz_strbuf_new("");
+	if (!sb) {
+		goto demangle_object_with_type_bad;
+	}
+
+	object[0] = 0;
+	object++;
+
+	rz_strbuf_appendf(sb, "%s:", name);
+	if (!demangle_type(object, sb, NULL)) {
+		goto demangle_object_with_type_bad;
+	}
+
+	free(name);
+	rz_str_replace_ch(rz_strbuf_get(sb), '/', '.', 1);
+	return rz_strbuf_drain(sb);
+
+demangle_object_with_type_bad:
+	rz_strbuf_free(sb);
+	free(name);
+	return NULL;
+}
+
+static char *demangle_any(char *mangled) {
+	RzStrBuf *sb = rz_strbuf_new("");
+	if (!sb) {
+		return NULL;
+	}
+
+	if (!demangle_type(mangled, sb, NULL)) {
+		free(mangled);
+		rz_strbuf_free(sb);
+		return NULL;
+	}
+	free(mangled);
+
+	rz_str_replace_ch(rz_strbuf_get(sb), '/', '.', 1);
+	return rz_strbuf_drain(sb);
+}
+
+RZ_API char *rz_bin_demangle_java(const char *mangled) {
+	rz_return_val_if_fail(mangled, NULL);
+
+	char *name = NULL;
+	char *arguments = NULL;
+	char *return_type = NULL;
+
+	name = strdup(mangled);
+	if (!name) {
+		return NULL;
+	}
+	rz_str_trim(name);
+	// removes any obvious class like java.lang.String
+	rz_str_replace(name, "java/lang/", "", 1);
+
+	if ((arguments = strchr(name, '(')) && (return_type = strchr(arguments, ')'))) {
+		return demangle_method(name, arguments, return_type);
+	} else if (name[0] == 'L' && (arguments = strchr(name, '.'))) {
+		return demangle_class_object(name, arguments);
+	} else if ((arguments = strchr(name, '.'))) {
+		return demangle_object_with_type(name, arguments);
+	}
+	return demangle_any(name);
 }
