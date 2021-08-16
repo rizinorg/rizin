@@ -725,31 +725,38 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 				node_malformed_error(state, child, text, "union field");
 				return -1;
 			}
-			const char *real_type = ts_node_sub_string(field_type, text);
+			char *real_type = ts_node_sub_string(field_type, text);
 			if (!real_type) {
 				parser_error(state, "ERROR: Union bitfield type should not be NULL!\n");
 				node_malformed_error(state, child, text, "union field");
 				return -1;
 			}
-			const char *real_identifier = ts_node_sub_string(field_declarator, text);
+			char *real_identifier = ts_node_sub_string(field_declarator, text);
 			if (!real_identifier) {
 				parser_error(state, "ERROR: Union bitfield identifier should not be NULL!\n");
 				node_malformed_error(state, child, text, "union field");
+				free(real_type);
 				return -1;
 			}
 			if (ts_node_named_child_count(bitfield_clause) != 1) {
 				node_malformed_error(state, child, text, "union field");
+				free(real_type);
+				free(real_identifier);
 				return -1;
 			}
 			TSNode field_bits = ts_node_named_child(bitfield_clause, 0);
 			if (ts_node_is_null(field_bits)) {
 				parser_error(state, "ERROR: Union bitfield bits AST node should not be NULL!\n");
 				node_malformed_error(state, child, text, "union field");
+				free(real_type);
+				free(real_identifier);
 				return -1;
 			}
 			const char *bits_str = ts_node_sub_string(field_bits, text);
 			int bits = rz_num_get(NULL, bits_str);
 			parser_debug(state, "field type: %s field_identifier: %s bits: %d\n", real_type, real_identifier, bits);
+			free(real_type);
+			free(real_identifier);
 			ParserTypePair *membtpair = NULL;
 			if (parse_type_node_single(state, field_type, text, &membtpair, is_const)) {
 				parser_error(state, "ERROR: parsing union member identifier\n");
