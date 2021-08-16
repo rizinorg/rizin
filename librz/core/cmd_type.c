@@ -166,6 +166,7 @@ static RzCmdStatus type_format_print_hexstring(RzCore *core, const char *type, c
 	char *fmt = rz_type_format(core->analysis->typedb, type);
 	if (RZ_STR_ISEMPTY(fmt)) {
 		eprintf("Cannot find type %s\n", type);
+		free(fmt);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_core_cmdf(core, "pf %s @x:%s", fmt, hexpairs);
