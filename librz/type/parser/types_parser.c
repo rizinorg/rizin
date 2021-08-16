@@ -1506,6 +1506,7 @@ int parse_type_declarator_node(CParserState *state, TSNode node, const char *tex
 	} else if (!strcmp(node_type, "array_declarator")) {
 		char *real_ident = ts_node_sub_string(node, text);
 		parser_debug(state, "array declarator: %s\n", real_ident);
+		free(real_ident);
 
 		// Every array declarator should have at least declarator field
 		// The size field is optional
@@ -1555,6 +1556,7 @@ int parse_type_declarator_node(CParserState *state, TSNode node, const char *tex
 	} else if (!strcmp(node_type, "function_declarator")) {
 		char *real_ident = ts_node_sub_string(node, text);
 		parser_debug(state, "function declarator: %s\n", real_ident);
+		free(real_ident);
 		// It can only contain two nodes:
 		// - declarator
 		// - parameters
