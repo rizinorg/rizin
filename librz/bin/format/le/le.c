@@ -460,6 +460,8 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 	ut32 tmp_offset;
 	if (!rz_buf_read_ble32_at(bin->buf, (ut64)h->fpagetab + bin->headerOff + cur_page * sizeof(ut32), h->worder, &tmp_offset)) {
 		rz_list_free(l);
+		rz_list_free(entries);
+		rz_list_free(sections);
 		return NULL;
 	}
 
@@ -468,6 +470,8 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 	ut32 tmp_end;
 	if (!rz_buf_read_ble32_at(bin->buf, (ut64)h->fpagetab + bin->headerOff + (cur_page + 1) * sizeof(ut32), h->worder, &tmp_end)) {
 		rz_list_free(l);
+		rz_list_free(entries);
+		rz_list_free(sections);
 		return NULL;
 	}
 	ut64 end = tmp_end + fix_rec_tbl_off;
@@ -509,11 +513,13 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 		ut16 source = 0;
 		if (header.source & F_SOURCE_LIST) {
 			if (!rz_buf_read8_at(bin->buf, offset, &repeat)) {
+				rz_bin_reloc_free(rel);
 				break;
 			}
 			offset += sizeof(ut8);
 		} else {
 			if (!rz_buf_read_ble16_at(bin->buf, offset, h->worder, &source)) {
+				rz_bin_reloc_free(rel);
 				break;
 			}
 			offset += sizeof(ut16);
@@ -522,6 +528,7 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 		if (header.target & F_TARGET_ORD16) {
 			ut16 tmp;
 			if (!rz_buf_read_ble16_at(bin->buf, offset, h->worder, &tmp)) {
+				rz_bin_reloc_free(rel);
 				break;
 			}
 			ordinal = tmp;
@@ -529,6 +536,7 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 		} else {
 			ut8 tmp;
 			if (!rz_buf_read8_at(bin->buf, offset, &tmp)) {
+				rz_bin_reloc_free(rel);
 				break;
 			}
 			ordinal = tmp;
@@ -542,6 +550,7 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 					if (header.target & F_TARGET_OFF32) {
 						ut32 tmp;
 						if (!rz_buf_read_ble32_at(bin->buf, offset, h->worder, &tmp)) {
+							rz_bin_reloc_free(rel);
 							break;
 						}
 						rel->addend += tmp;
@@ -549,6 +558,7 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 					} else {
 						ut16 tmp;
 						if (!rz_buf_read_ble16_at(bin->buf, offset, h->worder, &tmp)) {
+							rz_bin_reloc_free(rel);
 							break;
 						}
 						rel->addend += tmp;
@@ -571,18 +581,24 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 			if (header.target & F_TARGET_ORD8) {
 				ut8 tmp;
 				if (!rz_buf_read8_at(bin->buf, offset, &tmp)) {
+					rz_bin_reloc_free(rel);
+					rz_bin_import_free(imp);
 					break;
 				}
 				ordinal = tmp;
 				offset += sizeof(ut8);
 			} else if (header.target & F_TARGET_OFF32) {
 				if (!rz_buf_read_ble32_at(bin->buf, offset, h->worder, &ordinal)) {
+					rz_bin_reloc_free(rel);
+					rz_bin_import_free(imp);
 					break;
 				}
 				offset += sizeof(ut32);
 			} else {
 				ut16 tmp;
 				if (!rz_buf_read_ble16_at(bin->buf, offset, h->worder, &tmp)) {
+					rz_bin_reloc_free(rel);
+					rz_bin_import_free(imp);
 					break;
 				}
 				ordinal = tmp;
@@ -602,12 +618,16 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 			ut32 nameoff;
 			if (header.target & F_TARGET_OFF32) {
 				if (!rz_buf_read_ble32_at(bin->buf, offset, h->worder, &nameoff)) {
+					rz_bin_reloc_free(rel);
+					rz_bin_import_free(imp);
 					break;
 				}
 				offset += sizeof(ut32);
 			} else {
 				ut16 tmp;
 				if (!rz_buf_read_ble16_at(bin->buf, offset, h->worder, &tmp)) {
+					rz_bin_reloc_free(rel);
+					rz_bin_import_free(imp);
 					break;
 				}
 				nameoff = tmp;
@@ -628,12 +648,14 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 			ut32 additive = 0;
 			if (header.target & F_TARGET_ADD32) {
 				if (!rz_buf_read_ble32_at(bin->buf, offset, h->worder, &additive)) {
+					rz_bin_reloc_free(rel);
 					break;
 				}
 				offset += sizeof(ut32);
 			} else {
 				ut16 tmp;
 				if (!rz_buf_read_ble16_at(bin->buf, offset, h->worder, &tmp)) {
+					rz_bin_reloc_free(rel);
 					break;
 				}
 				additive = tmp;
@@ -651,6 +673,7 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 		if (header.target & F_TARGET_CHAIN) {
 			ut32 fixupinfo;
 			if (!rz_buf_read_ble32_at(bin->buf, cur_page_offset + source, h->worder, &fixupinfo)) {
+				rz_bin_reloc_free(rel);
 				break;
 			}
 

@@ -153,6 +153,7 @@ RzList *rz_bin_ne_get_symbols(rz_bin_ne_obj_t *bin) {
 		}
 		ut16 entry_off;
 		if (!rz_buf_read_le16_at(bin->buf, off, &entry_off)) {
+			rz_bin_symbol_free(sym);
 			break;
 		}
 		off += 2;

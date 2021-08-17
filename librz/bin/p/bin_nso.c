@@ -199,6 +199,7 @@ static RzList *entries(RzBinFile *bf) {
 
 	RzBinAddr *ptr = RZ_NEW0(RzBinAddr);
 	if (!ptr) {
+		rz_list_free(ret);
 		return NULL;
 	}
 
@@ -211,6 +212,7 @@ static RzList *entries(RzBinFile *bf) {
 
 	if (!rz_buf_read_le32_at(b, NSO_OFF(text_loc), &tmp)) {
 		rz_list_free(ret);
+		free(ptr);
 		return NULL;
 	}
 	ptr->vaddr = tmp;
