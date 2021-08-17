@@ -760,7 +760,7 @@ static RzList /*<RzBinSymbol*>*/ *dex_resolve_methods_in_class(RzBinDex *dex, De
 	if (!methods) {
 		return NULL;
 	}
-	
+
 	DexMethodId *method_id = NULL;
 	DexEncodedMethod *encoded_method = NULL;
 	RzListIter *it = NULL;

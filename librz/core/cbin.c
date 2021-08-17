@@ -4612,7 +4612,11 @@ static void resolve_method_flags(RzStrBuf *buf, ut64 flags) {
 	}
 }
 
-RZ_API char *rz_core_bin_class_build_flag_name(RzBinClass *cls) {
+/**
+ * \brief Returns the flag name of a class
+ *
+ * */
+RZ_API RZ_OWN char *rz_core_bin_class_build_flag_name(RZ_NONNULL RzBinClass *cls) {
 	rz_return_val_if_fail(cls, NULL);
 	char *ret = NULL;
 	if (!cls->name) {
@@ -4631,7 +4635,11 @@ RZ_API char *rz_core_bin_class_build_flag_name(RzBinClass *cls) {
 	return ret;
 }
 
-RZ_API char *rz_core_bin_super_build_flag_name(RzBinClass *cls) {
+/**
+ * \brief Returns the flag name of a super class
+ *
+ * */
+RZ_API RZ_OWN char *rz_core_bin_super_build_flag_name(RZ_NONNULL RzBinClass *cls) {
 	rz_return_val_if_fail(cls, NULL);
 	char *ret = NULL;
 	if (!cls->name || !cls->super) {
@@ -4650,7 +4658,11 @@ RZ_API char *rz_core_bin_super_build_flag_name(RzBinClass *cls) {
 	return ret;
 }
 
-RZ_API char *rz_core_bin_method_build_flag_name(RzBinClass *cls, RzBinSymbol *meth) {
+/**
+ * \brief Returns the flag name of a class method
+ *
+ * */
+RZ_API RZ_OWN char *rz_core_bin_method_build_flag_name(RZ_NONNULL RzBinClass *cls, RZ_NONNULL RzBinSymbol *meth) {
 	rz_return_val_if_fail(cls && meth, NULL);
 	if (!cls->name || !meth->name) {
 		return NULL;
@@ -4674,7 +4686,11 @@ RZ_API char *rz_core_bin_method_build_flag_name(RzBinClass *cls, RzBinSymbol *me
 	return ret;
 }
 
-RZ_API char *rz_core_bin_field_build_flag_name(RzBinClass *cls, RzBinField *field) {
+/**
+ * \brief Returns the flag name of a class field
+ *
+ * */
+RZ_API RZ_OWN char *rz_core_bin_field_build_flag_name(RZ_NONNULL RzBinClass *cls, RZ_NONNULL RzBinField *field) {
 	rz_return_val_if_fail(cls && field, NULL);
 	if (!cls->name || !field->name) {
 		return NULL;

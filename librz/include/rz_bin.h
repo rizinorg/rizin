@@ -944,13 +944,13 @@ RZ_API RzBinVirtualFile *rz_bin_object_get_virtual_file(RzBinObject *o, const ch
 RZ_API void rz_bin_mem_free(void *data);
 
 // demangle functions
-RZ_API char *rz_bin_demangle(RzBinFile *binfile, const char *lang, const char *str, ut64 vaddr, bool libs);
-RZ_API char *rz_bin_demangle_java(const char *str);
-RZ_API char *rz_bin_demangle_cxx(RzBinFile *binfile, const char *str, ut64 vaddr);
-RZ_API char *rz_bin_demangle_msvc(const char *str);
-RZ_API char *rz_bin_demangle_swift(const char *s, bool syscmd);
-RZ_API char *rz_bin_demangle_objc(RzBinFile *binfile, const char *sym);
-RZ_API char *rz_bin_demangle_rust(RzBinFile *binfile, const char *str, ut64 vaddr);
+RZ_API RZ_OWN char *rz_bin_demangle(RZ_NONNULL RzBinFile *binfile, RZ_NONNULL const char *lang, RZ_NONNULL const char *str, ut64 vaddr, bool libs);
+RZ_API RZ_OWN char *rz_bin_demangle_java(RZ_NONNULL const char *str);
+RZ_API RZ_OWN char *rz_bin_demangle_cxx(RZ_NONNULL RzBinFile *binfile, RZ_NONNULL const char *str, ut64 vaddr);
+RZ_API RZ_OWN char *rz_bin_demangle_msvc(RZ_NONNULL const char *str);
+RZ_API RZ_OWN char *rz_bin_demangle_swift(RZ_NONNULL const char *s, bool syscmd);
+RZ_API RZ_OWN char *rz_bin_demangle_objc(RZ_NONNULL RzBinFile *binfile, RZ_NONNULL const char *sym);
+RZ_API RZ_OWN char *rz_bin_demangle_rust(RZ_NONNULL RzBinFile *binfile, RZ_NONNULL const char *str, ut64 vaddr);
 RZ_API int rz_bin_demangle_type(const char *str);
 RZ_API void rz_bin_demangle_list(RzBin *bin);
 RZ_API char *rz_bin_demangle_plugin(RzBin *bin, const char *name, const char *str);
