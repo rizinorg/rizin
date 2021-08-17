@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2015 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #if 0
         __ut64    __x[29];  /* General purpose registers x0-x28 */
         __ut64    __fp;             /* Frame pointer x29 */ //// 232
