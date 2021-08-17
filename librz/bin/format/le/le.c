@@ -582,6 +582,7 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 				ut8 tmp;
 				if (!rz_buf_read8_at(bin->buf, offset, &tmp)) {
 					rz_bin_reloc_free(rel);
+					rz_bin_import_free(imp);
 					break;
 				}
 				ordinal = tmp;
@@ -589,6 +590,7 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 			} else if (header.target & F_TARGET_OFF32) {
 				if (!rz_buf_read_ble32_at(bin->buf, offset, h->worder, &ordinal)) {
 					rz_bin_reloc_free(rel);
+					rz_bin_import_free(imp);
 					break;
 				}
 				offset += sizeof(ut32);
@@ -596,6 +598,7 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 				ut16 tmp;
 				if (!rz_buf_read_ble16_at(bin->buf, offset, h->worder, &tmp)) {
 					rz_bin_reloc_free(rel);
+					rz_bin_import_free(imp);
 					break;
 				}
 				ordinal = tmp;
@@ -616,6 +619,7 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 			if (header.target & F_TARGET_OFF32) {
 				if (!rz_buf_read_ble32_at(bin->buf, offset, h->worder, &nameoff)) {
 					rz_bin_reloc_free(rel);
+					rz_bin_import_free(imp);
 					break;
 				}
 				offset += sizeof(ut32);
@@ -623,6 +627,7 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 				ut16 tmp;
 				if (!rz_buf_read_ble16_at(bin->buf, offset, h->worder, &tmp)) {
 					rz_bin_reloc_free(rel);
+					rz_bin_import_free(imp);
 					break;
 				}
 				nameoff = tmp;
