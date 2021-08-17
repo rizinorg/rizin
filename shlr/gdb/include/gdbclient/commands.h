@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2014 defragger <rlaemmert@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef CLIENT_COMMANDS_H
 #define CLIENT_COMMANDS_H
 

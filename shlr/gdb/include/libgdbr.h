@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2014 defragger <rlaemmert@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 /*! \file */
 #ifndef LIBGDBR_H
 #define LIBGDBR_H
