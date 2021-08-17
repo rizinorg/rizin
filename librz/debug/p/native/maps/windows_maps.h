@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2019 GustavoLCR <gugulcr@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef WINDOWS_MAPS_H
 #define WINDOWS_MAPS_H
 #include <rz_core.h>

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2018 vdf-git
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #define THUMB_NONE                                 0x0
 #define THUMB_REG                                  0x1
 #define THUMB_CONST                                0x2

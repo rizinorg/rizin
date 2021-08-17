@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2020 HoundThe <cgkajm@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef TEST_TYPES_H
 #define TEST_TYPES_H
 

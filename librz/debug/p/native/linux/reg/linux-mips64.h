@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2016 dromero <dromero.perez@hotmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #if 0
 	reg      name    usage
 	---+-----------+-------------

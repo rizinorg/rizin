@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef _IO_PRIVATE_H_
 #define _IO_PRIVATE_H_
 

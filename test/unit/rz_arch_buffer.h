@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2020 Aswin C (officialcjunior) <realc@protonmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #define _BUFFER_SIZE 6649
 const uint8_t cpu_buffer[_BUFFER_SIZE] = {
 	0xe9, 0x0f, 0x00, 0x00, 0x19, 0x10, 0x00, 0x00, 0x19, 0x10,

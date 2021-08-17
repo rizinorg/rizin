@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2015 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 return strdup(
 	"=SP	r13\n"
 	"=LR	r14\n"
