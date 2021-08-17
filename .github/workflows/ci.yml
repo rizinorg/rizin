@@ -28,7 +28,24 @@ jobs:
     - uses: actions/checkout@v2
     - uses: dorny/paths-filter@v2
       id: filter
+      if: github.event_name == 'pull_request'
       with:
+        filters: |
+          edited:
+            - '**.c'
+            - '**.h'
+            - '**.in'
+            - '**.inc'
+            - '**/meson.build'
+            - 'shlr/rizin-shell-parser/**'
+            - 'subprojects/**'
+            - '.github/workflows/ci.yml'
+            - 'test/**'
+    - uses: dorny/paths-filter@v2
+      id: filter
+      if: github.event_name != 'pull_request'
+      with:
+        base: ${{ github.ref }}
         filters: |
           edited:
             - '**.c'
