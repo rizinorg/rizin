@@ -330,21 +330,21 @@ Flags: (0x0021) public super
 Class: (#18) LJDWPExecCmd;
 Super: (#19) java/lang/Object
 Constant pool: 71
-   #1 = Methodref           #19:#33        // void Object()
+   #1 = Methodref           #19:#33        // void Object.<init>()
    #2 = Class               #34            // StringBuilder
-   #3 = Methodref           #2:#33         // void StringBuilder()
-   #4 = Methodref           #2:#35         // StringBuilder StringBuilder(String)
+   #3 = Methodref           #2:#33         // void StringBuilder.<init>()
+   #4 = Methodref           #2:#35         // StringBuilder StringBuilder.append(String)
    #5 = String              #36            // " output:\n"
-   #6 = Methodref           #2:#37         // String StringBuilder()
-   #7 = Methodref           #38:#39        // Runtime Runtime()
-   #8 = Methodref           #38:#40        // Process Runtime(String)
+   #6 = Methodref           #2:#37         // String StringBuilder.toString()
+   #7 = Methodref           #38:#39        // Runtime Runtime.getRuntime()
+   #8 = Methodref           #38:#40        // Process Runtime.exec(String)
    #9 = Class               #41            // java.io.BufferedReader
   #10 = Class               #42            // java.io.InputStreamReader
-  #11 = Methodref           #43:#44        // java.io.InputStream Process()
-  #12 = Methodref           #10:#45        // void java.io.InputStreamReader(java.io.InputStream)
-  #13 = Methodref           #9:#46         // void java.io.BufferedReader(java.io.Reader)
-  #14 = Methodref           #9:#47         // String java.io.BufferedReader()
-  #15 = Methodref           #48:#49        // String String()
+  #11 = Methodref           #43:#44        // java.io.InputStream Process.getInputStream()
+  #12 = Methodref           #10:#45        // void java.io.InputStreamReader.<init>(java.io.InputStream)
+  #13 = Methodref           #9:#46         // void java.io.BufferedReader.<init>(java.io.Reader)
+  #14 = Methodref           #9:#47         // String java.io.BufferedReader.readLine()
+  #15 = Methodref           #48:#49        // String String.trim()
   #16 = String              #50            // "\n"
   #17 = Class               #51            // Exception
   #18 = Class               #52            // JDWPExecCmd
@@ -445,8 +445,8 @@ Constant pool: 22
    #4 = Utf8                main
    #5 = Utf8                ([Ljava/lang/String;)V
    #6 = Utf8                Code
-   #7 = Fieldref            #14:#15        // java.io.PrintStream System.out
-   #8 = Methodref           #9:#10         // void java.io.PrintStream(String)
+   #7 = Fieldref            #14:#15        // System.out:java.io.PrintStream
+   #8 = Methodref           #9:#10         // void java.io.PrintStream.println(String)
    #9 = Class               #13            // java.io.PrintStream
   #10 = NameAndType         #11:#12        // void println(String)
   #11 = Utf8                println
@@ -509,13 +509,13 @@ Flags: (0x0021) public super
 Class: (#65) LMain;
 Super: (#2) java/lang/Object
 Constant pool: 78
-   #1 = Methodref           #2:#3          // void Object()
+   #1 = Methodref           #2:#3          // void Object.<init>()
    #2 = Class               #4             // Object
    #3 = NameAndType         #5:#6          // void <init>()
    #4 = Utf8                java/lang/Object
    #5 = Utf8                <init>
    #6 = Utf8                ()V
-   #7 = Fieldref            #8:#9          // java.io.PrintStream System.out
+   #7 = Fieldref            #8:#9          // System.out:java.io.PrintStream
    #8 = Class               #10            // System
    #9 = NameAndType         #11:#12        // out:java.io.PrintStream
   #10 = Utf8                java/lang/System
@@ -523,7 +523,7 @@ Constant pool: 78
   #12 = Utf8                Ljava/io/PrintStream;
   #13 = String              #14            // "Hello World"
   #14 = Utf8                Hello World
-  #15 = Methodref           #16:#17        // void java.io.PrintStream(String)
+  #15 = Methodref           #16:#17        // void java.io.PrintStream.println(String)
   #16 = Class               #18            // java.io.PrintStream
   #17 = NameAndType         #19:#20        // void println(String)
   #18 = Utf8                java/io/PrintStream
@@ -535,42 +535,42 @@ Constant pool: 78
   #24 = Utf8                java/io/BufferedReader
   #25 = Class               #26            // java.io.FileReader
   #26 = Utf8                java/io/FileReader
-  #27 = Methodref           #25:#28        // void java.io.FileReader(String)
+  #27 = Methodref           #25:#28        // void java.io.FileReader.<init>(String)
   #28 = NameAndType         #5:#20         // void <init>(String)
-  #29 = Methodref           #23:#30        // void java.io.BufferedReader(java.io.Reader)
+  #29 = Methodref           #23:#30        // void java.io.BufferedReader.<init>(java.io.Reader)
   #30 = NameAndType         #5:#31         // void <init>(java.io.Reader)
   #31 = Utf8                (Ljava/io/Reader;)V
-  #32 = Methodref           #23:#33        // String java.io.BufferedReader()
+  #32 = Methodref           #23:#33        // String java.io.BufferedReader.readLine()
   #33 = NameAndType         #34:#35        // String readLine()
   #34 = Utf8                readLine
   #35 = Utf8                ()Ljava/lang/String;
   #36 = Class               #37            // StringBuilder
   #37 = Utf8                java/lang/StringBuilder
-  #38 = Methodref           #36:#3         // void StringBuilder()
+  #38 = Methodref           #36:#3         // void StringBuilder.<init>()
   #39 = String              #40            // "Line: "
   #40 = Utf8                Line: 
-  #41 = Methodref           #36:#42        // StringBuilder StringBuilder(String)
+  #41 = Methodref           #36:#42        // StringBuilder StringBuilder.append(String)
   #42 = NameAndType         #43:#44        // StringBuilder append(String)
   #43 = Utf8                append
   #44 = Utf8                (Ljava/lang/String;)Ljava/lang/StringBuilder;
-  #45 = Methodref           #36:#46        // String StringBuilder()
+  #45 = Methodref           #36:#46        // String StringBuilder.toString()
   #46 = NameAndType         #47:#35        // String toString()
   #47 = Utf8                toString
-  #48 = Methodref           #23:#49        // void java.io.BufferedReader()
+  #48 = Methodref           #23:#49        // void java.io.BufferedReader.close()
   #49 = NameAndType         #50:#6         // void close()
   #50 = Utf8                close
   #51 = Class               #52            // Exception
   #52 = Utf8                java/lang/Exception
-  #53 = Fieldref            #8:#54         // java.io.PrintStream System.err
+  #53 = Fieldref            #8:#54         // System.err:java.io.PrintStream
   #54 = NameAndType         #55:#12        // err:java.io.PrintStream
   #55 = Utf8                err
   #56 = String              #57            // "Exception occurred trying to read '%s'."
   #57 = Utf8                Exception occurred trying to read '%s'.
-  #58 = Methodref           #16:#59        // java.io.PrintStream java.io.PrintStream(String, Object[])
+  #58 = Methodref           #16:#59        // java.io.PrintStream java.io.PrintStream.format(String, Object[])
   #59 = NameAndType         #60:#61        // java.io.PrintStream format(String, Object[])
   #60 = Utf8                format
   #61 = Utf8                (Ljava/lang/String;[Ljava/lang/Object;)Ljava/io/PrintStream;
-  #62 = Methodref           #51:#63        // void Exception()
+  #62 = Methodref           #51:#63        // void Exception.printStackTrace()
   #63 = NameAndType         #64:#6         // void printStackTrace()
   #64 = Utf8                printStackTrace
   #65 = Class               #66            // Main
@@ -616,13 +616,13 @@ Flags: (0x0021) public super
 Class: (#65) LMain;
 Super: (#2) java/lang/Object
 Constant pool: 78
-   #1 = Methodref           #2:#3          // void Object()
+   #1 = Methodref           #2:#3          // void Object.<init>()
    #2 = Class               #4             // Object
    #3 = NameAndType         #5:#6          // void <init>()
    #4 = Utf8                java/lang/Object
    #5 = Utf8                <init>
    #6 = Utf8                ()V
-   #7 = Fieldref            #8:#9          // java.io.PrintStream System.out
+   #7 = Fieldref            #8:#9          // System.out:java.io.PrintStream
    #8 = Class               #10            // System
    #9 = NameAndType         #11:#12        // out:java.io.PrintStream
   #10 = Utf8                java/lang/System
@@ -630,7 +630,7 @@ Constant pool: 78
   #12 = Utf8                Ljava/io/PrintStream;
   #13 = String              #14            // "Hello World"
   #14 = Utf8                Hello World
-  #15 = Methodref           #16:#17        // void java.io.PrintStream(String)
+  #15 = Methodref           #16:#17        // void java.io.PrintStream.println(String)
   #16 = Class               #18            // java.io.PrintStream
   #17 = NameAndType         #19:#20        // void println(String)
   #18 = Utf8                java/io/PrintStream
@@ -642,42 +642,42 @@ Constant pool: 78
   #24 = Utf8                java/io/BufferedReader
   #25 = Class               #26            // java.io.FileReader
   #26 = Utf8                java/io/FileReader
-  #27 = Methodref           #25:#28        // void java.io.FileReader(String)
+  #27 = Methodref           #25:#28        // void java.io.FileReader.<init>(String)
   #28 = NameAndType         #5:#20         // void <init>(String)
-  #29 = Methodref           #23:#30        // void java.io.BufferedReader(java.io.Reader)
+  #29 = Methodref           #23:#30        // void java.io.BufferedReader.<init>(java.io.Reader)
   #30 = NameAndType         #5:#31         // void <init>(java.io.Reader)
   #31 = Utf8                (Ljava/io/Reader;)V
-  #32 = Methodref           #23:#33        // String java.io.BufferedReader()
+  #32 = Methodref           #23:#33        // String java.io.BufferedReader.readLine()
   #33 = NameAndType         #34:#35        // String readLine()
   #34 = Utf8                readLine
   #35 = Utf8                ()Ljava/lang/String;
   #36 = Class               #37            // StringBuilder
   #37 = Utf8                java/lang/StringBuilder
-  #38 = Methodref           #36:#3         // void StringBuilder()
+  #38 = Methodref           #36:#3         // void StringBuilder.<init>()
   #39 = String              #40            // "Line: "
   #40 = Utf8                Line: 
-  #41 = Methodref           #36:#42        // StringBuilder StringBuilder(String)
+  #41 = Methodref           #36:#42        // StringBuilder StringBuilder.append(String)
   #42 = NameAndType         #43:#44        // StringBuilder append(String)
   #43 = Utf8                append
   #44 = Utf8                (Ljava/lang/String;)Ljava/lang/StringBuilder;
-  #45 = Methodref           #36:#46        // String StringBuilder()
+  #45 = Methodref           #36:#46        // String StringBuilder.toString()
   #46 = NameAndType         #47:#35        // String toString()
   #47 = Utf8                toString
-  #48 = Methodref           #23:#49        // void java.io.BufferedReader()
+  #48 = Methodref           #23:#49        // void java.io.BufferedReader.close()
   #49 = NameAndType         #50:#6         // void close()
   #50 = Utf8                close
   #51 = Class               #52            // Exception
   #52 = Utf8                java/lang/Exception
-  #53 = Fieldref            #8:#54         // java.io.PrintStream System.err
+  #53 = Fieldref            #8:#54         // System.err:java.io.PrintStream
   #54 = NameAndType         #55:#12        // err:java.io.PrintStream
   #55 = Utf8                err
   #56 = String              #57            // "Exception occurred trying to read '%s'."
   #57 = Utf8                Exception occurred trying to read '%s'.
-  #58 = Methodref           #16:#59        // java.io.PrintStream java.io.PrintStream(String, Object[])
+  #58 = Methodref           #16:#59        // java.io.PrintStream java.io.PrintStream.format(String, Object[])
   #59 = NameAndType         #60:#61        // java.io.PrintStream format(String, Object[])
   #60 = Utf8                format
   #61 = Utf8                (Ljava/lang/String;[Ljava/lang/Object;)Ljava/io/PrintStream;
-  #62 = Methodref           #51:#63        // void Exception()
+  #62 = Methodref           #51:#63        // void Exception.printStackTrace()
   #63 = NameAndType         #64:#6         // void printStackTrace()
   #64 = Utf8                printStackTrace
   #65 = Class               #66            // Main
@@ -723,13 +723,13 @@ Flags: (0x0021) public super
 Class: (#57) LMain;
 Super: (#2) java/lang/Object
 Constant pool: 85
-   #1 = Methodref           #2:#3          // void Object()
+   #1 = Methodref           #2:#3          // void Object.<init>()
    #2 = Class               #4             // Object
    #3 = NameAndType         #5:#6          // void <init>()
    #4 = Utf8                java/lang/Object
    #5 = Utf8                <init>
    #6 = Utf8                ()V
-   #7 = Fieldref            #8:#9          // java.io.PrintStream System.out
+   #7 = Fieldref            #8:#9          // System.out:java.io.PrintStream
    #8 = Class               #10            // System
    #9 = NameAndType         #11:#12        // out:java.io.PrintStream
   #10 = Utf8                java/lang/System
@@ -737,7 +737,7 @@ Constant pool: 85
   #12 = Utf8                Ljava/io/PrintStream;
   #13 = String              #14            // "Hello World"
   #14 = Utf8                Hello World
-  #15 = Methodref           #16:#17        // void java.io.PrintStream(String)
+  #15 = Methodref           #16:#17        // void java.io.PrintStream.println(String)
   #16 = Class               #18            // java.io.PrintStream
   #17 = NameAndType         #19:#20        // void println(String)
   #18 = Utf8                java/io/PrintStream
@@ -749,12 +749,12 @@ Constant pool: 85
   #24 = Utf8                java/io/BufferedReader
   #25 = Class               #26            // java.io.FileReader
   #26 = Utf8                java/io/FileReader
-  #27 = Methodref           #25:#28        // void java.io.FileReader(String)
+  #27 = Methodref           #25:#28        // void java.io.FileReader.<init>(String)
   #28 = NameAndType         #5:#20         // void <init>(String)
-  #29 = Methodref           #23:#30        // void java.io.BufferedReader(java.io.Reader)
+  #29 = Methodref           #23:#30        // void java.io.BufferedReader.<init>(java.io.Reader)
   #30 = NameAndType         #5:#31         // void <init>(java.io.Reader)
   #31 = Utf8                (Ljava/io/Reader;)V
-  #32 = Methodref           #23:#33        // String java.io.BufferedReader()
+  #32 = Methodref           #23:#33        // String java.io.BufferedReader.readLine()
   #33 = NameAndType         #34:#35        // String readLine()
   #34 = Utf8                readLine
   #35 = Utf8                ()Ljava/lang/String;
@@ -762,21 +762,21 @@ Constant pool: 85
   #37 = NameAndType         #38:#39        // String makeConcatWithConstants(String)
   #38 = Utf8                makeConcatWithConstants
   #39 = Utf8                (Ljava/lang/String;)Ljava/lang/String;
-  #40 = Methodref           #23:#41        // void java.io.BufferedReader()
+  #40 = Methodref           #23:#41        // void java.io.BufferedReader.close()
   #41 = NameAndType         #42:#6         // void close()
   #42 = Utf8                close
   #43 = Class               #44            // Exception
   #44 = Utf8                java/lang/Exception
-  #45 = Fieldref            #8:#46         // java.io.PrintStream System.err
+  #45 = Fieldref            #8:#46         // System.err:java.io.PrintStream
   #46 = NameAndType         #47:#12        // err:java.io.PrintStream
   #47 = Utf8                err
   #48 = String              #49            // "Exception occurred trying to read '%s'."
   #49 = Utf8                Exception occurred trying to read '%s'.
-  #50 = Methodref           #16:#51        // java.io.PrintStream java.io.PrintStream(String, Object[])
+  #50 = Methodref           #16:#51        // java.io.PrintStream java.io.PrintStream.format(String, Object[])
   #51 = NameAndType         #52:#53        // java.io.PrintStream format(String, Object[])
   #52 = Utf8                format
   #53 = Utf8                (Ljava/lang/String;[Ljava/lang/Object;)Ljava/io/PrintStream;
-  #54 = Methodref           #43:#55        // void Exception()
+  #54 = Methodref           #43:#55        // void Exception.printStackTrace()
   #55 = NameAndType         #56:#6         // void printStackTrace()
   #56 = Utf8                printStackTrace
   #57 = Class               #58            // Main
@@ -794,7 +794,7 @@ Constant pool: 85
   #69 = Utf8                Main.java
   #70 = Utf8                BootstrapMethods
   #71 = MethodHandle        6:#72
-  #72 = Methodref           #73:#74        // invoke.CallSite invoke.StringConcatFactory(invoke.MethodHandles$Lookup, String, invoke.MethodType, String, Object[])
+  #72 = Methodref           #73:#74        // invoke.CallSite invoke.StringConcatFactory.makeConcatWithConstants(invoke.MethodHandles$Lookup, String, invoke.MethodType, String, Object[])
   #73 = Class               #75            // invoke.StringConcatFactory
   #74 = NameAndType         #38:#76        // invoke.CallSite makeConcatWithConstants(invoke.MethodHandles$Lookup, String, invoke.MethodType, String, Object[])
   #75 = Utf8                java/lang/invoke/StringConcatFactory
@@ -839,13 +839,13 @@ Flags: (0x0021) public super
 Class: (#57) LMain;
 Super: (#2) java/lang/Object
 Constant pool: 85
-   #1 = Methodref           #2:#3          // void Object()
+   #1 = Methodref           #2:#3          // void Object.<init>()
    #2 = Class               #4             // Object
    #3 = NameAndType         #5:#6          // void <init>()
    #4 = Utf8                java/lang/Object
    #5 = Utf8                <init>
    #6 = Utf8                ()V
-   #7 = Fieldref            #8:#9          // java.io.PrintStream System.out
+   #7 = Fieldref            #8:#9          // System.out:java.io.PrintStream
    #8 = Class               #10            // System
    #9 = NameAndType         #11:#12        // out:java.io.PrintStream
   #10 = Utf8                java/lang/System
@@ -853,7 +853,7 @@ Constant pool: 85
   #12 = Utf8                Ljava/io/PrintStream;
   #13 = String              #14            // "Hello World"
   #14 = Utf8                Hello World
-  #15 = Methodref           #16:#17        // void java.io.PrintStream(String)
+  #15 = Methodref           #16:#17        // void java.io.PrintStream.println(String)
   #16 = Class               #18            // java.io.PrintStream
   #17 = NameAndType         #19:#20        // void println(String)
   #18 = Utf8                java/io/PrintStream
@@ -865,12 +865,12 @@ Constant pool: 85
   #24 = Utf8                java/io/BufferedReader
   #25 = Class               #26            // java.io.FileReader
   #26 = Utf8                java/io/FileReader
-  #27 = Methodref           #25:#28        // void java.io.FileReader(String)
+  #27 = Methodref           #25:#28        // void java.io.FileReader.<init>(String)
   #28 = NameAndType         #5:#20         // void <init>(String)
-  #29 = Methodref           #23:#30        // void java.io.BufferedReader(java.io.Reader)
+  #29 = Methodref           #23:#30        // void java.io.BufferedReader.<init>(java.io.Reader)
   #30 = NameAndType         #5:#31         // void <init>(java.io.Reader)
   #31 = Utf8                (Ljava/io/Reader;)V
-  #32 = Methodref           #23:#33        // String java.io.BufferedReader()
+  #32 = Methodref           #23:#33        // String java.io.BufferedReader.readLine()
   #33 = NameAndType         #34:#35        // String readLine()
   #34 = Utf8                readLine
   #35 = Utf8                ()Ljava/lang/String;
@@ -878,21 +878,21 @@ Constant pool: 85
   #37 = NameAndType         #38:#39        // String makeConcatWithConstants(String)
   #38 = Utf8                makeConcatWithConstants
   #39 = Utf8                (Ljava/lang/String;)Ljava/lang/String;
-  #40 = Methodref           #23:#41        // void java.io.BufferedReader()
+  #40 = Methodref           #23:#41        // void java.io.BufferedReader.close()
   #41 = NameAndType         #42:#6         // void close()
   #42 = Utf8                close
   #43 = Class               #44            // Exception
   #44 = Utf8                java/lang/Exception
-  #45 = Fieldref            #8:#46         // java.io.PrintStream System.err
+  #45 = Fieldref            #8:#46         // System.err:java.io.PrintStream
   #46 = NameAndType         #47:#12        // err:java.io.PrintStream
   #47 = Utf8                err
   #48 = String              #49            // "Exception occurred trying to read '%s'."
   #49 = Utf8                Exception occurred trying to read '%s'.
-  #50 = Methodref           #16:#51        // java.io.PrintStream java.io.PrintStream(String, Object[])
+  #50 = Methodref           #16:#51        // java.io.PrintStream java.io.PrintStream.format(String, Object[])
   #51 = NameAndType         #52:#53        // java.io.PrintStream format(String, Object[])
   #52 = Utf8                format
   #53 = Utf8                (Ljava/lang/String;[Ljava/lang/Object;)Ljava/io/PrintStream;
-  #54 = Methodref           #43:#55        // void Exception()
+  #54 = Methodref           #43:#55        // void Exception.printStackTrace()
   #55 = NameAndType         #56:#6         // void printStackTrace()
   #56 = Utf8                printStackTrace
   #57 = Class               #58            // Main
@@ -910,7 +910,7 @@ Constant pool: 85
   #69 = Utf8                Main.java
   #70 = Utf8                BootstrapMethods
   #71 = MethodHandle        6:#72
-  #72 = Methodref           #73:#74        // invoke.CallSite invoke.StringConcatFactory(invoke.MethodHandles$Lookup, String, invoke.MethodType, String, Object[])
+  #72 = Methodref           #73:#74        // invoke.CallSite invoke.StringConcatFactory.makeConcatWithConstants(invoke.MethodHandles$Lookup, String, invoke.MethodType, String, Object[])
   #73 = Class               #75            // invoke.StringConcatFactory
   #74 = NameAndType         #38:#76        // invoke.CallSite makeConcatWithConstants(invoke.MethodHandles$Lookup, String, invoke.MethodType, String, Object[])
   #75 = Utf8                java/lang/invoke/StringConcatFactory
@@ -955,13 +955,13 @@ Flags: (0x0021) public super
 Class: (#57) LMain;
 Super: (#2) java/lang/Object
 Constant pool: 85
-   #1 = Methodref           #2:#3          // void Object()
+   #1 = Methodref           #2:#3          // void Object.<init>()
    #2 = Class               #4             // Object
    #3 = NameAndType         #5:#6          // void <init>()
    #4 = Utf8                java/lang/Object
    #5 = Utf8                <init>
    #6 = Utf8                ()V
-   #7 = Fieldref            #8:#9          // java.io.PrintStream System.out
+   #7 = Fieldref            #8:#9          // System.out:java.io.PrintStream
    #8 = Class               #10            // System
    #9 = NameAndType         #11:#12        // out:java.io.PrintStream
   #10 = Utf8                java/lang/System
@@ -969,7 +969,7 @@ Constant pool: 85
   #12 = Utf8                Ljava/io/PrintStream;
   #13 = String              #14            // "Hello World"
   #14 = Utf8                Hello World
-  #15 = Methodref           #16:#17        // void java.io.PrintStream(String)
+  #15 = Methodref           #16:#17        // void java.io.PrintStream.println(String)
   #16 = Class               #18            // java.io.PrintStream
   #17 = NameAndType         #19:#20        // void println(String)
   #18 = Utf8                java/io/PrintStream
@@ -981,12 +981,12 @@ Constant pool: 85
   #24 = Utf8                java/io/BufferedReader
   #25 = Class               #26            // java.io.FileReader
   #26 = Utf8                java/io/FileReader
-  #27 = Methodref           #25:#28        // void java.io.FileReader(String)
+  #27 = Methodref           #25:#28        // void java.io.FileReader.<init>(String)
   #28 = NameAndType         #5:#20         // void <init>(String)
-  #29 = Methodref           #23:#30        // void java.io.BufferedReader(java.io.Reader)
+  #29 = Methodref           #23:#30        // void java.io.BufferedReader.<init>(java.io.Reader)
   #30 = NameAndType         #5:#31         // void <init>(java.io.Reader)
   #31 = Utf8                (Ljava/io/Reader;)V
-  #32 = Methodref           #23:#33        // String java.io.BufferedReader()
+  #32 = Methodref           #23:#33        // String java.io.BufferedReader.readLine()
   #33 = NameAndType         #34:#35        // String readLine()
   #34 = Utf8                readLine
   #35 = Utf8                ()Ljava/lang/String;
@@ -994,21 +994,21 @@ Constant pool: 85
   #37 = NameAndType         #38:#39        // String makeConcatWithConstants(String)
   #38 = Utf8                makeConcatWithConstants
   #39 = Utf8                (Ljava/lang/String;)Ljava/lang/String;
-  #40 = Methodref           #23:#41        // void java.io.BufferedReader()
+  #40 = Methodref           #23:#41        // void java.io.BufferedReader.close()
   #41 = NameAndType         #42:#6         // void close()
   #42 = Utf8                close
   #43 = Class               #44            // Exception
   #44 = Utf8                java/lang/Exception
-  #45 = Fieldref            #8:#46         // java.io.PrintStream System.err
+  #45 = Fieldref            #8:#46         // System.err:java.io.PrintStream
   #46 = NameAndType         #47:#12        // err:java.io.PrintStream
   #47 = Utf8                err
   #48 = String              #49            // "Exception occurred trying to read '%s'."
   #49 = Utf8                Exception occurred trying to read '%s'.
-  #50 = Methodref           #16:#51        // java.io.PrintStream java.io.PrintStream(String, Object[])
+  #50 = Methodref           #16:#51        // java.io.PrintStream java.io.PrintStream.format(String, Object[])
   #51 = NameAndType         #52:#53        // java.io.PrintStream format(String, Object[])
   #52 = Utf8                format
   #53 = Utf8                (Ljava/lang/String;[Ljava/lang/Object;)Ljava/io/PrintStream;
-  #54 = Methodref           #43:#55        // void Exception()
+  #54 = Methodref           #43:#55        // void Exception.printStackTrace()
   #55 = NameAndType         #56:#6         // void printStackTrace()
   #56 = Utf8                printStackTrace
   #57 = Class               #58            // Main
@@ -1026,7 +1026,7 @@ Constant pool: 85
   #69 = Utf8                Main.java
   #70 = Utf8                BootstrapMethods
   #71 = MethodHandle        6:#72
-  #72 = Methodref           #73:#74        // invoke.CallSite invoke.StringConcatFactory(invoke.MethodHandles$Lookup, String, invoke.MethodType, String, Object[])
+  #72 = Methodref           #73:#74        // invoke.CallSite invoke.StringConcatFactory.makeConcatWithConstants(invoke.MethodHandles$Lookup, String, invoke.MethodType, String, Object[])
   #73 = Class               #75            // invoke.StringConcatFactory
   #74 = NameAndType         #38:#76        // invoke.CallSite makeConcatWithConstants(invoke.MethodHandles$Lookup, String, invoke.MethodType, String, Object[])
   #75 = Utf8                java/lang/invoke/StringConcatFactory
@@ -1071,13 +1071,13 @@ Flags: (0x0021) public super
 Class: (#57) LMain;
 Super: (#2) java/lang/Object
 Constant pool: 85
-   #1 = Methodref           #2:#3          // void Object()
+   #1 = Methodref           #2:#3          // void Object.<init>()
    #2 = Class               #4             // Object
    #3 = NameAndType         #5:#6          // void <init>()
    #4 = Utf8                java/lang/Object
    #5 = Utf8                <init>
    #6 = Utf8                ()V
-   #7 = Fieldref            #8:#9          // java.io.PrintStream System.out
+   #7 = Fieldref            #8:#9          // System.out:java.io.PrintStream
    #8 = Class               #10            // System
    #9 = NameAndType         #11:#12        // out:java.io.PrintStream
   #10 = Utf8                java/lang/System
@@ -1085,7 +1085,7 @@ Constant pool: 85
   #12 = Utf8                Ljava/io/PrintStream;
   #13 = String              #14            // "Hello World"
   #14 = Utf8                Hello World
-  #15 = Methodref           #16:#17        // void java.io.PrintStream(String)
+  #15 = Methodref           #16:#17        // void java.io.PrintStream.println(String)
   #16 = Class               #18            // java.io.PrintStream
   #17 = NameAndType         #19:#20        // void println(String)
   #18 = Utf8                java/io/PrintStream
@@ -1097,12 +1097,12 @@ Constant pool: 85
   #24 = Utf8                java/io/BufferedReader
   #25 = Class               #26            // java.io.FileReader
   #26 = Utf8                java/io/FileReader
-  #27 = Methodref           #25:#28        // void java.io.FileReader(String)
+  #27 = Methodref           #25:#28        // void java.io.FileReader.<init>(String)
   #28 = NameAndType         #5:#20         // void <init>(String)
-  #29 = Methodref           #23:#30        // void java.io.BufferedReader(java.io.Reader)
+  #29 = Methodref           #23:#30        // void java.io.BufferedReader.<init>(java.io.Reader)
   #30 = NameAndType         #5:#31         // void <init>(java.io.Reader)
   #31 = Utf8                (Ljava/io/Reader;)V
-  #32 = Methodref           #23:#33        // String java.io.BufferedReader()
+  #32 = Methodref           #23:#33        // String java.io.BufferedReader.readLine()
   #33 = NameAndType         #34:#35        // String readLine()
   #34 = Utf8                readLine
   #35 = Utf8                ()Ljava/lang/String;
@@ -1110,21 +1110,21 @@ Constant pool: 85
   #37 = NameAndType         #38:#39        // String makeConcatWithConstants(String)
   #38 = Utf8                makeConcatWithConstants
   #39 = Utf8                (Ljava/lang/String;)Ljava/lang/String;
-  #40 = Methodref           #23:#41        // void java.io.BufferedReader()
+  #40 = Methodref           #23:#41        // void java.io.BufferedReader.close()
   #41 = NameAndType         #42:#6         // void close()
   #42 = Utf8                close
   #43 = Class               #44            // Exception
   #44 = Utf8                java/lang/Exception
-  #45 = Fieldref            #8:#46         // java.io.PrintStream System.err
+  #45 = Fieldref            #8:#46         // System.err:java.io.PrintStream
   #46 = NameAndType         #47:#12        // err:java.io.PrintStream
   #47 = Utf8                err
   #48 = String              #49            // "Exception occurred trying to read '%s'."
   #49 = Utf8                Exception occurred trying to read '%s'.
-  #50 = Methodref           #16:#51        // java.io.PrintStream java.io.PrintStream(String, Object[])
+  #50 = Methodref           #16:#51        // java.io.PrintStream java.io.PrintStream.format(String, Object[])
   #51 = NameAndType         #52:#53        // java.io.PrintStream format(String, Object[])
   #52 = Utf8                format
   #53 = Utf8                (Ljava/lang/String;[Ljava/lang/Object;)Ljava/io/PrintStream;
-  #54 = Methodref           #43:#55        // void Exception()
+  #54 = Methodref           #43:#55        // void Exception.printStackTrace()
   #55 = NameAndType         #56:#6         // void printStackTrace()
   #56 = Utf8                printStackTrace
   #57 = Class               #58            // Main
@@ -1142,7 +1142,7 @@ Constant pool: 85
   #69 = Utf8                Main.java
   #70 = Utf8                BootstrapMethods
   #71 = MethodHandle        6:#72
-  #72 = Methodref           #73:#74        // invoke.CallSite invoke.StringConcatFactory(invoke.MethodHandles$Lookup, String, invoke.MethodType, String, Object[])
+  #72 = Methodref           #73:#74        // invoke.CallSite invoke.StringConcatFactory.makeConcatWithConstants(invoke.MethodHandles$Lookup, String, invoke.MethodType, String, Object[])
   #73 = Class               #75            // invoke.StringConcatFactory
   #74 = NameAndType         #38:#76        // invoke.CallSite makeConcatWithConstants(invoke.MethodHandles$Lookup, String, invoke.MethodType, String, Object[])
   #75 = Utf8                java/lang/invoke/StringConcatFactory
@@ -1187,13 +1187,13 @@ Flags: (0x0021) public super
 Class: (#57) LMain;
 Super: (#2) java/lang/Object
 Constant pool: 85
-   #1 = Methodref           #2:#3          // void Object()
+   #1 = Methodref           #2:#3          // void Object.<init>()
    #2 = Class               #4             // Object
    #3 = NameAndType         #5:#6          // void <init>()
    #4 = Utf8                java/lang/Object
    #5 = Utf8                <init>
    #6 = Utf8                ()V
-   #7 = Fieldref            #8:#9          // java.io.PrintStream System.out
+   #7 = Fieldref            #8:#9          // System.out:java.io.PrintStream
    #8 = Class               #10            // System
    #9 = NameAndType         #11:#12        // out:java.io.PrintStream
   #10 = Utf8                java/lang/System
@@ -1201,7 +1201,7 @@ Constant pool: 85
   #12 = Utf8                Ljava/io/PrintStream;
   #13 = String              #14            // "Hello World"
   #14 = Utf8                Hello World
-  #15 = Methodref           #16:#17        // void java.io.PrintStream(String)
+  #15 = Methodref           #16:#17        // void java.io.PrintStream.println(String)
   #16 = Class               #18            // java.io.PrintStream
   #17 = NameAndType         #19:#20        // void println(String)
   #18 = Utf8                java/io/PrintStream
@@ -1213,12 +1213,12 @@ Constant pool: 85
   #24 = Utf8                java/io/BufferedReader
   #25 = Class               #26            // java.io.FileReader
   #26 = Utf8                java/io/FileReader
-  #27 = Methodref           #25:#28        // void java.io.FileReader(String)
+  #27 = Methodref           #25:#28        // void java.io.FileReader.<init>(String)
   #28 = NameAndType         #5:#20         // void <init>(String)
-  #29 = Methodref           #23:#30        // void java.io.BufferedReader(java.io.Reader)
+  #29 = Methodref           #23:#30        // void java.io.BufferedReader.<init>(java.io.Reader)
   #30 = NameAndType         #5:#31         // void <init>(java.io.Reader)
   #31 = Utf8                (Ljava/io/Reader;)V
-  #32 = Methodref           #23:#33        // String java.io.BufferedReader()
+  #32 = Methodref           #23:#33        // String java.io.BufferedReader.readLine()
   #33 = NameAndType         #34:#35        // String readLine()
   #34 = Utf8                readLine
   #35 = Utf8                ()Ljava/lang/String;
@@ -1226,21 +1226,21 @@ Constant pool: 85
   #37 = NameAndType         #38:#39        // String makeConcatWithConstants(String)
   #38 = Utf8                makeConcatWithConstants
   #39 = Utf8                (Ljava/lang/String;)Ljava/lang/String;
-  #40 = Methodref           #23:#41        // void java.io.BufferedReader()
+  #40 = Methodref           #23:#41        // void java.io.BufferedReader.close()
   #41 = NameAndType         #42:#6         // void close()
   #42 = Utf8                close
   #43 = Class               #44            // Exception
   #44 = Utf8                java/lang/Exception
-  #45 = Fieldref            #8:#46         // java.io.PrintStream System.err
+  #45 = Fieldref            #8:#46         // System.err:java.io.PrintStream
   #46 = NameAndType         #47:#12        // err:java.io.PrintStream
   #47 = Utf8                err
   #48 = String              #49            // "Exception occurred trying to read '%s'."
   #49 = Utf8                Exception occurred trying to read '%s'.
-  #50 = Methodref           #16:#51        // java.io.PrintStream java.io.PrintStream(String, Object[])
+  #50 = Methodref           #16:#51        // java.io.PrintStream java.io.PrintStream.format(String, Object[])
   #51 = NameAndType         #52:#53        // java.io.PrintStream format(String, Object[])
   #52 = Utf8                format
   #53 = Utf8                (Ljava/lang/String;[Ljava/lang/Object;)Ljava/io/PrintStream;
-  #54 = Methodref           #43:#55        // void Exception()
+  #54 = Methodref           #43:#55        // void Exception.printStackTrace()
   #55 = NameAndType         #56:#6         // void printStackTrace()
   #56 = Utf8                printStackTrace
   #57 = Class               #58            // Main
@@ -1258,7 +1258,7 @@ Constant pool: 85
   #69 = Utf8                Main.java
   #70 = Utf8                BootstrapMethods
   #71 = MethodHandle        6:#72
-  #72 = Methodref           #73:#74        // invoke.CallSite invoke.StringConcatFactory(invoke.MethodHandles$Lookup, String, invoke.MethodType, String, Object[])
+  #72 = Methodref           #73:#74        // invoke.CallSite invoke.StringConcatFactory.makeConcatWithConstants(invoke.MethodHandles$Lookup, String, invoke.MethodType, String, Object[])
   #73 = Class               #75            // invoke.StringConcatFactory
   #74 = NameAndType         #38:#76        // invoke.CallSite makeConcatWithConstants(invoke.MethodHandles$Lookup, String, invoke.MethodType, String, Object[])
   #75 = Utf8                java/lang/invoke/StringConcatFactory
@@ -1303,13 +1303,13 @@ Flags: (0x0021) public super
 Class: (#57) LMain;
 Super: (#2) java/lang/Object
 Constant pool: 85
-   #1 = Methodref           #2:#3          // void Object()
+   #1 = Methodref           #2:#3          // void Object.<init>()
    #2 = Class               #4             // Object
    #3 = NameAndType         #5:#6          // void <init>()
    #4 = Utf8                java/lang/Object
    #5 = Utf8                <init>
    #6 = Utf8                ()V
-   #7 = Fieldref            #8:#9          // java.io.PrintStream System.out
+   #7 = Fieldref            #8:#9          // System.out:java.io.PrintStream
    #8 = Class               #10            // System
    #9 = NameAndType         #11:#12        // out:java.io.PrintStream
   #10 = Utf8                java/lang/System
@@ -1317,7 +1317,7 @@ Constant pool: 85
   #12 = Utf8                Ljava/io/PrintStream;
   #13 = String              #14            // "Hello World"
   #14 = Utf8                Hello World
-  #15 = Methodref           #16:#17        // void java.io.PrintStream(String)
+  #15 = Methodref           #16:#17        // void java.io.PrintStream.println(String)
   #16 = Class               #18            // java.io.PrintStream
   #17 = NameAndType         #19:#20        // void println(String)
   #18 = Utf8                java/io/PrintStream
@@ -1329,12 +1329,12 @@ Constant pool: 85
   #24 = Utf8                java/io/BufferedReader
   #25 = Class               #26            // java.io.FileReader
   #26 = Utf8                java/io/FileReader
-  #27 = Methodref           #25:#28        // void java.io.FileReader(String)
+  #27 = Methodref           #25:#28        // void java.io.FileReader.<init>(String)
   #28 = NameAndType         #5:#20         // void <init>(String)
-  #29 = Methodref           #23:#30        // void java.io.BufferedReader(java.io.Reader)
+  #29 = Methodref           #23:#30        // void java.io.BufferedReader.<init>(java.io.Reader)
   #30 = NameAndType         #5:#31         // void <init>(java.io.Reader)
   #31 = Utf8                (Ljava/io/Reader;)V
-  #32 = Methodref           #23:#33        // String java.io.BufferedReader()
+  #32 = Methodref           #23:#33        // String java.io.BufferedReader.readLine()
   #33 = NameAndType         #34:#35        // String readLine()
   #34 = Utf8                readLine
   #35 = Utf8                ()Ljava/lang/String;
@@ -1342,21 +1342,21 @@ Constant pool: 85
   #37 = NameAndType         #38:#39        // String makeConcatWithConstants(String)
   #38 = Utf8                makeConcatWithConstants
   #39 = Utf8                (Ljava/lang/String;)Ljava/lang/String;
-  #40 = Methodref           #23:#41        // void java.io.BufferedReader()
+  #40 = Methodref           #23:#41        // void java.io.BufferedReader.close()
   #41 = NameAndType         #42:#6         // void close()
   #42 = Utf8                close
   #43 = Class               #44            // Exception
   #44 = Utf8                java/lang/Exception
-  #45 = Fieldref            #8:#46         // java.io.PrintStream System.err
+  #45 = Fieldref            #8:#46         // System.err:java.io.PrintStream
   #46 = NameAndType         #47:#12        // err:java.io.PrintStream
   #47 = Utf8                err
   #48 = String              #49            // "Exception occurred trying to read '%s'."
   #49 = Utf8                Exception occurred trying to read '%s'.
-  #50 = Methodref           #16:#51        // java.io.PrintStream java.io.PrintStream(String, Object[])
+  #50 = Methodref           #16:#51        // java.io.PrintStream java.io.PrintStream.format(String, Object[])
   #51 = NameAndType         #52:#53        // java.io.PrintStream format(String, Object[])
   #52 = Utf8                format
   #53 = Utf8                (Ljava/lang/String;[Ljava/lang/Object;)Ljava/io/PrintStream;
-  #54 = Methodref           #43:#55        // void Exception()
+  #54 = Methodref           #43:#55        // void Exception.printStackTrace()
   #55 = NameAndType         #56:#6         // void printStackTrace()
   #56 = Utf8                printStackTrace
   #57 = Class               #58            // Main
@@ -1374,7 +1374,7 @@ Constant pool: 85
   #69 = Utf8                Main.java
   #70 = Utf8                BootstrapMethods
   #71 = MethodHandle        6:#72
-  #72 = Methodref           #73:#74        // invoke.CallSite invoke.StringConcatFactory(invoke.MethodHandles$Lookup, String, invoke.MethodType, String, Object[])
+  #72 = Methodref           #73:#74        // invoke.CallSite invoke.StringConcatFactory.makeConcatWithConstants(invoke.MethodHandles$Lookup, String, invoke.MethodType, String, Object[])
   #73 = Class               #75            // invoke.StringConcatFactory
   #74 = NameAndType         #38:#76        // invoke.CallSite makeConcatWithConstants(invoke.MethodHandles$Lookup, String, invoke.MethodType, String, Object[])
   #75 = Utf8                java/lang/invoke/StringConcatFactory
@@ -1419,13 +1419,13 @@ Flags: (0x0021) public super
 Class: (#57) LMain;
 Super: (#2) java/lang/Object
 Constant pool: 85
-   #1 = Methodref           #2:#3          // void Object()
+   #1 = Methodref           #2:#3          // void Object.<init>()
    #2 = Class               #4             // Object
    #3 = NameAndType         #5:#6          // void <init>()
    #4 = Utf8                java/lang/Object
    #5 = Utf8                <init>
    #6 = Utf8                ()V
-   #7 = Fieldref            #8:#9          // java.io.PrintStream System.out
+   #7 = Fieldref            #8:#9          // System.out:java.io.PrintStream
    #8 = Class               #10            // System
    #9 = NameAndType         #11:#12        // out:java.io.PrintStream
   #10 = Utf8                java/lang/System
@@ -1433,7 +1433,7 @@ Constant pool: 85
   #12 = Utf8                Ljava/io/PrintStream;
   #13 = String              #14            // "Hello World"
   #14 = Utf8                Hello World
-  #15 = Methodref           #16:#17        // void java.io.PrintStream(String)
+  #15 = Methodref           #16:#17        // void java.io.PrintStream.println(String)
   #16 = Class               #18            // java.io.PrintStream
   #17 = NameAndType         #19:#20        // void println(String)
   #18 = Utf8                java/io/PrintStream
@@ -1445,12 +1445,12 @@ Constant pool: 85
   #24 = Utf8                java/io/BufferedReader
   #25 = Class               #26            // java.io.FileReader
   #26 = Utf8                java/io/FileReader
-  #27 = Methodref           #25:#28        // void java.io.FileReader(String)
+  #27 = Methodref           #25:#28        // void java.io.FileReader.<init>(String)
   #28 = NameAndType         #5:#20         // void <init>(String)
-  #29 = Methodref           #23:#30        // void java.io.BufferedReader(java.io.Reader)
+  #29 = Methodref           #23:#30        // void java.io.BufferedReader.<init>(java.io.Reader)
   #30 = NameAndType         #5:#31         // void <init>(java.io.Reader)
   #31 = Utf8                (Ljava/io/Reader;)V
-  #32 = Methodref           #23:#33        // String java.io.BufferedReader()
+  #32 = Methodref           #23:#33        // String java.io.BufferedReader.readLine()
   #33 = NameAndType         #34:#35        // String readLine()
   #34 = Utf8                readLine
   #35 = Utf8                ()Ljava/lang/String;
@@ -1458,21 +1458,21 @@ Constant pool: 85
   #37 = NameAndType         #38:#39        // String makeConcatWithConstants(String)
   #38 = Utf8                makeConcatWithConstants
   #39 = Utf8                (Ljava/lang/String;)Ljava/lang/String;
-  #40 = Methodref           #23:#41        // void java.io.BufferedReader()
+  #40 = Methodref           #23:#41        // void java.io.BufferedReader.close()
   #41 = NameAndType         #42:#6         // void close()
   #42 = Utf8                close
   #43 = Class               #44            // Exception
   #44 = Utf8                java/lang/Exception
-  #45 = Fieldref            #8:#46         // java.io.PrintStream System.err
+  #45 = Fieldref            #8:#46         // System.err:java.io.PrintStream
   #46 = NameAndType         #47:#12        // err:java.io.PrintStream
   #47 = Utf8                err
   #48 = String              #49            // "Exception occurred trying to read '%s'."
   #49 = Utf8                Exception occurred trying to read '%s'.
-  #50 = Methodref           #16:#51        // java.io.PrintStream java.io.PrintStream(String, Object[])
+  #50 = Methodref           #16:#51        // java.io.PrintStream java.io.PrintStream.format(String, Object[])
   #51 = NameAndType         #52:#53        // java.io.PrintStream format(String, Object[])
   #52 = Utf8                format
   #53 = Utf8                (Ljava/lang/String;[Ljava/lang/Object;)Ljava/io/PrintStream;
-  #54 = Methodref           #43:#55        // void Exception()
+  #54 = Methodref           #43:#55        // void Exception.printStackTrace()
   #55 = NameAndType         #56:#6         // void printStackTrace()
   #56 = Utf8                printStackTrace
   #57 = Class               #58            // Main
@@ -1490,7 +1490,7 @@ Constant pool: 85
   #69 = Utf8                Main.java
   #70 = Utf8                BootstrapMethods
   #71 = MethodHandle        6:#72
-  #72 = Methodref           #73:#74        // invoke.CallSite invoke.StringConcatFactory(invoke.MethodHandles$Lookup, String, invoke.MethodType, String, Object[])
+  #72 = Methodref           #73:#74        // invoke.CallSite invoke.StringConcatFactory.makeConcatWithConstants(invoke.MethodHandles$Lookup, String, invoke.MethodType, String, Object[])
   #73 = Class               #75            // invoke.StringConcatFactory
   #74 = NameAndType         #38:#76        // invoke.CallSite makeConcatWithConstants(invoke.MethodHandles$Lookup, String, invoke.MethodType, String, Object[])
   #75 = Utf8                java/lang/invoke/StringConcatFactory
@@ -1665,6 +1665,6 @@ NAME=Resolve java constant pool index
 FILE=bins/java/Pig.class
 CMDS=javar 15
 EXPECT=<<EOF
-void java.io.PrintStream(String)
+void java.io.PrintStream.println(String)
 EOF
 RUN
