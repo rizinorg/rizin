@@ -74,6 +74,7 @@ static void walkSymbols(RzBuffer *buf, RzBinNXOObj *bin, ut64 symtab, ut64 strta
 			import++;
 			ut64 pltSym;
 			if (!rz_buf_read_le64_at(buf, relplt + (import * 24), &pltSym)) {
+				free(symName);
 				break;
 			}
 			imp = RZ_NEW0(RzBinImport);
