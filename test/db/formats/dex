@@ -80,7 +80,7 @@ FILE=bins/dex/Hello.dex
 CMDS=ic
 EXPECT=<<EOF
 0x00000174 [0x000001a4 - 0x0000021e]    122 class 0 LHello; :: Ljava/lang/Object;
-0x00000336 field  0 P    who
+0x00000336 field  0 sP   who
 0x000001a4 method 0 pC   <init>(Ljava/lang/String;)V
 0x000001c0 method 1 sp   main([Ljava/lang/String;)V
 0x000001e8 method 2 p    say()V

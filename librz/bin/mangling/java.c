@@ -131,7 +131,7 @@ static char *demangle_method(char *name, char *arguments, char *return_type) {
 	const char *t = NULL;
 	if (name[0] == 'L' && (t = strchr(name, ';')) && !demangle_type(name, sb, NULL)) {
 		goto demangle_method_bad;
-	} else if (name[0] == 'L') {
+	} else if (name[0] == 'L' && t) {
 		rz_strbuf_append(sb, t + 1);
 	} else {
 		rz_strbuf_append(sb, name);
