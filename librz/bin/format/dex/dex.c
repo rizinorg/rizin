@@ -487,7 +487,7 @@ dex_parse_bad:
 }
 
 /**
- * /brief Frees a RzBinDex struct
+ * \brief Frees a RzBinDex struct
  */
 RZ_API void rz_bin_dex_free(RZ_NULLABLE RzBinDex *dex) {
 	if (!dex) {
@@ -506,7 +506,7 @@ RZ_API void rz_bin_dex_free(RZ_NULLABLE RzBinDex *dex) {
 }
 
 /**
- * /brief Parses the dex file and returns a RzBinDex struct
+ * \brief Parses the dex file and returns a RzBinDex struct
  */
 RZ_API RZ_OWN RzBinDex *rz_bin_dex_new(RZ_NONNULL RzBuffer *buf, ut64 base, RZ_NONNULL Sdb *kv) {
 	rz_return_val_if_fail(buf, NULL);
@@ -573,7 +573,7 @@ static char *dex_access_flags_readable(ut32 access_flags) {
 }
 
 /**
- * /brief Returns a RzList<RzBinString*> containing the dex strings
+ * \brief Returns a RzList<RzBinString*> containing the dex strings
  */
 RZ_API RZ_OWN RzList /*<RzBinString*>*/ *rz_bin_dex_strings(RZ_NONNULL RzBinDex *dex) {
 	rz_return_val_if_fail(dex, NULL);
@@ -934,7 +934,7 @@ static void free_rz_bin_class(RzBinClass *bclass) {
 }
 
 /**
- * /brief Returns a RzList<RzBinClass*> containing the dex classes
+ * \brief Returns a RzList<RzBinClass*> containing the dex classes
  */
 RZ_API RZ_OWN RzList /*<RzBinClass*>*/ *rz_bin_dex_classes(RZ_NONNULL RzBinDex *dex) {
 	rz_return_val_if_fail(dex, NULL);
@@ -1056,7 +1056,7 @@ static void dex_resolve_code_section_in_class(RzBinDex *dex, DexClassDef *class_
 }
 
 /**
- * /brief Returns a RzList<RzBinSection*> containing the dex sections
+ * \brief Returns a RzList<RzBinSection*> containing the dex sections
  */
 RZ_API RZ_OWN RzList /*<RzBinSection*>*/ *rz_bin_dex_sections(RZ_NONNULL RzBinDex *dex) {
 	rz_return_val_if_fail(dex, NULL);
@@ -1086,7 +1086,7 @@ RZ_API RZ_OWN RzList /*<RzBinSection*>*/ *rz_bin_dex_sections(RZ_NONNULL RzBinDe
 }
 
 /**
- * /brief Returns a RzList<RzBinField*> containing the dex fields
+ * \brief Returns a RzList<RzBinField*> containing the dex fields
  */
 RZ_API RZ_OWN RzList /*<RzBinField*>*/ *rz_bin_dex_fields(RZ_NONNULL RzBinDex *dex) {
 	rz_return_val_if_fail(dex, NULL);
@@ -1112,7 +1112,7 @@ RZ_API RZ_OWN RzList /*<RzBinField*>*/ *rz_bin_dex_fields(RZ_NONNULL RzBinDex *d
 }
 
 /**
- * /brief Returns a RzList<RzBinSymbol*> containing the dex symbols
+ * \brief Returns a RzList<RzBinSymbol*> containing the dex symbols
  */
 RZ_API RZ_OWN RzList /*<RzBinSymbol*>*/ *rz_bin_dex_symbols(RZ_NONNULL RzBinDex *dex) {
 	rz_return_val_if_fail(dex, NULL);
@@ -1224,7 +1224,7 @@ RZ_API RZ_OWN RzList /*<RzBinSymbol*>*/ *rz_bin_dex_symbols(RZ_NONNULL RzBinDex 
 }
 
 /**
- * /brief Returns a RzList<RzBinImport*> containing the dex imports
+ * \brief Returns a RzList<RzBinImport*> containing the dex imports
  */
 RZ_API RZ_OWN RzList /*<RzBinImport*>*/ *rz_bin_dex_imports(RZ_NONNULL RzBinDex *dex) {
 	rz_return_val_if_fail(dex, NULL);
@@ -1360,7 +1360,7 @@ static int compare_strings(const void *a, const void *b) {
 }
 
 /**
- * /brief Returns a RzList<char*> containing the dex libraries
+ * \brief Returns a RzList<char*> containing the dex libraries
  */
 RZ_API RZ_OWN RzList /*<char*>*/ *rz_bin_dex_libraries(RZ_NONNULL RzBinDex *dex) {
 	rz_return_val_if_fail(dex, NULL);
@@ -1483,7 +1483,7 @@ static bool dex_resolve_symbol_in_class_methods(RzBinDex *dex, DexClassDef *clas
 }
 
 /**
- * /brief Returns a RzBinAddr pointer containing the resolved RzBinSpecialSymbol
+ * \brief Returns a RzBinAddr pointer containing the resolved RzBinSpecialSymbol
  */
 RZ_API RZ_OWN RzBinAddr *rz_bin_dex_resolve_symbol(RZ_NONNULL RzBinDex *dex, RzBinSpecialSymbol resolve) {
 	rz_return_val_if_fail(dex, NULL);
@@ -1589,7 +1589,7 @@ static RzList /*<RzBinAddr*>*/ *dex_resolve_entrypoints_in_class(RzBinDex *dex, 
 }
 
 /**
- * /brief Returns a RzList<RzBinAddr*> containing the dex entripoints
+ * \brief Returns a RzList<RzBinAddr*> containing the dex entripoints
  */
 RZ_API RZ_OWN RzList /*<RzBinAddr*>*/ *rz_bin_dex_entrypoints(RZ_NONNULL RzBinDex *dex) {
 	rz_return_val_if_fail(dex, NULL);
@@ -1616,7 +1616,7 @@ RZ_API RZ_OWN RzList /*<RzBinAddr*>*/ *rz_bin_dex_entrypoints(RZ_NONNULL RzBinDe
 }
 
 /**
- * /brief Returns the resolved string linked to the given method id
+ * \brief Returns the resolved string linked to the given method id
  */
 RZ_API RZ_OWN char *rz_bin_dex_resolve_method_by_idx(RZ_NONNULL RzBinDex *dex, ut32 method_idx) {
 	rz_return_val_if_fail(dex, NULL);
@@ -1650,7 +1650,7 @@ RZ_API RZ_OWN char *rz_bin_dex_resolve_method_by_idx(RZ_NONNULL RzBinDex *dex, u
 }
 
 /**
- * /brief Returns the resolved string linked to the given field id
+ * \brief Returns the resolved string linked to the given field id
  */
 RZ_API RZ_OWN char *rz_bin_dex_resolve_field_by_idx(RZ_NONNULL RzBinDex *dex, ut32 field_idx) {
 	rz_return_val_if_fail(dex, NULL);
@@ -1687,7 +1687,7 @@ RZ_API RZ_OWN char *rz_bin_dex_resolve_field_by_idx(RZ_NONNULL RzBinDex *dex, ut
 }
 
 /**
- * /brief Returns the resolved offset linked to the given string id
+ * \brief Returns the resolved offset linked to the given string id
  */
 RZ_API ut64 rz_bin_dex_resolve_string_offset_by_idx(RZ_NONNULL RzBinDex *dex, ut32 string_idx) {
 	rz_return_val_if_fail(dex, UT64_MAX);
@@ -1701,7 +1701,7 @@ RZ_API ut64 rz_bin_dex_resolve_string_offset_by_idx(RZ_NONNULL RzBinDex *dex, ut
 }
 
 /**
- * /brief Returns the resolved offset linked to the given type id
+ * \brief Returns the resolved offset linked to the given type id
  */
 RZ_API ut64 rz_bin_dex_resolve_type_id_offset_by_idx(RZ_NONNULL RzBinDex *dex, ut32 type_idx) {
 	rz_return_val_if_fail(dex, UT64_MAX);
@@ -1715,7 +1715,7 @@ RZ_API ut64 rz_bin_dex_resolve_type_id_offset_by_idx(RZ_NONNULL RzBinDex *dex, u
 }
 
 /**
- * /brief Returns the resolved offset linked to the given method id
+ * \brief Returns the resolved offset linked to the given method id
  */
 RZ_API ut64 rz_bin_dex_resolve_method_offset_by_idx(RZ_NONNULL RzBinDex *dex, ut32 method_idx) {
 	rz_return_val_if_fail(dex, UT64_MAX);
@@ -1729,7 +1729,7 @@ RZ_API ut64 rz_bin_dex_resolve_method_offset_by_idx(RZ_NONNULL RzBinDex *dex, ut
 }
 
 /**
- * /brief Returns the resolved string linked to the given string id
+ * \brief Returns the resolved string linked to the given string id
  */
 RZ_API RZ_OWN char *rz_bin_dex_resolve_string_by_idx(RZ_NONNULL RzBinDex *dex, ut32 string_idx) {
 	rz_return_val_if_fail(dex, NULL);
@@ -1738,7 +1738,7 @@ RZ_API RZ_OWN char *rz_bin_dex_resolve_string_by_idx(RZ_NONNULL RzBinDex *dex, u
 }
 
 /**
- * /brief Returns the resolved string linked to the given class id
+ * \brief Returns the resolved string linked to the given class id
  */
 RZ_API RZ_OWN char *rz_bin_dex_resolve_class_by_idx(RZ_NONNULL RzBinDex *dex, ut32 class_idx) {
 	rz_return_val_if_fail(dex, NULL);
@@ -1747,7 +1747,7 @@ RZ_API RZ_OWN char *rz_bin_dex_resolve_class_by_idx(RZ_NONNULL RzBinDex *dex, ut
 }
 
 /**
- * /brief Returns the resolved string linked to the given prototype id
+ * \brief Returns the resolved string linked to the given prototype id
  */
 RZ_API RZ_OWN char *rz_bin_dex_resolve_proto_by_idx(RZ_NONNULL RzBinDex *dex, ut32 proto_idx) {
 	rz_return_val_if_fail(dex, NULL);
@@ -1756,7 +1756,7 @@ RZ_API RZ_OWN char *rz_bin_dex_resolve_proto_by_idx(RZ_NONNULL RzBinDex *dex, ut
 }
 
 /**
- * /brief Sets the RzBinHash dex checksum (adler32)
+ * \brief Sets the RzBinHash dex checksum (adler32)
  */
 RZ_API void rz_bin_dex_checksum(RZ_NONNULL RzBinDex *dex, RZ_NONNULL RzBinHash *hash) {
 	rz_return_if_fail(dex && hash);
@@ -1769,7 +1769,7 @@ RZ_API void rz_bin_dex_checksum(RZ_NONNULL RzBinDex *dex, RZ_NONNULL RzBinHash *
 }
 
 /**
- * /brief Sets the RzBinHash dex digest (sha1)
+ * \brief Sets the RzBinHash dex digest (sha1)
  */
 RZ_API void rz_bin_dex_sha1(RZ_NONNULL RzBinDex *dex, RZ_NONNULL RzBinHash *hash) {
 	rz_return_if_fail(dex && hash);
@@ -1782,7 +1782,7 @@ RZ_API void rz_bin_dex_sha1(RZ_NONNULL RzBinDex *dex, RZ_NONNULL RzBinHash *hash
 }
 
 /**
- * /brief Returns the dex version (string format)
+ * \brief Returns the dex version (string format)
  */
 RZ_API RZ_OWN char *rz_bin_dex_version(RZ_NONNULL RzBinDex *dex) {
 	rz_return_val_if_fail(dex, NULL);
@@ -1807,7 +1807,7 @@ RZ_API RZ_OWN char *rz_bin_dex_version(RZ_NONNULL RzBinDex *dex) {
 }
 
 /**
- * /brief Returns the dex debug info RzBin values
+ * \brief Returns the dex debug info RzBin values
  */
 RZ_API ut64 rz_bin_dex_debug_info(RZ_NONNULL RzBinDex *dex) {
 	rz_return_val_if_fail(dex, 0);

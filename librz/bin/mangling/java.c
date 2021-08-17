@@ -246,7 +246,7 @@ static char *demangle_any(char *mangled) {
 }
 
 /**
- * /brief Demangles java classes/methods/fields
+ * \brief Demangles java classes/methods/fields
  * 
  * Demangles java classes/methods/fields
  * 

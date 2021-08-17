@@ -1180,7 +1180,7 @@ RZ_API void rz_table_visual_list(RzTable *table, RzList *list, ut64 seek, ut64 l
 }
 
 /**
- * /brief Generates the transpose of RzTable.
+ * \brief Generates the transpose of RzTable.
  *
  * /param t Referenced \p RzTable
  * /return t Referenced \p RzTable
