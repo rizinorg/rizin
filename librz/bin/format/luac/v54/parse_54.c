@@ -301,6 +301,7 @@ static ut64 lua_parse_debug(LuaProto *proto, RzBuffer *buffer, ut64 offset, ut64
 		info_entry->offset = offset;
 		ut8 tmp;
 		if (!rz_buf_read8_at(buffer, offset, &tmp)) {
+			free(info_entry);
 			return 0;
 		}
 		info_entry->info_data = tmp;
