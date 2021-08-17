@@ -140,7 +140,6 @@ static char *demangle_method(char *name, char *arguments, char *return_type) {
 	rz_strbuf_append(sb, "(");
 	for (size_t pos = 0, used = 0; pos < args_length;) {
 		if (!demangle_type(arguments + pos, sb, &used)) {
-			rz_warn_if_reached();
 			goto demangle_method_bad;
 		}
 		pos += used;
