@@ -199,6 +199,7 @@ static RzList *entries(RzBinFile *bf) {
 
 	RzBinAddr *ptr = RZ_NEW0(RzBinAddr);
 	if (!ptr) {
+		rz_list_free(ret);
 		return NULL;
 	}
 
