@@ -3308,6 +3308,7 @@ static int bin_pe_init_security(struct PE_(rz_bin_pe_obj_t) * bin) {
 			return false;
 		}
 		if (!rz_buf_read_le32_at(bin->b, offset, &cert->dwLength)) {
+			RZ_FREE(cert);
 			return false;
 		}
 		cert->dwLength += (8 - (cert->dwLength & 7)) & 7; // align32
@@ -3317,9 +3318,11 @@ static int bin_pe_init_security(struct PE_(rz_bin_pe_obj_t) * bin) {
 			return false;
 		}
 		if (!rz_buf_read_le16_at(bin->b, offset + 4, &cert->wRevision)) {
+			RZ_FREE(cert);
 			return false;
 		}
 		if (!rz_buf_read_le16_at(bin->b, offset + 6, &cert->wCertificateType)) {
+			RZ_FREE(cert);
 			return false;
 		}
 		if (cert->dwLength < 6) {
