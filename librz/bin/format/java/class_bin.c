@@ -1496,7 +1496,7 @@ RZ_API RZ_OWN RzList *rz_bin_java_class_const_pool_as_imports(RZ_NONNULL RzBinJa
 
 			char *object = java_class_constant_pool_stringify_at(bin, class_name_index);
 			if (!object) {
-				break;
+				continue;
 			}
 
 			RzBinImport *import = RZ_NEW0(RzBinImport);
