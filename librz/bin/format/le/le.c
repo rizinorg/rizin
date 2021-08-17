@@ -509,6 +509,7 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 		ut16 source = 0;
 		if (header.source & F_SOURCE_LIST) {
 			if (!rz_buf_read8_at(bin->buf, offset, &repeat)) {
+				rz_bin_reloc_free(rel);
 				break;
 			}
 			offset += sizeof(ut8);
