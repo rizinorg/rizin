@@ -184,7 +184,7 @@ typedef struct dex_t {
 } RzBinDex;
 
 RZ_API RZ_OWN RzBinDex *rz_bin_dex_new(RZ_NONNULL RzBuffer *buf, ut64 base, RZ_NONNULL Sdb *kv);
-RZ_API void rz_bin_dex_free(RZ_NONNULL RzBinDex *dex);
+RZ_API void rz_bin_dex_free(RZ_NULLABLE RzBinDex *dex);
 
 RZ_API RZ_OWN char *rz_bin_dex_version(RZ_NONNULL RzBinDex *dex);
 RZ_API ut64 rz_bin_dex_debug_info(RZ_NONNULL RzBinDex *dex);
