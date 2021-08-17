@@ -17,7 +17,7 @@
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int l) {
 	HexInsn hi = { 0 };
 	ut32 data = rz_read_le32(buf);
-	op->size = hexagon_disasm_instruction(data, &hi, (ut32)a->pc);
+	op->buf_asm.len = hexagon_disasm_instruction(data, &hi, (ut32)a->pc);
 	rz_strbuf_set(&op->buf_asm, hi.mnem);
 	return op->size;
 }
