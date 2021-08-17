@@ -3715,18 +3715,12 @@ static int bin_classes(RzCore *r, PJ *pj, int mode) {
 			// C struct
 			if (!(bf->o->lang == RZ_BIN_NM_JAVA || (bf->o->info && bf->o->info->lang && strstr(bf->o->info->lang, "dalvik")))) {
 				rz_cons_printf("td \"struct %s {", c->name);
-				if (rz_list_empty(c->fields)) {
-					// XXX workaround because we cant register empty structs yet
-					// XXX https://github.com/rizinorg/rizin/issues/16342
-					rz_cons_printf(" char empty[0];");
-				} else {
-					rz_list_foreach (c->fields, iter2, f) {
-						char *n = objc_name_toc(f->name);
-						char *t = objc_type_toc(f->type);
-						rz_cons_printf(" %s %s;", t, n);
-						free(t);
-						free(n);
-					}
+				rz_list_foreach (c->fields, iter2, f) {
+					char *n = objc_name_toc(f->name);
+					char *t = objc_type_toc(f->type);
+					rz_cons_printf(" %s %s;", t, n);
+					free(t);
+					free(n);
 				}
 				rz_cons_printf("};\"\n");
 			}
