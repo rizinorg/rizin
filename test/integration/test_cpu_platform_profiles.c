@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2020 Aswin C (officialcjunior) <realc@protonmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_core.h>
 #include <rz_arch.h>
 #include <rz_project.h>
