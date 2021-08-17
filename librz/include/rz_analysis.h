@@ -1487,8 +1487,8 @@ typedef struct {
 /* Independent Trace Functions */
 RZ_API RzILTraceInstruction *rz_analysis_il_trace_instruction_new(ut64 addr);
 RZ_API void rz_analysis_il_trace_instruction_free(RzILTraceInstruction *instruction);
-RZ_API void rz_analysis_il_trace_add_mem(RzILTraceInstruction *trace, RzILTraceMemOp *mem);
-RZ_API void rz_analysis_il_trace_add_reg(RzILTraceInstruction *trace, RzILTraceRegOp *reg);
+RZ_API bool rz_analysis_il_trace_add_mem(RzILTraceInstruction *trace, RzILTraceMemOp *mem);
+RZ_API bool rz_analysis_il_trace_add_reg(RzILTraceInstruction *trace, RzILTraceRegOp *reg);
 RZ_API RzILTraceMemOp *rz_analysis_il_get_mem_op_trace(RzILTraceInstruction *trace, ut64 addr, RzILTraceOpType op_type);
 RZ_API RzILTraceRegOp *rz_analysis_il_get_reg_op_trace(RzILTraceInstruction *trace, const char *regname, RzILTraceOpType op_type);
 RZ_API bool rz_analysis_il_mem_trace_contains(RzILTraceInstruction *trace, ut64 addr, RzILTraceOpType op_type);

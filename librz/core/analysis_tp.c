@@ -502,6 +502,7 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 			}
 		}
 		size += analysis->bits / 8;
+		rz_type_free(type);
 	}
 	if (owned) {
 		rz_type_callable_free(callable);

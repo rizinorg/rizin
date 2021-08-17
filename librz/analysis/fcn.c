@@ -2515,6 +2515,7 @@ RZ_API RZ_OWN RzCallable *rz_analysis_function_derive_type(RzAnalysis *analysis,
 	}
 	RzPVector *args = rz_analysis_function_args(analysis, f);
 	if (!args || rz_pvector_empty(args)) {
+		rz_pvector_free(args);
 		return callable;
 	}
 	void **it;
