@@ -1,9 +1,36 @@
 // SPDX-FileCopyrightText: 2013-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "index.h"
 #include <rz_main.h>
 #include <rz_core.h>
+
+static const char *page_index =
+	"<html>"
+	"<head>"
+	"<title>rz-agent</title>"
+	"<script>"
+	"function file_open() {"
+	"  var file = window.prompt ('path to file?');"
+	"  window.open ('/file/open/'+file);"
+	"}"
+	"</script>"
+	"</head>"
+	"<body>"
+	"  <h2>rz-agent</h2>"
+	"  <hr size=1 />"
+	"File<br />"
+	" - <a href='javascript:file_open()'>open</a><br />"
+	" - <a href='/file/list'>list</a><br />"
+	" - push<br />"
+	" - pull<br />"
+	" - delete<br />"
+	" - chmod<br />"
+	"Processes<br />"
+	" - list<br />"
+	"Sessions<br />"
+	" - list<br />"
+	"</body>"
+	"</html>";
 
 #if __APPLE__ && (__arm__ || __arm64__ || __aarch64__)
 #define USE_IOS_JETSAM 1

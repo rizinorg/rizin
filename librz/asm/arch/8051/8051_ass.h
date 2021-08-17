@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2019 hmht
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef _8051_ASS_H
 #define _8051_ASS_H
 

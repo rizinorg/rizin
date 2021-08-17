@@ -95,6 +95,10 @@ Files: test/unit/legacy_unit/**/*
 Copyright: 2009 RadareOrg <pancake@nopcode.org>
 License: LGPL-3.0-only
 
+Files: test/prj/*.rzdb
+Copyright: 2020 RizinOrg <info@rizin.re>
+License: LGPL-3.0-only
+
 Files: shlr/rizin-shell-parser/*
 Copyright: 2020 ret2libc <sirmy15@gmail.com>
 License: LGPL-3.0-only
@@ -147,7 +151,7 @@ Files: pkgcfg/*.pc.acr
 Copyright: 2009 RadareOrg <pancake@nopcode.org>
 License: LGPL-3.0-only
 
-Files: pkgcfg/librz.pc.in
+Files: librz/librz.pc.in
 Copyright: 2009 RadareOrg <pancake@nopcode.org>
 License: LGPL-3.0-only
 
@@ -232,3 +236,18 @@ Files: subprojects/mpc/*
 Copyright: 2013-present Daniel Holden <contact@theorangeduck.com>
 License: BSD-2-Clause
 
+Files: librz/include/**/*.h librz/include/*.h librz/include/*.h.in
+Copyright: 2021 RizinOrg <info@rizin.re>
+License: LGPL-3.0-only
+
+Files: .dockerignore
+Copyright: 2020 RizinOrg <info@rizin.re>
+License: LGPL-3.0-only
+
+Files: .prettierignore
+Copyright: 2020 RizinOrg <info@rizin.re>
+License: LGPL-3.0-only
+
+Files: librz/reg/p/x86-linux.regs
+Copyright: 2009 pancake <pancake@nopcode.org>
+License: LGPL-3.0-only

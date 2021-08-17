@@ -4303,28 +4303,34 @@ void MACH0_(mach_headerfields)(RzBinFile *bf) {
 
 			ut16 current1;
 			if (!rz_buf_read_le16_at(buf, addr + 10, &current1)) {
+				free(id);
 				break;
 			}
 			ut8 current2;
 			if (!rz_buf_read8_at(buf, addr + 9, &current2)) {
+				free(id);
 				break;
 			}
 			ut8 current3;
 			if (!rz_buf_read8_at(buf, addr + 8, &current3)) {
+				free(id);
 				break;
 			}
 			cb_printf("0x%08" PFMT64x "  current     %d.%d.%d\n", pvaddr + 8, current1, current2, current3);
 
 			ut16 compat1;
 			if (!rz_buf_read_le16_at(buf, addr + 14, &compat1)) {
+				free(id);
 				break;
 			}
 			ut8 compat2;
 			if (!rz_buf_read8_at(buf, addr + 13, &compat2)) {
+				free(id);
 				break;
 			}
 			ut8 compat3;
 			if (!rz_buf_read8_at(buf, addr + 12, &compat3)) {
+				free(id);
 				break;
 			}
 			cb_printf("0x%08" PFMT64x "  compat      %d.%d.%d\n", pvaddr + 12, compat1, compat2, compat3);
@@ -4372,27 +4378,33 @@ void MACH0_(mach_headerfields)(RzBinFile *bf) {
 			char *load_dylib = rz_buf_get_string(buf, addr + str_off - 8);
 			ut16 current1;
 			if (!rz_buf_read_le16_at(buf, addr + 10, &current1)) {
+				free(load_dylib);
 				break;
 			}
 			ut8 current2;
 			if (!rz_buf_read8_at(buf, addr + 9, &current2)) {
+				free(load_dylib);
 				break;
 			}
 			ut8 current3;
 			if (!rz_buf_read8_at(buf, addr + 8, &current3)) {
+				free(load_dylib);
 				break;
 			}
 			cb_printf("0x%08" PFMT64x "  current     %d.%d.%d\n", pvaddr + 8, current1, current2, current3);
 			ut16 compat1;
 			if (!rz_buf_read_le16_at(buf, addr + 14, &compat1)) {
+				free(load_dylib);
 				break;
 			}
 			ut8 compat2;
 			if (!rz_buf_read8_at(buf, addr + 13, &compat2)) {
+				free(load_dylib);
 				break;
 			}
 			ut8 compat3;
 			if (!rz_buf_read8_at(buf, addr + 12, &compat3)) {
+				free(load_dylib);
 				break;
 			}
 			cb_printf("0x%08" PFMT64x "  compat      %d.%d.%d\n", pvaddr + 12, compat1, compat2, compat3);

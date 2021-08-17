@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2015 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #if 0
 	reg      name    usage
 	---+-----------+-------------

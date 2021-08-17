@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2015 Álvaro Felipe Melchor <alvaro.felipe91@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef _INCLUDE_XNU_THREADS_H_
 #define _INCLUDE_XNU_THREADS_H_
 

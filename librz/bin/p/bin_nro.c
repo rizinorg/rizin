@@ -188,6 +188,7 @@ static RzList *maps(RzBinFile *bf) {
 	}
 	map->name = strdup("data");
 	if (!rz_buf_read_le32_at(b, NRO_OFF(data_memoffset), &tmp)) {
+		free(map);
 		return ret;
 	}
 	map->paddr = tmp;
