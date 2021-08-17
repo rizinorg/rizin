@@ -247,3 +247,7 @@ License: LGPL-3.0-only
 Files: .prettierignore
 Copyright: 2020 RizinOrg <info@rizin.re>
 License: LGPL-3.0-only
+
+Files: librz/reg/p/x86-linux.regs
+Copyright: 2009 pancake <pancake@nopcode.org>
+License: LGPL-3.0-only
