@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2018 Emmanuel Vadot <manu@bidouilliste.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 // NGREG 34
 return strdup(
 	"=PC	pc\n"

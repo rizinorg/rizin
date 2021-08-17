@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2020 GustavoLCR <gugulcr@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 return strdup(
 	"=PC     pc\n"
 	"=SP     sp\n"
