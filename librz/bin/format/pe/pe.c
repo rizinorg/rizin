@@ -2843,6 +2843,7 @@ static void bin_pe_init_rich_info(struct PE_(rz_bin_pe_obj_t) * bin) {
 		entry->timesUsed = data ^ mask;
 		off -= sizeof(ut32);
 		if (!rz_buf_read_le32_at(bin->b, off, &data)) {
+			free(entry);
 			return;
 		}
 		data ^= mask;
