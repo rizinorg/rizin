@@ -1619,6 +1619,8 @@ RZ_API RZ_OWN RzList /*<RzBinAddr*>*/ *rz_bin_dex_entrypoints(RZ_NONNULL RzBinDe
  * /brief Returns the resolved string linked to the given method id
  */
 RZ_API RZ_OWN char *rz_bin_dex_resolve_method_by_idx(RZ_NONNULL RzBinDex *dex, ut32 method_idx) {
+	rz_return_val_if_fail(dex, NULL);
+
 	DexMethodId *method_id = (DexMethodId *)rz_list_get_n(dex->method_ids, method_idx);
 	if (!method_id) {
 		return NULL;
@@ -1651,6 +1653,8 @@ RZ_API RZ_OWN char *rz_bin_dex_resolve_method_by_idx(RZ_NONNULL RzBinDex *dex, u
  * /brief Returns the resolved string linked to the given field id
  */
 RZ_API RZ_OWN char *rz_bin_dex_resolve_field_by_idx(RZ_NONNULL RzBinDex *dex, ut32 field_idx) {
+	rz_return_val_if_fail(dex, NULL);
+
 	DexFieldId *field_id = (DexFieldId *)rz_list_get_n(dex->field_ids, field_idx);
 	if (!field_id) {
 		return NULL;
@@ -1686,6 +1690,8 @@ RZ_API RZ_OWN char *rz_bin_dex_resolve_field_by_idx(RZ_NONNULL RzBinDex *dex, ut
  * /brief Returns the resolved offset linked to the given string id
  */
 RZ_API ut64 rz_bin_dex_resolve_string_offset_by_idx(RZ_NONNULL RzBinDex *dex, ut32 string_idx) {
+	rz_return_val_if_fail(dex, UT64_MAX);
+
 	DexString *string = (DexString *)rz_list_get_n(dex->strings, string_idx);
 	if (!string) {
 		RZ_LOG_INFO("cannot find string with index %u\n", string_idx);
@@ -1698,6 +1704,8 @@ RZ_API ut64 rz_bin_dex_resolve_string_offset_by_idx(RZ_NONNULL RzBinDex *dex, ut
  * /brief Returns the resolved offset linked to the given type id
  */
 RZ_API ut64 rz_bin_dex_resolve_type_id_offset_by_idx(RZ_NONNULL RzBinDex *dex, ut32 type_idx) {
+	rz_return_val_if_fail(dex, UT64_MAX);
+
 	if (type_idx >= dex->type_ids_size) {
 		RZ_LOG_INFO("cannot find type_id with index %u\n", type_idx);
 		return UT64_MAX;
@@ -1710,6 +1718,8 @@ RZ_API ut64 rz_bin_dex_resolve_type_id_offset_by_idx(RZ_NONNULL RzBinDex *dex, u
  * /brief Returns the resolved offset linked to the given method id
  */
 RZ_API ut64 rz_bin_dex_resolve_method_offset_by_idx(RZ_NONNULL RzBinDex *dex, ut32 method_idx) {
+	rz_return_val_if_fail(dex, UT64_MAX);
+
 	DexMethodId *method = (DexMethodId *)rz_list_get_n(dex->method_ids, method_idx);
 	if (!method) {
 		RZ_LOG_INFO("cannot find method with index %u\n", method_idx);
@@ -1722,6 +1732,8 @@ RZ_API ut64 rz_bin_dex_resolve_method_offset_by_idx(RZ_NONNULL RzBinDex *dex, ut
  * /brief Returns the resolved string linked to the given string id
  */
 RZ_API RZ_OWN char *rz_bin_dex_resolve_string_by_idx(RZ_NONNULL RzBinDex *dex, ut32 string_idx) {
+	rz_return_val_if_fail(dex, NULL);
+
 	return dex_resolve_string_id(dex, string_idx);
 }
 
@@ -1729,6 +1741,8 @@ RZ_API RZ_OWN char *rz_bin_dex_resolve_string_by_idx(RZ_NONNULL RzBinDex *dex, u
  * /brief Returns the resolved string linked to the given class id
  */
 RZ_API RZ_OWN char *rz_bin_dex_resolve_class_by_idx(RZ_NONNULL RzBinDex *dex, ut32 class_idx) {
+	rz_return_val_if_fail(dex, NULL);
+
 	return dex_resolve_type_id(dex, class_idx);
 }
 
@@ -1736,6 +1750,8 @@ RZ_API RZ_OWN char *rz_bin_dex_resolve_class_by_idx(RZ_NONNULL RzBinDex *dex, ut
  * /brief Returns the resolved string linked to the given prototype id
  */
 RZ_API RZ_OWN char *rz_bin_dex_resolve_proto_by_idx(RZ_NONNULL RzBinDex *dex, ut32 proto_idx) {
+	rz_return_val_if_fail(dex, NULL);
+
 	return dex_resolve_proto_id(dex, "", proto_idx, false);
 }
 
