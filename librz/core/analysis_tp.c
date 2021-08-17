@@ -275,6 +275,44 @@ RzAnalysisOp *op_cache_get(HtUP *cache, RzCore *core, ut64 addr) {
 	return op;
 }
 
+RzCallable *function_type_derive(RzAnalysis *analysis, RZ_NONNULL const char *fcn_name, bool *owned) {
+	rz_return_val_if_fail(fcn_name && owned, NULL);
+	// Because in the case of `rz_type_func_get()` we get the borrowed
+	// pointer to the RzCallable and in the case of `rz_analysis_function_derive_type()`
+	// we get the owned pointer, we should free the pointer in the one case but not another.
+	*owned = false;
+	RzCallable *callable = rz_type_func_get(analysis->typedb, fcn_name);
+	if (!callable) {
+		RzAnalysisFunction *fcn = rz_analysis_get_function_byname(analysis, fcn_name);
+		if (!fcn) {
+			return NULL;
+		}
+		callable = rz_analysis_function_derive_type(analysis, fcn);
+		if (!callable) {
+			return NULL;
+		}
+		*owned = true;
+	}
+	return callable;
+}
+
+bool function_argument_type_derive(RZ_NULLABLE const RzCallable *callable, int arg_num, RzType **type, char **name) {
+	rz_return_val_if_fail(type && name, false);
+	if (!callable) {
+		return false;
+	}
+	if (arg_num >= rz_pvector_len(callable->args)) {
+		return false;
+	}
+	RzCallableArg *arg = *rz_pvector_index_ptr(callable->args, arg_num);
+	if (!arg) {
+		return false;
+	}
+	*type = rz_type_clone(arg->type);
+	*name = strdup(arg->name);
+	return true;
+}
+
 #define DEFAULT_MAX  3
 #define REGNAME_SIZE 10
 #define MAX_INSTR    5
@@ -326,10 +364,17 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 			max = DEFAULT_MAX;
 		}
 	}
+	// Because in the case of `rz_type_func_get()` we get the borrowed
+	// pointer to the RzCallable and in the case of `rz_analysis_function_derive_type()`
+	// we get the owned pointer, we should free the pointer in the one case but not another.
+	bool owned = false;
+	RzCallable *callable = function_type_derive(analysis, fcn_name, &owned);
+	// We don't check if the callable is NULL because we not always need it, for example
+	// in case of the `format` set it's unnecessary for the type derivation.
 	for (i = 0; i < max; i++) {
 		int arg_num = stack_rev ? (max - 1 - i) : i;
 		RzType *type = NULL;
-		const char *name = NULL;
+		char *name = NULL;
 		if (format) {
 			if (rz_list_empty(types)) {
 				break;
@@ -339,26 +384,9 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 				type = rz_type_parse_string_single(typedb->parser, typestr, NULL);
 			}
 		} else {
-			RzCallable *callable = rz_type_func_get(typedb, fcn_name);
-			if (!callable) {
-				RzAnalysisFunction *fcn = rz_analysis_get_function_byname(analysis, fcn_name);
-				if (!fcn) {
-					continue;
-				}
-				callable = rz_analysis_function_derive_type(analysis, fcn);
-				if (!callable) {
-					continue;
-				}
-			}
-			if (arg_num >= rz_pvector_len(callable->args)) {
+			if (!function_argument_type_derive(callable, arg_num, &type, &name)) {
 				continue;
 			}
-			RzCallableArg *arg = *rz_pvector_index_ptr(callable->args, arg_num);
-			if (!arg) {
-				continue;
-			}
-			type = arg->type;
-			name = arg->name;
 		}
 		if (!type && !userfnc) {
 			continue;
@@ -474,6 +502,9 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 			}
 		}
 		size += analysis->bits / 8;
+	}
+	if (owned) {
+		rz_type_callable_free(callable);
 	}
 	rz_list_free(types);
 	rz_cons_break_pop();

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2012-2017 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2012-2021 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /* ported to C by pancake for r2 in 2012-2017 */
@@ -52,6 +52,16 @@ static inline RNumCalcValue Norr(RNumCalcValue n, RNumCalcValue v) {
 static inline RNumCalcValue Nxor(RNumCalcValue n, RNumCalcValue v) {
 	n.d = v.d;
 	n.n ^= v.n;
+	return n;
+}
+static inline RNumCalcValue Nlt(RNumCalcValue n, RNumCalcValue v) {
+	n.d = v.d;
+	n.n = n.n < v.n;
+	return n;
+}
+static inline RNumCalcValue Ngt(RNumCalcValue n, RNumCalcValue v) {
+	n.d = v.d;
+	n.n = n.n > v.n;
 	return n;
 }
 static inline RNumCalcValue Nand(RNumCalcValue n, RNumCalcValue v) {
@@ -148,6 +158,8 @@ static RNumCalcValue expr(RNum *num, RNumCalc *nc, int get) {
 		case RNCXOR: left = Nxor(left, term(num, nc, 1)); break;
 		case RNCORR: left = Norr(left, term(num, nc, 1)); break;
 		case RNCAND: left = Nand(left, term(num, nc, 1)); break;
+		case RNCLT: left = Nlt(left, term(num, nc, 1)); break;
+		case RNCGT: left = Ngt(left, term(num, nc, 1)); break;
 		default:
 			return left;
 		}
@@ -224,6 +236,8 @@ static RNumCalcValue prim(RNum *num, RNumCalc *nc, int get) {
 		} else {
 			error(num, nc, " ')' expected");
 		}
+	case RNCLT:
+	case RNCGT:
 	case RNCEND:
 	case RNCXOR:
 	case RNCAND:
@@ -342,15 +356,15 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 		cin_putback(num, nc, c);
 		return nc->curr_tok = (RNumCalcToken)ch;
 	case '<':
-		if (cin_get(num, nc, &c) && c == '<') {
-			if (cin_get(num, nc, &c) && c == '<') {
+		if (cin_get(num, nc, &c) && c == '<') { // "<<" = shift left
+			if (cin_get(num, nc, &c) && c == '<') { // "<<<" = rotate left
 				return nc->curr_tok = RNCROL;
 			}
 			cin_putback(num, nc, c);
 			return nc->curr_tok = RNCSHL;
 		}
 		cin_putback(num, nc, c);
-		return nc->curr_tok = RNCEND;
+		return nc->curr_tok = RNCLT;
 	case '>':
 		if (cin_get(num, nc, &c) && c == '>') {
 			if (cin_get(num, nc, &c) && c == '>') {
@@ -360,7 +374,7 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 			return nc->curr_tok = RNCSHR;
 		}
 		cin_putback(num, nc, c);
-		return nc->curr_tok = RNCEND;
+		return nc->curr_tok = RNCGT;
 	case '^':
 	case '&':
 	case '|':
