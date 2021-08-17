@@ -41,7 +41,7 @@ RZ_LIB_VERSION_HEADER(rz_asm);
 	(x && x->binb.bin && x->binb.get_offset) ? x->binb.get_offset(x->binb.bin, y, z) : -1
 
 #define RZ_ASM_GET_NAME(x, y, z) \
-	(x && x->binb.bin && x->binb.get_name) ? x->binb.get_name(x->binb.bin, y, z, x->pseudo) : NULL
+	(x && x->binb.bin && x->binb.get_name) ? x->binb.get_name(x->binb.bin, y, z) : NULL
 
 enum {
 	RZ_ASM_SYNTAX_NONE = 0,

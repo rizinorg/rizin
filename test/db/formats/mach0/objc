@@ -3,6 +3,9 @@ FILE=bins/mach0/hello-objc
 CMDS=ic
 EXPECT=<<EOF
 0x100001180 [0x100000da0 - 0x100000e20]    128 class 0 Person :: NSObject
+0x00000000 field  0      isa
+0x100001178 field  1      Person::(ivar)name
+0x00000000 field  2      Person::(property)name
 0x100000da0 method 0      sayHello
 0x100000df0 method 1      name
 0x100000e20 method 2      setName:

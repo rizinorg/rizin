@@ -690,10 +690,6 @@ static int rz_core_file_do_load_for_debug(RzCore *r, ut64 baseaddr, const char *
 		}
 	}
 
-	if (plugin && !strcmp(plugin->name, "dex")) {
-		rz_core_cmd0(r, "\"(fix-dex,wx `ph sha1 $s-32 @32` @12 ; wx `ph adler32 $s-12 @12` @8)\"\n");
-	}
-
 	return true;
 }
 
@@ -750,9 +746,6 @@ static int rz_core_file_do_load_for_io_plugin(RzCore *r, ut64 baseaddr, ut64 loa
 		}
 	}
 
-	if (plugin && !strcmp(plugin->name, "dex")) {
-		rz_core_cmd0(r, "\"(fix-dex,wx `ph sha1 $s-32 @32` @12 ; wx `ph adler32 $s-12 @12` @8)\"\n");
-	}
 	return true;
 }
 
@@ -918,7 +911,6 @@ static bool map_multi_dex(RzCore *core, RzIODesc *desc, ut32 id) {
 
 		rz_pvector_push(&cf->binfiles, binfile);
 		rz_core_bin_apply_all_info(core, binfile);
-		rz_core_cmd0(core, "\"(fix-dex,wx `ph sha1 $s-32 @32` @12 ; wx `ph adler32 $s-12 @12` @8)\"\n");
 	}
 
 	return true;
@@ -1036,10 +1028,6 @@ RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filen
 	}
 	if (desc && rz_config_get_i(r->config, "io.exec")) {
 		desc->perm |= RZ_PERM_X;
-	}
-	if (plugin && plugin->name && !strcmp(plugin->name, "dex")) {
-		rz_core_cmd0(r, "\"(fix-dex,wx `ph sha1 $s-32 @32` @12 ;"
-				" wx `ph adler32 $s-12 @12` @8)\"\n");
 	}
 	if (!rz_config_get_b(r->config, "cfg.debug")) {
 		loadGP(r);

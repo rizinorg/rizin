@@ -713,6 +713,9 @@ static RzDiff *rz_diff_imports_new(DiffFile *dfile_a, DiffFile *dfile_b) {
 
 static ut32 symbol_hash_addr(const RzBinSymbol *elem) {
 	ut32 hash = rz_diff_hash_data((const ut8 *)elem->name, strlen(elem->name));
+	hash ^= rz_diff_hash_data((const ut8 *)elem->dname, strlen(elem->dname));
+	hash ^= rz_diff_hash_data((const ut8 *)elem->libname, strlen(elem->libname));
+	hash ^= rz_diff_hash_data((const ut8 *)elem->classname, strlen(elem->classname));
 	hash ^= (ut32)(elem->vaddr >> 32);
 	hash ^= (ut32)elem->vaddr;
 	hash ^= (ut32)(elem->paddr >> 32);
@@ -722,6 +725,9 @@ static ut32 symbol_hash_addr(const RzBinSymbol *elem) {
 
 static int symbol_compare_addr(const RzBinSymbol *a, const RzBinSymbol *b) {
 	st64 ret;
+	IF_STRCMP_S(ret, a->classname, b->classname);
+	IF_STRCMP_S(ret, a->libname, b->libname);
+	IF_STRCMP_S(ret, a->dname, b->dname);
 	IF_STRCMP_S(ret, a->name, b->name);
 	ret = ((st64)b->paddr) - ((st64)a->paddr);
 	if (ret) {
@@ -731,7 +737,7 @@ static int symbol_compare_addr(const RzBinSymbol *a, const RzBinSymbol *b) {
 }
 
 static void symbol_stringify_addr(const RzBinSymbol *elem, RzStrBuf *sb) {
-	rz_strbuf_setf(sb, "virt: 0x%016" PFMT64x " phys: 0x%016" PFMT64x " %s\n", elem->vaddr, elem->paddr, elem->name);
+	rz_strbuf_setf(sb, "virt: 0x%016" PFMT64x " phys: 0x%016" PFMT64x " %s %s %s\n", elem->vaddr, elem->paddr, elem->libname, elem->classname, elem->name);
 }
 
 static ut32 symbol_hash(const RzBinSymbol *elem) {
@@ -745,7 +751,7 @@ static int symbol_compare(const RzBinSymbol *a, const RzBinSymbol *b) {
 }
 
 static void symbol_stringify(const RzBinSymbol *elem, RzStrBuf *sb) {
-	rz_strbuf_setf(sb, "%s\n", elem->name);
+	rz_strbuf_setf(sb, "%s %s %s\n", elem->libname, elem->classname, elem->name);
 }
 
 static RzDiff *rz_diff_symbols_new(DiffFile *dfile_a, DiffFile *dfile_b, bool compare_addr) {

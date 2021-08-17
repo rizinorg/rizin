@@ -1220,9 +1220,12 @@ static void sym_name_init(RzCore *r, SymName *sn, RzBinSymbol *sym, const char *
 	if (!r || !sym || !sym->name) {
 		return;
 	}
-	int bin_demangle = lang != NULL;
-	bool keep_lib = rz_config_get_i(r->config, "bin.demangle.libs");
-	sn->name = rz_str_newf("%s%s", sym->is_imported ? "imp." : "", sym->name);
+
+	bool demangle = rz_config_get_b(r->config, "bin.demangle");
+	bool keep_lib = rz_config_get_b(r->config, "bin.demangle.libs");
+
+	const char *name = sym->dname && demangle ? sym->dname : sym->name;
+	sn->name = rz_str_newf("%s%s", sym->is_imported ? "imp." : "", name);
 	sn->libname = sym->libname ? strdup(sym->libname) : NULL;
 	const char *pfx = get_prefix_for_sym(sym);
 	sn->nameflag = construct_symbol_flagname(pfx, sym->libname, rz_bin_symbol_name(sym), MAXFLAG_LEN_DEFAULT);
@@ -1230,7 +1233,6 @@ static void sym_name_init(RzCore *r, SymName *sn, RzBinSymbol *sym, const char *
 		sn->classname = strdup(sym->classname);
 		sn->classflag = rz_str_newf("sym.%s.%s", sn->classname, sn->name);
 		rz_name_filter(sn->classflag, MAXFLAG_LEN_DEFAULT, true);
-		const char *name = sym->dname ? sym->dname : sym->name;
 		sn->methname = rz_str_newf("%s::%s", sn->classname, name);
 		sn->methflag = rz_str_newf("sym.%s.%s", sn->classname, name);
 		rz_name_filter(sn->methflag, strlen(sn->methflag), true);
@@ -1242,7 +1244,7 @@ static void sym_name_init(RzCore *r, SymName *sn, RzBinSymbol *sym, const char *
 	}
 	sn->demname = NULL;
 	sn->demflag = NULL;
-	if (bin_demangle && sym->paddr) {
+	if (demangle && sym->paddr && lang) {
 		sn->demname = rz_bin_demangle(r->bin->cur, lang, sn->name, sym->vaddr, keep_lib);
 		if (sn->demname) {
 			sn->demflag = construct_symbol_flagname(pfx, sym->libname, sn->demname, -1);
@@ -2527,7 +2529,14 @@ static int bin_imports(RzCore *r, PJ *pj, int mode, int va, const char *name) {
 		if (!import->name || (name && strcmp(import->name, name))) {
 			continue;
 		}
-		char *symname = import->name ? strdup(import->name) : NULL;
+		char *symname = NULL;
+		if (RZ_STR_ISNOTEMPTY(import->name)) {
+			if (RZ_STR_ISNOTEMPTY(import->classname)) {
+				symname = rz_str_newf("%s.%s", import->classname, import->name);
+			} else {
+				symname = strdup(import->name);
+			}
+		}
 		char *libname = import->libname ? strdup(import->libname) : NULL;
 		RzBinSymbol *sym = rz_bin_object_get_symbol_of_import(o, import);
 		ut64 addr = sym ? rva(o, sym->paddr, sym->vaddr, va) : UT64_MAX;
@@ -2535,8 +2544,7 @@ static int bin_imports(RzCore *r, PJ *pj, int mode, int va, const char *name) {
 			char *dname = rz_bin_demangle(r->bin->cur, NULL, symname, addr, keep_lib);
 			if (dname) {
 				free(symname);
-				symname = rz_str_newf("sym.imp.%s", dname);
-				free(dname);
+				symname = dname;
 			}
 		}
 		if (r->bin->prefix) {
@@ -2575,9 +2583,9 @@ static int bin_imports(RzCore *r, PJ *pj, int mode, int va, const char *name) {
 			const char *bind = import->bind ? import->bind : "NONE";
 			const char *type = import->type ? import->type : "NONE";
 			if (import->classname && import->classname[0]) {
-				rz_table_add_rowf(table, "nXssss", (ut64)import->ordinal, addr, bind, type, libname ? libname : "", sdb_fmt("%s.%s", import->classname, symname));
+				rz_table_add_rowf(table, "nXssss", (ut64)import->ordinal, addr, bind, type, rz_str_get(libname), symname);
 			} else {
-				rz_table_add_rowf(table, "nXssss", (ut64)import->ordinal, addr, bind, type, libname ? libname : "", symname);
+				rz_table_add_rowf(table, "nXssss", (ut64)import->ordinal, addr, bind, type, rz_str_get(libname), symname);
 			}
 
 			if (!IS_MODE_NORMAL(mode)) {
@@ -2624,7 +2632,6 @@ static int bin_symbols(RzCore *r, PJ *pj, int mode, int va, ut64 at, const char 
 
 	int i = 0, lastfs = 's';
 	RzTable *table = rz_core_table(r);
-	bool bin_demangle = rz_config_get_i(r->config, "bin.demangle");
 	if (IS_MODE_JSON(mode)) {
 		if (!printHere) {
 			pj_a(pj);
@@ -2641,7 +2648,7 @@ static int bin_symbols(RzCore *r, PJ *pj, int mode, int va, ut64 at, const char 
 		return 0;
 	}
 
-	const char *lang = bin_demangle ? rz_config_get(r->config, "bin.lang") : NULL;
+	const char *lang = rz_config_get(r->config, "bin.lang");
 
 	RzList *symbols = rz_bin_get_symbols(r->bin);
 
@@ -3506,34 +3513,105 @@ static void classdump_objc(RzCore *r, RzBinClass *c) {
 	rz_cons_printf("@end\n");
 }
 
+static inline char *demangle_class(const char *classname) {
+	if (!classname || classname[0] != 'L') {
+		return strdup(classname ? classname : "?");
+	}
+	char *demangled = strdup(classname + 1);
+	if (!demangled) {
+		return strdup(classname);
+	}
+	rz_str_replace_ch(demangled, '/', '.', 1);
+	demangled[strlen(demangled) - 1] = 0;
+	return demangled;
+}
+
+static inline char *demangle_type(const char *any) {
+	if (!any) {
+		return strdup("unknown");
+	}
+	switch (any[0]) {
+	case 'L': return rz_bin_demangle_java(any);
+	case 'B': return strdup("byte");
+	case 'C': return strdup("char");
+	case 'D': return strdup("double");
+	case 'F': return strdup("float");
+	case 'I': return strdup("int");
+	case 'J': return strdup("long");
+	case 'S': return strdup("short");
+	case 'V': return strdup("void");
+	case 'Z': return strdup("boolean");
+	default: return strdup("unknown");
+	}
+}
+
+static inline const char *resolve_visibility(const char *v) {
+	return v ? v : "public";
+}
+
 static void classdump_java(RzCore *r, RzBinClass *c) {
 	RzBinField *f;
 	RzListIter *iter2, *iter3;
 	RzBinSymbol *sym;
-	char *pn = strdup(c->name);
-	char *cn = (char *)rz_str_rchr(pn, NULL, '/');
-	if (cn) {
-		*cn = 0;
-		cn++;
-		rz_str_replace_char(pn, '/', '.');
+	bool simplify = false;
+	char *package = NULL, *classname = NULL;
+	char *tmp = (char *)rz_str_rchr(c->name, NULL, '/');
+	if (tmp) {
+		package = demangle_class(c->name);
+		classname = strdup(tmp + 1);
+		classname[strlen(classname) - 1] = 0;
+		simplify = true;
+	} else {
+		package = strdup("defpackage");
+		classname = demangle_class(c->name);
 	}
-	rz_cons_printf("package %s;\n\n", pn);
-	rz_cons_printf("public class %s {\n", cn);
-	free(pn);
+
+	rz_cons_printf("package %s;\n\n", package);
+
+	const char *visibility = resolve_visibility(c->visibility_str);
+	rz_cons_printf("%s class %s {\n", visibility, classname);
 	rz_list_foreach (c->fields, iter2, f) {
-		if (f->name && rz_regex_match("ivar", "e", f->name)) {
-			rz_cons_printf("  public %s %s\n", f->type, f->name);
+		visibility = resolve_visibility(f->visibility_str);
+		char *ftype = demangle_type(f->type);
+		if (simplify) {
+			// hide the current package in the demangled value.
+			ftype = rz_str_replace(ftype, package, classname, 1);
 		}
+		rz_cons_printf("  %s %s %s;\n", visibility, ftype, f->name);
+		free(ftype);
 	}
+	if (!rz_list_empty(c->fields)) {
+		rz_cons_newline();
+	}
+
 	rz_list_foreach (c->methods, iter3, sym) {
 		const char *mn = sym->dname ? sym->dname : sym->name;
-		const char *ms = strstr(mn, "method.");
-		if (ms) {
-			mn = ms + strlen("method.");
+		visibility = resolve_visibility(sym->visibility_str);
+		char *dem = rz_bin_demangle_java(mn);
+		if (simplify) {
+			// hide the current package in the demangled value.
+			dem = rz_str_replace(dem, package, classname, 1);
 		}
-		rz_cons_printf("  public %s ();\n", mn);
+		// rename all <init> to class name
+		dem = rz_str_replace(dem, "<init>", classname, 1);
+		rz_cons_printf("  %s %s;\n", visibility, dem);
+		free(dem);
 	}
+	free(package);
+	free(classname);
 	rz_cons_printf("}\n\n");
+}
+
+static inline bool is_java_lang(RzBinFile *bf) {
+	if (!bf || !bf->o) {
+		return false;
+	} else if (bf->o->lang == RZ_BIN_NM_JAVA) {
+		return true;
+	} else if (!bf->o->info || !bf->o->info->lang) {
+		return false;
+	}
+	const char *lang = bf->o->info->lang;
+	return strstr(lang, "dalvik") || strstr(lang, "java") || strstr(lang, "kotlin");
 }
 
 static int bin_classes(RzCore *r, PJ *pj, int mode) {
@@ -3591,30 +3669,41 @@ static int bin_classes(RzCore *r, PJ *pj, int mode) {
 		} else if (IS_MODE_CLASSDUMP(mode)) {
 			if (c) {
 				RzBinFile *bf = rz_bin_cur(r->bin);
-				if (bf && bf->o) {
-					if (IS_MODE_RZCMD(mode)) {
-						classdump_c(r, c);
-					} else if (bf->o->lang == RZ_BIN_NM_JAVA || (bf->o->info && bf->o->info->lang && strstr(bf->o->info->lang, "dalvik"))) {
-						classdump_java(r, c);
-					} else {
-						classdump_objc(r, c);
-					}
+				if (IS_MODE_RZCMD(mode)) {
+					classdump_c(r, c);
+				} else if (is_java_lang(bf)) {
+					classdump_java(r, c);
 				} else {
 					classdump_objc(r, c);
 				}
 			}
 		} else if (IS_MODE_RZCMD(mode)) {
-			char *n = __filterShell(name);
-			rz_cons_printf("\"f class.%s = 0x%" PFMT64x "\"\n", n, at_min);
-			free(n);
-			if (c->super) {
-				char *cn = c->name; // __filterShell (c->name);
-				char *su = c->super; // __filterShell (c->super);
-				rz_cons_printf("\"f super.%s.%s = %d\"\n",
-					cn, su, c->index);
-				// free (cn);
-				// free (su);
+			RzBinFile *bf = rz_bin_cur(r->bin);
+
+			// class
+			char *fn = rz_core_bin_class_build_flag_name(c);
+			if (fn) {
+				rz_cons_printf("\"f %s = 0x%" PFMT64x "\"\n", fn, at_min);
+				free(fn);
 			}
+
+			// super class
+			fn = rz_core_bin_super_build_flag_name(c);
+			if (fn) {
+				rz_cons_printf("\"f %s = %d\"\n", fn, c->index);
+				free(fn);
+			}
+
+			// class fields
+			rz_list_foreach (c->fields, iter2, f) {
+				char *fn = rz_core_bin_field_build_flag_name(c, f);
+				if (fn) {
+					rz_cons_printf("\"f %s = 0x%08" PFMT64x "\"\n", fn, f->vaddr);
+					free(fn);
+				}
+			}
+
+			// class methods
 			rz_list_foreach (c->methods, iter2, sym) {
 				char *fn = rz_core_bin_method_build_flag_name(c, sym);
 				if (fn) {
@@ -3622,20 +3711,10 @@ static int bin_classes(RzCore *r, PJ *pj, int mode) {
 					free(fn);
 				}
 			}
-			rz_list_foreach (c->fields, iter2, f) {
-				char *fn = rz_str_newf("field.%s.%s", c->name, f->name);
-				ut64 at = f->vaddr; //  sym->vaddr + (f->vaddr &  0xffff);
-				rz_cons_printf("\"f %s = 0x%08" PFMT64x "\"\n", fn, at);
-				free(fn);
-			}
 
 			// C struct
-			rz_cons_printf("td \"struct %s {", c->name);
-			if (rz_list_empty(c->fields)) {
-				// XXX workaround because we cant register empty structs yet
-				// XXX https://github.com/rizinorg/rizin/issues/16342
-				rz_cons_printf(" char empty[0];");
-			} else {
+			if (!(bf->o->lang == RZ_BIN_NM_JAVA || (bf->o->info && bf->o->info->lang && strstr(bf->o->info->lang, "dalvik")))) {
+				rz_cons_printf("td \"struct %s {", c->name);
 				rz_list_foreach (c->fields, iter2, f) {
 					char *n = objc_name_toc(f->name);
 					char *t = objc_type_toc(f->type);
@@ -3643,8 +3722,8 @@ static int bin_classes(RzCore *r, PJ *pj, int mode) {
 					free(t);
 					free(n);
 				}
+				rz_cons_printf("};\"\n");
 			}
-			rz_cons_printf("};\"\n");
 		} else if (IS_MODE_JSON(mode)) {
 			pj_o(pj);
 			pj_ks(pj, "classname", c->name);
@@ -3692,6 +3771,13 @@ static int bin_classes(RzCore *r, PJ *pj, int mode) {
 			} else {
 				rz_cons_newline();
 			}
+			rz_list_foreach (c->fields, iter2, f) {
+				char *mflags = rz_core_bin_method_flags_str(f->flags, mode);
+				rz_cons_printf("0x%08" PFMT64x " field  %d %s %s\n", f->vaddr, m, mflags, f->name);
+				free(mflags);
+				m++;
+			}
+			m = 0;
 			rz_list_foreach (c->methods, iter2, sym) {
 				char *mflags = rz_core_bin_method_flags_str(sym->method_flags, mode);
 				rz_cons_printf("0x%08" PFMT64x " method %d %s %s\n",
@@ -4508,7 +4594,69 @@ RZ_API int rz_core_bin_list(RzCore *core, int mode) {
 	return count;
 }
 
-RZ_API char *rz_core_bin_method_build_flag_name(RzBinClass *cls, RzBinSymbol *meth) {
+static void resolve_method_flags(RzStrBuf *buf, ut64 flags) {
+	for (int i = 0; flags; flags >>= 1, i++) {
+		if (!(flags & 1)) {
+			continue;
+		}
+		const char *flag_string = rz_bin_get_meth_flag_string(1ULL << i, false);
+		if (flag_string) {
+			rz_strbuf_appendf(buf, ".%s", flag_string);
+		}
+	}
+}
+
+/**
+ * \brief Returns the flag name of a class
+ *
+ * */
+RZ_API RZ_OWN char *rz_core_bin_class_build_flag_name(RZ_NONNULL RzBinClass *cls) {
+	rz_return_val_if_fail(cls, NULL);
+	char *ret = NULL;
+	if (!cls->name) {
+		return NULL;
+	}
+
+	if (cls->visibility_str) {
+		char *copy = strdup(cls->visibility_str);
+		rz_str_replace_ch(copy, ' ', '.', 1);
+		ret = rz_str_newf("class.%s.%s", copy, cls->name);
+		free(copy);
+	} else {
+		ret = rz_str_newf("class.public.%s", cls->name);
+	}
+	rz_name_filter(ret, -1, true);
+	return ret;
+}
+
+/**
+ * \brief Returns the flag name of a super class
+ *
+ * */
+RZ_API RZ_OWN char *rz_core_bin_super_build_flag_name(RZ_NONNULL RzBinClass *cls) {
+	rz_return_val_if_fail(cls, NULL);
+	char *ret = NULL;
+	if (!cls->name || !cls->super) {
+		return NULL;
+	}
+
+	if (cls->visibility_str) {
+		char *copy = strdup(cls->visibility_str);
+		rz_str_replace_ch(copy, ' ', '.', 1);
+		ret = rz_str_newf("super.%s.%s.%s", copy, cls->name, cls->super);
+		free(copy);
+	} else {
+		ret = rz_str_newf("super.public.%s.%s", cls->name, cls->super);
+	}
+	rz_name_filter(ret, -1, true);
+	return ret;
+}
+
+/**
+ * \brief Returns the flag name of a class method
+ *
+ * */
+RZ_API RZ_OWN char *rz_core_bin_method_build_flag_name(RZ_NONNULL RzBinClass *cls, RZ_NONNULL RzBinSymbol *meth) {
 	rz_return_val_if_fail(cls && meth, NULL);
 	if (!cls->name || !meth->name) {
 		return NULL;
@@ -4517,22 +4665,45 @@ RZ_API char *rz_core_bin_method_build_flag_name(RzBinClass *cls, RzBinSymbol *me
 	RzStrBuf buf;
 	rz_strbuf_initf(&buf, "method");
 
-	ut64 flags = meth->method_flags;
-	for (int i = 0; flags; flags >>= 1, i++) {
-		if (!(flags & 1)) {
-			continue;
-		}
-		const char *flag_string = rz_bin_get_meth_flag_string(1ULL << i, false);
-		if (flag_string) {
-			rz_strbuf_appendf(&buf, ".%s", flag_string);
-		}
+	if (meth->visibility_str) {
+		char *copy = strdup(meth->visibility_str);
+		rz_str_replace_ch(copy, ' ', '.', 1);
+		rz_strbuf_appendf(&buf, ".%s", copy);
+		free(copy);
+	} else {
+		resolve_method_flags(&buf, meth->method_flags);
+	}
+	const char *mn = meth->dname ? meth->dname : meth->name;
+	rz_strbuf_appendf(&buf, ".%s.%s", cls->name, mn);
+	char *ret = rz_strbuf_drain_nofree(&buf);
+	rz_name_filter(ret, -1, true);
+	return ret;
+}
+
+/**
+ * \brief Returns the flag name of a class field
+ *
+ * */
+RZ_API RZ_OWN char *rz_core_bin_field_build_flag_name(RZ_NONNULL RzBinClass *cls, RZ_NONNULL RzBinField *field) {
+	rz_return_val_if_fail(cls && field, NULL);
+	if (!cls->name || !field->name) {
+		return NULL;
 	}
 
-	rz_strbuf_appendf(&buf, ".%s.%s", cls->name, meth->name);
-	char *ret = rz_strbuf_drain_nofree(&buf);
-	if (ret) {
-		rz_name_filter(ret, -1, true);
+	RzStrBuf buf;
+	rz_strbuf_initf(&buf, "field");
+
+	if (field->visibility_str) {
+		char *copy = strdup(field->visibility_str);
+		rz_str_replace_ch(copy, ' ', '.', 1);
+		rz_strbuf_appendf(&buf, ".%s", copy);
+		free(copy);
+	} else {
+		resolve_method_flags(&buf, field->flags);
 	}
+	rz_strbuf_appendf(&buf, ".%s.%s", cls->name, field->name);
+	char *ret = rz_strbuf_drain_nofree(&buf);
+	rz_name_filter(ret, -1, true);
 	return ret;
 }
 

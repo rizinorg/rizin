@@ -2267,7 +2267,7 @@ static void cmd_foreach_cmdname(RzCmd *cmd, RzCmdDesc *cd, RzCmdForeachNameCb cb
 }
 
 /**
- * /brief Execute a callback function on each possible command the user can execute.
+ * \brief Execute a callback function on each possible command the user can execute.
  *
  * Only command names that can actually execute something are iterated. Help
  * commands (e.g. ?, h?, etc.) are ignored.

@@ -113,6 +113,7 @@ RZ_LIB_VERSION_HEADER(rz_bin);
 #define RZ_BIN_TYPE_NOTYPE_STR      "NOTYPE"
 #define RZ_BIN_TYPE_OBJECT_STR      "OBJ"
 #define RZ_BIN_TYPE_FUNC_STR        "FUNC"
+#define RZ_BIN_TYPE_FIELD_STR       "FIELD"
 #define RZ_BIN_TYPE_IFACE_STR       "IFACE"
 #define RZ_BIN_TYPE_METH_STR        "METH"
 #define RZ_BIN_TYPE_STATIC_STR      "STATIC"
@@ -550,8 +551,8 @@ typedef struct rz_bin_plugin_t {
 	char *(*signature)(RzBinFile *bf, bool json);
 	int (*demangle_type)(const char *str);
 	char *(*enrich_asm)(RzBinFile *bf, const char *asm_str, int asm_len);
-	int (*get_offset)(RzBinFile *bf, int type, int idx);
-	char *(*get_name)(RzBinFile *bf, int type, int idx, bool simplified);
+	ut64 (*get_offset)(RzBinFile *bf, int type, int idx);
+	char *(*get_name)(RzBinFile *bf, int type, int idx);
 	ut64 (*get_vaddr)(RzBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr);
 	char *(*section_type_to_string)(ut64 type);
 	RzList *(*section_flag_to_rzlist)(ut64 flag);
@@ -762,6 +763,7 @@ typedef struct rz_bin_field_t {
 	ut32 visibility;
 	char *name;
 	char *type;
+	char *visibility_str;
 	char *comment;
 	char *format;
 	bool format_named; // whether format is the name of a format or a raw pf format string
@@ -782,8 +784,8 @@ typedef struct rz_bin_mem_t {
 // TODO: deprecate rz_bin_is_big_endian
 // TODO: has_dbg_syms... maybe flags?
 
-typedef int (*RzBinGetOffset)(RzBin *bin, int type, int idx);
-typedef const char *(*RzBinGetName)(RzBin *bin, int type, int idx, bool sd);
+typedef ut64 (*RzBinGetOffset)(RzBin *bin, int type, int idx);
+typedef char *(*RzBinGetName)(RzBin *bin, int type, int idx);
 typedef RzList *(*RzBinGetSections)(RzBin *bin);
 typedef RzBinSection *(*RzBinGetSectionAt)(RzBin *bin, ut64 addr);
 typedef char *(*RzBinDemangle)(RzBinFile *bf, const char *def, const char *str, ut64 vaddr, bool libs);
@@ -942,13 +944,13 @@ RZ_API RzBinVirtualFile *rz_bin_object_get_virtual_file(RzBinObject *o, const ch
 RZ_API void rz_bin_mem_free(void *data);
 
 // demangle functions
-RZ_API char *rz_bin_demangle(RzBinFile *binfile, const char *lang, const char *str, ut64 vaddr, bool libs);
-RZ_API char *rz_bin_demangle_java(const char *str);
-RZ_API char *rz_bin_demangle_cxx(RzBinFile *binfile, const char *str, ut64 vaddr);
-RZ_API char *rz_bin_demangle_msvc(const char *str);
-RZ_API char *rz_bin_demangle_swift(const char *s, bool syscmd);
-RZ_API char *rz_bin_demangle_objc(RzBinFile *binfile, const char *sym);
-RZ_API char *rz_bin_demangle_rust(RzBinFile *binfile, const char *str, ut64 vaddr);
+RZ_API RZ_OWN char *rz_bin_demangle(RZ_NONNULL RzBinFile *binfile, RZ_NONNULL const char *lang, RZ_NONNULL const char *str, ut64 vaddr, bool libs);
+RZ_API RZ_OWN char *rz_bin_demangle_java(RZ_NULLABLE const char *str);
+RZ_API RZ_OWN char *rz_bin_demangle_cxx(RZ_NONNULL RzBinFile *binfile, RZ_NONNULL const char *str, ut64 vaddr);
+RZ_API RZ_OWN char *rz_bin_demangle_msvc(RZ_NONNULL const char *str);
+RZ_API RZ_OWN char *rz_bin_demangle_swift(RZ_NONNULL const char *s, bool syscmd);
+RZ_API RZ_OWN char *rz_bin_demangle_objc(RZ_NONNULL RzBinFile *binfile, RZ_NONNULL const char *sym);
+RZ_API RZ_OWN char *rz_bin_demangle_rust(RZ_NONNULL RzBinFile *binfile, RZ_NONNULL const char *str, ut64 vaddr);
 RZ_API int rz_bin_demangle_type(const char *str);
 RZ_API void rz_bin_demangle_list(RzBin *bin);
 RZ_API char *rz_bin_demangle_plugin(RzBin *bin, const char *name, const char *str);

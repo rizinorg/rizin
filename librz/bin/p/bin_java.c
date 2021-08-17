@@ -101,7 +101,7 @@ static RzList *classes(RzBinFile *bf) {
 	bclass->name = rz_bin_java_class_name(jclass);
 	bclass->super = rz_bin_java_class_super(jclass);
 	bclass->visibility = rz_bin_java_class_access_flags(jclass);
-	bclass->visibility_str = rz_bin_java_class_access_flags_readable(jclass, ACCESS_FLAG_MASK_ALL);
+	bclass->visibility_str = rz_bin_java_class_access_flags_readable(jclass, ACCESS_FLAG_MASK_ALL_NO_SUPER);
 
 	bclass->methods = rz_bin_java_class_methods_as_symbols(jclass);
 	bclass->fields = rz_bin_java_class_fields_as_binfields(jclass);
@@ -220,14 +220,8 @@ static char *enrich_asm(RzBinFile *bf, const char *asm_str, int asm_len) {
 				rz_warn_if_reached();
 				return NULL;
 			}
-			char *dem = rz_bin_demangle_java(tmp);
-			if (!dem) {
-				dem = tmp;
-			} else {
-				free(tmp);
-			}
-			char *result = rz_str_newf("%.*s%s", i, asm_str, dem);
-			free(dem);
+			char *result = rz_str_newf("%.*s%s", i, asm_str, tmp);
+			free(tmp);
 			return result;
 		}
 	}

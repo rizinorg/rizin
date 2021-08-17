@@ -555,16 +555,23 @@ CMDS=!rz-diff -C -t symbols bins/java/Main.java.11.class bins/java/Main.java.1.7
 EXPECT=<<EOF
 --- bins/java/Main.java.11.class
 +++ bins/java/Main.java.1.7.class
-@@ -8,6 +8,8 @@
- java.io.PrintStream.println
- java.lang.Exception.printStackTrace
- java.lang.Object.<init>
-+java.lang.StringBuilder.<init>
-+java.lang.StringBuilder.append
-+java.lang.StringBuilder.toString
- java.lang.System.err
- java.lang.System.out
--java.lang.invoke.StringConcatFactory.makeConcatWithConstants
+@@ -1,13 +1,15 @@
++java.lang.Object Ljava/lang/Object; <init>
+ java.lang.Object Ljava/lang/Object; <init>
+ java.io.FileReader Ljava/io/FileReader; <init>
+ java.io.BufferedReader Ljava/io/BufferedReader; <init>
+ Main LMain; LMain;.<init>
+ Main LMain; LMain;.main
++java.lang.StringBuilder Ljava/lang/StringBuilder; append
+ java.io.BufferedReader Ljava/io/BufferedReader; close
+ java.lang.System Ljava/lang/System; err
+ java.io.PrintStream Ljava/io/PrintStream; format
+-java.lang.invoke.StringConcatFactory Ljava/lang/invoke/StringConcatFactory; makeConcatWithConstants
+ java.lang.System Ljava/lang/System; out
+ java.lang.Exception Ljava/lang/Exception; printStackTrace
+ java.io.PrintStream Ljava/io/PrintStream; println
+ java.io.BufferedReader Ljava/io/BufferedReader; readLine
++java.lang.StringBuilder Ljava/lang/StringBuilder; toString
 
 EOF
 RUN
@@ -573,7 +580,7 @@ NAME=rz-diff symbols comparison JSON
 FILE==
 CMDS=!rz-diff -C -jt symbols bins/java/Main.java.11.class bins/java/Main.java.1.7.class
 EXPECT=<<EOF
-{"from":"bins/java/Main.java.11.class","to":"bins/java/Main.java.1.7.class","diff":[{"from":[8,6],"to":[8,8],"ops":[{"op":"equal","value":"java.io.PrintStream.println\n"},{"op":"equal","value":"java.lang.Exception.printStackTrace\n"},{"op":"equal","value":"java.lang.Object.<init>\n"},{"op":"insert","value":"java.lang.StringBuilder.<init>\n"},{"op":"insert","value":"java.lang.StringBuilder.append\n"},{"op":"insert","value":"java.lang.StringBuilder.toString\n"},{"op":"equal","value":"java.lang.System.err\n"},{"op":"equal","value":"java.lang.System.out\n"},{"op":"delete","value":"java.lang.invoke.StringConcatFactory.makeConcatWithConstants\n"}]}]}
+{"from":"bins/java/Main.java.11.class","to":"bins/java/Main.java.1.7.class","diff":[{"from":[1,13],"to":[1,15],"ops":[{"op":"insert","value":"java.lang.Object Ljava/lang/Object; <init>\n"},{"op":"equal","value":"java.lang.Object Ljava/lang/Object; <init>\n"},{"op":"equal","value":"java.io.FileReader Ljava/io/FileReader; <init>\n"},{"op":"equal","value":"java.io.BufferedReader Ljava/io/BufferedReader; <init>\n"},{"op":"equal","value":"Main LMain; LMain;.<init>\n"},{"op":"equal","value":"Main LMain; LMain;.main\n"},{"op":"insert","value":"java.lang.StringBuilder Ljava/lang/StringBuilder; append\n"},{"op":"equal","value":"java.io.BufferedReader Ljava/io/BufferedReader; close\n"},{"op":"equal","value":"java.lang.System Ljava/lang/System; err\n"},{"op":"equal","value":"java.io.PrintStream Ljava/io/PrintStream; format\n"},{"op":"delete","value":"java.lang.invoke.StringConcatFactory Ljava/lang/invoke/StringConcatFactory; makeConcatWithConstants\n"},{"op":"equal","value":"java.lang.System Ljava/lang/System; out\n"},{"op":"equal","value":"java.lang.Exception Ljava/lang/Exception; printStackTrace\n"},{"op":"equal","value":"java.io.PrintStream Ljava/io/PrintStream; println\n"},{"op":"equal","value":"java.io.BufferedReader Ljava/io/BufferedReader; readLine\n"},{"op":"insert","value":"java.lang.StringBuilder Ljava/lang/StringBuilder; toString\n"}]}]}
 EOF
 RUN
 
@@ -584,28 +591,28 @@ EXPECT=<<EOF
 --- bins/java/Main.java.11.class
 +++ bins/java/Main.java.1.7.class
 @@ -1,13 +1,15 @@
--virt: 0x00000000000004a4 phys: 0x00000000000004a4 Main.<init>
--virt: 0x00000000000004cf phys: 0x00000000000004cf Main.main
-+virt: 0x0000000000000383 phys: 0x0000000000000383 Main.<init>
-+virt: 0x00000000000003ae phys: 0x00000000000003ae Main.main
- virt: 0x000000000000011e phys: 0x000000000000011e java.io.BufferedReader.<init>
--virt: 0x00000000000001b7 phys: 0x00000000000001b7 java.io.BufferedReader.close
-+virt: 0x00000000000001f0 phys: 0x00000000000001f0 java.io.BufferedReader.close
- virt: 0x000000000000013e phys: 0x000000000000013e java.io.BufferedReader.readLine
- virt: 0x0000000000000114 phys: 0x0000000000000114 java.io.FileReader.<init>
--virt: 0x000000000000021f phys: 0x000000000000021f java.io.PrintStream.format
-+virt: 0x0000000000000258 phys: 0x0000000000000258 java.io.PrintStream.format
- virt: 0x0000000000000088 phys: 0x0000000000000088 java.io.PrintStream.println
--virt: 0x0000000000000271 phys: 0x0000000000000271 java.lang.Exception.printStackTrace
-+virt: 0x00000000000002aa phys: 0x00000000000002aa java.lang.Exception.printStackTrace
- virt: 0x000000000000000a phys: 0x000000000000000a java.lang.Object.<init>
--virt: 0x00000000000001e2 phys: 0x00000000000001e2 java.lang.System.err
-+virt: 0x0000000000000187 phys: 0x0000000000000187 java.lang.StringBuilder.<init>
-+virt: 0x0000000000000198 phys: 0x0000000000000198 java.lang.StringBuilder.append
-+virt: 0x00000000000001db phys: 0x00000000000001db java.lang.StringBuilder.toString
-+virt: 0x000000000000021b phys: 0x000000000000021b java.lang.System.err
- virt: 0x0000000000000039 phys: 0x0000000000000039 java.lang.System.out
--virt: 0x000000000000033f phys: 0x000000000000033f java.lang.invoke.StringConcatFactory.makeConcatWithConstants
+ virt: 0x000000000000000a phys: 0x000000000000000a java.lang.Object Ljava/lang/Object; <init>
+ virt: 0x0000000000000114 phys: 0x0000000000000114 java.io.FileReader Ljava/io/FileReader; <init>
+ virt: 0x000000000000011e phys: 0x000000000000011e java.io.BufferedReader Ljava/io/BufferedReader; <init>
+-virt: 0x00000000000004a4 phys: 0x00000000000004a4 Main LMain; LMain;.<init>
+-virt: 0x00000000000004cf phys: 0x00000000000004cf Main LMain; LMain;.main
+-virt: 0x00000000000001b7 phys: 0x00000000000001b7 java.io.BufferedReader Ljava/io/BufferedReader; close
+-virt: 0x00000000000001e2 phys: 0x00000000000001e2 java.lang.System Ljava/lang/System; err
+-virt: 0x000000000000021f phys: 0x000000000000021f java.io.PrintStream Ljava/io/PrintStream; format
+-virt: 0x000000000000033f phys: 0x000000000000033f java.lang.invoke.StringConcatFactory Ljava/lang/invoke/StringConcatFactory; makeConcatWithConstants
++virt: 0x0000000000000187 phys: 0x0000000000000187 java.lang.StringBuilder Ljava/lang/StringBuilder; <init>
++virt: 0x0000000000000383 phys: 0x0000000000000383 Main LMain; LMain;.<init>
++virt: 0x00000000000003ae phys: 0x00000000000003ae Main LMain; LMain;.main
++virt: 0x0000000000000198 phys: 0x0000000000000198 java.lang.StringBuilder Ljava/lang/StringBuilder; append
++virt: 0x00000000000001f0 phys: 0x00000000000001f0 java.io.BufferedReader Ljava/io/BufferedReader; close
++virt: 0x000000000000021b phys: 0x000000000000021b java.lang.System Ljava/lang/System; err
++virt: 0x0000000000000258 phys: 0x0000000000000258 java.io.PrintStream Ljava/io/PrintStream; format
+ virt: 0x0000000000000039 phys: 0x0000000000000039 java.lang.System Ljava/lang/System; out
+-virt: 0x0000000000000271 phys: 0x0000000000000271 java.lang.Exception Ljava/lang/Exception; printStackTrace
++virt: 0x00000000000002aa phys: 0x00000000000002aa java.lang.Exception Ljava/lang/Exception; printStackTrace
+ virt: 0x0000000000000088 phys: 0x0000000000000088 java.io.PrintStream Ljava/io/PrintStream; println
+ virt: 0x000000000000013e phys: 0x000000000000013e java.io.BufferedReader Ljava/io/BufferedReader; readLine
++virt: 0x00000000000001db phys: 0x00000000000001db java.lang.StringBuilder Ljava/lang/StringBuilder; toString
 
 EOF
 RUN
@@ -614,7 +621,7 @@ NAME=rz-diff symbols comparison with addresses JSON
 FILE==
 CMDS=!rz-diff -C -Ajt symbols bins/java/Main.java.11.class bins/java/Main.java.1.7.class
 EXPECT=<<EOF
-{"from":"bins/java/Main.java.11.class","to":"bins/java/Main.java.1.7.class","diff":[{"from":[1,13],"to":[1,15],"ops":[{"op":"delete","value":"virt: 0x00000000000004a4 phys: 0x00000000000004a4 Main.<init>\n"},{"op":"delete","value":"virt: 0x00000000000004cf phys: 0x00000000000004cf Main.main\n"},{"op":"insert","value":"virt: 0x0000000000000383 phys: 0x0000000000000383 Main.<init>\n"},{"op":"insert","value":"virt: 0x00000000000003ae phys: 0x00000000000003ae Main.main\n"},{"op":"equal","value":"virt: 0x000000000000011e phys: 0x000000000000011e java.io.BufferedReader.<init>\n"},{"op":"delete","value":"virt: 0x00000000000001b7 phys: 0x00000000000001b7 java.io.BufferedReader.close\n"},{"op":"insert","value":"virt: 0x00000000000001f0 phys: 0x00000000000001f0 java.io.BufferedReader.close\n"},{"op":"equal","value":"virt: 0x000000000000013e phys: 0x000000000000013e java.io.BufferedReader.readLine\n"},{"op":"equal","value":"virt: 0x0000000000000114 phys: 0x0000000000000114 java.io.FileReader.<init>\n"},{"op":"delete","value":"virt: 0x000000000000021f phys: 0x000000000000021f java.io.PrintStream.format\n"},{"op":"insert","value":"virt: 0x0000000000000258 phys: 0x0000000000000258 java.io.PrintStream.format\n"},{"op":"equal","value":"virt: 0x0000000000000088 phys: 0x0000000000000088 java.io.PrintStream.println\n"},{"op":"delete","value":"virt: 0x0000000000000271 phys: 0x0000000000000271 java.lang.Exception.printStackTrace\n"},{"op":"insert","value":"virt: 0x00000000000002aa phys: 0x00000000000002aa java.lang.Exception.printStackTrace\n"},{"op":"equal","value":"virt: 0x000000000000000a phys: 0x000000000000000a java.lang.Object.<init>\n"},{"op":"delete","value":"virt: 0x00000000000001e2 phys: 0x00000000000001e2 java.lang.System.err\n"},{"op":"insert","value":"virt: 0x0000000000000187 phys: 0x0000000000000187 java.lang.StringBuilder.<init>\n"},{"op":"insert","value":"virt: 0x0000000000000198 phys: 0x0000000000000198 java.lang.StringBuilder.append\n"},{"op":"insert","value":"virt: 0x00000000000001db phys: 0x00000000000001db java.lang.StringBuilder.toString\n"},{"op":"insert","value":"virt: 0x000000000000021b phys: 0x000000000000021b java.lang.System.err\n"},{"op":"equal","value":"virt: 0x0000000000000039 phys: 0x0000000000000039 java.lang.System.out\n"},{"op":"delete","value":"virt: 0x000000000000033f phys: 0x000000000000033f java.lang.invoke.StringConcatFactory.makeConcatWithConstants\n"}]}]}
+{"from":"bins/java/Main.java.11.class","to":"bins/java/Main.java.1.7.class","diff":[{"from":[1,13],"to":[1,15],"ops":[{"op":"equal","value":"virt: 0x000000000000000a phys: 0x000000000000000a java.lang.Object Ljava/lang/Object; <init>\n"},{"op":"equal","value":"virt: 0x0000000000000114 phys: 0x0000000000000114 java.io.FileReader Ljava/io/FileReader; <init>\n"},{"op":"equal","value":"virt: 0x000000000000011e phys: 0x000000000000011e java.io.BufferedReader Ljava/io/BufferedReader; <init>\n"},{"op":"delete","value":"virt: 0x00000000000004a4 phys: 0x00000000000004a4 Main LMain; LMain;.<init>\n"},{"op":"delete","value":"virt: 0x00000000000004cf phys: 0x00000000000004cf Main LMain; LMain;.main\n"},{"op":"delete","value":"virt: 0x00000000000001b7 phys: 0x00000000000001b7 java.io.BufferedReader Ljava/io/BufferedReader; close\n"},{"op":"delete","value":"virt: 0x00000000000001e2 phys: 0x00000000000001e2 java.lang.System Ljava/lang/System; err\n"},{"op":"delete","value":"virt: 0x000000000000021f phys: 0x000000000000021f java.io.PrintStream Ljava/io/PrintStream; format\n"},{"op":"delete","value":"virt: 0x000000000000033f phys: 0x000000000000033f java.lang.invoke.StringConcatFactory Ljava/lang/invoke/StringConcatFactory; makeConcatWithConstants\n"},{"op":"insert","value":"virt: 0x0000000000000187 phys: 0x0000000000000187 java.lang.StringBuilder Ljava/lang/StringBuilder; <init>\n"},{"op":"insert","value":"virt: 0x0000000000000383 phys: 0x0000000000000383 Main LMain; LMain;.<init>\n"},{"op":"insert","value":"virt: 0x00000000000003ae phys: 0x00000000000003ae Main LMain; LMain;.main\n"},{"op":"insert","value":"virt: 0x0000000000000198 phys: 0x0000000000000198 java.lang.StringBuilder Ljava/lang/StringBuilder; append\n"},{"op":"insert","value":"virt: 0x00000000000001f0 phys: 0x00000000000001f0 java.io.BufferedReader Ljava/io/BufferedReader; close\n"},{"op":"insert","value":"virt: 0x000000000000021b phys: 0x000000000000021b java.lang.System Ljava/lang/System; err\n"},{"op":"insert","value":"virt: 0x0000000000000258 phys: 0x0000000000000258 java.io.PrintStream Ljava/io/PrintStream; format\n"},{"op":"equal","value":"virt: 0x0000000000000039 phys: 0x0000000000000039 java.lang.System Ljava/lang/System; out\n"},{"op":"delete","value":"virt: 0x0000000000000271 phys: 0x0000000000000271 java.lang.Exception Ljava/lang/Exception; printStackTrace\n"},{"op":"insert","value":"virt: 0x00000000000002aa phys: 0x00000000000002aa java.lang.Exception Ljava/lang/Exception; printStackTrace\n"},{"op":"equal","value":"virt: 0x0000000000000088 phys: 0x0000000000000088 java.io.PrintStream Ljava/io/PrintStream; println\n"},{"op":"equal","value":"virt: 0x000000000000013e phys: 0x000000000000013e java.io.BufferedReader Ljava/io/BufferedReader; readLine\n"},{"op":"insert","value":"virt: 0x00000000000001db phys: 0x00000000000001db java.lang.StringBuilder Ljava/lang/StringBuilder; toString\n"}]}]}
 EOF
 RUN
 
@@ -637,7 +644,7 @@ EXPECT=<<EOF
 -Version: (55.0) Java SE 11
 +Version: (59.0) Java SE 15
  Flags: (0x0021) public super
- Class: (#57) Main
+ Class: (#57) LMain;
  Super: (#2) java/lang/Object
 
 EOF
@@ -647,7 +654,7 @@ NAME=rz-diff command with one argument JSON
 FILE==
 CMDS=!rz-diff -C -j -0 javac -t command bins/java/Main.java.11.class bins/java/Main.java.15.class
 EXPECT=<<EOF
-{"from":"bins/java/Main.java.11.class","to":"bins/java/Main.java.15.class","diff":[{"from":[1,4],"to":[1,4],"ops":[{"op":"delete","value":"Version: (55.0) Java SE 11\n"},{"op":"insert","value":"Version: (59.0) Java SE 15\n"},{"op":"equal","value":"Flags: (0x0021) public super\n"},{"op":"equal","value":"Class: (#57) Main\n"},{"op":"equal","value":"Super: (#2) java/lang/Object\n"}]}]}
+{"from":"bins/java/Main.java.11.class","to":"bins/java/Main.java.15.class","diff":[{"from":[1,4],"to":[1,4],"ops":[{"op":"delete","value":"Version: (55.0) Java SE 11\n"},{"op":"insert","value":"Version: (59.0) Java SE 15\n"},{"op":"equal","value":"Flags: (0x0021) public super\n"},{"op":"equal","value":"Class: (#57) LMain;\n"},{"op":"equal","value":"Super: (#2) java/lang/Object\n"}]}]}
 EOF
 RUN
 

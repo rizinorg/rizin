@@ -242,7 +242,10 @@ static void java_set_sdb(Sdb *kv, RzBinJavaClass *bin, ut64 offset, ut64 size) {
 	sdb_num_set(kv, "java_class.attributes_count", bin->attributes_count, 0);
 }
 
-RZ_API RzBinJavaClass *rz_bin_java_class_new(RzBuffer *buf, ut64 offset, Sdb *kv) {
+/**
+ * \brief Parses the java class file and returns a RzBinJavaClass struct
+ */
+RZ_API RZ_OWN RzBinJavaClass *rz_bin_java_class_new(RZ_NONNULL RzBuffer *buf, ut64 offset, RZ_NONNULL Sdb *kv) {
 	RzBinJavaClass *bin = (RzBinJavaClass *)RZ_NEW0(RzBinJavaClass);
 	rz_return_val_if_fail(bin, NULL);
 
@@ -256,7 +259,10 @@ RZ_API RzBinJavaClass *rz_bin_java_class_new(RzBuffer *buf, ut64 offset, Sdb *kv
 	return bin;
 }
 
-RZ_API char *rz_bin_java_class_version(RzBinJavaClass *bin) {
+/**
+ * \brief Parses the java class file and returns a RzBinJavaClass struct
+ */
+RZ_API RZ_OWN char *rz_bin_java_class_version(RZ_NONNULL RzBinJavaClass *bin) {
 	if (!bin) {
 		return NULL;
 	}
@@ -301,7 +307,7 @@ RZ_API char *rz_bin_java_class_version(RzBinJavaClass *bin) {
 	return strdup("unknown");
 }
 
-RZ_API ut64 rz_bin_java_class_debug_info(RzBinJavaClass *bin) {
+RZ_API ut64 rz_bin_java_class_debug_info(RZ_NONNULL RzBinJavaClass *bin) {
 	if (!bin) {
 		return 0;
 	}
@@ -328,7 +334,7 @@ RZ_API ut64 rz_bin_java_class_debug_info(RzBinJavaClass *bin) {
 	return RZ_BIN_DBG_SYMS;
 }
 
-RZ_API const char *rz_bin_java_class_language(RzBinJavaClass *bin) {
+RZ_API RZ_OWN const char *rz_bin_java_class_language(RZ_NONNULL RzBinJavaClass *bin) {
 	rz_return_val_if_fail(bin, NULL);
 	const char *language = "java";
 	char *string = NULL;
@@ -354,7 +360,10 @@ RZ_API const char *rz_bin_java_class_language(RzBinJavaClass *bin) {
 	return language;
 }
 
-RZ_API void rz_bin_java_class_free(RzBinJavaClass *bin) {
+/**
+ * \brief Frees a RzBinJavaClass pointer
+ */
+RZ_API void rz_bin_java_class_free(RZ_NULLABLE RzBinJavaClass *bin) {
 	if (!bin) {
 		return;
 	}
@@ -391,7 +400,10 @@ RZ_API void rz_bin_java_class_free(RzBinJavaClass *bin) {
 	free(bin);
 }
 
-RZ_API char *rz_bin_java_class_name(RzBinJavaClass *bin) {
+/**
+ * \brief Returns the class name
+ */
+RZ_API RZ_OWN char *rz_bin_java_class_name(RZ_NONNULL RzBinJavaClass *bin) {
 	ut16 index;
 	rz_return_val_if_fail(bin, NULL);
 	const ConstPool *cpool = java_class_constant_pool_at(bin, bin->this_class);
@@ -401,10 +413,16 @@ RZ_API char *rz_bin_java_class_name(RzBinJavaClass *bin) {
 		return strdup("unknown_class");
 	}
 
-	return java_class_constant_pool_stringify_at(bin, index);
+	char *tmp = java_class_constant_pool_stringify_at(bin, index);
+	char *class_name = rz_str_newf("L%s;", tmp);
+	free(tmp);
+	return class_name;
 }
 
-RZ_API char *rz_bin_java_class_super(RzBinJavaClass *bin) {
+/**
+ * \brief Returns the class super name
+ */
+RZ_OWN RZ_OWN char *rz_bin_java_class_super(RZ_NONNULL RzBinJavaClass *bin) {
 	ut16 index;
 	rz_return_val_if_fail(bin, NULL);
 	const ConstPool *cpool = java_class_constant_pool_at(bin, bin->super_class);
@@ -415,12 +433,15 @@ RZ_API char *rz_bin_java_class_super(RzBinJavaClass *bin) {
 	return java_class_constant_pool_stringify_at(bin, index);
 }
 
-RZ_API ut32 rz_bin_java_class_access_flags(RzBinJavaClass *bin) {
+RZ_API ut32 rz_bin_java_class_access_flags(RZ_NONNULL RzBinJavaClass *bin) {
 	rz_return_val_if_fail(bin, 0xffffffff);
 	return bin->access_flags;
 }
 
-RZ_API char *rz_bin_java_class_access_flags_readable(RzBinJavaClass *bin, ut16 mask) {
+/**
+ * \brief Returns the readable class access flags
+ */
+RZ_API RZ_OWN char *rz_bin_java_class_access_flags_readable(RZ_NONNULL RzBinJavaClass *bin, ut16 mask) {
 	rz_return_val_if_fail(bin, NULL);
 	RzStrBuf *sb = NULL;
 	ut16 access_flags = bin->access_flags & mask;
@@ -453,7 +474,10 @@ static int calculate_padding_ut16(ut16 count) {
 	return 2;
 }
 
-RZ_API void rz_bin_java_class_as_json(RzBinJavaClass *bin, PJ *j) {
+/**
+ * \brief Returns the class info as json
+ */
+RZ_API void rz_bin_java_class_as_json(RZ_NONNULL RzBinJavaClass *bin, RZ_NONNULL PJ *j) {
 	rz_return_if_fail(bin && j);
 	char *tmp = NULL;
 
@@ -520,7 +544,10 @@ RZ_API void rz_bin_java_class_as_json(RzBinJavaClass *bin, PJ *j) {
 	pj_end(j);
 }
 
-RZ_API void rz_bin_java_class_as_text(RzBinJavaClass *bin, RzStrBuf *sb) {
+/**
+ * \brief Returns the class info as text
+ */
+RZ_API void rz_bin_java_class_as_text(RZ_NONNULL RzBinJavaClass *bin, RZ_NONNULL RzStrBuf *sb) {
 	rz_return_if_fail(bin && sb);
 	char number[16];
 	char *tmp = NULL;
@@ -570,7 +597,10 @@ static inline bool is_dual_index(const ConstPool *cpool) {
 		cpool->tag == CONSTANT_POOL_INVOKEDYNAMIC;
 }
 
-RZ_API char *rz_bin_java_class_const_pool_resolve_index(RzBinJavaClass *bin, st32 index) {
+/**
+ * \brief Returns the string linked to the class const pool index
+ */
+RZ_API RZ_OWN char *rz_bin_java_class_const_pool_resolve_index(RZ_NONNULL RzBinJavaClass *bin, st32 index) {
 	rz_return_val_if_fail(bin && index >= 0, NULL);
 	ut16 arg0, arg1;
 	char *tmp;
@@ -588,8 +618,12 @@ RZ_API char *rz_bin_java_class_const_pool_resolve_index(RzBinJavaClass *bin, st3
 			return NULL;
 		}
 		tmp = rz_bin_java_class_const_pool_resolve_index(bin, arg0);
-		rz_str_replace_char(tmp, '/', '.');
-		return tmp;
+		if (tmp[0] == '[' && tmp[1] == 'L') {
+			return tmp;
+		}
+		char *res = rz_str_newf("L%s;", tmp);
+		free(tmp);
+		return res;
 	} else if (cpool->tag == CONSTANT_POOL_STRING) {
 		if (java_constant_pool_resolve(cpool, &arg0, NULL) != 1) {
 			RZ_LOG_ERROR("java bin: can't resolve constant pool index %u\n", index);
@@ -613,11 +647,13 @@ RZ_API char *rz_bin_java_class_const_pool_resolve_index(RzBinJavaClass *bin, st3
 			return NULL;
 		}
 		if (!arg0) {
-			rz_str_replace_char(s1, '/', '.');
 			return s1;
 		}
-		tmp = rz_str_newf("%s:%s", s0, s1);
-		rz_str_replace_char(tmp, '/', '.');
+		if (s1[0] == '(') {
+			tmp = rz_str_newf("%s%s", s0, s1);
+		} else {
+			tmp = rz_str_newf("%s.%s", s0, s1);
+		}
 		free(s0);
 		free(s1);
 		return tmp;
@@ -625,10 +661,14 @@ RZ_API char *rz_bin_java_class_const_pool_resolve_index(RzBinJavaClass *bin, st3
 	return NULL;
 }
 
-RZ_API void rz_bin_java_class_as_source_code(RzBinJavaClass *bin, RzStrBuf *sb) {
+/**
+ * \brief Returns the class info as text source code
+ */
+RZ_API void rz_bin_java_class_as_source_code(RZ_NONNULL RzBinJavaClass *bin, RZ_NONNULL RzStrBuf *sb) {
 	rz_return_if_fail(bin && sb);
 
-	char *tmp;
+	char *dem = NULL;
+	char *tmp = NULL;
 	ut16 index;
 
 	RzListIter *iter;
@@ -651,14 +691,20 @@ RZ_API void rz_bin_java_class_as_source_code(RzBinJavaClass *bin, RzStrBuf *sb) 
 	}
 
 	tmp = rz_bin_java_class_name(bin);
-	rz_str_replace_char(tmp, '/', '.');
-	rz_strbuf_appendf(sb, " %s", tmp);
+	dem = rz_bin_demangle_java(tmp);
+	if (dem) {
+		rz_strbuf_appendf(sb, " %s", dem);
+		RZ_FREE(dem);
+	} else {
+		rz_strbuf_appendf(sb, " %s", tmp);
+	}
+
 	free(tmp);
 
 	if (bin->access_flags & ACCESS_FLAG_SUPER) {
 		tmp = rz_bin_java_class_super(bin);
-		rz_str_replace_char(tmp, '/', '.');
-		if (strcmp(tmp, "java.lang.Object") != 0) {
+		if (strcmp(tmp, "java/lang/Object") != 0) {
+			rz_str_replace_char(tmp, '/', '.');
 			rz_strbuf_appendf(sb, " extends %s", tmp);
 		}
 		free(tmp);
@@ -677,7 +723,10 @@ RZ_API void rz_bin_java_class_as_source_code(RzBinJavaClass *bin, RzStrBuf *sb) 
 				break;
 			}
 			tmp = java_class_constant_pool_stringify_at(bin, index);
-			rz_str_replace_char(tmp, '/', '.');
+			if ((dem = rz_bin_demangle_java(tmp))) {
+				free(tmp);
+				tmp = dem;
+			}
 			if (k > 0) {
 				rz_strbuf_appendf(sb, ", %s", tmp);
 			} else {
@@ -707,38 +756,31 @@ RZ_API void rz_bin_java_class_as_source_code(RzBinJavaClass *bin, RzStrBuf *sb) 
 				free(tmp);
 			}
 
-			tmp = java_class_constant_pool_stringify_at(bin, method->descriptor_index);
-			rz_str_replace_char(tmp, '/', '.');
-			char *dem = rz_bin_demangle_java(tmp);
-			if (!dem) {
-				dem = tmp;
-				tmp = java_class_constant_pool_stringify_at(bin, method->name_index);
-				if (tmp) {
-					rz_str_replace_char(tmp, '/', '.');
-					rz_strbuf_appendf(sb, "%s ", tmp);
-					free(tmp);
-				}
-				rz_strbuf_append(sb, dem);
-			} else {
-				free(tmp);
-				tmp = java_class_constant_pool_stringify_at(bin, method->name_index);
-				if (tmp) {
-					rz_str_replace_char(tmp, '/', '.');
-
-					char *ptr = strchr(dem, '(');
-					if (ptr) {
-						*(ptr - 1) = 0;
-						rz_strbuf_append(sb, dem);
-						rz_strbuf_append(sb, tmp);
-						rz_strbuf_append(sb, ptr);
-					} else {
-						rz_strbuf_append(sb, dem);
-						rz_strbuf_append(sb, tmp);
-					}
-					free(tmp);
-				}
+			char *name = java_class_constant_pool_stringify_at(bin, method->name_index);
+			if (!name) {
+				name = strdup("?");
 			}
-			free(dem);
+			char *desc = java_class_constant_pool_stringify_at(bin, method->descriptor_index);
+			if (!desc) {
+				desc = strdup("(?)V");
+			}
+
+			if (desc[0] == '(') {
+				tmp = rz_str_newf("%s%s", name, desc);
+			} else {
+				tmp = strdup(name);
+			}
+			free(desc);
+			free(name);
+
+			dem = rz_bin_demangle_java(tmp);
+			if (!dem) {
+				rz_strbuf_append(sb, tmp);
+			} else {
+				rz_strbuf_append(sb, dem);
+				RZ_FREE(dem);
+			}
+			free(tmp);
 			rz_strbuf_append(sb, ";\n");
 		}
 	}
@@ -781,7 +823,10 @@ RZ_API void rz_bin_java_class_as_source_code(RzBinJavaClass *bin, RzStrBuf *sb) 
 	rz_strbuf_append(sb, "}\n");
 }
 
-RZ_API RzBinAddr *rz_bin_java_class_resolve_symbol(RzBinJavaClass *bin, RzBinSpecialSymbol resolve) {
+/**
+ * \brief Resolves and returns the RzBinAddr struct linked to the input RzBinSpecialSymbol
+ */
+RZ_API RZ_OWN RzBinAddr *rz_bin_java_class_resolve_symbol(RZ_NONNULL RzBinJavaClass *bin, RzBinSpecialSymbol resolve) {
 	rz_return_val_if_fail(bin, NULL);
 
 	RzBinAddr *ret = RZ_NEW0(RzBinAddr);
@@ -835,7 +880,10 @@ RZ_API RzBinAddr *rz_bin_java_class_resolve_symbol(RzBinJavaClass *bin, RzBinSpe
 	return ret;
 }
 
-RZ_API RzList *rz_bin_java_class_entrypoints(RzBinJavaClass *bin) {
+/**
+ * \brief Returns a RzList<RzBinAddr*> containing the entrypoints
+ */
+RZ_API RZ_OWN RzList *rz_bin_java_class_entrypoints(RZ_NONNULL RzBinJavaClass *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
 	RzList *list = rz_list_newf(free);
@@ -891,7 +939,10 @@ RZ_API RzList *rz_bin_java_class_entrypoints(RzBinJavaClass *bin) {
 	return list;
 }
 
-RZ_API RzList *rz_bin_java_class_strings(RzBinJavaClass *bin) {
+/**
+ * \brief Returns a RzList<RzBinString*> containing the strings
+ */
+RZ_API RZ_OWN RzList *rz_bin_java_class_strings(RZ_NONNULL RzBinJavaClass *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
 	RzList *list = rz_list_newf(rz_bin_string_free);
@@ -955,13 +1006,15 @@ static char *add_class_name_to_name(char *name, char *classname) {
 			return name;
 		}
 		free(name);
-		rz_str_replace_char(tmp, '/', '.');
 		return tmp;
 	}
 	return name;
 }
 
-RZ_API RzList *rz_bin_java_class_methods_as_symbols(RzBinJavaClass *bin) {
+/**
+ * \brief Returns a RzList<RzBinSymbol*> containing the class methods
+ */
+RZ_API RZ_OWN RzList *rz_bin_java_class_methods_as_symbols(RZ_NONNULL RzBinJavaClass *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
 	RzList *list = rz_list_newf((RzListFree)rz_bin_symbol_free);
@@ -969,7 +1022,7 @@ RZ_API RzList *rz_bin_java_class_methods_as_symbols(RzBinJavaClass *bin) {
 		return NULL;
 	}
 
-	char *sym = NULL;
+	char *method_name = NULL;
 	if (bin->methods) {
 		for (ut32 i = 0; i < bin->methods_count; ++i) {
 			const Method *method = bin->methods[i];
@@ -982,8 +1035,8 @@ RZ_API RzList *rz_bin_java_class_methods_as_symbols(RzBinJavaClass *bin) {
 				RZ_LOG_ERROR("java bin: can't resolve method with constant pool index %u\n", method->name_index);
 				continue;
 			}
-			sym = java_constant_pool_stringify(cpool);
-			if (!sym) {
+			method_name = java_constant_pool_stringify(cpool);
+			if (!method_name) {
 				continue;
 			}
 			ut64 size = 0;
@@ -1000,24 +1053,35 @@ RZ_API RzList *rz_bin_java_class_methods_as_symbols(RzBinJavaClass *bin) {
 			RzBinSymbol *symbol = rz_bin_symbol_new(NULL, addr, addr);
 			if (!symbol) {
 				rz_warn_if_reached();
-				free(sym);
+				free(method_name);
 				continue;
 			}
+			char *desc = java_class_constant_pool_stringify_at(bin, method->descriptor_index);
+			if (!desc) {
+				desc = strdup("(?)V");
+			}
+
 			symbol->classname = rz_bin_java_class_name(bin);
-			symbol->name = add_class_name_to_name(sym, symbol->classname);
+			symbol->dname = rz_str_newf("%s%s", method_name, desc);
+			symbol->name = add_class_name_to_name(method_name, symbol->classname);
 			symbol->size = size;
 			symbol->bind = java_method_is_global(method) ? RZ_BIN_BIND_GLOBAL_STR : RZ_BIN_BIND_LOCAL_STR;
 			symbol->type = RZ_BIN_TYPE_FUNC_STR;
 			symbol->ordinal = rz_list_length(list);
 			symbol->visibility = method->access_flags;
 			symbol->visibility_str = java_method_access_flags_readable(method);
+			symbol->libname = rz_bin_demangle_java(symbol->classname);
+			free(desc);
 			rz_list_append(list, symbol);
 		}
 	}
 	return list;
 }
 
-RZ_API void rz_bin_java_class_methods_as_text(RzBinJavaClass *bin, RzStrBuf *sb) {
+/**
+ * \brief Returns the methods in text format via RzStrBuf arg
+ */
+RZ_API void rz_bin_java_class_methods_as_text(RZ_NONNULL RzBinJavaClass *bin, RZ_NONNULL RzStrBuf *sb) {
 	rz_return_if_fail(bin && sb);
 
 	rz_strbuf_appendf(sb, "Methods: %u\n", bin->methods_count);
@@ -1062,7 +1126,10 @@ RZ_API void rz_bin_java_class_methods_as_text(RzBinJavaClass *bin, RzStrBuf *sb)
 	}
 }
 
-RZ_API void rz_bin_java_class_methods_as_json(RzBinJavaClass *bin, PJ *j) {
+/**
+ * \brief Returns the methods in json format via PJ arg
+ */
+RZ_API void rz_bin_java_class_methods_as_json(RZ_NONNULL RzBinJavaClass *bin, RZ_NONNULL PJ *j) {
 	rz_return_if_fail(bin && j);
 
 	pj_a(j);
@@ -1117,7 +1184,10 @@ RZ_API void rz_bin_java_class_methods_as_json(RzBinJavaClass *bin, PJ *j) {
 	pj_end(j);
 }
 
-RZ_API RzList *rz_bin_java_class_fields_as_symbols(RzBinJavaClass *bin) {
+/**
+ * \brief Returns a RzList<RzBinSymbol*> containing the class fields
+ */
+RZ_API RZ_OWN RzList *rz_bin_java_class_fields_as_symbols(RZ_NONNULL RzBinJavaClass *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
 	RzList *list = rz_list_newf((RzListFree)rz_bin_symbol_free);
@@ -1162,7 +1232,10 @@ RZ_API RzList *rz_bin_java_class_fields_as_symbols(RzBinJavaClass *bin) {
 	return list;
 }
 
-RZ_API RzList *rz_bin_java_class_fields_as_binfields(RzBinJavaClass *bin) {
+/**
+ * \brief Returns a RzList<RzBinField*> containing the class fields
+ */
+RZ_API RZ_OWN RzList *rz_bin_java_class_fields_as_binfields(RZ_NONNULL RzBinJavaClass *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
 	RzList *list = rz_list_newf((RzListFree)rz_bin_field_free);
@@ -1199,7 +1272,10 @@ RZ_API RzList *rz_bin_java_class_fields_as_binfields(RzBinJavaClass *bin) {
 	return list;
 }
 
-RZ_API void rz_bin_java_class_fields_as_text(RzBinJavaClass *bin, RzStrBuf *sb) {
+/**
+ * \brief Returns the fields in text format via RzStrBuf arg
+ */
+RZ_API void rz_bin_java_class_fields_as_text(RZ_NONNULL RzBinJavaClass *bin, RZ_NONNULL RzStrBuf *sb) {
 	rz_return_if_fail(bin && sb);
 
 	rz_strbuf_appendf(sb, "Fields: %u\n", bin->fields_count);
@@ -1244,7 +1320,10 @@ RZ_API void rz_bin_java_class_fields_as_text(RzBinJavaClass *bin, RzStrBuf *sb) 
 	}
 }
 
-RZ_API void rz_bin_java_class_fields_as_json(RzBinJavaClass *bin, PJ *j) {
+/**
+ * \brief Returns the fields in json format via PJ arg
+ */
+RZ_API void rz_bin_java_class_fields_as_json(RZ_NONNULL RzBinJavaClass *bin, RZ_NONNULL PJ *j) {
 	rz_return_if_fail(bin && j);
 
 	pj_a(j);
@@ -1310,14 +1389,17 @@ static char *import_type(const ConstPool *cpool) {
 	return RZ_BIN_TYPE_UNKNOWN_STR;
 }
 
-RZ_API RzList *rz_bin_java_class_const_pool_as_symbols(RzBinJavaClass *bin) {
+/**
+ * \brief Returns a RzList<RzBinSymbol*> containing the class const pool
+ */
+RZ_API RZ_OWN RzList *rz_bin_java_class_const_pool_as_symbols(RZ_NONNULL RzBinJavaClass *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
 	RzList *list = rz_list_newf((RzListFree)rz_bin_symbol_free);
 	if (!list) {
 		return NULL;
 	}
-	char *sym, *classname;
+	char *method_name, *classname;
 	bool is_main;
 	ut16 class_index, name_and_type_index, name_index, descriptor_index, class_name_index;
 	if (bin->constant_pool) {
@@ -1347,15 +1429,29 @@ RZ_API RzList *rz_bin_java_class_const_pool_as_symbols(RzBinJavaClass *bin) {
 				rz_warn_if_reached();
 				break;
 			}
-			sym = java_class_constant_pool_stringify_at(bin, name_index);
-			is_main = sym && !strcmp(sym, "main");
+
+			char *desc = java_class_constant_pool_stringify_at(bin, descriptor_index);
+			if (!desc) {
+				desc = strdup("(?)V");
+			}
+
+			method_name = java_class_constant_pool_stringify_at(bin, name_index);
+			is_main = method_name && !strcmp(method_name, "main");
 			classname = java_class_constant_pool_stringify_at(bin, class_name_index);
-			symbol->name = add_class_name_to_name(sym, classname);
-			symbol->classname = classname;
+			symbol->name = add_class_name_to_name(method_name, symbol->classname);
+			if (desc[0] == '(') {
+				symbol->dname = rz_str_newf("%s%s", method_name, desc);
+			} else {
+				symbol->dname = strdup(method_name);
+			}
+			symbol->classname = rz_str_newf("L%s;", classname);
+			symbol->libname = classname;
+			rz_str_replace_ch(symbol->libname, '/', '.', 1);
 			symbol->bind = RZ_BIN_BIND_IMPORT_STR;
 			symbol->type = is_main ? RZ_BIN_TYPE_FUNC_STR : import_type(cpool);
 			symbol->ordinal = i;
 			symbol->is_imported = true;
+			free(desc);
 			rz_list_append(list, symbol);
 		}
 	}
@@ -1363,7 +1459,10 @@ RZ_API RzList *rz_bin_java_class_const_pool_as_symbols(RzBinJavaClass *bin) {
 	return list;
 }
 
-RZ_API RzList *rz_bin_java_class_const_pool_as_imports(RzBinJavaClass *bin) {
+/**
+ * \brief Returns a RzList<RzBinImport*> containing the class const pool
+ */
+RZ_API RZ_OWN RzList *rz_bin_java_class_const_pool_as_imports(RZ_NONNULL RzBinJavaClass *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
 	RzList *imports = rz_list_newf((RzListFree)rz_bin_import_free);
@@ -1400,14 +1499,25 @@ RZ_API RzList *rz_bin_java_class_const_pool_as_imports(RzBinJavaClass *bin) {
 				rz_warn_if_reached();
 				continue;
 			}
-			import->classname = java_class_constant_pool_stringify_at(bin, class_name_index);
-			rz_str_replace_char(import->classname, '/', '.');
+
+			char *object = java_class_constant_pool_stringify_at(bin, class_name_index);
+
+			char *class_name = (char *)rz_str_rchr(object, NULL, '/');
+			if (class_name) {
+				class_name[0] = 0;
+				class_name++;
+			}
+			rz_str_replace_ch(object, '/', '.', 1);
+
+			import->classname = strdup(class_name ? class_name : object);
+			import->libname = class_name ? strdup(object) : NULL;
 			import->name = java_class_constant_pool_stringify_at(bin, name_index);
 			is_main = import->name && !strcmp(import->name, "main");
 			import->bind = is_main ? RZ_BIN_BIND_GLOBAL_STR : NULL;
 			import->type = is_main ? RZ_BIN_TYPE_FUNC_STR : import_type(cpool);
 			import->descriptor = java_class_constant_pool_stringify_at(bin, descriptor_index);
 			import->ordinal = i;
+			free(object);
 			rz_list_append(imports, import);
 		}
 	}
@@ -1431,7 +1541,6 @@ RZ_API RzList *rz_bin_java_class_const_pool_as_imports(RzBinJavaClass *bin) {
 			}
 
 			import->classname = java_class_constant_pool_stringify_at(bin, class_index);
-			rz_str_replace_char(import->classname, '/', '.');
 			import->name = strdup("*");
 			import->bind = RZ_BIN_BIND_WEAK_STR;
 			import->type = RZ_BIN_TYPE_IFACE_STR;
@@ -1443,7 +1552,10 @@ RZ_API RzList *rz_bin_java_class_const_pool_as_imports(RzBinJavaClass *bin) {
 	return imports;
 }
 
-RZ_API void rz_bin_java_class_const_pool_as_text(RzBinJavaClass *bin, RzStrBuf *sb) {
+/**
+ * \brief Returns the class const pool in text format via RzStrBuf arg
+ */
+RZ_API void rz_bin_java_class_const_pool_as_text(RZ_NONNULL RzBinJavaClass *bin, RZ_NONNULL RzStrBuf *sb) {
 	rz_return_if_fail(bin && sb);
 
 	char number[16];
@@ -1470,6 +1582,11 @@ RZ_API void rz_bin_java_class_const_pool_as_text(RzBinJavaClass *bin, RzStrBuf *
 				rtext = rz_bin_java_class_const_pool_resolve_index(bin, i);
 			}
 			if (rtext) {
+				char *dem = rz_bin_demangle_java(rtext);
+				if (dem) {
+					free(rtext);
+					rtext = dem;
+				}
 				rz_strbuf_appendf(sb, "  %*s = %-19s %-14s // %s\n", padding, number, tag, text, rtext);
 			} else {
 				rz_strbuf_appendf(sb, "  %*s = %-19s %s\n", padding, number, tag, text);
@@ -1480,7 +1597,10 @@ RZ_API void rz_bin_java_class_const_pool_as_text(RzBinJavaClass *bin, RzStrBuf *
 	}
 }
 
-RZ_API void rz_bin_java_class_const_pool_as_json(RzBinJavaClass *bin, PJ *j) {
+/**
+ * \brief Returns the class const pool in json format via PJ arg
+ */
+RZ_API void rz_bin_java_class_const_pool_as_json(RZ_NONNULL RzBinJavaClass *bin, RZ_NONNULL PJ *j) {
 	rz_return_if_fail(bin && j);
 	const char *tag;
 	char *text, *rtext;
@@ -1545,7 +1665,10 @@ static int compare_section_names(const void *a, const void *b) {
 	return strcmp((const char *)a, sec->name);
 }
 
-RZ_API RzList *rz_bin_java_class_as_sections(RzBinJavaClass *bin) {
+/**
+ * \brief Returns a RzList<RzBinSection*> containing the class sections
+ */
+RZ_API RZ_OWN RzList *rz_bin_java_class_as_sections(RZ_NONNULL RzBinJavaClass *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
 	RzList *sections = rz_list_newf(section_free);
@@ -1670,7 +1793,10 @@ static int compare_strings(const void *a, const void *b) {
 	return strcmp((const char *)a, (const char *)b);
 }
 
-RZ_API RzList *rz_bin_java_class_as_libraries(RzBinJavaClass *bin) {
+/**
+ * \brief Returns a RzList<char*> containing the class libraries
+ */
+RZ_API RZ_OWN RzList *rz_bin_java_class_as_libraries(RZ_NONNULL RzBinJavaClass *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
 	RzList *list = rz_list_newf(free);
@@ -1719,7 +1845,10 @@ RZ_API RzList *rz_bin_java_class_as_libraries(RzBinJavaClass *bin) {
 	return list;
 }
 
-RZ_API void rz_bin_java_class_interfaces_as_text(RzBinJavaClass *bin, RzStrBuf *sb) {
+/**
+ * \brief Returns the class interfaces as text via RzStrBuf arg
+ */
+RZ_API void rz_bin_java_class_interfaces_as_text(RZ_NONNULL RzBinJavaClass *bin, RZ_NONNULL RzStrBuf *sb) {
 	rz_return_if_fail(bin && sb);
 
 	ut16 index;
@@ -1746,7 +1875,10 @@ RZ_API void rz_bin_java_class_interfaces_as_text(RzBinJavaClass *bin, RzStrBuf *
 	}
 }
 
-RZ_API void rz_bin_java_class_interfaces_as_json(RzBinJavaClass *bin, PJ *j) {
+/**
+ * \brief Returns the class interfaces as json via PJ arg
+ */
+RZ_API void rz_bin_java_class_interfaces_as_json(RZ_NONNULL RzBinJavaClass *bin, RZ_NONNULL PJ *j) {
 	rz_return_if_fail(bin && j);
 	pj_a(j);
 	char *tmp = NULL;

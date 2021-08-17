@@ -1101,84 +1101,44 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 				if (!obj) {
 					break;
 				}
-				if (input[2] && input[2] != '*' && input[2] != 'j' && !strstr(input, "qq")) {
-					bool rizin = strstr(input, "**") != NULL;
+				bool rizin = input[1] == ' ' && strstr(input, "**");
+				if (input[1] == ' ' && !rizin) {
+					input = rz_str_trim_head_ro(input + 1);
 					int idx = -1;
 					const char *cls_name = NULL;
-					if (rizin) {
-						input++;
-					}
-					if (rz_num_is_valid_input(core->num, input + 2)) {
-						idx = rz_num_math(core->num, input + 2);
+					if (rz_num_is_valid_input(core->num, input)) {
+						idx = rz_num_math(core->num, input);
 					} else {
-						const char *first_char = input + ((input[1] == ' ') ? 1 : 2);
-						int not_space = strspn(first_char, " ");
-						if (first_char[not_space]) {
-							cls_name = first_char + not_space;
-						}
-					}
-					if (rizin) {
-						input++;
+						cls_name = input;
 					}
 					int count = 0;
-					int mode = input[1];
 					rz_list_foreach (obj->classes, iter, cls) {
-						if (rizin) {
-							rz_cons_printf("ac %s\n", cls->name);
-							rz_list_foreach (cls->methods, iter2, sym) {
-								rz_cons_printf("ac %s %s 0x%08" PFMT64x "\n", cls->name, sym->name, sym->vaddr);
-							}
+						if (cls_name && !strstr(cls->name, cls_name)) {
+							continue;
+						} else if (!cls_name && idx != count) {
+							count++;
 							continue;
 						}
-						if ((idx >= 0 && idx != count++) ||
-							(cls_name && *cls_name && strcmp(cls_name, cls->name) != 0)) {
-							continue;
+						rz_cons_printf("class %s\n", cls->name);
+						rz_list_foreach (cls->methods, iter2, sym) {
+							char *flags = rz_core_bin_method_flags_str(sym->method_flags, 0);
+							rz_cons_printf("0x%08" PFMT64x " method %s %s %s\n",
+								sym->vaddr, cls->name, flags, sym->name);
+							RZ_FREE(flags);
 						}
-						switch (mode) {
-						case '*':
-							rz_list_foreach (cls->methods, iter2, sym) {
-								rz_cons_printf("f sym.%s @ 0x%" PFMT64x "\n",
-									sym->name, sym->vaddr);
-							}
-							input++;
-							break;
-						case 'l':
-							rz_list_foreach (cls->methods, iter2, sym) {
-								const char *comma = iter2->p ? " " : "";
-								rz_cons_printf("%s0x%" PFMT64d, comma, sym->vaddr);
-							}
-							rz_cons_newline();
-							input++;
-							break;
-						case 'j':
-							input++;
-							pj_ks(pj, "class", cls->name);
-							pj_ka(pj, "methods");
-							rz_list_foreach (cls->methods, iter2, sym) {
-								pj_o(pj);
-								pj_ks(pj, "name", sym->name);
-								if (sym->method_flags) {
-									char *flags = rz_core_bin_method_flags_str(sym->method_flags, RZ_MODE_JSON);
-									pj_k(pj, "flags");
-									pj_j(pj, flags);
-									free(flags);
-								}
-								pj_kN(pj, "vaddr", sym->vaddr);
-								pj_end(pj);
-							}
-							pj_end(pj);
-							break;
-						default:
-							rz_cons_printf("class %s\n", cls->name);
-							rz_list_foreach (cls->methods, iter2, sym) {
-								char *flags = rz_core_bin_method_flags_str(sym->method_flags, 0);
-								rz_cons_printf("0x%08" PFMT64x " method %s %s %s\n",
-									sym->vaddr, cls->name, flags, sym->name);
-								RZ_FREE(flags);
-							}
-							break;
+						count++;
+					}
+					goto done;
+				} else if (input[1] == ' ' && rizin) {
+					bool rizin = strstr(input, "**") != NULL;
+					if (rizin) {
+						input += 2;
+					}
+					rz_list_foreach (obj->classes, iter, cls) {
+						rz_cons_printf("ac %s\n", cls->name);
+						rz_list_foreach (cls->methods, iter2, sym) {
+							rz_cons_printf("ac %s %s 0x%08" PFMT64x "\n", cls->name, sym->name, sym->vaddr);
 						}
-						goto done;
 					}
 					goto done;
 				} else if (obj->classes) {
