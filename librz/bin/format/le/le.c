@@ -460,6 +460,7 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 	ut32 tmp_offset;
 	if (!rz_buf_read_ble32_at(bin->buf, (ut64)h->fpagetab + bin->headerOff + cur_page * sizeof(ut32), h->worder, &tmp_offset)) {
 		rz_list_free(l);
+		rz_list_free(sections);
 		return NULL;
 	}
 
