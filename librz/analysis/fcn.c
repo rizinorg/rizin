@@ -1824,12 +1824,13 @@ RZ_API RZ_OWN char *rz_analysis_function_get_signature(RZ_NONNULL RzAnalysisFunc
 	rz_return_val_if_fail(function, NULL);
 	RzAnalysis *a = function->analysis;
 
-	// TODO: Better naming
 	RzCallable *callable = rz_analysis_function_derive_type(a, function);
 	if (!callable) {
 		return NULL;
 	}
-	return rz_type_callable_as_string(a->typedb, callable);
+	char *signature = rz_type_callable_as_string(a->typedb, callable);
+	rz_type_callable_free(callable);
+	return signature;
 }
 
 /**
@@ -2484,7 +2485,7 @@ RZ_API RZ_OWN RzList /* RzType */ *rz_analysis_types_from_fcn(RzAnalysis *analys
  * If not - it creates a new RzCallable instance based on the function name,
  * its arguments' names and types.
  *
- * \param a RzAnalysis instance
+ * \param analysis RzAnalysis instance
  * \param f Function to update
  */
 RZ_API RZ_OWN RzCallable *rz_analysis_function_derive_type(RzAnalysis *analysis, RzAnalysisFunction *f) {
@@ -2495,14 +2496,13 @@ RZ_API RZ_OWN RzCallable *rz_analysis_function_derive_type(RzAnalysis *analysis,
 		shortname = strdup(f->name);
 	}
 	RzCallable *callable = rz_type_func_get(analysis->typedb, shortname);
+	free(shortname);
 	if (callable) {
 		// TODO: Decide what to do if there is a mismatch between type
 		// stored in the RzTypeDB database and the actual type of the
 		// RzAnalysisFunction
-		free(shortname);
-		return callable;
+		return rz_type_callable_clone(callable);
 	}
-	free(shortname);
 	// If there is no match - create a new one.
 	// TODO: Figure out if we should use shortname or a fullname here
 	callable = rz_type_func_new(analysis->typedb, f->name, NULL);
@@ -2524,7 +2524,12 @@ RZ_API RZ_OWN RzCallable *rz_analysis_function_derive_type(RzAnalysis *analysis,
 			// TODO: maybe create a stub void arg here?
 			continue;
 		}
-		RzCallableArg *arg = rz_type_callable_arg_new(analysis->typedb, var->name, var->type);
+		RzType *cloned_type = rz_type_clone(var->type);
+		if (!cloned_type) {
+			rz_pvector_free(args);
+			return NULL;
+		}
+		RzCallableArg *arg = rz_type_callable_arg_new(analysis->typedb, var->name, cloned_type);
 		if (!arg) {
 			rz_pvector_free(args);
 			return NULL;
