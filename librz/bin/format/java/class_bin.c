@@ -1511,13 +1511,13 @@ RZ_API void rz_bin_java_class_const_pool_as_text(RzBinJavaClass *bin, RzStrBuf *
 			if (i > 0 && !java_constant_pool_is_string(cpool) &&
 				!java_constant_pool_is_number(cpool)) {
 				rtext = rz_bin_java_class_const_pool_resolve_index(bin, i);
+			}
+			if (rtext) {
 				char *dem = rz_bin_demangle_java(rtext);
 				if (dem) {
 					free(rtext);
 					rtext = dem;
 				}
-			}
-			if (rtext) {
 				rz_strbuf_appendf(sb, "  %*s = %-19s %-14s // %s\n", padding, number, tag, text, rtext);
 			} else {
 				rz_strbuf_appendf(sb, "  %*s = %-19s %s\n", padding, number, tag, text);

@@ -202,6 +202,9 @@ demangle_class_object_bad:
 }
 
 static char *demangle_object_with_type(char *name, char *object) {
+	// example: myMethod.Lsome/class/Object;
+	// name   = myMethod
+	// object = Lsome/class/Object;
 	RzStrBuf *sb = rz_strbuf_new("");
 	if (!sb) {
 		goto demangle_object_with_type_bad;
@@ -242,8 +245,22 @@ static char *demangle_any(char *mangled) {
 	return rz_strbuf_drain(sb);
 }
 
-RZ_API char *rz_bin_demangle_java(const char *mangled) {
-	rz_return_val_if_fail(mangled, NULL);
+/**
+ * /brief Demangles java classes/methods/fields
+ * 
+ * Demangles java classes/methods/fields
+ * 
+ * Supported formats:
+ * - Lsome/class/Object;                some.class.Object.myField
+ * - F                                  float
+ * - Lsome/class/Object;.myField.I      some.class.Object.myField:int
+ * - myField.I                          myField:int
+ * - Lsome/class/Object;.myMethod([F)I  int some.class.Object.myMethod(float[])
+ */
+RZ_API RZ_OWN char *rz_bin_demangle_java(RZ_NULLABLE const char *mangled) {
+	if (!mangled) {
+		return NULL;
+	}
 
 	char *name = NULL;
 	char *arguments = NULL;

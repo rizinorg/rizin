@@ -945,7 +945,7 @@ RZ_API void rz_bin_mem_free(void *data);
 
 // demangle functions
 RZ_API RZ_OWN char *rz_bin_demangle(RZ_NONNULL RzBinFile *binfile, RZ_NONNULL const char *lang, RZ_NONNULL const char *str, ut64 vaddr, bool libs);
-RZ_API RZ_OWN char *rz_bin_demangle_java(RZ_NONNULL const char *str);
+RZ_API RZ_OWN char *rz_bin_demangle_java(RZ_NULLABLE const char *str);
 RZ_API RZ_OWN char *rz_bin_demangle_cxx(RZ_NONNULL RzBinFile *binfile, RZ_NONNULL const char *str, ut64 vaddr);
 RZ_API RZ_OWN char *rz_bin_demangle_msvc(RZ_NONNULL const char *str);
 RZ_API RZ_OWN char *rz_bin_demangle_swift(RZ_NONNULL const char *s, bool syscmd);
