@@ -51,6 +51,40 @@ static inline int pp_nerr(CPreprocessorState *state) {
 
 static void gexpr(CPreprocessorState *state);
 
+void pp_value_push(CPreprocessorState *state, CValue *cval) {
+	rz_pvector_push(state->values, cval);
+}
+
+void pp_value_push_constant_int(CPreprocessorState *state, int v) {
+	CValue *cval = RZ_NEW0(CValue);
+	if (!cval) {
+		return;
+	}
+	cval->i = v;
+	cval->r = VT_CONST;
+	pp_value_push(state, cval);
+}
+
+void pp_value_push_constant_ut64(CPreprocessorState *state, ut64 v) {
+	CValue *cval = RZ_NEW0(CValue);
+	if (!cval) {
+		return;
+	}
+	cval->ull = v;
+	cval->r = VT_CONST;
+	pp_value_push(state, cval);
+}
+
+void pp_value_push_constant_size(CPreprocessorState *state, size_t v) {
+	CValue *cval = RZ_NEW0(CValue);
+	if (!cval) {
+		return;
+	}
+	cval->ull = v;
+	cval->r = VT_CONST;
+	pp_value_push(state, cval);
+}
+
 static void unary(CPreprocessorState *state) {
 	int n, t, align, size, r;
 	Sym *s;
