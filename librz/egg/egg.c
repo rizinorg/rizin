@@ -324,8 +324,8 @@ RZ_API bool rz_egg_assemble_asm(RzEgg *egg, char **asm_list) {
 			eprintf("fail assembling\n");
 		}
 	}
+	bool ret = code ? asmcode != NULL : true;
 	free(code);
-	bool ret = (asmcode != NULL);
 	rz_asm_code_free(asmcode);
 	return ret;
 }
