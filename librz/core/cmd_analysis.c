@@ -9119,6 +9119,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_signature_type_handler(RzCore *core, int
 	RzType *ret_type = rz_type_parse_string_single(core->analysis->typedb->parser, argv[1], &error_msg);
 	if (!ret_type || error_msg) {
 		eprintf("Cannot parse type \"%s\":\n%s\n", argv[1], error_msg);
+		free(error_msg);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (!rz_type_func_ret_set(core->analysis->typedb, fcn->name, ret_type)) {
