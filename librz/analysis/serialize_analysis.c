@@ -1549,11 +1549,12 @@ RZ_API bool rz_serialize_analysis_xrefs_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAn
 RZ_API void rz_serialize_analysis_meta_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis) {
 	rz_serialize_spaces_save(sdb_ns(db, "spaces", true), &analysis->meta_spaces);
 
-	PJ *j = pj_new();
-	if (!j) {
+	if (rz_interval_tree_empty(&analysis->meta)) {
 		return;
 	}
-	if (rz_interval_tree_empty(&analysis->meta)) {
+
+	PJ *j = pj_new();
+	if (!j) {
 		return;
 	}
 	char key[0x20];
@@ -1561,11 +1562,13 @@ RZ_API void rz_serialize_analysis_meta_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAna
 	RzAnalysisMetaItem *meta;
 	ut64 addr = 0;
 	size_t count = 0;
+
 #define FLUSH \
 	pj_end(j); \
 	if (snprintf(key, sizeof(key), "0x%" PFMT64x, addr) >= 0) { \
 		sdb_set(db, key, pj_string(j), 0); \
 	}
+
 	rz_interval_tree_foreach (&analysis->meta, it, meta) {
 		RzIntervalNode *node = rz_interval_tree_iter_get(&it);
 		if (count && node->start != addr) {
