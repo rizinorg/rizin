@@ -51,6 +51,40 @@ static inline int pp_nerr(CPreprocessorState *state) {
 
 static void gexpr(CPreprocessorState *state);
 
+void pp_value_push(CPreprocessorState *state, CValue *cval) {
+	rz_pvector_push(state->values, cval);
+}
+
+void pp_value_push_constant_int(CPreprocessorState *state, int v) {
+	CValue *cval = RZ_NEW0(CValue);
+	if (!cval) {
+		return;
+	}
+	cval->i = v;
+	cval->flags = VT_CONST;
+	pp_value_push(state, cval);
+}
+
+void pp_value_push_constant_ut64(CPreprocessorState *state, ut64 v) {
+	CValue *cval = RZ_NEW0(CValue);
+	if (!cval) {
+		return;
+	}
+	cval->ull = v;
+	cval->flags = VT_CONST;
+	pp_value_push(state, cval);
+}
+
+void pp_value_push_constant_size(CPreprocessorState *state, size_t v) {
+	CValue *cval = RZ_NEW0(CValue);
+	if (!cval) {
+		return;
+	}
+	cval->ull = v;
+	cval->flags = VT_CONST;
+	pp_value_push(state, cval);
+}
+
 static void unary(CPreprocessorState *state) {
 	int n, t, align, size, r;
 	Sym *s;
@@ -116,21 +150,21 @@ static void unary(CPreprocessorState *state) {
 		next(state);
 		unary(state);
 		// Invert the symbol
-		if ((vtop->r & PP_C_TYPE_VALMASK) == PP_C_TYPE_CMP) {
+		if ((vtop->flags & PP_C_TYPE_VALMASK) == PP_C_TYPE_CMP) {
 			vtop->c.i = vtop->c.i ^ 1;
 		}
 		break;
 	// special qnan , snan and infinity values
 	case TOK___NAN__:
-		vpush64(PP_C_TYPE_DOUBLE, 0x7ff8000000000000ULL);
+		pp_value_push_constant_ut64(state, PP_C_TYPE_DOUBLE, 0x7ff8000000000000ULL);
 		next(state);
 		break;
 	case TOK___SNAN__:
-		vpush64(PP_C_TYPE_DOUBLE, 0x7ff0000000000001ULL);
+		pp_value_push_constant_ut64(state, PP_C_TYPE_DOUBLE, 0x7ff0000000000001ULL);
 		next(state);
 		break;
 	case TOK___INF__:
-		vpush64(PP_C_TYPE_DOUBLE, 0x7ff0000000000000ULL);
+		pp_value_push_constant_ut64(state, PP_C_TYPE_DOUBLE, 0x7ff0000000000000ULL);
 		next(state);
 		break;
 
@@ -157,11 +191,11 @@ static void unary(CPreprocessorState *state) {
 				   compilation unit. */
 				r = PP_C_TYPE_SYM | PP_C_TYPE_CONST;
 			} else {
-				r = s->r;
+				r = s->flags;
 			}
 			vset(&s->type, r, s->c);
 			/* if forward reference, we must point to s */
-			if (vtop->r & PP_C_TYPE_SYM) {
+			if (vtop->flags & PP_C_TYPE_SYM) {
 				vtop->sym = s;
 				vtop->c.ul = 0;
 			}
@@ -261,6 +295,7 @@ static void expr_cond(CPreprocessorState *state) {
 	CPreprocessorCursorState *cur = state->cur;
 	CPreprocessorOptions *opts = state->opts;
 	if (cur->tok == '?') {
+		// shift vtop pointer/vector and put a duplicate of the top element
 		vpushv(vtop);
 		next(state);
 		if (cur->tok != ':' || !opts->gnu_ext) {
@@ -286,6 +321,7 @@ static void expr_eq(CPreprocessorState *state) {
 		if (t == '=') {
 			expr_eq(state);
 		} else {
+			// shift vtop pointer/vector and put a duplicate of the top element
 			vpushv(vtop);
 			expr_eq(state);
 		}

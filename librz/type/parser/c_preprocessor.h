@@ -16,6 +16,7 @@ typedef union CValue {
 	double d;
 	float f;
 	int i;
+	unsigned int flags;
 	unsigned int ui;
 	unsigned int ul; /* address (should be unsigned long on 64 bit cpu) */
 	long long ll;
@@ -37,6 +38,7 @@ typedef struct TokenString {
 typedef struct Sym {
 	int v; /* symbol token */
 	int t; /* type of the symbol */
+	unsigned int flags; /* symbol flags */
 	unsigned int label_flags; /* label flags */
 	union {
 		long long c; /* associated number */
@@ -86,6 +88,7 @@ typedef struct BufferedFile {
 	int ifndef_macro; /* #ifndef macro / #endif search */
 	int ifndef_macro_saved; /* saved ifndef_macro */
 	int *ifdef_stack_ptr; /* ifdef_stack value at the start of the file */
+	// FIXME: Use properly allocated string instead
 	char filename[1024]; /* filename */
 	char *dirname; /* file directory */
 	unsigned char buffer[IO_BUF_SIZE + 1]; /* extra size for CH_EOB char */
