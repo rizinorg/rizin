@@ -840,6 +840,7 @@ RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_analysis_var_load(RZ_NONNULL RzAn
 	RzType *vartype = rz_type_parse_string_single(fcn->analysis->typedb->parser, type, &error_msg);
 	if (error_msg) {
 		eprintf("Fail to parse the function variable (\"%s\") type: %s\n", name, type);
+		RZ_FREE(error_msg);
 		goto beach;
 	}
 	ret = rz_analysis_function_set_var(fcn, delta, kind, vartype, 0, arg, name);
@@ -1011,9 +1012,9 @@ static bool global_var_load_cb(void *user, const char *k, const char *v) {
 	RzType *vartype = rz_type_parse_string_single(ctx->analysis->typedb->parser, type, &error_msg);
 	if (error_msg) {
 		eprintf("Fail to parse the function variable (\"%s\") type: %s\n", name, type);
+		RZ_FREE(error_msg);
 		goto beach;
 	}
-	RZ_FREE(error_msg);
 	RzCore *core = ctx->analysis->core;
 	addr = rz_num_math(core->num, addr_s);
 	glob = rz_analysis_var_global_new(name, addr);
