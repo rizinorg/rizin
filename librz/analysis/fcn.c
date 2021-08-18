@@ -2495,6 +2495,7 @@ RZ_API RZ_OWN RzCallable *rz_analysis_function_derive_type(RzAnalysis *analysis,
 	if (!shortname) {
 		shortname = strdup(f->name);
 	}
+	// At this point the `callable` pointer is *borrowed*
 	RzCallable *callable = rz_type_func_get(analysis->typedb, shortname);
 	free(shortname);
 	if (callable) {
@@ -2505,6 +2506,8 @@ RZ_API RZ_OWN RzCallable *rz_analysis_function_derive_type(RzAnalysis *analysis,
 	}
 	// If there is no match - create a new one.
 	// TODO: Figure out if we should use shortname or a fullname here
+	// At this point the `callable` pointer is *owned*
+	// This means we have to free it after
 	callable = rz_type_func_new(analysis->typedb, f->name, NULL);
 	if (!callable) {
 		return NULL;
@@ -2528,11 +2531,13 @@ RZ_API RZ_OWN RzCallable *rz_analysis_function_derive_type(RzAnalysis *analysis,
 		RzType *cloned_type = rz_type_clone(var->type);
 		if (!cloned_type) {
 			rz_pvector_free(args);
+			rz_type_callable_free(callable);
 			return NULL;
 		}
 		RzCallableArg *arg = rz_type_callable_arg_new(analysis->typedb, var->name, cloned_type);
 		if (!arg) {
 			rz_pvector_free(args);
+			rz_type_callable_free(callable);
 			return NULL;
 		}
 		rz_type_callable_arg_add(callable, arg);
