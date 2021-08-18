@@ -1234,6 +1234,7 @@ static int var_cmd(RzCore *core, const char *str) {
 		if (!ttype || error_msg) {
 			eprintf("Can't parse type: \"%s\"\n%s\n", type, error_msg);
 			free(ostr);
+			free(error_msg);
 			return false;
 		}
 		rz_analysis_var_set_type(v1, ttype);
