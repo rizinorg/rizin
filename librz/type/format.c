@@ -1791,7 +1791,7 @@ static int rz_type_format_struct(const RzTypeDB *typedb, RzPrint *p, RzStrBuf *o
 			fmt = rz_type_format(typedb, name);
 		}
 	}
-	if (!fmt || !*fmt) {
+	if (RZ_STR_ISEMPTY(fmt)) {
 		eprintf("Undefined struct '%s'.\n", name);
 		return 0;
 	}
