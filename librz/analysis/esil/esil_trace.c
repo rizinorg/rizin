@@ -11,14 +11,14 @@ static int ocbs_set = false;
 static RzAnalysisEsilCallbacks ocbs = { 0 };
 
 // IL trace wrapper of esil
-static inline void esil_add_mem_trace(RzAnalysisEsilTrace *etrace, RzILTraceMemOp *mem) {
+static inline bool esil_add_mem_trace(RzAnalysisEsilTrace *etrace, RzILTraceMemOp *mem) {
 	RzILTraceInstruction *instr_trace = rz_analysis_esil_get_instruction_trace(etrace, etrace->idx);
-	rz_analysis_il_trace_add_mem(instr_trace, mem);
+	return rz_analysis_il_trace_add_mem(instr_trace, mem);
 }
 
-static inline void esil_add_reg_trace(RzAnalysisEsilTrace *etrace, RzILTraceRegOp *reg) {
+static inline bool esil_add_reg_trace(RzAnalysisEsilTrace *etrace, RzILTraceRegOp *reg) {
 	RzILTraceInstruction *instr_trace = rz_analysis_esil_get_instruction_trace(etrace, etrace->idx);
-	rz_analysis_il_trace_add_reg(instr_trace, reg);
+	return rz_analysis_il_trace_add_reg(instr_trace, reg);
 }
 
 static void htup_vector_free(HtUPKv *kv) {
@@ -142,7 +142,9 @@ static int trace_hook_reg_read(RzAnalysisEsil *esil, const char *name, ut64 *res
 		reg_read->reg_name = rz_str_constpool_get(&esil->analysis->constpool, name);
 		reg_read->behavior = RZ_IL_TRACE_OP_READ;
 		reg_read->value = *res;
-		esil_add_reg_trace(esil->trace, reg_read);
+		if (!esil_add_reg_trace(esil->trace, reg_read)) {
+			RZ_FREE(reg_read);
+		}
 	}
 	return ret;
 }
@@ -159,7 +161,9 @@ static int trace_hook_reg_write(RzAnalysisEsil *esil, const char *name, ut64 *va
 	reg_write->reg_name = rz_str_constpool_get(&esil->analysis->constpool, name);
 	reg_write->behavior = RZ_IL_TRACE_OP_WRITE;
 	reg_write->value = *val;
-	esil_add_reg_trace(esil->trace, reg_write);
+	if (!esil_add_reg_trace(esil->trace, reg_write)) {
+		RZ_FREE(reg_write);
+	}
 
 	RzRegItem *ri = rz_reg_get(esil->analysis->reg, name, -1);
 	add_reg_change(esil->trace, esil->trace->idx + 1, ri, *val);
@@ -193,7 +197,9 @@ static int trace_hook_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int le
 	rz_mem_copy(mem_read->data_buf, sizeof(mem_read->data_buf), buf, len);
 	mem_read->behavior = RZ_IL_TRACE_OP_READ;
 	mem_read->addr = addr;
-	esil_add_mem_trace(esil->trace, mem_read);
+	if (!esil_add_mem_trace(esil->trace, mem_read)) {
+		RZ_FREE(mem_read);
+	}
 
 	if (ocbs.hook_mem_read) {
 		RzAnalysisEsilCallbacks cbs = esil->cb;
@@ -223,7 +229,9 @@ static int trace_hook_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf,
 	rz_mem_copy(mem_write->data_buf, sizeof(mem_write->data_buf), buf, len);
 	mem_write->behavior = RZ_IL_TRACE_OP_WRITE;
 	mem_write->addr = addr;
-	esil_add_mem_trace(esil->trace, mem_write);
+	if (!esil_add_mem_trace(esil->trace, mem_write)) {
+		RZ_FREE(mem_write);
+	}
 
 	for (i = 0; i < len; i++) {
 		add_mem_change(esil->trace, esil->trace->idx + 1, addr + i, buf[i]);

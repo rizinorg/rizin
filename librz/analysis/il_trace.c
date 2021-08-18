@@ -65,58 +65,64 @@ RZ_API void rz_analysis_il_trace_instruction_free(RzILTraceInstruction *instruct
  * add memory change to an instruction trace
  * \param trace RzILTraceInstruction *, trace of instruction which triggers a memory change
  * \param mem RzILTraceMemOp *, info of memory change
+ * \return true if succeed
  */
-RZ_API void rz_analysis_il_trace_add_mem(RzILTraceInstruction *trace, RzILTraceMemOp *mem) {
+RZ_API bool rz_analysis_il_trace_add_mem(RzILTraceInstruction *trace, RzILTraceMemOp *mem) {
 	if (!(trace && mem)) {
-		return;
+		return false;
 	}
 
 	if (rz_analysis_il_mem_trace_contains(trace, mem->addr, mem->behavior)) {
-		return;
+		return false;
 	}
 
+	bool ret = false;
 	switch (mem->behavior) {
 	case RZ_IL_TRACE_OP_WRITE:
-		rz_pvector_push(trace->write_mem_ops, mem);
+		ret = !!rz_pvector_push(trace->write_mem_ops, mem);
 		trace->stats |= TRACE_INS_HAS_MEM_W;
 		break;
 	case RZ_IL_TRACE_OP_READ:
-		rz_pvector_push(trace->read_mem_ops, mem);
+		ret = !!rz_pvector_push(trace->read_mem_ops, mem);
 		trace->stats |= TRACE_INS_HAS_MEM_R;
 		break;
 	default:
 		rz_warn_if_reached();
 		break;
 	}
+	return ret;
 }
 
 /**
  * add register change to an instruction trace
  * \param trace RzILTraceInstruction *, trace of instruction which triggers a register change
  * \param mem RzILTraceRegOp *, info of register change
+ * \return true if succeed
  */
-RZ_API void rz_analysis_il_trace_add_reg(RzILTraceInstruction *trace, RzILTraceRegOp *reg) {
+RZ_API bool rz_analysis_il_trace_add_reg(RzILTraceInstruction *trace, RzILTraceRegOp *reg) {
 	if (!(trace && reg)) {
-		return;
+		return false;
 	}
 
 	if (rz_analysis_il_reg_trace_contains(trace, reg->reg_name, reg->behavior)) {
-		return;
+		return false;
 	}
 
+	bool ret = false;
 	switch (reg->behavior) {
 	case RZ_IL_TRACE_OP_WRITE:
-		rz_pvector_push(trace->write_reg_ops, reg);
+		ret = !!rz_pvector_push(trace->write_reg_ops, reg);
 		trace->stats |= TRACE_INS_HAS_REG_W;
 		break;
 	case RZ_IL_TRACE_OP_READ:
-		rz_pvector_push(trace->read_reg_ops, reg);
+		ret = !!rz_pvector_push(trace->read_reg_ops, reg);
 		trace->stats |= TRACE_INS_HAS_REG_R;
 		break;
 	default:
 		rz_warn_if_reached();
 		break;
 	}
+	return ret;
 }
 
 /**

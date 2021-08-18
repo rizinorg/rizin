@@ -502,6 +502,8 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 			}
 		}
 		size += analysis->bits / 8;
+		rz_type_free(type);
+		free(name);
 	}
 	if (owned) {
 		rz_type_callable_free(callable);
@@ -930,6 +932,7 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 		}
 	}
 out_function:
+	free(retctx.ret_reg);
 	ht_up_free(op_cache);
 	rz_cons_break_pop();
 	analysis_emul_restore(core, hc, dt, et);
