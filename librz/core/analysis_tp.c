@@ -148,6 +148,7 @@ static void var_type_set_str(RzAnalysis *analysis, RzAnalysisVar *var, const cha
 	RzType *realtype = rz_type_parse_string_single(analysis->typedb->parser, type, &error_msg);
 	if (!realtype && error_msg) {
 		eprintf("Fail to parse type \"%s\":\n%s\n", type, error_msg);
+		free(error_msg);
 		return;
 	}
 	var_type_set(analysis, var, realtype, ref);
