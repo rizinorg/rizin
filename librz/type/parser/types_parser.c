@@ -1234,6 +1234,7 @@ int parse_parameter_list(CParserState *state, TSNode paramlist, const char *text
 			free(identifier);
 			return -1;
 		}
+		free(identifier);
 	}
 	return 0;
 }
