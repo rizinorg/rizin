@@ -9448,6 +9448,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_type_handler(RzCore *core, int argc
 	RzType *v_type = rz_type_parse_string_single(core->analysis->typedb->parser, argv[2], &error_msg);
 	if (!v_type || error_msg) {
 		eprintf("Cannot parse type \"%s\":\n%s\n", argv[2], error_msg);
+		free(error_msg);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_analysis_var_set_type(v, v_type);
