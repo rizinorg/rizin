@@ -224,13 +224,16 @@ RZ_API int rz_type_parse_string_stateless(RzTypeParser *parser, const char *code
  */
 RZ_API int rz_type_parse_file_stateless(RzTypeParser *parser, const char *path, const char *dir, char **error_msg) {
 	size_t read_bytes = 0;
-	const char *source_code = rz_file_slurp(path, &read_bytes);
+	char *source_code = rz_file_slurp(path, &read_bytes);
 	if (!source_code || !read_bytes) {
+		free(source_code);
 		return -1;
 	}
 	ut64 file_size = rz_file_size(path);
 	RZ_LOG_DEBUG("File size is %" PFMT64d " bytes, read %zu bytes\n", file_size, read_bytes);
-	return rz_type_parse_string_stateless(parser, source_code, error_msg);
+	int result = rz_type_parse_string_stateless(parser, source_code, error_msg);
+	free(source_code);
+	return result;
 }
 
 /**
@@ -243,13 +246,16 @@ RZ_API int rz_type_parse_file_stateless(RzTypeParser *parser, const char *path, 
  */
 RZ_API int rz_type_parse_file(RzTypeDB *typedb, const char *path, const char *dir, char **error_msg) {
 	size_t read_bytes = 0;
-	const char *source_code = rz_file_slurp(path, &read_bytes);
+	char *source_code = rz_file_slurp(path, &read_bytes);
 	if (!source_code || !read_bytes) {
+		free(source_code);
 		return -1;
 	}
 	ut64 file_size = rz_file_size(path);
 	RZ_LOG_DEBUG("File size is %" PFMT64d " bytes, read %zu bytes\n", file_size, read_bytes);
-	return rz_type_parse_string(typedb, source_code, error_msg);
+	int result = rz_type_parse_string(typedb, source_code, error_msg);
+	free(source_code);
+	return result;
 }
 
 /**
