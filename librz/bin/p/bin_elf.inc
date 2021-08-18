@@ -721,13 +721,6 @@ static void patch_relocs(RzBinFile *bf, ELFOBJ *bin) {
 		// TODO relocation types B, L
 		patch_reloc(bin, reloc, sym_addr ? sym_addr : vaddr, 0, plt_entry_addr);
 
-		// TODO: do this in regular relocs cb
-#if 0
-		RzBinReloc *ptr = NULL;
-		if (!(ptr = reloc_convert(bin, &relcs[i], n_vaddr))) {
-			continue;
-		}
-#endif
 
 		if (sym_addr) {
 			reloc->target_vaddr = sym_addr;
@@ -1181,6 +1174,16 @@ static ut64 get_got_addr(ELFOBJ *bin) {
 	return 0;
 }
 
+static void elf_plugin_reloc_free(RzBinReloc *reloc) {
+	if (!reloc) {
+		return;
+	}
+
+	rz_bin_symbol_free(reloc->symbol);
+	rz_bin_import_free(reloc->import);
+	free(reloc);
+}
+
 static RzList *relocs(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 	RzList *ret = NULL;
@@ -1197,7 +1200,7 @@ static RzList *relocs(RzBinFile *bf) {
 
 	patch_relocs(bf, bin);
 
-	if (!(ret = rz_list_newf(free))) {
+	if (!(ret = rz_list_newf((RzListFree)elf_plugin_reloc_free))) {
 		return NULL;
 	}
 
