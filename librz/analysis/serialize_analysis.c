@@ -840,6 +840,7 @@ RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_analysis_var_load(RZ_NONNULL RzAn
 	RzType *vartype = rz_type_parse_string_single(fcn->analysis->typedb->parser, type, &error_msg);
 	if (error_msg) {
 		eprintf("Fail to parse the function variable (\"%s\") type: %s\n", name, type);
+		RZ_FREE(error_msg);
 		goto beach;
 	}
 	ret = rz_analysis_function_set_var(fcn, delta, kind, vartype, 0, arg, name);
@@ -1011,9 +1012,9 @@ static bool global_var_load_cb(void *user, const char *k, const char *v) {
 	RzType *vartype = rz_type_parse_string_single(ctx->analysis->typedb->parser, type, &error_msg);
 	if (error_msg) {
 		eprintf("Fail to parse the function variable (\"%s\") type: %s\n", name, type);
+		RZ_FREE(error_msg);
 		goto beach;
 	}
-	RZ_FREE(error_msg);
 	RzCore *core = ctx->analysis->core;
 	addr = rz_num_math(core->num, addr_s);
 	glob = rz_analysis_var_global_new(name, addr);
@@ -1548,11 +1549,12 @@ RZ_API bool rz_serialize_analysis_xrefs_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAn
 RZ_API void rz_serialize_analysis_meta_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis) {
 	rz_serialize_spaces_save(sdb_ns(db, "spaces", true), &analysis->meta_spaces);
 
-	PJ *j = pj_new();
-	if (!j) {
+	if (rz_interval_tree_empty(&analysis->meta)) {
 		return;
 	}
-	if (rz_interval_tree_empty(&analysis->meta)) {
+
+	PJ *j = pj_new();
+	if (!j) {
 		return;
 	}
 	char key[0x20];
@@ -1560,11 +1562,13 @@ RZ_API void rz_serialize_analysis_meta_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAna
 	RzAnalysisMetaItem *meta;
 	ut64 addr = 0;
 	size_t count = 0;
+
 #define FLUSH \
 	pj_end(j); \
 	if (snprintf(key, sizeof(key), "0x%" PFMT64x, addr) >= 0) { \
 		sdb_set(db, key, pj_string(j), 0); \
 	}
+
 	rz_interval_tree_foreach (&analysis->meta, it, meta) {
 		RzIntervalNode *node = rz_interval_tree_iter_get(&it);
 		if (count && node->start != addr) {

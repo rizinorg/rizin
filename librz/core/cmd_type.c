@@ -180,6 +180,7 @@ static void types_xrefs(RzCore *core, const char *typestr) {
 	if (!type || error_msg) {
 		if (error_msg) {
 			eprintf("%s", error_msg);
+			free(error_msg);
 		}
 		return;
 	}
@@ -260,6 +261,7 @@ static void types_xrefs_all(RzCore *core) {
 				rz_list_push(types_list, strdup(ident));
 			}
 		}
+		rz_list_free(types);
 	}
 	RzList *uniq_types = rz_list_uniq(types_list, (RzListComparator)strcmp);
 	rz_list_free(types_list);

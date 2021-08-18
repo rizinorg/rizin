@@ -94,6 +94,7 @@ RZ_API RzList *rz_sign_fcn_types(RzAnalysis *a, RzAnalysisFunction *fcn) {
 	}
 	if (!callable->args || rz_pvector_empty(callable->args)) {
 		rz_list_append(ret, rz_str_newf("func.%s.args=0", fcn->name));
+		rz_type_callable_free(callable);
 		return ret;
 	}
 	int fcnargs = rz_pvector_len(callable->args);

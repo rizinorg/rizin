@@ -1791,7 +1791,7 @@ static int rz_type_format_struct(const RzTypeDB *typedb, RzPrint *p, RzStrBuf *o
 			fmt = rz_type_format(typedb, name);
 		}
 	}
-	if (!fmt || !*fmt) {
+	if (RZ_STR_ISEMPTY(fmt)) {
 		eprintf("Undefined struct '%s'.\n", name);
 		return 0;
 	}
@@ -2857,13 +2857,14 @@ static void base_type_to_format_unfold(const RzTypeDB *typedb, RZ_NONNULL RzBase
 						base_type_to_format_no_unfold(typedb, btyp, memb->name, format, fields);
 					}
 				} else {
-					const char *membfmt = rz_type_as_format(typedb, memb->type);
+					char *membfmt = rz_type_as_format(typedb, memb->type);
 					rz_strbuf_append(format, membfmt);
 					if (!rz_type_is_atomic(typedb, memb->type)) {
 						rz_strbuf_appendf(fields, "(%s)%s ", membtype, memb->name);
 					} else {
 						rz_strbuf_appendf(fields, "%s ", memb->name);
 					}
+					free(membfmt);
 				}
 			}
 		}
@@ -2989,15 +2990,15 @@ RZ_API RZ_OWN char *rz_type_as_format(const RzTypeDB *typedb, RZ_NONNULL RzType 
 	if (type->kind == RZ_TYPE_KIND_CALLABLE) {
 		// We can't print anything useful for function type
 		// Thus we consider this is just a `void *` pointer
-		return "p";
+		return strdup("p");
 	}
 	// Special case of callable ptr or `void *`
 	if (rz_type_is_void_ptr(type) || rz_type_is_callable_ptr(type)) {
-		return "p";
+		return strdup("p");
 	}
 	// Special case of `char *`
 	if (rz_type_is_char_ptr(type)) {
-		return "z";
+		return strdup("z");
 	}
 	RzStrBuf *buf = rz_strbuf_new(NULL);
 	type_to_format(typedb, buf, type);

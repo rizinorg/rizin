@@ -918,12 +918,13 @@ RZ_IPI void rz_core_types_link_print(RzCore *core, RzType *type, ut64 addr, RzOu
 		rz_cons_printf("tl \"%s\" 0x%" PFMT64x "\n", typestr, addr);
 		break;
 	case RZ_OUTPUT_MODE_LONG: {
-		const char *fmt = rz_type_as_format(core->analysis->typedb, type);
+		char *fmt = rz_type_as_format(core->analysis->typedb, type);
 		if (!fmt) {
 			eprintf("Can't fint type %s", typestr);
 		}
 		rz_cons_printf("(%s)\n", typestr);
 		rz_core_cmdf(core, "pf %s @ 0x%" PFMT64x "\n", fmt, addr);
+		free(fmt);
 		break;
 	}
 	default:
@@ -961,12 +962,13 @@ RZ_IPI void rz_core_types_link_print_all(RzCore *core, RzOutputMode mode) {
 }
 
 RZ_IPI void rz_core_types_link(RzCore *core, const char *typestr, ut64 addr) {
-	char *error_msg;
+	char *error_msg = NULL;
 	RzType *type = rz_type_parse_string_single(core->analysis->typedb->parser, typestr, &error_msg);
 	if (!type || error_msg) {
 		if (error_msg) {
 			eprintf("%s", error_msg);
 		}
+		free(error_msg);
 		return;
 	}
 	rz_analysis_type_set_link(core->analysis, type, addr);
