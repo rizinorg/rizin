@@ -961,12 +961,13 @@ RZ_IPI void rz_core_types_link_print_all(RzCore *core, RzOutputMode mode) {
 }
 
 RZ_IPI void rz_core_types_link(RzCore *core, const char *typestr, ut64 addr) {
-	char *error_msg;
+	char *error_msg = NULL;
 	RzType *type = rz_type_parse_string_single(core->analysis->typedb->parser, typestr, &error_msg);
 	if (!type || error_msg) {
 		if (error_msg) {
 			eprintf("%s", error_msg);
 		}
+		free(error_msg);
 		return;
 	}
 	rz_analysis_type_set_link(core->analysis, type, addr);
