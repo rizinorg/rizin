@@ -180,6 +180,7 @@ static void types_xrefs(RzCore *core, const char *typestr) {
 	if (!type || error_msg) {
 		if (error_msg) {
 			eprintf("%s", error_msg);
+			free(error_msg);
 		}
 		return;
 	}
