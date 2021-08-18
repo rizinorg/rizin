@@ -156,15 +156,15 @@ static void unary(CPreprocessorState *state) {
 		break;
 	// special qnan , snan and infinity values
 	case TOK___NAN__:
-		vpush64(PP_C_TYPE_DOUBLE, 0x7ff8000000000000ULL);
+		pp_value_push_constant_ut64(state, PP_C_TYPE_DOUBLE, 0x7ff8000000000000ULL);
 		next(state);
 		break;
 	case TOK___SNAN__:
-		vpush64(PP_C_TYPE_DOUBLE, 0x7ff0000000000001ULL);
+		pp_value_push_constant_ut64(state, PP_C_TYPE_DOUBLE, 0x7ff0000000000001ULL);
 		next(state);
 		break;
 	case TOK___INF__:
-		vpush64(PP_C_TYPE_DOUBLE, 0x7ff0000000000000ULL);
+		pp_value_push_constant_ut64(state, PP_C_TYPE_DOUBLE, 0x7ff0000000000000ULL);
 		next(state);
 		break;
 
