@@ -260,6 +260,7 @@ static void types_xrefs_all(RzCore *core) {
 				rz_list_push(types_list, strdup(ident));
 			}
 		}
+		rz_list_free(types);
 	}
 	RzList *uniq_types = rz_list_uniq(types_list, (RzListComparator)strcmp);
 	rz_list_free(types_list);
