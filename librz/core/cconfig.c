@@ -3369,7 +3369,11 @@ RZ_API int rz_core_config_init(RzCore *core) {
 
 	SETCB("dbg.bpinmaps", "true", &cb_dbg_bpinmaps, "Activate breakpoints only if they are inside a valid map");
 	SETCB("dbg.forks", "false", &cb_dbg_forks, "Stop execution if fork() is done (see dbg.threads)");
+#if __WINDOWS__
+	n = NODECB("dbg.btalgo", "default", &cb_dbg_btalgo);
+#else
 	n = NODECB("dbg.btalgo", "fuzzy", &cb_dbg_btalgo);
+#endif
 	SETDESC(n, "Select backtrace algorithm");
 	SETOPTIONS(n, "default", "fuzzy", "analysis", "trace", NULL);
 	SETCB("dbg.threads", "false", &cb_stopthreads, "Stop all threads when debugger breaks (see dbg.forks)");
