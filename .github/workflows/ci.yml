@@ -651,7 +651,12 @@ jobs:
 
   test-osx-pkg:
     name: Test OSX pkg
-    runs-on: macos-latest
+    strategy:
+      matrix:
+        system:
+          - macos-latest
+          - macos-11.0
+    runs-on: ${{ matrix.system }}
     needs: [build-osx-pkg]
     steps:
     - name: Install pkg-config with Homebrew
