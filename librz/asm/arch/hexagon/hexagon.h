@@ -91,6 +91,7 @@ typedef struct {
 	bool duplex; // is part of duplex container?
 	bool compound; // is part of compound instruction?
 	int shift; // Optional shift left is it true?
+	st64 vals[6]; // Analysable values (yet only immediate operand values).
 	HexPktInfo pkt_info;
 	ut8 op_count;
 	HexOp ops[6];

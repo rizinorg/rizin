@@ -832,6 +832,7 @@ typedef struct rz_analysis_op_t {
 	RzAnalysisOpDirection direction;
 	st64 ptr; /* reference to memory */ /* XXX signed? */
 	ut64 val; /* reference to value */ /* XXX signed? */
+	RzAnalysisValue analysis_vals[6]; /* Analyzable values */
 	int ptrsize; /* f.ex: zero extends for 8, 16 or 32 bits only */
 	st64 stackptr; /* stack pointer */
 	int refptr; /* if (0) ptr = "reference" else ptr = "load memory of refptr bytes" */
