@@ -243,6 +243,7 @@ bool java_attribute_set_localvariabletable(Attribute *attr, RzBuffer *buf) {
 				!rz_buf_read_be16(buf, &alvt->table[i].index)) {
 				free(alvt->table);
 				free(alvt);
+				return false;
 			}
 		}
 	}
