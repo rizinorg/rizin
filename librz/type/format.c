@@ -507,7 +507,7 @@ static void rz_type_format_time(RzStrBuf *outbuf, int endian, int mode,
 		if (!timestr) {
 			return;
 		}
-		rz_asctime_r(gmtime_r((time_t *)&addr, &timestruct), timestr);
+		rz_asctime_r(rz_gmtime_r((time_t *)&addr, &timestruct), timestr);
 		*(timestr + 24) = '\0';
 		if (!SEEVALUE && !ISQUIET) {
 			rz_strbuf_appendf(outbuf, "0x%08" PFMT64x " = ", seeki + ((elem >= 0) ? elem * 4 : 0));
@@ -520,7 +520,7 @@ static void rz_type_format_time(RzStrBuf *outbuf, int endian, int mode,
 			}
 			while (size--) {
 				updateAddr(buf + i, size - i, endian, &addr, NULL);
-				rz_asctime_r(gmtime_r((time_t *)&addr, &timestruct), timestr);
+				rz_asctime_r(rz_gmtime_r((time_t *)&addr, &timestruct), timestr);
 				*(timestr + 24) = '\0';
 				if (elem == -1 || elem == 0) {
 					rz_strbuf_appendf(outbuf, "%s", timestr);
@@ -546,7 +546,7 @@ static void rz_type_format_time(RzStrBuf *outbuf, int endian, int mode,
 		if (!timestr) {
 			return;
 		}
-		rz_asctime_r(gmtime_r((time_t *)&addr, &timestruct), timestr);
+		rz_asctime_r(rz_gmtime_r((time_t *)&addr, &timestruct), timestr);
 		*(timestr + 24) = '\0';
 		if (size == -1) {
 			rz_strbuf_appendf(outbuf, "\"%s\"", timestr);
@@ -554,7 +554,7 @@ static void rz_type_format_time(RzStrBuf *outbuf, int endian, int mode,
 			rz_strbuf_append(outbuf, "[ ");
 			while (size--) {
 				updateAddr(buf + i, size - i, endian, &addr, NULL);
-				rz_asctime_r(gmtime_r((time_t *)&addr, &timestruct), timestr);
+				rz_asctime_r(rz_gmtime_r((time_t *)&addr, &timestruct), timestr);
 				*(timestr + 24) = '\0';
 				if (elem == -1 || elem == 0) {
 					rz_strbuf_appendf(outbuf, "\"%s\"", timestr);
