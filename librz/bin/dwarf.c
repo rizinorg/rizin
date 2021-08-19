@@ -2037,6 +2037,9 @@ RzBinSection *getsection(RzBinFile *binfile, const char *sn) {
 		return NULL;
 	}
 	rz_list_foreach (o->sections, iter, section) {
+		if (!section->name) {
+			continue;
+		}
 		if (strstr(section->name, sn)) {
 			return section;
 		}
