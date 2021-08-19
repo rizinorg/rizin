@@ -42,6 +42,7 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 		"=BP	r30\n"
 		"=LR	r31\n"
 		"=SR	usr\n"
+		"=SN	r0\n"
 		"=A0	r0\n"
 		"=A1	r1\n"
 		"=A2	r2\n"
