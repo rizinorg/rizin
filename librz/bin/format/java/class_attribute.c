@@ -208,6 +208,7 @@ bool java_attribute_set_linenumbertable(Attribute *attr, RzBuffer *buf) {
 				!rz_buf_read_be16(buf, &alnt->table[i].line_number)) {
 				free(alnt->table);
 				free(alnt);
+				return false;
 			}
 		}
 	}
