@@ -67,44 +67,49 @@ static void config_print_value_json(RzConfig *cfg, RzConfigNode *node) {
 	free(sval);
 }
 
-static void config_print_node(RzConfig *cfg, RzConfigNode *node, const char *pfx, const char *sfx, bool verbose, bool json) {
-	rz_return_if_fail(cfg && node && pfx && sfx);
+static void config_print_node(RzConfig *cfg, const char *pfx, const char *sfx, bool verbose, bool json) {
+	rz_return_if_fail(cfg && pfx && sfx);
 	char *option;
 	bool isFirst;
-	RzListIter *iter;
+	RzConfigNode *node = NULL;
+	RzListIter *iter, *iter2;
+	bool is_ro;
 	char *es = NULL;
 
 	if (json) {
+		PJ *pj = pj_new();
+		if (!pj) {
+			return;	
+		}
 		if (verbose) {
-			cfg->cb_printf("{");
-			cfg->cb_printf("\"name\":\"%s\",", node->name);
-			cfg->cb_printf("\"value\":");
-			config_print_value_json(cfg, node);
-			cfg->cb_printf(",\"type\":\"%s\",", rz_config_node_type(node));
-			es = rz_str_escape(node->desc);
-			if (es) {
-				cfg->cb_printf("\"desc\":\"%s\",", es);
-				free(es);
-			}
-			cfg->cb_printf("\"ro\":%s", rz_str_bool(rz_config_node_is_ro(node)));
-			if (!rz_list_empty(node->options)) {
-				isFirst = true;
-				cfg->cb_printf(",\"options\":[");
-				rz_list_foreach (node->options, iter, option) {
-					es = rz_str_escape(option);
-					if (es) {
-						if (isFirst) {
-							isFirst = false;
-						} else {
-							cfg->cb_printf(",");
-						}
-						cfg->cb_printf("\"%s\"", es);
-						free(es);
-					}
+			pj_a(pj);
+			rz_list_foreach (cfg->nodes, iter, node) {
+				pj_o(pj);
+				pj_ks(pj, "name", node->name);
+				pj_ks(pj, "value", node->value);
+				pj_ks(pj, "type", rz_config_node_type(node));
+				es = rz_str_escape(node->desc);
+				if (es) {
+					pj_ks(pj, "desc", es);
+					free(es);
 				}
-				cfg->cb_printf("]");
+				is_ro = rz_str_bool(rz_config_node_is_ro(node));
+				if (!is_ro)
+					pj_kb(pj, "ro", true);
+				else
+					pj_kb(pj, "ro", false);
+				if (!rz_list_empty(node->options)) {
+					pj_ka(pj, "options");            
+					rz_list_foreach(node->options, iter2, option) {
+						pj_s(pj, option);  
+					}
+					pj_end(pj);
+				}
+				pj_end(pj);
 			}
-			cfg->cb_printf("}");
+			pj_end(pj);
+			cfg->cb_printf("%s\n", pj_string (pj));
+			pj_free (pj);			
 		} else {
 			cfg->cb_printf("\"%s\":", node->name);
 			config_print_value_json(cfg, node);
@@ -145,7 +150,6 @@ RZ_API void rz_config_list(RzConfig *cfg, const char *str, int rad) {
 	int len = 0;
 	bool verbose = false;
 	bool json = false;
-	bool isFirst = false;
 
 	if (RZ_STR_ISNOTEMPTY(str)) {
 		str = rz_str_trim_head_ro(str);
@@ -174,7 +178,7 @@ RZ_API void rz_config_list(RzConfig *cfg, const char *str, int rad) {
 	case 0:
 		rz_list_foreach (cfg->nodes, iter, node) {
 			if (!str || (str && (!strncmp(str, node->name, len)))) {
-				config_print_node(cfg, node, pfx, sfx, verbose, json);
+			config_print_node(cfg, pfx, sfx, verbose, false);
 			}
 		}
 		break;
@@ -226,11 +230,7 @@ RZ_API void rz_config_list(RzConfig *cfg, const char *str, int rad) {
 		break;
 	case 'v':
 		verbose = true;
-		rz_list_foreach (cfg->nodes, iter, node) {
-			if (!str || (str && (!strncmp(str, node->name, len)))) {
-				config_print_node(cfg, node, pfx, sfx, verbose, json);
-			}
-		}
+		config_print_node(cfg, pfx, sfx, verbose, true);
 		break;
 	case 'q':
 		rz_list_foreach (cfg->nodes, iter, node) {
@@ -243,29 +243,7 @@ RZ_API void rz_config_list(RzConfig *cfg, const char *str, int rad) {
 		verbose = true;
 	/* fallthrou */
 	case 'j':
-		isFirst = true;
-		if (verbose) {
-			cfg->cb_printf("[");
-		} else {
-			cfg->cb_printf("{");
-		}
-		rz_list_foreach (cfg->nodes, iter, node) {
-			if (!str || (str && (!strncmp(str, node->name, len)))) {
-				if (!str || !strncmp(str, node->name, len)) {
-					if (isFirst) {
-						isFirst = false;
-					} else {
-						cfg->cb_printf(",");
-					}
-					config_print_node(cfg, node, pfx, sfx, verbose, true);
-				}
-			}
-		}
-		if (verbose) {
-			cfg->cb_printf("]\n");
-		} else {
-			cfg->cb_printf("}\n");
-		}
+		config_print_node(cfg, pfx, sfx, verbose, true);
 		break;
 	}
 }
