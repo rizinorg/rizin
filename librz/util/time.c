@@ -51,8 +51,9 @@ RZ_API char *rz_time_stamp_to_str(ut32 timeStamp) {
 #ifdef _MSC_VER
 	time_t rawtime;
 	struct tm *tminfo;
+	struct tm tmptm;
 	rawtime = (time_t)timeStamp;
-	tminfo = localtime(&rawtime);
+	tminfo = rz_localtime_r(&rawtime, &tmptm);
 	//tminfo = gmtime (&rawtime);
 	return rz_str_trim_dup(asctime(tminfo));
 #else
@@ -206,6 +207,15 @@ RZ_API struct tm *rz_localtime_r(const time_t *time, struct tm *res) {
 	return err ? NULL : res;
 #else
 	return localtime_r(time, res);
+#endif
+}
+
+RZ_API struct tm *rz_gmtime_r(const time_t *time, struct tm *res) {
+#if __WINDOWS__
+	errno_t err = gmtime_s(res, time);
+	return err ? NULL : res;
+#else
+	return gmtime_r(time, res);
 #endif
 }
 
