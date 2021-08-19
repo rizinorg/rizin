@@ -368,6 +368,9 @@ static bool __isDataSection(RzBinFile *a, RzBinSection *s) {
 	if (s->has_strings || s->is_data) {
 		return true;
 	}
+	if (!s->name) {
+		return false;
+	}
 	// Rust
 	return strstr(s->name, "_const") != NULL;
 }
@@ -768,6 +771,9 @@ RZ_IPI RzList *rz_bin_file_get_strings(RzBinFile *bf, int min, int dump, int raw
 			}
 		}
 		rz_list_foreach (o->sections, iter, section) {
+			if (!section->name) {
+				continue;
+			}
 			/* load objc/swift strings */
 			const int bits = (bf->o && bf->o->info) ? bf->o->info->bits : 32;
 			const int cfstr_size = (bits == 64) ? 32 : 16;

@@ -3034,7 +3034,7 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 		}
 		addr = rva(o, section->paddr, section->vaddr, va_sect);
 
-		if (name && strcmp(section->name, name)) {
+		if ((!section->name) || (name && strcmp(section->name, name))) {
 			continue;
 		}
 
