@@ -38,7 +38,7 @@ typedef struct {
 
 static void rzfind_options_fini(RzfindOptions *ro) {
 	free(ro->buf);
-	rz_list_free(ro->keywords);
+	ro->cur = 0;
 }
 
 static void rzfind_options_init(RzfindOptions *ro) {
@@ -220,8 +220,9 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 	}
 	rs->align = ro->align;
 	rz_search_set_callback(rs, &hit, ro);
-	if (ro->to == -1) {
-		ro->to = rz_io_size(io);
+	ut64 to = ro->to;
+	if (to == -1) {
+		to = rz_io_size(io);
 	}
 
 	if (!rz_cons_new()) {
@@ -236,7 +237,7 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 	}
 	if (ro->mode == RZ_SEARCH_MAGIC) {
 		/* TODO: implement using api */
-		char *tostr = (ro->to && ro->to != UT64_MAX) ? rz_str_newf("-e search.to=%" PFMT64d, ro->to) : strdup("");
+		char *tostr = (to && to != UT64_MAX) ? rz_str_newf("-e search.to=%" PFMT64d, to) : strdup("");
 		rz_sys_cmdf("rizin"
 			    " -e search.in=range"
 			    " -e search.align=%d"
@@ -275,12 +276,13 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 	rz_search_begin(rs);
 	(void)rz_io_seek(io, ro->from, RZ_IO_SEEK_SET);
 	result = 0;
-	for (ro->cur = ro->from; !last && ro->cur < ro->to; ro->cur += ro->bsize) {
-		if ((ro->cur + ro->bsize) > ro->to) {
-			ro->bsize = ro->to - ro->cur;
+	ut64 bsize = ro->bsize;
+	for (ro->cur = ro->from; !last && ro->cur < to; ro->cur += bsize) {
+		if ((ro->cur + bsize) > to) {
+			bsize = to - ro->cur;
 			last = true;
 		}
-		ret = rz_io_pread_at(io, ro->cur, ro->buf, ro->bsize);
+		ret = rz_io_pread_at(io, ro->cur, ro->buf, bsize);
 		if (ret == 0) {
 			if (ro->nonstop) {
 				continue;
@@ -288,8 +290,8 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 			result = 1;
 			break;
 		}
-		if (ret != ro->bsize && ret > 0) {
-			ro->bsize = ret;
+		if (ret != bsize && ret > 0) {
+			bsize = ret;
 		}
 
 		if (rz_search_update(rs, ro->cur, ro->buf, ret) == -1) {
@@ -467,10 +469,12 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 
 		if (RZ_STR_ISEMPTY(file)) {
 			eprintf("Cannot open empty path\n");
+			rz_list_free(ro.keywords);
 			return 1;
 		}
 		rzfind_open(&ro, file);
 	}
+	rz_list_free(ro.keywords);
 	if (ro.json) {
 		printf("]\n");
 	}
