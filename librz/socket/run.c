@@ -48,6 +48,9 @@
 #if defined(__APPLE__) || defined(__NetBSD__) || defined(__OpenBSD__)
 #include <util.h>
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
+#if HAVE_DECL_PROCCTL_ASLR_CTL
+#include <sys/procctl.h>
+#endif
 #include <sys/sysctl.h>
 #include <libutil.h>
 #endif
@@ -275,6 +278,12 @@ static void setASLR(RzRunProfile *r, int enabled) {
 	// the right way is to disable the aslr bit in the spawn call
 #elif __FreeBSD__ || __NetBSD__ || __DragonFly__
 	rz_sys_aslr(enabled);
+#if HAVE_DECL_PROCCTL_ASLR_CTL
+	int disabled = PROC_ASLR_FORCE_DISABLE;
+	if (procctl(P_PID, getpid(), PROC_ASLR_CTL, &disabled) == -1) {
+		rz_sys_aslr(0);
+	}
+#endif
 #else
 	// not supported for this platform
 #endif
