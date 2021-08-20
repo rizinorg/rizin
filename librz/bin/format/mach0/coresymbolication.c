@@ -234,7 +234,8 @@ RzCoreSymCacheElement *rz_coresym_cache_element_new(RzBinFile *bf, RzBuffer *buf
 		}
 		size_t i;
 		ut8 *cursor = b + start_of_sections;
-		for (i = 0; i < hdr->n_sections && cursor < end; i++) {
+		ut8 *upper_boundary = end - word_size;
+		for (i = 0; i < hdr->n_sections && cursor < upper_boundary; i++) {
 			ut8 *sect_start = cursor;
 			RzCoreSymCacheElementSection *sect = &result->sections[i];
 			sect->vaddr = sect->paddr = rz_read_ble(cursor, false, bits);
@@ -242,12 +243,12 @@ RzCoreSymCacheElement *rz_coresym_cache_element_new(RzBinFile *bf, RzBuffer *buf
 				sect->vaddr += page_zero_size;
 			}
 			cursor += word_size;
-			if (cursor >= end) {
+			if (cursor >= upper_boundary) {
 				break;
 			}
 			sect->size = rz_read_ble(cursor, false, bits);
 			cursor += word_size;
-			if (cursor >= end) {
+			if (cursor >= upper_boundary) {
 				break;
 			}
 			ut64 sect_name_off = rz_read_ble(cursor, false, bits);
