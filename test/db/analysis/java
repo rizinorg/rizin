@@ -1668,3 +1668,11 @@ EXPECT=<<EOF
 void java.io.PrintStream.println(String)
 EOF
 RUN
+
+
+NAME=Chrash on analysis
+FILE=bins/java/fba022731cfdd80bc65a899afefead1e
+CMDS=aaa
+EXPECT=<<EOF
+EOF
+RUN
