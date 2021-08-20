@@ -334,6 +334,8 @@ userconf.set10('USE_PTRACE_WRAP', use_ptrace_wrap)
 userconf.set10('WITH_GPL', true)
 ok = cc.has_header_symbol('sys/personality.h', 'ADDR_NO_RANDOMIZE')
 userconf.set10('HAVE_DECL_ADDR_NO_RANDOMIZE', ok)
+ok = cc.has_header_symbol('sys/procctl.h', 'PROC_ASLR_CTL')
+userconf.set10('HAVE_DECL_PROCCTL_ASLR_CTL', ok)
 
 if host_machine.system() == 'freebsd'
   add_project_link_arguments('-Wl,--unresolved-symbols,ignore-in-object-files', language: 'c')
