@@ -1293,7 +1293,7 @@ RZ_API int rz_core_file_list(RzCore *core, int mode) {
 	RzListIter *it;
 	RzBinFile *bf;
 	RzListIter *iter;
-	PJ *pj;
+	PJ *pj = NULL;
 	if (mode == 'j') {
 		pj = pj_new();
 		if (!pj) {
