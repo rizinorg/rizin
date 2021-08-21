@@ -1,51 +1,58 @@
 // SPDX-FileCopyrightText: 2015 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2021 Basstorm <basstorm@nyist.edu.cn>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "types.h"
-#include "stream_pe.h"
-#include "stream_file.h"
+#include "pdb.h"
 
-void parse_pe_stream(void *stream, RZ_STREAM_FILE *stream_file) {
-	int data_size = 0;
-	char *data = 0, *ptmp = 0;
-	int read_bytes = 0;
-	SIMAGE_SECTION_HEADER *sctn_header = 0;
-	SPEStream *pe_stream = (SPEStream *)stream;
-	int sctn_header_size = 0;
+static bool parse_image_header(PeImageSectionHeader *hdr, RzBuffer *buf) {
+	char *name =
+		rz_buf_get_nstring(buf, rz_buf_tell(buf), PDB_SIZEOF_SECTION_NAME);
+	rz_str_cpy(hdr->name, name);
+	RZ_FREE(name);
+	rz_buf_seek(buf, PDB_SIZEOF_SECTION_NAME, RZ_BUF_CUR);
+	return rz_buf_read_le32(buf, &hdr->misc.physical_address) &&
+		rz_buf_read_le32(buf, &hdr->virtual_address) &&
+		rz_buf_read_le32(buf, &hdr->size_of_raw_data) &&
+		rz_buf_read_le32(buf, &hdr->pointer_to_raw_data) &&
+		rz_buf_read_le32(buf, &hdr->pointer_to_relocations) &&
+		rz_buf_read_le32(buf, &hdr->pointer_to_line_numbers) &&
+		rz_buf_read_le16(buf, &hdr->number_of_relocations) &&
+		rz_buf_read_le16(buf, &hdr->number_of_line_numbers) &&
+		rz_buf_read_le32(buf, &hdr->charactestics);
+}
 
-	stream_file_get_size(stream_file, &data_size);
-	data = (char *)malloc(data_size);
-	if (!data) {
-		return;
+RZ_IPI bool parse_pe_stream(RzPdb *pdb, MsfStream *stream) {
+	rz_return_val_if_fail(pdb && stream, false);
+	if (!pdb->s_pe) {
+		pdb->s_pe = RZ_NEW0(PeStream);
 	}
-	stream_file_get_data(stream_file, data);
-
-	sctn_header_size = sizeof(SIMAGE_SECTION_HEADER);
-	ptmp = data;
-	pe_stream->sections_hdrs = rz_list_new();
-	while (read_bytes < data_size) {
-		sctn_header = (SIMAGE_SECTION_HEADER *)malloc(sctn_header_size);
-		if (!sctn_header) {
-			break;
+	RzBuffer *buf = stream->stream_data;
+	PeStream *s = pdb->s_pe;
+	if (!s) {
+		RZ_LOG_ERROR("Error allocating memory.\n");
+		return false;
+	}
+	if (!s->sections_hdrs) {
+		s->sections_hdrs = rz_list_newf(free);
+	}
+	ut32 size = rz_buf_size(buf);
+	ut32 read_len = 0;
+	while (read_len < size) {
+		PeImageSectionHeader *hdr = RZ_NEW0(PeImageSectionHeader);
+		if (!hdr) {
+			rz_list_free(s->sections_hdrs);
+			return false;
 		}
-		memcpy(sctn_header, ptmp, sctn_header_size);
-		ptmp += sctn_header_size;
-		rz_list_append(pe_stream->sections_hdrs, sctn_header);
-		read_bytes += sctn_header_size;
+		if (!parse_image_header(hdr, buf)) {
+			rz_list_free(s->sections_hdrs);
+			return false;
+		}
+
+		read_len += sizeof(PeImageSectionHeader);
+		rz_list_append(s->sections_hdrs, hdr);
 	}
-
-	free(data);
+	return true;
 }
-
-void free_pe_stream(void *stream) {
-	SPEStream *pe_stream = (SPEStream *)stream;
-	SIMAGE_SECTION_HEADER *sctn_header = 0;
-	RzListIter *it = 0;
-
-	it = rz_list_iterator(pe_stream->sections_hdrs);
-	while (rz_list_iter_next(it)) {
-		sctn_header = (SIMAGE_SECTION_HEADER *)rz_list_iter_get(it);
-		free(sctn_header);
-	}
-	rz_list_free(pe_stream->sections_hdrs);
-}
+RZ_IPI void free_pe_stream(PeStream *stream) {
+	rz_list_free(stream->sections_hdrs);
+};

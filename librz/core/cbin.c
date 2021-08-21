@@ -516,13 +516,13 @@ RZ_API bool rz_core_bin_print(RzCore *core, RzBinFile *bf, ut32 mask, RzCoreBinF
 			RzCmdStateOutput *st = add_header(state, RZ_OUTPUT_MODE_STANDARD, "pdb");
 			switch (st->mode) {
 			case RZ_OUTPUT_MODE_STANDARD:
-				rz_core_pdb_info(core, core->bin->file, NULL, RZ_MODE_PRINT);
+				rz_core_pdb_info_print(core, core->bin->file, RZ_MODE_PRINT);
 				break;
 			case RZ_OUTPUT_MODE_JSON:
-				rz_core_pdb_info(core, core->bin->file, st->d.pj, RZ_MODE_JSON);
+				rz_core_pdb_info_print(core, core->bin->file, RZ_MODE_JSON);
 				break;
 			case RZ_OUTPUT_MODE_RIZIN:
-				rz_core_pdb_info(core, core->bin->file, NULL, RZ_MODE_RIZINCMD);
+				rz_core_pdb_info_print(core, core->bin->file, RZ_MODE_RIZINCMD);
 				break;
 			default:
 				break;
@@ -1771,59 +1771,6 @@ RZ_API void rz_core_bin_print_source_line_info(RzCore *core, const RzBinSourceLi
 	}
 	rz_cons_break_pop();
 	rz_cmd_state_output_array_end(state);
-}
-
-RZ_API bool rz_core_pdb_info(RzCore *core, const char *file, PJ *pj, int mode) {
-	rz_return_val_if_fail(core && file, false);
-
-	ut64 baddr = rz_config_get_i(core->config, "bin.baddr");
-	if (core->bin->cur && core->bin->cur->o && core->bin->cur->o->opts.baseaddr) {
-		baddr = core->bin->cur->o->opts.baseaddr;
-	} else {
-		eprintf("Warning: Cannot find base address, flags will probably be misplaced\n");
-	}
-
-	RzPdb pdb = RZ_EMPTY;
-
-	pdb.cb_printf = rz_cons_printf;
-	if (!init_pdb_parser(&pdb, file)) {
-		return false;
-	}
-	if (!pdb.pdb_parse(&pdb)) {
-		eprintf("pdb was not parsed\n");
-		pdb.finish_pdb_parse(&pdb);
-		return false;
-	}
-
-	switch (mode) {
-	case RZ_MODE_SET:
-		rz_core_cmd0(core, ".iP*");
-		return true;
-	case RZ_MODE_JSON:
-		mode = 'j';
-		break;
-	case '*':
-	case 1:
-		mode = 'r';
-		break;
-	default:
-		mode = 'd'; // default
-		break;
-	}
-	if (mode == 'j') {
-		pj_o(pj);
-	}
-
-	pdb.print_types(&pdb, pj, mode);
-	pdb.print_gvars(&pdb, baddr, pj, mode);
-	// Save compound types into types database
-	rz_parse_pdb_types(core->analysis->typedb, &pdb);
-	pdb.finish_pdb_parse(&pdb);
-
-	if (mode == 'j') {
-		pj_end(pj);
-	}
-	return true;
 }
 
 static const char *bin_reloc_type_name(RzBinReloc *reloc) {
@@ -5198,7 +5145,7 @@ RZ_API bool rz_core_bin_archs_print(RzBin *bin, RzCmdStateOutput *state) {
 
 RZ_API bool rz_core_bin_pdb_load(RZ_NONNULL RzCore *core, RZ_NONNULL const char *filename) {
 	rz_cons_push();
-	rz_core_pdb_info(core, filename, NULL, RZ_MODE_RIZINCMD);
+	rz_core_pdb_info_print(core, filename, RZ_MODE_RIZINCMD);
 	const char *buf = rz_cons_get_buffer();
 	if (!buf) {
 		rz_cons_pop();
