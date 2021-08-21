@@ -6,6 +6,7 @@
 #include <rz_config.h>
 #include "rz_util.h"
 #include "rz_util/rz_time.h"
+#include "../bin/pdb/pdb.h"
 
 #define is_in_range(at, from, sz) ((at) >= (from) && (at) < ((from) + (sz)))
 
@@ -2120,15 +2121,8 @@ RZ_API bool rz_core_pdb_info(RzCore *core, const char *file, PJ *pj, int mode) {
 		eprintf("Warning: Cannot find base address, flags will probably be misplaced\n");
 	}
 
-	RzPdb pdb = RZ_EMPTY;
-
-	pdb.cb_printf = rz_cons_printf;
-	if (!init_pdb_parser(&pdb, file)) {
-		return false;
-	}
-	if (!pdb.pdb_parse(&pdb)) {
-		eprintf("pdb was not parsed\n");
-		pdb.finish_pdb_parse(&pdb);
+	RzPdb *pdb = rz_bin_pdb_parse_from_file(file);
+	if (!pdb) {
 		return false;
 	}
 
@@ -2139,23 +2133,19 @@ RZ_API bool rz_core_pdb_info(RzCore *core, const char *file, PJ *pj, int mode) {
 	case RZ_MODE_JSON:
 		mode = 'j';
 		break;
-	case '*':
-	case 1:
-		mode = 'r';
+	case RZ_MODE_PRINT:
+		mode = 'd';
 		break;
 	default:
-		mode = 'd'; // default
 		break;
 	}
 	if (mode == 'j') {
 		pj_o(pj);
 	}
-
-	pdb.print_types(&pdb, pj, mode);
-	pdb.print_gvars(&pdb, baddr, pj, mode);
 	// Save compound types into types database
-	rz_parse_pdb_types(core->analysis->typedb, &pdb);
-	pdb.finish_pdb_parse(&pdb);
+	rz_parse_pdb_types(core->analysis->typedb, pdb);
+	rz_bin_pdb_print_types(core->analysis->typedb, pdb, pj, mode);
+	rz_bin_pdb_print_gvars(pdb, baddr, pj, mode);
 
 	if (mode == 'j') {
 		pj_end(pj);

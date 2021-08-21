@@ -37,7 +37,7 @@ RZ_API RZ_BORROW RzBaseType *rz_type_db_get_base_type(const RzTypeDB *typedb, RZ
 	bool found = false;
 	RzBaseType *btype = ht_pp_find(typedb->types, name, &found);
 	if (!found || !btype) {
-		eprintf("Cannot find base type \"%s\"\n", name);
+		//eprintf("Cannot find base type \"%s\"\n", name);
 		return NULL;
 	}
 	return btype;

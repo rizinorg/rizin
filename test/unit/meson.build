@@ -63,7 +63,7 @@ if get_option('enable_tests')
     'json',
     'list',
     'ovf',
-    'pdb',
+#    'pdb',
     'pj',
     'project_migrate',
     'queue',

@@ -24,6 +24,7 @@
 #include <rz_type.h>
 #include <rz_arch.h>
 #include <rz_cmd.h>
+#include "../bin/pdb/pdb.h"
 
 #define esilprintf(op, fmt, ...) rz_strbuf_setf(&op->esil, fmt, ##__VA_ARGS__)
 
