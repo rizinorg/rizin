@@ -26,7 +26,7 @@ RZ_IPI RzCmdStatus rz_project_save_handler(RzCore *core, int argc, const char **
 		file = rz_config_get(core->config, "prj.file");
 		if (RZ_STR_ISEMPTY(file)) {
 			eprintf("There is no project file associated with the current session yet.\n"
-				"Specify the file explitily as `Ps <file.rzdb>` or set it manually with `e prj.file=<project-path>`.\n");
+				"Specify the file explicitly as `Ps <file.rzdb>` or set it manually with `e prj.file=<project-path>`.\n");
 			return RZ_CMD_STATUS_ERROR;
 		}
 	} else { // argc == 2 checked by the shell
