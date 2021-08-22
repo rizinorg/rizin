@@ -24,8 +24,9 @@ RZ_API RZ_NONNULL const char *rz_project_err_message(RzProjectErr err) {
 		return "invalid content encountered";
 	case RZ_PROJECT_ERR_MIGRATION_FAILED:
 		return "migration failed";
-	case RZ_PROJECT_ERR_UNKNOWN:
-		break;
+	case RZ_PROJECT_ERR_ZIP:
+		return "project file zip/unzip failed";
+	case RZ_PROJECT_ERR_UNKNOWN: break;
 	}
 	return "unknown error";
 }
@@ -38,22 +39,33 @@ RZ_API RzProjectErr rz_project_save(RzCore *core, RzProject *prj, const char *fi
 }
 
 RZ_API RzProjectErr rz_project_save_file(RzCore *core, const char *file) {
+	char *tmp_file = rz_file_temp("svprj");
+
 	RzProject *prj = sdb_new0();
 	if (!prj) {
 		return RZ_PROJECT_ERR_UNKNOWN;
 	}
-	RzProjectErr err = rz_project_save(core, prj, file);
+	RzProjectErr err = rz_project_save(core, prj, tmp_file);
 	if (err != RZ_PROJECT_ERR_SUCCESS) {
 		sdb_free(prj);
 		return err;
 	}
-	if (!sdb_text_save(prj, file, true)) {
+	if (!sdb_text_save(prj, tmp_file, true)) {
 		err = RZ_PROJECT_ERR_FILE;
 	}
 	sdb_free(prj);
 	if (err == RZ_PROJECT_ERR_SUCCESS) {
 		rz_config_set(core->config, "prj.file", file);
 	}
+
+	if (err == RZ_PROJECT_ERR_SUCCESS) {
+		if (!rz_file_zip(tmp_file, file)) {
+			free(tmp_file);
+			return RZ_PROJECT_ERR_ZIP;
+		}
+	}
+	free(tmp_file);
+
 	return err;
 }
 
@@ -63,10 +75,19 @@ RZ_API RzProject *rz_project_load_file_raw(const char *file) {
 	if (!prj) {
 		return NULL;
 	}
-	if (!sdb_text_load(prj, file)) {
+
+	char *tmp_file = rz_file_temp("ldprj");
+	if (!rz_file_unzip(file, tmp_file)) {
+		return RZ_PROJECT_ERR_ZIP;
+	}
+
+	if (!sdb_text_load(prj, tmp_file)) {
 		sdb_free(prj);
+		free(tmp_file);
 		return NULL;
 	}
+	free(tmp_file);
+
 	return prj;
 }
 
