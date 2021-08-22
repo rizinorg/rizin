@@ -69,6 +69,8 @@ RZ_API char *rz_file_tmpdir(void);
 RZ_API char *rz_file_readlink(const char *path);
 RZ_API bool rz_file_copy(const char *src, const char *dst);
 RZ_API RzList *rz_file_globsearch(const char *globbed_path, int maxdepth);
+RZ_API bool rz_file_zip(const char *src, const char *dst);
+RZ_API bool rz_file_unzip(const char *src, const char *dst);
 
 #ifdef __cplusplus
 }

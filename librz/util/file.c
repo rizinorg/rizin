@@ -1252,3 +1252,40 @@ RZ_API char *rz_file_path_join(const char *s1, const char *s2) {
 	const char *sep = ends_with_dir ? "" : RZ_SYS_DIR;
 	return rz_str_newf("%s%s%s", s1, sep, s2);
 }
+
+/**
+ * \brief zip the contents of src and store in dst
+ * \param src source file (string containing filename)
+ * \param dst destination file (string containing filename)
+ * \return true, if successful; false otherwise
+ */
+RZ_API bool rz_file_zip(const char *src, const char *dst) {
+	size_t len, comp_len;
+	char *content = rz_file_slurp(src, &len);
+	char *comp_content = rz_deflate(content, len, NULL, &comp_len);
+
+	bool result = rz_file_dump(dst, comp_content, comp_len, false);
+	free(content);
+	free(comp_content);
+
+	return result;
+}
+
+/**
+ * \brief unzip the contents of src and store in dst
+ * \param src source file (string containing filename)
+ * \param dst destination file (string containing filename)
+ * \return true, if successful; false otherwise
+ */
+RZ_API bool rz_file_unzip(const char *src, const char *dst) {
+	size_t len, decomp_len;
+	char *content = rz_file_slurp(src, &len);
+	char *decomp_content = rz_inflate(content, len, NULL, &decomp_len);
+
+	bool result = rz_file_dump(dst, decomp_content, decomp_len, false);
+
+	free(content);
+	free(decomp_content);
+
+	return result;
+}
