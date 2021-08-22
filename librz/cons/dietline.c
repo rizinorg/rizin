@@ -1332,6 +1332,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 	static int gcomp_idx = 0;
 	static bool yank_flag = 0;
 	static int gcomp = 0;
+	static int gcomp_is_rev = true;
 	char buf[10];
 #if USE_UTF8
 	int utflen;
@@ -1499,15 +1500,17 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 			}
 			fflush(stdout);
 			break;
-		case 18: // ^R -- autocompletion
+		case 18: // ^R -- reverse-search
 			if (gcomp) {
 				gcomp_idx++;
 			}
+			gcomp_is_rev = true;
 			gcomp = 1;
 			break;
-		case 19: // ^S -- backspace
+		case 19: // ^S -- forward-search
 			if (gcomp) {
-				gcomp--;
+				gcomp_idx--;
+				gcomp_is_rev = false;
 			} else {
 				__move_cursor_left();
 			}
@@ -1995,11 +1998,19 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 							}
 						}
 						if (i == 0) {
-							gcomp_idx--;
+							if (gcomp_is_rev) {
+								gcomp_idx--;
+							} else {
+								gcomp_idx++;
+							}
 						}
 					}
 				}
-				printf("\r (reverse-i-search (%s)): %s\r", I.buffer.data, gcomp_line);
+				if (gcomp_is_rev) {
+					printf("\r (reverse-i-search (%s)): %s\r", I.buffer.data, gcomp_line);
+				} else {
+					printf("\r (forward-i-search (%s)): %s\r", I.buffer.data, gcomp_line);
+				}
 			} else {
 				__print_prompt();
 			}
