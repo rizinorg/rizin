@@ -75,6 +75,7 @@ RZ_API RzProjectErr rz_project_save_file(RzCore *core, const char *file) {
 	rz_config_set(core->config, "prj.file", file);
 
 tmp_file_err:
+	rz_file_rm(tmp_file);
 	free(tmp_file);
 	return err;
 }
@@ -90,25 +91,30 @@ RZ_API RzProject *rz_project_load_file_raw(const char *file) {
 	int err_mkstemp = rz_file_mkstemp("ldprj", &tmp_file);
 
 	if (err_mkstemp == -1 || !tmp_file) {
+		free(tmp_file);
 		return NULL;
 	}
 
 	if (rz_file_is_deflated(file)) {
 		if (!rz_file_inflate(file, tmp_file)) {
-			return NULL;
+			prj = NULL;
+			goto tmp_file_err;
 		}
 	} else {
+		rz_file_rm(tmp_file);
 		free(tmp_file);
 		tmp_file = strdup(file);
 	}
 
 	if (!sdb_text_load(prj, tmp_file)) {
 		sdb_free(prj);
-		free(tmp_file);
-		return NULL;
+		prj = NULL;
+		goto tmp_file_err;
 	}
-	free(tmp_file);
 
+tmp_file_err:
+	rz_file_rm(tmp_file);
+	free(tmp_file);
 	return prj;
 }
 
