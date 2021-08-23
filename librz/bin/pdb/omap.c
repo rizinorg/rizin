@@ -34,8 +34,10 @@ RZ_IPI bool parse_omap_stream(RzPdb *pdb, MsfStream *stream) {
 }
 
 RZ_IPI void free_omap_stream(OmapStream *stream) {
+	if (!stream) {
+		return;
+	}
 	OmapEntry *entry;
-
 	RzListIter *it;
 	rz_list_foreach (stream->entries, it, entry) { RZ_FREE(entry); }
 	rz_list_free(stream->entries);

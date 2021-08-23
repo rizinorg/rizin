@@ -278,7 +278,6 @@ typedef enum {
 
 typedef union {
 	struct {
-#if __BYTE_ORDER == __LITTLE_ENDIAN
 		ut16 packed : 1; // true if structure is packed
 		ut16 ctor : 1; // true if constructors or destructors present
 		ut16 ovlops : 1; // true if overloaded operators present
@@ -293,24 +292,7 @@ typedef union {
 		ut16 hfa : 2; // CV_HFA_e
 		ut16 intrinsic : 1; // true if class is an intrinsic type (e.g. __m128d)
 		ut16 mocom : 2; // CV_MOCOM_UDT_e
-#else
-		ut16 mocom : 2; // CV_MOCOM_UDT_e
-		ut16 intrinsic : 1; // true if class is an intrinsic type (e.g. __m128d)
-		ut16 hfa : 2; // CV_HFA_e
-		ut16 sealed : 1; // true if class cannot be used as a base class
-		ut16 hasuniquename : 1; // true if there is a decorated name following the regular name
-		ut16 scoped : 1; // scoped definition
-		ut16 fwdref : 1; // true if forward reference (incomplete defn)
-		ut16 opcast : 1; // true if casting methods
-		ut16 opassign : 1; // true if overloaded assignment (=)
-		ut16 cnested : 1; // true if this class contains nested types
-		ut16 isnested : 1; // true if this is a nested class
-		ut16 ovlops : 1; // true if overloaded operators present
-		ut16 ctor : 1; // true if constructors or destructors present
-		ut16 packed : 1; // true if structure is packed
-#endif
 	} bits;
-	ut16 cv_property;
 } TpiCVProperty;
 
 typedef enum {
@@ -333,7 +315,6 @@ typedef enum {
 
 typedef union {
 	struct {
-#if __BYTE_ORDER == __LITTLE_ENDIAN
 		ut16 access : 2; // access protection CV_access_t
 		ut16 mprop : 3; // method properties CV_methodprop_t
 		ut16 pseudo : 1; // compiler generated fcn and does not exist
@@ -342,35 +323,16 @@ typedef union {
 		ut16 compgenx : 1; // compiler generated fcn and does exist
 		ut16 sealed : 1; // true if method cannot be overridden
 		ut16 unused : 6; // unused
-#else
-		ut16 unused : 6; // unused
-		ut16 sealed : 1; // true if method cannot be overridden
-		ut16 compgenx : 1; // compiler generated fcn and does exist
-		ut16 noconstruct : 1; // true if class cannot be constructed
-		ut16 noinherit : 1; // true if class cannot be inherited
-		ut16 pseudo : 1; // compiler generated fcn and does not exist
-		ut16 mprop : 3; // method properties CV_methodprop_t
-		ut16 access : 2; // access protection CV_access_t
-#endif
 	} bits;
-	ut16 fldattr;
 } TpiCVFldattr;
 
 typedef union {
 	struct cv_funcattr {
-#if __BYTE_ORDER == __LITTLE_ENDIAN
 		unsigned char cxxreturnudt : 1; // true if C++ style ReturnUDT
 		unsigned char ctor : 1; // true if func is an instance constructor
 		unsigned char ctorvbase : 1; // true if func is an instance constructor of a class with virtual bases
 		unsigned char unused : 5; // unused
-#else
-		unsigned char unused : 5; // unused
-		unsigned char ctorvbase : 1; // true if func is an instance constructor of a class with virtual bases
-		unsigned char ctor : 1; // true if func is an instance constructor
-		unsigned char cxxreturnudt : 1; // true if C++ style ReturnUDT
-#endif
 	} bits;
-	ut8 funcattr;
 } TpiCVFuncattr;
 
 typedef struct {
@@ -400,24 +362,18 @@ typedef struct {
 	ut8 pad;
 } Tpi_LF_Arglist;
 
+typedef union {
+	struct {
+		ut16 const_ : 1;
+		ut16 volatile_ : 1;
+		ut16 unaligned : 1;
+		ut16 unused : 13;
+	} bits;
+} TpiCVModifier;
+
 typedef struct {
 	ut32 modified_type;
-	union {
-		struct {
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-			ut16 const_ : 1;
-			ut16 volatile_ : 1;
-			ut16 unaligned : 1;
-			ut16 unused : 13;
-#else
-			ut16 unused : 13;
-			ut16 unaligned : 1;
-			ut16 volatile_ : 1;
-			ut16 const_ : 1;
-#endif
-		} bits;
-		ut16 modifier;
-	} umodifier;
+	TpiCVModifier umodifier;
 	ut8 pad;
 } Tpi_LF_Modifier;
 
@@ -450,7 +406,6 @@ typedef enum {
 
 typedef union {
 	struct {
-#if __BYTE_ORDER == __LITTLE_ENDIAN
 		ut32 ptrtype : 5; // ordinal specifying pointer type
 		ut32 ptrmode : 3; // ordinal specifying pointer mode
 		ut32 flat32 : 1; // true if 0:32 pointer
@@ -463,22 +418,7 @@ typedef union {
 		ut32 lref : 1; // TRUE if it is this pointer of member function with & ref-qualifier
 		ut32 rref : 1; // TRUE if it is this pointer of member function with && ref-qualifier
 		ut32 unused : 10; // pad out to 32-bits for following cv_typ_t's
-#else
-		ut32 unused : 10; // pad out to 32-bits for following cv_typ_t's
-		ut32 rref : 1; // TRUE if it is this pointer of member function with && ref-qualifier
-		ut32 lref : 1; // TRUE if it is this pointer of member function with & ref-qualifier
-		ut32 mocom : 1; // TRUE if it is a MoCOM pointer (^ or %)
-		ut32 size : 6; // size of pointer (in bytes)
-		ut32 restrict_ : 1; // TRUE if restricted pointer (allow agressive opts)
-		ut32 unaligned : 1; // TRUE if unaligned pointer
-		ut32 const_ : 1; // TRUE if const pointer
-		ut32 volatile_ : 1; // TRUE if volatile pointer
-		ut32 flat32 : 1; // true if 0:32 pointer
-		ut32 ptrmode : 3; // ordinal specifying pointer mode
-		ut32 ptrtype : 5; // ordinal specifying pointer type
-#endif
 	} bits;
-	ut32 ptr_attr;
 } TpiCVPointerAttr;
 
 typedef struct {

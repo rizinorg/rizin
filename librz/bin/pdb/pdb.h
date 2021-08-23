@@ -19,6 +19,8 @@ extern "C" {
 #define PDB_SIGNATURE     "Microsoft C/C++ MSF 7.00\r\n\x1a\x44\x53\x00\x00\x00"
 #define PDB_SIGNATURE_LEN 32
 
+#define GET_BF(value, start, len) (((value) >> (start)) & ((1 << len) - 1))
+
 typedef enum pdb_stream_index_t {
 	PDB_STREAM_ROOT = 0, // PDB_ROOT_DIRECTORY
 	PDB_STREAM_PDB, // PDB STREAM INFO

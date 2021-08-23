@@ -79,6 +79,60 @@ static TpiSimpleTypeKind get_simple_type_kind(ut32 type) {
 	return (type & 0x00000000000FF);
 }
 
+static void parse_codeview_property(TpiCVProperty *p, ut16 value) {
+	p->bits.packed = GET_BF(value, 0, 1);
+	p->bits.ctor = GET_BF(value, 1, 1);
+	p->bits.ovlops = GET_BF(value, 2, 1);
+	p->bits.isnested = GET_BF(value, 3, 1);
+	p->bits.packed = GET_BF(value, 4, 1);
+	p->bits.opassign = GET_BF(value, 5, 1);
+	p->bits.opcast = GET_BF(value, 6, 1);
+	p->bits.fwdref = GET_BF(value, 7, 1);
+	p->bits.scoped = GET_BF(value, 8, 1);
+	p->bits.hasuniquename = GET_BF(value, 9, 1);
+	p->bits.sealed = GET_BF(value, 10, 1);
+	p->bits.hfa = GET_BF(value, 11, 2);
+	p->bits.intrinsic = GET_BF(value, 13, 1);
+	p->bits.mocom = GET_BF(value, 14, 2);
+}
+
+static void parse_codeview_fld_attribute(TpiCVFldattr *f, ut16 value) {
+	f->bits.access = GET_BF(value, 0, 2);
+	f->bits.mprop = GET_BF(value, 2, 3);
+	f->bits.pseudo = GET_BF(value, 5, 1);
+	f->bits.noinherit = GET_BF(value, 6, 1);
+	f->bits.noconstruct = GET_BF(value, 7, 1);
+	f->bits.compgenx = GET_BF(value, 8, 1);
+	f->bits.sealed = GET_BF(value, 9, 1);
+}
+
+static void parse_codeview_func_attribute(TpiCVFuncattr *f, ut8 value){
+	f->bits.cxxreturnudt = GET_BF(value, 0, 1);
+	f->bits.ctor = GET_BF(value, 1, 1);
+	f->bits.ctorvbase = GET_BF(value, 2, 1);
+}
+
+static void parse_codeview_pointer_attribute(TpiCVPointerAttr *p, ut32 value) {
+	p->bits.ptrtype = GET_BF(value, 0, 5);
+	p->bits.ptrmode = GET_BF(value, 5, 3);
+	p->bits.flat32 = GET_BF(value, 8, 1);
+	p->bits.volatile_ = GET_BF(value, 9, 1);
+	p->bits.const_ = GET_BF(value, 10, 1);
+	p->bits.unaligned = GET_BF(value, 11, 1);
+	p->bits.restrict_ = GET_BF(value, 12, 1);
+	p->bits.size = GET_BF(value, 13, 6);
+	p->bits.mocom = GET_BF(value, 19, 1);
+	p->bits.lref = GET_BF(value, 20, 1);
+	p->bits.rref = GET_BF(value, 21, 1);
+	p->bits.unused = GET_BF(value, 22, 10);
+}
+
+static void parse_codeview_modifier(TpiCVModifier *m, ut16 value) {
+	m->bits.const_ = GET_BF(value, 0, 1);
+	m->bits.volatile_ = GET_BF(value, 1, 1);
+	m->bits.unaligned = GET_BF(value, 2, 1);
+}
+
 /**
  * \brief Parses simple type if the idx represents one
  * \param TpiStream TPI stream context
@@ -598,6 +652,23 @@ static void free_tpi_type(void *type_info) {
 		RZ_FREE(lf_simple->type);
 		break;
 	}
+	case LF_METHODLIST: {
+		Tpi_LF_MethodList *lf_mlist = (Tpi_LF_MethodList *)type->type_data;
+		rz_list_free(lf_mlist->members);
+		break;
+	}
+	case LF_POINTER:
+		break;
+	case LF_PROCEDURE:
+		break;
+	case LF_MODIFIER:
+		break;
+	case LF_MFUNCTION:
+		break;
+	case LF_BITFIELD:
+		break;
+	case LF_VFUNCTAB:
+		break;
 	default:
 		rz_warn_if_reached();
 		break;
@@ -757,10 +828,12 @@ static Tpi_LF_Enumerate *parse_type_enumerate(RzBuffer *buf, ut16 len,
 	if (!enumerate) {
 		return NULL;
 	}
-	if (!rz_buf_read_le16(buf, &enumerate->fldattr.fldattr)) {
+	ut16 fldattr;
+	if (!rz_buf_read_le16(buf, &fldattr)) {
 		RZ_FREE(enumerate);
 		return NULL;
 	}
+	parse_codeview_fld_attribute(&enumerate->fldattr, fldattr);
 	*read_len += sizeof(ut16);
 	if (!parse_type_numeric(buf, &enumerate->enum_value, read_len)) {
 		RZ_FREE(enumerate);
@@ -848,10 +921,12 @@ static Tpi_LF_Member *parse_type_member(RzBuffer *buf, ut16 len,
 	if (!member) {
 		return NULL;
 	}
-	if (!rz_buf_read_le16(buf, &member->fldattr.fldattr)) {
+	ut16 fldattr;
+	if (!rz_buf_read_le16(buf, &fldattr)) {
 		RZ_FREE(member);
 		return NULL;
 	}
+	parse_codeview_fld_attribute(&member->fldattr, fldattr);
 	*read_len += sizeof(ut16);
 	if (!rz_buf_read_le32(buf, &member->index)) {
 		RZ_FREE(member);
@@ -880,10 +955,12 @@ static Tpi_LF_StaticMember *parse_type_staticmember(RzBuffer *buf, ut16 len,
 	if (!member) {
 		return NULL;
 	}
-	if (!rz_buf_read_le16(buf, &member->fldattr.fldattr)) {
+	ut16 fldattr;
+	if (!rz_buf_read_le16(buf, &fldattr)) {
 		RZ_FREE(member);
 		return NULL;
 	}
+	parse_codeview_fld_attribute(&member->fldattr, fldattr);
 	*read_len += sizeof(ut16);
 	if (!rz_buf_read_le32(buf, &member->index)) {
 		RZ_FREE(member);
@@ -902,10 +979,12 @@ static Tpi_LF_OneMethod *parse_type_onemethod(RzBuffer *buf, ut16 len,
 	if (!onemethod) {
 		return NULL;
 	}
-	if (!rz_buf_read_le16(buf, &onemethod->fldattr.fldattr)) {
+	ut16 fldattr;
+	if (!rz_buf_read_le16(buf, &fldattr)) {
 		RZ_FREE(onemethod);
 		return NULL;
 	}
+	parse_codeview_fld_attribute(&onemethod->fldattr, fldattr);
 	*read_len += sizeof(ut16);
 	if (!rz_buf_read_le32(buf, &onemethod->index)) {
 		RZ_FREE(onemethod);
@@ -932,10 +1011,12 @@ static Tpi_LF_BClass *parse_type_bclass(RzBuffer *buf, ut16 len,
 	if (!bclass) {
 		return NULL;
 	}
-	if (!rz_buf_read_le16(buf, &bclass->fldattr.fldattr)) {
+	ut16 fldattr;
+	if (!rz_buf_read_le16(buf, &fldattr)) {
 		RZ_FREE(bclass);
 		return NULL;
 	}
+	parse_codeview_fld_attribute(&bclass->fldattr, fldattr);
 	*read_len += sizeof(ut16);
 	if (!rz_buf_read_le32(buf, &bclass->index)) {
 		RZ_FREE(bclass);
@@ -963,10 +1044,12 @@ static Tpi_LF_VBClass *parse_type_vbclass(RzBuffer *buf, ut16 len,
 	if (!bclass) {
 		return NULL;
 	}
-	if (!rz_buf_read_le16(buf, &bclass->fldattr.fldattr)) {
+	ut16 fldattr;
+	if (!rz_buf_read_le16(buf, &fldattr)) {
 		RZ_FREE(bclass);
 		return NULL;
 	}
+	parse_codeview_fld_attribute(&bclass->fldattr, fldattr);
 	*read_len += sizeof(ut16);
 	if (!rz_buf_read_le32(buf, &bclass->direct_vbclass_idx)) {
 		RZ_FREE(bclass);
@@ -1083,10 +1166,12 @@ static Tpi_LF_Enum *parse_type_enum(RzBuffer *buf, ut16 len) {
 		return NULL;
 	}
 	read_bytes += sizeof(ut16);
-	if (!rz_buf_read_le16(buf, &_enum->prop.cv_property)) {
+	ut16 prop;
+	if (!rz_buf_read_le16(buf, &prop)) {
 		RZ_FREE(_enum);
 		return NULL;
 	}
+	parse_codeview_property(&_enum->prop, prop);
 	read_bytes += sizeof(ut16);
 	if (!rz_buf_read_le32(buf, &_enum->utype)) {
 		RZ_FREE(_enum);
@@ -1118,10 +1203,12 @@ static Tpi_LF_Structure *parse_type_struct(RzBuffer *buf, ut16 len) {
 		return NULL;
 	}
 	read_bytes += sizeof(ut16);
-	if (!rz_buf_read_le16(buf, &structure->prop.cv_property)) {
+	ut16 prop;
+	if (!rz_buf_read_le16(buf, &prop)) {
 		RZ_FREE(structure);
 		return NULL;
 	}
+	parse_codeview_property(&structure->prop, prop);
 	read_bytes += sizeof(ut16);
 	if (!rz_buf_read_le32(buf, &structure->field_list)) {
 		RZ_FREE(structure);
@@ -1164,10 +1251,12 @@ static Tpi_LF_Structure_19 *parse_type_struct_19(RzBuffer *buf, ut16 len) {
 		return NULL;
 	}
 	ut16 read_bytes = sizeof(ut16);
-	if (!rz_buf_read_le16(buf, &structure->prop.cv_property)) {
+	ut16 prop;
+	if (!rz_buf_read_le16(buf, &prop)) {
 		RZ_FREE(structure);
 		return NULL;
 	}
+	parse_codeview_property(&structure->prop, prop);
 	read_bytes += sizeof(ut16);
 	if (!rz_buf_read_le16(buf, &structure->unknown)) {
 		RZ_FREE(structure);
@@ -1223,10 +1312,12 @@ static Tpi_LF_Pointer *parse_type_pointer(RzBuffer *buf, ut16 len) {
 		return NULL;
 	}
 	read_bytes += sizeof(ut32);
-	if (!rz_buf_read_le32(buf, &pointer->ptr_attr.ptr_attr)) {
+	ut32 ptrattr;
+	if (!rz_buf_read_le32(buf, &ptrattr)) {
 		RZ_FREE(pointer);
 		return NULL;
 	}
+	parse_codeview_pointer_attribute(&pointer->ptr_attr, ptrattr);
 	read_bytes += sizeof(ut32);
 	skip_padding(buf, len, &read_bytes);
 	return pointer;
@@ -1276,10 +1367,12 @@ static Tpi_LF_Modifier *parse_type_modifier(RzBuffer *buf, ut16 len) {
 		return NULL;
 	}
 	read_bytes += sizeof(ut32);
-	if (!rz_buf_read_le16(buf, &modifier->umodifier.modifier)) {
+	ut16 umodifier;
+	if (!rz_buf_read_le16(buf, &umodifier)) {
 		RZ_FREE(modifier);
 		return NULL;
 	}
+	parse_codeview_modifier(&modifier->umodifier, umodifier);
 	read_bytes += sizeof(ut16);
 	skip_padding(buf, len, &read_bytes);
 	return modifier;
@@ -1343,10 +1436,12 @@ static Tpi_LF_MFcuntion *parse_type_mfunction(RzBuffer *buf, ut16 len) {
 		return NULL;
 	}
 	read_bytes += sizeof(ut8);
-	if (!rz_buf_read8(buf, &mfunc->func_attr.funcattr)) {
+	ut8 funcattr;
+	if (!rz_buf_read8(buf, &funcattr)) {
 		RZ_FREE(mfunc);
 		return NULL;
 	}
+	parse_codeview_func_attribute(&mfunc->func_attr, funcattr);
 	read_bytes += sizeof(ut8);
 	if (!rz_buf_read_le16(buf, &mfunc->parm_count)) {
 		RZ_FREE(mfunc);
@@ -1384,12 +1479,14 @@ static Tpi_LF_MethodList *parse_type_methodlist(RzBuffer *buf, ut16 len) {
 		if (!member) {
 			continue;
 		}
-		if (!rz_buf_read_le16(buf, &member->fldattr.fldattr)) {
+		ut16 fldattr;
+		if (!rz_buf_read_le16(buf, &fldattr)) {
 			RZ_FREE(member);
 			rz_list_free(mlist->members);
 			RZ_FREE(mlist);
 			return NULL;
 		}
+		parse_codeview_fld_attribute(&member->fldattr, fldattr);
 		read_bytes += sizeof(ut16);
 		if (!rz_buf_read_le16(buf, &member->pad)) {
 			RZ_FREE(member);
@@ -1443,10 +1540,12 @@ static Tpi_LF_Procedure *parse_type_procedure(RzBuffer *buf, ut16 len) {
 		return NULL;
 	}
 	read_bytes += sizeof(ut8);
-	if (!rz_buf_read8(buf, &proc->func_attr.funcattr)) {
+	ut8 funcattr;
+	if (!rz_buf_read8(buf, &funcattr)) {
 		RZ_FREE(proc);
 		return NULL;
 	}
+	parse_codeview_func_attribute(&proc->func_attr, funcattr);
 	read_bytes += sizeof(ut8);
 	if (!rz_buf_read_le16(buf, &proc->parm_count)) {
 		RZ_FREE(proc);
@@ -1474,10 +1573,12 @@ static Tpi_LF_Union *parse_type_union(RzBuffer *buf, ut16 len) {
 		return NULL;
 	}
 	read_bytes += sizeof(ut16);
-	if (!rz_buf_read_le16(buf, &unin->prop.cv_property)) {
+	ut16 prop;
+	if (!rz_buf_read_le16(buf, &prop)) {
 		RZ_FREE(unin);
 		return NULL;
 	}
+	parse_codeview_property(&unin->prop, prop);
 	read_bytes += sizeof(ut16);
 	if (!rz_buf_read_le32(buf, &unin->field_list)) {
 		RZ_FREE(unin);
