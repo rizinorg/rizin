@@ -40,6 +40,10 @@ RZ_IPI bool parse_gdata_stream(RzPdb *pdb, MsfStream *stream) {
 		pdb->s_gdata = RZ_NEW0(GDataStream);
 	}
 	GDataStream *s = pdb->s_gdata;
+	if (!s) {
+		RZ_LOG_ERROR("Error allocating memory.\n");
+		return false;
+	}
 	RzBuffer *buf = stream->stream_data;
 	s->global_list = rz_list_new();
 	if (!s->global_list) {

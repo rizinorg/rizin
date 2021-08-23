@@ -28,6 +28,10 @@ RZ_IPI bool parse_pe_stream(RzPdb *pdb, MsfStream *stream) {
 	}
 	RzBuffer *buf = stream->stream_data;
 	PeStream *s = pdb->s_pe;
+	if (!s) {
+		RZ_LOG_ERROR("Error allocating memory.\n");
+		return false;
+	}
 	if (!s->sections_hdrs) {
 		s->sections_hdrs = rz_list_newf(free);
 	}

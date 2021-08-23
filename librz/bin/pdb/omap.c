@@ -12,6 +12,10 @@ RZ_IPI bool parse_omap_stream(RzPdb *pdb, MsfStream *stream) {
 	}
 	RzBuffer *buf = stream->stream_data;
 	OmapStream *s = pdb->s_omap;
+	if (!s) {
+		RZ_LOG_ERROR("Error allocating memory.\n");
+		return false;
+	}
 	if (!s->entries) {
 		s->entries = rz_list_new();
 	}

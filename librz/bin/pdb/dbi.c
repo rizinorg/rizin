@@ -140,6 +140,10 @@ RZ_IPI bool parse_dbi_stream(RzPdb *pdb, MsfStream *stream) {
 	}
 	pdb->s_dbi = RZ_NEW0(DbiStream);
 	DbiStream *s = pdb->s_dbi;
+	if (!s) {
+		RZ_LOG_ERROR("Error allocating memory.\n");
+		return false;
+	}
 	RzBuffer *buf = stream->stream_data;
 	// parse header
 	if (!parse_dbi_stream_header(s, buf) || !parse_dbi_stream_ex_header(s, buf)) {

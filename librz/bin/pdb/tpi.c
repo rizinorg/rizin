@@ -1768,6 +1768,10 @@ RZ_IPI bool parse_tpi_stream(RzPdb *pdb, MsfStream *stream) {
 	}
 	pdb->s_tpi = RZ_NEW0(TpiStream);
 	TpiStream *s = pdb->s_tpi;
+	if (!s) {
+		RZ_LOG_ERROR("Error allocating memory.\n");
+		return false;
+	}
 	s->types = NULL;
 	RzBuffer *buf = stream->stream_data;
 	if (!parse_tpi_stream_header(s, buf)) {
