@@ -181,7 +181,7 @@ static ut64 get_offset(RzBinFile *bf, int type, int index) {
 		return -1;
 	}
 	switch (type) {
-	case 'm': // strings
+	case 'm': // method
 		return rz_bin_dex_resolve_method_offset_by_idx(dex, index);
 	case 's': // strings
 		return (int)rz_bin_dex_resolve_string_offset_by_idx(dex, index);

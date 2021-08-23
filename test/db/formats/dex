@@ -57,9 +57,9 @@ NAME=DEX dex38.dex invoke-polymorphic
 FILE=bins/dex/dex38.dex
 CMDS=pi 2 @0x00125e; pi 3 @0x0012da
 EXPECT=<<EOF
-invoke-polymorphic {v1, v2, v3}, Ljava/lang/invoke/MethodHandle;.invoke([Ljava/lang/Object;)Ljava/lang/Object;, (II)Ljava/lang/Object;
+invoke-polymorphic {v1, v2, v3}, Ljava/lang/invoke/MethodHandle;->invoke([Ljava/lang/Object;)Ljava/lang/Object;, (II)Ljava/lang/Object;
 move-result-object v1
-invoke-polymorphic {v0, v1, v2}, Ljava/lang/invoke/MethodHandle;.invoke([Ljava/lang/Object;)Ljava/lang/Object;, (Ljava/lang/String;I)Ljava/lang/Object;
+invoke-polymorphic {v0, v1, v2}, Ljava/lang/invoke/MethodHandle;->invoke([Ljava/lang/Object;)Ljava/lang/Object;, (Ljava/lang/String;I)Ljava/lang/Object;
 move-result-object v0
 return-object v0
 EOF
@@ -258,11 +258,11 @@ EXPECT=<<EOF
 iput v0, v1, LHello;->localVar I
 sput v0, LHello;->localVar2 I
 sget-object v0, Ljava/lang/System;->out Ljava/io/PrintStream;
-invoke-virtual {v0, v1}, Ljava/io/PrintStream;.println(Ljava/lang/String;)V
-invoke-virtual {v0, v1}, LHello;.foo(I)V
+invoke-virtual {v0, v1}, Ljava/io/PrintStream;->println(Ljava/lang/String;)V
+invoke-virtual {v0, v1}, LHello;->foo(I)V
 new-instance v0, LHello;
 new-instance v1, Ljava/lang/StringBuilder;
-invoke-direct {v1}, Ljava/lang/StringBuilder;.<init>()V
+invoke-direct {v1}, Ljava/lang/StringBuilder;-><init>()V
 EOF
 RUN
 
