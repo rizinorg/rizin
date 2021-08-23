@@ -10,40 +10,26 @@ struct {
 	{ "1234567890abcdefghijklmnopqrstuvwxyz\n", "\x1f\x8b\x08\x08\x00\x00\x00\x00\x00\x03\x31\x33\x00\x33\x34\x32\x36\x31\x35\x33\xb7\xb0\x34\x48\x4c\x4a\x4e\x49\x4d\x4b\xcf\xc8\xcc\xca\xce\xc9\xcd\xcb\x2f\x28\x2c\x2a\x2e\x29\x2d\x2b\xaf\xa8\xac\xe2\x02\x00\x9f\x79\xdc\xdb\x25\x00\x00\x00" }
 };
 
+int deflated_lengths[] = { 287, 640, 60 };
+
 bool test_rz_inflate(void) {
-	unsigned char *inflated0 = rz_inflate((unsigned char *)test_cases[0].deflated, 287, NULL, NULL);
-	mu_assert_notnull(inflated0, "rz_inflate returned null for test 0");
-	mu_assert_memeq(inflated0, (unsigned char *)test_cases[0].inflated, strlen(test_cases[0].inflated), "rz_inflate failed for test 0");
-	free(inflated0);
-
-	unsigned char *inflated1 = rz_inflate((unsigned char *)test_cases[1].deflated, 640, NULL, NULL);
-	mu_assert_notnull(inflated1, "rz_inflate returned null for test 1");
-	mu_assert_memeq(inflated1, (unsigned char *)test_cases[1].inflated, strlen(test_cases[1].inflated), "rz_inflate failed for test 1");
-	free(inflated1);
-
-	unsigned char *inflated2 = rz_inflate((unsigned char *)test_cases[2].deflated, 60, NULL, NULL);
-	mu_assert_notnull(inflated2, "rz_inflate returned null for test 2");
-	mu_assert_memeq(inflated2, (unsigned char *)test_cases[2].inflated, strlen(test_cases[2].inflated), "rz_inflate failed for test 2");
-	free(inflated2);
+	for (int i = 0; i < 3; i++) {
+		unsigned char *inflated = rz_inflate((unsigned char *)test_cases[i].deflated, deflated_lengths[i], NULL, NULL);
+		mu_assert_notnull(inflated, "rz_inflate returned null");
+		mu_assert_memeq(inflated, (unsigned char *)test_cases[i].inflated, strlen(test_cases[i].inflated), "rz_inflate failed");
+		free(inflated);
+	}
 
 	mu_end;
 }
 
 bool test_rz_deflate(void) {
-	unsigned char *deflated0 = rz_deflate((unsigned char *)test_cases[0].inflated, strlen(test_cases[0].inflated), NULL, NULL);
-	mu_assert_notnull(deflated0, "rz_deflate returned null for test 0");
-	mu_assert_memeq(deflated0, (unsigned char *)test_cases[0].deflated, 287, "rz_deflate failed for 0");
-	free(deflated0);
-
-	unsigned char *deflated1 = rz_deflate((unsigned char *)test_cases[1].inflated, strlen(test_cases[1].inflated), NULL, NULL);
-	mu_assert_notnull(deflated1, "rz_deflate returned null for test 1");
-	mu_assert_memeq(deflated1, (unsigned char *)test_cases[1].deflated, 640, "rz_deflate failed for 1");
-	free(deflated1);
-
-	unsigned char *deflated2 = rz_deflate((unsigned char *)test_cases[2].inflated, strlen(test_cases[2].inflated), NULL, NULL);
-	mu_assert_notnull(deflated2, "rz_deflate returned null for test 2");
-	mu_assert_memeq(deflated2, (unsigned char *)test_cases[2].deflated, 60, "rz_deflate failed for 2");
-	free(deflated2);
+	for (int i = 0; i < 3; i++) {
+		unsigned char *deflated = rz_deflate((unsigned char *)test_cases[i].inflated, strlen(test_cases[i].inflated), NULL, NULL);
+		mu_assert_notnull(deflated, "rz_deflate returned null");
+		mu_assert_memeq(deflated, (unsigned char *)test_cases[i].deflated, deflated_lengths[i], "rz_deflate failed");
+		free(deflated);
+	}
 
 	mu_end;
 }
