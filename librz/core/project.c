@@ -24,8 +24,8 @@ RZ_API RZ_NONNULL const char *rz_project_err_message(RzProjectErr err) {
 		return "invalid content encountered";
 	case RZ_PROJECT_ERR_MIGRATION_FAILED:
 		return "migration failed";
-	case RZ_PROJECT_ERR_ZIP:
-		return "project file zip/unzip failed";
+	case RZ_PROJECT_ERR_COMPRESSION_FAILED:
+		return "project file compression failed";
 	case RZ_PROJECT_ERR_UNKNOWN: break;
 	}
 	return "unknown error";
@@ -61,7 +61,7 @@ RZ_API RzProjectErr rz_project_save_file(RzCore *core, const char *file) {
 	if (err == RZ_PROJECT_ERR_SUCCESS) {
 		if (!rz_file_deflate(tmp_file, file)) {
 			free(tmp_file);
-			return RZ_PROJECT_ERR_ZIP;
+			return RZ_PROJECT_ERR_COMPRESSION_FAILED;
 		}
 	}
 	free(tmp_file);
