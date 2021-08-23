@@ -93,8 +93,13 @@ RZ_API RzProject *rz_project_load_file_raw(const char *file) {
 		return NULL;
 	}
 
-	if (!rz_file_inflate(file, tmp_file)) {
-		return NULL;
+	if (rz_file_is_deflated(file)) {
+		if (!rz_file_inflate(file, tmp_file)) {
+			return NULL;
+		}
+	} else {
+		free(tmp_file);
+		tmp_file = strdup(file);
 	}
 
 	if (!sdb_text_load(prj, tmp_file)) {

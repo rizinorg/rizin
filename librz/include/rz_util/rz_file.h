@@ -71,6 +71,7 @@ RZ_API bool rz_file_copy(const char *src, const char *dst);
 RZ_API RzList *rz_file_globsearch(const char *globbed_path, int maxdepth);
 RZ_API bool rz_file_deflate(RZ_NONNULL const char *src, RZ_NONNULL const char *dst);
 RZ_API bool rz_file_inflate(RZ_NONNULL const char *src, RZ_NONNULL const char *dst);
+RZ_API bool rz_file_is_deflated(RZ_NONNULL const char *src);
 
 #ifdef __cplusplus
 }

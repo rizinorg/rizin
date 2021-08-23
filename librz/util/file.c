@@ -1310,3 +1310,11 @@ RZ_API bool rz_file_inflate(RZ_NONNULL const char *src, RZ_NONNULL const char *d
 
 	return result;
 }
+
+RZ_API bool rz_file_is_deflated(RZ_NONNULL const char *src) {
+	rz_return_val_if_fail(src, false);
+
+	unsigned char *header = (unsigned char *)rz_file_slurp_range(src, 0, 3, NULL);
+
+	return (header[0] == 0x1f && header[1] == 0x8b && header[2] == 0x08); // 1f 8b 08
+}
