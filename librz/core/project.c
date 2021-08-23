@@ -26,7 +26,10 @@ RZ_API RZ_NONNULL const char *rz_project_err_message(RzProjectErr err) {
 		return "migration failed";
 	case RZ_PROJECT_ERR_COMPRESSION_FAILED:
 		return "project file compression failed";
-	case RZ_PROJECT_ERR_UNKNOWN: break;
+	case RZ_PROJECT_ERR_MKSTEMP_FAILED:
+		return "failed to create a temporary file";
+	case RZ_PROJECT_ERR_UNKNOWN:
+		break;
 	}
 	return "unknown error";
 }
@@ -39,7 +42,12 @@ RZ_API RzProjectErr rz_project_save(RzCore *core, RzProject *prj, const char *fi
 }
 
 RZ_API RzProjectErr rz_project_save_file(RzCore *core, const char *file) {
-	char *tmp_file = rz_file_temp("svprj");
+	char *tmp_file;
+	int err_mkstemp = rz_file_mkstemp("svprj", &tmp_file);
+
+	if (err_mkstemp || !tmp_file) {
+		return RZ_PROJECT_ERR_MKSTEMP_FAILED;
+	}
 
 	RzProject *prj = sdb_new0();
 	if (!prj) {
@@ -54,18 +62,20 @@ RZ_API RzProjectErr rz_project_save_file(RzCore *core, const char *file) {
 		err = RZ_PROJECT_ERR_FILE;
 	}
 	sdb_free(prj);
-	if (err == RZ_PROJECT_ERR_SUCCESS) {
-		rz_config_set(core->config, "prj.file", file);
+
+	if (err != RZ_PROJECT_ERR_SUCCESS) {
+		goto tmp_file_err;
 	}
 
-	if (err == RZ_PROJECT_ERR_SUCCESS) {
-		if (!rz_file_deflate(tmp_file, file)) {
-			free(tmp_file);
-			return RZ_PROJECT_ERR_COMPRESSION_FAILED;
-		}
+	if (!rz_file_deflate(tmp_file, file)) {
+		err = RZ_PROJECT_ERR_COMPRESSION_FAILED;
+		goto tmp_file_err;
 	}
+
+	rz_config_set(core->config, "prj.file", file);
+
+tmp_file_err:
 	free(tmp_file);
-
 	return err;
 }
 
@@ -76,7 +86,13 @@ RZ_API RzProject *rz_project_load_file_raw(const char *file) {
 		return NULL;
 	}
 
-	char *tmp_file = rz_file_temp("ldprj");
+	char *tmp_file;
+	int err_mkstemp = rz_file_mkstemp("ldprj", &tmp_file);
+
+	if (err_mkstemp || !tmp_file) {
+		return NULL;
+	}
+
 	if (!rz_file_inflate(file, tmp_file)) {
 		return NULL;
 	}
