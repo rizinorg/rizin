@@ -333,7 +333,8 @@ static RzType *parse_type_nest(const RzTypeDB *typedb, TpiStream *stream, TpiTyp
  * \brief Parses struct member
  *
  * \param typedb Types DB instance
- * \param type_info Current type info (member)
+ * \param stream TPI Stream
+ * \param type_info Current TpiType (member)
  * \return RzTypeStructMember* parsed member, NULL if fail
  */
 static RzTypeStructMember *parse_struct_member(const RzTypeDB *typedb, TpiStream *stream, TpiType *type_info) {
@@ -397,6 +398,7 @@ cleanup:
  * \brief Parses structures into BaseType and saves them into hashtable
  *
  * \param t RzTypeDB instance
+ * \param stream TPI Stream
  * \param type Current type
  */
 static RzType *parse_structure(const RzTypeDB *typedb, TpiStream *stream, TpiType *type) {
@@ -470,7 +472,8 @@ cleanup:
  * \brief Parses union member
  *
  * \param typedb Types DB instance
- * \param type_info Current type info (member)
+ * \param stream TPI Stream
+ * \param type_info Current TpiType (member)
  * \return RzTypeUnionMember* parsed member, NULL if fail
  */
 static RzTypeUnionMember *parse_union_member(const RzTypeDB *typedb, TpiStream *stream, TpiType *type_info) {
@@ -518,8 +521,9 @@ cleanup:
 
 /**
  * \brief Parses union into BaseType and saves it into hashtable
- *
- * \param type_info Current type info (enum case)
+ * \param typedb Types DB instance
+ * \param stream TPI Stream
+ * \param type_info Current TpiType (enum case)
  */
 static RzType *parse_union(const RzTypeDB *typedb, TpiStream *stream, TpiType *type) {
 	rz_return_val_if_fail(typedb && stream && type, NULL);
@@ -590,7 +594,6 @@ cleanup:
 
 /**
  * \brief Parse enum case
- *
  * \param type_info Current type info (enum case)
  * \return RzTypeEnumCase* parsed enum case, NULL if fail
  */
@@ -617,6 +620,7 @@ cleanup:
  * \brief Parses enum into BaseType and saves it into SDB
  *
  * \param t RzTypeDB instance
+ * \param stream TPI Stream
  * \param type Current type
  */
 static RzType *parse_enum(const RzTypeDB *typedb, TpiStream *stream, TpiType *type) {
@@ -689,6 +693,7 @@ cleanup:
  * \brief Delegate the type parsing to appropriate function
  *
  * \param t RzTypeDB instance
+ * \param stream TPI Stream
  * \param type Current type
  */
 static void parse_types(const RzTypeDB *typedb, TpiStream *stream, TpiType *type) {
@@ -720,10 +725,10 @@ static void parse_types(const RzTypeDB *typedb, TpiStream *stream, TpiType *type
 }
 
 /**
- * \brief Saves PDB types from TPI stream into the SDB
+ * \brief Saves PDB types from TPI stream into the type database
  *
  * \param t RzTypeDB instance
- * \param pdb PDB information
+ * \param pdb PDB instance
  */
 RZ_API void rz_parse_pdb_types(const RzTypeDB *typedb, const RzPdb *pdb) {
 	rz_return_if_fail(typedb && pdb);

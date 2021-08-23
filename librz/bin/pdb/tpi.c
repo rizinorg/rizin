@@ -32,7 +32,7 @@ int tpi_type_node_cmp(const void *incoming, const RBNode *in_tree, void *user) {
  *
  * \param idx
  */
-RZ_API char *rz_bin_pdb_calling_convention_as_string(TpiCallingConvention idx) {
+RZ_API RZ_OWN char *rz_bin_pdb_calling_convention_as_string(RZ_NONNULL TpiCallingConvention idx) {
 	switch (idx) {
 	case NEAR_C:
 	case FAR_C:
@@ -366,7 +366,7 @@ static ut64 get_numeric_val(Tpi_Type_Numeric *numeric) {
  * \param t TpiType
  * \return bool
  */
-RZ_API bool rz_bin_pdb_type_is_fwdref(TpiType *t) {
+RZ_API bool rz_bin_pdb_type_is_fwdref(RZ_NONNULL TpiType *t) {
 	rz_return_val_if_fail(t, false); // return val stands for we do nothing for it
 	switch (t->leaf_type) {
 	case LF_UNION: {
@@ -393,7 +393,14 @@ RZ_API bool rz_bin_pdb_type_is_fwdref(TpiType *t) {
 	}
 }
 
-RZ_API RzList *rz_bin_pdb_get_type_members(TpiStream *stream, TpiType *t) {
+/**
+ * \brief Get the TpiType member list 
+ * 
+ * \param stream TPI stream
+ * \param t TpiType
+ * \return RzList *
+ */
+RZ_API RZ_BORROW RzList *rz_bin_pdb_get_type_members(RZ_NONNULL TpiStream *stream, TpiType *t) {
 	rz_return_val_if_fail(t, NULL);
 	TpiType *tmp;
 	switch (t->leaf_type) {
@@ -432,7 +439,13 @@ RZ_API RzList *rz_bin_pdb_get_type_members(TpiStream *stream, TpiType *t) {
 	}
 }
 
-RZ_API char *rz_bin_pdb_get_type_name(TpiType *type) {
+/**
+ * \brief Get the name of the givin type
+ * 
+ * \param type TpiType *
+ * \return char *
+ */
+RZ_API RZ_BORROW char *rz_bin_pdb_get_type_name(RZ_NONNULL TpiType *type) {
 	rz_return_val_if_fail(type, NULL);
 	switch (type->leaf_type) {
 	case LF_MEMBER: {
@@ -486,7 +499,13 @@ RZ_API char *rz_bin_pdb_get_type_name(TpiType *type) {
 	}
 }
 
-RZ_API ut64 rz_bin_pdb_get_type_val(TpiType *type) {
+/**
+ * \brief Get the numric inside the givin type
+ * 
+ * \param type TpiType *
+ * \return ut64
+ */
+RZ_API ut64 rz_bin_pdb_get_type_val(RZ_NONNULL TpiType *type) {
 	rz_return_val_if_fail(type, -1);
 	switch (type->leaf_type) {
 	case LF_ONEMETHOD: {
@@ -1777,11 +1796,12 @@ RZ_IPI bool parse_tpi_stream(RzPdb *pdb, MsfStream *stream) {
 }
 
 /**
- * \brief Get SType that matches tpi stream index
- *
+ * \brief Get TpiType that matches tpi stream index
+ * \param stream TPI Stream
  * \param index TPI Stream Index
  */
-RZ_API TpiType *rz_bin_pdb_get_type_by_index(TpiStream *stream, ut32 index) {
+RZ_API RZ_BORROW TpiType *rz_bin_pdb_get_type_by_index(RZ_NONNULL TpiStream *stream, ut32 index) {
+	rz_return_val_if_fail(stream, NULL);
 	if (index == 0) {
 		return NULL;
 	}

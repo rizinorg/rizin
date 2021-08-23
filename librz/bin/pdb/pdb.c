@@ -475,8 +475,14 @@ error:
 	return false;
 }
 
-RZ_API RZ_OWN RzPdb *
-rz_bin_pdb_parse_from_file(RZ_NONNULL const char *filename) {
+/**
+ * \brief Parse pdb file from the givin path
+ * 
+ * \param filename path of pdb file
+ * \return RzPdb *
+ */
+RZ_API RZ_OWN RzPdb *rz_bin_pdb_parse_from_file(RZ_NONNULL const char *filename) {
+	rz_return_val_if_fail(filename, NULL);
 	RzBuffer *buf = rz_buf_new_slurp(filename);
 	if (!buf) {
 		eprintf("%s: Error reading file \"%s\"\n", __FUNCTION__, filename);
@@ -485,7 +491,13 @@ rz_bin_pdb_parse_from_file(RZ_NONNULL const char *filename) {
 	return rz_bin_pdb_parse_from_buf(buf);
 }
 
-RZ_API RZ_OWN RzPdb *rz_bin_pdb_parse_from_buf(RZ_NONNULL RzBuffer *buf) {
+/**
+ * \brief Parse pdb from buffer
+ * 
+ * \param buf mmap of the PDB file
+ * \return RzPdb *
+ */
+RZ_API RZ_OWN RzPdb *rz_bin_pdb_parse_from_buf(RZ_NONNULL const RzBuffer *buf) {
 	rz_return_val_if_fail(buf, NULL);
 	RzPdb *pdb = RZ_NEW0(RzPdb);
 	if (!pdb) {
@@ -525,6 +537,12 @@ error:
 	return NULL;
 }
 
+/**
+ * \brief Free PDB instance
+ * 
+ * \param pdb PDB instance
+ * \return void 
+ */
 RZ_API void rz_bin_pdb_free(RzPdb *pdb) {
 	rz_buf_free(pdb->buf);
 	RZ_FREE(pdb->super_block);

@@ -111,7 +111,7 @@ typedef struct rz_pdb_t {
 } RzPdb;
 
 RZ_API RZ_OWN RzPdb *rz_bin_pdb_parse_from_file(RZ_NONNULL const char *filename);
-RZ_API RZ_OWN RzPdb *rz_bin_pdb_parse_from_buf(RZ_NONNULL RzBuffer *buf);
+RZ_API RZ_OWN RzPdb *rz_bin_pdb_parse_from_buf(RZ_NONNULL const RzBuffer *buf);
 RZ_API void rz_bin_pdb_print_types(RzTypeDB *db, const RzPdb *pdb, PJ *pj, const int mode);
 RZ_API void rz_bin_pdb_print_gvars(RzPdb *pdb, ut64 img_base, PJ *pj, int format);
 RZ_API void rz_bin_pdb_free(RzPdb *pdb);
@@ -136,12 +136,12 @@ RZ_IPI void free_pe_stream(PeStream *stream);
 //TPI
 RZ_IPI bool parse_tpi_stream(RzPdb *pdb, MsfStream *stream);
 // Get TpiType data by type_index
-RZ_API TpiType *rz_bin_pdb_get_type_by_index(TpiStream *stream, ut32 index);
-RZ_API char *rz_bin_pdb_calling_convention_as_string(TpiCallingConvention idx);
-RZ_API bool rz_bin_pdb_type_is_fwdref(TpiType *t);
-RZ_API RzList *rz_bin_pdb_get_type_members(TpiStream *stream, TpiType *t);
-RZ_API char *rz_bin_pdb_get_type_name(TpiType *type);
-RZ_API ut64 rz_bin_pdb_get_type_val(TpiType *type);
+RZ_API RZ_BORROW TpiType *rz_bin_pdb_get_type_by_index(RZ_NONNULL TpiStream *stream, ut32 index);
+RZ_API RZ_OWN char *rz_bin_pdb_calling_convention_as_string(RZ_NONNULL TpiCallingConvention idx);
+RZ_API bool rz_bin_pdb_type_is_fwdref(RZ_NONNULL TpiType *t);
+RZ_API RZ_BORROW RzList *rz_bin_pdb_get_type_members(RZ_NONNULL TpiStream *stream, TpiType *t);
+RZ_API RZ_BORROW char *rz_bin_pdb_get_type_name(RZ_NONNULL TpiType *type);
+RZ_API ut64 rz_bin_pdb_get_type_val(RZ_NONNULL TpiType *type);
 RZ_IPI TpiType *parse_simple_type(TpiStream *stream, ut32 idx);
 RZ_IPI void free_tpi_stream(TpiStream *stream);
 
