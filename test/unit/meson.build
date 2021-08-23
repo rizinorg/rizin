@@ -94,7 +94,8 @@ if get_option('enable_tests')
     'uleb128',
     'unum',
     'util',
-    'vector'
+    'vector',
+	'zip'
   ]
 
   unit_test_env = environment()
