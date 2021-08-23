@@ -375,6 +375,10 @@ RZ_OWN RzVector *Elf_(rz_bin_elf_convert_sections)(RZ_NONNULL ELFOBJ *bin, RZ_NO
 RZ_OWN RzVector *Elf_(rz_bin_elf_sections_new)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
+	if (!bin->ehdr.e_shnum) {
+		return NULL;
+	}
+
 	if (!Elf_(rz_bin_elf_check_array)(bin, bin->ehdr.e_shoff, bin->ehdr.e_shnum, sizeof(Elf_(Phdr)))) {
 		RZ_LOG_WARN("Invalid section header (check array failed).\n");
 		return NULL;
