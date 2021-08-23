@@ -13,6 +13,7 @@ rz_core_sources = [
   'cconfig.c',
   'cdebug.c',
   'cdwarf.c',
+  'cpdb.c',
   'chash.c',
   'cheap.c',
   'cio.c',

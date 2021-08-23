@@ -6,7 +6,6 @@
 #include <rz_config.h>
 #include "rz_util.h"
 #include "rz_util/rz_time.h"
-#include "../bin/pdb/pdb.h"
 
 #define is_in_range(at, from, sz) ((at) >= (from) && (at) < ((from) + (sz)))
 
@@ -2109,49 +2108,6 @@ RZ_API void rz_core_bin_print_source_line_info(RzCore *core, const RzBinSourceLi
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
 	}
-}
-
-RZ_API bool rz_core_pdb_info(RzCore *core, const char *file, PJ *pj, int mode) {
-	rz_return_val_if_fail(core && file, false);
-
-	ut64 baddr = rz_config_get_i(core->config, "bin.baddr");
-	if (core->bin->cur && core->bin->cur->o && core->bin->cur->o->opts.baseaddr) {
-		baddr = core->bin->cur->o->opts.baseaddr;
-	} else {
-		eprintf("Warning: Cannot find base address, flags will probably be misplaced\n");
-	}
-
-	RzPdb *pdb = rz_bin_pdb_parse_from_file(file);
-	if (!pdb) {
-		return false;
-	}
-
-	switch (mode) {
-	case RZ_MODE_SET:
-		rz_core_cmd0(core, ".iP*");
-		return true;
-	case RZ_MODE_JSON:
-		mode = 'j';
-		break;
-	case RZ_MODE_PRINT:
-		mode = 'd';
-		break;
-	default:
-		break;
-	}
-	if (mode == 'j') {
-		pj_o(pj);
-	}
-	// Save compound types into types database
-	rz_parse_pdb_types(core->analysis->typedb, pdb);
-	rz_bin_pdb_print_types(core->analysis->typedb, pdb, pj, mode);
-	rz_bin_pdb_print_gvars(pdb, baddr, pj, mode);
-	rz_bin_pdb_free(pdb);
-
-	if (mode == 'j') {
-		pj_end(pj);
-	}
-	return true;
 }
 
 static int bin_main(RzCore *r, RzBinFile *binfile, PJ *pj, int mode, int va) {
@@ -4354,7 +4310,7 @@ RZ_API int rz_core_bin_info(RzCore *core, int action, PJ *pj, int mode, int va, 
 		ret &= binfile ? bin_dwarf(core, binfile, pj, mode) : false;
 	}
 	if ((action & RZ_CORE_BIN_ACC_PDB)) {
-		ret &= rz_core_pdb_info(core, core->bin->file, pj, mode);
+		ret &= rz_core_pdb_info(core, core->bin->file, mode);
 	}
 	if ((action & RZ_CORE_BIN_ACC_ENTRIES)) {
 		ret &= bin_entry(core, pj, mode, loadaddr, va, false);

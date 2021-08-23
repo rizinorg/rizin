@@ -6,6 +6,7 @@
 #include <windows_heap.h>
 #include "..\..\debug\p\native\maps\windows_maps.h"
 #include "..\..\bin\pdb\pdb_downloader.h"
+#include "..\..\bin\pdb\pdb.h"
 
 /*
 *	Viewer discretion advised: Spaghetti code ahead
@@ -333,14 +334,25 @@ static bool GetHeapGlobalsOffset(RzDebug *dbg, HANDLE h_proc) {
 	}
 
 	// Get ntdll.dll PDB info and parse json output
-	PJ *pj = pj_new();
-	if (!rz_core_pdb_info(core, pdb_path, pj, RZ_MODE_JSON)) {
-		pj_free(pj);
+	RzPdb *pdb = rz_bin_pdb_parse_from_file(pdb_path);
+	if (!pdb) {
 		free(pdb_path);
 		goto fail;
 	}
+
 	free(pdb_path);
-	char *j = pj_drain(pj);
+	ut64 baddr = rz_config_get_i(core->config, "bin.baddr");
+	if (core->bin->cur && core->bin->cur->o && core->bin->cur->o->opts.baseaddr) {
+		baddr = core->bin->cur->o->opts.baseaddr;
+	} else {
+		eprintf("Warning: Cannot find base address, flags will probably be misplaced\n");
+	}
+	char *j = rz_bin_pdb_gvars_as_string(pdb, baddr, RZ_OUTPUT_MODE_JSON);
+	if (!j) {
+		rz_bin_pdb_free(pdb);
+		goto fail;
+	}
+	rz_bin_pdb_free(pdb);
 	RzJson *json = rz_json_parse(j);
 	if (!json) {
 		RZ_LOG_ERROR("rz_core_pdb_info returned invalid JSON");

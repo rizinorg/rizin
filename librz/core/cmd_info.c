@@ -947,7 +947,7 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 						free(filename);
 						break;
 					}
-					rz_core_pdb_info(core, filename, pj, mode);
+					rz_core_pdb_info(core, filename, mode);
 					free(filename);
 					break;
 				case '?':

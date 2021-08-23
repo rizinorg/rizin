@@ -8,21 +8,15 @@
 
 #include "pdb.h"
 
-/**
- * \brief Prints out types in a default format "idpi" command
- *
- * \param pdb pdb structure for printing function
- * \param types List of types
- */
-static void print_types_regular(RzTypeDB *db, const RzPdb *pdb, const RzList *types) {
-	rz_return_if_fail(pdb);
+static char *pdb_type_as_string_regular(const RzTypeDB *db, const RzPdb *pdb, const RzList *types) {
+	rz_return_val_if_fail(pdb && db, NULL);
 	if (!types) {
 		eprintf("there is nothing to print!\n");
 	}
 	RzListIter *it;
 	RzBaseType *type;
+	RzStrBuf *buf = rz_strbuf_new(NULL);
 	rz_list_foreach (types, it, type) {
-		RzStrBuf *buf = rz_strbuf_new(NULL);
 		switch (type->kind) {
 		case RZ_BASE_TYPE_KIND_STRUCT: {
 			rz_strbuf_appendf(buf, "struct %s { \n", type->name);
@@ -62,22 +56,22 @@ static void print_types_regular(RzTypeDB *db, const RzPdb *pdb, const RzList *ty
 		default:
 			break;
 		}
-		rz_cons_printf("%s\n", rz_strbuf_get(buf));
-		rz_strbuf_free(buf);
 	}
+	char *str = strdup(rz_strbuf_get(buf));
+	rz_strbuf_free(buf);
+	return str;
 }
 
-/**
- * \brief Prints out types in a json format - "idpij" command
- *
- * \param pdb pdb structure for printing function
- * \param types List of types
- */
-static void print_types_json(RzTypeDB *db, const RzPdb *pdb, PJ *pj, const RzList *types) {
-	rz_return_if_fail(pdb && types && pj);
+static char *pdb_type_as_string_json(const RzTypeDB *db, const RzPdb *pdb, const RzList *types) {
+	rz_return_val_if_fail(db && pdb && types, NULL);
 
 	RzListIter *it;
 	RzBaseType *type;
+	PJ *pj = pj_new();
+	if (!pj) {
+		return NULL;
+	}
+	pj_o(pj);
 	rz_list_foreach (types, it, type) {
 		pj_o(pj);
 		switch (type->kind) {
@@ -130,56 +124,81 @@ static void print_types_json(RzTypeDB *db, const RzPdb *pdb, PJ *pj, const RzLis
 		}
 		pj_end(pj);
 	}
+	pj_end(pj);
+	char *str = strdup(pj_string(pj));
+	pj_free(pj);
+	return str;
 }
 
 /**
- * \brief Prints out all the type information in regular,json or pf format
- *
- * \param pdb PDB information
+ * \brief return the output text for types in PDB
+ * \param db RzTypeDB
+ * \param pdb PDB instance
  * \param mode printing mode
+ * \return string of pdb types
  */
-RZ_API void rz_bin_pdb_print_types(RzTypeDB *db, const RzPdb *pdb, PJ *pj, const int mode) {
+RZ_API RZ_OWN char *rz_bin_pdb_types_as_string(RZ_NONNULL const RzTypeDB *db, RZ_NONNULL const RzPdb *pdb, const RzOutputMode mode) {
+	rz_return_val_if_fail(db && pdb, NULL);
 	TpiStream *stream = pdb->s_tpi;
-
 	if (!stream) {
 		eprintf("There is no tpi stream in current pdb\n");
-		return;
+		return NULL;
 	}
 	switch (mode) {
-	case 'd':
-		print_types_regular(db, pdb, stream->print_type);
-		return;
-	case 'j':
-		print_types_json(db, pdb, pj, stream->print_type);
-		return;
+	case RZ_OUTPUT_MODE_STANDARD:
+		return pdb_type_as_string_regular(db, pdb, stream->print_type);
+	case RZ_OUTPUT_MODE_JSON:
+		return pdb_type_as_string_json(db, pdb, stream->print_type);
+	default:
+		return NULL;
 	}
 }
 
-RZ_API void rz_bin_pdb_print_gvars(RzPdb *pdb, ut64 img_base, PJ *pj, int format) {
+/**
+ * \brief return the output text for global symbols in PDB
+ * 
+ * \param pdb PDB instance
+ * \param img_base image base addr
+ * \param mode print mode
+ * \return string of pdb symbols
+ */
+RZ_API RZ_OWN char *rz_bin_pdb_gvars_as_string(RZ_NONNULL const RzPdb *pdb, const ut64 img_base, RzOutputMode mode) {
+	rz_return_val_if_fail(pdb, NULL);
 	PeImageSectionHeader *sctn_header = 0;
 	GDataStream *gsym_data_stream = 0;
 	PeStream *pe_stream = 0;
 	OmapStream *omap_stream;
 	GDataGlobal *gdata = 0;
 	RzListIter *it = 0;
+	PJ *pj = NULL;
 	char *name;
-
-	if (format == 'j') {
+	RzStrBuf *buf = rz_strbuf_new(NULL);
+	if (!buf) {
+		return NULL;
+	}
+	if (mode == RZ_OUTPUT_MODE_JSON) {
+		pj = pj_new();
+		if (!pj) {
+			rz_strbuf_free(buf);
+			return NULL;
+		}
+		pj_o(pj);
 		pj_ka(pj, "gvars");
 	}
 	gsym_data_stream = pdb->s_gdata;
 	pe_stream = pdb->s_pe;
 	omap_stream = pdb->s_omap;
 	if (!pe_stream) {
-		return;
+		rz_strbuf_free(buf);
+		return NULL;
 	}
 	rz_list_foreach (gsym_data_stream->global_list, it, gdata) {
 		sctn_header = rz_list_get_n(pe_stream->sections_hdrs, (gdata->segment - 1));
 		if (sctn_header) {
 			name = rz_bin_demangle_msvc(gdata->name);
 			name = (name) ? name : strdup(gdata->name);
-			switch (format) {
-			case 'j': // JSON
+			switch (mode) {
+			case RZ_OUTPUT_MODE_JSON: // JSON
 				pj_o(pj);
 				pj_kN(pj, "address", (img_base + omap_remap(omap_stream, gdata->offset + sctn_header->virtual_address)));
 				pj_kN(pj, "symtype", gdata->symtype);
@@ -187,8 +206,8 @@ RZ_API void rz_bin_pdb_print_gvars(RzPdb *pdb, ut64 img_base, PJ *pj, int format
 				pj_ks(pj, "gdata_name", name);
 				pj_end(pj);
 				break;
-			case 'd':
-				rz_cons_printf("0x%08" PFMT64x "  %d  %.*s  %s\n",
+			case RZ_OUTPUT_MODE_STANDARD:
+				rz_strbuf_appendf(buf, "0x%08" PFMT64x "  %d  %.*s  %s\n",
 					(ut64)(img_base + omap_remap(omap_stream, gdata->offset + sctn_header->virtual_address)),
 					gdata->symtype, PDB_SIZEOF_SECTION_NAME, sctn_header->name, name);
 				break;
@@ -198,9 +217,15 @@ RZ_API void rz_bin_pdb_print_gvars(RzPdb *pdb, ut64 img_base, PJ *pj, int format
 			free(name);
 		}
 	}
-	if (format == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
+		pj_end(pj);
+		rz_strbuf_append(buf, pj_string(pj));
+		pj_free(pj);
 	}
+	char *str = strdup(rz_strbuf_get(buf));
+	rz_strbuf_free(buf);
+	return str;
 }
 
 static bool parse_pdb_stream(RzPdb *pdb, MsfStream *stream) {
