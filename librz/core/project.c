@@ -59,7 +59,7 @@ RZ_API RzProjectErr rz_project_save_file(RzCore *core, const char *file) {
 	}
 
 	if (err == RZ_PROJECT_ERR_SUCCESS) {
-		if (!rz_file_zip(tmp_file, file)) {
+		if (!rz_file_deflate(tmp_file, file)) {
 			free(tmp_file);
 			return RZ_PROJECT_ERR_ZIP;
 		}
@@ -77,8 +77,8 @@ RZ_API RzProject *rz_project_load_file_raw(const char *file) {
 	}
 
 	char *tmp_file = rz_file_temp("ldprj");
-	if (!rz_file_unzip(file, tmp_file)) {
-		return RZ_PROJECT_ERR_ZIP;
+	if (!rz_file_inflate(file, tmp_file)) {
+		return NULL;
 	}
 
 	if (!sdb_text_load(prj, tmp_file)) {
