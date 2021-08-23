@@ -398,6 +398,7 @@ RzList *rz_bin_le_get_sections(rz_bin_le_obj_t *bin) {
 					// Why is it big endian???
 					ut32 tmp_offset;
 					if (!rz_buf_read_be32_at(bin->buf, page_entry_off, &tmp_offset)) {
+						rz_bin_section_free(s);
 						break;
 					}
 
