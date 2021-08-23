@@ -135,6 +135,10 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 		goto another_castle;
 	}
 	ut64 total_size = hdr->text_size + hdr->ro_size + hdr->data_size;
+	if (total_size < hdr->text_size) {
+		// Prevent integer overflow
+		goto another_castle;
+	}
 	tmp = RZ_NEWS0(ut8, total_size);
 	if (!tmp) {
 		goto another_castle;
