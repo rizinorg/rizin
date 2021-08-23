@@ -1262,24 +1262,42 @@ RZ_API char *rz_file_path_join(const char *s1, const char *s2) {
 RZ_API bool rz_file_deflate(RZ_NONNULL const char *src, RZ_NONNULL const char *dst) {
 	rz_return_val_if_fail(src && dst, false);
 
-	size_t len;
-	int comp_len;
-	char *content = rz_file_slurp(src, &len);
-	if (!content) {
+	RzBuffer *src_buf = rz_buf_new_file(src, O_RDONLY, 0);
+	RzBuffer *dst_buf = rz_buf_new_file(dst, O_WRONLY | O_CREAT, 0644);
+
+	if (!(src_buf && dst_buf)) {
+		free(src_buf);
+		free(dst_buf);
 		return false;
 	}
 
-	unsigned char *comp_content = rz_deflate((unsigned char *)content, len, NULL, &comp_len);
-	if (!comp_content) {
-		free(content);
-		return false;
+	ut64 buf_size = 1 << 14; // 16 KB
+	unsigned char *src_data = malloc(buf_size), *dst_data;
+	ut64 src_cursor = 0, dst_cursor = 0;
+
+	st64 read_len;
+	int write_len = 0;
+
+	while ((read_len = rz_buf_read_at(src_buf, src_cursor, src_data, buf_size)) > 0) {
+		dst_data = rz_deflate(src_data, read_len, NULL, &write_len);
+		if (!dst_data) {
+			return false;
+		}
+
+		write_len = rz_buf_write_at(dst_buf, dst_cursor, dst_data, write_len);
+		if (write_len == -1) {
+			return false;
+		}
+
+		src_cursor += read_len;
+		dst_cursor += write_len;
+		free(dst_data);
 	}
+	free(src_data);
+	free(src_buf);
+	free(dst_buf);
 
-	bool result = rz_file_dump(dst, comp_content, comp_len, false);
-	free(content);
-	free(comp_content);
-
-	return result;
+	return true;
 }
 
 /**
