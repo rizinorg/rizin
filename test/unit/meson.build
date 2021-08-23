@@ -95,7 +95,7 @@ if get_option('enable_tests')
     'unum',
     'util',
     'vector',
-	'zip'
+    'inflate_deflate'
   ]
 
   unit_test_env = environment()
