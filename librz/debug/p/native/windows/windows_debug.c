@@ -1257,7 +1257,7 @@ int w32_dbg_wait(RzDebug *dbg, int pid) {
 				eprintf("(%d) unknown event: %lu\n", pid, de.dwDebugEventCode);
 				ret = -1;
 			}
-			goto end;
+			next_event = 0;
 		}
 	} while (next_event);
 
@@ -1269,7 +1269,23 @@ int w32_dbg_wait(RzDebug *dbg, int pid) {
 			rz_warn_if_reached();
 		}
 	}
-
+#if __arm__ || __arm64__
+	if (ret != RZ_DEBUG_REASON_EXIT_TID) {
+		CONTEXT ctx;
+		suspend_thread(wrap->pi.hThread, dbg->bits);
+		get_thread_context(wrap->pi.hThread, (ut8 *)&ctx, sizeof(ctx), CONTEXT_CONTROL);
+		resume_thread(wrap->pi.hThread, dbg->bits);
+		if (ctx.Cpsr & 0x20) {
+			dbg->bits = RZ_SYS_BITS_16;
+		} else {
+#if __arm__
+			dbg->bits = RZ_SYS_BITS_32;
+#else
+			dbg->bits = RZ_SYS_BITS_64;
+#endif
+		}
+	}
+#endif
 end:
 	if (ret == RZ_DEBUG_REASON_DEAD) {
 		w32_detach(dbg, dbg->pid);
