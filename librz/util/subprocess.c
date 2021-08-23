@@ -854,7 +854,7 @@ static size_t read_to_strbuf(RzStrBuf *sb, int fd, bool *fd_eof, size_t n_bytes)
  * \param n_bytes Number of bytes to read. If \p pipe_fds references multiple FDs, this indicates the number to read in either of them.
  */
 static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_ms, int pipe_fd, size_t n_bytes) {
-	ut64 timeout_abs;
+	ut64 timeout_abs = UT64_MAX;
 	if (timeout_ms != UT64_MAX) {
 		timeout_abs = rz_time_now_mono() + timeout_ms * RZ_USEC_PER_MSEC;
 	}
