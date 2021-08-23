@@ -250,6 +250,7 @@ RZ_API bool rz_core_yank_dump(RzCore *core, ut64 pos, int format) {
 				for (i = pos; i < rz_buf_size(core->yank_buf); i++) {
 					ut8 tmp;
 					if (!rz_buf_read8_at(core->yank_buf, i, &tmp)) {
+						pj_free(pj);
 						return false;
 					}
 					rz_strbuf_appendf(buf, "%02x", tmp);
