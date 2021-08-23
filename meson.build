@@ -371,6 +371,9 @@ foreach item : [
     ['system', '#include <stdlib.h>', []],
     ['fork', '#include <unistd.h>', []],
     ['nice', '#include <unistd.h>', []],
+    ['openpty', '', [utl]],
+    ['forkpty', '', [utl]],
+    ['login_tty', '', [utl]],
     ['pipe2', '#define _GNU_SOURCE\n#include <fcntl.h>\n#include <unistd.h>', []]
   ]
   func = item[0]

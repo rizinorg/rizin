@@ -4753,6 +4753,7 @@ static void ds_print_esil_analysis(RDisasmState *ds) {
 		}
 		if (key) {
 			if (ds->asm_types < 1) {
+				free(key);
 				break;
 			}
 			RzType *fcn_type = rz_type_func_ret(core->analysis->typedb, key);

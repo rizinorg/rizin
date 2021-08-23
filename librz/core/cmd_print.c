@@ -1774,6 +1774,7 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block,
 					rz_core_cmd0(core, ".ts*");
 				} else {
 					eprintf("Parse error: %s\n", error_msg);
+					free(error_msg);
 				}
 			} else {
 				if (!rz_core_cmd_file(core, home) && !rz_core_cmd_file(core, path)) {

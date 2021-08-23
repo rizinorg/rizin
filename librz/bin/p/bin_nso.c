@@ -135,6 +135,10 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 		goto another_castle;
 	}
 	ut64 total_size = hdr->text_size + hdr->ro_size + hdr->data_size;
+	if (total_size < hdr->text_size) {
+		// Prevent integer overflow
+		goto another_castle;
+	}
 	tmp = RZ_NEWS0(ut8, total_size);
 	if (!tmp) {
 		goto another_castle;
@@ -206,6 +210,7 @@ static RzList *entries(RzBinFile *bf) {
 	ut32 tmp;
 	if (!rz_buf_read_le32_at(b, NSO_OFF(text_memoffset), &tmp)) {
 		rz_list_free(ret);
+		free(ptr);
 		return NULL;
 	}
 	ptr->paddr = tmp;

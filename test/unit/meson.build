@@ -69,6 +69,7 @@ if get_option('enable_tests')
     'queue',
     'rbtree',
     'reg',
+    'run',
     'rz_test',
     'rzpipe',
     'serialize_analysis',

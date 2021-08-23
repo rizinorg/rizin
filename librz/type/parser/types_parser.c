@@ -674,7 +674,8 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 		TSNode first_leaf = ts_node_named_child(child, 0);
 		if (ts_node_is_null(first_leaf)) {
 			node_malformed_error(state, child, text, "field_declaration");
-			return -1;
+			result = -1;
+			goto urnexit;
 		}
 		const char *leaf_type = ts_node_type(first_leaf);
 		// If we have type qualifier in this position it is related to
@@ -693,7 +694,8 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 		if (strcmp(node_type, "field_declaration")) {
 			parser_error(state, "ERROR: Union field AST should contain (field_declaration) node!\n");
 			node_malformed_error(state, child, text, "union field");
-			return -1;
+			result = -1;
+			goto urnexit;
 		}
 
 		// Every field node should have at least type and declarator:
@@ -702,7 +704,8 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 		if (ts_node_is_null(field_type) || ts_node_is_null(field_declarator)) {
 			parser_error(state, "ERROR: Union field AST shoudl contain type and declarator items");
 			node_malformed_error(state, child, text, "union field");
-			return -1;
+			result = -1;
+			goto urnexit;
 		}
 		// Every field can be:
 		// - atomic: "int a;" or "char b[20]"

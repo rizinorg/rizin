@@ -85,7 +85,8 @@ RzList *rz_bin_ne_get_segments(rz_bin_ne_obj_t *bin) {
 	for (i = 0; i < bin->ne_header->SegCount; i++) {
 		RzBinSection *bs = RZ_NEW0(RzBinSection);
 		NE_image_segment_entry *se = &bin->segment_entries[i];
-		if (!bs) {
+		if (!bs || !se) {
+			free(bs);
 			return segments;
 		}
 		bs->size = se->length;
@@ -588,17 +589,20 @@ RzList *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 	return relocs;
 }
 
-void __init(RzBuffer *buf, rz_bin_ne_obj_t *bin) {
+bool rz_bin_ne_buf_init(RzBuffer *buf, rz_bin_ne_obj_t *bin) {
 	if (!rz_buf_read_le16_at(buf, 0x3c, &bin->header_offset)) {
-		return;
+		return false;
 	}
 
 	bin->ne_header = RZ_NEW0(NE_image_header);
 	if (!bin->ne_header) {
-		return;
+		return false;
 	}
 	bin->buf = buf;
 	rz_buf_read_at(buf, bin->header_offset, (ut8 *)bin->ne_header, sizeof(NE_image_header));
+	if (bin->ne_header->FileAlnSzShftCnt > 31) {
+		return false;
+	}
 	bin->alignment = 1 << bin->ne_header->FileAlnSzShftCnt;
 	if (!bin->alignment) {
 		bin->alignment = 1 << 9;
@@ -607,15 +611,25 @@ void __init(RzBuffer *buf, rz_bin_ne_obj_t *bin) {
 
 	ut16 offset = bin->ne_header->SegTableOffset + bin->header_offset;
 	ut16 size = bin->ne_header->SegCount * sizeof(NE_image_segment_entry);
+	if (!size) {
+		return false;
+	}
 	bin->segment_entries = calloc(1, size);
 	if (!bin->segment_entries) {
-		return;
+		return false;
 	}
 	rz_buf_read_at(buf, offset, (ut8 *)bin->segment_entries, size);
+	if (!bin->ne_header->EntryTableLength) {
+		return false;
+	}
 	bin->entry_table = calloc(1, bin->ne_header->EntryTableLength);
+	if (!bin->entry_table) {
+		return false;
+	}
 	rz_buf_read_at(buf, (ut64)bin->header_offset + bin->ne_header->EntryTableOffset, bin->entry_table, bin->ne_header->EntryTableLength);
 	bin->imports = rz_bin_ne_get_imports(bin);
 	__ne_get_resources(bin);
+	return true;
 }
 
 void rz_bin_ne_free(rz_bin_ne_obj_t *bin) {
@@ -632,6 +646,8 @@ rz_bin_ne_obj_t *rz_bin_ne_new_buf(RzBuffer *buf, bool verbose) {
 	if (!bin) {
 		return NULL;
 	}
-	__init(buf, bin);
+	if (!rz_bin_ne_buf_init(buf, bin)) {
+		return NULL;
+	}
 	return bin;
 }

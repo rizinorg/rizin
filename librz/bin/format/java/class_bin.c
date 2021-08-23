@@ -93,6 +93,9 @@ static bool java_class_parse(RzBinJavaClass *bin, ut64 base, Sdb *kv, RzBuffer *
 			}
 			bin->constant_pool[i] = cpool;
 			if (java_constant_pool_requires_null(cpool)) {
+				if (i >= (bin->constant_pool_count - 1)) {
+					break;
+				}
 				i++;
 				bin->constant_pool[i] = java_constant_null_new(offset);
 			}
