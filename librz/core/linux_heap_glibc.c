@@ -2282,6 +2282,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_tcache_print_handler)(RzCore *core, int argc, 
 	const int tc = rz_config_get_i(core->config, "dbg.glibc.tcache");
 	if (!tc) {
 		rz_cons_printf("No tcache present in this version of libc\n");
+		free(main_arena);
 		return RZ_CMD_STATUS_ERROR;
 	}
 
