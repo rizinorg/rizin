@@ -223,6 +223,7 @@ static int trace_hook_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf,
 
 	if (len > sizeof(mem_write->data_buf)) {
 		RZ_LOG_ERROR("write memory more than 32 bytes, cannot trace\n");
+		RZ_FREE(mem_write);
 		return 0;
 	}
 
