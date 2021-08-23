@@ -43,9 +43,10 @@ RZ_API RzProjectErr rz_project_save(RzCore *core, RzProject *prj, const char *fi
 
 RZ_API RzProjectErr rz_project_save_file(RzCore *core, const char *file) {
 	char *tmp_file;
-	int err_mkstemp = rz_file_mkstemp("svprj", &tmp_file);
+	int mkstemp_fd = rz_file_mkstemp("svprj", &tmp_file);
+	close(mkstemp_fd);
 
-	if (err_mkstemp == -1 || !tmp_file) {
+	if (mkstemp_fd == -1 || !tmp_file) {
 		return RZ_PROJECT_ERR_MKSTEMP_FAILED;
 	}
 
@@ -88,9 +89,10 @@ RZ_API RzProject *rz_project_load_file_raw(const char *file) {
 	}
 
 	char *tmp_file;
-	int err_mkstemp = rz_file_mkstemp("ldprj", &tmp_file);
+	int mkstemp_fd = rz_file_mkstemp("ldprj", &tmp_file);
+	close(mkstemp_fd);
 
-	if (err_mkstemp == -1 || !tmp_file) {
+	if (mkstemp_fd == -1 || !tmp_file) {
 		free(tmp_file);
 		return NULL;
 	}
