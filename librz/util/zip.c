@@ -118,7 +118,7 @@ err_exit:
  */
 RZ_API ut8 *rz_deflate(RZ_NONNULL const ut8 *src, int srcLen, int *srcConsumed, int *dstLen) {
 	rz_return_val_if_fail(src, NULL);
-	return rz_deflatew(src, srcLen, srcConsumed, dstLen, MAX_WBITS + 32);
+	return rz_deflatew(src, srcLen, srcConsumed, dstLen, MAX_WBITS + 15);
 }
 
 /**
@@ -151,7 +151,7 @@ RZ_API ut8 *rz_deflatew(RZ_NONNULL const ut8 *src, int srcLen, int *srcConsumed,
 	stream.zfree = Z_NULL;
 	stream.opaque = Z_NULL;
 
-	if (deflateInit2(&stream, Z_DEFAULT_COMPRESSION, Z_DEFLATED, wbits, 8, Z_DEFAULT_STRATEGY) != Z_OK) {
+	if (deflateInit2(&stream, Z_DEFAULT_COMPRESSION, Z_DEFLATED, wbits, 5, Z_DEFAULT_STRATEGY) != Z_OK) {
 		return NULL;
 	}
 
@@ -169,7 +169,7 @@ RZ_API ut8 *rz_deflatew(RZ_NONNULL const ut8 *src, int srcLen, int *srcConsumed,
 			stream.next_out = dst + stream.total_out;
 			stream.avail_out = srcLen;
 		}
-		err = deflate(&stream, Z_NO_FLUSH);
+		err = deflate(&stream, Z_FINISH);
 		if (err < 0) {
 			RZ_LOG_ERROR("deflate error: %d %s\n", err, gzerr(-err));
 			goto err_exit;
