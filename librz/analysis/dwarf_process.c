@@ -615,8 +615,9 @@ static void parse_enum_type(Context *ctx, ut64 idx) {
 		RzStrBuf strbuf;
 		rz_strbuf_init(&strbuf);
 		parse_type_outer(ctx, die->attr_values[type_attr_idx].reference, &strbuf, &base_type->size);
-		const char *type = rz_strbuf_drain_nofree(&strbuf);
+		char *type = rz_strbuf_drain_nofree(&strbuf);
 		base_type->type = rz_type_parse_string_single(ctx->analysis->typedb->parser, type, NULL);
+		free(type);
 		if (!base_type->type) {
 			rz_type_base_type_free(base_type);
 			return;

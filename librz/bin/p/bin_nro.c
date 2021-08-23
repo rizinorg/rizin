@@ -194,6 +194,7 @@ static RzList *maps(RzBinFile *bf) {
 	map->paddr = tmp;
 
 	if (!rz_buf_read_le32_at(b, NRO_OFF(data_size), &tmp)) {
+		free(map);
 		return ret;
 	}
 	map->psize = tmp;

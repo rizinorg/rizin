@@ -390,6 +390,7 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 			}
 		}
 		if (!type && !userfnc) {
+			free(name);
 			continue;
 		}
 		if (!in_stack) {
