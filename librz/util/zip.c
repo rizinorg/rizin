@@ -118,7 +118,7 @@ err_exit:
  */
 RZ_API ut8 *rz_deflate(RZ_NONNULL const ut8 *src, int srcLen, int *srcConsumed, int *dstLen) {
 	rz_return_val_if_fail(src, NULL);
-	return rz_deflatew(src, srcLen, srcConsumed, dstLen, MAX_WBITS + 15);
+	return rz_deflatew(src, srcLen, srcConsumed, dstLen, MAX_WBITS + 16);
 }
 
 /**
