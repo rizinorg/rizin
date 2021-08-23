@@ -1311,6 +1311,11 @@ RZ_API bool rz_file_inflate(RZ_NONNULL const char *src, RZ_NONNULL const char *d
 	return result;
 }
 
+/**
+ * \brief check whether a file is a deflated file
+ * \param src source file (string containing filename)
+ * \return true, if src is a deflated file; false otherwise
+ */
 RZ_API bool rz_file_is_deflated(RZ_NONNULL const char *src) {
 	rz_return_val_if_fail(src, false);
 
