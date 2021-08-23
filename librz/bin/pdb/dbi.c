@@ -16,7 +16,7 @@ RZ_IPI void rz_bin_pdb_free_dbi_stream(DbiStream *stream) {
 }
 
 static bool parse_dbi_stream_header(DbiStream *s, RzBuffer *buf) {
-	return rz_buf_read_le32(buf, &s->hdr.version_signature) &&
+	return rz_buf_read_le32(buf, (ut32 *)&s->hdr.version_signature) &&
 		rz_buf_read_le32(buf, &s->hdr.version_header) &&
 		rz_buf_read_le32(buf, &s->hdr.age) &&
 		rz_buf_read_le16(buf, &s->hdr.global_stream_index) &&
@@ -40,12 +40,12 @@ static bool parse_dbi_stream_header(DbiStream *s, RzBuffer *buf) {
 
 static bool parse_dbi_stream_section_entry(DbiStreamExHdr *hdr, RzBuffer *buf) {
 	return rz_buf_read_le16(buf, &hdr->sec_con.Section) &&
-		rz_buf_read_le16(buf, &hdr->sec_con.Padding1) &&
-		rz_buf_read_le32(buf, &hdr->sec_con.Offset) &&
-		rz_buf_read_le32(buf, &hdr->sec_con.Size) &&
+		rz_buf_read_le16(buf, (ut16 *)&hdr->sec_con.Padding1) &&
+		rz_buf_read_le32(buf, (ut32 *)&hdr->sec_con.Offset) &&
+		rz_buf_read_le32(buf, (ut32 *)&hdr->sec_con.Size) &&
 		rz_buf_read_le32(buf, &hdr->sec_con.Characteristics) &&
 		rz_buf_read_le16(buf, &hdr->sec_con.ModuleIndex) &&
-		rz_buf_read_le16(buf, &hdr->sec_con.Padding2) &&
+		rz_buf_read_le16(buf, (ut16 *)&hdr->sec_con.Padding2) &&
 		rz_buf_read_le32(buf, &hdr->sec_con.DataCrc) &&
 		rz_buf_read_le32(buf, &hdr->sec_con.RelocCrc);
 }
@@ -83,7 +83,7 @@ static bool parse_dbi_stream_ex_header(DbiStream *s, RzBuffer *buf) {
 		}
 		read_len += sizeof(ut32) * 3;
 		if (!rz_buf_read_le16(buf, &hdr->SourceFileCount) ||
-			!rz_buf_read_le16(buf, &hdr->Padding)) {
+			!rz_buf_read_le16(buf, (ut16 *)&hdr->Padding)) {
 			return false;
 		}
 		read_len += sizeof(ut16) * 2;
@@ -118,17 +118,17 @@ static bool parse_dbi_stream_ex_header(DbiStream *s, RzBuffer *buf) {
 }
 
 static bool parse_dbi_dbg_header(DbiStream *s, RzBuffer *buf) {
-	if (!rz_buf_read_le16(buf, &s->dbg_hdr.sn_fpo) ||
-		!rz_buf_read_le16(buf, &s->dbg_hdr.sn_exception) ||
-		!rz_buf_read_le16(buf, &s->dbg_hdr.sn_fixup) ||
-		!rz_buf_read_le16(buf, &s->dbg_hdr.sn_omap_to_src) ||
-		!rz_buf_read_le16(buf, &s->dbg_hdr.sn_omap_from_src) ||
-		!rz_buf_read_le16(buf, &s->dbg_hdr.sn_section_hdr) ||
-		!rz_buf_read_le16(buf, &s->dbg_hdr.sn_token_rid_map) ||
-		!rz_buf_read_le16(buf, &s->dbg_hdr.sn_xdata) ||
-		!rz_buf_read_le16(buf, &s->dbg_hdr.sn_pdata) ||
-		!rz_buf_read_le16(buf, &s->dbg_hdr.sn_new_fpo) ||
-		!rz_buf_read_le16(buf, &s->dbg_hdr.sn_section_hdr_orig)) {
+	if (!rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_fpo) ||
+		!rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_exception) ||
+		!rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_fixup) ||
+		!rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_omap_to_src) ||
+		!rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_omap_from_src) ||
+		!rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_section_hdr) ||
+		!rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_token_rid_map) ||
+		!rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_xdata) ||
+		!rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_pdata) ||
+		!rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_new_fpo) ||
+		!rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_section_hdr_orig)) {
 		return false;
 	}
 	return true;

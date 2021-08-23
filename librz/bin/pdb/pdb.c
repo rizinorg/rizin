@@ -230,7 +230,7 @@ static bool parse_pdb_stream(RzPdb *pdb, MsfStream *stream) {
 		!rz_buf_read_le32(buf, &s->hdr.unique_id.data1) ||
 		!rz_buf_read_le16(buf, &s->hdr.unique_id.data2) ||
 		!rz_buf_read_le16(buf, &s->hdr.unique_id.data3) ||
-		!rz_buf_read_le64(buf, &s->hdr.unique_id.data4)) {
+		!rz_buf_read_le64(buf, (ut64 *)&s->hdr.unique_id.data4)) {
 		return false;
 	}
 
@@ -491,7 +491,7 @@ RZ_API RZ_OWN RzPdb *rz_bin_pdb_parse_from_buf(RZ_NONNULL RzBuffer *buf) {
 	if (!pdb) {
 		goto error;
 	}
-	pdb->buf = buf;
+	pdb->buf = (RzBuffer *)buf;
 	pdb->super_block = RZ_NEW0(MsfSuperBlock);
 	rz_buf_read(pdb->buf, (ut8 *)pdb->super_block->file_magic, PDB_SIGNATURE_LEN);
 	if (memcmp(pdb->super_block->file_magic, PDB_SIGNATURE, PDB_SIGNATURE_LEN)) {
@@ -506,7 +506,7 @@ RZ_API RZ_OWN RzPdb *rz_bin_pdb_parse_from_buf(RZ_NONNULL RzBuffer *buf) {
 		!rz_buf_read_le32(pdb->buf, &pdb->super_block->block_map_addr)) {
 		goto error;
 	}
-	ut64 bufsize = buf->methods->get_size(buf); // length of whole PDB file
+	ut64 bufsize = rz_buf_size((RzBuffer *)buf); // length of whole PDB file
 	bool valid =
 		pdb->super_block->num_blocks > 0 &&
 		pdb->super_block->num_blocks * pdb->super_block->block_size == bufsize &&

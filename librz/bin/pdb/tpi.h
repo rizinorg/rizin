@@ -524,7 +524,7 @@ typedef struct {
 	ut32 field_list; // type index of LF_FIELD descriptor list
 	ut32 derived; // type index of derived from list if not zero
 	ut32 vshape; // type index of vshape table for this class
-	st16 unknown1;
+	Tpi_Type_Numeric unknown1;
 	Tpi_Type_Numeric size;
 	Tpi_Type_String name;
 	Tpi_Type_String mangled_name;

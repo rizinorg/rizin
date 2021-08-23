@@ -1015,9 +1015,9 @@ static Tpi_LF_FieldList *parse_type_fieldlist(RzBuffer *buf, ut16 len) {
 		}
 		type->length = 0;
 		type->type_index = 0;
-		if (!rz_buf_read_le16(buf, &type->leaf_type)) {
+		if (!rz_buf_read_le16(buf, (ut16 *)&type->leaf_type)) {
 			RZ_FREE(type);
-			rz_list_free(fieldlist);
+			rz_list_free(fieldlist->substructs);
 			return NULL;
 		}
 		read_len += sizeof(ut16);
@@ -1188,11 +1188,10 @@ static Tpi_LF_Structure_19 *parse_type_struct_19(RzBuffer *buf, ut16 len) {
 		return NULL;
 	}
 	read_bytes += sizeof(ut32);
-	if (!rz_buf_read_le32(buf, &structure->unknown1)) {
+	if (!parse_type_numeric(buf, &structure->unknown1, &read_bytes)) {
 		RZ_FREE(structure);
 		return NULL;
 	}
-	read_bytes += sizeof(ut32);
 	if (!parse_type_numeric(buf, &structure->size, &read_bytes)) {
 		RZ_FREE(structure);
 		return NULL;
@@ -1338,7 +1337,7 @@ static Tpi_LF_MFcuntion *parse_type_mfunction(RzBuffer *buf, ut16 len) {
 		return NULL;
 	}
 	read_bytes += sizeof(ut32);
-	if (!rz_buf_read8(buf, &mfunc->call_conv)) {
+	if (!rz_buf_read8(buf, (ut8 *)&mfunc->call_conv)) {
 		RZ_FREE(mfunc);
 		return NULL;
 	}
@@ -1358,7 +1357,7 @@ static Tpi_LF_MFcuntion *parse_type_mfunction(RzBuffer *buf, ut16 len) {
 		return NULL;
 	}
 	read_bytes += sizeof(ut32);
-	if (!rz_buf_read_le32(buf, &mfunc->this_adjust)) {
+	if (!rz_buf_read_le32(buf, (ut32 *)&mfunc->this_adjust)) {
 		RZ_FREE(mfunc);
 		return NULL;
 	}
@@ -1438,7 +1437,7 @@ static Tpi_LF_Procedure *parse_type_procedure(RzBuffer *buf, ut16 len) {
 		return NULL;
 	}
 	read_bytes += sizeof(ut32);
-	if (!rz_buf_read8(buf, &proc->call_conv)) {
+	if (!rz_buf_read8(buf, (ut8 *)&proc->call_conv)) {
 		RZ_FREE(proc);
 		return NULL;
 	}
@@ -1560,7 +1559,7 @@ static bool parse_tpi_types(RzBuffer *buf, TpiType *type) {
 	if (!rz_buf_read_le16(buf, &type->length)) {
 		return false;
 	}
-	if (!rz_buf_read_le16(buf, &type->leaf_type)) {
+	if (!rz_buf_read_le16(buf, (ut16 *)&type->leaf_type)) {
 		return false;
 	}
 	switch (type->leaf_type) {
@@ -1628,13 +1627,13 @@ static bool parse_tpi_stream_header(TpiStream *s, RzBuffer *buf) {
 		rz_buf_read_le32(buf, &s->header.HashKeySize) &&
 		rz_buf_read_le32(buf, &s->header.NumHashBuckets) &&
 
-		rz_buf_read_le32(buf, &s->header.HashValueBufferOffset) &&
+		rz_buf_read_le32(buf, (ut32 *)&s->header.HashValueBufferOffset) &&
 		rz_buf_read_le32(buf, &s->header.HashValueBufferLength) &&
 
-		rz_buf_read_le32(buf, &s->header.IndexOffsetBufferOffset) &&
+		rz_buf_read_le32(buf, (ut32 *)&s->header.IndexOffsetBufferOffset) &&
 		rz_buf_read_le32(buf, &s->header.IndexOffsetBufferLength) &&
 
-		rz_buf_read_le32(buf, &s->header.HashAdjBufferOffset) &&
+		rz_buf_read_le32(buf, (ut32 *)&s->header.HashAdjBufferOffset) &&
 		rz_buf_read_le32(buf, &s->header.HashAdjBufferLength);
 }
 
