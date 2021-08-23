@@ -10,11 +10,12 @@
 
 /**
  * \brief Prints out types in a default format "idpi" command
- * 
+ *
  * \param pdb pdb structure for printing function
  * \param types List of types
  */
-static void print_types_regular(RzTypeDB *db, const RzPdb *pdb, const RzList *types) {
+static void print_types_regular(RzTypeDB *db, const RzPdb *pdb,
+	const RzList *types) {
 	rz_return_if_fail(pdb);
 	if (!types) {
 		eprintf("there is nothing to print!\n");
@@ -28,7 +29,8 @@ static void print_types_regular(RzTypeDB *db, const RzPdb *pdb, const RzList *ty
 			rz_strbuf_appendf(buf, "struct %s { \n", type->name);
 			RzTypeStructMember *memb;
 			rz_vector_foreach(&type->struct_data.members, memb) {
-				char *declaration = rz_type_identifier_declaration_as_string(db, memb->type, memb->name);
+				char *declaration = rz_type_identifier_declaration_as_string(
+					db, memb->type, memb->name);
 				if (memb->type->kind == RZ_TYPE_KIND_CALLABLE) {
 					rz_strbuf_appendf(buf, "\t%s \n", declaration);
 				} else {
@@ -43,7 +45,8 @@ static void print_types_regular(RzTypeDB *db, const RzPdb *pdb, const RzList *ty
 			rz_strbuf_appendf(buf, "enum %s { \n", type->name);
 			RzTypeEnumCase *cas;
 			rz_vector_foreach(&type->enum_data.cases, cas) {
-				rz_strbuf_appendf(buf, "\t%s = 0x%" PFMT64x ", \n", cas->name, cas->val);
+				rz_strbuf_appendf(buf, "\t%s = 0x%" PFMT64x ", \n", cas->name,
+					cas->val);
 			}
 			rz_strbuf_append(buf, " }\n");
 			break;
@@ -52,7 +55,8 @@ static void print_types_regular(RzTypeDB *db, const RzPdb *pdb, const RzList *ty
 			rz_strbuf_appendf(buf, "union %s { \n", type->name);
 			RzTypeUnionMember *memb;
 			rz_vector_foreach(&type->union_data.members, memb) {
-				char *declaration = rz_type_identifier_declaration_as_string(db, memb->type, memb->name);
+				char *declaration = rz_type_identifier_declaration_as_string(
+					db, memb->type, memb->name);
 				rz_strbuf_appendf(buf, "\t%s %s; \n", declaration, memb->name);
 				free(declaration);
 			}
@@ -69,11 +73,12 @@ static void print_types_regular(RzTypeDB *db, const RzPdb *pdb, const RzList *ty
 
 /**
  * \brief Prints out types in a json format - "idpij" command
- * 
+ *
  * \param pdb pdb structure for printing function
  * \param types List of types
  */
-static void print_types_json(RzTypeDB *db, const RzPdb *pdb, PJ *pj, const RzList *types) {
+static void print_types_json(RzTypeDB *db, const RzPdb *pdb, PJ *pj,
+	const RzList *types) {
 	rz_return_if_fail(pdb && types && pj);
 
 	RzListIter *it;
@@ -134,11 +139,12 @@ static void print_types_json(RzTypeDB *db, const RzPdb *pdb, PJ *pj, const RzLis
 
 /**
  * \brief Prints out all the type information in regular,json or pf format
- * 
+ *
  * \param pdb PDB information
  * \param mode printing mode
  */
-RZ_API void rz_bin_pdb_print_types(RzTypeDB *db, const RzPdb *pdb, PJ *pj, const int mode) {
+RZ_API void rz_bin_pdb_print_types(RzTypeDB *db, const RzPdb *pdb, PJ *pj,
+	const int mode) {
 	TpiStream *stream = pdb->s_tpi;
 
 	if (!stream) {
@@ -146,12 +152,17 @@ RZ_API void rz_bin_pdb_print_types(RzTypeDB *db, const RzPdb *pdb, PJ *pj, const
 		return;
 	}
 	switch (mode) {
-	case 'd': print_types_regular(db, pdb, stream->print_type); return;
-	case 'j': print_types_json(db, pdb, pj, stream->print_type); return;
+	case 'd':
+		print_types_regular(db, pdb, stream->print_type);
+		return;
+	case 'j':
+		print_types_json(db, pdb, pj, stream->print_type);
+		return;
 	}
 }
 
-RZ_API void rz_bin_pdb_print_gvars(RzPdb *pdb, ut64 img_base, PJ *pj, int format) {
+RZ_API void rz_bin_pdb_print_gvars(RzPdb *pdb, ut64 img_base, PJ *pj,
+	int format) {
 	PeImageSectionHeader *sctn_header = 0;
 	GDataStream *gsym_data_stream = 0;
 	PeStream *pe_stream = 0;
@@ -177,15 +188,21 @@ RZ_API void rz_bin_pdb_print_gvars(RzPdb *pdb, ut64 img_base, PJ *pj, int format
 			switch (format) {
 			case 'j': // JSON
 				pj_o(pj);
-				pj_kN(pj, "address", (img_base + omap_remap(omap_stream, gdata->offset + sctn_header->virtual_address)));
+				pj_kN(pj, "address",
+					(img_base +
+						omap_remap(omap_stream,
+							gdata->offset + sctn_header->virtual_address)));
 				pj_kN(pj, "symtype", gdata->symtype);
 				pj_ks(pj, "section_name", sctn_header->name);
 				pj_ks(pj, "gdata_name", name);
 				pj_end(pj);
 				break;
 			case 'd':
-				rz_cons_printf("0x%08" PFMT64x "  %d  %.*s  %s\n",
-					(ut64)(img_base + omap_remap(omap_stream, gdata->offset + sctn_header->virtual_address)),
+				rz_cons_printf(
+					"0x%08" PFMT64x "  %d  %.*s  %s\n",
+					(ut64)(img_base +
+						omap_remap(omap_stream,
+							gdata->offset + sctn_header->virtual_address)),
 					gdata->symtype, PDB_SIZEOF_SECTION_NAME, sctn_header->name, name);
 				break;
 			default:
@@ -207,17 +224,20 @@ static bool parse_pdb_stream(RzPdb *pdb, MsfStream *stream) {
 	pdb->s_pdb = RZ_NEW0(PdbStream);
 	PdbStream *s = pdb->s_pdb;
 	RzBuffer *buf = stream->stream_data;
-	s->hdr.version = rz_buf_read_le32(buf);
+	if (!rz_buf_read_le32(buf, &s->hdr.version) ||
+		!rz_buf_read_le32(buf, &s->hdr.signature) ||
+		!rz_buf_read_le32(buf, &s->hdr.age) ||
+		!rz_buf_read_le32(buf, &s->hdr.unique_id.data1) ||
+		!rz_buf_read_le16(buf, &s->hdr.unique_id.data2) ||
+		!rz_buf_read_le16(buf, &s->hdr.unique_id.data3) ||
+		!rz_buf_read_le64(buf, &s->hdr.unique_id.data4)) {
+		return false;
+	}
+
 	if (s->hdr.version != VC70) {
 		RZ_LOG_ERROR("Error Unsupported PDB version.\n");
 		return false;
 	}
-	s->hdr.signature = rz_buf_read_le32(buf);
-	s->hdr.age = rz_buf_read_le32(buf);
-	s->hdr.unique_id.data1 = rz_buf_read_le32(buf);
-	s->hdr.unique_id.data2 = rz_buf_read_le16(buf);
-	s->hdr.unique_id.data3 = rz_buf_read_le16(buf);
-	*(ut64 *)s->hdr.unique_id.data4 = rz_buf_read_le64(buf);
 	return true;
 }
 
@@ -229,26 +249,44 @@ static bool parse_streams(RzPdb *pdb) {
 		case PDB_STREAM_ROOT:
 			break;
 		case PDB_STREAM_PDB:
-			parse_pdb_stream(pdb, ms);
+			if (!parse_pdb_stream(pdb, ms)) {
+				RZ_LOG_ERROR("Parse pdb stream failed.");
+				return false;
+			}
 			break;
 		case PDB_STREAM_TPI:
-			parse_tpi_stream(pdb, ms);
+			if (!parse_tpi_stream(pdb, ms)) {
+				RZ_LOG_ERROR("Parse tpi stream failed.");
+				return false;
+			}
 			break;
 		case PDB_STREAM_DBI:
-			parse_dbi_stream(pdb, ms);
+			if (!parse_dbi_stream(pdb, ms)) {
+				RZ_LOG_ERROR("Parse dbi stream failed.");
+				return false;
+			}
 			break;
 		default: {
 			if (!pdb->s_dbi) {
 				break;
 			}
 			if (ms->stream_idx == pdb->s_dbi->hdr.sym_record_stream) {
-				parse_gdata_stream(pdb, ms);
+				if (!parse_gdata_stream(pdb, ms)) {
+					RZ_LOG_ERROR("Parse gdata stream failed.");
+					return false;
+				}
 			} else if (ms->stream_idx == pdb->s_dbi->dbg_hdr.sn_section_hdr ||
 				ms->stream_idx == pdb->s_dbi->dbg_hdr.sn_section_hdr_orig) {
-				parse_pe_stream(pdb, ms);
+				if (!parse_pe_stream(pdb, ms)) {
+					RZ_LOG_ERROR("Parse pe stream failed.");
+					return false;
+				}
 			} else if (ms->stream_idx == pdb->s_dbi->dbg_hdr.sn_omap_to_src ||
 				ms->stream_idx == pdb->s_dbi->dbg_hdr.sn_omap_from_src) {
-				parse_omap_stream(pdb, ms);
+				if (!parse_omap_stream(pdb, ms)) {
+					RZ_LOG_ERROR("Parse omap stream failed.");
+					return false;
+				}
 			}
 			break;
 		}
@@ -294,19 +332,28 @@ static RzList *pdb7_extract_streams(RzPdb *pdb, MsfStreamDirectory *msd) {
 		}
 		stream->stream_idx = i;
 		stream->stream_size = msd->StreamSizes[i];
-		stream->blocks_num = count_blocks(stream->stream_size, pdb->super_block->block_size);
+		stream->blocks_num =
+			count_blocks(stream->stream_size, pdb->super_block->block_size);
 		if (!stream->stream_size) {
 			stream->stream_data = NULL;
 			rz_list_append(streams, stream);
 			continue;
 		}
-		ut8 *stream_data = (ut8 *)malloc(stream->blocks_num * pdb->super_block->block_size);
+		ut8 *stream_data =
+			(ut8 *)malloc(stream->blocks_num * pdb->super_block->block_size);
 		for (size_t j = 0; j < stream->blocks_num; j++) {
-			ut32 block_idx = rz_buf_read_le32(msd->sd);
-			rz_buf_seek(pdb->buf, block_idx * pdb->super_block->block_size, RZ_BUF_SET);
-			rz_buf_read(pdb->buf, stream_data + j * pdb->super_block->block_size, pdb->super_block->block_size);
+			ut32 block_idx;
+			if (!rz_buf_read_le32(msd->sd, &block_idx)) {
+				rz_list_free(streams);
+				return NULL;
+			}
+			rz_buf_seek(pdb->buf, block_idx * pdb->super_block->block_size,
+				RZ_BUF_SET);
+			rz_buf_read(pdb->buf, stream_data + j * pdb->super_block->block_size,
+				pdb->super_block->block_size);
 		}
-		stream->stream_data = rz_buf_new_with_bytes(stream_data, stream->stream_size);
+		stream->stream_data =
+			rz_buf_new_with_bytes(stream_data, stream->stream_size);
 		if (!stream->stream_data) {
 			RZ_FREE(stream_data);
 			rz_list_free(streams);
@@ -324,18 +371,24 @@ error_memory:
 
 static MsfStreamDirectory *pdb7_extract_msf_stream_directory(RzPdb *pdb) {
 	// Get block map
-	ut32 block_num = count_blocks(pdb->super_block->num_directory_bytes, pdb->super_block->block_size);
+	ut32 block_num = count_blocks(pdb->super_block->num_directory_bytes,
+		pdb->super_block->block_size);
 	if (!block_num) {
 		RZ_LOG_ERROR("Error block map size.\n");
 		goto error;
 	}
-	rz_buf_seek(pdb->buf, pdb->super_block->block_size * pdb->super_block->block_map_addr, RZ_BUF_SET);
+	rz_buf_seek(pdb->buf,
+		pdb->super_block->block_size * pdb->super_block->block_map_addr,
+		RZ_BUF_SET);
 	ut32 *block_map = (ut32 *)malloc(sizeof(ut32) * block_num);
 	if (!block_map) {
 		goto error_memory;
 	}
 	for (size_t i = 0; i < block_num; i++) {
-		ut32 block_idx = rz_buf_read_le32(pdb->buf);
+		ut32 block_idx;
+		if (!rz_buf_read_le32(pdb->buf, &block_idx)) {
+			goto error;
+		}
 		if (block_idx > pdb->super_block->num_blocks) {
 			RZ_LOG_ERROR("Error block index.\n");
 			goto error;
@@ -350,8 +403,10 @@ static MsfStreamDirectory *pdb7_extract_msf_stream_directory(RzPdb *pdb) {
 		goto error_memory;
 	}
 	for (size_t i = 0; i < block_num; i++) {
-		rz_buf_seek(pdb->buf, block_map[i] * pdb->super_block->block_size, RZ_BUF_SET);
-		rz_buf_read(pdb->buf, stream_directory + i * pdb->super_block->block_size, pdb->super_block->block_size);
+		rz_buf_seek(pdb->buf, block_map[i] * pdb->super_block->block_size,
+			RZ_BUF_SET);
+		rz_buf_read(pdb->buf, stream_directory + i * pdb->super_block->block_size,
+			pdb->super_block->block_size);
 	}
 	RzBuffer *sd = rz_buf_new_with_bytes(stream_directory, stream_directory_len);
 	if (!sd) {
@@ -365,7 +420,10 @@ static MsfStreamDirectory *pdb7_extract_msf_stream_directory(RzPdb *pdb) {
 	if (!msd) {
 		goto error_memory;
 	}
-	msd->NumStreams = rz_buf_read_le32(sd);
+	if (!rz_buf_read_le32(sd, &msd->NumStreams)) {
+		RZ_FREE(msd);
+		goto error;
+	}
 	msd->StreamSizes = (ut32 *)malloc(msd->NumStreams * sizeof(ut32));
 	msd->sd = sd;
 	if (!msd->StreamSizes) {
@@ -374,13 +432,19 @@ static MsfStreamDirectory *pdb7_extract_msf_stream_directory(RzPdb *pdb) {
 	}
 	ut32 total_blocks = 0;
 	for (size_t i = 0; i < msd->NumStreams; i++) {
-		ut32 stream_size = rz_buf_read_le32(sd);
+		ut32 stream_size;
+		if (!rz_buf_read_le32(sd, &stream_size)) {
+			RZ_FREE(msd);
+			goto error;
+		}
 		msd->StreamSizes[i] = stream_size;
 		ut32 blocks = count_blocks(stream_size, pdb->super_block->block_size);
 		total_blocks += blocks;
 	}
-	//				NumStreams						 StreamsSizes				   StreamsBlockMap
-	ut32 msd_size = sizeof(ut32) + msd->NumStreams * sizeof(ut32) + total_blocks * sizeof(ut32);
+	//				NumStreams
+	// StreamsSizes StreamsBlockMap
+	ut32 msd_size = sizeof(ut32) + msd->NumStreams * sizeof(ut32) +
+		total_blocks * sizeof(ut32);
 	if (msd_size != pdb->super_block->num_directory_bytes) {
 		RZ_LOG_ERROR("Error stream directory size.\n");
 		RZ_FREE(msd);
@@ -411,7 +475,8 @@ error:
 	return false;
 }
 
-RZ_API RZ_OWN RzPdb *rz_bin_pdb_parse_from_file(RZ_NONNULL const char *filename) {
+RZ_API RZ_OWN RzPdb *
+rz_bin_pdb_parse_from_file(RZ_NONNULL const char *filename) {
 	RzBuffer *buf = rz_buf_new_slurp(filename);
 	if (!buf) {
 		eprintf("%s: Error reading file \"%s\"\n", __FUNCTION__, filename);
@@ -433,13 +498,14 @@ RZ_API RZ_OWN RzPdb *rz_bin_pdb_parse_from_buf(RZ_NONNULL RzBuffer *buf) {
 		RZ_LOG_ERROR("PDB Signature Error!\n");
 		goto error;
 	}
-	pdb->super_block->block_size = rz_buf_read_le32(pdb->buf);
-	pdb->super_block->free_block_map_block = rz_buf_read_le32(pdb->buf);
-	pdb->super_block->num_blocks = rz_buf_read_le32(pdb->buf);
-	pdb->super_block->num_directory_bytes = rz_buf_read_le32(pdb->buf);
-	pdb->super_block->unknown = rz_buf_read_le32(pdb->buf);
-	pdb->super_block->block_map_addr = rz_buf_read_le32(pdb->buf);
-
+	if (!rz_buf_read_le32(pdb->buf, &pdb->super_block->block_size) ||
+		!rz_buf_read_le32(pdb->buf, &pdb->super_block->free_block_map_block) ||
+		!rz_buf_read_le32(pdb->buf, &pdb->super_block->num_blocks) ||
+		!rz_buf_read_le32(pdb->buf, &pdb->super_block->num_directory_bytes) ||
+		!rz_buf_read_le32(pdb->buf, &pdb->super_block->unknown) ||
+		!rz_buf_read_le32(pdb->buf, &pdb->super_block->block_map_addr)) {
+		goto error;
+	}
 	ut64 bufsize = buf->methods->get_size(buf); // length of whole PDB file
 	bool valid =
 		pdb->super_block->num_blocks > 0 &&

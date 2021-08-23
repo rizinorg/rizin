@@ -36,19 +36,21 @@ typedef struct dbi_stream_header_t {
 	ut32 padding;
 } DbiStreamHdr;
 
+typedef struct SectionContribEntry {
+	ut16 Section;
+	char Padding1[2];
+	st32 Offset;
+	st32 Size;
+	ut32 Characteristics;
+	ut16 ModuleIndex;
+	char Padding2[2];
+	ut32 DataCrc;
+	ut32 RelocCrc;
+} SectionContr;
+
 typedef struct dbi_stream_ex_header_t {
 	ut32 unknown;
-	struct SectionContribEntry {
-		ut16 Section;
-		char Padding1[2];
-		st32 Offset;
-		st32 Size;
-		ut32 Characteristics;
-		ut16 ModuleIndex;
-		char Padding2[2];
-		ut32 DataCrc;
-		ut32 RelocCrc;
-	} SectionContr;
+	SectionContr sec_con;
 	ut16 Flags;
 	ut16 ModuleSymStream;
 	ut32 SymByteSize;

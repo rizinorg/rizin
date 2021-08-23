@@ -4,20 +4,21 @@
 
 #include "pdb.h"
 
-static void parse_image_header(PeImageSectionHeader *hdr, RzBuffer *buf) {
-	char *name = rz_buf_get_nstring(buf, rz_buf_tell(buf), PDB_SIZEOF_SECTION_NAME);
+static bool parse_image_header(PeImageSectionHeader *hdr, RzBuffer *buf) {
+	char *name =
+		rz_buf_get_nstring(buf, rz_buf_tell(buf), PDB_SIZEOF_SECTION_NAME);
 	rz_str_cpy(hdr->name, name);
 	RZ_FREE(name);
 	rz_buf_seek(buf, rz_buf_tell(buf) + PDB_SIZEOF_SECTION_NAME, RZ_BUF_SET);
-	hdr->misc.physical_address = rz_buf_read_le32(buf);
-	hdr->virtual_address = rz_buf_read_le32(buf);
-	hdr->size_of_raw_data = rz_buf_read_le32(buf);
-	hdr->pointer_to_raw_data = rz_buf_read_le32(buf);
-	hdr->pointer_to_relocations = rz_buf_read_le32(buf);
-	hdr->pointer_to_line_numbers = rz_buf_read_le32(buf);
-	hdr->number_of_relocations = rz_buf_read_le16(buf);
-	hdr->number_of_line_numbers = rz_buf_read_le16(buf);
-	hdr->charactestics = rz_buf_read_le32(buf);
+	return rz_buf_read_le32(buf, &hdr->misc.physical_address) &&
+		rz_buf_read_le32(buf, &hdr->virtual_address) &&
+		rz_buf_read_le32(buf, &hdr->size_of_raw_data) &&
+		rz_buf_read_le32(buf, &hdr->pointer_to_raw_data) &&
+		rz_buf_read_le32(buf, &hdr->pointer_to_relocations) &&
+		rz_buf_read_le32(buf, &hdr->pointer_to_line_numbers) &&
+		rz_buf_read_le16(buf, &hdr->number_of_relocations) &&
+		rz_buf_read_le16(buf, &hdr->number_of_line_numbers) &&
+		rz_buf_read_le32(buf, &hdr->charactestics);
 }
 
 RZ_IPI bool parse_pe_stream(RzPdb *pdb, MsfStream *stream) {
@@ -28,7 +29,7 @@ RZ_IPI bool parse_pe_stream(RzPdb *pdb, MsfStream *stream) {
 	RzBuffer *buf = stream->stream_data;
 	PeStream *s = pdb->s_pe;
 	if (!s->sections_hdrs) {
-		s->sections_hdrs = rz_list_new();
+		s->sections_hdrs = rz_list_newf(free);
 	}
 	ut32 size = rz_buf_size(buf);
 	ut32 read_len = 0;
@@ -38,17 +39,16 @@ RZ_IPI bool parse_pe_stream(RzPdb *pdb, MsfStream *stream) {
 			rz_list_free(s->sections_hdrs);
 			return false;
 		}
-		parse_image_header(hdr, buf);
+		if (!parse_image_header(hdr, buf)) {
+			rz_list_free(s->sections_hdrs);
+			return false;
+		}
+
 		read_len += sizeof(PeImageSectionHeader);
 		rz_list_append(s->sections_hdrs, hdr);
 	}
 	return true;
 }
 RZ_IPI void free_pe_stream(PeStream *stream) {
-	RzListIter *it;
-	PeImageSectionHeader *hdr;
-	rz_list_foreach (stream->sections_hdrs, it, hdr) {
-		RZ_FREE(hdr);
-	}
 	rz_list_free(stream->sections_hdrs);
 };

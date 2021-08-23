@@ -4,11 +4,15 @@
 
 #include "pdb.h"
 
-static void parse_gdata_global(GDataGlobal *global, RzBuffer *buf, ut32 *read_len) {
-	global->symtype = rz_buf_read_le32(buf);
-	global->offset = rz_buf_read_le32(buf);
+static bool parse_gdata_global(GDataGlobal *global, RzBuffer *buf, ut32 *read_len) {
+	if (!rz_buf_read_le32(buf, &global->symtype) ||
+		!rz_buf_read_le32(buf, &global->offset)) {
+		return false;
+	}
 	*read_len += sizeof(ut32) * 2;
-	global->segment = rz_buf_read_le16(buf);
+	if (!rz_buf_read_le16(buf, &global->segment)) {
+		return false;
+	}
 	*read_len += sizeof(ut16);
 	if (global->leaf_type == 0x110E) {
 		global->name = rz_buf_get_string(buf, rz_buf_tell(buf));
@@ -17,7 +21,9 @@ static void parse_gdata_global(GDataGlobal *global, RzBuffer *buf, ut32 *read_le
 		rz_buf_seek(buf, rz_buf_tell(buf) + len, RZ_BUF_SET);
 		*read_len += len;
 	} else {
-		global->name_len = rz_buf_read8(buf);
+		if (!rz_buf_read8(buf, &global->name_len)) {
+			return false;
+		}
 		*read_len += sizeof(ut8);
 	}
 	if ((*read_len % 4)) {
@@ -25,6 +31,7 @@ static void parse_gdata_global(GDataGlobal *global, RzBuffer *buf, ut32 *read_le
 		rz_buf_seek(buf, rz_buf_tell(buf) + remain, RZ_BUF_SET);
 		read_len += remain;
 	}
+	return true;
 }
 
 RZ_IPI bool parse_gdata_stream(RzPdb *pdb, MsfStream *stream) {
@@ -41,12 +48,17 @@ RZ_IPI bool parse_gdata_stream(RzPdb *pdb, MsfStream *stream) {
 	ut16 len;
 	while (true) {
 		ut32 read_len = 0;
-		len = rz_buf_read_le16(buf);
+		if (!rz_buf_read_le16(buf, &len)) {
+			break;
+		}
 		read_len += sizeof(ut16);
 		if (len == 0 || len == UT16_MAX) {
 			break;
 		}
-		ut16 leaf_type = rz_buf_read_le16(buf);
+		ut16 leaf_type;
+		if (!rz_buf_read_le16(buf, &leaf_type)) {
+			return false;
+		}
 		read_len += sizeof(ut16);
 		if (leaf_type == 0x110E || leaf_type == 0x1009) {
 			GDataGlobal *global = RZ_NEW0(GDataGlobal);
@@ -54,7 +66,10 @@ RZ_IPI bool parse_gdata_stream(RzPdb *pdb, MsfStream *stream) {
 				goto skip;
 			}
 			global->leaf_type = leaf_type;
-			parse_gdata_global(global, buf, &read_len);
+			if (!parse_gdata_global(global, buf, &read_len)) {
+				RZ_FREE(global);
+				return false;
+			}
 			rz_list_append(s->global_list, global);
 			continue;
 		}

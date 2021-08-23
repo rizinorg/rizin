@@ -6,13 +6,14 @@
 
 static bool is_simple_type(TpiStream *stream, ut32 idx) {
 	/*   https://llvm.org/docs/PDB/TpiStream.html#type-indices
-        .---------------------------.------.----------.
-        |           Unused          | Mode |   Kind   |
-        '---------------------------'------'----------'
-        |+32                        |+12   |+8        |+0
-	*/
+  .---------------------------.------.----------.
+  |           Unused          | Mode |   Kind   |
+  '---------------------------'------'----------'
+  |+32                        |+12   |+8        |+0
+  */
 	return idx < stream->header.TypeIndexBegin;
-	// return ((value & 0x00000000FFF00) <= 0x700 && (value & 0x00000000000FF) < 0x80);
+	// return ((value & 0x00000000FFF00) <= 0x700 && (value & 0x00000000000FF) <
+	// 0x80);
 }
 
 int tpi_type_node_cmp(const void *incoming, const RBNode *in_tree, void *user) {
@@ -59,22 +60,22 @@ RZ_API char *rz_bin_pdb_calling_convention_as_string(TpiCallingConvention idx) {
 
 static TpiSimpleTypeMode get_simple_type_mode(ut32 type) {
 	/*   https://llvm.org/docs/PDB/TpiStream.html#type-indices
-        .---------------------------.------.----------.
-        |           Unused          | Mode |   Kind   |
-        '---------------------------'------'----------'
-        |+32                        |+12   |+8        |+0
-	*/
+  .---------------------------.------.----------.
+  |           Unused          | Mode |   Kind   |
+  '---------------------------'------'----------'
+  |+32                        |+12   |+8        |+0
+  */
 	// because mode is only number between 0-7, 1 byte is enough
 	return (type & 0x00000000F0000);
 }
 
 static TpiSimpleTypeKind get_simple_type_kind(ut32 type) {
 	/*   https://llvm.org/docs/PDB/TpiStream.html#type-indices
-        .---------------------------.------.----------.
-        |           Unused          | Mode |   Kind   |
-        '---------------------------'------'----------'
-        |+32                        |+12   |+8        |+0
-	*/
+  .---------------------------.------.----------.
+  |           Unused          | Mode |   Kind   |
+  '---------------------------'------'----------'
+  |+32                        |+12   |+8        |+0
+  */
 	return (type & 0x00000000000FF);
 }
 
@@ -277,7 +278,8 @@ RZ_IPI TpiType *parse_simple_type(TpiStream *stream, ut32 idx) {
 	}
 	simple_type->type = rz_strbuf_get(buf);
 	// We just insert once
-	rz_rbtree_insert(&stream->types, &type->type_index, &type->rb, tpi_type_node_cmp, NULL);
+	rz_rbtree_insert(&stream->types, &type->type_index, &type->rb,
+		tpi_type_node_cmp, NULL);
 	return type;
 }
 
@@ -306,7 +308,7 @@ static ut64 get_numeric_val(Tpi_Type_Numeric *numeric) {
 }
 /**
  * \brief Return true if type is forward definition
- * 
+ *
  * \param t TpiType
  * \return bool
  */
@@ -346,24 +348,28 @@ RZ_API RzList *rz_bin_pdb_get_type_members(TpiStream *stream, TpiType *t) {
 		return lf->substructs;
 	}
 	case LF_UNION: {
-		tmp = rz_bin_pdb_get_type_by_index(stream, ((Tpi_LF_Union *)t->type_data)->field_list);
+		tmp = rz_bin_pdb_get_type_by_index(
+			stream, ((Tpi_LF_Union *)t->type_data)->field_list);
 		Tpi_LF_FieldList *lf_union = tmp ? tmp->type_data : NULL;
 		return lf_union ? lf_union->substructs : NULL;
 	}
 	case LF_STRUCTURE:
 	case LF_CLASS: {
-		tmp = rz_bin_pdb_get_type_by_index(stream, ((Tpi_LF_Structure *)t->type_data)->field_list);
+		tmp = rz_bin_pdb_get_type_by_index(
+			stream, ((Tpi_LF_Structure *)t->type_data)->field_list);
 		Tpi_LF_FieldList *lf_struct = tmp ? tmp->type_data : NULL;
 		return lf_struct ? lf_struct->substructs : NULL;
 	}
 	case LF_STRUCTURE_19:
 	case LF_CLASS_19: {
-		tmp = rz_bin_pdb_get_type_by_index(stream, ((Tpi_LF_Structure_19 *)t->type_data)->field_list);
+		tmp = rz_bin_pdb_get_type_by_index(
+			stream, ((Tpi_LF_Structure_19 *)t->type_data)->field_list);
 		Tpi_LF_FieldList *lf_struct19 = tmp ? tmp->type_data : NULL;
 		return lf_struct19 ? lf_struct19->substructs : NULL;
 	}
 	case LF_ENUM: {
-		tmp = rz_bin_pdb_get_type_by_index(stream, ((Tpi_LF_Enum *)t->type_data)->field_list);
+		tmp = rz_bin_pdb_get_type_by_index(
+			stream, ((Tpi_LF_Enum *)t->type_data)->field_list);
 		Tpi_LF_FieldList *lf_enum = tmp ? tmp->type_data : NULL;
 		return lf_enum ? lf_enum->substructs : NULL;
 	}
@@ -611,8 +617,11 @@ static void free_tpi_stream(TpiStream *stream) {
 
 static void skip_padding(RzBuffer *buf, ut16 len, ut16 *read_len) {
 	while (*read_len < len) {
-		ut8 byt = rz_buf_read8(buf);
-		if ((byt & 0xf0) == 0xf0) {
+		ut8 byt;
+		if (!rz_buf_read8(buf, &byt)) {
+			break;
+		}
+		if ((byt & 0xf0) == 0xf0 || byt == 0) {
 			*read_len += 1;
 		} else {
 			rz_buf_seek(buf, rz_buf_tell(buf) - 1, RZ_BUF_SET);
@@ -623,7 +632,10 @@ static void skip_padding(RzBuffer *buf, ut16 len, ut16 *read_len) {
 
 static bool has_non_padding(RzBuffer *buf, ut16 len, ut16 *read_len) {
 	while (*read_len < len) {
-		ut8 byt = rz_buf_read8(buf);
+		ut8 byt;
+		if (!rz_buf_read8(buf, &byt)) {
+			break;
+		}
 		rz_buf_seek(buf, rz_buf_tell(buf) - 1, RZ_BUF_SET);
 		if ((byt & 0xf0) != 0xf0) {
 			return true;
@@ -633,62 +645,93 @@ static bool has_non_padding(RzBuffer *buf, ut16 len, ut16 *read_len) {
 	return false;
 }
 
-static void parse_type_numeric(RzBuffer *buf, Tpi_Type_Numeric *numeric, ut16 *read_len) {
+static bool parse_type_numeric(RzBuffer *buf, Tpi_Type_Numeric *numeric,
+	ut16 *read_len) {
 	numeric->data = 0;
 	numeric->is_integer = true;
-	numeric->type_index = rz_buf_read_le16(buf);
+	if (!rz_buf_read_le16(buf, &numeric->type_index)) {
+		return false;
+	}
 	*read_len += sizeof(ut16);
 	switch (numeric->type_index) {
 	case LF_CHAR:
 		numeric->data = RZ_NEW0(st8);
-		*(st8 *)numeric->data = rz_buf_read8(buf);
+		if (!rz_buf_read8(buf, numeric->data)) {
+			RZ_FREE(numeric->data);
+			return false;
+		}
 		*read_len += sizeof(st8);
 		break;
 	case LF_SHORT:
 		numeric->data = RZ_NEW0(st16);
-		*(st16 *)numeric->data = rz_buf_read_le16(buf);
+		if (!rz_buf_read_le16(buf, numeric->data)) {
+			RZ_FREE(numeric->data);
+			return false;
+		}
 		*read_len += sizeof(st16);
 		break;
 	case LF_USHORT:
 		numeric->data = RZ_NEW0(ut16);
-		*(ut16 *)numeric->data = rz_buf_read_le16(buf);
+		if (!rz_buf_read_le16(buf, numeric->data)) {
+			RZ_FREE(numeric->data);
+			return false;
+		}
 		*read_len += sizeof(ut16);
 		break;
 	case LF_LONG:
 		numeric->data = RZ_NEW0(st32);
-		*(st32 *)numeric->data = rz_buf_read_le32(buf);
+		if (!rz_buf_read_le32(buf, numeric->data)) {
+			RZ_FREE(numeric->data);
+			return false;
+		}
 		*read_len += sizeof(st32);
 		break;
 	case LF_ULONG:
 		numeric->data = RZ_NEW0(ut32);
-		*(ut32 *)numeric->data = rz_buf_read_le32(buf);
+		if (!rz_buf_read_le32(buf, numeric->data)) {
+			RZ_FREE(numeric->data);
+			return false;
+		}
 		*read_len += sizeof(ut32);
 		break;
 	case LF_QUADWORD:
 		numeric->data = RZ_NEW0(st64);
-		*(st64 *)numeric->data = rz_buf_read_le64(buf);
+		if (!rz_buf_read_le64(buf, numeric->data)) {
+			RZ_FREE(numeric->data);
+			return false;
+		}
 		*read_len += sizeof(st64);
 		break;
 	case LF_UQUADWORD:
 		numeric->data = RZ_NEW0(ut64);
-		*(ut64 *)numeric->data = rz_buf_read_le64(buf);
+		if (!rz_buf_read_le64(buf, numeric->data)) {
+			RZ_FREE(numeric->data);
+			return false;
+		}
 		*read_len += sizeof(ut64);
 		break;
 	default:
 		if (numeric->type_index >= 0x8000) {
 			numeric->is_integer = false;
-			RZ_LOG_ERROR("%s: Skipping unsupported type (%d)\n", __FUNCTION__, numeric->type_index);
-			return;
+			RZ_LOG_ERROR("%s: Skipping unsupported type (%d)\n", __FUNCTION__,
+				numeric->type_index);
+			return false;
 		}
 		numeric->data = RZ_NEW0(ut16);
 		*(ut16 *)(numeric->data) = numeric->type_index;
+		return true;
 	}
+	return true;
 }
 
-static void parse_type_string(RzBuffer *buf, Tpi_Type_String *str, ut16 len, ut16 *read_len) {
+static void parse_type_string(RzBuffer *buf, Tpi_Type_String *str, ut16 len,
+	ut16 *read_len) {
 	ut16 size = 0;
 	while (*read_len < len) {
-		ut8 byt = rz_buf_read8(buf);
+		ut8 byt;
+		if (!rz_buf_read8(buf, &byt)) {
+			break;
+		}
 		*(read_len) += 1;
 		size++;
 		if (!byt) {
@@ -706,15 +749,22 @@ static void parse_type_string(RzBuffer *buf, Tpi_Type_String *str, ut16 len, ut1
 	}
 }
 
-static Tpi_LF_Enumerate *parse_type_enumerate(RzBuffer *buf, ut16 len, ut16 *read_len) {
+static Tpi_LF_Enumerate *parse_type_enumerate(RzBuffer *buf, ut16 len,
+	ut16 *read_len) {
 	rz_return_val_if_fail(buf, NULL);
 	Tpi_LF_Enumerate *enumerate = RZ_NEW0(Tpi_LF_Enumerate);
 	if (!enumerate) {
 		return NULL;
 	}
-	enumerate->fldattr.fldattr = rz_buf_read_le16(buf);
+	if (!rz_buf_read_le16(buf, &enumerate->fldattr.fldattr)) {
+		RZ_FREE(enumerate);
+		return NULL;
+	}
 	*read_len += sizeof(ut16);
-	parse_type_numeric(buf, &enumerate->enum_value, read_len);
+	if (!parse_type_numeric(buf, &enumerate->enum_value, read_len)) {
+		RZ_FREE(enumerate);
+		return NULL;
+	}
 	if (!enumerate->enum_value.is_integer) {
 		RZ_LOG_ERROR("Integer expected!\n");
 		free_snumeric(&enumerate->enum_value);
@@ -726,60 +776,91 @@ static Tpi_LF_Enumerate *parse_type_enumerate(RzBuffer *buf, ut16 len, ut16 *rea
 	return enumerate;
 }
 
-static Tpi_LF_NestType *parse_type_nesttype(RzBuffer *buf, ut16 len, ut16 *read_len) {
+static Tpi_LF_NestType *parse_type_nesttype(RzBuffer *buf, ut16 len,
+	ut16 *read_len) {
 	rz_return_val_if_fail(buf, NULL);
 	Tpi_LF_NestType *nest = RZ_NEW0(Tpi_LF_NestType);
 	if (!nest) {
 		return NULL;
 	}
-	nest->pad = rz_buf_read_le16(buf);
+	if (!rz_buf_read_le16(buf, &nest->pad)) {
+		RZ_FREE(nest);
+		return NULL;
+	}
 	*read_len += sizeof(ut16);
-	nest->index = rz_buf_read_le32(buf);
+	if (!rz_buf_read_le32(buf, &nest->index)) {
+		RZ_FREE(nest);
+		return NULL;
+	}
 	*read_len += sizeof(ut32);
 	parse_type_string(buf, &nest->name, len, read_len);
 	skip_padding(buf, len, read_len);
 	return nest;
 }
 
-static Tpi_LF_VFuncTab *parse_type_vfunctab(RzBuffer *buf, ut16 len, ut16 *read_len) {
+static Tpi_LF_VFuncTab *parse_type_vfunctab(RzBuffer *buf, ut16 len,
+	ut16 *read_len) {
 	rz_return_val_if_fail(buf, NULL);
 	Tpi_LF_VFuncTab *vftab = RZ_NEW0(Tpi_LF_VFuncTab);
 	if (!vftab) {
 		return NULL;
 	}
-	vftab->pad = rz_buf_read_le16(buf);
+	if (!rz_buf_read_le16(buf, &vftab->pad)) {
+		RZ_FREE(vftab);
+		return NULL;
+	}
 	*read_len += sizeof(ut16);
-	vftab->index = rz_buf_read_le32(buf);
+	if (!rz_buf_read_le32(buf, &vftab->index)) {
+		RZ_FREE(vftab);
+		return NULL;
+	}
 	*read_len += sizeof(ut32);
 	return vftab;
 }
 
-static Tpi_LF_Method *parse_type_method(RzBuffer *buf, ut16 len, ut16 *read_len) {
+static Tpi_LF_Method *parse_type_method(RzBuffer *buf, ut16 len,
+	ut16 *read_len) {
 	rz_return_val_if_fail(buf, NULL);
 	Tpi_LF_Method *method = RZ_NEW0(Tpi_LF_Method);
 	if (!method) {
 		return NULL;
 	}
-	method->count = rz_buf_read_le16(buf);
+	if (!rz_buf_read_le16(buf, &method->count)) {
+		RZ_FREE(method);
+		return NULL;
+	}
 	*read_len += sizeof(ut16);
-	method->mlist = rz_buf_read_le32(buf);
+	if (!rz_buf_read_le32(buf, &method->mlist)) {
+		RZ_FREE(method);
+		return NULL;
+	}
 	*read_len += sizeof(ut32);
 	parse_type_string(buf, &method->name, len, read_len);
 	skip_padding(buf, len, read_len);
 	return method;
 }
 
-static Tpi_LF_Member *parse_type_member(RzBuffer *buf, ut16 len, ut16 *read_len) {
+static Tpi_LF_Member *parse_type_member(RzBuffer *buf, ut16 len,
+	ut16 *read_len) {
 	rz_return_val_if_fail(buf, NULL);
 	Tpi_LF_Member *member = RZ_NEW0(Tpi_LF_Member);
 	if (!member) {
 		return NULL;
 	}
-	member->fldattr.fldattr = rz_buf_read_le16(buf);
+	if (!rz_buf_read_le16(buf, &member->fldattr.fldattr)) {
+		RZ_FREE(member);
+		return NULL;
+	}
 	*read_len += sizeof(ut16);
-	member->index = rz_buf_read_le32(buf);
+	if (!rz_buf_read_le32(buf, &member->index)) {
+		RZ_FREE(member);
+		return NULL;
+	}
 	*read_len += sizeof(ut32);
-	parse_type_numeric(buf, &member->offset, read_len);
+	if (!parse_type_numeric(buf, &member->offset, read_len)) {
+		RZ_FREE(member);
+		return NULL;
+	}
 	if (!member->offset.is_integer) {
 		RZ_LOG_ERROR("Integer expected!\n");
 		free_snumeric(&member->offset);
@@ -791,34 +872,51 @@ static Tpi_LF_Member *parse_type_member(RzBuffer *buf, ut16 len, ut16 *read_len)
 	return member;
 }
 
-static Tpi_LF_StaticMember *parse_type_staticmember(RzBuffer *buf, ut16 len, ut16 *read_len) {
+static Tpi_LF_StaticMember *parse_type_staticmember(RzBuffer *buf, ut16 len,
+	ut16 *read_len) {
 	rz_return_val_if_fail(buf, NULL);
 	Tpi_LF_StaticMember *member = RZ_NEW0(Tpi_LF_StaticMember);
 	if (!member) {
 		return NULL;
 	}
-	member->fldattr.fldattr = rz_buf_read_le16(buf);
+	if (!rz_buf_read_le16(buf, &member->fldattr.fldattr)) {
+		RZ_FREE(member);
+		return NULL;
+	}
 	*read_len += sizeof(ut16);
-	member->index = rz_buf_read_le32(buf);
+	if (!rz_buf_read_le32(buf, &member->index)) {
+		RZ_FREE(member);
+		return NULL;
+	}
 	*read_len += sizeof(ut32);
 	parse_type_string(buf, &member->name, len, read_len);
 	skip_padding(buf, len, read_len);
 	return member;
 }
 
-static Tpi_LF_OneMethod *parse_type_onemethod(RzBuffer *buf, ut16 len, ut16 *read_len) {
+static Tpi_LF_OneMethod *parse_type_onemethod(RzBuffer *buf, ut16 len,
+	ut16 *read_len) {
 	rz_return_val_if_fail(buf, NULL);
 	Tpi_LF_OneMethod *onemethod = RZ_NEW0(Tpi_LF_OneMethod);
 	if (!onemethod) {
 		return NULL;
 	}
-	onemethod->fldattr.fldattr = rz_buf_read_le16(buf);
+	if (!rz_buf_read_le16(buf, &onemethod->fldattr.fldattr)) {
+		RZ_FREE(onemethod);
+		return NULL;
+	}
 	*read_len += sizeof(ut16);
-	onemethod->index = rz_buf_read_le32(buf);
+	if (!rz_buf_read_le32(buf, &onemethod->index)) {
+		RZ_FREE(onemethod);
+		return NULL;
+	}
 	*read_len += sizeof(ut32);
 	onemethod->offset_in_vtable = 0;
-	if (onemethod->fldattr.bits.mprop == MTintro || onemethod->fldattr.bits.mprop == MTpureintro) {
-		onemethod->offset_in_vtable = rz_buf_read_le32(buf);
+	if (onemethod->fldattr.bits.mprop == MTintro ||
+		onemethod->fldattr.bits.mprop == MTpureintro) {
+		if (!rz_buf_read_le32(buf, &onemethod->offset_in_vtable)) {
+			RZ_FREE(onemethod);
+		}
 		*read_len += sizeof(ut32);
 	}
 	parse_type_string(buf, &onemethod->name, len, read_len);
@@ -826,17 +924,27 @@ static Tpi_LF_OneMethod *parse_type_onemethod(RzBuffer *buf, ut16 len, ut16 *rea
 	return onemethod;
 }
 
-static Tpi_LF_BClass *parse_type_bclass(RzBuffer *buf, ut16 len, ut16 *read_len) {
+static Tpi_LF_BClass *parse_type_bclass(RzBuffer *buf, ut16 len,
+	ut16 *read_len) {
 	rz_return_val_if_fail(buf, NULL);
 	Tpi_LF_BClass *bclass = RZ_NEW0(Tpi_LF_BClass);
 	if (!bclass) {
 		return NULL;
 	}
-	bclass->fldattr.fldattr = rz_buf_read_le16(buf);
+	if (!rz_buf_read_le16(buf, &bclass->fldattr.fldattr)) {
+		RZ_FREE(bclass);
+		return NULL;
+	}
 	*read_len += sizeof(ut16);
-	bclass->index = rz_buf_read_le32(buf);
+	if (!rz_buf_read_le32(buf, &bclass->index)) {
+		RZ_FREE(bclass);
+		return NULL;
+	}
 	*read_len += sizeof(ut32);
-	parse_type_numeric(buf, &bclass->offset, read_len);
+	if (!parse_type_numeric(buf, &bclass->offset, read_len)) {
+		RZ_FREE(bclass);
+		return NULL;
+	}
 	if (!bclass->offset.is_integer) {
 		RZ_LOG_ERROR("Integer expected!\n");
 		free_snumeric(&bclass->offset);
@@ -847,17 +955,27 @@ static Tpi_LF_BClass *parse_type_bclass(RzBuffer *buf, ut16 len, ut16 *read_len)
 	return bclass;
 }
 
-static Tpi_LF_VBClass *parse_type_vbclass(RzBuffer *buf, ut16 len, ut16 *read_len) {
+static Tpi_LF_VBClass *parse_type_vbclass(RzBuffer *buf, ut16 len,
+	ut16 *read_len) {
 	rz_return_val_if_fail(buf, NULL);
 	Tpi_LF_VBClass *bclass = RZ_NEW0(Tpi_LF_VBClass);
 	if (!bclass) {
 		return NULL;
 	}
-	bclass->fldattr.fldattr = rz_buf_read_le16(buf);
+	if (!rz_buf_read_le16(buf, &bclass->fldattr.fldattr)) {
+		RZ_FREE(bclass);
+		return NULL;
+	}
 	*read_len += sizeof(ut16);
-	bclass->direct_vbclass_idx = rz_buf_read_le32(buf);
+	if (!rz_buf_read_le32(buf, &bclass->direct_vbclass_idx)) {
+		RZ_FREE(bclass);
+		return NULL;
+	}
 	*read_len += sizeof(ut32);
-	bclass->vb_pointer_idx = rz_buf_read_le32(buf);
+	if (!rz_buf_read_le32(buf, &bclass->vb_pointer_idx)) {
+		RZ_FREE(bclass);
+		return NULL;
+	}
 	*read_len += sizeof(ut32);
 	parse_type_numeric(buf, &bclass->vb_pointer_offset, read_len);
 	if (!bclass->vb_pointer_offset.is_integer) {
@@ -897,7 +1015,11 @@ static Tpi_LF_FieldList *parse_type_fieldlist(RzBuffer *buf, ut16 len) {
 		}
 		type->length = 0;
 		type->type_index = 0;
-		type->leaf_type = rz_buf_read_le16(buf);
+		if (!rz_buf_read_le16(buf, &type->leaf_type)) {
+			RZ_FREE(type);
+			rz_list_free(fieldlist);
+			return NULL;
+		}
 		read_len += sizeof(ut16);
 		switch (type->leaf_type) {
 		case LF_ENUMERATE:
@@ -929,7 +1051,8 @@ static Tpi_LF_FieldList *parse_type_fieldlist(RzBuffer *buf, ut16 len) {
 			type->type_data = parse_type_staticmember(buf, len, &read_len);
 			break;
 		default:
-			RZ_LOG_ERROR("%s: Unsupported leaf type 0x%" PFMT32x "\n", __FUNCTION__, type->leaf_type);
+			RZ_LOG_ERROR("%s: Unsupported leaf type 0x%" PFMT32x "\n", __FUNCTION__,
+				type->leaf_type);
 			RZ_FREE(type);
 			rz_list_free(fieldlist->substructs);
 			goto error;
@@ -954,13 +1077,25 @@ static Tpi_LF_Enum *parse_type_enum(RzBuffer *buf, ut16 len) {
 		return NULL;
 	}
 	ut16 read_bytes = sizeof(ut16); // include leaf_type
-	_enum->count = rz_buf_read_le16(buf);
+	if (!rz_buf_read_le16(buf, &_enum->count)) {
+		RZ_FREE(_enum);
+		return NULL;
+	}
 	read_bytes += sizeof(ut16);
-	_enum->prop.cv_property = rz_buf_read_le16(buf);
+	if (!rz_buf_read_le16(buf, &_enum->prop.cv_property)) {
+		RZ_FREE(_enum);
+		return NULL;
+	}
 	read_bytes += sizeof(ut16);
-	_enum->utype = rz_buf_read_le32(buf);
+	if (!rz_buf_read_le32(buf, &_enum->utype)) {
+		RZ_FREE(_enum);
+		return NULL;
+	}
 	read_bytes += sizeof(ut32);
-	_enum->field_list = rz_buf_read_le32(buf);
+	if (!rz_buf_read_le32(buf, &_enum->field_list)) {
+		RZ_FREE(_enum);
+		return NULL;
+	}
 	read_bytes += sizeof(ut32);
 	parse_type_string(buf, &_enum->name, len, &read_bytes);
 	if (has_non_padding(buf, len, &read_bytes)) {
@@ -977,17 +1112,35 @@ static Tpi_LF_Structure *parse_type_struct(RzBuffer *buf, ut16 len) {
 		return NULL;
 	}
 	ut16 read_bytes = sizeof(ut16);
-	structure->count = rz_buf_read_le16(buf);
+	if (!rz_buf_read_le16(buf, &structure->count)) {
+		RZ_FREE(structure);
+		return NULL;
+	}
 	read_bytes += sizeof(ut16);
-	structure->prop.cv_property = rz_buf_read_le16(buf);
+	if (!rz_buf_read_le16(buf, &structure->prop.cv_property)) {
+		RZ_FREE(structure);
+		return NULL;
+	}
 	read_bytes += sizeof(ut16);
-	structure->field_list = rz_buf_read_le32(buf);
+	if (!rz_buf_read_le32(buf, &structure->field_list)) {
+		RZ_FREE(structure);
+		return NULL;
+	}
 	read_bytes += sizeof(ut32);
-	structure->derived = rz_buf_read_le32(buf);
+	if (!rz_buf_read_le32(buf, &structure->derived)) {
+		RZ_FREE(structure);
+		return NULL;
+	}
 	read_bytes += sizeof(ut32);
-	structure->vshape = rz_buf_read_le32(buf);
+	if (!rz_buf_read_le32(buf, &structure->vshape)) {
+		RZ_FREE(structure);
+		return NULL;
+	}
 	read_bytes += sizeof(ut32);
-	parse_type_numeric(buf, &structure->size, &read_bytes);
+	if (!parse_type_numeric(buf, &structure->size, &read_bytes)) {
+		RZ_FREE(structure);
+		return NULL;
+	}
 	if (!structure->size.is_integer) {
 		RZ_LOG_ERROR("Integer expected!\n");
 		free_snumeric(&structure->size);
@@ -995,6 +1148,7 @@ static Tpi_LF_Structure *parse_type_struct(RzBuffer *buf, ut16 len) {
 		return NULL;
 	}
 	parse_type_string(buf, &structure->name, len, &read_bytes);
+	// idpi test/bins/pe/hello_world_arm/hello_world_arm_ZiZoO2.pdb
 	if (has_non_padding(buf, len, &read_bytes)) {
 		parse_type_string(buf, &structure->mangled_name, len, &read_bytes);
 	}
@@ -1009,19 +1163,40 @@ static Tpi_LF_Structure_19 *parse_type_struct_19(RzBuffer *buf, ut16 len) {
 		return NULL;
 	}
 	ut16 read_bytes = sizeof(ut16);
-	structure->prop.cv_property = rz_buf_read_le16(buf);
+	if (!rz_buf_read_le16(buf, &structure->prop.cv_property)) {
+		RZ_FREE(structure);
+		return NULL;
+	}
 	read_bytes += sizeof(ut16);
-	structure->unknown = rz_buf_read_le16(buf);
+	if (!rz_buf_read_le16(buf, &structure->unknown)) {
+		RZ_FREE(structure);
+		return NULL;
+	}
 	read_bytes += sizeof(ut16);
-	structure->field_list = rz_buf_read_le32(buf);
+	if (!rz_buf_read_le32(buf, &structure->field_list)) {
+		RZ_FREE(structure);
+		return NULL;
+	}
 	read_bytes += sizeof(ut32);
-	structure->derived = rz_buf_read_le32(buf);
+	if (!rz_buf_read_le32(buf, &structure->derived)) {
+		RZ_FREE(structure);
+		return NULL;
+	}
 	read_bytes += sizeof(ut32);
-	structure->vshape = rz_buf_read_le32(buf);
+	if (!rz_buf_read_le32(buf, &structure->vshape)) {
+		RZ_FREE(structure);
+		return NULL;
+	}
 	read_bytes += sizeof(ut32);
-	structure->unknown1 = rz_buf_read_le16(buf);
-	read_bytes += sizeof(ut16);
-	parse_type_numeric(buf, &structure->size, &read_bytes);
+	if (!rz_buf_read_le32(buf, &structure->unknown1)) {
+		RZ_FREE(structure);
+		return NULL;
+	}
+	read_bytes += sizeof(ut32);
+	if (!parse_type_numeric(buf, &structure->size, &read_bytes)) {
+		RZ_FREE(structure);
+		return NULL;
+	}
 	if (!structure->size.is_integer) {
 		RZ_LOG_ERROR("Integer expected!\n");
 		free_snumeric(&structure->size);
@@ -1043,9 +1218,15 @@ static Tpi_LF_Pointer *parse_type_pointer(RzBuffer *buf, ut16 len) {
 		return NULL;
 	}
 	ut16 read_bytes = sizeof(ut16);
-	pointer->utype = rz_buf_read_le32(buf);
+	if (!rz_buf_read_le32(buf, &pointer->utype)) {
+		RZ_FREE(pointer);
+		return NULL;
+	}
 	read_bytes += sizeof(ut32);
-	pointer->ptr_attr.ptr_attr = rz_buf_read_le32(buf);
+	if (!rz_buf_read_le32(buf, &pointer->ptr_attr.ptr_attr)) {
+		RZ_FREE(pointer);
+		return NULL;
+	}
 	read_bytes += sizeof(ut32);
 	skip_padding(buf, len, &read_bytes);
 	return pointer;
@@ -1058,11 +1239,20 @@ static Tpi_LF_Array *parse_type_array(RzBuffer *buf, ut16 len) {
 		return NULL;
 	}
 	ut16 read_bytes = sizeof(ut16);
-	array->element_type = rz_buf_read_le32(buf);
+	if (!rz_buf_read_le32(buf, &array->element_type)) {
+		RZ_FREE(array);
+		return NULL;
+	}
 	read_bytes += sizeof(ut32);
-	array->index_type = rz_buf_read_le32(buf);
+	if (!rz_buf_read_le32(buf, &array->index_type)) {
+		RZ_FREE(array);
+		return NULL;
+	}
 	read_bytes += sizeof(ut32);
-	parse_type_numeric(buf, &array->size, &read_bytes);
+	if (!parse_type_numeric(buf, &array->size, &read_bytes)) {
+		RZ_FREE(array);
+		return NULL;
+	}
 	if (!array->size.is_integer) {
 		RZ_LOG_ERROR("Integer expected!\n");
 		free_snumeric(&array->size);
@@ -1081,9 +1271,15 @@ static Tpi_LF_Modifier *parse_type_modifier(RzBuffer *buf, ut16 len) {
 		return NULL;
 	}
 	ut16 read_bytes = sizeof(ut16);
-	modifier->modified_type = rz_buf_read_le32(buf);
+	if (!rz_buf_read_le32(buf, &modifier->modified_type)) {
+		RZ_FREE(modifier);
+		return NULL;
+	}
 	read_bytes += sizeof(ut32);
-	modifier->umodifier.modifier = rz_buf_read_le16(buf);
+	if (!rz_buf_read_le16(buf, &modifier->umodifier.modifier)) {
+		RZ_FREE(modifier);
+		return NULL;
+	}
 	read_bytes += sizeof(ut16);
 	skip_padding(buf, len, &read_bytes);
 	return modifier;
@@ -1096,7 +1292,10 @@ static Tpi_LF_Arglist *parse_type_arglist(RzBuffer *buf, ut16 len) {
 		return NULL;
 	}
 	ut16 read_bytes = sizeof(ut16);
-	arglist->count = rz_buf_read_le32(buf);
+	if (!rz_buf_read_le32(buf, &arglist->count)) {
+		RZ_FREE(arglist);
+		return NULL;
+	}
 	read_bytes += sizeof(ut32);
 	arglist->arg_type = (ut32 *)malloc(sizeof(ut32) * arglist->count);
 	if (!arglist->arg_type) {
@@ -1105,7 +1304,11 @@ static Tpi_LF_Arglist *parse_type_arglist(RzBuffer *buf, ut16 len) {
 		return NULL;
 	}
 	for (size_t i = 0; i < arglist->count; i++) {
-		arglist->arg_type[i] = rz_buf_read_le32(buf);
+		if (!rz_buf_read_le32(buf, &arglist->arg_type[i])) {
+			RZ_FREE(arglist->arg_type);
+			RZ_FREE(arglist);
+			return NULL;
+		}
 		read_bytes += sizeof(ut32);
 	}
 	skip_padding(buf, len, &read_bytes);
@@ -1120,21 +1323,45 @@ static Tpi_LF_MFcuntion *parse_type_mfunction(RzBuffer *buf, ut16 len) {
 		return NULL;
 	}
 	ut16 read_bytes = sizeof(ut16);
-	mfunc->return_type = rz_buf_read_le32(buf);
+	if (!rz_buf_read_le32(buf, &mfunc->return_type)) {
+		RZ_FREE(mfunc);
+		return NULL;
+	}
 	read_bytes += sizeof(ut32);
-	mfunc->class_type = rz_buf_read_le32(buf);
+	if (!rz_buf_read_le32(buf, &mfunc->class_type)) {
+		RZ_FREE(mfunc);
+		return NULL;
+	}
 	read_bytes += sizeof(ut32);
-	mfunc->this_type = rz_buf_read_le32(buf);
+	if (!rz_buf_read_le32(buf, &mfunc->this_type)) {
+		RZ_FREE(mfunc);
+		return NULL;
+	}
 	read_bytes += sizeof(ut32);
-	mfunc->call_conv = rz_buf_read8(buf);
+	if (!rz_buf_read8(buf, &mfunc->call_conv)) {
+		RZ_FREE(mfunc);
+		return NULL;
+	}
 	read_bytes += sizeof(ut8);
-	mfunc->func_attr.funcattr = rz_buf_read8(buf);
+	if (!rz_buf_read8(buf, &mfunc->func_attr.funcattr)) {
+		RZ_FREE(mfunc);
+		return NULL;
+	}
 	read_bytes += sizeof(ut8);
-	mfunc->parm_count = rz_buf_read_le16(buf);
+	if (!rz_buf_read_le16(buf, &mfunc->parm_count)) {
+		RZ_FREE(mfunc);
+		return NULL;
+	}
 	read_bytes += sizeof(ut16);
-	mfunc->arglist = rz_buf_read_le32(buf);
+	if (!rz_buf_read_le32(buf, &mfunc->arglist)) {
+		RZ_FREE(mfunc);
+		return NULL;
+	}
 	read_bytes += sizeof(ut32);
-	mfunc->this_adjust = rz_buf_read_le32(buf);
+	if (!rz_buf_read_le32(buf, &mfunc->this_adjust)) {
+		RZ_FREE(mfunc);
+		return NULL;
+	}
 	read_bytes += sizeof(ut32);
 	skip_padding(buf, len, &read_bytes);
 	return mfunc;
@@ -1157,15 +1384,36 @@ static Tpi_LF_MethodList *parse_type_methodlist(RzBuffer *buf, ut16 len) {
 		if (!member) {
 			continue;
 		}
-		member->fldattr.fldattr = rz_buf_read_le16(buf);
+		if (!rz_buf_read_le16(buf, &member->fldattr.fldattr)) {
+			RZ_FREE(member);
+			rz_list_free(mlist->members);
+			RZ_FREE(mlist);
+			return NULL;
+		}
 		read_bytes += sizeof(ut16);
-		member->pad = rz_buf_read_le16(buf);
+		if (!rz_buf_read_le16(buf, &member->pad)) {
+			RZ_FREE(member);
+			rz_list_free(mlist->members);
+			RZ_FREE(mlist);
+			return NULL;
+		}
 		read_bytes += sizeof(ut16);
-		member->type = rz_buf_read_le32(buf);
+		if (!rz_buf_read_le32(buf, &member->type)) {
+			RZ_FREE(member);
+			rz_list_free(mlist->members);
+			RZ_FREE(mlist);
+			return NULL;
+		}
 		read_bytes += sizeof(ut32);
 		member->optional_offset = 0;
-		if (member->fldattr.bits.mprop == MTintro || member->fldattr.bits.mprop == MTpureintro) {
-			member->optional_offset = rz_buf_read_le32(buf);
+		if (member->fldattr.bits.mprop == MTintro ||
+			member->fldattr.bits.mprop == MTpureintro) {
+			if (!rz_buf_read_le32(buf, &member->optional_offset)) {
+				RZ_FREE(member);
+				rz_list_free(mlist->members);
+				RZ_FREE(mlist);
+				return NULL;
+			}
 			read_bytes += sizeof(ut32);
 		}
 		rz_list_append(mlist->members, member);
@@ -1185,15 +1433,30 @@ static Tpi_LF_Procedure *parse_type_procedure(RzBuffer *buf, ut16 len) {
 		return NULL;
 	}
 	ut16 read_bytes = sizeof(ut16);
-	proc->return_type = rz_buf_read_le32(buf);
+	if (!rz_buf_read_le32(buf, &proc->return_type)) {
+		RZ_FREE(proc);
+		return NULL;
+	}
 	read_bytes += sizeof(ut32);
-	proc->call_conv = rz_buf_read8(buf);
+	if (!rz_buf_read8(buf, &proc->call_conv)) {
+		RZ_FREE(proc);
+		return NULL;
+	}
 	read_bytes += sizeof(ut8);
-	proc->func_attr.funcattr = rz_buf_read8(buf);
+	if (!rz_buf_read8(buf, &proc->func_attr.funcattr)) {
+		RZ_FREE(proc);
+		return NULL;
+	}
 	read_bytes += sizeof(ut8);
-	proc->parm_count = rz_buf_read_le16(buf);
+	if (!rz_buf_read_le16(buf, &proc->parm_count)) {
+		RZ_FREE(proc);
+		return NULL;
+	}
 	read_bytes += sizeof(ut16);
-	proc->arg_list = rz_buf_read_le32(buf);
+	if (!rz_buf_read_le32(buf, &proc->arg_list)) {
+		RZ_FREE(proc);
+		return NULL;
+	}
 	read_bytes += sizeof(ut32);
 	skip_padding(buf, len, &read_bytes);
 	return proc;
@@ -1206,13 +1469,24 @@ static Tpi_LF_Union *parse_type_union(RzBuffer *buf, ut16 len) {
 		return NULL;
 	}
 	ut16 read_bytes = sizeof(ut16);
-	unin->count = rz_buf_read_le16(buf);
+	if (!rz_buf_read_le16(buf, &unin->count)) {
+		RZ_FREE(unin);
+		return NULL;
+	}
 	read_bytes += sizeof(ut16);
-	unin->prop.cv_property = rz_buf_read_le16(buf);
+	if (!rz_buf_read_le16(buf, &unin->prop.cv_property)) {
+		RZ_FREE(unin);
+		return NULL;
+	}
 	read_bytes += sizeof(ut16);
-	unin->field_list = rz_buf_read_le32(buf);
+	if (!rz_buf_read_le32(buf, &unin->field_list)) {
+		RZ_FREE(unin);
+		return NULL;
+	}
 	read_bytes += sizeof(ut32);
-	parse_type_numeric(buf, &unin->size, &read_bytes);
+	if (!parse_type_numeric(buf, &unin->size, &read_bytes)) {
+		RZ_FREE(unin);
+	}
 	if (!unin->size.is_integer) {
 		RZ_LOG_ERROR("Integer expected!\n");
 		free_snumeric(&unin->size);
@@ -1235,11 +1509,20 @@ static Tpi_LF_Bitfield *parse_type_bitfield(RzBuffer *buf, ut16 len) {
 		return NULL;
 	}
 	ut16 read_bytes = sizeof(ut16);
-	bf->base_type = rz_buf_read_le32(buf);
+	if (!rz_buf_read_le32(buf, &bf->base_type)) {
+		RZ_FREE(bf);
+		return NULL;
+	}
 	read_bytes += sizeof(ut32);
-	bf->length = rz_buf_read8(buf);
+	if (!rz_buf_read8(buf, &bf->length)) {
+		RZ_FREE(bf);
+		return NULL;
+	}
 	read_bytes += sizeof(ut8);
-	bf->position = rz_buf_read8(buf);
+	if (!rz_buf_read8(buf, &bf->position)) {
+		RZ_FREE(bf);
+		return NULL;
+	}
 	read_bytes += sizeof(ut8);
 	skip_padding(buf, len, &read_bytes);
 	return bf;
@@ -1252,7 +1535,10 @@ static Tpi_LF_Vtshape *parse_type_vtshape(RzBuffer *buf, ut16 len) {
 		return NULL;
 	}
 	ut16 read_bytes = sizeof(ut16);
-	vt->count = rz_buf_read_le16(buf);
+	if (!rz_buf_read_le16(buf, &vt->count)) {
+		RZ_FREE(vt);
+		return NULL;
+	}
 	read_bytes += sizeof(ut16);
 	ut16 size = (4 * vt->count + (vt->count % 2) * 4) / 8;
 	vt->vt_descriptors = (char *)malloc(size);
@@ -1271,8 +1557,12 @@ static bool parse_tpi_types(RzBuffer *buf, TpiType *type) {
 	if (!buf || !type) {
 		return false;
 	}
-	type->length = rz_buf_read_le16(buf);
-	type->leaf_type = rz_buf_read_le16(buf);
+	if (!rz_buf_read_le16(buf, &type->length)) {
+		return false;
+	}
+	if (!rz_buf_read_le16(buf, &type->leaf_type)) {
+		return false;
+	}
 	switch (type->leaf_type) {
 	case LF_FIELDLIST:
 		type->type_data = parse_type_fieldlist(buf, type->length);
@@ -1319,32 +1609,33 @@ static bool parse_tpi_types(RzBuffer *buf, TpiType *type) {
 		type->type_data = parse_type_vtshape(buf, type->length);
 		break;
 	default:
-		RZ_LOG_ERROR("%s: unsupported leaf type: 0x%" PFMT32x "\n", __FUNCTION__, type->leaf_type);
+		RZ_LOG_ERROR("%s: unsupported leaf type: 0x%" PFMT32x "\n", __FUNCTION__,
+			type->leaf_type);
 		return false;
 	}
 	return true;
 }
 
-static void parse_tpi_stream_header(TpiStream *s, RzBuffer *buf) {
-	s->header.Version = rz_buf_read_le32(buf);
-	s->header.HeaderSize = rz_buf_read_le32(buf);
-	s->header.TypeIndexBegin = rz_buf_read_le32(buf);
-	s->header.TypeIndexEnd = rz_buf_read_le32(buf);
-	s->header.TypeRecordBytes = rz_buf_read_le32(buf);
+static bool parse_tpi_stream_header(TpiStream *s, RzBuffer *buf) {
+	return rz_buf_read_le32(buf, &s->header.Version) &&
+		rz_buf_read_le32(buf, &s->header.HeaderSize) &&
+		rz_buf_read_le32(buf, &s->header.TypeIndexBegin) &&
+		rz_buf_read_le32(buf, &s->header.TypeIndexEnd) &&
+		rz_buf_read_le32(buf, &s->header.TypeRecordBytes) &&
 
-	s->header.HashStreamIndex = rz_buf_read_le16(buf);
-	s->header.HashAuxStreamIndex = rz_buf_read_le16(buf);
-	s->header.HashKeySize = rz_buf_read_le32(buf);
-	s->header.NumHashBuckets = rz_buf_read_le32(buf);
+		rz_buf_read_le16(buf, &s->header.HashStreamIndex) &&
+		rz_buf_read_le16(buf, &s->header.HashAuxStreamIndex) &&
+		rz_buf_read_le32(buf, &s->header.HashKeySize) &&
+		rz_buf_read_le32(buf, &s->header.NumHashBuckets) &&
 
-	s->header.HashValueBufferOffset = rz_buf_read_le32(buf);
-	s->header.HashValueBufferLength = rz_buf_read_le32(buf);
+		rz_buf_read_le32(buf, &s->header.HashValueBufferOffset) &&
+		rz_buf_read_le32(buf, &s->header.HashValueBufferLength) &&
 
-	s->header.IndexOffsetBufferOffset = rz_buf_read_le32(buf);
-	s->header.IndexOffsetBufferLength = rz_buf_read_le32(buf);
+		rz_buf_read_le32(buf, &s->header.IndexOffsetBufferOffset) &&
+		rz_buf_read_le32(buf, &s->header.IndexOffsetBufferLength) &&
 
-	s->header.HashAdjBufferOffset = rz_buf_read_le32(buf);
-	s->header.HashAdjBufferLength = rz_buf_read_le32(buf);
+		rz_buf_read_le32(buf, &s->header.HashAdjBufferOffset) &&
+		rz_buf_read_le32(buf, &s->header.HashAdjBufferLength);
 }
 
 RZ_IPI bool parse_tpi_stream(RzPdb *pdb, MsfStream *stream) {
@@ -1359,7 +1650,9 @@ RZ_IPI bool parse_tpi_stream(RzPdb *pdb, MsfStream *stream) {
 	TpiStream *s = pdb->s_tpi;
 	s->types = NULL;
 	RzBuffer *buf = stream->stream_data;
-	parse_tpi_stream_header(s, buf);
+	if (!parse_tpi_stream_header(s, buf)) {
+		return false;
+	}
 	if (s->header.HeaderSize != sizeof(TpiStreamHeader)) {
 		RZ_LOG_ERROR("Corrupted TPI stream.\n");
 		return false;
@@ -1374,9 +1667,10 @@ RZ_IPI bool parse_tpi_stream(RzPdb *pdb, MsfStream *stream) {
 		if (!parse_tpi_types(buf, type) || !type->type_data) {
 			RZ_LOG_ERROR("Parse TPI type error. idx in stream: 0x%" PFMT32x "\n", i);
 			RZ_FREE(type);
-			continue;
+			exit(0);
 		}
-		rz_rbtree_insert(&s->types, &type->type_index, &type->rb, tpi_type_node_cmp, NULL);
+		rz_rbtree_insert(&s->types, &type->type_index, &type->rb, tpi_type_node_cmp,
+			NULL);
 	}
 	return true;
 }

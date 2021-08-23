@@ -23,8 +23,10 @@ RZ_IPI bool parse_omap_stream(RzPdb *pdb, MsfStream *stream) {
 			rz_list_free(s->entries);
 			return false;
 		}
-		entry->from = rz_buf_read_le32(buf);
-		entry->to = rz_buf_read_le32(buf);
+		if (!rz_buf_read_le32(buf, &entry->from) ||
+			!rz_buf_read_le32(buf, &entry->to)) {
+			return false;
+		}
 		read_len += sizeof(ut32) * 2;
 		rz_list_append(s->entries, entry);
 	}
@@ -35,9 +37,7 @@ RZ_IPI void free_omap_stream(OmapStream *stream) {
 	OmapEntry *entry;
 
 	RzListIter *it;
-	rz_list_foreach (stream->entries, it, entry) {
-		RZ_FREE(entry);
-	}
+	rz_list_foreach (stream->entries, it, entry) { RZ_FREE(entry); }
 	rz_list_free(stream->entries);
 }
 
