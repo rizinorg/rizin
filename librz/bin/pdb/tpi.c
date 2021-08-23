@@ -332,8 +332,7 @@ RZ_IPI TpiType *parse_simple_type(TpiStream *stream, ut32 idx) {
 	}
 	simple_type->type = rz_strbuf_get(buf);
 	// We just insert once
-	rz_rbtree_insert(&stream->types, &type->type_index, &type->rb,
-		tpi_type_node_cmp, NULL);
+	rz_rbtree_insert(&stream->types, &type->type_index, &type->rb, tpi_type_node_cmp, NULL);
 	return type;
 }
 
@@ -409,28 +408,24 @@ RZ_API RZ_BORROW RzList *rz_bin_pdb_get_type_members(RZ_NONNULL TpiStream *strea
 		return lf->substructs;
 	}
 	case LF_UNION: {
-		tmp = rz_bin_pdb_get_type_by_index(
-			stream, ((Tpi_LF_Union *)t->type_data)->field_list);
+		tmp = rz_bin_pdb_get_type_by_index(stream, ((Tpi_LF_Union *)t->type_data)->field_list);
 		Tpi_LF_FieldList *lf_union = tmp ? tmp->type_data : NULL;
 		return lf_union ? lf_union->substructs : NULL;
 	}
 	case LF_STRUCTURE:
 	case LF_CLASS: {
-		tmp = rz_bin_pdb_get_type_by_index(
-			stream, ((Tpi_LF_Structure *)t->type_data)->field_list);
+		tmp = rz_bin_pdb_get_type_by_index(stream, ((Tpi_LF_Structure *)t->type_data)->field_list);
 		Tpi_LF_FieldList *lf_struct = tmp ? tmp->type_data : NULL;
 		return lf_struct ? lf_struct->substructs : NULL;
 	}
 	case LF_STRUCTURE_19:
 	case LF_CLASS_19: {
-		tmp = rz_bin_pdb_get_type_by_index(
-			stream, ((Tpi_LF_Structure_19 *)t->type_data)->field_list);
+		tmp = rz_bin_pdb_get_type_by_index(stream, ((Tpi_LF_Structure_19 *)t->type_data)->field_list);
 		Tpi_LF_FieldList *lf_struct19 = tmp ? tmp->type_data : NULL;
 		return lf_struct19 ? lf_struct19->substructs : NULL;
 	}
 	case LF_ENUM: {
-		tmp = rz_bin_pdb_get_type_by_index(
-			stream, ((Tpi_LF_Enum *)t->type_data)->field_list);
+		tmp = rz_bin_pdb_get_type_by_index(stream, ((Tpi_LF_Enum *)t->type_data)->field_list);
 		Tpi_LF_FieldList *lf_enum = tmp ? tmp->type_data : NULL;
 		return lf_enum ? lf_enum->substructs : NULL;
 	}
@@ -736,8 +731,7 @@ static bool has_non_padding(RzBuffer *buf, ut16 len, ut16 *read_len) {
 	return false;
 }
 
-static bool parse_type_numeric(RzBuffer *buf, Tpi_Type_Numeric *numeric,
-	ut16 *read_len) {
+static bool parse_type_numeric(RzBuffer *buf, Tpi_Type_Numeric *numeric, ut16 *read_len) {
 	numeric->data = 0;
 	numeric->is_integer = true;
 	if (!rz_buf_read_le16(buf, &numeric->type_index)) {
@@ -815,8 +809,7 @@ static bool parse_type_numeric(RzBuffer *buf, Tpi_Type_Numeric *numeric,
 	return true;
 }
 
-static void parse_type_string(RzBuffer *buf, Tpi_Type_String *str, ut16 len,
-	ut16 *read_len) {
+static void parse_type_string(RzBuffer *buf, Tpi_Type_String *str, ut16 len, ut16 *read_len) {
 	ut16 size = 0;
 	while (*read_len < len) {
 		ut8 byt;
@@ -840,8 +833,7 @@ static void parse_type_string(RzBuffer *buf, Tpi_Type_String *str, ut16 len,
 	}
 }
 
-static Tpi_LF_Enumerate *parse_type_enumerate(RzBuffer *buf, ut16 len,
-	ut16 *read_len) {
+static Tpi_LF_Enumerate *parse_type_enumerate(RzBuffer *buf, ut16 len, ut16 *read_len) {
 	rz_return_val_if_fail(buf, NULL);
 	Tpi_LF_Enumerate *enumerate = RZ_NEW0(Tpi_LF_Enumerate);
 	if (!enumerate) {
@@ -869,8 +861,7 @@ static Tpi_LF_Enumerate *parse_type_enumerate(RzBuffer *buf, ut16 len,
 	return enumerate;
 }
 
-static Tpi_LF_NestType *parse_type_nesttype(RzBuffer *buf, ut16 len,
-	ut16 *read_len) {
+static Tpi_LF_NestType *parse_type_nesttype(RzBuffer *buf, ut16 len, ut16 *read_len) {
 	rz_return_val_if_fail(buf, NULL);
 	Tpi_LF_NestType *nest = RZ_NEW0(Tpi_LF_NestType);
 	if (!nest) {
@@ -891,8 +882,7 @@ static Tpi_LF_NestType *parse_type_nesttype(RzBuffer *buf, ut16 len,
 	return nest;
 }
 
-static Tpi_LF_VFuncTab *parse_type_vfunctab(RzBuffer *buf, ut16 len,
-	ut16 *read_len) {
+static Tpi_LF_VFuncTab *parse_type_vfunctab(RzBuffer *buf, ut16 len, ut16 *read_len) {
 	rz_return_val_if_fail(buf, NULL);
 	Tpi_LF_VFuncTab *vftab = RZ_NEW0(Tpi_LF_VFuncTab);
 	if (!vftab) {
@@ -911,8 +901,7 @@ static Tpi_LF_VFuncTab *parse_type_vfunctab(RzBuffer *buf, ut16 len,
 	return vftab;
 }
 
-static Tpi_LF_Method *parse_type_method(RzBuffer *buf, ut16 len,
-	ut16 *read_len) {
+static Tpi_LF_Method *parse_type_method(RzBuffer *buf, ut16 len, ut16 *read_len) {
 	rz_return_val_if_fail(buf, NULL);
 	Tpi_LF_Method *method = RZ_NEW0(Tpi_LF_Method);
 	if (!method) {
@@ -933,8 +922,7 @@ static Tpi_LF_Method *parse_type_method(RzBuffer *buf, ut16 len,
 	return method;
 }
 
-static Tpi_LF_Member *parse_type_member(RzBuffer *buf, ut16 len,
-	ut16 *read_len) {
+static Tpi_LF_Member *parse_type_member(RzBuffer *buf, ut16 len, ut16 *read_len) {
 	rz_return_val_if_fail(buf, NULL);
 	Tpi_LF_Member *member = RZ_NEW0(Tpi_LF_Member);
 	if (!member) {
@@ -967,8 +955,7 @@ static Tpi_LF_Member *parse_type_member(RzBuffer *buf, ut16 len,
 	return member;
 }
 
-static Tpi_LF_StaticMember *parse_type_staticmember(RzBuffer *buf, ut16 len,
-	ut16 *read_len) {
+static Tpi_LF_StaticMember *parse_type_staticmember(RzBuffer *buf, ut16 len, ut16 *read_len) {
 	rz_return_val_if_fail(buf, NULL);
 	Tpi_LF_StaticMember *member = RZ_NEW0(Tpi_LF_StaticMember);
 	if (!member) {
@@ -991,8 +978,7 @@ static Tpi_LF_StaticMember *parse_type_staticmember(RzBuffer *buf, ut16 len,
 	return member;
 }
 
-static Tpi_LF_OneMethod *parse_type_onemethod(RzBuffer *buf, ut16 len,
-	ut16 *read_len) {
+static Tpi_LF_OneMethod *parse_type_onemethod(RzBuffer *buf, ut16 len, ut16 *read_len) {
 	rz_return_val_if_fail(buf, NULL);
 	Tpi_LF_OneMethod *onemethod = RZ_NEW0(Tpi_LF_OneMethod);
 	if (!onemethod) {
@@ -1023,8 +1009,7 @@ static Tpi_LF_OneMethod *parse_type_onemethod(RzBuffer *buf, ut16 len,
 	return onemethod;
 }
 
-static Tpi_LF_BClass *parse_type_bclass(RzBuffer *buf, ut16 len,
-	ut16 *read_len) {
+static Tpi_LF_BClass *parse_type_bclass(RzBuffer *buf, ut16 len, ut16 *read_len) {
 	rz_return_val_if_fail(buf, NULL);
 	Tpi_LF_BClass *bclass = RZ_NEW0(Tpi_LF_BClass);
 	if (!bclass) {
@@ -1056,8 +1041,7 @@ static Tpi_LF_BClass *parse_type_bclass(RzBuffer *buf, ut16 len,
 	return bclass;
 }
 
-static Tpi_LF_VBClass *parse_type_vbclass(RzBuffer *buf, ut16 len,
-	ut16 *read_len) {
+static Tpi_LF_VBClass *parse_type_vbclass(RzBuffer *buf, ut16 len, ut16 *read_len) {
 	rz_return_val_if_fail(buf, NULL);
 	Tpi_LF_VBClass *bclass = RZ_NEW0(Tpi_LF_VBClass);
 	if (!bclass) {
@@ -1729,8 +1713,7 @@ static bool parse_tpi_types(RzBuffer *buf, TpiType *type) {
 		type->type_data = parse_type_vtshape(buf, type->length);
 		break;
 	default:
-		RZ_LOG_ERROR("%s: unsupported leaf type: 0x%" PFMT32x "\n", __FUNCTION__,
-			type->leaf_type);
+		RZ_LOG_ERROR("%s: unsupported leaf type: 0x%" PFMT32x "\n", __FUNCTION__, type->leaf_type);
 		return false;
 	}
 	return true;
@@ -1793,8 +1776,7 @@ RZ_IPI bool parse_tpi_stream(RzPdb *pdb, MsfStream *stream) {
 			RZ_FREE(type);
 			exit(0);
 		}
-		rz_rbtree_insert(&s->types, &type->type_index, &type->rb, tpi_type_node_cmp,
-			NULL);
+		rz_rbtree_insert(&s->types, &type->type_index, &type->rb, tpi_type_node_cmp, NULL);
 	}
 	return true;
 }

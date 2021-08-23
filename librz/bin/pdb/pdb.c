@@ -14,8 +14,7 @@
  * \param pdb pdb structure for printing function
  * \param types List of types
  */
-static void print_types_regular(RzTypeDB *db, const RzPdb *pdb,
-	const RzList *types) {
+static void print_types_regular(RzTypeDB *db, const RzPdb *pdb, const RzList *types) {
 	rz_return_if_fail(pdb);
 	if (!types) {
 		eprintf("there is nothing to print!\n");
@@ -29,8 +28,7 @@ static void print_types_regular(RzTypeDB *db, const RzPdb *pdb,
 			rz_strbuf_appendf(buf, "struct %s { \n", type->name);
 			RzTypeStructMember *memb;
 			rz_vector_foreach(&type->struct_data.members, memb) {
-				char *declaration = rz_type_identifier_declaration_as_string(
-					db, memb->type, memb->name);
+				char *declaration = rz_type_identifier_declaration_as_string(db, memb->type, memb->name);
 				if (memb->type->kind == RZ_TYPE_KIND_CALLABLE) {
 					rz_strbuf_appendf(buf, "\t%s \n", declaration);
 				} else {
@@ -45,8 +43,7 @@ static void print_types_regular(RzTypeDB *db, const RzPdb *pdb,
 			rz_strbuf_appendf(buf, "enum %s { \n", type->name);
 			RzTypeEnumCase *cas;
 			rz_vector_foreach(&type->enum_data.cases, cas) {
-				rz_strbuf_appendf(buf, "\t%s = 0x%" PFMT64x ", \n", cas->name,
-					cas->val);
+				rz_strbuf_appendf(buf, "\t%s = 0x%" PFMT64x ", \n", cas->name, cas->val);
 			}
 			rz_strbuf_append(buf, " }\n");
 			break;
@@ -55,8 +52,7 @@ static void print_types_regular(RzTypeDB *db, const RzPdb *pdb,
 			rz_strbuf_appendf(buf, "union %s { \n", type->name);
 			RzTypeUnionMember *memb;
 			rz_vector_foreach(&type->union_data.members, memb) {
-				char *declaration = rz_type_identifier_declaration_as_string(
-					db, memb->type, memb->name);
+				char *declaration = rz_type_identifier_declaration_as_string(db, memb->type, memb->name);
 				rz_strbuf_appendf(buf, "\t%s %s; \n", declaration, memb->name);
 				free(declaration);
 			}
@@ -77,8 +73,7 @@ static void print_types_regular(RzTypeDB *db, const RzPdb *pdb,
  * \param pdb pdb structure for printing function
  * \param types List of types
  */
-static void print_types_json(RzTypeDB *db, const RzPdb *pdb, PJ *pj,
-	const RzList *types) {
+static void print_types_json(RzTypeDB *db, const RzPdb *pdb, PJ *pj, const RzList *types) {
 	rz_return_if_fail(pdb && types && pj);
 
 	RzListIter *it;
@@ -143,8 +138,7 @@ static void print_types_json(RzTypeDB *db, const RzPdb *pdb, PJ *pj,
  * \param pdb PDB information
  * \param mode printing mode
  */
-RZ_API void rz_bin_pdb_print_types(RzTypeDB *db, const RzPdb *pdb, PJ *pj,
-	const int mode) {
+RZ_API void rz_bin_pdb_print_types(RzTypeDB *db, const RzPdb *pdb, PJ *pj, const int mode) {
 	TpiStream *stream = pdb->s_tpi;
 
 	if (!stream) {
@@ -161,8 +155,7 @@ RZ_API void rz_bin_pdb_print_types(RzTypeDB *db, const RzPdb *pdb, PJ *pj,
 	}
 }
 
-RZ_API void rz_bin_pdb_print_gvars(RzPdb *pdb, ut64 img_base, PJ *pj,
-	int format) {
+RZ_API void rz_bin_pdb_print_gvars(RzPdb *pdb, ut64 img_base, PJ *pj, int format) {
 	PeImageSectionHeader *sctn_header = 0;
 	GDataStream *gsym_data_stream = 0;
 	PeStream *pe_stream = 0;
@@ -188,21 +181,15 @@ RZ_API void rz_bin_pdb_print_gvars(RzPdb *pdb, ut64 img_base, PJ *pj,
 			switch (format) {
 			case 'j': // JSON
 				pj_o(pj);
-				pj_kN(pj, "address",
-					(img_base +
-						omap_remap(omap_stream,
-							gdata->offset + sctn_header->virtual_address)));
+				pj_kN(pj, "address", (img_base + omap_remap(omap_stream, gdata->offset + sctn_header->virtual_address)));
 				pj_kN(pj, "symtype", gdata->symtype);
 				pj_ks(pj, "section_name", sctn_header->name);
 				pj_ks(pj, "gdata_name", name);
 				pj_end(pj);
 				break;
 			case 'd':
-				rz_cons_printf(
-					"0x%08" PFMT64x "  %d  %.*s  %s\n",
-					(ut64)(img_base +
-						omap_remap(omap_stream,
-							gdata->offset + sctn_header->virtual_address)),
+				rz_cons_printf("0x%08" PFMT64x "  %d  %.*s  %s\n",
+					(ut64)(img_base + omap_remap(omap_stream, gdata->offset + sctn_header->virtual_address)),
 					gdata->symtype, PDB_SIZEOF_SECTION_NAME, sctn_header->name, name);
 				break;
 			default:
@@ -332,28 +319,29 @@ static RzList *pdb7_extract_streams(RzPdb *pdb, MsfStreamDirectory *msd) {
 		}
 		stream->stream_idx = i;
 		stream->stream_size = msd->StreamSizes[i];
-		stream->blocks_num =
-			count_blocks(stream->stream_size, pdb->super_block->block_size);
+		stream->blocks_num = count_blocks(stream->stream_size, pdb->super_block->block_size);
 		if (!stream->stream_size) {
 			stream->stream_data = NULL;
 			rz_list_append(streams, stream);
 			continue;
 		}
-		ut8 *stream_data =
-			(ut8 *)malloc(stream->blocks_num * pdb->super_block->block_size);
+		ut8 *stream_data = (ut8 *)malloc(stream->blocks_num * pdb->super_block->block_size);
+		if (!stream_data) {
+			RZ_FREE(stream);
+			rz_list_free(streams);
+			RZ_LOG_ERROR("Error allocating memory.\n");
+			return NULL;
+		}
 		for (size_t j = 0; j < stream->blocks_num; j++) {
 			ut32 block_idx;
 			if (!rz_buf_read_le32(msd->sd, &block_idx)) {
 				rz_list_free(streams);
 				return NULL;
 			}
-			rz_buf_seek(pdb->buf, block_idx * pdb->super_block->block_size,
-				RZ_BUF_SET);
-			rz_buf_read(pdb->buf, stream_data + j * pdb->super_block->block_size,
-				pdb->super_block->block_size);
+			rz_buf_seek(pdb->buf, block_idx * pdb->super_block->block_size, RZ_BUF_SET);
+			rz_buf_read(pdb->buf, stream_data + j * pdb->super_block->block_size, pdb->super_block->block_size);
 		}
-		stream->stream_data =
-			rz_buf_new_with_bytes(stream_data, stream->stream_size);
+		stream->stream_data = rz_buf_new_with_bytes(stream_data, stream->stream_size);
 		if (!stream->stream_data) {
 			RZ_FREE(stream_data);
 			rz_list_free(streams);
@@ -371,15 +359,12 @@ error_memory:
 
 static MsfStreamDirectory *pdb7_extract_msf_stream_directory(RzPdb *pdb) {
 	// Get block map
-	ut32 block_num = count_blocks(pdb->super_block->num_directory_bytes,
-		pdb->super_block->block_size);
+	ut32 block_num = count_blocks(pdb->super_block->num_directory_bytes, pdb->super_block->block_size);
 	if (!block_num) {
 		RZ_LOG_ERROR("Error block map size.\n");
 		goto error;
 	}
-	rz_buf_seek(pdb->buf,
-		pdb->super_block->block_size * pdb->super_block->block_map_addr,
-		RZ_BUF_SET);
+	rz_buf_seek(pdb->buf, pdb->super_block->block_size * pdb->super_block->block_map_addr, RZ_BUF_SET);
 	ut32 *block_map = (ut32 *)malloc(sizeof(ut32) * block_num);
 	if (!block_map) {
 		goto error_memory;
@@ -403,10 +388,8 @@ static MsfStreamDirectory *pdb7_extract_msf_stream_directory(RzPdb *pdb) {
 		goto error_memory;
 	}
 	for (size_t i = 0; i < block_num; i++) {
-		rz_buf_seek(pdb->buf, block_map[i] * pdb->super_block->block_size,
-			RZ_BUF_SET);
-		rz_buf_read(pdb->buf, stream_directory + i * pdb->super_block->block_size,
-			pdb->super_block->block_size);
+		rz_buf_seek(pdb->buf, block_map[i] * pdb->super_block->block_size, RZ_BUF_SET);
+		rz_buf_read(pdb->buf, stream_directory + i * pdb->super_block->block_size, pdb->super_block->block_size);
 	}
 	RzBuffer *sd = rz_buf_new_with_bytes(stream_directory, stream_directory_len);
 	if (!sd) {
@@ -441,10 +424,8 @@ static MsfStreamDirectory *pdb7_extract_msf_stream_directory(RzPdb *pdb) {
 		ut32 blocks = count_blocks(stream_size, pdb->super_block->block_size);
 		total_blocks += blocks;
 	}
-	//				NumStreams
-	// StreamsSizes StreamsBlockMap
-	ut32 msd_size = sizeof(ut32) + msd->NumStreams * sizeof(ut32) +
-		total_blocks * sizeof(ut32);
+	//				NumStreams 						StreamsSizes 				StreamsBlockMap
+	ut32 msd_size = sizeof(ut32) + msd->NumStreams * sizeof(ut32) + total_blocks * sizeof(ut32);
 	if (msd_size != pdb->super_block->num_directory_bytes) {
 		RZ_LOG_ERROR("Error stream directory size.\n");
 		RZ_FREE(msd);
