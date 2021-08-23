@@ -67,7 +67,7 @@ static bool get_elf_segment(ELFOBJ *bin, RzBinObjectLoadOptions *options, RzBinE
 	return true;
 }
 
-static RzVector *get_segments_from_phdr(ELFOBJ *bin, RzBinObjectLoadOptions *options) {
+static RzVector *get_segments_from_phdr(ELFOBJ *bin, size_t count, RzBinObjectLoadOptions *options) {
 	RzVector *result = rz_vector_new(sizeof(RzBinElfSegment), NULL, NULL);
 	if (!result) {
 		return NULL;
@@ -75,7 +75,7 @@ static RzVector *get_segments_from_phdr(ELFOBJ *bin, RzBinObjectLoadOptions *opt
 
 	ut64 offset = bin->ehdr.e_phoff;
 
-	for (size_t i = 0; i < bin->ehdr.e_phnum; i++) {
+	for (size_t i = 0; i < count; i++) {
 		RzBinElfSegment *segment = rz_vector_push(result, NULL);
 		if (!segment) {
 			rz_vector_free(result);
@@ -98,6 +98,25 @@ static RzVector *get_segments_from_phdr(ELFOBJ *bin, RzBinObjectLoadOptions *opt
 	return result;
 }
 
+static size_t get_number_of_segments(ELFOBJ *bin, RzVector *sections) {
+	if (bin->ehdr.e_phnum != PN_XNUM) {
+		return bin->ehdr.e_phnum;
+	}
+
+	if (!sections) {
+		RZ_LOG_WARN("Failed to fetch the number of segments because there are no sections.\n");
+		return 0;
+	}
+
+	Elf_(Shdr) *section = rz_vector_index_ptr(sections, 0);
+	if (!section) {
+		RZ_LOG_WARN("Failed to fetch the number of segments from the section 0.\n");
+		return 0;
+	}
+
+	return section->sh_info;
+}
+
 RZ_BORROW RzBinElfSegment *Elf_(rz_bin_elf_get_segment_with_type)(RZ_NONNULL ELFOBJ *bin, Elf_(Word) type) {
 	rz_return_val_if_fail(bin, NULL);
 
@@ -111,15 +130,20 @@ RZ_BORROW RzBinElfSegment *Elf_(rz_bin_elf_get_segment_with_type)(RZ_NONNULL ELF
 	return NULL;
 }
 
-RZ_OWN RzVector *Elf_(rz_bin_elf_segments_new)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinObjectLoadOptions *options) {
+RZ_OWN RzVector *Elf_(rz_bin_elf_segments_new)(RZ_NONNULL ELFOBJ *bin, RzVector *sections, RZ_NONNULL RzBinObjectLoadOptions *options) {
 	rz_return_val_if_fail(bin && options, NULL);
 
-	if (!Elf_(rz_bin_elf_check_array)(bin, bin->ehdr.e_phoff, bin->ehdr.e_phnum, sizeof(Elf_(Phdr)))) {
+	size_t count = get_number_of_segments(bin, sections);
+	if (!count) {
+		return NULL;
+	}
+
+	if (!Elf_(rz_bin_elf_check_array)(bin, bin->ehdr.e_phoff, count, sizeof(Elf_(Phdr)))) {
 		RZ_LOG_WARN("Invalid program header (check array failed).\n");
 		return NULL;
 	}
 
-	return get_segments_from_phdr(bin, options);
+	return get_segments_from_phdr(bin, count, options);
 }
 
 bool Elf_(rz_bin_elf_has_segments)(RZ_NONNULL ELFOBJ *bin) {

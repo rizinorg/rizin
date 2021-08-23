@@ -322,7 +322,7 @@ ut64 Elf_(rz_bin_elf_get_num_relocs_dynamic_plt)(RZ_NONNULL ELFOBJ *bin);
 
 // elf_segments.c
 RZ_BORROW RzBinElfSegment *Elf_(rz_bin_elf_get_segment_with_type)(RZ_NONNULL ELFOBJ *bin, Elf_(Word) type);
-RZ_OWN RzVector *Elf_(rz_bin_elf_segments_new)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinObjectLoadOptions *options);
+RZ_OWN RzVector *Elf_(rz_bin_elf_segments_new)(RZ_NONNULL ELFOBJ *bin, RzVector *sections, RZ_NONNULL RzBinObjectLoadOptions *options);
 bool Elf_(rz_bin_elf_has_segments)(RZ_NONNULL ELFOBJ *bin);
 
 // elf_sections.c

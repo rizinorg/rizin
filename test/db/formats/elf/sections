@@ -180,7 +180,14 @@ WARNING: Failed to read ELF header (e_shentsize).
 WARNING: Failed to read ELF header (e_shnum).
 WARNING: Failed to read ELF header (e_shstrndx).
 WARNING: The binary seems to be a tiny elf (45 bytes). Reload e_phnum value.
-WARNING: Invalid section header (check array failed).
 WARNING: Failed to initialize section header.
+EOF
+RUN
+
+NAME=more than 65535 segments
+FILE=gzip://bins/elf/core/more-than-65535-segments.gz
+CMDS=iSS~?
+EXPECT=<<EOF
+131074
 EOF
 RUN
