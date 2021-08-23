@@ -611,8 +611,9 @@ static void free_tpi_rbtree(RBNode *node, void *user) {
 	RZ_FREE(type);
 }
 
-static void free_tpi_stream(TpiStream *stream) {
+RZ_IPI void free_tpi_stream(TpiStream *stream) {
 	rz_rbtree_free(stream->types, free_tpi_rbtree, NULL);
+	rz_list_free(stream->print_type);
 }
 
 static void skip_padding(RzBuffer *buf, ut16 len, ut16 *read_len) {

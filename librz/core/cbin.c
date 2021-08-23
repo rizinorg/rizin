@@ -2146,6 +2146,7 @@ RZ_API bool rz_core_pdb_info(RzCore *core, const char *file, PJ *pj, int mode) {
 	rz_parse_pdb_types(core->analysis->typedb, pdb);
 	rz_bin_pdb_print_types(core->analysis->typedb, pdb, pj, mode);
 	rz_bin_pdb_print_gvars(pdb, baddr, pj, mode);
+	rz_bin_pdb_free(pdb);
 
 	if (mode == 'j') {
 		pj_end(pj);

@@ -524,3 +524,19 @@ error:
 
 	return NULL;
 }
+
+RZ_API void rz_bin_pdb_free(RzPdb *pdb) {
+	rz_buf_free(pdb->buf);
+	RZ_FREE(pdb->super_block);
+	rz_list_free(pdb->streams);
+	RZ_FREE(pdb->s_pdb);
+	free_dbi_stream(pdb->s_dbi);
+	RZ_FREE(pdb->s_dbi);
+	free_gdata_stream(pdb->s_gdata);
+	RZ_FREE(pdb->s_gdata);
+	free_omap_stream(pdb->s_omap);
+	RZ_FREE(pdb->s_omap);
+	free_tpi_stream(pdb->s_tpi);
+	RZ_FREE(pdb->s_tpi);
+	RZ_FREE(pdb);
+}

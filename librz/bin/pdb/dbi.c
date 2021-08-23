@@ -4,7 +4,7 @@
 
 #include "pdb.h"
 
-RZ_IPI void rz_bin_pdb_free_dbi_stream(DbiStream *stream) {
+RZ_IPI void free_dbi_stream(DbiStream *stream) {
 	DbiStreamExHdr *ex_hdr;
 	RzListIter *it;
 	rz_list_foreach (stream->ex_hdrs, it, ex_hdr) {
