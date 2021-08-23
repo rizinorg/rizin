@@ -1259,7 +1259,9 @@ RZ_API char *rz_file_path_join(const char *s1, const char *s2) {
  * \param dst destination file (string containing filename)
  * \return true, if successful; false otherwise
  */
-RZ_API bool rz_file_deflate(const char *src, const char *dst) {
+RZ_API bool rz_file_deflate(RZ_NONNULL const char *src, RZ_NONNULL const char *dst) {
+	rz_return_val_if_fail(src && dst, false);
+
 	size_t len, comp_len;
 	char *content = rz_file_slurp(src, &len);
 	if (!content) {
@@ -1268,6 +1270,7 @@ RZ_API bool rz_file_deflate(const char *src, const char *dst) {
 
 	char *comp_content = rz_deflate(content, len, NULL, &comp_len);
 	if (!comp_content) {
+		free(content);
 		return false;
 	}
 
@@ -1284,7 +1287,9 @@ RZ_API bool rz_file_deflate(const char *src, const char *dst) {
  * \param dst destination file (string containing filename)
  * \return true, if successful; false otherwise
  */
-RZ_API bool rz_file_inflate(const char *src, const char *dst) {
+RZ_API bool rz_file_inflate(RZ_NONNULL const char *src, RZ_NONNULL const char *dst) {
+	rz_return_val_if_fail(src && dst, false);
+
 	size_t len, decomp_len;
 	char *content = rz_file_slurp(src, &len);
 	if (!content) {
@@ -1293,6 +1298,7 @@ RZ_API bool rz_file_inflate(const char *src, const char *dst) {
 
 	char *decomp_content = rz_inflate(content, len, NULL, &decomp_len);
 	if (!decomp_content) {
+		free(content);
 		return false;
 	}
 
