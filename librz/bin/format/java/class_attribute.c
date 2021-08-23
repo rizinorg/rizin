@@ -74,6 +74,7 @@ bool java_attribute_set_code(ConstPool **pool, ut32 poolsize, Attribute *attr, R
 
 		ut8 max_locals;
 		if (!rz_buf_read8(buf, &max_locals)) {
+			free(ac);
 			return false;
 		}
 		ac->max_locals = max_locals;
