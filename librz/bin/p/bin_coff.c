@@ -285,7 +285,7 @@ static RzList *sections(RzBinFile *bf) {
 			return ret;
 		}
 		ptr->name = rz_coff_symbol_name(obj, &obj->scn_hdrs[i]);
-		if (ptr->name && strstr(ptr->name, "data")) {
+		if (strstr(ptr->name, "data")) {
 			ptr->is_data = true;
 		}
 		ptr->size = obj->scn_hdrs[i].s_size;
