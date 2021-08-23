@@ -1262,13 +1262,14 @@ RZ_API char *rz_file_path_join(const char *s1, const char *s2) {
 RZ_API bool rz_file_deflate(RZ_NONNULL const char *src, RZ_NONNULL const char *dst) {
 	rz_return_val_if_fail(src && dst, false);
 
-	size_t len, comp_len;
+	size_t len;
+	int comp_len;
 	char *content = rz_file_slurp(src, &len);
 	if (!content) {
 		return false;
 	}
 
-	char *comp_content = rz_deflate(content, len, NULL, &comp_len);
+	unsigned char *comp_content = rz_deflate((unsigned char *)content, len, NULL, &comp_len);
 	if (!comp_content) {
 		free(content);
 		return false;
@@ -1290,13 +1291,14 @@ RZ_API bool rz_file_deflate(RZ_NONNULL const char *src, RZ_NONNULL const char *d
 RZ_API bool rz_file_inflate(RZ_NONNULL const char *src, RZ_NONNULL const char *dst) {
 	rz_return_val_if_fail(src && dst, false);
 
-	size_t len, decomp_len;
+	size_t len;
+	int decomp_len;
 	char *content = rz_file_slurp(src, &len);
 	if (!content) {
 		return false;
 	}
 
-	char *decomp_content = rz_inflate(content, len, NULL, &decomp_len);
+	unsigned char *decomp_content = rz_inflate((unsigned char *)content, len, NULL, &decomp_len);
 	if (!decomp_content) {
 		free(content);
 		return false;
