@@ -1509,7 +1509,9 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 			break;
 		case 19: // ^S -- forward-search
 			if (gcomp) {
-				gcomp_idx--;
+				if (gcomp_idx > 0) {
+					gcomp_idx--;
+				}
 				gcomp_is_rev = false;
 			} else {
 				__move_cursor_left();
@@ -2000,17 +2002,12 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 						if (i == 0) {
 							if (gcomp_is_rev) {
 								gcomp_idx--;
-							} else {
-								gcomp_idx++;
 							}
 						}
 					}
 				}
-				if (gcomp_is_rev) {
-					printf("\r (reverse-i-search (%s)): %s\r", I.buffer.data, gcomp_line);
-				} else {
-					printf("\r (forward-i-search (%s)): %s\r", I.buffer.data, gcomp_line);
-				}
+				const char *prompt = gcomp_is_rev ? "reverse-i-search" : "forward-i-search";
+				printf("\r (%s (%s)): %s\r", prompt, I.buffer.data, gcomp_line);
 			} else {
 				__print_prompt();
 			}
