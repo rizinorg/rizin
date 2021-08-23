@@ -272,8 +272,8 @@ typedef enum {
 	LF_PAD13 = 0x00FD,
 	LF_PAD14 = 0x00FE,
 	LF_PAD15 = 0x00FF,
-	LF_SIMPLE_TYPE = 0xEFFFFFFF, // Custom, hopefully it doesn't collide
-	LF_MAX = 0xFFFFFFFF
+	LF_SIMPLE_TYPE = 0xEFFF, // Custom, hopefully it doesn't collide
+	LF_MAX = 0xFFFF
 } TpiLeafType;
 
 typedef union {
@@ -620,7 +620,7 @@ typedef struct tpi_stream_header_t {
 typedef struct tpi_types {
 	RBNode rb;
 	ut32 type_index;
-	TpiLeafType leaf_type;
+	ut16 leaf_type;
 	ut16 length;
 	void *type_data;
 } TpiType;

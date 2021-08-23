@@ -106,7 +106,7 @@ static void parse_codeview_fld_attribute(TpiCVFldattr *f, ut16 value) {
 	f->bits.sealed = GET_BF(value, 9, 1);
 }
 
-static void parse_codeview_func_attribute(TpiCVFuncattr *f, ut8 value){
+static void parse_codeview_func_attribute(TpiCVFuncattr *f, ut8 value) {
 	f->bits.cxxreturnudt = GET_BF(value, 0, 1);
 	f->bits.ctor = GET_BF(value, 1, 1);
 	f->bits.ctorvbase = GET_BF(value, 2, 1);
@@ -1118,7 +1118,7 @@ static Tpi_LF_FieldList *parse_type_fieldlist(RzBuffer *buf, ut16 len) {
 		}
 		type->length = 0;
 		type->type_index = 0;
-		if (!rz_buf_read_le16(buf, (ut16 *)&type->leaf_type)) {
+		if (!rz_buf_read_le16(buf, &type->leaf_type)) {
 			RZ_FREE(type);
 			rz_list_free(fieldlist->substructs);
 			return NULL;
@@ -1680,7 +1680,7 @@ static bool parse_tpi_types(RzBuffer *buf, TpiType *type) {
 	if (!rz_buf_read_le16(buf, &type->length)) {
 		return false;
 	}
-	if (!rz_buf_read_le16(buf, (ut16 *)&type->leaf_type)) {
+	if (!rz_buf_read_le16(buf, &type->leaf_type)) {
 		return false;
 	}
 	switch (type->leaf_type) {
