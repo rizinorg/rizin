@@ -183,38 +183,26 @@ static PTHREAD_ITEM add_thread(RzDebug *dbg, DWORD pid, DWORD tid, HANDLE hThrea
 	return pthread;
 }
 
-static int suspend_thread(HANDLE th, int bits) {
+static inline int suspend_thread(HANDLE th) {
 	int ret;
-	//if (bits == RZ_SYS_BITS_32) {
 	if ((ret = SuspendThread(th)) == -1) {
 		rz_sys_perror("SuspendThread");
 	}
-	/*} else {
-		if ((ret = Wow64SuspendThread (th)) == -1) {
-			rz_sys_perror ("Wow64SuspendThread");
-		}
-	}*/
 	return ret;
 }
 
-static int resume_thread(HANDLE th, int bits) {
+static int resume_thread(HANDLE th) {
 	int ret;
-	//if (bits == RZ_SYS_BITS_32) {
 	if ((ret = ResumeThread(th)) == -1) {
 		rz_sys_perror("ResumeThread");
 	}
-	/*} else {
-		if ((ret = ResumeThread (th)) == -1) {
-			rz_sys_perror ("Wow64ResumeThread");
-		}
-	}*/
 	return ret;
 }
 
-static inline void continue_thread(HANDLE th, int bits) {
+static inline void continue_thread(HANDLE th) {
 	int ret;
 	do {
-		ret = resume_thread(th, bits);
+		ret = resume_thread(th);
 	} while (ret > 0);
 }
 
@@ -287,7 +275,6 @@ int w32_step(RzDebug *dbg) {
 		return false;
 	}
 	return w32_continue(dbg, dbg->pid, dbg->tid, dbg->reason.signum);
-	// (void)rz_debug_handle_signals (dbg);
 }
 
 static int get_avx(HANDLE th, ut128 xmm[16], ut128 ymm[16]) {
@@ -500,7 +487,7 @@ int w32_hwbp_arm_add(RzDebug *dbg, RzBreakpoint *bp, RzBreakpointItem *b) {
 	W32DbgWInst *wrap = dbg->plugin_data;
 	CONTEXT ctx;
 	const bool alive = is_thread_alive(dbg, wrap->pi.dwThreadId);
-	if (alive && suspend_thread(wrap->pi.hThread, dbg->bits) == -1) {
+	if (alive && suspend_thread(wrap->pi.hThread) == -1) {
 		return 0;
 	}
 	get_thread_context(wrap->pi.hThread, (ut8 *)&ctx, sizeof(CONTEXT), CONTEXT_DEBUG_REGISTERS);
@@ -536,7 +523,7 @@ int w32_hwbp_arm_add(RzDebug *dbg, RzBreakpoint *bp, RzBreakpointItem *b) {
 		}
 	}
 	set_thread_context(wrap->pi.hThread, (ut8 *)&ctx, sizeof(CONTEXT));
-	if (alive && resume_thread(wrap->pi.hThread, dbg->bits) == -1) {
+	if (alive && resume_thread(wrap->pi.hThread) == -1) {
 		return 0;
 	}
 	return 1;
@@ -546,7 +533,7 @@ int w32_hwbp_arm_del(RzDebug *dbg, RzBreakpoint *bp, RzBreakpointItem *b) {
 	W32DbgWInst *wrap = dbg->plugin_data;
 	CONTEXT ctx;
 	const bool alive = is_thread_alive(dbg, wrap->pi.dwThreadId);
-	if (alive && suspend_thread(wrap->pi.hThread, dbg->bits) == -1) {
+	if (alive && suspend_thread(wrap->pi.hThread) == -1) {
 		return 0;
 	}
 	get_thread_context(wrap->pi.hThread, (ut8 *)&ctx, sizeof(CONTEXT), CONTEXT_DEBUG_REGISTERS);
@@ -613,7 +600,7 @@ int w32_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 		return 0;
 	}
 	// Always suspend
-	if (alive && suspend_thread(th, dbg->bits) == -1) {
+	if (alive && suspend_thread(th) == -1) {
 		return 0;
 	}
 	size = get_thread_context(th, buf, size, CONTEXT_ALL);
@@ -621,7 +608,7 @@ int w32_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 		print_fpu_context(th, (CONTEXT *)buf);
 	}
 	// Always resume
-	if (alive && resume_thread(th, dbg->bits) == -1) {
+	if (alive && resume_thread(th) == -1) {
 		size = 0;
 	}
 	return size;
@@ -637,7 +624,7 @@ int w32_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 		return 0;
 	}
 	// Always suspend
-	if (suspend_thread(th, dbg->bits) == -1) {
+	if (suspend_thread(th) == -1) {
 		return false;
 	}
 	if (type == RZ_REG_TYPE_DRX) {
@@ -645,7 +632,7 @@ int w32_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 	}
 	bool ret = set_thread_context(th, buf, size);
 	// Always resume
-	if (resume_thread(th, dbg->bits) == -1) {
+	if (resume_thread(th) == -1) {
 		ret = false;
 	}
 	return ret;
@@ -689,7 +676,7 @@ int w32_detach(RzDebug *dbg, int pid) {
 	PTHREAD_ITEM th;
 	rz_list_foreach (dbg->threads, it, th) {
 		if (th->bSuspended && !th->bFinished) {
-			resume_thread(th->hThread, dbg->bits);
+			resume_thread(th->hThread);
 		}
 	}
 	rz_list_purge(dbg->threads);
@@ -938,7 +925,7 @@ int w32_select(RzDebug *dbg, int pid, int tid) {
 		// Suspend all other threads
 		rz_list_foreach (dbg->threads, it, th) {
 			if (!th->bFinished && !th->bSuspended && th->tid != selected) {
-				suspend_thread(th->hThread, dbg->bits);
+				suspend_thread(th->hThread);
 				th->bSuspended = true;
 			}
 		}
@@ -1272,9 +1259,9 @@ int w32_dbg_wait(RzDebug *dbg, int pid) {
 #if __arm__ || __arm64__
 	if (ret != RZ_DEBUG_REASON_EXIT_TID) {
 		CONTEXT ctx;
-		suspend_thread(wrap->pi.hThread, dbg->bits);
+		suspend_thread(wrap->pi.hThread);
 		get_thread_context(wrap->pi.hThread, (ut8 *)&ctx, sizeof(ctx), CONTEXT_CONTROL);
-		resume_thread(wrap->pi.hThread, dbg->bits);
+		resume_thread(wrap->pi.hThread);
 		if (ctx.Cpsr & 0x20) {
 			dbg->bits = RZ_SYS_BITS_16;
 		} else {
@@ -1312,7 +1299,7 @@ int w32_continue(RzDebug *dbg, int pid, int tid, int sig) {
 
 	PTHREAD_ITEM th = find_thread(dbg, tid);
 	if (th && th->hThread != INVALID_HANDLE_VALUE && th->bSuspended) {
-		continue_thread(th->hThread, dbg->bits);
+		continue_thread(th->hThread);
 		th->bSuspended = false;
 	}
 
