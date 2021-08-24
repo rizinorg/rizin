@@ -6042,6 +6042,19 @@ static void cmd_analysis_ucall_ref(RzCore *core, ut64 addr) {
 	}
 }
 
+static inline RzFlagItem *core_flag_get_at_as_ref_type(RzCore *core, RzAnalysisXRef *xrefi) {
+	switch (xrefi->type) {
+	case RZ_ANALYSIS_REF_TYPE_CALL:
+		return rz_flag_get_by_spaces(core->flags, xrefi->to, RZ_FLAGS_FS_SYMBOLS, RZ_FLAGS_FS_CLASSES, RZ_FLAGS_FS_FUNCTIONS, NULL);
+	case RZ_ANALYSIS_REF_TYPE_DATA:
+		return rz_flag_get_by_spaces(core->flags, xrefi->to, RZ_FLAGS_FS_STRINGS, RZ_FLAGS_FS_SYMBOLS, RZ_FLAGS_FS_IMPORTS, NULL);
+	case RZ_ANALYSIS_REF_TYPE_STRING:
+		return rz_flag_get_by_spaces(core->flags, xrefi->to, RZ_FLAGS_FS_STRINGS, NULL);
+	default:
+		return rz_flag_get_at(core->flags, xrefi->to, true);
+	}
+}
+
 #define var_ref_list(a, d, t) sdb_fmt("var.0x%" PFMT64x ".%d.%d.%s", \
 	a, 1, d, (t == 'R') ? "reads" : "writes");
 
@@ -6296,7 +6309,7 @@ static bool cmd_analysis_refs(RzCore *core, const char *input) {
 			if (fcn) {
 				RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
 				rz_list_foreach (xrefs, iter, xrefi) {
-					RzFlagItem *f = rz_flag_get_at(core->flags, xrefi->to, true);
+					RzFlagItem *f = core_flag_get_at_as_ref_type(core, xrefi);
 					const char *name = f ? f->name : "";
 					if (pj) {
 						pj_o(pj);

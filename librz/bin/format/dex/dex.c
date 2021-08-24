@@ -331,6 +331,38 @@ dex_class_def_new_fail:
 	return NULL;
 }
 
+static void dex_resolve_virtual_method_code(RzBinDex *dex, DexMethodId *to_resolve) {
+	DexMethodId *method_id = NULL;
+	RzListIter *it;
+
+	rz_list_foreach (dex->method_ids, it, method_id) {
+		if (!method_id->code_offset || method_id == to_resolve ||
+			method_id->class_idx == to_resolve->class_idx) {
+			continue;
+		}
+
+		if (method_id->proto_idx == to_resolve->proto_idx &&
+			method_id->name_idx == to_resolve->name_idx) {
+			to_resolve->code_offset = method_id->code_offset;
+			to_resolve->code_size = method_id->code_size;
+			return;
+		}
+	}
+}
+
+static void dex_resolve_all_virtual_methods(RzBinDex *dex) {
+	DexMethodId *method_id = NULL;
+	RzListIter *it;
+
+	rz_list_foreach (dex->method_ids, it, method_id) {
+		if (method_id->code_offset) {
+			continue;
+		}
+
+		dex_resolve_virtual_method_code(dex, method_id);
+	}
+}
+
 static bool dex_parse(RzBinDex *dex, ut64 base, RzBuffer *buf) {
 	ut64 offset = 0;
 	st64 read = 0;
@@ -478,6 +510,9 @@ static bool dex_parse(RzBinDex *dex, ut64 base, RzBuffer *buf) {
 			goto dex_parse_bad;
 		}
 	}
+
+	/* Resolve all virtual methods */
+	dex_resolve_all_virtual_methods(dex);
 
 	return true;
 
@@ -1644,7 +1679,7 @@ RZ_API RZ_OWN char *rz_bin_dex_resolve_method_by_idx(RZ_NONNULL RzBinDex *dex, u
 		return NULL;
 	}
 
-	char *method = rz_str_newf("%s.%s", name, proto);
+	char *method = rz_str_newf("%s->%s", name, proto);
 	free(name);
 	free(proto);
 	return method;
@@ -1726,7 +1761,10 @@ RZ_API ut64 rz_bin_dex_resolve_method_offset_by_idx(RZ_NONNULL RzBinDex *dex, ut
 		RZ_LOG_INFO("cannot find method with index %u\n", method_idx);
 		return UT64_MAX;
 	}
-	return method->code_offset;
+	if (method->code_offset) {
+		return method->code_offset;
+	}
+	return UT64_MAX;
 }
 
 /**

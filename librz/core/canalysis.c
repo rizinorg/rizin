@@ -2169,7 +2169,7 @@ static bool is_skippable_addr(RzCore *core, ut64 addr) {
 RZ_API int rz_core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, int depth) {
 	if (from == UT64_MAX && is_skippable_addr(core, at)) {
 		if (core->analysis->verbose) {
-			eprintf("Message: Invalid address for function 0x%08" PFMT64x "\n", at);
+			RZ_LOG_WARN("invalid address for function 0x%08" PFMT64x "\n", at);
 		}
 		return 0;
 	}
@@ -2184,7 +2184,7 @@ RZ_API int rz_core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, i
 	if (core->io->va) {
 		if (!rz_io_is_valid_offset(core->io, at, !core->analysis->opt.noncode)) {
 			if (core->analysis->verbose) {
-				eprintf("Warning: Address not mapped or not executable at 0x%08" PFMT64x "\n", at);
+				RZ_LOG_WARN("address not mapped or not executable at 0x%08" PFMT64x "\n", at);
 			}
 			return false;
 		}
@@ -2194,12 +2194,12 @@ RZ_API int rz_core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, i
 	}
 
 	if ((from != UT64_MAX && !at) || at == UT64_MAX) {
-		eprintf("Invalid address from 0x%08" PFMT64x "\n", from);
+		RZ_LOG_WARN("invalid address from 0x%08" PFMT64x "\n", from);
 		return false;
 	}
 	if (depth < 0) {
 		if (core->analysis->verbose) {
-			eprintf("Warning: analysis depth reached\n");
+			RZ_LOG_WARN("analysis depth reached\n");
 		}
 		return false;
 	}
