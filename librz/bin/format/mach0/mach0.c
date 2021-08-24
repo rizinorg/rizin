@@ -2715,12 +2715,12 @@ static int walk_exports(struct MACH0_(obj_t) * bin, RExportsIterator iterator, v
 			RZ_FREE(next);
 			goto beach;
 		}
-		next->node = tr + trie;
-		if (next->node >= end) {
+		if (tr + (ut64)trie >= (ut64)end) {
 			eprintf("malformed export trie\n");
 			RZ_FREE(next);
 			goto beach;
 		}
+		next->node = tr + trie;
 		{
 			// avoid loops
 			RzListIter *it;
