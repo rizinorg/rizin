@@ -1294,30 +1294,33 @@ error_route:
 RZ_API bool rz_file_inflate(RZ_NONNULL const char *src, RZ_NONNULL const char *dst) {
 	rz_return_val_if_fail(src && dst, false);
 
-	size_t len;
-	int decomp_len;
-	char *content = rz_file_slurp(src, &len);
-	if (!content) {
-		return false;
+	RzBuffer *src_buf = rz_buf_new_file(src, O_RDONLY, 0);
+	RzBuffer *dst_buf = rz_buf_new_file(dst, O_WRONLY | O_CREAT, 0644);
+
+	if (!(src_buf && dst_buf)) {
+		goto error_route;
 	}
 
-	unsigned char *decomp_content = rz_inflate((unsigned char *)content, len, NULL, &decomp_len);
-	if (!decomp_content) {
-		free(content);
-		return false;
+	ut64 block_size = 1 << 13; // 8 KB
+
+	if (!rz_inflate_buf(src_buf, dst_buf, block_size, NULL, NULL)) {
+		goto error_route;
 	}
 
-	bool result = rz_file_dump(dst, decomp_content, decomp_len, false);
-	free(content);
-	free(decomp_content);
+	rz_buf_free(src_buf);
+	rz_buf_free(dst_buf);
+	return true;
 
-	return result;
+error_route:
+	rz_buf_free(src_buf);
+	rz_buf_free(dst_buf);
+	return false;
 }
 
 /**
- * \brief check whether a file is a deflated file
+ * \brief check whether a file is a deflated (gzip) file
  * \param src source file (string containing filename)
- * \return true, if src is a deflated file; false otherwise
+ * \return true, if src is a deflated (gzip) file; false otherwise
  */
 RZ_API bool rz_file_is_deflated(RZ_NONNULL const char *src) {
 	rz_return_val_if_fail(src, false);
