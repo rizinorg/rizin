@@ -3619,7 +3619,7 @@ RZ_API RzList *rz_str_wrap(char *str, size_t width) {
 
 	do {
 		p++;
-		if (!*p || isspace(*p)) {
+		if (!*p || isspace((int)*p)) {
 			if (p != last_space + 1) {
 				if (p - start_line > width && first_space) {
 					rz_list_append(res, start_line);
@@ -3632,7 +3632,7 @@ RZ_API RzList *rz_str_wrap(char *str, size_t width) {
 		}
 	} while (*p);
 	p--;
-	while (p >= str && isspace(*p)) {
+	while (p >= str && isspace((int)*p)) {
 		*p = '\0';
 		p--;
 	}
