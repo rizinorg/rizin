@@ -97,26 +97,27 @@ RZ_API RzProject *rz_project_load_file_raw(const char *file) {
 
 	if (!rz_file_exists(file)) {
 		prj = NULL;
-		goto tmp_file_err;
+		goto return_goto;
 	}
 	if (rz_file_is_deflated(file)) {
 		if (!rz_file_inflate(file, tmp_file)) {
 			prj = NULL;
-			goto tmp_file_err;
+			goto return_goto;
 		}
 	} else {
-		rz_file_rm(tmp_file);
-		free(tmp_file);
-		tmp_file = strdup(file);
+		if (!sdb_text_load(prj, file)) {
+			sdb_free(prj);
+			prj = NULL;
+		}
+		goto return_goto;
 	}
 
 	if (!sdb_text_load(prj, tmp_file)) {
 		sdb_free(prj);
 		prj = NULL;
-		goto tmp_file_err;
 	}
 
-tmp_file_err:
+return_goto:
 	rz_file_rm(tmp_file);
 	free(tmp_file);
 	return prj;
