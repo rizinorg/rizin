@@ -211,6 +211,7 @@ EXPECT=<<EOF
 | 0x0000104a      1dab           add   r3, JNINativeInterface.GetSuperclassx74
 | 0x00001052      439b           ldr   r3, [JNINativeInterface.GetSuperclassx10c]
 | 0x00001054      4699           ldr   r1, [JNINativeInterface.GetSuperclassx118]
+| 0x00001066      d258           ldr   r2, [r2, r3]                    ; JNINativeInterface.reserved0
 | 0x00001078      439a           ldr   r2, [JNINativeInterface.GetSuperclassx10c]
 | 0x0000107a      4399           ldr   r1, [JNINativeInterface.GetSuperclassx10c]
 | 0x0000107e      4cad           add   r5, JNINativeInterface.reserved2
@@ -227,10 +228,12 @@ EXPECT=<<EOF
 | 0x000010d2      419b           ldr   r3, [JNINativeInterface.GetSuperclassx104]
 | 0x000010d8      459a           ldr   r2, [JNINativeInterface.GetSuperclassx114]
 | 0x000010da      449b           ldr   r3, [JNINativeInterface.GetSuperclassx110]
+| 0x00001114      d258           ldr   r2, [r2, r3]                    ; JNINativeInterface.reserved0
+| 0x0000112e      d258           ldr   r2, [r2, r3]                    ; JNINativeInterface.reserved0
 | 0x00001144      4b9a           ldr   r2, [JNINativeInterface.reserved0]
 | 0x00001148      9a42           cmp   r2, r3                          ; JNINativeInterface.reserved0
 | 0x00001150      4db0           add   JNINativeInterface.GetSuperclassx134
-43
+46
 EOF
 RUN
 
