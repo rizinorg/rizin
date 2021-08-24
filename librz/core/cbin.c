@@ -3597,7 +3597,9 @@ static void classdump_java(RzCore *r, RzBinClass *c) {
 	rz_list_foreach (c->fields, iter2, f) {
 		visibility = resolve_visibility(f->visibility_str);
 		char *ftype = demangle_type(f->type);
-		if (simplify) {
+		if (!ftype) {
+			ftype = strdup(f->type);
+		} else if (simplify && ftype && package && classname) {
 			// hide the current package in the demangled value.
 			ftype = rz_str_replace(ftype, package, classname, 1);
 		}
@@ -3612,7 +3614,9 @@ static void classdump_java(RzCore *r, RzBinClass *c) {
 		const char *mn = sym->dname ? sym->dname : sym->name;
 		visibility = resolve_visibility(sym->visibility_str);
 		char *dem = rz_bin_demangle_java(mn);
-		if (simplify) {
+		if (!dem) {
+			dem = strdup(mn);
+		} else if (simplify && dem && package && classname) {
 			// hide the current package in the demangled value.
 			dem = rz_str_replace(dem, package, classname, 1);
 		}
@@ -3690,6 +3694,181 @@ static void bin_class_print_rizin(RzCore *r, RzBinClass *c, ut64 at_min) {
 	}
 }
 
+RZ_IPI bool rz_core_bin_class_as_source_print(RzCore *core, RzCmdStateOutput *state, const char *class_name) {
+	RzBinClass *c;
+	RzListIter *iter;
+
+	RzBinObject *o = rz_bin_cur_object(core->bin);
+	if (!o) {
+		return false;
+	}
+	const RzList *cs = rz_bin_object_get_classes(o);
+	if (!cs) {
+		return false;
+	}
+
+	bool found = false;
+	rz_list_foreach (cs, iter, c) {
+		if (!c->name || !strstr(c->name, class_name)) {
+			continue;
+		}
+		found = true;
+		switch (o->lang) {
+		case RZ_BIN_NM_KOTLIN:
+		case RZ_BIN_NM_GROOVY:
+		case RZ_BIN_NM_JAVA:
+			classdump_java(core, c);
+			break;
+		case RZ_BIN_NM_SWIFT:
+		case RZ_BIN_NM_OBJC:
+			classdump_objc(core, c);
+			break;
+		case RZ_BIN_NM_C:
+			classdump_c(core, c);
+			break;
+		default:
+			return false;
+		}
+	}
+	return found;
+}
+
+RZ_IPI bool rz_core_bin_class_fields_print(RzCore *core, RzCmdStateOutput *state, const char *class_name) {
+	RzListIter *iter, *iter2;
+	RzBinClass *c;
+	RzBinField *f;
+	int m = 0;
+
+	RzBinObject *o = rz_bin_cur_object(core->bin);
+	if (!o) {
+		return false;
+	}
+	const RzList *cs = rz_bin_object_get_classes(o);
+	if (!cs) {
+		return false;
+	}
+
+	rz_cmd_state_output_array_start(state);
+	rz_cmd_state_output_set_columnsf(state, "Xisss", "address", "index", "flags", "name", "type", NULL);
+
+	rz_list_foreach (cs, iter, c) {
+		if (!c->name || strcmp(c->name, class_name)) {
+			continue;
+		}
+
+		switch (state->mode) {
+		case RZ_OUTPUT_MODE_QUIET:
+			rz_list_foreach (c->fields, iter2, f) {
+				char *mflags = rz_core_bin_method_flags_str(f->flags, 0);
+				rz_cons_printf("0x%08" PFMT64x " field  %d %s %s\n", f->vaddr, m, mflags, f->name);
+				free(mflags);
+				m++;
+			}
+			break;
+		case RZ_OUTPUT_MODE_QUIETEST:
+			rz_list_foreach (c->fields, iter2, f) {
+				rz_cons_printf("%s\n", f->name);
+			}
+			break;
+		case RZ_OUTPUT_MODE_JSON:
+			rz_list_foreach (c->fields, iter2, f) {
+				pj_o(state->d.pj);
+				if (f->type) {
+					pj_ks(state->d.pj, "type", f->type);
+				}
+				pj_ks(state->d.pj, "name", f->name);
+				if (f->flags) {
+					flags_to_json(state->d.pj, f->flags);
+				}
+				pj_kN(state->d.pj, "addr", f->vaddr);
+				pj_end(state->d.pj);
+			}
+			break;
+		case RZ_OUTPUT_MODE_TABLE:
+			rz_list_foreach (c->fields, iter2, f) {
+				char *mflags = rz_core_bin_method_flags_str(f->flags, 0);
+				rz_table_add_rowf(state->d.t, "Xisss", f->vaddr, m, mflags, f->name, f->type);
+				free(mflags);
+				m++;
+			}
+			break;
+		default:
+			rz_warn_if_reached();
+			break;
+		}
+	}
+	rz_cmd_state_output_array_end(state);
+	return true;
+}
+
+RZ_IPI bool rz_core_bin_class_methods_print(RzCore *core, RzCmdStateOutput *state, const char *class_name) {
+	RzListIter *iter, *iter2;
+	RzBinClass *c;
+	RzBinSymbol *sym;
+	int m = 0;
+
+	RzBinObject *o = rz_bin_cur_object(core->bin);
+	if (!o) {
+		return false;
+	}
+	const RzList *cs = rz_bin_object_get_classes(o);
+	if (!cs) {
+		return false;
+	}
+
+	rz_cmd_state_output_array_start(state);
+	rz_cmd_state_output_set_columnsf(state, "Xiss", "address", "index", "flags", "name", NULL);
+
+	rz_list_foreach (cs, iter, c) {
+		if (!c->name || strcmp(c->name, class_name)) {
+			continue;
+		}
+
+		switch (state->mode) {
+		case RZ_OUTPUT_MODE_QUIET:
+			rz_list_foreach (c->methods, iter2, sym) {
+				char *mflags = rz_core_bin_method_flags_str(sym->method_flags, 0);
+				rz_cons_printf("0x%08" PFMT64x " method %d %s %s\n",
+					sym->vaddr, m, mflags, sym->dname ? sym->dname : sym->name);
+				free(mflags);
+				m++;
+			}
+			break;
+		case RZ_OUTPUT_MODE_QUIETEST:
+			rz_list_foreach (c->methods, iter2, sym) {
+				const char *name = sym->dname ? sym->dname : sym->name;
+				rz_cons_printf("%s\n", name);
+			}
+			break;
+		case RZ_OUTPUT_MODE_JSON:
+			rz_list_foreach (c->methods, iter2, sym) {
+				pj_o(state->d.pj);
+				pj_ks(state->d.pj, "name", sym->name);
+				if (sym->method_flags) {
+					flags_to_json(state->d.pj, sym->method_flags);
+				}
+				pj_kN(state->d.pj, "addr", sym->vaddr);
+				pj_end(state->d.pj);
+			}
+			break;
+		case RZ_OUTPUT_MODE_TABLE:
+			rz_list_foreach (c->methods, iter2, sym) {
+				const char *name = sym->dname ? sym->dname : sym->name;
+				char *mflags = rz_core_bin_method_flags_str(sym->method_flags, 0);
+				rz_table_add_rowf(state->d.t, "Xiss", sym->vaddr, m, mflags, name);
+				free(mflags);
+				m++;
+			}
+			break;
+		default:
+			rz_warn_if_reached();
+			break;
+		}
+	}
+	rz_cmd_state_output_array_end(state);
+	return true;
+}
+
 RZ_IPI void rz_core_bin_classes_print(RzCore *core, RzCmdStateOutput *state) {
 	RzListIter *iter, *iter2, *iter3;
 	RzBinSymbol *sym;
@@ -3764,6 +3943,9 @@ RZ_IPI void rz_core_bin_classes_print(RzCore *core, RzCmdStateOutput *state) {
 			rz_list_foreach (c->fields, iter3, f) {
 				pj_o(state->d.pj);
 				pj_ks(state->d.pj, "name", f->name);
+				if (f->type) {
+					pj_ks(state->d.pj, "type", f->type);
+				}
 				if (f->flags) {
 					flags_to_json(state->d.pj, f->flags);
 				}

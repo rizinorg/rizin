@@ -1393,6 +1393,27 @@ RZ_IPI RzCmdStatus rz_cmd_info_classes_handler(RzCore *core, int argc, const cha
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI RzCmdStatus rz_cmd_info_class_as_source_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	if (rz_core_bin_class_as_source_print(core, state, argv[1])) {
+		return RZ_CMD_STATUS_OK;
+	}
+	return RZ_CMD_STATUS_ERROR;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_info_class_fields_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	if (rz_core_bin_class_fields_print(core, state, argv[1])) {
+		return RZ_CMD_STATUS_OK;
+	}
+	return RZ_CMD_STATUS_ERROR;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_info_class_methods_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	if (rz_core_bin_class_methods_print(core, state, argv[1])) {
+		return RZ_CMD_STATUS_OK;
+	}
+	return RZ_CMD_STATUS_ERROR;
+}
+
 RZ_IPI RzCmdStatus rz_cmd_info_signature_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	rz_core_bin_signatures_print(core, state);
 	return RZ_CMD_STATUS_OK;

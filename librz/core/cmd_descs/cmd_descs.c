@@ -131,6 +131,9 @@ static const RzCmdDescArg eval_type_args[2];
 static const RzCmdDescArg env_args[3];
 static const RzCmdDescArg history_list_or_exec_args[2];
 static const RzCmdDescArg cmd_bin_reload_args[2];
+static const RzCmdDescArg cmd_info_class_as_source_args[2];
+static const RzCmdDescArg cmd_info_class_fields_args[2];
+static const RzCmdDescArg cmd_info_class_methods_args[2];
 static const RzCmdDescArg cmd_info_pdb_load_args[2];
 static const RzCmdDescArg cmd_info_pdb_show_args[2];
 static const RzCmdDescArg cmd_info_demangle_args[3];
@@ -2547,12 +2550,57 @@ static const RzCmdDescHelp cmd_bin_reload_help = {
 	.args = cmd_bin_reload_args,
 };
 
+static const RzCmdDescHelp ic_help = {
+	.summary = "List classes, fields and methods",
+};
 static const RzCmdDescArg cmd_info_classes_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_info_classes_help = {
-	.summary = "List classes, methods and fields",
+	.summary = "List classes",
 	.args = cmd_info_classes_args,
+};
+
+static const RzCmdDescArg cmd_info_class_as_source_args[] = {
+	{
+		.name = "class name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_class_as_source_help = {
+	.summary = "Prints class, fields and methods as source code",
+	.args = cmd_info_class_as_source_args,
+};
+
+static const RzCmdDescArg cmd_info_class_fields_args[] = {
+	{
+		.name = "class name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_class_fields_help = {
+	.summary = "List class fields",
+	.args = cmd_info_class_fields_args,
+};
+
+static const RzCmdDescArg cmd_info_class_methods_args[] = {
+	{
+		.name = "class name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_class_methods_help = {
+	.summary = "List class methods",
+	.args = cmd_info_class_methods_args,
 };
 
 static const RzCmdDescArg cmd_info_signature_args[] = {
@@ -5918,9 +5966,19 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_bin_reload_cd = rz_cmd_desc_argv_new(core->rcmd, i_cd, "ib", rz_cmd_bin_reload_handler, &cmd_bin_reload_help);
 	rz_warn_if_fail(cmd_bin_reload_cd);
 
-	RzCmdDesc *cmd_info_classes_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "ic", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_LONG | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_QUIETEST, rz_cmd_info_classes_handler, &cmd_info_classes_help);
-	rz_warn_if_fail(cmd_info_classes_cd);
-	rz_cmd_desc_set_default_mode(cmd_info_classes_cd, RZ_OUTPUT_MODE_TABLE);
+	RzCmdDesc *ic_cd = rz_cmd_desc_group_state_new(core->rcmd, i_cd, "ic", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_LONG | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_QUIETEST, rz_cmd_info_classes_handler, &cmd_info_classes_help, &ic_help);
+	rz_warn_if_fail(ic_cd);
+	rz_cmd_desc_set_default_mode(ic_cd, RZ_OUTPUT_MODE_TABLE);
+	RzCmdDesc *cmd_info_class_as_source_cd = rz_cmd_desc_argv_state_new(core->rcmd, ic_cd, "icc", RZ_OUTPUT_MODE_STANDARD, rz_cmd_info_class_as_source_handler, &cmd_info_class_as_source_help);
+	rz_warn_if_fail(cmd_info_class_as_source_cd);
+
+	RzCmdDesc *cmd_info_class_fields_cd = rz_cmd_desc_argv_state_new(core->rcmd, ic_cd, "icf", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_QUIETEST | RZ_OUTPUT_MODE_JSON, rz_cmd_info_class_fields_handler, &cmd_info_class_fields_help);
+	rz_warn_if_fail(cmd_info_class_fields_cd);
+	rz_cmd_desc_set_default_mode(cmd_info_class_fields_cd, RZ_OUTPUT_MODE_TABLE);
+
+	RzCmdDesc *cmd_info_class_methods_cd = rz_cmd_desc_argv_state_new(core->rcmd, ic_cd, "icm", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_QUIETEST | RZ_OUTPUT_MODE_JSON, rz_cmd_info_class_methods_handler, &cmd_info_class_methods_help);
+	rz_warn_if_fail(cmd_info_class_methods_cd);
+	rz_cmd_desc_set_default_mode(cmd_info_class_methods_cd, RZ_OUTPUT_MODE_TABLE);
 
 	RzCmdDesc *cmd_info_signature_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "iC", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_info_signature_handler, &cmd_info_signature_help);
 	rz_warn_if_fail(cmd_info_signature_cd);
