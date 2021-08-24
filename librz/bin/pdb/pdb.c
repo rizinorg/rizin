@@ -71,58 +71,71 @@ static char *pdb_type_as_string_json(const RzTypeDB *db, const RzPdb *pdb, const
 	if (!pj) {
 		return NULL;
 	}
-	pj_o(pj);
+	pj_a(pj);
 	rz_list_foreach (types, it, type) {
-		pj_o(pj);
 		switch (type->kind) {
 		case RZ_BASE_TYPE_KIND_STRUCT: {
+			pj_o(pj);
 			pj_ks(pj, "type", "structure");
 			pj_ks(pj, "name", type->name);
 			pj_kn(pj, "size", type->size);
 			pj_ka(pj, "members");
 			RzTypeStructMember *memb;
 			rz_vector_foreach(&type->struct_data.members, memb) {
-				pj_ks(pj, "member_type", rz_type_as_string(db, memb->type));
+				pj_o(pj);
+				char *typ = rz_type_as_string(db, memb->type);
+				pj_ks(pj, "member_type", typ);
+				RZ_FREE(typ);
 				pj_ks(pj, "member_name", memb->name);
 				pj_kN(pj, "offset", memb->offset);
 				pj_end(pj);
 			}
 			pj_end(pj);
+			pj_end(pj);
 			break;
 		}
 		case RZ_BASE_TYPE_KIND_UNION: {
+			pj_o(pj);
 			pj_ks(pj, "type", "union");
 			pj_ks(pj, "name", type->name);
 			pj_kn(pj, "size", type->size);
 			pj_ka(pj, "members");
 			RzTypeUnionMember *memb;
 			rz_vector_foreach(&type->union_data.members, memb) {
-				pj_ks(pj, "member_type", rz_type_as_string(db, memb->type));
+				pj_o(pj);
+				char *typ = rz_type_as_string(db, memb->type);
+				pj_ks(pj, "member_type", typ);
+				RZ_FREE(typ);
 				pj_ks(pj, "member_name", memb->name);
 				pj_kN(pj, "offset", memb->offset);
 				pj_end(pj);
 			}
 			pj_end(pj);
+			pj_end(pj);
 			break;
 		}
 		case RZ_BASE_TYPE_KIND_ENUM: {
+			pj_o(pj);
 			pj_ks(pj, "type", "enum");
 			pj_ks(pj, "name", type->name);
-			pj_ks(pj, "base_type", rz_type_as_string(db, type->type));
+			char *typ = rz_type_as_string(db, type->type);
+			pj_ks(pj, "base_type", typ);
+			RZ_FREE(typ);
 			pj_ka(pj, "cases");
 			RzTypeEnumCase *cas;
 			rz_vector_foreach(&type->enum_data.cases, cas) {
+				pj_o(pj);
 				pj_ks(pj, "enum_name", cas->name);
 				pj_kn(pj, "enum_val", cas->val);
 				pj_end(pj);
 			}
+			pj_end(pj);
 			pj_end(pj);
 			break;
 		}
 		default:
 			break;
 		}
-		pj_end(pj);
 	}
 	pj_end(pj);
 	char *str = strdup(pj_string(pj));
