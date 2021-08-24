@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
-#include "rz_util.h"
 #include "../bin/pdb/pdb.h"
 
 static void rz_core_bin_pdb_types_print(const RzTypeDB *db, const RzPdb *pdb, const RzOutputMode mode) {
@@ -11,7 +10,9 @@ static void rz_core_bin_pdb_types_print(const RzTypeDB *db, const RzPdb *pdb, co
 	if (!str) {
 		return;
 	}
-	rz_cons_print(str);
+	// we use 'puts' here because the output of 'rz_cons_print' will be recognized as a command
+	puts(str);
+	RZ_FREE(str);
 }
 
 static void rz_core_bin_pdb_gvars_print(const RzPdb *pdb, const ut64 img_base, const RzOutputMode mode) {
@@ -20,7 +21,8 @@ static void rz_core_bin_pdb_gvars_print(const RzPdb *pdb, const ut64 img_base, c
 	if (!str) {
 		return;
 	}
-	rz_cons_print(str);
+	puts(str);
+	RZ_FREE(str);
 }
 
 /**
