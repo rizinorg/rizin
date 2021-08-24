@@ -2715,7 +2715,7 @@ static int walk_exports(struct MACH0_(obj_t) * bin, RExportsIterator iterator, v
 			RZ_FREE(next);
 			goto beach;
 		}
-		if (tr + (ut64)trie >= (ut64)end) {
+		if (UT64_ADD_OVFCHK(tr, (ut64)trie) || tr + (ut64)trie >= (ut64)end) {
 			eprintf("malformed export trie\n");
 			RZ_FREE(next);
 			goto beach;
