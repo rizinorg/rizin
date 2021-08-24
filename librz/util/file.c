@@ -1266,38 +1266,23 @@ RZ_API bool rz_file_deflate(RZ_NONNULL const char *src, RZ_NONNULL const char *d
 	RzBuffer *dst_buf = rz_buf_new_file(dst, O_WRONLY | O_CREAT, 0644);
 
 	if (!(src_buf && dst_buf)) {
-		free(src_buf);
-		free(dst_buf);
-		return false;
+		goto error_route;
 	}
 
-	ut64 buf_size = 1 << 14; // 16 KB
-	unsigned char *src_data = malloc(buf_size), *dst_data;
-	ut64 src_cursor = 0, dst_cursor = 0;
+	ut64 block_size = 1 << 18; // 256 KB
 
-	st64 read_len;
-	int write_len = 0;
-
-	while ((read_len = rz_buf_read_at(src_buf, src_cursor, src_data, buf_size)) > 0) {
-		dst_data = rz_deflate(src_data, read_len, NULL, &write_len);
-		if (!dst_data) {
-			return false;
-		}
-
-		write_len = rz_buf_write_at(dst_buf, dst_cursor, dst_data, write_len);
-		if (write_len == -1) {
-			return false;
-		}
-
-		src_cursor += read_len;
-		dst_cursor += write_len;
-		free(dst_data);
+	if (!rz_deflate_buf(src_buf, dst_buf, block_size, NULL, NULL)) {
+		goto error_route;
 	}
-	free(src_data);
-	free(src_buf);
-	free(dst_buf);
 
+	rz_buf_free(src_buf);
+	rz_buf_free(dst_buf);
 	return true;
+
+error_route:
+	rz_buf_free(src_buf);
+	rz_buf_free(dst_buf);
+	return false;
 }
 
 /**
