@@ -36,8 +36,8 @@ NAME=Dalvik resolve virtual methods called via invoke-virtual
 FILE=apk://bins/dex/org.radare.radare2installer.apk
 CMDS=e scr.prompt=false ; aaa ; axt @ sym.Lcom_ice_tar_TarEntry_.getUserName__Ljava_lang_String
 EXPECT=<<EOF
-entry0 0xc8ba [CALL] invoke-virtual {v1}, Lcom/ice/tar/TarEntry;.getUserName()Ljava/lang/String;
-entry0 0xc9e6 [CALL] invoke-virtual {v1}, Lcom/ice/tar/TarEntry;.getUserName()Ljava/lang/String;
-method.public.Lcom_ice_tar_TarEntry_.toString__Ljava_lang_String 0xf04a [CALL] invoke-virtual {v4}, Lcom/ice/tar/TarEntry;.getUserName()Ljava/lang/String;
+entry0 0xc8ba [CALL] invoke-virtual {v1}, Lcom/ice/tar/TarEntry;->getUserName()Ljava/lang/String;
+entry0 0xc9e6 [CALL] invoke-virtual {v1}, Lcom/ice/tar/TarEntry;->getUserName()Ljava/lang/String;
+method.public.Lcom_ice_tar_TarEntry_.toString__Ljava_lang_String 0xf04a [CALL] invoke-virtual {v4}, Lcom/ice/tar/TarEntry;->getUserName()Ljava/lang/String;
 EOF
 RUN
