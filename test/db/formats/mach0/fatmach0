@@ -181,11 +181,11 @@ iA
 iAj
 EOF
 EXPECT=<<EOF
-num offset     size  arch   machine    
----------------------------------------
-0   0x00001000 13792 x86_64 x86 64 all
-0   0x00005000 13760 x86_32 386
-0   0x00009000 13616 ppc_32 7400
+offset     size  arch   machine    
+-----------------------------------
+0x00001000 13792 x86_64 x86 64 all
+0x00005000 13760 x86_32 386
+0x00009000 13616 ppc_32 7400
 [{"arch":"x86","bits":64,"offset":4096,"size":13792,"machine":"x86 64 all"},{"arch":"x86","bits":32,"offset":20480,"size":13760,"machine":"386"},{"arch":"ppc","bits":32,"offset":36864,"size":13616,"machine":"7400"}]
 EOF
 RUN
@@ -197,10 +197,13 @@ CMDS=<<EOF
 !rz-bin -Aj bins/mach0/fatmach0-3true
 EOF
 EXPECT=<<EOF
-000 0x00001000 13792 x86_64 x86 64 all
-001 0x00005000 13760 x86_32 386
-002 0x00009000 13616 ppc_32 7400
-{"bins":[{"arch":"x86","bits":64,"offset":4096,"size":13792,"machine":"x86 64 all"},{"arch":"x86","bits":32,"offset":20480,"size":13760,"machine":"386"},{"arch":"ppc","bits":32,"offset":36864,"size":13616,"machine":"7400"}]}
+offset     size  arch   machine    
+-----------------------------------
+0x00001000 13792 x86_64 x86 64 all
+0x00005000 13760 x86_32 386
+0x00009000 13616 ppc_32 7400
+[{"arch":"x86","bits":64,"offset":4096,"size":13792,"machine":"x86 64 all"},{"arch":"x86","bits":32,"offset":20480,"size":13760,"machine":"386"},{"arch":"ppc","bits":32,"offset":36864,"size":13616,"machine":"7400"}]
+{}
 EOF
 RUN
 
@@ -240,36 +243,58 @@ RUN
 NAME=fatmach0 arm64e objc classes
 FILE=bins/mach0/modernobjc-noarm64
 ARGS=-a arm
-CMDS=ic
+CMDS=<<EOF
+ic
+icf ViewController
+icm ViewController
+icf AppDelegate
+icm AppDelegate
+icf SceneDelegate
+icm SceneDelegate
+EOF
 EXPECT=<<EOF
-0x100009298 [0x100001e90 - 0x100001e90]      0 class 0 ViewController
-0x100001e90 method 0      viewDidLoad
-0x1000092c0 [0x100001ee4 - 0x1000020a4]    448 class 0 AppDelegate
-0x00000000 field  0      AppDelegate::(property)window
-0x00000000 field  1      AppDelegate::(property)hash
-0x00000000 field  2      AppDelegate::(property)superclass
-0x00000000 field  3      AppDelegate::(property)description
-0x00000000 field  4      AppDelegate::(property)debugDescription
-0x100001ee4 method 0      application:didFinishLaunchingWithOptions:
-0x100001f74 method 1      application:configurationForConnectingSceneSession:options:
-0x1000020a4 method 2      application:didDiscardSceneSessions:
-0x100009310 [0x1000021d0 - 0x100002494]    708 class 0 SceneDelegate
-0x00000000 field  0      isa
-0x100009268 field  1      SceneDelegate::(ivar)_window
-0x00000000 field  2      SceneDelegate::(property)window
-0x00000000 field  3      SceneDelegate::(property)hash
-0x00000000 field  4      SceneDelegate::(property)superclass
-0x00000000 field  5      SceneDelegate::(property)description
-0x00000000 field  6      SceneDelegate::(property)debugDescription
-0x1000021d0 method 0      scene:willConnectToSession:options:
-0x100002280 method 1      sceneDidDisconnect:
-0x1000022d4 method 2      sceneDidBecomeActive:
-0x100002328 method 3      sceneWillResignActive:
-0x10000237c method 4      sceneWillEnterForeground:
-0x1000023d0 method 5      sceneDidEnterBackground:
-0x100002424 method 6      window
-0x100002450 method 7      setWindow:
-0x100002494 method 8      .cxx_destruct
+address     min         max         name           super 
+---------------------------------------------------------
+0x100009298 0x100001e90 0x100001e90 ViewController 
+0x1000092c0 0x100001ee4 0x1000020a4 AppDelegate    
+0x100009310 0x1000021d0 0x100002494 SceneDelegate  
+address index flags name type 
+------------------------------
+address     index flags name        
+------------------------------------
+0x100001e90 0           viewDidLoad
+address    index flags name                                    type 
+--------------------------------------------------------------------
+0x00000000 0           AppDelegate::(property)window           
+0x00000000 1           AppDelegate::(property)hash             
+0x00000000 2           AppDelegate::(property)superclass       
+0x00000000 3           AppDelegate::(property)description      
+0x00000000 4           AppDelegate::(property)debugDescription 
+address     index flags name                                                        
+------------------------------------------------------------------------------------
+0x100001ee4 0           application:didFinishLaunchingWithOptions:
+0x100001f74 1           application:configurationForConnectingSceneSession:options:
+0x1000020a4 2           application:didDiscardSceneSessions:
+address     index flags name                                      type                
+--------------------------------------------------------------------------------------
+0x00000000  0           isa                                       struct objc_class *
+0x100009268 1           SceneDelegate::(ivar)_window              @"UIWindow"
+0x00000000  2           SceneDelegate::(property)window           
+0x00000000  3           SceneDelegate::(property)hash             
+0x00000000  4           SceneDelegate::(property)superclass       
+0x00000000  5           SceneDelegate::(property)description      
+0x00000000  6           SceneDelegate::(property)debugDescription 
+address     index flags name                                
+------------------------------------------------------------
+0x1000021d0 0           scene:willConnectToSession:options:
+0x100002280 1           sceneDidDisconnect:
+0x1000022d4 2           sceneDidBecomeActive:
+0x100002328 3           sceneWillResignActive:
+0x10000237c 4           sceneWillEnterForeground:
+0x1000023d0 5           sceneDidEnterBackground:
+0x100002424 6           window
+0x100002450 7           setWindow:
+0x100002494 8           .cxx_destruct
 EOF
 RUN
 

@@ -44,12 +44,11 @@ NAME=DEX dex38.dex ie command
 FILE=bins/dex/dex38.dex
 CMDS=ie
 EXPECT=<<EOF
-[Entrypoints]
-vaddr=0x00000f70 paddr=0x00000f70 haddr=-1 type=program
-vaddr=0x000010b8 paddr=0x000010b8 haddr=-1 type=program
-vaddr=0x0000121c paddr=0x0000121c haddr=-1 type=program
-
-3 entrypoints
+vaddr      paddr      hvaddr     haddr      type    
+----------------------------------------------------
+0x00000f70 0x00000f70 ---------- ---------- program
+0x000010b8 0x000010b8 ---------- ---------- program
+0x0000121c 0x0000121c ---------- ---------- program
 EOF
 RUN
 
@@ -77,24 +76,41 @@ RUN
 
 NAME=DEX Hello.dex classes (ic command)
 FILE=bins/dex/Hello.dex
-CMDS=ic
+CMDS=<<EOF
+ic
+icf 'LHello;'
+icm 'LHello;'
+EOF
 EXPECT=<<EOF
-0x00000174 [0x000001a4 - 0x0000021e]    122 class 0 LHello; :: Ljava/lang/Object;
-0x00000336 field  0 sP   who
-0x000001a4 method 0 pC   <init>(Ljava/lang/String;)V
-0x000001c0 method 1 sp   main([Ljava/lang/String;)V
-0x000001e8 method 2 p    say()V
+address    min        max        name    super              
+------------------------------------------------------------
+0x00000174 0x000001a4 0x0000021e LHello; Ljava/lang/Object;
+address    index flags name type               
+-----------------------------------------------
+0x00000336 0     sP    who  Ljava/lang/String;
+address    index flags name                        
+---------------------------------------------------
+0x000001a4 0     pC    <init>(Ljava/lang/String;)V
+0x000001c0 1     sp    main([Ljava/lang/String;)V
+0x000001e8 2     p     say()V
 EOF
 RUN
 
 NAME=DEX Hello.dex single class (ic LHello)
 FILE=bins/dex/Hello.dex
-CMDS=ic LHello
+CMDS=<<EOF
+icf 'LHello;'
+icm 'LHello;'
+EOF
 EXPECT=<<EOF
-class LHello;
-0x000001a4 method LHello; pC   <init>
-0x000001c0 method LHello; sp   main
-0x000001e8 method LHello; p    say
+address    index flags name type               
+-----------------------------------------------
+0x00000336 0     sP    who  Ljava/lang/String;
+address    index flags name                        
+---------------------------------------------------
+0x000001a4 0     pC    <init>(Ljava/lang/String;)V
+0x000001c0 1     sp    main([Ljava/lang/String;)V
+0x000001e8 2     p     say()V
 EOF
 RUN
 
@@ -242,8 +258,6 @@ NAME=DEX HelloWorld.dex exports (iE command)
 FILE=bins/dex/HelloWorld.dex
 CMDS=iE
 EXPECT=<<EOF
-[Exports]
-
 nth paddr      vaddr      bind   type  size lib   name                
 ----------------------------------------------------------------------
 1   0x000004f0 0x000004f0 GLOBAL FIELD 0    Hello localVar2
@@ -1427,23 +1441,43 @@ RUN
 
 NAME=DEX radare2installer.dex classes (ic command with name)
 FILE=bins/dex/org.radare.radare2installer.dex
-CMDS=ic  Lcom/stericson/RootTools/Installer
+CMDS=<<EOF
+icf 'Lcom/stericson/RootTools/Installer;'
+icm 'Lcom/stericson/RootTools/Installer;'
+EOF
 EXPECT=<<EOF
-class Lcom/stericson/RootTools/Installer;
-0x00011410 method Lcom/stericson/RootTools/Installer; pC   <init>
-0x00011440 method Lcom/stericson/RootTools/Installer; r    installBinary
-0x00011814 method Lcom/stericson/RootTools/Installer; r    isBinaryInstalled
+address    index flags name            type                      
+-----------------------------------------------------------------
+0x0000a4b2 0     sPf   BOGUS_FILE_NAME Ljava/lang/String;
+0x0000a4b5 1     sPf   LOG_TAG         Ljava/lang/String;
+0x0000a4b7 2     sP    context         Landroid/content/Context;
+0x0000a4ba 3     sP    filesPath       Ljava/lang/String;
+address    index flags name                                                  
+-----------------------------------------------------------------------------
+0x00011410 0     pC    <init>(Landroid/content/Context;)V
+0x00011440 1     r     installBinary(ILjava/lang/String;Ljava/lang/String;)Z
+0x00011814 2     r     isBinaryInstalled(Ljava/lang/String;)Z
 EOF
 RUN
 
 NAME=DEX radare2installer.dex classes (ic command with index)
 FILE=bins/dex/org.radare.radare2installer.dex
-CMDS=ic 17
+CMDS=<<EOF
+icf 'Lcom/stericson/RootTools/Installer;'
+icm 'Lcom/stericson/RootTools/Installer;'
+EOF
 EXPECT=<<EOF
-class Lcom/stericson/RootTools/Installer;
-0x00011410 method Lcom/stericson/RootTools/Installer; pC   <init>
-0x00011440 method Lcom/stericson/RootTools/Installer; r    installBinary
-0x00011814 method Lcom/stericson/RootTools/Installer; r    isBinaryInstalled
+address    index flags name            type                      
+-----------------------------------------------------------------
+0x0000a4b2 0     sPf   BOGUS_FILE_NAME Ljava/lang/String;
+0x0000a4b5 1     sPf   LOG_TAG         Ljava/lang/String;
+0x0000a4b7 2     sP    context         Landroid/content/Context;
+0x0000a4ba 3     sP    filesPath       Ljava/lang/String;
+address    index flags name                                                  
+-----------------------------------------------------------------------------
+0x00011410 0     pC    <init>(Landroid/content/Context;)V
+0x00011440 1     r     installBinary(ILjava/lang/String;Ljava/lang/String;)Z
+0x00011814 2     r     isBinaryInstalled(Ljava/lang/String;)Z
 EOF
 RUN
 

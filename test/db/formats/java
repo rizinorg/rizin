@@ -47,16 +47,13 @@ NAME=Check that entry point points to main
 FILE=bins/java/HiKt.class
 CMDS=iS ; s
 EXPECT=<<EOF
-[Sections]
-
-nth paddr        size vaddr       vsize perm name                           
-----------------------------------------------------------------------------
-0   0x0000000a  0x201 0x0000000a  0x201 -r-- class.constant_pool
-1   0x0000020f   0x4e 0x0000020f   0x4e -r-- class.methods
-2   0x0000020f   0x4e 0x0000020f   0x4e -r-- class.methods.main.attr
-3   0x00000225   0x31 0x00000225   0x31 -r-x class.methods.main.attr.0.code
-4   0x0000025d   0x54 0x0000025d   0x54 -r-- class.attr
-
+paddr      size  vaddr      vsize align perm name                           type flags 
+---------------------------------------------------------------------------------------
+0x0000000a 0x201 0x0000000a 0x201 0x0   -r-- class.constant_pool                 
+0x0000020f 0x4e  0x0000020f 0x4e  0x0   -r-- class.methods                       
+0x0000020f 0x4e  0x0000020f 0x4e  0x0   -r-- class.methods.main.attr             
+0x00000225 0x31  0x00000225 0x31  0x0   -r-x class.methods.main.attr.0.code      
+0x0000025d 0x54  0x0000025d 0x54  0x0   -r-- class.attr                          
 0x225
 EOF
 RUN
@@ -66,18 +63,15 @@ NAME=Check that entry point points to <init>
 FILE=bins/java/jdwpexeccmd.class
 CMDS=iS ; s
 EXPECT=<<EOF
-[Sections]
-
-nth paddr        size vaddr       vsize perm name                             
-------------------------------------------------------------------------------
-0   0x0000000a  0x315 0x0000000a  0x315 -r-- class.constant_pool
-1   0x00000323  0x124 0x00000323  0x124 -r-- class.methods
-2   0x00000323   0x2b 0x00000323   0x2b -r-- class.methods._init_.attr
-3   0x00000339   0x1d 0x00000339   0x1d -r-x class.methods._init_.attr.0.code
-4   0x0000034e   0xf9 0x0000034e   0xf9 -r-- class.methods.run.attr
-5   0x00000364   0xe9 0x00000364   0xe9 -r-x class.methods.run.attr.0.code
-6   0x00000447    0x8 0x00000447    0x8 -r-- class.attr
-
+paddr      size  vaddr      vsize align perm name                             type flags 
+-----------------------------------------------------------------------------------------
+0x0000000a 0x315 0x0000000a 0x315 0x0   -r-- class.constant_pool                   
+0x00000323 0x124 0x00000323 0x124 0x0   -r-- class.methods                         
+0x00000323 0x2b  0x00000323 0x2b  0x0   -r-- class.methods._init_.attr             
+0x00000339 0x1d  0x00000339 0x1d  0x0   -r-x class.methods._init_.attr.0.code      
+0x0000034e 0xf9  0x0000034e 0xf9  0x0   -r-- class.methods.run.attr                
+0x00000364 0xe9  0x00000364 0xe9  0x0   -r-x class.methods.run.attr.0.code         
+0x00000447 0x8   0x00000447 0x8   0x0   -r-- class.attr                            
 0x339
 EOF
 RUN
@@ -87,7 +81,6 @@ NAME=Check that strings are provided by Java class
 FILE=bins/java/HiKt.class
 CMDS=iz
 EXPECT=<<EOF
-[Strings]
 nth paddr      vaddr      len size section             type string                                                                                                                                                                                                                                                                  
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 1   0x0000000a 0x0000000a 4   4    class.constant_pool utf8 HiKt
@@ -117,8 +110,6 @@ NAME=Java list symbols crash2.class
 FILE=bins/java/crash2.class
 CMDS=is
 EXPECT=<<EOF
-[Symbols]
-
 nth paddr vaddr bind type size lib name 
 ----------------------------------------
 EOF
@@ -129,8 +120,6 @@ NAME=Java list symbols DemoTest.class
 FILE=bins/java/DemoTest.class
 CMDS=is
 EXPECT=<<EOF
-[Symbols]
-
 nth paddr      vaddr      bind   type  size lib                 name                 
 -------------------------------------------------------------------------------------
 0   0x00000190 0x00000190 LOCAL  FUNC  27   DemoTest            int fun()
@@ -148,8 +137,6 @@ NAME=Java list symbols ExCaseTableSwitch.class
 FILE=bins/java/ExCaseTableSwitch.class
 CMDS=is
 EXPECT=<<EOF
-[Symbols]
-
 nth paddr      vaddr      bind   type  size lib                     name                         
 -------------------------------------------------------------------------------------------------
 0   0x00000464 0x00000464 LOCAL  FUNC  47   CaseTableSwitch         void <init>()
@@ -177,8 +164,6 @@ NAME=Java list symbols fuckedup.class
 FILE=bins/java/fuckedup.class
 CMDS=is
 EXPECT=<<EOF
-[Symbols]
-
 nth paddr vaddr bind type size lib name 
 ----------------------------------------
 EOF
@@ -189,8 +174,6 @@ NAME=Java list symbols Hello.class
 FILE=bins/java/Hello.class
 CMDS=is
 EXPECT=<<EOF
-[Symbols]
-
 nth paddr      vaddr      bind   type  size lib                     name                         
 -------------------------------------------------------------------------------------------------
 0   0x0000022b 0x0000022b LOCAL  FUNC  42   Hello                   void <init>(String)
@@ -214,8 +197,6 @@ NAME=Java list symbols HiKt.class
 FILE=bins/java/HiKt.class
 CMDS=is
 EXPECT=<<EOF
-[Symbols]
-
 nth paddr      vaddr      bind   type size lib                            name                                         
 -----------------------------------------------------------------------------------------------------------------------
 0   0x00000225 0x00000225 GLOBAL FUNC 49   HiKt                           void main(String[])
@@ -228,8 +209,6 @@ NAME=Java list symbols invisible.class
 FILE=bins/java/invisible.class
 CMDS=is
 EXPECT=<<EOF
-[Symbols]
-
 nth paddr      vaddr      bind   type  size lib                 name                 
 -------------------------------------------------------------------------------------
 0   0x00000120 0x00000120 LOCAL  FUNC  17   Test                void main(String[])
@@ -243,8 +222,6 @@ NAME=Java list symbols jdwpexeccmd.class
 FILE=bins/java/jdwpexeccmd.class
 CMDS=is
 EXPECT=<<EOF
-[Symbols]
-
 nth paddr      vaddr      bind   type size lib                       name                                 
 ----------------------------------------------------------------------------------------------------------
 0   0x00000339 0x00000339 LOCAL  FUNC 29   JDWPExecCmd               void <init>()
@@ -268,8 +245,6 @@ NAME=Java list symbols MainActivity.class
 FILE=bins/java/MainActivity.class
 CMDS=is
 EXPECT=<<EOF
-[Symbols]
-
 nth paddr      vaddr      bind   type  size lib                                  name                                                                                            
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 0   0x00001c87 0x00001c87 LOCAL  FUNC  113  org.radare2.installer.MainActivity   void <init>()
@@ -395,8 +370,6 @@ NAME=Java list symbols Main.class
 FILE=bins/java/Main.class
 CMDS=is
 EXPECT=<<EOF
-[Symbols]
-
 nth paddr      vaddr      bind   type  size lib                     name                                         
 -----------------------------------------------------------------------------------------------------------------
 0   0x00000389 0x00000389 LOCAL  FUNC  29   Main                    void <init>()
@@ -422,8 +395,6 @@ NAME=Java list symbols sjybq.class
 FILE=bins/java/sjybq.class
 CMDS=is
 EXPECT=<<EOF
-[Symbols]
-
 nth paddr vaddr bind type size lib name 
 ----------------------------------------
 EOF
@@ -434,8 +405,6 @@ NAME=Java list symbols test.class
 FILE=bins/java/test.class
 CMDS=is
 EXPECT=<<EOF
-[Symbols]
-
 nth paddr      vaddr      bind   type  size lib                                                name                                                                      
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 0   0x000008f9 0x000008f9 LOCAL  FUNC  39   test                                               void <init>()
@@ -479,8 +448,6 @@ NAME=Java list symbols TryWithResources.class
 FILE=bins/java/TryWithResources.class
 CMDS=is
 EXPECT=<<EOF
-[Symbols]
-
 nth paddr      vaddr      bind   type  size  lib                        name                            
 --------------------------------------------------------------------------------------------------------
 0   0x00000421 0x00000421 LOCAL  FUNC  21    TryWithResources           TryWithResources $(int)
@@ -519,143 +486,243 @@ RUN
 
 NAME=Java list classes crash2.class
 FILE=bins/java/crash2.class
-CMDS=ic
+CMDS=<<EOF
+ic
+icf 'unknown_class'
+icm 'unknown_class'
+EOF
 EXPECT=<<EOF
-0x00000000 [0x00000000 - 0x00000000]      0 class 0 unknown_class :: unknown_super
+address    min        max        name          super         
+-------------------------------------------------------------
+0x00000000 0x00000000 0x00000000 unknown_class unknown_super
+address index flags name type 
+------------------------------
+address index flags name 
+-------------------------
 EOF
 RUN
 
 
 NAME=Java list classes DemoTest.class
 FILE=bins/java/DemoTest.class
-CMDS=ic
+CMDS=<<EOF
+ic
+icf 'LDemoTest;'
+icm 'LDemoTest;'
+EOF
 EXPECT=<<EOF
-0x00000000 [0x00000190 - 0x00000236]    166 class 0 LDemoTest; :: java/lang/Object
-0x00000190 method 0      fun()I
-0x000001b9 method 1      <init>()V
-0x000001e8 method 2      res()Ljava/lang/String;
-0x00000211 method 3      main([Ljava/lang/String;)V
+address    min        max        name       super            
+-------------------------------------------------------------
+0x00000000 0x00000190 0x00000236 LDemoTest; java/lang/Object
+address index flags name type 
+------------------------------
+address    index flags name                       
+--------------------------------------------------
+0x00000190 0           fun()I
+0x000001b9 1           <init>()V
+0x000001e8 2           res()Ljava/lang/String;
+0x00000211 3           main([Ljava/lang/String;)V
 EOF
 RUN
 
 
 NAME=Java list classes ExCaseTableSwitch.class
 FILE=bins/java/ExCaseTableSwitch.class
-CMDS=ic
+CMDS=<<EOF
+ic
+icf 'LCaseTableSwitch;'
+icm 'LCaseTableSwitch;'
+EOF
 EXPECT=<<EOF
-0x00000000 [0x00000464 - 0x00000d74]   2320 class 0 LCaseTableSwitch; :: java/lang/Object
-0x00000464 method 0      <init>()V
-0x000004a1 method 1      a(I)Ljava/lang/String;
-0x000005df method 2      a(Ljava/lang/String;)I
-0x00000623 method 3      a()I
-0x0000065d method 4      hopskip_line_switch()V
-0x00000816 method 5      straight_line_switch()V
-0x000009ea method 6      straight_line_switch_()V
-0x00000bb6 method 7      main([Ljava/lang/String;)V
+address    min        max        name              super            
+--------------------------------------------------------------------
+0x00000000 0x00000464 0x00000d74 LCaseTableSwitch; java/lang/Object
+address index flags name type 
+------------------------------
+address    index flags name                       
+--------------------------------------------------
+0x00000464 0           <init>()V
+0x000004a1 1           a(I)Ljava/lang/String;
+0x000005df 2           a(Ljava/lang/String;)I
+0x00000623 3           a()I
+0x0000065d 4           hopskip_line_switch()V
+0x00000816 5           straight_line_switch()V
+0x000009ea 6           straight_line_switch_()V
+0x00000bb6 7           main([Ljava/lang/String;)V
 EOF
 RUN
 
 
 NAME=Java list classes fuckedup.class
 FILE=bins/java/fuckedup.class
-CMDS=ic
+CMDS=<<EOF
+ic
+icf 'unknown_class'
+icm 'unknown_class'
+EOF
 EXPECT=<<EOF
-0x00000000 [0x00000000 - 0x00000000]      0 class 0 unknown_class :: unknown_super
+address    min        max        name          super         
+-------------------------------------------------------------
+0x00000000 0x00000000 0x00000000 unknown_class unknown_super
+address index flags name type 
+------------------------------
+address index flags name 
+-------------------------
 EOF
 RUN
 
 
 NAME=Java list classes Hello.class
 FILE=bins/java/Hello.class
-CMDS=ic
+CMDS=<<EOF
+ic
+icf 'LHello;'
+icm 'LHello;'
+EOF
 EXPECT=<<EOF
-0x00000000 [0x0000022b - 0x000002d3]    168 class 0 LHello; :: java/lang/Object
-0x0000020b field  0      who
-0x0000022b method 0      <init>(Ljava/lang/String;)V
-0x00000263 method 1      say()V
-0x000002aa method 2      main([Ljava/lang/String;)V
+address    min        max        name    super            
+----------------------------------------------------------
+0x00000000 0x0000022b 0x000002d3 LHello; java/lang/Object
+address    index flags name type               
+-----------------------------------------------
+0x0000020b 0           who  Ljava/lang/String;
+address    index flags name                        
+---------------------------------------------------
+0x0000022b 0           <init>(Ljava/lang/String;)V
+0x00000263 1           say()V
+0x000002aa 2           main([Ljava/lang/String;)V
 EOF
 RUN
 
 
 NAME=Java list classes HiKt.class
 FILE=bins/java/HiKt.class
-CMDS=ic
+CMDS=<<EOF
+ic
+icf 'LHiKt;'
+icm 'LHiKt;'
+EOF
 EXPECT=<<EOF
-0x00000000 [0x00000225 - 0x00000256]     49 class 0 LHiKt; :: java/lang/Object
-0x00000225 method 0      main([Ljava/lang/String;)V
+address    min        max        name   super            
+---------------------------------------------------------
+0x00000000 0x00000225 0x00000256 LHiKt; java/lang/Object
+address index flags name type 
+------------------------------
+address    index flags name                       
+--------------------------------------------------
+0x00000225 0           main([Ljava/lang/String;)V
 EOF
 RUN
 
 
 NAME=Java list classes invisible.class
 FILE=bins/java/invisible.class
-CMDS=ic
+CMDS=<<EOF
+ic
+icf 'LTest;'
+icm 'LTest;'
+EOF
 EXPECT=<<EOF
-0x00000000 [0x00000120 - 0x00000131]     17 class 0 LTest; :: java/lang/Object
-0x00000120 method 0      main([Ljava/lang/String;)V
+address    min        max        name   super            
+---------------------------------------------------------
+0x00000000 0x00000120 0x00000131 LTest; java/lang/Object
+address index flags name type 
+------------------------------
+address    index flags name                       
+--------------------------------------------------
+0x00000120 0           main([Ljava/lang/String;)V
 EOF
 RUN
 
 
 NAME=Java list classes jdwpexeccmd.class
 FILE=bins/java/jdwpexeccmd.class
-CMDS=ic
+CMDS=<<EOF
+ic
+icf 'LJDWPExecCmd;'
+icm 'LJDWPExecCmd;'
+EOF
 EXPECT=<<EOF
-0x00000000 [0x00000339 - 0x0000044d]    276 class 0 LJDWPExecCmd; :: java/lang/Object
-0x00000339 method 0      <init>()V
-0x00000364 method 1      run(Ljava/lang/String;)Ljava/lang/String;
+address    min        max        name          super            
+----------------------------------------------------------------
+0x00000000 0x00000339 0x0000044d LJDWPExecCmd; java/lang/Object
+address index flags name type 
+------------------------------
+address    index flags name                                      
+-----------------------------------------------------------------
+0x00000339 0           <init>()V
+0x00000364 1           run(Ljava/lang/String;)Ljava/lang/String;
 EOF
 RUN
 
 
 NAME=Java list classes MainActivity.class
 FILE=bins/java/MainActivity.class
-CMDS=ic
+CMDS=<<EOF
+ic
+icf 'Lorg/radare2/installer/MainActivity;'
+icm 'Lorg/radare2/installer/MainActivity;'
+EOF
 EXPECT=<<EOF
-0x00000000 [0x00001c87 - 0x000029ea]   3427 class 0 Lorg/radare2/installer/MainActivity; :: android/app/Activity
-0x00001c1f field  0      outputView
-0x00001c27 field  1      handler
-0x00001c2f field  2      remoteRunButton
-0x00001c37 field  3      localRunButton
-0x00001c3f field  4      context
-0x00001c47 field  5      mUtils
-0x00001c4f field  6      http_url_default
-0x00001c57 field  7      onLocalRunButtonClick
-0x00001c5f field  8      thread
-0x00001c67 field  9      onRemoteRunButtonClick
-0x00001c87 method 0      <init>()V
-0x00001d06 method 1      onCreate(Landroid/os/Bundle;)V
-0x00001f02 method 2      onCreateOptionsMenu(Landroid/view/Menu;)Z
-0x00001f5a method 3      onOptionsItemSelected(Landroid/view/MenuItem;)Z
-0x00001ff7 method 4      checkForRadare()Z
-0x0000204c method 5      output(Ljava/lang/String;)V
-0x000020b4 method 6      unTarGz(Ljava/lang/String;Ljava/lang/String;)V
-0x00002254 method 7      resetButtons()V
-0x000022b1 method 8      download(Ljava/lang/String;Ljava/lang/String;)Z
-0x000025e6 method 9      onResume()V
-0x00002720 method 10      access$000(Lorg/radare2/installer/MainActivity;)Lorg/radare2/installer/Utils;
-0x0000275d method 11      access$100(Lorg/radare2/installer/MainActivity;Ljava/lang/String;)V
-0x000027a5 method 12      access$200(Lorg/radare2/installer/MainActivity;)Ljava/lang/String;
-0x000027e2 method 13      access$300(Lorg/radare2/installer/MainActivity;)Z
-0x0000281f method 14      access$402(Lorg/radare2/installer/MainActivity;Landroid/widget/Button;)Landroid/widget/Button;
-0x00002868 method 15      access$400(Lorg/radare2/installer/MainActivity;)Landroid/widget/Button;
-0x000028a5 method 16      access$500(Lorg/radare2/installer/MainActivity;)Landroid/widget/TextView;
-0x000028e2 method 17      access$600(Lorg/radare2/installer/MainActivity;)Ljava/lang/Thread;
-0x0000291f method 18      access$602(Lorg/radare2/installer/MainActivity;Ljava/lang/Thread;)Ljava/lang/Thread;
-0x00002968 method 19      access$700(Lorg/radare2/installer/MainActivity;)Landroid/os/Handler;
-0x000029a5 method 20      access$800(Lorg/radare2/installer/MainActivity;Ljava/lang/String;Ljava/lang/String;)Z
+address    min        max        name                                 super                
+-------------------------------------------------------------------------------------------
+0x00000000 0x00001c87 0x000029ea Lorg/radare2/installer/MainActivity; android/app/Activity
+address    index flags name                   type                                
+----------------------------------------------------------------------------------
+0x00001c1f 0           outputView             Landroid/widget/TextView;
+0x00001c27 1           handler                Landroid/os/Handler;
+0x00001c2f 2           remoteRunButton        Landroid/widget/Button;
+0x00001c37 3           localRunButton         Landroid/widget/Button;
+0x00001c3f 4           context                Landroid/content/Context;
+0x00001c47 5           mUtils                 Lorg/radare2/installer/Utils;
+0x00001c4f 6           http_url_default       Ljava/lang/String;
+0x00001c57 7           onLocalRunButtonClick  Landroid/view/View$OnClickListener;
+0x00001c5f 8           thread                 Ljava/lang/Thread;
+0x00001c67 9           onRemoteRunButtonClick Landroid/view/View$OnClickListener;
+address    index flags name                                                                                           
+----------------------------------------------------------------------------------------------------------------------
+0x00001c87 0           <init>()V
+0x00001d06 1           onCreate(Landroid/os/Bundle;)V
+0x00001f02 2           onCreateOptionsMenu(Landroid/view/Menu;)Z
+0x00001f5a 3           onOptionsItemSelected(Landroid/view/MenuItem;)Z
+0x00001ff7 4           checkForRadare()Z
+0x0000204c 5           output(Ljava/lang/String;)V
+0x000020b4 6           unTarGz(Ljava/lang/String;Ljava/lang/String;)V
+0x00002254 7           resetButtons()V
+0x000022b1 8           download(Ljava/lang/String;Ljava/lang/String;)Z
+0x000025e6 9           onResume()V
+0x00002720 10          access$000(Lorg/radare2/installer/MainActivity;)Lorg/radare2/installer/Utils;
+0x0000275d 11          access$100(Lorg/radare2/installer/MainActivity;Ljava/lang/String;)V
+0x000027a5 12          access$200(Lorg/radare2/installer/MainActivity;)Ljava/lang/String;
+0x000027e2 13          access$300(Lorg/radare2/installer/MainActivity;)Z
+0x0000281f 14          access$402(Lorg/radare2/installer/MainActivity;Landroid/widget/Button;)Landroid/widget/Button;
+0x00002868 15          access$400(Lorg/radare2/installer/MainActivity;)Landroid/widget/Button;
+0x000028a5 16          access$500(Lorg/radare2/installer/MainActivity;)Landroid/widget/TextView;
+0x000028e2 17          access$600(Lorg/radare2/installer/MainActivity;)Ljava/lang/Thread;
+0x0000291f 18          access$602(Lorg/radare2/installer/MainActivity;Ljava/lang/Thread;)Ljava/lang/Thread;
+0x00002968 19          access$700(Lorg/radare2/installer/MainActivity;)Landroid/os/Handler;
+0x000029a5 20          access$800(Lorg/radare2/installer/MainActivity;Ljava/lang/String;Ljava/lang/String;)Z
 EOF
 RUN
 
 
 NAME=Java list classes Main.class
 FILE=bins/java/Main.class
-CMDS=ic
+CMDS=<<EOF
+ic
+icf 'LMain;'
+icm 'LMain;'
+EOF
 EXPECT=<<EOF
-0x00000000 [0x00000389 - 0x00000482]    249 class 0 LMain; :: java/lang/Object
-0x00000389 method 0      <init>()V
-0x000003b4 method 1      main([Ljava/lang/String;)V
+address    min        max        name   super            
+---------------------------------------------------------
+0x00000000 0x00000389 0x00000482 LMain; java/lang/Object
+address index flags name type 
+------------------------------
+address    index flags name                       
+--------------------------------------------------
+0x00000389 0           <init>()V
+0x000003b4 1           main([Ljava/lang/String;)V
 EOF
 RUN
 
@@ -664,45 +731,67 @@ NAME=Java list classes sjybq.class
 FILE=bins/java/sjybq.class
 CMDS=ic
 EXPECT=<<EOF
+address min max name super 
+---------------------------
 EOF
 RUN
 
 
 NAME=Java list classes test.class
 FILE=bins/java/test.class
-CMDS=ic
+CMDS=<<EOF
+ic
+icf 'Ltest;'
+icm 'Ltest;'
+EOF
 EXPECT=<<EOF
-0x00000000 [0x000008f9 - 0x00000bcd]    724 class 0 Ltest; :: groovy/lang/Script
-0x000008c9 field  0      $staticClassInfo
-0x000008d1 field  1      __$stMC
-0x000008d9 field  2      $callSiteArray
-0x000008f9 method 0      <init>()V
-0x0000092e method 1      <init>(Lgroovy/lang/Binding;)V
-0x0000096e method 2      main([Ljava/lang/String;)V
-0x000009ae method 3      run()Ljava/lang/Object;
-0x00000aba method 4      $getStaticMetaClass()Lgroovy/lang/MetaClass;
-0x00000afb method 5      $createCallSiteArray_1([Ljava/lang/String;)V
-0x00000b6a method 6      $createCallSiteArray()Lorg/codehaus/groovy/runtime/callsite/CallSiteArray;
-0x00000b99 method 7      $getCallSiteArray()[Lorg/codehaus/groovy/runtime/callsite/CallSite;
+address    min        max        name   super              
+-----------------------------------------------------------
+0x00000000 0x000008f9 0x00000bcd Ltest; groovy/lang/Script
+address    index flags name             type                                       
+-----------------------------------------------------------------------------------
+0x000008c9 0           $staticClassInfo Lorg/codehaus/groovy/reflection/ClassInfo;
+0x000008d1 1           __$stMC          Z
+0x000008d9 2           $callSiteArray   Ljava/lang/ref/SoftReference;
+address    index flags name                                                                       
+--------------------------------------------------------------------------------------------------
+0x000008f9 0           <init>()V
+0x0000092e 1           <init>(Lgroovy/lang/Binding;)V
+0x0000096e 2           main([Ljava/lang/String;)V
+0x000009ae 3           run()Ljava/lang/Object;
+0x00000aba 4           $getStaticMetaClass()Lgroovy/lang/MetaClass;
+0x00000afb 5           $createCallSiteArray_1([Ljava/lang/String;)V
+0x00000b6a 6           $createCallSiteArray()Lorg/codehaus/groovy/runtime/callsite/CallSiteArray;
+0x00000b99 7           $getCallSiteArray()[Lorg/codehaus/groovy/runtime/callsite/CallSite;
 EOF
 RUN
 
 
 NAME=Java list classes TryWithResources.class
 FILE=bins/java/TryWithResources.class
-CMDS=ic
+CMDS=<<EOF
+ic
+icf 'LTryWithResources;'
+icm 'LTryWithResources;'
+EOF
 EXPECT=<<EOF
-0x00000000 [0x00000421 - 0x00004f31]  19216 class 0 LTryWithResources; :: java/lang/RuntimeException
-0x000003f9 field  0      $
-0x00000401 field  1      i
-0x00000421 method 0      $(I)LTryWithResources;
-0x00000444 method 1      <init>(I)V
-0x00000484 method 2      close()V
-0x000004d0 method 3      $(ILjava/lang/RuntimeException;)V
-0x000004fb method 4      $(Ljava/lang/RuntimeException;)V
-0x0000051d method 5      main([Ljava/lang/String;)V
-0x0000054c method 6      main([[Ljava/lang/String;)V
-0x00004f19 method 7      <clinit>()V
+address    min        max        name               super                      
+-------------------------------------------------------------------------------
+0x00000000 0x00000421 0x00004f31 LTryWithResources; java/lang/RuntimeException
+address    index flags name type               
+-----------------------------------------------
+0x000003f9 0           $    LTryWithResources;
+0x00000401 1           i    I
+address    index flags name                              
+---------------------------------------------------------
+0x00000421 0           $(I)LTryWithResources;
+0x00000444 1           <init>(I)V
+0x00000484 2           close()V
+0x000004d0 3           $(ILjava/lang/RuntimeException;)V
+0x000004fb 4           $(Ljava/lang/RuntimeException;)V
+0x0000051d 5           main([Ljava/lang/String;)V
+0x0000054c 6           main([[Ljava/lang/String;)V
+0x00004f19 7           <clinit>()V
 EOF
 RUN
 
@@ -713,10 +802,8 @@ NAME=Java list imports crash2.class
 FILE=bins/java/crash2.class
 CMDS=ii
 EXPECT=<<EOF
-[Imports]
 nth vaddr bind type lib name 
 -----------------------------
-
 EOF
 RUN
 
@@ -725,13 +812,11 @@ NAME=Java list imports DemoTest.class
 FILE=bins/java/DemoTest.class
 CMDS=ii
 EXPECT=<<EOF
-[Imports]
 nth vaddr      bind type  lib       name                
 --------------------------------------------------------
 1   0x0000000a NONE METH  java.lang Object.<init>
 3   0x00000012 NONE FIELD java.lang System.out
 5   0x0000001a NONE METH  java.io   PrintStream.println
-
 EOF
 RUN
 
@@ -740,7 +825,6 @@ NAME=Java list imports ExCaseTableSwitch.class
 FILE=bins/java/ExCaseTableSwitch.class
 CMDS=ii
 EXPECT=<<EOF
-[Imports]
 nth vaddr      bind type  lib       name                                      
 ------------------------------------------------------------------------------
 8   0x0000004b NONE METH  java.lang Object.<init>
@@ -752,7 +836,6 @@ nth vaddr      bind type  lib       name
 46  0x0000004b NONE METH  java.lang String.<init>
 55  0x00000267 NONE METH  java.lang Integer.valueOf
 61  0x000002ab NONE METH            TestVariableSwitchUp.TestMultipleVariable
-
 EOF
 RUN
 
@@ -761,10 +844,8 @@ NAME=Java list imports fuckedup.class
 FILE=bins/java/fuckedup.class
 CMDS=ii
 EXPECT=<<EOF
-[Imports]
 nth vaddr bind type lib name 
 -----------------------------
-
 EOF
 RUN
 
@@ -773,7 +854,6 @@ NAME=Java list imports Hello.class
 FILE=bins/java/Hello.class
 CMDS=ii
 EXPECT=<<EOF
-[Imports]
 nth vaddr      bind type  lib       name                   
 -----------------------------------------------------------
 1   0x0000000a NONE METH  java.lang Object.<init>
@@ -785,7 +865,6 @@ nth vaddr      bind type  lib       name
 9   0x0000002e NONE METH  java.io   PrintStream.println
 12  0x0000000a NONE METH            Hello.<init>
 13  0x0000003e NONE METH            Hello.say
-
 EOF
 RUN
 
@@ -794,11 +873,9 @@ NAME=Java list imports HiKt.class
 FILE=bins/java/HiKt.class
 CMDS=ii
 EXPECT=<<EOF
-[Imports]
 nth vaddr      bind type lib                 name                               
 --------------------------------------------------------------------------------
 15  0x000000e7 NONE METH kotlin.jvm.internal Intrinsics.checkParameterIsNotNull
-
 EOF
 RUN
 
@@ -807,12 +884,10 @@ NAME=Java list imports invisible.class
 FILE=bins/java/invisible.class
 CMDS=ii
 EXPECT=<<EOF
-[Imports]
 nth vaddr      bind type  lib       name                
 --------------------------------------------------------
 7   0x0000003a NONE FIELD java.lang System.out
 8   0x0000003f NONE METH  java.io   PrintStream.println
-
 EOF
 RUN
 
@@ -821,7 +896,6 @@ NAME=Java list imports jdwpexeccmd.class
 FILE=bins/java/jdwpexeccmd.class
 CMDS=ii
 EXPECT=<<EOF
-[Imports]
 nth vaddr      bind type lib       name                     
 ------------------------------------------------------------
 1   0x0000000a NONE METH java.lang Object.<init>
@@ -835,7 +909,6 @@ nth vaddr      bind type lib       name
 13  0x0000000a NONE METH java.io   BufferedReader.<init>
 14  0x00000043 NONE METH java.io   BufferedReader.readLine
 15  0x00000048 NONE METH java.lang String.trim
-
 EOF
 RUN
 
@@ -844,7 +917,6 @@ NAME=Java list imports MainActivity.class
 FILE=bins/java/MainActivity.class
 CMDS=ii
 EXPECT=<<EOF
-[Imports]
 nth vaddr      bind type  lib                   name                                          
 ----------------------------------------------------------------------------------------------
 1   0x0000000a NONE METH  org.radare2.installer MainActivity.download
@@ -931,7 +1003,6 @@ nth vaddr      bind type  lib                   name
 141 0x00000260 NONE METH  android.app           AlarmManager.cancel
 142 0x00000265 NONE METH  android.os            SystemClock.elapsedRealtime
 143 0x0000026a NONE METH  android.app           AlarmManager.setInexactRepeating
-
 EOF
 RUN
 
@@ -940,7 +1011,6 @@ NAME=Java list imports Main.class
 FILE=bins/java/Main.class
 CMDS=ii
 EXPECT=<<EOF
-[Imports]
 nth vaddr      bind type  lib       name                      
 --------------------------------------------------------------
 1   0x0000000a NONE METH  java.lang Object.<init>
@@ -956,7 +1026,6 @@ nth vaddr      bind type  lib       name
 18  0x00000051 NONE FIELD java.lang System.err
 21  0x0000005c NONE METH  java.io   PrintStream.format
 22  0x00000061 NONE METH  java.lang Exception.printStackTrace
-
 EOF
 RUN
 
@@ -965,10 +1034,8 @@ NAME=Java list imports sjybq.class
 FILE=bins/java/sjybq.class
 CMDS=ii
 EXPECT=<<EOF
-[Imports]
 nth vaddr bind type lib name 
 -----------------------------
-
 EOF
 RUN
 
@@ -977,7 +1044,6 @@ NAME=Java list imports test.class
 FILE=bins/java/test.class
 CMDS=ii
 EXPECT=<<EOF
-[Imports]
 nth vaddr      bind type  lib                                  name                                
 ---------------------------------------------------------------------------------------------------
 13  0x0000009c NONE METH  groovy.lang                          Script.<init>
@@ -1002,7 +1068,6 @@ nth vaddr      bind type  lib                                  name
 161 0x00000818 NONE METH                                       test.$createCallSiteArray
 164 0x0000009c NONE METH  java.lang.ref                        SoftReference.<init>
 168 0x0000087f NONE FIELD org.codehaus.groovy.runtime.callsite CallSiteArray.array
-
 EOF
 RUN
 
@@ -1011,7 +1076,6 @@ NAME=Java list imports TryWithResources.class
 FILE=bins/java/TryWithResources.class
 CMDS=ii
 EXPECT=<<EOF
-[Imports]
 nth vaddr      bind   type  lib       name                      
 ----------------------------------------------------------------
 2   0x0000000d NONE   METH            TryWithResources.<init>
@@ -1035,7 +1099,6 @@ nth vaddr      bind   type  lib       name
 26  0x00000067 NONE   IMETH java.lang AutoCloseable.close
 27  0x0000007e NONE   METH  java.lang Throwable.printStackTrace
 0   ---------- WEAK   IFACE           java/lang/AutoCloseable.*
-
 EOF
 RUN
 
@@ -1044,12 +1107,9 @@ NAME=Java list sections crash2.class
 FILE=bins/java/crash2.class
 CMDS=iS
 EXPECT=<<EOF
-[Sections]
-
-nth paddr       size vaddr       vsize perm name                
-----------------------------------------------------------------
-0   0x0000000a  0x12 0x0000000a   0x12 -r-- class.constant_pool
-
+paddr      size vaddr      vsize align perm name                type flags 
+---------------------------------------------------------------------------
+0x0000000a 0x12 0x0000000a 0x12  0x0   -r-- class.constant_pool      
 EOF
 RUN
 
@@ -1058,22 +1118,19 @@ NAME=Java list sections DemoTest.class
 FILE=bins/java/DemoTest.class
 CMDS=iS
 EXPECT=<<EOF
-[Sections]
-
-nth paddr        size vaddr       vsize perm name                             
-------------------------------------------------------------------------------
-0   0x0000000a  0x16c 0x0000000a  0x16c -r-- class.constant_pool
-1   0x0000017a   0xb6 0x0000017a   0xb6 -r-- class.methods
-2   0x0000017a   0x29 0x0000017a   0x29 -r-- class.methods.fun.attr
-3   0x00000190   0x1b 0x00000190   0x1b -r-x class.methods.fun.attr.0.code
-4   0x000001a3   0x2f 0x000001a3   0x2f -r-- class.methods._init_.attr
-5   0x000001b9   0x21 0x000001b9   0x21 -r-x class.methods._init_.attr.0.code
-6   0x000001d2   0x29 0x000001d2   0x29 -r-- class.methods.res.attr
-7   0x000001e8   0x1b 0x000001e8   0x1b -r-x class.methods.res.attr.0.code
-8   0x000001fb   0x35 0x000001fb   0x35 -r-- class.methods.main.attr
-9   0x00000211   0x25 0x00000211   0x25 -r-x class.methods.main.attr.0.code
-10  0x00000230    0x8 0x00000230    0x8 -r-- class.attr
-
+paddr      size  vaddr      vsize align perm name                             type flags 
+-----------------------------------------------------------------------------------------
+0x0000000a 0x16c 0x0000000a 0x16c 0x0   -r-- class.constant_pool                   
+0x0000017a 0xb6  0x0000017a 0xb6  0x0   -r-- class.methods                         
+0x0000017a 0x29  0x0000017a 0x29  0x0   -r-- class.methods.fun.attr                
+0x00000190 0x1b  0x00000190 0x1b  0x0   -r-x class.methods.fun.attr.0.code         
+0x000001a3 0x2f  0x000001a3 0x2f  0x0   -r-- class.methods._init_.attr             
+0x000001b9 0x21  0x000001b9 0x21  0x0   -r-x class.methods._init_.attr.0.code      
+0x000001d2 0x29  0x000001d2 0x29  0x0   -r-- class.methods.res.attr                
+0x000001e8 0x1b  0x000001e8 0x1b  0x0   -r-x class.methods.res.attr.0.code         
+0x000001fb 0x35  0x000001fb 0x35  0x0   -r-- class.methods.main.attr               
+0x00000211 0x25  0x00000211 0x25  0x0   -r-x class.methods.main.attr.0.code        
+0x00000230 0x8   0x00000230 0x8   0x0   -r-- class.attr                            
 EOF
 RUN
 
@@ -1082,30 +1139,27 @@ NAME=Java list sections ExCaseTableSwitch.class
 FILE=bins/java/ExCaseTableSwitch.class
 CMDS=iS
 EXPECT=<<EOF
-[Sections]
-
-nth paddr        size vaddr       vsize perm name                                            
----------------------------------------------------------------------------------------------
-0   0x0000000a  0x440 0x0000000a  0x440 -r-- class.constant_pool
-1   0x0000044e  0x920 0x0000044e  0x920 -r-- class.methods
-2   0x0000044e   0x3d 0x0000044e   0x3d -r-- class.methods._init_.attr
-3   0x00000464   0x2f 0x00000464   0x2f -r-x class.methods._init_.attr.0.code
-4   0x0000048b  0x13e 0x0000048b  0x13e -r-- class.methods.a.attr
-5   0x000004a1  0x130 0x000004a1  0x130 -r-x class.methods.a.attr.0.code
-6   0x000005c9   0x44 0x000005c9   0x44 -r-- class.methods.a_1.attr
-7   0x000005df   0x36 0x000005df   0x36 -r-x class.methods.a_1.attr.0.code
-8   0x0000060d   0x3a 0x0000060d   0x3a -r-- class.methods.a_1.attr_1
-9   0x00000623   0x2c 0x00000623   0x2c -r-x class.methods.a_1.attr.0.code_1
-10  0x00000647  0x1b9 0x00000647  0x1b9 -r-- class.methods.hopskip_line_switch.attr
-11  0x0000065d  0x1ab 0x0000065d  0x1ab -r-x class.methods.hopskip_line_switch.attr.0.code
-12  0x00000800  0x1d4 0x00000800  0x1d4 -r-- class.methods.straight_line_switch.attr
-13  0x00000816  0x1c6 0x00000816  0x1c6 -r-x class.methods.straight_line_switch.attr.0.code
-14  0x000009d4  0x1cc 0x000009d4  0x1cc -r-- class.methods.straight_line_switch_.attr
-15  0x000009ea  0x1be 0x000009ea  0x1be -r-x class.methods.straight_line_switch_.attr.0.code
-16  0x00000ba0  0x1ce 0x00000ba0  0x1ce -r-- class.methods.main.attr
-17  0x00000bb6  0x1be 0x00000bb6  0x1be -r-x class.methods.main.attr.0.code
-18  0x00000d6e    0x8 0x00000d6e    0x8 -r-- class.attr
-
+paddr      size  vaddr      vsize align perm name                                            type flags 
+--------------------------------------------------------------------------------------------------------
+0x0000000a 0x440 0x0000000a 0x440 0x0   -r-- class.constant_pool                                  
+0x0000044e 0x920 0x0000044e 0x920 0x0   -r-- class.methods                                        
+0x0000044e 0x3d  0x0000044e 0x3d  0x0   -r-- class.methods._init_.attr                            
+0x00000464 0x2f  0x00000464 0x2f  0x0   -r-x class.methods._init_.attr.0.code                     
+0x0000048b 0x13e 0x0000048b 0x13e 0x0   -r-- class.methods.a.attr                                 
+0x000004a1 0x130 0x000004a1 0x130 0x0   -r-x class.methods.a.attr.0.code                          
+0x000005c9 0x44  0x000005c9 0x44  0x0   -r-- class.methods.a_1.attr                               
+0x000005df 0x36  0x000005df 0x36  0x0   -r-x class.methods.a_1.attr.0.code                        
+0x0000060d 0x3a  0x0000060d 0x3a  0x0   -r-- class.methods.a_1.attr_1                             
+0x00000623 0x2c  0x00000623 0x2c  0x0   -r-x class.methods.a_1.attr.0.code_1                      
+0x00000647 0x1b9 0x00000647 0x1b9 0x0   -r-- class.methods.hopskip_line_switch.attr               
+0x0000065d 0x1ab 0x0000065d 0x1ab 0x0   -r-x class.methods.hopskip_line_switch.attr.0.code        
+0x00000800 0x1d4 0x00000800 0x1d4 0x0   -r-- class.methods.straight_line_switch.attr              
+0x00000816 0x1c6 0x00000816 0x1c6 0x0   -r-x class.methods.straight_line_switch.attr.0.code       
+0x000009d4 0x1cc 0x000009d4 0x1cc 0x0   -r-- class.methods.straight_line_switch_.attr             
+0x000009ea 0x1be 0x000009ea 0x1be 0x0   -r-x class.methods.straight_line_switch_.attr.0.code      
+0x00000ba0 0x1ce 0x00000ba0 0x1ce 0x0   -r-- class.methods.main.attr                              
+0x00000bb6 0x1be 0x00000bb6 0x1be 0x0   -r-x class.methods.main.attr.0.code                       
+0x00000d6e 0x8   0x00000d6e 0x8   0x0   -r-- class.attr                                           
 EOF
 RUN
 
@@ -1114,12 +1168,9 @@ NAME=Java list sections fuckedup.class
 FILE=bins/java/fuckedup.class
 CMDS=iS
 EXPECT=<<EOF
-[Sections]
-
-nth paddr       size vaddr       vsize perm name                
-----------------------------------------------------------------
-0   0x0000000a  0x41 0x0000000a   0x41 -r-- class.constant_pool
-
+paddr      size vaddr      vsize align perm name                type flags 
+---------------------------------------------------------------------------
+0x0000000a 0x41 0x0000000a 0x41  0x0   -r-- class.constant_pool      
 EOF
 RUN
 
@@ -1128,22 +1179,19 @@ NAME=Java list sections Hello.class
 FILE=bins/java/Hello.class
 CMDS=iS
 EXPECT=<<EOF
-[Sections]
-
-nth paddr        size vaddr       vsize perm name                             
-------------------------------------------------------------------------------
-0   0x0000000a  0x1ff 0x0000000a  0x1ff -r-- class.constant_pool
-1   0x0000020b    0xa 0x0000020b    0xa -r-- class.fields.who.attr
-2   0x0000020b    0xa 0x0000020b    0xa -r-- class.fields
-3   0x00000215   0xb8 0x00000215   0xb8 -r-- class.methods
-4   0x00000215   0x38 0x00000215   0x38 -r-- class.methods._init_.attr
-5   0x0000022b   0x2a 0x0000022b   0x2a -r-x class.methods._init_.attr.0.code
-6   0x0000024d   0x47 0x0000024d   0x47 -r-- class.methods.say.attr
-7   0x00000263   0x39 0x00000263   0x39 -r-x class.methods.say.attr.0.code
-8   0x00000294   0x39 0x00000294   0x39 -r-- class.methods.main.attr
-9   0x000002aa   0x29 0x000002aa   0x29 -r-x class.methods.main.attr.0.code
-10  0x000002cd    0x8 0x000002cd    0x8 -r-- class.attr
-
+paddr      size  vaddr      vsize align perm name                             type flags 
+-----------------------------------------------------------------------------------------
+0x0000000a 0x1ff 0x0000000a 0x1ff 0x0   -r-- class.constant_pool                   
+0x0000020b 0xa   0x0000020b 0xa   0x0   -r-- class.fields.who.attr                 
+0x0000020b 0xa   0x0000020b 0xa   0x0   -r-- class.fields                          
+0x00000215 0xb8  0x00000215 0xb8  0x0   -r-- class.methods                         
+0x00000215 0x38  0x00000215 0x38  0x0   -r-- class.methods._init_.attr             
+0x0000022b 0x2a  0x0000022b 0x2a  0x0   -r-x class.methods._init_.attr.0.code      
+0x0000024d 0x47  0x0000024d 0x47  0x0   -r-- class.methods.say.attr                
+0x00000263 0x39  0x00000263 0x39  0x0   -r-x class.methods.say.attr.0.code         
+0x00000294 0x39  0x00000294 0x39  0x0   -r-- class.methods.main.attr               
+0x000002aa 0x29  0x000002aa 0x29  0x0   -r-x class.methods.main.attr.0.code        
+0x000002cd 0x8   0x000002cd 0x8   0x0   -r-- class.attr                            
 EOF
 RUN
 
@@ -1152,16 +1200,13 @@ NAME=Java list sections HiKt.class
 FILE=bins/java/HiKt.class
 CMDS=iS
 EXPECT=<<EOF
-[Sections]
-
-nth paddr        size vaddr       vsize perm name                           
-----------------------------------------------------------------------------
-0   0x0000000a  0x201 0x0000000a  0x201 -r-- class.constant_pool
-1   0x0000020f   0x4e 0x0000020f   0x4e -r-- class.methods
-2   0x0000020f   0x4e 0x0000020f   0x4e -r-- class.methods.main.attr
-3   0x00000225   0x31 0x00000225   0x31 -r-x class.methods.main.attr.0.code
-4   0x0000025d   0x54 0x0000025d   0x54 -r-- class.attr
-
+paddr      size  vaddr      vsize align perm name                           type flags 
+---------------------------------------------------------------------------------------
+0x0000000a 0x201 0x0000000a 0x201 0x0   -r-- class.constant_pool                 
+0x0000020f 0x4e  0x0000020f 0x4e  0x0   -r-- class.methods                       
+0x0000020f 0x4e  0x0000020f 0x4e  0x0   -r-- class.methods.main.attr             
+0x00000225 0x31  0x00000225 0x31  0x0   -r-x class.methods.main.attr.0.code      
+0x0000025d 0x54  0x0000025d 0x54  0x0   -r-- class.attr                          
 EOF
 RUN
 
@@ -1170,15 +1215,12 @@ NAME=Java list sections invisible.class
 FILE=bins/java/invisible.class
 CMDS=iS
 EXPECT=<<EOF
-[Sections]
-
-nth paddr        size vaddr       vsize perm name                           
-----------------------------------------------------------------------------
-0   0x0000000a  0x100 0x0000000a  0x100 -r-- class.constant_pool
-1   0x0000010e   0x21 0x0000010e   0x21 -r-- class.methods
-2   0x0000010e   0x21 0x0000010e   0x21 -r-- class.methods.main.attr
-3   0x00000120   0x11 0x00000120   0x11 -r-x class.methods.main.attr.0.code
-
+paddr      size  vaddr      vsize align perm name                           type flags 
+---------------------------------------------------------------------------------------
+0x0000000a 0x100 0x0000000a 0x100 0x0   -r-- class.constant_pool                 
+0x0000010e 0x21  0x0000010e 0x21  0x0   -r-- class.methods                       
+0x0000010e 0x21  0x0000010e 0x21  0x0   -r-- class.methods.main.attr             
+0x00000120 0x11  0x00000120 0x11  0x0   -r-x class.methods.main.attr.0.code      
 EOF
 RUN
 
@@ -1187,18 +1229,15 @@ NAME=Java list sections jdwpexeccmd.class
 FILE=bins/java/jdwpexeccmd.class
 CMDS=iS
 EXPECT=<<EOF
-[Sections]
-
-nth paddr        size vaddr       vsize perm name                             
-------------------------------------------------------------------------------
-0   0x0000000a  0x315 0x0000000a  0x315 -r-- class.constant_pool
-1   0x00000323  0x124 0x00000323  0x124 -r-- class.methods
-2   0x00000323   0x2b 0x00000323   0x2b -r-- class.methods._init_.attr
-3   0x00000339   0x1d 0x00000339   0x1d -r-x class.methods._init_.attr.0.code
-4   0x0000034e   0xf9 0x0000034e   0xf9 -r-- class.methods.run.attr
-5   0x00000364   0xe9 0x00000364   0xe9 -r-x class.methods.run.attr.0.code
-6   0x00000447    0x8 0x00000447    0x8 -r-- class.attr
-
+paddr      size  vaddr      vsize align perm name                             type flags 
+-----------------------------------------------------------------------------------------
+0x0000000a 0x315 0x0000000a 0x315 0x0   -r-- class.constant_pool                   
+0x00000323 0x124 0x00000323 0x124 0x0   -r-- class.methods                         
+0x00000323 0x2b  0x00000323 0x2b  0x0   -r-- class.methods._init_.attr             
+0x00000339 0x1d  0x00000339 0x1d  0x0   -r-x class.methods._init_.attr.0.code      
+0x0000034e 0xf9  0x0000034e 0xf9  0x0   -r-- class.methods.run.attr                
+0x00000364 0xe9  0x00000364 0xe9  0x0   -r-x class.methods.run.attr.0.code         
+0x00000447 0x8   0x00000447 0x8   0x0   -r-- class.attr                            
 EOF
 RUN
 
@@ -1207,67 +1246,64 @@ NAME=Java list sections MainActivity.class
 FILE=bins/java/MainActivity.class
 CMDS=iS
 EXPECT=<<EOF
-[Sections]
-
-nth paddr         size vaddr        vsize perm name                                            
------------------------------------------------------------------------------------------------
-0   0x0000000a  0x1c13 0x0000000a  0x1c13 -r-- class.constant_pool
-1   0x00001c1f     0x8 0x00001c1f     0x8 -r-- class.fields.outputView.attr
-2   0x00001c27     0x8 0x00001c27     0x8 -r-- class.fields.handler.attr
-3   0x00001c2f     0x8 0x00001c2f     0x8 -r-- class.fields.remoteRunButton.attr
-4   0x00001c37     0x8 0x00001c37     0x8 -r-- class.fields.localRunButton.attr
-5   0x00001c3f     0x8 0x00001c3f     0x8 -r-- class.fields.context.attr
-6   0x00001c47     0x8 0x00001c47     0x8 -r-- class.fields.mUtils.attr
-7   0x00001c4f     0x8 0x00001c4f     0x8 -r-- class.fields.http_url_default.attr
-8   0x00001c57     0x8 0x00001c57     0x8 -r-- class.fields.onLocalRunButtonClick.attr
-9   0x00001c5f     0x8 0x00001c5f     0x8 -r-- class.fields.thread.attr
-10  0x00001c67     0xa 0x00001c67     0xa -r-- class.fields.onRemoteRunButtonClick.attr
-11  0x00001c1f    0x52 0x00001c1f    0x52 -r-- class.fields
-12  0x00001c71   0xd73 0x00001c71   0xd73 -r-- class.methods
-13  0x00001c71    0x7f 0x00001c71    0x7f -r-- class.methods._init_.attr
-14  0x00001c87    0x71 0x00001c87    0x71 -r-x class.methods._init_.attr.0.code
-15  0x00001cf0   0x1fc 0x00001cf0   0x1fc -r-- class.methods.onCreate.attr
-16  0x00001d06   0x1ee 0x00001d06   0x1ee -r-x class.methods.onCreate.attr.0.code
-17  0x00001eec    0x58 0x00001eec    0x58 -r-- class.methods.onCreateOptionsMenu.attr
-18  0x00001f02    0x4a 0x00001f02    0x4a -r-x class.methods.onCreateOptionsMenu.attr.0.code
-19  0x00001f44    0x9d 0x00001f44    0x9d -r-- class.methods.onOptionsItemSelected.attr
-20  0x00001f5a    0x8f 0x00001f5a    0x8f -r-x class.methods.onOptionsItemSelected.attr.0.code
-21  0x00001fe1    0x55 0x00001fe1    0x55 -r-- class.methods.checkForRadare.attr
-22  0x00001ff7    0x47 0x00001ff7    0x47 -r-x class.methods.checkForRadare.attr.0.code
-23  0x00002036    0x68 0x00002036    0x68 -r-- class.methods.output.attr
-24  0x0000204c    0x5a 0x0000204c    0x5a -r-x class.methods.output.attr.0.code
-25  0x0000209e   0x1a0 0x0000209e   0x1a0 -r-- class.methods.unTarGz.attr
-26  0x000020b4   0x188 0x000020b4   0x188 -r-x class.methods.unTarGz.attr.0.code
-27  0x0000223e    0x5d 0x0000223e    0x5d -r-- class.methods.resetButtons.attr
-28  0x00002254    0x4f 0x00002254    0x4f -r-x class.methods.resetButtons.attr.0.code
-29  0x0000229b   0x335 0x0000229b   0x335 -r-- class.methods.download.attr
-30  0x000022b1   0x327 0x000022b1   0x327 -r-x class.methods.download.attr.0.code
-31  0x000025d0   0x13a 0x000025d0   0x13a -r-- class.methods.onResume.attr
-32  0x000025e6   0x12c 0x000025e6   0x12c -r-x class.methods.onResume.attr.0.code
-33  0x0000270a    0x3d 0x0000270a    0x3d -r-- class.methods.access_000.attr
-34  0x00002720    0x2f 0x00002720    0x2f -r-x class.methods.access_000.attr.0.code
-35  0x00002747    0x48 0x00002747    0x48 -r-- class.methods.access_100.attr
-36  0x0000275d    0x3a 0x0000275d    0x3a -r-x class.methods.access_100.attr.0.code
-37  0x0000278f    0x3d 0x0000278f    0x3d -r-- class.methods.access_200.attr
-38  0x000027a5    0x2f 0x000027a5    0x2f -r-x class.methods.access_200.attr.0.code
-39  0x000027cc    0x3d 0x000027cc    0x3d -r-- class.methods.access_300.attr
-40  0x000027e2    0x2f 0x000027e2    0x2f -r-x class.methods.access_300.attr.0.code
-41  0x00002809    0x49 0x00002809    0x49 -r-- class.methods.access_402.attr
-42  0x0000281f    0x3b 0x0000281f    0x3b -r-x class.methods.access_402.attr.0.code
-43  0x00002852    0x3d 0x00002852    0x3d -r-- class.methods.access_400.attr
-44  0x00002868    0x2f 0x00002868    0x2f -r-x class.methods.access_400.attr.0.code
-45  0x0000288f    0x3d 0x0000288f    0x3d -r-- class.methods.access_500.attr
-46  0x000028a5    0x2f 0x000028a5    0x2f -r-x class.methods.access_500.attr.0.code
-47  0x000028cc    0x3d 0x000028cc    0x3d -r-- class.methods.access_600.attr
-48  0x000028e2    0x2f 0x000028e2    0x2f -r-x class.methods.access_600.attr.0.code
-49  0x00002909    0x49 0x00002909    0x49 -r-- class.methods.access_602.attr
-50  0x0000291f    0x3b 0x0000291f    0x3b -r-x class.methods.access_602.attr.0.code
-51  0x00002952    0x3d 0x00002952    0x3d -r-- class.methods.access_700.attr
-52  0x00002968    0x2f 0x00002968    0x2f -r-x class.methods.access_700.attr.0.code
-53  0x0000298f    0x55 0x0000298f    0x55 -r-- class.methods.access_800.attr
-54  0x000029a5    0x45 0x000029a5    0x45 -r-x class.methods.access_800.attr.0.code
-55  0x000029e4    0x50 0x000029e4    0x50 -r-- class.attr
-
+paddr      size   vaddr      vsize  align perm name                                            type flags 
+----------------------------------------------------------------------------------------------------------
+0x0000000a 0x1c13 0x0000000a 0x1c13 0x0   -r-- class.constant_pool                                  
+0x00001c1f 0x8    0x00001c1f 0x8    0x0   -r-- class.fields.outputView.attr                         
+0x00001c27 0x8    0x00001c27 0x8    0x0   -r-- class.fields.handler.attr                            
+0x00001c2f 0x8    0x00001c2f 0x8    0x0   -r-- class.fields.remoteRunButton.attr                    
+0x00001c37 0x8    0x00001c37 0x8    0x0   -r-- class.fields.localRunButton.attr                     
+0x00001c3f 0x8    0x00001c3f 0x8    0x0   -r-- class.fields.context.attr                            
+0x00001c47 0x8    0x00001c47 0x8    0x0   -r-- class.fields.mUtils.attr                             
+0x00001c4f 0x8    0x00001c4f 0x8    0x0   -r-- class.fields.http_url_default.attr                   
+0x00001c57 0x8    0x00001c57 0x8    0x0   -r-- class.fields.onLocalRunButtonClick.attr              
+0x00001c5f 0x8    0x00001c5f 0x8    0x0   -r-- class.fields.thread.attr                             
+0x00001c67 0xa    0x00001c67 0xa    0x0   -r-- class.fields.onRemoteRunButtonClick.attr             
+0x00001c1f 0x52   0x00001c1f 0x52   0x0   -r-- class.fields                                         
+0x00001c71 0xd73  0x00001c71 0xd73  0x0   -r-- class.methods                                        
+0x00001c71 0x7f   0x00001c71 0x7f   0x0   -r-- class.methods._init_.attr                            
+0x00001c87 0x71   0x00001c87 0x71   0x0   -r-x class.methods._init_.attr.0.code                     
+0x00001cf0 0x1fc  0x00001cf0 0x1fc  0x0   -r-- class.methods.onCreate.attr                          
+0x00001d06 0x1ee  0x00001d06 0x1ee  0x0   -r-x class.methods.onCreate.attr.0.code                   
+0x00001eec 0x58   0x00001eec 0x58   0x0   -r-- class.methods.onCreateOptionsMenu.attr               
+0x00001f02 0x4a   0x00001f02 0x4a   0x0   -r-x class.methods.onCreateOptionsMenu.attr.0.code        
+0x00001f44 0x9d   0x00001f44 0x9d   0x0   -r-- class.methods.onOptionsItemSelected.attr             
+0x00001f5a 0x8f   0x00001f5a 0x8f   0x0   -r-x class.methods.onOptionsItemSelected.attr.0.code      
+0x00001fe1 0x55   0x00001fe1 0x55   0x0   -r-- class.methods.checkForRadare.attr                    
+0x00001ff7 0x47   0x00001ff7 0x47   0x0   -r-x class.methods.checkForRadare.attr.0.code             
+0x00002036 0x68   0x00002036 0x68   0x0   -r-- class.methods.output.attr                            
+0x0000204c 0x5a   0x0000204c 0x5a   0x0   -r-x class.methods.output.attr.0.code                     
+0x0000209e 0x1a0  0x0000209e 0x1a0  0x0   -r-- class.methods.unTarGz.attr                           
+0x000020b4 0x188  0x000020b4 0x188  0x0   -r-x class.methods.unTarGz.attr.0.code                    
+0x0000223e 0x5d   0x0000223e 0x5d   0x0   -r-- class.methods.resetButtons.attr                      
+0x00002254 0x4f   0x00002254 0x4f   0x0   -r-x class.methods.resetButtons.attr.0.code               
+0x0000229b 0x335  0x0000229b 0x335  0x0   -r-- class.methods.download.attr                          
+0x000022b1 0x327  0x000022b1 0x327  0x0   -r-x class.methods.download.attr.0.code                   
+0x000025d0 0x13a  0x000025d0 0x13a  0x0   -r-- class.methods.onResume.attr                          
+0x000025e6 0x12c  0x000025e6 0x12c  0x0   -r-x class.methods.onResume.attr.0.code                   
+0x0000270a 0x3d   0x0000270a 0x3d   0x0   -r-- class.methods.access_000.attr                        
+0x00002720 0x2f   0x00002720 0x2f   0x0   -r-x class.methods.access_000.attr.0.code                 
+0x00002747 0x48   0x00002747 0x48   0x0   -r-- class.methods.access_100.attr                        
+0x0000275d 0x3a   0x0000275d 0x3a   0x0   -r-x class.methods.access_100.attr.0.code                 
+0x0000278f 0x3d   0x0000278f 0x3d   0x0   -r-- class.methods.access_200.attr                        
+0x000027a5 0x2f   0x000027a5 0x2f   0x0   -r-x class.methods.access_200.attr.0.code                 
+0x000027cc 0x3d   0x000027cc 0x3d   0x0   -r-- class.methods.access_300.attr                        
+0x000027e2 0x2f   0x000027e2 0x2f   0x0   -r-x class.methods.access_300.attr.0.code                 
+0x00002809 0x49   0x00002809 0x49   0x0   -r-- class.methods.access_402.attr                        
+0x0000281f 0x3b   0x0000281f 0x3b   0x0   -r-x class.methods.access_402.attr.0.code                 
+0x00002852 0x3d   0x00002852 0x3d   0x0   -r-- class.methods.access_400.attr                        
+0x00002868 0x2f   0x00002868 0x2f   0x0   -r-x class.methods.access_400.attr.0.code                 
+0x0000288f 0x3d   0x0000288f 0x3d   0x0   -r-- class.methods.access_500.attr                        
+0x000028a5 0x2f   0x000028a5 0x2f   0x0   -r-x class.methods.access_500.attr.0.code                 
+0x000028cc 0x3d   0x000028cc 0x3d   0x0   -r-- class.methods.access_600.attr                        
+0x000028e2 0x2f   0x000028e2 0x2f   0x0   -r-x class.methods.access_600.attr.0.code                 
+0x00002909 0x49   0x00002909 0x49   0x0   -r-- class.methods.access_602.attr                        
+0x0000291f 0x3b   0x0000291f 0x3b   0x0   -r-x class.methods.access_602.attr.0.code                 
+0x00002952 0x3d   0x00002952 0x3d   0x0   -r-- class.methods.access_700.attr                        
+0x00002968 0x2f   0x00002968 0x2f   0x0   -r-x class.methods.access_700.attr.0.code                 
+0x0000298f 0x55   0x0000298f 0x55   0x0   -r-- class.methods.access_800.attr                        
+0x000029a5 0x45   0x000029a5 0x45   0x0   -r-x class.methods.access_800.attr.0.code                 
+0x000029e4 0x50   0x000029e4 0x50   0x0   -r-- class.attr                                           
 EOF
 RUN
 
@@ -1276,18 +1312,15 @@ NAME=Java list sections Main.class
 FILE=bins/java/Main.class
 CMDS=iS
 EXPECT=<<EOF
-[Sections]
-
-nth paddr        size vaddr       vsize perm name                             
-------------------------------------------------------------------------------
-0   0x0000000a  0x365 0x0000000a  0x365 -r-- class.constant_pool
-1   0x00000373  0x109 0x00000373  0x109 -r-- class.methods
-2   0x00000373   0x2b 0x00000373   0x2b -r-- class.methods._init_.attr
-3   0x00000389   0x1d 0x00000389   0x1d -r-x class.methods._init_.attr.0.code
-4   0x0000039e   0xde 0x0000039e   0xde -r-- class.methods.main.attr
-5   0x000003b4   0xce 0x000003b4   0xce -r-x class.methods.main.attr.0.code
-6   0x0000047c    0x8 0x0000047c    0x8 -r-- class.attr
-
+paddr      size  vaddr      vsize align perm name                             type flags 
+-----------------------------------------------------------------------------------------
+0x0000000a 0x365 0x0000000a 0x365 0x0   -r-- class.constant_pool                   
+0x00000373 0x109 0x00000373 0x109 0x0   -r-- class.methods                         
+0x00000373 0x2b  0x00000373 0x2b  0x0   -r-- class.methods._init_.attr             
+0x00000389 0x1d  0x00000389 0x1d  0x0   -r-x class.methods._init_.attr.0.code      
+0x0000039e 0xde  0x0000039e 0xde  0x0   -r-- class.methods.main.attr               
+0x000003b4 0xce  0x000003b4 0xce  0x0   -r-x class.methods.main.attr.0.code        
+0x0000047c 0x8   0x0000047c 0x8   0x0   -r-- class.attr                            
 EOF
 RUN
 
@@ -1296,11 +1329,8 @@ NAME=Java list sections sjybq.class
 FILE=bins/java/sjybq.class
 CMDS=iS
 EXPECT=<<EOF
-[Sections]
-
-nth paddr  size vaddr  vsize perm name 
----------------------------------------
-
+paddr size vaddr vsize align perm name type flags 
+--------------------------------------------------
 EOF
 RUN
 
@@ -1309,34 +1339,31 @@ NAME=Java list sections test.class
 FILE=bins/java/test.class
 CMDS=iS
 EXPECT=<<EOF
-[Sections]
-
-nth paddr        size vaddr       vsize perm name                                             
-----------------------------------------------------------------------------------------------
-0   0x0000000a  0x8bd 0x0000000a  0x8bd -r-- class.constant_pool
-1   0x000008c9    0x8 0x000008c9    0x8 -r-- class.fields._staticClassInfo.attr
-2   0x000008d1    0x8 0x000008d1    0x8 -r-- class.fields.___stMC.attr
-3   0x000008d9    0xa 0x000008d9    0xa -r-- class.fields._callSiteArray.attr
-4   0x000008c9   0x1a 0x000008c9   0x1a -r-- class.fields
-5   0x000008e3  0x2e4 0x000008e3  0x2e4 -r-- class.methods
-6   0x000008e3   0x35 0x000008e3   0x35 -r-- class.methods._init_.attr
-7   0x000008f9   0x27 0x000008f9   0x27 -r-x class.methods._init_.attr.0.code
-8   0x00000918   0x40 0x00000918   0x40 -r-- class.methods._init__1.attr
-9   0x0000092e   0x32 0x0000092e   0x32 -r-x class.methods._init__1.attr.0.code
-10  0x00000958   0x40 0x00000958   0x40 -r-- class.methods.main.attr
-11  0x0000096e   0x32 0x0000096e   0x32 -r-x class.methods.main.attr.0.code
-12  0x00000998  0x10c 0x00000998  0x10c -r-- class.methods.run.attr
-13  0x000009ae   0xfe 0x000009ae   0xfe -r-x class.methods.run.attr.0.code
-14  0x00000aa4   0x41 0x00000aa4   0x41 -r-- class.methods._getStaticMetaClass.attr
-15  0x00000aba   0x33 0x00000aba   0x33 -r-x class.methods._getStaticMetaClass.attr.0.code
-16  0x00000ae5   0x6f 0x00000ae5   0x6f -r-- class.methods._createCallSiteArray_1.attr
-17  0x00000afb   0x61 0x00000afb   0x61 -r-x class.methods._createCallSiteArray_1.attr.0.code
-18  0x00000b54   0x2f 0x00000b54   0x2f -r-- class.methods._createCallSiteArray.attr
-19  0x00000b6a   0x21 0x00000b6a   0x21 -r-x class.methods._createCallSiteArray.attr.0.code
-20  0x00000b83   0x44 0x00000b83   0x44 -r-- class.methods._getCallSiteArray.attr
-21  0x00000b99   0x34 0x00000b99   0x34 -r-x class.methods._getCallSiteArray.attr.0.code
-22  0x00000bc7    0x8 0x00000bc7    0x8 -r-- class.attr
-
+paddr      size  vaddr      vsize align perm name                                             type flags 
+---------------------------------------------------------------------------------------------------------
+0x0000000a 0x8bd 0x0000000a 0x8bd 0x0   -r-- class.constant_pool                                   
+0x000008c9 0x8   0x000008c9 0x8   0x0   -r-- class.fields._staticClassInfo.attr                    
+0x000008d1 0x8   0x000008d1 0x8   0x0   -r-- class.fields.___stMC.attr                             
+0x000008d9 0xa   0x000008d9 0xa   0x0   -r-- class.fields._callSiteArray.attr                      
+0x000008c9 0x1a  0x000008c9 0x1a  0x0   -r-- class.fields                                          
+0x000008e3 0x2e4 0x000008e3 0x2e4 0x0   -r-- class.methods                                         
+0x000008e3 0x35  0x000008e3 0x35  0x0   -r-- class.methods._init_.attr                             
+0x000008f9 0x27  0x000008f9 0x27  0x0   -r-x class.methods._init_.attr.0.code                      
+0x00000918 0x40  0x00000918 0x40  0x0   -r-- class.methods._init__1.attr                           
+0x0000092e 0x32  0x0000092e 0x32  0x0   -r-x class.methods._init__1.attr.0.code                    
+0x00000958 0x40  0x00000958 0x40  0x0   -r-- class.methods.main.attr                               
+0x0000096e 0x32  0x0000096e 0x32  0x0   -r-x class.methods.main.attr.0.code                        
+0x00000998 0x10c 0x00000998 0x10c 0x0   -r-- class.methods.run.attr                                
+0x000009ae 0xfe  0x000009ae 0xfe  0x0   -r-x class.methods.run.attr.0.code                         
+0x00000aa4 0x41  0x00000aa4 0x41  0x0   -r-- class.methods._getStaticMetaClass.attr                
+0x00000aba 0x33  0x00000aba 0x33  0x0   -r-x class.methods._getStaticMetaClass.attr.0.code         
+0x00000ae5 0x6f  0x00000ae5 0x6f  0x0   -r-- class.methods._createCallSiteArray_1.attr             
+0x00000afb 0x61  0x00000afb 0x61  0x0   -r-x class.methods._createCallSiteArray_1.attr.0.code      
+0x00000b54 0x2f  0x00000b54 0x2f  0x0   -r-- class.methods._createCallSiteArray.attr               
+0x00000b6a 0x21  0x00000b6a 0x21  0x0   -r-x class.methods._createCallSiteArray.attr.0.code        
+0x00000b83 0x44  0x00000b83 0x44  0x0   -r-- class.methods._getCallSiteArray.attr                  
+0x00000b99 0x34  0x00000b99 0x34  0x0   -r-x class.methods._getCallSiteArray.attr.0.code           
+0x00000bc7 0x8   0x00000bc7 0x8   0x0   -r-- class.attr                                            
 EOF
 RUN
 
@@ -1345,33 +1372,30 @@ NAME=Java list sections TryWithResources.class
 FILE=bins/java/TryWithResources.class
 CMDS=iS
 EXPECT=<<EOF
-[Sections]
-
-nth paddr         size vaddr        vsize perm name                               
-----------------------------------------------------------------------------------
-0   0x0000000a   0x3eb 0x0000000a   0x3eb -r-- class.constant_pool
-1   0x000003f5     0x4 0x000003f5     0x4 -r-- class.interfaces
-2   0x000003f9     0x8 0x000003f9     0x8 -r-- class.fields._.attr
-3   0x00000401     0xa 0x00000401     0xa -r-- class.fields.i.attr
-4   0x000003f9    0x12 0x000003f9    0x12 -r-- class.fields
-5   0x0000040b  0x4b20 0x0000040b  0x4b20 -r-- class.methods
-6   0x0000040b    0x23 0x0000040b    0x23 -r-- class.methods._.attr
-7   0x00000421    0x15 0x00000421    0x15 -r-x class.methods._.attr.0.code
-8   0x0000042e    0x40 0x0000042e    0x40 -r-- class.methods._init_.attr
-9   0x00000444    0x32 0x00000444    0x32 -r-x class.methods._init_.attr.0.code
-10  0x0000046e    0x4c 0x0000046e    0x4c -r-- class.methods.close.attr
-11  0x00000484    0x3e 0x00000484    0x3e -r-x class.methods.close.attr.0.code
-12  0x000004ba    0x2b 0x000004ba    0x2b -r-- class.methods.__1.attr
-13  0x000004d0    0x1d 0x000004d0    0x1d -r-x class.methods.__1.attr.0.code
-14  0x000004e5    0x22 0x000004e5    0x22 -r-- class.methods.__1.attr_1
-15  0x000004fb    0x14 0x000004fb    0x14 -r-x class.methods.__1.attr.0.code_1
-16  0x00000507    0x2f 0x00000507    0x2f -r-- class.methods.main.attr
-17  0x0000051d    0x17 0x0000051d    0x17 -r-x class.methods.main.attr.0.code
-18  0x00000536  0x49cd 0x00000536  0x49cd -r-- class.methods.main_1.attr
-19  0x0000054c  0x49bf 0x0000054c  0x49bf -r-x class.methods.main_1.attr.0.code
-20  0x00004f03    0x28 0x00004f03    0x28 -r-- class.methods._clinit_.attr
-21  0x00004f19    0x18 0x00004f19    0x18 -r-x class.methods._clinit_.attr.0.code
-
+paddr      size   vaddr      vsize  align perm name                               type flags 
+---------------------------------------------------------------------------------------------
+0x0000000a 0x3eb  0x0000000a 0x3eb  0x0   -r-- class.constant_pool                     
+0x000003f5 0x4    0x000003f5 0x4    0x0   -r-- class.interfaces                        
+0x000003f9 0x8    0x000003f9 0x8    0x0   -r-- class.fields._.attr                     
+0x00000401 0xa    0x00000401 0xa    0x0   -r-- class.fields.i.attr                     
+0x000003f9 0x12   0x000003f9 0x12   0x0   -r-- class.fields                            
+0x0000040b 0x4b20 0x0000040b 0x4b20 0x0   -r-- class.methods                           
+0x0000040b 0x23   0x0000040b 0x23   0x0   -r-- class.methods._.attr                    
+0x00000421 0x15   0x00000421 0x15   0x0   -r-x class.methods._.attr.0.code             
+0x0000042e 0x40   0x0000042e 0x40   0x0   -r-- class.methods._init_.attr               
+0x00000444 0x32   0x00000444 0x32   0x0   -r-x class.methods._init_.attr.0.code        
+0x0000046e 0x4c   0x0000046e 0x4c   0x0   -r-- class.methods.close.attr                
+0x00000484 0x3e   0x00000484 0x3e   0x0   -r-x class.methods.close.attr.0.code         
+0x000004ba 0x2b   0x000004ba 0x2b   0x0   -r-- class.methods.__1.attr                  
+0x000004d0 0x1d   0x000004d0 0x1d   0x0   -r-x class.methods.__1.attr.0.code           
+0x000004e5 0x22   0x000004e5 0x22   0x0   -r-- class.methods.__1.attr_1                
+0x000004fb 0x14   0x000004fb 0x14   0x0   -r-x class.methods.__1.attr.0.code_1         
+0x00000507 0x2f   0x00000507 0x2f   0x0   -r-- class.methods.main.attr                 
+0x0000051d 0x17   0x0000051d 0x17   0x0   -r-x class.methods.main.attr.0.code          
+0x00000536 0x49cd 0x00000536 0x49cd 0x0   -r-- class.methods.main_1.attr               
+0x0000054c 0x49bf 0x0000054c 0x49bf 0x0   -r-x class.methods.main_1.attr.0.code        
+0x00004f03 0x28   0x00004f03 0x28   0x0   -r-- class.methods._clinit_.attr             
+0x00004f19 0x18   0x00004f19 0x18   0x0   -r-x class.methods._clinit_.attr.0.code      
 EOF
 RUN
 
@@ -1379,8 +1403,6 @@ NAME=Java list exports HiKt.class
 FILE=bins/java/HiKt.class
 CMDS=iE
 EXPECT=<<EOF
-[Exports]
-
 nth paddr      vaddr      bind   type size lib  name                
 --------------------------------------------------------------------
 0   0x00000225 0x00000225 GLOBAL FUNC 49   HiKt void main(String[])

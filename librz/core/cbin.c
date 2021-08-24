@@ -3713,7 +3713,7 @@ RZ_IPI bool rz_core_bin_class_as_source_print(RzCore *core, RzCmdStateOutput *st
 			continue;
 		}
 		found = true;
-		switch (o->lang) {
+		switch (o->lang & (~RZ_BIN_NM_BLOCKS)) {
 		case RZ_BIN_NM_KOTLIN:
 		case RZ_BIN_NM_GROOVY:
 		case RZ_BIN_NM_JAVA:
@@ -6522,10 +6522,9 @@ struct arch_ctx {
 	const char *machine;
 };
 
-static void print_arch(RzBin *bin, RzCmdStateOutput *state, int num, struct arch_ctx *ctx, const char *flag, RzBinInfo *info) {
-
+static void print_arch(RzBin *bin, RzCmdStateOutput *state, struct arch_ctx *ctx, const char *flag, RzBinInfo *info) {
 	char str_fmt[30];
-	const char *fmt = "dXnss";
+	const char *fmt = "Xnss";
 
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_QUIET:
@@ -6553,7 +6552,7 @@ static void print_arch(RzBin *bin, RzCmdStateOutput *state, int num, struct arch
 		} else {
 			rz_strf(str_fmt, "%s_%i", ctx->arch, ctx->bits);
 		}
-		rz_table_add_rowf(state->d.t, fmt, 0, ctx->offset, ctx->size, str_fmt, ctx->machine);
+		rz_table_add_rowf(state->d.t, fmt, ctx->offset, ctx->size, str_fmt, ctx->machine);
 		break;
 	default:
 		rz_warn_if_reached();
@@ -6569,14 +6568,13 @@ RZ_API void rz_core_bin_archs_print(RzBin *bin, RzCmdStateOutput *state) {
 		return;
 	}
 
-	const char *fmt = "dXnss";
+	const char *fmt = "Xnss";
 	rz_cmd_state_output_array_start(state);
-	rz_cmd_state_output_set_columnsf(state, fmt, "num", "offset", "size", "arch", "machine", NULL);
+	rz_cmd_state_output_set_columnsf(state, fmt, "offset", "size", "arch", "machine", NULL);
 
 	if (binfile->curxtr) {
 		RzListIter *iter_xtr;
 		RzBinXtrData *xtr_data;
-		int i = 0;
 		rz_list_foreach (binfile->xtr_data, iter_xtr, xtr_data) {
 			if (!xtr_data || !xtr_data->metadata ||
 				!xtr_data->metadata->arch) {
@@ -6589,7 +6587,7 @@ RZ_API void rz_core_bin_archs_print(RzBin *bin, RzCmdStateOutput *state) {
 			ctx.bits = xtr_data->metadata->bits;
 			ctx.machine = xtr_data->metadata->machine;
 
-			print_arch(bin, state, i++, &ctx, NULL, NULL);
+			print_arch(bin, state, &ctx, NULL, NULL);
 		}
 	} else {
 		RzBinObject *obj = binfile->o;
@@ -6602,7 +6600,7 @@ RZ_API void rz_core_bin_archs_print(RzBin *bin, RzCmdStateOutput *state) {
 		ctx.machine = info ? info->machine : "unknown_machine";
 
 		const char *h_flag = info ? info->head_flag : NULL;
-		print_arch(bin, state, 0, &ctx, h_flag, info);
+		print_arch(bin, state, &ctx, h_flag, info);
 	}
 
 	rz_cmd_state_output_array_end(state);
