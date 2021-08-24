@@ -3786,12 +3786,13 @@ RZ_IPI void rz_core_bin_classes_print(RzCore *core, RzCmdStateOutput *state) {
 			case RZ_BIN_NM_JAVA:
 				classdump_java(core, c);
 				break;
+			case RZ_BIN_NM_SWIFT:
 			case RZ_BIN_NM_OBJC:
 				classdump_objc(core, c);
 				break;
 			case RZ_BIN_NM_C:
-			default:
 				classdump_c(core, c);
+			default:
 				break;
 			}
 			break;

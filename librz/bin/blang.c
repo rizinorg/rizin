@@ -1,66 +1,50 @@
-// SPDX-FileCopyrightText: 2018-2019 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bin.h>
 
-#define lang_apply_blocks(x,b) (b?(RZ_BIN_NM_BLOCKS|(x)):(x))
+#define lang_apply_blocks(x, b) (b ? (RZ_BIN_NM_BLOCKS | (x)) : (x))
 
 static inline bool check_rust(RzBinSymbol *sym) {
-	return sym->name && strstr(sym->name, "_$LT$");
+	return strstr(sym->name, "_$LT$");
 }
 
 static inline bool check_objc(RzBinSymbol *sym) {
-	if (sym->name && !strncmp(sym->name, "_OBJC_", 6)) {
-		return true;
-	}
-	return false;
+	return !strncmp(sym->name, "_OBJC_", 6);
 }
 
-static bool check_dlang(RzBinSymbol *sym) {
+static inline bool check_dlang(RzBinSymbol *sym) {
 	if (!strncmp(sym->name, "_D2", 3)) {
 		return true;
 	}
-	if (!strncmp(sym->name, "_D4", 3)) {
-		return true;
-	}
-	return false;
+	return !strncmp(sym->name, "_D4", 3);
 }
 
-static bool check_swift(RzBinSymbol *sym) {
-	if (sym->name && strstr(sym->name, "swift_once")) {
-		return true;
-	}
-	return false;
+static inline bool check_swift(RzBinSymbol *sym) {
+	return strstr(sym->name, "swift_once");
 }
 
-static bool check_golang(RzBinSymbol *sym) {
+static inline bool check_golang(RzBinSymbol *sym) {
 	return !strncmp(sym->name, "go.", 3);
 }
 
-static inline bool is_cxx_symbol(const char *name) {
-	rz_return_val_if_fail(name, false);
-	if (!strncmp(name, "_Z", 2)) {
+static inline bool check_cxx(RzBinSymbol *sym) {
+	if (!strncmp(sym->name, "_Z", 2)) {
 		return true;
 	}
-	if (!strncmp(name, "__Z", 3)) {
-		return true;
-	}
-	return false;
+	return !strncmp(sym->name, "__Z", 3);
 }
 
-static bool check_cxx(RzBinSymbol *sym) {
-	return is_cxx_symbol(sym->name);
-}
-
-static bool check_msvc(RzBinSymbol *sym) {
+static inline bool check_msvc(RzBinSymbol *sym) {
 	return *sym->name == '?';
 }
 
-static bool check_kotlin(RzBinSymbol *sym) {
+static inline bool check_kotlin(RzBinSymbol *sym) {
 	return strstr(sym->name, "kotlin_");
 }
 
-static bool check_groovy(RzBinSymbol *sym) {
+static inline bool check_groovy(RzBinSymbol *sym) {
 	return strstr(sym->name, "_groovy");
 }
 
@@ -129,6 +113,9 @@ RZ_API int rz_bin_load_languages(RzBinFile *binfile) {
 	}
 
 	rz_list_foreach (o->symbols, iter, sym) {
+		if (!sym->name) {
+			continue;
+		}
 		if (check_rust(sym)) {
 			info->lang = "rust";
 			return RZ_BIN_NM_RUST;
