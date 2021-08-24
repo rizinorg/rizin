@@ -95,6 +95,10 @@ RZ_API RzProject *rz_project_load_file_raw(const char *file) {
 		return NULL;
 	}
 
+	if (!rz_file_exists(file)) {
+		prj = NULL;
+		goto tmp_file_err;
+	}
 	if (rz_file_is_deflated(file)) {
 		if (!rz_file_inflate(file, tmp_file)) {
 			prj = NULL;
