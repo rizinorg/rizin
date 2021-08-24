@@ -788,6 +788,7 @@ RUN
 NAME=tpv
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=16
 e cfg.bigendian=false
 td "struct s16ui { uint16_t a_u; int16_t b_i; uint16_t c_u; int16_t d_i;}"
