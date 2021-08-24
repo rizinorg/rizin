@@ -53,18 +53,18 @@ RZ_API char *rz_coff_symbol_name(struct rz_bin_coff_obj *obj, void *ptr) {
 		};
 	} *p = ptr;
 	if (!ptr) {
-		return NULL;
+		return strdup("");
 	}
 	if (p->zero) {
 		return rz_str_ndup(p->name, 8);
 	}
 	offset = obj->hdr.f_symptr + obj->hdr.f_nsyms * sizeof(struct coff_symbol) + p->offset;
 	if (offset > obj->size) {
-		return NULL;
+		return strdup("");
 	}
 	len = rz_buf_read_at(obj->b, offset, (ut8 *)n, sizeof(n));
 	if (len < 1) {
-		return NULL;
+		return strdup("");
 	}
 	/* ensure null terminated string */
 	n[sizeof(n) - 1] = 0;
