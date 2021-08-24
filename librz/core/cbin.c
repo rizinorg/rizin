@@ -3781,6 +3781,8 @@ RZ_IPI void rz_core_bin_classes_print(RzCore *core, RzCmdStateOutput *state) {
 			break;
 		case RZ_OUTPUT_MODE_LONG:
 			switch (o->lang) {
+			case RZ_BIN_NM_KOTLIN:
+			case RZ_BIN_NM_GROOVY:
 			case RZ_BIN_NM_JAVA:
 				classdump_java(core, c);
 				break;

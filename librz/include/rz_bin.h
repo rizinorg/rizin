@@ -151,6 +151,7 @@ enum {
 	RZ_BIN_NM_MSVC = 1 << 7,
 	RZ_BIN_NM_RUST = 1 << 8,
 	RZ_BIN_NM_KOTLIN = 1 << 9,
+	RZ_BIN_NM_GROOVY = 1 << 10,
 	RZ_BIN_NM_BLOCKS = 1 << 31,
 	RZ_BIN_NM_ANY = -1,
 };

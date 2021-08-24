@@ -18,7 +18,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 		return NULL;
 	}
 
-	binfo->lang = "dalvik";
+	binfo->lang = "java";
 	binfo->file = strdup(bf->file);
 	binfo->type = strdup("DEX CLASS");
 	binfo->bclass = rz_bin_dex_version(dex);
