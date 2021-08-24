@@ -938,7 +938,7 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 					}
 
 					if (!file_found) {
-						if (info->debug_file_name) {
+						if (info && info->debug_file_name) {
 							const char *fn = rz_file_basename(info->debug_file_name);
 							eprintf("File '%s' not found in file directory or symbol store\n", fn);
 						} else {
