@@ -26,8 +26,6 @@ RZ_API RZ_NONNULL const char *rz_project_err_message(RzProjectErr err) {
 		return "migration failed";
 	case RZ_PROJECT_ERR_COMPRESSION_FAILED:
 		return "project file compression failed";
-	case RZ_PROJECT_ERR_MKSTEMP_FAILED:
-		return "failed to create a temporary file";
 	case RZ_PROJECT_ERR_UNKNOWN:
 		break;
 	}
@@ -47,7 +45,7 @@ RZ_API RzProjectErr rz_project_save_file(RzCore *core, const char *file) {
 	close(mkstemp_fd);
 
 	if (mkstemp_fd == -1 || !tmp_file) {
-		return RZ_PROJECT_ERR_MKSTEMP_FAILED;
+		return RZ_PROJECT_ERR_FILE;
 	}
 
 	RzProject *prj = sdb_new0();
