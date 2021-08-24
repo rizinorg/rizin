@@ -38,7 +38,8 @@ idp 404.pdb
 EOF
 EXPECT=
 EXPECT_ERR=<<EOF
-Cannot open file
+Warning: Cannot find base address, flags will probably be misplaced
+rz_bin_pdb_parse_from_file: Error reading file "404.pdb"
 EOF
 RUN
 
@@ -56,6 +57,7 @@ EXPECT=<<EOF
 0x00011000 0 pdb.__enc_textbss_end
 0x00811000 0 pdb.__enc_textbss_end
 EOF
+BROKEN=1
 RUN
 
 NAME=find structure R2_TEST_STRUCT
@@ -72,6 +74,7 @@ CMDS=!rz-bin -P ${RZ_FILE} | grep -ao "struct CTest2"
 EXPECT=<<EOF
 struct CTest2
 EOF
+BROKEN=1
 RUN
 
 NAME=find class _onexit_table_t # LF_STRUCTURE_19
@@ -80,6 +83,7 @@ CMDS=!rz-bin -P ${RZ_FILE} | grep -ao _onexit_table_t
 EXPECT=<<EOF
 _onexit_table_t
 EOF
+BROKEN=1
 RUN
 
 NAME=find union R2_TEST_UNION
@@ -104,6 +108,7 @@ CMDS=!rz-bin -P ${RZ_FILE} | grep -ao _RTC_ErrorNumber
 EXPECT=<<EOF
 _RTC_ErrorNumber
 EOF
+BROKEN=1
 RUN
 
 NAME=find enum member of _RTC_ErrorNumber
@@ -112,31 +117,7 @@ CMDS=!rz-bin -P ${RZ_FILE} | grep -ao _RTC_ILLEGAL
 EXPECT=<<EOF
 _RTC_ILLEGAL
 EOF
-RUN
-
-NAME=member1 offset of structure R2_TEST_STRUCT
-FILE=bins/pdb/Project1.pdb
-CMDS=!rz-bin -P ${RZ_FILE} | grep r2_struct_var_1 | grep -ao 0x0
-EXPECT=<<EOF
-0x0
-EOF
-RUN
-
-NAME=member2 offset of structure _onexit_table_t # LF_STRUCTURE_19
-FILE=bins/pdb/vs2019_cpp_override.pdb
-CMDS=!rz-bin -P ${RZ_FILE} | grep "void\ \*\*\ _last" | grep -ao 0x4
-EXPECT=<<EOF
-0x4
-EOF
-RUN
-
-NAME=member2 offset of structure R2_TEST_STRUCT
-
-FILE=bins/pdb/Project1.pdb
-CMDS=!rz-bin -P ${RZ_FILE} | grep r2_struct_var_2 | grep -ao 0x4
-EXPECT=<<EOF
-0x4
-EOF
+BROKEN=1
 RUN
 
 NAME=member1 name of structure R2_TEST_STRUCT
@@ -153,6 +134,7 @@ CMDS=!rz-bin -P ${RZ_FILE} | grep -ao "void\ \*\*\ _first"
 EXPECT=<<EOF
 void ** _first
 EOF
+BROKEN=1
 RUN
 
 NAME=member2 name of structure R2_TEST_STRUCT
@@ -173,25 +155,9 @@ RUN
 
 NAME=member2 type of structure R2_TEST_STRUCT
 FILE=bins/pdb/Project1.pdb
-CMDS=!rz-bin -P ${RZ_FILE} | grep r2_struct_var_2 | grep -ao uint16_t
+CMDS=!rz-bin -P ${RZ_FILE} | grep r2_struct_var_2 | grep -ao int16_t
 EXPECT=<<EOF
-uint16_t
-EOF
-RUN
-
-NAME=check size of structure R2_TEST_STRUCT
-FILE=bins/pdb/Project1.pdb
-CMDS=!rz-bin -P ${RZ_FILE} | grep R2_TEST_STRUCT | grep -ao 0x8
-EXPECT=<<EOF
-0x8
-EOF
-RUN
-
-NAME=check size of structure _onexit_table_t # LF_STRUCTURE_19
-FILE=bins/pdb/vs2019_cpp_override.pdb
-CMDS=!rz-bin -P ${RZ_FILE} | grep _onexit_table_t | grep -ao 0xc
-EXPECT=<<EOF
-0xc
+int16_t
 EOF
 RUN
 
@@ -227,62 +193,6 @@ double
 EOF
 RUN
 
-NAME=check size of union R2_TEST_UNION
-FILE=bins/pdb/Project1.pdb
-CMDS=!rz-bin -P ${RZ_FILE} | grep R2_TEST_UNION | grep -ao 0x8
-EXPECT=<<EOF
-0x8
-EOF
-RUN
-
-NAME=redirection test
-FILE=bins/pdb/Project1.pdb
-CMDS=!rz-bin -Pr ${RZ_FILE} | grep -ao _unnamed_tag_ | head -n1
-EXPECT=<<EOF
-_unnamed_tag_
-EOF
-RUN
-
-NAME=struct export test
-FILE=bins/pdb/Project1.pdb
-CMDS=!rz-bin -Pr ${RZ_FILE} | grep -ao R2_TEST_STRUCT
-EXPECT=<<EOF
-R2_TEST_STRUCT
-EOF
-RUN
-
-NAME=struct export command
-FILE=bins/pdb/Project1.pdb
-CMDS=!rz-bin -Pr ${RZ_FILE} | grep R2_TEST_STRUCT | grep -ao pf
-EXPECT=<<EOF
-pf
-EOF
-RUN
-
-NAME=struct export types
-FILE=bins/pdb/Project1.pdb
-CMDS=!rz-bin -Pr ${RZ_FILE} | grep R2_TEST_STRUCT | grep -ao n4n2
-EXPECT=<<EOF
-n4n2
-EOF
-RUN
-
-NAME=struct export name1
-FILE=bins/pdb/Project1.pdb
-CMDS=!rz-bin -Pr ${RZ_FILE} | grep R2_TEST_STRUCT | grep -ao r2_struct_var_1
-EXPECT=<<EOF
-r2_struct_var_1
-EOF
-RUN
-
-NAME=struct export name2
-FILE=bins/pdb/Project1.pdb
-CMDS=!rz-bin -Pr ${RZ_FILE} | grep R2_TEST_STRUCT | grep -ao r2_struct_var_2
-EXPECT=<<EOF
-r2_struct_var_2
-EOF
-RUN
-
 NAME=GUID CHECK
 FILE=bins/pdb/user32.dll
 CMDS=!rz-bin -I ${RZ_FILE} | grep -ao 15F778B3671D4EFDBDCDE79905308B792
@@ -299,5 +209,56 @@ fN @ 0x00011000
 EOF
 EXPECT=<<EOF
 __enc$textbss$end
+EOF
+BROKEN=1
+RUN
+
+NAME=member1 type of struct _SECURITY_ATTRIBUTES of arm PDB
+FILE=bins/pe/hello_world_arm/hello_world_arm_ZiZoO2.pdb
+CMDS=!rz-bin -P ${RZ_FILE} | grep nLength | grep -ao uint32_t
+EXPECT=<<EOF
+uint32_t
+uint32_t
+EOF
+RUN
+
+NAME=member1 name of struct _SECURITY_ATTRIBUTES of arm PDB
+FILE=bins/pe/hello_world_arm/hello_world_arm_ZiZoO2.pdb
+CMDS=!rz-bin -P ${RZ_FILE} | grep -ao nLength
+EXPECT=<<EOF
+nLength
+nLength
+EOF
+RUN
+
+NAME=member value of enum __acrt_fenv_machine_arm_control of arm PDB
+FILE=bins/pe/hello_world_arm/hello_world_arm_ZiZoO2.pdb
+CMDS=!rz-bin -P ${RZ_FILE} | grep all_control_bits | grep -ao 0x3c09f00
+EXPECT=<<EOF
+0x3c09f00
+EOF
+RUN
+
+NAME=enum __acrt_fenv_abstract_status of arm PDB
+FILE=bins/pe/hello_world_arm/hello_world_arm_ZiZoO2.pdb
+CMDS=!rz-bin -P ${RZ_FILE} | grep "__acrt_fenv_abstract_status {"
+EXPECT=<<EOF
+enum __acrt_fenv_abstract_status { 
+EOF
+RUN
+
+NAME=symbol _towlower_internal of arm PDB
+FILE=bins/pe/hello_world_arm/hello_world_arm_ZiZoO2.pdb
+CMDS=!rz-bin -P ${RZ_FILE} | grep "_towlower_internal"
+EXPECT=<<EOF
+0x00066da4  2  .text  _towlower_internal
+EOF
+RUN
+
+NAME=complex symbol of arm PDB
+FILE=bins/pe/hello_world_arm/hello_world_arm_ZiZoO2.pdb
+CMDS=!rz-bin -P ${RZ_FILE} | grep "??_C@_1BK@FIHMCKAM@?$AAs?$AAo?$AAu?$AAt?$AAh?$AA?5?$AAa?$AAf?$AAr?$AAi?$AAc?$AAa@"
+EXPECT=<<EOF
+0x000820c4  0  .rdata  ??_C@_1BK@FIHMCKAM@?$AAs?$AAo?$AAu?$AAt?$AAh?$AA?5?$AAa?$AAf?$AAr?$AAi?$AAc?$AAa@
 EOF
 RUN
