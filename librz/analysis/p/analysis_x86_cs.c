@@ -2051,6 +2051,7 @@ static void set_access_info(RzReg *reg, RzAnalysisOp *op, csh *handle, cs_insn *
 static void set_src_dst(RzReg *reg, RzAnalysisValue *val, csh *handle, cs_insn *insn, int x) {
 	switch (INSOP(x).type) {
 	case X86_OP_MEM:
+		val->type = RZ_ANALYSIS_VAL_MEM;
 		val->mul = INSOP(x).mem.scale;
 		val->delta = INSOP(x).mem.disp;
 		val->memref = INSOP(x).size;
@@ -2059,9 +2060,11 @@ static void set_src_dst(RzReg *reg, RzAnalysisValue *val, csh *handle, cs_insn *
 		val->regdelta = cs_reg2reg(reg, handle, INSOP(x).mem.index);
 		break;
 	case X86_OP_REG:
+		val->type = RZ_ANALYSIS_VAL_REG;
 		val->reg = cs_reg2reg(reg, handle, INSOP(x).reg);
 		break;
 	case X86_OP_IMM:
+		val->type = RZ_ANALYSIS_VAL_IMM;
 		val->imm = INSOP(x).imm;
 		break;
 	default:

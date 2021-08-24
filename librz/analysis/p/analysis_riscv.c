@@ -650,24 +650,30 @@ static int riscv_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		char *argf = strdup(o->args);
 		char *comma = strtok(argf, ",");
 		if (comma && strchr(comma, '(')) {
+			op->dst->type = RZ_ANALYSIS_VAL_MEM;
 			op->dst->delta = (st64)rz_num_get(NULL, args.arg[0]);
 			op->dst->reg = rz_reg_get(analysis->reg, args.arg[1], -1);
 			j = 2;
 		} else if (isdigit(args.arg[j][0])) {
+			op->dst->type = RZ_ANALYSIS_VAL_IMM;
 			op->dst->imm = rz_num_get(NULL, args.arg[0]);
 		} else {
+			op->dst->type = RZ_ANALYSIS_VAL_REG;
 			op->dst->reg = rz_reg_get(analysis->reg, args.arg[0], -1);
 		}
 		for (i = 0; j < args.num; i++, j++) {
 			op->src[i] = RZ_NEW0(RzAnalysisValue);
 			comma = strtok(NULL, ",");
 			if (comma && strchr(comma, '(')) {
+				op->src[i]->type = RZ_ANALYSIS_VAL_MEM;
 				op->src[i]->delta = (st64)rz_num_get(NULL, args.arg[j]);
 				op->src[i]->reg = rz_reg_get(analysis->reg, args.arg[j + 1], -1);
 				j++;
 			} else if (isalpha(args.arg[j][0])) {
+				op->src[i]->type = RZ_ANALYSIS_VAL_REG;
 				op->src[i]->reg = rz_reg_get(analysis->reg, args.arg[j], -1);
 			} else {
+				op->src[i]->type = RZ_ANALYSIS_VAL_IMM;
 				op->src[i]->imm = rz_num_get(NULL, args.arg[j]);
 			}
 		}
