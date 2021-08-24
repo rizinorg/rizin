@@ -29,6 +29,7 @@ static const char *gzerr(int n) {
  */
 RZ_API ut8 *rz_inflate(RZ_NONNULL const ut8 *src, int srcLen, int *srcConsumed, int *dstLen) {
 	rz_return_val_if_fail(src, NULL);
+	rz_return_val_if_fail(srcLen > 0, NULL);
 	return rz_inflatew(src, srcLen, srcConsumed, dstLen, MAX_WBITS + 32);
 }
 
@@ -38,6 +39,7 @@ RZ_API ut8 *rz_inflate(RZ_NONNULL const ut8 *src, int srcLen, int *srcConsumed, 
  */
 RZ_API ut8 *rz_inflate_ignore_header(RZ_NONNULL const ut8 *src, int srcLen, int *srcConsumed, int *dstLen) {
 	rz_return_val_if_fail(src, NULL);
+	rz_return_val_if_fail(srcLen > 0, NULL);
 	return rz_inflatew(src, srcLen, srcConsumed, dstLen, -MAX_WBITS);
 }
 
@@ -52,16 +54,13 @@ RZ_API ut8 *rz_inflate_ignore_header(RZ_NONNULL const ut8 *src, int srcLen, int 
  */
 RZ_API ut8 *rz_inflatew(RZ_NONNULL const ut8 *src, int srcLen, int *srcConsumed, int *dstLen, int wbits) {
 	rz_return_val_if_fail(src, NULL);
+	rz_return_val_if_fail(srcLen > 0, NULL);
 
 	int err = 0;
 	int out_size = 0;
 	ut8 *dst = NULL;
 	ut8 *tmp_ptr;
 	z_stream stream;
-
-	if (srcLen <= 0) {
-		return NULL;
-	}
 
 	memset(&stream, 0, sizeof(z_stream));
 	stream.avail_in = srcLen;
@@ -118,6 +117,7 @@ err_exit:
  */
 RZ_API ut8 *rz_deflate(RZ_NONNULL const ut8 *src, int srcLen, int *srcConsumed, int *dstLen) {
 	rz_return_val_if_fail(src, NULL);
+	rz_return_val_if_fail(srcLen > 0, NULL);
 	return rz_deflatew(src, srcLen, srcConsumed, dstLen, MAX_WBITS + 16);
 }
 
@@ -132,16 +132,13 @@ RZ_API ut8 *rz_deflate(RZ_NONNULL const ut8 *src, int srcLen, int *srcConsumed, 
  */
 RZ_API ut8 *rz_deflatew(RZ_NONNULL const ut8 *src, int srcLen, int *srcConsumed, int *dstLen, int wbits) {
 	rz_return_val_if_fail(src, NULL);
+	rz_return_val_if_fail(srcLen > 0, NULL);
 
 	int err = 0;
 	int out_size = 0;
 	ut8 *dst = NULL;
 	ut8 *tmp_ptr;
 	z_stream stream;
-
-	if (srcLen <= 0) {
-		return NULL;
-	}
 
 	memset(&stream, 0, sizeof(z_stream));
 
@@ -196,9 +193,10 @@ err_exit:
  * \brief deflate uncompressed data in RzBbuffer to zlib or gzipped, use MAX_WBITS as the window size logarithm.
  * \see rz_deflatew_buf()
  */
-RZ_API bool rz_deflate_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, ut64 block_size, ut8 *src_consumed, ut8 *dst_len) {
+RZ_API bool rz_deflate_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, ut64 block_size, ut8 *src_consumed) {
 	rz_return_val_if_fail(src && dst, false);
-	return rz_deflatew_buf(src, dst, block_size, src_consumed, dst_len, MAX_WBITS + 16);
+	rz_return_val_if_fail(block_size > 0, false);
+	return rz_deflatew_buf(src, dst, block_size, src_consumed, MAX_WBITS + 16);
 }
 
 /**
@@ -207,21 +205,17 @@ RZ_API bool rz_deflate_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, u
  * \param dst destination buffer
  * \param block_size block sizes to use while deflating data
  * \param src_consumed consumed source buffer length
- * \param dst_len deflated buffer length
  * \param wbits the size of the history buffer (or “window size”), and what header and trailer format is expected.
  * \return true if successful; false otherwise
  */
-RZ_API bool rz_deflatew_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, ut64 block_size, ut8 *src_consumed, ut8 *dst_len, int wbits) {
+RZ_API bool rz_deflatew_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, ut64 block_size, ut8 *src_consumed, int wbits) {
 	rz_return_val_if_fail(src && dst, false);
+	rz_return_val_if_fail(block_size > 0, false);
 
 	int err = 0, flush = Z_NO_FLUSH;
 	ut64 dst_cursor = 0, src_cursor = 0;
 	ut64 src_readlen = 0;
 	z_stream stream;
-
-	if (block_size <= 0) {
-		return false;
-	}
 
 	memset(&stream, 0, sizeof(z_stream));
 
@@ -254,9 +248,6 @@ RZ_API bool rz_deflatew_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, 
 		dst_cursor += rz_buf_write_at(dst, dst_cursor, dst_tmpbuf, stream.total_out);
 	}
 
-	if (dst_len) {
-		*dst_len = dst_cursor;
-	}
 	if (src_consumed) {
 		*src_consumed = src_cursor;
 	}
@@ -271,9 +262,10 @@ RZ_API bool rz_deflatew_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, 
  * \brief inflate compressed data in RzBbuffer, use MAX_WBITS as the window size logarithm.
  * \see rz_inflatew_buf()
  */
-RZ_API bool rz_inflate_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, ut64 block_size, ut8 *src_consumed, ut8 *dst_len) {
+RZ_API bool rz_inflate_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, ut64 block_size, ut8 *src_consumed) {
 	rz_return_val_if_fail(src && dst, false);
-	return rz_inflatew_buf(src, dst, block_size, src_consumed, dst_len, MAX_WBITS + 16);
+	rz_return_val_if_fail(block_size > 0, false);
+	return rz_inflatew_buf(src, dst, block_size, src_consumed, MAX_WBITS + 16);
 }
 
 /**
@@ -282,21 +274,17 @@ RZ_API bool rz_inflate_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, u
  * \param dst destination buffer
  * \param block_size block sizes to use while inflating data
  * \param src_consumed consumed source buffer length
- * \param dst_len inflated buffer length
  * \param wbits the size of the history buffer (or “window size”), and what header and trailer format is expected.
  * \return true if successful; false otherwise
  */
-RZ_API bool rz_inflatew_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, ut64 block_size, ut8 *src_consumed, ut8 *dst_len, int wbits) {
+RZ_API bool rz_inflatew_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, ut64 block_size, ut8 *src_consumed, int wbits) {
 	rz_return_val_if_fail(src && dst, false);
+	rz_return_val_if_fail(block_size > 0, false);
 
 	int err = 0, flush = Z_NO_FLUSH;
 	ut64 dst_cursor = 0, src_cursor = 0;
 	ut64 src_readlen = 0;
 	z_stream stream;
-
-	if (block_size <= 0) {
-		return false;
-	}
 
 	memset(&stream, 0, sizeof(z_stream));
 
@@ -330,9 +318,6 @@ RZ_API bool rz_inflatew_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, 
 		dst_cursor += rz_buf_write_at(dst, dst_cursor, dst_tmpbuf, stream.total_out);
 	}
 
-	if (dst_len) {
-		*dst_len = dst_cursor;
-	}
 	if (src_consumed) {
 		*src_consumed = src_cursor;
 	}

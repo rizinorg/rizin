@@ -1271,7 +1271,7 @@ RZ_API bool rz_file_deflate(RZ_NONNULL const char *src, RZ_NONNULL const char *d
 
 	ut64 block_size = 1 << 18; // 256 KB
 
-	if (!rz_deflate_buf(src_buf, dst_buf, block_size, NULL, NULL)) {
+	if (!rz_deflate_buf(src_buf, dst_buf, block_size, NULL)) {
 		goto error_route;
 	}
 
@@ -1303,7 +1303,7 @@ RZ_API bool rz_file_inflate(RZ_NONNULL const char *src, RZ_NONNULL const char *d
 
 	ut64 block_size = 1 << 13; // 8 KB
 
-	if (!rz_inflate_buf(src_buf, dst_buf, block_size, NULL, NULL)) {
+	if (!rz_inflate_buf(src_buf, dst_buf, block_size, NULL)) {
 		goto error_route;
 	}
 
