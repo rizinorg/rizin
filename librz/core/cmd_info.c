@@ -867,13 +867,9 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 				RzBinInfo *info;
 				bool file_found;
 				char *filename;
-
 				switch (input[2]) {
 				case ' ': // "idp file.pdb"
-					rz_core_cmdf(core, ".idpi* %s", input + 3);
-					while (input[2]) {
-						input++;
-					}
+					rz_core_pdb_info(core, input + 3, -1);
 					break;
 				case '\0': // "idp"
 					rz_core_cmd0(core, ".idpi*");
