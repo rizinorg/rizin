@@ -350,7 +350,7 @@ static RzList *pdb7_extract_streams(RzPdb *pdb, MsfStreamDirectory *msd) {
 			rz_list_append(streams, stream);
 			continue;
 		}
-		ut8 *stream_data = (ut8 *)malloc(stream->blocks_num * pdb->super_block->block_size);
+		ut8 *stream_data = (ut8 *)malloc((size_t)stream->blocks_num * pdb->super_block->block_size);
 		if (!stream_data) {
 			RZ_FREE(stream);
 			rz_list_free(streams);
@@ -363,7 +363,7 @@ static RzList *pdb7_extract_streams(RzPdb *pdb, MsfStreamDirectory *msd) {
 				rz_list_free(streams);
 				return NULL;
 			}
-			rz_buf_seek(pdb->buf, block_idx * pdb->super_block->block_size, RZ_BUF_SET);
+			rz_buf_seek(pdb->buf, (long long)block_idx * pdb->super_block->block_size, RZ_BUF_SET);
 			rz_buf_read(pdb->buf, stream_data + j * pdb->super_block->block_size, pdb->super_block->block_size);
 		}
 		stream->stream_data = rz_buf_new_with_bytes(stream_data, stream->stream_size);
@@ -389,7 +389,7 @@ static MsfStreamDirectory *pdb7_extract_msf_stream_directory(RzPdb *pdb) {
 		RZ_LOG_ERROR("Error block map size.\n");
 		goto error;
 	}
-	rz_buf_seek(pdb->buf, pdb->super_block->block_size * pdb->super_block->block_map_addr, RZ_BUF_SET);
+	rz_buf_seek(pdb->buf, (long long)pdb->super_block->block_size * pdb->super_block->block_map_addr, RZ_BUF_SET);
 	ut32 *block_map = (ut32 *)malloc(sizeof(ut32) * block_num);
 	if (!block_map) {
 		goto error_memory;
@@ -413,7 +413,7 @@ static MsfStreamDirectory *pdb7_extract_msf_stream_directory(RzPdb *pdb) {
 		goto error_memory;
 	}
 	for (size_t i = 0; i < block_num; i++) {
-		rz_buf_seek(pdb->buf, block_map[i] * pdb->super_block->block_size, RZ_BUF_SET);
+		rz_buf_seek(pdb->buf, (long long)block_map[i] * pdb->super_block->block_size, RZ_BUF_SET);
 		rz_buf_read(pdb->buf, stream_directory + i * pdb->super_block->block_size, pdb->super_block->block_size);
 	}
 	RzBuffer *sd = rz_buf_new_with_bytes(stream_directory, stream_directory_len);
@@ -482,9 +482,9 @@ error:
 }
 
 /**
- * \brief Parse pdb file from the givin path
+ * \brief Parse PDB file given the path
  * 
- * \param filename path of pdb file
+ * \param filename path of the PDB file
  * \return RzPdb *
  */
 RZ_API RZ_OWN RzPdb *rz_bin_pdb_parse_from_file(RZ_NONNULL const char *filename) {
@@ -498,7 +498,7 @@ RZ_API RZ_OWN RzPdb *rz_bin_pdb_parse_from_file(RZ_NONNULL const char *filename)
 }
 
 /**
- * \brief Parse pdb from buffer
+ * \brief Parse pdb from the buffer
  * 
  * \param buf mmap of the PDB file
  * \return RzPdb *
@@ -527,7 +527,7 @@ RZ_API RZ_OWN RzPdb *rz_bin_pdb_parse_from_buf(RZ_NONNULL const RzBuffer *buf) {
 	ut64 bufsize = rz_buf_size((RzBuffer *)buf); // length of whole PDB file
 	bool valid =
 		pdb->super_block->num_blocks > 0 &&
-		pdb->super_block->num_blocks * pdb->super_block->block_size == bufsize &&
+		(ut64)pdb->super_block->num_blocks * pdb->super_block->block_size == bufsize &&
 		pdb->super_block->free_block_map_block < pdb->super_block->num_blocks &&
 		pdb->super_block->num_directory_bytes > 0;
 	if (!valid) {
