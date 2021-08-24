@@ -1110,9 +1110,7 @@ static void rz_type_format_word(RzStrBuf *outbuf, int endian, int mode,
 		elem = size / ARRAYINDEX_COEF - 1;
 		size %= ARRAYINDEX_COEF;
 	}
-	addr = endian
-		? (*(buf + i)) << 8 | (*(buf + i + 1))
-		: (*(buf + i + 1)) << 8 | (*(buf + i));
+	addr = rz_read_ble16(buf + i, endian);
 	if (MUSTSET) {
 		rz_strbuf_appendf(outbuf, "wv2 %s @ 0x%08" PFMT64x "\n", setval, seeki + ((elem >= 0) ? elem * 2 : 0));
 	} else if ((mode & RZ_PRINT_DOT) || MUSTSEESTRUCT) {
@@ -1120,9 +1118,7 @@ static void rz_type_format_word(RzStrBuf *outbuf, int endian, int mode,
 			rz_strbuf_appendf(outbuf, "0x%04" PFMT64x, addr);
 		}
 		while ((size -= 2) > 0) {
-			addr = endian
-				? (*(buf + i)) << 8 | (*(buf + i + 1))
-				: (*(buf + i + 1)) << 8 | (*(buf + i));
+			addr = rz_read_ble16(buf + i, endian);
 			if (elem == -1 || elem == 0) {
 				rz_strbuf_appendf(outbuf, "%" PFMT64d, addr);
 				if (elem == 0) {
@@ -1148,9 +1144,7 @@ static void rz_type_format_word(RzStrBuf *outbuf, int endian, int mode,
 				rz_strbuf_append(outbuf, "[ ");
 			}
 			while (size--) {
-				addr = endian
-					? (*(buf + i)) << 8 | (*(buf + i + 1))
-					: (*(buf + i + 1)) << 8 | (*(buf + i));
+				addr = rz_read_ble16(buf + i, endian);
 				if (elem == -1 || elem == 0) {
 					rz_strbuf_appendf(outbuf, "0x%04" PFMT64x, addr);
 					if (elem == 0) {
@@ -1175,9 +1169,7 @@ static void rz_type_format_word(RzStrBuf *outbuf, int endian, int mode,
 		} else {
 			rz_strbuf_append(outbuf, "[ ");
 			while ((size -= 2) > 0) {
-				addr = endian
-					? (*(buf + i)) << 8 | (*(buf + i + 1))
-					: (*(buf + i + 1)) << 8 | (*(buf + i));
+				addr = rz_read_ble16(buf + i, endian);
 				if (elem == -1 || elem == 0) {
 					rz_strbuf_appendf(outbuf, "%" PFMT64d, addr);
 					if (elem == 0) {

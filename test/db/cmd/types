@@ -788,7 +788,9 @@ RUN
 NAME=tpv
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=16
+e cfg.bigendian=false
 td "struct s16ui { uint16_t a_u; int16_t b_i; uint16_t c_u; int16_t d_i;}"
 td "struct s16iu { int16_t a_i; uint16_t b_u; int16_t c_i; uint16_t d_u;}"
 td "struct s32ui { uint32_t e_u; int16_t f_i;}"
@@ -804,6 +806,7 @@ tpv s16iu 0xcafebabecafebabe
 tpv s32ui 0xcafebabecafebabe
 tpv s32iu 0xcafebabecafebabe
 e asm.bits=32
+e cfg.bigendian=false
 td "struct s16ui { uint16_t a_u; int16_t b_i; uint16_t c_u; int16_t d_i;}"
 td "struct s16iu { int16_t a_i; uint16_t b_u; int16_t c_i; uint16_t d_u;}"
 td "struct s32ui { uint32_t e_u; int16_t f_i;}"
@@ -819,6 +822,7 @@ tpv s16iu 0xcafebabecafebabe
 tpv s32ui 0xcafebabecafebabe
 tpv s32iu 0xcafebabecafebabe
 e asm.bits=64
+e cfg.bigendian=false
 td "struct s16ui { uint16_t a_u; int16_t b_i; uint16_t c_u; int16_t d_i;}"
 td "struct s16iu { int16_t a_i; uint16_t b_u; int16_t c_i; uint16_t d_u;}"
 td "struct s32ui { uint32_t e_u; int16_t f_i;}"

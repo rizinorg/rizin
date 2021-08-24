@@ -46,17 +46,6 @@ jobs:
             - cabextract
 
   allow_failures:
-    # Linux with GCC on PowerPC
-    - os: linux
-      arch: ppc64le
-      env: COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DRZ_ASSERT_STDOUT=1" RZ_ARM64_AS=aarch64-linux-gnu-as RZ_ARM32_AS=arm-linux-gnueabi-as RZ_X86_AS=x86_64-linux-gnu-as
-      addons:
-        apt:
-          packages:
-            - binutils-aarch64-linux-gnu
-            - binutils-arm-linux-gnueabi
-            - binutils-x86-64-linux-gnu
-            - cabextract
     # Linux with GCC on System Z
     - os: linux
       arch: s390x
