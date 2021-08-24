@@ -8,16 +8,17 @@ RUN
 
 NAME=1: PE: tls_noEP - entrypoint
 FILE=bins/pe/tls_noEP.exe
-CMDS=ieee
+CMDS=<<EOF
+iee
+ie
+EOF
 EXPECT=<<EOF
-[Constructors]
-vaddr=0x00401000 paddr=0x00000200 hpaddr=0x00000384 type=tls
-
-1 entrypoints
-[Entrypoints]
-vaddr=0x00401000 paddr=0x00000200 haddr=0x00000068 type=program
-
-1 entrypoints
+vaddr      paddr      hvaddr     haddr      type 
+-------------------------------------------------
+0x00401000 0x00000200 ---------- 0x00000384 tls
+vaddr      paddr      hvaddr     haddr      type    
+----------------------------------------------------
+0x00401000 0x00000200 ---------- 0x00000068 program
 EOF
 RUN
 

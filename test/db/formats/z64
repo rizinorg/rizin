@@ -10,12 +10,9 @@ NAME=z64: sections
 FILE=bins/z64/demo.z64
 CMDS=iS
 EXPECT=<<EOF
-[Sections]
-
-nth paddr           size vaddr          vsize perm name 
---------------------------------------------------------
-0   0x00001000  0x13f000 0x80001000  0x13f000 -r-x text
-
+paddr      size     vaddr      vsize    align perm name type flags 
+-------------------------------------------------------------------
+0x00001000 0x13f000 0x80001000 0x13f000 0x0   -r-x text      
 EOF
 RUN
 

@@ -1,8 +1,10 @@
 NAME=ELF: entrypoint
 FILE=bins/elf/analysis/pie
-CMDS=ie~addr
+CMDS=ie
 EXPECT=<<EOF
-vaddr=0x00000450 paddr=0x00000450 haddr=0x00000018 hvaddr=0x00000018 type=program
+vaddr      paddr      hvaddr     haddr      type    
+----------------------------------------------------
+0x00000450 0x00000450 0x00000018 0x00000018 program
 EOF
 RUN
 
@@ -14,8 +16,8 @@ iI~baddr
 ie~program
 EOF
 EXPECT=<<EOF
-baddr    0x300000
-vaddr=0x00300450 paddr=0x00000450 haddr=0x00000018 hvaddr=0x00300018 type=program
+baddr    0x00300000
+0x00300450 0x00000450 0x00300018 0x00000018 program
 EOF
 RUN
 

@@ -15,7 +15,7 @@ iI~arch,binsz,bits
 EOF
 EXPECT=<<EOF
 arch     x86
-binsz    126484
+binsz    0x0001ee14
 bits     32
 EOF
 RUN
@@ -26,7 +26,7 @@ CMDS=<<EOF
 id~?
 EOF
 EXPECT=<<EOF
-22191
+15830
 EOF
 RUN
 
@@ -102,6 +102,6 @@ CMDS=<<EOF
 iI~binsz
 EOF
 EXPECT=<<EOF
-binsz    127593
+binsz    0x0001f269
 EOF
 RUN

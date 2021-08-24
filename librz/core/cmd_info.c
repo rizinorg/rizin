@@ -78,14 +78,6 @@ static const char *help_msg_id[] = {
 	NULL
 };
 
-static const char *help_msg_ix[] = {
-	"Usage: ix", "", "Display source file line info (from debug info)",
-	"ix[j]", "", "List all source line info available",
-	"ix.[j]", "", "Show source line info for current address",
-	"ixf[j]", "", "Show summary of all source files used",
-	NULL
-};
-
 #define PAIR_WIDTH 9
 // TODO: reuse implementation in core/bin.c
 static void pair(const char *a, const char *b) {
@@ -374,7 +366,7 @@ typedef enum {
 	PRINT_SOURCE_INFO_FILES
 } PrintSourceInfoType;
 
-static bool print_source_info(RzCore *core, PrintSourceInfoType type, RzOutputMode mode) {
+static bool print_source_info(RzCore *core, PrintSourceInfoType type, RzCmdStateOutput *state) {
 	RzBinFile *binfile = core->bin->cur;
 	if (!binfile || !binfile->o) {
 		rz_cons_printf("No file loaded.\n");
@@ -384,10 +376,6 @@ static bool print_source_info(RzCore *core, PrintSourceInfoType type, RzOutputMo
 	if (!li) {
 		rz_cons_printf("No source info available.\n");
 		return true;
-	}
-	PJ *j = NULL;
-	if (mode == RZ_OUTPUT_MODE_JSON) {
-		j = pj_new();
 	}
 	switch (type) {
 	case PRINT_SOURCE_INFO_FILES: {
@@ -410,13 +398,13 @@ static bool print_source_info(RzCore *core, PrintSourceInfoType type, RzOutputMo
 		rz_pvector_sort(&sorter, (RzPVectorComparator)strcmp);
 		ht_pp_free(files);
 		// print them!
-		if (mode == RZ_OUTPUT_MODE_JSON) {
-			pj_a(j);
+		if (state->mode == RZ_OUTPUT_MODE_JSON) {
+			pj_a(state->d.pj);
 			void **it;
 			rz_pvector_foreach (&sorter, it) {
-				pj_s(j, *it);
+				pj_s(state->d.pj, *it);
 			}
-			pj_end(j);
+			pj_end(state->d.pj);
 		} else {
 			rz_cons_printf("[Source file]\n");
 			void **it;
@@ -429,24 +417,16 @@ static bool print_source_info(RzCore *core, PrintSourceInfoType type, RzOutputMo
 		break;
 	}
 	case PRINT_SOURCE_INFO_LINES_ALL:
-		rz_core_bin_print_source_line_info(core, li, mode, j);
+		rz_core_bin_print_source_line_info(core, li, state);
 		break;
 	case PRINT_SOURCE_INFO_LINES_HERE:
-		if (mode == RZ_OUTPUT_MODE_JSON) {
-			pj_a(j);
-		}
+		rz_cmd_state_output_array_start(state);
 		for (const RzBinSourceLineSample *s = rz_bin_source_line_info_get_first_at(li, core->offset);
 			s; s = rz_bin_source_line_info_get_next(li, s)) {
-			rz_core_bin_print_source_line_sample(core, s, mode, j);
+			rz_core_bin_print_source_line_sample(core, s, state);
 		}
-		if (mode == RZ_OUTPUT_MODE_JSON) {
-			pj_end(j);
-		}
+		rz_cmd_state_output_array_end(state);
 		break;
-	}
-	if (mode == RZ_OUTPUT_MODE_JSON) {
-		rz_cons_println(pj_string(j));
-		pj_free(j);
 	}
 	return true;
 }
@@ -817,41 +797,6 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 			break;
 		case 'r': // "ir"
 			RZBININFO("relocs", RZ_CORE_BIN_ACC_RELOCS, NULL);
-			break;
-		case 'x':
-			newline = false;
-			switch (*++input) {
-			case '\0': // "ix"
-			case ' ':
-				print_source_info(core, PRINT_SOURCE_INFO_LINES_ALL, RZ_OUTPUT_MODE_STANDARD);
-				break;
-			case 'j': // "ixj"
-				print_source_info(core, PRINT_SOURCE_INFO_LINES_ALL, RZ_OUTPUT_MODE_JSON);
-				break;
-			case '.':
-				if (*++input == 'j') { // "ix.j"
-					print_source_info(core, PRINT_SOURCE_INFO_LINES_HERE, RZ_OUTPUT_MODE_JSON);
-					mode = 0; // we do json ourselves here
-					input++;
-				} else { // "ix."
-					print_source_info(core, PRINT_SOURCE_INFO_LINES_HERE, RZ_OUTPUT_MODE_STANDARD);
-				}
-				break;
-			case 'f':
-				if (*++input == 'j') { // "ixfj"
-					print_source_info(core, PRINT_SOURCE_INFO_FILES, RZ_OUTPUT_MODE_JSON);
-					mode = 0; // we do json ourselves here
-					input++;
-				} else { // "ixf"
-					print_source_info(core, PRINT_SOURCE_INFO_FILES, RZ_OUTPUT_MODE_STANDARD);
-				}
-				break;
-			case '?': // "ix?"
-			default:
-				rz_core_cmd_help(core, help_msg_ix);
-				input++;
-				break;
-			}
 			break;
 		case 'd': // "id"
 			if (input[1] == 'p') { // "idp"
@@ -1353,6 +1298,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_section_bars_handler(RzCore *core, int argc, cons
 	}
 	rz_cons_printf("%s\n", s);
 	free(s);
+	res = RZ_CMD_STATUS_OK;
 
 table_err:
 	rz_table_free(table);
@@ -1668,17 +1614,17 @@ RZ_IPI RzCmdStatus rz_cmd_info_trycatch_handler(RzCore *core, int argc, const ch
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_sourcelines_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	print_source_info(core, PRINT_SOURCE_INFO_LINES_ALL, state->mode);
+	print_source_info(core, PRINT_SOURCE_INFO_LINES_ALL, state);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_sourcelines_here_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	print_source_info(core, PRINT_SOURCE_INFO_LINES_HERE, state->mode);
+	print_source_info(core, PRINT_SOURCE_INFO_LINES_HERE, state);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_source_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	print_source_info(core, PRINT_SOURCE_INFO_FILES, state->mode);
+	print_source_info(core, PRINT_SOURCE_INFO_FILES, state);
 	return RZ_CMD_STATUS_OK;
 }
 

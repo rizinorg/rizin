@@ -1,6 +1,6 @@
 NAME=pe64 msvc main
 FILE=bins/pe/testapp-msvc64.exe
-CMDS=iM~addr
+CMDS=iM
 EXPECT=<<EOF
 vaddr=0x140001000 paddr=0x00000400
 EOF
@@ -8,7 +8,7 @@ RUN
 
 NAME=pe64 header
 FILE=bins/pe/tls64.exe
-CMDS=ih~?Signature : 0x4550
+CMDS=ih~Signature~0x4550?
 EXPECT=<<EOF
 1
 EOF
@@ -24,7 +24,7 @@ RUN
 
 NAME=pe64 msvc vs2019 debug main
 FILE=bins/pe/rizin_vs2019_debug.exe
-CMDS=iM~addr
+CMDS=iM
 EXPECT=<<EOF
 vaddr=0x140001620 paddr=0x00000a20
 EOF

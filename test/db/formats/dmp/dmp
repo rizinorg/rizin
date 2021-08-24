@@ -10,21 +10,22 @@ NAME=: DMP64 Info
 FILE=bins/dmp/bmp.dmp
 CMDS=iI
 EXPECT=<<EOF
-Name     Value              
-----------------------------
 arch     x86
-baddr    0xffffffffffffffff
-binsz    88428600
+baddr    ----------
+binsz    0x05455038
 bintype  dmp64
 bits     64
 retguard false
+class    
 endian   LE
-laddr    0x0
+laddr    0x00000000
+lang     
 machine  AMD64
 maxopsz  16
 minopsz  1
 os       Unknown
 pcalign  0
+subsys   
 stripped false
 crypto   false
 havecode true

@@ -10,16 +10,13 @@ NAME=nro sections
 FILE=bins/nro/appstore.nro
 CMDS=iS
 EXPECT=<<EOF
-[Sections]
-
-nth paddr           size vaddr          vsize perm name   
-----------------------------------------------------------
-0   0x00000000      0x80 0x00000000      0x80 -r-- header
-1   0x0021d000       0x0 0x0021d000       0x0 -r-- sig0
-2   0x00000000  0x1b4000 0x00000000  0x1b4000 -r-x text
-3   0x001b4000   0x5a000 0x001b4000   0x5a000 -r-- ro
-4   0x0020e000    0xf000 0x0020e000    0xf000 -rw- data
-
+paddr      size     vaddr      vsize    align perm name   type flags 
+---------------------------------------------------------------------
+0x00000000 0x80     0x00000000 0x80     0x0   -r-- header      
+0x0021d000 0x0      0x0021d000 0x0      0x0   -r-- sig0        
+0x00000000 0x1b4000 0x00000000 0x1b4000 0x0   -r-x text        
+0x001b4000 0x5a000  0x001b4000 0x5a000  0x0   -r-- ro          
+0x0020e000 0xf000   0x0020e000 0xf000   0x0   -rw- data        
 EOF
 RUN
 
@@ -37,10 +34,9 @@ NAME=nro entry
 FILE=bins/nro/appstore.nro
 CMDS=ie
 EXPECT=<<EOF
-[Entrypoints]
-vaddr=0x00000080 paddr=0x00000080 haddr=-1 type=program
-
-1 entrypoints
+vaddr      paddr      hvaddr     haddr      type    
+----------------------------------------------------
+0x00000080 0x00000080 ---------- ---------- program
 EOF
 RUN
 

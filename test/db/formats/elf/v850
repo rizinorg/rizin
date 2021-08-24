@@ -16,17 +16,15 @@ format   elf
 iorw     false
 block    0x100
 type     EXEC (Executable file)
-Name     Value            
---------------------------
 arch     v850
-baddr    0x100000
-binsz    973677
+baddr    0x00100000
+binsz    0x000edb6d
 bintype  elf
 bits     32
 class    ELF32
 compiler GCC: (GNU) 9.3.0
 endian   LE
-laddr    0x0
+laddr    0x00000000
 lang     c
 machine  NEC V800 series
 maxopsz  8

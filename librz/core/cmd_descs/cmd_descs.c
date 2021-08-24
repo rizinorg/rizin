@@ -5918,7 +5918,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_bin_reload_cd = rz_cmd_desc_argv_new(core->rcmd, i_cd, "ib", rz_cmd_bin_reload_handler, &cmd_bin_reload_help);
 	rz_warn_if_fail(cmd_bin_reload_cd);
 
-	RzCmdDesc *cmd_info_classes_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "ic", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_LONG | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_classes_handler, &cmd_info_classes_help);
+	RzCmdDesc *cmd_info_classes_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "ic", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_LONG | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_QUIETEST, rz_cmd_info_classes_handler, &cmd_info_classes_help);
 	rz_warn_if_fail(cmd_info_classes_cd);
 	rz_cmd_desc_set_default_mode(cmd_info_classes_cd, RZ_OUTPUT_MODE_TABLE);
 
@@ -5954,7 +5954,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(cmd_info_fields_cd);
 	rz_cmd_desc_set_default_mode(cmd_info_fields_cd, RZ_OUTPUT_MODE_TABLE);
 
-	RzCmdDesc *cmd_info_headers_cd = rz_cmd_desc_argv_new(core->rcmd, i_cd, "iHH", rz_cmd_info_headers_handler, &cmd_info_headers_help);
+	RzCmdDesc *cmd_info_headers_cd = rz_cmd_desc_argv_new(core->rcmd, i_cd, "iH", rz_cmd_info_headers_handler, &cmd_info_headers_help);
 	rz_warn_if_fail(cmd_info_headers_cd);
 
 	RzCmdDesc *cmd_info_imports_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "ii", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_imports_handler, &cmd_info_imports_help);
@@ -5990,7 +5990,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_info_resources_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "iR", RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_STANDARD, rz_cmd_info_resources_handler, &cmd_info_resources_help);
 	rz_warn_if_fail(cmd_info_resources_cd);
 
-	RzCmdDesc *cmd_info_symbols_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "is", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_symbols_handler, &cmd_info_symbols_help);
+	RzCmdDesc *cmd_info_symbols_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "is", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_QUIETEST, rz_cmd_info_symbols_handler, &cmd_info_symbols_help);
 	rz_warn_if_fail(cmd_info_symbols_cd);
 	rz_cmd_desc_set_default_mode(cmd_info_symbols_cd, RZ_OUTPUT_MODE_TABLE);
 
@@ -6002,7 +6002,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(cmd_info_sections_cd);
 	rz_cmd_desc_set_default_mode(cmd_info_sections_cd, RZ_OUTPUT_MODE_TABLE);
 
-	RzCmdDesc *cmd_info_cur_section_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "iS.", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_cur_section_handler, &cmd_info_cur_section_help);
+	RzCmdDesc *cmd_info_cur_section_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "iS.", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON, rz_cmd_info_cur_section_handler, &cmd_info_cur_section_help);
 	rz_warn_if_fail(cmd_info_cur_section_cd);
 	rz_cmd_desc_set_default_mode(cmd_info_cur_section_cd, RZ_OUTPUT_MODE_TABLE);
 
@@ -6032,11 +6032,11 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_info_source_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "ixf", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_info_source_handler, &cmd_info_source_help);
 	rz_warn_if_fail(cmd_info_source_cd);
 
-	RzCmdDesc *cmd_info_strings_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "iz", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_strings_handler, &cmd_info_strings_help);
+	RzCmdDesc *cmd_info_strings_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "iz", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_QUIETEST, rz_cmd_info_strings_handler, &cmd_info_strings_help);
 	rz_warn_if_fail(cmd_info_strings_cd);
 	rz_cmd_desc_set_default_mode(cmd_info_strings_cd, RZ_OUTPUT_MODE_TABLE);
 
-	RzCmdDesc *cmd_info_whole_strings_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "izz", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_whole_strings_handler, &cmd_info_whole_strings_help);
+	RzCmdDesc *cmd_info_whole_strings_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "izz", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_QUIETEST, rz_cmd_info_whole_strings_handler, &cmd_info_whole_strings_help);
 	rz_warn_if_fail(cmd_info_whole_strings_cd);
 	rz_cmd_desc_set_default_mode(cmd_info_whole_strings_cd, RZ_OUTPUT_MODE_TABLE);
 

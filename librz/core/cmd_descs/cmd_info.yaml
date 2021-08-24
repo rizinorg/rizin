@@ -40,6 +40,7 @@ commands:
       - RZ_OUTPUT_MODE_RIZIN
       - RZ_OUTPUT_MODE_LONG
       - RZ_OUTPUT_MODE_QUIET
+      - RZ_OUTPUT_MODE_QUIETEST
     args: []
   - name: iC
     cname: cmd_info_signature
@@ -151,7 +152,7 @@ commands:
       - RZ_OUTPUT_MODE_JSON
       - RZ_OUTPUT_MODE_QUIET
     args: []
-  - name: iHH
+  - name: iH
     cname: cmd_info_headers
     summary: Show binary headers
     args: []
@@ -253,6 +254,7 @@ commands:
       - RZ_OUTPUT_MODE_TABLE
       - RZ_OUTPUT_MODE_JSON
       - RZ_OUTPUT_MODE_QUIET
+      - RZ_OUTPUT_MODE_QUIETEST
     args: []
   - name: is.
     cname: cmd_info_cur_symbol
@@ -285,7 +287,6 @@ commands:
     modes:
       - RZ_OUTPUT_MODE_TABLE
       - RZ_OUTPUT_MODE_JSON
-      - RZ_OUTPUT_MODE_QUIET
     args: []
   - name: iS=
     cname: cmd_info_section_bars
@@ -361,6 +362,7 @@ commands:
       - RZ_OUTPUT_MODE_TABLE
       - RZ_OUTPUT_MODE_JSON
       - RZ_OUTPUT_MODE_QUIET
+      - RZ_OUTPUT_MODE_QUIETEST
     args: []
   - name: izz
     cname: cmd_info_whole_strings
@@ -371,6 +373,7 @@ commands:
       - RZ_OUTPUT_MODE_TABLE
       - RZ_OUTPUT_MODE_JSON
       - RZ_OUTPUT_MODE_QUIET
+      - RZ_OUTPUT_MODE_QUIETEST
     args: []
   - name: izzz
     cname: cmd_info_dump_strings

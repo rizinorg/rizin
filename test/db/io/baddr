@@ -27,8 +27,8 @@ RUN
 NAME=io.baddr entry0 data
 FILE=bins/elf/analysis/pie
 CMDS=<<EOF
-ie~paddr[3]
-ie~vaddr[1]
+ie:paddr:quiet
+ie:vaddr:quiet
 p8 10 @ 0x00000450
 EOF
 EXPECT=<<EOF
@@ -51,8 +51,8 @@ NAME=io.baddr -x86_32 entry0 data
 FILE=bins/mach0/fatmach0-3true
 ARGS=-a x86 -b 32
 CMDS=<<EOF
-ie~paddr[3]
-ie~vaddr[1]
+ie:paddr:quiet
+ie:vaddr:quiet
 p8 10 @ 0x00001f44
 p8 10 @ 0x00005f44
 EOF

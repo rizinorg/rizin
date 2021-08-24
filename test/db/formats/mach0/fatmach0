@@ -181,10 +181,12 @@ iA
 iAj
 EOF
 EXPECT=<<EOF
-000 0x00001000 13792 x86_64 x86 64 all
-001 0x00005000 13760 x86_32 386
-002 0x00009000 13616 ppc_32 7400
-{"bins":[{"arch":"x86","bits":64,"offset":4096,"size":13792,"machine":"x86 64 all"},{"arch":"x86","bits":32,"offset":20480,"size":13760,"machine":"386"},{"arch":"ppc","bits":32,"offset":36864,"size":13616,"machine":"7400"}]}
+num offset     size  arch   machine    
+---------------------------------------
+0   0x00001000 13792 x86_64 x86 64 all
+0   0x00005000 13760 x86_32 386
+0   0x00009000 13616 ppc_32 7400
+[{"arch":"x86","bits":64,"offset":4096,"size":13792,"machine":"x86 64 all"},{"arch":"x86","bits":32,"offset":20480,"size":13760,"machine":"386"},{"arch":"ppc","bits":32,"offset":36864,"size":13616,"machine":"7400"}]
 EOF
 RUN
 
@@ -227,8 +229,6 @@ FILE=bins/mach0/fatmach0-3true
 ARGS=-a x86 -b32 -B 0x90000000
 CMDS=is
 EXPECT=<<EOF
-[Symbols]
-
 nth paddr      vaddr      bind   type size lib name                
 -------------------------------------------------------------------
 0   0x00005000 0x90000000 GLOBAL FUNC 0        __mh_execute_header

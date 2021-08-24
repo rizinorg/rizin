@@ -10,12 +10,9 @@ NAME=psx: sqrxz4 - sections
 FILE=bins/psx/HITPSX.EXE
 CMDS=iS
 EXPECT=<<EOF
-[Sections]
-
-nth paddr           size vaddr          vsize perm name 
---------------------------------------------------------
-0   0x00000800  0x180000 0x80010000  0x180000 -r-x TEXT
-
+paddr      size     vaddr      vsize    align perm name type flags 
+-------------------------------------------------------------------
+0x00000800 0x180000 0x80010000 0x180000 0x0   -r-x TEXT      
 EOF
 RUN
 

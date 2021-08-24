@@ -2,10 +2,9 @@ NAME=ELF: riscv64: entrypoint
 FILE=bins/elf/analysis/guess-number-riscv64
 CMDS=ie
 EXPECT=<<EOF
-[Entrypoints]
-vaddr=0x00010000 paddr=0x00001000 haddr=0x00000018 hvaddr=0x00010018 type=program
-
-1 entrypoints
+vaddr      paddr      hvaddr     haddr      type    
+----------------------------------------------------
+0x00010000 0x00001000 0x00010018 0x00000018 program
 EOF
 RUN
 
@@ -13,8 +12,6 @@ NAME=ELF: riscv64: symbols
 FILE=bins/elf/analysis/guess-number-riscv64
 CMDS=is
 EXPECT=<<EOF
-[Symbols]
-
 nth paddr      vaddr      bind   type   size lib name                                   
 ----------------------------------------------------------------------------------------
 1   0x00001000 0x00010000 LOCAL  SECT   0        .text
@@ -397,7 +394,7 @@ RUN
 
 NAME=ELF: riscv64: file format
 FILE=bins/elf/analysis/guess-number-riscv64
-CMDS=if
+CMDS=i
 EXPECT=<<EOF
 fd       3
 file     bins/elf/analysis/guess-number-riscv64
@@ -408,17 +405,15 @@ format   elf64
 iorw     false
 block    0x100
 type     EXEC (Executable file)
-Name     Value            
---------------------------
 arch     riscv
-baddr    0x10000
-binsz    643108
+baddr    0x00010000
+binsz    0x0009d024
 bintype  elf
 bits     64
 class    ELF64
 compiler GCC: (GNU) 5.2.0
 endian   LE
-laddr    0x0
+laddr    0x00000000
 lang     c
 machine  RISC V
 os       linux

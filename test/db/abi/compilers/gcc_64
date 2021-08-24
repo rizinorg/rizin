@@ -15,7 +15,7 @@ iI~arch,binsz,bits
 EOF
 EXPECT=<<EOF
 arch     x86
-binsz    123583
+binsz    0x0001e2bf
 bits     64
 machine  AMD x86-64 architecture
 EOF
@@ -27,7 +27,7 @@ CMDS=<<EOF
 id~?
 EOF
 EXPECT=<<EOF
-25775
+21579
 EOF
 RUN
 
@@ -103,6 +103,6 @@ CMDS=<<EOF
 iI~binsz
 EOF
 EXPECT=<<EOF
-binsz    167405
+binsz    0x00028ded
 EOF
 RUN

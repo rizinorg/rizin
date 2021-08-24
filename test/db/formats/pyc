@@ -93,19 +93,63 @@ CMDS=<<EOF
 iS~Bat
 EOF
 EXPECT=<<EOF
-30  0x00001f0d   0x2a 0x00001f0d   0x2a ---- module_.Bat
-31  0x00001f5f    0xa 0x00001f5f    0xa ---- module_.Bat.__init
-32  0x00001fca    0x8 0x00001fca    0x8 ---- module_.Bat.say
-33  0x00002037    0x4 0x00002037    0x4 ---- module_.Bat.sonar
-34  0x00002103   0x1c 0x00002103   0x1c ---- module_.Batman
-35  0x00002143   0x44 0x00002143   0x44 ---- module_.Batman.__init
-36  0x00002235    0x4 0x00002235    0x4 ---- module_.Batman.sing
+0x00001f0d 0x2a  0x00001f0d 0x2a  0x0   ---- module_.Bat                     
+0x00001f5f 0xa   0x00001f5f 0xa   0x0   ---- module_.Bat.__init              
+0x00001fca 0x8   0x00001fca 0x8   0x0   ---- module_.Bat.say                 
+0x00002037 0x4   0x00002037 0x4   0x0   ---- module_.Bat.sonar               
+0x00002103 0x1c  0x00002103 0x1c  0x0   ---- module_.Batman                  
+0x00002143 0x44  0x00002143 0x44  0x0   ---- module_.Batman.__init           
+0x00002235 0x4   0x00002235 0x4   0x0   ---- module_.Batman.sing             
 EOF
 REGEXP_FILTER_ERR=<<EOF
 free_object\ \(0\)
 EOF
 EXPECT_ERR=<<EOF
-free_object (0)
+Undefined type in free_object (0)
+WARNING: No calling convention defined for this file, analysis may be inaccurate.
+WARNING: rz_list_pop_head: assertion 'list' failed (line 375)
+WARNING: rz_list_pop_head: assertion 'list' failed (line 375)
+WARNING: rz_list_pop_head: assertion 'list' failed (line 375)
+WARNING: rz_list_pop_head: assertion 'list' failed (line 375)
+WARNING: rz_list_pop_head: assertion 'list' failed (line 375)
+WARNING: rz_list_pop_head: assertion 'list' failed (line 375)
+WARNING: rz_list_pop_head: assertion 'list' failed (line 375)
+WARNING: rz_list_pop_head: assertion 'list' failed (line 375)
+WARNING: rz_list_pop_head: assertion 'list' failed (line 375)
+WARNING: rz_list_pop_head: assertion 'list' failed (line 375)
+WARNING: rz_list_pop_head: assertion 'list' failed (line 375)
+WARNING: rz_list_pop_head: assertion 'list' failed (line 375)
+WARNING: rz_list_pop_head: assertion 'list' failed (line 375)
+WARNING: rz_list_pop_head: assertion 'list' failed (line 375)
+WARNING: rz_list_pop_head: assertion 'list' failed (line 375)
+WARNING: rz_list_pop_head: assertion 'list' failed (line 375)
+WARNING: rz_list_pop_head: assertion 'list' failed (line 375)
+WARNING: rz_list_pop_head: assertion 'list' failed (line 375)
+WARNING: rz_list_pop_head: assertion 'list' failed (line 375)
+WARNING: rz_list_pop_head: assertion 'list' failed (line 375)
+WARNING: rz_list_pop_head: assertion 'list' failed (line 375)
+WARNING: rz_list_pop_head: assertion 'list' failed (line 375)
+WARNING: rz_list_pop_head: assertion 'list' failed (line 375)
+WARNING: rz_list_pop_head: assertion 'list' failed (line 375)
+WARNING: rz_list_pop_head: assertion 'list' failed (line 375)
+WARNING: rz_list_pop_head: assertion 'list' failed (line 375)
+WARNING: rz_list_pop_head: assertion 'list' failed (line 375)
+WARNING: rz_list_pop_head: assertion 'list' failed (line 375)
+WARNING: rz_list_pop_head: assertion 'list' failed (line 375)
+WARNING: rz_list_pop_head: assertion 'list' failed (line 375)
+WARNING: rz_list_pop_head: assertion 'list' failed (line 375)
+WARNING: rz_list_pop_head: assertion 'list' failed (line 375)
+WARNING: rz_list_pop_head: assertion 'list' failed (line 375)
+WARNING: rz_list_pop_head: assertion 'list' failed (line 375)
+WARNING: rz_list_pop_head: assertion 'list' failed (line 375)
+WARNING: rz_list_pop_head: assertion 'list' failed (line 375)
+WARNING: rz_list_pop_head: assertion 'list' failed (line 375)
+WARNING: rz_list_pop_head: assertion 'list' failed (line 375)
+WARNING: rz_list_pop_head: assertion 'list' failed (line 375)
+WARNING: rz_list_pop_head: assertion 'list' failed (line 375)
+WARNING: rz_list_pop_head: assertion 'list' failed (line 375)
+WARNING: rz_list_pop_head: assertion 'list' failed (line 375)
+WARNING: rz_list_pop_head: assertion 'list' failed (line 375)
 EOF
 RUN
 
@@ -125,13 +169,14 @@ CMDS=<<EOF
 ie~program
 EOF
 EXPECT=<<EOF
-vaddr=0x0000002a paddr=0x0000002a haddr=-1 type=program
+0x0000002a 0x0000002a ---------- ---------- program
 EOF
 REGEXP_FILTER_ERR=<<EOF
 free_object\ \(0\)
 EOF
 EXPECT_ERR=<<EOF
-free_object (0)
+Undefined type in free_object (0)
+WARNING: No calling convention defined for this file, analysis may be inaccurate.
 EOF
 RUN
 

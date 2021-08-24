@@ -5,7 +5,6 @@ ii
 iS
 EOF
 EXPECT=<<EOF
-[Imports]
 nth vaddr      bind type lib name                      
 -------------------------------------------------------
 0   0x0000b690 NONE FUNC     __TIFFmalloc
@@ -34,23 +33,19 @@ nth vaddr      bind type lib name
 23  0x0000b748 NONE FUNC     __TIFFDataSize
 24  0x0000b750 NONE FUNC     __TIFFCheckMalloc
 25  0x0000b758 NONE UNK      __fltused
-
-[Sections]
-
-nth paddr         size vaddr        vsize perm name     
---------------------------------------------------------
-0   0x000001cc    0x2f 0x00000000    0x2f ---- .drectve
-1   0x000001fb  0x8670 0x00000030  0x8670 -r-- .debug_S
-2   0x0000ad73    0x70 0x000086a0    0x70 -r-- .debug_T
-3   0x0000ade3   0x625 0x00008710   0x625 -rw- .data
-4   0x0000b408    0x54 0x00008d40    0x54 -r-- .rdata
-5   0x00000000     0x8 0x00008da0     0x8 -rw- .bss
-6   0x0000b45c  0x2895 0x00008db0  0x2895 -r-x .text_mn
-7   0x0000e967     0x8 0x0000b650     0x8 -r-- .rdata_1
-8   0x0000e96f     0x4 0x0000b660     0x4 -r-- .rdata_2
-9   0x0000e973     0x8 0x0000b670     0x8 -r-- .rdata_3
-10  0x0000e97b     0x4 0x0000b680     0x4 -r-- .rdata_4
-
+paddr      size   vaddr      vsize  align perm name     type flags 
+-------------------------------------------------------------------
+0x000001cc 0x2f   0x00000000 0x2f   0x0   ---- .drectve      
+0x000001fb 0x8670 0x00000030 0x8670 0x0   -r-- .debug_S      
+0x0000ad73 0x70   0x000086a0 0x70   0x0   -r-- .debug_T      
+0x0000ade3 0x625  0x00008710 0x625  0x0   -rw- .data         
+0x0000b408 0x54   0x00008d40 0x54   0x0   -r-- .rdata        
+0x00000000 0x8    0x00008da0 0x8    0x0   -rw- .bss          
+0x0000b45c 0x2895 0x00008db0 0x2895 0x0   -r-x .text_mn      
+0x0000e967 0x8    0x0000b650 0x8    0x0   -r-- .rdata_1      
+0x0000e96f 0x4    0x0000b660 0x4    0x0   -r-- .rdata_2      
+0x0000e973 0x8    0x0000b670 0x8    0x0   -r-- .rdata_3      
+0x0000e97b 0x4    0x0000b680 0x4    0x0   -r-- .rdata_4      
 EOF
 RUN
 
@@ -61,8 +56,6 @@ EXPECT=<<EOF
  1 fd: 4 +0x00000000 0x00000058 - 0x00000067 r-- vmap.reloc-targets
  2 fd: 5 +0x00000064 0x00000000 - 0x00000026 r-x vmap..text
  3 fd: 3 +0x0000008b 0x00000030 - 0x0000004b r-- fmap..data
-[Symbols]
-
 nth paddr      vaddr      bind   type size lib name            
 ---------------------------------------------------------------
 0   ---------- 0x00000058 NONE   UNK  4        imp.MessageBoxA
@@ -70,17 +63,12 @@ nth paddr      vaddr      bind   type size lib name
 0   0x00000064 0x00000000 LOCAL  SECT 4        .text
 0   0x00000064 0x00000000 GLOBAL FUNC 4        main
 0   0x0000008b 0x00000030 LOCAL  SECT 4        .data
-[Relocations]
-
 vaddr      paddr      target     type   name               
 -----------------------------------------------------------
 0x00000009 0x0000006d 0x00000030 ADD_32 .data
 0x00000010 0x00000074 0x00000030 ADD_32 .data + 0x0000000f
 0x0000001c 0x00000080 0x00000058 ADD_32 MessageBoxA
 0x00000023 0x00000087 0x00000060 ADD_32 ExitProcess
-
-
-4 relocations
 EOF
 RUN
 
@@ -105,22 +93,17 @@ EXPECT=<<EOF
  8 fd: 5 +0x00000eec 0x00000d60 - 0x00000e33 r-- vmap..debug$S
  9 fd: 5 +0x00000ff2 0x00000e40 - 0x00000e43 r-- vmap..rtc$IMZ
 10 fd: 5 +0x00001000 0x00000e50 - 0x00000e53 r-- vmap..rtc$TMZ
-[Sections]
-
-nth paddr        size vaddr       vsize perm name       
---------------------------------------------------------
-0   0x0000017c   0xef 0x00000000   0xef ---- .drectve
-1   0x0000026b  0xab0 0x000000f0  0xab0 -r-- .debug_S
-2   0x00000d1b   0x74 0x00000ba0   0x74 -r-- .debug_T
-3   0x00000d8f   0x2d 0x00000c20   0x2d -r-x .text_mn
-4   0x00000dbc   0xd4 0x00000c50   0xd4 -r-- .debug_S_1
-5   0x00000ec2   0x2a 0x00000d30   0x2a -r-x .text_mn_1
-6   0x00000eec   0xd4 0x00000d60   0xd4 -r-- .debug_S_2
-7   0x00000ff2    0x4 0x00000e40    0x4 -r-- .rtc_IMZ
-8   0x00001000    0x4 0x00000e50    0x4 -r-- .rtc_TMZ
-
-[Symbols]
-
+paddr      size  vaddr      vsize align perm name       type flags 
+-------------------------------------------------------------------
+0x0000017c 0xef  0x00000000 0xef  0x0   ---- .drectve        
+0x0000026b 0xab0 0x000000f0 0xab0 0x0   -r-- .debug_S        
+0x00000d1b 0x74  0x00000ba0 0x74  0x0   -r-- .debug_T        
+0x00000d8f 0x2d  0x00000c20 0x2d  0x0   -r-x .text_mn        
+0x00000dbc 0xd4  0x00000c50 0xd4  0x0   -r-- .debug_S_1      
+0x00000ec2 0x2a  0x00000d30 0x2a  0x0   -r-x .text_mn_1      
+0x00000eec 0xd4  0x00000d60 0xd4  0x0   -r-- .debug_S_2      
+0x00000ff2 0x4   0x00000e40 0x4   0x0   -r-- .rtc_IMZ        
+0x00001000 0x4   0x00000e50 0x4   0x0   -r-- .rtc_TMZ        
 nth paddr      vaddr      bind   type size lib name                   
 ----------------------------------------------------------------------
 0   ---------- ---------- LOCAL  ABS  4        @comp.id-0x01055e97
