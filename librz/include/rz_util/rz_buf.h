@@ -163,6 +163,9 @@ RZ_API const RzBufferSparseChunk *rz_buf_sparse_get_chunks(RzBuffer *b, RZ_NONNU
 RZ_API void rz_buf_sparse_set_write_mode(RzBuffer *b, RzBufferSparseWriteMode mode);
 RZ_API bool rz_buf_sparse_populated_in(RzBuffer *b, ut64 from, ut64 to);
 
+RZ_API bool rz_deflatew_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, ut64 block_size, ut8 *src_consumed, ut8 *dst_len, int wbits);
+RZ_API bool rz_deflate_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, ut64 block_size, ut8 *src_consumed, ut8 *dst_len);
+
 #ifdef __cplusplus
 }
 #endif
