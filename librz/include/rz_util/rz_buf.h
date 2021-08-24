@@ -165,6 +165,8 @@ RZ_API bool rz_buf_sparse_populated_in(RzBuffer *b, ut64 from, ut64 to);
 
 RZ_API bool rz_deflatew_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, ut64 block_size, ut8 *src_consumed, ut8 *dst_len, int wbits);
 RZ_API bool rz_deflate_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, ut64 block_size, ut8 *src_consumed, ut8 *dst_len);
+RZ_API bool rz_inflatew_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, ut64 block_size, ut8 *src_consumed, ut8 *dst_len, int wbits);
+RZ_API bool rz_inflate_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, ut64 block_size, ut8 *src_consumed, ut8 *dst_len);
 
 #ifdef __cplusplus
 }
