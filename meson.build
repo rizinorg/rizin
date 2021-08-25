@@ -371,6 +371,7 @@ foreach item : [
     ['system', '#include <stdlib.h>', []],
     ['fork', '#include <unistd.h>', []],
     ['nice', '#include <unistd.h>', []],
+    ['copyfile', '#include <copyfile.h>', []],
     ['strlcpy', '#include <string.h>', []],
     ['openpty', '', [utl]],
     ['forkpty', '', [utl]],
