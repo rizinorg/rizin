@@ -10,7 +10,11 @@
 	(((addr) < (rz_itv_end(((RzSkylineItem *)(part))->itv)) || !rz_itv_end(((RzSkylineItem *)(part))->itv)) ? -1 : 1)
 
 RZ_API bool rz_skyline_add(RzSkyline *skyline, RzInterval itv, void *user) {
-	rz_return_val_if_fail(skyline && (!rz_itv_size(itv) || !UT64_ADD_OVFCHK(rz_itv_begin(itv), rz_itv_size(itv) - 1)), false);
+	rz_return_val_if_fail(skyline, false);
+	if (rz_itv_size(itv)) {
+		// Allow size 1 itv at UT64_MAX, block all other overflows
+		rz_return_val_if_fail(!UT64_ADD_OVFCHK(rz_itv_begin(itv), rz_itv_size(itv) - 1), false);
+	}
 	RzVector *skyline_vec = &skyline->v;
 	RzSkylineItem new_part = { itv, user };
 	const ut64 new_part_end = rz_itv_end(new_part.itv);
@@ -57,7 +61,8 @@ RZ_API const RzSkylineItem *rz_skyline_get_item_intersect(RzSkyline *skyline, ut
 	if (!len) {
 		return NULL;
 	}
-	rz_return_val_if_fail(skyline && !UT64_ADD_OVFCHK(addr, len - 1), NULL);
+	rz_return_val_if_fail(skyline, NULL);
+	rz_return_val_if_fail(!UT64_ADD_OVFCHK(addr, len - 1), NULL);
 	RzVector *skyline_vec = &skyline->v;
 	size_t i, l = rz_vector_len(skyline_vec);
 	rz_vector_lower_bound(skyline_vec, addr, i, CMP_END_GTE_PART);
