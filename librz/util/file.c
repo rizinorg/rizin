@@ -14,12 +14,7 @@
 #include <sys/mman.h>
 #include <limits.h>
 #endif
-#if __APPLE__ && __MAC_10_5
-#define HAVE_COPYFILE_H 1
-#else
-#define HAVE_COPYFILE_H 0
-#endif
-#if HAVE_COPYFILE_H
+#if HAVE_COPYFILE
 #include <copyfile.h>
 #endif
 #if _MSC_VER
@@ -1155,7 +1150,7 @@ RZ_API char *rz_file_tmpdir(void) {
 RZ_API bool rz_file_copy(const char *src, const char *dst) {
 	/* TODO: implement in C */
 	/* TODO: Use NO_CACHE for iOS dyldcache copying */
-#if HAVE_COPYFILE_H
+#if HAVE_COPYFILE
 	return copyfile(src, dst, 0, COPYFILE_DATA | COPYFILE_XATTR) != -1;
 #elif __WINDOWS__
 	PTCHAR s = rz_sys_conv_utf8_to_win(src);
