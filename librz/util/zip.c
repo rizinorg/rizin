@@ -148,7 +148,7 @@ RZ_API ut8 *rz_deflatew(RZ_NONNULL const ut8 *src, int srcLen, int *srcConsumed,
 	stream.zfree = Z_NULL;
 	stream.opaque = Z_NULL;
 
-	if (deflateInit2(&stream, Z_DEFAULT_COMPRESSION, Z_DEFLATED, wbits, 5, Z_DEFAULT_STRATEGY) != Z_OK) {
+	if (deflateInit2(&stream, Z_DEFAULT_COMPRESSION, Z_DEFLATED, wbits, 8, Z_DEFAULT_STRATEGY) != Z_OK) {
 		return NULL;
 	}
 
@@ -223,7 +223,7 @@ RZ_API bool rz_deflatew_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, 
 	stream.zfree = Z_NULL;
 	stream.opaque = Z_NULL;
 
-	if (deflateInit2(&stream, Z_DEFAULT_COMPRESSION, Z_DEFLATED, wbits, 5, Z_DEFAULT_STRATEGY) != Z_OK) {
+	if (deflateInit2(&stream, Z_DEFAULT_COMPRESSION, Z_DEFLATED, wbits, 8, Z_DEFAULT_STRATEGY) != Z_OK) {
 		return false;
 	}
 
@@ -252,10 +252,11 @@ RZ_API bool rz_deflatew_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, 
 		*src_consumed = src_cursor;
 	}
 
+	deflateEnd(&stream);
 	free(src_tmpbuf);
 	free(dst_tmpbuf);
 
-	return true;
+	return rz_buf_resize(dst, dst_cursor);
 }
 
 /**
@@ -265,7 +266,7 @@ RZ_API bool rz_deflatew_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, 
 RZ_API bool rz_inflate_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, ut64 block_size, ut8 *src_consumed) {
 	rz_return_val_if_fail(src && dst, false);
 	rz_return_val_if_fail(block_size > 0, false);
-	return rz_inflatew_buf(src, dst, block_size, src_consumed, MAX_WBITS + 16);
+	return rz_inflatew_buf(src, dst, block_size, src_consumed, MAX_WBITS + 32);
 }
 
 /**
@@ -322,6 +323,7 @@ RZ_API bool rz_inflatew_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, 
 		*src_consumed = src_cursor;
 	}
 
+	inflateEnd(&stream);
 	free(src_tmpbuf);
 	free(dst_tmpbuf);
 
