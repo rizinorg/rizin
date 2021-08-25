@@ -3494,6 +3494,9 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_LDRT:
 		op->cycles = 4;
 		// 0x000082a8    28301be5     ldr r3, [fp, -0x28]
+		op->scale = INSOP(1).mem.scale << INSOP(1).mem.lshift;
+		op->ireg = cs_reg_name(handle, REGBASE(1));
+		op->disp = MEMDISP(1);
 		if (REGID(0) == ARM_REG_PC) {
 			op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
 			if (insn->detail->arm.cc != ARM_CC_AL) {
