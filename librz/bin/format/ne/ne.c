@@ -107,6 +107,15 @@ static int __find_symbol_by_paddr(const void *paddr, const void *sym) {
 	return (int)!(*(ut64 *)paddr == ((RzBinSymbol *)sym)->paddr);
 }
 
+static void ne_sanitize_name(char *name, ut16 count) {
+	// expect to have names in ASCII format.
+	for (ut16 i = 0; i < count && name[i]; ++i) {
+		if (!IS_PRINTABLE(name[i])) {
+			name[i] = '?';
+		}
+	}
+}
+
 RzList *rz_bin_ne_get_symbols(rz_bin_ne_obj_t *bin) {
 	RzBinSymbol *sym;
 	ut16 off = bin->ne_header->ResidNamTable + bin->header_offset;
@@ -148,6 +157,7 @@ RzList *rz_bin_ne_get_symbols(rz_bin_ne_obj_t *bin) {
 		if (!sym) {
 			break;
 		}
+		ne_sanitize_name(name, sz);
 		sym->name = name;
 		if (!first) {
 			sym->bind = RZ_BIN_BIND_GLOBAL_STR;
