@@ -722,6 +722,8 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 		}
 		if (!rel_appended) {
 			free(rel);
+			rel = NULL;
+			break;
 		}
 	}
 	rz_list_free(entries);
