@@ -284,7 +284,7 @@ static bool __ne_get_resources(rz_bin_ne_obj_t *bin) {
 	ut16 resoff = bin->ne_header->ResTableOffset + bin->header_offset;
 
 	ut16 alignment;
-	if (!rz_buf_read_le16_at(bin->buf, resoff, &alignment)) {
+	if (!rz_buf_read_le16_at(bin->buf, resoff, &alignment) || alignment > 31) {
 		return false;
 	}
 
@@ -417,6 +417,10 @@ RzList *rz_bin_ne_get_entrypoints(rz_bin_ne_obj_t *bin) {
 				ut8 segnum = *(bin->entry_table + off);
 				off++;
 				ut16 segoff = *(ut16 *)(bin->entry_table + off);
+				if (!segnum) {
+					free(entry);
+					break;
+				}
 				entry->paddr = (ut64)bin->segment_entries[segnum - 1].offset * bin->alignment + segoff;
 			} else { // Fixed
 				ut16 *p = (ut16 *)(bin->entry_table + off);
