@@ -415,12 +415,20 @@ RZ_API char *rz_reg_profile_to_cc(RzReg *reg) {
 	const char *a1 = rz_reg_get_name_by_type(reg, "A1");
 	const char *a2 = rz_reg_get_name_by_type(reg, "A2");
 	const char *a3 = rz_reg_get_name_by_type(reg, "A3");
+	const char *a4 = rz_reg_get_name_by_type(reg, "A4");
+	const char *a5 = rz_reg_get_name_by_type(reg, "A5");
 
 	// it is mandatory to have at least =A0 defined in the reg profile
 	// this will be enforced in reg/profile at parsing time
 	rz_return_val_if_fail(a0, NULL);
 	if (!r0) {
 		r0 = a0;
+	}
+	if (a5 && a4 && a3 && a2 && a1) {
+		return rz_str_newf("%s reg(%s, %s, %s, %s, %s, %s)", r0, a0, a1, a2, a3, a4, a5);
+	}
+	if (a4 && a3 && a2 && a1) {
+		return rz_str_newf("%s reg(%s, %s, %s, %s, %s)", r0, a0, a1, a2, a3, a4);
 	}
 	if (a3 && a2 && a1) {
 		return rz_str_newf("%s reg(%s, %s, %s, %s)", r0, a0, a1, a2, a3);
