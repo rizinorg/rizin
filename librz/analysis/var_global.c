@@ -225,6 +225,7 @@ RZ_API bool rz_analysis_var_global_rename(RzAnalysis *analysis, RZ_NONNULL const
 	rz_return_val_if_fail(analysis && old_name && newname, false);
 	RzAnalysisVarGlobal *glob = rz_analysis_var_global_get_byname(analysis, old_name);
 	if (!glob) {
+		RZ_LOG_ERROR("Global variable %s does not exist!\n", old_name);
 		return false;
 	}
 	RZ_FREE(glob->name);
