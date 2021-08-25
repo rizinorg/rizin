@@ -391,7 +391,7 @@ RzList *rz_bin_ne_get_entrypoints(rz_bin_ne_obj_t *bin) {
 		entry->paddr = bin->ne_header->ipEntryPoint + (s ? s->paddr : 0);
 		rz_list_append(entries, entry);
 	}
-	int off = 0;
+	ut32 off = 0;
 	while (off < bin->ne_header->EntryTableLength) {
 		ut8 bundle_length = *(ut8 *)(bin->entry_table + off);
 		if (!bundle_length) {
@@ -419,7 +419,12 @@ RzList *rz_bin_ne_get_entrypoints(rz_bin_ne_obj_t *bin) {
 				ut16 segoff = *(ut16 *)(bin->entry_table + off);
 				entry->paddr = (ut64)bin->segment_entries[segnum - 1].offset * bin->alignment + segoff;
 			} else { // Fixed
-				entry->paddr = (ut64)bin->segment_entries[bundle_type - 1].offset * bin->alignment + *(ut16 *)(bin->entry_table + off);
+				ut16 *p = (ut16 *)(bin->entry_table + off);
+				if (off >= bin->ne_header->EntryTableLength) {
+					free(entry);
+					break;
+				}
+				entry->paddr = (ut64)bin->segment_entries[bundle_type - 1].offset * bin->alignment + (*p);
 			}
 			off += 2;
 			rz_list_append(entries, entry);
@@ -444,7 +449,7 @@ RzList *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 		return NULL;
 	}
 
-	ut16 *modref = malloc(bin->ne_header->ModRefs * sizeof(ut16));
+	ut16 *modref = calloc(bin->ne_header->ModRefs, sizeof(ut16));
 	if (!modref) {
 		return NULL;
 	}
@@ -510,8 +515,8 @@ RzList *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 					free(reloc);
 					break;
 				}
-				char *name;
-				if (rel.index > bin->ne_header->ModRefs) {
+				char *name = NULL;
+				if (rel.index > bin->ne_header->ModRefs || !rel.index) {
 					name = rz_str_newf("UnknownModule%d_%x", rel.index, off); // ????
 				} else {
 					offset = modref[rel.index - 1] + bin->header_offset + bin->ne_header->ImportNameTable;
@@ -557,13 +562,11 @@ RzList *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 				}
 			}
 
+			rz_list_append(relocs, reloc);
 			if (rel.flags & ADDITIVE) {
 				reloc->additive = 1;
-				rz_list_append(relocs, reloc);
 			} else {
 				do {
-					rz_list_append(relocs, reloc);
-
 					ut16 tmp_offset;
 					if (!rz_buf_read_le16_at(bin->buf, reloc->paddr, &tmp_offset)) {
 						break;
@@ -578,8 +581,8 @@ RzList *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 					}
 					*reloc = *tmp;
 					reloc->paddr = seg->paddr + offset;
+					rz_list_append(relocs, reloc);
 				} while (offset != 0xFFFF);
-				free(reloc);
 			}
 
 			off += sizeof(NE_image_reloc_item);
