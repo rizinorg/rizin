@@ -758,6 +758,7 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 	// because we can't use functions that lock after fork
 	char **child_env = create_child_env(opt->envvars, opt->envvals, opt->env_size);
 
+	rz_sys_signal(SIGPIPE, SIG_IGN);
 	proc->pid = rz_sys_fork();
 	if (proc->pid == -1) {
 		// fail
