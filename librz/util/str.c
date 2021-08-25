@@ -768,11 +768,10 @@ RZ_API size_t rz_str_ncpy(char *dst, const char *src, size_t n) {
 #if HAVE_STRLCPY
 	return strlcpy(dst, src, n);
 #else
-	strncpy(dst, src, n);
-	dst[n] = '\0';
-#endif
-
+	strncpy(dst, src, n - 1);
+	dst[n - 1] = '\0';
 	return n;
+#endif
 }
 
 /* memccmp("foo.bar", "foo.cow, '.') == 0 */
