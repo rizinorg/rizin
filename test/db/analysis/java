@@ -191,17 +191,15 @@ format   java
 iorw     true
 block    0x100
 type     JAVA CLASS
-Name     Value       
----------------------
 arch     java
-baddr    0x0
-binsz    1024
+baddr    0x00000000
+binsz    0x00000400
 bintype  class
 bits     32
 retguard false
 class    Java SE 1.7
 endian   BE
-laddr    0x0
+laddr    0x00000000
 lang     java
 machine  jvm
 maxopsz  16
@@ -268,7 +266,7 @@ RUN
 
 NAME=Output java class source-code-like
 FILE=bins/java/jdwpexeccmd.class
-CMDS=javas ; icc
+CMDS=javas ; icl
 EXPECT=<<EOF
 import java.lang.Object;
 import java.lang.StringBuilder;
