@@ -286,12 +286,9 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 		}
 	}
 	RzCoreSymCacheElement *element = parseDragons(bf, buf, sm.addr + sm.size, sm.bits, file_name);
-	if (element) {
-		obj->bin_obj = element;
-		return true;
-	}
+	obj->bin_obj = element;
 	free(file_name);
-	return false;
+	return obj->bin_obj != NULL;
 }
 
 static RzList *sections(RzBinFile *bf) {
