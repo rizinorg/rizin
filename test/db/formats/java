@@ -495,10 +495,10 @@ EXPECT=<<EOF
 address    min        max        name          super         
 -------------------------------------------------------------
 0x00000000 0x00000000 0x00000000 unknown_class unknown_super
-address index flags name type 
-------------------------------
-address index flags name 
--------------------------
+address index class flags name type 
+------------------------------------
+address index class flags name 
+-------------------------------
 EOF
 RUN
 
@@ -514,14 +514,14 @@ EXPECT=<<EOF
 address    min        max        name       super            
 -------------------------------------------------------------
 0x00000000 0x00000190 0x00000236 LDemoTest; java/lang/Object
-address index flags name type 
-------------------------------
-address    index flags name                       
---------------------------------------------------
-0x00000190 0           fun()I
-0x000001b9 1           <init>()V
-0x000001e8 2           res()Ljava/lang/String;
-0x00000211 3           main([Ljava/lang/String;)V
+address index class flags name type 
+------------------------------------
+address    index class      flags name                       
+-------------------------------------------------------------
+0x00000190 0     LDemoTest; p     fun()I
+0x000001b9 1     LDemoTest; p     <init>()V
+0x000001e8 2     LDemoTest; p     res()Ljava/lang/String;
+0x00000211 3     LDemoTest; sp    main([Ljava/lang/String;)V
 EOF
 RUN
 
@@ -537,18 +537,18 @@ EXPECT=<<EOF
 address    min        max        name              super            
 --------------------------------------------------------------------
 0x00000000 0x00000464 0x00000d74 LCaseTableSwitch; java/lang/Object
-address index flags name type 
-------------------------------
-address    index flags name                       
---------------------------------------------------
-0x00000464 0           <init>()V
-0x000004a1 1           a(I)Ljava/lang/String;
-0x000005df 2           a(Ljava/lang/String;)I
-0x00000623 3           a()I
-0x0000065d 4           hopskip_line_switch()V
-0x00000816 5           straight_line_switch()V
-0x000009ea 6           straight_line_switch_()V
-0x00000bb6 7           main([Ljava/lang/String;)V
+address index class flags name type 
+------------------------------------
+address    index class             flags name                       
+--------------------------------------------------------------------
+0x00000464 0     LCaseTableSwitch; p     <init>()V
+0x000004a1 1     LCaseTableSwitch; p     a(I)Ljava/lang/String;
+0x000005df 2     LCaseTableSwitch; p     a(Ljava/lang/String;)I
+0x00000623 3     LCaseTableSwitch; p     a()I
+0x0000065d 4     LCaseTableSwitch; p     hopskip_line_switch()V
+0x00000816 5     LCaseTableSwitch; p     straight_line_switch()V
+0x000009ea 6     LCaseTableSwitch; p     straight_line_switch_()V
+0x00000bb6 7     LCaseTableSwitch; sp    main([Ljava/lang/String;)V
 EOF
 RUN
 
@@ -564,10 +564,10 @@ EXPECT=<<EOF
 address    min        max        name          super         
 -------------------------------------------------------------
 0x00000000 0x00000000 0x00000000 unknown_class unknown_super
-address index flags name type 
-------------------------------
-address index flags name 
--------------------------
+address index class flags name type 
+------------------------------------
+address index class flags name 
+-------------------------------
 EOF
 RUN
 
@@ -583,14 +583,14 @@ EXPECT=<<EOF
 address    min        max        name    super            
 ----------------------------------------------------------
 0x00000000 0x0000022b 0x000002d3 LHello; java/lang/Object
-address    index flags name type               
------------------------------------------------
-0x0000020b 0           who  Ljava/lang/String;
-address    index flags name                        
----------------------------------------------------
-0x0000022b 0           <init>(Ljava/lang/String;)V
-0x00000263 1           say()V
-0x000002aa 2           main([Ljava/lang/String;)V
+address    index class   flags name type               
+-------------------------------------------------------
+0x0000020b 0     LHello; P     who  Ljava/lang/String;
+address    index class   flags name                        
+-----------------------------------------------------------
+0x0000022b 0     LHello; p     <init>(Ljava/lang/String;)V
+0x00000263 1     LHello; p     say()V
+0x000002aa 2     LHello; sp    main([Ljava/lang/String;)V
 EOF
 RUN
 
@@ -606,11 +606,11 @@ EXPECT=<<EOF
 address    min        max        name   super            
 ---------------------------------------------------------
 0x00000000 0x00000225 0x00000256 LHiKt; java/lang/Object
-address index flags name type 
-------------------------------
-address    index flags name                       
---------------------------------------------------
-0x00000225 0           main([Ljava/lang/String;)V
+address index class flags name type 
+------------------------------------
+address    index class  flags name                       
+---------------------------------------------------------
+0x00000225 0     LHiKt; spf   main([Ljava/lang/String;)V
 EOF
 RUN
 
@@ -626,11 +626,11 @@ EXPECT=<<EOF
 address    min        max        name   super            
 ---------------------------------------------------------
 0x00000000 0x00000120 0x00000131 LTest; java/lang/Object
-address index flags name type 
-------------------------------
-address    index flags name                       
---------------------------------------------------
-0x00000120 0           main([Ljava/lang/String;)V
+address index class flags name type 
+------------------------------------
+address    index class  flags name                       
+---------------------------------------------------------
+0x00000120 0     LTest; sp    main([Ljava/lang/String;)V
 EOF
 RUN
 
@@ -646,12 +646,12 @@ EXPECT=<<EOF
 address    min        max        name          super            
 ----------------------------------------------------------------
 0x00000000 0x00000339 0x0000044d LJDWPExecCmd; java/lang/Object
-address index flags name type 
-------------------------------
-address    index flags name                                      
------------------------------------------------------------------
-0x00000339 0           <init>()V
-0x00000364 1           run(Ljava/lang/String;)Ljava/lang/String;
+address index class flags name type 
+------------------------------------
+address    index class         flags name                                      
+-------------------------------------------------------------------------------
+0x00000339 0     LJDWPExecCmd; p     <init>()V
+0x00000364 1     LJDWPExecCmd; sp    run(Ljava/lang/String;)Ljava/lang/String;
 EOF
 RUN
 
@@ -667,41 +667,41 @@ EXPECT=<<EOF
 address    min        max        name                                 super                
 -------------------------------------------------------------------------------------------
 0x00000000 0x00001c87 0x000029ea Lorg/radare2/installer/MainActivity; android/app/Activity
-address    index flags name                   type                                
-----------------------------------------------------------------------------------
-0x00001c1f 0           outputView             Landroid/widget/TextView;
-0x00001c27 1           handler                Landroid/os/Handler;
-0x00001c2f 2           remoteRunButton        Landroid/widget/Button;
-0x00001c37 3           localRunButton         Landroid/widget/Button;
-0x00001c3f 4           context                Landroid/content/Context;
-0x00001c47 5           mUtils                 Lorg/radare2/installer/Utils;
-0x00001c4f 6           http_url_default       Ljava/lang/String;
-0x00001c57 7           onLocalRunButtonClick  Landroid/view/View$OnClickListener;
-0x00001c5f 8           thread                 Ljava/lang/Thread;
-0x00001c67 9           onRemoteRunButtonClick Landroid/view/View$OnClickListener;
-address    index flags name                                                                                           
-----------------------------------------------------------------------------------------------------------------------
-0x00001c87 0           <init>()V
-0x00001d06 1           onCreate(Landroid/os/Bundle;)V
-0x00001f02 2           onCreateOptionsMenu(Landroid/view/Menu;)Z
-0x00001f5a 3           onOptionsItemSelected(Landroid/view/MenuItem;)Z
-0x00001ff7 4           checkForRadare()Z
-0x0000204c 5           output(Ljava/lang/String;)V
-0x000020b4 6           unTarGz(Ljava/lang/String;Ljava/lang/String;)V
-0x00002254 7           resetButtons()V
-0x000022b1 8           download(Ljava/lang/String;Ljava/lang/String;)Z
-0x000025e6 9           onResume()V
-0x00002720 10          access$000(Lorg/radare2/installer/MainActivity;)Lorg/radare2/installer/Utils;
-0x0000275d 11          access$100(Lorg/radare2/installer/MainActivity;Ljava/lang/String;)V
-0x000027a5 12          access$200(Lorg/radare2/installer/MainActivity;)Ljava/lang/String;
-0x000027e2 13          access$300(Lorg/radare2/installer/MainActivity;)Z
-0x0000281f 14          access$402(Lorg/radare2/installer/MainActivity;Landroid/widget/Button;)Landroid/widget/Button;
-0x00002868 15          access$400(Lorg/radare2/installer/MainActivity;)Landroid/widget/Button;
-0x000028a5 16          access$500(Lorg/radare2/installer/MainActivity;)Landroid/widget/TextView;
-0x000028e2 17          access$600(Lorg/radare2/installer/MainActivity;)Ljava/lang/Thread;
-0x0000291f 18          access$602(Lorg/radare2/installer/MainActivity;Ljava/lang/Thread;)Ljava/lang/Thread;
-0x00002968 19          access$700(Lorg/radare2/installer/MainActivity;)Landroid/os/Handler;
-0x000029a5 20          access$800(Lorg/radare2/installer/MainActivity;Ljava/lang/String;Ljava/lang/String;)Z
+address    index class                                flags name                   type                                
+-----------------------------------------------------------------------------------------------------------------------
+0x00001c1f 0     Lorg/radare2/installer/MainActivity; P     outputView             Landroid/widget/TextView;
+0x00001c27 1     Lorg/radare2/installer/MainActivity; P     handler                Landroid/os/Handler;
+0x00001c2f 2     Lorg/radare2/installer/MainActivity; P     remoteRunButton        Landroid/widget/Button;
+0x00001c37 3     Lorg/radare2/installer/MainActivity; P     localRunButton         Landroid/widget/Button;
+0x00001c3f 4     Lorg/radare2/installer/MainActivity; P     context                Landroid/content/Context;
+0x00001c47 5     Lorg/radare2/installer/MainActivity; P     mUtils                 Lorg/radare2/installer/Utils;
+0x00001c4f 6     Lorg/radare2/installer/MainActivity; P     http_url_default       Ljava/lang/String;
+0x00001c57 7     Lorg/radare2/installer/MainActivity; P     onLocalRunButtonClick  Landroid/view/View$OnClickListener;
+0x00001c5f 8     Lorg/radare2/installer/MainActivity; P     thread                 Ljava/lang/Thread;
+0x00001c67 9     Lorg/radare2/installer/MainActivity; P     onRemoteRunButtonClick Landroid/view/View$OnClickListener;
+address    index class                                flags name                                                                                           
+-----------------------------------------------------------------------------------------------------------------------------------------------------------
+0x00001c87 0     Lorg/radare2/installer/MainActivity; p     <init>()V
+0x00001d06 1     Lorg/radare2/installer/MainActivity; p     onCreate(Landroid/os/Bundle;)V
+0x00001f02 2     Lorg/radare2/installer/MainActivity; p     onCreateOptionsMenu(Landroid/view/Menu;)Z
+0x00001f5a 3     Lorg/radare2/installer/MainActivity; p     onOptionsItemSelected(Landroid/view/MenuItem;)Z
+0x00001ff7 4     Lorg/radare2/installer/MainActivity; P     checkForRadare()Z
+0x0000204c 5     Lorg/radare2/installer/MainActivity; P     output(Ljava/lang/String;)V
+0x000020b4 6     Lorg/radare2/installer/MainActivity; sp    unTarGz(Ljava/lang/String;Ljava/lang/String;)V
+0x00002254 7     Lorg/radare2/installer/MainActivity; P     resetButtons()V
+0x000022b1 8     Lorg/radare2/installer/MainActivity; P     download(Ljava/lang/String;Ljava/lang/String;)Z
+0x000025e6 9     Lorg/radare2/installer/MainActivity; p     onResume()V
+0x00002720 10    Lorg/radare2/installer/MainActivity; sh    access$000(Lorg/radare2/installer/MainActivity;)Lorg/radare2/installer/Utils;
+0x0000275d 11    Lorg/radare2/installer/MainActivity; sh    access$100(Lorg/radare2/installer/MainActivity;Ljava/lang/String;)V
+0x000027a5 12    Lorg/radare2/installer/MainActivity; sh    access$200(Lorg/radare2/installer/MainActivity;)Ljava/lang/String;
+0x000027e2 13    Lorg/radare2/installer/MainActivity; sh    access$300(Lorg/radare2/installer/MainActivity;)Z
+0x0000281f 14    Lorg/radare2/installer/MainActivity; sh    access$402(Lorg/radare2/installer/MainActivity;Landroid/widget/Button;)Landroid/widget/Button;
+0x00002868 15    Lorg/radare2/installer/MainActivity; sh    access$400(Lorg/radare2/installer/MainActivity;)Landroid/widget/Button;
+0x000028a5 16    Lorg/radare2/installer/MainActivity; sh    access$500(Lorg/radare2/installer/MainActivity;)Landroid/widget/TextView;
+0x000028e2 17    Lorg/radare2/installer/MainActivity; sh    access$600(Lorg/radare2/installer/MainActivity;)Ljava/lang/Thread;
+0x0000291f 18    Lorg/radare2/installer/MainActivity; sh    access$602(Lorg/radare2/installer/MainActivity;Ljava/lang/Thread;)Ljava/lang/Thread;
+0x00002968 19    Lorg/radare2/installer/MainActivity; sh    access$700(Lorg/radare2/installer/MainActivity;)Landroid/os/Handler;
+0x000029a5 20    Lorg/radare2/installer/MainActivity; sh    access$800(Lorg/radare2/installer/MainActivity;Ljava/lang/String;Ljava/lang/String;)Z
 EOF
 RUN
 
@@ -717,12 +717,12 @@ EXPECT=<<EOF
 address    min        max        name   super            
 ---------------------------------------------------------
 0x00000000 0x00000389 0x00000482 LMain; java/lang/Object
-address index flags name type 
-------------------------------
-address    index flags name                       
---------------------------------------------------
-0x00000389 0           <init>()V
-0x000003b4 1           main([Ljava/lang/String;)V
+address index class flags name type 
+------------------------------------
+address    index class  flags name                       
+---------------------------------------------------------
+0x00000389 0     LMain; p     <init>()V
+0x000003b4 1     LMain; sp    main([Ljava/lang/String;)V
 EOF
 RUN
 
@@ -748,21 +748,21 @@ EXPECT=<<EOF
 address    min        max        name   super              
 -----------------------------------------------------------
 0x00000000 0x000008f9 0x00000bcd Ltest; groovy/lang/Script
-address    index flags name             type                                       
------------------------------------------------------------------------------------
-0x000008c9 0           $staticClassInfo Lorg/codehaus/groovy/reflection/ClassInfo;
-0x000008d1 1           __$stMC          Z
-0x000008d9 2           $callSiteArray   Ljava/lang/ref/SoftReference;
-address    index flags name                                                                       
---------------------------------------------------------------------------------------------------
-0x000008f9 0           <init>()V
-0x0000092e 1           <init>(Lgroovy/lang/Binding;)V
-0x0000096e 2           main([Ljava/lang/String;)V
-0x000009ae 3           run()Ljava/lang/Object;
-0x00000aba 4           $getStaticMetaClass()Lgroovy/lang/MetaClass;
-0x00000afb 5           $createCallSiteArray_1([Ljava/lang/String;)V
-0x00000b6a 6           $createCallSiteArray()Lorg/codehaus/groovy/runtime/callsite/CallSiteArray;
-0x00000b99 7           $getCallSiteArray()[Lorg/codehaus/groovy/runtime/callsite/CallSite;
+address    index class  flags name             type                                       
+------------------------------------------------------------------------------------------
+0x000008c9 0     Ltest; sPh   $staticClassInfo Lorg/codehaus/groovy/reflection/ClassInfo;
+0x000008d1 1     Ltest; spgh  __$stMC          Z
+0x000008d9 2     Ltest; sPh   $callSiteArray   Ljava/lang/ref/SoftReference;
+address    index class  flags name                                                                       
+---------------------------------------------------------------------------------------------------------
+0x000008f9 0     Ltest; p     <init>()V
+0x0000092e 1     Ltest; p     <init>(Lgroovy/lang/Binding;)V
+0x0000096e 2     Ltest; spg   main([Ljava/lang/String;)V
+0x000009ae 3     Ltest; p     run()Ljava/lang/Object;
+0x00000aba 4     Ltest; rh    $getStaticMetaClass()Lgroovy/lang/MetaClass;
+0x00000afb 5     Ltest; sPh   $createCallSiteArray_1([Ljava/lang/String;)V
+0x00000b6a 6     Ltest; sPh   $createCallSiteArray()Lorg/codehaus/groovy/runtime/callsite/CallSiteArray;
+0x00000b99 7     Ltest; sPh   $getCallSiteArray()[Lorg/codehaus/groovy/runtime/callsite/CallSite;
 EOF
 RUN
 
@@ -778,20 +778,20 @@ EXPECT=<<EOF
 address    min        max        name               super                      
 -------------------------------------------------------------------------------
 0x00000000 0x00000421 0x00004f31 LTryWithResources; java/lang/RuntimeException
-address    index flags name type               
------------------------------------------------
-0x000003f9 0           $    LTryWithResources;
-0x00000401 1           i    I
-address    index flags name                              
----------------------------------------------------------
-0x00000421 0           $(I)LTryWithResources;
-0x00000444 1           <init>(I)V
-0x00000484 2           close()V
-0x000004d0 3           $(ILjava/lang/RuntimeException;)V
-0x000004fb 4           $(Ljava/lang/RuntimeException;)V
-0x0000051d 5           main([Ljava/lang/String;)V
-0x0000054c 6           main([[Ljava/lang/String;)V
-0x00004f19 7           <clinit>()V
+address    index class              flags name type               
+------------------------------------------------------------------
+0x000003f9 0     LTryWithResources; sp    $    LTryWithResources;
+0x00000401 1     LTryWithResources; pf    i    I
+address    index class              flags name                              
+----------------------------------------------------------------------------
+0x00000421 0     LTryWithResources; sp    $(I)LTryWithResources;
+0x00000444 1     LTryWithResources; p     <init>(I)V
+0x00000484 2     LTryWithResources; p     close()V
+0x000004d0 3     LTryWithResources; sp    $(ILjava/lang/RuntimeException;)V
+0x000004fb 4     LTryWithResources; sp    $(Ljava/lang/RuntimeException;)V
+0x0000051d 5     LTryWithResources; sp    main([Ljava/lang/String;)V
+0x0000054c 6     LTryWithResources; pg    main([[Ljava/lang/String;)V
+0x00004f19 7     LTryWithResources; s     <clinit>()V
 EOF
 RUN
 
