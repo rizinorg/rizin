@@ -30,7 +30,7 @@ bool test_rz_io_cache(void) {
 	mu_assert_true(rz_io_cache_read(io, 4, buf + 4, 2), "Cache read at 4 failed");
 	mu_assert_false(rz_io_cache_read(io, 6, buf + 6, 2), "Cache read at 6 should fail");
 	mu_assert_true(rz_io_cache_read(io, 7, buf + 7, 2), "Cache read at 7 with size 2 should succeed");
-	mu_assert_true(rz_io_cache_read(io, 9, buf + 9, 2), "Cache read at 8 failed");
+	mu_assert_true(rz_io_cache_read(io, 9, buf + 9, 2), "Cache read at 9 failed");
 	mu_assert_true(rz_io_cache_read(io, 11, buf + 11, 4), "Cache read at 11 failed");
 	mu_assert_memeq(buf, (ut8 *)"ABAACDZZEFGBBBB", sizeof(buf), "Cache read doesn't match expected output");
 	mu_assert_true(rz_io_cache_write(io, 0, (ut8 *)"FFFFFFFFFFFFFFF", 15), "Cache write failed");

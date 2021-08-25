@@ -12,7 +12,7 @@
 RZ_API bool rz_skyline_add(RzSkyline *skyline, RzInterval itv, void *user) {
 	rz_return_val_if_fail(skyline, false);
 	if (rz_itv_size(itv)) {
-		// Allow size 1 itv at UT64_MAX, block all other overflows
+		// Allow intervals whose end overflows to 0, but block if it overflows past that
 		rz_return_val_if_fail(!UT64_ADD_OVFCHK(rz_itv_begin(itv), rz_itv_size(itv) - 1), false);
 	}
 	RzVector *skyline_vec = &skyline->v;
