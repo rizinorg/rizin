@@ -7,11 +7,11 @@
 | latest-release   | :white_check_mark: |
 | *                | :x:                |
 
-Rizin is a user-space Command Line Interface (CLI) tool which isn't considered a high-availability service. As such, issues that impact Rizin's availability will not be considered as vulnerbilities by the security team. Such issues include, but not limitied to:
+Rizin is a user-space Command Line Interface (CLI) tool that isn't considered a high-availability service. As such, issues that impact Rizin's availability will not be considered as vulnerabilities by the security team. Such issues include, but are not limited to:
  - NULL Pointer Dereference
  - Memory Exhaustion
 
-Issues that can leak non-sensitive memory contents (e.g memory addresses and values, etc.) shuld be demonstrated to be usable by an attacker, and will be considered on a case-by-case basis.
+Issues that can leak non-sensitive memory contents (e.g memory addresses and values, etc.) should be demonstrated to be usable by an attacker and will be considered on a case-by-case basis.
 
 ## Reporting a Vulnerability
 
