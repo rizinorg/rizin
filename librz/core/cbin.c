@@ -3749,7 +3749,7 @@ RZ_IPI bool rz_core_bin_class_fields_print(RzCore *core, RzCmdStateOutput *state
 	}
 
 	rz_cmd_state_output_array_start(state);
-	rz_cmd_state_output_set_columnsf(state, "Xisss", "address", "index", "flags", "name", "type", NULL);
+	rz_cmd_state_output_set_columnsf(state, "Xissss", "address", "index", "class", "flags", "name", "type", NULL);
 
 	rz_list_foreach (cs, iter, c) {
 		if (!c->name || strcmp(c->name, class_name)) {
@@ -3760,7 +3760,7 @@ RZ_IPI bool rz_core_bin_class_fields_print(RzCore *core, RzCmdStateOutput *state
 		case RZ_OUTPUT_MODE_QUIET:
 			rz_list_foreach (c->fields, iter2, f) {
 				char *mflags = rz_core_bin_method_flags_str(f->flags, 0);
-				rz_cons_printf("0x%08" PFMT64x " field  %d %s %s\n", f->vaddr, m, mflags, f->name);
+				rz_cons_printf("0x%08" PFMT64x " field  %d %s %s %s\n", f->vaddr, m, class_name, mflags, f->name);
 				free(mflags);
 				m++;
 			}
@@ -3787,7 +3787,7 @@ RZ_IPI bool rz_core_bin_class_fields_print(RzCore *core, RzCmdStateOutput *state
 		case RZ_OUTPUT_MODE_TABLE:
 			rz_list_foreach (c->fields, iter2, f) {
 				char *mflags = rz_core_bin_method_flags_str(f->flags, 0);
-				rz_table_add_rowf(state->d.t, "Xisss", f->vaddr, m, mflags, f->name, f->type);
+				rz_table_add_rowf(state->d.t, "Xissss", f->vaddr, m, class_name, mflags, f->name, f->type);
 				free(mflags);
 				m++;
 			}
@@ -3817,7 +3817,7 @@ RZ_IPI bool rz_core_bin_class_methods_print(RzCore *core, RzCmdStateOutput *stat
 	}
 
 	rz_cmd_state_output_array_start(state);
-	rz_cmd_state_output_set_columnsf(state, "Xiss", "address", "index", "flags", "name", NULL);
+	rz_cmd_state_output_set_columnsf(state, "Xisss", "address", "index", "class", "flags", "name", NULL);
 
 	rz_list_foreach (cs, iter, c) {
 		if (!c->name || strcmp(c->name, class_name)) {
@@ -3827,9 +3827,9 @@ RZ_IPI bool rz_core_bin_class_methods_print(RzCore *core, RzCmdStateOutput *stat
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_QUIET:
 			rz_list_foreach (c->methods, iter2, sym) {
+				const char *name = sym->dname ? sym->dname : sym->name;
 				char *mflags = rz_core_bin_method_flags_str(sym->method_flags, 0);
-				rz_cons_printf("0x%08" PFMT64x " method %d %s %s\n",
-					sym->vaddr, m, mflags, sym->dname ? sym->dname : sym->name);
+				rz_cons_printf("0x%08" PFMT64x " method %d %s %s %s\n", sym->vaddr, m, class_name, mflags, name);
 				free(mflags);
 				m++;
 			}
@@ -3855,7 +3855,7 @@ RZ_IPI bool rz_core_bin_class_methods_print(RzCore *core, RzCmdStateOutput *stat
 			rz_list_foreach (c->methods, iter2, sym) {
 				const char *name = sym->dname ? sym->dname : sym->name;
 				char *mflags = rz_core_bin_method_flags_str(sym->method_flags, 0);
-				rz_table_add_rowf(state->d.t, "Xiss", sym->vaddr, m, mflags, name);
+				rz_table_add_rowf(state->d.t, "Xisss", sym->vaddr, m, class_name, mflags, name);
 				free(mflags);
 				m++;
 			}
@@ -3962,7 +3962,7 @@ RZ_IPI void rz_core_bin_classes_print(RzCore *core, RzCmdStateOutput *state) {
 			rz_table_add_rowf(state->d.t, "XXXss", c->addr, at_min, at_max, c->name, c->super);
 			break;
 		case RZ_OUTPUT_MODE_LONG:
-			switch (o->lang) {
+			switch (o->lang & (~RZ_BIN_NM_BLOCKS)) {
 			case RZ_BIN_NM_KOTLIN:
 			case RZ_BIN_NM_GROOVY:
 			case RZ_BIN_NM_JAVA:

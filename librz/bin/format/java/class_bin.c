@@ -26,6 +26,44 @@ static const AccessFlagsReadable access_flags_list[CLASS_ACCESS_FLAGS_SIZE] = {
 	{ ACCESS_FLAG_MODULE, /*    */ "module" },
 };
 
+static ut64 java_access_flags_to_bin_flags(ut64 access_flags) {
+	ut64 flags = 0;
+	if (access_flags & ACCESS_FLAG_PUBLIC) {
+		flags |= RZ_BIN_METH_PUBLIC;
+	}
+	if (access_flags & ACCESS_FLAG_PRIVATE) {
+		flags |= RZ_BIN_METH_PRIVATE;
+	}
+	if (access_flags & ACCESS_FLAG_PROTECTED) {
+		flags |= RZ_BIN_METH_PROTECTED;
+	}
+	if (access_flags & ACCESS_FLAG_STATIC) {
+		flags |= RZ_BIN_METH_STATIC;
+	}
+	if (access_flags & ACCESS_FLAG_FINAL) {
+		flags |= RZ_BIN_METH_FINAL;
+	}
+	if (access_flags & ACCESS_FLAG_BRIDGE) {
+		flags |= RZ_BIN_METH_BRIDGE;
+	}
+	if (access_flags & ACCESS_FLAG_VARARGS) {
+		flags |= RZ_BIN_METH_VARARGS;
+	}
+	if (access_flags & ACCESS_FLAG_NATIVE) {
+		flags |= RZ_BIN_METH_NATIVE;
+	}
+	if (access_flags & ACCESS_FLAG_ABSTRACT) {
+		flags |= RZ_BIN_METH_ABSTRACT;
+	}
+	if (access_flags & ACCESS_FLAG_STRICT) {
+		flags |= RZ_BIN_METH_STRICT;
+	}
+	if (access_flags & ACCESS_FLAG_SYNTHETIC) {
+		flags |= RZ_BIN_METH_SYNTHETIC;
+	}
+	return flags;
+}
+
 static const ConstPool *java_class_constant_pool_at(RzBinJavaClass *bin, ut32 index) {
 	if (bin->constant_pool && index < bin->constant_pool_count) {
 		return bin->constant_pool[index];
@@ -1068,6 +1106,7 @@ RZ_API RZ_OWN RzList *rz_bin_java_class_methods_as_symbols(RZ_NONNULL RzBinJavaC
 			symbol->visibility = method->access_flags;
 			symbol->visibility_str = java_method_access_flags_readable(method);
 			symbol->libname = rz_bin_demangle_java(symbol->classname);
+			symbol->method_flags = java_access_flags_to_bin_flags(method->access_flags);
 			free(desc);
 			free(method_name);
 			rz_list_append(list, symbol);
@@ -1224,6 +1263,7 @@ RZ_API RZ_OWN RzList *rz_bin_java_class_fields_as_symbols(RZ_NONNULL RzBinJavaCl
 			symbol->ordinal = i;
 			symbol->visibility = field->access_flags;
 			symbol->visibility_str = java_field_access_flags_readable(field);
+			symbol->method_flags = java_access_flags_to_bin_flags(field->access_flags);
 			free(field_name);
 			rz_list_append(list, symbol);
 		}
@@ -1262,6 +1302,7 @@ RZ_API RZ_OWN RzList *rz_bin_java_class_fields_as_binfields(RZ_NONNULL RzBinJava
 			RzBinField *bf = rz_bin_field_new(field->offset, field->offset, 0, name, NULL, NULL, false);
 			if (bf) {
 				bf->visibility = field->access_flags;
+				bf->flags = java_access_flags_to_bin_flags(field->access_flags);
 				bf->type = java_class_constant_pool_stringify_at(bin, field->descriptor_index);
 				rz_list_append(list, bf);
 			}
