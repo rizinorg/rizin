@@ -95,6 +95,8 @@ RZ_API RzProject *rz_project_load_file_raw(const char *file) {
 		return NULL;
 	}
 
+	const char *load_file = tmp_file;
+
 	if (!rz_file_exists(file)) {
 		prj = NULL;
 		goto return_goto;
@@ -105,14 +107,10 @@ RZ_API RzProject *rz_project_load_file_raw(const char *file) {
 			goto return_goto;
 		}
 	} else {
-		if (!sdb_text_load(prj, file)) {
-			sdb_free(prj);
-			prj = NULL;
-		}
-		goto return_goto;
+		load_file = file;
 	}
 
-	if (!sdb_text_load(prj, tmp_file)) {
+	if (!sdb_text_load(prj, load_file)) {
 		sdb_free(prj);
 		prj = NULL;
 	}

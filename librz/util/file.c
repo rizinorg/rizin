@@ -1262,27 +1262,27 @@ RZ_API char *rz_file_path_join(const char *s1, const char *s2) {
 RZ_API bool rz_file_deflate(RZ_NONNULL const char *src, RZ_NONNULL const char *dst) {
 	rz_return_val_if_fail(src && dst, false);
 
+	bool ret = false;
+
 	RzBuffer *src_buf = rz_buf_new_file(src, O_RDONLY, 0);
 	RzBuffer *dst_buf = rz_buf_new_file(dst, O_WRONLY | O_CREAT, 0644);
 
 	if (!(src_buf && dst_buf)) {
-		goto error_route;
+		goto return_goto;
 	}
 
 	ut64 block_size = 1 << 18; // 256 KB
 
 	if (!rz_deflate_buf(src_buf, dst_buf, block_size, NULL)) {
-		goto error_route;
+		goto return_goto;
 	}
 
-	rz_buf_free(src_buf);
-	rz_buf_free(dst_buf);
-	return true;
+	ret = true;
 
-error_route:
+return_goto:
 	rz_buf_free(src_buf);
 	rz_buf_free(dst_buf);
-	return false;
+	return ret;
 }
 
 /**
@@ -1294,27 +1294,27 @@ error_route:
 RZ_API bool rz_file_inflate(RZ_NONNULL const char *src, RZ_NONNULL const char *dst) {
 	rz_return_val_if_fail(src && dst, false);
 
+	bool ret = false;
+
 	RzBuffer *src_buf = rz_buf_new_file(src, O_RDONLY, 0);
 	RzBuffer *dst_buf = rz_buf_new_file(dst, O_WRONLY | O_CREAT, 0644);
 
 	if (!(src_buf && dst_buf)) {
-		goto error_route;
+		goto return_goto;
 	}
 
 	ut64 block_size = 1 << 13; // 8 KB
 
 	if (!rz_inflate_buf(src_buf, dst_buf, block_size, NULL)) {
-		goto error_route;
+		goto return_goto;
 	}
 
-	rz_buf_free(src_buf);
-	rz_buf_free(dst_buf);
-	return true;
+	ret = true;
 
-error_route:
+return_goto:
 	rz_buf_free(src_buf);
 	rz_buf_free(dst_buf);
-	return false;
+	return ret;
 }
 
 /**
