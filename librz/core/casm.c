@@ -267,7 +267,7 @@ RZ_API RzList *rz_core_asm_strsearch(RzCore *core, const char *input, ut64 from,
 				bool match = (val != UT64_MAX && val >= usrimm && val <= usrimm2);
 
 				if (!match) {
-					for (size_t i=0; i<6; ++i) {
+					for (size_t i = 0; i < 6; ++i) {
 						st64 v = analop.analysis_vals[i].imm;
 						match = (v != ST64_MAX && v >= usrimm && v <= usrimm2);
 						if (match) {
