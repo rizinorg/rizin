@@ -13,7 +13,6 @@
 #include <time.h>
 #include <ht_uu.h>
 
-#define PE_IMAGE_FILE_MACHINE_RPI2 452
 #define MAX_METADATA_STRING_LENGTH 256
 #define bprintf \
 	if (bin->verbose) \
@@ -53,8 +52,9 @@ static inline int is_thumb(struct PE_(rz_bin_pe_obj_t) * bin) {
 
 static inline int is_arm(struct PE_(rz_bin_pe_obj_t) * bin) {
 	switch (bin->nt_headers->file_header.Machine) {
-	case PE_IMAGE_FILE_MACHINE_RPI2: // 462
 	case PE_IMAGE_FILE_MACHINE_ARM:
+	case PE_IMAGE_FILE_MACHINE_ARM64:
+	case PE_IMAGE_FILE_MACHINE_ARMNT:
 	case PE_IMAGE_FILE_MACHINE_THUMB:
 		return 1;
 	}
@@ -3430,8 +3430,8 @@ char *PE_(rz_bin_pe_get_arch)(struct PE_(rz_bin_pe_obj_t) * bin) {
 	case PE_IMAGE_FILE_MACHINE_ALPHA64:
 		arch = strdup("alpha");
 		break;
-	case PE_IMAGE_FILE_MACHINE_RPI2: // 462
 	case PE_IMAGE_FILE_MACHINE_ARM:
+	case PE_IMAGE_FILE_MACHINE_ARMNT:
 	case PE_IMAGE_FILE_MACHINE_THUMB:
 		arch = strdup("arm");
 		break;
@@ -4100,6 +4100,8 @@ char *PE_(rz_bin_pe_get_machine)(struct PE_(rz_bin_pe_obj_t) * bin) {
 		case PE_IMAGE_FILE_MACHINE_AM33: machine = "AM33"; break;
 		case PE_IMAGE_FILE_MACHINE_AMD64: machine = "AMD 64"; break;
 		case PE_IMAGE_FILE_MACHINE_ARM: machine = "ARM"; break;
+		case PE_IMAGE_FILE_MACHINE_ARMNT: machine = "ARM Thumb-2"; break;
+		case PE_IMAGE_FILE_MACHINE_ARM64: machine = "ARM64"; break;
 		case PE_IMAGE_FILE_MACHINE_CEE: machine = "CEE"; break;
 		case PE_IMAGE_FILE_MACHINE_CEF: machine = "CEF"; break;
 		case PE_IMAGE_FILE_MACHINE_EBC: machine = "EBC"; break;
@@ -4181,10 +4183,8 @@ char *PE_(rz_bin_pe_get_class)(struct PE_(rz_bin_pe_obj_t) * bin) {
 int PE_(rz_bin_pe_get_bits)(struct PE_(rz_bin_pe_obj_t) * bin) {
 	int bits = 32;
 	if (bin && bin->nt_headers) {
-		if (is_arm(bin)) {
-			if (is_thumb(bin)) {
-				bits = 16;
-			}
+		if (is_arm(bin) && is_thumb(bin)) {
+			bits = 16;
 		} else {
 			switch (bin->nt_headers->optional_header.Magic) {
 			case PE_IMAGE_FILE_TYPE_PE32: bits = 32; break;
