@@ -6879,6 +6879,7 @@ RZ_IPI void rz_analysis_var_global_list_show(RzAnalysis *analysis, RzCmdStateOut
 		}
 		glob = rz_analysis_var_global_get_byname(analysis, name);
 		if (!glob) {
+			RZ_LOG_ERROR("Global variable %s does not exist!\n", name);
 			rz_list_free(global_vars);
 			return;
 		}

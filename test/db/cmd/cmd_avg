@@ -99,3 +99,15 @@ global char * foo @ 0x100
 global char[50] foo @ 0x100
 EOF
 RUN
+
+NAME=avg <non-existing-var>
+FILE==
+CMDS=<<EOF
+avg foo
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Global variable foo does not exist!
+EOF
+RUN
