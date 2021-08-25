@@ -6868,19 +6868,20 @@ RZ_IPI char *rz_core_analysis_all_vars_display(RzCore *core, RzAnalysisFunction 
 	return rz_strbuf_drain(sb);
 }
 
-RZ_IPI void rz_analysis_var_global_list_show(RzAnalysis *analysis, RzCmdStateOutput *state, RZ_NULLABLE const char *name) {
-	rz_return_if_fail(analysis && state);
+RZ_IPI bool rz_analysis_var_global_list_show(RzAnalysis *analysis, RzCmdStateOutput *state, RZ_NULLABLE const char *name) {
+	rz_return_val_if_fail(analysis && state, false);
 	RzList *global_vars = NULL;
 	RzAnalysisVarGlobal *glob = NULL;
 	if (name) {
 		global_vars = rz_list_new();
 		if (!global_vars) {
-			return;
+			return false;
 		}
 		glob = rz_analysis_var_global_get_byname(analysis, name);
 		if (!glob) {
+			RZ_LOG_ERROR("Global variable '%s' does not exist!\n", name);
 			rz_list_free(global_vars);
-			return;
+			return false;
 		}
 		rz_list_append(global_vars, glob);
 	} else {
@@ -6895,7 +6896,7 @@ RZ_IPI void rz_analysis_var_global_list_show(RzAnalysis *analysis, RzCmdStateOut
 	rz_cmd_state_output_array_start(state);
 	if (!global_vars) {
 		rz_cmd_state_output_array_end(state);
-		return;
+		return false;
 	}
 	rz_list_foreach (global_vars, it, glob) {
 		var_type = rz_type_as_string(analysis->typedb, glob->type);
@@ -6919,6 +6920,7 @@ RZ_IPI void rz_analysis_var_global_list_show(RzAnalysis *analysis, RzCmdStateOut
 	}
 	rz_cmd_state_output_array_end(state);
 	rz_list_free(global_vars);
+	return true;
 }
 
 static int check_rom_exists(const void *value, const void *data) {
