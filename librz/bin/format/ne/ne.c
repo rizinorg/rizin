@@ -398,6 +398,9 @@ RzList *rz_bin_ne_get_entrypoints(rz_bin_ne_obj_t *bin) {
 			break;
 		}
 		off++;
+		if (off >= bin->ne_header->EntryTableLength) {
+			break;
+		}
 		ut8 bundle_type = *(ut8 *)(bin->entry_table + off);
 		off++;
 		int i;
