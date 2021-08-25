@@ -18,7 +18,6 @@
 extern ut32 constant_extender;
 
 void hexagon_disasm_duplex_0x0(ut32 hi_u32, HexInsn *hi, ut32 addr) {
-	char signed_imm[16] = "";
 	if ((hi_u32 & 0xf000f000) == 0x0) {
 		// 0000IIIISSSSDDDDEE00iiiissssdddd | RD = memw(RS+#II) ; Rd = memw(Rs+#Ii)
 		hi->instruction = HEX_INS_X2_AUTOJOIN_SL1_LOADRI_IO_SL1_LOADRI_IO;
@@ -115,7 +114,6 @@ void hexagon_disasm_duplex_0x0(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 }
 
 void hexagon_disasm_duplex_0x1(ut32 hi_u32, HexInsn *hi, ut32 addr) {
-	char signed_imm[16] = "";
 	if ((hi_u32 & 0xf000ffff) == 0x3f00) {
 		// 0000iiiissssddddEE11111100000000 | Rd = memw(Rs+#Ii) ; deallocframe
 		hi->instruction = HEX_INS_X2_AUTOJOIN_SL1_LOADRI_IO_SL2_DEALLOCFRAME;
@@ -885,7 +883,6 @@ void hexagon_disasm_duplex_0x1(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 }
 
 void hexagon_disasm_duplex_0x2(ut32 hi_u32, HexInsn *hi, ut32 addr) {
-	char signed_imm[16] = "";
 	if ((hi_u32 & 0xffffffff) == 0x3f001f00) {
 		// 0011111100000000EE01111100000000 | deallocframe ; deallocframe
 		hi->instruction = HEX_INS_X2_AUTOJOIN_SL2_DEALLOCFRAME_SL2_DEALLOCFRAME;
@@ -25134,7 +25131,6 @@ void hexagon_disasm_duplex_0x7(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 }
 
 void hexagon_disasm_duplex_0x8(ut32 hi_u32, HexInsn *hi, ut32 addr) {
-	char signed_imm[16] = "";
 	if ((hi_u32 & 0xf000f000) == 0x80001000) {
 		// 1000IIIISSSSddddEE01iiiisssstttt | Rd = memw(RS+#II) ; memb(Rs+#Ii) = Rt
 		hi->instruction = HEX_INS_X2_AUTOJOIN_SL1_LOADRI_IO_SS1_STOREB_IO;
@@ -25262,7 +25258,6 @@ void hexagon_disasm_duplex_0x8(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 }
 
 void hexagon_disasm_duplex_0x9(ut32 hi_u32, HexInsn *hi, ut32 addr) {
-	char signed_imm[16] = "";
 	if ((hi_u32 & 0xfffff000) == 0x9f003000) {
 		// 1001111100000000EE11iiiisssstttt | deallocframe ; memb(Rs+#Ii) = Rt
 		hi->instruction = HEX_INS_X2_AUTOJOIN_SL2_DEALLOCFRAME_SS1_STOREB_IO;
@@ -25822,7 +25817,6 @@ void hexagon_disasm_duplex_0x9(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 }
 
 void hexagon_disasm_duplex_0xa(ut32 hi_u32, HexInsn *hi, ut32 addr) {
-	char signed_imm[16] = "";
 	if ((hi_u32 & 0xf000f000) == 0xb0001000) {
 		// 1011IIIISSSSTTTTEE01iiiisssstttt | memb(RS+#II) = RT ; memb(Rs+#Ii) = Rt
 		hi->instruction = HEX_INS_X2_AUTOJOIN_SS1_STOREB_IO_SS1_STOREB_IO;
@@ -29958,7 +29952,6 @@ void hexagon_disasm_duplex_0xe(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 }
 
 void hexagon_disasm_0x0(ut32 hi_u32, HexInsn *hi, ut32 addr) {
-	char signed_imm[16] = "";
 	if ((hi_u32 & 0xf0000000) == 0x0) {
 		// 0000iiiiiiiiiiiiPPiiiiiiiiiiiiii | immext(#Ii)
 		hi->instruction = HEX_INS_A4_EXT;
@@ -29988,7 +29981,6 @@ void hexagon_disasm_0x0(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 }
 
 void hexagon_disasm_0x1(ut32 hi_u32, HexInsn *hi, ut32 addr) {
-	char signed_imm[16] = "";
 	if ((hi_u32 & 0xffc03001) == 0x14400000) {
 		// 0001010001iissssPP00ttttiiiiiii0 | p0 = cmp.eq(Rs,Rt); if (!p0.new) jump:nt Ii
 		hi->instruction = HEX_INS_J4_CMPEQ_FP0_JUMP_NT;
@@ -46932,7 +46924,6 @@ void hexagon_disasm_0x3(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 }
 
 void hexagon_disasm_0x4(ut32 hi_u32, HexInsn *hi, ut32 addr) {
-	char signed_imm[16] = "";
 	if ((hi_u32 & 0xf9e00000) == 0x49000000) {
 		// 01001ii1000iiiiiPPiiiiiiiiiddddd | Rd = memb(gp+#Ii)
 		hi->instruction = HEX_INS_L2_LOADRBGP;
@@ -48792,7 +48783,6 @@ void hexagon_disasm_0x4(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 }
 
 void hexagon_disasm_0x5(ut32 hi_u32, HexInsn *hi, ut32 addr) {
-	char signed_imm[16] = "";
 	if ((hi_u32 & 0xfe000001) == 0x5a000000) {
 		// 0101101iiiiiiiiiPPiiiiiiiiiiiii0 | call Ii
 		hi->instruction = HEX_INS_J2_CALL;
@@ -49331,7 +49321,6 @@ void hexagon_disasm_0x5(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 }
 
 void hexagon_disasm_0x6(ut32 hi_u32, HexInsn *hi, ut32 addr) {
-	char signed_imm[16] = "";
 	if ((hi_u32 & 0xffe03fe0) == 0x6a000000) {
 		// 01101010000sssssPP000000000ddddd | Rd = Cs
 		hi->instruction = HEX_INS_A2_TFRCRR;
@@ -74422,7 +74411,6 @@ void hexagon_disasm_0xe(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 }
 
 void hexagon_disasm_0xf(ut32 hi_u32, HexInsn *hi, ut32 addr) {
-	char signed_imm[16] = "";
 	if ((hi_u32 & 0xffe020e0) == 0xf3000000) {
 		// 11110011000sssssPP0ttttt000ddddd | Rd = add(Rs,Rt)
 		hi->instruction = HEX_INS_A2_ADD;
