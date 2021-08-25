@@ -19,7 +19,6 @@
 char *hex_get_ctr_regs(int opcode_reg) {
 	switch (opcode_reg) {
 	default:
-		rz_warn_if_reached();
 		return "<err>";
 	case HEX_REG_CTR_REGS_LC0:
 		return "LC0";
@@ -71,7 +70,6 @@ char *hex_get_ctr_regs(int opcode_reg) {
 char *hex_get_ctr_regs64(int opcode_reg) {
 	switch (opcode_reg) {
 	default:
-		rz_warn_if_reached();
 		return "<err>";
 	case HEX_REG_CTR_REGS64_C1_0:
 		return "C1:0";
@@ -101,7 +99,6 @@ char *hex_get_ctr_regs64(int opcode_reg) {
 char *hex_get_double_regs(int opcode_reg) {
 	switch (opcode_reg) {
 	default:
-		rz_warn_if_reached();
 		return "<err>";
 	case HEX_REG_DOUBLE_REGS_D0:
 		return "R1:0";
@@ -145,7 +142,6 @@ char *hex_get_general_double_low8_regs(int opcode_reg) {
 	}
 	switch (opcode_reg) {
 	default:
-		rz_warn_if_reached();
 		return "<err>";
 	case HEX_REG_GENERAL_DOUBLE_LOW8_REGS_D11:
 		return "R23:22";
@@ -172,7 +168,6 @@ char *hex_get_general_sub_regs(int opcode_reg) {
 	}
 	switch (opcode_reg) {
 	default:
-		rz_warn_if_reached();
 		return "<err>";
 	case HEX_REG_GENERAL_SUB_REGS_R23:
 		return "R23";
@@ -212,7 +207,6 @@ char *hex_get_general_sub_regs(int opcode_reg) {
 char *hex_get_guest_regs(int opcode_reg) {
 	switch (opcode_reg) {
 	default:
-		rz_warn_if_reached();
 		return "<err>";
 	case HEX_REG_GUEST_REGS_GELR:
 		return "GELR";
@@ -284,7 +278,6 @@ char *hex_get_guest_regs(int opcode_reg) {
 char *hex_get_guest_regs64(int opcode_reg) {
 	switch (opcode_reg) {
 	default:
-		rz_warn_if_reached();
 		return "<err>";
 	case HEX_REG_GUEST_REGS64_G1_0:
 		return "G1:0";
@@ -324,7 +317,6 @@ char *hex_get_guest_regs64(int opcode_reg) {
 char *hex_get_hvx_qr(int opcode_reg) {
 	switch (opcode_reg) {
 	default:
-		rz_warn_if_reached();
 		return "<err>";
 	case HEX_REG_HVX_QR_Q0:
 		return "Q0";
@@ -340,7 +332,6 @@ char *hex_get_hvx_qr(int opcode_reg) {
 char *hex_get_hvx_vqr(int opcode_reg) {
 	switch (opcode_reg) {
 	default:
-		rz_warn_if_reached();
 		return "<err>";
 	case HEX_REG_HVX_VQR_VQ0:
 		return "V3:0";
@@ -364,7 +355,6 @@ char *hex_get_hvx_vqr(int opcode_reg) {
 char *hex_get_hvx_vr(int opcode_reg) {
 	switch (opcode_reg) {
 	default:
-		rz_warn_if_reached();
 		return "<err>";
 	case HEX_REG_HVX_VR_V0:
 		return "V0";
@@ -436,7 +426,6 @@ char *hex_get_hvx_vr(int opcode_reg) {
 char *hex_get_hvx_wr(int opcode_reg) {
 	switch (opcode_reg) {
 	default:
-		rz_warn_if_reached();
 		return "<err>";
 	case HEX_REG_HVX_WR_W0:
 		return "V1:0";
@@ -476,7 +465,6 @@ char *hex_get_hvx_wr(int opcode_reg) {
 char *hex_get_int_regs(int opcode_reg) {
 	switch (opcode_reg) {
 	default:
-		rz_warn_if_reached();
 		return "<err>";
 	case HEX_REG_INT_REGS_R0:
 		return "R0";
@@ -548,7 +536,6 @@ char *hex_get_int_regs(int opcode_reg) {
 char *hex_get_int_regs_low8(int opcode_reg) {
 	switch (opcode_reg) {
 	default:
-		rz_warn_if_reached();
 		return "<err>";
 	case HEX_REG_INT_REGS_LOW8_R7:
 		return "R7";
@@ -574,7 +561,6 @@ char *hex_get_mod_regs(int opcode_reg) {
 
 	switch (opcode_reg) {
 	default:
-		rz_warn_if_reached();
 		return "<err>";
 	case HEX_REG_MOD_REGS_M0:
 		return "M0";
@@ -586,7 +572,6 @@ char *hex_get_mod_regs(int opcode_reg) {
 char *hex_get_pred_regs(int opcode_reg) {
 	switch (opcode_reg) {
 	default:
-		rz_warn_if_reached();
 		return "<err>";
 	case HEX_REG_PRED_REGS_P0:
 		return "P0";
