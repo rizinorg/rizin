@@ -421,7 +421,7 @@ RzList *rz_bin_ne_get_entrypoints(rz_bin_ne_obj_t *bin) {
 				return NULL;
 			}
 			off++;
-			if (!bundle_type) { // Skip
+			if (!bundle_type || bundle_type >= bin->ne_header->SegCount) { // Skip
 				off--;
 				free(entry);
 				break;
@@ -634,7 +634,7 @@ bool rz_bin_ne_buf_init(RzBuffer *buf, rz_bin_ne_obj_t *bin) {
 	if (!size) {
 		return false;
 	}
-	bin->segment_entries = calloc(1, size);
+	bin->segment_entries = calloc(bin->ne_header->SegCount, sizeof(NE_image_segment_entry));
 	if (!bin->segment_entries) {
 		return false;
 	}
