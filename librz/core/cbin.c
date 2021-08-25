@@ -1747,7 +1747,7 @@ static bool bin_dwarf(RzCore *core, RzBinFile *binfile, RzCmdStateOutput *state)
 		RZ_BIN_DWARF_LINE_INFO_MASK_LINES | (state->mode == RZ_OUTPUT_MODE_STANDARD ? RZ_BIN_DWARF_LINE_INFO_MASK_OPS : 0));
 	rz_bin_dwarf_debug_info_free(info);
 	if (lines) {
-		if (state->mode == RZ_MODE_PRINT) {
+		if (state->mode == RZ_OUTPUT_MODE_STANDARD) {
 			rz_core_bin_dwarf_print_line_units(lines->units);
 		}
 		if (lines->lines) {
@@ -2228,6 +2228,10 @@ RZ_IPI void rz_core_bin_exports_print(RzCore *core, RzCmdStateOutput *state) {
 	symbols_print(core, state, true, false);
 }
 
+RZ_IPI void rz_core_bin_cur_export_print(RzCore *core, RzCmdStateOutput *state) {
+	symbols_print(core, state, true, true);
+}
+
 RZ_IPI void rz_core_bin_imports_print(RzCore *core, RzCmdStateOutput *state) {
 	int bin_demangle = rz_config_get_i(core->config, "bin.demangle");
 	bool keep_lib = rz_config_get_i(core->config, "bin.demangle.libs");
@@ -2645,6 +2649,15 @@ RZ_IPI void rz_core_bin_sections_print(RzCore *core, RzCmdStateOutput *state, Rz
 	const RzList *sections = rz_bin_object_get_sections(o);
 	RzBinSection *section;
 	RzListIter *iter;
+	RzOutputMode mode = state->mode;
+
+	if (state->mode == RZ_OUTPUT_MODE_QUIET) {
+		state->mode = RZ_OUTPUT_MODE_TABLE;
+		state->d.t = rz_table_new();
+		if (!state->d.t) {
+			goto err;
+		}
+	}
 
 	rz_cmd_state_output_array_start(state);
 	sections_headers_setup(core, state, hashes);
@@ -2664,6 +2677,21 @@ RZ_IPI void rz_core_bin_sections_print(RzCore *core, RzCmdStateOutput *state, Rz
 	}
 
 	rz_cmd_state_output_array_end(state);
+
+err:
+	if (mode == RZ_OUTPUT_MODE_QUIET) {
+		if (state->d.t) {
+			rz_table_query(state->d.t, "vaddr/cols/vsize/perm/name");
+			char *s = rz_table_tostring(state->d.t);
+			if (s) {
+				rz_cons_printf("%s", s);
+				free(s);
+			}
+		}
+
+		state->mode = mode;
+		rz_table_free(state->d.t);
+	}
 }
 
 RZ_IPI void rz_core_bin_cur_section_print(RzCore *core, RzCmdStateOutput *state, RzList *hashes) {
@@ -2675,6 +2703,12 @@ RZ_IPI void rz_core_bin_cur_section_print(RzCore *core, RzCmdStateOutput *state,
 
 	int va = (core->io->va || core->bin->is_debugger) ? VA_TRUE : VA_FALSE;
 	RzBinSection *section = rz_bin_get_section_at(o, core->offset, va);
+	if (!section) {
+		section = rz_bin_get_section_at(o, core->offset, 0);
+		if (!section) {
+			return;
+		}
+	}
 	sections_headers_setup(core, state, hashes);
 
 	switch (state->mode) {
@@ -3718,7 +3752,7 @@ RZ_IPI bool rz_core_bin_class_as_source_print(RzCore *core, RzCmdStateOutput *st
 
 	bool found = false;
 	rz_list_foreach (cs, iter, c) {
-		if (!c->name || !strstr(c->name, class_name)) {
+		if (class_name && (!c->name || !strstr(c->name, class_name))) {
 			continue;
 		}
 		found = true;
@@ -3761,7 +3795,7 @@ RZ_IPI bool rz_core_bin_class_fields_print(RzCore *core, RzCmdStateOutput *state
 	rz_cmd_state_output_set_columnsf(state, "Xissss", "address", "index", "class", "flags", "name", "type", NULL);
 
 	rz_list_foreach (cs, iter, c) {
-		if (!c->name || strcmp(c->name, class_name)) {
+		if (class_name && (!c->name || strcmp(c->name, class_name))) {
 			continue;
 		}
 
@@ -3769,7 +3803,7 @@ RZ_IPI bool rz_core_bin_class_fields_print(RzCore *core, RzCmdStateOutput *state
 		case RZ_OUTPUT_MODE_QUIET:
 			rz_list_foreach (c->fields, iter2, f) {
 				char *mflags = rz_core_bin_method_flags_str(f->flags, 0);
-				rz_cons_printf("0x%08" PFMT64x " field  %d %s %s %s\n", f->vaddr, m, class_name, mflags, f->name);
+				rz_cons_printf("0x%08" PFMT64x " field  %d %s %s %s\n", f->vaddr, m, c->name, mflags, f->name);
 				free(mflags);
 				m++;
 			}
@@ -3786,6 +3820,7 @@ RZ_IPI bool rz_core_bin_class_fields_print(RzCore *core, RzCmdStateOutput *state
 					pj_ks(state->d.pj, "type", f->type);
 				}
 				pj_ks(state->d.pj, "name", f->name);
+				pj_ks(state->d.pj, "class", c->name);
 				if (f->flags) {
 					flags_to_json(state->d.pj, f->flags);
 				}
@@ -3796,7 +3831,7 @@ RZ_IPI bool rz_core_bin_class_fields_print(RzCore *core, RzCmdStateOutput *state
 		case RZ_OUTPUT_MODE_TABLE:
 			rz_list_foreach (c->fields, iter2, f) {
 				char *mflags = rz_core_bin_method_flags_str(f->flags, 0);
-				rz_table_add_rowf(state->d.t, "Xissss", f->vaddr, m, class_name, mflags, f->name, f->type);
+				rz_table_add_rowf(state->d.t, "Xissss", f->vaddr, m, c->name, mflags, f->name, f->type);
 				free(mflags);
 				m++;
 			}
@@ -3829,7 +3864,7 @@ RZ_IPI bool rz_core_bin_class_methods_print(RzCore *core, RzCmdStateOutput *stat
 	rz_cmd_state_output_set_columnsf(state, "Xisss", "address", "index", "class", "flags", "name", NULL);
 
 	rz_list_foreach (cs, iter, c) {
-		if (!c->name || strcmp(c->name, class_name)) {
+		if (class_name && (!c->name || strcmp(c->name, class_name))) {
 			continue;
 		}
 
@@ -3838,7 +3873,7 @@ RZ_IPI bool rz_core_bin_class_methods_print(RzCore *core, RzCmdStateOutput *stat
 			rz_list_foreach (c->methods, iter2, sym) {
 				const char *name = sym->dname ? sym->dname : sym->name;
 				char *mflags = rz_core_bin_method_flags_str(sym->method_flags, 0);
-				rz_cons_printf("0x%08" PFMT64x " method %d %s %s %s\n", sym->vaddr, m, class_name, mflags, name);
+				rz_cons_printf("0x%08" PFMT64x " method %d %s %s %s\n", sym->vaddr, m, c->name, mflags, name);
 				free(mflags);
 				m++;
 			}
@@ -3853,6 +3888,7 @@ RZ_IPI bool rz_core_bin_class_methods_print(RzCore *core, RzCmdStateOutput *stat
 			rz_list_foreach (c->methods, iter2, sym) {
 				pj_o(state->d.pj);
 				pj_ks(state->d.pj, "name", sym->name);
+				pj_ks(state->d.pj, "class", c->name);
 				if (sym->method_flags) {
 					flags_to_json(state->d.pj, sym->method_flags);
 				}
@@ -3864,7 +3900,7 @@ RZ_IPI bool rz_core_bin_class_methods_print(RzCore *core, RzCmdStateOutput *stat
 			rz_list_foreach (c->methods, iter2, sym) {
 				const char *name = sym->dname ? sym->dname : sym->name;
 				char *mflags = rz_core_bin_method_flags_str(sym->method_flags, 0);
-				rz_table_add_rowf(state->d.t, "Xisss", sym->vaddr, m, class_name, mflags, name);
+				rz_table_add_rowf(state->d.t, "Xisss", sym->vaddr, m, c->name, mflags, name);
 				free(mflags);
 				m++;
 			}
@@ -4003,7 +4039,7 @@ RZ_IPI void rz_core_bin_signatures_print(RzCore *core, RzCmdStateOutput *state) 
 		return;
 	}
 
-	char *signature = plg->signature(cur, false);
+	char *signature = plg->signature(cur, state->mode == RZ_OUTPUT_MODE_JSON);
 	if (!signature) {
 		return;
 	}
@@ -4011,7 +4047,8 @@ RZ_IPI void rz_core_bin_signatures_print(RzCore *core, RzCmdStateOutput *state) 
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_JSON:
 		pj_o(state->d.pj);
-		pj_ks(state->d.pj, "signature", signature);
+		pj_k(state->d.pj, "signature");
+		pj_raw(state->d.pj, signature);
 		pj_end(state->d.pj);
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:

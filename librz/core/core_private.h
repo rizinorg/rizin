@@ -102,6 +102,7 @@ RZ_IPI void rz_core_agraph_print_write(RzCore *core, const char *filename);
 RZ_IPI void rz_core_bin_entries_print(RzCore *core, RzCmdStateOutput *state);
 RZ_IPI void rz_core_bin_initfini_print(RzCore *core, RzCmdStateOutput *state);
 RZ_IPI void rz_core_bin_exports_print(RzCore *core, RzCmdStateOutput *state);
+RZ_IPI void rz_core_bin_cur_export_print(RzCore *core, RzCmdStateOutput *state);
 RZ_IPI void rz_core_bin_symbols_print(RzCore *core, RzCmdStateOutput *state);
 RZ_IPI void rz_core_bin_cur_symbol_print(RzCore *core, RzCmdStateOutput *state);
 RZ_IPI void rz_core_bin_imports_print(RzCore *core, RzCmdStateOutput *state);

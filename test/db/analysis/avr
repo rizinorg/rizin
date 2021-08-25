@@ -178,7 +178,7 @@ aaa
 iS~.rom
 EOF
 EXPECT=<<EOF
-8   0x00001fff  0x4000 0x00001fff  0x4000 -r-x .rom      NULL     
+0x00001fff 0x4000 0x00001fff 0x4000 0x0   -r-x .rom      NULL     
 EOF
 RUN
 

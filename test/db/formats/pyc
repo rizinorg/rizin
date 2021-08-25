@@ -105,8 +105,7 @@ REGEXP_FILTER_ERR=<<EOF
 free_object\ \(0\)
 EOF
 EXPECT_ERR=<<EOF
-Undefined type in free_object (0)
-WARNING: No calling convention defined for this file, analysis may be inaccurate.
+free_object (0)
 EOF
 RUN
 
@@ -132,8 +131,7 @@ REGEXP_FILTER_ERR=<<EOF
 free_object\ \(0\)
 EOF
 EXPECT_ERR=<<EOF
-Undefined type in free_object (0)
-WARNING: No calling convention defined for this file, analysis may be inaccurate.
+free_object (0)
 EOF
 RUN
 

@@ -1184,6 +1184,91 @@ RZ_IPI RzCmdStatus rz_cmd_info_archs_handler(RzCore *core, int argc, const char 
 	return RZ_CMD_STATUS_OK;
 }
 
+static bool add_footer(RzCmdStateOutput *state) {
+	if (state->mode == RZ_OUTPUT_MODE_TABLE) {
+		char *s = rz_table_tostring(state->d.t);
+		if (!s) {
+			return false;
+		}
+		rz_cons_printf("%s\n", s);
+		free(s);
+		rz_table_free(state->d.t);
+		state->d.t = rz_table_new();
+	}
+	return true;
+}
+
+static void add_header(RzCmdStateOutput *state, const char *header) {
+	if (state->mode == RZ_OUTPUT_MODE_TABLE || state->mode == RZ_OUTPUT_MODE_QUIET) {
+		rz_cons_printf("[%c%s]\n", toupper(header[0]), header + 1);
+	} else if (state->mode == RZ_OUTPUT_MODE_JSON) {
+		pj_k(state->d.pj, header);
+	}
+}
+
+RZ_IPI RzCmdStatus rz_cmd_info_all_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzOutputMode mode = state->mode;
+	if (mode == RZ_OUTPUT_MODE_STANDARD) {
+		state->mode = RZ_OUTPUT_MODE_TABLE;
+		state->d.t = rz_table_new();
+	} else if (mode == RZ_OUTPUT_MODE_JSON) {
+		pj_o(state->d.pj);
+	}
+
+	add_header(state, "info");
+	rz_core_bin_info_print(core, state);
+	if (!add_footer(state)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	add_header(state, "imports");
+	rz_core_bin_imports_print(core, state);
+	if (!add_footer(state)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	add_header(state, "entries");
+	rz_core_bin_entries_print(core, state);
+	if (!add_footer(state)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	add_header(state, "exports");
+	rz_core_bin_exports_print(core, state);
+	if (!add_footer(state)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	add_header(state, "classes");
+	rz_core_bin_classes_print(core, state);
+	if (!add_footer(state)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	add_header(state, "symbols");
+	rz_core_bin_symbols_print(core, state);
+	if (!add_footer(state)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	add_header(state, "sections");
+	rz_core_bin_sections_print(core, state, NULL);
+	if (!add_footer(state)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	add_header(state, "memory");
+	rz_core_bin_memory_print(core, state);
+	if (!add_footer(state)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	add_header(state, "strings");
+	rz_core_bin_strings_print(core, state);
+	if (!add_footer(state)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (mode == RZ_OUTPUT_MODE_STANDARD) {
+		state->mode = RZ_OUTPUT_MODE_STANDARD;
+		rz_table_free(state->d.t);
+	} else if (mode == RZ_OUTPUT_MODE_JSON) {
+		pj_end(state->d.pj);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
 RZ_IPI RzCmdStatus rz_cmd_info_entry_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	rz_core_bin_entries_print(core, state);
 	return RZ_CMD_STATUS_OK;
@@ -1196,6 +1281,11 @@ RZ_IPI RzCmdStatus rz_cmd_info_entryexits_handler(RzCore *core, int argc, const 
 
 RZ_IPI RzCmdStatus rz_cmd_info_exports_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	rz_core_bin_exports_print(core, state);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_info_cur_export_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	rz_core_bin_cur_export_print(core, state);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -1470,7 +1560,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_dwarf_handler(RzCore *core, int argc, const char 
 RZ_IPI RzCmdStatus rz_cmd_info_pdb_load_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	char *filename = argc > 1 ? strdup(argv[1]) : rz_core_bin_pdb_get_filename(core);
 	if (!filename || !rz_file_exists(filename)) {
-		eprintf("PDB file cannot be downloaded\n");
+		RZ_LOG_ERROR("Cannot open file '%s'\n", filename);
 		free(filename);
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -1497,7 +1587,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_pdb_load_handler(RzCore *core, int argc, const ch
 RZ_IPI RzCmdStatus rz_cmd_info_pdb_show_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	char *filename = argc > 1 ? strdup(argv[1]) : rz_core_bin_pdb_get_filename(core);
 	if (!filename || !rz_file_exists(filename)) {
-		eprintf("PDB file cannot be downloaded\n");
+		eprintf("Cannot open file '%s'\n", filename);
 		free(filename);
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -1525,7 +1615,13 @@ RZ_IPI RzCmdStatus rz_cmd_info_pdb_download_handler(RzCore *core, int argc, cons
 	pdbopts.extract = rz_config_get_i(core->config, "pdb.extract");
 	pdbopts.symbol_store_path = rz_config_get(core->config, "pdb.symstore");
 	pdbopts.symbol_server = rz_config_get(core->config, "pdb.server");
+	if (state->mode == RZ_OUTPUT_MODE_JSON) {
+		pj_o(state->d.pj);
+	}
 	int r = rz_bin_pdb_download(core, state->mode == RZ_OUTPUT_MODE_JSON ? state->d.pj : NULL, state->mode == RZ_OUTPUT_MODE_JSON, &pdbopts);
+	if (state->mode == RZ_OUTPUT_MODE_JSON) {
+		pj_end(state->d.pj);
+	}
 	if (r > 0) {
 		eprintf("Error while downloading pdb file\n");
 		return RZ_CMD_STATUS_ERROR;

@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
 // SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
+// SPDX-FileCopyrightText: 2018-2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bin.h>
@@ -76,13 +77,14 @@ RZ_API int rz_bin_load_languages(RzBinFile *binfile) {
 	bool is_pe = info->rclass ? strstr(info->rclass, "pe") : false;
 	bool is_blocks = false;
 	bool is_objc = false;
+	bool is_cpp = false;
 	char *lib = NULL;
 
 	if (!is_macho && !is_elf && !is_pe) {
 		return RZ_BIN_NM_NONE;
 	}
 
-	if (is_macho) {
+	if (is_macho || is_elf) {
 		rz_list_foreach (o->imports, iter, sym) {
 			const char *name = sym->name;
 			if (!strcmp(name, "_NSConcreteGlobalBlock")) {
@@ -97,8 +99,7 @@ RZ_API int rz_bin_load_languages(RzBinFile *binfile) {
 			info->lang = "swift";
 			return lang_apply_blocks(RZ_BIN_NM_SWIFT, is_blocks);
 		} else if (strstr(lib, "stdc++") || strstr(lib, "c++")) {
-			info->lang = "c++";
-			return RZ_BIN_NM_CXX;
+			is_cpp = true;
 		} else if (strstr(lib, "msvcp")) {
 			info->lang = "msvc";
 			return RZ_BIN_NM_MSVC;
@@ -126,8 +127,7 @@ RZ_API int rz_bin_load_languages(RzBinFile *binfile) {
 			info->lang = "swift";
 			return lang_apply_blocks(RZ_BIN_NM_SWIFT, is_blocks);
 		} else if (check_cxx(sym)) {
-			info->lang = "c++";
-			return lang_apply_blocks(RZ_BIN_NM_CXX, is_blocks);
+			is_cpp = true;
 		} else if (check_objc(sym)) {
 			info->lang = "objc";
 			return lang_apply_blocks(RZ_BIN_NM_OBJC, is_blocks);
@@ -144,6 +144,10 @@ RZ_API int rz_bin_load_languages(RzBinFile *binfile) {
 			info->lang = "c";
 			return RZ_BIN_NM_MSVC;
 		}
+	}
+	if (is_cpp) {
+		info->lang = "c++";
+		return lang_apply_blocks(RZ_BIN_NM_CXX, is_blocks);
 	}
 	return lang_apply_blocks(RZ_BIN_NM_C, is_blocks);
 }

@@ -2527,6 +2527,14 @@ static const RzCmdDescHelp cmd_info_help = {
 	.args = cmd_info_args,
 };
 
+static const RzCmdDescArg cmd_info_all_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_all_help = {
+	.summary = "Show a summary of all info (imports, exports, sections, etc.)",
+	.args = cmd_info_all_args,
+};
+
 static const RzCmdDescArg cmd_info_archs_args[] = {
 	{ 0 },
 };
@@ -2566,6 +2574,7 @@ static const RzCmdDescArg cmd_info_class_as_source_args[] = {
 		.name = "class name",
 		.type = RZ_CMD_ARG_TYPE_STRING,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
 
 	},
 	{ 0 },
@@ -2580,6 +2589,7 @@ static const RzCmdDescArg cmd_info_class_fields_args[] = {
 		.name = "class name",
 		.type = RZ_CMD_ARG_TYPE_STRING,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
 
 	},
 	{ 0 },
@@ -2594,6 +2604,7 @@ static const RzCmdDescArg cmd_info_class_methods_args[] = {
 		.name = "class name",
 		.type = RZ_CMD_ARG_TYPE_STRING,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
 
 	},
 	{ 0 },
@@ -2698,12 +2709,23 @@ static const RzCmdDescHelp cmd_info_entryexits_help = {
 	.args = cmd_info_entryexits_args,
 };
 
+static const RzCmdDescHelp iE_help = {
+	.summary = "List exports",
+};
 static const RzCmdDescArg cmd_info_exports_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_info_exports_help = {
 	.summary = "List exports (global symbols)",
 	.args = cmd_info_exports_args,
+};
+
+static const RzCmdDescArg cmd_info_cur_export_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_cur_export_help = {
+	.summary = "List export at current offset",
+	.args = cmd_info_cur_export_args,
 };
 
 static const RzCmdDescArg cmd_info_fields_args[] = {
@@ -5960,6 +5982,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *i_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "i", RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON, rz_cmd_info_handler, &cmd_info_help, &i_help);
 	rz_warn_if_fail(i_cd);
 	rz_cmd_desc_set_default_mode(i_cd, RZ_OUTPUT_MODE_TABLE);
+	RzCmdDesc *cmd_info_all_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "ia", RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_STANDARD, rz_cmd_info_all_handler, &cmd_info_all_help);
+	rz_warn_if_fail(cmd_info_all_cd);
+
 	RzCmdDesc *cmd_info_archs_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "iA", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_archs_handler, &cmd_info_archs_help);
 	rz_warn_if_fail(cmd_info_archs_cd);
 
@@ -6004,9 +6029,12 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(cmd_info_entryexits_cd);
 	rz_cmd_desc_set_default_mode(cmd_info_entryexits_cd, RZ_OUTPUT_MODE_TABLE);
 
-	RzCmdDesc *cmd_info_exports_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "iE", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_exports_handler, &cmd_info_exports_help);
-	rz_warn_if_fail(cmd_info_exports_cd);
-	rz_cmd_desc_set_default_mode(cmd_info_exports_cd, RZ_OUTPUT_MODE_TABLE);
+	RzCmdDesc *iE_cd = rz_cmd_desc_group_state_new(core->rcmd, i_cd, "iE", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_exports_handler, &cmd_info_exports_help, &iE_help);
+	rz_warn_if_fail(iE_cd);
+	rz_cmd_desc_set_default_mode(iE_cd, RZ_OUTPUT_MODE_TABLE);
+	RzCmdDesc *cmd_info_cur_export_cd = rz_cmd_desc_argv_state_new(core->rcmd, iE_cd, "iE.", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_cur_export_handler, &cmd_info_cur_export_help);
+	rz_warn_if_fail(cmd_info_cur_export_cd);
+	rz_cmd_desc_set_default_mode(cmd_info_cur_export_cd, RZ_OUTPUT_MODE_TABLE);
 
 	RzCmdDesc *cmd_info_fields_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "ih", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_fields_handler, &cmd_info_fields_help);
 	rz_warn_if_fail(cmd_info_fields_cd);
@@ -6056,7 +6084,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(cmd_info_cur_symbol_cd);
 	rz_cmd_desc_set_default_mode(cmd_info_cur_symbol_cd, RZ_OUTPUT_MODE_TABLE);
 
-	RzCmdDesc *cmd_info_sections_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "iS", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON, rz_cmd_info_sections_handler, &cmd_info_sections_help);
+	RzCmdDesc *cmd_info_sections_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "iS", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_sections_handler, &cmd_info_sections_help);
 	rz_warn_if_fail(cmd_info_sections_cd);
 	rz_cmd_desc_set_default_mode(cmd_info_sections_cd, RZ_OUTPUT_MODE_TABLE);
 
