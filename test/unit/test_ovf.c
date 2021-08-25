@@ -7,11 +7,15 @@
 int test_overflow_add(void) {
 	mu_assert_true(UT8_ADD_OVFCHK(250, 32), "ut8-add 1");
 	mu_assert_false(UT8_ADD_OVFCHK(250, 2), "ut8-add 2");
+	mu_assert_false(UT8_ADD_OVFCHK(UT8_MAX, 0), "ut8-add (max, 0)");
 	mu_assert_false(UT16_ADD_OVFCHK(ST16_MAX, 2), "ut16-add 2");
+	mu_assert_false(UT16_ADD_OVFCHK(UT16_MAX, 0), "ut16-add (max, 0)");
 	mu_assert_true(ST16_ADD_OVFCHK(ST16_MAX, 2), "st16-add 2");
 	mu_assert_true(ST16_ADD_OVFCHK(ST16_MAX - 2, 4), "st16-add 2");
 	mu_assert_true(ST16_ADD_OVFCHK(1, ST16_MAX), "st16-add 3");
-
+	mu_assert_false(UT32_ADD_OVFCHK(UT32_MAX, 0), "ut32-add (max, 0)");
+	mu_assert_false(UT64_ADD_OVFCHK(UT64_MAX, 0), "ut64-add (max, 0)");
+	mu_assert_false(ST64_ADD_OVFCHK(ST64_MAX, 0), "st64-add (max, 0)");
 	mu_assert_true(ST16_ADD_OVFCHK(ST16_MIN, -1), "st16-add (min, -1)");
 	mu_assert_true(UT16_ADD_OVFCHK(10, -20), "ut16-add (10, -20)");
 	mu_assert_false(ST16_ADD_OVFCHK(-10, 20), "st16-add (-10, 20)");

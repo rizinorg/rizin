@@ -15,11 +15,19 @@ bool test_rz_skyline(void) {
 	mu_assert_true(rz_skyline_contains(&sky, 2), "Skyline should contain 2");
 	mu_assert_eq((size_t)rz_skyline_get(&sky, 0), 1, "rz_skyline_get should get first map");
 	mu_assert_eq((size_t)rz_skyline_get(&sky, 2), 2, "rz_skyline_get should get second map");
+	mu_assert_eq((size_t)rz_skyline_get(&sky, 3), 2, "rz_skyline_get should get second map");
 	mu_assert_eq((size_t)rz_skyline_get_intersect(&sky, 1, 2), 2, "rz_skyline_get_intersect should get second map");
 	rz_skyline_add(&sky, (RzInterval){ 0, 3 }, (void *)3);
 	mu_assert_true(rz_skyline_contains(&sky, 0) && rz_skyline_contains(&sky, 3),
 		"Skyline should still contain 0 to 3 after overlap");
 	mu_assert_eq((size_t)rz_skyline_get(&sky, 0), 3, "rz_skyline_get should get third map");
+	rz_skyline_add(&sky, (RzInterval){ UT64_MAX - 1, 2 }, (void *)4);
+	mu_assert_true(rz_skyline_contains(&sky, UT64_MAX), "Skyline should contain UT64_MAX");
+	mu_assert_eq((size_t)rz_skyline_get(&sky, UT64_MAX), 4, "rz_skyline_get should get fourth map");
+	rz_skyline_fini(&sky);
+	rz_skyline_init(&sky);
+	rz_skyline_add(&sky, (RzInterval){ 1, 1 }, (void *)1);
+	mu_assert_false(rz_skyline_contains(&sky, 0), "Skyline shouldn't contain 0");
 	rz_skyline_fini(&sky);
 	mu_end;
 }
