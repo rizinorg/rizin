@@ -2412,8 +2412,8 @@ static void rz_core_visual_analysis_refresh_column(RzCore *core, int colpos) {
 }
 
 static const char *help_fun_visual[] = {
-	"(a)", "analyze ", "(-)", "delete ", "(x)", "xrefs to", "(X)", "xrefs from  j/k next/prev\n",
-	"(r)", "rename ", "(c)", "calls ", "(d)", "definetab column (_) hud\n",
+	"(a)", "analyze ", "(-)", "delete ", "(x)", "xrefs to ", "(X)", "xrefs from ", "(j/k)", "next/prev\n",
+	"(r)", "rename ", "(c)", "calls ", "(d)", "define ", "(tab)", "column ", "(_)", "hud\n",
 	"(d)", "define ", "(v)", "vars ", "(?)", " help ", "(:)", "shell ", "(q)", "quit\n",
 	"(s)", "edit function signature.  \n\n",
 	NULL
