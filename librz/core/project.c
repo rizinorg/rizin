@@ -52,7 +52,7 @@ RZ_API RzProjectErr rz_project_save_file(RzCore *core, const char *file) {
 	if (!prj) {
 		return RZ_PROJECT_ERR_UNKNOWN;
 	}
-	RzProjectErr err = rz_project_save(core, prj, tmp_file);
+	RzProjectErr err = rz_project_save(core, prj, file);
 	if (err != RZ_PROJECT_ERR_SUCCESS) {
 		sdb_free(prj);
 		return err;
