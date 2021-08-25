@@ -59,6 +59,9 @@ bool test_rz_str_ncpy(void) {
 	rz_str_ncpy(buf, str, size);
 	mu_assert_streq(buf, "hello wor", "error, while size = sizeof(buf)");
 
+	size = rz_str_ncpy(buf, str, 6);
+	mu_assert_eq(size, 11, "error, return value is not equal to the length of src");
+
 	free(str);
 	mu_end;
 }
