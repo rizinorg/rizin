@@ -2241,7 +2241,6 @@ RZ_IPI void rz_core_bin_imports_print(RzCore *core, RzCmdStateOutput *state) {
 	const RzList *imports = rz_bin_object_get_imports(o);
 	RzBinImport *import;
 	RzListIter *iter;
-	char name[100];
 
 	rz_cmd_state_output_array_start(state);
 	rz_cmd_state_output_set_columnsf(state, "nXssss", "nth", "vaddr", "bind", "type", "lib", "name");
@@ -2254,14 +2253,24 @@ RZ_IPI void rz_core_bin_imports_print(RzCore *core, RzCmdStateOutput *state) {
 		char *libname = import->libname ? strdup(import->libname) : NULL;
 		RzBinSymbol *sym = rz_bin_object_get_symbol_of_import(o, import);
 		ut64 addr = sym ? rva(o, sym->paddr, sym->vaddr, va) : UT64_MAX;
+
+
+		if (RZ_STR_ISNOTEMPTY(import->classname)) {
+			char *tmp = rz_str_newf("%s.%s", import->classname, symname);
+			if (tmp) {
+				free(symname);
+				symname = tmp;
+			}
+		}
+
 		if (bin_demangle) {
 			char *dname = rz_bin_demangle(core->bin->cur, NULL, symname, addr, keep_lib);
 			if (dname) {
 				free(symname);
-				symname = rz_str_newf("sym.imp.%s", dname);
-				free(dname);
+				symname = dname;
 			}
 		}
+
 		if (core->bin->prefix) {
 			char *prname = rz_str_newf("%s.%s", core->bin->prefix, symname);
 			free(symname);
@@ -2300,7 +2309,7 @@ RZ_IPI void rz_core_bin_imports_print(RzCore *core, RzCmdStateOutput *state) {
 				import->bind ? import->bind : "NONE",
 				import->type ? import->type : "NONE",
 				libname ? libname : "",
-				RZ_STR_ISNOTEMPTY(import->classname) ? rz_strf(name, "%s.%s", import->classname, symname) : symname);
+				symname);
 			break;
 		default:
 			rz_warn_if_reached();
