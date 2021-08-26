@@ -163,6 +163,8 @@ enum {
 	RZ_STRING_TYPE_UTF8 = 'u',
 	RZ_STRING_TYPE_WIDE = 'w', // utf16 / widechar string
 	RZ_STRING_TYPE_WIDE32 = 'W', // utf32
+	RZ_STRING_TYPE_WIDE_BE = 'x', // utf16-be / widechar string
+	RZ_STRING_TYPE_WIDE32_BE = 'X', // utf32-be
 	RZ_STRING_TYPE_BASE64 = 'b',
 };
 

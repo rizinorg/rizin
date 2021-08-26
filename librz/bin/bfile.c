@@ -236,7 +236,11 @@ static void get_strings_range(RzBinFile *bf, RzList *list, int min, int raw, ut6
 		type = RZ_STRING_TYPE_WIDE;
 	} else if (!strcmp(enc, "utf32le")) {
 		type = RZ_STRING_TYPE_WIDE32;
-	} else { // TODO utf16be, utf32be
+	} else if (!strcmp(enc, "utf16be")) {
+		type = RZ_STRING_TYPE_WIDE_BE;
+	} else if (!strcmp(enc, "utf32be")) {
+		type = RZ_STRING_TYPE_WIDE32_BE;
+	} else {
 		eprintf("ERROR: encoding %s not supported\n", enc);
 		return;
 	}

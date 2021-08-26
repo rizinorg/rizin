@@ -71,11 +71,13 @@ RZ_API RzBinXtrData *rz_bin_xtrdata_new(RzBuffer *buf, ut64 offset, ut64 size, u
 
 RZ_API const char *rz_bin_string_type(int type) {
 	switch (type) {
-	case 'a': return "ascii";
-	case 'u': return "utf8";
-	case 'w': return "utf16le";
-	case 'W': return "utf32le";
-	case 'b': return "base64";
+	case RZ_STRING_TYPE_ASCII: return "ascii";
+	case RZ_STRING_TYPE_UTF8: return "utf8";
+	case RZ_STRING_TYPE_WIDE: return "utf16le";
+	case RZ_STRING_TYPE_WIDE32: return "utf32le";
+	case RZ_STRING_TYPE_WIDE_BE: return "utf16be";
+	case RZ_STRING_TYPE_WIDE32_BE: return "utf32be";
+	case RZ_STRING_TYPE_BASE64: return "base64";
 	}
 	return "ascii"; // XXX
 }

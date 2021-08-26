@@ -41,30 +41,56 @@ RZ_API int rz_scan_strings(RzList *list, RzBuffer *buf_to_scan,
 	rz_buf_read_at(buf_to_scan, from, buf, len);
 	// may oobread
 	while (needle < to) {
-		rc = rz_utf8_decode(buf + needle - from, to - needle, NULL);
-		if (!rc) {
-			needle++;
-			continue;
+		bool is_wide_be_str = false;
+
+		char ch = *(buf + needle - from);
+		if (ch == 0 && type == RZ_STRING_TYPE_DETECT) {
+			char *w = (char *)buf + needle + 1 - from;
+			if ((to - needle) > 5 + 1) {
+				bool is_wide32_be = !w[0] && !w[1] && w[2] && !w[3] && !w[4];
+				bool is_wide_be = w[0] && !w[1] && w[2] && !w[3] && w[4];
+				if (is_wide32_be) {
+					is_wide_be_str = true;
+					str_type = RZ_STRING_TYPE_WIDE32_BE;
+					rc = 4;
+				} else if (is_wide_be) {
+					is_wide_be_str = true;
+					str_type = RZ_STRING_TYPE_WIDE_BE;
+					rc = 2;
+				}
+			}
 		}
 
-		if (type == RZ_STRING_TYPE_DETECT) {
-			char *w = (char *)buf + needle + rc - from;
-			if ((to - needle) > 5 + rc) {
-				bool is_wide32 = (needle + rc + 2 < to) && (!w[0] && !w[1] && !w[2] && w[3] && !w[4]);
-				if (is_wide32) {
-					str_type = RZ_STRING_TYPE_WIDE32;
-				} else {
-					bool is_wide = needle + rc + 4 < to && !w[0] && w[1] && !w[2] && w[3] && !w[4];
-					str_type = is_wide ? RZ_STRING_TYPE_WIDE : RZ_STRING_TYPE_ASCII;
-				}
-			} else {
-				str_type = RZ_STRING_TYPE_ASCII;
+		if (!is_wide_be_str) {
+			rc = rz_utf8_decode(buf + needle - from, to - needle, NULL);
+			if (!rc) {
+				needle++;
+				continue;
 			}
-		} else if (type == RZ_STRING_TYPE_UTF8) {
-			str_type = RZ_STRING_TYPE_ASCII; // initial assumption
-		} else {
-			str_type = type;
+
+			if (type == RZ_STRING_TYPE_DETECT) {
+				char *w = (char *)buf + needle + rc - from;
+				if ((to - needle) > 5 + rc) {
+					bool is_wide32_le = !w[0] && !w[1] && !w[2] && w[3] && !w[4];
+					bool is_wide_le = !w[0] && w[1] && !w[2] && w[3] && !w[4];
+
+					if (is_wide32_le) {
+						str_type = RZ_STRING_TYPE_WIDE32;
+					} else if (is_wide_le) {
+						str_type = RZ_STRING_TYPE_WIDE;
+					} else {
+						str_type = RZ_STRING_TYPE_ASCII;
+					}
+				} else {
+					str_type = RZ_STRING_TYPE_ASCII;
+				}
+			} else if (type == RZ_STRING_TYPE_UTF8) {
+				str_type = RZ_STRING_TYPE_ASCII; // initial assumption
+			} else {
+				str_type = type;
+			}
 		}
+
 		runes = 0;
 		str_start = needle;
 
@@ -79,6 +105,16 @@ RZ_API int rz_scan_strings(RzList *list, RzBuffer *buf_to_scan,
 				}
 			} else if (str_type == RZ_STRING_TYPE_WIDE) {
 				rc = rz_utf16le_decode(buf + needle - from, to - needle, &r);
+				if (rc == 1) {
+					rc = 2;
+				}
+			} else if (str_type == RZ_STRING_TYPE_WIDE32_BE) {
+				rc = rz_utf32be_decode(buf + needle - from, to - needle, &r);
+				if (rc) {
+					rc = 4;
+				}
+			} else if (str_type == RZ_STRING_TYPE_WIDE_BE) {
+				rc = rz_utf16be_decode(buf + needle - from, to - needle, &r);
 				if (rc == 1) {
 					rc = 2;
 				}
@@ -198,11 +234,27 @@ RZ_API int rz_scan_strings(RzList *list, RzBuffer *buf_to_scan,
 					}
 				}
 				break;
+			case RZ_STRING_TYPE_WIDE_BE:
+				if (str_start - from > 1) {
+					const ut8 *p = buf + str_start - 2 - from;
+					if (p[0] == 0xfe && p[1] == 0xff) {
+						str_start -= 2; // \xfe\xff
+					}
+				}
+				break;
 			case RZ_STRING_TYPE_WIDE32:
 				if (str_start - from > 3) {
 					const ut8 *p = buf + str_start - 4 - from;
-					if (p[0] == 0xff && p[1] == 0xfe) {
+					if (p[0] == 0xff && p[1] == 0xfe && !p[2] && !p[3]) {
 						str_start -= 4; // \xff\xfe\x00\x00
+					}
+				}
+				break;
+			case RZ_STRING_TYPE_WIDE32_BE:
+				if (str_start - from > 3) {
+					const ut8 *p = buf + str_start - 4 - from;
+					if (!p[0] && !p[1] && p[2] == 0xfe && p[3] == 0xff) {
+						str_start -= 4; // \x00\x00\xfe\xff
 					}
 				}
 				break;
