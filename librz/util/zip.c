@@ -243,6 +243,10 @@ RZ_API bool rz_deflatew_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, 
 		err = deflate(&stream, flush);
 		if (err < 0) {
 			RZ_LOG_ERROR("deflate error: %d %s\n", err, gzerr(-err));
+			deflateEnd(&stream);
+			free(src_tmpbuf);
+			free(dst_tmpbuf);
+			return false;
 		}
 
 		dst_cursor += rz_buf_write_at(dst, dst_cursor, dst_tmpbuf, stream.total_out);
@@ -314,6 +318,10 @@ RZ_API bool rz_inflatew_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, 
 		err = inflate(&stream, flush);
 		if (err < 0) {
 			RZ_LOG_ERROR("inflate error: %d %s\n", err, gzerr(-err));
+			inflateEnd(&stream);
+			free(src_tmpbuf);
+			free(dst_tmpbuf);
+			return false;
 		}
 
 		dst_cursor += rz_buf_write_at(dst, dst_cursor, dst_tmpbuf, stream.total_out);
