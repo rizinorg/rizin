@@ -14,7 +14,7 @@ struct {
 void check_os() {
 #if __APPLE__
 	for (int i = 0; i < 3; i++) {
-		test_cases[i].deflated[9] = 0x13 // set OS bit for MacOS
+		test_cases[i].deflated[9] = 0x13; // set OS bit for MacOS
 	}
 #endif
 }
