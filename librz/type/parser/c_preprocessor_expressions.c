@@ -295,6 +295,7 @@ static void expr_cond(CPreprocessorState *state) {
 	CPreprocessorCursorState *cur = state->cur;
 	CPreprocessorOptions *opts = state->opts;
 	if (cur->tok == '?') {
+		// shift vtop pointer/vector and put a duplicate of the top element
 		vpushv(vtop);
 		next(state);
 		if (cur->tok != ':' || !opts->gnu_ext) {
@@ -320,6 +321,7 @@ static void expr_eq(CPreprocessorState *state) {
 		if (t == '=') {
 			expr_eq(state);
 		} else {
+			// shift vtop pointer/vector and put a duplicate of the top element
 			vpushv(vtop);
 			expr_eq(state);
 		}
