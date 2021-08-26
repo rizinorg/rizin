@@ -213,6 +213,7 @@ RZ_API bool rz_deflatew_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, 
 	rz_return_val_if_fail(block_size > 0, false);
 
 	int err = 0, flush = Z_NO_FLUSH;
+	bool ret = true;
 	ut64 dst_cursor = 0, src_cursor = 0;
 	ut64 src_readlen = 0;
 	z_stream stream;
@@ -243,10 +244,8 @@ RZ_API bool rz_deflatew_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, 
 		err = deflate(&stream, flush);
 		if (err < 0) {
 			RZ_LOG_ERROR("deflate error: %d %s\n", err, gzerr(-err));
-			deflateEnd(&stream);
-			free(src_tmpbuf);
-			free(dst_tmpbuf);
-			return false;
+			ret = false;
+			goto return_goto;
 		}
 
 		dst_cursor += rz_buf_write_at(dst, dst_cursor, dst_tmpbuf, stream.total_out);
@@ -255,12 +254,14 @@ RZ_API bool rz_deflatew_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, 
 	if (src_consumed) {
 		*src_consumed = src_cursor;
 	}
+	ret = rz_buf_resize(dst, dst_cursor);
 
+return_goto:
 	deflateEnd(&stream);
 	free(src_tmpbuf);
 	free(dst_tmpbuf);
 
-	return rz_buf_resize(dst, dst_cursor);
+	return ret;
 }
 
 /**
@@ -287,6 +288,7 @@ RZ_API bool rz_inflatew_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, 
 	rz_return_val_if_fail(block_size > 0, false);
 
 	int err = 0, flush = Z_NO_FLUSH;
+	bool ret = true;
 	ut64 dst_cursor = 0, src_cursor = 0;
 	ut64 src_readlen = 0;
 	z_stream stream;
@@ -318,10 +320,8 @@ RZ_API bool rz_inflatew_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, 
 		err = inflate(&stream, flush);
 		if (err < 0) {
 			RZ_LOG_ERROR("inflate error: %d %s\n", err, gzerr(-err));
-			inflateEnd(&stream);
-			free(src_tmpbuf);
-			free(dst_tmpbuf);
-			return false;
+			ret = false;
+			goto return_goto;
 		}
 
 		dst_cursor += rz_buf_write_at(dst, dst_cursor, dst_tmpbuf, stream.total_out);
@@ -331,9 +331,10 @@ RZ_API bool rz_inflatew_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, 
 		*src_consumed = src_cursor;
 	}
 
+return_goto:
 	inflateEnd(&stream);
 	free(src_tmpbuf);
 	free(dst_tmpbuf);
 
-	return true;
+	return ret;
 }
