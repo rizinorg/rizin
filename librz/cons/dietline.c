@@ -243,7 +243,7 @@ do_it_again:
 	if (rz_cons_singleton()->term_xterm) {
 		ret = ReadFile(h, buf, 1, &out, NULL);
 	} else {
-		ret = ReadConsoleInput(h, &irInBuf, 1, &out);
+		ret = ReadConsoleInputW(h, &irInBuf, 1, &out);
 	}
 	rz_cons_sleep_end(bed);
 	if (ret < 1) {
@@ -252,7 +252,7 @@ do_it_again:
 	if (irInBuf.EventType == KEY_EVENT) {
 		if (irInBuf.Event.KeyEvent.bKeyDown) {
 			if (irInBuf.Event.KeyEvent.uChar.UnicodeChar) {
-				char *tmp = rz_sys_conv_win_to_utf8_l((PTCHAR)&irInBuf.Event.KeyEvent.uChar, 1);
+				char *tmp = rz_utf16_to_utf8_l(&irInBuf.Event.KeyEvent.uChar.UnicodeChar, 1);
 				if (!tmp) {
 					return 0;
 				}
@@ -1531,15 +1531,11 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 			HANDLE hClipBoard;
 			PTCHAR clipText;
 			if (OpenClipboard(NULL)) {
-#if UNICODE
 				hClipBoard = GetClipboardData(CF_UNICODETEXT);
-#else
-				hClipBoard = GetClipboardData(CF_TEXT);
-#endif
 				if (hClipBoard) {
 					clipText = GlobalLock(hClipBoard);
 					if (clipText) {
-						char *txt = rz_sys_conv_win_to_utf8(clipText);
+						char *txt = rz_utf16_to_utf8(clipText);
 						if (!txt) {
 							RZ_LOG_ERROR("Failed to allocate memory\n");
 							break;

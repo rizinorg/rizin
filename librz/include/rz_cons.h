@@ -17,6 +17,7 @@ extern "C" {
 #include <rz_util/rz_str.h>
 #include <rz_util/rz_str_constpool.h>
 #include <rz_util/rz_sys.h>
+#include <rz_util/rz_utf8.h>
 #include <rz_util/rz_file.h>
 #include <rz_vector.h>
 #include <sdb.h>
