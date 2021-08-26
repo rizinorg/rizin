@@ -2,31 +2,33 @@ d "/ immext(##0x0)" 00400000 0x0
 d "/ immext(##0x40)" 01400000 0x0
 d "/ immext(##0xffffffc0)" ff7fff0f 0x0
 
-d "[     R0 = ##0x101" 20e00078
-d "[     R5 = add(clb(R31),#-0x1)" 05ff3f8c
-d "[     R4 = add(R19,##0x33)" 64c613b0
+d "[     R0 = ##0x101" 20e00078 0x0
+d "[     R5 = add(clb(R31),#-0x1)" 05ff3f8c 0x0
+d "[     R4 = add(R19,##0x33)" 64c613b0 0x0
 
-d "[     nop"  00c0007f 0x10000000
-d "/ R31 = add(R0,##0x2)" 5f4000b0
+d "? nop"  00c0007f 0x10000000 0x0
+d "/ R31 = add(R0,##0x2)" 5f4000b0 0x0
 
-d "[     P0 = tstbit(R6,#0); if (!P0.new) jump:t 0x14" 04e3c611 0xc
-d "[     P0 = tstbit(R6,#0); if (!P0.new) jump:t 0x8" fce3f611 0x10
+d "? P0 = tstbit(R6,#0); if (!P0.new) jump:t 0x14" 04e3c611 0xc
+d "? P0 = tstbit(R6,#0); if (!P0.new) jump:t 0x8" fce3f611 0x10
 
 d "[     R7 = ##0x4 ; R0 = #-1" 003a4728 0x0
-d "[     R1:0 = memd(R29+#0x40) ; if (P0) dealloc_return" 441f403e
-d "[     R7:6 = memd(R29+#0x40) ; if (!P0) dealloc_return" 451f433e
-d "[     R23:22 = combine(#0,#0x2) ; R17:16 = memd(R29+#0x40)" 443e475c
-d "[     if (!P0.new) R23 = #0 ; jumpr R31" c03f5f5a
+d "[     R1:0 = memd(R29+#0x40) ; if (P0) dealloc_return" 441f403e 0x0
+d "[     R7:6 = memd(R29+#0x40) ; if (!P0) dealloc_return" 451f433e 0x0
+d "[     R23:22 = combine(#0,#0x2) ; R17:16 = memd(R29+#0x40)" 443e475c 0x0
+d "[     if (!P0.new) R23 = #0 ; jumpr R31" c03f5f5a 0x0
 
-d "[     G9:8 = R9:8" 08c00863
-d "[     GELR = R31" 00c01f62
+d "[     G9:8 = R9:8" 08c00863 0x0
+d "[     GELR = R31" 00c01f62 0x0
 
-d "/ R11:10 = memb_fifo(R12++M0:brev)" 0a408c9e
-d "[     R15:14 = memb_fifo(R7=##0x3)" 6ed0879a
-dB "[     C21:20 = R19:18" 14c03263
-d "[     C17:16 = R19:18" 10c03263
-d "[     C19:18 = R31:30" 12c03e63
+d "/ R11:10 = memb_fifo(R12++M0:brev)" 0a408c9e 0x0
+d "[     R15:14 = memb_fifo(R7=##0x3)" 6ed0879a 0x0
+dB "[     C21:20 = R19:18" 14c03263 0x0
+d "[     C17:16 = R19:18" 10c03263 0x0
+d "[     C19:18 = R31:30" 12c03e63 0x0
 
 dB "HVX MISSING" 4160d719
 
-d "[     loop0(0x6c,#0x10)" 88c00069 0x68
+d "? loop0(0x6c,#0x10)" 88c00069 0x68
+
+d "? memb(R10=##0x7) = R4" 87c40aab 0x9c
