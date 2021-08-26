@@ -579,13 +579,15 @@ RzList *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 				}
 			}
 
-			rz_list_append(relocs, reloc);
 			if (rel.flags & ADDITIVE) {
 				reloc->additive = 1;
+				rz_list_append(relocs, reloc);
 			} else {
 				do {
+					rz_list_append(relocs, reloc);
 					ut16 tmp_offset;
 					if (!rz_buf_read_le16_at(bin->buf, reloc->paddr, &tmp_offset)) {
+						reloc = NULL;
 						break;
 					}
 
@@ -598,8 +600,8 @@ RzList *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 					}
 					*reloc = *tmp;
 					reloc->paddr = seg->paddr + offset;
-					rz_list_append(relocs, reloc);
 				} while (offset != 0xFFFF);
+				free(reloc);
 			}
 
 			off += sizeof(NE_image_reloc_item);
