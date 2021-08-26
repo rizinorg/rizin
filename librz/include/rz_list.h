@@ -39,7 +39,6 @@ typedef struct rz_oflist_t {
 	RFList *array; // statical readonly cache of linked list as a pointer array
 } ROFList;
 
-
 #ifdef RZ_API
 
 #define rz_list_foreach(list, it, pos) \
