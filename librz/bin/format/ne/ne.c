@@ -421,7 +421,7 @@ RzList *rz_bin_ne_get_entrypoints(rz_bin_ne_obj_t *bin) {
 				return NULL;
 			}
 			off++;
-			if (!bundle_type || bundle_type >= bin->ne_header->SegCount) { // Skip
+			if (!bundle_type) { // Skip
 				off--;
 				free(entry);
 				break;
@@ -432,14 +432,14 @@ RzList *rz_bin_ne_get_entrypoints(rz_bin_ne_obj_t *bin) {
 				ut16 segoff = *(ut16 *)(bin->entry_table + off);
 				if (!segnum) {
 					free(entry);
-					break;
+					continue;
 				}
 				entry->paddr = (ut64)bin->segment_entries[segnum - 1].offset * bin->alignment + segoff;
 			} else { // Fixed
 				ut16 *p = (ut16 *)(bin->entry_table + off);
-				if (off >= bin->ne_header->EntryTableLength) {
+				if (off >= bin->ne_header->EntryTableLength || bundle_type > bin->ne_header->SegCount) {
 					free(entry);
-					break;
+					continue;
 				}
 				entry->paddr = (ut64)bin->segment_entries[bundle_type - 1].offset * bin->alignment + (*p);
 			}
