@@ -4,6 +4,7 @@
 #include <rz_types.h>
 #include <rz_flist.h>
 #include <sdb.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -37,7 +38,7 @@ typedef struct rz_oflist_t {
 	ROFList_Parent super; // super class
 	RFList *array; // statical readonly cache of linked list as a pointer array
 } ROFList;
-#endif
+
 
 #ifdef RZ_API
 
@@ -116,4 +117,5 @@ RZ_API RZ_BORROW RzListIter *rz_list_find(RZ_NONNULL const RzList *list, const v
 }
 #endif
 
+#endif
 #endif
