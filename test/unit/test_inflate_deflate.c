@@ -11,14 +11,6 @@ struct {
 	{ "1234567890abcdefghijklmnopqrstuvwxyz\n", "\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\x03\x33\x34\x32\x36\x31\x35\x33\xb7\xb0\x34\x48\x4c\x4a\x4e\x49\x4d\x4b\xcf\xc8\xcc\xca\xce\xc9\xcd\xcb\x2f\x28\x2c\x2a\x2e\x29\x2d\x2b\xaf\xa8\xac\xe2\x02\x00\x9f\x79\xdc\xdb\x25\x00\x00\x00", 57 }
 };
 
-int inflated_lengths[3];
-
-void init_lengths() {
-	for (int i = 0; i < 3; i++) {
-		inflated_lengths[i] = strlen(test_cases[i].inflated);
-	}
-}
-
 void check_os() {
 #if __APPLE__
 	for (int i = 0; i < 3; i++) {
@@ -31,7 +23,7 @@ bool test_rz_inflate(void) {
 	for (int i = 0; i < 3; i++) {
 		unsigned char *inflated = rz_inflate((unsigned char *)test_cases[i].deflated, test_cases[i].deflated_length, NULL, NULL);
 		mu_assert_notnull(inflated, "rz_inflate returned null");
-		mu_assert_memeq(inflated, (unsigned char *)test_cases[i].inflated, inflated_lengths[i], "rz_inflate failed");
+		mu_assert_memeq(inflated, (unsigned char *)test_cases[i].inflated, strlen(test_cases[i].inflated), "rz_inflate failed");
 		free(inflated);
 	}
 
@@ -40,7 +32,7 @@ bool test_rz_inflate(void) {
 
 bool test_rz_deflate(void) {
 	for (int i = 0; i < 3; i++) {
-		unsigned char *deflated = rz_deflate((unsigned char *)test_cases[i].inflated, inflated_lengths[i], NULL, NULL);
+		unsigned char *deflated = rz_deflate((unsigned char *)test_cases[i].inflated, strlen(test_cases[i].inflated), NULL, NULL);
 		mu_assert_notnull(deflated, "rz_deflate returned null");
 		mu_assert_memeq(deflated, (unsigned char *)test_cases[i].deflated, test_cases[i].deflated_length, "rz_deflate failed");
 		free(deflated);
@@ -52,13 +44,13 @@ bool test_rz_deflate(void) {
 bool test_rz_inflate_buf(void) {
 	for (int i = 0; i < 3; i++) {
 		RzBuffer *deflated_buf = rz_buf_new_with_bytes((unsigned char *)test_cases[i].deflated, test_cases[i].deflated_length);
-		RzBuffer *inflated_buf = rz_buf_new_empty(inflated_lengths[i]);
+		RzBuffer *inflated_buf = rz_buf_new_empty(strlen(test_cases[i].inflated));
 		mu_assert_true(rz_inflate_buf(deflated_buf, inflated_buf, 1 << 13, NULL), "rz_inflate_buf failed");
-		unsigned char *inflated = malloc(inflated_lengths[i]);
-		rz_buf_read(inflated_buf, inflated, inflated_lengths[i]);
+		unsigned char *inflated = malloc(strlen(test_cases[i].inflated));
+		rz_buf_read(inflated_buf, inflated, strlen(test_cases[i].inflated));
 
 		mu_assert_notnull(inflated, "rz_buf_read failed");
-		mu_assert_memeq(inflated, (unsigned char *)test_cases[i].inflated, inflated_lengths[i], "rz_inflate_buf does not return expected output");
+		mu_assert_memeq(inflated, (unsigned char *)test_cases[i].inflated, strlen(test_cases[i].inflated), "rz_inflate_buf does not return expected output");
 		free(inflated);
 	}
 
@@ -67,7 +59,7 @@ bool test_rz_inflate_buf(void) {
 
 bool test_rz_deflate_buf(void) {
 	for (int i = 0; i < 3; i++) {
-		RzBuffer *inflated_buf = rz_buf_new_with_bytes((unsigned char *)test_cases[i].inflated, inflated_lengths[i]);
+		RzBuffer *inflated_buf = rz_buf_new_with_bytes((unsigned char *)test_cases[i].inflated, strlen(test_cases[i].inflated));
 		RzBuffer *deflated_buf = rz_buf_new_empty(test_cases[i].deflated_length);
 		mu_assert_true(rz_deflate_buf(inflated_buf, deflated_buf, 1 << 18, NULL), "rz_deflate_buf failed");
 		unsigned char *deflated = malloc(test_cases[i].deflated_length);
@@ -82,7 +74,6 @@ bool test_rz_deflate_buf(void) {
 }
 
 int all_tests() {
-	init_lengths();
 	check_os();
 	mu_run_test(test_rz_inflate);
 	mu_run_test(test_rz_deflate);
