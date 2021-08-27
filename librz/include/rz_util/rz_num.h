@@ -97,6 +97,7 @@ RZ_API int rz_num_str_len(const char *str);
 RZ_API int rz_num_str_split(char *str);
 RZ_API RzList *rz_num_str_split_list(char *str);
 RZ_API void *rz_num_dup(ut64 n);
+RZ_API size_t rz_num_base_of_string(RNum *num, RZ_NONNULL const char *str);
 RZ_API double rz_num_cos(double a);
 RZ_API double rz_num_sin(double a);
 RZ_API double rz_num_get_float(RNum *num, const char *str);

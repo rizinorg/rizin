@@ -913,3 +913,49 @@ RZ_API double rz_num_cos(double a) {
 RZ_API double rz_num_sin(double a) {
 	return sin(a);
 }
+
+/**
+ * \brief Convert the base suffix to the numeric value
+ */
+RZ_API size_t rz_num_base_of_string(RNum *num, RZ_NONNULL const char *str) {
+	rz_return_val_if_fail(num && str, 10);
+	size_t base = 10;
+	if (rz_str_startswith(str, "10u") || rz_str_startswith(str, "du")) {
+		base = 11;
+	} else {
+		switch (str[0]) {
+		case 's':
+			base = 1;
+			break;
+		case 'b':
+			base = 2;
+			break;
+		case 'p':
+			base = 3;
+			break;
+		case 'o':
+			base = 8;
+			break;
+		case 'd':
+			base = 10;
+			break;
+		case 'h':
+			base = 16;
+			break;
+		case 'i':
+			base = 32;
+			break;
+		case 'q':
+			base = 64;
+			break;
+		case 'S':
+			// IPv4 address
+			base = 80;
+			break;
+		default:
+			// syscall
+			base = rz_num_math(num, str);
+		}
+	}
+	return base;
+}

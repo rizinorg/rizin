@@ -1749,10 +1749,8 @@ RZ_API int rz_core_visual_trackflags(RzCore *core) {
 				if (rz_cons_fgets(line, sizeof(line), 0, NULL) < 0) {
 					cmd[0] = '\0';
 				}
-				int res = snprintf(cmd, sizeof(cmd), "afr %s %s", line, fs2);
-				if (res < sizeof(cmd)) {
-					rz_core_cmd(core, cmd, 0);
-				}
+				ut64 addr = rz_num_math(core->num, line);
+				rz_core_analysis_function_add(core, fs2, addr, true);
 				rz_cons_set_raw(1);
 				rz_cons_show_cursor(false);
 			}
@@ -1769,8 +1767,8 @@ RZ_API int rz_core_visual_trackflags(RzCore *core) {
 		case '\r':
 		case '\n':
 			if (menu == 1) {
-				sprintf(cmd, "s %s", fs2);
-				rz_core_cmd(core, cmd, 0);
+				ut64 addr = rz_num_math(core->num, fs2);
+				rz_core_seek_and_save(core, addr, true);
 				return true;
 			}
 			rz_flag_space_set(core->flags, fs);
@@ -3116,7 +3114,8 @@ onemoretime:
 		rz_cons_show_cursor(true);
 		rz_line_set_prompt("immbase: ");
 		if (rz_cons_fgets(str, sizeof(str), 0, NULL) > 0) {
-			rz_core_cmdf(core, "ahi %s @ 0x%" PFMT64x, str, off);
+			int base = rz_num_base_of_string(core->num, str);
+			rz_analysis_hint_set_immbase(core->analysis, off, base);
 		}
 	} break;
 	case 'I': {
