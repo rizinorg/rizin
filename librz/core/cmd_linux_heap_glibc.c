@@ -29,8 +29,18 @@ RZ_IPI RzCmdStatus rz_cmd_heap_chunk_print_handler(RzCore *core, int argc, const
 RZ_IPI RzCmdStatus rz_cmd_heap_chunks_graph_handler(RzCore *core, int argc, const char **argv) {
 	// RZ_OUTPUT_MODE_LONG_JSON mode workaround for graph
 	RzCmdStateOutput state = { 0 };
-	state.mode = RZ_OUTPUT_MODE_LONG_JSON;
-	call_handler(rz_cmd_heap_chunks_print_handler, argc, argv, &state);
+	if (!rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_LONG)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzCmdStatus res;
+	if (core->rasm->bits == 64) {
+		res = rz_cmd_heap_chunks_print_handler_64(core, argc, argv, &state);
+	} else {
+		res = rz_cmd_heap_chunks_print_handler_32(core, argc, argv, &state);
+	}
+	rz_cmd_state_output_print(&state);
+	rz_cmd_state_output_fini(&state);
+	return res;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_heap_info_print_handler(RzCore *core, int argc, const char **argv) {
