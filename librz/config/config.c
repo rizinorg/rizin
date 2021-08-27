@@ -67,55 +67,45 @@ static void config_print_value_json(RzConfig *cfg, RzConfigNode *node) {
 	free(sval);
 }
 
-static void config_print_node(RzConfig *cfg, const char *pfx, const char *sfx, bool verbose, bool json) {
+static void config_print_node(RzConfig *cfg, const char *pfx, const char *sfx, RzOutputMode mode) {
 	rz_return_if_fail(cfg && pfx && sfx);
 	char *option;
 	bool isFirst;
 	RzConfigNode *node = NULL;
-	RzListIter *iter, *iter2;
-	bool is_ro;
+	RzListIter *iter, *iter_options;
 	char *es = NULL;
 
-	if (json) {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		PJ *pj = pj_new();
 		if (!pj) {
-			return;	
+			return;
 		}
-		if (verbose) {
-			pj_a(pj);
-			rz_list_foreach (cfg->nodes, iter, node) {
-				pj_o(pj);
-				pj_ks(pj, "name", node->name);
-				pj_ks(pj, "value", node->value);
-				pj_ks(pj, "type", rz_config_node_type(node));
-				es = rz_str_escape(node->desc);
-				if (es) {
-					pj_ks(pj, "desc", es);
-					free(es);
-				}
-				is_ro = rz_str_bool(rz_config_node_is_ro(node));
-				if (!is_ro)
-					pj_kb(pj, "ro", true);
-				else
-					pj_kb(pj, "ro", false);
-				if (!rz_list_empty(node->options)) {
-					pj_ka(pj, "options");            
-					rz_list_foreach(node->options, iter2, option) {
-						pj_s(pj, option);  
-					}
-					pj_end(pj);
+		pj_a(pj);
+		rz_list_foreach (cfg->nodes, iter, node) {
+			pj_o(pj);
+			pj_ks(pj, "name", node->name);
+			pj_ks(pj, "value", node->value);
+			pj_ks(pj, "type", rz_config_node_type(node));
+			es = rz_str_escape(node->desc);
+			if (es) {
+				pj_ks(pj, "desc", es);
+				free(es);
+			}
+			pj_kb(pj, "ro", rz_config_node_is_ro(node));
+			if (!rz_list_empty(node->options)) {
+				pj_ka(pj, "options");
+				rz_list_foreach (node->options, iter_options, option) {
+					pj_s(pj, option);
 				}
 				pj_end(pj);
 			}
 			pj_end(pj);
-			cfg->cb_printf("%s\n", pj_string (pj));
-			pj_free (pj);			
-		} else {
-			cfg->cb_printf("\"%s\":", node->name);
-			config_print_value_json(cfg, node);
 		}
-	} else {
-		if (verbose) {
+		pj_end(pj);
+		cfg->cb_printf("%s\n", pj_string(pj));
+		pj_free(pj);
+	} else if (mode == RZ_OUTPUT_MODE_LONG) {
+		rz_list_foreach (cfg->nodes, iter, node) {
 			cfg->cb_printf("%s%s = %s%s %s; %s", pfx,
 				node->name, node->value, sfx,
 				rz_config_node_is_ro(node) ? "(ro)" : "",
@@ -123,7 +113,7 @@ static void config_print_node(RzConfig *cfg, const char *pfx, const char *sfx, b
 			if (!rz_list_empty(node->options)) {
 				isFirst = true;
 				cfg->cb_printf(" [");
-				rz_list_foreach (node->options, iter, option) {
+				rz_list_foreach (node->options, iter_options, option) {
 					if (isFirst) {
 						isFirst = false;
 					} else {
@@ -134,10 +124,10 @@ static void config_print_node(RzConfig *cfg, const char *pfx, const char *sfx, b
 				cfg->cb_printf("]");
 			}
 			cfg->cb_printf("\n");
-		} else {
-			cfg->cb_printf("%s%s = %s%s\n", pfx,
-				node->name, node->value, sfx);
 		}
+	} else {
+		cfg->cb_printf("%s%s = %s%s\n", pfx,
+			node->name, node->value, sfx);
 	}
 }
 
@@ -148,8 +138,6 @@ RZ_API void rz_config_list(RzConfig *cfg, const char *str, int rad) {
 	const char *sfx = "";
 	const char *pfx = "";
 	int len = 0;
-	bool verbose = false;
-	bool json = false;
 
 	if (RZ_STR_ISNOTEMPTY(str)) {
 		str = rz_str_trim_head_ro(str);
@@ -157,7 +145,6 @@ RZ_API void rz_config_list(RzConfig *cfg, const char *str, int rad) {
 		if (len > 0 && str[0] == 'j') {
 			str++;
 			len--;
-			json = true;
 			rad = 'J';
 		}
 		if (len > 0 && str[0] == ' ') {
@@ -176,11 +163,7 @@ RZ_API void rz_config_list(RzConfig *cfg, const char *str, int rad) {
 		sfx = "\"";
 	/* fallthrou */
 	case 0:
-		rz_list_foreach (cfg->nodes, iter, node) {
-			if (!str || (str && (!strncmp(str, node->name, len)))) {
-			config_print_node(cfg, pfx, sfx, verbose, false);
-			}
-		}
+		config_print_node(cfg, pfx, sfx, RZ_OUTPUT_MODE_LONG);
 		break;
 	case 2:
 		rz_list_foreach (cfg->nodes, iter, node) {
@@ -229,8 +212,7 @@ RZ_API void rz_config_list(RzConfig *cfg, const char *str, int rad) {
 		}
 		break;
 	case 'v':
-		verbose = true;
-		config_print_node(cfg, pfx, sfx, verbose, true);
+		config_print_node(cfg, pfx, sfx, RZ_OUTPUT_MODE_JSON);
 		break;
 	case 'q':
 		rz_list_foreach (cfg->nodes, iter, node) {
@@ -240,10 +222,9 @@ RZ_API void rz_config_list(RzConfig *cfg, const char *str, int rad) {
 		}
 		break;
 	case 'J':
-		verbose = true;
 	/* fallthrou */
 	case 'j':
-		config_print_node(cfg, pfx, sfx, verbose, true);
+		config_print_node(cfg, pfx, sfx, RZ_OUTPUT_MODE_JSON);
 		break;
 	}
 }
