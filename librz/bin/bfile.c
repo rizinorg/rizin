@@ -107,18 +107,65 @@ static void print_string(RzBinFile *bf, RzBinString *string, int raw, PJ *pj) {
 	}
 }
 
+static inline void detected_string_to_bin_string(RzBinString *dst, RzDetectedString *src) {
+	int type = -1;
+	switch (src->type) {
+	case RZ_STRING_ENC_LATIN1:
+		type = RZ_STRING_TYPE_ASCII;
+		break;
+	case RZ_STRING_ENC_UTF8:
+		type = RZ_STRING_TYPE_UTF8;
+		break;
+	case RZ_STRING_ENC_UTF16LE:
+		type = RZ_STRING_TYPE_WIDE_LE;
+		break;
+	case RZ_STRING_ENC_UTF32LE:
+		type = RZ_STRING_TYPE_WIDE32_LE;
+		break;
+	case RZ_STRING_ENC_UTF16BE:
+		type = RZ_STRING_TYPE_WIDE_BE;
+		break;
+	case RZ_STRING_ENC_UTF32BE:
+		type = RZ_STRING_TYPE_WIDE32_BE;
+		break;
+	case RZ_STRING_ENC_GUESS:
+		type = RZ_STRING_TYPE_DETECT;
+		break;
+	default:
+		break;
+	}
+
+	dst->string = src->string;
+	dst->size = src->size;
+	dst->length = src->length;
+	dst->type = type;
+	dst->paddr = src->addr;
+	dst->vaddr = src->addr;
+
+	free(src);
+}
+
 static int string_scan_range(RzList *list, RzBinFile *bf, int min,
-	const ut64 from, const ut64 to, int type, int raw, RzBinSection *section) {
+	const ut64 from, const ut64 to, RzStrEnc type, int raw, RzBinSection *section) {
 
 	rz_return_val_if_fail(bf, -1);
 
 	RzListIter *it;
-	RzBinString *bs;
+	RzDetectedString *str;
 	RzBinSection *s = NULL;
 
 	RzList *str_list = rz_list_new();
+	if (!str_list) {
+		return -1;
+	}
 
-	int count = rz_scan_strings(str_list, bf->buf, from, to, min, type);
+	RzUtilStrScanOptions scan_opt = {
+		.buf_size = 2048,
+		.max_uni_blocks = 4,
+		.min_str_length = min
+	};
+
+	int count = rz_scan_strings(&scan_opt, str_list, bf->buf, from, to, type);
 	if (count <= 0) {
 		rz_list_free(str_list);
 		return 0;
@@ -132,14 +179,19 @@ static int string_scan_range(RzList *list, RzBinFile *bf, int min,
 		}
 	}
 
-	rz_list_foreach (str_list, it, bs) {
+	int ord = 0;
+	rz_list_foreach (str_list, it, str) {
 		if (!s) {
 			if (section) {
 				s = section;
 			} else if (bf->o) {
-				s = rz_bin_get_section_at(bf->o, bs->paddr, false);
+				s = rz_bin_get_section_at(bf->o, str->addr, false);
 			}
 		}
+
+		RzBinString *bs = RZ_NEW0(RzBinString);
+		detected_string_to_bin_string(bs, str);
+		bs->ordinal = ord++;
 
 		if (s) {
 			bs->vaddr = bs->paddr - s->paddr + s->vaddr;
@@ -224,22 +276,23 @@ static void get_strings_range(RzBinFile *bf, RzList *list, int min, int raw, ut6
 			return;
 		}
 	}
-	int type;
+
+	RzStrEnc type;
 	const char *enc = bf->rbin->strenc;
 	if (!enc) {
-		type = RZ_STRING_TYPE_DETECT;
+		type = RZ_STRING_ENC_GUESS;
 	} else if (!strcmp(enc, "latin1")) {
-		type = RZ_STRING_TYPE_ASCII;
+		type = RZ_STRING_ENC_LATIN1;
 	} else if (!strcmp(enc, "utf8")) {
-		type = RZ_STRING_TYPE_UTF8;
+		type = RZ_STRING_ENC_UTF8;
 	} else if (!strcmp(enc, "utf16le")) {
-		type = RZ_STRING_TYPE_WIDE;
+		type = RZ_STRING_ENC_UTF16LE;
 	} else if (!strcmp(enc, "utf32le")) {
-		type = RZ_STRING_TYPE_WIDE32;
+		type = RZ_STRING_ENC_UTF32LE;
 	} else if (!strcmp(enc, "utf16be")) {
-		type = RZ_STRING_TYPE_WIDE_BE;
+		type = RZ_STRING_ENC_UTF16BE;
 	} else if (!strcmp(enc, "utf32be")) {
-		type = RZ_STRING_TYPE_WIDE32_BE;
+		type = RZ_STRING_ENC_UTF32BE;
 	} else {
 		eprintf("ERROR: encoding %s not supported\n", enc);
 		return;

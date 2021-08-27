@@ -161,8 +161,8 @@ enum {
 	RZ_STRING_TYPE_DETECT = '?',
 	RZ_STRING_TYPE_ASCII = 'a',
 	RZ_STRING_TYPE_UTF8 = 'u',
-	RZ_STRING_TYPE_WIDE = 'w', // utf16 / widechar string
-	RZ_STRING_TYPE_WIDE32 = 'W', // utf32
+	RZ_STRING_TYPE_WIDE_LE = 'w', // utf16 / widechar string
+	RZ_STRING_TYPE_WIDE32_LE = 'W', // utf32
 	RZ_STRING_TYPE_WIDE_BE = 'x', // utf16-be / widechar string
 	RZ_STRING_TYPE_WIDE32_BE = 'X', // utf32-be
 	RZ_STRING_TYPE_BASE64 = 'b',
@@ -935,7 +935,7 @@ RZ_API bool rz_bin_use_arch(RzBin *bin, const char *arch, int bits, const char *
 RZ_API RzBuffer *rz_bin_create(RzBin *bin, const char *plugin_name, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt);
 RZ_API RzBuffer *rz_bin_package(RzBin *bin, const char *type, const char *file, RzList *files);
 
-RZ_API const char *rz_bin_string_type(int type);
+RZ_API RZ_OWN const char *rz_bin_string_type(int type);
 RZ_API const char *rz_bin_entry_type_string(int etype);
 
 RZ_API bool rz_bin_file_object_new_from_xtr_data(RzBin *bin, RzBinFile *bf, RzBinObjectLoadOptions *opts, RzBinXtrData *data);
