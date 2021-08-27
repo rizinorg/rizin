@@ -4,6 +4,7 @@
 #include "rz_test.h"
 #include <assert.h>
 #include <rz_cons.h>
+#include <rz_main.h>
 
 #define Color_INSERT   Color_BGREEN
 #define Color_DELETE   Color_BRED
@@ -169,7 +170,7 @@ static bool rz_test_chdir_fromtest(const char *test_path) {
 	return found;
 }
 
-int main(int argc, char **argv) {
+int rz_test_main(int argc, const char **argv) {
 	int workers_count = WORKERS_DEFAULT;
 	bool verbose = false;
 	bool nothing = false;
@@ -1081,4 +1082,11 @@ static void interact_commands(RzTestResultInfo *result, RzPVector *fixup_results
 	replace_cmd_kv_file(result->test->path, test->cmds.line_begin, test->cmds.line_end, "CMDS", newcmds, fixup_results);
 	free(name);
 	free(newcmds);
+}
+
+int MAIN_NAME(int argc, const ARGV_TYPE **argv) {
+	char **utf8_argv = ARGV_TYPE_TO_UTF8(argc, argv);
+	int ret = rz_test_main(argc, (const char **)utf8_argv);
+	FREE_UTF8_ARGV(argc, utf8_argv);
+	return ret;
 }
