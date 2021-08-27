@@ -34,7 +34,7 @@ typedef struct rz_type_db_t {
 	HtPP /* <char *, RzCallable *> */ *callables; //< name -> RzCallable (function type)
 	RzTypeTarget *target;
 	RzTypeParser *parser;
-	RNum *num;
+	RzNum *num;
 	RzIOBind iob; // for RzIO in formats
 } RzTypeDB;
 
