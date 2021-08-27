@@ -13,7 +13,7 @@ bool test_rz_analysis_op_val() {
 	RzAnalysisOp op;
 	SWITCH_TO_ARCH_BITS("x86", 64);
 	// mov rax, [rbx+rcx+4]
-	int len = rz_analysis_op(analysis, &op, 0, "\x48\x8b\x44\x0b\x04", 5, RZ_ANALYSIS_OP_MASK_VAL);
+	int len = rz_analysis_op(analysis, &op, 0, (const ut8 *)"\x48\x8b\x44\x0b\x04", 5, RZ_ANALYSIS_OP_MASK_VAL);
 	mu_assert_eq(len, 5, "Op is of size 5");
 	mu_assert_eq(op.dst->type, RZ_ANALYSIS_VAL_REG, "Destination should be reg");
 	mu_assert_streq(op.dst->reg->name, "rax", "Dst reg should be rax");
