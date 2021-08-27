@@ -18,6 +18,7 @@ if get_option('enable_tests')
     'analysis_function',
     'analysis_hints',
     'analysis_meta',
+    'analysis_op',
     'analysis_var',
     'analysis_global_var',
     'analysis_xrefs',

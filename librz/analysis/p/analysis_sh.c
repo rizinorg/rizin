@@ -203,12 +203,14 @@ static char *regs[] = { "r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r
 
 static RzAnalysisValue *analysis_fill_ai_rg(RzAnalysis *analysis, int idx) {
 	RzAnalysisValue *ret = rz_analysis_value_new();
+	ret->type = RZ_ANALYSIS_VAL_REG;
 	ret->reg = rz_reg_get(analysis->reg, regs[idx], RZ_REG_TYPE_GPR);
 	return ret;
 }
 
 static RzAnalysisValue *analysis_fill_im(RzAnalysis *analysis, st32 v) {
 	RzAnalysisValue *ret = rz_analysis_value_new();
+	ret->type = RZ_ANALYSIS_VAL_IMM;
 	ret->imm = v;
 	return ret;
 }
@@ -216,6 +218,7 @@ static RzAnalysisValue *analysis_fill_im(RzAnalysis *analysis, st32 v) {
 /* Implements @(disp,Rn) , size=1 for .b, 2 for .w, 4 for .l */
 static RzAnalysisValue *analysis_fill_reg_disp_mem(RzAnalysis *analysis, int reg, st64 delta, st64 size) {
 	RzAnalysisValue *ret = analysis_fill_ai_rg(analysis, reg);
+	ret->type = RZ_ANALYSIS_VAL_MEM;
 	ret->memref = size;
 	ret->delta = delta * size;
 	return ret;
@@ -224,6 +227,7 @@ static RzAnalysisValue *analysis_fill_reg_disp_mem(RzAnalysis *analysis, int reg
 /* Rn */
 static RzAnalysisValue *analysis_fill_reg_ref(RzAnalysis *analysis, int reg, st64 size) {
 	RzAnalysisValue *ret = analysis_fill_ai_rg(analysis, reg);
+	ret->type = RZ_ANALYSIS_VAL_MEM;
 	ret->memref = size;
 	return ret;
 }
@@ -231,6 +235,7 @@ static RzAnalysisValue *analysis_fill_reg_ref(RzAnalysis *analysis, int reg, st6
 /* @(R0,Rx) references for all sizes */
 static RzAnalysisValue *analysis_fill_r0_reg_ref(RzAnalysis *analysis, int reg, st64 size) {
 	RzAnalysisValue *ret = analysis_fill_ai_rg(analysis, 0);
+	ret->type = RZ_ANALYSIS_VAL_MEM;
 	ret->regdelta = rz_reg_get(analysis->reg, regs[reg], RZ_REG_TYPE_GPR);
 	ret->memref = size;
 	return ret;
@@ -239,6 +244,7 @@ static RzAnalysisValue *analysis_fill_r0_reg_ref(RzAnalysis *analysis, int reg, 
 // @(disp,PC) for size=2(.w), size=4(.l). disp is 0-extended
 static RzAnalysisValue *analysis_pcrel_disp_mov(RzAnalysis *analysis, RzAnalysisOp *op, ut8 disp, int size) {
 	RzAnalysisValue *ret = rz_analysis_value_new();
+	ret->type = RZ_ANALYSIS_VAL_MEM;
 	if (size == 2) {
 		ret->base = op->addr + 4;
 		ret->delta = disp << 1;
@@ -246,13 +252,14 @@ static RzAnalysisValue *analysis_pcrel_disp_mov(RzAnalysis *analysis, RzAnalysis
 		ret->base = (op->addr + 4) & ~0x03;
 		ret->delta = disp << 2;
 	}
-
+	ret->memref = size;
 	return ret;
 }
 
 //= PC+4+R<reg>
 static RzAnalysisValue *analysis_regrel_jump(RzAnalysis *analysis, RzAnalysisOp *op, ut8 reg) {
 	RzAnalysisValue *ret = rz_analysis_value_new();
+	ret->type = RZ_ANALYSIS_VAL_REG;
 	ret->reg = rz_reg_get(analysis->reg, regs[reg], RZ_REG_TYPE_GPR);
 	ret->base = op->addr + 4;
 	return ret;

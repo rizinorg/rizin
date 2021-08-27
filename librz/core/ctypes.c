@@ -839,22 +839,48 @@ RZ_API void rz_core_link_stroff(RzCore *core, RzAnalysisFunction *fcn) {
 			}
 			i += ret - 1;
 			at += ret;
-			int index = 0;
-			if (aop.ireg) {
-				index = rz_reg_getv(esil->analysis->reg, aop.ireg) * aop.scale;
-			}
 			int j, src_imm = -1, dst_imm = -1;
 			ut64 src_addr = UT64_MAX;
 			ut64 dst_addr = UT64_MAX;
 			for (j = 0; j < 3; j++) {
-				if (aop.src[j] && aop.src[j]->reg && aop.src[j]->reg->name) {
-					src_addr = rz_reg_getv(esil->analysis->reg, aop.src[j]->reg->name) + index;
-					src_imm = aop.src[j]->delta;
+				if (aop.src[j]) {
+					if (aop.src[j]->type == RZ_ANALYSIS_VAL_REG) {
+						if (aop.src[j]->reg && aop.src[j]->reg->name) {
+							src_addr = rz_reg_getv(esil->analysis->reg, aop.src[j]->reg->name);
+						}
+						src_imm = 0;
+					} else if (aop.src[j]->type == RZ_ANALYSIS_VAL_MEM) {
+						if (aop.src[j]->reg && aop.src[j]->reg->name) {
+							src_addr = rz_reg_getv(esil->analysis->reg, aop.src[j]->reg->name);
+							if (aop.src[j]->regdelta && aop.src[j]->regdelta->name) {
+								src_addr += rz_reg_getv(esil->analysis->reg, aop.src[j]->regdelta->name) * aop.src[j]->mul;
+							}
+						}
+						src_imm = aop.src[j]->base + aop.src[j]->delta;
+					} else if (aop.src[j]->type == RZ_ANALYSIS_VAL_IMM) {
+						src_addr = aop.src[j]->imm;
+						src_imm = 0;
+					}
 				}
 			}
-			if (aop.dst && aop.dst->reg && aop.dst->reg->name) {
-				dst_addr = rz_reg_getv(esil->analysis->reg, aop.dst->reg->name) + index;
-				dst_imm = aop.dst->delta;
+			if (aop.dst) {
+				if (aop.dst->type == RZ_ANALYSIS_VAL_REG) {
+					if (aop.dst->reg && aop.dst->reg->name) {
+						dst_addr = rz_reg_getv(esil->analysis->reg, aop.dst->reg->name);
+					}
+					dst_imm = 0;
+				} else if (aop.dst->type == RZ_ANALYSIS_VAL_MEM) {
+					if (aop.dst->reg && aop.dst->reg->name) {
+						dst_addr = rz_reg_getv(esil->analysis->reg, aop.dst->reg->name);
+						if (aop.dst->regdelta && aop.dst->regdelta->name) {
+							dst_addr += rz_reg_getv(esil->analysis->reg, aop.dst->regdelta->name) * aop.dst->mul;
+						}
+					}
+					dst_imm = aop.dst->base + aop.dst->delta;
+				} else if (aop.dst->type == RZ_ANALYSIS_VAL_IMM) {
+					dst_addr = aop.dst->imm;
+					dst_imm = 0;
+				}
 			}
 			RzAnalysisVar *var = rz_analysis_get_used_function_var(core->analysis, aop.addr);
 			if (false) { // src_addr != UT64_MAX || dst_addr != UT64_MAX) {

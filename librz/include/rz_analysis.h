@@ -764,6 +764,7 @@ typedef enum {
 } RzAnalysisValueAccess;
 
 typedef enum {
+	RZ_ANALYSIS_VAL_UNK,
 	RZ_ANALYSIS_VAL_REG,
 	RZ_ANALYSIS_VAL_MEM,
 	RZ_ANALYSIS_VAL_IMM,

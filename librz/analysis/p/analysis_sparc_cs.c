@@ -81,6 +81,7 @@ static void op_fillval(RzAnalysisOp *op, csh handle, cs_insn *insn) {
 		if (INSOP(0).type == SPARC_OP_MEM) {
 			ZERO_FILL(reg);
 			op->src[0] = rz_analysis_value_new();
+			op->src[0]->type = RZ_ANALYSIS_VAL_MEM;
 			op->src[0]->reg = &reg;
 			parse_reg_name(op->src[0]->reg, handle, insn, 0);
 			op->src[0]->delta = INSOP(0).mem.disp;
@@ -90,6 +91,7 @@ static void op_fillval(RzAnalysisOp *op, csh handle, cs_insn *insn) {
 		if (INSOP(1).type == SPARC_OP_MEM) {
 			ZERO_FILL(reg);
 			op->dst = rz_analysis_value_new();
+			op->dst->type = RZ_ANALYSIS_VAL_MEM;
 			op->dst->reg = &reg;
 			parse_reg_name(op->dst->reg, handle, insn, 1);
 			op->dst->delta = INSOP(1).mem.disp;
