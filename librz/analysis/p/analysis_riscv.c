@@ -648,7 +648,7 @@ static int riscv_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		op->dst = RZ_NEW0(RzAnalysisValue);
 		char *argf = strdup(o->args);
 		const char *comma = NULL;
-		int dst_idx, src_idx;
+		int dst_idx = 0, src_idx;
 		if (op->type == RZ_ANALYSIS_OP_TYPE_STORE) {
 			comma = rz_str_rchr(argf, argf + strlen(argf), ',');
 			if (comma) {

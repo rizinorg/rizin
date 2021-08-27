@@ -6,7 +6,7 @@
 
 #define SWITCH_TO_ARCH_BITS(arch, bits) \
 	rz_analysis_use(analysis, arch); \
-	rz_analysis_set_bits(analysis, bits); \
+	rz_analysis_set_bits(analysis, bits);
 
 bool test_rz_analysis_op_val() {
 	RzAnalysis *analysis = rz_analysis_new();
