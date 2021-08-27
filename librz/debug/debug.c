@@ -853,6 +853,7 @@ RZ_API int rz_debug_step_soft(RzDebug *dbg) {
 		}
 		br = 1;
 		break;
+	case RZ_ANALYSIS_OP_TYPE_UJMP:
 	case RZ_ANALYSIS_OP_TYPE_UCALL:
 	case RZ_ANALYSIS_OP_TYPE_MJMP:
 		if (op.ireg) {
@@ -867,7 +868,6 @@ RZ_API int rz_debug_step_soft(RzDebug *dbg) {
 		}
 		br = 1;
 		break;
-	case RZ_ANALYSIS_OP_TYPE_UJMP:
 	default:
 		next[0] = op.addr + op.size;
 		br = 1;

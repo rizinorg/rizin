@@ -3105,6 +3105,7 @@ static void anop64(ArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 		break;
 	case ARM64_INS_BLR: // blr x0
 		op->type = RZ_ANALYSIS_OP_TYPE_RCALL;
+		op->reg = cs_reg_name(handle, REGID64(0));
 		op->fail = addr + 4;
 		//op->jump = IMM64(0);
 		break;
@@ -3121,7 +3122,8 @@ static void anop64(ArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 		op->fail = addr + op->size;
 		break;
 	case ARM64_INS_BR:
-		op->type = RZ_ANALYSIS_OP_TYPE_UJMP; // RJMP ?
+		op->type = RZ_ANALYSIS_OP_TYPE_RJMP;
+		op->reg = cs_reg_name(handle, REGID64(0));
 		op->eob = true;
 		break;
 	case ARM64_INS_B:
@@ -3492,6 +3494,9 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_LDRT:
 		op->cycles = 4;
 		// 0x000082a8    28301be5     ldr r3, [fp, -0x28]
+		op->scale = INSOP(1).mem.scale << INSOP(1).mem.lshift;
+		op->ireg = cs_reg_name(handle, REGBASE(1));
+		op->disp = MEMDISP(1);
 		if (REGID(0) == ARM_REG_PC) {
 			op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
 			if (insn->detail->arm.cc != ARM_CC_AL) {
@@ -3537,6 +3542,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		if (ISREG(0)) {
 			/* blx reg */
 			op->type = RZ_ANALYSIS_OP_TYPE_RCALL;
+			op->reg = cs_reg_name(handle, REGID(0));
 		} else {
 			/* blx label */
 			op->type = RZ_ANALYSIS_OP_TYPE_CALL;
@@ -3587,21 +3593,22 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_BXJ:
 		/* bx reg */
 		op->cycles = 4;
+		op->reg = cs_reg_name(handle, REGID(0));
 		switch (REGID(0)) {
 		case ARM_REG_LR:
 			op->type = RZ_ANALYSIS_OP_TYPE_RET;
 			break;
 		case ARM_REG_IP:
-			op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
+			op->type = RZ_ANALYSIS_OP_TYPE_RJMP;
 			break;
 		case ARM_REG_PC:
 			// bx pc is well known without ESIL
-			op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
+			op->type = RZ_ANALYSIS_OP_TYPE_RJMP;
 			op->jump = (addr & ~3LL) + pcdelta;
 			op->hint.new_bits = 32;
 			break;
 		default:
-			op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
+			op->type = RZ_ANALYSIS_OP_TYPE_RJMP;
 			op->eob = true;
 			break;
 		}
@@ -3750,11 +3757,14 @@ static void set_src_dst(RzAnalysisValue *val, RzReg *reg, csh *handle, cs_insn *
 	if (bits == 64) {
 		switch (arm64op.type) {
 		case ARM64_OP_REG:
+			val->type = RZ_ANALYSIS_VAL_REG;
 			break;
 		case ARM64_OP_MEM:
+			val->type = RZ_ANALYSIS_VAL_MEM;
 			val->delta = arm64op.mem.disp;
 			break;
 		case ARM64_OP_IMM:
+			val->type = RZ_ANALYSIS_VAL_IMM;
 			val->imm = arm64op.imm;
 			break;
 		default:
@@ -3763,12 +3773,15 @@ static void set_src_dst(RzAnalysisValue *val, RzReg *reg, csh *handle, cs_insn *
 	} else {
 		switch (armop.type) {
 		case ARM_OP_REG:
+			val->type = RZ_ANALYSIS_VAL_REG;
 			break;
 		case ARM_OP_MEM:
-			val->mul = armop.mem.scale;
+			val->type = RZ_ANALYSIS_VAL_MEM;
+			val->mul = armop.mem.scale << armop.mem.lshift;
 			val->delta = armop.mem.disp;
 			break;
 		case ARM_OP_IMM:
+			val->type = RZ_ANALYSIS_VAL_IMM;
 			val->imm = armop.imm;
 			break;
 		default:
@@ -3852,12 +3865,6 @@ static void op_fillval(RzAnalysis *analysis, RzAnalysisOp *op, csh handle, cs_in
 		break;
 	default:
 		break;
-	}
-	if ((bits == 64) && HASMEMINDEX64(1)) {
-		op->ireg = rz_str_get_null(cs_reg_name(handle, INSOP64(1).mem.index));
-	} else if (HASMEMINDEX(1)) {
-		op->ireg = rz_str_get_null(cs_reg_name(handle, INSOP(1).mem.index));
-		op->scale = INSOP(1).mem.scale;
 	}
 }
 
