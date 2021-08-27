@@ -3765,10 +3765,7 @@ RZ_API int rz_core_cmd_foreach(RzCore *core, const char *cmd, char *each) {
 					rz_core_seek(core, fcn->addr, true);
 					rz_cons_push();
 					rz_core_cmd(core, cmd, 0);
-					buf = (char *)rz_cons_get_buffer();
-					if (buf) {
-						buf = strdup(buf);
-					}
+					buf = rz_cons_get_buffer_dup();
 					rz_cons_pop();
 					rz_cons_strcat(buf);
 					free(buf);
@@ -3961,12 +3958,10 @@ RZ_API int rz_core_cmd_foreach(RzCore *core, const char *cmd, char *each) {
 					}
 
 					char *buf = NULL;
-					const char *tmp = NULL;
 					rz_core_seek(core, flag->offset, true);
 					rz_cons_push();
 					rz_core_cmd(core, cmd, 0);
-					tmp = rz_cons_get_buffer();
-					buf = tmp ? strdup(tmp) : NULL;
+					buf = rz_cons_get_buffer_dup();
 					rz_cons_pop();
 					rz_cons_strcat(buf);
 					free(buf);
