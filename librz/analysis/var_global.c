@@ -3,6 +3,7 @@
 
 #include <rz_analysis.h>
 #include <rz_list.h>
+#include <rz_core.h>
 
 /**
  * \brief Create a new instance of global variable
@@ -20,6 +21,7 @@ RZ_API RZ_OWN RzAnalysisVarGlobal *rz_analysis_var_global_new(RZ_NONNULL const c
 	}
 	glob->name = strdup(name);
 	glob->addr = addr;
+	glob->flag = NULL;
 	return glob;
 }
 
@@ -73,6 +75,14 @@ RZ_API void rz_analysis_var_global_free(RzAnalysisVarGlobal *glob) {
 	RZ_FREE(glob);
 }
 
+RZ_API bool rz_analysis_var_global_delete(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisVarGlobal *glob) {
+	rz_return_val_if_fail(analysis && glob, false);
+
+	// We need to delete RBTree first because ht_pp_delete will free its member
+	bool deleted = rz_rbtree_delete(&analysis->global_var_tree, &glob->addr, global_var_node_cmp, NULL, NULL, NULL);
+	return deleted ? ht_pp_delete(analysis->ht_global_var, glob->name) : deleted;
+}
+
 /**
  * \brief Delete and free the global variable by its name
  * 
@@ -86,9 +96,8 @@ RZ_API bool rz_analysis_var_global_delete_byname(RzAnalysis *analysis, RZ_NONNUL
 	if (!glob) {
 		return false;
 	}
-	// We need to delete RBTree first because ht_pp_delete will free its member
-	bool deleted = rz_rbtree_delete(&analysis->global_var_tree, &glob->addr, global_var_node_cmp, NULL, NULL, NULL);
-	return deleted ? ht_pp_delete(analysis->ht_global_var, name) : deleted;
+
+	return rz_analysis_var_global_delete(analysis, glob);
 }
 
 /**
@@ -104,9 +113,8 @@ RZ_API bool rz_analysis_var_global_delete_byaddr_at(RzAnalysis *analysis, ut64 a
 	if (!glob) {
 		return false;
 	}
-	// We need to delete RBTree first because ht_pp_delete will free its member
-	bool deleted = rz_rbtree_delete(&analysis->global_var_tree, &glob->addr, global_var_node_cmp, NULL, NULL, NULL);
-	return deleted ? ht_pp_delete(analysis->ht_global_var, glob->name) : deleted;
+
+	return rz_analysis_var_global_delete(analysis, glob);
 }
 
 /**
@@ -122,9 +130,8 @@ RZ_API bool rz_analysis_var_global_delete_byaddr_in(RzAnalysis *analysis, ut64 a
 	if (!glob) {
 		return false;
 	}
-	// We need to delete RBTree first because ht_pp_delete will free its member
-	bool deleted = rz_rbtree_delete(&analysis->global_var_tree, &glob->addr, global_var_node_cmp, NULL, NULL, NULL);
-	return deleted ? ht_pp_delete(analysis->ht_global_var, glob->name) : deleted;
+
+	return rz_analysis_var_global_delete(analysis, glob);
 }
 
 /**
@@ -308,4 +315,41 @@ RZ_API RZ_OWN char *rz_analysis_var_global_get_constraints_readable(RzAnalysisVa
 		}
 	}
 	return rz_strbuf_drain_nofree(&sb);
+}
+
+RZ_API bool rz_analysis_var_global_init_flag(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisVarGlobal *glob) {
+	rz_return_val_if_fail(core && glob, false);
+
+	RzFlagItem *glob_flag_item = rz_flag_set(core->flags, glob->name, glob->addr, rz_type_db_get_bitsize(core->analysis->typedb, glob->type) / 8);
+
+	if (!glob_flag_item) {
+		return false;
+	}
+
+	glob->flag = glob_flag_item;
+	return true;
+}
+
+RZ_API bool rz_analysis_var_global_destroy_flag(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisVarGlobal *glob) {
+	rz_return_val_if_fail(core && glob, false);
+
+	if (!glob->flag) {
+		return true; // no-op
+	}
+
+	bool ret = false;
+	if (!rz_flag_unset(core->flags, glob->flag)) {
+		goto return_goto;
+	}
+	ret = true;
+
+return_goto:
+	glob->flag = NULL;
+	return ret;
+}
+
+RZ_API void rz_analysis_var_global_update_flag(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisVarGlobal *glob) {
+	glob->flag->name = strdup(glob->name);
+	glob->flag->realname = strdup(glob->name);
+	glob->flag->size = rz_type_db_get_bitsize(core->analysis->typedb, glob->type) / 8;
 }

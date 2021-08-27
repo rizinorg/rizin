@@ -748,6 +748,7 @@ typedef struct rz_analysis_var_global_t {
 	ut64 addr; ///< address of the global variable
 	RzType *type; ///< type of the variable
 	RzVector /*<RzTypeConstraint>*/ constraints;
+	RzFlagItem *flag; ///< flag to allow seeking and other things
 } RzAnalysisVarGlobal;
 
 // Refers to a variable or a struct field inside a variable, only for varsub
@@ -1650,6 +1651,10 @@ RZ_API bool rz_analysis_var_global_rename(RzAnalysis *analysis, RZ_NONNULL const
 RZ_API void rz_analysis_var_global_set_type(RzAnalysisVarGlobal *glob, RZ_NONNULL RZ_BORROW RzType *type);
 RZ_API void rz_analysis_var_global_add_constraint(RzAnalysisVarGlobal *glob, RzTypeConstraint *constraint);
 RZ_API RZ_OWN char *rz_analysis_var_global_get_constraints_readable(RzAnalysisVarGlobal *glob);
+RZ_API bool rz_analysis_var_global_init_flag(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisVarGlobal *glob);
+RZ_API bool rz_analysis_var_global_destroy_flag(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisVarGlobal *glob);
+RZ_API bool rz_analysis_var_global_delete(RzAnalysis *analysis, RzAnalysisVarGlobal *glob);
+RZ_API void rz_analysis_var_global_update_flag(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisVarGlobal *glob);
 
 // Maintaining type links
 RZ_API bool rz_analysis_type_link_exists(RzAnalysis *analysis, ut64 addr);
