@@ -8103,7 +8103,9 @@ RZ_IPI RzCmdStatus rz_analysis_rtti_demangle_class_name_handler(RzCore *core, in
 }
 
 RZ_IPI RzCmdStatus rz_analysis_print_global_variable_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	rz_analysis_var_global_list_show(core->analysis, state, argv[1]);
+	if (!rz_analysis_var_global_list_show(core->analysis, state, argv[1])) {
+		return RZ_CMD_STATUS_ERROR;
+	}
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -8153,7 +8155,7 @@ RZ_IPI RzCmdStatus rz_analysis_global_variable_retype_handler(RzCore *core, int 
 	const char *type = argv[2];
 	RzAnalysisVarGlobal *glob = rz_analysis_var_global_get_byname(core->analysis, name);
 	if (!glob) {
-		RZ_LOG_ERROR("No such global variable!\n");
+		RZ_LOG_ERROR("Global variable '%s' does not exist!\n", name);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	char *errmsg = NULL;

@@ -17,6 +17,7 @@ extern "C" {
 #include <rz_util/rz_str.h>
 #include <rz_util/rz_str_constpool.h>
 #include <rz_util/rz_sys.h>
+#include <rz_util/rz_utf8.h>
 #include <rz_util/rz_file.h>
 #include <rz_vector.h>
 #include <sdb.h>
@@ -520,6 +521,7 @@ typedef struct rz_cons_t {
 #elif __WINDOWS__
 	DWORD term_raw, term_buf, term_xterm;
 	UINT old_cp;
+	UINT old_ocp;
 #endif
 	RNum *num;
 	/* Pager (like more or less) to use if the output doesn't fit on the

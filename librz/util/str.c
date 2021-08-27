@@ -753,22 +753,25 @@ RZ_API char *rz_str_newf(const char *fmt, ...) {
 	return p;
 }
 
-// Secure string copy with null terminator (like strlcpy or strscpy but ours
-RZ_API size_t rz_str_ncpy(char *dst, const char *src, size_t n) {
+/**
+ * \brief Secure string copy with null terminator
+ *
+ * 	This API behaves like strlcpy or strscpy.
+ */
+RZ_API size_t rz_str_ncpy(char *dst, const char *src, size_t dst_size) {
 	rz_return_val_if_fail(dst && src, 0);
-	size_t i;
 
-	// do not do anything if n is 0
-	if (n == 0) {
+	// do not do anything if dst_size is 0
+	if (dst_size == 0) {
 		return 0;
 	}
-
-	n--;
-	for (i = 0; src[i] && n > 0; i++, n--) {
-		dst[i] = src[i];
-	}
-	dst[i] = 0;
-	return i;
+#if HAVE_STRLCPY
+	return strlcpy(dst, src, dst_size);
+#else
+	strncpy(dst, src, dst_size - 1);
+	dst[dst_size - 1] = '\0';
+	return strlen(src);
+#endif
 }
 
 /* memccmp("foo.bar", "foo.cow, '.') == 0 */
@@ -3619,7 +3622,7 @@ RZ_API RzList *rz_str_wrap(char *str, size_t width) {
 
 	do {
 		p++;
-		if (!*p || isspace(*p)) {
+		if (!*p || isspace((int)*p)) {
 			if (p != last_space + 1) {
 				if (p - start_line > width && first_space) {
 					rz_list_append(res, start_line);
@@ -3632,7 +3635,7 @@ RZ_API RzList *rz_str_wrap(char *str, size_t width) {
 		}
 	} while (*p);
 	p--;
-	while (p >= str && isspace(*p)) {
+	while (p >= str && isspace((int)*p)) {
 		*p = '\0';
 		p--;
 	}

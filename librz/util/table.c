@@ -1247,6 +1247,7 @@ RZ_OWN RZ_API RzTable *rz_table_transpose(RZ_NONNULL RzTable *t) {
 		}
 		//free(item);
 	}
+	rz_list_free(row_name);
 	return transpose;
 }
 

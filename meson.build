@@ -371,10 +371,12 @@ foreach item : [
     ['system', '#include <stdlib.h>', []],
     ['fork', '#include <unistd.h>', []],
     ['nice', '#include <unistd.h>', []],
+    ['copyfile', '#include <copyfile.h>', []],
+    ['strlcpy', '#include <string.h>', []],
     ['openpty', '', [utl]],
     ['forkpty', '', [utl]],
     ['login_tty', '', [utl]],
-    ['pipe2', '#define _GNU_SOURCE\n#include <fcntl.h>\n#include <unistd.h>', []]
+    ['pipe2', '#define _GNU_SOURCE\n#include <fcntl.h>\n#include <unistd.h>', []],
   ]
   func = item[0]
   ok = cc.has_function(func, prefix: item[1], dependencies: item[2])
