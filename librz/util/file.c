@@ -1325,7 +1325,16 @@ return_goto:
 RZ_API bool rz_file_is_deflated(RZ_NONNULL const char *src) {
 	rz_return_val_if_fail(src, false);
 
+	bool ret = false;
 	unsigned char *header = (unsigned char *)rz_file_slurp_range(src, 0, 3, NULL);
 
-	return (header[0] == 0x1f && header[1] == 0x8b && header[2] == 0x08); // 1f 8b 08
+	if (!header || strlen((char *)header) != 3) {
+		goto return_goto;
+	}
+
+	ret = (header[0] == 0x1f && header[1] == 0x8b && header[2] == 0x08); // 1f 8b 08
+
+return_goto:
+	free(header);
+	return ret;
 }
