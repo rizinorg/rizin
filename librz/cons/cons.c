@@ -777,9 +777,20 @@ RZ_API void rz_cons_reset(void) {
 	CTX(pageable) = true;
 }
 
+/**
+ * \brief Return the current RzCons buffer
+ */
 RZ_API const char *rz_cons_get_buffer(void) {
 	//check len otherwise it will return trash
 	return I.context->buffer_len ? I.context->buffer : NULL;
+}
+
+/**
+ * \brief Return a newly allocated buffer containing what's currently in RzCons buffer
+ */
+RZ_API char *rz_cons_get_buffer_dup(void) {
+	const char *s = rz_cons_get_buffer();
+	return s ? strdup(s) : NULL;
 }
 
 RZ_API int rz_cons_get_buffer_len(void) {
