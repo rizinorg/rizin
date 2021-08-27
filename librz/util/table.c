@@ -1173,7 +1173,7 @@ RZ_API void rz_table_visual_list(RzTable *table, RzList *list, ut64 seek, ut64 l
 		width = 30;
 	}
 
-	rz_table_set_columnsf(table, "sssssss", "No.", "offset", "blocks", "offset", "perms", "extra", "name");
+	rz_table_set_columnsf(table, "sssssss", "No.", "start", "blocks", "end", "perms", "extra", "name");
 	rz_list_foreach (list, iter, info) {
 		if (min == -1 || info->pitv.addr < min) {
 			min = info->pitv.addr;
