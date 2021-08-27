@@ -305,7 +305,7 @@ static int riscv_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 
 	if (len >= sizeof(ut64)) {
 		word = rz_read_ble64(data, analysis->big_endian);
-	} else if (len >= sizeof(ut32)) {
+	} else if (len >= sizeof(ut16)) {
 		word = rz_read_ble16(data, analysis->big_endian);
 	} else {
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
@@ -645,37 +645,58 @@ static int riscv_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 	}
 	if (mask & RZ_ANALYSIS_OP_MASK_VAL && args.num) {
-		int i, j = 1;
 		op->dst = RZ_NEW0(RzAnalysisValue);
 		char *argf = strdup(o->args);
-		char *comma = strtok(argf, ",");
+		const char *comma = NULL;
+		int dst_idx, src_idx;
+		if (op->type == RZ_ANALYSIS_OP_TYPE_STORE) {
+			comma = rz_str_rchr(argf, argf + strlen(argf), ',');
+			if (comma) {
+				*(char *)comma++ = 0;
+				if (strchr(comma, '(')) {
+					dst_idx = args.num = args.num - 2;
+				} else {
+					dst_idx = args.num = args.num - 1;
+				}
+			}
+		} else {
+			comma = strtok(argf, ",");
+			dst_idx = 0;
+		}
 		if (comma && strchr(comma, '(')) {
 			op->dst->type = RZ_ANALYSIS_VAL_MEM;
-			op->dst->delta = (st64)rz_num_get(NULL, args.arg[0]);
-			op->dst->reg = rz_reg_get(analysis->reg, args.arg[1], -1);
-			j = 2;
-		} else if (isdigit(args.arg[j][0])) {
+			op->dst->delta = (st64)rz_num_get(NULL, args.arg[dst_idx++]);
+			op->dst->reg = rz_reg_get(analysis->reg, args.arg[dst_idx], -1);
+			src_idx = op->type == RZ_ANALYSIS_OP_TYPE_STORE ? 0 : 2;
+		} else if (isdigit(args.arg[dst_idx][0])) {
 			op->dst->type = RZ_ANALYSIS_VAL_IMM;
-			op->dst->imm = rz_num_get(NULL, args.arg[0]);
+			op->dst->imm = rz_num_get(NULL, args.arg[dst_idx]);
+			src_idx = op->type == RZ_ANALYSIS_OP_TYPE_STORE ? 0 : 1;
 		} else {
 			op->dst->type = RZ_ANALYSIS_VAL_REG;
-			op->dst->reg = rz_reg_get(analysis->reg, args.arg[0], -1);
+			op->dst->reg = rz_reg_get(analysis->reg, args.arg[dst_idx], -1);
+			src_idx = op->type == RZ_ANALYSIS_OP_TYPE_STORE ? 0 : 1;
 		}
-		for (i = 0; j < args.num; i++, j++) {
+
+		comma = op->type == RZ_ANALYSIS_OP_TYPE_STORE
+			? strtok(argf, ",")
+			: strtok(NULL, ",");
+		int i;
+		for (i = 0; src_idx < args.num; i++, src_idx++) {
 			op->src[i] = RZ_NEW0(RzAnalysisValue);
-			comma = strtok(NULL, ",");
 			if (comma && strchr(comma, '(')) {
 				op->src[i]->type = RZ_ANALYSIS_VAL_MEM;
-				op->src[i]->delta = (st64)rz_num_get(NULL, args.arg[j]);
-				op->src[i]->reg = rz_reg_get(analysis->reg, args.arg[j + 1], -1);
-				j++;
-			} else if (isalpha(args.arg[j][0])) {
+				op->src[i]->delta = (st64)rz_num_get(NULL, args.arg[src_idx]);
+				op->src[i]->reg = rz_reg_get(analysis->reg, args.arg[src_idx + 1], -1);
+				src_idx++;
+			} else if (isalpha(args.arg[src_idx][0])) {
 				op->src[i]->type = RZ_ANALYSIS_VAL_REG;
-				op->src[i]->reg = rz_reg_get(analysis->reg, args.arg[j], -1);
+				op->src[i]->reg = rz_reg_get(analysis->reg, args.arg[src_idx], -1);
 			} else {
 				op->src[i]->type = RZ_ANALYSIS_VAL_IMM;
-				op->src[i]->imm = rz_num_get(NULL, args.arg[j]);
+				op->src[i]->imm = rz_num_get(NULL, args.arg[src_idx]);
 			}
+			comma = strtok(NULL, ",");
 		}
 		free(argf);
 	}
