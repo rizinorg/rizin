@@ -763,19 +763,15 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 			RzCmdStateOutput state = { 0 };
 			char *ptr = strchr(input, ' ');
 			switch (input[1]) {
-			case 'j': {
-				state.mode = RZ_OUTPUT_MODE_JSON;
-				state.d.pj = pj_new();
+			case 'j':
+				rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_JSON);
 				break;
-			}
-			case 'q': {
-				state.mode = RZ_OUTPUT_MODE_QUIET;
+			case 'q':
+				rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET);
 				break;
-			}
-			default: {
-				state.mode = RZ_OUTPUT_MODE_STANDARD;
+			default:
+				rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
 				break;
-			}
 			}
 			if (ptr && ptr[1]) {
 				const char *plugin_name = ptr + 1;
@@ -785,17 +781,9 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 				rz_bin_list_plugin(core->bin, plugin_name, pj, 0);
 			} else {
 				rz_core_bin_plugins_print(core->bin, &state);
-				switch (state.mode) {
-				case RZ_OUTPUT_MODE_JSON: {
-					rz_cons_print(pj_string(state.d.pj));
-					rz_cons_flush();
-					pj_free(state.d.pj);
-					break;
-				}
-				default: {
-					break;
-				}
-				}
+				rz_cmd_state_output_print(&state);
+				rz_cmd_state_output_fini(&state);
+				rz_cons_flush();
 			}
 			newline = false;
 			goto done;

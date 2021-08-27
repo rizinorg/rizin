@@ -504,9 +504,11 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			free(debugbackend);
 			debugbackend = strdup(opt.arg);
 			RzCmdStateOutput state = { 0 };
-			state.mode = RZ_OUTPUT_MODE_QUIET;
+			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET);
 			if (!strcmp(opt.arg, "?")) {
 				rz_core_debug_plugins_print(r, &state);
+				rz_cmd_state_output_print(&state);
+				rz_cmd_state_output_fini(&state);
 				rz_cons_flush();
 				LISTS_FREE();
 				return 0;
@@ -726,8 +728,10 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		if (quietLeak) {
 			exit(0);
 		}
-		state.mode = RZ_OUTPUT_MODE_STANDARD;
+		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
 		rz_core_io_plugins_print(r->io, &state);
+		rz_cmd_state_output_print(&state);
+		rz_cmd_state_output_fini(&state);
 		rz_cons_flush();
 		LISTS_FREE();
 		free(pfile);

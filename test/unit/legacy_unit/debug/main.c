@@ -13,11 +13,13 @@ int main(int argc, char **argv) {
 	struct rz_io_t *io;
 	struct rz_debug_t *dbg = NULL;
 	RzCmdStateOutput state = { 0 };
-	state.mode = RZ_OUTPUT_MODE_STANDARD;
+	rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
 
 	io = rz_io_new();
 	printf("Supported IO pluggins:\n");
 	rz_core_io_plugins_print(io, &state);
+	rz_cmd_state_output_print(&state);
+	rz_cmd_state_output_fini(&state);
 
 	fd = rz_io_open_nomap(io, "dbg:///bin/ls", 0, 0);
 	if (!fd) {

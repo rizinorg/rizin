@@ -640,40 +640,20 @@ static RzCmdStatus argv_call_cb(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args
 		if (args->argc < cd->d.argv_state_data.min_argc || args->argc > cd->d.argv_state_data.max_argc) {
 			return RZ_CMD_STATUS_WRONG_ARGS;
 		}
-		RzCmdStateOutput state = { 0 };
-		state.mode = mode;
-		switch (mode) {
-		case RZ_OUTPUT_MODE_JSON:
-			state.d.pj = pj_new();
-			break;
-		case RZ_OUTPUT_MODE_TABLE:
-			state.d.t = rz_table_new();
-			break;
-		default:
-			break;
+		RzCmdStateOutput state;
+		if (!rz_cmd_state_output_init(&state, mode)) {
+			return RZ_CMD_STATUS_INVALID;
 		}
 		RzCmdStatus res = cd->d.argv_state_data.cb(cmd->data, args->argc, (const char **)args->argv, &state);
-		char *s;
-		switch (mode) {
-		case RZ_OUTPUT_MODE_JSON:
-			rz_cons_println(pj_string(state.d.pj));
-			pj_free(state.d.pj);
-			break;
-		case RZ_OUTPUT_MODE_TABLE:
-			if (args->extra) {
-				bool res = rz_table_query(state.d.t, args->extra);
-				if (!res) {
-					return RZ_CMD_STATUS_INVALID;
-				}
+		if (args->extra && state.mode == RZ_OUTPUT_MODE_TABLE) {
+			bool res = rz_table_query(state.d.t, args->extra);
+			if (!res) {
+				rz_cmd_state_output_fini(&state);
+				return RZ_CMD_STATUS_INVALID;
 			}
-			s = rz_table_tostring(state.d.t);
-			rz_cons_printf("%s", s);
-			free(s);
-			rz_table_free(state.d.t);
-			break;
-		default:
-			break;
 		}
+		rz_cmd_state_output_print(&state);
+		rz_cmd_state_output_fini(&state);
 		return res;
 	default:
 		return RZ_CMD_STATUS_INVALID;
@@ -2399,4 +2379,87 @@ RZ_API void rz_cmd_state_output_set_columnsf(RzCmdStateOutput *state, const char
 		rz_table_set_vcolumnsf(state->d.t, fmt, ap);
 	}
 	va_end(ap);
+}
+
+/**
+ * \brief Clear the inner fields of RzCmdStateOutput structure, but do not free it.
+ */
+RZ_API void rz_cmd_state_output_fini(RzCmdStateOutput *state) {
+	rz_return_if_fail(state);
+
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_JSON:
+		pj_free(state->d.pj);
+		state->d.pj = NULL;
+		break;
+	case RZ_OUTPUT_MODE_TABLE:
+		rz_table_free(state->d.t);
+		state->d.t = NULL;
+		break;
+	default:
+		break;
+	}
+}
+
+/**
+ * \brief Free the RzCmdStateOutput structure and its inner fields appropriately
+ */
+RZ_API void rz_cmd_state_output_free(RzCmdStateOutput *state) {
+	rz_return_if_fail(state);
+
+	rz_cmd_state_output_fini(state);
+	free(state);
+}
+
+/**
+ * \brief Initialize a RzCmdStateOutput structure and its inner fields based on the provided mode
+ */
+RZ_API bool rz_cmd_state_output_init(RzCmdStateOutput *state, RzOutputMode mode) {
+	rz_return_val_if_fail(state, false);
+
+	state->mode = mode;
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_TABLE:
+		state->d.t = rz_table_new();
+		if (!state->d.t) {
+			return false;
+		}
+		break;
+	case RZ_OUTPUT_MODE_JSON:
+		state->d.pj = pj_new();
+		if (!state->d.pj) {
+			return false;
+		}
+		break;
+	default:
+		break;
+	}
+	return true;
+}
+
+/**
+ * \brief Print the output accumulated in \p state to RzCons, if necessary
+ *
+ * Some output modes like JSON and TABLE accumulate their output in their
+ * respective data structures, thus it is needed to print them to have the
+ * output on screen. This function takes care of that, doing nothing in case the
+ * output was already printed to console for those types that output as they go
+ * (e.g. STANDARD, QUIET).
+ */
+RZ_API void rz_cmd_state_output_print(RzCmdStateOutput *state) {
+	rz_return_if_fail(state);
+
+	char *s;
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_JSON:
+		rz_cons_println(pj_string(state->d.pj));
+		break;
+	case RZ_OUTPUT_MODE_TABLE:
+		s = rz_table_tostring(state->d.t);
+		rz_cons_printf("%s", s);
+		free(s);
+		break;
+	default:
+		break;
+	}
 }

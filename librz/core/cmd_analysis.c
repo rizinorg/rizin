@@ -8748,14 +8748,12 @@ RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
 				break;
 			}
 			RzCmdStateOutput state = { 0 };
-			state.mode = RZ_OUTPUT_MODE_JSON;
-			state.d.pj = pj_new();
-			if (!state.d.pj) {
+			if (!rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_JSON)) {
 				break;
 			}
 			rz_core_analysis_bb_info_print(core, bb, addr, &state);
-			rz_cons_println(pj_string(state.d.pj));
-			pj_free(state.d.pj);
+			rz_cmd_state_output_print(&state);
+			rz_cmd_state_output_fini(&state);
 			break;
 		}
 		case 0:
@@ -8771,8 +8769,12 @@ RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
 				break;
 			}
 			RzCmdStateOutput state = { 0 };
-			state.mode = RZ_OUTPUT_MODE_LONG;
+			if (!rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_LONG)) {
+				break;
+			}
 			rz_core_analysis_bb_info_print(core, bb, addr, &state);
+			rz_cmd_state_output_print(&state);
+			rz_cmd_state_output_fini(&state);
 			break;
 		}
 		default:
@@ -8792,32 +8794,20 @@ RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
 	case 'L': { // aL
 		RzCmdStateOutput state = { 0 };
 		switch (input[1]) {
-		case 'j': {
-			state.mode = RZ_OUTPUT_MODE_JSON;
-			state.d.pj = pj_new();
+		case 'j':
+			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_JSON);
 			break;
-		}
-		case 'q': {
-			state.mode = RZ_OUTPUT_MODE_QUIET;
+		case 'q':
+			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_JSON);
 			break;
-		}
-		default: {
-			state.mode = RZ_OUTPUT_MODE_STANDARD;
+		default:
+			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
 			break;
-		}
 		}
 		rz_core_asm_plugins_print(core, NULL, &state);
-		switch (state.mode) {
-		case RZ_OUTPUT_MODE_JSON: {
-			rz_cons_println(pj_string(state.d.pj));
-			rz_cons_flush();
-			pj_free(state.d.pj);
-			break;
-		}
-		default: {
-			break;
-		}
-		}
+		rz_cmd_state_output_print(&state);
+		rz_cmd_state_output_fini(&state);
+		rz_cons_flush();
 		break;
 	}
 	case 'o': cmd_analysis_opcode(core, input + 1); break; // "ao"

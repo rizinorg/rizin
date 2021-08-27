@@ -531,25 +531,11 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 		case 'L': {
 			RzCore *core = rz_core_new();
 			RzCmdStateOutput state = { 0 };
-			if (as->json) {
-				state.mode = RZ_OUTPUT_MODE_JSON;
-				state.d.pj = pj_new();
-			} else {
-				state.mode = RZ_OUTPUT_MODE_STANDARD;
-			}
+			rz_cmd_state_output_init(&state, as->json ? RZ_OUTPUT_MODE_JSON : RZ_OUTPUT_MODE_STANDARD);
 			rz_core_asm_plugins_print(core, opt.argv[opt.ind], &state);
-			switch (state.mode) {
-			case RZ_OUTPUT_MODE_JSON: {
-				rz_cons_println(pj_string(state.d.pj));
-				rz_cons_flush();
-				pj_free(state.d.pj);
-				break;
-			}
-			default: {
-				rz_cons_flush();
-				break;
-			}
-			}
+			rz_cmd_state_output_print(&state);
+			rz_cmd_state_output_fini(&state);
+			rz_cons_flush();
 			free(core);
 			ret = 1;
 			goto beach;
