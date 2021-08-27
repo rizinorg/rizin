@@ -552,7 +552,7 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 						ut32 tmp;
 						if (!rz_buf_read_ble32_at(bin->buf, offset, h->worder, &tmp)) {
 							rz_bin_reloc_free(rel);
-							break;
+							continue;
 						}
 						rel->addend += tmp;
 						offset += sizeof(ut32);
@@ -560,7 +560,7 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 						ut16 tmp;
 						if (!rz_buf_read_ble16_at(bin->buf, offset, h->worder, &tmp)) {
 							rz_bin_reloc_free(rel);
-							break;
+							continue;
 						}
 						rel->addend += tmp;
 						offset += sizeof(ut16);
@@ -669,7 +669,6 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 		if (header.target & F_TARGET_CHAIN) {
 			ut32 fixupinfo;
 			if (!rz_buf_read_ble32_at(bin->buf, cur_page_offset + source, h->worder, &fixupinfo)) {
-				rz_bin_reloc_free(rel);
 				break;
 			}
 
@@ -721,7 +720,7 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 			}
 		}
 		if (!rel_appended) {
-			free(rel);
+			rz_bin_reloc_free(rel);
 		}
 	}
 	rz_list_free(entries);

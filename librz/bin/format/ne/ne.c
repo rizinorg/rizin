@@ -107,6 +107,15 @@ static int __find_symbol_by_paddr(const void *paddr, const void *sym) {
 	return (int)!(*(ut64 *)paddr == ((RzBinSymbol *)sym)->paddr);
 }
 
+static void ne_sanitize_name(char *name, ut16 count) {
+	// expect to have names in ASCII format.
+	for (ut16 i = 0; i < count && name[i]; ++i) {
+		if (!IS_PRINTABLE(name[i])) {
+			name[i] = '?';
+		}
+	}
+}
+
 RzList *rz_bin_ne_get_symbols(rz_bin_ne_obj_t *bin) {
 	RzBinSymbol *sym;
 	ut16 off = bin->ne_header->ResidNamTable + bin->header_offset;
@@ -148,6 +157,7 @@ RzList *rz_bin_ne_get_symbols(rz_bin_ne_obj_t *bin) {
 		if (!sym) {
 			break;
 		}
+		ne_sanitize_name(name, sz);
 		sym->name = name;
 		if (!first) {
 			sym->bind = RZ_BIN_BIND_GLOBAL_STR;
@@ -284,7 +294,7 @@ static bool __ne_get_resources(rz_bin_ne_obj_t *bin) {
 	ut16 resoff = bin->ne_header->ResTableOffset + bin->header_offset;
 
 	ut16 alignment;
-	if (!rz_buf_read_le16_at(bin->buf, resoff, &alignment)) {
+	if (!rz_buf_read_le16_at(bin->buf, resoff, &alignment) || alignment > 31) {
 		return false;
 	}
 
@@ -391,13 +401,16 @@ RzList *rz_bin_ne_get_entrypoints(rz_bin_ne_obj_t *bin) {
 		entry->paddr = bin->ne_header->ipEntryPoint + (s ? s->paddr : 0);
 		rz_list_append(entries, entry);
 	}
-	int off = 0;
+	ut32 off = 0;
 	while (off < bin->ne_header->EntryTableLength) {
 		ut8 bundle_length = *(ut8 *)(bin->entry_table + off);
 		if (!bundle_length) {
 			break;
 		}
 		off++;
+		if (off >= bin->ne_header->EntryTableLength) {
+			break;
+		}
 		ut8 bundle_type = *(ut8 *)(bin->entry_table + off);
 		off++;
 		int i;
@@ -417,9 +430,18 @@ RzList *rz_bin_ne_get_entrypoints(rz_bin_ne_obj_t *bin) {
 				ut8 segnum = *(bin->entry_table + off);
 				off++;
 				ut16 segoff = *(ut16 *)(bin->entry_table + off);
+				if (!segnum) {
+					free(entry);
+					continue;
+				}
 				entry->paddr = (ut64)bin->segment_entries[segnum - 1].offset * bin->alignment + segoff;
 			} else { // Fixed
-				entry->paddr = (ut64)bin->segment_entries[bundle_type - 1].offset * bin->alignment + *(ut16 *)(bin->entry_table + off);
+				ut16 *p = (ut16 *)(bin->entry_table + off);
+				if (off >= bin->ne_header->EntryTableLength || bundle_type > bin->ne_header->SegCount) {
+					free(entry);
+					continue;
+				}
+				entry->paddr = (ut64)bin->segment_entries[bundle_type - 1].offset * bin->alignment + (*p);
 			}
 			off += 2;
 			rz_list_append(entries, entry);
@@ -444,7 +466,7 @@ RzList *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 		return NULL;
 	}
 
-	ut16 *modref = malloc(bin->ne_header->ModRefs * sizeof(ut16));
+	ut16 *modref = calloc(bin->ne_header->ModRefs, sizeof(ut16));
 	if (!modref) {
 		return NULL;
 	}
@@ -510,8 +532,8 @@ RzList *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 					free(reloc);
 					break;
 				}
-				char *name;
-				if (rel.index > bin->ne_header->ModRefs) {
+				char *name = NULL;
+				if (rel.index > bin->ne_header->ModRefs || !rel.index) {
 					name = rz_str_newf("UnknownModule%d_%x", rel.index, off); // ????
 				} else {
 					offset = modref[rel.index - 1] + bin->header_offset + bin->ne_header->ImportNameTable;
@@ -563,9 +585,9 @@ RzList *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 			} else {
 				do {
 					rz_list_append(relocs, reloc);
-
 					ut16 tmp_offset;
 					if (!rz_buf_read_le16_at(bin->buf, reloc->paddr, &tmp_offset)) {
+						reloc = NULL;
 						break;
 					}
 
@@ -614,7 +636,7 @@ bool rz_bin_ne_buf_init(RzBuffer *buf, rz_bin_ne_obj_t *bin) {
 	if (!size) {
 		return false;
 	}
-	bin->segment_entries = calloc(1, size);
+	bin->segment_entries = calloc(bin->ne_header->SegCount, sizeof(NE_image_segment_entry));
 	if (!bin->segment_entries) {
 		return false;
 	}
