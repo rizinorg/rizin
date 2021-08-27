@@ -259,11 +259,51 @@ bool test_rz_bin_file_delete_all(void) {
 	mu_end;
 }
 
+bool test_rz_bin_sections_mapping(void) {
+	RzBin *bin = rz_bin_new();
+	RzIO *io = rz_io_new();
+	rz_io_bind(io, &bin->iob);
+
+	RzBinOptions opt = { 0 };
+	rz_bin_options_init(&opt, 0, 0, 0, false, false);
+	RzBinFile *bf = rz_bin_open(bin, "bins/elf/ioli/crackme0x00", &opt);
+	mu_assert_notnull(bf, "crackme0x00 binary could not be opened");
+	mu_assert_notnull(bf->o, "bin object");
+	mu_assert_streq(bf->file, "bins/elf/ioli/crackme0x00", "filename should be right");
+
+	RzBinObject *o = bf->o;
+	RzVector *maps = rz_bin_object_sections_mapping_list(o);
+	mu_assert_eq(rz_vector_len(maps), 10, "there should be 10 maps, because 10 are the segments");
+
+	RzBinSectionMap *map0 = rz_vector_index_ptr(maps, 0);
+	mu_assert_streq(map0->segment->name, "PHDR", "first map is for PHDR");
+	mu_assert_eq(rz_pvector_len(&map0->sections), 0, "no sections in PHDR");
+	RzBinSectionMap *map1 = rz_vector_index_ptr(maps, 1);
+	mu_assert_streq(map1->segment->name, "INTERP", "second map is for INTERP");
+	mu_assert_eq(rz_pvector_len(&map1->sections), 1, "just .interp in INTERP");
+	RzBinSection *sec1_0 = *rz_pvector_index_ptr(&map1->sections, 0);
+	mu_assert_streq(sec1_0->name, ".interp", "section is .interp");
+	RzBinSectionMap *map7 = rz_vector_index_ptr(maps, 7);
+	mu_assert_streq(map7->segment->name, "GNU_RELRO", "seventh map is for GNURELRO");
+	mu_assert_eq(rz_pvector_len(&map7->sections), 5, "5 elements in GNURELRO");
+	RzBinSection *sec7_0 = *rz_pvector_index_ptr(&map7->sections, 0);
+	mu_assert_streq(sec7_0->name, ".ctors", "section is .ctors");
+	RzBinSection *sec7_1 = *rz_pvector_index_ptr(&map7->sections, 1);
+	mu_assert_streq(sec7_1->name, ".dtors", "section is .dtors");
+
+	rz_vector_free(maps);
+
+	rz_bin_free(bin);
+	rz_io_free(io);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_bin);
 	mu_run_test(test_rz_bin_reloc_storage);
 	mu_run_test(test_rz_bin_file_delete);
 	mu_run_test(test_rz_bin_file_delete_all);
+	mu_run_test(test_rz_bin_sections_mapping);
 	return tests_passed != tests_run;
 }
 

@@ -868,3 +868,61 @@ RZ_API bool rz_bin_object_is_static(RzBinObject *obj) {
 	}
 	return true;
 }
+
+static void bin_section_map_fini(void *e, void *user) {
+	(void)user;
+	RzBinSectionMap *bsm = (RzBinSectionMap *)e;
+	rz_pvector_fini(&bsm->sections);
+}
+
+/**
+ * \brief Get the mapping between segments and sections in the binary
+ *
+ * \return A RzVector* with RzBinSectionMap structure inside.
+ **/
+RZ_API RzVector *rz_bin_object_sections_mapping_list(RzBinObject *obj) {
+	rz_return_val_if_fail(obj, NULL);
+
+	const RzList *all = rz_bin_object_get_sections_all(obj);
+	if (!all) {
+		return NULL;
+	}
+
+	RzList *sections = rz_list_new();
+	RzList *segments = rz_list_new();
+	RzBinSection *section, *segment;
+	RzListIter *iter;
+
+	rz_list_foreach (all, iter, section) {
+		RzList *list = section->is_segment ? segments : sections;
+		rz_list_append(list, section);
+	}
+
+	RzVector *res = rz_vector_new(sizeof(RzBinSectionMap), bin_section_map_fini, NULL);
+	if (!res) {
+		goto err;
+	}
+	rz_vector_reserve(res, rz_list_length(segments));
+
+	rz_list_foreach (segments, iter, segment) {
+		RzInterval segment_itv = (RzInterval){ segment->vaddr, segment->size };
+		RzListIter *iter2;
+
+		RzBinSectionMap map;
+		map.segment = segment;
+		rz_pvector_init(&map.sections, NULL);
+
+		rz_list_foreach (sections, iter2, section) {
+			RzInterval section_itv = (RzInterval){ section->vaddr, section->size };
+			if (rz_itv_begin(section_itv) >= rz_itv_begin(segment_itv) && rz_itv_end(section_itv) <= rz_itv_end(segment_itv) && section->name[0]) {
+				rz_pvector_push(&map.sections, section);
+			}
+		}
+		rz_vector_push(res, &map);
+	}
+
+err:
+	rz_list_free(segments);
+	rz_list_free(sections);
+	return res;
+}

@@ -643,6 +643,15 @@ typedef struct rz_bin_section_t {
 	bool is_segment;
 } RzBinSection;
 
+/**
+ * Structure to associate a segment with the list of sections that fall in that
+ * segment.
+ */
+typedef struct rz_bin_section_map_t {
+	const RzBinSection *segment;
+	RzPVector sections;
+} RzBinSectionMap;
+
 typedef struct rz_bin_class_t {
 	char *name;
 	// TODO: char *module;
@@ -910,6 +919,7 @@ RZ_API const RzList *rz_bin_object_reset_strings(RZ_NONNULL RzBin *bin, RZ_NONNU
 RZ_API bool rz_bin_object_is_string(RZ_NONNULL RzBinObject *obj, ut64 va);
 RZ_API bool rz_bin_object_is_big_endian(RZ_NONNULL RzBinObject *obj);
 RZ_API bool rz_bin_object_is_static(RZ_NONNULL RzBinObject *obj);
+RZ_API RZ_OWN RzVector *rz_bin_object_sections_mapping_list(RZ_NONNULL RzBinObject *obj);
 
 RZ_API int rz_bin_load_languages(RzBinFile *binfile);
 RZ_API RzBinFile *rz_bin_cur(RzBin *bin);
