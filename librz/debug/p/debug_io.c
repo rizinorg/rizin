@@ -80,12 +80,12 @@ static char *__io_reg_profile(RzDebug *dbg) {
 	if (drp) {
 		return drp;
 	}
-	const char *buf = rz_cons_get_buffer();
-	if (buf && *buf) {
-		char *ret = strdup(buf);
+	char *buf = rz_cons_get_buffer_dup();
+	if (RZ_STR_ISNOTEMPTY(buf)) {
 		rz_cons_pop();
-		return ret;
+		return buf;
 	}
+	free(buf);
 	rz_cons_pop();
 	return rz_analysis_get_reg_profile(dbg->analysis);
 }
@@ -94,12 +94,13 @@ static char *__io_reg_profile(RzDebug *dbg) {
 static int __reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 	char *dr8 = dbg->iob.system(dbg->iob.io, "dr8");
 	if (!dr8) {
-		const char *fb = rz_cons_get_buffer();
-		if (!fb || !*fb) {
+		char *fb = rz_cons_get_buffer_dup();
+		if (RZ_STR_ISEMPTY(fb)) {
+			free(fb);
 			eprintf("debug.io: Failed to get dr8 from io\n");
 			return -1;
 		}
-		dr8 = strdup(fb);
+		dr8 = fb;
 		rz_cons_reset();
 	}
 	ut8 *bregs = calloc(1, strlen(dr8));

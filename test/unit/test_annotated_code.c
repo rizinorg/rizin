@@ -301,7 +301,7 @@ static bool test_rz_core_annotated_code_print_json(void) {
 	rz_cons_new();
 	rz_cons_push();
 	rz_core_annotated_code_print_json(code);
-	actual = strdup(rz_cons_get_buffer());
+	actual = rz_cons_get_buffer_dup();
 	rz_cons_pop();
 	mu_assert_streq(actual, expected, "pdgj OUTPUT DOES NOT MATCH");
 
@@ -320,7 +320,7 @@ static bool test_rz_core_annotated_code_print_json_context_annotations(void) {
 	rz_cons_new();
 	rz_cons_push();
 	rz_core_annotated_code_print_json(code);
-	char *actual = strdup(rz_cons_get_buffer());
+	char *actual = rz_cons_get_buffer_dup();
 	rz_cons_pop();
 	mu_assert_streq(actual, expected, "rz_core_annotated_code_print_json() output doesn't match with the expected output");
 	free(actual);
@@ -341,7 +341,7 @@ static bool test_rz_core_annotated_code_print(void) {
 	rz_cons_new();
 	rz_cons_push();
 	rz_core_annotated_code_print(code, NULL);
-	actual = strdup(rz_cons_get_buffer());
+	actual = rz_cons_get_buffer_dup();
 	rz_cons_pop();
 	mu_assert_streq(actual, expected_first, "pdg OUTPUT DOES NOT MATCH");
 	rz_cons_pop();
@@ -356,7 +356,7 @@ static bool test_rz_core_annotated_code_print(void) {
 				"                  |}\n";
 	rz_core_annotated_code_print(code, offsets);
 	free(actual);
-	actual = strdup(rz_cons_get_buffer());
+	actual = rz_cons_get_buffer_dup();
 	rz_cons_pop();
 	mu_assert_streq(actual, expected_second, "pdgo OUTPUT DOES NOT MATCH");
 	rz_cons_pop();
@@ -376,7 +376,7 @@ static bool test_rz_core_annotated_code_print_comment_cmds(void) {
 	rz_cons_new();
 	rz_cons_push();
 	rz_core_annotated_code_print_comment_cmds(code);
-	actual = strdup(rz_cons_get_buffer());
+	actual = rz_cons_get_buffer_dup();
 	rz_cons_pop();
 	mu_assert_streq(actual, expected, "pdg* OUTPUT DOES NOT MATCH");
 

@@ -4059,7 +4059,7 @@ static char *get_graph_string(RzCore *core, RzAGraph *g) {
 	rz_config_set_i(core->config, "scr.color", 0);
 	rz_config_set_i(core->config, "scr.utf8", 0);
 	rz_core_visual_graph(core, g, NULL, false);
-	char *s = strdup(rz_cons_get_buffer());
+	char *s = rz_cons_get_buffer_dup();
 	rz_cons_reset();
 	rz_config_set_i(core->config, "scr.color", c);
 	rz_config_set_i(core->config, "scr.utf8", u);
