@@ -1257,7 +1257,12 @@ RZ_OWN RZ_API RzTable *rz_table_transpose(RZ_NONNULL RzTable *t) {
 
 	// adding rows to transpose table rows * (number of columns in the table)
 	for (int i = 0; i < t->rows->length; i++) {
-		rz_table_add_column(transpose, typeString, "Value", 0);
+		char name[20];
+		if (t->rows->length == 1) {
+			rz_table_add_column(transpose, typeString, "Value", 0);
+		} else {
+			rz_table_add_column(transpose, typeString, rz_strf(name, "Value%d", i + 1), 0);
+		}
 	}
 
 	// column names to row heads
