@@ -132,7 +132,7 @@ gdb_reg_t *arch_parse_reg_profile(const char *reg_profile) {
 	}
 	i = 0;
 	rz_list_foreach (gdb_regs_list, iter, reg) {
-		memcpy(reg, gdb_regs + i, sizeof(gdb_reg_t));
+		memcpy(gdb_regs + i, reg, sizeof(gdb_reg_t));
 		i++;
 	}
 	memset(gdb_regs + i, 0, sizeof(gdb_reg_t));
