@@ -327,10 +327,10 @@ bool test_rz_table_transpose() {
 	rz_table_add_row(t, "d", "100", NULL);
 	char *table = rz_table_tostring(rz_table_transpose(t));
 	mu_assert_streq(table,
-		"Name  Value Value Value Value \n"
-		"------------------------------\n"
-		"ascii a     b     c     d\n"
-		"code  97    98    99    100\n",
+		"Name  Value1 Value2 Value3 Value4 \n"
+		"----------------------------------\n"
+		"ascii a      b      c      d\n"
+		"code  97     98     99     100\n",
 		"rz_table_transpose");
 	free(table);
 	mu_end;
