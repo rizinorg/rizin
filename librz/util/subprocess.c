@@ -25,19 +25,19 @@ static bool create_pipe_overlap(HANDLE *pipe_read, HANDLE *pipe_write, LPSECURIT
 	if (!sz) {
 		sz = 4096;
 	}
-	char name[MAX_PATH];
-	snprintf(name, sizeof(name), "\\\\.\\pipe\\rz-pipe-subproc.%d.%ld", (int)GetCurrentProcessId(), (long)InterlockedIncrement(&pipe_id));
-	*pipe_read = CreateNamedPipeA(name, PIPE_ACCESS_INBOUND | read_mode, PIPE_TYPE_BYTE | PIPE_WAIT, 1, sz, sz, 120 * 1000, attrs);
+	WCHAR name[MAX_PATH];
+	_snwprintf_s(name, _countof(name), sizeof(name), L"\\\\.\\pipe\\rz-pipe-subproc.%d.%ld", (int)GetCurrentProcessId(), (long)InterlockedIncrement(&pipe_id));
+	*pipe_read = CreateNamedPipeW(name, PIPE_ACCESS_INBOUND | read_mode, PIPE_TYPE_BYTE | PIPE_WAIT, 1, sz, sz, 120 * 1000, attrs);
 	if (!*pipe_read) {
 		return FALSE;
 	}
-	*pipe_write = CreateFileA(name, GENERIC_WRITE, 0, attrs, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | write_mode, NULL);
+	*pipe_write = CreateFileW(name, GENERIC_WRITE, 0, attrs, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | write_mode, NULL);
 	if (*pipe_write == INVALID_HANDLE_VALUE) {
 		CloseHandle(*pipe_read);
 		return FALSE;
 	}
 
-	SetEnvironmentVariable(TEXT("RZ_PIPE_PATH"), name);
+	SetEnvironmentVariableW(L"RZ_PIPE_PATH", name);
 	return true;
 }
 
@@ -45,7 +45,7 @@ RZ_API bool rz_subprocess_init(void) {
 	return true;
 }
 RZ_API void rz_subprocess_fini(void) {
-	SetEnvironmentVariable(TEXT("RZ_PIPE_PATH"), NULL);
+	SetEnvironmentVariableW(L"RZ_PIPE_PATH", NULL);
 }
 
 // Create an env block that inherits the current vars but overrides the given ones
@@ -141,18 +141,31 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 	HANDLE stdin_read = GetStdHandle(STD_INPUT_HANDLE);
 	HANDLE stdout_write = GetStdHandle(STD_OUTPUT_HANDLE);
 	HANDLE stderr_write = GetStdHandle(STD_ERROR_HANDLE);
-	LPSTR lpFilePart;
-	char cmd_exe[MAX_PATH];
+	LPWSTR lpFilePart;
+	WCHAR cmd_exe[MAX_PATH];
 
-	if (!rz_file_exists(opt->file) && NeedCurrentDirectoryForExePathA(opt->file)) {
+	PWCHAR file = rz_utf8_to_utf16(opt->file);
+	if (!file) {
+		return NULL;
+	}
+
+	if (!rz_file_exists(opt->file) && NeedCurrentDirectoryForExePathW(file)) {
 		DWORD len;
-		if ((len = SearchPath(NULL, opt->file, ".exe", sizeof(cmd_exe), cmd_exe, &lpFilePart)) < 1) {
+		if ((len = SearchPathW(NULL, file, L".exe", _countof(cmd_exe), cmd_exe, &lpFilePart)) < 1) {
 			RZ_LOG_DEBUG("SearchPath failed for %s\n", opt->file);
+			free(file);
 			return NULL;
 		}
 	} else {
-		snprintf(cmd_exe, sizeof(cmd_exe), "%s", opt->file);
+		WCHAR *tmp = rz_utf8_to_utf16(opt->file);
+		if (!tmp) {
+			free(file);
+			return NULL;
+		}
+		_snwprintf_s(cmd_exe, _countof(cmd_exe), sizeof(cmd_exe), L"%s", tmp);
+		free(tmp);
 	}
+	free(file);
 
 	char **argv = calloc(opt->args_size + 1, sizeof(char *));
 	if (!argv) {
@@ -162,10 +175,22 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 	if (opt->args_size) {
 		memcpy(argv + 1, opt->args, sizeof(char *) * opt->args_size);
 	}
-	char *cmdline = rz_str_format_msvc_argv(opt->args_size + 1, argv);
+	char *cmd = rz_str_format_msvc_argv(opt->args_size + 1, argv);
 	free(argv);
-	if (!cmdline) {
+	if (!cmd) {
 		return NULL;
+	}
+	PWCHAR cmdline = rz_utf8_to_utf16(cmd);
+	if (!cmdline) {
+		goto error;
+	}
+
+	{
+		char *log_executable = rz_utf16_to_utf8(cmd_exe);
+		if (log_executable) {
+			RZ_LOG_DEBUG("%s%s\n", log_executable, cmd);
+			free(log_executable);
+		}
 	}
 
 	proc = RZ_NEW0(RzSubprocess);
@@ -215,7 +240,7 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 	}
 
 	PROCESS_INFORMATION proc_info = { 0 };
-	STARTUPINFOA start_info = { 0 };
+	STARTUPINFOW start_info = { 0 };
 	start_info.cb = sizeof(start_info);
 	start_info.hStdError = stderr_write;
 	start_info.hStdOutput = stdout_write;
@@ -223,8 +248,7 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 	start_info.dwFlags = STARTF_USESTDHANDLES;
 
 	LPWSTR env = override_env(opt->envvars, opt->envvals, opt->env_size);
-	RZ_LOG_DEBUG("%s%s\n", cmd_exe, cmdline);
-	if (!CreateProcessA(
+	if (!CreateProcessW(
 		    cmd_exe, // exe
 		    cmdline, // command line
 		    NULL, // process security attributes
@@ -236,12 +260,7 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 		    &start_info, // STARTUPINFO pointer
 		    &proc_info)) { // receives PROCESS_INFORMATION
 		free(env);
-		char err_msg[256];
-		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-			NULL, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-			err_msg, sizeof(err_msg), NULL);
-
-		RZ_LOG_ERROR("CreateProcess failed: %#x %s\n", (int)GetLastError(), err_msg);
+		rz_sys_perror("CreateProcess");
 		goto error;
 	}
 	free(env);
@@ -251,13 +270,13 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 
 beach:
 
-	if (stdin_read != GetStdHandle(STD_INPUT_HANDLE)) {
+	if (stdin_read && stdin_read != GetStdHandle(STD_INPUT_HANDLE)) {
 		CloseHandle(stdin_read);
 	}
-	if (stderr_write != GetStdHandle(STD_ERROR_HANDLE) && stderr_write != stdout_write) {
+	if (stderr_write && stderr_write != GetStdHandle(STD_ERROR_HANDLE) && stderr_write != stdout_write) {
 		CloseHandle(stderr_write);
 	}
-	if (stdout_write != GetStdHandle(STD_OUTPUT_HANDLE)) {
+	if (stdout_write && stdout_write != GetStdHandle(STD_OUTPUT_HANDLE)) {
 		CloseHandle(stdout_write);
 	}
 	free(cmdline);

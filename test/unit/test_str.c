@@ -42,6 +42,30 @@ bool test_rz_str_replace(void) {
 	mu_end;
 }
 
+bool test_rz_str_ncpy(void) {
+	char *str = strdup("hello world");
+	char buf[10];
+	rz_str_ncpy(buf, str, 3);
+	mu_assert_streq(buf, "he", "error, while copying n bytes");
+
+	rz_str_ncpy(buf, str, 1);
+	mu_assert_streq(buf, "", "error, while copying 1 bytes");
+
+	int size = sizeof(buf) - 1;
+	rz_str_ncpy(buf, str, size);
+	mu_assert_streq(buf, "hello wo", "error, while size = sizeof(buf) - 1");
+
+	size = sizeof(buf);
+	rz_str_ncpy(buf, str, size);
+	mu_assert_streq(buf, "hello wor", "error, while size = sizeof(buf)");
+
+	size = rz_str_ncpy(buf, str, 6);
+	mu_assert_eq(size, 11, "error, return value is not equal to the length of src");
+
+	free(str);
+	mu_end;
+}
+
 bool test_rz_str_replace_char(void) {
 	char *str = strdup("hello world");
 	(void)rz_str_replace_char(str, 'l', 'x');
@@ -657,6 +681,7 @@ bool test_rz_str_ndup(void) {
 bool all_tests() {
 	mu_run_test(test_rz_str_newf);
 	mu_run_test(test_rz_str_replace_char_once);
+	mu_run_test(test_rz_str_ncpy);
 	mu_run_test(test_rz_str_replace_char);
 	mu_run_test(test_rz_str_replace);
 	mu_run_test(test_rz_str_bits64);

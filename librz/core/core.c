@@ -1693,25 +1693,25 @@ static RzLineNSCompletionResult *rzshell_autocomplete(RzLineBuffer *buf, RzLineP
 RZ_API int rz_core_fgets(char *buf, int len, void *user) {
 	RzCore *core = (RzCore *)user;
 	RzCons *cons = rz_cons_singleton();
-	RzLine *rzli = cons->line;
+	RzLine *rzline = cons->line;
 	bool prompt = cons->context->is_interactive;
 	buf[0] = '\0';
 	if (prompt) {
 		if (core->use_rzshell_autocompletion) {
-			rzli->ns_completion.run = rzshell_autocomplete;
-			rzli->ns_completion.run_user = core;
-			rzli->completion.run = NULL;
+			rzline->ns_completion.run = rzshell_autocomplete;
+			rzline->ns_completion.run_user = core;
+			rzline->completion.run = NULL;
 		} else {
-			rz_line_completion_set(&rzli->completion, rizin_argc, rizin_argv);
-			rzli->completion.run = autocomplete;
-			rzli->completion.run_user = core;
-			rzli->ns_completion.run = NULL;
+			rz_line_completion_set(&rzline->completion, rizin_argc, rizin_argv);
+			rzline->completion.run = autocomplete;
+			rzline->completion.run_user = core;
+			rzline->ns_completion.run = NULL;
 		}
 	} else {
-		rzli->history.data = NULL;
-		rz_line_completion_set(&rzli->completion, 0, NULL);
-		rzli->completion.run = NULL;
-		rzli->completion.run_user = NULL;
+		rzline->history.data = NULL;
+		rz_line_completion_set(&rzline->completion, 0, NULL);
+		rzline->completion.run = NULL;
+		rzline->completion.run_user = NULL;
 	}
 	const char *ptr = rz_line_readline();
 	if (!ptr) {

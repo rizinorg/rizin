@@ -158,6 +158,11 @@ RZ_API bool rz_io_cache_write(RzIO *io, ut64 addr, const ut8 *buf, int len) {
 	if (!ch) {
 		return false;
 	}
+	if (UT64_ADD_OVFCHK(addr, len)) {
+		const ut64 first_len = UT64_MAX - addr;
+		rz_io_cache_write(io, 0, buf + first_len, len - first_len);
+		len = first_len;
+	}
 	ch->itv = (RzInterval){ addr, len };
 	ch->odata = (ut8 *)calloc(1, len + 1);
 	if (!ch->odata) {
@@ -188,6 +193,14 @@ RZ_API bool rz_io_cache_write(RzIO *io, ut64 addr, const ut8 *buf, int len) {
 RZ_API bool rz_io_cache_read(RzIO *io, ut64 addr, ut8 *buf, int len) {
 	rz_return_val_if_fail(io && buf, false);
 	RzSkyline *skyline = &io->cache_skyline;
+	if (!len) {
+		return true;
+	}
+	if (UT64_ADD_OVFCHK(addr, len)) {
+		const ut64 first_len = UT64_MAX - addr;
+		rz_io_cache_read(io, 0, buf + first_len, len - first_len);
+		len = first_len;
+	}
 	const RzSkylineItem *iter = rz_skyline_get_item_intersect(skyline, addr, len);
 	if (!iter) {
 		return false;

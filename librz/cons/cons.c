@@ -528,6 +528,30 @@ RZ_API bool rz_cons_enable_mouse(const bool enable) {
 #endif
 }
 
+#if __WINDOWS__
+static void set_console_codepage_to_utf8(void) {
+	if (IsValidCodePage(CP_UTF8)) {
+		if (!SetConsoleOutputCP(CP_UTF8)) {
+			rz_sys_perror("SetConsoleCP");
+		}
+		if (!SetConsoleCP(CP_UTF8)) {
+			rz_sys_perror("SetConsoleCP");
+		}
+	} else {
+		RZ_LOG_INFO("UTF-8 Codepage not installed.\n");
+	}
+}
+
+static void restore_console_codepage(void) {
+	if (!SetConsoleCP(I.old_cp)) {
+		rz_sys_perror("SetConsoleCP");
+	}
+	if (!SetConsoleOutputCP(I.old_ocp)) {
+		rz_sys_perror("SetConsoleOutputCP");
+	}
+}
+#endif
+
 // Stub function that cb_main_output gets pointed to in util/log.c by rz_cons_new
 // This allows Cutter to set per-task logging redirection
 RZ_API RzCons *rz_cons_new(void) {
@@ -563,8 +587,10 @@ RZ_API RzCons *rz_cons_new(void) {
 	I.num = NULL;
 	I.null = 0;
 #if __WINDOWS__
-	I.old_cp = GetConsoleOutputCP();
+	I.old_cp = GetConsoleCP();
+	I.old_ocp = GetConsoleOutputCP();
 	I.vtmode = rz_cons_is_vtcompat();
+	set_console_codepage_to_utf8();
 #else
 	I.vtmode = 2;
 #endif
@@ -601,11 +627,7 @@ RZ_API RzCons *rz_cons_new(void) {
 RZ_API RzCons *rz_cons_free(void) {
 #if __WINDOWS__
 	rz_cons_enable_mouse(false);
-	if (I.old_cp) {
-		(void)SetConsoleOutputCP(I.old_cp);
-		// chcp doesn't pick up the code page switch for some reason
-		(void)rz_sys_cmdf("chcp %u > NUL", I.old_cp);
-	}
+	restore_console_codepage();
 #endif
 	I.refcnt--;
 	if (I.refcnt != 0) {
@@ -1600,30 +1622,6 @@ RZ_API void rz_cons_set_raw(bool is_raw) {
 
 RZ_API void rz_cons_set_utf8(bool b) {
 	I.use_utf8 = b;
-#if __WINDOWS__
-	if (b) {
-		if (IsValidCodePage(CP_UTF8)) {
-			if (!SetConsoleOutputCP(CP_UTF8)) {
-				rz_sys_perror("rz_cons_set_utf8");
-			}
-#if UNICODE
-			UINT inCP = CP_UTF8;
-#else
-			UINT inCP = GetACP();
-#endif
-			if (!SetConsoleCP(inCP)) {
-				rz_sys_perror("rz_cons_set_utf8");
-			}
-		} else {
-			RZ_LOG_WARN("UTF-8 Codepage not installed.\n");
-		}
-	} else {
-		UINT acp = GetACP();
-		if (!SetConsoleCP(acp) || !SetConsoleOutputCP(acp)) {
-			rz_sys_perror("rz_cons_set_utf8");
-		}
-	}
-#endif
 }
 
 RZ_API void rz_cons_invert(int set, int color) {

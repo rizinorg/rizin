@@ -61,8 +61,9 @@ static void pair_bool(bool use_color, RzTable *t, PJ *pj, const char *key, bool 
 		pj_kb(pj, key, val);
 	} else {
 		RzTableColumnType *typeString = rz_table_type("bool");
-		const char *b = val || typeString ? get_coloured(rz_str_bool(val), use_color) : "";
+		char *b = val || typeString ? get_coloured(rz_str_bool(val), use_color) : strdup("");
 		pair(key, b, row_list, t);
+		free(b);
 	}
 }
 
@@ -70,8 +71,9 @@ static void pair_int(RzTable *t, PJ *pj, const char *key, int val, RzList *row_l
 	if (pj) {
 		pj_ki(pj, key, val);
 	} else {
-		const char *fmt = rz_str_newf("%d", val);
+		char *fmt = rz_str_newf("%d", val);
 		pair(key, fmt, row_list, t);
+		free(fmt);
 	}
 }
 
@@ -79,8 +81,9 @@ static void pair_ut64(RzTable *t, PJ *pj, const char *key, ut64 val, RzList *row
 	if (pj) {
 		pj_kn(pj, key, val);
 	} else {
-		const char *fmt = rz_str_newf("%" PFMT64d, val);
+		char *fmt = rz_str_newf("%" PFMT64d, val);
 		pair(key, fmt, row_list, t);
+		free(fmt);
 	}
 }
 
@@ -141,8 +144,9 @@ static void pair_ut64x(RzTable *t, PJ *pj, const char *key, ut64 val, RzList *ro
 	if (pj) {
 		pair_ut64(t, pj, key, val, row_list);
 	} else {
-		const char *fmt = rz_str_newf("0x%" PFMT64x, val);
+		char *fmt = rz_str_newf("0x%" PFMT64x, val);
 		pair(key, fmt, row_list, t);
+		free(fmt);
 	}
 }
 
@@ -1876,7 +1880,7 @@ static int bin_info(RzCore *r, PJ *pj, int mode, ut64 laddr) {
 	} else {
 		char *tmp_buf;
 		RzTable *table = rz_core_table(r);
-		RzList *row_list = rz_list_new();
+		RzList *row_list = rz_list_newf(free);
 		if (IS_MODE_JSON(mode)) {
 			pj_o(pj);
 		}

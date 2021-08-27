@@ -33,7 +33,7 @@ static inline void rz_skyline_clear(RzSkyline *skyline) {
 
 static inline const RzSkylineItem *rz_skyline_get_item(RzSkyline *skyline, ut64 addr) {
 	rz_return_val_if_fail(skyline, NULL);
-	return rz_skyline_get_item_intersect(skyline, addr, 0);
+	return rz_skyline_get_item_intersect(skyline, addr, 1);
 }
 
 static inline void *rz_skyline_get(RzSkyline *skyline, ut64 addr) {
