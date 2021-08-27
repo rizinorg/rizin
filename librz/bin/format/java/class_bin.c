@@ -1439,6 +1439,9 @@ RZ_API RZ_OWN RzList *rz_bin_java_class_const_pool_as_symbols(RZ_NONNULL RzBinJa
 			}
 
 			method_name = java_class_constant_pool_stringify_at(bin, name_index);
+			if (!method_name) {
+				method_name = strdup("unknown_method");
+			}
 			is_main = method_name && !strcmp(method_name, "main");
 			classname = java_class_constant_pool_stringify_at(bin, class_name_index);
 			symbol->name = add_class_name_to_name(method_name, symbol->classname);

@@ -2313,7 +2313,7 @@ RzList *MACH0_(get_segments)(RzBinFile *bf) {
 			}
 			s->vaddr = (ut64)bin->sects[i].addr;
 			s->vsize = (ut64)bin->sects[i].size;
-			s->align = (ut64)(1 << bin->sects[i].align);
+			s->align = (ut64)(1ULL << (bin->sects[i].align & 63));
 			s->is_segment = false;
 			s->size = (bin->sects[i].flags == S_ZEROFILL) ? 0 : (ut64)bin->sects[i].size;
 			// The bottom byte of flags is the section type
@@ -2435,7 +2435,7 @@ struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) * bin) {
 			sections[i].vsize = seg->vmsize;
 			sections[i].align = 4096;
 			sections[i].flags = seg->flags;
-			rz_str_ncpy(sectname, seg->segname, 16);
+			rz_strf(sectname, "%.16s", seg->segname);
 			sectname[16] = 0;
 			rz_str_filter(sectname, -1);
 			// hack to support multiple sections with same name
@@ -2463,9 +2463,9 @@ struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) * bin) {
 		sections[i].vsize = (ut64)bin->sects[i].size;
 		sections[i].align = bin->sects[i].align;
 		sections[i].flags = bin->sects[i].flags;
-		rz_str_ncpy(sectname, bin->sects[i].sectname, 17);
+		rz_strf(sectname, "%.16s", bin->sects[i].sectname);
 		rz_str_filter(sectname, -1);
-		rz_str_ncpy(raw_segname, bin->sects[i].segname, 16);
+		rz_strf(raw_segname, "%.16s", bin->sects[i].segname);
 		for (j = 0; j < bin->nsegs; j++) {
 			if (sections[i].addr >= bin->segs[j].vmaddr &&
 				sections[i].addr < (bin->segs[j].vmaddr + bin->segs[j].vmsize)) {
