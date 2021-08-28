@@ -9,13 +9,9 @@
  * \return bv RzILBitVector, pointer to the new bitvector instance
  */
 RZ_API RzILBitVector rz_il_bv_new0(ut32 length) {
+	rz_return_val_if_fail(length, NULL);
 	RzILBitVector ret = (RzILBitVector)malloc(sizeof(struct bitvector_t));
 	if (ret == NULL) {
-		return NULL;
-	}
-
-	if (length == 0) {
-		RZ_LOG_ERROR("Create a bitvector with 0 length\n");
 		return NULL;
 	}
 
@@ -25,9 +21,8 @@ RZ_API RzILBitVector rz_il_bv_new0(ut32 length) {
 	ret->bits = (ut8 *)calloc(real_elem_cnt, sizeof(ut8));
 	ret->len = length;
 	ret->_elem_len = real_elem_cnt;
-	ret->endian = BV_BIG_END;
 
-	if (ret->bits == NULL) {
+	if (!ret->bits) {
 		free(ret);
 		printf("Malloc Failed\n");
 		return NULL;
@@ -41,26 +36,26 @@ RZ_API RzILBitVector rz_il_bv_new0(ut32 length) {
  * \param bv RzILBitVector, pointer to the bitvector you want to free
  */
 RZ_API void rz_il_bv_free(RzILBitVector bv) {
-	if (bv && bv->bits) {
+	if (!bv) {
+		return;
+	}
+	if (bv->bits) {
 		free(bv->bits);
 	}
-
-	if (bv) {
-		free(bv);
-	}
+	free(bv);
 }
 
 /**
- * Dump a bitvector
+ * Clone a bitvector
  * \param bv RzILBitVector, pointer to the source bitvector
- * \return dump RzILBitVector, pointer to a new bitvector, which is a copy of source
+ * \return dup RzILBitVector, pointer to a new bitvector, which is a copy of source
  */
 RZ_API RzILBitVector rz_il_bv_dup(RzILBitVector bv) {
-	// dump bv to a new one
 	rz_return_val_if_fail(bv && bv->bits, NULL);
 
 	RzILBitVector new_bv = rz_il_bv_new0(bv->len);
 	if (!new_bv || !(new_bv->bits)) {
+		rz_il_bv_free(new_bv);
 		return NULL;
 	}
 
@@ -70,7 +65,7 @@ RZ_API RzILBitVector rz_il_bv_dup(RzILBitVector bv) {
 }
 
 /**
- * copy from source bitvector to destination bitvector
+ * Copy from source bitvector to destination bitvector
  * the maximum copied size depends on MIN(src_len, dst_len)
  * \param src RzILBitVector, the source bitvector
  * \param dst RzILBitVector, the destination bitvector
@@ -242,6 +237,10 @@ RZ_API RzILBitVector rz_il_bv_concat(RzILBitVector bv1, RzILBitVector bv2) {
  * \return ret bool, bool value at `pos` after this operation
  */
 RZ_API bool rz_il_bv_set(RzILBitVector bv, ut32 pos, bool b) {
+	if (!bv || !bv->bits) {
+		RZ_LOG_ERROR("FAIL TO SET BIT : Broken bitvector\n");
+		return false;
+	}
 	pos = bv->len - pos - 1;
 	if (b) {
 		(bv->bits)[pos / BV_ELEM_SIZE] |= (1u << (pos % BV_ELEM_SIZE));
@@ -259,6 +258,10 @@ RZ_API bool rz_il_bv_set(RzILBitVector bv, ut32 pos, bool b) {
  * \return ret bool, bool value at every positions after this operation
  */
 RZ_API bool rz_il_bv_set_all(RzILBitVector bv, bool b) {
+	if (!bv || !bv->bits) {
+		RZ_LOG_ERROR("FAIL TO SET BIT : Broken bitvector\n");
+		return false;
+	}
 	if (b) {
 		for (int i = 0; i < bv->_elem_len; ++i) {
 			bv->bits[i] = 0xff;
@@ -280,6 +283,10 @@ RZ_API bool rz_il_bv_set_all(RzILBitVector bv, bool b) {
  * \return ret bool, bool value at `pos` after this operation
  */
 RZ_API bool rz_il_bv_toggle(RzILBitVector bv, ut32 pos) {
+	if (!bv || !bv->bits) {
+		RZ_LOG_ERROR("FAIL TO SET BIT : Broken bitvector\n");
+		return false;
+	}
 	bool cur_bit = rz_il_bv_get(bv, pos);
 	bool new_bit = !cur_bit;
 	rz_il_bv_set(bv, pos, new_bit);
@@ -287,12 +294,16 @@ RZ_API bool rz_il_bv_toggle(RzILBitVector bv, ut32 pos) {
 }
 
 /**
- * Invert every bits
+ * Invert all bits
  * \param bv RzILBitVector, pointer to bv
  * \param b bit, true or false (set or unset)
  * \return ret bool, bool value at every positions after this operation
  */
 RZ_API bool rz_il_bv_toggle_all(RzILBitVector bv) {
+	if (!bv || !bv->bits) {
+		RZ_LOG_ERROR("FAIL TO SET BIT : Broken bitvector\n");
+		return false;
+	}
 	for (int i = 0; i < bv->_elem_len; ++i) {
 		(bv->bits)[i] = ~((bv->bits)[i]);
 	}
@@ -306,6 +317,10 @@ RZ_API bool rz_il_bv_toggle_all(RzILBitVector bv) {
  * \return ret bit, bool value of bit
  */
 RZ_API bool rz_il_bv_get(RzILBitVector bv, ut32 pos) {
+	if (!bv || !bv->bits) {
+		RZ_LOG_ERROR("FAIL TO GET BIT : Broken bitvector\n");
+		return false;
+	}
 	pos = bv->len - pos - 1;
 	return ((bv->bits)[pos / BV_ELEM_SIZE] & (1u << (pos % BV_ELEM_SIZE))) ? true : false;
 }
@@ -1008,7 +1023,35 @@ ut32 rz_il_bv_hash(RzILBitVector x) {
 	return h;
 }
 
-ut32 rz_il_bv_to_ut32(RzILBitVector x) {
+RZ_API ut8 rz_il_bv_to_ut8(RzILBitVector x) {
+	ut8 ret = 0;
+	if (x->len > 8) {
+		//		printf("[Warning] Convert to ut32 may loss some bits\n");
+	}
+	for (int i = 0; i < x->len; ++i) {
+		if (rz_il_bv_get(x, i)) {
+			ret += 0x1U << i;
+		}
+	}
+
+	return ret;
+}
+
+RZ_API ut16 rz_il_bv_to_ut16(RzILBitVector x) {
+	ut16 ret = 0;
+	if (x->len > 16) {
+		//		printf("[Warning] Convert to ut32 may loss some bits\n");
+	}
+	for (int i = 0; i < x->len; ++i) {
+		if (rz_il_bv_get(x, i)) {
+			ret += 0x1U << i;
+		}
+	}
+
+	return ret;
+}
+
+RZ_API ut32 rz_il_bv_to_ut32(RzILBitVector x) {
 	ut32 ret = 0;
 	if (x->len > 32) {
 		//		printf("[Warning] Convert to ut32 may loss some bits\n");

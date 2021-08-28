@@ -9,7 +9,8 @@
  * \param name string, name of this variable
  * \return var RzILVar, pointer to the new variable in VM
  */
-RZ_API RzILVar rz_il_vm_create_variable(RzILVM vm, char *name) {
+RZ_API RzILVar rz_il_vm_create_variable(RZ_NONNULL RzILVM vm, RZ_NONNULL char *name) {
+	rz_return_val_if_fail(vm && name, NULL);
 	if (vm->var_count >= RZ_IL_VM_MAX_VAR) {
 		printf("No More Vars here\n");
 		return NULL;
@@ -29,7 +30,8 @@ RZ_API RzILVar rz_il_vm_create_variable(RzILVM vm, char *name) {
  * \param type RZIL_VAR_TYPE, enum to specify the type of this value
  * \return val RzILVal, pointer to the new value in VM
  */
-RZ_API RzILVal rz_il_vm_create_value(RzILVM vm, RZIL_VAR_TYPE type) {
+RZ_API RzILVal rz_il_vm_create_value(RZ_NONNULL RzILVM vm, RZ_NONNULL RZIL_VAR_TYPE type) {
+	rz_return_val_if_fail(vm, NULL);
 	if (vm->val_count >= RZ_IL_VM_MAX_VAL) {
 		printf("No More Values\n");
 		return NULL;
@@ -48,7 +50,9 @@ RZ_API RzILVal rz_il_vm_create_value(RzILVM vm, RZIL_VAR_TYPE type) {
  * \param name string, the name of register
  * \param length int, width of register
  */
-RZ_API void rz_il_vm_add_reg(RzILVM vm, char *name, int length) {
+RZ_API void rz_il_vm_add_reg(RZ_NONNULL RzILVM vm, RZ_NONNULL char *name, int length) {
+	rz_return_if_fail(vm && name);
+	rz_return_if_fail(length > 0);
 	RzILVar var = rz_il_vm_create_variable(vm, name);
 	RzILVal val = rz_il_vm_create_value(vm, RZIL_VAR_TYPE_BV);
 	val->data.bv = rz_il_bv_new0(length);
@@ -66,7 +70,7 @@ RZ_API RzILVal rz_il_vm_fortify_val(RzILVM vm, int temp_val_index) {
 	rz_il_add_to_bag(vm->vm_global_value_set, val);
 
 	rz_il_empty_temp(vm, temp_val_index);
-	rz_il_make_val_temp(vm, temp_val_index, rz_il_dump_value(val));
+	rz_il_make_val_temp(vm, temp_val_index, rz_il_dup_value(val));
 	return val;
 }
 
@@ -78,6 +82,9 @@ RZ_API RzILVal rz_il_vm_fortify_val(RzILVM vm, int temp_val_index) {
  */
 RZ_API RzILVal rz_il_vm_fortify_bitv(RzILVM vm, int temp_val_index) {
 	RzILVal val = rz_il_new_value();
+	if (!val) {
+		return NULL;
+	}
 	val->type = RZIL_VAR_TYPE_BV;
 	val->data.bv = rz_il_get_bv_temp(vm, temp_val_index);
 	rz_il_add_to_bag(vm->vm_global_value_set, val);
@@ -94,6 +101,9 @@ RZ_API RzILVal rz_il_vm_fortify_bitv(RzILVM vm, int temp_val_index) {
  */
 RZ_API RzILVal rz_il_vm_fortify_bool(RzILVM vm, int temp_val_index) {
 	RzILVal val = rz_il_new_value();
+	if (!val) {
+		return NULL;
+	}
 	val->type = RZIL_VAR_TYPE_BOOL;
 	val->data.b = rz_il_get_bool_temp(vm, temp_val_index);
 	rz_il_add_to_bag(vm->vm_global_value_set, val);
@@ -109,6 +119,10 @@ RZ_API RzILVal rz_il_vm_fortify_bool(RzILVM vm, int temp_val_index) {
  * \return val RzILVal, pointer to the value of variable
  */
 RZ_API RzILVal rz_il_hash_find_val_by_var(RzILVM vm, RzILVar var) {
+	if (!var) {
+		RZ_LOG_ERROR("Empty var detected\n");
+		return NULL;
+	}
 	char *var_name = var->var_name;
 	RzILVal ret = rz_il_hash_find_val_by_name(vm, var_name);
 	return ret;
@@ -120,7 +134,8 @@ RZ_API RzILVal rz_il_hash_find_val_by_var(RzILVM vm, RzILVar var) {
  * \param var_name string, the name of variable
  * \return val RzILVal, pointer to the value of variable with name `var_name`
  */
-RZ_API RzILVal rz_il_hash_find_val_by_name(RzILVM vm, const char *var_name) {
+RZ_API RzILVal rz_il_hash_find_val_by_name(RzILVM vm, RZ_NONNULL const char *var_name) {
+	rz_return_val_if_fail(var_name, NULL);
 	RzILVal ret = ht_pp_find(vm->vm_global_bind_table, var_name, NULL);
 	return ret;
 }
@@ -131,8 +146,9 @@ RZ_API RzILVal rz_il_hash_find_val_by_name(RzILVM vm, const char *var_name) {
  * \param var_name string, the name of variable
  * \return var RzILVar, pointer to the variable
  */
-RZ_API RzILVar rz_il_find_var_by_name(RzILVM vm, const char *var_name) {
+RZ_API RzILVar rz_il_find_var_by_name(RzILVM vm, RZ_NONNULL const char *var_name) {
 	RzILVar var;
+	rz_return_val_if_fail(var_name, NULL);
 	for (int i = 0; i < vm->var_count; ++i) {
 		var = vm->vm_global_variable_list[i];
 		if (strcmp(var_name, var->var_name) == 0) {
@@ -161,6 +177,15 @@ RZ_API void rz_il_hash_cancel_binding(RzILVM vm, RzILVar var) {
  * \param val RzILVal, value
  */
 RZ_API void rz_il_hash_bind(RzILVM vm, RzILVar var, RzILVal val) {
+	rz_return_if_fail(vm);
+	if (!var) {
+		eprintf("Cannot bind to an NULL\n");
+		return;
+	}
+	if (!val) {
+		eprintf("Val is NULL, fail to bind to a variable\n");
+		return;
+	}
 	char *var_id = var->var_name;
 	ht_pp_update(vm->vm_global_bind_table, var_id, val);
 }
@@ -171,11 +196,12 @@ RZ_API void rz_il_hash_bind(RzILVM vm, RzILVar var, RzILVal val) {
  * \param lbl_name string, the name of label
  * \return addr RzILBitVector, address which has RzILBitVector type
  */
-RZ_API RzILBitVector rz_il_hash_find_addr_by_lblname(RzILVM vm, const char *lbl_name) {
+RZ_API RzILBitVector rz_il_hash_find_addr_by_lblname(RzILVM vm, RZ_NONNULL const char *lbl_name) {
 	HtPP *lbl_table = vm->vm_global_label_table;
 	RzILBitVector ret;
 	bool found = false;
 
+	rz_return_val_if_fail(lbl_name, NULL);
 	RzILEffectLabel label = ht_pp_find(lbl_table, lbl_name, &found);
 	if (found) {
 		ret = label->addr;
@@ -190,7 +216,8 @@ RZ_API RzILBitVector rz_il_hash_find_addr_by_lblname(RzILVM vm, const char *lbl_
  * \param lbl_name string, the name of label
  * \return lbl RzILEffectLabel, pointer to label instance
  */
-RZ_API RzILEffectLabel rz_il_vm_find_label_by_name(RzILVM vm, const char *lbl_name) {
+RZ_API RzILEffectLabel rz_il_vm_find_label_by_name(RzILVM vm, RZ_NONNULL const char *lbl_name) {
+	rz_return_val_if_fail(lbl_name, NULL);
 	RzILEffectLabel lbl = ht_pp_find(vm->vm_global_label_table, lbl_name, NULL);
 	return lbl;
 }
@@ -202,8 +229,9 @@ RZ_API RzILEffectLabel rz_il_vm_find_label_by_name(RzILVM vm, const char *lbl_na
  * \param addr RzILBitVector, label address
  * \return lbl RzILEffectLabel, pointer to label instance
  */
-RZ_API RzILEffectLabel rz_il_vm_create_label(RzILVM vm, char *name, RzILBitVector addr) {
+RZ_API RzILEffectLabel rz_il_vm_create_label(RzILVM vm, RZ_NONNULL char *name, RzILBitVector addr) {
 	HtPP *lbl_table = vm->vm_global_label_table;
+	rz_return_val_if_fail(name, NULL);
 
 	RzILEffectLabel lbl = effect_new_label(name, EFFECT_LABEL_ADDR);
 	lbl->addr = rz_il_bv_dup(addr);
@@ -218,8 +246,9 @@ RZ_API RzILEffectLabel rz_il_vm_create_label(RzILVM vm, char *name, RzILBitVecto
  * \param name string, name of this label
  * \return lbl RzILEffectLabel, pointer to label instance
  */
-RZ_API RzILEffectLabel rz_il_vm_create_label_lazy(RzILVM vm, char *name) {
+RZ_API RzILEffectLabel rz_il_vm_create_label_lazy(RzILVM vm, RZ_NONNULL char *name) {
 	HtPP *lbl_table = vm->vm_global_label_table;
+	rz_return_val_if_fail(name, NULL);
 
 	RzILEffectLabel lbl = effect_new_label(name, EFFECT_LABEL_ADDR);
 	lbl->addr = NULL;
@@ -234,7 +263,8 @@ RZ_API RzILEffectLabel rz_il_vm_create_label_lazy(RzILVM vm, char *name) {
  * \param name string, name of this label
  * \return lbl RzILEffectLabel, pointer to label instance
  */
-RZ_API RzILEffectLabel rz_il_vm_update_label(RzILVM vm, char *name, RzILBitVector addr) {
+RZ_API RzILEffectLabel rz_il_vm_update_label(RzILVM vm, RZ_NONNULL char *name, RzILBitVector addr) {
+	rz_return_val_if_fail(name, NULL);
 	RzILEffectLabel lbl = ht_pp_find(vm->vm_global_label_table, name, NULL);
 	if (lbl->addr) {
 		rz_il_bv_free(lbl->addr);
@@ -524,6 +554,10 @@ RZ_API RzPVector *rz_il_make_oplist_with_id(ut64 id, int num, ...) {
 	va_list args;
 	RzILOp cur_op;
 	RzPVector *oplist = rz_pvector_new((RzPVectorFree)rz_il_free_op);
+	if (!oplist) {
+		RZ_LOG_ERROR("Fail to create pvector for oplist\n");
+		return NULL;
+	}
 
 	va_start(args, num);
 	for (int i = 0; i < num; ++i) {
@@ -564,161 +598,3 @@ RZ_API RzPVector *rz_il_vm_load_opcodes_at_pc(RzILVM vm) {
 RZ_API RzPVector *rz_il_vm_load_opcodes(RzILVM vm, RzILBitVector addr) {
 	return ht_pp_find(vm->ct_opcodes, addr, NULL);
 }
-
-static void print_val(RzILVal val) {
-	RZIL_VAR_TYPE type = val->type;
-	RzILBitVector bv = val->data.bv;
-	RzILBool b = val->data.b;
-
-	if (type == RZIL_VAR_TYPE_BV) {
-		printf("[BV] -> %d -> ", rz_il_bv_to_ut32(bv));
-		rz_il_print_bv(bv);
-		return;
-	}
-
-	if (type == RZIL_VAR_TYPE_BOOL) {
-		printf("[BOOL]");
-		printf("%s\n", b->b ? "TRUE" : "FALSE");
-		return;
-	}
-
-	if (type == RZIL_VAR_TYPE_UNK) {
-		printf("[UNK]\n");
-	}
-}
-
-bool print_bind(void *user, const void *k, const void *v) {
-	printf("[Var-%d] : %s\n", *(int *)user, (char *)k);
-	printf("[Val-%d] : ", *(int *)user);
-	print_val((RzILVal)v);
-	*(int *)user += 1;
-	return true;
-}
-
-void rz_il_print_vm(RzILVM vm) {
-	int count = 0;
-	HtPP *var_val_bind_table = vm->vm_global_bind_table;
-	ht_pp_foreach(var_val_bind_table, (HtPPForeachCallback)print_bind, &count);
-}
-
-static bool print_vm_mem_callback(void *user, const void *k, const void *v) {
-	printf("[%d] : ", *(int *)user);
-	printf("[%d] -- [%p] -> ", rz_il_bv_to_ut32((RzILBitVector)k), v);
-	rz_il_print_bv((RzILBitVector)v);
-	*(int *)user += 1;
-	return true;
-}
-
-static bool print_vm_op_callback(void *user, const void *k, const void *v) {
-	printf("[%d] : ", *(int *)user);
-	if (k && v) {
-		printf("[%lld] -- [%p] \n", rz_il_bv_to_ut64((RzILBitVector)k), v);
-	} else if (k) {
-		printf("[%lld] -- NULL \n", rz_il_bv_to_ut64((RzILBitVector)k));
-	} else {
-		printf("[NULL] -- [NULL] \n");
-	}
-	*(int *)user += 1;
-	return true;
-}
-
-static bool print_vm_label_callback(void *user, const void *k, const void *v) {
-	printf("[%d] : ", *(int *)user);
-	*(int *)user += 1;
-
-	RzILEffectLabel label = (RzILEffectLabel)v;
-	if (label == NULL) {
-		printf("None Label : <key> %p -- <value> %p\n", k, v);
-		return false;
-	}
-	if (label->type == EFFECT_LABEL_ADDR) {
-		if (label->addr) {
-			printf("<%s> -> Addr *%p = %d\n", (char *)k, (void *)label->addr, rz_il_bv_to_ut32(label->addr));
-		} else {
-			printf("<%s> -> Addr (NULL)\n", (char *)k);
-		}
-		return true;
-	}
-
-	printf("<%s> -> Addr(function) %p\n", (char *)k, (void *)label->addr);
-	return true;
-}
-
-static bool print_vm_vars_callback(void *user, const void *k, const void *v) {
-	printf("[%d] : ", *(int *)user);
-	*(int *)user += 1;
-
-	RzILVal val = (RzILVal)v;
-	if (val == NULL) {
-		eprintf("Error : No binding Val\n");
-		return false;
-	}
-
-	char *var = (char *)k;
-	if (val->type == RZIL_VAR_TYPE_BV) {
-		printf("Var %s -- %lld\n", var, rz_il_bv_to_ut64(val->data.bv));
-	}
-
-	return true;
-}
-
-void rz_il_print_vm_vars(RzILVM vm) {
-	int count = 0;
-	ht_pp_foreach(vm->vm_global_bind_table, print_vm_vars_callback, &count);
-}
-
-void rz_il_print_vm_mem(RzILVM vm) {
-	int count = 0;
-	ht_pp_foreach(vm->mems[0]->kv_map, print_vm_mem_callback, &count);
-}
-
-void rz_il_print_vm_labels(RzILVM vm) {
-	int count = 0;
-	printf(">>>>>>>>>>>>>>>>>>>>>>>>>\n");
-	ht_pp_foreach(vm->vm_global_label_table, print_vm_label_callback, &count);
-}
-
-void rz_il_vm_debug_print_ops(RzILVM vm) {
-	int count = 0;
-	printf(">>>>>>>>>>>>>>>>>>>>>>\n");
-	ht_pp_foreach(vm->ct_opcodes, print_vm_op_callback, &count);
-}
-
-RZ_API void rz_il_print_vm_temps(RzILVM vm) {
-	int i = 0;
-	RzILTemp cur;
-	for (i = 0; i < 8; ++i) {
-		cur = vm->temp_value_list[i];
-		if (cur) {
-			printf("[TEMP-%d] -> ", i);
-			if (cur->type == RZIL_TEMP_EMPTY) {
-				printf("[EMPTY TEMP]\n");
-				continue;
-			}
-
-			if (cur->type == RZIL_TEMP_BV) {
-				printf("[BITV]");
-				rz_il_print_bv(cur->data);
-				continue;
-			}
-
-			if (cur->type == RZIL_TEMP_BOOL) {
-				printf("[BOOL]");
-				printf("%s\n", ((RzILBool)cur->data)->b ? "TRUE" : "FALSE");
-				continue;
-			}
-
-			if (cur->type == RZIL_TEMP_VAL) {
-				printf("[VAL] TYPE-%d\n", ((RzILVal)cur->data)->type);
-				continue;
-			}
-
-			if (cur->type == RZIL_TEMP_EFF) {
-				printf("[EFF] TYPE-%d\n", ((RzILEffect)cur->data)->effect_type);
-				continue;
-			}
-		}
-	}
-}
-
-void rz_il_vm_debug_easy(RzILVM vm) {}

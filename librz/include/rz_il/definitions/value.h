@@ -54,7 +54,7 @@ typedef struct rz_il_tempv_t *RzILTemp;
 
 RZ_API RzILVal rz_il_new_value(void);
 RZ_API RzILTemp rz_il_new_temp(void);
-RZ_API RzILVal rz_il_dump_value(RzILVal val);
+RZ_API RzILVal rz_il_dup_value(RzILVal val);
 RZ_API void rz_il_free_temp(RzILTemp temp);
 RZ_API void rz_il_free_value(RzILVal val);
 

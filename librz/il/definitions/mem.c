@@ -10,6 +10,9 @@ static void free_bv_key_value(HtPPKv *kv) {
 
 RZ_API RzILMem rz_il_new_mem(int min_unit_size) {
 	RzILMem ret = (RzILMem)RZ_NEW0(struct rzil_mem_t);
+	if (!ret) {
+		return NULL;
+	}
 
 	HtPPOptions options = { 0 };
 	options.cmp = (HtPPListComparator)rz_il_bv_cmp;

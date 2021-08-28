@@ -27,7 +27,6 @@ struct bitvector_t {
 	ut8 *bits; ///< bits data
 	ut32 _elem_len; ///< length of ut8 array -- real / physical
 	ut32 len; ///< length of bits -- virtual / logical
-	BV_ENDIAN endian; ///< control endian
 };
 
 typedef struct bitvector_t *RzILBitVector;
@@ -79,6 +78,8 @@ RZ_API bool rz_il_bv_lsb(RzILBitVector bv);
 RZ_API bool rz_il_bv_ule(RzILBitVector x, RzILBitVector y);
 RZ_API bool rz_il_bv_sle(RzILBitVector x, RzILBitVector y);
 // some convert functions
+RZ_API ut8 rz_il_bv_to_ut8(RzILBitVector x);
+RZ_API ut16 rz_il_bv_to_ut16(RzILBitVector x);
 RZ_API ut32 rz_il_bv_to_ut32(RzILBitVector x);
 RZ_API ut64 rz_il_bv_to_ut64(RzILBitVector x);
 // misc

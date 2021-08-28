@@ -6,6 +6,9 @@
 RZ_API RzILDataEffect effect_new_data(void) {
 	RzILDataEffect ret;
 	ret = (RzILDataEffect)malloc(sizeof(struct rzil_data_effect_t));
+	if (!ret) {
+		return NULL;
+	}
 	ret->operation = 0;
 	ret->var_name = NULL;
 	ret->val_index = -1;
@@ -15,6 +18,9 @@ RZ_API RzILDataEffect effect_new_data(void) {
 RZ_API RzILCtrlEffect effect_new_ctrl(void) {
 	RzILCtrlEffect ret;
 	ret = (RzILCtrlEffect)malloc(sizeof(struct rzil_control_effect_t));
+	if (!ret) {
+		return NULL;
+	}
 	ret->pc = 0;
 	return ret;
 }
@@ -159,6 +165,9 @@ RZ_API void print_effect(RzILEffect effect) {
 
 RZ_API RzILEffectLabel effect_new_label(char *name, EFFECT_LABEL_TYPE type) {
 	RzILEffectLabel lbl = (RzILEffectLabel)RZ_NEW0(struct rzil_effect_label_t);
+	if (!lbl) {
+		return NULL;
+	}
 	lbl->label_id = strdup(name);
 	lbl->type = type;
 	return lbl;

@@ -124,13 +124,12 @@ void rz_il_handler_load(RzILVM vm, RzILOp op);
 void rz_il_handler_store(RzILVM vm, RzILOp op);
 
 // debug info
-bool print_bind(void *user, const void *k, const void *v);
-void rz_il_print_vm(RzILVM vm);
-void rz_il_print_vm_mem(RzILVM vm);
+RZ_API void rz_il_print_vm(RzILVM vm);
+RZ_API void rz_il_print_vm_mem(RzILVM vm);
 RZ_API void rz_il_print_vm_temps(RzILVM vm);
-void rz_il_print_vm_labels(RzILVM vm);
-void rz_il_vm_debug_easy(RzILVM vm);
-void rz_il_vm_debug_print_ops(RzILVM vm);
-void rz_il_print_vm_vars(RzILVM vm);
+RZ_API void rz_il_print_vm_labels(RzILVM vm);
+RZ_API void rz_il_vm_debug_easy(RzILVM vm);
+RZ_API void rz_il_vm_debug_print_ops(RzILVM vm);
+RZ_API void rz_il_print_vm_vars(RzILVM vm);
 
 #endif // RZIL_VM_H

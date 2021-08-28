@@ -10,17 +10,20 @@
 RZ_API RzILVal rz_il_new_value(void) {
 	RzILVal ret;
 	ret = (RzILVal)malloc(sizeof(struct rz_il_val_t));
+	if (!ret) {
+		return NULL;
+	}
 	memset(ret, 0, sizeof(struct rz_il_val_t));
 	ret->type = RZIL_VAR_TYPE_UNK;
 	return ret;
 }
 
 /**
- * Dump (deep copy) a value
+ * Clone an RzILVal
  * \param val RzILVal, pointer to the value you want to dump
  * \return dump RzILVal, pointer to the dumped value
  */
-RZ_API RzILVal rz_il_dump_value(RzILVal val) {
+RZ_API RzILVal rz_il_dup_value(RzILVal val) {
 	RzILVal ret = rz_il_new_value();
 	ret->type = val->type;
 
@@ -46,6 +49,9 @@ RZ_API RzILVal rz_il_dump_value(RzILVal val) {
  */
 RZ_API RzILTemp rz_il_new_temp(void) {
 	RzILTemp temp = RZ_NEW0(struct rz_il_tempv_t);
+	if (!temp) {
+		return NULL;
+	}
 	temp->data = NULL;
 	temp->type = RZIL_TEMP_EMPTY;
 	return temp;

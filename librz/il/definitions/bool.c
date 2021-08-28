@@ -10,6 +10,9 @@
  */
 RZ_API RzILBool rz_il_new_bool(bool true_or_false) {
 	RzILBool ret = (RzILBool)malloc(sizeof(struct bool_t));
+	if (!ret) {
+		return NULL;
+	}
 	ret->b = true_or_false;
 	return ret;
 }

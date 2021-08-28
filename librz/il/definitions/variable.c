@@ -6,7 +6,7 @@
 #include <stdlib.h>
 
 /**
- * New a variable with UNKOWN TYPE
+ * New a variable with UNKNOWN TYPE
  * \param name string, name of variable
  * \return var RzILVar, pointer to this variable
  */
@@ -14,6 +14,9 @@ RZ_API RzILVar rz_il_new_variable(char *name) {
 	RzILVar ret;
 
 	ret = (RzILVar)malloc(sizeof(struct rz_il_var_t));
+	if (!ret) {
+		return NULL;
+	}
 	ret->var_name = strdup(name);
 	ret->type = RZIL_VAR_TYPE_UNK;
 
@@ -25,6 +28,9 @@ RZ_API RzILVar rz_il_new_variable(char *name) {
  * \param var RzILVar, pointer to RzILVar
  */
 RZ_API void rz_il_free_variable(RzILVar var) {
+	if (!var) {
+		return;
+	}
 	free(var->var_name);
 	free(var);
 }

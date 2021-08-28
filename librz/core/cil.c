@@ -447,7 +447,7 @@ RZ_IPI void rz_core_rzil_step(RzCore *core) {
 	RzPVector *oplist;
 
 	if (!core->analysis || !core->analysis->rzil) {
-		RZ_LOG_ERROR("Please aezi to init RZIL first\n");
+		RZ_LOG_ERROR("Run 'aezi' to init RZIL VM first\n");
 		return;
 	}
 
@@ -476,6 +476,6 @@ RZ_IPI void rz_core_rzil_step(RzCore *core) {
 		rz_il_vm_list_step(vm, oplist);
 		rz_il_clean_temps(vm);
 	} else {
-		eprintf("No oplist\n");
+		eprintf("Invalid instruction detected or reach the end of code\n");
 	}
 }

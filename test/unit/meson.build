@@ -58,6 +58,7 @@ if get_option('enable_tests')
     'idpool',
     'idstorage',
     'il_definitions',
+    'il_vm',
     'intervaltree',
     'io',
     'itv',
