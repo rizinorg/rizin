@@ -8114,7 +8114,7 @@ RZ_IPI RzCmdStatus rz_analysis_global_variable_add_handler(RzCore *core, int arg
 	rz_analysis_var_global_set_type(glob, typ, core->analysis->typedb);
 
 	if (!rz_analysis_var_global_add(core->analysis, glob)) {
-		rz_analysis_var_global_free(glob);
+		rz_analysis_var_global_free(glob, core->flags);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	return RZ_CMD_STATUS_OK;

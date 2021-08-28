@@ -72,12 +72,12 @@ RZ_API RZ_OWN bool rz_analysis_var_global_add(RzAnalysis *analysis, RZ_NONNULL R
 }
 
 /**
- * \brief Free the global variable instance
+ * \brief Free the global variable instance except the flag
  * 
  * \param glob Global variable instance
  * \return void
  */
-RZ_API void rz_analysis_var_global_free(RzAnalysisVarGlobal *glob) {
+RZ_API void rz_analysis_var_global_free_except_flag(RZ_NONNULL RzAnalysisVarGlobal *glob) {
 	if (!glob) {
 		return;
 	}
@@ -85,6 +85,30 @@ RZ_API void rz_analysis_var_global_free(RzAnalysisVarGlobal *glob) {
 	RZ_FREE(glob->name);
 	rz_type_free(glob->type);
 	rz_vector_fini(&glob->constraints);
+	RZ_FREE(glob);
+}
+
+/**
+ * \brief Free the global variable instance
+ * 
+ * \param glob Global variable instance
+ * \param flags flag list of current core instance
+ * \return void
+ */
+RZ_API void rz_analysis_var_global_free(RZ_NONNULL RzAnalysisVarGlobal *glob, RZ_NONNULL RzFlag *flags) {
+	if (!glob) {
+		return;
+	}
+	rz_return_if_fail(flags);
+
+	RZ_FREE(glob->name);
+	rz_type_free(glob->type);
+	rz_vector_fini(&glob->constraints);
+
+	if (!rz_flag_unset(flags, glob->flag)) {
+		RZ_LOG_ERROR("Failed to unset flag for global variable %s at 0x%" PFMT64x "\n", glob->name, glob->addr);
+	}
+	glob->flag = NULL;
 	RZ_FREE(glob);
 }
 
@@ -106,6 +130,7 @@ RZ_API bool rz_analysis_var_global_delete(RZ_NONNULL RzAnalysis *analysis, RZ_NO
 	ret = deleted ? ht_pp_delete(analysis->ht_global_var, glob->name) : deleted;
 
 	if (!flags || !glob->flag) {
+		glob->flag = NULL;
 		return ret;
 	}
 
@@ -276,8 +301,11 @@ RZ_API bool rz_analysis_var_global_rename(RzAnalysis *analysis, RZ_NONNULL const
 	glob->name = strdup(newname);
 
 	if (glob->flag) {
+		if (glob->flag->realname != glob->flag->name) {
+			RZ_FREE(glob->flag->realname);
+		}
 		RZ_FREE(glob->flag->name);
-		RZ_FREE(glob->flag->realname);
+
 		glob->flag->realname = strdup(newname);
 		glob->flag->name = strdup(newname);
 	}

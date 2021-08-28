@@ -80,7 +80,7 @@ static void rz_meta_item_free(void *_item) {
 
 static void global_kv_free(HtPPKv *kv) {
 	free(kv->key);
-	rz_analysis_var_global_free(kv->value);
+	rz_analysis_var_global_free_except_flag(kv->value);
 }
 
 RZ_API RzAnalysis *rz_analysis_new(void) {
