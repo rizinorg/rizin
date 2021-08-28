@@ -8120,7 +8120,7 @@ RZ_IPI RzCmdStatus rz_analysis_global_variable_add_handler(RzCore *core, int arg
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_analysis_global_variable_delete_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_analysis_global_variable_delete_byaddr_handler(RzCore *core, int argc, const char **argv) {
 	ut64 addr = rz_num_math(core->num, argv[1]);
 
 	if (!rz_analysis_var_global_delete_byaddr_at(core->analysis, addr, core->flags)) {
@@ -8129,6 +8129,15 @@ RZ_IPI RzCmdStatus rz_analysis_global_variable_delete_handler(RzCore *core, int 
 
 	return RZ_CMD_STATUS_OK;
 }
+
+RZ_IPI RzCmdStatus rz_analysis_global_variable_delete_byname_handler(RzCore *core, int argc, const char **argv) {
+	if (!rz_analysis_var_global_delete_byname(core->analysis, argv[1], core->flags)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	return RZ_CMD_STATUS_OK;
+}
+
 
 RZ_IPI RzCmdStatus rz_analysis_global_variable_rename_handler(RzCore *core, int argc, const char **argv) {
 	const char *oldname = argv[1];

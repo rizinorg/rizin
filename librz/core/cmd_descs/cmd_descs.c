@@ -91,7 +91,8 @@ static const RzCmdDescArg analysis_function_vars_sp_getref_args[3];
 static const RzCmdDescArg analysis_function_vars_sp_setref_args[3];
 static const RzCmdDescArg analysis_print_global_variable_args[2];
 static const RzCmdDescArg analysis_global_variable_add_args[4];
-static const RzCmdDescArg analysis_global_variable_delete_args[2];
+static const RzCmdDescArg analysis_global_variable_delete_byaddr_args[2];
+static const RzCmdDescArg analysis_global_variable_delete_byname_args[2];
 static const RzCmdDescArg analysis_global_variable_rename_args[3];
 static const RzCmdDescArg analysis_global_variable_retype_args[3];
 static const RzCmdDescArg analysis_rtti_demangle_class_name_args[2];
@@ -1544,7 +1545,7 @@ static const RzCmdDescHelp analysis_global_variable_add_help = {
 	.args = analysis_global_variable_add_args,
 };
 
-static const RzCmdDescArg analysis_global_variable_delete_args[] = {
+static const RzCmdDescArg analysis_global_variable_delete_byaddr_args[] = {
 	{
 		.name = "addr",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
@@ -1553,9 +1554,23 @@ static const RzCmdDescArg analysis_global_variable_delete_args[] = {
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp analysis_global_variable_delete_help = {
+static const RzCmdDescHelp analysis_global_variable_delete_byaddr_help = {
 	.summary = "delete the global variable at the addr",
-	.args = analysis_global_variable_delete_args,
+	.args = analysis_global_variable_delete_byaddr_args,
+};
+
+static const RzCmdDescArg analysis_global_variable_delete_byname_args[] = {
+	{
+		.name = "name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_global_variable_delete_byname_help = {
+	.summary = "delete global variable with name",
+	.args = analysis_global_variable_delete_byname_args,
 };
 
 static const RzCmdDescArg analysis_global_variable_rename_args[] = {
@@ -5261,8 +5276,11 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_global_variable_add_cd = rz_cmd_desc_argv_new(core->rcmd, avg_cd, "avga", rz_analysis_global_variable_add_handler, &analysis_global_variable_add_help);
 	rz_warn_if_fail(analysis_global_variable_add_cd);
 
-	RzCmdDesc *analysis_global_variable_delete_cd = rz_cmd_desc_argv_new(core->rcmd, avg_cd, "avgd", rz_analysis_global_variable_delete_handler, &analysis_global_variable_delete_help);
-	rz_warn_if_fail(analysis_global_variable_delete_cd);
+	RzCmdDesc *analysis_global_variable_delete_byaddr_cd = rz_cmd_desc_argv_new(core->rcmd, avg_cd, "avgd", rz_analysis_global_variable_delete_byaddr_handler, &analysis_global_variable_delete_byaddr_help);
+	rz_warn_if_fail(analysis_global_variable_delete_byaddr_cd);
+
+	RzCmdDesc *analysis_global_variable_delete_byname_cd = rz_cmd_desc_argv_new(core->rcmd, avg_cd, "avgm", rz_analysis_global_variable_delete_byname_handler, &analysis_global_variable_delete_byname_help);
+	rz_warn_if_fail(analysis_global_variable_delete_byname_cd);
 
 	RzCmdDesc *analysis_global_variable_rename_cd = rz_cmd_desc_argv_new(core->rcmd, avg_cd, "avgn", rz_analysis_global_variable_rename_handler, &analysis_global_variable_rename_help);
 	rz_warn_if_fail(analysis_global_variable_rename_cd);
