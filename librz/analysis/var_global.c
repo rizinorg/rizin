@@ -11,6 +11,7 @@
  * \param name variable name
  * \param addr variable address
  * \param comment variable comment
+ * \param flags flag list of current core instance
  * \return RzAnalysisVarGlobal *
  */
 RZ_API RZ_OWN RzAnalysisVarGlobal *rz_analysis_var_global_new(RZ_NONNULL const char *name, ut64 addr, RzFlag *flags) {
@@ -87,6 +88,14 @@ RZ_API void rz_analysis_var_global_free(RzAnalysisVarGlobal *glob) {
 	RZ_FREE(glob);
 }
 
+/**
+ * \brief Delete and free the global variable
+ * 
+ * \param analysis RzAnalysis
+ * \param glob global variable to be deleted
+ * \param flags flag list of current core instance
+ * \return true if succeed
+ */
 RZ_API bool rz_analysis_var_global_delete(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisVarGlobal *glob, RzFlag *flags) {
 	rz_return_val_if_fail(analysis && glob, false);
 
@@ -113,6 +122,7 @@ RZ_API bool rz_analysis_var_global_delete(RZ_NONNULL RzAnalysis *analysis, RZ_NO
  * 
  * \param analysis RzAnalysis
  * \param name Global Variable name
+ * \param flags flag list of current core instance
  * \return true if succeed
  */
 RZ_API bool rz_analysis_var_global_delete_byname(RzAnalysis *analysis, RZ_NONNULL const char *name, RzFlag *flags) {
@@ -130,6 +140,7 @@ RZ_API bool rz_analysis_var_global_delete_byname(RzAnalysis *analysis, RZ_NONNUL
  * 
  * \param analysis RzAnalysis
  * \param addr Global Variable address
+ * \param flags flag list of current core instance
  * \return true if succeed
  */
 RZ_API bool rz_analysis_var_global_delete_byaddr_at(RzAnalysis *analysis, ut64 addr, RzFlag *flags) {
@@ -147,6 +158,7 @@ RZ_API bool rz_analysis_var_global_delete_byaddr_at(RzAnalysis *analysis, ut64 a
  * 
  * \param analysis RzAnalysis
  * \param addr Global Variable address
+ * \param flags flag list of current core instance
  * \return true if succeed
  */
 RZ_API bool rz_analysis_var_global_delete_byaddr_in(RzAnalysis *analysis, ut64 addr, RzFlag *flags) {
@@ -278,6 +290,7 @@ RZ_API bool rz_analysis_var_global_rename(RzAnalysis *analysis, RZ_NONNULL const
  * 
  * \param glob Global variable instance
  * \param type The type to set. RzType*
+ * \param typedb RzTypeDB for the current analysis instance
  * \return void
  */
 RZ_API void rz_analysis_var_global_set_type(RzAnalysisVarGlobal *glob, RZ_NONNULL RZ_BORROW RzType *type, const RzTypeDB *typedb) {

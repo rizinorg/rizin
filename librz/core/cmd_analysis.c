@@ -8136,7 +8136,6 @@ RZ_IPI RzCmdStatus rz_analysis_global_variable_rename_handler(RzCore *core, int 
 	if (!rz_analysis_var_global_rename(core->analysis, oldname, newname)) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_analysis_var_global_update_flag(core, rz_analysis_var_global_get_byname(core->analysis, newname));
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -8156,7 +8155,6 @@ RZ_IPI RzCmdStatus rz_analysis_global_variable_retype_handler(RzCore *core, int 
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_analysis_var_global_set_type(glob, typ, core->analysis->typedb);
-	rz_analysis_var_global_update_flag(core, glob);
 	return RZ_CMD_STATUS_OK;
 }
 
