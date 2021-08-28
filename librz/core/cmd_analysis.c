@@ -8107,18 +8107,13 @@ RZ_IPI RzCmdStatus rz_analysis_global_variable_add_handler(RzCore *core, int arg
 		free(errmsg);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	RzAnalysisVarGlobal *glob = rz_analysis_var_global_new(var_name, addr);
+	RzAnalysisVarGlobal *glob = rz_analysis_var_global_new(var_name, addr, core->flags);
 	if (!glob) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_analysis_var_global_set_type(glob, typ);
+	rz_analysis_var_global_set_type(glob, typ, core->analysis->typedb);
 
-	if (!rz_analysis_var_global_init_flag(core, glob)) {
-		rz_analysis_var_global_free(glob);
-		return RZ_CMD_STATUS_ERROR;
-	}
 	if (!rz_analysis_var_global_add(core->analysis, glob)) {
-		rz_analysis_var_global_destroy_flag(core, glob);
 		rz_analysis_var_global_free(glob);
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -8127,12 +8122,10 @@ RZ_IPI RzCmdStatus rz_analysis_global_variable_add_handler(RzCore *core, int arg
 
 RZ_IPI RzCmdStatus rz_analysis_global_variable_delete_handler(RzCore *core, int argc, const char **argv) {
 	ut64 addr = rz_num_math(core->num, argv[1]);
-	RzAnalysisVarGlobal *glob = rz_analysis_var_global_get_byaddr_at(core->analysis, addr);
 
-	if (!rz_analysis_var_global_delete(core->analysis, glob)) {
+	if (!rz_analysis_var_global_delete_byaddr_at(core->analysis, addr, core->flags)) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_analysis_var_global_destroy_flag(core, glob);
 
 	return RZ_CMD_STATUS_OK;
 }
@@ -8162,7 +8155,7 @@ RZ_IPI RzCmdStatus rz_analysis_global_variable_retype_handler(RzCore *core, int 
 		free(errmsg);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_analysis_var_global_set_type(glob, typ);
+	rz_analysis_var_global_set_type(glob, typ, core->analysis->typedb);
 	rz_analysis_var_global_update_flag(core, glob);
 	return RZ_CMD_STATUS_OK;
 }

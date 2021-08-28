@@ -1017,11 +1017,11 @@ static bool global_var_load_cb(void *user, const char *k, const char *v) {
 	}
 	RzCore *core = ctx->analysis->core;
 	addr = rz_num_math(core->num, addr_s);
-	glob = rz_analysis_var_global_new(name, addr);
+	glob = rz_analysis_var_global_new(name, addr, core->flags);
 	if (!glob) {
 		goto beach;
 	}
-	rz_analysis_var_global_set_type(glob, vartype);
+	rz_analysis_var_global_set_type(glob, vartype, core->analysis->typedb);
 
 	RzTypeConstraint *constr;
 	rz_vector_foreach(&constraints, constr) {

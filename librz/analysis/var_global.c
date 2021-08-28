@@ -13,7 +13,7 @@
  * \param comment variable comment
  * \return RzAnalysisVarGlobal *
  */
-RZ_API RZ_OWN RzAnalysisVarGlobal *rz_analysis_var_global_new(RZ_NONNULL const char *name, ut64 addr) {
+RZ_API RZ_OWN RzAnalysisVarGlobal *rz_analysis_var_global_new(RZ_NONNULL const char *name, ut64 addr, RzFlag *flags) {
 	rz_return_val_if_fail(name, NULL);
 	RzAnalysisVarGlobal *glob = RZ_NEW0(RzAnalysisVarGlobal);
 	if (!glob) {
@@ -22,6 +22,18 @@ RZ_API RZ_OWN RzAnalysisVarGlobal *rz_analysis_var_global_new(RZ_NONNULL const c
 	glob->name = strdup(name);
 	glob->addr = addr;
 	glob->flag = NULL;
+
+	if (!flags) {
+		return glob;
+	}
+
+	RzFlagItem *glob_flag_item = rz_flag_set(flags, glob->name, glob->addr, 0);
+	if (!glob_flag_item) {
+		RZ_LOG_ERROR("Unable to create flag item for global variable %s at 0x%" PFMT64x "\n", glob->name, glob->addr);
+		return glob;
+	}
+	glob->flag = glob_flag_item;
+
 	return glob;
 }
 
@@ -75,12 +87,25 @@ RZ_API void rz_analysis_var_global_free(RzAnalysisVarGlobal *glob) {
 	RZ_FREE(glob);
 }
 
-RZ_API bool rz_analysis_var_global_delete(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisVarGlobal *glob) {
+RZ_API bool rz_analysis_var_global_delete(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisVarGlobal *glob, RzFlag *flags) {
 	rz_return_val_if_fail(analysis && glob, false);
+
+	bool ret = false;
 
 	// We need to delete RBTree first because ht_pp_delete will free its member
 	bool deleted = rz_rbtree_delete(&analysis->global_var_tree, &glob->addr, global_var_node_cmp, NULL, NULL, NULL);
-	return deleted ? ht_pp_delete(analysis->ht_global_var, glob->name) : deleted;
+	ret = deleted ? ht_pp_delete(analysis->ht_global_var, glob->name) : deleted;
+
+	if (!flags || !glob->flag) {
+		return ret;
+	}
+
+	if (!rz_flag_unset(flags, glob->flag)) {
+		RZ_LOG_ERROR("Failed to unset flag for global variable %s at 0x%" PFMT64x "\n", glob->name, glob->addr);
+	}
+
+	glob->flag = NULL;
+	return ret;
 }
 
 /**
@@ -90,14 +115,14 @@ RZ_API bool rz_analysis_var_global_delete(RZ_NONNULL RzAnalysis *analysis, RZ_NO
  * \param name Global Variable name
  * \return true if succeed
  */
-RZ_API bool rz_analysis_var_global_delete_byname(RzAnalysis *analysis, RZ_NONNULL const char *name) {
+RZ_API bool rz_analysis_var_global_delete_byname(RzAnalysis *analysis, RZ_NONNULL const char *name, RzFlag *flags) {
 	rz_return_val_if_fail(analysis && name, false);
 	RzAnalysisVarGlobal *glob = rz_analysis_var_global_get_byname(analysis, name);
 	if (!glob) {
 		return false;
 	}
 
-	return rz_analysis_var_global_delete(analysis, glob);
+	return rz_analysis_var_global_delete(analysis, glob, flags);
 }
 
 /**
@@ -107,14 +132,14 @@ RZ_API bool rz_analysis_var_global_delete_byname(RzAnalysis *analysis, RZ_NONNUL
  * \param addr Global Variable address
  * \return true if succeed
  */
-RZ_API bool rz_analysis_var_global_delete_byaddr_at(RzAnalysis *analysis, ut64 addr) {
+RZ_API bool rz_analysis_var_global_delete_byaddr_at(RzAnalysis *analysis, ut64 addr, RzFlag *flags) {
 	rz_return_val_if_fail(analysis, false);
 	RzAnalysisVarGlobal *glob = rz_analysis_var_global_get_byaddr_at(analysis, addr);
 	if (!glob) {
 		return false;
 	}
 
-	return rz_analysis_var_global_delete(analysis, glob);
+	return rz_analysis_var_global_delete(analysis, glob, flags);
 }
 
 /**
@@ -124,14 +149,14 @@ RZ_API bool rz_analysis_var_global_delete_byaddr_at(RzAnalysis *analysis, ut64 a
  * \param addr Global Variable address
  * \return true if succeed
  */
-RZ_API bool rz_analysis_var_global_delete_byaddr_in(RzAnalysis *analysis, ut64 addr) {
+RZ_API bool rz_analysis_var_global_delete_byaddr_in(RzAnalysis *analysis, ut64 addr, RzFlag *flags) {
 	rz_return_val_if_fail(analysis, false);
 	RzAnalysisVarGlobal *glob = rz_analysis_var_global_get_byaddr_in(analysis, addr);
 	if (!glob) {
 		return false;
 	}
 
-	return rz_analysis_var_global_delete(analysis, glob);
+	return rz_analysis_var_global_delete(analysis, glob, flags);
 }
 
 /**
@@ -237,6 +262,14 @@ RZ_API bool rz_analysis_var_global_rename(RzAnalysis *analysis, RZ_NONNULL const
 	}
 	RZ_FREE(glob->name);
 	glob->name = strdup(newname);
+
+	if (glob->flag) {
+		RZ_FREE(glob->flag->name);
+		RZ_FREE(glob->flag->realname);
+		glob->flag->realname = strdup(newname);
+		glob->flag->name = strdup(newname);
+	}
+
 	return ht_pp_update_key(analysis->ht_global_var, old_name, newname);
 }
 
@@ -247,10 +280,14 @@ RZ_API bool rz_analysis_var_global_rename(RzAnalysis *analysis, RZ_NONNULL const
  * \param type The type to set. RzType*
  * \return void
  */
-RZ_API void rz_analysis_var_global_set_type(RzAnalysisVarGlobal *glob, RZ_NONNULL RZ_BORROW RzType *type) {
+RZ_API void rz_analysis_var_global_set_type(RzAnalysisVarGlobal *glob, RZ_NONNULL RZ_BORROW RzType *type, const RzTypeDB *typedb) {
 	rz_return_if_fail(glob && type);
 	rz_type_free(glob->type);
 	glob->type = type;
+
+	if (typedb) {
+		glob->flag->size = rz_type_db_get_bitsize(typedb, glob->type) / 8;
+	}
 }
 
 /**
@@ -315,41 +352,4 @@ RZ_API RZ_OWN char *rz_analysis_var_global_get_constraints_readable(RzAnalysisVa
 		}
 	}
 	return rz_strbuf_drain_nofree(&sb);
-}
-
-RZ_API bool rz_analysis_var_global_init_flag(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisVarGlobal *glob) {
-	rz_return_val_if_fail(core && glob, false);
-
-	RzFlagItem *glob_flag_item = rz_flag_set(core->flags, glob->name, glob->addr, rz_type_db_get_bitsize(core->analysis->typedb, glob->type) / 8);
-
-	if (!glob_flag_item) {
-		return false;
-	}
-
-	glob->flag = glob_flag_item;
-	return true;
-}
-
-RZ_API bool rz_analysis_var_global_destroy_flag(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisVarGlobal *glob) {
-	rz_return_val_if_fail(core && glob, false);
-
-	if (!glob->flag) {
-		return true; // no-op
-	}
-
-	bool ret = false;
-	if (!rz_flag_unset(core->flags, glob->flag)) {
-		goto return_goto;
-	}
-	ret = true;
-
-return_goto:
-	glob->flag = NULL;
-	return ret;
-}
-
-RZ_API void rz_analysis_var_global_update_flag(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisVarGlobal *glob) {
-	glob->flag->name = strdup(glob->name);
-	glob->flag->realname = strdup(glob->name);
-	glob->flag->size = rz_type_db_get_bitsize(core->analysis->typedb, glob->type) / 8;
 }

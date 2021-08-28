@@ -1637,24 +1637,21 @@ RZ_API char *rz_analysis_fcn_format_sig(RZ_NONNULL RzAnalysis *analysis, RZ_NONN
 RZ_API void rz_analysis_fcn_vars_add_types(RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn);
 
 // Global vars
-RZ_API RZ_OWN RzAnalysisVarGlobal *rz_analysis_var_global_new(RZ_NONNULL const char *name, ut64 addr);
+RZ_API RZ_OWN RzAnalysisVarGlobal *rz_analysis_var_global_new(RZ_NONNULL const char *name, ut64 addr, RzFlag *flags);
 RZ_API RZ_OWN bool rz_analysis_var_global_add(RzAnalysis *analysis, RZ_NONNULL RzAnalysisVarGlobal *global_var);
 RZ_API void rz_analysis_var_global_free(RzAnalysisVarGlobal *glob);
-RZ_API bool rz_analysis_var_global_delete_byname(RzAnalysis *analysis, RZ_NONNULL const char *name);
-RZ_API bool rz_analysis_var_global_delete_byaddr_at(RzAnalysis *analysis, ut64 addr);
-RZ_API bool rz_analysis_var_global_delete_byaddr_in(RzAnalysis *analysis, ut64 addr);
+RZ_API bool rz_analysis_var_global_delete(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisVarGlobal *glob, RzFlag *flags);
+RZ_API bool rz_analysis_var_global_delete_byname(RzAnalysis *analysis, RZ_NONNULL const char *name, RzFlag *flags);
+RZ_API bool rz_analysis_var_global_delete_byaddr_at(RzAnalysis *analysis, ut64 addr, RzFlag *flags);
+RZ_API bool rz_analysis_var_global_delete_byaddr_in(RzAnalysis *analysis, ut64 addr, RzFlag *flags);
 RZ_API RZ_BORROW RzAnalysisVarGlobal *rz_analysis_var_global_get_byname(RzAnalysis *analysis, RZ_NONNULL const char *name);
 RZ_API RZ_BORROW RzAnalysisVarGlobal *rz_analysis_var_global_get_byaddr_at(RzAnalysis *analysis, ut64 addr);
 RZ_API RZ_BORROW RzAnalysisVarGlobal *rz_analysis_var_global_get_byaddr_in(RzAnalysis *analysis, ut64 addr);
 RZ_API RZ_OWN RzList *rz_analysis_var_global_get_all(RzAnalysis *analysis);
 RZ_API bool rz_analysis_var_global_rename(RzAnalysis *analysis, RZ_NONNULL const char *old_name, RZ_NONNULL const char *newname);
-RZ_API void rz_analysis_var_global_set_type(RzAnalysisVarGlobal *glob, RZ_NONNULL RZ_BORROW RzType *type);
+RZ_API void rz_analysis_var_global_set_type(RzAnalysisVarGlobal *glob, RZ_NONNULL RZ_BORROW RzType *type, const RzTypeDB *typedb);
 RZ_API void rz_analysis_var_global_add_constraint(RzAnalysisVarGlobal *glob, RzTypeConstraint *constraint);
 RZ_API RZ_OWN char *rz_analysis_var_global_get_constraints_readable(RzAnalysisVarGlobal *glob);
-RZ_API bool rz_analysis_var_global_init_flag(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisVarGlobal *glob);
-RZ_API bool rz_analysis_var_global_destroy_flag(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisVarGlobal *glob);
-RZ_API bool rz_analysis_var_global_delete(RzAnalysis *analysis, RzAnalysisVarGlobal *glob);
-RZ_API void rz_analysis_var_global_update_flag(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisVarGlobal *glob);
 
 // Maintaining type links
 RZ_API bool rz_analysis_type_link_exists(RzAnalysis *analysis, ut64 addr);
