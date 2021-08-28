@@ -62,6 +62,10 @@ RZ_API RZ_OWN bool rz_analysis_var_global_add(RzAnalysis *analysis, RZ_NONNULL R
 		RZ_LOG_ERROR("Global variable %s at 0x%" PFMT64x " already exists!\n", global_var->name, global_var->addr);
 		return false;
 	}
+	if (rz_analysis_var_global_get_byname(analysis, global_var->name)) {
+		RZ_LOG_ERROR("Global variable %s at 0x%" PFMT64x " already exists!\n", global_var->name, global_var->addr);
+		return false;
+	}
 	if (!ht_pp_insert(analysis->ht_global_var, global_var->name, global_var)) {
 		return false;
 	}
