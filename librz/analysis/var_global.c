@@ -158,6 +158,7 @@ RZ_API bool rz_analysis_var_global_delete_byname(RzAnalysis *analysis, RZ_NONNUL
 	rz_return_val_if_fail(analysis && name, false);
 	RzAnalysisVarGlobal *glob = rz_analysis_var_global_get_byname(analysis, name);
 	if (!glob) {
+		RZ_LOG_ERROR("No global variable found having name %s\n", name);
 		return false;
 	}
 
@@ -176,6 +177,7 @@ RZ_API bool rz_analysis_var_global_delete_byaddr_at(RzAnalysis *analysis, ut64 a
 	rz_return_val_if_fail(analysis, false);
 	RzAnalysisVarGlobal *glob = rz_analysis_var_global_get_byaddr_at(analysis, addr);
 	if (!glob) {
+		RZ_LOG_ERROR("No global variable found at 0x%" PFMT64x "\n", addr);
 		return false;
 	}
 
