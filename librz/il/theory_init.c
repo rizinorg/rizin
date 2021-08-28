@@ -23,7 +23,7 @@ void rz_il_handler_ite(RzILVM vm, RzILOp op) {
 void rz_il_handler_var(RzILVM vm, RzILOp op) {
 	RzILOpVar var_op = op->op.var;
 	RzILVal val = rz_il_hash_find_val_by_name(vm, var_op->v);
-	val = rz_il_dump_value(val);
+	val = rz_il_dup_value(val);
 	rz_il_make_val_temp(vm, var_op->ret, val);
 }
 

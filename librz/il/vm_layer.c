@@ -36,7 +36,18 @@ RZ_API bool rz_il_vm_init(RzILVM vm, ut64 start_addr, int addr_size, int data_si
 	vm->data_size = data_size;
 
 	vm->vm_global_variable_list = (RzILVar *)calloc(RZ_IL_VM_MAX_VAR, sizeof(RzILVar));
+	if (!vm->vm_global_variable_list) {
+		RZ_LOG_ERROR("[VM INIT FAILED] : variable\n");
+		rz_il_vm_close(vm);
+		return false;
+	}
+
 	vm->vm_global_value_set = rz_il_new_bag(RZ_IL_VM_MAX_VAL, (RzILBagFreeFunc)rz_il_free_value);
+	if (!vm->vm_global_value_set) {
+		RZ_LOG_ERROR("[VM INIT FAILED] : value bag\n");
+		rz_il_vm_close(vm);
+		return false;
+	}
 
 	// Key : string
 	// Val : RzILEffectLabel
@@ -64,6 +75,11 @@ RZ_API bool rz_il_vm_init(RzILVM vm, ut64 start_addr, int addr_size, int data_si
 
 	// Temporary Value for core theory execution
 	vm->temp_value_list = (RzILTemp *)calloc(RZ_IL_VM_MAX_TEMP, sizeof(RzILTemp));
+	if (!vm->temp_value_list) {
+		RZ_LOG_ERROR("[VM INIT FAILED] : temporary value\n");
+		rz_il_vm_close(vm);
+		return false;
+	}
 	for (int i = 0; i < RZ_IL_VM_MAX_TEMP; ++i) {
 		vm->temp_value_list[i] = rz_il_new_temp();
 	}
@@ -73,6 +89,10 @@ RZ_API bool rz_il_vm_init(RzILVM vm, ut64 start_addr, int addr_size, int data_si
 	//      2. Multiple Memory
 	//      3. pc length
 	vm->mems = (RzILMem *)calloc(RZ_IL_VM_MAX_TEMP, sizeof(RzILMem));
+	if (!vm->mems) {
+		RZ_LOG_ERROR("[VM INIT FAILED] : mem\n");
+		rz_il_vm_close(vm);
+	}
 	vm->pc = rz_il_bv_new_from_ut64(addr_size, start_addr);
 
 	// Table for storing the core theory opcodes

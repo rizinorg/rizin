@@ -34,14 +34,14 @@ static void bf_syscall_read(RzILVM vm, RzILOp op) {
 	ut8 c = getc(stdin);
 	RzILBitVector bv = rz_il_bv_new_from_ut32(BF_ALIGN_SIZE, c);
 
-	RzILVal ptr_val = rz_il_dump_value(rz_il_hash_find_val_by_name(vm, "ptr"));
+	RzILVal ptr_val = rz_il_dup_value(rz_il_hash_find_val_by_name(vm, "ptr"));
 
 	rz_il_vm_mem_store(vm, 0, ptr_val->data.bv, bv);
 	rz_il_free_value(ptr_val);
 }
 
 static void bf_syscall_write(RzILVM vm, RzILOp op) {
-	RzILVal ptr_val = rz_il_dump_value(rz_il_hash_find_val_by_name(vm, "ptr"));
+	RzILVal ptr_val = rz_il_dup_value(rz_il_hash_find_val_by_name(vm, "ptr"));
 
 	RzILBitVector bv = rz_il_vm_mem_load(vm, 0, ptr_val->data.bv);
 	if (!bv) {

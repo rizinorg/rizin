@@ -235,7 +235,7 @@ bool test_rzil_bv_cmp(void) {
 }
 
 bool test_rzil_bv_operation(void) {
-	RzILBitVector x, res, prep, append, cut_h, cut_t;
+	RzILBitVector x, y, res, prep, append, cut_h, cut_t, concat;
 
 	// 0000 1000
 	x = rz_il_bv_new0(8);
@@ -256,6 +256,17 @@ bool test_rzil_bv_operation(void) {
 	// cut tail 4: 0000
 	cut_t = rz_il_bv_new0(4);
 
+	// y : 1011
+	y = rz_il_bv_new0(4);
+	rz_il_bv_set(y, 0, true);
+	rz_il_bv_set(y, 1, true);
+	rz_il_bv_set(y, 3, true);
+	concat = rz_il_bv_new0(12);
+	rz_il_bv_set(concat, 0, true);
+	rz_il_bv_set(concat, 1, true);
+	rz_il_bv_set(concat, 3, true);
+	rz_il_bv_set(concat, 7, true);
+
 	res = rz_il_bv_prepend_zero(x, 3);
 	mu_assert("prepend 3 zero", is_equal_bv(res, prep));
 	rz_il_bv_free(res);
@@ -272,11 +283,17 @@ bool test_rzil_bv_operation(void) {
 	mu_assert("cut tail 4 zero", is_equal_bv(res, cut_t));
 	rz_il_bv_free(res);
 
+	res = rz_il_bv_concat(x, y);
+	mu_assert("concat x and y", is_equal_bv(res, concat));
+	rz_il_bv_free(res);
+
 	rz_il_bv_free(prep);
 	rz_il_bv_free(append);
 	rz_il_bv_free(cut_h);
 	rz_il_bv_free(cut_t);
+	rz_il_bv_free(concat);
 	rz_il_bv_free(x);
+	rz_il_bv_free(y);
 
 	mu_end;
 }

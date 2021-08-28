@@ -22,7 +22,7 @@ RZ_API RzAnalysisRzil *rz_analysis_rzil_new() {
 }
 
 /**
- * Cleanup rzil instance : clean VM, clean arch-specific user_data, and rzil itself
+ * Cleanup RZIL instance : clean VM, clean arch-specific user_data, and RZIL itself
  * \param analysis pointer to rizin's RzAnalysis
  * \param rzil pointer to RzAnalysisRzil
  */
@@ -39,7 +39,7 @@ RZ_API void rz_analysis_rzil_cleanup(RzAnalysis *analysis, RzAnalysisRzil *rzil)
 }
 
 /**
- * Set pc of rzil
+ * Set instruction pointer for the current RZIL VM session
  * \param rzil RzAnalysis* pointer to RzAnalysisRzil instance
  * \param addr ut64 address of new pc
  * \return true if set successfully, else return false
@@ -53,7 +53,7 @@ RZ_API bool rz_analysis_rzil_set_pc(RzAnalysisRzil *rzil, ut64 addr) {
 }
 
 /**
- * Init an empty rzil
+ * Init an empty RZIL
  * \param analysis RzAnalysis* pointer to RzAnalysis
  * \param rzil RzAnalysisRzil* pointer to RzAnalysisRzil
  * \param romem int is read only mem ?
@@ -79,7 +79,7 @@ RZ_API bool rz_analysis_rzil_setup(RzAnalysis *analysis) {
 }
 
 /**
- * Set op at address in VM
+ * Set operand list starting at the specified address for the RZIL VM
  * \param rzil RzAnalysisRzil* pointer to RzAnalysisRzil
  * \param addr ut64 address of current pc
  * \param oplist RzPvector* vector of core theory opcodes

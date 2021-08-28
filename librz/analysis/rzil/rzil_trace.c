@@ -60,16 +60,18 @@ error:
 
 RZ_API void rz_analysis_rzil_trace_free(RzAnalysisEsilTrace *trace) {
 	size_t i;
-	if (trace) {
-		ht_up_free(trace->registers);
-		ht_up_free(trace->memory);
-		for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
-			rz_reg_arena_free(trace->arena[i]);
-		}
-		rz_pvector_free(trace->instructions);
-		trace->instructions = NULL;
-		RZ_FREE(trace);
+	if (!trace) {
+		return;
 	}
+
+	ht_up_free(trace->registers);
+	ht_up_free(trace->memory);
+	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
+		rz_reg_arena_free(trace->arena[i]);
+	}
+	rz_pvector_free(trace->instructions);
+	trace->instructions = NULL;
+	RZ_FREE(trace);
 }
 
 // IL trace wrapper of ESIL
@@ -92,8 +94,9 @@ static void bv_to_databuf(ut8 *buf, RzILBitVector bv) {
 	//	}
 }
 
-static void rz_analysis_rzil_trace_focus_mem_read(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzILOp single_op) {
+static void rz_analysis_rzil_trace_focus_mem_read(RzAnalysis *analysis, RZ_NONNULL RzAnalysisRzil *rzil, RZ_NONNULL RzILOp single_op) {
 	rz_return_if_fail(rzil);
+	rz_return_if_fail(single_op);
 	RzILOpLoad op_load = single_op->op.load;
 
 	RzILBitVector addr = rz_il_get_bv_temp(rzil->vm, op_load->key);
@@ -116,8 +119,9 @@ static void rz_analysis_rzil_trace_focus_mem_read(RzAnalysis *analysis, RzAnalys
 	rzil_add_mem_trace(rzil->trace, mem_read);
 }
 
-static void rz_analysis_rzil_trace_focus_mem_write(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzILOp single_op) {
+static void rz_analysis_rzil_trace_focus_mem_write(RzAnalysis *analysis, RZ_NONNULL RzAnalysisRzil *rzil, RZ_NONNULL RzILOp single_op) {
 	rz_return_if_fail(rzil);
+	rz_return_if_fail(single_op);
 	RzILOpStore op_store = single_op->op.store;
 
 	RzILBitVector addr = rz_il_get_bv_temp(rzil->vm, op_store->key);
@@ -140,8 +144,9 @@ static void rz_analysis_rzil_trace_focus_mem_write(RzAnalysis *analysis, RzAnaly
 	rzil_add_mem_trace(rzil->trace, mem_write);
 }
 
-static void rz_analysis_rzil_trace_focus_reg_read(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzILOp single_op) {
+static void rz_analysis_rzil_trace_focus_reg_read(RzAnalysis *analysis, RZ_NONNULL RzAnalysisRzil *rzil, RZ_NONNULL RzILOp single_op) {
 	rz_return_if_fail(rzil);
+	rz_return_if_fail(single_op);
 	RzILOpVar op_var = single_op->op.var;
 	RzILVM vm = rzil->vm;
 
@@ -160,8 +165,9 @@ static void rz_analysis_rzil_trace_focus_reg_read(RzAnalysis *analysis, RzAnalys
 	rzil_add_reg_trace(rzil->trace, reg_read);
 }
 
-static void rz_analysis_rzil_trace_focus_reg_write(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzILOp single_op) {
+static void rz_analysis_rzil_trace_focus_reg_write(RzAnalysis *analysis, RZ_NONNULL RzAnalysisRzil *rzil, RZ_NONNULL RzILOp single_op) {
 	rz_return_if_fail(rzil);
+	rz_return_if_fail(single_op);
 	RzILOpSet op_set = single_op->op.set;
 	RzILVM vm = rzil->vm;
 
@@ -180,7 +186,7 @@ static void rz_analysis_rzil_trace_focus_reg_write(RzAnalysis *analysis, RzAnaly
 	rzil_add_reg_trace(rzil->trace, reg_write);
 }
 
-static void rz_analysis_rzil_trace_focus(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzILOp single_op) {
+static void rz_analysis_rzil_trace_focus(RzAnalysis *analysis, RZ_NONNULL RzAnalysisRzil *rzil, RZ_NONNULL RzILOp single_op) {
 	// focus those op only
 	switch (single_op->code) {
 	case RZIL_OP_LOAD:
@@ -208,8 +214,9 @@ static void rz_analysis_rzil_trace_focus(RzAnalysis *analysis, RzAnalysisRzil *r
  * \param rzil
  * \param op
  */
-RZ_API void rz_analysis_rzil_trace_op(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzAnalysisRzilOp *op) {
+RZ_API void rz_analysis_rzil_trace_op(RzAnalysis *analysis, RZ_NONNULL RzAnalysisRzil *rzil, RZ_NONNULL RzAnalysisRzilOp *op) {
 	// TODO : rewrite this file when migrate to new op structure
+	rz_return_if_fail(rzil && op);
 	RzPVector *op_list = op->ops;
 
 	void **iter;

@@ -7,6 +7,9 @@
 
 RzILOp rz_il_new_empty_op(void) {
 	RzILOp ret = (RzILOp)malloc(sizeof(struct RzILOp_t));
+	if (!ret) {
+		return NULL;
+	}
 	ret->id = 0;
 	ret->code = RZIL_OP_INVALID;
 	ret->op.nil = NULL;
@@ -21,6 +24,9 @@ RzILOp rz_il_new_empty_op(void) {
  */
 RZ_API RzILOp rz_il_new_op(RzILOPCode code) {
 	RzILOp ret = (RzILOp)malloc(sizeof(struct RzILOp_t));
+	if (!ret) {
+		return NULL;
+	}
 	ret->id = 0;
 	ret->code = code;
 

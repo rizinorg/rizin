@@ -59,6 +59,7 @@ if get_option('enable_tests')
     'idstorage',
     'inflate_deflate',
     'il_definitions',
+    'il_vm',
     'intervaltree',
     'io',
     'io_ihex',
