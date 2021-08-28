@@ -39,15 +39,20 @@ RZ_API RzProjectErr rz_project_save(RzCore *core, RzProject *prj, const char *fi
 	return RZ_PROJECT_ERR_SUCCESS;
 }
 
-RZ_API RzProjectErr rz_project_save_file(RzCore *core, const char *file) {
-	char *tmp_file;
-	int mkstemp_fd = rz_file_mkstemp("svprj", &tmp_file);
-	close(mkstemp_fd);
+RZ_API RzProjectErr rz_project_save_file(RzCore *core, const char *file, bool decompress) {
 
-	if (mkstemp_fd == -1 || !tmp_file) {
-		return RZ_PROJECT_ERR_FILE;
+	char *tmp_file;
+
+	if (decompress) {
+		int mkstemp_fd = rz_file_mkstemp("svprj", &tmp_file);
+		close(mkstemp_fd);
+
+		if (mkstemp_fd == -1 || !tmp_file) {
+			return RZ_PROJECT_ERR_FILE;
+		}
 	}
 
+	const char *save_file = decompress ? tmp_file : file;
 	RzProject *prj = sdb_new0();
 	if (!prj) {
 		return RZ_PROJECT_ERR_UNKNOWN;
@@ -57,10 +62,17 @@ RZ_API RzProjectErr rz_project_save_file(RzCore *core, const char *file) {
 		sdb_free(prj);
 		return err;
 	}
-	if (!sdb_text_save(prj, tmp_file, true)) {
+	if (!sdb_text_save(prj, save_file, true)) {
 		err = RZ_PROJECT_ERR_FILE;
 	}
 	sdb_free(prj);
+
+	if (!decompress) {
+		if (err == RZ_PROJECT_ERR_SUCCESS) {
+			rz_config_set(core->config, "prj.file", file);
+		}
+		return err;
+	}
 
 	if (err != RZ_PROJECT_ERR_SUCCESS) {
 		goto tmp_file_err;

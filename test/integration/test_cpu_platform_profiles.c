@@ -34,7 +34,7 @@ bool test_cpu_profiles() {
 	if (!rz_file_is_directory(".tmp" RZ_SYS_DIR)) {
 		mu_assert_true(rz_sys_mkdir(".tmp/"), "create tmp directory");
 	}
-	RzProjectErr err = rz_project_save_file(core, ".tmp/cpu_profile.rzdb");
+	RzProjectErr err = rz_project_save_file(core, ".tmp/cpu_profile.rzdb", true);
 	mu_assert_eq(err, RZ_PROJECT_ERR_SUCCESS, "project save err");
 
 	// 4. Close the file
@@ -85,7 +85,7 @@ bool test_platform_profiles() {
 	mu_assert_streq(comment, "Broadcom Serial Controller 1 (BSC)", "Comment unequal!");
 
 	// 3. Save into the project
-	RzProjectErr err = rz_project_save_file(core, ".tmp/cpu_platform.rzdb");
+	RzProjectErr err = rz_project_save_file(core, ".tmp/cpu_platform.rzdb", true);
 	mu_assert_eq(err, RZ_PROJECT_ERR_SUCCESS, "project save err");
 
 	// 4. Close the file

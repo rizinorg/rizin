@@ -1417,15 +1417,16 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			}
 
 			prj = rz_config_get(r->config, "prj.file");
+			bool decompress = rz_config_get_b(r->config, "prj.decompress");
 			RzProjectErr prj_err = RZ_PROJECT_ERR_SUCCESS;
 			if (no_question_save) {
 				if (prj && *prj && y_save_project) {
-					prj_err = rz_project_save_file(r, prj);
+					prj_err = rz_project_save_file(r, prj, decompress);
 				}
 			} else {
 				question = rz_str_newf("Do you want to save the '%s' project? (Y/n)", prj);
 				if (prj && *prj && rz_cons_yesno('y', "%s", question)) {
-					prj_err = rz_project_save_file(r, prj);
+					prj_err = rz_project_save_file(r, prj, decompress);
 				}
 				free(question);
 			}
