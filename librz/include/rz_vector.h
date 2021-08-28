@@ -320,7 +320,7 @@ static inline void **rz_pvector_flush(RzPVector *vec) {
 /*
  * example:
  *
- * RzVector *v = ...;
+ * RzPVector *v = ...;
  * void **it;
  * rz_pvector_foreach (v, it) {
  *     void *p = *it;
