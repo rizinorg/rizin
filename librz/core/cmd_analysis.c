@@ -8111,10 +8111,12 @@ RZ_IPI RzCmdStatus rz_analysis_global_variable_add_handler(RzCore *core, int arg
 	if (!glob) {
 		return RZ_CMD_STATUS_ERROR;
 	}
+	rz_analysis_var_global_set_type(glob, typ);
+
 	if (!rz_analysis_var_global_init_flag(core, glob)) {
+		rz_analysis_var_global_free(glob);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_analysis_var_global_set_type(glob, typ);
 	if (!rz_analysis_var_global_add(core->analysis, glob)) {
 		rz_analysis_var_global_destroy_flag(core, glob);
 		rz_analysis_var_global_free(glob);
