@@ -48,7 +48,7 @@ typedef struct rz_flag_t {
 	st64 base; /* base address for all flag items */
 	bool realnames;
 	Sdb *tags;
-	RNum *num;
+	RzNum *num;
 	RzSkipList *by_off; /* flags sorted by offset, value=RzFlagsAtOffset */
 	HtPP *ht_name; /* hashmap key=item name, value=RzFlagItem * */
 	PrintfCallback cb_printf;

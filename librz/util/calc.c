@@ -17,95 +17,95 @@
 #include <stdio.h>
 
 /* accessors */
-static inline RNumCalcValue Nset(ut64 v) {
-	RNumCalcValue n;
+static inline RzNumCalcValue Nset(ut64 v) {
+	RzNumCalcValue n;
 	n.d = (double)v;
 	n.n = v;
 	return n;
 }
-static inline RNumCalcValue Nsetf(double v) {
-	RNumCalcValue n;
+static inline RzNumCalcValue Nsetf(double v) {
+	RzNumCalcValue n;
 	n.d = v;
 	n.n = (ut64)v;
 	return n;
 }
-//UNUSED static inline RNumCalcValue Naddf(RNumCalcValue n, double v) { n.d += v; n.n += (ut64)v; return n; }
-static inline RNumCalcValue Naddi(RNumCalcValue n, ut64 v) {
+//UNUSED static inline RzNumCalcValue Naddf(RzNumCalcValue n, double v) { n.d += v; n.n += (ut64)v; return n; }
+static inline RzNumCalcValue Naddi(RzNumCalcValue n, ut64 v) {
 	n.d += (double)v;
 	n.n += v;
 	return n;
 }
-static inline RNumCalcValue Nsubi(RNumCalcValue n, ut64 v) {
+static inline RzNumCalcValue Nsubi(RzNumCalcValue n, ut64 v) {
 	n.d -= (double)v;
 	n.n -= v;
 	return n;
 }
-static inline RNumCalcValue Nneg(RNumCalcValue n) {
+static inline RzNumCalcValue Nneg(RzNumCalcValue n) {
 	n.n = ~n.n;
 	return n;
 }
-static inline RNumCalcValue Norr(RNumCalcValue n, RNumCalcValue v) {
+static inline RzNumCalcValue Norr(RzNumCalcValue n, RzNumCalcValue v) {
 	n.d = v.d;
 	n.n |= v.n;
 	return n;
 }
-static inline RNumCalcValue Nxor(RNumCalcValue n, RNumCalcValue v) {
+static inline RzNumCalcValue Nxor(RzNumCalcValue n, RzNumCalcValue v) {
 	n.d = v.d;
 	n.n ^= v.n;
 	return n;
 }
-static inline RNumCalcValue Nlt(RNumCalcValue n, RNumCalcValue v) {
+static inline RzNumCalcValue Nlt(RzNumCalcValue n, RzNumCalcValue v) {
 	n.d = v.d;
 	n.n = n.n < v.n;
 	return n;
 }
-static inline RNumCalcValue Ngt(RNumCalcValue n, RNumCalcValue v) {
+static inline RzNumCalcValue Ngt(RzNumCalcValue n, RzNumCalcValue v) {
 	n.d = v.d;
 	n.n = n.n > v.n;
 	return n;
 }
-static inline RNumCalcValue Nand(RNumCalcValue n, RNumCalcValue v) {
+static inline RzNumCalcValue Nand(RzNumCalcValue n, RzNumCalcValue v) {
 	n.d = v.d;
 	n.n &= v.n;
 	return n;
 }
-static inline RNumCalcValue Nadd(RNumCalcValue n, RNumCalcValue v) {
+static inline RzNumCalcValue Nadd(RzNumCalcValue n, RzNumCalcValue v) {
 	n.d += v.d;
 	n.n += v.n;
 	return n;
 }
-static inline RNumCalcValue Nsub(RNumCalcValue n, RNumCalcValue v) {
+static inline RzNumCalcValue Nsub(RzNumCalcValue n, RzNumCalcValue v) {
 	n.d -= v.d;
 	n.n -= v.n;
 	return n;
 }
-static inline RNumCalcValue Nmul(RNumCalcValue n, RNumCalcValue v) {
+static inline RzNumCalcValue Nmul(RzNumCalcValue n, RzNumCalcValue v) {
 	n.d *= v.d;
 	n.n *= v.n;
 	return n;
 }
 
-static inline RNumCalcValue Nshl(RNumCalcValue n, RNumCalcValue v) {
+static inline RzNumCalcValue Nshl(RzNumCalcValue n, RzNumCalcValue v) {
 	n.d += v.d;
 	n.n <<= v.n;
 	return n;
 }
-static inline RNumCalcValue Nshr(RNumCalcValue n, RNumCalcValue v) {
+static inline RzNumCalcValue Nshr(RzNumCalcValue n, RzNumCalcValue v) {
 	n.d += v.d;
 	n.n >>= v.n;
 	return n;
 }
-static inline RNumCalcValue Nrol(RNumCalcValue n, RNumCalcValue v) {
+static inline RzNumCalcValue Nrol(RzNumCalcValue n, RzNumCalcValue v) {
 	n.d += v.d;
 	n.n = (n.n << v.n) | (n.n >> (sizeof(n.n) * 8 - v.n));
 	return n;
 }
-static inline RNumCalcValue Nror(RNumCalcValue n, RNumCalcValue v) {
+static inline RzNumCalcValue Nror(RzNumCalcValue n, RzNumCalcValue v) {
 	n.d += v.d;
 	n.n = (n.n >> v.n) | (n.n << (sizeof(n.n) * 8 - v.n));
 	return n;
 }
-static inline RNumCalcValue Nmod(RNumCalcValue n, RNumCalcValue v) {
+static inline RzNumCalcValue Nmod(RzNumCalcValue n, RzNumCalcValue v) {
 	if (v.d) {
 		n.d = (n.d - (n.d / v.d));
 	} else {
@@ -119,7 +119,7 @@ static inline RNumCalcValue Nmod(RNumCalcValue n, RNumCalcValue v) {
 	return n;
 }
 
-static inline RNumCalcValue Ndiv(RNumCalcValue n, RNumCalcValue v) {
+static inline RzNumCalcValue Ndiv(RzNumCalcValue n, RzNumCalcValue v) {
 	if (v.d) {
 		n.d /= v.d;
 	} else {
@@ -133,20 +133,20 @@ static inline RNumCalcValue Ndiv(RNumCalcValue n, RNumCalcValue v) {
 	return n;
 }
 
-static RNumCalcValue expr(RNum *, RNumCalc *, int);
-static RNumCalcValue term(RNum *, RNumCalc *, int);
-static void error(RNum *, RNumCalc *, const char *);
-static RNumCalcValue prim(RNum *, RNumCalc *, int);
-static RNumCalcToken get_token(RNum *, RNumCalc *);
+static RzNumCalcValue expr(RzNum *, RzNumCalc *, int);
+static RzNumCalcValue term(RzNum *, RzNumCalc *, int);
+static void error(RzNum *, RzNumCalc *, const char *);
+static RzNumCalcValue prim(RzNum *, RzNumCalc *, int);
+static RzNumCalcToken get_token(RzNum *, RzNumCalc *);
 
-static void error(RNum *num, RNumCalc *nc, const char *s) {
+static void error(RzNum *num, RzNumCalc *nc, const char *s) {
 	nc->errors++;
 	nc->calc_err = s;
 	//fprintf (stderr, "error: %s\n", s);
 }
 
-static RNumCalcValue expr(RNum *num, RNumCalc *nc, int get) {
-	RNumCalcValue left = term(num, nc, get);
+static RzNumCalcValue expr(RzNum *num, RzNumCalc *nc, int get) {
+	RzNumCalcValue left = term(num, nc, get);
 	for (;;) {
 		switch (nc->curr_tok) {
 		case RNCSHL: left = Nshl(left, term(num, nc, 1)); break;
@@ -167,20 +167,20 @@ static RNumCalcValue expr(RNum *num, RNumCalc *nc, int get) {
 	return left;
 }
 
-static RNumCalcValue term(RNum *num, RNumCalc *nc, int get) {
-	RNumCalcValue left = prim(num, nc, get);
+static RzNumCalcValue term(RzNum *num, RzNumCalc *nc, int get) {
+	RzNumCalcValue left = prim(num, nc, get);
 	for (;;) {
 		if (nc->curr_tok == RNCMUL) {
 			left = Nmul(left, prim(num, nc, 1));
 		} else if (nc->curr_tok == RNCMOD) {
-			RNumCalcValue d = prim(num, nc, 1);
+			RzNumCalcValue d = prim(num, nc, 1);
 			if (!d.d) {
 				//error (num, nc, "divide by 0");
 				return d;
 			}
 			left = Nmod(left, d);
 		} else if (nc->curr_tok == RNCDIV) {
-			RNumCalcValue d = prim(num, nc, 1);
+			RzNumCalcValue d = prim(num, nc, 1);
 			if (num != NULL && (!d.d || !d.n)) {
 				num->dbz = 1;
 				return d;
@@ -192,8 +192,8 @@ static RNumCalcValue term(RNum *num, RNumCalc *nc, int get) {
 	}
 }
 
-static RNumCalcValue prim(RNum *num, RNumCalc *nc, int get) {
-	RNumCalcValue v = { 0 };
+static RzNumCalcValue prim(RzNum *num, RzNumCalc *nc, int get) {
+	RzNumCalcValue v = { 0 };
 	if (get) {
 		get_token(num, nc);
 	}
@@ -258,11 +258,11 @@ static RNumCalcValue prim(RNum *num, RNumCalc *nc, int get) {
 	return v;
 }
 
-static void cin_putback(RNum *num, RNumCalc *nc, char c) {
+static void cin_putback(RzNum *num, RzNumCalc *nc, char c) {
 	nc->oc = c;
 }
 
-RZ_API const char *rz_num_calc_index(RNum *num, const char *p) {
+RZ_API const char *rz_num_calc_index(RzNum *num, const char *p) {
 	if (!num) {
 		return NULL;
 	}
@@ -274,7 +274,7 @@ RZ_API const char *rz_num_calc_index(RNum *num, const char *p) {
 	return num->nc.calc_buf + num->nc.calc_i;
 }
 
-static int cin_get(RNum *num, RNumCalc *nc, char *c) {
+static int cin_get(RzNum *num, RzNumCalc *nc, char *c) {
 	if (nc->oc) {
 		*c = nc->oc;
 		nc->oc = 0;
@@ -292,7 +292,7 @@ static int cin_get(RNum *num, RNumCalc *nc, char *c) {
 	return 1;
 }
 
-static int cin_get_num(RNum *num, RNumCalc *nc, RNumCalcValue *n) {
+static int cin_get_num(RzNum *num, RzNumCalc *nc, RzNumCalcValue *n) {
 	double d;
 	char str[RZ_NUMCALC_STRSZ + 1]; // TODO: move into the heap?
 	int i = 0;
@@ -321,7 +321,7 @@ static int cin_get_num(RNum *num, RNumCalc *nc, RNumCalcValue *n) {
 	return 1;
 }
 
-static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
+static RzNumCalcToken get_token(RzNum *num, RzNumCalc *nc) {
 	char ch = 0, c = 0;
 
 	do {
@@ -340,21 +340,21 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 			return nc->curr_tok = RNCINC;
 		}
 		cin_putback(num, nc, c);
-		return nc->curr_tok = (RNumCalcToken)ch;
+		return nc->curr_tok = (RzNumCalcToken)ch;
 	// negate hack
 	case '~':
 		if (cin_get(num, nc, &c) && c == '-') {
 			return nc->curr_tok = RNCNEG;
 		}
 		cin_putback(num, nc, c);
-		return nc->curr_tok = (RNumCalcToken)ch;
+		return nc->curr_tok = (RzNumCalcToken)ch;
 	// negative number
 	case '-':
 		if (cin_get(num, nc, &c) && c == '-') {
 			return nc->curr_tok = RNCDEC;
 		}
 		cin_putback(num, nc, c);
-		return nc->curr_tok = (RNumCalcToken)ch;
+		return nc->curr_tok = (RzNumCalcToken)ch;
 	case '<':
 		if (cin_get(num, nc, &c) && c == '<') { // "<<" = shift left
 			if (cin_get(num, nc, &c) && c == '<') { // "<<<" = rotate left
@@ -384,7 +384,7 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 	case '(':
 	case ')':
 	case '=':
-		return nc->curr_tok = (RNumCalcToken)ch;
+		return nc->curr_tok = (RzNumCalcToken)ch;
 	case '0':
 	case '1':
 	case '2':
@@ -444,16 +444,16 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 	}
 }
 
-static void load_token(RNum *num, RNumCalc *nc, const char *s) {
+static void load_token(RzNum *num, RzNumCalc *nc, const char *s) {
 	nc->calc_i = 0;
 	nc->calc_len = strlen(s);
 	nc->calc_buf = s;
 	nc->calc_err = NULL;
 }
 
-RZ_API ut64 rz_num_calc(RNum *num, const char *str, const char **err) {
-	RNumCalcValue n;
-	RNumCalc *nc, nc_local;
+RZ_API ut64 rz_num_calc(RzNum *num, const char *str, const char **err) {
+	RzNumCalcValue n;
+	RzNumCalc *nc, nc_local;
 	if (!str || !*str) {
 		return 0LL;
 	}

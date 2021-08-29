@@ -342,7 +342,7 @@ RZ_API RzBreakpointItem *rz_debug_bp_add(RzDebug *dbg, ut64 addr, int hw, bool w
 	return bpi;
 }
 
-static const char *rz_debug_str_callback(RNum *userptr, ut64 off, int *ok) {
+static const char *rz_debug_str_callback(RzNum *userptr, ut64 off, int *ok) {
 	// RzDebug *dbg = (RzDebug *)userptr;
 	eprintf("rz_debug_str_callback has been called. this should not happen\n");
 	return NULL;
@@ -1184,7 +1184,7 @@ repeat:
 
 	if (dbg->corebind.core) {
 		RzCore *core = (RzCore *)dbg->corebind.core;
-		RNum *num = core->num;
+		RzNum *num = core->num;
 		if (reason == RZ_DEBUG_REASON_COND) {
 			if (bp && bp->cond && dbg->corebind.cmd) {
 				dbg->corebind.cmd(dbg->corebind.core, bp->cond);

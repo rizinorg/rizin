@@ -287,7 +287,7 @@ struct rz_core_t {
 	RzIO *io;
 	RzCoreFile *file;
 	RzList *files;
-	RNum *num;
+	RzNum *num;
 	ut64 rc; // command's return code .. related to num->value;
 	RzLib *lib;
 	RzCmd *rcmd;

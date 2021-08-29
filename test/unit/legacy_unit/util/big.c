@@ -6,7 +6,7 @@
 
 void main() {
 	int a, b;
-	RNumBig n1, n2, n3, zero;
+	RzNumBig n1, n2, n3, zero;
 
 	rz_big_set_st(&n2, -2);
 	rz_big_set_str(&n3, "-3");

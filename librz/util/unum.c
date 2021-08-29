@@ -10,7 +10,7 @@
 #include <rz_util.h>
 #define RZ_NUM_USE_CALC 1
 
-static ut64 rz_num_tailff(RNum *num, const char *hex);
+static ut64 rz_num_tailff(RzNum *num, const char *hex);
 
 // TODO: rename to rz_num_srand()
 static void rz_srand(int seed) {
@@ -62,8 +62,8 @@ RZ_API void rz_num_minmax_swap_i(int *a, int *b) {
 	}
 }
 
-RZ_API RNum *rz_num_new(RNumCallback cb, RNumCallback2 cb2, void *ptr) {
-	RNum *num = RZ_NEW0(RNum);
+RZ_API RzNum *rz_num_new(RzNumCallback cb, RzNumCallback2 cb2, void *ptr) {
+	RzNum *num = RZ_NEW0(RzNum);
 	if (!num) {
 		return NULL;
 	}
@@ -74,7 +74,7 @@ RZ_API RNum *rz_num_new(RNumCallback cb, RNumCallback2 cb2, void *ptr) {
 	return num;
 }
 
-RZ_API void rz_num_free(RNum *num) {
+RZ_API void rz_num_free(RzNum *num) {
 	free(num);
 }
 
@@ -134,7 +134,7 @@ RZ_API char *rz_num_units(char *buf, size_t len, ut64 num) {
 	return buf;
 }
 
-RZ_API const char *rz_num_get_name(RNum *num, ut64 n) {
+RZ_API const char *rz_num_get_name(RzNum *num, ut64 n) {
 	if (num->cb_from_value) {
 		int ok = 0;
 		const char *msg = num->cb_from_value(num, n, &ok);
@@ -148,7 +148,7 @@ RZ_API const char *rz_num_get_name(RNum *num, ut64 n) {
 	return NULL;
 }
 
-static void error(RNum *num, const char *err_str) {
+static void error(RzNum *num, const char *err_str) {
 	if (num) {
 		num->nc.errors++;
 #if 0
@@ -159,7 +159,7 @@ static void error(RNum *num, const char *err_str) {
 
 // TODO: try to avoid the use of sscanf
 /* old get_offset */
-RZ_API ut64 rz_num_get(RNum *num, const char *str) {
+RZ_API ut64 rz_num_get(RzNum *num, const char *str) {
 	int i, j, ok;
 	char lch, len;
 	ut64 ret = 0LL;
@@ -404,7 +404,7 @@ RZ_API ut64 rz_num_get(RNum *num, const char *str) {
 }
 
 #if !RZ_NUM_USE_CALC
-static ut64 rz_num_op(RNum *num, char op, ut64 a, ut64 b) {
+static ut64 rz_num_op(RzNum *num, char op, ut64 a, ut64 b) {
 	switch (op) {
 	case '+': return a + b;
 	case '-': return a - b;
@@ -420,7 +420,7 @@ static ut64 rz_num_op(RNum *num, char op, ut64 a, ut64 b) {
 	return b;
 }
 
-RZ_API static ut64 rz_num_math_internal(RNum *num, char *s) {
+RZ_API static ut64 rz_num_math_internal(RzNum *num, char *s) {
 	ut64 ret = 0LL;
 	char *p = s;
 	int i, nop, op = 0;
@@ -438,7 +438,7 @@ RZ_API static ut64 rz_num_math_internal(RNum *num, char *s) {
 }
 #endif /* !RZ_NUM_USE_CALC */
 
-RZ_API ut64 rz_num_math(RNum *num, const char *str) {
+RZ_API ut64 rz_num_math(RzNum *num, const char *str) {
 #if RZ_NUM_USE_CALC
 	ut64 ret;
 	const char *err = NULL;
@@ -514,11 +514,11 @@ RZ_API ut64 rz_num_math(RNum *num, const char *str) {
 #endif
 }
 
-RZ_API int rz_num_is_float(RNum *num, const char *str) {
+RZ_API int rz_num_is_float(RzNum *num, const char *str) {
 	return (IS_DIGIT(*str) && (strchr(str, '.') || str[strlen(str) - 1] == 'f'));
 }
 
-RZ_API double rz_num_get_float(RNum *num, const char *str) {
+RZ_API double rz_num_get_float(RzNum *num, const char *str) {
 	double d = 0.0f;
 	(void)sscanf(str, "%lf", &d);
 	return d;
@@ -585,7 +585,7 @@ RZ_API ut64 rz_num_chs(int cylinder, int head, int sector, int sectorsize) {
 	return (ut64)cylinder * (ut64)head * (ut64)sector * (ut64)sectorsize;
 }
 
-RZ_API int rz_num_conditional(RNum *num, const char *str) {
+RZ_API int rz_num_conditional(RzNum *num, const char *str) {
 	char *lgt, *t, *p, *s = strdup(str);
 	int res = 0;
 	ut64 n, a, b;
@@ -658,12 +658,12 @@ fail:
 	return res;
 }
 
-RZ_API int rz_num_is_valid_input(RNum *num, const char *input_value) {
+RZ_API int rz_num_is_valid_input(RzNum *num, const char *input_value) {
 	ut64 value = input_value ? rz_num_math(num, input_value) : 0;
 	return !(value == 0 && input_value && *input_value != '0') || !(value == 0 && input_value && *input_value != '@');
 }
 
-RZ_API ut64 rz_num_get_input_value(RNum *num, const char *input_value) {
+RZ_API ut64 rz_num_get_input_value(RzNum *num, const char *input_value) {
 	ut64 value = input_value ? rz_num_math(num, input_value) : 0;
 	return value;
 }
@@ -687,7 +687,7 @@ static int escape_char(char *dst, char byte) {
 	return 0;
 }
 
-RZ_API char *rz_num_as_string(RNum *___, ut64 n, bool printable_only) {
+RZ_API char *rz_num_as_string(RzNum *___, ut64 n, bool printable_only) {
 	char str[34]; // 8 byte * 4 chars in \x?? format
 	int stri, ret = 0, off = 0;
 	int len = sizeof(ut64);
@@ -717,7 +717,7 @@ RZ_API char *rz_num_as_string(RNum *___, ut64 n, bool printable_only) {
 	return NULL;
 }
 
-RZ_API bool rz_is_valid_input_num_value(RNum *num, const char *input_value) {
+RZ_API bool rz_is_valid_input_num_value(RzNum *num, const char *input_value) {
 	if (!input_value) {
 		return false;
 	}
@@ -725,7 +725,7 @@ RZ_API bool rz_is_valid_input_num_value(RNum *num, const char *input_value) {
 	return !(value == 0 && *input_value != '0');
 }
 
-RZ_API ut64 rz_get_input_num_value(RNum *num, const char *str) {
+RZ_API ut64 rz_get_input_num_value(RzNum *num, const char *str) {
 	return (str && *str) ? rz_num_math(num, str) : 0;
 }
 
@@ -735,7 +735,7 @@ static inline ut64 __nth_nibble(ut64 n, ut32 i) {
 	return (n >> s) & 0xf;
 }
 
-RZ_API ut64 rz_num_tail_base(RNum *num, ut64 addr, ut64 off) {
+RZ_API ut64 rz_num_tail_base(RzNum *num, ut64 addr, ut64 off) {
 	int i;
 	bool ready = false;
 	ut64 res = 0;
@@ -757,7 +757,7 @@ RZ_API ut64 rz_num_tail_base(RNum *num, ut64 addr, ut64 off) {
 	return res;
 }
 
-RZ_API ut64 rz_num_tail(RNum *num, ut64 addr, const char *hex) {
+RZ_API ut64 rz_num_tail(RzNum *num, ut64 addr, const char *hex) {
 	ut64 mask = 0LL;
 	ut64 n = 0;
 	char *p;
@@ -784,7 +784,7 @@ RZ_API ut64 rz_num_tail(RNum *num, ut64 addr, const char *hex) {
 	return (addr & mask) | n;
 }
 
-static ut64 rz_num_tailff(RNum *num, const char *hex) {
+static ut64 rz_num_tailff(RzNum *num, const char *hex) {
 	ut64 n = 0;
 
 	while (*hex && (*hex == ' ' || *hex == '.')) {
@@ -808,7 +808,7 @@ static ut64 rz_num_tailff(RNum *num, const char *hex) {
 	return left | n;
 }
 
-RZ_API int rz_num_between(RNum *num, const char *input_value) {
+RZ_API int rz_num_between(RzNum *num, const char *input_value) {
 	int i;
 	ut64 ns[3];
 	char *const str = strdup(input_value);
@@ -917,7 +917,7 @@ RZ_API double rz_num_sin(double a) {
 /**
  * \brief Convert the base suffix to the numeric value
  */
-RZ_API size_t rz_num_base_of_string(RNum *num, RZ_NONNULL const char *str) {
+RZ_API size_t rz_num_base_of_string(RzNum *num, RZ_NONNULL const char *str) {
 	rz_return_val_if_fail(num && str, 10);
 	size_t base = 10;
 	if (rz_str_startswith(str, "10u") || rz_str_startswith(str, "du")) {

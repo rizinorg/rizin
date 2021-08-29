@@ -414,7 +414,7 @@ static ut64 bbSize(RzAnalysisFunction *fcn, ut64 addr) {
 	return 0;
 }
 
-static const char *str_callback(RNum *user, ut64 off, int *ok) {
+static const char *str_callback(RzNum *user, ut64 off, int *ok) {
 	RzFlag *f = (RzFlag *)user;
 	if (ok) {
 		*ok = 0;
@@ -431,7 +431,7 @@ static const char *str_callback(RNum *user, ut64 off, int *ok) {
 	return NULL;
 }
 
-static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
+static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 	RzCore *core = (RzCore *)userptr; // XXX ?
 	RzAnalysisFunction *fcn;
 	char *ptr, *bptr, *out = NULL;
