@@ -332,7 +332,7 @@ RZ_API void rz_analysis_var_global_set_type(RzAnalysisVarGlobal *glob, RZ_NONNUL
 	rz_type_free(glob->type);
 	glob->type = type;
 
-	if (typedb) {
+	if (typedb && glob->flag) {
 		glob->flag->size = rz_type_db_get_bitsize(typedb, glob->type) / 8;
 	}
 }
