@@ -58,12 +58,14 @@ int global_var_node_cmp(const void *incoming, const RBNode *in_tree, void *user)
  */
 RZ_API RZ_OWN bool rz_analysis_var_global_add(RzAnalysis *analysis, RZ_NONNULL RzAnalysisVarGlobal *global_var) {
 	rz_return_val_if_fail(analysis && global_var, false);
-	if (rz_analysis_var_global_get_byaddr_in(analysis, global_var->addr)) {
-		RZ_LOG_ERROR("Global variable %s at 0x%" PFMT64x " already exists!\n", global_var->name, global_var->addr);
+
+	RzAnalysisVarGlobal* existing_glob = NULL;
+	if ((existing_glob = rz_analysis_var_global_get_byaddr_in(analysis, global_var->addr))) {
+		RZ_LOG_ERROR("Global variable %s at 0x%" PFMT64x " already exists!\n", existing_glob->name, existing_glob->addr);
 		return false;
 	}
-	if (rz_analysis_var_global_get_byname(analysis, global_var->name)) {
-		RZ_LOG_ERROR("Global variable %s at 0x%" PFMT64x " already exists!\n", global_var->name, global_var->addr);
+	if ((existing_glob = rz_analysis_var_global_get_byname(analysis, global_var->name))) {
+		RZ_LOG_ERROR("Global variable %s at 0x%" PFMT64x " already exists!\n", existing_glob->name, existing_glob->addr);
 		return false;
 	}
 	if (!ht_pp_insert(analysis->ht_global_var, global_var->name, global_var)) {
