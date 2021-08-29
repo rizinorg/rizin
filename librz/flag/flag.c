@@ -13,7 +13,7 @@ RZ_LIB_VERSION(rz_flag);
 #define IS_FI_IN_SPACE(fi, sp)  (!(sp) || (fi)->space == (sp))
 #define STRDUP_OR_NULL(s)       (!RZ_STR_ISEMPTY(s) ? strdup(s) : NULL)
 
-static const char *str_callback(RNum *user, ut64 off, int *ok) {
+static const char *str_callback(RzNum *user, ut64 off, int *ok) {
 	RzFlag *f = (RzFlag *)user;
 	if (ok) {
 		*ok = 0;
@@ -45,7 +45,7 @@ static int flag_skiplist_cmp(const void *va, const void *vb) {
 	return a->off < b->off ? -1 : 1;
 }
 
-static ut64 num_callback(RNum *user, const char *name, int *ok) {
+static ut64 num_callback(RzNum *user, const char *name, int *ok) {
 	RzFlag *f = (RzFlag *)user;
 	if (ok) {
 		*ok = 0;

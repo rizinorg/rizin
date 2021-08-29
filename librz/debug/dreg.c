@@ -152,7 +152,7 @@ RZ_API ut64 rz_debug_reg_get_err(RzDebug *dbg, const char *name, int *err, utX *
 }
 
 // XXX: dup for get_Err!
-RZ_API ut64 rz_debug_num_callback(RNum *userptr, const char *str, int *ok) {
+RZ_API ut64 rz_debug_num_callback(RzNum *userptr, const char *str, int *ok) {
 	RzDebug *dbg = (RzDebug *)userptr;
 	// resolve using regnu
 	return rz_debug_reg_get_err(dbg, str, ok, NULL);

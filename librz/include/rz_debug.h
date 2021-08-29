@@ -322,7 +322,7 @@ typedef struct rz_debug_t {
 	RzCoreBind corebind;
 	// internal use only
 	int _mode;
-	RNum *num;
+	RzNum *num;
 	RzEgg *egg;
 	bool verbose;
 	bool main_arena_resolved; /* is the main_arena resolved already? */
@@ -564,7 +564,7 @@ RZ_API int rz_debug_drx_set(RzDebug *dbg, int idx, ut64 addr, int len, int rwx, 
 RZ_API int rz_debug_drx_unset(RzDebug *dbg, int idx);
 
 /* esil */
-RZ_API ut64 rz_debug_num_callback(RNum *userptr, const char *str, int *ok);
+RZ_API ut64 rz_debug_num_callback(RzNum *userptr, const char *str, int *ok);
 RZ_API int rz_debug_esil_stepi(RzDebug *dbg);
 RZ_API ut64 rz_debug_esil_step(RzDebug *dbg, ut32 count);
 RZ_API ut64 rz_debug_esil_continue(RzDebug *dbg);

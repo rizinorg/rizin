@@ -4,7 +4,7 @@
 #include <rz_util.h>
 #include "minunit.h"
 
-static RNum *num;
+static RzNum *num;
 
 bool test_rz_num_units() {
 	char humansz[8];

@@ -523,7 +523,7 @@ typedef struct rz_cons_t {
 	UINT old_cp;
 	UINT old_ocp;
 #endif
-	RNum *num;
+	RzNum *num;
 	/* Pager (like more or less) to use if the output doesn't fit on the
 	 * current window. If NULL or "" no pager is used. */
 	char *pager;
