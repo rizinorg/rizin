@@ -1458,7 +1458,8 @@ typedef enum {
 typedef struct {
 	ut64 addr; ///< memory address
 	RzILTraceOpType behavior; ///< read or write, see RzILTraceOpType enums
-	ut8 data_buf[32]; ///< data either written to or read from, big endian in ESIL
+	ut8 data_buf[32]; ///< data either written to or read from
+	int data_len; ///< data length
 } RzILTraceMemOp;
 
 typedef struct {
@@ -1478,8 +1479,8 @@ typedef struct {
 	ut64 addr; ///< Address of instruction
 	ut32 stats; ///< Has write/read to reg/mem ? see TRACE_INS_HAS_* enums
 
-	RzPVector *write_mem_ops; ///< Vector<RzILTraceRegOp>
-	RzPVector *read_mem_ops; ///< Vector<RzILTraceRegOp>
+	RzPVector *write_mem_ops; ///< Vector<RzILTraceMemOp>
+	RzPVector *read_mem_ops; ///< Vector<RzILTraceMemOp>
 
 	RzPVector *write_reg_ops; ///< Vector<RzILTraceRegOp>
 	RzPVector *read_reg_ops; ///< Vector<RzILTraceRegOp>
