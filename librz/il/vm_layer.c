@@ -92,6 +92,7 @@ RZ_API bool rz_il_vm_init(RzILVM vm, ut64 start_addr, int addr_size, int data_si
 	if (!vm->mems) {
 		RZ_LOG_ERROR("[VM INIT FAILED] : mem\n");
 		rz_il_vm_close(vm);
+		return false;
 	}
 	vm->pc = rz_il_bv_new_from_ut64(addr_size, start_addr);
 
@@ -228,7 +229,7 @@ RZ_API void rz_il_vm_list_step(RzILVM vm, RzPVector *op_list) {
 		//		rz_il_print_vm_temps(vm);
 	}
 
-	RzILBitVector one = rz_il_bv_new0(vm->pc->len);
+	RzILBitVector one = rz_il_bv_new(vm->pc->len);
 	rz_il_bv_set(one, 0, true); // set one = 1
 	RzILBitVector next_pc = rz_il_bv_add(vm->pc, one);
 	rz_il_bv_free(vm->pc);
@@ -478,7 +479,6 @@ RZ_API RzILBitVector rz_il_vm_mem_load(RzILVM vm, int mem_index, RzILBitVector k
 		m = vm->mems[mem_index];
 		return rz_il_mem_load(m, key);
 	}
-	eprintf("???\n");
 	return NULL;
 }
 

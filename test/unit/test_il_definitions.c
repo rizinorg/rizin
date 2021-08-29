@@ -15,12 +15,12 @@ static bool is_equal_bool(RzILBool x, RzILBool y) {
 
 bool test_rzil_bv_init(void) {
 	// create a zero vector
-	RzILBitVector bits_42 = rz_il_bv_new0(42);
+	RzILBitVector bits_42 = rz_il_bv_new(42);
 	mu_assert("init 42-bits vector", bits_42 && (bits_42->len == 42));
 
 	// create by given ut32
 	RzILBitVector bits_32 = rz_il_bv_new_from_ut32(32, 100);
-	RzILBitVector bits_cmp = rz_il_bv_new0(32);
+	RzILBitVector bits_cmp = rz_il_bv_new(32);
 
 	// 100 = 64 + 32 + 4 == 0b 0000 0000 0000 0000 0000 0000 0110 0100
 	rz_il_bv_set(bits_cmp, 2, true);
@@ -45,43 +45,43 @@ bool test_rzil_bv_logic(void) {
 	RzILBitVector and, or, xor, neg, not, ls, rs, ls_fill, rs_fill;
 
 	// x : 0101 0101
-	x = rz_il_bv_new0(8);
+	x = rz_il_bv_new(8);
 	rz_il_bv_set(x, 0, true);
 	rz_il_bv_set(x, 2, true);
 	rz_il_bv_set(x, 4, true);
 	rz_il_bv_set(x, 6, true);
 
 	// y : 1010 1001
-	y = rz_il_bv_new0(8);
+	y = rz_il_bv_new(8);
 	rz_il_bv_set(y, 0, true);
 	rz_il_bv_set(y, 3, true);
 	rz_il_bv_set(y, 5, true);
 	rz_il_bv_set(y, 7, true);
 
 	// and : 0000 0001
-	and = rz_il_bv_new0(8);
+	and = rz_il_bv_new(8);
 	rz_il_bv_set(and, 0, true);
 
 	// xor : 1111 1100
-	xor = rz_il_bv_new0(8);
+	xor = rz_il_bv_new(8);
 	rz_il_bv_toggle_all(xor);
 	rz_il_bv_set(xor, 0, false);
 	rz_il_bv_set(xor, 1, false);
 
 	// or : 1111 1101
-	or = rz_il_bv_new0(8);
+	or = rz_il_bv_new(8);
 	rz_il_bv_toggle_all(or);
 	rz_il_bv_set(or, 1, false);
 
 	// not of x : 1010 1010
-	not = rz_il_bv_new0(8);
+	not = rz_il_bv_new(8);
 	rz_il_bv_set(not, 1, true);
 	rz_il_bv_set(not, 3, true);
 	rz_il_bv_set(not, 5, true);
 	rz_il_bv_set(not, 7, true);
 
 	// neg of x : 1010 1011
-	neg = rz_il_bv_new0(8);
+	neg = rz_il_bv_new(8);
 	rz_il_bv_set(neg, 0, true);
 	rz_il_bv_set(neg, 1, true);
 	rz_il_bv_set(neg, 3, true);
@@ -89,12 +89,12 @@ bool test_rzil_bv_logic(void) {
 	rz_il_bv_set(neg, 7, true);
 
 	// left shift (3 bits) of y : 0100 1000
-	ls = rz_il_bv_new0(8);
+	ls = rz_il_bv_new(8);
 	rz_il_bv_set(ls, 3, true);
 	rz_il_bv_set(ls, 6, true);
 
 	// left shift (3 bits) of y : 0100 1111
-	ls_fill = rz_il_bv_new0(8);
+	ls_fill = rz_il_bv_new(8);
 	rz_il_bv_set(ls_fill, 0, true);
 	rz_il_bv_set(ls_fill, 1, true);
 	rz_il_bv_set(ls_fill, 2, true);
@@ -102,13 +102,13 @@ bool test_rzil_bv_logic(void) {
 	rz_il_bv_set(ls_fill, 6, true);
 
 	// right shift (3 bits) of y : 0001 0101
-	rs = rz_il_bv_new0(8);
+	rs = rz_il_bv_new(8);
 	rz_il_bv_set(rs, 0, true);
 	rz_il_bv_set(rs, 2, true);
 	rz_il_bv_set(rs, 4, true);
 
 	// right shift (3 bits) of y : 1111 0101
-	rs_fill = rz_il_bv_new0(8);
+	rs_fill = rz_il_bv_new(8);
 	rz_il_bv_toggle_all(rs_fill);
 	rz_il_bv_set(rs_fill, 1, false);
 	rz_il_bv_set(rs_fill, 3, false);
@@ -206,13 +206,13 @@ bool test_rzil_bv_cmp(void) {
 	RzILBitVector x, y;
 
 	// x : 1000 0111, y : 0000 0111
-	x = rz_il_bv_new0(8);
+	x = rz_il_bv_new(8);
 	rz_il_bv_set(x, 0, true);
 	rz_il_bv_set(x, 1, true);
 	rz_il_bv_set(x, 2, true);
 	rz_il_bv_set(x, 7, true);
 
-	y = rz_il_bv_new0(8);
+	y = rz_il_bv_new(8);
 	rz_il_bv_set(y, 0, true);
 	rz_il_bv_set(y, 1, true);
 	rz_il_bv_set(y, 2, true);
@@ -238,30 +238,30 @@ bool test_rzil_bv_operation(void) {
 	RzILBitVector x, y, res, prep, append, cut_h, cut_t, concat;
 
 	// 0000 1000
-	x = rz_il_bv_new0(8);
+	x = rz_il_bv_new(8);
 	rz_il_bv_set(x, 3, true);
 
 	// prepend 3 : 000 0000 1000
-	prep = rz_il_bv_new0(11);
+	prep = rz_il_bv_new(11);
 	rz_il_bv_set(prep, 3, true);
 
 	// append 5 : 0000 1000 0000 0
-	append = rz_il_bv_new0(13);
+	append = rz_il_bv_new(13);
 	rz_il_bv_set(append, 8, true);
 
 	// cut head 2: 00 1000
-	cut_h = rz_il_bv_new0(6);
+	cut_h = rz_il_bv_new(6);
 	rz_il_bv_set(cut_h, 3, true);
 
 	// cut tail 4: 0000
-	cut_t = rz_il_bv_new0(4);
+	cut_t = rz_il_bv_new(4);
 
 	// y : 1011
-	y = rz_il_bv_new0(4);
+	y = rz_il_bv_new(4);
 	rz_il_bv_set(y, 0, true);
 	rz_il_bv_set(y, 1, true);
 	rz_il_bv_set(y, 3, true);
-	concat = rz_il_bv_new0(12);
+	concat = rz_il_bv_new(12);
 	rz_il_bv_set(concat, 0, true);
 	rz_il_bv_set(concat, 1, true);
 	rz_il_bv_set(concat, 3, true);

@@ -149,12 +149,6 @@ RZ_API void rz_analysis_rzil_collect_info(RzAnalysis *analysis, RzAnalysisRzil *
 		return;
 	}
 
-	// Debug Only
-	//	const char *charset = "[]<>+-,.";
-	//	if (op->id > 0) {
-	//		printf("op : {%c}\n", charset[op->id - 1]);
-	//	}
-
 	// Create instruction trace for current instruction
 	RzILTraceInstruction *instruction = rz_analysis_il_trace_instruction_new(op->addr);
 	rz_pvector_push(rzil->trace->instructions, instruction);

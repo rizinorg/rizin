@@ -57,13 +57,12 @@ RZ_API RzILVar rz_il_find_var_by_name(RzILVM vm, const char *var_name);
 
 RZ_API RzILVar rz_il_vm_create_variable(RzILVM vm, char *name);
 RZ_API RzILVal rz_il_vm_create_value(RzILVM vm, RZIL_VAR_TYPE type);
-RZ_API void rz_il_vm_add_reg(RzILVM vm, char *name, int length);
-RZ_API RzILVal rz_il_vm_fortify_val(RzILVM vm, int temp_val_index);
-RZ_API RzILVal rz_il_vm_fortify_bitv(RzILVM vm, int temp_val_index);
-RZ_API RzILVal rz_il_vm_fortify_bool(RzILVM vm, int temp_val_index);
 RZ_API void rz_il_hash_bind(RzILVM vm, RzILVar var, RzILVal val);
 RZ_API void rz_il_hash_cancel_binding(RzILVM vm, RzILVar var);
 
+RZ_API RzILVal rz_il_vm_fortify_val(RzILVM vm, int temp_val_index);
+RZ_API RzILVal rz_il_vm_fortify_bitv(RzILVM vm, int temp_val_index);
+RZ_API RzILVal rz_il_vm_fortify_bool(RzILVM vm, int temp_val_index);
 RZ_API void rz_il_make_bool_temp(RzILVM vm, int store_index, RzILBool b);
 RZ_API void rz_il_make_val_temp(RzILVM vm, int store_index, RzILVal val);
 RZ_API void rz_il_make_bv_temp(RzILVM vm, int store_index, RzILBitVector bv);
@@ -75,6 +74,8 @@ RZ_API RzILVal rz_il_get_val_temp(RzILVM vm, int index);
 RZ_API void rz_il_clean_temp(RzILVM vm, RzILTemp temp);
 RZ_API void rz_il_clean_temps(RzILVM vm);
 RZ_API void rz_il_empty_temp(RzILVM vm, int index);
+
+RZ_API void rz_il_vm_add_reg(RzILVM vm, char *name, int length);
 
 // VM store and load core theory opcodes
 RZ_API RzPVector *rz_il_make_oplist(int num, ...);
@@ -122,14 +123,5 @@ void rz_il_handler_branch(RzILVM vm, RzILOp op);
 
 void rz_il_handler_load(RzILVM vm, RzILOp op);
 void rz_il_handler_store(RzILVM vm, RzILOp op);
-
-// debug info
-RZ_API void rz_il_print_vm(RzILVM vm);
-RZ_API void rz_il_print_vm_mem(RzILVM vm);
-RZ_API void rz_il_print_vm_temps(RzILVM vm);
-RZ_API void rz_il_print_vm_labels(RzILVM vm);
-RZ_API void rz_il_vm_debug_easy(RzILVM vm);
-RZ_API void rz_il_vm_debug_print_ops(RzILVM vm);
-RZ_API void rz_il_print_vm_vars(RzILVM vm);
 
 #endif // RZIL_VM_H

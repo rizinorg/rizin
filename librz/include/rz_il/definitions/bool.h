@@ -4,6 +4,7 @@
 #ifndef RZ_IL_BOOL_H
 #define RZ_IL_BOOL_H
 #include <rz_types.h>
+#include <rz_util.h>
 
 struct bool_t {
 	bool b;

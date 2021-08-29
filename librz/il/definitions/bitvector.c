@@ -8,7 +8,7 @@
  * \param length int, the length of bitvector
  * \return bv RzILBitVector, pointer to the new bitvector instance
  */
-RZ_API RzILBitVector rz_il_bv_new0(ut32 length) {
+RZ_API RzILBitVector rz_il_bv_new(ut32 length) {
 	rz_return_val_if_fail(length, NULL);
 	RzILBitVector ret = (RzILBitVector)malloc(sizeof(struct bitvector_t));
 	if (ret == NULL) {
@@ -39,10 +39,27 @@ RZ_API void rz_il_bv_free(RzILBitVector bv) {
 	if (!bv) {
 		return;
 	}
-	if (bv->bits) {
-		free(bv->bits);
-	}
+	free(bv->bits);
 	free(bv);
+}
+
+/**
+ * Return bitvector string
+ * \param bv RzILBitVector, pointer to bitvector
+ * \return str char*, bitvector string
+ */
+RZ_API RZ_OWN char *rz_il_bv_as_string(RZ_NONNULL RzILBitVector bv) {
+	if (!bv) {
+		return rz_str_new("Empty Bitvector");
+	}
+
+	char *str = (char *)malloc(bv->len);
+	for (int i = bv->len - 1; i >= 0; --i) {
+		str[i] = (char)(rz_il_bv_get(bv, i) ? '1' : '0');
+	}
+	str[bv->len] = '\0';
+
+	return str;
 }
 
 /**
@@ -50,10 +67,10 @@ RZ_API void rz_il_bv_free(RzILBitVector bv) {
  * \param bv RzILBitVector, pointer to the source bitvector
  * \return dup RzILBitVector, pointer to a new bitvector, which is a copy of source
  */
-RZ_API RzILBitVector rz_il_bv_dup(RzILBitVector bv) {
+RZ_API RzILBitVector rz_il_bv_dup(RZ_NONNULL RzILBitVector bv) {
 	rz_return_val_if_fail(bv && bv->bits, NULL);
 
-	RzILBitVector new_bv = rz_il_bv_new0(bv->len);
+	RzILBitVector new_bv = rz_il_bv_new(bv->len);
 	if (!new_bv || !(new_bv->bits)) {
 		rz_il_bv_free(new_bv);
 		return NULL;
@@ -124,13 +141,11 @@ RZ_API int rz_il_bv_copy_nbits(
  * \param delta_len int, the number of zero bits
  * \return ret RzILBitVector, pointer to the new bitvector instance
  */
-RZ_API RzILBitVector rz_il_bv_prepend_zero(RzILBitVector bv, ut32 delta_len) {
-	if (!bv || !bv->bits) {
-		return NULL;
-	}
+RZ_API RzILBitVector rz_il_bv_prepend_zero(RZ_NONNULL RzILBitVector bv, ut32 delta_len) {
+	rz_return_val_if_fail(bv, NULL);
 
 	ut32 new_len = bv->len + delta_len;
-	RzILBitVector ret = rz_il_bv_new0(new_len);
+	RzILBitVector ret = rz_il_bv_new(new_len);
 	if (ret == NULL) {
 		return NULL;
 	}
@@ -148,13 +163,11 @@ RZ_API RzILBitVector rz_il_bv_prepend_zero(RzILBitVector bv, ut32 delta_len) {
  * \param delta_len, the number of zero bits
  * \return ret RzILBitVector, pointert to the new btivector
  */
-RZ_API RzILBitVector rz_il_bv_append_zero(RzILBitVector bv, ut32 delta_len) {
-	if (!bv || !bv->bits) {
-		return NULL;
-	}
+RZ_API RzILBitVector rz_il_bv_append_zero(RZ_NONNULL RzILBitVector bv, ut32 delta_len) {
+	rz_return_val_if_fail(bv, NULL);
 
 	ut32 new_len = bv->len + delta_len;
-	RzILBitVector ret = rz_il_bv_new0(new_len);
+	RzILBitVector ret = rz_il_bv_new(new_len);
 	if (ret == NULL) {
 		return NULL;
 	}
@@ -173,9 +186,11 @@ RZ_API RzILBitVector rz_il_bv_append_zero(RzILBitVector bv, ut32 delta_len) {
  * \param delta_len, the number of zero bits
  * \return ret RzILBitVector, pointert to the new btivector
  */
-RZ_API RzILBitVector rz_il_bv_cut_head(RzILBitVector bv, ut32 delta_len) {
+RZ_API RzILBitVector rz_il_bv_cut_head(RZ_NONNULL RzILBitVector bv, ut32 delta_len) {
+	rz_return_val_if_fail(bv, NULL);
+
 	ut32 new_len = bv->len - delta_len;
-	RzILBitVector ret = rz_il_bv_new0(new_len);
+	RzILBitVector ret = rz_il_bv_new(new_len);
 	if (!ret) {
 		return NULL;
 	}
@@ -193,9 +208,11 @@ RZ_API RzILBitVector rz_il_bv_cut_head(RzILBitVector bv, ut32 delta_len) {
  * \param delta_len, the number of zero bits
  * \return ret RzILBitVector, pointert to the new btivector
  */
-RZ_API RzILBitVector rz_il_bv_cut_tail(RzILBitVector bv, ut32 delta_len) {
+RZ_API RzILBitVector rz_il_bv_cut_tail(RZ_NONNULL RzILBitVector bv, ut32 delta_len) {
+	rz_return_val_if_fail(bv, NULL);
+
 	ut32 new_len = bv->len - delta_len;
-	RzILBitVector ret = rz_il_bv_new0(new_len);
+	RzILBitVector ret = rz_il_bv_new(new_len);
 	if (!ret) {
 		return NULL;
 	}
@@ -220,7 +237,7 @@ RZ_API RzILBitVector rz_il_bv_concat(RzILBitVector bv1, RzILBitVector bv2) {
 	}
 
 	ut32 new_len = bv1->len + bv2->len;
-	RzILBitVector ret = rz_il_bv_new0(new_len);
+	RzILBitVector ret = rz_il_bv_new(new_len);
 
 	// copy n bits from bv1
 	rz_il_bv_copy_nbits(bv2, 0, ret, 0, bv2->len);
@@ -356,6 +373,11 @@ RZ_API bool rz_il_bv_rshift(RzILBitVector bv, ut32 size) {
  * \return flag bool, success or not
  */
 RZ_API bool rz_il_bv_lshift_fill(RzILBitVector bv, ut32 size, bool fill_bit) {
+	if (!bv) {
+		RZ_LOG_ERROR("Cannot shift on a NULL\n");
+		return false;
+	}
+
 	// left shift
 	if (size == 0) {
 		return false;
@@ -366,7 +388,7 @@ RZ_API bool rz_il_bv_lshift_fill(RzILBitVector bv, ut32 size, bool fill_bit) {
 		return true;
 	}
 
-	RzILBitVector tmp = rz_il_bv_new0(bv->len);
+	RzILBitVector tmp = rz_il_bv_new(bv->len);
 	rz_il_bv_set_all(tmp, fill_bit);
 
 	int copied_size = rz_il_bv_copy_nbits(bv, 0, tmp, size, bv->len - size);
@@ -390,6 +412,11 @@ RZ_API bool rz_il_bv_lshift_fill(RzILBitVector bv, ut32 size, bool fill_bit) {
  * \return flag bool, success or not
  */
 RZ_API bool rz_il_bv_rshift_fill(RzILBitVector bv, ut32 size, bool fill_bit) {
+	if (!bv) {
+		RZ_LOG_ERROR("Cannot shift on a NULL\n");
+		return false;
+	}
+
 	// left shift
 	if (size == 0) {
 		return false;
@@ -400,7 +427,7 @@ RZ_API bool rz_il_bv_rshift_fill(RzILBitVector bv, ut32 size, bool fill_bit) {
 		return true;
 	}
 
-	RzILBitVector tmp = rz_il_bv_new0(bv->len);
+	RzILBitVector tmp = rz_il_bv_new(bv->len);
 	rz_il_bv_set_all(tmp, fill_bit);
 
 	int copied_size = rz_il_bv_copy_nbits(bv, size, tmp, 0, tmp->len - size);
@@ -423,11 +450,15 @@ RZ_API bool rz_il_bv_rshift_fill(RzILBitVector bv, ut32 size, bool fill_bit) {
  * \return ret RzILBitVector, a new bitvector, which is the result of AND
  */
 RZ_API RzILBitVector rz_il_bv_and(RzILBitVector x, RzILBitVector y) {
+	if (!x || !y) {
+		RZ_LOG_ERROR("Perform bitv operation on NULL pointer\n");
+		return NULL;
+	}
 	if (x->len != y->len) {
 		return NULL;
 	}
 
-	RzILBitVector ret = rz_il_bv_new0(x->len);
+	RzILBitVector ret = rz_il_bv_new(x->len);
 	for (int i = 0; i < ret->_elem_len; ++i) {
 		ret->bits[i] = x->bits[i] & y->bits[i];
 	}
@@ -442,11 +473,15 @@ RZ_API RzILBitVector rz_il_bv_and(RzILBitVector x, RzILBitVector y) {
  * \return ret RzILBitVector, a new bitvector, which is the result of OR
  */
 RZ_API RzILBitVector rz_il_bv_or(RzILBitVector x, RzILBitVector y) {
+	if (!x || !y) {
+		RZ_LOG_ERROR("Perform bitv operation on NULL pointer\n");
+		return NULL;
+	}
 	if (x->len != y->len) {
 		return NULL;
 	}
 
-	RzILBitVector ret = rz_il_bv_new0(x->len);
+	RzILBitVector ret = rz_il_bv_new(x->len);
 	for (int i = 0; i < ret->_elem_len; ++i) {
 		ret->bits[i] = x->bits[i] | y->bits[i];
 	}
@@ -461,11 +496,15 @@ RZ_API RzILBitVector rz_il_bv_or(RzILBitVector x, RzILBitVector y) {
  * \return ret RzILBitVector, a new bitvector, which is the result of XOR
  */
 RZ_API RzILBitVector rz_il_bv_xor(RzILBitVector x, RzILBitVector y) {
+	if (!x || !y) {
+		RZ_LOG_ERROR("Perform bitv operation on NULL pointer\n");
+		return NULL;
+	}
 	if (x->len != y->len) {
 		return NULL;
 	}
 
-	RzILBitVector ret = rz_il_bv_new0(x->len);
+	RzILBitVector ret = rz_il_bv_new(x->len);
 	for (int i = 0; i < ret->_elem_len; ++i) {
 		ret->bits[i] = x->bits[i] ^ y->bits[i];
 	}
@@ -477,8 +516,10 @@ RZ_API RzILBitVector rz_il_bv_xor(RzILBitVector x, RzILBitVector y) {
  * \param bv RzILBitVector, operand
  * \return ret RzILBitVector, a new bitvector, which is the 1's complement of bv
  */
-RZ_API RzILBitVector rz_il_bv_complement_1(RzILBitVector bv) {
-	RzILBitVector ret = rz_il_bv_new0(bv->len);
+RZ_API RzILBitVector rz_il_bv_complement_1(RZ_NONNULL RzILBitVector bv) {
+	rz_return_val_if_fail(bv, NULL);
+
+	RzILBitVector ret = rz_il_bv_new(bv->len);
 	ut32 real_elem_cnt = bv->_elem_len;
 	for (int i = 0; i < real_elem_cnt; ++i) {
 		ret->bits[i] = ~bv->bits[i];
@@ -491,7 +532,9 @@ RZ_API RzILBitVector rz_il_bv_complement_1(RzILBitVector bv) {
  * \param bv RzILBitVector, operand
  * \return ret RzILBitVector, a new bitvector, which is the 2's complement of bv
  */
-RZ_API RzILBitVector rz_il_bv_complement_2(RzILBitVector bv) {
+RZ_API RzILBitVector rz_il_bv_complement_2(RZ_NONNULL RzILBitVector bv) {
+	rz_return_val_if_fail(bv, NULL);
+
 	// from right side to left, find the 1st 1 bit
 	// flip/toggle every bit before it
 	RzILBitVector ret = rz_il_bv_dup(bv);
@@ -519,6 +562,10 @@ RZ_API RzILBitVector rz_il_bv_complement_2(RzILBitVector bv) {
  * \return ret RzILBitVector, point to the new bitvector
  */
 RZ_API RzILBitVector rz_il_bv_add(RzILBitVector x, RzILBitVector y) {
+	if (!x || !y) {
+		RZ_LOG_ERROR("And bitvector with NULL pointer\n");
+		return NULL;
+	}
 	if (x->len != y->len) {
 		return NULL;
 	}
@@ -526,7 +573,7 @@ RZ_API RzILBitVector rz_il_bv_add(RzILBitVector x, RzILBitVector y) {
 	bool a, b, carry;
 	ut32 len = x->len;
 	ut32 pos;
-	RzILBitVector ret = rz_il_bv_new0(len);
+	RzILBitVector ret = rz_il_bv_new(len);
 	carry = false;
 
 	for (pos = 0; pos < len; ++pos) {
@@ -546,6 +593,10 @@ RZ_API RzILBitVector rz_il_bv_add(RzILBitVector x, RzILBitVector y) {
  * \return ret RzILBitVector, point to the new bitvector
  */
 RZ_API RzILBitVector rz_il_bv_sub(RzILBitVector x, RzILBitVector y) {
+	if (!x || !y) {
+		RZ_LOG_ERROR("And bitvector with NULL pointer\n");
+		return NULL;
+	}
 	RzILBitVector ret;
 	RzILBitVector neg_y;
 
@@ -562,6 +613,10 @@ RZ_API RzILBitVector rz_il_bv_sub(RzILBitVector x, RzILBitVector y) {
  * \return ret RzILBitVector, point to the new bitvector
  */
 RZ_API RzILBitVector rz_il_bv_mul(RzILBitVector x, RzILBitVector y) {
+	if (!x || !y) {
+		RZ_LOG_ERROR("And bitvector with NULL pointer\n");
+		return NULL;
+	}
 	RzILBitVector result, dump, tmp;
 	bool cur_bit = false;
 
@@ -569,7 +624,7 @@ RZ_API RzILBitVector rz_il_bv_mul(RzILBitVector x, RzILBitVector y) {
 		return NULL;
 	}
 
-	result = rz_il_bv_new0(x->len);
+	result = rz_il_bv_new(x->len);
 	dump = rz_il_bv_dup(x);
 
 	for (int i = 0; i < y->len; ++i) {
@@ -591,6 +646,10 @@ RZ_API RzILBitVector rz_il_bv_mul(RzILBitVector x, RzILBitVector y) {
 // if x == y return 0
 // if x > y return positive (+1)
 int bv_unsigned_cmp(RzILBitVector x, RzILBitVector y) {
+	if (!x || !y) {
+		RZ_LOG_ERROR("And bitvector with NULL pointer\n");
+		return 0;
+	}
 	if (x->len != y->len) {
 		printf("[ERROR] : Comparing bitvectors with different length\n");
 		return 0;
@@ -619,12 +678,16 @@ int bv_unsigned_cmp(RzILBitVector x, RzILBitVector y) {
  * \return ret RzILBitVector, point to the new bitvector
  */
 RZ_API RzILBitVector rz_il_bv_div(RzILBitVector x, RzILBitVector y) {
+	if (!x || !y) {
+		RZ_LOG_ERROR("And bitvector with NULL pointer\n");
+		return NULL;
+	}
 	if (x->len != y->len) {
 		return NULL;
 	}
 
 	if (rz_il_bv_is_zero_vector(y)) {
-		RzILBitVector ret = rz_il_bv_new0(y->len);
+		RzILBitVector ret = rz_il_bv_new(y->len);
 		rz_il_bv_set_all(ret, true);
 		printf("[DIVIDE ZERO]\n");
 		return ret;
@@ -635,7 +698,7 @@ RZ_API RzILBitVector rz_il_bv_div(RzILBitVector x, RzILBitVector y) {
 	// dividend < divisor
 	// remainder = dividend, quotient = 0
 	if (compare_result < 0) {
-		return rz_il_bv_new0(x->len);
+		return rz_il_bv_new(x->len);
 	}
 
 	// dividend == divisor
@@ -669,6 +732,10 @@ RZ_API RzILBitVector rz_il_bv_div(RzILBitVector x, RzILBitVector y) {
  * \return ret RzILBitVector, point to the new bitvector
  */
 RZ_API RzILBitVector rz_il_bv_mod(RzILBitVector x, RzILBitVector y) {
+	if (!x || !y) {
+		RZ_LOG_ERROR("And bitvector with NULL pointer\n");
+		return NULL;
+	}
 	if (x->len != y->len) {
 		return NULL;
 	}
@@ -688,7 +755,7 @@ RZ_API RzILBitVector rz_il_bv_mod(RzILBitVector x, RzILBitVector y) {
 	// dividend == divisor
 	// remainder = 0, quotient = dividend
 	if (compare_result == 0) {
-		return rz_il_bv_new0(x->len);
+		return rz_il_bv_new(x->len);
 	}
 
 	// dividend > divisor
@@ -721,6 +788,10 @@ RZ_API RzILBitVector rz_il_bv_mod(RzILBitVector x, RzILBitVector y) {
  * \return ret RzILBitVector, point to the new bitvector
  */
 RZ_API RzILBitVector rz_il_bv_sdiv(RzILBitVector x, RzILBitVector y) {
+	if (!x || !y) {
+		RZ_LOG_ERROR("And bitvector with NULL pointer\n");
+		return NULL;
+	}
 	bool mx = rz_il_bv_msb(x);
 	bool my = rz_il_bv_msb(y);
 
@@ -779,6 +850,10 @@ RZ_API RzILBitVector rz_il_bv_sdiv(RzILBitVector x, RzILBitVector y) {
  * \return ret RzILBitVector, point to the new bitvector
  */
 RZ_API RzILBitVector rz_il_bv_smod(RzILBitVector x, RzILBitVector y) {
+	if (!x || !y) {
+		RZ_LOG_ERROR("And bitvector with NULL pointer\n");
+		return NULL;
+	}
 	bool mx = rz_il_bv_msb(x);
 	bool my = rz_il_bv_msb(y);
 
@@ -841,35 +916,14 @@ RZ_API bool rz_il_bv_lsb(RzILBitVector bv) {
 	return rz_il_bv_get(bv, 0);
 }
 
-char *bv_to_string(RzILBitVector bv) {
-	char *ret = (char *)malloc(sizeof(char) * bv->len);
-	for (int i = 0; i < bv->len; ++i) {
-		ret[i] = rz_il_bv_get(bv, i) ? '0' : '1';
-	}
-	return ret;
-}
-
-/**
- * Print bitvector, debug function
- * \param bv RzILBitVector, pointer to bitvector
- */
-RZ_API void rz_il_print_bv(RzILBitVector bv) {
-	if (!bv) {
-		printf("Empty BV\n");
-		return;
-	}
-	for (int i = bv->len - 1; i >= 0; --i) {
-		putchar(rz_il_bv_get(bv, i) ? '1' : '0');
-	}
-	putchar('\n');
-}
-
 /**
  * Check if the bitvector is zero
  * \param x RzILBitVector, pointer to bv
  * \return ret bool, return true if bv is a zero bitvector, false if not
  */
-RZ_API bool rz_il_bv_is_zero_vector(RzILBitVector x) {
+RZ_API bool rz_il_bv_is_zero_vector(RZ_NONNULL RzILBitVector x) {
+	rz_return_val_if_fail(x, NULL);
+
 	for (int i = 0; i < x->_elem_len; ++i) {
 		if (x->bits[i] != 0) {
 			return false;
@@ -884,7 +938,8 @@ RZ_API bool rz_il_bv_is_zero_vector(RzILBitVector x) {
  * \param y RzILBitVector, operand
  * \return ret bool, return true if x <= y, else return false
  */
-RZ_API bool rz_il_bv_ule(RzILBitVector x, RzILBitVector y) {
+RZ_API bool rz_il_bv_ule(RZ_NONNULL RzILBitVector x, RZ_NONNULL RzILBitVector y) {
+	rz_return_val_if_fail(x && y, false);
 	// x > y ? return false : return true
 	return bv_unsigned_cmp(x, y) > 0 ? false : true;
 }
@@ -895,7 +950,8 @@ RZ_API bool rz_il_bv_ule(RzILBitVector x, RzILBitVector y) {
  * \param y RzILBitVector, operand
  * \return ret bool, return true if x <= y, else return false
  */
-RZ_API bool rz_il_bv_sle(RzILBitVector x, RzILBitVector y) {
+RZ_API bool rz_il_bv_sle(RZ_NONNULL RzILBitVector x, RZ_NONNULL RzILBitVector y) {
+	rz_return_val_if_fail(x && y, false);
 	int x_msb = rz_il_bv_msb(x);
 	int y_msb = rz_il_bv_lsb(y);
 
@@ -920,6 +976,10 @@ RZ_API bool rz_il_bv_sle(RzILBitVector x, RzILBitVector y) {
  * \return ret int, return 1 if x != y, return 0 if x == y
  */
 RZ_API int rz_il_bv_cmp(RzILBitVector x, RzILBitVector y) {
+	if (!x || !y) {
+		RZ_LOG_ERROR("Cannot compare bitv with NULL\n");
+		return 1;
+	}
 	if (x->len != y->len) {
 		return 1;
 	}
@@ -939,6 +999,10 @@ RZ_API int rz_il_bv_cmp(RzILBitVector x, RzILBitVector y) {
  * \return len int, length of bitvector
  */
 RZ_API ut32 rz_il_bv_len(RzILBitVector bv) {
+	if (!bv) {
+		RZ_LOG_ERROR("NULL bitv has length 0\n");
+		return 0;
+	}
 	return bv->len;
 }
 
@@ -949,9 +1013,13 @@ RZ_API ut32 rz_il_bv_len(RzILBitVector bv) {
  * \return bv RzILBitVector, pointer to new bitvector
  */
 RZ_API RzILBitVector rz_il_bv_new_from_ut32(ut32 length, ut32 value) {
-	RzILBitVector bv = rz_il_bv_new0(32);
-	RzILBitVector ret;
 	int type_size = 32;
+	RzILBitVector bv = rz_il_bv_new(type_size);
+	if (!bv) {
+		RZ_LOG_ERROR("New bitvector from ut32 failed\n");
+		return NULL;
+	}
+	RzILBitVector ret;
 
 	ut32 mask = 0x1;
 	for (int i = 0; i < type_size; ++i) {
@@ -983,9 +1051,13 @@ RZ_API RzILBitVector rz_il_bv_new_from_ut32(ut32 length, ut32 value) {
  * \return bv RzILBitVector, pointer to new bitvector
  */
 RZ_API RzILBitVector rz_il_bv_new_from_ut64(ut32 length, ut64 value) {
-	RzILBitVector bv = rz_il_bv_new0(length);
-	RzILBitVector ret;
 	int type_size = 64;
+	RzILBitVector bv = rz_il_bv_new(type_size);
+	if (!bv) {
+		RZ_LOG_ERROR("New bitvector from ut64 failed\n");
+		return NULL;
+	}
+	RzILBitVector ret;
 
 	ut64 mask = 0x1;
 	for (int i = 0; i < type_size; ++i) {
@@ -1023,6 +1095,11 @@ ut32 rz_il_bv_hash(RzILBitVector x) {
 	return h;
 }
 
+/**
+ * Convert bitv to a ut8 value
+ * \param x BitVector
+ * \return  ut8 value
+ */
 RZ_API ut8 rz_il_bv_to_ut8(RzILBitVector x) {
 	ut8 ret = 0;
 	if (x->len > 8) {
@@ -1037,6 +1114,11 @@ RZ_API ut8 rz_il_bv_to_ut8(RzILBitVector x) {
 	return ret;
 }
 
+/**
+ * Convert bitv to ut16 value
+ * \param x BitVector
+ * \return ut16 value
+ */
 RZ_API ut16 rz_il_bv_to_ut16(RzILBitVector x) {
 	ut16 ret = 0;
 	if (x->len > 16) {
@@ -1051,6 +1133,11 @@ RZ_API ut16 rz_il_bv_to_ut16(RzILBitVector x) {
 	return ret;
 }
 
+/**
+ * Convert bitv to ut32 value
+ * \param x BitVector
+ * \return ut32 value
+ */
 RZ_API ut32 rz_il_bv_to_ut32(RzILBitVector x) {
 	ut32 ret = 0;
 	if (x->len > 32) {

@@ -54,8 +54,9 @@ RZ_API void rz_il_vm_add_reg(RZ_NONNULL RzILVM vm, RZ_NONNULL char *name, int le
 	rz_return_if_fail(vm && name);
 	rz_return_if_fail(length > 0);
 	RzILVar var = rz_il_vm_create_variable(vm, name);
+	var->type = RZIL_VAR_TYPE_BV;
 	RzILVal val = rz_il_vm_create_value(vm, RZIL_VAR_TYPE_BV);
-	val->data.bv = rz_il_bv_new0(length);
+	val->data.bv = rz_il_bv_new(length);
 	rz_il_hash_bind(vm, var, val);
 }
 
@@ -147,8 +148,8 @@ RZ_API RzILVal rz_il_hash_find_val_by_name(RzILVM vm, RZ_NONNULL const char *var
  * \return var RzILVar, pointer to the variable
  */
 RZ_API RzILVar rz_il_find_var_by_name(RzILVM vm, RZ_NONNULL const char *var_name) {
-	RzILVar var;
 	rz_return_val_if_fail(var_name, NULL);
+	RzILVar var;
 	for (int i = 0; i < vm->var_count; ++i) {
 		var = vm->vm_global_variable_list[i];
 		if (strcmp(var_name, var->var_name) == 0) {
@@ -230,10 +231,10 @@ RZ_API RzILEffectLabel rz_il_vm_find_label_by_name(RzILVM vm, RZ_NONNULL const c
  * \return lbl RzILEffectLabel, pointer to label instance
  */
 RZ_API RzILEffectLabel rz_il_vm_create_label(RzILVM vm, RZ_NONNULL char *name, RzILBitVector addr) {
-	HtPP *lbl_table = vm->vm_global_label_table;
 	rz_return_val_if_fail(name, NULL);
+	HtPP *lbl_table = vm->vm_global_label_table;
 
-	RzILEffectLabel lbl = effect_new_label(name, EFFECT_LABEL_ADDR);
+	RzILEffectLabel lbl = rz_il_effect_new_label(name, EFFECT_LABEL_ADDR);
 	lbl->addr = rz_il_bv_dup(addr);
 	ht_pp_insert(lbl_table, name, lbl);
 
@@ -247,10 +248,10 @@ RZ_API RzILEffectLabel rz_il_vm_create_label(RzILVM vm, RZ_NONNULL char *name, R
  * \return lbl RzILEffectLabel, pointer to label instance
  */
 RZ_API RzILEffectLabel rz_il_vm_create_label_lazy(RzILVM vm, RZ_NONNULL char *name) {
-	HtPP *lbl_table = vm->vm_global_label_table;
 	rz_return_val_if_fail(name, NULL);
+	HtPP *lbl_table = vm->vm_global_label_table;
 
-	RzILEffectLabel lbl = effect_new_label(name, EFFECT_LABEL_ADDR);
+	RzILEffectLabel lbl = rz_il_effect_new_label(name, EFFECT_LABEL_ADDR);
 	lbl->addr = NULL;
 	ht_pp_insert(lbl_table, name, lbl);
 
@@ -499,7 +500,7 @@ RZ_API void rz_il_clean_temp(RzILVM vm, RzILTemp temp) {
 		rz_il_bv_free(temp->data);
 		break;
 	case RZIL_TEMP_EFF:
-		effect_free(temp->data);
+		rz_il_effect_free(temp->data);
 		break;
 	default:
 		break;

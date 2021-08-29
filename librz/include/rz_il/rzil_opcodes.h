@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#ifndef RZIL_CORE_THEORY_DEFINITIONS_H
-#define RZIL_CORE_THEORY_DEFINITIONS_H
+#ifndef RZIL_OPCODES_H
+#define RZIL_OPCODES_H
 
 #include "definitions/definitions.h"
 
@@ -489,4 +489,4 @@ typedef struct RzILOp_t *RzILOp;
 RZ_API RzILOp rz_il_new_op(RzILOPCode code);
 RZ_API void rz_il_free_op(RzILOp op);
 
-#endif //RZIL_CORE_THEORY_DEFINITIONS_H
+#endif //RZIL_OPCODES_H

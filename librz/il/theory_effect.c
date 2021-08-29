@@ -55,7 +55,7 @@ void rz_il_handler_perform(RzILVM vm, RzILOp op) {
 void rz_il_handler_set(RzILVM vm, RzILOp op) {
 	RzILOpSet set_op = op->op.set;
 
-	RzILEffect eff = effect_new(EFFECT_TYPE_DATA);
+	RzILEffect eff = rz_il_effect_new(EFFECT_TYPE_DATA);
 	eff->data_eff->var_name = set_op->v;
 	eff->data_eff->val_index = set_op->x;
 
@@ -66,7 +66,7 @@ void rz_il_handler_set(RzILVM vm, RzILOp op) {
 void rz_il_handler_jmp(RzILVM vm, RzILOp op) {
 	RzILOpJmp op_jmp = op->op.jmp;
 	RzILBitVector addr = rz_il_get_bv_temp(vm, op_jmp->dst);
-	RzILEffect eff = effect_new(EFFECT_TYPE_CTRL);
+	RzILEffect eff = rz_il_effect_new(EFFECT_TYPE_CTRL);
 
 	eff->ctrl_eff->pc = rz_il_bv_dup(addr);
 
@@ -76,16 +76,16 @@ void rz_il_handler_jmp(RzILVM vm, RzILOp op) {
 void rz_il_handler_goto(RzILVM vm, RzILOp op) {
 	RzILOpGoto op_goto = op->op.goto_;
 	const char *lname = op_goto->lbl;
-	RzILEffect eff = effect_new(EFFECT_TYPE_CTRL);
+	RzILEffect eff = rz_il_effect_new(EFFECT_TYPE_CTRL);
 
 	RzILEffectLabel label = rz_il_vm_find_label_by_name(vm, lname);
 	if (label->type == EFFECT_LABEL_SYSCALL) {
-		effect_free_ctrl(eff->ctrl_eff);
+		rz_il_effect_free_ctrl(eff->ctrl_eff);
 		eff->notation = EFFECT_NOTATION_GOTO_SYS;
 		// WARN : HACK to call hook
 		eff->ctrl_eff = (void *)op;
 	} else if (label->type == EFFECT_LABEL_HOOK) {
-		effect_free_ctrl(eff->ctrl_eff);
+		rz_il_effect_free_ctrl(eff->ctrl_eff);
 		eff->notation = EFFECT_NOTATION_GOTO_HOOK;
 		// WARN : HACK to call
 		eff->ctrl_eff = (void *)op;
@@ -130,11 +130,11 @@ void rz_il_handler_branch(RzILVM vm, RzILOp op) {
 	RzILEffect true_branch, false_branch;
 
 	if (condition->b) {
-		true_branch = (op_branch->true_eff == -1) ? effect_new(EFFECT_TYPE_NON) : rz_il_get_temp(vm, op_branch->true_eff);
+		true_branch = (op_branch->true_eff == -1) ? rz_il_effect_new(EFFECT_TYPE_NON) : rz_il_get_temp(vm, op_branch->true_eff);
 		rz_il_make_eff_temp(vm, op_branch->ret, true_branch);
 		rz_il_empty_temp(vm, op_branch->true_eff);
 	} else {
-		false_branch = (op_branch->false_eff == -1) ? effect_new(EFFECT_TYPE_NON) : rz_il_get_temp(vm, op_branch->false_eff);
+		false_branch = (op_branch->false_eff == -1) ? rz_il_effect_new(EFFECT_TYPE_NON) : rz_il_get_temp(vm, op_branch->false_eff);
 		rz_il_make_eff_temp(vm, op_branch->ret, false_branch);
 		rz_il_empty_temp(vm, op_branch->false_eff);
 	}

@@ -3,6 +3,8 @@
 
 #include <rz_analysis.h>
 
+// TODO : rewrite this file when migrate to new op structure
+
 /**
  * In ESIL, stats is used to collect these info :
  * 1: ops.list : ESIL op
@@ -149,8 +151,13 @@ static void rz_analysis_rzil_stats_focus(RzAnalysis *analysis, RzAnalysisRzil *r
 	}
 }
 
+/**
+ * Record memory R/W address, register R/W names. similar to `trace`
+ * \param analysis RzAnalysis
+ * \param rzil RZIL instance
+ * \param op  a general RZIL op structure (Designed for switching between different implementations of RZIL op struct)
+ */
 RZ_API void rz_analysis_rzil_record_stats(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzAnalysisRzilOp *op) {
-	// TODO : rewrite this file when migrate to new op structure
 	RzPVector *op_list = op->ops;
 
 	void **iter;

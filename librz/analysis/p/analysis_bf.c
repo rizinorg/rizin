@@ -17,9 +17,10 @@ static int getid(char ch) {
 /* New IL uplift bf */
 #define BF_ADDR_SIZE  64
 #define BF_ALIGN_SIZE 8
+#define BF_ID_STACK   32
 
 struct bf_stack_t {
-	ut64 stack[32];
+	ut64 stack[BF_ID_STACK];
 	int sp;
 };
 typedef struct bf_stack_t *BfStack;
@@ -68,7 +69,7 @@ ut64 pop_astack(BfStack stack) {
 }
 
 void push_astack(BfStack stack, ut64 id) {
-	if (stack->sp >= 31) {
+	if (stack->sp >= BF_ID_STACK - 1) {
 		eprintf("Stack Full\n");
 		return;
 	}
@@ -460,6 +461,10 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 	RzILVM vm = analysis->rzil->vm;
 	RzPVector *oplist;
 	op->rzil_op = RZ_NEW0(RzAnalysisRzilOp);
+	if (!op->rzil_op) {
+		RZ_LOG_ERROR("Fail to init rzil op\n");
+		return 1;
+	}
 	ut64 dst = 0LL;
 
 	switch (buf[0]) {

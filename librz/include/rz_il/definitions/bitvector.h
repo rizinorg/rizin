@@ -32,7 +32,7 @@ struct bitvector_t {
 typedef struct bitvector_t *RzILBitVector;
 
 // init
-RZ_API RzILBitVector rz_il_bv_new0(ut32 length);
+RZ_API RzILBitVector rz_il_bv_new(ut32 length);
 RZ_API RzILBitVector rz_il_bv_dup(RzILBitVector bv);
 RZ_API RzILBitVector rz_il_bv_concat(RzILBitVector bv1, RzILBitVector bv2);
 RZ_API int rz_il_bv_copy(RzILBitVector src, RzILBitVector dst);
@@ -84,9 +84,9 @@ RZ_API ut32 rz_il_bv_to_ut32(RzILBitVector x);
 RZ_API ut64 rz_il_bv_to_ut64(RzILBitVector x);
 // misc
 RZ_API bool rz_il_bv_is_zero_vector(RzILBitVector x);
-RZ_API void rz_il_print_bv(RzILBitVector bv);
 RZ_API RzILBitVector rz_il_bv_new_from_ut32(ut32 length, ut32 value);
 RZ_API RzILBitVector rz_il_bv_new_from_ut64(ut32 length, ut64 value);
+RZ_API char *rz_il_bv_as_string(RzILBitVector bv);
 
 RZ_API ut32 rz_il_bv_len(RzILBitVector bv);
 RZ_API int rz_il_bv_cmp(RzILBitVector x, RzILBitVector y);

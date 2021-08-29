@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#ifndef RZ_IL_CORE_THEORY_CMDS_H
-#define RZ_IL_CORE_THEORY_CMDS_H
+#ifndef RZ_IL_VM_LAYER_H
+#define RZ_IL_VM_LAYER_H
 #include "rzil_vm.h"
 
 // VM high level operations
@@ -24,4 +24,4 @@ RZ_API ut64 rz_il_bv_addr_to_ut64(RzILBitVector addr);
 RZ_API void rz_il_free_bv_addr(RzILBitVector addr);
 RZ_API char *rz_il_op2str(RzILOPCode opcode);
 
-#endif // RZ_IL_CORE_THEORY_CMDS_H
+#endif // RZ_IL_VM_LAYER_H

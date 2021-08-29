@@ -15,7 +15,13 @@ static void htup_vector_free(HtUPKv *kv) {
 	rz_vector_free(kv->value);
 }
 
-RZ_API RzAnalysisRzilTrace *rz_analysis_rzil_trace_new(RzAnalysis *analysis, RzAnalysisRzil *rzil) {
+/**
+ * Create a new trace to collect infos
+ * \param analysis pointer to RzAnalysis
+ * \param rzil RZIL instance
+ * \return pointer to RzilTrace
+ */
+RZ_API RzAnalysisRzilTrace *rz_analysis_rzil_trace_new(RzAnalysis *analysis, RZ_NONNULL RzAnalysisRzil *rzil) {
 	rz_return_val_if_fail(rzil, NULL);
 	size_t i;
 	RzAnalysisEsilTrace *trace = RZ_NEW0(RzAnalysisEsilTrace);
@@ -58,6 +64,10 @@ error:
 	return NULL;
 }
 
+/**
+ * Free an RZIL trace
+ * \param trace trace to be free
+ */
 RZ_API void rz_analysis_rzil_trace_free(RzAnalysisEsilTrace *trace) {
 	size_t i;
 	if (!trace) {
@@ -95,8 +105,7 @@ static void bv_to_databuf(ut8 *buf, RzILBitVector bv) {
 }
 
 static void rz_analysis_rzil_trace_focus_mem_read(RzAnalysis *analysis, RZ_NONNULL RzAnalysisRzil *rzil, RZ_NONNULL RzILOp single_op) {
-	rz_return_if_fail(rzil);
-	rz_return_if_fail(single_op);
+	rz_return_if_fail(rzil && single_op);
 	RzILOpLoad op_load = single_op->op.load;
 
 	RzILBitVector addr = rz_il_get_bv_temp(rzil->vm, op_load->key);
@@ -120,8 +129,7 @@ static void rz_analysis_rzil_trace_focus_mem_read(RzAnalysis *analysis, RZ_NONNU
 }
 
 static void rz_analysis_rzil_trace_focus_mem_write(RzAnalysis *analysis, RZ_NONNULL RzAnalysisRzil *rzil, RZ_NONNULL RzILOp single_op) {
-	rz_return_if_fail(rzil);
-	rz_return_if_fail(single_op);
+	rz_return_if_fail(rzil && single_op);
 	RzILOpStore op_store = single_op->op.store;
 
 	RzILBitVector addr = rz_il_get_bv_temp(rzil->vm, op_store->key);
@@ -145,8 +153,7 @@ static void rz_analysis_rzil_trace_focus_mem_write(RzAnalysis *analysis, RZ_NONN
 }
 
 static void rz_analysis_rzil_trace_focus_reg_read(RzAnalysis *analysis, RZ_NONNULL RzAnalysisRzil *rzil, RZ_NONNULL RzILOp single_op) {
-	rz_return_if_fail(rzil);
-	rz_return_if_fail(single_op);
+	rz_return_if_fail(rzil && single_op);
 	RzILOpVar op_var = single_op->op.var;
 	RzILVM vm = rzil->vm;
 
@@ -166,8 +173,7 @@ static void rz_analysis_rzil_trace_focus_reg_read(RzAnalysis *analysis, RZ_NONNU
 }
 
 static void rz_analysis_rzil_trace_focus_reg_write(RzAnalysis *analysis, RZ_NONNULL RzAnalysisRzil *rzil, RZ_NONNULL RzILOp single_op) {
-	rz_return_if_fail(rzil);
-	rz_return_if_fail(single_op);
+	rz_return_if_fail(rzil && single_op);
 	RzILOpSet op_set = single_op->op.set;
 	RzILVM vm = rzil->vm;
 
@@ -187,6 +193,7 @@ static void rz_analysis_rzil_trace_focus_reg_write(RzAnalysis *analysis, RZ_NONN
 }
 
 static void rz_analysis_rzil_trace_focus(RzAnalysis *analysis, RZ_NONNULL RzAnalysisRzil *rzil, RZ_NONNULL RzILOp single_op) {
+	rz_return_if_fail(rzil && single_op);
 	// focus those op only
 	switch (single_op->code) {
 	case RZIL_OP_LOAD:
@@ -210,9 +217,9 @@ static void rz_analysis_rzil_trace_focus(RzAnalysis *analysis, RZ_NONNULL RzAnal
 /**
  * This function should be called after executing the RZIL op
  * Collect trace info (target and data of mem/reg read/write)
- * \param analysis
- * \param rzil
- * \param op
+ * \param analysis RzAnalysis
+ * \param rzil RZIL instance
+ * \param op RzAnalysisRzilOp, a general RZIL op structure (Designed for switching between different implementations of RZIL op struct)
  */
 RZ_API void rz_analysis_rzil_trace_op(RzAnalysis *analysis, RZ_NONNULL RzAnalysisRzil *rzil, RZ_NONNULL RzAnalysisRzilOp *op) {
 	// TODO : rewrite this file when migrate to new op structure

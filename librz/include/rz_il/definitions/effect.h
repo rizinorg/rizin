@@ -74,17 +74,15 @@ struct rzil_effect_union_t {
 
 // a chain of effects
 // should use something like rz_vector / rz_list
-RZ_API RzILEffect effect_new(EFFECT_TYPE type);
-RZ_API RzILDataEffect effect_new_data(void);
-RZ_API RzILCtrlEffect effect_new_ctrl(void);
-RZ_API RzILEffect wrap_ctrl_effect(RzILCtrlEffect eff);
-RZ_API RzILEffect wrap_data_effect(RzILDataEffect eff);
-RZ_API RzILEffectLabel effect_new_label(char *name, EFFECT_LABEL_TYPE type);
-RZ_API void effect_free(RzILEffect effect);
-RZ_API void effect_free_ctrl(RzILCtrlEffect eff);
-RZ_API void effect_free_data(RzILDataEffect eff);
-RZ_API void print_effect(RzILEffect effect);
-RZ_API void print_ctrl_effect(RzILCtrlEffect eff);
-RZ_API void print_data_effect(RzILDataEffect eff);
+RZ_API RzILEffect rz_il_effect_new(EFFECT_TYPE type);
+RZ_API RzILDataEffect rz_il_effect_new_data(void);
+RZ_API RzILCtrlEffect rz_il_effect_new_ctrl(void);
+RZ_API RzILEffect rz_il_wrap_ctrl_effect(RzILCtrlEffect eff);
+RZ_API RzILEffect rz_il_wrap_data_effect(RzILDataEffect eff);
+RZ_API RzILEffectLabel rz_il_effect_new_label(char *name, EFFECT_LABEL_TYPE type);
+RZ_API void rz_il_effect_free(RzILEffect effect);
+RZ_API void rz_il_effect_free_ctrl(RzILCtrlEffect eff);
+RZ_API void rz_il_effect_free_data(RzILDataEffect eff);
+RZ_API char *rz_il_effect_as_string(RzILEffect effect);
 
 #endif // RZ_IL_EFFECT_H
