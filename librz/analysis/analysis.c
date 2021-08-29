@@ -582,8 +582,7 @@ static bool noreturn_recurse(RzAnalysis *analysis, ut64 addr) {
 		eprintf("Couldn't read buffer\n");
 		return false;
 	}
-	if (rz_analysis_op(analysis, &op, addr, bbuf, sizeof(bbuf), RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_VAL) <
-		1) {
+	if (rz_analysis_op(analysis, &op, addr, bbuf, sizeof(bbuf), RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_VAL) < 1) {
 		return false;
 	}
 	switch (op.type & RZ_ANALYSIS_OP_TYPE_MASK) {

@@ -4,32 +4,33 @@
 #include <rz_il/rzil_opcodes.h>
 #include <rz_il/rzil_vm.h>
 
-void rz_il_handler_ite(RzILVM vm, RzILOp op) {
-	RzILOpIte op_ite = op->op.ite;
+void *rz_il_handler_ite(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
+	RzILOpIte *op_ite = op->op.ite;
 
-	RzILBool condition = rz_il_get_bool_temp(vm, op_ite->condition);
-	RzILVal true_branch = rz_il_get_val_temp(vm, op_ite->x);
-	RzILVal false_branch = rz_il_get_val_temp(vm, op_ite->y);
+	RzILBool *condition = rz_il_evaluate_bool(vm, op_ite->condition, type);
+	RzILVal *ret;
 
+	*type = RZIL_OP_ARG_VAL;
 	if (condition->b) {
-		rz_il_make_val_temp(vm, op_ite->ret, true_branch);
-		rz_il_empty_temp(vm, op_ite->x); // the true branch has moved to `ret`, set [x] to NULL
+		ret = rz_il_evaluate_val(vm, op_ite->x, type); // true branch
 	} else {
-		rz_il_make_val_temp(vm, op_ite->ret, false_branch);
-		rz_il_empty_temp(vm, op_ite->y);
+		ret = rz_il_evaluate_val(vm, op_ite->y, type); // false branch
 	}
+
+	return ret;
 }
 
-void rz_il_handler_var(RzILVM vm, RzILOp op) {
-	RzILOpVar var_op = op->op.var;
-	RzILVal val = rz_il_hash_find_val_by_name(vm, var_op->v);
+void *rz_il_handler_var(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
+	RzILOpVar *var_op = op->op.var;
+	RzILVal *val = rz_il_hash_find_val_by_name(vm, var_op->v);
 	val = rz_il_dup_value(val);
-	rz_il_make_val_temp(vm, var_op->ret, val);
+
+	*type = RZIL_OP_ARG_VAL;
+	return val;
 }
 
-void rz_il_handler_unk(RzILVM vm, RzILOp op) {
-	RzILOpUnk op_unk = op->op.unk;
-	RzILVal val = rz_il_new_value(); // has UNK
-
-	rz_il_make_val_temp(vm, op_unk->ret, val);
+void *rz_il_handler_unk(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
+	RzILVal *val = rz_il_new_value(); // has UNK
+	*type = RZIL_OP_ARG_VAL;
+	return val;
 }

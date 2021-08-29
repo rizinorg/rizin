@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#ifndef RZIL_CORE_THEORY_DEFINITIONS_H
-#define RZIL_CORE_THEORY_DEFINITIONS_H
+#ifndef RZIL_OPCODES_H
+#define RZIL_OPCODES_H
 
 #include "definitions/definitions.h"
 
@@ -40,7 +40,6 @@
 struct rzil_op_int_t {
 	ut32 length; ///< s -- sort(type), length of bitvector
 	int value; ///< x -- value of bitvector
-	RzIL_BITV int ret; ///< index of RzILBitVector in temp_value_list
 };
 
 /**
@@ -50,8 +49,7 @@ struct rzil_op_int_t {
  *  [LSB] lsb x is the least significant bit of x.
  */
 struct rzil_op_msb_lsb_t {
-	RzIL_BITV int bv; ///< index of bitvector operand
-	RzIL_BOOL int ret; ///< index of return RzILBool value in temp_value_list
+	RzIL_BITV void *bv; ///< index of bitvector operand
 };
 
 /**
@@ -61,8 +59,7 @@ struct rzil_op_msb_lsb_t {
  *  neg x is two-complement unary minus
  */
 struct rzil_op_neg_t {
-	RzIL_BITV int bv; ///< index of bitvector operand
-	RzIL_BITV int ret; ///< index of return RzILBitVector value in temp_value_list
+	RzIL_BITV void *bv; ///< index of bitvector operand
 };
 
 /**
@@ -72,8 +69,7 @@ struct rzil_op_neg_t {
  *  neg x is one-complement unary minus
  */
 struct rzil_op_not_t {
-	RzIL_BITV int bv; ///< index of bitvector operand
-	RzIL_BITV int ret; ///< index of return RzILBitVector value in temp_value_list
+	RzIL_BITV void *bv; ///< index of bitvector operand
 };
 
 /**
@@ -92,9 +88,8 @@ struct rzil_op_not_t {
  *  [LOGXOR] logxor x y is a bitwise logical xor of x and y.
  */
 struct rzil_op_alg_log_operations_t {
-	RzIL_BITV int x; ///< index of Operand 1
-	RzIL_BITV int y; ///< index of Operand 2
-	RzIL_BITV int ret; ///< index of store result in temp_value_list
+	RzIL_BITV void *x; ///< index of Operand 1
+	RzIL_BITV void *y; ///< index of Operand 2
 };
 
 /**
@@ -105,9 +100,8 @@ struct rzil_op_alg_log_operations_t {
  *  [ULE] ule x y binary predicate for unsigned less than or equal
  */
 struct rzil_op_sle_ule_t {
-	RzIL_BITV int x; ///< index of operand 1
-	RzIL_BITV int y; ///< index of operand 2
-	RzIL_BOOL int ret; ///< index of store bool result in temp_value_list
+	RzIL_BITV void *x; ///< index of operand 1
+	RzIL_BITV void *y; ///< index of operand 2
 };
 
 /**
@@ -118,10 +112,9 @@ struct rzil_op_sle_ule_t {
  *  [RSHIFT] shiftr s x m shifts x right by m bits filling with s.
  */
 struct rzil_op_shift_t {
-	RzIL_BOOL int fill_bit; ///< index of fill bit
-	RzIL_BITV int x; ///< index of operand 1
-	RzIL_BITV int y; ///< index of operand 2
-	RzIL_BITV int ret; ///< index of store bitvector result
+	RzIL_BOOL void *fill_bit; ///< index of fill bit
+	RzIL_BITV void *x; ///< index of operand 1
+	RzIL_BITV void *y; ///< index of operand 2
 };
 
 /**
@@ -132,8 +125,7 @@ struct rzil_op_shift_t {
  *  normally we set ret to -1 to show that no more effect after perform this one
  */
 struct rzil_op_perform_t {
-	RzIL_EFF int eff; ///< index of effect to perform
-	RzIL_EFF int ret; ///< index of store bitvector result
+	RzIL_EFF void *eff; ///< index of effect to perform
 };
 
 /**
@@ -144,8 +136,7 @@ struct rzil_op_perform_t {
  */
 struct rzil_op_set_t {
 	RzIL_VAR const char *v; ///< name of variable, const one
-	RzIL_PURE_VAL int x; ///< index of RzILVal
-	RzIL_EFF int ret; ///< index of store Effect result
+	RzIL_PURE_VAL void *x; ///< index of RzILVal
 };
 
 /**
@@ -155,8 +146,7 @@ struct rzil_op_set_t {
  *  jmp dst passes the control to a program located at dst.
  */
 struct rzil_op_jmp_t {
-	RzIL_BITV int dst; ///< index of destination address (RzILBitVector)
-	RzIL_EFF int ret_ctrl_eff; ///< index of store control effect
+	RzIL_BITV void *dst; ///< index of destination address (RzILBitVector)
 };
 
 /**
@@ -167,7 +157,6 @@ struct rzil_op_jmp_t {
  */
 struct rzil_op_goto_t {
 	RzIL_LABLE const char *lbl; ///< name of the label, const one
-	RzIL_EFF int ret_ctrl_eff; ///< index of store control effect
 };
 
 /**
@@ -177,9 +166,8 @@ struct rzil_op_goto_t {
  *  seq x y performs effect x, after that perform effect y. Pack two effects into one.
  */
 struct rzil_op_seq_t {
-	RzIL_EFF int x; ///< index of the first effect
-	RzIL_EFF int y; ///< index of the second effect
-	RzIL_EFF int ret; ///< index of store the packed effect
+	RzIL_EFF void *x; ///< index of the first effect
+	RzIL_EFF void *y; ///< index of the second effect
 };
 
 /**
@@ -189,9 +177,8 @@ struct rzil_op_seq_t {
  *  blk lbl data ctrl a labeled sequence of effects.
  */
 struct rzil_op_blk_t {
-	RzIL_EFF int data_eff; ///< index of data_eff
-	RzIL_EFF int ctrl_eff; ///< index of ctrl_eff
-	RzIL_EFF int ret; ///< index of store the packed effect
+	RzIL_EFF void *data_eff; ///< index of data_eff
+	RzIL_EFF void *ctrl_eff; ///< index of ctrl_eff
 };
 
 /**
@@ -201,9 +188,8 @@ struct rzil_op_blk_t {
  *  repeat c data repeats data effects until the condition c holds.
  */
 struct rzil_op_repeat_t {
-	RzIL_BOOL int condition; ///< index of BOOL condition
-	RzIL_EFF int data_eff; ///< index of data effect
-	RzIL_EFF int ret; ///< index of data effect result
+	RzIL_BOOL void *condition; ///< index of BOOL condition
+	RzIL_EFF void *data_eff; ///< index of data effect
 };
 
 /**
@@ -213,10 +199,9 @@ struct rzil_op_repeat_t {
  *  branch c lhs rhs if c holds then performs lhs else rhs.
  */
 struct rzil_op_branch_t {
-	RzIL_BOOL int condition; ///< index of BOOL condition
-	RzIL_EFF int true_eff; ///< index of true effect, set to -1 means do nothing
-	RzIL_EFF int false_eff; ///< index of false effect, set to -1 means do nothing
-	RzIL_EFF int ret; ///< index of store the chosen effect
+	RzIL_BOOL void *condition; ///< index of BOOL condition
+	RzIL_EFF void *true_eff; ///< index of true effect, set to -1 means do nothing
+	RzIL_EFF void *false_eff; ///< index of false effect, set to -1 means do nothing
 };
 
 /**
@@ -226,10 +211,9 @@ struct rzil_op_branch_t {
  *  ite c x y is x if c evaluates to b1 else y.
  */
 struct rzil_op_ite_t {
-	RzIL_BOOL int condition; ///< index of BOOL condition
-	RzIL_PURE_VAL int x; ///< index of RzILVal operand 1
-	RzIL_PURE_VAL int y; ///< index of RzILVal operand 2
-	RzIL_PURE_VAL int ret; ///< index of the chosen RzILVal
+	RzIL_BOOL void *condition; ///< index of BOOL condition
+	RzIL_PURE_VAL void *x; ///< index of RzILVal operand 1
+	RzIL_PURE_VAL void *y; ///< index of RzILVal operand 2
 };
 
 /**
@@ -240,28 +224,6 @@ struct rzil_op_ite_t {
  */
 struct rzil_op_var_t {
 	RzIL_VAR const char *v; ///< name of variable, const one
-	RzIL_PURE_VAL int ret; ///< index of RzILVal value of the variable
-};
-
-/**
- *  \struct rzil_op_unk_t
- *  \brief op structure for `unk` ('a Value.sort -> 'a pure)
- *
- *  unk s an unknown value of sort s. This term explicitly denotes a term with undefined or unknown value.
- */
-struct rzil_op_unk_t {
-	RzIL_PURE_VAL int ret; ///< index of store the UNK
-};
-
-/**
- *  \struct rzil_op_b_t
- *  \brief op structure for `b0` and `b1` (bool)
- *
- *  [B0] b0 is false aka 0 bit
- *  [B1] b1 is true aka 1 bit
- */
-struct rzil_op_b_t {
-	RzIL_BOOL int ret; ///< index of store the B0/B1
 };
 
 /**
@@ -271,9 +233,8 @@ struct rzil_op_b_t {
  *  and_ x y is a conjunction of x and y.
  */
 struct rzil_op_and__t {
-	RzIL_BOOL int x; ///< index of the BOOL operand
-	RzIL_BOOL int y; ///< index of the BOOL operand
-	RzIL_BOOL int ret; ///< index of store the BOOL result
+	RzIL_BOOL void *x; ///< index of the BOOL operand
+	RzIL_BOOL void *y; ///< index of the BOOL operand
 };
 
 /**
@@ -283,9 +244,8 @@ struct rzil_op_and__t {
  *  or_ x y is a disjunction of x and y.
  */
 struct rzil_op_or__t {
-	RzIL_BOOL int x; ///< index of the BOOL operand
-	RzIL_BOOL int y; ///< index of the BOOL operand
-	RzIL_BOOL int ret; ///< index of store the BOOL result
+	RzIL_BOOL void *x; ///< index of the BOOL operand
+	RzIL_BOOL void *y; ///< index of the BOOL operand
 };
 
 /**
@@ -295,8 +255,8 @@ struct rzil_op_or__t {
  *  inv x inverts x.
  */
 struct rzil_op_inv_t {
-	RzIL_BOOL int x; ///< index of the BOOL operand
-	RzIL_BOOL int ret; ///< index of store the BOOL result
+	RzIL_BOOL void *x; ///< index of the BOOL operand
+	RzIL_BOOL void *ret; ///< index of store the BOOL result
 };
 
 /**
@@ -307,8 +267,7 @@ struct rzil_op_inv_t {
  */
 struct rzil_op_load_t {
 	RzIL_MEM int mem; ///< index of the memory in VM (different from the temp_val_list)
-	RzIL_BITV int key; ///< index of the RzILBitVector key (address)
-	RzIL_BITV int ret; ///< index of store the data loaded from memory
+	RzIL_BITV void *key; ///< index of the RzILBitVector key (address)
 };
 
 /**
@@ -319,9 +278,8 @@ struct rzil_op_load_t {
  */
 struct rzil_op_store_t {
 	RzIL_MEM int mem; ///< index of memory in VM
-	RzIL_BITV int key; ///< index of the RzILBitVector key (address)
-	RzIL_BITV int value; ///< index of the RzILVal value (data) to store
-	RzIL_MEM int ret; ///< The returned Mem index.
+	RzIL_BITV void *key; ///< index of the RzILBitVector key (address)
+	RzIL_BITV void *value; ///< index of the RzILVal value (data) to store
 };
 
 // TODO : a better way to map enum to string
@@ -389,91 +347,88 @@ typedef enum {
 ///               val ite : bool -> 'a pure -> 'a pure -> 'a pure
 ///               ite c x y is x if c evaluates to b1 else y.
 /// they are defined in specific modules
-typedef struct rzil_op_ite_t *RzILOpIte;
-typedef struct rzil_op_var_t *RzILOpVar;
-typedef struct rzil_op_unk_t *RzILOpUnk;
+typedef struct rzil_op_ite_t RzILOpIte;
+typedef struct rzil_op_var_t RzILOpVar;
 
-typedef struct rzil_op_msb_lsb_t *RzILOpMsb;
-typedef struct rzil_op_msb_lsb_t *RzILOpLsb;
-typedef struct rzil_op_sle_ule_t *RzILOpSle;
-typedef struct rzil_op_sle_ule_t *RzILOpUle;
-typedef struct rzil_op_not_t *RzILOpNot;
-typedef struct rzil_op_neg_t *RzILOpNeg;
-typedef struct rzil_op_alg_log_operations_t *RzILOpAdd;
-typedef struct rzil_op_alg_log_operations_t *RzILOpSub;
-typedef struct rzil_op_alg_log_operations_t *RzILOpMul;
-typedef struct rzil_op_alg_log_operations_t *RzILOpDiv;
-typedef struct rzil_op_alg_log_operations_t *RzILOpSdiv;
-typedef struct rzil_op_alg_log_operations_t *RzILOpMod;
-typedef struct rzil_op_alg_log_operations_t *RzILOpSmod;
-typedef struct rzil_op_alg_log_operations_t *RzILOpLogand;
-typedef struct rzil_op_alg_log_operations_t *RzILOpLogor;
-typedef struct rzil_op_alg_log_operations_t *RzILOpLogxor;
-typedef struct rzil_op_shift_t *RzILOpShiftl;
-typedef struct rzil_op_shift_t *RzILOpShiftr;
-typedef struct rzil_op_int_t *RzILOpInt;
+typedef struct rzil_op_msb_lsb_t RzILOpMsb;
+typedef struct rzil_op_msb_lsb_t RzILOpLsb;
+typedef struct rzil_op_sle_ule_t RzILOpSle;
+typedef struct rzil_op_sle_ule_t RzILOpUle;
+typedef struct rzil_op_not_t RzILOpNot;
+typedef struct rzil_op_neg_t RzILOpNeg;
+typedef struct rzil_op_alg_log_operations_t RzILOpAdd;
+typedef struct rzil_op_alg_log_operations_t RzILOpSub;
+typedef struct rzil_op_alg_log_operations_t RzILOpMul;
+typedef struct rzil_op_alg_log_operations_t RzILOpDiv;
+typedef struct rzil_op_alg_log_operations_t RzILOpSdiv;
+typedef struct rzil_op_alg_log_operations_t RzILOpMod;
+typedef struct rzil_op_alg_log_operations_t RzILOpSmod;
+typedef struct rzil_op_alg_log_operations_t RzILOpLogand;
+typedef struct rzil_op_alg_log_operations_t RzILOpLogor;
+typedef struct rzil_op_alg_log_operations_t RzILOpLogxor;
+typedef struct rzil_op_shift_t RzILOpShiftl;
+typedef struct rzil_op_shift_t RzILOpShiftr;
+typedef struct rzil_op_int_t RzILOpInt;
 
-typedef struct rzil_op_b_t *RzILOpB0;
-typedef struct rzil_op_b_t *RzILOpB1;
-typedef struct rzil_op_and__t *RzILOpAnd_;
-typedef struct rzil_op_or__t *RzILOpOr_;
-typedef struct rzil_op_inv_t *RzILOpInv;
+typedef struct rzil_op_and__t RzILOpAnd_;
+typedef struct rzil_op_or__t RzILOpOr_;
+typedef struct rzil_op_inv_t RzILOpInv;
 
-typedef struct rzil_op_perform_t *RzILOpPerform;
-typedef struct rzil_op_set_t *RzILOpSet;
-typedef struct rzil_op_jmp_t *RzILOpJmp;
-typedef struct rzil_op_goto_t *RzILOpGoto;
-typedef struct rzil_op_seq_t *RzILOpSeq;
-typedef struct rzil_op_blk_t *RzILOpBlk;
-typedef struct rzil_op_repeat_t *RzILOpRepeat;
-typedef struct rzil_op_branch_t *RzILOpBranch;
+typedef struct rzil_op_perform_t RzILOpPerform;
+typedef struct rzil_op_set_t RzILOpSet;
+typedef struct rzil_op_jmp_t RzILOpJmp;
+typedef struct rzil_op_goto_t RzILOpGoto;
+typedef struct rzil_op_seq_t RzILOpSeq;
+typedef struct rzil_op_blk_t RzILOpBlk;
+typedef struct rzil_op_repeat_t RzILOpRepeat;
+typedef struct rzil_op_branch_t RzILOpBranch;
 
-typedef struct rzil_op_load_t *RzILOpLoad;
-typedef struct rzil_op_store_t *RzILOpStore;
+typedef struct rzil_op_load_t RzILOpLoad;
+typedef struct rzil_op_store_t RzILOpStore;
 
 // Then define a union to union all of these struct
 typedef union {
-	RzILOpIte ite;
-	RzILOpVar var;
-	RzILOpUnk unk;
+	RzILOpIte *ite;
+	RzILOpVar *var;
+	void *unk;
 
-	RzILOpB0 b0;
-	RzILOpB1 b1;
-	RzILOpAnd_ and_;
-	RzILOpOr_ or_;
-	RzILOpInv inv;
+	void *b0;
+	void *b1;
+	RzILOpAnd_ *and_;
+	RzILOpOr_ *or_;
+	RzILOpInv *inv;
 
-	RzILOpInt int_;
-	RzILOpMsb msb;
-	RzILOpLsb lsb;
-	RzILOpUle ule;
-	RzILOpSle sle;
-	RzILOpNeg neg;
-	RzILOpNot not ;
-	RzILOpAdd add;
-	RzILOpSub sub;
-	RzILOpMul mul;
-	RzILOpDiv div;
-	RzILOpSdiv sdiv;
-	RzILOpSmod smod;
-	RzILOpMod mod;
-	RzILOpLogand logand;
-	RzILOpLogor logor;
-	RzILOpLogxor logxor;
-	RzILOpShiftl shiftl;
-	RzILOpShiftr shiftr;
+	RzILOpInt *int_;
+	RzILOpMsb *msb;
+	RzILOpLsb *lsb;
+	RzILOpUle *ule;
+	RzILOpSle *sle;
+	RzILOpNeg *neg;
+	RzILOpNot * not ;
+	RzILOpAdd *add;
+	RzILOpSub *sub;
+	RzILOpMul *mul;
+	RzILOpDiv *div;
+	RzILOpSdiv *sdiv;
+	RzILOpSmod *smod;
+	RzILOpMod *mod;
+	RzILOpLogand *logand;
+	RzILOpLogor *logor;
+	RzILOpLogxor *logxor;
+	RzILOpShiftl *shiftl;
+	RzILOpShiftr *shiftr;
 
-	RzILOpPerform perform;
-	RzILOpSet set;
-	RzILOpJmp jmp;
-	RzILOpGoto goto_;
-	RzILOpSeq seq;
-	RzILOpBlk blk;
-	RzILOpRepeat repeat;
-	RzILOpBranch branch;
+	RzILOpPerform *perform;
+	RzILOpSet *set;
+	RzILOpJmp *jmp;
+	RzILOpGoto *goto_;
+	RzILOpSeq *seq;
+	RzILOpBlk *blk;
+	RzILOpRepeat *repeat;
+	RzILOpBranch *branch;
 
-	RzILOpLoad load;
-	RzILOpStore store;
+	RzILOpLoad *load;
+	RzILOpStore *store;
 
 	void *nil;
 	// ... More
@@ -484,9 +439,9 @@ struct RzILOp_t {
 	RzILOPCode code;
 	_RzILOp op;
 };
-typedef struct RzILOp_t *RzILOp;
+typedef struct RzILOp_t RzILOp;
 // Opcode
-RZ_API RzILOp rz_il_new_op(RzILOPCode code);
-RZ_API void rz_il_free_op(RzILOp op);
+RZ_API RzILOp *rz_il_new_op(RzILOPCode code);
+RZ_API void rz_il_free_op(RzILOp *op);
 
-#endif //RZIL_CORE_THEORY_DEFINITIONS_H
+#endif //RZIL_OPCODES_H

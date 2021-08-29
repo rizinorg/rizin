@@ -7,13 +7,12 @@
  * New an empty value
  * \return val RzILVal, pointer to this value
  */
-RZ_API RzILVal rz_il_new_value(void) {
-	RzILVal ret;
-	ret = (RzILVal)malloc(sizeof(struct rz_il_val_t));
+RZ_API RzILVal *rz_il_new_value(void) {
+	RzILVal *ret;
+	ret = RZ_NEW0(RzILVal);
 	if (!ret) {
 		return NULL;
 	}
-	memset(ret, 0, sizeof(struct rz_il_val_t));
 	ret->type = RZIL_VAR_TYPE_UNK;
 	return ret;
 }
@@ -23,8 +22,8 @@ RZ_API RzILVal rz_il_new_value(void) {
  * \param val RzILVal, pointer to the value you want to dump
  * \return dump RzILVal, pointer to the dumped value
  */
-RZ_API RzILVal rz_il_dup_value(RzILVal val) {
-	RzILVal ret = rz_il_new_value();
+RZ_API RzILVal *rz_il_dup_value(RzILVal *val) {
+	RzILVal *ret = rz_il_new_value();
 	ret->type = val->type;
 
 	if (ret->type == RZIL_VAR_TYPE_BOOL) {
@@ -44,32 +43,10 @@ RZ_API RzILVal rz_il_dup_value(RzILVal val) {
 }
 
 /**
- * New an empty temporary value
- * \return temp RzILTemp, pointer to the new temporary value
- */
-RZ_API RzILTemp rz_il_new_temp(void) {
-	RzILTemp temp = RZ_NEW0(struct rz_il_tempv_t);
-	if (!temp) {
-		return NULL;
-	}
-	temp->data = NULL;
-	temp->type = RZIL_TEMP_EMPTY;
-	return temp;
-}
-
-/**
- * Free a temporary value
- * \param temp RzILTemp, pointer to the temporary value you want to free
- */
-RZ_API void rz_il_free_temp(RzILTemp temp) {
-	free(temp);
-}
-
-/**
  * Free a RzILVal value
  * \param val RzILVal, pointer to the RzILVal instance
  */
-RZ_API void rz_il_free_value(RzILVal val) {
+RZ_API void rz_il_free_value(RzILVal *val) {
 	if (!val) {
 		return;
 	}

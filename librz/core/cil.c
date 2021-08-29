@@ -453,7 +453,7 @@ RZ_IPI void rz_core_rzil_step(RzCore *core) {
 
 	RzAnalysis *analysis = core->analysis;
 	RzAnalysisRzil *rzil = analysis->rzil;
-	RzILVM vm = rzil->vm;
+	RzILVM *vm = rzil->vm;
 	RzAnalysisPlugin *cur = analysis->cur;
 	RzAnalysisOp op = { 0 };
 
@@ -474,7 +474,6 @@ RZ_IPI void rz_core_rzil_step(RzCore *core) {
 
 	if (oplist) {
 		rz_il_vm_list_step(vm, oplist);
-		rz_il_clean_temps(vm);
 	} else {
 		eprintf("Invalid instruction detected or reach the end of code\n");
 	}

@@ -3,10 +3,8 @@
 
 #include <rz_il/rzil_opcodes.h>
 
-#define RZIL_OP_NEW(size) calloc(1, (size))
-
-RzILOp rz_il_new_empty_op(void) {
-	RzILOp ret = (RzILOp)malloc(sizeof(struct RzILOp_t));
+RzILOp *rz_il_new_empty_op(void) {
+	RzILOp *ret = RZ_NEW0(RzILOp);
 	if (!ret) {
 		return NULL;
 	}
@@ -22,8 +20,8 @@ RzILOp rz_il_new_empty_op(void) {
  * \param code RzILOPCode, enum to specify the op type
  * \return RzILOp, a pointer to an empty opcode instance
  */
-RZ_API RzILOp rz_il_new_op(RzILOPCode code) {
-	RzILOp ret = (RzILOp)malloc(sizeof(struct RzILOp_t));
+RZ_API RzILOp *rz_il_new_op(RzILOPCode code) {
+	RzILOp *ret = RZ_NEW0(RzILOp);
 	if (!ret) {
 		return NULL;
 	}
@@ -32,39 +30,39 @@ RZ_API RzILOp rz_il_new_op(RzILOPCode code) {
 
 	switch (code) {
 	case RZIL_OP_VAR:
-		ret->op.var = (RzILOpVar)RZIL_OP_NEW(sizeof(struct rzil_op_var_t));
+		ret->op.var = (RzILOpVar *)RZ_NEW0(RzILOpVar);
 		break;
 	case RZIL_OP_ITE:
-		ret->op.ite = (RzILOpIte)RZIL_OP_NEW(sizeof(struct rzil_op_ite_t));
+		ret->op.ite = (RzILOpIte *)RZ_NEW0(RzILOpIte);
 		break;
 	case RZIL_OP_UNK:
-		ret->op.unk = (RzILOpUnk)RZIL_OP_NEW(sizeof(struct rzil_op_unk_t));
+		ret->op.unk = NULL;
 		break;
 	case RZIL_OP_B0:
 	case RZIL_OP_B1:
-		ret->op.b0 = (RzILOpB0)RZIL_OP_NEW(sizeof(struct rzil_op_b_t));
+		ret->op.b0 = NULL;
 		break;
 	case RZIL_OP_AND_:
-		ret->op.and_ = (RzILOpAnd_)RZIL_OP_NEW(sizeof(struct rzil_op_and__t));
+		ret->op.and_ = (RzILOpAnd_ *)RZ_NEW0(RzILOpAnd_);
 		break;
 	case RZIL_OP_OR_:
-		ret->op.or_ = (RzILOpOr_)RZIL_OP_NEW(sizeof(struct rzil_op_or__t));
+		ret->op.or_ = (RzILOpOr_ *)RZ_NEW0(RzILOpOr_);
 		break;
 	case RZIL_OP_INV:
-		ret->op.inv = (RzILOpInv)RZIL_OP_NEW(sizeof(struct rzil_op_inv_t));
+		ret->op.inv = (RzILOpInv *)RZ_NEW0(RzILOpInv);
 		break;
 	case RZIL_OP_INT:
-		ret->op.int_ = (RzILOpInt)RZIL_OP_NEW(sizeof(struct rzil_op_int_t));
+		ret->op.int_ = (RzILOpInt *)RZ_NEW0(RzILOpInt);
 		break;
 	case RZIL_OP_MSB:
 	case RZIL_OP_LSB:
-		ret->op.lsb = (RzILOpMsb)RZIL_OP_NEW(sizeof(struct rzil_op_msb_lsb_t));
+		ret->op.lsb = (RzILOpMsb *)RZ_NEW0(RzILOpLsb);
 		break;
 	case RZIL_OP_NEG:
-		ret->op.neg = (RzILOpNeg)RZIL_OP_NEW(sizeof(struct rzil_op_neg_t));
+		ret->op.neg = (RzILOpNeg *)RZ_NEW0(RzILOpNeg);
 		break;
 	case RZIL_OP_NOT:
-		ret->op.not = (RzILOpNot)RZIL_OP_NEW(sizeof(struct rzil_op_not_t));
+		ret->op.not = (RzILOpNot *)RZ_NEW0(RzILOpNot);
 		break;
 	case RZIL_OP_ADD:
 	case RZIL_OP_SUB:
@@ -77,30 +75,31 @@ RZ_API RzILOp rz_il_new_op(RzILOPCode code) {
 	case RZIL_OP_LOGOR:
 	case RZIL_OP_LOGXOR:
 		// trick to set union members
-		ret->op.add = RZIL_OP_NEW(sizeof(struct rzil_op_alg_log_operations_t));
+		ret->op.add = (RzILOpAdd *)RZ_NEW0(RzILOpAdd);
 		break;
 	case RZIL_OP_LOAD:
-		ret->op.load = RZIL_OP_NEW(sizeof(struct rzil_op_load_t));
+		ret->op.load = (RzILOpLoad *)RZ_NEW0(RzILOpLoad);
 		break;
 	case RZIL_OP_STORE:
-		ret->op.store = RZIL_OP_NEW(sizeof(struct rzil_op_store_t));
+		ret->op.store = (RzILOpStore *)RZ_NEW0(RzILOpStore);
 		break;
 	case RZIL_OP_SET:
-		ret->op.set = (RzILOpSet)RZIL_OP_NEW(sizeof(struct rzil_op_set_t));
+		ret->op.set = (RzILOpSet *)RZ_NEW0(RzILOpSet);
 		break;
 	case RZIL_OP_PERFORM:
-		ret->op.perform = (RzILOpPerform)RZIL_OP_NEW(sizeof(struct rzil_op_perform_t));
+		ret->op.perform = (RzILOpPerform *)RZ_NEW0(RzILOpPerform);
 		break;
 	case RZIL_OP_BRANCH:
-		ret->op.branch = (RzILOpBranch)RZIL_OP_NEW(sizeof(struct rzil_op_branch_t));
+		ret->op.branch = (RzILOpBranch *)RZ_NEW0(RzILOpBranch);
 		break;
 	case RZIL_OP_GOTO:
-		ret->op.goto_ = (RzILOpGoto)RZIL_OP_NEW(sizeof(struct rzil_op_goto_t));
+		ret->op.goto_ = (RzILOpGoto *)RZ_NEW0(RzILOpGoto);
 		break;
 	default:
 		free(ret);
 		ret = NULL;
-		printf("Unknown opcode\n");
+		RZ_LOG_ERROR("Unknown opcode\n");
+		rz_warn_if_reached();
 		break;
 	}
 
@@ -111,7 +110,7 @@ RZ_API RzILOp rz_il_new_op(RzILOPCode code) {
  * Free core theory opcode instance
  * \param op RzILOp, pointer to opcode instance
  */
-RZ_API void rz_il_free_op(RzILOp op) {
+RZ_API void rz_il_free_op(RzILOp *op) {
 	if (!op) {
 		return;
 	}
@@ -169,7 +168,8 @@ RZ_API void rz_il_free_op(RzILOp op) {
 		free(op->op.b0);
 		break;
 	default:
-		printf("[WIP]\n");
+		RZ_LOG_ERROR("[WIP]\n");
+		rz_warn_if_reached();
 		break;
 	}
 	free(op);

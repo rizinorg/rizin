@@ -23,11 +23,11 @@ struct rz_il_bag_t {
 	int sp; ///< internal variable, used for managing space
 	RzILBagFreeFunc free_func; ///< Function pointer to free RzILVal
 };
-typedef struct rz_il_bag_t *RzILBag;
+typedef struct rz_il_bag_t RzILBag;
 
-RZ_API RzILBag rz_il_new_bag(int capcity, RzILBagFreeFunc func);
-RZ_API bool rz_il_rm_from_bag(RzILBag bag, void *item);
-RZ_API bool rz_il_add_to_bag(RzILBag bag, void *item);
-RZ_API void rz_il_free_bag(RzILBag bag);
+RZ_API RzILBag *rz_il_new_bag(int capcity, RzILBagFreeFunc func);
+RZ_API bool rz_il_rm_from_bag(RzILBag *bag, void *item);
+RZ_API bool rz_il_add_to_bag(RzILBag *bag, void *item);
+RZ_API void rz_il_free_bag(RzILBag *bag);
 
 #endif // RZ_IL_BAG_H

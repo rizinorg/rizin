@@ -21,9 +21,9 @@ struct rz_il_var_t {
 	char *var_name; ///< name of variable
 	RZIL_VAR_TYPE type; ///< data type of variable
 };
-typedef struct rz_il_var_t *RzILVar;
+typedef struct rz_il_var_t RzILVar;
 
-RZ_API RzILVar rz_il_new_variable(char *name);
-RZ_API void rz_il_free_variable(RzILVar var);
+RZ_API RzILVar *rz_il_new_variable(const char *name);
+RZ_API void rz_il_free_variable(RzILVar *var);
 
 #endif // RZ_IL_VARIABLE_H

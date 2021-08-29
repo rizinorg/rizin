@@ -17,8 +17,8 @@
 #define RzIL_MEM
 
 typedef union {
-	RzILBitVector bv;
-	RzILBool b;
+	RzILBitVector *bv;
+	RzILBool *b;
 } RzValUnion;
 
 /**
@@ -29,7 +29,7 @@ struct rz_il_val_t {
 	RZIL_VAR_TYPE type; ///< type of value
 	RzValUnion data; ///< data pointer
 };
-typedef struct rz_il_val_t *RzILVal;
+typedef struct rz_il_val_t RzILVal;
 
 typedef enum {
 	RZIL_TEMP_BV,
@@ -40,22 +40,8 @@ typedef enum {
 	RZIL_TEMP_EMPTY
 } RZIL_TEMP_TYPE;
 
-/**
- *  \struct rz_il_tempv_t
- *  \brief structure for RzIL Temporary
- *
- *  It's a container to carry RzILBitVector/RzILVal/RzILBool/Effect temporarily
- */
-struct rz_il_tempv_t {
-	void *data; ///< Pointer to the carried data
-	RZIL_TEMP_TYPE type; ///< Type of carried data
-};
-typedef struct rz_il_tempv_t *RzILTemp;
-
-RZ_API RzILVal rz_il_new_value(void);
-RZ_API RzILTemp rz_il_new_temp(void);
-RZ_API RzILVal rz_il_dup_value(RzILVal val);
-RZ_API void rz_il_free_temp(RzILTemp temp);
-RZ_API void rz_il_free_value(RzILVal val);
+RZ_API RzILVal *rz_il_new_value(void);
+RZ_API RzILVal *rz_il_dup_value(RzILVal *val);
+RZ_API void rz_il_free_value(RzILVal *val);
 
 #endif // RZ_IL_VALUE_H

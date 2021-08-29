@@ -8,8 +8,13 @@ static void free_bv_key_value(HtPPKv *kv) {
 	rz_il_bv_free(kv->key);
 }
 
-RZ_API RzILMem rz_il_new_mem(int min_unit_size) {
-	RzILMem ret = (RzILMem)RZ_NEW0(struct rzil_mem_t);
+/**
+ * Create a Mem (Array)
+ * \param min_unit_size, minimal size of a data unit of current arch
+ * \return RzILMem*
+ */
+RZ_API RzILMem *rz_il_new_mem(ut32 min_unit_size) {
+	RzILMem *ret = RZ_NEW0(RzILMem);
 	if (!ret) {
 		return NULL;
 	}
@@ -29,7 +34,11 @@ RZ_API RzILMem rz_il_new_mem(int min_unit_size) {
 	return ret;
 }
 
-RZ_API void rz_il_free_mem(RzILMem mem) {
+/**
+ * Free a Mem
+ * \param mem memory to be free
+ */
+RZ_API void rz_il_free_mem(RzILMem *mem) {
 	if (!mem) {
 		return;
 	}
@@ -38,20 +47,33 @@ RZ_API void rz_il_free_mem(RzILMem mem) {
 	free(mem);
 }
 
-RZ_API RzILMem rz_il_mem_store(RzILMem mem, RzILBitVector key, RzILBitVector value) {
+/**
+ * Store data (bitvector) into an address (bitvector)
+ * \param mem Memory
+ * \param key address (bitvector)
+ * \param value data (bitvector)
+ * \return a pointer to memory
+ */
+RZ_API RzILMem *rz_il_mem_store(RzILMem *mem, RzILBitVector *key, RzILBitVector *value) {
 	if (value->len != mem->min_unit_size) {
-		printf("[Type Not Matched]\n");
+		RZ_LOG_ERROR("[Type Not Matched]\n");
 		return NULL;
 	}
 	ht_pp_update(mem->kv_map, key, value);
 	return mem;
 }
 
-RZ_API RzILBitVector rz_il_mem_load(RzILMem mem, RzILBitVector key) {
-	RzILBitVector val = ht_pp_find(mem->kv_map, key, NULL);
+/**
+ * Load data (bitvector) from current address (bitvector)
+ * \param mem Memory
+ * \param key address (bitvector)
+ * \return data (bitvector)
+ */
+RZ_API RzILBitVector *rz_il_mem_load(RzILMem *mem, RzILBitVector *key) {
+	RzILBitVector *val = ht_pp_find(mem->kv_map, key, NULL);
 	if (val == NULL) {
 		return NULL;
 	}
-	RzILBitVector ret = rz_il_bv_dup(val);
+	RzILBitVector *ret = rz_il_bv_dup(val);
 	return ret;
 }

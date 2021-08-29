@@ -28,7 +28,6 @@ RZ_API RzAnalysisRzil *rz_analysis_rzil_new() {
  */
 RZ_API void rz_analysis_rzil_cleanup(RzAnalysis *analysis, RzAnalysisRzil *rzil) {
 	if (!rzil) {
-		eprintf("uninitialized rzil\n");
 		return;
 	}
 	if (analysis && analysis->cur && analysis->cur->rzil_fini) {
@@ -45,11 +44,11 @@ RZ_API void rz_analysis_rzil_cleanup(RzAnalysis *analysis, RzAnalysisRzil *rzil)
  * \return true if set successfully, else return false
  */
 RZ_API bool rz_analysis_rzil_set_pc(RzAnalysisRzil *rzil, ut64 addr) {
-	if (rzil) {
-		rzil->pc_addr = addr;
-		return true;
+	if (!rzil) {
+		return false;
 	}
-	return false;
+	rzil->pc_addr = addr;
+	return true;
 }
 
 /**
@@ -85,16 +84,13 @@ RZ_API bool rz_analysis_rzil_setup(RzAnalysis *analysis) {
  * \param oplist RzPvector* vector of core theory opcodes
  */
 RZ_API void rz_analysis_set_rzil_op(RzAnalysisRzil *rzil, ut64 addr, RzPVector *oplist) {
-	if (!rzil) {
-		eprintf("uninitialized rzil, cannot set op\n");
-		return;
-	}
-	RzILBitVector bv_addr = rz_il_ut64_addr_to_bv(addr);
+	rz_return_if_fail(rzil);
+	RzILBitVector *bv_addr = rz_il_ut64_addr_to_bv(addr);
 	rz_il_vm_store_opcodes_to_addr(rzil->vm, bv_addr, oplist);
 	rz_il_free_bv_addr(bv_addr);
 }
 
-static void rz_analysis_rzil_parse_pvector(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzAnalysisRzilOp *ops) {
+static void rz_analysis_rzil_parse_root(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzAnalysisRzilOp *ops) {
 	rz_return_if_fail(analysis && rzil);
 
 	// RZIL disabled
@@ -102,24 +98,9 @@ static void rz_analysis_rzil_parse_pvector(RzAnalysis *analysis, RzAnalysisRzil 
 		return;
 	}
 
-	RzILVM vm = rzil->vm;
-	RzPVector *op_list = ops->ops;
-
-	if (!ops->ops) {
-		return;
-	}
-
 	// 1. step exec the op
-	rz_il_vm_list_step(vm, op_list);
-
 	// 2. call trace to collect trace info
-	rz_analysis_rzil_trace_op(analysis, rzil, ops);
-
 	// 3. call stats to collect stats info
-	rz_analysis_rzil_record_stats(analysis, rzil, ops);
-
-	// 4. clean the temp
-	rz_il_clean_temps(vm);
 }
 
 /**
@@ -149,12 +130,6 @@ RZ_API void rz_analysis_rzil_collect_info(RzAnalysis *analysis, RzAnalysisRzil *
 		return;
 	}
 
-	// Debug Only
-	//	const char *charset = "[]<>+-,.";
-	//	if (op->id > 0) {
-	//		printf("op : {%c}\n", charset[op->id - 1]);
-	//	}
-
 	// Create instruction trace for current instruction
 	RzILTraceInstruction *instruction = rz_analysis_il_trace_instruction_new(op->addr);
 	rz_pvector_push(rzil->trace->instructions, instruction);
@@ -164,5 +139,6 @@ RZ_API void rz_analysis_rzil_collect_info(RzAnalysis *analysis, RzAnalysisRzil *
 	// TODO : Add register change for sync with analysis->register
 
 	// Parse and emulate RZIL opcode, and collect `trace` and `stats` info
-	rz_analysis_rzil_parse_pvector(analysis, rzil, op->rzil_op);
+	// Use new op struct for parsing
+	rz_analysis_rzil_parse_root(analysis, rzil, op->rzil_op);
 }

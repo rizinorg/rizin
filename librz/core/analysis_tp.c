@@ -926,10 +926,8 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 			rz_list_free(fcns);
 		}
 	}
-	//	h_debug_trace_db(core->analysis->esil->trace);
 	// Type propagation for register based args
 	void **vit;
-	// RzPVector *cloned_vars = (RzPVector *)rz_vector_clone((RzVector *)&fcn->vars);
 	rz_pvector_foreach (&fcn->vars, vit) {
 		RzAnalysisVar *rvar = *vit;
 		if (rvar->kind == RZ_ANALYSIS_VAR_KIND_REG) {
