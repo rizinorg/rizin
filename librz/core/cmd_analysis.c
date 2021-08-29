@@ -8138,7 +8138,6 @@ RZ_IPI RzCmdStatus rz_analysis_global_variable_delete_byname_handler(RzCore *cor
 	return RZ_CMD_STATUS_OK;
 }
 
-
 RZ_IPI RzCmdStatus rz_analysis_global_variable_rename_handler(RzCore *core, int argc, const char **argv) {
 	const char *oldname = argv[1];
 	const char *newname = argv[2];
