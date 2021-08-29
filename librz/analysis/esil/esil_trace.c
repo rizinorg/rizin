@@ -371,7 +371,7 @@ RZ_API void rz_analysis_esil_trace_restore(RzAnalysisEsil *esil, int idx) {
 static void print_instruction_trace(RzILTraceInstruction *instruction, int idx) {
 	void **it;
 	bool first;
-	printf("%d.addr=0x%" PFMT64x "\n", idx, instruction->addr);
+	rz_cons_printf("%d.addr=0x%" PFMT64x "\n", idx, instruction->addr);
 
 	// IL ops within an instruction are printed in the order reg read, mem
 	// read, reg write, mem write that is partially based on x86 PUSH. This
@@ -380,71 +380,71 @@ static void print_instruction_trace(RzILTraceInstruction *instruction, int idx) 
 	// Reg read
 	first = true;
 	if (rz_pvector_len(instruction->read_reg_ops)) {
-		printf("%d.reg.read=", idx);
+		rz_cons_printf("%d.reg.read=", idx);
 		rz_pvector_foreach (instruction->read_reg_ops, it) {
 			RzILTraceRegOp *read_op = (RzILTraceRegOp *)*it;
-			first ? (first = false) : printf(",");
-			printf("%s", read_op->reg_name);
+			first ? (first = false) : rz_cons_print(",");
+			rz_cons_printf("%s", read_op->reg_name);
 		}
-		printf("\n");
+		rz_cons_newline();
 	}
 	rz_pvector_foreach (instruction->read_reg_ops, it) {
 		RzILTraceRegOp *read_op = (RzILTraceRegOp *)*it;
-		printf("%d.reg.read.%s=%s%" PFMT64x "\n", idx,
+		rz_cons_printf("%d.reg.read.%s=%s%" PFMT64x "\n", idx,
 			read_op->reg_name, read_op->value < 10 ? "" : "0x", read_op->value);
 	}
 
 	// Mem read
 	first = true;
 	if (rz_pvector_len(instruction->read_mem_ops)) {
-		printf("%d.mem.read=", idx);
+		rz_cons_printf("%d.mem.read=", idx);
 		rz_pvector_foreach (instruction->read_mem_ops, it) {
 			RzILTraceMemOp *read_op = (RzILTraceMemOp *)*it;
-			first ? (first = false) : printf(",");
-			printf("0x%" PFMT64x, read_op->addr);
+			first ? (first = false) : rz_cons_print(",");
+			rz_cons_printf("0x%" PFMT64x, read_op->addr);
 		}
-		printf("\n");
+		rz_cons_newline();
 	}
 	rz_pvector_foreach (instruction->read_mem_ops, it) {
 		RzILTraceMemOp *read_op = (RzILTraceMemOp *)*it;
 		char hexstr[sizeof(read_op->data_buf) * 2 + 1];
 		rz_hex_bin2str(read_op->data_buf, RZ_MIN(sizeof(read_op->data_buf), read_op->data_len), hexstr);
-		printf("%d.mem.read.data.0x%" PFMT64x "=%s\n", idx, read_op->addr, hexstr);
+		rz_cons_printf("%d.mem.read.data.0x%" PFMT64x "=%s\n", idx, read_op->addr, hexstr);
 	}
 
 	// Reg write
 	first = true;
 	if (rz_pvector_len(instruction->write_reg_ops)) {
-		printf("%d.reg.write=", idx);
+		rz_cons_printf("%d.reg.write=", idx);
 		rz_pvector_foreach (instruction->write_reg_ops, it) {
 			RzILTraceRegOp *write_op = (RzILTraceRegOp *)*it;
-			first ? (first = false) : printf(",");
-			printf("%s", write_op->reg_name);
+			first ? (first = false) : rz_cons_print(",");
+			rz_cons_printf("%s", write_op->reg_name);
 		}
-		printf("\n");
+		rz_cons_newline();
 	}
 	rz_pvector_foreach (instruction->write_reg_ops, it) {
 		RzILTraceRegOp *write_op = (RzILTraceRegOp *)*it;
-		printf("%d.reg.write.%s=%s%" PFMT64x "\n", idx,
+		rz_cons_printf("%d.reg.write.%s=%s%" PFMT64x "\n", idx,
 			write_op->reg_name, write_op->value < 10 ? "" : "0x", write_op->value);
 	}
 
 	// Mem write
 	first = true;
 	if (rz_pvector_len(instruction->write_mem_ops)) {
-		printf("%d.mem.write=", idx);
+		rz_cons_printf("%d.mem.write=", idx);
 		rz_pvector_foreach (instruction->write_mem_ops, it) {
 			RzILTraceMemOp *write_op = (RzILTraceMemOp *)*it;
-			first ? (first = false) : printf(",");
-			printf("0x%" PFMT64x, write_op->addr);
+			first ? (first = false) : rz_cons_print(",");
+			rz_cons_printf("0x%" PFMT64x, write_op->addr);
 		}
-		printf("\n");
+		rz_cons_newline();
 	}
 	rz_pvector_foreach (instruction->write_mem_ops, it) {
 		RzILTraceMemOp *write_op = (RzILTraceMemOp *)*it;
 		char hexstr[sizeof(write_op->data_buf) * 2 + 1];
 		rz_hex_bin2str(write_op->data_buf, RZ_MIN(sizeof(write_op->data_buf), write_op->data_len), hexstr);
-		printf("%d.mem.write.data.0x%" PFMT64x "=%s\n", idx, write_op->addr, hexstr);
+		rz_cons_printf("%d.mem.write.data.0x%" PFMT64x "=%s\n", idx, write_op->addr, hexstr);
 	}
 }
 
@@ -466,7 +466,7 @@ RZ_API void rz_analysis_esil_trace_list(RzAnalysisEsil *esil) {
 		print_instruction_trace(instruction_trace, idx);
 		idx++;
 	}
-	printf("idx=%d\n", idx - 1);
+	rz_cons_printf("idx=%d\n", idx - 1);
 }
 
 /**
