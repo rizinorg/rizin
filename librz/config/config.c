@@ -92,7 +92,7 @@ static void config_print_node(RzConfig *cfg, RzConfigNode *node, const char *pfx
 			cfg->cb_printf("]");
 		}
 		cfg->cb_printf("\n");
-	} else {
+	} else if (mode == RZ_OUTPUT_MODE_QUIET) {
 		cfg->cb_printf("%s%s = %s%s\n", pfx,
 			node->name, node->value, sfx);
 	}
@@ -133,7 +133,7 @@ RZ_API void rz_config_list(RzConfig *cfg, const char *str, int rad) {
 	case 0:
 		rz_list_foreach (cfg->nodes, iter, node) {
 			if (!str || (str && (!strncmp(str, node->name, len)))) {
-				config_print_node(cfg, node, pfx, sfx, NULL, RZ_OUTPUT_MODE_LONG);
+				config_print_node(cfg, node, pfx, sfx, NULL, RZ_OUTPUT_MODE_QUIET);
 			}
 		}
 		break;
