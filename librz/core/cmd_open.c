@@ -179,7 +179,10 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 	switch (input[1]) {
 	case 'L': // "obL"
 		state.mode = RZ_OUTPUT_MODE_STANDARD;
+		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
 		rz_core_bin_plugins_print(core->bin, &state);
+		rz_cmd_state_output_print(&state);
+		rz_cmd_state_output_fini(&state);
 		break;
 	case '\0': // "ob"
 	case 'q': // "obj"
@@ -1323,22 +1326,13 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 			break;
 		}
 		if (input[1] == 'j') {
-			state.mode = RZ_OUTPUT_MODE_JSON;
-			state.d.pj = pj_new();
+			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_JSON);
 		} else {
-			state.mode = RZ_OUTPUT_MODE_STANDARD;
+			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
 		}
 		rz_core_io_plugins_print(core->io, &state);
-		switch (state.mode) {
-		case RZ_OUTPUT_MODE_JSON: {
-			rz_cons_println(pj_string(state.d.pj));
-			pj_free(state.d.pj);
-			break;
-		}
-		default: {
-			break;
-		}
-		}
+		rz_cmd_state_output_print(&state);
+		rz_cmd_state_output_fini(&state);
 		break;
 	}
 	case 'i': // "oi"
