@@ -108,7 +108,7 @@ typedef struct rz_asm_t {
 	RzParse *ofilter;
 	Sdb *pair;
 	RzSyscall *syscall;
-	RNum *num;
+	RzNum *num;
 	char *features;
 	char *platforms;
 	int invhex; // invalid instructions displayed in hex

@@ -5793,7 +5793,7 @@ static void cmd_analysis_syscall(RzCore *core, const char *input) {
 	RzSyscallItem *si;
 	RzListIter *iter;
 	RzList *list;
-	RNum *num = NULL;
+	RzNum *num = NULL;
 	int n;
 
 	switch (input[0]) {

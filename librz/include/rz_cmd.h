@@ -141,7 +141,7 @@ typedef struct rz_cmd_macro_t {
 	RzCoreCmd cmd;
 	PrintfCallback cb_printf;
 	void *user;
-	RNum *num;
+	RzNum *num;
 	int labels_n;
 	RzCmdMacroLabel labels[MACRO_LABELS];
 	RzList *macros;
