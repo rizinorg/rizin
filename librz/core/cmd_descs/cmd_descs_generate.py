@@ -819,10 +819,12 @@ cf_text = CMDDESCS_C_TEMPLATE.format(
     helps="\n".join(helps),
     init_code="\n".join(init_code),
 )
-with open(os.path.join(args.output_dir, "cmd_descs.c"), "w") as f:
+with open(os.path.join(args.output_dir, "cmd_descs.c"), "w", encoding="utf8") as f:
     f.write(cf_text)
 if args.src_output_dir:
-    with open(os.path.join(args.src_output_dir, "cmd_descs.c"), "w") as f:
+    with open(
+        os.path.join(args.src_output_dir, "cmd_descs.c"), "w", encoding="utf8"
+    ) as f:
         f.write(cf_text)
 
 handlers_decls = filter(
@@ -833,8 +835,10 @@ handlers_decls = filter(
 hf_text = CMDDESCS_H_TEMPLATE.format(
     handlers_declarations="\n".join([handler2decl(t, h) for t, h in handlers_decls]),
 )
-with open(os.path.join(args.output_dir, "cmd_descs.h"), "w") as f:
+with open(os.path.join(args.output_dir, "cmd_descs.h"), "w", encoding="utf8") as f:
     f.write(hf_text)
 if args.src_output_dir:
-    with open(os.path.join(args.src_output_dir, "cmd_descs.h"), "w") as f:
+    with open(
+        os.path.join(args.src_output_dir, "cmd_descs.h"), "w", encoding="utf8"
+    ) as f:
         f.write(hf_text)
