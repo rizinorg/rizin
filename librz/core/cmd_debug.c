@@ -1385,8 +1385,11 @@ RZ_IPI RzCmdStatus rz_cmd_debug_map_current_handler(RzCore *core, int argc, cons
 	ut64 addr = core->offset;
 	// RZ_OUTPUT_MODE_LONG is workaround for '.'
 	RzCmdStateOutput state = { 0 };
-	state.mode = RZ_OUTPUT_MODE_LONG;
+	rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_LONG);
 	rz_debug_map_print(core->dbg, addr, &state);
+	rz_cmd_state_output_print(&state);
+	rz_cmd_state_output_fini(&state);
+	rz_cons_flush();
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -1426,8 +1429,11 @@ RZ_IPI int rz_cmd_debug_dmi(void *data, const char *input) {
 	case '\0': // "dmi" alias of "dmm"
 	{
 		RzCmdStateOutput state = { 0 };
-		state.mode = RZ_OUTPUT_MODE_STANDARD;
+		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
 		cmd_debug_modules(core, &state);
+		rz_cmd_state_output_print(&state);
+		rz_cmd_state_output_fini(&state);
+		rz_cons_flush();
 		break;
 	}
 	case ' ': // "dmi "
@@ -4601,15 +4607,12 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 	case 'L': { // "dL"
 		RzCmdStateOutput state = { 0 };
 		switch (input[1]) {
-		case 'q': {
-			state.mode = RZ_OUTPUT_MODE_QUIET;
+		case 'q':
+			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET);
 			break;
-		}
-		case 'j': {
-			state.mode = RZ_OUTPUT_MODE_JSON;
-			state.d.pj = pj_new();
+		case 'j':
+			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_JSON);
 			break;
-		}
 		case ' ': {
 			char *backend = rz_str_trim_dup(input + 2);
 			rz_config_set(core->config, "dbg.backend", backend);
@@ -4621,23 +4624,14 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 			rz_core_cmd_help(core, help_msg_dL);
 			break;
 		}
-		default: {
-			state.mode = RZ_OUTPUT_MODE_STANDARD;
+		default:
+			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
 			break;
-		}
 		}
 		rz_core_debug_plugins_print(core, &state);
-		switch (state.mode) {
-		case RZ_OUTPUT_MODE_JSON: {
-			rz_cons_println(pj_string(state.d.pj));
-			rz_cons_flush();
-			pj_free(state.d.pj);
-			break;
-		}
-		default: {
-			break;
-		}
-		}
+		rz_cmd_state_output_print(&state);
+		rz_cmd_state_output_fini(&state);
+		rz_cons_flush();
 		break;
 	}
 	case 'i': // "di"
