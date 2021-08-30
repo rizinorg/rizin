@@ -117,6 +117,9 @@ DEFINE_FAKE_TEMPLATE = """
 \tRzCmdDesc *{cname}_cd = rz_cmd_desc_fake_new(core->rcmd, {parent_cname}_cd, {name}, &{help_cname});
 \trz_warn_if_fail({cname}_cd);"""
 
+SET_DEFAULT_MODE_TEMPLATE = """
+\trz_cmd_desc_set_default_mode({cname}_cd, {default_mode});"""
+
 CD_TYPE_OLDINPUT = "RZ_CMD_DESC_TYPE_OLDINPUT"
 CD_TYPE_GROUP = "RZ_CMD_DESC_TYPE_GROUP"
 CD_TYPE_ARGV = "RZ_CMD_DESC_TYPE_ARGV"
@@ -429,6 +432,7 @@ class CmdDesc:
         self.exec_cd = None
         self.modes = c.pop("modes", None)
         self.handler = c.pop("handler", None)
+        self.default_mode = c.pop("default_mode", None)
         # RzCmdDescHelp fields
         self.summary = strip(c.pop("summary"))
         self.description = strip(c.pop("description", None))
@@ -621,6 +625,60 @@ class CmdDesc:
         return self.str_tab()
 
 
+def createcd_typegroup(cd):
+    if cd.exec_cd and cd.exec_cd.type == CD_TYPE_ARGV_MODES:
+        formatted_string = DEFINE_GROUP_MODES_TEMPLATE.format(
+            cname=cd.cname,
+            parent_cname=cd.parent.cname,
+            name=strornull(cd.name),
+            modes=" | ".join(cd.exec_cd.modes),
+            handler_cname=cd.exec_cd.get_handler_cname(),
+            help_cname_ref="&" + cd.exec_cd.get_help_cname(),
+            group_help_cname=cd.get_help_cname(),
+        )
+        if cd.exec_cd.default_mode is not None:
+            formatted_string += SET_DEFAULT_MODE_TEMPLATE.format(
+                cname=cd.cname,
+                default_mode=cd.exec_cd.default_mode,
+            )
+        formatted_string += "\n".join(
+            [createcd(child) for child in cd.subcommands[1:] or []]
+        )
+    elif cd.exec_cd and cd.exec_cd.type == CD_TYPE_ARGV_STATE:
+        formatted_string = DEFINE_GROUP_STATE_TEMPLATE.format(
+            cname=cd.cname,
+            parent_cname=cd.parent.cname,
+            name=strornull(cd.name),
+            modes=" | ".join(cd.exec_cd.modes),
+            handler_cname=cd.exec_cd.get_handler_cname(),
+            help_cname_ref="&" + cd.exec_cd.get_help_cname(),
+            group_help_cname=cd.get_help_cname(),
+        )
+        if cd.exec_cd.default_mode is not None:
+            formatted_string += SET_DEFAULT_MODE_TEMPLATE.format(
+                cname=cd.cname,
+                default_mode=cd.exec_cd.default_mode,
+            )
+        formatted_string += "\n".join(
+            [createcd(child) for child in cd.subcommands[1:] or []]
+        )
+    else:
+        formatted_string = DEFINE_GROUP_TEMPLATE.format(
+            cname=cd.cname,
+            parent_cname=cd.parent.cname,
+            name=strornull(cd.name),
+            handler_cname=(cd.exec_cd and cd.exec_cd.get_handler_cname()) or "NULL",
+            help_cname_ref=(cd.exec_cd and "&" + cd.exec_cd.get_help_cname()) or "NULL",
+            group_help_cname=cd.get_help_cname(),
+        )
+        subcommands = (
+            cd.exec_cd and cd.subcommands and cd.subcommands[1:]
+        ) or cd.subcommands
+        formatted_string += "\n".join([createcd(child) for child in subcommands or []])
+
+    return formatted_string
+
+
 def createcd(cd):
     formatted_string = None
 
@@ -641,6 +699,11 @@ def createcd(cd):
             handler_cname=cd.get_handler_cname(),
             help_cname=cd.get_help_cname(),
         )
+        if cd.default_mode is not None:
+            formatted_string += SET_DEFAULT_MODE_TEMPLATE.format(
+                cname=cd.cname,
+                default_mode=cd.default_mode,
+            )
     elif cd.type == CD_TYPE_ARGV_STATE:
         formatted_string = DEFINE_ARGV_STATE_TEMPLATE.format(
             cname=cd.cname,
@@ -650,6 +713,11 @@ def createcd(cd):
             handler_cname=cd.get_handler_cname(),
             help_cname=cd.get_help_cname(),
         )
+        if cd.default_mode is not None:
+            formatted_string += SET_DEFAULT_MODE_TEMPLATE.format(
+                cname=cd.cname,
+                default_mode=cd.default_mode,
+            )
     elif cd.type == CD_TYPE_FAKE:
         formatted_string = DEFINE_FAKE_TEMPLATE.format(
             cname=cd.cname,
@@ -678,53 +746,8 @@ def createcd(cd):
         formatted_string += "\n".join(
             [createcd(child) for child in cd.subcommands or []]
         )
-    elif (
-        cd.type == CD_TYPE_GROUP
-        and cd.exec_cd
-        and cd.exec_cd.type == CD_TYPE_ARGV_MODES
-    ):
-        formatted_string = DEFINE_GROUP_MODES_TEMPLATE.format(
-            cname=cd.cname,
-            parent_cname=cd.parent.cname,
-            name=strornull(cd.name),
-            modes=" | ".join(cd.exec_cd.modes),
-            handler_cname=cd.exec_cd.get_handler_cname(),
-            help_cname_ref="&" + cd.exec_cd.get_help_cname(),
-            group_help_cname=cd.get_help_cname(),
-        )
-        formatted_string += "\n".join(
-            [createcd(child) for child in cd.subcommands[1:] or []]
-        )
-    elif (
-        cd.type == CD_TYPE_GROUP
-        and cd.exec_cd
-        and cd.exec_cd.type == CD_TYPE_ARGV_STATE
-    ):
-        formatted_string = DEFINE_GROUP_STATE_TEMPLATE.format(
-            cname=cd.cname,
-            parent_cname=cd.parent.cname,
-            name=strornull(cd.name),
-            modes=" | ".join(cd.exec_cd.modes),
-            handler_cname=cd.exec_cd.get_handler_cname(),
-            help_cname_ref="&" + cd.exec_cd.get_help_cname(),
-            group_help_cname=cd.get_help_cname(),
-        )
-        formatted_string += "\n".join(
-            [createcd(child) for child in cd.subcommands[1:] or []]
-        )
     elif cd.type == CD_TYPE_GROUP:
-        formatted_string = DEFINE_GROUP_TEMPLATE.format(
-            cname=cd.cname,
-            parent_cname=cd.parent.cname,
-            name=strornull(cd.name),
-            handler_cname=(cd.exec_cd and cd.exec_cd.get_handler_cname()) or "NULL",
-            help_cname_ref=(cd.exec_cd and "&" + cd.exec_cd.get_help_cname()) or "NULL",
-            group_help_cname=cd.get_help_cname(),
-        )
-        subcommands = (
-            cd.exec_cd and cd.subcommands and cd.subcommands[1:]
-        ) or cd.subcommands
-        formatted_string += "\n".join([createcd(child) for child in subcommands or []])
+        formatted_string = createcd_typegroup(cd)
     else:
         raise Exception("Not handled cd type")
 
@@ -796,10 +819,12 @@ cf_text = CMDDESCS_C_TEMPLATE.format(
     helps="\n".join(helps),
     init_code="\n".join(init_code),
 )
-with open(os.path.join(args.output_dir, "cmd_descs.c"), "w") as f:
+with open(os.path.join(args.output_dir, "cmd_descs.c"), "w", encoding="utf8") as f:
     f.write(cf_text)
 if args.src_output_dir:
-    with open(os.path.join(args.src_output_dir, "cmd_descs.c"), "w") as f:
+    with open(
+        os.path.join(args.src_output_dir, "cmd_descs.c"), "w", encoding="utf8"
+    ) as f:
         f.write(cf_text)
 
 handlers_decls = filter(
@@ -810,8 +835,10 @@ handlers_decls = filter(
 hf_text = CMDDESCS_H_TEMPLATE.format(
     handlers_declarations="\n".join([handler2decl(t, h) for t, h in handlers_decls]),
 )
-with open(os.path.join(args.output_dir, "cmd_descs.h"), "w") as f:
+with open(os.path.join(args.output_dir, "cmd_descs.h"), "w", encoding="utf8") as f:
     f.write(hf_text)
 if args.src_output_dir:
-    with open(os.path.join(args.src_output_dir, "cmd_descs.h"), "w") as f:
+    with open(
+        os.path.join(args.src_output_dir, "cmd_descs.h"), "w", encoding="utf8"
+    ) as f:
         f.write(hf_text)

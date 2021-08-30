@@ -22,6 +22,8 @@
 #   modes: >
 #     same as RzCmdDesc.modes. When present the type is automatically set to
 #     ARGV_MODES.
+#   default_mode: >
+#     same as RzCmdDesc.default_mode.
 #   details: >
 #     an array of RzCmdDescDetail or a string referencing an already existing
 #     RzCmdDescDetail array
