@@ -5,7 +5,7 @@
 import copy
 import sys
 
-with open("/usr/include/sys/syscall.h", "r") as f:
+with open("/usr/include/sys/syscall.h", "r", encoding="utf8") as f:
     rec = {"name": None, "args": None}
     recs = {}
 
@@ -37,7 +37,7 @@ with open("/usr/include/sys/syscall.h", "r") as f:
 
             recs[int(callnum)] = copy.copy(rec)
             rec = {"name": None, "args": None}
-with open("openbsd.c", "w") as out:
+with open("openbsd.c", "w", encoding="utf8") as out:
     out.write('#include "r_syscall.h"\n\n/* syscall-openbsd */\n')
     out.write("RSyscallItem syscalls_openbsd_x86[] = {\n")
 
