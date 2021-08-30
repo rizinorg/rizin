@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2014-2018 Fedor Sakharov <fedor.sakharov@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_V850_DISASM_H
 #define RZ_V850_DISASM_H
 

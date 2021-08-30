@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2014 Fedor Sakharov <fedor.sakharov@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_H8300_DISAS_H
 #define RZ_H8300_DISAS_H
 

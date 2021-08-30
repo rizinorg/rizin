@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2007 sorbo
+// SPDX-FileCopyrightText: 2010-2019 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef _INCLUDE_XAP_DIS_H_
 #define _INCLUDE_XAP_DIS_H_
 
