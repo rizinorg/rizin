@@ -55,7 +55,7 @@ static float updateAddr(const ut8 *buf, int len, int endian, ut64 *addr, ut64 *a
 	return f;
 }
 
-static int rz_get_size(RNum *num, ut8 *buf, int endian, const char *s) {
+static int rz_get_size(RzNum *num, ut8 *buf, int endian, const char *s) {
 	int len = strlen(s);
 	if (s[0] == '*' && len >= 4) { // value pointed by the address
 		ut64 addr;

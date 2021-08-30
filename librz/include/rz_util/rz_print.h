@@ -97,7 +97,7 @@ typedef struct rz_print_t {
 	Sdb *sdb_types;
 	RzCons *cons;
 	RzConsBind consbind;
-	RNum *num;
+	RzNum *num;
 	RzReg *reg;
 	RzRegItem *(*get_register)(RzReg *reg, const char *name, int type);
 	ut64 (*get_register_value)(RzReg *reg, RzRegItem *item);

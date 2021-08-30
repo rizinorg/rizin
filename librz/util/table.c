@@ -102,7 +102,23 @@ RZ_API void rz_table_free(RzTable *t) {
 	free(t);
 }
 
+static bool column_exists(RzTable *t, const char *name) {
+	RzListIter *it;
+	RzTableColumn *c;
+
+	rz_list_foreach (t->cols, it, c) {
+		if (!strcmp(c->name, name)) {
+			return true;
+		}
+	}
+	return false;
+}
+
 RZ_API void rz_table_add_column(RzTable *t, RzTableColumnType *type, const char *name, int maxWidth) {
+	if (column_exists(t, name)) {
+		return;
+	}
+
 	RzTableColumn *c = RZ_NEW0(RzTableColumn);
 	if (c) {
 		c->name = strdup(name);
@@ -195,53 +211,89 @@ RZ_API void rz_table_set_columnsf(RzTable *t, const char *fmt, ...) {
 	va_end(ap);
 }
 
+#define add_column_to_rowf(row, fmt, ap) \
+	do { \
+		const char *arg = NULL; \
+		switch (fmt) { \
+		case 's': \
+		case 'z': \
+			arg = va_arg(ap, const char *); \
+			rz_list_append(row, strdup(arg ? arg : "")); \
+			break; \
+		case 'b': \
+			rz_list_append(row, rz_str_new(rz_str_bool(va_arg(ap, int)))); \
+			break; \
+		case 'i': \
+		case 'd': \
+			rz_list_append(row, rz_str_newf("%d", va_arg(ap, int))); \
+			break; \
+		case 'n': \
+			rz_list_append(row, rz_str_newf("%" PFMT64d, va_arg(ap, ut64))); \
+			break; \
+		case 'u': \
+			rz_list_append(row, rz_num_units(NULL, 32, va_arg(ap, ut64))); \
+			break; \
+		case 'x': \
+		case 'X': { \
+			ut64 n = va_arg(ap, ut64); \
+			if (n == UT64_MAX) { \
+				if (fmt == 'X') { \
+					rz_list_append(row, strdup("----------")); \
+				} else { \
+					rz_list_append(row, strdup("-1")); \
+				} \
+			} else { \
+				if (fmt == 'X') { \
+					rz_list_append(row, rz_str_newf("0x%08" PFMT64x, n)); \
+				} else { \
+					rz_list_append(row, rz_str_newf("0x%" PFMT64x, n)); \
+				} \
+			} \
+		} break; \
+		default: \
+			eprintf("Invalid format string char '%c', use 's' or 'n'\n", fmt); \
+			break; \
+		} \
+	} while (0)
+
+/**
+ * Add some columns values to the last created row, if any, or create a new row otherwise.
+ */
+RZ_API void rz_table_add_row_columnsf(RzTable *t, const char *fmt, ...) {
+	rz_return_if_fail(t && fmt);
+
+	va_list ap;
+	va_start(ap, fmt);
+	RzTableRow *row = rz_list_last(t->rows);
+	RzList *list;
+	bool add_row;
+	if (row) {
+		list = row->items;
+		add_row = false;
+	} else {
+		list = rz_list_newf(free);
+		add_row = true;
+	}
+	for (const char *f = fmt; *f; f++) {
+		add_column_to_rowf(list, *f, ap);
+	}
+	va_end(ap);
+	if (add_row) {
+		rz_table_add_row_list(t, list);
+	}
+}
+
+/**
+ * Add a new row with the specified columns values.
+ */
 RZ_API void rz_table_add_rowf(RzTable *t, const char *fmt, ...) {
+	rz_return_if_fail(t && fmt);
+
 	va_list ap;
 	va_start(ap, fmt);
 	RzList *list = rz_list_newf(free);
-	const char *f = fmt;
-	const char *arg = NULL;
-	for (; *f; f++) {
-		switch (*f) {
-		case 's':
-		case 'z':
-			arg = va_arg(ap, const char *);
-			rz_list_append(list, strdup(arg ? arg : ""));
-			break;
-		case 'b':
-			rz_list_append(list, rz_str_new(rz_str_bool(va_arg(ap, int))));
-			break;
-		case 'i':
-		case 'd':
-			rz_list_append(list, rz_str_newf("%d", va_arg(ap, int)));
-			break;
-		case 'n':
-			rz_list_append(list, rz_str_newf("%" PFMT64d, va_arg(ap, ut64)));
-			break;
-		case 'u':
-			rz_list_append(list, rz_num_units(NULL, 32, va_arg(ap, ut64)));
-			break;
-		case 'x':
-		case 'X': {
-			ut64 n = va_arg(ap, ut64);
-			if (n == UT64_MAX) {
-				if (*f == 'X') {
-					rz_list_append(list, strdup("----------"));
-				} else {
-					rz_list_append(list, strdup("-1"));
-				}
-			} else {
-				if (*f == 'X') {
-					rz_list_append(list, rz_str_newf("0x%08" PFMT64x, n));
-				} else {
-					rz_list_append(list, rz_str_newf("0x%" PFMT64x, n));
-				}
-			}
-		} break;
-		default:
-			eprintf("Invalid format string char '%c', use 's' or 'n'\n", *f);
-			break;
-		}
+	for (const char *f = fmt; *f; f++) {
+		add_column_to_rowf(list, *f, ap);
 	}
 	va_end(ap);
 	rz_table_add_row_list(t, list);
@@ -1121,7 +1173,7 @@ RZ_API void rz_table_visual_list(RzTable *table, RzList *list, ut64 seek, ut64 l
 		width = 30;
 	}
 
-	rz_table_set_columnsf(table, "sssssss", "No.", "offset", "blocks", "offset", "perms", "extra", "name");
+	rz_table_set_columnsf(table, "sssssss", "No.", "start", "blocks", "end", "perms", "extra", "name");
 	rz_list_foreach (list, iter, info) {
 		if (min == -1 || info->pitv.addr < min) {
 			min = info->pitv.addr;
@@ -1205,7 +1257,12 @@ RZ_OWN RZ_API RzTable *rz_table_transpose(RZ_NONNULL RzTable *t) {
 
 	// adding rows to transpose table rows * (number of columns in the table)
 	for (int i = 0; i < t->rows->length; i++) {
-		rz_table_add_column(transpose, typeString, "Value", 0);
+		char name[20];
+		if (t->rows->length == 1) {
+			rz_table_add_column(transpose, typeString, "Value", 0);
+		} else {
+			rz_table_add_column(transpose, typeString, rz_strf(name, "Value%d", i + 1), 0);
+		}
 	}
 
 	// column names to row heads

@@ -7,9 +7,9 @@
 
 // don't use fixed sized buffers
 #define STDIN_BUFFER_SIZE 354096
-static int rax(RNum *num, char *str, int len, int last, ut64 *flags, int *fm);
+static int rax(RzNum *num, char *str, int len, int last, ut64 *flags, int *fm);
 
-static int use_stdin(RNum *num, ut64 *flags, int *fm) {
+static int use_stdin(RzNum *num, ut64 *flags, int *fm) {
 	if (!flags) {
 		return 0;
 	}
@@ -48,7 +48,7 @@ static int use_stdin(RNum *num, ut64 *flags, int *fm) {
 	return 0;
 }
 
-static int format_output(RNum *num, char mode, const char *s, int force_mode, ut64 flags) {
+static int format_output(RzNum *num, char mode, const char *s, int force_mode, ut64 flags) {
 	ut64 n = rz_num_math(num, s);
 	char strbits[65];
 	if (force_mode) {
@@ -159,7 +159,7 @@ static int help(void) {
 	return true;
 }
 
-static int rax(RNum *num, char *str, int len, int last, ut64 *_flags, int *fm) {
+static int rax(RzNum *num, char *str, int len, int last, ut64 *_flags, int *fm) {
 	ut64 flags = *_flags;
 	const char *nl = "";
 	ut8 *buf;
@@ -467,7 +467,7 @@ dotherax:
 		ut64 n = rz_num_math(num, str);
 
 		if (num->dbz) {
-			eprintf("RNum ERROR: Division by Zero\n");
+			eprintf("RzNum ERROR: Division by Zero\n");
 			return false;
 		}
 		n32 = (ut32)(n & UT32_MAX);
@@ -562,7 +562,7 @@ dotherax:
 		ut64 n = rz_num_math(num, modified_str);
 		free(modified_str);
 		if (num->dbz) {
-			eprintf("RNum ERROR: Division by Zero\n");
+			eprintf("RzNum ERROR: Division by Zero\n");
 			return false;
 		}
 
@@ -633,7 +633,7 @@ dotherax:
 
 RZ_API int rz_main_rz_ax(int argc, const char **argv) {
 	int i, fm = 0;
-	RNum *num = rz_num_new(NULL, NULL, NULL);
+	RzNum *num = rz_num_new(NULL, NULL, NULL);
 	if (argc == 1) {
 		use_stdin(num, 0, &fm);
 	} else {

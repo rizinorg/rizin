@@ -137,7 +137,7 @@ Variables
 1. No predefined bitness (should be easy to extend them to 128,256 and 512bits, e.g. for MMX, SSE, AVX, Neon)
 2. Infinite number (for SSA-form compatibility)
 3. Register names have no specific syntax. They are just strings
-4. Numbers can be specified in any base supported by RNum (dec, hex, oct, binary ...)
+4. Numbers can be specified in any base supported by RzNum (dec, hex, oct, binary ...)
 5. Each ESIL backend should have an associated RReg profile to describe the esil register specs
 
 Bitarrays

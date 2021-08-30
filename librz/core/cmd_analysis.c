@@ -5793,7 +5793,7 @@ static void cmd_analysis_syscall(RzCore *core, const char *input) {
 	RzSyscallItem *si;
 	RzListIter *iter;
 	RzList *list;
-	RNum *num = NULL;
+	RzNum *num = NULL;
 	int n;
 
 	switch (input[0]) {
@@ -6528,21 +6528,7 @@ static void cmd_analysis_hint(RzCore *core, const char *input) {
 		}
 		if (input[1] == ' ') {
 			// You can either specify immbase with letters, or numbers
-			int base;
-			if (rz_str_startswith(input + 2, "10u") || rz_str_startswith(input + 2, "du")) {
-				base = 11;
-			} else {
-				base = (input[2] == 's') ? 1 : (input[2] == 'b') ? 2
-					: (input[2] == 'p')                      ? 3
-					: (input[2] == 'o')                      ? 8
-					: (input[2] == 'd')                      ? 10
-					: (input[2] == 'h')                      ? 16
-					: (input[2] == 'i')                      ? 32
-										 : // ip address
-                                        (input[2] == 'S') ? 80
-									       : // syscall
-                                        (int)rz_num_math(core->num, input + 1);
-			}
+			int base = rz_num_base_of_string(core->num, input + 2);
 			rz_analysis_hint_set_immbase(core->analysis, core->offset, base);
 		} else if (input[1] != '?' && input[1] != '-') {
 			eprintf("|ERROR| Usage: ahi <base>\n");

@@ -11,7 +11,7 @@ static void *my_function(RzCore *core, void *user) {
 		rz_cons_printf("%u, %d\n", (unsigned int)val, i);
 		rz_core_task_yield(&core->tasks);
 	}
-	return strdup(rz_cons_get_buffer());
+	return rz_cons_get_buffer_dup();
 }
 
 static bool test_core_task(void) {

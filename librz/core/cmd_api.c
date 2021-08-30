@@ -1126,14 +1126,16 @@ static char *oldinput_get_help(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *a) {
 		return NULL;
 	}
 
-	const char *s = NULL;
+	char *res = NULL;
 	rz_cons_push();
 	RzCmdStatus status = rz_cmd_call_parsed_args(cmd, a);
 	if (status == RZ_CMD_STATUS_OK) {
 		rz_cons_filter();
-		s = rz_cons_get_buffer();
+		res = rz_cons_get_buffer_dup();
 	}
-	char *res = strdup(s ? s : "");
+	if (!res) {
+		res = strdup("");
+	}
 	rz_cons_pop();
 	return res;
 }

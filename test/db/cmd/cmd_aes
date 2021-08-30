@@ -36,3 +36,90 @@ EXPECT=<<EOF
 ebx = 0x00000010
 EOF
 RUN
+
+NAME=dte
+FILE=bins/elf/ls
+CMDS=<<EOF
+s main
+aei
+aeim
+6aes
+s `aer~^rip[1]`
+aer
+pd 4
+aets+
+4aes
+aer~^rbx
+aer~^rdi
+aer~^rip
+aer~^rflags
+aer~^rsp
+?e qword[0x0] = `pv8 @ 0`
+?e
+dte
+EOF
+EXPECT=<<EOF
+rax = 0x00000000
+rbx = 0x00000000
+rcx = 0x00000000
+rdx = 0x00000000
+rsi = 0x00000000
+rdi = 0x00000000
+r8 = 0x00000000
+r9 = 0x00000000
+r10 = 0x00000000
+r11 = 0x00000000
+r12 = 0x00000000
+r13 = 0x00000000
+r14 = 0x00000000
+r15 = 0x00000000
+rip = 0x0000407b
+rbp = 0x00000000
+rflags = 0x00000000
+rsp = 0x00177fd8
+            ;-- rip:
+            0x0000407b      push  rbx
+            0x0000407c      mov   rbx, rsi
+            0x0000407f      sub   rsp, 0x58
+            0x00004083      mov   rdi, qword [rsi]
+rbx = 0x00000000
+rdi = 0x10102464c457f
+rip = 0x00004086
+rflags = 0x00000004
+rsp = 0x00177f78
+qword[0x0] = 0x00010102464c457f
+
+0.addr=0x407b
+0.reg.read=rsp,rbx
+0.reg.read.rsp=0x177fd8
+0.reg.read.rbx=0
+0.reg.write=rsp
+0.reg.write.rsp=0x177fd0
+0.mem.write=0x177fd0
+0.mem.write.data.0x177fd0=0000000000000000
+1.addr=0x407c
+1.reg.read=rsi
+1.reg.read.rsi=0
+1.reg.write=rbx
+1.reg.write.rbx=0
+2.addr=0x407f
+2.reg.read=rsp
+2.reg.read.rsp=0x177fd0
+2.reg.write=rsp,of,sf,zf,pf,cf,af
+2.reg.write.rsp=0x177f78
+2.reg.write.of=0
+2.reg.write.sf=0
+2.reg.write.zf=0
+2.reg.write.pf=1
+2.reg.write.cf=0
+2.reg.write.af=0
+3.addr=0x4083
+3.reg.read=rsi
+3.reg.read.rsi=0
+3.mem.read=0x0
+3.mem.read.data.0x0=7f454c4602010100
+3.reg.write=rdi
+3.reg.write.rdi=0x10102464c457f
+idx=3
+EOF
+RUN
