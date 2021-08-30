@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2012 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef _INCLUDE_DCPU16_H_
 #define _INCLUDE_DCPU16_H_
 
