@@ -40,8 +40,7 @@ RZ_API RzProjectErr rz_project_save(RzCore *core, RzProject *prj, const char *fi
 }
 
 RZ_API RzProjectErr rz_project_save_file(RzCore *core, const char *file, bool compress) {
-
-	char *tmp_file;
+	char *tmp_file = NULL;
 
 	if (compress) {
 		int mkstemp_fd = rz_file_mkstemp("svprj", &tmp_file);
