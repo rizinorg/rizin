@@ -11,13 +11,13 @@ struct {
 	{ "1234567890abcdefghijklmnopqrstuvwxyz\n", "\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\x03\x33\x34\x32\x36\x31\x35\x33\xb7\xb0\x34\x48\x4c\x4a\x4e\x49\x4d\x4b\xcf\xc8\xcc\xca\xce\xc9\xcd\xcb\x2f\x28\x2c\x2a\x2e\x29\x2d\x2b\xaf\xa8\xac\xe2\x02\x00\x9f\x79\xdc\xdb\x25\x00\x00\x00", 57 }
 };
 
-void check_os() {
-#if __APPLE__
-	for (int i = 0; i < 3; i++) {
-		test_cases[i].deflated[9] = 0x13; // set OS bit for MacOS
-	}
-#endif
-}
+// Deflated data can be different based on the OS/system where the deflation was done.
+// This ignore the OS byte in the zlib header
+#define mu_deflated_eq(actual, expected, len, message) \
+	do { \
+		mu_assert_memeq(actual, expected, 9, message); \
+		mu_assert_memeq(actual + 10, expected + 10, len - 10, message); \
+	} while (0)
 
 bool test_rz_inflate(void) {
 	for (int i = 0; i < 3; i++) {
@@ -34,7 +34,7 @@ bool test_rz_deflate(void) {
 	for (int i = 0; i < 3; i++) {
 		unsigned char *deflated = rz_deflate((unsigned char *)test_cases[i].inflated, strlen(test_cases[i].inflated), NULL, NULL);
 		mu_assert_notnull(deflated, "rz_deflate returned null");
-		mu_assert_memeq(deflated, (unsigned char *)test_cases[i].deflated, test_cases[i].deflated_length, "rz_deflate failed");
+		mu_deflated_eq(deflated, (unsigned char *)test_cases[i].deflated, test_cases[i].deflated_length, "rz_deflate failed");
 		free(deflated);
 	}
 
@@ -66,7 +66,7 @@ bool test_rz_deflate_buf(void) {
 		rz_buf_read(deflated_buf, deflated, test_cases[i].deflated_length);
 
 		mu_assert_notnull(deflated, "rz_buf_read failed");
-		mu_assert_memeq(deflated, (unsigned char *)test_cases[i].deflated, test_cases[i].deflated_length, "rz_deflate_buf does not return expected output");
+		mu_deflated_eq(deflated, (unsigned char *)test_cases[i].deflated, test_cases[i].deflated_length, "rz_deflate_buf does not return expected output");
 		free(deflated);
 	}
 
@@ -74,7 +74,6 @@ bool test_rz_deflate_buf(void) {
 }
 
 int all_tests() {
-	check_os();
 	mu_run_test(test_rz_inflate);
 	mu_run_test(test_rz_deflate);
 	mu_run_test(test_rz_inflate_buf);
