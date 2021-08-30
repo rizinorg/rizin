@@ -1737,6 +1737,244 @@ RZ_API bool rz_core_esil_cmd(RzAnalysisEsil *esil, const char *cmd, ut64 a1, ut6
 	return false;
 }
 
+static void __evalString(RzConfig *cfg, char *name) {
+	if (!*name) {
+		return;
+	}
+	char *eq = strchr(name, '=');
+	if (eq) {
+		*eq++ = 0;
+		rz_str_trim(name);
+		rz_str_trim(eq);
+		if (*name) {
+			(void)rz_config_set(cfg, name, eq);
+		}
+	} else {
+		if (rz_str_endswith(name, ".")) {
+			rz_config_list(cfg, name, 0);
+		} else {
+			const char *v = rz_config_get(cfg, name);
+			if (v) {
+				rz_cons_printf("%s\n", v);
+			} else {
+				rz_cons_printf("Invalid config key %s\n", name);
+			}
+		}
+	}
+}
+
+RZ_API bool rz_core_config_eval_and_print(RzConfig *cfg, const char *str, bool many) {
+	rz_return_val_if_fail(cfg && str, false);
+
+	char *s = rz_str_trim_dup(str);
+
+	if (!*s || !strcmp(s, "help")) {
+		rz_config_list(cfg, NULL, 0);
+		free(s);
+		return false;
+	}
+
+	if (*s == '-') {
+		rz_config_rm(cfg, s + 1);
+		free(s);
+		return false;
+	}
+	if (many) {
+		// space separated list of k=v k=v,..
+		// if you want to use spaces go for base64 or e.
+		RzList *list = rz_str_split_list(s, ",", 0);
+		RzListIter *iter;
+		char *name;
+		rz_list_foreach (list, iter, name) {
+			__evalString(cfg, name);
+		}
+		free(s);
+		return true;
+	}
+	__evalString(cfg, s);
+	free(s);
+	return true;
+}
+
+static void config_print_node(RzConfig *cfg, RzConfigNode *node, const char *pfx, const char *sfx,
+	PJ *pj, RzOutputMode mode) {
+
+	rz_return_if_fail(cfg && pfx && sfx);
+	char *option;
+	bool isFirst;
+	RzListIter *iter;
+	char *es = NULL;
+
+	if (mode == RZ_OUTPUT_MODE_JSON) {
+		pj_o(pj);
+		pj_ks(pj, "name", node->name);
+		pj_ks(pj, "value", node->value);
+		pj_ks(pj, "type", rz_config_node_type(node));
+		es = rz_str_escape(node->desc);
+		if (es) {
+			pj_ks(pj, "desc", es);
+			free(es);
+		}
+		pj_kb(pj, "ro", rz_config_node_is_ro(node));
+		if (!rz_list_empty(node->options)) {
+			pj_ka(pj, "options");
+			rz_list_foreach (node->options, iter, option) {
+				pj_s(pj, option);
+			}
+			pj_end(pj);
+		}
+		pj_end(pj);
+	} else if (mode == RZ_OUTPUT_MODE_LONG) {
+		rz_cons_printf("%s%s = %s%s %s; %s", pfx,
+			node->name, node->value, sfx,
+			rz_config_node_is_ro(node) ? "(ro)" : "",
+			node->desc);
+		if (!rz_list_empty(node->options)) {
+			isFirst = true;
+			rz_cons_printf(" [");
+			rz_list_foreach (node->options, iter, option) {
+				if (isFirst) {
+					isFirst = false;
+				} else {
+					rz_cons_printf(", ");
+				}
+				rz_cons_printf("%s", option);
+			}
+			rz_cons_printf("]");
+		}
+		rz_cons_println("");
+	} else if (mode == RZ_OUTPUT_MODE_QUIET) {
+		rz_cons_printf("%s%s = %s%s\n", pfx,
+			node->name, node->value, sfx);
+	}
+}
+
+RZ_API void rz_config_list(RzConfig *cfg, const char *str, int rad) {
+	rz_return_if_fail(cfg);
+	RzConfigNode *node;
+	RzListIter *iter;
+	const char *sfx = "";
+	const char *pfx = "";
+	int len = 0;
+	PJ *pj = NULL;
+
+	if (RZ_STR_ISNOTEMPTY(str)) {
+		str = rz_str_trim_head_ro(str);
+		len = strlen(str);
+		if (len > 0 && str[0] == 'j') {
+			str++;
+			len--;
+			rad = 'J';
+		}
+		if (len > 0 && str[0] == ' ') {
+			str++;
+			len--;
+		}
+		if (strlen(str) == 0) {
+			str = NULL;
+			len = 0;
+		}
+	}
+
+	switch (rad) {
+	case 1:
+		pfx = "\"e ";
+		sfx = "\"";
+	/* fallthrou */
+	case 0:
+		rz_list_foreach (cfg->nodes, iter, node) {
+			if (!str || (str && (!strncmp(str, node->name, len)))) {
+				config_print_node(cfg, node, pfx, sfx, NULL, RZ_OUTPUT_MODE_QUIET);
+			}
+		}
+		break;
+	case 2:
+		rz_list_foreach (cfg->nodes, iter, node) {
+			if (!str || (str && (!strncmp(str, node->name, len)))) {
+				if (!str || !strncmp(str, node->name, len)) {
+					rz_cons_printf("%20s: %s\n", node->name,
+						node->desc ? node->desc : "");
+				}
+			}
+		}
+		break;
+	case 's':
+		if (str && *str) {
+			rz_list_foreach (cfg->nodes, iter, node) {
+				char *space = strdup(node->name);
+				char *dot = strchr(space, '.');
+				if (dot) {
+					*dot = 0;
+				}
+				if (!strcmp(str, space)) {
+					rz_cons_println(dot + 1);
+				}
+				free(space);
+			}
+		} else {
+			char *oldSpace = NULL;
+			rz_list_foreach (cfg->nodes, iter, node) {
+				char *space = strdup(node->name);
+				char *dot = strchr(space, '.');
+				if (dot) {
+					*dot = 0;
+				}
+				if (oldSpace) {
+					if (!strcmp(space, oldSpace)) {
+						free(space);
+						continue;
+					}
+					free(oldSpace);
+					oldSpace = space;
+				} else {
+					oldSpace = space;
+				}
+				rz_cons_println(space);
+			}
+			free(oldSpace);
+		}
+		break;
+	case 'v':
+		pj = pj_new();
+		if (!pj) {
+			return;
+		}
+		pj_a(pj);
+		rz_list_foreach (cfg->nodes, iter, node) {
+			if (!str || (str && (!strncmp(str, node->name, len)))) {
+				config_print_node(cfg, node, pfx, sfx, pj, RZ_OUTPUT_MODE_JSON);
+			}
+		}
+		pj_end(pj);
+		rz_cons_println(pj_string(pj));
+		pj_free(pj);
+		break;
+	case 'q':
+		rz_list_foreach (cfg->nodes, iter, node) {
+			if (!str || (str && (!strncmp(str, node->name, len)))) {
+				rz_cons_println(node->name);
+			}
+		}
+		break;
+	case 'J':
+	/* fallthrou */
+	case 'j':
+		if (!pj) {
+			pj = pj_new();
+		}
+		pj_a(pj);
+		rz_list_foreach (cfg->nodes, iter, node) {
+			if (!str || (str && (!strncmp(str, node->name, len)))) {
+				config_print_node(cfg, node, pfx, sfx, pj, RZ_OUTPUT_MODE_JSON);
+			}
+		}
+		pj_end(pj);
+		rz_cons_println(pj_string(pj));
+		pj_free(pj);
+		break;
+	}
+}
+
 static bool cb_cmd_esil_ioer(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -2789,7 +3027,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	if (!cfg) {
 		return 0;
 	}
-	cfg->cb_printf = rz_cons_printf;
 	cfg->num = core->num;
 	/* dir.prefix is used in other modules, set it first */
 	{
