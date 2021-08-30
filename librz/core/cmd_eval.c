@@ -502,14 +502,14 @@ RZ_IPI int rz_cmd_eval(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	switch (input[0]) {
 	case '\0': // "e"
-		rz_config_list(core->config, NULL, 0);
+		rz_core_config_print_all(core->config, NULL, 0);
 		break;
 	case '?': // "e?"
 	default:
 		switch (input[1]) {
 		case '\0': rz_core_cmd_help(core, help_msg_e); break;
-		case '?': rz_config_list(core->config, input + 2, 2); break;
-		default: rz_config_list(core->config, input + 1, 2); break;
+		case '?': rz_core_config_print_all(core->config, input + 2, 2); break;
+		default: rz_core_config_print_all(core->config, input + 1, 2); break;
 		}
 		break;
 	case 't': // "et"
@@ -563,13 +563,13 @@ RZ_IPI int rz_cmd_eval(void *data, const char *input) {
 		// XXX we need headers for the cmd_xxx files.
 		return rz_cmd_quit(data, "");
 	case 'j': // json
-		rz_config_list(core->config, NULL, 'j');
+		rz_core_config_print_all(core->config, NULL, 'j');
 		break;
 	case 'v': // verbose
-		rz_config_list(core->config, input + 1, 'v');
+		rz_core_config_print_all(core->config, input + 1, 'v');
 		break;
 	case 'q': // quiet list of eval keys
-		rz_config_list(core->config, NULL, 'q');
+		rz_core_config_print_all(core->config, NULL, 'q');
 		break;
 	case 'c': // "ec"
 		rz_eval_color(core, input + 1);
@@ -596,14 +596,14 @@ RZ_IPI int rz_cmd_eval(void *data, const char *input) {
 		}
 		break;
 	case 's': // "es"
-		rz_config_list(core->config, (input[1]) ? input + 1 : NULL, 's');
+		rz_core_config_print_all(core->config, (input[1]) ? input + 1 : NULL, 's');
 		break;
 	case '-': // "e-"
 		rz_core_config_init(core);
 		//eprintf ("BUG: 'e-' command locks the eval hashtable. patches are welcome :)\n");
 		break;
 	case '*': // "e*"
-		rz_config_list(core->config, NULL, 1);
+		rz_core_config_print_all(core->config, NULL, 1);
 		break;
 	case 'r': // "er"
 		if (input[1]) {
@@ -616,15 +616,15 @@ RZ_IPI int rz_cmd_eval(void *data, const char *input) {
 		}
 		break;
 	case ',': // "e."
-		rz_core_config_eval_and_print(core->config, input + 1, true);
+		rz_core_config_eval_and_print(core, input + 1, true);
 		break;
 	case '.': // "e "
 	case ' ': // "e "
 		if (rz_str_endswith(input, ".")) {
-			rz_config_list(core->config, input + 1, 0);
+			rz_core_config_print_all(core->config, input + 1, 0);
 		} else {
 			// XXX we cant do "e cmd.gprompt=dr=", because the '=' is a token, and quotes dont affect him
-			rz_core_config_eval_and_print(core->config, input + 1, false);
+			rz_core_config_eval_and_print(core, input + 1, false);
 		}
 		break;
 	}
@@ -633,7 +633,7 @@ RZ_IPI int rz_cmd_eval(void *data, const char *input) {
 
 RZ_IPI RzCmdStatus rz_eval_getset_handler(RzCore *core, int argc, const char **argv) {
 	if (argc == 1) {
-		rz_config_list(core->config, NULL, 0);
+		rz_core_config_print_all(core->config, NULL, 0);
 		return RZ_CMD_STATUS_OK;
 	}
 
@@ -655,7 +655,7 @@ RZ_IPI RzCmdStatus rz_eval_getset_handler(RzCore *core, int argc, const char **a
 
 		if (llen == 1 && rz_str_endswith(key, ".")) {
 			// no value was set, only key with ".". List possible sub-keys.
-			rz_config_list(core->config, key, false);
+			rz_core_config_print_all(core->config, key, false);
 		} else if (llen == 1) {
 			// no value was set, show the value of the key
 			const char *v = rz_config_get(core->config, key);
@@ -678,23 +678,23 @@ RZ_IPI RzCmdStatus rz_eval_list_handler(RzCore *core, int argc, const char **arg
 	const char *arg = argc > 1 ? argv[1] : "";
 	switch (mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
-		rz_config_list(core->config, arg, 2);
+		rz_core_config_print_all(core->config, arg, 2);
 		break;
 	case RZ_OUTPUT_MODE_JSON:
-		rz_config_list(core->config, arg, 'j');
+		rz_core_config_print_all(core->config, arg, 'j');
 		break;
 	case RZ_OUTPUT_MODE_RIZIN:
-		rz_config_list(core->config, arg, 1);
+		rz_core_config_print_all(core->config, arg, 1);
 		break;
 	case RZ_OUTPUT_MODE_QUIET:
-		rz_config_list(core->config, arg, 'q');
+		rz_core_config_print_all(core->config, arg, 'q');
 		break;
 	case RZ_OUTPUT_MODE_LONG:
-		rz_config_list(core->config, arg, 'v');
+		rz_core_config_print_all(core->config, arg, 'v');
 		break;
 	case RZ_OUTPUT_MODE_LONG_JSON: {
 		char *a = rz_str_newf("j%s", arg);
-		rz_config_list(core->config, a, 'v');
+		rz_core_config_print_all(core->config, a, 'v');
 		free(a);
 		break;
 	}
@@ -741,7 +741,7 @@ RZ_IPI RzCmdStatus rz_eval_readonly_handler(RzCore *core, int argc, const char *
 
 RZ_IPI RzCmdStatus rz_eval_spaces_handler(RzCore *core, int argc, const char **argv) {
 	const char *arg = argc > 1 ? argv[1] : "";
-	rz_config_list(core->config, arg, 's');
+	rz_core_config_print_all(core->config, arg, 's');
 	return RZ_CMD_STATUS_OK;
 }
 

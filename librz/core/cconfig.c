@@ -1751,7 +1751,7 @@ static void __evalString(RzConfig *cfg, char *name) {
 		}
 	} else {
 		if (rz_str_endswith(name, ".")) {
-			rz_config_list(cfg, name, 0);
+			rz_core_config_print_all(cfg, name, 0);
 		} else {
 			const char *v = rz_config_get(cfg, name);
 			if (v) {
@@ -1763,19 +1763,19 @@ static void __evalString(RzConfig *cfg, char *name) {
 	}
 }
 
-RZ_API bool rz_core_config_eval_and_print(RzConfig *cfg, const char *str, bool many) {
-	rz_return_val_if_fail(cfg && str, false);
+RZ_API bool rz_core_config_eval_and_print(RzCore *core, const char *str, bool many) {
+	rz_return_val_if_fail(core && str, false);
 
 	char *s = rz_str_trim_dup(str);
 
 	if (!*s || !strcmp(s, "help")) {
-		rz_config_list(cfg, NULL, 0);
+		rz_core_config_print_all(core->config, NULL, 0);
 		free(s);
 		return false;
 	}
 
 	if (*s == '-') {
-		rz_config_rm(cfg, s + 1);
+		rz_config_rm(core->config, s + 1);
 		free(s);
 		return false;
 	}
@@ -1786,12 +1786,12 @@ RZ_API bool rz_core_config_eval_and_print(RzConfig *cfg, const char *str, bool m
 		RzListIter *iter;
 		char *name;
 		rz_list_foreach (list, iter, name) {
-			__evalString(cfg, name);
+			__evalString(core->config, name);
 		}
 		free(s);
 		return true;
 	}
-	__evalString(cfg, s);
+	__evalString(core->config, s);
 	free(s);
 	return true;
 }
@@ -1849,7 +1849,7 @@ static void config_print_node(RzConfig *cfg, RzConfigNode *node, const char *pfx
 	}
 }
 
-RZ_API void rz_config_list(RzConfig *cfg, const char *str, int rad) {
+RZ_API void rz_core_config_print_all(RzConfig *cfg, const char *str, int rad) {
 	rz_return_if_fail(cfg);
 	RzConfigNode *node;
 	RzListIter *iter;
