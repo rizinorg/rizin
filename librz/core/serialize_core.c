@@ -151,6 +151,8 @@ static char *prj_relative_restore(const char *prj_dir, const char *rel_file) {
 }
 
 static void file_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, RZ_NULLABLE const char *prj_file) {
+	rz_return_if_fail(db && core);
+
 	if (!core->file) {
 		return;
 	}

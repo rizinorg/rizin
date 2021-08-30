@@ -1252,3 +1252,89 @@ RZ_API char *rz_file_path_join(const char *s1, const char *s2) {
 	const char *sep = ends_with_dir ? "" : RZ_SYS_DIR;
 	return rz_str_newf("%s%s%s", s1, sep, s2);
 }
+
+/**
+ * \brief zip the contents of src and store in dst
+ * \param src source file (string containing filename)
+ * \param dst destination file (string containing filename)
+ * \return true, if successful; false otherwise
+ */
+RZ_API bool rz_file_deflate(RZ_NONNULL const char *src, RZ_NONNULL const char *dst) {
+	rz_return_val_if_fail(src && dst, false);
+
+	bool ret = false;
+
+	RzBuffer *src_buf = rz_buf_new_file(src, O_RDONLY, 0);
+	RzBuffer *dst_buf = rz_buf_new_file(dst, O_WRONLY | O_CREAT, 0644);
+
+	if (!(src_buf && dst_buf)) {
+		goto return_goto;
+	}
+
+	ut64 block_size = 1 << 18; // 256 KB
+
+	if (!rz_deflate_buf(src_buf, dst_buf, block_size, NULL)) {
+		goto return_goto;
+	}
+
+	ret = true;
+
+return_goto:
+	rz_buf_free(src_buf);
+	rz_buf_free(dst_buf);
+	return ret;
+}
+
+/**
+ * \brief unzip the contents of src and store in dst
+ * \param src source file (string containing filename)
+ * \param dst destination file (string containing filename)
+ * \return true, if successful; false otherwise
+ */
+RZ_API bool rz_file_inflate(RZ_NONNULL const char *src, RZ_NONNULL const char *dst) {
+	rz_return_val_if_fail(src && dst, false);
+
+	bool ret = false;
+
+	RzBuffer *src_buf = rz_buf_new_file(src, O_RDONLY, 0);
+	RzBuffer *dst_buf = rz_buf_new_file(dst, O_WRONLY | O_CREAT, 0644);
+
+	if (!(src_buf && dst_buf)) {
+		goto return_goto;
+	}
+
+	ut64 block_size = 1 << 13; // 8 KB
+
+	if (!rz_inflate_buf(src_buf, dst_buf, block_size, NULL)) {
+		goto return_goto;
+	}
+
+	ret = true;
+
+return_goto:
+	rz_buf_free(src_buf);
+	rz_buf_free(dst_buf);
+	return ret;
+}
+
+/**
+ * \brief check whether a file is a deflated (gzip) file
+ * \param src source file (string containing filename)
+ * \return true, if src is a deflated (gzip) file; false otherwise
+ */
+RZ_API bool rz_file_is_deflated(RZ_NONNULL const char *src) {
+	rz_return_val_if_fail(src, false);
+
+	bool ret = false;
+	unsigned char *header = (unsigned char *)rz_file_slurp_range(src, 0, 3, NULL);
+
+	if (!header || strlen((char *)header) != 3) {
+		goto return_goto;
+	}
+
+	ret = (header[0] == 0x1f && header[1] == 0x8b && header[2] == 0x08); // 1f 8b 08
+
+return_goto:
+	free(header);
+	return ret;
+}
