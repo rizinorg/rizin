@@ -293,7 +293,7 @@ static int snes_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut
 		break;
 	case 0x4c: // jmp addr
 		op->eob = true;
-		op->jump = (addr & 0xFF0000) | ut8p_bw(data + 1);
+		op->jump = (addr & 0xFF0000) | rz_read_le16(data + 1);
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		break;
 	case 0x5c: // jmp long
@@ -308,7 +308,7 @@ static int snes_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut
 		break;
 	case 0x82: // brl
 		op->eob = true;
-		op->jump = addr + 3 + (st16)ut8p_bw(data + 1);
+		op->jump = addr + 3 + (st16)rz_read_le16(data + 1);
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		break;
 	case 0x6c: // jmp (addr)
@@ -343,7 +343,7 @@ static int snes_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		break;
 	case 0x20: // jsr addr
-		op->jump = (addr & 0xFF0000) | ut8p_bw(data + 1);
+		op->jump = (addr & 0xFF0000) | rz_read_le16(data + 1);
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 		break;
 	case 0x22: // jsr long

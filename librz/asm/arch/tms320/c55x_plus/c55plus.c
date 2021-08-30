@@ -12,7 +12,6 @@
 #define USE_DECODE
 #include "decode.h"
 
-#include "../tms320_p.h"
 #include "../tms320_dasm.h"
 
 extern ut8 *ins_buff;
