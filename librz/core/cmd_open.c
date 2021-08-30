@@ -22,7 +22,6 @@ static const char *help_msg_o[] = {
 	"oa", "[-] [A] [B] [filename]", "Specify arch and bits for given file",
 	"ob", "[?] [lbdos] [...]", "list opened binary files backed by fd",
 	"oc", " [file]", "open core file, like relaunching rizin",
-	"of", " [file]", "open file and map it at addr 0 as read-only",
 	"oi", "[-|idx]", "alias for o, but using index instead of fd",
 	"oj", "[?]	", "list opened files in JSON format",
 	"om", "[?]", "create, list, remove IO maps",
@@ -1157,45 +1156,6 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 		core->num->value = fd;
 		rz_core_block_read(core);
 		return 0;
-#if 1
-	// XXX projects use the of command, but i think we should deprecate it... keeping it for now
-	case 'f': // "of"
-		ptr = rz_str_trim_head_ro(input + 2);
-		argv = rz_str_argv(ptr, &argc);
-		if (argc == 0) {
-			eprintf("Usage: of [filename] (rwx)\n");
-			rz_str_argv_free(argv);
-			return 0;
-		} else if (argc == 2) {
-			perms = rz_str_rwx(argv[1]);
-		}
-		fd = rz_io_fd_open(core->io, argv[0], perms, 0);
-		core->num->value = fd;
-		rz_str_argv_free(argv);
-		return 0;
-#else
-		{
-			if ((input[1] == 's') && (input[2] == ' ')) {
-				silence = true;
-				input++;
-			}
-			addr = 0; // honor bin.baddr ?
-			const char *argv0 = rz_str_trim_head_ro(input + 2);
-			if ((file = rz_core_file_open(core, argv0, perms, addr))) {
-				fd = file->fd;
-				if (!silence) {
-					eprintf("%d\n", fd);
-				}
-				rz_core_bin_load(core, argv0, baddr);
-			} else {
-				eprintf("cannot open file %s\n", argv0);
-			}
-			rz_str_argv_free(argv);
-		}
-		rz_core_block_read(core);
-		return 0;
-		break;
-#endif
 	case 'p': // "op"
 		/* handle prioritize */
 		if (input[1]) {
