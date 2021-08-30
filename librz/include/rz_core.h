@@ -817,7 +817,6 @@ RZ_API RZ_OWN RzList *rz_heap_windows_heap_list(RzCore *core);
 #define RZ_CORE_BIN_ACC_RESOURCES        0x100000
 #define RZ_CORE_BIN_ACC_INITFINI         0x200000
 #define RZ_CORE_BIN_ACC_SEGMENTS         0x400000
-#define RZ_CORE_BIN_ACC_HASHES           0x10000000
 #define RZ_CORE_BIN_ACC_TRYCATCH         0x20000000
 #define RZ_CORE_BIN_ACC_SECTIONS_MAPPING 0x40000000
 #define RZ_CORE_BIN_ACC_MAPS             0x80000000
@@ -853,6 +852,37 @@ RZ_API char *rz_core_bin_method_flags_str(ut64 flags, int mode);
 RZ_API bool rz_core_pdb_info(RzCore *core, const char *file, PJ *pj, int mode);
 RZ_API RzCmdStatus rz_core_bin_plugins_print(RzBin *bin, RzCmdStateOutput *state);
 RZ_API void rz_core_bin_archs_print(RzBin *bin, RzCmdStateOutput *state);
+
+RZ_API void rz_core_bin_entries_print(RzCore *core, RzCmdStateOutput *state);
+RZ_API void rz_core_bin_initfini_print(RzCore *core, RzCmdStateOutput *state);
+RZ_API void rz_core_bin_exports_print(RzCore *core, RzCmdStateOutput *state, RzCoreBinFilter *filter);
+RZ_API void rz_core_bin_cur_export_print(RzCore *core, RzCmdStateOutput *state);
+RZ_API void rz_core_bin_symbols_print(RzCore *core, RzCmdStateOutput *state, RzCoreBinFilter *filter);
+RZ_API void rz_core_bin_cur_symbol_print(RzCore *core, RzCmdStateOutput *state);
+RZ_API void rz_core_bin_imports_print(RzCore *core, RzCmdStateOutput *state, RzCoreBinFilter *filter);
+RZ_API void rz_core_bin_libs_print(RzCore *core, RzCmdStateOutput *state);
+RZ_API void rz_core_bin_main_print(RzCore *core, RzCmdStateOutput *state);
+RZ_API void rz_core_bin_relocs_print(RzCore *core, RzCmdStateOutput *state);
+RZ_API void rz_core_bin_sections_print(RzCore *core, RzCmdStateOutput *state, RzCoreBinFilter *filter, RzList *hashes);
+RZ_API void rz_core_bin_cur_section_print(RzCore *core, RzCmdStateOutput *state, RzList *hashes);
+RZ_API void rz_core_bin_segments_print(RzCore *core, RzCmdStateOutput *state, RzCoreBinFilter *filter, RzList *hashes);
+RZ_API void rz_core_bin_strings_print(RzCore *core, RzCmdStateOutput *state);
+RZ_API void rz_core_bin_whole_strings_print(RzCore *core, RzCmdStateOutput *state);
+RZ_API void rz_core_file_info_print(RzCore *core, RzCmdStateOutput *state);
+RZ_API void rz_core_bin_info_print(RzCore *core, RzCmdStateOutput *state);
+RZ_API void rz_core_bin_classes_print(RzCore *core, RzCmdStateOutput *state);
+RZ_API bool rz_core_bin_class_as_source_print(RzCore *core, RzCmdStateOutput *state, const char *class_name);
+RZ_API bool rz_core_bin_class_fields_print(RzCore *core, RzCmdStateOutput *state, const char *class_name);
+RZ_API bool rz_core_bin_class_methods_print(RzCore *core, RzCmdStateOutput *state, const char *class_name);
+RZ_API void rz_core_bin_signatures_print(RzCore *core, RzCmdStateOutput *state);
+RZ_API void rz_core_bin_fields_print(RzCore *core, RzCmdStateOutput *state);
+RZ_API void rz_core_bin_headers_print(RzCore *core);
+RZ_API void rz_core_bin_dwarf_print(RzCore *core, RzCmdStateOutput *state);
+RZ_API char *rz_core_bin_pdb_get_filename(RzCore *core);
+RZ_API void rz_core_bin_memory_print(RzCore *core, RzCmdStateOutput *state);
+RZ_API void rz_core_bin_resources_print(RzCore *core, RzCmdStateOutput *state);
+RZ_API void rz_core_bin_versions_print(RzCore *core, RzCmdStateOutput *state);
+RZ_API void rz_core_bin_trycatch_print(RzCore *core, RzCmdStateOutput *state);
 
 typedef enum {
 	RZ_CORE_STRING_KIND_UNKNOWN,

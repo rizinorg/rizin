@@ -5987,6 +5987,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_info_archs_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "iA", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_archs_handler, &cmd_info_archs_help);
 	rz_warn_if_fail(cmd_info_archs_cd);
+	rz_cmd_desc_set_default_mode(cmd_info_archs_cd, RZ_OUTPUT_MODE_TABLE);
 
 	RzCmdDesc *cmd_bin_reload_cd = rz_cmd_desc_argv_new(core->rcmd, i_cd, "ib", rz_cmd_bin_reload_handler, &cmd_bin_reload_help);
 	rz_warn_if_fail(cmd_bin_reload_cd);

@@ -26,6 +26,7 @@ commands:
     cname: cmd_info_archs
     summary: List archs
     type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    default_mode: RZ_OUTPUT_MODE_TABLE
     modes:
       - RZ_OUTPUT_MODE_TABLE
       - RZ_OUTPUT_MODE_JSON
