@@ -66,18 +66,11 @@ RZ_API RzProjectErr rz_project_save_file(RzCore *core, const char *file, bool co
 	}
 	sdb_free(prj);
 
-	if (!compress) {
-		if (err == RZ_PROJECT_ERR_SUCCESS) {
-			rz_config_set(core->config, "prj.file", file);
-		}
-		return err;
-	}
-
 	if (err != RZ_PROJECT_ERR_SUCCESS) {
 		goto tmp_file_err;
 	}
 
-	if (!rz_file_deflate(tmp_file, file)) {
+	if (compress && !rz_file_deflate(tmp_file, file)) {
 		err = RZ_PROJECT_ERR_COMPRESSION_FAILED;
 		goto tmp_file_err;
 	}
