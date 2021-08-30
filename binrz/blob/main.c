@@ -13,6 +13,6 @@ int MAIN_NAME(int argc, const ARGV_TYPE **argv) {
 		rc = rz_main_run(m, argc, (const char **)utf8_argv);
 		rz_main_free(m);
 	}
-	UTF8_ARGV_FREE(argc, utf8_argv);
+	FREE_UTF8_ARGV(argc, utf8_argv);
 	return rc;
 }
