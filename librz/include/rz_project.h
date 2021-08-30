@@ -30,7 +30,7 @@ typedef enum rz_project_err {
 
 RZ_API RZ_NONNULL const char *rz_project_err_message(RzProjectErr err);
 RZ_API RzProjectErr rz_project_save(RzCore *core, RzProject *prj, const char *file);
-RZ_API RzProjectErr rz_project_save_file(RzCore *core, const char *file, bool decompress);
+RZ_API RzProjectErr rz_project_save_file(RzCore *core, const char *file, bool compress);
 RZ_API RzProject *rz_project_load_file_raw(const char *file);
 RZ_API void rz_project_free(RzProject *prj);
 

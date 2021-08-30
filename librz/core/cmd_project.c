@@ -32,7 +32,7 @@ RZ_IPI RzCmdStatus rz_project_save_handler(RzCore *core, int argc, const char **
 	} else { // argc == 2 checked by the shell
 		file = argv[1];
 	}
-	bool decompress = rz_config_get_b(core->config, "prj.decompress");
+	bool decompress = rz_config_get_b(core->config, "prj.compress");
 	RzProjectErr err = rz_project_save_file(core, file, decompress);
 	if (err != RZ_PROJECT_ERR_SUCCESS) {
 		eprintf("Failed to save project to file %s: %s\n", file, rz_project_err_message(err));
