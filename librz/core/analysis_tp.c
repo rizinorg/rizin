@@ -48,7 +48,7 @@ static bool type_pos_hit(RzAnalysis *analysis, RzILTraceInstruction *instr_trace
 		ut64 sp = rz_reg_getv(analysis->reg, sp_name);
 
 		ut64 write_addr = 0LL;
-		if (instr_trace && (instr_trace->stats & TRACE_INS_HAS_MEM_W)) {
+		if (instr_trace && (instr_trace->stats & RZ_IL_TRACE_INS_HAS_MEM_W)) {
 			// TODO : This assumes an op will only write to memory once
 			//      : which may be wrong in some archs. this is only a temporary solution
 			RzILTraceMemOp *mem = rz_pvector_at(instr_trace->write_mem_ops, 0);
@@ -423,7 +423,7 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 			RzAnalysisVar *var = rz_analysis_get_used_function_var(analysis, op->addr);
 
 			// FIXME : It seems also assume only read memory once ?
-			if (op->type == RZ_ANALYSIS_OP_TYPE_MOV && (instr_trace->stats & TRACE_INS_HAS_MEM_R)) {
+			if (op->type == RZ_ANALYSIS_OP_TYPE_MOV && (instr_trace->stats & RZ_IL_TRACE_INS_HAS_MEM_R)) {
 				memref = !(!memref && var && (var->kind != RZ_ANALYSIS_VAR_KIND_REG));
 			}
 			// Match type from function param to instr
@@ -580,7 +580,7 @@ static void propagate_return_type(RzCore *core, RzAnalysisOp *aop, RzAnalysisOp 
 
 	// TODO : handle multiple registers case, this is a temporary solution
 	RzILTraceRegOp *single_write_reg = NULL;
-	if (trace && (trace->stats & TRACE_INS_HAS_REG_W)) {
+	if (trace && (trace->stats & RZ_IL_TRACE_INS_HAS_REG_W)) {
 		single_write_reg = rz_pvector_at(trace->write_reg_ops, 0);
 	}
 
@@ -775,7 +775,7 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, RzAnalys
 		// Assert : reg write only once here
 		RzILTraceRegOp *w_reg = NULL;
 		if (cur_instr_trace) {
-			if (cur_instr_trace->stats & TRACE_INS_HAS_REG_W) {
+			if (cur_instr_trace->stats & RZ_IL_TRACE_INS_HAS_REG_W) {
 				w_reg = rz_pvector_at(cur_instr_trace->write_reg_ops, 0);
 				if (w_reg) {
 					ctx->prev_dest = rz_str_constpool_get(&analysis->constpool, w_reg->reg_name);

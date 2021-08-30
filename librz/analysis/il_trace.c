@@ -80,11 +80,11 @@ RZ_API bool rz_analysis_il_trace_add_mem(RzILTraceInstruction *trace, RzILTraceM
 	switch (mem->behavior) {
 	case RZ_IL_TRACE_OP_WRITE:
 		ret = !!rz_pvector_push(trace->write_mem_ops, mem);
-		trace->stats |= TRACE_INS_HAS_MEM_W;
+		trace->stats |= RZ_IL_TRACE_INS_HAS_MEM_W;
 		break;
 	case RZ_IL_TRACE_OP_READ:
 		ret = !!rz_pvector_push(trace->read_mem_ops, mem);
-		trace->stats |= TRACE_INS_HAS_MEM_R;
+		trace->stats |= RZ_IL_TRACE_INS_HAS_MEM_R;
 		break;
 	default:
 		rz_warn_if_reached();
@@ -112,11 +112,11 @@ RZ_API bool rz_analysis_il_trace_add_reg(RzILTraceInstruction *trace, RzILTraceR
 	switch (reg->behavior) {
 	case RZ_IL_TRACE_OP_WRITE:
 		ret = !!rz_pvector_push(trace->write_reg_ops, reg);
-		trace->stats |= TRACE_INS_HAS_REG_W;
+		trace->stats |= RZ_IL_TRACE_INS_HAS_REG_W;
 		break;
 	case RZ_IL_TRACE_OP_READ:
 		ret = !!rz_pvector_push(trace->read_reg_ops, reg);
-		trace->stats |= TRACE_INS_HAS_REG_R;
+		trace->stats |= RZ_IL_TRACE_INS_HAS_REG_R;
 		break;
 	default:
 		rz_warn_if_reached();

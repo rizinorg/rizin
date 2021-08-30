@@ -1469,15 +1469,15 @@ typedef struct {
 } RzILTraceRegOp;
 
 enum {
-	TRACE_INS_HAS_MEM_R = 0x1U, ///< instruction include memory read
-	TRACE_INS_HAS_MEM_W = 0x2U, ///< instruction include memory write
-	TRACE_INS_HAS_REG_R = 0x4U, ///< instruction include register read
-	TRACE_INS_HAS_REG_W = 0x8U ///< instruction include register write
+	RZ_IL_TRACE_INS_HAS_MEM_R = 0x1U, ///< instruction include memory read
+	RZ_IL_TRACE_INS_HAS_MEM_W = 0x2U, ///< instruction include memory write
+	RZ_IL_TRACE_INS_HAS_REG_R = 0x4U, ///< instruction include register read
+	RZ_IL_TRACE_INS_HAS_REG_W = 0x8U ///< instruction include register write
 };
 
 typedef struct {
 	ut64 addr; ///< Address of instruction
-	ut32 stats; ///< Has write/read to reg/mem ? see TRACE_INS_HAS_* enums
+	ut32 stats; ///< Has write/read to reg/mem ? see RZ_IL_TRACE_INS_HAS_* enums
 
 	RzPVector *write_mem_ops; ///< Vector<RzILTraceMemOp>
 	RzPVector *read_mem_ops; ///< Vector<RzILTraceMemOp>
