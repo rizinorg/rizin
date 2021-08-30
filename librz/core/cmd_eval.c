@@ -616,7 +616,7 @@ RZ_IPI int rz_cmd_eval(void *data, const char *input) {
 		}
 		break;
 	case ',': // "e."
-		rz_config_eval(core->config, input + 1, true);
+		rz_core_config_eval_and_print(core->config, input + 1, true);
 		break;
 	case '.': // "e "
 	case ' ': // "e "
@@ -624,7 +624,7 @@ RZ_IPI int rz_cmd_eval(void *data, const char *input) {
 			rz_config_list(core->config, input + 1, 0);
 		} else {
 			// XXX we cant do "e cmd.gprompt=dr=", because the '=' is a token, and quotes dont affect him
-			rz_config_eval(core->config, input + 1, false);
+			rz_core_config_eval_and_print(core->config, input + 1, false);
 		}
 		break;
 	}

@@ -76,7 +76,7 @@ RZ_API RzConfig *rz_config_new(void *user);
 RZ_API RzConfig *rz_config_clone(RzConfig *cfg);
 RZ_API void rz_config_free(RzConfig *cfg);
 RZ_API void rz_config_lock(RzConfig *cfg, int l);
-RZ_API bool rz_config_eval(RzConfig *cfg, const char *str, bool many);
+RZ_API bool rz_core_config_eval_and_print(RzConfig *cfg, const char *str, bool many);
 RZ_API void rz_config_bump(RzConfig *cfg, const char *key);
 RZ_API RzConfigNode *rz_config_set_i(RzConfig *cfg, const char *name, const ut64 i);
 RZ_API RzConfigNode *rz_config_set_b(RzConfig *cfg, const char *name, bool value);
