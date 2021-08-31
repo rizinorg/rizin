@@ -1017,7 +1017,7 @@ static bool global_var_load_cb(void *user, const char *k, const char *v) {
 	}
 	RzCore *core = ctx->analysis->core;
 	addr = rz_num_math(core->num, addr_s);
-	glob = rz_analysis_var_global_new(name, addr, core->flags);
+	glob = rz_analysis_var_global_new(name, addr);
 	if (!glob) {
 		goto beach;
 	}

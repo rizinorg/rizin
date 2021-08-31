@@ -748,7 +748,8 @@ typedef struct rz_analysis_var_global_t {
 	ut64 addr; ///< address of the global variable
 	RzType *type; ///< type of the variable
 	RzVector /*<RzTypeConstraint>*/ constraints;
-	RzFlagItem *flag; ///< flag to allow seeking and other things
+	RZ_BORROW RzFlagItem *flag_item; ///< flag corresponding to the global variable
+	RZ_BORROW RzFlag *flags; ///< RzFlag for the current analysis
 } RzAnalysisVarGlobal;
 
 // Refers to a variable or a struct field inside a variable, only for varsub
@@ -1637,14 +1638,13 @@ RZ_API char *rz_analysis_fcn_format_sig(RZ_NONNULL RzAnalysis *analysis, RZ_NONN
 RZ_API void rz_analysis_fcn_vars_add_types(RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn);
 
 // Global vars
-RZ_API RZ_OWN RzAnalysisVarGlobal *rz_analysis_var_global_new(RZ_NONNULL const char *name, ut64 addr, RzFlag *flags);
+RZ_API RZ_OWN RzAnalysisVarGlobal *rz_analysis_var_global_new(RZ_NONNULL const char *name, ut64 addr);
 RZ_API RZ_OWN bool rz_analysis_var_global_add(RzAnalysis *analysis, RZ_NONNULL RzAnalysisVarGlobal *global_var);
-RZ_API void rz_analysis_var_global_free_except_flag(RZ_NONNULL RzAnalysisVarGlobal *glob);
-RZ_API void rz_analysis_var_global_free(RZ_NONNULL RzAnalysisVarGlobal *glob, RZ_NONNULL RzFlag *flags);
-RZ_API bool rz_analysis_var_global_delete(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisVarGlobal *glob, RzFlag *flags);
-RZ_API bool rz_analysis_var_global_delete_byname(RzAnalysis *analysis, RZ_NONNULL const char *name, RzFlag *flags);
-RZ_API bool rz_analysis_var_global_delete_byaddr_at(RzAnalysis *analysis, ut64 addr, RzFlag *flags);
-RZ_API bool rz_analysis_var_global_delete_byaddr_in(RzAnalysis *analysis, ut64 addr, RzFlag *flags);
+RZ_API void rz_analysis_var_global_free(RZ_NONNULL RzAnalysisVarGlobal *glob);
+RZ_API bool rz_analysis_var_global_delete(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisVarGlobal *glob);
+RZ_API bool rz_analysis_var_global_delete_byname(RzAnalysis *analysis, RZ_NONNULL const char *name);
+RZ_API bool rz_analysis_var_global_delete_byaddr_at(RzAnalysis *analysis, ut64 addr);
+RZ_API bool rz_analysis_var_global_delete_byaddr_in(RzAnalysis *analysis, ut64 addr);
 RZ_API RZ_BORROW RzAnalysisVarGlobal *rz_analysis_var_global_get_byname(RzAnalysis *analysis, RZ_NONNULL const char *name);
 RZ_API RZ_BORROW RzAnalysisVarGlobal *rz_analysis_var_global_get_byaddr_at(RzAnalysis *analysis, ut64 addr);
 RZ_API RZ_BORROW RzAnalysisVarGlobal *rz_analysis_var_global_get_byaddr_in(RzAnalysis *analysis, ut64 addr);

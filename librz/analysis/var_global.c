@@ -3,7 +3,6 @@
 
 #include <rz_analysis.h>
 #include <rz_list.h>
-#include <rz_core.h>
 
 /**
  * \brief Create a new instance of global variable
@@ -14,7 +13,7 @@
  * \param flags flag list of current core instance
  * \return RzAnalysisVarGlobal *
  */
-RZ_API RZ_OWN RzAnalysisVarGlobal *rz_analysis_var_global_new(RZ_NONNULL const char *name, ut64 addr, RzFlag *flags) {
+RZ_API RZ_OWN RzAnalysisVarGlobal *rz_analysis_var_global_new(RZ_NONNULL const char *name, ut64 addr) {
 	rz_return_val_if_fail(name, NULL);
 	RzAnalysisVarGlobal *glob = RZ_NEW0(RzAnalysisVarGlobal);
 	if (!glob) {
@@ -22,18 +21,8 @@ RZ_API RZ_OWN RzAnalysisVarGlobal *rz_analysis_var_global_new(RZ_NONNULL const c
 	}
 	glob->name = strdup(name);
 	glob->addr = addr;
-	glob->flag = NULL;
-
-	if (!flags) {
-		return glob;
-	}
-
-	RzFlagItem *glob_flag_item = rz_flag_set(flags, glob->name, glob->addr, 0);
-	if (!glob_flag_item) {
-		RZ_LOG_ERROR("Unable to create flag item for global variable %s at 0x%" PFMT64x "\n", glob->name, glob->addr);
-		return glob;
-	}
-	glob->flag = glob_flag_item;
+	glob->flag_item = NULL;
+	glob->flags = NULL;
 
 	return glob;
 }
@@ -74,24 +63,11 @@ RZ_API RZ_OWN bool rz_analysis_var_global_add(RzAnalysis *analysis, RZ_NONNULL R
 	if (!rz_rbtree_aug_insert(&analysis->global_var_tree, &global_var->addr, &global_var->rb, global_var_node_cmp, NULL, NULL)) {
 		return false;
 	}
+
+	global_var->flags = analysis->flb.f;
+	global_var->flag_item = rz_flag_set(global_var->flags, global_var->name, global_var->addr, rz_type_db_get_bitsize(analysis->typedb, global_var->type) / 8);
+
 	return true;
-}
-
-/**
- * \brief Free the global variable instance except the flag
- * 
- * \param glob Global variable instance
- * \return void
- */
-RZ_API void rz_analysis_var_global_free_except_flag(RZ_NONNULL RzAnalysisVarGlobal *glob) {
-	if (!glob) {
-		return;
-	}
-
-	RZ_FREE(glob->name);
-	rz_type_free(glob->type);
-	rz_vector_fini(&glob->constraints);
-	RZ_FREE(glob);
 }
 
 /**
@@ -101,20 +77,21 @@ RZ_API void rz_analysis_var_global_free_except_flag(RZ_NONNULL RzAnalysisVarGlob
  * \param flags flag list of current core instance
  * \return void
  */
-RZ_API void rz_analysis_var_global_free(RZ_NONNULL RzAnalysisVarGlobal *glob, RZ_NONNULL RzFlag *flags) {
+RZ_API void rz_analysis_var_global_free(RZ_NONNULL RzAnalysisVarGlobal *glob) {
 	if (!glob) {
 		return;
 	}
-	rz_return_if_fail(flags);
 
 	RZ_FREE(glob->name);
 	rz_type_free(glob->type);
 	rz_vector_fini(&glob->constraints);
 
-	if (!rz_flag_unset(flags, glob->flag)) {
+	if (glob->flag_item && glob->flags && !rz_flag_unset(glob->flags, glob->flag_item)) {
 		RZ_LOG_ERROR("Failed to unset flag for global variable %s at 0x%" PFMT64x "\n", glob->name, glob->addr);
 	}
-	glob->flag = NULL;
+
+	glob->flag_item = NULL;
+	glob->flags = NULL;
 	RZ_FREE(glob);
 }
 
@@ -126,7 +103,7 @@ RZ_API void rz_analysis_var_global_free(RZ_NONNULL RzAnalysisVarGlobal *glob, RZ
  * \param flags flag list of current core instance
  * \return true if succeed
  */
-RZ_API bool rz_analysis_var_global_delete(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisVarGlobal *glob, RzFlag *flags) {
+RZ_API bool rz_analysis_var_global_delete(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisVarGlobal *glob) {
 	rz_return_val_if_fail(analysis && glob, false);
 
 	bool ret = false;
@@ -134,17 +111,6 @@ RZ_API bool rz_analysis_var_global_delete(RZ_NONNULL RzAnalysis *analysis, RZ_NO
 	// We need to delete RBTree first because ht_pp_delete will free its member
 	bool deleted = rz_rbtree_delete(&analysis->global_var_tree, &glob->addr, global_var_node_cmp, NULL, NULL, NULL);
 	ret = deleted ? ht_pp_delete(analysis->ht_global_var, glob->name) : deleted;
-
-	if (!flags || !glob->flag) {
-		glob->flag = NULL;
-		return ret;
-	}
-
-	if (!rz_flag_unset(flags, glob->flag)) {
-		RZ_LOG_ERROR("Failed to unset flag for global variable %s at 0x%" PFMT64x "\n", glob->name, glob->addr);
-	}
-
-	glob->flag = NULL;
 	return ret;
 }
 
@@ -156,7 +122,7 @@ RZ_API bool rz_analysis_var_global_delete(RZ_NONNULL RzAnalysis *analysis, RZ_NO
  * \param flags flag list of current core instance
  * \return true if succeed
  */
-RZ_API bool rz_analysis_var_global_delete_byname(RzAnalysis *analysis, RZ_NONNULL const char *name, RzFlag *flags) {
+RZ_API bool rz_analysis_var_global_delete_byname(RzAnalysis *analysis, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(analysis && name, false);
 	RzAnalysisVarGlobal *glob = rz_analysis_var_global_get_byname(analysis, name);
 	if (!glob) {
@@ -164,7 +130,7 @@ RZ_API bool rz_analysis_var_global_delete_byname(RzAnalysis *analysis, RZ_NONNUL
 		return false;
 	}
 
-	return rz_analysis_var_global_delete(analysis, glob, flags);
+	return rz_analysis_var_global_delete(analysis, glob);
 }
 
 /**
@@ -175,7 +141,7 @@ RZ_API bool rz_analysis_var_global_delete_byname(RzAnalysis *analysis, RZ_NONNUL
  * \param flags flag list of current core instance
  * \return true if succeed
  */
-RZ_API bool rz_analysis_var_global_delete_byaddr_at(RzAnalysis *analysis, ut64 addr, RzFlag *flags) {
+RZ_API bool rz_analysis_var_global_delete_byaddr_at(RzAnalysis *analysis, ut64 addr) {
 	rz_return_val_if_fail(analysis, false);
 	RzAnalysisVarGlobal *glob = rz_analysis_var_global_get_byaddr_at(analysis, addr);
 	if (!glob) {
@@ -183,7 +149,7 @@ RZ_API bool rz_analysis_var_global_delete_byaddr_at(RzAnalysis *analysis, ut64 a
 		return false;
 	}
 
-	return rz_analysis_var_global_delete(analysis, glob, flags);
+	return rz_analysis_var_global_delete(analysis, glob);
 }
 
 /**
@@ -194,7 +160,7 @@ RZ_API bool rz_analysis_var_global_delete_byaddr_at(RzAnalysis *analysis, ut64 a
  * \param flags flag list of current core instance
  * \return true if succeed
  */
-RZ_API bool rz_analysis_var_global_delete_byaddr_in(RzAnalysis *analysis, ut64 addr, RzFlag *flags) {
+RZ_API bool rz_analysis_var_global_delete_byaddr_in(RzAnalysis *analysis, ut64 addr) {
 	rz_return_val_if_fail(analysis, false);
 	RzAnalysisVarGlobal *glob = rz_analysis_var_global_get_byaddr_in(analysis, addr);
 	if (!glob) {
@@ -202,7 +168,7 @@ RZ_API bool rz_analysis_var_global_delete_byaddr_in(RzAnalysis *analysis, ut64 a
 		return false;
 	}
 
-	return rz_analysis_var_global_delete(analysis, glob, flags);
+	return rz_analysis_var_global_delete(analysis, glob);
 }
 
 /**
@@ -309,14 +275,14 @@ RZ_API bool rz_analysis_var_global_rename(RzAnalysis *analysis, RZ_NONNULL const
 	RZ_FREE(glob->name);
 	glob->name = strdup(newname);
 
-	if (glob->flag) {
-		if (glob->flag->realname != glob->flag->name) {
-			RZ_FREE(glob->flag->realname);
+	if (glob->flag_item) {
+		if (glob->flag_item->realname != glob->flag_item->name) {
+			RZ_FREE(glob->flag_item->realname);
 		}
-		RZ_FREE(glob->flag->name);
+		RZ_FREE(glob->flag_item->name);
 
-		glob->flag->realname = strdup(newname);
-		glob->flag->name = strdup(newname);
+		glob->flag_item->realname = strdup(newname);
+		glob->flag_item->name = strdup(newname);
 	}
 
 	return ht_pp_update_key(analysis->ht_global_var, old_name, newname);
@@ -335,8 +301,8 @@ RZ_API void rz_analysis_var_global_set_type(RzAnalysisVarGlobal *glob, RZ_NONNUL
 	rz_type_free(glob->type);
 	glob->type = type;
 
-	if (typedb && glob->flag) {
-		glob->flag->size = rz_type_db_get_bitsize(typedb, glob->type) / 8;
+	if (typedb && glob->flag_item) {
+		glob->flag_item->size = rz_type_db_get_bitsize(typedb, glob->type) / 8;
 	}
 }
 
