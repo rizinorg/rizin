@@ -1468,12 +1468,12 @@ typedef struct {
 	ut64 value; ///< data either written to or read from
 } RzILTraceRegOp;
 
-enum {
+typedef enum {
 	RZ_IL_TRACE_INS_HAS_MEM_R = 0x1U, ///< instruction include memory read
 	RZ_IL_TRACE_INS_HAS_MEM_W = 0x2U, ///< instruction include memory write
 	RZ_IL_TRACE_INS_HAS_REG_R = 0x4U, ///< instruction include register read
 	RZ_IL_TRACE_INS_HAS_REG_W = 0x8U ///< instruction include register write
-};
+} RzILTraceInsOp;
 
 typedef struct {
 	ut64 addr; ///< Address of instruction
