@@ -88,6 +88,7 @@ typedef struct BufferedFile {
 	int ifndef_macro; /* #ifndef macro / #endif search */
 	int ifndef_macro_saved; /* saved ifndef_macro */
 	int *ifdef_stack_ptr; /* ifdef_stack value at the start of the file */
+	// FIXME: Use properly allocated string instead
 	char filename[1024]; /* filename */
 	char *dirname; /* file directory */
 	unsigned char buffer[IO_BUF_SIZE + 1]; /* extra size for CH_EOB char */
