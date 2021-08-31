@@ -35,7 +35,7 @@ bool rz_bin_checksum_omf_ok(const ut8 *buf, ut64 buf_size) {
 		eprintf("Invalid record (too short)\n");
 		return false;
 	}
-	size = ut8p_bw(buf + 1);
+	size = rz_read_le16(buf + 1);
 	if (buf_size < size + 3) {
 		eprintf("Invalid record (too short)\n");
 		return false;

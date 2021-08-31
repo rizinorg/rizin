@@ -3152,7 +3152,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 
 	/* prj */
 	SETPREF("prj.file", "", "Path of the currently opened project");
-	SETBPREF("prj.compress", "true", "Compress the project file while saving");
+	SETBPREF("prj.compress", "false", "Compress the project file while saving");
 
 	/* cfg */
 	SETBPREF("cfg.plugins", "true", "Load plugins at startup");
