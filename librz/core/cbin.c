@@ -3593,6 +3593,13 @@ static void classdump_objc(RzCore *r, RzBinClass *c) {
 	rz_cons_printf("@end\n");
 }
 
+static inline bool is_known_namespace(const char *string) {
+	if (!strcmp(string, "std")) {
+		return true;
+	}
+	return false;
+}
+
 #define CXX_BIN_VISIBILITY_FLAGS (RZ_BIN_METH_PUBLIC | RZ_BIN_METH_PRIVATE | RZ_BIN_METH_PROTECTED)
 static void classdump_cpp(RzCore *r, RzBinClass *c) {
 	RzListIter *iter;
@@ -3600,13 +3607,21 @@ static void classdump_cpp(RzCore *r, RzBinClass *c) {
 	RzBinSymbol *sym;
 	ut64 used = UT64_MAX;
 	bool has_methods = false;
+	bool is_namespace = false;
 
-	const char *type = c->visibility_str ? c->visibility_str : "class";
+	const char *visibility = "class";
+	if (c->visibility_str) {
+		visibility = c->visibility_str;
+		is_namespace = !!strstr(visibility, "namespace");
+	} else if (is_known_namespace(c->name)) {
+		visibility = "namespace";
+		is_namespace = true;
+	}
 
 	if (c->super) {
-		rz_cons_printf("%s %s : public %s {\n", type, c->name, c->super);
+		rz_cons_printf("%s %s : public %s {\n", visibility, c->name, c->super);
 	} else {
-		rz_cons_printf("%s %s {\n", type, c->name);
+		rz_cons_printf("%s %s {\n", visibility, c->name);
 	}
 
 	if (rz_list_length(c->methods) > 0) {
@@ -3615,7 +3630,7 @@ static void classdump_cpp(RzCore *r, RzBinClass *c) {
 			const char *type = sym->type ? sym->type : "void";
 			const char *name = sym->dname ? sym->dname : sym->name;
 
-			if (used != (sym->method_flags & CXX_BIN_VISIBILITY_FLAGS)) {
+			if (!is_namespace && used != (sym->method_flags & CXX_BIN_VISIBILITY_FLAGS)) {
 				used = sym->method_flags & CXX_BIN_VISIBILITY_FLAGS;
 				if (used & RZ_BIN_METH_PRIVATE) {
 					rz_cons_print("  private:\n");
@@ -3652,7 +3667,7 @@ static void classdump_cpp(RzCore *r, RzBinClass *c) {
 		}
 		used = UT64_MAX;
 		rz_list_foreach (c->fields, iter, f) {
-			if (used != (f->visibility & CXX_BIN_VISIBILITY_FLAGS)) {
+			if (!is_namespace && used != (f->visibility & CXX_BIN_VISIBILITY_FLAGS)) {
 				used = f->visibility & CXX_BIN_VISIBILITY_FLAGS;
 				if (used & RZ_BIN_METH_PRIVATE) {
 					rz_cons_print("    private:\n");

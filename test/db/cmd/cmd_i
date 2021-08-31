@@ -567,8 +567,7 @@ class SystemClassLoaderInjector {
     void injectInAliyunOs(_JNIEnv*, _jobject*, _jstring*, _jstring*);
     void injectBelowApiLevel14(_JNIEnv*, _jobject*, _jstring*, _jstring*);
 }
-class std {
-  public:
+namespace std {
     void terminate();
     void uncaught_exception();
     void unexpected();
@@ -1311,8 +1310,7 @@ class SystemClassLoaderInjector {
     void injectInAliyunOs(_JNIEnv*, _jobject*, _jstring*, _jstring*);
     void injectBelowApiLevel14(_JNIEnv*, _jobject*, _jstring*, _jstring*);
 }
-class std {
-  public:
+namespace std {
     void terminate();
     void uncaught_exception();
     void unexpected();
