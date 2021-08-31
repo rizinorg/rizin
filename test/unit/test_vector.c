@@ -72,7 +72,7 @@ static bool test_vector_fini(void) {
 	rz_vector_init(&v, sizeof(void *), NULL, free);
 	rz_vector_push(&v, &v);
 	mu_assert_eq(v.elem_size, sizeof(void *), "init elem_size");
-	mu_assert_eq(v.len, 1, "init len");
+	mu_assert_eq(v.len, 6, "init len");
 	mu_assert_notnull(v.a, "init a");
 	mu_assert_null(v.free, "init free");
 	mu_assert_eq(v.free_user, (void *)free, "init free_user");
