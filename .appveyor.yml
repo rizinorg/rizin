@@ -61,7 +61,7 @@ init:
 # Required software for building
 install:
   # Update environment variables
-  - ps: $env:RZ_VERSION = ( python sys\\version.py )
+  - ps: $env:RZ_VERSION = (& (Join-Path $env:PYTHON python.exe) sys\\version.py )
   - ps: $env:DIST_FOLDER = "rizin-$env:builder-$env:RZ_VERSION"
   - ps: $env:ARTIFACT_ZIP = "$env:DIST_FOLDER.zip"
   # Download required packages
