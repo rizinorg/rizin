@@ -3593,6 +3593,89 @@ static void classdump_objc(RzCore *r, RzBinClass *c) {
 	rz_cons_printf("@end\n");
 }
 
+#define CXX_BIN_VISIBILITY_FLAGS (RZ_BIN_METH_PUBLIC | RZ_BIN_METH_PRIVATE | RZ_BIN_METH_PROTECTED)
+static void classdump_cpp(RzCore *r, RzBinClass *c) {
+	RzListIter *iter;
+	RzBinField *f;
+	RzBinSymbol *sym;
+	ut64 used = UT64_MAX;
+	bool has_methods = false;
+
+	const char *type = c->visibility_str ? c->visibility_str : "class";
+
+	if (c->super) {
+		rz_cons_printf("%s %s : public %s {\n", type, c->name, c->super);
+	} else {
+		rz_cons_printf("%s %s {\n", type, c->name);
+	}
+
+	if (rz_list_length(c->methods) > 0) {
+		has_methods = true;
+		rz_list_foreach (c->methods, iter, sym) {
+			const char *type = sym->type ? sym->type : "void";
+			const char *name = sym->dname ? sym->dname : sym->name;
+
+			if (used != (sym->method_flags & CXX_BIN_VISIBILITY_FLAGS)) {
+				used = sym->method_flags & CXX_BIN_VISIBILITY_FLAGS;
+				if (used & RZ_BIN_METH_PRIVATE) {
+					rz_cons_print("  private:\n");
+				} else if (used & RZ_BIN_METH_PROTECTED) {
+					rz_cons_print("  protected:\n");
+				} else {
+					rz_cons_print("  public:\n");
+				}
+			}
+			rz_cons_print("    ");
+			if (sym->method_flags & RZ_BIN_METH_STATIC) {
+				rz_cons_print("static ");
+			}
+
+			if (name[0] == '~' || strstr(name, c->name) == name) {
+				rz_cons_print(name);
+			} else {
+				rz_cons_printf("%s %s", type, name);
+			}
+			if (sym->method_flags & RZ_BIN_METH_CONST) {
+				rz_cons_print(" const");
+			}
+			if (sym->method_flags & RZ_BIN_METH_VIRTUAL) {
+				rz_cons_print(" = 0;\n");
+			} else {
+				rz_cons_print(";\n");
+			}
+		}
+	}
+
+	if (rz_list_length(c->fields) > 0) {
+		if (has_methods) {
+			rz_cons_newline();
+		}
+		used = UT64_MAX;
+		rz_list_foreach (c->fields, iter, f) {
+			if (used != (f->visibility & CXX_BIN_VISIBILITY_FLAGS)) {
+				used = f->visibility & CXX_BIN_VISIBILITY_FLAGS;
+				if (used & RZ_BIN_METH_PRIVATE) {
+					rz_cons_print("    private:\n");
+				} else if (used & RZ_BIN_METH_PUBLIC) {
+					rz_cons_print("    public:\n");
+				} else if (used & RZ_BIN_METH_PROTECTED) {
+					rz_cons_print("    protected:\n");
+				}
+			}
+			rz_cons_print("    ");
+			if (f->visibility & RZ_BIN_METH_STATIC) {
+				rz_cons_print("static ");
+			}
+			if (f->visibility & RZ_BIN_METH_CONST) {
+				rz_cons_print("const ");
+			}
+			rz_cons_printf("%s %s;\n", f->type, f->name);
+		}
+	}
+	rz_cons_printf("}\n");
+}
+#undef CXX_BIN_VISIBILITY_FLAGS
+
 static inline char *demangle_class(const char *classname) {
 	if (!classname || classname[0] != 'L') {
 		return strdup(classname ? classname : "?");
@@ -3625,7 +3708,7 @@ static inline char *demangle_type(const char *any) {
 	}
 }
 
-static inline const char *resolve_visibility(const char *v) {
+static inline const char *resolve_java_visibility(const char *v) {
 	return v ? v : "public";
 }
 
@@ -3648,10 +3731,10 @@ static void classdump_java(RzCore *r, RzBinClass *c) {
 
 	rz_cons_printf("package %s;\n\n", package);
 
-	const char *visibility = resolve_visibility(c->visibility_str);
+	const char *visibility = resolve_java_visibility(c->visibility_str);
 	rz_cons_printf("%s class %s {\n", visibility, classname);
 	rz_list_foreach (c->fields, iter2, f) {
-		visibility = resolve_visibility(f->visibility_str);
+		visibility = resolve_java_visibility(f->visibility_str);
 		char *ftype = demangle_type(f->type);
 		if (!ftype) {
 			ftype = strdup(f->type);
@@ -3668,7 +3751,7 @@ static void classdump_java(RzCore *r, RzBinClass *c) {
 
 	rz_list_foreach (c->methods, iter3, sym) {
 		const char *mn = sym->dname ? sym->dname : sym->name;
-		visibility = resolve_visibility(sym->visibility_str);
+		visibility = resolve_java_visibility(sym->visibility_str);
 		char *dem = rz_bin_demangle_java(mn);
 		if (!dem) {
 			dem = strdup(mn);
@@ -3778,6 +3861,9 @@ RZ_API bool rz_core_bin_class_as_source_print(RzCore *core, RzCmdStateOutput *st
 		case RZ_BIN_NM_SWIFT:
 		case RZ_BIN_NM_OBJC:
 			classdump_objc(core, c);
+			break;
+		case RZ_BIN_NM_CXX:
+			classdump_cpp(core, c);
 			break;
 		case RZ_BIN_NM_C:
 			classdump_c(core, c);
@@ -4029,6 +4115,9 @@ RZ_API void rz_core_bin_classes_print(RzCore *core, RzCmdStateOutput *state) {
 			case RZ_BIN_NM_SWIFT:
 			case RZ_BIN_NM_OBJC:
 				classdump_objc(core, c);
+				break;
+			case RZ_BIN_NM_CXX:
+				classdump_cpp(core, c);
 				break;
 			case RZ_BIN_NM_C:
 				classdump_c(core, c);

@@ -539,26 +539,136 @@ NAME=icl
 FILE=bins/elf/libmagic.so
 CMDS=icl
 EXPECT=<<EOF
-0x24672 0x24682 0x24692 0x24718 0x24728 0x24740 0x24768 0x24796 0x24810 0x26974 0x27004
-0x29944 0x27036 0x27180 0x27324 0x27380 0x27420 0x27568 0x27904 0x28252 0x28520 0x29196
-0x38000 0x34924 0x38036 0x38060 0x38088
-0x34948 0x35060
-0x34972 0x35076
-0x35012
-0x35036
-0x35204
-0x37948 0x38024
-0x38116
-0x38844 0x38868 0x38876 0x38996 0x38884 0x38920
-0x38184 0x38192 0x38260
-0x40432 0x40500 0x40400
-0x38388 0x38456 0x38556 0x38780
-0x39128 0x39196 0x39240 0x39016 0x39108 0x39308
-0x40644 0x75648 0x75720
-0x75440 0x75512
-0x75456 0x75472
-0x76760 0x76744
-0x76844 0x76828
+class _JNIEnv {
+  public:
+    void FindClass(char const*);
+    void DeleteLocalRef(_jobject*);
+    void NewObject(_jclass*, _jmethodID*, ...);
+    void GetObjectClass(_jobject*);
+    void GetMethodID(_jclass*, char const*, char const*);
+    void CallObjectMethod(_jobject*, _jmethodID*, ...);
+    void CallVoidMethod(_jobject*, _jmethodID*, ...);
+    void GetStaticMethodID(_jclass*, char const*, char const*);
+    void CallStaticObjectMethod(_jclass*, _jmethodID*, ...);
+    void CallStaticIntMethod(_jclass*, _jmethodID*, ...);
+    void CallStaticVoidMethod(_jclass*, _jmethodID*, ...);
+}
+class SystemClassLoaderInjector {
+  public:
+    void inject(_JNIEnv*, _jobject*, _jstring*, _jstring*);
+    void findBaseDexClassloader(_JNIEnv*, _jobject*);
+    void getField(_JNIEnv*, _jobject*, _jobject*, _jstring*);
+    void getPathList(_JNIEnv*, _jobject*);
+    void getDexElements(_JNIEnv*, _jobject*);
+    void setField(_JNIEnv*, _jobject*, _jobject*, _jstring*, _jobject*);
+    void combineArray(_JNIEnv*, _jobject*, _jobject*);
+    void injectAboveEqualApiLevel14(_JNIEnv*, _jobject*, _jstring*, _jstring*);
+    void appendArray(_JNIEnv*, _jobject*, _jobject*);
+    void injectInAliyunOs(_JNIEnv*, _jobject*, _jstring*, _jstring*);
+    void injectBelowApiLevel14(_JNIEnv*, _jobject*, _jstring*, _jstring*);
+}
+class std {
+  public:
+    void terminate();
+    void uncaught_exception();
+    void unexpected();
+    void set_terminate(void (*)());
+    void set_unexpected(void (*)());
+}
+class std::exception {
+  public:
+    ~exception();
+    void what() const;
+}
+class std::bad_exception {
+  public:
+    ~bad_exception();
+    void what() const;
+}
+class __cxxabiv1::__forced_unwind {
+  public:
+    ~__forced_unwind();
+}
+class __cxxabiv1::__foreign_exception {
+  public:
+    ~__foreign_exception();
+}
+class __eh_globals_init {
+  public:
+    ~__eh_globals_init();
+}
+class __cxxabiv1 {
+  public:
+    void __terminate(void (*)());
+    void __unexpected(void (*)());
+}
+class __cxxabiv1::__fundamental_type_info {
+  public:
+    ~__fundamental_type_info();
+}
+class std::type_info {
+  public:
+    ~type_info();
+    void __is_pointer_p() const;
+    void __is_function_p() const;
+    void __do_catch(std::type_info const*, void**, unsigned int) const;
+    void __do_upcast(__cxxabiv1::__class_type_info const*, void**) const;
+    void operator==(std::type_info const&) const;
+}
+class __cxxabiv1::__pointer_type_info {
+  public:
+    void __is_pointer_p() const;
+    ~__pointer_type_info();
+    void __pointer_catch(__cxxabiv1::__pbase_type_info const*, void**, unsigned int) const;
+}
+class __cxxabiv1::__pbase_type_info {
+  public:
+    ~__pbase_type_info();
+    void __do_catch(std::type_info const*, void**, unsigned int) const;
+    void __pointer_catch(__cxxabiv1::__pbase_type_info const*, void**, unsigned int) const;
+}
+class __cxxabiv1::__si_class_type_info {
+  public:
+    ~__si_class_type_info();
+    void __do_find_public_src(int, void const*, __cxxabiv1::__class_type_info const*, void const*) const;
+    void __do_dyncast(int, __cxxabiv1::__class_type_info::__sub_kind, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__dyncast_result&) const;
+    void __do_upcast(__cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__upcast_result&) const;
+}
+class __cxxabiv1::__class_type_info {
+  public:
+    ~__class_type_info();
+    void __do_upcast(__cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__upcast_result&) const;
+    void __do_catch(std::type_info const*, void**, unsigned int) const;
+    void __do_upcast(__cxxabiv1::__class_type_info const*, void**) const;
+    void __do_find_public_src(int, void const*, __cxxabiv1::__class_type_info const*, void const*) const;
+    void __do_dyncast(int, __cxxabiv1::__class_type_info::__sub_kind, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__dyncast_result&) const;
+}
+class __gnu_cxx {
+  public:
+    void __verbose_terminate_handler();
+    void __throw_concurrence_lock_error();
+    void __throw_concurrence_unlock_error();
+}
+class __gnu_cxx::__concurrence_lock_error {
+  public:
+    void what() const;
+    ~__concurrence_lock_error();
+}
+class __gnu_cxx::__concurrence_unlock_error {
+  public:
+    void what() const;
+    ~__concurrence_unlock_error();
+}
+class std::bad_cast {
+  public:
+    ~bad_cast();
+    void what() const;
+}
+class std::bad_typeid {
+  public:
+    ~bad_typeid();
+    void what() const;
+}
 EOF
 RUN
 
@@ -1173,86 +1283,136 @@ NAME=icc
 FILE=bins/elf/libmagic.so
 CMDS=icc
 EXPECT=<<EOF
-@interface _JNIEnv
-{
+class _JNIEnv {
+  public:
+    void FindClass(char const*);
+    void DeleteLocalRef(_jobject*);
+    void NewObject(_jclass*, _jmethodID*, ...);
+    void GetObjectClass(_jobject*);
+    void GetMethodID(_jclass*, char const*, char const*);
+    void CallObjectMethod(_jobject*, _jmethodID*, ...);
+    void CallVoidMethod(_jobject*, _jmethodID*, ...);
+    void GetStaticMethodID(_jclass*, char const*, char const*);
+    void CallStaticObjectMethod(_jclass*, _jmethodID*, ...);
+    void CallStaticIntMethod(_jclass*, _jmethodID*, ...);
+    void CallStaticVoidMethod(_jclass*, _jmethodID*, ...);
 }
-@end
-@interface SystemClassLoaderInjector
-{
+class SystemClassLoaderInjector {
+  public:
+    void inject(_JNIEnv*, _jobject*, _jstring*, _jstring*);
+    void findBaseDexClassloader(_JNIEnv*, _jobject*);
+    void getField(_JNIEnv*, _jobject*, _jobject*, _jstring*);
+    void getPathList(_JNIEnv*, _jobject*);
+    void getDexElements(_JNIEnv*, _jobject*);
+    void setField(_JNIEnv*, _jobject*, _jobject*, _jstring*, _jobject*);
+    void combineArray(_JNIEnv*, _jobject*, _jobject*);
+    void injectAboveEqualApiLevel14(_JNIEnv*, _jobject*, _jstring*, _jstring*);
+    void appendArray(_JNIEnv*, _jobject*, _jobject*);
+    void injectInAliyunOs(_JNIEnv*, _jobject*, _jstring*, _jstring*);
+    void injectBelowApiLevel14(_JNIEnv*, _jobject*, _jstring*, _jstring*);
 }
-@end
-@interface std
-{
+class std {
+  public:
+    void terminate();
+    void uncaught_exception();
+    void unexpected();
+    void set_terminate(void (*)());
+    void set_unexpected(void (*)());
 }
-@end
-@interface std::exception
-{
+class std::exception {
+  public:
+    ~exception();
+    void what() const;
 }
-@end
-@interface std::bad_exception
-{
+class std::bad_exception {
+  public:
+    ~bad_exception();
+    void what() const;
 }
-@end
-@interface __cxxabiv1::__forced_unwind
-{
+class __cxxabiv1::__forced_unwind {
+  public:
+    ~__forced_unwind();
 }
-@end
-@interface __cxxabiv1::__foreign_exception
-{
+class __cxxabiv1::__foreign_exception {
+  public:
+    ~__foreign_exception();
 }
-@end
-@interface __eh_globals_init
-{
+class __eh_globals_init {
+  public:
+    ~__eh_globals_init();
 }
-@end
-@interface __cxxabiv1
-{
+class __cxxabiv1 {
+  public:
+    void __terminate(void (*)());
+    void __unexpected(void (*)());
 }
-@end
-@interface __cxxabiv1::__fundamental_type_info
-{
+class __cxxabiv1::__fundamental_type_info {
+  public:
+    ~__fundamental_type_info();
 }
-@end
-@interface std::type_info
-{
+class std::type_info {
+  public:
+    ~type_info();
+    void __is_pointer_p() const;
+    void __is_function_p() const;
+    void __do_catch(std::type_info const*, void**, unsigned int) const;
+    void __do_upcast(__cxxabiv1::__class_type_info const*, void**) const;
+    void operator==(std::type_info const&) const;
 }
-@end
-@interface __cxxabiv1::__pointer_type_info
-{
+class __cxxabiv1::__pointer_type_info {
+  public:
+    void __is_pointer_p() const;
+    ~__pointer_type_info();
+    void __pointer_catch(__cxxabiv1::__pbase_type_info const*, void**, unsigned int) const;
 }
-@end
-@interface __cxxabiv1::__pbase_type_info
-{
+class __cxxabiv1::__pbase_type_info {
+  public:
+    ~__pbase_type_info();
+    void __do_catch(std::type_info const*, void**, unsigned int) const;
+    void __pointer_catch(__cxxabiv1::__pbase_type_info const*, void**, unsigned int) const;
 }
-@end
-@interface __cxxabiv1::__si_class_type_info
-{
+class __cxxabiv1::__si_class_type_info {
+  public:
+    ~__si_class_type_info();
+    void __do_find_public_src(int, void const*, __cxxabiv1::__class_type_info const*, void const*) const;
+    void __do_dyncast(int, __cxxabiv1::__class_type_info::__sub_kind, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__dyncast_result&) const;
+    void __do_upcast(__cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__upcast_result&) const;
 }
-@end
-@interface __cxxabiv1::__class_type_info
-{
+class __cxxabiv1::__class_type_info {
+  public:
+    ~__class_type_info();
+    void __do_upcast(__cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__upcast_result&) const;
+    void __do_catch(std::type_info const*, void**, unsigned int) const;
+    void __do_upcast(__cxxabiv1::__class_type_info const*, void**) const;
+    void __do_find_public_src(int, void const*, __cxxabiv1::__class_type_info const*, void const*) const;
+    void __do_dyncast(int, __cxxabiv1::__class_type_info::__sub_kind, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__dyncast_result&) const;
 }
-@end
-@interface __gnu_cxx
-{
+class __gnu_cxx {
+  public:
+    void __verbose_terminate_handler();
+    void __throw_concurrence_lock_error();
+    void __throw_concurrence_unlock_error();
 }
-@end
-@interface __gnu_cxx::__concurrence_lock_error
-{
+class __gnu_cxx::__concurrence_lock_error {
+  public:
+    void what() const;
+    ~__concurrence_lock_error();
 }
-@end
-@interface __gnu_cxx::__concurrence_unlock_error
-{
+class __gnu_cxx::__concurrence_unlock_error {
+  public:
+    void what() const;
+    ~__concurrence_unlock_error();
 }
-@end
-@interface std::bad_cast
-{
+class std::bad_cast {
+  public:
+    ~bad_cast();
+    void what() const;
 }
-@end
-@interface std::bad_typeid
-{
+class std::bad_typeid {
+  public:
+    ~bad_typeid();
+    void what() const;
 }
-@end
 EOF
 RUN
 
