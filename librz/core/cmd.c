@@ -1437,10 +1437,7 @@ static int cmd_rebase(RzCore *core, const char *input) {
 	rz_debug_bp_rebase(core->dbg, addr, core->offset);
 	rz_bin_set_baddr(core->bin, core->offset);
 	rz_flag_move(core->flags, addr, core->offset);
-	rz_core_cmd0(core, ".is*");
-	rz_core_cmd0(core, ".iM*");
-	rz_core_cmd0(core, ".ii*");
-	rz_core_cmd0(core, ".iz*");
+	rz_core_bin_apply_all_info(core, rz_bin_cur(core->bin));
 	// TODO: rz_analysis_move :??
 	// TODO: differentiate analysis by map ranges (associated with files or memory maps)
 	return 0;

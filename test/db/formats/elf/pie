@@ -25,11 +25,11 @@ NAME=ELF: rz-bin entrypoint with baddr
 FILE==
 CMDS=<<EOF
 !rz-bin -I -B 0x300000 bins/elf/analysis/pie | grep baddr
-!rz-bin -e -B 0x300000 bins/elf/analysis/pie | sed -n '2 p'
+!rz-bin -e -B 0x300000 bins/elf/analysis/pie | grep program
 EOF
 EXPECT=<<EOF
-baddr    0x300000
-vaddr=0x00300450 paddr=0x00000450 haddr=0x00000018 hvaddr=0x00300018 type=program
+baddr    0x00300000
+0x00300450 0x00000450 0x00300018 0x00000018 program
 EOF
 RUN
 
@@ -45,7 +45,7 @@ NAME=ELF: simple.elf - code
 FILE=bins/elf/analysis/pie
 ARGS=-n
 CMDS=<<EOF
-.!rz-bin -rps bins/elf/analysis/pie
+oba
 ?v sym.main
 e asm.arch=x86
 e asm.bits=32
@@ -65,7 +65,7 @@ NAME=ELF: simple.elf - code
 FILE=bins/elf/analysis/pie
 ARGS=-n -b32
 CMDS=<<EOF
-.!rz-bin -rps bins/elf/analysis/pie
+oba
 e asm.arch=x86
 e asm.bits=32
 pi 5 @ sym.main

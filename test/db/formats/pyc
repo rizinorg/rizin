@@ -1,12 +1,3 @@
-NAME=pyc load version39
-FILE=bins/pyc/py39.pyc
-CMDS=<<EOF
-iI~machine
-EOF
-EXPECT=<<EOF
-EOF
-RUN
-
 NAME=pyc load version38
 FILE=bins/pyc/py38.pyc
 CMDS=<<EOF

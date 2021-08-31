@@ -223,9 +223,9 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 					ut64 addr = rz_num_math(core->num, arg);
 					RzBinOptions opt;
 					rz_core_bin_options_init(core, &opt, desc->fd, addr, 0);
-					rz_bin_open_io(core->bin, &opt);
+					RzBinFile *bf = rz_bin_open_io(core->bin, &opt);
 					rz_io_desc_close(desc);
-					rz_core_cmd0(core, ".is*");
+					rz_core_bin_apply_all_info(core, bf);
 					rz_io_use_fd(core->io, saved_fd);
 				} else {
 					eprintf("Cannot open %s\n", filename + 1);
@@ -239,8 +239,8 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 					RzBinOptions opt;
 					opt.sz = 1024 * 1024 * 1;
 					rz_core_bin_options_init(core, &opt, desc->fd, baddr, addr);
-					rz_bin_open_io(core->bin, &opt);
-					rz_core_cmd0(core, ".is*");
+					RzBinFile *bf = rz_bin_open_io(core->bin, &opt);
+					rz_core_bin_apply_all_info(core, bf);
 				} else {
 					eprintf("No file to load bin from?\n");
 				}
@@ -252,8 +252,8 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 					RzBinOptions opt;
 					opt.sz = 1024 * 1024 * 1;
 					rz_core_bin_options_init(core, &opt, desc->fd, addr, addr);
-					rz_bin_open_io(core->bin, &opt);
-					rz_core_cmd0(core, ".is*");
+					RzBinFile *bf = rz_bin_open_io(core->bin, &opt);
+					rz_core_bin_apply_all_info(core, bf);
 				} else {
 					eprintf("No file to load bin from?\n");
 				}
@@ -273,8 +273,8 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 				int fd = (size_t)_fd;
 				RzBinOptions opt;
 				rz_core_bin_options_init(core, &opt, fd, core->offset, 0);
-				rz_bin_open_io(core->bin, &opt);
-				rz_core_cmd0(core, ".ies*");
+				RzBinFile *bf = rz_bin_open_io(core->bin, &opt);
+				rz_core_bin_apply_all_info(core, bf);
 				break;
 			}
 			rz_list_free(files);
@@ -310,7 +310,7 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 	}
 	case 'r': // "obr"
 		rz_core_bin_rebase(core, rz_num_math(core->num, input + 3));
-		rz_core_cmd0(core, ".is*");
+		rz_core_bin_apply_all_info(core, rz_bin_cur(core->bin));
 		break;
 	case 'f':
 		if (input[2] == ' ') {

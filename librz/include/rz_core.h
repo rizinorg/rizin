@@ -871,7 +871,7 @@ RZ_API void rz_core_bin_whole_strings_print(RzCore *core, RzCmdStateOutput *stat
 RZ_API void rz_core_file_info_print(RzCore *core, RzCmdStateOutput *state);
 RZ_API void rz_core_bin_info_print(RzCore *core, RzCmdStateOutput *state);
 RZ_API void rz_core_bin_classes_print(RzCore *core, RzCmdStateOutput *state);
-RZ_API bool rz_core_bin_class_as_source_print(RzCore *core, RzCmdStateOutput *state, const char *class_name);
+RZ_API bool rz_core_bin_class_as_source_print(RzCore *core, const char *class_name);
 RZ_API bool rz_core_bin_class_fields_print(RzCore *core, RzCmdStateOutput *state, const char *class_name);
 RZ_API bool rz_core_bin_class_methods_print(RzCore *core, RzCmdStateOutput *state, const char *class_name);
 RZ_API void rz_core_bin_signatures_print(RzCore *core, RzCmdStateOutput *state);

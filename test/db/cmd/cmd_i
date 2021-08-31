@@ -535,9 +535,9 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=icl
+NAME=icc
 FILE=bins/elf/libmagic.so
-CMDS=icl
+CMDS=icc
 EXPECT=<<EOF
 class _JNIEnv {
   public:
@@ -1432,7 +1432,6 @@ NAME=iaq
 FILE=bins/elf/libmagic.so
 CMDS=iaq
 EXPECT=<<EOF
-[Info]
 arch arm
 bits 16
 os linux
@@ -1440,7 +1439,6 @@ endian little
 minopsz 2
 maxopsz 4
 pcalign 2
-[Imports]
 __cxa_finalize
 __cxa_atexit
 malloc
@@ -1479,9 +1477,7 @@ sprintf
 strncmp
 pthread_mutex_lock
 pthread_mutex_unlock
-[Entries]
 0x00005fa8
-[Exports]
 0x00007c70 10 __aeabi_unwind_cpp_pr0
 0x00006108 48 getPackageName(_JNIEnv*, _jobject*)
 0x00006138 164 JstringToString(_JNIEnv*, _jstring*)
@@ -1682,7 +1678,6 @@ pthread_mutex_unlock
 0x00012c2c 40 std::bad_typeid::~bad_typeid()
 0x00012c54 28 std::bad_typeid::~bad_typeid()
 0x00014b58 15 typeinfo name for std::bad_typeid
-[Classes]
 0x00000000 [0x00006060 - 0x0000697c] _JNIEnv
 0x00000000 [0x0000699c - 0x000074f8] SystemClassLoaderInjector
 0x00000000 [0x0000886c - 0x000094c8] std
@@ -1703,7 +1698,6 @@ pthread_mutex_unlock
 0x00000000 [0x000126c0 - 0x000126d0] __gnu_cxx::__concurrence_unlock_error
 0x00000000 [0x00012bc8 - 0x00012bd8] std::bad_cast
 0x00000000 [0x00012c1c - 0x00012c2c] std::bad_typeid
-[Symbols]
 0x00006060 10 _JNIEnv::FindClass(char const*)
 0x00007c7a 10 __aeabi_unwind_cpp_pr1
 0x0000606a 10 _JNIEnv::DeleteLocalRef(_jobject*)
@@ -2112,7 +2106,6 @@ pthread_mutex_unlock
 0x00005f84 16 imp.strncmp
 0x00005f90 16 imp.pthread_mutex_lock
 0x00005f9c 16 imp.pthread_mutex_unlock
-[Sections]
 vaddr      vsize  perm name                   
 ----------------------------------------------
 0x00000000 0x0    ---- 
@@ -2140,8 +2133,6 @@ vaddr      vsize  perm name
 0x00000000 0x1c   ---- .note.gnu.gold-version
 0x00000000 0x2b   ---- .ARM.attributes
 0x00000000 0xf3   ---- .shstrtab
-[Memory]
-[Strings]
 0x139ac 15 14 getPackageName
 0x139bb 21 20 ()Ljava/lang/String;
 0x139d0 17 16 java/lang/String
@@ -5246,7 +5237,6 @@ CMDS=is.q
 EXPECT=<<EOF
 0x00400410 0 .text
 0x00400410 0 _start
-0x00400400 16 imp.__gmon_start__
 EOF
 RUN
 

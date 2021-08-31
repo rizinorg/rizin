@@ -1199,7 +1199,7 @@ static bool add_footer(RzCmdStateOutput *state) {
 }
 
 static void add_header(RzCmdStateOutput *state, const char *header) {
-	if (state->mode == RZ_OUTPUT_MODE_TABLE || state->mode == RZ_OUTPUT_MODE_QUIET) {
+	if (state->mode == RZ_OUTPUT_MODE_TABLE) {
 		rz_cons_printf("[%c%s]\n", toupper(header[0]), header + 1);
 	} else if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_k(state->d.pj, header);
@@ -1483,8 +1483,8 @@ RZ_IPI RzCmdStatus rz_cmd_info_classes_handler(RzCore *core, int argc, const cha
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_cmd_info_class_as_source_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	if (rz_core_bin_class_as_source_print(core, state, argv[1])) {
+RZ_IPI RzCmdStatus rz_cmd_info_class_as_source_handler(RzCore *core, int argc, const char **argv) {
+	if (rz_core_bin_class_as_source_print(core, argv[1])) {
 		return RZ_CMD_STATUS_OK;
 	}
 	return RZ_CMD_STATUS_ERROR;

@@ -1,23 +1,3 @@
-NAME=ELF: arm relocs
-FILE=bins/elf/analysis/arm-relocs
-CMDS=<<EOF
-ir*~reloc?
-ir*~!1
-EOF
-EXPECT=<<EOF
-11
-fs relocs
-"f reloc.r0 4 0x08000034"
-"f reloc.r2 4 0x0800003c"
-"f reloc.r3 4 0x08000040"
-"f reloc.r4 4 0x08000044"
-"f reloc.r0 4 0x0800004c"
-"f reloc.r2 4 0x08000054"
-"f reloc.r3 4 0x08000058"
-"f reloc.r4 4 0x0800005c"
-EOF
-RUN
-
 NAME=ELF: ppc relocs
 FILE=bins/elf/hello.ppc
 CMDS=<<EOF
@@ -46,12 +26,12 @@ RUN
 NAME=ELF: arm sh relocs
 FILE=bins/elf/r2pay-arm32.so
 CMDS=<<EOF
-ir*~reloc?
+ir~?
 s section..init_array
 pd 10
 EOF
 EXPECT=<<EOF
-366
+427
             ;-- section..init_array:
             ;-- .datadiv_decode1794556967687044894:
             0x000b58c4      .dword 0x00004560 ; reloc.target..datadiv_decode1794556967687044894 ; sym..datadiv_decode1794556967687044894; RELOC 32 .datadiv_decode1794556967687044894 @ 0x00004560 ; [15] -rw- section size 364 named .init_array
@@ -77,12 +57,12 @@ RUN
 NAME=ELF: arm64 sh relocs
 FILE=bins/elf/r2pay-arm64.so
 CMDS=<<EOF
-ir*~reloc?
+ir~?
 s section..init_array
 pd 10
 EOF
 EXPECT=<<EOF
-175
+231
             ;-- section..init_array:
             ;-- segment.LOAD1:
             0x00126510      .qword 0x0000000000005a6c ; sym..datadiv_decode9958896245423089702 ; [13] -rw- section size 728 named .init_array

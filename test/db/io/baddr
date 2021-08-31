@@ -15,15 +15,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=3: io.baddr
-FILE=bins/elf/analysis/pie
-CMDS=!rz-bin -B 0xf00000 -re ${RZ_FILE} | grep 0x
-EXPECT=<<EOF
-"f entry0 1 0x00f00450"
-"f entry0_haddr 1 0x00000018"
-EOF
-RUN
-
 NAME=io.baddr entry0 data
 FILE=bins/elf/analysis/pie
 CMDS=<<EOF
@@ -68,12 +59,9 @@ NAME=4: io.baddr
 FILE=bins/elf/analysis/pie
 ARGS=-B 0xf00000
 CMDS=<<EOF
-!rz-bin -B 0xf00000 -re ${RZ_FILE} | grep 0x
 p8 10 @ 0x00f00450
 EOF
 EXPECT=<<EOF
-"f entry0 1 0x00f00450"
-"f entry0_haddr 1 0x00000018"
 31ed5e89e183e4f05054
 EOF
 RUN

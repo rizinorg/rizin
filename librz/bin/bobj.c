@@ -488,7 +488,7 @@ RZ_API int rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
 		}
 		REBASE_PADDR(o, o->strings, RzBinString);
 	}
-	if (bin->filter_rules & RZ_BIN_REQ_CLASSES) {
+	if (bin->filter_rules & (RZ_BIN_REQ_CLASSES | RZ_BIN_REQ_CLASSES_SOURCES)) {
 		if (p->classes) {
 			RzList *classes = p->classes(bf);
 			if (classes) {

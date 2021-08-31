@@ -266,7 +266,7 @@ RUN
 
 NAME=Output java class source-code-like
 FILE=bins/java/jdwpexeccmd.class
-CMDS=javas ; icl
+CMDS=javas ; icc
 EXPECT=<<EOF
 import java.lang.Object;
 import java.lang.StringBuilder;

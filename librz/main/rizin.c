@@ -1125,7 +1125,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 					eprintf("Warning: using oba to load the syminfo from different mapaddress.\n");
 					// load symbols when using rz -m 0x1000 /bin/ls
 					rz_core_cmdf(r, "oba 0 0x%" PFMT64x, mapaddr);
-					rz_core_cmd0(r, ".ies*");
 				}
 			}
 		} else {

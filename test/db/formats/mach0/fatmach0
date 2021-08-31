@@ -150,9 +150,9 @@ RUN
 NAME=fatmach0 entry1 rz-bin (2)
 FILE=bins/mach0/fatmach0-3true
 ARGS=-n
-CMDS=!rz-bin -a x86 -b 32 -e bins/mach0/fatmach0-3true | grep paddr=
+CMDS=!rz-bin -a x86 -b 32 -e bins/mach0/fatmach0-3true | grep program
 EXPECT=<<EOF
-vaddr=0x00001f44 paddr=0x00005f44 haddr=0x00000420 type=program
+0x00001f44 0x00005f44 ---------- 0x00000420 program
 EOF
 RUN
 
@@ -197,10 +197,14 @@ CMDS=<<EOF
 !rz-bin -Aj bins/mach0/fatmach0-3true
 EOF
 EXPECT=<<EOF
-000 0x00001000 13792 x86_64 x86 64 all
-001 0x00005000 13760 x86_32 386
-002 0x00009000 13616 ppc_32 7400
-{"bins":[{"arch":"x86","bits":64,"offset":4096,"size":13792,"machine":"x86 64 all"},{"arch":"x86","bits":32,"offset":20480,"size":13760,"machine":"386"},{"arch":"ppc","bits":32,"offset":36864,"size":13616,"machine":"7400"}]}
+[Archs]
+offset     size  arch   machine    
+-----------------------------------
+0x00001000 13792 x86_64 x86 64 all
+0x00005000 13760 x86_32 386
+0x00009000 13616 ppc_32 7400
+
+{"archs":[{"arch":"x86","bits":64,"offset":4096,"size":13792,"machine":"x86 64 all"},{"arch":"x86","bits":32,"offset":20480,"size":13760,"machine":"386"},{"arch":"ppc","bits":32,"offset":36864,"size":13616,"machine":"7400"}]}
 EOF
 RUN
 
