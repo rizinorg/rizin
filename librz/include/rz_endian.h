@@ -65,6 +65,23 @@ static inline void rz_write_at_be16(void *dest, ut16 val, size_t offset) {
 	rz_write_be16(d, val);
 }
 
+static inline ut32 rz_read_be24(const void *src) {
+	return rz_read_be8(src) << 16 | rz_read_be8((const ut8 *)src + 1) << 8 |
+		rz_read_be8((const ut8 *)src + 2);
+}
+
+static inline ut32 rz_read_at_be24(const void *src, size_t offset) {
+	const ut8 *s = (const ut8 *)src + offset;
+	return rz_read_be24(s);
+}
+
+static inline void rz_write_be24(void *_dest, ut32 val) {
+	ut8 *dest = (ut8 *)_dest;
+	rz_write_be8(dest++, val >> 16);
+	rz_write_be8(dest++, val >> 8);
+	rz_write_be8(dest, val);
+}
+
 static inline ut32 rz_read_be32(const void *src) {
 	const ut8 *s = (const ut8 *)src;
 	return (((ut32)s[0]) << 24) | (((ut32)s[1]) << 16) |
@@ -79,13 +96,6 @@ static inline ut32 rz_read_at_be32(const void *src, size_t offset) {
 static inline void rz_write_be32(void *dest, ut32 val) {
 	rz_write_be16(dest, val >> 16);
 	rz_write_at_be16(dest, val, sizeof(ut16));
-}
-
-static inline void rz_write_be24(void *_dest, ut32 val) {
-	ut8 *dest = (ut8 *)_dest;
-	rz_write_be8(dest++, val >> 16);
-	rz_write_be8(dest++, val >> 8);
-	rz_write_be8(dest, val);
 }
 
 static inline void rz_write_at_be32(void *dest, ut32 val, size_t offset) {
@@ -554,15 +564,6 @@ static inline void rz_write_ble(void *dst, ut64 val, bool big_endian, int size) 
 		break;
 	}
 }
-
-// TODO: find better names and write vapis
-#define ut8p_b(x)  ((x)[0])
-#define ut8p_bw(x) ((x)[0] | ((x)[1] << 8))
-#define ut8p_bd(x) ((x)[0] | ((x)[1] << 8) | ((x)[2] << 16) | ((x)[3] << 24))
-#define ut8p_bq(x) ((x)[0] | ((x)[1] << 8) | ((x)[2] << 16) | ((x)[3] << 24) | ((x)[4] << 32) | ((x)[5] << 40) | ((x)[6] << 48) | ((x)[7] << 56))
-#define ut8p_lw(x) ((x)[1] | ((x)[0] << 8))
-#define ut8p_ld(x) ((x)[3] | ((x)[2] << 8) | ((x)[1] << 16) | ((x)[0] << 24))
-#define ut8p_lq(x) ((x)[7] | ((x)[6] << 8) | ((x)[5] << 16) | ((x)[4] << 24) | ((x)[3] << 32) | ((x)[2] << 40) | ((x)[1] << 48) | ((x)[0] << 56))
 
 /*swap*/
 static inline ut16 rz_swap_ut16(ut16 val) {
