@@ -61,7 +61,7 @@ void pp_value_push_constant_int(CPreprocessorState *state, int v) {
 		return;
 	}
 	cval->i = v;
-	cval->r = VT_CONST;
+	cval->flags = VT_CONST;
 	pp_value_push(state, cval);
 }
 
@@ -71,7 +71,7 @@ void pp_value_push_constant_ut64(CPreprocessorState *state, ut64 v) {
 		return;
 	}
 	cval->ull = v;
-	cval->r = VT_CONST;
+	cval->flags = VT_CONST;
 	pp_value_push(state, cval);
 }
 
@@ -81,7 +81,7 @@ void pp_value_push_constant_size(CPreprocessorState *state, size_t v) {
 		return;
 	}
 	cval->ull = v;
-	cval->r = VT_CONST;
+	cval->flags = VT_CONST;
 	pp_value_push(state, cval);
 }
 
@@ -150,7 +150,7 @@ static void unary(CPreprocessorState *state) {
 		next(state);
 		unary(state);
 		// Invert the symbol
-		if ((vtop->r & PP_C_TYPE_VALMASK) == PP_C_TYPE_CMP) {
+		if ((vtop->flags & PP_C_TYPE_VALMASK) == PP_C_TYPE_CMP) {
 			vtop->c.i = vtop->c.i ^ 1;
 		}
 		break;
@@ -191,11 +191,11 @@ static void unary(CPreprocessorState *state) {
 				   compilation unit. */
 				r = PP_C_TYPE_SYM | PP_C_TYPE_CONST;
 			} else {
-				r = s->r;
+				r = s->flags;
 			}
 			vset(&s->type, r, s->c);
 			/* if forward reference, we must point to s */
-			if (vtop->r & PP_C_TYPE_SYM) {
+			if (vtop->flags & PP_C_TYPE_SYM) {
 				vtop->sym = s;
 				vtop->c.ul = 0;
 			}

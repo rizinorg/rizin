@@ -16,6 +16,7 @@ typedef union CValue {
 	double d;
 	float f;
 	int i;
+	unsigned int flags;
 	unsigned int ui;
 	unsigned int ul; /* address (should be unsigned long on 64 bit cpu) */
 	long long ll;
@@ -37,6 +38,7 @@ typedef struct TokenString {
 typedef struct Sym {
 	int v; /* symbol token */
 	int t; /* type of the symbol */
+	unsigned int flags; /* symbol flags */
 	unsigned int label_flags; /* label flags */
 	union {
 		long long c; /* associated number */
