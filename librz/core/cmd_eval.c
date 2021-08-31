@@ -678,23 +678,23 @@ RZ_IPI RzCmdStatus rz_eval_list_handler(RzCore *core, int argc, const char **arg
 	const char *arg = argc > 1 ? argv[1] : "";
 	switch (mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
-		rz_core_config_print_all(core->config, arg, 2);
+		rz_core_config_print_all(core->config, arg, RZ_OUTPUT_MODE_STANDARD);
 		break;
 	case RZ_OUTPUT_MODE_JSON:
-		rz_core_config_print_all(core->config, arg, 'j');
+		rz_core_config_print_all(core->config, arg, RZ_OUTPUT_MODE_JSON);
 		break;
 	case RZ_OUTPUT_MODE_RIZIN:
-		rz_core_config_print_all(core->config, arg, 1);
+		rz_core_config_print_all(core->config, arg, RZ_OUTPUT_MODE_RIZIN);
 		break;
 	case RZ_OUTPUT_MODE_QUIET:
-		rz_core_config_print_all(core->config, arg, 'q');
+		rz_core_config_print_all(core->config, arg, RZ_OUTPUT_MODE_QUIET);
 		break;
 	case RZ_OUTPUT_MODE_LONG:
-		rz_core_config_print_all(core->config, arg, 'v');
+		rz_core_config_print_all(core->config, arg, RZ_OUTPUT_MODE_LONG);
 		break;
 	case RZ_OUTPUT_MODE_LONG_JSON: {
 		char *a = rz_str_newf("j%s", arg);
-		rz_core_config_print_all(core->config, a, 'v');
+		rz_core_config_print_all(core->config, a, RZ_OUTPUT_MODE_LONG);
 		free(a);
 		break;
 	}
@@ -741,7 +741,43 @@ RZ_IPI RzCmdStatus rz_eval_readonly_handler(RzCore *core, int argc, const char *
 
 RZ_IPI RzCmdStatus rz_eval_spaces_handler(RzCore *core, int argc, const char **argv) {
 	const char *arg = argc > 1 ? argv[1] : "";
-	rz_core_config_print_all(core->config, arg, 's');
+	RzConfigNode *node;
+	RzListIter *iter;
+	arg = rz_str_trim_head_ro(arg);
+	if (arg && *arg) {
+		rz_list_foreach (core->config->nodes, iter, node) {
+			char *space = strdup(node->name);
+			char *dot = strchr(space, '.');
+			if (dot) {
+				*dot = 0;
+			}
+			if (!strcmp(arg, space)) {
+				rz_cons_println(dot + 1);
+			}
+			free(space);
+		}
+	} else {
+		char *oldSpace = NULL;
+		rz_list_foreach (core->config->nodes, iter, node) {
+			char *space = strdup(node->name);
+			char *dot = strchr(space, '.');
+			if (dot) {
+				*dot = 0;
+			}
+			if (oldSpace) {
+				if (!strcmp(space, oldSpace)) {
+					free(space);
+					continue;
+				}
+				free(oldSpace);
+				oldSpace = space;
+			} else {
+				oldSpace = space;
+			}
+			rz_cons_println(space);
+		}
+		free(oldSpace);
+	}
 	return RZ_CMD_STATUS_OK;
 }
 

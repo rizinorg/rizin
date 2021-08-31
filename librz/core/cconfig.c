@@ -1751,7 +1751,7 @@ static void __evalString(RzConfig *cfg, char *name) {
 		}
 	} else {
 		if (rz_str_endswith(name, ".")) {
-			rz_core_config_print_all(cfg, name, 0);
+			rz_core_config_print_all(cfg, name, RZ_OUTPUT_MODE_QUIET);
 		} else {
 			const char *v = rz_config_get(cfg, name);
 			if (v) {
@@ -1769,7 +1769,7 @@ RZ_API bool rz_core_config_eval_and_print(RzCore *core, const char *str, bool ma
 	char *s = rz_str_trim_dup(str);
 
 	if (!*s || !strcmp(s, "help")) {
-		rz_core_config_print_all(core->config, NULL, 0);
+		rz_core_config_print_all(core->config, NULL, RZ_OUTPUT_MODE_QUIET);
 		free(s);
 		return false;
 	}
@@ -1849,7 +1849,7 @@ static void config_print_node(RzConfig *cfg, RzConfigNode *node, const char *pfx
 	}
 }
 
-RZ_API void rz_core_config_print_all(RzConfig *cfg, const char *str, int rad) {
+RZ_API void rz_core_config_print_all(RzConfig *cfg, const char *str, RzOutputMode mode) {
 	rz_return_if_fail(cfg);
 	RzConfigNode *node;
 	RzListIter *iter;
@@ -1864,7 +1864,7 @@ RZ_API void rz_core_config_print_all(RzConfig *cfg, const char *str, int rad) {
 		if (len > 0 && str[0] == 'j') {
 			str++;
 			len--;
-			rad = 'J';
+			mode = RZ_OUTPUT_MODE_JSON;
 		}
 		if (len > 0 && str[0] == ' ') {
 			str++;
@@ -1876,19 +1876,19 @@ RZ_API void rz_core_config_print_all(RzConfig *cfg, const char *str, int rad) {
 		}
 	}
 
-	switch (rad) {
-	case 1:
+	switch (mode) {
+	case RZ_OUTPUT_MODE_RIZIN:
 		pfx = "\"e ";
 		sfx = "\"";
 	/* fallthrou */
-	case 0:
+	case RZ_OUTPUT_MODE_QUIET:
 		rz_list_foreach (cfg->nodes, iter, node) {
 			if (!str || (str && (!strncmp(str, node->name, len)))) {
 				config_print_node(cfg, node, pfx, sfx, NULL, RZ_OUTPUT_MODE_QUIET);
 			}
 		}
 		break;
-	case 2:
+	case RZ_OUTPUT_MODE_STANDARD:
 		rz_list_foreach (cfg->nodes, iter, node) {
 			if (!str || (str && (!strncmp(str, node->name, len)))) {
 				if (!str || !strncmp(str, node->name, len)) {
@@ -1898,43 +1898,7 @@ RZ_API void rz_core_config_print_all(RzConfig *cfg, const char *str, int rad) {
 			}
 		}
 		break;
-	case 's':
-		if (str && *str) {
-			rz_list_foreach (cfg->nodes, iter, node) {
-				char *space = strdup(node->name);
-				char *dot = strchr(space, '.');
-				if (dot) {
-					*dot = 0;
-				}
-				if (!strcmp(str, space)) {
-					rz_cons_println(dot + 1);
-				}
-				free(space);
-			}
-		} else {
-			char *oldSpace = NULL;
-			rz_list_foreach (cfg->nodes, iter, node) {
-				char *space = strdup(node->name);
-				char *dot = strchr(space, '.');
-				if (dot) {
-					*dot = 0;
-				}
-				if (oldSpace) {
-					if (!strcmp(space, oldSpace)) {
-						free(space);
-						continue;
-					}
-					free(oldSpace);
-					oldSpace = space;
-				} else {
-					oldSpace = space;
-				}
-				rz_cons_println(space);
-			}
-			free(oldSpace);
-		}
-		break;
-	case 'v':
+	case RZ_OUTPUT_MODE_LONG:
 		pj = pj_new();
 		if (!pj) {
 			return;
@@ -1949,16 +1913,7 @@ RZ_API void rz_core_config_print_all(RzConfig *cfg, const char *str, int rad) {
 		rz_cons_println(pj_string(pj));
 		pj_free(pj);
 		break;
-	case 'q':
-		rz_list_foreach (cfg->nodes, iter, node) {
-			if (!str || (str && (!strncmp(str, node->name, len)))) {
-				rz_cons_println(node->name);
-			}
-		}
-		break;
-	case 'J':
-	/* fallthrou */
-	case 'j':
+	case RZ_OUTPUT_MODE_JSON:
 		if (!pj) {
 			pj = pj_new();
 		}
@@ -1971,6 +1926,8 @@ RZ_API void rz_core_config_print_all(RzConfig *cfg, const char *str, int rad) {
 		pj_end(pj);
 		rz_cons_println(pj_string(pj));
 		pj_free(pj);
+		break;
+	default:
 		break;
 	}
 }
