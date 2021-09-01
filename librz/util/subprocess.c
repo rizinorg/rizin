@@ -992,10 +992,14 @@ RZ_API RzSubprocessWaitReason rz_subprocess_wait(RzSubprocess *proc, ut64 timeou
  * \param buf_size Number of bytes to send
  */
 RZ_API ssize_t rz_subprocess_stdin_write(RzSubprocess *proc, const ut8 *buf, size_t buf_size) {
+	ssize_t written = -1;
 	if (proc->stdin_fd == -1) {
-		return -1;
+		return written;
 	}
-	return write(proc->stdin_fd, buf, buf_size);
+	rz_sys_signal(SIGPIPE, SIG_IGN);
+	written = write(proc->stdin_fd, buf, buf_size);
+	rz_sys_signal(SIGPIPE, SIG_DFL);
+	return written;
 }
 
 /**

@@ -203,9 +203,13 @@ RZ_OWN RzVector *Elf_(rz_bin_elf_relocs_new)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
 	HtUU *set = ht_uu_new0();
+	if (!set) {
+		return NULL;
+	}
 
 	RzVector *result = rz_vector_new(sizeof(RzBinElfReloc), NULL, NULL);
 	if (!result) {
+		ht_uu_free(set);
 		return NULL;
 	}
 
