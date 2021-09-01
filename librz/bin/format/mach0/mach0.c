@@ -1004,9 +1004,6 @@ static int parse_thread(struct MACH0_(obj_t) * bin, struct load_command *lc, ut6
 		goto wrong_read;
 	}
 	flavor = rz_read_ble32(tmp, bin->big_endian);
-	if (len == -1) {
-		goto wrong_read;
-	}
 
 	if (off + sizeof(struct thread_command) + sizeof(flavor) > bin->size ||
 		off + sizeof(struct thread_command) + sizeof(flavor) + sizeof(ut32) > bin->size) {
