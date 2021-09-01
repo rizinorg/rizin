@@ -1806,9 +1806,24 @@ static void config_print_node(RzConfig *cfg, RzConfigNode *node, const char *pfx
 	char *es = NULL;
 
 	if (mode == RZ_OUTPUT_MODE_JSON) {
+		if (rz_str_isnumber(node->value)) {
+			pj_kn(pj, node->name, rz_num_math(NULL, node->value));
+			return;
+		} else if (rz_str_is_bool(node->value)) {
+			pj_kb(pj, node->name, (node->value));
+			return;
+		}
+		pj_ks(pj, node->name, node->value);
+	} else if (mode == RZ_OUTPUT_MODE_LONG_JSON) {
 		pj_o(pj);
 		pj_ks(pj, "name", node->name);
-		pj_ks(pj, "value", node->value);
+		if (rz_str_isnumber(node->value)) {
+			pj_kn(pj, "value", rz_num_math(NULL, node->value));
+		} else if (rz_str_is_bool(node->value)) {
+			pj_kb(pj, "value", (node->value));
+		} else {
+			pj_ks(pj, "value", node->value);
+		}
 		pj_ks(pj, "type", rz_config_node_type(node));
 		es = rz_str_escape(node->desc);
 		if (es) {
@@ -1864,7 +1879,6 @@ RZ_API void rz_core_config_print_all(RzConfig *cfg, const char *str, RzOutputMod
 		if (len > 0 && str[0] == 'j') {
 			str++;
 			len--;
-			mode = RZ_OUTPUT_MODE_JSON;
 		}
 		if (len > 0 && str[0] == ' ') {
 			str++;
@@ -1899,14 +1913,20 @@ RZ_API void rz_core_config_print_all(RzConfig *cfg, const char *str, RzOutputMod
 		}
 		break;
 	case RZ_OUTPUT_MODE_LONG:
-		pj = pj_new();
+		rz_list_foreach (cfg->nodes, iter, node) {
+			if (!str || (str && (!strncmp(str, node->name, len)))) {
+				config_print_node(cfg, node, pfx, sfx, pj, RZ_OUTPUT_MODE_LONG);
+			}
+		}
+		break;
+	case RZ_OUTPUT_MODE_LONG_JSON:
 		if (!pj) {
-			return;
+			pj = pj_new();
 		}
 		pj_a(pj);
 		rz_list_foreach (cfg->nodes, iter, node) {
 			if (!str || (str && (!strncmp(str, node->name, len)))) {
-				config_print_node(cfg, node, pfx, sfx, pj, RZ_OUTPUT_MODE_JSON);
+				config_print_node(cfg, node, pfx, sfx, pj, RZ_OUTPUT_MODE_LONG_JSON);
 			}
 		}
 		pj_end(pj);
@@ -1917,7 +1937,7 @@ RZ_API void rz_core_config_print_all(RzConfig *cfg, const char *str, RzOutputMod
 		if (!pj) {
 			pj = pj_new();
 		}
-		pj_a(pj);
+		pj_o(pj);
 		rz_list_foreach (cfg->nodes, iter, node) {
 			if (!str || (str && (!strncmp(str, node->name, len)))) {
 				config_print_node(cfg, node, pfx, sfx, pj, RZ_OUTPUT_MODE_JSON);
@@ -1925,8 +1945,7 @@ RZ_API void rz_core_config_print_all(RzConfig *cfg, const char *str, RzOutputMod
 		}
 		pj_end(pj);
 		rz_cons_println(pj_string(pj));
-		pj_free(pj);
-		break;
+		pj_free(pj);	
 	default:
 		break;
 	}

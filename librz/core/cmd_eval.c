@@ -633,7 +633,7 @@ RZ_IPI int rz_cmd_eval(void *data, const char *input) {
 
 RZ_IPI RzCmdStatus rz_eval_getset_handler(RzCore *core, int argc, const char **argv) {
 	if (argc == 1) {
-		rz_core_config_print_all(core->config, NULL, 0);
+		rz_core_config_print_all(core->config, NULL, RZ_OUTPUT_MODE_QUIET);
 		return RZ_CMD_STATUS_OK;
 	}
 
@@ -655,7 +655,7 @@ RZ_IPI RzCmdStatus rz_eval_getset_handler(RzCore *core, int argc, const char **a
 
 		if (llen == 1 && rz_str_endswith(key, ".")) {
 			// no value was set, only key with ".". List possible sub-keys.
-			rz_core_config_print_all(core->config, key, false);
+			rz_core_config_print_all(core->config, key, RZ_OUTPUT_MODE_QUIET);
 		} else if (llen == 1) {
 			// no value was set, show the value of the key
 			const char *v = rz_config_get(core->config, key);
@@ -694,7 +694,7 @@ RZ_IPI RzCmdStatus rz_eval_list_handler(RzCore *core, int argc, const char **arg
 		break;
 	case RZ_OUTPUT_MODE_LONG_JSON: {
 		char *a = rz_str_newf("j%s", arg);
-		rz_core_config_print_all(core->config, a, RZ_OUTPUT_MODE_LONG);
+		rz_core_config_print_all(core->config, a, RZ_OUTPUT_MODE_LONG_JSON);
 		free(a);
 		break;
 	}
