@@ -616,10 +616,10 @@ void hex_set_pkt_info(RZ_INOUT HexPktInfo *i_pkt_info, const ut32 addr) {
 	// We can only know for sure, if the current packet is a valid packet,
 	// if we have seen the instr. before the current one.
 	//
-	// In case the previous instruction belong to a vlaid packet, we are still in a valid packet.
+	// In case the previous instruction belong to a valid packet, we are still in a valid packet.
 	// If it was part of an *invalid* packet, a new *valid* packet only begins, if the previous instruction
 	// was the last of the invalid packet.
-	valid_packet = (prev_addr == (addr - 4) || addr == 0) && (valid_packet || (new_pkt_starts && !valid_packet));
+	valid_packet = (prev_addr == (addr - 4) || addr == 0) && (valid_packet || new_pkt_starts);
 	if (valid_packet) {
 		memcpy(&pkt.i_infos[i], i_pkt_info, sizeof(HexPktInfo));
 	}
@@ -701,7 +701,7 @@ void hex_op_extend(RZ_INOUT HexOp *op, const bool set_new_extender) {
 
 	if (imm_is_extendable(constant_extender, op->type)) {
 		if (imm_is_scaled(op->attr)) {
-			op->op.imm = (op->op.imm >> op->shift); // Extended immediate values won't get scaled. Redo it.
+			op->op.imm = (op->op.imm >> op->shift); // Extended immediate values won't get scaled. Undo it.
 		}
 		op->op.imm = ((op->op.imm) & 0x3F) | (constant_extender);
 	}
