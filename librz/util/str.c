@@ -2551,21 +2551,13 @@ RZ_API void rz_str_range_foreach(const char *r, RzStrRangeCallback cb, void *u) 
 
 RZ_API bool rz_str_range_in(const char *r, ut64 addr) {
 	const char *p = r;
-	ut64 min = UT64_MAX;
-	ut64 max = 0;
 	if (!r) {
 		return false;
 	}
 	for (; *r; r++) {
 		if (*r == ',') {
-			if (max == 0) {
-				if (addr == rz_num_get(NULL, p)) {
-					return true;
-				}
-			} else {
-				if (addr >= min && addr <= rz_num_get(NULL, p)) {
-					return true;
-				}
+			if (addr == rz_num_get(NULL, p)) {
+				return true;
 			}
 			p = r + 1;
 		}
