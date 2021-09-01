@@ -960,14 +960,16 @@ static int cmd_an(RzCore *core, bool use_json, const char *name) {
 			ret = rz_analysis_var_rename(var, name, true)
 				? 0
 				: -1;
-		} else if (use_json) {
-			pj_o(pj);
-			pj_ks(pj, "name", var->name);
-			pj_ks(pj, "type", "var");
-			pj_kn(pj, "offset", tgt_addr);
-			pj_end(pj);
 		} else {
-			rz_cons_println(var->name);
+			if (use_json) {
+				pj_o(pj);
+				pj_ks(pj, "name", var->name);
+				pj_ks(pj, "type", "var");
+				pj_kn(pj, "offset", tgt_addr);
+				pj_end(pj);
+			} else {
+				rz_cons_println(var->name);
+			}
 		}
 	} else if (tgt_addr != UT64_MAX) {
 		RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, tgt_addr);
@@ -975,45 +977,51 @@ static int cmd_an(RzCore *core, bool use_json, const char *name) {
 		if (fcn) {
 			if (name) {
 				ret = rz_analysis_function_rename(fcn, name) ? 0 : -1;
-			} else if (!use_json) {
-				rz_cons_println(fcn->name);
 			} else {
-				pj_o(pj);
-				pj_ks(pj, "name", fcn->name);
-				pj_ks(pj, "type", "function");
-				pj_kn(pj, "offset", tgt_addr);
-				pj_end(pj);
+				if (!use_json) {
+					rz_cons_println(fcn->name);
+				} else {
+					pj_o(pj);
+					pj_ks(pj, "name", fcn->name);
+					pj_ks(pj, "type", "function");
+					pj_kn(pj, "offset", tgt_addr);
+					pj_end(pj);
+				}
 			}
 		} else if (f) {
 			if (name) {
 				ret = rz_flag_rename(core->flags, f, name) ? 0 : -1;
-			} else if (!use_json) {
-				rz_cons_println(f->name);
 			} else {
-				pj_o(pj);
-				if (name) {
-					pj_ks(pj, "old_name", f->name);
-					pj_ks(pj, "new_name", name);
+				if (!use_json) {
+					rz_cons_println(f->name);
 				} else {
-					pj_ks(pj, "name", f->name);
+					pj_o(pj);
+					if (name) {
+						pj_ks(pj, "old_name", f->name);
+						pj_ks(pj, "name", name);
+					} else {
+						pj_ks(pj, "name", f->name);
+					}
+					if (f->realname) {
+						pj_ks(pj, "realname", f->realname);
+					}
+					pj_ks(pj, "type", "flag");
+					pj_kn(pj, "offset", tgt_addr);
+					pj_end(pj);
 				}
-				if (f->realname) {
-					pj_ks(pj, "realname", f->realname);
-				}
-				pj_ks(pj, "type", "flag");
-				pj_kn(pj, "offset", tgt_addr);
-				pj_end(pj);
 			}
 		} else {
 			if (name) {
 				ret = rz_flag_set(core->flags, name, tgt_addr, 1) ? 0 : -1;
-			} else if (!use_json) {
-				rz_cons_printf("0x%" PFMT64x "\n", tgt_addr);
 			} else {
-				pj_o(pj);
-				pj_ks(pj, "type", "address");
-				pj_kn(pj, "offset", tgt_addr);
-				pj_end(pj);
+				if (!use_json) {
+					rz_cons_printf("0x%" PFMT64x "\n", tgt_addr);
+				} else {
+					pj_o(pj);
+					pj_ks(pj, "type", "address");
+					pj_kn(pj, "offset", tgt_addr);
+					pj_end(pj);
+				}
 			}
 		}
 	}
