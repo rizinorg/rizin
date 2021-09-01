@@ -627,7 +627,7 @@ RZ_API RzColor rz_cons_pal_get(const char *key) {
 	for (i = 0; keys[i].name; i++) {
 		if (!strcmp(key, keys[i].name)) {
 			rcolor = RZCOLOR_AT(i);
-			return rcolor ? *rcolor : (RzColor)RzColor_NULL;
+			return *rcolor;
 		}
 	}
 	return (RzColor)RzColor_NULL;
