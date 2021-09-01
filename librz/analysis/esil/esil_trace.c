@@ -377,7 +377,7 @@ static void print_instruction_ops(RzILTraceInstruction *instruction, int idx, Rz
 
 	if (reg) {
 		RzPVector *ops = read ? instruction->read_reg_ops : instruction->write_reg_ops;
-		if (rz_pvector_len(ops)) {
+		if (!rz_pvector_empty(ops)) {
 			rz_cons_printf("%d.reg.%s=", idx, direction);
 			rz_pvector_foreach (ops, it) {
 				RzILTraceRegOp *op = (RzILTraceRegOp *)*it;
