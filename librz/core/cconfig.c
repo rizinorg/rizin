@@ -1894,7 +1894,6 @@ RZ_API void rz_core_config_print_all(RzConfig *cfg, const char *str, RzOutputMod
 	case RZ_OUTPUT_MODE_RIZIN:
 		pfx = "\"e ";
 		sfx = "\"";
-	/* fallthrou */
 	case RZ_OUTPUT_MODE_QUIET:
 		rz_list_foreach (cfg->nodes, iter, node) {
 			if (!str || (str && (!strncmp(str, node->name, len)))) {
@@ -1945,7 +1944,7 @@ RZ_API void rz_core_config_print_all(RzConfig *cfg, const char *str, RzOutputMod
 		}
 		pj_end(pj);
 		rz_cons_println(pj_string(pj));
-		pj_free(pj);	
+		pj_free(pj);
 	default:
 		break;
 	}
