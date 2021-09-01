@@ -381,9 +381,10 @@ static RZ_OWN char *callable_as_string(const RzTypeDB *typedb, RZ_NONNULL const 
 	if (callable->noret) {
 		rz_strbuf_append(buf, "__attribute__((noreturn)) ");
 	}
-	const char *ret_str = callable->ret ? rz_type_as_string(typedb, callable->ret) : NULL;
+	char *ret_str = callable->ret ? rz_type_as_string(typedb, callable->ret) : NULL;
 	char *callable_name = is_ptr ? rz_str_newf("(*%s)", rz_str_get(callable->name)) : strdup(rz_str_get(callable->name));
 	rz_strbuf_appendf(buf, "%s %s(", ret_str ? ret_str : "void", callable_name);
+	free(ret_str);
 	void **it;
 	bool first = true;
 	rz_pvector_foreach (callable->args, it) {
