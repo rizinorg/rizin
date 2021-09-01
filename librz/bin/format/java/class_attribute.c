@@ -429,15 +429,20 @@ bool java_attribute_set_module(Attribute *attr, RzBuffer *buf) {
 	return true;
 
 java_attribute_set_module_bad:
-	rz_warn_if_reached();
-	for (ut32 i = 0; i < am->exports_count; ++i) {
-		free(am->exports[i].to_indices);
+	if (am->exports) {
+		for (ut32 i = 0; i < am->exports_count; ++i) {
+			free(am->exports[i].to_indices);
+		}
 	}
-	for (ut32 i = 0; i < am->opens_count; ++i) {
-		free(am->opens[i].to_indices);
+	if (am->opens) {
+		for (ut32 i = 0; i < am->opens_count; ++i) {
+			free(am->opens[i].to_indices);
+		}
 	}
-	for (ut32 i = 0; i < am->provides_count; ++i) {
-		free(am->provides[i].with_indices);
+	if (am->provides) {
+		for (ut32 i = 0; i < am->provides_count; ++i) {
+			free(am->provides[i].with_indices);
+		}
 	}
 	free(am->uses_index);
 	free(am->exports);
