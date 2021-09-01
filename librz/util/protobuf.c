@@ -70,7 +70,7 @@ static void decode_buffer(RzStrBuf *sb, const ut8 *start, const ut8 *end, ut32 p
 		}
 		//ut8 byte = *buffer;
 		ut8 number = buffer[0] >> 3;
-		ut8 wire = buffer[0] & 0x3;
+		ut8 wire = buffer[0] & 0x7;
 		buffer++;
 		if (buffer < start || buffer >= end) {
 			eprintf("\ninvalid buffer pointer.\n");
