@@ -1021,7 +1021,7 @@ static bool global_var_load_cb(void *user, const char *k, const char *v) {
 	if (!glob) {
 		goto beach;
 	}
-	rz_analysis_var_global_set_type(glob, vartype, core->analysis->typedb);
+	rz_analysis_var_global_set_type(glob, vartype);
 
 	RzTypeConstraint *constr;
 	rz_vector_foreach(&constraints, constr) {

@@ -8111,7 +8111,7 @@ RZ_IPI RzCmdStatus rz_analysis_global_variable_add_handler(RzCore *core, int arg
 	if (!glob) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_analysis_var_global_set_type(glob, typ, core->analysis->typedb);
+	rz_analysis_var_global_set_type(glob, typ);
 
 	if (!rz_analysis_var_global_add(core->analysis, glob)) {
 		rz_analysis_var_global_free(glob);
@@ -8162,7 +8162,7 @@ RZ_IPI RzCmdStatus rz_analysis_global_variable_retype_handler(RzCore *core, int 
 		free(errmsg);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_analysis_var_global_set_type(glob, typ, core->analysis->typedb);
+	rz_analysis_var_global_set_type(glob, typ);
 	return RZ_CMD_STATUS_OK;
 }
 

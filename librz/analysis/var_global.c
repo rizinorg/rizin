@@ -21,7 +21,7 @@ RZ_API RZ_OWN RzAnalysisVarGlobal *rz_analysis_var_global_new(RZ_NONNULL const c
 	glob->name = strdup(name);
 	glob->addr = addr;
 	glob->flag_item = NULL;
-	glob->flags = NULL;
+	glob->analysis = NULL;
 
 	return glob;
 }
@@ -63,8 +63,8 @@ RZ_API RZ_OWN bool rz_analysis_var_global_add(RzAnalysis *analysis, RZ_NONNULL R
 		return false;
 	}
 
-	global_var->flags = analysis->flb.f;
-	global_var->flag_item = rz_flag_set(global_var->flags, global_var->name, global_var->addr, rz_type_db_get_bitsize(analysis->typedb, global_var->type) / 8);
+	global_var->analysis = analysis;
+	global_var->flag_item = rz_flag_set(global_var->analysis->flb.f, global_var->name, global_var->addr, rz_type_db_get_bitsize(global_var->analysis->typedb, global_var->type) / 8);
 
 	return true;
 }
@@ -75,7 +75,7 @@ RZ_API RZ_OWN bool rz_analysis_var_global_add(RzAnalysis *analysis, RZ_NONNULL R
  * \param glob Global variable instance
  * \return void
  */
-RZ_API void rz_analysis_var_global_free(RZ_NONNULL RzAnalysisVarGlobal *glob) {
+RZ_API void rz_analysis_var_global_free(RzAnalysisVarGlobal *glob) {
 	if (!glob) {
 		return;
 	}
@@ -84,12 +84,12 @@ RZ_API void rz_analysis_var_global_free(RZ_NONNULL RzAnalysisVarGlobal *glob) {
 	rz_type_free(glob->type);
 	rz_vector_fini(&glob->constraints);
 
-	if (glob->flag_item && glob->flags && !rz_flag_unset(glob->flags, glob->flag_item)) {
+	if (glob->flag_item && glob->analysis && !rz_flag_unset(glob->analysis->flb.f, glob->flag_item)) {
 		RZ_LOG_ERROR("Failed to unset flag for global variable %s at 0x%" PFMT64x "\n", glob->name, glob->addr);
 	}
 
 	glob->flag_item = NULL;
-	glob->flags = NULL;
+	glob->analysis = NULL;
 	RZ_FREE(glob);
 }
 
@@ -103,12 +103,9 @@ RZ_API void rz_analysis_var_global_free(RZ_NONNULL RzAnalysisVarGlobal *glob) {
 RZ_API bool rz_analysis_var_global_delete(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisVarGlobal *glob) {
 	rz_return_val_if_fail(analysis && glob, false);
 
-	bool ret = false;
-
 	// We need to delete RBTree first because ht_pp_delete will free its member
 	bool deleted = rz_rbtree_delete(&analysis->global_var_tree, &glob->addr, global_var_node_cmp, NULL, NULL, NULL);
-	ret = deleted ? ht_pp_delete(analysis->ht_global_var, glob->name) : deleted;
-	return ret;
+	return deleted ? ht_pp_delete(analysis->ht_global_var, glob->name) : deleted;
 }
 
 /**
@@ -270,13 +267,7 @@ RZ_API bool rz_analysis_var_global_rename(RzAnalysis *analysis, RZ_NONNULL const
 	glob->name = strdup(newname);
 
 	if (glob->flag_item) {
-		if (glob->flag_item->realname != glob->flag_item->name) {
-			RZ_FREE(glob->flag_item->realname);
-		}
-		RZ_FREE(glob->flag_item->name);
-
-		glob->flag_item->realname = strdup(newname);
-		glob->flag_item->name = strdup(newname);
+		rz_flag_rename(analysis->flb.f, glob->flag_item, newname);
 	}
 
 	return ht_pp_update_key(analysis->ht_global_var, old_name, newname);
@@ -287,16 +278,15 @@ RZ_API bool rz_analysis_var_global_rename(RzAnalysis *analysis, RZ_NONNULL const
  * 
  * \param glob Global variable instance
  * \param type The type to set. RzType*
- * \param typedb RzTypeDB for the current analysis instance
  * \return void
  */
-RZ_API void rz_analysis_var_global_set_type(RzAnalysisVarGlobal *glob, RZ_NONNULL RZ_BORROW RzType *type, const RzTypeDB *typedb) {
+RZ_API void rz_analysis_var_global_set_type(RzAnalysisVarGlobal *glob, RZ_NONNULL RZ_BORROW RzType *type) {
 	rz_return_if_fail(glob && type);
 	rz_type_free(glob->type);
 	glob->type = type;
 
-	if (typedb && glob->flag_item) {
-		glob->flag_item->size = rz_type_db_get_bitsize(typedb, glob->type) / 8;
+	if (glob->analysis && glob->flag_item) {
+		glob->flag_item->size = rz_type_db_get_bitsize(glob->analysis->typedb, glob->type) / 8;
 	}
 }
 

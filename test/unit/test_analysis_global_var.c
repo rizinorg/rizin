@@ -14,19 +14,18 @@ bool test_rz_analysis_global_var() {
 	mu_assert_streq(glob->name, "foo", "global var name");
 	mu_assert_eq(glob->addr, 0x1337, "global var address");
 	mu_assert_null(glob->flag_item, "global var flag_item");
-	mu_assert_null(glob->flags, "global var flags");
+	mu_assert_null(glob->analysis, "global var analysis");
 	RzTypeParser *parser = rz_type_parser_new();
 	mu_assert_notnull(parser, "create type parser");
 	char *errmsg = NULL;
 	RzType *typ = rz_type_parse_string_single(parser, "int", &errmsg);
 	mu_assert_notnull(typ, "parsed type");
-	rz_analysis_var_global_set_type(glob, typ, analysis->typedb);
+	rz_analysis_var_global_set_type(glob, typ);
 	mu_assert_streq(glob->type->identifier.name, "int", "global var type");
 
 	bool added = rz_analysis_var_global_add(analysis, glob);
 	mu_assert_true(added, "add global var");
 	mu_assert_notnull(glob->flag_item, "flag_item null");
-	mu_assert_notnull(glob->flags, "flags null");
 
 	glob = NULL;
 	glob = rz_analysis_var_global_get_byaddr_at(analysis, 0x1337);
@@ -49,7 +48,7 @@ bool test_rz_analysis_global_var() {
 	mu_assert_eq(glob->addr, 0x1337, "global var address");
 	mu_assert_streq(glob->type->identifier.name, "int", "global var type");
 
-	RzFlagItem *flag_exists = rz_flag_get(glob->flags, glob->name);
+	RzFlagItem *flag_exists = rz_flag_get(analysis->flb.f, glob->name);
 	mu_assert_notnull(flag_exists, "flag not found");
 
 	bool rename = rz_analysis_var_global_rename(analysis, "foo", "bar");
@@ -74,23 +73,22 @@ bool test_rz_analysis_global_var() {
 	mu_assert_streq(glob->name, "foo", "global var name");
 	mu_assert_eq(glob->addr, 0x1337, "global var address");
 	mu_assert_null(glob->flag_item, "global var flag_item");
-	mu_assert_null(glob->flags, "global var flags");
+	mu_assert_null(glob->analysis, "global var flags");
 	errmsg = NULL;
 	typ = rz_type_parse_string_single(parser, "int", &errmsg);
 	mu_assert_notnull(typ, "parsed type");
-	rz_analysis_var_global_set_type(glob, typ, analysis->typedb);
+	rz_analysis_var_global_set_type(glob, typ);
 	mu_assert_streq(glob->type->identifier.name, "int", "global var type");
 
 	added = rz_analysis_var_global_add(analysis, glob);
 	mu_assert_true(added, "add global var");
 	mu_assert_notnull(glob->flag_item, "flag_item null");
-	mu_assert_notnull(glob->flags, "flags null");
 
 	glob = NULL;
 	glob = rz_analysis_var_global_get_byaddr_at(analysis, 0x1337);
 	mu_assert_notnull(glob, "get readded global var");
 
-	flag_exists = rz_flag_get(glob->flags, glob->name);
+	flag_exists = rz_flag_get(analysis->flb.f, glob->name);
 	mu_assert_notnull(flag_exists, "flag not found");
 
 	deleted = rz_analysis_var_global_delete_byaddr_in(analysis, 0x133A); //test RBTree again
@@ -105,22 +103,21 @@ bool test_rz_analysis_global_var() {
 	mu_assert_streq(glob->name, "bar", "global var name");
 	mu_assert_eq(glob->addr, 0x114514, "global var address");
 	mu_assert_null(glob->flag_item, "global var flag_item");
-	mu_assert_null(glob->flags, "global var flags");
+	mu_assert_null(glob->analysis, "global var flags");
 	typ = rz_type_parse_string_single(parser, "int", &errmsg);
 	mu_assert_notnull(typ, "parsed type");
-	rz_analysis_var_global_set_type(glob, typ, analysis->typedb);
+	rz_analysis_var_global_set_type(glob, typ);
 	mu_assert_streq(glob->type->identifier.name, "int", "global var type");
 
 	added = rz_analysis_var_global_add(analysis, glob);
 	mu_assert_true(added, "add global var");
 	mu_assert_notnull(glob->flag_item, "flag_item null");
-	mu_assert_notnull(glob->flags, "flags null");
 
 	glob = NULL;
 	glob = rz_analysis_var_global_get_byname(analysis, "bar");
 	mu_assert_notnull(glob, "get readded global var");
 
-	flag_exists = rz_flag_get(glob->flags, glob->name);
+	flag_exists = rz_flag_get(analysis->flb.f, glob->name);
 	mu_assert_notnull(flag_exists, "flag not found");
 
 	deleted = rz_analysis_var_global_delete_byname(analysis, "bar");
