@@ -345,10 +345,6 @@ RzList *rz_bin_le_get_sections(rz_bin_le_obj_t *bin) {
 			return l;
 		}
 		LE_object_entry *entry = &bin->objtbl[i];
-		if (!entry) {
-			free(sec);
-			return l;
-		}
 		sec->name = rz_str_newf("obj.%d", i + 1);
 		sec->vsize = entry->virtual_size;
 		sec->vaddr = entry->reloc_base_addr;
