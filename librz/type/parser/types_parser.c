@@ -741,6 +741,7 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 				result = -1;
 				goto unexit;
 			}
+			free(real_identifier);
 			real_identifier = ts_node_sub_string(field_declarator, text);
 			if (!real_identifier) {
 				parser_error(state, "ERROR: Union bitfield identifier should not be NULL!\n");
