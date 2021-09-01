@@ -368,6 +368,150 @@ RZ_API bool rz_core_bin_apply_all_info(RzCore *r, RzBinFile *binfile) {
 	return true;
 }
 
+static bool add_footer(RzCmdStateOutput *main_state, RzCmdStateOutput *state) {
+	if (state->mode == RZ_OUTPUT_MODE_TABLE) {
+		char *s = rz_table_tostring(state->d.t);
+		if (!s) {
+			return false;
+		}
+		rz_cons_printf("%s\n", s);
+		free(s);
+	} else if (state->mode == RZ_OUTPUT_MODE_JSON || state->mode == RZ_OUTPUT_MODE_LONG_JSON) {
+		const char *state_json = pj_string(state->d.pj);
+		pj_raw(main_state->d.pj, state_json);
+	}
+	rz_cmd_state_output_free(state);
+	return true;
+}
+
+static RzCmdStateOutput *add_header(RzCmdStateOutput *main_state, RzOutputMode default_mode, const char *header) {
+	RzCmdStateOutput *state = RZ_NEW(RzCmdStateOutput);
+	rz_cmd_state_output_init(state, main_state->mode == RZ_OUTPUT_MODE_STANDARD ? default_mode : main_state->mode);
+	if (state->mode == RZ_OUTPUT_MODE_TABLE || state->mode == RZ_OUTPUT_MODE_STANDARD) {
+		rz_cons_printf("[%c%s]\n", toupper(header[0]), header + 1);
+	} else if (state->mode == RZ_OUTPUT_MODE_JSON || state->mode == RZ_OUTPUT_MODE_LONG_JSON) {
+		pj_k(main_state->d.pj, header);
+	}
+	return state;
+}
+
+/**
+ * \brief Print (to RzCons or inside RzCmdStateOutput) the binary information specified in \p mask
+ *
+ * This function can be used to print information from the current binary file.
+ * What type of information to print depends on the value of \p mask, which can
+ * be a mix of RZ_CORE_BIN_ACC_ defines. When \p filter is NULL, all
+ * informations are printed. When \p filter is not NULL some information (e.g.
+ * symbols, sections, imports, etc.) are filtered by name and/or address.
+ *
+ * The argument \p state is used to specify the output mode you want the info.
+ *
+ * \param core RzCore instance
+ * \param mask Mask of info you want to print, see RZ_CORE_BIN_ACC_ defines
+ * \param filter When specified it filter some of the info by name and/or address
+ * \param state RzCmdStateOutput instance specifying the output mode
+ * \param hashes List of strings with name of hashes that RZ_CORE_BIN_ACC_SECTIONS/SEGMENTS should print
+ * \return true if everything that was requested was printed well, false otherwise
+ */
+RZ_API bool rz_core_bin_print(RzCore *core, ut32 mask, RzCoreBinFilter *filter, RzCmdStateOutput *state, RzList *hashes) {
+	rz_return_val_if_fail(core && state, false);
+
+#define wrap_mode(header, default_mode, method) \
+	do { \
+		RzCmdStateOutput *st = add_header(state, default_mode, header); \
+		method; \
+		add_footer(state, st); \
+	} while(0)
+
+	if (mask & RZ_CORE_BIN_ACC_INFO) {
+		wrap_mode("info", RZ_OUTPUT_MODE_TABLE, rz_core_bin_info_print(core, st));
+	}
+	if (mask & RZ_CORE_BIN_ACC_IMPORTS) {
+		wrap_mode("imports", RZ_OUTPUT_MODE_TABLE, rz_core_bin_imports_print(core, st, filter));
+	}
+	if (mask & RZ_CORE_BIN_ACC_ENTRIES) {
+		wrap_mode("entries", RZ_OUTPUT_MODE_TABLE, rz_core_bin_entries_print(core, st));
+	}
+	if (mask & RZ_CORE_BIN_ACC_EXPORTS) {
+		wrap_mode("exports", RZ_OUTPUT_MODE_TABLE, rz_core_bin_exports_print(core, st, filter));
+	}
+	if (mask & RZ_CORE_BIN_ACC_CLASSES) {
+		wrap_mode("classes", RZ_OUTPUT_MODE_TABLE, rz_core_bin_classes_print(core, st));
+	}
+	if (mask & RZ_CORE_BIN_ACC_SYMBOLS) {
+		wrap_mode("symbols", RZ_OUTPUT_MODE_TABLE, rz_core_bin_symbols_print(core, st, filter));
+	}
+	if (mask & RZ_CORE_BIN_ACC_SECTIONS) {
+		wrap_mode("sections", RZ_OUTPUT_MODE_TABLE, rz_core_bin_sections_print(core, st, filter, hashes));
+	}
+	if (mask & RZ_CORE_BIN_ACC_SEGMENTS) {
+		wrap_mode("segments", RZ_OUTPUT_MODE_TABLE, rz_core_bin_segments_print(core, st, filter, hashes));
+	}
+	if (mask & RZ_CORE_BIN_ACC_MEM) {
+		wrap_mode("memory", RZ_OUTPUT_MODE_TABLE, rz_core_bin_memory_print(core, st));
+	}
+	if (mask & RZ_CORE_BIN_ACC_STRINGS) {
+		wrap_mode("strings", RZ_OUTPUT_MODE_TABLE, rz_core_bin_strings_print(core, st));
+	}
+	if (mask & RZ_CORE_BIN_ACC_MAIN) {
+		wrap_mode("main", RZ_OUTPUT_MODE_TABLE, rz_core_bin_main_print(core, st));
+	}
+	if (mask & RZ_CORE_BIN_ACC_DWARF) {
+		wrap_mode("dwarf", RZ_OUTPUT_MODE_STANDARD, rz_core_bin_dwarf_print(core, st));
+	}
+	if (mask & RZ_CORE_BIN_ACC_RELOCS) {
+		wrap_mode("relocs", RZ_OUTPUT_MODE_TABLE, rz_core_bin_relocs_print(core, st));
+	}
+	if (mask & RZ_CORE_BIN_ACC_RESOURCES) {
+		wrap_mode("resources", RZ_OUTPUT_MODE_TABLE, rz_core_bin_resources_print(core, st));
+	}
+	if (mask & RZ_CORE_BIN_ACC_FIELDS) {
+		wrap_mode("fields", RZ_OUTPUT_MODE_TABLE, rz_core_bin_fields_print(core, st));
+	}
+	if (mask & RZ_CORE_BIN_ACC_LIBS) {
+		wrap_mode("libs", RZ_OUTPUT_MODE_TABLE, rz_core_bin_libs_print(core, st));
+	}
+	if (mask & RZ_CORE_BIN_ACC_SIZE) {
+		wrap_mode("size", RZ_OUTPUT_MODE_STANDARD, rz_core_bin_size_print(core, st));
+	}
+	if (mask & RZ_CORE_BIN_ACC_PDB) {
+		RzCmdStateOutput *st = add_header(state, RZ_OUTPUT_MODE_STANDARD, "pdb");
+		switch (st->mode) {
+		case RZ_OUTPUT_MODE_STANDARD:
+			rz_core_pdb_info(core, core->bin->file, NULL, RZ_MODE_PRINT);
+			break;
+		case RZ_OUTPUT_MODE_JSON:
+			rz_core_pdb_info(core, core->bin->file, st->d.pj, RZ_MODE_JSON);
+			break;
+		case RZ_OUTPUT_MODE_RIZIN:
+			rz_core_pdb_info(core, core->bin->file, NULL, RZ_MODE_RIZINCMD);
+			break;
+		default:
+			break;
+		}
+		add_footer(state, st);
+	}
+	if (mask & RZ_CORE_BIN_ACC_VERSIONINFO) {
+		wrap_mode("versioninfo", RZ_OUTPUT_MODE_STANDARD, rz_core_bin_versions_print(core, st));
+	}
+	if (mask & RZ_CORE_BIN_ACC_SIGNATURE) {
+		wrap_mode("signatures", RZ_OUTPUT_MODE_STANDARD, rz_core_bin_signatures_print(core, st));
+	}
+	if (mask & RZ_CORE_BIN_ACC_INITFINI) {
+		wrap_mode("initfini", RZ_OUTPUT_MODE_TABLE, rz_core_bin_initfini_print(core, st));
+	}
+	if (mask & RZ_CORE_BIN_ACC_TRYCATCH) {
+		wrap_mode("trycatch", RZ_OUTPUT_MODE_RIZIN, rz_core_bin_trycatch_print(core, st));
+	}
+	if (mask & RZ_CORE_BIN_ACC_SECTIONS_MAPPING) {
+		wrap_mode("sections mapping", RZ_OUTPUT_MODE_TABLE, rz_core_bin_sections_mapping_print(core, st));
+	}
+
+#undef wrap_mode
+
+	return true;
+}
+
 RZ_API bool rz_core_bin_apply_strings(RzCore *r, RzBinFile *binfile) {
 	rz_return_val_if_fail(r && binfile, false);
 	RzBinObject *o = binfile->o;
@@ -6709,6 +6853,65 @@ RZ_API void rz_core_bin_trycatch_print(RzCore *core, RzCmdStateOutput *state) {
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_RIZIN:
 		bin_trycatch(core, NULL, RZ_MODE_PRINT);
+		break;
+	default:
+		rz_warn_if_reached();
+		break;
+	}
+}
+
+RZ_API void rz_core_bin_sections_mapping_print(RzCore *core, RzCmdStateOutput *state) {
+	rz_return_if_fail(core && state);
+	rz_warn_if_fail(state->mode == RZ_OUTPUT_MODE_TABLE);
+
+	RzBinObject *o = rz_bin_cur_object(core->bin);
+	if (!o) {
+		return;
+	}
+
+	RzVector *maps = rz_bin_object_sections_mapping_list(o);
+	if (!maps) {
+		return;
+	}
+
+	rz_cmd_state_output_set_columnsf(state, "ss", "Segment", "Sections");
+	rz_cmd_state_output_array_start(state);
+
+	RzBinSectionMap *map;
+	rz_vector_foreach(maps, map) {
+		RzStrBuf *sb = rz_strbuf_new(NULL);
+		const char *space = "";
+		void **it;
+
+		rz_table_add_rowf(state->d.t, "s", map->segment->name);
+
+		rz_pvector_foreach (&map->sections, it) {
+			RzBinSection *sect = *(RzBinSection **)it;
+			rz_strbuf_appendf(sb, "%s%s", space, sect->name);
+			space = " ";
+		}
+		rz_table_add_row_columnsf(state->d.t, "s", rz_strbuf_get(sb));
+		rz_strbuf_free(sb);
+	}
+
+	rz_cmd_state_output_array_end(state);
+}
+
+RZ_API void rz_core_bin_size_print(RzCore *core, RzCmdStateOutput *state) {
+	rz_return_if_fail(core && state);
+
+	ut64 size = rz_bin_get_size(core->bin);
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_JSON:
+		pj_o(state->d.pj);
+		pj_kn(state->d.pj, "size", size);
+		pj_end(state->d.pj);
+		break;
+	case RZ_OUTPUT_MODE_RIZIN:
+		rz_cons_printf("f bin_size @ %" PFMT64u "\n", size);
+		break;
+	case RZ_OUTPUT_MODE_STANDARD:
+		rz_cons_printf("%" PFMT64u "\n", size);
 		break;
 	default:
 		rz_warn_if_reached();

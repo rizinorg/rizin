@@ -1184,89 +1184,24 @@ RZ_IPI RzCmdStatus rz_cmd_info_archs_handler(RzCore *core, int argc, const char 
 	return RZ_CMD_STATUS_OK;
 }
 
-static bool add_footer(RzCmdStateOutput *state) {
-	if (state->mode == RZ_OUTPUT_MODE_TABLE) {
-		char *s = rz_table_tostring(state->d.t);
-		if (!s) {
-			return false;
-		}
-		rz_cons_printf("%s\n", s);
-		free(s);
-		rz_table_free(state->d.t);
-		state->d.t = rz_table_new();
-	}
-	return true;
-}
-
-static void add_header(RzCmdStateOutput *state, const char *header) {
-	if (state->mode == RZ_OUTPUT_MODE_TABLE) {
-		rz_cons_printf("[%c%s]\n", toupper(header[0]), header + 1);
-	} else if (state->mode == RZ_OUTPUT_MODE_JSON) {
-		pj_k(state->d.pj, header);
-	}
-}
-
 RZ_IPI RzCmdStatus rz_cmd_info_all_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	RzOutputMode mode = state->mode;
-	if (mode == RZ_OUTPUT_MODE_STANDARD) {
-		state->mode = RZ_OUTPUT_MODE_TABLE;
-		state->d.t = rz_table_new();
-	} else if (mode == RZ_OUTPUT_MODE_JSON) {
+	ut32 mask = RZ_CORE_BIN_ACC_INFO;
+	mask |= RZ_CORE_BIN_ACC_IMPORTS;
+	mask |= RZ_CORE_BIN_ACC_ENTRIES;
+	mask |= RZ_CORE_BIN_ACC_EXPORTS;
+	mask |= RZ_CORE_BIN_ACC_CLASSES;
+	mask |= RZ_CORE_BIN_ACC_SYMBOLS;
+	mask |= RZ_CORE_BIN_ACC_SECTIONS;
+	mask |= RZ_CORE_BIN_ACC_MEM;
+	mask |= RZ_CORE_BIN_ACC_STRINGS;
+	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_o(state->d.pj);
 	}
-
-	add_header(state, "info");
-	rz_core_bin_info_print(core, state);
-	if (!add_footer(state)) {
-		return RZ_CMD_STATUS_ERROR;
-	}
-	add_header(state, "imports");
-	rz_core_bin_imports_print(core, state, NULL);
-	if (!add_footer(state)) {
-		return RZ_CMD_STATUS_ERROR;
-	}
-	add_header(state, "entries");
-	rz_core_bin_entries_print(core, state);
-	if (!add_footer(state)) {
-		return RZ_CMD_STATUS_ERROR;
-	}
-	add_header(state, "exports");
-	rz_core_bin_exports_print(core, state, NULL);
-	if (!add_footer(state)) {
-		return RZ_CMD_STATUS_ERROR;
-	}
-	add_header(state, "classes");
-	rz_core_bin_classes_print(core, state);
-	if (!add_footer(state)) {
-		return RZ_CMD_STATUS_ERROR;
-	}
-	add_header(state, "symbols");
-	rz_core_bin_symbols_print(core, state, NULL);
-	if (!add_footer(state)) {
-		return RZ_CMD_STATUS_ERROR;
-	}
-	add_header(state, "sections");
-	rz_core_bin_sections_print(core, state, NULL, NULL);
-	if (!add_footer(state)) {
-		return RZ_CMD_STATUS_ERROR;
-	}
-	add_header(state, "memory");
-	rz_core_bin_memory_print(core, state);
-	if (!add_footer(state)) {
-		return RZ_CMD_STATUS_ERROR;
-	}
-	add_header(state, "strings");
-	rz_core_bin_strings_print(core, state);
-	if (!add_footer(state)) {
-		return RZ_CMD_STATUS_ERROR;
-	}
-	if (mode == RZ_OUTPUT_MODE_STANDARD) {
-		state->mode = RZ_OUTPUT_MODE_STANDARD;
-		rz_table_free(state->d.t);
-	} else if (mode == RZ_OUTPUT_MODE_JSON) {
+	bool res = rz_core_bin_print(core, mask, NULL, state, NULL);
+	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(state->d.pj);
 	}
-	return RZ_CMD_STATUS_OK;
+	return res ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_entry_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
@@ -1746,23 +1681,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_source_handler(RzCore *core, int argc, const char
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_guess_size_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	ut64 size = rz_bin_get_size(core->bin);
-	switch (state->mode) {
-	case RZ_OUTPUT_MODE_JSON:
-		pj_o(state->d.pj);
-		pj_kn(state->d.pj, "size", size);
-		pj_end(state->d.pj);
-		break;
-	case RZ_OUTPUT_MODE_RIZIN:
-		rz_cons_printf("f bin_size @ %" PFMT64u "\n", size);
-		break;
-	case RZ_OUTPUT_MODE_STANDARD:
-		rz_cons_printf("%" PFMT64u "\n", size);
-		break;
-	default:
-		rz_warn_if_reached();
-		break;
-	}
+	rz_core_bin_size_print(core, state);
 	return RZ_CMD_STATUS_OK;
 }
 

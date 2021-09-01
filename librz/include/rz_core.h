@@ -883,6 +883,9 @@ RZ_API void rz_core_bin_memory_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzCmdSt
 RZ_API void rz_core_bin_resources_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzCmdStateOutput *state);
 RZ_API void rz_core_bin_versions_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzCmdStateOutput *state);
 RZ_API void rz_core_bin_trycatch_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzCmdStateOutput *state);
+RZ_API void rz_core_bin_size_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzCmdStateOutput *state);
+RZ_API void rz_core_bin_sections_mapping_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzCmdStateOutput *state);
+RZ_API bool rz_core_bin_print(RzCore *core, ut32 mask, RzCoreBinFilter *filter, RzCmdStateOutput *state, RzList *hashes);
 
 typedef enum {
 	RZ_CORE_STRING_KIND_UNKNOWN,

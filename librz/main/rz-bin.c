@@ -52,91 +52,8 @@ static RzCmdStateOutput *add_header(RzCmdStateOutput *main_state, RzOutputMode m
 	return state;
 }
 
-static void headers_print(RzCore *core, RzCmdStateOutput *state) {
-	rz_core_bin_headers_print(core);
-}
-
-static void guess_size_print(RzCore *core, RzCmdStateOutput *state) {
-	ut64 size = rz_bin_get_size(core->bin);
-	rz_cmd_state_output_set_columnsf(state, "d", "value");
-	switch (state->mode) {
-	case RZ_OUTPUT_MODE_JSON:
-		pj_n(state->d.pj, size);
-		break;
-	case RZ_OUTPUT_MODE_RIZIN:
-		rz_cons_printf("f bin_size @ %" PFMT64u "\n", size);
-		break;
-	case RZ_OUTPUT_MODE_STANDARD:
-		rz_cons_printf("%" PFMT64u "\n", size);
-		break;
-	case RZ_OUTPUT_MODE_TABLE:
-		rz_table_hide_header(state->d.t);
-		rz_table_add_rowf(state->d.t, "d", size);
-		break;
-	default:
-		rz_warn_if_reached();
-		break;
-	}
-}
-
 static void classes_as_source_print(RzCore *core, RzCmdStateOutput *state) {
 	rz_core_bin_class_as_source_print(core, NULL);
-}
-
-static void pdb_print(RzCore *core, RzCmdStateOutput *state) {
-	switch (state->mode) {
-	case RZ_OUTPUT_MODE_JSON:
-		rz_core_pdb_info(core, core->bin->file, state->d.pj, RZ_MODE_JSON);
-		break;
-	case RZ_OUTPUT_MODE_TABLE:
-	case RZ_OUTPUT_MODE_STANDARD:
-	case RZ_OUTPUT_MODE_QUIET:
-		rz_core_pdb_info(core, core->bin->file, NULL, RZ_MODE_PRINT);
-		break;
-	case RZ_OUTPUT_MODE_RIZIN:
-		rz_core_pdb_info(core, core->bin->file, NULL, RZ_MODE_RIZINCMD);
-		break;
-	default:
-		break;
-	}
-}
-
-static void sections_mapping_print(RzCore *core, RzCmdStateOutput *state) {
-	if (state->mode != RZ_OUTPUT_MODE_TABLE) {
-		return;
-	}
-
-	RzBinObject *o = rz_bin_cur_object(core->bin);
-	if (!o) {
-		return;
-	}
-
-	RzVector *maps = rz_bin_object_sections_mapping_list(o);
-	if (!maps) {
-		return;
-	}
-
-	rz_cmd_state_output_set_columnsf(state, "ss", "Segment", "Sections");
-	rz_cmd_state_output_array_start(state);
-
-	RzBinSectionMap *map;
-	rz_vector_foreach(maps, map) {
-		RzStrBuf *sb = rz_strbuf_new(NULL);
-		const char *space = "";
-		void **it;
-
-		rz_table_add_rowf(state->d.t, "s", map->segment->name);
-
-		rz_pvector_foreach (&map->sections, it) {
-			RzBinSection *sect = *(RzBinSection **)it;
-			rz_strbuf_appendf(sb, "%s%s", space, sect->name);
-			space = " ";
-		}
-		rz_table_add_row_columnsf(state->d.t, "s", rz_strbuf_get(sb));
-		rz_strbuf_free(sb);
-	}
-
-	rz_cmd_state_output_array_end(state);
 }
 
 static RzOutputMode rad2outputmode(int rad) {
@@ -153,6 +70,77 @@ static RzOutputMode rad2outputmode(int rad) {
 	default:
 		return RZ_OUTPUT_MODE_STANDARD;
 	}
+}
+
+static ut32 actions2mask(ut64 action) {
+	ut32 res = 0;
+	if (action & RZ_BIN_REQ_SECTIONS) {
+		res |= RZ_CORE_BIN_ACC_SECTIONS;
+	}
+	if (action & RZ_BIN_REQ_SEGMENTS) {
+		res |= RZ_CORE_BIN_ACC_SEGMENTS;
+	}
+	if (action & RZ_BIN_REQ_ENTRIES) {
+		res |= RZ_CORE_BIN_ACC_ENTRIES;
+	}
+	if (action & RZ_BIN_REQ_INITFINI) {
+		res |= RZ_CORE_BIN_ACC_INITFINI;
+	}
+	if (action & RZ_BIN_REQ_MAIN) {
+		res |= RZ_CORE_BIN_ACC_MAIN;
+	}
+	if (action & RZ_BIN_REQ_IMPORTS) {
+		res |= RZ_CORE_BIN_ACC_IMPORTS;
+	}
+	if (action & RZ_BIN_REQ_CLASSES) {
+		res |= RZ_CORE_BIN_ACC_CLASSES;
+	}
+	if (action & RZ_BIN_REQ_SYMBOLS) {
+		res |= RZ_CORE_BIN_ACC_SYMBOLS;
+	}
+	if (action & RZ_BIN_REQ_EXPORTS) {
+		res |= RZ_CORE_BIN_ACC_EXPORTS;
+	}
+	if (action & RZ_BIN_REQ_RESOURCES) {
+		res |= RZ_CORE_BIN_ACC_RESOURCES;
+	}
+	if (action & RZ_BIN_REQ_STRINGS) {
+		res |= RZ_CORE_BIN_ACC_STRINGS;
+	}
+	if (action & RZ_BIN_REQ_INFO) {
+		res |= RZ_CORE_BIN_ACC_INFO;
+	}
+	if (action & RZ_BIN_REQ_FIELDS) {
+		res |= RZ_CORE_BIN_ACC_FIELDS;
+	}
+	if (action & RZ_BIN_REQ_HEADER) {
+		res |= RZ_CORE_BIN_ACC_HEADER;
+	}
+	if (action & RZ_BIN_REQ_LIBS) {
+		res |= RZ_CORE_BIN_ACC_LIBS;
+	}
+	if (action & RZ_BIN_REQ_RELOCS) {
+		res |= RZ_CORE_BIN_ACC_RELOCS;
+	}
+	if (action & RZ_BIN_REQ_DWARF) {
+		res |= RZ_CORE_BIN_ACC_DWARF;
+	}
+	if (action & RZ_BIN_REQ_PDB) {
+		res |= RZ_CORE_BIN_ACC_PDB;
+	}
+	if (action & RZ_BIN_REQ_SIZE) {
+		res |= RZ_CORE_BIN_ACC_SIZE;
+	}
+	if (action & RZ_BIN_REQ_VERSIONINFO) {
+		res |= RZ_CORE_BIN_ACC_VERSIONINFO;
+	}
+	if (action & RZ_BIN_REQ_SIGNATURE) {
+		res |= RZ_CORE_BIN_ACC_SIGNATURE;
+	}
+	if (action & RZ_BIN_REQ_SECTIONS_MAPPING) {
+		res |= RZ_CORE_BIN_ACC_SECTIONS_MAPPING;
+	}
+	return res;
 }
 
 static int rabin_show_help(int v) {
@@ -1219,24 +1207,6 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		y(&core, st); \
 		add_footer(&state, st); \
 	}
-#define run_action_table(n, x, y) \
-	if (action & (x)) { \
-		RzCmdStateOutput *st = add_header(&state, mode == RZ_OUTPUT_MODE_STANDARD ? RZ_OUTPUT_MODE_TABLE : mode, n); \
-		y(&core, st); \
-		add_footer(&state, st); \
-	}
-#define run_action_chksum(n, x, y, filter, chksum_list) \
-	if (action & (x)) { \
-		RzCmdStateOutput *st = add_header(&state, mode == RZ_OUTPUT_MODE_STANDARD ? RZ_OUTPUT_MODE_TABLE : mode, n); \
-		y(&core, st, (filter), chksum_list); \
-		add_footer(&state, st); \
-	}
-#define run_action_filter(n, x, y, filter) \
-	if (action & (x)) { \
-		RzCmdStateOutput *st = add_header(&state, mode == RZ_OUTPUT_MODE_STANDARD ? RZ_OUTPUT_MODE_TABLE : mode, n); \
-		y(&core, st, (filter)); \
-		add_footer(&state, st); \
-	}
 
 	core.bin = bin;
 	bin->cb_printf = rz_cons_printf;
@@ -1286,29 +1256,10 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		free(tmp);
 	}
 
-	run_action_chksum("sections", RZ_BIN_REQ_SECTIONS, rz_core_bin_sections_print, &filter, chksum_list);
-	run_action_chksum("segments", RZ_BIN_REQ_SEGMENTS, rz_core_bin_segments_print, &filter, chksum_list);
-	run_action_table("entries", RZ_BIN_REQ_ENTRIES, rz_core_bin_entries_print);
-	run_action_table("initfini", RZ_BIN_REQ_INITFINI, rz_core_bin_initfini_print);
-	run_action_table("main", RZ_BIN_REQ_MAIN, rz_core_bin_main_print);
-	run_action_filter("imports", RZ_BIN_REQ_IMPORTS, rz_core_bin_imports_print, &filter);
-	run_action_table("classes", RZ_BIN_REQ_CLASSES, rz_core_bin_classes_print);
+	ut32 mask = actions2mask(action);
+	rz_core_bin_print(&core, mask, &filter, &state, chksum_list);
+
 	run_action("classes source", RZ_BIN_REQ_CLASSES_SOURCES, classes_as_source_print);
-	run_action_filter("symbols", RZ_BIN_REQ_SYMBOLS, rz_core_bin_symbols_print, &filter);
-	run_action_filter("exports", RZ_BIN_REQ_EXPORTS, rz_core_bin_exports_print, &filter);
-	run_action_table("resources", RZ_BIN_REQ_RESOURCES, rz_core_bin_resources_print);
-	run_action_table("strings", RZ_BIN_REQ_STRINGS, rz_core_bin_strings_print);
-	run_action_table("info", RZ_BIN_REQ_INFO, rz_core_bin_info_print);
-	run_action_table("fields", RZ_BIN_REQ_FIELDS, rz_core_bin_fields_print);
-	run_action_table("header", RZ_BIN_REQ_HEADER, headers_print);
-	run_action_table("libs", RZ_BIN_REQ_LIBS, rz_core_bin_libs_print);
-	run_action_table("relocs", RZ_BIN_REQ_RELOCS, rz_core_bin_relocs_print);
-	run_action_table("dwarf", RZ_BIN_REQ_DWARF, rz_core_bin_dwarf_print);
-	run_action_table("pdb", RZ_BIN_REQ_PDB, pdb_print);
-	run_action("size", RZ_BIN_REQ_SIZE, guess_size_print);
-	run_action("versioninfo", RZ_BIN_REQ_VERSIONINFO, rz_core_bin_versions_print);
-	run_action_table("signature", RZ_BIN_REQ_SIGNATURE, rz_core_bin_signatures_print);
-	run_action_table("sections mapping", RZ_BIN_REQ_SECTIONS_MAPPING, sections_mapping_print);
 	if (action & RZ_BIN_REQ_SRCLINE) {
 		rabin_show_srcline(bin, at);
 	}
