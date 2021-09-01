@@ -669,6 +669,7 @@ rz_bin_ne_obj_t *rz_bin_ne_new_buf(RzBuffer *buf, bool verbose) {
 		return NULL;
 	}
 	if (!rz_bin_ne_buf_init(buf, bin)) {
+		free(bin);
 		return NULL;
 	}
 	return bin;
