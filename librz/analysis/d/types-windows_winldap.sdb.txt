@@ -1,5 +1,32 @@
 ### winldap.h ###
 
+berval=struct
+struct.berval=bv_len,bv_val
+struct.berval.bv_len=ULONG,0,0
+struct.berval.bv_val=PCHAR,4,0
+
+LDAP_BERVAL=typedef
+typedef.LDAP_BERVAL=struct berval
+
+PLDAP_BERVAL=typedef
+typedef.PLDAP_BERVAL=struct berval*
+
+BERVAL=typedef
+typedef.BERVAL=struct berval
+
+PBERVAL=typedef
+typedef.PBERVAL=struct berval*
+
+BerValue=typedef
+typedef.BerValue=struct berval
+
+berelement=struct
+struct.berelement=opaque
+struct.berelement.opaque=PCHAR,0,0
+
+BerElement=typedef
+typedef.BerElement=struct berelement
+
 l_timeval=struct
 struct.l_timeval=tv_sec,tv_usec
 struct.l_timeval.tv_sec=LONG,0,0
@@ -30,14 +57,51 @@ typedef.PLDAP=struct ldap*
 PLDAP_TIMEVAL=typedef
 typedef.PLDAP_TIMEVAL=LDAP_TIMEVAL*
 
-PLDAPControlA=type
-type.PLDAPControlA=p
+ldapcontrolA=struct
+struct.ldapcontrolA=ldctl_oid,ldctl_value,ldctl_iscritical
+struct.ldapcontrolA.ldctl_oid=PCHAR,0,0
+struct.ldapcontrolA.ldctl_value=struct berval,8,0
+struct.ldapcontrolA.ldctl_iscritical=BOOLEAN,16,0
 
-PLDAPControlW=type
-type.PLDAPControlW=p
+LDAPControlA=typedef
+typedef.LDAPControlA=struct ldapcontrolA
 
-PLDAPMessage=type
-type.PLDAPMessage=p
+PLDAPControlA=typedef
+typedef.PLDAPControlA=struct ldapcontrolA*
+
+ldapcontrolW=struct
+struct.ldapcontrolW=ldctl_oid,ldctl_value,ldctl_iscritical
+struct.ldapcontrolW.ldctl_oid=PWCHAR,0,0
+struct.ldapcontrolW.ldctl_value=struct berval,8,0
+struct.ldapcontrolW.ldctl_iscritical=BOOLEAN,16,0
+
+LDAPControlW=typedef
+typedef.LDAPControlW=struct ldapcontrolW
+
+PLDAPControlW=typedef
+typedef.PLDAPControlW=struct ldapcontrolW*
+
+ldapmsg=struct
+struct.ldapmsg=lm_msgid,lm_msgtype,lm_ber,lm_chain,lm_next,lm_time,Connection,Request,lm_returncode,lm_referral,lm_chased,lm_eom,ConnectionReferenced
+struct.ldapmsg.lm_msgid=ULONG,0,0
+struct.ldapmsg.lm_msgtype=ULONG,4,0
+struct.ldapmsg.lm_ber=PVOID,8,0
+struct.ldapmsg.lm_chain=struct ldapmsg*,16,0
+struct.ldapmsg.lm_next=struct ldapmsg*,24,0
+struct.ldapmsg.lm_time=ULONG,32,0
+struct.ldapmsg.Connection=PLDAP,36,0
+struct.ldapmsg.Request=PVOID,42,0
+struct.ldapmsg.lm_returncode=ULONG,50,0
+struct.ldapmsg.lm_referral=USHORT,54,0
+struct.ldapmsg.lm_chased=BOOLEAN,56,0
+struct.ldapmsg.lm_eom=BOOLEAN,60,0
+struct.ldapmsg.ConnectionReferenced=BOOLEAN,64,0
+
+LDAPMessage=typedef
+typedef.LDAPMessage=struct ldapmsg
+
+PLDAPMessage=typedef
+typedef.PLDAPMessage=struct ldapmsg*
 
 PLDAPSearch=type
 type.PLDAPSearch=p
