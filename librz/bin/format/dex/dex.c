@@ -1313,6 +1313,7 @@ RZ_API RZ_OWN RzList /*<RzBinImport*>*/ *rz_bin_dex_imports(RZ_NONNULL RzBinDex 
 
 		char *object = dex_resolve_type_id(dex, field_id->class_idx);
 		if (!object) {
+			free(import);
 			break;
 		}
 		rz_str_replace_char(object, ';', 0);
