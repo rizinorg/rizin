@@ -1470,6 +1470,7 @@ static bool find_autocomplete(RzCore *core, RzLineCompletion *completion, RzLine
 	switch (parent->type) {
 	case RZ_CORE_AUTOCMPLT_SEEK:
 		autocomplete_functions(core, completion, p);
+		// fallthrough
 	case RZ_CORE_AUTOCMPLT_FLAG:
 		autocomplete_flags(core, completion, p);
 		break;
