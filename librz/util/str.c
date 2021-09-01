@@ -3573,7 +3573,10 @@ RZ_API char *rz_str_scale(const char *s, int w, int h) {
 		memset(linetext, ' ', w);
 	}
 	free(str);
-	return rz_str_list_join(out, "\n");
+
+	char *join = rz_str_list_join(out, "\n");
+	rz_list_free(out);
+	return join;
 }
 
 RZ_API const char *rz_str_str_xy(const char *s, const char *word, const char *prev, int *x, int *y) {
