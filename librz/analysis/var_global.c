@@ -10,7 +10,6 @@
  * \param name variable name
  * \param addr variable address
  * \param comment variable comment
- * \param flags flag list of current core instance
  * \return RzAnalysisVarGlobal *
  */
 RZ_API RZ_OWN RzAnalysisVarGlobal *rz_analysis_var_global_new(RZ_NONNULL const char *name, ut64 addr) {
@@ -74,7 +73,6 @@ RZ_API RZ_OWN bool rz_analysis_var_global_add(RzAnalysis *analysis, RZ_NONNULL R
  * \brief Free the global variable instance
  * 
  * \param glob Global variable instance
- * \param flags flag list of current core instance
  * \return void
  */
 RZ_API void rz_analysis_var_global_free(RZ_NONNULL RzAnalysisVarGlobal *glob) {
@@ -100,7 +98,6 @@ RZ_API void rz_analysis_var_global_free(RZ_NONNULL RzAnalysisVarGlobal *glob) {
  * 
  * \param analysis RzAnalysis
  * \param glob global variable to be deleted
- * \param flags flag list of current core instance
  * \return true if succeed
  */
 RZ_API bool rz_analysis_var_global_delete(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisVarGlobal *glob) {
@@ -119,7 +116,6 @@ RZ_API bool rz_analysis_var_global_delete(RZ_NONNULL RzAnalysis *analysis, RZ_NO
  * 
  * \param analysis RzAnalysis
  * \param name Global Variable name
- * \param flags flag list of current core instance
  * \return true if succeed
  */
 RZ_API bool rz_analysis_var_global_delete_byname(RzAnalysis *analysis, RZ_NONNULL const char *name) {
@@ -138,7 +134,6 @@ RZ_API bool rz_analysis_var_global_delete_byname(RzAnalysis *analysis, RZ_NONNUL
  * 
  * \param analysis RzAnalysis
  * \param addr Global Variable address
- * \param flags flag list of current core instance
  * \return true if succeed
  */
 RZ_API bool rz_analysis_var_global_delete_byaddr_at(RzAnalysis *analysis, ut64 addr) {
@@ -157,7 +152,6 @@ RZ_API bool rz_analysis_var_global_delete_byaddr_at(RzAnalysis *analysis, ut64 a
  * 
  * \param analysis RzAnalysis
  * \param addr Global Variable address
- * \param flags flag list of current core instance
  * \return true if succeed
  */
 RZ_API bool rz_analysis_var_global_delete_byaddr_in(RzAnalysis *analysis, ut64 addr) {
