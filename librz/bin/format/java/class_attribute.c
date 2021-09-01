@@ -385,8 +385,8 @@ bool java_attribute_set_module(Attribute *attr, RzBuffer *buf) {
 	}
 
 	if (am->uses_count > 0) {
-		am->uses_index = RZ_NEWS0(ut16, am->uses_count);
-		if (!am->uses_index) {
+		tmp16 = RZ_NEWS0(ut16, am->uses_count);
+		if (!tmp16) {
 			goto java_attribute_set_module_bad;
 		}
 		am->uses_index = tmp16;
