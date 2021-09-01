@@ -1146,6 +1146,7 @@ static RzList /*<RzBinDwarfARangeSet>*/ *parse_aranges_raw(const ut8 *obuf, size
 		set->segment_size = READ8(buf);
 		unit_length -= header_rest_size;
 		if (!set->address_size) {
+			free(set);
 			break;
 		}
 

@@ -518,6 +518,7 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 			// 2nd case, normal structure
 			// AST looks like
 			// type: (primitive_type) declarator: (field_identifier)
+			free(real_type);
 			real_type = ts_node_sub_string(field_type, text);
 			if (!real_type) {
 				parser_error(state, "ERROR: Struct field type should not be NULL!\n");
@@ -525,6 +526,7 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 				result = -1;
 				goto snexit;
 			}
+			free(real_identifier);
 			real_identifier = ts_node_sub_string(field_declarator, text);
 			if (!real_identifier) {
 				parser_error(state, "ERROR: Struct declarator should not be NULL!\n");
@@ -734,6 +736,7 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 				result = -1;
 				goto unexit;
 			}
+			free(real_type);
 			real_type = ts_node_sub_string(field_type, text);
 			if (!real_type) {
 				parser_error(state, "ERROR: Union bitfield type should not be NULL!\n");
@@ -741,6 +744,7 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 				result = -1;
 				goto unexit;
 			}
+			free(real_identifier);
 			real_identifier = ts_node_sub_string(field_declarator, text);
 			if (!real_identifier) {
 				parser_error(state, "ERROR: Union bitfield identifier should not be NULL!\n");
@@ -797,6 +801,7 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 			// 2nd case, normal union
 			// AST looks like
 			// type: (primitive_type) declarator: (field_identifier)
+			free(real_type);
 			real_type = ts_node_sub_string(field_type, text);
 			if (!real_type) {
 				parser_error(state, "ERROR: Union field type should not be NULL!\n");
@@ -804,6 +809,7 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 				result = -1;
 				goto unexit;
 			}
+			free(real_identifier);
 			real_identifier = ts_node_sub_string(field_declarator, text);
 			if (!real_identifier) {
 				parser_error(state, "ERROR: Union declarator should not be NULL!\n");

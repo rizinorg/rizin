@@ -117,8 +117,9 @@ static RzList *maps(RzBinFile *bf) {
 		return NULL;
 	}
 
+	RzBinMap *map = NULL;
 	if (sig0 && sig0 + 8 < bufsz) {
-		RzBinMap *map = RZ_NEW0(RzBinMap);
+		map = RZ_NEW0(RzBinMap);
 		if (!map) {
 			return ret;
 		}
@@ -126,7 +127,8 @@ static RzList *maps(RzBinFile *bf) {
 		ut32 sig0sz;
 		if (!rz_buf_read_le32_at(bf->buf, sig0 + 4, &sig0sz)) {
 			rz_list_free(ret);
-			return NULL;
+			ret = NULL;
+			goto maps_err;
 		}
 
 		map->name = strdup("sig0");
@@ -141,19 +143,18 @@ static RzList *maps(RzBinFile *bf) {
 	}
 
 	// add text segment
-	RzBinMap *map;
 	if (!(map = RZ_NEW0(RzBinMap))) {
 		return ret;
 	}
 	map->name = strdup("text");
 	ut32 tmp;
 	if (!rz_buf_read_le32_at(b, NRO_OFF(text_memoffset), &tmp)) {
-		return ret;
+		goto maps_err;
 	}
 	map->paddr = tmp;
 
 	if (!rz_buf_read_le32_at(b, NRO_OFF(text_size), &tmp)) {
-		return ret;
+		goto maps_err;
 	}
 	map->psize = tmp;
 
@@ -168,12 +169,12 @@ static RzList *maps(RzBinFile *bf) {
 	}
 	map->name = strdup("ro");
 	if (!rz_buf_read_le32_at(b, NRO_OFF(ro_memoffset), &tmp)) {
-		return ret;
+		goto maps_err;
 	}
 	map->paddr = tmp;
 
 	if (!rz_buf_read_le32_at(b, NRO_OFF(ro_size), &tmp)) {
-		return ret;
+		goto maps_err;
 	}
 	map->psize = tmp;
 
@@ -188,14 +189,12 @@ static RzList *maps(RzBinFile *bf) {
 	}
 	map->name = strdup("data");
 	if (!rz_buf_read_le32_at(b, NRO_OFF(data_memoffset), &tmp)) {
-		free(map);
-		return ret;
+		goto maps_err;
 	}
 	map->paddr = tmp;
 
 	if (!rz_buf_read_le32_at(b, NRO_OFF(data_size), &tmp)) {
-		free(map);
-		return ret;
+		goto maps_err;
 	}
 	map->psize = tmp;
 
@@ -203,6 +202,10 @@ static RzList *maps(RzBinFile *bf) {
 	map->vaddr = map->paddr + ba;
 	map->perm = RZ_PERM_RW;
 	rz_list_append(ret, map);
+	return ret;
+
+maps_err:
+	free(map);
 	return ret;
 }
 

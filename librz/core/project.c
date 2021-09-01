@@ -44,19 +44,20 @@ RZ_API RzProjectErr rz_project_save_file(RzCore *core, const char *file, bool co
 
 	if (compress) {
 		int mkstemp_fd = rz_file_mkstemp("svprj", &tmp_file);
-		close(mkstemp_fd);
-
 		if (mkstemp_fd == -1 || !tmp_file) {
 			return RZ_PROJECT_ERR_FILE;
 		}
+		close(mkstemp_fd);
 	}
 
+	RzProjectErr err;
 	const char *save_file = compress ? tmp_file : file;
 	RzProject *prj = sdb_new0();
 	if (!prj) {
-		return RZ_PROJECT_ERR_UNKNOWN;
+		err = RZ_PROJECT_ERR_UNKNOWN;
+		goto tmp_file_err;
 	}
-	RzProjectErr err = rz_project_save(core, prj, file);
+	err = rz_project_save(core, prj, file);
 	if (err != RZ_PROJECT_ERR_SUCCESS) {
 		sdb_free(prj);
 		return err;
