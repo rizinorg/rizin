@@ -683,6 +683,9 @@ RZ_API ut64 rz_bin_object_get_vaddr(RzBinObject *o, ut64 paddr, ut64 vaddr) {
 	return paddr;
 }
 
+/**
+ * \brief Return the \p RzBinAddr structure representing the special symbol \p sym
+ */
 RZ_API const RzBinAddr *rz_bin_object_get_special_symbol(RzBinObject *o, RzBinSpecialSymbol sym) {
 	rz_return_val_if_fail(o, NULL);
 	if (sym < 0 || sym >= RZ_BIN_SPECIAL_SYMBOL_LAST) {

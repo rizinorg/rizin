@@ -1761,7 +1761,7 @@ static bool bin_dwarf(RzCore *core, RzBinFile *binfile, RzCmdStateOutput *state)
 }
 
 // NOTE: compatibility function, remove as soon as possible
-static bool bin_dwarf_old(RzCore *core, RzBinFile *binfile, PJ *pj, int mode) {
+static RZ_DEPRECATE bool bin_dwarf_old(RzCore *core, RzBinFile *binfile, PJ *pj, int mode) {
 	RzCmdStateOutput state = { 0 };
 	if (mode == RZ_MODE_JSON) {
 		state.mode = RZ_OUTPUT_MODE_JSON;
@@ -2257,15 +2257,14 @@ RZ_API void rz_core_bin_cur_export_print(RzCore *core, RzCmdStateOutput *state) 
 RZ_API void rz_core_bin_imports_print(RzCore *core, RzCmdStateOutput *state, RzCoreBinFilter *filter) {
 	rz_return_if_fail(core && state);
 
-	int bin_demangle = rz_config_get_i(core->config, "bin.demangle");
-	bool keep_lib = rz_config_get_i(core->config, "bin.demangle.libs");
-	int va = (core->io->va || core->bin->is_debugger) ? VA_TRUE : VA_FALSE;
-	RzBinFile *bf = rz_bin_cur(core->bin);
-	RzBinObject *o = bf ? bf->o : NULL;
+	RzBinObject *o = rz_bin_cur_object(core->bin);
 	if (!o) {
 		return;
 	}
 
+	int bin_demangle = rz_config_get_i(core->config, "bin.demangle");
+	bool keep_lib = rz_config_get_i(core->config, "bin.demangle.libs");
+	int va = (core->io->va || core->bin->is_debugger) ? VA_TRUE : VA_FALSE;
 	const RzList *imports = rz_bin_object_get_imports(o);
 	RzBinImport *import;
 	RzListIter *iter;
@@ -4810,7 +4809,6 @@ static char *filter_hash_string(const char *chksum) {
 	return ret;
 }
 
-/* Map Sections to Segments https://github.com/rizinorg/rizin/issues/14647 */
 static int bin_map_sections_to_segments(RzBin *bin, PJ *pj, int mode) {
 	RzListIter *iter, *iter2;
 	RzBinSection *section = NULL, *segment = NULL;

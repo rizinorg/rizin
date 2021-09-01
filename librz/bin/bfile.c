@@ -866,6 +866,10 @@ static inline bool add_file_hash(RzMsgDigest *md, const char *name, RzList *list
 	return true;
 }
 
+/**
+ * Return a list of RzBinFileHash structures with the hashes md5, sha1, sha256
+ * computed over the whole \p bf .
+ */
 RZ_API RzList *rz_bin_file_compute_hashes(RzBin *bin, RzBinFile *bf, ut64 limit) {
 	rz_return_val_if_fail(bin && bf && bf->o, NULL);
 	ut64 buf_len = 0, r = 0;
