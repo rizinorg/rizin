@@ -1213,7 +1213,7 @@ RZ_API RZ_OWN RzList *rz_bin_java_class_fields_as_symbols(RZ_NONNULL RzBinJavaCl
 			RzBinSymbol *symbol = rz_bin_symbol_new(NULL, field->offset, field->offset);
 			if (!symbol) {
 				rz_warn_if_reached();
-				free(sym);
+				free(field_name);
 				continue;
 			}
 			symbol->classname = rz_bin_java_class_name(bin);
