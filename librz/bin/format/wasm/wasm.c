@@ -277,7 +277,7 @@ static void *parse_type_entry(RzBuffer *b, ut64 max) {
 	if (!(consume_u32_r(b, max, &ptr->param_count))) {
 		goto beach;
 	}
-	ut32 count = ptr ? ptr->param_count : 0;
+	ut32 count = ptr->param_count;
 	if (!(rz_buf_tell(b) + count <= max)) {
 		goto beach;
 	}
