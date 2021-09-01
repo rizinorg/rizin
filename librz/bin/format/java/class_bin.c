@@ -1002,16 +1002,10 @@ RZ_API RZ_OWN RzList *rz_bin_java_class_strings(RZ_NONNULL RzBinJavaClass *bin) 
 }
 
 static char *add_class_name_to_name(char *name, char *classname) {
-	char *tmp;
 	if (classname && name) {
-		tmp = rz_str_newf("%s.%s", classname, name);
-		if (!tmp) {
-			return name;
-		}
-		free(name);
-		return tmp;
+		return rz_str_newf("%s.%s", classname, name);
 	}
-	return name;
+	return strdup(name);
 }
 
 /**
@@ -1075,6 +1069,7 @@ RZ_API RZ_OWN RzList *rz_bin_java_class_methods_as_symbols(RZ_NONNULL RzBinJavaC
 			symbol->visibility_str = java_method_access_flags_readable(method);
 			symbol->libname = rz_bin_demangle_java(symbol->classname);
 			free(desc);
+			free(method_name);
 			rz_list_append(list, symbol);
 		}
 	}
@@ -1198,7 +1193,7 @@ RZ_API RZ_OWN RzList *rz_bin_java_class_fields_as_symbols(RZ_NONNULL RzBinJavaCl
 		return NULL;
 	}
 
-	char *sym = NULL;
+	char *field_name = NULL;
 	if (bin->fields) {
 		for (ut32 i = 0; i < bin->fields_count; ++i) {
 			const Field *field = bin->fields[i];
@@ -1211,8 +1206,8 @@ RZ_API RZ_OWN RzList *rz_bin_java_class_fields_as_symbols(RZ_NONNULL RzBinJavaCl
 				RZ_LOG_ERROR("java bin: can't resolve field with constant pool index %u\n", field->name_index);
 				continue;
 			}
-			sym = java_constant_pool_stringify(cpool);
-			if (!sym) {
+			field_name = java_constant_pool_stringify(cpool);
+			if (!field_name) {
 				continue;
 			}
 			RzBinSymbol *symbol = rz_bin_symbol_new(NULL, field->offset, field->offset);
@@ -1222,13 +1217,14 @@ RZ_API RZ_OWN RzList *rz_bin_java_class_fields_as_symbols(RZ_NONNULL RzBinJavaCl
 				continue;
 			}
 			symbol->classname = rz_bin_java_class_name(bin);
-			symbol->name = add_class_name_to_name(sym, symbol->classname);
+			symbol->name = add_class_name_to_name(field_name, symbol->classname);
 			symbol->size = 0;
 			symbol->bind = java_field_is_global(field) ? RZ_BIN_BIND_GLOBAL_STR : RZ_BIN_BIND_LOCAL_STR;
 			symbol->type = RZ_BIN_TYPE_OBJECT_STR;
 			symbol->ordinal = i;
 			symbol->visibility = field->access_flags;
 			symbol->visibility_str = java_field_access_flags_readable(field);
+			free(field_name);
 			rz_list_append(list, symbol);
 		}
 	}
@@ -1442,7 +1438,7 @@ RZ_API RZ_OWN RzList *rz_bin_java_class_const_pool_as_symbols(RZ_NONNULL RzBinJa
 			if (!method_name) {
 				method_name = strdup("unknown_method");
 			}
-			is_main = method_name && !strcmp(method_name, "main");
+			is_main = !strcmp(method_name, "main");
 			classname = java_class_constant_pool_stringify_at(bin, class_name_index);
 			symbol->name = add_class_name_to_name(method_name, symbol->classname);
 			if (desc[0] == '(') {
@@ -1458,6 +1454,7 @@ RZ_API RZ_OWN RzList *rz_bin_java_class_const_pool_as_symbols(RZ_NONNULL RzBinJa
 			symbol->ordinal = i;
 			symbol->is_imported = true;
 			free(desc);
+			free(method_name);
 			rz_list_append(list, symbol);
 		}
 	}
