@@ -525,6 +525,7 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 				result = -1;
 				goto snexit;
 			}
+			free(real_identifier);
 			real_identifier = ts_node_sub_string(field_declarator, text);
 			if (!real_identifier) {
 				parser_error(state, "ERROR: Struct declarator should not be NULL!\n");
