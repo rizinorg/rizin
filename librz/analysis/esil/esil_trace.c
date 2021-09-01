@@ -393,7 +393,7 @@ static void print_instruction_ops(RzILTraceInstruction *instruction, int idx, Rz
 		}
 	} else {
 		RzPVector *ops = read ? instruction->read_mem_ops : instruction->write_mem_ops;
-		if (rz_pvector_len(ops)) {
+		if (!rz_pvector_empty(ops)) {
 			rz_cons_printf("%d.mem.%s=", idx, direction);
 			rz_pvector_foreach (ops, it) {
 				RzILTraceMemOp *op = (RzILTraceMemOp *)*it;
