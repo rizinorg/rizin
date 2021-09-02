@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2019 GustavoLCR <gugulcr@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef LE_SPECS_H
 #define LE_SPECS_H
 #include <rz_types.h>

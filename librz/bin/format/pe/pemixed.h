@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2018 JohnPeng47 <johnpeng47@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_types.h>
 #include "pe.h"
 
@@ -5,8 +8,8 @@
 #define SUB_BIN_NATIVE 1
 #define SUB_BIN_NET    2
 
-#ifndef _INCLUDE_R_BIN_PEMIXED_H_
-#define _INCLUDE_R_BIN_PEMIXED_H_
+#ifndef _INCLUDE_RZ_BIN_PEMIXED_H_
+#define _INCLUDE_RZ_BIN_PEMIXED_H_
 
 struct rz_bin_pemixed_obj_t {
 	const char *file;
