@@ -2551,21 +2551,13 @@ RZ_API void rz_str_range_foreach(const char *r, RzStrRangeCallback cb, void *u) 
 
 RZ_API bool rz_str_range_in(const char *r, ut64 addr) {
 	const char *p = r;
-	ut64 min = UT64_MAX;
-	ut64 max = 0;
 	if (!r) {
 		return false;
 	}
 	for (; *r; r++) {
 		if (*r == ',') {
-			if (max == 0) {
-				if (addr == rz_num_get(NULL, p)) {
-					return true;
-				}
-			} else {
-				if (addr >= min && addr <= rz_num_get(NULL, p)) {
-					return true;
-				}
+			if (addr == rz_num_get(NULL, p)) {
+				return true;
 			}
 			p = r + 1;
 		}
@@ -3573,7 +3565,10 @@ RZ_API char *rz_str_scale(const char *s, int w, int h) {
 		memset(linetext, ' ', w);
 	}
 	free(str);
-	return rz_str_list_join(out, "\n");
+
+	char *join = rz_str_list_join(out, "\n");
+	rz_list_free(out);
+	return join;
 }
 
 RZ_API const char *rz_str_str_xy(const char *s, const char *word, const char *prev, int *x, int *y) {
@@ -3612,6 +3607,9 @@ RZ_API RzList *rz_str_wrap(char *str, size_t width) {
 	rz_return_val_if_fail(str, NULL);
 
 	RzList *res = rz_list_new();
+	if (!res) {
+		return NULL;
+	}
 	char *p, *start_line = str;
 	char *first_space = NULL, *last_space = NULL;
 
@@ -3623,11 +3621,11 @@ RZ_API RzList *rz_str_wrap(char *str, size_t width) {
 	do {
 		p++;
 		if (!*p || isspace((int)*p)) {
-			if (p != last_space + 1) {
+			if (!last_space || p != last_space + 1) {
 				if (p - start_line > width && first_space) {
 					rz_list_append(res, start_line);
 					*first_space = '\0';
-					start_line = last_space ? last_space + 1 : p;
+					start_line = last_space + 1;
 				}
 				first_space = p;
 			}

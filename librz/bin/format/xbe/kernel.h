@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2014 LemonBoy <thatlemon@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 "AvGetSavedDataAddress",
 	"AvSendTVEncoderOption",
 	"AvSetDisplayMode",
