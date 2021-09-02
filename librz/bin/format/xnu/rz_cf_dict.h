@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2019 Francesco Tamagni <mrmacete@protonmail.ch>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_CF_DICT_H
 #define RZ_CF_DICT_H
 

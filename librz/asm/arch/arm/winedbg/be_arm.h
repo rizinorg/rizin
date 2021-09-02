@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2010-2013 André Hentschel
+// SPDX-License-Identifier: LGPL-2.1-or-later
+
 #ifndef _INCLUDE_WINEDBG_BE_ARM_H_
 #define _INCLUDE_WINEDBG_BE_ARM_H_
 

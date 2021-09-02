@@ -329,18 +329,8 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 	}
 }
 
-RZ_API bool rz_core_bin_load_structs(RzCore *core, const char *file) {
+RZ_API bool rz_core_bin_load_structs(RZ_NONNULL RzCore *core, RZ_NONNULL const char *file) {
 	rz_return_val_if_fail(core && file && core->io, false);
-	if (!file) {
-		int fd = rz_io_fd_get_current(core->io);
-		RzIODesc *desc = rz_io_desc_get(core->io, fd);
-		if (desc) {
-			file = desc->name;
-		}
-		if (!file) {
-			return false;
-		}
-	}
 	if (strchr(file, '\"')) { // TODO: escape "?
 		eprintf("Invalid char found in filename\n");
 		return false;

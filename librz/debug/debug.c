@@ -593,17 +593,9 @@ RZ_API bool rz_debug_select(RzDebug *dbg, int pid, int tid) {
 	if (tid < 0) {
 		tid = pid;
 	}
-	if (pid != -1 && tid != -1) {
-		if ((pid != dbg->pid || tid != dbg->tid) && dbg->verbose) {
-			eprintf("= attach %d %d\n", pid, tid);
-		}
-	} else {
-		if (dbg->pid != -1) {
-			eprintf("Child %d is dead\n", dbg->pid);
-		}
-	}
-	if (pid < 0 || tid < 0) {
-		return false;
+
+	if ((pid != dbg->pid || tid != dbg->tid) && dbg->verbose) {
+		eprintf("= attach %d %d\n", pid, tid);
 	}
 
 	if (dbg->cur && dbg->cur->select && !dbg->cur->select(dbg, pid, tid)) {
