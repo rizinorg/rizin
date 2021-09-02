@@ -551,7 +551,11 @@ RZ_IPI void rz_core_debug_single_step_over(RzCore *core) {
 	rz_config_set_b(core->config, "io.cache", false);
 	if (rz_config_get_b(core->config, "cfg.debug")) {
 		if (core->print->cur_enabled) {
-			rz_core_cmd(core, "dcr", 0);
+			rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
+			rz_reg_arena_swap(core->dbg->reg, true);
+			rz_debug_continue_until_optype(core->dbg, RZ_ANALYSIS_OP_TYPE_RET, 1);
+			rz_cons_break_pop();
+			rz_core_dbg_follow_seek_register(core);
 			core->print->cur_enabled = 0;
 		} else {
 			rz_core_cmd(core, "dso", 0);
