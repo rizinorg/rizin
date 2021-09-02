@@ -8,8 +8,8 @@
 #define SUB_BIN_NATIVE 1
 #define SUB_BIN_NET    2
 
-#ifndef _INCLUDE_R_BIN_PEMIXED_H_
-#define _INCLUDE_R_BIN_PEMIXED_H_
+#ifndef _INCLUDE_RZ_BIN_PEMIXED_H_
+#define _INCLUDE_RZ_BIN_PEMIXED_H_
 
 struct rz_bin_pemixed_obj_t {
 	const char *file;

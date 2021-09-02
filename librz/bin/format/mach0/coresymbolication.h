@@ -4,8 +4,8 @@
 #include <rz_bin.h>
 #include <rz_types.h>
 
-#ifndef _INCLUDE_R_BIN_CORESYMBOLICATION_H
-#define _INCLUDE_R_BIN_CORESYMBOLICATION_H
+#ifndef _INCLUDE_RZ_BIN_CORESYMBOLICATION_H
+#define _INCLUDE_RZ_BIN_CORESYMBOLICATION_H
 
 typedef struct rz_coresym_cache_element_hdr_t {
 	ut32 version;

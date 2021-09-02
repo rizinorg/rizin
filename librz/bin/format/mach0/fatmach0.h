@@ -4,8 +4,8 @@
 #include <rz_types.h>
 #include "mach0_specs.h"
 
-#ifndef _INCLUDE_R_BIN_FATMACH0_H_
-#define _INCLUDE_R_BIN_FATMACH0_H_
+#ifndef _INCLUDE_RZ_BIN_FATMACH0_H_
+#define _INCLUDE_RZ_BIN_FATMACH0_H_
 
 struct rz_bin_fatmach0_obj_t {
 	const char *file;
