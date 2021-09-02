@@ -368,84 +368,59 @@ RZ_API void rz_analysis_esil_trace_restore(RzAnalysisEsil *esil, int idx) {
 	ht_up_foreach(trace->memory, restore_memory_cb, esil);
 }
 
-static void print_instruction_trace(RzILTraceInstruction *instruction, int idx) {
+static void print_instruction_ops(RzILTraceInstruction *instruction, int idx, RzILTraceInsOp focus) {
+	bool reg = focus == RZ_IL_TRACE_INS_HAS_REG_R || focus == RZ_IL_TRACE_INS_HAS_REG_W;
+	bool read = focus == RZ_IL_TRACE_INS_HAS_REG_R || focus == RZ_IL_TRACE_INS_HAS_MEM_R;
+	const char *direction = read ? "read" : "write";
 	void **it;
-	bool first;
+	bool first = true;
+
+	if (reg) {
+		RzPVector *ops = read ? instruction->read_reg_ops : instruction->write_reg_ops;
+		if (!rz_pvector_empty(ops)) {
+			rz_cons_printf("%d.reg.%s=", idx, direction);
+			rz_pvector_foreach (ops, it) {
+				RzILTraceRegOp *op = (RzILTraceRegOp *)*it;
+				first ? (first = false) : rz_cons_print(",");
+				rz_cons_printf("%s", op->reg_name);
+			}
+			rz_cons_newline();
+		}
+		rz_pvector_foreach (ops, it) {
+			RzILTraceRegOp *op = (RzILTraceRegOp *)*it;
+			rz_cons_printf("%d.reg.%s.%s=%s%" PFMT64x "\n", idx, direction,
+				op->reg_name, op->value < 10 ? "" : "0x", op->value);
+		}
+	} else {
+		RzPVector *ops = read ? instruction->read_mem_ops : instruction->write_mem_ops;
+		if (!rz_pvector_empty(ops)) {
+			rz_cons_printf("%d.mem.%s=", idx, direction);
+			rz_pvector_foreach (ops, it) {
+				RzILTraceMemOp *op = (RzILTraceMemOp *)*it;
+				first ? (first = false) : rz_cons_print(",");
+				rz_cons_printf("0x%" PFMT64x, op->addr);
+			}
+			rz_cons_newline();
+		}
+		rz_pvector_foreach (ops, it) {
+			RzILTraceMemOp *op = (RzILTraceMemOp *)*it;
+			char hexstr[sizeof(op->data_buf) * 2 + 1];
+			rz_hex_bin2str(op->data_buf, RZ_MIN(sizeof(op->data_buf), op->data_len), hexstr);
+			rz_cons_printf("%d.mem.%s.data.0x%" PFMT64x "=%s\n", idx, direction, op->addr, hexstr);
+		}
+	}
+}
+
+static void print_instruction_trace(RzILTraceInstruction *instruction, int idx) {
 	rz_cons_printf("%d.addr=0x%" PFMT64x "\n", idx, instruction->addr);
 
 	// IL ops within an instruction are printed in the order reg read, mem
 	// read, reg write, mem write that is partially based on x86 PUSH. This
 	// print order MAY NOT be the same as the actual ops order.
-
-	// Reg read
-	first = true;
-	if (rz_pvector_len(instruction->read_reg_ops)) {
-		rz_cons_printf("%d.reg.read=", idx);
-		rz_pvector_foreach (instruction->read_reg_ops, it) {
-			RzILTraceRegOp *read_op = (RzILTraceRegOp *)*it;
-			first ? (first = false) : rz_cons_print(",");
-			rz_cons_printf("%s", read_op->reg_name);
-		}
-		rz_cons_newline();
-	}
-	rz_pvector_foreach (instruction->read_reg_ops, it) {
-		RzILTraceRegOp *read_op = (RzILTraceRegOp *)*it;
-		rz_cons_printf("%d.reg.read.%s=%s%" PFMT64x "\n", idx,
-			read_op->reg_name, read_op->value < 10 ? "" : "0x", read_op->value);
-	}
-
-	// Mem read
-	first = true;
-	if (rz_pvector_len(instruction->read_mem_ops)) {
-		rz_cons_printf("%d.mem.read=", idx);
-		rz_pvector_foreach (instruction->read_mem_ops, it) {
-			RzILTraceMemOp *read_op = (RzILTraceMemOp *)*it;
-			first ? (first = false) : rz_cons_print(",");
-			rz_cons_printf("0x%" PFMT64x, read_op->addr);
-		}
-		rz_cons_newline();
-	}
-	rz_pvector_foreach (instruction->read_mem_ops, it) {
-		RzILTraceMemOp *read_op = (RzILTraceMemOp *)*it;
-		char hexstr[sizeof(read_op->data_buf) * 2 + 1];
-		rz_hex_bin2str(read_op->data_buf, RZ_MIN(sizeof(read_op->data_buf), read_op->data_len), hexstr);
-		rz_cons_printf("%d.mem.read.data.0x%" PFMT64x "=%s\n", idx, read_op->addr, hexstr);
-	}
-
-	// Reg write
-	first = true;
-	if (rz_pvector_len(instruction->write_reg_ops)) {
-		rz_cons_printf("%d.reg.write=", idx);
-		rz_pvector_foreach (instruction->write_reg_ops, it) {
-			RzILTraceRegOp *write_op = (RzILTraceRegOp *)*it;
-			first ? (first = false) : rz_cons_print(",");
-			rz_cons_printf("%s", write_op->reg_name);
-		}
-		rz_cons_newline();
-	}
-	rz_pvector_foreach (instruction->write_reg_ops, it) {
-		RzILTraceRegOp *write_op = (RzILTraceRegOp *)*it;
-		rz_cons_printf("%d.reg.write.%s=%s%" PFMT64x "\n", idx,
-			write_op->reg_name, write_op->value < 10 ? "" : "0x", write_op->value);
-	}
-
-	// Mem write
-	first = true;
-	if (rz_pvector_len(instruction->write_mem_ops)) {
-		rz_cons_printf("%d.mem.write=", idx);
-		rz_pvector_foreach (instruction->write_mem_ops, it) {
-			RzILTraceMemOp *write_op = (RzILTraceMemOp *)*it;
-			first ? (first = false) : rz_cons_print(",");
-			rz_cons_printf("0x%" PFMT64x, write_op->addr);
-		}
-		rz_cons_newline();
-	}
-	rz_pvector_foreach (instruction->write_mem_ops, it) {
-		RzILTraceMemOp *write_op = (RzILTraceMemOp *)*it;
-		char hexstr[sizeof(write_op->data_buf) * 2 + 1];
-		rz_hex_bin2str(write_op->data_buf, RZ_MIN(sizeof(write_op->data_buf), write_op->data_len), hexstr);
-		rz_cons_printf("%d.mem.write.data.0x%" PFMT64x "=%s\n", idx, write_op->addr, hexstr);
-	}
+	print_instruction_ops(instruction, idx, RZ_IL_TRACE_INS_HAS_REG_R);
+	print_instruction_ops(instruction, idx, RZ_IL_TRACE_INS_HAS_MEM_R);
+	print_instruction_ops(instruction, idx, RZ_IL_TRACE_INS_HAS_REG_W);
+	print_instruction_ops(instruction, idx, RZ_IL_TRACE_INS_HAS_MEM_W);
 }
 
 /**
