@@ -72,17 +72,6 @@ works
 EOF
 RUN
 
-NAME=ibib2
-FILE=bins/elf/analysis/main
-CMDS=<<EOF
-ib;ib
-?e works
-EOF
-EXPECT=<<EOF
-works
-EOF
-RUN
-
 NAME=ih (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=ihq

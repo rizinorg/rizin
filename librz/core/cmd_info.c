@@ -1681,7 +1681,14 @@ RZ_IPI RzCmdStatus rz_cmd_info_source_handler(RzCore *core, int argc, const char
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_guess_size_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	if (state->mode == RZ_OUTPUT_MODE_JSON) {
+		pj_o(state->d.pj);
+		pj_k(state->d.pj, "size");
+	}
 	rz_core_bin_size_print(core, state);
+	if (state->mode == RZ_OUTPUT_MODE_JSON) {
+		pj_end(state->d.pj);
+	}
 	return RZ_CMD_STATUS_OK;
 }
 
