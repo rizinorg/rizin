@@ -1179,9 +1179,12 @@ redone:
 	return 0;
 }
 
+static RzCmdStatus bool2status(bool val) {
+	return val ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+}
+
 RZ_IPI RzCmdStatus rz_cmd_info_archs_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	rz_core_bin_archs_print(core->bin, state);
-	return RZ_CMD_STATUS_OK;
+	return bool2status(rz_core_bin_archs_print(core->bin, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_all_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
@@ -1205,53 +1208,43 @@ RZ_IPI RzCmdStatus rz_cmd_info_all_handler(RzCore *core, int argc, const char **
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_entry_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	rz_core_bin_entries_print(core, state);
-	return RZ_CMD_STATUS_OK;
+	return bool2status(rz_core_bin_entries_print(core, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_entryexits_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	rz_core_bin_initfini_print(core, state);
-	return RZ_CMD_STATUS_OK;
+	return bool2status(rz_core_bin_initfini_print(core, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_exports_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	rz_core_bin_exports_print(core, state, NULL);
-	return RZ_CMD_STATUS_OK;
+	return bool2status(rz_core_bin_exports_print(core, state, NULL));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_cur_export_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	rz_core_bin_cur_export_print(core, state);
-	return RZ_CMD_STATUS_OK;
+	return bool2status(rz_core_bin_cur_export_print(core, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_symbols_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	rz_core_bin_symbols_print(core, state, NULL);
-	return RZ_CMD_STATUS_OK;
+	return bool2status(rz_core_bin_symbols_print(core, state, NULL));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_cur_symbol_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	rz_core_bin_cur_symbol_print(core, state);
-	return RZ_CMD_STATUS_OK;
+	return bool2status(rz_core_bin_cur_symbol_print(core, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_imports_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	rz_core_bin_imports_print(core, state, NULL);
-	return RZ_CMD_STATUS_OK;
+	return bool2status(rz_core_bin_imports_print(core, state, NULL));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_libs_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	rz_core_bin_libs_print(core, state);
-	return RZ_CMD_STATUS_OK;
+	return bool2status(rz_core_bin_libs_print(core, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_main_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	rz_core_bin_main_print(core, state);
-	return RZ_CMD_STATUS_OK;
+	return bool2status(rz_core_bin_main_print(core, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_relocs_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	rz_core_bin_relocs_print(core, state);
-	return RZ_CMD_STATUS_OK;
+	return bool2status(rz_core_bin_relocs_print(core, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_sections_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
@@ -1259,9 +1252,9 @@ RZ_IPI RzCmdStatus rz_cmd_info_sections_handler(RzCore *core, int argc, const ch
 	if (!hashes) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_core_bin_sections_print(core, state, NULL, hashes);
+	bool res = rz_core_bin_sections_print(core, state, NULL, hashes);
 	rz_list_free(hashes);
-	return RZ_CMD_STATUS_OK;
+	return bool2status(res);
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_cur_section_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
@@ -1269,9 +1262,9 @@ RZ_IPI RzCmdStatus rz_cmd_info_cur_section_handler(RzCore *core, int argc, const
 	if (!hashes) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_core_bin_cur_section_print(core, state, hashes);
+	bool res = rz_core_bin_cur_section_print(core, state, hashes);
 	rz_list_free(hashes);
-	return RZ_CMD_STATUS_OK;
+	return bool2status(res);
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_section_bars_handler(RzCore *core, int argc, const char **argv) {
@@ -1339,19 +1332,17 @@ RZ_IPI RzCmdStatus rz_cmd_info_segments_handler(RzCore *core, int argc, const ch
 	if (!hashes) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_core_bin_segments_print(core, state, NULL, hashes);
+	bool res = rz_core_bin_segments_print(core, state, NULL, hashes);
 	rz_list_free(hashes);
-	return RZ_CMD_STATUS_OK;
+	return bool2status(res);
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_strings_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	rz_core_bin_strings_print(core, state);
-	return RZ_CMD_STATUS_OK;
+	return bool2status(rz_core_bin_strings_print(core, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_whole_strings_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	rz_core_bin_whole_strings_print(core, state);
-	return RZ_CMD_STATUS_OK;
+	return bool2status(rz_core_bin_whole_strings_print(core, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_dump_strings_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
@@ -1398,7 +1389,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_handler(RzCore *core, int argc, const char **argv
 		pj_o(state->d.pj);
 		pj_k(state->d.pj, "core");
 	}
-	rz_core_file_info_print(core, state);
+	bool res = rz_core_file_info_print(core, state);
 
 	RzBinObject *obj = rz_bin_cur_object(core->bin);
 	if (bin_is_executable(obj)) {
@@ -1410,53 +1401,39 @@ RZ_IPI RzCmdStatus rz_cmd_info_handler(RzCore *core, int argc, const char **argv
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(state->d.pj);
 	}
-	return RZ_CMD_STATUS_OK;
+	return bool2status(res);
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_classes_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	rz_core_bin_classes_print(core, state);
-	return RZ_CMD_STATUS_OK;
+	return bool2status(rz_core_bin_classes_print(core, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_class_as_source_handler(RzCore *core, int argc, const char **argv) {
-	if (rz_core_bin_class_as_source_print(core, argv[1])) {
-		return RZ_CMD_STATUS_OK;
-	}
-	return RZ_CMD_STATUS_ERROR;
+	return bool2status(rz_core_bin_class_as_source_print(core, argv[1]));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_class_fields_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	if (rz_core_bin_class_fields_print(core, state, argv[1])) {
-		return RZ_CMD_STATUS_OK;
-	}
-	return RZ_CMD_STATUS_ERROR;
+	return bool2status(rz_core_bin_class_fields_print(core, state, argv[1]));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_class_methods_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	if (rz_core_bin_class_methods_print(core, state, argv[1])) {
-		return RZ_CMD_STATUS_OK;
-	}
-	return RZ_CMD_STATUS_ERROR;
+	return bool2status(rz_core_bin_class_methods_print(core, state, argv[1]));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_signature_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	rz_core_bin_signatures_print(core, state);
-	return RZ_CMD_STATUS_OK;
+	return bool2status(rz_core_bin_signatures_print(core, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_fields_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	rz_core_bin_fields_print(core, state);
-	return RZ_CMD_STATUS_OK;
+	return bool2status(rz_core_bin_fields_print(core, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_headers_handler(RzCore *core, int argc, const char **argv) {
-	rz_core_bin_headers_print(core);
-	return RZ_CMD_STATUS_OK;
+	return bool2status(rz_core_bin_headers_print(core));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_binary_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	rz_core_bin_info_print(core, state);
-	return RZ_CMD_STATUS_OK;
+	return bool2status(rz_core_bin_info_print(core, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_plugins_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
@@ -1488,8 +1465,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_plugins_handler(RzCore *core, int argc, const cha
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_dwarf_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	rz_core_bin_dwarf_print(core, state);
-	return RZ_CMD_STATUS_OK;
+	return bool2status(rz_core_bin_dwarf_print(core, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_pdb_load_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
@@ -1565,18 +1541,15 @@ RZ_IPI RzCmdStatus rz_cmd_info_pdb_download_handler(RzCore *core, int argc, cons
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_demangle_handler(RzCore *core, int argc, const char **argv) {
-	demangle_internal(core, argv[1], argv[2]);
-	return RZ_CMD_STATUS_OK;
+	return bool2status(demangle_internal(core, argv[1], argv[2]));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_memory_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	rz_core_bin_memory_print(core, state);
-	return RZ_CMD_STATUS_OK;
+	return bool2status(rz_core_bin_memory_print(core, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_resources_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	rz_core_bin_resources_print(core, state);
-	return RZ_CMD_STATUS_OK;
+	return bool2status(rz_core_bin_resources_print(core, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_hashes_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
@@ -1656,28 +1629,23 @@ RZ_IPI RzCmdStatus rz_cmd_info_hashes_handler(RzCore *core, int argc, const char
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_versions_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	rz_core_bin_versions_print(core, state);
-	return RZ_CMD_STATUS_OK;
+	return bool2status(rz_core_bin_versions_print(core, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_trycatch_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	rz_core_bin_trycatch_print(core, state);
-	return RZ_CMD_STATUS_OK;
+	return bool2status(rz_core_bin_trycatch_print(core, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_sourcelines_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	print_source_info(core, PRINT_SOURCE_INFO_LINES_ALL, state);
-	return RZ_CMD_STATUS_OK;
+	return bool2status(print_source_info(core, PRINT_SOURCE_INFO_LINES_ALL, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_sourcelines_here_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	print_source_info(core, PRINT_SOURCE_INFO_LINES_HERE, state);
-	return RZ_CMD_STATUS_OK;
+	return bool2status(print_source_info(core, PRINT_SOURCE_INFO_LINES_HERE, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_source_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	print_source_info(core, PRINT_SOURCE_INFO_FILES, state);
-	return RZ_CMD_STATUS_OK;
+	return bool2status(print_source_info(core, PRINT_SOURCE_INFO_FILES, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_guess_size_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
@@ -1685,11 +1653,11 @@ RZ_IPI RzCmdStatus rz_cmd_info_guess_size_handler(RzCore *core, int argc, const 
 		pj_o(state->d.pj);
 		pj_k(state->d.pj, "size");
 	}
-	rz_core_bin_size_print(core, state);
+	bool res = rz_core_bin_size_print(core, state);
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(state->d.pj);
 	}
-	return RZ_CMD_STATUS_OK;
+	return bool2status(res);
 }
 
 RZ_IPI RzCmdStatus rz_cmd_bin_reload_handler(RzCore *core, int argc, const char **argv) {
