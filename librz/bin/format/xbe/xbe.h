@@ -1,3 +1,8 @@
+// SPDX-FileCopyrightText: 2014 LemonBoy <thatlemon@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
+#ifndef _INCLUDE_XBE_H_
+#define _INCLUDE_XBE_H_
 
 #define XBE_MAGIC 0x48454258
 
@@ -71,3 +76,5 @@ typedef struct {
 	int kt_key;
 	int ep_key;
 } rz_bin_xbe_obj_t;
+
+#endif

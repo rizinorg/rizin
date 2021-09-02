@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2014-2018 thelemon <thatlemon@gmail.com>
+// SPDX-FileCopyrightText: 2014-2018 LemonBoy <thatlemon@gmail.com>
 // SPDX-FileCopyrightText: 2014-2018 kazarmy <kazarmy@gmail.com>
 // SPDX-FileCopyrightText: 2014-2018 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only

@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2016 Alberto Ortega
+// SPDX-License-Identifier: LGPL-3.0-only
 
 /*
 https://www.3dbrew.org/wiki/FIRM

@@ -35,6 +35,10 @@ Files: .gitignore
 Copyright: 2021 RizinOrg <info@rizin.re>
 License: LGPL-3.0-only
 
+Files: **/.gitignore
+Copyright: 2021 RizinOrg <info@rizin.re>
+License: LGPL-3.0-only
+
 Files: .pylintrc
 Copyright: 2021 RizinOrg <info@rizin.re>
 License: LGPL-3.0-only
@@ -47,6 +51,10 @@ Files: *.md
 Copyright: 2021 RizinOrg <info@rizin.re>
 License: LGPL-3.0-only
 
+Files: *.in
+Copyright: 2021 RizinOrg <info@rizin.re>
+License: LGPL-3.0-only
+
 Files: **/meson.build
 Copyright: 2021 RizinOrg <info@rizin.re>
 License: LGPL-3.0-only
@@ -56,6 +64,10 @@ Copyright: 2021 RizinOrg <info@rizin.re>
 License: LGPL-3.0-only
 
 Files: meson_options.txt
+Copyright: 2021 RizinOrg <info@rizin.re>
+License: LGPL-3.0-only
+
+Files: **/meson_options.txt
 Copyright: 2021 RizinOrg <info@rizin.re>
 License: LGPL-3.0-only
 
