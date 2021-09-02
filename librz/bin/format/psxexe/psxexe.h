@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2015 Dax <trogu.davide@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef PSXEXE_H
 #define PSXEXE_H
 

@@ -1,3 +1,8 @@
+// SPDX-FileCopyrightText: 2015. The YARA Authors. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+/* Forked by pancake in 2017 */
+
 #ifndef YR_DOTNET_H
 #define YR_DOTNET_H
 

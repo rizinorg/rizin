@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2008-2011 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef _R_BFVM_INCLUDE_
 #define _R_BFVM_INCLUDE_
 

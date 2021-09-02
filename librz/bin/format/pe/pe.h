@@ -8,8 +8,8 @@
 
 #include "pe_specs.h"
 
-#ifndef _INCLUDE_R_BIN_PE_H_
-#define _INCLUDE_R_BIN_PE_H_
+#ifndef _INCLUDE_RZ_BIN_PE_H_
+#define _INCLUDE_RZ_BIN_PE_H_
 
 #define RZ_BIN_PE_SCN_IS_SHAREABLE(x)  x &PE_IMAGE_SCN_MEM_SHARED
 #define RZ_BIN_PE_SCN_IS_EXECUTABLE(x) x &PE_IMAGE_SCN_MEM_EXECUTE

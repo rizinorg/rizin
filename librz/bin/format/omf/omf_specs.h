@@ -1,7 +1,11 @@
+// SPDX-FileCopyrightText: 2015 ampotos <mercie_i@epitech.eu>
+// SPDX-FileCopyrightText: 2015-2019 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef OMF_SPECS_H_
 #define OMF_SPECS_H_
 
-// additionnal informations : http://pierrelib.pagesperso-orange.fr/exec_formats/OMF_v1.1.pdf
+// additional information : http://pierrelib.pagesperso-orange.fr/exec_formats/OMF_v1.1.pdf
 
 // record type
 #define OMF_THEADR    0x80 // Translator Header Record

@@ -1,9 +1,13 @@
+// SPDX-FileCopyrightText: 2010-2020 nibble <nibble.ds@gmail.com>
+// SPDX-FileCopyrightText: 2010-2020 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_bin.h>
 #include <rz_types.h>
 #include "mach0_specs.h"
 
-#ifndef _INCLUDE_R_BIN_MACH0_H_
-#define _INCLUDE_R_BIN_MACH0_H_
+#ifndef _INCLUDE_RZ_BIN_MACH0_H_
+#define _INCLUDE_RZ_BIN_MACH0_H_
 
 // 20% faster loading times for macho if enabled
 #define FEATURE_SYMLIST 0
