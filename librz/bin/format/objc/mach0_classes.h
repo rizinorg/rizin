@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2015 inisider <inisider@gmail.com>
+// SPDX-FileCopyrightText: 2018-2019 Francesco Tamagni <mrmacete@protonmail.ch>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_bin.h>
 
 #include "mach0/mach0_specs.h"

@@ -7,8 +7,8 @@
 #include <rz_lib.h>
 #include <rz_bin.h>
 
-#ifndef _INCLUDE_R_BIN_TE_H_
-#define _INCLUDE_R_BIN_TE_H_
+#ifndef _INCLUDE_RZ_BIN_TE_H_
+#define _INCLUDE_RZ_BIN_TE_H_
 
 #define RZ_BIN_TE_SCN_IS_SHAREABLE(x)  x &TE_IMAGE_SCN_MEM_SHARED
 #define RZ_BIN_TE_SCN_IS_EXECUTABLE(x) x &TE_IMAGE_SCN_MEM_EXECUTE

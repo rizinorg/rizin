@@ -20,6 +20,9 @@ RZ_API RZ_OWN RzAnalysisVarGlobal *rz_analysis_var_global_new(RZ_NONNULL const c
 	}
 	glob->name = strdup(name);
 	glob->addr = addr;
+	glob->flag_item = NULL;
+	glob->analysis = NULL;
+
 	return glob;
 }
 
@@ -43,8 +46,14 @@ int global_var_node_cmp(const void *incoming, const RBNode *in_tree, void *user)
  */
 RZ_API RZ_OWN bool rz_analysis_var_global_add(RzAnalysis *analysis, RZ_NONNULL RzAnalysisVarGlobal *global_var) {
 	rz_return_val_if_fail(analysis && global_var, false);
-	if (rz_analysis_var_global_get_byaddr_in(analysis, global_var->addr)) {
-		RZ_LOG_ERROR("Global variable %s at 0x%" PFMT64x " already exists!\n", global_var->name, global_var->addr);
+
+	RzAnalysisVarGlobal *existing_glob = NULL;
+	if ((existing_glob = rz_analysis_var_global_get_byaddr_in(analysis, global_var->addr))) {
+		RZ_LOG_ERROR("Global variable %s at 0x%" PFMT64x " already exists!\n", existing_glob->name, existing_glob->addr);
+		return false;
+	}
+	if ((existing_glob = rz_analysis_var_global_get_byname(analysis, global_var->name))) {
+		RZ_LOG_ERROR("Global variable %s at 0x%" PFMT64x " already exists!\n", existing_glob->name, existing_glob->addr);
 		return false;
 	}
 	if (!ht_pp_insert(analysis->ht_global_var, global_var->name, global_var)) {
@@ -53,6 +62,10 @@ RZ_API RZ_OWN bool rz_analysis_var_global_add(RzAnalysis *analysis, RZ_NONNULL R
 	if (!rz_rbtree_aug_insert(&analysis->global_var_tree, &global_var->addr, &global_var->rb, global_var_node_cmp, NULL, NULL)) {
 		return false;
 	}
+
+	global_var->analysis = analysis;
+	global_var->flag_item = rz_flag_set(global_var->analysis->flb.f, global_var->name, global_var->addr, rz_type_db_get_bitsize(global_var->analysis->typedb, global_var->type) / 8);
+
 	return true;
 }
 
@@ -70,7 +83,29 @@ RZ_API void rz_analysis_var_global_free(RzAnalysisVarGlobal *glob) {
 	RZ_FREE(glob->name);
 	rz_type_free(glob->type);
 	rz_vector_fini(&glob->constraints);
+
+	if (glob->flag_item && glob->analysis && !rz_flag_unset(glob->analysis->flb.f, glob->flag_item)) {
+		RZ_LOG_ERROR("Failed to unset flag for global variable %s at 0x%" PFMT64x "\n", glob->name, glob->addr);
+	}
+
+	glob->flag_item = NULL;
+	glob->analysis = NULL;
 	RZ_FREE(glob);
+}
+
+/**
+ * \brief Delete and free the global variable
+ * 
+ * \param analysis RzAnalysis
+ * \param glob global variable to be deleted
+ * \return true if succeed
+ */
+RZ_API bool rz_analysis_var_global_delete(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisVarGlobal *glob) {
+	rz_return_val_if_fail(analysis && glob, false);
+
+	// We need to delete RBTree first because ht_pp_delete will free its member
+	bool deleted = rz_rbtree_delete(&analysis->global_var_tree, &glob->addr, global_var_node_cmp, NULL, NULL, NULL);
+	return deleted ? ht_pp_delete(analysis->ht_global_var, glob->name) : deleted;
 }
 
 /**
@@ -84,11 +119,11 @@ RZ_API bool rz_analysis_var_global_delete_byname(RzAnalysis *analysis, RZ_NONNUL
 	rz_return_val_if_fail(analysis && name, false);
 	RzAnalysisVarGlobal *glob = rz_analysis_var_global_get_byname(analysis, name);
 	if (!glob) {
+		RZ_LOG_ERROR("No global variable found having name %s\n", name);
 		return false;
 	}
-	// We need to delete RBTree first because ht_pp_delete will free its member
-	bool deleted = rz_rbtree_delete(&analysis->global_var_tree, &glob->addr, global_var_node_cmp, NULL, NULL, NULL);
-	return deleted ? ht_pp_delete(analysis->ht_global_var, name) : deleted;
+
+	return rz_analysis_var_global_delete(analysis, glob);
 }
 
 /**
@@ -102,11 +137,11 @@ RZ_API bool rz_analysis_var_global_delete_byaddr_at(RzAnalysis *analysis, ut64 a
 	rz_return_val_if_fail(analysis, false);
 	RzAnalysisVarGlobal *glob = rz_analysis_var_global_get_byaddr_at(analysis, addr);
 	if (!glob) {
+		RZ_LOG_ERROR("No global variable found at 0x%" PFMT64x "\n", addr);
 		return false;
 	}
-	// We need to delete RBTree first because ht_pp_delete will free its member
-	bool deleted = rz_rbtree_delete(&analysis->global_var_tree, &glob->addr, global_var_node_cmp, NULL, NULL, NULL);
-	return deleted ? ht_pp_delete(analysis->ht_global_var, glob->name) : deleted;
+
+	return rz_analysis_var_global_delete(analysis, glob);
 }
 
 /**
@@ -120,11 +155,11 @@ RZ_API bool rz_analysis_var_global_delete_byaddr_in(RzAnalysis *analysis, ut64 a
 	rz_return_val_if_fail(analysis, false);
 	RzAnalysisVarGlobal *glob = rz_analysis_var_global_get_byaddr_in(analysis, addr);
 	if (!glob) {
+		RZ_LOG_ERROR("No global variable found in 0x%" PFMT64x "\n", addr);
 		return false;
 	}
-	// We need to delete RBTree first because ht_pp_delete will free its member
-	bool deleted = rz_rbtree_delete(&analysis->global_var_tree, &glob->addr, global_var_node_cmp, NULL, NULL, NULL);
-	return deleted ? ht_pp_delete(analysis->ht_global_var, glob->name) : deleted;
+
+	return rz_analysis_var_global_delete(analysis, glob);
 }
 
 /**
@@ -230,6 +265,11 @@ RZ_API bool rz_analysis_var_global_rename(RzAnalysis *analysis, RZ_NONNULL const
 	}
 	RZ_FREE(glob->name);
 	glob->name = strdup(newname);
+
+	if (glob->flag_item) {
+		rz_flag_rename(analysis->flb.f, glob->flag_item, newname);
+	}
+
 	return ht_pp_update_key(analysis->ht_global_var, old_name, newname);
 }
 
@@ -244,6 +284,10 @@ RZ_API void rz_analysis_var_global_set_type(RzAnalysisVarGlobal *glob, RZ_NONNUL
 	rz_return_if_fail(glob && type);
 	rz_type_free(glob->type);
 	glob->type = type;
+
+	if (glob->analysis && glob->flag_item) {
+		glob->flag_item->size = rz_type_db_get_bitsize(glob->analysis->typedb, glob->type) / 8;
+	}
 }
 
 /**
