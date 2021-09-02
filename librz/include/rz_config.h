@@ -42,7 +42,6 @@ typedef struct rz_config_t {
 	int lock;
 	void *user;
 	RzNum *num;
-	PrintfCallback cb_printf;
 	RzList *nodes;
 	HtPP *ht;
 } RzConfig;

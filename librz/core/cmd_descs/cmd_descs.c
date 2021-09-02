@@ -5912,7 +5912,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *e_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "e", rz_eval_getset_handler, &eval_getset_help, &e_help);
 	rz_warn_if_fail(e_cd);
-	RzCmdDesc *eval_list_cd = rz_cmd_desc_argv_modes_new(core->rcmd, e_cd, "el", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_LONG | RZ_OUTPUT_MODE_LONG_JSON, rz_eval_list_handler, &eval_list_help);
+	RzCmdDesc *eval_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, e_cd, "el", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_LONG | RZ_OUTPUT_MODE_LONG_JSON, rz_eval_list_handler, &eval_list_help);
 	rz_warn_if_fail(eval_list_cd);
 
 	RzCmdDesc *eval_reset_cd = rz_cmd_desc_argv_new(core->rcmd, e_cd, "e-", rz_eval_reset_handler, &eval_reset_help);

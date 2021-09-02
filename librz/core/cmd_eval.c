@@ -475,7 +475,11 @@ RZ_IPI int rz_eval_color(void *data, const char *input) {
 
 RZ_IPI RzCmdStatus rz_eval_getset_handler(RzCore *core, int argc, const char **argv) {
 	if (argc == 1) {
-		rz_core_config_print_all(core->config, NULL, RZ_OUTPUT_MODE_QUIET);
+		RzCmdStateOutput state = { 0 };
+		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET);
+		rz_core_config_print_all(core->config, NULL, &state);
+		rz_cmd_state_output_print(&state);
+		rz_cmd_state_output_fini(&state);
 		return RZ_CMD_STATUS_OK;
 	}
 
@@ -497,7 +501,11 @@ RZ_IPI RzCmdStatus rz_eval_getset_handler(RzCore *core, int argc, const char **a
 
 		if (llen == 1 && rz_str_endswith(key, ".")) {
 			// no value was set, only key with ".". List possible sub-keys.
-			rz_core_config_print_all(core->config, key, RZ_OUTPUT_MODE_QUIET);
+			RzCmdStateOutput state = { 0 };
+			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET);
+			rz_core_config_print_all(core->config, key, &state);
+			rz_cmd_state_output_print(&state);
+			rz_cmd_state_output_fini(&state);
 		} else if (llen == 1) {
 			// no value was set, show the value of the key
 			const char *v = rz_config_get(core->config, key);
@@ -510,39 +518,14 @@ RZ_IPI RzCmdStatus rz_eval_getset_handler(RzCore *core, int argc, const char **a
 			char *value = rz_list_get_n(l, 1);
 			rz_config_set(core->config, key, value);
 		}
-
 		rz_list_free(l);
 	}
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_eval_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+RZ_IPI RzCmdStatus rz_eval_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	const char *arg = argc > 1 ? argv[1] : "";
-	switch (mode) {
-	case RZ_OUTPUT_MODE_STANDARD:
-		rz_core_config_print_all(core->config, arg, RZ_OUTPUT_MODE_STANDARD);
-		break;
-	case RZ_OUTPUT_MODE_JSON:
-		rz_core_config_print_all(core->config, arg, RZ_OUTPUT_MODE_JSON);
-		break;
-	case RZ_OUTPUT_MODE_RIZIN:
-		rz_core_config_print_all(core->config, arg, RZ_OUTPUT_MODE_RIZIN);
-		break;
-	case RZ_OUTPUT_MODE_QUIET:
-		rz_core_config_print_all(core->config, arg, RZ_OUTPUT_MODE_QUIET);
-		break;
-	case RZ_OUTPUT_MODE_LONG:
-		rz_core_config_print_all(core->config, arg, RZ_OUTPUT_MODE_LONG);
-		break;
-	case RZ_OUTPUT_MODE_LONG_JSON: {
-		char *a = rz_str_newf("j%s", arg);
-		rz_core_config_print_all(core->config, a, RZ_OUTPUT_MODE_LONG_JSON);
-		free(a);
-		break;
-	}
-	default:
-		return RZ_CMD_STATUS_ERROR;
-	}
+	rz_core_config_print_all(core->config, arg, state);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -586,40 +569,32 @@ RZ_IPI RzCmdStatus rz_eval_spaces_handler(RzCore *core, int argc, const char **a
 	RzConfigNode *node;
 	RzListIter *iter;
 	arg = rz_str_trim_head_ro(arg);
-	if (arg && *arg) {
-		rz_list_foreach (core->config->nodes, iter, node) {
-			char *space = strdup(node->name);
-			char *dot = strchr(space, '.');
-			if (dot) {
-				*dot = 0;
-			}
+	char *oldSpace = NULL;
+	rz_list_foreach (core->config->nodes, iter, node) {
+		char *space = strdup(node->name);
+		char *dot = strchr(space, '.');
+		if (dot) {
+			*dot = 0;
+		}
+		if (arg && *arg) {
 			if (!strcmp(arg, space)) {
 				rz_cons_println(dot + 1);
 			}
 			free(space);
-		}
-	} else {
-		char *oldSpace = NULL;
-		rz_list_foreach (core->config->nodes, iter, node) {
-			char *space = strdup(node->name);
-			char *dot = strchr(space, '.');
-			if (dot) {
-				*dot = 0;
+			continue;
+		} else if (oldSpace) {
+			if (!strcmp(space, oldSpace)) {
+				free(space);
+				continue;
 			}
-			if (oldSpace) {
-				if (!strcmp(space, oldSpace)) {
-					free(space);
-					continue;
-				}
-				free(oldSpace);
-				oldSpace = space;
-			} else {
-				oldSpace = space;
-			}
-			rz_cons_println(space);
+			free(oldSpace);
+			oldSpace = space;
+		} else {
+			oldSpace = space;
 		}
-		free(oldSpace);
+		rz_cons_println(space);
 	}
+	free(oldSpace);
 	return RZ_CMD_STATUS_OK;
 }
 

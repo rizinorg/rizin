@@ -1737,7 +1737,7 @@ RZ_API bool rz_core_esil_cmd(RzAnalysisEsil *esil, const char *cmd, ut64 a1, ut6
 	return false;
 }
 
-static void __evalString(RzConfig *cfg, char *name) {
+static void eval_string(RzConfig *cfg, char *name) {
 	if (!*name) {
 		return;
 	}
@@ -1751,7 +1751,11 @@ static void __evalString(RzConfig *cfg, char *name) {
 		}
 	} else {
 		if (rz_str_endswith(name, ".")) {
-			rz_core_config_print_all(cfg, name, RZ_OUTPUT_MODE_QUIET);
+			RzCmdStateOutput state = { 0 };
+			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET);
+			rz_core_config_print_all(cfg, NULL, &state);
+			rz_cmd_state_output_print(&state);
+			rz_cmd_state_output_fini(&state);
 		} else {
 			const char *v = rz_config_get(cfg, name);
 			if (v) {
@@ -1769,7 +1773,11 @@ RZ_API bool rz_core_config_eval_and_print(RzCore *core, const char *str, bool ma
 	char *s = rz_str_trim_dup(str);
 
 	if (!*s || !strcmp(s, "help")) {
-		rz_core_config_print_all(core->config, NULL, RZ_OUTPUT_MODE_QUIET);
+		RzCmdStateOutput state = { 0 };
+		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET);
+		rz_core_config_print_all(core->config, NULL, &state);
+		rz_cmd_state_output_print(&state);
+		rz_cmd_state_output_fini(&state);
 		free(s);
 		return false;
 	}
@@ -1782,26 +1790,26 @@ RZ_API bool rz_core_config_eval_and_print(RzCore *core, const char *str, bool ma
 	if (many) {
 		// space separated list of k=v k=v,..
 		// if you want to use spaces go for base64 or e.
-		RzList *list = rz_str_split_list(s, ",", 0);
+		RzList *list = rz_str_split_list(s, " ", 0);
 		RzListIter *iter;
 		char *name;
 		rz_list_foreach (list, iter, name) {
-			__evalString(core->config, name);
+			eval_string(core->config, name);
 		}
 		free(s);
 		return true;
 	}
-	__evalString(core->config, s);
+	eval_string(core->config, s);
 	free(s);
 	return true;
 }
 
-static void config_print_node(RzConfig *cfg, RzConfigNode *node, const char *pfx, const char *sfx,
-	PJ *pj, RzOutputMode mode) {
-
-	rz_return_if_fail(cfg && pfx && sfx);
+static void config_print_node(RzConfig *cfg, RzConfigNode *node, RzCmdStateOutput *state) {
+	rz_return_if_fail(cfg);
 	char *option;
 	bool isFirst;
+	RzOutputMode mode = state->mode;
+	PJ *pj = state->d.pj;
 	RzListIter *iter;
 	char *es = NULL;
 
@@ -1840,8 +1848,8 @@ static void config_print_node(RzConfig *cfg, RzConfigNode *node, const char *pfx
 		}
 		pj_end(pj);
 	} else if (mode == RZ_OUTPUT_MODE_LONG) {
-		rz_cons_printf("%s%s = %s%s %s; %s", pfx,
-			node->name, node->value, sfx,
+		rz_cons_printf("%s = %s %s; %s",
+			node->name, node->value,
 			rz_config_node_is_ro(node) ? "(ro)" : "",
 			node->desc);
 		if (!rz_list_empty(node->options)) {
@@ -1859,94 +1867,47 @@ static void config_print_node(RzConfig *cfg, RzConfigNode *node, const char *pfx
 		}
 		rz_cons_println("");
 	} else if (mode == RZ_OUTPUT_MODE_QUIET) {
-		rz_cons_printf("%s%s = %s%s\n", pfx,
-			node->name, node->value, sfx);
+		rz_cons_printf("%s=%s\n", node->name, node->value);
+	} else if (mode == RZ_OUTPUT_MODE_RIZIN) {
+		rz_cons_printf("e %s=%s\n", node->name, node->value);
+	} else if (mode == RZ_OUTPUT_MODE_STANDARD) {
+		rz_cons_printf("%20s: %s\n", node->name,
+			node->desc ? node->desc : "");
 	}
 }
 
-RZ_API void rz_core_config_print_all(RzConfig *cfg, const char *str, RzOutputMode mode) {
+RZ_API void rz_core_config_print_all(RzConfig *cfg, const char *str, RzCmdStateOutput *state) {
 	rz_return_if_fail(cfg);
 	RzConfigNode *node;
 	RzListIter *iter;
-	const char *sfx = "";
-	const char *pfx = "";
 	int len = 0;
-	PJ *pj = NULL;
+	PJ *pj = state->d.pj;
+	RzOutputMode mode = state->mode;
+
+	if (mode == RZ_OUTPUT_MODE_LONG_JSON) {
+		pj_a(pj);
+	} else if (mode == RZ_OUTPUT_MODE_JSON) {
+		pj_o(pj);
+	}
 
 	if (RZ_STR_ISNOTEMPTY(str)) {
 		str = rz_str_trim_head_ro(str);
 		len = strlen(str);
-		if (len > 0 && str[0] == 'j') {
-			str++;
-			len--;
-		}
 		if (len > 0 && str[0] == ' ') {
 			str++;
 			len--;
 		}
-		if (strlen(str) == 0) {
-			str = NULL;
-			len = 0;
+	}
+
+	rz_list_foreach (cfg->nodes, iter, node) {
+		if (!str || (!strncmp(str, node->name, len))) {
+			config_print_node(cfg, node, state);
 		}
 	}
 
-	switch (mode) {
-	case RZ_OUTPUT_MODE_RIZIN:
-		pfx = "\"e ";
-		sfx = "\"";
-	case RZ_OUTPUT_MODE_QUIET:
-		rz_list_foreach (cfg->nodes, iter, node) {
-			if (!str || (str && (!strncmp(str, node->name, len)))) {
-				config_print_node(cfg, node, pfx, sfx, NULL, RZ_OUTPUT_MODE_QUIET);
-			}
-		}
-		break;
-	case RZ_OUTPUT_MODE_STANDARD:
-		rz_list_foreach (cfg->nodes, iter, node) {
-			if (!str || (str && (!strncmp(str, node->name, len)))) {
-				if (!str || !strncmp(str, node->name, len)) {
-					rz_cons_printf("%20s: %s\n", node->name,
-						node->desc ? node->desc : "");
-				}
-			}
-		}
-		break;
-	case RZ_OUTPUT_MODE_LONG:
-		rz_list_foreach (cfg->nodes, iter, node) {
-			if (!str || (str && (!strncmp(str, node->name, len)))) {
-				config_print_node(cfg, node, pfx, sfx, pj, RZ_OUTPUT_MODE_LONG);
-			}
-		}
-		break;
-	case RZ_OUTPUT_MODE_LONG_JSON:
-		if (!pj) {
-			pj = pj_new();
-		}
-		pj_a(pj);
-		rz_list_foreach (cfg->nodes, iter, node) {
-			if (!str || (str && (!strncmp(str, node->name, len)))) {
-				config_print_node(cfg, node, pfx, sfx, pj, RZ_OUTPUT_MODE_LONG_JSON);
-			}
-		}
+	if (mode == RZ_OUTPUT_MODE_LONG_JSON || mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
 		rz_cons_println(pj_string(pj));
-		pj_free(pj);
-		break;
-	case RZ_OUTPUT_MODE_JSON:
-		if (!pj) {
-			pj = pj_new();
-		}
-		pj_o(pj);
-		rz_list_foreach (cfg->nodes, iter, node) {
-			if (!str || (str && (!strncmp(str, node->name, len)))) {
-				config_print_node(cfg, node, pfx, sfx, pj, RZ_OUTPUT_MODE_JSON);
-			}
-		}
-		pj_end(pj);
-		rz_cons_println(pj_string(pj));
-		pj_free(pj);
-	default:
-		break;
 	}
 }
 
