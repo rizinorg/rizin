@@ -1525,7 +1525,7 @@ RZ_IPI int rz_cmd_debug_dmi(void *data, const char *input) {
 		map = get_closest_map(core, addr);
 		if (map) {
 			RzCoreBinFilter filter;
-			filter.offset = 0LL;
+			filter.offset = UT64_MAX;
 			filter.name = (char *)symname;
 			baddr = map->addr;
 
@@ -1585,7 +1585,7 @@ RZ_IPI int rz_cmd_debug_dmi(void *data, const char *input) {
 			}
 			if (closest_symbol) {
 				RzCoreBinFilter filter;
-				filter.offset = 0LL;
+				filter.offset = UT64_MAX;
 				filter.name = (char *)closest_symbol->name;
 
 				rz_bin_set_baddr(core->bin, map->addr);
