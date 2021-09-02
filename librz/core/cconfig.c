@@ -1805,7 +1805,7 @@ RZ_API bool rz_core_config_eval_and_print(RzCore *core, const char *str, bool ma
 }
 
 static void config_print_node(RzConfig *cfg, RzConfigNode *node, RzCmdStateOutput *state) {
-	rz_return_if_fail(cfg);
+	rz_return_if_fail(cfg && node && state);
 	char *option;
 	bool isFirst;
 	RzOutputMode mode = state->mode;
@@ -1869,7 +1869,7 @@ static void config_print_node(RzConfig *cfg, RzConfigNode *node, RzCmdStateOutpu
 	} else if (mode == RZ_OUTPUT_MODE_QUIET) {
 		rz_cons_printf("%s=%s\n", node->name, node->value);
 	} else if (mode == RZ_OUTPUT_MODE_RIZIN) {
-		rz_cons_printf("e %s=%s\n", node->name, node->value);
+		rz_cons_printf("e %s=%s\n", node->name, rz_cmd_escape_arg(node->value, RZ_CMD_ESCAPE_ONE_ARG));
 	} else if (mode == RZ_OUTPUT_MODE_STANDARD) {
 		rz_cons_printf("%20s: %s\n", node->name,
 			node->desc ? node->desc : "");
