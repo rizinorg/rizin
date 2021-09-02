@@ -1,3 +1,8 @@
 IStream=struct
 struct.IStream=
 
+HUSKEY=typedef
+typedef.HUSKEY=HANDLE
+
+PHUSKEY=typedef
+typedef.PHUSKEY=HUSKEY*
