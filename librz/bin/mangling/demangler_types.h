@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2015 inisider <inisider@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef DEMANGLER_TYPES_H
 #define DEMANGLER_TYPES_H
 

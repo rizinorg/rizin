@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2014 Ilya V. Matveychikov <matvejchikov@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 static insn_head_t c55x_list[] = {
 {
 	.byte = 0x00,
