@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2010-2020 nibble <nibble.ds@gmail.com>
+// SPDX-FileCopyrightText: 2010-2020 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef _INCLUDE_R_BIN_MACH0_SPECS_H_
 #define _INCLUDE_R_BIN_MACH0_SPECS_H_
