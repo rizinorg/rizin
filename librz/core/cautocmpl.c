@@ -276,6 +276,19 @@ static void autocmplt_cmd_arg_any_type(RzCore *core, RzLineNSCompletionResult *r
 	rz_list_free(list);
 }
 
+static void autocmplt_cmd_arg_global_var(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
+	RzAnalysisVarGlobal *glob;
+	RzListIter *iter;
+	RzList *list = rz_analysis_var_global_get_all(core->analysis);
+	rz_list_foreach (list, iter, glob) {
+		char *name = glob->name;
+		if (!strncmp(name, s, len)) {
+			rz_line_ns_completion_result_add(res, name);
+		}
+	}
+	rz_list_free(list);
+}
+
 static void autocmplt_cmd_arg_help_var(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
 	const char **vars = rz_core_help_vars_get(core);
 	while (*vars) {
@@ -520,6 +533,9 @@ static void autocmplt_cmd_arg(RzCore *core, RzLineNSCompletionResult *res, const
 		break;
 	case RZ_CMD_ARG_TYPE_ANY_TYPE:
 		autocmplt_cmd_arg_any_type(core, res, s, len);
+		break;
+	case RZ_CMD_ARG_TYPE_GLOBAL_VAR:
+		autocmplt_cmd_arg_global_var(core, res, s, len);
 		break;
 	default:
 		break;
