@@ -479,7 +479,7 @@ RZ_API bool rz_core_bin_print(RzCore *core, ut32 mask, RzCoreBinFilter *filter, 
 		}
 	}
 	if (mask & RZ_CORE_BIN_ACC_DWARF) {
-		if (state->mode & (RZ_OUTPUT_MODE_STANDARD)) {
+		if (state->mode & (RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON)) {
 			wrap_mode("dwarf", RZ_OUTPUT_MODE_STANDARD, rz_core_bin_dwarf_print(core, st));
 		}
 	}
