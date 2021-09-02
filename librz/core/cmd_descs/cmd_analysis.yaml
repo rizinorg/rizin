@@ -422,10 +422,17 @@ commands:
           - name: avgd
             summary: delete the global variable at the addr
             type: RZ_CMD_DESC_TYPE_ARGV
-            cname: analysis_global_variable_delete
+            cname: analysis_global_variable_delete_byaddr
             args:
               - name: addr
                 type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: avgm
+            summary: delete global variable with name
+            type: RZ_CMD_DESC_TYPE_ARGV
+            cname: analysis_global_variable_delete_byname
+            args:
+              - name: name
+                type: RZ_CMD_ARG_TYPE_STRING
           - name: avgn
             summary: rename the global variable
             type: RZ_CMD_DESC_TYPE_ARGV
