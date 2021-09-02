@@ -429,7 +429,7 @@ RZ_API void rz_core_fini(RzCore *c);
 RZ_API void rz_core_wait(RzCore *core);
 RZ_API RzCore *rz_core_ncast(ut64 p);
 RZ_API RzCore *rz_core_cast(void *p);
-RZ_API bool rz_core_bin_load_structs(RzCore *core, const char *file);
+RZ_API bool rz_core_bin_load_structs(RZ_NONNULL RzCore *core, RZ_NONNULL const char *file);
 RZ_API int rz_core_config_init(RzCore *core);
 RZ_API void rz_core_parse_rizinrc(RzCore *r);
 RZ_API int rz_core_prompt(RzCore *core, int sync);

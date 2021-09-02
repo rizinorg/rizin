@@ -1488,9 +1488,7 @@ static int bin_pe_init_imports(struct PE_(rz_bin_pe_obj_t) * bin) {
 
 	PE_DWord import_dir_paddr = bin_pe_rva_to_paddr(bin, data_dir_import->VirtualAddress);
 	PE_DWord import_dir_offset = bin_pe_rva_to_paddr(bin, data_dir_import->VirtualAddress);
-	PE_DWord delay_import_dir_offset = data_dir_delay_import
-		? bin_pe_rva_to_paddr(bin, data_dir_delay_import->VirtualAddress)
-		: 0;
+	PE_DWord delay_import_dir_offset = bin_pe_rva_to_paddr(bin, data_dir_delay_import->VirtualAddress);
 
 	PE_(image_import_directory) *import_dir = NULL;
 	PE_(image_import_directory) *new_import_dir = NULL;
