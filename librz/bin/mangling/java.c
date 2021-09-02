@@ -272,7 +272,7 @@ RZ_API RZ_OWN char *rz_bin_demangle_java(RZ_NULLABLE const char *mangled) {
 	}
 	rz_str_trim(name);
 	// removes any obvious class like java.lang.String
-	rz_str_replace(name, "java/lang/", "", 1);
+	name = rz_str_replace(name, "java/lang/", "", 1);
 
 	if ((arguments = strchr(name, '(')) && (return_type = strchr(arguments, ')'))) {
 		return demangle_method(name, arguments, return_type);
