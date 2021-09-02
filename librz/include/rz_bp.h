@@ -166,6 +166,10 @@ RZ_API void rz_bp_traptrace_enable(RzBreakpoint *bp, int enable);
 /* watchpoint */
 RZ_API RzBreakpointItem *rz_bp_watch_add(RzBreakpoint *bp, ut64 addr, int size, int hw, int rw);
 
+/* serialize */
+RZ_API void rz_serialize_bp_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzBreakpoint *bp);
+RZ_API bool rz_serialize_bp_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzBreakpoint *bp, RZ_NULLABLE RzSerializeResultInfo *res);
+
 /* plugin pointers */
 extern RzBreakpointPlugin rz_bp_plugin_x86;
 extern RzBreakpointPlugin rz_bp_plugin_arm;
