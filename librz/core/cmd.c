@@ -1705,50 +1705,6 @@ RZ_IPI int rz_cmd_env(void *data, const char *input) {
 	return ret;
 }
 
-static struct autocomplete_flag_map_t {
-	const char *name;
-	const char *desc;
-	int type;
-} autocomplete_flags[] = {
-	{ "$dflt", "default autocomplete flag", RZ_CORE_AUTOCMPLT_DFLT },
-	{ "$flag", "shows known flag hints", RZ_CORE_AUTOCMPLT_FLAG },
-	{ "$flsp", "shows known flag-spaces hints", RZ_CORE_AUTOCMPLT_FLSP },
-	{ "$seek", "shows the seek hints", RZ_CORE_AUTOCMPLT_SEEK },
-	{ "$fcn", "shows the functions hints", RZ_CORE_AUTOCMPLT_FCN },
-	{ "$zign", "shows known zignatures hints", RZ_CORE_AUTOCMPLT_ZIGN },
-	{ "$eval", "shows known evals hints", RZ_CORE_AUTOCMPLT_EVAL },
-	{ "$mins", NULL, RZ_CORE_AUTOCMPLT_MINS },
-	{ "$brkp", "shows known breakpoints hints", RZ_CORE_AUTOCMPLT_BRKP },
-	{ "$macro", NULL, RZ_CORE_AUTOCMPLT_MACR },
-	{ "$file", "hints file paths", RZ_CORE_AUTOCMPLT_FILE },
-	{ "$thme", "shows known themes hints", RZ_CORE_AUTOCMPLT_THME },
-	{ "$optn", "allows the selection for multiple options", RZ_CORE_AUTOCMPLT_OPTN },
-	{ "$sdb", "shows sdb hints", RZ_CORE_AUTOCMPLT_SDB },
-	{ NULL, NULL, 0 }
-};
-
-static inline void print_dict(RzCoreAutocomplete *a, int sub) {
-	if (!a) {
-		return;
-	}
-	int i, j;
-	const char *name = "unknown";
-	for (i = 0; i < a->n_subcmds; i++) {
-		RzCoreAutocomplete *b = a->subcmds[i];
-		if (b->locked) {
-			continue;
-		}
-		for (j = 0; j < RZ_CORE_AUTOCMPLT_END; j++) {
-			if (b->type == autocomplete_flags[j].type) {
-				name = autocomplete_flags[j].name;
-				break;
-			}
-		}
-		eprintf("[%3d] %s: '%s'\n", sub, name, b->cmd);
-		print_dict(a->subcmds[i], sub + 1);
-	}
-}
-
 RZ_IPI RzCmdStatus rz_cmd_exit_handler(RzCore *core, int argc, const char **argv) {
 	core->num->value = 0LL;
 	return RZ_CMD_STATUS_EXIT;

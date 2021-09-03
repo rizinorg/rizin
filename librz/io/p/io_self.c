@@ -316,12 +316,12 @@ static int __close(RzIODesc *fd) {
 	return 0;
 }
 
-static void got_alarm(int sig) {
 #if !defined(__WINDOWS__)
+static void got_alarm(int sig) {
 	// !!! may die if not running from r2preload !!! //
 	kill(getpid(), SIGUSR1);
-#endif
 }
+#endif
 
 static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 	if (!strcmp(cmd, "pid")) {

@@ -22,8 +22,13 @@
 #endif
 
 #define BS 1024
+#ifdef __WINDOWS__
+#define StructStat struct _stat
+#else
+#define StructStat struct stat
+#endif
 
-static int file_stat(const char *file, struct stat *const pStat) {
+static int file_stat(const char *file, StructStat *pStat) {
 	rz_return_val_if_fail(file && pStat, -1);
 #if __WINDOWS__
 	wchar_t *wfile = rz_utf8_to_utf16(file);
@@ -131,7 +136,7 @@ RZ_API bool rz_file_is_c(const char *file) {
 }
 
 RZ_API bool rz_file_is_regular(const char *str) {
-	struct stat buf = { 0 };
+	StructStat buf = { 0 };
 	if (!str || !*str || file_stat(str, &buf) == -1) {
 		return false;
 	}
@@ -139,7 +144,7 @@ RZ_API bool rz_file_is_regular(const char *str) {
 }
 
 RZ_API bool rz_file_is_directory(const char *str) {
-	struct stat buf = { 0 };
+	StructStat buf = { 0 };
 	rz_return_val_if_fail(!RZ_STR_ISEMPTY(str), false);
 	if (file_stat(str, &buf) == -1) {
 		return false;
@@ -166,7 +171,7 @@ RZ_API bool rz_file_fexists(const char *fmt, ...) {
 RZ_API bool rz_file_exists(const char *str) {
 	rz_return_val_if_fail(!RZ_STR_ISEMPTY(str), false);
 	char *absfile = rz_file_abspath(str);
-	struct stat buf = { 0 };
+	StructStat buf = { 0 };
 
 	if (file_stat(absfile, &buf) == -1) {
 		free(absfile);
@@ -178,7 +183,7 @@ RZ_API bool rz_file_exists(const char *str) {
 
 RZ_API ut64 rz_file_size(const char *str) {
 	rz_return_val_if_fail(!RZ_STR_ISEMPTY(str), 0);
-	struct stat buf = { 0 };
+	StructStat buf = { 0 };
 	if (file_stat(str, &buf) == -1) {
 		return 0;
 	}
@@ -874,7 +879,6 @@ repeat:
 static RzMmap *file_mmap(RzMmap *m) {
 	LPTSTR file_ = rz_sys_conv_utf8_to_win(m->filename);
 	bool is_write = (m->perm & O_WRONLY) || (m->perm & O_RDWR);
-	bool is_creat = m->perm & O_CREAT;
 	HANDLE fh = (HANDLE)_get_osfhandle(m->fd);
 	m->len = (DWORD)GetFileSize(fh, (LPDWORD)((char *)&m->len + sizeof(DWORD)));
 	if (m->len == INVALID_FILE_SIZE) {
