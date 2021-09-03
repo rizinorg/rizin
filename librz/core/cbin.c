@@ -1962,17 +1962,22 @@ static bool symbols_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, 
 
 		SymName sn = { 0 };
 		sym_name_init(core, &sn, symbol, lang);
-		char *rz_symbol_name = rz_str_escape_utf8(sn.name, false, true);
+		char *rz_symbol_name = rz_str_escape_utf8(sn.demname ? sn.demname : sn.name, false, true);
+		if (core->bin->prefix) {
+			char *tmp = rz_str_newf("%s.%s", core->bin->prefix, rz_symbol_name);
+			free(rz_symbol_name);
+			rz_symbol_name = tmp;
+		}
 
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_QUIET:
 			rz_cons_printf("0x%08" PFMT64x " %d %s%s%s\n",
 				addr, (int)symbol->size,
 				sn.libname ? sn.libname : "", sn.libname ? " " : "",
-				sn.demname ? sn.demname : rz_symbol_name);
+				rz_symbol_name);
 			break;
 		case RZ_OUTPUT_MODE_QUIETEST:
-			rz_cons_printf("%s\n", sn.demname ? sn.demname : rz_symbol_name);
+			rz_cons_printf("%s\n", rz_symbol_name);
 			break;
 		case RZ_OUTPUT_MODE_JSON:
 			pj_o(state->d.pj);
@@ -2000,7 +2005,7 @@ static bool symbols_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, 
 				symbol->type ? symbol->type : "NONE",
 				symbol->size,
 				symbol->libname ? symbol->libname : "", // for 'is' libname empty
-				rz_str_get_null(sn.demname ? sn.demname : sn.name));
+				rz_str_get_null(rz_symbol_name));
 			break;
 		default:
 			rz_warn_if_reached();
@@ -2285,7 +2290,11 @@ RZ_API bool rz_core_bin_relocs_print(RzCore *core, RzBinFile *bf, RzCmdStateOutp
 				}
 			}
 			char *reloc_name = construct_reloc_name(reloc, name);
-			RzStrBuf *buf = rz_strbuf_new(rz_str_get(reloc_name));
+			RzStrBuf *buf = rz_strbuf_new(NULL);
+			if (core->bin->prefix) {
+				rz_strbuf_appendf(buf, "%s.", core->bin->prefix);
+			}
+			rz_strbuf_append(buf, rz_str_get(reloc_name));
 			free(reloc_name);
 			RZ_FREE(name);
 			if (reloc->addend) {
@@ -2404,7 +2413,12 @@ static bool sections_print_table(RzCore *core, RzTable *t, RzBinObject *o, RzBin
 		}
 	}
 
-	rz_table_add_rowf(t, "XxXxxss", section->paddr, section->size, addr, section->vsize, section->align, perms, section->name);
+	char *section_name = section->name;
+	if (core->bin->prefix) {
+		section_name = rz_str_newf("%s.%s", core->bin->prefix, section_name);
+	}
+
+	rz_table_add_rowf(t, "XxXxxss", section->paddr, section->size, addr, section->vsize, section->align, perms, section_name);
 	if (!section->is_segment) {
 		rz_table_add_row_columnsf(t, "ss", section_type, section_flags_str);
 	}
@@ -2432,6 +2446,9 @@ static bool sections_print_table(RzCore *core, RzTable *t, RzBinObject *o, RzBin
 			}
 			free(data);
 		}
+	}
+	if (section_name != section->name) {
+		free(section_name);
 	}
 	free(section_type);
 	free(section_flags_str);
