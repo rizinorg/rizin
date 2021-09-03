@@ -71,23 +71,6 @@ static bool is_equal_file_hashes(RzList *lfile_hashes, RzList *rfile_hashes, boo
 	return true;
 }
 
-static bool __r_core_bin_reload(RzCore *r, const char *file, ut64 baseaddr) {
-	RzCoreFile *cf = rz_core_file_cur(r);
-	if (!cf) {
-		return false;
-	}
-	RzBinFile *obf = rz_bin_file_find_by_fd(r->bin, cf->fd);
-	if (!obf) {
-		return false;
-	}
-	RzBinFile *nbf = rz_bin_reload(r->bin, obf, baseaddr);
-	if (!nbf) {
-		return false;
-	}
-	rz_core_bin_apply_all_info(r, nbf);
-	return true;
-}
-
 static bool source_file_collect_cb(void *user, const void *k, const void *v) {
 	RzPVector *r = user;
 	char *f = strdup(k);
@@ -211,15 +194,6 @@ RZ_IPI int rz_cmd_info_kuery(void *data, const char *input) {
 		return 1;
 	}
 	return 0;
-}
-
-static void bin_reload_cmd(RzCore *core, ut64 baddr) {
-	// XXX: this will reload the bin using the buffer.
-	// An assumption is made that assumes there is an underlying
-	// plugin that will be used to load the bin (e.g. malloc://)
-	// TODO: Might be nice to reload a bin at a specified offset?
-	__r_core_bin_reload(core, NULL, baddr);
-	rz_core_block_read(core);
 }
 
 static RzCmdStatus bool2status(bool val) {
@@ -730,10 +704,4 @@ RZ_IPI RzCmdStatus rz_cmd_info_guess_size_handler(RzCore *core, int argc, const 
 		pj_end(state->d.pj);
 	}
 	return bool2status(res);
-}
-
-RZ_IPI RzCmdStatus rz_cmd_bin_reload_handler(RzCore *core, int argc, const char **argv) {
-	ut64 baddr = argc > 1 ? rz_num_math(core->num, argv[1]) : rz_config_get_i(core->config, "bin.baddr");
-	bin_reload_cmd(core, baddr);
-	return RZ_CMD_STATUS_OK;
 }

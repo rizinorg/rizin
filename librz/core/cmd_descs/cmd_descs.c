@@ -130,7 +130,6 @@ static const RzCmdDescArg eval_spaces_args[2];
 static const RzCmdDescArg eval_type_args[2];
 static const RzCmdDescArg env_args[3];
 static const RzCmdDescArg history_list_or_exec_args[2];
-static const RzCmdDescArg cmd_bin_reload_args[2];
 static const RzCmdDescArg cmd_info_class_as_source_args[2];
 static const RzCmdDescArg cmd_info_class_fields_args[2];
 static const RzCmdDescArg cmd_info_class_methods_args[2];
@@ -2541,21 +2540,6 @@ static const RzCmdDescArg cmd_info_archs_args[] = {
 static const RzCmdDescHelp cmd_info_archs_help = {
 	.summary = "List archs",
 	.args = cmd_info_archs_args,
-};
-
-static const RzCmdDescArg cmd_bin_reload_args[] = {
-	{
-		.name = "baddr",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_bin_reload_help = {
-	.summary = "Reload the current buffer for setting of the bin (use once only)",
-	.args = cmd_bin_reload_args,
 };
 
 static const RzCmdDescHelp ic_help = {
@@ -5988,9 +5972,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_info_archs_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "iA", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_archs_handler, &cmd_info_archs_help);
 	rz_warn_if_fail(cmd_info_archs_cd);
 	rz_cmd_desc_set_default_mode(cmd_info_archs_cd, RZ_OUTPUT_MODE_TABLE);
-
-	RzCmdDesc *cmd_bin_reload_cd = rz_cmd_desc_argv_new(core->rcmd, i_cd, "ib", rz_cmd_bin_reload_handler, &cmd_bin_reload_help);
-	rz_warn_if_fail(cmd_bin_reload_cd);
 
 	RzCmdDesc *ic_cd = rz_cmd_desc_group_state_new(core->rcmd, i_cd, "ic", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_QUIETEST, rz_cmd_info_classes_handler, &cmd_info_classes_help, &ic_help);
 	rz_warn_if_fail(ic_cd);
