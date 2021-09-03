@@ -19,20 +19,28 @@ iorw     false
 block    0x100
 type     library-cache
 arch     arm
+cpu      N/A
 baddr    0x180000000
 binsz    0x00034000
-bintype  
+bintype  N/A
 bits     64
 retguard false
 class    dyldcache
+compiler N/A
+dbg_file N/A
 endian   LE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
 laddr    0x00000000
-lang     
+lang     N/A
 machine  arm
 maxopsz  4
 minopsz  4
 os       Darwin
+cc       N/A
 pcalign  4
+rpath    N/A
 subsys   xnu
 stripped false
 crypto   false
@@ -92,20 +100,28 @@ iorw     false
 block    0x100
 type     library-cache
 arch     arm
+cpu      N/A
 baddr    0x180000000
 binsz    0x00034000
-bintype  
+bintype  N/A
 bits     64
 retguard false
 class    dyldcache
+compiler N/A
+dbg_file N/A
 endian   LE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
 laddr    0x00000000
-lang     
+lang     N/A
 machine  arm
 maxopsz  4
 minopsz  4
 os       Darwin
+cc       N/A
 pcalign  4
+rpath    N/A
 subsys   xnu
 stripped false
 crypto   false
@@ -163,20 +179,28 @@ iorw     false
 block    0x100
 type     library-cache
 arch     arm
+cpu      N/A
 baddr    0x180000000
 binsz    0x00098000
-bintype  
+bintype  N/A
 bits     64
 retguard false
 class    dyldcache
+compiler N/A
+dbg_file N/A
 endian   LE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
 laddr    0x00000000
-lang     
+lang     N/A
 machine  arm
 maxopsz  4
 minopsz  4
 os       Darwin
+cc       N/A
 pcalign  4
+rpath    N/A
 subsys   xnu
 stripped false
 crypto   false
@@ -248,20 +272,28 @@ iorw     false
 block    0x100
 type     library-cache
 arch     arm
+cpu      N/A
 baddr    0x180000000
 binsz    0x000a8000
-bintype  
+bintype  N/A
 bits     64
 retguard false
 class    dyldcache
+compiler N/A
+dbg_file N/A
 endian   LE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
 laddr    0x00000000
-lang     
+lang     N/A
 machine  arm
 maxopsz  4
 minopsz  4
 os       Darwin
+cc       N/A
 pcalign  4
+rpath    N/A
 subsys   xnu
 stripped false
 crypto   false

@@ -11,17 +11,25 @@ iorw     false
 block    0x100
 type     ROM
 arch     m68k
+cpu      N/A
 baddr    0x00000000
 binsz    0x000272f8
-bintype  
+bintype  N/A
 bits     16
 retguard false
 class    SEGA MEGASIS    (C)2015 James L.
+compiler N/A
+dbg_file N/A
 endian   BE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
 laddr    0x00000000
-lang     
+lang     N/A
 machine  Sega Megadrive
 os       smd
+cc       N/A
+rpath    N/A
 subsys   
 stripped false
 crypto   false

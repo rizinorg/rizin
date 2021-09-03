@@ -406,17 +406,23 @@ iorw     false
 block    0x100
 type     EXEC (Executable file)
 arch     riscv
+cpu      N/A
 baddr    0x00010000
 binsz    0x0009d024
 bintype  elf
 bits     64
 class    ELF64
 compiler GCC: (GNU) 5.2.0
+dbg_file N/A
 endian   LE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
 laddr    0x00000000
 lang     c
 machine  RISC V
 os       linux
+cc       N/A
 rpath    NONE
 subsys   linux
 stripped false

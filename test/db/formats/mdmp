@@ -11,21 +11,27 @@ FILE=bins/mdmp/calc.dmp
 CMDS=iI
 EXPECT=<<EOF
 arch     x86
+cpu      N/A
 baddr    ----------
 binsz    0x00008f74
 bintype  mdmp
 bits     64
 retguard false
-class    
+class    N/A
+compiler N/A
+dbg_file N/A
 endian   LE
 flags    0x00040000
 hdr.csum 0x00000000
+guid     N/A
+intrp    N/A
 laddr    0x00000000
-lang     
+lang     N/A
 machine  AMD64
 maxopsz  16
 minopsz  1
 os       Windows NT Workstation 6.1.7601
+cc       N/A
 pcalign  0
 rpath    NONE
 streams  13
@@ -474,7 +480,7 @@ RUN
 NAME=mdmp reload file
 FILE=bins/mdmp/calc.dmp
 CMDS=<<EOF
-ib
+obR
 ?e ok
 EOF
 EXPECT=<<EOF

@@ -468,12 +468,17 @@ iorw     false
 block    0x100
 type     EXEC (Executable file)
 arch     x86
+cpu      N/A
 baddr    0x08048000
 binsz    0x000050bc
 bintype  elf
 bits     32
 class    ELF32
+compiler N/A
+dbg_file N/A
 endian   LE
+hdr.csum N/A
+guid     N/A
 intrp    /lib/ld-linux.so.2
 laddr    0x00000000
 lang     c
@@ -481,6 +486,7 @@ machine  Intel 80386
 maxopsz  16
 minopsz  1
 os       linux
+cc       N/A
 pcalign  0
 relro    partial
 rpath    NONE

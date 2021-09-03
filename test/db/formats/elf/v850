@@ -17,19 +17,25 @@ iorw     false
 block    0x100
 type     EXEC (Executable file)
 arch     v850
+cpu      N/A
 baddr    0x00100000
 binsz    0x000edb6d
 bintype  elf
 bits     32
 class    ELF32
 compiler GCC: (GNU) 9.3.0
+dbg_file N/A
 endian   LE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
 laddr    0x00000000
 lang     c
 machine  NEC V800 series
 maxopsz  8
 minopsz  2
 os       linux
+cc       N/A
 pcalign  2
 rpath    NONE
 subsys   linux
