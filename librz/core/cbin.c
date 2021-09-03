@@ -2911,6 +2911,10 @@ RZ_API bool rz_core_file_info_print(RzCore *core, RzBinFile *binfile, RzCmdState
 	return true;
 }
 
+static const char *str2na(const char *s) {
+	return RZ_STR_ISEMPTY(s) ? "N/A" : s;
+}
+
 RZ_API bool rz_core_bin_info_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state) {
 	rz_return_val_if_fail(core && state, false);
 
@@ -2939,9 +2943,7 @@ RZ_API bool rz_core_bin_info_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_QUIET:
 		rz_cons_printf("arch %s\n", info->arch);
-		if (info->cpu && *info->cpu) {
-			rz_cons_printf("cpu %s\n", info->cpu);
-		}
+		rz_cons_printf("cpu %s\n", str2na(info->cpu));
 		rz_cons_printf("bits %d\n", bits);
 		rz_cons_printf("os %s\n", info->os);
 		rz_cons_printf("endian %s\n", info->big_endian ? "big" : "little");
@@ -3094,18 +3096,16 @@ RZ_API bool rz_core_bin_info_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput
 		rz_table_set_columnsf(t, "ss", "field", "value");
 		rz_table_hide_header(t);
 
-		rz_table_add_rowf(t, "ss", "arch", info->arch);
-		if (info->cpu && *info->cpu) {
-			rz_table_add_rowf(t, "ss", "cpu", info->cpu);
-		}
+		rz_table_add_rowf(t, "ss", "arch", str2na(info->arch));
+		rz_table_add_rowf(t, "ss", "cpu", str2na(info->cpu));
 		rz_table_add_rowf(t, "sX", "baddr", rz_bin_get_baddr(core->bin));
 		rz_table_add_rowf(t, "sX", "binsz", rz_bin_get_size(core->bin));
-		rz_table_add_rowf(t, "ss", "bintype", info->rclass);
+		rz_table_add_rowf(t, "ss", "bintype", str2na(info->rclass));
 		rz_table_add_rowf(t, "sd", "bits", bits);
 		if (info->has_retguard != -1) {
 			table_add_row_bool(t, "retguard", info->has_retguard);
 		}
-		rz_table_add_rowf(t, "ss", "class", info->bclass);
+		rz_table_add_rowf(t, "ss", "class", str2na(info->bclass));
 		if (info->actual_checksum) {
 			/* computed checksum */
 			rz_table_add_rowf(t, "ss", "cmp.csum", info->actual_checksum);
@@ -3113,13 +3113,9 @@ RZ_API bool rz_core_bin_info_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput
 		if (compiled) {
 			rz_table_add_rowf(t, "ss", "compiled", compiled);
 		}
-		if (info->compiler) {
-			rz_table_add_rowf(t, "ss", "compiler", info->compiler);
-		}
-		if (info->debug_file_name) {
-			rz_table_add_rowf(t, "ss", "dbg_file", info->debug_file_name);
-		}
-		rz_table_add_rowf(t, "ss", "endian", endian);
+		rz_table_add_rowf(t, "ss", "compiler", str2na(info->compiler));
+		rz_table_add_rowf(t, "ss", "dbg_file", str2na(info->debug_file_name));
+		rz_table_add_rowf(t, "ss", "endian", str2na(endian));
 		if (info->rclass && !strcmp(info->rclass, "mdmp")) {
 			tmp_buf = sdb_get(bf->sdb, "mdmp.flags", 0);
 			if (tmp_buf) {
@@ -3127,19 +3123,13 @@ RZ_API bool rz_core_bin_info_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput
 				free(tmp_buf);
 			}
 		}
-		if (info->claimed_checksum) {
-			/* checksum specified in header */
-			rz_table_add_rowf(t, "ss", "hdr.csum", info->claimed_checksum);
-		}
-		if (info->guid) {
-			rz_table_add_rowf(t, "ss", "guid", info->guid);
-		}
-		if (info->intrp) {
-			rz_table_add_rowf(t, "ss", "intrp", info->intrp);
-		}
+		/* checksum specified in header */
+		rz_table_add_rowf(t, "ss", "hdr.csum", str2na(info->claimed_checksum));
+		rz_table_add_rowf(t, "ss", "guid", str2na(info->guid));
+		rz_table_add_rowf(t, "ss", "intrp", str2na(info->intrp));
 		rz_table_add_rowf(t, "sX", "laddr", laddr);
-		rz_table_add_rowf(t, "ss", "lang", info->lang);
-		rz_table_add_rowf(t, "ss", "machine", info->machine);
+		rz_table_add_rowf(t, "ss", "lang", str2na(info->lang));
+		rz_table_add_rowf(t, "ss", "machine", str2na(info->machine));
 		u = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE);
 		if (u != -1) {
 			rz_table_add_rowf(t, "sd", "maxopsz", u);
@@ -3148,13 +3138,11 @@ RZ_API bool rz_core_bin_info_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput
 		if (v != -1) {
 			rz_table_add_rowf(t, "sd", "minopsz", v);
 		}
-		rz_table_add_rowf(t, "ss", "os", info->os);
+		rz_table_add_rowf(t, "ss", "os", str2na(info->os));
 		if (info->rclass && !strcmp(info->rclass, "pe")) {
 			table_add_row_bool(t, "overlay", info->pe_overlay);
 		}
-		if (info->default_cc) {
-			rz_table_add_rowf(t, "ss", "cc", info->default_cc);
-		}
+		rz_table_add_rowf(t, "ss", "cc", str2na(info->default_cc));
 		uv = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
 		if (uv != -1) {
 			rz_table_add_rowf(t, "sd", "pcalign", uv);
@@ -3165,9 +3153,7 @@ RZ_API bool rz_core_bin_info_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput
 			rz_table_add_rowf(t, "ss", "relro", tmp_buf);
 			free(tmp_buf);
 		}
-		if (info->rpath) {
-			rz_table_add_rowf(t, "ss", "rpath", info->rpath);
-		}
+		rz_table_add_rowf(t, "ss", "rpath", str2na(info->rpath));
 		if (info->rclass && !strcmp(info->rclass, "pe")) {
 			//this should be moved if added to mach0 (or others)
 			table_add_row_bool(t, "signed", info->signature);
