@@ -1840,10 +1840,6 @@ static const char *bin_reloc_type_name(RzBinReloc *reloc) {
 static bool entries_initfini_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, bool initfini) {
 	RzBinObject *o = bf->o;
 	const RzList *entries = rz_bin_object_get_entries(o);
-	if (!entries) {
-		return false;
-	}
-
 	RzListIter *iter;
 	RzBinAddr *entry = NULL;
 	ut64 baddr = rz_bin_get_baddr(core->bin);
