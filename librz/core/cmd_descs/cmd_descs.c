@@ -1510,8 +1510,7 @@ static const RzCmdDescHelp avg_help = {
 static const RzCmdDescArg analysis_print_global_variable_args[] = {
 	{
 		.name = "var_name",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.type = RZ_CMD_ARG_TYPE_GLOBAL_VAR,
 		.optional = true,
 
 	},
@@ -1562,8 +1561,7 @@ static const RzCmdDescHelp analysis_global_variable_delete_byaddr_help = {
 static const RzCmdDescArg analysis_global_variable_delete_byname_args[] = {
 	{
 		.name = "name",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.type = RZ_CMD_ARG_TYPE_GLOBAL_VAR,
 
 	},
 	{ 0 },
@@ -1576,7 +1574,7 @@ static const RzCmdDescHelp analysis_global_variable_delete_byname_help = {
 static const RzCmdDescArg analysis_global_variable_rename_args[] = {
 	{
 		.name = "old_var_name",
-		.type = RZ_CMD_ARG_TYPE_STRING,
+		.type = RZ_CMD_ARG_TYPE_GLOBAL_VAR,
 
 	},
 	{
@@ -1595,7 +1593,7 @@ static const RzCmdDescHelp analysis_global_variable_rename_help = {
 static const RzCmdDescArg analysis_global_variable_retype_args[] = {
 	{
 		.name = "var_name",
-		.type = RZ_CMD_ARG_TYPE_STRING,
+		.type = RZ_CMD_ARG_TYPE_GLOBAL_VAR,
 
 	},
 	{

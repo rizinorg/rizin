@@ -57,6 +57,7 @@ typedef enum rz_cmd_arg_type_t {
 	RZ_CMD_ARG_TYPE_ALIAS_TYPE, ///< Argument is a C typedef (alias) name
 	RZ_CMD_ARG_TYPE_CLASS_TYPE, ///< Argument is a C++/etc class name
 	RZ_CMD_ARG_TYPE_ANY_TYPE, ///< Argument is the any of the C or C++ type name
+	RZ_CMD_ARG_TYPE_GLOBAL_VAR, ///< Argument is a user defined global variable
 } RzCmdArgType;
 
 /**
