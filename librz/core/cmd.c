@@ -6548,7 +6548,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "e", "evaluate configuration variable", rz_cmd_eval },
 		{ "f", "get/set flags", rz_cmd_flag },
 		{ "g", "egg manipulation", rz_cmd_egg },
-		{ "i", "get file info", rz_cmd_info },
 		{ "k", "perform sdb query", rz_cmd_kuery },
 		{ "ls", "list files and directories", rz_cmd_ls },
 		{ "m", "make directory and move files", rz_cmd_m },
