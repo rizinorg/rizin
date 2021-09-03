@@ -1317,17 +1317,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		free(global_rc);
 	}
 
-	// only analyze if file contains entrypoint
-	{
-		char *s = rz_core_cmd_str(r, "ieq");
-		if (s && *s) {
-			int da = rz_config_get_i(r->config, "file.analyze");
-			if (da > do_analysis) {
-				do_analysis = da;
-			}
-		}
-		free(s);
-	}
 	if (do_analysis > 0) {
 		switch (do_analysis) {
 		case 1: rz_core_cmd0(r, "aa"); break;
