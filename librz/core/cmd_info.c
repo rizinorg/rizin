@@ -1183,11 +1183,19 @@ static RzCmdStatus bool2status(bool val) {
 	return val ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
+#define GET_CHECK_CUR_BINFILE(core) \
+	RzBinFile *bf = rz_bin_cur(core->bin); \
+	if (!bf) { \
+		RZ_LOG_ERROR("No binary object currently selected.\n"); \
+		return RZ_CMD_STATUS_ERROR; \
+	}
+
 RZ_IPI RzCmdStatus rz_cmd_info_archs_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	return bool2status(rz_core_bin_archs_print(core->bin, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_all_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	GET_CHECK_CUR_BINFILE(core);
 	ut32 mask = RZ_CORE_BIN_ACC_INFO;
 	mask |= RZ_CORE_BIN_ACC_IMPORTS;
 	mask |= RZ_CORE_BIN_ACC_ENTRIES;
@@ -1200,7 +1208,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_all_handler(RzCore *core, int argc, const char **
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_o(state->d.pj);
 	}
-	bool res = rz_core_bin_print(core, mask, NULL, state, NULL);
+	bool res = rz_core_bin_print(core, bf, mask, NULL, state, NULL);
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(state->d.pj);
 	}
@@ -1208,61 +1216,73 @@ RZ_IPI RzCmdStatus rz_cmd_info_all_handler(RzCore *core, int argc, const char **
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_entry_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return bool2status(rz_core_bin_entries_print(core, state));
+	GET_CHECK_CUR_BINFILE(core);
+	return bool2status(rz_core_bin_entries_print(core, bf, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_entryexits_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return bool2status(rz_core_bin_initfini_print(core, state));
+	GET_CHECK_CUR_BINFILE(core);
+	return bool2status(rz_core_bin_initfini_print(core, bf, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_exports_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return bool2status(rz_core_bin_exports_print(core, state, NULL));
+	GET_CHECK_CUR_BINFILE(core);
+	return bool2status(rz_core_bin_exports_print(core, bf, state, NULL));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_cur_export_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return bool2status(rz_core_bin_cur_export_print(core, state));
+	GET_CHECK_CUR_BINFILE(core);
+	return bool2status(rz_core_bin_cur_export_print(core, bf, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_symbols_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return bool2status(rz_core_bin_symbols_print(core, state, NULL));
+	GET_CHECK_CUR_BINFILE(core);
+	return bool2status(rz_core_bin_symbols_print(core, bf, state, NULL));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_cur_symbol_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return bool2status(rz_core_bin_cur_symbol_print(core, state));
+	GET_CHECK_CUR_BINFILE(core);
+	return bool2status(rz_core_bin_cur_symbol_print(core, bf, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_imports_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return bool2status(rz_core_bin_imports_print(core, state, NULL));
+	GET_CHECK_CUR_BINFILE(core);
+	return bool2status(rz_core_bin_imports_print(core, bf, state, NULL));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_libs_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return bool2status(rz_core_bin_libs_print(core, state));
+	GET_CHECK_CUR_BINFILE(core);
+	return bool2status(rz_core_bin_libs_print(core, bf, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_main_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return bool2status(rz_core_bin_main_print(core, state));
+	GET_CHECK_CUR_BINFILE(core);
+	return bool2status(rz_core_bin_main_print(core, bf, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_relocs_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return bool2status(rz_core_bin_relocs_print(core, state));
+	GET_CHECK_CUR_BINFILE(core);
+	return bool2status(rz_core_bin_relocs_print(core, bf, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_sections_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	GET_CHECK_CUR_BINFILE(core);
 	RzList *hashes = rz_list_new_from_array((const void **)argv + 1, argc - 1);
 	if (!hashes) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	bool res = rz_core_bin_sections_print(core, state, NULL, hashes);
+	bool res = rz_core_bin_sections_print(core, bf, state, NULL, hashes);
 	rz_list_free(hashes);
 	return bool2status(res);
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_cur_section_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	GET_CHECK_CUR_BINFILE(core);
 	RzList *hashes = rz_list_new_from_array((const void **)argv + 1, argc - 1);
 	if (!hashes) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	bool res = rz_core_bin_cur_section_print(core, state, hashes);
+	bool res = rz_core_bin_cur_section_print(core, bf, state, hashes);
 	rz_list_free(hashes);
 	return bool2status(res);
 }
@@ -1328,28 +1348,28 @@ sections_err:
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_segments_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	GET_CHECK_CUR_BINFILE(core);
 	RzList *hashes = rz_list_new_from_array((const void **)argv + 1, argc - 1);
 	if (!hashes) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	bool res = rz_core_bin_segments_print(core, state, NULL, hashes);
+	bool res = rz_core_bin_segments_print(core, bf, state, NULL, hashes);
 	rz_list_free(hashes);
 	return bool2status(res);
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_strings_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return bool2status(rz_core_bin_strings_print(core, state));
+	GET_CHECK_CUR_BINFILE(core);
+	return bool2status(rz_core_bin_strings_print(core, bf, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_whole_strings_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return bool2status(rz_core_bin_whole_strings_print(core, state));
+	GET_CHECK_CUR_BINFILE(core);
+	return bool2status(rz_core_bin_whole_strings_print(core, bf, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_dump_strings_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	RzBinFile *bf = rz_bin_cur(core->bin);
-	if (!bf) {
-		return RZ_CMD_STATUS_ERROR;
-	}
+	GET_CHECK_CUR_BINFILE(core);
 	int min = rz_config_get_i(core->config, "bin.minstr");
 	int strmode = bf->strmode;
 	switch (state->mode) {
@@ -1385,18 +1405,19 @@ RZ_IPI RzCmdStatus rz_cmd_info_handler(RzCore *core, int argc, const char **argv
 	if (!core->file) {
 		return RZ_CMD_STATUS_ERROR;
 	}
+	GET_CHECK_CUR_BINFILE(core);
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_o(state->d.pj);
 		pj_k(state->d.pj, "core");
 	}
-	bool res = rz_core_file_info_print(core, state);
+	bool res = rz_core_file_info_print(core, bf, state);
 
 	RzBinObject *obj = rz_bin_cur_object(core->bin);
 	if (bin_is_executable(obj)) {
 		if (state->mode == RZ_OUTPUT_MODE_JSON) {
 			pj_k(state->d.pj, "bin");
 		}
-		rz_core_bin_info_print(core, state);
+		rz_core_bin_info_print(core, bf, state);
 	}
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(state->d.pj);
@@ -1405,35 +1426,43 @@ RZ_IPI RzCmdStatus rz_cmd_info_handler(RzCore *core, int argc, const char **argv
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_classes_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return bool2status(rz_core_bin_classes_print(core, state));
+	GET_CHECK_CUR_BINFILE(core);
+	return bool2status(rz_core_bin_classes_print(core, bf, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_class_as_source_handler(RzCore *core, int argc, const char **argv) {
-	return bool2status(rz_core_bin_class_as_source_print(core, argv[1]));
+	GET_CHECK_CUR_BINFILE(core);
+	return bool2status(rz_core_bin_class_as_source_print(core, bf, argv[1]));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_class_fields_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return bool2status(rz_core_bin_class_fields_print(core, state, argv[1]));
+	GET_CHECK_CUR_BINFILE(core);
+	return bool2status(rz_core_bin_class_fields_print(core, bf, state, argv[1]));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_class_methods_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return bool2status(rz_core_bin_class_methods_print(core, state, argv[1]));
+	GET_CHECK_CUR_BINFILE(core);
+	return bool2status(rz_core_bin_class_methods_print(core, bf, state, argv[1]));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_signature_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return bool2status(rz_core_bin_signatures_print(core, state));
+	GET_CHECK_CUR_BINFILE(core);
+	return bool2status(rz_core_bin_signatures_print(core, bf, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_fields_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return bool2status(rz_core_bin_fields_print(core, state));
+	GET_CHECK_CUR_BINFILE(core);
+	return bool2status(rz_core_bin_fields_print(core, bf, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_headers_handler(RzCore *core, int argc, const char **argv) {
-	return bool2status(rz_core_bin_headers_print(core));
+	GET_CHECK_CUR_BINFILE(core);
+	return bool2status(rz_core_bin_headers_print(core, bf));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_binary_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return bool2status(rz_core_bin_info_print(core, state));
+	GET_CHECK_CUR_BINFILE(core);
+	return bool2status(rz_core_bin_info_print(core, bf, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_plugins_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
@@ -1465,7 +1494,8 @@ RZ_IPI RzCmdStatus rz_cmd_info_plugins_handler(RzCore *core, int argc, const cha
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_dwarf_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return bool2status(rz_core_bin_dwarf_print(core, state));
+	GET_CHECK_CUR_BINFILE(core);
+	return bool2status(rz_core_bin_dwarf_print(core, bf, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_pdb_load_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
@@ -1545,11 +1575,13 @@ RZ_IPI RzCmdStatus rz_cmd_info_demangle_handler(RzCore *core, int argc, const ch
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_memory_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return bool2status(rz_core_bin_memory_print(core, state));
+	GET_CHECK_CUR_BINFILE(core);
+	return bool2status(rz_core_bin_memory_print(core, bf, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_resources_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return bool2status(rz_core_bin_resources_print(core, state));
+	GET_CHECK_CUR_BINFILE(core);
+	return bool2status(rz_core_bin_resources_print(core, bf, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_hashes_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
@@ -1560,11 +1592,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_hashes_handler(RzCore *core, int argc, const char
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	RzBinFile *bf = rz_bin_cur(core->bin);
-	if (!bf) {
-		eprintf("Cannot get current binary file\n");
-		return RZ_CMD_STATUS_ERROR;
-	}
+	GET_CHECK_CUR_BINFILE(core);
 
 	RzList *new_hashes = rz_bin_file_compute_hashes(core->bin, bf, limit);
 	RzList *old_hashes = rz_bin_file_set_hashes(core->bin, new_hashes);
@@ -1629,11 +1657,13 @@ RZ_IPI RzCmdStatus rz_cmd_info_hashes_handler(RzCore *core, int argc, const char
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_versions_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return bool2status(rz_core_bin_versions_print(core, state));
+	GET_CHECK_CUR_BINFILE(core);
+	return bool2status(rz_core_bin_versions_print(core, bf, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_trycatch_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return bool2status(rz_core_bin_trycatch_print(core, state));
+	GET_CHECK_CUR_BINFILE(core);
+	return bool2status(rz_core_bin_trycatch_print(core, bf, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_sourcelines_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
@@ -1649,11 +1679,12 @@ RZ_IPI RzCmdStatus rz_cmd_info_source_handler(RzCore *core, int argc, const char
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_guess_size_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	GET_CHECK_CUR_BINFILE(core);
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_o(state->d.pj);
 		pj_k(state->d.pj, "size");
 	}
-	bool res = rz_core_bin_size_print(core, state);
+	bool res = rz_core_bin_size_print(core, bf, state);
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(state->d.pj);
 	}

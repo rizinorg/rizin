@@ -1332,7 +1332,7 @@ static bool get_bin_info(RzCore *core, const char *file, ut64 baseaddr, PJ *pj, 
 	} else {
 		RzCmdStateOutput state;
 		rz_cmd_state_output_init(&state, rad2mode(mode));
-		rz_core_bin_print(core, action, filter, &state, NULL);
+		rz_core_bin_print(core, bf, action, filter, &state, NULL);
 		rz_cmd_state_output_print(&state);
 		rz_cmd_state_output_fini(&state);
 	}
@@ -1547,13 +1547,16 @@ RZ_IPI int rz_cmd_debug_dmi(void *data, const char *input) {
 					free(newfile);
 				}
 			} else {
-				rz_bin_set_baddr(core->bin, map->addr);
-				RzCmdStateOutput state;
-				rz_cmd_state_output_init(&state, rad2mode(mode));
-				rz_core_bin_print(core, RZ_CORE_BIN_ACC_SYMBOLS, &filter, &state, NULL);
-				rz_cmd_state_output_print(&state);
-				rz_cmd_state_output_fini(&state);
-				rz_bin_set_baddr(core->bin, baddr);
+				RzBinFile *bf = rz_bin_cur(core->bin);
+				if (bf) {
+					rz_bin_set_baddr(core->bin, map->addr);
+					RzCmdStateOutput state;
+					rz_cmd_state_output_init(&state, rad2mode(mode));
+					rz_core_bin_print(core, bf, RZ_CORE_BIN_ACC_SYMBOLS, &filter, &state, NULL);
+					rz_cmd_state_output_print(&state);
+					rz_cmd_state_output_fini(&state);
+					rz_bin_set_baddr(core->bin, baddr);
+				}
 			}
 		}
 		if (mode == RZ_MODE_JSON) {
@@ -1583,7 +1586,8 @@ RZ_IPI int rz_cmd_debug_dmi(void *data, const char *input) {
 					}
 				}
 			}
-			if (closest_symbol) {
+			RzBinFile *bf = rz_bin_cur(core->bin);
+			if (closest_symbol && bf) {
 				RzCoreBinFilter filter;
 				filter.offset = UT64_MAX;
 				filter.name = (char *)closest_symbol->name;
@@ -1591,7 +1595,7 @@ RZ_IPI int rz_cmd_debug_dmi(void *data, const char *input) {
 				rz_bin_set_baddr(core->bin, map->addr);
 				RzCmdStateOutput state;
 				rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
-				rz_core_bin_print(core, RZ_CORE_BIN_ACC_SYMBOLS, &filter, &state, NULL);
+				rz_core_bin_print(core, bf, RZ_CORE_BIN_ACC_SYMBOLS, &filter, &state, NULL);
 				rz_cmd_state_output_print(&state);
 				rz_cmd_state_output_fini(&state);
 			}

@@ -53,7 +53,10 @@ static RzCmdStateOutput *add_header(RzCmdStateOutput *main_state, RzOutputMode m
 }
 
 static void classes_as_source_print(RzCore *core, RzCmdStateOutput *state) {
-	rz_core_bin_class_as_source_print(core, NULL);
+	RzBinFile *bf = rz_bin_cur(core->bin);
+	if (bf) {
+		rz_core_bin_class_as_source_print(core, bf, NULL);
+	}
 }
 
 static RzOutputMode rad2outputmode(int rad) {
@@ -1257,7 +1260,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	}
 
 	ut32 mask = actions2mask(action);
-	rz_core_bin_print(&core, mask, &filter, &state, chksum_list);
+	rz_core_bin_print(&core, bf, mask, &filter, &state, chksum_list);
 
 	run_action("classes source", RZ_BIN_REQ_CLASSES_SOURCES, classes_as_source_print);
 	if (action & RZ_BIN_REQ_SRCLINE) {
