@@ -2417,7 +2417,7 @@ RZ_API char *rz_cmd_unescape_arg(const char *arg, RzCmdEscape esc) {
  */
 RZ_API void rz_cmd_state_output_array_start(RzCmdStateOutput *state) {
 	rz_return_if_fail(state);
-	if (state->mode == RZ_OUTPUT_MODE_JSON) {
+	if (state->mode == RZ_OUTPUT_MODE_JSON || state->mode == RZ_OUTPUT_MODE_LONG_JSON) {
 		rz_return_if_fail(state->d.pj);
 		pj_a(state->d.pj);
 	}
@@ -2431,7 +2431,7 @@ RZ_API void rz_cmd_state_output_array_start(RzCmdStateOutput *state) {
  */
 RZ_API void rz_cmd_state_output_array_end(RzCmdStateOutput *state) {
 	rz_return_if_fail(state);
-	if (state->mode == RZ_OUTPUT_MODE_JSON) {
+	if (state->mode == RZ_OUTPUT_MODE_JSON || state->mode == RZ_OUTPUT_MODE_LONG_JSON) {
 		rz_return_if_fail(state->d.pj);
 		pj_end(state->d.pj);
 	}
@@ -2465,6 +2465,7 @@ RZ_API void rz_cmd_state_output_fini(RzCmdStateOutput *state) {
 
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_JSON:
+	case RZ_OUTPUT_MODE_LONG_JSON:
 		pj_free(state->d.pj);
 		state->d.pj = NULL;
 		break;
@@ -2502,6 +2503,7 @@ RZ_API bool rz_cmd_state_output_init(RzCmdStateOutput *state, RzOutputMode mode)
 		}
 		break;
 	case RZ_OUTPUT_MODE_JSON:
+	case RZ_OUTPUT_MODE_LONG_JSON:
 		state->d.pj = pj_new();
 		if (!state->d.pj) {
 			return false;
@@ -2528,6 +2530,7 @@ RZ_API void rz_cmd_state_output_print(RzCmdStateOutput *state) {
 	char *s;
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_JSON:
+	case RZ_OUTPUT_MODE_LONG_JSON:
 		rz_cons_println(pj_string(state->d.pj));
 		break;
 	case RZ_OUTPUT_MODE_TABLE:
