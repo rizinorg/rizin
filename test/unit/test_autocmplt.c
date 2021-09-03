@@ -401,7 +401,8 @@ static bool test_autocmplt_seek(void) {
 }
 
 static bool test_autocmplt_global(void) {
-	RzCore *core = fake_core_new();
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "core should not be null");
 
 	RzAnalysisVarGlobal *glob1 = rz_analysis_var_global_new("GINT", 0x1337); // untyped global
 	mu_assert_notnull(glob1, "glob1 null");
