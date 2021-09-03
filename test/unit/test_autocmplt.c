@@ -427,8 +427,6 @@ static bool test_autocmplt_global(void) {
 	buf->index = buf->length;
 	RzLineNSCompletionResult *r = rz_core_autocomplete_rzshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
 
-	rz_config_set_b(core->config, "cfg.oldshell.autocompletion", false); // for autocompletion to work
-
 	mu_assert_notnull(r, "r should not be null");
 	mu_assert_eq(r->start, strlen("avg "), "should autocomplete the last arg");
 	mu_assert_eq(r->end, buf->length, "should autocomplete ending at end of buffer");
