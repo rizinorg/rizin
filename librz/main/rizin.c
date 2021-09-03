@@ -519,7 +519,10 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			if (!strcmp(opt.arg, "q")) {
 				rz_core_cmd0(r, "eq");
 			} else {
-				rz_core_config_eval_and_print(r, opt.arg, false);
+				const char *val = rz_config_get(r->config, opt.arg);
+				if (val) {
+					rz_cons_println(val);
+				}
 				rz_list_append(evals, (void *)opt.arg);
 			}
 			break;
@@ -1198,7 +1201,10 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			rz_core_seek(r, mapaddr, true);
 		}
 		rz_list_foreach (evals, iter, cmdn) {
-			rz_core_config_eval_and_print(r, cmdn, false);
+			const char *val = rz_config_get(r->config, cmdn);
+			if (val) {
+				rz_cons_println(val);
+			}
 			rz_cons_flush();
 		}
 		if (asmarch) {
@@ -1272,7 +1278,10 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		}
 
 		rz_list_foreach (evals, iter, cmdn) {
-			rz_core_config_eval_and_print(r, cmdn, false);
+			const char *val = rz_config_get(r->config, cmdn);
+			if (val) {
+				rz_cons_println(val);
+			}
 			rz_cons_flush();
 		}
 
@@ -1296,7 +1305,10 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		rz_core_block_read(r);
 
 		rz_list_foreach (evals, iter, cmdn) {
-			rz_core_config_eval_and_print(r, cmdn, false);
+			const char *val = rz_config_get(r->config, cmdn);
+			if (val) {
+				rz_cons_println(val);
+			}			
 			rz_cons_flush();
 		}
 		if (asmarch) {

@@ -474,15 +474,6 @@ RZ_IPI int rz_eval_color(void *data, const char *input) {
 }
 
 RZ_IPI RzCmdStatus rz_eval_getset_handler(RzCore *core, int argc, const char **argv) {
-	if (argc == 1) {
-		RzCmdStateOutput state = { 0 };
-		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET);
-		rz_core_config_print_all(core->config, NULL, &state);
-		rz_cmd_state_output_print(&state);
-		rz_cmd_state_output_fini(&state);
-		return RZ_CMD_STATUS_OK;
-	}
-
 	int i;
 	for (i = 1; i < argc; i++) {
 		RzList *l = rz_str_split_duplist_n(argv[i], "=", 1, false);
@@ -568,7 +559,6 @@ RZ_IPI RzCmdStatus rz_eval_spaces_handler(RzCore *core, int argc, const char **a
 	const char *arg = argc > 1 ? argv[1] : "";
 	RzConfigNode *node;
 	RzListIter *iter;
-	arg = rz_str_trim_head_ro(arg);
 	char *oldSpace = NULL;
 	rz_list_foreach (core->config->nodes, iter, node) {
 		char *space = strdup(node->name);

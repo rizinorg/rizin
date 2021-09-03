@@ -18,11 +18,11 @@ NAME=e-dot
 FILE==
 CMDS=e zoom.
 EXPECT=<<EOF
-zoom.byte = h
-zoom.from = 0
-zoom.in = io.map
-zoom.maxsz = 512
-zoom.to = 0
+zoom.byte=h
+zoom.from=0
+zoom.in=io.map
+zoom.maxsz=512
+zoom.to=0
 EOF
 RUN
 
@@ -81,9 +81,8 @@ RUN
 
 NAME=multiple assignments
 FILE==
-ARGS=-ecfg.oldshell=true
 CMDS=<<EOF
-"e  scr.highlight= scr.highlight.grep  =scr.rainbow =true "
+e scr.highlight=" scr.highlight.grep =scr.rainbow =true"
 e scr.highlight
 e scr.highlight.grep
 e scr.rainbow

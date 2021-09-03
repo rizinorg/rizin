@@ -30,7 +30,6 @@ EOF
 RUN
 
 NAME="/e /t\wst\d\d\d\s\w\w/i" - oldshell
-ARGS=-ecfg.oldshell=true
 FILE=malloc://1024
 CMDS=<<EOF
 w "test123 ab"
@@ -38,6 +37,7 @@ w "Test123 ab" @444
 ?e
 e search.in=block
 b 777
+cfg.oldshell=true
 "/e /t\wst\d\d\d\s\w\w/i"
 EOF
 EXPECT=<<EOF
