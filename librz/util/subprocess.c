@@ -175,7 +175,7 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 	if (opt->args_size) {
 		memcpy(argv + 1, opt->args, sizeof(char *) * opt->args_size);
 	}
-	char *cmd = rz_str_format_msvc_argv(opt->args_size + 1, argv);
+	char *cmd = rz_str_format_msvc_argv(opt->args_size + 1, (const char **)argv);
 	free(argv);
 	if (!cmd) {
 		return NULL;
@@ -298,7 +298,7 @@ error:
 	goto beach;
 }
 
-static bool do_read(HANDLE *f, ut8 *buf, size_t buf_size, size_t n_bytes, OVERLAPPED *overlapped) {
+static bool do_read(HANDLE *f, char *buf, size_t buf_size, size_t n_bytes, OVERLAPPED *overlapped) {
 	size_t to_read = buf_size;
 	if (n_bytes && to_read > n_bytes) {
 		to_read = n_bytes;

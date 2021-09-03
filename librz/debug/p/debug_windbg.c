@@ -54,7 +54,7 @@ static bool __is_target_kernel(DbgEngContext *idbg) {
 	return false;
 }
 
-static bool windbg_init(RzDebug *dbg) {
+static bool windbg_init(RzDebug *dbg, void **user) {
 	DbgEngContext *idbg = dbg->plugin_data;
 	if (!idbg || !idbg->initialized) {
 		return false;

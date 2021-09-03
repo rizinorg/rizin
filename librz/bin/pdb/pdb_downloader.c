@@ -27,8 +27,8 @@ static bool download_and_write(SPDBDownloaderOpt *opt, const char *file) {
 	char *path = rz_str_newf("%s%s%s", dir, RZ_SYS_DIR, opt->dbg_file);
 #if __WINDOWS__
 	if (rz_str_startswith(url, "\\\\")) { // Network path
-		LPCWSTR origin = rz_utf8_to_utf16(url);
-		LPCWSTR dest = rz_utf8_to_utf16(path);
+		wchar_t *origin = rz_utf8_to_utf16(url);
+		wchar_t *dest = rz_utf8_to_utf16(path);
 		BOOL ret = CopyFileW(origin, dest, FALSE);
 		free(dir);
 		free(path);
