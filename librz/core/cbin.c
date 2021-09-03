@@ -2047,7 +2047,7 @@ RZ_API bool rz_core_bin_cur_export_print(RzCore *core, RzBinFile *bf, RzCmdState
 }
 
 RZ_API bool rz_core_bin_imports_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, RzCoreBinFilter *filter) {
-	rz_return_val_if_fail(core && bf && state, false);
+	rz_return_val_if_fail(core && bf && bf->o && state, false);
 
 	int bin_demangle = rz_config_get_i(core->config, "bin.demangle");
 	bool keep_lib = rz_config_get_i(core->config, "bin.demangle.libs");
@@ -2151,7 +2151,7 @@ RZ_API bool rz_core_bin_imports_print(RzCore *core, RzBinFile *bf, RzCmdStateOut
 }
 
 RZ_API bool rz_core_bin_libs_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state) {
-	rz_return_val_if_fail(core && bf && state, false);
+	rz_return_val_if_fail(core && bf && bf->o && state, false);
 
 	const RzList *libs = rz_bin_object_get_libs(bf->o);
 	RzListIter *iter;
@@ -2180,7 +2180,7 @@ RZ_API bool rz_core_bin_libs_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput
 }
 
 RZ_API bool rz_core_bin_main_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state) {
-	rz_return_val_if_fail(core && bf && state, false);
+	rz_return_val_if_fail(core && bf && bf->o && state, false);
 
 	int va = (core->io->va || core->bin->is_debugger) ? VA_TRUE : VA_FALSE;
 	const RzBinAddr *binmain = rz_bin_object_get_special_symbol(bf->o, RZ_BIN_SPECIAL_SYMBOL_MAIN);
@@ -2212,7 +2212,7 @@ RZ_API bool rz_core_bin_main_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput
 }
 
 RZ_API bool rz_core_bin_relocs_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state) {
-	rz_return_val_if_fail(core && bf && state, false);
+	rz_return_val_if_fail(core && bf && bf->o && state, false);
 
 	RzBinObject *o = bf->o;
 
@@ -2470,7 +2470,7 @@ static void sections_headers_setup(RzCore *core, RzCmdStateOutput *state, RzList
 }
 
 RZ_API bool rz_core_bin_sections_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, RzCoreBinFilter *filter, RzList *hashes) {
-	rz_return_val_if_fail(core && bf && state, false);
+	rz_return_val_if_fail(core && bf && bf->o && state, false);
 
 	RzBinObject *o = bf->o;
 	RzList *sections = rz_bin_object_get_sections(o);
@@ -2547,7 +2547,7 @@ RZ_API bool rz_core_bin_cur_section_print(RzCore *core, RzBinFile *bf, RzCmdStat
 }
 
 RZ_API bool rz_core_bin_segments_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, RzCoreBinFilter *filter, RzList *hashes) {
-	rz_return_val_if_fail(core && bf && state, false);
+	rz_return_val_if_fail(core && bf && bf->o && state, false);
 
 	RzBinObject *o = bf->o;
 	RzList *segments = rz_bin_object_get_segments(o);
@@ -3698,7 +3698,7 @@ RZ_API bool rz_core_bin_class_as_source_print(RzCore *core, RzBinFile *bf, const
 }
 
 RZ_API bool rz_core_bin_class_fields_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, const char *class_name) {
-	rz_return_val_if_fail(core && bf && state, false);
+	rz_return_val_if_fail(core && bf && bf->o && state, false);
 
 	RzListIter *iter, *iter2;
 	RzBinClass *c;
@@ -3765,7 +3765,7 @@ RZ_API bool rz_core_bin_class_fields_print(RzCore *core, RzBinFile *bf, RzCmdSta
 }
 
 RZ_API bool rz_core_bin_class_methods_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, const char *class_name) {
-	rz_return_val_if_fail(core && bf && state, false);
+	rz_return_val_if_fail(core && bf && bf->o && state, false);
 
 	RzListIter *iter, *iter2;
 	RzBinClass *c;
@@ -3832,7 +3832,7 @@ RZ_API bool rz_core_bin_class_methods_print(RzCore *core, RzBinFile *bf, RzCmdSt
 }
 
 RZ_API bool rz_core_bin_classes_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state) {
-	rz_return_val_if_fail(core && bf && state, false);
+	rz_return_val_if_fail(core && bf && bf->o && state, false);
 
 	RzListIter *iter, *iter2, *iter3;
 	RzBinSymbol *sym;
@@ -3963,7 +3963,7 @@ RZ_API bool rz_core_bin_signatures_print(RzCore *core, RzBinFile *bf, RzCmdState
 }
 
 RZ_API bool rz_core_bin_fields_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state) {
-	rz_return_val_if_fail(core && bf && state, false);
+	rz_return_val_if_fail(core && bf && bf->o && state, false);
 
 	const RzList *fields = rz_bin_object_get_fields(bf->o);
 	RzListIter *iter;
@@ -5046,7 +5046,7 @@ static void bin_memory_print_rec(RzCmdStateOutput *state, RzBinMem *mirror, cons
 }
 
 RZ_API bool rz_core_bin_memory_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state) {
-	rz_return_val_if_fail(core && bf && state, false);
+	rz_return_val_if_fail(core && bf && bf->o && state, false);
 
 	rz_cmd_state_output_array_start(state);
 	rz_cmd_state_output_set_columnsf(state, "sxXss", "name", "size", "address", "flags", "mirror");
@@ -5109,7 +5109,7 @@ RZ_API bool rz_core_bin_trycatch_print(RzCore *core, RzBinFile *bf, RzCmdStateOu
 }
 
 RZ_API bool rz_core_bin_sections_mapping_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state) {
-	rz_return_val_if_fail(core && bf && state, false);
+	rz_return_val_if_fail(core && bf && bf->o && state, false);
 	rz_warn_if_fail(state->mode == RZ_OUTPUT_MODE_TABLE);
 
 	RzVector *maps = rz_bin_object_sections_mapping_list(bf->o);
