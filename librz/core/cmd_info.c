@@ -448,15 +448,13 @@ RZ_IPI RzCmdStatus rz_cmd_info_handler(RzCore *core, int argc, const char **argv
 	if (!core->file) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	GET_CHECK_CUR_BINFILE(core);
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_o(state->d.pj);
 		pj_k(state->d.pj, "core");
 	}
+	RzBinFile *bf = rz_bin_cur(core->bin);
 	bool res = rz_core_file_info_print(core, bf, state);
-
-	RzBinObject *obj = rz_bin_cur_object(core->bin);
-	if (bin_is_executable(obj)) {
+	if (bf && bin_is_executable(bf->o)) {
 		if (state->mode == RZ_OUTPUT_MODE_JSON) {
 			pj_k(state->d.pj, "bin");
 		}
