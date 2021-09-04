@@ -80,7 +80,7 @@ RZ_API bool rz_serialize_core_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, 
 	SUB("flags", rz_serialize_flag_load(subdb, core->flags, res));
 	SUB("analysis", rz_serialize_analysis_load(subdb, core->analysis, res));
 
-	if (sdb_ns(subdb, "breakpoints", false)) {
+	if (sdb_ns(db, "breakpoints", false)) {
 		SUB("breakpoints", rz_serialize_bp_load(subdb, core->dbg->bp, res));
 	}
 

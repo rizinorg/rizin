@@ -15,7 +15,6 @@ RZ_API void rz_serialize_bp_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzBreakpoint *bp
 			return;
 		}
 		pj_o(j);
-		pj_kn(j, "addr", bp_item->addr);
 		pj_ks(j, "bbytes", (char *)bp_item->bbytes);
 		pj_ks(j, "cond", bp_item->cond);
 		pj_ks(j, "data", bp_item->data);
@@ -27,6 +26,7 @@ RZ_API void rz_serialize_bp_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzBreakpoint *bp
 		pj_ki(j, "internal", bp_item->internal);
 		pj_kN(j, "module_delta", bp_item->module_delta);
 		pj_ks(j, "module_name", bp_item->module_name);
+		pj_ks(j, "name", bp_item->name);
 		pj_ks(j, "obytes", (char *)bp_item->obytes);
 		pj_ki(j, "perm", bp_item->perm);
 
@@ -41,7 +41,10 @@ RZ_API void rz_serialize_bp_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzBreakpoint *bp
 		pj_ki(j, "togglehits", bp_item->togglehits);
 		pj_ki(j, "trace", bp_item->trace);
 		pj_end(j);
-		sdb_set(db, bp_item->name, pj_string(j), 0);
+
+		char key[19];
+		snprintf(key, 19, "0x%" PFMT64x, bp_item->addr);
+		sdb_set(db, key, pj_string(j), 0);
 		pj_free(j);
 	}
 }
@@ -67,13 +70,11 @@ static bool bp_load_cb(void *user, const char *k, const char *v) {
 	if (!bp_item) {
 		goto return_goto;
 	}
-	bp_item->name = strdup(k);
+	sscanf(k, "0x%" PFMT64u, &bp_item->addr);
 
 	for (child = json->children.first; child; child = child->next) {
 		if (child->type == RZ_JSON_INTEGER) {
-			if (strcmp(child->key, "addr") == 0) {
-				bp_item->addr = child->num.u_value;
-			} else if (strcmp(child->key, "delta") == 0) {
+			if (strcmp(child->key, "delta") == 0) {
 				bp_item->delta = child->num.u_value;
 			} else if (strcmp(child->key, "enabled") == 0) {
 				bp_item->enabled = child->num.s_value;
@@ -109,6 +110,8 @@ static bool bp_load_cb(void *user, const char *k, const char *v) {
 				bp_item->expr = strdup(child->str_value);
 			} else if (strcmp(child->key, "module_name") == 0) {
 				bp_item->module_name = strdup(child->str_value);
+			} else if (strcmp(child->key, "name") == 0) {
+				bp_item->name = strdup(child->str_value);
 			} else if (strcmp(child->key, "obytes") == 0) {
 				bp_item->obytes = (unsigned char *)strdup(child->str_value);
 			}
