@@ -438,7 +438,6 @@ int w32_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 		type = -type;
 	}
 	bool alive = is_thread_alive(dbg, dbg->tid);
-	W32DbgWInst *wrap = dbg->plugin_data;
 	HANDLE th = get_thread_handle_from_tid(dbg, dbg->tid);
 	if (!th || th == INVALID_HANDLE_VALUE) {
 		return 0;
@@ -473,7 +472,6 @@ int w32_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 	if (!alive) {
 		return false;
 	}
-	W32DbgWInst *wrap = dbg->plugin_data;
 	HANDLE th = get_thread_handle_from_tid(dbg, dbg->tid);
 	if (!th || th == INVALID_HANDLE_VALUE) {
 		return 0;
@@ -516,7 +514,6 @@ int w32_attach(RzDebug *dbg, int pid) {
 		wrap->pi.dwProcessId = 0;
 		return -1;
 	}
-	int ret;
 	dbg->cur->wait(dbg, pid);
 	rz_debug_continue(dbg);
 	return wrap->pi.dwThreadId;

@@ -89,7 +89,7 @@ static bool __plugin_open(RzIO *io, const char *file, bool many) {
 	return !strncmp(file, "w32dbg://", 9);
 }
 
-static inline current_handle_valid(W32DbgWInst *wrap, int pid) {
+static inline bool current_handle_valid(W32DbgWInst *wrap, int pid) {
 	return wrap->pi.dwProcessId == pid && wrap->pi.hProcess != INVALID_HANDLE_VALUE;
 }
 

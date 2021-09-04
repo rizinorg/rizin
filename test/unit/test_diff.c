@@ -14,17 +14,17 @@ static struct {
 	ut32 myers;
 	ut32 levenstein;
 } tests[] = {
-	R("", "zzz", 3.0, 3.0),
-	R("meow", "", 4.0, 4.0),
-	R("a", "b", 2.0, 1.0),
-	R("aaa", "aaa", 0.0, 0.0),
-	R("aaaaa", "aabaa", 2.0, 1.0),
-	R("aaaa", "aabaa", 1.0, 1.0),
-	R("aaba", "babca", 3.0, 2.0),
-	R("foo", "foobar", 3.0, 3.0),
-	R("wallaby", "wallet", 5.0, 3.0),
-	R("identity", "identity", 0.0, 0.0),
-	{ NULL, NULL, 0.0, 0.0 }
+	R("", "zzz", 3, 3),
+	R("meow", "", 4, 4),
+	R("a", "b", 2, 1),
+	R("aaa", "aaa", 0, 0),
+	R("aaaaa", "aabaa", 2, 1),
+	R("aaaa", "aabaa", 1, 1),
+	R("aaba", "babca", 3, 2),
+	R("foo", "foobar", 3, 3),
+	R("wallaby", "wallet", 5, 3),
+	R("identity", "identity", 0, 0),
+	{ NULL, NULL, 0, 0 }
 };
 
 bool test_rz_diff_distances(void) {
