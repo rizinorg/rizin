@@ -978,13 +978,6 @@ static bool cb_binfilter(void *user, void *data) {
 }
 
 /* BinDemangleCmd */
-static bool cb_bdc(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	core->bin->demanglercmd = node->i_value;
-	return true;
-}
-
 static bool cb_useldr(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -3325,7 +3318,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETICB("dbg.trace.tag", 0, &cb_tracetag, "Trace tag");
 
 	/* cmd */
-	SETCB("cmd.demangle", "false", &cb_bdc, "run xcrun swift-demangle and similar if available (SLOW)");
 	SETICB("cmd.depth", 10, &cb_cmddepth, "Maximum command depth");
 	SETPREF("cmd.bp", "", "Run when a breakpoint is hit");
 	SETPREF("cmd.onsyscall", "", "Run when a syscall is hit");

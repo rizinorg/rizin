@@ -126,7 +126,7 @@ RZ_API char *rz_bin_demangle(RzBinFile *bf, const char *def, const char *str, ut
 	case RZ_BIN_NM_JAVA: demangled = rz_bin_demangle_java(str); break;
 	case RZ_BIN_NM_RUST: demangled = rz_bin_demangle_rust(bf, str, vaddr); break;
 	case RZ_BIN_NM_OBJC: demangled = rz_bin_demangle_objc(NULL, str); break;
-	case RZ_BIN_NM_SWIFT: demangled = rz_bin_demangle_swift(str, bin ? bin->demanglercmd : false); break;
+	case RZ_BIN_NM_SWIFT: demangled = rz_bin_demangle_swift(str); break;
 	case RZ_BIN_NM_CXX: demangled = rz_bin_demangle_cxx(bf, str, vaddr); break;
 	case RZ_BIN_NM_MSVC: demangled = rz_bin_demangle_msvc(str); break;
 	case RZ_BIN_NM_DLANG: demangled = rz_bin_demangle_plugin(bin, "dlang", str); break;

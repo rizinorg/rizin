@@ -4,5 +4,6 @@ directory = libuv-v1.40.0
 source_url = https://dist.libuv.org/dist/v1.40.0/libuv-v1.40.0.tar.gz
 source_filename = libuv-v1.40.0.tar.gz
 source_hash = 61a90db95bac00adec1cc5ddc767ebbcaabc70242bd1134a7a6b1fb1d498a194
+source_fallback_url = https://src.fedoraproject.org/lookaside/pkgs/libuv/libuv-v1.40.0.tar.gz/sha512/400a567f4695569c9dfa3916d1d7d8c68344bdb36a83af0567b51d084163457a5deaaba17bc7162907d7138600cd246722190801c7370e31311e67bfbaf8cc57/libuv-v1.40.0.tar.gz
 
 patch_directory = libuv-v1.40.0

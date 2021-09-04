@@ -137,3 +137,4 @@ subprojects/packagecache/
 subprojects/sdb/
 subprojects/tree-sitter-*/
 subprojects/zlib-*/
+subprojects/libswift/
