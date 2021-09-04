@@ -515,7 +515,11 @@ RZ_IPI RzCmdStatus rz_cmd_info_dwarf_handler(RzCore *core, int argc, const char 
 
 RZ_IPI RzCmdStatus rz_cmd_info_pdb_load_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	char *filename = argc > 1 ? strdup(argv[1]) : rz_core_bin_pdb_get_filename(core);
-	if (!filename || !rz_file_exists(filename)) {
+	if (!filename) {
+		RZ_LOG_ERROR("Cannot find the right PDB file to load\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!rz_file_exists(filename)) {
 		RZ_LOG_ERROR("Cannot open file '%s'\n", filename);
 		free(filename);
 		return RZ_CMD_STATUS_ERROR;
@@ -542,11 +546,16 @@ RZ_IPI RzCmdStatus rz_cmd_info_pdb_load_handler(RzCore *core, int argc, const ch
 
 RZ_IPI RzCmdStatus rz_cmd_info_pdb_show_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	char *filename = argc > 1 ? strdup(argv[1]) : rz_core_bin_pdb_get_filename(core);
-	if (!filename || !rz_file_exists(filename)) {
-		eprintf("Cannot open file '%s'\n", filename);
+	if (!filename) {
+		RZ_LOG_ERROR("Cannot find the right PDB file to load\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!rz_file_exists(filename)) {
+		RZ_LOG_ERROR("Cannot open file '%s'\n", filename);
 		free(filename);
 		return RZ_CMD_STATUS_ERROR;
 	}
+
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
 		rz_core_pdb_info(core, filename, NULL, RZ_MODE_PRINT);
