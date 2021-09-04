@@ -2985,7 +2985,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("analysis.jmp.tbl", "true", &cb_analysis_jmptbl, "Analyze jump tables in switch statements");
 	SETICB("analysis.jmp.tblmax", 512, &cb_analysis_jmptblmax, "Maximum amount of entries to analyze in jump tables");
 
-	SETCB("analysis.jmp.cref", "false", &cb_analysis_cjmpref, "Create references for conditional jumps");
+	SETCB("analysis.jmp.cref", "true", &cb_analysis_cjmpref, "Create references for conditional jumps");
 	SETCB("analysis.jmp.ref", "true", &cb_analysis_jmpref, "Create references for unconditional jumps");
 
 	SETCB("analysis.jmp.above", "true", &cb_analysis_jmpabove, "Jump above function pointer");
