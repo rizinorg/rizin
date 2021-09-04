@@ -463,7 +463,9 @@ RZ_API RzTestResultInfo *rz_test_run_test(RzTestRunConfig *config, RzTest *test)
 		RzAsmTestOutput *out = rz_test_run_asm_test(config, asm_test);
 		success = rz_test_check_asm_test(out, asm_test);
 		ret->asm_out = out;
-		ret->timeout = out->as_timeout || out->disas_timeout;
+		if (out) {
+			ret->timeout = out->as_timeout || out->disas_timeout;
+		}
 		ret->run_failed = !out;
 		break;
 	}
@@ -472,7 +474,9 @@ RZ_API RzTestResultInfo *rz_test_run_test(RzTestRunConfig *config, RzTest *test)
 		RzSubprocessOutput *out = rz_test_run_json_test(config, json_test, subprocess_runner, NULL);
 		success = rz_test_check_json_test(out, json_test);
 		ret->proc_out = out;
-		ret->timeout = out->timeout;
+		if (out) {
+			ret->timeout = out->timeout;
+		}
 		ret->run_failed = !out;
 		break;
 	}
@@ -481,7 +485,9 @@ RZ_API RzTestResultInfo *rz_test_run_test(RzTestRunConfig *config, RzTest *test)
 		RzSubprocessOutput *out = rz_test_run_fuzz_test(config, fuzz_test, subprocess_runner, NULL);
 		success = rz_test_check_fuzz_test(out);
 		ret->proc_out = out;
-		ret->timeout = out->timeout;
+		if (out) {
+			ret->timeout = out->timeout;
+		}
 		ret->run_failed = !out;
 	}
 	}
