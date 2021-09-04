@@ -10,15 +10,12 @@ NAME=nso sections
 FILE=bins/nso/application.nso
 CMDS=iS
 EXPECT=<<EOF
-[Sections]
-
-nth paddr          size vaddr         vsize perm name   
---------------------------------------------------------
-0   0x00000000    0x100 0x00000000    0x100 -r-- header
-1   0x00000000  0x20e18 0x08000000  0x20e18 -r-x text
-2   0x00020e18   0xdb0c 0x08021000   0xdb0c -r-- ro
-3   0x0002e924   0x4218 0x0802f000   0x4218 -rw- data
-
+paddr      size    vaddr      vsize   align perm name   type flags 
+-------------------------------------------------------------------
+0x00000000 0x100   0x00000000 0x100   0x0   -r-- header      
+0x00000000 0x20e18 0x08000000 0x20e18 0x0   -r-x text        
+0x00020e18 0xdb0c  0x08021000 0xdb0c  0x0   -r-- ro          
+0x0002e924 0x4218  0x0802f000 0x4218  0x0   -rw- data        
 EOF
 RUN
 
@@ -36,10 +33,9 @@ NAME=nso entry
 FILE=bins/nso/application.nso
 CMDS=ie
 EXPECT=<<EOF
-[Entrypoints]
-vaddr=0x08000000 paddr=0x00000100 haddr=-1 type=program
-
-1 entrypoints
+vaddr      paddr      hvaddr     haddr      type    
+----------------------------------------------------
+0x08000000 0x00000100 ---------- ---------- program
 EOF
 RUN
 

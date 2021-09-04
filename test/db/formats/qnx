@@ -8,9 +8,9 @@ RUN
 
 NAME=entry point of qnx
 FILE=bins/qnx/test.x
-CMDS=ie~addr
+CMDS=ie:quiet
 EXPECT=<<EOF
-vaddr=0x0000021c paddr=0x0000021c haddr=-1 type=program
+0x0000021c 0x0000021c ---------- ---------- program
 EOF
 RUN
 
@@ -18,13 +18,10 @@ NAME=sections of qnx
 FILE=bins/qnx/test.x
 CMDS=iS
 EXPECT=<<EOF
-[Sections]
-
-nth paddr        size vaddr       vsize perm name     
-------------------------------------------------------
-0   0x00000044   0xf6 0x00000044   0xf6 ---- LMF_LOAD
-1   0x00000152  0x6c3 0x00000152  0x6c3 ---- LMF_LOAD
-
+paddr      size  vaddr      vsize align perm name     type flags 
+-----------------------------------------------------------------
+0x00000044 0xf6  0x00000044 0xf6  0x0   ---- LMF_LOAD      
+0x00000152 0x6c3 0x00000152 0x6c3 0x0   ---- LMF_LOAD      
 EOF
 RUN
 

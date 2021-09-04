@@ -6,17 +6,27 @@ iI
 p8 0x30 @ 0x0801
 EOF
 EXPECT=<<EOF
-Name     Value        
-----------------------
 arch     6502
-baddr    0x801
-binsz    38
+cpu      N/A
+baddr    0x00000801
+binsz    0x00000026
+bintype  N/A
 bits     8
 retguard false
+class    N/A
+compiler N/A
+dbg_file N/A
 endian   LE
-laddr    0x0
+hdr.csum N/A
+guid     N/A
+intrp    N/A
+laddr    0x00000000
+lang     N/A
 machine  Commodore 64
 os       c64
+cc       N/A
+rpath    N/A
+subsys   
 stripped false
 crypto   false
 havecode true

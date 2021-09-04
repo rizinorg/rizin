@@ -14,15 +14,31 @@ RUN
 
 NAME=tc2
 FILE=bins/mach0/objc-employee
-CMDS=icc*
+BROKEN=1
+CMDS=icc
 EXPECT=<<EOF
-typedef struct class_Employee {
-    struct objc_class * isa; // 0
-    short _shortWord; // 8
-    struct NSString* _username; // 16
-    struct NSString* _firstName; // 24
-    uint64_t _wideWord; // 32
-} Employee;
+@interface Employee : NSObject
+{
+  s Employee::(ivar)_shortWord
+  @"NSString" Employee::(ivar)_username
+  @"NSString" Employee::(ivar)_firstName
+  Q Employee::(ivar)_wideWord
+}
+- (void) helloWorld
+- (id) sayHello
+- (unknown) p0
+- (unknown) p1
+- (unknown) p2
+- (unknown) p3
+- (unknown) base
+- (id) username
+- (void) setUsername:
+- (id) firstName
+- (void) setFirstName:
+- (short) shortWord
+- (unsigned long long) wideWord
++ (id) sayHello
+@end
 EOF
 RUN
 
@@ -118,15 +134,32 @@ RUN
 
 NAME=tc2 iOS14 arm64
 FILE=bins/mach0/objc-employee-ios14-arm64
-CMDS=icc*
+CMDS=icc
+BROKEN=1
 EXPECT=<<EOF
-typedef struct class_Employee {
-    struct objc_class * isa; // 0
-    short _shortWord; // 8
-    struct NSString* _username; // 16
-    struct NSString* _firstName; // 24
-    uint64_t _wideWord; // 32
-} Employee;
+@interface Employee : NSObject
+{
+  s Employee::(ivar)_shortWord
+  @"NSString" Employee::(ivar)_username
+  @"NSString" Employee::(ivar)_firstName
+  Q Employee::(ivar)_wideWord
+}
+- (void) sayHello
+- (void) helloWorld
+- (unknown) p0
+- (unknown) p1
+- (unknown) p2
+- (unknown) p3
+- (unknown) base
+- (id) username
+- (void) setUsername:
+- (id) firstName
+- (void) setFirstName:
+- (short) shortWord
+- (unsigned long long) wideWord
+- (void) .cxx_destruct
++ (void) sayHello
+@end
 EOF
 RUN
 
@@ -223,15 +256,32 @@ RUN
 
 NAME=tc2 iOS14 arm64e
 FILE=bins/mach0/objc-employee-ios14-arm64e
-CMDS=icc*
+CMDS=icc
+BROKEN=1
 EXPECT=<<EOF
-typedef struct class_Employee {
-    struct objc_class * isa; // 0
-    short _shortWord; // 8
-    struct NSString* _username; // 16
-    struct NSString* _firstName; // 24
-    uint64_t _wideWord; // 32
-} Employee;
+@interface Employee
+{
+  s Employee::(ivar)_shortWord
+  @"NSString" Employee::(ivar)_username
+  @"NSString" Employee::(ivar)_firstName
+  Q Employee::(ivar)_wideWord
+}
+- (void) sayHello
+- (void) helloWorld
+- (unknown) p0
+- (unknown) p1
+- (unknown) p2
+- (unknown) p3
+- (unknown) base
+- (id) username
+- (void) setUsername:
+- (id) firstName
+- (void) setFirstName:
+- (short) shortWord
+- (unsigned long long) wideWord
+- (void) .cxx_destruct
++ (void) sayHello
+@end
 EOF
 RUN
 

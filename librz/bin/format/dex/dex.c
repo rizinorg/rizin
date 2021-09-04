@@ -839,19 +839,24 @@ static RzList /*<RzBinSymbol*>*/ *dex_resolve_methods_in_class(RzBinDex *dex, De
 	return methods;
 }
 
-static RzBinField *dex_field_to_bin_field(RzBinDex *dex, DexEncodedField *encoded_field, DexFieldId *field_id) {
+static RzBinField *dex_field_to_bin_field(RzBinDex *dex, DexEncodedField *encoded_field, DexFieldId *field_id, bool is_static) {
 	RzBinField *field = RZ_NEW0(RzBinField);
 	if (!field) {
 		return NULL;
 	}
 
+	ut64 access_flags = encoded_field->access_flags;
+	if (is_static) {
+		access_flags |= ACCESS_FLAG_STATIC;
+	}
+
 	field->vaddr = encoded_field->offset;
 	field->paddr = encoded_field->offset;
 	field->visibility = encoded_field->access_flags & UT32_MAX;
-	field->visibility_str = dex_access_flags_readable(encoded_field->access_flags | ACCESS_FLAG_STATIC);
+	field->visibility_str = dex_access_flags_readable(access_flags);
 	field->name = dex_resolve_string_id(dex, field_id->name_idx);
 	field->type = dex_resolve_type_id(dex, field_id->type_idx);
-	field->flags = dex_access_flags_to_bin_flags(encoded_field->access_flags | ACCESS_FLAG_STATIC);
+	field->flags = dex_access_flags_to_bin_flags(access_flags);
 
 	return field;
 }
@@ -872,7 +877,7 @@ static RzList /*<RzBinField*>*/ *dex_resolve_fields_in_class(RzBinDex *dex, DexC
 			continue;
 		}
 
-		RzBinField *field = dex_field_to_bin_field(dex, encoded_field, field_id);
+		RzBinField *field = dex_field_to_bin_field(dex, encoded_field, field_id, true);
 		if (!field || !rz_list_append(fields, field)) {
 			rz_bin_field_free(field);
 			break;
@@ -886,7 +891,7 @@ static RzList /*<RzBinField*>*/ *dex_resolve_fields_in_class(RzBinDex *dex, DexC
 			continue;
 		}
 
-		RzBinField *field = dex_field_to_bin_field(dex, encoded_field, field_id);
+		RzBinField *field = dex_field_to_bin_field(dex, encoded_field, field_id, false);
 		if (!field || !rz_list_append(fields, field)) {
 			rz_bin_field_free(field);
 			break;

@@ -180,12 +180,12 @@ e bin.baddr=0xf00000
 k old_v=`ieq`
 oob
 iI~baddr[1]
-ie~vaddr[1]
+ie:vaddr:quiet
 p8 10 @ entry0
 p8 10 @ `k old_v`
 EOF
 EXPECT=<<EOF
-0xf00000
+0x00f00000
 0x00f01058
 554889e5415741564155
 ffffffffffffffffffff
@@ -203,8 +203,8 @@ iI~laddr[1]
 iI~baddr[1]
 EOF
 EXPECT=<<EOF
-0x0
-0x1000
+0x00000000
+0x00001000
 EOF
 RUN
 
@@ -219,7 +219,7 @@ iI~laddr[1]
 iI~baddr[1]
 EOF
 EXPECT=<<EOF
-0x0
+0x00000000
 0x100000000
 EOF
 RUN
@@ -467,22 +467,26 @@ format   elf
 iorw     false
 block    0x100
 type     EXEC (Executable file)
-Name     Value              
-----------------------------
 arch     x86
-baddr    0x8048000
-binsz    20668
+cpu      N/A
+baddr    0x08048000
+binsz    0x000050bc
 bintype  elf
 bits     32
 class    ELF32
+compiler N/A
+dbg_file N/A
 endian   LE
+hdr.csum N/A
+guid     N/A
 intrp    /lib/ld-linux.so.2
-laddr    0x0
+laddr    0x00000000
 lang     c
 machine  Intel 80386
 maxopsz  16
 minopsz  1
 os       linux
+cc       N/A
 pcalign  0
 relro    partial
 rpath    NONE
@@ -501,14 +505,14 @@ RELROCS  false
 NX       true
 --
 1
-fd       3
-file     malloc://512
-size     0x200
-humansz  512
-mode     rwx
-format   any
-iorw     true
-block    0x100
-
+fd      3
+file    malloc://512
+size    0x200
+humansz 512
+mode    rwx
+format  any
+iorw    true
+block   0x100
+type    
 EOF
 RUN

@@ -2,8 +2,6 @@ NAME=bflt
 FILE=bins/bflt/bin.bflt
 CMDS=ir
 EXPECT=<<EOF
-[Relocations]
-
 vaddr      paddr      type   name 
 ----------------------------------
 0x00000074 0x00000074 SET_32 
@@ -98,8 +96,5 @@ vaddr      paddr      type   name
 0x00002fb4 0x00002fb4 SET_32 
 0x00002fb8 0x00002fb8 SET_32 
 0x00002fbc 0x00002fbc SET_32 
-
-
-92 relocations
 EOF
 RUN

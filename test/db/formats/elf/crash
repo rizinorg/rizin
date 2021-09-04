@@ -20,10 +20,8 @@ ii
 iij
 EOF
 EXPECT=<<EOF
-[Imports]
 nth vaddr bind type lib name 
 -----------------------------
-
 []
 EOF
 RUN

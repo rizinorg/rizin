@@ -1173,7 +1173,7 @@ RZ_API void rz_table_visual_list(RzTable *table, RzList *list, ut64 seek, ut64 l
 		width = 30;
 	}
 
-	rz_table_set_columnsf(table, "sssssss", "No.", "start", "blocks", "end", "perms", "extra", "name");
+	rz_table_set_columnsf(table, "sxsxsss", "No.", "start", "blocks", "end", "perms", "extra", "name");
 	rz_list_foreach (list, iter, info) {
 		if (min == -1 || info->pitv.addr < min) {
 			min = info->pitv.addr;
@@ -1196,20 +1196,25 @@ RZ_API void rz_table_visual_list(RzTable *table, RzList *list, ut64 seek, ut64 l
 				rz_strbuf_append(buf, arg);
 			}
 			char *b = rz_strbuf_drain(buf);
+			char no[64];
 			if (va) {
-				rz_table_add_rowf(table, "sssssss",
-					sdb_fmt("%d%c", i, rz_itv_contain(info->vitv, seek) ? '*' : ' '),
-					sdb_fmt("0x%" PFMT64x, info->vitv.addr),
+				rz_table_add_rowf(table, "sxsxsss",
+					rz_strf(no, "%d%c", i, rz_itv_contain(info->vitv, seek) ? '*' : ' '),
+					info->vitv.addr,
 					b,
-					sdb_fmt("0x%" PFMT64x, rz_itv_end(info->vitv)),
+					rz_itv_end(info->vitv),
 					(info->perm != -1) ? rz_str_rwx_i(info->perm) : "",
 					(info->extra) ? info->extra : "",
 					(info->name) ? info->name : "");
 			} else {
-				rz_table_add_rowf(table, "sssssss", sdb_fmt("%d%c", i, rz_itv_contain(info->pitv, seek) ? '*' : ' '),
-					sdb_fmt("0x%" PFMT64x, info->pitv.addr), b,
-					sdb_fmt("0x%" PFMT64x, rz_itv_end(info->pitv)),
-					(info->perm != -1) ? rz_str_rwx_i(info->perm) : "", (info->extra) ? info->extra : "", (info->name) ? info->name : "");
+				rz_table_add_rowf(table, "sxsxsss",
+					rz_strf(no, "%d%c", i, rz_itv_contain(info->pitv, seek) ? '*' : ' '),
+					info->pitv.addr,
+					b,
+					rz_itv_end(info->pitv),
+					(info->perm != -1) ? rz_str_rwx_i(info->perm) : "",
+					(info->extra) ? info->extra : "",
+					(info->name) ? info->name : "");
 			}
 			free(b);
 			i++;
@@ -1223,8 +1228,10 @@ RZ_API void rz_table_visual_list(RzTable *table, RzList *list, ut64 seek, ut64 l
 			for (j = 0; j < width; j++) {
 				rz_strbuf_append(buf, ((j * mul) + min >= seek && (j * mul) + min <= seek + len) ? "^" : h_line);
 			}
+			char *s = rz_strbuf_drain(buf);
 			rz_table_add_rowf(table, "sssssss", "=>", sdb_fmt("0x%08" PFMT64x, seek),
-				rz_strbuf_drain(buf), sdb_fmt("0x%08" PFMT64x, seek + len), "", "", "");
+				s, sdb_fmt("0x%08" PFMT64x, seek + len), "", "", "");
+			free(s);
 		} else {
 			rz_strbuf_free(buf);
 		}

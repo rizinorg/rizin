@@ -10,25 +10,32 @@ NAME=mdmp info
 FILE=bins/mdmp/calc.dmp
 CMDS=iI
 EXPECT=<<EOF
-Name     Value                           
------------------------------------------
 arch     x86
-baddr    0xffffffffffffffff
-binsz    36724
+cpu      N/A
+baddr    ----------
+binsz    0x00008f74
 bintype  mdmp
 bits     64
 retguard false
+class    N/A
+compiler N/A
+dbg_file N/A
 endian   LE
 flags    0x00040000
 hdr.csum 0x00000000
-laddr    0x0
+guid     N/A
+intrp    N/A
+laddr    0x00000000
+lang     N/A
 machine  AMD64
 maxopsz  16
 minopsz  1
 os       Windows NT Workstation 6.1.7601
+cc       N/A
 pcalign  0
 rpath    NONE
 streams  13
+subsys   
 stripped false
 crypto   false
 havecode true
@@ -48,37 +55,34 @@ NAME=mdmp sections
 FILE=bins/mdmp/calc.dmp
 CMDS=iS
 EXPECT=<<EOF
-[Sections]
-
-nth paddr           size vaddr             vsize perm name                                  
---------------------------------------------------------------------------------------------
-0   0x00000000   0xe3000 0xfffe0000      0xe3000 ---- C:_Windows_System32_calc.exe
-1   0x00000000  0x1aa000 0x77720000     0x1aa000 ---- C:_Windows_System32__tdll.dll
-2   0x00000000  0x11f000 0x77500000     0x11f000 ---- C:_Windows_System32_kernel32.dll
-3   0x00000000   0x6a000 0x7fefd4a0000   0x6a000 ---- C:_Windows_System32_KERNELBASE.dll
-4   0x00000000  0xd8a000 0x7fefeca0000  0xd8a000 ---- C:_Windows_System32_shell32.dll
-5   0x00000000   0x9f000 0x7fefdab0000   0x9f000 ---- C:_Windows_System32_msvcrt.dll
-6   0x00000000   0x71000 0x7fefd890000   0x71000 ---- C:_Windows_System32_shlwapi.dll
-7   0x00000000   0x67000 0x7fefdb50000   0x67000 ---- C:_Windows_System32_gdi32.dll
-8   0x00000000   0xfa000 0x77620000      0xfa000 ---- C:_Windows_System32_user32.dll
-9   0x00000000    0xe000 0x7fefdbc0000    0xe000 ---- C:_Windows_System32_lpk.dll
-10  0x00000000   0xca000 0x7fefe450000   0xca000 ---- C:_Windows_System32_usp10.dll
-11  0x00000000  0x203000 0x7fefea90000  0x203000 ---- C:_Windows_System32_ole32.dll
-12  0x00000000  0x12d000 0x7fefe8d0000  0x12d000 ---- C:_Windows_System32__pcrt4.dll
-13  0x00000000   0xdb000 0x7fefd9d0000   0xdb000 ---- C:_Windows_System32__dvapi32.dll
-14  0x00000000   0x1f000 0x7fefdff0000   0x1f000 ---- C:_Windows_System32_sechost.dll
-15  0x00000000   0xda000 0x7fefe520000   0xda000 ---- C:_Windows_System32_oleaut32.dll
-16  0x00000000   0x56000 0x7fefbb40000   0x56000 ---- C:_Windows_System32_uxtheme.dll
-17  0x00000000   0x3b000 0x7fefa140000   0x3b000 ---- C:_Windows_System32_winmm.dll
-18  0x00000000    0xc000 0x7fefc330000    0xc000 ---- C:_Windows_System32__ersion.dll
-19  0x00000000   0x2e000 0x7fefea00000   0x2e000 ---- C:_Windows_System32_imm32.dll
-20  0x00000000  0x109000 0x7fefe340000  0x109000 ---- C:_Windows_System32_msctf.dll
-21  0x00000000  0x161000 0x7fefb560000  0x161000 ---- C:_Windows_System32_WindowsCodecs.dll
-22  0x00000000   0x18000 0x7fefb710000   0x18000 ---- C:_Windows_System32_dwmapi.dll
-23  0x00000000    0xf000 0x7fefd2b0000    0xf000 ---- C:_Windows_System32_CRYPTBASE.dll
-24  0x00000000   0x99000 0x7fefddb0000   0x99000 ---- C:_Windows_System32_clbcatq.dll
-25  0x00000000   0x54000 0x7fef62b0000   0x54000 ---- C:_Windows_System32_oleacc.dll
-
+paddr      size     vaddr         vsize    align perm name                                  type flags 
+-------------------------------------------------------------------------------------------------------
+0x00000000 0xe3000  0xfffe0000    0xe3000  0x0   ---- C:_Windows_System32_calc.exe               
+0x00000000 0x1aa000 0x77720000    0x1aa000 0x0   ---- C:_Windows_System32__tdll.dll              
+0x00000000 0x11f000 0x77500000    0x11f000 0x0   ---- C:_Windows_System32_kernel32.dll           
+0x00000000 0x6a000  0x7fefd4a0000 0x6a000  0x0   ---- C:_Windows_System32_KERNELBASE.dll         
+0x00000000 0xd8a000 0x7fefeca0000 0xd8a000 0x0   ---- C:_Windows_System32_shell32.dll            
+0x00000000 0x9f000  0x7fefdab0000 0x9f000  0x0   ---- C:_Windows_System32_msvcrt.dll             
+0x00000000 0x71000  0x7fefd890000 0x71000  0x0   ---- C:_Windows_System32_shlwapi.dll            
+0x00000000 0x67000  0x7fefdb50000 0x67000  0x0   ---- C:_Windows_System32_gdi32.dll              
+0x00000000 0xfa000  0x77620000    0xfa000  0x0   ---- C:_Windows_System32_user32.dll             
+0x00000000 0xe000   0x7fefdbc0000 0xe000   0x0   ---- C:_Windows_System32_lpk.dll                
+0x00000000 0xca000  0x7fefe450000 0xca000  0x0   ---- C:_Windows_System32_usp10.dll              
+0x00000000 0x203000 0x7fefea90000 0x203000 0x0   ---- C:_Windows_System32_ole32.dll              
+0x00000000 0x12d000 0x7fefe8d0000 0x12d000 0x0   ---- C:_Windows_System32__pcrt4.dll             
+0x00000000 0xdb000  0x7fefd9d0000 0xdb000  0x0   ---- C:_Windows_System32__dvapi32.dll           
+0x00000000 0x1f000  0x7fefdff0000 0x1f000  0x0   ---- C:_Windows_System32_sechost.dll            
+0x00000000 0xda000  0x7fefe520000 0xda000  0x0   ---- C:_Windows_System32_oleaut32.dll           
+0x00000000 0x56000  0x7fefbb40000 0x56000  0x0   ---- C:_Windows_System32_uxtheme.dll            
+0x00000000 0x3b000  0x7fefa140000 0x3b000  0x0   ---- C:_Windows_System32_winmm.dll              
+0x00000000 0xc000   0x7fefc330000 0xc000   0x0   ---- C:_Windows_System32__ersion.dll            
+0x00000000 0x2e000  0x7fefea00000 0x2e000  0x0   ---- C:_Windows_System32_imm32.dll              
+0x00000000 0x109000 0x7fefe340000 0x109000 0x0   ---- C:_Windows_System32_msctf.dll              
+0x00000000 0x161000 0x7fefb560000 0x161000 0x0   ---- C:_Windows_System32_WindowsCodecs.dll      
+0x00000000 0x18000  0x7fefb710000 0x18000  0x0   ---- C:_Windows_System32_dwmapi.dll             
+0x00000000 0xf000   0x7fefd2b0000 0xf000   0x0   ---- C:_Windows_System32_CRYPTBASE.dll          
+0x00000000 0x99000  0x7fefddb0000 0x99000  0x0   ---- C:_Windows_System32_clbcatq.dll            
+0x00000000 0x54000  0x7fef62b0000 0x54000  0x0   ---- C:_Windows_System32_oleacc.dll             
 EOF
 RUN
 
@@ -162,9 +166,8 @@ NAME=mdmp entrypoints nomem .dmp
 FILE=bins/mdmp/calc.dmp
 CMDS=ie
 EXPECT=<<EOF
-[Entrypoints]
-
-0 entrypoints
+vaddr paddr hvaddr haddr type 
+------------------------------
 EOF
 RUN
 
@@ -211,10 +214,9 @@ RUN
 
 NAME=mdmp 32bit - libraries count
 FILE=bins/mdmp/hello.dmp
-CMDS=il~libraries
+CMDS=il:quiet~?
 EXPECT=<<EOF
-[Linked libraries]
-57 libraries
+57
 EOF
 RUN
 
@@ -229,12 +231,12 @@ RUN
 NAME=mdmp 32bit - entrypoints count
 FILE=bins/mdmp/hello.dmp
 CMDS=<<EOF
-ie~entrypoints
-iee~entrypoints
+ie:quiet~?
+iee:quiet~?
 EOF
 EXPECT=<<EOF
-9 entrypoints
-2 entrypoints
+9
+2
 EOF
 RUN
 
@@ -242,7 +244,7 @@ NAME=mdmp 32bit - entrypoints resolving
 FILE=bins/mdmp/hello.dmp
 CMDS=ie~0x004014e0
 EXPECT=<<EOF
-vaddr=0x004014e0 paddr=0x000990b2 haddr=0x00097c7a type=program
+0x004014e0 0x000990b2 ---------- 0x00097c7a program
 EOF
 RUN
 
@@ -250,7 +252,7 @@ NAME=mdmp 32bit - symbols count
 FILE=bins/mdmp/hello.dmp
 CMDS=is~?
 EXPECT=<<EOF
-7469
+7468
 EOF
 RUN
 
@@ -274,7 +276,7 @@ NAME=mdmp 32bit - imports count
 FILE=bins/mdmp/hello.dmp
 CMDS=ii~?
 EXPECT=<<EOF
-2031
+2030
 EOF
 RUN
 
@@ -290,7 +292,7 @@ NAME=mdmp 32bit - exports count
 FILE=bins/mdmp/hello.dmp
 CMDS=iE~?
 EXPECT=<<EOF
-5441
+5440
 EOF
 RUN
 
@@ -304,9 +306,9 @@ RUN
 
 NAME=mdmp 32bit - relocs count
 FILE=bins/mdmp/hello.dmp
-CMDS=ir~relocations
+CMDS=ir:quiet~?
 EXPECT=<<EOF
-2028 relocations
+2028
 EOF
 RUN
 
@@ -342,16 +344,15 @@ NAME=mdmp 32bit - strings count
 FILE=bins/mdmp/hello.dmp
 CMDS=iz~?
 EXPECT=<<EOF
-10277
+10276
 EOF
 RUN
 
 NAME=mdmp 64bit - libraries count
 FILE=bins/mdmp/hello64.dmp
-CMDS=il~libraries
+CMDS=il:quiet~?
 EXPECT=<<EOF
-[Linked libraries]
-49 libraries
+49
 EOF
 RUN
 
@@ -365,9 +366,9 @@ RUN
 
 NAME=mdmp 64bit - entrypoints count
 FILE=bins/mdmp/hello64.dmp
-CMDS=ie~entrypoints
+CMDS=ie:quiet~?
 EXPECT=<<EOF
-5 entrypoints
+5
 EOF
 RUN
 
@@ -375,7 +376,7 @@ NAME=mdmp 64bit - entrypoints resolving
 FILE=bins/mdmp/hello64.dmp
 CMDS=ie~0x00401500
 EXPECT=<<EOF
-vaddr=0x00401500 paddr=0x0009418f haddr=0x00092d37 type=program
+0x00401500    0x0009418f ---------- 0x00092d37 program
 EOF
 RUN
 
@@ -383,7 +384,7 @@ NAME=mdmp 64bit - symbols count
 FILE=bins/mdmp/hello64.dmp
 CMDS=is~?
 EXPECT=<<EOF
-6827
+6826
 EOF
 RUN
 
@@ -407,7 +408,7 @@ NAME=mdmp 64bit - imports count
 FILE=bins/mdmp/hello64.dmp
 CMDS=ii~?
 EXPECT=<<EOF
-1512
+1511
 EOF
 RUN
 
@@ -423,7 +424,7 @@ NAME=mdmp 64bit - exports count
 FILE=bins/mdmp/hello64.dmp
 CMDS=iE~?
 EXPECT=<<EOF
-5318
+5317
 EOF
 RUN
 
@@ -437,9 +438,9 @@ RUN
 
 NAME=mdmp 64bit - relocs count
 FILE=bins/mdmp/hello64.dmp
-CMDS=ir~relocations
+CMDS=ir:quiet~?
 EXPECT=<<EOF
-1509 relocations
+1509
 EOF
 RUN
 
@@ -472,14 +473,14 @@ NAME=mdmp 64bit - strings count
 FILE=bins/mdmp/hello64.dmp
 CMDS=iz~?
 EXPECT=<<EOF
-22901
+22900
 EOF
 RUN
 
 NAME=mdmp reload file
 FILE=bins/mdmp/calc.dmp
 CMDS=<<EOF
-ib
+obR
 ?e ok
 EOF
 EXPECT=<<EOF

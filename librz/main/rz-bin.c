@@ -9,6 +9,143 @@
 #include <rz_main.h>
 #include "../../librz/bin/pdb/pdb_downloader.h"
 
+static void start_state(RzCmdStateOutput *state) {
+	if (state->mode == RZ_OUTPUT_MODE_JSON) {
+		pj_o(state->d.pj);
+	}
+}
+
+static void end_state(RzCmdStateOutput *state) {
+	if (state->mode == RZ_OUTPUT_MODE_JSON) {
+		pj_end(state->d.pj);
+		const char *s = pj_string(state->d.pj);
+		if (s) {
+			rz_cons_printf("%s\n", s);
+		}
+	}
+}
+
+static bool add_footer(RzCmdStateOutput *main_state, RzCmdStateOutput *state) {
+	if (state->mode == RZ_OUTPUT_MODE_TABLE) {
+		char *s = rz_table_tostring(state->d.t);
+		if (!s) {
+			return false;
+		}
+		rz_cons_printf("%s\n", s);
+		free(s);
+	} else if (state->mode == RZ_OUTPUT_MODE_JSON) {
+		const char *state_json = pj_string(state->d.pj);
+		pj_raw(main_state->d.pj, state_json);
+	}
+	rz_cmd_state_output_free(state);
+	return true;
+}
+
+static RzCmdStateOutput *add_header(RzCmdStateOutput *main_state, RzOutputMode mode, const char *header) {
+	RzCmdStateOutput *state = RZ_NEW(RzCmdStateOutput);
+	rz_cmd_state_output_init(state, mode);
+	if (mode == RZ_OUTPUT_MODE_TABLE || mode == RZ_OUTPUT_MODE_STANDARD) {
+		rz_cons_printf("[%c%s]\n", toupper(header[0]), header + 1);
+	} else if (mode == RZ_OUTPUT_MODE_JSON) {
+		pj_k(main_state->d.pj, header);
+	}
+	return state;
+}
+
+static void classes_as_source_print(RzCore *core, RzCmdStateOutput *state) {
+	RzBinFile *bf = rz_bin_cur(core->bin);
+	if (bf) {
+		rz_core_bin_class_as_source_print(core, bf, NULL);
+	}
+}
+
+static RzOutputMode rad2outputmode(int rad) {
+	switch (rad) {
+	case RZ_MODE_JSON:
+		return RZ_OUTPUT_MODE_JSON;
+	case RZ_MODE_SIMPLE:
+		return RZ_OUTPUT_MODE_QUIET;
+	case RZ_MODE_SIMPLEST:
+		return RZ_OUTPUT_MODE_QUIETEST;
+	case RZ_MODE_RIZINCMD:
+		return RZ_OUTPUT_MODE_RIZIN;
+	case RZ_MODE_PRINT:
+	default:
+		return RZ_OUTPUT_MODE_STANDARD;
+	}
+}
+
+static ut32 actions2mask(ut64 action) {
+	ut32 res = 0;
+	if (action & RZ_BIN_REQ_SECTIONS) {
+		res |= RZ_CORE_BIN_ACC_SECTIONS;
+	}
+	if (action & RZ_BIN_REQ_SEGMENTS) {
+		res |= RZ_CORE_BIN_ACC_SEGMENTS;
+	}
+	if (action & RZ_BIN_REQ_ENTRIES) {
+		res |= RZ_CORE_BIN_ACC_ENTRIES;
+	}
+	if (action & RZ_BIN_REQ_INITFINI) {
+		res |= RZ_CORE_BIN_ACC_INITFINI;
+	}
+	if (action & RZ_BIN_REQ_MAIN) {
+		res |= RZ_CORE_BIN_ACC_MAIN;
+	}
+	if (action & RZ_BIN_REQ_IMPORTS) {
+		res |= RZ_CORE_BIN_ACC_IMPORTS;
+	}
+	if (action & RZ_BIN_REQ_CLASSES) {
+		res |= RZ_CORE_BIN_ACC_CLASSES;
+	}
+	if (action & RZ_BIN_REQ_SYMBOLS) {
+		res |= RZ_CORE_BIN_ACC_SYMBOLS;
+	}
+	if (action & RZ_BIN_REQ_EXPORTS) {
+		res |= RZ_CORE_BIN_ACC_EXPORTS;
+	}
+	if (action & RZ_BIN_REQ_RESOURCES) {
+		res |= RZ_CORE_BIN_ACC_RESOURCES;
+	}
+	if (action & RZ_BIN_REQ_STRINGS) {
+		res |= RZ_CORE_BIN_ACC_STRINGS;
+	}
+	if (action & RZ_BIN_REQ_INFO) {
+		res |= RZ_CORE_BIN_ACC_INFO;
+	}
+	if (action & RZ_BIN_REQ_FIELDS) {
+		res |= RZ_CORE_BIN_ACC_FIELDS;
+	}
+	if (action & RZ_BIN_REQ_HEADER) {
+		res |= RZ_CORE_BIN_ACC_HEADER;
+	}
+	if (action & RZ_BIN_REQ_LIBS) {
+		res |= RZ_CORE_BIN_ACC_LIBS;
+	}
+	if (action & RZ_BIN_REQ_RELOCS) {
+		res |= RZ_CORE_BIN_ACC_RELOCS;
+	}
+	if (action & RZ_BIN_REQ_DWARF) {
+		res |= RZ_CORE_BIN_ACC_DWARF;
+	}
+	if (action & RZ_BIN_REQ_PDB) {
+		res |= RZ_CORE_BIN_ACC_PDB;
+	}
+	if (action & RZ_BIN_REQ_SIZE) {
+		res |= RZ_CORE_BIN_ACC_SIZE;
+	}
+	if (action & RZ_BIN_REQ_VERSIONINFO) {
+		res |= RZ_CORE_BIN_ACC_VERSIONINFO;
+	}
+	if (action & RZ_BIN_REQ_SIGNATURE) {
+		res |= RZ_CORE_BIN_ACC_SIGNATURE;
+	}
+	if (action & RZ_BIN_REQ_SECTIONS_MAPPING) {
+		res |= RZ_CORE_BIN_ACC_SECTIONS_MAPPING;
+	}
+	return res;
+}
+
 static int rabin_show_help(int v) {
 	printf("Usage: rz-bin [-AcdeEghHiIjlLMqrRsSUvVxzZ] [-@ at] [-a arch] [-b bits] [-B addr]\n"
 	       "              [-C F:C:D] [-f str] [-m addr] [-n str] [-N m:M] [-P[-P] pdb]\n"
@@ -59,7 +196,6 @@ static int rabin_show_help(int v) {
 			" -S              sections\n"
 			" -SS             segments\n"
 			" -SSS            sections mapping to segments\n"
-			" -t              display file hashes\n"
 			" -T              display file signature\n"
 			" -u              unfiltered (no rename duplicated symbols/sections)\n"
 			" -U              resoUrces\n"
@@ -522,7 +658,6 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	const char *query = NULL;
 	int c, bits = 0, actions = 0;
 	char *create = NULL;
-	bool va = true;
 	ut64 action = RZ_BIN_REQ_UNK;
 	char *tmp, *ptr, *arch_name = NULL;
 	const char *arch = NULL;
@@ -622,7 +757,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	}
 #define unset_action(x) action &= ~x
 	RzGetopt opt;
-	rz_getopt_init(&opt, argc, argv, "DjgAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSVIHeEUlRwO:o:pPqQrTtvLhuxXzZ");
+	rz_getopt_init(&opt, argc, argv, "DjgAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSVIHeEUlRwO:o:pPqQrTvLhuxXzZ");
 	while ((c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case 'g':
@@ -646,7 +781,6 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			break;
 		case 'V': set_action(RZ_BIN_REQ_VERSIONINFO); break;
 		case 'T': set_action(RZ_BIN_REQ_SIGNATURE); break;
-		case 't': set_action(RZ_BIN_REQ_HASHES); break;
 		case 'w': set_action(RZ_BIN_REQ_TRYCATCH); break;
 		case 'q':
 			rad = (rad & RZ_MODE_SIMPLE ? RZ_MODE_SIMPLEST : RZ_MODE_SIMPLE);
@@ -663,7 +797,8 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		case 'K': chksum = opt.arg; break;
 		case 'c':
 			if (is_active(RZ_BIN_REQ_CLASSES)) {
-				rad = RZ_MODE_CLASSDUMP;
+				action &= ~RZ_BIN_REQ_CLASSES;
+				action |= RZ_BIN_REQ_CLASSES_SOURCES;
 			} else {
 				set_action(RZ_BIN_REQ_CLASSES);
 			}
@@ -713,7 +848,8 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		case 'd': set_action(RZ_BIN_REQ_DWARF); break;
 		case 'P':
 			if (is_active(RZ_BIN_REQ_PDB)) {
-				set_action(RZ_BIN_REQ_PDB_DWNLD);
+				action &= ~RZ_BIN_REQ_PDB;
+				action |= RZ_BIN_REQ_PDB_DWNLD;
 			} else {
 				set_action(RZ_BIN_REQ_PDB);
 			}
@@ -766,7 +902,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			}
 			break;
 		case 'o': output = opt.arg; break;
-		case 'p': va = false; break;
+		case 'p': core.io->va = false; break;
 		case 'r': rad = true; break;
 		case 'v':
 			rz_core_fini(&core);
@@ -777,7 +913,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		case 'G':
 			laddr = rz_num_math(NULL, opt.arg);
 			if (laddr == UT64_MAX) {
-				va = false;
+				core.io->va = false;
 			}
 			break;
 		case 'B':
@@ -808,24 +944,20 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		}
 	}
 
-	PJ *pj = NULL;
-	if (rad == RZ_MODE_JSON) {
-		pj = pj_new();
-		if (!pj) {
-			return 1;
-		}
-	}
-
 	if (is_active(RZ_BIN_REQ_LISTPLUGINS)) {
 		const char *plugin_name = NULL;
 		if (opt.ind < argc) {
 			plugin_name = argv[opt.ind];
 		}
+		PJ *pj = pj_new();
+		if (!pj) {
+			rz_core_fini(&core);
+			return 1;
+		}
 		__listPlugins(bin, plugin_name, pj, rad);
 		if (rad == RZ_MODE_JSON) {
 			rz_cons_println(pj_string(pj));
 			rz_cons_flush();
-			pj_free(pj);
 		}
 		rz_core_fini(&core);
 		return 0;
@@ -1019,9 +1151,8 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			fd = rz_io_fd_get_current(core.io);
 			if (fd == -1) {
 				eprintf("rz_core: Cannot open file '%s'\n", file);
-				rz_core_file_close(fh);
-				rz_core_fini(&core);
-				return 1;
+				result = 1;
+				goto err;
 			}
 		} else {
 			eprintf("rz_core: Cannot open file '%s'\n", file);
@@ -1045,9 +1176,8 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	RzBinFile *bf = rz_bin_open(bin, file, &bo);
 	if (!bf) {
 		eprintf("rz-bin: Cannot open file\n");
-		rz_core_file_close(fh);
-		rz_core_fini(&core);
-		return 1;
+		result = 1;
+		goto err;
 	}
 	/* required to automatically select a sub-bin when not specified */
 	(void)rz_core_bin_update_arch_bits(&core);
@@ -1070,38 +1200,44 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 				sdb_query(bin->cur->sdb, query);
 			}
 		}
-		rz_core_file_close(fh);
-		rz_core_fini(&core);
-		return 0;
+		result = 0;
+		goto err;
 	}
 #define isradjson (rad == RZ_MODE_JSON && actions > 0)
 #define run_action(n, x, y) \
-	{ \
-		if (action & (x)) { \
-			if (isradjson) \
-				pj_k(pj, n); \
-			if (!rz_core_bin_info(&core, y, pj, rad, va, &filter, chksum)) { \
-				if (isradjson) \
-					pj_b(pj, false); \
-			}; \
-		} \
+	if (action & (x)) { \
+		RzCmdStateOutput *st = add_header(&state, mode, n); \
+		y(&core, st); \
+		add_footer(&state, st); \
 	}
+
 	core.bin = bin;
 	bin->cb_printf = rz_cons_printf;
 	filter.offset = at;
 	filter.name = name;
+	RzList *chksum_list = NULL;
+	if (RZ_STR_ISNOTEMPTY(chksum)) {
+		chksum_list = rz_str_split_duplist_n(chksum, ",", 0, true);
+		if (!chksum_list) {
+			result = 1;
+			goto err;
+		}
+	}
 	rz_cons_new()->context->is_interactive = false;
 
-	if (isradjson) {
-		pj_o(pj);
+	RzCmdStateOutput state;
+	RzOutputMode mode = rad2outputmode(rad);
+	if (!rz_cmd_state_output_init(&state, mode)) {
+		result = 1;
+		goto chksum_err;
 	}
+	start_state(&state);
+
 	// List fatmach0 sub-binaries, etc
 	if (action & RZ_BIN_REQ_LISTARCHS || ((arch || bits || arch_name) && !rz_bin_select(bin, arch, bits, arch_name))) {
-		if (rad == RZ_MODE_SIMPLEST || rad == RZ_MODE_SIMPLE) {
-			rz_bin_list_archs(bin, pj, 'q');
-		} else {
-			rz_bin_list_archs(bin, pj, (rad == RZ_MODE_JSON) ? 'j' : 1);
-		}
+		RzCmdStateOutput *st = add_header(&state, mode == RZ_OUTPUT_MODE_STANDARD ? RZ_OUTPUT_MODE_TABLE : mode, "archs");
+		rz_core_bin_archs_print(bin, st);
+		add_footer(&state, st);
 		free(arch_name);
 	}
 	if (action & RZ_BIN_REQ_PDB_DWNLD) {
@@ -1115,7 +1251,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			RZ_FREE(tmp);
 		}
 		pdbopts.symbol_store_path = (char *)rz_config_get(core.config, "pdb.symstore");
-		result = rz_bin_pdb_download(&core, pj, isradjson, &pdbopts);
+		result = rz_bin_pdb_download(&core, state.mode == RZ_OUTPUT_MODE_JSON ? state.d.pj : NULL, isradjson, &pdbopts);
 	}
 
 	if ((tmp = rz_sys_getenv("RZ_BIN_PREFIX"))) {
@@ -1123,29 +1259,10 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		free(tmp);
 	}
 
-	run_action("sections", RZ_BIN_REQ_SECTIONS, RZ_CORE_BIN_ACC_SECTIONS);
-	run_action("segments", RZ_BIN_REQ_SEGMENTS, RZ_CORE_BIN_ACC_SEGMENTS);
-	run_action("entries", RZ_BIN_REQ_ENTRIES, RZ_CORE_BIN_ACC_ENTRIES);
-	run_action("initfini", RZ_BIN_REQ_INITFINI, RZ_CORE_BIN_ACC_INITFINI);
-	run_action("main", RZ_BIN_REQ_MAIN, RZ_CORE_BIN_ACC_MAIN);
-	run_action("imports", RZ_BIN_REQ_IMPORTS, RZ_CORE_BIN_ACC_IMPORTS);
-	run_action("classes", RZ_BIN_REQ_CLASSES, RZ_CORE_BIN_ACC_CLASSES);
-	run_action("symbols", RZ_BIN_REQ_SYMBOLS, RZ_CORE_BIN_ACC_SYMBOLS);
-	run_action("exports", RZ_BIN_REQ_EXPORTS, RZ_CORE_BIN_ACC_EXPORTS);
-	run_action("resources", RZ_BIN_REQ_RESOURCES, RZ_CORE_BIN_ACC_RESOURCES);
-	run_action("strings", RZ_BIN_REQ_STRINGS, RZ_CORE_BIN_ACC_STRINGS);
-	run_action("info", RZ_BIN_REQ_INFO, RZ_CORE_BIN_ACC_INFO);
-	run_action("fields", RZ_BIN_REQ_FIELDS, RZ_CORE_BIN_ACC_FIELDS);
-	run_action("header", RZ_BIN_REQ_HEADER, RZ_CORE_BIN_ACC_HEADER);
-	run_action("libs", RZ_BIN_REQ_LIBS, RZ_CORE_BIN_ACC_LIBS);
-	run_action("relocs", RZ_BIN_REQ_RELOCS, RZ_CORE_BIN_ACC_RELOCS);
-	run_action("dwarf", RZ_BIN_REQ_DWARF, RZ_CORE_BIN_ACC_DWARF);
-	run_action("pdb", RZ_BIN_REQ_PDB, RZ_CORE_BIN_ACC_PDB);
-	run_action("size", RZ_BIN_REQ_SIZE, RZ_CORE_BIN_ACC_SIZE);
-	run_action("versioninfo", RZ_BIN_REQ_VERSIONINFO, RZ_CORE_BIN_ACC_VERSIONINFO);
-	run_action("sections", RZ_BIN_REQ_SIGNATURE, RZ_CORE_BIN_ACC_SIGNATURE);
-	run_action("hashes", RZ_BIN_REQ_HASHES, RZ_CORE_BIN_ACC_HASHES);
-	run_action("sections mapping", RZ_BIN_REQ_SECTIONS_MAPPING, RZ_CORE_BIN_ACC_SECTIONS_MAPPING);
+	ut32 mask = actions2mask(action);
+	rz_core_bin_print(&core, bf, mask, &filter, &state, chksum_list);
+
+	run_action("classes source", RZ_BIN_REQ_CLASSES_SOURCES, classes_as_source_print);
 	if (action & RZ_BIN_REQ_SRCLINE) {
 		rabin_show_srcline(bin, at);
 	}
@@ -1162,12 +1279,14 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	if (op && action & RZ_BIN_REQ_OPERATION) {
 		rabin_do_operation(bin, op, rad, output, file);
 	}
-	if (isradjson) {
-		pj_end(pj);
-		rz_cons_println(pj_string(pj));
-	}
-	pj_free(pj);
+	end_state(&state);
+	rz_cmd_state_output_fini(&state);
+
 	rz_cons_flush();
+
+chksum_err:
+	rz_list_free(chksum_list);
+err:
 	rz_core_file_close(fh);
 	rz_core_fini(&core);
 

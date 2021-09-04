@@ -1287,6 +1287,22 @@ static RzDebugMap *get_closest_map(RzCore *core, ut64 addr) {
 	return NULL;
 }
 
+static RzOutputMode rad2mode(int mode) {
+	switch (mode) {
+	case RZ_MODE_PRINT:
+	default:
+		return RZ_OUTPUT_MODE_STANDARD;
+	case RZ_MODE_JSON:
+		return RZ_OUTPUT_MODE_JSON;
+	case RZ_MODE_SIMPLE:
+		return RZ_OUTPUT_MODE_QUIET;
+	case RZ_MODE_SIMPLEST:
+		return RZ_OUTPUT_MODE_QUIETEST;
+	case RZ_MODE_RIZINCMD:
+		return RZ_OUTPUT_MODE_RIZIN;
+	}
+}
+
 static bool get_bin_info(RzCore *core, const char *file, ut64 baseaddr, PJ *pj, int mode, bool symbols_only, RzCoreBinFilter *filter) {
 	int fd;
 	if ((fd = rz_io_fd_open(core->io, file, RZ_PERM_R, 0)) == -1) {
@@ -1314,7 +1330,11 @@ static bool get_bin_info(RzCore *core, const char *file, ut64 baseaddr, PJ *pj, 
 	if (mode == RZ_MODE_SET) {
 		rz_core_bin_apply_info(core, core->bin->cur, action);
 	} else {
-		rz_core_bin_info(core, action, pj, mode, 1, filter, NULL);
+		RzCmdStateOutput state;
+		rz_cmd_state_output_init(&state, rad2mode(mode));
+		rz_core_bin_print(core, bf, action, filter, &state, NULL);
+		rz_cmd_state_output_print(&state);
+		rz_cmd_state_output_fini(&state);
 	}
 	rz_bin_file_delete(core->bin, bf);
 	rz_bin_file_set_cur_binfile(core->bin, obf);
@@ -1475,7 +1495,7 @@ RZ_IPI int rz_cmd_debug_dmi(void *data, const char *input) {
 			mode = RZ_MODE_PRINT;
 			break;
 		}
-		ptr = strdup(rz_str_trim_head_ro(input + 1));
+		ptr = strdup(input[0] ? rz_str_trim_head_ro(input + 1) : "");
 		if (!ptr || !*ptr) {
 			rz_core_cmd(core, "dmm", 0);
 			free(ptr);
@@ -1505,7 +1525,7 @@ RZ_IPI int rz_cmd_debug_dmi(void *data, const char *input) {
 		map = get_closest_map(core, addr);
 		if (map) {
 			RzCoreBinFilter filter;
-			filter.offset = 0LL;
+			filter.offset = UT64_MAX;
 			filter.name = (char *)symname;
 			baddr = map->addr;
 
@@ -1527,9 +1547,16 @@ RZ_IPI int rz_cmd_debug_dmi(void *data, const char *input) {
 					free(newfile);
 				}
 			} else {
-				rz_bin_set_baddr(core->bin, map->addr);
-				rz_core_bin_info(core, RZ_CORE_BIN_ACC_SYMBOLS, pj, (input[0] == '*'), true, &filter, NULL);
-				rz_bin_set_baddr(core->bin, baddr);
+				RzBinFile *bf = rz_bin_cur(core->bin);
+				if (bf) {
+					rz_bin_set_baddr(core->bin, map->addr);
+					RzCmdStateOutput state;
+					rz_cmd_state_output_init(&state, rad2mode(mode));
+					rz_core_bin_print(core, bf, RZ_CORE_BIN_ACC_SYMBOLS, &filter, &state, NULL);
+					rz_cmd_state_output_print(&state);
+					rz_cmd_state_output_fini(&state);
+					rz_bin_set_baddr(core->bin, baddr);
+				}
 			}
 		}
 		if (mode == RZ_MODE_JSON) {
@@ -1559,13 +1586,18 @@ RZ_IPI int rz_cmd_debug_dmi(void *data, const char *input) {
 					}
 				}
 			}
-			if (closest_symbol) {
+			RzBinFile *bf = rz_bin_cur(core->bin);
+			if (closest_symbol && bf) {
 				RzCoreBinFilter filter;
-				filter.offset = 0LL;
+				filter.offset = UT64_MAX;
 				filter.name = (char *)closest_symbol->name;
 
 				rz_bin_set_baddr(core->bin, map->addr);
-				rz_core_bin_info(core, RZ_CORE_BIN_ACC_SYMBOLS, NULL, false, true, &filter, NULL);
+				RzCmdStateOutput state;
+				rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
+				rz_core_bin_print(core, bf, RZ_CORE_BIN_ACC_SYMBOLS, &filter, &state, NULL);
+				rz_cmd_state_output_print(&state);
+				rz_cmd_state_output_fini(&state);
 			}
 		}
 	} break;

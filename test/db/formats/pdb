@@ -16,7 +16,7 @@ CMDS=<<EOF
 !rz-bin -PPj bins/pdb/user32.dll
 EOF
 EXPECT=<<EOF
-{"pdb":{"file":"user32.pdb","download":true},"pdb":false}
+{"pdb":{"file":"user32.pdb","download":true}}
 EOF
 RUN
 
@@ -38,7 +38,7 @@ idp 404.pdb
 EOF
 EXPECT=
 EXPECT_ERR=<<EOF
-Cannot open file
+ERROR: Cannot open file '404.pdb'
 EOF
 RUN
 
