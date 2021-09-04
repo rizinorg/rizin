@@ -406,7 +406,7 @@ commands:
               - RZ_OUTPUT_MODE_JSON
             args:
               - name: var_name
-                type: RZ_CMD_ARG_TYPE_STRING
+                type: RZ_CMD_ARG_TYPE_GLOBAL_VAR
                 optional: true
           - name: avga
             summary: add global variable manually
@@ -432,14 +432,14 @@ commands:
             cname: analysis_global_variable_delete_byname
             args:
               - name: name
-                type: RZ_CMD_ARG_TYPE_STRING
+                type: RZ_CMD_ARG_TYPE_GLOBAL_VAR
           - name: avgn
             summary: rename the global variable
             type: RZ_CMD_DESC_TYPE_ARGV
             cname: analysis_global_variable_rename
             args:
               - name: old_var_name
-                type: RZ_CMD_ARG_TYPE_STRING
+                type: RZ_CMD_ARG_TYPE_GLOBAL_VAR
               - name: new_var_name
                 type: RZ_CMD_ARG_TYPE_STRING
           - name: avgt
@@ -448,7 +448,7 @@ commands:
             cname: analysis_global_variable_retype
             args:
               - name: var_name
-                type: RZ_CMD_ARG_TYPE_STRING
+                type: RZ_CMD_ARG_TYPE_GLOBAL_VAR
               - name: type
                 type: RZ_CMD_ARG_TYPE_ANY_TYPE
       - name: avr
