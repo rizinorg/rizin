@@ -6667,12 +6667,14 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		}
 	}
 
-	oldstr = rz_print_rowlog(core->print, "Analyze len bytes of instructions for references (aar)");
-	(void)rz_core_analysis_refs(core, ""); // "aar"
-	rz_print_rowlog_done(core->print, oldstr);
-	rz_core_task_yield(&core->tasks);
-	if (rz_cons_is_breaked()) {
-		return false;
+	if (rz_config_get_b(core->config, "analysis.jmp.cref")) {
+		oldstr = rz_print_rowlog(core->print, "Analyze len bytes of instructions for references (aar)");
+		(void)rz_core_analysis_refs(core, ""); // "aar"
+		rz_print_rowlog_done(core->print, oldstr);
+		rz_core_task_yield(&core->tasks);
+		if (rz_cons_is_breaked()) {
+			return false;
+		}
 	}
 	if (is_apple_target(core)) {
 		oldstr = rz_print_rowlog(core->print, "Check for objc references");
