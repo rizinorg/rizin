@@ -35,9 +35,9 @@ static RzSubprocessOutput *subprocess_runner(const char *file, const char *args[
 	RzSubprocessOutput *out = rz_subprocess_drain(proc);
 	if (out) {
 		out->timeout = r == RZ_SUBPROCESS_TIMEDOUT;
+		out->out = remove_cr(out->out);
+		out->err = remove_cr(out->err);
 	}
-	out->out = remove_cr(out->out);
-	out->err = remove_cr(out->err);
 	rz_subprocess_free(proc);
 	return out;
 }
