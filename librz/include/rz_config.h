@@ -93,6 +93,7 @@ RZ_API void rz_config_node_free(void *n);
 RZ_API void rz_config_node_value_format_i(char *buf, size_t buf_size, const ut64 i, RZ_NULLABLE RzConfigNode *node);
 RZ_API bool rz_config_toggle(RzConfig *cfg, const char *name);
 RZ_API bool rz_config_readonly(RzConfig *cfg, const char *key);
+RZ_API bool rz_config_eval(RzConfig *cfg, const char *str);
 
 RZ_API void rz_config_set_sort_column(char *column);
 RZ_API bool rz_config_set_setter(RzConfig *cfg, const char *key, RzConfigCallback cb);

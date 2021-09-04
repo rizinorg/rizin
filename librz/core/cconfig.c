@@ -1815,8 +1815,8 @@ static void config_print_node(RzConfig *cfg, RzConfigNode *node, RzCmdStateOutpu
 			node->desc ? node->desc : "");
 		break;
 	default:
-	   	rz_warn_if_reached();
-		break;		
+		rz_warn_if_reached();
+		break;
 	}
 }
 

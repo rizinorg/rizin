@@ -545,3 +545,13 @@ RZ_API bool rz_config_unserialize(RZ_NONNULL RzConfig *config, RZ_NONNULL Sdb *d
 	sdb_foreach(db, load_config_cb, config);
 	return true;
 }
+
+RZ_API bool rz_config_eval(RzConfig *cfg, const char *str) {
+	char *s = rz_str_trim_dup(str);
+	char *eq = strchr(s, '=');
+	if (eq) {
+		*eq++ = 0;
+		rz_config_set(cfg, s, eq);
+	}
+	return true;
+}
