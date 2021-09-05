@@ -489,8 +489,12 @@ static const RzCmdDescHelp pointer_help = {
 	.args = pointer_args,
 };
 
+static const RzCmdDescArg cmd_stdin_args[] = {
+	{ 0 },
+};
 static const RzCmdDescHelp cmd_stdin_help = {
 	.summary = "Open cfg.editor and run script",
+	.args = cmd_stdin_args,
 };
 
 static const RzCmdDescHelp dot__help = {
@@ -5520,7 +5524,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *pointer_cd = rz_cmd_desc_argv_new(core->rcmd, root_cd, "*", rz_pointer_handler, &pointer_help);
 	rz_warn_if_fail(pointer_cd);
 
-	RzCmdDesc *cmd_stdin_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "-", rz_cmd_stdin, &cmd_stdin_help);
+	RzCmdDesc *cmd_stdin_cd = rz_cmd_desc_argv_new(core->rcmd, root_cd, "-", rz_cmd_stdin_handler, &cmd_stdin_help);
 	rz_warn_if_fail(cmd_stdin_cd);
 
 	RzCmdDesc *dot__cd = rz_cmd_desc_group_new(core->rcmd, root_cd, ".", rz_interpret_handler, &interpret_help, &dot__help);
