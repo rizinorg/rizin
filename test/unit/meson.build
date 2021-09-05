@@ -74,6 +74,7 @@ if get_option('enable_tests')
     'rz_test',
     'rzpipe',
     'serialize_analysis',
+    'serialize_bp',
     'serialize_config',
     'serialize_flag',
     'serialize_spaces',
