@@ -562,6 +562,7 @@ RUN
 NAME=aclj3
 FILE=bins/pe/cpp-msvc-x86.exe
 CMDS=<<EOF
+e analysis.jmp.cref=true
 aaa
 aclj
 EOF

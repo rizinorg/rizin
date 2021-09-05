@@ -101,6 +101,7 @@ RUN
 NAME=PE: corkami cm01.exe - section refs 1
 FILE=bins/pe/cm01.exe
 CMDS=<<EOF
+e analysis.jmp.cref=true
 e analysis.strings=true
 aaa
 pi 2 @ 0x004010b7
@@ -114,6 +115,7 @@ RUN
 NAME=PE: corkami cm01.exe - section refs 2
 FILE=bins/pe/cm01.exe
 CMDS=<<EOF
+e analysis.jmp.cref=true
 e analysis.strings=true
 aaa
 pi 2 @ 0x0040136b
@@ -127,6 +129,7 @@ RUN
 NAME=PE: corkami cm01.exe - section refs 3
 FILE=bins/pe/cm01.exe
 CMDS=<<EOF
+e analysis.jmp.cref=true
 e analysis.strings=true
 aaa
 pi 2 @ 0x004013af
@@ -140,6 +143,7 @@ RUN
 NAME=PE: corkami cm01.exe - section refs 4
 FILE=bins/pe/cm01.exe
 CMDS=<<EOF
+e analysis.jmp.cref=true
 e analysis.strings=true
 aaa
 pi 2 @ 0x0040134f
