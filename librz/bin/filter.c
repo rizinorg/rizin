@@ -90,15 +90,11 @@ RZ_API void rz_bin_filter_sym(RzBinFile *bf, HtPP *ht, ut64 vaddr, RzBinSymbol *
 			char *p = strchr(dn, '.');
 			if (p) {
 				if (IS_UPPER(*dn)) {
-					if (sym->classname) {
-						free(sym->classname);
-					}
+					free(sym->classname);
 					sym->classname = strdup(dn);
 					sym->classname[p - dn] = 0;
 				} else if (IS_UPPER(p[1])) {
-					if (sym->classname) {
-						free(sym->classname);
-					}
+					free(sym->classname);
 					sym->classname = strdup(p + 1);
 					p = strchr(sym->classname, '.');
 					if (p) {
