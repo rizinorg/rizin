@@ -347,6 +347,10 @@ ok = cc.has_header_symbol('sys/procctl.h', 'PROC_ASLR_CTL')
 userconf.set10('HAVE_DECL_PROCCTL_ASLR_CTL', ok)
 
 if host_machine.system() == 'freebsd'
+  # resolves an issue linked to environ being available only on crt1.o
+  # which results in not being able to link a shared library since environ
+  # is used by the lib and not by the main binary
+  # see: https://bugs.webkit.org/show_bug.cgi?id=138420
   add_project_link_arguments('-Wl,--unresolved-symbols,ignore-in-object-files', language: ['c', 'cpp'])
 endif
 
