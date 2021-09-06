@@ -6,7 +6,6 @@
 #include <rz_core.h>
 #include <rz_debug.h>
 #include "core_private.h"
-#include "cmd_descs/cmd_descs.h"
 
 static bool is_x86_call(RzDebug *dbg, ut64 addr) {
 	ut8 buf[3];
@@ -72,7 +71,14 @@ RZ_API bool rz_core_debug_step_one(RzCore *core, int times) {
 
 RZ_IPI void rz_core_debug_continue(RzCore *core) {
 	if (rz_config_get_b(core->config, "cfg.debug")) {
-		rz_debug_continue_oldhandler(core, "");
+		rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
+		rz_reg_arena_swap(core->dbg->reg, true);
+#if __linux__
+		core->dbg->continue_all_threads = true;
+#endif
+		rz_debug_continue(core->dbg);
+		rz_cons_break_pop();
+		rz_core_dbg_follow_seek_register(core);
 	} else {
 		rz_core_esil_step(core, UT64_MAX, "0", NULL, false);
 		rz_core_regs2flags(core);
@@ -545,7 +551,11 @@ RZ_IPI void rz_core_debug_single_step_over(RzCore *core) {
 	rz_config_set_b(core->config, "io.cache", false);
 	if (rz_config_get_b(core->config, "cfg.debug")) {
 		if (core->print->cur_enabled) {
-			rz_core_cmd(core, "dcr", 0);
+			rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
+			rz_reg_arena_swap(core->dbg->reg, true);
+			rz_debug_continue_until_optype(core->dbg, RZ_ANALYSIS_OP_TYPE_RET, 1);
+			rz_cons_break_pop();
+			rz_core_dbg_follow_seek_register(core);
 			core->print->cur_enabled = 0;
 		} else {
 			rz_core_cmd(core, "dso", 0);
@@ -572,6 +582,7 @@ RZ_IPI void rz_core_debug_breakpoint_toggle(RzCore *core, ut64 addr) {
 }
 
 RZ_IPI void rz_core_debug_attach(RzCore *core, int pid) {
+	rz_debug_reg_profile_sync(core->dbg);
 	if (pid > 0) {
 		rz_debug_attach(core->dbg, pid);
 	} else {

@@ -8,12 +8,12 @@
 #include <rz_bin.h>
 #include "omf/omf.h"
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *b, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *sdb) {
 	ut64 size;
 	const ut8 *buf = rz_buf_data(b, &size);
 	rz_return_val_if_fail(buf, false);
-	*bin_obj = rz_bin_internal_omf_load(buf, size);
-	return *bin_obj != NULL;
+	obj->bin_obj = rz_bin_internal_omf_load(buf, size);
+	return obj->bin_obj;
 }
 
 static void destroy(RzBinFile *bf) {
@@ -30,7 +30,12 @@ static bool check_buffer(RzBuffer *b) {
 	if (ch != 0x80 && ch != 0x82) {
 		return false;
 	}
-	ut16 rec_size = rz_buf_read_le16_at(b, 1);
+
+	ut16 rec_size;
+	if (!rz_buf_read_le16_at(b, 1, &rec_size)) {
+		return false;
+	}
+
 	ut8 str_size;
 	(void)rz_buf_read_at(b, 3, &str_size, 1);
 	ut64 length = rz_buf_size(b);

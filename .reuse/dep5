@@ -35,6 +35,10 @@ Files: .gitignore
 Copyright: 2021 RizinOrg <info@rizin.re>
 License: LGPL-3.0-only
 
+Files: **/.gitignore
+Copyright: 2021 RizinOrg <info@rizin.re>
+License: LGPL-3.0-only
+
 Files: .pylintrc
 Copyright: 2021 RizinOrg <info@rizin.re>
 License: LGPL-3.0-only
@@ -47,6 +51,10 @@ Files: *.md
 Copyright: 2021 RizinOrg <info@rizin.re>
 License: LGPL-3.0-only
 
+Files: *.in
+Copyright: 2021 RizinOrg <info@rizin.re>
+License: LGPL-3.0-only
+
 Files: **/meson.build
 Copyright: 2021 RizinOrg <info@rizin.re>
 License: LGPL-3.0-only
@@ -56,6 +64,10 @@ Copyright: 2021 RizinOrg <info@rizin.re>
 License: LGPL-3.0-only
 
 Files: meson_options.txt
+Copyright: 2021 RizinOrg <info@rizin.re>
+License: LGPL-3.0-only
+
+Files: **/meson_options.txt
 Copyright: 2021 RizinOrg <info@rizin.re>
 License: LGPL-3.0-only
 
@@ -93,6 +105,10 @@ License: LGPL-3.0-only
 
 Files: test/unit/legacy_unit/**/*
 Copyright: 2009 RadareOrg <pancake@nopcode.org>
+License: LGPL-3.0-only
+
+Files: test/prj/*.rzdb
+Copyright: 2020 RizinOrg <info@rizin.re>
 License: LGPL-3.0-only
 
 Files: shlr/rizin-shell-parser/*
@@ -147,7 +163,7 @@ Files: pkgcfg/*.pc.acr
 Copyright: 2009 RadareOrg <pancake@nopcode.org>
 License: LGPL-3.0-only
 
-Files: pkgcfg/librz.pc.in
+Files: librz/librz.pc.in
 Copyright: 2009 RadareOrg <pancake@nopcode.org>
 License: LGPL-3.0-only
 
@@ -223,10 +239,6 @@ Files: shlr/spp/*
 Copyright: 2009-2020 pancake <pancake@nopcode.org>
 License: MIT
 
-Files: shlr/tcc/*
-Copyright: 2001-2004 Fabrice Bellard
-License: LGPL-2.0-or-later
-
 Files: shlr/winkd/profiles.h
 Copyright: 2014-2017 The Lemon Man <thatlemon@gmail.com>
 Copyright: 2019-2020 GustavoLCR <gugulcr@gmail.com>
@@ -236,3 +248,18 @@ Files: subprojects/mpc/*
 Copyright: 2013-present Daniel Holden <contact@theorangeduck.com>
 License: BSD-2-Clause
 
+Files: librz/include/**/*.h librz/include/*.h librz/include/*.h.in
+Copyright: 2021 RizinOrg <info@rizin.re>
+License: LGPL-3.0-only
+
+Files: .dockerignore
+Copyright: 2020 RizinOrg <info@rizin.re>
+License: LGPL-3.0-only
+
+Files: .prettierignore
+Copyright: 2020 RizinOrg <info@rizin.re>
+License: LGPL-3.0-only
+
+Files: librz/reg/p/x86-linux.regs
+Copyright: 2009 pancake <pancake@nopcode.org>
+License: LGPL-3.0-only

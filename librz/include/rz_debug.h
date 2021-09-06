@@ -295,7 +295,6 @@ typedef struct rz_debug_t {
 	RzList *q_regs;
 	const char *creg; // current register value
 	RzBreakpoint *bp;
-	RZ_DEPRECATE void *user; /// currently only used in windows-specific io_debug
 	char *snap_path;
 
 	/* io */
@@ -323,7 +322,7 @@ typedef struct rz_debug_t {
 	RzCoreBind corebind;
 	// internal use only
 	int _mode;
-	RNum *num;
+	RzNum *num;
 	RzEgg *egg;
 	bool verbose;
 	bool main_arena_resolved; /* is the main_arena resolved already? */
@@ -518,6 +517,7 @@ RZ_API int rz_debug_desc_write(RzDebug *dbg, int fd, ut64 addr, int len);
 RZ_API int rz_debug_desc_list(RzDebug *dbg, int rad);
 
 /* registers */
+RZ_API bool rz_debug_reg_profile_sync(RzDebug *dbg);
 RZ_API int rz_debug_reg_sync(RzDebug *dbg, int type, int write);
 RZ_API int rz_debug_reg_set(RzDebug *dbg, const char *name, ut64 num);
 RZ_API ut64 rz_debug_reg_get(RzDebug *dbg, const char *name);
@@ -564,7 +564,7 @@ RZ_API int rz_debug_drx_set(RzDebug *dbg, int idx, ut64 addr, int len, int rwx, 
 RZ_API int rz_debug_drx_unset(RzDebug *dbg, int idx);
 
 /* esil */
-RZ_API ut64 rz_debug_num_callback(RNum *userptr, const char *str, int *ok);
+RZ_API ut64 rz_debug_num_callback(RzNum *userptr, const char *str, int *ok);
 RZ_API int rz_debug_esil_stepi(RzDebug *dbg);
 RZ_API ut64 rz_debug_esil_step(RzDebug *dbg, ut32 count);
 RZ_API ut64 rz_debug_esil_continue(RzDebug *dbg);

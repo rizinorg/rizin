@@ -30,20 +30,36 @@ static char *__hashify(char *s, ut64 vaddr) {
 }
 
 // - name should be allocated on the heap
-RZ_API char *rz_bin_filter_name(RzBinFile *bf, Sdb *db, ut64 vaddr, char *name) {
+RZ_API char *rz_bin_filter_name(RzBinFile *bf, HtPU *db, ut64 vaddr, char *name) {
 	rz_return_val_if_fail(db && name, NULL);
 
 	char *resname = name;
-	const char *uname = sdb_fmt("%" PFMT64x ".%s", vaddr, resname);
-	ut32 vhash = sdb_hash(uname); // vaddr hash - unique
-	ut32 hash = sdb_hash(resname); // name hash - if dupped and not in unique hash must insert
-	int count = sdb_num_inc(db, sdb_fmt("%x", hash), 1, 0);
+	char *uname = rz_str_newf("%" PFMT64x ".%s", vaddr, name);
+	int count = 0;
+	HtPUKv *kv = ht_pu_find_kv(db, name, NULL);
+	if (kv) {
+		count = ++kv->value;
+	} else {
+		count = 1;
+		ht_pu_insert(db, name, 1ULL);
+	}
 
-	if (sdb_exists(db, sdb_fmt("%x", vhash))) {
+	bool found;
+	ht_pu_find(db, uname, &found);
+	if (found) {
 		// TODO: symbol is dupped, so symbol can be removed!
+		free(uname);
 		return resname;
 	}
-	sdb_num_set(db, sdb_fmt("%x", vhash), 1, 0);
+
+	HtPUKv tmp = {
+		.key = uname,
+		.key_len = strlen(uname),
+		.value = 1ULL,
+		.value_len = sizeof(ut64)
+	};
+	ht_pu_insert_kv(db, &tmp, false);
+
 	if (vaddr) {
 		char *p = __hashify(resname, vaddr);
 		if (p) {
@@ -64,24 +80,21 @@ RZ_API char *rz_bin_filter_name(RzBinFile *bf, Sdb *db, ut64 vaddr, char *name) 
 
 RZ_API void rz_bin_filter_sym(RzBinFile *bf, HtPP *ht, ut64 vaddr, RzBinSymbol *sym) {
 	rz_return_if_fail(ht && sym && sym->name);
-	const char *name = sym->name;
-	// if (!strncmp (sym->name, "imp.", 4)) {
-	// demangle symbol name depending on the language specs if any
-	if (bf && bf->o && bf->o->lang) {
-		const char *lang = rz_bin_lang_tostring(bf->o->lang);
-		char *dn = rz_bin_demangle(bf, lang, sym->name, sym->vaddr, false);
-		if (dn && *dn) {
+	const char *name = sym->dname ? sym->dname : sym->name;
+
+	if (bf && bf->o && bf->o->lang && !sym->dname) {
+		char *dn = rz_bin_demangle(bf, NULL, name, sym->vaddr, false);
+		if (RZ_STR_ISNOTEMPTY(dn)) {
 			sym->dname = dn;
-			// XXX this is wrong but is required for this test to pass
-			// pmb:new pancake$ bin/rz_test.js db/formats/mangling/swift
-			sym->name = dn;
 			// extract class information from demangled symbol name
 			char *p = strchr(dn, '.');
 			if (p) {
 				if (IS_UPPER(*dn)) {
+					free(sym->classname);
 					sym->classname = strdup(dn);
 					sym->classname[p - dn] = 0;
 				} else if (IS_UPPER(p[1])) {
+					free(sym->classname);
 					sym->classname = strdup(p + 1);
 					p = strchr(sym->classname, '.');
 					if (p) {
@@ -130,7 +143,7 @@ RZ_API void rz_bin_filter_symbols(RzBinFile *bf, RzList *list) {
 
 RZ_API void rz_bin_filter_sections(RzBinFile *bf, RzList *list) {
 	RzBinSection *sec;
-	Sdb *db = sdb_new0();
+	HtPU *db = ht_pu_new0();
 	RzListIter *iter;
 	rz_list_foreach (list, iter, sec) {
 		char *p = rz_bin_filter_name(bf, db, sec->vaddr, sec->name);
@@ -138,7 +151,7 @@ RZ_API void rz_bin_filter_sections(RzBinFile *bf, RzList *list) {
 			sec->name = p;
 		}
 	}
-	sdb_free(db);
+	ht_pu_free(db);
 }
 
 static bool false_positive(const char *str) {

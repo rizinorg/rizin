@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2009-2018 pancake <pancake@nopcode.org>
 // SPDX-FileCopyrightText: 2009-2018 jduck <github.jdrake@qoop.org>
-// SPDX-FileCopyrightText: 2009-2018 TheLemonMan <thatlemon@gmail.com>
+// SPDX-FileCopyrightText: 2009-2018 LemonBoy <thatlemon@gmail.com>
 // SPDX-FileCopyrightText: 2009-2018 saucec0de
 // SPDX-License-Identifier: LGPL-3.0-only
 
@@ -342,7 +342,7 @@ RZ_API RzBreakpointItem *rz_debug_bp_add(RzDebug *dbg, ut64 addr, int hw, bool w
 	return bpi;
 }
 
-static const char *rz_debug_str_callback(RNum *userptr, ut64 off, int *ok) {
+static const char *rz_debug_str_callback(RzNum *userptr, ut64 off, int *ok) {
 	// RzDebug *dbg = (RzDebug *)userptr;
 	eprintf("rz_debug_str_callback has been called. this should not happen\n");
 	return NULL;
@@ -593,17 +593,9 @@ RZ_API bool rz_debug_select(RzDebug *dbg, int pid, int tid) {
 	if (tid < 0) {
 		tid = pid;
 	}
-	if (pid != -1 && tid != -1) {
-		if ((pid != dbg->pid || tid != dbg->tid) && dbg->verbose) {
-			eprintf("= attach %d %d\n", pid, tid);
-		}
-	} else {
-		if (dbg->pid != -1) {
-			eprintf("Child %d is dead\n", dbg->pid);
-		}
-	}
-	if (pid < 0 || tid < 0) {
-		return false;
+
+	if ((pid != dbg->pid || tid != dbg->tid) && dbg->verbose) {
+		eprintf("= attach %d %d\n", pid, tid);
 	}
 
 	if (dbg->cur && dbg->cur->select && !dbg->cur->select(dbg, pid, tid)) {
@@ -853,6 +845,7 @@ RZ_API int rz_debug_step_soft(RzDebug *dbg) {
 		}
 		br = 1;
 		break;
+	case RZ_ANALYSIS_OP_TYPE_UJMP:
 	case RZ_ANALYSIS_OP_TYPE_UCALL:
 	case RZ_ANALYSIS_OP_TYPE_MJMP:
 		if (op.ireg) {
@@ -867,7 +860,6 @@ RZ_API int rz_debug_step_soft(RzDebug *dbg) {
 		}
 		br = 1;
 		break;
-	case RZ_ANALYSIS_OP_TYPE_UJMP:
 	default:
 		next[0] = op.addr + op.size;
 		br = 1;
@@ -1184,7 +1176,7 @@ repeat:
 
 	if (dbg->corebind.core) {
 		RzCore *core = (RzCore *)dbg->corebind.core;
-		RNum *num = core->num;
+		RzNum *num = core->num;
 		if (reason == RZ_DEBUG_REASON_COND) {
 			if (bp && bp->cond && dbg->corebind.cmd) {
 				dbg->corebind.cmd(dbg->corebind.core, bp->cond);

@@ -27,8 +27,8 @@ static bool download_and_write(SPDBDownloaderOpt *opt, const char *file) {
 	char *path = rz_str_newf("%s%s%s", dir, RZ_SYS_DIR, opt->dbg_file);
 #if __WINDOWS__
 	if (rz_str_startswith(url, "\\\\")) { // Network path
-		LPCWSTR origin = rz_utf8_to_utf16(url);
-		LPCWSTR dest = rz_utf8_to_utf16(path);
+		wchar_t *origin = rz_utf8_to_utf16(url);
+		wchar_t *dest = rz_utf8_to_utf16(path);
 		BOOL ret = CopyFileW(origin, dest, FALSE);
 		free(dir);
 		free(path);
@@ -172,7 +172,7 @@ static bool is_valid_guid(const char *guid) {
 }
 
 int rz_bin_pdb_download(RzCore *core, PJ *pj, int isradjson, SPDBOptions *options) {
-	int ret;
+	int ret = 1;
 	SPDBDownloaderOpt opt;
 	SPDBDownloader pdb_downloader;
 	RzBinInfo *info = rz_bin_get_info(core->bin);
@@ -192,15 +192,22 @@ int rz_bin_pdb_download(RzCore *core, PJ *pj, int isradjson, SPDBOptions *option
 		return 1;
 	}
 
-	opt.dbg_file = (char *)rz_file_basename(info->debug_file_name);
+	opt.dbg_file = rz_file_basename(info->debug_file_name);
 	opt.guid = info->guid;
-	opt.symbol_server = options->symbol_server;
 	opt.user_agent = options->user_agent;
 	opt.symbol_store_path = options->symbol_store_path;
 	opt.extract = options->extract;
+	char *symbol_server = strdup(options->symbol_server);
+	char *server = strtok(symbol_server, ";");
+	while (server && ret) {
+		opt.symbol_server = server;
+		init_pdb_downloader(&opt, &pdb_downloader);
+		ret = pdb_downloader.download ? pdb_downloader.download(&pdb_downloader) : 1;
+		deinit_pdb_downloader(&pdb_downloader);
+		server = strtok(NULL, ";");
+	}
+	free(symbol_server);
 
-	init_pdb_downloader(&opt, &pdb_downloader);
-	ret = pdb_downloader.download ? pdb_downloader.download(&pdb_downloader) : 0;
 	if (isradjson) {
 		pj_ko(pj, "pdb");
 		pj_ks(pj, "file", opt.dbg_file);
@@ -210,7 +217,6 @@ int rz_bin_pdb_download(RzCore *core, PJ *pj, int isradjson, SPDBOptions *option
 		rz_cons_printf("PDB \"%s\" download %s\n",
 			opt.dbg_file, ret ? "success" : "failed");
 	}
-	deinit_pdb_downloader(&pdb_downloader);
 
 	return !ret;
 }

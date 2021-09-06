@@ -21,12 +21,3 @@ EXPECT=<<EOF
 mov bp, ax
 EOF
 RUN
-
-NAME=MZ: unzip.exe segments
-FILE=bins/mz/unzip.exe
-CMDS=iS*
-EXPECT=<<EOF
-fs sections
-"f section.seg_000 1 0x00000000"
-EOF
-RUN

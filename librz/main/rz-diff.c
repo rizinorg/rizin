@@ -620,7 +620,11 @@ static bool rz_diff_file_open(DiffFile *dfile, const char *filename) {
 
 	rz_io_bind(dio->io, &bin->iob);
 
+	// TODO: no RzConfig ???
 	rz_bin_options_init(&opt, dio->io->desc->fd, 0, 0, false, false);
+	opt.obj_opts.elf_load_sections = true;
+	opt.obj_opts.elf_checks_sections = true;
+	opt.obj_opts.elf_checks_segments = true;
 	opt.sz = rz_io_desc_size(dio->io->desc);
 
 	file = rz_bin_open_io(bin, &opt);
@@ -709,6 +713,9 @@ static RzDiff *rz_diff_imports_new(DiffFile *dfile_a, DiffFile *dfile_b) {
 
 static ut32 symbol_hash_addr(const RzBinSymbol *elem) {
 	ut32 hash = rz_diff_hash_data((const ut8 *)elem->name, strlen(elem->name));
+	hash ^= rz_diff_hash_data((const ut8 *)elem->dname, strlen(elem->dname));
+	hash ^= rz_diff_hash_data((const ut8 *)elem->libname, strlen(elem->libname));
+	hash ^= rz_diff_hash_data((const ut8 *)elem->classname, strlen(elem->classname));
 	hash ^= (ut32)(elem->vaddr >> 32);
 	hash ^= (ut32)elem->vaddr;
 	hash ^= (ut32)(elem->paddr >> 32);
@@ -718,6 +725,9 @@ static ut32 symbol_hash_addr(const RzBinSymbol *elem) {
 
 static int symbol_compare_addr(const RzBinSymbol *a, const RzBinSymbol *b) {
 	st64 ret;
+	IF_STRCMP_S(ret, a->classname, b->classname);
+	IF_STRCMP_S(ret, a->libname, b->libname);
+	IF_STRCMP_S(ret, a->dname, b->dname);
 	IF_STRCMP_S(ret, a->name, b->name);
 	ret = ((st64)b->paddr) - ((st64)a->paddr);
 	if (ret) {
@@ -727,7 +737,7 @@ static int symbol_compare_addr(const RzBinSymbol *a, const RzBinSymbol *b) {
 }
 
 static void symbol_stringify_addr(const RzBinSymbol *elem, RzStrBuf *sb) {
-	rz_strbuf_setf(sb, "virt: 0x%016" PFMT64x " phys: 0x%016" PFMT64x " %s\n", elem->vaddr, elem->paddr, elem->name);
+	rz_strbuf_setf(sb, "virt: 0x%016" PFMT64x " phys: 0x%016" PFMT64x " %s %s %s\n", elem->vaddr, elem->paddr, elem->libname, elem->classname, elem->name);
 }
 
 static ut32 symbol_hash(const RzBinSymbol *elem) {
@@ -741,7 +751,7 @@ static int symbol_compare(const RzBinSymbol *a, const RzBinSymbol *b) {
 }
 
 static void symbol_stringify(const RzBinSymbol *elem, RzStrBuf *sb) {
-	rz_strbuf_setf(sb, "%s\n", elem->name);
+	rz_strbuf_setf(sb, "%s %s %s\n", elem->libname, elem->classname, elem->name);
 }
 
 static RzDiff *rz_diff_symbols_new(DiffFile *dfile_a, DiffFile *dfile_b, bool compare_addr) {
@@ -1694,8 +1704,8 @@ static bool rz_diff_draw_tui(DiffHexView *hview, bool show_help) {
 	rz_cons_canvas_write(canvas, line);
 
 	if (show_help) {
-		rz_cons_canvas_fill(canvas, 4, 2, 56, 14, ' ');
-		rz_cons_canvas_box(canvas, 4, 2, 56, 14, legenda);
+		rz_cons_canvas_fill(canvas, 4, 2, 56, 16, ' ');
+		rz_cons_canvas_box(canvas, 4, 2, 56, 16, legenda);
 
 		snprintf(line, lsize, "%sHelp page%s\n", legenda, reset);
 		rz_cons_canvas_gotoxy(canvas, 6, 3);
@@ -1739,6 +1749,14 @@ static bool rz_diff_draw_tui(DiffHexView *hview, bool show_help) {
 
 		snprintf(line, lsize, "%s:%s     seek at offset (relative via +-)\n", legenda, reset);
 		rz_cons_canvas_gotoxy(canvas, 6, 14);
+		rz_cons_canvas_write(canvas, line);
+
+		snprintf(line, lsize, "%s3%s     file0 seek at offset (relative via +-)\n", legenda, reset);
+		rz_cons_canvas_gotoxy(canvas, 6, 15);
+		rz_cons_canvas_write(canvas, line);
+
+		snprintf(line, lsize, "%s4%s     file1 seek at offset (relative via +-)\n", legenda, reset);
+		rz_cons_canvas_gotoxy(canvas, 6, 16);
 		rz_cons_canvas_write(canvas, line);
 	}
 
@@ -1799,6 +1817,50 @@ static void prompt_offset_and_seek(DiffHexView *hview, ut64 minseek) {
 		} else {
 			hview->offset_a = RZ_MIN(number, hview->io_a->filesize - minseek);
 			hview->offset_b = RZ_MIN(number, hview->io_b->filesize - minseek);
+		}
+	}
+	free(value);
+}
+
+static void prompt_offset_and_seek_file(DiffHexView *hview, ut64 minseek, bool is_file0) {
+	char *value = visual_prompt(hview, " you can input an absolute offset or a relative offset by adding the prefix + or -\n offset");
+	if (value) {
+		const char *p = rz_str_trim_head_ro(value);
+		if (!IS_DIGIT(*p) && *p != '-' && *p != '+') {
+			free(value);
+			return;
+		}
+		st64 number = strtoll((*p == '+') ? p + 1 : p, NULL, 0);
+		if (*p == '-') {
+			if (is_file0) {
+				if ((hview->offset_a - number) < hview->offset_a) {
+					hview->offset_a -= number;
+				} else if (hview->offset_a != hview->offset_b) {
+					hview->offset_a = RZ_MIN(hview->offset_a, hview->offset_b);
+				} else {
+					hview->offset_a = 0;
+				}
+			} else {
+				if ((hview->offset_b - number) < hview->offset_b) {
+					hview->offset_b -= number;
+				} else if (hview->offset_a != hview->offset_b) {
+					hview->offset_b = RZ_MIN(hview->offset_a, hview->offset_b);
+				} else {
+					hview->offset_b = 0;
+				}
+			}
+		} else if (*p == '+') {
+			if (is_file0 && (hview->offset_a + number) < hview->io_a->filesize) {
+				hview->offset_a += number;
+			} else if (!is_file0 && (hview->offset_b + number) < hview->io_b->filesize) {
+				hview->offset_b += number;
+			}
+		} else {
+			if (is_file0) {
+				hview->offset_a = RZ_MIN(number, hview->io_a->filesize - minseek);
+			} else {
+				hview->offset_b = RZ_MIN(number, hview->io_b->filesize - minseek);
+			}
 		}
 	}
 	free(value);
@@ -2046,6 +2108,12 @@ static bool rz_diff_hex_visual(DiffContext *ctx) {
 			break;
 		case ':':
 			prompt_offset_and_seek(&hview, seekmin);
+			break;
+		case '3':
+			prompt_offset_and_seek_file(&hview, seekmin, true);
+			break;
+		case '4':
+			prompt_offset_and_seek_file(&hview, seekmin, false);
 			break;
 		case '9':
 			hview.offset_a = hview.offset_b = RZ_MIN(hview.offset_a, hview.offset_b);

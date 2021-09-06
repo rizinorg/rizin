@@ -15,6 +15,18 @@ typedef struct rz_main_t {
 	// stdin/stdout
 } RzMain;
 
+#if __WINDOWS__
+#define MAIN_NAME                       wmain
+#define ARGV_TYPE                       wchar_t
+#define ARGV_TYPE_TO_UTF8(argc, argv)   rz_sys_utf8_argv_new(argc, argv)
+#define FREE_UTF8_ARGV(argc, utf8_argv) rz_sys_utf8_argv_free(argc, utf8_argv)
+#else
+#define MAIN_NAME                     main
+#define ARGV_TYPE                     char
+#define ARGV_TYPE_TO_UTF8(argc, argv) (char **)argv
+#define FREE_UTF8_ARGV(argc, utf8_argv)
+#endif
+
 typedef int (*RzMainCallback)(int argc, const char **argv);
 
 RZ_API RzMain *rz_main_new(const char *name);

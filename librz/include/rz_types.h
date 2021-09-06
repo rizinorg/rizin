@@ -40,6 +40,7 @@ typedef enum {
 	RZ_OUTPUT_MODE_LONG = 1 << 5,
 	RZ_OUTPUT_MODE_LONG_JSON = 1 << 6,
 	RZ_OUTPUT_MODE_TABLE = 1 << 7,
+	RZ_OUTPUT_MODE_QUIETEST = 1 << 8,
 } RzOutputMode;
 
 #define RZ_IN        /* do not use, implicit */
@@ -86,49 +87,13 @@ typedef enum {
 #define RZ_PERM_ACCESS 32
 #define RZ_PERM_CREAT  64
 
-// HACK to fix capstone-android-mips build
-#undef mips
-#define mips mips
-
 #if defined(__powerpc) || defined(__powerpc__)
 #undef __POWERPC__
 #define __POWERPC__ 1
 #endif
 
-#if __IPHONE_8_0 && defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
-#define LIBC_HAVE_SYSTEM 0
-#else
-#define LIBC_HAVE_SYSTEM 1
-#endif
-
-#if APPLE_SDK_IPHONEOS || APPLE_SDK_APPLETVOS || APPLE_SDK_WATCHOS || APPLE_SDK_APPLETVSIMULATOR || APPLE_SDK_WATCHSIMULATOR
-#define LIBC_HAVE_PTRACE 0
-#else
-#define LIBC_HAVE_PTRACE 1
-#endif
-
-#if HAVE_FORK
-#define LIBC_HAVE_FORK 1
-#else
-#define LIBC_HAVE_FORK 0
-#endif
-
 #if defined(__OpenBSD__)
 #include <sys/param.h>
-#undef MAXCOMLEN /* redefined in zipint.h */
-#endif
-
-/* release >= 5.9 */
-#if __OpenBSD__ && OpenBSD >= 201605
-#define LIBC_HAVE_PLEDGE 1
-#else
-#define LIBC_HAVE_PLEDGE 0
-#endif
-
-#if __sun
-#define LIBC_HAVE_PRIV_SET 1
-#else
-#define LIBC_HAVE_PRIV_SET 0
 #endif
 
 #ifdef __GNUC__
@@ -160,11 +125,6 @@ typedef enum {
 #define strcasecmp  stricmp
 #define strncasecmp strnicmp
 #define __WINDOWS__ 1
-
-#include <time.h>
-static inline struct tm *gmtime_r(const time_t *t, struct tm *r) {
-	return (gmtime_s(r, t)) ? NULL : r;
-}
 #endif
 
 #if defined(EMSCRIPTEN) || defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__) || defined(__QNX__) || defined(__sun) || defined(__HAIKU__)
@@ -193,9 +153,10 @@ typedef int socklen_t;
 #if __WINDOWS__ || _WIN32
 #define __addr_t_defined
 #include <windows.h>
+#include <direct.h>
 #endif
 
-#if defined(__APPLE__) && (__arm__ || __arm64__ || __aarch64__)
+#if defined(__APPLE__) && ((__arm__ || __arm64__ || __aarch64__) && IS_IOS)
 #define TARGET_OS_IPHONE 1
 #else
 #define TARGET_OS_IPHONE 0
@@ -211,14 +172,6 @@ typedef int socklen_t;
 #define FUNC_ATTR_USED                  __attribute__((used))
 #define FUNC_ATTR_WARN_UNUSED_RESULT    __attribute__((warn_unused_result))
 #define FUNC_ATTR_ALWAYS_INLINE         __attribute__((always_inline))
-
-#ifdef __clang__
-// clang only
-#elif defined(__INTEL_COMPILER)
-// intel only
-#else
-// gcc only
-#endif
 #else
 #define FUNC_ATTR_MALLOC
 #define FUNC_ATTR_ALLOC_SIZE(x)
@@ -391,11 +344,6 @@ static inline void *rz_new_copy(int size, void *data) {
 #include <dirent.h>
 #include <unistd.h>
 #include <sys/time.h>
-#ifdef __HAIKU__
-// Original macro cast it to clockid_t
-#undef CLOCK_MONOTONIC
-#define CLOCK_MONOTONIC 0
-#endif
 #endif
 
 #ifndef HAVE_EPRINTF
@@ -424,12 +372,6 @@ static inline void *rz_new_copy(int size, void *data) {
 		free((void *)x); \
 		x = NULL; \
 	}
-
-#if __WINDOWS__
-#define HAVE_REGEXP 0
-#else
-#define HAVE_REGEXP 1
-#endif
 
 #if __WINDOWS__
 #define PFMT64x "I64x"
@@ -607,12 +549,6 @@ typedef enum {
 	RZ_SYS_ARCH_RISCV
 } RzSysArch;
 
-#if HAVE_CLOCK_NANOSLEEP && defined(CLOCK_MONOTONIC) && (__linux__ || (__FreeBSD__ && __FreeBSD_version >= 1101000) || (__NetBSD__ && __NetBSD_Version__ >= 700000000))
-#define HAS_CLOCK_NANOSLEEP 1
-#else
-#define HAS_CLOCK_NANOSLEEP 0
-#endif
-
 /* os */
 #if defined(__QNX__)
 #define RZ_SYS_OS "qnx"
@@ -701,7 +637,7 @@ static inline void rz_run_call10(void *fcn, void *arg1, void *arg2, void *arg3, 
 #endif
 
 // reference counter
-typedef int RRef;
+typedef int RzRef;
 
 #define RZ_REF_NAME    refcount
 #define rz_ref(x)      x->RZ_REF_NAME++;
@@ -714,7 +650,7 @@ typedef int RRef;
 		} \
 	}
 
-#define RZ_REF_TYPE RRef RZ_REF_NAME
+#define RZ_REF_TYPE RzRef RZ_REF_NAME
 #define RZ_REF_FUNCTIONS(s, n) \
 	static inline void n##_ref(s *x) { x->RZ_REF_NAME++; } \
 	static inline void n##_unref(s *x) { rz_unref(x, n##_free); }

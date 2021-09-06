@@ -112,12 +112,12 @@ static RzList *maps(RzBinFile *bf) {
 	return ret;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
 	rz_return_val_if_fail(buf, false);
 	struct rz_bin_dmp64_obj_t *res = rz_bin_dmp64_new_buf(buf);
 	if (res) {
 		sdb_ns_set(sdb, "info", res->kv);
-		*bin_obj = res;
+		obj->bin_obj = res;
 		return true;
 	}
 	return false;

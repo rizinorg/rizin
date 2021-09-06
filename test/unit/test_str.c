@@ -42,6 +42,30 @@ bool test_rz_str_replace(void) {
 	mu_end;
 }
 
+bool test_rz_str_ncpy(void) {
+	char *str = strdup("hello world");
+	char buf[10];
+	rz_str_ncpy(buf, str, 3);
+	mu_assert_streq(buf, "he", "error, while copying n bytes");
+
+	rz_str_ncpy(buf, str, 1);
+	mu_assert_streq(buf, "", "error, while copying 1 bytes");
+
+	int size = sizeof(buf) - 1;
+	rz_str_ncpy(buf, str, size);
+	mu_assert_streq(buf, "hello wo", "error, while size = sizeof(buf) - 1");
+
+	size = sizeof(buf);
+	rz_str_ncpy(buf, str, size);
+	mu_assert_streq(buf, "hello wor", "error, while size = sizeof(buf)");
+
+	size = rz_str_ncpy(buf, str, 6);
+	mu_assert_eq(size, 11, "error, return value is not equal to the length of src");
+
+	free(str);
+	mu_end;
+}
+
 bool test_rz_str_replace_char(void) {
 	char *str = strdup("hello world");
 	(void)rz_str_replace_char(str, 'l', 'x');
@@ -621,9 +645,43 @@ bool test_rz_strf(void) {
 	mu_end;
 }
 
+bool test_rz_str_nlen(void) {
+	mu_assert_eq(rz_str_nlen("Hello", 0), 0, "0 n should give 0");
+	mu_assert_eq(rz_str_nlen("Hello", 1), 1, "1 n should give 1");
+	mu_assert_eq(rz_str_nlen("Hello", 5), 5, "0 n should give 5");
+	mu_assert_eq(rz_str_nlen("Hello", 20), 5, "20 n should give 5 because 'hello' is 5 chars");
+	mu_assert_eq(rz_str_nlen("", 0), 0, "empty string has 0 length");
+	mu_assert_eq(rz_str_nlen("", 4), 0, "empty string has 0 length even with n=4");
+	mu_assert_eq(rz_str_nlen("A", 0), 0, "0 n should give 0");
+	mu_assert_eq(rz_str_nlen("A", 1), 1, "1 n should give 1");
+	mu_assert_eq(rz_str_nlen("A", 2), 1, "1 n should give 1 for 'A'");
+	mu_assert_eq(rz_str_nlen("A", -100), 0, "-100 n should give 0 for 'A'");
+	mu_assert_eq(rz_str_nlen("", -100), 0, "-100 n should give 0 for ''");
+	mu_assert_eq(rz_str_nlen(NULL, -100), 0, "-100 n should give 0 for NULL");
+	mu_end;
+}
+
+bool test_rz_str_ndup(void) {
+	mu_assert_streq_free(rz_str_ndup("Hello", 0), "", "empty string");
+	mu_assert_streq_free(rz_str_ndup("Hello", 1), "H", "only first char");
+	mu_assert_streq_free(rz_str_ndup("Hello", 5), "Hello", "whole string");
+	mu_assert_streq_free(rz_str_ndup("Hello", 100), "Hello", "still whole string");
+	mu_assert_streq_free(rz_str_ndup("", 0), "", "empty string");
+	mu_assert_streq_free(rz_str_ndup("", 1), "", "empty string 2");
+	mu_assert_streq_free(rz_str_ndup("", 100), "", "empty string 3");
+	mu_assert_streq_free(rz_str_ndup("A", 0), "", "empty string for 'A'");
+	mu_assert_streq_free(rz_str_ndup("A", 1), "A", "'A' string for 'A' with n=1");
+	mu_assert_streq_free(rz_str_ndup("A", 100), "A", "'A' string for 'A' with n=100");
+	mu_assert_streq_free(rz_str_ndup("A", -100), NULL, "NULL string for 'A' with n=-100");
+	mu_assert_streq_free(rz_str_ndup("", -100), NULL, "NULL string for '' with n=-100");
+	mu_assert_streq_free(rz_str_ndup(NULL, -100), NULL, "NULL string for NULL with n=-100");
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_str_newf);
 	mu_run_test(test_rz_str_replace_char_once);
+	mu_run_test(test_rz_str_ncpy);
 	mu_run_test(test_rz_str_replace_char);
 	mu_run_test(test_rz_str_replace);
 	mu_run_test(test_rz_str_bits64);
@@ -656,6 +714,8 @@ bool all_tests() {
 	mu_run_test(test_rz_str_wrap);
 	mu_run_test(test_rz_str_encoded_json);
 	mu_run_test(test_rz_strf);
+	mu_run_test(test_rz_str_nlen);
+	mu_run_test(test_rz_str_ndup);
 	return tests_passed != tests_run;
 }
 

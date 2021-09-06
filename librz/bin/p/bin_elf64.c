@@ -5,6 +5,10 @@
 #define RZ_BIN_ELF64 1
 #include "bin_elf.inc"
 
+static void destroy(RzBinFile *bf) {
+	Elf_(rz_bin_elf_free)(bf->o->bin_obj);
+}
+
 static bool check_buffer(RzBuffer *b) {
 	ut8 buf[5] = { 0 };
 	if (rz_buf_size(b) > 4) {
@@ -26,20 +30,89 @@ static ut64 get_elf_vaddr64(RzBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
 
 static void headers64(RzBinFile *bf) {
 #define p bf->rbin->cb_printf
-	p("0x00000000  ELF64       0x%08x\n", rz_buf_read_le32_at(bf->buf, 0));
-	p("0x00000010  Type        0x%04x\n", rz_buf_read_le16_at(bf->buf, 0x10));
-	p("0x00000012  Machine     0x%04x\n", rz_buf_read_le16_at(bf->buf, 0x12));
-	p("0x00000014  Version     0x%08x\n", rz_buf_read_le32_at(bf->buf, 0x14));
-	p("0x00000018  Entrypoint  0x%08" PFMT64x "\n", rz_buf_read_le64_at(bf->buf, 0x18));
-	p("0x00000020  PhOff       0x%08" PFMT64x "\n", rz_buf_read_le64_at(bf->buf, 0x20));
-	p("0x00000028  ShOff       0x%08" PFMT64x "\n", rz_buf_read_le64_at(bf->buf, 0x28));
-	p("0x00000030  Flags       0x%08x\n", rz_buf_read_le32_at(bf->buf, 0x30));
-	p("0x00000034  EhSize      %d\n", rz_buf_read_le16_at(bf->buf, 0x34));
-	p("0x00000036  PhentSize   %d\n", rz_buf_read_le16_at(bf->buf, 0x36));
-	p("0x00000038  PhNum       %d\n", rz_buf_read_le16_at(bf->buf, 0x38));
-	p("0x0000003a  ShentSize   %d\n", rz_buf_read_le16_at(bf->buf, 0x3a));
-	p("0x0000003c  ShNum       %d\n", rz_buf_read_le16_at(bf->buf, 0x3c));
-	p("0x0000003e  ShrStrndx   %d\n", rz_buf_read_le16_at(bf->buf, 0x3e));
+	ut32 magic;
+	if (!rz_buf_read_le32_at(bf->buf, 0, &magic)) {
+		return;
+	}
+	p("0x00000000  ELF64       0x%08x\n", magic);
+
+	ut16 type;
+	if (!rz_buf_read_le16_at(bf->buf, 0x10, &type)) {
+		return;
+	}
+	p("0x00000010  Type        0x%04x\n", type);
+
+	ut16 machine;
+	if (!rz_buf_read_le16_at(bf->buf, 0x12, &machine)) {
+		return;
+	}
+	p("0x00000012  Machine     0x%04x\n", machine);
+
+	ut32 version;
+	if (!rz_buf_read_le32_at(bf->buf, 0x14, &version)) {
+		return;
+	}
+	p("0x00000014  Version     0x%08x\n", version);
+
+	ut64 entry;
+	if (!rz_buf_read_le64_at(bf->buf, 0x18, &entry)) {
+		return;
+	}
+	p("0x00000018  Entrypoint  0x%08" PFMT64x "\n", entry);
+
+	ut64 phoff;
+	if (!rz_buf_read_le64_at(bf->buf, 0x20, &phoff)) {
+		return;
+	}
+	p("0x00000020  PhOff       0x%08" PFMT64x "\n", phoff);
+
+	ut64 shoff;
+	if (!rz_buf_read_le64_at(bf->buf, 0x28, &shoff)) {
+		return;
+	}
+	p("0x00000028  ShOff       0x%08" PFMT64x "\n", shoff);
+
+	ut32 flags;
+	if (!rz_buf_read_le32_at(bf->buf, 0x30, &flags)) {
+		return;
+	}
+	p("0x00000030  Flags       0x%08x\n", flags);
+
+	ut16 ehsize;
+	if (!rz_buf_read_le16_at(bf->buf, 0x34, &ehsize)) {
+		return;
+	}
+	p("0x00000034  EhSize      %d\n", ehsize);
+
+	ut16 phentsize;
+	if (!rz_buf_read_le16_at(bf->buf, 0x36, &phentsize)) {
+		return;
+	}
+	p("0x00000036  PhentSize   %d\n", phentsize);
+
+	ut16 phnum;
+	if (!rz_buf_read_le16_at(bf->buf, 0x38, &phnum)) {
+		return;
+	}
+	p("0x00000038  PhNum       %d\n", phnum);
+
+	ut16 shentsize;
+	if (!rz_buf_read_le16_at(bf->buf, 0x3a, &shentsize)) {
+		return;
+	}
+	p("0x0000003a  ShentSize   %d\n", shentsize);
+
+	ut16 shnum;
+	if (!rz_buf_read_le16_at(bf->buf, 0x3c, &shnum)) {
+		return;
+	}
+	p("0x0000003c  ShNum       %d\n", shnum);
+
+	ut16 shrstrndx;
+	if (!rz_buf_read_le16_at(bf->buf, 0x3e, &shrstrndx)) {
+		return;
+	}
+	p("0x0000003e  ShrStrndx   %d\n", shrstrndx);
 }
 
 static RzBuffer *create(RzBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt) {
@@ -133,7 +206,6 @@ RzBinPlugin rz_bin_plugin_elf64 = {
 	.get_sdb = &get_sdb,
 	.check_buffer = &check_buffer,
 	.load_buffer = &load_buffer,
-	.destroy = &destroy,
 	.baddr = &baddr,
 	.boffset = &boffset,
 	.binsym = &binsym,
@@ -156,6 +228,7 @@ RzBinPlugin rz_bin_plugin_elf64 = {
 	.regstate = &regstate,
 	.section_type_to_string = &Elf_(rz_bin_elf_section_type_to_string),
 	.section_flag_to_rzlist = &Elf_(rz_bin_elf_section_flag_to_rzlist),
+	.destroy = destroy,
 };
 
 #ifndef RZ_PLUGIN_INCORE

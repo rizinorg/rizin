@@ -123,7 +123,7 @@ RZ_API bool rz_core_gdiff_2_files(RzCore *c, RzCore *c2) {
 
 static void diffrow(ut64 addr, const char *name, ut32 size, int maxnamelen,
 	int digits, ut64 addr2, const char *name2, ut32 size2,
-	double dist, bool is_new, bool bare, bool color) {
+	double dist, bool bare, bool color) {
 
 	const char *type = NULL;
 	const char *prefix = NULL;
@@ -132,13 +132,9 @@ static void diffrow(ut64 addr, const char *name, ut32 size, int maxnamelen,
 	if (dist == 1.0) {
 		prefix = color ? Color_BGREEN : "";
 		type = color ? Color_BGREEN "MATCH  " Color_RESET : "MATCH  ";
-	} else if (dist >= 0.5) {
+	} else if (dist >= RZ_ANALYSIS_DIFF_THRESHOLD) {
 		prefix = color ? Color_BYELLOW : "";
 		type = color ? Color_BYELLOW "SIMILAR" Color_RESET : "SIMILAR";
-	} else if (is_new) {
-		dist = 0.0;
-		prefix = color ? Color_BBLUE : "";
-		type = color ? Color_BBLUE "NEW    " Color_RESET : "NEW    ";
 	} else {
 		prefix = color ? Color_BRED : "";
 		type = color ? Color_BRED "UNMATCH" Color_RESET : "UNMATCH";
@@ -166,7 +162,7 @@ RZ_API void rz_core_diff_show(RzCore *c, RzCore *c2, bool json) {
 	rz_return_if_fail(c && c2);
 	bool color = rz_config_get_i(c->config, "scr.color") > 0 || rz_config_get_i(c2->config, "scr.color") > 0;
 	bool bare = rz_config_get_b(c->config, "diff.bare") || rz_config_get_b(c2->config, "diff.bare");
-	bool is_new = false;
+	bool ignore = false;
 	RzList *fcns = rz_analysis_get_fcns(c->analysis);
 	RzListIter *iter;
 	RzAnalysisFunction *f;
@@ -221,16 +217,20 @@ RZ_API void rz_core_diff_show(RzCore *c, RzCore *c2, bool json) {
 			switch (f->diff->type) {
 			case RZ_ANALYSIS_DIFF_TYPE_MATCH:
 			case RZ_ANALYSIS_DIFF_TYPE_UNMATCH:
-				is_new = false;
+				ignore = false;
 				break;
 			default:
-				is_new = true;
+				ignore = true;
+				break;
+			}
+			if (ignore) {
+				continue;
 			}
 			if (json) {
 				double dist = f->diff->dist;
 				pj_o(pj);
 				pj_kd(pj, "distance", f->diff->dist);
-				pj_ks(pj, "type", dist >= 1.0 ? "MATCH" : (dist >= 0.5 ? "SIMILAR" : (is_new ? "NEW" : "UNMATCH")));
+				pj_ks(pj, "type", dist >= 1.0 ? "MATCH" : (dist >= 0.5 ? "SIMILAR" : "UNMATCH"));
 				if (f->name) {
 					pj_ko(pj, "original");
 					pj_ks(pj, "name", f->name);
@@ -249,13 +249,13 @@ RZ_API void rz_core_diff_show(RzCore *c, RzCore *c2, bool json) {
 			} else {
 				diffrow(f->addr, f->name, rz_analysis_function_realsize(f), maxnamelen, digits,
 					f->diff->addr, f->diff->name, f->diff->size,
-					f->diff->dist, is_new, bare, color);
+					f->diff->dist, bare, color);
 			}
 			break;
 		}
 	}
-	fcns = rz_analysis_get_fcns(c2->analysis);
-	rz_list_sort(fcns, c2->analysis->columnSort);
+
+	ignore = true;
 	rz_list_foreach (fcns, iter, f) {
 		switch (f->type) {
 		case RZ_ANALYSIS_FCN_TYPE_FCN:
@@ -272,18 +272,49 @@ RZ_API void rz_core_diff_show(RzCore *c, RzCore *c2, bool json) {
 						pj_kn(pj, "size", rz_analysis_function_realsize(f));
 						pj_end(pj);
 					}
-					if (f->diff->name) {
+					pj_end(pj);
+				} else {
+					if (ignore) {
+						ignore = false;
+						printf("original not matched:");
+					}
+					printf(" %s", f->name);
+				}
+			}
+			break;
+		}
+	}
+	if (!json && !ignore) {
+		printf("\n");
+	}
+
+	fcns = rz_analysis_get_fcns(c2->analysis);
+	rz_list_sort(fcns, c2->analysis->columnSort);
+
+	ignore = true;
+	rz_list_foreach (fcns, iter, f) {
+		switch (f->type) {
+		case RZ_ANALYSIS_FCN_TYPE_FCN:
+		case RZ_ANALYSIS_FCN_TYPE_SYM:
+			if (f->diff->type == RZ_ANALYSIS_DIFF_TYPE_NULL) {
+				if (json) {
+					pj_o(pj);
+					pj_kd(pj, "distance", 0.0);
+					pj_ks(pj, "type", "NEW");
+					if (f->name) {
 						pj_ko(pj, "modified");
-						pj_ks(pj, "name", f->diff->name);
-						pj_kn(pj, "addr", f->diff->addr);
-						pj_kn(pj, "size", f->diff->size);
+						pj_ks(pj, "name", f->name);
+						pj_kn(pj, "addr", f->addr);
+						pj_kn(pj, "size", rz_analysis_function_realsize(f));
 						pj_end(pj);
 					}
 					pj_end(pj);
 				} else {
-					diffrow(f->addr, f->name, rz_analysis_function_realsize(f), maxnamelen,
-						digits, f->diff->addr, f->diff->name, f->diff->size,
-						0.0, true, bare, color);
+					if (ignore) {
+						ignore = false;
+						printf("modified not matched:");
+					}
+					printf(" %s", f->name);
 				}
 			}
 			break;
@@ -294,6 +325,8 @@ RZ_API void rz_core_diff_show(RzCore *c, RzCore *c2, bool json) {
 		pj_end(pj);
 		printf("%s\n", pj_string(pj));
 		pj_free(pj);
+	} else if (!ignore) {
+		printf("\n");
 	}
 }
 

@@ -18,7 +18,9 @@ if get_option('enable_tests')
     'analysis_function',
     'analysis_hints',
     'analysis_meta',
+    'analysis_op',
     'analysis_var',
+    'analysis_global_var',
     'analysis_xrefs',
     'annotated_code',
     'autocmplt',
@@ -45,7 +47,6 @@ if get_option('enable_tests')
     'dwarf_info',
     'dwarf_integration',
     'endian',
-    'esil_dfg_filter',
     'event',
     'file',
     'flags',
@@ -58,6 +59,7 @@ if get_option('enable_tests')
     'idstorage',
     'intervaltree',
     'io',
+    'itv',
     'io_ihex',
     'json',
     'list',
@@ -68,6 +70,7 @@ if get_option('enable_tests')
     'queue',
     'rbtree',
     'reg',
+    'run',
     'rz_test',
     'rzpipe',
     'serialize_analysis',
@@ -91,7 +94,8 @@ if get_option('enable_tests')
     'uleb128',
     'unum',
     'util',
-    'vector'
+    'vector',
+    'inflate_deflate'
   ]
 
   unit_test_env = environment()

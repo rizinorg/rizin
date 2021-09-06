@@ -16,7 +16,7 @@ int main(int argc, char **argv) {
 		printf("%s\n", str);
 		printf("\n----\n\n");
 		rz_parse_use(p, "att2intel");
-		rz_parse_parse(p, "movl $3, %eax", str); //, sizeof (str));
+		rz_parse_pseudocode(p, "movl $3, %eax", str); //, sizeof (str));
 		//rz_parse_filter (p, NULL, "movl $3, %eax", str, sizeof (str));
 		printf("%s\n", str);
 	} else {
@@ -29,7 +29,7 @@ int main(int argc, char **argv) {
 				break;
 			buf[strlen(buf) - 1] = 0;
 			if (*buf) {
-				rz_parse_parse(p, buf, str); //, sizeof (str));
+				rz_parse_pseudocode(p, buf, str); //, sizeof (str));
 				printf("%s\n", str);
 			}
 		}

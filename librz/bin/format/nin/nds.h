@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2014 Alberto Ortega
+// SPDX-License-Identifier: LGPL-3.0-only
 
 /*
 http://dsibrew.org/wiki/NDS_Format

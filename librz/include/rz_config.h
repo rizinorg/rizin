@@ -41,7 +41,7 @@ RZ_API const char *rz_config_node_type(RzConfigNode *node);
 typedef struct rz_config_t {
 	int lock;
 	void *user;
-	RNum *num;
+	RzNum *num;
 	PrintfCallback cb_printf;
 	RzList *nodes;
 	HtPP *ht;

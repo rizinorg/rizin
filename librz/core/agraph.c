@@ -9,7 +9,6 @@
 #include <ctype.h>
 #include <limits.h>
 #include "core_private.h"
-#include "cmd_descs/cmd_descs.h"
 
 static int mousemode = 0;
 static int disMode = 0;
@@ -4027,7 +4026,7 @@ static void graph_breakpoint(RzCore *core) {
 }
 
 static void graph_continue(RzCore *core) {
-	rz_debug_continue_oldhandler(core, "");
+	rz_core_debug_continue(core);
 }
 static void applyDisMode(RzCore *core) {
 	switch (disMode) {
@@ -4060,7 +4059,7 @@ static char *get_graph_string(RzCore *core, RzAGraph *g) {
 	rz_config_set_i(core->config, "scr.color", 0);
 	rz_config_set_i(core->config, "scr.utf8", 0);
 	rz_core_visual_graph(core, g, NULL, false);
-	char *s = strdup(rz_cons_get_buffer());
+	char *s = rz_cons_get_buffer_dup();
 	rz_cons_reset();
 	rz_config_set_i(core->config, "scr.color", c);
 	rz_config_set_i(core->config, "scr.utf8", u);
@@ -4268,15 +4267,6 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 			agraph_set_zoom(g, ZOOM_DEFAULT);
 			agraph_update_seek(g, get_anode(g->curnode), true);
 			// update scroll (with minor shift)
-			break;
-			// Those hardcoded keys are useful only for aegi, should add subcommand of ag to set key actions
-		case '1':
-			rz_core_seek_opcode(core, 1, false);
-			rz_core_cmd0(core, ".aeg*");
-			break;
-		case '2':
-			rz_core_seek_opcode(core, -1, false);
-			rz_core_cmd0(core, ".aeg*");
 			break;
 		case '=': { // TODO: edit
 			showcursor(core, true);

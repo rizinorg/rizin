@@ -43,9 +43,22 @@ static bool knownHeaderBuffer(RzBuffer *b, ut16 offset) {
 }
 
 static bool checkEntrypointBuffer(RzBuffer *b) {
-	st16 cs = rz_buf_read_le16_at(b, 0x16);
-	ut16 ip = rz_buf_read_le16_at(b, 0x14);
-	ut32 pa = ((rz_buf_read_le16_at(b, 0x08) + cs) << 4) + ip;
+	ut16 cs;
+	if (!rz_buf_read_le16_at(b, 0x16, &cs)) {
+		return false;
+	}
+
+	ut16 ip;
+	if (!rz_buf_read_le16_at(b, 0x14, &ip)) {
+		return false;
+	}
+
+	ut16 tmp;
+	if (!rz_buf_read_le16_at(b, 0x08, &tmp)) {
+		return false;
+	}
+
+	ut32 pa = ((tmp + cs) << 4) + ip;
 
 	/* A minimal MZ header is 0x1B bytes.  Header length is measured in
 	 * 16-byte paragraphs so the minimum header must occupy 2 paragraphs.
@@ -55,7 +68,11 @@ static bool checkEntrypointBuffer(RzBuffer *b) {
 	pa &= 0xffff;
 	ut64 length = rz_buf_size(b);
 	if (pa >= 0x20 && pa + 1 < length) {
-		ut16 pe = rz_buf_read_le16_at(b, 0x3c);
+		ut16 pe;
+		if (!rz_buf_read_le16_at(b, 0x3c, &pe)) {
+			return false;
+		}
+
 		if (pe + 2 < length && length > 0x104) {
 			ut8 h[2];
 			if (rz_buf_read_at(b, pe, h, 2) == 2) {
@@ -86,7 +103,11 @@ static bool check_buffer(RzBuffer *b) {
 	}
 
 	// See if there is a new exe header.
-	ut16 new_exe_header_offset = rz_buf_read_le16_at(b, 0x3c);
+	ut16 new_exe_header_offset;
+	if (!rz_buf_read_le16_at(b, 0x3c, &new_exe_header_offset)) {
+		return false;
+	}
+
 	if (b_size > new_exe_header_offset + 2) {
 		if (knownHeaderBuffer(b, new_exe_header_offset)) {
 			return false;
@@ -100,11 +121,11 @@ static bool check_buffer(RzBuffer *b) {
 	return true;
 }
 
-static bool load(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
 	struct rz_bin_mz_obj_t *mz_obj = rz_bin_mz_new_buf(buf);
 	if (mz_obj) {
 		sdb_ns_set(sdb, "info", mz_obj->kv);
-		*bin_obj = mz_obj;
+		obj->bin_obj = mz_obj;
 		return true;
 	}
 	return false;

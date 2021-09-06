@@ -12,12 +12,74 @@ bool test_rz_bin(void) {
 	rz_io_bind(io, &bin->iob);
 
 	RzBinOptions opt = { 0 };
+	rz_bin_options_init(&opt, 0, 0, 0, false, false);
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/ioli/crackme0x00", &opt);
 	mu_assert_notnull(bf, "crackme0x00 binary could not be opened");
 	mu_assert_notnull(bf->o, "bin object");
 
-	RzList *sections = bf->o->sections;
-	mu_assert_eq(rz_list_length(sections), 39, "rz_bin_get_sections");
+	RzBinObject *obj = rz_bin_cur_object(bin);
+
+	RzList *sections = rz_bin_object_get_sections(obj);
+	mu_assert_eq(rz_list_length(sections), 29, "rz_bin_object_get_sections");
+	rz_list_free(sections);
+
+	RzList *segments = rz_bin_object_get_segments(obj);
+	mu_assert_eq(rz_list_length(segments), 10, "rz_bin_object_get_segments");
+	rz_list_free(segments);
+
+	const RzList *entries = rz_bin_object_get_entries(obj);
+	mu_assert_eq(rz_list_length(entries), 1, "rz_bin_object_get_entries");
+	RzBinAddr *entry = rz_list_first(entries);
+	mu_assert_eq(entry->vaddr, 0x8048360, "entry virtual address");
+	mu_assert_eq(entry->paddr, 0x360, "entry file offset");
+
+	const RzList *imports = rz_bin_object_get_imports(obj);
+	mu_assert_eq(rz_list_length(imports), 5, "rz_bin_object_get_imports");
+	const char *import_names[] = { "__libc_start_main", "printf", "scanf", "strcmp", "__gmon_start__" };
+	bool has_import_names[sizeof(import_names)] = { 0 };
+	RzBinImport *import;
+	RzListIter *it;
+	rz_list_foreach (imports, it, import) {
+		for (int i = 0; i < RZ_ARRAY_SIZE(import_names); ++i) {
+			if (!strcmp(import->name, import_names[i])) {
+				has_import_names[i] = true;
+				break;
+			}
+		}
+	}
+	for (int i = 0; i < RZ_ARRAY_SIZE(import_names); ++i) {
+		mu_assert_true(has_import_names[i], "Import name was not found");
+	}
+
+	const RzList *strings = rz_bin_object_get_strings(obj);
+	mu_assert_eq(rz_list_length(strings), 5, "rz_bin_object_get_strings");
+	const char *exp_strings[] = {
+		"IOLI Crackme Level 0x00\\n",
+		"Password: ",
+		// "%s", // This is not automatically recognized because too short
+		"250382",
+		"Invalid Password!\\n",
+		"Password OK :)\\n",
+	};
+	RzBinString *s;
+	int i = 0;
+	rz_list_foreach (strings, it, s) {
+		mu_assert_streq(s->string, exp_strings[i], "String not found");
+		mu_assert_true(rz_bin_object_is_string(obj, s->vaddr), "is_string should be true");
+		i++;
+	}
+
+	const RzList *hashes = rz_bin_file_compute_hashes(bin, bf, UT64_MAX);
+	mu_assert_eq(rz_list_length(hashes), 3, "rz_bin_file_get_hashes");
+	const char *hash_names[] = { "md5", "sha1", "sha256" };
+	const char *hash_hexes[] = { "99327411dd72a11d7198b54298648adf", "f2bf1c7758c7b1e22bdea1d7681882783b658705", "3aed9a3821134a2ab1d69cb455e5e9d80bb651a1c97af04cdba4f3bb0adaa37b" };
+	RzBinFileHash *hash;
+	i = 0;
+	rz_list_foreach (hashes, it, hash) {
+		mu_assert_streq(hash->type, hash_names[i], "hash name is wrong");
+		mu_assert_streq(hash->hex, hash_hexes[i], "hash digest is wrong");
+		i++;
+	}
 
 	rz_bin_free(bin);
 	rz_io_free(io);
@@ -197,11 +259,51 @@ bool test_rz_bin_file_delete_all(void) {
 	mu_end;
 }
 
+bool test_rz_bin_sections_mapping(void) {
+	RzBin *bin = rz_bin_new();
+	RzIO *io = rz_io_new();
+	rz_io_bind(io, &bin->iob);
+
+	RzBinOptions opt = { 0 };
+	rz_bin_options_init(&opt, 0, 0, 0, false, false);
+	RzBinFile *bf = rz_bin_open(bin, "bins/elf/ioli/crackme0x00", &opt);
+	mu_assert_notnull(bf, "crackme0x00 binary could not be opened");
+	mu_assert_notnull(bf->o, "bin object");
+	mu_assert_streq(bf->file, "bins/elf/ioli/crackme0x00", "filename should be right");
+
+	RzBinObject *o = bf->o;
+	RzVector *maps = rz_bin_object_sections_mapping_list(o);
+	mu_assert_eq(rz_vector_len(maps), 10, "there should be 10 maps, because 10 are the segments");
+
+	RzBinSectionMap *map0 = rz_vector_index_ptr(maps, 0);
+	mu_assert_streq(map0->segment->name, "PHDR", "first map is for PHDR");
+	mu_assert_eq(rz_pvector_len(&map0->sections), 0, "no sections in PHDR");
+	RzBinSectionMap *map1 = rz_vector_index_ptr(maps, 1);
+	mu_assert_streq(map1->segment->name, "INTERP", "second map is for INTERP");
+	mu_assert_eq(rz_pvector_len(&map1->sections), 1, "just .interp in INTERP");
+	RzBinSection *sec1_0 = *rz_pvector_index_ptr(&map1->sections, 0);
+	mu_assert_streq(sec1_0->name, ".interp", "section is .interp");
+	RzBinSectionMap *map7 = rz_vector_index_ptr(maps, 7);
+	mu_assert_streq(map7->segment->name, "GNU_RELRO", "seventh map is for GNURELRO");
+	mu_assert_eq(rz_pvector_len(&map7->sections), 5, "5 elements in GNURELRO");
+	RzBinSection *sec7_0 = *rz_pvector_index_ptr(&map7->sections, 0);
+	mu_assert_streq(sec7_0->name, ".ctors", "section is .ctors");
+	RzBinSection *sec7_1 = *rz_pvector_index_ptr(&map7->sections, 1);
+	mu_assert_streq(sec7_1->name, ".dtors", "section is .dtors");
+
+	rz_vector_free(maps);
+
+	rz_bin_free(bin);
+	rz_io_free(io);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_bin);
 	mu_run_test(test_rz_bin_reloc_storage);
 	mu_run_test(test_rz_bin_file_delete);
 	mu_run_test(test_rz_bin_file_delete_all);
+	mu_run_test(test_rz_bin_sections_mapping);
 	return tests_passed != tests_run;
 }
 

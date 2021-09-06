@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2016 SkUaTeR <skuater@hotmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 /*! \file */
 #ifndef LIBBOCHS_H
 #define LIBBOCHS_H

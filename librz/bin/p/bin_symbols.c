@@ -249,7 +249,7 @@ static RzCoreSymCacheElement *parseDragons(RzBinFile *bf, RzBuffer *buf, int off
 	return rz_coresym_cache_element_new(bf, buf, off + 16, bits, file_name);
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
 #if 0
 	SYMBOLS HEADER
 
@@ -286,12 +286,9 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 		}
 	}
 	RzCoreSymCacheElement *element = parseDragons(bf, buf, sm.addr + sm.size, sm.bits, file_name);
-	if (element) {
-		*bin_obj = element;
-		return true;
-	}
+	obj->bin_obj = element;
 	free(file_name);
-	return false;
+	return obj->bin_obj != NULL;
 }
 
 static RzList *sections(RzBinFile *bf) {

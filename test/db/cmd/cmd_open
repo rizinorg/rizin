@@ -18,8 +18,8 @@ pf.~?
 o~?
 EOF
 EXPECT=<<EOF
-0
-58
+41
+99
 1
 EOF
 RUN
@@ -180,12 +180,12 @@ e bin.baddr=0xf00000
 k old_v=`ieq`
 oob
 iI~baddr[1]
-ie~vaddr[1]
+ie:vaddr:quiet
 p8 10 @ entry0
 p8 10 @ `k old_v`
 EOF
 EXPECT=<<EOF
-0xf00000
+0x00f00000
 0x00f01058
 554889e5415741564155
 ffffffffffffffffffff
@@ -203,8 +203,8 @@ iI~laddr[1]
 iI~baddr[1]
 EOF
 EXPECT=<<EOF
-0x0
-0x1000
+0x00000000
+0x00001000
 EOF
 RUN
 
@@ -219,7 +219,7 @@ iI~laddr[1]
 iI~baddr[1]
 EOF
 EXPECT=<<EOF
-0x0
+0x00000000
 0x100000000
 EOF
 RUN
@@ -339,8 +339,8 @@ EXPECT=<<EOF
 
 0x00000010  2021 2223 2425 2627 2829 2a2b 2c2d 2e2f   !"#$%&'()*+,-./
 
- 2 fd: 4 +0x00000000 0x00000000 - 0x000000ff rwx 
  1 fd: 3 +0x00000000 0x00000000 - 0x000001ff rwx 
+ 2 fd: 4 +0x00000000 0x00000000 - 0x000000ff rwx 
 
 0x00000010  1011 1213 1415 1617 1819 1a1b 1c1d 1e1f  ................
 EOF
@@ -399,12 +399,12 @@ om
 # pv1
 EOF
 EXPECT=<<EOF
- 6 fd: 6 +0x00000000 0x00023560 - 0x00023f17 rwx vmap.reloc-targets
- 5 fd: 3 +0x00000000 0x00000000 - 0x0000347f rwx fmap.LOAD0
- 4 fd: 3 +0x00004000 0x00004000 - 0x00016790 rwx fmap.LOAD1
- 3 fd: 3 +0x00017000 0x00017000 - 0x0001f7bf rwx fmap.LOAD2
- 2 fd: 5 +0x00020050 0x00021050 - 0x00022267 rwx vmap.LOAD3
- 1 fd: 4 +0x00000000 0x00022268 - 0x00023557 rwx mmap.LOAD3
+ 1 fd: 4 +0x00000000 0x00023560 - 0x00023f17 rwx vmap.reloc-targets
+ 2 fd: 3 +0x00000000 0x00000000 - 0x0000347f rwx fmap.LOAD0
+ 3 fd: 3 +0x00004000 0x00004000 - 0x00016790 rwx fmap.LOAD1
+ 4 fd: 3 +0x00017000 0x00017000 - 0x0001f7bf rwx fmap.LOAD2
+ 5 fd: 5 +0x00000000 0x00022268 - 0x00023557 rwx mmap.LOAD3
+ 6 fd: 6 +0x00020050 0x00021050 - 0x00022267 rwx vmap.LOAD3
 EOF
 RUN
 
@@ -467,22 +467,26 @@ format   elf
 iorw     false
 block    0x100
 type     EXEC (Executable file)
-Name     Value              
-----------------------------
 arch     x86
-baddr    0x8048000
-binsz    20668
+cpu      N/A
+baddr    0x08048000
+binsz    0x000050bc
 bintype  elf
 bits     32
 class    ELF32
+compiler N/A
+dbg_file N/A
 endian   LE
+hdr.csum N/A
+guid     N/A
 intrp    /lib/ld-linux.so.2
-laddr    0x0
+laddr    0x00000000
 lang     c
 machine  Intel 80386
 maxopsz  16
 minopsz  1
 os       linux
+cc       N/A
 pcalign  0
 relro    partial
 rpath    NONE
@@ -501,14 +505,14 @@ RELROCS  false
 NX       true
 --
 1
-fd       3
-file     malloc://512
-size     0x200
-humansz  512
-mode     rwx
-format   any
-iorw     true
-block    0x100
-
+fd      3
+file    malloc://512
+size    0x200
+humansz 512
+mode    rwx
+format  any
+iorw    true
+block   0x100
+type    
 EOF
 RUN

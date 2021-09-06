@@ -707,7 +707,7 @@ RZ_API char *rz_str_new(const char *str) {
 // Returns a new heap-allocated copy of str, sets str[len] to '\0'.
 // If the input str is longer than len, it will be truncated.
 RZ_API char *rz_str_newlen(const char *str, int len) {
-	if (len < 1) {
+	if (len < 0) {
 		return NULL;
 	}
 	char *buf = malloc(len + 1);
@@ -753,22 +753,25 @@ RZ_API char *rz_str_newf(const char *fmt, ...) {
 	return p;
 }
 
-// Secure string copy with null terminator (like strlcpy or strscpy but ours
-RZ_API size_t rz_str_ncpy(char *dst, const char *src, size_t n) {
+/**
+ * \brief Secure string copy with null terminator
+ *
+ * 	This API behaves like strlcpy or strscpy.
+ */
+RZ_API size_t rz_str_ncpy(char *dst, const char *src, size_t dst_size) {
 	rz_return_val_if_fail(dst && src, 0);
-	size_t i;
 
-	// do not do anything if n is 0
-	if (n == 0) {
+	// do not do anything if dst_size is 0
+	if (dst_size == 0) {
 		return 0;
 	}
-
-	n--;
-	for (i = 0; src[i] && n > 0; i++, n--) {
-		dst[i] = src[i];
-	}
-	dst[i] = 0;
-	return i;
+#if HAVE_STRLCPY
+	return strlcpy(dst, src, dst_size);
+#else
+	strncpy(dst, src, dst_size - 1);
+	dst[dst_size - 1] = '\0';
+	return strlen(src);
+#endif
 }
 
 /* memccmp("foo.bar", "foo.cow, '.') == 0 */
@@ -2548,21 +2551,13 @@ RZ_API void rz_str_range_foreach(const char *r, RzStrRangeCallback cb, void *u) 
 
 RZ_API bool rz_str_range_in(const char *r, ut64 addr) {
 	const char *p = r;
-	ut64 min = UT64_MAX;
-	ut64 max = 0;
 	if (!r) {
 		return false;
 	}
 	for (; *r; r++) {
 		if (*r == ',') {
-			if (max == 0) {
-				if (addr == rz_num_get(NULL, p)) {
-					return true;
-				}
-			} else {
-				if (addr >= min && addr <= rz_num_get(NULL, p)) {
-					return true;
-				}
+			if (addr == rz_num_get(NULL, p)) {
+				return true;
 			}
 			p = r + 1;
 		}
@@ -3570,7 +3565,10 @@ RZ_API char *rz_str_scale(const char *s, int w, int h) {
 		memset(linetext, ' ', w);
 	}
 	free(str);
-	return rz_str_list_join(out, "\n");
+
+	char *join = rz_str_list_join(out, "\n");
+	rz_list_free(out);
+	return join;
 }
 
 RZ_API const char *rz_str_str_xy(const char *s, const char *word, const char *prev, int *x, int *y) {
@@ -3609,6 +3607,9 @@ RZ_API RzList *rz_str_wrap(char *str, size_t width) {
 	rz_return_val_if_fail(str, NULL);
 
 	RzList *res = rz_list_new();
+	if (!res) {
+		return NULL;
+	}
 	char *p, *start_line = str;
 	char *first_space = NULL, *last_space = NULL;
 
@@ -3619,12 +3620,12 @@ RZ_API RzList *rz_str_wrap(char *str, size_t width) {
 
 	do {
 		p++;
-		if (!*p || isspace(*p)) {
-			if (p != last_space + 1) {
+		if (!*p || isspace((int)*p)) {
+			if (!last_space || p != last_space + 1) {
 				if (p - start_line > width && first_space) {
 					rz_list_append(res, start_line);
 					*first_space = '\0';
-					start_line = last_space ? last_space + 1 : p;
+					start_line = last_space + 1;
 				}
 				first_space = p;
 			}
@@ -3632,7 +3633,7 @@ RZ_API RzList *rz_str_wrap(char *str, size_t width) {
 		}
 	} while (*p);
 	p--;
-	while (p >= str && isspace(*p)) {
+	while (p >= str && isspace((int)*p)) {
 		*p = '\0';
 		p--;
 	}

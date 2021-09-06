@@ -231,7 +231,11 @@ RZ_API bool rz_core_yank_dump(RzCore *core, ut64 pos, int format) {
 			switch (format) {
 			case 'q':
 				for (i = pos; i < rz_buf_size(core->yank_buf); i++) {
-					rz_cons_printf("%02x", rz_buf_read8_at(core->yank_buf, i));
+					ut8 tmp;
+					if (!rz_buf_read8_at(core->yank_buf, i, &tmp)) {
+						return false;
+					}
+					rz_cons_printf("%02x", tmp);
 				}
 				rz_cons_newline();
 				break;
@@ -244,7 +248,13 @@ RZ_API bool rz_core_yank_dump(RzCore *core, ut64 pos, int format) {
 				pj_kn(pj, "addr", core->yank_addr);
 				RzStrBuf *buf = rz_strbuf_new("");
 				for (i = pos; i < rz_buf_size(core->yank_buf); i++) {
-					rz_strbuf_appendf(buf, "%02x", rz_buf_read8_at(core->yank_buf, i));
+					ut8 tmp;
+					if (!rz_buf_read8_at(core->yank_buf, i, &tmp)) {
+						rz_strbuf_free(buf);
+						pj_free(pj);
+						return false;
+					}
+					rz_strbuf_appendf(buf, "%02x", tmp);
 				}
 				pj_ks(pj, "bytes", rz_strbuf_get(buf));
 				rz_strbuf_free(buf);
@@ -257,7 +267,11 @@ RZ_API bool rz_core_yank_dump(RzCore *core, ut64 pos, int format) {
 				//rz_cons_printf ("yfx ");
 				rz_cons_printf("wx ");
 				for (i = pos; i < rz_buf_size(core->yank_buf); i++) {
-					rz_cons_printf("%02x", rz_buf_read8_at(core->yank_buf, i));
+					ut8 tmp;
+					if (!rz_buf_read8_at(core->yank_buf, i, &tmp)) {
+						return false;
+					}
+					rz_cons_printf("%02x", tmp);
 				}
 				//rz_cons_printf (" @ 0x%08"PFMT64x, core->yank_addr);
 				rz_cons_newline();
@@ -267,7 +281,11 @@ RZ_API bool rz_core_yank_dump(RzCore *core, ut64 pos, int format) {
 					core->yank_addr + pos,
 					rz_buf_size(core->yank_buf) - pos);
 				for (i = pos; i < rz_buf_size(core->yank_buf); i++) {
-					rz_cons_printf("%02x", rz_buf_read8_at(core->yank_buf, i));
+					ut8 tmp;
+					if (!rz_buf_read8_at(core->yank_buf, i, &tmp)) {
+						return false;
+					}
+					rz_cons_printf("%02x", tmp);
 				}
 				rz_cons_newline();
 			}

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2014-2019 thatlemon@gmail.com <thatlemon@gmail.com>
+// SPDX-FileCopyrightText: 2014-2019 LemonBoy <thatlemon@gmail.com>
 // SPDX-FileCopyrightText: 2014-2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
@@ -21,7 +21,7 @@ static bool check_buffer(RzBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, RzBinObject *o, RzBuffer *buf, Sdb *sdb) {
 	rz_bin_xbe_obj_t *obj = RZ_NEW(rz_bin_xbe_obj_t);
 	if (!obj) {
 		return false;
@@ -45,7 +45,7 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 		obj->ep_key = XBE_EP_RETAIL;
 		obj->kt_key = XBE_KP_RETAIL;
 	}
-	*bin_obj = obj;
+	o->bin_obj = obj;
 	return true;
 }
 

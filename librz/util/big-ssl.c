@@ -4,23 +4,23 @@
 
 #include <rz_util.h>
 
-RZ_API RNumBig *rz_big_new(void) {
+RZ_API RzNumBig *rz_big_new(void) {
 	return BN_new();
 }
 
-RZ_API void rz_big_free(RNumBig *b) {
+RZ_API void rz_big_free(RzNumBig *b) {
 	BN_free(b);
 }
 
-RZ_API void rz_big_init(RNumBig *b) {
+RZ_API void rz_big_init(RzNumBig *b) {
 	BN_zero(b);
 }
 
-RZ_API void rz_big_fini(RNumBig *b) {
+RZ_API void rz_big_fini(RzNumBig *b) {
 	BN_clear(b);
 }
 
-RZ_API void rz_big_from_int(RNumBig *b, st64 v) {
+RZ_API void rz_big_from_int(RzNumBig *b, st64 v) {
 	if (v < 0) {
 		BN_set_word(b, -v);
 		BN_set_negative(b, v);
@@ -29,12 +29,12 @@ RZ_API void rz_big_from_int(RNumBig *b, st64 v) {
 	}
 }
 
-RZ_API st64 rz_big_to_int(RNumBig *b) {
+RZ_API st64 rz_big_to_int(RzNumBig *b) {
 	BN_ULONG maxx = 0;
 	maxx = ~maxx;
 	BN_ULONG res = BN_get_word(b);
 	if (res == maxx) {
-		RNumBig *B = rz_big_new();
+		RzNumBig *B = rz_big_new();
 		rz_big_assign(B, b);
 		BN_mask_bits(B, BN_BYTES * 8 - 1);
 		res = BN_get_word(B);
@@ -44,7 +44,7 @@ RZ_API st64 rz_big_to_int(RNumBig *b) {
 	return res;
 }
 
-RZ_API void rz_big_from_hexstr(RNumBig *b, const char *str) {
+RZ_API void rz_big_from_hexstr(RzNumBig *b, const char *str) {
 	if (rz_str_startswith(str, "0x")) {
 		str += 2;
 		BN_hex2bn(&b, str);
@@ -55,7 +55,7 @@ RZ_API void rz_big_from_hexstr(RNumBig *b, const char *str) {
 	}
 }
 
-RZ_API char *rz_big_to_hexstr(RNumBig *b) {
+RZ_API char *rz_big_to_hexstr(RzNumBig *b) {
 	char *tmp = BN_bn2hex(b);
 	char *res;
 	if (tmp[0] == '-') {
@@ -70,47 +70,47 @@ RZ_API char *rz_big_to_hexstr(RNumBig *b) {
 	return res;
 }
 
-RZ_API void rz_big_assign(RNumBig *dst, RNumBig *src) {
+RZ_API void rz_big_assign(RzNumBig *dst, RzNumBig *src) {
 	BN_copy(dst, src);
 }
 
-RZ_API void rz_big_add(RNumBig *c, RNumBig *a, RNumBig *b) {
+RZ_API void rz_big_add(RzNumBig *c, RzNumBig *a, RzNumBig *b) {
 	BN_add(c, a, b);
 }
 
-RZ_API void rz_big_sub(RNumBig *c, RNumBig *a, RNumBig *b) {
+RZ_API void rz_big_sub(RzNumBig *c, RzNumBig *a, RzNumBig *b) {
 	BN_sub(c, a, b);
 }
 
-RZ_API void rz_big_mul(RNumBig *c, RNumBig *a, RNumBig *b) {
+RZ_API void rz_big_mul(RzNumBig *c, RzNumBig *a, RzNumBig *b) {
 	BN_CTX *bn_ctx = BN_CTX_new();
 	BN_mul(c, a, b, bn_ctx);
 	BN_CTX_free(bn_ctx);
 }
 
-RZ_API void rz_big_div(RNumBig *c, RNumBig *a, RNumBig *b) {
+RZ_API void rz_big_div(RzNumBig *c, RzNumBig *a, RzNumBig *b) {
 	BN_CTX *bn_ctx = BN_CTX_new();
 	BN_div(c, NULL, a, b, bn_ctx);
 	BN_CTX_free(bn_ctx);
 }
 
-RZ_API void rz_big_mod(RNumBig *c, RNumBig *a, RNumBig *b) {
+RZ_API void rz_big_mod(RzNumBig *c, RzNumBig *a, RzNumBig *b) {
 	BN_CTX *bn_ctx = BN_CTX_new();
 	BN_mod(c, a, b, bn_ctx);
 	BN_CTX_free(bn_ctx);
 }
 
-RZ_API void rz_big_divmod(RNumBig *c, RNumBig *d, RNumBig *a, RNumBig *b) {
+RZ_API void rz_big_divmod(RzNumBig *c, RzNumBig *d, RzNumBig *a, RzNumBig *b) {
 	BN_CTX *bn_ctx = BN_CTX_new();
 	BN_div(c, d, a, b, bn_ctx);
 	BN_CTX_free(bn_ctx);
 }
 
-RZ_API void rz_big_and(RNumBig *c, RNumBig *a, RNumBig *b) {
-	RNumBig *A = rz_big_new();
-	RNumBig *B = rz_big_new();
-	RNumBig *C = rz_big_new();
-	RNumBig *addition = rz_big_new();
+RZ_API void rz_big_and(RzNumBig *c, RzNumBig *a, RzNumBig *b) {
+	RzNumBig *A = rz_big_new();
+	RzNumBig *B = rz_big_new();
+	RzNumBig *C = rz_big_new();
+	RzNumBig *addition = rz_big_new();
 
 	size_t step = 4 * 8, move = 0;
 	ut32 tmp = 0;
@@ -137,11 +137,11 @@ RZ_API void rz_big_and(RNumBig *c, RNumBig *a, RNumBig *b) {
 	rz_big_free(addition);
 }
 
-RZ_API void rz_big_or(RNumBig *c, RNumBig *a, RNumBig *b) {
-	RNumBig *A = rz_big_new();
-	RNumBig *B = rz_big_new();
-	RNumBig *C = rz_big_new();
-	RNumBig *addition = rz_big_new();
+RZ_API void rz_big_or(RzNumBig *c, RzNumBig *a, RzNumBig *b) {
+	RzNumBig *A = rz_big_new();
+	RzNumBig *B = rz_big_new();
+	RzNumBig *C = rz_big_new();
+	RzNumBig *addition = rz_big_new();
 
 	size_t step = 4 * 8, move = 0;
 	ut32 tmp = 0;
@@ -168,11 +168,11 @@ RZ_API void rz_big_or(RNumBig *c, RNumBig *a, RNumBig *b) {
 	rz_big_free(addition);
 }
 
-RZ_API void rz_big_xor(RNumBig *c, RNumBig *a, RNumBig *b) {
-	RNumBig *A = rz_big_new();
-	RNumBig *B = rz_big_new();
-	RNumBig *C = rz_big_new();
-	RNumBig *addition = rz_big_new();
+RZ_API void rz_big_xor(RzNumBig *c, RzNumBig *a, RzNumBig *b) {
+	RzNumBig *A = rz_big_new();
+	RzNumBig *B = rz_big_new();
+	RzNumBig *C = rz_big_new();
+	RzNumBig *addition = rz_big_new();
 
 	size_t step = 4 * 8, move = 0;
 	ut32 tmp = 0;
@@ -199,41 +199,41 @@ RZ_API void rz_big_xor(RNumBig *c, RNumBig *a, RNumBig *b) {
 	rz_big_free(addition);
 }
 
-RZ_API void rz_big_lshift(RNumBig *c, RNumBig *a, size_t nbits) {
+RZ_API void rz_big_lshift(RzNumBig *c, RzNumBig *a, size_t nbits) {
 	BN_lshift(c, a, nbits);
 }
 
-RZ_API void rz_big_rshift(RNumBig *c, RNumBig *a, size_t nbits) {
+RZ_API void rz_big_rshift(RzNumBig *c, RzNumBig *a, size_t nbits) {
 	BN_rshift(c, a, nbits);
 }
 
-RZ_API int rz_big_cmp(RNumBig *a, RNumBig *b) {
+RZ_API int rz_big_cmp(RzNumBig *a, RzNumBig *b) {
 	return BN_cmp(a, b);
 }
 
-RZ_API int rz_big_is_zero(RNumBig *a) {
+RZ_API int rz_big_is_zero(RzNumBig *a) {
 	return BN_is_zero(a);
 }
 
-RZ_API void rz_big_inc(RNumBig *a) {
+RZ_API void rz_big_inc(RzNumBig *a) {
 	BN_add_word(a, 1);
 }
 
-RZ_API void rz_big_dec(RNumBig *a) {
+RZ_API void rz_big_dec(RzNumBig *a) {
 	BN_sub_word(a, 1);
 }
 
-RZ_API void rz_big_powm(RNumBig *c, RNumBig *a, RNumBig *b, RNumBig *m) {
+RZ_API void rz_big_powm(RzNumBig *c, RzNumBig *a, RzNumBig *b, RzNumBig *m) {
 	BN_CTX *bn_ctx = BN_CTX_new();
 	BN_mod_exp(c, a, b, m, bn_ctx);
 	BN_CTX_free(bn_ctx);
 }
 
-RZ_API void rz_big_isqrt(RNumBig *b, RNumBig *a) {
-	RNumBig *tmp = rz_big_new();
-	RNumBig *low = rz_big_new();
-	RNumBig *high = rz_big_new();
-	RNumBig *mid = rz_big_new();
+RZ_API void rz_big_isqrt(RzNumBig *b, RzNumBig *a) {
+	RzNumBig *tmp = rz_big_new();
+	RzNumBig *low = rz_big_new();
+	RzNumBig *high = rz_big_new();
+	RzNumBig *mid = rz_big_new();
 
 	rz_big_assign(high, a);
 	rz_big_rshift(mid, high, 1);

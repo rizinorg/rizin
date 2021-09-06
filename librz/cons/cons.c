@@ -528,6 +528,30 @@ RZ_API bool rz_cons_enable_mouse(const bool enable) {
 #endif
 }
 
+#if __WINDOWS__
+static void set_console_codepage_to_utf8(void) {
+	if (IsValidCodePage(CP_UTF8)) {
+		if (!SetConsoleOutputCP(CP_UTF8)) {
+			rz_sys_perror("SetConsoleCP");
+		}
+		if (!SetConsoleCP(CP_UTF8)) {
+			rz_sys_perror("SetConsoleCP");
+		}
+	} else {
+		RZ_LOG_INFO("UTF-8 Codepage not installed.\n");
+	}
+}
+
+static void restore_console_codepage(void) {
+	if (!SetConsoleCP(I.old_cp)) {
+		rz_sys_perror("SetConsoleCP");
+	}
+	if (!SetConsoleOutputCP(I.old_ocp)) {
+		rz_sys_perror("SetConsoleOutputCP");
+	}
+}
+#endif
+
 // Stub function that cb_main_output gets pointed to in util/log.c by rz_cons_new
 // This allows Cutter to set per-task logging redirection
 RZ_API RzCons *rz_cons_new(void) {
@@ -563,8 +587,10 @@ RZ_API RzCons *rz_cons_new(void) {
 	I.num = NULL;
 	I.null = 0;
 #if __WINDOWS__
-	I.old_cp = GetConsoleOutputCP();
+	I.old_cp = GetConsoleCP();
+	I.old_ocp = GetConsoleOutputCP();
 	I.vtmode = rz_cons_is_vtcompat();
+	set_console_codepage_to_utf8();
 #else
 	I.vtmode = 2;
 #endif
@@ -601,11 +627,7 @@ RZ_API RzCons *rz_cons_new(void) {
 RZ_API RzCons *rz_cons_free(void) {
 #if __WINDOWS__
 	rz_cons_enable_mouse(false);
-	if (I.old_cp) {
-		(void)SetConsoleOutputCP(I.old_cp);
-		// chcp doesn't pick up the code page switch for some reason
-		(void)rz_sys_cmdf("chcp %u > NUL", I.old_cp);
-	}
+	restore_console_codepage();
 #endif
 	I.refcnt--;
 	if (I.refcnt != 0) {
@@ -755,9 +777,20 @@ RZ_API void rz_cons_reset(void) {
 	CTX(pageable) = true;
 }
 
+/**
+ * \brief Return the current RzCons buffer
+ */
 RZ_API const char *rz_cons_get_buffer(void) {
 	//check len otherwise it will return trash
 	return I.context->buffer_len ? I.context->buffer : NULL;
+}
+
+/**
+ * \brief Return a newly allocated buffer containing what's currently in RzCons buffer
+ */
+RZ_API char *rz_cons_get_buffer_dup(void) {
+	const char *s = rz_cons_get_buffer();
+	return s ? strdup(s) : NULL;
 }
 
 RZ_API int rz_cons_get_buffer_len(void) {
@@ -1145,17 +1178,16 @@ RZ_API void rz_cons_printf_list(const char *format, va_list ap) {
 	if (strchr(format, '%')) {
 		if (palloc(MOAR + strlen(format) * 20)) {
 		club:
-			size = I.context->buffer_sz - I.context->buffer_len - 1; /* remaining space in I.context->buffer */
+			size = I.context->buffer_sz - I.context->buffer_len; /* remaining space in I.context->buffer */
 			written = vsnprintf(I.context->buffer + I.context->buffer_len, size, format, ap3);
 			if (written >= size) { /* not all bytes were written */
-				if (palloc(written)) {
+				if (palloc(written + 1)) { /* + 1 byte for \0 termination */
 					va_end(ap3);
 					va_copy(ap3, ap2);
 					goto club;
 				}
 			}
 			I.context->buffer_len += written;
-			I.context->buffer[I.context->buffer_len] = 0;
 		}
 	} else {
 		rz_cons_strcat(format);
@@ -1601,30 +1633,6 @@ RZ_API void rz_cons_set_raw(bool is_raw) {
 
 RZ_API void rz_cons_set_utf8(bool b) {
 	I.use_utf8 = b;
-#if __WINDOWS__
-	if (b) {
-		if (IsValidCodePage(CP_UTF8)) {
-			if (!SetConsoleOutputCP(CP_UTF8)) {
-				rz_sys_perror("rz_cons_set_utf8");
-			}
-#if UNICODE
-			UINT inCP = CP_UTF8;
-#else
-			UINT inCP = GetACP();
-#endif
-			if (!SetConsoleCP(inCP)) {
-				rz_sys_perror("rz_cons_set_utf8");
-			}
-		} else {
-			RZ_LOG_WARN("UTF-8 Codepage not installed.\n");
-		}
-	} else {
-		UINT acp = GetACP();
-		if (!SetConsoleCP(acp) || !SetConsoleOutputCP(acp)) {
-			rz_sys_perror("rz_cons_set_utf8");
-		}
-	}
-#endif
 }
 
 RZ_API void rz_cons_invert(int set, int color) {

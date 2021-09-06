@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2020 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #if 0
 
 https://www.kernel.org/doc/Documentation/s390/Debugging390.txt

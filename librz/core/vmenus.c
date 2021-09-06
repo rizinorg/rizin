@@ -1749,10 +1749,8 @@ RZ_API int rz_core_visual_trackflags(RzCore *core) {
 				if (rz_cons_fgets(line, sizeof(line), 0, NULL) < 0) {
 					cmd[0] = '\0';
 				}
-				int res = snprintf(cmd, sizeof(cmd), "afr %s %s", line, fs2);
-				if (res < sizeof(cmd)) {
-					rz_core_cmd(core, cmd, 0);
-				}
+				ut64 addr = rz_num_math(core->num, line);
+				rz_core_analysis_function_add(core, fs2, addr, true);
 				rz_cons_set_raw(1);
 				rz_cons_show_cursor(false);
 			}
@@ -1769,8 +1767,8 @@ RZ_API int rz_core_visual_trackflags(RzCore *core) {
 		case '\r':
 		case '\n':
 			if (menu == 1) {
-				sprintf(cmd, "s %s", fs2);
-				rz_core_cmd(core, cmd, 0);
+				ut64 addr = rz_num_math(core->num, fs2);
+				rz_core_seek_and_save(core, addr, true);
 				return true;
 			}
 			rz_flag_space_set(core->flags, fs);
@@ -2226,9 +2224,10 @@ static void variable_set_type(RzCore *core, ut64 addr, int vindex, const char *t
 	RzListIter *iter;
 	RzAnalysisVar *var;
 
+	RzType *ttype = rz_type_parse_string_single(core->analysis->typedb->parser, type, NULL);
 	rz_list_foreach (list, iter, var) {
 		if (vindex == 0) {
-			rz_analysis_var_set_type(var, type);
+			rz_analysis_var_set_type(var, ttype);
 			break;
 		}
 		vindex--;
@@ -2329,6 +2328,7 @@ static ut64 var_variables_show(RzCore *core, int idx, int *vindex, int show, int
 				break;
 			}
 			if (show) {
+				char *vartype = rz_type_as_string(core->analysis->typedb, var->type);
 				switch (var->kind & 0xff) {
 				case 'r': {
 					RzRegItem *r = rz_reg_index_get(core->analysis->reg, var->delta);
@@ -2338,14 +2338,14 @@ static ut64 var_variables_show(RzCore *core, int idx, int *vindex, int show, int
 					}
 					rz_cons_printf("%sarg %s %s @ %s\n",
 						i == *vindex ? "* " : "  ",
-						var->type, var->name,
+						vartype, var->name,
 						r->name);
 				} break;
 				case 'b':
 					rz_cons_printf("%s%s %s %s @ %s%s0x%x\n",
 						i == *vindex ? "* " : "  ",
 						var->delta < 0 ? "var" : "arg",
-						var->type, var->name,
+						vartype, var->name,
 						core->analysis->reg->name[RZ_REG_NAME_BP],
 						(var->kind == 'v') ? "-" : "+",
 						var->delta);
@@ -2354,12 +2354,13 @@ static ut64 var_variables_show(RzCore *core, int idx, int *vindex, int show, int
 					rz_cons_printf("%s%s %s %s @ %s%s0x%x\n",
 						i == *vindex ? "* " : "  ",
 						var->delta < 0 ? "var" : "arg",
-						var->type, var->name,
+						vartype, var->name,
 						core->analysis->reg->name[RZ_REG_NAME_BP],
 						(var->kind == 'v') ? "-" : "+",
 						var->delta);
 					break;
 				}
+				free(vartype);
 			}
 		}
 		++i;
@@ -2409,10 +2410,10 @@ static void rz_core_visual_analysis_refresh_column(RzCore *core, int colpos) {
 }
 
 static const char *help_fun_visual[] = {
-	"(a)", "analyze ", "(-)", "delete ", "(x)", "xrefs to", "(X)", "xrefs from  j/k next/prev\n",
-	"(r)", "rename ", "(c)", "calls ", "(d)", "definetab column (_) hud\n",
-	"(d)", "define ", "(v)", "vars ", "(?)", " help ", "(:)", "shell ", "(q)", "quit\n",
-	"(s)", "edit function signature.  \n\n",
+	"(a)", "analyze ", "(-)", "delete ", "(x)", "xrefs to ", "(X)", "xrefs from\n",
+	"(r)", "rename ", "(c)", "calls ", "(d)", "define ", "(v)", "vars\n",
+	"(j/k)", "next/prev ", "(tab)", "column ", "(_)", "hud ", "(?)", " help\n",
+	"(s)", "function signature ", "(:)", "shell ", "(q)", "quit\n\n",
 	NULL
 };
 
@@ -3113,7 +3114,8 @@ onemoretime:
 		rz_cons_show_cursor(true);
 		rz_line_set_prompt("immbase: ");
 		if (rz_cons_fgets(str, sizeof(str), 0, NULL) > 0) {
-			rz_core_cmdf(core, "ahi %s @ 0x%" PFMT64x, str, off);
+			int base = rz_num_base_of_string(core->num, str);
+			rz_analysis_hint_set_immbase(core->analysis, off, base);
 		}
 	} break;
 	case 'I': {

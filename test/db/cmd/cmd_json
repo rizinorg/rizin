@@ -48,6 +48,6 @@ NAME=empty irj should print empty array
 FILE==
 CMDS=irj
 EXPECT=<<EOF
-[]
+
 EOF
 RUN

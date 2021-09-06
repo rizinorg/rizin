@@ -29,10 +29,11 @@ NAME=laddr 0
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=!rz-bin -G 0 -e ${RZ_FILE}
 EXPECT=<<EOF
-[Entrypoints]
-vaddr=0x00400410 paddr=0x00000410 haddr=0x00000018 hvaddr=0x00400018 type=program
+[Entries]
+vaddr      paddr      hvaddr     haddr      type    
+----------------------------------------------------
+0x00400410 0x00000410 0x00400018 0x00000018 program
 
-1 entrypoints
 EOF
 RUN
 
@@ -40,19 +41,24 @@ NAME=laddr 0 && baddr 0
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=!rz-bin -G 0 -B 0 -e ${RZ_FILE}
 EXPECT=<<EOF
-[Entrypoints]
-vaddr=0x00000410 paddr=0x00000410 haddr=0x00000018 hvaddr=0x00000018 type=program
+[Entries]
+vaddr      paddr      hvaddr     haddr      type    
+----------------------------------------------------
+0x00000410 0x00000410 0x00000018 0x00000018 program
 
-1 entrypoints
 EOF
 RUN
 
 NAME=rz-bin -k file
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=!rz-bin -k ${RZ_FILE}
+ARGS=-e log.level=4
 EXPECT=<<EOF
 EOF
 EXPECT_ERR=<<EOF
+WARNING: Neither hash nor gnu_hash exist. Falling back to heuristics for deducing the number of dynamic symbols...
+WARNING: Neither hash nor gnu_hash exist. Falling back to heuristics for deducing the number of dynamic symbols...
+WARNING: Neither hash nor gnu_hash exist. Falling back to heuristics for deducing the number of dynamic symbols...
 Missing file.
 EOF
 RUN
@@ -62,14 +68,13 @@ FILE=bins/pe/a.exe
 CMDS=!rz-bin -K md5 -S ${RZ_FILE}
 EXPECT=<<EOF
 [Sections]
-
-nth paddr        size vaddr        vsize perm md5                              name   flags                                       
-----------------------------------------------------------------------------------------------------------------------------------
-0   0x00000400  0xa00 0x00401000  0x1000 -r-x 3d6a5b8dc5e41b09659638ad5735e5b5 .text  CNT_CODE,CNT_INITIALIZED_DATA,ALIGN_16BYTES
-1   0x00000e00  0x200 0x00402000  0x1000 -rw- b3c542ba67f2d1a949fa1a25ce22f7e3 .data  CNT_INITIALIZED_DATA,ALIGN_4BYTES
-2   0x00001000  0x200 0x00403000  0x1000 -r-- c9a877a4e945b087b8323830442c88d6 .rdata CNT_INITIALIZED_DATA,ALIGN_4BYTES
-3   0x00000000    0x0 0x00404000  0x1000 -rw- d41d8cd98f00b204e9800998ecf8427e .bss   CNT_UNINITIALIZED,ALIGN_8BYTES
-4   0x00001200  0x400 0x00405000  0x1000 -rw- 963212dc58a74f32e0f6ffce84dcf7ea .idata CNT_INITIALIZED_DATA,ALIGN_4BYTES
+paddr      size  vaddr      vsize  align perm name   type flags                                       md5                              
+---------------------------------------------------------------------------------------------------------------------------------------
+0x00000400 0xa00 0x00401000 0x1000 0x0   -r-x .text       CNT_CODE,CNT_INITIALIZED_DATA,ALIGN_16BYTES 3d6a5b8dc5e41b09659638ad5735e5b5
+0x00000e00 0x200 0x00402000 0x1000 0x0   -rw- .data       CNT_INITIALIZED_DATA,ALIGN_4BYTES           b3c542ba67f2d1a949fa1a25ce22f7e3
+0x00001000 0x200 0x00403000 0x1000 0x0   -r-- .rdata      CNT_INITIALIZED_DATA,ALIGN_4BYTES           c9a877a4e945b087b8323830442c88d6
+0x00000000 0x0   0x00404000 0x1000 0x0   -rw- .bss        CNT_UNINITIALIZED,ALIGN_8BYTES
+0x00001200 0x400 0x00405000 0x1000 0x0   -rw- .idata      CNT_INITIALIZED_DATA,ALIGN_4BYTES           963212dc58a74f32e0f6ffce84dcf7ea
 
 EOF
 RUN
@@ -86,7 +91,7 @@ NAME=rz-bin -s file elf
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=!rz-bin -s ${RZ_FILE}|wc -l|awk "{print \$1}"
 EXPECT=<<EOF
-69
+70
 EOF
 RUN
 
@@ -99,56 +104,54 @@ CMDS=<<EOF
 !env RZ_BIN_PREFIX=prixfixe rz-bin -SS ${RZ_FILE}
 EOF
 EXPECT=<<EOF
-35
-14
+34
+13
 [Sections]
-
-nth paddr        size vaddr       vsize perm name                        type       flags         
+paddr      size  vaddr      vsize align perm name                        type       flags         
 --------------------------------------------------------------------------------------------------
-0   0x00000000    0x0 0x00000000    0x0 ---- prixfixe.                   NULL       
-1   0x00000134   0x13 0x08048134   0x13 -r-- prixfixe..interp            PROGBITS   alloc
-2   0x00000148   0x20 0x08048148   0x20 -r-- prixfixe..note.ABI-tag      NOTE       alloc
-3   0x00000168   0x24 0x08048168   0x24 -r-- prixfixe..note.gnu.build-id NOTE       alloc
-4   0x0000018c   0x20 0x0804818c   0x20 -r-- prixfixe..gnu.hash          GNU_HASH   alloc
-5   0x000001ac   0x50 0x080481ac   0x50 -r-- prixfixe..dynsym            DYNSYM     alloc
-6   0x000001fc   0x4a 0x080481fc   0x4a -r-- prixfixe..dynstr            STRTAB     alloc
-7   0x00000246    0xa 0x08048246    0xa -r-- prixfixe..gnu.version       VERSYM     alloc
-8   0x00000250   0x20 0x08048250   0x20 -r-- prixfixe..gnu.version_r     VERNEED    alloc
-9   0x00000270    0x8 0x08048270    0x8 -r-- prixfixe..rel.dyn           REL        alloc
-10  0x00000278   0x18 0x08048278   0x18 -r-- prixfixe..rel.plt           REL        alloc
-11  0x00000290   0x23 0x08048290   0x23 -r-x prixfixe..init              PROGBITS   alloc,execute
-12  0x000002c0   0x40 0x080482c0   0x40 -r-x prixfixe..plt               PROGBITS   alloc,execute
-13  0x00000300  0x194 0x08048300  0x194 -r-x prixfixe..text              PROGBITS   alloc,execute
-14  0x00000494   0x14 0x08048494   0x14 -r-x prixfixe..fini              PROGBITS   alloc,execute
-15  0x000004a8   0x15 0x080484a8   0x15 -r-- prixfixe..rodata            PROGBITS   alloc
-16  0x000004c0   0x2c 0x080484c0   0x2c -r-- prixfixe..eh_frame_hdr      PROGBITS   alloc
-17  0x000004ec   0xb0 0x080484ec   0xb0 -r-- prixfixe..eh_frame          PROGBITS   alloc
-18  0x0000059c    0x4 0x0804959c    0x4 -rw- prixfixe..init_array        INIT_ARRAY write,alloc
-19  0x000005a0    0x4 0x080495a0    0x4 -rw- prixfixe..fini_array        FINI_ARRAY write,alloc
-20  0x000005a4    0x4 0x080495a4    0x4 -rw- prixfixe..jcr               PROGBITS   write,alloc
-21  0x000005a8   0xe8 0x080495a8   0xe8 -rw- prixfixe..dynamic           DYNAMIC    write,alloc
-22  0x00000690    0x4 0x08049690    0x4 -rw- prixfixe..got               PROGBITS   write,alloc
-23  0x00000694   0x18 0x08049694   0x18 -rw- prixfixe..got.plt           PROGBITS   write,alloc
-24  0x000006ac    0x8 0x080496ac    0x8 -rw- prixfixe..data              PROGBITS   write,alloc
-25  0x000006b4    0x0 0x080496b4    0x4 -rw- prixfixe..bss               NOBITS     write,alloc
-26  0x000006b4   0x11 0x00000000   0x11 ---- prixfixe..comment           PROGBITS   merge,strings
-27  0x000006c5  0x106 0x00000000  0x106 ---- prixfixe..shstrtab          STRTAB     
-28  0x00000c7c  0x450 0x00000000  0x450 ---- prixfixe..symtab            SYMTAB     
-29  0x000010cc  0x257 0x00000000  0x257 ---- prixfixe..strtab            STRTAB     
+0x00000000 0x0   0x00000000 0x0   0x0   ---- prixfixe.                   NULL       
+0x00000134 0x13  0x08048134 0x13  0x0   -r-- prixfixe..interp            PROGBITS   alloc
+0x00000148 0x20  0x08048148 0x20  0x0   -r-- prixfixe..note.ABI-tag      NOTE       alloc
+0x00000168 0x24  0x08048168 0x24  0x0   -r-- prixfixe..note.gnu.build-id NOTE       alloc
+0x0000018c 0x20  0x0804818c 0x20  0x0   -r-- prixfixe..gnu.hash          GNU_HASH   alloc
+0x000001ac 0x50  0x080481ac 0x50  0x0   -r-- prixfixe..dynsym            DYNSYM     alloc
+0x000001fc 0x4a  0x080481fc 0x4a  0x0   -r-- prixfixe..dynstr            STRTAB     alloc
+0x00000246 0xa   0x08048246 0xa   0x0   -r-- prixfixe..gnu.version       VERSYM     alloc
+0x00000250 0x20  0x08048250 0x20  0x0   -r-- prixfixe..gnu.version_r     VERNEED    alloc
+0x00000270 0x8   0x08048270 0x8   0x0   -r-- prixfixe..rel.dyn           REL        alloc
+0x00000278 0x18  0x08048278 0x18  0x0   -r-- prixfixe..rel.plt           REL        alloc
+0x00000290 0x23  0x08048290 0x23  0x0   -r-x prixfixe..init              PROGBITS   alloc,execute
+0x000002c0 0x40  0x080482c0 0x40  0x0   -r-x prixfixe..plt               PROGBITS   alloc,execute
+0x00000300 0x194 0x08048300 0x194 0x0   -r-x prixfixe..text              PROGBITS   alloc,execute
+0x00000494 0x14  0x08048494 0x14  0x0   -r-x prixfixe..fini              PROGBITS   alloc,execute
+0x000004a8 0x15  0x080484a8 0x15  0x0   -r-- prixfixe..rodata            PROGBITS   alloc
+0x000004c0 0x2c  0x080484c0 0x2c  0x0   -r-- prixfixe..eh_frame_hdr      PROGBITS   alloc
+0x000004ec 0xb0  0x080484ec 0xb0  0x0   -r-- prixfixe..eh_frame          PROGBITS   alloc
+0x0000059c 0x4   0x0804959c 0x4   0x0   -rw- prixfixe..init_array        INIT_ARRAY write,alloc
+0x000005a0 0x4   0x080495a0 0x4   0x0   -rw- prixfixe..fini_array        FINI_ARRAY write,alloc
+0x000005a4 0x4   0x080495a4 0x4   0x0   -rw- prixfixe..jcr               PROGBITS   write,alloc
+0x000005a8 0xe8  0x080495a8 0xe8  0x0   -rw- prixfixe..dynamic           DYNAMIC    write,alloc
+0x00000690 0x4   0x08049690 0x4   0x0   -rw- prixfixe..got               PROGBITS   write,alloc
+0x00000694 0x18  0x08049694 0x18  0x0   -rw- prixfixe..got.plt           PROGBITS   write,alloc
+0x000006ac 0x8   0x080496ac 0x8   0x0   -rw- prixfixe..data              PROGBITS   write,alloc
+0x000006b4 0x0   0x080496b4 0x4   0x0   -rw- prixfixe..bss               NOBITS     write,alloc
+0x000006b4 0x11  0x00000000 0x11  0x0   ---- prixfixe..comment           PROGBITS   merge,strings
+0x000006c5 0x106 0x00000000 0x106 0x0   ---- prixfixe..shstrtab          STRTAB     
+0x00000c7c 0x450 0x00000000 0x450 0x0   ---- prixfixe..symtab            SYMTAB     
+0x000010cc 0x257 0x00000000 0x257 0x0   ---- prixfixe..strtab            STRTAB     
 
 [Segments]
-
-nth paddr        size vaddr       vsize perm name                  align  
---------------------------------------------------------------------------
-0   0x00000034  0x100 0x08048034  0x100 -r-x prixfixe.PHDR         0x4
-1   0x00000134   0x13 0x08048134   0x13 -r-- prixfixe.INTERP       0x1
-2   0x00000000  0x59c 0x08048000  0x59c -r-x prixfixe.LOAD0        0x1000
-3   0x0000059c  0x118 0x0804959c  0x11c -rw- prixfixe.LOAD1        0x1000
-4   0x000005a8   0xe8 0x080495a8   0xe8 -rw- prixfixe.DYNAMIC      0x4
-5   0x00000148   0x44 0x08048148   0x44 -r-- prixfixe.NOTE         0x4
-6   0x000004c0   0x2c 0x080484c0   0x2c -r-- prixfixe.GNU_EH_FRAME 0x4
-7   0x00000000    0x0 0x00000000    0x0 -rw- prixfixe.GNU_STACK    0x4
-8   0x00000000   0x34 0x08048000   0x34 -rw- prixfixe.ehdr
+paddr      size  vaddr      vsize align  perm name                  
+--------------------------------------------------------------------
+0x00000034 0x100 0x08048034 0x100 0x4    -r-x prixfixe.PHDR
+0x00000134 0x13  0x08048134 0x13  0x1    -r-- prixfixe.INTERP
+0x00000000 0x59c 0x08048000 0x59c 0x1000 -r-x prixfixe.LOAD0
+0x0000059c 0x118 0x0804959c 0x11c 0x1000 -rw- prixfixe.LOAD1
+0x000005a8 0xe8  0x080495a8 0xe8  0x4    -rw- prixfixe.DYNAMIC
+0x00000148 0x44  0x08048148 0x44  0x4    -r-- prixfixe.NOTE
+0x000004c0 0x2c  0x080484c0 0x2c  0x4    -r-- prixfixe.GNU_EH_FRAME
+0x00000000 0x0   0x00000000 0x0   0x4    -rw- prixfixe.GNU_STACK
+0x00000000 0x34  0x08048000 0x34  0x0    -rw- prixfixe.ehdr
 
 EOF
 RUN
@@ -165,7 +168,7 @@ NAME=rz-bin -z pe
 FILE=bins/pe/a.exe
 CMDS=!rz-bin -z ${RZ_FILE}|wc -l|awk "{print \$1}"
 EXPECT=<<EOF
-7
+8
 EOF
 RUN
 
@@ -221,23 +224,7 @@ NAME=rz-bin -z elf
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=!rz-bin -z ${RZ_FILE}|wc -l|awk "{print \$1}"
 EXPECT=<<EOF
-4
-EOF
-RUN
-
-NAME=rz-bin -G 0x1000 -rs fatmach0
-FILE=bins/mach0/fatmach0-3true
-CMDS=!rz-bin -G 0x1000 -rs ${RZ_FILE}|grep "f " | wc -l|awk "{print \$1}"
-EXPECT=<<EOF
-3
-EOF
-RUN
-
-NAME=rz-bin -G 0x1300 -rs fatmach0
-FILE=bins/mach0/fatmach0-3true
-CMDS=!rz-bin -G 0x1300 -rs ${RZ_FILE}|wc -l|awk "{print \$1}"
-EXPECT=<<EOF
-1
+5
 EOF
 RUN
 
@@ -245,10 +232,11 @@ NAME=rz-bin -G 0x1000 -e fatmach0
 FILE=bins/mach0/fatmach0-3true
 CMDS=!rz-bin -G 0x1000 -e ${RZ_FILE}
 EXPECT=<<EOF
-[Entrypoints]
-vaddr=0x100000ef8 paddr=0x00001ef8 haddr=0x00000570 type=program
+[Entries]
+vaddr       paddr      hvaddr     haddr      type    
+-----------------------------------------------------
+0x100000ef8 0x00001ef8 ---------- 0x00000570 program
 
-1 entrypoints
 EOF
 RUN
 
@@ -268,10 +256,11 @@ NAME=rz-bin -G 0x5000 -e fatmach0
 FILE=bins/mach0/fatmach0-3true
 CMDS=!rz-bin -G 0x5000 -e ${RZ_FILE}
 EXPECT=<<EOF
-[Entrypoints]
-vaddr=0x00001f44 paddr=0x00005f44 haddr=0x00000420 type=program
+[Entries]
+vaddr      paddr      hvaddr     haddr      type    
+----------------------------------------------------
+0x00001f44 0x00005f44 ---------- 0x00000420 program
 
-1 entrypoints
 EOF
 RUN
 
@@ -291,10 +280,11 @@ NAME=rz-bin -B 0x2000000 -G 0x1000 -e fatmach0
 FILE=bins/mach0/fatmach0-3true
 CMDS=!rz-bin -B 0x2000000 -G 0x1000 -e ${RZ_FILE}
 EXPECT=<<EOF
-[Entrypoints]
-vaddr=0x02000ef8 paddr=0x00001ef8 haddr=0x00000570 type=program
+[Entries]
+vaddr      paddr      hvaddr     haddr      type    
+----------------------------------------------------
+0x02000ef8 0x00001ef8 ---------- 0x00000570 program
 
-1 entrypoints
 EOF
 RUN
 
@@ -311,10 +301,11 @@ NAME=rz-bin -B 0x2000000 -e arm64
 FILE=bins/mach0/hello-ios-arm64
 CMDS=!rz-bin -B 0x2000000 -e ${RZ_FILE}
 EXPECT=<<EOF
-[Entrypoints]
-vaddr=0x02007f34 paddr=0x00007f34 haddr=0x00000468 type=program
+[Entries]
+vaddr      paddr      hvaddr     haddr      type    
+----------------------------------------------------
+0x02007f34 0x00007f34 ---------- 0x00000468 program
 
-1 entrypoints
 EOF
 RUN
 
@@ -355,8 +346,8 @@ RUN
 NAME=rz-bin -qqzz
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=<<EOF
-!!rz-bin -qqzz ${RZ_FILE}~do_global_dtors_aux_fini_array_entry
-!!rz-bin -qqzz ${RZ_FILE}~?
+!rz-bin -qqzz ${RZ_FILE}~do_global_dtors_aux_fini_array_entry
+!rz-bin -qqzz ${RZ_FILE}~?
 EOF
 EXPECT=<<EOF
 __do_global_dtors_aux_fini_array_entry
@@ -367,8 +358,8 @@ RUN
 NAME=rz-bin -qqzzz
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=<<EOF
-!!rz-bin -qqzzz ${RZ_FILE}~do_global_dtors_aux_fini_array_entry
-!!rz-bin -qqzzz ${RZ_FILE}~?
+!rz-bin -qqzzz ${RZ_FILE}~do_global_dtors_aux_fini_array_entry
+!rz-bin -qqzzz ${RZ_FILE}~?
 EOF
 EXPECT=<<EOF
 __do_global_dtors_aux_fini_array_entry
@@ -388,7 +379,9 @@ RUN
 
 NAME=rz-bin -ee -j
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=!!rz-bin -ee -j ${RZ_FILE}~{}
+CMDS=<<EOF
+!rz-bin -ee -j ${RZ_FILE}~{}
+EOF
 EXPECT=<<EOF
 {
   "initfini": [
@@ -398,7 +391,7 @@ EXPECT=<<EOF
       "baddr": 134512640,
       "laddr": 0,
       "hvaddr": 134518172,
-      "hpaddr": 1436,
+      "haddr": 1436,
       "type": "init"
     },
     {
@@ -407,7 +400,7 @@ EXPECT=<<EOF
       "baddr": 134512640,
       "laddr": 0,
       "hvaddr": 134518176,
-      "hpaddr": 1440,
+      "haddr": 1440,
       "type": "fini"
     }
   ]
@@ -419,11 +412,12 @@ NAME=-ee baddr 0
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=!rz-bin -ee -B 0 ${RZ_FILE}
 EXPECT=<<EOF
-[Constructors]
-vaddr=0x000003d0 paddr=0x000003d0 hvaddr=0x0000159c hpaddr=0x0000059c type=init
-vaddr=0x000003b0 paddr=0x000003b0 hvaddr=0x000015a0 hpaddr=0x000005a0 type=fini
+[Initfini]
+vaddr      paddr      hvaddr     haddr      type 
+-------------------------------------------------
+0x000003d0 0x000003d0 0x0000159c 0x0000059c init
+0x000003b0 0x000003b0 0x000015a0 0x000005a0 fini
 
-2 entrypoints
 EOF
 RUN
 
@@ -431,66 +425,44 @@ NAME=rz-bin -g
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=!rz-bin -g ${RZ_FILE}
 EXPECT=<<EOF
-[Sections]
+[Info]
+arch     x86
+cpu      N/A
+baddr    0x08048000
+binsz    0x00001323
+bintype  elf
+bits     32
+class    ELF32
+compiler GCC: (GNU) 4.8.2
+dbg_file N/A
+endian   LE
+hdr.csum N/A
+guid     N/A
+intrp    /lib/ld-linux.so.2
+laddr    0x00000000
+lang     c
+machine  Intel 80386
+maxopsz  16
+minopsz  1
+os       linux
+cc       N/A
+pcalign  0
+relro    no
+rpath    NONE
+subsys   linux
+stripped false
+crypto   false
+havecode true
+va       true
+sanitiz  false
+static   false
+linenum  true
+lsyms    true
+canary   false
+PIE      false
+RELROCS  true
+NX       true
 
-nth paddr        size vaddr       vsize perm name               type       flags         
------------------------------------------------------------------------------------------
-0   0x00000000    0x0 0x00000000    0x0 ----                    NULL       
-1   0x00000134   0x13 0x08048134   0x13 -r-- .interp            PROGBITS   alloc
-2   0x00000148   0x20 0x08048148   0x20 -r-- .note.ABI-tag      NOTE       alloc
-3   0x00000168   0x24 0x08048168   0x24 -r-- .note.gnu.build-id NOTE       alloc
-4   0x0000018c   0x20 0x0804818c   0x20 -r-- .gnu.hash          GNU_HASH   alloc
-5   0x000001ac   0x50 0x080481ac   0x50 -r-- .dynsym            DYNSYM     alloc
-6   0x000001fc   0x4a 0x080481fc   0x4a -r-- .dynstr            STRTAB     alloc
-7   0x00000246    0xa 0x08048246    0xa -r-- .gnu.version       VERSYM     alloc
-8   0x00000250   0x20 0x08048250   0x20 -r-- .gnu.version_r     VERNEED    alloc
-9   0x00000270    0x8 0x08048270    0x8 -r-- .rel.dyn           REL        alloc
-10  0x00000278   0x18 0x08048278   0x18 -r-- .rel.plt           REL        alloc
-11  0x00000290   0x23 0x08048290   0x23 -r-x .init              PROGBITS   alloc,execute
-12  0x000002c0   0x40 0x080482c0   0x40 -r-x .plt               PROGBITS   alloc,execute
-13  0x00000300  0x194 0x08048300  0x194 -r-x .text              PROGBITS   alloc,execute
-14  0x00000494   0x14 0x08048494   0x14 -r-x .fini              PROGBITS   alloc,execute
-15  0x000004a8   0x15 0x080484a8   0x15 -r-- .rodata            PROGBITS   alloc
-16  0x000004c0   0x2c 0x080484c0   0x2c -r-- .eh_frame_hdr      PROGBITS   alloc
-17  0x000004ec   0xb0 0x080484ec   0xb0 -r-- .eh_frame          PROGBITS   alloc
-18  0x0000059c    0x4 0x0804959c    0x4 -rw- .init_array        INIT_ARRAY write,alloc
-19  0x000005a0    0x4 0x080495a0    0x4 -rw- .fini_array        FINI_ARRAY write,alloc
-20  0x000005a4    0x4 0x080495a4    0x4 -rw- .jcr               PROGBITS   write,alloc
-21  0x000005a8   0xe8 0x080495a8   0xe8 -rw- .dynamic           DYNAMIC    write,alloc
-22  0x00000690    0x4 0x08049690    0x4 -rw- .got               PROGBITS   write,alloc
-23  0x00000694   0x18 0x08049694   0x18 -rw- .got.plt           PROGBITS   write,alloc
-24  0x000006ac    0x8 0x080496ac    0x8 -rw- .data              PROGBITS   write,alloc
-25  0x000006b4    0x0 0x080496b4    0x4 -rw- .bss               NOBITS     write,alloc
-26  0x000006b4   0x11 0x00000000   0x11 ---- .comment           PROGBITS   merge,strings
-27  0x000006c5  0x106 0x00000000  0x106 ---- .shstrtab          STRTAB     
-28  0x00000c7c  0x450 0x00000000  0x450 ---- .symtab            SYMTAB     
-29  0x000010cc  0x257 0x00000000  0x257 ---- .strtab            STRTAB     
-
-[Segments]
-
-nth paddr        size vaddr       vsize perm name         align  
------------------------------------------------------------------
-0   0x00000034  0x100 0x08048034  0x100 -r-x PHDR         0x4
-1   0x00000134   0x13 0x08048134   0x13 -r-- INTERP       0x1
-2   0x00000000  0x59c 0x08048000  0x59c -r-x LOAD0        0x1000
-3   0x0000059c  0x118 0x0804959c  0x11c -rw- LOAD1        0x1000
-4   0x000005a8   0xe8 0x080495a8   0xe8 -rw- DYNAMIC      0x4
-5   0x00000148   0x44 0x08048148   0x44 -r-- NOTE         0x4
-6   0x000004c0   0x2c 0x080484c0   0x2c -r-- GNU_EH_FRAME 0x4
-7   0x00000000    0x0 0x00000000    0x0 -rw- GNU_STACK    0x4
-8   0x00000000   0x34 0x08048000   0x34 -rw- ehdr
-
-[Entrypoints]
-vaddr=0x08048300 paddr=0x00000300 haddr=0x00000018 hvaddr=0x08048018 type=program
-
-1 entrypoints
-[Constructors]
-vaddr=0x080483d0 paddr=0x000003d0 hvaddr=0x0804959c hpaddr=0x0000059c type=init
-vaddr=0x080483b0 paddr=0x000003b0 hvaddr=0x080495a0 hpaddr=0x000005a0 type=fini
-
-2 entrypoints
-[Main]
-vaddr=0x08048400 paddr=0x00000400
 [Imports]
 nth vaddr      bind   type   lib name              
 ---------------------------------------------------
@@ -498,8 +470,16 @@ nth vaddr      bind   type   lib name
 2   0x080482e0 WEAK   NOTYPE     __gmon_start__
 3   0x080482f0 GLOBAL FUNC       __libc_start_main
 
-[Symbols]
+[Entries]
+vaddr      paddr      hvaddr     haddr      type    
+----------------------------------------------------
+0x08048300 0x00000300 0x08048018 0x00000018 program
 
+[Classes]
+address min max name super 
+---------------------------
+
+[Symbols]
 nth paddr      vaddr      bind   type   size lib name                                   
 ----------------------------------------------------------------------------------------
 4   0x000004ac 0x080484ac GLOBAL OBJ    4        _IO_stdin_used
@@ -556,6 +536,7 @@ nth paddr      vaddr      bind   type   size lib name
 52  0x00000494 0x08048494 GLOBAL FUNC   0        _fini
 53  0x000006ac 0x080496ac GLOBAL NOTYPE 0        __data_start
 56  0x000006b0 0x080496b0 GLOBAL OBJ    0        __dso_handle
+57  0x000004ac 0x080484ac GLOBAL OBJ    4        _IO_stdin_used
 59  0x00000420 0x08048420 GLOBAL FUNC   97       __libc_csu_init
 60  ---------- 0x080496b8 GLOBAL NOTYPE 0        _end
 61  0x00000300 0x08048300 GLOBAL FUNC   0        _start
@@ -567,63 +548,66 @@ nth paddr      vaddr      bind   type   size lib name
 1   0x000002d0 0x080482d0 GLOBAL FUNC   16       imp.puts
 2   0x000002e0 0x080482e0 WEAK   NOTYPE 16       imp.__gmon_start__
 3   0x000002f0 0x080482f0 GLOBAL FUNC   16       imp.__libc_start_main
+
+[Sections]
+paddr      size  vaddr      vsize align perm name               type       flags         
+-----------------------------------------------------------------------------------------
+0x00000000 0x0   0x00000000 0x0   0x0   ----                    NULL       
+0x00000134 0x13  0x08048134 0x13  0x0   -r-- .interp            PROGBITS   alloc
+0x00000148 0x20  0x08048148 0x20  0x0   -r-- .note.ABI-tag      NOTE       alloc
+0x00000168 0x24  0x08048168 0x24  0x0   -r-- .note.gnu.build-id NOTE       alloc
+0x0000018c 0x20  0x0804818c 0x20  0x0   -r-- .gnu.hash          GNU_HASH   alloc
+0x000001ac 0x50  0x080481ac 0x50  0x0   -r-- .dynsym            DYNSYM     alloc
+0x000001fc 0x4a  0x080481fc 0x4a  0x0   -r-- .dynstr            STRTAB     alloc
+0x00000246 0xa   0x08048246 0xa   0x0   -r-- .gnu.version       VERSYM     alloc
+0x00000250 0x20  0x08048250 0x20  0x0   -r-- .gnu.version_r     VERNEED    alloc
+0x00000270 0x8   0x08048270 0x8   0x0   -r-- .rel.dyn           REL        alloc
+0x00000278 0x18  0x08048278 0x18  0x0   -r-- .rel.plt           REL        alloc
+0x00000290 0x23  0x08048290 0x23  0x0   -r-x .init              PROGBITS   alloc,execute
+0x000002c0 0x40  0x080482c0 0x40  0x0   -r-x .plt               PROGBITS   alloc,execute
+0x00000300 0x194 0x08048300 0x194 0x0   -r-x .text              PROGBITS   alloc,execute
+0x00000494 0x14  0x08048494 0x14  0x0   -r-x .fini              PROGBITS   alloc,execute
+0x000004a8 0x15  0x080484a8 0x15  0x0   -r-- .rodata            PROGBITS   alloc
+0x000004c0 0x2c  0x080484c0 0x2c  0x0   -r-- .eh_frame_hdr      PROGBITS   alloc
+0x000004ec 0xb0  0x080484ec 0xb0  0x0   -r-- .eh_frame          PROGBITS   alloc
+0x0000059c 0x4   0x0804959c 0x4   0x0   -rw- .init_array        INIT_ARRAY write,alloc
+0x000005a0 0x4   0x080495a0 0x4   0x0   -rw- .fini_array        FINI_ARRAY write,alloc
+0x000005a4 0x4   0x080495a4 0x4   0x0   -rw- .jcr               PROGBITS   write,alloc
+0x000005a8 0xe8  0x080495a8 0xe8  0x0   -rw- .dynamic           DYNAMIC    write,alloc
+0x00000690 0x4   0x08049690 0x4   0x0   -rw- .got               PROGBITS   write,alloc
+0x00000694 0x18  0x08049694 0x18  0x0   -rw- .got.plt           PROGBITS   write,alloc
+0x000006ac 0x8   0x080496ac 0x8   0x0   -rw- .data              PROGBITS   write,alloc
+0x000006b4 0x0   0x080496b4 0x4   0x0   -rw- .bss               NOBITS     write,alloc
+0x000006b4 0x11  0x00000000 0x11  0x0   ---- .comment           PROGBITS   merge,strings
+0x000006c5 0x106 0x00000000 0x106 0x0   ---- .shstrtab          STRTAB     
+0x00000c7c 0x450 0x00000000 0x450 0x0   ---- .symtab            SYMTAB     
+0x000010cc 0x257 0x00000000 0x257 0x0   ---- .strtab            STRTAB     
+
+[Segments]
+paddr      size  vaddr      vsize align  perm name         
+-----------------------------------------------------------
+0x00000034 0x100 0x08048034 0x100 0x4    -r-x PHDR
+0x00000134 0x13  0x08048134 0x13  0x1    -r-- INTERP
+0x00000000 0x59c 0x08048000 0x59c 0x1000 -r-x LOAD0
+0x0000059c 0x118 0x0804959c 0x11c 0x1000 -rw- LOAD1
+0x000005a8 0xe8  0x080495a8 0xe8  0x4    -rw- DYNAMIC
+0x00000148 0x44  0x08048148 0x44  0x4    -r-- NOTE
+0x000004c0 0x2c  0x080484c0 0x2c  0x4    -r-- GNU_EH_FRAME
+0x00000000 0x0   0x00000000 0x0   0x4    -rw- GNU_STACK
+0x00000000 0x34  0x08048000 0x34  0x0    -rw- ehdr
+
 [Strings]
 nth paddr      vaddr      len size section type  string       
 --------------------------------------------------------------
 0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
-Name     Value              
-----------------------------
-arch     x86
-baddr    0x8048000
-binsz    4899
-bintype  elf
-bits     32
-class    ELF32
-compiler GCC: (GNU) 4.8.2
-endian   LE
-intrp    /lib/ld-linux.so.2
-laddr    0x0
-lang     c
-machine  Intel 80386
-maxopsz  16
-minopsz  1
-os       linux
-pcalign  0
-relro    no
-rpath    NONE
-subsys   linux
-stripped false
-crypto   false
-havecode true
-va       true
-sanitiz  false
-static   false
-linenum  true
-lsyms    true
-canary   false
-PIE      false
-RELROCS  true
-NX       true
-0x00000000  ELF MAGIC   0x464c457f
-0x00000010  Type        0x0002
-0x00000012  Machine     0x0003
-0x00000014  Version     0x00000001
-0x00000018  Entrypoint  0x08048300
-0x0000001c  PhOff       0x00000034
-0x00000020  ShOff       0x000007cc
-0x00000024  Flags       0x00000000
-0x00000028  EhSize      52
-0x0000002a  PhentSize   32
-0x0000002c  PhNum       8
-0x0000002e  ShentSize   40
-0x00000030  ShNum       30
-0x00000032  ShrStrndx   27
-[Linked libraries]
-libc.so.6
 
-1 library
-[Relocations]
+[Main]
+vaddr      paddr      
+----------------------
+0x08048400 0x00000400
 
+[Dwarf]
+[Relocs]
 vaddr      paddr      type   name              
 -----------------------------------------------
 0x08049690 0x00000690 SET_32 __gmon_start__
@@ -631,9 +615,32 @@ vaddr      paddr      type   name
 0x080496a4 0x000006a4 SET_32 __gmon_start__
 0x080496a8 0x000006a8 SET_32 __libc_start_main
 
+[Fields]
+paddr      name        vaddr      comment    
+---------------------------------------------
+0x00000000 ELF         0x00000000 0x464c457f
+0x00000010 Type        0x00000010 0x00000002
+0x00000012 Machine     0x00000012 0x00000003
+0x00000014 Version     0x00000014 0x00000001
+0x00000018 Entry point 0x00000018 0x08048300
+0x0000001c PhOff       0x0000001c 0x00000034
+0x00000020 ShOff       0x00000020 0x000007cc
+0x00000024 Flags       0x00000024 0x00000000
+0x00000028 EhSize      0x00000028 0x00000034
+0x0000002a PhentSize   0x0000002a 0x00000020
+0x0000002c PhNum       0x0000002c 0x00000008
+0x0000002e ShentSize   0x0000002e 0x00000028
+0x00000030 ShNum       0x00000030 0x0000001e
+0x00000032 ShrStrndx   0x00000032 0x0000001b
 
-4 relocations
+[Libs]
+library   
+----------
+libc.so.6
+
+[Size]
 4899
+[Versioninfo]
 Version symbols has 5 entries:
  Addr: 0x08048246  Offset: 0x00000246
   0x00000000: 0 (*local*)
@@ -647,16 +654,22 @@ Version need has 1 entries:
  Addr: 0x08048250  Offset: 0x00000250
   0x00000250: Version: 1  File: libc.so.6  Cnt: 1
   0x00000260:   Name: GLIBC_2.0  Flags: none Version: 2
-Section to Segment mapping:
-Segment      Section                                                                                                                                                                  
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[Initfini]
+vaddr      paddr      hvaddr     haddr      type 
+-------------------------------------------------
+0x080483d0 0x000003d0 0x0804959c 0x0000059c init
+0x080483b0 0x000003b0 0x080495a0 0x000005a0 fini
+
+[Sections mapping]
+Segment      Sections                                                                                                                                                                
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 PHDR         
-INTERP       .interp 
-LOAD0        .interp .note.ABI-tag .note.gnu.build-id .gnu.hash .dynsym .dynstr .gnu.version .gnu.version_r .rel.dyn .rel.plt .init .plt .text .fini .rodata .eh_frame_hdr .eh_frame 
-LOAD1        .init_array .fini_array .jcr .dynamic .got .got.plt .data .bss 
-DYNAMIC      .dynamic 
-NOTE         .note.ABI-tag .note.gnu.build-id 
-GNU_EH_FRAME .eh_frame_hdr 
+INTERP       .interp
+LOAD0        .interp .note.ABI-tag .note.gnu.build-id .gnu.hash .dynsym .dynstr .gnu.version .gnu.version_r .rel.dyn .rel.plt .init .plt .text .fini .rodata .eh_frame_hdr .eh_frame
+LOAD1        .init_array .fini_array .jcr .dynamic .got .got.plt .data .bss
+DYNAMIC      .dynamic
+NOTE         .note.ABI-tag .note.gnu.build-id
+GNU_EH_FRAME .eh_frame_hdr
 GNU_STACK    
 ehdr         
 
@@ -681,23 +694,27 @@ NAME=rz-bin -I elf_cpp
 FILE=bins/elf/analysis/a.out.cpp
 CMDS=!rz-bin -I ${RZ_FILE}
 EXPECT=<<EOF
-Name     Value                               
----------------------------------------------
+[Info]
 arch     x86
-baddr    0x0
-binsz    7051
+cpu      N/A
+baddr    0x00000000
+binsz    0x00001b8b
 bintype  elf
 bits     64
 class    ELF64
 compiler GCC: (Ubuntu 7.3.0-16ubuntu3) 7.3.0
+dbg_file N/A
 endian   LE
+hdr.csum N/A
+guid     N/A
 intrp    /lib64/ld-linux-x86-64.so.2
-laddr    0x0
+laddr    0x00000000
 lang     c++
 machine  AMD x86-64 architecture
 maxopsz  16
 minopsz  1
 os       linux
+cc       N/A
 pcalign  0
 relro    full
 rpath    NONE
@@ -714,6 +731,7 @@ canary   false
 PIE      true
 RELROCS  true
 NX       true
+
 EOF
 RUN
 
@@ -721,23 +739,27 @@ NAME=rz-bin -I asan
 FILE=bins/elf/analysis/a.out.asan
 CMDS=!rz-bin -I ${RZ_FILE}
 EXPECT=<<EOF
-Name     Value                                                                      
-------------------------------------------------------------------------------------
+[Info]
 arch     x86
-baddr    0x400000
-binsz    1603255
+cpu      N/A
+baddr    0x00400000
+binsz    0x001876b7
 bintype  elf
 bits     64
 class    ELF64
 compiler GCC: (Debian 8.2.0-5) 8.2.0 clang version 6.0.1-6 (tags/RELEASE_601/final)
+dbg_file N/A
 endian   LE
+hdr.csum N/A
+guid     N/A
 intrp    /lib64/ld-linux-x86-64.so.2
-laddr    0x0
+laddr    0x00000000
 lang     c++
 machine  AMD x86-64 architecture
 maxopsz  16
 minopsz  1
 os       linux
+cc       N/A
 pcalign  0
 relro    partial
 rpath    NONE
@@ -754,6 +776,7 @@ canary   false
 PIE      false
 RELROCS  true
 NX       true
+
 EOF
 RUN
 
@@ -761,23 +784,29 @@ NAME=rz-bin -I apple-blocks-ext
 FILE=bins/mach0/mach0-blocks-ext
 CMDS=!rz-bin -I ${RZ_FILE}
 EXPECT=<<EOF
-Name     Value           
--------------------------
+[Info]
 arch     x86
+cpu      N/A
 baddr    0x100000000
-binsz    9828
+binsz    0x00002664
 bintype  mach0
 bits     64
 class    MACH064
+compiler N/A
+dbg_file N/A
 endian   LE
+hdr.csum N/A
+guid     N/A
 intrp    /usr/lib/dyld
-laddr    0x0
-lang     c++ with blocks
+laddr    0x00000000
+lang     c++
 machine  x86 64 all
 maxopsz  16
 minopsz  1
 os       darwin
+cc       N/A
 pcalign  0
+rpath    N/A
 subsys   darwin
 stripped false
 crypto   false
@@ -791,6 +820,7 @@ canary   false
 PIE      true
 RELROCS  false
 NX       false
+
 EOF
 RUN
 
@@ -808,6 +838,7 @@ NAME=rz-bin -V
 FILE=bins/pe/version_cust.exe
 CMDS=!rz-bin -V ${RZ_FILE}
 EXPECT=<<EOF
+[Versioninfo]
 === VS_VERSIONINFO ===
 
 # VS_FIXEDFILEINFO
@@ -831,15 +862,11 @@ NAME=rz-bin -c
 FILE=bins/java/test.class
 CMDS=!rz-bin -c ${RZ_FILE}
 EXPECT=<<EOF
-0x00000000 [0x000008f9 - 0x00000bcd]    724 class 0 test :: groovy/lang/Script
-0x000008f9 method 0      test.<init>
-0x0000092e method 1      test.<init>
-0x0000096e method 2      test.main
-0x000009ae method 3      test.run
-0x00000aba method 4      test.$getStaticMetaClass
-0x00000afb method 5      test.$createCallSiteArray_1
-0x00000b6a method 6      test.$createCallSiteArray
-0x00000b99 method 7      test.$getCallSiteArray
+[Classes]
+address    min        max        name   super              
+-----------------------------------------------------------
+0x00000000 0x000008f9 0x00000bcd Ltest; groovy/lang/Script
+
 EOF
 RUN
 
@@ -847,16 +874,15 @@ NAME=rz-bin -cq
 FILE=bins/java/test.class
 CMDS=!rz-bin -cq ${RZ_FILE}
 EXPECT=<<EOF
-0x00000000 [0x000008f9 - 0x00000bcd] test groovy/lang/Script
+0x00000000 [0x000008f9 - 0x00000bcd] Ltest; groovy/lang/Script
 EOF
 RUN
 
 NAME=rz-bin -D swift
-BROKEN=1
 FILE=bins/elf/libc.so.0
 CMDS=!rz-bin -D swift  _TFSSCfT21_builtinStringLiteralBp8byteSizeBw7isASCIIBi1__SS
 EXPECT=<<EOF
-Swift.String.init (_builtinStringLiteral(Builtin.RawPointer byteSize__Builtin.Word isASCII__Builtin.Int1 _) -> String
+Swift.String.init(_builtinStringLiteral: Builtin.RawPointer, byteSize: Builtin.Word, isASCII: Builtin.Int1) -> Swift.String
 EOF
 RUN
 
@@ -950,7 +976,7 @@ RUN
 
 NAME=rz-bin -U
 FILE=bins/pe/resource.exe
-CMDS=!rz-bin -U ${RZ_FILE} | grep -c Resource
+CMDS=!rz-bin -U ${RZ_FILE} | grep -c "Resource 0"
 EXPECT=<<EOF
 1
 EOF
@@ -961,10 +987,10 @@ FILE=bins/pe/dll.dll
 CMDS=!rz-bin -E ${RZ_FILE}
 EXPECT=<<EOF
 [Exports]
-
 nth paddr      vaddr      bind   type size lib     name   
 ----------------------------------------------------------
 0   0x00000224 0x01001024 GLOBAL FUNC 0    dll.dll export
+
 EOF
 RUN
 
@@ -988,6 +1014,7 @@ NAME=rz-bin -Z
 FILE=bins/pe/base.exe
 CMDS=!rz-bin -Z ${RZ_FILE}
 EXPECT=<<EOF
+[Size]
 216569
 EOF
 RUN
@@ -1002,7 +1029,7 @@ RUN
 
 NAME=rz-bin -H
 FILE=bins/pe/base.exe
-CMDS=!rz-bin -H ${RZ_FILE} | grep -c "Machine : 0x14c"
+CMDS=!rz-bin -H ${RZ_FILE} | grep -c "Machine"
 EXPECT=<<EOF
 1
 EOF
@@ -1034,7 +1061,10 @@ RUN
 
 NAME=rz-bin -Pj
 FILE=bins/pdb/minimal.pdb
-CMDS=!!rz-bin -Pj ${RZ_FILE}~{}
+CMDS=<<EOF
+!rz-bin -Pj ${RZ_FILE}~{}
+?e
+EOF
 EXPECT=<<EOF
 {
   "pdb": {
@@ -1101,17 +1131,17 @@ EXPECT=<<EOF
         "size": 1,
         "members": [
           {
-            "member_type": "bitfield uint8_t : 1",
+            "member_type": "uint8_t /*bitfield:1*/",
             "member_name": "a",
             "offset": 0
           },
           {
-            "member_type": "bitfield uint8_t : 2",
+            "member_type": "uint8_t /*bitfield:2*/",
             "member_name": "b",
             "offset": 0
           },
           {
-            "member_type": "bitfield uint8_t : 3",
+            "member_type": "uint8_t /*bitfield:3*/",
             "member_name": "c",
             "offset": 0
           }
@@ -1174,6 +1204,7 @@ EXPECT=<<EOF
     ]
   }
 }
+
 EOF
 RUN
 
@@ -1186,7 +1217,6 @@ EOF
 RUN
 
 NAME=rz-bin rust static type
-BROKEN=1
 FILE==
 CMDS=!rz-bin -D rust '_ZN71_$LT$Test$u20$$u2b$$u20$$u27$static$u20$as$u20$foo..Bar$LT$Test$GT$$GT$3barE'
 EXPECT=<<EOF
@@ -1195,10 +1225,17 @@ EOF
 RUN
 
 NAME=rz-bin rust static type with hash
-BROKEN=1
 FILE==
 CMDS=!rz-bin -D rust '_ZN96_$LT$core..fmt..Write..write_fmt..Adapter$LT$$u27$a$C$$u20$T$GT$$u20$as$u20$core..fmt..Write$GT$9write_str17he4f4768a2f446facE'
 EXPECT=<<EOF
 <core::fmt::Write::write_fmt::Adapter<'a, T> as core::fmt::Write>::write_str::he4f4768a2f446fac
+EOF
+RUN
+
+NAME=rz_bin_prefix is used in symbols
+FILE=bins/elf/analysis/hello-linux-x86_64
+CMDS=<<EOF
+EOF
+EXPECT=<<EOF
 EOF
 RUN

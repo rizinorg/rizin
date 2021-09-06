@@ -11,12 +11,9 @@ NAME=SPC700: sections
 FILE=bins/spc700/bin.spc
 CMDS=iS
 EXPECT=<<EOF
-[Sections]
-
-nth paddr          size vaddr         vsize perm name 
-------------------------------------------------------
-0   0x00000100  0x10000 0x00000000  0x10000 -r-- RAM
-
+paddr      size    vaddr      vsize   align perm name type flags 
+-----------------------------------------------------------------
+0x00000100 0x10000 0x00000000 0x10000 0x0   -r-- RAM       
 EOF
 EXPECT_ERR=
 RUN

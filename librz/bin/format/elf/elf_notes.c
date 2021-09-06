@@ -42,28 +42,34 @@ static bool parse_note_prstatus(ELFOBJ *bin, RzVector *notes, Elf_(Nhdr) * note_
 	}
 
 	if (rz_buf_read_at(bin->b, offset + layout->regdelta, note->prstatus.regstate, note->prstatus.regstate_size) != layout->regsize) {
-		RZ_LOG_WARN("Cannot read register state from CORE file\n");
+		RZ_LOG_WARN("Failed to read register state from CORE file\n");
 		return false;
 	}
 
 	return true;
 }
 
+static bool get_note_file_aux(ELFOBJ *bin, RzBinElfNoteFile *file, ut64 *offset) {
+	return Elf_(rz_bin_elf_read_addr)(bin, offset, &file->start_vaddr) &&
+		Elf_(rz_bin_elf_read_addr)(bin, offset, &file->end_vaddr) &&
+		Elf_(rz_bin_elf_read_off)(bin, offset, &file->file_off);
+}
+
+static bool get_note_file(ELFOBJ *bin, RzBinElfNoteFile *file, ut64 *offset) {
+	ut64 tmp = *offset;
+	if (!get_note_file_aux(bin, file, offset)) {
+		RZ_LOG_WARN("Failed to read NT_FILE at 0x%" PFMT64x ".\n", tmp);
+	}
+
+	return true;
+}
+
 static bool set_note_file(ELFOBJ *bin, RzBinElfNoteFile *file, ut64 *offset, char *name) {
-	if (!Elf_(rz_bin_elf_read_addr)(bin, offset, &file->start_vaddr)) {
-		return false;
-	}
-
-	if (!Elf_(rz_bin_elf_read_addr)(bin, offset, &file->end_vaddr)) {
-		return false;
-	}
-
-	if (!Elf_(rz_bin_elf_read_off)(bin, offset, &file->file_off)) {
+	if (!get_note_file(bin, file, offset)) {
 		return false;
 	}
 
 	file->file = name;
-
 	return true;
 }
 
@@ -112,11 +118,13 @@ static bool set_note(ELFOBJ *bin, RzVector *notes, Elf_(Nhdr) * note_segment_hea
 	switch (note_segment_header->n_type) {
 	case NT_FILE:
 		if (!parse_note_file(bin, notes, note_segment_header, offset)) {
+			RZ_LOG_WARN("Failed to parse NT_FILE.\n");
 			return false;
 		}
 		break;
 	case NT_PRSTATUS:
 		if (!parse_note_prstatus(bin, notes, note_segment_header, offset)) {
+			RZ_LOG_WARN("Failed to parse NT_PRSTATUS.\n");
 			return false;
 		}
 		break;
@@ -220,18 +228,16 @@ RZ_OWN RzVector *Elf_(rz_bin_elf_notes_new)(RZ_NONNULL ELFOBJ *bin) {
 			continue;
 		}
 
-		RzVector *notes = rz_vector_new(sizeof(RzBinElfNote), note_free, NULL);
+		RzVector *notes = rz_vector_push(result, NULL);
 		if (!notes) {
 			rz_vector_free(result);
 			return NULL;
 		}
 
-		if (!set_note_segment(bin, notes, segment)) {
-			rz_vector_free(result);
-			return NULL;
-		}
+		rz_vector_init(notes, sizeof(RzBinElfNote), note_free, NULL);
 
-		if (!rz_vector_push(result, notes)) {
+		if (!set_note_segment(bin, notes, segment)) {
+			rz_vector_fini(notes);
 			rz_vector_free(result);
 			return NULL;
 		}

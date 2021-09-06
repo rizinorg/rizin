@@ -554,7 +554,7 @@ static int cmd_meta_others(RzCore *core, const char *input) {
 					if (p) {
 						p = (char *)rz_str_trim_head_ro(p);
 						if (*p == '.') {
-							const char *realformat = rz_type_db_format_byname(core->analysis->typedb, p + 1);
+							const char *realformat = rz_type_db_format_get(core->analysis->typedb, p + 1);
 							if (realformat) {
 								p = (char *)realformat;
 							} else {
@@ -847,7 +847,7 @@ RZ_IPI int rz_cmd_meta(void *data, const char *input) {
 		f = rz_analysis_get_fcn_in(core->analysis, core->offset,
 			RZ_ANALYSIS_FCN_TYPE_FCN | RZ_ANALYSIS_FCN_TYPE_SYM);
 		if (f) {
-			rz_analysis_str_to_fcn(core->analysis, f, input + 2);
+			rz_analysis_function_set_type_str(core->analysis, f, input + 2);
 		} else {
 			eprintf("Cannot find function here\n");
 		}

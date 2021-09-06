@@ -511,16 +511,6 @@ static const char *help_msg_ps[] = {
 	NULL
 };
 
-static const char *help_msg_pt[] = {
-	"Usage: pt", "[dn]", "print timestamps",
-	"pt.", "", "print current time",
-	"pt", "", "print UNIX time (32 bit `cfg.bigendian`) Since January 1, 1970",
-	"ptd", "", "print DOS time (32 bit `cfg.bigendian`) Since January 1, 1980",
-	"pth", "", "print HFS time (32 bit `cfg.bigendian`) Since January 1, 1904",
-	"ptn", "", "print NTFS time (64 bit `cfg.bigendian`) Since January 1, 1601",
-	NULL
-};
-
 static const char *help_msg_pv[] = {
 	"Usage: pv[j][1,2,4,8,z]", "", "",
 	"pv", "", "print bytes based on asm.bits",
@@ -903,7 +893,11 @@ static void cmd_prc(RzCore *core, const ut8 *block, int len) {
 			}
 			if (show_color) {
 				ut32 color_val = colormap[block[j]];
-				int brightness = ((color_val & 0xff0000) >> 16) + 2 * ((color_val & 0xff00) >> 8) + (color_val & 0xff) / 2;
+				// Brightness weights are based on
+				// https://twitter.com/DanHollick/status/1417895189239123968
+				// (normalized to red). I'm aware that max
+				// brightness is greater than 255 * 3.
+				int brightness = ((color_val & 0xff0000) >> 16) + 2 * ((color_val & 0xff00) >> 8) + (color_val & 0xff) / 3;
 				char *str = rz_str_newf("rgb:%s rgb:%06x",
 					brightness <= 0x7f * 3 ? "fff" : "000", color_val);
 				color = rz_cons_pal_parse(str, NULL);
@@ -1592,6 +1586,92 @@ static void cmd_print_gadget(RzCore *core, const char *_input) {
 	}
 }
 
+RZ_IPI RzCmdStatus rz_cmd_print_timestamp_unix_handler(RzCore *core, int argc, const char **argv) {
+	// len must be multiple of 4 since rz_mem_copyendian move data in fours - sizeof(ut32)
+	st64 l;
+	ut8 *block = core->block;
+	int len = core->blocksize;
+	if (len < sizeof(ut32)) {
+		eprintf("Please change the block size to a value greater than and a multiple of %zu. For example, "
+			"run `b %zu`\n",
+			sizeof(ut32), sizeof(ut32));
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (len % sizeof(ut32)) {
+		len = len - (len % sizeof(ut32));
+	}
+	for (l = 0; l < len; l += sizeof(ut32)) {
+		rz_print_date_unix(core->print, block + l, sizeof(ut32));
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_print_timestamp_current_handler(RzCore *core, int argc, const char **argv) {
+	char nowstr[64] = { 0 };
+	rz_print_date_get_now(core->print, nowstr);
+	rz_cons_printf("%s", nowstr);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_print_timestamp_dos_handler(RzCore *core, int argc, const char **argv) {
+	// len must be multiple of 4 since rz_print_date_dos read buf+3
+	// if block size is 1 or 5 for example it reads beyond the buffer
+	st64 l;
+	ut8 *block = core->block;
+	int len = core->blocksize;
+	if (len < sizeof(ut32)) {
+		eprintf("Please change the block size to a value greater than and a multiple of %zu. For example, "
+			"run `b %zu`\n",
+			sizeof(ut32), sizeof(ut32));
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (len % sizeof(ut32)) {
+		len = len - (len % sizeof(ut32));
+	}
+	for (l = 0; l < len; l += sizeof(ut32)) {
+		rz_print_date_dos(core->print, block + l, sizeof(ut32));
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_print_timestamp_hfs_handler(RzCore *core, int argc, const char **argv) {
+	st64 l;
+	ut8 *block = core->block;
+	int len = core->blocksize;
+	if (len < sizeof(ut32)) {
+		eprintf("Please change the block size to a value greater than and a multiple of %zu. For example, "
+			"run `b %zu`\n",
+			sizeof(ut32), sizeof(ut32));
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (len % sizeof(ut32)) {
+		len = len - (len % sizeof(ut32));
+	}
+	for (l = 0; l < len; l += sizeof(ut32)) {
+		rz_print_date_hfs(core->print, block + l, sizeof(ut32));
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_print_timestamp_ntfs_handler(RzCore *core, int argc, const char **argv) {
+	st64 l;
+	ut8 *block = core->block;
+	int len = core->blocksize;
+	if (len < sizeof(ut64)) {
+		eprintf("Please change the block size to a value greater than and a multiple of %zu. For example, "
+			"run `b %zu`\n",
+			sizeof(ut64), sizeof(ut64));
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (len % sizeof(ut64)) {
+		len = len - (len % sizeof(ut64));
+	}
+	for (l = 0; l < len; l += sizeof(ut64)) {
+		rz_print_date_w32(core->print, block + l, sizeof(ut64));
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
 static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block, int len) {
 	char *input = NULL;
 	int mode = RZ_PRINT_MUSTSEE;
@@ -1689,13 +1769,12 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block,
 			if (rz_str_endswith(_input, ".h")) {
 				char *error_msg = NULL;
 				const char *dir = rz_config_get(core->config, "dir.types");
-				char *out = rz_type_parse_c_file(core->analysis->typedb, path, dir, &error_msg);
-				if (out) {
-					rz_type_db_save_parsed_type(core->analysis->typedb, out);
+				int result = rz_type_parse_file(core->analysis->typedb, path, dir, &error_msg);
+				if (!result) {
 					rz_core_cmd0(core, ".ts*");
-					free(out);
 				} else {
 					eprintf("Parse error: %s\n", error_msg);
+					free(error_msg);
 				}
 			} else {
 				if (!rz_core_cmd_file(core, home) && !rz_core_cmd_file(core, path)) {
@@ -1879,6 +1958,7 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block,
 		if (!args) {
 			rz_cons_printf("Error: Mem Allocation.");
 			free(args);
+			free(buf);
 			goto stage_left;
 		}
 		const char *arg1 = strtok(args, " ");
@@ -3129,59 +3209,25 @@ restore_conf:
 	rz_config_set_i(core->config, "emu.str", emu_str);
 }
 
-static bool cmd_print_ph(RzCore *core, const char *input) {
-	char algo[128];
-	ut32 osize = 0, len = core->blocksize;
-	const char *ptr;
-	bool handled_cmd = false;
-	const RzMsgDigestPlugin *plugin = NULL;
-	RzCmdStateOutput state = { 0 };
-	if (!*input || *input == '?') {
-		state.mode = RZ_OUTPUT_MODE_QUIET;
+RZ_IPI RzCmdStatus rz_cmd_print_msg_digest_handler(RzCore *core, int argc, const char **argv) {
+	const RzMsgDigestPlugin *plugin = rz_msg_digest_plugin_by_name(argv[1]);
+
+	if (!plugin) {
+		RZ_LOG_ERROR("algorithm '%s' does not exists\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
 	}
-	if (*input == '=') {
-		state.mode = RZ_OUTPUT_MODE_STANDARD;
+
+	if (!strncmp(plugin->name, "entropy", 7)) {
+		handle_entropy(plugin->name, core->block, core->blocksize);
+	} else {
+		handle_msg_digest(plugin->name, core->block, core->blocksize);
 	}
-	if (state.mode) {
-		return rz_core_hash_plugins_print(&state) ? true : false;
-	}
-	input = rz_str_trim_head_ro(input);
-	ptr = strchr(input, ' ');
-	sscanf(input, "%31s", algo);
-	if (ptr && ptr[1]) { // && rz_num_is_valid_input (core->num, ptr + 1)) {
-		int nlen = rz_num_math(core->num, ptr + 1);
-		if (nlen > 0) {
-			len = nlen;
-		}
-		osize = core->blocksize;
-		if (nlen > core->blocksize) {
-			rz_core_block_size(core, nlen);
-			if (nlen != core->blocksize) {
-				eprintf("Invalid block size\n");
-				rz_core_block_size(core, osize);
-				return false;
-			}
-			rz_core_block_read(core);
-		}
-	} else if (!ptr || !*(ptr + 1)) {
-		osize = len;
-	}
-	/* TODO: Simplify this spaguetti monster */
-	for (size_t j = 0; osize > 0 && (plugin = rz_msg_digest_plugin_by_index(j)); ++j) {
-		if (!rz_str_ccmp(plugin->name, input, ' ')) {
-			if (!strncmp(plugin->name, "entropy", 7)) {
-				handle_entropy(plugin->name, core->block, len);
-			} else {
-				handle_msg_digest(plugin->name, core->block, len);
-			}
-			handled_cmd = true;
-			break;
-		}
-	}
-	if (osize) {
-		rz_core_block_size(core, osize);
-	}
-	return handled_cmd;
+
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_print_msg_digest_algo_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	return rz_core_hash_plugins_print(state);
 }
 
 // XXX blocksize is missing
@@ -4972,9 +5018,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				free(res);
 			}
 		}
-		break;
-	case 'h': // "ph"
-		cmd_print_ph(core, input + 1);
 		break;
 	case 'v': // "pv"
 		cmd_print_pv(core, input + 1, false);
@@ -6837,67 +6880,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			rz_io_read_at(core->io, offset0, core->block, len);
 			core->offset = offset0;
 			rz_cons_printf("\n");
-		}
-		break;
-	case 't': // "pt"
-		switch (input[1]) {
-		case '.': {
-			char nowstr[64] = { 0 };
-			rz_print_date_get_now(core->print, nowstr);
-			rz_cons_printf("%s\n", nowstr);
-		} break;
-		case ' ':
-		case '\0':
-			// len must be multiple of 4 since rz_mem_copyendian move data in fours - sizeof(ut32)
-			if (len < sizeof(ut32)) {
-				eprintf("You should change the block size: b %d\n", (int)sizeof(ut32));
-			}
-			if (len % sizeof(ut32)) {
-				len = len - (len % sizeof(ut32));
-			}
-			for (l = 0; l < len; l += sizeof(ut32)) {
-				rz_print_date_unix(core->print, block + l, sizeof(ut32));
-			}
-			break;
-		case 'h': // "pth"
-			// len must be multiple of 4 since rz_mem_copyendian move data in fours - sizeof(ut32)
-			if (len < sizeof(ut32)) {
-				eprintf("You should change the block size: b %d\n", (int)sizeof(ut32));
-			}
-			if (len % sizeof(ut32)) {
-				len = len - (len % sizeof(ut32));
-			}
-			for (l = 0; l < len; l += sizeof(ut32)) {
-				rz_print_date_hfs(core->print, block + l, sizeof(ut32));
-			}
-			break;
-		case 'd': // "ptd"
-			// len must be multiple of 4 since rz_print_date_dos read buf+3
-			// if block size is 1 or 5 for example it reads beyond the buffer
-			if (len < sizeof(ut32)) {
-				eprintf("You should change the block size: b %d\n", (int)sizeof(ut32));
-			}
-			if (len % sizeof(ut32)) {
-				len = len - (len % sizeof(ut32));
-			}
-			for (l = 0; l < len; l += sizeof(ut32)) {
-				rz_print_date_dos(core->print, block + l, sizeof(ut32));
-			}
-			break;
-		case 'n': // "ptn"
-			if (len < sizeof(ut64)) {
-				eprintf("You should change the block size: b %d\n", (int)sizeof(ut64));
-			}
-			if (len % sizeof(ut64)) {
-				len = len - (len % sizeof(ut64));
-			}
-			for (l = 0; l < len; l += sizeof(ut64)) {
-				rz_print_date_w32(core->print, block + l, sizeof(ut64));
-			}
-			break;
-		case '?':
-			rz_core_cmd_help(core, help_msg_pt);
-			break;
 		}
 		break;
 	case 'q': // "pq"

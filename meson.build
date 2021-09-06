@@ -133,7 +133,7 @@ endif
 
 # Sanitize correct usage of rz_strf()
 if cc.has_argument('-Werror=sizeof-pointer-memaccess')
-  add_global_arguments('-Werror=sizeof-pointer-memaccess', language: ['c', 'cpp'])
+  add_global_arguments('-Werror=sizeof-pointer-memaccess', language: ['c'])
 endif
 
 if cc.get_id() == 'clang-cl'
@@ -249,6 +249,15 @@ if sys_xxhash_opt.auto() or sys_xxhash_opt.disabled()
   xxhash_dep = xxhash_proj.get_variable('xxhash_dep')
 endif
 
+# handle libswift library
+r = run_command(py3_exe, check_meson_subproject_py, 'libswift')
+if r.returncode() == 1 and get_option('subprojects_check')
+  error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+endif
+
+libswift_proj = subproject('libswift', default_options: ['default_library=static'])
+libswift_dep = libswift_proj.get_variable('libswift_dep')
+
 # handle openssl library
 sys_openssl = dependency('openssl', required: get_option('use_sys_openssl'), static: is_static_build)
 
@@ -265,6 +274,18 @@ if get_option('use_libuv')
     libuv_proj = subproject('libuv', default_options: ['default_library=static'])
     libuv_dep = libuv_proj.get_variable('libuv_dep')
   endif
+endif
+
+# handle tree-sitter
+r = run_command(py3_exe, check_meson_subproject_py, 'tree-sitter')
+if r.returncode() == 1 and get_option('subprojects_check')
+  error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+endif
+
+tree_sitter_dep = dependency('tree-sitter', required: get_option('use_sys_tree_sitter'), static: is_static_build, fallback: [])
+if not tree_sitter_dep.found()
+  tree_sitter_proj = subproject('tree-sitter', default_options: ['default_library=static'])
+  tree_sitter_dep = tree_sitter_proj.get_variable('tree_sitter_dep')
 endif
 
 has_debugger = get_option('debugger')
@@ -297,6 +318,7 @@ userconf.set10('HAVE_LIB_XXHASH', xxhash_dep.found())
 userconf.set10('USE_LIB_XXHASH', xxhash_dep.found())
 userconf.set10('DEBUGGER', has_debugger)
 userconf.set('PREFIX', rizin_prefix)
+userconf.set('BINDIR', rizin_bindir)
 userconf.set('LIBDIR', rizin_libdir)
 userconf.set('INCLUDEDIR', rizin_incdir)
 userconf.set('DATADIR_RZ', rizin_datdir_rz)
@@ -321,9 +343,15 @@ userconf.set10('USE_PTRACE_WRAP', use_ptrace_wrap)
 userconf.set10('WITH_GPL', true)
 ok = cc.has_header_symbol('sys/personality.h', 'ADDR_NO_RANDOMIZE')
 userconf.set10('HAVE_DECL_ADDR_NO_RANDOMIZE', ok)
+ok = cc.has_header_symbol('sys/procctl.h', 'PROC_ASLR_CTL')
+userconf.set10('HAVE_DECL_PROCCTL_ASLR_CTL', ok)
 
 if host_machine.system() == 'freebsd'
-  add_project_link_arguments('-Wl,--unresolved-symbols,ignore-in-object-files', language: 'c')
+  # resolves an issue linked to environ being available only on crt1.o
+  # which results in not being able to link a shared library since environ
+  # is used by the lib and not by the main binary
+  # see: https://bugs.webkit.org/show_bug.cgi?id=138420
+  add_project_link_arguments('-Wl,--unresolved-symbols,ignore-in-object-files', language: ['c', 'cpp'])
 endif
 
 lrt = []
@@ -335,6 +363,11 @@ code = '#include <unistd.h>\nextern char **environ;\nint main() { char **env = e
 have_environ = cc.links(code, name: 'have extern char **environ')
 userconf.set10('HAVE_ENVIRON', have_environ)
 message('HAVE_ENVIRON: @0@'.format(have_environ))
+
+code = '#if __is_target_os(ios)\nint x = 0;\n#endif\nint main() { x++; }'
+is_ios = cc.links(code, name: 'target is ios')
+userconf.set10('IS_IOS', is_ios)
+message('IS_IOS: @0@'.format(is_ios))
 
 foreach item : [
     ['arc4random_uniform', '#include <stdlib.h>', []],
@@ -350,7 +383,13 @@ foreach item : [
     ['execl', '#include <unistd.h>', []],
     ['system', '#include <stdlib.h>', []],
     ['fork', '#include <unistd.h>', []],
-    ['pipe2', '#define _GNU_SOURCE\n#include <fcntl.h>\n#include <unistd.h>', []]
+    ['nice', '#include <unistd.h>', []],
+    ['copyfile', '#include <copyfile.h>', []],
+    ['strlcpy', '#include <string.h>', []],
+    ['openpty', '', [utl]],
+    ['forkpty', '', [utl]],
+    ['login_tty', '', [utl]],
+    ['pipe2', '#define _GNU_SOURCE\n#include <fcntl.h>\n#include <unistd.h>', []],
   ]
   func = item[0]
   ok = cc.has_function(func, prefix: item[1], dependencies: item[2])

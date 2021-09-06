@@ -732,7 +732,7 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		}
 		op->fail = addr + op->size;
 		// FIXME: add a type of conditional
-		// op->cond = RZ_ANALYSIS_COND_LE;
+		// op->cond = RZ_TYPE_COND_LE;
 		_6502_analysis_esil_ccall(op, data[0]);
 		break;
 	// JSR

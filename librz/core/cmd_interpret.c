@@ -3,7 +3,7 @@
 
 #include <rz_cmd.h>
 #include <rz_core.h>
-#include "cmd_descs/cmd_descs.h"
+#include <cmd_descs.h>
 
 RZ_IPI RzCmdStatus rz_interpret_handler(RzCore *core, int argc, const char **argv) {
 	if (argc == 1) {
@@ -14,6 +14,9 @@ RZ_IPI RzCmdStatus rz_interpret_handler(RzCore *core, int argc, const char **arg
 		rz_cons_singleton()->is_html = 0;
 		char *cmd_output = rz_core_cmd_str(core, argv[1]);
 		rz_cons_singleton()->is_html = tmp_html;
+		if (!cmd_output) {
+			return RZ_CMD_STATUS_ERROR;
+		}
 		rz_core_cmd(core, cmd_output, 0);
 		free(cmd_output);
 		return RZ_CMD_STATUS_OK;
@@ -58,13 +61,6 @@ RZ_IPI RzCmdStatus rz_interpret_editor_2_handler(RzCore *core, int argc, const c
 
 RZ_IPI RzCmdStatus rz_interpret_pipe_handler(RzCore *core, int argc, const char **argv) {
 	rz_core_run_script(core, argv[1]);
-	return RZ_CMD_STATUS_OK;
-}
-
-RZ_IPI RzCmdStatus rz_interpret_system_handler(RzCore *core, int argc, const char **argv) {
-	char *args = rz_str_array_join(argv + 1, argc - 1, " ");
-	rz_core_cmd_command(core, args);
-	free(args);
 	return RZ_CMD_STATUS_OK;
 }
 

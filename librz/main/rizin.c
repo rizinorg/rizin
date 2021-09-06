@@ -504,9 +504,11 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			free(debugbackend);
 			debugbackend = strdup(opt.arg);
 			RzCmdStateOutput state = { 0 };
-			state.mode = RZ_OUTPUT_MODE_QUIET;
+			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET);
 			if (!strcmp(opt.arg, "?")) {
 				rz_core_debug_plugins_print(r, &state);
+				rz_cmd_state_output_print(&state);
+				rz_cmd_state_output_fini(&state);
 				rz_cons_flush();
 				LISTS_FREE();
 				return 0;
@@ -726,8 +728,10 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		if (quietLeak) {
 			exit(0);
 		}
-		state.mode = RZ_OUTPUT_MODE_STANDARD;
+		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
 		rz_core_io_plugins_print(r->io, &state);
+		rz_cmd_state_output_print(&state);
+		rz_cmd_state_output_fini(&state);
 		rz_cons_flush();
 		LISTS_FREE();
 		free(pfile);
@@ -1121,7 +1125,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 					eprintf("Warning: using oba to load the syminfo from different mapaddress.\n");
 					// load symbols when using rz -m 0x1000 /bin/ls
 					rz_core_cmdf(r, "oba 0 0x%" PFMT64x, mapaddr);
-					rz_core_cmd0(r, ".ies*");
 				}
 			}
 		} else {
@@ -1237,7 +1240,11 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		if (o && o->info && compute_hashes) {
 			// TODO: recall with limit=0 ?
 			ut64 limit = rz_config_get_i(r->config, "bin.hashlimit");
-			rz_bin_file_set_hashes(r->bin, rz_bin_file_compute_hashes(r->bin, limit));
+			RzBinFile *bf = r->bin->cur;
+			if (bf) {
+				RzList *old_hashes = rz_bin_file_set_hashes(r->bin, rz_bin_file_compute_hashes(r->bin, bf, limit));
+				rz_list_free(old_hashes);
+			}
 		}
 		if (s_seek) {
 			seek = rz_num_math(r->num, s_seek);
@@ -1310,17 +1317,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		free(global_rc);
 	}
 
-	// only analyze if file contains entrypoint
-	{
-		char *s = rz_core_cmd_str(r, "ieq");
-		if (s && *s) {
-			int da = rz_config_get_i(r->config, "file.analyze");
-			if (da > do_analysis) {
-				do_analysis = da;
-			}
-		}
-		free(s);
-	}
 	if (do_analysis > 0) {
 		switch (do_analysis) {
 		case 1: rz_core_cmd0(r, "aa"); break;
@@ -1416,15 +1412,16 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			}
 
 			prj = rz_config_get(r->config, "prj.file");
+			bool compress = rz_config_get_b(r->config, "prj.compress");
 			RzProjectErr prj_err = RZ_PROJECT_ERR_SUCCESS;
 			if (no_question_save) {
 				if (prj && *prj && y_save_project) {
-					prj_err = rz_project_save_file(r, prj);
+					prj_err = rz_project_save_file(r, prj, compress);
 				}
 			} else {
 				question = rz_str_newf("Do you want to save the '%s' project? (Y/n)", prj);
 				if (prj && *prj && rz_cons_yesno('y', "%s", question)) {
-					prj_err = rz_project_save_file(r, prj);
+					prj_err = rz_project_save_file(r, prj, compress);
 				}
 				free(question);
 			}

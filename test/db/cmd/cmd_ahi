@@ -277,7 +277,7 @@ CMDS=<<EOF
 e io.va
 e asm.sub.rel=false
 e asm.bytes=true
-e asm.leahints=false
+e asm.hint.lea=false
 e asm.arch=x86
 e asm.bits=64
 e io.va=true

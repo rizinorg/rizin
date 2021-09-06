@@ -17,6 +17,7 @@ extern "C" {
 #include <rz_util/rz_str.h>
 #include <rz_util/rz_str_constpool.h>
 #include <rz_util/rz_sys.h>
+#include <rz_util/rz_utf8.h>
 #include <rz_util/rz_file.h>
 #include <rz_vector.h>
 #include <sdb.h>
@@ -520,8 +521,9 @@ typedef struct rz_cons_t {
 #elif __WINDOWS__
 	DWORD term_raw, term_buf, term_xterm;
 	UINT old_cp;
+	UINT old_ocp;
 #endif
-	RNum *num;
+	RzNum *num;
 	/* Pager (like more or less) to use if the output doesn't fit on the
 	 * current window. If NULL or "" no pager is used. */
 	char *pager;
@@ -973,6 +975,7 @@ RZ_API char *rz_cons_hud_string(const char *s);
 RZ_API char *rz_cons_hud_file(const char *f);
 
 RZ_API const char *rz_cons_get_buffer(void);
+RZ_API RZ_OWN char *rz_cons_get_buffer_dup(void);
 RZ_API int rz_cons_get_buffer_len(void);
 RZ_API void rz_cons_grep_help(void);
 RZ_API void rz_cons_grep_parsecmd(char *cmd, const char *quotestr);

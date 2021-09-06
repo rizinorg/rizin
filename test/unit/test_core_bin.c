@@ -11,7 +11,7 @@ static bool check_buffer(RzBuffer *b) {
 	return true;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
 	return true;
 }
 
@@ -112,37 +112,37 @@ bool test_map(void) {
 	mu_assert_streq(bf->o->plugin->name, "mock", "binfile with mock plugin");
 
 	mu_assert_eq(rz_pvector_len(&core->io->maps), 6, "io maps count");
-	RzIOMap *map = rz_pvector_at(&core->io->maps, 0);
+	RzIOMap *map = rz_pvector_at(&core->io->maps, 4);
 	mu_assert_streq(map->name, "mmap.vfile map with zeroes", "io map name");
 	mu_assert_eq(map->delta, 0, "map delta");
 	mu_assert_eq(map->itv.addr, 0x403, "map addr");
 	mu_assert_eq(map->itv.size, 1, "map size");
 	mu_assert_eq(map->perm, RZ_PERM_R, "io map perm");
-	map = rz_pvector_at(&core->io->maps, 1);
+	map = rz_pvector_at(&core->io->maps, 5);
 	mu_assert_streq(map->name, "vmap.vfile map with zeroes", "io map name");
 	mu_assert_eq(map->delta, 0, "map delta");
 	mu_assert_eq(map->itv.addr, 0x400, "map addr");
 	mu_assert_eq(map->itv.size, 3, "map size");
 	mu_assert_eq(map->perm, RZ_PERM_R, "io map perm");
-	map = rz_pvector_at(&core->io->maps, 2);
+	map = rz_pvector_at(&core->io->maps, 3);
 	mu_assert_streq(map->name, "vmap.vfile map", "io map name");
 	mu_assert_eq(map->delta, 4, "map delta");
 	mu_assert_eq(map->itv.addr, 0x300, "map addr");
 	mu_assert_eq(map->itv.size, 4, "map size");
 	mu_assert_eq(map->perm, RZ_PERM_RWX, "io map perm");
-	map = rz_pvector_at(&core->io->maps, 3);
+	map = rz_pvector_at(&core->io->maps, 1);
 	mu_assert_streq(map->name, "mmap.direct map with zeroes", "io map name");
 	mu_assert_eq(map->delta, 0, "map delta");
 	mu_assert_eq(map->itv.addr, 0x202, "map addr");
 	mu_assert_eq(map->itv.size, 0x2e, "map size");
 	mu_assert_eq(map->perm, RZ_PERM_R, "io map perm");
-	map = rz_pvector_at(&core->io->maps, 4);
+	map = rz_pvector_at(&core->io->maps, 2);
 	mu_assert_streq(map->name, "fmap.direct map with zeroes", "io map name");
 	mu_assert_eq(map->delta, 2, "map delta");
 	mu_assert_eq(map->itv.addr, 0x200, "map addr");
 	mu_assert_eq(map->itv.size, 2, "map size");
 	mu_assert_eq(map->perm, RZ_PERM_R, "io map perm");
-	map = rz_pvector_at(&core->io->maps, 5);
+	map = rz_pvector_at(&core->io->maps, 0);
 	mu_assert_streq(map->name, "fmap.direct map", "io map name");
 	mu_assert_eq(map->delta, 2, "map delta");
 	mu_assert_eq(map->itv.addr, 0x100, "map addr");
@@ -500,7 +500,7 @@ bool test_cfile_close_manual_vfile_map(void) {
 	mu_assert_eq(rz_pvector_len(&core->io->maps), 6, "io maps count");
 
 	mu_assert_eq(rz_pvector_len(&f->extra_files), 4, "extra files count");
-	RzIODesc *desc = rz_pvector_at(&f->extra_files, 1);
+	RzIODesc *desc = rz_pvector_at(&f->extra_files, 3);
 	mu_assert_streq(desc->name, "vfile://0/vfile0", "vfile desc name");
 
 	RzIOMap *map = rz_io_map_add(core->io, desc->fd, RZ_PERM_R, 0, 0x8000, 0x3);

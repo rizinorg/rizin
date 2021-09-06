@@ -5,7 +5,7 @@
 #include "minunit.h"
 
 static bool test_rz_big_from_to_int(void) {
-	RNumBig *a = rz_big_new();
+	RzNumBig *a = rz_big_new();
 
 	mu_assert_eq(0, rz_big_to_int(a), "Failed rz_big_to_int");
 
@@ -20,7 +20,7 @@ static bool test_rz_big_from_to_int(void) {
 }
 
 static bool test_rz_big_from_to_hexstr(void) {
-	RNumBig *a = rz_big_new();
+	RzNumBig *a = rz_big_new();
 	char *str;
 
 	rz_big_from_hexstr(a, "0xffff");
@@ -40,8 +40,8 @@ static bool test_rz_big_from_to_hexstr(void) {
 }
 
 static bool test_rz_big_assign(void) {
-	RNumBig *a = rz_big_new();
-	RNumBig *b = rz_big_new();
+	RzNumBig *a = rz_big_new();
+	RzNumBig *b = rz_big_new();
 
 	rz_big_from_int(a, 0xffff);
 	rz_big_assign(b, a);
@@ -57,8 +57,8 @@ static bool test_rz_big_assign(void) {
 }
 
 static bool test_rz_big_cmp(void) {
-	RNumBig *a = rz_big_new();
-	RNumBig *b = rz_big_new();
+	RzNumBig *a = rz_big_new();
+	RzNumBig *b = rz_big_new();
 
 	rz_big_from_int(b, 0);
 	rz_big_from_int(a, 1);
@@ -97,9 +97,9 @@ static bool test_rz_big_cmp(void) {
 }
 
 static bool test_rz_big_add(void) {
-	RNumBig *a = rz_big_new();
-	RNumBig *b = rz_big_new();
-	RNumBig *c = rz_big_new();
+	RzNumBig *a = rz_big_new();
+	RzNumBig *b = rz_big_new();
+	RzNumBig *c = rz_big_new();
 
 	rz_big_from_int(a, 1);
 	rz_big_from_int(b, -1);
@@ -134,9 +134,9 @@ static bool test_rz_big_add(void) {
 }
 
 static bool test_rz_big_sub(void) {
-	RNumBig *a = rz_big_new();
-	RNumBig *b = rz_big_new();
-	RNumBig *c = rz_big_new();
+	RzNumBig *a = rz_big_new();
+	RzNumBig *b = rz_big_new();
+	RzNumBig *c = rz_big_new();
 
 	rz_big_from_int(a, 1);
 	rz_big_from_int(b, 1);
@@ -190,9 +190,9 @@ static bool test_rz_big_sub(void) {
 }
 
 static bool test_rz_big_mul(void) {
-	RNumBig *a = rz_big_new();
-	RNumBig *b = rz_big_new();
-	RNumBig *c = rz_big_new();
+	RzNumBig *a = rz_big_new();
+	RzNumBig *b = rz_big_new();
+	RzNumBig *c = rz_big_new();
 
 	rz_big_from_int(a, 2);
 	rz_big_from_int(b, -2);
@@ -252,9 +252,9 @@ static bool test_rz_big_mul(void) {
 }
 
 static bool test_rz_big_div(void) {
-	RNumBig *a = rz_big_new();
-	RNumBig *b = rz_big_new();
-	RNumBig *c = rz_big_new();
+	RzNumBig *a = rz_big_new();
+	RzNumBig *b = rz_big_new();
+	RzNumBig *c = rz_big_new();
 
 	rz_big_from_int(a, 2);
 	rz_big_from_int(b, -2);
@@ -296,10 +296,10 @@ static bool test_rz_big_div(void) {
 }
 
 static bool test_rz_big_divmod(void) {
-	RNumBig *a = rz_big_new();
-	RNumBig *b = rz_big_new();
-	RNumBig *c = rz_big_new();
-	RNumBig *d = rz_big_new();
+	RzNumBig *a = rz_big_new();
+	RzNumBig *b = rz_big_new();
+	RzNumBig *c = rz_big_new();
+	RzNumBig *d = rz_big_new();
 
 	rz_big_from_hexstr(a, "0x73204217f728a2fb7dc798618f23c5796675eee1ccd60a3a7be9cddf7d0eb30e9b004b0246051fcbc26ce99b67e23f07d3f2a493b1194af2777ffdfd5d66c61ba4fa2cd14536010ee00e695863039829c315c594c84170559822fcceb20afdc56a81ab7105e17efb0afd8f090bce2e5330e1c78e2e3ab26a1f49610b49b0fafa75b342b5c1a79322be4a92fac102958ed43aee787c221ea5c23e9485321c6b901cdb5c584bebcbea644a8f2c40bfbaf2dee40102e660e37d41b1f2ccee933a57693ee8ee2473bec98911ccd4b853704c7ed73b86da962845efe5399561fb3b0c37f5f0e730ddebcea7144351064f1ee04c1348125807a760186ac33316633d09");
 	rz_big_from_hexstr(b, "0x10001");
@@ -316,9 +316,9 @@ static bool test_rz_big_divmod(void) {
 }
 
 static bool test_rz_big_mod(void) {
-	RNumBig *a = rz_big_new();
-	RNumBig *b = rz_big_new();
-	RNumBig *c = rz_big_new();
+	RzNumBig *a = rz_big_new();
+	RzNumBig *b = rz_big_new();
+	RzNumBig *c = rz_big_new();
 
 	rz_big_from_hexstr(a, "0x73204217f728a2fb7dc798618f23c5796675eee1ccd60a3a7be9cddf7d0eb30e9b004b0246051fcbc26ce99b67e23f07d3f2a493b1194af2777ffdfd5d66c61ba4fa2cd14536010ee00e695863039829c315c594c84170559822fcceb20afdc56a81ab7105e17efb0afd8f090bce2e5330e1c78e2e3ab26a1f49610b49b0fafa75b342b5c1a79322be4a92fac102958ed43aee787c221ea5c23e9485321c6b901cdb5c584bebcbea644a8f2c40bfbaf2dee40102e660e37d41b1f2ccee933a57693ee8ee2473bec98911ccd4b853704c7ed73b86da962845efe5399561fb3b0c37f5f0e730ddebcea7144351064f1ee04c1348125807a760186ac33316633d09");
 	rz_big_from_hexstr(b, "0x10001");
@@ -332,9 +332,9 @@ static bool test_rz_big_mod(void) {
 }
 
 static bool test_rz_big_and(void) {
-	RNumBig *a = rz_big_new();
-	RNumBig *b = rz_big_new();
-	RNumBig *c = rz_big_new();
+	RzNumBig *a = rz_big_new();
+	RzNumBig *b = rz_big_new();
+	RzNumBig *c = rz_big_new();
 
 	rz_big_from_hexstr(a, "0x73204217f728a2fb7dc798618f23c5796675eee1ccd60a3a7be9cddf7d0eb30e9b004b0246051fcbc26ce99b67e23f07d3f2a493b1194af2777ffdfd5d66c61ba4fa2cd14536010ee00e695863039829c315c594c84170559822fcceb20afdc56a81ab7105e17efb0afd8f090bce2e5330e1c78e2e3ab26a1f49610b49b0fafa75b342b5c1a79322be4a92fac102958ed43aee787c221ea5c23e9485321c6b901cdb5c584bebcbea644a8f2c40bfbaf2dee40102e660e37d41b1f2ccee933a57693ee8ee2473bec98911ccd4b853704c7ed73b86da962845efe5399561fb3b0c37f5f0e730ddebcea7144351064f1ee04c1348125807a760186ac33316633d09");
 	rz_big_from_hexstr(b, "0x8a1712798b2575df7ae8419ad4b43e0df66c4d2af6a327fc78ffe78b9a15dc2b9630167bfc6ca4f7958ba5073a31c0e06da3d7d0db3fac9a33546f3a62a3a2d20992da45141ed267e91e86308ab14ec027580eaa29719592b9e3a354f2135d87cebf6bfe9acf3b85deb9bb098804ce681a979b68a84594b08dd699afc7511f6790e61365f7de17df954b9a865ec840eca9cabf849b5df4d14adb31eabfb27b8f6144f18907026d41a61b59f72a5f689f8aeca79d0e5272cd2f7ba12620826fa36e3eb8d0b2c90dd76a7dda85dfd3ccad1193f50354e6e74fdbc62c1a765fe6515b2142ad1e16d9b0c914d7e345b2b40ef91f7f10b60806a850c1bccafdd080ac");
@@ -349,9 +349,9 @@ static bool test_rz_big_and(void) {
 }
 
 static bool test_rz_big_or(void) {
-	RNumBig *a = rz_big_new();
-	RNumBig *b = rz_big_new();
-	RNumBig *c = rz_big_new();
+	RzNumBig *a = rz_big_new();
+	RzNumBig *b = rz_big_new();
+	RzNumBig *c = rz_big_new();
 
 	rz_big_from_hexstr(a, "0x73204217f728a2fb7dc798618f23c5796675eee1ccd60a3a7be9cddf7d0eb30e9b004b0246051fcbc26ce99b67e23f07d3f2a493b1194af2777ffdfd5d66c61ba4fa2cd14536010ee00e695863039829c315c594c84170559822fcceb20afdc56a81ab7105e17efb0afd8f090bce2e5330e1c78e2e3ab26a1f49610b49b0fafa75b342b5c1a79322be4a92fac102958ed43aee787c221ea5c23e9485321c6b901cdb5c584bebcbea644a8f2c40bfbaf2dee40102e660e37d41b1f2ccee933a57693ee8ee2473bec98911ccd4b853704c7ed73b86da962845efe5399561fb3b0c37f5f0e730ddebcea7144351064f1ee04c1348125807a760186ac33316633d09");
 	rz_big_from_hexstr(b, "0x8a1712798b2575df7ae8419ad4b43e0df66c4d2af6a327fc78ffe78b9a15dc2b9630167bfc6ca4f7958ba5073a31c0e06da3d7d0db3fac9a33546f3a62a3a2d20992da45141ed267e91e86308ab14ec027580eaa29719592b9e3a354f2135d87cebf6bfe9acf3b85deb9bb098804ce681a979b68a84594b08dd699afc7511f6790e61365f7de17df954b9a865ec840eca9cabf849b5df4d14adb31eabfb27b8f6144f18907026d41a61b59f72a5f689f8aeca79d0e5272cd2f7ba12620826fa36e3eb8d0b2c90dd76a7dda85dfd3ccad1193f50354e6e74fdbc62c1a765fe6515b2142ad1e16d9b0c914d7e345b2b40ef91f7f10b60806a850c1bccafdd080ac");
@@ -366,9 +366,9 @@ static bool test_rz_big_or(void) {
 }
 
 static bool test_rz_big_xor(void) {
-	RNumBig *a = rz_big_new();
-	RNumBig *b = rz_big_new();
-	RNumBig *c = rz_big_new();
+	RzNumBig *a = rz_big_new();
+	RzNumBig *b = rz_big_new();
+	RzNumBig *c = rz_big_new();
 
 	rz_big_from_hexstr(a, "0x73204217f728a2fb7dc798618f23c5796675eee1ccd60a3a7be9cddf7d0eb30e9b004b0246051fcbc26ce99b67e23f07d3f2a493b1194af2777ffdfd5d66c61ba4fa2cd14536010ee00e695863039829c315c594c84170559822fcceb20afdc56a81ab7105e17efb0afd8f090bce2e5330e1c78e2e3ab26a1f49610b49b0fafa75b342b5c1a79322be4a92fac102958ed43aee787c221ea5c23e9485321c6b901cdb5c584bebcbea644a8f2c40bfbaf2dee40102e660e37d41b1f2ccee933a57693ee8ee2473bec98911ccd4b853704c7ed73b86da962845efe5399561fb3b0c37f5f0e730ddebcea7144351064f1ee04c1348125807a760186ac33316633d09");
 	rz_big_from_hexstr(b, "0x8a1712798b2575df7ae8419ad4b43e0df66c4d2af6a327fc78ffe78b9a15dc2b9630167bfc6ca4f7958ba5073a31c0e06da3d7d0db3fac9a33546f3a62a3a2d20992da45141ed267e91e86308ab14ec027580eaa29719592b9e3a354f2135d87cebf6bfe9acf3b85deb9bb098804ce681a979b68a84594b08dd699afc7511f6790e61365f7de17df954b9a865ec840eca9cabf849b5df4d14adb31eabfb27b8f6144f18907026d41a61b59f72a5f689f8aeca79d0e5272cd2f7ba12620826fa36e3eb8d0b2c90dd76a7dda85dfd3ccad1193f50354e6e74fdbc62c1a765fe6515b2142ad1e16d9b0c914d7e345b2b40ef91f7f10b60806a850c1bccafdd080ac");
@@ -383,7 +383,7 @@ static bool test_rz_big_xor(void) {
 }
 
 static bool test_rz_big_inc(void) {
-	RNumBig *a = rz_big_new();
+	RzNumBig *a = rz_big_new();
 
 	rz_big_from_int(a, -1);
 	rz_big_inc(a);
@@ -396,7 +396,7 @@ static bool test_rz_big_inc(void) {
 }
 
 static bool test_rz_big_dec(void) {
-	RNumBig *a = rz_big_new();
+	RzNumBig *a = rz_big_new();
 
 	rz_big_from_int(a, 1);
 	rz_big_dec(a);
@@ -409,7 +409,7 @@ static bool test_rz_big_dec(void) {
 }
 
 static bool test_rz_big_is_zero(void) {
-	RNumBig *a = rz_big_new();
+	RzNumBig *a = rz_big_new();
 
 	rz_big_from_int(a, 1);
 	rz_big_dec(a);
@@ -422,8 +422,8 @@ static bool test_rz_big_is_zero(void) {
 }
 
 static bool test_rz_big_lshift(void) {
-	RNumBig *a = rz_big_new();
-	RNumBig *c = rz_big_new();
+	RzNumBig *a = rz_big_new();
+	RzNumBig *c = rz_big_new();
 
 	rz_big_from_hexstr(a, "0x73204217f728a2fb7dc798618f23c5796675eee1ccd60a3a7be9cddf7d0eb30e9b004b0246051fcbc26ce99b67e23f07d3f2a493b1194af2777ffdfd5d66c61ba4fa2cd14536010ee00e695863039829c315c594c84170559822fcceb20afdc56a81ab7105e17efb0afd8f090bce2e5330e1c78e2e3ab26a1f49610b49b0fafa75b342b5c1a79322be4a92fac102958ed43aee787c221ea5c23e9485321c6b901cdb5c584bebcbea644a8f2c40bfbaf2dee40102e660e37d41b1f2ccee933a57693ee8ee2473bec98911ccd4b853704c7ed73b86da962845efe5399561fb3b0c37f5f0e730ddebcea7144351064f1ee04c1348125807a760186ac33316633d09");
 	rz_big_lshift(c, a, 1023);
@@ -436,8 +436,8 @@ static bool test_rz_big_lshift(void) {
 }
 
 static bool test_rz_big_rshift(void) {
-	RNumBig *a = rz_big_new();
-	RNumBig *c = rz_big_new();
+	RzNumBig *a = rz_big_new();
+	RzNumBig *c = rz_big_new();
 
 	rz_big_from_hexstr(a, "0x73204217f728a2fb7dc798618f23c5796675eee1ccd60a3a7be9cddf7d0eb30e9b004b0246051fcbc26ce99b67e23f07d3f2a493b1194af2777ffdfd5d66c61ba4fa2cd14536010ee00e695863039829c315c594c84170559822fcceb20afdc56a81ab7105e17efb0afd8f090bce2e5330e1c78e2e3ab26a1f49610b49b0fafa75b342b5c1a79322be4a92fac102958ed43aee787c221ea5c23e9485321c6b901cdb5c584bebcbea644a8f2c40bfbaf2dee40102e660e37d41b1f2ccee933a57693ee8ee2473bec98911ccd4b853704c7ed73b86da962845efe5399561fb3b0c37f5f0e730ddebcea7144351064f1ee04c1348125807a760186ac33316633d09");
 	rz_big_rshift(c, a, 1023);
@@ -450,10 +450,10 @@ static bool test_rz_big_rshift(void) {
 }
 
 static bool test_rz_big_powm(void) {
-	RNumBig *a = rz_big_new();
-	RNumBig *b = rz_big_new();
-	RNumBig *c = rz_big_new();
-	RNumBig *m = rz_big_new();
+	RzNumBig *a = rz_big_new();
+	RzNumBig *b = rz_big_new();
+	RzNumBig *c = rz_big_new();
+	RzNumBig *m = rz_big_new();
 
 	rz_big_from_int(a, 3);
 	rz_big_from_int(b, 4);
@@ -469,8 +469,8 @@ static bool test_rz_big_powm(void) {
 }
 
 static bool test_rz_big_isqrt(void) {
-	RNumBig *a = rz_big_new();
-	RNumBig *c = rz_big_new();
+	RzNumBig *a = rz_big_new();
+	RzNumBig *c = rz_big_new();
 
 	rz_big_from_int(a, 4);
 	rz_big_isqrt(c, a);

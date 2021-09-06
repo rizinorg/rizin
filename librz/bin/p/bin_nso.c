@@ -46,6 +46,25 @@ static bool check_buffer(RzBuffer *b) {
 	return false;
 }
 
+static bool parse_header_aux(RzBuffer *buf, NSOHeader *r) {
+	return rz_buf_read_le32_at(buf, NSO_OFF(magic), &r->magic) &&
+		rz_buf_read_le32_at(buf, NSO_OFF(pad0), &r->pad0) &&
+		rz_buf_read_le32_at(buf, NSO_OFF(pad1), &r->pad1) &&
+		rz_buf_read_le32_at(buf, NSO_OFF(pad2), &r->pad2) &&
+		rz_buf_read_le32_at(buf, NSO_OFF(text_memoffset), &r->text_memoffset) &&
+		rz_buf_read_le32_at(buf, NSO_OFF(text_loc), &r->text_loc) &&
+		rz_buf_read_le32_at(buf, NSO_OFF(text_size), &r->text_size) &&
+		rz_buf_read_le32_at(buf, NSO_OFF(pad3), &r->pad3) &&
+		rz_buf_read_le32_at(buf, NSO_OFF(ro_memoffset), &r->ro_memoffset) &&
+		rz_buf_read_le32_at(buf, NSO_OFF(ro_loc), &r->ro_loc) &&
+		rz_buf_read_le32_at(buf, NSO_OFF(ro_size), &r->ro_size) &&
+		rz_buf_read_le32_at(buf, NSO_OFF(pad4), &r->pad4) &&
+		rz_buf_read_le32_at(buf, NSO_OFF(data_memoffset), &r->data_memoffset) &&
+		rz_buf_read_le32_at(buf, NSO_OFF(data_loc), &r->data_loc) &&
+		rz_buf_read_le32_at(buf, NSO_OFF(data_size), &r->data_size) &&
+		rz_buf_read_le32_at(buf, NSO_OFF(bss_size), &r->bss_size);
+}
+
 static NSOHeader *parse_header(RzBuffer *buf) {
 	RZ_STATIC_ASSERT(sizeof(NSOHeader) == 64);
 	if (rz_buf_size(buf) < sizeof(NSOHeader)) {
@@ -55,22 +74,12 @@ static NSOHeader *parse_header(RzBuffer *buf) {
 	if (!r) {
 		return NULL;
 	}
-	r->magic = rz_buf_read_le32_at(buf, NSO_OFF(magic));
-	r->pad0 = rz_buf_read_le32_at(buf, NSO_OFF(pad0));
-	r->pad1 = rz_buf_read_le32_at(buf, NSO_OFF(pad1));
-	r->pad2 = rz_buf_read_le32_at(buf, NSO_OFF(pad2));
-	r->text_memoffset = rz_buf_read_le32_at(buf, NSO_OFF(text_memoffset));
-	r->text_loc = rz_buf_read_le32_at(buf, NSO_OFF(text_loc));
-	r->text_size = rz_buf_read_le32_at(buf, NSO_OFF(text_size));
-	r->pad3 = rz_buf_read_le32_at(buf, NSO_OFF(pad3));
-	r->ro_memoffset = rz_buf_read_le32_at(buf, NSO_OFF(ro_memoffset));
-	r->ro_loc = rz_buf_read_le32_at(buf, NSO_OFF(ro_loc));
-	r->ro_size = rz_buf_read_le32_at(buf, NSO_OFF(ro_size));
-	r->pad4 = rz_buf_read_le32_at(buf, NSO_OFF(pad4));
-	r->data_memoffset = rz_buf_read_le32_at(buf, NSO_OFF(data_memoffset));
-	r->data_loc = rz_buf_read_le32_at(buf, NSO_OFF(data_loc));
-	r->data_size = rz_buf_read_le32_at(buf, NSO_OFF(data_size));
-	r->bss_size = rz_buf_read_le32_at(buf, NSO_OFF(bss_size));
+
+	if (!parse_header_aux(buf, r)) {
+		free(r);
+		return NULL;
+	}
+
 	return r;
 }
 
@@ -113,7 +122,7 @@ static bool decompress(RzBuffer *source_buf, ut64 source_offset, ut64 source_siz
 	return r == decompressed_size;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
 	rz_return_val_if_fail(bf && buf, false);
 	RzBinNXOObj *bin = nso_new(buf);
 	if (!bin) {
@@ -126,6 +135,10 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 		goto another_castle;
 	}
 	ut64 total_size = hdr->text_size + hdr->ro_size + hdr->data_size;
+	if (total_size < hdr->text_size) {
+		// Prevent integer overflow
+		goto another_castle;
+	}
 	tmp = RZ_NEWS0(ut8, total_size);
 	if (!tmp) {
 		goto another_castle;
@@ -151,15 +164,19 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 	}
 
 	/* Load unpacked binary */
-	ut32 modoff = rz_buf_read_le32_at(bin->decompressed, NSO_OFFSET_MODMEMOFF);
+	ut32 modoff;
+	if (!rz_buf_read_le32_at(bin->decompressed, NSO_OFFSET_MODMEMOFF, &modoff)) {
+		goto another_castle;
+	}
+
 	eprintf("MOD Offset = 0x%" PFMT64x "\n", (ut64)modoff);
 	parseMod(bin->decompressed, bin, modoff, ba);
-	*bin_obj = bin;
+	obj->bin_obj = bin;
 	return true;
 another_castle:
 	nso_free(bin);
 	free(tmp);
-	*bin_obj = NULL;
+	obj->bin_obj = NULL;
 	return false;
 }
 
@@ -176,17 +193,39 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
 
 static RzList *entries(RzBinFile *bf) {
 	RzList *ret;
-	RzBinAddr *ptr = NULL;
 	RzBuffer *b = bf->buf;
+
 	if (!(ret = rz_list_new())) {
 		return NULL;
 	}
+
 	ret->free = free;
-	if ((ptr = RZ_NEW0(RzBinAddr))) {
-		ptr->paddr = rz_buf_read_le32_at(b, NSO_OFF(text_memoffset));
-		ptr->vaddr = rz_buf_read_le32_at(b, NSO_OFF(text_loc)) + baddr(bf);
-		rz_list_append(ret, ptr);
+
+	RzBinAddr *ptr = RZ_NEW0(RzBinAddr);
+	if (!ptr) {
+		rz_list_free(ret);
+		return NULL;
 	}
+
+	ut32 tmp;
+	if (!rz_buf_read_le32_at(b, NSO_OFF(text_memoffset), &tmp)) {
+		rz_list_free(ret);
+		free(ptr);
+		return NULL;
+	}
+	ptr->paddr = tmp;
+
+	if (!rz_buf_read_le32_at(b, NSO_OFF(text_loc), &tmp)) {
+		rz_list_free(ret);
+		free(ptr);
+		return NULL;
+	}
+	ptr->vaddr = tmp;
+
+	ptr->vaddr += baddr(bf);
+
+	rz_list_append(ret, ptr);
+
 	return ret;
 }
 
@@ -283,8 +322,19 @@ static RzList *sections(RzBinFile *bf) {
 		return ret;
 	}
 	ptr->name = strdup("header");
-	ptr->size = rz_buf_read_le32_at(b, NSO_OFF(text_memoffset));
-	ptr->vsize = rz_buf_read_le32_at(b, NSO_OFF(text_memoffset));
+	ut32 tmp;
+	if (!rz_buf_read_le32_at(b, NSO_OFF(text_memoffset), &tmp)) {
+		rz_list_free(ret);
+		return NULL;
+	}
+	ptr->size = tmp;
+
+	if (!rz_buf_read_le32_at(b, NSO_OFF(text_memoffset), &tmp)) {
+		rz_list_free(ret);
+		return NULL;
+	}
+	ptr->vsize = tmp;
+
 	ptr->paddr = 0;
 	ptr->vaddr = 0;
 	ptr->perm = RZ_PERM_R;

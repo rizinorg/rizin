@@ -221,25 +221,15 @@ typedef struct rz_malloc_state {
 	int have_fast_chunks; /* have fast chunks */
 	unsigned int attached_threads; /* threads attached */
 
-	/*32 bits members*/
-	ut32 fastbinsY_32[NFASTBINS + 1]; /* array of fastchunks */
-	ut32 top_32; /* top chunk's base addr */
-	ut32 last_remainder_32; /* remainder top chunk's addr */
-	ut32 bins_32[NBINS * 2 - 2]; /* array of remainder free chunks */
-	ut32 next_32; /* double linked list of chunks */
-	ut32 next_free_32; /* double linked list of free chunks */
-	ut32 system_mem_32; /* current allocated memory of current arena */
-	ut32 max_system_mem_32; /* maximum system memory */
-
 	/*64 bits members */
-	ut64 fastbinsY_64[NFASTBINS]; /* array of fastchunks */
-	ut64 top_64; /* top chunk's base addr */
-	ut64 last_remainder_64; /* remainder top chunk's addr */
-	ut64 bins_64[NBINS * 2 - 2]; /* array of remainder free chunks */
-	ut64 next_64; /* double linked list of chunks */
-	ut64 next_free_64; /* double linked list of free chunks */
-	ut64 system_mem_64; /* current allocated memory of current arena */
-	ut64 max_system_mem_64; /* maximum system memory */
+	ut64 fastbinsY[NFASTBINS]; /* array of fastchunks */
+	ut64 top; /* top chunk's base addr */
+	ut64 last_remainder; /* remainder top chunk's addr */
+	ut64 bins[NBINS * 2 - 2]; /* array of remainder free chunks */
+	ut64 next; /* double linked list of chunks */
+	ut64 next_free; /* double linked list of free chunks */
+	ut64 system_mem; /* current allocated memory of current arena */
+	ut64 max_system_mem; /* maximum system memory */
 } MallocState;
 
 typedef struct rz_heap_info_32 {

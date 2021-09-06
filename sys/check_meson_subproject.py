@@ -18,7 +18,7 @@ meson_root = os.environ["MESON_SOURCE_ROOT"]
 subproject_filename = os.path.join(meson_root, "subprojects", subproject + ".wrap")
 
 try:
-    with open(subproject_filename, "r") as f:
+    with open(subproject_filename, "r", encoding="utf8") as f:
 
         is_wrap_git = False
         revision = None
@@ -43,7 +43,9 @@ try:
             subproject_dir = os.path.join(meson_root, "subprojects", directory)
             subproject_git_dir = os.path.join(subproject_dir, ".git")
             if os.path.isdir(subproject_dir) and os.path.isdir(subproject_git_dir):
-                with open(os.path.join(subproject_git_dir, "HEAD"), "r") as f:
+                with open(
+                    os.path.join(subproject_git_dir, "HEAD"), "r", encoding="utf8"
+                ) as f:
                     head = f.read().strip()
                 if head != revision:
                     sys.exit(1)

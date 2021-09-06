@@ -390,6 +390,7 @@ RUN
 
 NAME=f.*
 FILE=bins/elf/analysis/main
+ARGS=-e log.level=4
 CMDS=<<EOF
 af
 f.patata
@@ -407,12 +408,16 @@ all
 f.patata@0x00400410
 EOF
 EXPECT_ERR=<<EOF
+WARNING: Neither hash nor gnu_hash exist. Falling back to heuristics for deducing the number of dynamic symbols...
+WARNING: Neither hash nor gnu_hash exist. Falling back to heuristics for deducing the number of dynamic symbols...
+WARNING: Neither hash nor gnu_hash exist. Falling back to heuristics for deducing the number of dynamic symbols...
 Cannot find function at 0x00000000
 EOF
 RUN
 
 NAME=f.j
 FILE=bins/elf/analysis/main
+ARGS=-e log.level=4
 CMDS=<<EOF
 af
 f.patata
@@ -430,12 +435,16 @@ all
 {"entry0":{"patata":4195344}}
 EOF
 EXPECT_ERR=<<EOF
+WARNING: Neither hash nor gnu_hash exist. Falling back to heuristics for deducing the number of dynamic symbols...
+WARNING: Neither hash nor gnu_hash exist. Falling back to heuristics for deducing the number of dynamic symbols...
+WARNING: Neither hash nor gnu_hash exist. Falling back to heuristics for deducing the number of dynamic symbols...
 Cannot find function at 0x00000000
 EOF
 RUN
 
 NAME=f.-
 FILE=bins/elf/analysis/main
+ARGS=-e log.level=4
 CMDS=<<EOF
 af
 f.patata
@@ -446,7 +455,11 @@ EOF
 EXPECT=<<EOF
 0x00400410 patata   [entry0 + 0]
 EOF
-EXPECT_ERR=
+EXPECT_ERR=<<EOF
+WARNING: Neither hash nor gnu_hash exist. Falling back to heuristics for deducing the number of dynamic symbols...
+WARNING: Neither hash nor gnu_hash exist. Falling back to heuristics for deducing the number of dynamic symbols...
+WARNING: Neither hash nor gnu_hash exist. Falling back to heuristics for deducing the number of dynamic symbols...
+EOF
 RUN
 
 NAME=f-.

@@ -543,7 +543,7 @@
         },
         {
           "type": "SYMBOL",
-          "name": "pipe_second_stmt"
+          "name": "args"
         }
       ]
     },
@@ -1858,32 +1858,6 @@
                       "type": "BLANK"
                     }
                   ]
-                }
-              }
-            ]
-          },
-          {
-            "type": "SEQ",
-            "members": [
-              {
-                "type": "FIELD",
-                "name": "command",
-                "content": {
-                  "type": "ALIAS",
-                  "content": {
-                    "type": "STRING",
-                    "value": ".!"
-                  },
-                  "named": true,
-                  "value": "cmd_identifier"
-                }
-              },
-              {
-                "type": "FIELD",
-                "name": "args",
-                "content": {
-                  "type": "SYMBOL",
-                  "name": "interpret_arg"
                 }
               }
             ]

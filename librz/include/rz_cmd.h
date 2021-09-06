@@ -57,6 +57,7 @@ typedef enum rz_cmd_arg_type_t {
 	RZ_CMD_ARG_TYPE_ALIAS_TYPE, ///< Argument is a C typedef (alias) name
 	RZ_CMD_ARG_TYPE_CLASS_TYPE, ///< Argument is a C++/etc class name
 	RZ_CMD_ARG_TYPE_ANY_TYPE, ///< Argument is the any of the C or C++ type name
+	RZ_CMD_ARG_TYPE_GLOBAL_VAR, ///< Argument is a user defined global variable
 } RzCmdArgType;
 
 /**
@@ -141,7 +142,7 @@ typedef struct rz_cmd_macro_t {
 	RzCoreCmd cmd;
 	PrintfCallback cb_printf;
 	void *user;
-	RNum *num;
+	RzNum *num;
 	int labels_n;
 	RzCmdMacroLabel labels[MACRO_LABELS];
 	RzList *macros;
@@ -434,12 +435,14 @@ typedef struct rz_cmd_desc_t {
 		struct {
 			RzCmdArgvModesCb cb;
 			int modes; ///< A combination of RzOutputMode values
+			RzOutputMode default_mode; ///< Make one of the modes the default one, used even when the special suffix is not specified.
 			int min_argc;
 			int max_argc;
 		} argv_modes_data;
 		struct {
 			RzCmdArgvStateCb cb;
 			int modes; ///< A combination of RzOutputMode values
+			RzOutputMode default_mode; ///< Make one of the modes the default one, used even when the special suffix is not specified.
 			int min_argc;
 			int max_argc;
 		} argv_state_data;
@@ -536,6 +539,7 @@ RZ_API RzCmdDesc *rz_cmd_desc_oldinput_new(RzCmd *cmd, RzCmdDesc *parent, const 
 RZ_API RzCmdDesc *rz_cmd_desc_fake_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, const RzCmdDescHelp *help);
 RZ_API RzCmdDesc *rz_cmd_desc_parent(RzCmdDesc *cd);
 RZ_API RzCmdDesc *rz_cmd_desc_get_exec(RzCmdDesc *cd);
+RZ_API bool rz_cmd_desc_set_default_mode(RzCmdDesc *cd, RzOutputMode mode);
 RZ_API bool rz_cmd_desc_has_handler(const RzCmdDesc *cd);
 RZ_API bool rz_cmd_desc_remove(RzCmd *cmd, RzCmdDesc *cd);
 RZ_API void rz_cmd_foreach_cmdname(RzCmd *cmd, RzCmdDesc *begin, RzCmdForeachNameCb cb, void *user);
@@ -561,6 +565,10 @@ RZ_API char *rz_cmd_unescape_arg(const char *arg, RzCmdEscape escape);
 RZ_API void rz_cmd_state_output_array_start(RzCmdStateOutput *state);
 RZ_API void rz_cmd_state_output_array_end(RzCmdStateOutput *state);
 RZ_API void rz_cmd_state_output_set_columnsf(RzCmdStateOutput *state, const char *fmt, ...);
+RZ_API bool rz_cmd_state_output_init(RZ_NONNULL RzCmdStateOutput *state, RzOutputMode mode);
+RZ_API void rz_cmd_state_output_fini(RZ_NONNULL RzCmdStateOutput *state);
+RZ_API void rz_cmd_state_output_free(RZ_NONNULL RzCmdStateOutput *state);
+RZ_API void rz_cmd_state_output_print(RZ_NONNULL RzCmdStateOutput *state);
 
 #define rz_cmd_parsed_args_foreach_arg(args, i, arg) for ((i) = 1; (i) < (args->argc) && ((arg) = (args)->argv[i]); (i)++)
 

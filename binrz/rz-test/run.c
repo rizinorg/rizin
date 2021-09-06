@@ -2,6 +2,25 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "rz_test.h"
+#include <rz_cons.h>
+
+#if __WINDOWS__
+static ut8 *remove_cr(ut8 *str) {
+	char *s = (char *)str;
+	char *start = s;
+	while (*s) {
+		if (s[0] == '\r' &&
+			!(s - start >= 4 && !strncmp(s - 4, RZ_CONS_CLEAR_SCREEN, 4))) {
+			memmove(s, s + 1, strlen(s + 1) + 1);
+			continue;
+		}
+		s++;
+	}
+	return (ut8 *)start;
+}
+#else
+#define remove_cr(x) (x)
+#endif
 
 static RzSubprocessOutput *subprocess_runner(const char *file, const char *args[], size_t args_size,
 	const char *envvars[], const char *envvals[], size_t env_size, ut64 timeout_ms, void *user) {
@@ -16,6 +35,8 @@ static RzSubprocessOutput *subprocess_runner(const char *file, const char *args[
 	RzSubprocessOutput *out = rz_subprocess_drain(proc);
 	if (out) {
 		out->timeout = r == RZ_SUBPROCESS_TIMEDOUT;
+		out->out = remove_cr(out->out);
+		out->err = remove_cr(out->err);
 	}
 	rz_subprocess_free(proc);
 	return out;
@@ -49,7 +70,7 @@ static char *convert_win_cmds(const char *cmds) {
 					if (c == '{') {
 						*p++ = '%';
 						cmds++;
-						for (; c = *cmds, c && c != '}'; *cmds++) {
+						for (; c = *cmds, c && c != '}'; cmds++) {
 							*p++ = c;
 						}
 						if (c) { // must check c to prevent overflow
@@ -184,12 +205,12 @@ RZ_API bool rz_test_check_cmd_test(RzSubprocessOutput *out, RzCmdTest *test) {
 	}
 	const char *expect_out = test->expect.value;
 	const char *regexp_out = test->regexp_out.value;
-	if (expect_out && !rz_test_cmp_cmd_output(out->out, expect_out, regexp_out)) {
+	if (expect_out && !rz_test_cmp_cmd_output((char *)out->out, expect_out, regexp_out)) {
 		return false;
 	}
 	const char *expect_err = test->expect_err.value;
 	const char *regexp_err = test->regexp_err.value;
-	if (expect_err && !rz_test_cmp_cmd_output(out->err, expect_err, regexp_err)) {
+	if (expect_err && !rz_test_cmp_cmd_output((char *)out->err, expect_err, regexp_err)) {
 		return false;
 	}
 	return true;
@@ -234,7 +255,7 @@ RZ_API bool rz_test_check_json_test(RzSubprocessOutput *out, RzJsonTest *test) {
 	}
 	const char *args[] = { "." };
 	RzSubprocess *proc = rz_subprocess_start(JQ_CMD, args, 1, NULL, NULL, 0);
-	rz_subprocess_stdin_write(proc, (const ut8 *)out->out, strlen(out->out));
+	rz_subprocess_stdin_write(proc, (const ut8 *)out->out, strlen((char *)out->out));
 	rz_subprocess_wait(proc, UT64_MAX);
 	bool ret = rz_subprocess_ret(proc) == 0;
 	rz_subprocess_free(proc);
@@ -289,7 +310,7 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 		if (rz_subprocess_ret(proc) != 0) {
 			goto rip;
 		}
-		char *hex = rz_subprocess_out(proc);
+		char *hex = (char *)remove_cr(rz_subprocess_out(proc, NULL));
 		size_t hexlen = strlen(hex);
 		if (!hexlen) {
 			goto rip;
@@ -323,7 +344,7 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 		if (rz_subprocess_ret(proc) != 0) {
 			goto ship;
 		}
-		char *disasm = rz_subprocess_out(proc);
+		char *disasm = (char *)remove_cr(rz_subprocess_out(proc, NULL));
 		rz_str_trim(disasm);
 		out->disasm = disasm;
 	ship:
@@ -442,7 +463,9 @@ RZ_API RzTestResultInfo *rz_test_run_test(RzTestRunConfig *config, RzTest *test)
 		RzAsmTestOutput *out = rz_test_run_asm_test(config, asm_test);
 		success = rz_test_check_asm_test(out, asm_test);
 		ret->asm_out = out;
-		ret->timeout = out->as_timeout || out->disas_timeout;
+		if (out) {
+			ret->timeout = out->as_timeout || out->disas_timeout;
+		}
 		ret->run_failed = !out;
 		break;
 	}
@@ -451,7 +474,9 @@ RZ_API RzTestResultInfo *rz_test_run_test(RzTestRunConfig *config, RzTest *test)
 		RzSubprocessOutput *out = rz_test_run_json_test(config, json_test, subprocess_runner, NULL);
 		success = rz_test_check_json_test(out, json_test);
 		ret->proc_out = out;
-		ret->timeout = out->timeout;
+		if (out) {
+			ret->timeout = out->timeout;
+		}
 		ret->run_failed = !out;
 		break;
 	}
@@ -460,7 +485,9 @@ RZ_API RzTestResultInfo *rz_test_run_test(RzTestRunConfig *config, RzTest *test)
 		RzSubprocessOutput *out = rz_test_run_fuzz_test(config, fuzz_test, subprocess_runner, NULL);
 		success = rz_test_check_fuzz_test(out);
 		ret->proc_out = out;
-		ret->timeout = out->timeout;
+		if (out) {
+			ret->timeout = out->timeout;
+		}
 		ret->run_failed = !out;
 	}
 	}
@@ -471,7 +498,7 @@ RZ_API RzTestResultInfo *rz_test_run_test(RzTestRunConfig *config, RzTest *test)
 #error RZ_ASSERT_STDOUT undefined or 0
 #endif
 	RzSubprocessOutput *out = ret->proc_out;
-	if (!success && test->type == RZ_TEST_TYPE_CMD && strstr(test->path, "/dbg") && (!out->out || (!strstr(out->out, "WARNING:") && !strstr(out->out, "ERROR:") && !strstr(out->out, "FATAL:"))) && (!out->err || (!strstr(out->err, "Sanitizer") && !strstr(out->err, "runtime error:")))) {
+	if (!success && test->type == RZ_TEST_TYPE_CMD && strstr(test->path, "/dbg") && (!out->out || (!strstr((char *)out->out, "WARNING:") && !strstr((char *)out->out, "ERROR:") && !strstr((char *)out->out, "FATAL:"))) && (!out->err || (!strstr((char *)out->err, "Sanitizer") && !strstr((char *)out->err, "runtime error:")))) {
 		broken = true;
 	}
 #endif

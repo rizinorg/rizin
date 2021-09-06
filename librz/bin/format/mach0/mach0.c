@@ -851,9 +851,13 @@ static bool parse_signature(struct MACH0_(obj_t) * bin, ut64 off) {
 		bin->signature = (ut8 *)strdup("Malformed entitlement");
 		return true;
 	}
-	super.blob.magic = rz_buf_read_ble32_at(bin->b, data, mach0_endian);
-	super.blob.length = rz_buf_read_ble32_at(bin->b, data + 4, mach0_endian);
-	super.count = rz_buf_read_ble32_at(bin->b, data + 8, mach0_endian);
+
+	if (!rz_buf_read_ble32_at(bin->b, data, mach0_endian, &super.blob.magic) ||
+		!rz_buf_read_ble32_at(bin->b, data + 4, mach0_endian, &super.blob.length) ||
+		!rz_buf_read_ble32_at(bin->b, data + 8, mach0_endian, &super.count)) {
+		return false;
+	}
+
 	char *verbose = rz_sys_getenv("RZ_BIN_CODESIGN_VERBOSE");
 	bool isVerbose = false;
 	if (verbose) {
@@ -886,8 +890,10 @@ static bool parse_signature(struct MACH0_(obj_t) * bin, ut64 off) {
 					break;
 				}
 				struct blob_t entitlements = { 0 };
-				entitlements.magic = rz_buf_read_ble32_at(bin->b, off, mach0_endian);
-				entitlements.length = rz_buf_read_ble32_at(bin->b, off + 4, mach0_endian);
+				if (!rz_buf_read_ble32_at(bin->b, off, mach0_endian, &entitlements.magic) ||
+					!rz_buf_read_ble32_at(bin->b, off + 4, mach0_endian, &entitlements.length)) {
+					break;
+				}
 				len = entitlements.length - sizeof(struct blob_t);
 				if (len <= bin->size && len > 1) {
 					bin->signature = calloc(1, len + 1);
@@ -998,9 +1004,6 @@ static int parse_thread(struct MACH0_(obj_t) * bin, struct load_command *lc, ut6
 		goto wrong_read;
 	}
 	flavor = rz_read_ble32(tmp, bin->big_endian);
-	if (len == -1) {
-		goto wrong_read;
-	}
 
 	if (off + sizeof(struct thread_command) + sizeof(flavor) > bin->size ||
 		off + sizeof(struct thread_command) + sizeof(flavor) + sizeof(ut32) > bin->size) {
@@ -1500,7 +1503,7 @@ static bool parse_chained_fixups(struct MACH0_(obj_t) * bin, ut32 offset, ut32 s
 		return false;
 	}
 	ut32 segs_count;
-	if ((segs_count = rz_buf_read_le32_at(bin->b, starts_at)) == UT32_MAX) {
+	if (!rz_buf_read_le32_at(bin->b, starts_at, &segs_count)) {
 		return false;
 	}
 	bin->chained_starts = RZ_NEWS0(struct rz_dyld_chained_starts_in_segment *, segs_count);
@@ -1511,7 +1514,7 @@ static bool parse_chained_fixups(struct MACH0_(obj_t) * bin, ut32 offset, ut32 s
 	ut64 cursor = starts_at + sizeof(ut32);
 	for (i = 0; i < segs_count; i++) {
 		ut32 seg_off;
-		if ((seg_off = rz_buf_read_le32_at(bin->b, cursor)) == UT32_MAX || !seg_off) {
+		if (!rz_buf_read_le32_at(bin->b, cursor, &seg_off) || !seg_off) {
 			cursor += sizeof(ut32);
 			continue;
 		}
@@ -2307,7 +2310,7 @@ RzList *MACH0_(get_segments)(RzBinFile *bf) {
 			}
 			s->vaddr = (ut64)bin->sects[i].addr;
 			s->vsize = (ut64)bin->sects[i].size;
-			s->align = (ut64)(1 << bin->sects[i].align);
+			s->align = (ut64)(1ULL << (bin->sects[i].align & 63));
 			s->is_segment = false;
 			s->size = (bin->sects[i].flags == S_ZEROFILL) ? 0 : (ut64)bin->sects[i].size;
 			// The bottom byte of flags is the section type
@@ -2429,7 +2432,7 @@ struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) * bin) {
 			sections[i].vsize = seg->vmsize;
 			sections[i].align = 4096;
 			sections[i].flags = seg->flags;
-			rz_str_ncpy(sectname, seg->segname, 16);
+			rz_strf(sectname, "%.16s", seg->segname);
 			sectname[16] = 0;
 			rz_str_filter(sectname, -1);
 			// hack to support multiple sections with same name
@@ -2457,9 +2460,9 @@ struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) * bin) {
 		sections[i].vsize = (ut64)bin->sects[i].size;
 		sections[i].align = bin->sects[i].align;
 		sections[i].flags = bin->sects[i].flags;
-		rz_str_ncpy(sectname, bin->sects[i].sectname, 17);
+		rz_strf(sectname, "%.16s", bin->sects[i].sectname);
 		rz_str_filter(sectname, -1);
-		rz_str_ncpy(raw_segname, bin->sects[i].segname, 16);
+		rz_strf(raw_segname, "%.16s", bin->sects[i].segname);
 		for (j = 0; j < bin->nsegs; j++) {
 			if (sections[i].addr >= bin->segs[j].vmaddr &&
 				sections[i].addr < (bin->segs[j].vmaddr + bin->segs[j].vmsize)) {
@@ -2709,12 +2712,12 @@ static int walk_exports(struct MACH0_(obj_t) * bin, RExportsIterator iterator, v
 			RZ_FREE(next);
 			goto beach;
 		}
-		next->node = tr + trie;
-		if (next->node >= end) {
+		if (UT64_ADD_OVFCHK(tr, (ut64)trie) || tr + (ut64)trie >= (ut64)end) {
 			eprintf("malformed export trie\n");
 			RZ_FREE(next);
 			goto beach;
 		}
+		next->node = tr + trie;
 		{
 			// avoid loops
 			RzListIter *it;
@@ -2783,6 +2786,7 @@ const RzList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) * bin) {
 	}
 
 	if (!bin->symtab || !bin->symstr) {
+		ht_pp_free(hash);
 		return list;
 	}
 	/* parse dynamic symbol table */
@@ -3946,7 +3950,6 @@ static const char *cpusubtype_tostring(ut32 cputype, ut32 cpusubtype) {
 		case CPU_SUBTYPE_ARM64E: return "arm64e";
 		default: return "Unknown arm64 subtype";
 		}
-		return "v8";
 	case CPU_TYPE_ARM:
 		switch (cpusubtype & 0xff) {
 		case CPU_SUBTYPE_ARM_ALL:
@@ -4186,29 +4189,75 @@ void MACH0_(mach_headerfields)(RzBinFile *bf) {
 		}
 		switch (lcType) {
 		case LC_BUILD_VERSION: {
-			cb_printf("0x%08" PFMT64x "  platform    %s\n",
-				pvaddr, build_version_platform_to_string(rz_buf_read_le32_at(buf, addr)));
-			cb_printf("0x%08" PFMT64x "  minos       %d.%d.%d\n",
-				pvaddr + 4, rz_buf_read_le16_at(buf, addr + 6), rz_buf_read8_at(buf, addr + 5),
-				rz_buf_read8_at(buf, addr + 4));
-			cb_printf("0x%08" PFMT64x "  sdk         %d.%d.%d\n",
-				pvaddr + 8, rz_buf_read_le16_at(buf, addr + 10), rz_buf_read8_at(buf, addr + 9),
-				rz_buf_read8_at(buf, addr + 8));
-			ut32 ntools = rz_buf_read_le32_at(buf, addr + 12);
-			cb_printf("0x%08" PFMT64x "  ntools      %d\n",
-				pvaddr + 12, ntools);
+			ut32 platform;
+			if (!rz_buf_read_le32_at(buf, addr, &platform)) {
+				break;
+			}
+			cb_printf("0x%08" PFMT64x "  platform    %s\n", pvaddr, build_version_platform_to_string(platform));
+
+			ut16 minos1;
+			if (!rz_buf_read_le16_at(buf, addr + 6, &minos1)) {
+				break;
+			}
+			ut8 minos2;
+			if (!rz_buf_read8_at(buf, addr + 5, &minos2)) {
+				break;
+			}
+			ut8 minos3;
+			if (!rz_buf_read8_at(buf, addr + 4, &minos3)) {
+				break;
+			}
+			cb_printf("0x%08" PFMT64x "  minos       %d.%d.%d\n", pvaddr + 4, minos1, minos2, minos3);
+
+			ut16 sdk1;
+			if (!rz_buf_read_le16_at(buf, addr + 10, &sdk1)) {
+				break;
+			}
+			ut8 sdk2;
+			if (!rz_buf_read8_at(buf, addr + 9, &sdk2)) {
+				break;
+			}
+			ut8 sdk3;
+			if (!rz_buf_read8_at(buf, addr + 8, &sdk3)) {
+				break;
+			}
+			cb_printf("0x%08" PFMT64x "  sdk         %d.%d.%d\n", pvaddr + 8, sdk1, sdk2, sdk3);
+
+			ut32 ntools;
+			if (!rz_buf_read_le32_at(buf, addr + 12, &ntools)) {
+				break;
+			}
+			cb_printf("0x%08" PFMT64x "  ntools      %d\n", pvaddr + 12, ntools);
+
 			ut64 off = 16;
 			while (off < (lcSize - 8) && ntools--) {
 				cb_printf("pf.mach0_build_version_tool @ 0x%08" PFMT64x "\n", pvaddr + off);
-				cb_printf("0x%08" PFMT64x "  tool        %s\n",
-					pvaddr + off, build_version_tool_to_string(rz_buf_read_le32_at(buf, addr + off)));
+
+				ut32 tool;
+				if (!rz_buf_read_le32_at(buf, addr + off, &tool)) {
+					break;
+				}
+				cb_printf("0x%08" PFMT64x "  tool        %s\n", pvaddr + off, build_version_tool_to_string(tool));
+
 				off += 4;
 				if (off >= (lcSize - 8)) {
 					break;
 				}
-				cb_printf("0x%08" PFMT64x "  version     %d.%d.%d\n",
-					pvaddr + off, rz_buf_read_le16_at(buf, addr + off + 2), rz_buf_read8_at(buf, addr + off + 1),
-					rz_buf_read8_at(buf, addr + off));
+
+				ut16 version1;
+				if (!rz_buf_read_le16_at(buf, addr + off + 2, &version1)) {
+					break;
+				}
+				ut8 version2;
+				if (!rz_buf_read8_at(buf, addr + off + 1, &version2)) {
+					break;
+				}
+				ut8 version3;
+				if (!rz_buf_read8_at(buf, addr + off, &version3)) {
+					break;
+				}
+				cb_printf("0x%08" PFMT64x "  version     %d.%d.%d\n", pvaddr + off, version1, version2, version3);
+
 				off += 4;
 			}
 			break;
@@ -4242,14 +4291,47 @@ void MACH0_(mach_headerfields)(RzBinFile *bf) {
 #endif
 			break;
 		case LC_ID_DYLIB: { // install_name_tool
-			ut32 str_off = rz_buf_read_ble32_at(buf, addr, isBe);
+			ut32 str_off;
+			if (!rz_buf_read_ble32_at(buf, addr, isBe, &str_off)) {
+				break;
+			}
+
 			char *id = rz_buf_get_string(buf, addr + str_off - 8);
-			cb_printf("0x%08" PFMT64x "  current     %d.%d.%d\n",
-				pvaddr + 8, rz_buf_read_le16_at(buf, addr + 10), rz_buf_read8_at(buf, addr + 9),
-				rz_buf_read8_at(buf, addr + 8));
-			cb_printf("0x%08" PFMT64x "  compat      %d.%d.%d\n",
-				pvaddr + 12, rz_buf_read_le16_at(buf, addr + 14), rz_buf_read8_at(buf, addr + 13),
-				rz_buf_read8_at(buf, addr + 12));
+
+			ut16 current1;
+			if (!rz_buf_read_le16_at(buf, addr + 10, &current1)) {
+				free(id);
+				break;
+			}
+			ut8 current2;
+			if (!rz_buf_read8_at(buf, addr + 9, &current2)) {
+				free(id);
+				break;
+			}
+			ut8 current3;
+			if (!rz_buf_read8_at(buf, addr + 8, &current3)) {
+				free(id);
+				break;
+			}
+			cb_printf("0x%08" PFMT64x "  current     %d.%d.%d\n", pvaddr + 8, current1, current2, current3);
+
+			ut16 compat1;
+			if (!rz_buf_read_le16_at(buf, addr + 14, &compat1)) {
+				free(id);
+				break;
+			}
+			ut8 compat2;
+			if (!rz_buf_read8_at(buf, addr + 13, &compat2)) {
+				free(id);
+				break;
+			}
+			ut8 compat3;
+			if (!rz_buf_read8_at(buf, addr + 12, &compat3)) {
+				free(id);
+				break;
+			}
+			cb_printf("0x%08" PFMT64x "  compat      %d.%d.%d\n", pvaddr + 12, compat1, compat2, compat3);
+
 			cb_printf("0x%08" PFMT64x "  id          %s\n",
 				pvaddr + str_off - 8, id ? id : "");
 			free(id);
@@ -4269,7 +4351,10 @@ void MACH0_(mach_headerfields)(RzBinFile *bf) {
 			ut8 name[17] = { 0 };
 			rz_buf_read_at(buf, addr, name, sizeof(name) - 1);
 			cb_printf("0x%08" PFMT64x "  name        %s\n", pvaddr, name);
-			ut32 nsects = rz_buf_read_le32_at(buf, addr - 8 + (is64 ? 64 : 48));
+			ut32 nsects;
+			if (!rz_buf_read_le32_at(buf, addr - 8 + (is64 ? 64 : 48), &nsects)) {
+				break;
+			}
 			ut64 off = is64 ? 72 : 56;
 			while (off < lcSize && nsects--) {
 				if (is64) {
@@ -4283,14 +4368,43 @@ void MACH0_(mach_headerfields)(RzBinFile *bf) {
 		} break;
 		case LC_LOAD_DYLIB:
 		case LC_LOAD_WEAK_DYLIB: {
-			ut32 str_off = rz_buf_read_ble32_at(buf, addr, isBe);
+			ut32 str_off;
+			if (!rz_buf_read_ble32_at(buf, addr, isBe, &str_off)) {
+				break;
+			}
 			char *load_dylib = rz_buf_get_string(buf, addr + str_off - 8);
-			cb_printf("0x%08" PFMT64x "  current     %d.%d.%d\n",
-				pvaddr + 8, rz_buf_read_le16_at(buf, addr + 10), rz_buf_read8_at(buf, addr + 9),
-				rz_buf_read8_at(buf, addr + 8));
-			cb_printf("0x%08" PFMT64x "  compat      %d.%d.%d\n",
-				pvaddr + 12, rz_buf_read_le16_at(buf, addr + 14), rz_buf_read8_at(buf, addr + 13),
-				rz_buf_read8_at(buf, addr + 12));
+			ut16 current1;
+			if (!rz_buf_read_le16_at(buf, addr + 10, &current1)) {
+				free(load_dylib);
+				break;
+			}
+			ut8 current2;
+			if (!rz_buf_read8_at(buf, addr + 9, &current2)) {
+				free(load_dylib);
+				break;
+			}
+			ut8 current3;
+			if (!rz_buf_read8_at(buf, addr + 8, &current3)) {
+				free(load_dylib);
+				break;
+			}
+			cb_printf("0x%08" PFMT64x "  current     %d.%d.%d\n", pvaddr + 8, current1, current2, current3);
+			ut16 compat1;
+			if (!rz_buf_read_le16_at(buf, addr + 14, &compat1)) {
+				free(load_dylib);
+				break;
+			}
+			ut8 compat2;
+			if (!rz_buf_read8_at(buf, addr + 13, &compat2)) {
+				free(load_dylib);
+				break;
+			}
+			ut8 compat3;
+			if (!rz_buf_read8_at(buf, addr + 12, &compat3)) {
+				free(load_dylib);
+				break;
+			}
+			cb_printf("0x%08" PFMT64x "  compat      %d.%d.%d\n", pvaddr + 12, compat1, compat2, compat3);
 			cb_printf("0x%08" PFMT64x "  load_dylib  %s\n",
 				pvaddr + str_off - 8, load_dylib ? load_dylib : "");
 			free(load_dylib);
@@ -4305,11 +4419,20 @@ void MACH0_(mach_headerfields)(RzBinFile *bf) {
 		}
 		case LC_ENCRYPTION_INFO:
 		case LC_ENCRYPTION_INFO_64: {
-			ut32 word = rz_buf_read_le32_at(buf, addr);
+			ut32 word;
+			if (!rz_buf_read_le32_at(buf, addr, &word)) {
+				break;
+			}
 			cb_printf("0x%08" PFMT64x "  cryptoff   0x%08x\n", pvaddr, word);
-			word = rz_buf_read_le32_at(buf, addr + 4);
+
+			if (!rz_buf_read_le32_at(buf, addr + 4, &word)) {
+				break;
+			}
 			cb_printf("0x%08" PFMT64x "  cryptsize  %d\n", pvaddr + 4, word);
-			word = rz_buf_read_le32_at(buf, addr + 8);
+
+			if (!rz_buf_read_le32_at(buf, addr + 8, &word)) {
+				break;
+			}
 			cb_printf("0x%08" PFMT64x "  cryptid    %d\n", pvaddr + 8, word);
 			break;
 		}
@@ -4362,8 +4485,14 @@ RzList *MACH0_(mach_fields)(RzBinFile *bf) {
 
 	int n;
 	for (n = 0; n < mh->ncmds; n++) {
-		ut32 lcType = rz_buf_read_ble32_at(buf, paddr, isBe);
-		ut32 word = rz_buf_read_ble32_at(buf, paddr + 4, isBe);
+		ut32 lcType;
+		if (!rz_buf_read_ble32_at(buf, paddr, isBe, &lcType)) {
+			break;
+		}
+		ut32 word;
+		if (!rz_buf_read_ble32_at(buf, paddr + 4, isBe, &word)) {
+			break;
+		}
 		if (paddr + 8 > length) {
 			break;
 		}
@@ -4382,7 +4511,10 @@ RzList *MACH0_(mach_fields)(RzBinFile *bf) {
 		}
 		switch (lcType) {
 		case LC_BUILD_VERSION: {
-			ut32 ntools = rz_buf_read_le32_at(buf, paddr + 20);
+			ut32 ntools;
+			if (!rz_buf_read_le32_at(buf, paddr + 20, &ntools)) {
+				break;
+			}
 			ut64 off = 24;
 			int j = 0;
 			while (off < lcSize && ntools--) {
@@ -4393,7 +4525,10 @@ RzList *MACH0_(mach_fields)(RzBinFile *bf) {
 		}
 		case LC_SEGMENT:
 		case LC_SEGMENT_64: {
-			ut32 nsects = rz_buf_read_le32_at(buf, addr + (is64 ? 64 : 48));
+			ut32 nsects;
+			if (!rz_buf_read_le32_at(buf, addr + (is64 ? 64 : 48), &nsects)) {
+				break;
+			}
 			ut64 off = is64 ? 72 : 56;
 			size_t i, j = 0;
 			for (i = 0; i < nsects && (addr + off) < length && off < lcSize; i++) {

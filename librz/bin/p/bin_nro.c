@@ -28,7 +28,16 @@ typedef struct {
 } NROHeader;
 
 static ut64 baddr(RzBinFile *bf) {
-	return bf ? rz_buf_read_le32_at(bf->buf, NRO_OFFSET_MODMEMOFF) : 0;
+	if (!bf) {
+		return 0;
+	}
+
+	ut32 result;
+	if (!rz_buf_read_le32_at(bf->buf, NRO_OFFSET_MODMEMOFF, &result)) {
+		return 0;
+	}
+
+	return result;
 }
 
 static bool check_buffer(RzBuffer *b) {
@@ -39,18 +48,25 @@ static bool check_buffer(RzBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *b, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *sdb) {
+	ut32 mod0;
+	if (!rz_buf_read_le32_at(b, NRO_OFFSET_MODMEMOFF, &mod0)) {
+		return false;
+	}
+
 	// XX bf->buf vs b :D this load_b
 	RzBinNXOObj *bin = RZ_NEW0(RzBinNXOObj);
-	if (bin) {
-		ut64 ba = baddr(bf);
-		bin->methods_list = rz_list_newf((RzListFree)rz_bin_symbol_free);
-		bin->imports_list = rz_list_newf((RzListFree)rz_bin_import_free);
-		bin->classes_list = rz_list_newf((RzListFree)free);
-		ut32 mod0 = rz_buf_read_le32_at(b, NRO_OFFSET_MODMEMOFF);
-		parseMod(b, bin, mod0, ba);
-		*bin_obj = bin;
+	if (!bin) {
+		return false;
 	}
+
+	ut64 ba = baddr(bf);
+	bin->methods_list = rz_list_newf((RzListFree)rz_bin_symbol_free);
+	bin->imports_list = rz_list_newf((RzListFree)rz_bin_import_free);
+	bin->classes_list = rz_list_newf((RzListFree)free);
+	parseMod(b, bin, mod0, ba);
+	obj->bin_obj = bin;
+
 	return true;
 }
 
@@ -95,13 +111,26 @@ static RzList *maps(RzBinFile *bf) {
 	ut64 ba = baddr(bf);
 	ut64 bufsz = rz_buf_size(bf->buf);
 
-	ut32 sig0 = rz_buf_read_le32_at(bf->buf, 0x18);
+	ut32 sig0;
+	if (!rz_buf_read_le32_at(bf->buf, 0x18, &sig0)) {
+		rz_list_free(ret);
+		return NULL;
+	}
+
+	RzBinMap *map = NULL;
 	if (sig0 && sig0 + 8 < bufsz) {
-		RzBinMap *map = RZ_NEW0(RzBinMap);
+		map = RZ_NEW0(RzBinMap);
 		if (!map) {
 			return ret;
 		}
-		ut32 sig0sz = rz_buf_read_le32_at(bf->buf, sig0 + 4);
+
+		ut32 sig0sz;
+		if (!rz_buf_read_le32_at(bf->buf, sig0 + 4, &sig0sz)) {
+			rz_list_free(ret);
+			ret = NULL;
+			goto maps_err;
+		}
+
 		map->name = strdup("sig0");
 		map->paddr = sig0;
 		map->psize = sig0sz;
@@ -114,13 +143,22 @@ static RzList *maps(RzBinFile *bf) {
 	}
 
 	// add text segment
-	RzBinMap *map;
 	if (!(map = RZ_NEW0(RzBinMap))) {
 		return ret;
 	}
 	map->name = strdup("text");
-	map->paddr = rz_buf_read_le32_at(b, NRO_OFF(text_memoffset));
-	map->vsize = map->psize = rz_buf_read_le32_at(b, NRO_OFF(text_size));
+	ut32 tmp;
+	if (!rz_buf_read_le32_at(b, NRO_OFF(text_memoffset), &tmp)) {
+		goto maps_err;
+	}
+	map->paddr = tmp;
+
+	if (!rz_buf_read_le32_at(b, NRO_OFF(text_size), &tmp)) {
+		goto maps_err;
+	}
+	map->psize = tmp;
+
+	map->vsize = map->psize;
 	map->vaddr = map->paddr + ba;
 	map->perm = RZ_PERM_RX;
 	rz_list_append(ret, map);
@@ -130,8 +168,17 @@ static RzList *maps(RzBinFile *bf) {
 		return ret;
 	}
 	map->name = strdup("ro");
-	map->paddr = rz_buf_read_le32_at(b, NRO_OFF(ro_memoffset));
-	map->vsize = map->psize = rz_buf_read_le32_at(b, NRO_OFF(ro_size));
+	if (!rz_buf_read_le32_at(b, NRO_OFF(ro_memoffset), &tmp)) {
+		goto maps_err;
+	}
+	map->paddr = tmp;
+
+	if (!rz_buf_read_le32_at(b, NRO_OFF(ro_size), &tmp)) {
+		goto maps_err;
+	}
+	map->psize = tmp;
+
+	map->vsize = map->psize;
 	map->vaddr = map->paddr + ba;
 	map->perm = RZ_PERM_R;
 	rz_list_append(ret, map);
@@ -141,11 +188,24 @@ static RzList *maps(RzBinFile *bf) {
 		return ret;
 	}
 	map->name = strdup("data");
-	map->paddr = rz_buf_read_le32_at(b, NRO_OFF(data_memoffset));
-	map->vsize = map->psize = rz_buf_read_le32_at(b, NRO_OFF(data_size));
+	if (!rz_buf_read_le32_at(b, NRO_OFF(data_memoffset), &tmp)) {
+		goto maps_err;
+	}
+	map->paddr = tmp;
+
+	if (!rz_buf_read_le32_at(b, NRO_OFF(data_size), &tmp)) {
+		goto maps_err;
+	}
+	map->psize = tmp;
+
+	map->vsize = map->psize;
 	map->vaddr = map->paddr + ba;
 	map->perm = RZ_PERM_RW;
 	rz_list_append(ret, map);
+	return ret;
+
+maps_err:
+	free(map);
 	return ret;
 }
 
@@ -171,12 +231,21 @@ static RzList *sections(RzBinFile *bf) {
 
 	int bufsz = rz_buf_size(bf->buf);
 
-	ut32 mod0 = rz_buf_read_le32_at(bf->buf, NRO_OFFSET_MODMEMOFF);
+	ut32 mod0;
+	if (!rz_buf_read_le32_at(bf->buf, NRO_OFFSET_MODMEMOFF, &mod0)) {
+		free(ret);
+		return NULL;
+	}
+
 	if (mod0 && mod0 + 8 < bufsz) {
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			return ret;
 		}
-		ut32 mod0sz = rz_buf_read_le32_at(bf->buf, mod0 + 4);
+		ut32 mod0sz;
+		if (!rz_buf_read_le32_at(bf->buf, mod0 + 4, &mod0sz)) {
+			free(ret);
+			return NULL;
+		}
 		ptr->name = strdup("mod0");
 		ptr->size = mod0sz;
 		ptr->vsize = mod0sz;

@@ -200,4 +200,24 @@ char *ReadFromPipe(HANDLE fh, int *outlen) {
 	}
 	return str;
 }
+
+RZ_API char **rz_sys_utf8_argv_new(int argc, const wchar_t **argv) {
+	char **utf8_argv = calloc(argc + 1, sizeof(wchar_t *));
+	if (!utf8_argv) {
+		return NULL;
+	}
+	int i;
+	for (i = 0; i < argc; i++) {
+		utf8_argv[i] = rz_utf16_to_utf8(argv[i]);
+	}
+	return utf8_argv;
+}
+
+RZ_API void rz_sys_utf8_argv_free(int argc, char **utf8_argv) {
+	int i;
+	for (i = 0; i < argc; i++) {
+		free(utf8_argv[i]);
+	}
+	free(utf8_argv);
+}
 #endif

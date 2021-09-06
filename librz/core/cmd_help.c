@@ -38,13 +38,11 @@ static const char *help_msg_env[] = {
 	"\nEnvironment:", "", "",
 	"RZ_FILE", "", "file name",
 	"RZ_OFFSET", "", "10base offset 64bit value",
-	"RZ_BYTES", "", "TODO: variable with bytes in curblock",
 	"RZ_XOFFSET", "", "same as above, but in 16 base",
 	"RZ_BSIZE", "", "block size",
 	"RZ_ENDIAN", "", "'big' or 'little'",
 	"RZ_IOVA", "", "is io.va true? virtual addressing (1,0)",
 	"RZ_DEBUG", "", "debug mode enabled? (1,0)",
-	"RZ_BLOCK", "", "TODO: dump current block to tmp file",
 	"RZ_SIZE", "", "file size",
 	"RZ_ARCH", "", "value of asm.arch",
 	"RZ_BITS", "", "arch reg size (8, 16, 32, 64)",
@@ -186,7 +184,7 @@ static const char *help_msg_question_v[] = {
 	"$v", "", "opcode immediate value (e.g. lui a0,0x8010 => 0x8010)",
 	"$w", "", "get word size, 4 if asm.bits=32, 8 if 64, ...",
 	"$Xn", "", "get nth xref of function",
-	"RNum", "", "$variables usable in math expressions",
+	"RzNum", "", "$variables usable in math expressions",
 	NULL
 };
 
@@ -488,7 +486,7 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 				eprintf("Usage: ?btw num|(expr) num|(expr) num|(expr)\n");
 			}
 		} else {
-			n = rz_num_get(core->num, input + 1);
+			n = rz_num_math(core->num, input + 1);
 			rz_num_to_bits(out, n);
 			rz_cons_printf("%sb\n", out);
 		}
@@ -576,7 +574,7 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 			}
 			n = rz_num_math(core->num, str);
 			if (core->num->dbz) {
-				eprintf("RNum ERROR: Division by Zero\n");
+				eprintf("RzNum ERROR: Division by Zero\n");
 			}
 			asnum = rz_num_as_string(NULL, n, false);
 			/* decimal, hexa, octal */
@@ -631,9 +629,9 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 				rz_num_to_trits(out, n);
 				pj_ks(pj, "trits", sdb_fmt("0t%s", out));
 			} else {
-				rz_cons_printf("fvalue: %.1lf\n", core->num->fvalue);
-				rz_cons_printf("float:  %ff\n", f);
-				rz_cons_printf("double: %lf\n", d);
+				rz_cons_printf("fvalue  %.1lf\n", core->num->fvalue);
+				rz_cons_printf("float   %ff\n", f);
+				rz_cons_printf("double  %lf\n", d);
 				rz_cons_printf("binary  0b%s\n", out);
 
 				/* ternary */
@@ -653,7 +651,7 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 	} break;
 	case 'q': // "?q"
 		if (core->num->dbz) {
-			eprintf("RNum ERROR: Division by Zero\n");
+			eprintf("RzNum ERROR: Division by Zero\n");
 		}
 		if (input[1] == '?') {
 			rz_cons_printf("|Usage: ?q [num]  # Update $? without printing anything\n"
@@ -678,7 +676,7 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 		}
 	}
 		if (core->num->dbz) {
-			eprintf("RNum ERROR: Division by Zero\n");
+			eprintf("RzNum ERROR: Division by Zero\n");
 		}
 		switch (input[1]) {
 		case '?':
@@ -1115,7 +1113,7 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 			}
 		} else {
 			if (core->num->dbz) {
-				eprintf("RNum ERROR: Division by Zero\n");
+				eprintf("RzNum ERROR: Division by Zero\n");
 			}
 			rz_cons_printf("%" PFMT64d "\n", core->num->value);
 		}

@@ -20,12 +20,12 @@ static Sdb *get_sdb(RzBinFile *bf) {
 	return bin ? bin->kv : NULL;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	rz_return_val_if_fail(bf && bin_obj && buf, false);
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
+	rz_return_val_if_fail(bf && obj && buf, false);
 	struct PE_(rz_bin_pe_obj_t) *res = PE_(rz_bin_pe_new_buf)(buf, bf->rbin->verbose);
 	if (res) {
 		sdb_ns_set(sdb, "info", res->kv);
-		*bin_obj = res;
+		obj->bin_obj = res;
 		return true;
 	}
 	return false;
@@ -227,16 +227,28 @@ static void find_pe_overlay(RzBinFile *bf) {
 	}
 }
 
+static inline bool is_thumb(struct PE_(rz_bin_pe_obj_t) * bin, ut64 address) {
+	switch (bin->nt_headers->file_header.Machine) {
+	case PE_IMAGE_FILE_MACHINE_ARM:
+	case PE_IMAGE_FILE_MACHINE_ARMNT:
+		return address & 1;
+	default:
+		return false;
+	}
+}
+
 static RzList *symbols(RzBinFile *bf) {
 	RzList *ret = NULL;
 	RzBinSymbol *ptr = NULL;
 	struct rz_bin_pe_export_t *symbols = NULL;
 	struct rz_bin_pe_import_t *imports = NULL;
+	struct PE_(rz_bin_pe_obj_t) *bin = bf->o->bin_obj;
 	int i;
 
 	if (!(ret = rz_list_newf((RzListFree)rz_bin_symbol_free))) {
 		return NULL;
 	}
+	int file_bits = PE_(rz_bin_pe_get_bits(bin));
 	if ((symbols = PE_(rz_bin_pe_get_exports)(bf->o->bin_obj))) {
 		for (i = 0; !symbols[i].last; i++) {
 			if (!(ptr = RZ_NEW0(RzBinSymbol))) {
@@ -249,8 +261,15 @@ static RzList *symbols(RzBinFile *bf) {
 			ptr->bind = RZ_BIN_BIND_GLOBAL_STR;
 			ptr->type = RZ_BIN_TYPE_FUNC_STR;
 			ptr->size = 0;
-			ptr->vaddr = symbols[i].vaddr;
-			ptr->paddr = symbols[i].paddr;
+			if (is_thumb(bin, symbols[i].vaddr)) {
+				ptr->bits = 16;
+				ptr->vaddr = symbols[i].vaddr - 1;
+				ptr->paddr = symbols[i].paddr - 1;
+			} else {
+				ptr->bits = file_bits;
+				ptr->vaddr = symbols[i].vaddr;
+				ptr->paddr = symbols[i].paddr;
+			}
 			ptr->ordinal = symbols[i].ordinal;
 			rz_list_append(ret, ptr);
 		}
@@ -511,7 +530,6 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->actual_checksum = strdup(sdb_fmt("0x%08x", actual_checksum));
 	ret->pe_overlay = pe_overlay > 0;
 	ret->signature = bin ? bin->is_signed : false;
-	ret->file_hashes = rz_list_newf((RzListFree)rz_bin_file_hash_free);
 	Sdb *db = sdb_ns(bf->sdb, "pe", true);
 	sdb_bool_set(db, "canary", has_canary(bf), 0);
 	sdb_bool_set(db, "highva", haschr(bf, IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA), 0);

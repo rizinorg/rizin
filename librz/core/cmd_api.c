@@ -63,6 +63,7 @@ static const struct argv_modes_t {
 	{ "j", " (JSON mode)", RZ_OUTPUT_MODE_JSON },
 	{ "*", " (rizin mode)", RZ_OUTPUT_MODE_RIZIN },
 	{ "q", " (quiet mode)", RZ_OUTPUT_MODE_QUIET },
+	{ "Q", " (quietest mode)", RZ_OUTPUT_MODE_QUIETEST },
 	{ "k", " (sdb mode)", RZ_OUTPUT_MODE_SDB },
 	{ "l", " (verbose mode)", RZ_OUTPUT_MODE_LONG },
 	{ "J", " (verbose JSON mode)", RZ_OUTPUT_MODE_LONG_JSON },
@@ -77,6 +78,16 @@ RZ_IPI int rz_output_mode_to_char(RzOutputMode mode) {
 		}
 	}
 	return -1;
+}
+
+RZ_IPI const char *rz_output_mode_to_summary(RzOutputMode mode) {
+	size_t i;
+	for (i = 0; i < RZ_ARRAY_SIZE(argv_modes); i++) {
+		if (argv_modes[i].mode == mode) {
+			return argv_modes[i].summary_suffix;
+		}
+	}
+	return "";
 }
 
 static int value = 0;
@@ -330,6 +341,42 @@ out:
 	return res;
 }
 
+/**
+ * \brief Set the default mode of the command descriptor, if the type allows it.
+ *
+ * Command descriptors that support multiple output modes can also have a
+ * default one. This function can be used to set it.
+ *
+ * \return True if the default output mode was changed, false otherwise.
+ */
+RZ_API bool rz_cmd_desc_set_default_mode(RzCmdDesc *cd, RzOutputMode mode) {
+	rz_return_val_if_fail(cd, false);
+
+	switch (cd->type) {
+	case RZ_CMD_DESC_TYPE_ARGV_MODES:
+		if (cd->d.argv_modes_data.modes & RZ_OUTPUT_MODE_STANDARD) {
+			return false;
+		}
+		cd->d.argv_modes_data.default_mode = mode;
+		return true;
+	case RZ_CMD_DESC_TYPE_ARGV_STATE:
+		if (cd->d.argv_state_data.modes & RZ_OUTPUT_MODE_STANDARD) {
+			return false;
+		}
+		cd->d.argv_state_data.default_mode = mode;
+		return true;
+	case RZ_CMD_DESC_TYPE_GROUP: {
+		RzCmdDesc *exec_cd = rz_cmd_desc_get_exec(cd);
+		if (exec_cd) {
+			return rz_cmd_desc_set_default_mode(exec_cd, mode);
+		}
+		return false;
+	}
+	default:
+		return false;
+	}
+}
+
 RZ_API char **rz_cmd_alias_keys(RzCmd *cmd, int *sz) {
 	if (sz) {
 		*sz = cmd->aliases.count;
@@ -543,11 +590,30 @@ static void get_minmax_argc(RzCmdDesc *cd, int *min_argc, int *max_argc) {
 	}
 }
 
+static RzOutputMode get_cd_default_mode(RzCmdDesc *cd) {
+	switch (cd->type) {
+	case RZ_CMD_DESC_TYPE_ARGV_MODES:
+		return cd->d.argv_modes_data.default_mode;
+	case RZ_CMD_DESC_TYPE_ARGV_STATE:
+		return cd->d.argv_state_data.default_mode;
+	default:
+		return RZ_OUTPUT_MODE_STANDARD;
+	}
+}
+
+static bool has_cd_default_mode(RzCmdDesc *cd) {
+	return get_cd_default_mode(cd) != RZ_OUTPUT_MODE_STANDARD;
+}
+
 static RzOutputMode cd_suffix2mode(RzCmdDesc *cd, const char *cmdid) {
 	if (!has_cd_submodes(cd)) {
 		return 0;
 	}
-	return suffix2mode(cmdid + strlen(cd->name));
+	RzOutputMode mode = suffix2mode(cmdid + strlen(cd->name));
+	if (mode == RZ_OUTPUT_MODE_STANDARD && has_cd_default_mode(cd)) {
+		mode = get_cd_default_mode(cd);
+	}
+	return mode;
 }
 
 /**
@@ -640,40 +706,20 @@ static RzCmdStatus argv_call_cb(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args
 		if (args->argc < cd->d.argv_state_data.min_argc || args->argc > cd->d.argv_state_data.max_argc) {
 			return RZ_CMD_STATUS_WRONG_ARGS;
 		}
-		RzCmdStateOutput state = { 0 };
-		state.mode = mode;
-		switch (mode) {
-		case RZ_OUTPUT_MODE_JSON:
-			state.d.pj = pj_new();
-			break;
-		case RZ_OUTPUT_MODE_TABLE:
-			state.d.t = rz_table_new();
-			break;
-		default:
-			break;
+		RzCmdStateOutput state;
+		if (!rz_cmd_state_output_init(&state, mode)) {
+			return RZ_CMD_STATUS_INVALID;
 		}
 		RzCmdStatus res = cd->d.argv_state_data.cb(cmd->data, args->argc, (const char **)args->argv, &state);
-		char *s;
-		switch (mode) {
-		case RZ_OUTPUT_MODE_JSON:
-			rz_cons_println(pj_string(state.d.pj));
-			pj_free(state.d.pj);
-			break;
-		case RZ_OUTPUT_MODE_TABLE:
-			if (args->extra) {
-				bool res = rz_table_query(state.d.t, args->extra);
-				if (!res) {
-					return RZ_CMD_STATUS_INVALID;
-				}
+		if (args->extra && state.mode == RZ_OUTPUT_MODE_TABLE) {
+			bool res = rz_table_query(state.d.t, args->extra);
+			if (!res) {
+				rz_cmd_state_output_fini(&state);
+				return RZ_CMD_STATUS_INVALID;
 			}
-			s = rz_table_tostring(state.d.t);
-			rz_cons_printf("%s", s);
-			free(s);
-			rz_table_free(state.d.t);
-			break;
-		default:
-			break;
 		}
+		rz_cmd_state_output_print(&state);
+		rz_cmd_state_output_fini(&state);
 		return res;
 	default:
 		return RZ_CMD_STATUS_INVALID;
@@ -917,10 +963,17 @@ static void fill_usage_strbuf(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd, bool use_
 		rz_strbuf_append(sb, pal_reset);
 	}
 	if (cd->help->summary) {
-		columns += strbuf_append_calc(sb, "   ");
-		rz_strbuf_append(sb, pal_help_color);
-		fill_wrapped_comment(cmd, sb, cd->help->summary, columns);
-		rz_strbuf_append(sb, pal_reset);
+		RzStrBuf *summary_sb = rz_strbuf_new(cd->help->summary);
+		if (summary_sb) {
+			columns += strbuf_append_calc(sb, "   ");
+			rz_strbuf_append(sb, pal_help_color);
+			if (has_cd_default_mode(cd)) {
+				rz_strbuf_appendf(summary_sb, "%s", rz_output_mode_to_summary(get_cd_default_mode(cd)));
+			}
+			fill_wrapped_comment(cmd, sb, rz_strbuf_get(summary_sb), columns);
+			rz_strbuf_append(sb, pal_reset);
+			rz_strbuf_free(summary_sb);
+		}
 	}
 	rz_strbuf_append(sb, "\n");
 }
@@ -1146,14 +1199,16 @@ static char *oldinput_get_help(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *a) {
 		return NULL;
 	}
 
-	const char *s = NULL;
+	char *res = NULL;
 	rz_cons_push();
 	RzCmdStatus status = rz_cmd_call_parsed_args(cmd, a);
 	if (status == RZ_CMD_STATUS_OK) {
 		rz_cons_filter();
-		s = rz_cons_get_buffer();
+		res = rz_cons_get_buffer_dup();
 	}
-	char *res = strdup(s ? s : "");
+	if (!res) {
+		res = strdup("");
+	}
 	rz_cons_pop();
 	return res;
 }
@@ -1971,6 +2026,7 @@ static RzCmdDesc *argv_modes_new(RzCmd *cmd, RzCmdDesc *parent, const char *name
 
 	res->d.argv_modes_data.cb = cb;
 	res->d.argv_modes_data.modes = modes;
+	res->d.argv_modes_data.default_mode = RZ_OUTPUT_MODE_STANDARD;
 	get_minmax_argc(res, &res->d.argv_modes_data.min_argc, &res->d.argv_modes_data.max_argc);
 	return res;
 }
@@ -1983,6 +2039,7 @@ static RzCmdDesc *argv_state_new(RzCmd *cmd, RzCmdDesc *parent, const char *name
 
 	res->d.argv_state_data.cb = cb;
 	res->d.argv_state_data.modes = modes;
+	res->d.argv_state_data.default_mode = RZ_OUTPUT_MODE_STANDARD;
 	get_minmax_argc(res, &res->d.argv_state_data.min_argc, &res->d.argv_state_data.max_argc);
 	return res;
 }
@@ -2267,7 +2324,7 @@ static void cmd_foreach_cmdname(RzCmd *cmd, RzCmdDesc *cd, RzCmdForeachNameCb cb
 }
 
 /**
- * /brief Execute a callback function on each possible command the user can execute.
+ * \brief Execute a callback function on each possible command the user can execute.
  *
  * Only command names that can actually execute something are iterated. Help
  * commands (e.g. ?, h?, etc.) are ignored.
@@ -2361,7 +2418,7 @@ RZ_API char *rz_cmd_unescape_arg(const char *arg, RzCmdEscape esc) {
  */
 RZ_API void rz_cmd_state_output_array_start(RzCmdStateOutput *state) {
 	rz_return_if_fail(state);
-	if (state->mode == RZ_OUTPUT_MODE_JSON) {
+	if (state->mode == RZ_OUTPUT_MODE_JSON || state->mode == RZ_OUTPUT_MODE_LONG_JSON) {
 		rz_return_if_fail(state->d.pj);
 		pj_a(state->d.pj);
 	}
@@ -2375,7 +2432,7 @@ RZ_API void rz_cmd_state_output_array_start(RzCmdStateOutput *state) {
  */
 RZ_API void rz_cmd_state_output_array_end(RzCmdStateOutput *state) {
 	rz_return_if_fail(state);
-	if (state->mode == RZ_OUTPUT_MODE_JSON) {
+	if (state->mode == RZ_OUTPUT_MODE_JSON || state->mode == RZ_OUTPUT_MODE_LONG_JSON) {
 		rz_return_if_fail(state->d.pj);
 		pj_end(state->d.pj);
 	}
@@ -2399,4 +2456,90 @@ RZ_API void rz_cmd_state_output_set_columnsf(RzCmdStateOutput *state, const char
 		rz_table_set_vcolumnsf(state->d.t, fmt, ap);
 	}
 	va_end(ap);
+}
+
+/**
+ * \brief Clear the inner fields of RzCmdStateOutput structure, but do not free it.
+ */
+RZ_API void rz_cmd_state_output_fini(RzCmdStateOutput *state) {
+	rz_return_if_fail(state);
+
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_JSON:
+	case RZ_OUTPUT_MODE_LONG_JSON:
+		pj_free(state->d.pj);
+		state->d.pj = NULL;
+		break;
+	case RZ_OUTPUT_MODE_TABLE:
+		rz_table_free(state->d.t);
+		state->d.t = NULL;
+		break;
+	default:
+		break;
+	}
+}
+
+/**
+ * \brief Free the RzCmdStateOutput structure and its inner fields appropriately
+ */
+RZ_API void rz_cmd_state_output_free(RzCmdStateOutput *state) {
+	rz_return_if_fail(state);
+
+	rz_cmd_state_output_fini(state);
+	free(state);
+}
+
+/**
+ * \brief Initialize a RzCmdStateOutput structure and its inner fields based on the provided mode
+ */
+RZ_API bool rz_cmd_state_output_init(RzCmdStateOutput *state, RzOutputMode mode) {
+	rz_return_val_if_fail(state, false);
+
+	state->mode = mode;
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_TABLE:
+		state->d.t = rz_table_new();
+		if (!state->d.t) {
+			return false;
+		}
+		break;
+	case RZ_OUTPUT_MODE_JSON:
+	case RZ_OUTPUT_MODE_LONG_JSON:
+		state->d.pj = pj_new();
+		if (!state->d.pj) {
+			return false;
+		}
+		break;
+	default:
+		break;
+	}
+	return true;
+}
+
+/**
+ * \brief Print the output accumulated in \p state to RzCons, if necessary
+ *
+ * Some output modes like JSON and TABLE accumulate their output in their
+ * respective data structures, thus it is needed to print them to have the
+ * output on screen. This function takes care of that, doing nothing in case the
+ * output was already printed to console for those types that output as they go
+ * (e.g. STANDARD, QUIET).
+ */
+RZ_API void rz_cmd_state_output_print(RzCmdStateOutput *state) {
+	rz_return_if_fail(state);
+
+	char *s;
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_JSON:
+	case RZ_OUTPUT_MODE_LONG_JSON:
+		rz_cons_println(pj_string(state->d.pj));
+		break;
+	case RZ_OUTPUT_MODE_TABLE:
+		s = rz_table_tostring(state->d.t);
+		rz_cons_printf("%s", s);
+		free(s);
+		break;
+	default:
+		break;
+	}
 }

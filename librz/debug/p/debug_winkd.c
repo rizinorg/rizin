@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2014-2017 The Lemon Man
+// SPDX-FileCopyrightText: 2014-2017 LemonBoy
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_debug.h>

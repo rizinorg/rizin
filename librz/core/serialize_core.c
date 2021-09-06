@@ -58,6 +58,7 @@ static const char *const config_exclude[] = {
 	"scr.color.ops",
 	"scr.color.pipe",
 	"scr.interactive", // especially relevant for Cutter since it needs this to be false
+	"scr.prompt", // especially relevant for rzpipe, otherwise loading a project might break the pipe
 	"scr.rainbow",
 	"scr.utf8",
 	"scr.utf8.curvy",
@@ -150,6 +151,8 @@ static char *prj_relative_restore(const char *prj_dir, const char *rel_file) {
 }
 
 static void file_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, RZ_NULLABLE const char *prj_file) {
+	rz_return_if_fail(db && core);
+
 	if (!core->file) {
 		return;
 	}

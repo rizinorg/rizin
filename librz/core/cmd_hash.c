@@ -45,7 +45,7 @@ static int cmd_hash_bang(RzCore *core, const char *input) {
 	int ac;
 	char **av = rz_str_argv(input + 1, &ac);
 	RzCmdStateOutput state = { 0 };
-	state.mode = RZ_OUTPUT_MODE_STANDARD;
+	rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
 	if (ac > 0) {
 		RzLangPlugin *p = rz_lang_get_by_name(core->lang, av[0]);
 		if (p) {
@@ -77,6 +77,8 @@ static int cmd_hash_bang(RzCore *core, const char *input) {
 	} else {
 		rz_core_lang_plugins_print(core->lang, &state);
 	}
+	rz_cmd_state_output_print(&state);
+	rz_cmd_state_output_fini(&state);
 	rz_str_argv_free(av);
 	return true;
 }
@@ -106,10 +108,12 @@ RZ_IPI int rz_cmd_hash(void *data, const char *input) {
 }
 
 RZ_IPI RzCmdStatus rz_hash_bang_handler(RzCore *core, int argc, const char **argv) {
-	RzCmdStateOutput state = { 0 };
-	state.mode = RZ_OUTPUT_MODE_STANDARD;
 	if (argc == 1) {
+		RzCmdStateOutput state = { 0 };
+		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
 		rz_core_lang_plugins_print(core->lang, &state);
+		rz_cmd_state_output_print(&state);
+		rz_cmd_state_output_fini(&state);
 	} else {
 		RzLangPlugin *p = rz_lang_get_by_name(core->lang, argv[1]);
 		if (!p) {

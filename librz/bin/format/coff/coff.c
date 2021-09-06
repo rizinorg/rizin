@@ -53,18 +53,18 @@ RZ_API char *rz_coff_symbol_name(struct rz_bin_coff_obj *obj, void *ptr) {
 		};
 	} *p = ptr;
 	if (!ptr) {
-		return NULL;
+		return strdup("");
 	}
 	if (p->zero) {
 		return rz_str_ndup(p->name, 8);
 	}
 	offset = obj->hdr.f_symptr + obj->hdr.f_nsyms * sizeof(struct coff_symbol) + p->offset;
 	if (offset > obj->size) {
-		return NULL;
+		return strdup("");
 	}
 	len = rz_buf_read_at(obj->b, offset, (ut8 *)n, sizeof(n));
 	if (len < 1) {
-		return NULL;
+		return strdup("");
 	}
 	/* ensure null terminated string */
 	n[sizeof(n) - 1] = 0;
@@ -129,7 +129,11 @@ RZ_API RzBinAddr *rz_coff_get_entry(struct rz_bin_coff_obj *obj) {
 }
 
 static bool rz_bin_coff_init_hdr(struct rz_bin_coff_obj *obj) {
-	ut16 magic = rz_buf_read_ble16_at(obj->b, 0, COFF_IS_LITTLE_ENDIAN);
+	ut16 magic;
+	if (!rz_buf_read_ble16_at(obj->b, 0, COFF_IS_LITTLE_ENDIAN, &magic)) {
+		return false;
+	}
+
 	switch (magic) {
 	case COFF_FILE_MACHINE_H8300:
 	case COFF_FILE_MACHINE_AMD29KBE:

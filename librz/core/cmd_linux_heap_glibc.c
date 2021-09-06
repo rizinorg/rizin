@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Pulak Malhotra <pulakmalhotra2000@gmail.com>
+// SPDX-FileCopyrightText: 2021 Pulak Malhotra <pulakmalhotra2000@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
@@ -29,8 +29,18 @@ RZ_IPI RzCmdStatus rz_cmd_heap_chunk_print_handler(RzCore *core, int argc, const
 RZ_IPI RzCmdStatus rz_cmd_heap_chunks_graph_handler(RzCore *core, int argc, const char **argv) {
 	// RZ_OUTPUT_MODE_LONG_JSON mode workaround for graph
 	RzCmdStateOutput state = { 0 };
-	state.mode = RZ_OUTPUT_MODE_LONG_JSON;
-	call_handler(rz_cmd_heap_chunks_print_handler, argc, argv, &state);
+	if (!rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_LONG)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzCmdStatus res;
+	if (core->rasm->bits == 64) {
+		res = rz_cmd_heap_chunks_print_handler_64(core, argc, argv, &state);
+	} else {
+		res = rz_cmd_heap_chunks_print_handler_32(core, argc, argv, &state);
+	}
+	rz_cmd_state_output_print(&state);
+	rz_cmd_state_output_fini(&state);
+	return res;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_heap_info_print_handler(RzCore *core, int argc, const char **argv) {
@@ -119,4 +129,26 @@ RZ_API RzHeapBin *rz_heap_fastbin_content(RzCore *core, MallocState *arena, int 
  */
 RZ_API MallocState *rz_heap_get_arena(RzCore *core, ut64 m_state) {
 	call_handler(rz_heap_get_arena, m_state);
+}
+
+/**
+ * \brief Get a list of bins for the tcache associated with an arena
+ * The list is in form of RzList and the bins are of the form of RzHeapBin
+ * Arena has the base address arena_base
+ * \param core RzCore pointer
+ * \param arena_base Base address of the arena
+ * \return RzList of RzHeapBin pointers
+ */
+RZ_API RzList *rz_heap_tcache_content(RzCore *core, ut64 arena_base) {
+	call_handler(rz_heap_tcache_content, arena_base);
+}
+
+/**
+ * \brief Write a heap chunk header to memory
+ * \param core RzCore pointer
+ * \param chunk_simple RzHeapChunkSimple pointer to the heap chunk data
+ * \return bool if the write succeeded or not
+ */
+RZ_API bool rz_heap_write_chunk(RzCore *core, RzHeapChunkSimple *chunk_simple) {
+	call_handler(rz_heap_write_heap_chunk, chunk_simple);
 }

@@ -24,6 +24,8 @@ RZ_API RZ_NONNULL const char *rz_project_err_message(RzProjectErr err) {
 		return "invalid content encountered";
 	case RZ_PROJECT_ERR_MIGRATION_FAILED:
 		return "migration failed";
+	case RZ_PROJECT_ERR_COMPRESSION_FAILED:
+		return "project file compression failed";
 	case RZ_PROJECT_ERR_UNKNOWN:
 		break;
 	}
@@ -37,27 +39,96 @@ RZ_API RzProjectErr rz_project_save(RzCore *core, RzProject *prj, const char *fi
 	return RZ_PROJECT_ERR_SUCCESS;
 }
 
-RZ_API RzProjectErr rz_project_save_file(RzCore *core, const char *file) {
+RZ_API RzProjectErr rz_project_save_file(RzCore *core, const char *file, bool compress) {
+	char *tmp_file = NULL;
+
+	if (compress) {
+		int mkstemp_fd = rz_file_mkstemp("svprj", &tmp_file);
+		if (mkstemp_fd == -1 || !tmp_file) {
+			return RZ_PROJECT_ERR_FILE;
+		}
+		close(mkstemp_fd);
+	}
+
+	RzProjectErr err;
+	const char *save_file = compress ? tmp_file : file;
 	RzProject *prj = sdb_new0();
 	if (!prj) {
-		return RZ_PROJECT_ERR_UNKNOWN;
+		err = RZ_PROJECT_ERR_UNKNOWN;
+		goto tmp_file_err;
 	}
-	RzProjectErr err = rz_project_save(core, prj, file);
+	err = rz_project_save(core, prj, file);
 	if (err != RZ_PROJECT_ERR_SUCCESS) {
 		sdb_free(prj);
 		return err;
 	}
-	if (!sdb_text_save(prj, file, true)) {
+	if (!sdb_text_save(prj, save_file, true)) {
 		err = RZ_PROJECT_ERR_FILE;
 	}
 	sdb_free(prj);
-	if (err == RZ_PROJECT_ERR_SUCCESS) {
-		rz_config_set(core->config, "prj.file", file);
+
+	if (err != RZ_PROJECT_ERR_SUCCESS) {
+		goto tmp_file_err;
 	}
+
+	if (compress && !rz_file_deflate(tmp_file, file)) {
+		err = RZ_PROJECT_ERR_COMPRESSION_FAILED;
+		goto tmp_file_err;
+	}
+
+	rz_config_set(core->config, "prj.file", file);
+
+tmp_file_err:
+	rz_file_rm(tmp_file);
+	free(tmp_file);
 	return err;
 }
 
-RZ_IPI bool rz_project_migrate(RzProject *prj, unsigned long version, RzSerializeResultInfo *res);
+/// Load a file into an RzProject but don't actually migrate anything or load it into an RzCore
+RZ_API RzProject *rz_project_load_file_raw(const char *file) {
+	RzProject *prj = sdb_new0();
+	if (!prj) {
+		return NULL;
+	}
+
+	char *tmp_file;
+	int mkstemp_fd = rz_file_mkstemp("ldprj", &tmp_file);
+	close(mkstemp_fd);
+
+	if (mkstemp_fd == -1 || !tmp_file) {
+		free(tmp_file);
+		return NULL;
+	}
+
+	const char *load_file = tmp_file;
+
+	if (!rz_file_exists(file)) {
+		prj = NULL;
+		goto return_goto;
+	}
+	if (rz_file_is_deflated(file)) {
+		if (!rz_file_inflate(file, tmp_file)) {
+			prj = NULL;
+			goto return_goto;
+		}
+	} else {
+		load_file = file;
+	}
+
+	if (!sdb_text_load(prj, load_file)) {
+		sdb_free(prj);
+		prj = NULL;
+	}
+
+return_goto:
+	rz_file_rm(tmp_file);
+	free(tmp_file);
+	return prj;
+}
+
+RZ_API void rz_project_free(RzProject *prj) {
+	sdb_free(prj);
+}
 
 RZ_API RzProjectErr rz_project_load(RzCore *core, RzProject *prj, bool load_bin_io, RZ_NULLABLE const char *file, RzSerializeResultInfo *res) {
 	rz_return_val_if_fail(core && prj, RZ_PROJECT_ERR_UNKNOWN);
@@ -95,11 +166,8 @@ RZ_API RzProjectErr rz_project_load(RzCore *core, RzProject *prj, bool load_bin_
 }
 
 RZ_API RzProjectErr rz_project_load_file(RzCore *core, const char *file, bool load_bin_io, RzSerializeResultInfo *res) {
-	RzProject *prj = sdb_new0();
+	RzProject *prj = rz_project_load_file_raw(file);
 	if (!prj) {
-		return RZ_PROJECT_ERR_UNKNOWN;
-	}
-	if (!sdb_text_load(prj, file)) {
 		RZ_SERIALIZE_ERR(res, "failed to read database file");
 		return RZ_PROJECT_ERR_FILE;
 	}

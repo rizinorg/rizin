@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 #
 # SPDX-FileCopyrightText: 2019 Francesco Tamagni <mrmacete@protonmail.ch>
 # SPDX-License-Identifier: LGPL-3.0-only
@@ -9,10 +9,16 @@ import json
 import re
 import sys
 
-header = """ /*
+header = """// SPDX-FileCopyrightText: 2019-2021 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2019 Francesco Tamagni <mrmacete@protonmail.ch>
+// SPDX-License-Identifier: LGPL-3.0-only
+
+// clang-format off
+
+/*
  * This file is generated in this way:
  *
- * python2 build_mig_index.py ~/xnu-4570.51.1/bsd/kern/trace_codes traps.json > mig_index.h
+ * python3 build_mig_index.py ~/xnu-4570.51.1/bsd/kern/trace_codes traps.json > mig_index.h
  *
  *
  * The traps.json file is generated from any dyld cache using the machtraps.py rzpipe script.
@@ -48,22 +54,23 @@ def convert(trace_codes, trap_json):
 
     result.sort(key=lambda x: x[0])
 
-    print header
-    print "#ifndef RZ_MIG_INDEX_H"
-    print "#define RZ_MIG_INDEX_H\n"
+    print(header)
+    print("#ifndef RZ_MIG_INDEX_H")
+    print("#define RZ_MIG_INDEX_H\n")
 
-    print "#define RZ_MIG_INDEX_LEN %d\n" % (len(data) * 2)
+    print("#define RZ_MIG_INDEX_LEN %d\n" % (len(data) * 2))
 
-    print "static const char * mig_index[RZ_MIG_INDEX_LEN] = {"
+    print("static const char *mig_index[RZ_MIG_INDEX_LEN] = {")
     for pair in result:
-        print '\t"%d", "%s",' % pair
-    print "};\n"
+        print('\t"%d", "%s",' % pair)
+    print("};\n")
 
-    print "#endif"
+    print("#endif")
 
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
-        print "usage %s bsd/kern/trace_codes traps.json" % sys.argv[0]
+        print("usage %s bsd/kern/trace_codes traps.json" % sys.argv[0])
+        exit(1)
     else:
         convert(sys.argv[1], sys.argv[2])

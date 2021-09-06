@@ -165,7 +165,7 @@ RzCoreSymCacheElement *rz_coresym_cache_element_new(RzBinFile *bf, RzBuffer *buf
 	}
 	ut8 *end = b + hdr->size;
 	if (file_name) {
-		result->file_name = file_name;
+		result->file_name = strdup(file_name);
 	} else if (hdr->file_name_off) {
 		result->file_name = str_dup_safe(b, b + (size_t)hdr->file_name_off, end);
 	}
@@ -190,22 +190,22 @@ RzCoreSymCacheElement *rz_coresym_cache_element_new(RzBinFile *bf, RzBuffer *buf
 		}
 		size_t i;
 		ut8 *cursor = b + RZ_CS_EL_OFF_SEGS;
-		for (i = 0; i < hdr->n_segments && cursor < end; i++) {
+		for (i = 0; i < hdr->n_segments && (cursor + 8) <= end; i++) {
 			RzCoreSymCacheElementSegment *seg = &result->segments[i];
 			seg->paddr = seg->vaddr = rz_read_le64(cursor);
 			cursor += 8;
 			if (cursor >= end) {
-				break;
+				goto beach;
 			}
 			seg->size = seg->vsize = rz_read_le64(cursor);
 			cursor += 8;
 			if (cursor >= end) {
-				break;
+				goto beach;
 			}
 			seg->name = str_dup_safe_fixed(b, cursor, 16, end);
 			cursor += 16;
 			if (!seg->name) {
-				continue;
+				goto beach;
 			}
 
 			if (!strcmp(seg->name, "__PAGEZERO")) {
@@ -234,7 +234,8 @@ RzCoreSymCacheElement *rz_coresym_cache_element_new(RzBinFile *bf, RzBuffer *buf
 		}
 		size_t i;
 		ut8 *cursor = b + start_of_sections;
-		for (i = 0; i < hdr->n_sections && cursor < end; i++) {
+		ut8 *upper_boundary = end - word_size;
+		for (i = 0; i < hdr->n_sections && cursor < upper_boundary; i++) {
 			ut8 *sect_start = cursor;
 			RzCoreSymCacheElementSection *sect = &result->sections[i];
 			sect->vaddr = sect->paddr = rz_read_ble(cursor, false, bits);
@@ -242,13 +243,13 @@ RzCoreSymCacheElement *rz_coresym_cache_element_new(RzBinFile *bf, RzBuffer *buf
 				sect->vaddr += page_zero_size;
 			}
 			cursor += word_size;
-			if (cursor >= end) {
-				break;
+			if (cursor >= upper_boundary) {
+				goto beach;
 			}
 			sect->size = rz_read_ble(cursor, false, bits);
 			cursor += word_size;
-			if (cursor >= end) {
-				break;
+			if (cursor >= upper_boundary) {
+				goto beach;
 			}
 			ut64 sect_name_off = rz_read_ble(cursor, false, bits);
 			if (!i && !sect_name_off) {
@@ -281,15 +282,18 @@ RzCoreSymCacheElement *rz_coresym_cache_element_new(RzBinFile *bf, RzBuffer *buf
 			sym->name = str_dup_safe(b, string_origin + name_off, end);
 			if (!sym->name) {
 				cursor += RZ_CS_EL_SIZE_SYM;
-				continue;
+				goto beach;
 			}
 			string_origin = relative_to_strings ? b + start_of_strings : cursor;
 			sym->mangled_name = str_dup_safe(b, string_origin + mangled_name_off, end);
 			if (!sym->mangled_name) {
 				cursor += RZ_CS_EL_SIZE_SYM;
-				continue;
+				goto beach;
 			}
 			cursor += RZ_CS_EL_SIZE_SYM;
+		}
+		if (i < hdr->n_symbols) {
+			hdr->n_symbols = i;
 		}
 	}
 	if (hdr->n_lined_symbols) {
@@ -313,22 +317,22 @@ RzCoreSymCacheElement *rz_coresym_cache_element_new(RzBinFile *bf, RzBuffer *buf
 			string_origin = relative_to_strings ? b + start_of_strings : cursor;
 			lsym->sym.name = str_dup_safe(b, string_origin + name_off, end);
 			if (!lsym->sym.name) {
-				cursor += RZ_CS_EL_SIZE_LSYM;
-				continue;
+				goto beach;
 			}
 			string_origin = relative_to_strings ? b + start_of_strings : cursor;
 			lsym->sym.mangled_name = str_dup_safe(b, string_origin + mangled_name_off, end);
 			if (!lsym->sym.mangled_name) {
-				cursor += RZ_CS_EL_SIZE_LSYM;
-				continue;
+				goto beach;
 			}
 			string_origin = relative_to_strings ? b + start_of_strings : cursor;
 			lsym->flc.file = str_dup_safe(b, string_origin + file_name_off, end);
 			if (!lsym->flc.file) {
-				cursor += RZ_CS_EL_SIZE_LSYM;
-				continue;
+				goto beach;
 			}
 			cursor += RZ_CS_EL_SIZE_LSYM;
+		}
+		if (i < hdr->n_lined_symbols) {
+			hdr->n_lined_symbols = i;
 		}
 	}
 	if (hdr->n_line_info) {
@@ -348,9 +352,12 @@ RzCoreSymCacheElement *rz_coresym_cache_element_new(RzBinFile *bf, RzBuffer *buf
 			string_origin = relative_to_strings ? b + start_of_strings : cursor;
 			info->flc.file = str_dup_safe(b, string_origin + file_name_off, end);
 			if (!info->flc.file) {
-				break;
+				goto beach;
 			}
 			cursor += RZ_CS_EL_SIZE_LINFO;
+		}
+		if (i < hdr->n_line_info) {
+			hdr->n_line_info = i;
 		}
 	}
 
@@ -360,8 +367,11 @@ RzCoreSymCacheElement *rz_coresym_cache_element_new(RzBinFile *bf, RzBuffer *buf
 	 * 32-bit integers located at the end of line info.
 	 * Those are the last info before the strings at the end.
 	 */
+	free(b);
+	return result;
 
 beach:
 	free(b);
-	return result;
+	rz_coresym_cache_element_free(result);
+	return NULL;
 }

@@ -162,7 +162,7 @@ module.exports = grammar({
 
     html_disable_stmt: ($) => prec.right(1, seq(field("command", $._simple_stmt), "|")),
     html_enable_stmt: ($) => prec.right(1, seq(field("command", $._simple_stmt), "|H")),
-    pipe_stmt: ($) => seq($._simple_stmt, "|", $.pipe_second_stmt),
+    pipe_stmt: ($) => seq($._simple_stmt, "|", $.args),
     pipe_second_stmt: ($) => /[^|\r\n;]+/,
 
     iter_file_lines_stmt: ($) => prec.right(1, seq($._simple_stmt, "@@.", $.arg)),
@@ -264,7 +264,6 @@ module.exports = grammar({
           seq(field("command", alias(".", $.cmd_identifier)), field("args", $._simple_stmt)),
           seq(field("command", alias(/\.[\.:\-*]+/, $.cmd_identifier)), /[ ]+/, field("args", optional($.args))),
           seq(field("command", alias(/\.[ ]+/, $.cmd_identifier)), field("args", optional($.args))),
-          seq(field("command", alias(".!", $.cmd_identifier)), field("args", $.interpret_arg)),
           seq(field("command", alias(".(", $.cmd_identifier)), field("args", $.macro_call_content)),
           seq(field("command", alias($._interpret_search_identifier, $.cmd_identifier)), field("args", $.args)),
           prec.right(1, seq(field("args", $._simple_stmt), field("command", "|.")))

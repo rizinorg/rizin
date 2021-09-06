@@ -48,7 +48,7 @@ static ut32 avr_rdddddrrrr(cchar* name, ut16 data[2], ut64 pc, RzStrBuf *sb) {
 
 static ut32 avr_KKddKKKK(cchar* name, ut16 data[2], ut64 pc, RzStrBuf *sb) {
 	ut16 K = data[0] & 0x000F;
-	ut16 Rd = 24 + ((data[0] & 0x0030) >> 4);
+	ut16 Rd = 24 + ((data[0] & 0x0030) >> 3);
 	K |= ((data[0] & 0x00C0) >> 2);
 
 	rz_strbuf_setf(sb, "%s r%u, 0x%02x", name, Rd, K);

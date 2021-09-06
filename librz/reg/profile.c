@@ -244,7 +244,7 @@ RZ_API bool rz_reg_set_profile_string(RzReg *reg, const char *str) {
 }
 
 RZ_API bool rz_reg_set_profile(RzReg *reg, const char *profile) {
-	rz_return_val_if_fail(reg && profile, NULL);
+	rz_return_val_if_fail(reg && profile, false);
 	char *base, *file;
 	char *str = rz_file_slurp(profile, NULL);
 	if (!str) {

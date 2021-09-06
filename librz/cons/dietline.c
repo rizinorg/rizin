@@ -207,16 +207,16 @@ static int rz_line_readchar_utf8(ut8 *s, int slen) {
 
 #if __WINDOWS__
 static int rz_line_readchar_win(ut8 *s, int slen) { // this function handle the input in console mode
-	if (slen > 0 && rz_cons_readbuffer_readchar(s)) {
-		if (s[0] == '\x1b' && rz_cons_readbuffer_readchar(s + 1)) {
-			if (s[1] == '\x31' && rz_cons_readbuffer_readchar(s + 2)) {
+	if (slen > 0 && rz_cons_readbuffer_readchar((char *)s)) {
+		if (s[0] == '\x1b' && rz_cons_readbuffer_readchar((char *)s + 1)) {
+			if (s[1] == '\x31' && rz_cons_readbuffer_readchar((char *)s + 2)) {
 				return 3;
 			}
 			return 2;
 		}
 		return 1;
 	}
-	INPUT_RECORD irInBuf = { { 0 } };
+	INPUT_RECORD irInBuf = { 0 };
 	BOOL ret, bCtrl = FALSE;
 	DWORD mode, out;
 	char buf[5] = { 0 };
@@ -243,7 +243,7 @@ do_it_again:
 	if (rz_cons_singleton()->term_xterm) {
 		ret = ReadFile(h, buf, 1, &out, NULL);
 	} else {
-		ret = ReadConsoleInput(h, &irInBuf, 1, &out);
+		ret = ReadConsoleInputW(h, &irInBuf, 1, &out);
 	}
 	rz_cons_sleep_end(bed);
 	if (ret < 1) {
@@ -252,7 +252,7 @@ do_it_again:
 	if (irInBuf.EventType == KEY_EVENT) {
 		if (irInBuf.Event.KeyEvent.bKeyDown) {
 			if (irInBuf.Event.KeyEvent.uChar.UnicodeChar) {
-				char *tmp = rz_sys_conv_win_to_utf8_l((PTCHAR)&irInBuf.Event.KeyEvent.uChar, 1);
+				char *tmp = rz_utf16_to_utf8_l(&irInBuf.Event.KeyEvent.uChar.UnicodeChar, 1);
 				if (!tmp) {
 					return 0;
 				}
@@ -446,8 +446,9 @@ RZ_API int rz_line_hist_list(void) {
 	}
 	if (I.history.data) {
 		for (i = 0; i < I.history.size && I.history.data[i]; i++) {
-			const char *pad = rz_str_pad(' ', 32 - strlen(I.history.data[i]));
-			rz_cons_printf("%s %s # !%d\n", I.history.data[i], pad, i);
+			// when you execute a command, you always move the history
+			// by 1 before actually printing it.
+			rz_cons_printf("%5d  %s\n", i + 1, I.history.data[i]);
 		}
 	}
 	return i;
@@ -1331,6 +1332,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 	static int gcomp_idx = 0;
 	static bool yank_flag = 0;
 	static int gcomp = 0;
+	static int gcomp_is_rev = true;
 	char buf[10];
 #if USE_UTF8
 	int utflen;
@@ -1498,15 +1500,19 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 			}
 			fflush(stdout);
 			break;
-		case 18: // ^R -- autocompletion
+		case 18: // ^R -- reverse-search
 			if (gcomp) {
 				gcomp_idx++;
 			}
+			gcomp_is_rev = true;
 			gcomp = 1;
 			break;
-		case 19: // ^S -- backspace
+		case 19: // ^S -- forward-search
 			if (gcomp) {
-				gcomp--;
+				if (gcomp_idx > 0) {
+					gcomp_idx--;
+				}
+				gcomp_is_rev = false;
 			} else {
 				__move_cursor_left();
 			}
@@ -1525,15 +1531,11 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 			HANDLE hClipBoard;
 			PTCHAR clipText;
 			if (OpenClipboard(NULL)) {
-#if UNICODE
 				hClipBoard = GetClipboardData(CF_UNICODETEXT);
-#else
-				hClipBoard = GetClipboardData(CF_TEXT);
-#endif
 				if (hClipBoard) {
 					clipText = GlobalLock(hClipBoard);
 					if (clipText) {
-						char *txt = rz_sys_conv_win_to_utf8(clipText);
+						char *txt = rz_utf16_to_utf8(clipText);
 						if (!txt) {
 							RZ_LOG_ERROR("Failed to allocate memory\n");
 							break;
@@ -1994,11 +1996,14 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 							}
 						}
 						if (i == 0) {
-							gcomp_idx--;
+							if (gcomp_is_rev) {
+								gcomp_idx--;
+							}
 						}
 					}
 				}
-				printf("\r (reverse-i-search (%s)): %s\r", I.buffer.data, gcomp_line);
+				const char *prompt = gcomp_is_rev ? "reverse-i-search" : "forward-i-search";
+				printf("\r (%s (%s)): %s\r", prompt, I.buffer.data, gcomp_line);
 			} else {
 				__print_prompt();
 			}

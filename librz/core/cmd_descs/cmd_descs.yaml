@@ -22,6 +22,8 @@
 #   modes: >
 #     same as RzCmdDesc.modes. When present the type is automatically set to
 #     ARGV_MODES.
+#   default_mode: >
+#     same as RzCmdDesc.default_mode.
 #   details: >
 #     an array of RzCmdDescDetail or a string referencing an already existing
 #     RzCmdDescDetail array
@@ -62,9 +64,8 @@
 name: root
 commands:
   - name: "!"
-    cname: cmd_system
-    summary: Run given commands as in system(3)
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    summary: Run given commands as in system(3) or shows command history
+    subcommands: cmd_system
   - name: _
     cname: last_output
     summary: Print last output
@@ -216,10 +217,12 @@ commands:
     cname: cmd_egg
     summary: Generate shellcodes with rz_egg
     type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: H
+    summary: Rizin history commands.
+    subcommands: cmd_history
   - name: i
-    cname: cmd_info
     summary: Get info about opened binary file
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    subcommands: cmd_info
   - name: k
     cname: cmd_kuery
     summary: Run sdb-query

@@ -462,7 +462,7 @@ static int __cons_readchar_w32(ut32 usec) {
 				return ch;
 			}
 		} else {
-			ret = ReadConsoleInput(h, &irInBuf, 1, &out);
+			ret = ReadConsoleInputW(h, &irInBuf, 1, &out);
 		}
 		rz_cons_sleep_end(bed);
 		if (ret) {
@@ -504,9 +504,15 @@ static int __cons_readchar_w32(ut32 usec) {
 
 			if (irInBuf.EventType == KEY_EVENT) {
 				if (irInBuf.Event.KeyEvent.bKeyDown) {
-					ch = irInBuf.Event.KeyEvent.uChar.AsciiChar;
 					bCtrl = irInBuf.Event.KeyEvent.dwControlKeyState & 8;
-					if (irInBuf.Event.KeyEvent.uChar.AsciiChar == 0) {
+					if (irInBuf.Event.KeyEvent.uChar.UnicodeChar) {
+						char *tmp = rz_utf16_to_utf8_l(&irInBuf.Event.KeyEvent.uChar.UnicodeChar, 1);
+						if (tmp) {
+							int len = strlen(tmp);
+							memcpy(&ch, tmp, R_MIN(len, sizeof(ch)));
+							free(tmp);
+						}
+					} else {
 						switch (irInBuf.Event.KeyEvent.wVirtualKeyCode) {
 						case VK_DOWN: // key down
 						case VK_RIGHT: // key right

@@ -36,14 +36,20 @@ static ut64 t9_pre = UT64_MAX;
 #define SET_SRC_DST_3_REGS(op) \
 	CREATE_SRC_DST_3(op); \
 	(op)->dst->reg = rz_reg_get(analysis->reg, REG(0), RZ_REG_TYPE_GPR); \
+	(op)->dst->type = RZ_ANALYSIS_VAL_REG; \
 	(op)->src[0]->reg = rz_reg_get(analysis->reg, REG(1), RZ_REG_TYPE_GPR); \
-	(op)->src[1]->reg = rz_reg_get(analysis->reg, REG(2), RZ_REG_TYPE_GPR);
+	(op)->src[0]->type = RZ_ANALYSIS_VAL_REG; \
+	(op)->src[1]->reg = rz_reg_get(analysis->reg, REG(2), RZ_REG_TYPE_GPR); \
+	(op)->src[1]->type = RZ_ANALYSIS_VAL_REG;
 
 #define SET_SRC_DST_3_IMM(op) \
 	CREATE_SRC_DST_3(op); \
 	(op)->dst->reg = rz_reg_get(analysis->reg, REG(0), RZ_REG_TYPE_GPR); \
+	(op)->dst->type = RZ_ANALYSIS_VAL_REG; \
 	(op)->src[0]->reg = rz_reg_get(analysis->reg, REG(1), RZ_REG_TYPE_GPR); \
-	(op)->src[1]->imm = IMM(2);
+	(op)->src[0]->type = RZ_ANALYSIS_VAL_REG; \
+	(op)->src[1]->imm = IMM(2); \
+	(op)->src[1]->type = RZ_ANALYSIS_VAL_IMM;
 
 #define SET_SRC_DST_2_REGS(op) \
 	CREATE_SRC_DST_2(op); \
@@ -616,6 +622,7 @@ static void op_fillval(RzAnalysis *analysis, RzAnalysisOp *op, csh *handle, cs_i
 		if (OPERAND(1).type == MIPS_OP_MEM) {
 			ZERO_FILL(reg);
 			op->src[0] = rz_analysis_value_new();
+			op->src[0]->type = RZ_ANALYSIS_VAL_MEM;
 			op->src[0]->reg = &reg;
 			parse_reg_name(op->src[0]->reg, *handle, insn, 1);
 			op->src[0]->delta = OPERAND(1).mem.disp;
@@ -625,6 +632,7 @@ static void op_fillval(RzAnalysis *analysis, RzAnalysisOp *op, csh *handle, cs_i
 		if (OPERAND(1).type == MIPS_OP_MEM) {
 			ZERO_FILL(reg);
 			op->dst = rz_analysis_value_new();
+			op->dst->type = RZ_ANALYSIS_VAL_MEM;
 			op->dst->reg = &reg;
 			parse_reg_name(op->dst->reg, *handle, insn, 1);
 			op->dst->delta = OPERAND(1).mem.disp;

@@ -11,8 +11,8 @@
 #define TE_DWord ut64
 #define TE_VWord ut32
 
-#ifndef _INCLUDE_R_BIN_TE_SPECS_H_
-#define _INCLUDE_R_BIN_TE_SPECS_H_
+#ifndef _INCLUDE_RZ_BIN_TE_SPECS_H_
+#define _INCLUDE_RZ_BIN_TE_SPECS_H_
 
 #define TE_NAME_LENGTH   256
 #define TE_STRING_LENGTH 256

@@ -166,8 +166,9 @@ static int replace(int argc, char *argv[], char *newstr) {
 	return false;
 }
 
-static int parse(RzParse *p, const char *data, char *str) {
+static bool parse(RzParse *p, const char *data, RzStrBuf *sb) {
 	char w0[256], w1[256], w2[256], w3[256];
+	char str[1024] = { 0 };
 	int i;
 	size_t len = strlen(data);
 	int sz = 32;
@@ -285,6 +286,7 @@ static int parse(RzParse *p, const char *data, char *str) {
 		replace(nw, wa, str);
 	}
 	free(buf);
+	rz_strbuf_set(sb, str);
 	return true;
 }
 

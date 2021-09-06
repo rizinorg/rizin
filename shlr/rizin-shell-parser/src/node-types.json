@@ -72,10 +72,6 @@
             "named": true
           },
           {
-            "type": "interpret_arg",
-            "named": true
-          },
-          {
             "type": "iter_bbs_stmt",
             "named": true
           },
@@ -1295,11 +1291,6 @@
         ]
       }
     }
-  },
-  {
-    "type": "interpret_arg",
-    "named": true,
-    "fields": {}
   },
   {
     "type": "iter_bbs_stmt",
@@ -6708,6 +6699,10 @@
           "named": true
         },
         {
+          "type": "args",
+          "named": true
+        },
+        {
           "type": "grep_stmt",
           "named": true
         },
@@ -6825,10 +6820,6 @@
         },
         {
           "type": "number_stmt",
-          "named": true
-        },
-        {
-          "type": "pipe_second_stmt",
           "named": true
         },
         {
@@ -11253,10 +11244,6 @@
   },
   {
     "type": "html_redirect_operator",
-    "named": true
-  },
-  {
-    "type": "pipe_second_stmt",
     "named": true
   },
   {

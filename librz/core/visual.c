@@ -4,7 +4,6 @@
 #include <rz_core.h>
 #include <rz_cons.h>
 #include "core_private.h"
-#include "cmd_descs/cmd_descs.h"
 
 #define NPF  5
 #define PIDX (RZ_ABS(core->printidx % NPF))
@@ -350,7 +349,7 @@ static const char *help_msg_visual[] = {
 	"O", "toggle asm.pseudo and asm.esil",
 	"p/P", "rotate print modes (hex, disasm, debug, words, buf)",
 	"q", "back to rizin shell",
-	"r", "toggle callhints/jmphints/leahints",
+	"r", "toggle call/jmp/lea hints",
 	"R", "randomize color palette (ecr)",
 	"sS", "step / step over",
 	"tT", "tt new tab, t[1-9] switch to nth tab, t= name tab, t- close tab",
@@ -594,7 +593,7 @@ repeat:
 	case 'e':
 		rz_strbuf_appendf(p, "Visual Evals:\n\n");
 		rz_strbuf_appendf(p,
-			" E      toggle asm.leahints\n"
+			" E      toggle asm.hint.lea\n"
 			" &      rotate asm.bits=16,32,64\n");
 		ret = rz_cons_less_str(rz_strbuf_get(p), "?");
 		break;

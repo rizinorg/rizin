@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2015 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 // 64bit host debugging 64bit target
 return strdup(
 	"=PC	rip\n"

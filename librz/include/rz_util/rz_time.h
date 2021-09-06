@@ -27,6 +27,7 @@ RZ_API char *rz_time_to_string(ut64 ts);
 RZ_API char *rz_asctime_r(const struct tm *tm, char *buf);
 RZ_API char *rz_ctime_r(const time_t *timer, char *buf);
 RZ_API struct tm *rz_localtime_r(const time_t *time, struct tm *res);
+RZ_API struct tm *rz_gmtime_r(const time_t *time, struct tm *res);
 
 #define RZ_TIME_PROFILE_ENABLED 0
 

@@ -47,7 +47,7 @@ typedef struct rz_parse_plugin_t {
 	char *desc;
 	bool (*init)(RzParse *p, void *user);
 	int (*fini)(RzParse *p, void *user);
-	int (*parse)(RzParse *p, const char *data, char *str);
+	bool (*parse)(RzParse *p, const char *data, RzStrBuf *sb);
 	bool (*assemble)(RzParse *p, char *data, char *str);
 	int (*filter)(RzParse *p, ut64 addr, RzFlag *f, char *data, char *str, int len, bool big_endian);
 	bool (*subvar)(RzParse *p, RzAnalysisFunction *f, ut64 addr, int oplen, char *data, char *str, int len);
@@ -66,7 +66,7 @@ RZ_API bool rz_parse_add(RzParse *p, RzParsePlugin *foo);
 RZ_API bool rz_parse_use(RzParse *p, const char *name);
 
 /* action */
-RZ_API bool rz_parse_parse(RzParse *p, const char *data, char *str);
+RZ_API char *rz_parse_pseudocode(RzParse *p, const char *data);
 RZ_API bool rz_parse_assemble(RzParse *p, char *data, char *str); // XXX deprecate, unused and probably useless, related to write-hack
 RZ_API bool rz_parse_filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char *data, char *str, int len, bool big_endian);
 RZ_API bool rz_parse_subvar(RzParse *p, RzAnalysisFunction *f, ut64 addr, int oplen, char *data, char *str, int len);

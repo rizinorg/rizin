@@ -1474,8 +1474,8 @@ samesets(struct re_guts *g, int c1, int c2) {
 static void
 categorize(struct parse *p, struct re_guts *g) {
 	cat_t *cats = g ? g->categories : NULL;
-	unsigned int c;
-	unsigned int c2;
+	int c;
+	int c2;
 	cat_t cat;
 
 	/* avoid making error situations worse */

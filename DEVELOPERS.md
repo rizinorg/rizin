@@ -3,6 +3,7 @@
 This file is aimed at developers who want to work on the Rizin code base.
 
 ## Documentation
+
 There is support for Doxygen document generation in this repo.
 By running `doxygen` in the root of this repository, it will autodetect the
 Doxyfile and generate HTML documentation into
@@ -12,6 +13,7 @@ If you're contributing code or willing to update existing code, you can use the
 doxygen C-style comments to improve documentation and comments in code.
 See the [Doxygen Manual](http://www.doxygen.nl/manual/index.html)
 for more info. Example usage can be found [here](http://www.doxygen.nl/manual/docblocks.html)
+
 ```c
 /**
  * \brief Find the min and max addresses in an RzList of maps.

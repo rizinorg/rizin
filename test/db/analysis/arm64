@@ -54,7 +54,6 @@ ii
 iE
 EOF
 EXPECT=<<EOF
-[Imports]
 nth vaddr      bind   type   lib name             
 --------------------------------------------------
 3   0x00020060 GLOBAL NOTYPE     _bss_end__
@@ -72,9 +71,6 @@ nth vaddr      bind   type   lib name
 16  0x00020060 GLOBAL NOTYPE     _end
 17  0x00000710 GLOBAL FUNC       free
 18  0x00000720 GLOBAL FUNC       __cxa_atexit
-
-[Exports]
-
 nth paddr      vaddr      bind   type size lib name            
 ---------------------------------------------------------------
 6   0x0000aa20 0x0000aa20 GLOBAL FUNC 1176     Java_o__003dc_e
@@ -93,7 +89,7 @@ address: 0x100007f10
 opcode: irg x8, sp, x8
 esilcost: 0
 disasm: irg x8, sp, x8
-pseudo: irg x8,sp,x8 
+pseudo: asm("irg x8, sp, x8")
 mnemonic: irg
 mask: ffffffff
 prefix: 0
@@ -110,7 +106,7 @@ address: 0x100007f14
 opcode: addg x9, x8, 0x20, 0x0
 esilcost: 0
 disasm: addg x9, x8, 0x20, 0x0
-pseudo: addg x9,x8,0x20, 0x0 
+pseudo: asm("addg x9, x8, 0x20, 0x0")
 mnemonic: addg
 mask: ffffffff
 prefix: 0
@@ -141,7 +137,7 @@ address: 0x0
 opcode: addg x12, x8, 0x0, 0x2
 esilcost: 0
 disasm: addg x12, x8, 0x0, 0x2
-pseudo: addg x12,x8,0x0, 0x2 
+pseudo: asm("addg x12, x8, 0x0, 0x2")
 mnemonic: addg
 mask: ffffffff
 prefix: 0
@@ -158,7 +154,7 @@ address: 0x4
 opcode: addg x9, x8, 0x20, 0x0
 esilcost: 0
 disasm: addg x9, x8, 0x20, 0x0
-pseudo: addg x9,x8,0x20, 0x0 
+pseudo: asm("addg x9, x8, 0x20, 0x0")
 mnemonic: addg
 mask: ffffffff
 prefix: 0
@@ -175,7 +171,7 @@ address: 0x8
 opcode: irg x8, sp, x8
 esilcost: 0
 disasm: irg x8, sp, x8
-pseudo: irg x8,sp,x8 
+pseudo: asm("irg x8, sp, x8")
 mnemonic: irg
 mask: ffffffff
 prefix: 0

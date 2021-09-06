@@ -8,8 +8,8 @@
 import re
 import sys
 
-with open(sys.argv[1]) as inf:
-    with open(sys.argv[2], "w") as outf:
+with open(sys.argv[1], encoding="utf8") as inf:
+    with open(sys.argv[2], "w", encoding="utf8") as outf:
         for line in inf:
             if not line.startswith("_") and "=" in line:
                 arr = re.split("=|,", line)

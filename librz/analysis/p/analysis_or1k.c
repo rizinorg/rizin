@@ -71,7 +71,7 @@ static int insn_to_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, insn_t *descr,
 		break;
 	case 0x03: /* l.bnf */
 		o.n = get_operand_value(insn, type_descr, INSN_OPER_N);
-		op->cond = RZ_ANALYSIS_COND_NE;
+		op->cond = RZ_TYPE_COND_NE;
 		op->jump = n_oper_to_addr(o.n, get_operand_mask(type_descr, INSN_OPER_N),
 			addr);
 		op->fail = addr + 8;
@@ -79,7 +79,7 @@ static int insn_to_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, insn_t *descr,
 		break;
 	case 0x04: /* l.bf */
 		o.n = get_operand_value(insn, type_descr, INSN_OPER_N);
-		op->cond = RZ_ANALYSIS_COND_EQ;
+		op->cond = RZ_TYPE_COND_EQ;
 		op->jump = n_oper_to_addr(o.n, get_operand_mask(type_descr, INSN_OPER_N),
 			addr);
 		op->fail = addr + 8;

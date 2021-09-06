@@ -1145,6 +1145,10 @@ static RzList /*<RzBinDwarfARangeSet>*/ *parse_aranges_raw(const ut8 *obuf, size
 		set->address_size = READ8(buf);
 		set->segment_size = READ8(buf);
 		unit_length -= header_rest_size;
+		if (!set->address_size) {
+			free(set);
+			break;
+		}
 
 		// align to 2*addr_size
 		size_t off = buf - start;
@@ -2034,6 +2038,9 @@ RzBinSection *getsection(RzBinFile *binfile, const char *sn) {
 		return NULL;
 	}
 	rz_list_foreach (o->sections, iter, section) {
+		if (!section->name) {
+			continue;
+		}
 		if (strstr(section->name, sn)) {
 			return section;
 		}

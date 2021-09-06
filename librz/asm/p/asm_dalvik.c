@@ -18,8 +18,8 @@ static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	int vA, vB, vC, vD, vE, vF, vG, vH, payload = 0, i = (int)buf[0];
 	int size = dalvik_opcodes[i].len;
 	char str[1024], *strasm = NULL;
-	ut64 offset;
-	const char *flag_str;
+	ut64 offset = 0;
+	char *flag_str = NULL;
 	a->dataalign = 2;
 
 	const char *buf_asm = NULL;
@@ -83,37 +83,37 @@ static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		case fmtopvAvB:
 			vA = buf[1] & 0x0f;
 			vB = (buf[1] & 0xf0) >> 4;
-			snprintf(str, sizeof(str), " v%i, v%i", vA, vB);
+			rz_strf(str, " v%i, v%i", vA, vB);
 			strasm = rz_str_append(strasm, str);
 			break;
 		case fmtopvAAvBBBB:
 			vA = (int)buf[1];
 			vB = (buf[3] << 8) | buf[2];
-			snprintf(str, sizeof(str), " v%i, v%i", vA, vB);
+			rz_strf(str, " v%i, v%i", vA, vB);
 			strasm = rz_str_append(strasm, str);
 			break;
 		case fmtopvAAAAvBBBB: // buf[1] seems useless :/
 			vA = (buf[3] << 8) | buf[2];
 			vB = (buf[5] << 8) | buf[4];
-			snprintf(str, sizeof(str), " v%i, v%i", vA, vB);
+			rz_strf(str, " v%i, v%i", vA, vB);
 			strasm = rz_str_append(strasm, str);
 			break;
 		case fmtopvAA:
 			vA = (int)buf[1];
-			snprintf(str, sizeof(str), " v%i", vA);
+			rz_strf(str, " v%i", vA);
 			strasm = rz_str_append(strasm, str);
 			break;
 		case fmtopvAcB:
 			vA = buf[1] & 0x0f;
 			vB = (buf[1] & 0xf0) >> 4;
-			snprintf(str, sizeof(str), " v%i, %#x", vA, vB);
+			rz_strf(str, " v%i, %#x", vA, vB);
 			strasm = rz_str_append(strasm, str);
 			break;
 		case fmtopvAAcBBBB:
 			vA = (int)buf[1];
 			{
 				short sB = (buf[3] << 8) | buf[2];
-				snprintf(str, sizeof(str), " v%i, %#04hx", vA, sB);
+				rz_strf(str, " v%i, %#04hx", vA, sB);
 				strasm = rz_str_append(strasm, str);
 			}
 			break;
@@ -121,9 +121,9 @@ static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 			vA = (int)buf[1];
 			vB = buf[2] | (buf[3] << 8) | (buf[4] << 16) | (buf[5] << 24);
 			if (buf[0] == 0x17) { //const-wide/32
-				snprintf(str, sizeof(str), " v%i:v%i, 0x%08x", vA, vA + 1, vB);
+				rz_strf(str, " v%i:v%i, 0x%08x", vA, vA + 1, vB);
 			} else { //const
-				snprintf(str, sizeof(str), " v%i, 0x%08x", vA, vB);
+				rz_strf(str, " v%i, 0x%08x", vA, vB);
 			}
 			strasm = rz_str_append(strasm, str);
 			break;
@@ -132,9 +132,9 @@ static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 			// vB = 0|(buf[3]<<16)|(buf[2]<<24);
 			vB = 0 | (buf[2] << 16) | (buf[3] << 24);
 			if (buf[0] == 0x19) { // const-wide/high16
-				snprintf(str, sizeof(str), " v%i:v%i, 0x%08x", vA, vA + 1, vB);
+				rz_strf(str, " v%i:v%i, 0x%08x", vA, vA + 1, vB);
 			} else {
-				snprintf(str, sizeof(str), " v%i, 0x%08x", vA, vB);
+				rz_strf(str, " v%i, 0x%08x", vA, vB);
 			}
 			strasm = rz_str_append(strasm, str);
 			break;
@@ -144,52 +144,52 @@ static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 				((ut64)buf[4] << 16) | ((ut64)buf[5] << 24) |
 				((ut64)buf[6] << 32) | ((ut64)buf[7] << 40) |
 				((ut64)(buf[8] & 0xff) << 48) | ((ut64)(buf[9] & 0xff) << 56);
-			snprintf(str, sizeof(str), " v%i:v%i, 0x%" PFMT64x, vA, vA + 1, lB);
+			rz_strf(str, " v%i:v%i, 0x%" PFMT64x, vA, vA + 1, lB);
 			strasm = rz_str_append(strasm, str);
 			break;
 		case fmtopvAAvBBvCC:
 			vA = (int)buf[1];
 			vB = (int)buf[2];
 			vC = (int)buf[3];
-			snprintf(str, sizeof(str), " v%i, v%i, v%i", vA, vB, vC);
+			rz_strf(str, " v%i, v%i, v%i", vA, vB, vC);
 			strasm = rz_str_append(strasm, str);
 			break;
 		case fmtopvAAvBBcCC:
 			vA = (int)buf[1];
 			vB = (int)buf[2];
 			vC = (int)buf[3];
-			snprintf(str, sizeof(str), " v%i, v%i, %#x", vA, vB, vC);
+			rz_strf(str, " v%i, v%i, %#x", vA, vB, vC);
 			strasm = rz_str_append(strasm, str);
 			break;
 		case fmtopvAvBcCCCC:
 			vA = buf[1] & 0x0f;
 			vB = (buf[1] & 0xf0) >> 4;
 			vC = (buf[3] << 8) | buf[2];
-			snprintf(str, sizeof(str), " v%i, v%i, %#x", vA, vB, vC);
+			rz_strf(str, " v%i, v%i, %#x", vA, vB, vC);
 			strasm = rz_str_append(strasm, str);
 			break;
 		case fmtoppAA:
 			vA = (signed char)buf[1];
 			//snprintf (str, sizeof (str), " %i", vA*2); // vA : word -> byte
-			snprintf(str, sizeof(str), " 0x%08" PFMT64x, a->pc + (vA * 2)); // vA : word -> byte
+			rz_strf(str, " 0x%08" PFMT64x, a->pc + (vA * 2)); // vA : word -> byte
 			strasm = rz_str_append(strasm, str);
 			break;
 		case fmtoppAAAA:
 			vA = (short)(buf[3] << 8 | buf[2]);
-			snprintf(str, sizeof(str), " 0x%08" PFMT64x, a->pc + (vA * 2)); // vA : word -> byte
+			rz_strf(str, " 0x%08" PFMT64x, a->pc + (vA * 2)); // vA : word -> byte
 			strasm = rz_str_append(strasm, str);
 			break;
 		case fmtopvAApBBBB: // if-*z
 			vA = (int)buf[1];
 			vB = (int)(buf[3] << 8 | buf[2]);
 			//snprintf (str, sizeof (str), " v%i, %i", vA, vB);
-			snprintf(str, sizeof(str), " v%i, 0x%08" PFMT64x, vA, a->pc + (vB * 2));
+			rz_strf(str, " v%i, 0x%08" PFMT64x, vA, a->pc + (vB * 2));
 			strasm = rz_str_append(strasm, str);
 			break;
 		case fmtoppAAAAAAAA:
 			vA = (int)(buf[2] | (buf[3] << 8) | (buf[4] << 16) | (buf[5] << 24));
 			//snprintf (str, sizeof (str), " %#08x", vA*2); // vA: word -> byte
-			snprintf(str, sizeof(str), " 0x%08" PFMT64x, a->pc + (vA * 2)); // vA : word -> byte
+			rz_strf(str, " 0x%08" PFMT64x, a->pc + (vA * 2)); // vA : word -> byte
 			strasm = rz_str_append(strasm, str);
 			break;
 		case fmtopvAvBpCCCC: // if-*
@@ -197,13 +197,13 @@ static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 			vB = (buf[1] & 0xf0) >> 4;
 			vC = (int)(buf[3] << 8 | buf[2]);
 			//snprintf (str, sizeof (str), " v%i, v%i, %i", vA, vB, vC);
-			snprintf(str, sizeof(str), " v%i, v%i, 0x%08" PFMT64x, vA, vB, a->pc + (vC * 2));
+			rz_strf(str, " v%i, v%i, 0x%08" PFMT64x, vA, vB, a->pc + (vC * 2));
 			strasm = rz_str_append(strasm, str);
 			break;
 		case fmtopvAApBBBBBBBB:
 			vA = (int)buf[1];
 			vB = (short)(buf[2] | (buf[3] << 8) | (buf[4] << 16) | (buf[5] << 24));
-			snprintf(str, sizeof(str), " v%i, 0x%08" PFMT64x, vA, a->pc + (vB * 2) + 8);
+			rz_strf(str, " v%i, 0x%08" PFMT64x, vA, a->pc + (vB * 2) + 8);
 			strasm = rz_str_append(strasm, str);
 			break;
 		case fmtoptinlineI:
@@ -212,23 +212,23 @@ static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 			*str = 0;
 			switch (vA) {
 			case 1:
-				snprintf(str, sizeof(str), " {v%i}", buf[4] & 0x0f);
+				rz_strf(str, " {v%i}", buf[4] & 0x0f);
 				break;
 			case 2:
-				snprintf(str, sizeof(str), " {v%i, v%i}", buf[4] & 0x0f, (buf[4] & 0xf0) >> 4);
+				rz_strf(str, " {v%i, v%i}", buf[4] & 0x0f, (buf[4] & 0xf0) >> 4);
 				break;
 			case 3:
-				snprintf(str, sizeof(str), " {v%i, v%i, v%i}", buf[4] & 0x0f, (buf[4] & 0xf0) >> 4, buf[5] & 0x0f);
+				rz_strf(str, " {v%i, v%i, v%i}", buf[4] & 0x0f, (buf[4] & 0xf0) >> 4, buf[5] & 0x0f);
 				break;
 			case 4:
-				snprintf(str, sizeof(str), " {v%i, v%i, v%i, v%i}", buf[4] & 0x0f,
+				rz_strf(str, " {v%i, v%i, v%i, v%i}", buf[4] & 0x0f,
 					(buf[4] & 0xf0) >> 4, buf[5] & 0x0f, (buf[5] & 0xf0) >> 4);
 				break;
 			default:
-				snprintf(str, sizeof(str), " {}");
+				rz_strf(str, " {}");
 			}
 			strasm = rz_str_append(strasm, str);
-			snprintf(str, sizeof(str), ", [%04x]", vB);
+			rz_strf(str, ", [%04x]", vB);
 			strasm = rz_str_append(strasm, str);
 			break;
 		case fmtoptinlineIR:
@@ -236,7 +236,7 @@ static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 			vA = (int)buf[1];
 			vB = (buf[3] << 8) | buf[2];
 			vC = (buf[5] << 8) | buf[4];
-			snprintf(str, sizeof(str), " {v%i..v%i}, [%04x]", vC, vC + vA - 1, vB);
+			rz_strf(str, " {v%i..v%i}, [%04x]", vC, vC + vA - 1, vB);
 			strasm = rz_str_append(strasm, str);
 			break;
 		case fmtoptinvokeVS:
@@ -244,25 +244,25 @@ static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 			vB = (buf[3] << 8) | buf[2];
 			switch (vA) {
 			case 1:
-				snprintf(str, sizeof(str), " {v%i}", buf[4] & 0x0f);
+				rz_strf(str, " {v%i}", buf[4] & 0x0f);
 				break;
 			case 2:
-				snprintf(str, sizeof(str), " {v%i, v%i}", buf[4] & 0x0f, (buf[4] & 0xf0) >> 4);
+				rz_strf(str, " {v%i, v%i}", buf[4] & 0x0f, (buf[4] & 0xf0) >> 4);
 				break;
 			case 3:
-				snprintf(str, sizeof(str), " {v%i, v%i, v%i}", buf[4] & 0x0f,
+				rz_strf(str, " {v%i, v%i, v%i}", buf[4] & 0x0f,
 					(buf[4] & 0xf0) >> 4, buf[5] & 0x0f);
 				break;
 			case 4:
-				snprintf(str, sizeof(str), " {v%i, v%i, v%i, v%i}", buf[4] & 0x0f,
+				rz_strf(str, " {v%i, v%i, v%i, v%i}", buf[4] & 0x0f,
 					(buf[4] & 0xf0) >> 4, buf[5] & 0x0f, (buf[5] & 0xf0) >> 4);
 				break;
 			default:
-				snprintf(str, sizeof(str), " {}");
+				rz_strf(str, " {}");
 				break;
 			}
 			strasm = rz_str_append(strasm, str);
-			snprintf(str, sizeof(str), ", [%04x]", vB);
+			rz_strf(str, ", [%04x]", vB);
 			strasm = rz_str_append(strasm, str);
 			break;
 		case fmtopvAAtBBBB: // "sput-*"
@@ -270,24 +270,24 @@ static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 			vB = (buf[3] << 8) | buf[2];
 			if (buf[0] == 0x1a) {
 				offset = RZ_ASM_GET_OFFSET(a, 's', vB);
-				if (offset == -1) {
-					snprintf(str, sizeof(str), " v%i, string+%i", vA, vB);
+				if (offset == UT64_MAX) {
+					rz_strf(str, " v%i, string+%i", vA, vB);
 				} else {
-					snprintf(str, sizeof(str), " v%i, 0x%" PFMT64x, vA, offset);
+					rz_strf(str, " v%i, 0x%" PFMT64x, vA, offset);
 				}
 			} else if (buf[0] == 0x1c || buf[0] == 0x1f || buf[0] == 0x22) {
 				flag_str = RZ_ASM_GET_NAME(a, 'c', vB);
 				if (!flag_str) {
-					snprintf(str, sizeof(str), " v%i, class+%i", vA, vB);
+					rz_strf(str, " v%i, class+%i", vA, vB);
 				} else {
-					snprintf(str, sizeof(str), " v%i, %s", vA, flag_str);
+					rz_strf(str, " v%i, %s", vA, flag_str);
 				}
 			} else {
 				flag_str = RZ_ASM_GET_NAME(a, 'f', vB);
 				if (!flag_str) {
-					snprintf(str, sizeof(str), " v%i, field+%i", vA, vB);
+					rz_strf(str, " v%i, field+%i", vA, vB);
 				} else {
-					snprintf(str, sizeof(str), " v%i, %s", vA, flag_str);
+					rz_strf(str, " v%i, %s", vA, flag_str);
 				}
 			}
 			strasm = rz_str_append(strasm, str);
@@ -297,10 +297,10 @@ static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 			vB = (buf[1] & 0xf0) >> 4;
 			vC = (buf[3] << 8) | buf[2];
 			offset = RZ_ASM_GET_OFFSET(a, 'o', vC);
-			if (offset == -1) {
-				snprintf(str, sizeof(str), " v%i, v%i, [obj+%04x]", vA, vB, vC);
+			if (offset == UT64_MAX) {
+				rz_strf(str, " v%i, v%i, [obj+%04x]", vA, vB, vC);
 			} else {
-				snprintf(str, sizeof(str), " v%i, v%i, [0x%" PFMT64x "]", vA, vB, offset);
+				rz_strf(str, " v%i, v%i, [0x%" PFMT64x "]", vA, vB, offset);
 			}
 			strasm = rz_str_append(strasm, str);
 			break;
@@ -308,10 +308,10 @@ static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 			vA = (int)buf[1];
 			vB = (buf[3] << 8) | buf[2];
 			offset = RZ_ASM_GET_OFFSET(a, 't', vB);
-			if (offset == -1) {
-				snprintf(str, sizeof(str), " v%i, thing+%i", vA, vB);
+			if (offset == UT64_MAX) {
+				rz_strf(str, " v%i, thing+%i", vA, vB);
 			} else {
-				snprintf(str, sizeof(str), " v%i, 0x%" PFMT64x, vA, offset);
+				rz_strf(str, " v%i, 0x%" PFMT64x, vA, offset);
 			}
 			strasm = rz_str_append(strasm, str);
 			break;
@@ -321,17 +321,17 @@ static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 			vC = (buf[3] << 8) | buf[2];
 			if (buf[0] == 0x20 || buf[0] == 0x23) { //instance-of & new-array
 				flag_str = RZ_ASM_GET_NAME(a, 'c', vC);
-				if (flag_str) {
-					snprintf(str, sizeof(str), " v%i, v%i, %s", vA, vB, flag_str);
+				if (RZ_STR_ISNOTEMPTY(flag_str)) {
+					rz_strf(str, " v%i, v%i, %s", vA, vB, flag_str);
 				} else {
-					snprintf(str, sizeof(str), " v%i, v%i, class+%i", vA, vB, vC);
+					rz_strf(str, " v%i, v%i, class+%i", vA, vB, vC);
 				}
 			} else {
 				flag_str = RZ_ASM_GET_NAME(a, 'f', vC);
-				if (flag_str) {
-					snprintf(str, sizeof(str), " v%i, v%i, %s", vA, vB, flag_str);
+				if (RZ_STR_ISNOTEMPTY(flag_str)) {
+					rz_strf(str, " v%i, v%i, %s", vA, vB, flag_str);
 				} else {
-					snprintf(str, sizeof(str), " v%i, v%i, field+%i", vA, vB, vC);
+					rz_strf(str, " v%i, v%i, field+%i", vA, vB, vC);
 				}
 			}
 			strasm = rz_str_append(strasm, str);
@@ -340,10 +340,10 @@ static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 			vA = (int)buf[1];
 			vB = (int)(buf[5] | (buf[4] << 8) | (buf[3] << 16) | (buf[2] << 24));
 			offset = RZ_ASM_GET_OFFSET(a, 's', vB);
-			if (offset == -1) {
-				snprintf(str, sizeof(str), " v%i, string+%i", vA, vB);
+			if (offset == UT64_MAX) {
+				rz_strf(str, " v%i, string+%i", vA, vB);
 			} else {
-				snprintf(str, sizeof(str), " v%i, 0x%" PFMT64x, vA, offset);
+				rz_strf(str, " v%i, 0x%" PFMT64x, vA, offset);
 			}
 			strasm = rz_str_append(strasm, str);
 			break;
@@ -353,24 +353,24 @@ static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 			vC = (buf[5] << 8) | buf[4];
 			if (buf[0] == 0x25) { // filled-new-array/range
 				flag_str = RZ_ASM_GET_NAME(a, 'c', vB);
-				if (flag_str) {
-					snprintf(str, sizeof(str), " {v%i..v%i}, %s", vC, vC + vA - 1, flag_str);
+				if (RZ_STR_ISNOTEMPTY(flag_str)) {
+					rz_strf(str, " {v%i..v%i}, %s", vC, vC + vA - 1, flag_str);
 				} else {
-					snprintf(str, sizeof(str), " {v%i..v%i}, class+%i", vC, vC + vA - 1, vB);
+					rz_strf(str, " {v%i..v%i}, class+%i", vC, vC + vA - 1, vB);
 				}
 			} else if (buf[0] == 0xfd) { // invoke-custom/range
 				flag_str = RZ_ASM_GET_NAME(a, 's', vB);
-				if (flag_str) {
-					snprintf(str, sizeof(str), " {v%i..v%i}, %s", vC, vC + vA - 1, flag_str);
+				if (RZ_STR_ISNOTEMPTY(flag_str)) {
+					rz_strf(str, " {v%i..v%i}, %s", vC, vC + vA - 1, flag_str);
 				} else {
-					snprintf(str, sizeof(str), " {v%i..v%i}, call_site+%i", vC, vC + vA - 1, vB);
+					rz_strf(str, " {v%i..v%i}, call_site+%i", vC, vC + vA - 1, vB);
 				}
 			} else {
 				flag_str = RZ_ASM_GET_NAME(a, 'm', vB);
-				if (flag_str) {
-					snprintf(str, sizeof(str), " {v%i..v%i}, %s", vC, vC + vA - 1, flag_str);
+				if (RZ_STR_ISNOTEMPTY(flag_str)) {
+					rz_strf(str, " {v%i..v%i}, %s", vC, vC + vA - 1, flag_str);
 				} else {
-					snprintf(str, sizeof(str), " {v%i..v%i}, method+%i", vC, vC + vA - 1, vB);
+					rz_strf(str, " {v%i..v%i}, method+%i", vC, vC + vA - 1, vB);
 				}
 			}
 			strasm = rz_str_append(strasm, str);
@@ -380,49 +380,50 @@ static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 			vB = (buf[3] << 8) | buf[2];
 			switch (vA) {
 			case 1:
-				snprintf(str, sizeof(str), " {v%i}", buf[4] & 0x0f);
+				rz_strf(str, " {v%i}", buf[4] & 0x0f);
 				break;
 			case 2:
-				snprintf(str, sizeof(str), " {v%i, v%i}", buf[4] & 0x0f, (buf[4] & 0xf0) >> 4);
+				rz_strf(str, " {v%i, v%i}", buf[4] & 0x0f, (buf[4] & 0xf0) >> 4);
 				break;
 			case 3:
-				snprintf(str, sizeof(str), " {v%i, v%i, v%i}", buf[4] & 0x0f,
+				rz_strf(str, " {v%i, v%i, v%i}", buf[4] & 0x0f,
 					(buf[4] & 0xf0) >> 4, buf[5] & 0x0f);
 				break;
 			case 4:
-				snprintf(str, sizeof(str), " {v%i, v%i, v%i, v%i}", buf[4] & 0x0f,
+				rz_strf(str, " {v%i, v%i, v%i, v%i}", buf[4] & 0x0f,
 					(buf[4] & 0xf0) >> 4, buf[5] & 0x0f, (buf[5] & 0xf0) >> 4);
 				break;
 			case 5:
-				snprintf(str, sizeof(str), " {v%i, v%i, v%i, v%i, v%i}", buf[4] & 0x0f,
+				rz_strf(str, " {v%i, v%i, v%i, v%i, v%i}", buf[4] & 0x0f,
 					(buf[4] & 0xf0) >> 4, buf[5] & 0x0f, (buf[5] & 0xf0) >> 4, buf[1] & 0x0f); // TOODO: recheck this
 				break;
 			default:
-				snprintf(str, sizeof(str), " {}");
+				rz_strf(str, " {}");
 			}
 			strasm = rz_str_append(strasm, str);
 			if (buf[0] == 0x24) { // filled-new-array
 				flag_str = RZ_ASM_GET_NAME(a, 'c', vB);
-				if (flag_str) {
-					snprintf(str, sizeof(str), ", %s ; 0x%x", flag_str, vB);
+				if (RZ_STR_ISEMPTY(flag_str)) {
+					rz_strf(str, ", class+%i", vB);
 				} else {
-					snprintf(str, sizeof(str), ", class+%i", vB);
+					rz_strf(str, ", %s", flag_str);
 				}
 			} else if (buf[0] == 0xfc) { // invoke-custom
 				flag_str = RZ_ASM_GET_NAME(a, 's', vB);
-				if (flag_str) {
-					snprintf(str, sizeof(str), ", %s ; 0x%x", flag_str, vB);
+				if (RZ_STR_ISEMPTY(flag_str)) {
+					rz_strf(str, ", call_site+%i", vB);
 				} else {
-					snprintf(str, sizeof(str), ", call_site+%i", vB);
+					rz_strf(str, ", %s", flag_str);
 				}
 			} else { // invoke-kind
 				flag_str = RZ_ASM_GET_NAME(a, 'm', vB);
-				if (flag_str) {
-					snprintf(str, sizeof(str), ", %s ; 0x%x", flag_str, vB);
+				if (RZ_STR_ISNOTEMPTY(flag_str)) {
+					rz_strf(str, ", %s", flag_str);
 				} else {
-					snprintf(str, sizeof(str), ", method+%i", vB);
+					rz_strf(str, ", method+%i", vB);
 				}
 			}
+			free(flag_str);
 			strasm = rz_str_append(strasm, str);
 			break;
 		case fmtop45CC:
@@ -437,35 +438,35 @@ static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 
 			switch (vA) {
 			case 1:
-				snprintf(str, sizeof(str), " {v%d}", vC);
+				rz_strf(str, " {v%d}", vC);
 				break;
 			case 2:
-				snprintf(str, sizeof(str), " {v%d, v%d}", vC, vD);
+				rz_strf(str, " {v%d, v%d}", vC, vD);
 				break;
 			case 3:
-				snprintf(str, sizeof(str), " {v%d, v%d, v%d}", vC, vD, vE);
+				rz_strf(str, " {v%d, v%d, v%d}", vC, vD, vE);
 				break;
 			case 4:
-				snprintf(str, sizeof(str), " {v%d, v%d, v%d, v%d}", vC, vD, vE, vF);
+				rz_strf(str, " {v%d, v%d, v%d, v%d}", vC, vD, vE, vF);
 				break;
 			case 5:
-				snprintf(str, sizeof(str), " {v%d, v%d, v%d, v%d, v%d}", vC, vD, vE, vF, vG);
+				rz_strf(str, " {v%d, v%d, v%d, v%d, v%d}", vC, vD, vE, vF, vG);
 				break;
 			default:
-				snprintf(str, sizeof(str), " %d", vC);
+				rz_strf(str, " %d", vC);
 				break;
 			}
 			strasm = rz_str_append(strasm, str);
 
 			flag_str = RZ_ASM_GET_NAME(a, 'm', vB);
-			if (flag_str) {
+			if (RZ_STR_ISNOTEMPTY(flag_str)) {
 				strasm = rz_str_appendf(strasm, ", %s", flag_str);
 			} else {
 				strasm = rz_str_appendf(strasm, ", method+%i", vB);
 			}
 
 			flag_str = RZ_ASM_GET_NAME(a, 'p', vH);
-			if (flag_str) {
+			if (RZ_STR_ISNOTEMPTY(flag_str)) {
 				strasm = rz_str_appendf(strasm, ", %s", flag_str);
 			} else {
 				strasm = rz_str_appendf(strasm, ", proto+%i", vH);
@@ -477,18 +478,18 @@ static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 			vC = (buf[5] << 8) | buf[4];
 			vH = (buf[7] << 8) | buf[6];
 			flag_str = RZ_ASM_GET_NAME(a, 'm', vB);
-			if (flag_str) {
-				snprintf(str, sizeof(str), " {v%i..v%i}, %s", vC, vC + vA - 1, flag_str);
+			if (RZ_STR_ISNOTEMPTY(flag_str)) {
+				rz_strf(str, " {v%i..v%i}, %s", vC, vC + vA - 1, flag_str);
 			} else {
-				snprintf(str, sizeof(str), " {v%i..v%i}, method+%i", vC, vC + vA - 1, vB);
+				rz_strf(str, " {v%i..v%i}, method+%i", vC, vC + vA - 1, vB);
 			}
 			strasm = rz_str_append(strasm, str);
 
 			flag_str = RZ_ASM_GET_NAME(a, 'p', vH);
-			if (flag_str) {
-				snprintf(str, sizeof(str), ", %s", flag_str);
+			if (RZ_STR_ISNOTEMPTY(flag_str)) {
+				rz_strf(str, ", %s", flag_str);
 			} else {
-				snprintf(str, sizeof(str), ", proto+%i", vH);
+				rz_strf(str, ", proto+%i", vH);
 			}
 			strasm = rz_str_append(strasm, str);
 			break;

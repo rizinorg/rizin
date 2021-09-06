@@ -400,6 +400,45 @@ static bool test_autocmplt_seek(void) {
 	mu_end;
 }
 
+static bool test_autocmplt_global(void) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "core should not be null");
+
+	RzAnalysisVarGlobal *glob1 = rz_analysis_var_global_new("GINT", 0x1337); // untyped global
+	mu_assert_notnull(glob1, "glob1 null");
+	bool added = rz_analysis_var_global_add(core->analysis, glob1);
+	mu_assert_true(added, "unable to add glob1");
+
+	RzAnalysisVarGlobal *glob2 = rz_analysis_var_global_new("GCHR", 0xd3ad); // typed global
+	mu_assert_notnull(glob2, "glob2 null");
+	added = rz_analysis_var_global_add(core->analysis, glob2);
+	mu_assert_true(added, "unable to add glob2");
+	RzTypeParser *parser = rz_type_parser_new();
+	mu_assert_notnull(parser, "create type parser");
+	char *errmsg = NULL;
+	RzType *typ = rz_type_parse_string_single(parser, "int", &errmsg);
+	mu_assert_notnull(typ, "parsed type");
+	rz_analysis_var_global_set_type(glob2, typ);
+
+	RzLineBuffer *buf = &core->cons->line->buffer;
+	const char *s = "avg ";
+	strcpy(buf->data, s);
+	buf->length = strlen(s);
+	buf->index = buf->length;
+	RzLineNSCompletionResult *r = rz_core_autocomplete_rzshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
+
+	mu_assert_notnull(r, "r should not be null");
+	mu_assert_eq(r->start, strlen("avg "), "should autocomplete the last arg");
+	mu_assert_eq(r->end, buf->length, "should autocomplete ending at end of buffer");
+	mu_assert_eq(rz_pvector_len(&r->options), 2, "there are 2 global vars");
+	mu_assert_streq(rz_pvector_at(&r->options, 0), "GINT", "GINT found");
+	mu_assert_streq(rz_pvector_at(&r->options, 1), "GCHR", "GCHR found");
+	rz_line_ns_completion_result_free(r);
+
+	rz_core_free(core);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_autocmplt_cmdid);
 	mu_run_test(test_autocmplt_newcommand);
@@ -409,6 +448,7 @@ bool all_tests() {
 	mu_run_test(test_autocmplt_fcn);
 	mu_run_test(test_autocmplt_eval);
 	mu_run_test(test_autocmplt_seek);
+	mu_run_test(test_autocmplt_global);
 	return tests_passed != tests_run;
 }
 

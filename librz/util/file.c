@@ -14,12 +14,7 @@
 #include <sys/mman.h>
 #include <limits.h>
 #endif
-#if __APPLE__ && __MAC_10_5
-#define HAVE_COPYFILE_H 1
-#else
-#define HAVE_COPYFILE_H 0
-#endif
-#if HAVE_COPYFILE_H
+#if HAVE_COPYFILE
 #include <copyfile.h>
 #endif
 #if _MSC_VER
@@ -27,8 +22,13 @@
 #endif
 
 #define BS 1024
+#ifdef __WINDOWS__
+#define StructStat struct _stat
+#else
+#define StructStat struct stat
+#endif
 
-static int file_stat(const char *file, struct stat *const pStat) {
+static int file_stat(const char *file, StructStat *pStat) {
 	rz_return_val_if_fail(file && pStat, -1);
 #if __WINDOWS__
 	wchar_t *wfile = rz_utf8_to_utf16(file);
@@ -136,7 +136,7 @@ RZ_API bool rz_file_is_c(const char *file) {
 }
 
 RZ_API bool rz_file_is_regular(const char *str) {
-	struct stat buf = { 0 };
+	StructStat buf = { 0 };
 	if (!str || !*str || file_stat(str, &buf) == -1) {
 		return false;
 	}
@@ -144,7 +144,7 @@ RZ_API bool rz_file_is_regular(const char *str) {
 }
 
 RZ_API bool rz_file_is_directory(const char *str) {
-	struct stat buf = { 0 };
+	StructStat buf = { 0 };
 	rz_return_val_if_fail(!RZ_STR_ISEMPTY(str), false);
 	if (file_stat(str, &buf) == -1) {
 		return false;
@@ -171,7 +171,7 @@ RZ_API bool rz_file_fexists(const char *fmt, ...) {
 RZ_API bool rz_file_exists(const char *str) {
 	rz_return_val_if_fail(!RZ_STR_ISEMPTY(str), false);
 	char *absfile = rz_file_abspath(str);
-	struct stat buf = { 0 };
+	StructStat buf = { 0 };
 
 	if (file_stat(absfile, &buf) == -1) {
 		free(absfile);
@@ -183,7 +183,7 @@ RZ_API bool rz_file_exists(const char *str) {
 
 RZ_API ut64 rz_file_size(const char *str) {
 	rz_return_val_if_fail(!RZ_STR_ISEMPTY(str), 0);
-	struct stat buf = { 0 };
+	StructStat buf = { 0 };
 	if (file_stat(str, &buf) == -1) {
 		return 0;
 	}
@@ -831,7 +831,9 @@ RZ_API bool rz_file_dump(const char *file, const ut8 *buf, int len, bool append)
 }
 
 RZ_API bool rz_file_rm(const char *file) {
-	rz_return_val_if_fail(!RZ_STR_ISEMPTY(file), false);
+	if (RZ_STR_ISEMPTY(file)) {
+		return false;
+	}
 	if (rz_file_is_directory(file)) {
 #if __WINDOWS__
 		LPTSTR file_ = rz_sys_conv_utf8_to_win(file);
@@ -877,7 +879,6 @@ repeat:
 static RzMmap *file_mmap(RzMmap *m) {
 	LPTSTR file_ = rz_sys_conv_utf8_to_win(m->filename);
 	bool is_write = (m->perm & O_WRONLY) || (m->perm & O_RDWR);
-	bool is_creat = m->perm & O_CREAT;
 	HANDLE fh = (HANDLE)_get_osfhandle(m->fd);
 	m->len = (DWORD)GetFileSize(fh, (LPDWORD)((char *)&m->len + sizeof(DWORD)));
 	if (m->len == INVALID_FILE_SIZE) {
@@ -1153,7 +1154,7 @@ RZ_API char *rz_file_tmpdir(void) {
 RZ_API bool rz_file_copy(const char *src, const char *dst) {
 	/* TODO: implement in C */
 	/* TODO: Use NO_CACHE for iOS dyldcache copying */
-#if HAVE_COPYFILE_H
+#if HAVE_COPYFILE
 	return copyfile(src, dst, 0, COPYFILE_DATA | COPYFILE_XATTR) != -1;
 #elif __WINDOWS__
 	PTCHAR s = rz_sys_conv_utf8_to_win(src);
@@ -1254,4 +1255,90 @@ RZ_API char *rz_file_path_join(const char *s1, const char *s2) {
 	bool ends_with_dir = s1[strlen(s1) - 1] == RZ_SYS_DIR[0];
 	const char *sep = ends_with_dir ? "" : RZ_SYS_DIR;
 	return rz_str_newf("%s%s%s", s1, sep, s2);
+}
+
+/**
+ * \brief zip the contents of src and store in dst
+ * \param src source file (string containing filename)
+ * \param dst destination file (string containing filename)
+ * \return true, if successful; false otherwise
+ */
+RZ_API bool rz_file_deflate(RZ_NONNULL const char *src, RZ_NONNULL const char *dst) {
+	rz_return_val_if_fail(src && dst, false);
+
+	bool ret = false;
+
+	RzBuffer *src_buf = rz_buf_new_file(src, O_RDONLY, 0);
+	RzBuffer *dst_buf = rz_buf_new_file(dst, O_WRONLY | O_CREAT, 0644);
+
+	if (!(src_buf && dst_buf)) {
+		goto return_goto;
+	}
+
+	ut64 block_size = 1 << 18; // 256 KB
+
+	if (!rz_deflate_buf(src_buf, dst_buf, block_size, NULL)) {
+		goto return_goto;
+	}
+
+	ret = true;
+
+return_goto:
+	rz_buf_free(src_buf);
+	rz_buf_free(dst_buf);
+	return ret;
+}
+
+/**
+ * \brief unzip the contents of src and store in dst
+ * \param src source file (string containing filename)
+ * \param dst destination file (string containing filename)
+ * \return true, if successful; false otherwise
+ */
+RZ_API bool rz_file_inflate(RZ_NONNULL const char *src, RZ_NONNULL const char *dst) {
+	rz_return_val_if_fail(src && dst, false);
+
+	bool ret = false;
+
+	RzBuffer *src_buf = rz_buf_new_file(src, O_RDONLY, 0);
+	RzBuffer *dst_buf = rz_buf_new_file(dst, O_WRONLY | O_CREAT, 0644);
+
+	if (!(src_buf && dst_buf)) {
+		goto return_goto;
+	}
+
+	ut64 block_size = 1 << 13; // 8 KB
+
+	if (!rz_inflate_buf(src_buf, dst_buf, block_size, NULL)) {
+		goto return_goto;
+	}
+
+	ret = true;
+
+return_goto:
+	rz_buf_free(src_buf);
+	rz_buf_free(dst_buf);
+	return ret;
+}
+
+/**
+ * \brief check whether a file is a deflated (gzip) file
+ * \param src source file (string containing filename)
+ * \return true, if src is a deflated (gzip) file; false otherwise
+ */
+RZ_API bool rz_file_is_deflated(RZ_NONNULL const char *src) {
+	rz_return_val_if_fail(src, false);
+
+	bool ret = false;
+	unsigned char *header = (unsigned char *)rz_file_slurp_range(src, 0, 3, NULL);
+
+	if (!header || strlen((char *)header) != 3) {
+		goto return_goto;
+	}
+
+	ret = (header[0] == 0x1f && header[1] == 0x8b && header[2] == 0x08); // 1f 8b 08
+
+return_goto:
+	free(header);
+	return ret;
 }

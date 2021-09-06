@@ -245,7 +245,10 @@ static char *getNameDelta(RzCore *core, ut64 addr) {
 	RzFlagItem *item = rz_flag_get_at(core->flags, addr, true);
 	if (item) {
 		if (item->offset != addr) {
-			return rz_str_newf("%s + %d", item->name, (int)(addr - item->offset));
+			const char *name = core->flags->realnames
+				? item->realname
+				: item->name;
+			return rz_str_newf("%s+%" PFMT64u, name, addr - item->offset);
 		}
 		return strdup(item->name);
 	}
@@ -411,7 +414,7 @@ static ut64 bbSize(RzAnalysisFunction *fcn, ut64 addr) {
 	return 0;
 }
 
-static const char *str_callback(RNum *user, ut64 off, int *ok) {
+static const char *str_callback(RzNum *user, ut64 off, int *ok) {
 	RzFlag *f = (RzFlag *)user;
 	if (ok) {
 		*ok = 0;
@@ -428,7 +431,7 @@ static const char *str_callback(RNum *user, ut64 off, int *ok) {
 	return NULL;
 }
 
-static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
+static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 	RzCore *core = (RzCore *)userptr; // XXX ?
 	RzAnalysisFunction *fcn;
 	char *ptr, *bptr, *out = NULL;
@@ -1467,6 +1470,7 @@ static bool find_autocomplete(RzCore *core, RzLineCompletion *completion, RzLine
 	switch (parent->type) {
 	case RZ_CORE_AUTOCMPLT_SEEK:
 		autocomplete_functions(core, completion, p);
+		// fallthrough
 	case RZ_CORE_AUTOCMPLT_FLAG:
 		autocomplete_flags(core, completion, p);
 		break;
@@ -1690,25 +1694,25 @@ static RzLineNSCompletionResult *rzshell_autocomplete(RzLineBuffer *buf, RzLineP
 RZ_API int rz_core_fgets(char *buf, int len, void *user) {
 	RzCore *core = (RzCore *)user;
 	RzCons *cons = rz_cons_singleton();
-	RzLine *rzli = cons->line;
+	RzLine *rzline = cons->line;
 	bool prompt = cons->context->is_interactive;
 	buf[0] = '\0';
 	if (prompt) {
 		if (core->use_rzshell_autocompletion) {
-			rzli->ns_completion.run = rzshell_autocomplete;
-			rzli->ns_completion.run_user = core;
-			rzli->completion.run = NULL;
+			rzline->ns_completion.run = rzshell_autocomplete;
+			rzline->ns_completion.run_user = core;
+			rzline->completion.run = NULL;
 		} else {
-			rz_line_completion_set(&rzli->completion, rizin_argc, rizin_argv);
-			rzli->completion.run = autocomplete;
-			rzli->completion.run_user = core;
-			rzli->ns_completion.run = NULL;
+			rz_line_completion_set(&rzline->completion, rizin_argc, rizin_argv);
+			rzline->completion.run = autocomplete;
+			rzline->completion.run_user = core;
+			rzline->ns_completion.run = NULL;
 		}
 	} else {
-		rzli->history.data = NULL;
-		rz_line_completion_set(&rzli->completion, 0, NULL);
-		rzli->completion.run = NULL;
-		rzli->completion.run_user = NULL;
+		rzline->history.data = NULL;
+		rz_line_completion_set(&rzline->completion, 0, NULL);
+		rzline->completion.run = NULL;
+		rzline->completion.run_user = NULL;
 	}
 	const char *ptr = rz_line_readline();
 	if (!ptr) {
@@ -2833,38 +2837,31 @@ RZ_API int rz_core_prompt_exec(RzCore *r) {
 	return ret;
 }
 
-RZ_API int rz_core_block_size(RzCore *core, int bsize) {
+RZ_API bool rz_core_block_size(RzCore *core, ut32 bsize) {
 	ut8 *bump;
-	int ret = false;
-	if (bsize < 0) {
-		return false;
-	}
 	if (bsize == core->blocksize) {
 		return true;
 	}
 	if (bsize > core->blocksize_max) {
-		eprintf("Block size %d is too big\n", bsize);
+		RZ_LOG_ERROR("Block size %d is too big\n", bsize);
 		return false;
 	}
 	if (bsize < 1) {
 		bsize = 1;
 	} else if (core->blocksize_max && bsize > core->blocksize_max) {
-		eprintf("bsize is bigger than `bm`. dimmed to 0x%x > 0x%x\n",
-			bsize, core->blocksize_max);
+		RZ_LOG_ERROR("block size is bigger than its max (check `bm` command). set to 0x%x\n", core->blocksize_max);
 		bsize = core->blocksize_max;
 	}
 	bump = realloc(core->block, bsize + 1);
 	if (!bump) {
-		eprintf("Oops. cannot allocate that much (%u)\n", bsize);
-		ret = false;
-	} else {
-		ret = true;
-		core->block = bump;
-		core->blocksize = bsize;
-		memset(core->block, 0xff, core->blocksize);
-		rz_core_seek(core, core->offset, true);
+		RZ_LOG_ERROR("Oops. cannot allocate that much (%u)\n", bsize);
+		return false;
 	}
-	return ret;
+	core->block = bump;
+	core->blocksize = bsize;
+	memset(core->block, 0xff, core->blocksize);
+	rz_core_seek(core, core->offset, true);
+	return true;
 }
 
 RZ_API char *rz_core_op_str(RzCore *core, ut64 addr) {

@@ -2,8 +2,6 @@ NAME=ELF: dynamic p_offset
 FILE=bins/elf/analysis/dynamic-poffset
 CMDS=ir
 EXPECT=<<EOF
-[Relocations]
-
 vaddr      paddr      type   name              
 -----------------------------------------------
 0x00600988 0x00000988 SET_64 __gmon_start__
@@ -11,9 +9,6 @@ vaddr      paddr      type   name
 0x006009b0 0x000009b0 SET_64 close
 0x006009b8 0x000009b8 SET_64 __libc_start_main
 0x006009c0 0x000009c0 SET_64 open
-
-
-5 relocations
 EOF
 RUN
 
@@ -112,15 +107,15 @@ pd 1 @ 0x080000a2
 pd 1 @ reloc.target.strcmp
 EOF
 EXPECT=<<EOF
- 9 fd: 3 +0x00000e00 0x08000e00 - 0x08000ef2 --- fmap..strtab
- 8 fd: 3 +0x00000040 0x08000040 - 0x08000635 r-x fmap..text
- 7 fd: 3 +0x00000b00 0x08000b00 - 0x08000d6f --x fmap..rela.text
- 6 fd: 3 +0x00000636 0x08000636 - 0x08000824 r-- fmap..rodata.str1.1
+ 1 fd: 3 +0x00000e00 0x08000e00 - 0x08000ef2 --- fmap..strtab
+ 2 fd: 3 +0x00000040 0x08000040 - 0x08000635 r-x fmap..text
+ 3 fd: 3 +0x00000b00 0x08000b00 - 0x08000d6f --x fmap..rela.text
+ 4 fd: 3 +0x00000636 0x08000636 - 0x08000824 r-- fmap..rodata.str1.1
  5 fd: 3 +0x00000825 0x08000825 - 0x0800085b --- fmap..comment
- 4 fd: 3 +0x00000860 0x08000860 - 0x0800091f r-- fmap..eh_frame
- 3 fd: 3 +0x00000d70 0x08000d70 - 0x08000dff --- fmap..rela.eh_frame
- 2 fd: 3 +0x00000920 0x08000920 - 0x08000aff --- fmap..symtab
- 1 fd: 3 +0x00000000 0x08000000 - 0x0800003f r-- fmap.ehdr
+ 6 fd: 3 +0x00000860 0x08000860 - 0x0800091f r-- fmap..eh_frame
+ 7 fd: 3 +0x00000d70 0x08000d70 - 0x08000dff --- fmap..rela.eh_frame
+ 8 fd: 3 +0x00000920 0x08000920 - 0x08000aff --- fmap..symtab
+ 9 fd: 3 +0x00000000 0x08000000 - 0x0800003f r-- fmap.ehdr
 --
             0x08000079      e800000000     call  strcmp
             0x080000a2      e800000000     call  strcmp
@@ -145,16 +140,16 @@ pd 1 @ 0x080000a2
 pd 1 @ reloc.target.strcmp
 EOF
 EXPECT=<<EOF
-10 fd: 5 +0x00000000 0x08000f00 - 0x08000fff r-- vmap.reloc-targets
- 9 fd: 3 +0x00000e00 0x08000e00 - 0x08000ef2 --- fmap..strtab
- 8 fd: 4 +0x00000040 0x08000040 - 0x08000635 r-x vmap..text
- 7 fd: 3 +0x00000b00 0x08000b00 - 0x08000d6f --x fmap..rela.text
- 6 fd: 3 +0x00000636 0x08000636 - 0x08000824 r-- fmap..rodata.str1.1
- 5 fd: 3 +0x00000825 0x08000825 - 0x0800085b --- fmap..comment
- 4 fd: 4 +0x00000860 0x08000860 - 0x0800091f r-- vmap..eh_frame
- 3 fd: 3 +0x00000d70 0x08000d70 - 0x08000dff --- fmap..rela.eh_frame
- 2 fd: 3 +0x00000920 0x08000920 - 0x08000aff --- fmap..symtab
- 1 fd: 3 +0x00000000 0x08000000 - 0x0800003f r-- fmap.ehdr
+ 1 fd: 4 +0x00000000 0x08000f00 - 0x08000fff r-- vmap.reloc-targets
+ 2 fd: 3 +0x00000e00 0x08000e00 - 0x08000ef2 --- fmap..strtab
+ 3 fd: 5 +0x00000040 0x08000040 - 0x08000635 r-x vmap..text
+ 4 fd: 3 +0x00000b00 0x08000b00 - 0x08000d6f --x fmap..rela.text
+ 5 fd: 3 +0x00000636 0x08000636 - 0x08000824 r-- fmap..rodata.str1.1
+ 6 fd: 3 +0x00000825 0x08000825 - 0x0800085b --- fmap..comment
+ 7 fd: 5 +0x00000860 0x08000860 - 0x0800091f r-- vmap..eh_frame
+ 8 fd: 3 +0x00000d70 0x08000d70 - 0x08000dff --- fmap..rela.eh_frame
+ 9 fd: 3 +0x00000920 0x08000920 - 0x08000aff --- fmap..symtab
+10 fd: 3 +0x00000000 0x08000000 - 0x0800003f r-- fmap.ehdr
 --
 0x08000040 4 reloc.target..text
 0x08000073 4 reloc..rodata.str1.1
@@ -282,9 +277,9 @@ px 0x10 @ 0x0800064a
 rm .tmp/elf-reloc-patchee
 EOF
 EXPECT=<<EOF
-10 fd: 5 +0x00000000 0x08000f00 - 0x08000fff rwx vmap.reloc-targets
- 8 fd: 4 +0x00000040 0x08000040 - 0x08000635 rwx vmap..text
- 4 fd: 4 +0x00000860 0x08000860 - 0x0800091f rwx vmap..eh_frame
+ 1 fd: 4 +0x00000000 0x08000f00 - 0x08000fff rwx vmap.reloc-targets
+ 3 fd: 5 +0x00000040 0x08000040 - 0x08000635 rwx vmap..text
+ 7 fd: 5 +0x00000860 0x08000860 - 0x0800091f rwx vmap..eh_frame
 -- original
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x0800006a  488b 45f0 488b 7808 b936 0600 0889 cee8  H.E.H.x..6......

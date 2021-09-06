@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 #
 # SPDX-FileCopyrightText: 2019 Francesco Tamagni <mrmacete@protonmail.ch>
 # SPDX-License-Identifier: LGPL-3.0-only
@@ -11,7 +11,7 @@ Example usage to regenerate traps.json:
 RZ_DYLDCACHE_FILTER=libsystem_kernel rizin -e bin.usextr=false ~/Library/Developer/Xcode/iOS\ DeviceSupport/12.1.2\ \(16C101\)\ arm64e/Symbols/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64e
 
     - run the script with this command:
-        #!pipe python2 /path/to/this/script.py > traps.json
+        #!pipe python3 /path/to/this/script.py > traps.json
 
 """
 
@@ -20,7 +20,7 @@ import re
 
 import rzpipe
 
-r = rzpipe.open("#!pipe")
+r = rzpipe.open()
 
 
 def walk_back_until(addr, pattern, min_addr):
@@ -49,9 +49,9 @@ def carve_trap_num(addr, flag):
     r.cmd("s " + str(emu_start))
     obj = r.cmd("aefa 0x%08x~[0]:0" % addr)
     r.cmd("s " + saved_seek)
-    val = r.cmdj("pv4j@%s+0x14" % obj)["value"]
+    val = r.cmdj("pv4j@%s+0x14" % obj.strip())[0]["value"]
     if val == 0:
-        val = r.cmdj("pv4j@%s+0x18" % obj)["value"]
+        val = r.cmdj("pv4j@%s+0x18" % obj.strip())[0]["value"]
     return val
 
 
@@ -67,7 +67,7 @@ def carve_traps():
         r.cmd("shu")
         msgs = r.cmdj("axtj sym._mach_msg")
         if len(msgs) == 0:
-            print "Cannot find refs to mach_msg!"
+            print("Cannot find refs to mach_msg!")
             return
 
     traps = {}
@@ -96,4 +96,4 @@ def carve_traps():
 
 if __name__ == "__main__":
     traps = carve_traps()
-    print json.dumps(traps, indent=4)
+    print(json.dumps(traps, indent=4))

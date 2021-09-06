@@ -177,7 +177,7 @@ static void rz_kernel_cache_free(RKernelCacheObj *obj);
 
 static RzList *pending_bin_files = NULL;
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, RzBinObject *o, RzBuffer *buf, Sdb *sdb) {
 	RzBuffer *fbuf = rz_buf_ref(buf);
 	struct MACH0_(opts_t) opts;
 	MACH0_(opts_set_default)
@@ -229,7 +229,7 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 	obj->pa2va_exec = prelink_range->pa2va_exec;
 	obj->pa2va_data = prelink_range->pa2va_data;
 
-	*bin_obj = obj;
+	o->bin_obj = obj;
 
 	rz_list_push(pending_bin_files, bf);
 
@@ -607,20 +607,46 @@ static RzList *kexts_from_load_commands(RKernelCacheObj *obj) {
 		return NULL;
 	}
 
-	ut32 i, ncmds = rz_buf_read_le32_at(obj->cache_buf, 16);
+	ut32 i;
+	ut32 ncmds;
+	if (!rz_buf_read_le32_at(obj->cache_buf, 16, &ncmds)) {
+		rz_list_free(kexts);
+		return NULL;
+	}
+
 	ut64 length = rz_buf_size(obj->cache_buf);
 
 	ut32 cursor = sizeof(struct MACH0_(mach_header));
 	for (i = 0; i < ncmds && cursor < length; i++) {
-		ut32 cmdtype = rz_buf_read_le32_at(obj->cache_buf, cursor);
-		ut32 cmdsize = rz_buf_read_le32_at(obj->cache_buf, cursor + 4);
+		ut32 cmdtype;
+		if (!rz_buf_read_le32_at(obj->cache_buf, cursor, &cmdtype)) {
+			rz_list_free(kexts);
+			return NULL;
+		}
+
+		ut32 cmdsize;
+		if (!rz_buf_read_le32_at(obj->cache_buf, cursor + 4, &cmdsize)) {
+			rz_list_free(kexts);
+			return NULL;
+		}
+
 		if (cmdtype != LC_KEXT) {
 			cursor += cmdsize;
 			continue;
 		}
 
-		ut64 vaddr = rz_buf_read_le64_at(obj->cache_buf, cursor + 8);
-		ut64 paddr = rz_buf_read_le64_at(obj->cache_buf, cursor + 16);
+		ut64 vaddr;
+		if (!rz_buf_read_le64_at(obj->cache_buf, cursor + 8, &vaddr)) {
+			rz_list_free(kexts);
+			return NULL;
+		}
+
+		ut64 paddr;
+		if (!rz_buf_read_le64_at(obj->cache_buf, cursor + 16, &paddr)) {
+			rz_list_free(kexts);
+			return NULL;
+		}
+
 		st32 padded_name_length = (st32)cmdsize - 32;
 		if (padded_name_length <= 0) {
 			cursor += cmdsize;

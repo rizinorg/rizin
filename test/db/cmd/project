@@ -150,8 +150,8 @@ pdi 3 @ 0x080483d8
 EOF
 EXPECT=<<EOF
  3 * r-x 0x00001de8 bins/elf/crackme0x05
- 4 - rw- 0x00000004 null://4
- 5 - r-x 0x0000001c vfile://0/reloc-targets
+ 4 - r-x 0x0000001c vfile://0/reloc-targets
+ 5 - rw- 0x00000004 null://4
 --
 0x080483d8                   ff  invalid
 0x080483d9                   ff  invalid
@@ -186,8 +186,8 @@ pdi 3 @ 0x080483d8
 EOF
 EXPECT=<<EOF
  3 * r-x 0x00001de8 bins/elf/crackme0x05
- 4 - rw- 0x00000004 null://4
- 5 - r-x 0x0000001c vfile://0/reloc-targets
+ 4 - r-x 0x0000001c vfile://0/reloc-targets
+ 5 - rw- 0x00000004 null://4
 --
 0x080483d8                   ff  invalid
 0x080483d9                   ff  invalid
@@ -374,5 +374,7 @@ EXPECT=
 EXPECT_ERR=<<EOF
 Detailed project load info:
   project migrated from version 1 to 2.
+  project migrated from version 2 to 3.
+  project migrated from version 3 to 4.
 EOF
 RUN

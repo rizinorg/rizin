@@ -382,3 +382,100 @@ commands:
                     type: RZ_CMD_ARG_TYPE_RZNUM
                   - name: addr
                     type: RZ_CMD_ARG_TYPE_RZNUM
+  - name: av
+    summary: C++ vtables and RTTI
+    subcommands:
+      - name: av
+        summary: search for vtables in data sections and show results
+        type: RZ_CMD_DESC_TYPE_ARGV_MODES
+        cname: analysis_list_vtables
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: avg
+        summary: Global variables
+        subcommands:
+          - name: avg
+            summary: show global variables
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            cname: analysis_print_global_variable
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+            args:
+              - name: var_name
+                type: RZ_CMD_ARG_TYPE_GLOBAL_VAR
+                optional: true
+          - name: avga
+            summary: add global variable manually
+            type: RZ_CMD_DESC_TYPE_ARGV
+            cname: analysis_global_variable_add
+            args:
+              - name: var_name
+                type: RZ_CMD_ARG_TYPE_STRING
+              - name: addr
+                type: RZ_CMD_ARG_TYPE_RZNUM
+              - name: type
+                type: RZ_CMD_ARG_TYPE_ANY_TYPE
+          - name: avgd
+            summary: delete the global variable at the addr
+            type: RZ_CMD_DESC_TYPE_ARGV
+            cname: analysis_global_variable_delete_byaddr
+            args:
+              - name: addr
+                type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: avgm
+            summary: delete global variable with name
+            type: RZ_CMD_DESC_TYPE_ARGV
+            cname: analysis_global_variable_delete_byname
+            args:
+              - name: name
+                type: RZ_CMD_ARG_TYPE_GLOBAL_VAR
+          - name: avgn
+            summary: rename the global variable
+            type: RZ_CMD_DESC_TYPE_ARGV
+            cname: analysis_global_variable_rename
+            args:
+              - name: old_var_name
+                type: RZ_CMD_ARG_TYPE_GLOBAL_VAR
+              - name: new_var_name
+                type: RZ_CMD_ARG_TYPE_STRING
+          - name: avgt
+            summary: change the global variable type
+            type: RZ_CMD_DESC_TYPE_ARGV
+            cname: analysis_global_variable_retype
+            args:
+              - name: var_name
+                type: RZ_CMD_ARG_TYPE_GLOBAL_VAR
+              - name: type
+                type: RZ_CMD_ARG_TYPE_ANY_TYPE
+      - name: avr
+        summary: try to parse RTTI at vtable addr (see analysis.cpp.abi)
+        type: RZ_CMD_DESC_TYPE_ARGV_MODES
+        cname: analysis_print_rtti
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: avra
+        summary: search for vtables and try to parse RTTI at each of them
+        type: RZ_CMD_DESC_TYPE_ARGV_MODES
+        cname: analysis_print_rtti_all
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: avrr
+        summary: recover class info from all findable RTTI (see ac)
+        type: RZ_CMD_DESC_TYPE_ARGV
+        cname: analysis_recover_rtti_all
+        args: []
+      - name: avrD
+        summary: demangle a class name from RTTI
+        type: RZ_CMD_DESC_TYPE_ARGV
+        cname: analysis_rtti_demangle_class_name
+        args:
+          - name: classname
+            type: RZ_CMD_ARG_TYPE_STRING
