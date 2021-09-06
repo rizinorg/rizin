@@ -253,14 +253,33 @@ RZ_API void rz_type_db_init(RzTypeDB *typedb, const char *dir_prefix, const char
 		RZ_LOG_DEBUG("types: loaded \"%s\"\n", dbpath);
 	}
 
-	// We do not load further if architecture or bits are not specified
-	if (!arch || bits <= 0) {
+	// We do not load further if bits are not specified
+	if (bits <= 0) {
+		return;
+	}
+
+	// Bits-specific types that are independent from architecture or OS
+	dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_TYPES, "types-%d.sdb"),
+		dir_prefix, bits);
+	if (rz_type_db_load_sdb(typedb, dbpath)) {
+		RZ_LOG_DEBUG("types: loaded \"%s\"\n", dbpath);
+	}
+
+	// We do not load further if architecture is not specified
+	if (!arch) {
 		return;
 	}
 
 	// Architecture-specific types
 	dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_TYPES, "types-%s.sdb"),
 		dir_prefix, arch);
+	if (rz_type_db_load_sdb(typedb, dbpath)) {
+		RZ_LOG_DEBUG("types: loaded \"%s\"\n", dbpath);
+	}
+
+	// Architecture- and bits-specific types
+	dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_TYPES, "types-%s-%d.sdb"),
+		dir_prefix, arch, bits);
 	if (rz_type_db_load_sdb(typedb, dbpath)) {
 		RZ_LOG_DEBUG("types: loaded \"%s\"\n", dbpath);
 	}
@@ -272,18 +291,8 @@ RZ_API void rz_type_db_init(RzTypeDB *typedb, const char *dir_prefix, const char
 		if (rz_type_db_load_sdb(typedb, dbpath)) {
 			RZ_LOG_DEBUG("types: loaded \"%s\"\n", dbpath);
 		}
-		dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_TYPES, "types-%d.sdb"),
-			dir_prefix, bits);
-		if (rz_type_db_load_sdb(typedb, dbpath)) {
-			RZ_LOG_DEBUG("types: loaded \"%s\"\n", dbpath);
-		}
 		dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_TYPES, "types-%s-%d.sdb"),
 			dir_prefix, os, bits);
-		if (rz_type_db_load_sdb(typedb, dbpath)) {
-			RZ_LOG_DEBUG("types: loaded \"%s\"\n", dbpath);
-		}
-		dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_TYPES, "types-%s-%d.sdb"),
-			dir_prefix, arch, bits);
 		if (rz_type_db_load_sdb(typedb, dbpath)) {
 			RZ_LOG_DEBUG("types: loaded \"%s\"\n", dbpath);
 		}
