@@ -2337,6 +2337,7 @@ RUN
 NAME=refs with aar
 FILE=bins/elf/crackme
 CMDS=<<EOF
+e analysis.jmp.cref=true
 e asm.bytes=true
 e asm.lines.bb=false
 e asm.lines.fcn=false
