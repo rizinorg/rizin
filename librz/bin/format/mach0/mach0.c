@@ -3070,7 +3070,7 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) * bin) {
 			}
 		}
 
-		for (i = 0; i < bin->nsymtab; i++) {
+		for (i = 0; i < bin->nsymtab && i < symbols_count; i++) {
 			struct MACH0_(nlist) *st = &bin->symtab[i];
 			if (st->n_type & N_STAB) {
 				continue;
