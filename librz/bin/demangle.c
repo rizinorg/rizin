@@ -64,7 +64,7 @@ RZ_API int rz_bin_demangle_type(const char *str) {
 }
 
 RZ_API char *rz_bin_demangle(RzBinFile *bf, const char *def, const char *str, ut64 vaddr, bool libs) {
-	int type = -1;
+	int type = RZ_BIN_NM_NONE;
 	if (RZ_STR_ISEMPTY(str)) {
 		return NULL;
 	}
@@ -110,16 +110,14 @@ RZ_API char *rz_bin_demangle(RzBinFile *bf, const char *def, const char *str, ut
 	if (RZ_STR_ISEMPTY(str)) {
 		return NULL;
 	}
-	if (type == -1) {
-		if (!strncmp(str, "__", 2)) {
-			if (str[2] == 'T') {
-				type = RZ_BIN_NM_SWIFT;
-			} else {
-				type = RZ_BIN_NM_CXX;
-			}
+	if (!strncmp(str, "__", 2)) {
+		if (str[2] == 'T') {
+			type = RZ_BIN_NM_SWIFT;
 		} else {
-			type = rz_bin_lang_type(bf, def, str);
+			type = RZ_BIN_NM_CXX;
 		}
+	} else {
+		type = rz_bin_lang_type(bf, def, str);
 	}
 	char *demangled = NULL;
 	switch (type) {
