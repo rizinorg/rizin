@@ -81,15 +81,10 @@ RZ_API int rz_bin_load_languages(RzBinFile *binfile) {
 
 	bool is_macho = info->rclass ? strstr(info->rclass, "mach") : false;
 	bool is_elf = info->rclass ? strstr(info->rclass, "elf") : false;
-	bool is_pe = info->rclass ? strstr(info->rclass, "pe") : false;
 	bool is_blocks = false;
 	bool is_objc = false;
 	bool is_cpp = false;
 	char *lib = NULL;
-
-	if (!is_macho && !is_elf && !is_pe) {
-		return RZ_BIN_NM_NONE;
-	}
 
 	if (is_macho || is_elf) {
 		rz_list_foreach (o->imports, iter, sym) {
@@ -156,7 +151,7 @@ RZ_API int rz_bin_load_languages(RzBinFile *binfile) {
 		info->lang = "c++";
 		return lang_apply_blocks(RZ_BIN_NM_CXX, is_blocks);
 	} else if (!info->lang) {
-		info->lang = "c";
+		return RZ_BIN_NM_NONE;
 	} else if (strstr(info->lang, "java")) {
 		return RZ_BIN_NM_JAVA;
 	}
