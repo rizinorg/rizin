@@ -375,7 +375,6 @@ RZ_API int rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
 	rz_return_val_if_fail(bf && o && o->plugin, false);
 
 	int i;
-	bool isSwift = false;
 	RzBin *bin = bf->rbin;
 	RzBinPlugin *p = o->plugin;
 	int minlen = (bf->rbin->minstrlen > 0) ? bf->rbin->minstrlen : p->minstrlen;
@@ -488,6 +487,9 @@ RZ_API int rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
 		}
 		REBASE_PADDR(o, o->strings, RzBinString);
 	}
+
+	o->lang = rz_bin_load_languages(bf);
+
 	if (bin->filter_rules & (RZ_BIN_REQ_CLASSES | RZ_BIN_REQ_CLASSES_SOURCES)) {
 		if (p->classes) {
 			RzList *classes = p->classes(bf);
@@ -497,8 +499,7 @@ RZ_API int rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
 				o->classes = classes;
 				rz_bin_object_rebuild_classes_ht(o);
 			}
-			isSwift = rz_bin_lang_swift(bf);
-			if (isSwift) {
+			if (o->lang == RZ_BIN_NM_SWIFT) {
 				o->classes = classes_from_symbols(bf);
 			}
 		} else {
@@ -507,9 +508,11 @@ RZ_API int rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
 				o->classes = classes;
 			}
 		}
+
 		if (bin->filter) {
 			filter_classes(bf, o->classes);
 		}
+
 		// cache addr=class+method
 		if (o->classes) {
 			RzList *klasses = o->classes;
@@ -540,7 +543,6 @@ RZ_API int rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
 	if (p->mem) {
 		o->mem = p->mem(bf);
 	}
-	o->lang = isSwift ? RZ_BIN_NM_SWIFT : rz_bin_load_languages(bf);
 	return true;
 }
 

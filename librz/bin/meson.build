@@ -147,7 +147,6 @@ rz_bin_sources = [
   'mangling/microsoft_demangle.c',
   'mangling/msvc.c',
   'mangling/objc.c',
-  'mangling/swift-sd.c',
   'mangling/swift.c',
 
   'pdb/dbi.c',
