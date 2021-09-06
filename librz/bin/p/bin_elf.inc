@@ -354,13 +354,324 @@ static ut64 reloc_targets_vfile_size(RzBinFile *bf, ELFOBJ *obj) {
 	return Elf_(rz_bin_elf_get_relocs_count)(obj) * reloc_target_size(obj);
 }
 
-static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel, ut64 S, ut64 B, ut64 L) {
+static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel, ut64 S, ut64 B, ut64 L, ut64 GOT) {
+	// TODO Add G option.
 	ut16 e_machine = obj->ehdr.e_machine;
-	ut64 val;
+	ut64 val = 0;
 	ut64 A = rel->addend, P = rel->vaddr;
 	ut64 patch_addr = rel->paddr != UT64_MAX ? rel->paddr : Elf_(rz_bin_elf_v2p_new)(obj, rel->vaddr);
 	ut8 buf[8];
 	switch (e_machine) {
+	case EM_QDSP6: ;
+		ut8 word = 0;
+		ut64 bitmask = UT64_MAX; // Mask for bits in the opcode which get patched.
+		switch (rel->type) {
+		default:
+			eprintf("Patching for reloc type %d not implemented.", rel->type);
+			rz_warn_if_reached();
+			return;
+		case R_HEX_NONE:
+			return;
+		case R_HEX_GLOB_DAT:
+			word = 4;
+			val = (S + A);
+			break;
+		case R_HEX_JMP_SLOT:
+			word = 4;
+			val = (S + A);
+			break;
+		case R_HEX_RELATIVE:
+			word = 4;
+			val = (B + A);
+			break;
+		case R_HEX_B22_PCREL:
+			word = 4;
+			val = (S + A - P) >> 2;
+			break;
+		case R_HEX_B15_PCREL:
+			bitmask = 0x00df20fe;
+			word = 4;
+			val = (S + A - P) >> 2;
+			break;
+		case R_HEX_B7_PCREL:
+			bitmask = 0x00001f18;
+			word = 4;
+			val = (S + A - P) >> 2;
+			break;
+		case R_HEX_LO16:
+			bitmask = 0x00c03fff;
+			word = 4;
+			val = (S + A);
+			break;
+		case R_HEX_HI16:
+			bitmask = 0x00c03fff;
+			word = 4;
+			val = (S + A) >> 16;
+			break;
+		case R_HEX_32:
+			word = 4;
+			val = (S + A);
+			break;
+		case R_HEX_16:
+			bitmask = 0xffff;
+			word = 2;
+			val = (S + A);
+			break;
+		case R_HEX_8:
+			bitmask = 0xff;
+			word = 1;
+			val = (S + A);
+			break;
+		case R_HEX_HL16:
+			bitmask = 0x00c03fff;
+			word = 4;
+			val = (S + A);
+			break;
+		case R_HEX_B13_PCREL:
+			bitmask = 0x00202ffe;
+			word = 4;
+			val = (S + A - P) >> 2;
+			break;
+		case R_HEX_B9_PCREL:
+			bitmask = 0x003000fe;
+			word = 4;
+			val = (S + A - P) >> 2;
+			break;
+		case R_HEX_B32_PCREL_X:
+			word = 4;
+			val = (S + A - P) >> 6;
+			break;
+		case R_HEX_32_6_X:
+			word = 4;
+			val = (S + A) >> 6;
+			break;
+		case R_HEX_B22_PCREL_X:
+			bitmask = 0x01ff3ffe;
+			word = 4;
+			val = (S + A - P) & 0x3f;
+			break;
+		case R_HEX_B15_PCREL_X:
+			bitmask = 0x00df20fe;
+			word = 4;
+			val = (S + A - P) & 0x3f;
+			break;
+		case R_HEX_B13_PCREL_X:
+			bitmask = 0x00202ffe;
+			word = 4;
+			val = (S + A - P) & 0x3f;
+			break;
+		case R_HEX_B9_PCREL_X:
+			bitmask = 0x003000fe;
+			word = 4;
+			val = (S + A - P) & 0x3f;
+			break;
+		case R_HEX_B7_PCREL_X:
+			bitmask = 0x00001f18;
+			word = 4;
+			val = (S + A - P) & 0x3f;
+			break;
+		case R_HEX_12_X:
+			bitmask = 0x000007e0;
+			word = 4;
+			val = (S + A);
+			break;
+		case R_HEX_32_PCREL:
+			word = 4;
+			val = (S + A - P);
+			break;
+		case R_HEX_PLT_B22_PCREL:
+			bitmask = 0x01ff3ffe;
+			word = 4;
+			val = (L + A - P) >> 2;
+			break;
+		case R_HEX_GOTREL_LO16:
+			bitmask = 0x00c03fff;
+			word = 4;
+			val = (S + A - GOT);
+			break;
+		case R_HEX_GOTREL_HI16:
+			bitmask = 0x00c03fff;
+			word = 4;
+			val = (S + A - GOT) >> 16;
+			break;
+		case R_HEX_GOTREL_32:
+			word = 4;
+			val = (S + A - GOT);
+			break;
+		case R_HEX_GOTREL_32_6_X:
+			word = 4;
+			val = (S + A - GOT) >> 6;
+			break;
+		case R_HEX_LD_PLT_B22_PCREL:
+			bitmask = 0x01ff3ffe;
+			word = 4;
+			val = (L + A - P) >> 2;
+			break;
+		case R_HEX_GD_PLT_B22_PCREL:
+			bitmask = 0x01ff3ffe;
+			word = 4;
+			val = (L + A - P) >> 2;
+			break;
+		case R_HEX_GD_PLT_B22_PCREL_X:
+			bitmask = 0x01ff3ffe;
+			word = 4;
+			val = (S + A - P) & 0x3f;
+			break;
+		case R_HEX_GD_PLT_B32_PCREL_X:
+			word = 4;
+			val = (S + A - P) >> 6;
+			break;
+		case R_HEX_LD_PLT_B22_PCREL_X:
+			bitmask = 0x01ff3ffe;
+			word = 4;
+			val = (S + A - P) & 0x3f;
+			break;
+		case R_HEX_LD_PLT_B32_PCREL_X:
+			word = 4;
+			val = (S + A - P) >> 6;
+			break;
+		//case R_HEX_GOT_LO16:
+		//	bitmask = 0x00c03fff;
+		//	word = 4;
+		//	val = (G);
+		//	break;
+		//case R_HEX_GOT_HI16:
+		//	bitmask = 0x00c03fff;
+		//	word = 4;
+		//	val = (G) >> 16;
+		//	break;
+		//case R_HEX_GOT_32:
+		//	word = 4;
+		//	val = (G);
+		//	break;
+		//case R_HEX_GD_GOT_LO16:
+		//	bitmask = 0x00c03fff;
+		//	word = 4;
+		//	val = (G);
+		//	break;
+		//case R_HEX_GD_GOT_HI16:
+		//	bitmask = 0x00c03fff;
+		//	word = 4;
+		//	val = (G) >> 16;
+		//	break;
+		//case R_HEX_GD_GOT_32:
+		//	word = 4;
+		//	val = (G);
+		//	break;
+		//case R_HEX_IE_LO16:
+		//	bitmask = 0x00c03fff;
+		//	word = 4;
+		//	val = (G + GOT);
+		//	break;
+		//case R_HEX_IE_HI16:
+		//	bitmask = 0x00c03fff;
+		//	word = 4;
+		//	val = (G + GOT) >> 16;
+		//	break;
+		//case R_HEX_IE_32:
+		//	word = 4;
+		//	val = (G + GOT);
+		//	break;
+		//case R_HEX_IE_GOT_LO16:
+		//	bitmask = 0x00c03fff;
+		//	word = 4;
+		//	val = (G);
+		//	break;
+		//case R_HEX_IE_GOT_HI16:
+		//	bitmask = 0x00c03fff;
+		//	word = 4;
+		//	val = (G) >> 16;
+		//	break;
+		//case R_HEX_IE_GOT_32:
+		//	word = 4;
+		//	val = (G);
+		//	break;
+		//case R_HEX_GOT_32_6_X:
+		//	word = 4;
+		//	val = (G) >> 6;
+		//	break;
+		//case R_HEX_GD_GOT_32_6_X:
+		//	word = 4;
+		//	val = (G) >> 6;
+		//	break;
+		//case R_HEX_IE_32_6_X:
+		//	word = 4;
+		//	val = (G + GOT) >> 6;
+		//	break;
+		//case R_HEX_IE_GOT_32_6_X:
+		//	word = 4;
+		//	val = (G) >> 6;
+		//	break;
+		//case R_HEX_LD_GOT_LO16:
+		//	bitmask = 0x00c03fff;
+		//	word = 4;
+		//	val = (G);
+		//	break;
+		//case R_HEX_LD_GOT_HI16:
+		//	bitmask = 0x00c03fff;
+		//	word = 4;
+		//	val =  (G) >> 16;
+		//	break;
+		//case R_HEX_LD_GOT_32:
+		//	word = 4;
+		//	val = (G);
+		//	break;
+		//case R_HEX_LD_GOT_16:
+		//	word = 4;
+		//	val = (G);
+		//	break;
+		//case R_HEX_LD_GOT_32_6_X:
+		//	word = 4;
+		//	val = (G) >> 6;
+		//	break;
+		}
+
+		// Patch two opcodes at once.
+		if (rel->type == R_HEX_HL16) {
+			ut32 val1 = val >> 16;
+			ut32 val2 = val & 0xffffffff;
+			ut32 opcode_val1 = 0, opcode_val2 = 0, pos = 1, vpos = 1;
+			for (ut8 i=0; i<32; ++i) {
+				if (bitmask & pos) {
+					opcode_val1 |= (val1 & vpos);
+					opcode_val2 |= (val2 & vpos);
+					vpos = vpos << 1;
+				}
+				pos = pos << 1;
+			}
+			rz_buf_read_at(obj->buf_patched, patch_addr, buf, 8);
+			ut64 opcode1 = (rz_read_le64(buf) & 0xffffffff);
+			ut64 opcode2 = (rz_read_le64(buf) >> 32);
+			opcode1 &= ~bitmask;
+			opcode2 &= ~bitmask;
+			opcode1 |= opcode_val1;
+			opcode2 |= opcode_val2;
+			ut64 opcode12 = opcode1 & (opcode2 << 32);
+			rz_write_le64(buf, opcode12);
+			rz_buf_write_at(obj->buf_patched, patch_addr, buf, 8);
+		} else {
+			if (bitmask != 0xff && bitmask != 0xffff && bitmask != UT64_MAX) {
+				// Reposition bits of val to fit bit position in the opcode.
+				ut64 pos = 1, vpos = 1;
+				ut64 opcode_val = 0;
+				for(ut8 i=0; i<word*8; ++i) {
+					if (bitmask & pos) {
+						opcode_val |= (val & vpos);
+						vpos = vpos << 1;
+					}
+					pos = pos << 1;
+				}
+			} else {
+				val = val & bitmask;
+			}
+			rz_buf_read_at(obj->buf_patched, patch_addr, buf, 4);
+			ut64 opcode = rz_read_le32(buf);
+			opcode &= ~bitmask;
+			opcode |= val;
+			rz_write_le32(buf, opcode);
+			rz_buf_write_at(obj->buf_patched, patch_addr, buf, 4);
+		}
+		break;
 	case EM_ARM:
 		val = S + A;
 		rz_write_le32(buf, val);
@@ -504,6 +815,24 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 		break;
 	}
 	}
+}
+
+static ut64 get_got_addr(ELFOBJ *bin) {
+	if (!Elf_(rz_bin_elf_has_sections)(bin)) {
+		return 0;
+	}
+
+	RzBinElfSection *section = Elf_(rz_bin_elf_get_section_with_name)(bin, ".got");
+	if (section) {
+		return section->offset;
+	}
+
+	section = Elf_(rz_bin_elf_get_section_with_name)(bin, ".got.plt");
+	if (section) {
+		return section->offset;
+	}
+
+	return 0;
 }
 
 static RzBinReloc *reloc_convert(struct Elf_(rz_bin_elf_obj_t) * bin, RzBinElfReloc *rel, ut64 GOT) {
@@ -665,6 +994,9 @@ static void patch_relocs(RzBinFile *bf, ELFOBJ *bin) {
 	Elf_(rz_bin_elf_get_imports)(bin); // Pre-populate imports and syms. Calling this multiple times is fine since it only parses once lazily.
 	ut64 vaddr = n_vaddr;
 	RzBinElfReloc *reloc;
+	ut64 got_addr = get_got_addr(bin);
+	ut64 baddr = bf->o->opts.baseaddr;
+
 	rz_bin_elf_foreach_relocs(bin, reloc) {
 		ut64 sym_addr = 0;
 		ut64 plt_entry_addr = vaddr;
@@ -681,8 +1013,8 @@ static void patch_relocs(RzBinFile *bf, ELFOBJ *bin) {
 				plt_entry_addr = sym_addr;
 			}
 		}
-		// TODO relocation types B, L
-		patch_reloc(bin, reloc, sym_addr ? sym_addr : vaddr, 0, plt_entry_addr);
+		// TODO relocation types L
+		patch_reloc(bin, reloc, sym_addr ? sym_addr : vaddr, baddr, plt_entry_addr, got_addr);
 
 		// TODO: do this in regular relocs cb
 #if 0
@@ -1148,24 +1480,6 @@ static RzList *imports(RzBinFile *bf) {
 static RzList *libs(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 	return Elf_(rz_bin_elf_get_libs)(bf->o->bin_obj);
-}
-
-static ut64 get_got_addr(ELFOBJ *bin) {
-	if (!Elf_(rz_bin_elf_has_sections)(bin)) {
-		return 0;
-	}
-
-	RzBinElfSection *section = Elf_(rz_bin_elf_get_section_with_name)(bin, ".got");
-	if (section) {
-		return section->offset;
-	}
-
-	section = Elf_(rz_bin_elf_get_section_with_name)(bin, ".got.plt");
-	if (section) {
-		return section->offset;
-	}
-
-	return 0;
 }
 
 static RzList *relocs(RzBinFile *bf) {

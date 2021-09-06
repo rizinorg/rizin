@@ -494,6 +494,10 @@ static ut64 get_import_addr_x86(ELFOBJ *bin, RzBinElfReloc *rel) {
 	return tmp + X86_OFFSET_PLT_ENTRY_FROM_GOT_ADDR;
 }
 
+static ut64 get_import_addr_hexagon(ELFOBJ *bin, RzBinElfReloc *rel) {
+	return UT64_MAX;
+}
+
 static bool is_special_arm_symbol(ELFOBJ *bin, Elf_(Sym) * sym, const char *name) {
 	if (!name) {
 		return false;
@@ -566,6 +570,8 @@ static ut64 get_import_addr_aux(ELFOBJ *bin, RzBinElfReloc *reloc) {
 	case EM_386:
 	case EM_X86_64:
 		return get_import_addr_x86(bin, reloc);
+	case EM_QDSP6:
+		return get_import_addr_hexagon(bin, reloc);
 	default:
 		eprintf("Unsupported relocs type %" PFMT64u " for arch %d\n",
 			(ut64)reloc->type, bin->ehdr.e_machine);
