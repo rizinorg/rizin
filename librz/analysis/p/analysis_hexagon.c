@@ -268,7 +268,7 @@ RzAnalysisPlugin rz_analysis_plugin_hexagon = {
 	.arch = "hexagon",
 	.bits = 32,
 	.op = hexagon_v6_op,
-	.esil = true,
+	.esil = false,
 	.set_reg_profile = set_reg_profile,
 };
 
