@@ -1,0 +1,127 @@
+DMA-1=name
+DMA-1.address=0x1f
+DMA-1.comment=First Direct Memory Access controller 8237 (Legacy) (0000-001F)
+
+PS/2-register=name
+PS/2-register.address=0x18
+PS/2-register.comment=PS/2 extended function register
+
+PS/2-execute=name
+PS/2-execute.address=0x1a
+PS/2-execute.comment=PS/2 extended function execute
+
+PIC-1=name
+PIC-1.address=0x20
+PIC-1.comment=Programmable Interrupt Controller 8259 (0020-003F)
+
+Cx486SLC/DLC=name
+Cx486SLC/DLC.address=0x22
+Cx486SLC/DLC.comment=Cyrix Cx486SLC/DLC processor Cache Configuration Registers (0022-0023)
+
+Cozet-PC=name
+Cozet-PC.address=0x38
+Cozet-PC.comment=PC radio by CoZet Info Systems (0038-003F)
+
+PIT=name
+PIT.address=0x40
+PIT.comment=PIT Programmable Interrupt Timer  8253, 8254 (0040-005F)
+
+PS/2-8042=name
+PS/2-8042.address=0x60
+PS/2-8042.comment=Keyboard controller 804x (8041, 8042)  (or PPI (8255) on PC,XT) (0060-006F)
+
+AT&T-Chip-Select=name
+AT&T-Chip-Select.address=0x65
+AT&T-Chip-Select.comment=AT&T 6300+ high/low chip select
+
+SSGA=name
+SSGA.address=0x6b
+SSGA.comment=SSGA control registers (006B-006F)
+
+CMOS-RTC=name
+CMOS-RTC.address=0x70
+CMOS-RTC.comment=CMOS RAM/RTC (Real Time Clock  MC146818) (0070-007F)
+
+DMA-Page=name
+DMA-Page.address=0x80
+DMA-Page.comment=DMA page registers (0080-008F)
+
+PS/2-POS=name
+PS/2-POS.address=0x90
+PS/2-POS.comment=PS/2 POS (Programmable Option Select) (0090-009F)
+
+PIC-2=name
+PIC-2.address=0xa0
+PIC-2.comment=Programmable Interrupt Controller 8259 (00A0-00AF)
+
+DMA-2=name
+DMA-2.address=0xc0
+DMA-2.comment=DMA 2	(second Direct Memory Access controller 8237) (00C0-00DF)
+
+PCjr=name
+PCjr.address=0xf0
+PCjr.comment=PCjr Disk Controller (00F0-00F5)
+
+SCSI=name
+SCSI.address=0x340
+SCSI.comment=SCSI (alternate Small Computer System Interface) adapter (1st at 0340-034F)
+
+HDC-2=name
+HDC-2.address=0x170
+HDC-2.comment=HDC 2	(secondary ATA harddisk controller) same as 01Fx (ISA, EISA) (0170-0177)
+
+HDC-1=name
+HDC-1.address=0x1f0
+HDC-1.comment=HDC 1	(first ATA harddisk controller) same as 107x (ISA, EISA) (01F0-01F7)
+
+Game-port=name
+Game-port.address=0x200
+Game-port.comment=Game port reserved I/O address space (0200-020F)
+
+Parallel-port=name
+Parallel-port.address=0x278
+Parallel-port.comment=Parallel printer port, same as 0378 and 03BC (0278-027E)
+
+GPIAB=name
+GPIAB.address=0x2e0
+GPIAB.comment=General Purpose Interface Bus, IEEE 488 interface (02E0-02EF)
+
+Serial-port=name
+Serial-port.address=0x2e8
+Serial-port.comment=Serial port- same as 0x2E8, 0x3E8 and 0x3F8 (02E8-02EF)
+
+MIDI=name
+MIDI.address=0x330
+MIDI.comment=MIDI interface (0330-0331)
+
+NS3249C-card=name
+NS3249C-card.address=0x360
+NS3249C-card.comment=National Semiconductor DP8390(1)C/NS3249C network chipset (0360-036F)
+
+FDC-2=name
+FDC-2.address=0x370
+FDC-2.comment=2nd Floppy Disk Controller (0370-0377)
+
+SDLC-2=name
+SDLC-2.address=0x380
+SDLC-2.comment=2nd Binary Synchronous Data Link Control adapter (see 03A0) (0380-038F)
+
+SDLC-2=name
+SDLC-2.address=0x3a0
+SDLC-2.comment=1st Binary Synchronous Data Link Control adapter (see 03A0) (03A0-03AF)
+
+MDA=name
+MDA.address=0x3b0
+MDA.comment=Monochrome Display Adapter based on 6845 (03B0-03BF)
+
+EGA=name
+EGA.address=0x3c0
+EGA.comment=1st Enhanced Graphics Adapter (03C0-03CF)
+
+CGA=name
+CGA.address=0x3d0
+CGA.comment=Color Graphics Adapter (03D0-03DF)
+
+FDC-1=name
+FDC-1.address=0x3f0
+FDC-1.comment=1st Floppy Disk Controller (03F0-03F7)

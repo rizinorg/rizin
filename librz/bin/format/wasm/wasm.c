@@ -95,9 +95,14 @@ static size_t consume_init_expr_r(RzBuffer *b, ut64 max, ut8 eoc, void *out) {
 		return 0;
 	}
 	size_t res = 0;
-	ut8 cur = rz_buf_read8(b);
+	ut8 cur;
+	if (!rz_buf_read8(b, &cur)) {
+		return 0;
+	}
 	while (rz_buf_tell(b) <= max && cur != eoc) {
-		cur = rz_buf_read8(b);
+		if (!rz_buf_read8(b, &cur)) {
+			return 0;
+		}
 		res++;
 	}
 	if (cur != eoc) {
@@ -111,7 +116,7 @@ static size_t consume_locals_r(RzBuffer *b, ut64 max, RzBinWasmCodeEntry *out) {
 	if (!b || max >= rz_buf_size(b) || cur > max) {
 		return 0;
 	}
-	ut32 count = out ? out->local_count : 0;
+	ut32 count = out->local_count;
 	if (count > 0) {
 		if (!(out->locals = RZ_NEWS0(struct rz_bin_wasm_local_entry_t, count))) {
 			return 0;
@@ -119,10 +124,10 @@ static size_t consume_locals_r(RzBuffer *b, ut64 max, RzBinWasmCodeEntry *out) {
 	}
 	ut32 j = 0;
 	while (rz_buf_tell(b) <= max && j < count) {
-		if (!(consume_u32_r(b, max, (out ? &out->locals[j].count : NULL)))) {
+		if (!(consume_u32_r(b, max, &out->locals[j].count))) {
 			goto beach;
 		}
-		if (!(consume_s7_r(b, max, (out ? (st8 *)&out->locals[j].type : NULL)))) {
+		if (!(consume_s7_r(b, max, (st8 *)&out->locals[j].type))) {
 			goto beach;
 		}
 		j++;
@@ -150,7 +155,7 @@ static size_t consume_limits_r(RzBuffer *b, ut64 max, struct rz_bin_wasm_resizab
 	if (out->flags && (!(consume_u32_r(b, max, &out->maximum)))) {
 		return 0;
 	}
-	return (size_t)RZ_ABS(rz_buf_tell(b) - i);
+	return (size_t)(rz_buf_tell(b) - i);
 }
 
 // Utils
@@ -272,7 +277,7 @@ static void *parse_type_entry(RzBuffer *b, ut64 max) {
 	if (!(consume_u32_r(b, max, &ptr->param_count))) {
 		goto beach;
 	}
-	ut32 count = ptr ? ptr->param_count : 0;
+	ut32 count = ptr->param_count;
 	if (!(rz_buf_tell(b) + count <= max)) {
 		goto beach;
 	}

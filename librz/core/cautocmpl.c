@@ -14,7 +14,7 @@
 enum autocmplt_type_t {
 	AUTOCMPLT_UNKNOWN = 0, ///< Unknown, nothing will be autocompleted
 	AUTOCMPLT_CMD_ID, ///< A command identifier (aka command name) needs to be autocompleted
-	AUTOCMPLT_CMD_ARG, ///< The argument of an arged_command (see grammar.js) needs to be autocompleted
+	AUTOCMPLT_CMD_ARG, ///< The argument of an arged_stmt (see grammar.js) needs to be autocompleted
 };
 
 /**
@@ -219,7 +219,7 @@ static void autocmplt_cmd_arg_fcn(RzCore *core, RzLineNSCompletionResult *res, c
 static void autocmplt_cmd_arg_enum_type(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
 	char *item;
 	RzListIter *iter;
-	RzList *list = rz_types_enums(core->analysis->sdb_types);
+	RzList *list = rz_type_db_enum_names(core->analysis->typedb);
 	rz_list_foreach (list, iter, item) {
 		if (!strncmp(item, s, len)) {
 			rz_line_ns_completion_result_add(res, item);
@@ -231,7 +231,7 @@ static void autocmplt_cmd_arg_enum_type(RzCore *core, RzLineNSCompletionResult *
 static void autocmplt_cmd_arg_struct_type(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
 	char *item;
 	RzListIter *iter;
-	RzList *list = rz_types_structs(core->analysis->sdb_types);
+	RzList *list = rz_type_db_struct_names(core->analysis->typedb);
 	rz_list_foreach (list, iter, item) {
 		if (!strncmp(item, s, len)) {
 			rz_line_ns_completion_result_add(res, item);
@@ -243,7 +243,7 @@ static void autocmplt_cmd_arg_struct_type(RzCore *core, RzLineNSCompletionResult
 static void autocmplt_cmd_arg_union_type(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
 	char *item;
 	RzListIter *iter;
-	RzList *list = rz_types_unions(core->analysis->sdb_types);
+	RzList *list = rz_type_db_union_names(core->analysis->typedb);
 	rz_list_foreach (list, iter, item) {
 		if (!strncmp(item, s, len)) {
 			rz_line_ns_completion_result_add(res, item);
@@ -255,7 +255,7 @@ static void autocmplt_cmd_arg_union_type(RzCore *core, RzLineNSCompletionResult 
 static void autocmplt_cmd_arg_alias_type(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
 	char *item;
 	RzListIter *iter;
-	RzList *list = rz_types_typedefs(core->analysis->sdb_types);
+	RzList *list = rz_type_db_typedef_names(core->analysis->typedb);
 	rz_list_foreach (list, iter, item) {
 		if (!strncmp(item, s, len)) {
 			rz_line_ns_completion_result_add(res, item);
@@ -267,10 +267,23 @@ static void autocmplt_cmd_arg_alias_type(RzCore *core, RzLineNSCompletionResult 
 static void autocmplt_cmd_arg_any_type(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
 	char *item;
 	RzListIter *iter;
-	RzList *list = rz_types_all(core->analysis->sdb_types);
+	RzList *list = rz_type_db_all(core->analysis->typedb);
 	rz_list_foreach (list, iter, item) {
 		if (!strncmp(item, s, len)) {
 			rz_line_ns_completion_result_add(res, item);
+		}
+	}
+	rz_list_free(list);
+}
+
+static void autocmplt_cmd_arg_global_var(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
+	RzAnalysisVarGlobal *glob;
+	RzListIter *iter;
+	RzList *list = rz_analysis_var_global_get_all(core->analysis);
+	rz_list_foreach (list, iter, glob) {
+		char *name = glob->name;
+		if (!strncmp(name, s, len)) {
+			rz_line_ns_completion_result_add(res, name);
 		}
 	}
 	rz_list_free(list);
@@ -432,7 +445,7 @@ static RzCmdDesc *get_cd_from_arg(RzCore *core, const char *data, TSNode arg) {
 		parent_type = ts_node_type(parent);
 	} while (is_arg_type(parent_type));
 
-	if (strcmp(parent_type, "arged_command")) {
+	if (strcmp(parent_type, "arged_stmt")) {
 		return NULL;
 	}
 
@@ -520,6 +533,9 @@ static void autocmplt_cmd_arg(RzCore *core, RzLineNSCompletionResult *res, const
 		break;
 	case RZ_CMD_ARG_TYPE_ANY_TYPE:
 		autocmplt_cmd_arg_any_type(core, res, s, len);
+		break;
+	case RZ_CMD_ARG_TYPE_GLOBAL_VAR:
+		autocmplt_cmd_arg_global_var(core, res, s, len);
 		break;
 	default:
 		break;
@@ -611,7 +627,7 @@ static bool find_autocmplt_type(struct autocmplt_data_t *ad, RzCore *core, TSNod
 	RZ_LOG_DEBUG("lstart = %d, lend = %d, type = %s\n", lstart, lend, root_type);
 	if (!strcmp(root_type, "cmd_identifier") && buf->data[lend - 1] != ' ') {
 		res = fill_autocmplt_data_cmdid(ad, lstart, lend);
-	} else if (!strcmp(root_type, "commands") && ts_node_named_child_count(root) == 0) {
+	} else if (!strcmp(root_type, "statements") && ts_node_named_child_count(root) == 0) {
 		res = fill_autocmplt_data_cmdid(ad, lend, lend);
 	} else if (!strcmp(root_type, "arg_identifier")) {
 		res = fill_autocmplt_data_cmdarg(ad, lstart, lend, buf->data, root, core);
@@ -650,7 +666,7 @@ static bool find_autocmplt_type(struct autocmplt_data_t *ad, RzCore *core, TSNod
  * Returns a \p RzLineNSCompletionResult structure containing all the info to
  * autocomplete what is currently in \p buf.
  */
-RZ_API RzLineNSCompletionResult *rz_core_autocomplete_newshell(RzCore *core, RzLineBuffer *buf, RzLinePromptType prompt_type) {
+RZ_API RzLineNSCompletionResult *rz_core_autocomplete_rzshell(RzCore *core, RzLineBuffer *buf, RzLinePromptType prompt_type) {
 	RzLineNSCompletionResult *res = NULL;
 	if (prompt_type == RZ_LINE_PROMPT_OFFSET) {
 		res = rz_line_ns_completion_result_new(0, buf->length, NULL);

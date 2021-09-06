@@ -67,7 +67,7 @@ static bool check_buffer(RzBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *b, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *sdb) {
 	return check_buffer(b);
 }
 
@@ -131,7 +131,6 @@ static RzList *sections(RzBinFile *bf) {
 	ptr->paddr = rz_read_ble32(buf + 12, false);
 	ptr->vaddr = ptr->paddr + baddr(bf);
 	ptr->perm = RZ_PERM_RX; // r-x
-	ptr->add = true;
 	rz_list_append(ret, ptr);
 
 	if (MENUET_VERSION(buf)) {
@@ -147,7 +146,6 @@ static RzList *sections(RzBinFile *bf) {
 		ptr->paddr = rz_read_ble32(buf + 40, false);
 		ptr->vaddr = ptr->paddr + baddr(bf);
 		ptr->perm = RZ_PERM_R; // r--
-		ptr->add = true;
 		rz_list_append(ret, ptr);
 	}
 
@@ -190,7 +188,7 @@ static ut64 size(RzBinFile *bf) {
 
 /* inspired in http://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */
 static RzBuffer *create(RzBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt) {
-	RzBuffer *buf = rz_buf_new();
+	RzBuffer *buf = rz_buf_new_with_bytes(NULL, 0);
 #define B(x, y) rz_buf_append_bytes(buf, (const ut8 *)(x), y)
 #define D(x)    rz_buf_append_ut32(buf, x)
 	B("MENUET01", 8);
@@ -213,6 +211,7 @@ RzBinPlugin rz_bin_plugin_menuet = {
 	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.entries = &entries,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
 	.info = &info,
 	.create = &create,

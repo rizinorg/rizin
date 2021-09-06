@@ -6,6 +6,7 @@
 #include <rz_sign.h>
 #include <rz_search.h>
 #include <rz_core.h>
+#include <rz_msg_digest.h>
 
 RZ_LIB_VERSION(rz_sign);
 
@@ -69,12 +70,11 @@ RZ_API RzList *rz_sign_fcn_vars(RzAnalysis *a, RzAnalysisFunction *fcn) {
 
 RZ_API RzList *rz_sign_fcn_types(RzAnalysis *a, RzAnalysisFunction *fcn) {
 
-	// From analysis/types/*:
-	// Get key-value types from sdb matching "func.%s", fcn->name
-	// Get func.%s.args (number of args)
+	// Get key-value types from types db fcn->name
+	// Get number of function args
 	// Get type,name pairs
 	// Put everything in RzList following the next format:
-	// types: main.ret=%type%, main.args=%num%, main.arg.0="int,argc", ...
+	// types: main.ret="%type%", main.args=%num%, main.arg.0="int,argc", ...
 
 	rz_return_val_if_fail(a && fcn, NULL);
 
@@ -83,33 +83,31 @@ RZ_API RzList *rz_sign_fcn_types(RzAnalysis *a, RzAnalysisFunction *fcn) {
 		return NULL;
 	}
 
-	char *scratch = rz_str_newf("func.%s.args", fcn->name);
-	if (!scratch) {
+	RzCallable *callable = rz_analysis_function_derive_type(a, fcn);
+	if (!callable) {
 		return NULL;
 	}
-	const char *fcntypes = sdb_const_get(a->sdb_types, scratch, 0);
-	free(scratch);
-
-	scratch = rz_str_newf("func.%s.ret", fcn->name);
-	if (!scratch) {
-		return NULL;
+	if (callable->ret) {
+		char *ret_type_str = rz_type_as_string(a->typedb, callable->ret);
+		rz_list_append(ret, rz_str_newf("func.%s.ret=\"%s\"", fcn->name, ret_type_str));
+		free(ret_type_str);
 	}
-	const char *ret_type = sdb_const_get(a->sdb_types, scratch, 0);
-	free(scratch);
-
-	if (fcntypes) {
-		if (ret_type) {
-			rz_list_append(ret, rz_str_newf("func.%s.ret=%s", fcn->name, ret_type));
-		}
-		int argc = atoi(fcntypes);
-		rz_list_append(ret, rz_str_newf("func.%s.args=%d", fcn->name, argc));
-		int i;
-		for (i = 0; i < argc; i++) {
-			const char *arg = sdb_const_get(a->sdb_types, rz_str_newf("func.%s.arg.%d", fcn->name, i), 0);
-			rz_list_append(ret, rz_str_newf("func.%s.arg.%d=\"%s\"", fcn->name, i, arg));
-		}
+	if (!callable->args || rz_pvector_empty(callable->args)) {
+		rz_list_append(ret, rz_str_newf("func.%s.args=0", fcn->name));
+		rz_type_callable_free(callable);
+		return ret;
+	}
+	int fcnargs = rz_pvector_len(callable->args);
+	rz_list_append(ret, rz_str_newf("func.%s.args=%d", fcn->name, fcnargs));
+	int i;
+	for (i = 0; i < fcnargs; i++) {
+		RzCallableArg *arg = *rz_pvector_index_ptr(callable->args, i);
+		char *arg_type_str = rz_type_as_string(a->typedb, arg->type);
+		rz_list_append(ret, rz_str_newf("func.%s.arg.%d=\"%s,%s\"", fcn->name, i, arg_type_str, arg->name));
+		free(arg_type_str);
 	}
 
+	rz_type_callable_free(callable);
 	return ret;
 }
 
@@ -791,7 +789,7 @@ RZ_API bool rz_sign_add_hash(RzAnalysis *a, const char *name, int type, const ch
 		eprintf("error: hash type unknown");
 		return false;
 	}
-	int digestsize = rz_hash_size(RZ_ZIGN_HASH) * 2;
+	int digestsize = ZIGN_HASH_SIZE * 2;
 	if (len != digestsize) {
 		eprintf("error: invalid hash size: %d (%s digest size is %d)\n", len, ZIGN_HASH, digestsize);
 		return false;
@@ -1184,7 +1182,7 @@ static double cmp_bytesig_to_buff(RzSignBytes *sig, ut8 *buf, int len) {
 	ut8 *sigbuf = build_combined_bytes(sig);
 	double sim = -1.0;
 	if (sigbuf) {
-		rz_diff_buffers_distance(NULL, sigbuf, sig->size, buf, len, NULL, &sim);
+		rz_diff_levenstein_distance(sigbuf, sig->size, buf, len, NULL, &sim);
 		free(sigbuf);
 	}
 	return sim;
@@ -1524,6 +1522,7 @@ RZ_API bool rz_sign_diff_by_name(RzAnalysis *a, RzSignOptions *options, const ch
 	}
 	RzList *lb = deserialize_sign_space(a, other_space);
 	if (!lb) {
+		rz_list_free(la);
 		return false;
 	}
 
@@ -2051,7 +2050,7 @@ RZ_API void rz_sign_list(RzAnalysis *a, int format) {
 	PJ *pj = NULL;
 
 	if (format == 'j') {
-		pj = a->coreb.pjWithEncoding(a->coreb.core);
+		pj = pj_new();
 		pj_a(pj);
 	}
 
@@ -2095,30 +2094,41 @@ RZ_API char *rz_sign_calc_bbhash(RzAnalysis *a, RzAnalysisFunction *fcn) {
 	RzListIter *iter = NULL;
 	RzAnalysisBlock *bbi = NULL;
 	char *digest_hex = NULL;
-	RzHash *ctx = rz_hash_new(true, RZ_ZIGN_HASH);
-	if (!ctx) {
+	RzMsgDigestSize digest_size = 0;
+	const ut8 *digest = NULL;
+	RzMsgDigest *md = NULL;
+	ut8 *buf = NULL;
+
+	md = rz_msg_digest_new_with_algo2(ZIGN_HASH);
+	if (!md) {
 		goto beach;
 	}
+
 	rz_list_sort(fcn->bbs, &cmpaddr);
-	rz_hash_do_begin(ctx, RZ_ZIGN_HASH);
 	rz_list_foreach (fcn->bbs, iter, bbi) {
-		ut8 *buf = malloc(bbi->size);
+		buf = malloc(bbi->size);
 		if (!buf) {
 			goto beach;
 		}
 		if (!a->iob.read_at(a->iob.io, bbi->addr, buf, bbi->size)) {
 			goto beach;
 		}
-		if (!rz_hash_do_sha256(ctx, buf, bbi->size)) {
+		if (!rz_msg_digest_update(md, buf, bbi->size)) {
 			goto beach;
 		}
-		free(buf);
+		RZ_FREE(buf);
 	}
-	rz_hash_do_end(ctx, RZ_ZIGN_HASH);
 
-	digest_hex = rz_hex_bin2strdup(ctx->digest, rz_hash_size(RZ_ZIGN_HASH));
+	if (!rz_msg_digest_final(md) ||
+		!(digest = rz_msg_digest_get_result(md, ZIGN_HASH, &digest_size))) {
+		goto beach;
+	}
+
+	digest_hex = rz_hex_bin2strdup(digest, digest_size);
+
 beach:
-	free(ctx);
+	rz_msg_digest_free(md);
+	free(buf);
 	return digest_hex;
 }
 
@@ -2488,10 +2498,10 @@ static int match_metrics(RzSignItem *it, void *user) {
 			found = xrefs_from_match(it, &ctx->xrefs_from, sm);
 			break;
 		case RZ_SIGN_TYPES:
-			found = vars_match(it, &ctx->vars, sm);
+			found = types_match(it, &ctx->types, sm);
 			break;
 		case RZ_SIGN_VARS:
-			found = types_match(it, &ctx->types, sm);
+			found = vars_match(it, &ctx->vars, sm);
 			break;
 		default:
 			eprintf("Invalid type: %c\n", type);

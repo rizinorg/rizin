@@ -1,5 +1,5 @@
 NAME=Cf. crash
-FILE=-
+FILE==
 CMDS=<<EOF
 Cf.
 EOF
@@ -94,7 +94,7 @@ EOF
 RUN
 
 NAME=CC.
-FILE=-
+FILE==
 CMDS=<<EOF
 CC hello @ 10
 CC.

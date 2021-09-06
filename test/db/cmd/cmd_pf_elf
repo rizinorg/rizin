@@ -390,14 +390,14 @@ EOF
 RUN
 
 NAME=pf elf_header times fix
-FILE=-
+FILE==
 CMDS=<<EOF
 pfo elf32
 pf? elf_header
 pfs.elf_header
 ?e
 wz `pf? elf_header`
-(pfelf num; pf.elf_header {$0}`psz`; pf? elf_header; pfs.elf_header)
+(pfelf num; pf.elf_header$0 {$0}`psz`; pf? elf_header$0; pfs.elf_header$0)
 .(pfelf 1)
 ?e
 .(pfelf 2)

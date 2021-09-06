@@ -8,6 +8,10 @@
 #include <config.h>
 #include "io_private.h"
 
+#if __WINDOWS__
+#include <w32dbg_wrap.h>
+#endif
+
 RZ_LIB_VERSION(rz_io);
 
 static int fd_read_at_wrap(RzIO *io, int fd, ut64 addr, ut8 *buf, int len, RzIOMap *map, void *user) {
@@ -159,8 +163,18 @@ RZ_API RzIODesc *rz_io_open(RzIO *io, const char *uri, int perm, int mode) {
 	return desc;
 }
 
-/* opens a file and maps it to an offset specified by the "at"-parameter */
-RZ_API RzIODesc *rz_io_open_at(RzIO *io, const char *uri, int perm, int mode, ut64 at) {
+/**
+ * \brief Open a file and directly map it at the given offset
+ *
+ * This executes both rz_io_open_nomap() and rz_io_map_new() and returns their
+ * results without updating the skyline.
+ *
+ * \param uri file uri to open
+ * \param at where to map the file
+ * \param map optionally returns the created RzIOMap
+ * \return the opened RzIODesc of the file
+ * */
+RZ_API RzIODesc *rz_io_open_at(RzIO *io, const char *uri, int perm, int mode, ut64 at, RZ_NULLABLE RZ_OUT RzIOMap **map) {
 	rz_return_val_if_fail(io && uri, NULL);
 
 	RzIODesc *desc = rz_io_open_nomap(io, uri, perm, mode);
@@ -176,7 +190,10 @@ RZ_API RzIODesc *rz_io_open_at(RzIO *io, const char *uri, int perm, int mode, ut
 		size = UT64_MAX - at + 1;
 	}
 	// skyline not updated
-	rz_io_map_new(io, desc->fd, desc->perm, 0LL, at, size);
+	RzIOMap *m = rz_io_map_new(io, desc->fd, desc->perm, 0LL, at, size);
+	if (map) {
+		*map = m;
+	}
 	return desc;
 }
 
@@ -243,12 +260,9 @@ RZ_API int rz_io_close_all(RzIO *io) { // what about undo?
 		return false;
 	}
 	rz_io_desc_fini(io);
-	rz_io_map_fini(io);
-	ls_free(io->plugins);
+	rz_io_map_reset(io);
 	rz_io_desc_init(io);
-	rz_io_map_init(io);
 	rz_io_cache_fini(io);
-	rz_io_plugin_init(io);
 	return true;
 }
 
@@ -502,7 +516,7 @@ RZ_API ut64 rz_io_v2p(RzIO *io, ut64 va) {
 	RzIOMap *map = rz_io_map_get(io, va);
 	if (map) {
 		st64 delta = va - map->itv.addr;
-		return map->itv.addr + map->delta + delta;
+		return map->delta + delta;
 	}
 	return UT64_MAX;
 }
@@ -544,6 +558,9 @@ RZ_API void rz_io_bind(RzIO *io, RzIOBind *bnd) {
 #if HAVE_PTRACE
 	bnd->ptrace = rz_io_ptrace;
 	bnd->ptrace_func = rz_io_ptrace_func;
+#endif
+#if __WINDOWS__
+	bnd->get_w32dbg_wrap = rz_io_get_w32dbg_wrap;
 #endif
 }
 
@@ -665,6 +682,16 @@ RZ_API void *rz_io_ptrace_func(RzIO *io, void *(*func)(void *), void *user) {
 }
 #endif
 
+#if __WINDOWS__
+/// Lazily initializing getter for the w32dbg_wrap instance. Only use this and don't access io->w32dbg_wrap directly.
+RZ_API struct w32dbg_wrap_instance_t *rz_io_get_w32dbg_wrap(RzIO *io) {
+	if (!io->priv_w32dbg_wrap) {
+		io->priv_w32dbg_wrap = (struct w32dbg_wrap_instance_t *)w32dbg_wrap_new();
+	}
+	return io->priv_w32dbg_wrap;
+}
+#endif
+
 //remove all descs and maps
 RZ_API int rz_io_fini(RzIO *io) {
 	if (!io) {
@@ -673,7 +700,7 @@ RZ_API int rz_io_fini(RzIO *io) {
 	rz_io_desc_cache_fini_all(io);
 	rz_io_desc_fini(io);
 	rz_io_map_fini(io);
-	ls_free(io->plugins);
+	rz_list_free(io->plugins);
 	rz_io_cache_fini(io);
 	if (io->runprofile) {
 		RZ_FREE(io->runprofile);
@@ -685,6 +712,9 @@ RZ_API int rz_io_fini(RzIO *io) {
 		ptrace_wrap_instance_stop(io->ptrace_wrap);
 		free(io->ptrace_wrap);
 	}
+#endif
+#if __WINDOWS__
+	w32dbg_wrap_free((W32DbgWInst *)io->priv_w32dbg_wrap);
 #endif
 	return true;
 }

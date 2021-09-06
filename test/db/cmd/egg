@@ -1,7 +1,7 @@
 # XXX its green on mac, but it's os-specific test and will fail on travis
 NAME=rz-gg eggtest.c
 BROKEN=1
-FILE=-
+FILE==
 CMDS=!rz-gg bins/src/eggtest.c
 EXPECT=<<EOF
 rz-bin -o 'bins/src/eggtest.c.text' -O d/S/'0..__text' 'bins/src/eggtest.c.o'

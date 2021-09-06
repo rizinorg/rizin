@@ -7,9 +7,11 @@ RUN
 
 NAME=entrypoint decoding [64k]
 FILE=bins/firmware/bios_64k.bin
-CMDS=ie~addr
+CMDS=ie
 EXPECT=<<EOF
-vaddr=0x000ffff0 paddr=0x00000000 haddr=-1 type=program
+vaddr      paddr      hvaddr     haddr      type    
+----------------------------------------------------
+0x000ffff0 0x00000000 ---------- ---------- program
 EOF
 RUN
 
@@ -35,9 +37,9 @@ octal   03777652
 unit    1023.9K
 segment f000:0faa
 string  "\xaa\xff\x0f"
-fvalue: 1048490.0
-float:  0.000000f
-double: 0.000000
+fvalue  1048490.0
+float   0.000000f
+double  0.000000
 binary  0b000011111111111110101010
 trits   0t1222021020222
 EOF
@@ -52,9 +54,11 @@ RUN
 
 NAME=entrypoint decoding [128k]
 FILE=bins/firmware/bios_128k.bin
-CMDS=ie~addr
+CMDS=ie
 EXPECT=<<EOF
-vaddr=0x000ffff0 paddr=0x00000000 haddr=-1 type=program
+vaddr      paddr      hvaddr     haddr      type    
+----------------------------------------------------
+0x000ffff0 0x00000000 ---------- ---------- program
 EOF
 RUN
 
@@ -75,9 +79,11 @@ RUN
 
 NAME=entrypoint decoding [256k]
 FILE=bins/firmware/bios_256k.bin
-CMDS=ie~addr
+CMDS=ie
 EXPECT=<<EOF
-vaddr=0x000ffff0 paddr=0x00000000 haddr=-1 type=program
+vaddr      paddr      hvaddr     haddr      type    
+----------------------------------------------------
+0x000ffff0 0x00000000 ---------- ---------- program
 EOF
 RUN
 
@@ -98,9 +104,11 @@ RUN
 
 NAME=entrypoint decoding [512k]
 FILE=bins/firmware/bios_512k.bin
-CMDS=ie~addr
+CMDS=ie
 EXPECT=<<EOF
-vaddr=0x000ffff0 paddr=0x00000000 haddr=-1 type=program
+vaddr      paddr      hvaddr     haddr      type    
+----------------------------------------------------
+0x000ffff0 0x00000000 ---------- ---------- program
 EOF
 RUN
 
@@ -121,9 +129,11 @@ RUN
 
 NAME=entrypoint decoding [1M]
 FILE=bins/firmware/bios_1M.bin
-CMDS=ie~addr
+CMDS=ie
 EXPECT=<<EOF
-vaddr=0x000ffff0 paddr=0x00000000 haddr=-1 type=program
+vaddr      paddr      hvaddr     haddr      type    
+----------------------------------------------------
+0x000ffff0 0x00000000 ---------- ---------- program
 EOF
 RUN
 
@@ -144,9 +154,11 @@ RUN
 
 NAME=entrypoint decoding [2M]
 FILE=bins/firmware/bios_2M.bin
-CMDS=ie~addr
+CMDS=ie
 EXPECT=<<EOF
-vaddr=0x000ffff0 paddr=0x00000000 haddr=-1 type=program
+vaddr      paddr      hvaddr     haddr      type    
+----------------------------------------------------
+0x000ffff0 0x00000000 ---------- ---------- program
 EOF
 RUN
 
@@ -167,9 +179,11 @@ RUN
 
 NAME=entrypoint decoding [4M]
 FILE=bins/firmware/bios_4M.bin
-CMDS=ie~addr
+CMDS=ie
 EXPECT=<<EOF
-vaddr=0x000ffff0 paddr=0x00000000 haddr=-1 type=program
+vaddr      paddr      hvaddr     haddr      type    
+----------------------------------------------------
+0x000ffff0 0x00000000 ---------- ---------- program
 EOF
 RUN
 
@@ -190,9 +204,11 @@ RUN
 
 NAME=entrypoint decoding [8M]
 FILE=bins/firmware/bios_8M.bin
-CMDS=ie~addr
+CMDS=ie
 EXPECT=<<EOF
-vaddr=0x000ffff0 paddr=0x00000000 haddr=-1 type=program
+vaddr      paddr      hvaddr     haddr      type    
+----------------------------------------------------
+0x000ffff0 0x00000000 ---------- ---------- program
 EOF
 RUN
 
@@ -201,5 +217,52 @@ FILE=bins/firmware/bios_8M.bin
 CMDS=pi 1
 EXPECT=<<EOF
 ljmp 0xf000:0xffaa
+EOF
+RUN
+
+NAME=test x86 IO ports 
+FILE=bins/firmware/bios_1M.bin
+CMDS=<<EOF
+e asm.cpu=generic
+e asm.platform=generic
+aa
+f,~platform
+CC~reg
+EOF
+EXPECT=<<EOF
+0x00000018 1     platform.ports PS_2_register
+0x0000001a 1     platform.ports PS_2_execute
+0x0000001f 1     platform.ports DMA_1
+0x00000020 1     platform.ports PIC_1
+0x00000022 1     platform.ports Cx486SLC_DLC
+0x00000038 1     platform.ports Cozet_PC
+0x00000040 1     platform.ports PIT
+0x00000060 1     platform.ports PS_2_8042
+0x00000065 1     platform.ports AT_T_Chip_Select
+0x0000006b 1     platform.ports SSGA
+0x00000070 1     platform.ports CMOS_RTC
+0x00000080 1     platform.ports DMA_Page
+0x00000090 1     platform.ports PS_2_POS
+0x000000a0 1     platform.ports PIC_2
+0x000000c0 1     platform.ports DMA_2
+0x000000f0 1     platform.ports PCjr
+0x00000170 1     platform.ports HDC_2
+0x000001f0 1     platform.ports HDC_1
+0x00000200 1     platform.ports Game_port
+0x00000278 1     platform.ports Parallel_port
+0x000002e0 1     platform.ports GPIAB
+0x000002e8 1     platform.ports Serial_port
+0x00000330 1     platform.ports MIDI
+0x00000340 1     platform.ports SCSI
+0x00000360 1     platform.ports NS3249C_card
+0x00000370 1     platform.ports FDC_2
+0x000003a0 1     platform.ports SDLC_2
+0x000003b0 1     platform.ports MDA
+0x000003c0 1     platform.ports EGA
+0x000003d0 1     platform.ports CGA
+0x000003f0 1     platform.ports FDC_1
+0x00000018 CCu "PS/2 extended function register"
+0x0000006b CCu "SSGA control registers (006B-006F)"
+0x00000080 CCu "DMA page registers (0080-008F)"
 EOF
 RUN

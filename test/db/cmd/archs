@@ -1,5 +1,5 @@
 NAME=endian tests: mips
-FILE=-
+FILE==
 CMDS=<<EOF
 wx 0f84010a
 e asm.arch=mips
@@ -16,7 +16,7 @@ EOF
 RUN
 
 NAME=endian tests: arm
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -33,7 +33,7 @@ EOF
 RUN
 
 NAME=endian tests: thumb
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
@@ -50,7 +50,7 @@ EOF
 RUN
 
 NAME=endian tests: arm64
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
@@ -67,7 +67,7 @@ EOF
 RUN
 
 NAME=endian tests: sparc
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=sparc
 wx 554889e5
@@ -83,7 +83,7 @@ EOF
 RUN
 
 NAME=endian tests: sparc.gnu
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=sparc.gnu
 e asm.bits=64
@@ -193,7 +193,7 @@ RUN
 
 NAME=Test arch switch
 BROKEN=1
-FILE=-
+FILE==
 CMDS=<<EOF
 wx 00b5884206bf01300130042000bd
 e asm.arch=arm asm.bits=16

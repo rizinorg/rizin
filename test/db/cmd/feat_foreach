@@ -1,5 +1,5 @@
 NAME=@@= 10 20 30
-FILE=-
+FILE==
 CMDS=?v $$ @@= 10 20 30
 EXPECT=<<EOF
 0xa
@@ -34,7 +34,7 @@ EOF
 RUN
 
 NAME=@@= 10   20   30
-FILE=-
+FILE==
 CMDS=?v $$ @@= 10   20   30
 EXPECT=<<EOF
 0xa
@@ -44,7 +44,7 @@ EOF
 RUN
 
 NAME=@@= `prz` fix
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bytes=true

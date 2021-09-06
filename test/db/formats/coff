@@ -5,52 +5,47 @@ ii
 iS
 EOF
 EXPECT=<<EOF
-[Imports]
-nth vaddr      bind type lib name
----------------------------------
-0   ---------- NONE FUNC     __TIFFmalloc
-1   ---------- NONE FUNC     __TIFFrealloc
-2   ---------- NONE FUNC     __TIFFmemset
-3   ---------- NONE FUNC     __TIFFmemcpy
-4   ---------- NONE FUNC     __TIFFfree
-5   ---------- NONE FUNC     _TIFFFindField
-6   ---------- NONE FUNC     _TIFFFieldWithTag
-7   ---------- NONE FUNC     _TIFFReadDirectory
-8   ---------- NONE FUNC     _TIFFErrorExt
-9   ---------- NONE FUNC     _TIFFWarningExt
-10  ---------- NONE FUNC     _TIFFSwabShort
-11  ---------- NONE FUNC     _TIFFSwabLong
-12  ---------- NONE FUNC     _TIFFSwabLong8
-13  ---------- NONE FUNC     __TIFFGetFields
-14  ---------- NONE FUNC     __TIFFGetExifFields
-15  ---------- NONE FUNC     __TIFFSetupFields
-16  ---------- NONE FUNC     __TIFFFillStriles
-17  ---------- NONE FUNC     __TIFFNoPostDecode
-18  ---------- NONE FUNC     __TIFFSwab16BitData
-19  ---------- NONE FUNC     __TIFFSwab24BitData
-20  ---------- NONE FUNC     __TIFFSwab32BitData
-21  ---------- NONE FUNC     __TIFFSwab64BitData
-22  ---------- NONE FUNC     _TIFFSetCompressionScheme
-23  ---------- NONE FUNC     __TIFFDataSize
-24  ---------- NONE FUNC     __TIFFCheckMalloc
-25  ---------- NONE UNK      __fltused
-
-[Sections]
-
-nth paddr         size vaddr        vsize perm name
----------------------------------------------------
-0   0x000001cc    0x2f 0x00000000    0x2f ---- .drectve-0
-1   0x000001fb  0x8670 0x00000030  0x8670 -r-- .debug_S-1
-2   0x0000ad73    0x70 0x000086a0    0x70 -r-- .debug_T-2
-3   0x0000ade3   0x625 0x00008710   0x625 -rw- .data-3
-4   0x0000b408    0x54 0x00008d40    0x54 -r-- .rdata-4
-5   0x00000000     0x8 0x00008da0     0x8 -rw- .bss-5
-6   0x0000b45c  0x2895 0x00008db0  0x2895 -r-x .text_mn-6
-7   0x0000e967     0x8 0x0000b650     0x8 -r-- .rdata-7
-8   0x0000e96f     0x4 0x0000b660     0x4 -r-- .rdata-8
-9   0x0000e973     0x8 0x0000b670     0x8 -r-- .rdata-9
-10  0x0000e97b     0x4 0x0000b680     0x4 -r-- .rdata-10
-
+nth vaddr      bind type lib name                      
+-------------------------------------------------------
+0   0x0000b690 NONE FUNC     __TIFFmalloc
+1   0x0000b698 NONE FUNC     __TIFFrealloc
+2   0x0000b6a0 NONE FUNC     __TIFFmemset
+3   0x0000b6a8 NONE FUNC     __TIFFmemcpy
+4   0x0000b6b0 NONE FUNC     __TIFFfree
+5   0x0000b6b8 NONE FUNC     _TIFFFindField
+6   0x0000b6c0 NONE FUNC     _TIFFFieldWithTag
+7   0x0000b6c8 NONE FUNC     _TIFFReadDirectory
+8   0x0000b6d0 NONE FUNC     _TIFFErrorExt
+9   0x0000b6d8 NONE FUNC     _TIFFWarningExt
+10  0x0000b6e0 NONE FUNC     _TIFFSwabShort
+11  0x0000b6e8 NONE FUNC     _TIFFSwabLong
+12  0x0000b6f0 NONE FUNC     _TIFFSwabLong8
+13  0x0000b6f8 NONE FUNC     __TIFFGetFields
+14  0x0000b700 NONE FUNC     __TIFFGetExifFields
+15  0x0000b708 NONE FUNC     __TIFFSetupFields
+16  0x0000b710 NONE FUNC     __TIFFFillStriles
+17  0x0000b718 NONE FUNC     __TIFFNoPostDecode
+18  0x0000b720 NONE FUNC     __TIFFSwab16BitData
+19  0x0000b728 NONE FUNC     __TIFFSwab24BitData
+20  0x0000b730 NONE FUNC     __TIFFSwab32BitData
+21  0x0000b738 NONE FUNC     __TIFFSwab64BitData
+22  0x0000b740 NONE FUNC     _TIFFSetCompressionScheme
+23  0x0000b748 NONE FUNC     __TIFFDataSize
+24  0x0000b750 NONE FUNC     __TIFFCheckMalloc
+25  0x0000b758 NONE UNK      __fltused
+paddr      size   vaddr      vsize  align perm name     type flags 
+-------------------------------------------------------------------
+0x000001cc 0x2f   0x00000000 0x2f   0x0   ---- .drectve      
+0x000001fb 0x8670 0x00000030 0x8670 0x0   -r-- .debug_S      
+0x0000ad73 0x70   0x000086a0 0x70   0x0   -r-- .debug_T      
+0x0000ade3 0x625  0x00008710 0x625  0x0   -rw- .data         
+0x0000b408 0x54   0x00008d40 0x54   0x0   -r-- .rdata        
+0x00000000 0x8    0x00008da0 0x8    0x0   -rw- .bss          
+0x0000b45c 0x2895 0x00008db0 0x2895 0x0   -r-x .text_mn      
+0x0000e967 0x8    0x0000b650 0x8    0x0   -r-- .rdata_1      
+0x0000e96f 0x4    0x0000b660 0x4    0x0   -r-- .rdata_2      
+0x0000e973 0x8    0x0000b670 0x8    0x0   -r-- .rdata_3      
+0x0000e97b 0x4    0x0000b680 0x4    0x0   -r-- .rdata_4      
 EOF
 RUN
 
@@ -58,28 +53,22 @@ NAME=tiny coff
 FILE=bins/coff/coff.obj
 CMDS=om;is;ir
 EXPECT=<<EOF
- 2 fd: 3 +0x00000064 0x00000000 - 0x00000026 r-x fmap..text-0
- 1 fd: 3 +0x0000008b 0x00000030 - 0x0000004b r-- fmap..data-1
-[Symbols]
-
-nth paddr      vaddr      bind   type size lib name
----------------------------------------------------
-0   ---------- ---------- NONE   UNK  4        imp.MessageBoxA
-0   ---------- ---------- NONE   UNK  4        imp.ExitProcess
+ 1 fd: 4 +0x00000000 0x00000058 - 0x00000067 r-- vmap.reloc-targets
+ 2 fd: 5 +0x00000064 0x00000000 - 0x00000026 r-x vmap..text
+ 3 fd: 3 +0x0000008b 0x00000030 - 0x0000004b r-- fmap..data
+nth paddr      vaddr      bind   type size lib name            
+---------------------------------------------------------------
+0   ---------- 0x00000058 NONE   UNK  4        imp.MessageBoxA
+0   ---------- 0x00000060 NONE   UNK  4        imp.ExitProcess
 0   0x00000064 0x00000000 LOCAL  SECT 4        .text
 0   0x00000064 0x00000000 GLOBAL FUNC 4        main
 0   0x0000008b 0x00000030 LOCAL  SECT 4        .data
-[Relocations]
-
-vaddr      paddr      type   name
----------------------------------
-0x00000009 0x0000006d ADD_32 .data
-0x00000010 0x00000074 ADD_32 .data
-0x0000001c 0x00000080 ADD_32 MessageBoxA
-0x00000023 0x00000087 ADD_32 ExitProcess
-
-
-4 relocations
+vaddr      paddr      target     type   name               
+-----------------------------------------------------------
+0x00000009 0x0000006d 0x00000030 ADD_32 .data
+0x00000010 0x00000074 0x00000030 ADD_32 .data + 0x0000000f
+0x0000001c 0x00000080 0x00000058 ADD_32 MessageBoxA
+0x00000023 0x00000087 0x00000060 ADD_32 ExitProcess
 EOF
 RUN
 
@@ -88,37 +77,66 @@ FILE=bins/coff/coff2.obj
 CMDS=<<EOF
 e asm.bytes=true
 om
-is~text
+iS
+is
 s sym.__1FooBar__QAE_XZ
 pd 2
 EOF
 EXPECT=<<EOF
- 9 fd: 3 +0x0000017c 0x00000000 - 0x000000ee --- fmap..drectve-0
- 8 fd: 3 +0x0000026b 0x000000f0 - 0x00000b9f r-- fmap..debug_S-1
- 7 fd: 3 +0x00000d1b 0x00000ba0 - 0x00000c13 r-- fmap..debug_T-2
- 6 fd: 3 +0x00000d8f 0x00000c20 - 0x00000c4c r-x fmap..text_mn-3
- 5 fd: 3 +0x00000dbc 0x00000c50 - 0x00000d23 r-- fmap..debug_S-4
- 4 fd: 3 +0x00000ec2 0x00000d30 - 0x00000d59 r-x fmap..text_mn-5
- 3 fd: 3 +0x00000eec 0x00000d60 - 0x00000e33 r-- fmap..debug_S-6
- 2 fd: 3 +0x00000ff2 0x00000e40 - 0x00000e43 r-- fmap..rtc_IMZ-7
- 1 fd: 3 +0x00001000 0x00000e50 - 0x00000e53 r-- fmap..rtc_TMZ-8
+ 1 fd: 4 +0x00000000 0x00000e60 - 0x00000e6f r-- vmap.reloc-targets
+ 2 fd: 3 +0x0000017c 0x00000000 - 0x000000ee --- fmap..drectve
+ 3 fd: 3 +0x0000026b 0x000000f0 - 0x00000b9f r-- fmap..debug$S
+ 4 fd: 3 +0x00000d1b 0x00000ba0 - 0x00000c13 r-- fmap..debug$T
+ 5 fd: 3 +0x00000d8f 0x00000c20 - 0x00000c4c r-x fmap..text$mn
+ 6 fd: 5 +0x00000dbc 0x00000c50 - 0x00000d23 r-- vmap..debug$S
+ 7 fd: 3 +0x00000ec2 0x00000d30 - 0x00000d59 r-x fmap..text$mn
+ 8 fd: 5 +0x00000eec 0x00000d60 - 0x00000e33 r-- vmap..debug$S
+ 9 fd: 5 +0x00000ff2 0x00000e40 - 0x00000e43 r-- vmap..rtc$IMZ
+10 fd: 5 +0x00001000 0x00000e50 - 0x00000e53 r-- vmap..rtc$TMZ
+paddr      size  vaddr      vsize align perm name       type flags 
+-------------------------------------------------------------------
+0x0000017c 0xef  0x00000000 0xef  0x0   ---- .drectve        
+0x0000026b 0xab0 0x000000f0 0xab0 0x0   -r-- .debug_S        
+0x00000d1b 0x74  0x00000ba0 0x74  0x0   -r-- .debug_T        
+0x00000d8f 0x2d  0x00000c20 0x2d  0x0   -r-x .text_mn        
+0x00000dbc 0xd4  0x00000c50 0xd4  0x0   -r-- .debug_S_1      
+0x00000ec2 0x2a  0x00000d30 0x2a  0x0   -r-x .text_mn_1      
+0x00000eec 0xd4  0x00000d60 0xd4  0x0   -r-- .debug_S_2      
+0x00000ff2 0x4   0x00000e40 0x4   0x0   -r-- .rtc_IMZ        
+0x00001000 0x4   0x00000e50 0x4   0x0   -r-- .rtc_TMZ        
+nth paddr      vaddr      bind   type size lib name                   
+----------------------------------------------------------------------
+0   ---------- ---------- LOCAL  ABS  4        @comp.id-0x01055e97
+0   ---------- ---------- LOCAL  ABS  4        @feat.00-0x80000191
+0   0x0000017c 0x00000000 LOCAL  SECT 4        .drectve
+0   0x0000026b 0x000000f0 LOCAL  SECT 4        .debug$S
+0   0x00000d1b 0x00000ba0 LOCAL  SECT 4        .debug$T
 0   0x00000d8f 0x00000c20 LOCAL  SECT 4        .text$mn
+0   0x00000dbc 0x00000c50 LOCAL  SECT 4        .debug$S
 0   0x00000ec2 0x00000d30 LOCAL  SECT 4        .text$mn
-            ;-- section..text_mn_5:
-            ;-- .text$mn:
+0   0x00000eec 0x00000d60 LOCAL  SECT 4        .debug$S
+0   0x00000d8f 0x00000c20 GLOBAL FUNC 4        ??0FooBar@@QAE@XZ
+0   0x00000ec2 0x00000d30 GLOBAL FUNC 4        ??1FooBar@@QAE@XZ
+0   ---------- 0x00000e60 NONE   FUNC 4        imp.__RTC_InitBase
+0   ---------- 0x00000e68 NONE   FUNC 4        imp.__RTC_Shutdown
+0   0x00000ff2 0x00000e40 LOCAL  SECT 4        .rtc$IMZ
+0   0x00000ff2 0x00000e40 LOCAL  UNK  4        __RTC_InitBase.rtc$IMZ
+0   0x00001000 0x00000e50 LOCAL  SECT 4        .rtc$TMZ
+0   0x00001000 0x00000e50 LOCAL  UNK  4        __RTC_Shutdown.rtc$TMZ
+            ;-- section..text_mn_1:
             ;-- ??1FooBar@@QAE@XZ:
-            0x00000d30      55             push  ebp                   ; [05] -r-x section size 42 named .text_mn-5
+            ;-- .text$mn:
+            0x00000d30      55             push  ebp                   ; RELOC TARGET 10 ??1FooBar@@QAE@XZ @ 0x00000d30 ; [05] -r-x section size 42 named .text_mn_1
             0x00000d31      8bec           mov   ebp, esp
 EOF
 RUN
 
 NAME=patched reloc x86
-ARGS=-e io.cache=1
 FILE=bins/coff/tif_dir.obj
 CMDS=<<EOF
 e asm.bytes=true
 af @ sym._TIFFGetField
-pd 1 @ reloc._TIFFVGetField-1
+pd 1 @ 0x8dbd
 axt @ sym._TIFFVGetField
 pd 1 @ sym._TIFFVGetField+0xe
 pd 1 @ sym.imp._TIFFFindField
@@ -126,16 +144,14 @@ EOF
 EXPECT=<<EOF
 |           0x00008dbd      e80e000000     call  sym._TIFFVGetField    ; RELOC 32 _TIFFVGetField @ 0x00008dd0
 sym._TIFFGetField 0x8dbd [CALL] call sym._TIFFVGetField
-|           0x00008dde      e8ad280000     call  _TIFFFindField
+|           0x00008dde      e8d5280000     call  sym.imp._TIFFFindField; RELOC 32 _TIFFFindField
             ; CALL XREF from sym._TIFFVGetField @ 0x8dde
-            ;-- reloc._TIFFFindField:
             ;-- _TIFFFindField:
-            0x0000b690      .dword 0x00000000                          ; RELOC 32 _TIFFFindField
+            0x0000b6b8      .dword 0x00000000                          ; RELOC TARGET 32 _TIFFFindField
 EOF
 RUN
 
 NAME=patching REL32 amd64
-ARGS=-e io.cache=1
 FILE=bins/coff/coff.obj
 CMDS=<<EOF
 e asm.bytes=true

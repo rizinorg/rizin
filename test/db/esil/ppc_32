@@ -1,5 +1,5 @@
 NAME=load with update ppc-32
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=32
@@ -14,7 +14,7 @@ EOF
 RUN
 
 NAME=store with update ppc-32
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=32
@@ -29,7 +29,7 @@ EOF
 RUN
 
 NAME=long ESIL ppc-32
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=32

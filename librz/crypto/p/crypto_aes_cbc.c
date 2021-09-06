@@ -7,32 +7,44 @@
 
 #define BLOCK_SIZE 16
 
-static struct aes_state st;
-static bool iv_set = 0;
-static ut8 iv[32];
+typedef struct aes_cbc_context_t {
+	aes_state_t st;
+	bool iv_set;
+	ut8 iv[32];
+} AesCbcCtx;
 
 static bool aes_cbc_set_key(RzCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
+	rz_return_val_if_fail(cry->user && key, false);
+
 	if (!(keylen == 128 / 8 || keylen == 192 / 8 || keylen == 256 / 8)) {
 		return false;
 	}
-	st.key_size = keylen;
-	st.rounds = 6 + (int)(keylen / 4);
-	st.columns = (int)(keylen / 4);
-	memcpy(st.key, key, keylen);
+	AesCbcCtx *ctx = (AesCbcCtx *)cry->user;
+
+	ctx->st.key_size = keylen;
+	ctx->st.rounds = 6 + (int)(keylen / 4);
+	ctx->st.columns = (int)(keylen / 4);
+	memcpy(ctx->st.key, key, keylen);
 	cry->dir = direction;
 	return true;
 }
 
 static int aes_cbc_get_key_size(RzCrypto *cry) {
-	return st.key_size;
+	rz_return_val_if_fail(cry->user, 0);
+	AesCbcCtx *ctx = (AesCbcCtx *)cry->user;
+
+	return ctx->st.key_size;
 }
 
 static bool aes_cbc_set_iv(RzCrypto *cry, const ut8 *iv_src, int ivlen) {
+	rz_return_val_if_fail(cry->user && iv_src, false);
+	AesCbcCtx *ctx = (AesCbcCtx *)cry->user;
+
 	if (ivlen != BLOCK_SIZE) {
 		return false;
 	}
-	memcpy(iv, iv_src, BLOCK_SIZE);
-	iv_set = 1;
+	memcpy(ctx->iv, iv_src, BLOCK_SIZE);
+	ctx->iv_set = true;
 	return true;
 }
 
@@ -41,7 +53,14 @@ static bool aes_cbc_use(const char *algo) {
 }
 
 static bool update(RzCrypto *cry, const ut8 *buf, int len) {
-	if (!iv_set) {
+	rz_return_val_if_fail(cry->user, false);
+	AesCbcCtx *ctx = (AesCbcCtx *)cry->user;
+
+	if (len < 1) {
+		return false;
+	}
+
+	if (!ctx->iv_set) {
 		eprintf("IV not set. Use -I [iv]\n");
 		return false;
 	}
@@ -68,21 +87,21 @@ static bool update(RzCrypto *cry, const ut8 *buf, int len) {
 	}
 
 	int i, j;
-	if (cry->dir == 0) {
+	if (cry->dir == RZ_CRYPTO_DIR_ENCRYPT) {
 		for (i = 0; i < blocks; i++) {
 			for (j = 0; j < BLOCK_SIZE; j++) {
-				ibuf[i * BLOCK_SIZE + j] ^= iv[j];
+				ibuf[i * BLOCK_SIZE + j] ^= ctx->iv[j];
 			}
-			aes_encrypt(&st, ibuf + BLOCK_SIZE * i, obuf + BLOCK_SIZE * i);
-			memcpy(iv, obuf + BLOCK_SIZE * i, BLOCK_SIZE);
+			aes_encrypt(&ctx->st, ibuf + BLOCK_SIZE * i, obuf + BLOCK_SIZE * i);
+			memcpy(ctx->iv, obuf + BLOCK_SIZE * i, BLOCK_SIZE);
 		}
-	} else if (cry->dir == 1) {
+	} else {
 		for (i = 0; i < blocks; i++) {
-			aes_decrypt(&st, ibuf + BLOCK_SIZE * i, obuf + BLOCK_SIZE * i);
+			aes_decrypt(&ctx->st, ibuf + BLOCK_SIZE * i, obuf + BLOCK_SIZE * i);
 			for (j = 0; j < BLOCK_SIZE; j++) {
-				obuf[i * BLOCK_SIZE + j] ^= iv[j];
+				obuf[i * BLOCK_SIZE + j] ^= ctx->iv[j];
 			}
-			memcpy(iv, buf + BLOCK_SIZE * i, BLOCK_SIZE);
+			memcpy(ctx->iv, buf + BLOCK_SIZE * i, BLOCK_SIZE);
 		}
 	}
 
@@ -96,14 +115,32 @@ static bool final(RzCrypto *cry, const ut8 *buf, int len) {
 	return update(cry, buf, len);
 }
 
+static bool aes_cbc_init(RzCrypto *cry) {
+	rz_return_val_if_fail(cry, false);
+
+	cry->user = RZ_NEW0(AesCbcCtx);
+	return cry->user != NULL;
+}
+
+static bool aes_cbc_fini(RzCrypto *cry) {
+	rz_return_val_if_fail(cry, false);
+
+	free(cry->user);
+	return true;
+}
+
 RzCryptoPlugin rz_crypto_plugin_aes_cbc = {
 	.name = "aes-cbc",
+	.author = "rakholiyajenish.07",
+	.license = "LGPL-3",
 	.set_key = aes_cbc_set_key,
 	.get_key_size = aes_cbc_get_key_size,
 	.set_iv = aes_cbc_set_iv,
 	.use = aes_cbc_use,
 	.update = update,
-	.final = final
+	.final = final,
+	.init = aes_cbc_init,
+	.fini = aes_cbc_fini,
 };
 
 #ifndef RZ_PLUGIN_INCORE

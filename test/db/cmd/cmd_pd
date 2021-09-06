@@ -258,7 +258,7 @@ EOF
 RUN
 
 NAME=pd bits hint
-FILE=-
+FILE==
 ARGS=-a snes
 CMDS=<<EOF
 e asm.bytes=true
@@ -1122,7 +1122,7 @@ EOF
 RUN
 
 NAME=bin.str.enc error handling
-FILE=-
+FILE==
 CMDS=<<EOF
 (test_str.enc enc; e bin.str.enc=$0; e bin.str.enc)
 .(test_str.enc UTF-32LE)
@@ -1379,7 +1379,9 @@ CMDS=<<EOF
 e asm.bytes=true
 e asm.arch=x86
 e asm.bits=64
+fs relocs
 f reloc.test @ 0x1
+fs *
 pdJ 1 @ 0x0
 EOF
 EXPECT=<<EOF
@@ -1388,7 +1390,7 @@ EOF
 RUN
 
 NAME=pdJ string - oldshell
-ARGS=-ecfg.newshell=false
+ARGS=-ecfg.oldshell=true
 FILE=malloc://128
 CMDS=<<EOF
 w Snoo"ping as" usual,
@@ -1400,8 +1402,8 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pdJ string - newshell
-ARGS=-ecfg.newshell=true
+NAME=pdJ string - rzshell
+ARGS=-ecfg.oldshell=false
 FILE=malloc://128
 CMDS=<<EOF
 w "Snoo\"ping as\" usual,"
@@ -1456,8 +1458,8 @@ pdJ 1 @ 0x080483ec
 EOF
 EXPECT=<<EOF
 [{"offset":134514169,"arrow":134514133,"text":"|       `=< 0x080485f9      72da           if (((unsigned) var) < 0) goto 0x80485d5"}]
-[{"offset":134513644,"text":"            ; sym.imp.__libc_start_main"},{"offset":134513644,"text":"            ; int __libc_start_main(func main, int argc, char **ubp_av, func init, func fini, func rtld_fini, void *stack_end)"},{"offset":134513644,"text":"            0x080483ec      e873ffffff     134513508,eip,4,esp,-=,esp,=[],eip,="}]
-[{"offset":134513644,"text":"            0x080483ec      e873ffffff     134513508,eip,4,esp,-=,esp,=[],eip,= ; sym.imp.__libc_start_main ; int __libc_start_main(func main, int argc, char **ubp_av, func init, func fini, func rtld_fini, void *stack_end)"}]
+[{"offset":134513644,"text":"            ; sym.imp.__libc_start_main"},{"offset":134513644,"text":"            ; int __libc_start_main(void *main, int argc, char **ubp_av, void *init, void *fini, void *rtld_fini, void *stack_end)"},{"offset":134513644,"text":"            0x080483ec      e873ffffff     134513508,eip,4,esp,-=,esp,=[],eip,="}]
+[{"offset":134513644,"text":"            0x080483ec      e873ffffff     134513508,eip,4,esp,-=,esp,=[],eip,= ; sym.imp.__libc_start_main ; int __libc_start_main(void *main, int argc, char **ubp_av, void *init, void *fini, void *rtld_fini, void *stack_end)"}]
 EOF
 RUN
 
@@ -1495,7 +1497,7 @@ EOF
 RUN
 
 NAME=pdJ asm.xrefs.fold asm.xrefs.max
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.bytes=true
 s 0
@@ -1524,7 +1526,7 @@ EOF
 RUN
 
 NAME=pd0~{} - crash
-FILE=-
+FILE==
 CMDS=<<EOF
 e scr.null=true
 pd0~{}
@@ -1534,7 +1536,7 @@ EOF
 RUN
 
 NAME=pI - crash
-FILE=-
+FILE==
 CMDS=<<EOF
 e scr.null=true
 pI 0x200
@@ -1544,7 +1546,7 @@ EOF
 RUN
 
 NAME=pC - crash
-FILE=-
+FILE==
 CMDS=<<EOF
 e scr.null=true
 pC 0x200
@@ -1651,7 +1653,7 @@ EOF
 RUN
 
 NAME=pd @B
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.bytes=true
 e asm.functions=false
@@ -1943,7 +1945,7 @@ EOF
 RUN
 
 NAME=pdJ with backslashes, quotation marks, str.escbslash and bin.str.enc
-FILE=-
+FILE==
 CMDS=<<EOF
 e io.cache=true
 e asm.arch=x86
@@ -2196,7 +2198,7 @@ EXPECT=<<EOF
 |           0x00005af3      4c8d05660c01.  lea   r8, [0x00016760]
 |           0x00005afa      488d0def0b01.  lea   rcx, [0x000166f0]
 |           0x00005b01      488d3d68e5ff.  lea   rdi, [main]           ; 0x4070 ; "AWAVAUATU\x89\xfdSH\x89\xf3H\x83\xecXH\x8b>dH\x8b\x04%("
-\           0x00005b08      ff150ac30100   call  qword [reloc.__libc_start_main] ; [0x21e18:8]=0
+\           0x00005b08      ff150ac30100   call  qword [reloc.__libc_start_main] ; [reloc.__libc_start_main:8]=0x23d10 reloc.target.__libc_start_main
 EOF
 RUN
 
@@ -2299,7 +2301,7 @@ aaa
 pdf @ 0x08048484~:1
 EOF
 EXPECT=<<EOF
-sym.parell (char *s);
+sym.parell (const char *s);
 EOF
 RUN
 
@@ -2313,7 +2315,7 @@ aaa
 pdf @ 0x08048484~:1
 EOF
 EXPECT=<<EOF
-parell (char *s);
+parell (const char *s);
 EOF
 RUN
 

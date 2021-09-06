@@ -31,7 +31,6 @@ RZ_LIB_VERSION_HEADER(rz_heap_glibc);
 #define FASTBIN_IDX_TO_SIZE(i) ((SZ * 4) + (SZ * 2) * (i - 1))
 #define BITSPERMAP             (1U << BINMAPSHIFT)
 #define BINMAPSIZE             (NBINS / BITSPERMAP)
-#define MAX(a, b)              (((a) > (b)) ? (a) : (b))
 #define NPAD                   -6
 #define TCACHE_MAX_BINS        64
 #define TCACHE_FILL_COUNT      7
@@ -48,8 +47,6 @@ RZ_LIB_VERSION_HEADER(rz_heap_glibc);
 #define TC_SZ_64  0x10
 
 // Introduced with glibc 2.32
-#define PROTECT_PTR(pos, ptr) \
-	((__typeof(ptr))((((size_t)pos) >> 12) ^ ((size_t)ptr)))
 
 #define largebin_index_32(size) \
 	(((((ut32)(size)) >> 6) <= 38) ? 56 + (((ut32)(size)) >> 6) : ((((ut32)(size)) >> 9) <= 20) ? 91 + (((ut32)(size)) >> 9) \
@@ -73,6 +70,8 @@ RZ_LIB_VERSION_HEADER(rz_heap_glibc);
 #define largebin_index(size) \
 	(SZ == 8 ? largebin_index_64(size) : largebin_index_32(size))
 
+#define fastbin_index(size) \
+	(SZ == 8 ? (size >> 4) - 2 : (size >> 3) - 2)
 /* Not works 32 bit on 64 emulation
 #define largebin_index(size) \
   (SZ == 8 ? largebin_index_64 (size)                          \
@@ -222,25 +221,15 @@ typedef struct rz_malloc_state {
 	int have_fast_chunks; /* have fast chunks */
 	unsigned int attached_threads; /* threads attached */
 
-	/*32 bits members*/
-	ut32 fastbinsY_32[NFASTBINS + 1]; /* array of fastchunks */
-	ut32 top_32; /* top chunk's base addr */
-	ut32 last_remainder_32; /* remainder top chunk's addr */
-	ut32 bins_32[NBINS * 2 - 2]; /* array of remainder free chunks */
-	ut32 next_32; /* double linked list of chunks */
-	ut32 next_free_32; /* double linked list of free chunks */
-	ut32 system_mem_32; /* current allocated memory of current arena */
-	ut32 max_system_mem_32; /* maximum system memory */
-
 	/*64 bits members */
-	ut64 fastbinsY_64[NFASTBINS]; /* array of fastchunks */
-	ut64 top_64; /* top chunk's base addr */
-	ut64 last_remainder_64; /* remainder top chunk's addr */
-	ut64 bins_64[NBINS * 2 - 2]; /* array of remainder free chunks */
-	ut64 next_64; /* double linked list of chunks */
-	ut64 next_free_64; /* double linked list of free chunks */
-	ut64 system_mem_64; /* current allocated memory of current arena */
-	ut64 max_system_mem_64; /* maximum system memory */
+	ut64 fastbinsY[NFASTBINS]; /* array of fastchunks */
+	ut64 top; /* top chunk's base addr */
+	ut64 last_remainder; /* remainder top chunk's addr */
+	ut64 bins[NBINS * 2 - 2]; /* array of remainder free chunks */
+	ut64 next; /* double linked list of chunks */
+	ut64 next_free; /* double linked list of free chunks */
+	ut64 system_mem; /* current allocated memory of current arena */
+	ut64 max_system_mem; /* maximum system memory */
 } MallocState;
 
 typedef struct rz_heap_info_32 {
@@ -275,6 +264,66 @@ typedef enum rz_heap_bin_type {
 	RZ_HEAP_BIN_SMALL,
 	RZ_HEAP_BIN_LARGE
 } RzHeapBinType;
+
+typedef struct rz_heap_chunk_list_item {
+	ut64 addr; /* Base addr of the chunk */
+	ut64 size; /* Size of the chunk */
+	char *status; /* Status of the chunk, allocated/free/corrupted */
+} RzHeapChunkListItem;
+
+typedef struct rz_arena_list_item {
+	ut64 addr; /* Base addr of the arena */
+	char *type; /* Type of arena, main/thread */
+	MallocState *arena; /* The MallocState for the arena */
+} RzArenaListItem;
+
+typedef struct rz_heap_chunk_simple {
+	ut64 addr; /* Base addr of the chunk*/
+	ut64 prev_size; /* size of prev_chunk*/
+	ut64 size; /* size of chunk */
+	bool non_main_arena; /* flag for NON_MAIN_ARENA */
+	bool prev_inuse; /* flag for PREV_INUSE*/
+	bool is_mmapped; /* flag for IS_MMAPPED*/
+	ut64 fd; /* fd pointer, only if free */
+	ut64 bk; /* bk pointer, only if free */
+	ut64 fd_nextsize; /* fd nextsize pointer, only if free */
+	ut64 bk_nextsize; /* bk nextsize pointer, only if free */
+} RzHeapChunkSimple;
+
+typedef struct rz_heap_bin {
+	ut64 addr;
+	ut64 size;
+	ut64 fd;
+	ut64 bk;
+	int bin_num;
+	char *type;
+	RzList *chunks; /* list of chunks in the bins */
+	char *message; /* indicating the list is corrupted or double free*/
+} RzHeapBin;
+
+RZ_API RzHeapChunkSimple *rz_heap_chunk_wrapper_32(RzCore *core, ut32 addr);
+RZ_API RzHeapChunkSimple *rz_heap_chunk_wrapper_64(RzCore *core, ut64 addr);
+
+RZ_API RzHeapChunk_64 *rz_heap_get_chunk_at_addr_64(RzCore *core, ut64 addr);
+RZ_API RzHeapChunk_32 *rz_heap_get_chunk_at_addr_32(RzCore *core, ut32 addr);
+
+RZ_API RzList *rz_heap_arenas_list_64(RzCore *core, ut64 m_arena, MallocState *main_arena);
+RZ_API RzList *rz_heap_arenas_list_32(RzCore *core, ut32 m_arena, MallocState *main_arena);
+
+RZ_API RzList *rz_heap_chunks_list_64(RzCore *core, MallocState *main_arena, ut64 m_arena, ut64 m_state, bool top_chunk);
+RZ_API RzList *rz_heap_chunks_list_32(RzCore *core, MallocState *main_arena, ut32 m_arena, ut32 m_state, bool top_chunk);
+
+RZ_API bool rz_heap_resolve_main_arena_64(RzCore *core, ut64 *m_arena);
+RZ_API bool rz_heap_resolve_main_arena_32(RzCore *core, ut32 *m_arena);
+
+RZ_API bool rz_heap_update_main_arena_64(RzCore *core, ut64 m_arena, MallocState *main_arena);
+RZ_API bool rz_heap_update_main_arena_32(RzCore *core, ut32 m_arena, MallocState *main_arena);
+
+RZ_API RzList *rz_heap_tcache_list_64(RzCore *core, ut64 m_arena, MallocState *main_arena, bool main_thread_only);
+RZ_API RzList *rz_heap_tcache_list_32(RzCore *core, ut32 m_arena, MallocState *main_arena, bool main_thread_only);
+
+RZ_API void rz_heap_bin_free_64(RzHeapBin *bin);
+RZ_API void rz_heap_bin_free_32(RzHeapBin *bin);
 
 #ifdef __cplusplus
 }

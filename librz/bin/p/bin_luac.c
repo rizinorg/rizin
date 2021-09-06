@@ -16,7 +16,7 @@ static bool check_buffer(RzBuffer *buff) {
 	return false;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
 	ut8 MAJOR_MINOR_VERSION;
 	LuacBinInfo *bin_info_obj = NULL;
 	LuaProto *proto = NULL;
@@ -33,13 +33,17 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 
 	if (major != 5) {
 		eprintf("currently support lua 5.x only\n");
-		return NULL;
+		return false;
 	}
 
 	switch (minor) {
 	case 4:
 		proto = lua_parse_body_54(buf, 0x20, bf->size);
 		general_info = lua_parse_header_54(bf, major, minor);
+		break;
+	case 3:
+		proto = lua_parse_body_53(buf, 0x22, bf->size);
+		general_info = lua_parse_header_53(bf, major, minor);
 		break;
 	default:
 		proto = NULL;
@@ -48,7 +52,6 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 		return false;
 	}
 
-	// how to free it ? in .finit?
 	bin_info_obj = luac_build_info(proto);
 	if (bin_info_obj == NULL) {
 		lua_free_proto_entry(proto);
@@ -61,7 +64,7 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 	lua_free_proto_entry(proto);
 	proto = NULL;
 
-	*bin_obj = bin_info_obj;
+	obj->bin_obj = bin_info_obj;
 	return true;
 }
 
@@ -86,7 +89,7 @@ static RzList *sections(RzBinFile *bf) {
 		return NULL;
 	}
 
-	return bin_info_obj->section_list;
+	return rz_list_clone(bin_info_obj->section_list);
 }
 
 static RzList *symbols(RzBinFile *bf) {
@@ -134,11 +137,11 @@ RzBinPlugin rz_bin_plugin_luac = {
 	.check_buffer = &check_buffer,
 	.baddr = NULL,
 	.entries = &entries,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
 	.symbols = &symbols,
 	.info = &info,
 	.strings = &strings,
-	.fini = NULL
 };
 
 #ifndef RZ_PLUGIN_INCORE

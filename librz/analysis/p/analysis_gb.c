@@ -37,22 +37,6 @@ static ut8 gb_op_calljump(RzAnalysis *a, RzAnalysisOp *op, const ut8 *data, ut64
 	return true;
 }
 
-#if 0
-static inline int gb_analysis_esil_banksw (RzAnalysisOp *op)							//remove that
-{
-	ut64 base = op->dst->base;
-	if (op->addr < 0x4000 && 0x1fff < base && base < 0x4000) {
-		rz_strbuf_set (&op->esil, "mbcrom=0,?a%0x20,mbcrom=a-1");				//if a is a multiple of 0x20 mbcrom is 0, else it gets its value from a
-		return true;
-	}
-	if (base < 0x6000 && 0x3fff < base) {
-		rz_strbuf_set (&op->esil, "mbcram=a");
-		return true;
-	}
-	return false;
-}
-#endif
-
 static void gb_analysis_esil_call(RzAnalysisOp *op) {
 	rz_strbuf_setf(&op->esil, "2,sp,-=,pc,sp,=[2],%" PFMT64d ",pc,:=", (op->jump & 0xffff));
 }
@@ -67,7 +51,7 @@ static inline void gb_analysis_esil_ccall(RzAnalysisOp *op, const ut8 data) {
 	default:
 		cond = 'C';
 	}
-	if (op->cond == RZ_ANALYSIS_COND_EQ) {
+	if (op->cond == RZ_TYPE_COND_EQ) {
 		rz_strbuf_setf(&op->esil, "%c,?{,2,sp,-=,pc,sp,=[2],%" PFMT64d ",pc,:=,}", cond, (op->jump & 0xffff));
 	} else {
 		rz_strbuf_setf(&op->esil, "%c,!,?{,2,sp,-=,pc,sp,=[2],%" PFMT64d ",pc,:=,}", cond, (op->jump & 0xffff));
@@ -85,7 +69,7 @@ static inline void gb_analysis_esil_cret(RzAnalysisOp *op, const ut8 data) {
 	} else {
 		cond = 'Z';
 	}
-	if (op->cond == RZ_ANALYSIS_COND_EQ) {
+	if (op->cond == RZ_TYPE_COND_EQ) {
 		rz_strbuf_setf(&op->esil, "%c,?{,sp,[2],pc,:=,2,sp,+=,}", cond);
 	} else {
 		rz_strbuf_setf(&op->esil, "%c,!,?{,sp,[2],pc,:=,2,sp,+=,}", cond);
@@ -104,7 +88,7 @@ static inline void gb_analysis_esil_cjmp(RzAnalysisOp *op, const ut8 data) {
 	default:
 		cond = 'C';
 	}
-	if (op->cond == RZ_ANALYSIS_COND_EQ) {
+	if (op->cond == RZ_TYPE_COND_EQ) {
 		rz_strbuf_setf(&op->esil, "%c,?{,0x%" PFMT64x ",pc,:=,}", cond, (op->jump & 0xffff));
 	} else {
 		rz_strbuf_setf(&op->esil, "%c,!,?{,0x%" PFMT64x ",pc,:=,}", cond, (op->jump & 0xffff));
@@ -264,9 +248,9 @@ static inline void gb_analysis_cond(RzReg *reg, RzAnalysisOp *op, const ut8 data
 	op->src[0] = rz_analysis_value_new();
 	op->src[0]->imm = 1;
 	if (data & 0x8) {
-		op->cond = RZ_ANALYSIS_COND_EQ;
+		op->cond = RZ_TYPE_COND_EQ;
 	} else {
-		op->cond = RZ_ANALYSIS_COND_NE;
+		op->cond = RZ_TYPE_COND_NE;
 	}
 	switch (data) {
 	case 0x20:

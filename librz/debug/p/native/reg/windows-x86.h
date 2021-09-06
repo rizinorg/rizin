@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2015 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 return strdup(
 	"=PC	eip\n"
 	"=SP	esp\n"

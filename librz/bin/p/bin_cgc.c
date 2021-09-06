@@ -6,7 +6,10 @@
 #include "bin_elf.inc"
 
 extern struct rz_bin_dbginfo_t rz_bin_dbginfo_elf;
-extern struct rz_bin_write_t rz_bin_write_elf;
+
+static void destroy(RzBinFile *bf) {
+	Elf_(rz_bin_elf_free)(bf->o->bin_obj);
+}
 
 static bool check_buffer(RzBuffer *buf) {
 	ut8 tmp[SCGCMAG + 1];
@@ -21,7 +24,7 @@ static RzBuffer *create(RzBin *bin, const ut8 *code, int codelen, const ut8 *dat
 	ut16 ehdrsz, phdrsz;
 	ut32 p_vaddr, p_paddr, p_fs, p_fs2;
 	ut32 baddr = 0x8048000;
-	RzBuffer *buf = rz_buf_new();
+	RzBuffer *buf = rz_buf_new_with_bytes(NULL, 0);
 
 #define B(x, y)    rz_buf_append_bytes(buf, (const ut8 *)(x), y)
 #define D(x)       rz_buf_append_ut32(buf, x)
@@ -107,12 +110,13 @@ RzBinPlugin rz_bin_plugin_cgc = {
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
 	.load_buffer = load_buffer,
-	.destroy = &destroy,
 	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.boffset = &boffset,
 	.binsym = &binsym,
 	.entries = &entries,
+	.virtual_files = &virtual_files,
+	.maps = &maps,
 	.sections = &sections,
 	.symbols = &symbols,
 	.minstrlen = 4,
@@ -123,11 +127,9 @@ RzBinPlugin rz_bin_plugin_cgc = {
 	.libs = &libs,
 	.relocs = &relocs,
 	.create = &create,
-	.patch_relocs = &patch_relocs,
-	.write = &rz_bin_write_elf,
 	.file_type = get_file_type,
 	.regstate = regstate,
-	.maps = maps,
-	.section_type_to_string = &Elf_(section_type_to_string),
-	.section_flag_to_rzlist = &Elf_(section_flag_to_rzlist),
+	.section_type_to_string = &Elf_(rz_bin_elf_section_type_to_string),
+	.section_flag_to_rzlist = &Elf_(rz_bin_elf_section_flag_to_rzlist),
+	.destroy = destroy
 };

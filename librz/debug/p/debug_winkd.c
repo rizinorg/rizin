@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2014-2017 The Lemon Man
+// SPDX-FileCopyrightText: 2014-2017 LemonBoy
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_debug.h>
@@ -141,7 +141,7 @@ static int rz_debug_winkd_breakpoint(RzBreakpoint *bp, RzBreakpointItem *b, bool
 	return winkd_bkpt(wctx, b->addr, set, b->hw, tag);
 }
 
-static int rz_debug_winkd_init(RzDebug *dbg) {
+static bool rz_debug_winkd_init(RzDebug *dbg, void **user) {
 	return true;
 }
 

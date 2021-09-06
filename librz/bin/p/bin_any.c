@@ -44,12 +44,10 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->has_va = 0;
 	ret->has_nx = 0;
 	ret->dbg_info = 0;
-	ret->dbg_info = 0;
-	ret->dbg_info = 0;
 	return ret;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
 	return true;
 }
 

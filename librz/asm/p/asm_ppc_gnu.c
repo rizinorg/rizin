@@ -50,7 +50,11 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 
 	/* prepare disassembler */
 	memset(&disasm_obj, '\0', sizeof(struct disassemble_info));
-	disasm_obj.disassembler_options = (a->bits == 64) ? "64" : "";
+	if (RZ_STR_ISNOTEMPTY(a->cpu)) {
+		disasm_obj.disassembler_options = rz_str_newf("%s,%s", (a->bits == 64) ? "64" : "", a->cpu);
+	} else if (a->bits == 64) {
+		disasm_obj.disassembler_options = rz_str_new("64");
+	}
 	disasm_obj.buffer = bytes;
 	disasm_obj.read_memory_func = &ppc_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
@@ -74,6 +78,7 @@ RzAsmPlugin rz_asm_plugin_ppc_gnu = {
 	.name = "ppc.gnu",
 	.arch = "ppc",
 	.license = "GPL3",
+	.cpus = "booke,e300,e500,e500x2,e500mc,e440,e464,efs,ppcps,power4,power5,power6,power7,vsx",
 	.bits = 32 | 64,
 	.endian = RZ_SYS_ENDIAN_LITTLE | RZ_SYS_ENDIAN_BIG,
 	.desc = "PowerPC",

@@ -14,7 +14,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#if __APPLE__ && LIBC_HAVE_FORK
+#if __APPLE__ && HAVE_FORK
 #if !__POWERPC__
 #include <spawn.h>
 #endif
@@ -32,6 +32,17 @@
 #include <mach-o/nlist.h>
 #endif
 
+#if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
+#if defined(__APPLE__) || defined(__NetBSD__) || defined(__OpenBSD__)
+#include <util.h>
+#elif defined(__FreeBSD__) || defined(__DragonFly__)
+#include <libutil.h>
+#else
+#include <pty.h>
+#include <utmp.h>
+#endif
+#endif
+
 #if __UNIX__
 #include <sys/ioctl.h>
 #include <sys/resource.h>
@@ -42,14 +53,12 @@
 #endif
 #if __linux__ && !__ANDROID__
 #include <sys/personality.h>
-#include <pty.h>
-#include <utmp.h>
 #endif
-#if defined(__APPLE__) || defined(__NetBSD__) || defined(__OpenBSD__)
-#include <util.h>
-#elif defined(__FreeBSD__) || defined(__DragonFly__)
+#if defined(__FreeBSD__) || defined(__DragonFly__)
+#if HAVE_DECL_PROCCTL_ASLR_CTL
+#include <sys/procctl.h>
+#endif
 #include <sys/sysctl.h>
-#include <libutil.h>
 #endif
 #endif
 #ifdef _MSC_VER
@@ -58,14 +67,7 @@
 #define pid_t int
 #endif
 
-#if EMSCRIPTEN
-#undef HAVE_PTY
-#define HAVE_PTY 0
-#else
-#define HAVE_PTY __UNIX__ && !__ANDROID__ && LIBC_HAVE_FORK && !__sun
-#endif
-
-#if HAVE_PTY
+#if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
 static int (*dyn_openpty)(int *amaster, int *aslave, char *name, struct termios *termp, struct winsize *winp) = NULL;
 static int (*dyn_login_tty)(int fd) = NULL;
 static id_t (*dyn_forkpty)(int *amaster, char *name, struct termios *termp, struct winsize *winp) = NULL;
@@ -275,6 +277,12 @@ static void setASLR(RzRunProfile *r, int enabled) {
 	// the right way is to disable the aslr bit in the spawn call
 #elif __FreeBSD__ || __NetBSD__ || __DragonFly__
 	rz_sys_aslr(enabled);
+#if HAVE_DECL_PROCCTL_ASLR_CTL
+	int disabled = PROC_ASLR_FORCE_DISABLE;
+	if (procctl(P_PID, getpid(), PROC_ASLR_CTL, &disabled) == -1) {
+		rz_sys_aslr(0);
+	}
+#endif
 #else
 	// not supported for this platform
 #endif
@@ -282,7 +290,7 @@ static void setASLR(RzRunProfile *r, int enabled) {
 
 #if __APPLE__ && !__POWERPC__
 #else
-#if HAVE_PTY
+#if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
 static void restore_saved_fd(int saved, bool restore, int fd) {
 	if (saved == -1) {
 		return;
@@ -295,7 +303,7 @@ static void restore_saved_fd(int saved, bool restore, int fd) {
 #endif
 
 static int handle_redirection_proc(const char *cmd, bool in, bool out, bool err) {
-#if HAVE_PTY
+#if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
 	if (!dyn_forkpty) {
 		// No forkpty api found, maybe we should fallback to just fork without any pty allocated
 		return -1;
@@ -669,7 +677,7 @@ RZ_API const char *rz_run_help(void) {
 	       "# nice=5\n";
 }
 
-#if HAVE_PTY
+#if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
 static int fd_forward(int in_fd, int out_fd, char **buff) {
 	int size = 0;
 
@@ -720,7 +728,7 @@ static RzThreadFunctionRet exit_process(RzThread *th) {
 #endif
 
 static int redirect_socket_to_pty(RzSocket *sock) {
-#if HAVE_PTY
+#if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
 	// directly duplicating the fds using dup2() creates problems
 	// in case of interactive applications
 	int fdm, fds;
@@ -800,7 +808,7 @@ static int redirect_socket_to_pty(RzSocket *sock) {
 RZ_API int rz_run_config_env(RzRunProfile *p) {
 	int ret;
 
-#if HAVE_PTY
+#if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
 	dyn_init();
 #endif
 
@@ -1016,7 +1024,11 @@ RZ_API int rz_run_config_env(RzRunProfile *p) {
 #if __WINDOWS__
 		eprintf("rz-run: libpath unsupported for this platform\n");
 #elif __HAIKU__
-		rz_sys_setenv("LIBRARY_PATH", p->_libpath);
+		char *orig = rz_sys_getenv("LIBRARY_PATH");
+		char *newlib = rz_str_newf("%s:%s", p->_libpath, orig);
+		rz_sys_setenv("LIBRARY_PATH", newlib);
+		free(newlib);
+		free(orig);
 #elif __APPLE__
 		rz_sys_setenv("DYLD_LIBRARY_PATH", p->_libpath);
 #else
@@ -1064,12 +1076,12 @@ RZ_API int rz_run_config_env(RzRunProfile *p) {
 
 // NOTE: return value is like in unix return code (0 = ok, 1 = not ok)
 RZ_API int rz_run_start(RzRunProfile *p) {
-#if LIBC_HAVE_FORK
+#if HAVE_EXECVE
 	if (p->_execve) {
 		exit(rz_sys_execv(p->_program, (char *const *)p->_args));
 	}
 #endif
-#if __APPLE__ && !__POWERPC__ && LIBC_HAVE_FORK
+#if __APPLE__ && !__POWERPC__ && HAVE_FORK
 	posix_spawnattr_t attr = { 0 };
 	pid_t pid = -1;
 	int ret;
@@ -1217,7 +1229,7 @@ RZ_API int rz_run_start(RzRunProfile *p) {
 #endif
 
 		if (p->_nice) {
-#if __UNIX__ && !defined(__HAIKU__)
+#if HAVE_NICE
 			if (nice(p->_nice) == -1) {
 				return 1;
 			}
@@ -1245,13 +1257,12 @@ RZ_API int rz_run_start(RzRunProfile *p) {
 				}
 			}
 			setsid();
-#if !LIBC_HAVE_FORK
+#if HAVE_EXECVE
 			exit(rz_sys_execv(p->_program, (char *const *)p->_args));
 #endif
 #endif
 		}
-// TODO: must be HAVE_EXECVE
-#if LIBC_HAVE_FORK
+#if HAVE_EXECVE
 		exit(rz_sys_execv(p->_program, (char *const *)p->_args));
 #endif
 	}

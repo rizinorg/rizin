@@ -1,0 +1,72 @@
+/
+type=rizin rz-db project
+version=1
+
+/core
+blocksize=0x100
+offset=0x0
+
+/core/analysis
+/core/analysis/blocks
+/core/analysis/cc
+/core/analysis/classes
+/core/analysis/classes/attrs
+/core/analysis/functions
+/core/analysis/hints
+/core/analysis/imports
+/core/analysis/meta
+/core/analysis/meta/spaces
+name=CS
+spacestack=["*"]
+/core/analysis/meta/spaces/spaces
+bin=s
+/core/analysis/pins
+/core/analysis/types
+*aligned_alloc=func
+NSString=struct
+func.memcpy.arg.0=void *,s1
+func.memcpy.arg.1=const void *,s2
+func.memcpy.arg.2=size_t,n
+func.memcpy.args=3
+func.memcpy.ret=void *
+memcpy=func
+struct.NSString=p0,p1,str,len
+struct.NSString.len=int,0,0
+struct.NSString.len.meta=4
+struct.NSString.p0=void *,0,0
+struct.NSString.p0.meta=4
+struct.NSString.p1=size_t,0,0
+struct.NSString.p1.meta=4
+struct.NSString.str=char *,0,0
+struct.NSString.str.meta=4
+
+/core/analysis/xrefs
+
+/core/analysis/zigns
+
+/core/analysis/zigns/spaces
+name=zs
+spacestack=["*"]
+
+/core/analysis/zigns/spaces/spaces
+
+/core/config
+
+/core/file
+relative=../bins/elf/crackme0x05
+
+/core/flags
+base=0
+realnames=0
+/core/flags/flags
+/core/flags/spaces
+name=fs
+spacestack=["*"]
+/core/flags/spaces/spaces
+classes=s
+relocs=s
+sections=s
+segments=s
+symbols=s
+/core/flags/tags
+/core/flags/zones

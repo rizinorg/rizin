@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2020 phakeobj
+// SPDX-License-Identifier: LGPL-3.0-only
+
 static char *hack_handle_dp_imm(ut32 insn) {
 	char *buf_asm = NULL;
 	char *mnemonic = NULL;

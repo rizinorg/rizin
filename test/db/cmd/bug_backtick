@@ -1,5 +1,5 @@
 NAME=t/bug_backtick
-FILE=-
+FILE==
 BROKEN=1
 CMDS=p8 3`~`
 EXPECT=<<EOF

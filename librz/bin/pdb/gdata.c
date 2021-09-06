@@ -6,7 +6,6 @@
 #include "stream_file.h"
 #include "tpi.h"
 
-///////////////////////////////////////////////////////////////////////////////
 static int parse_global(char *data, int data_size, SGlobal *global) {
 	unsigned int read_bytes = 2;
 
@@ -14,7 +13,7 @@ static int parse_global(char *data, int data_size, SGlobal *global) {
 	READ4(read_bytes, data_size, global->offset, data, ut32);
 	READ2(read_bytes, data_size, global->segment, data, ut8);
 	if (global->leaf_type == 0x110E) {
-		parse_sctring(&global->name, (unsigned char *)data, &read_bytes, data_size);
+		parse_scstring(&global->name, (unsigned char *)data, &read_bytes, data_size);
 	} else {
 		READ1(read_bytes, data_size, global->name.size, data, ut8);
 		init_scstring(&global->name, global->name.size, data);
@@ -23,7 +22,6 @@ static int parse_global(char *data, int data_size, SGlobal *global) {
 	return read_bytes;
 }
 
-///////////////////////////////////////////////////////////////////////////////
 void parse_gdata_stream(void *stream, RZ_STREAM_FILE *stream_file) {
 	unsigned short len = 0;
 	unsigned short leaf_type = 0;
@@ -69,7 +67,6 @@ void parse_gdata_stream(void *stream, RZ_STREAM_FILE *stream_file) {
 	//            self.funcs[g.name] = g
 }
 
-///////////////////////////////////////////////////////////////////////////////
 void free_gdata_stream(void *stream) {
 	SGDATAStream *data_stream = (SGDATAStream *)stream;
 	SGlobal *global = 0;

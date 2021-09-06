@@ -19,7 +19,10 @@ EXPECT=<<EOF
     0 * classes
   110 * functions
    38 * imports
+    0 * platform.ports
     0 * registers
+    0 * registers.extended
+    0 * registers.mmio
    38 * relocs
     4 * sections
     0 * segments
@@ -59,7 +62,10 @@ EXPECT=<<EOF
     0 * classes
    85 * functions
    38 * imports
+    0 * platform.ports
     0 * registers
+    0 * registers.extended
+    0 * registers.mmio
    38 * relocs
     5 * sections
     0 * segments

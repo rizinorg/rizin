@@ -306,7 +306,7 @@ RZ_API void rz_sys_backtrace(void) {
 }
 
 RZ_API int rz_sys_sleep(int secs) {
-#if HAS_CLOCK_NANOSLEEP
+#if HAVE_CLOCK_NANOSLEEP && defined(CLOCK_MONOTONIC)
 	struct timespec rqtp;
 	rqtp.tv_sec = secs;
 	rqtp.tv_nsec = 0;
@@ -320,7 +320,7 @@ RZ_API int rz_sys_sleep(int secs) {
 }
 
 RZ_API int rz_sys_usleep(int usecs) {
-#if HAS_CLOCK_NANOSLEEP
+#if HAVE_CLOCK_NANOSLEEP && defined(CLOCK_MONOTONIC)
 	struct timespec rqtp;
 	rqtp.tv_sec = usecs / 1000000;
 	rqtp.tv_nsec = (usecs - (rqtp.tv_sec * 1000000)) * 1000;
@@ -1301,7 +1301,12 @@ RZ_API const char *rz_sys_prefix(const char *pfx) {
 		if (pid_to_path) {
 			char *t = rz_file_dirname(pid_to_path);
 			free(pid_to_path);
-			prefix = rz_file_dirname(t);
+			// When rz_sys_prefix is called from a unit test or from a
+			// not-yet-installed rizin binary this would return the wrong path.
+			// In those cases, just return RZ_PREFIX.
+			if (rz_str_endswith(t, RZ_SYS_DIR RZ_BINDIR)) {
+				prefix = rz_file_dirname(t);
+			}
 			free(t);
 		}
 		if (!prefix) {

@@ -153,7 +153,7 @@ EOF
 RUN
 
 NAME=arm 16 BE 4 bytes instruction
-FILE=-
+FILE==
 ARGS=-a arm -b 16
 CMDS=<<EOF
 e cfg.bigendian=1
@@ -467,7 +467,7 @@ EOF
 RUN
 
 NAME=arm subrel <256
-FILE=-
+FILE==
 CMDS=<<EOF
 wx 0c009fe5
 e asm.arch=arm
@@ -677,7 +677,7 @@ afva@main
 pdf@main
 EOF
 EXPECT=<<EOF
-/ int main (int argc, char **argv);
+/ int main (int argc, char **argv, char **envp);
 |           ; var int32_t var_ch @ fp-0xc
 |           ; var int32_t var_8h @ fp-0x8
 |           ; arg int argc @ r0
@@ -887,6 +887,45 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=test platform profiles for arm BCM 2835
+FILE=bins/arm/elf/hello_world
+CMDS=<<EOF
+e asm.cpu=arm1176
+e asm.platform=bcm2835
+aa
+f~AUX
+CC~Broadcom
+EOF
+EXPECT=<<EOF
+0x07e21500 1 AUX_ENABLES
+0x7e215000 1 AUX_IRQ
+0x7e215040 1 AUX_MU_IO_REG
+0x7e215044 1 AUX_MU_IER_REG
+0x7e215048 1 AUX_MU_IIR_REG
+0x7e21504c 1 AUX_MU_LCR_REG
+0x7e215050 1 AUX_MU_MCR_REG
+0x7e215054 1 AUX_MU_LSR_REG
+0x7e215058 1 AUX_MU_MSR_REG
+0x7e21505c 1 AUX_MU_SCRATCH
+0x7e215060 1 AUX_MU_CNTL_REG
+0x7e215064 1 AUX_MU_STAT_REG
+0x7e215068 1 AUX_MU_BAUD_REG
+0x7e215080 1 AUX_SPI0_CNTL0_REG
+0x7e215084 1 AUX_SPI0_CNTL1_REG
+0x7e215088 1 AUX_SPI0_STAT_REG
+0x7e215090 1 AUX_SPI0_IO_REG
+0x7e215094 1 AUX_SPI0_PEEK_REG
+0x7e2150c0 1 AUX_SPI1_CNTL0_REG
+0x7e2150c4 1 AUX_SPI1_CNTL1_REG
+0x7e2150c8 1 AUX_SPI1_STAT_REG
+0x7e2150d0 1 AUX_SPI1_IO_REG
+0x7e2150d4 1 AUX_SPI1_PEEK_REG
+0x7e205000 CCu "Broadcom Serial Controller 0 (BSC)"
+0x7e804000 CCu "Broadcom Serial Controller 1 (BSC)"
+0x7e805000 CCu "Broadcom Serial Controller 2 (BSC)"
+EOF
+RUN
+
 NAME=ao 16 after ao 32
 FILE=bins/arm/elf/hello_world
 CMDS=<<EOF
@@ -900,7 +939,7 @@ address: 0x568
 opcode: push {r3, lr}
 esilcost: 16
 disasm: push {r3, lr}
-pseudo: push (r3, lr) 
+pseudo: push (r3, lr)
 mnemonic: push
 mask: ffffffff
 prefix: 0
@@ -961,7 +1000,7 @@ EOF
 RUN
 
 NAME=arm show registers in table
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -1066,7 +1105,7 @@ EOF
 RUN
 
 NAME=thumb bx lr
-FILE=-
+FILE==
 CMDS=<<EOF
 wx 000090e50fe0a0e113ff2fe1000090e51eff2fe1
 e asm.arch=arm
@@ -1076,5 +1115,16 @@ afi~size
 EOF
 EXPECT=<<EOF
 size: 20
+EOF
+RUN
+
+NAME=aaef xrefs without pcache
+FILE=bins/arm/elf/hello_world
+CMDS=<<EOF
+aaa
+axt @ str.Hello_world
+EOF
+EXPECT=<<EOF
+main 0x512 [DATA] add r3, pc
 EOF
 RUN

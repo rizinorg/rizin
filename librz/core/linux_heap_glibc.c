@@ -30,7 +30,7 @@
 
 /**
  * \brief Find the address of a given symbol
- * \param core RzCore Pointer to the r2's core
+ * \param core RzCore Pointer to the Rizin's core
  * \param path Pointer to the binary path in which to look for the symbol
  * \param sym_name Pointer to the symbol's name to search for
  * \return address
@@ -47,9 +47,13 @@ static GHT GH(get_va_symbol)(RzCore *core, const char *path, const char *sym_nam
 	RzBinSymbol *s;
 
 	RzBinOptions opt;
-	rz_bin_options_init(&opt, -1, 0, 0, false);
-	bool res = rz_bin_open(bin, path, &opt);
-	if (!res) {
+	rz_bin_options_init(&opt, -1, 0, 0, false, false);
+	opt.obj_opts.elf_load_sections = rz_config_get_b(core->config, "elf.load.sections");
+	opt.obj_opts.elf_checks_sections = rz_config_get_b(core->config, "elf.checks.sections");
+	opt.obj_opts.elf_checks_segments = rz_config_get_b(core->config, "elf.checks.segments");
+
+	RzBinFile *libc_bf = rz_bin_open(bin, path, &opt);
+	if (!libc_bf) {
 		return vaddr;
 	}
 
@@ -61,8 +65,7 @@ static GHT GH(get_va_symbol)(RzCore *core, const char *path, const char *sym_nam
 		}
 	}
 
-	RzBinFile *libc_bf = rz_bin_cur(bin);
-	rz_bin_file_delete(bin, libc_bf->id);
+	rz_bin_file_delete(bin, libc_bf);
 	rz_bin_file_set_cur_binfile(bin, current_bf);
 	return vaddr;
 }
@@ -72,7 +75,7 @@ static inline GHT GH(align_address_to_size)(ut64 addr, ut64 align) {
 }
 
 static inline GHT GH(get_next_pointer)(RzCore *core, GHT pos, GHT next) {
-	return (core->dbg->glibc_version < 232) ? next : PROTECT_PTR(pos, next);
+	return (core->dbg->glibc_version < 232) ? next : (GHT)((pos >> 12) ^ next);
 }
 
 static GHT GH(get_main_arena_with_symbol)(RzCore *core, RzDebugMap *map) {
@@ -105,6 +108,9 @@ static GHT GH(get_main_arena_with_symbol)(RzCore *core, RzDebugMap *map) {
 }
 
 static bool GH(is_tcache)(RzCore *core) {
+	// NOTE This method of resolving libc fails in the following cases:
+	// 1. libc shared object file does not have version number
+	// 2. if another map has `libc-` in its absolute path
 	char *fp = NULL;
 	double v = 0;
 	if (rz_config_get_b(core->config, "cfg.debug")) {
@@ -126,6 +132,12 @@ static bool GH(is_tcache)(RzCore *core) {
 		return tcv != 0;
 	}
 	if (fp) {
+
+		// In case there is string `libc-` in path actual libc go to last occurrence of `libc-`
+		while (strstr(fp + 1, "libc-") != NULL) {
+			fp = strstr(fp + 1, "libc-");
+		}
+
 		v = rz_num_get_float(NULL, fp + 5);
 		core->dbg->glibc_version = (int)round((v * 100));
 	}
@@ -154,17 +166,17 @@ static void GH(update_arena_with_tc)(GH(RzHeap_MallocState_tcache) * cmain_arena
 	main_arena->have_fast_chunks = cmain_arena->have_fast_chunks;
 	main_arena->attached_threads = cmain_arena->attached_threads;
 	for (i = 0; i < NFASTBINS; i++) {
-		main_arena->GH(fastbinsY)[i] = cmain_arena->fastbinsY[i];
+		main_arena->fastbinsY[i] = cmain_arena->fastbinsY[i];
 	}
-	main_arena->GH(top) = cmain_arena->top;
-	main_arena->GH(last_remainder) = cmain_arena->last_remainder;
+	main_arena->top = cmain_arena->top;
+	main_arena->last_remainder = cmain_arena->last_remainder;
 	for (i = 0; i < NBINS * 2 - 2; i++) {
-		main_arena->GH(bins)[i] = cmain_arena->bins[i];
+		main_arena->bins[i] = cmain_arena->bins[i];
 	}
-	main_arena->GH(next) = cmain_arena->next;
-	main_arena->GH(next_free) = cmain_arena->next_free;
-	main_arena->GH(system_mem) = cmain_arena->system_mem;
-	main_arena->GH(max_system_mem) = cmain_arena->max_system_mem;
+	main_arena->next = cmain_arena->next;
+	main_arena->next_free = cmain_arena->next_free;
+	main_arena->system_mem = cmain_arena->system_mem;
+	main_arena->max_system_mem = cmain_arena->max_system_mem;
 }
 
 static void GH(update_arena_without_tc)(GH(RzHeap_MallocState) * cmain_arena, MallocState *main_arena) {
@@ -176,20 +188,27 @@ static void GH(update_arena_without_tc)(GH(RzHeap_MallocState) * cmain_arena, Ma
 	}
 	main_arena->attached_threads = 1;
 	for (i = 0; i < NFASTBINS; i++) {
-		main_arena->GH(fastbinsY)[i] = cmain_arena->fastbinsY[i];
+		main_arena->fastbinsY[i] = cmain_arena->fastbinsY[i];
 	}
-	main_arena->GH(top) = cmain_arena->top;
-	main_arena->GH(last_remainder) = cmain_arena->last_remainder;
+	main_arena->top = cmain_arena->top;
+	main_arena->last_remainder = cmain_arena->last_remainder;
 	for (i = 0; i < NBINS * 2 - 2; i++) {
-		main_arena->GH(bins)[i] = cmain_arena->bins[i];
+		main_arena->bins[i] = cmain_arena->bins[i];
 	}
-	main_arena->GH(next) = cmain_arena->next;
-	main_arena->GH(next_free) = cmain_arena->next_free;
-	main_arena->GH(system_mem) = cmain_arena->system_mem;
-	main_arena->GH(max_system_mem) = cmain_arena->max_system_mem;
+	main_arena->next = cmain_arena->next;
+	main_arena->next_free = cmain_arena->next_free;
+	main_arena->system_mem = cmain_arena->system_mem;
+	main_arena->max_system_mem = cmain_arena->max_system_mem;
 }
 
-static bool GH(update_main_arena)(RzCore *core, GHT m_arena, MallocState *main_arena) {
+/**
+ * \brief Store the MallocState struct of an arena with base address m_arena in main_arena
+ * \param core RzCore pointer
+ * \param m_arena The base address of malloc state struct of the arena
+ * \param main_arena The MallocState struct in which the data is stored
+ * \return True if the main_arena struct was successfully updated else False
+ */
+RZ_API bool GH(rz_heap_update_main_arena)(RzCore *core, GHT m_arena, MallocState *main_arena) {
 	const int tcache = rz_config_get_i(core->config, "dbg.glibc.tcache");
 	if (tcache) {
 		GH(RzHeap_MallocState_tcache) *cmain_arena = RZ_NEW0(GH(RzHeap_MallocState_tcache));
@@ -227,7 +246,8 @@ static void GH(get_brks)(RzCore *core, GHT *brk_start, GHT *brk_end) {
 		}
 	} else {
 		void **it;
-		rz_pvector_foreach (&core->io->maps, it) {
+		RzPVector *maps = rz_io_maps(core->io);
+		rz_pvector_foreach (maps, it) {
 			RzIOMap *map = *it;
 			if (map->name) {
 				if (strstr(map->name, "[heap]")) {
@@ -251,13 +271,13 @@ static void GH(print_arena_stats)(RzCore *core, GHT m_arena, MallocState *main_a
 	}
 
 	GHT apart[NSMALLBINS + 1] = { 0LL };
-	if (format == '*') {
+	if (format == RZ_OUTPUT_MODE_RIZIN) {
 		for (i = 0; i < NBINS * 2 - 2; i += 2) {
 			GHT addr = m_arena + align + SZ * i - SZ * 2;
-			GHT bina = main_arena->GH(bins)[i];
+			GHT bina = main_arena->bins[i];
 			rz_cons_printf("f chunk.%zu.bin = 0x%" PFMT64x "\n", i, (ut64)addr);
 			rz_cons_printf("f chunk.%zu.fd = 0x%" PFMT64x "\n", i, (ut64)bina);
-			bina = main_arena->GH(bins)[i + 1];
+			bina = main_arena->bins[i + 1];
 			rz_cons_printf("f chunk.%zu.bk = 0x%" PFMT64x "\n", i, (ut64)bina);
 		}
 		for (i = 0; i < BINMAPSIZE; i++) {
@@ -265,16 +285,16 @@ static void GH(print_arena_stats)(RzCore *core, GHT m_arena, MallocState *main_a
 		}
 		{ /* maybe use SDB instead of flags for this? */
 			char units[8];
-			rz_num_units(units, sizeof(units), main_arena->GH(max_system_mem));
+			rz_num_units(units, sizeof(units), main_arena->max_system_mem);
 			rz_cons_printf("f heap.maxmem = %s\n", units);
 
-			rz_num_units(units, sizeof(units), main_arena->GH(system_mem));
+			rz_num_units(units, sizeof(units), main_arena->system_mem);
 			rz_cons_printf("f heap.sysmem = %s\n", units);
 
-			rz_num_units(units, sizeof(units), main_arena->GH(next_free));
+			rz_num_units(units, sizeof(units), main_arena->next_free);
 			rz_cons_printf("f heap.nextfree = %s\n", units);
 
-			rz_num_units(units, sizeof(units), main_arena->GH(next));
+			rz_num_units(units, sizeof(units), main_arena->next);
 			rz_cons_printf("f heap.next= %s\n", units);
 		}
 		return;
@@ -297,15 +317,15 @@ static void GH(print_arena_stats)(RzCore *core, GHT m_arena, MallocState *main_a
 		}
 		PRINT_GA(" chunksize:");
 		PRINTF_BA(" == %04zu ", k);
-		PRINTF_GA("0x%" PFMT64x, (ut64)main_arena->GH(fastbinsY)[i]);
+		PRINTF_GA("0x%" PFMT64x, (ut64)main_arena->fastbinsY[i]);
 		PRINT_GA(",\n");
 	}
 	PRINT_GA("}\n");
 	PRINT_GA("  top = ");
-	PRINTF_BA("0x%" PFMT64x, (ut64)main_arena->GH(top));
+	PRINTF_BA("0x%" PFMT64x, (ut64)main_arena->top);
 	PRINT_GA(",\n");
 	PRINT_GA("  last_remainder = ");
-	PRINTF_BA("0x%" PFMT64x, (ut64)main_arena->GH(last_remainder));
+	PRINTF_BA("0x%" PFMT64x, (ut64)main_arena->last_remainder);
 	PRINT_GA(",\n");
 	PRINT_GA("  bins {\n");
 
@@ -358,10 +378,10 @@ static void GH(print_arena_stats)(RzCore *core, GHT m_arena, MallocState *main_a
 		}
 		GHT bin = m_arena + align + SZ * i - SZ * 2;
 		PRINTF_GA("0x%" PFMT64x "->fd = ", (ut64)bin);
-		PRINTF_BA("0x%" PFMT64x, (ut64)main_arena->GH(bins)[i]);
+		PRINTF_BA("0x%" PFMT64x, (ut64)main_arena->bins[i]);
 		PRINT_GA(", ");
 		PRINTF_GA("0x%" PFMT64x "->bk = ", (ut64)bin);
-		PRINTF_BA("0x%" PFMT64x, (ut64)main_arena->GH(bins)[i + 1]);
+		PRINTF_BA("0x%" PFMT64x, (ut64)main_arena->bins[i + 1]);
 		PRINT_GA(", ");
 		rz_cons_newline();
 	}
@@ -377,26 +397,28 @@ static void GH(print_arena_stats)(RzCore *core, GHT m_arena, MallocState *main_a
 	}
 	PRINT_GA("}\n");
 	PRINT_GA("  next = ");
-	PRINTF_BA("0x%" PFMT64x, (ut64)main_arena->GH(next));
+	PRINTF_BA("0x%" PFMT64x, (ut64)main_arena->next);
 	PRINT_GA(",\n");
 	PRINT_GA("  next_free = ");
-	PRINTF_BA("0x%" PFMT64x, (ut64)main_arena->GH(next_free));
+	PRINTF_BA("0x%" PFMT64x, (ut64)main_arena->next_free);
 	PRINT_GA(",\n");
 	PRINT_GA("  system_mem = ");
-	PRINTF_BA("0x%" PFMT64x, (ut64)main_arena->GH(system_mem));
+	PRINTF_BA("0x%" PFMT64x, (ut64)main_arena->system_mem);
 	PRINT_GA(",\n");
 	PRINT_GA("  max_system_mem = ");
-	PRINTF_BA("0x%" PFMT64x, (ut64)main_arena->GH(max_system_mem));
+	PRINTF_BA("0x%" PFMT64x, (ut64)main_arena->max_system_mem);
 	PRINT_GA(",\n");
 	PRINT_GA("}\n\n");
 }
 
-static bool GH(rz_resolve_main_arena)(RzCore *core, GHT *m_arena) {
+/**
+ * \brief Store the base address of main arena at m_arena
+ * \param core RzCore pointer
+ * \param m_arena Store the location of main arena at this integer pointer
+ * \return True if a main arena was found else False
+ */
+RZ_API bool GH(rz_heap_resolve_main_arena)(RzCore *core, GHT *m_arena) {
 	rz_return_val_if_fail(core && core->dbg && core->dbg->maps, false);
-
-	if (core->dbg->main_arena_resolved) {
-		return true;
-	}
 
 	GHT brk_start = GHT_MAX, brk_end = GHT_MAX;
 	GHT libc_addr_sta = GHT_MAX, libc_addr_end = 0;
@@ -404,6 +426,7 @@ static bool GH(rz_resolve_main_arena)(RzCore *core, GHT *m_arena) {
 	GHT main_arena_sym = GHT_MAX;
 	bool is_debugged = rz_config_get_b(core->config, "cfg.debug");
 	bool first_libc = true;
+	rz_config_set_i(core->config, "dbg.glibc.tcache", GH(is_tcache)(core));
 
 	if (is_debugged) {
 		RzListIter *iter;
@@ -423,7 +446,8 @@ static bool GH(rz_resolve_main_arena)(RzCore *core, GHT *m_arena) {
 		}
 	} else {
 		void **it;
-		rz_pvector_foreach (&core->io->maps, it) {
+		RzPVector *maps = rz_io_maps(core->io);
+		rz_pvector_foreach (maps, it) {
 			RzIOMap *map = *it;
 			if (map->name && strstr(map->name, "arena")) {
 				libc_addr_sta = map->itv.addr;
@@ -457,7 +481,7 @@ static bool GH(rz_resolve_main_arena)(RzCore *core, GHT *m_arena) {
 	}
 
 	if (main_arena_sym != GHT_MAX) {
-		GH(update_main_arena)
+		GH(rz_heap_update_main_arena)
 		(core, main_arena_sym, ta);
 		*m_arena = main_arena_sym;
 		core->dbg->main_arena_resolved = true;
@@ -465,10 +489,10 @@ static bool GH(rz_resolve_main_arena)(RzCore *core, GHT *m_arena) {
 		return true;
 	}
 	while (addr_srch < libc_addr_end) {
-		GH(update_main_arena)
+		GH(rz_heap_update_main_arena)
 		(core, addr_srch, ta);
-		if (ta->GH(top) > brk_start && ta->GH(top) < brk_end &&
-			ta->GH(system_mem) == heap_sz) {
+		if (ta->top > brk_start && ta->top < brk_end &&
+			ta->system_mem == heap_sz) {
 
 			*m_arena = addr_srch;
 			free(ta);
@@ -484,9 +508,8 @@ static bool GH(rz_resolve_main_arena)(RzCore *core, GHT *m_arena) {
 	return false;
 }
 
-void GH(print_heap_chunk)(RzCore *core) {
+void GH(print_heap_chunk)(RzCore *core, GHT chunk) {
 	GH(RzHeapChunk) *cnk = RZ_NEW0(GH(RzHeapChunk));
-	GHT chunk = core->offset;
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 
 	if (!cnk) {
@@ -539,44 +562,80 @@ void GH(print_heap_chunk)(RzCore *core) {
 }
 
 /**
+ * \brief Get a heap chunk with base address <addr>
+ * \param core RzCore pointer
+ * \param addr Base address of the chunk
+ * \return RzHeapChunk struct pointer of the chunk
+ */
+RZ_API GH(RzHeapChunk) * GH(rz_heap_get_chunk_at_addr)(RzCore *core, GHT addr) {
+	GH(RzHeapChunk) *cnk = RZ_NEW0(GH(RzHeapChunk));
+	if (!cnk) {
+		return NULL;
+	}
+	(void)rz_io_nread_at(core->io, addr, (ut8 *)cnk, sizeof(*cnk));
+	return cnk;
+}
+
+/**
  * \brief Prints compact representation of a heap chunk. Format: Chunk(addr=, size=, flags=)
  * \param core RzCore pointer
  * \param chunk Offset of the chunk in memory
  */
-void GH(print_heap_chunk_simple)(RzCore *core, GHT chunk) {
-	GH(RzHeapChunk) *cnk = RZ_NEW0(GH(RzHeapChunk));
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
-
+void GH(print_heap_chunk_simple)(RzCore *core, GHT chunk, const char *status, PJ *pj) {
+	GH(RzHeapChunk) *cnk = GH(rz_heap_get_chunk_at_addr)(core, chunk);
 	if (!cnk) {
 		return;
 	}
-
-	(void)rz_io_read_at(core->io, chunk, (ut8 *)cnk, sizeof(*cnk));
-
-	PRINT_GA("Chunk");
-	rz_cons_printf("(addr=");
-	PRINTF_YA("0x%" PFMT64x, (ut64)chunk);
-	rz_cons_printf(", size=0x%" PFMT64x, (ut64)cnk->size & ~(NON_MAIN_ARENA | IS_MMAPPED | PREV_INUSE));
-	rz_cons_printf(", flags=");
-	bool print_comma = false;
-	if (cnk->size & NON_MAIN_ARENA) {
-		PRINT_RA("NON_MAIN_ARENA");
-		print_comma = true;
-	}
-	if (cnk->size & IS_MMAPPED) {
-		if (print_comma) {
-			PRINT_RA(",");
+	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	if (pj == NULL) {
+		PRINT_GA("Chunk");
+		rz_cons_printf("(");
+		if (status) {
+			rz_cons_printf("status=");
+			if (!strcmp(status, "free")) {
+				PRINTF_GA("%s", status);
+				rz_cons_printf("%-6s", ",");
+			} else {
+				rz_cons_printf("%s,", status);
+			}
+			rz_cons_printf(" ");
 		}
-		PRINT_RA("IS_MMAPPED");
-		print_comma = true;
-	}
-	if (cnk->size & PREV_INUSE) {
-		if (print_comma) {
-			PRINT_RA(",");
+		rz_cons_printf("addr=");
+		PRINTF_YA("0x%" PFMT64x, (ut64)chunk);
+		rz_cons_printf(", size=");
+		PRINTF_BA("0x%" PFMT64x, (ut64)cnk->size & ~(NON_MAIN_ARENA | IS_MMAPPED | PREV_INUSE));
+		rz_cons_printf(", flags=");
+		bool print_comma = false;
+		if (cnk->size & NON_MAIN_ARENA) {
+			PRINT_RA("NON_MAIN_ARENA");
+			print_comma = true;
 		}
-		PRINT_RA("PREV_INUSE");
+		if (cnk->size & IS_MMAPPED) {
+			if (print_comma) {
+				PRINT_RA(",");
+			}
+			PRINT_RA("IS_MMAPPED");
+			print_comma = true;
+		}
+		if (cnk->size & PREV_INUSE) {
+			if (print_comma) {
+				PRINT_RA(",");
+			}
+			PRINT_RA("PREV_INUSE");
+		}
+		rz_cons_printf(")");
+	} else {
+		pj_o(pj);
+		pj_kn(pj, "prev_size", cnk->prev_size);
+		pj_kn(pj, "addr", chunk);
+		pj_kn(pj, "size", (ut64)cnk->size & ~(NON_MAIN_ARENA | IS_MMAPPED | PREV_INUSE));
+		pj_kn(pj, "non_main_arena", cnk->size & NON_MAIN_ARENA);
+		pj_kn(pj, "mmapped", cnk->size & IS_MMAPPED);
+		pj_kn(pj, "prev_inuse", cnk->size & PREV_INUSE);
+		pj_kn(pj, "fd", cnk->fd);
+		pj_kn(pj, "bk", cnk->bk);
+		pj_end(pj);
 	}
-	rz_cons_printf(")");
 	free(cnk);
 }
 
@@ -588,20 +647,20 @@ static bool GH(is_arena)(RzCore *core, GHT m_arena, GHT m_state) {
 	if (!ta) {
 		return false;
 	}
-	if (!GH(update_main_arena)(core, m_arena, ta)) {
+	if (!GH(rz_heap_update_main_arena)(core, m_arena, ta)) {
 		free(ta);
 		return false;
 	}
-	if (ta->GH(next) == m_state) {
+	if (ta->next == m_state) {
 		free(ta);
 		return true;
 	}
-	while (ta->GH(next) != GHT_MAX && ta->GH(next) != m_arena) {
-		if (!GH(update_main_arena)(core, ta->GH(next), ta)) {
+	while (ta->next != GHT_MAX && ta->next != m_arena) {
+		if (!GH(rz_heap_update_main_arena)(core, ta->next, ta)) {
 			free(ta);
 			return false;
 		}
-		if (ta->GH(next) == m_state) {
+		if (ta->next == m_state) {
 			free(ta);
 			return true;
 		}
@@ -629,7 +688,7 @@ static int GH(print_double_linked_list_bin_simple)(RzCore *core, GHT bin, Malloc
 	while (cnk->fd != bin) {
 		PRINTF_BA("->fd = 0x%" PFMT64x, (ut64)cnk->fd);
 		next = cnk->fd;
-		if (next < brk_start || next > main_arena->GH(top)) {
+		if (next < brk_start || next > main_arena->top) {
 			PRINT_RA("Double linked list corrupted\n");
 			free(cnk);
 			return -1;
@@ -651,7 +710,7 @@ static int GH(print_double_linked_list_bin_simple)(RzCore *core, GHT bin, Malloc
 	while (cnk->bk != bin) {
 		PRINTF_BA("->bk = 0x%" PFMT64x, (ut64)cnk->bk);
 		next = cnk->bk;
-		if (next < brk_start || next > main_arena->GH(top)) {
+		if (next < brk_start || next > main_arena->top) {
 			PRINT_RA("Double linked list corrupted.\n");
 			free(cnk);
 			return -1;
@@ -688,7 +747,7 @@ static int GH(print_double_linked_list_bin_graph)(RzCore *core, GHT bin, MallocS
 
 	while (cnk->bk != bin) {
 		next = cnk->bk;
-		if (next < brk_start || next > main_arena->GH(top)) {
+		if (next < brk_start || next > main_arena->top) {
 			PRINT_RA("Double linked list corrupted\n");
 			free(cnk);
 			free(g);
@@ -725,7 +784,7 @@ static int GH(print_double_linked_list_bin)(RzCore *core, MallocState *main_aren
 	if (num_bin > 126) {
 		return -1;
 	}
-	GHT bin = main_arena->GH(bins)[num_bin];
+	GHT bin = main_arena->bins[num_bin];
 
 	if (!bin) {
 		return -1;
@@ -748,16 +807,12 @@ static int GH(print_double_linked_list_bin)(RzCore *core, MallocState *main_aren
 		initial_brk = (brk_start >> 12) << 12;
 	}
 
-	switch (num_bin) {
-	case 0:
+	if (num_bin == 0) {
 		PRINT_GA("  double linked list unsorted bin {\n");
-		break;
-	case 1 ... NSMALLBINS - 1:
+	} else if (num_bin >= 1 && num_bin <= NSMALLBINS - 1) {
 		PRINT_GA("  double linked list small bin {\n");
-		break;
-	case NSMALLBINS ... NBINS - 2:
+	} else if (num_bin >= NSMALLBINS && num_bin <= NBINS - 2) {
 		PRINT_GA("  double linked list large bin {\n");
-		break;
 	}
 
 	if (!graph || graph == 1) {
@@ -786,7 +841,7 @@ static void GH(print_heap_bin)(RzCore *core, GHT m_arena, MallocState *main_aren
 	case '\0': // dmhb
 		PRINT_YA("Bins {\n");
 		for (i = 0; i < NBINS - 1; i++) {
-			PRINTF_YA(" Bin %03d:\n", i + 1);
+			PRINTF_YA(" Bin %03d:\n", i);
 			GH(print_double_linked_list_bin)
 			(core, main_arena, m_arena, offset, i, 0);
 		}
@@ -796,64 +851,68 @@ static void GH(print_heap_bin)(RzCore *core, GHT m_arena, MallocState *main_aren
 		j--; // for spaces after input
 		/* fallthu */
 	case 'g': // dmhbg [bin_num]
-		num_bin = rz_num_get(NULL, input + j) - 1;
+		num_bin = rz_num_get(NULL, input + j);
 		if (num_bin > NBINS - 2) {
-			eprintf("Error: 0 < bin <= %d\n", NBINS - 1);
+			eprintf("Error: 0 <= bin <= %d\n", NBINS - 2);
 			break;
 		}
-		PRINTF_YA("  Bin %03" PFMT64u ":\n", (ut64)num_bin + 1);
+		PRINTF_YA("  Bin %03" PFMT64u ":\n", (ut64)num_bin);
 		GH(print_double_linked_list_bin)
 		(core, main_arena, m_arena, offset, num_bin, j);
 		break;
 	}
 }
 
-static int GH(print_single_linked_list_bin)(RzCore *core, MallocState *main_arena, GHT m_arena, GHT offset, GHT bin_num, bool demangle) {
+void GH(rz_heap_chunk_free)(RzHeapChunkListItem *item) {
+	if (!item) {
+		return;
+	}
+	free(item->status);
+	free(item);
+}
+
+RZ_API RzHeapBin *GH(rz_heap_fastbin_content)(RzCore *core, MallocState *main_arena, int bin_num) {
 	if (!core || !core->dbg || !core->dbg->maps) {
-		return -1;
+		return NULL;
 	}
-	GHT next = GHT_MAX, brk_start = GHT_MAX, brk_end = GHT_MAX;
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
-
+	GHT brk_start = GHT_MAX, brk_end = GHT_MAX;
+	RzHeapBin *heap_bin = RZ_NEW0(RzHeapBin);
 	GH(RzHeapChunk) *cnk = RZ_NEW0(GH(RzHeapChunk));
-	if (!cnk) {
-		return 0;
-	}
-
-	if (!GH(update_main_arena)(core, m_arena, main_arena)) {
+	if (!cnk || !heap_bin) {
+		free(heap_bin);
 		free(cnk);
-		return 0;
+		return NULL;
 	}
-
-	GHT bin = main_arena->GH(fastbinsY)[bin_num];
-	if (!bin) {
+	heap_bin->chunks = rz_list_newf((RzListFree)GH(rz_heap_chunk_free));
+	heap_bin->bin_num = bin_num + 1;
+	heap_bin->size = FASTBIN_IDX_TO_SIZE(bin_num + 1);
+	heap_bin->type = rz_str_new("Fast");
+	GHT next = main_arena->fastbinsY[bin_num];
+	if (!next) {
 		free(cnk);
-		return -1;
+		return heap_bin;
 	}
-
-	bin = m_arena + offset + SZ * bin_num;
-	rz_io_read_at(core->io, bin, (ut8 *)&next, SZ);
-
 	GH(get_brks)
 	(core, &brk_start, &brk_end);
+	heap_bin->fd = next;
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX) {
-		eprintf("No Heap section\n");
 		free(cnk);
-		return 0;
+		return heap_bin;
 	}
-
-	PRINTF_GA("  fastbin %" PFMT64d " @ ", (ut64)bin_num + 1);
-	PRINTF_GA("0x%" PFMT64x " {\n   ", (ut64)bin);
-
-	GHT size = main_arena->GH(top) - brk_start;
+	GHT size = main_arena->top - brk_start;
 
 	GHT next_root = next, next_tmp = next, double_free = GHT_MAX;
-	while (next && next >= brk_start && next < main_arena->GH(top)) {
-		GH(print_heap_chunk_simple)
-		(core, (ut64)next);
-		while (double_free == GHT_MAX && next_tmp && next_tmp >= brk_start && next_tmp <= main_arena->GH(top)) {
+	while (next && next >= brk_start && next < main_arena->top) {
+		RzHeapChunkListItem *item = RZ_NEW0(RzHeapChunkListItem);
+		if (!item) {
+			break;
+		}
+		item->addr = next;
+		item->status = rz_str_new("free");
+		rz_list_append(heap_bin->chunks, item);
+		while (double_free == GHT_MAX && next_tmp && next_tmp >= brk_start && next_tmp <= main_arena->top) {
 			rz_io_read_at(core->io, next_tmp, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
-			next_tmp = (!demangle) ? cnk->fd : PROTECT_PTR(next_tmp, cnk->fd);
+			next_tmp = GH(get_next_pointer)(core, next_tmp, cnk->fd);
 			if (cnk->prev_size > size || ((cnk->size >> 3) << 3) > size) {
 				break;
 			}
@@ -863,86 +922,111 @@ static int GH(print_single_linked_list_bin)(RzCore *core, MallocState *main_aren
 			}
 		}
 		rz_io_read_at(core->io, next, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
-		next = (!demangle) ? cnk->fd : PROTECT_PTR(next, cnk->fd);
-		PRINTF_BA("%s", next ? " -> " : "");
+		next = GH(get_next_pointer)(core, next, cnk->fd);
 		if (cnk->prev_size > size || ((cnk->size >> 3) << 3) > size) {
-			PRINTF_RA(" 0x%" PFMT64x, (ut64)next);
-			PRINT_RA(" Linked list corrupted\n");
-			PRINT_GA("\n  }\n");
+			char message[50];
+			rz_snprintf(message, 50, "Linked list corrupted @ 0x%" PFMT64x, (ut64)next);
+			heap_bin->message = rz_str_new(message);
 			free(cnk);
-			return -1;
+			return heap_bin;
 		}
 
 		next_root = next_tmp = next;
 		if (double_free == next) {
-			PRINTF_RA("0x%" PFMT64x, (ut64)next);
-			PRINT_RA(" Double free detected\n");
-			PRINT_GA("\n  }\n");
+			char message[50];
+			rz_snprintf(message, 50, "Double free detected @ 0x%" PFMT64x, (ut64)next);
+			heap_bin->message = rz_str_new(message);
 			free(cnk);
-			return -1;
+			return heap_bin;
 		}
 	}
-
-	if (next && (next < brk_start || next >= main_arena->GH(top))) {
-		PRINTF_RA("0x%" PFMT64x, (ut64)next);
-		PRINT_RA(" Linked list corrupted\n");
-		PRINT_GA("\n  }\n");
+	if (next && (next < brk_start || next >= main_arena->top)) {
+		char message[50];
+		rz_snprintf(message, 50, "Linked list corrupted @ 0x%" PFMT64x, (ut64)next);
+		heap_bin->message = rz_str_new(message);
 		free(cnk);
-		return -1;
+		return heap_bin;
 	}
-
-	PRINT_GA("\n  }\n");
 	free(cnk);
-	return 0;
+	return heap_bin;
 }
 
-void GH(print_heap_fastbin)(RzCore *core, GHT m_arena, MallocState *main_arena, GHT global_max_fast, const char *input, bool demangle, bool main_arena_only) {
-	size_t i, j, k;
-	GHT num_bin = GHT_MAX, offset = sizeof(int) * 2;
-	const int tcache = rz_config_get_i(core->config, "dbg.glibc.tcache");
+void GH(print_heap_fastbin)(RzCore *core, GHT m_arena, MallocState *main_arena, GHT global_max_fast, const char *input, bool main_arena_only, PJ *pj) {
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
-
-	if (tcache) {
-		offset = 16;
-	}
-
+	int fastbins_max = rz_config_get_i(core->config, "dbg.glibc.fastbinmax") - 1;
+	int global_max_fast_idx = fastbin_index(global_max_fast);
+	int fastbin_count = fastbins_max < global_max_fast_idx ? fastbins_max : global_max_fast_idx;
+	int bin_to_print = 0;
 	switch (input[0]) {
-	case '\0': // dmhf
-		if (!main_arena_only && core->offset != core->prompt_offset) {
-			m_arena = core->offset;
+	case ' ':
+		bin_to_print = (int)rz_num_get(NULL, input);
+		if (bin_to_print <= 0 || bin_to_print - 1 > fastbin_count) {
+			eprintf("Error: 0 < bin <= %d\n", fastbin_count + 1);
+			return;
 		}
-		rz_cons_printf("Fast bins @ ");
-		PRINTF_BA("0x%" PFMT64x "\n", (ut64)m_arena);
-		for (i = 0, j = 1, k = SZ * 4; i < NFASTBINS; i++, j++, k += SZ * 2) {
-			if (FASTBIN_IDX_TO_SIZE(j) <= global_max_fast) {
-				PRINTF_YA("Fastbin %02zu", j);
-			} else {
-				PRINTF_RA("Fastbin %02zu", j);
+	}
+	if (!pj) {
+		rz_cons_printf("Fast bins in Arena @ ");
+		PRINTF_YA("0x%" PFMT64x, (ut64)m_arena);
+		rz_cons_newline();
+	}
+	for (int i = 0; i <= fastbin_count; i++) {
+		if (bin_to_print && i != bin_to_print - 1) {
+			continue;
+		}
+		RzHeapBin *bin = GH(rz_heap_fastbin_content)(core, main_arena, i);
+		if (!bin) {
+			continue;
+		}
+		if (!pj) {
+			rz_cons_printf("Fast_bin[");
+			PRINTF_BA("%02zu", (size_t)bin->bin_num);
+			rz_cons_printf("] [size: ");
+			PRINTF_BA("0x%" PFMT64x, bin->size);
+			rz_cons_printf("]");
+		} else {
+			pj_o(pj);
+			pj_ks(pj, "bin_type", "fast");
+			pj_kn(pj, "bin_num", bin->bin_num);
+			pj_ka(pj, "chunks");
+		}
+		if (!bin->chunks || !rz_list_length(bin->chunks)) {
+			if (!pj) {
+				PRINT_RA(" Empty bin\n");
 			}
-			PRINT_GA(" [size:");
-			PRINTF_BA(" == 0x%" PFMT64x "]", (ut64)k);
-			if (GH(print_single_linked_list_bin)(core, main_arena, m_arena, offset, i, demangle)) {
-				PRINT_BA("  Empty\n");
+		} else {
+			RzListIter *iter;
+			RzHeapChunkListItem *pos;
+			rz_cons_newline();
+			rz_list_foreach (bin->chunks, iter, pos) {
+				if (!pj) {
+					rz_cons_printf(" -> ");
+				}
+				GH(print_heap_chunk_simple)
+				(core, pos->addr, NULL, pj);
+				if (!pj) {
+					rz_cons_newline();
+				}
+			}
+			if (bin->message && !pj) {
+				PRINTF_RA("%s\n", bin->message);
 			}
 		}
-		break;
-	case ' ': // dmhf [bin_num]
-		num_bin = rz_num_get(NULL, input) - 1;
-		if (num_bin >= NFASTBINS) {
-			eprintf("Error: 0 < bin <= %d\n", NFASTBINS);
-			break;
+		if (pj) {
+			pj_end(pj);
+			pj_end(pj);
 		}
-		if (GH(print_single_linked_list_bin)(core, main_arena, m_arena, offset, num_bin, demangle)) {
-			PRINT_GA(" Empty bin");
-			PRINT_BA(" 0x0\n");
-		}
-		break;
+		GH(rz_heap_bin_free)
+		(bin);
 	}
 }
 
 static GH(RTcache) * GH(tcache_new)(RzCore *core) {
 	rz_return_val_if_fail(core, NULL);
 	GH(RTcache) *tcache = RZ_NEW0(GH(RTcache));
+	if (!tcache) {
+		return NULL;
+	}
 	if (core->dbg->glibc_version >= TCACHE_NEW_VERSION) {
 		tcache->type = NEW;
 		tcache->RzHeapTcache.heap_tcache = RZ_NEW0(GH(RzHeapTcache));
@@ -953,7 +1037,7 @@ static GH(RTcache) * GH(tcache_new)(RzCore *core) {
 	return tcache;
 }
 
-static void GH(tcache_free)(GH(RTcache) * tcache) {
+RZ_API void GH(tcache_free)(GH(RTcache) * tcache) {
 	rz_return_if_fail(tcache);
 	tcache->type == NEW
 		? free(tcache->RzHeapTcache.heap_tcache)
@@ -982,129 +1066,710 @@ static GHT GH(tcache_get_entry)(GH(RTcache) * tcache, int index) {
 		: tcache->RzHeapTcache.heap_tcache_pre_230->entries[index];
 }
 
-static void GH(tcache_print)(RzCore *core, GH(RTcache) * tcache, bool demangle) {
-	rz_return_if_fail(core && tcache);
-	GHT tcache_fd = GHT_MAX;
-	GHT tcache_tmp = GHT_MAX;
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
-	size_t i;
-	for (i = 0; i < TCACHE_MAX_BINS; i++) {
+/**
+ * \brief Get a list of bins for the tcache associated with arena with base address arena_base
+ * \param core RzCore pointer
+ * \param arena_base Base address of the arena
+ * \return RzList of RzHeapBin pointers
+ */
+RZ_API RzList *GH(rz_heap_tcache_content)(RzCore *core, GHT arena_base) {
+	// check if tcache is even present in this Glibc version
+	const int tc = rz_config_get_i(core->config, "dbg.glibc.tcache");
+	if (!tc) {
+		rz_cons_printf("No tcache present in this version of libc\n");
+		return NULL;
+	}
+
+	// get main arena base address to compare
+	GHT m_arena;
+	if (!GH(rz_heap_resolve_main_arena)(core, &m_arena)) {
+		return NULL;
+	}
+
+	GHT brk_start = GHT_MAX, brk_end = GHT_MAX, initial_brk = GHT_MAX;
+	GH(get_brks)
+	(core, &brk_start, &brk_end);
+	GHT fc_offset = GH(tcache_chunk_size)(core, brk_start);
+	initial_brk = brk_start + fc_offset;
+	if (brk_start == GHT_MAX || brk_end == GHT_MAX || initial_brk == GHT_MAX) {
+		// no heap section exists in this case
+		return NULL;
+	}
+
+	// get the base address of tcache
+	GHT tcache_start;
+	if (arena_base == m_arena) {
+		// get tcache base for main arena
+		// tcache is consistently the first allocation in the main arena.
+		tcache_start = brk_start + 0x10;
+	} else {
+		// get tcache base for thread arena
+		GHT mmap_start = ((arena_base >> 16) << 16);
+		tcache_start = mmap_start + sizeof(GH(RzHeapInfo)) + sizeof(GH(RzHeap_MallocState_tcache)) + GH(MMAP_ALIGN);
+
+		// for thread arena check if the arena has threads attached or not
+		MallocState *arena = RZ_NEW0(MallocState);
+		if (!arena) {
+			return NULL;
+		}
+		if (!GH(rz_heap_update_main_arena)(core, arena_base, arena) || !arena->attached_threads) {
+			free(arena);
+			return NULL;
+		}
+		free(arena);
+	}
+	// Get rz_tcache struct
+	GH(RTcache) *tcache = GH(tcache_new)(core);
+	if (!GH(tcache_read)(core, tcache_start, tcache)) {
+		GH(tcache_free)
+		(tcache);
+		return NULL;
+	}
+
+	// List of heap bins to return
+	RzList *tcache_bins_list = rz_list_newf((RzListFree)GH(rz_heap_bin_free));
+
+	// Use rz_tcache struct to get bins
+	for (int i = 0; i < TCACHE_MAX_BINS; i++) {
 		int count = GH(tcache_get_count)(tcache, i);
 		GHT entry = GH(tcache_get_entry)(tcache, i);
-		if (count > 0) {
-			PRINT_GA("bin :");
-			PRINTF_BA("%2zu", i);
-			PRINT_GA(", items :");
-			PRINTF_BA("%2d", count);
-			rz_cons_printf(" -> ");
-			GH(print_heap_chunk_simple)
-			(core, (ut64)(entry - GH(HDR_SZ)));
-			if (count > 1) {
-				tcache_fd = entry;
-				size_t n;
-				for (n = 1; n < count; n++) {
-					bool r = rz_io_read_at(core->io, tcache_fd, (ut8 *)&tcache_tmp, sizeof(GHT));
-					if (!r) {
-						break;
-					}
-					tcache_tmp = (!demangle)
-						? read_le(&tcache_tmp)
-						: PROTECT_PTR(tcache_fd, read_le(&tcache_tmp));
-					rz_cons_printf(" -> ");
-					GH(print_heap_chunk_simple)
-					(core, (ut64)(tcache_tmp - TC_HDR_SZ));
-					tcache_fd = tcache_tmp;
-				}
-			}
-			PRINT_BA("\n");
+
+		RzHeapBin *bin = RZ_NEW0(RzHeapBin);
+		if (!bin) {
+			goto error;
 		}
+		bin->type = rz_str_new("Tcache");
+		bin->bin_num = i;
+		bin->chunks = rz_list_newf((RzListFree)GH(rz_heap_chunk_free));
+		rz_list_append(tcache_bins_list, bin);
+		if (count <= 0) {
+			continue;
+		}
+		bin->fd = (ut64)(entry - GH(HDR_SZ));
+		// get first chunk
+		RzHeapChunkListItem *chunk = RZ_NEW0(RzHeapChunkListItem);
+		if (!chunk) {
+			goto error;
+		}
+		chunk->addr = (ut64)(entry - GH(HDR_SZ));
+		rz_list_append(bin->chunks, chunk);
+
+		if (count <= 1) {
+			continue;
+		}
+
+		// get rest of the chunks
+		GHT tcache_fd = entry;
+		GHT tcache_tmp = GHT_MAX;
+		for (size_t n = 1; n < count; n++) {
+			bool r = rz_io_nread_at(core->io, tcache_fd, (ut8 *)&tcache_tmp, sizeof(GHT));
+			if (!r) {
+				goto error;
+			}
+			tcache_tmp = GH(get_next_pointer)(core, tcache_fd, tcache_tmp);
+			chunk = RZ_NEW0(RzHeapChunkListItem);
+			if (!chunk) {
+				goto error;
+			}
+			// the base address of the chunk = address - 2 * PTR_SIZE
+			chunk->addr = (ut64)(tcache_tmp - GH(HDR_SZ));
+			rz_list_append(bin->chunks, chunk);
+			tcache_fd = tcache_tmp;
+		}
+	}
+	free(tcache);
+	return tcache_bins_list;
+
+error:
+	rz_list_free(tcache_bins_list);
+	free(tcache);
+	return NULL;
+}
+
+static void GH(print_tcache_content)(RzCore *core, GHT arena_base, GHT main_arena_base, PJ *pj) {
+	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+
+	RzList *bins = GH(rz_heap_tcache_content)(core, arena_base);
+	if (!bins) {
+		return;
+	}
+	if (!pj) {
+		if (main_arena_base == arena_base) {
+			rz_cons_printf("Tcache bins in Main Arena @ ");
+		} else {
+			rz_cons_printf("Tcache bins in Thread Arena @ ");
+		}
+		PRINTF_YA("0x%" PFMT64x "\n", (ut64)arena_base);
+	}
+	RzHeapBin *bin;
+	RzListIter *iter;
+	rz_list_foreach (bins, iter, bin) {
+		if (!bin) {
+			continue;
+		}
+		RzList *chunks = bin->chunks;
+		if (rz_list_length(chunks) == 0) {
+			continue;
+		}
+		if (!pj) {
+			rz_cons_printf("%s", bin->type);
+			rz_cons_printf("_bin[");
+			PRINTF_BA("%02zu", (size_t)bin->bin_num);
+			rz_cons_printf("]: Items:");
+			PRINTF_BA("%2d", rz_list_length(bin->chunks));
+			rz_cons_newline();
+		} else {
+			pj_o(pj);
+			pj_ks(pj, "bin_type", "tcache");
+			pj_kn(pj, "bin_num", bin->bin_num);
+			pj_ka(pj, "chunks");
+		}
+		RzHeapChunkListItem *pos;
+		RzListIter *iter2;
+		rz_list_foreach (chunks, iter2, pos) {
+			if (!pj) {
+				rz_cons_printf(" -> ");
+			}
+			GH(print_heap_chunk_simple)
+			(core, pos->addr, NULL, pj);
+			if (!pj) {
+				rz_cons_newline();
+			}
+		}
+		if (bin->message) {
+			PRINTF_RA("%s\n", bin->message);
+		}
+		if (pj) {
+			pj_end(pj);
+			pj_end(pj);
+		}
+	}
+	rz_list_free(bins);
+}
+
+void GH(print_malloc_states)(RzCore *core, GHT m_arena, MallocState *main_arena, bool json) {
+	MallocState *ta = RZ_NEW0(MallocState);
+	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+
+	if (!ta) {
+		return;
+	}
+	PJ *pj = NULL;
+	if (!json) {
+		rz_cons_printf("Main arena  (addr=");
+		PRINTF_YA("0x%" PFMT64x, (ut64)m_arena);
+		rz_cons_printf(", lastRemainder=");
+		PRINTF_YA("0x%" PFMT64x, (ut64)main_arena->last_remainder);
+		rz_cons_printf(", top=");
+		PRINTF_YA("0x%" PFMT64x, (ut64)main_arena->top);
+		rz_cons_printf(", next=");
+		PRINTF_YA("0x%" PFMT64x, (ut64)main_arena->next);
+		rz_cons_printf(")\n");
+	} else {
+		pj = pj_new();
+		if (!pj) {
+			free(ta);
+			return;
+		}
+		pj_o(pj);
+		pj_ka(pj, "arenas");
+		pj_o(pj);
+		pj_kn(pj, "addr", m_arena);
+		pj_kn(pj, "last_rem", main_arena->last_remainder);
+		pj_kn(pj, "top", main_arena->top);
+		pj_kn(pj, "next", main_arena->next);
+		pj_ks(pj, "type", "main");
+		pj_ks(pj, "state", "used");
+		pj_end(pj);
+	}
+	if (main_arena->next != m_arena) {
+		ta->next = main_arena->next;
+		while (GH(is_arena)(core, m_arena, ta->next) && ta->next != m_arena) {
+			ut64 ta_addr = ta->next;
+			if (!GH(rz_heap_update_main_arena)(core, ta->next, ta)) {
+				goto end;
+			}
+			if (!json) {
+				rz_cons_printf("Thread arena(addr=");
+				PRINTF_YA("0x%" PFMT64x, ta_addr);
+				rz_cons_printf(", lastRemainder=");
+				PRINTF_YA("0x%" PFMT64x, (ut64)ta->last_remainder);
+				rz_cons_printf(", top=");
+				PRINTF_YA("0x%" PFMT64x, (ut64)ta->top);
+				rz_cons_printf(", next=");
+				PRINTF_YA("0x%" PFMT64x, (ut64)ta->next);
+				if (ta->attached_threads) {
+					rz_cons_printf(")\n");
+				} else {
+					rz_cons_printf(" free)\n");
+				}
+			} else {
+				pj_o(pj);
+				pj_kn(pj, "addr", (ut64)ta_addr);
+				pj_kn(pj, "last_rem", ta->last_remainder);
+				pj_kn(pj, "top", ta->top);
+				pj_kn(pj, "next", ta->next);
+				pj_ks(pj, "type", "thread");
+				if (ta->attached_threads) {
+					pj_ks(pj, "state", "used");
+				} else {
+					pj_ks(pj, "state", "free");
+				}
+				pj_end(pj);
+			}
+		}
+	}
+end:
+	if (json) {
+		pj_end(pj);
+		pj_end(pj);
+		rz_cons_println(pj_string(pj));
+		pj_free(pj);
+	}
+	free(ta);
+}
+
+void GH(print_inst_minfo)(GH(RzHeapInfo) * heap_info, GHT hinfo) {
+	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+
+	PRINT_YA("malloc_info @ ");
+	PRINTF_BA("0x%" PFMT64x, (ut64)hinfo);
+	PRINT_YA(" {\n  ar_ptr = ");
+	PRINTF_BA("0x%" PFMT64x "\n", (ut64)heap_info->ar_ptr);
+	PRINT_YA("  prev = ");
+	PRINTF_BA("0x%" PFMT64x "\n", (ut64)heap_info->prev);
+	PRINT_YA("  size = ");
+	PRINTF_BA("0x%" PFMT64x "\n", (ut64)heap_info->size);
+	PRINT_YA("  mprotect_size = ");
+	PRINTF_BA("0x%" PFMT64x "\n", (ut64)heap_info->mprotect_size);
+	PRINT_YA("}\n\n");
+}
+
+void GH(print_malloc_info)(RzCore *core, GHT m_state, GHT malloc_state) {
+	GHT h_info;
+	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	if (malloc_state == m_state) {
+		PRINT_RA("main_arena does not have an instance of malloc_info\n");
+	} else if (GH(is_arena)(core, malloc_state, m_state)) {
+
+		h_info = (malloc_state >> 16) << 16;
+		GH(RzHeapInfo) *heap_info = RZ_NEW0(GH(RzHeapInfo));
+		if (!heap_info) {
+			return;
+		}
+		rz_io_read_at(core->io, h_info, (ut8 *)heap_info, sizeof(GH(RzHeapInfo)));
+		GH(print_inst_minfo)
+		(heap_info, h_info);
+		MallocState *ms = RZ_NEW0(MallocState);
+		if (!ms) {
+			free(heap_info);
+			return;
+		}
+
+		while (heap_info->prev != 0x0 && heap_info->prev != GHT_MAX) {
+			if (!GH(rz_heap_update_main_arena)(core, malloc_state, ms)) {
+				free(ms);
+				free(heap_info);
+				return;
+			}
+			if ((ms->top >> 16) << 16 != h_info) {
+				h_info = (ms->top >> 16) << 16;
+				rz_io_read_at(core->io, h_info, (ut8 *)heap_info, sizeof(GH(RzHeapInfo)));
+				GH(print_inst_minfo)
+				(heap_info, h_info);
+			}
+		}
+		free(heap_info);
+		free(ms);
+	} else {
+		PRINT_RA("This address is not part of the arenas\n");
 	}
 }
 
-static void GH(print_tcache_instance)(RzCore *core, GHT m_arena, MallocState *main_arena, bool demangle, bool main_thread_only) {
-	rz_return_if_fail(core && core->dbg && core->dbg->maps);
+char *GH(rz_bin_num_to_type)(int bin_num) {
+	if (bin_num == 0) {
+		return rz_str_new("Unsorted");
+	} else if (bin_num >= 1 && bin_num <= NSMALLBINS - 1) {
+		return rz_str_new("Small");
+	} else if (bin_num >= NSMALLBINS && bin_num <= NBINS - 2) {
+		return rz_str_new("Large");
+	}
+	return NULL;
+}
 
-	const int tcache = rz_config_get_i(core->config, "dbg.glibc.tcache");
-	if (!tcache) {
-		rz_cons_printf("No Tcache in this libc version\n");
+void GH(rz_heap_bin_free)(RzHeapBin *bin) {
+	if (!bin) {
 		return;
+	}
+	free(bin->type);
+	free(bin->message);
+	rz_list_free(bin->chunks);
+	free(bin);
+}
+/**
+ * \brief Get information about <bin_num> bin from NBINS array of an arena.
+ * \param core RzCore pointer
+ * \param main_arena MallocState struct of arena
+ * \param bin_num bin number of bin whose chunk list you want
+ * \return RzHeapBin struct for the bin
+ */
+RZ_API RzHeapBin *GH(rz_heap_bin_content)(RzCore *core, MallocState *main_arena, int bin_num, GHT m_arena) {
+	int idx = 2 * bin_num;
+	ut64 fw = main_arena->bins[idx];
+	ut64 bk = main_arena->bins[idx + 1];
+	RzHeapBin *bin = RZ_NEW0(RzHeapBin);
+	if (!bin) {
+		return NULL;
+	}
+	bin->fd = fw;
+	bin->bk = bk;
+	bin->bin_num = bin_num;
+	bin->type = GH(rz_bin_num_to_type)(bin_num);
+
+	// small bins hold chunks of a fixed size
+	if (!strcmp(bin->type, "Small")) {
+		bin->size = 4 * SZ + (bin_num - 1) * 2 * SZ;
+	}
+
+	bin->chunks = rz_list_newf(free);
+	GH(RzHeapChunk) *head = RZ_NEW0(GH(RzHeapChunk));
+	if (!head) {
+		GH(rz_heap_bin_free)
+		(bin);
+		return NULL;
+	}
+
+	(void)rz_io_read_at(core->io, bk, (ut8 *)head, sizeof(GH(RzHeapChunk)));
+
+	if (head->fd == fw) {
+		return bin;
+	}
+	GH(RzHeapChunk) *cnk = RZ_NEW0(GH(RzHeapChunk));
+	if (!cnk) {
+		GH(rz_heap_bin_free)
+		(bin);
+		return NULL;
 	}
 	GHT brk_start = GHT_MAX, brk_end = GHT_MAX, initial_brk = GHT_MAX;
 	GH(get_brks)
 	(core, &brk_start, &brk_end);
-	GHT tcache_start = GHT_MAX;
+	if (brk_start == GHT_MAX || brk_end == GHT_MAX) {
+		free(cnk);
+		return bin;
+	}
+	const int tcache = rz_config_get_i(core->config, "dbg.glibc.tcache");
+	int offset;
+	GHT base;
+	if (tcache) {
+		offset = 16;
+		const int fc_offset = rz_config_get_i(core->config, "dbg.glibc.fc_offset");
+		base = m_arena + offset + SZ * bin_num * 2 + 10 * SZ;
+		initial_brk = ((brk_start >> 12) << 12) + fc_offset;
+	} else {
+		offset = 12 * SZ + sizeof(int) * 2;
+		base = m_arena + offset + SZ * bin_num * 2 - SZ * 2;
+		initial_brk = (brk_start >> 12) << 12;
+	}
+	bin->addr = base;
+	while (fw != head->fd) {
+		if (fw > main_arena->top || fw < initial_brk) {
+			bin->message = rz_str_new("Corrupted list");
+			break;
+		}
+		rz_io_read_at(core->io, fw, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
+		RzHeapChunkListItem *chunk = RZ_NEW0(RzHeapChunkListItem);
+		if (!chunk) {
+			break;
+		}
+		chunk->addr = fw;
+		rz_list_append(bin->chunks, chunk);
+		fw = cnk->fd;
+	}
+	free(cnk);
+	free(head);
+	return bin;
+}
+/**
+ * \brief Prints the heap chunks in a bin with double linked list (small|large|unsorted)
+ * \param core RzCore pointer
+ * \param main_arena MallocState struct for the arena in which bins are
+ * \param bin_num The bin number for the bin from which chunks have to printed
+ * \return number of chunks found in the bin
+ */
+static int GH(print_bin_content)(RzCore *core, MallocState *main_arena, int bin_num, PJ *pj, GHT m_arena) {
+	RzListIter *iter;
+	RzHeapChunkListItem *pos;
+	RzHeapBin *bin = GH(rz_heap_bin_content)(core, main_arena, bin_num, m_arena);
+	RzList *chunks = bin->chunks;
+	if (rz_list_length(chunks) == 0) {
+		GH(rz_heap_bin_free)
+		(bin);
+		return 0;
+	}
+	int chunks_cnt = 0;
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
-
-	tcache_start = brk_start + 0x10;
-	GHT fc_offset = GH(tcache_chunk_size)(core, brk_start);
-	initial_brk = brk_start + fc_offset;
-	if (brk_start == GHT_MAX || brk_end == GHT_MAX || initial_brk == GHT_MAX) {
-		eprintf("No heap section\n");
-		return;
-	}
-
-	GH(RTcache) *rz_tcache = GH(tcache_new)(core);
-	if (!rz_tcache) {
-		return;
-	}
-	if (!GH(tcache_read)(core, tcache_start, rz_tcache)) {
-		return;
-	}
-
-	rz_cons_printf("Tcache main arena @");
-	PRINTF_BA(" 0x%" PFMT64x "\n", (ut64)m_arena);
-	GH(tcache_print)
-	(core, rz_tcache, demangle);
-	if (main_thread_only) {
-		return;
-	}
-
-	if (main_arena->GH(next) != m_arena) {
-		GHT mmap_start = GHT_MAX, tcache_start = GHT_MAX;
-		MallocState *ta = RZ_NEW0(MallocState);
-		if (!ta) {
-			free(ta);
-			GH(tcache_free)
-			(rz_tcache);
-			return;
+	if (!pj) {
+		rz_cons_printf("%s", bin->type);
+		rz_cons_printf("_bin[");
+		PRINTF_BA("%d", bin->bin_num);
+		rz_cons_printf("]: fd=");
+		PRINTF_YA("0x%" PFMT64x, bin->fd);
+		rz_cons_printf(", bk=");
+		PRINTF_YA("0x%" PFMT64x, bin->bk);
+		rz_cons_printf(", base=");
+		PRINTF_YA("0x%" PFMT64x, bin->addr);
+		if (!strcmp(bin->type, "Small")) {
+			rz_cons_printf(", size=");
+			PRINTF_BA("0x%" PFMT64x, bin->size);
 		}
-		ta->GH(next) = main_arena->GH(next);
-		while (GH(is_arena)(core, m_arena, ta->GH(next)) && ta->GH(next) != m_arena) {
-			PRINT_YA("Tcache thread arena @ ");
-			PRINTF_BA(" 0x%" PFMT64x, (ut64)ta->GH(next));
-			mmap_start = ((ta->GH(next) >> 16) << 16);
-			tcache_start = mmap_start + sizeof(GH(RzHeapInfo)) + sizeof(GH(RzHeap_MallocState_tcache)) + GH(MMAP_ALIGN);
-
-			if (!GH(update_main_arena)(core, ta->GH(next), ta)) {
-				free(ta);
-				GH(tcache_free)
-				(rz_tcache);
-				return;
-			}
-
-			if (ta->attached_threads) {
-				PRINT_BA("\n");
-				GH(tcache_read)
-				(core, tcache_start, rz_tcache);
-				GH(tcache_print)
-				(core, rz_tcache, demangle);
-			} else {
-				PRINT_GA(" free\n");
-			}
-		}
+		rz_cons_newline();
+	} else {
+		pj_kn(pj, "fd", bin->fd);
+		pj_kn(pj, "bk", bin->bk);
+		pj_kn(pj, "base", bin->addr);
+		pj_ka(pj, "chunks");
 	}
-	GH(tcache_free)
-	(rz_tcache);
+	rz_list_foreach (chunks, iter, pos) {
+		if (!pj) {
+			rz_cons_printf(" -> ");
+		}
+		GH(print_heap_chunk_simple)
+		(core, pos->addr, NULL, pj);
+		if (!pj) {
+			rz_cons_newline();
+		}
+		chunks_cnt += 1;
+	}
+	if (bin->message) {
+		PRINTF_RA("%s\n", bin->message);
+	}
+	GH(rz_heap_bin_free)
+	(bin);
+	if (pj) {
+		pj_end(pj);
+	}
+	return chunks_cnt;
 }
 
-static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
-	GHT m_arena, GHT m_state, GHT global_max_fast, int format_out) {
-
-	if (!core || !core->dbg || !core->dbg->maps) {
-		return;
+/**
+ * \brief Prints unsorted bin description for an arena (used for `dmhd` command)
+ * \param core RzCore pointer
+ * \param m_arena Offset of the arena in memory
+ * \param main_arena MallocState struct for the arena in which bin are
+ */
+static void GH(print_unsortedbin_description)(RzCore *core, GHT m_arena, MallocState *main_arena, PJ *pj) {
+	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	if (!pj) {
+		rz_cons_printf("Unsorted bin in Arena @ ");
+		PRINTF_YA("0x%" PFMT64x "\n", (ut64)m_arena);
 	}
+	if (pj) {
+		pj_o(pj);
+		pj_kn(pj, "bin_num", 0);
+		pj_ks(pj, "bin_type", "unsorted");
+	}
+	int chunk_cnt = GH(print_bin_content)(core, main_arena, 0, pj, m_arena);
+	if (!pj) {
+		rz_cons_printf("Found %d chunks in unsorted bin\n", chunk_cnt);
+	} else {
+		pj_end(pj);
+	}
+}
 
-	int w, h;
+/**
+ * \brief Prints small bins description for an arena (used for `dmhd` command)
+ * \param core RzCore pointer
+ * \param m_arena Offset of the arena in memory
+ * \param main_arena Pointer to MallocState struct for the arena in which bins are
+ */
+static void GH(print_smallbin_description)(RzCore *core, GHT m_arena, MallocState *main_arena, PJ *pj) {
+	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	if (!pj) {
+		rz_cons_printf("Small bins in Arena @ ");
+		PRINTF_YA("0x%" PFMT64x "\n", (ut64)m_arena);
+	}
+	int chunk_cnt = 0;
+	int non_empty_cnt = 0;
+	for (int bin_num = 1; bin_num < NSMALLBINS; bin_num++) {
+		if (pj) {
+			pj_o(pj);
+			pj_kn(pj, "bin_num", bin_num);
+			pj_ks(pj, "bin_type", "small");
+		}
+		int chunk_found = GH(print_bin_content)(core, main_arena, bin_num, pj, m_arena);
+		if (pj) {
+			pj_end(pj);
+		}
+		if (chunk_found > 0) {
+			non_empty_cnt += 1;
+		}
+		chunk_cnt += chunk_found;
+	}
+	if (!pj) {
+		rz_cons_printf("Found %d chunks in %d small bins\n", chunk_cnt, non_empty_cnt);
+	}
+}
+
+/**
+ * \brief Prints large bins description for an arena (used for `dmhd` command)
+ * \param core RzCore pointer
+ * \param m_arena Offset of the arena in memory
+ * \param main_arena Pointer to MallocState struct for the arena in which bins are
+ */
+static void GH(print_largebin_description)(RzCore *core, GHT m_arena, MallocState *main_arena, PJ *pj) {
+	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	if (!pj) {
+		rz_cons_printf("Large bins in Arena @ ");
+		PRINTF_YA("0x%" PFMT64x "\n", (ut64)m_arena);
+	}
+	int chunk_cnt = 0;
+	int non_empty_cnt = 0;
+	for (int bin_num = NSMALLBINS; bin_num < NBINS - 2; bin_num++) {
+		if (pj) {
+			pj_o(pj);
+			pj_kn(pj, "bin_num", bin_num);
+			pj_ks(pj, "bin_type", "large");
+		}
+		int chunk_found = GH(print_bin_content)(core, main_arena, bin_num, pj, m_arena);
+		if (pj) {
+			pj_end(pj);
+		}
+		if (chunk_found > 0) {
+			non_empty_cnt += 1;
+		}
+		chunk_cnt += chunk_found;
+	}
+	if (!pj) {
+		rz_cons_printf("Found %d chunks in %d large bins\n", chunk_cnt, non_empty_cnt);
+	}
+}
+
+/**
+ * \brief Prints description of bins for main arena for `dmhd` command
+ * \param core RzCore pointer
+ * \param m_arena Offset of main arena in memory
+ * \param main_arena Pointer to Malloc state struct for main arena
+ * \param global_max_fast The largest fast bin size
+ * \param format Enum to determine which type of bins to print.
+ */
+static void GH(print_main_arena_bins)(RzCore *core, GHT m_arena, MallocState *main_arena, GHT main_arena_base, GHT global_max_fast, RzHeapBinType format, bool json) {
+	rz_return_if_fail(core && core->dbg && core->dbg->maps);
+	PJ *pj = NULL;
+	if (json) {
+		pj = pj_new();
+		if (!pj) {
+			return;
+		}
+		pj_o(pj);
+		pj_ka(pj, "bins");
+	}
+	if (format == RZ_HEAP_BIN_ANY || format == RZ_HEAP_BIN_TCACHE) {
+		GH(print_tcache_content)
+		(core, m_arena, main_arena_base, pj);
+		rz_cons_newline();
+	}
+	if (format == RZ_HEAP_BIN_ANY || format == RZ_HEAP_BIN_FAST) {
+		char *input = rz_str_newlen("", 1);
+		bool main_arena_only = true;
+		GH(print_heap_fastbin)
+		(core, m_arena, main_arena, global_max_fast, input, main_arena_only, pj);
+		free(input);
+		rz_cons_newline();
+	}
+	if (format == RZ_HEAP_BIN_ANY || format == RZ_HEAP_BIN_UNSORTED) {
+		GH(print_unsortedbin_description)
+		(core, m_arena, main_arena, pj);
+		rz_cons_newline();
+	}
+	if (format == RZ_HEAP_BIN_ANY || format == RZ_HEAP_BIN_SMALL) {
+		GH(print_smallbin_description)
+		(core, m_arena, main_arena, pj);
+		rz_cons_newline();
+	}
+	if (format == RZ_HEAP_BIN_ANY || format == RZ_HEAP_BIN_LARGE) {
+		GH(print_largebin_description)
+		(core, m_arena, main_arena, pj);
+		rz_cons_newline();
+	}
+	if (json) {
+		pj_end(pj);
+		pj_end(pj);
+		rz_cons_println(pj_string(pj));
+		pj_free(pj);
+	}
+}
+
+void GH(rz_arena_list_free)(RzArenaListItem *item) {
+	free(item->arena);
+	free(item->type);
+	free(item);
+}
+/**
+ * \brief Get a list of MallocState structs for all the arenas
+ * \param core RzCore pointer
+ * \param m_arena Base address of MallocState struct of main arena
+ * \param main_arena MallocState struct of main arena
+ * \return RzList pointer for list of MallocState structs of all the arenas
+ */
+RZ_API RzList *GH(rz_heap_arenas_list)(RzCore *core, GHT m_arena, MallocState *main_arena) {
+	RzList *arena_list = rz_list_newf((RzListFree)GH(rz_arena_list_free));
+	MallocState *ta = RZ_NEW0(MallocState);
+	if (!ta) {
+		return arena_list;
+	}
+	// main arena
+	if (!GH(rz_heap_update_main_arena)(core, m_arena, ta)) {
+		free(ta);
+		return arena_list;
+	}
+	RzArenaListItem *item = RZ_NEW0(RzArenaListItem);
+	if (!item) {
+		free(ta);
+		return arena_list;
+	}
+	item->addr = m_arena;
+	item->type = rz_str_new("Main");
+	item->arena = ta;
+	rz_list_append(arena_list, item);
+	if (main_arena->next != m_arena) {
+		ta->next = main_arena->next;
+		while (GH(is_arena)(core, m_arena, ta->next) && ta->next != m_arena) {
+			ut64 ta_addr = ta->next;
+			ta = RZ_NEW0(MallocState);
+			if (!GH(rz_heap_update_main_arena)(core, ta_addr, ta)) {
+				free(ta);
+				return arena_list;
+			}
+			// thread arenas
+			item = RZ_NEW0(RzArenaListItem);
+			if (!item) {
+				break;
+			}
+			item->addr = ta_addr;
+			item->type = rz_str_new("Thread");
+			item->arena = ta;
+			rz_list_append(arena_list, item);
+		}
+	}
+	return arena_list;
+}
+
+/**
+ * \brief Get a list of all the heap chunks in an arena. The chunks are in form of a struct RzHeapChunkListItem
+ * \param core RzCore pointer
+ * \param main_arena MallocState struct of main arena
+ * \param m_arena Base address of malloc state of main arena
+ * \param m_state Base address of malloc state of the arena whose chunks are required
+ * \param top_chunk Boolean value to return the top chunk in the list or not
+ * \return RzList pointer for list of all chunks in a given arena
+ */
+RZ_API RzList *GH(rz_heap_chunks_list)(RzCore *core, MallocState *main_arena,
+	GHT m_arena, GHT m_state, bool top_chunk) {
+	RzList *chunks = rz_list_newf((RzListFree)GH(rz_heap_chunk_free));
+	if (!core || !core->dbg || !core->dbg->maps) {
+		return chunks;
+	}
+	GHT global_max_fast = (64 * SZ / 4);
 	GHT brk_start = GHT_MAX, brk_end = GHT_MAX, size_tmp, min_size = SZ * 4;
 	GHT tcache_fd = GHT_MAX, tcache_tmp = GHT_MAX;
 	GHT initial_brk = GHT_MAX, tcache_initial_brk = GHT_MAX;
@@ -1130,7 +1795,7 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 		}
 	} else {
 		brk_start = ((m_state >> 16) << 16);
-		brk_end = brk_start + main_arena->GH(system_mem);
+		brk_end = brk_start + main_arena->system_mem;
 		if (tcache) {
 			tcache_initial_brk = brk_start + sizeof(GH(RzHeapInfo)) + sizeof(GH(RzHeap_MallocState_tcache)) + GH(MMAP_ALIGN);
 			initial_brk = tcache_initial_brk + offset;
@@ -1141,159 +1806,51 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX || initial_brk == GHT_MAX) {
 		eprintf("No Heap section\n");
-		return;
+		return chunks;
 	}
 
 	GHT next_chunk = initial_brk, prev_chunk = next_chunk;
 	GH(RzHeapChunk) *cnk = RZ_NEW0(GH(RzHeapChunk));
 	if (!cnk) {
-		return;
+		return chunks;
 	}
 	GH(RzHeapChunk) *cnk_next = RZ_NEW0(GH(RzHeapChunk));
 	if (!cnk_next) {
 		free(cnk);
-		return;
+		return chunks;
 	}
-
-	RzConfigHold *hc = rz_config_hold_new(core->config);
-	if (!hc) {
-		free(cnk);
-		free(cnk_next);
-		return;
-	}
-
-	w = rz_cons_get_size(&h);
-	RzConsCanvas *can = rz_cons_canvas_new(w, h);
-	if (!can) {
-		free(cnk);
-		free(cnk_next);
-		rz_config_hold_free(hc);
-		return;
-	}
-
-	RzAGraph *g = rz_agraph_new(can);
-	if (!g) {
-		free(cnk);
-		free(cnk_next);
-		rz_cons_canvas_free(can);
-		rz_config_hold_restore(hc);
-		rz_config_hold_free(hc);
-		return;
-	}
-
-	RzANode *top = RZ_EMPTY, *chunk_node = RZ_EMPTY, *prev_node = RZ_EMPTY;
-	char *top_title, *top_data, *node_title, *node_data;
-	bool first_node = true;
-
-	top_data = rz_str_new("");
-	top_title = rz_str_new("");
 
 	(void)rz_io_read_at(core->io, next_chunk, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
 	size_tmp = (cnk->size >> 3) << 3;
 	ut64 prev_chunk_addr;
 	ut64 prev_chunk_size;
-	PJ *pj = NULL;
-
-	switch (format_out) {
-	case 'j':
-		pj = rz_core_pj_new(core);
-		if (!pj) {
-			return;
-		}
-		pj_o(pj);
-		pj_ka(pj, "chunks");
-		break;
-	case '*':
-		rz_cons_printf("fs+heap.allocated\n");
-		break;
-	case 'g':
-		can->linemode = rz_config_get_i(core->config, "graph.linemode");
-		can->color = rz_config_get_i(core->config, "scr.color");
-		core->cons->use_utf8 = rz_config_get_i(core->config, "scr.utf8");
-		g->layout = rz_config_get_i(core->config, "graph.layout");
-		rz_agraph_set_title(g, "Heap Layout");
-		top_title = rz_str_newf("Top chunk @ 0x%" PFMT64x "\n", (ut64)main_arena->GH(top));
-	case 'c':
-	case 'v':
-		rz_cons_printf("Arena @ ");
-		PRINTF_YA("0x%" PFMT64x, (ut64)m_state);
-		rz_cons_newline();
-	}
-
-	while (next_chunk && next_chunk >= brk_start && next_chunk < main_arena->GH(top)) {
-		if (size_tmp < min_size || next_chunk + size_tmp > main_arena->GH(top)) {
-			const char *status = "corrupted";
-			switch (format_out) {
-			case 'v':
-				GH(print_heap_chunk_simple)
-				(core, next_chunk);
-				PRINTF_RA("[%s]\n", status);
-				PRINTF_RA("   size: 0x%" PFMT64x "\n   fd: 0x%" PFMT64x ", bk: 0x%" PFMT64x "\n",
-					(ut64)cnk->size, (ut64)cnk->fd, (ut64)cnk->bk);
-				int size = 0x10;
-				char *data = calloc(1, size);
-				if (data) {
-					rz_io_nread_at(core->io, (ut64)(next_chunk + SZ * 2), (ut8 *)data, size);
-					core->print->flags &= ~RZ_PRINT_FLAGS_HEADER;
-					core->print->pairs = false;
-					PRINT_GA("  ");
-					rz_print_hexdump(core->print, (ut64)(next_chunk + SZ * 2), (ut8 *)data, size, SZ * 2, 1, 1);
-					core->print->flags |= RZ_PRINT_FLAGS_HEADER;
-					core->print->pairs = true;
-					free(data);
-				}
-				break;
-			case 'c':
-				GH(print_heap_chunk_simple)
-				(core, next_chunk);
-				PRINTF_RA("[%s]\n", status);
-				PRINTF_RA("   size: 0x%" PFMT64x "\n   fd: 0x%" PFMT64x ", bk: 0x%" PFMT64x "\n",
-					(ut64)cnk->size, (ut64)cnk->fd, (ut64)cnk->bk);
-				break;
-			case 'j':
-				pj_o(pj);
-				pj_kn(pj, "addr", next_chunk);
-				pj_kn(pj, "size", cnk->size);
-				pj_ks(pj, "status", status);
-				pj_kN(pj, "fd", cnk->fd);
-				pj_kN(pj, "bk", cnk->bk);
-				pj_end(pj);
-				break;
-			case '*':
-				rz_cons_printf("fs heap.corrupted\n");
-				char *name = rz_str_newf("chunk.corrupted.%06" PFMT64x, ((prev_chunk >> 4) & 0xffffULL));
-				rz_cons_printf("f %s %d 0x%" PFMT64x "\n", name, (int)cnk->size, (ut64)prev_chunk);
-				free(name);
-				break;
-			case 'g':
-				node_title = rz_str_newf("  Malloc chunk @ 0x%" PFMT64x " ", (ut64)prev_chunk);
-				node_data = rz_str_newf("[corrupted] size: 0x%" PFMT64x "\n fd: 0x%" PFMT64x ", bk: 0x%" PFMT64x
-							"\nHeap graph could not be recovered\n",
-					(ut64)cnk->size, (ut64)cnk->fd, (ut64)cnk->bk);
-				rz_agraph_add_node(g, node_title, node_data);
-				if (first_node) {
-					first_node = false;
-				}
+	while (next_chunk && next_chunk >= brk_start && next_chunk < main_arena->top) {
+		if (size_tmp < min_size || next_chunk + size_tmp > main_arena->top) {
+			RzHeapChunkListItem *block = RZ_NEW0(RzHeapChunkListItem);
+			if (!block) {
 				break;
 			}
+			block->addr = next_chunk;
+			block->status = rz_str_new("corrupted");
+			block->size = size_tmp;
+			rz_list_append(chunks, block);
 			break;
 		}
 
 		prev_chunk_addr = (ut64)prev_chunk;
 		prev_chunk_size = (((ut64)cnk->size) >> 3) << 3;
-
 		bool fastbin = size_tmp >= SZ * 4 && size_tmp <= global_max_fast;
 		bool is_free = false, double_free = false;
 
 		if (fastbin) {
 			int i = (size_tmp / (SZ * 2)) - 2;
-			GHT idx = (GHT)main_arena->GH(fastbinsY)[i];
+			GHT idx = (GHT)main_arena->fastbinsY[i];
 			(void)rz_io_read_at(core->io, idx, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
 			GHT next = GH(get_next_pointer)(core, idx, cnk->fd);
 			if (prev_chunk == idx && idx && !next) {
 				is_free = true;
 			}
-			while (next && next >= brk_start && next < main_arena->GH(top)) {
+			while (next && next >= brk_start && next < main_arena->top) {
 				if (prev_chunk == idx || prev_chunk == next || idx == next) {
 					is_free = true;
 					if (idx == next) {
@@ -1303,7 +1860,7 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 					(void)rz_io_read_at(core->io, next, (ut8 *)cnk_next, sizeof(GH(RzHeapChunk)));
 					GHT next_node = GH(get_next_pointer)(core, next, cnk_next->fd);
 					// avoid triple while?
-					while (next_node && next_node >= brk_start && next_node < main_arena->GH(top)) {
+					while (next_node && next_node >= brk_start && next_node < main_arena->top) {
 						if (prev_chunk == next_node) {
 							double_free = true;
 							break;
@@ -1328,13 +1885,9 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 		if (tcache) {
 			GH(RTcache) *tcache_heap = GH(tcache_new)(core);
 			if (!tcache_heap) {
-				rz_cons_canvas_free(can);
-				rz_config_hold_restore(hc);
-				rz_config_hold_free(hc);
-				free(g);
 				free(cnk);
 				free(cnk_next);
-				return;
+				return chunks;
 			}
 			GH(tcache_read)
 			(core, tcache_initial_brk, tcache_heap);
@@ -1375,61 +1928,210 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 		prev_chunk = next_chunk;
 		rz_io_read_at(core->io, next_chunk, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
 		size_tmp = (cnk->size >> 3) << 3;
-
-		const char *status = "allocated";
+		RzHeapChunkListItem *block = RZ_NEW0(RzHeapChunkListItem);
+		if (!block) {
+			break;
+		}
+		char *status = rz_str_new("allocated");
 		if (fastbin) {
 			if (is_free) {
-				status = "free";
+				strcpy(status, "free");
 			}
 		}
 		if (!(cnk->size & 1)) {
-			status = "free";
+			strcpy(status, "free");
 		}
 		if (tcache) {
 			if (is_free) {
-				status = "free";
+				strcpy(status, "free");
 			}
 		}
-
-		switch (format_out) {
-		case 'c':
-			GH(print_heap_chunk_simple)
-			(core, prev_chunk_addr);
-			rz_cons_printf("[%s]\n", status);
-			break;
-		case 'v':
-			GH(print_heap_chunk_simple)
-			(core, prev_chunk_addr);
-			rz_cons_printf("[%s]\n", status);
-			int size = 0x10;
-			char *data = calloc(1, size);
-			if (data) {
-				rz_io_nread_at(core->io, (ut64)(prev_chunk_addr + SZ * 2), (ut8 *)data, size);
-				core->print->flags &= ~RZ_PRINT_FLAGS_HEADER;
-				core->print->pairs = false;
-				rz_cons_printf("   ");
-				rz_print_hexdump(core->print, (ut64)(prev_chunk_addr + SZ * 2), (ut8 *)data, size, SZ * 2, 1, 1);
-				core->print->flags |= RZ_PRINT_FLAGS_HEADER;
-				core->print->pairs = true;
-				free(data);
+		block->addr = prev_chunk_addr;
+		block->status = status;
+		block->size = prev_chunk_size;
+		rz_list_append(chunks, block);
+	}
+	if (top_chunk) {
+		RzHeapChunkListItem *block = RZ_NEW0(RzHeapChunkListItem);
+		if (block) {
+			block->addr = main_arena->top;
+			block->status = rz_str_new("free (top)");
+			RzHeapChunkSimple *chunkSimple = GH(rz_heap_chunk_wrapper)(core, main_arena->top);
+			if (chunkSimple) {
+				block->size = chunkSimple->size;
+				free(chunkSimple);
 			}
-			break;
-		case 'j':
+			rz_list_append(chunks, block);
+		}
+	}
+	free(cnk);
+	free(cnk_next);
+	return chunks;
+}
+
+RZ_IPI RzCmdStatus GH(rz_cmd_arena_print_handler)(RzCore *core, int argc, const char **argv) {
+	GHT m_arena = GHT_MAX;
+	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	MallocState *main_arena = RZ_NEW0(MallocState);
+	if (!main_arena) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!GH(rz_heap_resolve_main_arena)(core, &m_arena)) {
+		free(main_arena);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!GH(rz_heap_update_main_arena)(core, m_arena, main_arena)) {
+		free(main_arena);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzList *arenas_list = GH(rz_heap_arenas_list)(core, m_arena, main_arena);
+	RzListIter *iter;
+	RzArenaListItem *pos;
+	bool flag = false;
+	rz_list_foreach (arenas_list, iter, pos) {
+		MallocState *arena = pos->arena;
+		if (!flag) {
+			flag = true;
+			rz_cons_printf("Main arena  (addr=");
+		} else {
+			rz_cons_printf("Thread arena(addr=");
+		}
+		PRINTF_YA("0x%" PFMT64x, (ut64)pos->addr);
+		rz_cons_printf(", lastRemainder=");
+		PRINTF_YA("0x%" PFMT64x, (ut64)arena->last_remainder);
+		rz_cons_printf(", top=");
+		PRINTF_YA("0x%" PFMT64x, (ut64)arena->top);
+		rz_cons_printf(", next=");
+		PRINTF_YA("0x%" PFMT64x, (ut64)arena->next);
+		if (arena->attached_threads) {
+			rz_cons_printf(")\n");
+		} else {
+			rz_cons_printf(", free)\n");
+		}
+	}
+	rz_list_free(arenas_list);
+	free(main_arena);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	GHT m_arena = GHT_MAX, m_state = GHT_MAX;
+	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	MallocState *main_arena = RZ_NEW0(MallocState);
+	RzOutputMode mode = state->mode;
+	if (!main_arena) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!GH(rz_heap_resolve_main_arena)(core, &m_arena)) {
+		free(main_arena);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (argc == 1) {
+		m_state = m_arena;
+	} else if (argc == 2) {
+		m_state = rz_num_get(NULL, argv[1]);
+	}
+	if (!GH(is_arena)(core, m_arena, m_state)) {
+		free(main_arena);
+		PRINT_RA("This address is not a valid arena\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!GH(rz_heap_update_main_arena)(core, m_state, main_arena)) {
+		free(main_arena);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	GHT brk_start, brk_end;
+	if (m_arena == m_state) {
+		GH(get_brks)
+		(core, &brk_start, &brk_end);
+
+	} else {
+		brk_start = ((m_state >> 16) << 16);
+		brk_end = brk_start + main_arena->system_mem;
+	}
+	RzListIter *iter;
+	RzHeapChunkListItem *pos;
+	PJ *pj = state->d.pj;
+	int w, h;
+	RzConfigHold *hc = rz_config_hold_new(core->config);
+	if (!hc) {
+		free(main_arena);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	w = rz_cons_get_size(&h);
+	RzConsCanvas *can = rz_cons_canvas_new(w, h);
+	if (!can) {
+		free(main_arena);
+		rz_config_hold_free(hc);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	RzAGraph *g = rz_agraph_new(can);
+	if (!g) {
+		free(main_arena);
+		rz_cons_canvas_free(can);
+		rz_config_hold_restore(hc);
+		rz_config_hold_free(hc);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzANode *top = RZ_EMPTY, *chunk_node = RZ_EMPTY, *prev_node = RZ_EMPTY;
+	char *top_title = NULL, *top_data = NULL, *node_title = NULL, *node_data = NULL;
+	bool first_node = true;
+	top_data = rz_str_new("");
+	RzList *chunks = GH(rz_heap_chunks_list)(core, main_arena, m_arena, m_state, false);
+	if (mode == RZ_OUTPUT_MODE_JSON) {
+		if (!pj) {
+			goto end;
+		}
+		pj_o(pj);
+		pj_ka(pj, "chunks");
+	} else if (mode == RZ_OUTPUT_MODE_STANDARD || mode == RZ_OUTPUT_MODE_LONG) {
+		rz_cons_printf("Arena @ ");
+		PRINTF_YA("0x%" PFMT64x, (ut64)m_state);
+		rz_cons_newline();
+	} else if (mode == RZ_OUTPUT_MODE_LONG_JSON) {
+		can->linemode = rz_config_get_i(core->config, "graph.linemode");
+		can->color = rz_config_get_i(core->config, "scr.color");
+		core->cons->use_utf8 = rz_config_get_i(core->config, "scr.utf8");
+		g->layout = rz_config_get_i(core->config, "graph.layout");
+		rz_agraph_set_title(g, "Heap Layout");
+		top_title = rz_str_newf("Top chunk @ 0x%" PFMT64x "\n", (ut64)main_arena->top);
+	}
+	rz_list_foreach (chunks, iter, pos) {
+		if (mode == RZ_OUTPUT_MODE_STANDARD || mode == RZ_OUTPUT_MODE_LONG) {
+			GH(print_heap_chunk_simple)
+			(core, pos->addr, pos->status, NULL);
+			rz_cons_newline();
+			if (mode == RZ_OUTPUT_MODE_LONG) {
+				int size = 0x10;
+				char *data = calloc(1, size);
+				if (data) {
+					rz_io_nread_at(core->io, (ut64)(pos->addr + SZ * 2), (ut8 *)data, size);
+					core->print->flags &= ~RZ_PRINT_FLAGS_HEADER;
+					core->print->pairs = false;
+					rz_cons_printf("   ");
+					rz_print_hexdump(core->print, (ut64)(pos->addr + SZ * 2), (ut8 *)data, size, SZ * 2, 1, 1);
+					core->print->flags |= RZ_PRINT_FLAGS_HEADER;
+					core->print->pairs = true;
+					free(data);
+				}
+			}
+		} else if (mode == RZ_OUTPUT_MODE_JSON) {
 			pj_o(pj);
-			pj_kn(pj, "addr", prev_chunk_addr);
-			pj_kn(pj, "size", prev_chunk_size);
-			pj_ks(pj, "status", status);
+			pj_kn(pj, "addr", pos->addr);
+			pj_kn(pj, "size", pos->size);
+			pj_ks(pj, "status", pos->status);
 			pj_end(pj);
-			break;
-		case '*':
-			rz_cons_printf("fs heap.%s\n", status);
-			char *name = rz_str_newf("chunk.%06" PFMT64x, ((prev_chunk_addr >> 4) & 0xffffULL));
-			rz_cons_printf("f %s %d 0x%" PFMT64x "\n", name, (int)prev_chunk_size, (ut64)prev_chunk_addr);
+		} else if (mode == RZ_OUTPUT_MODE_RIZIN) {
+			rz_cons_printf("fs heap.%s\n", pos->status);
+			char *name = rz_str_newf("chunk.%06" PFMT64x, ((pos->addr >> 4) & 0xffffULL));
+			rz_cons_printf("f %s %d 0x%" PFMT64x "\n", name, (int)pos->size, (ut64)pos->addr);
 			free(name);
-			break;
-		case 'g':
-			node_title = rz_str_newf("  Malloc chunk @ 0x%" PFMT64x " ", (ut64)prev_chunk_addr);
-			node_data = rz_str_newf("size: 0x%" PFMT64x " status: %s\n", (ut64)prev_chunk_size, status);
+		} else if (mode == RZ_OUTPUT_MODE_LONG_JSON) { // graph
+			free(node_title);
+			free(node_data);
+			node_title = rz_str_newf("  Malloc chunk @ 0x%" PFMT64x " ", (ut64)pos->addr);
+			node_data = rz_str_newf("size: 0x%" PFMT64x " status: %s\n", (ut64)pos->size, pos->status);
 			chunk_node = rz_agraph_add_node(g, node_title, node_data);
 			if (first_node) {
 				first_node = false;
@@ -1437,37 +2139,29 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 				rz_agraph_add_edge(g, prev_node, chunk_node);
 			}
 			prev_node = chunk_node;
-			break;
 		}
 	}
-
-	switch (format_out) {
-	case 'v':
-	case 'c':
+	if (mode == RZ_OUTPUT_MODE_STANDARD || mode == RZ_OUTPUT_MODE_LONG) {
 		GH(print_heap_chunk_simple)
-		(core, main_arena->GH(top));
-		rz_cons_printf("[top][brk_start: ");
+		(core, main_arena->top, "free", NULL);
+		PRINT_RA("[top]");
+		rz_cons_printf("[brk_start: ");
 		PRINTF_YA("0x%" PFMT64x, (ut64)brk_start);
 		rz_cons_printf(", brk_end: ");
 		PRINTF_YA("0x%" PFMT64x, (ut64)brk_end);
-		rz_cons_printf("]\n");
-		break;
-	case 'j':
+		rz_cons_printf("]");
+	} else if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
-		pj_kn(pj, "top", main_arena->GH(top));
+		pj_kn(pj, "top", main_arena->top);
 		pj_kn(pj, "brk", brk_start);
 		pj_kn(pj, "end", brk_end);
 		pj_end(pj);
-		rz_cons_print(pj_string(pj));
-		pj_free(pj);
-		break;
-	case '*':
+	} else if (mode == RZ_OUTPUT_MODE_RIZIN) {
 		rz_cons_printf("fs-\n");
-		rz_cons_printf("f heap.top = 0x%08" PFMT64x "\n", (ut64)main_arena->GH(top));
+		rz_cons_printf("f heap.top = 0x%08" PFMT64x "\n", (ut64)main_arena->top);
 		rz_cons_printf("f heap.brk = 0x%08" PFMT64x "\n", (ut64)brk_start);
 		rz_cons_printf("f heap.end = 0x%08" PFMT64x "\n", (ut64)brk_end);
-		break;
-	case 'g':
+	} else if (mode == RZ_OUTPUT_MODE_LONG_JSON) {
 		top = rz_agraph_add_node(g, top_title, top_data);
 		if (!first_node) {
 			rz_agraph_add_edge(g, prev_node, top);
@@ -1475,546 +2169,415 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 			free(node_title);
 		}
 		rz_agraph_print(g);
-		rz_cons_canvas_free(can);
-		rz_config_hold_restore(hc);
-		rz_config_hold_free(hc);
-		break;
 	}
-
-	rz_cons_printf("\n");
+end:
+	rz_cons_newline();
 	free(g);
 	free(top_data);
 	free(top_title);
-	free(cnk);
-	free(cnk_next);
+	rz_list_free(chunks);
+	free(main_arena);
+	rz_cons_canvas_free(can);
+	rz_config_hold_restore(hc);
+	rz_config_hold_free(hc);
+	return RZ_CMD_STATUS_OK;
 }
 
-void GH(print_malloc_states)(RzCore *core, GHT m_arena, MallocState *main_arena) {
-	MallocState *ta = RZ_NEW0(MallocState);
+RZ_IPI RzCmdStatus GH(rz_cmd_main_arena_print_handler)(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	GHT m_arena = GHT_MAX, m_state = GHT_MAX;
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
-
-	if (!ta) {
-		return;
-	}
-	PRINT_YA("main_arena @ ");
-	PRINTF_BA("0x%" PFMT64x "\n", (ut64)m_arena);
-	if (main_arena->GH(next) != m_arena) {
-		ta->GH(next) = main_arena->GH(next);
-		while (GH(is_arena)(core, m_arena, ta->GH(next)) && ta->GH(next) != m_arena) {
-			PRINT_YA("thread arena @ ");
-			PRINTF_BA("0x%" PFMT64x, (ut64)ta->GH(next));
-			if (!GH(update_main_arena)(core, ta->GH(next), ta)) {
-				free(ta);
-				return;
-			}
-			if (ta->attached_threads) {
-				PRINT_BA("\n");
-			} else {
-				PRINT_GA(" free\n");
-			}
-		}
-	}
-	free(ta);
-}
-
-void GH(print_inst_minfo)(GH(RzHeapInfo) * heap_info, GHT hinfo) {
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
-
-	PRINT_YA("malloc_info @ ");
-	PRINTF_BA("0x%" PFMT64x, (ut64)hinfo);
-	PRINT_YA(" {\n  ar_ptr = ");
-	PRINTF_BA("0x%" PFMT64x "\n", (ut64)heap_info->ar_ptr);
-	PRINT_YA("  prev = ");
-	PRINTF_BA("0x%" PFMT64x "\n", (ut64)heap_info->prev);
-	PRINT_YA("  size = ");
-	PRINTF_BA("0x%" PFMT64x "\n", (ut64)heap_info->size);
-	PRINT_YA("  mprotect_size = ");
-	PRINTF_BA("0x%" PFMT64x "\n", (ut64)heap_info->mprotect_size);
-	PRINT_YA("}\n\n");
-}
-
-void GH(print_malloc_info)(RzCore *core, GHT m_state, GHT malloc_state) {
-	GHT h_info;
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
-
-	if (malloc_state == m_state) {
-		PRINT_RA("main_arena does not have an instance of malloc_info\n");
-	} else if (GH(is_arena)(core, malloc_state, m_state)) {
-
-		h_info = (malloc_state >> 16) << 16;
-		GH(RzHeapInfo) *heap_info = RZ_NEW0(GH(RzHeapInfo));
-		if (!heap_info) {
-			return;
-		}
-		rz_io_read_at(core->io, h_info, (ut8 *)heap_info, sizeof(GH(RzHeapInfo)));
-		GH(print_inst_minfo)
-		(heap_info, h_info);
-		MallocState *ms = RZ_NEW0(MallocState);
-		if (!ms) {
-			free(heap_info);
-			return;
-		}
-
-		while (heap_info->prev != 0x0 && heap_info->prev != GHT_MAX) {
-			if (!GH(update_main_arena)(core, malloc_state, ms)) {
-				free(ms);
-				free(heap_info);
-				return;
-			}
-			if ((ms->GH(top) >> 16) << 16 != h_info) {
-				h_info = (ms->GH(top) >> 16) << 16;
-				rz_io_read_at(core->io, h_info, (ut8 *)heap_info, sizeof(GH(RzHeapInfo)));
-				GH(print_inst_minfo)
-				(heap_info, h_info);
-			}
-		}
-		free(heap_info);
-		free(ms);
-	} else {
-		PRINT_RA("This address is not part of the arenas\n");
-	}
-}
-
-/**
- * \brief Prints the heap chunks in a bin with double linked list (small|large|unsorted)
- * \param core RzCore pointer
- * \param main_arena MallocState struct for the arena in which bins are
- * \param bin_num The bin number for the bin from which chunks have to printed
- * \return number of chunks found in the bin
- */
-static int GH(print_bin_content)(RzCore *core, MallocState *main_arena, int bin_num) {
-	int idx = 2 * bin_num;
-	ut64 fw = main_arena->GH(bins)[idx];
-	ut64 bk = main_arena->GH(bins)[idx + 1];
-
-	GH(RzHeapChunk) *head = RZ_NEW0(GH(RzHeapChunk));
-	if (!head) {
-		return 0;
-	}
-	(void)rz_io_read_at(core->io, bk, (ut8 *)head, sizeof(GH(RzHeapChunk)));
-
-	size_t chunks_cnt = 0;
-	if (head->fd == fw) {
-		return chunks_cnt;
-	}
-	if (bin_num == 0) {
-		rz_cons_printf("Unsorted");
-	} else if (bin_num >= 1 && bin_num <= NSMALLBINS - 1) {
-		rz_cons_printf("Small");
-	} else if (bin_num >= NSMALLBINS && bin_num <= NBINS - 2) {
-		rz_cons_printf("Large");
-	}
-	rz_cons_printf("_bin[%d]: ", bin_num);
-	rz_cons_printf("fd=0x%" PFMT64x, fw);
-	rz_cons_printf(", bk=0x%" PFMT64x, bk);
-	rz_cons_newline();
-	GH(RzHeapChunk) *cnk = RZ_NEW0(GH(RzHeapChunk));
-
-	if (!cnk) {
-		return 0;
-	}
-
-	while (fw != head->fd) {
-		rz_io_read_at(core->io, fw, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
-		rz_cons_printf(" -> ");
-		GH(print_heap_chunk_simple)
-		(core, fw);
-		fw = cnk->fd;
-		chunks_cnt += 1;
-	}
-	rz_cons_newline();
-	free(cnk);
-	free(head);
-
-	return chunks_cnt;
-}
-
-/**
- * \brief Prints unsorted bin description for an arena (used for `dmhd` command)
- * \param core RzCore pointer
- * \param m_arena Offset of the arena in memory
- * \param main_arena MallocState struct for the arena in which bin are
- */
-static void GH(print_unsortedbin_description)(RzCore *core, GHT m_arena, MallocState *main_arena) {
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
-	rz_cons_printf("Unsorted bin @ ");
-	PRINTF_BA("0x%" PFMT64x "\n", (ut64)m_arena);
-	int chunk_cnt = GH(print_bin_content)(core, main_arena, 0);
-	rz_cons_printf("Found %d chunks in unsorted bins \n", chunk_cnt);
-}
-
-/**
- * \brief Prints small bins description for an arena (used for `dmhd` command)
- * \param core RzCore pointer
- * \param m_arena Offset of the arena in memory
- * \param main_arena Pointer to MallocState struct for the arena in which bins are
- */
-static void GH(print_smallbin_description)(RzCore *core, GHT m_arena, MallocState *main_arena) {
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
-	rz_cons_printf("Small bins @ ");
-	PRINTF_BA("0x%" PFMT64x "\n", (ut64)m_arena);
-	int chunk_cnt = 0;
-	int non_empty_cnt = 0;
-	for (int bin_num = 1; bin_num < NSMALLBINS; bin_num++) {
-		int chunk_found = GH(print_bin_content)(core, main_arena, bin_num);
-		if (chunk_found > 0) {
-			non_empty_cnt += 1;
-		}
-		chunk_cnt += chunk_found;
-	}
-	rz_cons_printf("Found %d chunks in %d small bins \n", chunk_cnt, non_empty_cnt);
-}
-
-/**
- * \brief Prints large bins description for an arena (used for `dmhd` command)
- * \param core RzCore pointer
- * \param m_arena Offset of the arena in memory
- * \param main_arena Pointer to MallocState struct for the arena in which bins are
- */
-static void GH(print_largebin_description)(RzCore *core, GHT m_arena, MallocState *main_arena) {
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
-	rz_cons_printf("Large bins @ ");
-	PRINTF_BA("0x%" PFMT64x "\n", (ut64)m_arena);
-	int chunk_cnt = 0;
-	int non_empty_cnt = 0;
-	for (int bin_num = NSMALLBINS; bin_num < NBINS - 2; bin_num++) {
-		int chunk_found = GH(print_bin_content)(core, main_arena, bin_num);
-		if (chunk_found > 0) {
-			non_empty_cnt += 1;
-		}
-		chunk_cnt += chunk_found;
-	}
-	rz_cons_printf("Found %d chunks in %d large bins \n", chunk_cnt, non_empty_cnt);
-}
-
-/**
- * \brief Prints description of bins for main arena for `dmhd` command
- * \param core RzCore pointer
- * \param m_arena Offset of main arena in memory
- * \param main_arena Pointer to Malloc state struct for main arena
- * \param global_max_fast The largest fast bin size (used for formatting)
- * \param format Enum to determine which type of bins to print.
- */
-static void GH(print_main_arena_bins)(RzCore *core, GHT m_arena, MallocState *main_arena, GHT global_max_fast, RzHeapBinType format) {
-	rz_return_if_fail(core && core->dbg && core->dbg->maps);
-	bool demangle = rz_config_get_i(core->config, "dbg.glibc.demangle");
-	if (format == RZ_HEAP_BIN_ANY || format == RZ_HEAP_BIN_TCACHE) {
-		bool main_thread_only = true;
-		GH(print_tcache_instance)
-		(core, m_arena, main_arena, demangle, main_thread_only);
-		rz_cons_newline();
-	}
-	if (format == RZ_HEAP_BIN_ANY || format == RZ_HEAP_BIN_FAST) {
-		char *input = malloc(sizeof(char) * 1);
-		input[0] = '\0';
-		bool main_arena_only = true;
-		GH(print_heap_fastbin)
-		(core, m_arena, main_arena, global_max_fast, input, demangle, main_arena_only);
-		free(input);
-		rz_cons_newline();
-	}
-	if (format == RZ_HEAP_BIN_ANY || format == RZ_HEAP_BIN_UNSORTED) {
-		GH(print_unsortedbin_description)
-		(core, m_arena, main_arena);
-		rz_cons_newline();
-	}
-	if (format == RZ_HEAP_BIN_ANY || format == RZ_HEAP_BIN_SMALL) {
-		GH(print_smallbin_description)
-		(core, m_arena, main_arena);
-		rz_cons_newline();
-	}
-	if (format == RZ_HEAP_BIN_ANY || format == RZ_HEAP_BIN_LARGE) {
-		GH(print_largebin_description)
-		(core, m_arena, main_arena);
-		rz_cons_newline();
-	}
-}
-
-static const char *GH(help_msg)[] = {
-	"Usage:", " dmh", " # Memory map heap",
-	"dmh", "", "List the chunks inside the heap segment",
-	"dmh", " @[malloc_state]", "List heap chunks of a particular arena",
-	"dmha", "", "List all malloc_state instances in application",
-	"dmhb", " @[malloc_state]", "Display all parsed Double linked list of main_arena's or a particular arena bins instance",
-	"dmhb", " [bin_num|bin_num:malloc_state]", "Display parsed double linked list of bins instance from a particular arena",
-	"dmhbg", " [bin_num]", "Display double linked list graph of main_arena's bin [Under development]",
-	"dmhc", " @[chunk_addr]", "Display malloc_chunk struct for a given malloc chunk",
-	"dmhd", " [tcache|unsorted|fast|small|large]", "Display description of bins in the main_arena",
-	"dmhf", " @[malloc_state]", "Display all parsed fastbins of main_arena's or a particular arena fastbinY instance",
-	"dmhf", " [fastbin_num|fastbin_num:malloc_state]", "Display parsed single linked list in fastbinY instance from a particular arena",
-	"dmhg", "", "Display heap graph of heap segment",
-	"dmhg", " [malloc_state]", "Display heap graph of a particular arena",
-	"dmhi", " @[malloc_state]", "Display heap_info structure/structures for a given arena",
-	"dmhj", "", "List the chunks inside the heap segment in JSON format",
-	"dmhm", "", "List all elements of struct malloc_state of main thread (main_arena)",
-	"dmhm", " @[malloc_state]", "List all malloc_state instance of a particular arena",
-	"dmht", "", "Display all parsed thread cache bins of all arena's tcache instance",
-	"dmhv", " @[malloc_state]", "List heap chunks of a particular arena along with hexdump of first 0x10 bytes",
-	"dmh?", "", "Show map heap help",
-	NULL
-};
-
-static int GH(cmd_dbg_map_heap_glibc)(RzCore *core, const char *input) {
-	static GHT m_arena = GHT_MAX, m_state = GHT_MAX;
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
-
 	GHT global_max_fast = (64 * SZ / 4);
-
 	MallocState *main_arena = RZ_NEW0(MallocState);
 	if (!main_arena) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!GH(rz_heap_resolve_main_arena)(core, &m_arena)) {
+		free(main_arena);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (argc == 1) {
+		m_state = m_arena;
+	} else if (argc == 2) {
+		m_state = rz_num_get(NULL, argv[1]);
+	}
+	if (!GH(is_arena)(core, m_arena, m_state)) {
+		PRINT_RA("This address is not a valid arena\n");
+		free(main_arena);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!GH(rz_heap_update_main_arena)(core, m_state, main_arena)) {
+		free(main_arena);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	GH(print_arena_stats)
+	(core, m_state, main_arena, global_max_fast, mode);
+	free(main_arena);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunk_print_handler)(RzCore *core, int argc, const char **argv) {
+	GHT m_arena = GHT_MAX;
+	MallocState *main_arena = RZ_NEW0(MallocState);
+	if (!main_arena) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!GH(rz_heap_resolve_main_arena)(core, &m_arena)) {
+		free(main_arena);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	ut64 addr = core->offset;
+	GH(print_heap_chunk)
+	(core, addr);
+	free(main_arena);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus GH(rz_cmd_heap_info_print_handler)(RzCore *core, int argc, const char **argv) {
+	GHT m_arena = GHT_MAX, m_state = GHT_MAX;
+	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	MallocState *main_arena = RZ_NEW0(MallocState);
+	if (!main_arena) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!GH(rz_heap_resolve_main_arena)(core, &m_arena)) {
+		free(main_arena);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (argc == 1) {
+		m_state = m_arena;
+	} else if (argc == 2) {
+		m_state = rz_num_get(NULL, argv[1]);
+	}
+	if (!GH(is_arena)(core, m_arena, m_state)) {
+		PRINT_RA("This address is not a valid arena\n");
+		free(main_arena);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!GH(rz_heap_update_main_arena)(core, m_state, main_arena)) {
+		free(main_arena);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	GH(print_malloc_info)
+	(core, m_arena, m_state);
+	free(main_arena);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus GH(rz_cmd_heap_tcache_print_handler)(RzCore *core, int argc, const char **argv) {
+	GHT m_arena = GHT_MAX;
+	MallocState *main_arena = RZ_NEW0(MallocState);
+	if (!main_arena) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!GH(rz_heap_resolve_main_arena)(core, &m_arena)) {
+		free(main_arena);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!GH(rz_heap_update_main_arena)(core, m_arena, main_arena)) {
+		free(main_arena);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	// if no tcache in this version of glibc just return
+	const int tc = rz_config_get_i(core->config, "dbg.glibc.tcache");
+	if (!tc) {
+		rz_cons_printf("No tcache present in this version of libc\n");
+		free(main_arena);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	RzList *arenas_list = GH(rz_heap_arenas_list)(core, m_arena, main_arena);
+	RzArenaListItem *item;
+	RzListIter *iter;
+	rz_list_foreach (arenas_list, iter, item) {
+		GH(print_tcache_content)
+		(core, item->addr, m_arena, NULL);
+	}
+	free(main_arena);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI int GH(rz_cmd_heap_bins_list_print)(RzCore *core, const char *input) {
+	GHT m_arena = GHT_MAX, m_state = GHT_MAX;
+	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	MallocState *main_arena = RZ_NEW0(MallocState);
+	if (!GH(rz_heap_resolve_main_arena)(core, &m_arena)) {
+		free(main_arena);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	char *m_state_str, *dup = strdup(input);
+	if (*dup) {
+		strtok(dup, ":");
+		m_state_str = strtok(NULL, ":");
+		m_state = rz_num_get(NULL, m_state_str);
+		if (!m_state) {
+			m_state = m_arena;
+		}
+	} else {
+		if (core->offset != core->prompt_offset) {
+			m_state = core->offset;
+		} else {
+			m_state = m_arena;
+		}
+	}
+	if (GH(is_arena)(core, m_arena, m_state)) {
+		if (!GH(rz_heap_update_main_arena)(core, m_state, main_arena)) {
+			free(main_arena);
+			free(dup);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		GH(print_heap_bin)
+		(core, m_state, main_arena, dup);
+	} else {
+		PRINT_RA("This address is not part of the arenas\n");
+		free(main_arena);
+		free(dup);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	free(dup);
+	free(main_arena);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI int GH(rz_cmd_heap_fastbins_print)(void *data, const char *input) {
+	RzCore *core = (RzCore *)data;
+	GHT m_arena = GHT_MAX, m_state = GHT_MAX;
+	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	MallocState *main_arena = RZ_NEW0(MallocState);
+	GHT global_max_fast = (64 * SZ / 4);
+	if (!GH(rz_heap_resolve_main_arena)(core, &m_arena)) {
+		free(main_arena);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	bool main_arena_only = false;
+	char *m_state_str, *dup = strdup(input);
+	if (*dup) {
+		strtok(dup, ":");
+		m_state_str = strtok(NULL, ":");
+		m_state = rz_num_get(NULL, m_state_str);
+		if (!m_state) {
+			m_state = m_arena;
+		}
+	} else {
+		if (core->offset != core->prompt_offset) {
+			m_state = core->offset;
+		} else {
+			m_state = m_arena;
+		}
+	}
+	if (GH(is_arena)(core, m_arena, m_state)) {
+		if (!GH(rz_heap_update_main_arena)(core, m_state, main_arena)) {
+			free(dup);
+			free(main_arena);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		GH(print_heap_fastbin)
+		(core, m_state, main_arena, global_max_fast, dup, main_arena_only, NULL);
+	} else {
+		PRINT_RA("This address is not part of the arenas\n");
+		free(dup);
+		free(main_arena);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	free(dup);
+	free(main_arena);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus GH(rz_cmd_heap_arena_bins_print_handler)(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	GHT m_arena = GHT_MAX, m_state = GHT_MAX;
+	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	GHT global_max_fast = (64 * SZ / 4);
+	MallocState *main_arena = RZ_NEW0(MallocState);
+	if (!main_arena) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!GH(rz_heap_resolve_main_arena)(core, &m_arena)) {
+		free(main_arena);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (core->offset != core->prompt_offset) {
+		m_state = core->offset;
+	} else {
+		m_state = m_arena;
+	}
+	if (!GH(is_arena)(core, m_arena, m_state)) {
+		PRINT_RA("This address is not part of the arenas\n");
+		free(main_arena);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!GH(rz_heap_update_main_arena)(core, m_state, main_arena)) {
+		free(main_arena);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	bool json = false;
+	if (mode == RZ_OUTPUT_MODE_JSON) { // dmhdj
+		json = true;
+	}
+	RzHeapBinType bin_format = RZ_HEAP_BIN_ANY;
+	if (argc == 2) {
+		const char *input = argv[1];
+		if (!strcmp(input, "tcache")) {
+			bin_format = RZ_HEAP_BIN_TCACHE;
+		} else if (!strcmp(input, "fast")) {
+			bin_format = RZ_HEAP_BIN_FAST;
+		} else if (!strcmp(input, "unsorted")) {
+			bin_format = RZ_HEAP_BIN_UNSORTED;
+		} else if (!strcmp(input, "small")) {
+			bin_format = RZ_HEAP_BIN_SMALL;
+		} else if (!strcmp(input, "large")) {
+			bin_format = RZ_HEAP_BIN_LARGE;
+		}
+	}
+	GH(print_main_arena_bins)
+	(core, m_state, main_arena, m_arena, global_max_fast, bin_format, json);
+	free(main_arena);
+	return RZ_CMD_STATUS_OK;
+}
+
+/**
+ * \brief A wrapper around GH(rz_heap_arenas_list) which handles finding main_arena
+ * \param core RzCore pointer
+ * \return RzList of RzArenaListItem
+ */
+RZ_API RzList *GH(rz_heap_arena_list_wrapper)(RzCore *core) {
+	GHT m_arena;
+	if (!GH(rz_heap_resolve_main_arena)(core, &m_arena)) {
+		return rz_list_newf(free);
+	}
+	MallocState *main_arena = RZ_NEW0(MallocState);
+	if (!main_arena) {
+		return rz_list_newf(free);
+	}
+	if (!GH(rz_heap_update_main_arena)(core, m_arena, main_arena)) {
+		free(main_arena);
+		return rz_list_newf(free);
+	}
+	RzList *arenas_list = GH(rz_heap_arenas_list)(core, m_arena, main_arena);
+	free(main_arena);
+	return arenas_list;
+}
+
+/**
+ * \brief A wrapper around GH(rz_heap_chunks_list) which handles finding the main arena
+ * \param core RzCore pointer
+ * \param m_arena Base Address of the arena
+ * \return RzList of heap chunks as RzHeapChunkListItem structs
+ */
+RZ_API RzList *GH(rz_heap_chunks_list_wrapper)(RzCore *core, ut64 m_state) {
+	GHT m_arena;
+	if (!GH(rz_heap_resolve_main_arena)(core, &m_arena)) {
+		return rz_list_newf(free);
+	}
+	if (!GH(is_arena)(core, m_arena, m_state)) {
+		return rz_list_newf(free);
+	}
+	MallocState *main_arena = RZ_NEW0(MallocState);
+	if (!main_arena) {
+		return rz_list_newf(free);
+	}
+	if (!GH(rz_heap_update_main_arena)(core, m_state, main_arena)) {
+		free(main_arena);
+		return rz_list_newf(free);
+	}
+	RzList *chunks = GH(rz_heap_chunks_list)(core, main_arena, m_arena, m_state, true);
+	free(main_arena);
+	return chunks;
+}
+
+/**
+ * \brief Get info about a heap chunk as RzHeapChunkSimple
+ * \param core RzCore pointer
+ * \param addr Base address of the heap chunk
+ * \return RzHeapChunkSimple struct pointer for the chunk
+ */
+RZ_API RzHeapChunkSimple *GH(rz_heap_chunk_wrapper)(RzCore *core, GHT addr) {
+	GH(RzHeapChunk) *heap_chunk = GH(rz_heap_get_chunk_at_addr)(core, addr);
+	if (!heap_chunk) {
+		return NULL;
+	}
+	RzHeapChunkSimple *simple_chunk = RZ_NEW0(RzHeapChunkSimple);
+	if (!simple_chunk) {
+		free(heap_chunk);
+		return NULL;
+	}
+	ut64 size = heap_chunk->size;
+	simple_chunk->addr = addr;
+	simple_chunk->size = size & ~(NON_MAIN_ARENA | IS_MMAPPED | PREV_INUSE);
+	simple_chunk->non_main_arena = (bool)((size & NON_MAIN_ARENA) >> 2);
+	simple_chunk->is_mmapped = (bool)((size & IS_MMAPPED) >> 1);
+	simple_chunk->prev_inuse = (bool)(size & PREV_INUSE);
+	simple_chunk->prev_size = heap_chunk->prev_size;
+	simple_chunk->bk = heap_chunk->bk;
+	simple_chunk->fd = heap_chunk->fd;
+	simple_chunk->fd_nextsize = heap_chunk->fd_nextsize;
+	simple_chunk->bk_nextsize = heap_chunk->bk_nextsize;
+	free(heap_chunk);
+	return simple_chunk;
+}
+
+/**
+ * \brief Get MallocState struct for arena with given base address
+ * if base address is 0 then return MallocState for main arena
+ * \param core RzCore pointer
+ * \param addr Base address of the arena
+ * \return MallocState struct pointer for the arena
+ */
+RZ_API MallocState *GH(rz_heap_get_arena)(RzCore *core, GHT m_state) {
+	GHT m_arena;
+	if (!GH(rz_heap_resolve_main_arena)(core, &m_arena)) {
+		return NULL;
+	}
+	if (!m_state) {
+		m_state = m_arena;
+	}
+	if (!GH(is_arena)(core, m_arena, m_state)) {
+		return NULL;
+	}
+	MallocState *main_arena = RZ_NEW0(MallocState);
+	if (!main_arena) {
+		return NULL;
+	}
+	if (!GH(rz_heap_update_main_arena)(core, m_state, main_arena)) {
+		free(main_arena);
+		return NULL;
+	}
+	return main_arena;
+}
+
+/**
+ * \brief Write a heap chunk header to memory
+ * \param core RzCore pointer
+ * \param chunk_simple RzHeapChunkSimple pointer to the heap chunk data
+ * \return bool if the write succeeded or not
+ */
+RZ_API bool GH(rz_heap_write_heap_chunk)(RzCore *core, RzHeapChunkSimple *chunk_simple) {
+	if (!chunk_simple) {
+		return false;
+	}
+	GH(RzHeapChunk) *heap_chunk = RZ_NEW0(GH(RzHeapChunk));
+	if (!heap_chunk) {
 		return false;
 	}
 
-	rz_config_set_i(core->config, "dbg.glibc.tcache", GH(is_tcache)(core));
-
-	int format = 'c';
-	bool get_state = false;
-
-	switch (input[0]) {
-	case ' ': // dmh [malloc_state]
-		m_state = rz_num_get(NULL, input);
-		get_state = true;
-	case '\0': // dmh
-		if (GH(rz_resolve_main_arena)(core, &m_arena)) {
-
-			if (core->offset != core->prompt_offset) {
-				m_state = core->offset;
-			} else {
-				if (!get_state) {
-					m_state = m_arena;
-				}
-			}
-			if (GH(is_arena)(core, m_arena, m_state)) {
-				if (!GH(update_main_arena)(core, m_state, main_arena)) {
-					break;
-				}
-				GH(print_heap_segment)
-				(core, main_arena, m_arena, m_state, global_max_fast, format);
-				break;
-			} else {
-				PRINT_RA("This address is not part of the arenas\n");
-				break;
-			}
-		}
-		break;
-	case 'a': // dmha
-		if (GH(rz_resolve_main_arena)(core, &m_arena)) {
-			if (!GH(update_main_arena)(core, m_arena, main_arena)) {
-				break;
-			}
-			GH(print_malloc_states)
-			(core, m_arena, main_arena);
-		}
-		break;
-	case 'i': // dmhi
-		if (GH(rz_resolve_main_arena)(core, &m_arena)) {
-			if (!GH(update_main_arena)(core, m_arena, main_arena)) {
-				break;
-			}
-			input += 1;
-			if (!strcmp(input, "\0")) {
-				if (core->offset != core->prompt_offset) {
-					m_state = core->offset;
-				}
-			} else {
-				m_state = rz_num_get(NULL, input);
-			}
-			GH(print_malloc_info)
-			(core, m_arena, m_state);
-		}
-		break;
-	case 'm': // "dmhm"
-		if (GH(rz_resolve_main_arena)(core, &m_arena)) {
-
-			switch (input[1]) {
-			case '*':
-				format = '*';
-				input += 1;
-				break;
-			case 'j':
-				format = 'j';
-				input += 1;
-				break;
-			}
-			input += 1;
-			if (!strcmp(input, "\0")) {
-				if (core->offset != core->prompt_offset) {
-					m_arena = core->offset;
-					if (!GH(update_main_arena)(core, m_arena, main_arena)) {
-						break;
-					}
-				} else {
-					if (!GH(update_main_arena)(core, m_arena, main_arena)) {
-						break;
-					}
-				}
-			} else {
-				m_arena = rz_num_get(NULL, input);
-				if (!GH(update_main_arena)(core, m_arena, main_arena)) {
-					break;
-				}
-			}
-			GH(print_arena_stats)
-			(core, m_arena, main_arena, global_max_fast, format);
-		}
-		break;
-	case 'b': // "dmhb"
-		if (GH(rz_resolve_main_arena)(core, &m_arena)) {
-			char *m_state_str, *dup = strdup(input + 1);
-			if (*dup) {
-				strtok(dup, ":");
-				m_state_str = strtok(NULL, ":");
-				m_state = rz_num_get(NULL, m_state_str);
-				if (!m_state) {
-					m_state = m_arena;
-				}
-			} else {
-				if (core->offset != core->prompt_offset) {
-					m_state = core->offset;
-				} else {
-					m_state = m_arena;
-				}
-			}
-			if (GH(is_arena)(core, m_arena, m_state)) {
-				if (!GH(update_main_arena)(core, m_state, main_arena)) {
-					free(dup);
-					break;
-				}
-				GH(print_heap_bin)
-				(core, m_state, main_arena, dup);
-			} else {
-				PRINT_RA("This address is not part of the arenas\n");
-				free(dup);
-				break;
-			}
-			free(dup);
-		}
-		break;
-	case 'c': // "dmhc"
-		if (GH(rz_resolve_main_arena)(core, &m_arena)) {
-			GH(print_heap_chunk)
-			(core);
-		}
-		break;
-	case 'd': // "dmhd"
-		if (!GH(rz_resolve_main_arena)(core, &m_arena)) {
-			break;
-		}
-		if (!GH(update_main_arena)(core, m_arena, main_arena)) {
-			break;
-		}
-		input += 1;
-		RzHeapBinType bin_format = RZ_HEAP_BIN_ANY;
-		if (input[0] == ' ') {
-			input += 1;
-			if (!strcmp(input, "tcache")) {
-				bin_format = RZ_HEAP_BIN_TCACHE;
-			} else if (!strcmp(input, "fast")) {
-				bin_format = RZ_HEAP_BIN_FAST;
-			} else if (!strcmp(input, "unsorted")) {
-				bin_format = RZ_HEAP_BIN_UNSORTED;
-			} else if (!strcmp(input, "small")) {
-				bin_format = RZ_HEAP_BIN_SMALL;
-			} else if (!strcmp(input, "large")) {
-				bin_format = RZ_HEAP_BIN_LARGE;
-			} else {
-				break;
-			}
-		}
-
-		GH(print_main_arena_bins)
-		(core, m_arena, main_arena, global_max_fast, bin_format);
-		break;
-	case 'f': // "dmhf"
-		if (GH(rz_resolve_main_arena)(core, &m_arena)) {
-			bool demangle = rz_config_get_i(core->config, "dbg.glibc.demangle");
-			bool main_arena_only = false;
-			char *m_state_str, *dup = strdup(input + 1);
-			if (*dup) {
-				strtok(dup, ":");
-				m_state_str = strtok(NULL, ":");
-				m_state = rz_num_get(NULL, m_state_str);
-				if (!m_state) {
-					m_state = m_arena;
-				}
-			} else {
-				if (core->offset != core->prompt_offset) {
-					m_state = core->offset;
-				} else {
-					m_state = m_arena;
-				}
-			}
-			if (GH(is_arena)(core, m_arena, m_state)) {
-				if (!GH(update_main_arena)(core, m_state, main_arena)) {
-					free(dup);
-					break;
-				}
-				GH(print_heap_fastbin)
-				(core, m_state, main_arena, global_max_fast, dup, demangle, main_arena_only);
-			} else {
-				PRINT_RA("This address is not part of the arenas\n");
-				free(dup);
-				break;
-			}
-			free(dup);
-		}
-		break;
-	case 'v':
-		if (input[0] == 'v') {
-			format = 'v';
-		}
-	case 'g': //dmhg
-		if (input[0] == 'g') {
-			format = 'g';
-		}
-	case '*': //dmh*
-		if (input[0] == '*') {
-			format = '*';
-		}
-	case 'j': // "dmhj"
-		if (input[0] == 'j') {
-			format = 'j';
-		}
-		if (GH(rz_resolve_main_arena)(core, &m_arena)) {
-			input += 1;
-			if (!strcmp(input, "\0")) {
-				if (core->offset != core->prompt_offset) {
-					m_state = core->offset;
-					get_state = true;
-				}
-			} else {
-				m_state = rz_num_get(NULL, input);
-				get_state = true;
-			}
-			if (!get_state) {
-				m_state = m_arena;
-			}
-			if (GH(is_arena)(core, m_arena, m_state)) {
-				if (!GH(update_main_arena)(core, m_state, main_arena)) {
-					break;
-				}
-				GH(print_heap_segment)
-				(core, main_arena, m_arena, m_state, global_max_fast, format);
-			} else {
-				PRINT_RA("This address is not part of the arenas\n");
-			}
-		}
-		break;
-	case 't':
-		if (GH(rz_resolve_main_arena)(core, &m_arena)) {
-			if (!GH(update_main_arena)(core, m_arena, main_arena)) {
-				break;
-			}
-			bool demangle = rz_config_get_i(core->config, "dbg.glibc.demangle");
-			bool main_thread_only = false;
-			GH(print_tcache_instance)
-			(core, m_arena, main_arena, demangle, main_thread_only);
-		}
-		break;
-	case '?':
-		rz_core_cmd_help(core, GH(help_msg));
-		break;
+	heap_chunk->size = chunk_simple->size;
+	// add flag bits to chunk size
+	if (chunk_simple->prev_inuse) {
+		heap_chunk->size |= PREV_INUSE;
 	}
-	free(main_arena);
-	return true;
+	if (chunk_simple->is_mmapped) {
+		heap_chunk->size |= IS_MMAPPED;
+	}
+	if (chunk_simple->non_main_arena) {
+		heap_chunk->size |= NON_MAIN_ARENA;
+	}
+
+	heap_chunk->fd = chunk_simple->fd;
+	heap_chunk->bk = chunk_simple->bk;
+	heap_chunk->fd_nextsize = chunk_simple->fd_nextsize;
+	heap_chunk->bk_nextsize = chunk_simple->bk_nextsize;
+	bool res = rz_io_write_at(core->io, chunk_simple->addr, (ut8 *)heap_chunk, sizeof(GH(RzHeapChunk)));
+	free(heap_chunk);
+	return res;
 }

@@ -1,0 +1,91 @@
+# SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+---
+name: cmd_plugins
+commands:
+  - name: L
+    cname: plugins_load
+    summary: Load a plugin from file
+    args:
+      - name: plugin_file
+        type: RZ_CMD_ARG_TYPE_FILE
+  - name: L-
+    cname: plugins_unload
+    summary: Unload core plugin by name
+    args:
+      - name: plugin_name
+        type: RZ_CMD_ARG_TYPE_STRING
+  - name: Ll
+    cname: plugins_lang_print
+    summary: Print the lang plugins
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    args: []
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+  - name: La
+    cname: plugins_asm_print
+    summary: Print the asm/analysis plugins
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    args: []
+    modes:
+      - RZ_OUTPUT_MODE_QUIET
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+  - name: Lc
+    cname: plugins_core_print
+    summary: Print the core plugins
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    args: []
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+  - name: Ld
+    summary: Print the debug plugins
+    cname: plugins_debug_print
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    args:
+      - name: handler
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+    modes:
+      - RZ_OUTPUT_MODE_QUIET
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+  - name: Lh
+    cname: plugins_hash_print
+    summary: Print the hash plugins
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    args: []
+    modes:
+      - RZ_OUTPUT_MODE_QUIET
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+  - name: Li
+    cname: plugins_bin_print
+    summary: Print the bin plugins
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    args: []
+    modes:
+      - RZ_OUTPUT_MODE_QUIET
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+  - name: Lo
+    cname: plugins_io_print
+    summary: Print the io plugins
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    args:
+      - name: plugin
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+  - name: Lp
+    cname: plugins_parser_print
+    summary: Print the parser plugins
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    args: []
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON

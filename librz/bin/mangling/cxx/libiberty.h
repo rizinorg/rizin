@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 /* Function declarations for libiberty.
 
    Copyright 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005,

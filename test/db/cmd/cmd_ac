@@ -1,5 +1,5 @@
 NAME=ac
-FILE=-
+FILE==
 CMDS=<<EOF
 ac Flatline
 acll
@@ -15,7 +15,7 @@ EOF
 RUN
 
 NAME=acm
-FILE=-
+FILE==
 CMDS=<<EOF
 ac Flatline
 acm Flatline PrayerPosition 0x1337 0x42
@@ -27,8 +27,8 @@ f@F:classes
 EOF
 EXPECT=<<EOF
 [Flatline]
-nth name              addr vt_offset type
------------------------------------------
+nth name              addr vt_offset type    
+---------------------------------------------
 1   PrayerPosition  0x1337 0x42      DEFAULT
 
 Flatline=c
@@ -41,7 +41,7 @@ EOF
 RUN
 
 NAME=acm-
-FILE=-
+FILE==
 CMDS=<<EOF
 ac Flatline
 acm Flatline PrayerPosition 0x1337 0x42
@@ -68,8 +68,8 @@ f@F:classes
 EOF
 EXPECT=<<EOF
 [Flatline]
-nth name                  addr vt_offset type
----------------------------------------------
+nth name                  addr vt_offset type    
+-------------------------------------------------
 1   PrayerPosition      0x1337 0x42      DEFAULT
 2   RemainIndoors   0xdeadbeef -1        DEFAULT
 
@@ -83,8 +83,8 @@ attrtypes.Flatline=method
 0xdeadbeef 0 method.Flatline.RemainIndoors
 --
 [Flatline]
-nth name                 addr vt_offset type
---------------------------------------------
+nth name                 addr vt_offset type    
+------------------------------------------------
 1   RemainIndoors  0xdeadbeef -1        DEFAULT
 
 Flatline=c
@@ -101,7 +101,7 @@ EOF
 RUN
 
 NAME=acmn
-FILE=-
+FILE==
 CMDS=<<EOF
 ac Flatline
 acm Flatline PrayerPosition 0x1337 0x42
@@ -120,8 +120,8 @@ f@F:classes
 EOF
 EXPECT=<<EOF
 [Flatline]
-nth name              addr vt_offset type
------------------------------------------
+nth name              addr vt_offset type    
+---------------------------------------------
 1   PrayerPosition  0x1337 0x42      DEFAULT
 
 Flatline=c
@@ -132,8 +132,8 @@ attrtypes.Flatline=method
 0x00001337 0 method.Flatline.PrayerPosition
 --
 [Flatline]
-nth name        addr vt_offset type
------------------------------------
+nth name        addr vt_offset type    
+---------------------------------------
 1   Marigold  0x1337 0x42      DEFAULT
 
 Flatline=c
@@ -146,7 +146,7 @@ EOF
 RUN
 
 NAME=ac-
-FILE=-
+FILE==
 CMDS=<<EOF
 ac Album
 ac PeripheryAlbum
@@ -188,8 +188,8 @@ EXPECT=<<EOF
 [Album]
 [Flatline: PeripheryAlbum]
   (vtable at 0x1337)
-nth name              addr vt_offset type
------------------------------------------
+nth name              addr vt_offset type    
+---------------------------------------------
 1   PrayerPosition  0x1337 0x42      DEFAULT
 
 [PeripheryAlbum: Album]
@@ -212,8 +212,8 @@ attrtypes.PeripheryAlbum=base
 --
 [Flatline: PeripheryAlbum]
   (vtable at 0x1337)
-nth name              addr vt_offset type
------------------------------------------
+nth name              addr vt_offset type    
+---------------------------------------------
 1   PrayerPosition  0x1337 0x42      DEFAULT
 
 [PeripheryAlbum]
@@ -232,8 +232,8 @@ attrtypes.Flatline=base,method,vtable
 --
 [Flatline: PeripheryAlbum]
   (vtable at 0x1337)
-nth name              addr vt_offset type
------------------------------------------
+nth name              addr vt_offset type    
+---------------------------------------------
 1   PrayerPosition  0x1337 0x42      DEFAULT
 
 [PeripheryAlbum]
@@ -257,7 +257,7 @@ EOF
 RUN
 
 NAME=acb
-FILE=-
+FILE==
 CMDS=<<EOF
 ac PeripherySong
 ac NiceSong
@@ -289,7 +289,7 @@ EOF
 RUN
 
 NAME=acb-
-FILE=-
+FILE==
 CMDS=<<EOF
 ac PeripherySong
 ac NiceSong
@@ -333,7 +333,7 @@ EOF
 RUN
 
 NAME=acv
-FILE=-
+FILE==
 CMDS=<<EOF
 ac Deadwing
 acv Deadwing 0x1337
@@ -361,7 +361,7 @@ EOF
 RUN
 
 NAME=acv-
-FILE=-
+FILE==
 CMDS=<<EOF
 ac Deadwing
 acv Deadwing 0x1337
@@ -402,7 +402,7 @@ EOF
 RUN
 
 NAME=acn
-FILE=-
+FILE==
 CMDS=<<EOF
 ac Album
 ac PorcupineTreeAlbum
@@ -429,8 +429,8 @@ EXPECT=<<EOF
 [Deadwing: PorcupineTreeAlbum]
 [PorcupineTreeAlbum: Album]
   (vtable at 0x1337 in class at +0x42)
-nth name          addr vt_offset type
--------------------------------------
+nth name          addr vt_offset type    
+-----------------------------------------
 1   Listen  0xdeadbeef -1        DEFAULT
 
 Album=c
@@ -454,8 +454,8 @@ attrtypes.PorcupineTreeAlbum=base,vtable,method
 [Deadwing: Masterpiece]
 [Masterpiece: Album]
   (vtable at 0x1337 in class at +0x42)
-nth name          addr vt_offset type
--------------------------------------
+nth name          addr vt_offset type    
+-----------------------------------------
 1   Listen  0xdeadbeef -1        DEFAULT
 
 Album=c
@@ -478,7 +478,7 @@ EOF
 RUN
 
 NAME=acl*
-FILE=-
+FILE==
 CMDS=<<EOF
 ac Album
 ac PorcupineTreeAlbum
@@ -501,7 +501,7 @@ EOF
 RUN
 
 NAME=aclj
-FILE=-
+FILE==
 CMDS=<<EOF
 ac PorcupineTreeAlbum
 ac Deadwing

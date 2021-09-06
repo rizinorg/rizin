@@ -6,40 +6,42 @@ EXPECT=<<EOF
 EOF
 RUN
 
-
 NAME=nro sections
 FILE=bins/nro/appstore.nro
-ARGS=-e io.cache=true
 CMDS=iS
 EXPECT=<<EOF
-[Sections]
+paddr      size     vaddr      vsize    align perm name   type flags 
+---------------------------------------------------------------------
+0x00000000 0x80     0x00000000 0x80     0x0   -r-- header      
+0x0021d000 0x0      0x0021d000 0x0      0x0   -r-- sig0        
+0x00000000 0x1b4000 0x00000000 0x1b4000 0x0   -r-x text        
+0x001b4000 0x5a000  0x001b4000 0x5a000  0x0   -r-- ro          
+0x0020e000 0xf000   0x0020e000 0xf000   0x0   -rw- data        
+EOF
+RUN
 
-nth paddr           size vaddr          vsize perm name
--------------------------------------------------------
-0   0x00000000      0x80 0x00000000      0x80 -r-- header
-1   0x0021d000       0x0 0x0021d000       0x0 -r-- sig0
-2   0x00000000  0x1b4000 0x00000000  0x1b4000 -r-x text
-3   0x001b4000   0x5a000 0x001b4000   0x5a000 -r-- ro
-4   0x0020e000    0xf000 0x0020e000    0xf000 -rw- data
-
+NAME=nro maps
+FILE=bins/nro/appstore.nro
+CMDS=om
+EXPECT=<<EOF
+ 1 fd: 3 +0x00000000 0x00000000 - 0x001b3fff r-x fmap.text
+ 2 fd: 3 +0x001b4000 0x001b4000 - 0x0020dfff r-- fmap.ro
+ 3 fd: 3 +0x0020e000 0x0020e000 - 0x0021cfff r-- fmap.data
 EOF
 RUN
 
 NAME=nro entry
 FILE=bins/nro/appstore.nro
-ARGS=-e io.cache=true
 CMDS=ie
 EXPECT=<<EOF
-[Entrypoints]
-vaddr=0x00000080 paddr=0x00000080 haddr=-1 type=program
-
-1 entrypoints
+vaddr      paddr      hvaddr     haddr      type    
+----------------------------------------------------
+0x00000080 0x00000080 ---------- ---------- program
 EOF
 RUN
 
 NAME=nro data
 FILE=bins/nro/appstore.nro
-ARGS=-e io.cache=true
 CMDS=p8 0x30 @ 0x80
 EXPECT=<<EOF
 fb031eaa01000094dc2302d1f90300aafa0301aae0100090c11100d00000199121e02191210000cb211c009121f07d92

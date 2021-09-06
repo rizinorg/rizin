@@ -4,6 +4,7 @@ if get_option('enable_rz_test')
     include_directories: [platform_inc],
     dependencies: [
       rz_util_dep,
+      rz_diff_dep,
       lrt,
     ],
     install: true,

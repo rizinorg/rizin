@@ -1,5 +1,5 @@
 NAME=aek-
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -21,7 +21,7 @@ EOF
 RUN
 
 NAME=aek- - crash
-FILE=-
+FILE==
 BROKEN=1
 CMDS=aek-
 EXPECT=<<EOF

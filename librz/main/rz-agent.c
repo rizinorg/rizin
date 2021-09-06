@@ -1,9 +1,36 @@
 // SPDX-FileCopyrightText: 2013-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "index.h"
 #include <rz_main.h>
 #include <rz_core.h>
+
+static const char *page_index =
+	"<html>"
+	"<head>"
+	"<title>rz-agent</title>"
+	"<script>"
+	"function file_open() {"
+	"  var file = window.prompt ('path to file?');"
+	"  window.open ('/file/open/'+file);"
+	"}"
+	"</script>"
+	"</head>"
+	"<body>"
+	"  <h2>rz-agent</h2>"
+	"  <hr size=1 />"
+	"File<br />"
+	" - <a href='javascript:file_open()'>open</a><br />"
+	" - <a href='/file/list'>list</a><br />"
+	" - push<br />"
+	" - pull<br />"
+	" - delete<br />"
+	" - chmod<br />"
+	"Processes<br />"
+	" - list<br />"
+	"Sessions<br />"
+	" - list<br />"
+	"</body>"
+	"</html>";
 
 #if __APPLE__ && (__arm__ || __arm64__ || __aarch64__)
 #define USE_IOS_JETSAM 1
@@ -95,7 +122,7 @@ RZ_API int rz_main_rz_agent(int argc, const char **argv) {
 	memorystatus_control(MEMORYSTATUS_CMD_SET_JETSAM_TASK_LIMIT, getpid(), 256, NULL, 0);
 #endif
 	if (dodaemon) {
-#if LIBC_HAVE_FORK
+#if HAVE_FORK
 		int pid = rz_sys_fork();
 		if (pid > 0) {
 			printf("%d\n", pid);
@@ -150,7 +177,7 @@ RZ_API int rz_main_rz_agent(int argc, const char **argv) {
 					perror("malloc");
 					return 1;
 				}
-				snprintf(cmd, cmd_len, "rizin -q %s-e http.port=%d -c=h \"%s\"",
+				snprintf(cmd, cmd_len, "rizin -q %s-e http.port=%d -cRh \"%s\"",
 					listenlocal ? "" : "-e http.bind=public ",
 					session_port, escaped_filename);
 

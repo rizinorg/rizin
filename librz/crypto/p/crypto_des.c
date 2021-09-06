@@ -15,8 +15,6 @@ struct des_state {
 	int i;
 };
 
-static struct des_state st = { { 0 } };
-
 static ut32 be32(const ut8 *buf4) {
 	ut32 val = buf4[0] << 8;
 	val |= buf4[1];
@@ -79,6 +77,9 @@ static int des_decrypt(struct des_state *st, const ut8 *input, ut8 *output) {
 }
 
 static bool des_set_key(RzCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
+	rz_return_val_if_fail(cry->user && key, 0);
+	struct des_state *st = (struct des_state *)cry->user;
+
 	ut32 keylo, keyhi, i;
 	if (keylen != DES_KEY_SIZE) {
 		return false;
@@ -87,22 +88,24 @@ static bool des_set_key(RzCrypto *cry, const ut8 *key, int keylen, int mode, int
 	keylo = be32(key);
 	keyhi = be32(key + 4);
 
-	st.key_size = DES_KEY_SIZE;
-	st.rounds = 16;
-	cry->dir = direction; // = direction == 0;
+	st->key_size = DES_KEY_SIZE;
+	st->rounds = 16;
+	cry->dir = direction;
 	// key permutation to derive round keys
 	rz_des_permute_key(&keylo, &keyhi);
 
 	for (i = 0; i < 16; i++) {
 		// filling round keys space
-		rz_des_round_key(i, &st.keylo[i], &st.keyhi[i], &keylo, &keyhi);
+		rz_des_round_key(i, &st->keylo[i], &st->keyhi[i], &keylo, &keyhi);
 	}
 
 	return true;
 }
 
 static int des_get_key_size(RzCrypto *cry) {
-	return st.key_size;
+	rz_return_val_if_fail(cry->user, 0);
+	struct des_state *st = (struct des_state *)cry->user;
+	return st->key_size;
 }
 
 static bool des_use(const char *algo) {
@@ -110,6 +113,9 @@ static bool des_use(const char *algo) {
 }
 
 static bool update(RzCrypto *cry, const ut8 *buf, int len) {
+	rz_return_val_if_fail(cry->user, false);
+	struct des_state *st = (struct des_state *)cry->user;
+
 	if (len <= 0) {
 		return false;
 	}
@@ -139,15 +145,15 @@ static bool update(RzCrypto *cry, const ut8 *buf, int len) {
 	//	}
 
 	int i;
-	if (cry->dir) {
+	if (cry->dir == RZ_CRYPTO_DIR_DECRYPT) {
 		for (i = 0; i < blocks; i++) {
 			ut32 next = (DES_BLOCK_SIZE * i);
-			des_decrypt(&st, ibuf + next, obuf + next);
+			des_decrypt(st, ibuf + next, obuf + next);
 		}
 	} else {
 		for (i = 0; i < blocks; i++) {
 			ut32 next = (DES_BLOCK_SIZE * i);
-			des_encrypt(&st, ibuf + next, obuf + next);
+			des_encrypt(st, ibuf + next, obuf + next);
 		}
 	}
 
@@ -161,13 +167,30 @@ static bool final(RzCrypto *cry, const ut8 *buf, int len) {
 	return update(cry, buf, len);
 }
 
+static bool des_init(RzCrypto *cry) {
+	rz_return_val_if_fail(cry, false);
+	cry->user = RZ_NEW0(struct des_state);
+	return cry->user != NULL;
+}
+
+static bool des_fini(RzCrypto *cry) {
+	rz_return_val_if_fail(cry, false);
+
+	free(cry->user);
+	return true;
+}
+
 RzCryptoPlugin rz_crypto_plugin_des = {
 	.name = "des-ecb",
+	.author = "deroad",
+	.license = "LGPL-3",
 	.set_key = des_set_key,
 	.get_key_size = des_get_key_size,
 	.use = des_use,
 	.update = update,
-	.final = final
+	.final = final,
+	.init = des_init,
+	.fini = des_fini,
 };
 
 #ifndef RZ_PLUGIN_INCORE

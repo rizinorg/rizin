@@ -5,9 +5,10 @@ om
 s
 EOF
 EXPECT=<<EOF
- 2 fd: 3 +0x0000035d 0x0000035d - 0x00000368 r-x fmap.code
- 1 fd: 3 +0x00000000 0x00000000 - 0x0000041b r-- fmap.file
-0x35d
+ 1 fd: 3 +0x00000160 0x00000160 - 0x0000041b r-x fmap.data
+ 2 fd: 3 +0x00000000 0x00000000 - 0x0000041b r-- fmap.file
+ 3 fd: 3 +0x00000000 0x00000000 - 0x0000041b r-x 
+0x160
 EOF
 RUN
 
@@ -27,7 +28,7 @@ iZ
 EOF
 EXPECT=<<EOF
 0x800
-1000
+2048
 EOF
 RUN
 
@@ -43,10 +44,11 @@ NAME=DEX dex38.dex ie command
 FILE=bins/dex/dex38.dex
 CMDS=ie
 EXPECT=<<EOF
-[Entrypoints]
-vaddr=0x00001378 paddr=0x00001378 haddr=-1 type=program
-
-1 entrypoints
+vaddr      paddr      hvaddr     haddr      type    
+----------------------------------------------------
+0x00000f70 0x00000f70 ---------- ---------- program
+0x000010b8 0x000010b8 ---------- ---------- program
+0x0000121c 0x0000121c ---------- ---------- program
 EOF
 RUN
 
@@ -54,9 +56,9 @@ NAME=DEX dex38.dex invoke-polymorphic
 FILE=bins/dex/dex38.dex
 CMDS=pi 2 @0x00125e; pi 3 @0x0012da
 EXPECT=<<EOF
-invoke-polymorphic {v1, v2, v3}, Ljava/lang/invoke/MethodHandle.invoke([Ljava/lang/Object;)Ljava/lang/Object;, (II)Ljava/lang/Object;
+invoke-polymorphic {v1, v2, v3}, Ljava/lang/invoke/MethodHandle;->invoke([Ljava/lang/Object;)Ljava/lang/Object;, (II)Ljava/lang/Object;
 move-result-object v1
-invoke-polymorphic {v0, v1, v2}, Ljava/lang/invoke/MethodHandle.invoke([Ljava/lang/Object;)Ljava/lang/Object;, (Ljava/lang/String;I)Ljava/lang/Object;
+invoke-polymorphic {v0, v1, v2}, Ljava/lang/invoke/MethodHandle;->invoke([Ljava/lang/Object;)Ljava/lang/Object;, (Ljava/lang/String;I)Ljava/lang/Object;
 move-result-object v0
 return-object v0
 EOF
@@ -72,25 +74,43 @@ return-object v0
 EOF
 RUN
 
-NAME=DEX Hello.dex classes (ic command)
+NAME=DEX Hello.dex classes (ic, icf & icm command)
 FILE=bins/dex/Hello.dex
-CMDS=ic
+CMDS=<<EOF
+ic
+icf 'LHello;'
+icm 'LHello;'
+EOF
 EXPECT=<<EOF
-0x00000174 [0x000001a4 - 0x0000021e]    122 class 0 LHello :: Ljava/lang/Object;
-0x000001a4 method 0 pC   LHello.method.<init>(Ljava/lang/String;)V
-0x000001c0 method 1 sp   LHello.method.main([Ljava/lang/String;)V
-0x000001e8 method 2 p    LHello.method.say()V
+address    min        max        name    super              
+------------------------------------------------------------
+0x00000174 0x000001a4 0x0000021e LHello; Ljava/lang/Object;
+address    index class   flags name type               
+-------------------------------------------------------
+0x00000336 0     LHello; P     who  Ljava/lang/String;
+address    index class   flags name                        
+-----------------------------------------------------------
+0x000001a4 0     LHello; pC    <init>(Ljava/lang/String;)V
+0x000001c0 1     LHello; sp    main([Ljava/lang/String;)V
+0x000001e8 2     LHello; p     say()V
 EOF
 RUN
 
-NAME=DEX Hello.dex single class (ic LHello)
+NAME=DEX Hello.dex single class (icf & icm LHello)
 FILE=bins/dex/Hello.dex
-CMDS=ic LHello
+CMDS=<<EOF
+icf 'LHello;'
+icm 'LHello;'
+EOF
 EXPECT=<<EOF
-class LHello
-0x000001a4 method LHello pC   LHello.method.<init>(Ljava/lang/String;)V
-0x000001c0 method LHello sp   LHello.method.main([Ljava/lang/String;)V
-0x000001e8 method LHello p    LHello.method.say()V
+address    index class   flags name type               
+-------------------------------------------------------
+0x00000336 0     LHello; P     who  Ljava/lang/String;
+address    index class   flags name                        
+-----------------------------------------------------------
+0x000001a4 0     LHello; pC    <init>(Ljava/lang/String;)V
+0x000001c0 1     LHello; sp    main([Ljava/lang/String;)V
+0x000001e8 2     LHello; p     say()V
 EOF
 RUN
 
@@ -98,7 +118,7 @@ NAME=DEX Hello.dex classes quiet (icq command)
 FILE=bins/dex/Hello.dex
 CMDS=icq
 EXPECT=<<EOF
-0x00000174 [0x000001a4 - 0x0000021e] LHello Ljava/lang/Object;
+0x00000174 [0x000001a4 - 0x0000021e] LHello; Ljava/lang/Object;
 EOF
 RUN
 
@@ -118,7 +138,7 @@ NAME=DEX Hello.dex method flags (r2 commands) (ic*)
 FILE=bins/dex/Hello.dex
 CMDS=ic*~main
 EXPECT=<<EOF
-"f method.static.public.LHello.LHello.method.main([Ljava/lang/String;)V = 0x1c0"
+"f method.public.static.LHello_.main__Ljava_lang_String__V = 0x1c0"
 EOF
 RUN
 
@@ -126,22 +146,23 @@ NAME=DEX HelloWorld.dex symbols, fields and statics (isq command)
 FILE=bins/dex/HelloWorld.dex
 CMDS=isq
 EXPECT=<<EOF
-0x00000168 0 LHello.sfield_localVar2:I
-0x00000160 0 LHello.ifield_localVar:I
-0x00000238 20 LHello.method.<init>()V
-0x0000025c 34 LHello.method.main([Ljava/lang/String;)V
-0x00000290 84 LHello.method.foo(I)V
-0x00000170 0 LWorld.ifield_worldVar:I
-0x00000178 0 LWorld.ifield_worldVar2:I
-0x000002f4 20 LWorld.method.<init>()V
-0x00000318 68 LWorld.method.foo(I)V
-0x000001b0 0 imp.Ljava/io/PrintStream.method.println(Ljava/lang/String;)V
-0x000001b8 0 imp.Ljava/lang/Integer.method.<init>(I)V
-0x000001c0 0 imp.Ljava/lang/Integer.method.toString()Ljava/lang/String;
-0x000001c8 0 imp.Ljava/lang/Object.method.<init>()V
-0x000001d0 0 imp.Ljava/lang/StringBuilder.method.<init>()V
-0x000001d8 0 imp.Ljava/lang/StringBuilder.method.append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-0x000001e0 0 imp.Ljava/lang/StringBuilder.method.toString()Ljava/lang/String;
+0x000004f0 0 Hello localVar2
+0x000004f2 0 Hello localVar
+0x00000238 20 Hello void <init>()
+0x0000025c 34 Hello void main(String[])
+0x00000290 84 Hello void foo(int)
+0x00000506 0 World worldVar
+0x00000508 0 World worldVar2
+0x000002f4 20 World void <init>()
+0x00000318 68 World void foo(int)
+0x00000000 0 java.lang.System imp.out
+0x00000000 0 java.io.PrintStream imp.println(Ljava/lang/String;)V
+0x00000000 0 java.lang.Integer imp.<init>(I)V
+0x00000000 0 java.lang.Integer imp.toString()Ljava/lang/String;
+0x00000000 0 java.lang.Object imp.<init>()V
+0x00000000 0 java.lang.StringBuilder imp.<init>()V
+0x00000000 0 java.lang.StringBuilder imp.append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+0x00000000 0 java.lang.StringBuilder imp.toString()Ljava/lang/String;
 EOF
 RUN
 
@@ -149,52 +170,68 @@ NAME=DEX HelloWorld.dex flags (f command)
 FILE=bins/dex/HelloWorld.dex
 CMDS=f
 EXPECT=<<EOF
-0x00000000 112 section.header
 0x00000000 1460 section.file
-0x00000000 1460 segment.file
-0x00000070 440 section.constpool
-0x00000160 0 sym.LHello.ifield_localVar:I
-0x00000168 0 sym.LHello.sfield_localVar2:I
-0x00000170 0 sym.LWorld.ifield_worldVar:I
-0x00000178 0 sym.LWorld.ifield_worldVar2:I
-0x000001b0 0 sym.imp.Ljava_io_PrintStream.method.println_Ljava_lang_String__V
-0x000001b8 0 sym.imp.Ljava_lang_Integer.method._init__I_V
-0x000001c0 0 sym.imp.Ljava_lang_Integer.method.toString__Ljava_lang_String
-0x000001c8 0 sym.imp.Ljava_lang_Object.method._init___V
-0x000001d0 0 sym.imp.Ljava_lang_StringBuilder.method._init___V
-0x000001d8 0 sym.imp.Ljava_lang_StringBuilder.method.append_Ljava_lang_String__Ljava_lang_StringBuilder
-0x000001e0 0 sym.imp.Ljava_lang_StringBuilder.method.toString__Ljava_lang_String
+0x00000000 0 sym.Ljava_lang_System_.out
+0x00000000 0 sym.Ljava_io_PrintStream_.println_Ljava_lang_String__V
+0x00000000 0 sym.Ljava_lang_Integer_._init__I_V
+0x00000000 0 sym.Ljava_lang_Integer_.toString__Ljava_lang_String
+0x00000000 0 sym.Ljava_lang_Object_._init___V
+0x00000000 0 sym.Ljava_lang_StringBuilder_._init___V
+0x00000000 0 sym.Ljava_lang_StringBuilder_.append_Ljava_lang_String__Ljava_lang_StringBuilder
+0x00000000 0 sym.Ljava_lang_StringBuilder_.toString__Ljava_lang_String
 0x000001e8 1 class.LHello
 0x00000208 1 class.LWorld
-0x00000228 308 section.code
-0x00000228 308 segment.code
-0x00000238 20 sym.LHello.method._init___V
-0x00000238 1 method.public.constructor.LHello.LHello.method._init___V
+0x00000228 908 section.data
+0x00000238 20 section.code.Hello._init
+0x00000238 20 sym.LHello_._init___V
+0x00000238 1 method.public.constructor.LHello_._init___V
+0x0000025c 256 main
 0x0000025c 1 entry0
-0x0000025c 34 sym.LHello.method.main__Ljava_lang_String__V
-0x0000025c 1 method.static.public.LHello.LHello.method.main__Ljava_lang_String__V
-0x00000290 84 sym.LHello.method.foo_I_V
-0x00000290 1 method.public.LHello.LHello.method.foo_I_V
-0x000002f4 20 sym.LWorld.method._init___V
-0x000002f4 1 method.public.constructor.LWorld.LWorld.method._init___V
-0x00000318 68 sym.LWorld.method.foo_I_V
-0x00000318 1 method.public.LWorld.LWorld.method.foo_I_V
-0x0000035c 600 section.data
+0x0000025c 34 section.code.Hello.main
+0x0000025c 34 sym.LHello_.main__Ljava_lang_String__V
+0x0000025c 1 method.public.static.LHello_.main__Ljava_lang_String__V
+0x00000290 84 section.code.Hello.foo
+0x00000290 84 sym.LHello_.foo_I_V
+0x00000290 1 method.public.LHello_.foo_I_V
+0x000002f4 20 section.code.World._init
+0x000002f4 20 sym.LWorld_._init___V
+0x000002f4 1 method.public.constructor.LWorld_._init___V
+0x00000318 68 section.code.World.foo
+0x00000318 68 sym.LWorld_.foo_I_V
+0x00000318 1 method.public.LWorld_.foo_I_V
 0x00000372 6 str.init
 0x0000037a 6 str.Findus
 0x00000382 10 str.Hello.java
+0x0000038e 1 str.I
+0x00000391 1 str.L
 0x00000394 7 str.LHello
+0x0000039d 2 str.LL
 0x000003a1 7 str.LWorld
+0x000003aa 21 str.Ljava_io_PrintStream
+0x000003c1 19 str.Ljava_lang_Integer
+0x000003d6 18 str.Ljava_lang_Object
+0x000003fe 25 str.Ljava_lang_StringBuilder
+0x00000419 18 str.Ljava_lang_System
+0x0000042d 1 str.V
+0x00000430 2 str.VI
+0x00000434 2 str.VL
 0x00000438 10 str.World.java
+0x00000444 19 str.Ljava_lang_String
 0x00000459 6 str.append
 0x00000466 6 str.foo
 0x0000046e 8 str.localVar
 0x00000478 9 str.localVar2
+0x00000483 4 str.main
+0x00000489 3 str.out
 0x0000048e 7 str.println
 0x00000497 8 str.toString
 0x000004a1 8 str.world
 0x000004ab 8 str.worldVar
 0x000004b5 9 str.worldVar2
+0x000004f0 0 sym.LHello_.localVar2
+0x000004f2 0 sym.LHello_.localVar
+0x00000506 0 sym.LWorld_.worldVar
+0x00000508 0 sym.LWorld_.worldVar2
 EOF
 RUN
 
@@ -202,17 +239,16 @@ NAME=DEX HelloWorld.dex imports (ii command)
 FILE=bins/dex/HelloWorld.dex
 CMDS=ii
 EXPECT=<<EOF
-[Imports]
-nth vaddr      bind type lib name
----------------------------------
-0   0x000001b0 NONE FUNC     Ljava/io/PrintStream.method.println(Ljava/lang/String;)V
-1   0x000001b8 NONE FUNC     Ljava/lang/Integer.method.<init>(I)V
-2   0x000001c0 NONE FUNC     Ljava/lang/Integer.method.toString()Ljava/lang/String;
-3   0x000001c8 NONE FUNC     Ljava/lang/Object.method.<init>()V
-4   0x000001d0 NONE FUNC     Ljava/lang/StringBuilder.method.<init>()V
-5   0x000001d8 NONE FUNC     Ljava/lang/StringBuilder.method.append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-6   0x000001e0 NONE FUNC     Ljava/lang/StringBuilder.method.toString()Ljava/lang/String;
-
+nth vaddr      bind type  lib       name                                       
+-------------------------------------------------------------------------------
+0   0x00000000 WEAK FIELD java.lang System.out
+1   ---------- WEAK FUNC  java.io   void PrintStream.println(String)
+2   ---------- WEAK FUNC  java.lang void Integer.<init>(int)
+3   ---------- WEAK FUNC  java.lang String Integer.toString()
+4   ---------- WEAK FUNC  java.lang void Object.<init>()
+5   ---------- WEAK FUNC  java.lang void StringBuilder.<init>()
+6   ---------- WEAK FUNC  java.lang StringBuilder StringBuilder.append(String)
+7   ---------- WEAK FUNC  java.lang String StringBuilder.toString()
 EOF
 RUN
 
@@ -220,15 +256,10 @@ NAME=DEX HelloWorld.dex exports (iE command)
 FILE=bins/dex/HelloWorld.dex
 CMDS=iE
 EXPECT=<<EOF
-[Exports]
-
-nth paddr      vaddr      bind   type size lib name
----------------------------------------------------
-2   0x00000238 0x00000238 GLOBAL FUNC 20       LHello.method.<init>()V
-3   0x0000025c 0x0000025c GLOBAL FUNC 34       LHello.method.main([Ljava/lang/String;)V
-4   0x00000290 0x00000290 GLOBAL FUNC 84       LHello.method.foo(I)V
-7   0x000002f4 0x000002f4 GLOBAL FUNC 20       LWorld.method.<init>()V
-8   0x00000318 0x00000318 GLOBAL FUNC 68       LWorld.method.foo(I)V
+nth paddr      vaddr      bind   type  size lib   name                
+----------------------------------------------------------------------
+1   0x000004f0 0x000004f0 GLOBAL FIELD 0    Hello localVar2
+2   0x0000025c 0x0000025c GLOBAL METH  34   Hello void main(String[])
 EOF
 RUN
 
@@ -239,15 +270,16 @@ EXPECT=<<EOF
 iput v0, v1, LHello;->localVar I
 sput v0, LHello;->localVar2 I
 sget-object v0, Ljava/lang/System;->out Ljava/io/PrintStream;
-invoke-virtual {v0, v1}, Ljava/io/PrintStream.println(Ljava/lang/String;)V ; 0x5
-invoke-virtual {v0, v1}, LHello.foo(I)V ; 0x1
+invoke-virtual {v0, v1}, Ljava/io/PrintStream;->println(Ljava/lang/String;)V
+invoke-virtual {v0, v1}, LHello;->foo(I)V
 new-instance v0, LHello;
 new-instance v1, Ljava/lang/StringBuilder;
-invoke-direct {v1}, Ljava/lang/StringBuilder.<init>()V ; 0x9
+invoke-direct {v1}, Ljava/lang/StringBuilder;-><init>()V
 EOF
 RUN
 
 NAME=DEX HelloWorld.dex debug info
+BROKEN=1
 FILE=bins/dex/HelloWorld.dex
 CMDS=e io.va=0; e asm.bytes=1; pd 1 @0x00000290|grep Hello.java; pd 1 @0x000002f4|grep World.java; pd 1 @0x00000318|grep World.java;
 EXPECT=<<EOF
@@ -258,6 +290,7 @@ EOF
 RUN
 
 NAME=DEX HelloWorld.dex debug info CL
+BROKEN=1
 FILE=bins/dex/HelloWorld.dex
 CMDS=<<EOF
 ix
@@ -296,6 +329,7 @@ EOF
 RUN
 
 NAME=DEX HelloWorld.dex dexdump
+BROKEN=1
 FILE=bins/dex/HelloWorld.dex
 CMDS=iHH
 EXPECT=<<EOF
@@ -446,14 +480,15 @@ RUN
 
 NAME=DEX radare2installer.dex classes (is getProper)
 FILE=bins/dex/org.radare.radare2installer.dex
-CMDS=is~getProper
+CMDS=ii~getProper
 EXPECT=<<EOF
-1649 0x00006a20 0x00006a20 NONE   FUNC   0        imp.Ljava/lang/System.method.getProperty(Ljava/lang/String;)Ljava/lang/String;
-1650 0x00006a28 0x00006a28 NONE   FUNC   0        imp.Ljava/lang/System.method.getProperty(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+402 ---------- WEAK FUNC  java.lang                 String System.getProperty(String)
+403 ---------- WEAK FUNC  java.lang                 String System.getProperty(String, String)
 EOF
 RUN
 
 NAME=DEX radare2installer.dex classes (ic command)
+BROKEN=1
 FILE=bins/dex/org.radare.radare2installer.dex
 CMDS=ic
 EXPECT=<<EOF
@@ -1402,25 +1437,24 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=DEX radare2installer.dex classes (ic command with name)
+NAME=DEX radare2installer.dex classes
 FILE=bins/dex/org.radare.radare2installer.dex
-CMDS=ic  Lcom/stericson/RootTools/Installer
-EXPECT=<<EOF
-class Lcom/stericson/RootTools/Installer
-0x00011410 method Lcom/stericson/RootTools/Installer pC   Lcom/stericson/RootTools/Installer.method.<init>(Landroid/content/Context;)V
-0x00011440 method Lcom/stericson/RootTools/Installer r    Lcom/stericson/RootTools/Installer.method.installBinary(ILjava/lang/String;Ljava/lang/String;)Z
-0x00011814 method Lcom/stericson/RootTools/Installer r    Lcom/stericson/RootTools/Installer.method.isBinaryInstalled(Ljava/lang/String;)Z
+CMDS=<<EOF
+icf 'Lcom/stericson/RootTools/Installer;'
+icm 'Lcom/stericson/RootTools/Installer;'
 EOF
-RUN
-
-NAME=DEX radare2installer.dex classes (ic command with index)
-FILE=bins/dex/org.radare.radare2installer.dex
-CMDS=ic 17
 EXPECT=<<EOF
-class Lcom/stericson/RootTools/Installer
-0x00011410 method Lcom/stericson/RootTools/Installer pC   Lcom/stericson/RootTools/Installer.method.<init>(Landroid/content/Context;)V
-0x00011440 method Lcom/stericson/RootTools/Installer r    Lcom/stericson/RootTools/Installer.method.installBinary(ILjava/lang/String;Ljava/lang/String;)Z
-0x00011814 method Lcom/stericson/RootTools/Installer r    Lcom/stericson/RootTools/Installer.method.isBinaryInstalled(Ljava/lang/String;)Z
+address    index class                               flags name            type                      
+-----------------------------------------------------------------------------------------------------
+0x0000a4b2 0     Lcom/stericson/RootTools/Installer; sPf   BOGUS_FILE_NAME Ljava/lang/String;
+0x0000a4b5 1     Lcom/stericson/RootTools/Installer; sPf   LOG_TAG         Ljava/lang/String;
+0x0000a4b7 2     Lcom/stericson/RootTools/Installer; P     context         Landroid/content/Context;
+0x0000a4ba 3     Lcom/stericson/RootTools/Installer; P     filesPath       Ljava/lang/String;
+address    index class                               flags name                                                  
+-----------------------------------------------------------------------------------------------------------------
+0x00011410 0     Lcom/stericson/RootTools/Installer; pC    <init>(Landroid/content/Context;)V
+0x00011440 1     Lcom/stericson/RootTools/Installer; r     installBinary(ILjava/lang/String;Ljava/lang/String;)Z
+0x00011814 2     Lcom/stericson/RootTools/Installer; r     isBinaryInstalled(Ljava/lang/String;)Z
 EOF
 RUN
 
@@ -1434,8 +1468,31 @@ RUN
 
 NAME=DEX test.dex
 FILE=bins/dex/test.dex
-CMDS=e asm.bytes=true; pd 1 @ 0x000001c4;
+CMDS=e asm.bytes=true; pd 1 @ 0x000001c4;
 EXPECT=<<EOF
             0x000001c4      1234           const/4 v4, 0x3
+EOF
+RUN
+
+NAME=FakeMultiDex.apk
+FILE=apk://bins/dex/FakeMultiDex.apk
+CMDS=<<EOF
+om
+o
+EOF
+EXPECT=<<EOF
+ 1 fd: 4 +0x000001a4 0x000001a4 - 0x000001af r-x fmap.code.Hello.<init>
+ 2 fd: 4 +0x000001c0 0x000001c0 - 0x000001d5 r-x fmap.code.Hello.main
+ 3 fd: 4 +0x000001e8 0x000001e8 - 0x0000021d r-x fmap.code.Hello.say
+ 4 fd: 4 +0x00000194 0x00000194 - 0x000003e7 r-x fmap.data
+ 5 fd: 4 +0x00000000 0x00000000 - 0x000003e7 r-- fmap.file
+ 6 fd: 3 +0x000001a4 0x000001a4 - 0x000001af r-x fmap.code.Hello.<init>
+ 7 fd: 3 +0x000001c0 0x000001c0 - 0x000001d5 r-x fmap.code.Hello.main
+ 8 fd: 3 +0x000001e8 0x000001e8 - 0x0000021d r-x fmap.code.Hello.say
+ 9 fd: 3 +0x00000194 0x00000194 - 0x000003e7 r-x fmap.data
+10 fd: 3 +0x00000000 0x00000000 - 0x000003e7 r-- fmap.file
+11 fd: 4 +0x00000000 0x00000000 - 0x000003e7 r-x 
+ 3 - r-x 0x00000800 classes2.dex
+ 4 * r-x 0x000003e8 classes.dex
 EOF
 RUN

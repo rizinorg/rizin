@@ -32,7 +32,6 @@ push {r7, lr}
 add ip, pc, 0, 12
 push {r3, lr}
 add ip, pc, 0, 12
-str lr, [sp, -4]!
 EOF
 RUN
 
@@ -48,7 +47,7 @@ NAME=x86 - init_array detection2
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=iS~init_array
 EXPECT=<<EOF
-18  0x0000059c    0x4 0x0804959c    0x4 -rw- .init_array        INIT_ARRAY write,alloc
+0x0000059c 0x4   0x0804959c 0x4   0x0   -rw- .init_array        INIT_ARRAY write,alloc
 EOF
 RUN
 
@@ -254,7 +253,7 @@ CMDS=fs
 EXPECT=<<EOF
     0 * classes
     3 * imports
-    3 * relocs
+    4 * relocs
    30 * sections
     9 * segments
     1 * strings
@@ -273,7 +272,10 @@ EXPECT=<<EOF
     0 * classes
     0 * functions
     3 * imports
-    3 * relocs
+    0 * platform.ports
+    0 * registers.extended
+    0 * registers.mmio
+    4 * relocs
    30 * sections
     9 * segments
     1 * strings
@@ -290,7 +292,7 @@ EXPECT=<<EOF
     0 * classes
     1 * functions
     3 * imports
-    3 * relocs
+    4 * relocs
    30 * sections
     9 * segments
     1 * strings
@@ -327,7 +329,7 @@ p-
 EOF
 EXPECT=<<EOF
 0x08048000 [^._______ss_s__s_sss_ssssss_ss_ss__sz_s____] 0x0804859c
-0x08048000 [^_sssssszss_____________________________sss] 0x080496b8
+0x08048000 [^_sssssszss_____________________________sss] 0x080496d0
 EOF
 RUN
 
@@ -416,7 +418,7 @@ NAME=flags (total)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=f~?
 EXPECT=<<EOF
-106
+107
 EOF
 RUN
 
@@ -511,12 +513,13 @@ EXPECT=<<EOF
 0x080495a8 0 sym..dynamic
 0x080495a8 0 obj._DYNAMIC
 0x08049690 4 section..got
+0x08049690 4 reloc.__gmon_start
 0x08049690 0 sym..got
 0x08049694 24 section..got.plt
 0x08049694 0 sym..got.plt
 0x08049694 0 obj._GLOBAL_OFFSET_TABLE
 0x080496a0 4 reloc.puts
-0x080496a4 4 reloc.__gmon_start
+0x080496a4 4 reloc.__gmon_start.0
 0x080496a8 4 reloc.__libc_start_main
 0x080496ac 8 section..data
 0x080496ac 0 sym..data

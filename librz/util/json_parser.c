@@ -7,6 +7,8 @@
 #include <rz_util/rz_utf8.h>
 #include <rz_util/rz_hex.h>
 #include <rz_util/rz_json.h>
+#include <rz_util/rz_assert.h>
+#include <rz_util/pj.h>
 
 #if 0
 // optional error printing
@@ -340,9 +342,9 @@ static char *parse_value(RzJson *parent, const char *key, char *p) {
 			}
 		} else {
 			if (*p == '-') {
-				js->num.dbl_value = js->num.s_value;
+				js->num.dbl_value = (double)js->num.s_value;
 			} else {
-				js->num.dbl_value = js->num.u_value;
+				js->num.dbl_value = (double)js->num.u_value;
 			}
 		}
 		return pe;
@@ -388,14 +390,20 @@ RZ_API RzJson *rz_json_parse(char *text) {
 	return js.children.first;
 }
 
-RZ_API const RzJson *rz_json_get(const RzJson *json, const char *key) {
+// getter with explicit size parameter, since in rz_json_get_path our key is
+// not zero-terminated.
+static const RzJson *rz_json_get_len(const RzJson *json, const char *key, size_t keysize) {
 	RzJson *js;
 	for (js = json->children.first; js; js = js->next) {
-		if (js->key && !strcmp(js->key, key)) {
+		if (js->key && !strncmp(js->key, key, keysize)) {
 			return js;
 		}
 	}
 	return NULL;
+}
+
+RZ_API const RzJson *rz_json_get(const RzJson *json, const char *key) {
+	return rz_json_get_len(json, key, strlen(key));
 }
 
 RZ_API const RzJson *rz_json_item(const RzJson *json, size_t idx) {
@@ -406,4 +414,150 @@ RZ_API const RzJson *rz_json_item(const RzJson *json, size_t idx) {
 		}
 	}
 	return NULL;
+}
+
+RZ_API const RzJson *rz_json_get_path(const RzJson *json, const char *path) {
+	const RzJson *js = json;
+	const char *key;
+	size_t keysize;
+	ut64 index;
+
+	while (*path) {
+		switch (*path++) {
+		case '\0':
+			break;
+		case '[':
+			// we could check if js->type != RZ_JSON_ARRAY but rz_json_item will
+			// fail in that case anyway
+			key = path;
+			index = (ut64)strtoull(key, (char **)&path, 10);
+			if (key == path || *path != ']') {
+				RZ_JSON_REPORT_ERROR("JSON path: expected ]", path - 1);
+				return NULL;
+			}
+			++path;
+			js = rz_json_item(js, index);
+			if (!js) {
+				return NULL;
+			}
+			break;
+		case '.':
+			key = path;
+			for (keysize = 0; key[keysize]; ++keysize) {
+				if (strchr(".[", key[keysize])) {
+					break;
+				}
+			}
+			if (keysize == 0) {
+				RZ_JSON_REPORT_ERROR("JSON path: expected key", path - 1);
+				return NULL;
+			}
+			js = rz_json_get_len(js, key, keysize);
+			if (!js) {
+				return NULL;
+			}
+			path = key + keysize;
+			break;
+		default:
+			RZ_JSON_REPORT_ERROR("JSON path: unexpected char", path - 1);
+			return NULL;
+		}
+	}
+	// js == json means we've not done any access at all
+	return (js == json) ? NULL : js;
+}
+
+static void json_pj_recurse(const RzJson *json, PJ *pj) {
+	rz_return_if_fail(json && pj);
+	switch (json->type) {
+	case RZ_JSON_NULL: {
+		if (json->key) {
+			pj_knull(pj, json->key);
+		} else {
+			pj_null(pj);
+		}
+		break;
+	}
+	case RZ_JSON_OBJECT: {
+		if (json->key) {
+			pj_ko(pj, json->key);
+		} else {
+			pj_o(pj);
+		}
+		RzJson *baby;
+		for (baby = json->children.first; baby; baby = baby->next) {
+			json_pj_recurse(baby, pj);
+		}
+		pj_end(pj);
+		break;
+	}
+	case RZ_JSON_ARRAY: {
+		if (json->key) {
+			pj_ka(pj, json->key);
+		} else {
+			pj_a(pj);
+		}
+		RzJson *baby;
+		for (baby = json->children.first; baby; baby = baby->next) {
+			json_pj_recurse(baby, pj);
+		}
+		pj_end(pj);
+		break;
+	}
+	case RZ_JSON_STRING: {
+		if (json->key) {
+			pj_ks(pj, json->key, json->str_value);
+		} else {
+			pj_s(pj, json->str_value);
+		}
+		break;
+	}
+	case RZ_JSON_INTEGER: {
+		if (json->key) {
+			pj_ki(pj, json->key, json->num.u_value);
+		} else {
+			pj_i(pj, json->num.u_value);
+		}
+		break;
+	}
+	case RZ_JSON_DOUBLE: {
+		if (json->key) {
+			pj_kd(pj, json->key, json->num.dbl_value);
+		} else {
+			pj_d(pj, json->num.dbl_value);
+		}
+		break;
+	}
+	case RZ_JSON_BOOLEAN: {
+		if (json->key) {
+			pj_kb(pj, json->key, (bool)json->num.u_value);
+		} else {
+			pj_b(pj, (bool)json->num.u_value);
+		}
+	}
+	}
+}
+
+static void json_pj_handler(const RzJson *json, PJ *pj) {
+	if (json->type == RZ_JSON_OBJECT) {
+		pj_o(pj);
+	} else if (json->type == RZ_JSON_ARRAY) {
+		pj_a(pj);
+	}
+	RzJson *js;
+	for (js = json->children.first; js; js = js->next) {
+		json_pj_recurse(js, pj);
+	}
+	if (json->type == RZ_JSON_OBJECT || json->type == RZ_JSON_ARRAY) {
+		pj_end(pj);
+	}
+}
+
+RZ_API RZ_OWN char *rz_json_as_string(const RzJson *json) {
+	rz_return_val_if_fail(json, NULL);
+	rz_return_val_if_fail(json->type != RZ_JSON_NULL, NULL);
+	PJ *pj = pj_new();
+	json_pj_handler(json, pj);
+	char *str = pj_drain(pj);
+	return str;
 }

@@ -1,5 +1,5 @@
 NAME=imul 1 arg
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -13,7 +13,7 @@ EOF
 RUN
 
 NAME=imul 2 arg
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -27,7 +27,7 @@ EOF
 RUN
 
 NAME=imul 3 arg
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -41,7 +41,7 @@ EOF
 RUN
 
 NAME=esil x86-64 pd deinit
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -61,7 +61,7 @@ EOF
 RUN
 
 NAME=esil x86-64 pd deinit
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -81,7 +81,7 @@ EOF
 RUN
 
 NAME=esil x86-64 pd deinit
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -101,7 +101,7 @@ EOF
 RUN
 
 NAME=esil x86-64 imul
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.bits=64
 e asm.arch=x86
@@ -117,7 +117,7 @@ EOF
 RUN
 
 NAME=esil x86-64 imul emu
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.bits=64
 e asm.arch=x86
@@ -134,7 +134,7 @@ EOF
 RUN
 
 NAME=esil x86-64 two steps
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -154,7 +154,7 @@ EOF
 RUN
 
 NAME=esil x86-64 aesu
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -174,7 +174,7 @@ EOF
 RUN
 
 NAME=esil x86-64 aesu
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -194,7 +194,7 @@ EOF
 RUN
 
 NAME=esil x86-64
-FILE=-
+FILE==
 CMDS=<<EOF
 ?e
 e asm.arch=x86
@@ -211,7 +211,7 @@ EOF
 RUN
 
 NAME=esil x86-64
-FILE=-
+FILE==
 CMDS=<<EOF
 ?e
 e asm.arch=x86
@@ -228,7 +228,7 @@ EOF
 RUN
 
 NAME=esil x86-64
-FILE=-
+FILE==
 CMDS=<<EOF
 ?e
 e asm.arch=x86
@@ -245,7 +245,7 @@ EOF
 RUN
 
 NAME=eax/rax
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -260,7 +260,7 @@ EOF
 RUN
 
 NAME=reg size bitmask
-FILE=-
+FILE==
 CMDS=<<EOF
 e io.va=true
 e esil.debug=true
@@ -284,7 +284,7 @@ EOF
 RUN
 
 NAME=mem read
-FILE=-
+FILE==
 CMDS=<<EOF
 e io.va=true
 e esil.debug=true
@@ -307,7 +307,7 @@ EOF
 RUN
 
 NAME=movsxd rax, dword [rdx + rax*4]
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -321,7 +321,7 @@ EOF
 RUN
 
 NAME=lea rax, [rdi + r13*8]
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -336,7 +336,7 @@ EOF
 RUN
 
 NAME=lea rbx, [rax + rdx]
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -351,7 +351,7 @@ EOF
 RUN
 
 NAME=ldrh instruction
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -408,7 +408,7 @@ EOF
 RUN
 
 NAME=cmd.esil.intr set
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.bits=64
 e asm.arch=x86
@@ -423,7 +423,7 @@ EOF
 RUN
 
 NAME=test_sf
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86;e asm.bits=64;s 0;aei;aer rip=0;wa test eax, eax;aer eax=-1;aes
 aer 1~sf
@@ -434,7 +434,7 @@ EOF
 RUN
 
 NAME=neg
-FILE=-
+FILE==
 CMDS=<<EOF
 wx f6dbf6df66f7dbf7db48f7db
 e asm.arch=x86

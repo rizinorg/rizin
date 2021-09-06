@@ -1,0 +1,17 @@
+ad "settabup 0 -1 -2" 08404080
+ad "lt 0 0 -10" 20404200
+ad "jmp 0 4" 1ec00080
+ad "gettabup 0 0 -1" 06004000
+ad "call 0 2 1" 24400001
+ad "loadk 1 13" 41400300
+ad "gettable 0 0 -16" 07c04300
+ad "concat 2 2 3" 9dc00001
+ad "move 3 0" c0000000
+ad "test 0 1" 22400000
+ad "forprep 0 3" 28800080
+ad "closure 3 9" ec400200
+ad "settable 2 -92 3" 8ac080ad
+ad "self 2 2 348" 8c005701
+ad "tforcall 2 2" a9800000
+ad "forloop 2 -5" a780fe7f
+ad "return 0 1" 26008000

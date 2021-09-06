@@ -316,12 +316,12 @@ static int __close(RzIODesc *fd) {
 	return 0;
 }
 
-static void got_alarm(int sig) {
 #if !defined(__WINDOWS__)
+static void got_alarm(int sig) {
 	// !!! may die if not running from r2preload !!! //
 	kill(getpid(), SIGUSR1);
-#endif
 }
+#endif
 
 static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 	if (!strcmp(cmd, "pid")) {
@@ -339,7 +339,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 		char *argv = strdup(cmd + 5);
 		int argc = rz_str_word_set0(argv);
 		if (argc == 0) {
-			eprintf("Usage: =!call [fcnptr] [a0] [a1] ...\n");
+			eprintf("Usage: R!call [fcnptr] [a0] [a1] ...\n");
 			free(argv);
 			return NULL;
 		}
@@ -465,16 +465,16 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 				self_sections[i].name);
 		}
 	} else {
-		eprintf("|Usage: =![cmd] [args]\n");
-		eprintf("| =!pid               show getpid()\n");
-		eprintf("| =!maps              show map regions\n");
-		eprintf("| =!kill              commit suicide\n");
+		eprintf("|Usage: R![cmd] [args]\n");
+		eprintf("| R!pid               show getpid()\n");
+		eprintf("| R!maps              show map regions\n");
+		eprintf("| R!kill              commit suicide\n");
 #if !defined(__WINDOWS__)
-		eprintf("| =!alarm [secs]      setup alarm signal to raise rizin prompt\n");
+		eprintf("| R!alarm [secs]      setup alarm signal to raise rizin prompt\n");
 #endif
-		eprintf("| =!dlsym [sym]       dlopen\n");
-		eprintf("| =!call [sym] [...]  nativelly call a function\n");
-		eprintf("| =!mameio            enter mame IO mode\n");
+		eprintf("| R!dlsym [sym]       dlopen\n");
+		eprintf("| R!call [sym] [...]  nativelly call a function\n");
+		eprintf("| R!mameio            enter mame IO mode\n");
 	}
 	return NULL;
 }

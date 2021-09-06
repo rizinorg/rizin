@@ -35,7 +35,7 @@ bool rz_bin_checksum_omf_ok(const ut8 *buf, ut64 buf_size) {
 		eprintf("Invalid record (too short)\n");
 		return false;
 	}
-	size = ut8p_bw(buf + 1);
+	size = rz_read_le16(buf + 1);
 	if (buf_size < size + 3) {
 		eprintf("Invalid record (too short)\n");
 		return false;
@@ -765,7 +765,6 @@ int rz_bin_omf_send_sections(RzList *list, OMF_segment *section, rz_bin_omf_obj 
 		new->paddr = data->paddr;
 		new->vaddr = section->vaddr + data->offset + OMF_BASE_ADDR;
 		new->perm = RZ_PERM_RWX;
-		new->add = true;
 		rz_list_append(list, new);
 		data = data->next;
 	}

@@ -11,7 +11,6 @@ static RzBuffer *build(RzEgg *egg) {
 	ut8 aux[32], nkey;
 	const char *default_key = DEFAULT_XOR_KEY;
 	char *key = rz_egg_option_get(egg, "key");
-	int i;
 
 	if (!key || !*key) {
 		free(key);
@@ -40,16 +39,23 @@ static RzBuffer *build(RzEgg *egg) {
 		return NULL;
 	}
 
-	for (i = 0; i < rz_buf_size(sc); i++) {
+	for (size_t i = 0; i < rz_buf_size(sc); i++) {
 		// eprintf ("%02x -> %02x\n", sc->buf[i], sc->buf[i] ^nkey);
-		if ((rz_buf_read8_at(sc, i) ^ nkey) == 0) {
+		ut8 tmp;
+		if (!rz_buf_read8_at(sc, i, &tmp)) {
+			free(key);
+			return NULL;
+		}
+
+		if ((tmp ^ nkey) == 0) {
 			eprintf("This xor key generates null bytes. Try again.\n");
 			free(key);
 			return NULL;
 		}
 	}
-	buf = rz_buf_new();
-	sc = rz_buf_new();
+
+	buf = rz_buf_new_with_bytes(NULL, 0);
+	sc = rz_buf_new_with_bytes(NULL, 0);
 
 	// TODO: alphanumeric? :D
 	// This is the x86-32/64 xor encoder
@@ -77,8 +83,14 @@ static RzBuffer *build(RzEgg *egg) {
 
 		rz_buf_append_bytes(buf, stub, STUBLEN);
 
-		for (i = 0; i < rz_buf_size(sc); i++) {
-			ut8 v = rz_buf_read8_at(sc, i) ^ nkey;
+		for (size_t i = 0; i < rz_buf_size(sc); i++) {
+			ut8 v;
+			if (!rz_buf_read8_at(sc, i, &v)) {
+				free(key);
+				return NULL;
+			}
+
+			v ^= nkey;
 			rz_buf_write_at(sc, i, &v, sizeof(v));
 		}
 		rz_buf_append_buf(buf, sc);

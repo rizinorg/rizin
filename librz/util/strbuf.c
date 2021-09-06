@@ -328,14 +328,14 @@ static inline char *drain(RzStrBuf *sb) {
 		: strdup(sb->buf);
 }
 
-RZ_API char *rz_strbuf_drain(RzStrBuf *sb) {
+RZ_API RZ_OWN char *rz_strbuf_drain(RzStrBuf *sb) {
 	rz_return_val_if_fail(sb, NULL);
 	char *ret = drain(sb);
 	free(sb);
 	return ret;
 }
 
-RZ_API char *rz_strbuf_drain_nofree(RzStrBuf *sb) {
+RZ_API RZ_OWN char *rz_strbuf_drain_nofree(RzStrBuf *sb) {
 	rz_return_val_if_fail(sb, NULL);
 	char *ret = drain(sb);
 	sb->ptr = NULL;
@@ -354,6 +354,7 @@ RZ_API void rz_strbuf_free(RzStrBuf *sb) {
 RZ_API void rz_strbuf_fini(RzStrBuf *sb) {
 	if (sb && !sb->weakref) {
 		RZ_FREE(sb->ptr);
+		sb->ptr = NULL;
 		sb->len = 0;
 		sb->buf[0] = '\0';
 	}

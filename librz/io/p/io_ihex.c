@@ -41,98 +41,41 @@ typedef struct {
 	RzBuffer *rbuf;
 } Rihex;
 
-static int fw04b(FILE *fd, ut16 eaddr);
-static int fwblock(FILE *fd, ut8 *b, ut32 start_addr, ut16 size);
+static bool ihex_write(RzIODesc *desc, Rihex *rih);
 
 static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
-	const char *pathname;
-	FILE *out;
-	Rihex *rih;
-	RzBufferSparse *rbs;
-	RzListIter *iter;
-
 	if (!fd || !fd->data || (fd->perm & RZ_PERM_W) == 0 || count <= 0) {
 		return -1;
 	}
-	rih = fd->data;
-	pathname = fd->name + 7;
-	out = rz_sys_fopen(pathname, "w");
-	if (!out) {
-		eprintf("Cannot open '%s' for writing\n", pathname);
-		return -1;
-	}
+	Rihex *rih = fd->data;
 	/* mem write */
 	if (rz_buf_write_at(rih->rbuf, io->off, buf, count) != count) {
 		eprintf("ihex:write(): sparse write failed\n");
-		fclose(out);
 		return -1;
 	}
 	rz_buf_seek(rih->rbuf, count, RZ_BUF_CUR);
+	if (!ihex_write(fd, rih)) {
+		return -1;
+	}
+	return count;
+}
 
-	/* disk write : process each sparse chunk */
-	//TODO : sort addresses + check overlap?
-	RzList *nonempty = rz_buf_nonempty_list(rih->rbuf);
-	rz_list_foreach (nonempty, iter, rbs) {
-		ut16 addl0 = rbs->from & 0xffff;
-		ut16 addh0 = rbs->from >> 16;
-		ut16 addh1 = rbs->to >> 16;
-		ut16 tsiz = 0;
-		if (rbs->size == 0) {
-			continue;
-		}
-
-		if (addh0 != addh1) {
-			//we cross a 64k boundary, so write in two steps
-			//04 record (ext address)
-			if (fw04b(out, addh0) < 0) {
-				eprintf("ihex:write: file error\n");
-				rz_list_free(nonempty);
-				fclose(out);
-				return -1;
-			}
-			//00 records (data)
-			tsiz = -addl0;
-			addl0 = 0;
-			if (fwblock(out, rbs->data, rbs->from, tsiz)) {
-				eprintf("ihex:fwblock error\n");
-				rz_list_free(nonempty);
-				fclose(out);
-				return -1;
-			}
-		}
-		//04 record (ext address)
-		if (fw04b(out, addh1) < 0) {
-			eprintf("ihex:write: file error\n");
-			rz_list_free(nonempty);
-			fclose(out);
-			return -1;
-		}
-		//00 records (remaining data)
-		if (fwblock(out, rbs->data + tsiz, (addh1 << 16) | addl0, rbs->size - tsiz)) {
-			eprintf("ihex:fwblock error\n");
-			rz_list_free(nonempty);
-			fclose(out);
-			return -1;
-		}
-	} //list_foreach
-
-	rz_list_free(nonempty);
-	fprintf(out, ":00000001FF\n");
-	fclose(out);
-	out = NULL;
-	return 0;
+//fw04b : write 04 record (extended address); ret <0 if error
+static int fw04b(FILE *fd, ut16 eaddr) {
+	ut8 cks = 0 - (6 + (eaddr >> 8) + (eaddr & 0xff));
+	return fprintf(fd, ":02000004%04X%02X\n", eaddr, cks);
 }
 
 //write contiguous block of data to file; ret 0 if ok
 //max 65535 bytes; assumes a 04 rec was written before
-static int fwblock(FILE *fd, ut8 *b, ut32 start_addr, ut16 size) {
+static int fwblock(FILE *fd, ut8 *b, ut32 start_addr, ut32 size) {
 	ut8 cks;
 	char linebuf[80];
 	ut16 last_addr;
 	int j;
 	ut32 i; //has to be bigger than size !
 
-	if (size < 1 || !fd || !b) {
+	if (size < 1 || size > 0x10000 || !fd || !b) {
 		return -1;
 	}
 
@@ -151,11 +94,10 @@ static int fwblock(FILE *fd, ut8 *b, ut32 start_addr, ut16 size) {
 			    b[14], b[15], cks) < 0) {
 			return -1;
 		}
-		start_addr += 0x10;
 		b += 0x10;
-		if ((start_addr & 0xffff) < 0x10) {
+		if (((i + start_addr) & 0xffff) < 0x10) {
 			//addr rollover: write ext address record
-			if (fw04b(fd, start_addr >> 16) < 0) {
+			if (fw04b(fd, (i + start_addr) >> 16) < 0) {
 				return -1;
 			}
 		}
@@ -179,12 +121,6 @@ static int fwblock(FILE *fd, ut8 *b, ut32 start_addr, ut16 size) {
 	return 0;
 }
 
-//fw04b : write 04 record (extended address); ret <0 if error
-static int fw04b(FILE *fd, ut16 eaddr) {
-	ut8 cks = 0 - (6 + (eaddr >> 8) + (eaddr & 0xff));
-	return fprintf(fd, ":02000004%04X%02X\n", eaddr, cks);
-}
-
 static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
 	if (!fd || !fd->data || (count <= 0)) {
 		return -1;
@@ -195,7 +131,9 @@ static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
 	if (r >= 0) {
 		rz_buf_seek(rih->rbuf, r, RZ_BUF_CUR);
 	}
-	return r;
+	// sparse read return >= 0 but < count still means everything was read successfully,
+	// just maybe not entirely populated by chunks:
+	return r < 0 ? -1 : count;
 }
 
 static int __close(RzIODesc *fd) {
@@ -389,6 +327,65 @@ fail:
 	return false;
 }
 
+static bool ihex_write(RzIODesc *desc, Rihex *rih) {
+	const char *pathname = desc->name + 7;
+	FILE *out = rz_sys_fopen(pathname, "w");
+	if (!out) {
+		eprintf("Cannot open '%s' for writing\n", pathname);
+		return false;
+	}
+	// disk write : process each sparse chunk
+	size_t chunks_count;
+	const RzBufferSparseChunk *chunks = rz_buf_sparse_get_chunks(rih->rbuf, &chunks_count);
+	ut64 addh_cur = 0;
+	for (size_t i = 0; i < chunks_count; i++) {
+		const RzBufferSparseChunk *rbs = &chunks[i];
+		ut64 from = rbs->from;
+		while (from >> 16 != rbs->to >> 16) {
+			// we cross a 64k boundary, so write in multiple steps
+			ut16 addl = from & 0xffff;
+			ut16 addh = from >> 16;
+			if (addh != addh_cur) {
+				addh_cur = addh;
+				// 04 record (ext address)
+				if (fw04b(out, addh) < 0) {
+					eprintf("ihex:write: file error\n");
+					fclose(out);
+					return false;
+				}
+			}
+			// 00 records (data)
+			ut32 tsiz = (ut32)0x10000 - (ut32)addl;
+			if (fwblock(out, rbs->data + (from - rbs->from), from, tsiz)) {
+				eprintf("ihex:fwblock error\n");
+				fclose(out);
+				return false;
+			}
+			from = ((from >> 16) + 1) << 16;
+		}
+		ut16 addh = from >> 16;
+		if (addh != addh_cur) {
+			addh_cur = addh;
+			// 04 record (ext address)
+			if (fw04b(out, addh) < 0) {
+				eprintf("ihex:write: file error\n");
+				fclose(out);
+				return false;
+			}
+		}
+		// 00 records (remaining data)
+		if (fwblock(out, rbs->data + (from - rbs->from), from, rbs->to - from + 1)) {
+			eprintf("ihex:fwblock error 2\n");
+			fclose(out);
+			return false;
+		}
+	}
+
+	fprintf(out, ":00000001FF\n");
+	fclose(out);
+	return true;
+}
+
 static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
 	Rihex *mal = NULL;
 	char *str = NULL;
@@ -427,10 +424,13 @@ static bool __resize(RzIO *io, RzIODesc *fd, ut64 size) {
 		return false;
 	}
 	Rihex *rih = fd->data;
-	if (rih) {
-		return rz_buf_resize(rih->rbuf, size);
+	if (!rih) {
+		return false;
 	}
-	return false;
+	if (!rz_buf_resize(rih->rbuf, size)) {
+		return false;
+	}
+	return ihex_write(fd, rih);
 }
 
 RzIOPlugin rz_io_plugin_ihex = {

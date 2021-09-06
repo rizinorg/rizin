@@ -4,9 +4,67 @@
 name: cmd_debug
 commands:
   - name: dc
-    cname: debug_continue_oldhandler
     summary: Continue execution
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    subcommands:
+      - name: dc
+        summary: Continue execution of all children
+        cname: cmd_debug_continue_execution
+        args:
+          - name: pid
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: dcb
+        summary: Continue back until breakpoint
+        cname: cmd_debug_continue_back
+        args: [ ]
+      - name: dcc
+        summary: Continue until call (use step into)
+        cname: cmd_debug_continue_call
+        args: [ ]
+      - name: dccu
+        summary: Continue until unknown call (call reg)
+        cname: cmd_debug_continue_unknown_call
+        args: [ ]
+      - name: dce
+        summary: Continue execution (pass exception to program) (Windows only)
+        cname: cmd_debug_continue_exception
+        args: [ ]
+      - name: dcf
+        summary: Continue until fork
+        cname: cmd_debug_continue_fork
+        args: [ ]
+      - name: dck
+        summary: Continue sending signal to process
+        cname: cmd_debug_continue_send_signal
+        args:
+          - name: signal
+            type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: pid
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: dcp
+        summary: Continue until program code (mapped io section)
+        cname: cmd_debug_continue_mapped_io
+        args: [ ]
+      - name: dcr
+        summary: Continue until ret (uses step over)
+        cname: cmd_debug_continue_ret
+        args: [ ]
+      - name: dcs
+        summary: Continue until syscall
+        cname: cmd_debug_continue_syscall
+        type: RZ_CMD_DESC_TYPE_OLDINPUT
+      - name: dct
+        summary: Traptrace from curseek to len, no argument to list
+        cname: cmd_debug_continue_traptrace
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: dcu
+        summary: Debug continue until
+        cname: cmd_debug_continue_until
+        type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: ds
     summary: Debug step commands
     cname: cmd_debug_step
@@ -19,36 +77,206 @@ commands:
             cname: cmd_debug_step_until
             summary: Step until <addr>
             args:
-            - name: addr
-              type: RZ_CMD_ARG_TYPE_RZNUM
+              - name: addr
+                type: RZ_CMD_ARG_TYPE_RZNUM
           - name: dsui
             cname: cmd_debug_step_until_instr
             summary: Step until an instruction that matches <instr>
             args:
-            - name: instr
-              type: RZ_CMD_ARG_TYPE_STRING
+              - name: instr
+                type: RZ_CMD_ARG_TYPE_STRING
           - name: dsuir
             cname: cmd_debug_step_until_instr_regex
             summary: Step until an instruction that matches <regex>
             args:
-            - name: regex
-              type: RZ_CMD_ARG_TYPE_STRING
+              - name: regex
+                type: RZ_CMD_ARG_TYPE_STRING
           - name: dsuo
             cname: cmd_debug_step_until_optype
             summary: Step until an instruction matches one of the <optype>s
             args:
-            - name: optype
-              type: RZ_CMD_ARG_TYPE_STRING
-              flags: RZ_CMD_ARG_FLAG_ARRAY
+              - name: optype
+                type: RZ_CMD_ARG_TYPE_STRING
+                flags: RZ_CMD_ARG_FLAG_ARRAY
           - name: dsue
             cname: cmd_debug_step_until_esil
             summary: Step until <esil> expression matches
             args:
-            - name: esil
-              type: RZ_CMD_ARG_TYPE_STRING
+              - name: esil
+                type: RZ_CMD_ARG_TYPE_STRING
           - name: dsuf
             cname: cmd_debug_step_until_flag
             summary: Step until pc == <flag> matching name
             args:
-            - name: flag
-              type: RZ_CMD_ARG_TYPE_FLAG
+              - name: flag
+                type: RZ_CMD_ARG_TYPE_FLAG
+  - name: dts
+    summary: Debug trace session commands
+    subcommands:
+      - name: dts+
+        summary: Start trace session
+        cname: cmd_debug_start_trace_session
+        args: []
+      - name: dts-
+        summary: Stop trace session
+        cname: cmd_debug_stop_trace_session
+        args: []
+      - name: dtst
+        cname: cmd_debug_save_trace_session
+        summary: Save trace sessions to disk
+        args:
+          - name: dir
+            type: RZ_CMD_ARG_TYPE_FILE
+      - name: dtsf
+        cname: cmd_debug_load_trace_session
+        summary: Load trace sessions to disk
+        args:
+          - name: dir
+            type: RZ_CMD_ARG_TYPE_FILE
+      - name: dtsm
+        cname: cmd_debug_list_trace_session_mmap
+        summary: List current memory map and hash
+        args: []
+  - name: dm
+    summary: Memory map commands
+    subcommands:
+      - name: dm
+        cname: cmd_debug_list_maps
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        summary: >
+          List memory maps
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+        args: []
+      - name: dm+
+        cname: cmd_debug_allocate_maps
+        summary: >
+          Allocate <size> bytes at current offset
+        args:
+          - name: size
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: dm=
+        cname: cmd_debug_list_maps_ascii
+        summary: List memory maps of current process with ASCII art bars
+        args: []
+      - name: dm.
+        cname: cmd_debug_map_current
+        summary: Show map name of current address
+        args: []
+      - name: dmm
+        summary: Module memory map commands
+        subcommands:
+          - name: dmm
+            summary: List modules (libraries, binaries loaded in memory)
+            cname: cmd_debug_modules
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_RIZIN
+              - RZ_OUTPUT_MODE_JSON
+            args: []
+          - name: dmm.
+            cname: cmd_debug_current_modules
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_RIZIN
+            summary: List memory map of current module
+            args: []
+      - name: dm-
+        summary: Deallocate memory map at current offset
+        cname: cmd_debug_deallocate_map
+        args: []
+      - name: dmd
+        summary: Dump debug map regions to a file (from-to.dmp)
+        subcommands:
+          - name: dmd
+            summary: Dump debug maps to <filename>
+            cname: cmd_debug_dump_maps
+            args:
+              - name: filename
+                type: RZ_CMD_ARG_TYPE_FILE
+                optional: true
+          - name: dmda
+            cname: cmd_debug_dump_maps_all
+            summary: Dump all debug maps
+            args: []
+          - name: dmdw
+            cname: cmd_debug_dump_maps_writable
+            summary: Dump writable debug maps
+            args: []
+      - name: dmh
+        summary: Glibc heap commands
+        subcommands: cmd_heap_glibc
+      - name: dmi
+        summary: List/Load symbols
+        cname: cmd_debug_dmi
+        type: RZ_CMD_DESC_TYPE_OLDINPUT
+      - name: dml
+        summary: Load contents of file into current map region
+        cname: cmd_debug_dml
+        args:
+          - name: file
+            type: RZ_CMD_ARG_TYPE_FILE
+      - name: dmp
+        summary: >
+          Change page at current offset with <size>, protection <perms>
+          / Change dbg.map permissions to <perms>
+        cname: debug_memory_permission
+        args:
+          - name: perms
+            type: RZ_CMD_ARG_TYPE_STRING
+          - name: size
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: dmL
+        summary: >
+          Allocate <size> bytes at current offset and promote to huge page
+        cname: cmd_debug_dmL
+        args:
+          - name: size
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: dmS
+        summary: List sections of target lib
+        cname: cmd_debug_dmS
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
+        args:
+          - name: addr|libname
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+          - name: sectname
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: dmw
+        summary: Windows heap commands
+        subcommands:
+          - name: dmw
+            summary: List process heaps
+            cname: cmd_debug_process_heaps
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+            args: []
+          - name: dmwb
+            summary: List allocated heap blocks
+            cname: cmd_debug_process_heap_block
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+            args:
+              - name: addr
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+          - name: dmwbf
+            summary: Create flags for each allocated heap block
+            cname: cmd_debug_heap_block_flag
+            args: []
+      - name: dmx
+        summary: Jemalloc heap commands
+        cname: cmd_debug_heap_jemalloc
+        type: RZ_CMD_DESC_TYPE_OLDINPUT
+        args: []

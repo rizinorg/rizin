@@ -25,7 +25,7 @@ EOF
 RUN
 
 NAME=append to file
-FILE=-
+FILE==
 CMDS=<<EOF
 echo Hello > .rz-append-to-file.test
 echo World >> .rz-append-to-file.test

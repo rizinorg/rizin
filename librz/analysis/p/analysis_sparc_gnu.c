@@ -86,48 +86,48 @@ enum {
 	FCC_ULE = 0xe,
 };
 /* Define some additional conditions that are nor mappable to
-   the existing RZ_ANALYSIS_COND* ones and need to be handled in a
+   the existing RZ_TYPE_COND* ones and need to be handled in a
    special way. */
 enum {
-	RZ_ANALYSIS_COND_ALWAYS = -1,
-	RZ_ANALYSIS_COND_NEVER = -2,
-	RZ_ANALYSIS_COND_UNKNOWN = -3,
+	RZ_TYPE_COND_ALWAYS = -1,
+	RZ_TYPE_COND_NEVER = -2,
+	RZ_TYPE_COND_UNKNOWN = -3,
 };
 
 static int icc_to_r_cond(const int cond) {
 	/* we treat signed and unsigned the same here */
 	switch (cond) {
-	case ICC_A: return RZ_ANALYSIS_COND_ALWAYS;
-	case ICC_CC: return RZ_ANALYSIS_COND_GE;
-	case ICC_CS: return RZ_ANALYSIS_COND_LT;
-	case ICC_E: return RZ_ANALYSIS_COND_EQ;
-	case ICC_G: return RZ_ANALYSIS_COND_GT;
-	case ICC_GE: return RZ_ANALYSIS_COND_GE;
-	case ICC_GU: return RZ_ANALYSIS_COND_GT;
-	case ICC_L: return RZ_ANALYSIS_COND_LT;
-	case ICC_LE: return RZ_ANALYSIS_COND_LE;
-	case ICC_LEU: return RZ_ANALYSIS_COND_LE;
-	case ICC_N: return RZ_ANALYSIS_COND_NEVER;
-	case ICC_NE: return RZ_ANALYSIS_COND_NE;
+	case ICC_A: return RZ_TYPE_COND_ALWAYS;
+	case ICC_CC: return RZ_TYPE_COND_GE;
+	case ICC_CS: return RZ_TYPE_COND_LT;
+	case ICC_E: return RZ_TYPE_COND_EQ;
+	case ICC_G: return RZ_TYPE_COND_GT;
+	case ICC_GE: return RZ_TYPE_COND_GE;
+	case ICC_GU: return RZ_TYPE_COND_GT;
+	case ICC_L: return RZ_TYPE_COND_LT;
+	case ICC_LE: return RZ_TYPE_COND_LE;
+	case ICC_LEU: return RZ_TYPE_COND_LE;
+	case ICC_N: return RZ_TYPE_COND_NEVER;
+	case ICC_NE: return RZ_TYPE_COND_NE;
 	case ICC_NEG:
 	case ICC_POS:
 	case ICC_VC:
 	case ICC_VS:
-	default: return RZ_ANALYSIS_COND_UNKNOWN;
+	default: return RZ_TYPE_COND_UNKNOWN;
 	}
 }
 
 static int fcc_to_r_cond(const int cond) {
 	switch (cond) {
-	case FCC_A: return RZ_ANALYSIS_COND_ALWAYS;
-	case FCC_E: return RZ_ANALYSIS_COND_EQ;
-	case FCC_G: return RZ_ANALYSIS_COND_GT;
-	case FCC_GE: return RZ_ANALYSIS_COND_GE;
-	case FCC_L: return RZ_ANALYSIS_COND_LT;
-	case FCC_LE: return RZ_ANALYSIS_COND_LE;
-	case FCC_LG: return RZ_ANALYSIS_COND_NE;
-	case FCC_N: return RZ_ANALYSIS_COND_NEVER;
-	case FCC_NE: return RZ_ANALYSIS_COND_NE;
+	case FCC_A: return RZ_TYPE_COND_ALWAYS;
+	case FCC_E: return RZ_TYPE_COND_EQ;
+	case FCC_G: return RZ_TYPE_COND_GT;
+	case FCC_GE: return RZ_TYPE_COND_GE;
+	case FCC_L: return RZ_TYPE_COND_LT;
+	case FCC_LE: return RZ_TYPE_COND_LE;
+	case FCC_LG: return RZ_TYPE_COND_NE;
+	case FCC_N: return RZ_TYPE_COND_NEVER;
+	case FCC_NE: return RZ_TYPE_COND_NE;
 	case FCC_O:
 	case FCC_U:
 	case FCC_UE:
@@ -136,7 +136,7 @@ static int fcc_to_r_cond(const int cond) {
 	case FCC_UL:
 	case FCC_ULE:
 	default:
-		return RZ_ANALYSIS_COND_UNKNOWN;
+		return RZ_TYPE_COND_UNKNOWN;
 	}
 }
 
@@ -338,12 +338,12 @@ static void analysis_branch(RzAnalysisOp *op, const ut32 insn, const ut64 addr) 
 	} else if (X_OP2(insn) == OP2_FBfcc || X_OP2(insn) == OP2_FBPfcc) {
 		rz_cond = fcc_to_r_cond(X_COND(insn));
 	} else if (X_OP2(insn) == OP2_BPr) {
-		rz_cond = RZ_ANALYSIS_COND_UNKNOWN;
+		rz_cond = RZ_TYPE_COND_UNKNOWN;
 	}
 
-	if (rz_cond == RZ_ANALYSIS_COND_ALWAYS) {
+	if (rz_cond == RZ_TYPE_COND_ALWAYS) {
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
-	} else if (rz_cond == RZ_ANALYSIS_COND_NEVER) {
+	} else if (rz_cond == RZ_TYPE_COND_NEVER) {
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		return;
 	} else {

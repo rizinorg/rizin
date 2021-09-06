@@ -1,9 +1,13 @@
+// SPDX-FileCopyrightText: 2010-2020 nibble <nibble.ds@gmail.com>
+// SPDX-FileCopyrightText: 2010-2020 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_bin.h>
 #include <rz_types.h>
 #include "mach0_specs.h"
 
-#ifndef _INCLUDE_R_BIN_MACH0_H_
-#define _INCLUDE_R_BIN_MACH0_H_
+#ifndef _INCLUDE_RZ_BIN_MACH0_H_
+#define _INCLUDE_RZ_BIN_MACH0_H_
 
 // 20% faster loading times for macho if enabled
 #define FEATURE_SYMLIST 0
@@ -173,9 +177,9 @@ struct MACH0_(obj_t) {
 	ut64 (*va2pa)(ut64 p, ut32 *offset, ut32 *left, RzBinFile *bf);
 	struct symbol_t *symbols;
 	ut64 main_addr;
-	int (*original_io_read)(RzIO *io, RzIODesc *fd, ut8 *buf, int count);
-	bool rebasing_buffer;
 };
+
+#define MACH0_VFILE_NAME_REBASED_STRIPPED "rebased_stripped"
 
 void MACH0_(opts_set_default)(struct MACH0_(opts_t) * options, RzBinFile *bf);
 struct MACH0_(obj_t) * MACH0_(mach0_new)(const char *file, struct MACH0_(opts_t) * options);
@@ -183,9 +187,10 @@ struct MACH0_(obj_t) * MACH0_(new_buf)(RzBuffer *buf, struct MACH0_(opts_t) * op
 void *MACH0_(mach0_free)(struct MACH0_(obj_t) * bin);
 struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) * bin);
 char *MACH0_(section_type_to_string)(ut64 type);
-//RzList *MACH0_(get_segments)(struct MACH0_(obj_t) *bin);
 RzList *MACH0_(section_flag_to_rzlist)(ut64 flag);
-RzList *MACH0_(get_segments)(RzBinFile *bf); // struct MACH0_(obj_t) *bin);
+RzList *MACH0_(get_virtual_files)(RzBinFile *bf);
+RzList *MACH0_(get_maps)(RzBinFile *bf);
+RzList *MACH0_(get_segments)(RzBinFile *bf);
 const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) * bin);
 const RzList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) * bin);
 void MACH0_(pull_symbols)(struct MACH0_(obj_t) * mo, RzBinSymbolCallback cb, void *user);
@@ -212,4 +217,9 @@ int MACH0_(get_bits_from_hdr)(struct MACH0_(mach_header) * hdr);
 struct MACH0_(mach_header) * MACH0_(get_hdr)(RzBuffer *buf);
 void MACH0_(mach_headerfields)(RzBinFile *bf);
 RzList *MACH0_(mach_fields)(RzBinFile *bf);
+
+RZ_API RzBuffer *MACH0_(new_rebasing_and_stripping_buf)(struct MACH0_(obj_t) * obj);
+RZ_API bool MACH0_(needs_rebasing_and_stripping)(struct MACH0_(obj_t) * obj);
+RZ_API bool MACH0_(segment_needs_rebasing_and_stripping)(struct MACH0_(obj_t) * obj, size_t seg_index);
+
 #endif

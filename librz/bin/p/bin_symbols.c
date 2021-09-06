@@ -132,7 +132,6 @@ static RzBinSection *bin_section_from_section(RzCoreSymCacheElementSection *sect
 	s->vsize = s->size;
 	s->paddr = sect->paddr;
 	s->vaddr = sect->vaddr;
-	s->add = true;
 	s->perm = strstr(s->name, "TEXT") ? 5 : 4;
 	s->is_segment = false;
 	return s;
@@ -151,7 +150,6 @@ static RzBinSection *bin_section_from_segment(RzCoreSymCacheElementSegment *seg)
 	s->vsize = seg->vsize;
 	s->paddr = seg->paddr;
 	s->vaddr = seg->vaddr;
-	s->add = true;
 	s->perm = strstr(s->name, "TEXT") ? 5 : 4;
 	s->is_segment = true;
 	return s;
@@ -251,7 +249,7 @@ static RzCoreSymCacheElement *parseDragons(RzBinFile *bf, RzBuffer *buf, int off
 	return rz_coresym_cache_element_new(bf, buf, off + 16, bits, file_name);
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
 #if 0
 	SYMBOLS HEADER
 
@@ -288,12 +286,9 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 		}
 	}
 	RzCoreSymCacheElement *element = parseDragons(bf, buf, sm.addr + sm.size, sm.bits, file_name);
-	if (element) {
-		*bin_obj = element;
-		return true;
-	}
+	obj->bin_obj = element;
 	free(file_name);
-	return false;
+	return obj->bin_obj != NULL;
 }
 
 static RzList *sections(RzBinFile *bf) {
@@ -465,6 +460,7 @@ RzBinPlugin rz_bin_plugin_symbols = {
 	.load_buffer = &load_buffer,
 	.check_buffer = &check_buffer,
 	.symbols = &symbols,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
 	.size = &size,
 	.baddr = &baddr,

@@ -53,7 +53,7 @@ static void apply_line_style(RzConsCanvas *c, int x, int y, int x2, int y2,
 	RzCons *cons = rz_cons_singleton();
 	switch (style->color) {
 	case LINE_UNCJMP:
-		c->attr = cons->context->pal.graph_trufae;
+		c->attr = cons->context->pal.graph_ujump;
 		break;
 	case LINE_TRUE:
 		c->attr = cons->context->pal.graph_true;
@@ -63,7 +63,7 @@ static void apply_line_style(RzConsCanvas *c, int x, int y, int x2, int y2,
 		break;
 	case LINE_NONE:
 	default:
-		c->attr = cons->context->pal.graph_trufae;
+		c->attr = cons->context->pal.graph_ujump;
 		break;
 	}
 	if (!c->color) {

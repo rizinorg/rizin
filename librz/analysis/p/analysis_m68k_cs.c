@@ -141,11 +141,13 @@ static void op_fillval(RzAnalysisOp *op, csh handle, cs_insn *insn) {
 		ZERO_FILL(reg);
 		if (OPERAND(1).type == M68K_OP_MEM) {
 			op->src[0] = rz_analysis_value_new();
+			op->src[0]->type = RZ_ANALYSIS_VAL_MEM;
 			op->src[0]->reg = &reg;
 			parse_reg_name(op->src[0]->reg, handle, insn, 1);
 			op->src[0]->delta = OPERAND(0).mem.disp;
 		} else if (OPERAND(0).type == M68K_OP_MEM) {
 			op->dst = rz_analysis_value_new();
+			op->dst->type = RZ_ANALYSIS_VAL_MEM;
 			op->dst->reg = &reg;
 			parse_reg_name(op->dst->reg, handle, insn, 0);
 			op->dst->delta = OPERAND(1).mem.disp;
@@ -155,6 +157,7 @@ static void op_fillval(RzAnalysisOp *op, csh handle, cs_insn *insn) {
 		ZERO_FILL(reg);
 		if (OPERAND(1).type == M68K_OP_MEM) {
 			op->dst = rz_analysis_value_new();
+			op->dst->type = RZ_ANALYSIS_VAL_MEM;
 			op->dst->reg = &reg;
 			parse_reg_name(op->dst->reg, handle, insn, 1);
 			op->dst->delta = OPERAND(1).mem.disp;

@@ -41,7 +41,7 @@ static HANDLE hproc = NULL;
 static void lang_pipe_run_win(RzLang *lang) {
 	CHAR buf[PIPE_BUF_SIZE];
 	BOOL bSuccess = TRUE;
-	int i, res = 0;
+	int i;
 	DWORD dwRead = 0, dwWritten = 0, dwEvent;
 	HANDLE hRead = CreateEvent(NULL, TRUE, FALSE, NULL);
 	if (!hRead) {

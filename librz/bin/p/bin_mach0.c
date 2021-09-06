@@ -13,16 +13,7 @@
 
 // wip settings
 
-extern RzBinWrite rz_bin_write_mach0;
-
 static RzBinInfo *info(RzBinFile *bf);
-
-static void swizzle_io_read(struct MACH0_(obj_t) * obj, RzIO *io);
-static int rebasing_and_stripping_io_read(RzIO *io, RzIODesc *fd, ut8 *buf, int count);
-static void rebase_buffer(struct MACH0_(obj_t) * obj, ut64 off, RzIODesc *fd, ut8 *buf, int count);
-
-#define IS_PTR_AUTH(x) ((x & (1ULL << 63)) != 0)
-#define IS_PTR_BIND(x) ((x & (1ULL << 62)) != 0)
 
 static Sdb *get_sdb(RzBinFile *bf) {
 	RzBinObject *o = bf->o;
@@ -48,19 +39,15 @@ static char *entitlements(RzBinFile *bf, bool json) {
 	}
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	rz_return_val_if_fail(bf && bin_obj && buf, false);
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
+	rz_return_val_if_fail(bf && obj && buf, false);
 	struct MACH0_(opts_t) opts;
 	MACH0_(opts_set_default)
 	(&opts, bf);
 	struct MACH0_(obj_t) *res = MACH0_(new_buf)(buf, &opts);
 	if (res) {
-		if (res->chained_starts) {
-			RzIO *io = bf->rbin->iob.io;
-			swizzle_io_read(res, io);
-		}
 		sdb_ns_set(sdb, "info", res->kv);
-		*bin_obj = res;
+		obj->bin_obj = res;
 		return true;
 	}
 	return false;
@@ -75,6 +62,14 @@ static ut64 baddr(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, UT64_MAX);
 	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
 	return MACH0_(get_baddr)(bin);
+}
+
+static RzList *virtual_files(RzBinFile *bf) {
+	return MACH0_(get_virtual_files)(bf);
+}
+
+static RzList *maps(RzBinFile *bf) {
+	return MACH0_(get_maps)(bf);
 }
 
 static RzList *sections(RzBinFile *bf) {
@@ -221,7 +216,7 @@ static RzList *symbols(RzBinFile *bf) {
 	if (!(syms = MACH0_(get_symbols)(obj->bin_obj))) {
 		return ret;
 	}
-	Sdb *symcache = sdb_new0();
+	SetU *symcache = set_u_new();
 	bin = (struct MACH0_(obj_t) *)obj->bin_obj;
 	for (i = 0; !syms[i].last; i++) {
 		if (syms[i].name == NULL || syms[i].name[0] == '\0' || syms[i].addr < 100) {
@@ -263,7 +258,7 @@ static RzList *symbols(RzBinFile *bf) {
 		}
 		ptr->ordinal = i;
 		bin->dbg_info = strncmp(ptr->name, "radr://", 7) ? 0 : 1;
-		sdb_set(symcache, sdb_fmt("sym0x%" PFMT64x, ptr->vaddr), "found", 0);
+		set_u_add(symcache, ptr->vaddr);
 #if 0
 		if (!strncmp (ptr->name, "__Z", 3)) {
 			lang = "c++";
@@ -278,11 +273,9 @@ static RzList *symbols(RzBinFile *bf) {
 	}
 	//functions from LC_FUNCTION_STARTS
 	if (bin->func_start) {
-		char symstr[128];
 		ut64 value = 0, address = 0;
 		const ut8 *temp = bin->func_start;
 		const ut8 *temp_end = bin->func_start + bin->func_size;
-		strcpy(symstr, "sym0x");
 		while (temp + 3 < temp_end && *temp) {
 			temp = rz_uleb128_decode(temp, NULL, &value);
 			address += value;
@@ -304,8 +297,7 @@ static RzList *symbols(RzBinFile *bf) {
 			rz_list_append(ret, ptr);
 			// if any func is not found in syms then we can consider it is stripped
 			if (!isStripped) {
-				snprintf(symstr + 5, sizeof(symstr) - 5, "%" PFMT64x, ptr->vaddr);
-				if (!sdb_const_get(symcache, symstr, 0)) {
+				if (!set_u_contains(symcache, ptr->vaddr)) {
 					isStripped = true;
 				}
 			}
@@ -321,7 +313,7 @@ static RzList *symbols(RzBinFile *bf) {
 	if (isStripped) {
 		bin->dbg_info |= RZ_BIN_DBG_STRIPPED;
 	}
-	sdb_free(symcache);
+	set_u_free(symcache);
 	return ret;
 }
 #endif // FEATURE_SYMLIST
@@ -518,7 +510,6 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->subsystem = strdup("darwin");
 	ret->arch = strdup(MACH0_(get_cputype)(bf->o->bin_obj));
 	ret->machine = MACH0_(get_cpusubtype)(bf->o->bin_obj);
-	ret->has_lit = true;
 	ret->type = MACH0_(get_filetype)(bf->o->bin_obj);
 	ret->big_endian = MACH0_(is_big_endian)(bf->o->bin_obj);
 	ret->bits = 32;
@@ -625,7 +616,8 @@ static RzList *patch_relocs(RzBinFile *bf) {
 
 	ut64 offset = 0;
 	void **vit;
-	rz_pvector_foreach (&io->maps, vit) {
+	RzPVector *maps = rz_io_maps(io);
+	rz_pvector_foreach (maps, vit) {
 		RzIOMap *map = *vit;
 		if (map->itv.addr > offset) {
 			offset = map->itv.addr;
@@ -638,14 +630,10 @@ static RzList *patch_relocs(RzBinFile *bf) {
 	ut64 n_vaddr = g->itv.addr + g->itv.size;
 	ut64 size = num_ext_relocs * cdsz;
 	char *muri = rz_str_newf("malloc://%" PFMT64u, size);
-	gotrzdesc = b->iob.open_at(io, muri, RZ_PERM_R, 0664, n_vaddr);
+	RzIOMap *gotrzmap;
+	gotrzdesc = b->iob.open_at(io, muri, RZ_PERM_R, 0664, n_vaddr, &gotrzmap);
 	free(muri);
 	if (!gotrzdesc) {
-		goto beach;
-	}
-
-	RzIOMap *gotrzmap = b->iob.map_get(io, n_vaddr);
-	if (!gotrzmap) {
 		goto beach;
 	}
 	gotrzmap->name = strdup(".got.rz");
@@ -680,7 +668,7 @@ static RzList *patch_relocs(RzBinFile *bf) {
 			RZ_FREE(ptr);
 			goto beach;
 		}
-		ptr->vaddr = sym_addr;
+		ptr->target_vaddr = sym_addr;
 		ptr->import = imp;
 		rz_list_append(ret, ptr);
 	}
@@ -699,135 +687,6 @@ beach:
 	rz_list_free(ret);
 	ht_uu_free(relocs_by_sym);
 	return NULL;
-}
-
-static void swizzle_io_read(struct MACH0_(obj_t) * obj, RzIO *io) {
-	rz_return_if_fail(io && io->desc && io->desc->plugin);
-	RzIOPlugin *plugin = io->desc->plugin;
-	obj->original_io_read = plugin->read;
-	plugin->read = &rebasing_and_stripping_io_read;
-}
-
-static int rebasing_and_stripping_io_read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
-	rz_return_val_if_fail(io, -1);
-	RzCore *core = (RzCore *)io->corebind.core;
-	if (!core || !core->bin || !core->bin->binfiles) {
-		return -1;
-	}
-	struct MACH0_(obj_t) *obj = NULL;
-	RzListIter *iter;
-	RzBinFile *bf;
-	rz_list_foreach (core->bin->binfiles, iter, bf) {
-		if (bf->fd == fd->fd) {
-			/* The first field of MACH0_(obj_t) is
-			 * the mach_header, whose first field is
-			 * the MH magic.
-			 * This code assumes that bin objects are
-			 * at least 4 bytes long.
-			 */
-			ut32 *magic = bf->o->bin_obj;
-			if (magic && (*magic == MH_MAGIC || *magic == MH_CIGAM || *magic == MH_MAGIC_64 || *magic == MH_CIGAM_64)) {
-				obj = bf->o->bin_obj;
-			}
-			break;
-		}
-	}
-	if (!obj || !obj->original_io_read) {
-		if (fd->plugin->read == &rebasing_and_stripping_io_read) {
-			return -1;
-		}
-		return fd->plugin->read(io, fd, buf, count);
-	}
-	if (obj->rebasing_buffer) {
-		return obj->original_io_read(io, fd, buf, count);
-	}
-	static ut8 *internal_buffer = NULL;
-	static int internal_buf_size = 0;
-	if (count > internal_buf_size) {
-		if (internal_buffer) {
-			RZ_FREE(internal_buffer);
-			internal_buffer = NULL;
-		}
-		internal_buf_size = RZ_MAX(count, 8);
-		internal_buffer = (ut8 *)malloc(internal_buf_size);
-	}
-	ut64 io_off = fd->plugin->lseek(io, fd, 0, RZ_IO_SEEK_CUR);
-	int result = obj->original_io_read(io, fd, internal_buffer, count);
-	if (result == count) {
-		rebase_buffer(obj, io_off - bf->o->boffset, fd, internal_buffer, count);
-		memcpy(buf, internal_buffer, result);
-	}
-	return result;
-}
-
-static void rebase_buffer(struct MACH0_(obj_t) * obj, ut64 off, RzIODesc *fd, ut8 *buf, int count) {
-	if (obj->rebasing_buffer) {
-		return;
-	}
-	obj->rebasing_buffer = true;
-	ut64 eob = off + count;
-	int i = 0;
-	for (; i < obj->nsegs; i++) {
-		if (!obj->chained_starts[i]) {
-			continue;
-		}
-		ut64 page_size = obj->chained_starts[i]->page_size;
-		ut64 start = obj->segs[i].fileoff;
-		ut64 end = start + obj->segs[i].filesize;
-		if (end >= off && start <= eob) {
-			ut64 page_idx = (RZ_MAX(start, off) - start) / page_size;
-			ut64 page_end_idx = (RZ_MIN(eob, end) - start) / page_size;
-			for (; page_idx <= page_end_idx; page_idx++) {
-				if (page_idx >= obj->chained_starts[i]->page_count) {
-					break;
-				}
-				ut16 page_start = obj->chained_starts[i]->page_start[page_idx];
-				if (page_start == DYLD_CHAINED_PTR_START_NONE) {
-					continue;
-				}
-				ut64 cursor = start + page_idx * page_size + page_start;
-				while (cursor < eob && cursor < end) {
-					ut8 tmp[8];
-					if (rz_buf_read_at(obj->b, cursor, tmp, 8) != 8) {
-						break;
-					}
-					ut64 raw_ptr = rz_read_le64(tmp);
-					bool is_auth = IS_PTR_AUTH(raw_ptr);
-					bool is_bind = IS_PTR_BIND(raw_ptr);
-					ut64 ptr_value = raw_ptr;
-					ut64 delta;
-					if (is_auth && is_bind) {
-						struct dyld_chained_ptr_arm64e_auth_bind *p =
-							(struct dyld_chained_ptr_arm64e_auth_bind *)&raw_ptr;
-						delta = p->next;
-					} else if (!is_auth && is_bind) {
-						struct dyld_chained_ptr_arm64e_bind *p =
-							(struct dyld_chained_ptr_arm64e_bind *)&raw_ptr;
-						delta = p->next;
-					} else if (is_auth && !is_bind) {
-						struct dyld_chained_ptr_arm64e_auth_rebase *p =
-							(struct dyld_chained_ptr_arm64e_auth_rebase *)&raw_ptr;
-						delta = p->next;
-						ptr_value = p->target + obj->baddr;
-					} else {
-						struct dyld_chained_ptr_arm64e_rebase *p =
-							(struct dyld_chained_ptr_arm64e_rebase *)&raw_ptr;
-						delta = p->next;
-						ptr_value = ((ut64)p->high8 << 56) | p->target;
-					}
-					ut64 in_buf = cursor - off;
-					if (cursor >= off && cursor <= eob - 8) {
-						rz_write_le64(&buf[in_buf], ptr_value);
-					}
-					cursor += delta * 8;
-					if (!delta) {
-						break;
-					}
-				}
-			}
-		}
-	}
-	obj->rebasing_buffer = false;
 }
 
 #if !RZ_BIN_MACH064
@@ -860,7 +719,7 @@ static RzBuffer *create(RzBin *bin, const ut8 *code, int clen, const ut8 *data, 
 	rz_return_val_if_fail(bin && opt, NULL);
 
 	bool is_arm = strstr(opt->arch, "arm");
-	RzBuffer *buf = rz_buf_new();
+	RzBuffer *buf = rz_buf_new_with_bytes(NULL, 0);
 #ifndef RZ_BIN_MACH064
 	if (opt->bits == 64) {
 		eprintf("TODO: Please use mach064 instead of mach0\n");
@@ -1113,11 +972,11 @@ static RzBuffer *create(RzBin *bin, const ut8 *code, int clen, const ut8 *data, 
 	return buf;
 }
 
-static RzBinAddr *binsym(RzBinFile *bf, int sym) {
+static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol sym) {
 	ut64 addr;
 	RzBinAddr *ret = NULL;
 	switch (sym) {
-	case RZ_BIN_SYM_MAIN:
+	case RZ_BIN_SPECIAL_SYMBOL_MAIN:
 		addr = MACH0_(get_main)(bf->o->bin_obj);
 		if (addr == UT64_MAX || !(ret = RZ_NEW0(RzBinAddr))) {
 			return NULL;
@@ -1127,6 +986,8 @@ static RzBinAddr *binsym(RzBinFile *bf, int sym) {
 		ret->vaddr = ((addr >> 1) << 1);
 		//}
 		ret->paddr = ret->vaddr;
+		break;
+	default:
 		break;
 	}
 	return ret;
@@ -1161,6 +1022,8 @@ RzBinPlugin rz_bin_plugin_mach0 = {
 	.binsym = &binsym,
 	.entries = &entries,
 	.signature = &entitlements,
+	.virtual_files = &virtual_files,
+	.maps = &maps,
 	.sections = &sections,
 	.symbols = &symbols,
 	.imports = &imports,
@@ -1173,7 +1036,6 @@ RzBinPlugin rz_bin_plugin_mach0 = {
 	.patch_relocs = &patch_relocs,
 	.create = &create,
 	.classes = &MACH0_(parse_classes),
-	.write = &rz_bin_write_mach0,
 	.section_type_to_string = &MACH0_(section_type_to_string),
 	.section_flag_to_rzlist = &MACH0_(section_flag_to_rzlist),
 };

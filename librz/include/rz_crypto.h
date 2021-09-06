@@ -18,9 +18,10 @@ enum {
 	RZ_CRYPTO_MODE_CFB,
 };
 
+/* Defines in which direction the set_key methods needs to run */
 enum {
-	RZ_CRYPTO_DIR_CIPHER,
-	RZ_CRYPTO_DIR_DECIPHER,
+	RZ_CRYPTO_DIR_ENCRYPT = 0,
+	RZ_CRYPTO_DIR_DECRYPT,
 };
 
 typedef struct rz_crypto_t {
@@ -39,32 +40,33 @@ typedef struct rz_crypto_t {
 typedef struct rz_crypto_plugin_t {
 	const char *name;
 	const char *license;
+	const char *author;
 	int (*get_key_size)(RzCrypto *cry);
 	bool (*set_iv)(RzCrypto *cry, const ut8 *iv, int ivlen);
 	bool (*set_key)(RzCrypto *cry, const ut8 *key, int keylen, int mode, int direction);
 	bool (*update)(RzCrypto *cry, const ut8 *buf, int len);
 	bool (*final)(RzCrypto *cry, const ut8 *buf, int len);
 	bool (*use)(const char *algo);
-	int (*fini)(RzCrypto *cry);
+	bool (*init)(RzCrypto *cry);
+	bool (*fini)(RzCrypto *cry);
 } RzCryptoPlugin;
 
 typedef ut64 RzCryptoSelector;
 
 #ifdef RZ_API
-RZ_API RzCrypto *rz_crypto_init(RzCrypto *cry, int hard);
-RZ_API RzCrypto *rz_crypto_as_new(RzCrypto *cry);
 RZ_API int rz_crypto_add(RzCrypto *cry, RzCryptoPlugin *h);
 RZ_API RzCrypto *rz_crypto_new(void);
-RZ_API RzCrypto *rz_crypto_free(RzCrypto *cry);
+RZ_API void rz_crypto_free(RzCrypto *cry);
 RZ_API bool rz_crypto_use(RzCrypto *cry, const char *algo);
 RZ_API bool rz_crypto_set_key(RzCrypto *cry, const ut8 *key, int keylen, int mode, int direction);
 RZ_API bool rz_crypto_set_iv(RzCrypto *cry, const ut8 *iv, int ivlen);
 RZ_API int rz_crypto_update(RzCrypto *cry, const ut8 *buf, int len);
 RZ_API int rz_crypto_final(RzCrypto *cry, const ut8 *buf, int len);
 RZ_API int rz_crypto_append(RzCrypto *cry, const ut8 *buf, int len);
-RZ_API ut8 *rz_crypto_get_output(RzCrypto *cry, int *size);
+RZ_API const ut8 *rz_crypto_get_output(RzCrypto *cry, int *size);
 RZ_API const char *rz_crypto_name(const RzCryptoSelector bit);
 RZ_API const char *rz_crypto_codec_name(const RzCryptoSelector bit);
+RZ_API const RzCryptoPlugin *rz_crypto_plugin_by_index(size_t index);
 #endif
 
 /* plugin pointers */

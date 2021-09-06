@@ -36,7 +36,7 @@ static char *socket_http_answer(RzSocket *s, int *code, int *rlen, ut32 redirect
 	const char *p;
 	int ret, len = 0, delta = 0;
 	char *dn = NULL;
-	RzBuffer *b = rz_buf_new();
+	RzBuffer *b = rz_buf_new_with_bytes(NULL, 0);
 	if (!b) {
 		return NULL;
 	}

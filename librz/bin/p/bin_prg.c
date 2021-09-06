@@ -9,13 +9,17 @@ static bool check_buffer(RzBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
 	return true;
 }
 
 static ut64 baddr(RzBinFile *bf) {
-	ut16 base = rz_buf_read_le16_at(bf->buf, 0);
-	return base != UT16_MAX ? base : 0;
+	ut16 base;
+	if (!rz_buf_read_le16_at(bf->buf, 0, &base)) {
+		return 0;
+	}
+
+	return base;
 }
 
 static RzBinInfo *info(RzBinFile *bf) {
@@ -52,7 +56,6 @@ static RzList *sections(RzBinFile *bf) {
 	section->vaddr = baddr(bf);
 	section->vsize = sz - 2;
 	section->perm = RZ_PERM_RWX;
-	section->add = true;
 	rz_list_append(ret, section);
 	return ret;
 }
@@ -80,6 +83,7 @@ RzBinPlugin rz_bin_plugin_prg = {
 	.baddr = baddr,
 	.check_buffer = check_buffer,
 	.entries = entries,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = sections,
 	.info = info,
 };

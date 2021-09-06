@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2020 Zi Fan <zifan.tan@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 return strdup(
 	"=PC	rip\n"
 	"=SP	rsp\n"

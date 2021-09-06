@@ -17,9 +17,9 @@ static bool check_buffer(RzBuffer *b) {
 	return (!memcmp(magic, "FIRM", 4));
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *b, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *sdb) {
 	if (rz_buf_read_at(b, 0, (ut8 *)&loaded_header, sizeof(loaded_header)) == sizeof(loaded_header)) {
-		*bin_obj = &loaded_header;
+		obj->bin_obj = &loaded_header;
 		return true;
 	}
 	return false;
@@ -55,7 +55,6 @@ static RzList *sections(RzBinFile *bf) {
 			sections[i]->paddr = loaded_header.sections[i].offset;
 			sections[i]->vaddr = loaded_header.sections[i].address;
 			sections[i]->perm = rz_str_rwx("rwx");
-			sections[i]->add = true;
 		}
 	}
 
@@ -135,6 +134,7 @@ RzBinPlugin rz_bin_plugin_nin3ds = {
 	.load_buffer = &load_buffer,
 	.check_buffer = &check_buffer,
 	.entries = &entries,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
 	.info = &info,
 };

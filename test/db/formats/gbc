@@ -5,3 +5,27 @@ EXPECT=<<EOF
 1
 EOF
 RUN
+
+NAME=Gameboy: Sections
+FILE=bins/gbc/a.gb
+CMDS=iS
+EXPECT=<<EOF
+paddr      size   vaddr      vsize  align perm name      type flags 
+--------------------------------------------------------------------
+0x00000000 0x4000 0x00000000 0x4000 0x0   -r-x rombank00      
+0x00004000 0x4000 0x00004000 0x4000 0x0   -r-x rombank01      
+0x00008000 0x4000 0x00014000 0x4000 0x0   -r-x rombank02      
+0x0000c000 0x4000 0x00024000 0x4000 0x0   -r-x rombank03      
+EOF
+RUN
+
+NAME=Gameboy: Maps
+FILE=bins/gbc/a.gb
+CMDS=om
+EXPECT=<<EOF
+ 1 fd: 3 +0x00000000 0x00000000 - 0x00003fff r-x fmap.rombank00
+ 2 fd: 3 +0x00004000 0x00004000 - 0x00007fff r-x fmap.rombank01
+ 3 fd: 3 +0x00008000 0x00014000 - 0x00017fff r-x fmap.rombank02
+ 4 fd: 3 +0x0000c000 0x00024000 - 0x00027fff r-x fmap.rombank03
+EOF
+RUN

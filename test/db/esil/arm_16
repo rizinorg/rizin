@@ -1,9 +1,9 @@
 NAME=adr emulation
 FILE=malloc://0x200
 CMDS=<<EOF
-e io.cache=true
 e asm.arch=arm
 e asm.bits=16
+e io.cache=true
 s 0x0008735c
 wx 30a1
 w rizin_emulation\x00 @ 0x87420
@@ -21,7 +21,6 @@ RUN
 NAME=clz
 FILE=malloc://0x200
 CMDS=<<EOF
-e io.cache=true
 e asm.arch=arm
 e asm.bits=16
 wa clz r0, r1
@@ -46,10 +45,10 @@ RUN
 NAME=addw emulation
 FILE=malloc://0x200
 CMDS=<<EOF
-e io.cache=true
 e asm.arch=arm
 e asm.bits=16
-s 0x00088a1c 
+e io.cache=true
+s 0x00088a1c
 wx 0ff26c71
 w addw_emulation\x00 @ 0x8918c
 aei
@@ -159,6 +158,109 @@ ar r0
 EOF
 EXPECT=<<EOF
 0x11223344
+EOF
+RUN
+
+NAME=ldrd r2, r3, [r1]
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+ar r1=8
+# put value at r1 into r2 and at r1+4 into r3
+wx d1e90023 # ldrd r2,r3,[r1]
+wx ddccbbaa @ 8
+wx efbeadde @ 12
+aes
+ar r2
+ar r3
+EOF
+EXPECT=<<EOF
+0xaabbccdd
+0xdeadbeef
+EOF
+RUN
+
+NAME=ldrd r2, r3, [r1, #4]
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+ar r1=4
+# put value at r1+4 into r2 and at r1+4+4 into r3
+wx d1e90123 # ldrd r2,r3,[r1, 4]
+wx ddccbbaa @ 8
+wx efbeadde @ 12
+aes
+ar r2
+ar r3
+EOF
+EXPECT=<<EOF
+0xaabbccdd
+0xdeadbeef
+EOF
+RUN
+
+NAME=ldrd r2, r3, [pc, #8]
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+# put value at pc+4 into r2 and at pc+4+4 into r3
+wx dfe90223 # ldrd r2, r3, [pc, #8]
+wx ddccbbaa @ 12
+wx efbeadde @ 16
+aes
+ar r2
+ar r3
+EOF
+EXPECT=<<EOF
+0xaabbccdd
+0xdeadbeef
+EOF
+RUN
+
+NAME=ldrd r2, r3, [r1, #4]!
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+ar r1=4
+# put value at r1+4 into r2 and at r1+4+4 into r3 then put r1+4 into r1
+wx f1e90123 # ldrd r2, r3, [r1, #4]!
+wx ddccbbaa @ 8
+wx efbeadde @ 12
+aes
+ar r1
+ar r2
+ar r3
+EOF
+EXPECT=<<EOF
+0x00000008
+0xaabbccdd
+0xdeadbeef
+EOF
+RUN
+
+NAME=ldrd r2, r3, [r1], #4
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+ar r1=8
+# put value at r1 into r2 and at r1+4 into r3 then put r1+4 into r1
+wx f1e80123 # ldrd r2,r3,[r1], 4
+wx ddccbbaa @ 8
+wx efbeadde @ 12
+aes
+ar r1
+ar r2
+ar r3
+EOF
+EXPECT=<<EOF
+0x0000000c
+0xaabbccdd
+0xdeadbeef
 EOF
 RUN
 
@@ -844,7 +946,7 @@ EOF
 RUN
 
 NAME=x86-16 dos syscall
-FILE=-
+FILE==
 ARGS=-ax86 -b16 -kdos
 CMDS=<<EOF
 "wa mov ah,0x30;int 0x21"
@@ -858,7 +960,7 @@ RUN
 
 NAME=arm s110 syscalls esil
 BROKEN=1
-FILE=-
+FILE==
 ARGS=-aarm -b16 -easm.os=s110
 CMDS=<<EOF
 wx 05220aa17cdf
@@ -874,7 +976,7 @@ RUN
 
 NAME=arm s110 syscalls as
 BROKEN=1
-FILE=-
+FILE==
 ARGS=-aarm -b16 -easm.os=s110
 CMDS=<<EOF
 wx 05220aa17cdf
@@ -891,7 +993,7 @@ RUN
 
 NAME=arm s110 syscalls as num
 BROKEN=1
-FILE=-
+FILE==
 ARGS=-aarm -b16 -easm.os=s110
 CMDS=<<EOF
 wx 05220aa17cdf
@@ -993,7 +1095,7 @@ EOF
 RUN
 
 NAME=arm s110 syscalls asl ascii
-FILE=-
+FILE==
 ARGS=-aarm -b16 -easm.os=s110
 CMDS=asl sd_evt_get
 EXPECT=<<EOF
@@ -1002,7 +1104,7 @@ EOF
 RUN
 
 NAME=arm s110 syscalls asl num
-FILE=-
+FILE==
 ARGS=-aarm -b16 -easm.os=s110
 CMDS=asl 0x51
 EXPECT=<<EOF
@@ -1011,7 +1113,7 @@ EOF
 RUN
 
 NAME=arm s110 syscalls asc num
-FILE=-
+FILE==
 ARGS=-aarm -b16 -easm.os=s110
 CMDS=asc 0x51
 EXPECT=<<EOF
@@ -1020,7 +1122,7 @@ EOF
 RUN
 
 NAME=arm s110 syscalls asca num
-FILE=-
+FILE==
 ARGS=-aarm -b16 -easm.os=s110
 CMDS=asca 0x51
 EXPECT=<<EOF

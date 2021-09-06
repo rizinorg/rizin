@@ -48,8 +48,14 @@ RZ_API int rz_getopt_next(RzGetopt *opt) {
 		 * if the user didn't specify '-' as an option,
 		 * assume it means -1.
 		 */
-		if (opt->opt == '-') {
-			return -1;
+		if (opt->opt == (int)'-') {
+			opt->ind++;
+			if (rz_getopt_next(opt) == -1) {
+				opt->ind--;
+				return -1;
+			}
+
+			return '-';
 		}
 		if (!*place) {
 			opt->ind++;

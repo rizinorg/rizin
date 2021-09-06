@@ -36,12 +36,12 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return binfo;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	RzBinJavaClass *jclass = rz_bin_java_class_new(buf, loadaddr, sdb);
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
+	RzBinJavaClass *jclass = rz_bin_java_class_new(buf, obj->opts.loadaddr, sdb);
 	if (!jclass) {
 		return false;
 	}
-	*bin_obj = jclass;
+	obj->bin_obj = jclass;
 	return true;
 }
 
@@ -101,7 +101,7 @@ static RzList *classes(RzBinFile *bf) {
 	bclass->name = rz_bin_java_class_name(jclass);
 	bclass->super = rz_bin_java_class_super(jclass);
 	bclass->visibility = rz_bin_java_class_access_flags(jclass);
-	bclass->visibility_str = rz_bin_java_class_access_flags_readable(jclass, ACCESS_FLAG_MASK_ALL);
+	bclass->visibility_str = rz_bin_java_class_access_flags_readable(jclass, ACCESS_FLAG_MASK_ALL_NO_SUPER);
 
 	bclass->methods = rz_bin_java_class_methods_as_symbols(jclass);
 	bclass->fields = rz_bin_java_class_fields_as_binfields(jclass);
@@ -171,7 +171,7 @@ static RzList *libs(RzBinFile *bf) {
 	return rz_bin_java_class_as_libraries(jclass);
 }
 
-static RzBinAddr *binsym(RzBinFile *bf, int sym) {
+static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol sym) {
 	RzBinJavaClass *jclass = rz_bin_file_get_java_class(bf);
 	if (!jclass) {
 		return NULL;
@@ -220,14 +220,8 @@ static char *enrich_asm(RzBinFile *bf, const char *asm_str, int asm_len) {
 				rz_warn_if_reached();
 				return NULL;
 			}
-			char *dem = rz_bin_demangle_java(tmp);
-			if (!dem) {
-				dem = tmp;
-			} else {
-				free(tmp);
-			}
-			char *result = rz_str_newf("%.*s%s", i, asm_str, dem);
-			free(dem);
+			char *result = rz_str_newf("%.*s%s", i, asm_str, tmp);
+			free(tmp);
 			return result;
 		}
 	}
@@ -245,6 +239,7 @@ RzBinPlugin rz_bin_plugin_java = {
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entrypoints,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = sections,
 	.symbols = symbols,
 	.imports = &imports,

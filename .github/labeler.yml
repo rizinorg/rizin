@@ -98,6 +98,9 @@ RzSocket:
 RzSyscall:
   - librz/syscall/**/*
 
+RzType:
+  - librz/type/**/*
+
 RzUtil:
   - librz/util/**/*
 
@@ -114,7 +117,7 @@ documentation:
   - doc/**/*
 
 ESIL:
-  - librz/analysis/esil*
+  - librz/analysis/esil/*
 
 gdb:
   - shlr/gdb/**/*

@@ -1,0 +1,99 @@
+va_list=typedef
+typedef.va_list=char*
+
+wint_t=typedef
+typedef.wint_t=int
+
+wchar_t=typedef
+typedef.wchar_t=int
+
+wctype_t=typedef
+typedef.wctype_t=int
+
+wctrans_t=typedef
+typedef.wctrans_t=unsigned int
+
+sockaddr=struct
+struct.sockaddr=
+
+tm=struct
+struct.tm=tm_sec,tm_min,tm_hour,tm_mday,tm_mon,tm_year,tm_wday,tm_yday,tm_isdst
+struct.tm.tm_sec=int,0,0
+struct.tm.tm_min=int,4,0
+struct.tm.tm_hour=int,8,0
+struct.tm.tm_mday=int,12,0
+struct.tm.tm_mon=int,16,0
+struct.tm.tm_year=int,20,0
+struct.tm.tm_wday=int,24,0
+struct.tm.tm_yday=int,28,0
+struct.tm.tm_isdst=int,32,0
+
+lconv=struct
+struct.lconv=
+
+socklen_t=typedef
+typedef.socklen_t=int
+
+FILE=typedef
+typedef.FILE=void
+
+FILE=typedef
+typedef.FILE=void
+
+clock_t=typedef
+typedef.clock_t=void
+
+time_t=typedef
+typedef.time_t=void
+
+mbstate_t=typedef
+typedef.mbstate_t=void
+
+nl_item=typedef
+typedef.nl_item=int
+
+__div_t=struct
+struct.__div_t=quot,rem
+struct.__div_t.quot=int,0,0
+struct.__div_t.rem=int,2,0
+
+__ldiv_t=struct
+struct.__ldiv_t=quot,rem
+struct.__ldiv_t.quot=long int,0,0
+struct.__ldiv_t.rem=long int,4,0
+
+__lldiv_t=struct
+struct.__lldiv_t=quot,rem
+struct.__lldiv_t.quot=long long int,0,0
+struct.__lldiv_t.rem=long long int,4,0
+
+__imaxdiv_t=struct
+struct.__imaxdiv_t=quot,rem
+struct.__imaxdiv_t.quot=intmax_t,0,0
+struct.__imaxdiv_t.rem=intmax_t,8,0
+
+div_t=typedef
+typedef.div_t=struct __div_t
+
+ldiv_t=typedef
+typedef.ldiv_t=struct __ldiv_t
+
+lldiv_t=typedef
+typedef.lldiv_t=struct __lldiv_t
+
+imaxdiv_t=typedef
+typedef.imaxdiv_t=struct __imaxdiv_t
+fenv_t=typedef
+typedef.fenv_t=void
+
+fexcept_t=typedef
+typedef.fexcept_t=void
+
+fpos_t=typedef
+typedef.fpos_t=void
+
+jmp_buf=typedef
+typedef.jmp_buf=void
+
+locale_t=typedef
+typedef.locale_t=void

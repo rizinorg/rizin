@@ -138,8 +138,8 @@ static int op_thumb(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 "hi", "ls", "ge", "lt", "gt", "le", "al", "nv",
 #endif
 static int iconds[] = {
-	RZ_ANALYSIS_COND_EQ,
-	RZ_ANALYSIS_COND_NE,
+	RZ_TYPE_COND_EQ,
+	RZ_TYPE_COND_NE,
 	0, // cs
 	0, // cc
 	0, // mi
@@ -149,12 +149,12 @@ static int iconds[] = {
 
 	0, // hi
 	0, // ls
-	RZ_ANALYSIS_COND_GE,
-	RZ_ANALYSIS_COND_LT,
-	RZ_ANALYSIS_COND_GT,
-	RZ_ANALYSIS_COND_LE,
-	RZ_ANALYSIS_COND_AL,
-	RZ_ANALYSIS_COND_NV,
+	RZ_TYPE_COND_GE,
+	RZ_TYPE_COND_LT,
+	RZ_TYPE_COND_GT,
+	RZ_TYPE_COND_LE,
+	RZ_TYPE_COND_AL,
+	RZ_TYPE_COND_NV,
 };
 
 static int op_cond(const ut8 *data) {

@@ -462,7 +462,7 @@ static int __cons_readchar_w32(ut32 usec) {
 				return ch;
 			}
 		} else {
-			ret = ReadConsoleInput(h, &irInBuf, 1, &out);
+			ret = ReadConsoleInputW(h, &irInBuf, 1, &out);
 		}
 		rz_cons_sleep_end(bed);
 		if (ret) {
@@ -504,9 +504,15 @@ static int __cons_readchar_w32(ut32 usec) {
 
 			if (irInBuf.EventType == KEY_EVENT) {
 				if (irInBuf.Event.KeyEvent.bKeyDown) {
-					ch = irInBuf.Event.KeyEvent.uChar.AsciiChar;
 					bCtrl = irInBuf.Event.KeyEvent.dwControlKeyState & 8;
-					if (irInBuf.Event.KeyEvent.uChar.AsciiChar == 0) {
+					if (irInBuf.Event.KeyEvent.uChar.UnicodeChar) {
+						char *tmp = rz_utf16_to_utf8_l(&irInBuf.Event.KeyEvent.uChar.UnicodeChar, 1);
+						if (tmp) {
+							int len = strlen(tmp);
+							memcpy(&ch, tmp, R_MIN(len, sizeof(ch)));
+							free(tmp);
+						}
+					} else {
 						switch (irInBuf.Event.KeyEvent.wVirtualKeyCode) {
 						case VK_DOWN: // key down
 						case VK_RIGHT: // key right
@@ -577,6 +583,10 @@ static int __cons_readchar_w32(ut32 usec) {
 #endif
 
 RZ_API int rz_cons_readchar_timeout(ut32 usec) {
+	char ch;
+	if (rz_cons_readbuffer_readchar(&ch)) {
+		return ch;
+	}
 #if __UNIX__
 	struct timeval tv;
 	fd_set fdset, errset;
@@ -621,13 +631,20 @@ RZ_API void rz_cons_switchbuf(bool active) {
 extern volatile sig_atomic_t sigwinchFlag;
 #endif
 
+RZ_API bool rz_cons_readbuffer_readchar(char *ch) {
+	if (readbuffer_length <= 0) {
+		return false;
+	}
+	*ch = *readbuffer;
+	readbuffer_length--;
+	memmove(readbuffer, readbuffer + 1, readbuffer_length);
+	return true;
+}
+
 RZ_API int rz_cons_readchar(void) {
-	char buf[2];
+	char buf[2], ch;
 	buf[0] = -1;
-	if (readbuffer_length > 0) {
-		int ch = *readbuffer;
-		readbuffer_length--;
-		memmove(readbuffer, readbuffer + 1, readbuffer_length);
+	if (rz_cons_readbuffer_readchar(&ch)) {
 		return ch;
 	}
 	rz_cons_set_raw(1);

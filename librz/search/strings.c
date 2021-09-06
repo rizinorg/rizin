@@ -61,7 +61,6 @@ static bool is_encoded(int encoding, unsigned char c) {
 
 RZ_API int rz_search_strings_update(RzSearch *s, ut64 from, const ut8 *buf, int len) {
 	int i = 0;
-	int widechar = 0;
 	int matches = 0;
 	char str[4096];
 	RzListIter *iter;
@@ -79,7 +78,6 @@ RZ_API int rz_search_strings_update(RzSearch *s, ut64 from, const ut8 *buf, int 
 			} else {
 				/* wide char check \x??\x00\x??\x00 */
 				if (matches && i + 2 < len && buf[i + 2] == '\0' && buf[i] == '\0' && buf[i + 1] != '\0') {
-					// widechar = 1;
 					return 1; // widechar
 				}
 				/* check if the length fits on our request */
@@ -87,18 +85,12 @@ RZ_API int rz_search_strings_update(RzSearch *s, ut64 from, const ut8 *buf, int 
 					str[matches] = '\0';
 					int len = strlen(str);
 					if (len > 2) {
-						if (widechar) {
-							ut64 off = (ut64)from + i - (len * 2) + 1;
-							rz_search_hit_new(s, kw, off);
-						} else {
-							ut64 off = (ut64)from + i - matches;
-							rz_search_hit_new(s, kw, off);
-						}
+						ut64 off = (ut64)from + i - matches;
+						rz_search_hit_new(s, kw, off);
 					}
 					fflush(stdout);
 				}
 				matches = 0;
-				widechar = 0;
 			}
 		}
 	}

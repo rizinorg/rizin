@@ -169,17 +169,17 @@ e asm.lines.bb=false
 e asm.xrefs=false
 e asm.flags.middle=0
 wx cafebabe00000033001707000201001b7261646172655f746573745f63617365732f6368616c6c656e67650700040100106a6176612f6c616e672f4f626a6563740100063c696e69743e010003282956010004436f64650a000300090c0005000601000f4c696e654e756d6265725461626c650100124c6f63616c5661726961626c655461626c650100047468697301001d4c7261646172655f746573745f63617365732f6368616c6c656e67653b01001573696d706c655f636173655f73746d745f3476616c01000328294901000169010001490100016a0100016b01000d537461636b4d61705461626c6501000a536f7572636546696c6501000e6368616c6c656e67652e6a617661002100010003000000000002000100050006000100070000002f00010001000000052ab70008b100000002000a00000006000100000003000b0000000c000100000005000c000d00000008000e000f00010007000000c10002000300000048033b033ca7003c1a08703d1caa0000000000003200000000000000030000002000000026000000320000002c840202a70011840203a7000b840209a70005033c1a100aa1ffc41bac00000003000a0000002a000a000000050004000600070007000b0008002c00090032000a0038000b003e000c004000060046000f000b0000002000030002004600100011000000040044001200110001000b00350013001100020014000000110006fd00070101fc002401050505fa000100010015000000020016
-ib
+obR
 i
-pd 3 @ sym.radare_test_cases_challenge.radare_test_cases.challenge._init
+pd 3 @ sym.Lradare_test_cases_challenge_._init___V
 o malloc://1024 0xa00~a
 s 0xa00
 wx cafebabe0000003300180700020100177261646172655f746573745f63617365732f6c6f6f70730700040100106a6176612f6c616e672f4f626a6563740100063c696e69743e010003282956010004436f64650a000300090c0005000601000f4c696e654e756d6265725461626c650100124c6f63616c5661726961626c655461626c65010004746869730100194c7261646172655f746573745f63617365732f6c6f6f70733b01000f73696d706c655f666f725f6c6f6f7001000328294201000169010001490100016a0100016b01000d537461636b4d61705461626c6501001c73696d706c655f666f725f6c6f6f705f6d756c74695f72657475726e01000a536f7572636546696c6501000a6c6f6f70732e6a617661002100010003000000000003000100050006000100070000002f00010001000000052ab70008b100000002000a00000006000100000003000b0000000c000100000005000c000d00000008000e000f000100070000006c0002000300000017033d033b043d10643ca700068400011a1ba1fffb1c91ac00000003000a0000000e000300000006000200080014000b000b000000200003000400130010001100000009000e001200110001000200150013001100020014000000090002fe000c0101010200080015000f0001000700000095000200030000002b033d033b043d10643ca7001a1c1a823d1c1100ffa000061c91ac1c1100ff703d8400011a1ba1ffe71c91ac00000003000a0000002200080000000e00020010000c00110010001300170014001a00150020001000280018000b00000020000300040027001000110000000900220012001100010002002900130011000200140000000a0003fe000c0101010d0800010016000000020017
 oba 0xa00
 pdf
-ib
+obR
 af
-s sym.rizin_test_cases_challenge.simple_case_stmt_4val; pdf
+s sym.Lradare_test_cases_loops_.simple_for_loop_multi_return__B; pdf
 EOF
 EXPECT=<<EOF
 fd       3
@@ -192,44 +192,52 @@ iorw     true
 block    0x100
 type     JAVA CLASS
 arch     java
-baddr    0x0
-binsz    1024
+cpu      N/A
+baddr    0x00000000
+binsz    0x00000400
 bintype  class
 bits     32
-canary   false
 retguard false
 class    Java SE 1.7
-crypto   false
-endian   big
-havecode true
-laddr    0x0
+compiler N/A
+dbg_file N/A
+endian   BE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
+laddr    0x00000000
 lang     java
-linenum  true
-lsyms    true
 machine  jvm
 maxopsz  16
 minopsz  1
-nx       false
 os       any
+cc       N/A
 pcalign  0
-pic      false
-relocs   false
+rpath    N/A
+subsys   any
+stripped false
+crypto   false
+havecode true
+va       false
 sanitiz  false
 static   false
-stripped false
-subsys   any
-va       false
+linenum  true
+lsyms    true
+canary   false
+PIE      false
+RELROCS  false
+NX       false
   ;-- entry0:
   ;-- section.class.methods._init_.attr.0.code:
-  ;-- sym.radare_test_cases_challenge.radare_test_cases.challenge._init:
-  ;-- method.radare_test_cases_challenge.radare_test_cases.challenge._init:
+  ;-- sym.Lradare_test_cases_challenge_._init___V:
+  ;-- method.public.Lradare_test_cases_challenge_._init___V:
   0x0000012d      aload_0
-  0x0000012e      invokespecial void java.lang.Object:<init>: ()
+  0x0000012e      invokespecial Ljava/lang/Object;.<init>()V
   0x00000131      return
   ;-- entry2:
   ;-- section.class.methods.simple_for_loop_multi_return.attr.0.code:
-  ;-- sym.radare_test_cases_loops.radare_test_cases.loops.simple_for_loop_multi_return:
-/ method.radare_test_cases_loops.radare_test_cases.loops.simple_for_loop_multi_return ();
+  ;-- sym.Lradare_test_cases_loops_.simple_for_loop_multi_return__B:
+/ method.static.Lradare_test_cases_loops_.simple_for_loop_multi_return__B ();
 | 0x000001f1      iconst_0
 | 0x000001f2      istore_2
 | 0x000001f3      iconst_0
@@ -266,7 +274,7 @@ RUN
 
 NAME=Output java class source-code-like
 FILE=bins/java/jdwpexeccmd.class
-CMDS=javas
+CMDS=javas ; icc
 EXPECT=<<EOF
 import java.lang.Object;
 import java.lang.StringBuilder;
@@ -280,8 +288,15 @@ import JDWPExecCmd;
 
 class public JDWPExecCmd {
   public void <init>();
-  public static java.lang.String run(java.lang.String);
+  public static String run(String);
 }
+package defpackage;
+
+public class JDWPExecCmd {
+  public void JDWPExecCmd();
+  public static String run(String);
+}
+
 EOF
 RUN
 
@@ -301,8 +316,8 @@ import [C;
 
 class public c {
   public void <init>();
-  public static java.lang.String a(java.lang.String);
-  public static java.lang.String b(java.lang.String);
+  public static String a(String);
+  public static String b(String);
   static void <clinit>();
 
   public static a Z
@@ -318,28 +333,28 @@ CMDS=javac
 EXPECT=<<EOF
 Version: (51.0) Java SE 1.7
 Flags: (0x0021) public super
-Class: (#18) JDWPExecCmd
+Class: (#18) LJDWPExecCmd;
 Super: (#19) java/lang/Object
 Constant pool: 71
-   #1 = Methodref           #19:#33        // java.lang.Object:<init>:()V
-   #2 = Class               #34            // java.lang.StringBuilder
-   #3 = Methodref           #2:#33         // java.lang.StringBuilder:<init>:()V
-   #4 = Methodref           #2:#35         // java.lang.StringBuilder:append:(Ljava.lang.String;)Ljava.lang.StringBuilder;
+   #1 = Methodref           #19:#33        // void Object.<init>()
+   #2 = Class               #34            // StringBuilder
+   #3 = Methodref           #2:#33         // void StringBuilder.<init>()
+   #4 = Methodref           #2:#35         // StringBuilder StringBuilder.append(String)
    #5 = String              #36            // " output:\n"
-   #6 = Methodref           #2:#37         // java.lang.StringBuilder:toString:()Ljava.lang.String;
-   #7 = Methodref           #38:#39        // java.lang.Runtime:getRuntime:()Ljava.lang.Runtime;
-   #8 = Methodref           #38:#40        // java.lang.Runtime:exec:(Ljava.lang.String;)Ljava.lang.Process;
+   #6 = Methodref           #2:#37         // String StringBuilder.toString()
+   #7 = Methodref           #38:#39        // Runtime Runtime.getRuntime()
+   #8 = Methodref           #38:#40        // Process Runtime.exec(String)
    #9 = Class               #41            // java.io.BufferedReader
   #10 = Class               #42            // java.io.InputStreamReader
-  #11 = Methodref           #43:#44        // java.lang.Process:getInputStream:()Ljava.io.InputStream;
-  #12 = Methodref           #10:#45        // java.io.InputStreamReader:<init>:(Ljava.io.InputStream;)V
-  #13 = Methodref           #9:#46         // java.io.BufferedReader:<init>:(Ljava.io.Reader;)V
-  #14 = Methodref           #9:#47         // java.io.BufferedReader:readLine:()Ljava.lang.String;
-  #15 = Methodref           #48:#49        // java.lang.String:trim:()Ljava.lang.String;
+  #11 = Methodref           #43:#44        // java.io.InputStream Process.getInputStream()
+  #12 = Methodref           #10:#45        // void java.io.InputStreamReader.<init>(java.io.InputStream)
+  #13 = Methodref           #9:#46         // void java.io.BufferedReader.<init>(java.io.Reader)
+  #14 = Methodref           #9:#47         // String java.io.BufferedReader.readLine()
+  #15 = Methodref           #48:#49        // String String.trim()
   #16 = String              #50            // "\n"
-  #17 = Class               #51            // java.lang.Exception
+  #17 = Class               #51            // Exception
   #18 = Class               #52            // JDWPExecCmd
-  #19 = Class               #53            // java.lang.Object
+  #19 = Class               #53            // Object
   #20 = Utf8                <init>
   #21 = Utf8                ()V
   #22 = Utf8                Code
@@ -347,29 +362,29 @@ Constant pool: 71
   #24 = Utf8                run
   #25 = Utf8                (Ljava/lang/String;)Ljava/lang/String;
   #26 = Utf8                StackMapTable
-  #27 = Class               #54            // java.lang.String
-  #28 = Class               #55            // java.lang.Process
+  #27 = Class               #54            // String
+  #28 = Class               #55            // Process
   #29 = Class               #41            // java.io.BufferedReader
-  #30 = Class               #51            // java.lang.Exception
+  #30 = Class               #51            // Exception
   #31 = Utf8                SourceFile
   #32 = Utf8                JDWPExecCmd.java
-  #33 = NameAndType         #20:#21        // <init>:()V
+  #33 = NameAndType         #20:#21        // void <init>()
   #34 = Utf8                java/lang/StringBuilder
-  #35 = NameAndType         #56:#57        // append:(Ljava.lang.String;)Ljava.lang.StringBuilder;
+  #35 = NameAndType         #56:#57        // StringBuilder append(String)
   #36 = Utf8                 output:\n
-  #37 = NameAndType         #58:#59        // toString:()Ljava.lang.String;
-  #38 = Class               #60            // java.lang.Runtime
-  #39 = NameAndType         #61:#62        // getRuntime:()Ljava.lang.Runtime;
-  #40 = NameAndType         #63:#64        // exec:(Ljava.lang.String;)Ljava.lang.Process;
+  #37 = NameAndType         #58:#59        // String toString()
+  #38 = Class               #60            // Runtime
+  #39 = NameAndType         #61:#62        // Runtime getRuntime()
+  #40 = NameAndType         #63:#64        // Process exec(String)
   #41 = Utf8                java/io/BufferedReader
   #42 = Utf8                java/io/InputStreamReader
-  #43 = Class               #55            // java.lang.Process
-  #44 = NameAndType         #65:#66        // getInputStream:()Ljava.io.InputStream;
-  #45 = NameAndType         #20:#67        // <init>:(Ljava.io.InputStream;)V
-  #46 = NameAndType         #20:#68        // <init>:(Ljava.io.Reader;)V
-  #47 = NameAndType         #69:#59        // readLine:()Ljava.lang.String;
-  #48 = Class               #54            // java.lang.String
-  #49 = NameAndType         #70:#59        // trim:()Ljava.lang.String;
+  #43 = Class               #55            // Process
+  #44 = NameAndType         #65:#66        // java.io.InputStream getInputStream()
+  #45 = NameAndType         #20:#67        // void <init>(java.io.InputStream)
+  #46 = NameAndType         #20:#68        // void <init>(java.io.Reader)
+  #47 = NameAndType         #69:#59        // String readLine()
+  #48 = Class               #54            // String
+  #49 = NameAndType         #70:#59        // String trim()
   #50 = Utf8                \n
   #51 = Utf8                java/lang/Exception
   #52 = Utf8                JDWPExecCmd
@@ -416,7 +431,7 @@ NAME=Output java class structure (json)
 FILE=bins/java/jdwpexeccmd.class
 CMDS=javacj
 EXPECT=<<EOF
-{"version":{"minor":0,"major":51,"version":"Java SE 1.7"},"constant_pool_count":71,"constant_pool":[{"index":1,"tag_n":10,"tag_s":"Methodref","value":"#19:#33","resolved":"java.lang.Object:<init>:()V"},{"index":2,"tag_n":7,"tag_s":"Class","value":"#34","resolved":"java.lang.StringBuilder"},{"index":3,"tag_n":10,"tag_s":"Methodref","value":"#2:#33","resolved":"java.lang.StringBuilder:<init>:()V"},{"index":4,"tag_n":10,"tag_s":"Methodref","value":"#2:#35","resolved":"java.lang.StringBuilder:append:(Ljava.lang.String;)Ljava.lang.StringBuilder;"},{"index":5,"tag_n":8,"tag_s":"String","value":"#36","resolved":"\" output:\\n\""},{"index":6,"tag_n":10,"tag_s":"Methodref","value":"#2:#37","resolved":"java.lang.StringBuilder:toString:()Ljava.lang.String;"},{"index":7,"tag_n":10,"tag_s":"Methodref","value":"#38:#39","resolved":"java.lang.Runtime:getRuntime:()Ljava.lang.Runtime;"},{"index":8,"tag_n":10,"tag_s":"Methodref","value":"#38:#40","resolved":"java.lang.Runtime:exec:(Ljava.lang.String;)Ljava.lang.Process;"},{"index":9,"tag_n":7,"tag_s":"Class","value":"#41","resolved":"java.io.BufferedReader"},{"index":10,"tag_n":7,"tag_s":"Class","value":"#42","resolved":"java.io.InputStreamReader"},{"index":11,"tag_n":10,"tag_s":"Methodref","value":"#43:#44","resolved":"java.lang.Process:getInputStream:()Ljava.io.InputStream;"},{"index":12,"tag_n":10,"tag_s":"Methodref","value":"#10:#45","resolved":"java.io.InputStreamReader:<init>:(Ljava.io.InputStream;)V"},{"index":13,"tag_n":10,"tag_s":"Methodref","value":"#9:#46","resolved":"java.io.BufferedReader:<init>:(Ljava.io.Reader;)V"},{"index":14,"tag_n":10,"tag_s":"Methodref","value":"#9:#47","resolved":"java.io.BufferedReader:readLine:()Ljava.lang.String;"},{"index":15,"tag_n":10,"tag_s":"Methodref","value":"#48:#49","resolved":"java.lang.String:trim:()Ljava.lang.String;"},{"index":16,"tag_n":8,"tag_s":"String","value":"#50","resolved":"\"\\n\""},{"index":17,"tag_n":7,"tag_s":"Class","value":"#51","resolved":"java.lang.Exception"},{"index":18,"tag_n":7,"tag_s":"Class","value":"#52","resolved":"JDWPExecCmd"},{"index":19,"tag_n":7,"tag_s":"Class","value":"#53","resolved":"java.lang.Object"},{"index":20,"tag_n":1,"tag_s":"Utf8","value":"<init>"},{"index":21,"tag_n":1,"tag_s":"Utf8","value":"()V"},{"index":22,"tag_n":1,"tag_s":"Utf8","value":"Code"},{"index":23,"tag_n":1,"tag_s":"Utf8","value":"LineNumberTable"},{"index":24,"tag_n":1,"tag_s":"Utf8","value":"run"},{"index":25,"tag_n":1,"tag_s":"Utf8","value":"(Ljava/lang/String;)Ljava/lang/String;"},{"index":26,"tag_n":1,"tag_s":"Utf8","value":"StackMapTable"},{"index":27,"tag_n":7,"tag_s":"Class","value":"#54","resolved":"java.lang.String"},{"index":28,"tag_n":7,"tag_s":"Class","value":"#55","resolved":"java.lang.Process"},{"index":29,"tag_n":7,"tag_s":"Class","value":"#41","resolved":"java.io.BufferedReader"},{"index":30,"tag_n":7,"tag_s":"Class","value":"#51","resolved":"java.lang.Exception"},{"index":31,"tag_n":1,"tag_s":"Utf8","value":"SourceFile"},{"index":32,"tag_n":1,"tag_s":"Utf8","value":"JDWPExecCmd.java"},{"index":33,"tag_n":12,"tag_s":"NameAndType","value":"#20:#21","resolved":"<init>:()V"},{"index":34,"tag_n":1,"tag_s":"Utf8","value":"java/lang/StringBuilder"},{"index":35,"tag_n":12,"tag_s":"NameAndType","value":"#56:#57","resolved":"append:(Ljava.lang.String;)Ljava.lang.StringBuilder;"},{"index":36,"tag_n":1,"tag_s":"Utf8","value":" output:\\n"},{"index":37,"tag_n":12,"tag_s":"NameAndType","value":"#58:#59","resolved":"toString:()Ljava.lang.String;"},{"index":38,"tag_n":7,"tag_s":"Class","value":"#60","resolved":"java.lang.Runtime"},{"index":39,"tag_n":12,"tag_s":"NameAndType","value":"#61:#62","resolved":"getRuntime:()Ljava.lang.Runtime;"},{"index":40,"tag_n":12,"tag_s":"NameAndType","value":"#63:#64","resolved":"exec:(Ljava.lang.String;)Ljava.lang.Process;"},{"index":41,"tag_n":1,"tag_s":"Utf8","value":"java/io/BufferedReader"},{"index":42,"tag_n":1,"tag_s":"Utf8","value":"java/io/InputStreamReader"},{"index":43,"tag_n":7,"tag_s":"Class","value":"#55","resolved":"java.lang.Process"},{"index":44,"tag_n":12,"tag_s":"NameAndType","value":"#65:#66","resolved":"getInputStream:()Ljava.io.InputStream;"},{"index":45,"tag_n":12,"tag_s":"NameAndType","value":"#20:#67","resolved":"<init>:(Ljava.io.InputStream;)V"},{"index":46,"tag_n":12,"tag_s":"NameAndType","value":"#20:#68","resolved":"<init>:(Ljava.io.Reader;)V"},{"index":47,"tag_n":12,"tag_s":"NameAndType","value":"#69:#59","resolved":"readLine:()Ljava.lang.String;"},{"index":48,"tag_n":7,"tag_s":"Class","value":"#54","resolved":"java.lang.String"},{"index":49,"tag_n":12,"tag_s":"NameAndType","value":"#70:#59","resolved":"trim:()Ljava.lang.String;"},{"index":50,"tag_n":1,"tag_s":"Utf8","value":"\\n"},{"index":51,"tag_n":1,"tag_s":"Utf8","value":"java/lang/Exception"},{"index":52,"tag_n":1,"tag_s":"Utf8","value":"JDWPExecCmd"},{"index":53,"tag_n":1,"tag_s":"Utf8","value":"java/lang/Object"},{"index":54,"tag_n":1,"tag_s":"Utf8","value":"java/lang/String"},{"index":55,"tag_n":1,"tag_s":"Utf8","value":"java/lang/Process"},{"index":56,"tag_n":1,"tag_s":"Utf8","value":"append"},{"index":57,"tag_n":1,"tag_s":"Utf8","value":"(Ljava/lang/String;)Ljava/lang/StringBuilder;"},{"index":58,"tag_n":1,"tag_s":"Utf8","value":"toString"},{"index":59,"tag_n":1,"tag_s":"Utf8","value":"()Ljava/lang/String;"},{"index":60,"tag_n":1,"tag_s":"Utf8","value":"java/lang/Runtime"},{"index":61,"tag_n":1,"tag_s":"Utf8","value":"getRuntime"},{"index":62,"tag_n":1,"tag_s":"Utf8","value":"()Ljava/lang/Runtime;"},{"index":63,"tag_n":1,"tag_s":"Utf8","value":"exec"},{"index":64,"tag_n":1,"tag_s":"Utf8","value":"(Ljava/lang/String;)Ljava/lang/Process;"},{"index":65,"tag_n":1,"tag_s":"Utf8","value":"getInputStream"},{"index":66,"tag_n":1,"tag_s":"Utf8","value":"()Ljava/io/InputStream;"},{"index":67,"tag_n":1,"tag_s":"Utf8","value":"(Ljava/io/InputStream;)V"},{"index":68,"tag_n":1,"tag_s":"Utf8","value":"(Ljava/io/Reader;)V"},{"index":69,"tag_n":1,"tag_s":"Utf8","value":"readLine"},{"index":70,"tag_n":1,"tag_s":"Utf8","value":"trim"}],"access_flags_n":33,"access_flags_s":"public super","class_n":18,"class_s":"JDWPExecCmd","super_n":19,"super_s":"java/lang/Object","interfaces_count":0,"interfaces":[],"methods_count":2,"methods":[{"offset":803,"access_flags_n":1,"access_flags_s":"public","name_n":20,"name_s":"<init>","descriptor_n":21,"descriptor_s":"()V","attributes_count":1,"attributes":[{"offset":811,"size":29,"name_n":22,"name_s":"Code"}]},{"offset":846,"access_flags_n":9,"access_flags_s":"public static","name_n":24,"name_s":"run","descriptor_n":25,"descriptor_s":"(Ljava/lang/String;)Ljava/lang/String;","attributes_count":1,"attributes":[{"offset":854,"size":233,"name_n":22,"name_s":"Code"}]}],"fields_count":0,"fields":[],"attributes_count":1,"attributes":[{"offset":1095,"size":2,"name_n":31,"name_s":"SourceFile"}]}
+{"version":{"minor":0,"major":51,"version":"Java SE 1.7"},"constant_pool_count":71,"constant_pool":[{"index":1,"tag_n":10,"tag_s":"Methodref","value":"#19:#33","resolved":"Ljava/lang/Object;.<init>()V"},{"index":2,"tag_n":7,"tag_s":"Class","value":"#34","resolved":"Ljava/lang/StringBuilder;"},{"index":3,"tag_n":10,"tag_s":"Methodref","value":"#2:#33","resolved":"Ljava/lang/StringBuilder;.<init>()V"},{"index":4,"tag_n":10,"tag_s":"Methodref","value":"#2:#35","resolved":"Ljava/lang/StringBuilder;.append(Ljava/lang/String;)Ljava/lang/StringBuilder;"},{"index":5,"tag_n":8,"tag_s":"String","value":"#36","resolved":"\" output:\\n\""},{"index":6,"tag_n":10,"tag_s":"Methodref","value":"#2:#37","resolved":"Ljava/lang/StringBuilder;.toString()Ljava/lang/String;"},{"index":7,"tag_n":10,"tag_s":"Methodref","value":"#38:#39","resolved":"Ljava/lang/Runtime;.getRuntime()Ljava/lang/Runtime;"},{"index":8,"tag_n":10,"tag_s":"Methodref","value":"#38:#40","resolved":"Ljava/lang/Runtime;.exec(Ljava/lang/String;)Ljava/lang/Process;"},{"index":9,"tag_n":7,"tag_s":"Class","value":"#41","resolved":"Ljava/io/BufferedReader;"},{"index":10,"tag_n":7,"tag_s":"Class","value":"#42","resolved":"Ljava/io/InputStreamReader;"},{"index":11,"tag_n":10,"tag_s":"Methodref","value":"#43:#44","resolved":"Ljava/lang/Process;.getInputStream()Ljava/io/InputStream;"},{"index":12,"tag_n":10,"tag_s":"Methodref","value":"#10:#45","resolved":"Ljava/io/InputStreamReader;.<init>(Ljava/io/InputStream;)V"},{"index":13,"tag_n":10,"tag_s":"Methodref","value":"#9:#46","resolved":"Ljava/io/BufferedReader;.<init>(Ljava/io/Reader;)V"},{"index":14,"tag_n":10,"tag_s":"Methodref","value":"#9:#47","resolved":"Ljava/io/BufferedReader;.readLine()Ljava/lang/String;"},{"index":15,"tag_n":10,"tag_s":"Methodref","value":"#48:#49","resolved":"Ljava/lang/String;.trim()Ljava/lang/String;"},{"index":16,"tag_n":8,"tag_s":"String","value":"#50","resolved":"\"\\n\""},{"index":17,"tag_n":7,"tag_s":"Class","value":"#51","resolved":"Ljava/lang/Exception;"},{"index":18,"tag_n":7,"tag_s":"Class","value":"#52","resolved":"LJDWPExecCmd;"},{"index":19,"tag_n":7,"tag_s":"Class","value":"#53","resolved":"Ljava/lang/Object;"},{"index":20,"tag_n":1,"tag_s":"Utf8","value":"<init>"},{"index":21,"tag_n":1,"tag_s":"Utf8","value":"()V"},{"index":22,"tag_n":1,"tag_s":"Utf8","value":"Code"},{"index":23,"tag_n":1,"tag_s":"Utf8","value":"LineNumberTable"},{"index":24,"tag_n":1,"tag_s":"Utf8","value":"run"},{"index":25,"tag_n":1,"tag_s":"Utf8","value":"(Ljava/lang/String;)Ljava/lang/String;"},{"index":26,"tag_n":1,"tag_s":"Utf8","value":"StackMapTable"},{"index":27,"tag_n":7,"tag_s":"Class","value":"#54","resolved":"Ljava/lang/String;"},{"index":28,"tag_n":7,"tag_s":"Class","value":"#55","resolved":"Ljava/lang/Process;"},{"index":29,"tag_n":7,"tag_s":"Class","value":"#41","resolved":"Ljava/io/BufferedReader;"},{"index":30,"tag_n":7,"tag_s":"Class","value":"#51","resolved":"Ljava/lang/Exception;"},{"index":31,"tag_n":1,"tag_s":"Utf8","value":"SourceFile"},{"index":32,"tag_n":1,"tag_s":"Utf8","value":"JDWPExecCmd.java"},{"index":33,"tag_n":12,"tag_s":"NameAndType","value":"#20:#21","resolved":"<init>()V"},{"index":34,"tag_n":1,"tag_s":"Utf8","value":"java/lang/StringBuilder"},{"index":35,"tag_n":12,"tag_s":"NameAndType","value":"#56:#57","resolved":"append(Ljava/lang/String;)Ljava/lang/StringBuilder;"},{"index":36,"tag_n":1,"tag_s":"Utf8","value":" output:\\n"},{"index":37,"tag_n":12,"tag_s":"NameAndType","value":"#58:#59","resolved":"toString()Ljava/lang/String;"},{"index":38,"tag_n":7,"tag_s":"Class","value":"#60","resolved":"Ljava/lang/Runtime;"},{"index":39,"tag_n":12,"tag_s":"NameAndType","value":"#61:#62","resolved":"getRuntime()Ljava/lang/Runtime;"},{"index":40,"tag_n":12,"tag_s":"NameAndType","value":"#63:#64","resolved":"exec(Ljava/lang/String;)Ljava/lang/Process;"},{"index":41,"tag_n":1,"tag_s":"Utf8","value":"java/io/BufferedReader"},{"index":42,"tag_n":1,"tag_s":"Utf8","value":"java/io/InputStreamReader"},{"index":43,"tag_n":7,"tag_s":"Class","value":"#55","resolved":"Ljava/lang/Process;"},{"index":44,"tag_n":12,"tag_s":"NameAndType","value":"#65:#66","resolved":"getInputStream()Ljava/io/InputStream;"},{"index":45,"tag_n":12,"tag_s":"NameAndType","value":"#20:#67","resolved":"<init>(Ljava/io/InputStream;)V"},{"index":46,"tag_n":12,"tag_s":"NameAndType","value":"#20:#68","resolved":"<init>(Ljava/io/Reader;)V"},{"index":47,"tag_n":12,"tag_s":"NameAndType","value":"#69:#59","resolved":"readLine()Ljava/lang/String;"},{"index":48,"tag_n":7,"tag_s":"Class","value":"#54","resolved":"Ljava/lang/String;"},{"index":49,"tag_n":12,"tag_s":"NameAndType","value":"#70:#59","resolved":"trim()Ljava/lang/String;"},{"index":50,"tag_n":1,"tag_s":"Utf8","value":"\\n"},{"index":51,"tag_n":1,"tag_s":"Utf8","value":"java/lang/Exception"},{"index":52,"tag_n":1,"tag_s":"Utf8","value":"JDWPExecCmd"},{"index":53,"tag_n":1,"tag_s":"Utf8","value":"java/lang/Object"},{"index":54,"tag_n":1,"tag_s":"Utf8","value":"java/lang/String"},{"index":55,"tag_n":1,"tag_s":"Utf8","value":"java/lang/Process"},{"index":56,"tag_n":1,"tag_s":"Utf8","value":"append"},{"index":57,"tag_n":1,"tag_s":"Utf8","value":"(Ljava/lang/String;)Ljava/lang/StringBuilder;"},{"index":58,"tag_n":1,"tag_s":"Utf8","value":"toString"},{"index":59,"tag_n":1,"tag_s":"Utf8","value":"()Ljava/lang/String;"},{"index":60,"tag_n":1,"tag_s":"Utf8","value":"java/lang/Runtime"},{"index":61,"tag_n":1,"tag_s":"Utf8","value":"getRuntime"},{"index":62,"tag_n":1,"tag_s":"Utf8","value":"()Ljava/lang/Runtime;"},{"index":63,"tag_n":1,"tag_s":"Utf8","value":"exec"},{"index":64,"tag_n":1,"tag_s":"Utf8","value":"(Ljava/lang/String;)Ljava/lang/Process;"},{"index":65,"tag_n":1,"tag_s":"Utf8","value":"getInputStream"},{"index":66,"tag_n":1,"tag_s":"Utf8","value":"()Ljava/io/InputStream;"},{"index":67,"tag_n":1,"tag_s":"Utf8","value":"(Ljava/io/InputStream;)V"},{"index":68,"tag_n":1,"tag_s":"Utf8","value":"(Ljava/io/Reader;)V"},{"index":69,"tag_n":1,"tag_s":"Utf8","value":"readLine"},{"index":70,"tag_n":1,"tag_s":"Utf8","value":"trim"}],"access_flags_n":33,"access_flags_s":"public super","class_n":18,"class_s":"LJDWPExecCmd;","super_n":19,"super_s":"java/lang/Object","interfaces_count":0,"interfaces":[],"methods_count":2,"methods":[{"offset":803,"access_flags_n":1,"access_flags_s":"public","name_n":20,"name_s":"<init>","descriptor_n":21,"descriptor_s":"()V","attributes_count":1,"attributes":[{"offset":811,"size":29,"name_n":22,"name_s":"Code"}]},{"offset":846,"access_flags_n":9,"access_flags_s":"public static","name_n":24,"name_s":"run","descriptor_n":25,"descriptor_s":"(Ljava/lang/String;)Ljava/lang/String;","attributes_count":1,"attributes":[{"offset":854,"size":233,"name_n":22,"name_s":"Code"}]}],"fields_count":0,"fields":[],"attributes_count":1,"attributes":[{"offset":1095,"size":2,"name_n":31,"name_s":"SourceFile"}]}
 EOF
 RUN
 
@@ -427,24 +442,24 @@ CMDS=javac
 EXPECT=<<EOF
 Version: (45.2) Java SE 1.0.2
 Flags: (0x0001) public
-Class: (#2) Test
+Class: (#2) LTest;
 Super: (#3) java/lang/Object
 Constant pool: 22
    #1 = String              #21            // "See if you can decompile/disassemble me!"
    #2 = Class               #20            // Test
-   #3 = Class               #19            // java.lang.Object
+   #3 = Class               #19            // Object
    #4 = Utf8                main
    #5 = Utf8                ([Ljava/lang/String;)V
    #6 = Utf8                Code
-   #7 = Fieldref            #14:#15        // java.lang.System:out:Ljava.io.PrintStream;
-   #8 = Methodref           #9:#10         // java.io.PrintStream:println:(Ljava.lang.String;)V
+   #7 = Fieldref            #14:#15        // System.out:java.io.PrintStream
+   #8 = Methodref           #9:#10         // void java.io.PrintStream.println(String)
    #9 = Class               #13            // java.io.PrintStream
-  #10 = NameAndType         #11:#12        // println:(Ljava.lang.String;)V
+  #10 = NameAndType         #11:#12        // void println(String)
   #11 = Utf8                println
   #12 = Utf8                (Ljava/lang/String;)V
   #13 = Utf8                java/io/PrintStream
-  #14 = Class               #18            // java.lang.System
-  #15 = NameAndType         #16:#17        // out:Ljava.io.PrintStream;
+  #14 = Class               #18            // System
+  #15 = NameAndType         #16:#17        // out:java.io.PrintStream
   #16 = Utf8                out
   #17 = Utf8                Ljava/io/PrintStream;
   #18 = Utf8                java/lang/System
@@ -469,7 +484,7 @@ NAME=Output OAK class structure (json)
 FILE=bins/java/invisible.class
 CMDS=javacj
 EXPECT=<<EOF
-{"version":{"minor":2,"major":45,"version":"Java SE 1.0.2"},"constant_pool_count":22,"constant_pool":[{"index":1,"tag_n":8,"tag_s":"String","value":"#21","resolved":"\"See if you can decompile/disassemble me!\""},{"index":2,"tag_n":7,"tag_s":"Class","value":"#20","resolved":"Test"},{"index":3,"tag_n":7,"tag_s":"Class","value":"#19","resolved":"java.lang.Object"},{"index":4,"tag_n":1,"tag_s":"Utf8","value":"main"},{"index":5,"tag_n":1,"tag_s":"Utf8","value":"([Ljava/lang/String;)V"},{"index":6,"tag_n":1,"tag_s":"Utf8","value":"Code"},{"index":7,"tag_n":9,"tag_s":"Fieldref","value":"#14:#15","resolved":"java.lang.System:out:Ljava.io.PrintStream;"},{"index":8,"tag_n":10,"tag_s":"Methodref","value":"#9:#10","resolved":"java.io.PrintStream:println:(Ljava.lang.String;)V"},{"index":9,"tag_n":7,"tag_s":"Class","value":"#13","resolved":"java.io.PrintStream"},{"index":10,"tag_n":12,"tag_s":"NameAndType","value":"#11:#12","resolved":"println:(Ljava.lang.String;)V"},{"index":11,"tag_n":1,"tag_s":"Utf8","value":"println"},{"index":12,"tag_n":1,"tag_s":"Utf8","value":"(Ljava/lang/String;)V"},{"index":13,"tag_n":1,"tag_s":"Utf8","value":"java/io/PrintStream"},{"index":14,"tag_n":7,"tag_s":"Class","value":"#18","resolved":"java.lang.System"},{"index":15,"tag_n":12,"tag_s":"NameAndType","value":"#16:#17","resolved":"out:Ljava.io.PrintStream;"},{"index":16,"tag_n":1,"tag_s":"Utf8","value":"out"},{"index":17,"tag_n":1,"tag_s":"Utf8","value":"Ljava/io/PrintStream;"},{"index":18,"tag_n":1,"tag_s":"Utf8","value":"java/lang/System"},{"index":19,"tag_n":1,"tag_s":"Utf8","value":"java/lang/Object"},{"index":20,"tag_n":1,"tag_s":"Utf8","value":"Test"},{"index":21,"tag_n":1,"tag_s":"Utf8","value":"See if you can decompile/disassemble me!"}],"access_flags_n":1,"access_flags_s":"public","class_n":2,"class_s":"Test","super_n":3,"super_s":"java/lang/Object","interfaces_count":0,"interfaces":[],"methods_count":1,"methods":[{"offset":270,"access_flags_n":9,"access_flags_s":"public static","name_n":4,"name_s":"main","descriptor_n":5,"descriptor_s":"([Ljava/lang/String;)V","attributes_count":1,"attributes":[{"offset":278,"size":17,"name_n":6,"name_s":"Code"}]}],"fields_count":0,"fields":[],"attributes_count":0,"attributes":[]}
+{"version":{"minor":2,"major":45,"version":"Java SE 1.0.2"},"constant_pool_count":22,"constant_pool":[{"index":1,"tag_n":8,"tag_s":"String","value":"#21","resolved":"\"See if you can decompile/disassemble me!\""},{"index":2,"tag_n":7,"tag_s":"Class","value":"#20","resolved":"LTest;"},{"index":3,"tag_n":7,"tag_s":"Class","value":"#19","resolved":"Ljava/lang/Object;"},{"index":4,"tag_n":1,"tag_s":"Utf8","value":"main"},{"index":5,"tag_n":1,"tag_s":"Utf8","value":"([Ljava/lang/String;)V"},{"index":6,"tag_n":1,"tag_s":"Utf8","value":"Code"},{"index":7,"tag_n":9,"tag_s":"Fieldref","value":"#14:#15","resolved":"Ljava/lang/System;.out.Ljava/io/PrintStream;"},{"index":8,"tag_n":10,"tag_s":"Methodref","value":"#9:#10","resolved":"Ljava/io/PrintStream;.println(Ljava/lang/String;)V"},{"index":9,"tag_n":7,"tag_s":"Class","value":"#13","resolved":"Ljava/io/PrintStream;"},{"index":10,"tag_n":12,"tag_s":"NameAndType","value":"#11:#12","resolved":"println(Ljava/lang/String;)V"},{"index":11,"tag_n":1,"tag_s":"Utf8","value":"println"},{"index":12,"tag_n":1,"tag_s":"Utf8","value":"(Ljava/lang/String;)V"},{"index":13,"tag_n":1,"tag_s":"Utf8","value":"java/io/PrintStream"},{"index":14,"tag_n":7,"tag_s":"Class","value":"#18","resolved":"Ljava/lang/System;"},{"index":15,"tag_n":12,"tag_s":"NameAndType","value":"#16:#17","resolved":"out.Ljava/io/PrintStream;"},{"index":16,"tag_n":1,"tag_s":"Utf8","value":"out"},{"index":17,"tag_n":1,"tag_s":"Utf8","value":"Ljava/io/PrintStream;"},{"index":18,"tag_n":1,"tag_s":"Utf8","value":"java/lang/System"},{"index":19,"tag_n":1,"tag_s":"Utf8","value":"java/lang/Object"},{"index":20,"tag_n":1,"tag_s":"Utf8","value":"Test"},{"index":21,"tag_n":1,"tag_s":"Utf8","value":"See if you can decompile/disassemble me!"}],"access_flags_n":1,"access_flags_s":"public","class_n":2,"class_s":"LTest;","super_n":3,"super_s":"java/lang/Object","interfaces_count":0,"interfaces":[],"methods_count":1,"methods":[{"offset":270,"access_flags_n":9,"access_flags_s":"public static","name_n":4,"name_s":"main","descriptor_n":5,"descriptor_s":"([Ljava/lang/String;)V","attributes_count":1,"attributes":[{"offset":278,"size":17,"name_n":6,"name_s":"Code"}]}],"fields_count":0,"fields":[],"attributes_count":0,"attributes":[]}
 EOF
 RUN
 
@@ -481,11 +496,11 @@ EXPECT=<<EOF
             ;-- main:
             ;-- entry0:
             ;-- section.class.methods.main.attr.0.code:
-            ;-- sym.Test.Test.main:
-/ method.Test.Test.main ();
-|           0x00000120      getstatic java.lang.System:out:Ljava.io.PrintStream; ; [01] -r-x section size 17 named class.methods.main.attr.0.code
+            ;-- sym.LTest_.main__Ljava_lang_String__V:
+/ method.public.static.LTest_.main__Ljava_lang_String__V ();
+|           0x00000120      getstatic Ljava/lang/System;.out.Ljava/io/PrintStream; ; [03] -r-x section size 17 named class.methods.main.attr.0.code
 |           0x00000123      ldc   "See if you can decompile/disassemble me!"
-|           0x00000125      invokevirtual void java.io.PrintStream:println: (short, java.lang.String)
+|           0x00000125      invokevirtual Ljava/io/PrintStream;.println(Ljava/lang/String;)V
 \           0x00000128      return
 EOF
 RUN
@@ -497,26 +512,26 @@ CMDS=javac
 EXPECT=<<EOF
 Version: (51.0) Java SE 1.7
 Flags: (0x0021) public super
-Class: (#65) Main
+Class: (#65) LMain;
 Super: (#2) java/lang/Object
 Constant pool: 78
-   #1 = Methodref           #2:#3          // java.lang.Object:<init>:()V
-   #2 = Class               #4             // java.lang.Object
-   #3 = NameAndType         #5:#6          // <init>:()V
+   #1 = Methodref           #2:#3          // void Object.<init>()
+   #2 = Class               #4             // Object
+   #3 = NameAndType         #5:#6          // void <init>()
    #4 = Utf8                java/lang/Object
    #5 = Utf8                <init>
    #6 = Utf8                ()V
-   #7 = Fieldref            #8:#9          // java.lang.System:out:Ljava.io.PrintStream;
-   #8 = Class               #10            // java.lang.System
-   #9 = NameAndType         #11:#12        // out:Ljava.io.PrintStream;
+   #7 = Fieldref            #8:#9          // System.out:java.io.PrintStream
+   #8 = Class               #10            // System
+   #9 = NameAndType         #11:#12        // out:java.io.PrintStream
   #10 = Utf8                java/lang/System
   #11 = Utf8                out
   #12 = Utf8                Ljava/io/PrintStream;
   #13 = String              #14            // "Hello World"
   #14 = Utf8                Hello World
-  #15 = Methodref           #16:#17        // java.io.PrintStream:println:(Ljava.lang.String;)V
+  #15 = Methodref           #16:#17        // void java.io.PrintStream.println(String)
   #16 = Class               #18            // java.io.PrintStream
-  #17 = NameAndType         #19:#20        // println:(Ljava.lang.String;)V
+  #17 = NameAndType         #19:#20        // void println(String)
   #18 = Utf8                java/io/PrintStream
   #19 = Utf8                println
   #20 = Utf8                (Ljava/lang/String;)V
@@ -526,43 +541,43 @@ Constant pool: 78
   #24 = Utf8                java/io/BufferedReader
   #25 = Class               #26            // java.io.FileReader
   #26 = Utf8                java/io/FileReader
-  #27 = Methodref           #25:#28        // java.io.FileReader:<init>:(Ljava.lang.String;)V
-  #28 = NameAndType         #5:#20         // <init>:(Ljava.lang.String;)V
-  #29 = Methodref           #23:#30        // java.io.BufferedReader:<init>:(Ljava.io.Reader;)V
-  #30 = NameAndType         #5:#31         // <init>:(Ljava.io.Reader;)V
+  #27 = Methodref           #25:#28        // void java.io.FileReader.<init>(String)
+  #28 = NameAndType         #5:#20         // void <init>(String)
+  #29 = Methodref           #23:#30        // void java.io.BufferedReader.<init>(java.io.Reader)
+  #30 = NameAndType         #5:#31         // void <init>(java.io.Reader)
   #31 = Utf8                (Ljava/io/Reader;)V
-  #32 = Methodref           #23:#33        // java.io.BufferedReader:readLine:()Ljava.lang.String;
-  #33 = NameAndType         #34:#35        // readLine:()Ljava.lang.String;
+  #32 = Methodref           #23:#33        // String java.io.BufferedReader.readLine()
+  #33 = NameAndType         #34:#35        // String readLine()
   #34 = Utf8                readLine
   #35 = Utf8                ()Ljava/lang/String;
-  #36 = Class               #37            // java.lang.StringBuilder
+  #36 = Class               #37            // StringBuilder
   #37 = Utf8                java/lang/StringBuilder
-  #38 = Methodref           #36:#3         // java.lang.StringBuilder:<init>:()V
+  #38 = Methodref           #36:#3         // void StringBuilder.<init>()
   #39 = String              #40            // "Line: "
   #40 = Utf8                Line: 
-  #41 = Methodref           #36:#42        // java.lang.StringBuilder:append:(Ljava.lang.String;)Ljava.lang.StringBuilder;
-  #42 = NameAndType         #43:#44        // append:(Ljava.lang.String;)Ljava.lang.StringBuilder;
+  #41 = Methodref           #36:#42        // StringBuilder StringBuilder.append(String)
+  #42 = NameAndType         #43:#44        // StringBuilder append(String)
   #43 = Utf8                append
   #44 = Utf8                (Ljava/lang/String;)Ljava/lang/StringBuilder;
-  #45 = Methodref           #36:#46        // java.lang.StringBuilder:toString:()Ljava.lang.String;
-  #46 = NameAndType         #47:#35        // toString:()Ljava.lang.String;
+  #45 = Methodref           #36:#46        // String StringBuilder.toString()
+  #46 = NameAndType         #47:#35        // String toString()
   #47 = Utf8                toString
-  #48 = Methodref           #23:#49        // java.io.BufferedReader:close:()V
-  #49 = NameAndType         #50:#6         // close:()V
+  #48 = Methodref           #23:#49        // void java.io.BufferedReader.close()
+  #49 = NameAndType         #50:#6         // void close()
   #50 = Utf8                close
-  #51 = Class               #52            // java.lang.Exception
+  #51 = Class               #52            // Exception
   #52 = Utf8                java/lang/Exception
-  #53 = Fieldref            #8:#54         // java.lang.System:err:Ljava.io.PrintStream;
-  #54 = NameAndType         #55:#12        // err:Ljava.io.PrintStream;
+  #53 = Fieldref            #8:#54         // System.err:java.io.PrintStream
+  #54 = NameAndType         #55:#12        // err:java.io.PrintStream
   #55 = Utf8                err
   #56 = String              #57            // "Exception occurred trying to read '%s'."
   #57 = Utf8                Exception occurred trying to read '%s'.
-  #58 = Methodref           #16:#59        // java.io.PrintStream:format:(Ljava.lang.String;[Ljava.lang.Object;)Ljava.io.PrintStream;
-  #59 = NameAndType         #60:#61        // format:(Ljava.lang.String;[Ljava.lang.Object;)Ljava.io.PrintStream;
+  #58 = Methodref           #16:#59        // java.io.PrintStream java.io.PrintStream.format(String, Object[])
+  #59 = NameAndType         #60:#61        // java.io.PrintStream format(String, Object[])
   #60 = Utf8                format
   #61 = Utf8                (Ljava/lang/String;[Ljava/lang/Object;)Ljava/io/PrintStream;
-  #62 = Methodref           #51:#63        // java.lang.Exception:printStackTrace:()V
-  #63 = NameAndType         #64:#6         // printStackTrace:()V
+  #62 = Methodref           #51:#63        // void Exception.printStackTrace()
+  #63 = NameAndType         #64:#6         // void printStackTrace()
   #64 = Utf8                printStackTrace
   #65 = Class               #66            // Main
   #66 = Utf8                Main
@@ -571,9 +586,9 @@ Constant pool: 78
   #69 = Utf8                main
   #70 = Utf8                ([Ljava/lang/String;)V
   #71 = Utf8                StackMapTable
-  #72 = Class               #73            // java.lang.String
+  #72 = Class               #73            // String
   #73 = Utf8                java/lang/String
-  #74 = Class               #75            // [Ljava.lang.String;
+  #74 = Class               #75            // String[]
   #75 = Utf8                [Ljava/lang/String;
   #76 = Utf8                SourceFile
   #77 = Utf8                Main.java
@@ -604,26 +619,26 @@ CMDS=javac
 EXPECT=<<EOF
 Version: (52.0) Java SE 1.8
 Flags: (0x0021) public super
-Class: (#65) Main
+Class: (#65) LMain;
 Super: (#2) java/lang/Object
 Constant pool: 78
-   #1 = Methodref           #2:#3          // java.lang.Object:<init>:()V
-   #2 = Class               #4             // java.lang.Object
-   #3 = NameAndType         #5:#6          // <init>:()V
+   #1 = Methodref           #2:#3          // void Object.<init>()
+   #2 = Class               #4             // Object
+   #3 = NameAndType         #5:#6          // void <init>()
    #4 = Utf8                java/lang/Object
    #5 = Utf8                <init>
    #6 = Utf8                ()V
-   #7 = Fieldref            #8:#9          // java.lang.System:out:Ljava.io.PrintStream;
-   #8 = Class               #10            // java.lang.System
-   #9 = NameAndType         #11:#12        // out:Ljava.io.PrintStream;
+   #7 = Fieldref            #8:#9          // System.out:java.io.PrintStream
+   #8 = Class               #10            // System
+   #9 = NameAndType         #11:#12        // out:java.io.PrintStream
   #10 = Utf8                java/lang/System
   #11 = Utf8                out
   #12 = Utf8                Ljava/io/PrintStream;
   #13 = String              #14            // "Hello World"
   #14 = Utf8                Hello World
-  #15 = Methodref           #16:#17        // java.io.PrintStream:println:(Ljava.lang.String;)V
+  #15 = Methodref           #16:#17        // void java.io.PrintStream.println(String)
   #16 = Class               #18            // java.io.PrintStream
-  #17 = NameAndType         #19:#20        // println:(Ljava.lang.String;)V
+  #17 = NameAndType         #19:#20        // void println(String)
   #18 = Utf8                java/io/PrintStream
   #19 = Utf8                println
   #20 = Utf8                (Ljava/lang/String;)V
@@ -633,43 +648,43 @@ Constant pool: 78
   #24 = Utf8                java/io/BufferedReader
   #25 = Class               #26            // java.io.FileReader
   #26 = Utf8                java/io/FileReader
-  #27 = Methodref           #25:#28        // java.io.FileReader:<init>:(Ljava.lang.String;)V
-  #28 = NameAndType         #5:#20         // <init>:(Ljava.lang.String;)V
-  #29 = Methodref           #23:#30        // java.io.BufferedReader:<init>:(Ljava.io.Reader;)V
-  #30 = NameAndType         #5:#31         // <init>:(Ljava.io.Reader;)V
+  #27 = Methodref           #25:#28        // void java.io.FileReader.<init>(String)
+  #28 = NameAndType         #5:#20         // void <init>(String)
+  #29 = Methodref           #23:#30        // void java.io.BufferedReader.<init>(java.io.Reader)
+  #30 = NameAndType         #5:#31         // void <init>(java.io.Reader)
   #31 = Utf8                (Ljava/io/Reader;)V
-  #32 = Methodref           #23:#33        // java.io.BufferedReader:readLine:()Ljava.lang.String;
-  #33 = NameAndType         #34:#35        // readLine:()Ljava.lang.String;
+  #32 = Methodref           #23:#33        // String java.io.BufferedReader.readLine()
+  #33 = NameAndType         #34:#35        // String readLine()
   #34 = Utf8                readLine
   #35 = Utf8                ()Ljava/lang/String;
-  #36 = Class               #37            // java.lang.StringBuilder
+  #36 = Class               #37            // StringBuilder
   #37 = Utf8                java/lang/StringBuilder
-  #38 = Methodref           #36:#3         // java.lang.StringBuilder:<init>:()V
+  #38 = Methodref           #36:#3         // void StringBuilder.<init>()
   #39 = String              #40            // "Line: "
   #40 = Utf8                Line: 
-  #41 = Methodref           #36:#42        // java.lang.StringBuilder:append:(Ljava.lang.String;)Ljava.lang.StringBuilder;
-  #42 = NameAndType         #43:#44        // append:(Ljava.lang.String;)Ljava.lang.StringBuilder;
+  #41 = Methodref           #36:#42        // StringBuilder StringBuilder.append(String)
+  #42 = NameAndType         #43:#44        // StringBuilder append(String)
   #43 = Utf8                append
   #44 = Utf8                (Ljava/lang/String;)Ljava/lang/StringBuilder;
-  #45 = Methodref           #36:#46        // java.lang.StringBuilder:toString:()Ljava.lang.String;
-  #46 = NameAndType         #47:#35        // toString:()Ljava.lang.String;
+  #45 = Methodref           #36:#46        // String StringBuilder.toString()
+  #46 = NameAndType         #47:#35        // String toString()
   #47 = Utf8                toString
-  #48 = Methodref           #23:#49        // java.io.BufferedReader:close:()V
-  #49 = NameAndType         #50:#6         // close:()V
+  #48 = Methodref           #23:#49        // void java.io.BufferedReader.close()
+  #49 = NameAndType         #50:#6         // void close()
   #50 = Utf8                close
-  #51 = Class               #52            // java.lang.Exception
+  #51 = Class               #52            // Exception
   #52 = Utf8                java/lang/Exception
-  #53 = Fieldref            #8:#54         // java.lang.System:err:Ljava.io.PrintStream;
-  #54 = NameAndType         #55:#12        // err:Ljava.io.PrintStream;
+  #53 = Fieldref            #8:#54         // System.err:java.io.PrintStream
+  #54 = NameAndType         #55:#12        // err:java.io.PrintStream
   #55 = Utf8                err
   #56 = String              #57            // "Exception occurred trying to read '%s'."
   #57 = Utf8                Exception occurred trying to read '%s'.
-  #58 = Methodref           #16:#59        // java.io.PrintStream:format:(Ljava.lang.String;[Ljava.lang.Object;)Ljava.io.PrintStream;
-  #59 = NameAndType         #60:#61        // format:(Ljava.lang.String;[Ljava.lang.Object;)Ljava.io.PrintStream;
+  #58 = Methodref           #16:#59        // java.io.PrintStream java.io.PrintStream.format(String, Object[])
+  #59 = NameAndType         #60:#61        // java.io.PrintStream format(String, Object[])
   #60 = Utf8                format
   #61 = Utf8                (Ljava/lang/String;[Ljava/lang/Object;)Ljava/io/PrintStream;
-  #62 = Methodref           #51:#63        // java.lang.Exception:printStackTrace:()V
-  #63 = NameAndType         #64:#6         // printStackTrace:()V
+  #62 = Methodref           #51:#63        // void Exception.printStackTrace()
+  #63 = NameAndType         #64:#6         // void printStackTrace()
   #64 = Utf8                printStackTrace
   #65 = Class               #66            // Main
   #66 = Utf8                Main
@@ -678,9 +693,9 @@ Constant pool: 78
   #69 = Utf8                main
   #70 = Utf8                ([Ljava/lang/String;)V
   #71 = Utf8                StackMapTable
-  #72 = Class               #73            // java.lang.String
+  #72 = Class               #73            // String
   #73 = Utf8                java/lang/String
-  #74 = Class               #75            // [Ljava.lang.String;
+  #74 = Class               #75            // String[]
   #75 = Utf8                [Ljava/lang/String;
   #76 = Utf8                SourceFile
   #77 = Utf8                Main.java
@@ -711,26 +726,26 @@ CMDS=javac
 EXPECT=<<EOF
 Version: (53.0) Java SE 1.9
 Flags: (0x0021) public super
-Class: (#57) Main
+Class: (#57) LMain;
 Super: (#2) java/lang/Object
 Constant pool: 85
-   #1 = Methodref           #2:#3          // java.lang.Object:<init>:()V
-   #2 = Class               #4             // java.lang.Object
-   #3 = NameAndType         #5:#6          // <init>:()V
+   #1 = Methodref           #2:#3          // void Object.<init>()
+   #2 = Class               #4             // Object
+   #3 = NameAndType         #5:#6          // void <init>()
    #4 = Utf8                java/lang/Object
    #5 = Utf8                <init>
    #6 = Utf8                ()V
-   #7 = Fieldref            #8:#9          // java.lang.System:out:Ljava.io.PrintStream;
-   #8 = Class               #10            // java.lang.System
-   #9 = NameAndType         #11:#12        // out:Ljava.io.PrintStream;
+   #7 = Fieldref            #8:#9          // System.out:java.io.PrintStream
+   #8 = Class               #10            // System
+   #9 = NameAndType         #11:#12        // out:java.io.PrintStream
   #10 = Utf8                java/lang/System
   #11 = Utf8                out
   #12 = Utf8                Ljava/io/PrintStream;
   #13 = String              #14            // "Hello World"
   #14 = Utf8                Hello World
-  #15 = Methodref           #16:#17        // java.io.PrintStream:println:(Ljava.lang.String;)V
+  #15 = Methodref           #16:#17        // void java.io.PrintStream.println(String)
   #16 = Class               #18            // java.io.PrintStream
-  #17 = NameAndType         #19:#20        // println:(Ljava.lang.String;)V
+  #17 = NameAndType         #19:#20        // void println(String)
   #18 = Utf8                java/io/PrintStream
   #19 = Utf8                println
   #20 = Utf8                (Ljava/lang/String;)V
@@ -740,35 +755,35 @@ Constant pool: 85
   #24 = Utf8                java/io/BufferedReader
   #25 = Class               #26            // java.io.FileReader
   #26 = Utf8                java/io/FileReader
-  #27 = Methodref           #25:#28        // java.io.FileReader:<init>:(Ljava.lang.String;)V
-  #28 = NameAndType         #5:#20         // <init>:(Ljava.lang.String;)V
-  #29 = Methodref           #23:#30        // java.io.BufferedReader:<init>:(Ljava.io.Reader;)V
-  #30 = NameAndType         #5:#31         // <init>:(Ljava.io.Reader;)V
+  #27 = Methodref           #25:#28        // void java.io.FileReader.<init>(String)
+  #28 = NameAndType         #5:#20         // void <init>(String)
+  #29 = Methodref           #23:#30        // void java.io.BufferedReader.<init>(java.io.Reader)
+  #30 = NameAndType         #5:#31         // void <init>(java.io.Reader)
   #31 = Utf8                (Ljava/io/Reader;)V
-  #32 = Methodref           #23:#33        // java.io.BufferedReader:readLine:()Ljava.lang.String;
-  #33 = NameAndType         #34:#35        // readLine:()Ljava.lang.String;
+  #32 = Methodref           #23:#33        // String java.io.BufferedReader.readLine()
+  #33 = NameAndType         #34:#35        // String readLine()
   #34 = Utf8                readLine
   #35 = Utf8                ()Ljava/lang/String;
-  #36 = InvokeDynamic       #0:#37         // makeConcatWithConstants:(Ljava.lang.String;)Ljava.lang.String;
-  #37 = NameAndType         #38:#39        // makeConcatWithConstants:(Ljava.lang.String;)Ljava.lang.String;
+  #36 = InvokeDynamic       #0:#37         // String makeConcatWithConstants(String)
+  #37 = NameAndType         #38:#39        // String makeConcatWithConstants(String)
   #38 = Utf8                makeConcatWithConstants
   #39 = Utf8                (Ljava/lang/String;)Ljava/lang/String;
-  #40 = Methodref           #23:#41        // java.io.BufferedReader:close:()V
-  #41 = NameAndType         #42:#6         // close:()V
+  #40 = Methodref           #23:#41        // void java.io.BufferedReader.close()
+  #41 = NameAndType         #42:#6         // void close()
   #42 = Utf8                close
-  #43 = Class               #44            // java.lang.Exception
+  #43 = Class               #44            // Exception
   #44 = Utf8                java/lang/Exception
-  #45 = Fieldref            #8:#46         // java.lang.System:err:Ljava.io.PrintStream;
-  #46 = NameAndType         #47:#12        // err:Ljava.io.PrintStream;
+  #45 = Fieldref            #8:#46         // System.err:java.io.PrintStream
+  #46 = NameAndType         #47:#12        // err:java.io.PrintStream
   #47 = Utf8                err
   #48 = String              #49            // "Exception occurred trying to read '%s'."
   #49 = Utf8                Exception occurred trying to read '%s'.
-  #50 = Methodref           #16:#51        // java.io.PrintStream:format:(Ljava.lang.String;[Ljava.lang.Object;)Ljava.io.PrintStream;
-  #51 = NameAndType         #52:#53        // format:(Ljava.lang.String;[Ljava.lang.Object;)Ljava.io.PrintStream;
+  #50 = Methodref           #16:#51        // java.io.PrintStream java.io.PrintStream.format(String, Object[])
+  #51 = NameAndType         #52:#53        // java.io.PrintStream format(String, Object[])
   #52 = Utf8                format
   #53 = Utf8                (Ljava/lang/String;[Ljava/lang/Object;)Ljava/io/PrintStream;
-  #54 = Methodref           #43:#55        // java.lang.Exception:printStackTrace:()V
-  #55 = NameAndType         #56:#6         // printStackTrace:()V
+  #54 = Methodref           #43:#55        // void Exception.printStackTrace()
+  #55 = NameAndType         #56:#6         // void printStackTrace()
   #56 = Utf8                printStackTrace
   #57 = Class               #58            // Main
   #58 = Utf8                Main
@@ -777,25 +792,25 @@ Constant pool: 85
   #61 = Utf8                main
   #62 = Utf8                ([Ljava/lang/String;)V
   #63 = Utf8                StackMapTable
-  #64 = Class               #65            // java.lang.String
+  #64 = Class               #65            // String
   #65 = Utf8                java/lang/String
-  #66 = Class               #67            // [Ljava.lang.String;
+  #66 = Class               #67            // String[]
   #67 = Utf8                [Ljava/lang/String;
   #68 = Utf8                SourceFile
   #69 = Utf8                Main.java
   #70 = Utf8                BootstrapMethods
   #71 = MethodHandle        6:#72
-  #72 = Methodref           #73:#74        // java.lang.invoke.StringConcatFactory:makeConcatWithConstants:(Ljava.lang.invoke.MethodHandles$Lookup;Ljava.lang.String;Ljava.lang.invoke.MethodType;Ljava.lang.String;[Ljava.lang.Object;)Ljava.lang.invoke.CallSite;
-  #73 = Class               #75            // java.lang.invoke.StringConcatFactory
-  #74 = NameAndType         #38:#76        // makeConcatWithConstants:(Ljava.lang.invoke.MethodHandles$Lookup;Ljava.lang.String;Ljava.lang.invoke.MethodType;Ljava.lang.String;[Ljava.lang.Object;)Ljava.lang.invoke.CallSite;
+  #72 = Methodref           #73:#74        // invoke.CallSite invoke.StringConcatFactory.makeConcatWithConstants(invoke.MethodHandles$Lookup, String, invoke.MethodType, String, Object[])
+  #73 = Class               #75            // invoke.StringConcatFactory
+  #74 = NameAndType         #38:#76        // invoke.CallSite makeConcatWithConstants(invoke.MethodHandles$Lookup, String, invoke.MethodType, String, Object[])
   #75 = Utf8                java/lang/invoke/StringConcatFactory
   #76 = Utf8                (Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
   #77 = String              #78            // "Line: \u0001"
   #78 = Utf8                Line: \u0001
   #79 = Utf8                InnerClasses
-  #80 = Class               #81            // java.lang.invoke.MethodHandles$Lookup
+  #80 = Class               #81            // invoke.MethodHandles$Lookup
   #81 = Utf8                java/lang/invoke/MethodHandles$Lookup
-  #82 = Class               #83            // java.lang.invoke.MethodHandles
+  #82 = Class               #83            // invoke.MethodHandles
   #83 = Utf8                java/lang/invoke/MethodHandles
   #84 = Utf8                Lookup
 Interfaces: 0
@@ -827,26 +842,26 @@ CMDS=javac
 EXPECT=<<EOF
 Version: (54.0) Java SE 10
 Flags: (0x0021) public super
-Class: (#57) Main
+Class: (#57) LMain;
 Super: (#2) java/lang/Object
 Constant pool: 85
-   #1 = Methodref           #2:#3          // java.lang.Object:<init>:()V
-   #2 = Class               #4             // java.lang.Object
-   #3 = NameAndType         #5:#6          // <init>:()V
+   #1 = Methodref           #2:#3          // void Object.<init>()
+   #2 = Class               #4             // Object
+   #3 = NameAndType         #5:#6          // void <init>()
    #4 = Utf8                java/lang/Object
    #5 = Utf8                <init>
    #6 = Utf8                ()V
-   #7 = Fieldref            #8:#9          // java.lang.System:out:Ljava.io.PrintStream;
-   #8 = Class               #10            // java.lang.System
-   #9 = NameAndType         #11:#12        // out:Ljava.io.PrintStream;
+   #7 = Fieldref            #8:#9          // System.out:java.io.PrintStream
+   #8 = Class               #10            // System
+   #9 = NameAndType         #11:#12        // out:java.io.PrintStream
   #10 = Utf8                java/lang/System
   #11 = Utf8                out
   #12 = Utf8                Ljava/io/PrintStream;
   #13 = String              #14            // "Hello World"
   #14 = Utf8                Hello World
-  #15 = Methodref           #16:#17        // java.io.PrintStream:println:(Ljava.lang.String;)V
+  #15 = Methodref           #16:#17        // void java.io.PrintStream.println(String)
   #16 = Class               #18            // java.io.PrintStream
-  #17 = NameAndType         #19:#20        // println:(Ljava.lang.String;)V
+  #17 = NameAndType         #19:#20        // void println(String)
   #18 = Utf8                java/io/PrintStream
   #19 = Utf8                println
   #20 = Utf8                (Ljava/lang/String;)V
@@ -856,35 +871,35 @@ Constant pool: 85
   #24 = Utf8                java/io/BufferedReader
   #25 = Class               #26            // java.io.FileReader
   #26 = Utf8                java/io/FileReader
-  #27 = Methodref           #25:#28        // java.io.FileReader:<init>:(Ljava.lang.String;)V
-  #28 = NameAndType         #5:#20         // <init>:(Ljava.lang.String;)V
-  #29 = Methodref           #23:#30        // java.io.BufferedReader:<init>:(Ljava.io.Reader;)V
-  #30 = NameAndType         #5:#31         // <init>:(Ljava.io.Reader;)V
+  #27 = Methodref           #25:#28        // void java.io.FileReader.<init>(String)
+  #28 = NameAndType         #5:#20         // void <init>(String)
+  #29 = Methodref           #23:#30        // void java.io.BufferedReader.<init>(java.io.Reader)
+  #30 = NameAndType         #5:#31         // void <init>(java.io.Reader)
   #31 = Utf8                (Ljava/io/Reader;)V
-  #32 = Methodref           #23:#33        // java.io.BufferedReader:readLine:()Ljava.lang.String;
-  #33 = NameAndType         #34:#35        // readLine:()Ljava.lang.String;
+  #32 = Methodref           #23:#33        // String java.io.BufferedReader.readLine()
+  #33 = NameAndType         #34:#35        // String readLine()
   #34 = Utf8                readLine
   #35 = Utf8                ()Ljava/lang/String;
-  #36 = InvokeDynamic       #0:#37         // makeConcatWithConstants:(Ljava.lang.String;)Ljava.lang.String;
-  #37 = NameAndType         #38:#39        // makeConcatWithConstants:(Ljava.lang.String;)Ljava.lang.String;
+  #36 = InvokeDynamic       #0:#37         // String makeConcatWithConstants(String)
+  #37 = NameAndType         #38:#39        // String makeConcatWithConstants(String)
   #38 = Utf8                makeConcatWithConstants
   #39 = Utf8                (Ljava/lang/String;)Ljava/lang/String;
-  #40 = Methodref           #23:#41        // java.io.BufferedReader:close:()V
-  #41 = NameAndType         #42:#6         // close:()V
+  #40 = Methodref           #23:#41        // void java.io.BufferedReader.close()
+  #41 = NameAndType         #42:#6         // void close()
   #42 = Utf8                close
-  #43 = Class               #44            // java.lang.Exception
+  #43 = Class               #44            // Exception
   #44 = Utf8                java/lang/Exception
-  #45 = Fieldref            #8:#46         // java.lang.System:err:Ljava.io.PrintStream;
-  #46 = NameAndType         #47:#12        // err:Ljava.io.PrintStream;
+  #45 = Fieldref            #8:#46         // System.err:java.io.PrintStream
+  #46 = NameAndType         #47:#12        // err:java.io.PrintStream
   #47 = Utf8                err
   #48 = String              #49            // "Exception occurred trying to read '%s'."
   #49 = Utf8                Exception occurred trying to read '%s'.
-  #50 = Methodref           #16:#51        // java.io.PrintStream:format:(Ljava.lang.String;[Ljava.lang.Object;)Ljava.io.PrintStream;
-  #51 = NameAndType         #52:#53        // format:(Ljava.lang.String;[Ljava.lang.Object;)Ljava.io.PrintStream;
+  #50 = Methodref           #16:#51        // java.io.PrintStream java.io.PrintStream.format(String, Object[])
+  #51 = NameAndType         #52:#53        // java.io.PrintStream format(String, Object[])
   #52 = Utf8                format
   #53 = Utf8                (Ljava/lang/String;[Ljava/lang/Object;)Ljava/io/PrintStream;
-  #54 = Methodref           #43:#55        // java.lang.Exception:printStackTrace:()V
-  #55 = NameAndType         #56:#6         // printStackTrace:()V
+  #54 = Methodref           #43:#55        // void Exception.printStackTrace()
+  #55 = NameAndType         #56:#6         // void printStackTrace()
   #56 = Utf8                printStackTrace
   #57 = Class               #58            // Main
   #58 = Utf8                Main
@@ -893,25 +908,25 @@ Constant pool: 85
   #61 = Utf8                main
   #62 = Utf8                ([Ljava/lang/String;)V
   #63 = Utf8                StackMapTable
-  #64 = Class               #65            // java.lang.String
+  #64 = Class               #65            // String
   #65 = Utf8                java/lang/String
-  #66 = Class               #67            // [Ljava.lang.String;
+  #66 = Class               #67            // String[]
   #67 = Utf8                [Ljava/lang/String;
   #68 = Utf8                SourceFile
   #69 = Utf8                Main.java
   #70 = Utf8                BootstrapMethods
   #71 = MethodHandle        6:#72
-  #72 = Methodref           #73:#74        // java.lang.invoke.StringConcatFactory:makeConcatWithConstants:(Ljava.lang.invoke.MethodHandles$Lookup;Ljava.lang.String;Ljava.lang.invoke.MethodType;Ljava.lang.String;[Ljava.lang.Object;)Ljava.lang.invoke.CallSite;
-  #73 = Class               #75            // java.lang.invoke.StringConcatFactory
-  #74 = NameAndType         #38:#76        // makeConcatWithConstants:(Ljava.lang.invoke.MethodHandles$Lookup;Ljava.lang.String;Ljava.lang.invoke.MethodType;Ljava.lang.String;[Ljava.lang.Object;)Ljava.lang.invoke.CallSite;
+  #72 = Methodref           #73:#74        // invoke.CallSite invoke.StringConcatFactory.makeConcatWithConstants(invoke.MethodHandles$Lookup, String, invoke.MethodType, String, Object[])
+  #73 = Class               #75            // invoke.StringConcatFactory
+  #74 = NameAndType         #38:#76        // invoke.CallSite makeConcatWithConstants(invoke.MethodHandles$Lookup, String, invoke.MethodType, String, Object[])
   #75 = Utf8                java/lang/invoke/StringConcatFactory
   #76 = Utf8                (Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
   #77 = String              #78            // "Line: \u0001"
   #78 = Utf8                Line: \u0001
   #79 = Utf8                InnerClasses
-  #80 = Class               #81            // java.lang.invoke.MethodHandles$Lookup
+  #80 = Class               #81            // invoke.MethodHandles$Lookup
   #81 = Utf8                java/lang/invoke/MethodHandles$Lookup
-  #82 = Class               #83            // java.lang.invoke.MethodHandles
+  #82 = Class               #83            // invoke.MethodHandles
   #83 = Utf8                java/lang/invoke/MethodHandles
   #84 = Utf8                Lookup
 Interfaces: 0
@@ -943,26 +958,26 @@ CMDS=javac
 EXPECT=<<EOF
 Version: (55.0) Java SE 11
 Flags: (0x0021) public super
-Class: (#57) Main
+Class: (#57) LMain;
 Super: (#2) java/lang/Object
 Constant pool: 85
-   #1 = Methodref           #2:#3          // java.lang.Object:<init>:()V
-   #2 = Class               #4             // java.lang.Object
-   #3 = NameAndType         #5:#6          // <init>:()V
+   #1 = Methodref           #2:#3          // void Object.<init>()
+   #2 = Class               #4             // Object
+   #3 = NameAndType         #5:#6          // void <init>()
    #4 = Utf8                java/lang/Object
    #5 = Utf8                <init>
    #6 = Utf8                ()V
-   #7 = Fieldref            #8:#9          // java.lang.System:out:Ljava.io.PrintStream;
-   #8 = Class               #10            // java.lang.System
-   #9 = NameAndType         #11:#12        // out:Ljava.io.PrintStream;
+   #7 = Fieldref            #8:#9          // System.out:java.io.PrintStream
+   #8 = Class               #10            // System
+   #9 = NameAndType         #11:#12        // out:java.io.PrintStream
   #10 = Utf8                java/lang/System
   #11 = Utf8                out
   #12 = Utf8                Ljava/io/PrintStream;
   #13 = String              #14            // "Hello World"
   #14 = Utf8                Hello World
-  #15 = Methodref           #16:#17        // java.io.PrintStream:println:(Ljava.lang.String;)V
+  #15 = Methodref           #16:#17        // void java.io.PrintStream.println(String)
   #16 = Class               #18            // java.io.PrintStream
-  #17 = NameAndType         #19:#20        // println:(Ljava.lang.String;)V
+  #17 = NameAndType         #19:#20        // void println(String)
   #18 = Utf8                java/io/PrintStream
   #19 = Utf8                println
   #20 = Utf8                (Ljava/lang/String;)V
@@ -972,35 +987,35 @@ Constant pool: 85
   #24 = Utf8                java/io/BufferedReader
   #25 = Class               #26            // java.io.FileReader
   #26 = Utf8                java/io/FileReader
-  #27 = Methodref           #25:#28        // java.io.FileReader:<init>:(Ljava.lang.String;)V
-  #28 = NameAndType         #5:#20         // <init>:(Ljava.lang.String;)V
-  #29 = Methodref           #23:#30        // java.io.BufferedReader:<init>:(Ljava.io.Reader;)V
-  #30 = NameAndType         #5:#31         // <init>:(Ljava.io.Reader;)V
+  #27 = Methodref           #25:#28        // void java.io.FileReader.<init>(String)
+  #28 = NameAndType         #5:#20         // void <init>(String)
+  #29 = Methodref           #23:#30        // void java.io.BufferedReader.<init>(java.io.Reader)
+  #30 = NameAndType         #5:#31         // void <init>(java.io.Reader)
   #31 = Utf8                (Ljava/io/Reader;)V
-  #32 = Methodref           #23:#33        // java.io.BufferedReader:readLine:()Ljava.lang.String;
-  #33 = NameAndType         #34:#35        // readLine:()Ljava.lang.String;
+  #32 = Methodref           #23:#33        // String java.io.BufferedReader.readLine()
+  #33 = NameAndType         #34:#35        // String readLine()
   #34 = Utf8                readLine
   #35 = Utf8                ()Ljava/lang/String;
-  #36 = InvokeDynamic       #0:#37         // makeConcatWithConstants:(Ljava.lang.String;)Ljava.lang.String;
-  #37 = NameAndType         #38:#39        // makeConcatWithConstants:(Ljava.lang.String;)Ljava.lang.String;
+  #36 = InvokeDynamic       #0:#37         // String makeConcatWithConstants(String)
+  #37 = NameAndType         #38:#39        // String makeConcatWithConstants(String)
   #38 = Utf8                makeConcatWithConstants
   #39 = Utf8                (Ljava/lang/String;)Ljava/lang/String;
-  #40 = Methodref           #23:#41        // java.io.BufferedReader:close:()V
-  #41 = NameAndType         #42:#6         // close:()V
+  #40 = Methodref           #23:#41        // void java.io.BufferedReader.close()
+  #41 = NameAndType         #42:#6         // void close()
   #42 = Utf8                close
-  #43 = Class               #44            // java.lang.Exception
+  #43 = Class               #44            // Exception
   #44 = Utf8                java/lang/Exception
-  #45 = Fieldref            #8:#46         // java.lang.System:err:Ljava.io.PrintStream;
-  #46 = NameAndType         #47:#12        // err:Ljava.io.PrintStream;
+  #45 = Fieldref            #8:#46         // System.err:java.io.PrintStream
+  #46 = NameAndType         #47:#12        // err:java.io.PrintStream
   #47 = Utf8                err
   #48 = String              #49            // "Exception occurred trying to read '%s'."
   #49 = Utf8                Exception occurred trying to read '%s'.
-  #50 = Methodref           #16:#51        // java.io.PrintStream:format:(Ljava.lang.String;[Ljava.lang.Object;)Ljava.io.PrintStream;
-  #51 = NameAndType         #52:#53        // format:(Ljava.lang.String;[Ljava.lang.Object;)Ljava.io.PrintStream;
+  #50 = Methodref           #16:#51        // java.io.PrintStream java.io.PrintStream.format(String, Object[])
+  #51 = NameAndType         #52:#53        // java.io.PrintStream format(String, Object[])
   #52 = Utf8                format
   #53 = Utf8                (Ljava/lang/String;[Ljava/lang/Object;)Ljava/io/PrintStream;
-  #54 = Methodref           #43:#55        // java.lang.Exception:printStackTrace:()V
-  #55 = NameAndType         #56:#6         // printStackTrace:()V
+  #54 = Methodref           #43:#55        // void Exception.printStackTrace()
+  #55 = NameAndType         #56:#6         // void printStackTrace()
   #56 = Utf8                printStackTrace
   #57 = Class               #58            // Main
   #58 = Utf8                Main
@@ -1009,25 +1024,25 @@ Constant pool: 85
   #61 = Utf8                main
   #62 = Utf8                ([Ljava/lang/String;)V
   #63 = Utf8                StackMapTable
-  #64 = Class               #65            // java.lang.String
+  #64 = Class               #65            // String
   #65 = Utf8                java/lang/String
-  #66 = Class               #67            // [Ljava.lang.String;
+  #66 = Class               #67            // String[]
   #67 = Utf8                [Ljava/lang/String;
   #68 = Utf8                SourceFile
   #69 = Utf8                Main.java
   #70 = Utf8                BootstrapMethods
   #71 = MethodHandle        6:#72
-  #72 = Methodref           #73:#74        // java.lang.invoke.StringConcatFactory:makeConcatWithConstants:(Ljava.lang.invoke.MethodHandles$Lookup;Ljava.lang.String;Ljava.lang.invoke.MethodType;Ljava.lang.String;[Ljava.lang.Object;)Ljava.lang.invoke.CallSite;
-  #73 = Class               #75            // java.lang.invoke.StringConcatFactory
-  #74 = NameAndType         #38:#76        // makeConcatWithConstants:(Ljava.lang.invoke.MethodHandles$Lookup;Ljava.lang.String;Ljava.lang.invoke.MethodType;Ljava.lang.String;[Ljava.lang.Object;)Ljava.lang.invoke.CallSite;
+  #72 = Methodref           #73:#74        // invoke.CallSite invoke.StringConcatFactory.makeConcatWithConstants(invoke.MethodHandles$Lookup, String, invoke.MethodType, String, Object[])
+  #73 = Class               #75            // invoke.StringConcatFactory
+  #74 = NameAndType         #38:#76        // invoke.CallSite makeConcatWithConstants(invoke.MethodHandles$Lookup, String, invoke.MethodType, String, Object[])
   #75 = Utf8                java/lang/invoke/StringConcatFactory
   #76 = Utf8                (Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
   #77 = String              #78            // "Line: \u0001"
   #78 = Utf8                Line: \u0001
   #79 = Utf8                InnerClasses
-  #80 = Class               #81            // java.lang.invoke.MethodHandles$Lookup
+  #80 = Class               #81            // invoke.MethodHandles$Lookup
   #81 = Utf8                java/lang/invoke/MethodHandles$Lookup
-  #82 = Class               #83            // java.lang.invoke.MethodHandles
+  #82 = Class               #83            // invoke.MethodHandles
   #83 = Utf8                java/lang/invoke/MethodHandles
   #84 = Utf8                Lookup
 Interfaces: 0
@@ -1059,26 +1074,26 @@ CMDS=javac
 EXPECT=<<EOF
 Version: (56.0) Java SE 12
 Flags: (0x0021) public super
-Class: (#57) Main
+Class: (#57) LMain;
 Super: (#2) java/lang/Object
 Constant pool: 85
-   #1 = Methodref           #2:#3          // java.lang.Object:<init>:()V
-   #2 = Class               #4             // java.lang.Object
-   #3 = NameAndType         #5:#6          // <init>:()V
+   #1 = Methodref           #2:#3          // void Object.<init>()
+   #2 = Class               #4             // Object
+   #3 = NameAndType         #5:#6          // void <init>()
    #4 = Utf8                java/lang/Object
    #5 = Utf8                <init>
    #6 = Utf8                ()V
-   #7 = Fieldref            #8:#9          // java.lang.System:out:Ljava.io.PrintStream;
-   #8 = Class               #10            // java.lang.System
-   #9 = NameAndType         #11:#12        // out:Ljava.io.PrintStream;
+   #7 = Fieldref            #8:#9          // System.out:java.io.PrintStream
+   #8 = Class               #10            // System
+   #9 = NameAndType         #11:#12        // out:java.io.PrintStream
   #10 = Utf8                java/lang/System
   #11 = Utf8                out
   #12 = Utf8                Ljava/io/PrintStream;
   #13 = String              #14            // "Hello World"
   #14 = Utf8                Hello World
-  #15 = Methodref           #16:#17        // java.io.PrintStream:println:(Ljava.lang.String;)V
+  #15 = Methodref           #16:#17        // void java.io.PrintStream.println(String)
   #16 = Class               #18            // java.io.PrintStream
-  #17 = NameAndType         #19:#20        // println:(Ljava.lang.String;)V
+  #17 = NameAndType         #19:#20        // void println(String)
   #18 = Utf8                java/io/PrintStream
   #19 = Utf8                println
   #20 = Utf8                (Ljava/lang/String;)V
@@ -1088,35 +1103,35 @@ Constant pool: 85
   #24 = Utf8                java/io/BufferedReader
   #25 = Class               #26            // java.io.FileReader
   #26 = Utf8                java/io/FileReader
-  #27 = Methodref           #25:#28        // java.io.FileReader:<init>:(Ljava.lang.String;)V
-  #28 = NameAndType         #5:#20         // <init>:(Ljava.lang.String;)V
-  #29 = Methodref           #23:#30        // java.io.BufferedReader:<init>:(Ljava.io.Reader;)V
-  #30 = NameAndType         #5:#31         // <init>:(Ljava.io.Reader;)V
+  #27 = Methodref           #25:#28        // void java.io.FileReader.<init>(String)
+  #28 = NameAndType         #5:#20         // void <init>(String)
+  #29 = Methodref           #23:#30        // void java.io.BufferedReader.<init>(java.io.Reader)
+  #30 = NameAndType         #5:#31         // void <init>(java.io.Reader)
   #31 = Utf8                (Ljava/io/Reader;)V
-  #32 = Methodref           #23:#33        // java.io.BufferedReader:readLine:()Ljava.lang.String;
-  #33 = NameAndType         #34:#35        // readLine:()Ljava.lang.String;
+  #32 = Methodref           #23:#33        // String java.io.BufferedReader.readLine()
+  #33 = NameAndType         #34:#35        // String readLine()
   #34 = Utf8                readLine
   #35 = Utf8                ()Ljava/lang/String;
-  #36 = InvokeDynamic       #0:#37         // makeConcatWithConstants:(Ljava.lang.String;)Ljava.lang.String;
-  #37 = NameAndType         #38:#39        // makeConcatWithConstants:(Ljava.lang.String;)Ljava.lang.String;
+  #36 = InvokeDynamic       #0:#37         // String makeConcatWithConstants(String)
+  #37 = NameAndType         #38:#39        // String makeConcatWithConstants(String)
   #38 = Utf8                makeConcatWithConstants
   #39 = Utf8                (Ljava/lang/String;)Ljava/lang/String;
-  #40 = Methodref           #23:#41        // java.io.BufferedReader:close:()V
-  #41 = NameAndType         #42:#6         // close:()V
+  #40 = Methodref           #23:#41        // void java.io.BufferedReader.close()
+  #41 = NameAndType         #42:#6         // void close()
   #42 = Utf8                close
-  #43 = Class               #44            // java.lang.Exception
+  #43 = Class               #44            // Exception
   #44 = Utf8                java/lang/Exception
-  #45 = Fieldref            #8:#46         // java.lang.System:err:Ljava.io.PrintStream;
-  #46 = NameAndType         #47:#12        // err:Ljava.io.PrintStream;
+  #45 = Fieldref            #8:#46         // System.err:java.io.PrintStream
+  #46 = NameAndType         #47:#12        // err:java.io.PrintStream
   #47 = Utf8                err
   #48 = String              #49            // "Exception occurred trying to read '%s'."
   #49 = Utf8                Exception occurred trying to read '%s'.
-  #50 = Methodref           #16:#51        // java.io.PrintStream:format:(Ljava.lang.String;[Ljava.lang.Object;)Ljava.io.PrintStream;
-  #51 = NameAndType         #52:#53        // format:(Ljava.lang.String;[Ljava.lang.Object;)Ljava.io.PrintStream;
+  #50 = Methodref           #16:#51        // java.io.PrintStream java.io.PrintStream.format(String, Object[])
+  #51 = NameAndType         #52:#53        // java.io.PrintStream format(String, Object[])
   #52 = Utf8                format
   #53 = Utf8                (Ljava/lang/String;[Ljava/lang/Object;)Ljava/io/PrintStream;
-  #54 = Methodref           #43:#55        // java.lang.Exception:printStackTrace:()V
-  #55 = NameAndType         #56:#6         // printStackTrace:()V
+  #54 = Methodref           #43:#55        // void Exception.printStackTrace()
+  #55 = NameAndType         #56:#6         // void printStackTrace()
   #56 = Utf8                printStackTrace
   #57 = Class               #58            // Main
   #58 = Utf8                Main
@@ -1125,25 +1140,25 @@ Constant pool: 85
   #61 = Utf8                main
   #62 = Utf8                ([Ljava/lang/String;)V
   #63 = Utf8                StackMapTable
-  #64 = Class               #65            // java.lang.String
+  #64 = Class               #65            // String
   #65 = Utf8                java/lang/String
-  #66 = Class               #67            // [Ljava.lang.String;
+  #66 = Class               #67            // String[]
   #67 = Utf8                [Ljava/lang/String;
   #68 = Utf8                SourceFile
   #69 = Utf8                Main.java
   #70 = Utf8                BootstrapMethods
   #71 = MethodHandle        6:#72
-  #72 = Methodref           #73:#74        // java.lang.invoke.StringConcatFactory:makeConcatWithConstants:(Ljava.lang.invoke.MethodHandles$Lookup;Ljava.lang.String;Ljava.lang.invoke.MethodType;Ljava.lang.String;[Ljava.lang.Object;)Ljava.lang.invoke.CallSite;
-  #73 = Class               #75            // java.lang.invoke.StringConcatFactory
-  #74 = NameAndType         #38:#76        // makeConcatWithConstants:(Ljava.lang.invoke.MethodHandles$Lookup;Ljava.lang.String;Ljava.lang.invoke.MethodType;Ljava.lang.String;[Ljava.lang.Object;)Ljava.lang.invoke.CallSite;
+  #72 = Methodref           #73:#74        // invoke.CallSite invoke.StringConcatFactory.makeConcatWithConstants(invoke.MethodHandles$Lookup, String, invoke.MethodType, String, Object[])
+  #73 = Class               #75            // invoke.StringConcatFactory
+  #74 = NameAndType         #38:#76        // invoke.CallSite makeConcatWithConstants(invoke.MethodHandles$Lookup, String, invoke.MethodType, String, Object[])
   #75 = Utf8                java/lang/invoke/StringConcatFactory
   #76 = Utf8                (Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
   #77 = String              #78            // "Line: \u0001"
   #78 = Utf8                Line: \u0001
   #79 = Utf8                InnerClasses
-  #80 = Class               #81            // java.lang.invoke.MethodHandles$Lookup
+  #80 = Class               #81            // invoke.MethodHandles$Lookup
   #81 = Utf8                java/lang/invoke/MethodHandles$Lookup
-  #82 = Class               #83            // java.lang.invoke.MethodHandles
+  #82 = Class               #83            // invoke.MethodHandles
   #83 = Utf8                java/lang/invoke/MethodHandles
   #84 = Utf8                Lookup
 Interfaces: 0
@@ -1175,26 +1190,26 @@ CMDS=javac
 EXPECT=<<EOF
 Version: (57.0) Java SE 13
 Flags: (0x0021) public super
-Class: (#57) Main
+Class: (#57) LMain;
 Super: (#2) java/lang/Object
 Constant pool: 85
-   #1 = Methodref           #2:#3          // java.lang.Object:<init>:()V
-   #2 = Class               #4             // java.lang.Object
-   #3 = NameAndType         #5:#6          // <init>:()V
+   #1 = Methodref           #2:#3          // void Object.<init>()
+   #2 = Class               #4             // Object
+   #3 = NameAndType         #5:#6          // void <init>()
    #4 = Utf8                java/lang/Object
    #5 = Utf8                <init>
    #6 = Utf8                ()V
-   #7 = Fieldref            #8:#9          // java.lang.System:out:Ljava.io.PrintStream;
-   #8 = Class               #10            // java.lang.System
-   #9 = NameAndType         #11:#12        // out:Ljava.io.PrintStream;
+   #7 = Fieldref            #8:#9          // System.out:java.io.PrintStream
+   #8 = Class               #10            // System
+   #9 = NameAndType         #11:#12        // out:java.io.PrintStream
   #10 = Utf8                java/lang/System
   #11 = Utf8                out
   #12 = Utf8                Ljava/io/PrintStream;
   #13 = String              #14            // "Hello World"
   #14 = Utf8                Hello World
-  #15 = Methodref           #16:#17        // java.io.PrintStream:println:(Ljava.lang.String;)V
+  #15 = Methodref           #16:#17        // void java.io.PrintStream.println(String)
   #16 = Class               #18            // java.io.PrintStream
-  #17 = NameAndType         #19:#20        // println:(Ljava.lang.String;)V
+  #17 = NameAndType         #19:#20        // void println(String)
   #18 = Utf8                java/io/PrintStream
   #19 = Utf8                println
   #20 = Utf8                (Ljava/lang/String;)V
@@ -1204,35 +1219,35 @@ Constant pool: 85
   #24 = Utf8                java/io/BufferedReader
   #25 = Class               #26            // java.io.FileReader
   #26 = Utf8                java/io/FileReader
-  #27 = Methodref           #25:#28        // java.io.FileReader:<init>:(Ljava.lang.String;)V
-  #28 = NameAndType         #5:#20         // <init>:(Ljava.lang.String;)V
-  #29 = Methodref           #23:#30        // java.io.BufferedReader:<init>:(Ljava.io.Reader;)V
-  #30 = NameAndType         #5:#31         // <init>:(Ljava.io.Reader;)V
+  #27 = Methodref           #25:#28        // void java.io.FileReader.<init>(String)
+  #28 = NameAndType         #5:#20         // void <init>(String)
+  #29 = Methodref           #23:#30        // void java.io.BufferedReader.<init>(java.io.Reader)
+  #30 = NameAndType         #5:#31         // void <init>(java.io.Reader)
   #31 = Utf8                (Ljava/io/Reader;)V
-  #32 = Methodref           #23:#33        // java.io.BufferedReader:readLine:()Ljava.lang.String;
-  #33 = NameAndType         #34:#35        // readLine:()Ljava.lang.String;
+  #32 = Methodref           #23:#33        // String java.io.BufferedReader.readLine()
+  #33 = NameAndType         #34:#35        // String readLine()
   #34 = Utf8                readLine
   #35 = Utf8                ()Ljava/lang/String;
-  #36 = InvokeDynamic       #0:#37         // makeConcatWithConstants:(Ljava.lang.String;)Ljava.lang.String;
-  #37 = NameAndType         #38:#39        // makeConcatWithConstants:(Ljava.lang.String;)Ljava.lang.String;
+  #36 = InvokeDynamic       #0:#37         // String makeConcatWithConstants(String)
+  #37 = NameAndType         #38:#39        // String makeConcatWithConstants(String)
   #38 = Utf8                makeConcatWithConstants
   #39 = Utf8                (Ljava/lang/String;)Ljava/lang/String;
-  #40 = Methodref           #23:#41        // java.io.BufferedReader:close:()V
-  #41 = NameAndType         #42:#6         // close:()V
+  #40 = Methodref           #23:#41        // void java.io.BufferedReader.close()
+  #41 = NameAndType         #42:#6         // void close()
   #42 = Utf8                close
-  #43 = Class               #44            // java.lang.Exception
+  #43 = Class               #44            // Exception
   #44 = Utf8                java/lang/Exception
-  #45 = Fieldref            #8:#46         // java.lang.System:err:Ljava.io.PrintStream;
-  #46 = NameAndType         #47:#12        // err:Ljava.io.PrintStream;
+  #45 = Fieldref            #8:#46         // System.err:java.io.PrintStream
+  #46 = NameAndType         #47:#12        // err:java.io.PrintStream
   #47 = Utf8                err
   #48 = String              #49            // "Exception occurred trying to read '%s'."
   #49 = Utf8                Exception occurred trying to read '%s'.
-  #50 = Methodref           #16:#51        // java.io.PrintStream:format:(Ljava.lang.String;[Ljava.lang.Object;)Ljava.io.PrintStream;
-  #51 = NameAndType         #52:#53        // format:(Ljava.lang.String;[Ljava.lang.Object;)Ljava.io.PrintStream;
+  #50 = Methodref           #16:#51        // java.io.PrintStream java.io.PrintStream.format(String, Object[])
+  #51 = NameAndType         #52:#53        // java.io.PrintStream format(String, Object[])
   #52 = Utf8                format
   #53 = Utf8                (Ljava/lang/String;[Ljava/lang/Object;)Ljava/io/PrintStream;
-  #54 = Methodref           #43:#55        // java.lang.Exception:printStackTrace:()V
-  #55 = NameAndType         #56:#6         // printStackTrace:()V
+  #54 = Methodref           #43:#55        // void Exception.printStackTrace()
+  #55 = NameAndType         #56:#6         // void printStackTrace()
   #56 = Utf8                printStackTrace
   #57 = Class               #58            // Main
   #58 = Utf8                Main
@@ -1241,25 +1256,25 @@ Constant pool: 85
   #61 = Utf8                main
   #62 = Utf8                ([Ljava/lang/String;)V
   #63 = Utf8                StackMapTable
-  #64 = Class               #65            // java.lang.String
+  #64 = Class               #65            // String
   #65 = Utf8                java/lang/String
-  #66 = Class               #67            // [Ljava.lang.String;
+  #66 = Class               #67            // String[]
   #67 = Utf8                [Ljava/lang/String;
   #68 = Utf8                SourceFile
   #69 = Utf8                Main.java
   #70 = Utf8                BootstrapMethods
   #71 = MethodHandle        6:#72
-  #72 = Methodref           #73:#74        // java.lang.invoke.StringConcatFactory:makeConcatWithConstants:(Ljava.lang.invoke.MethodHandles$Lookup;Ljava.lang.String;Ljava.lang.invoke.MethodType;Ljava.lang.String;[Ljava.lang.Object;)Ljava.lang.invoke.CallSite;
-  #73 = Class               #75            // java.lang.invoke.StringConcatFactory
-  #74 = NameAndType         #38:#76        // makeConcatWithConstants:(Ljava.lang.invoke.MethodHandles$Lookup;Ljava.lang.String;Ljava.lang.invoke.MethodType;Ljava.lang.String;[Ljava.lang.Object;)Ljava.lang.invoke.CallSite;
+  #72 = Methodref           #73:#74        // invoke.CallSite invoke.StringConcatFactory.makeConcatWithConstants(invoke.MethodHandles$Lookup, String, invoke.MethodType, String, Object[])
+  #73 = Class               #75            // invoke.StringConcatFactory
+  #74 = NameAndType         #38:#76        // invoke.CallSite makeConcatWithConstants(invoke.MethodHandles$Lookup, String, invoke.MethodType, String, Object[])
   #75 = Utf8                java/lang/invoke/StringConcatFactory
   #76 = Utf8                (Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
   #77 = String              #78            // "Line: \u0001"
   #78 = Utf8                Line: \u0001
   #79 = Utf8                InnerClasses
-  #80 = Class               #81            // java.lang.invoke.MethodHandles$Lookup
+  #80 = Class               #81            // invoke.MethodHandles$Lookup
   #81 = Utf8                java/lang/invoke/MethodHandles$Lookup
-  #82 = Class               #83            // java.lang.invoke.MethodHandles
+  #82 = Class               #83            // invoke.MethodHandles
   #83 = Utf8                java/lang/invoke/MethodHandles
   #84 = Utf8                Lookup
 Interfaces: 0
@@ -1291,26 +1306,26 @@ CMDS=javac
 EXPECT=<<EOF
 Version: (58.0) Java SE 14
 Flags: (0x0021) public super
-Class: (#57) Main
+Class: (#57) LMain;
 Super: (#2) java/lang/Object
 Constant pool: 85
-   #1 = Methodref           #2:#3          // java.lang.Object:<init>:()V
-   #2 = Class               #4             // java.lang.Object
-   #3 = NameAndType         #5:#6          // <init>:()V
+   #1 = Methodref           #2:#3          // void Object.<init>()
+   #2 = Class               #4             // Object
+   #3 = NameAndType         #5:#6          // void <init>()
    #4 = Utf8                java/lang/Object
    #5 = Utf8                <init>
    #6 = Utf8                ()V
-   #7 = Fieldref            #8:#9          // java.lang.System:out:Ljava.io.PrintStream;
-   #8 = Class               #10            // java.lang.System
-   #9 = NameAndType         #11:#12        // out:Ljava.io.PrintStream;
+   #7 = Fieldref            #8:#9          // System.out:java.io.PrintStream
+   #8 = Class               #10            // System
+   #9 = NameAndType         #11:#12        // out:java.io.PrintStream
   #10 = Utf8                java/lang/System
   #11 = Utf8                out
   #12 = Utf8                Ljava/io/PrintStream;
   #13 = String              #14            // "Hello World"
   #14 = Utf8                Hello World
-  #15 = Methodref           #16:#17        // java.io.PrintStream:println:(Ljava.lang.String;)V
+  #15 = Methodref           #16:#17        // void java.io.PrintStream.println(String)
   #16 = Class               #18            // java.io.PrintStream
-  #17 = NameAndType         #19:#20        // println:(Ljava.lang.String;)V
+  #17 = NameAndType         #19:#20        // void println(String)
   #18 = Utf8                java/io/PrintStream
   #19 = Utf8                println
   #20 = Utf8                (Ljava/lang/String;)V
@@ -1320,35 +1335,35 @@ Constant pool: 85
   #24 = Utf8                java/io/BufferedReader
   #25 = Class               #26            // java.io.FileReader
   #26 = Utf8                java/io/FileReader
-  #27 = Methodref           #25:#28        // java.io.FileReader:<init>:(Ljava.lang.String;)V
-  #28 = NameAndType         #5:#20         // <init>:(Ljava.lang.String;)V
-  #29 = Methodref           #23:#30        // java.io.BufferedReader:<init>:(Ljava.io.Reader;)V
-  #30 = NameAndType         #5:#31         // <init>:(Ljava.io.Reader;)V
+  #27 = Methodref           #25:#28        // void java.io.FileReader.<init>(String)
+  #28 = NameAndType         #5:#20         // void <init>(String)
+  #29 = Methodref           #23:#30        // void java.io.BufferedReader.<init>(java.io.Reader)
+  #30 = NameAndType         #5:#31         // void <init>(java.io.Reader)
   #31 = Utf8                (Ljava/io/Reader;)V
-  #32 = Methodref           #23:#33        // java.io.BufferedReader:readLine:()Ljava.lang.String;
-  #33 = NameAndType         #34:#35        // readLine:()Ljava.lang.String;
+  #32 = Methodref           #23:#33        // String java.io.BufferedReader.readLine()
+  #33 = NameAndType         #34:#35        // String readLine()
   #34 = Utf8                readLine
   #35 = Utf8                ()Ljava/lang/String;
-  #36 = InvokeDynamic       #0:#37         // makeConcatWithConstants:(Ljava.lang.String;)Ljava.lang.String;
-  #37 = NameAndType         #38:#39        // makeConcatWithConstants:(Ljava.lang.String;)Ljava.lang.String;
+  #36 = InvokeDynamic       #0:#37         // String makeConcatWithConstants(String)
+  #37 = NameAndType         #38:#39        // String makeConcatWithConstants(String)
   #38 = Utf8                makeConcatWithConstants
   #39 = Utf8                (Ljava/lang/String;)Ljava/lang/String;
-  #40 = Methodref           #23:#41        // java.io.BufferedReader:close:()V
-  #41 = NameAndType         #42:#6         // close:()V
+  #40 = Methodref           #23:#41        // void java.io.BufferedReader.close()
+  #41 = NameAndType         #42:#6         // void close()
   #42 = Utf8                close
-  #43 = Class               #44            // java.lang.Exception
+  #43 = Class               #44            // Exception
   #44 = Utf8                java/lang/Exception
-  #45 = Fieldref            #8:#46         // java.lang.System:err:Ljava.io.PrintStream;
-  #46 = NameAndType         #47:#12        // err:Ljava.io.PrintStream;
+  #45 = Fieldref            #8:#46         // System.err:java.io.PrintStream
+  #46 = NameAndType         #47:#12        // err:java.io.PrintStream
   #47 = Utf8                err
   #48 = String              #49            // "Exception occurred trying to read '%s'."
   #49 = Utf8                Exception occurred trying to read '%s'.
-  #50 = Methodref           #16:#51        // java.io.PrintStream:format:(Ljava.lang.String;[Ljava.lang.Object;)Ljava.io.PrintStream;
-  #51 = NameAndType         #52:#53        // format:(Ljava.lang.String;[Ljava.lang.Object;)Ljava.io.PrintStream;
+  #50 = Methodref           #16:#51        // java.io.PrintStream java.io.PrintStream.format(String, Object[])
+  #51 = NameAndType         #52:#53        // java.io.PrintStream format(String, Object[])
   #52 = Utf8                format
   #53 = Utf8                (Ljava/lang/String;[Ljava/lang/Object;)Ljava/io/PrintStream;
-  #54 = Methodref           #43:#55        // java.lang.Exception:printStackTrace:()V
-  #55 = NameAndType         #56:#6         // printStackTrace:()V
+  #54 = Methodref           #43:#55        // void Exception.printStackTrace()
+  #55 = NameAndType         #56:#6         // void printStackTrace()
   #56 = Utf8                printStackTrace
   #57 = Class               #58            // Main
   #58 = Utf8                Main
@@ -1357,25 +1372,25 @@ Constant pool: 85
   #61 = Utf8                main
   #62 = Utf8                ([Ljava/lang/String;)V
   #63 = Utf8                StackMapTable
-  #64 = Class               #65            // java.lang.String
+  #64 = Class               #65            // String
   #65 = Utf8                java/lang/String
-  #66 = Class               #67            // [Ljava.lang.String;
+  #66 = Class               #67            // String[]
   #67 = Utf8                [Ljava/lang/String;
   #68 = Utf8                SourceFile
   #69 = Utf8                Main.java
   #70 = Utf8                BootstrapMethods
   #71 = MethodHandle        6:#72
-  #72 = Methodref           #73:#74        // java.lang.invoke.StringConcatFactory:makeConcatWithConstants:(Ljava.lang.invoke.MethodHandles$Lookup;Ljava.lang.String;Ljava.lang.invoke.MethodType;Ljava.lang.String;[Ljava.lang.Object;)Ljava.lang.invoke.CallSite;
-  #73 = Class               #75            // java.lang.invoke.StringConcatFactory
-  #74 = NameAndType         #38:#76        // makeConcatWithConstants:(Ljava.lang.invoke.MethodHandles$Lookup;Ljava.lang.String;Ljava.lang.invoke.MethodType;Ljava.lang.String;[Ljava.lang.Object;)Ljava.lang.invoke.CallSite;
+  #72 = Methodref           #73:#74        // invoke.CallSite invoke.StringConcatFactory.makeConcatWithConstants(invoke.MethodHandles$Lookup, String, invoke.MethodType, String, Object[])
+  #73 = Class               #75            // invoke.StringConcatFactory
+  #74 = NameAndType         #38:#76        // invoke.CallSite makeConcatWithConstants(invoke.MethodHandles$Lookup, String, invoke.MethodType, String, Object[])
   #75 = Utf8                java/lang/invoke/StringConcatFactory
   #76 = Utf8                (Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
   #77 = String              #78            // "Line: \u0001"
   #78 = Utf8                Line: \u0001
   #79 = Utf8                InnerClasses
-  #80 = Class               #81            // java.lang.invoke.MethodHandles$Lookup
+  #80 = Class               #81            // invoke.MethodHandles$Lookup
   #81 = Utf8                java/lang/invoke/MethodHandles$Lookup
-  #82 = Class               #83            // java.lang.invoke.MethodHandles
+  #82 = Class               #83            // invoke.MethodHandles
   #83 = Utf8                java/lang/invoke/MethodHandles
   #84 = Utf8                Lookup
 Interfaces: 0
@@ -1407,26 +1422,26 @@ CMDS=javac
 EXPECT=<<EOF
 Version: (59.0) Java SE 15
 Flags: (0x0021) public super
-Class: (#57) Main
+Class: (#57) LMain;
 Super: (#2) java/lang/Object
 Constant pool: 85
-   #1 = Methodref           #2:#3          // java.lang.Object:<init>:()V
-   #2 = Class               #4             // java.lang.Object
-   #3 = NameAndType         #5:#6          // <init>:()V
+   #1 = Methodref           #2:#3          // void Object.<init>()
+   #2 = Class               #4             // Object
+   #3 = NameAndType         #5:#6          // void <init>()
    #4 = Utf8                java/lang/Object
    #5 = Utf8                <init>
    #6 = Utf8                ()V
-   #7 = Fieldref            #8:#9          // java.lang.System:out:Ljava.io.PrintStream;
-   #8 = Class               #10            // java.lang.System
-   #9 = NameAndType         #11:#12        // out:Ljava.io.PrintStream;
+   #7 = Fieldref            #8:#9          // System.out:java.io.PrintStream
+   #8 = Class               #10            // System
+   #9 = NameAndType         #11:#12        // out:java.io.PrintStream
   #10 = Utf8                java/lang/System
   #11 = Utf8                out
   #12 = Utf8                Ljava/io/PrintStream;
   #13 = String              #14            // "Hello World"
   #14 = Utf8                Hello World
-  #15 = Methodref           #16:#17        // java.io.PrintStream:println:(Ljava.lang.String;)V
+  #15 = Methodref           #16:#17        // void java.io.PrintStream.println(String)
   #16 = Class               #18            // java.io.PrintStream
-  #17 = NameAndType         #19:#20        // println:(Ljava.lang.String;)V
+  #17 = NameAndType         #19:#20        // void println(String)
   #18 = Utf8                java/io/PrintStream
   #19 = Utf8                println
   #20 = Utf8                (Ljava/lang/String;)V
@@ -1436,35 +1451,35 @@ Constant pool: 85
   #24 = Utf8                java/io/BufferedReader
   #25 = Class               #26            // java.io.FileReader
   #26 = Utf8                java/io/FileReader
-  #27 = Methodref           #25:#28        // java.io.FileReader:<init>:(Ljava.lang.String;)V
-  #28 = NameAndType         #5:#20         // <init>:(Ljava.lang.String;)V
-  #29 = Methodref           #23:#30        // java.io.BufferedReader:<init>:(Ljava.io.Reader;)V
-  #30 = NameAndType         #5:#31         // <init>:(Ljava.io.Reader;)V
+  #27 = Methodref           #25:#28        // void java.io.FileReader.<init>(String)
+  #28 = NameAndType         #5:#20         // void <init>(String)
+  #29 = Methodref           #23:#30        // void java.io.BufferedReader.<init>(java.io.Reader)
+  #30 = NameAndType         #5:#31         // void <init>(java.io.Reader)
   #31 = Utf8                (Ljava/io/Reader;)V
-  #32 = Methodref           #23:#33        // java.io.BufferedReader:readLine:()Ljava.lang.String;
-  #33 = NameAndType         #34:#35        // readLine:()Ljava.lang.String;
+  #32 = Methodref           #23:#33        // String java.io.BufferedReader.readLine()
+  #33 = NameAndType         #34:#35        // String readLine()
   #34 = Utf8                readLine
   #35 = Utf8                ()Ljava/lang/String;
-  #36 = InvokeDynamic       #0:#37         // makeConcatWithConstants:(Ljava.lang.String;)Ljava.lang.String;
-  #37 = NameAndType         #38:#39        // makeConcatWithConstants:(Ljava.lang.String;)Ljava.lang.String;
+  #36 = InvokeDynamic       #0:#37         // String makeConcatWithConstants(String)
+  #37 = NameAndType         #38:#39        // String makeConcatWithConstants(String)
   #38 = Utf8                makeConcatWithConstants
   #39 = Utf8                (Ljava/lang/String;)Ljava/lang/String;
-  #40 = Methodref           #23:#41        // java.io.BufferedReader:close:()V
-  #41 = NameAndType         #42:#6         // close:()V
+  #40 = Methodref           #23:#41        // void java.io.BufferedReader.close()
+  #41 = NameAndType         #42:#6         // void close()
   #42 = Utf8                close
-  #43 = Class               #44            // java.lang.Exception
+  #43 = Class               #44            // Exception
   #44 = Utf8                java/lang/Exception
-  #45 = Fieldref            #8:#46         // java.lang.System:err:Ljava.io.PrintStream;
-  #46 = NameAndType         #47:#12        // err:Ljava.io.PrintStream;
+  #45 = Fieldref            #8:#46         // System.err:java.io.PrintStream
+  #46 = NameAndType         #47:#12        // err:java.io.PrintStream
   #47 = Utf8                err
   #48 = String              #49            // "Exception occurred trying to read '%s'."
   #49 = Utf8                Exception occurred trying to read '%s'.
-  #50 = Methodref           #16:#51        // java.io.PrintStream:format:(Ljava.lang.String;[Ljava.lang.Object;)Ljava.io.PrintStream;
-  #51 = NameAndType         #52:#53        // format:(Ljava.lang.String;[Ljava.lang.Object;)Ljava.io.PrintStream;
+  #50 = Methodref           #16:#51        // java.io.PrintStream java.io.PrintStream.format(String, Object[])
+  #51 = NameAndType         #52:#53        // java.io.PrintStream format(String, Object[])
   #52 = Utf8                format
   #53 = Utf8                (Ljava/lang/String;[Ljava/lang/Object;)Ljava/io/PrintStream;
-  #54 = Methodref           #43:#55        // java.lang.Exception:printStackTrace:()V
-  #55 = NameAndType         #56:#6         // printStackTrace:()V
+  #54 = Methodref           #43:#55        // void Exception.printStackTrace()
+  #55 = NameAndType         #56:#6         // void printStackTrace()
   #56 = Utf8                printStackTrace
   #57 = Class               #58            // Main
   #58 = Utf8                Main
@@ -1473,25 +1488,25 @@ Constant pool: 85
   #61 = Utf8                main
   #62 = Utf8                ([Ljava/lang/String;)V
   #63 = Utf8                StackMapTable
-  #64 = Class               #65            // java.lang.String
+  #64 = Class               #65            // String
   #65 = Utf8                java/lang/String
-  #66 = Class               #67            // [Ljava.lang.String;
+  #66 = Class               #67            // String[]
   #67 = Utf8                [Ljava/lang/String;
   #68 = Utf8                SourceFile
   #69 = Utf8                Main.java
   #70 = Utf8                BootstrapMethods
   #71 = MethodHandle        6:#72
-  #72 = Methodref           #73:#74        // java.lang.invoke.StringConcatFactory:makeConcatWithConstants:(Ljava.lang.invoke.MethodHandles$Lookup;Ljava.lang.String;Ljava.lang.invoke.MethodType;Ljava.lang.String;[Ljava.lang.Object;)Ljava.lang.invoke.CallSite;
-  #73 = Class               #75            // java.lang.invoke.StringConcatFactory
-  #74 = NameAndType         #38:#76        // makeConcatWithConstants:(Ljava.lang.invoke.MethodHandles$Lookup;Ljava.lang.String;Ljava.lang.invoke.MethodType;Ljava.lang.String;[Ljava.lang.Object;)Ljava.lang.invoke.CallSite;
+  #72 = Methodref           #73:#74        // invoke.CallSite invoke.StringConcatFactory.makeConcatWithConstants(invoke.MethodHandles$Lookup, String, invoke.MethodType, String, Object[])
+  #73 = Class               #75            // invoke.StringConcatFactory
+  #74 = NameAndType         #38:#76        // invoke.CallSite makeConcatWithConstants(invoke.MethodHandles$Lookup, String, invoke.MethodType, String, Object[])
   #75 = Utf8                java/lang/invoke/StringConcatFactory
   #76 = Utf8                (Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
   #77 = String              #78            // "Line: \u0001"
   #78 = Utf8                Line: \u0001
   #79 = Utf8                InnerClasses
-  #80 = Class               #81            // java.lang.invoke.MethodHandles$Lookup
+  #80 = Class               #81            // invoke.MethodHandles$Lookup
   #81 = Utf8                java/lang/invoke/MethodHandles$Lookup
-  #82 = Class               #83            // java.lang.invoke.MethodHandles
+  #82 = Class               #83            // invoke.MethodHandles
   #83 = Utf8                java/lang/invoke/MethodHandles
   #84 = Utf8                Lookup
 Interfaces: 0
@@ -1523,10 +1538,10 @@ CMDS=af ; pdf
 EXPECT=<<EOF
             ;-- entry0:
             ;-- section.class.methods._init_.attr.0.code:
-            ;-- sym.Main.Main._init:
-/ method.Main.Main._init ();
-|           0x00000383      aload_0                                    ; [01] -r-x section size 29 named class.methods._init_.attr.0.code
-|           0x00000384      invokespecial void java.lang.Object:<init>: ()
+            ;-- sym.LMain_._init___V:
+/ method.public.LMain_._init___V ();
+|           0x00000383      aload_0                                    ; [03] -r-x section size 29 named class.methods._init_.attr.0.code
+|           0x00000384      invokespecial Ljava/lang/Object;.<init>()V
 \           0x00000387      return
 EOF
 RUN
@@ -1538,10 +1553,10 @@ CMDS=af ; pdf
 EXPECT=<<EOF
             ;-- entry0:
             ;-- section.class.methods._init_.attr.0.code:
-            ;-- sym.Main.Main._init:
-/ method.Main.Main._init ();
-|           0x00000383      aload_0                                    ; [01] -r-x section size 29 named class.methods._init_.attr.0.code
-|           0x00000384      invokespecial void java.lang.Object:<init>: ()
+            ;-- sym.LMain_._init___V:
+/ method.public.LMain_._init___V ();
+|           0x00000383      aload_0                                    ; [03] -r-x section size 29 named class.methods._init_.attr.0.code
+|           0x00000384      invokespecial Ljava/lang/Object;.<init>()V
 \           0x00000387      return
 EOF
 RUN
@@ -1553,10 +1568,10 @@ CMDS=af ; pdf
 EXPECT=<<EOF
             ;-- entry0:
             ;-- section.class.methods._init_.attr.0.code:
-            ;-- sym.Main.Main._init:
-/ method.Main.Main._init ();
-|           0x000004a4      aload_0                                    ; [01] -r-x section size 29 named class.methods._init_.attr.0.code
-|           0x000004a5      invokespecial void java.lang.Object:<init>: ()
+            ;-- sym.LMain_._init___V:
+/ method.public.LMain_._init___V ();
+|           0x000004a4      aload_0                                    ; [03] -r-x section size 29 named class.methods._init_.attr.0.code
+|           0x000004a5      invokespecial Ljava/lang/Object;.<init>()V
 \           0x000004a8      return
 EOF
 RUN
@@ -1568,10 +1583,10 @@ CMDS=af ; pdf
 EXPECT=<<EOF
             ;-- entry0:
             ;-- section.class.methods._init_.attr.0.code:
-            ;-- sym.Main.Main._init:
-/ method.Main.Main._init ();
-|           0x000004a4      aload_0                                    ; [01] -r-x section size 29 named class.methods._init_.attr.0.code
-|           0x000004a5      invokespecial void java.lang.Object:<init>: ()
+            ;-- sym.LMain_._init___V:
+/ method.public.LMain_._init___V ();
+|           0x000004a4      aload_0                                    ; [03] -r-x section size 29 named class.methods._init_.attr.0.code
+|           0x000004a5      invokespecial Ljava/lang/Object;.<init>()V
 \           0x000004a8      return
 EOF
 RUN
@@ -1583,10 +1598,10 @@ CMDS=af ; pdf
 EXPECT=<<EOF
             ;-- entry0:
             ;-- section.class.methods._init_.attr.0.code:
-            ;-- sym.Main.Main._init:
-/ method.Main.Main._init ();
-|           0x000004a4      aload_0                                    ; [01] -r-x section size 29 named class.methods._init_.attr.0.code
-|           0x000004a5      invokespecial void java.lang.Object:<init>: ()
+            ;-- sym.LMain_._init___V:
+/ method.public.LMain_._init___V ();
+|           0x000004a4      aload_0                                    ; [03] -r-x section size 29 named class.methods._init_.attr.0.code
+|           0x000004a5      invokespecial Ljava/lang/Object;.<init>()V
 \           0x000004a8      return
 EOF
 RUN
@@ -1598,10 +1613,10 @@ CMDS=af ; pdf
 EXPECT=<<EOF
             ;-- entry0:
             ;-- section.class.methods._init_.attr.0.code:
-            ;-- sym.Main.Main._init:
-/ method.Main.Main._init ();
-|           0x000004a4      aload_0                                    ; [01] -r-x section size 29 named class.methods._init_.attr.0.code
-|           0x000004a5      invokespecial void java.lang.Object:<init>: ()
+            ;-- sym.LMain_._init___V:
+/ method.public.LMain_._init___V ();
+|           0x000004a4      aload_0                                    ; [03] -r-x section size 29 named class.methods._init_.attr.0.code
+|           0x000004a5      invokespecial Ljava/lang/Object;.<init>()V
 \           0x000004a8      return
 EOF
 RUN
@@ -1613,10 +1628,10 @@ CMDS=af ; pdf
 EXPECT=<<EOF
             ;-- entry0:
             ;-- section.class.methods._init_.attr.0.code:
-            ;-- sym.Main.Main._init:
-/ method.Main.Main._init ();
-|           0x000004a4      aload_0                                    ; [01] -r-x section size 29 named class.methods._init_.attr.0.code
-|           0x000004a5      invokespecial void java.lang.Object:<init>: ()
+            ;-- sym.LMain_._init___V:
+/ method.public.LMain_._init___V ();
+|           0x000004a4      aload_0                                    ; [03] -r-x section size 29 named class.methods._init_.attr.0.code
+|           0x000004a5      invokespecial Ljava/lang/Object;.<init>()V
 \           0x000004a8      return
 EOF
 RUN
@@ -1628,10 +1643,10 @@ CMDS=af ; pdf
 EXPECT=<<EOF
             ;-- entry0:
             ;-- section.class.methods._init_.attr.0.code:
-            ;-- sym.Main.Main._init:
-/ method.Main.Main._init ();
-|           0x000004a4      aload_0                                    ; [01] -r-x section size 29 named class.methods._init_.attr.0.code
-|           0x000004a5      invokespecial void java.lang.Object:<init>: ()
+            ;-- sym.LMain_._init___V:
+/ method.public.LMain_._init___V ();
+|           0x000004a4      aload_0                                    ; [03] -r-x section size 29 named class.methods._init_.attr.0.code
+|           0x000004a5      invokespecial Ljava/lang/Object;.<init>()V
 \           0x000004a8      return
 EOF
 RUN
@@ -1643,10 +1658,10 @@ CMDS=af ; pdf
 EXPECT=<<EOF
             ;-- entry0:
             ;-- section.class.methods._init_.attr.0.code:
-            ;-- sym.Main.Main._init:
-/ method.Main.Main._init ();
-|           0x000004a4      aload_0                                    ; [01] -r-x section size 29 named class.methods._init_.attr.0.code
-|           0x000004a5      invokespecial void java.lang.Object:<init>: ()
+            ;-- sym.LMain_._init___V:
+/ method.public.LMain_._init___V ();
+|           0x000004a4      aload_0                                    ; [03] -r-x section size 29 named class.methods._init_.attr.0.code
+|           0x000004a5      invokespecial Ljava/lang/Object;.<init>()V
 \           0x000004a8      return
 EOF
 RUN
@@ -1656,6 +1671,14 @@ NAME=Resolve java constant pool index
 FILE=bins/java/Pig.class
 CMDS=javar 15
 EXPECT=<<EOF
-void java.io.PrintStream:println: (short, java.lang.String)
+void java.io.PrintStream.println(String)
+EOF
+RUN
+
+NAME=Crash on analysis
+FILE=bins/java/fba022731cfdd80bc65a899afefead1e
+CMDS=e scr.prompt=false ; aaa
+REGEXP_FILTER_OUT=ignoreme
+EXPECT=<<EOF
 EOF
 RUN

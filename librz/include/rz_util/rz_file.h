@@ -43,11 +43,14 @@ RZ_API char *rz_file_relpath(const char *base, const char *path);
 RZ_API char *rz_file_path_local_to_unix(const char *path);
 RZ_API char *rz_file_path_unix_to_local(const char *path);
 RZ_API char *rz_file_binsh(void);
-RZ_API ut8 *rz_inflate(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen);
+RZ_API ut8 *rz_inflatew(RZ_NONNULL const ut8 *src, int srcLen, int *srcConsumed, int *dstLen, int wbits);
+RZ_API ut8 *rz_inflate(RZ_NONNULL const ut8 *src, int srcLen, int *srcConsumed, int *dstLen);
+RZ_API ut8 *rz_inflate_ignore_header(RZ_NONNULL const ut8 *src, int srcLen, int *srcConsumed, int *dstLen);
+RZ_API ut8 *rz_deflatew(RZ_NONNULL const ut8 *src, int srcLen, int *srcConsumed, int *dstLen, int wbits);
+RZ_API ut8 *rz_deflate(RZ_NONNULL const ut8 *src, int srcLen, int *srcConsumed, int *dstLen);
 RZ_API ut8 *rz_file_gzslurp(const char *str, int *outlen, int origonfail);
 RZ_API char *rz_stdin_slurp(int *sz);
-RZ_API char *rz_file_slurp(const char *str, RZ_NULLABLE size_t *usz);
-//RZ_API char *rz_file_slurp_range(const char *str, ut64 off, ut64 sz);
+RZ_API RZ_OWN char *rz_file_slurp(const char *str, RZ_NULLABLE size_t *usz);
 RZ_API char *rz_file_slurp_range(const char *str, ut64 off, int sz, int *osz);
 RZ_API char *rz_file_slurp_random_line(const char *file);
 RZ_API char *rz_file_slurp_random_line_count(const char *file, int *linecount);
@@ -60,12 +63,15 @@ RZ_API bool rz_file_exists(const char *str);
 RZ_API bool rz_file_fexists(const char *fmt, ...) RZ_PRINTF_CHECK(1, 2);
 RZ_API char *rz_file_slurp_line(const char *file, int line, int context);
 RZ_API char *rz_file_slurp_lines(const char *file, int line, int count);
-RZ_API char *rz_file_slurp_lines_from_bottom(const char *file, int line);
+RZ_API RZ_OWN char *rz_file_slurp_lines_from_bottom(const char *file, int line);
 RZ_API int rz_file_mkstemp(const char *prefix, char **oname);
 RZ_API char *rz_file_tmpdir(void);
 RZ_API char *rz_file_readlink(const char *path);
 RZ_API bool rz_file_copy(const char *src, const char *dst);
 RZ_API RzList *rz_file_globsearch(const char *globbed_path, int maxdepth);
+RZ_API bool rz_file_deflate(RZ_NONNULL const char *src, RZ_NONNULL const char *dst);
+RZ_API bool rz_file_inflate(RZ_NONNULL const char *src, RZ_NONNULL const char *dst);
+RZ_API bool rz_file_is_deflated(RZ_NONNULL const char *src);
 
 #ifdef __cplusplus
 }

@@ -86,8 +86,9 @@ typedef enum
 #define PUT_NEXT_WORD_IN(a)						\
   do									\
     {									\
-      if (is_limm == 1 && !NEXT_WORD (1))				\
+      if (is_limm == 1 && !NEXT_WORD (1)) {				\
 	mwerror (state, _("Illegal limm reference in last instruction!\n")); \
+      } \
       (a) = state->words[1];						\
     }									\
   while (0)
@@ -256,6 +257,11 @@ arc_sprintf (struct arcDisState *state, char *buf, const char *format, ...)
   va_list ap;
 
   va_start (ap, format);
+
+  if (!buf || !format) {
+    va_end (ap);
+    return;
+  }
 
   bp = buf;
   *bp = 0;

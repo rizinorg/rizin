@@ -4,7 +4,6 @@
 #include <rz_core.h>
 #include <rz_cons.h>
 #include "core_private.h"
-#include "cmd_descs/cmd_descs.h"
 
 #define NPF  5
 #define PIDX (RZ_ABS(core->printidx % NPF))
@@ -261,8 +260,9 @@ static bool __core_visual_gogo(RzCore *core, int ch) {
 	case 'g':
 		if (core->io->va) {
 			RzIOMap *map = rz_io_map_get(core->io, core->offset);
-			if (!map && !rz_pvector_empty(&core->io->maps)) {
-				map = rz_pvector_at(&core->io->maps, rz_pvector_len(&core->io->maps) - 1);
+			RzPVector *maps = rz_io_maps(core->io);
+			if (!map && !rz_pvector_empty(maps)) {
+				map = rz_pvector_at(maps, rz_pvector_len(maps) - 1);
 			}
 			if (map) {
 				rz_core_seek_and_save(core, rz_itv_begin(map->itv), true);
@@ -271,10 +271,11 @@ static bool __core_visual_gogo(RzCore *core, int ch) {
 			rz_core_seek_and_save(core, 0, true);
 		}
 		return true;
-	case 'G':
+	case 'G': {
 		map = rz_io_map_get(core->io, core->offset);
-		if (!map && !rz_pvector_empty(&core->io->maps)) {
-			map = rz_pvector_at(&core->io->maps, 0);
+		RzPVector *maps = rz_io_maps(core->io);
+		if (!map && !rz_pvector_empty(maps)) {
+			map = rz_pvector_at(maps, 0);
 		}
 		if (map) {
 			RzPrint *p = core->print;
@@ -287,6 +288,7 @@ static bool __core_visual_gogo(RzCore *core, int ch) {
 			rz_core_seek_and_save(core, rz_itv_end(map->itv) - (scr_rows - 2) * scols, true);
 		}
 		return true;
+	}
 	}
 	return false;
 }
@@ -347,7 +349,7 @@ static const char *help_msg_visual[] = {
 	"O", "toggle asm.pseudo and asm.esil",
 	"p/P", "rotate print modes (hex, disasm, debug, words, buf)",
 	"q", "back to rizin shell",
-	"r", "toggle callhints/jmphints/leahints",
+	"r", "toggle call/jmp/lea hints",
 	"R", "randomize color palette (ecr)",
 	"sS", "step / step over",
 	"tT", "tt new tab, t[1-9] switch to nth tab, t= name tab, t- close tab",
@@ -591,7 +593,7 @@ repeat:
 	case 'e':
 		rz_strbuf_appendf(p, "Visual Evals:\n\n");
 		rz_strbuf_appendf(p,
-			" E      toggle asm.leahints\n"
+			" E      toggle asm.hint.lea\n"
 			" &      rotate asm.bits=16,32,64\n");
 		ret = rz_cons_less_str(rz_strbuf_get(p), "?");
 		break;
@@ -2077,7 +2079,6 @@ RZ_API void rz_core_visual_browse(RzCore *core, const char *input) {
 		" q  quit\n"
 		" r  ROP gadgets\n"
 		" s  symbols\n"
-		" t  types\n"
 		" T  themes\n"
 		" v  vars\n"
 		" x  xrefs\n"
@@ -2139,9 +2140,6 @@ RZ_API void rz_core_visual_browse(RzCore *core, const char *input) {
 			break;
 		case 'C': // "vbC"
 			rz_core_visual_comments(core);
-			break;
-		case 't': // "vbt"
-			rz_core_visual_types(core);
 			break;
 		case 'T': // "vbT"
 			rz_core_cmd0(core, "eco $(eco~...)");
@@ -3246,13 +3244,14 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 						if (s) {
 							entry = s->vaddr;
 						} else {
-							RzIOMap *map = rz_pvector_pop(&core->io->maps);
+							RzPVector *maps = rz_io_maps(core->io);
+							RzIOMap *map = rz_pvector_pop(maps);
 							if (map) {
 								entry = map->itv.addr;
 							} else {
 								entry = rz_config_get_i(core->config, "bin.baddr");
 							}
-							rz_pvector_push_front(&core->io->maps, map);
+							rz_pvector_push_front(maps, map);
 						}
 					}
 					if (entry != UT64_MAX) {
@@ -3756,12 +3755,10 @@ static void visual_refresh(RzCore *core) {
 
 	int w = visual_responsive(core);
 
-	if (autoblocksize) {
-		rz_cons_gotoxy(0, 0);
-	} else {
+	if (!autoblocksize) {
 		rz_cons_clear();
 	}
-	rz_cons_print_clear();
+	rz_cons_goto_origin_reset();
 	rz_cons_flush();
 
 	int hex_cols = rz_config_get_i(core->config, "hex.cols");
@@ -3860,7 +3857,7 @@ static void visual_refresh(RzCore *core) {
 		rz_cons_reset();
 	}
 	if (core->scr_gadgets) {
-		rz_core_cmd0(core, "pg");
+		rz_core_gadget_print(core);
 		rz_cons_flush();
 	}
 	core->cons->blankline = false;
@@ -4011,7 +4008,6 @@ RZ_API int rz_core_visual(RzCore *core, const char *input) {
 			printfmtSingle[2] = debugstr;
 		}
 #endif
-		rz_cons_show_cursor(false);
 		rz_cons_enable_mouse(rz_config_get_b(core->config, "scr.wheel"));
 		core->cons->event_resize = NULL; // avoid running old event with new data
 		core->cons->event_data = core;

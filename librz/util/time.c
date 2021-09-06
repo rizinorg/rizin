@@ -36,7 +36,9 @@ RZ_API ut64 rz_time_now_mono(void) {
 #elif __APPLE__ && !defined(MAC_OS_X_VERSION_10_12)
 	ut64 ticks = mach_absolute_time();
 	static mach_timebase_info_data_t tb;
-	mach_timebase_info(&tb);
+	if (tb.denom == 0) {
+		mach_timebase_info(&tb);
+	}
 	return ((ticks * tb.numer) / tb.denom) / RZ_NSEC_PER_USEC;
 #else
 	struct timespec now;
@@ -49,8 +51,9 @@ RZ_API char *rz_time_stamp_to_str(ut32 timeStamp) {
 #ifdef _MSC_VER
 	time_t rawtime;
 	struct tm *tminfo;
+	struct tm tmptm;
 	rawtime = (time_t)timeStamp;
-	tminfo = localtime(&rawtime);
+	tminfo = rz_localtime_r(&rawtime, &tmptm);
 	//tminfo = gmtime (&rawtime);
 	return rz_str_trim_dup(asctime(tminfo));
 #else
@@ -193,9 +196,8 @@ RZ_API int rz_print_date_w32(RzPrint *p, const ut8 *buf, int len) {
 	return ret;
 }
 
-RZ_API const char *rz_time_to_string(ut64 ts) {
-	time_t l;
-	l = ts >> 20;
+RZ_API char *rz_time_to_string(ut64 timestamp64) {
+	ut64 l = timestamp64 / RZ_USEC_PER_SEC;
 	return rz_time_stamp_to_str(l);
 }
 
@@ -205,6 +207,15 @@ RZ_API struct tm *rz_localtime_r(const time_t *time, struct tm *res) {
 	return err ? NULL : res;
 #else
 	return localtime_r(time, res);
+#endif
+}
+
+RZ_API struct tm *rz_gmtime_r(const time_t *time, struct tm *res) {
+#if __WINDOWS__
+	errno_t err = gmtime_s(res, time);
+	return err ? NULL : res;
+#else
+	return gmtime_r(time, res);
 #endif
 }
 

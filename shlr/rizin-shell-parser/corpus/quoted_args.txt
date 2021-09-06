@@ -6,8 +6,8 @@ Echo with (double) quoted args
 
 ---
 
-(commands
-  (arged_command command: (cmd_identifier)
+(statements
+  (arged_stmt command: (cmd_identifier)
     args: (args (arg (double_quoted_arg)))))
 
 ==============================
@@ -18,8 +18,8 @@ Echo with (single) quoted args
 
 ---
 
-(commands
-  (arged_command command: (cmd_identifier)
+(statements
+  (arged_stmt command: (cmd_identifier)
     args: (args (arg (single_quoted_arg)))))
 
 
@@ -31,8 +31,8 @@ Legacy command - all quoted
 
 ---
 
-(commands
-  (legacy_quoted_command))
+(statements
+  (legacy_quoted_stmt))
 
 
 =======================================
@@ -43,12 +43,12 @@ Double quoted arg with cmd substitution
 
 ---
 
-(commands
-  (arged_command command: (cmd_identifier)
+(statements
+  (arged_stmt command: (cmd_identifier)
     args: (args
              (arg (double_quoted_arg
 	       (cmd_substitution_arg
-	         (arged_command command: (cmd_identifier)
+	         (arged_stmt command: (cmd_identifier)
 		   args: (args
 		            (arg (double_quoted_arg))))))))))
 
@@ -62,13 +62,13 @@ Quoted hash
 
 ---
 
-(commands
-  (arged_command command: (cmd_identifier)
+(statements
+  (arged_stmt command: (cmd_identifier)
     args: (args (arg (double_quoted_arg))))
-  (arged_command command: (cmd_identifier)
+  (arged_stmt command: (cmd_identifier)
     args: (args
             (arg (double_quoted_arg
 	           (cmd_substitution_arg
-		     (arged_command command: (cmd_identifier)))))))
-  (arged_command command: (cmd_identifier)
+		     (arged_stmt command: (cmd_identifier)))))))
+  (arged_stmt command: (cmd_identifier)
     args: (args (arg (single_quoted_arg)))))

@@ -36,7 +36,7 @@ static RzBuffer *create(RzBin *bin, const ut8 *code, int codelen, const ut8 *dat
 	ut64 p_cmdsize = 0, p_entry = 0, p_tmp = 0;
 	ut64 baddr = 0x100001000LL;
 	// TODO: baddr must be overriden with -b
-	RzBuffer *buf = rz_buf_new();
+	RzBuffer *buf = rz_buf_new_with_bytes(NULL, 0);
 
 #define B(x, y)    rz_buf_append_bytes(buf, (const ut8 *)(x), y)
 #define D(x)       rz_buf_append_ut32(buf, x)
@@ -270,16 +270,18 @@ static RzBuffer *create(RzBin *bin, const ut8 *code, int codelen, const ut8 *dat
 	return buf;
 }
 
-static RzBinAddr *binsym(RzBinFile *bf, int sym) {
+static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol sym) {
 	ut64 addr;
 	RzBinAddr *ret = NULL;
 	switch (sym) {
-	case RZ_BIN_SYM_MAIN:
+	case RZ_BIN_SPECIAL_SYMBOL_MAIN:
 		addr = MACH0_(get_main)(bf->o->bin_obj);
 		if (!addr || !(ret = RZ_NEW0(RzBinAddr))) {
 			return NULL;
 		}
 		ret->paddr = ret->vaddr = addr;
+		break;
+	default:
 		break;
 	}
 	return ret;
@@ -296,6 +298,8 @@ RzBinPlugin rz_bin_plugin_mach064 = {
 	.baddr = &baddr,
 	.binsym = binsym,
 	.entries = &entries,
+	.virtual_files = &virtual_files,
+	.maps = &maps,
 	.sections = &sections,
 	.signature = &entitlements,
 	.symbols = &symbols,
@@ -308,7 +312,6 @@ RzBinPlugin rz_bin_plugin_mach064 = {
 	.fields = &MACH0_(mach_fields),
 	.create = &create,
 	.classes = &MACH0_(parse_classes),
-	.write = &rz_bin_write_mach0,
 	.section_type_to_string = &MACH0_(section_type_to_string),
 	.section_flag_to_rzlist = &MACH0_(section_flag_to_rzlist),
 

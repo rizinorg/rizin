@@ -64,6 +64,123 @@ RZ_API char *rz_core_asm_search(RzCore *core, const char *input) {
 	return ret;
 }
 
+static const char *has_esil(RzCore *core, const char *name) {
+	RzListIter *iter;
+	RzAnalysisPlugin *h;
+	rz_return_val_if_fail(core && core->analysis && name, NULL);
+	rz_list_foreach (core->analysis->plugins, iter, h) {
+		if (h->name && !strcmp(name, h->name)) {
+			return h->esil ? "Ae" : "A_";
+		}
+	}
+	return "__";
+}
+
+RZ_API RzCmdStatus rz_core_asm_plugin_print(RzCore *core, RzAsmPlugin *ap, const char *arch, RzCmdStateOutput *state, const char *license) {
+	const char *feat2, *feat;
+	char bits[32];
+	PJ *pj = state->d.pj;
+	bits[0] = 0;
+	if (ap->bits == 27) {
+		strcat(bits, "27");
+	} else if (ap->bits == 0) {
+		strcat(bits, "any");
+	} else {
+		if (ap->bits & 4) {
+			strcat(bits, "4 ");
+		}
+		if (ap->bits & 8) {
+			strcat(bits, "8 ");
+		}
+		if (ap->bits & 16) {
+			strcat(bits, "16 ");
+		}
+		if (ap->bits & 32) {
+			strcat(bits, "32 ");
+		}
+		if (ap->bits & 64) {
+			strcat(bits, "64 ");
+		}
+	}
+	feat = "__";
+	if (ap->assemble && ap->disassemble) {
+		feat = "ad";
+	}
+	if (ap->assemble && !ap->disassemble) {
+		feat = "a_";
+	}
+	if (!ap->assemble && ap->disassemble) {
+		feat = "_d";
+	}
+	feat2 = has_esil(core, ap->name);
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_QUIET: {
+		rz_cons_println(ap->name);
+		break;
+	}
+	case RZ_OUTPUT_MODE_JSON: {
+		pj_ko(pj, ap->name);
+		pj_ks(pj, "bits", bits);
+		pj_ks(pj, "license", license);
+		pj_ks(pj, "description", ap->desc);
+		pj_ks(pj, "features", feat);
+		pj_end(pj);
+		break;
+	}
+	case RZ_OUTPUT_MODE_STANDARD: {
+		rz_cons_printf("%s%s  %-9s  %-11s %-7s %s",
+			feat, feat2, bits, ap->name, license, ap->desc);
+		if (ap->author) {
+			rz_cons_printf(" (by %s)", ap->author);
+		}
+		if (ap->version) {
+			rz_cons_printf(" v%s", ap->version);
+		}
+		rz_cons_newline();
+		break;
+	}
+	default: {
+		rz_warn_if_reached();
+		return RZ_CMD_STATUS_NONEXISTINGCMD;
+	}
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_API RzCmdStatus rz_core_asm_plugins_print(RzCore *core, const char *arch, RzCmdStateOutput *state) {
+	int i;
+	RzAsm *a = core->rasm;
+	RzAsmPlugin *ap;
+	RzListIter *iter;
+	RzCmdStatus status;
+	if (arch) {
+		rz_list_foreach (a->plugins, iter, ap) {
+			if (ap->cpus && !strcmp(arch, ap->name)) {
+				char *c = strdup(ap->cpus);
+				int n = rz_str_split(c, ',');
+				for (i = 0; i < n; i++) {
+					rz_cons_println(rz_str_word_get0(c, i));
+				}
+				free(c);
+				break;
+			}
+		}
+	} else {
+		rz_cmd_state_output_array_start(state);
+		rz_list_foreach (a->plugins, iter, ap) {
+			const char *license = ap->license
+				? ap->license
+				: "unknown";
+			status = rz_core_asm_plugin_print(core, ap, arch, state, license);
+			if (status != RZ_CMD_STATUS_OK) {
+				return status;
+			}
+		}
+		rz_cmd_state_output_array_end(state);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
 // TODO: add support for byte-per-byte opcode search
 RZ_API RzList *rz_core_asm_strsearch(RzCore *core, const char *input, ut64 from, ut64 to, int maxhits, int regexp, int everyByte, int mode) {
 	RzCoreAsmHit *hit;

@@ -35,7 +35,6 @@ typedef struct rz_buffer_methods_t {
 	RzBufferSeek seek;
 	RzBufferGetWholeBuf get_whole_buf;
 	RzBufferFreeWholeBuf free_whole_buf;
-	RzBufferNonEmptyList nonempty_list;
 } RzBufferMethods;
 
 struct rz_buf_t {
@@ -48,156 +47,103 @@ struct rz_buf_t {
 	int fd;
 };
 
-// XXX: this should not be public
-typedef struct rz_buf_cache_t {
-	ut64 from;
-	ut64 to;
-	int size;
-	ut8 *data;
-	int written;
-} RzBufferSparse;
+typedef struct rz_buf_sparse_chunk_t {
+	ut64 from; ///< inclusive
+	ut64 to; ///< inclusive, there can't be chunks with size == 0
+	ut8 *data; ///< size == to - from + 1
+} RzBufferSparseChunk;
+
+typedef enum {
+	RZ_BUF_SPARSE_WRITE_MODE_SPARSE, ///< all writes are performed in the sparse overlay
+	RZ_BUF_SPARSE_WRITE_MODE_THROUGH ///< all writes are performed in the underlying base buffer
+} RzBufferSparseWriteMode;
+
+/* utils */
+
+/// change cur according to addr and whence (RZ_BUF_SET/RZ_BUF_CUR/RZ_BUF_END)
+static inline ut64 rz_seek_offset(ut64 cur, ut64 length, st64 addr, int whence) {
+	switch (whence) {
+	case RZ_BUF_CUR:
+		return cur + (ut64)addr;
+	case RZ_BUF_SET:
+		return addr;
+	case RZ_BUF_END:
+		return length + (ut64)addr;
+	default:
+		rz_warn_if_reached();
+		return cur;
+	}
+}
 
 /* constructors */
-RZ_API RzBuffer *rz_buf_new(void);
-RZ_API RzBuffer *rz_buf_new_with_io(void *iob, int fd);
-RZ_API RzBuffer *rz_buf_new_with_bytes(const ut8 *bytes, ut64 len);
-RZ_API RzBuffer *rz_buf_new_with_string(const char *msg);
-RZ_API RzBuffer *rz_buf_new_with_pointers(const ut8 *bytes, ut64 len, bool steal);
-RZ_API RzBuffer *rz_buf_new_file(const char *file, int perm, int mode);
-RZ_API RzBuffer *rz_buf_new_with_buf(RzBuffer *b);
-RZ_API RzBuffer *rz_buf_new_slurp(const char *file);
-RZ_API RzBuffer *rz_buf_new_slice(RzBuffer *b, ut64 offset, ut64 size);
-RZ_API RzBuffer *rz_buf_new_empty(ut64 len);
-RZ_API RzBuffer *rz_buf_new_mmap(const char *file, int flags, int mode);
-RZ_API RzBuffer *rz_buf_new_sparse(ut8 Oxff);
+RZ_API RZ_OWN RzBuffer *rz_buf_new_empty(ut64 len);
+RZ_API RZ_OWN RzBuffer *rz_buf_new_file(const char *file, int perm, int mode);
+RZ_API RZ_OWN RzBuffer *rz_buf_new_mmap(const char *file, int flags, int mode);
+RZ_API RZ_OWN RzBuffer *rz_buf_new_slice(RzBuffer *b, ut64 offset, ut64 size);
+RZ_API RZ_OWN RzBuffer *rz_buf_new_slurp(const char *file);
+RZ_API RZ_OWN RzBuffer *rz_buf_new_sparse(ut8 Oxff);
+RZ_API RZ_OWN RzBuffer *rz_buf_new_sparse_overlay(RzBuffer *b, RzBufferSparseWriteMode write_mode);
+RZ_API RZ_OWN RzBuffer *rz_buf_new_with_buf(RzBuffer *b);
+RZ_API RZ_OWN RzBuffer *rz_buf_new_with_bytes(RZ_NULLABLE RZ_OWN const ut8 *bytes, ut64 len);
+RZ_API RZ_OWN RzBuffer *rz_buf_new_with_io(RZ_NONNULL void *iob, int fd);
+RZ_API RZ_OWN RzBuffer *rz_buf_new_with_methods(RZ_NONNULL const RzBufferMethods *methods, void *init_user);
+RZ_API RZ_OWN RzBuffer *rz_buf_new_with_pointers(const ut8 *bytes, ut64 len, bool steal);
+RZ_API RZ_OWN RzBuffer *rz_buf_new_with_string(RZ_NONNULL const char *msg);
 
 /* methods */
-RZ_API bool rz_buf_dump(RzBuffer *buf, const char *file);
-RZ_API bool rz_buf_set_bytes(RzBuffer *b, const ut8 *buf, ut64 length);
-RZ_API st64 rz_buf_append_string(RzBuffer *b, const char *str);
-RZ_API bool rz_buf_append_buf(RzBuffer *b, RzBuffer *a);
-RZ_API bool rz_buf_append_bytes(RzBuffer *b, const ut8 *buf, ut64 length);
-RZ_API bool rz_buf_append_nbytes(RzBuffer *b, ut64 length);
-RZ_API bool rz_buf_append_ut16(RzBuffer *b, ut16 n);
-RZ_API bool rz_buf_append_buf_slice(RzBuffer *b, RzBuffer *a, ut64 offset, ut64 size);
-RZ_API bool rz_buf_append_ut32(RzBuffer *b, ut32 n);
-RZ_API bool rz_buf_append_ut64(RzBuffer *b, ut64 n);
-RZ_API bool rz_buf_prepend_bytes(RzBuffer *b, const ut8 *buf, ut64 length);
-RZ_API st64 rz_buf_insert_bytes(RzBuffer *b, ut64 addr, const ut8 *buf, ut64 length);
-RZ_API char *rz_buf_to_string(RzBuffer *b);
-RZ_API char *rz_buf_get_string(RzBuffer *b, ut64 addr);
-RZ_API st64 rz_buf_read(RzBuffer *b, ut8 *buf, ut64 len);
-RZ_API ut8 rz_buf_read8(RzBuffer *b);
-RZ_API st64 rz_buf_fread(RzBuffer *b, ut8 *buf, const char *fmt, int n);
-RZ_API st64 rz_buf_read_at(RzBuffer *b, ut64 addr, ut8 *buf, ut64 len);
-RZ_API ut8 rz_buf_read8_at(RzBuffer *b, ut64 addr);
-RZ_API ut64 rz_buf_tell(RzBuffer *b);
-RZ_API st64 rz_buf_seek(RzBuffer *b, st64 addr, int whence);
-RZ_API st64 rz_buf_fread_at(RzBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n);
-RZ_API st64 rz_buf_write(RzBuffer *b, const ut8 *buf, ut64 len);
-RZ_API st64 rz_buf_fwrite(RzBuffer *b, const ut8 *buf, const char *fmt, int n);
-RZ_API st64 rz_buf_write_at(RzBuffer *b, ut64 addr, const ut8 *buf, ut64 len);
-RZ_API st64 rz_buf_fwrite_at(RzBuffer *b, ut64 addr, const ut8 *buf, const char *fmt, int n);
-// WARNING: this function should be used with care because it may allocate the
-// entire buffer in memory. Consider using the rz_buf_read* APIs instead and read
-// only the chunks you need.
-RZ_DEPRECATE RZ_API const ut8 *rz_buf_data(RzBuffer *b, ut64 *size);
-RZ_API ut64 rz_buf_size(RzBuffer *b);
-RZ_API bool rz_buf_resize(RzBuffer *b, ut64 newsize);
+RZ_API RZ_OWN char *rz_buf_get_nstring(RZ_NONNULL RzBuffer *b, ut64 addr, size_t size);
+RZ_API RZ_OWN char *rz_buf_get_string(RZ_NONNULL RzBuffer *b, ut64 addr);
+RZ_API RZ_OWN char *rz_buf_to_string(RZ_NONNULL RzBuffer *b);
 RZ_API RzBuffer *rz_buf_ref(RzBuffer *b);
-RZ_API void rz_buf_free(RzBuffer *b);
+RZ_API bool rz_buf_append_buf(RZ_NONNULL RzBuffer *b, RZ_NONNULL RzBuffer *a);
+RZ_API bool rz_buf_append_buf_slice(RZ_NONNULL RzBuffer *b, RZ_NONNULL RzBuffer *a, ut64 offset, ut64 size);
+RZ_API bool rz_buf_append_bytes(RZ_NONNULL RzBuffer *b, RZ_NONNULL const ut8 *buf, ut64 length);
+RZ_API bool rz_buf_append_nbytes(RZ_NONNULL RzBuffer *b, ut64 length);
+RZ_API bool rz_buf_append_ut16(RZ_NONNULL RzBuffer *b, ut16 n);
+RZ_API bool rz_buf_append_ut32(RZ_NONNULL RzBuffer *b, ut32 n);
+RZ_API bool rz_buf_append_ut64(RZ_NONNULL RzBuffer *b, ut64 n);
+RZ_API bool rz_buf_dump(RZ_NONNULL RzBuffer *buf, RZ_NONNULL const char *file);
 RZ_API bool rz_buf_fini(RzBuffer *b);
-RZ_API RzList *rz_buf_nonempty_list(RzBuffer *b);
+RZ_API bool rz_buf_prepend_bytes(RZ_NONNULL RzBuffer *b, RZ_NONNULL const ut8 *buf, ut64 length);
+RZ_API bool rz_buf_read8(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut8 *result);
+RZ_API bool rz_buf_read8_at(RzBuffer *b, ut64 addr, RZ_NONNULL RZ_OUT ut8 *result);
+RZ_API bool rz_buf_read_be16(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut16 *result);
+RZ_API bool rz_buf_read_be16_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL RZ_OUT ut16 *result);
+RZ_API bool rz_buf_read_be32(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut32 *result);
+RZ_API bool rz_buf_read_be32_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL RZ_OUT ut32 *result);
+RZ_API bool rz_buf_read_be64(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut64 *result);
+RZ_API bool rz_buf_read_be64_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL RZ_OUT ut64 *result);
+RZ_API bool rz_buf_read_ble16(RZ_NONNULL RzBuffer *b, bool big_endian, RZ_NONNULL RZ_OUT ut16 *result);
+RZ_API bool rz_buf_read_ble16_at(RZ_NONNULL RzBuffer *b, ut64 addr, bool big_endian, RZ_NONNULL RZ_OUT ut16 *result);
+RZ_API bool rz_buf_read_ble32(RZ_NONNULL RzBuffer *b, RZ_NONNULL bool big_endian, RZ_OUT ut32 *result);
+RZ_API bool rz_buf_read_ble32_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL bool big_endian, RZ_OUT ut32 *result);
+RZ_API bool rz_buf_read_ble64(RZ_NONNULL RzBuffer *b, bool big_endian, RZ_NONNULL RZ_OUT ut64 *result);
+RZ_API bool rz_buf_read_ble64_at(RZ_NONNULL RzBuffer *b, ut64 addr, bool big_endian, RZ_NONNULL RZ_OUT ut64 *result);
+RZ_API bool rz_buf_read_le16(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut16 *result);
+RZ_API bool rz_buf_read_le16_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL RZ_OUT ut16 *result);
+RZ_API bool rz_buf_read_le32(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut32 *result);
+RZ_API bool rz_buf_read_le32_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL RZ_OUT ut32 *result);
+RZ_API bool rz_buf_read_le64(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut64 *result);
+RZ_API bool rz_buf_read_le64_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL RZ_OUT ut64 *result);
+RZ_API bool rz_buf_resize(RZ_NONNULL RzBuffer *b, ut64 newsize);
+RZ_API bool rz_buf_set_bytes(RZ_NONNULL RzBuffer *b, RZ_NONNULL const ut8 *buf, ut64 length);
+RZ_API st64 rz_buf_append_string(RZ_NONNULL RzBuffer *b, RZ_NONNULL const char *str);
+RZ_API st64 rz_buf_fread(RZ_NONNULL RzBuffer *b, RZ_NONNULL ut8 *buf, RZ_NONNULL const char *fmt, int n);
+RZ_API st64 rz_buf_fread_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL ut8 *buf, RZ_NONNULL const char *fmt, int n);
+RZ_API st64 rz_buf_fwrite(RZ_NONNULL RzBuffer *b, RZ_NONNULL const ut8 *buf, RZ_NONNULL const char *fmt, int n);
+RZ_API st64 rz_buf_fwrite_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL const ut8 *buf, RZ_NONNULL const char *fmt, int n);
+RZ_API st64 rz_buf_insert_bytes(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL const ut8 *buf, ut64 length);
+RZ_API st64 rz_buf_read(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut8 *buf, ut64 len);
+RZ_API st64 rz_buf_read_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL RZ_OUT ut8 *buf, ut64 len);
+RZ_API st64 rz_buf_seek(RZ_NONNULL RzBuffer *b, st64 addr, int whence);
+RZ_API st64 rz_buf_write(RZ_NONNULL RzBuffer *b, RZ_NONNULL const ut8 *buf, ut64 len);
+RZ_API st64 rz_buf_write_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL const ut8 *buf, ut64 len);
+RZ_API ut64 rz_buf_size(RZ_NONNULL RzBuffer *b);
+RZ_API ut64 rz_buf_tell(RZ_NONNULL RzBuffer *b);
+RZ_API void rz_buf_free(RzBuffer *b);
+RZ_API void rz_buf_set_overflow_byte(RZ_NONNULL RzBuffer *b, ut8 Oxff);
 
-static inline ut16 rz_buf_read_be16(RzBuffer *b) {
-	ut8 buf[sizeof(ut16)];
-	int r = (int)rz_buf_read(b, buf, sizeof(buf));
-	return r == sizeof(buf) ? rz_read_be16(buf) : UT16_MAX;
-}
-
-static inline ut16 rz_buf_read_be16_at(RzBuffer *b, ut64 addr) {
-	ut8 buf[sizeof(ut16)];
-	int r = (int)rz_buf_read_at(b, addr, buf, sizeof(buf));
-	return r == sizeof(buf) ? rz_read_be16(buf) : UT16_MAX;
-}
-
-static inline ut32 rz_buf_read_be32(RzBuffer *b) {
-	ut8 buf[sizeof(ut32)];
-	int r = (int)rz_buf_read(b, buf, sizeof(buf));
-	return r == sizeof(buf) ? rz_read_be32(buf) : UT32_MAX;
-}
-
-static inline ut32 rz_buf_read_be32_at(RzBuffer *b, ut64 addr) {
-	ut8 buf[sizeof(ut32)];
-	int r = (int)rz_buf_read_at(b, addr, buf, sizeof(buf));
-	return r == sizeof(buf) ? rz_read_be32(buf) : UT32_MAX;
-}
-
-static inline ut64 rz_buf_read_be64(RzBuffer *b) {
-	ut8 buf[sizeof(ut64)];
-	int r = (int)rz_buf_read(b, buf, sizeof(buf));
-	return r == sizeof(buf) ? rz_read_be64(buf) : UT64_MAX;
-}
-
-static inline ut64 rz_buf_read_be64_at(RzBuffer *b, ut64 addr) {
-	ut8 buf[sizeof(ut64)];
-	int r = (int)rz_buf_read_at(b, addr, buf, sizeof(buf));
-	return r == sizeof(buf) ? rz_read_be64(buf) : UT64_MAX;
-}
-
-static inline ut16 rz_buf_read_le16(RzBuffer *b) {
-	ut8 buf[sizeof(ut16)];
-	int r = (int)rz_buf_read(b, buf, sizeof(buf));
-	return r == sizeof(buf) ? rz_read_le16(buf) : UT16_MAX;
-}
-
-static inline ut16 rz_buf_read_le16_at(RzBuffer *b, ut64 addr) {
-	ut8 buf[sizeof(ut16)];
-	int r = (int)rz_buf_read_at(b, addr, buf, sizeof(buf));
-	return r == sizeof(buf) ? rz_read_le16(buf) : UT16_MAX;
-}
-
-static inline ut32 rz_buf_read_le32(RzBuffer *b) {
-	ut8 buf[sizeof(ut32)];
-	int r = (int)rz_buf_read(b, buf, sizeof(buf));
-	return r == sizeof(buf) ? rz_read_le32(buf) : UT32_MAX;
-}
-
-static inline ut32 rz_buf_read_le32_at(RzBuffer *b, ut64 addr) {
-	ut8 buf[sizeof(ut32)];
-	int r = (int)rz_buf_read_at(b, addr, buf, sizeof(buf));
-	return r == sizeof(buf) ? rz_read_le32(buf) : UT32_MAX;
-}
-
-static inline ut64 rz_buf_read_le64(RzBuffer *b) {
-	ut8 buf[sizeof(ut64)];
-	int r = (int)rz_buf_read(b, buf, sizeof(buf));
-	return r == sizeof(buf) ? rz_read_le64(buf) : UT64_MAX;
-}
-
-static inline ut64 rz_buf_read_le64_at(RzBuffer *b, ut64 addr) {
-	ut8 buf[sizeof(ut64)];
-	int r = (int)rz_buf_read_at(b, addr, buf, sizeof(buf));
-	return r == sizeof(buf) ? rz_read_le64(buf) : UT64_MAX;
-}
-
-static inline ut16 rz_buf_read_ble16_at(RzBuffer *b, ut64 addr, bool big_endian) {
-	ut8 buf[sizeof(ut16)];
-	int r = (int)rz_buf_read_at(b, addr, buf, sizeof(buf));
-	return r == sizeof(buf) ? rz_read_ble16(buf, big_endian) : UT16_MAX;
-}
-
-static inline ut32 rz_buf_read_ble32_at(RzBuffer *b, ut64 addr, bool big_endian) {
-	ut8 buf[sizeof(ut32)];
-	int r = (int)rz_buf_read_at(b, addr, buf, sizeof(buf));
-	return r == sizeof(buf) ? rz_read_ble32(buf, big_endian) : UT32_MAX;
-}
-
-static inline ut64 rz_buf_read_ble64_at(RzBuffer *b, ut64 addr, bool big_endian) {
-	ut8 buf[sizeof(ut64)];
-	int r = (int)rz_buf_read_at(b, addr, buf, sizeof(buf));
-	return r == sizeof(buf) ? rz_read_ble64(buf, big_endian) : UT64_MAX;
-}
+RZ_DEPRECATE RZ_API RZ_BORROW const ut8 *rz_buf_data(RZ_NONNULL RzBuffer *b, ut64 *size);
 
 RZ_API st64 rz_buf_uleb128(RzBuffer *b, ut64 *v);
 RZ_API st64 rz_buf_sleb128(RzBuffer *b, st64 *v);
@@ -210,6 +156,17 @@ static inline st64 rz_buf_sleb128_at(RzBuffer *b, ut64 addr, st64 *v) {
 	rz_buf_seek(b, addr, RZ_BUF_SET);
 	return rz_buf_sleb128(b, v);
 }
+
+// sparse-specific
+
+RZ_API const RzBufferSparseChunk *rz_buf_sparse_get_chunks(RzBuffer *b, RZ_NONNULL size_t *count);
+RZ_API void rz_buf_sparse_set_write_mode(RzBuffer *b, RzBufferSparseWriteMode mode);
+RZ_API bool rz_buf_sparse_populated_in(RzBuffer *b, ut64 from, ut64 to);
+
+RZ_API bool rz_deflatew_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, ut64 block_size, ut8 *src_consumed, int wbits);
+RZ_API bool rz_deflate_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, ut64 block_size, ut8 *src_consumed);
+RZ_API bool rz_inflatew_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, ut64 block_size, ut8 *src_consumed, int wbits);
+RZ_API bool rz_inflate_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, ut64 block_size, ut8 *src_consumed);
 
 #ifdef __cplusplus
 }

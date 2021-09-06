@@ -1,5 +1,5 @@
 NAME=dh esil
-FILE=-
+FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 aei

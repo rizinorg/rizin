@@ -1,5 +1,5 @@
 NAME=aea 5
-FILE=-
+FILE==
 ARGS=-a x86 -b64
 CMDS=wx 4889e5b8ffff000089c2c1ea1f01d0;aea 5
 EXPECT=<<EOF
@@ -13,7 +13,7 @@ EOF
 RUN
 
 NAME=aeaj 5
-FILE=-
+FILE==
 ARGS=-a x86 -b64
 CMDS=wx 4889e5b8ffff000089c2c1ea1f01d0;aeaj 5~{}
 EXPECT=<<EOF
@@ -68,7 +68,7 @@ EOF
 RUN
 
 NAME=aeA 15
-FILE=-
+FILE==
 ARGS=-a x86 -b64
 CMDS=wx 4889e5b8ffff000089c2c1ea1f01d0;aeA 15
 EXPECT=<<EOF

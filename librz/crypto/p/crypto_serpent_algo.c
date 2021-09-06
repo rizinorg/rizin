@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2017 NicsTr <nicolas.bordes@grenoble-inp.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include "crypto_serpent_algo.h"
 #include <rz_util/rz_assert.h>
 
@@ -87,9 +90,8 @@ void apply_FP(ut32 in[DW_BY_BLOCK], ut32 out[DW_BY_BLOCK]) {
 	}
 }
 
-void serpent_keyschedule(struct serpent_state st,
-	ut32 subkeys[NB_SUBKEYS * DW_BY_BLOCK]) {
-	rz_return_if_fail((st.key_size == 128) || (st.key_size == 192) || (st.key_size == 256));
+void serpent_keyschedule(const serpent_state_t *st, ut32 subkeys[NB_SUBKEYS * DW_BY_BLOCK]) {
+	rz_return_if_fail((st->key_size == 128) || (st->key_size == 192) || (st->key_size == 256));
 
 	ut32 tmpkeys[DW_BY_BLOCK * NB_SUBKEYS + DW_BY_USERKEY] = { 0 };
 	const ut32 phi = 0x9e3779b9;
@@ -97,13 +99,13 @@ void serpent_keyschedule(struct serpent_state st,
 	ut8 in, out;
 	int i, j, l;
 
-	for (i = 0; i < st.key_size / 32; i++) {
-		tmpkeys[i] = st.key[i];
+	for (i = 0; i < st->key_size / 32; i++) {
+		tmpkeys[i] = st->key[i];
 	}
 
 	// Padding key
-	if (st.key_size != 256) {
-		tmpkeys[st.key_size / 32] = 1;
+	if (st->key_size != 256) {
+		tmpkeys[st->key_size / 32] = 1;
 	}
 
 	for (i = DW_BY_USERKEY; i < NB_SUBKEYS * DW_BY_BLOCK + DW_BY_USERKEY; i++) {
@@ -127,8 +129,7 @@ void serpent_keyschedule(struct serpent_state st,
 
 	// Apply IP on every subkey
 	for (i = 0; i < NB_SUBKEYS; i++) {
-		apply_IP(&subkeys[i * DW_BY_BLOCK],
-			&tmpkeys[DW_BY_USERKEY + i * DW_BY_BLOCK]);
+		apply_IP(&subkeys[i * DW_BY_BLOCK], &tmpkeys[DW_BY_USERKEY + i * DW_BY_BLOCK]);
 	}
 
 	memcpy(subkeys, tmpkeys + DW_BY_USERKEY, 132 * sizeof(ut32));
@@ -216,13 +217,13 @@ void apply_round_inv(int round, ut32 block[DW_BY_BLOCK],
 	apply_xor(block, subkeys + 4 * round);
 }
 
-void serpent_encrypt(struct serpent_state *st, ut32 in[DW_BY_BLOCK],
+void serpent_encrypt(serpent_state_t *st, ut32 in[DW_BY_BLOCK],
 	ut32 out[DW_BY_BLOCK]) {
 	int i;
 	ut32 subkeys[DW_BY_BLOCK * NB_SUBKEYS] = { 0 };
 	ut32 tmp_block[DW_BY_BLOCK] = { 0 };
 
-	serpent_keyschedule(*st, subkeys);
+	serpent_keyschedule(st, subkeys);
 
 	apply_IP(in, tmp_block);
 	for (i = 0; i < NB_ROUNDS; i++) {
@@ -231,13 +232,13 @@ void serpent_encrypt(struct serpent_state *st, ut32 in[DW_BY_BLOCK],
 	apply_FP(tmp_block, out);
 }
 
-void serpent_decrypt(struct serpent_state *st, ut32 in[DW_BY_BLOCK],
+void serpent_decrypt(serpent_state_t *st, ut32 in[DW_BY_BLOCK],
 	ut32 out[DW_BY_BLOCK]) {
 	int i;
 	ut32 subkeys[DW_BY_BLOCK * NB_SUBKEYS] = { 0 };
 	ut32 tmp_block[DW_BY_BLOCK] = { 0 };
 
-	serpent_keyschedule(*st, subkeys);
+	serpent_keyschedule(st, subkeys);
 
 	apply_IP(in, tmp_block);
 	for (i = NB_ROUNDS - 1; i >= 0; i--) {

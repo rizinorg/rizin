@@ -1,4 +1,5 @@
 NAME="m68k: m68k filter"
+FILE==
 CMDS=<<EOF
 e asm.arch=m68k
 e asm.bits=32
@@ -14,6 +15,7 @@ EOF
 RUN
 
 NAME="m68k: m68k filter2"
+FILE==
 CMDS=<<EOF
 e asm.arch=m68k
 e asm.bits=32

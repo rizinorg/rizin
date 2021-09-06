@@ -1,5 +1,5 @@
 NAME=afn normal function
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=avr
 wa ret
@@ -13,7 +13,7 @@ EOF
 RUN
 
 NAME=afn interrupt handler
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=avr
 wa reti

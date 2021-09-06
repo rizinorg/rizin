@@ -193,14 +193,14 @@ EOF
 RUN
 
 NAME=Cf should be silent
-FILE=-
+FILE==
 CMDS=Cf 32 2xx
 EXPECT=<<EOF
 EOF
 RUN
 
 NAME=format memory metadata
-FILE=-
+FILE==
 CMDS=<<EOF
 wx 41424344
 Cf 4 x
@@ -573,7 +573,7 @@ EOF
 RUN
 
 NAME=Cd- <size> <repeat>
-FILE=-
+FILE==
 CMDS=<<EOF
 s 0x100
 Cd 4 5
@@ -602,7 +602,7 @@ EOF
 RUN
 
 NAME=delete specific type of metadata from addr
-FILE=-
+FILE==
 CMDS=<<EOF
 s 0x100
 w abcd
@@ -626,7 +626,7 @@ EOF
 RUN
 
 NAME=C-
-FILE=-
+FILE==
 CMDS=<<EOF
 s 0x100
 w abcd
@@ -647,7 +647,7 @@ EOF
 RUN
 
 NAME=Cd- and C- in issue #8648
-FILE=-
+FILE==
 CMDS=<<EOF
 s 0x100
 Cd 4 1
@@ -678,7 +678,7 @@ EOF
 RUN
 
 NAME=Cd. (#10856)
-FILE=-
+FILE==
 CMDS=<<EOF
 s 0x50
 Cd 4 2

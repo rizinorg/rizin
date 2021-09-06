@@ -30,7 +30,6 @@
 # $ rizin -d /bin/true
 #
 
-# Using debian 10 as base image.
 FROM debian:10
 
 # rz-pipe python version
@@ -48,65 +47,48 @@ RUN echo -e "Building versions:\n\
 # Build rizin in a volume to minimize space used by build
 COPY . /tmp/rizin/
 
-# Install all build dependencies
-# Install bindings
-# Build and install rizin on master branch
-# Remove all build dependencies
-# Cleanup
-# gcc git python3-pip ccache patch
-# pip3 install meson ninja
-
-RUN apt-get update && \
-	apt-get install -y --no-install-recommends \
+RUN apt-get update
+RUN apt-get install -y --no-install-recommends \
 	cmake \
 	gcc \
 	cpp \
 	g++ \
 	git \
 	make \
+	pkg-config \
 	libc-dev-bin libc6-dev linux-libc-dev \
 	python3-pip \
 	python3-setuptools \
 	python3-wheel \
 	${with_arm64_as:+binutils-aarch64-linux-gnu} \
 	${with_arm32_as:+binutils-arm-linux-gnueabi} \
-	${with_ppc_as:+binutils-powerpc64le-linux-gnu} && \
-	pip3 install meson ninja && \
-	cd /tmp && \
-	git clone -b "$RZ_PIPE_PY_VERSION" https://github.com/rizinorg/rz-pipe && \
-	pip3 install ./rz-pipe/python && \
-	cd rizin && \
-	meson --prefix=/usr /tmp/build && \
-	meson compile -C /tmp/build && \
-	meson install -C /tmp/build && \
-	rm -rf /tmp/build && \
-	pip3 uninstall -y meson ninja && \
-	apt-get remove --purge -y \
-	cmake \
-	cpp \
-	g++ \
-	python3-pip \
-	python3-setuptools \
-	python3-wheel && \
-	apt-get autoremove --purge -y && \
-	apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+	${with_ppc_as:+binutils-powerpc64le-linux-gnu}
 
+RUN pip3 install meson ninja
+
+WORKDIR /tmp
+RUN git clone -b "$RZ_PIPE_PY_VERSION" https://github.com/rizinorg/rz-pipe
+RUN pip3 install --root=/tmp/rizin-install ./rz-pipe/python
+
+WORKDIR /tmp/rizin
+RUN meson --prefix=/usr /tmp/build
+RUN meson compile -C /tmp/build
+RUN meson install --destdir /tmp/rizin-install -C /tmp/build
+
+FROM debian:10
 ENV RZ_ARM64_AS=${with_arm64_as:+aarch64-linux-gnu-as}
 ENV RZ_ARM32_AS=${with_arm32_as:+arm-linux-gnueabi-as}
 ENV RZ_PPC_AS=${with_ppc_as:+powerpc64le-linux-gnu-as}
 
-# Create non-root user
 RUN useradd -m rizin
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates git python3
 
-# Initilise base user
 USER rizin
 WORKDIR /home/rizin
 ENV HOME /home/rizin
 
-# Setup rz-pm
-RUN rz-pm init && \
-	rz-pm update && \
-	chown -R rizin:rizin /home/rizin/.config
+COPY --from=0 /tmp/rizin-install/ /
 
-# Base command for container
+RUN rz-pm init && rz-pm update
+
 CMD ["/bin/bash"]

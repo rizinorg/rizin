@@ -17,7 +17,12 @@ static bool checkHeader(RzBuffer *b) {
 	rz_buf_read_at(b, 0, buf, 4);
 	if (sz >= 0x300 && !memcmp(buf, "\xca\xfe\xba\xbe", 4)) {
 		ut64 addr = 4 * sizeof(32);
-		ut64 off = rz_buf_read_be32_at(b, addr);
+
+		ut32 off;
+		if (!rz_buf_read_be32_at(b, addr, &off)) {
+			return false;
+		}
+
 		if (off > 0 && off + 4 < sz) {
 			ut64 h = 0;
 			rz_buf_read_at(b, h + off, buf, 4);

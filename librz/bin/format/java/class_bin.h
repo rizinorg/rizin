@@ -32,7 +32,8 @@ typedef enum {
 	ACCESS_FLAG_MODULE /*    */ = 0x8000
 } ClassAccessFlag;
 
-#define ACCESS_FLAG_MASK_ALL (0xFFFF)
+#define ACCESS_FLAG_MASK_ALL          (0xFFFF)
+#define ACCESS_FLAG_MASK_ALL_NO_SUPER ((~ACCESS_FLAG_SUPER) & ACCESS_FLAG_MASK_ALL)
 
 typedef struct java_class_t {
 	ut32 magic;
@@ -61,39 +62,39 @@ typedef struct java_class_t {
 	ut64 class_end_offset;
 } RzBinJavaClass;
 
-RZ_API RzBinJavaClass *rz_bin_java_class_new(RzBuffer *buf, ut64 offset, Sdb *kv);
-RZ_API void rz_bin_java_class_free(RzBinJavaClass *bin);
+RZ_API RZ_OWN RzBinJavaClass *rz_bin_java_class_new(RZ_NONNULL RzBuffer *buf, ut64 offset, RZ_NONNULL Sdb *kv);
+RZ_API void rz_bin_java_class_free(RZ_NULLABLE RzBinJavaClass *bin);
 
-RZ_API char *rz_bin_java_class_version(RzBinJavaClass *bin);
-RZ_API ut64 rz_bin_java_class_debug_info(RzBinJavaClass *bin);
-RZ_API const char *rz_bin_java_class_language(RzBinJavaClass *bin);
-RZ_API char *rz_bin_java_class_name(RzBinJavaClass *bin);
-RZ_API char *rz_bin_java_class_super(RzBinJavaClass *bin);
-RZ_API ut32 rz_bin_java_class_access_flags(RzBinJavaClass *bin);
-RZ_API char *rz_bin_java_class_access_flags_readable(RzBinJavaClass *bin, ut16 mask);
-RZ_API void rz_bin_java_class_as_json(RzBinJavaClass *bin, PJ *j);
-RZ_API void rz_bin_java_class_as_text(RzBinJavaClass *bin, RzStrBuf *sb);
-RZ_API char *rz_bin_java_class_const_pool_resolve_index(RzBinJavaClass *bin, st32 index);
+RZ_API RZ_OWN char *rz_bin_java_class_version(RZ_NONNULL RzBinJavaClass *bin);
+RZ_API ut64 rz_bin_java_class_debug_info(RZ_NONNULL RzBinJavaClass *bin);
+RZ_API RZ_BORROW const char *rz_bin_java_class_language(RZ_NONNULL RzBinJavaClass *bin);
+RZ_API RZ_OWN char *rz_bin_java_class_name(RZ_NONNULL RzBinJavaClass *bin);
+RZ_API RZ_OWN char *rz_bin_java_class_super(RZ_NONNULL RzBinJavaClass *bin);
+RZ_API ut32 rz_bin_java_class_access_flags(RZ_NONNULL RzBinJavaClass *bin);
+RZ_API RZ_OWN char *rz_bin_java_class_access_flags_readable(RZ_NONNULL RzBinJavaClass *bin, ut16 mask);
+RZ_API void rz_bin_java_class_as_json(RZ_NONNULL RzBinJavaClass *bin, RZ_NONNULL PJ *j);
+RZ_API void rz_bin_java_class_as_text(RZ_NONNULL RzBinJavaClass *bin, RZ_NONNULL RzStrBuf *sb);
+RZ_API RZ_OWN char *rz_bin_java_class_const_pool_resolve_index(RZ_NONNULL RzBinJavaClass *bin, st32 index);
 
 /* used in bin_java.c and core_java.c */
-RZ_API void rz_bin_java_class_as_source_code(RzBinJavaClass *bin, RzStrBuf *sb);
-RZ_API RzBinAddr *rz_bin_java_class_resolve_symbol(RzBinJavaClass *bin, int resolve);
-RZ_API RzList *rz_bin_java_class_strings(RzBinJavaClass *bin);
-RZ_API RzList *rz_bin_java_class_entrypoints(RzBinJavaClass *bin);
-RZ_API RzList *rz_bin_java_class_methods_as_symbols(RzBinJavaClass *bin);
-RZ_API void rz_bin_java_class_methods_as_text(RzBinJavaClass *bin, RzStrBuf *sb);
-RZ_API void rz_bin_java_class_methods_as_json(RzBinJavaClass *bin, PJ *j);
-RZ_API RzList *rz_bin_java_class_fields_as_symbols(RzBinJavaClass *bin);
-RZ_API RzList *rz_bin_java_class_fields_as_binfields(RzBinJavaClass *bin);
-RZ_API void rz_bin_java_class_fields_as_text(RzBinJavaClass *bin, RzStrBuf *sb);
-RZ_API void rz_bin_java_class_fields_as_json(RzBinJavaClass *bin, PJ *j);
-RZ_API RzList *rz_bin_java_class_const_pool_as_symbols(RzBinJavaClass *bin);
-RZ_API RzList *rz_bin_java_class_const_pool_as_imports(RzBinJavaClass *bin);
-RZ_API void rz_bin_java_class_const_pool_as_text(RzBinJavaClass *bin, RzStrBuf *sb);
-RZ_API void rz_bin_java_class_const_pool_as_json(RzBinJavaClass *bin, PJ *j);
-RZ_API RzList *rz_bin_java_class_as_sections(RzBinJavaClass *bin);
-RZ_API RzList *rz_bin_java_class_as_libraries(RzBinJavaClass *bin);
-RZ_API void rz_bin_java_class_interfaces_as_text(RzBinJavaClass *bin, RzStrBuf *sb);
-RZ_API void rz_bin_java_class_interfaces_as_json(RzBinJavaClass *bin, PJ *j);
+RZ_API void rz_bin_java_class_as_source_code(RZ_NONNULL RzBinJavaClass *bin, RZ_NONNULL RzStrBuf *sb);
+RZ_API RZ_OWN RzBinAddr *rz_bin_java_class_resolve_symbol(RZ_NONNULL RzBinJavaClass *bin, RzBinSpecialSymbol resolve);
+RZ_API RZ_OWN RzList *rz_bin_java_class_strings(RZ_NONNULL RzBinJavaClass *bin);
+RZ_API RZ_OWN RzList *rz_bin_java_class_entrypoints(RZ_NONNULL RzBinJavaClass *bin);
+RZ_API RZ_OWN RzList *rz_bin_java_class_methods_as_symbols(RZ_NONNULL RzBinJavaClass *bin);
+RZ_API void rz_bin_java_class_methods_as_text(RZ_NONNULL RzBinJavaClass *bin, RZ_NONNULL RzStrBuf *sb);
+RZ_API void rz_bin_java_class_methods_as_json(RZ_NONNULL RzBinJavaClass *bin, RZ_NONNULL PJ *j);
+RZ_API RZ_OWN RzList *rz_bin_java_class_fields_as_symbols(RZ_NONNULL RzBinJavaClass *bin);
+RZ_API RZ_OWN RzList *rz_bin_java_class_fields_as_binfields(RZ_NONNULL RzBinJavaClass *bin);
+RZ_API void rz_bin_java_class_fields_as_text(RZ_NONNULL RzBinJavaClass *bin, RZ_NONNULL RzStrBuf *sb);
+RZ_API void rz_bin_java_class_fields_as_json(RZ_NONNULL RzBinJavaClass *bin, RZ_NONNULL PJ *j);
+RZ_API RZ_OWN RzList *rz_bin_java_class_const_pool_as_symbols(RZ_NONNULL RzBinJavaClass *bin);
+RZ_API RZ_OWN RzList *rz_bin_java_class_const_pool_as_imports(RZ_NONNULL RzBinJavaClass *bin);
+RZ_API void rz_bin_java_class_const_pool_as_text(RZ_NONNULL RzBinJavaClass *bin, RZ_NONNULL RzStrBuf *sb);
+RZ_API void rz_bin_java_class_const_pool_as_json(RZ_NONNULL RzBinJavaClass *bin, RZ_NONNULL PJ *j);
+RZ_API RZ_OWN RzList *rz_bin_java_class_as_sections(RZ_NONNULL RzBinJavaClass *bin);
+RZ_API RZ_OWN RzList *rz_bin_java_class_as_libraries(RZ_NONNULL RzBinJavaClass *bin);
+RZ_API void rz_bin_java_class_interfaces_as_text(RZ_NONNULL RzBinJavaClass *bin, RZ_NONNULL RzStrBuf *sb);
+RZ_API void rz_bin_java_class_interfaces_as_json(RZ_NONNULL RzBinJavaClass *bin, RZ_NONNULL PJ *j);
 
 #endif /* RZ_BIN_JAVA_CLASS_H */

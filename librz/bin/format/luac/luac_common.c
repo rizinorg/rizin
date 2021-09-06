@@ -164,7 +164,7 @@ void lua_free_upvalue_entry(LuaUpvalueEntry *entry) {
 }
 
 void lua_free_proto_entry(LuaProto *proto) {
-	if (proto == NULL) {
+	if (!proto) {
 		return;
 	}
 

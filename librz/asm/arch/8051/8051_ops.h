@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2021 Florian Märkl <info@florianmaerkl.de>
 // SPDX-FileCopyrightText: 2015-2016 pancake <pancake@nopcode.org>
 // SPDX-FileCopyrightText: 2015-2016 condret <condr3t@protonmail.com>
 // SPDX-FileCopyrightText: 2015-2016 riq <ricardoquesada@gmail.com>
@@ -9,17 +10,22 @@
 
 #include <rz_types.h>
 
-static inline ut16 arg_offset(ut16 pc, ut8 offset) {
-	if (offset < 0x80) {
-		return pc + offset;
-	}
-	offset = 0 - offset;
-	return pc - offset;
+/// Construct an address with the higher bits from ref (determining the bank) and the lower from addr (offset in the bank)
+static inline ut64 apply_bank(ut64 ref, ut16 addr) {
+	return (ref & ~0xffff) | (ut64)addr;
 }
 
-static inline ut16 arg_addr11(ut16 pc, const ut8 *buf) {
+static inline ut64 arg_offset(ut64 bank, ut16 pc, ut8 offset) {
+	if (offset < 0x80) {
+		return apply_bank(bank, pc + offset);
+	}
+	offset = 0 - offset;
+	return apply_bank(bank, pc - offset);
+}
+
+static inline ut64 arg_addr11(ut64 bank, ut16 pc, const ut8 *buf) {
 	// ADDR11 is replacing lower 11 bits of (pre-incremented) PC
-	return (pc & 0xf800) + ((buf[0] & 0xe0) << 3) + buf[1];
+	return apply_bank(bank, (pc & 0xf800) + ((buf[0] & 0xe0) << 3) + buf[1]);
 }
 
 static inline ut8 arg_bit(ut8 bit_addr) {

@@ -2,9 +2,8 @@ NAME=entrypoint on object
 FILE=bins/elf/pngrutil_o
 CMDS=ie
 EXPECT=<<EOF
-[Entrypoints]
-
-0 entrypoints
+vaddr paddr hvaddr haddr type 
+------------------------------
 EOF
 RUN
 
@@ -13,10 +12,8 @@ NAME=symbols non common LD script
 FILE=bins/elf/analysis/custom_ldscript
 CMDS=is
 EXPECT=<<EOF
-[Symbols]
-
-nth paddr      vaddr      bind   type   size lib name
------------------------------------------------------
+nth paddr      vaddr      bind   type   size lib name                  
+-----------------------------------------------------------------------
 1   0x00000200 0x00400200 LOCAL  SECT   0        .interp
 2   0x0000022c 0x0040022c LOCAL  SECT   0        .note.ABI-tag
 3   0x00000250 0x00400250 LOCAL  SECT   0        .hash
@@ -72,10 +69,8 @@ NAME=symbols with no sections header information
 FILE=bins/elf/analysis/main_nosect
 CMDS=is
 EXPECT=<<EOF
-[Symbols]
-
-nth paddr      vaddr      bind   type   size lib name
------------------------------------------------------
+nth paddr      vaddr      bind   type   size lib name                  
+-----------------------------------------------------------------------
 1   0x000003e0 0x004003e0 GLOBAL FUNC   16       imp.puts
 2   0x000003f0 0x004003f0 GLOBAL FUNC   16       imp.__libc_start_main
 3   0x00000400 0x00400400 WEAK   NOTYPE 16       imp.__gmon_start__
@@ -86,10 +81,8 @@ NAME=symbols with no sections header information 2
 FILE=bins/elf/analysis/clark
 CMDS=is
 EXPECT=<<EOF
-[Symbols]
-
-nth paddr      vaddr      bind   type   size lib name
------------------------------------------------------
+nth paddr      vaddr      bind   type   size lib name                  
+-----------------------------------------------------------------------
 8   0x000007dc 0x080487dc GLOBAL OBJ    4        _IO_stdin_used
 1   0x00000370 0x08048370 GLOBAL FUNC   16       imp.mprotect
 2   0x00000380 0x08048380 GLOBAL FUNC   16       imp.puts
@@ -105,10 +98,8 @@ NAME=symbols with no sections header information 3
 FILE=bins/elf/libmemalloc-dump-mem
 CMDS=is
 EXPECT=<<EOF
-[Symbols]
-
-nth paddr      vaddr      bind   type   size lib name
------------------------------------------------------
+nth paddr      vaddr      bind   type   size lib name                                                                
+---------------------------------------------------------------------------------------------------------------------
 3   0x00002dd0 0x00003dd0 WEAK   OBJ    36       vtable for gralloc::IMemAlloc
 6   0x00001210 0x00001210 GLOBAL FUNC   68       gralloc::IonAlloc::unmap_buffer(void*, unsigned int, int)
 11  0x00001254 0x00001254 GLOBAL FUNC   96       gralloc::IonAlloc::open_device()
@@ -195,6 +186,14 @@ NAME=symname just before end of dynstr section of size 1
 FILE=bins/elf/switch-hello-world.elf
 CMDS=isq~?
 EXPECT=<<EOF
-1732
+1731
+EOF
+RUN
+
+NAME=symbol with more than 256 bytes name
+FILE=bins/elf/long-symbol.elf
+CMDS=is~AAA
+EXPECT=<<EOF
+28  0x00001139 0x00001139 GLOBAL FUNC   15       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 EOF
 RUN

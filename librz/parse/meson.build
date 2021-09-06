@@ -1,8 +1,6 @@
 rz_parse_sources = [
-  'code.c',
   'filter.c',
   'parse.c',
-  'ctype.c',
   'p/parse_6502_pseudo.c',
   'p/parse_arm_pseudo.c',
   'p/parse_att2intel.c',
@@ -30,8 +28,6 @@ rz_parse = library('rz_parse', rz_parse_sources,
     rz_syscall_dep,
     rz_reg_dep,
     rz_cons_dep,
-    tcc_dep,
-    mpc_dep
   ],
   install: true,
   implicit_include_directories: false,

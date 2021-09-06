@@ -89,6 +89,18 @@ static inline void *rz_vector_index_ptr(RzVector *vec, size_t index) {
 	return (char *)vec->a + vec->elem_size * index;
 }
 
+// returns a pointer to the first element of the vector
+static inline void *rz_vector_head(RzVector *vec) {
+	rz_return_val_if_fail(vec, NULL);
+	return (void *)vec->a;
+}
+
+// returns a pointer to the last element of the vector
+static inline void *rz_vector_tail(RzVector *vec) {
+	rz_return_val_if_fail(vec, NULL);
+	return (char *)vec->a + vec->elem_size * (vec->len - 1);
+}
+
 // helper function to assign an element of size vec->elem_size from elem to p.
 // elem is a pointer to the actual data to assign!
 RZ_API void rz_vector_assign(RzVector *vec, void *p, void *elem);
@@ -100,6 +112,12 @@ RZ_API void *rz_vector_assign_at(RzVector *vec, size_t index, void *elem);
 // remove the element at the given index and write the content to into.
 // It is the caller's responsibility to free potential resources associated with the element.
 RZ_API void rz_vector_remove_at(RzVector *vec, size_t index, void *into);
+
+/**
+ * remove all elements in the given range and write the contents to into (must be appropriately large).
+ * It is the caller's responsibility to free potential resources associated with the elements.
+ */
+RZ_API void rz_vector_remove_range(RzVector *vec, size_t index, size_t count, void *into);
 
 // insert the value of size vec->elem_size at x at the given index.
 // x is a pointer to the actual data to assign!
@@ -237,6 +255,18 @@ static inline void **rz_pvector_data(RzPVector *vec) {
 	return (void **)vec->v.a;
 }
 
+// returns the first element of the vector
+static inline void *rz_pvector_head(RzPVector *vec) {
+	rz_return_val_if_fail(vec, NULL);
+	return ((void **)vec->v.a)[0];
+}
+
+// returns the last element of the vector
+static inline void *rz_pvector_tail(RzPVector *vec) {
+	rz_return_val_if_fail(vec, NULL);
+	return ((void **)vec->v.a)[vec->v.len - 1];
+}
+
 // returns the respective pointer inside the vector if x is found or NULL otherwise.
 RZ_API void **rz_pvector_contains(RzPVector *vec, void *x);
 
@@ -290,7 +320,7 @@ static inline void **rz_pvector_flush(RzPVector *vec) {
 /*
  * example:
  *
- * RzVector *v = ...;
+ * RzPVector *v = ...;
  * void **it;
  * rz_pvector_foreach (v, it) {
  *     void *p = *it;
@@ -305,26 +335,74 @@ static inline void **rz_pvector_flush(RzPVector *vec) {
 	for (it = ((vec)->v.len == 0 ? NULL : (void **)(vec)->v.a + (vec)->v.len - 1); it != NULL && it != (void **)(vec)->v.a - 1; it--)
 
 /*
+ * \brief Find the index of the least element greater than or equal to the lower bound x using binary search
  * example:
  *
- * RzPVector *v = ...; // contains {(void*)0, (void*)2, (void*)4, (void*)6, (void*)8};
+ * st64 a[] = { 0, 2, 4, 6, 8 };
  * size_t index;
  * #define CMP(x, y) x - y
- * rz_pvector_lower_bound (v, (void *)3, index, CMP);
- * // index == 2
+ * rz_pvector_lower_bound (v, 3, index, CMP);
+ * // index == 2 (contains value 4)
  */
-#define rz_pvector_lower_bound(vec, x, i, cmp) \
+#define rz_array_lower_bound(array, len, x, i, cmp) \
 	do { \
-		size_t h = (vec)->v.len, m; \
+		size_t h = len, m; \
 		for (i = 0; i < h;) { \
 			m = i + ((h - i) >> 1); \
-			if ((cmp((x), ((void **)(vec)->v.a)[m])) > 0) { \
+			if (cmp((x), ((array)[m])) > 0) { \
 				i = m + 1; \
 			} else { \
 				h = m; \
 			} \
 		} \
 	} while (0)
+
+/*
+ * \brief Find the index of the least element greater than the upper bound x using binary search
+ * example:
+ *
+ * st64 a[] = { 0, 2, 4, 6, 8 };
+ * size_t index;
+ * #define CMP(x, y) x - y
+ * rz_pvector_lower_bound (v, 2, index, CMP);
+ * // index == 2 (contains value 4)
+ */
+#define rz_array_upper_bound(array, len, x, i, cmp) \
+	do { \
+		size_t h = len, m; \
+		for (i = 0; i < h;) { \
+			m = i + ((h - i) >> 1); \
+			if (cmp((x), ((array)[m])) < 0) { \
+				h = m; \
+			} else { \
+				i = m + 1; \
+			} \
+		} \
+	} while (0)
+
+/*
+ * example:
+ *
+ * RzPVector *v = ...; // contains {(void*)0, (void*)2, (void*)4, (void*)6, (void*)8};
+ * size_t index;
+ * #define CMP(x, y) x - y
+ * rz_pvector_lower_bound (v, (void *)2, index, CMP);
+ * // index == 1
+ */
+#define rz_pvector_lower_bound(vec, x, i, cmp) \
+	rz_array_lower_bound((void **)(vec)->v.a, (vec)->v.len, x, i, cmp)
+
+/*
+ * example:
+ *
+ * RzPVector *v = ...; // contains {(void*)0, (void*)2, (void*)4, (void*)6, (void*)8};
+ * size_t index;
+ * #define CMP(x, y) x - y
+ * rz_pvector_upper_bound (v, (void *)2, index, CMP);
+ * // index == 2
+ */
+#define rz_pvector_upper_bound(vec, x, i, cmp) \
+	rz_array_upper_bound((void **)(vec)->v.a, (vec)->v.len, x, i, cmp)
 
 #ifdef __cplusplus
 }

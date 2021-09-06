@@ -57,7 +57,7 @@ static ut8 thumb_linux_binsh[] =
 	"\x49\x1a\x92\x1a\x0b\x27\x01\xdf\x2f\x62\x69\x6e\x2f\x73\x68"; // "/bin/sh";
 
 static RzBuffer *build(RzEgg *egg) {
-	RzBuffer *buf = rz_buf_new();
+	RzBuffer *buf = rz_buf_new_with_bytes(NULL, 0);
 	const ut8 *sc = NULL;
 	int cd = 0;
 	char *shell = rz_egg_option_get(egg, "cmd");

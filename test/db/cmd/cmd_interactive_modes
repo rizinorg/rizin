@@ -1,5 +1,5 @@
 NAME=Internal less
-FILE=-
+FILE==
 CMDS=<<EOF
 e scr.interactive=false
 pd 1~..
@@ -10,7 +10,7 @@ EOF
 RUN
 
 NAME=Hud mode
-FILE=-
+FILE==
 CMDS=<<EOF
 e scr.interactive=false
 pd 1~...

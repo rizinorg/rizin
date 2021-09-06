@@ -1,0 +1,20 @@
+ad "varargprep 0" 51000000
+ad "settabup 0 0 1 1" 0f800001
+ad "lti 0 50 0" 3e00b100
+ad "jmp 5" 38020080
+ad "gettabup 0 0 0" 0b000000
+ad "addi 0 0 1" 15000080
+ad "mmbini 0 1 6 0" 2f008006
+ad "settabup 0 0 0 0" 0f000000
+ad "loadk 1 10" 83000500
+ad "jmp 4" b8010080
+ad "call 0 2 1" 44000201
+ad "test 0 1" 42800000
+ad "gti 0 40 0" 4000a700
+ad "add 4 4 3" 22020403
+ad "eqi 0 0 0" 3d007f00
+ad "forprep 0 4" 4a000200
+ad "closure 0 1" 4f800000
+ad "extraarg 0" 52000000
+ad "newtable 2 2 0 0" 13010200
+ad "setfield 2 44 21 1" 12812c15

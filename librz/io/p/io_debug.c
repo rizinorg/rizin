@@ -115,15 +115,11 @@ static int fork_and_ptraceme(RzIO *io, int bits, const char *cmd) {
 	PROCESS_INFORMATION pi;
 	STARTUPINFO si = { 0 };
 	si.cb = sizeof(si);
-	DEBUG_EVENT de;
 	int pid, tid;
 	if (!*cmd) {
 		return -1;
 	}
 	setup_tokens();
-	if (!io->w32dbg_wrap) {
-		io->w32dbg_wrap = (struct w32dbg_wrap_instance_t *)w32dbg_wrap_new();
-	}
 	char *_cmd = io->args ? rz_str_appendf(strdup(cmd), " %s", io->args) : strdup(cmd);
 	char **argv = rz_str_argv(_cmd, NULL);
 	char *cmdline = NULL;
@@ -141,7 +137,7 @@ static int fork_and_ptraceme(RzIO *io, int bits, const char *cmd) {
 	flags |= core->dbg->create_new_console ? CREATE_NEW_CONSOLE : 0;
 	free(cmdline);
 	struct __createprocess_params p = { appname_, cmdline_, &pi, flags };
-	W32DbgWInst *wrap = (W32DbgWInst *)io->w32dbg_wrap;
+	W32DbgWInst *wrap = (W32DbgWInst *)rz_io_get_w32dbg_wrap(io);
 	wrap->params.type = W32_CALL_FUNC;
 	wrap->params.func.func = __createprocess_wrap;
 	wrap->params.func.user = &p;
@@ -153,6 +149,7 @@ static int fork_and_ptraceme(RzIO *io, int bits, const char *cmd) {
 		free(cmdline_);
 		return -1;
 	}
+	CloseHandle(pi.hThread);
 	free(appname_);
 	free(cmdline_);
 	rz_str_argv_free(argv);
@@ -161,37 +158,21 @@ static int fork_and_ptraceme(RzIO *io, int bits, const char *cmd) {
 	pid = pi.dwProcessId;
 	tid = pi.dwThreadId;
 
-	/* catch create process event */
-	wrap->params.type = W32_WAIT;
-	wrap->params.wait.wait_time = 10000;
-	wrap->params.wait.de = &de;
-	w32dbg_wrap_wait_ret(wrap);
-	if (!w32dbgw_ret(wrap))
-		goto err_fork;
-
-	/* check if is a create process debug event */
-	if (de.dwDebugEventCode != CREATE_PROCESS_DEBUG_EVENT) {
-		eprintf("exception code 0x%04x\n", (ut32)de.dwDebugEventCode);
-		goto err_fork;
-	}
-
-	CloseHandle(de.u.CreateProcessInfo.hFile);
-
-	wrap->pi.hProcess = pi.hProcess;
-	wrap->pi.hThread = pi.hThread;
-	wrap->winbase = (ut64)de.u.CreateProcessInfo.lpBaseOfImage;
-
 	eprintf("Spawned new process with pid %d, tid = %d\n", pid, tid);
-	return pid;
 
-err_fork:
-	eprintf("ERRFORK\n");
-	TerminateProcess(pi.hProcess, 1);
-	w32dbg_wrap_fini((W32DbgWInst *)io->w32dbg_wrap);
-	io->w32dbg_wrap = NULL;
-	CloseHandle(pi.hThread);
+	RzCore *c = io->corebind.core;
+	c->dbg->plugin_data = wrap;
+	/* catch create process event */
+	int ret = c->dbg->cur->wait(c->dbg, pi.dwProcessId);
+	/* check if is a create process debug event */
+	if (ret != RZ_DEBUG_REASON_NEW_PID) {
+		TerminateProcess(pi.hProcess, 1);
+		core->dbg->cur->detach(core->dbg, wrap->pi.dwProcessId);
+		CloseHandle(pi.hProcess);
+		return -1;
+	}
 	CloseHandle(pi.hProcess);
-	return -1;
+	return pid;
 }
 #else // windows
 
@@ -465,11 +446,11 @@ static bool __plugin_open(RzIO *io, const char *file, bool many) {
 #include <rz_core.h>
 static int get_pid_of(RzIO *io, const char *procname) {
 	RzCore *c = io->corebind.core;
-	if (c && c->dbg && c->dbg->h) {
+	if (c && c->dbg && c->dbg->cur) {
 		RzListIter *iter;
 		RzDebugPid *proc;
 		RzDebug *d = c->dbg;
-		RzList *pids = d->h->pids(d, 0);
+		RzList *pids = d->cur->pids(d, 0);
 		rz_list_foreach (pids, iter, proc) {
 			if (strstr(proc->path, procname)) {
 				eprintf("Matching PID %d %s\n", proc->pid, proc->path);
@@ -526,11 +507,7 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 			if (!_plugin || !_plugin->open) {
 				return NULL;
 			}
-			if ((ret = _plugin->open(io, uri, rw, mode))) {
-				RzCore *c = io->corebind.core;
-				W32DbgWInst *wrap = (W32DbgWInst *)ret->data;
-				c->dbg->user = wrap;
-			}
+			ret = _plugin->open(io, uri, rw, mode);
 #elif __APPLE__
 			sprintf(uri, "smach://%d", pid); //s is for spawn
 			_plugin = rz_io_plugin_resolve(io, (const char *)uri + 1, false);
@@ -557,8 +534,7 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 #if __WINDOWS__
 			if (ret) {
 				RzCore *c = io->corebind.core;
-				W32DbgWInst *wrap = (W32DbgWInst *)ret->data;
-				c->dbg->user = wrap;
+				c->dbg->plugin_data = ret->data;
 			}
 #endif
 		}

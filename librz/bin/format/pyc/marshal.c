@@ -184,7 +184,7 @@ static pyc_object *get_long_object(RzBuffer *buffer) {
 	ut32 tmp = 0;
 	size_t size;
 	size_t i, j = 0, left = 0;
-	ut16 n;
+	ut32 n;
 	char *hexstr;
 	char digist2hex[] = "0123456789abcdef";
 
@@ -206,14 +206,15 @@ static pyc_object *get_long_object(RzBuffer *buffer) {
 	} else {
 		size = ndigits * 15;
 		size = (size - 1) / 4 + 1;
-		size += 3 + (neg ? 1 : 0);
-		hexstr = calloc(size, sizeof(char));
+		size += 4 + (neg ? 1 : 0);
+		hexstr = malloc(size);
 		if (!hexstr) {
 			free(ret);
 			return NULL;
 		}
+		memset(hexstr, 0x20, size);
 		j = size - 1;
-
+		hexstr[j] = 0;
 		for (i = 0; i < ndigits; i++) {
 			n = get_ut16(buffer, &error);
 			tmp |= n << left;
@@ -236,7 +237,8 @@ static pyc_object *get_long_object(RzBuffer *buffer) {
 			hexstr[--j] = '-';
 		}
 
-		ret->data = &hexstr[j];
+		rz_str_trim(hexstr);
+		ret->data = hexstr;
 	}
 	return ret;
 }
@@ -1170,6 +1172,7 @@ static bool extract_sections_symbols(pyc_object *obj, RzList *sections, RzList *
 	if (!rz_list_append(sections, section)) {
 		goto fail;
 	}
+	section = NULL;
 	// start building symbol
 	symbol->name = strdup(prefix);
 	//symbol->bind;

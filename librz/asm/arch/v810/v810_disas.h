@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2015 danielps
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_V810_DISASM_H
 #define RZ_V810_DISASM_H
 

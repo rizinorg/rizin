@@ -1,0 +1,255 @@
+SREG=reg
+SREG.address=0x3f
+SREG.comment=SREG Flags
+
+SPH=reg
+SPH.address=0x3e
+SPH.comment=Stack higher bits SP8 SP10
+
+SPL=reg
+SPL.address=0x3d
+SPL.comment=Stack lower bits SP0 SP7
+
+OCR0=reg
+OCR0.address=0x3c
+OCR0.comment=Timer Counter0 Output Compare Register
+
+GICR=reg
+GICR.address=0x3b
+GICR.comment=General Interrupt Control Register
+
+GIFR=reg
+GIFR.address=0x3a
+GIFR.comment=General Interrupt Flag Register
+
+TIMSK=reg
+TIMSK.address=0x39
+TIMSK.comment=Timer-Counter Interrupt Mask
+
+TIFR=reg
+TIFR.address=0x38
+TIFR.comment=Timer-Counter Interrupt Flag Register
+
+SPMCR=reg
+SPMCR.address=0x37
+SPMCR.comment=Store Program Memory Control Register
+
+TWCR=reg
+TWCR.address=0x36
+TWCR.comment=I2C (Two wire) Control Register
+
+MCUCR=reg
+MCUCR.address=0x35
+MCUCR.comment=MCU (Power Management) Control Register
+
+MCUCSR=reg
+MCUCSR.address=0x34
+MCUCSR.comment=MCU Control and Status Register Watchdog Brown out Power on
+
+TCCR0=reg
+TCCR0.address=0x33
+TCCR0.comment=Timer-Counter Control Register
+
+TCNT0=reg
+TCNT0.address=0x32
+TCNT0.comment=Timer-Counter Register 0 (8 bits)
+
+OSCCAL=reg
+OSCCAL.address=0x31
+OSCCAL.comment=(Internal) Oscillator Calibration Register
+
+SFIOR=reg
+SFIOR.address=0x30
+SFIOR.comment=Special Function IO Register
+
+TCCR1A=reg
+TCCR1A.address=0x2f
+TCCR1A.comment=Timer-Counter Control Register 1A (16 bits) Used for (fast) PWM
+
+TCCR1B=reg
+TCCR1B=0x2e
+TCCR1B.comment=Timer-Counter Control Register 1B (16 bits) PWM mode select
+
+TCNT1H=reg
+TCNT1H.address=0x2d
+TCNT1H.comment=Timer-Counter1 Register High byte
+
+TCNT1L=reg
+TCNT1L.address=0x2c
+TCNT1L.comment=Timer-Counter1 Register Low byte
+
+OCR1AH=reg
+OCR1AH.address=0x2b
+OCR1AH.comment=Timer-Counter1 Output Compare Register A High byte
+
+OCR1AL=reg
+OCR1AL.address=0x2a
+OCR1AL.comment=Timer-Counter1 Output Compare Register A Low byte
+
+OCR1BH=reg
+OCR1BH.address=0x29
+OCR1BH.comment=Timer-Counter1 Output Compare Register B High byte
+
+OCR1BL=reg
+OCR1BL.address=0x28
+OCR1BL.comment=Timer-Counter1 Output Compare Register B Low byte
+
+ICR1H=reg
+ICR1H.address=0x27
+ICR1H.comment=Timer-Counter1 Input Capture Register High byte
+
+ICR1L=reg
+ICR1L.address=0x26
+ICR1L.comment=Timer-Counter1 Input Capture Register Low byte
+
+TCCR2=reg
+TCCR2.address=0x25
+TCCR2.comment=Timer-Counter2 Control Register (8 bits)
+
+TCNT2=reg
+TCNT2.address=0x24
+TCNT2.comment=Timer-Counter2 (8 bits)
+
+OCR2=reg
+OCR2.address=0x23
+OCR2.comment=Timer-Counter2 Output Compare Register
+
+ASSR=reg
+ASSR.address=0x22
+ASSR.comment=Asynchronous Operation of the Timer-Counter
+
+WDTCR=reg
+WDTCR.address=0x21
+WDTCR.comment=Watchdog Timer Control Register
+
+UBRRH=reg
+UBRRH.address=0x20
+UBRRH.comment=USART Baud Rate Registers=High byte and Control Aka setting serial port speed
+
+EEARH=reg
+EEARH.address=0x1f
+EEARH.comment=EEPROM Address Register High byte
+
+EEARL=reg
+EEARL.address=0x1e
+EEARL.comment=EEPROM Address Register Low byte
+
+EEDR=reg
+EEDR.address=0x1d
+EEDR.comment= EEPROM Data Register
+
+EECR=reg
+EECR.address=0x1c
+EECR.comment= EEPROM Control Register
+
+PORTA=reg
+PORTA.address=0x1b
+PORTA.comment= Output pins-pullups address for port A
+
+DDRA=reg
+DDRA.address=0x1a
+DDRA.comment= Data Direction Register for Port A
+
+PINA=reg
+PINA.address=0x19
+PINA.comment= Input Pins Address for Port A
+
+SPDR=reg
+SPDR.address=0x0f
+SPDR.comment= SPI Data Register
+
+SPSR=reg
+SPSR.address=0x0e
+SPSR.comment= SPI Status Register
+
+SPCR=reg
+SPCR.address=0x0d
+SPCR.comment= SPI Control Register
+
+UDR=reg
+UDR.address=0x0c
+UDR.comment= USART I-O Data Register
+
+UCSRA=reg
+UCSRA.address=0x0b
+UCSRA.comment= USART Control and Status Register A
+
+UCSRB=reg
+UCSRB.address=0x0a
+UCSRB.comment= USART Control and Status Register B
+
+UBRRL=reg
+UBRRL.address=0x09
+UBRRL.comment= USART Baud Rate Registers Low byte Aka setting serial port speed
+
+ACSR=reg
+ACSR.address=0x08
+ACSR.comment= Analog Comparator Control and Status Register
+
+ADMUX=reg
+ADMUX.address=0x07
+ADMUX.comment= ADC Multiplexer Selection Register
+
+ADCSRA=reg
+ADCSRA.address=0x06
+ADCSRA.comment= ADC Control and Status Register A
+
+ADCH=reg
+ADCH.address=0x05
+ADCH.comment= ADC Data Register High byte
+
+ADCL=reg
+ADCL.address=0x04
+ADCL.comment= ADC Data Register Low byte
+
+TWDR=reg
+TWDR.address=0x03
+TWDR.comment= I2C (Two wire) Serial Interface Data Register
+
+TWAR=reg
+TWAR.address=0x02
+TWAR.comment= I2C (Two wire) Serial Interface (Slave) Address Register
+
+TWSR=reg
+TWSR.address=0x01
+TWSR.comment= I2C (Two wire) Serial Interface Status Register
+
+TWBR=reg
+TWBR.address=0x99
+TWBR.comment= I2C (Two wire) Serial Interface Bit Rate Register
+
+PORTB=mmio
+PORTB.address=0x18
+PORTB.comment=Output pins/pullups address for port B
+
+DDRB=mmio
+DDRB.address=0x17
+DDRB.comment=Data Direction Register for Port B
+
+PINB=mmio
+PINB.address=0x16
+PINB.comment=Input Pins Address for Port B
+
+PORTC=mmio
+PORTC.address=0x15
+PORTC.comment=Output pins/pullups address for port C
+
+DDRC=mmio
+DDRC.address=0x14
+DDRC.comment=Data Direction Register for Port C
+
+PINC=mmio
+PINC.address=0x13
+PINC.comment=Input Pins Address for Port C
+
+PORTD=mmio
+PORTD.address=0x12
+PORTD.comment=Output pins/pullups address for port D
+
+DDRD=mmio
+DDRD.address=0x11
+DDRD.comment=Data Direction Register for Port D
+
+PIND=mmio
+PIND.address=0x10
+PIND.comment=Input Pins Address for Port D

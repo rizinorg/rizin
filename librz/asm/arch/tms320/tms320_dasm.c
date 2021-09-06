@@ -10,10 +10,31 @@
 #include <sdb.h>
 
 /* private headers */
-#include "tms320_p.h"
 #include "tms320_dasm.h"
 
 #include "c55x_plus/c55plus.h"
+
+#ifndef get_bits
+#define get_bits(av, af, an) (((av) >> (af)) & ((2 << (an - 1)) - 1))
+#endif
+
+static inline ut16 be16(ut16 v) {
+	ut16 value = v;
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+	ut8 *pv = (void *)&v;
+	value = (pv[0] << 8) | pv[1];
+#endif
+	return value;
+}
+
+static inline ut32 be24(ut32 v) {
+	ut32 value = v;
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+	ut8 *pv = (void *)&v;
+	value = (pv[0] << 16) | (pv[1] << 8) | pv[2];
+#endif
+	return value;
+}
 
 /*
  * TMS320 disassembly engine implementation
@@ -959,13 +980,13 @@ void decode_addressing_modes(tms320_dasm_t *dasm) {
 
 		if (field_value(dasm, AAAAAAAI) & 1) {
 			if (strstr(tmp, "k16")) {
-				substitute(tmp, "k16", "0x%04X", be16(*(ut16 *)(&dasm->stream + dasm->length)));
+				substitute(tmp, "k16", "0x%04X", rz_read_be16(&dasm->stream + dasm->length));
 				dasm->length += 2;
 			} else if (strstr(tmp, "k23")) {
-				substitute(tmp, "k23", "0x%06X", be24(*(ut32 *)(&dasm->stream + dasm->length) & 0x7FFFFF));
+				substitute(tmp, "k23", "0x%06X", rz_read_be24(&dasm->stream + dasm->length));
 				dasm->length += 3;
 			} else if (strstr(tmp, "K16")) {
-				substitute(tmp, "K16", "0x%04X", be16(*(ut16 *)(&dasm->stream + dasm->length)));
+				substitute(tmp, "K16", "0x%04X", rz_read_be16(&dasm->stream + dasm->length));
 				dasm->length += 2;
 			}
 
@@ -1102,7 +1123,7 @@ insn_head_t *lookup_insn_head(tms320_dasm_t *dasm) {
 
 static void init_dasm(tms320_dasm_t *dasm, const ut8 *stream, int len) {
 	strcpy(dasm->syntax, "invalid");
-	memcpy(dasm->stream, stream, min(sizeof(dasm->stream), len));
+	memcpy(dasm->stream, stream, RZ_MIN(sizeof(dasm->stream), len));
 
 	dasm->status = 0;
 	dasm->length = 0;
@@ -1169,7 +1190,7 @@ int tms320_dasm_init(tms320_dasm_t *dasm) {
 	if (!dasm->map) {
 		return 0;
 	}
-	for (i = 0; i < ARRAY_SIZE(c55x_list); i++) {
+	for (i = 0; i < RZ_ARRAY_SIZE(c55x_list); i++) {
 		ht_up_insert(dasm->map, c55x_list[i].byte, &c55x_list[i]);
 	}
 

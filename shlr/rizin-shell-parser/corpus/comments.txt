@@ -6,8 +6,8 @@ afl # af is not going to be parsed
 
 ---
 
-(commands
-  (arged_command (cmd_identifier)))
+(statements
+  (arged_stmt (cmd_identifier)))
 
 
 ==================
@@ -20,11 +20,11 @@ Begin with comment
 
 ---
 
-(commands)
+(statements)
 
 
 ====================================
-Multiple commands multiple comments
+Multiple statements multiple comments
 ====================================
 
 afl # first comment
@@ -33,11 +33,11 @@ p8 10# third comment
 
 ---
 
-(commands
-  (arged_command (cmd_identifier))
-  (arged_command (cmd_identifier)
+(statements
+  (arged_stmt (cmd_identifier))
+  (arged_stmt (cmd_identifier)
     (args (arg (arg_identifier))))
-  (arged_command (cmd_identifier)
+  (arged_stmt (cmd_identifier)
     (args (arg (arg_identifier)))))
 
 ==================================
@@ -48,8 +48,8 @@ p8 4 # something
 
 ---
 
-(commands
-  (arged_command (cmd_identifier)
+(statements
+  (arged_stmt (cmd_identifier)
     (args (arg (arg_identifier)))))
 
 
@@ -63,7 +63,7 @@ p8 4 # something
 
 ---
 
-(commands
-  (arged_command (cmd_identifier))
-  (arged_command (cmd_identifier))
-  (arged_command (cmd_identifier)))
+(statements
+  (arged_stmt (cmd_identifier))
+  (arged_stmt (cmd_identifier))
+  (arged_stmt (cmd_identifier)))

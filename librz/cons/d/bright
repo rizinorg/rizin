@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2019 Khairul Azhar Kasmiran <kazarmy@gmail.com>
 # SPDX-License-Identifier: LGPL-3.0-only
 
-# r2 default palette but with bright colors for all
+# rizin default palette but with bright colors for all
 
 ec b0x00 rgb:00ff00
 ec b0x7f rgb:00ffff
@@ -70,6 +70,6 @@ ec graph.box3 rgb:ff00ff
 ec graph.box4 rgb:808080
 ec graph.true rgb:00ff00
 ec graph.false rgb:ff0000
-ec graph.trufae rgb:0000ff    # single jump
+ec graph.ujump rgb:0000ff    # single jump
 ec graph.traced rgb:ffff00
 ec graph.current rgb:0000ff

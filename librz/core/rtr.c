@@ -324,10 +324,10 @@ static int rz_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 			case 't':
 				switch (cmd[3]) {
 				case '\0': // dpt
-					if (!core->dbg->h->threads) {
+					if (!core->dbg->cur->threads) {
 						return -1;
 					}
-					if (!(list = core->dbg->h->threads(core->dbg, core->dbg->pid))) {
+					if (!(list = core->dbg->cur->threads(core->dbg, core->dbg->pid))) {
 						return -1;
 					}
 					memset(out_buf, 0, max_len);
@@ -521,6 +521,8 @@ static int rz_core_rtr_gdb_run(RzCore *core, int launch, const char *path) {
 		eprintf("Cannot open file (%s)\n", file);
 		return -1;
 	}
+	ut64 baddr = rz_config_get_i(core->config, "bin.baddr");
+	rz_core_bin_load(core, NULL, baddr);
 	rz_core_file_reopen_debug(core, args);
 
 	if (!(sock = rz_socket_new(false))) {
@@ -639,7 +641,7 @@ RZ_API void rz_core_rtr_list(RzCore *core) {
 		case RTR_PROTOCOL_UNIX: proto = "unix"; break;
 		}
 		rz_cons_printf("%d fd:%i %s://%s:%i/%s\n",
-			i, rtr_host[i].fd->fd, proto, rtr_host[i].host,
+			i, (int)rtr_host[i].fd->fd, proto, rtr_host[i].host,
 			rtr_host[i].port, rtr_host[i].file);
 	}
 }
@@ -861,7 +863,7 @@ RZ_API void rz_core_rtr_cmd(RzCore *core, const char *input) {
 		return;
 	}
 
-	if (*input == '&') { // "=h&" "=&:9090"
+	if (*input == '&') { // "Rh&" "R&:9090"
 		if (rapthread) {
 			eprintf("RAP Thread is already running\n");
 			eprintf("This is experimental and probably buggy. Use at your own risk\n");
@@ -937,6 +939,7 @@ RZ_API void rz_core_rtr_cmd(RzCore *core, const char *input) {
 		char *str = rz_socket_http_get(uri, NULL, &len);
 		if (!str) {
 			eprintf("Cannot find '%s'\n", uri);
+			free(uri);
 			return;
 		}
 		core->num->value = 0;

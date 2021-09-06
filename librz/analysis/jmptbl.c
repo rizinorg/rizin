@@ -12,8 +12,6 @@
 	if (analysis->verbose) \
 	eprintf(format, __VA_ARGS__)
 
-#define JMPTBL_MAXSZ 512
-
 static void apply_case(RzAnalysis *analysis, RzAnalysisBlock *block, ut64 switch_addr, ut64 offset_sz, ut64 case_addr, ut64 id, ut64 case_addr_loc) {
 	// eprintf ("** apply_case: 0x%"PFMT64x " from 0x%"PFMT64x "\n", case_addr, case_addr_loc);
 	rz_meta_set_data_at(analysis, case_addr_loc, offset_sz);
@@ -46,64 +44,69 @@ static void apply_switch(RzAnalysis *analysis, ut64 switch_addr, ut64 jmptbl_add
 
 // analyze a jmptablle inside a function // maybe rename to rz_analysis_fcn_jmptbl() ?
 RZ_API bool rz_analysis_jmptbl(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysisBlock *block, ut64 jmpaddr, ut64 table, ut64 tablesize, ut64 default_addr) {
-	const int depth = 50;
-	return try_walkthrough_jmptbl(analysis, fcn, block, depth, jmpaddr, 0, table, table, tablesize, tablesize, default_addr, false);
+	RzAnalysisJmpTableParams params = {
+		.jmp_address = jmpaddr,
+		.case_shift = 0,
+		.jmptbl_loc = table,
+		.casetbl_loc = UT64_MAX,
+		.jmptbl_off = table,
+		.entry_size = tablesize,
+		.table_count = tablesize,
+		.default_case = default_addr,
+	};
+	return rz_analysis_walkthrough_jmptbl(analysis, fcn, block, &params);
 }
 
-static inline void analyze_new_case(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysisBlock *block, ut64 ip, ut64 jmpptr, int depth) {
-	const ut64 block_size = block->size;
-	(void)rz_analysis_fcn_bb(analysis, fcn, jmpptr, depth - 1);
-	if (block->size != block_size) {
-		// block was be split during analysis and does not contain the
-		// jmp instruction anymore, so we need to search for it and get it again
-		RzAnalysisSwitchOp *sop = block->switch_op;
-		block = rz_analysis_find_most_relevant_block_in(analysis, ip);
-		if (!block) {
-			rz_warn_if_reached();
-			return;
-		}
-		block->switch_op = sop;
+/**
+* \brief Marks for analysis jump table cases with a space optimization for multiple cases corresponding to the same address
+* 
+* This function works similarly to `rz_analysis_walkthrough_jmptbl`,
+* with the difference that jump targets are hidden behind a indirection in the case table
+* 
+* \param analysis Pointer to RzAnalysis instance
+* \param fcn Pointer to RzAnalysisFunction to add the new cases
+* \param block Pointer to RzAnalysisBlock that originates the switch table
+* \param params Pointer to RzAnalysisJmpTableParams necessary to analyze the jump table
+*/
+RZ_API bool rz_analysis_walkthrough_casetbl(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NONNULL RzAnalysisBlock *block, RZ_NONNULL RzAnalysisJmpTableParams *params) {
+	rz_return_val_if_fail(analysis && fcn && block && params, false);
+	bool ret = true;
+	if (params->table_count == 0) {
+		params->table_count = analysis->opt.jmptbl_maxcount;
 	}
-}
-
-RZ_API bool try_walkthrough_casetbl(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysisBlock *block, int depth, ut64 ip, st64 start_casenum_shift, ut64 jmptbl_loc, ut64 casetbl_loc, ut64 jmptbl_off, ut64 sz, ut64 jmptbl_size, ut64 default_case, bool ret0) {
-	bool ret = ret0;
-	if (jmptbl_size == 0) {
-		jmptbl_size = JMPTBL_MAXSZ;
-	}
-	if (jmptbl_loc == UT64_MAX) {
-		aprintf("Warning: Invalid JumpTable location 0x%08" PFMT64x "\n", jmptbl_loc);
+	if (params->jmptbl_loc == UT64_MAX) {
+		aprintf("Warning: Invalid JumpTable location 0x%08" PFMT64x "\n", params->jmptbl_loc);
 		return false;
 	}
-	if (casetbl_loc == UT64_MAX) {
-		aprintf("Warning: Invalid CaseTable location 0x%08" PFMT64x "\n", jmptbl_loc);
+	if (params->casetbl_loc == UT64_MAX) {
+		aprintf("Warning: Invalid CaseTable location 0x%08" PFMT64x "\n", params->jmptbl_loc);
 		return false;
 	}
-	if (jmptbl_size < 1 || jmptbl_size > ST32_MAX) {
-		aprintf("Warning: Invalid JumpTable size at 0x%08" PFMT64x "\n", ip);
+	if (params->table_count < 1 || params->table_count > ST32_MAX) {
+		aprintf("Warning: Invalid JumpTable size at 0x%08" PFMT64x "\n", params->jmp_address);
 		return false;
 	}
 	ut64 jmpptr, case_idx, jmpptr_idx;
-	ut8 *jmptbl = calloc(jmptbl_size, sz);
-	if (!jmptbl || !analysis->iob.read_at(analysis->iob.io, jmptbl_loc, jmptbl, jmptbl_size * sz)) {
+	ut8 *jmptbl = calloc(params->table_count, params->entry_size);
+	if (!jmptbl || !analysis->iob.read_at(analysis->iob.io, params->jmptbl_loc, jmptbl, params->table_count * params->entry_size)) {
 		free(jmptbl);
 		return false;
 	}
-	ut8 *casetbl = calloc(jmptbl_size, sizeof(ut8));
-	if (!casetbl || !analysis->iob.read_at(analysis->iob.io, casetbl_loc, casetbl, jmptbl_size)) {
+	ut8 *casetbl = calloc(params->table_count, sizeof(ut8));
+	if (!casetbl || !analysis->iob.read_at(analysis->iob.io, params->casetbl_loc, casetbl, params->table_count)) {
 		free(jmptbl);
 		free(casetbl);
 		return false;
 	}
-	for (case_idx = 0; case_idx < jmptbl_size; case_idx++) {
+	for (case_idx = 0; case_idx < params->table_count; case_idx++) {
 		jmpptr_idx = casetbl[case_idx];
 
-		if (jmpptr_idx >= jmptbl_size) {
+		if (jmpptr_idx >= params->table_count) {
 			ret = false;
 			break;
 		}
 
-		switch (sz) {
+		switch (params->entry_size) {
 		case 1:
 			jmpptr = rz_read_le8(jmptbl + jmpptr_idx);
 			break;
@@ -123,7 +126,7 @@ RZ_API bool try_walkthrough_casetbl(RzAnalysis *analysis, RzAnalysisFunction *fc
 		if (!analysis->iob.is_valid_offset(analysis->iob.io, jmpptr, 0)) {
 			st32 jmpdelta = (st32)jmpptr;
 			// jump tables where sign extended movs are used
-			jmpptr = jmptbl_off + jmpdelta;
+			jmpptr = params->jmptbl_off + jmpdelta;
 			if (!analysis->iob.is_valid_offset(analysis->iob.io, jmpptr, 0)) {
 				break;
 			}
@@ -134,19 +137,19 @@ RZ_API bool try_walkthrough_casetbl(RzAnalysis *analysis, RzAnalysisFunction *fc
 			}
 		}
 
-		const ut64 jmpptr_idx_off = casetbl_loc + case_idx;
+		const ut64 jmpptr_idx_off = params->casetbl_loc + case_idx;
 		rz_meta_set_data_at(analysis, jmpptr_idx_off, 1);
 		rz_analysis_hint_set_immbase(analysis, jmpptr_idx_off, 10);
 
-		apply_case(analysis, block, ip, sz, jmpptr, case_idx + start_casenum_shift, jmptbl_loc + jmpptr_idx * sz);
-		analyze_new_case(analysis, fcn, block, ip, jmpptr, depth);
+		apply_case(analysis, block, params->jmp_address, params->entry_size, jmpptr, case_idx + params->case_shift, params->jmptbl_loc + jmpptr_idx * params->entry_size);
+		rz_analysis_task_item_new(analysis, params->tasks, fcn, NULL, jmpptr);
 	}
 
 	if (case_idx > 0) {
-		if (default_case == 0) {
-			default_case = UT64_MAX;
+		if (params->default_case == 0) {
+			params->default_case = UT64_MAX;
 		}
-		apply_switch(analysis, ip, jmptbl_loc, case_idx, default_case);
+		apply_switch(analysis, params->jmp_address, params->jmptbl_loc, case_idx, params->default_case);
 	}
 
 	free(jmptbl);
@@ -154,30 +157,41 @@ RZ_API bool try_walkthrough_casetbl(RzAnalysis *analysis, RzAnalysisFunction *fc
 	return ret;
 }
 
-RZ_API bool try_walkthrough_jmptbl(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysisBlock *block, int depth, ut64 ip, st64 start_casenum_shift, ut64 jmptbl_loc, ut64 jmptbl_off, ut64 sz, ut64 jmptbl_size, ut64 default_case, bool ret0) {
-	bool ret = ret0;
-	// jmptbl_size can not always be determined
-	if (jmptbl_size == 0) {
-		jmptbl_size = JMPTBL_MAXSZ;
+/**
+* \brief Marks the jump table cases for analysis
+* 
+* Goes through each case on the jump table, adds necessary flags/metadata and
+* a new RzAnalysisTaskItem to `params->tasks` to be analyzed later.
+*
+* \param analysis Pointer to RzAnalysis instance
+* \param fcn Pointer to RzAnalysisFunction to add the new cases
+* \param block Pointer to RzAnalysisBlock that originates the switch table
+* \param params Pointer to RzAnalysisJmpTableParams necessary to analyze the jump table
+*/
+RZ_API bool rz_analysis_walkthrough_jmptbl(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NONNULL RzAnalysisBlock *block, RZ_NONNULL RzAnalysisJmpTableParams *params) {
+	rz_return_val_if_fail(analysis && fcn && block && params, false);
+	// table_count can not always be determined
+	if (params->table_count == 0) {
+		params->table_count = analysis->opt.jmptbl_maxcount;
 	}
-	if (jmptbl_loc == UT64_MAX) {
-		aprintf("Warning: Invalid JumpTable location 0x%08" PFMT64x "\n", jmptbl_loc);
+	if (params->jmptbl_loc == UT64_MAX) {
+		aprintf("Warning: Invalid JumpTable location 0x%08" PFMT64x "\n", params->jmptbl_loc);
 		return false;
 	}
-	if (jmptbl_size < 1 || jmptbl_size > ST32_MAX) {
-		aprintf("Warning: Invalid JumpTable size at 0x%08" PFMT64x "\n", ip);
+	if (params->table_count < 1 || params->table_count > ST32_MAX) {
+		aprintf("Warning: Invalid JumpTable size at 0x%08" PFMT64x "\n", params->jmp_address);
 		return false;
 	}
 	ut64 jmpptr, offs;
-	ut8 *jmptbl = calloc(jmptbl_size, sz);
+	ut8 *jmptbl = calloc(params->table_count, params->entry_size);
 	if (!jmptbl) {
 		return false;
 	}
 	bool is_arm = analysis->cur->arch && !strncmp(analysis->cur->arch, "arm", 3);
 	// eprintf ("JMPTBL AT 0x%"PFMT64x"\n", jmptbl_loc);
-	analysis->iob.read_at(analysis->iob.io, jmptbl_loc, jmptbl, jmptbl_size * sz);
-	for (offs = 0; offs + sz - 1 < jmptbl_size * sz; offs += sz) {
-		switch (sz) {
+	analysis->iob.read_at(analysis->iob.io, params->jmptbl_loc, jmptbl, params->table_count * params->entry_size);
+	for (offs = 0; offs + params->entry_size - 1 < params->table_count * params->entry_size; offs += params->entry_size) {
+		switch (params->entry_size) {
 		case 1:
 			jmpptr = (ut64)(ut8)rz_read_le8(jmptbl + offs);
 			break;
@@ -201,14 +215,14 @@ RZ_API bool try_walkthrough_jmptbl(RzAnalysis *analysis, RzAnalysisFunction *fcn
 		if (jmpptr == 0 || jmpptr == UT32_MAX || jmpptr == UT64_MAX) {
 			break;
 		}
-		if (sz == 2 && is_arm) {
-			jmpptr = ip + 4 + (jmpptr * 2); // tbh [pc, r2, lsl 1]  // assume lsl 1
-		} else if (sz == 1 && is_arm) {
-			jmpptr = ip + 4 + (jmpptr * 2); // lbb [pc, r2]  // assume lsl 1
+		if (params->entry_size == 2 && is_arm) {
+			jmpptr = params->jmp_address + 4 + (jmpptr * 2); // tbh [pc, r2, lsl 1]  // assume lsl 1
+		} else if (params->entry_size == 1 && is_arm) {
+			jmpptr = params->jmp_address + 4 + (jmpptr * 2); // lbb [pc, r2]  // assume lsl 1
 		} else if (!analysis->iob.is_valid_offset(analysis->iob.io, jmpptr, 0)) {
 			st32 jmpdelta = (st32)jmpptr;
 			// jump tables where sign extended movs are used
-			jmpptr = jmptbl_off + jmpdelta;
+			jmpptr = params->jmptbl_off + jmpdelta;
 			if (!analysis->iob.is_valid_offset(analysis->iob.io, jmpptr, 0)) {
 				break;
 			}
@@ -218,19 +232,19 @@ RZ_API bool try_walkthrough_jmptbl(RzAnalysis *analysis, RzAnalysisFunction *fcn
 				break;
 			}
 		}
-		apply_case(analysis, block, ip, sz, jmpptr, (offs / sz) + start_casenum_shift, jmptbl_loc + offs);
-		analyze_new_case(analysis, fcn, block, ip, jmpptr, depth);
+		apply_case(analysis, block, params->jmp_address, params->entry_size, jmpptr, (offs / params->entry_size) + params->case_shift, params->jmptbl_loc + offs);
+		rz_analysis_task_item_new(analysis, params->tasks, fcn, NULL, jmpptr);
 	}
 
 	if (offs > 0) {
-		if (default_case == 0) {
-			default_case = UT64_MAX;
+		if (params->default_case == 0) {
+			params->default_case = UT64_MAX;
 		}
-		apply_switch(analysis, ip, jmptbl_loc, offs / sz, default_case);
+		apply_switch(analysis, params->jmp_address, params->jmptbl_loc, offs / params->entry_size, params->default_case);
 	}
 
 	free(jmptbl);
-	return ret;
+	return true;
 }
 
 static bool detect_casenum_shift(RzAnalysisOp *op, RzRegItem **cmp_reg, st64 *start_casenum_shift) {
@@ -255,29 +269,43 @@ static bool detect_casenum_shift(RzAnalysisOp *op, RzRegItem **cmp_reg, st64 *st
 	return false;
 }
 
-// TODO: RENAME
-RZ_API bool try_get_delta_jmptbl_info(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 jmp_addr, ut64 lea_addr, ut64 *table_size, ut64 *default_case, st64 *start_casenum_shift) {
+/**
+* \brief Gets some necessary information about a jump table to perform analysis on
+* 
+* Gets amount of cases inside a jump table, the default case address and the case shift amount
+* 
+* \param analysis Pointer to RzAnalysis instance
+* \param fcn Pointer to RzAnalysisFunction where jump table ocurred
+* \param jmp_address Address of jump intruction that uses the table
+* \param lea_addr Address of lea instruction that loads the address of the jump table base
+* \param params Pointer to RzAnalysisJmpTableParams where the results of the function are stored
+*/
+RZ_API bool rz_analysis_get_delta_jmptbl_info(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn, ut64 jmp_address, ut64 lea_address, RZ_NONNULL RzAnalysisJmpTableParams *params) {
+	rz_return_val_if_fail(analysis && fcn && params, false);
 	bool isValid = false;
 	bool foundCmp = false;
 	int i;
 
 	RzAnalysisOp tmp_aop = { 0 };
-	if (lea_addr > jmp_addr) {
+	if (lea_address > jmp_address) {
 		return false;
 	}
-	int search_sz = jmp_addr - lea_addr;
+
+	params->jmp_address = jmp_address;
+
+	int search_sz = jmp_address - lea_address;
 	ut8 *buf = malloc(search_sz);
 	if (!buf) {
 		return false;
 	}
 	// search for a cmp register with a reasonable size
-	analysis->iob.read_at(analysis->iob.io, lea_addr, (ut8 *)buf, search_sz);
+	analysis->iob.read_at(analysis->iob.io, lea_address, (ut8 *)buf, search_sz);
 	RzVector v;
 	rz_vector_init(&v, sizeof(ut64), NULL, NULL);
 	int len = 0;
 	RzRegItem *cmp_reg = NULL;
 	for (i = 0; i + 8 < search_sz; i += len) {
-		len = rz_analysis_op(analysis, &tmp_aop, lea_addr + i, buf + i, search_sz - i, RZ_ANALYSIS_OP_MASK_BASIC);
+		len = rz_analysis_op(analysis, &tmp_aop, lea_address + i, buf + i, search_sz - i, RZ_ANALYSIS_OP_MASK_BASIC);
 		if (len < 1) {
 			len = 1;
 		}
@@ -287,7 +315,7 @@ RZ_API bool try_get_delta_jmptbl_info(RzAnalysis *analysis, RzAnalysisFunction *
 				continue;
 			}
 
-			*default_case = tmp_aop.jump == tmp_aop.jump + len ? tmp_aop.fail : tmp_aop.jump;
+			params->default_case = tmp_aop.jump == tmp_aop.jump + len ? tmp_aop.fail : tmp_aop.jump;
 			break;
 		}
 
@@ -303,16 +331,16 @@ RZ_API bool try_get_delta_jmptbl_info(RzAnalysis *analysis, RzAnalysisFunction *
 		// might not actually have a value, let the next step figure out the size then
 		if (tmp_aop.val == UT64_MAX && tmp_aop.refptr == 0) {
 			isValid = true;
-			*table_size = 0;
+			params->table_count = 0;
 		} else if (tmp_aop.refptr == 0) {
 			isValid = tmp_aop.val < 0x200;
-			*table_size = tmp_aop.val + 1;
+			params->table_count = tmp_aop.val + 1;
 		} else {
 			isValid = tmp_aop.refptr < 0x200;
-			*table_size = tmp_aop.refptr + 1;
+			params->table_count = tmp_aop.refptr + 1;
 		}
 		rz_vector_push(&v, &i);
-		rz_analysis_op(analysis, &tmp_aop, lea_addr + i, buf + i, search_sz - i, RZ_ANALYSIS_OP_MASK_VAL);
+		rz_analysis_op(analysis, &tmp_aop, lea_address + i, buf + i, search_sz - i, RZ_ANALYSIS_OP_MASK_VAL);
 		if (tmp_aop.dst && tmp_aop.dst->reg) {
 			cmp_reg = tmp_aop.dst->reg;
 		} else if (tmp_aop.reg) {
@@ -325,15 +353,15 @@ RZ_API bool try_get_delta_jmptbl_info(RzAnalysis *analysis, RzAnalysisFunction *
 		foundCmp = true;
 	}
 	if (isValid) {
-		*start_casenum_shift = 0;
+		params->case_shift = 0;
 		void **it;
 		rz_vector_foreach_prev(&v, it) {
 			const ut64 op_off = *(ut64 *)it;
-			ut64 op_addr = lea_addr + op_off;
+			ut64 op_addr = lea_address + op_off;
 			rz_analysis_op(analysis, &tmp_aop, op_addr,
 				buf + op_off, search_sz - op_off,
 				RZ_ANALYSIS_OP_MASK_VAL);
-			if (detect_casenum_shift(&tmp_aop, &cmp_reg, start_casenum_shift)) {
+			if (detect_casenum_shift(&tmp_aop, &cmp_reg, &params->case_shift)) {
 				rz_analysis_op_fini(&tmp_aop);
 				break;
 			}
@@ -345,8 +373,17 @@ RZ_API bool try_get_delta_jmptbl_info(RzAnalysis *analysis, RzAnalysisFunction *
 	return isValid;
 }
 
-// TODO: find a better function name
-RZ_API int walkthrough_arm_jmptbl_style(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysisBlock *block, int depth, ut64 ip, ut64 jmptbl_loc, ut64 sz, ut64 jmptbl_size, ut64 default_case, int ret0) {
+/**
+* \brief Marks for analysis ARM specific jump table cases
+* 
+* This function works similarly to `rz_analysis_walkthrough_jmptbl`, but is specific to ARM
+* 
+* \param analysis Pointer to RzAnalysis instance
+* \param fcn Pointer to RzAnalysisFunction to add the new cases
+* \param block Pointer to RzAnalysisBlock that originates the switch table
+* \param params Pointer to RzAnalysisJmpTableParams necessary to analyze the jump table
+*/
+RZ_API bool rz_analysis_walkthrough_arm_jmptbl_style(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NONNULL RzAnalysisBlock *block, RZ_NONNULL RzAnalysisJmpTableParams *params) {
 	/*
 	 * Example about arm jump table
 	 *
@@ -365,30 +402,41 @@ RZ_API int walkthrough_arm_jmptbl_style(RzAnalysis *analysis, RzAnalysisFunction
 	 * ; CODE XREF from loc._a_7 (+0x18)
 	 * 0x000105e8      bbffffea       b sym.input_3
 	 */
-
+	rz_return_val_if_fail(analysis && fcn && block && params, false);
 	ut64 offs, jmpptr;
-	int ret = ret0;
 
-	if (jmptbl_size == 0) {
-		jmptbl_size = JMPTBL_MAXSZ;
+	if (params->table_count == 0) {
+		params->table_count = analysis->opt.jmptbl_maxcount;
 	}
 
-	for (offs = 0; offs + sz - 1 < jmptbl_size * sz; offs += sz) {
-		jmpptr = jmptbl_loc + offs;
-		apply_case(analysis, block, ip, sz, jmpptr, offs / sz, jmptbl_loc + offs);
-		analyze_new_case(analysis, fcn, block, ip, jmpptr, depth);
+	for (offs = 0; offs + params->entry_size - 1 < params->table_count * params->entry_size; offs += params->entry_size) {
+		jmpptr = params->jmptbl_loc + offs;
+		apply_case(analysis, block, params->jmp_address, params->entry_size, jmpptr, offs / params->entry_size, params->jmptbl_loc + offs);
+		rz_analysis_task_item_new(analysis, params->tasks, fcn, NULL, jmpptr);
 	}
 
 	if (offs > 0) {
-		if (default_case == 0 || default_case == UT32_MAX) {
-			default_case = UT64_MAX;
+		if (params->default_case == 0 || params->default_case == UT32_MAX) {
+			params->default_case = UT64_MAX;
 		}
-		apply_switch(analysis, ip, jmptbl_loc, offs / sz, default_case);
+		apply_switch(analysis, params->jmp_address, params->jmptbl_loc, offs / params->entry_size, params->default_case);
 	}
-	return ret;
+	return true;
 }
 
-RZ_API bool try_get_jmptbl_info(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 addr, RzAnalysisBlock *my_bb, ut64 *table_size, ut64 *default_case, st64 *start_casenum_shift) {
+/**
+* \brief Gets some necessary information about a jump table to perform analysis on
+* 
+* Gets amount of cases inside a jump table, the default case address and the case shift amount
+* 
+* \param analysis Pointer to RzAnalysis instance
+* \param fcn Pointer to RzAnalysisFunction where jump table ocurred
+* \param block Pointer to RzAnalysisBlock where the jump instruction related to the jump table ocurred
+* \param jmp_address Address of jump intruction that uses the table
+* \param params Pointer to RzAnalysisJmpTableParams where the results of the function are stored
+*/
+RZ_API bool rz_analysis_get_jmptbl_info(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NONNULL RzAnalysisBlock *block, ut64 jmp_address, RZ_NONNULL RzAnalysisJmpTableParams *params) {
+	rz_return_val_if_fail(analysis && fcn && params && block, false);
 	bool isValid = false;
 	int i;
 	RzListIter *iter;
@@ -398,8 +446,10 @@ RZ_API bool try_get_jmptbl_info(RzAnalysis *analysis, RzAnalysisFunction *fcn, u
 		return false;
 	}
 
+	params->jmp_address = jmp_address;
+
 	/* if UJMP is in .plt section just skip it */
-	RzBinSection *s = analysis->binb.get_vsect_at(analysis->binb.bin, addr);
+	RzBinSection *s = analysis->binb.get_vsect_at(analysis->binb.bin, jmp_address);
 	if (s && s->name[0]) {
 		bool in_plt = strstr(s->name, ".plt") != NULL;
 		if (!in_plt && strstr(s->name, "_stubs") != NULL) {
@@ -413,19 +463,19 @@ RZ_API bool try_get_jmptbl_info(RzAnalysis *analysis, RzAnalysisFunction *fcn, u
 
 	// search for the predecessor bb
 	rz_list_foreach (fcn->bbs, iter, tmp_bb) {
-		if (tmp_bb->jump == my_bb->addr || tmp_bb->fail == my_bb->addr) {
+		if (tmp_bb->jump == block->addr || tmp_bb->fail == block->addr) {
 			prev_bb = tmp_bb;
 			break;
 		}
 	}
 	// predecessor must be a conditional jump
 	if (!prev_bb || !prev_bb->jump || !prev_bb->fail) {
-		aprintf("Warning: [analysis.jmp.tbl] Missing predecesessor cjmp bb at 0x%08" PFMT64x "\n", addr);
+		aprintf("Warning: [analysis.jmp.tbl] Missing predecesessor cjmp bb at 0x%08" PFMT64x "\n", jmp_address);
 		return false;
 	}
 
 	// default case is the jump target of the unconditional jump
-	*default_case = prev_bb->jump == my_bb->addr ? prev_bb->fail : prev_bb->jump;
+	params->default_case = prev_bb->jump == block->addr ? prev_bb->fail : prev_bb->jump;
 
 	RzAnalysisOp tmp_aop = { 0 };
 	ut8 *bb_buf = calloc(1, prev_bb->size);
@@ -436,12 +486,12 @@ RZ_API bool try_get_jmptbl_info(RzAnalysis *analysis, RzAnalysisFunction *fcn, u
 	analysis->iob.read_at(analysis->iob.io, prev_bb->addr, (ut8 *)bb_buf, prev_bb->size);
 	isValid = false;
 
-	RzAnalysisHint *hint = rz_analysis_hint_get(analysis, addr);
+	RzAnalysisHint *hint = rz_analysis_hint_get(analysis, jmp_address);
 	if (hint) {
 		ut64 val = hint->val;
 		rz_analysis_hint_free(hint);
 		if (val != UT64_MAX) {
-			*table_size = val;
+			params->table_count = val;
 			return true;
 		}
 	}
@@ -470,13 +520,13 @@ RZ_API bool try_get_jmptbl_info(RzAnalysis *analysis, RzAnalysisFunction *fcn, u
 		// might not actually have a value, let the next step figure out the size then
 		if (tmp_aop.val == UT64_MAX && tmp_aop.refptr == 0) {
 			isValid = true;
-			*table_size = 0;
+			params->table_count = 0;
 		} else if (tmp_aop.refptr == 0 || tmp_aop.val != UT64_MAX) {
 			isValid = tmp_aop.val < 0x200;
-			*table_size = tmp_aop.val + 1;
+			params->table_count = tmp_aop.val + 1;
 		} else {
 			isValid = tmp_aop.refptr < 0x200;
-			*table_size = tmp_aop.refptr + 1;
+			params->table_count = tmp_aop.refptr + 1;
 		}
 		if (isValid) {
 			rz_analysis_op_fini(&tmp_aop);
@@ -496,7 +546,7 @@ RZ_API bool try_get_jmptbl_info(RzAnalysis *analysis, RzAnalysisFunction *fcn, u
 		break;
 	}
 	if (isValid) {
-		*start_casenum_shift = 0;
+		params->case_shift = 0;
 		for (i--; i >= 0; i--) {
 			const ut64 prev_pos = rz_analysis_block_get_op_offset(prev_bb, i);
 			const ut64 op_addr = rz_analysis_block_get_op_addr(prev_bb, i);
@@ -507,7 +557,7 @@ RZ_API bool try_get_jmptbl_info(RzAnalysis *analysis, RzAnalysisFunction *fcn, u
 			rz_analysis_op(analysis, &tmp_aop, op_addr,
 				bb_buf + prev_pos, buflen,
 				RZ_ANALYSIS_OP_MASK_VAL);
-			if (detect_casenum_shift(&tmp_aop, &cmp_reg, start_casenum_shift)) {
+			if (detect_casenum_shift(&tmp_aop, &cmp_reg, &params->case_shift)) {
 				rz_analysis_op_fini(&tmp_aop);
 				break;
 			}
@@ -516,9 +566,5 @@ RZ_API bool try_get_jmptbl_info(RzAnalysis *analysis, RzAnalysisFunction *fcn, u
 		}
 	}
 	free(bb_buf);
-	// eprintf ("switch at 0x%" PFMT64x "\n\tdefault case 0x%" PFMT64x "\n\t#cases: %d\n",
-	// 		addr,
-	// 		*default_case,
-	// 		*table_size);
 	return isValid;
 }

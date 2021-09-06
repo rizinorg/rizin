@@ -23,13 +23,8 @@ static RzAsmPlugin *asm_static_plugins[] = { RZ_ASM_STATIC_PLUGINS };
 
 static void parseHeap(RzParse *p, RzStrBuf *s) {
 	char *op_buf_asm = rz_strbuf_get(s);
-	size_t len = rz_strbuf_length(s);
-	char *out = malloc(64 + (len * 2));
+	char *out = rz_parse_pseudocode(p, op_buf_asm);
 	if (out) {
-		*out = 0;
-		strcpy(out, op_buf_asm);
-		// XXX we shouldn't pad here because we have t orefactor the RzParse API to handle boundaries and chunks properly
-		rz_parse_parse(p, op_buf_asm, out);
 		rz_strbuf_set(s, out);
 		free(out);
 	}
@@ -575,7 +570,11 @@ RZ_API int rz_asm_assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
 		return 0;
 	}
 	if (a->ifilter) {
-		rz_parse_parse(a->ifilter, buf, b);
+		char *tmp = rz_parse_pseudocode(a->ifilter, buf);
+		if (tmp) {
+			free(b);
+			b = tmp;
+		}
 	}
 	rz_str_case(b, 0); // to-lower
 	memset(op, 0, sizeof(RzAsmOp));
@@ -659,8 +658,11 @@ RZ_API RzAsmCode *rz_asm_mdisassemble_hexstr(RzAsm *a, RzParse *p, const char *h
 	}
 	RzAsmCode *ret = rz_asm_mdisassemble(a, buf, (ut64)len);
 	if (ret && p) {
-		// XXX this can crash
-		rz_parse_parse(p, ret->assembly, ret->assembly);
+		char *tmp = rz_parse_pseudocode(p, ret->assembly);
+		if (tmp) {
+			free(ret->assembly);
+			ret->assembly = tmp;
+		}
 	}
 	free(buf);
 	return ret;
@@ -987,9 +989,6 @@ RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 			} else { /* Instruction */
 				char *str = ptr_start;
 				rz_str_trim(str);
-				if (a->ifilter) {
-					rz_parse_parse(a->ifilter, ptr_start, ptr_start);
-				}
 				if (acode->equs) {
 					if (!*ptr_start) {
 						continue;

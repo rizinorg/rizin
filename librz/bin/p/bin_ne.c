@@ -13,7 +13,11 @@ static bool check_buffer(RzBuffer *b) {
 	if (length <= 0x3d) {
 		return false;
 	}
-	ut16 idx = rz_buf_read_le16_at(b, 0x3c);
+
+	ut16 idx;
+	if (!rz_buf_read_le16_at(b, 0x3c, &idx)) {
+	}
+
 	if ((ut64)idx + 26 < length) {
 		ut8 buf[2];
 		rz_buf_read_at(b, 0, buf, sizeof(buf));
@@ -27,11 +31,11 @@ static bool check_buffer(RzBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	rz_return_val_if_fail(bf && bin_obj && buf, false);
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
+	rz_return_val_if_fail(bf && obj && buf, false);
 	rz_bin_ne_obj_t *res = rz_bin_ne_new_buf(buf, bf->rbin->verbose);
 	if (res) {
-		*bin_obj = res;
+		obj->bin_obj = res;
 		return true;
 	}
 	return false;

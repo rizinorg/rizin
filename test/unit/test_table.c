@@ -54,8 +54,8 @@ bool test_rz_table_column_type(void) {
 	rz_table_sort(t, 1, true);
 	char *s = rz_table_tostring(t);
 	mu_assert_streq(s,
-		"ascii code\n"
-		"----------\n"
+		"ascii code \n"
+		"-----------\n"
 		"a     97\n"
 		"b     98\n"
 		"c     99\n",
@@ -74,8 +74,8 @@ bool test_rz_table_tostring(void) {
 		char *s = rz_table_tostring(t);
 		snprintf(buf, BUF_LENGTH, "%d-th call to rz_table_tostring", i);
 		mu_assert_streq(s,
-			"ascii code\n"
-			"----------\n"
+			"ascii code \n"
+			"-----------\n"
 			"a     97\n"
 			"b     98\n"
 			"c     99\n",
@@ -92,8 +92,8 @@ bool test_rz_table_sort1(void) {
 	rz_table_sort(t, 1, true);
 	char *strd = rz_table_tostring(t);
 	mu_assert_streq(strd,
-		"ascii code\n"
-		"----------\n"
+		"ascii code \n"
+		"-----------\n"
 		"c     99\n"
 		"b     98\n"
 		"a     97\n",
@@ -103,8 +103,8 @@ bool test_rz_table_sort1(void) {
 	rz_table_sort(t, 1, false);
 	char *stri = rz_table_tostring(t);
 	mu_assert_streq(stri,
-		"ascii code\n"
-		"----------\n"
+		"ascii code \n"
+		"-----------\n"
 		"a     97\n"
 		"b     98\n"
 		"c     99\n",
@@ -120,8 +120,8 @@ bool test_rz_table_uniq(void) {
 	rz_table_uniq(t);
 	char *strd = rz_table_tostring(t);
 	mu_assert_streq(strd,
-		"ascii code\n"
-		"----------\n"
+		"ascii code \n"
+		"-----------\n"
 		"a     97\n"
 		"b     98\n"
 		"c     99\n",
@@ -144,8 +144,8 @@ bool test_rz_table_uniq(void) {
 	rz_table_uniq(t);
 	char *stri = rz_table_tostring(t);
 	mu_assert_streq(stri,
-		"ascii code\n"
-		"----------\n"
+		"ascii code \n"
+		"-----------\n"
 		"a     97\n"
 		"b     98\n"
 		"c     99\n"
@@ -199,8 +199,8 @@ bool test_rz_table_group(void) {
 	rz_table_group(t, -1, NULL);
 	char *str = rz_table_tostring(t);
 	mu_assert_streq(str,
-		"ascii code\n"
-		"----------\n"
+		"ascii code \n"
+		"-----------\n"
 		"a     97\n"
 		"b     98\n"
 		"c     99\n",
@@ -223,8 +223,8 @@ bool test_rz_table_group(void) {
 	rz_table_group(t, 0, NULL);
 	str = rz_table_tostring(t);
 	mu_assert_streq(str,
-		"ascii code\n"
-		"----------\n"
+		"ascii code \n"
+		"-----------\n"
 		"a     97\n"
 		"b     98\n"
 		"c     99\n"
@@ -240,8 +240,8 @@ bool test_rz_table_group(void) {
 	rz_table_group(t, 1, simple_merge);
 	str = rz_table_tostring(t);
 	mu_assert_streq(str,
-		"ascii code\n"
-		"----------\n"
+		"ascii code \n"
+		"-----------\n"
 		"a | e 97\n"
 		"b | f 98\n"
 		"c | h 99\n"
@@ -322,6 +322,38 @@ bool test_rz_table_columns() {
 #undef CREATE_TABLE
 }
 
+bool test_rz_table_transpose() {
+	RzTable *t = __table_test_data1();
+	rz_table_add_row(t, "d", "100", NULL);
+	char *table = rz_table_tostring(rz_table_transpose(t));
+	mu_assert_streq(table,
+		"Name  Value1 Value2 Value3 Value4 \n"
+		"----------------------------------\n"
+		"ascii a      b      c      d\n"
+		"code  97     98     99     100\n",
+		"rz_table_transpose");
+	free(table);
+	mu_end;
+}
+
+bool test_rz_table_add_row_columnsf() {
+	RzTable *t = __table_test_data1();
+	rz_table_add_rowf(t, "s", "e");
+	rz_table_add_row_columnsf(t, "d", 10);
+
+	char *table = rz_table_tostring(t);
+	mu_assert_streq(table,
+		"ascii code \n"
+		"-----------\n"
+		"a     97\n"
+		"b     98\n"
+		"c     99\n"
+		"e     10\n",
+		"rz_table_transpose");
+	free(table);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_table);
 	mu_run_test(test_rz_table_column_type);
@@ -330,6 +362,8 @@ bool all_tests() {
 	mu_run_test(test_rz_table_uniq);
 	mu_run_test(test_rz_table_group);
 	mu_run_test(test_rz_table_columns);
+	mu_run_test(test_rz_table_transpose);
+	mu_run_test(test_rz_table_add_row_columnsf);
 	return tests_passed != tests_run;
 }
 

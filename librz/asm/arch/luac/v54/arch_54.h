@@ -195,10 +195,14 @@ typedef enum {
 #define LUA_MASK0(n, p) (~LUA_MASK1(n, p))
 
 /* OPCODE getter */
-#define LUA_GET_OPCODE(i) (LUA_CAST(LuaOpCode, ((i) >> LUAOP_OP_OFFSET) & LUA_MASK1(LUAOP_OP_SIZE, 0)))
+#define LUA_GET_OPCODE(i)    (LUA_CAST(LuaOpCode, ((i) >> LUAOP_OP_OFFSET) & LUA_MASK1(LUAOP_OP_SIZE, 0)))
+#define LUA_SET_OPCODE(i, o) ((i) = (((i)&LUA_MASK0(LUAOP_OP_SIZE, LUAOP_OP_OFFSET)) | \
+				      ((LUA_CAST(LuaInstruction, o) << LUAOP_OP_OFFSET) & LUA_MASK1(LUAOP_OP_SIZE, LUAOP_OP_OFFSET))))
 
 /* Arguments getter */
 #define LUA_GETARG(i, offset, size) (LUA_CAST(int, ((i) >> (offset)) & LUA_MASK1(size, 0)))
+#define LUA_SETARG(i, v, pos, size) ((i) = (((i)&LUA_MASK0(size, pos)) | \
+					     ((LUA_CAST(LuaInstruction, v) << (pos)) & LUA_MASK1(size, pos))))
 
 #define LUA_GETARG_A(i)   LUA_GETARG(i, LUAOP_A_OFFSET, LUAOP_A_SIZE)
 #define LUA_GETARG_B(i)   LUA_GETARG(i, LUAOP_B_OFFSET, LUAOP_B_SIZE)
@@ -212,27 +216,34 @@ typedef enum {
 
 #define LUA_GETARG_k(i) LUA_GETARG(i, LUAOP_k_OFFSET, 1)
 
+#define SETARG_A(i, v)   LUA_SETARG(i, v, LUAOP_A_OFFSET, LUAOP_A_SIZE)
+#define SETARG_B(i, v)   LUA_SETARG(i, v, LUAOP_B_OFFSET, LUAOP_B_SIZE)
+#define SETARG_C(i, v)   LUA_SETARG(i, v, LUAOP_C_OFFSET, LUAOP_C_SIZE)
+#define SETARG_Bx(i, v)  LUA_SETARG(i, v, LUAOP_Bx_OFFSET, LUAOP_Bx_SIZE)
+#define SETARG_Ax(i, v)  LUA_SETARG(i, v, LUAOP_Ax_OFFSET, LUAOP_Ax_SIZE)
+#define SETARG_sBx(i, b) SETARG_Bx((i), LUA_CAST(ut32, (b) + LUAOP_FIX_sBx))
+#define SETARG_sJ(i, j) \
+	LUA_SETARG((i), LUA_CAST(ut32, (j) + LUAOP_FIX_sJ), LUAOP_sJ_OFFSET, LUAOP_sJ_SIZE)
+#define SETARG_sC(i, v) SETARG_C((i), int2sC(v))
+#define SETARG_sB(i, v) SETARG_B((i), int2sC(v))
+
+#define SETARG_k(i, v) LUA_SETARG(i, v, LUAOP_k_OFFSET, 1)
+
+/* parameter flags */
+#define PARAM_A   1
+#define PARAM_B   2
+#define PARAM_C   4
+#define PARAM_Ax  8
+#define PARAM_Bx  16
+#define PARAM_sBx 32
+#define PARAM_sJ  64
+#define PARAM_sC  128
+#define PARAM_sB  256
+#define PARAM_k   512
+
+#define has_param_flag(flag, bit) ((flag) & (bit)) ? true : false
+
 #define ISK(isk)    ((isk) ? "#CONST" : "#R")
 #define ISFLIP(isk) ((isk) ? "#FLIP" : "")
-
-/* About OpMode
-** masks for instruction properties. The format is:
-** bits 0-2: op mode
-** bit 3: instruction set register A
-** bit 4: operator is a test (next instruction must be a jump)
-** bit 5: instruction uses 'L->top' set by previous instruction (when B == 0)
-** bit 6: instruction sets 'L->top' for next instruction (when C == 0)
-** bit 7: instruction is an MM instruction (call a metamethod)
- *
- * OT - "out top" set top for next instruction
- * IT - "in top" uses top from previous instruction
-*/
-
-#define LUA_GET_OPMODE(i)  (LUA_CAST(LuaOpMode, (i)&7))
-#define LUA_TEST_AMODE(i)  ((i) & (1 << 3))
-#define LUA_TEST_TMODE(i)  ((i) & (1 << 4))
-#define LUA_TEST_ITMODE(i) ((i) & (1 << 5))
-#define LUA_TEST_OTMODE(i) ((i) & (1 << 6))
-#define LUA_TEST_MMMODE(i) ((i) & (1 << 7))
 
 #endif //BUILD_ARCH_54_H

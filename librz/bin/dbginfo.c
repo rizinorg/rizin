@@ -152,20 +152,14 @@ RZ_API const RzBinSourceLineSample *rz_bin_source_line_info_get_first_at(const R
 	if (!sli->samples_count) {
 		return NULL;
 	}
-	// binary search
-	size_t l = 0;
-	size_t h = sli->samples_count;
-	while (l < h - 1) {
-		size_t m = l + ((h - l) >> 1);
-		if (addr < sli->samples[m].address) {
-			h = m;
-		} else {
-			l = m;
-		}
-	}
-	if (l >= sli->samples_count) {
+	size_t l;
+#define CMP(x, y) (x > y.address ? 1 : (x < y.address ? -1 : 0))
+	rz_array_upper_bound(sli->samples, sli->samples_count, addr, l, CMP);
+#undef CMP
+	if (!l) {
 		return NULL;
 	}
+	l--;
 	RzBinSourceLineSample *r = &sli->samples[l];
 	if (r->address > addr || rz_bin_source_line_sample_is_closing(r)) {
 		return NULL;
@@ -200,7 +194,7 @@ RZ_API const RzBinSourceLineSample *rz_bin_source_line_info_get_next(const RzBin
 RZ_API bool rz_bin_addr2line(RzBin *bin, ut64 addr, char *file, int len, int *line) {
 	rz_return_val_if_fail(bin, false);
 	if (!bin->cur || !bin->cur->o || !bin->cur->o->lines) {
-		return NULL;
+		return false;
 	}
 	const RzBinSourceLineSample *s = rz_bin_source_line_info_get_first_at(bin->cur->o->lines, addr);
 	if (!s || s->address != addr) {

@@ -23,7 +23,7 @@
 	do { \
 		size_t new_capacity = next_capacity; \
 		void **new_a = realloc(vec->a, vec->elem_size * new_capacity); \
-		if (!new_a) { \
+		if (!new_a && new_capacity) { \
 			return NULL; \
 		} \
 		vec->a = new_a; \
@@ -133,6 +133,18 @@ RZ_API void rz_vector_remove_at(RzVector *vec, size_t index, void *into) {
 	vec->len--;
 	if (index < vec->len) {
 		memmove(p, (char *)p + vec->elem_size, vec->elem_size * (vec->len - index));
+	}
+}
+
+RZ_API void rz_vector_remove_range(RzVector *vec, size_t index, size_t count, void *into) {
+	rz_return_if_fail(vec && index + count <= vec->len);
+	void *p = rz_vector_index_ptr(vec, index);
+	if (into) {
+		memcpy(into, p, count * vec->elem_size);
+	}
+	vec->len -= count;
+	if (index < vec->len) {
+		memmove(p, (char *)p + vec->elem_size * count, vec->elem_size * (vec->len - index));
 	}
 }
 

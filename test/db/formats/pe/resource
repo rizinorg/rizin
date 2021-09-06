@@ -1,6 +1,88 @@
-NAME=PE: corkami resource.exe - open
+NAME=PE: corkami resource.exe
 FILE=bins/pe/resource.exe
-CMDS=q!
+CMDS=iR
 EXPECT=<<EOF
+Resource 0
+  name: 29524
+  timestamp: Thu Jan  1 00:00:00 1970
+  vaddr: 0x00401168
+  size: 32
+  type: UNKNOWN (789)
+  language: LANG_NEUTRAL
+EOF
+RUN
+
+NAME=PE: corkami resource2.exe
+FILE=bins/pe/resource2.exe
+CMDS=iR
+EXPECT=<<EOF
+Resource 0
+  name: 7354
+  timestamp: Thu Jan  1 00:00:00 1970
+  vaddr: 0x00401178
+  size: 39
+  type: UNKNOWN (315)
+  language: LANG_NEUTRAL
+EOF
+RUN
+
+NAME=PE: corkami resource_icon.exe
+FILE=bins/pe/resource_icon.exe
+CMDS=iR
+EXPECT=<<EOF
+Resource 0
+  name: 1576
+  timestamp: Thu Jan  1 00:00:00 1970
+  vaddr: 0x00401200
+  size: 5.5K
+  type: ICON
+  language: LANG_NEUTRAL
+Resource 1
+  name: 788
+  timestamp: Thu Jan  1 00:00:00 1970
+  vaddr: 0x00402828
+  size: 20
+  type: GROUP_ICON
+  language: LANG_NEUTRAL
+EOF
+RUN
+
+NAME=PE: corkami resource_string.exe
+FILE=bins/pe/resource_string.exe
+CMDS=iR
+EXPECT=<<EOF
+Resource 0
+  name: 10
+  timestamp: Thu Jan  1 00:00:00 1970
+  vaddr: 0x004010d6
+  size: 94
+  type: STRING
+  language: LANG_NEUTRAL
+EOF
+RUN
+
+NAME=PE: corkami resourceloop.exe
+FILE=bins/pe/resourceloop.exe
+CMDS=iR
+EXPECT=<<EOF
+Resource 0
+  name: 29524
+  timestamp: Thu Jan  1 00:00:00 1970
+  vaddr: 0x004011a0
+  size: 34
+  type: UNKNOWN (789)
+  language: LANG_NEUTRAL
+EOF
+RUN
+
+NAME=PE resources flags
+FILE=bins/pe/standard.exe
+CMDS=f@F:resources
+EXPECT=<<EOF
+0x00401180 5672 resource.0
+0x004027b0 20 resource.2
+0x004027d0 452 resource.3
+0x004029a0 74 resource.4
+0x00402a10 76 resource.1
 EOF
 RUN

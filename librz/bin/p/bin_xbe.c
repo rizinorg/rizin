@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2014-2019 thatlemon@gmail.com <thatlemon@gmail.com>
+// SPDX-FileCopyrightText: 2014-2019 LemonBoy <thatlemon@gmail.com>
 // SPDX-FileCopyrightText: 2014-2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
@@ -21,7 +21,7 @@ static bool check_buffer(RzBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, RzBinObject *o, RzBuffer *buf, Sdb *sdb) {
 	rz_bin_xbe_obj_t *obj = RZ_NEW(rz_bin_xbe_obj_t);
 	if (!obj) {
 		return false;
@@ -45,7 +45,7 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 		obj->ep_key = XBE_EP_RETAIL;
 		obj->kt_key = XBE_KP_RETAIL;
 	}
-	*bin_obj = obj;
+	o->bin_obj = obj;
 	return true;
 }
 
@@ -53,8 +53,8 @@ static void destroy(RzBinFile *bf) {
 	RZ_FREE(bf->o->bin_obj);
 }
 
-static RzBinAddr *binsym(RzBinFile *bf, int type) {
-	if (!bf || !bf->buf || type != RZ_BIN_SYM_MAIN) {
+static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
+	if (!bf || !bf->buf || type != RZ_BIN_SPECIAL_SYMBOL_MAIN) {
 		return NULL;
 	}
 	rz_bin_xbe_obj_t *obj = bf->o->bin_obj;
@@ -144,7 +144,6 @@ static RzList *sections(RzBinFile *bf) {
 		item->vaddr = sect[i].vaddr;
 		item->size = sect[i].size;
 		item->vsize = sect[i].vsize;
-		item->add = true;
 
 		item->perm = RZ_PERM_R;
 		if (sect[i].flags & SECT_FLAG_X) {
@@ -364,6 +363,7 @@ RzBinPlugin rz_bin_plugin_xbe = {
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
 	.symbols = &symbols,
 	.info = &info,

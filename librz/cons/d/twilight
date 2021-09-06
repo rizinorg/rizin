@@ -45,7 +45,7 @@ ec flag rgb:ffd
 ec linehl rgb:004
 ec graph.true rgb:9b7
 ec graph.false rgb:b97
-ec graph.trufae rgb:64c
+ec graph.ujump rgb:64c
 ec graph.current blue
 ec graph.traced blue
 ec graph.box rgb:9b7

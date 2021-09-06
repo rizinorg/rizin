@@ -79,6 +79,7 @@ enum {
 	RZ_LIB_TYPE_SYSCALL, /* syscall */
 	RZ_LIB_TYPE_FASTCALL, /* fastcall */
 	RZ_LIB_TYPE_CRYPTO, /* cryptography */
+	RZ_LIB_TYPE_MD, /* message digests */
 	RZ_LIB_TYPE_CORE, /* RzCore commands */
 	RZ_LIB_TYPE_EGG, /* rz_egg plugin */
 	RZ_LIB_TYPE_LAST

@@ -49,6 +49,7 @@ commands:
       - name: sh
         cname: seek_history_list
         summary: List undo seek history
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
         args: []
         modes:
           - RZ_OUTPUT_MODE_STANDARD

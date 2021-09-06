@@ -15,7 +15,11 @@ static bool check_buffer(RzBuffer *buf) {
 		return false;
 	}
 
-	ut8 b0 = rz_buf_read8_at(buf, 0);
+	ut8 b0;
+	if (!rz_buf_read8_at(buf, 0, &b0)) {
+		return false;
+	}
+
 	if (b0 == 0xcf || b0 == 0x7f) {
 		return false;
 	}
@@ -30,15 +34,19 @@ static bool check_buffer(RzBuffer *buf) {
 	}
 
 	/* Check if this a 'jmp' opcode */
-	ut8 bep = rz_buf_read8_at(buf, ep);
+	ut8 bep;
+	if (!rz_buf_read8_at(buf, ep, &bep)) {
+		return false;
+	}
+
 	return bep == 0xea || bep == 0xe9;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
 	if (!check_buffer(buf)) {
 		return false;
 	}
-	*bin_obj = rz_buf_ref(buf);
+	obj->bin_obj = rz_buf_ref(buf);
 	return true;
 }
 
@@ -93,7 +101,6 @@ static RzList *sections(RzBinFile *bf) {
 	ptr->paddr = rz_buf_size(bf->buf) - ptr->size;
 	ptr->vaddr = 0xf0000;
 	ptr->perm = RZ_PERM_RWX;
-	ptr->add = true;
 	rz_list_append(ret, ptr);
 	// If image bigger than 128K - add one more section
 	if (bf->size >= 0x20000) {
@@ -105,7 +112,6 @@ static RzList *sections(RzBinFile *bf) {
 		ptr->paddr = rz_buf_size(obj) - 2 * ptr->size;
 		ptr->vaddr = 0xe0000;
 		ptr->perm = RZ_PERM_RWX;
-		ptr->add = true;
 		rz_list_append(ret, ptr);
 	}
 	return ret;
@@ -136,6 +142,7 @@ RzBinPlugin rz_bin_plugin_bios = {
 	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.entries = entries,
+	.maps = rz_bin_maps_of_file_sections,
 	.sections = sections,
 	.strings = &strings,
 	.info = &info,

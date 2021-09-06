@@ -313,8 +313,8 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 							rz_str_uri_decode(cmd);
 							rz_config_set(core->config, "scr.interactive", "false");
 
-							if ((!strcmp(cmd, "=h*") ||
-								    !strcmp(cmd, "=h--"))) {
+							if ((!strcmp(cmd, "Rh*") ||
+								    !strcmp(cmd, "Rh--"))) {
 								out = NULL;
 							} else if (*cmd == ':') {
 								/* commands in /cmd/: starting with : do not show any output */
@@ -336,14 +336,14 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 								rz_socket_http_response(rs, 200, "", 0, headers);
 							}
 
-							if (!strcmp(cmd, "=h*")) {
+							if (!strcmp(cmd, "Rh*")) {
 								/* do stuff */
 								rz_socket_http_close(rs);
 								free(dir);
 								free(refstr);
 								ret = -2;
 								goto the_end;
-							} else if (!strcmp(cmd, "=h--")) {
+							} else if (!strcmp(cmd, "Rh--")) {
 								rz_socket_http_close(rs);
 								free(dir);
 								free(refstr);
@@ -530,7 +530,7 @@ RZ_API int rz_core_rtr_http(RzCore *core, int launch, int browse, const char *pa
 		while (*path == '&') {
 			path++;
 		}
-		return rz_core_cmdf(core, "& =h%s", path);
+		return rz_core_cmdf(core, "& Rh%s", path);
 	}
 #if 0
 		if (httpthread) {

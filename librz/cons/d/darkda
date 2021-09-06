@@ -47,7 +47,7 @@ ec graph.box3 rgb:66d9ef
 ec graph.box4 rgb:66d9ef
 ec graph.true rgb:009100
 ec graph.false rgb:bc0000
-ec graph.trufae rgb:0043cb
+ec graph.ujump rgb:0043cb
 ec graph.current rgb:fff
 
 ec func_var rgb:99a

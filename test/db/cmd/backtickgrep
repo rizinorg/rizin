@@ -1,5 +1,5 @@
 NAME=t/backtickgrep
-FILE=-
+FILE==
 CMDS=?v `i~size[1]`-$s;?! ?e works
 EXPECT=<<EOF
 0x0

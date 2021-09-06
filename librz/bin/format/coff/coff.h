@@ -9,6 +9,7 @@
 #include <rz_lib.h>
 #include <rz_bin.h>
 #include <ht_up.h>
+#include <ht_uu.h>
 
 #define COFF_IS_BIG_ENDIAN    1
 #define COFF_IS_LITTLE_ENDIAN 0
@@ -28,15 +29,29 @@ struct rz_bin_coff_obj {
 	ut8 endian;
 	Sdb *kv;
 	bool verbose;
-	HtUP *sym_ht;
-	HtUP *imp_ht;
+	HtUP /*<symidx, RzBinSymbol>*/ *sym_ht;
+	HtUP /*<symidx, RzBinImport>*/ *imp_ht;
+	HtUU /*<symidx, ut64>*/ *imp_index; ///< locally-generated indices for imports, in particular for deterministically assigning reloc targets
 	ut64 *scn_va;
+	ut64 reloc_targets_map_base;
+	bool reloc_targets_map_base_calculated;
+	RzBuffer *buf_patched; ///< overlay over the original file with relocs patched
+	bool relocs_patched;
 };
 
-bool rz_coff_supported_arch(const ut8 *buf); /* Reads two bytes from buf. */
-struct rz_bin_coff_obj *rz_bin_coff_new_buf(RzBuffer *buf, bool verbose);
-void rz_bin_coff_free(struct rz_bin_coff_obj *obj);
-RzBinAddr *rz_coff_get_entry(struct rz_bin_coff_obj *obj);
-char *rz_coff_symbol_name(struct rz_bin_coff_obj *obj, void *ptr);
+RZ_API bool rz_coff_supported_arch(const ut8 *buf); /* Reads two bytes from buf. */
+RZ_API ut64 rz_coff_perms_from_section_flags(ut32 flags);
+RZ_API struct rz_bin_coff_obj *rz_bin_coff_new_buf(RzBuffer *buf, bool verbose);
+RZ_API void rz_bin_coff_free(struct rz_bin_coff_obj *obj);
+RZ_API RzBinAddr *rz_coff_get_entry(struct rz_bin_coff_obj *obj);
+RZ_API char *rz_coff_symbol_name(struct rz_bin_coff_obj *obj, void *ptr);
+
+RZ_API ut64 rz_coff_import_index_addr(struct rz_bin_coff_obj *obj, ut64 imp_index);
+RZ_API ut64 rz_coff_get_reloc_targets_map_base(struct rz_bin_coff_obj *obj);
+RZ_API RzList *rz_coff_get_relocs(struct rz_bin_coff_obj *bin);
+RZ_API ut64 rz_coff_get_reloc_targets_vfile_size(struct rz_bin_coff_obj *obj);
+RZ_API RZ_BORROW RzBuffer *rz_coff_get_patched_buf(struct rz_bin_coff_obj *bin);
+
+#define RZ_COFF_RELOC_TARGET_SIZE 8
 
 #endif /* COFF_H */

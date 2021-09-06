@@ -8,8 +8,8 @@ RUN
 
 NAME=PE: corkami elf-nx - nx disabled
 FILE=bins/elf/analysis/elf-xnorelro
-CMDS=iI~^nx
+CMDS=iI~^NX
 EXPECT=<<EOF
-nx       false
+NX       false
 EOF
 RUN

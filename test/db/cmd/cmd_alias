@@ -1,5 +1,5 @@
 NAME=test $alias
-FILE=-
+FILE==
 CMDS=<<EOF
 $foo=?e hello
 $foo
@@ -10,7 +10,7 @@ EOF
 RUN
 
 NAME=test $alias quotes
-FILE=-
+FILE==
 CMDS=<<EOF
 "$foo=?e hello;?e world"
 $foo
@@ -22,7 +22,7 @@ EOF
 RUN
 
 NAME=test $alias args
-FILE=-
+FILE==
 CMDS=<<EOF
 $foo=!echo hello
 $foo world
@@ -33,7 +33,7 @@ EOF
 RUN
 
 NAME=list $alias
-FILE=-
+FILE==
 CMDS=<<EOF
 $foo=a
 $bar=b
@@ -46,7 +46,7 @@ EOF
 RUN
 
 NAME=delete $alias
-FILE=-
+FILE==
 CMDS=<<EOF
 $foo=a
 $bar=b

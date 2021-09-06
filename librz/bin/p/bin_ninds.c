@@ -26,10 +26,10 @@ static bool check_buffer(RzBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *b, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *sdb) {
 	rz_buf_read_at(b, 0, (ut8 *)&loaded_header, sizeof(loaded_header));
-	*bin_obj = &loaded_header;
-	return (*bin_obj != NULL);
+	obj->bin_obj = &loaded_header;
+	return obj->bin_obj;
 }
 
 static ut64 baddr(RzBinFile *bf) {
@@ -44,7 +44,7 @@ static RzList *sections(RzBinFile *bf) {
 	RzList *ret = NULL;
 	RzBinSection *ptr9 = NULL, *ptr7 = NULL;
 
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_list_newf((RzListFree)rz_bin_section_free))) {
 		return NULL;
 	}
 	if (!(ptr9 = RZ_NEW0(RzBinSection))) {
@@ -63,7 +63,6 @@ static RzList *sections(RzBinFile *bf) {
 	ptr9->paddr = loaded_header.arm9_rom_offset;
 	ptr9->vaddr = loaded_header.arm9_ram_address;
 	ptr9->perm = rz_str_rwx("rwx");
-	ptr9->add = true;
 	rz_list_append(ret, ptr9);
 
 	ptr7->name = strdup("arm7");
@@ -72,7 +71,6 @@ static RzList *sections(RzBinFile *bf) {
 	ptr7->paddr = loaded_header.arm7_rom_offset;
 	ptr7->vaddr = loaded_header.arm7_ram_address;
 	ptr7->perm = rz_str_rwx("rwx");
-	ptr7->add = true;
 	rz_list_append(ret, ptr7);
 
 	return ret;
@@ -136,6 +134,7 @@ RzBinPlugin rz_bin_plugin_ninds = {
 	.baddr = &baddr,
 	.boffset = &boffset,
 	.entries = &entries,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
 	.info = &info,
 };

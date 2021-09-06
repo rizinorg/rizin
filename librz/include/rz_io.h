@@ -29,6 +29,10 @@
 #endif
 #endif
 
+#if __WINDOWS__
+#include <w32dbg_wrap.h>
+#endif
+
 #if (defined(__GLIBC__) && defined(__linux__))
 typedef enum __ptrace_request rz_ptrace_request_t;
 typedef void *rz_ptrace_data_t;
@@ -74,14 +78,14 @@ typedef struct rz_io_t {
 	RzSkyline cache_skyline;
 	ut8 *write_mask;
 	int write_mask_len;
-	SdbList *plugins;
+	RzList *plugins;
 	char *runprofile;
 	char *envprofile;
 #if USE_PTRACE_WRAP
 	struct ptrace_wrap_instance_t *ptrace_wrap;
 #endif
 #if __WINDOWS__
-	struct w32dbg_wrap_instance_t *w32dbg_wrap;
+	struct w32dbg_wrap_instance_t *priv_w32dbg_wrap; ///< Do not access this directly, use rz_io_get_w32dbg_wrap() instead!
 #endif
 	char *args;
 	RzEvent *event;
@@ -152,7 +156,7 @@ typedef struct rz_io_map_t {
 	ut32 id;
 	RzInterval itv;
 	ut64 delta; // paddr = itv.addr + delta
-	char *name;
+	RZ_NULLABLE char *name;
 } RzIOMap;
 
 typedef struct rz_io_cache_t {
@@ -168,13 +172,27 @@ typedef struct rz_io_desc_cache_t {
 	ut8 cdata[RZ_IO_DESC_CACHE_SIZE];
 } RzIODescCache;
 
+typedef struct rz_event_io_write_t {
+	ut64 addr;
+	const ut8 *buf;
+	int len;
+} RzEventIOWrite;
+
+typedef struct rz_event_io_desc_close_t {
+	RzIODesc *desc;
+} RzEventIODescClose;
+
+typedef struct rz_event_io_map_del_t {
+	RzIOMap *map;
+} RzEventIOMapDel;
+
 struct rz_io_bind_t;
 
 typedef bool (*RzIODescUse)(RzIO *io, int fd);
 typedef RzIODesc *(*RzIODescGet)(RzIO *io, int fd);
 typedef ut64 (*RzIODescSize)(RzIODesc *desc);
 typedef RzIODesc *(*RzIOOpen)(RzIO *io, const char *uri, int flags, int mode);
-typedef RzIODesc *(*RzIOOpenAt)(RzIO *io, const char *uri, int flags, int mode, ut64 at);
+typedef RzIODesc *(*RzIOOpenAt)(RzIO *io, const char *uri, int flags, int mode, ut64 at, RZ_NULLABLE RZ_OUT RzIOMap **map);
 typedef bool (*RzIOClose)(RzIO *io, int fd);
 typedef bool (*RzIOReadAt)(RzIO *io, ut64 addr, ut8 *buf, int len);
 typedef bool (*RzIOWriteAt)(RzIO *io, ut64 addr, const ut8 *buf, int len);
@@ -202,6 +220,9 @@ typedef RzIOMap *(*RzIOMapAdd)(RzIO *io, int fd, int flags, ut64 delta, ut64 add
 #if HAVE_PTRACE
 typedef long (*RzIOPtraceFn)(RzIO *io, rz_ptrace_request_t request, pid_t pid, void *addr, rz_ptrace_data_t data);
 typedef void *(*RzIOPtraceFuncFn)(RzIO *io, void *(*func)(void *), void *user);
+#endif
+#if __WINDOWS__
+typedef struct w32dbg_wrap_instance_t *(*RzIOGetW32DbgWrap)(RzIO *io);
 #endif
 
 typedef struct rz_io_bind_t {
@@ -240,6 +261,9 @@ typedef struct rz_io_bind_t {
 	RzIOPtraceFn ptrace;
 	RzIOPtraceFuncFn ptrace_func;
 #endif
+#if __WINDOWS__
+	RzIOGetW32DbgWrap get_w32dbg_wrap;
+#endif
 } RzIOBind;
 
 //map.c
@@ -272,6 +296,7 @@ RZ_API void rz_io_map_set_name(RzIOMap *map, const char *name);
 RZ_API void rz_io_map_del_name(RzIOMap *map);
 RZ_API RzList *rz_io_map_get_for_fd(RzIO *io, int fd);
 RZ_API bool rz_io_map_resize(RzIO *io, ut32 id, ut64 newsize);
+RZ_API RZ_BORROW RzPVector *rz_io_maps(RzIO *io);
 
 // next free address to place a map.. maybe just unify
 RZ_API ut64 rz_io_map_next_available(RzIO *io, ut64 addr, ut64 size, ut64 load_align);
@@ -287,7 +312,7 @@ RZ_API RzIO *rz_io_new(void);
 RZ_API RzIO *rz_io_init(RzIO *io);
 RZ_API RzIODesc *rz_io_open_nomap(RzIO *io, const char *uri, int flags, int mode); //should return int
 RZ_API RzIODesc *rz_io_open(RzIO *io, const char *uri, int flags, int mode);
-RZ_API RzIODesc *rz_io_open_at(RzIO *io, const char *uri, int flags, int mode, ut64 at);
+RZ_API RzIODesc *rz_io_open_at(RzIO *io, const char *uri, int flags, int mode, ut64 at, RZ_NULLABLE RZ_OUT RzIOMap **map);
 RZ_API RzList *rz_io_open_many(RzIO *io, const char *uri, int flags, int mode);
 RZ_API RzIODesc *rz_io_open_buffer(RzIO *io, RzBuffer *b, int flags, int mode);
 RZ_API bool rz_io_close(RzIO *io);
@@ -320,9 +345,7 @@ RZ_API bool rz_io_plugin_init(RzIO *io);
 RZ_API int rz_io_plugin_open(RzIO *io, int fd, RzIOPlugin *plugin);
 RZ_API int rz_io_plugin_close(RzIO *io, int fd, RzIOPlugin *plugin);
 RZ_API int rz_io_plugin_generate(RzIO *io);
-RZ_API bool rz_io_plugin_add(RzIO *io, RzIOPlugin *plugin);
-RZ_API int rz_io_plugin_list(RzIO *io);
-RZ_API int rz_io_plugin_list_json(RzIO *io);
+RZ_API bool rz_io_plugin_add(RzIO *io, RZ_BORROW RzIOPlugin *plugin);
 RZ_API int rz_io_plugin_read(RzIODesc *desc, ut8 *buf, int len);
 RZ_API int rz_io_plugin_write(RzIODesc *desc, const ut8 *buf, int len);
 RZ_API int rz_io_plugin_read_at(RzIODesc *desc, ut64 addr, ut8 *buf, int len);
@@ -425,6 +448,10 @@ RZ_API pid_t rz_io_ptrace_fork(RzIO *io, void (*child_callback)(void *), void *c
 RZ_API void *rz_io_ptrace_func(RzIO *io, void *(*func)(void *), void *user);
 #endif
 
+#if __WINDOWS__
+RZ_API struct w32dbg_wrap_instance_t *rz_io_get_w32dbg_wrap(RzIO *io);
+#endif
+
 extern RzIOPlugin rz_io_plugin_procpid;
 extern RzIOPlugin rz_io_plugin_malloc;
 extern RzIOPlugin rz_io_plugin_sparse;
@@ -442,6 +469,7 @@ extern RzIOPlugin rz_io_plugin_w32;
 extern RzIOPlugin rz_io_plugin_zip;
 extern RzIOPlugin rz_io_plugin_default;
 extern RzIOPlugin rz_io_plugin_ihex;
+extern RzIOPlugin rz_io_plugin_srec;
 extern RzIOPlugin rz_io_plugin_self;
 extern RzIOPlugin rz_io_plugin_gzip;
 extern RzIOPlugin rz_io_plugin_winkd;

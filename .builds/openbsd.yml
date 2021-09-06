@@ -18,7 +18,7 @@ tasks:
         /usr/local/bin/python3 -m pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
     - build: |
         cd rizin
-        meson --prefix=${HOME} build
+        meson --buildtype=debug --prefix=${HOME} build # buildtype temporarily set to debug to examine rare rz-test crash core dumps
         ninja -C build
     - install: |
         cd rizin

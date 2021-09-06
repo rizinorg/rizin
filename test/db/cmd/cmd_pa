@@ -1,5 +1,5 @@
 NAME=asm/callflag
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 f eax=33
@@ -15,7 +15,7 @@ RUN
 
 NAME=asm.assembler
 BROKEN=1
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 pa call eax

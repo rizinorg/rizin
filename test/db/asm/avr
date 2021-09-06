@@ -1,69 +1,239 @@
-ad "add r20, r24" 480f
+ad "adc r0, r1" 011C
 ad "adc r21, r25" 591f
+ad "add r0, r1" 010C
+ad "add r20, r24" 480f
+ad "adiw r24, 0x00" 0096
 ad "adiw r24, 0x01" 0196
+ad "and r0, r1" 0120
+ad "andi r16, 0x00" 0070
 ad "andi r24, 0xef" 8f7e
+ad "asr r0" 0594
+a  "bclr 7" f894
+a  "bclr 2" a894
+ad "bld r0, 0" 00F8
 ad "bld r14, 1" e1f8
+a  "brbc 5, 2" 05f4
+a  "brbc 5, 0xffffffffffffff84" 0df6
+a  "brbs 5, 2" 05f0
+a  "brbs 5, 0xffffffffffffff84" 0df2
+ad "brcc 0x2" 00F4
 ad "brcc 0x4" 08f4
-ad "cli" f894
-ad "clr r15" ff24
+ad "brcc 0x4" 08f4 0
+ad "brcc 0xffffffffffffff84" 08f6
+ad "brcs 0x2" 00F0
+ad "brcs 0x4" 08f0 0
+ad "brcs 0xffffffffffffff84" 08f2
+ad "break" 9895
+ad "breq 0x2" 01F0
+ad "breq 0x6" 09f0 2
+ad "breq 0xffffffffffffff84" 09f2
+ad "brge 0x2" 04F4
+ad "brge 0xc" 0cf4 8
+ad "brge 0xffffffffffffff84" 0cf6
+ad "brhc 0x2" 05F4
+ad "brhc 0xe" 0df4 0xa
+ad "brhc 0xffffffffffffff84" 0df6
+ad "brhs 0x2" 05F0
+ad "brhs 0xe" 0df0 0xa
+ad "brhs 0xffffffffffffff84" 0df2
+ad "brid 0x12" 0ff4 0xe
+ad "brid 0x2" 07F4
+ad "brid 0xffffffffffffff84" 0ff6
+ad "brie 0x12" 0ff0 0xe
+ad "brie 0x2" 07F0
+ad "brie 0xffffffffffffff84" 0ff2
+ad "brlt 0x2" 04F0
+ad "brlt 0xc" 0cf0 8
+ad "brlt 0xffffffffffffff84" 0cf2
+ad "brmi 0x2" 02F0
+ad "brmi 0x8" 0af0 4
+ad "brmi 0xffffffffffffff84" 0af2
+ad "brne 0x2" 01F4
+ad "brne 0x6" 09f4 2
+ad "brne 0xffffffffffffff84" 09f6
+ad "brpl 0x2" 02F4
+ad "brpl 0x8" 0af4 4
+ad "brpl 0xffffffffffffff84" 0af6
+ad "brtc 0x10" 0ef4 0xc
+ad "brtc 0x2" 06F4
+ad "brtc 0xffffffffffffff84" 0ef6
+ad "brts 0x10" 0ef0 0xc
+ad "brts 0x2" 06F0
+ad "brts 0xffffffffffffff84" 0ef2
+ad "brvc 0x2" 03F4
+ad "brvc 0xa" 0bf4 6
+ad "brvc 0xffffffffffffff84" 0bf6
+ad "brvs 0x2" 03F0
+ad "brvs 0xa" 0bf0 6
+ad "brvs 0xffffffffffffff84" 0bf2
+a  "bset 7" 7894
+a  "bset 2" 2894
+ad "bst r0, 0" 00FA
+ad "call 0x0" 0E940000
+ad "call 0x16" 0e940b00 0x2d0
 ad "call 0x2016" 0e940b10
+ad "call 0x3ffffe" FF94FFFF
+ad "cbi 0x00, 0" 0098
+a  "cbr r16, 0xf0" 0f70
+a  "cbr r18, 1" 2e7f
+ad "clc" 8894
+ad "clh" D894
+ad "cli" f894
+ad "cli" F894
+ad "cln" A894
+ad "clr r15" ff24
+ad "cls" C894
+ad "clt" E894
+ad "clv" B894
+ad "clz" 9894
+ad "com r0" 0094
 ad "com r24" 8095
+ad "cp r0, r1" 0114
 ad "cp r18, r24" 2817
-ad "cpi r24, 0xf5" 853f
+ad "cpc r0, r1" 0104
 ad "cpc r25, r18" 9207
+ad "cpi r16, 0x00" 0030
+ad "cpi r24, 0xf5" 853f
+ad "cpse r0, r0" 0010
 ad "dec r0" 0a94
+ad "dec r0" 0A94
+ad "des 0x00" 0B94
+ad "eicall" 1995
+ad "eijmp" 1994
+ad "elpm r0, Z" 0690
+ad "elpm r0, Z+" 0790
+ad "elpm r0, Z+" 0790
+ad "elpm" D895
+ad "eor r0, r1" 0124
 ad "eor r24, r25" 8927
-ad "elpm r0, z+" 0790
+ad "fmul r16, r16" 0803
+ad "fmuls r16, r16" 8003
+ad "fmulsu r16, r16" 8803
+ad "icall" 0995
+ad "ijmp" 0994
+ad "in r0, 0x00" 00B0
 ad "in r28, 0x3d" cdb7
+ad "inc r0" 0394
 ad "inc r14" e394
-ad "jmp 0x246" 0c942301
+ad "jmp 0x0" 0C940000
 ad "jmp 0x20246" 0d942301
+ad "jmp 0x246" 0c942301
 ad "jmp 0x2c0246" bc942301
 ad "jmp 0x400246" 0c952301
-ad "ld r24, z" 8081
+ad "lac Z, r0" 0692
+ad "las Z, r0" 0592
+ad "lat Z, r0" 0792
+ad "ld r0, -X" 0E90
+ad "ld r0, -Y" 0A90
+ad "ld r0, -Z" 0290
+ad "ld r0, X" 0C90
+ad "ld r0, X+" 0D90
+ad "ld r0, Y" 0880
+ad "ld r0, Y+" 0990
+ad "ld r0, Z" 0080
+ad "ld r0, Z+" 0190
+ad "ld r24, Z" 8081
+ad "ldd r0, Y+63" 0FAC
+ad "ldd r0, Y+7" 0F80
+ad "ldd r0, Z+48" 00A8
+ad "ldd r0, Z+63" 07AC
+ad "ldd r0, Z+7" 0780
+ad "ldd r9, Z+1" 9180
+ad "ldi r16, 0x00" 00E0
 ad "ldi r25, 0x07" 97e0
-ad "ldd r9, z+1" 9180
+ad "lds r0, 0x00" 00900000
 ad "lds r24, 0x102" 80910201
+ad "lpm r0, Z" 0490
+ad "lpm r0, Z+" 0590
+ad "lpm" C895
 ad "lsl r24" 880f
+ad "lsr r0" 0694
+ad "mov r0, r0" 002C
 ad "mov r0, r31" 0f2e
+ad "movw r0, r0" 0001
 ad "movw r22, r18" b901
+ad "mul r0, r0" 009C
+ad "muls r16, r16" 0002
+ad "mulsu r16, r16" 0003
+ad "neg r0" 0194
+ad "nop" 0000
+ad "or r0, r0" 0028
+ad "ori r16, 0x00" 0060
 ad "ori r24, 0x01" 8160
+ad "out 0x00, r0" 00B8
 ad "out 0x3e, r25" 9ebf
-ad "push r29" df93
-ad "rcall 0x4" 01d0
-ad "rjmp 0x4" 01c0
+ad "pop r0" 0F90
 ad "pop r28" cf91
+ad "push r0" 0F92
+ad "push r29" df93
+ad "rcall 0x2" 00D0
+ad "rcall 0x4" 01d0
+ad "ret" 0895
 ad "ret" 0895
 ad "reti" 1895
+ad "reti" 1895
+ad "rjmp 0x2" 00C0
+ad "rjmp 0x4" 01c0
+ad "rjmp 0xfffffffffffff002" 00c8
+ad "rjmp 0xfffffffffffff004" 01c8
+ad "rjmp 0xfffffffffffff0fe" 7ec8
+ad "rjmp 0xfffffffffffff100" 7fc8
+ad "rjmp 0xfffffffffffff102" 80c8
+ad "rjmp 0xfffffffffffff104" 81c8
 ad "rol r25" 991f
+ad "ror r0" 0794
+ad "sbc r0, r0" 0008
 ad "sbc r19, r25" 390b
+ad "sbci r16, 0x00" 0040
 ad "sbci r19, 0xff" 3f4f
+ad "sbi 0x00, 0" 009A
+ad "sbic 0x00, 0" 0099
+ad "sbis 0x00, 0" 009B
+ad "sbiw r24, 0x00" 0097
 ad "sbiw r24, 0x01" 0197
+ad "sbrc r0, 0" 00FC
+ad "sbrs r0, 0" 00FE
+ad "sec" 0894
+ad "seh" 5894
 ad "sei" 7894
+ad "sei" 7894
+ad "sen" 2894
+ad "ser r16" 0FEF
 ad "ser r24" 8fef
-ad "std z+0, r1" 1082
-ad "std z+1, r1" 1182
+ad "ses" 4894
+ad "set" 6894
+ad "sev" 3894
+ad "sez" 1894
+ad "sleep" 8895
+ad "spm Z+" F895
+ad "spm" E895
+ad "st -X, r0" 0E92
+ad "st -Y, r0" 0A92
+ad "st -Z, r0" 0292
+ad "st X+1, r0" 0D92
+ad "st X, r0" 0C92
+ad "st Y+1, r0" 0992
+ad "st Y, r0" 0882
+ad "st Y, r15" F882
+ad "st Z+1, r0" 0192
+ad "st Z, r0" 0082
+ad "st Z, r1" 1082
+ad "std Y+1, r0" 0982
+ad "std Y+63, r0" 0FAE
+ad "std Y+7, r0" 0F82
+ad "std Z+1, r0" 0182
+ad "std Z+1, r1" 1182
+ad "std Z+63, r0" 07AE
+ad "sts 0x00, r0" 00920000
 ad "sts 0x7c0, r25" 9093c007
+ad "sub r0, r0" 0018
 ad "sub r18, r24" 281b
+ad "subi r16, 0x00" 0050
 ad "subi r18, 0xff" 2f5f
+ad "swap r0" 0294
+ad "tst r0" 0020
 ad "tst r24" 8823
+ad "wdr" A895
+ad "xch Z, r0" 0492
 d "invalid" 0e
-d "call 0x16" 0e940b00 0x2d0
-ad "brcc 0x4" 08f4 0
-ad "brne 0x6" 09f4 2
-ad "brpl 0x8" 0af4 4
-ad "brvc 0xa" 0bf4 6
-ad "brge 0xc" 0cf4 8
-ad "brhc 0xe" 0df4 0xa
-ad "brtc 0x10" 0ef4 0xc
-ad "brid 0x12" 0ff4 0xe
-ad "brcc 0x4" 08f4 0
-ad "brcs 0x4" 08f0 0
-ad "breq 0x6" 09f0 2
-ad "brmi 0x8" 0af0 4
-ad "brvs 0xa" 0bf0 6
-ad "brlt 0xc" 0cf0 8
-ad "brhs 0xe" 0df0 0xa
-ad "brts 0x10" 0ef0 0xc
-ad "brie 0x12" 0ff0 0xe
 d "invalid" ffff 2

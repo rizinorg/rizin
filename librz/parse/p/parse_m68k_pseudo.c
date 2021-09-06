@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2016 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <stdio.h>
@@ -11,190 +11,92 @@
 #include <rz_analysis.h>
 #include <rz_parse.h>
 
-static bool can_replace(const char *str, int idx, int max_operands) {
-	if (str[idx] > '9' || str[idx] < '1') {
-		return false;
-	}
-	if (str[idx + 1] != '\x00' && str[idx + 1] <= '9' && str[idx + 1] >= '1') {
-		return false;
-	}
-	if ((int)((int)str[idx] - 0x30) > max_operands) {
-		return false;
-	}
-	return true;
-}
+#include "parse_common.c"
 
-static int replace(int argc, const char *argv[], char *newstr) {
-	int i, j, k;
-	struct {
-		char *op;
-		char *str;
-		int max_operands;
-	} ops[] = {
-		{ "move", "2 = 1", 2 },
-		{ "movea", "2 = 1", 2 },
-		{ "moveq", "2 = 1", 2 },
-		{ "movem", "2 = 1", 2 },
-		{ "lea", "2 = 1", 2 },
-		{ "bsr", "1()", 1 },
-		{ "jsr", "1()", 1 },
-		{ "beq", "if (==) jmp 1", 1 },
-		{ "blt", "if (<) jmp 1", 1 },
-		{ "ble", "if (<=) jmp 1", 1 },
-		{ "bgt", "if (>) jmp 1", 1 },
-		{ "bge", "if (>=) jmp 1", 1 },
-		{ "bcs", "if (cs) jmp 1", 1 },
-		{ "bcc", "if (cc) jmp 1", 1 },
-		{ "bra", "jmp 1", 1 },
-		{ "jmp", "jmp 1", 1 },
-		{ "rts", "ret", 2 },
-		{ "btst", "1 == 2", 2 },
-		{ "cmp", "1 == 2", 2 },
-		{ "cmpi", "2 == 1", 2 },
-		{ "add", "1 += 2", 2 },
-		{ "addi", "1 += 2", 2 },
-		{ "adda", "1 += 2", 2 },
-		{ "sub", "1 += 2", 2 },
-		{ "subq", "1 += 2", 2 },
-		{ "tst", "1 == 2", 2 },
-		{ "ori", "2 |= 1", 2 },
-		{ "or", "2 |= 1", 2 },
-		{ "lsr", "2 >>= 1", 2 },
-		{ "lsl", "2 <<= 1", 2 },
-		{ "andi", "2 &= 1", 2 },
-		{ "nop", "" },
-		//
-		{ NULL }
-	};
+static RzList *m68k_tokenize(const char *assembly, size_t length);
 
-	for (i = 0; ops[i].op != NULL; i++) {
-		if (!strcmp(ops[i].op, argv[0])) {
-			if (newstr != NULL) {
-				for (j = k = 0; ops[i].str[j] != '\0'; j++, k++) {
-					if (can_replace(ops[i].str, j, ops[i].max_operands)) {
-						const char *w = argv[ops[i].str[j] - '0'];
-						if (w != NULL) {
-							strcpy(newstr + k, w);
-							k += strlen(w) - 1;
-						}
-					} else {
-						newstr[k] = ops[i].str[j];
-					}
-				}
-				newstr[k] = '\0';
-			}
-			return true;
+static const RzPseudoGrammar m68k_lexicon[] = {
+	RZ_PSEUDO_DEFINE_GRAMMAR("add", "1 += 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("adda", "1 += 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("addi", "1 += 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("addq", "1 += 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("andi", "2 &= 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("bcc", "if (cc) goto 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("bcs", "if (cs) goto 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("bne", "if (!=) goto 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("beq", "if (==) goto 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("bge", "if (>=) goto 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("bgt", "if (>) goto 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("ble", "if (<=) goto 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("blt", "if (<) goto 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("bra", "goto 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("bsr", "call 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("btst", "1 == 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("cmp", "1 == 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("cmpi", "2 == 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("jmp", "goto 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("jsr", "call 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("lea", "2 = 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("lsl", "2 <<= 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("lsr", "2 >>= 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("move", "2 = 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("movea", "2 = 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("movem", "2 = 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("moveq", "2 = 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("nop", ""),
+	RZ_PSEUDO_DEFINE_GRAMMAR("or", "2 |= 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("ori", "2 |= 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("rts", "ret"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("sub", "1 += 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("subq", "1 += 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("tst", "1 == 0"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("clr", "1 = 0"),
+};
+
+static const RzPseudoReplace m68k_replace[] = {
+	RZ_PSEUDO_DEFINE_REPLACE("+ -", "- ", 1),
+};
+
+static const RzPseudoConfig m68k_config = RZ_PSEUDO_DEFINE_CONFIG_NO_DIRECT(m68k_lexicon, m68k_replace, 4, m68k_tokenize);
+
+RzList *m68k_tokenize(const char *assembly, size_t length) {
+	size_t i, p;
+	char *buf = NULL;
+	RzList *tokens = NULL;
+
+	buf = rz_str_ndup(assembly, length);
+	if (!buf) {
+		return NULL;
+	}
+
+	for (i = 0, p = 0; p < length; ++i, ++p) {
+		if (buf[p] == ',') {
+			p++;
+		}
+		if (p > i) {
+			buf[i] = buf[p];
 		}
 	}
+	buf[i] = 0;
 
-	/* TODO: this is slow */
-	if (newstr != NULL) {
-		newstr[0] = '\0';
-		for (i = 0; i < argc; i++) {
-			strcat(newstr, argv[i]);
-			strcat(newstr, (i == 0 || i == argc - 1) ? " " : ", ");
-		}
-	}
-
-	return false;
+	tokens = rz_str_split_duplist(buf, " ", true);
+	free(buf);
+	return tokens;
 }
 
-#define WSZ 64
-static int parse(RzParse *p, const char *data, char *str) {
-	int i, len = strlen(data);
-	char w0[WSZ];
-	char w1[WSZ];
-	char w2[WSZ];
-	char w3[WSZ];
-	char w4[WSZ];
-	char *buf, *ptr, *optr;
-
-	if (!strcmp(data, "jr ra")) {
-		strcpy(str, "ret");
+static bool parse(RzParse *parse, const char *assembly, RzStrBuf *sb) {
+	char *copy = strdup(assembly);
+	if (!copy) {
+		rz_strbuf_setf(sb, "asm(\"%s\")", assembly);
 		return true;
 	}
-
-	// malloc can be slow here :?
-	if (!(buf = malloc(len + 1))) {
-		return false;
-	}
-	memcpy(buf, data, len + 1);
-
-	rz_str_replace_in(buf, len + 1, ".l", "", 1);
-	rz_str_replace_in(buf, len + 1, ".w", "", 1);
-	rz_str_replace_in(buf, len + 1, ".d", "", 1);
-	rz_str_replace_in(buf, len + 1, ".b", "", 1);
-	rz_str_trim(buf);
-
-	if (*buf) {
-		w0[0] = '\0';
-		w1[0] = '\0';
-		w2[0] = '\0';
-		w3[0] = '\0';
-		w4[0] = '\0';
-		ptr = strchr(buf, ' ');
-		if (!ptr) {
-			ptr = strchr(buf, '\t');
-		}
-		if (ptr) {
-			*ptr = '\0';
-			for (++ptr; *ptr == ' '; ptr++) {
-				;
-			}
-			strncpy(w0, buf, WSZ - 1);
-			strncpy(w1, ptr, WSZ - 1);
-
-			optr = ptr;
-			ptr = strchr(ptr, ',');
-			if (ptr) {
-				*ptr = '\0';
-				for (++ptr; *ptr == ' '; ptr++) {
-					;
-				}
-				strncpy(w1, optr, WSZ - 1);
-				strncpy(w2, ptr, WSZ - 1);
-				optr = ptr;
-				ptr = strchr(ptr, ',');
-				if (ptr) {
-					*ptr = '\0';
-					for (++ptr; *ptr == ' '; ptr++) {
-						;
-					}
-					strncpy(w2, optr, WSZ - 1);
-					strncpy(w3, ptr, WSZ - 1);
-					optr = ptr;
-					// bonus
-					ptr = strchr(ptr, ',');
-					if (ptr) {
-						*ptr = '\0';
-						for (++ptr; *ptr == ' '; ptr++) {
-							;
-						}
-						strncpy(w3, optr, WSZ - 1);
-						strncpy(w4, ptr, WSZ - 1);
-					}
-				}
-			}
-		}
-		{
-			const char *wa[] = { w0, w1, w2, w3, w4 };
-			int nw = 0;
-			for (i = 0; i < 5; i++) {
-				if (wa[i][0] != '\0') {
-					nw++;
-				}
-			}
-			replace(nw, wa, str);
-			{
-				char *pluseq = strstr(str, "+ =");
-				if (pluseq) {
-					memcpy(pluseq, " +=", 3);
-				}
-			}
-		}
-	}
-	free(buf);
-	return true;
+	copy = rz_str_replace(copy, ".l", "", 0);
+	copy = rz_str_replace(copy, ".w", "", 0);
+	copy = rz_str_replace(copy, ".d", "", 0);
+	copy = rz_str_replace(copy, ".b", "", 0);
+	bool res = rz_pseudo_convert(&m68k_config, copy, sb);
+	free(copy);
+	return res;
 }
 
 RzParsePlugin rz_parse_plugin_m68k_pseudo = {
