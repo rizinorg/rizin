@@ -15,17 +15,27 @@ RZ_API void rz_serialize_bp_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzBreakpoint *bp
 			return;
 		}
 		pj_o(j);
-		pj_ks(j, "cond", bp_item->cond);
-		pj_ks(j, "data", bp_item->data);
+		if (bp_item->cond) {
+			pj_ks(j, "cond", bp_item->cond);
+		}
+		if (bp_item->data) {
+			pj_ks(j, "data", bp_item->data);
+		}
 		pj_kn(j, "delta", bp_item->delta);
 		pj_ki(j, "enabled", bp_item->enabled);
-		pj_ks(j, "expr", bp_item->expr);
+		if (bp_item->expr) {
+			pj_ks(j, "expr", bp_item->expr);
+		}
 		pj_ki(j, "hits", bp_item->hits);
 		pj_ki(j, "hw", bp_item->hw);
 		pj_ki(j, "internal", bp_item->internal);
 		pj_kN(j, "module_delta", bp_item->module_delta);
-		pj_ks(j, "module_name", bp_item->module_name);
-		pj_ks(j, "name", bp_item->name);
+		if (bp_item->module_name) {
+			pj_ks(j, "module_name", bp_item->module_name);
+		}
+		if (bp_item->name) {
+			pj_ks(j, "name", bp_item->name);
+		}
 		pj_ki(j, "perm", bp_item->perm);
 
 		pj_ka(j, "pids");
@@ -273,7 +283,7 @@ RZ_API bool rz_serialize_bp_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzBreakpoint *bp
 	if (!bp_parser) {
 		goto heaven;
 	}
-	if (rz_list_empty(bp->bps) && !rz_bp_del_all(bp)) {
+	if (!rz_list_empty(bp->bps) && !rz_bp_del_all(bp)) {
 		goto heaven;
 	}
 
