@@ -106,7 +106,7 @@ RZ_API RzSerializeBpParser rz_serialize_bp_parser_new(void) {
 
 typedef struct {
 	RzBreakpoint *bp;
-	RzSerializeBpParser *parser;
+	RzSerializeBpParser parser;
 } BpLoadCtx;
 
 static bool bp_load_cb(void *user, const char *k, const char *v) {
@@ -121,13 +121,9 @@ static bool bp_load_cb(void *user, const char *k, const char *v) {
 		goto heaven;
 	}
 	RzBreakpointItem bp_item_temp = { 0 };
+	bp_item_temp.addr = strtoull(k, NULL, 0);
 
-	if (!json->key) {
-		goto heaven;
-	}
-	sscanf(json->key, "0x%" PFMT64x, &bp_item_temp.addr);
-
-	RZ_KEY_PARSER_JSON(*ctx->parser, json, child, {
+	RZ_KEY_PARSER_JSON(ctx->parser, json, child, {
 		case BP_FIELD_NAME:
 			if (child->type != RZ_JSON_STRING) {
 				break;
@@ -249,8 +245,12 @@ static bool bp_load_cb(void *user, const char *k, const char *v) {
 		goto beach;
 	}
 
-	bp_item->name = strdup(bp_item_temp.name);
-	bp_item->module_name = strdup(bp_item_temp.module_name);
+	if (bp_item_temp.name) {
+		bp_item->name = strdup(bp_item_temp.name);
+	}
+	if (bp_item_temp.module_name) {
+		bp_item->module_name = strdup(bp_item_temp.module_name);
+	}
 	bp_item->module_delta = bp_item_temp.module_delta;
 	bp_item->delta = bp_item_temp.delta;
 	bp_item->swstep = bp_item_temp.swstep;
@@ -263,9 +263,15 @@ static bool bp_load_cb(void *user, const char *k, const char *v) {
 	for (int i = 0; i < RZ_BP_MAXPIDS; i++) {
 		bp_item->pids[i] = bp_item_temp.pids[i];
 	}
-	bp_item->data = strdup(bp_item_temp.data);
-	bp_item->cond = strdup(bp_item_temp.cond);
-	bp_item->expr = strdup(bp_item_temp.expr);
+	if (bp_item_temp.data) {
+		bp_item->data = strdup(bp_item_temp.data);
+	}
+	if (bp_item_temp.cond) {
+		bp_item->cond = strdup(bp_item_temp.cond);
+	}
+	if (bp_item_temp.expr) {
+		bp_item->expr = strdup(bp_item_temp.expr);
+	}
 	ret = true;
 
 beach:
