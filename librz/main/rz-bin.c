@@ -219,7 +219,6 @@ static int rabin_show_help(int v) {
 		       "?' -\n"
 		       " RZ_BIN_STRPURGE:  e bin.str.purge    # try to purge false positives\n"
 		       " RZ_BIN_DEBASE64:  e bin.debase64     # try to debase64 all strings\n"
-		       " RZ_BIN_DMNGLRCMD: e bin.demanglercmd # try to purge false positives\n"
 		       " RZ_BIN_PDBSERVER: e pdb.server       # use alternative PDB server\n"
 		       " RZ_BIN_SYMSTORE:  e pdb.symstore     # path to downstream symbol store\n"
 		       " RZ_BIN_PREFIX:    e bin.prefix       # prefix symbols/sections/relocs with a specific string\n"
@@ -607,13 +606,16 @@ static int __lib_bin_ldr_dt(RzLibPlugin *pl, void *p, void *u) {
 }
 
 static char *__demangleAs(RzBin *bin, int type, const char *file) {
-	bool syscmd = bin ? bin->demanglercmd : false;
 	char *res = NULL;
 	switch (type) {
 	case RZ_BIN_NM_CXX: res = rz_bin_demangle_cxx(NULL, file, 0); break;
+	case RZ_BIN_NM_KOTLIN:
+		/* fall-thru */
+	case RZ_BIN_NM_GROOVY:
+		/* fall-thru */
 	case RZ_BIN_NM_JAVA: res = rz_bin_demangle_java(file); break;
 	case RZ_BIN_NM_OBJC: res = rz_bin_demangle_objc(NULL, file); break;
-	case RZ_BIN_NM_SWIFT: res = rz_bin_demangle_swift(file, syscmd); break;
+	case RZ_BIN_NM_SWIFT: res = rz_bin_demangle_swift(file); break;
 	case RZ_BIN_NM_MSVC: res = rz_bin_demangle_msvc(file); break;
 	case RZ_BIN_NM_RUST: res = rz_bin_demangle_rust(NULL, file, 0); break;
 	default:
@@ -714,10 +716,6 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		} else {
 			eprintf("Cannot open file specified in RZ_CONFIG\n");
 		}
-		free(tmp);
-	}
-	if ((tmp = rz_sys_getenv("RZ_BIN_DMNGLRCMD"))) {
-		rz_config_set(core.config, "cmd.demangle", tmp);
 		free(tmp);
 	}
 	if ((tmp = rz_sys_getenv("RZ_BIN_LANG"))) {
