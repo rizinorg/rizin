@@ -1,20 +1,11 @@
 NAME=mach0 swift demangle methods
 FILE=bins/mach0/swift-main
-CMDS=isq~FooClass.
+CMDS=isq~&FooClass,method
 EXPECT=<<EOF
-0x100004760 0 direct field offset for main.FooClass.bar : Swift.String
-0x100004758 0 direct field offset for main.FooClass.foo : Swift.Int
-0x1000014c0 0 main.FooClass.init() -> main.FooClass
-0x1000015a0 0 main.FooClass.__allocating_init() -> main.FooClass
-0x1000015e0 0 main.FooClass.sayHello() -> ()
-0x100001720 0 main.FooClass.__deallocating_deinit
-0x100001750 0 main.FooClass.deinit
-0x100001780 0 main.FooClass.foo.getter : Swift.Int
-0x100001790 0 main.FooClass.foo.setter : Swift.Int
-0x1000017a0 0 main.FooClass.foo.materializeForSet : Swift.Int
-0x1000017c0 0 main.FooClass.bar.getter : Swift.String
-0x100001800 0 main.FooClass.bar.setter : Swift.String
-0x100001860 0 main.FooClass.bar.materializeForSet : Swift.String
+0x1000047a0 0 FooClass.bar.method__String..init.witnesstable
+0x100004788 0 FooClass.foo.method__Swift.Int..init.witnesstable
+0x1000017a0 0 main.FooClass.foo.method__Swift.Int
+0x100001860 0 main.FooClass.bar.method__String
 EOF
 RUN
 
@@ -58,34 +49,12 @@ cc.swift.arg9: xmm3
 cc.swift.arg10: xmm4
 cc.swift.self: r13
 cc.swift.error: r12
-var int64_t var_d8h @ rbp-0xd8
-var int64_t var_d0h @ rbp-0xd0
-var int64_t var_c8h @ rbp-0xc8
-var int64_t var_c0h @ rbp-0xc0
-var int64_t var_b8h @ rbp-0xb8
-var int64_t var_b0h @ rbp-0xb0
-var int64_t var_a8h @ rbp-0xa8
-var int64_t var_a0h @ rbp-0xa0
-var int64_t var_98h @ rbp-0x98
-var int64_t var_90h @ rbp-0x90
-var int64_t var_88h @ rbp-0x88
-var int64_t var_80h @ rbp-0x80
-var int64_t var_78h @ rbp-0x78
-var int64_t var_70h @ rbp-0x70
-var int64_t var_68h @ rbp-0x68
-var int64_t var_60h @ rbp-0x60
-var int64_t var_58h @ rbp-0x58
-var int64_t var_50h @ rbp-0x50
-var int64_t var_48h @ rbp-0x48
-var int64_t var_40h @ rbp-0x40
-var int64_t var_38h @ rbp-0x38
-var int64_t var_30h @ rbp-0x30
-var int64_t var_24h @ rbp-0x24
+var int64_t var_28h @ rbp-0x28
 var int64_t var_20h @ rbp-0x20
+var int64_t var_18h @ rbp-0x18
+var int64_t var_10h @ rbp-0x10
 arg int64_t self @ r13
 arg int64_t error @ r12
-arg char ** argv @ rsi
-arg int argc @ rdi
 EOF
 RUN
 
@@ -101,6 +70,6 @@ afvj
 EOF
 EXPECT=<<EOF
 {"ret":"rax","args":["rdi","rsi","rdx","rcx","r8","r9","xmm0","xmm1","xmm2","xmm3","xmm4"],"self":"r13","error":"r12"}
-{"sp":[],"bp":[{"name":"var_d8h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-216}},{"name":"var_d0h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-208}},{"name":"var_c8h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-200}},{"name":"var_c0h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-192}},{"name":"var_b8h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-184}},{"name":"var_b0h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-176}},{"name":"var_a8h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-168}},{"name":"var_a0h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-160}},{"name":"var_98h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-152}},{"name":"var_90h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-144}},{"name":"var_88h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-136}},{"name":"var_80h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-128}},{"name":"var_78h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-120}},{"name":"var_70h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-112}},{"name":"var_68h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-104}},{"name":"var_60h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-96}},{"name":"var_58h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-88}},{"name":"var_50h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-80}},{"name":"var_48h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-72}},{"name":"var_40h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-64}},{"name":"var_38h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-56}},{"name":"var_30h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-48}},{"name":"var_24h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-36}},{"name":"var_20h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-32}}],"reg":[{"name":"self","kind":"reg","type":"int64_t","ref":"r13"},{"name":"error","kind":"reg","type":"int64_t","ref":"r12"},{"name":"argv","kind":"reg","type":"char **","ref":"rsi"},{"name":"argc","kind":"reg","type":"int","ref":"rdi"}]}
+{"sp":[],"bp":[{"name":"var_28h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-40}},{"name":"var_20h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-32}},{"name":"var_18h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-24}},{"name":"var_10h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-16}}],"reg":[{"name":"self","kind":"reg","type":"int64_t","ref":"r13"},{"name":"error","kind":"reg","type":"int64_t","ref":"r12"}]}
 EOF
 RUN

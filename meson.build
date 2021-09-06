@@ -133,7 +133,7 @@ endif
 
 # Sanitize correct usage of rz_strf()
 if cc.has_argument('-Werror=sizeof-pointer-memaccess')
-  add_global_arguments('-Werror=sizeof-pointer-memaccess', language: ['c'])
+  add_global_arguments('-Werror=sizeof-pointer-memaccess', language: ['c', 'cpp'])
 endif
 
 if cc.get_id() == 'clang-cl'
@@ -249,15 +249,6 @@ if sys_xxhash_opt.auto() or sys_xxhash_opt.disabled()
   xxhash_dep = xxhash_proj.get_variable('xxhash_dep')
 endif
 
-# handle libswift library
-r = run_command(py3_exe, check_meson_subproject_py, 'libswift')
-if r.returncode() == 1 and get_option('subprojects_check')
-  error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
-endif
-
-libswift_proj = subproject('libswift', default_options: ['default_library=static'])
-libswift_dep = libswift_proj.get_variable('libswift_dep')
-
 # handle openssl library
 sys_openssl = dependency('openssl', required: get_option('use_sys_openssl'), static: is_static_build)
 
@@ -347,11 +338,7 @@ ok = cc.has_header_symbol('sys/procctl.h', 'PROC_ASLR_CTL')
 userconf.set10('HAVE_DECL_PROCCTL_ASLR_CTL', ok)
 
 if host_machine.system() == 'freebsd'
-  # resolves an issue linked to environ being available only on crt1.o
-  # which results in not being able to link a shared library since environ
-  # is used by the lib and not by the main binary
-  # see: https://bugs.webkit.org/show_bug.cgi?id=138420
-  add_project_link_arguments('-Wl,--unresolved-symbols,ignore-in-object-files', language: ['c', 'cpp'])
+  add_project_link_arguments('-Wl,--unresolved-symbols,ignore-in-object-files', language: 'c')
 endif
 
 lrt = []

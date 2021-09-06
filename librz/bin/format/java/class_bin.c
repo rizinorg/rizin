@@ -385,7 +385,7 @@ RZ_API RZ_OWN const char *rz_bin_java_class_language(RZ_NONNULL RzBinJavaClass *
 			if (!cpool || !java_constant_pool_is_string(cpool)) {
 				continue;
 			}
-			string = java_constant_pool_stringify(cpool);
+			char *string = java_constant_pool_stringify(cpool);
 			if (string && !strncmp(string, "kotlin/jvm", 10)) {
 				language = "kotlin";
 				break;

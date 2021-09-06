@@ -360,6 +360,7 @@ struct rz_bin_t {
 	char *prefix; // bin.prefix
 	char *strenc;
 	ut64 filter_rules;
+	bool demanglercmd;
 	bool verbose;
 	bool use_xtr; // use extract plugins when loading a file?
 	bool use_ldr; // use loader plugins when loading a file?
@@ -981,7 +982,7 @@ RZ_API RZ_OWN char *rz_bin_demangle(RZ_NONNULL RzBinFile *binfile, RZ_NONNULL co
 RZ_API RZ_OWN char *rz_bin_demangle_java(RZ_NULLABLE const char *str);
 RZ_API RZ_OWN char *rz_bin_demangle_cxx(RZ_NONNULL RzBinFile *binfile, RZ_NONNULL const char *str, ut64 vaddr);
 RZ_API RZ_OWN char *rz_bin_demangle_msvc(RZ_NONNULL const char *str);
-RZ_API RZ_OWN char *rz_bin_demangle_swift(RZ_NONNULL const char *s);
+RZ_API RZ_OWN char *rz_bin_demangle_swift(RZ_NONNULL const char *s, bool syscmd);
 RZ_API RZ_OWN char *rz_bin_demangle_objc(RZ_NONNULL RzBinFile *binfile, RZ_NONNULL const char *sym);
 RZ_API RZ_OWN char *rz_bin_demangle_rust(RZ_NONNULL RzBinFile *binfile, RZ_NONNULL const char *str, ut64 vaddr);
 RZ_API int rz_bin_demangle_type(const char *str);

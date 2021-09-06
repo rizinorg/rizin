@@ -60,35 +60,27 @@ RZ_API int rz_bin_load_languages(RzBinFile *binfile) {
 	if (!info) {
 		return RZ_BIN_NM_NONE;
 	} else if (RZ_STR_ISNOTEMPTY(info->lang)) {
-		if (strstr(info->lang, "kotlin")) {
+		if (strstr(info->lang, "java")) {
+			return RZ_BIN_NM_JAVA;
+		} else if (strstr(info->lang, "kotlin")) {
 			return RZ_BIN_NM_KOTLIN;
 		} else if (strstr(info->lang, "groovy")) {
 			return RZ_BIN_NM_GROOVY;
 		} else if (strstr(info->lang, "swift")) {
 			return RZ_BIN_NM_SWIFT;
-		} else if (strstr(info->lang, "dlang")) {
-			return RZ_BIN_NM_DLANG;
-		} else if (strstr(info->lang, "msvc")) {
-			return RZ_BIN_NM_MSVC;
-		} else if (strstr(info->lang, "go")) {
-			return RZ_BIN_NM_GO;
-		} else if (strstr(info->lang, "objc")) {
-			return RZ_BIN_NM_OBJC;
-		} else if (strstr(info->lang, "c++") || strstr(info->lang, "cxx")) {
-			return RZ_BIN_NM_CXX;
 		}
+		return RZ_BIN_NM_NONE;
 	}
 
 	bool is_macho = info->rclass ? strstr(info->rclass, "mach") : false;
 	bool is_elf = info->rclass ? strstr(info->rclass, "elf") : false;
 	bool is_pe = info->rclass ? strstr(info->rclass, "pe") : false;
-	bool is_class = info->rclass ? strstr(info->rclass, "class") : false;
 	bool is_blocks = false;
 	bool is_objc = false;
 	bool is_cpp = false;
 	char *lib = NULL;
 
-	if (!is_macho && !is_elf && !is_pe && !is_class) {
+	if (!is_macho && !is_elf && !is_pe) {
 		return RZ_BIN_NM_NONE;
 	}
 
@@ -156,10 +148,6 @@ RZ_API int rz_bin_load_languages(RzBinFile *binfile) {
 	if (is_cpp) {
 		info->lang = "c++";
 		return lang_apply_blocks(RZ_BIN_NM_CXX, is_blocks);
-	} else if (!info->lang) {
-		info->lang = "c";
-	} else if (strstr(info->lang, "java")) {
-		return RZ_BIN_NM_JAVA;
 	}
 	return lang_apply_blocks(RZ_BIN_NM_C, is_blocks);
 }
@@ -170,15 +158,22 @@ RZ_IPI int rz_bin_lang_type(RzBinFile *binfile, const char *def, const char *sym
 	if (sym && sym[0] == sym[1] && sym[0] == '_') {
 		type = RZ_BIN_NM_CXX;
 	}
-	type = rz_bin_demangle_type(def);
-	if (type != RZ_BIN_NM_NONE) {
-		return type;
+	if (def && *def) {
+		type = rz_bin_demangle_type(def);
+		if (type != RZ_BIN_NM_NONE) {
+			return type;
+		}
 	}
 	plugin = rz_bin_file_cur_plugin(binfile);
 	if (plugin && plugin->demangle_type) {
 		type = plugin->demangle_type(def);
-	} else if (binfile && binfile->o && binfile->o->info) {
-		type = rz_bin_demangle_type(binfile->o->info->lang);
+	} else {
+		if (binfile && binfile->o && binfile->o->info) {
+			type = rz_bin_demangle_type(binfile->o->info->lang);
+		}
+	}
+	if (type == RZ_BIN_NM_NONE) {
+		type = rz_bin_demangle_type(def);
 	}
 	return type;
 }

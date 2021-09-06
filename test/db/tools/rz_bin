@@ -884,6 +884,7 @@ CMDS=!rz-bin -D swift  _TFSSCfT21_builtinStringLiteralBp8byteSizeBw7isASCIIBi1__
 EXPECT=<<EOF
 Swift.String.init(_builtinStringLiteral: Builtin.RawPointer, byteSize: Builtin.Word, isASCII: Builtin.Int1) -> Swift.String
 EOF
+BROKEN=1
 RUN
 
 NAME=rz-bin -D Unsupported
