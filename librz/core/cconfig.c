@@ -843,10 +843,17 @@ static bool cb_emuskip(void *user, void *data) {
 	return true;
 }
 
-static bool cb_asm_armimm(void *user, void *data) {
+static bool cb_asm_immhash(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	core->rasm->immdisp = node->i_value ? true : false;
+	return true;
+}
+
+static bool cb_asm_immsign(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	core->rasm->immsign = node->i_value;
 	return true;
 }
 
@@ -2413,7 +2420,9 @@ static bool cb_tracetag(void *user, void *data) {
 }
 
 static bool cb_utf8(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
+	core->rasm->utf8 = (bool)node->i_value;
 	rz_cons_set_utf8((bool)node->i_value);
 	return true;
 }
@@ -3080,7 +3089,8 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI("asm.hint.pos", 1, "Shortcut hint position (-1, 0, 1)");
 	SETBPREF("asm.slow", "true", "Perform slow analysis operations in disasm");
 	SETBPREF("asm.decode", "false", "Use code analysis as a disassembler");
-	SETICB("asm.imm.arm", false, &cb_asm_armimm, "Display # for immediates in ARM");
+	SETICB("asm.imm.hash", 0, &cb_asm_immhash, "Display # for immediates in ARM and Hexagon (0 = on)");
+	SETCB("asm.imm.sign", "true", &cb_asm_immsign, "False: Print signed immediates in unsigned representation. True: Print them with sign.");
 	SETBPREF("asm.imm.str", "true", "Show immediates values as strings");
 	SETBPREF("asm.imm.trim", "false", "Remove all offsets and constants from disassembly");
 	SETBPREF("asm.indent", "false", "Indent disassembly based on reflines depth");
