@@ -1545,15 +1545,19 @@ static int rz_debug_setup_ownership (int fd, RzDebug *dbg) {
 }
 #endif
 
-static bool rz_debug_gcore(RzDebug *dbg, RzBuffer *dest) {
+static bool rz_debug_gcore(RzDebug *dbg, char *path, RzBuffer *dest) {
 #if __APPLE__
+	(void)path;
 	return xnu_generate_corefile(dbg, dest);
 #elif __linux__ && (__x86_64__ || __i386__ || __arm__ || __arm64__)
+	(void)path;
 #if __ANDROID__
 	return false;
 #else
 	return linux_generate_corefile(dbg, dest);
 #endif
+#elif __KFBSD__ || __NetBSD__
+	return bsd_generate_corefile(dbg, path, dest);
 #else
 	return false;
 #endif

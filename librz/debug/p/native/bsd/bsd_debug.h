@@ -10,6 +10,7 @@
 int bsd_handle_signals(RzDebug *dbg);
 int bsd_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size);
 RzDebugInfo *bsd_info(RzDebug *dbg, const char *arg);
+bool bsd_generate_corefile(RzDebug *dbg, char *path, RzBuffer *dest);
 RzList *bsd_pid_list(RzDebug *dbg, int pid, RzList *list);
 RzList *bsd_native_sysctl_map(RzDebug *dbg);
 RzList *bsd_desc_list(int pid);
