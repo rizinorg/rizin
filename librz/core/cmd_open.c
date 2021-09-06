@@ -326,10 +326,6 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 		free(v);
 		break;
 	}
-	case 'r': // "obr"
-		rz_core_bin_rebase(core, rz_num_math(core->num, input + 3));
-		rz_core_bin_apply_all_info(core, rz_bin_cur(core->bin));
-		break;
 	case 'R': // "obR"
 		// XXX: this will reload the bin using the buffer.
 		// An assumption is made that assumes there is an underlying
@@ -337,6 +333,18 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 		// TODO: Might be nice to reload a bin at a specified offset?
 		core_bin_reload(core, NULL, input[2] ? rz_num_math(core->num, input + 3) : 0);
 		rz_core_block_read(core);
+		break;
+	case 'r':; // "obr"
+		ut64 baddr = rz_bin_get_baddr(core->bin);
+		ut64 addr = rz_num_math(core->num, input + 2); // mapaddr
+		ut32 cur_bf_id = core->bin->cur->id;
+		char cmd[64] = "";
+
+		sprintf(cmd, "oba 0x%llx 0x%llx", baddr, addr);
+		rz_core_cmd0(core, cmd);
+		sprintf(cmd, "ob-%d", cur_bf_id);
+		rz_core_cmd0(core, cmd);
+		rz_core_bin_apply_all_info(core, rz_bin_cur(core->bin));
 		break;
 	case 'f':
 		if (input[2] == ' ') {
