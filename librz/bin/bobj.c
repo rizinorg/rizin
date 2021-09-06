@@ -186,11 +186,11 @@ static char *swiftField(const char *dn, const char *cn) {
 		return NULL;
 	}
 
-	char *p = strstr(dn, ".getter_");
+	char *p = strstr(dn, ".getter");
 	if (!p) {
-		p = strstr(dn, ".setter_");
+		p = strstr(dn, ".setter");
 		if (!p) {
-			p = strstr(dn, ".method_");
+			p = strstr(dn, ".method");
 		}
 	}
 	if (p) {
@@ -499,6 +499,7 @@ RZ_API int rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
 				o->classes = classes;
 				rz_bin_object_rebuild_classes_ht(o);
 			}
+
 			if (o->lang == RZ_BIN_NM_SWIFT) {
 				o->classes = classes_from_symbols(bf);
 			}

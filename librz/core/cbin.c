@@ -3632,7 +3632,7 @@ static void bin_class_print_rizin(RzCore *r, RzBinClass *c, ut64 at_min) {
 	}
 
 	// C struct
-	if (!(bf->o->lang == RZ_BIN_NM_JAVA || (bf->o->info && bf->o->info->lang && strstr(bf->o->info->lang, "dalvik")))) {
+	if (bf->o->lang != RZ_BIN_NM_JAVA && bf->o->lang != RZ_BIN_NM_KOTLIN && bf->o->lang != RZ_BIN_NM_GROOVY) {
 		rz_cons_printf("td \"struct %s {", c->name);
 		rz_list_foreach (c->fields, iter2, f) {
 			char *n = objc_name_toc(f->name);
@@ -3664,7 +3664,9 @@ RZ_API bool rz_core_bin_class_as_source_print(RzCore *core, RzBinFile *bf, const
 		found = true;
 		switch (bf->o->lang & (~RZ_BIN_NM_BLOCKS)) {
 		case RZ_BIN_NM_KOTLIN:
+			/* fall-thru */
 		case RZ_BIN_NM_GROOVY:
+			/* fall-thru */
 		case RZ_BIN_NM_JAVA:
 			classdump_java(core, c);
 			break;

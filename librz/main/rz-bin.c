@@ -609,6 +609,10 @@ static char *__demangleAs(RzBin *bin, int type, const char *file) {
 	char *res = NULL;
 	switch (type) {
 	case RZ_BIN_NM_CXX: res = rz_bin_demangle_cxx(NULL, file, 0); break;
+	case RZ_BIN_NM_KOTLIN:
+		/* fall-thru */
+	case RZ_BIN_NM_GROOVY:
+		/* fall-thru */
 	case RZ_BIN_NM_JAVA: res = rz_bin_demangle_java(file); break;
 	case RZ_BIN_NM_OBJC: res = rz_bin_demangle_objc(NULL, file); break;
 	case RZ_BIN_NM_SWIFT: res = rz_bin_demangle_swift(file); break;

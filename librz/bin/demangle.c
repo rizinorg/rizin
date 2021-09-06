@@ -37,35 +37,35 @@ RZ_API char *rz_bin_demangle_plugin(RzBin *bin, const char *name, const char *st
 }
 
 RZ_API int rz_bin_demangle_type(const char *str) {
-	if (str && *str) {
-		if (!strcmp(str, "swift")) {
-			return RZ_BIN_NM_SWIFT;
-		}
-		if (!strcmp(str, "java")) {
-			return RZ_BIN_NM_JAVA;
-		}
-		if (!strcmp(str, "objc")) {
-			return RZ_BIN_NM_OBJC;
-		}
-		if (!strcmp(str, "cxx") || !strcmp(str, "c++")) {
-			return RZ_BIN_NM_CXX;
-		}
-		if (!strcmp(str, "dlang")) {
-			return RZ_BIN_NM_DLANG;
-		}
-		if (!strcmp(str, "msvc")) {
-			return RZ_BIN_NM_MSVC;
-		}
-		if (!strcmp(str, "rust")) {
-			return RZ_BIN_NM_RUST;
-		}
+	if (RZ_STR_ISEMPTY(str)) {
+		return RZ_BIN_NM_NONE;
+	} else if (strstr(str, "swift")) {
+		return RZ_BIN_NM_SWIFT;
+	} else if (strstr(str, "java")) {
+		return RZ_BIN_NM_JAVA;
+	} else if (strstr(str, "groovy")) {
+		return RZ_BIN_NM_GROOVY;
+	} else if (strstr(str, "kotlin")) {
+		return RZ_BIN_NM_KOTLIN;
+	} else if (strstr(str, "objc")) {
+		return RZ_BIN_NM_OBJC;
+	} else if (strstr(str, "cxx") || strstr(str, "c++")) {
+		return RZ_BIN_NM_CXX;
+	} else if (strstr(str, "dlang")) {
+		return RZ_BIN_NM_DLANG;
+	} else if (strstr(str, "msvc")) {
+		return RZ_BIN_NM_MSVC;
+	} else if (strstr(str, "rust")) {
+		return RZ_BIN_NM_RUST;
+	} else if (!strcmp(str, "go")) {
+		return RZ_BIN_NM_GO;
 	}
 	return RZ_BIN_NM_NONE;
 }
 
 RZ_API char *rz_bin_demangle(RzBinFile *bf, const char *def, const char *str, ut64 vaddr, bool libs) {
 	int type = -1;
-	if (!str || !*str) {
+	if (RZ_STR_ISEMPTY(str)) {
 		return NULL;
 	}
 	RzBin *bin = bf ? bf->rbin : NULL;
@@ -106,23 +106,27 @@ RZ_API char *rz_bin_demangle(RzBinFile *bf, const char *def, const char *str, ut
 			}
 		}
 	}
-	if (!strncmp(str, "__", 2)) {
-		if (str[2] == 'T') {
-			type = RZ_BIN_NM_SWIFT;
-		} else {
-			type = RZ_BIN_NM_CXX;
-			//	str++;
-		}
-	}
 	// if str is sym. or imp. when str+=4 str points to the end so just return
-	if (!*str) {
+	if (RZ_STR_ISEMPTY(str)) {
 		return NULL;
 	}
 	if (type == -1) {
-		type = rz_bin_lang_type(bf, def, str);
+		if (!strncmp(str, "__", 2)) {
+			if (str[2] == 'T') {
+				type = RZ_BIN_NM_SWIFT;
+			} else {
+				type = RZ_BIN_NM_CXX;
+			}
+		} else {
+			type = rz_bin_lang_type(bf, def, str);
+		}
 	}
 	char *demangled = NULL;
 	switch (type) {
+	case RZ_BIN_NM_KOTLIN:
+		/* fall-thru */
+	case RZ_BIN_NM_GROOVY:
+		/* fall-thru */
 	case RZ_BIN_NM_JAVA: demangled = rz_bin_demangle_java(str); break;
 	case RZ_BIN_NM_RUST: demangled = rz_bin_demangle_rust(bf, str, vaddr); break;
 	case RZ_BIN_NM_OBJC: demangled = rz_bin_demangle_objc(NULL, str); break;
@@ -130,6 +134,7 @@ RZ_API char *rz_bin_demangle(RzBinFile *bf, const char *def, const char *str, ut
 	case RZ_BIN_NM_CXX: demangled = rz_bin_demangle_cxx(bf, str, vaddr); break;
 	case RZ_BIN_NM_MSVC: demangled = rz_bin_demangle_msvc(str); break;
 	case RZ_BIN_NM_DLANG: demangled = rz_bin_demangle_plugin(bin, "dlang", str); break;
+	default: return NULL;
 	}
 	if (libs && demangled && lib) {
 		char *d = rz_str_newf("%s_%s", lib, demangled);
