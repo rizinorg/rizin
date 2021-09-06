@@ -3593,18 +3593,6 @@ static void classdump_java(RzCore *r, RzBinClass *c) {
 	rz_cons_printf("}\n\n");
 }
 
-static inline bool is_java_lang(RzBinFile *bf) {
-	if (!bf || !bf->o) {
-		return false;
-	} else if (bf->o->lang == RZ_BIN_NM_JAVA) {
-		return true;
-	} else if (!bf->o->info || !bf->o->info->lang) {
-		return false;
-	}
-	const char *lang = bf->o->info->lang;
-	return strstr(lang, "dalvik") || strstr(lang, "java") || strstr(lang, "kotlin");
-}
-
 static void bin_class_print_rizin(RzCore *r, RzBinClass *c, ut64 at_min) {
 	RzListIter *iter2;
 	RzBinFile *bf = rz_bin_cur(r->bin);

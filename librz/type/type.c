@@ -788,23 +788,23 @@ static char *type_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *typ
 		// Here it can be any of the RzBaseType
 		RzBaseType *btype = rz_type_db_get_base_type(typedb, type->identifier.name);
 		if (!btype) {
-			rz_strbuf_free(buf);
-			return NULL;
+			rz_strbuf_appendf(buf, "%s%s", "unknown_t", separator);
+		} else {
+			if (type->identifier.is_const) {
+				rz_strbuf_append(buf, "const ");
+			}
+			switch (btype->kind) {
+			case RZ_BASE_TYPE_KIND_UNION:
+				rz_strbuf_append(buf, "union ");
+				break;
+			case RZ_BASE_TYPE_KIND_STRUCT:
+				rz_strbuf_append(buf, "struct ");
+				break;
+			default:
+				break;
+			}
+			rz_strbuf_appendf(buf, "%s%s", btype->name, separator);
 		}
-		if (type->identifier.is_const) {
-			rz_strbuf_append(buf, "const ");
-		}
-		switch (btype->kind) {
-		case RZ_BASE_TYPE_KIND_UNION:
-			rz_strbuf_append(buf, "union ");
-			break;
-		case RZ_BASE_TYPE_KIND_STRUCT:
-			rz_strbuf_append(buf, "struct ");
-			break;
-		default:
-			break;
-		}
-		rz_strbuf_appendf(buf, "%s%s", btype->name, separator);
 		break;
 	}
 	case RZ_TYPE_KIND_POINTER: {
@@ -843,17 +843,18 @@ static char *type_as_string_decl(const RzTypeDB *typedb, RZ_NONNULL const RzType
 		// Here it can be any of the RzBaseType
 		RzBaseType *btype = rz_type_db_get_base_type(typedb, type->identifier.name);
 		if (!btype) {
-			rz_strbuf_free(buf);
-			return NULL;
-		}
-		char *btypestr = btype->kind == RZ_BASE_TYPE_KIND_TYPEDEF ? strdup(btype->name) : rz_type_db_base_type_as_string(typedb, btype);
-		if (type->identifier.is_const) {
-			rz_strbuf_appendf(buf, "const %s%s", btypestr, separator);
-		} else {
-			rz_strbuf_append(buf, btypestr);
+			rz_strbuf_append(buf, "unknown_t");
 			rz_strbuf_append(buf, separator);
+		} else {
+			char *btypestr = btype->kind == RZ_BASE_TYPE_KIND_TYPEDEF ? strdup(btype->name) : rz_type_db_base_type_as_string(typedb, btype);
+			if (type->identifier.is_const) {
+				rz_strbuf_appendf(buf, "const %s%s", btypestr, separator);
+			} else {
+				rz_strbuf_append(buf, btypestr);
+				rz_strbuf_append(buf, separator);
+			}
+			free(btypestr);
 		}
-		free(btypestr);
 		break;
 	}
 	case RZ_TYPE_KIND_POINTER: {
@@ -900,35 +901,35 @@ static char *type_as_string_identifier_decl(const RzTypeDB *typedb, RZ_NONNULL c
 		// Here it can be any of the RzBaseType
 		RzBaseType *btype = rz_type_db_get_base_type(typedb, type->identifier.name);
 		if (!btype) {
-			rz_strbuf_free(buf);
-			return NULL;
-		}
-		// If the structure/union is anonymous, then we put declaration inline,
-		// if not - just the name
-		if (!strncmp(type->identifier.name, "anonymous ", 10)) {
-			char *btypestr = btype->kind == RZ_BASE_TYPE_KIND_TYPEDEF ? strdup(btype->name) : rz_type_db_base_type_as_string(typedb, btype);
-			if (type->identifier.is_const) {
-				rz_strbuf_appendf(buf, "const %s%s", btypestr, separator);
-			} else {
-				rz_strbuf_append(buf, btypestr);
-				rz_strbuf_append(buf, separator);
-			}
-			free(btypestr);
+			rz_strbuf_appendf(buf, "%s%s", "unknown_t", separator);
 		} else {
-			if (type->identifier.is_const) {
-				rz_strbuf_append(buf, "const ");
+			// If the structure/union is anonymous, then we put declaration inline,
+			// if not - just the name
+			if (!strncmp(type->identifier.name, "anonymous ", 10)) {
+				char *btypestr = btype->kind == RZ_BASE_TYPE_KIND_TYPEDEF ? strdup(btype->name) : rz_type_db_base_type_as_string(typedb, btype);
+				if (type->identifier.is_const) {
+					rz_strbuf_appendf(buf, "const %s%s", btypestr, separator);
+				} else {
+					rz_strbuf_append(buf, btypestr);
+					rz_strbuf_append(buf, separator);
+				}
+				free(btypestr);
+			} else {
+				if (type->identifier.is_const) {
+					rz_strbuf_append(buf, "const ");
+				}
+				switch (btype->kind) {
+				case RZ_BASE_TYPE_KIND_UNION:
+					rz_strbuf_append(buf, "union ");
+					break;
+				case RZ_BASE_TYPE_KIND_STRUCT:
+					rz_strbuf_append(buf, "struct ");
+					break;
+				default:
+					break;
+				}
+				rz_strbuf_appendf(buf, "%s%s", btype->name, separator);
 			}
-			switch (btype->kind) {
-			case RZ_BASE_TYPE_KIND_UNION:
-				rz_strbuf_append(buf, "union ");
-				break;
-			case RZ_BASE_TYPE_KIND_STRUCT:
-				rz_strbuf_append(buf, "struct ");
-				break;
-			default:
-				break;
-			}
-			rz_strbuf_appendf(buf, "%s%s", btype->name, separator);
 		}
 		break;
 	}

@@ -22,7 +22,8 @@ func.AVIFileOpenA.arg.0=PAVIFILE*,ppfile
 func.AVIFileOpenA.arg.1=LPCSTR,szFile
 func.AVIFileOpenA.arg.2=UINT,mode
 func.AVIFileOpenA.arg.3=CLSID,pclsidHandler
-func.AVIFileOpenA.ret=stdapi
+func.AVIFileOpenA.ret=HRESULT
+func.AVIFileOpenA.cc=stdapi
 
 AVIFileOpenW=func
 func.AVIFileOpenW.args=4
@@ -30,21 +31,24 @@ func.AVIFileOpenW.arg.0=PAVIFILE*,ppfile
 func.AVIFileOpenW.arg.1=LPCWSTR,szFile
 func.AVIFileOpenW.arg.2=UINT,mode
 func.AVIFileOpenW.arg.3=CLSID,pclsidHandler
-func.AVIFileOpenW.ret=stdapi
+func.AVIFileOpenW.ret=HRESULT
+func.AVIFileOpenW.cc=stdapi
 
 AVIFileInfoA=func
 func.AVIFileInfoA.args=3
 func.AVIFileInfoA.arg.0=PAVIFILE,pfile
 func.AVIFileInfoA.arg.1=LPAVIFILEINFOA,pfi
 func.AVIFileInfoA.arg.2=LONG,lSize
-func.AVIFileInfoA.ret=stdapi
+func.AVIFileInfoA.ret=HRESULT
+func.AVIFileInfoA.cc=stdapi
 
 AVIFileInfoW=func
 func.AVIFileInfoW.args=3
 func.AVIFileInfoW.arg.0=PAVIFILE,pfile
 func.AVIFileInfoW.arg.1=LPAVIFILEINFOW,pfi
 func.AVIFileInfoW.arg.2=LONG,lSize
-func.AVIFileInfoW.ret=stdapi
+func.AVIFileInfoW.ret=HRESULT
+func.AVIFileInfoW.cc=stdapi
 
 #### com.h ####
 
@@ -306,7 +310,7 @@ func.CombineRgn.arg.0=HRGN,HRGNDest
 func.CombineRgn.arg.1=HRGN,HRGNSrc1
 func.CombineRgn.arg.2=HRGN,HRGNSrc2
 func.CombineRgn.arg.3=_CombineRgn,fnCombineMode
-func.CombineRgn.ret=_regionflags
+func.CombineRgn.ret=int
 
 CopyMetaFileA=func
 func.CopyMetaFileA.args=2
@@ -656,7 +660,7 @@ func.ExcludeClipRect.arg.1=int,nLeftRect
 func.ExcludeClipRect.arg.2=int,nTopRect
 func.ExcludeClipRect.arg.3=int,nRightRect
 func.ExcludeClipRect.arg.4=int,nBottomRect
-func.ExcludeClipRect.ret=_regionflags
+func.ExcludeClipRect.ret=int
 
 ExtCreateRegion=func
 func.ExtCreateRegion.args=3
@@ -699,8 +703,9 @@ func.FrameRgn.arg.4=int,nHeight
 func.FrameRgn.ret=BOOL
 
 GetROP2=func
-func.GetROP2.args=0
-func.GetROP2.ret=_binarydrawmode
+func.GetROP2.args=1
+func.GetROP2.arg.0=HDC,hdc
+func.GetROP2.ret=int
 
 GetAspectRatioFilterEx=func
 func.GetAspectRatioFilterEx.args=2
@@ -830,7 +835,7 @@ GetClipBox=func
 func.GetClipBox.args=2
 func.GetClipBox.arg.0=HDC,hdc
 func.GetClipBox.arg.1=LPRECT,lprc
-func.GetClipBox.ret=_regionflags
+func.GetClipBox.ret=int
 
 GetClipRgn=func
 func.GetClipRgn.args=2
@@ -880,7 +885,7 @@ func.GetFontData.arg.1=DWORD,dwTable
 func.GetFontData.arg.2=DWORD,dwOffset
 func.GetFontData.arg.3=LPVOID,lpvBuffer
 func.GetFontData.arg.4=DWORD,cbData
-func.GetFontData.ret=_gdi_error
+func.GetFontData.ret=DWORD
 
 GetGlyphOutlineA=func
 func.GetGlyphOutlineA.args=7
@@ -905,12 +910,14 @@ func.GetGlyphOutlineW.arg.6=MAT2,*lpmat2
 func.GetGlyphOutlineW.ret=DWORD
 
 GetGraphicsMode=func
-func.GetGraphicsMode.args=0
-func.GetGraphicsMode.ret=_gm
+func.GetGraphicsMode.args=1
+func.GetGraphicsMode.arg.0=HDC,hdc
+func.GetGraphicsMode.ret=int
 
 GetMapMode=func
-func.GetMapMode.args=0
-func.GetMapMode.ret=_mm
+func.GetMapMode.args=1
+func.GetMapMode.arg.0=HDC,hdc
+func.GetMapMode.ret=int
 
 GetMetaFileBitsEx=func
 func.GetMetaFileBitsEx.args=3
@@ -940,8 +947,9 @@ func.GetNearestPaletteIndex.arg.1=COLORREF,crColor
 func.GetNearestPaletteIndex.ret=COLORREF
 
 GetObjectType=func
-func.GetObjectType.args=0
-func.GetObjectType.ret=_obj
+func.GetObjectType.args=1
+func.GetObjectType.arg.0=HGDIOBJ,h
+func.GetObjectType.ret=DWORD
 
 GetOutlineTextMetricsA=func
 func.GetOutlineTextMetricsA.args=3
@@ -977,8 +985,9 @@ func.GetPixelFormat.args=0
 func.GetPixelFormat.ret=long
 
 GetPolyFillMode=func
-func.GetPolyFillMode.args=0
-func.GetPolyFillMode.ret=_polyfill
+func.GetPolyFillMode.args=1
+func.GetPolyFillMode.arg.0=HDC,hdc
+func.GetPolyFillMode.ret=int
 
 GetRasterizerCaps=func
 func.GetRasterizerCaps.args=2
@@ -1004,7 +1013,7 @@ GetRgnBox=func
 func.GetRgnBox.args=2
 func.GetRgnBox.arg.0=HRGN,HRGN
 func.GetRgnBox.arg.1=LPRECT,lprc
-func.GetRgnBox.ret=_regionflags
+func.GetRgnBox.ret=int
 
 GetStockObject=func
 func.GetStockObject.args=0
@@ -1023,16 +1032,19 @@ func.GetSystemPaletteEntries.arg.3=LPPALETTEENTRY,lppe
 func.GetSystemPaletteEntries.ret=UINT
 
 GetSystemPaletteUse=func
-func.GetSystemPaletteUse.args=0
-func.GetSystemPaletteUse.ret=_syspal
+func.GetSystemPaletteUse.args=1
+func.GetSystemPaletteUse.arg.0=HDC,hdc
+func.GetSystemPaletteUse.ret=UINT
 
 GetTextCharacterExtra=func
-func.GetTextCharacterExtra.args=0
-func.GetTextCharacterExtra.ret=_odd_failure
+func.GetTextCharacterExtra.args=1
+func.GetTextCharacterExtra.arg.0=HDC,hdc
+func.GetTextCharacterExtra.ret=int
 
 GetTextAlign=func
-func.GetTextAlign.args=0
-func.GetTextAlign.ret=_textalignmentoptions
+func.GetTextAlign.args=1
+func.GetTextAlign.arg.0=HDC,hdc
+func.GetTextAlign.ret=UINT
 
 GetTextColor=func
 func.GetTextColor.args=0
@@ -1093,15 +1105,16 @@ func.GetTextExtentExPointW.arg.6=LPSIZE,lpSize
 func.GetTextExtentExPointW.ret=BOOL
 
 GetTextCharset=func
-func.GetTextCharset.args=0
-func.GetTextCharset.ret=_charset
+func.GetTextCharset.args=1
+func.GetTextCharset.arg.0=HDC,hdc
+func.GetTextCharset.ret=int
 
 GetTextCharsetInfo=func
 func.GetTextCharsetInfo.args=3
 func.GetTextCharsetInfo.arg.0=HDC,hdc
 func.GetTextCharsetInfo.arg.1=LPFONTSIGNATURE,lpSig
 func.GetTextCharsetInfo.arg.2=DWORD,dwFlags
-func.GetTextCharsetInfo.ret=_charset
+func.GetTextCharsetInfo.ret=int
 
 TranslateCharsetInfo=func
 func.TranslateCharsetInfo.args=3
@@ -1112,7 +1125,7 @@ func.TranslateCharsetInfo.ret=BOOL
 
 GetFontLanguageInfo=func
 func.GetFontLanguageInfo.args=0
-func.GetFontLanguageInfo.ret=_gcp
+func.GetFontLanguageInfo.ret=DWORD
 
 GetCharacterPlacementA=func
 func.GetCharacterPlacementA.args=6
@@ -1229,7 +1242,7 @@ func.AddFontMemResourceEx.arg.0=PVOID,pbFont
 func.AddFontMemResourceEx.arg.1=DWORD,cbFont
 func.AddFontMemResourceEx.arg.2=PVOID,pdv
 func.AddFontMemResourceEx.arg.3=DWORD,*pcFonts
-func.AddFontMemResourceEx.ret=handle
+func.AddFontMemResourceEx.ret=HANDLE
 
 RemoveFontMemResourceEx=func
 func.RemoveFontMemResourceEx.args=0
@@ -1274,7 +1287,7 @@ func.IntersectClipRect.arg.1=int,nLeftRect
 func.IntersectClipRect.arg.2=int,nTopRect
 func.IntersectClipRect.arg.3=int,nRightRect
 func.IntersectClipRect.arg.4=int,nBottomRect
-func.IntersectClipRect.ret=_regionflags
+func.IntersectClipRect.ret=int
 
 InvertRgn=func
 func.InvertRgn.args=2
@@ -1334,14 +1347,14 @@ func.OffsetClipRgn.args=3
 func.OffsetClipRgn.arg.0=HDC,hdc
 func.OffsetClipRgn.arg.1=int,nXOffset
 func.OffsetClipRgn.arg.2=int,nYOffset
-func.OffsetClipRgn.ret=_regionflags
+func.OffsetClipRgn.ret=int
 
 OffsetRgn=func
 func.OffsetRgn.args=3
 func.OffsetRgn.arg.0=HRGN,HRGN
 func.OffsetRgn.arg.1=int,nXOffset
 func.OffsetRgn.arg.2=int,nYOffset
-func.OffsetRgn.ret=_regionflags
+func.OffsetRgn.ret=int
 
 PatBlt=func
 func.PatBlt.args=6
@@ -1441,7 +1454,7 @@ func.ResetDCW.ret=HDC
 
 RealizePalette=func
 func.RealizePalette.args=0
-func.RealizePalette.ret=_gdi_error
+func.RealizePalette.ret=UINT
 
 RemoveFontResourceA=func
 func.RemoveFontResourceA.args=0
@@ -1476,18 +1489,18 @@ SelectClipRgn=func
 func.SelectClipRgn.args=2
 func.SelectClipRgn.arg.0=HDC,hdc
 func.SelectClipRgn.arg.1=HRGN,HRGN
-func.SelectClipRgn.ret=_regionflags
+func.SelectClipRgn.ret=int
 
 ExtSelectClipRgn=func
 func.ExtSelectClipRgn.args=3
 func.ExtSelectClipRgn.arg.0=HDC,hdc
 func.ExtSelectClipRgn.arg.1=HRGN,HRGN
 func.ExtSelectClipRgn.arg.2=_CombineRgn,fnMode
-func.ExtSelectClipRgn.ret=_regionflags
+func.ExtSelectClipRgn.ret=int
 
 SetMetaRgn=func
 func.SetMetaRgn.args=0
-func.SetMetaRgn.ret=_regionflags
+func.SetMetaRgn.ret=int
 
 SelectObject=func
 func.SelectObject.args=2
@@ -1571,7 +1584,7 @@ SetMapperFlags=func
 func.SetMapperFlags.args=2
 func.SetMapperFlags.arg.0=HDC,hdc
 func.SetMapperFlags.arg.1=DWORD,dwFlag
-func.SetMapperFlags.ret=_gdi_error
+func.SetMapperFlags.ret=DWORD
 
 SetGraphicsMode=func
 func.SetGraphicsMode.args=2
@@ -1588,12 +1601,13 @@ func.SetMapMode.ret=long
 SetLayout=func
 func.SetLayout.args=2
 func.SetLayout.arg.0=HDC,hdc
-func.SetLayout.arg.1=_LAYOUT,dwLayout
-func.SetLayout.ret=_gdi_error
+func.SetLayout.arg.1=DWORD,dwLayout
+func.SetLayout.ret=DWORD
 
 GetLayout=func
-func.GetLayout.args=0
-func.GetLayout.ret=_gdi_error
+func.GetLayout.args=1
+func.GetLayout.arg.0=HDC,hdc
+func.GetLayout.ret=DWORD
 
 SetMetaFileBitsEx=func
 func.SetMetaFileBitsEx.args=2
@@ -1677,7 +1691,7 @@ func.StretchDIBits.arg.9=VOID,*lpBits
 func.StretchDIBits.arg.10=BITMAPINFO,*lpBitsInfo
 func.StretchDIBits.arg.11=_DIB_Color,iUsage
 func.StretchDIBits.arg.12=_TernaryDrawMode,dwRop
-func.StretchDIBits.ret=_gdi_error
+func.StretchDIBits.ret=int
 
 SetROP2=func
 func.SetROP2.args=2
@@ -1695,13 +1709,13 @@ SetSystemPaletteUse=func
 func.SetSystemPaletteUse.args=2
 func.SetSystemPaletteUse.arg.0=HDC,hdc
 func.SetSystemPaletteUse.arg.1=_SYSPAL,uUsage
-func.SetSystemPaletteUse.ret=_syspal
+func.SetSystemPaletteUse.ret=UINT
 
 SetTextCharacterExtra=func
 func.SetTextCharacterExtra.args=2
 func.SetTextCharacterExtra.arg.0=HDC,hdc
 func.SetTextCharacterExtra.arg.1=int,nCharExtra
-func.SetTextCharacterExtra.ret=_odd_failure
+func.SetTextCharacterExtra.ret=int
 
 SetTextColor=func
 func.SetTextColor.args=2
@@ -2124,8 +2138,9 @@ func.GetMiterLimit.arg.1=PFLOAT,peLimit
 func.GetMiterLimit.ret=BOOL
 
 GetArcDirection=func
-func.GetArcDirection.args=0
-func.GetArcDirection.ret=_ad
+func.GetArcDirection.args=1
+func.GetArcDirection.arg.0=HDC,hdc
+func.GetArcDirection.ret=int
 
 GetObjectA=func
 func.GetObjectA.args=3
@@ -2554,11 +2569,11 @@ func.SHBindToParent.ret=HRESULT
 
 SHBrowseForFolderA=func
 func.SHBrowseForFolderA.args=0
-func.SHBrowseForFolderA.ret=lpitemidlist
+func.SHBrowseForFolderA.ret=LPITEMIDLIST
 
 SHBrowseForFolderW=func
 func.SHBrowseForFolderW.args=0
-func.SHBrowseForFolderW.ret=lpitemidlist
+func.SHBrowseForFolderW.ret=LPITEMIDLIST
 
 SHChangeNotify=func
 func.SHChangeNotify.args=4

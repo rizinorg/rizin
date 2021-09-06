@@ -1,7 +1,7 @@
 Calling Conventions profiles
 ============================
 
-Rizin uses calling conventions to help in identifying function formal arguments and return types. It is used also as guide for basic function prototype (WIP at the time of writing this wiki).
+Rizin uses calling conventions to help in identifying function formal arguments and return types. It is used also as guide for basic function prototype.
 
 Profile grammar
 ===============
@@ -13,7 +13,7 @@ Attribute list
 
 Note that you will substitute `x` for the calling convention name you will use.
 
-`default.cc=x` : used to set the default calling convention used for all functions in `RzAnalysis` instance for which this key is set, string of this calling convention `"x"` will be returned for every call of `RZ_API const char *r_analysis_cc_default(RzAnalysis *analysis)`.
+`default.cc=x` : used to set the default calling convention used for all functions in `RzAnalysis` instance for which this key is set, string of this calling convention `"x"` will be returned for every call of `RZ_API const char *rz_analysis_cc_default(RzAnalysis *analysis)`.
 
 `x=cc`: used to initialize calling convention (think of it as their is calling convention called x).
 
@@ -34,6 +34,6 @@ In order to integrate the calling convention profile you created with the rizin 
 
 - Store the unparsed sdb file in `path-to-rizin-source/librz/analysis/d`.
 - If you want the sdb to be loaded for specific architecture the file name should follow this convention `cc-arch-bits`, for example to create profile that loads automatically for x86 arch with 16 bits call the file `cc-x86-16`
-- In the file `path-to-rizin-source/librz/analysis/d/makefile` add entry `F+= cc-arch-bits` with desired arch and bits and you should be ready to go.
+- In the file `path-to-rizin-source/librz/analysis/d/meson.build` add entry `cc-arch-bits` with desired arch and bits and you should be ready to go.
 
 
