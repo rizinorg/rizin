@@ -1,0 +1,454 @@
+# SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+---
+name: cmd_info
+commands:
+  - name: i
+    cname: cmd_info
+    summary: Show info of current file
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    default_mode: RZ_OUTPUT_MODE_TABLE
+    modes:
+      - RZ_OUTPUT_MODE_QUIET
+      - RZ_OUTPUT_MODE_TABLE
+      - RZ_OUTPUT_MODE_JSON
+    args: []
+  - name: ia
+    cname: cmd_info_all
+    summary: Show a summary of all info (imports, exports, sections, etc.)
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_QUIET
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_STANDARD
+    args: []
+  - name: iA
+    cname: cmd_info_archs
+    summary: List archs
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    default_mode: RZ_OUTPUT_MODE_TABLE
+    modes:
+      - RZ_OUTPUT_MODE_TABLE
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_QUIET
+    args: []
+  - name: ic
+    summary: List classes, fields and methods
+    subcommands:
+      - name: ic
+        cname: cmd_info_classes
+        summary: List classes
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        default_mode: RZ_OUTPUT_MODE_TABLE
+        modes:
+          - RZ_OUTPUT_MODE_TABLE
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_RIZIN
+          - RZ_OUTPUT_MODE_QUIET
+          - RZ_OUTPUT_MODE_QUIETEST
+        args: []
+      - name: icc
+        summary: Prints class, fields and methods as source code
+        cname: cmd_info_class_as_source
+        args:
+          - name: class name
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: icf
+        summary: List class fields
+        cname: cmd_info_class_fields
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        default_mode: RZ_OUTPUT_MODE_TABLE
+        modes:
+          - RZ_OUTPUT_MODE_TABLE
+          - RZ_OUTPUT_MODE_QUIET
+          - RZ_OUTPUT_MODE_QUIETEST
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: class name
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: icm
+        summary: List class methods
+        cname: cmd_info_class_methods
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        default_mode: RZ_OUTPUT_MODE_TABLE
+        modes:
+          - RZ_OUTPUT_MODE_TABLE
+          - RZ_OUTPUT_MODE_QUIET
+          - RZ_OUTPUT_MODE_QUIETEST
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: class name
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+  - name: iC
+    cname: cmd_info_signature
+    summary: Show signature info (entitlements, ...)
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+    args: []
+  - name: id
+    summary: Debug commands
+    subcommands:
+      - name: id
+        summary: Show DWARF source lines information
+        cname: cmd_info_dwarf
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_QUIET
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: idp
+        summary: PDB commands
+        subcommands:
+          - name: idp
+            summary: Load PDB file information
+            cname: cmd_info_pdb_load
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+            args:
+              - name: file.pdb
+                type: RZ_CMD_ARG_TYPE_FILE
+                optional: true
+          - name: idpi
+            summary: Show PDB file information
+            cname: cmd_info_pdb_show
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_RIZIN
+              - RZ_OUTPUT_MODE_JSON
+            args:
+              - name: file.pdb
+                type: RZ_CMD_ARG_TYPE_FILE
+                optional: true
+          - name: idpd
+            summary: Download PDB file on remote server
+            cname: cmd_info_pdb_download
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+            args: []
+  - name: iD
+    cname: cmd_info_demangle
+    summary: Demangle symbol for given language
+    args:
+      - name: lang
+        type: RZ_CMD_ARG_TYPE_CHOICES
+        choices:
+          - c++
+          - java
+          - objc
+          - swift
+          - dlang
+          - msvc
+          - rust
+      - name: symbol
+        type: RZ_CMD_ARG_TYPE_STRING
+  - name: ie
+    cname: cmd_info_entry
+    summary: List entrypoints
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    default_mode: RZ_OUTPUT_MODE_TABLE
+    modes:
+      - RZ_OUTPUT_MODE_TABLE
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_QUIET
+    args: []
+  - name: iee
+    cname: cmd_info_entryexits
+    summary: List entries/exits functions (e.g. preinit, init, fini)
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    default_mode: RZ_OUTPUT_MODE_TABLE
+    modes:
+      - RZ_OUTPUT_MODE_TABLE
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_QUIET
+    args: []
+  - name: iE
+    summary: List exports
+    subcommands:
+      - name: iE
+        cname: cmd_info_exports
+        summary: List exports (global symbols)
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        default_mode: RZ_OUTPUT_MODE_TABLE
+        modes:
+          - RZ_OUTPUT_MODE_TABLE
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+        args: []
+      - name: iE.
+        cname: cmd_info_cur_export
+        summary: List export at current offset
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        default_mode: RZ_OUTPUT_MODE_TABLE
+        modes:
+          - RZ_OUTPUT_MODE_TABLE
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+        args: []
+  - name: ih
+    cname: cmd_info_fields
+    summary: Show binary fields
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    default_mode: RZ_OUTPUT_MODE_TABLE
+    modes:
+      - RZ_OUTPUT_MODE_TABLE
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_QUIET
+    args: []
+  - name: iH
+    cname: cmd_info_headers
+    summary: Show binary headers
+    args: []
+  - name: ii
+    cname: cmd_info_imports
+    summary: List imports
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    default_mode: RZ_OUTPUT_MODE_TABLE
+    modes:
+      - RZ_OUTPUT_MODE_TABLE
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_QUIET
+    args: []
+  - name: iI
+    cname: cmd_info_binary
+    summary: Show binary info
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    default_mode: RZ_OUTPUT_MODE_TABLE
+    modes:
+      - RZ_OUTPUT_MODE_TABLE
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_QUIET
+    args: []
+  - name: ik
+    cname: cmd_info_kuery
+    summary: Key-value database from RzBinObject
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    args:
+      - name: query
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+  - name: il
+    cname: cmd_info_libs
+    summary: List libraries
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    default_mode: RZ_OUTPUT_MODE_TABLE
+    modes:
+      - RZ_OUTPUT_MODE_TABLE
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_QUIET
+    args: []
+  - name: iL
+    cname: cmd_info_plugins
+    summary: List all binary plugins loaded / Show plugin details
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_TABLE
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_QUIET
+    args:
+      - name: plugin
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+  - name: im
+    cname: cmd_info_memory
+    summary: Show info about predefined memory allocation
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    default_mode: RZ_OUTPUT_MODE_TABLE
+    modes:
+      - RZ_OUTPUT_MODE_TABLE
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_QUIET
+    args: []
+  - name: iM
+    cname: cmd_info_main
+    summary: Show main address
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    default_mode: RZ_OUTPUT_MODE_TABLE
+    modes:
+      - RZ_OUTPUT_MODE_TABLE
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_QUIET
+    args: []
+  - name: ir
+    cname: cmd_info_relocs
+    summary: List relocations
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    default_mode: RZ_OUTPUT_MODE_TABLE
+    modes:
+      - RZ_OUTPUT_MODE_TABLE
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_QUIET
+    args: []
+  - name: iR
+    cname: cmd_info_resources
+    summary: List Resources
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_STANDARD
+    args: []
+  - name: is
+    cname: cmd_info_symbols
+    summary: List symbols
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    default_mode: RZ_OUTPUT_MODE_TABLE
+    modes:
+      - RZ_OUTPUT_MODE_TABLE
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_QUIET
+      - RZ_OUTPUT_MODE_QUIETEST
+    args: []
+  - name: is.
+    cname: cmd_info_cur_symbol
+    summary: Current symbol
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    default_mode: RZ_OUTPUT_MODE_TABLE
+    modes:
+      - RZ_OUTPUT_MODE_TABLE
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_QUIET
+    args: []
+  - name: iS
+    cname: cmd_info_sections
+    summary: List sections
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    default_mode: RZ_OUTPUT_MODE_TABLE
+    modes:
+      - RZ_OUTPUT_MODE_TABLE
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_QUIET
+    args:
+      - name: digests
+        type: RZ_CMD_ARG_TYPE_STRING
+        flags: RZ_CMD_ARG_FLAG_ARRAY
+        optional: true
+  - name: iS.
+    cname: cmd_info_cur_section
+    summary: Current section
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    default_mode: RZ_OUTPUT_MODE_TABLE
+    modes:
+      - RZ_OUTPUT_MODE_TABLE
+      - RZ_OUTPUT_MODE_JSON
+    args: []
+  - name: iS=
+    cname: cmd_info_section_bars
+    summary: Show ascii-art color bars with the section ranges
+    args: []
+  - name: iSS
+    cname: cmd_info_segments
+    summary: List segments
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    default_mode: RZ_OUTPUT_MODE_TABLE
+    modes:
+      - RZ_OUTPUT_MODE_TABLE
+      - RZ_OUTPUT_MODE_JSON
+    args:
+      - name: digests
+        type: RZ_CMD_ARG_TYPE_STRING
+        flags: RZ_CMD_ARG_FLAG_ARRAY
+        optional: true
+  - name: it
+    cname: cmd_info_hashes
+    summary: Show file hashes
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+    args: []
+  - name: iV
+    cname: cmd_info_versions
+    summary: Display file version info
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+    args: []
+  - name: iw
+    cname: cmd_info_trycatch
+    summary: Show try/catch blocks
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    default_mode: RZ_OUTPUT_MODE_RIZIN
+    modes:
+      - RZ_OUTPUT_MODE_RIZIN
+    args: []
+  - name: ix
+    cname: cmd_info_sourcelines
+    summary: Display source file line info
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+    args: []
+  - name: ix.
+    cname: cmd_info_sourcelines_here
+    summary: Display source file line info at current address
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+    args: []
+  - name: ixf
+    cname: cmd_info_source
+    summary: Display source file info
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+    args: []
+  - name: iz
+    cname: cmd_info_strings
+    summary: List strings
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    default_mode: RZ_OUTPUT_MODE_TABLE
+    modes:
+      - RZ_OUTPUT_MODE_TABLE
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_QUIET
+      - RZ_OUTPUT_MODE_QUIETEST
+    args: []
+  - name: izz
+    cname: cmd_info_whole_strings
+    summary: List strings in the whole binary
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    default_mode: RZ_OUTPUT_MODE_TABLE
+    modes:
+      - RZ_OUTPUT_MODE_TABLE
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_QUIET
+      - RZ_OUTPUT_MODE_QUIETEST
+    args: []
+  - name: izzz
+    cname: cmd_info_dump_strings
+    summary: Dump Strings from whole binary to rizin shell (for huge files)
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    default_mode: RZ_OUTPUT_MODE_TABLE
+    modes:
+      - RZ_OUTPUT_MODE_TABLE
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_QUIET
+    args: []
+  - name: iz-
+    cname: cmd_info_purge_string
+    summary: Purge string at current address via bin.str.purge
+    args: []
+  - name: iZ
+    cname: cmd_info_guess_size
+    summary: Guess size of binary program
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_RIZIN
+    args: []

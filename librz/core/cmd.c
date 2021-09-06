@@ -1437,10 +1437,7 @@ static int cmd_rebase(RzCore *core, const char *input) {
 	rz_debug_bp_rebase(core->dbg, addr, core->offset);
 	rz_bin_set_baddr(core->bin, core->offset);
 	rz_flag_move(core->flags, addr, core->offset);
-	rz_core_cmd0(core, ".is*");
-	rz_core_cmd0(core, ".iM*");
-	rz_core_cmd0(core, ".ii*");
-	rz_core_cmd0(core, ".iz*");
+	rz_core_bin_apply_all_info(core, rz_bin_cur(core->bin));
 	// TODO: rz_analysis_move :??
 	// TODO: differentiate analysis by map ranges (associated with files or memory maps)
 	return 0;
@@ -1703,50 +1700,6 @@ RZ_IPI int rz_cmd_env(void *data, const char *input) {
 		ret = rz_core_cmdf(core, "env %s", input);
 	}
 	return ret;
-}
-
-static struct autocomplete_flag_map_t {
-	const char *name;
-	const char *desc;
-	int type;
-} autocomplete_flags[] = {
-	{ "$dflt", "default autocomplete flag", RZ_CORE_AUTOCMPLT_DFLT },
-	{ "$flag", "shows known flag hints", RZ_CORE_AUTOCMPLT_FLAG },
-	{ "$flsp", "shows known flag-spaces hints", RZ_CORE_AUTOCMPLT_FLSP },
-	{ "$seek", "shows the seek hints", RZ_CORE_AUTOCMPLT_SEEK },
-	{ "$fcn", "shows the functions hints", RZ_CORE_AUTOCMPLT_FCN },
-	{ "$zign", "shows known zignatures hints", RZ_CORE_AUTOCMPLT_ZIGN },
-	{ "$eval", "shows known evals hints", RZ_CORE_AUTOCMPLT_EVAL },
-	{ "$mins", NULL, RZ_CORE_AUTOCMPLT_MINS },
-	{ "$brkp", "shows known breakpoints hints", RZ_CORE_AUTOCMPLT_BRKP },
-	{ "$macro", NULL, RZ_CORE_AUTOCMPLT_MACR },
-	{ "$file", "hints file paths", RZ_CORE_AUTOCMPLT_FILE },
-	{ "$thme", "shows known themes hints", RZ_CORE_AUTOCMPLT_THME },
-	{ "$optn", "allows the selection for multiple options", RZ_CORE_AUTOCMPLT_OPTN },
-	{ "$sdb", "shows sdb hints", RZ_CORE_AUTOCMPLT_SDB },
-	{ NULL, NULL, 0 }
-};
-
-static inline void print_dict(RzCoreAutocomplete *a, int sub) {
-	if (!a) {
-		return;
-	}
-	int i, j;
-	const char *name = "unknown";
-	for (i = 0; i < a->n_subcmds; i++) {
-		RzCoreAutocomplete *b = a->subcmds[i];
-		if (b->locked) {
-			continue;
-		}
-		for (j = 0; j < RZ_CORE_AUTOCMPLT_END; j++) {
-			if (b->type == autocomplete_flags[j].type) {
-				name = autocomplete_flags[j].name;
-				break;
-			}
-		}
-		eprintf("[%3d] %s: '%s'\n", sub, name, b->cmd);
-		print_dict(a->subcmds[i], sub + 1);
-	}
 }
 
 RZ_IPI RzCmdStatus rz_cmd_exit_handler(RzCore *core, int argc, const char **argv) {
@@ -6551,7 +6504,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "e", "evaluate configuration variable", rz_cmd_eval },
 		{ "f", "get/set flags", rz_cmd_flag },
 		{ "g", "egg manipulation", rz_cmd_egg },
-		{ "i", "get file info", rz_cmd_info },
 		{ "k", "perform sdb query", rz_cmd_kuery },
 		{ "ls", "list files and directories", rz_cmd_ls },
 		{ "m", "make directory and move files", rz_cmd_m },

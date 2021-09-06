@@ -16,20 +16,23 @@ format   pe
 iorw     false
 block    0x100
 type     EXEC (Executable file)
-Name     Value                    
-----------------------------------
 arch     arm
-baddr    0x400000
-binsz    7680
+cpu      N/A
+baddr    0x00400000
+binsz    0x00001e00
 bintype  pe
 bits     16
 retguard false
 class    PE32
 cmp.csum 0x0000584b
 compiled Thu Aug 12 03:57:16 2021
+compiler N/A
+dbg_file N/A
 endian   LE
 hdr.csum 0x00000000
-laddr    0x0
+guid     N/A
+intrp    N/A
+laddr    0x00000000
 lang     c
 machine  ARM Thumb-2
 maxopsz  4
@@ -38,6 +41,7 @@ os       windows
 overlay  false
 cc       arm16
 pcalign  2
+rpath    N/A
 signed   false
 subsys   Windows CUI
 stripped false
@@ -52,12 +56,9 @@ canary   false
 PIE      true
 RELROCS  false
 NX       true
-[Entrypoints]
-vaddr=0x004011d4 paddr=0x000005d4 haddr=0x00000108 type=program
-
-1 entrypoints
-[Symbols]
-
+vaddr      paddr      hvaddr     haddr      type    
+----------------------------------------------------
+0x004011d4 0x000005d4 ---------- 0x00000108 program
 nth paddr      vaddr      bind type size lib                               name                                           
 --------------------------------------------------------------------------------------------------------------------------
 1   0x00000e00 0x00402000 NONE FUNC 0    KERNEL32.dll                      imp.QueryPerformanceCounter

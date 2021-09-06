@@ -221,9 +221,8 @@ commands:
     summary: Rizin history commands.
     subcommands: cmd_history
   - name: i
-    cname: cmd_info
     summary: Get info about opened binary file
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    subcommands: cmd_info
   - name: k
     cname: cmd_kuery
     summary: Run sdb-query

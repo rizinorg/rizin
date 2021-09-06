@@ -6,6 +6,7 @@ cmd_descs_yaml = files(
   'cmd_eval.yaml',
   'cmd_heap_glibc.yaml',
   'cmd_history.yaml',
+  'cmd_info.yaml',
   'cmd_interpret.yaml',
   'cmd_plugins.yaml',
   'cmd_print.yaml',

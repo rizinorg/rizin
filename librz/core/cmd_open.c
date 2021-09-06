@@ -81,6 +81,7 @@ static const char *help_msg_ob[] = {
 	"obn", " [name]", "Select binfile by name",
 	"obo", " [fd]", "Switch to open binfile by fd number",
 	"obr", " [baddr]", "Rebase current bin object",
+	"obR", " [baddr]", "Reload the current buffer for setting of the bin (use once only)",
 	NULL
 };
 
@@ -169,6 +170,23 @@ static const char *help_msg_oonn[] = {
 	NULL
 };
 
+static bool core_bin_reload(RzCore *r, const char *file, ut64 baseaddr) {
+	RzCoreFile *cf = rz_core_file_cur(r);
+	if (!cf) {
+		return false;
+	}
+	RzBinFile *obf = rz_bin_file_find_by_fd(r->bin, cf->fd);
+	if (!obf) {
+		return false;
+	}
+	RzBinFile *nbf = rz_bin_reload(r->bin, obf, baseaddr);
+	if (!nbf) {
+		return false;
+	}
+	rz_core_bin_apply_all_info(r, nbf);
+	return true;
+}
+
 // HONOR bin.at
 static void cmd_open_bin(RzCore *core, const char *input) {
 	const char *value = NULL;
@@ -223,9 +241,9 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 					ut64 addr = rz_num_math(core->num, arg);
 					RzBinOptions opt;
 					rz_core_bin_options_init(core, &opt, desc->fd, addr, 0);
-					rz_bin_open_io(core->bin, &opt);
+					RzBinFile *bf = rz_bin_open_io(core->bin, &opt);
 					rz_io_desc_close(desc);
-					rz_core_cmd0(core, ".is*");
+					rz_core_bin_apply_all_info(core, bf);
 					rz_io_use_fd(core->io, saved_fd);
 				} else {
 					eprintf("Cannot open %s\n", filename + 1);
@@ -239,8 +257,8 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 					RzBinOptions opt;
 					opt.sz = 1024 * 1024 * 1;
 					rz_core_bin_options_init(core, &opt, desc->fd, baddr, addr);
-					rz_bin_open_io(core->bin, &opt);
-					rz_core_cmd0(core, ".is*");
+					RzBinFile *bf = rz_bin_open_io(core->bin, &opt);
+					rz_core_bin_apply_all_info(core, bf);
 				} else {
 					eprintf("No file to load bin from?\n");
 				}
@@ -252,8 +270,8 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 					RzBinOptions opt;
 					opt.sz = 1024 * 1024 * 1;
 					rz_core_bin_options_init(core, &opt, desc->fd, addr, addr);
-					rz_bin_open_io(core->bin, &opt);
-					rz_core_cmd0(core, ".is*");
+					RzBinFile *bf = rz_bin_open_io(core->bin, &opt);
+					rz_core_bin_apply_all_info(core, bf);
 				} else {
 					eprintf("No file to load bin from?\n");
 				}
@@ -273,8 +291,8 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 				int fd = (size_t)_fd;
 				RzBinOptions opt;
 				rz_core_bin_options_init(core, &opt, fd, core->offset, 0);
-				rz_bin_open_io(core->bin, &opt);
-				rz_core_cmd0(core, ".ies*");
+				RzBinFile *bf = rz_bin_open_io(core->bin, &opt);
+				rz_core_bin_apply_all_info(core, bf);
 				break;
 			}
 			rz_list_free(files);
@@ -310,7 +328,15 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 	}
 	case 'r': // "obr"
 		rz_core_bin_rebase(core, rz_num_math(core->num, input + 3));
-		rz_core_cmd0(core, ".is*");
+		rz_core_bin_apply_all_info(core, rz_bin_cur(core->bin));
+		break;
+	case 'R': // "obR"
+		// XXX: this will reload the bin using the buffer.
+		// An assumption is made that assumes there is an underlying
+		// plugin that will be used to load the bin (e.g. malloc://)
+		// TODO: Might be nice to reload a bin at a specified offset?
+		core_bin_reload(core, NULL, input[2] ? rz_num_math(core->num, input + 3) : 0);
+		rz_core_block_read(core);
 		break;
 	case 'f':
 		if (input[2] == ' ') {

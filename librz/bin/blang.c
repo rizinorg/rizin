@@ -1,195 +1,155 @@
+// SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
 // SPDX-FileCopyrightText: 2018-2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bin.h>
 
-typedef struct {
-	bool rust;
-	bool objc;
-	bool dlang;
-	bool swift;
-	bool cxx;
-	bool msvc;
-} Langs;
+#define lang_apply_blocks(x, b) (b ? (RZ_BIN_NM_BLOCKS | (x)) : (x))
 
 static inline bool check_rust(RzBinSymbol *sym) {
-	return sym->name && strstr(sym->name, "_$LT$");
+	return strstr(sym->name, "_$LT$");
 }
 
 static inline bool check_objc(RzBinSymbol *sym) {
-	if (sym->name && !strncmp(sym->name, "_OBJC_", 6)) {
-		// free (rz_bin_demangle_objc (binfile, sym->name));
-		return true;
-	}
-	return false;
+	return !strncmp(sym->name, "_OBJC_", 6);
 }
 
-static bool check_dlang(RzBinSymbol *sym) {
+static inline bool check_dlang(RzBinSymbol *sym) {
 	if (!strncmp(sym->name, "_D2", 3)) {
 		return true;
 	}
-	if (!strncmp(sym->name, "_D4", 3)) {
-		return true;
-	}
-	return false;
+	return !strncmp(sym->name, "_D4", 3);
 }
 
-static bool check_swift(RzBinSymbol *sym) {
-	if (sym->name && strstr(sym->name, "swift_once")) {
-		return true;
-	}
-	return false;
+static inline bool check_swift(RzBinSymbol *sym) {
+	return strstr(sym->name, "swift_once");
 }
 
-static bool check_golang(RzBinSymbol *sym) {
+static inline bool check_golang(RzBinSymbol *sym) {
 	return !strncmp(sym->name, "go.", 3);
 }
 
-static inline bool is_cxx_symbol(const char *name) {
-	rz_return_val_if_fail(name, false);
-	if (!strncmp(name, "_Z", 2)) {
+static inline bool check_cxx(RzBinSymbol *sym) {
+	if (!strncmp(sym->name, "_Z", 2)) {
 		return true;
 	}
-	if (!strncmp(name, "__Z", 3)) {
-		return true;
-	}
-	return false;
+	return !strncmp(sym->name, "__Z", 3);
 }
 
-static bool check_cxx(RzBinSymbol *sym) {
-	return is_cxx_symbol(sym->name);
-}
-
-static bool check_msvc(RzBinSymbol *sym) {
+static inline bool check_msvc(RzBinSymbol *sym) {
 	return *sym->name == '?';
+}
+
+static inline bool check_kotlin(RzBinSymbol *sym) {
+	return strstr(sym->name, "kotlin_");
+}
+
+static inline bool check_groovy(RzBinSymbol *sym) {
+	return strstr(sym->name, "_groovy");
 }
 
 /* This is about 10% of the loading time, optimize if possible */
 RZ_API int rz_bin_load_languages(RzBinFile *binfile) {
-	rz_return_val_if_fail(binfile, RZ_BIN_NM_NONE);
-	rz_return_val_if_fail(binfile->o, RZ_BIN_NM_NONE);
-	rz_return_val_if_fail(binfile->o->info, RZ_BIN_NM_NONE);
+	rz_return_val_if_fail(binfile && binfile->o, RZ_BIN_NM_NONE);
 	RzBinObject *o = binfile->o;
 	RzBinInfo *info = o->info;
 	RzBinSymbol *sym;
-	RzListIter *iter, *iter2;
-	Langs cantbe = { 0 };
-	bool phobosIsChecked = false;
-	bool swiftIsChecked = false;
-	bool canBeCxx = false;
-	bool cxxIsChecked = false;
-	bool isMsvc = false;
+	RzListIter *iter;
 
-	char *ft = info->rclass ? info->rclass : "";
-	bool unknownType = info->rclass == NULL;
-	bool isMacho = strstr(ft, "mach");
-	bool isElf = strstr(ft, "elf");
-	bool isPe = strstr(ft, "pe");
-	bool isBlocks = false;
-	bool isObjC = false;
-
-	if (unknownType || !(isMacho || isElf || isPe)) {
+	if (!info) {
+		return RZ_BIN_NM_NONE;
+	} else if (RZ_STR_ISNOTEMPTY(info->lang)) {
+		if (strstr(info->lang, "java")) {
+			return RZ_BIN_NM_JAVA;
+		} else if (strstr(info->lang, "kotlin")) {
+			return RZ_BIN_NM_KOTLIN;
+		} else if (strstr(info->lang, "groovy")) {
+			return RZ_BIN_NM_GROOVY;
+		} else if (strstr(info->lang, "swift")) {
+			return RZ_BIN_NM_SWIFT;
+		}
 		return RZ_BIN_NM_NONE;
 	}
 
-	// check in imports . can be slow
-	rz_list_foreach (o->imports, iter, sym) {
-		const char *name = sym->name;
-		if (!strcmp(name, "_NSConcreteGlobalBlock")) {
-			isBlocks = true;
-		} else if (!strncmp(name, "objc_", 5)) {
-			isObjC = true;
-			cantbe.objc = true;
+	bool is_macho = info->rclass ? strstr(info->rclass, "mach") : false;
+	bool is_elf = info->rclass ? strstr(info->rclass, "elf") : false;
+	bool is_pe = info->rclass ? strstr(info->rclass, "pe") : false;
+	bool is_blocks = false;
+	bool is_objc = false;
+	bool is_cpp = false;
+	char *lib = NULL;
+
+	if (!is_macho && !is_elf && !is_pe) {
+		return RZ_BIN_NM_NONE;
+	}
+
+	if (is_macho || is_elf) {
+		rz_list_foreach (o->imports, iter, sym) {
+			const char *name = sym->name;
+			if (!strcmp(name, "_NSConcreteGlobalBlock")) {
+				is_blocks = true;
+			} else if (!strncmp(name, "objc_", 5)) {
+				is_objc = true;
+			}
 		}
+	}
+	rz_list_foreach (o->libs, iter, lib) {
+		if (is_macho && strstr(lib, "swift")) {
+			info->lang = "swift";
+			return lang_apply_blocks(RZ_BIN_NM_SWIFT, is_blocks);
+		} else if (strstr(lib, "stdc++") || strstr(lib, "c++")) {
+			is_cpp = true;
+		} else if (strstr(lib, "msvcp")) {
+			info->lang = "msvc";
+			return RZ_BIN_NM_MSVC;
+		} else if (strstr(lib, "phobos")) {
+			info->lang = "dlang";
+			return RZ_BIN_NM_DLANG;
+		}
+	}
+	if (is_objc) {
+		info->lang = "objc";
+		return lang_apply_blocks(RZ_BIN_NM_OBJC, is_blocks);
 	}
 
 	rz_list_foreach (o->symbols, iter, sym) {
-		char *lib;
-		if (!cantbe.rust) {
-			if (check_rust(sym)) {
-				info->lang = "rust";
-				return RZ_BIN_NM_RUST;
-			}
+		if (!sym->name) {
+			continue;
 		}
-		if (check_golang(sym)) {
+		if (check_rust(sym)) {
+			info->lang = "rust";
+			return RZ_BIN_NM_RUST;
+		} else if (check_golang(sym)) {
 			info->lang = "go";
 			return RZ_BIN_NM_GO;
-		}
-		if (!cantbe.swift) {
-			bool hasswift = false;
-			if (!swiftIsChecked) {
-				rz_list_foreach (o->libs, iter2, lib) {
-					if (strstr(lib, "swift")) {
-						hasswift = true;
-						break;
-					}
-				}
-				swiftIsChecked = true;
-			}
-			if (hasswift || check_swift(sym)) {
-				info->lang = "swift";
-				return RZ_BIN_NM_SWIFT;
-			}
-		}
-		if (!cantbe.cxx) {
-			bool hascxx = false;
-			if (!cxxIsChecked) {
-				rz_list_foreach (o->libs, iter2, lib) {
-					if (strstr(lib, "stdc++") ||
-						strstr(lib, "c++")) {
-						hascxx = true;
-						break;
-					}
-					if (strstr(lib, "msvcp")) {
-						info->lang = "msvc";
-						return RZ_BIN_NM_MSVC;
-					}
-				}
-				cxxIsChecked = true;
-			}
-			if (hascxx || check_cxx(sym)) {
-				canBeCxx = true;
-				cantbe.cxx = true;
-			}
-		}
-		if (!cantbe.objc) {
-			if (check_objc(sym)) {
-				info->lang = "objc";
-				return RZ_BIN_NM_OBJC;
-			}
-		}
-		if (!cantbe.dlang) {
-			bool hasdlang = false;
-			if (!phobosIsChecked) {
-				rz_list_foreach (o->libs, iter2, lib) {
-					if (strstr(lib, "phobos")) {
-						hasdlang = true;
-						break;
-					}
-				}
-				phobosIsChecked = true;
-			}
-			if (hasdlang || check_dlang(sym)) {
-				info->lang = "dlang";
-				return RZ_BIN_NM_DLANG;
-			}
-		}
-		if (!cantbe.msvc) {
-			if (!isMsvc && check_msvc(sym)) {
-				isMsvc = true;
-			}
+		} else if (check_swift(sym)) {
+			info->lang = "swift";
+			return lang_apply_blocks(RZ_BIN_NM_SWIFT, is_blocks);
+		} else if (check_cxx(sym)) {
+			is_cpp = true;
+		} else if (check_objc(sym)) {
+			info->lang = "objc";
+			return lang_apply_blocks(RZ_BIN_NM_OBJC, is_blocks);
+		} else if (check_dlang(sym)) {
+			info->lang = "dlang";
+			return RZ_BIN_NM_DLANG;
+		} else if (check_kotlin(sym)) {
+			info->lang = "kotlin";
+			return RZ_BIN_NM_KOTLIN;
+		} else if (check_groovy(sym)) {
+			info->lang = "groovy";
+			return RZ_BIN_NM_GROOVY;
+		} else if (check_msvc(sym)) {
+			info->lang = "c";
+			return RZ_BIN_NM_MSVC;
 		}
 	}
-	if (isObjC) {
-		return RZ_BIN_NM_OBJC | (isBlocks ? RZ_BIN_NM_BLOCKS : 0);
+	if (is_cpp) {
+		info->lang = "c++";
+		return lang_apply_blocks(RZ_BIN_NM_CXX, is_blocks);
 	}
-	if (canBeCxx) {
-		return RZ_BIN_NM_CXX | (isBlocks ? RZ_BIN_NM_BLOCKS : 0);
-	}
-	if (isMsvc) {
-		return RZ_BIN_NM_MSVC;
-	}
-	return RZ_BIN_NM_C | (isBlocks ? RZ_BIN_NM_BLOCKS : 0);
+	return lang_apply_blocks(RZ_BIN_NM_C, is_blocks);
 }
 
 RZ_IPI int rz_bin_lang_type(RzBinFile *binfile, const char *def, const char *sym) {
@@ -233,13 +193,15 @@ RZ_API const char *rz_bin_lang_tostring(int lang) {
 	case RZ_BIN_NM_CXX:
 		return (lang & RZ_BIN_NM_BLOCKS) ? "c++ with blocks" : "c++";
 	case RZ_BIN_NM_DLANG:
-		return "d";
+		return "dlang";
 	case RZ_BIN_NM_OBJC:
 		return (lang & RZ_BIN_NM_BLOCKS) ? "objc with blocks" : "objc";
 	case RZ_BIN_NM_MSVC:
 		return "msvc";
 	case RZ_BIN_NM_RUST:
 		return "rust";
+	case RZ_BIN_NM_GROOVY:
+		return "groovy";
 	}
 	return NULL;
 }

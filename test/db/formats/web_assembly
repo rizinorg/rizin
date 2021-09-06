@@ -15,9 +15,9 @@ RUN
 
 NAME=WASM: Wasm - entrypoint
 FILE=bins/wasm/start.wasm
-CMDS=ie~vaddr
+CMDS=ie:quiet
 EXPECT=<<EOF
-vaddr=0x0000002d paddr=0x0000002d haddr=-1 type=program
+0x0000002d 0x0000002d ---------- ---------- program
 EOF
 RUN
 
@@ -25,15 +25,12 @@ NAME=WASM: Wasm - sections
 FILE=bins/wasm/binary.wasm
 CMDS=iS
 EXPECT=<<EOF
-[Sections]
-
-nth paddr        size vaddr       vsize perm name     
-------------------------------------------------------
-0   0x0000000a   0x10 0x0000000a   0x10 ---- type
-1   0x0000001d   0x2c 0x0000001d   0x2c ---- function
-2   0x0000004d  0x1dc 0x0000004d  0x1dc ---- export
-3   0x0000022d  0x1f6 0x0000022d  0x1f6 ---- code
-
+paddr      size  vaddr      vsize align perm name     type flags 
+-----------------------------------------------------------------
+0x0000000a 0x10  0x0000000a 0x10  0x0   ---- type          
+0x0000001d 0x2c  0x0000001d 0x2c  0x0   ---- function      
+0x0000004d 0x1dc 0x0000004d 0x1dc 0x0   ---- export        
+0x0000022d 0x1f6 0x0000022d 0x1f6 0x0   ---- code          
 EOF
 RUN
 

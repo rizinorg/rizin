@@ -121,7 +121,7 @@ static bool rz_test_test_run_unit(void) {
 }
 
 static bool rz_test_chdir_fromtest(const char *test_path) {
-	if (*test_path == '@') {
+	if (!test_path || *test_path == '@') {
 		test_path = "";
 	}
 	char *abs_test_path = rz_file_abspath(test_path);
