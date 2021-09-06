@@ -819,6 +819,7 @@ RZ_API int rz_core_bin_rebase(RzCore *core, ut64 baddr) {
 	RzBinFile *bf = core->bin->cur;
 	bf->o->opts.baseaddr = baddr;
 	bf->o->opts.loadaddr = baddr;
+	bf->o->opts.patch_relocs = true;
 	rz_bin_object_set_items(bf, bf->o);
 	return 1;
 }

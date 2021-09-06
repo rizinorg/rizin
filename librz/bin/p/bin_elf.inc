@@ -670,12 +670,12 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 
 static void patch_relocs(RzBinFile *bf, ELFOBJ *bin) {
 	rz_return_if_fail(bf && bin);
-	if (bin->relocs_patched || !Elf_(rz_bin_elf_has_relocs)(bin)) {
+	RzBinObject *obj = bf->o;
+	if (!obj || (bin->ehdr.e_type != ET_REL && bin->ehdr.e_type != ET_DYN)) {
 		return;
 	}
-	bin->relocs_patched = true; // run this function just once (lazy relocs patching)
-	RzBinObject *obj = bf->o;
-	if (!obj || !obj->opts.patch_relocs || (bin->ehdr.e_type != ET_REL && bin->ehdr.e_type != ET_DYN)) {
+	// Run function only once, except it is requested to run it again (via opts.patch_relocs)
+	if (!obj->opts.patch_relocs || !Elf_(rz_bin_elf_has_relocs)(bin)) {
 		return;
 	}
 	ut64 cdsz = reloc_target_size(bin);
@@ -737,6 +737,8 @@ static void patch_relocs(RzBinFile *bf, ELFOBJ *bin) {
 			vaddr += cdsz;
 		}
 	}
+	obj->opts.patch_relocs = false; // Do not relocate again after successful reloc patching.
+	bin->relocs_patched = true;
 	ht_uu_free(relocs_by_sym);
 	// from now on, all writes should propagate through to the actual file
 	rz_buf_sparse_set_write_mode(bin->buf_patched, RZ_BUF_SPARSE_WRITE_MODE_THROUGH);
