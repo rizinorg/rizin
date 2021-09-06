@@ -237,7 +237,6 @@ if r.returncode() == 1 and get_option('subprojects_check')
   error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
 endif
 
-# handle libswift library
 r = run_command(py3_exe, check_meson_subproject_py, 'libswift')
 if r.returncode() == 1 and get_option('subprojects_check')
   error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
@@ -255,6 +254,7 @@ if sys_xxhash_opt.auto() or sys_xxhash_opt.disabled()
   xxhash_dep = xxhash_proj.get_variable('xxhash_dep')
 endif
 
+# handle libswift library
 libswift_proj = subproject('libswift', default_options: ['default_library=static'])
 libswift_dep = libswift_proj.get_variable('libswift_dep')
 
