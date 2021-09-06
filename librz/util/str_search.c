@@ -112,7 +112,7 @@ static ut64 adjust_offset(RzStrEnc str_type, ut8 *buf, const ut64 str_start) {
 	return 0;
 }
 
-RZ_API int rz_scan_strings(const RzUtilStrScanOptions *opt, RzList *list, RzBuffer *buf_to_scan,
+RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrScanOptions *opt,
 	const ut64 from, const ut64 to, RzStrEnc type) {
 
 	rz_return_val_if_fail(opt, -1);

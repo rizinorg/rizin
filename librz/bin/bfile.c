@@ -165,7 +165,7 @@ static int string_scan_range(RzList *list, RzBinFile *bf, int min,
 		.min_str_length = min
 	};
 
-	int count = rz_scan_strings(&scan_opt, str_list, bf->buf, from, to, type);
+	int count = rz_scan_strings(bf->buf, str_list, &scan_opt, from, to, type);
 	if (count <= 0) {
 		rz_list_free(str_list);
 		return 0;

@@ -13,7 +13,7 @@ bool test_rz_scan_strings_detect_ascii(void) {
 	RzBuffer *buf = rz_buf_new_with_bytes(str, sizeof(str));
 
 	RzList *str_list = rz_list_new();
-	int n = rz_scan_strings(&g_opt, str_list, buf, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_GUESS);
+	int n = rz_scan_strings(buf, str_list, &g_opt, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_GUESS);
 	mu_assert_eq(n, 1, "rz_scan_strings ascii, number of strings");
 
 	RzDetectedString *s = rz_list_get_n(str_list, 0);
@@ -32,7 +32,7 @@ bool test_rz_scan_strings_detect_utf8(void) {
 	RzBuffer *buf = rz_buf_new_with_bytes(str, sizeof(str));
 
 	RzList *str_list = rz_list_new();
-	int n = rz_scan_strings(&g_opt, str_list, buf, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_GUESS);
+	int n = rz_scan_strings(buf, str_list, &g_opt, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_GUESS);
 	mu_assert_eq(n, 1, "rz_scan_strings utf8, number of strings");
 
 	RzDetectedString *s = rz_list_get_n(str_list, 0);
@@ -56,7 +56,7 @@ bool test_rz_scan_strings_detect_utf16_le(void) {
 	RzBuffer *buf = rz_buf_new_with_bytes(str, sizeof(str));
 
 	RzList *str_list = rz_list_new();
-	int n = rz_scan_strings(&g_opt, str_list, buf, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_GUESS);
+	int n = rz_scan_strings(buf, str_list, &g_opt, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_GUESS);
 	mu_assert_eq(n, 1, "rz_scan_strings utf16le, number of strings");
 
 	RzDetectedString *s = rz_list_get_n(str_list, 0);
@@ -80,7 +80,7 @@ bool test_rz_scan_strings_detect_utf16_be(void) {
 	RzBuffer *buf = rz_buf_new_with_bytes(str, sizeof(str));
 
 	RzList *str_list = rz_list_new();
-	int n = rz_scan_strings(&g_opt, str_list, buf, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_GUESS);
+	int n = rz_scan_strings(buf, str_list, &g_opt, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_GUESS);
 	mu_assert_eq(n, 1, "rz_scan_strings utf16be, number of strings");
 
 	RzDetectedString *s = rz_list_get_n(str_list, 0);
@@ -107,7 +107,7 @@ bool test_rz_scan_strings_detect_utf32_le(void) {
 	RzBuffer *buf = rz_buf_new_with_bytes(str, sizeof(str));
 
 	RzList *str_list = rz_list_new();
-	int n = rz_scan_strings(&g_opt, str_list, buf, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_GUESS);
+	int n = rz_scan_strings(buf, str_list, &g_opt, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_GUESS);
 	mu_assert_eq(n, 1, "rz_scan_strings utf32le, number of strings");
 
 	RzDetectedString *s = rz_list_get_n(str_list, 0);
@@ -134,7 +134,7 @@ bool test_rz_scan_strings_detect_utf32_be(void) {
 	RzBuffer *buf = rz_buf_new_with_bytes(str, sizeof(str));
 
 	RzList *str_list = rz_list_new();
-	int n = rz_scan_strings(&g_opt, str_list, buf, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_GUESS);
+	int n = rz_scan_strings(buf, str_list, &g_opt, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_GUESS);
 	mu_assert_eq(n, 1, "rz_scan_strings utf32be, number of strings");
 
 	RzDetectedString *s = rz_list_get_n(str_list, 0);
@@ -155,7 +155,7 @@ bool test_rz_scan_strings_utf16_be(void) {
 	RzBuffer *buf = rz_buf_new_with_bytes(str, sizeof(str));
 
 	RzList *str_list = rz_list_new();
-	int n = rz_scan_strings(&g_opt, str_list, buf, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_UTF16BE);
+	int n = rz_scan_strings(buf, str_list, &g_opt, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_UTF16BE);
 	mu_assert_eq(n, 1, "rz_scan_strings utf16be, number of strings");
 
 	RzDetectedString *s = rz_list_get_n(str_list, 0);
