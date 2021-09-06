@@ -15,7 +15,6 @@ RZ_API void rz_serialize_bp_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzBreakpoint *bp
 			return;
 		}
 		pj_o(j);
-		pj_ks(j, "bbytes", (char *)bp_item->bbytes);
 		pj_ks(j, "cond", bp_item->cond);
 		pj_ks(j, "data", bp_item->data);
 		pj_kn(j, "delta", bp_item->delta);
@@ -27,7 +26,6 @@ RZ_API void rz_serialize_bp_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzBreakpoint *bp
 		pj_kN(j, "module_delta", bp_item->module_delta);
 		pj_ks(j, "module_name", bp_item->module_name);
 		pj_ks(j, "name", bp_item->name);
-		pj_ks(j, "obytes", (char *)bp_item->obytes);
 		pj_ki(j, "perm", bp_item->perm);
 
 		pj_ka(j, "pids");
@@ -49,101 +47,246 @@ RZ_API void rz_serialize_bp_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzBreakpoint *bp
 	}
 }
 
+enum {
+	BP_FIELD_NAME,
+	BP_FIELD_MODULE_NAME,
+	BP_FIELD_MODULE_DELTA,
+	BP_FIELD_DELTA,
+	BP_FIELD_SIZE,
+	BP_FIELD_SWSTEP,
+	BP_FIELD_PERM,
+	BP_FIELD_HW,
+	BP_FIELD_TRACE,
+	BP_FIELD_INTERNAL,
+	BP_FIELD_ENABLED,
+	BP_FIELD_TOGGLEHITS,
+	BP_FIELD_HITS,
+	BP_FIELD_PIDS,
+	BP_FIELD_DATA,
+	BP_FIELD_COND,
+	BP_FIELD_EXPR
+};
+
+RZ_API RzSerializeBpParser rz_serialize_bp_parser_new(void) {
+	RzSerializeBpParser parser = rz_key_parser_new();
+	if (!parser) {
+		return NULL;
+	}
+
+	rz_key_parser_add(parser, "name", BP_FIELD_NAME);
+	rz_key_parser_add(parser, "module_name", BP_FIELD_MODULE_NAME);
+	rz_key_parser_add(parser, "module_delta", BP_FIELD_MODULE_DELTA);
+	rz_key_parser_add(parser, "delta", BP_FIELD_DELTA);
+	rz_key_parser_add(parser, "size", BP_FIELD_SIZE);
+	rz_key_parser_add(parser, "swstep", BP_FIELD_SWSTEP);
+	rz_key_parser_add(parser, "perm", BP_FIELD_PERM);
+	rz_key_parser_add(parser, "hw", BP_FIELD_HW);
+	rz_key_parser_add(parser, "trace", BP_FIELD_TRACE);
+	rz_key_parser_add(parser, "internal", BP_FIELD_INTERNAL);
+	rz_key_parser_add(parser, "enabled", BP_FIELD_ENABLED);
+	rz_key_parser_add(parser, "togglehits", BP_FIELD_TOGGLEHITS);
+	rz_key_parser_add(parser, "hits", BP_FIELD_HITS);
+	rz_key_parser_add(parser, "pids", BP_FIELD_PIDS);
+	rz_key_parser_add(parser, "data", BP_FIELD_DATA);
+	rz_key_parser_add(parser, "cond", BP_FIELD_COND);
+	rz_key_parser_add(parser, "expr", BP_FIELD_EXPR);
+
+	return parser;
+}
+
+typedef struct {
+	RzBreakpoint *bp;
+	RzSerializeBpParser *parser;
+} BpLoadCtx;
+
 static bool bp_load_cb(void *user, const char *k, const char *v) {
-	RzList *list = user;
+	bool ret = false;
+	BpLoadCtx *ctx = user;
 	char *json_str = strdup(v);
 	if (!json_str) {
 		return true;
 	}
-
 	RzJson *json = rz_json_parse(json_str);
-	if (!json) {
-		free(json_str);
-		return true;
+	if (!json || json->type != RZ_JSON_OBJECT) {
+		goto heaven;
 	}
-	if (json->type != RZ_JSON_OBJECT) {
-		goto return_goto;
-	}
+	RzBreakpointItem bp_item_temp = { 0 };
 
-	const RzJson *child;
-	RzBreakpointItem *bp_item = RZ_NEW0(RzBreakpointItem);
-	if (!bp_item) {
-		goto return_goto;
+	if (!json->key) {
+		goto heaven;
 	}
-	sscanf(k, "0x%" PFMT64u, &bp_item->addr);
+	sscanf(json->key, "0x%" PFMT64x, &bp_item_temp.addr);
 
-	for (child = json->children.first; child; child = child->next) {
-		if (child->type == RZ_JSON_INTEGER) {
-			if (strcmp(child->key, "delta") == 0) {
-				bp_item->delta = child->num.u_value;
-			} else if (strcmp(child->key, "enabled") == 0) {
-				bp_item->enabled = child->num.s_value;
-			} else if (strcmp(child->key, "hits") == 0) {
-				bp_item->hits = child->num.s_value;
-			} else if (strcmp(child->key, "hw") == 0) {
-				bp_item->hw = child->num.s_value;
-			} else if (strcmp(child->key, "internal") == 0) {
-				bp_item->internal = child->num.s_value;
-			} else if (strcmp(child->key, "module_delta") == 0) {
-				bp_item->module_delta = child->num.s_value;
-			} else if (strcmp(child->key, "perm") == 0) {
-				bp_item->perm = child->num.s_value;
-			} else if (strcmp(child->key, "size") == 0) {
-				bp_item->size = child->num.s_value;
-			} else if (strcmp(child->key, "togglehits") == 0) {
-				bp_item->togglehits = child->num.s_value;
-			} else if (strcmp(child->key, "trace") == 0) {
-				bp_item->trace = child->num.s_value;
+	RZ_KEY_PARSER_JSON(*ctx->parser, json, child, {
+		case BP_FIELD_NAME:
+			if (child->type != RZ_JSON_STRING) {
+				break;
 			}
-		} else if (child->type == RZ_JSON_BOOLEAN) {
-			if (strcmp(child->key, "swstep") == 0) {
-				bp_item->swstep = child->num.u_value ? true : false;
+			bp_item_temp.name = (char *)child->str_value;
+			break;
+		case BP_FIELD_MODULE_NAME:
+			if (child->type != RZ_JSON_STRING) {
+				break;
 			}
-		} else if (child->type == RZ_JSON_STRING) {
-			if (strcmp(child->key, "bbytes") == 0) {
-				bp_item->bbytes = (unsigned char *)strdup(child->str_value);
-			} else if (strcmp(child->key, "cond") == 0) {
-				bp_item->cond = strdup(child->str_value);
-			} else if (strcmp(child->key, "data") == 0) {
-				bp_item->data = strdup(child->str_value);
-			} else if (strcmp(child->key, "expr") == 0) {
-				bp_item->expr = strdup(child->str_value);
-			} else if (strcmp(child->key, "module_name") == 0) {
-				bp_item->module_name = strdup(child->str_value);
-			} else if (strcmp(child->key, "name") == 0) {
-				bp_item->name = strdup(child->str_value);
-			} else if (strcmp(child->key, "obytes") == 0) {
-				bp_item->obytes = (unsigned char *)strdup(child->str_value);
+			bp_item_temp.module_name = (char *)child->str_value;
+			break;
+		case BP_FIELD_MODULE_DELTA:
+			if (child->type != RZ_JSON_INTEGER) {
+				break;
 			}
-		} else if (child->type == RZ_JSON_ARRAY) {
-			if (strcmp(child->key, "pids") == 0) {
-				int index = 0;
-				for (const RzJson *pid_child = child->children.first; pid_child; pid_child = pid_child->next) {
-					if (index >= RZ_BP_MAXPIDS) {
-						break;
-					}
-					bp_item->pids[index] = pid_child->num.s_value;
-					++index;
+			bp_item_temp.module_delta = child->num.s_value;
+			break;
+		case BP_FIELD_DELTA:
+			if (child->type != RZ_JSON_INTEGER) {
+				break;
+			}
+			bp_item_temp.delta = child->num.u_value;
+			break;
+		case BP_FIELD_SIZE:
+			if (child->type != RZ_JSON_INTEGER) {
+				break;
+			}
+			bp_item_temp.size = (int)child->num.s_value;
+			break;
+		case BP_FIELD_SWSTEP:
+			if (child->type != RZ_JSON_BOOLEAN) {
+				break;
+			}
+			bp_item_temp.swstep = child->num.u_value ? true : false;
+			break;
+		case BP_FIELD_PERM:
+			if (child->type != RZ_JSON_INTEGER) {
+				break;
+			}
+			bp_item_temp.perm = (int)child->num.s_value;
+			break;
+		case BP_FIELD_HW:
+			if (child->type != RZ_JSON_INTEGER) {
+				break;
+			}
+			bp_item_temp.hw = (int)child->num.s_value;
+			break;
+		case BP_FIELD_TRACE:
+			if (child->type != RZ_JSON_INTEGER) {
+				break;
+			}
+			bp_item_temp.trace = (int)child->num.s_value;
+			break;
+		case BP_FIELD_INTERNAL:
+			if (child->type != RZ_JSON_INTEGER) {
+				break;
+			}
+			bp_item_temp.internal = (int)child->num.s_value;
+			break;
+		case BP_FIELD_ENABLED:
+			if (child->type != RZ_JSON_INTEGER) {
+				break;
+			}
+			bp_item_temp.enabled = (int)child->num.s_value;
+			break;
+		case BP_FIELD_TOGGLEHITS:
+			if (child->type != RZ_JSON_INTEGER) {
+				break;
+			}
+			bp_item_temp.togglehits = (int)child->num.s_value;
+			break;
+		case BP_FIELD_HITS:
+			if (child->type != RZ_JSON_INTEGER) {
+				break;
+			}
+			bp_item_temp.hits = (int)child->num.s_value;
+			break;
+		case BP_FIELD_PIDS:
+			if (child->type != RZ_JSON_ARRAY) {
+				break;
+			}
+			int index = 0;
+			for (const RzJson *pid_child = child->children.first; pid_child; pid_child = pid_child->next) {
+				if (index >= RZ_BP_MAXPIDS) {
+					break;
 				}
+				bp_item_temp.pids[index] = (int)pid_child->num.s_value;
+				++index;
 			}
-		}
-	}
-	rz_list_append(list, bp_item);
+			break;
+		case BP_FIELD_DATA:
+			if (child->type != RZ_JSON_STRING) {
+				break;
+			}
+			bp_item_temp.data = (char *)child->str_value;
+			break;
+		case BP_FIELD_COND:
+			if (child->type != RZ_JSON_STRING) {
+				break;
+			}
+			bp_item_temp.cond = (char *)child->str_value;
+			break;
+		case BP_FIELD_EXPR:
+			if (child->type != RZ_JSON_STRING) {
+				break;
+			}
+			bp_item_temp.expr = (char *)child->str_value;
+			break;
+	})
 
-return_goto:
+	RzBreakpointItem *bp_item = NULL;
+	if (bp_item_temp.hw) {
+		bp_item = rz_bp_add_hw(ctx->bp, bp_item_temp.addr, bp_item_temp.size, bp_item_temp.perm);
+	} else {
+		bp_item = rz_bp_add_sw(ctx->bp, bp_item_temp.addr, bp_item_temp.size, bp_item_temp.perm);
+	}
+	if (!bp_item) {
+		goto beach;
+	}
+
+	bp_item->name = strdup(bp_item_temp.name);
+	bp_item->module_name = strdup(bp_item_temp.module_name);
+	bp_item->module_delta = bp_item_temp.module_delta;
+	bp_item->delta = bp_item_temp.delta;
+	bp_item->swstep = bp_item_temp.swstep;
+	bp_item->hw = bp_item_temp.hw;
+	bp_item->trace = bp_item_temp.trace;
+	bp_item->internal = bp_item_temp.internal;
+	bp_item->enabled = bp_item_temp.enabled;
+	bp_item->togglehits = bp_item_temp.togglehits;
+	bp_item->hits = bp_item_temp.hits;
+	for (int i = 0; i < RZ_BP_MAXPIDS; i++) {
+		bp_item->pids[i] = bp_item_temp.pids[i];
+	}
+	bp_item->data = strdup(bp_item_temp.data);
+	bp_item->cond = strdup(bp_item_temp.cond);
+	bp_item->expr = strdup(bp_item_temp.expr);
+	ret = true;
+
+beach:
 	rz_json_free(json);
+heaven:
 	free(json_str);
-	return true;
+	return ret;
 }
 
 RZ_API bool rz_serialize_bp_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzBreakpoint *bp, RZ_NULLABLE RzSerializeResultInfo *res) {
 	rz_return_val_if_fail(db && bp, false);
 
-	RzList *bp_list = bp->bps;
-	rz_list_purge(bp_list);
-	bool ret = sdb_foreach(db, bp_load_cb, bp_list);
+	bool ret = false;
+	RzSerializeBpParser bp_parser = rz_serialize_bp_parser_new();
+	if (!bp_parser) {
+		goto heaven;
+	}
+	if (rz_list_empty(bp->bps) && !rz_bp_del_all(bp)) {
+		goto heaven;
+	}
+
+	BpLoadCtx ctx = {
+		.bp = bp,
+		.parser = bp_parser
+	};
+	ret = sdb_foreach(db, bp_load_cb, &ctx);
 	if (!ret) {
 		RZ_SERIALIZE_ERR(res, "failed to parse a breakpoint json");
 	}
+
+heaven:
+	rz_key_parser_free(bp_parser);
 	return ret;
 }
