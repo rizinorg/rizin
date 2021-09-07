@@ -111,6 +111,8 @@ RZ_API RzILEffect rz_il_effect_new(EFFECT_TYPE type) {
 		ret = (RzILEffect)malloc(sizeof(struct rzil_effect_union_t));
 		ret->effect_type = EFFECT_TYPE_NON;
 		ret->notation = EFFECT_NOTATION_NON;
+		ret->data_eff = NULL;
+		ret->ctrl_eff = NULL;
 		ret->next_eff = NULL;
 		break;
 	default:

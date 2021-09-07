@@ -384,6 +384,57 @@ bool test_rzil_bool_logic(void) {
 	mu_end;
 }
 
+static bool test_rzil_mem() {
+	RzILMem mem = rz_il_new_mem(8);
+	mu_assert_notnull(mem, "Create mem");
+
+	RzILBitVector addr = rz_il_bv_new_from_ut32(16, 121);
+	RzILBitVector valid_data = rz_il_bv_new_from_ut32(8, 177);
+	RzILBitVector invalid_data = rz_il_bv_new_from_ut32(24, 177);
+
+	RzILMem result = rz_il_mem_store(mem, addr, valid_data);
+	mu_assert_eq(result, mem, "Store successfully");
+
+	result = rz_il_mem_store(mem, addr, invalid_data);
+	mu_assert_null(result, "Unmatched type");
+
+	RzILBitVector data = rz_il_mem_load(mem, addr);
+	mu_assert("Load correct data", is_equal_bv(data, valid_data));
+
+	mu_end;
+}
+
+static bool test_rzil_effect() {
+	RzILEffect general_effect = rz_il_effect_new(EFFECT_TYPE_NON);
+	mu_assert_notnull(general_effect, "Create Empty General Effect");
+
+	mu_assert_eq(general_effect->effect_type, EFFECT_TYPE_NON, "Empty effect has correct type");
+	mu_assert_null(general_effect->next_eff, "Empty doesn't have next effect");
+	mu_assert_null(general_effect->ctrl_eff, "Empty doesn't include control effect");
+	mu_assert_null(general_effect->data_eff, "Empty doesn't include data effect");
+
+	RzILCtrlEffect c_eff = rz_il_effect_new_ctrl();
+	mu_assert_notnull(c_eff, "Create empty control effect");
+	mu_assert_null(c_eff->pc, "Empty control effect have no next pc info");
+
+	RzILDataEffect d_eff = rz_il_effect_new_data();
+	mu_assert_notnull(d_eff, "Create empty data effect");
+	mu_assert_null(d_eff->var_name, "Empty data effect doesn't have variable name");
+	mu_assert_eq(d_eff->val_index, -1, "Empty data effect doesn't have new value");
+
+	RzILEffect data_effect, contrl_effect;
+	// wrap data effect
+	data_effect = rz_il_wrap_data_effect(d_eff);
+	mu_assert_eq(data_effect->effect_type, EFFECT_TYPE_DATA, "Wrap data effect");
+	mu_assert_eq(data_effect->data_eff, d_eff, "Get data effect from general one");
+
+	contrl_effect = rz_il_wrap_ctrl_effect(c_eff);
+	mu_assert_eq(contrl_effect->effect_type, EFFECT_TYPE_CTRL, "Wrap control effect");
+	mu_assert_eq(contrl_effect->ctrl_eff, c_eff, "Get control effect from general one");
+
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rzil_bv_init);
 	mu_run_test(test_rzil_bv_cmp);
@@ -394,6 +445,8 @@ bool all_tests() {
 
 	mu_run_test(test_rzil_bool_init);
 	mu_run_test(test_rzil_bool_logic);
+
+	mu_run_test(test_rzil_mem);
 	return tests_passed != tests_run;
 }
 
