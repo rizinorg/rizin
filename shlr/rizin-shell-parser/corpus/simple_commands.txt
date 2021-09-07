@@ -378,3 +378,14 @@ rz-find -S واسع bins/pe/testapp-msvc64.exe
       (arg (arg_identifier))
       (arg (arg_identifier))
       (arg (arg_identifier)))))
+
+===============
+.- with no args
+===============
+
+.-
+
+---
+
+(statements
+  (arged_stmt (cmd_identifier)))
