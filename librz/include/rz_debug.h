@@ -602,6 +602,10 @@ RZ_API bool rz_debug_goto_cnum(RzDebug *dbg, ut32 cnum);
 RZ_API int rz_debug_step_cnum(RzDebug *dbg, int steps);
 RZ_API bool rz_debug_continue_back(RzDebug *dbg);
 
+/* serialize */
+RZ_API void rz_serialize_debug_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzDebug *dbg);
+RZ_API bool rz_serialize_debug_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzDebug *dbg, RZ_NULLABLE RzSerializeResultInfo *res);
+
 /* ptrace */
 #if HAVE_PTRACE
 static inline long rz_debug_ptrace(RzDebug *dbg, rz_ptrace_request_t request, pid_t pid, void *addr, rz_ptrace_data_t data) {
