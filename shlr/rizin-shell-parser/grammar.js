@@ -262,7 +262,10 @@ module.exports = grammar({
         1,
         choice(
           seq(field("command", alias(".", $.cmd_identifier)), field("args", $._simple_stmt)),
-          seq(field("command", alias(/\.[\.:\-*]+/, $.cmd_identifier)), /[ ]+/, field("args", optional($.args))),
+          seq(
+            field("command", alias(/\.[\.:\-*]+/, $.cmd_identifier)),
+            optional(seq(/[ ]+/, field("args", optional($.args))))
+          ),
           seq(field("command", alias(/\.[ ]+/, $.cmd_identifier)), field("args", optional($.args))),
           seq(field("command", alias(".(", $.cmd_identifier)), field("args", $.macro_call_content)),
           seq(field("command", alias($._interpret_search_identifier, $.cmd_identifier)), field("args", $.args)),
