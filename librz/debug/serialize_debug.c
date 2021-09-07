@@ -6,10 +6,12 @@
 #include <rz_util/rz_serialize.h>
 
 RZ_API void rz_serialize_debug_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzDebug *dbg) {
+	rz_return_if_fail(db && dbg);
 	rz_serialize_bp_save(sdb_ns(db, "breakpoints", true), dbg->bp);
 }
 
 RZ_API bool rz_serialize_debug_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzDebug *dbg, RZ_NULLABLE RzSerializeResultInfo *res) {
+	rz_return_val_if_fail(db && dbg, false);
 	bool ret = false;
 #define SUB(ns, call) RZ_SERIALIZE_SUB_DO(db, subdb, res, ns, call, goto heaven;)
 
