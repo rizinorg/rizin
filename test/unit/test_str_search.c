@@ -155,7 +155,7 @@ bool test_rz_scan_strings_utf16_be(void) {
 	RzBuffer *buf = rz_buf_new_with_bytes(str, sizeof(str));
 
 	RzList *str_list = rz_list_new();
-	int n = rz_scan_strings(buf, str_list, &g_opt, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_UTF16BE);
+	int n = rz_scan_strings(buf, str_list, &g_opt, 16, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_UTF16BE);
 	mu_assert_eq(n, 1, "rz_scan_strings utf16be, number of strings");
 
 	RzDetectedString *s = rz_list_get_n(str_list, 0);
