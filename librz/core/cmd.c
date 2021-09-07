@@ -924,20 +924,6 @@ RZ_IPI RzCmdStatus rz_ls_handler(RzCore *core, int argc, const char **argv) {
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI int rz_cmd_stdin(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	if (input[0] == '?') {
-		rz_cons_printf("Usage: '-' '.-' '. -' do the same\n");
-		return false;
-	}
-	return rz_core_run_script(core, "-");
-}
-
-RZ_IPI RzCmdStatus rz_cmd_stdin_handler(RzCore *core, int argc, const char **argv) {
-	rz_core_run_script(core, "-");
-	return RZ_CMD_STATUS_OK;
-}
-
 RZ_IPI int rz_cmd_interpret(void *data, const char *input) {
 	char *str, *ptr, *eol, *rbuf, *filter, *inp;
 	const char *host, *port, *cmd;
@@ -6494,7 +6480,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "&", "tasks", rz_cmd_tasks },
 		{ "(", "macro", rz_cmd_macro },
 		{ "*", "pointer read/write", rz_cmd_pointer },
-		{ "-", "open cfg.editor and run script", rz_cmd_stdin },
 		{ ".", "interpret", rz_cmd_interpret },
 		{ "/", "search kw, pattern aes", rz_cmd_search },
 		{ "R", "io pipe", rz_cmd_remote },

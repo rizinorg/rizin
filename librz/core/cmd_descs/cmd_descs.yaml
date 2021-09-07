@@ -140,10 +140,6 @@ commands:
           - text: "*"
             arg_str: "entry0"
             comment: read the value contained at the entrypoint
-  - name: "-"
-    cname: cmd_stdin
-    summary: Open cfg.editor and run script
-    args: []
   - name: .
     summary: Interpret commands
     subcommands: cmd_interpret
