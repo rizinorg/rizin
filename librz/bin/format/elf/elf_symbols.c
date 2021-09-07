@@ -377,7 +377,7 @@ Elf_(Word) Elf_(rz_bin_elf_get_number_of_dynamic_symbols)(RZ_NONNULL ELFOBJ *bin
 		return result;
 	}
 
-	RZ_LOG_WARN("Neither hash nor gnu_hash exist. Falling back to heuristics for deducing the number of dynamic symbols...\n");
+	RZ_LOG_INFO("Neither hash nor gnu_hash exist. Falling back to heuristics for deducing the number of dynamic symbols...\n");
 
 	result = get_number_of_symbols_from_section(bin);
 	if (result) {
