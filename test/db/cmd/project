@@ -376,5 +376,6 @@ Detailed project load info:
   project migrated from version 1 to 2.
   project migrated from version 2 to 3.
   project migrated from version 3 to 4.
+  project migrated from version 4 to 5.
 EOF
 RUN
