@@ -38,7 +38,7 @@ typedef void (*RLogCallback)(const char *output, const char *funcname, const cha
 #define RZ_LOG(lvl, tag, fmtstr, ...) rz_log(MACRO_LOG_FUNC, __FILE__, \
 	__LINE__, lvl, tag, fmtstr, ##__VA_ARGS__);
 
-#ifdef RZ_BUILD_DEBUG
+#if RZ_BUILD_DEBUG
 #define RZ_LOG_SILLY(fmtstr, ...) rz_log(MACRO_LOG_FUNC, __FILE__, \
 	__LINE__, RZ_LOGLVL_SILLY, NULL, fmtstr, ##__VA_ARGS__);
 #define RZ_LOG_DEBUG(fmtstr, ...) rz_log(MACRO_LOG_FUNC, __FILE__, \
