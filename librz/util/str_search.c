@@ -144,6 +144,7 @@ RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrS
 	rz_buf_read_at(buf_to_scan, from, buf, len);
 	// may oobread
 	while (needle < to) {
+		ut64 original_needle = needle;
 		bool is_wide_be_str = false;
 
 		char ch = *(buf + needle - from);
@@ -272,6 +273,7 @@ RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrS
 		if (runes >= opt->min_str_length) {
 			FalsePositiveResult false_positive_result = reduce_false_positives(opt, tmp, i - 1, str_type);
 			if (false_positive_result == SKIP_STRING) {
+				needle = original_needle + 1;
 				continue;
 			} else if (false_positive_result == RETRY_ASCII) {
 				ascii_only = true;
@@ -293,6 +295,8 @@ RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrS
 			ds->addr = str_start;
 			ds->string = rz_str_ndup((const char *)tmp, i);
 			rz_list_append(list, ds);
+		} else {
+			needle = original_needle + 1;
 		}
 		ascii_only = false;
 	}
