@@ -120,6 +120,17 @@ int bsd_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 	return (r == 0 ? true : false);
 }
 
+bool bsd_generate_corefile(RzDebug *dbg, char *path, RzBuffer *dest) {
+#if defined(__NetBSD__)
+	return ptrace(PT_DUMPCORE, dbg->pid, path, strlen(path)) != -1;
+#elif defined(__FreeBSD__)
+	// TODO when FreeBSD 14 is out or at least the interface stabilized
+	// and will most likely use the RzBuffer part
+	return false;
+#else
+	return false;
+#endif
+}
 RzDebugInfo *bsd_info(RzDebug *dbg, const char *arg) {
 #if __KFBSD__
 	struct kinfo_proc *kp;
