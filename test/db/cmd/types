@@ -351,6 +351,7 @@ EXPECT_ERR=<<EOF
 Cannot find base type "xoo"
 Cannot find 'xoo' type
 Cannot find base type "xoo"
+ERROR: Cannot find "xoo" union type
 EOF
 RUN
 
