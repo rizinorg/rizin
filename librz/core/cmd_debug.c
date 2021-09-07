@@ -4823,7 +4823,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 			rz_file_rm(corefile);
 			RzBuffer *dst = rz_buf_new_file(corefile, O_RDWR | O_CREAT, 0644);
 			if (dst) {
-				if (!core->dbg->cur->gcore(core->dbg, dst)) {
+				if (!core->dbg->cur->gcore(core->dbg, corefile, dst)) {
 					eprintf("dg: coredump failed\n");
 				}
 				rz_buf_free(dst);
