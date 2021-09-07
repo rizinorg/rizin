@@ -453,7 +453,7 @@ RZ_IPI void rz_core_rzil_step(RzCore *core) {
 
 	RzAnalysis *analysis = core->analysis;
 	RzAnalysisRzil *rzil = analysis->rzil;
-	RzILVM vm = rzil->vm;
+	RzILVM *vm = rzil->vm;
 	RzAnalysisPlugin *cur = analysis->cur;
 	RzAnalysisOp op = { 0 };
 

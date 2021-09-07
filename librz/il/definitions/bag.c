@@ -10,8 +10,8 @@
  * \param func function pointer to free element
  * \return RzILBag pointer
  */
-RZ_API RzILBag rz_il_new_bag(int capacity, RzILBagFreeFunc func) {
-	RzILBag bag = RZ_NEW0(struct rz_il_bag_t);
+RZ_API RzILBag *rz_il_new_bag(int capacity, RzILBagFreeFunc func) {
+	RzILBag *bag = RZ_NEW0(struct rz_il_bag_t);
 	if (!bag) {
 		return NULL;
 	}
@@ -32,7 +32,7 @@ RZ_API RzILBag rz_il_new_bag(int capacity, RzILBagFreeFunc func) {
 	return bag;
 }
 
-int rz_il_find_in_bag(RzILBag bag, void *item) {
+int rz_il_find_in_bag(RzILBag *bag, void *item) {
 	void *cur_item;
 	for (int i = 0; i < bag->capcity; ++i) {
 		cur_item = bag->data_list[i];
@@ -51,7 +51,7 @@ int rz_il_find_in_bag(RzILBag bag, void *item) {
  * \param item pointer pointed to the item you want to remove from current bag
  * \return true if successfully removed
  */
-RZ_API bool rz_il_rm_from_bag(RZ_NONNULL RzILBag bag, RZ_NONNULL void *item) {
+RZ_API bool rz_il_rm_from_bag(RZ_NONNULL RzILBag *bag, RZ_NONNULL void *item) {
 	rz_return_val_if_fail(bag && item, false);
 	int pos = rz_il_find_in_bag(bag, item);
 	if (pos == -1) {
@@ -82,7 +82,7 @@ RZ_API bool rz_il_rm_from_bag(RZ_NONNULL RzILBag bag, RZ_NONNULL void *item) {
  * \param item A pointer to an element you want to store
  * \return true if store successfully
  */
-RZ_API bool rz_il_add_to_bag(RZ_NONNULL RzILBag bag, RZ_NONNULL void *item) {
+RZ_API bool rz_il_add_to_bag(RZ_NONNULL RzILBag *bag, RZ_NONNULL void *item) {
 	rz_return_val_if_fail(bag && item, false);
 	if (bag->item_count >= bag->capcity) {
 		printf("[Cannot Carry More Values]\n");
@@ -111,7 +111,7 @@ RZ_API bool rz_il_add_to_bag(RZ_NONNULL RzILBag bag, RZ_NONNULL void *item) {
  * Destroy the bag
  * \param bag RzILBag, point to the bag
  */
-RZ_API void rz_il_free_bag(RzILBag bag) {
+RZ_API void rz_il_free_bag(RzILBag *bag) {
 	if (!bag) {
 		return;
 	}

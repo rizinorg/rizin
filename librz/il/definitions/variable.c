@@ -10,10 +10,10 @@
  * \param name string, name of variable
  * \return var RzILVar, pointer to this variable
  */
-RZ_API RzILVar rz_il_new_variable(char *name) {
-	RzILVar ret;
+RZ_API RzILVar *rz_il_new_variable(char *name) {
+	RzILVar *ret;
 
-	ret = (RzILVar)malloc(sizeof(struct rz_il_var_t));
+	ret = (RzILVar *)malloc(sizeof(struct rz_il_var_t));
 	if (!ret) {
 		return NULL;
 	}
@@ -27,7 +27,7 @@ RZ_API RzILVar rz_il_new_variable(char *name) {
  * Free variable
  * \param var RzILVar, pointer to RzILVar
  */
-RZ_API void rz_il_free_variable(RzILVar var) {
+RZ_API void rz_il_free_variable(RzILVar *var) {
 	if (!var) {
 		return;
 	}

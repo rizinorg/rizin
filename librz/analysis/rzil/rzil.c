@@ -89,7 +89,7 @@ RZ_API void rz_analysis_set_rzil_op(RzAnalysisRzil *rzil, ut64 addr, RzPVector *
 		eprintf("uninitialized rzil, cannot set op\n");
 		return;
 	}
-	RzILBitVector bv_addr = rz_il_ut64_addr_to_bv(addr);
+	RzILBitVector *bv_addr = rz_il_ut64_addr_to_bv(addr);
 	rz_il_vm_store_opcodes_to_addr(rzil->vm, bv_addr, oplist);
 	rz_il_free_bv_addr(bv_addr);
 }
@@ -102,7 +102,7 @@ static void rz_analysis_rzil_parse_pvector(RzAnalysis *analysis, RzAnalysisRzil 
 		return;
 	}
 
-	RzILVM vm = rzil->vm;
+	RzILVM *vm = rzil->vm;
 	RzPVector *op_list = ops->ops;
 
 	if (!ops->ops) {

@@ -7,9 +7,9 @@
  * New an empty value
  * \return val RzILVal, pointer to this value
  */
-RZ_API RzILVal rz_il_new_value(void) {
-	RzILVal ret;
-	ret = (RzILVal)malloc(sizeof(struct rz_il_val_t));
+RZ_API RzILVal *rz_il_new_value(void) {
+	RzILVal *ret;
+	ret = (RzILVal *)malloc(sizeof(struct rz_il_val_t));
 	if (!ret) {
 		return NULL;
 	}
@@ -23,8 +23,8 @@ RZ_API RzILVal rz_il_new_value(void) {
  * \param val RzILVal, pointer to the value you want to dump
  * \return dump RzILVal, pointer to the dumped value
  */
-RZ_API RzILVal rz_il_dup_value(RzILVal val) {
-	RzILVal ret = rz_il_new_value();
+RZ_API RzILVal *rz_il_dup_value(RzILVal *val) {
+	RzILVal *ret = rz_il_new_value();
 	ret->type = val->type;
 
 	if (ret->type == RZIL_VAR_TYPE_BOOL) {
@@ -69,7 +69,7 @@ RZ_API void rz_il_free_temp(RzILTemp temp) {
  * Free a RzILVal value
  * \param val RzILVal, pointer to the RzILVal instance
  */
-RZ_API void rz_il_free_value(RzILVal val) {
+RZ_API void rz_il_free_value(RzILVal *val) {
 	if (!val) {
 		return;
 	}

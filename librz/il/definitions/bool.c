@@ -8,8 +8,8 @@
  * \param true_or_false bool, set bool as true or false
  * \return bool RzILBool, pointer to bool value
  */
-RZ_API RzILBool rz_il_new_bool(bool true_or_false) {
-	RzILBool ret = (RzILBool)malloc(sizeof(struct bool_t));
+RZ_API RzILBool *rz_il_new_bool(bool true_or_false) {
+	RzILBool *ret = (RzILBool *)malloc(sizeof(struct bool_t));
 	if (!ret) {
 		return NULL;
 	}
@@ -23,10 +23,10 @@ RZ_API RzILBool rz_il_new_bool(bool true_or_false) {
  * \param b RzILBool, operand of `AND`
  * \return bool RzILBool, pointer to the result
  */
-RZ_API RzILBool rz_il_bool_and(RZ_NONNULL RzILBool a, RZ_NONNULL RzILBool b) {
+RZ_API RzILBool *rz_il_bool_and(RZ_NONNULL RzILBool *a, RZ_NONNULL RzILBool *b) {
 	rz_return_val_if_fail(a && b, NULL);
 	bool result = a->b && b->b;
-	RzILBool ret = rz_il_new_bool(result);
+	RzILBool *ret = rz_il_new_bool(result);
 	return ret;
 }
 
@@ -36,10 +36,10 @@ RZ_API RzILBool rz_il_bool_and(RZ_NONNULL RzILBool a, RZ_NONNULL RzILBool b) {
  * \param b RzILBool, operand of `AND`
  * \return bool RzILBool, pointer to the result
  */
-RZ_API RzILBool rz_il_bool_or(RZ_NONNULL RzILBool a, RZ_NONNULL RzILBool b) {
+RZ_API RzILBool *rz_il_bool_or(RZ_NONNULL RzILBool *a, RZ_NONNULL RzILBool *b) {
 	rz_return_val_if_fail(a && b, NULL);
 	bool result = a->b || b->b;
-	RzILBool ret = rz_il_new_bool(result);
+	RzILBool *ret = rz_il_new_bool(result);
 	return ret;
 }
 
@@ -49,7 +49,7 @@ RZ_API RzILBool rz_il_bool_or(RZ_NONNULL RzILBool a, RZ_NONNULL RzILBool b) {
  * \param b RzILBool, operand of `AND`
  * \return bool RzILBool, pointer to the result
  */
-RZ_API RzILBool rz_il_bool_xor(RZ_NONNULL RzILBool a, RZ_NONNULL RzILBool b) {
+RZ_API RzILBool *rz_il_bool_xor(RZ_NONNULL RzILBool *a, RZ_NONNULL RzILBool *b) {
 	rz_return_val_if_fail(a && b, NULL);
 	bool result = a->b != b->b;
 	return rz_il_new_bool(result);
@@ -60,10 +60,10 @@ RZ_API RzILBool rz_il_bool_xor(RZ_NONNULL RzILBool a, RZ_NONNULL RzILBool b) {
  * \param a RzILBool, operand of `AND`
  * \return bool RzILBool, pointer to the result
  */
-RZ_API RzILBool rz_il_bool_not(RZ_NONNULL RzILBool a) {
+RZ_API RzILBool *rz_il_bool_not(RZ_NONNULL RzILBool *a) {
 	rz_return_val_if_fail(a, NULL);
 	bool result = !a->b;
-	RzILBool ret = rz_il_new_bool(result);
+	RzILBool *ret = rz_il_new_bool(result);
 	return ret;
 }
 
@@ -71,7 +71,7 @@ RZ_API RzILBool rz_il_bool_not(RZ_NONNULL RzILBool a) {
  * Free RzILBool instance
  * \param bool_var RzILBool, pointer to the bool instance
  */
-RZ_API void rz_il_free_bool(RzILBool bool_var) {
+RZ_API void rz_il_free_bool(RzILBool *bool_var) {
 	if (!bool_var) {
 		return;
 	}

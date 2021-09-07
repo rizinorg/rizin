@@ -813,7 +813,7 @@ typedef enum rz_analysis_data_type_t {
 typedef struct rz_analysis_rzil_op_t {
 	RzPVector *ops;
 	// TODO : use root approach in the future
-	RzILOp *root_node;
+	RzILOp **root_node;
 } RzAnalysisRzilOp;
 
 typedef struct rz_analysis_op_t {
@@ -1122,7 +1122,7 @@ typedef struct rz_analysis_rzil_callbacks_t {
 } RzAnalysisRzilCallbacks;
 
 typedef struct rz_analysis_rzil_t {
-	RzILVM vm;
+	RzILVM *vm;
 	RzAnalysisRzilTrace *trace;
 
 	RzAnalysisRzilCallbacks cb;

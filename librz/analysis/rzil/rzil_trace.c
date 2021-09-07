@@ -96,7 +96,7 @@ static inline void rzil_add_reg_trace(RzAnalysisRzilTrace *rtrace, RzILTraceRegO
 }
 
 // buf limit 32
-static void bv_to_databuf(ut8 *buf, RzILBitVector bv) {
+static void bv_to_databuf(ut8 *buf, RzILBitVector *bv) {
 	// rz_il_bv_prepend_zero(bv, 128 - bv->len);
 	//	if (bv->_elem_len != 16) {
 	//		RZ_LOG_ERROR("BAD SIZE\n");
@@ -104,12 +104,12 @@ static void bv_to_databuf(ut8 *buf, RzILBitVector bv) {
 	//	}
 }
 
-static void rz_analysis_rzil_trace_focus_mem_read(RzAnalysis *analysis, RZ_NONNULL RzAnalysisRzil *rzil, RZ_NONNULL RzILOp single_op) {
+static void rz_analysis_rzil_trace_focus_mem_read(RzAnalysis *analysis, RZ_NONNULL RzAnalysisRzil *rzil, RZ_NONNULL RzILOp *single_op) {
 	rz_return_if_fail(rzil && single_op);
-	RzILOpLoad op_load = single_op->op.load;
+	RzILOpLoad *op_load = single_op->op.load;
 
-	RzILBitVector addr = rz_il_get_bv_temp(rzil->vm, op_load->key);
-	RzILBitVector data = rz_il_get_bv_temp(rzil->vm, op_load->ret);
+	RzILBitVector *addr = rz_il_get_bv_temp(rzil->vm, op_load->key);
+	RzILBitVector *data = rz_il_get_bv_temp(rzil->vm, op_load->ret);
 
 	if (data->len > 128) {
 		RZ_LOG_ERROR("RZIL memory read more than 128 bits\n");
@@ -128,12 +128,12 @@ static void rz_analysis_rzil_trace_focus_mem_read(RzAnalysis *analysis, RZ_NONNU
 	rzil_add_mem_trace(rzil->trace, mem_read);
 }
 
-static void rz_analysis_rzil_trace_focus_mem_write(RzAnalysis *analysis, RZ_NONNULL RzAnalysisRzil *rzil, RZ_NONNULL RzILOp single_op) {
+static void rz_analysis_rzil_trace_focus_mem_write(RzAnalysis *analysis, RZ_NONNULL RzAnalysisRzil *rzil, RZ_NONNULL RzILOp *single_op) {
 	rz_return_if_fail(rzil && single_op);
-	RzILOpStore op_store = single_op->op.store;
+	RzILOpStore *op_store = single_op->op.store;
 
-	RzILBitVector addr = rz_il_get_bv_temp(rzil->vm, op_store->key);
-	RzILBitVector data = rz_il_get_bv_temp(rzil->vm, op_store->value);
+	RzILBitVector *addr = rz_il_get_bv_temp(rzil->vm, op_store->key);
+	RzILBitVector *data = rz_il_get_bv_temp(rzil->vm, op_store->value);
 
 	if (data->len > 128) {
 		RZ_LOG_ERROR("RZIL memory write more than 128 bits\n");
@@ -152,10 +152,10 @@ static void rz_analysis_rzil_trace_focus_mem_write(RzAnalysis *analysis, RZ_NONN
 	rzil_add_mem_trace(rzil->trace, mem_write);
 }
 
-static void rz_analysis_rzil_trace_focus_reg_read(RzAnalysis *analysis, RZ_NONNULL RzAnalysisRzil *rzil, RZ_NONNULL RzILOp single_op) {
+static void rz_analysis_rzil_trace_focus_reg_read(RzAnalysis *analysis, RZ_NONNULL RzAnalysisRzil *rzil, RZ_NONNULL RzILOp *single_op) {
 	rz_return_if_fail(rzil && single_op);
-	RzILOpVar op_var = single_op->op.var;
-	RzILVM vm = rzil->vm;
+	RzILOpVar *op_var = single_op->op.var;
+	RzILVM *vm = rzil->vm;
 
 	const char *reg_name = rz_str_constpool_get(&analysis->constpool, op_var->v);
 	ut64 data = rz_il_bv_to_ut64(rz_il_get_bv_temp(vm, op_var->ret));
@@ -172,10 +172,10 @@ static void rz_analysis_rzil_trace_focus_reg_read(RzAnalysis *analysis, RZ_NONNU
 	rzil_add_reg_trace(rzil->trace, reg_read);
 }
 
-static void rz_analysis_rzil_trace_focus_reg_write(RzAnalysis *analysis, RZ_NONNULL RzAnalysisRzil *rzil, RZ_NONNULL RzILOp single_op) {
+static void rz_analysis_rzil_trace_focus_reg_write(RzAnalysis *analysis, RZ_NONNULL RzAnalysisRzil *rzil, RZ_NONNULL RzILOp *single_op) {
 	rz_return_if_fail(rzil && single_op);
-	RzILOpSet op_set = single_op->op.set;
-	RzILVM vm = rzil->vm;
+	RzILOpSet *op_set = single_op->op.set;
+	RzILVM *vm = rzil->vm;
 
 	const char *reg_name = rz_str_constpool_get(&analysis->constpool, op_set->v);
 	ut64 data = rz_il_bv_to_ut64(rz_il_get_bv_temp(vm, op_set->x));
@@ -192,7 +192,7 @@ static void rz_analysis_rzil_trace_focus_reg_write(RzAnalysis *analysis, RZ_NONN
 	rzil_add_reg_trace(rzil->trace, reg_write);
 }
 
-static void rz_analysis_rzil_trace_focus(RzAnalysis *analysis, RZ_NONNULL RzAnalysisRzil *rzil, RZ_NONNULL RzILOp single_op) {
+static void rz_analysis_rzil_trace_focus(RzAnalysis *analysis, RZ_NONNULL RzAnalysisRzil *rzil, RZ_NONNULL RzILOp *single_op) {
 	rz_return_if_fail(rzil && single_op);
 	// focus those op only
 	switch (single_op->code) {
@@ -228,7 +228,7 @@ RZ_API void rz_analysis_rzil_trace_op(RzAnalysis *analysis, RZ_NONNULL RzAnalysi
 
 	void **iter;
 	rz_pvector_foreach (op_list, iter) {
-		RzILOp single_op = *iter;
+		RzILOp *single_op = *iter;
 		rz_analysis_rzil_trace_focus(analysis, rzil, single_op);
 	}
 }

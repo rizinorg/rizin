@@ -31,20 +31,20 @@ typedef struct bf_context_t {
 	ut64 op_count;
 } BfContext;
 
-static void bf_syscall_read(RzILVM vm, RzILOp op) {
+static void bf_syscall_read(RzILVM *vm, RzILOp *op) {
 	ut8 c = getc(stdin);
-	RzILBitVector bv = rz_il_bv_new_from_ut32(BF_ALIGN_SIZE, c);
+	RzILBitVector *bv = rz_il_bv_new_from_ut32(BF_ALIGN_SIZE, c);
 
-	RzILVal ptr_val = rz_il_dup_value(rz_il_hash_find_val_by_name(vm, "ptr"));
+	RzILVal *ptr_val = rz_il_dup_value(rz_il_hash_find_val_by_name(vm, "ptr"));
 
 	rz_il_vm_mem_store(vm, 0, ptr_val->data.bv, bv);
 	rz_il_free_value(ptr_val);
 }
 
-static void bf_syscall_write(RzILVM vm, RzILOp op) {
-	RzILVal ptr_val = rz_il_dup_value(rz_il_hash_find_val_by_name(vm, "ptr"));
+static void bf_syscall_write(RzILVM *vm, RzILOp *op) {
+	RzILVal *ptr_val = rz_il_dup_value(rz_il_hash_find_val_by_name(vm, "ptr"));
 
-	RzILBitVector bv = rz_il_vm_mem_load(vm, 0, ptr_val->data.bv);
+	RzILBitVector *bv = rz_il_vm_mem_load(vm, 0, ptr_val->data.bv);
 	if (!bv) {
 		// default write nothing
 		return;
@@ -83,28 +83,28 @@ ut64 parse_label_id(char *lbl_name) {
 	return addr;
 }
 
-RzPVector *bf_right_arrow(RzILVM vm, ut64 id) {
+RzPVector *bf_right_arrow(RzILVM *vm, ut64 id) {
 	// (set ptr (+ (val ptr) (int 1)))
-	RzILOp var = rz_il_new_op(RZIL_OP_VAR);
+	RzILOp *var = rz_il_new_op(RZIL_OP_VAR);
 	var->op.var->v = "ptr";
 	var->op.var->ret = 0;
 
-	RzILOp int_ = rz_il_new_op(RZIL_OP_INT);
+	RzILOp *int_ = rz_il_new_op(RZIL_OP_INT);
 	int_->op.int_->length = BF_ADDR_SIZE;
 	int_->op.int_->value = 1;
 	int_->op.int_->ret = 1;
 
-	RzILOp add = rz_il_new_op(RZIL_OP_ADD);
+	RzILOp *add = rz_il_new_op(RZIL_OP_ADD);
 	add->op.add->x = 0;
 	add->op.add->y = 1;
 	add->op.add->ret = 2;
 
-	RzILOp set = rz_il_new_op(RZIL_OP_SET);
+	RzILOp *set = rz_il_new_op(RZIL_OP_SET);
 	set->op.set->x = 2;
 	set->op.set->v = "ptr";
 	set->op.set->ret = 3; // eff
 
-	RzILOp perform = rz_il_new_op(RZIL_OP_PERFORM);
+	RzILOp *perform = rz_il_new_op(RZIL_OP_PERFORM);
 	perform->op.perform->eff = 3;
 	perform->op.perform->ret = -1; // no return;
 
@@ -112,28 +112,28 @@ RzPVector *bf_right_arrow(RzILVM vm, ut64 id) {
 	return oplist;
 }
 
-RzPVector *bf_left_arrow(RzILVM vm, ut64 id) {
+RzPVector *bf_left_arrow(RzILVM *vm, ut64 id) {
 	// (set ptr (- (val ptr) (int 1)))
-	RzILOp var = rz_il_new_op(RZIL_OP_VAR);
+	RzILOp *var = rz_il_new_op(RZIL_OP_VAR);
 	var->op.var->v = "ptr";
 	var->op.var->ret = 0;
 
-	RzILOp int_ = rz_il_new_op(RZIL_OP_INT);
+	RzILOp *int_ = rz_il_new_op(RZIL_OP_INT);
 	int_->op.int_->value = 1;
 	int_->op.int_->length = BF_ADDR_SIZE;
 	int_->op.int_->ret = 1;
 
-	RzILOp sub = rz_il_new_op(RZIL_OP_SUB);
+	RzILOp *sub = rz_il_new_op(RZIL_OP_SUB);
 	sub->op.add->x = 0;
 	sub->op.add->y = 1;
 	sub->op.add->ret = 2;
 
-	RzILOp set = rz_il_new_op(RZIL_OP_SET);
+	RzILOp *set = rz_il_new_op(RZIL_OP_SET);
 	set->op.set->x = 2;
 	set->op.set->v = "ptr";
 	set->op.set->ret = 3; // eff
 
-	RzILOp perform = rz_il_new_op(RZIL_OP_PERFORM);
+	RzILOp *perform = rz_il_new_op(RZIL_OP_PERFORM);
 	perform->op.perform->eff = 3;
 	perform->op.perform->ret = -1; // no return;
 
@@ -141,32 +141,32 @@ RzPVector *bf_left_arrow(RzILVM vm, ut64 id) {
 	return oplist;
 }
 
-RzPVector *bf_inc(RzILVM vm, ut64 id) {
+RzPVector *bf_inc(RzILVM *vm, ut64 id) {
 	// (store mem (var ptr) (+ (load (var ptr)) (int 1)))
-	RzILOp var = rz_il_new_op(RZIL_OP_VAR);
+	RzILOp *var = rz_il_new_op(RZIL_OP_VAR);
 	var->op.var->v = "ptr";
 	var->op.var->ret = 0; // temp
 
-	RzILOp load = rz_il_new_op(RZIL_OP_LOAD);
+	RzILOp *load = rz_il_new_op(RZIL_OP_LOAD);
 	load->op.load->mem = 0; // the only mem in bf
 	load->op.load->key = 0;
 	load->op.load->ret = 1;
 
-	RzILOp int_ = rz_il_new_op(RZIL_OP_INT);
+	RzILOp *int_ = rz_il_new_op(RZIL_OP_INT);
 	int_->op.int_->value = 1;
 	int_->op.int_->length = BF_ALIGN_SIZE;
 	int_->op.int_->ret = 2;
 
-	RzILOp add = rz_il_new_op(RZIL_OP_ADD);
+	RzILOp *add = rz_il_new_op(RZIL_OP_ADD);
 	add->op.add->x = 1;
 	add->op.add->y = 2;
 	add->op.add->ret = 3;
 
-	RzILOp var_2 = rz_il_new_op(RZIL_OP_VAR);
+	RzILOp *var_2 = rz_il_new_op(RZIL_OP_VAR);
 	var_2->op.var->v = "ptr";
 	var_2->op.var->ret = 4;
 
-	RzILOp store = rz_il_new_op(RZIL_OP_STORE);
+	RzILOp *store = rz_il_new_op(RZIL_OP_STORE);
 	store->op.store->mem = 0;
 	store->op.store->key = 4;
 	store->op.store->value = 3;
@@ -176,32 +176,32 @@ RzPVector *bf_inc(RzILVM vm, ut64 id) {
 	return oplist;
 }
 
-RzPVector *bf_dec(RzILVM vm, ut64 id) {
+RzPVector *bf_dec(RzILVM *vm, ut64 id) {
 	// (store mem (var ptr) (- (load (var ptr)) (int 1)))
-	RzILOp var = rz_il_new_op(RZIL_OP_VAR);
+	RzILOp *var = rz_il_new_op(RZIL_OP_VAR);
 	var->op.var->v = "ptr";
 	var->op.var->ret = 0; // temp
 
-	RzILOp load = rz_il_new_op(RZIL_OP_LOAD);
+	RzILOp *load = rz_il_new_op(RZIL_OP_LOAD);
 	load->op.load->mem = 0; // the only mem in bf
 	load->op.load->key = 0;
 	load->op.load->ret = 1;
 
-	RzILOp int_ = rz_il_new_op(RZIL_OP_INT);
+	RzILOp *int_ = rz_il_new_op(RZIL_OP_INT);
 	int_->op.int_->value = 1;
 	int_->op.int_->length = BF_ALIGN_SIZE;
 	int_->op.int_->ret = 2;
 
-	RzILOp sub = rz_il_new_op(RZIL_OP_SUB);
+	RzILOp *sub = rz_il_new_op(RZIL_OP_SUB);
 	sub->op.sub->x = 1;
 	sub->op.sub->y = 2;
 	sub->op.sub->ret = 3;
 
-	RzILOp var_2 = rz_il_new_op(RZIL_OP_VAR);
+	RzILOp *var_2 = rz_il_new_op(RZIL_OP_VAR);
 	var_2->op.var->v = "ptr";
 	var_2->op.var->ret = 4;
 
-	RzILOp store = rz_il_new_op(RZIL_OP_STORE);
+	RzILOp *store = rz_il_new_op(RZIL_OP_STORE);
 	store->op.store->mem = 0;
 	store->op.store->key = 4;
 	store->op.store->value = 3;
@@ -211,10 +211,10 @@ RzPVector *bf_dec(RzILVM vm, ut64 id) {
 	return oplist;
 }
 
-RzPVector *bf_out(RzILVM vm, ut64 id) {
+RzPVector *bf_out(RzILVM *vm, ut64 id) {
 	// (goto write)
-	RzILOp goto_ = rz_il_new_op(RZIL_OP_GOTO);
-	RzILOp perform = rz_il_new_op(RZIL_OP_PERFORM);
+	RzILOp *goto_ = rz_il_new_op(RZIL_OP_GOTO);
+	RzILOp *perform = rz_il_new_op(RZIL_OP_PERFORM);
 	goto_->op.goto_->ret_ctrl_eff = 0;
 	goto_->op.goto_->lbl = "write";
 
@@ -225,13 +225,13 @@ RzPVector *bf_out(RzILVM vm, ut64 id) {
 	return oplist;
 }
 
-RzPVector *bf_in(RzILVM vm, ut64 id) {
+RzPVector *bf_in(RzILVM *vm, ut64 id) {
 	// (goto hook_read)
-	RzILOp goto_ = rz_il_new_op(RZIL_OP_GOTO);
+	RzILOp *goto_ = rz_il_new_op(RZIL_OP_GOTO);
 	goto_->op.goto_->ret_ctrl_eff = 0;
 	goto_->op.goto_->lbl = "read";
 
-	RzILOp perform = rz_il_new_op(RZIL_OP_PERFORM);
+	RzILOp *perform = rz_il_new_op(RZIL_OP_PERFORM);
 	perform->op.perform->eff = 0;
 	perform->op.perform->ret = -1;
 
@@ -239,13 +239,13 @@ RzPVector *bf_in(RzILVM vm, ut64 id) {
 	return oplist;
 }
 
-RzPVector *bf_llimit(RzILVM vm, BfContext *ctx, ut64 id, ut64 addr) {
+RzPVector *bf_llimit(RzILVM *vm, BfContext *ctx, ut64 id, ut64 addr) {
 	// (perform (branch (load mem (var ptr))
 	//                  (do nothing)
 	//                  (goto ]))
 	char *cur_lbl_name = NULL, *dst_lbl_name = NULL;
-	RzILEffectLabel cur_label, dst_label;
-	RzILBitVector cur_addr;
+	RzILEffectLabel *cur_label, *dst_label;
+	RzILBitVector *cur_addr;
 
 	cur_lbl_name = ht_up_find(ctx->label_names, addr, NULL);
 	if (!cur_lbl_name) {
@@ -271,11 +271,11 @@ RzPVector *bf_llimit(RzILVM vm, BfContext *ctx, ut64 id, ut64 addr) {
 	}
 	free(dst_lbl_name);
 
-	RzILOp var = rz_il_new_op(RZIL_OP_VAR);
-	RzILOp load = rz_il_new_op(RZIL_OP_LOAD);
-	RzILOp branch = rz_il_new_op(RZIL_OP_BRANCH);
-	RzILOp goto_ = rz_il_new_op(RZIL_OP_GOTO);
-	RzILOp perform = rz_il_new_op(RZIL_OP_PERFORM);
+	RzILOp *var = rz_il_new_op(RZIL_OP_VAR);
+	RzILOp *load = rz_il_new_op(RZIL_OP_LOAD);
+	RzILOp *branch = rz_il_new_op(RZIL_OP_BRANCH);
+	RzILOp *goto_ = rz_il_new_op(RZIL_OP_GOTO);
+	RzILOp *perform = rz_il_new_op(RZIL_OP_PERFORM);
 
 	var->op.var->v = "ptr";
 	var->op.var->ret = 0;
@@ -302,12 +302,12 @@ RzPVector *bf_llimit(RzILVM vm, BfContext *ctx, ut64 id, ut64 addr) {
 	return oplist;
 }
 
-RzPVector *bf_rlimit(RzILVM vm, BfContext *ctx, ut64 id, ut64 addr) {
+RzPVector *bf_rlimit(RzILVM *vm, BfContext *ctx, ut64 id, ut64 addr) {
 	// (perform (branch (load mem (var ptr))
 	//                  (goto [)
 	//                  (do nothing))
 	char *cur_lbl_name = NULL, *dst_lbl_name = NULL;
-	RzILEffectLabel dst_label;
+	RzILEffectLabel *dst_label;
 	ut64 dst_addr;
 
 	cur_lbl_name = ht_up_find(ctx->label_names, addr, NULL);
@@ -318,7 +318,7 @@ RzPVector *bf_rlimit(RzILVM vm, BfContext *ctx, ut64 id, ut64 addr) {
 	}
 
 	if (!rz_il_hash_find_addr_by_lblname(vm, cur_lbl_name)) {
-		RzILBitVector cur_bv_addr = rz_il_ut64_addr_to_bv(addr);
+		RzILBitVector *cur_bv_addr = rz_il_ut64_addr_to_bv(addr);
 		rz_il_vm_update_label(vm, cur_lbl_name, cur_bv_addr);
 		rz_il_free_bv_addr(cur_bv_addr);
 	}
@@ -329,12 +329,12 @@ RzPVector *bf_rlimit(RzILVM vm, BfContext *ctx, ut64 id, ut64 addr) {
 	rz_return_val_if_fail(dst_lbl_name, NULL);
 	dst_label = rz_il_vm_find_label_by_name(vm, dst_lbl_name);
 
-	RzILOp var = rz_il_new_op(RZIL_OP_VAR);
-	RzILOp load = rz_il_new_op(RZIL_OP_LOAD);
-	RzILOp branch = rz_il_new_op(RZIL_OP_BRANCH);
-	RzILOp goto_ = rz_il_new_op(RZIL_OP_GOTO);
-	RzILOp perform = rz_il_new_op(RZIL_OP_PERFORM);
-	RzILOp inv = rz_il_new_op(RZIL_OP_INV);
+	RzILOp *var = rz_il_new_op(RZIL_OP_VAR);
+	RzILOp *load = rz_il_new_op(RZIL_OP_LOAD);
+	RzILOp *branch = rz_il_new_op(RZIL_OP_BRANCH);
+	RzILOp *goto_ = rz_il_new_op(RZIL_OP_GOTO);
+	RzILOp *perform = rz_il_new_op(RZIL_OP_PERFORM);
+	RzILOp *inv = rz_il_new_op(RZIL_OP_INV);
 
 	var->op.var->v = "ptr";
 	var->op.var->ret = 0;
@@ -365,14 +365,14 @@ RzPVector *bf_rlimit(RzILVM vm, BfContext *ctx, ut64 id, ut64 addr) {
 }
 
 static bool bf_specific_init(RzAnalysisRzil *rzil) {
-	RzILVM vm = rzil->vm;
+	RzILVM *vm = rzil->vm;
 
 	// load reg
 	// TODO use info of reg profile
 	rz_il_vm_add_reg(vm, "ptr", BF_ADDR_SIZE);
 
-	RzILEffectLabel read_label = rz_il_vm_create_label_lazy(vm, "read");
-	RzILEffectLabel write_label = rz_il_vm_create_label_lazy(vm, "write");
+	RzILEffectLabel *read_label = rz_il_vm_create_label_lazy(vm, "read");
+	RzILEffectLabel *write_label = rz_il_vm_create_label_lazy(vm, "write");
 	read_label->addr = (void *)bf_syscall_read;
 	write_label->addr = (void *)bf_syscall_write;
 	read_label->type = EFFECT_LABEL_SYSCALL;
@@ -458,7 +458,7 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 	op->rzil_op = NULL;
 
 	BfContext *ctx = analysis->rzil->user;
-	RzILVM vm = analysis->rzil->vm;
+	RzILVM *vm = analysis->rzil->vm;
 	RzPVector *oplist;
 	op->rzil_op = RZ_NEW0(RzAnalysisRzilOp);
 	if (!op->rzil_op) {

@@ -7,9 +7,9 @@
  * Create a data effect
  * \return Data effect instance
  */
-RZ_API RzILDataEffect rz_il_effect_new_data(void) {
-	RzILDataEffect ret;
-	ret = (RzILDataEffect)malloc(sizeof(struct rzil_data_effect_t));
+RZ_API RzILDataEffect *rz_il_effect_new_data(void) {
+	RzILDataEffect *ret;
+	ret = (RzILDataEffect *)malloc(sizeof(struct rzil_data_effect_t));
 	if (!ret) {
 		return NULL;
 	}
@@ -23,9 +23,9 @@ RZ_API RzILDataEffect rz_il_effect_new_data(void) {
  * Create a control effect
  * \return Control effect
  */
-RZ_API RzILCtrlEffect rz_il_effect_new_ctrl(void) {
-	RzILCtrlEffect ret;
-	ret = (RzILCtrlEffect)malloc(sizeof(struct rzil_control_effect_t));
+RZ_API RzILCtrlEffect *rz_il_effect_new_ctrl(void) {
+	RzILCtrlEffect *ret;
+	ret = (RzILCtrlEffect *)malloc(sizeof(struct rzil_control_effect_t));
 	if (!ret) {
 		return NULL;
 	}
@@ -38,9 +38,9 @@ RZ_API RzILCtrlEffect rz_il_effect_new_ctrl(void) {
  * \param eff control effect
  * \return general effect
  */
-RZ_API RzILEffect rz_il_wrap_ctrl_effect(RzILCtrlEffect eff) {
-	RzILEffect ret;
-	ret = (RzILEffect)malloc(sizeof(struct rzil_effect_union_t));
+RZ_API RzILEffect *rz_il_wrap_ctrl_effect(RzILCtrlEffect *eff) {
+	RzILEffect *ret;
+	ret = (RzILEffect *)malloc(sizeof(struct rzil_effect_union_t));
 	if (!ret) {
 		return NULL;
 	}
@@ -56,9 +56,9 @@ RZ_API RzILEffect rz_il_wrap_ctrl_effect(RzILCtrlEffect eff) {
  * \param eff data effect
  * \return general effect
  */
-RZ_API RzILEffect rz_il_wrap_data_effect(RzILDataEffect eff) {
-	RzILEffect ret;
-	ret = (RzILEffect)malloc(sizeof(struct rzil_effect_union_t));
+RZ_API RzILEffect *rz_il_wrap_data_effect(RzILDataEffect *eff) {
+	RzILEffect *ret;
+	ret = (RzILEffect *)malloc(sizeof(struct rzil_effect_union_t));
 	if (!ret) {
 		return NULL;
 	}
@@ -73,7 +73,7 @@ RZ_API RzILEffect rz_il_wrap_data_effect(RzILDataEffect eff) {
  * Free a control effect
  * \param eff control effect to be free
  */
-RZ_API void rz_il_effect_free_ctrl(RzILCtrlEffect eff) {
+RZ_API void rz_il_effect_free_ctrl(RzILCtrlEffect *eff) {
 	if (!eff) {
 		return;
 	}
@@ -84,7 +84,7 @@ RZ_API void rz_il_effect_free_ctrl(RzILCtrlEffect eff) {
  * Free a data effect
  * \param eff data effect to be free
  */
-RZ_API void rz_il_effect_free_data(RzILDataEffect eff) {
+RZ_API void rz_il_effect_free_data(RzILDataEffect *eff) {
 	if (!eff) {
 		return;
 	}
@@ -96,8 +96,8 @@ RZ_API void rz_il_effect_free_data(RzILDataEffect eff) {
  * \param type effect type, can be CONTROL or DATA, see EFFECT_TYPE_* enums
  * \return General effect
  */
-RZ_API RzILEffect rz_il_effect_new(EFFECT_TYPE type) {
-	RzILEffect ret;
+RZ_API RzILEffect *rz_il_effect_new(EFFECT_TYPE type) {
+	RzILEffect *ret;
 
 	// can only be data or ctrl
 	switch (type) {
@@ -108,7 +108,7 @@ RZ_API RzILEffect rz_il_effect_new(EFFECT_TYPE type) {
 		ret = rz_il_wrap_data_effect(rz_il_effect_new_data());
 		break;
 	case EFFECT_TYPE_NON:
-		ret = (RzILEffect)malloc(sizeof(struct rzil_effect_union_t));
+		ret = (RzILEffect *)malloc(sizeof(struct rzil_effect_union_t));
 		ret->effect_type = EFFECT_TYPE_NON;
 		ret->notation = EFFECT_NOTATION_NON;
 		ret->data_eff = NULL;
@@ -128,7 +128,7 @@ RZ_API RzILEffect rz_il_effect_new(EFFECT_TYPE type) {
  * Free a general effect
  * \param effect a general effect to be free
  */
-RZ_API void rz_il_effect_free(RzILEffect effect) {
+RZ_API void rz_il_effect_free(RzILEffect *effect) {
 	if (!effect) {
 		return;
 	}
@@ -153,14 +153,14 @@ RZ_API void rz_il_effect_free(RzILEffect effect) {
 	free(effect);
 }
 
-static char *ctrl_effect_as_string(RzILCtrlEffect eff) {
+static char *ctrl_effect_as_string(RzILCtrlEffect *eff) {
 	if (!eff) {
 		return NULL;
 	}
 	return rz_str_newf("[Ctrl Eff] pc -> %" PFMT64u "\n", rz_il_bv_to_ut64(eff->pc));
 }
 
-static char *data_effect_as_string(RzILDataEffect eff) {
+static char *data_effect_as_string(RzILDataEffect *eff) {
 	if (!eff) {
 		return NULL;
 	}
@@ -172,7 +172,7 @@ static char *data_effect_as_string(RzILDataEffect eff) {
  * \param effect RzILEffect
  * \return char *, effect info string
  */
-RZ_API RZ_OWN char *rz_il_effect_as_string(RzILEffect effect) {
+RZ_API RZ_OWN char *rz_il_effect_as_string(RzILEffect *effect) {
 	if (!effect) {
 		return NULL;
 	}
@@ -202,8 +202,8 @@ RZ_API RZ_OWN char *rz_il_effect_as_string(RzILEffect effect) {
  * \param type Label type
  * \return Pointer to label
  */
-RZ_API RzILEffectLabel rz_il_effect_new_label(char *name, EFFECT_LABEL_TYPE type) {
-	RzILEffectLabel lbl = (RzILEffectLabel)RZ_NEW0(struct rzil_effect_label_t);
+RZ_API RzILEffectLabel *rz_il_effect_new_label(char *name, EFFECT_LABEL_TYPE type) {
+	RzILEffectLabel *lbl = (RzILEffectLabel *)RZ_NEW0(struct rzil_effect_label_t);
 	if (!lbl) {
 		return NULL;
 	}

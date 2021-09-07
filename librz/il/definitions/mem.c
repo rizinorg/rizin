@@ -54,7 +54,7 @@ RZ_API void rz_il_free_mem(RzILMem mem) {
  * \param value data (bitvector)
  * \return a pointer to memory
  */
-RZ_API RzILMem rz_il_mem_store(RzILMem mem, RzILBitVector key, RzILBitVector value) {
+RZ_API RzILMem rz_il_mem_store(RzILMem mem, RzILBitVector *key, RzILBitVector *value) {
 	if (value->len != mem->min_unit_size) {
 		printf("[Type Not Matched]\n");
 		return NULL;
@@ -69,11 +69,11 @@ RZ_API RzILMem rz_il_mem_store(RzILMem mem, RzILBitVector key, RzILBitVector val
  * \param key address (bitvector)
  * \return data (bitvector)
  */
-RZ_API RzILBitVector rz_il_mem_load(RzILMem mem, RzILBitVector key) {
-	RzILBitVector val = ht_pp_find(mem->kv_map, key, NULL);
+RZ_API RzILBitVector *rz_il_mem_load(RzILMem mem, RzILBitVector *key) {
+	RzILBitVector *val = ht_pp_find(mem->kv_map, key, NULL);
 	if (val == NULL) {
 		return NULL;
 	}
-	RzILBitVector ret = rz_il_bv_dup(val);
+	RzILBitVector *ret = rz_il_bv_dup(val);
 	return ret;
 }

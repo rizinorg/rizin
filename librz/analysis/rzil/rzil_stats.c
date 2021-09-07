@@ -84,24 +84,24 @@ static void stats_add_op(RzAnalysisRzil *rzil, RzILOPCode opcode) {
 	sdb_array_add(rzil->stats, "ops.list", op_name, 0);
 }
 
-static void rz_analysis_rzil_stats_focus_mem_read(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzILOp single_op) {
-	RzILOpLoad op_load = single_op->op.load;
-	RzILVM vm = rzil->vm;
+static void rz_analysis_rzil_stats_focus_mem_read(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzILOp *single_op) {
+	RzILOpLoad *op_load = single_op->op.load;
+	RzILVM *vm = rzil->vm;
 
 	ut64 addr = rz_il_bv_to_ut64(rz_il_get_bv_temp(vm, op_load->key));
 	stats_add_mem(rzil, addr, RZ_IL_TRACE_OP_READ);
 }
 
-static void rz_analysis_rzil_stats_focus_mem_write(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzILOp single_op) {
-	RzILOpStore op_store = single_op->op.store;
-	RzILVM vm = rzil->vm;
+static void rz_analysis_rzil_stats_focus_mem_write(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzILOp *single_op) {
+	RzILOpStore *op_store = single_op->op.store;
+	RzILVM *vm = rzil->vm;
 
 	ut64 addr = rz_il_bv_to_ut64(rz_il_get_bv_temp(vm, op_store->key));
 	stats_add_mem(rzil, addr, RZ_IL_TRACE_OP_WRITE);
 }
 
-static void rz_analysis_rzil_stats_focus_reg_read(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzILOp single_op) {
-	RzILOpVar op_var = single_op->op.var;
+static void rz_analysis_rzil_stats_focus_reg_read(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzILOp *single_op) {
+	RzILOpVar *op_var = single_op->op.var;
 
 	const char *reg_name = rz_str_constpool_get(&analysis->constpool, op_var->v);
 
@@ -114,8 +114,8 @@ static void rz_analysis_rzil_stats_focus_reg_read(RzAnalysis *analysis, RzAnalys
 	stats_add_reg(rzil, reg_name, RZ_IL_TRACE_OP_READ);
 }
 
-static void rz_analysis_rzil_stats_focus_reg_write(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzILOp single_op) {
-	RzILOpSet op_set = single_op->op.set;
+static void rz_analysis_rzil_stats_focus_reg_write(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzILOp *single_op) {
+	RzILOpSet *op_set = single_op->op.set;
 
 	const char *reg_name = rz_str_constpool_get(&analysis->constpool, op_set->v);
 
@@ -128,7 +128,7 @@ static void rz_analysis_rzil_stats_focus_reg_write(RzAnalysis *analysis, RzAnaly
 	stats_add_reg(rzil, reg_name, RZ_IL_TRACE_OP_WRITE);
 }
 
-static void rz_analysis_rzil_stats_focus(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzILOp single_op) {
+static void rz_analysis_rzil_stats_focus(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzILOp *single_op) {
 	// focus those op only
 	// flags treated as register
 	stats_add_op(rzil, single_op->code);
@@ -162,7 +162,7 @@ RZ_API void rz_analysis_rzil_record_stats(RzAnalysis *analysis, RzAnalysisRzil *
 
 	void **iter;
 	rz_pvector_foreach (op_list, iter) {
-		RzILOp single_op = *iter;
+		RzILOp *single_op = *iter;
 		rz_analysis_rzil_stats_focus(analysis, rzil, single_op);
 	}
 }

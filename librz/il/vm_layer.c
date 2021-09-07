@@ -5,7 +5,7 @@
 
 static void free_label_kv(HtPPKv *kv) {
 	free(kv->key);
-	RzILEffectLabel lbl = kv->value;
+	RzILEffectLabel *lbl = kv->value;
 
 	if (lbl->type == EFFECT_LABEL_HOOK || lbl->type == EFFECT_LABEL_SYSCALL) {
 		lbl->addr = NULL;
@@ -31,11 +31,11 @@ static void free_bind_var_val(HtPPKv *kv) {
  * \param addr_size int, size of the address in VM
  * \param data_size int, size of the minimal data unit in VM
  */
-RZ_API bool rz_il_vm_init(RzILVM vm, ut64 start_addr, int addr_size, int data_size) {
+RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, int addr_size, int data_size) {
 	vm->addr_size = addr_size;
 	vm->data_size = data_size;
 
-	vm->vm_global_variable_list = (RzILVar *)calloc(RZ_IL_VM_MAX_VAR, sizeof(RzILVar));
+	vm->vm_global_variable_list = (RzILVar **)calloc(RZ_IL_VM_MAX_VAR, sizeof(RzILVar *));
 	if (!vm->vm_global_variable_list) {
 		RZ_LOG_ERROR("[VM INIT FAILED] : variable\n");
 		rz_il_vm_close(vm);
@@ -153,10 +153,10 @@ RZ_API bool rz_il_vm_init(RzILVM vm, ut64 start_addr, int addr_size, int data_si
 
 /**
  * Close and clean vm
- * \param vm RzILVM pointer to VM
+ * \param vm RzILVM* pointer to VM
  */
-RZ_API void rz_il_vm_close(RzILVM vm) {
-	RzILVar var;
+RZ_API void rz_il_vm_close(RzILVM *vm) {
+	RzILVar *var;
 
 	rz_il_free_bag(vm->vm_global_value_set);
 
@@ -203,7 +203,7 @@ RZ_API void rz_il_vm_close(RzILVM vm) {
 }
 
 // Step on core theory opcode
-void rz_il_vm_step(RzILVM vm, RzILOp op) {
+void rz_il_vm_step(RzILVM *vm, RzILOp *op) {
 	vm->easy_debug += 1;
 	RzILOpHandler handler = vm->op_handler_table[op->code];
 	handler(vm, op);
@@ -215,9 +215,9 @@ void rz_il_vm_step(RzILVM vm, RzILOp op) {
  * \param vm RzILVM, pointer to VM
  * \param op_list RzPVector*, pointer to the vector of core theory ops
  */
-RZ_API void rz_il_vm_list_step(RzILVM vm, RzPVector *op_list) {
+RZ_API void rz_il_vm_list_step(RzILVM *vm, RzPVector *op_list) {
 	void **iter;
-	RzILOp cur_op;
+	RzILOp *cur_op;
 
 	// rz_il_vm_debug_print_ops(vm);
 	// rz_il_print_vm_labels(vm);
@@ -229,9 +229,9 @@ RZ_API void rz_il_vm_list_step(RzILVM vm, RzPVector *op_list) {
 		//		rz_il_print_vm_temps(vm);
 	}
 
-	RzILBitVector one = rz_il_bv_new(vm->pc->len);
+	RzILBitVector *one = rz_il_bv_new(vm->pc->len);
 	rz_il_bv_set(one, 0, true); // set one = 1
-	RzILBitVector next_pc = rz_il_bv_add(vm->pc, one);
+	RzILBitVector *next_pc = rz_il_bv_add(vm->pc, one);
 	rz_il_bv_free(vm->pc);
 	rz_il_bv_free(one);
 	vm->pc = next_pc;
@@ -243,7 +243,7 @@ RZ_API void rz_il_vm_list_step(RzILVM vm, RzPVector *op_list) {
  * \param addr ut64, an address
  * \return RzILBitVector, 64-bit bitvector
  */
-RZ_API RzILBitVector rz_il_ut64_addr_to_bv(ut64 addr) {
+RZ_API RzILBitVector *rz_il_ut64_addr_to_bv(ut64 addr) {
 	return rz_il_bv_new_from_ut64(64, addr);
 }
 
@@ -253,7 +253,7 @@ RZ_API RzILBitVector rz_il_ut64_addr_to_bv(ut64 addr) {
  * \param addr RzILBitVector, a bitvector address
  * \return ut64, the value of bitvector
  */
-RZ_API ut64 rz_il_bv_addr_to_ut64(RzILBitVector addr) {
+RZ_API ut64 rz_il_bv_addr_to_ut64(RzILBitVector *addr) {
 	return rz_il_bv_to_ut64(addr);
 }
 
@@ -261,7 +261,7 @@ RZ_API ut64 rz_il_bv_addr_to_ut64(RzILBitVector addr) {
  * the same as rz_il_bv_free, free a bitvector address
  * \param addr RzILBitVector, a bitvector to free
  */
-RZ_API void rz_il_free_bv_addr(RzILBitVector addr) {
+RZ_API void rz_il_free_bv_addr(RzILBitVector *addr) {
 	rz_il_bv_free(addr);
 }
 
@@ -271,7 +271,7 @@ RZ_API void rz_il_free_bv_addr(RzILBitVector addr) {
  * \param min_unit_size int, size of minimal unit of the vm
  * \return Mem memory, return a pointer to the newly created memory
  */
-RZ_API RzILMem rz_il_vm_add_mem(RzILVM vm, int min_unit_size) {
+RZ_API RzILMem rz_il_vm_add_mem(RzILVM *vm, int min_unit_size) {
 	RzILMem mem = rz_il_new_mem(min_unit_size);
 	vm->mems[vm->mem_count] = mem;
 	vm->mem_count += 1;
@@ -326,7 +326,7 @@ RZ_API char *rz_il_op2str(RzILOPCode opcode) {
 }
 
 // create string for single core theory opcode
-int rz_il_vm_printer_step(RzILOp op, char **helper) {
+int rz_il_vm_printer_step(RzILOp *op, char **helper) {
 	char *cur_op_str;
 	char *arg1, *arg2, *arg3;
 	int ret;
@@ -447,7 +447,7 @@ void rz_il_vm_list_printer_step(RzPVector *op_list) {
 	char *helper[32] = { NULL };
 
 	void **iter;
-	RzILOp cur_op;
+	RzILOp *cur_op;
 	int ret = 0;
 	rz_pvector_foreach (op_list, iter) {
 		cur_op = *iter;
@@ -469,7 +469,7 @@ void rz_il_vm_list_printer_step(RzPVector *op_list) {
  * \param key RzILBitVector, aka address, a key to load data from memory
  * \return val Bitvector, data at the address, has `vm->min_unit_size` length
  */
-RZ_API RzILBitVector rz_il_vm_mem_load(RzILVM vm, int mem_index, RzILBitVector key) {
+RZ_API RzILBitVector *rz_il_vm_mem_load(RzILVM *vm, int mem_index, RzILBitVector *key) {
 	RzILMem m;
 
 	if (vm && vm->mems) {
@@ -485,13 +485,13 @@ RZ_API RzILBitVector rz_il_vm_mem_load(RzILVM vm, int mem_index, RzILBitVector k
 /**
  * Store data to memory by key, will create a key-value pair
  * or update the key-value pair if key existed.
- * \param vm RzILVM pointer to VM
+ * \param vm RzILVM* pointer to VM
  * \param mem_index int, index to choose a memory
  * \param key RzILBitVector, aka address, a key to load data from memory
  * \return val Bitvector, data at the address, must have `vm->min_unit_size` length
  * \return mem Mem, the memory you store data to
  */
-RZ_API RzILMem rz_il_vm_mem_store(RzILVM vm, int mem_index, RzILBitVector key, RzILBitVector value) {
+RZ_API RzILMem rz_il_vm_mem_store(RzILVM *vm, int mem_index, RzILBitVector *key, RzILBitVector *value) {
 	RzILMem m;
 
 	if (vm && vm->mems) {

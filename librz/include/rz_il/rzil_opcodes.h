@@ -389,91 +389,91 @@ typedef enum {
 ///               val ite : bool -> 'a pure -> 'a pure -> 'a pure
 ///               ite c x y is x if c evaluates to b1 else y.
 /// they are defined in specific modules
-typedef struct rzil_op_ite_t *RzILOpIte;
-typedef struct rzil_op_var_t *RzILOpVar;
-typedef struct rzil_op_unk_t *RzILOpUnk;
+typedef struct rzil_op_ite_t RzILOpIte;
+typedef struct rzil_op_var_t RzILOpVar;
+typedef struct rzil_op_unk_t RzILOpUnk;
 
-typedef struct rzil_op_msb_lsb_t *RzILOpMsb;
-typedef struct rzil_op_msb_lsb_t *RzILOpLsb;
-typedef struct rzil_op_sle_ule_t *RzILOpSle;
-typedef struct rzil_op_sle_ule_t *RzILOpUle;
-typedef struct rzil_op_not_t *RzILOpNot;
-typedef struct rzil_op_neg_t *RzILOpNeg;
-typedef struct rzil_op_alg_log_operations_t *RzILOpAdd;
-typedef struct rzil_op_alg_log_operations_t *RzILOpSub;
-typedef struct rzil_op_alg_log_operations_t *RzILOpMul;
-typedef struct rzil_op_alg_log_operations_t *RzILOpDiv;
-typedef struct rzil_op_alg_log_operations_t *RzILOpSdiv;
-typedef struct rzil_op_alg_log_operations_t *RzILOpMod;
-typedef struct rzil_op_alg_log_operations_t *RzILOpSmod;
-typedef struct rzil_op_alg_log_operations_t *RzILOpLogand;
-typedef struct rzil_op_alg_log_operations_t *RzILOpLogor;
-typedef struct rzil_op_alg_log_operations_t *RzILOpLogxor;
-typedef struct rzil_op_shift_t *RzILOpShiftl;
-typedef struct rzil_op_shift_t *RzILOpShiftr;
-typedef struct rzil_op_int_t *RzILOpInt;
+typedef struct rzil_op_msb_lsb_t RzILOpMsb;
+typedef struct rzil_op_msb_lsb_t RzILOpLsb;
+typedef struct rzil_op_sle_ule_t RzILOpSle;
+typedef struct rzil_op_sle_ule_t RzILOpUle;
+typedef struct rzil_op_not_t RzILOpNot;
+typedef struct rzil_op_neg_t RzILOpNeg;
+typedef struct rzil_op_alg_log_operations_t RzILOpAdd;
+typedef struct rzil_op_alg_log_operations_t RzILOpSub;
+typedef struct rzil_op_alg_log_operations_t RzILOpMul;
+typedef struct rzil_op_alg_log_operations_t RzILOpDiv;
+typedef struct rzil_op_alg_log_operations_t RzILOpSdiv;
+typedef struct rzil_op_alg_log_operations_t RzILOpMod;
+typedef struct rzil_op_alg_log_operations_t RzILOpSmod;
+typedef struct rzil_op_alg_log_operations_t RzILOpLogand;
+typedef struct rzil_op_alg_log_operations_t RzILOpLogor;
+typedef struct rzil_op_alg_log_operations_t RzILOpLogxor;
+typedef struct rzil_op_shift_t RzILOpShiftl;
+typedef struct rzil_op_shift_t RzILOpShiftr;
+typedef struct rzil_op_int_t RzILOpInt;
 
-typedef struct rzil_op_b_t *RzILOpB0;
-typedef struct rzil_op_b_t *RzILOpB1;
-typedef struct rzil_op_and__t *RzILOpAnd_;
-typedef struct rzil_op_or__t *RzILOpOr_;
-typedef struct rzil_op_inv_t *RzILOpInv;
+typedef struct rzil_op_b_t RzILOpB0;
+typedef struct rzil_op_b_t RzILOpB1;
+typedef struct rzil_op_and__t RzILOpAnd_;
+typedef struct rzil_op_or__t RzILOpOr_;
+typedef struct rzil_op_inv_t RzILOpInv;
 
-typedef struct rzil_op_perform_t *RzILOpPerform;
-typedef struct rzil_op_set_t *RzILOpSet;
-typedef struct rzil_op_jmp_t *RzILOpJmp;
-typedef struct rzil_op_goto_t *RzILOpGoto;
-typedef struct rzil_op_seq_t *RzILOpSeq;
-typedef struct rzil_op_blk_t *RzILOpBlk;
-typedef struct rzil_op_repeat_t *RzILOpRepeat;
-typedef struct rzil_op_branch_t *RzILOpBranch;
+typedef struct rzil_op_perform_t RzILOpPerform;
+typedef struct rzil_op_set_t RzILOpSet;
+typedef struct rzil_op_jmp_t RzILOpJmp;
+typedef struct rzil_op_goto_t RzILOpGoto;
+typedef struct rzil_op_seq_t RzILOpSeq;
+typedef struct rzil_op_blk_t RzILOpBlk;
+typedef struct rzil_op_repeat_t RzILOpRepeat;
+typedef struct rzil_op_branch_t RzILOpBranch;
 
-typedef struct rzil_op_load_t *RzILOpLoad;
-typedef struct rzil_op_store_t *RzILOpStore;
+typedef struct rzil_op_load_t RzILOpLoad;
+typedef struct rzil_op_store_t RzILOpStore;
 
 // Then define a union to union all of these struct
 typedef union {
-	RzILOpIte ite;
-	RzILOpVar var;
-	RzILOpUnk unk;
+	RzILOpIte *ite;
+	RzILOpVar *var;
+	RzILOpUnk *unk;
 
-	RzILOpB0 b0;
-	RzILOpB1 b1;
-	RzILOpAnd_ and_;
-	RzILOpOr_ or_;
-	RzILOpInv inv;
+	RzILOpB0 *b0;
+	RzILOpB1 *b1;
+	RzILOpAnd_ *and_;
+	RzILOpOr_ *or_;
+	RzILOpInv *inv;
 
-	RzILOpInt int_;
-	RzILOpMsb msb;
-	RzILOpLsb lsb;
-	RzILOpUle ule;
-	RzILOpSle sle;
-	RzILOpNeg neg;
-	RzILOpNot not ;
-	RzILOpAdd add;
-	RzILOpSub sub;
-	RzILOpMul mul;
-	RzILOpDiv div;
-	RzILOpSdiv sdiv;
-	RzILOpSmod smod;
-	RzILOpMod mod;
-	RzILOpLogand logand;
-	RzILOpLogor logor;
-	RzILOpLogxor logxor;
-	RzILOpShiftl shiftl;
-	RzILOpShiftr shiftr;
+	RzILOpInt *int_;
+	RzILOpMsb *msb;
+	RzILOpLsb *lsb;
+	RzILOpUle *ule;
+	RzILOpSle *sle;
+	RzILOpNeg *neg;
+	RzILOpNot * not ;
+	RzILOpAdd *add;
+	RzILOpSub *sub;
+	RzILOpMul *mul;
+	RzILOpDiv *div;
+	RzILOpSdiv *sdiv;
+	RzILOpSmod *smod;
+	RzILOpMod *mod;
+	RzILOpLogand *logand;
+	RzILOpLogor *logor;
+	RzILOpLogxor *logxor;
+	RzILOpShiftl *shiftl;
+	RzILOpShiftr *shiftr;
 
-	RzILOpPerform perform;
-	RzILOpSet set;
-	RzILOpJmp jmp;
-	RzILOpGoto goto_;
-	RzILOpSeq seq;
-	RzILOpBlk blk;
-	RzILOpRepeat repeat;
-	RzILOpBranch branch;
+	RzILOpPerform *perform;
+	RzILOpSet *set;
+	RzILOpJmp *jmp;
+	RzILOpGoto *goto_;
+	RzILOpSeq *seq;
+	RzILOpBlk *blk;
+	RzILOpRepeat *repeat;
+	RzILOpBranch *branch;
 
-	RzILOpLoad load;
-	RzILOpStore store;
+	RzILOpLoad *load;
+	RzILOpStore *store;
 
 	void *nil;
 	// ... More
@@ -484,9 +484,9 @@ struct RzILOp_t {
 	RzILOPCode code;
 	_RzILOp op;
 };
-typedef struct RzILOp_t *RzILOp;
+typedef struct RzILOp_t RzILOp;
 // Opcode
-RZ_API RzILOp rz_il_new_op(RzILOPCode code);
-RZ_API void rz_il_free_op(RzILOp op);
+RZ_API RzILOp *rz_il_new_op(RzILOPCode code);
+RZ_API void rz_il_free_op(RzILOp *op);
 
 #endif //RZIL_OPCODES_H
