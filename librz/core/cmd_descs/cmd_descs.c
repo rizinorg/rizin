@@ -6355,7 +6355,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *type_link_del_all_cd = rz_cmd_desc_argv_new(core->rcmd, tl_cd, "tl-*", rz_type_link_del_all_handler, &type_link_del_all_help);
 	rz_warn_if_fail(type_link_del_all_cd);
 
-	RzCmdDesc *tn_cd = rz_cmd_desc_group_modes_new(core->rcmd, t_cd, "tn", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN, rz_type_list_noreturn_handler, &type_list_noreturn_help, &tn_help);
+	RzCmdDesc *tn_cd = rz_cmd_desc_group_modes_new(core->rcmd, t_cd, "tn", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_type_list_noreturn_handler, &type_list_noreturn_help, &tn_help);
 	rz_warn_if_fail(tn_cd);
 	RzCmdDesc *type_noreturn_del_cd = rz_cmd_desc_argv_new(core->rcmd, tn_cd, "tn-", rz_type_noreturn_del_handler, &type_noreturn_del_help);
 	rz_warn_if_fail(type_noreturn_del_cd);

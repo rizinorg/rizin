@@ -191,7 +191,7 @@ commands:
         summary: List all noreturn references / Add a noreturn function
         modes:
           - RZ_OUTPUT_MODE_STANDARD
-          - RZ_OUTPUT_MODE_RIZIN
+          - RZ_OUTPUT_MODE_JSON
         args:
           - name: name
             type: RZ_CMD_ARG_TYPE_STRING
