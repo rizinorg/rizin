@@ -150,9 +150,9 @@ RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrS
 		char ch = *(buf + needle - from);
 		if (ch == 0 && type == RZ_STRING_ENC_GUESS) {
 			char *w = (char *)buf + needle + 1 - from;
-			if ((to - needle) > 5 + 1) {
-				bool is_wide32_be = !w[0] && !w[1] && w[2] && !w[3] && !w[4];
-				bool is_wide_be = w[0] && !w[1] && w[2] && !w[3] && w[4];
+			if ((to - needle) > 6 + 1) {
+				bool is_wide32_be = !w[0] && !w[1] && w[2] && !w[3] && !w[4] && !w[5];
+				bool is_wide_be = w[0] && !w[1] && w[2] && !w[3] && w[4] && !w[5];
 				if (is_wide32_be) {
 					is_wide_be_str = true;
 					str_type = RZ_STRING_ENC_UTF32BE;
