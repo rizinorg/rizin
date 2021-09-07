@@ -523,7 +523,7 @@ static bool nonreturn_print_json(RzCore *core, RzList *noretl) {
 	PJ *pj = pj_new();
 	pj_a(pj);
 	rz_list_foreach (noretl, it, s) {
-		pj_k(pj, s);
+		pj_s(pj, s);
 	}
 	pj_end(pj);
 	rz_cons_println(pj_string(pj));
@@ -979,6 +979,15 @@ RZ_IPI void rz_core_types_print_all(RzCore *core, RzOutputMode mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
 		rz_list_foreach (types, it, btype) {
 			rz_cons_println(btype->name);
+		}
+		break;
+	case RZ_OUTPUT_MODE_RIZIN:
+		rz_list_foreach (types, it, btype) {
+			char *fmt = rz_type_format(core->analysis->typedb, btype->name);
+			if (fmt) {
+				rz_cons_printf("pf.%s %s\n", btype->name, fmt);
+				free(fmt);
+			}
 		}
 		break;
 	default:
