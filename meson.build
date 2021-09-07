@@ -298,6 +298,10 @@ if checks_level == 9999
   endif
 endif
 
+if get_option('buildtype').startswith('debug')
+  add_project_arguments('-DRZ_BUILD_DEBUG', language : 'c')
+endif
+
 message('RZ_CHECKS_LEVEL: @0@'.format(checks_level))
 
 userconf = configuration_data()
