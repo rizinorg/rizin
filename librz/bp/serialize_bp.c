@@ -4,6 +4,12 @@
 #include <rz_util/rz_serialize.h>
 #include <rz_bp.h>
 
+/**
+ * \brief serialize and save the breakpoints in a sdb
+ * 
+ * \param db sdb to save the breakpoints
+ * \param bp RzBreakpoint instance to serialize and save
+ */
 RZ_API void rz_serialize_bp_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzBreakpoint *bp) {
 	rz_return_if_fail(db && bp);
 
@@ -77,6 +83,11 @@ enum {
 	BP_FIELD_EXPR
 };
 
+/**
+ * \brief Create a new RzSerializeBpParser instance
+ * 
+ * \return NULL if fail, new instance otherwise
+ */
 RZ_API RzSerializeBpParser rz_serialize_bp_parser_new(void) {
 	RzSerializeBpParser parser = rz_key_parser_new();
 	if (!parser) {
@@ -281,6 +292,14 @@ heaven:
 	return ret;
 }
 
+/**
+ * \brief Load a serialized breakpoints to a RzBreakpoint instance
+ * 
+ * \param db sdb to load the breakpoints from
+ * \param bp RzBreakpoint instance to load the deserialized breakpoints
+ * \param res RzSerializeResultInfo to store info/errors/warnings
+ * \return true if successful, false otherwise
+ */
 RZ_API bool rz_serialize_bp_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzBreakpoint *bp, RZ_NULLABLE RzSerializeResultInfo *res) {
 	rz_return_val_if_fail(db && bp, false);
 
