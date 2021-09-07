@@ -7975,3 +7975,18 @@ BOOL IsMenu(HMENU hMenu);
 DWORD GetEnhMetaFilePaletteEntries(HENHMETAFILE hemf, UINT cEntries, unknown_t lppe);
 EOF
 RUN
+
+NAME=tn test
+FILE=--
+CMDS=<<EOF
+tn fun1
+tn fun2
+tn
+tnj
+EOF
+EXPECT=<<EOF
+fun1
+fun2
+["fun1","fun2"]
+EOF
+RUN
