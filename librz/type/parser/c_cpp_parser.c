@@ -229,9 +229,7 @@ RZ_API int rz_type_parse_file_stateless(RzTypeParser *parser, const char *path, 
 		free(source_code);
 		return -1;
 	}
-	ut64 file_size = rz_file_size(path);
-	(void)file_size;
-	RZ_LOG_DEBUG("File size is %" PFMT64d " bytes, read %zu bytes\n", file_size, read_bytes);
+	RZ_LOG_DEBUG("File size is %" PFMT64d " bytes, read %zu bytes\n", rz_file_size(path), read_bytes);
 	int result = rz_type_parse_string_stateless(parser, source_code, error_msg);
 	free(source_code);
 	return result;
@@ -252,9 +250,7 @@ RZ_API int rz_type_parse_file(RzTypeDB *typedb, const char *path, const char *di
 		free(source_code);
 		return -1;
 	}
-	ut64 file_size = rz_file_size(path);
-	(void)file_size;
-	RZ_LOG_DEBUG("File size is %" PFMT64d " bytes, read %zu bytes\n", file_size, read_bytes);
+	RZ_LOG_DEBUG("File size is %" PFMT64d " bytes, read %zu bytes\n", rz_file_size(path), read_bytes);
 	int result = rz_type_parse_string(typedb, source_code, error_msg);
 	free(source_code);
 	return result;
