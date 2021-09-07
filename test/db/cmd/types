@@ -351,6 +351,7 @@ EXPECT_ERR=<<EOF
 Cannot find base type "xoo"
 Cannot find 'xoo' type
 Cannot find base type "xoo"
+ERROR: Cannot find "xoo" union type
 EOF
 RUN
 
@@ -7973,5 +7974,20 @@ float ntohf(__uint32 Value);
 BOOL CancelTimerQueueTimer(HANDLE TimerQueue, HANDLE Timer);
 BOOL IsMenu(HMENU hMenu);
 DWORD GetEnhMetaFilePaletteEntries(HENHMETAFILE hemf, UINT cEntries, unknown_t lppe);
+EOF
+RUN
+
+NAME=tn test
+FILE=--
+CMDS=<<EOF
+tn fun1
+tn fun2
+tn
+tnj
+EOF
+EXPECT=<<EOF
+fun1
+fun2
+["fun1","fun2"]
 EOF
 RUN
