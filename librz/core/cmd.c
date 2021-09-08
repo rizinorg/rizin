@@ -4488,8 +4488,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(arged_stmt) {
 			eprintf("Did you want to see the help? Try `%s` without any argument.\n", cmdname);
 		}
 	} else if (res == RZ_CMD_STATUS_ERROR) {
-		const char *cmdname = rz_cmd_parsed_args_cmd(pr_args);
-		RZ_LOG_DEBUG("Something wrong during the execution of `%s` command.\n", cmdname);
+		RZ_LOG_DEBUG("Something wrong during the execution of `%s` command.\n", rz_cmd_parsed_args_cmd(pr_args));
 	}
 
 err:

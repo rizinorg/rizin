@@ -2259,6 +2259,12 @@ RZ_API bool rz_serialize_analysis_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis
 	SUB("xrefs", rz_serialize_analysis_xrefs_load(subdb, analysis, res));
 
 	SUB("blocks", rz_serialize_analysis_blocks_load(subdb, analysis, diff_parser, res));
+
+	SUB("classes", rz_serialize_analysis_classes_load(subdb, analysis, res));
+	SUB("types", rz_serialize_analysis_types_load(subdb, analysis, res));
+	SUB("callables", rz_serialize_analysis_callables_load(subdb, analysis, res));
+	SUB("typelinks", rz_serialize_analysis_typelinks_load(subdb, analysis, res));
+
 	// All bbs have ref=1 now
 	SUB("functions", rz_serialize_analysis_functions_load(subdb, analysis, diff_parser, res));
 	SUB("noreturn", rz_serialize_analysis_function_noreturn_load(subdb, analysis, res));
@@ -2281,10 +2287,6 @@ RZ_API bool rz_serialize_analysis_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis
 
 	SUB("meta", rz_serialize_analysis_meta_load(subdb, analysis, res));
 	SUB("hints", rz_serialize_analysis_hints_load(subdb, analysis, res));
-	SUB("classes", rz_serialize_analysis_classes_load(subdb, analysis, res));
-	SUB("types", rz_serialize_analysis_types_load(subdb, analysis, res));
-	SUB("callables", rz_serialize_analysis_callables_load(subdb, analysis, res));
-	SUB("typelinks", rz_serialize_analysis_typelinks_load(subdb, analysis, res));
 	SUB("zigns", rz_serialize_analysis_sign_load(subdb, analysis, res));
 	SUB("imports", rz_serialize_analysis_imports_load(subdb, analysis, res));
 	SUB("pins", rz_serialize_analysis_pin_load(subdb, analysis, res));
