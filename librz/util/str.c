@@ -2474,7 +2474,7 @@ RZ_API size_t rz_str_len_utf8_ansi(const char *str) {
 			i += chlen - 1;
 		} else if ((ch & 0xc0) != 0x80) { // utf8
 			len++;
-			if (rz_str_char_fullwidth(str + i, 4)) {
+			if (rz_str_char_fullwidth(str + i, chlen)) {
 				fullwidths++;
 			}
 		}
