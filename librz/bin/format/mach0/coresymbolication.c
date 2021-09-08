@@ -183,7 +183,16 @@ RzCoreSymCacheElement *rz_coresym_cache_element_new(RzBinFile *bf, RzBuffer *buf
 
 	ut64 page_zero_size = 0;
 	size_t page_zero_idx = 0;
+
 	if (UT32_MUL_OVFCHK(hdr->n_segments, sizeof(RzCoreSymCacheElementSegment))) {
+		goto beach;
+	} else if (UT32_MUL_OVFCHK(hdr->n_segments, sizeof(RzCoreSymCacheElementSection))) {
+		goto beach;
+	} else if (UT32_MUL_OVFCHK(hdr->n_symbols, sizeof(RzCoreSymCacheElementSymbol))) {
+		goto beach;
+	} else if (UT32_MUL_OVFCHK(hdr->n_lined_symbols, sizeof(RzCoreSymCacheElementLinedSymbol))) {
+		goto beach;
+	} else if (UT32_MUL_OVFCHK(hdr->n_line_info, sizeof(RzCoreSymCacheElementLineInfo))) {
 		goto beach;
 	}
 	if (hdr->n_segments > 0) {
