@@ -183,6 +183,9 @@ RzCoreSymCacheElement *rz_coresym_cache_element_new(RzBinFile *bf, RzBuffer *buf
 
 	ut64 page_zero_size = 0;
 	size_t page_zero_idx = 0;
+	if (UT32_MUL_OVFCHK(hdr->n_segments, sizeof(RzCoreSymCacheElementSegment))) {
+		goto beach;
+	}
 	if (hdr->n_segments > 0) {
 		result->segments = RZ_NEWS0(RzCoreSymCacheElementSegment, hdr->n_segments);
 		if (!result->segments) {
