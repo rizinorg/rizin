@@ -908,3 +908,80 @@ EXPECT=<<EOF
 0x00008000 2 sp
 EOF
 RUN
+
+NAME=avr resolve mmio and ext_reg (TCCR0B & OCR1BH)
+FILE=bins/firmware/arduino_avr.bin
+CMDS=<<EOF
+e asm.arch=avr
+e asm.cpu=ATmega168
+aaa
+s fcn.000005a2
+pdr
+EOF
+EXPECT=<<EOF
+  ; CALL XREF from fcn.00000662 @ 0x696
+  ; CALL XREF from fcn.00000662 @ +0x92
+/ fcn.000005a2 ();
+| 0x000005a2      cpi   r24, 0x05
+| 0x000005a4      breq  0x5d4
+| ----------- true: 0x000005d4  false: 0x000005a6
+| 0x000005a6      brcc  0x5b2
+| ----------- true: 0x000005b2  false: 0x000005a8
+| 0x000005a8      cpi   r24, 0x03
+| 0x000005aa      breq  0x5c6
+| ----------- true: 0x000005c6  false: 0x000005ac
+| 0x000005ac      cpi   r24, 0x04
+| 0x000005ae      breq  0x5cc
+| ----------- true: 0x000005cc  false: 0x000005b0
+| 0x000005b0      ret
+
+| ; CODE XREF from fcn.000005a2 @ 0x5a6
+| 0x000005b2      cpi   r24, 0x09
+| 0x000005b4      breq  0x5dc
+| ----------- true: 0x000005dc  false: 0x000005b6
+| 0x000005b6      cpi   r24, 0x0a
+| 0x000005b8      breq  0x5e4
+| ----------- true: 0x000005e4  false: 0x000005ba
+| 0x000005ba      cpi   r24, 0x08
+| 0x000005bc      brne  0x5ee
+| ----------- true: 0x000005ee  false: 0x000005be
+| 0x000005be      lds   r24, OCR1BH                                    ; 0x8b
+| 0x000005c2      andi  r24, 0x7f
+| 0x000005c4      rjmp  0x5ea
+| ----------- true: 0x000005ea
+| ; CODE XREF from fcn.000005a2 @ 0x5aa
+| 0x000005c6      in    r24, 0x2f
+| 0x000005c8      andi  r24, 0x7f
+| 0x000005ca      rjmp  0x5d0
+| ----------- true: 0x000005d0
+| ; CODE XREF from fcn.000005a2 @ 0x5ae
+| 0x000005cc      in    r24, 0x2f
+| 0x000005ce      andi  r24, 0xdf
+| ----------- true: 0x000005d0
+| ; CODE XREF from fcn.000005a2 @ 0x5ca
+| 0x000005d0      out   0x2f, r24
+| 0x000005d2      ret
+
+| ; CODE XREF from fcn.000005a2 @ 0x5a4
+| 0x000005d4      in    r24, TCCR0B
+| 0x000005d6      andi  r24, 0xdf
+| 0x000005d8      out   TCCR0B, r24
+| 0x000005da      ret
+
+| ; CODE XREF from fcn.000005a2 @ 0x5b4
+| 0x000005dc      lds   r24, OCR1BH                                    ; 0x8b
+| 0x000005e0      andi  r24, 0xdf
+| 0x000005e2      rjmp  0x5ea
+| ----------- true: 0x000005ea
+| ; CODE XREF from fcn.000005a2 @ 0x5b8
+| 0x000005e4      lds   r24, OCR1BH                                    ; 0x8b
+| 0x000005e8      andi  r24, 0xf7
+| ----------- true: 0x000005ea
+| ; CODE XREFS from fcn.000005a2 @ 0x5c4, 0x5e2
+| 0x000005ea      sts   OCR1BH, r24                                    ; 0x8b
+| ----------- true: 0x000005ee
+| ; CODE XREF from fcn.000005a2 @ 0x5bc
+\ 0x000005ee      ret
+
+EOF
+RUN
