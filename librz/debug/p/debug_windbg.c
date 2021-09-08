@@ -562,9 +562,10 @@ static RzDebugInfo *windbg_info(RzDebug *dbg, const char *arg) {
 	return NULL;
 }
 
-static bool windbg_gcore(RzDebug *dbg, RzBuffer *dest) {
+static bool windbg_gcore(RzDebug *dbg, char *p, RzBuffer *dest) {
 	DbgEngContext *idbg = dbg->plugin_data;
 	rz_return_val_if_fail(idbg && idbg->initialized, false);
+	(void)p;
 	char *path = rz_sys_getenv(RZ_SYS_TMP);
 	if (RZ_STR_ISEMPTY(path)) {
 		free(path);

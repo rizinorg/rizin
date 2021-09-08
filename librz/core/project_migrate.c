@@ -132,6 +132,12 @@ RZ_API bool rz_project_migrate_v2_v3(RzProject *prj, RzSerializeResultInfo *res)
 	return true;
 }
 
+// --
+// Migration 3 -> 4
+//
+// Changes from 8d54707ccf8b3492b999dfa42057da0847acb952:
+//	Added new global variables in "/core/analysis/vars"
+
 #if 0
 typedef struct {
 	RzList /*<char *>*/ *moved_keys; ///< deferred for deletion from the old sdb
@@ -186,11 +192,59 @@ RZ_API bool rz_project_migrate_v3_v4(RzProject *prj, RzSerializeResultInfo *res)
 }
 
 // --
+// Migration 4 -> 5
+//
+// Changes from a523314fa7c8fde0c2c0d116e82aa77f62991d37
+//	Added new type called `unknown_t` in "/core/analysis/types"
+//	It is used for all unknown types during the project loading and saving
+
+RZ_API bool rz_project_migrate_v4_v5(RzProject *prj, RzSerializeResultInfo *res) {
+	Sdb *core_db;
+	RZ_SERIALIZE_SUB(prj, core_db, res, "core", return false;);
+	Sdb *analysis_db;
+	RZ_SERIALIZE_SUB(core_db, analysis_db, res, "analysis", return false;);
+	Sdb *config_db;
+	RZ_SERIALIZE_SUB(core_db, config_db, res, "config", return false;);
+	Sdb *types_db;
+	RZ_SERIALIZE_SUB(analysis_db, types_db, res, "types", return false;);
+	// Common keys:
+	// unknown_t=type
+	// type.unknown_t.typeclass=Integral
+	sdb_set(types_db, "unknown_t", "type", 0);
+	sdb_set(types_db, "type.unknown_t.typeclass", "Integral", 0);
+	// Now we read the bits value from "asm.bits=XX" in "/core/config"
+	int bits = sdb_num_get(config_db, "asm.bits", 0);
+	switch (bits) {
+	case 16:
+		// type.unknown_t=w
+		// type.unknown_t.size=16
+		sdb_set(types_db, "type.unknown_t", "w", 0);
+		sdb_set(types_db, "type.unknown_t.size", "16", 0);
+		break;
+	case 64:
+		// type.unknown_t=q
+		// type.unknown_t.size=64
+		sdb_set(types_db, "type.unknown_t", "q", 0);
+		sdb_set(types_db, "type.unknown_t.size", "64", 0);
+		break;
+	case 32:
+	default:
+		// type.unknown_t=d
+		// type.unknown_t.size=32
+		sdb_set(types_db, "type.unknown_t", "d", 0);
+		sdb_set(types_db, "type.unknown_t.size", "32", 0);
+		break;
+	}
+	return true;
+}
+
+// --
 
 static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = {
 	rz_project_migrate_v1_v2,
 	rz_project_migrate_v2_v3,
-	rz_project_migrate_v3_v4
+	rz_project_migrate_v3_v4,
+	rz_project_migrate_v4_v5
 };
 
 /// Migrate the given project to the current version in-place
