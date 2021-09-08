@@ -1,4 +1,4 @@
-project('libuv', 'c', version : '1.40.0', license : 'libuv', default_options: ['werror=false'])
+project('libuv', 'c', version : '1.44.1', license : 'libuv', default_options: ['werror=false'])
 
 cc = meson.get_compiler('c')
 
@@ -94,6 +94,7 @@ endif
 if host_machine.system() == 'android'
   uvsrc += [
     'src/unix/android-ifaddrs.c',
+    'src/unix/epoll.c',
     'src/unix/linux-core.c',
     'src/unix/linux-inotify.c',
     'src/unix/linux-syscalls.c',
@@ -156,6 +157,7 @@ endif
 
 if host_machine.system() == 'linux'
   uvsrc += [
+    'src/unix/epoll.c',
     'src/unix/linux-core.c',
     'src/unix/linux-inotify.c',
     'src/unix/linux-syscalls.c',
