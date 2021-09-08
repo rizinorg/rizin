@@ -1837,12 +1837,8 @@ RZ_API void rz_core_config_print_all(RzConfig *cfg, const char *str, RzCmdStateO
 	}
 
 	if (RZ_STR_ISNOTEMPTY(str)) {
-		str = rz_str_trim_head_ro(str);
 		len = strlen(str);
-		if (len > 0 && str[0] == ' ') {
-			str++;
-			len--;
-		}
+		len--;
 	}
 
 	rz_list_foreach (cfg->nodes, iter, node) {

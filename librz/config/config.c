@@ -546,7 +546,15 @@ RZ_API bool rz_config_unserialize(RZ_NONNULL RzConfig *config, RZ_NONNULL Sdb *d
 	return true;
 }
 
-RZ_API bool rz_config_eval(RzConfig *cfg, const char *str) {
+/**
+ * \brief Sets the configuration variable and its value passed as argument
+ *
+ * \param cfg reference to RzConfig
+ * \param str reference the configuration variable string (eg, 'asm.arch=x86')
+ */
+RZ_API bool rz_config_eval(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *str) {
+	rz_return_val_if_fail(str, false);
+
 	char *name = rz_str_trim_dup(str);
 	char *value = strchr(name, '=');
 	if (!value) {
