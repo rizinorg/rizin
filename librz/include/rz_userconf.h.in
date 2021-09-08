@@ -37,6 +37,7 @@
 #define WITH_GPL                    @WITH_GPL@
 #define HAVE_JEMALLOC               @HAVE_JEMALLOC@
 #define IS_IOS                      @IS_IOS@
+#define RZ_BUILD_DEBUG              @RZ_BUILD_DEBUG@
 
 #define RZ_IS_PORTABLE @IS_PORTABLE@
 
