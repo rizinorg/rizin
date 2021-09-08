@@ -1,4 +1,4 @@
-project('libuv', 'c', version : '1.40.0', license : 'libuv', default_options: ['werror=false'])
+project('libuv', 'c', version : '1.42.0', license : 'libuv', default_options: ['werror=false'])
 
 cc = meson.get_compiler('c')
 
