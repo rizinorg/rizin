@@ -1176,13 +1176,36 @@ e asm.bits=64
 ws hello @ 0xc
 td "struct foo {int x; int (*fp)(int a , int b ); char *b;};"
 ts foo
+tcd foo
+tsc foo
 .ts foo
+td "struct boo {int x; int (***ffp)(int a , int b ); char *b;};"
+ts boo
+tcd boo
+tsc boo
+.ts boo
 EOF
 EXPECT=<<EOF
 pf dpz x (fp)fp b
+struct foo {int x; int (*fp)(int a, int b); char *b;};
+struct foo {
+	int x;
+	int (*fp)(int a, int b);
+	char *b;
+};
   x : 0x00000000 = 0
 (fp)fp : 0x00000004 = (qword)0x0000000000000000
   b : 0x0000000c = "\x05hello"
+pf dpz x (ffp)ffp b
+struct boo {int x; int (***ffp)(int a, int b); char *b;};
+struct boo {
+	int x;
+	int (***ffp)(int a, int b);
+	char *b;
+};
+   x : 0x00000000 = 0
+(ffp)ffp : 0x00000004 = (qword)0x0000000000000000
+   b : 0x0000000c = "\x05hello"
 EOF
 RUN
 
