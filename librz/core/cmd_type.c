@@ -671,6 +671,7 @@ RZ_IPI RzCmdStatus rz_type_list_union_handler(RzCore *core, int argc, const char
 			RzBaseType *btype = rz_type_db_get_union(core->analysis->typedb, argv[1]);
 			if (!btype) {
 				RZ_LOG_ERROR("Cannot find \"%s\" union type\n", argv[1]);
+				pj_free(pj);
 				return RZ_CMD_STATUS_ERROR;
 			}
 			rz_core_types_union_print(core, btype, mode, pj);
