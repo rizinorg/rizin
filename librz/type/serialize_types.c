@@ -525,7 +525,7 @@ static void save_atomic_type(const RzTypeDB *typedb, Sdb *sdb, const RzBaseType 
 		rz_strbuf_setf(&key, "type.%s.typeclass", sname),
 		rz_type_typeclass_as_string(get_base_type_typeclass(type)), 0);
 
-	const char *typefmt = rz_type_format(typedb, sname);
+	const char *typefmt = rz_type_db_format_get(typedb, sname);
 	sdb_set(sdb,
 		rz_strbuf_setf(&key, "type.%s", sname),
 		typefmt, 0);

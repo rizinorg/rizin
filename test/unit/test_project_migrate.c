@@ -95,10 +95,11 @@ bool test_load_v1_noreturn() {
 	mu_assert_notnull(res, "result info new");
 	RzProjectErr err = rz_project_load_file(core, "prj/v1-noreturn.rzdb", true, res);
 	mu_assert_eq(err, RZ_PROJECT_ERR_SUCCESS, "project load err");
-	mu_assert_eq(rz_list_length(res), 3, "info");
+	mu_assert_eq(rz_list_length(res), 4, "info");
 	mu_assert_streq(rz_list_get_n(res, 0), "project migrated from version 1 to 2.", "info");
 	mu_assert_streq(rz_list_get_n(res, 1), "project migrated from version 2 to 3.", "info");
 	mu_assert_streq(rz_list_get_n(res, 2), "project migrated from version 3 to 4.", "info");
+	mu_assert_streq(rz_list_get_n(res, 3), "project migrated from version 4 to 5.", "info");
 
 	mu_assert_true(rz_analysis_noreturn_at_addr(core->analysis, 0x4242), "noreturn");
 	mu_assert_true(rz_analysis_noreturn_at_addr(core->analysis, 0x1337), "noreturn");
@@ -116,14 +117,39 @@ bool test_load_v1_noreturn_empty() {
 	mu_assert_notnull(res, "result info new");
 	RzProjectErr err = rz_project_load_file(core, "prj/v1-noreturn-empty.rzdb", true, res);
 	mu_assert_eq(err, RZ_PROJECT_ERR_SUCCESS, "project load err");
-	mu_assert_eq(rz_list_length(res), 3, "info");
+	mu_assert_eq(rz_list_length(res), 4, "info");
 	mu_assert_streq(rz_list_get_n(res, 0), "project migrated from version 1 to 2.", "info");
 	mu_assert_streq(rz_list_get_n(res, 1), "project migrated from version 2 to 3.", "info");
 	mu_assert_streq(rz_list_get_n(res, 2), "project migrated from version 3 to 4.", "info");
+	mu_assert_streq(rz_list_get_n(res, 3), "project migrated from version 4 to 5.", "info");
 
 	mu_assert_false(rz_analysis_noreturn_at_addr(core->analysis, 0x4242), "nono");
 	mu_assert_false(rz_analysis_noreturn_at_addr(core->analysis, 0x1337), "nono");
 	mu_assert_false(rz_analysis_noreturn_at_addr(core->analysis, 0x12345), "nono");
+
+	rz_serialize_result_info_free(res);
+
+	rz_core_free(core);
+	mu_end;
+}
+
+bool test_load_v1_unknown_type() {
+	RzCore *core = rz_core_new();
+	RzSerializeResultInfo *res = rz_serialize_result_info_new();
+	mu_assert_notnull(res, "result info new");
+	RzProjectErr err = rz_project_load_file(core, "prj/v1-noreturn.rzdb", true, res);
+	mu_assert_eq(err, RZ_PROJECT_ERR_SUCCESS, "project load err");
+	mu_assert_eq(rz_list_length(res), 4, "info");
+	mu_assert_streq(rz_list_get_n(res, 0), "project migrated from version 1 to 2.", "info");
+	mu_assert_streq(rz_list_get_n(res, 1), "project migrated from version 2 to 3.", "info");
+	mu_assert_streq(rz_list_get_n(res, 2), "project migrated from version 3 to 4.", "info");
+	mu_assert_streq(rz_list_get_n(res, 3), "project migrated from version 4 to 5.", "info");
+
+	mu_assert_true(rz_type_exists(core->analysis->typedb, "unknown_t"), "has unknown_t");
+	RzBaseType *unknown = rz_type_db_get_base_type(core->analysis->typedb, "unknown_t");
+	mu_assert_notnull(unknown, "has unknown_t");
+	mu_assert_eq(RZ_BASE_TYPE_KIND_ATOMIC, unknown->kind, "unknown_t is atomic");
+	mu_assert_eq(32, unknown->size, "unknown_t is 32-bit wide");
 
 	rz_serialize_result_info_free(res);
 
@@ -137,9 +163,10 @@ bool test_load_v2_typelink() {
 	mu_assert_notnull(res, "result info new");
 	RzProjectErr err = rz_project_load_file(core, "prj/v2-typelink-callables.rzdb", true, res);
 	mu_assert_eq(err, RZ_PROJECT_ERR_SUCCESS, "project load err");
-	mu_assert_eq(rz_list_length(res), 2, "info");
+	mu_assert_eq(rz_list_length(res), 3, "info");
 	mu_assert_streq(rz_list_get_n(res, 0), "project migrated from version 2 to 3.", "info");
 	mu_assert_streq(rz_list_get_n(res, 1), "project migrated from version 3 to 4.", "info");
+	mu_assert_streq(rz_list_get_n(res, 2), "project migrated from version 4 to 5.", "info");
 
 	mu_assert_true(rz_analysis_type_link_exists(core->analysis, 0x80484b0), "has typelink");
 	RzType *typelink = rz_analysis_type_link_at(core->analysis, 0x80484b0);
@@ -159,9 +186,10 @@ bool test_load_v2_callables() {
 	mu_assert_notnull(res, "result info new");
 	RzProjectErr err = rz_project_load_file(core, "prj/v2-typelink-callables.rzdb", true, res);
 	mu_assert_eq(err, RZ_PROJECT_ERR_SUCCESS, "project load err");
-	mu_assert_eq(rz_list_length(res), 2, "info");
+	mu_assert_eq(rz_list_length(res), 3, "info");
 	mu_assert_streq(rz_list_get_n(res, 0), "project migrated from version 2 to 3.", "info");
 	mu_assert_streq(rz_list_get_n(res, 1), "project migrated from version 3 to 4.", "info");
+	mu_assert_streq(rz_list_get_n(res, 2), "project migrated from version 4 to 5.", "info");
 
 	RzAnalysisFunction *fcn = rz_analysis_get_function_byname(core->analysis, "entry0");
 	mu_assert_notnull(fcn, "find \"entry0\" function");
@@ -195,6 +223,7 @@ int all_tests() {
 	mu_run_test(test_migrate_v2_v3);
 	mu_run_test(test_load_v1_noreturn);
 	mu_run_test(test_load_v1_noreturn_empty);
+	mu_run_test(test_load_v1_unknown_type);
 	mu_run_test(test_load_v2_callables);
 	mu_run_test(test_load_v2_typelink);
 #endif

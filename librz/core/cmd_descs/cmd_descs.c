@@ -489,10 +489,6 @@ static const RzCmdDescHelp pointer_help = {
 	.args = pointer_args,
 };
 
-static const RzCmdDescHelp cmd_stdin_help = {
-	.summary = "Open cfg.editor and run script",
-};
-
 static const RzCmdDescHelp dot__help = {
 	.summary = "Interpret commands",
 };
@@ -5520,9 +5516,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *pointer_cd = rz_cmd_desc_argv_new(core->rcmd, root_cd, "*", rz_pointer_handler, &pointer_help);
 	rz_warn_if_fail(pointer_cd);
 
-	RzCmdDesc *cmd_stdin_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "-", rz_cmd_stdin, &cmd_stdin_help);
-	rz_warn_if_fail(cmd_stdin_cd);
-
 	RzCmdDesc *dot__cd = rz_cmd_desc_group_new(core->rcmd, root_cd, ".", rz_interpret_handler, &interpret_help, &dot__help);
 	rz_warn_if_fail(dot__cd);
 	RzCmdDesc *interpret_script_cd = rz_cmd_desc_argv_new(core->rcmd, dot__cd, ". ", rz_interpret_script_handler, &interpret_script_help);
@@ -6355,7 +6348,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *type_link_del_all_cd = rz_cmd_desc_argv_new(core->rcmd, tl_cd, "tl-*", rz_type_link_del_all_handler, &type_link_del_all_help);
 	rz_warn_if_fail(type_link_del_all_cd);
 
-	RzCmdDesc *tn_cd = rz_cmd_desc_group_modes_new(core->rcmd, t_cd, "tn", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN, rz_type_list_noreturn_handler, &type_list_noreturn_help, &tn_help);
+	RzCmdDesc *tn_cd = rz_cmd_desc_group_modes_new(core->rcmd, t_cd, "tn", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_type_list_noreturn_handler, &type_list_noreturn_help, &tn_help);
 	rz_warn_if_fail(tn_cd);
 	RzCmdDesc *type_noreturn_del_cd = rz_cmd_desc_argv_new(core->rcmd, tn_cd, "tn-", rz_type_noreturn_del_handler, &type_noreturn_del_help);
 	rz_warn_if_fail(type_noreturn_del_cd);

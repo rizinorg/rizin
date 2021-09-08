@@ -65,9 +65,10 @@ RZ_IPI void rz_core_types_calling_conventions_print(RzCore *core, RzOutputMode m
 
 // Enums
 
-static void core_types_enum_print(RzCore *core, RzBaseType *btype, RzOutputMode mode, PJ *pj) {
+RZ_IPI void rz_core_types_enum_print(RzCore *core, const RzBaseType *btype, RzOutputMode mode, PJ *pj) {
 	rz_return_if_fail(core && btype);
 	rz_return_if_fail(btype->kind == RZ_BASE_TYPE_KIND_ENUM);
+
 	switch (mode) {
 	case RZ_OUTPUT_MODE_JSON: {
 		rz_return_if_fail(pj);
@@ -103,16 +104,6 @@ static void core_types_enum_print(RzCore *core, RzBaseType *btype, RzOutputMode 
 	}
 }
 
-RZ_IPI void rz_core_types_enum_print(RzCore *core, const char *name, RzOutputMode mode, PJ *pj) {
-	rz_return_if_fail(name);
-	RzTypeDB *typedb = core->analysis->typedb;
-	RzBaseType *btype = rz_type_db_get_enum(typedb, name);
-	if (!btype) {
-		return;
-	}
-	core_types_enum_print(core, btype, mode, pj);
-}
-
 RZ_IPI void rz_core_types_enum_print_all(RzCore *core, RzOutputMode mode) {
 	RzList *enumlist = rz_type_db_get_base_types_of_kind(core->analysis->typedb, RZ_BASE_TYPE_KIND_ENUM);
 	RzListIter *it;
@@ -122,7 +113,7 @@ RZ_IPI void rz_core_types_enum_print_all(RzCore *core, RzOutputMode mode) {
 	}
 	RzBaseType *btype;
 	rz_list_foreach (enumlist, it, btype) {
-		core_types_enum_print(core, btype, mode, pj);
+		rz_core_types_enum_print(core, btype, mode, pj);
 	}
 	rz_list_free(enumlist);
 	if (mode == RZ_OUTPUT_MODE_JSON) {
@@ -132,9 +123,10 @@ RZ_IPI void rz_core_types_enum_print_all(RzCore *core, RzOutputMode mode) {
 	}
 }
 
-static void core_types_enum_print_c(RzBaseType *btype, bool multiline) {
+RZ_IPI void rz_core_types_enum_print_c(RzTypeDB *typedb, const RzBaseType *btype, bool multiline) {
 	rz_return_if_fail(btype);
 	rz_return_if_fail(btype->kind == RZ_BASE_TYPE_KIND_ENUM);
+
 	char *separator;
 	if (!rz_vector_empty(&btype->enum_data.cases)) {
 		rz_cons_printf("enum %s {%s", btype->name, multiline ? "\n" : "");
@@ -150,29 +142,22 @@ static void core_types_enum_print_c(RzBaseType *btype, bool multiline) {
 	}
 }
 
-RZ_IPI void rz_core_types_enum_print_c(RzTypeDB *typedb, const char *name, bool multiline) {
-	RzBaseType *btype = rz_type_db_get_enum(typedb, name);
-	if (!btype) {
-		return;
-	}
-	core_types_enum_print_c(btype, multiline);
-}
-
 RZ_IPI void rz_core_types_enum_print_c_all(RzTypeDB *typedb, bool multiline) {
 	RzList *enumlist = rz_type_db_get_base_types_of_kind(typedb, RZ_BASE_TYPE_KIND_ENUM);
 	RzListIter *it;
 	RzBaseType *btype;
 	rz_list_foreach (enumlist, it, btype) {
-		core_types_enum_print_c(btype, multiline);
+		rz_core_types_enum_print_c(typedb, btype, multiline);
 	}
 	rz_list_free(enumlist);
 }
 
 // Unions
 
-static void core_types_union_print(RzCore *core, RzBaseType *btype, RzOutputMode mode, PJ *pj) {
+RZ_IPI void rz_core_types_union_print(RzCore *core, const RzBaseType *btype, RzOutputMode mode, PJ *pj) {
 	rz_return_if_fail(core && btype);
 	rz_return_if_fail(btype->kind == RZ_BASE_TYPE_KIND_UNION);
+
 	switch (mode) {
 	case RZ_OUTPUT_MODE_JSON: {
 		rz_return_if_fail(pj);
@@ -215,16 +200,6 @@ static void core_types_union_print(RzCore *core, RzBaseType *btype, RzOutputMode
 	}
 }
 
-RZ_IPI void rz_core_types_union_print(RzCore *core, const char *name, RzOutputMode mode, PJ *pj) {
-	rz_return_if_fail(name);
-	RzTypeDB *typedb = core->analysis->typedb;
-	RzBaseType *btype = rz_type_db_get_union(typedb, name);
-	if (!btype) {
-		return;
-	}
-	core_types_union_print(core, btype, mode, pj);
-}
-
 RZ_IPI void rz_core_types_union_print_all(RzCore *core, RzOutputMode mode) {
 	RzList *unionlist = rz_type_db_get_base_types_of_kind(core->analysis->typedb, RZ_BASE_TYPE_KIND_UNION);
 	RzListIter *it;
@@ -234,7 +209,7 @@ RZ_IPI void rz_core_types_union_print_all(RzCore *core, RzOutputMode mode) {
 	}
 	RzBaseType *btype;
 	rz_list_foreach (unionlist, it, btype) {
-		core_types_union_print(core, btype, mode, pj);
+		rz_core_types_union_print(core, btype, mode, pj);
 	}
 	rz_list_free(unionlist);
 	if (mode == RZ_OUTPUT_MODE_JSON) {
@@ -244,9 +219,10 @@ RZ_IPI void rz_core_types_union_print_all(RzCore *core, RzOutputMode mode) {
 	}
 }
 
-static void core_types_union_print_c(RzTypeDB *typedb, RzBaseType *btype, bool multiline) {
+RZ_IPI void rz_core_types_union_print_c(RzTypeDB *typedb, const RzBaseType *btype, bool multiline) {
 	rz_return_if_fail(btype);
 	rz_return_if_fail(btype->kind == RZ_BASE_TYPE_KIND_UNION);
+
 	char *separator;
 	if (!rz_vector_empty(&btype->enum_data.cases)) {
 		rz_cons_printf("union %s {%s", btype->name, multiline ? "\n" : "");
@@ -279,29 +255,22 @@ static void core_types_union_print_c(RzTypeDB *typedb, RzBaseType *btype, bool m
 	}
 }
 
-RZ_IPI void rz_core_types_union_print_c(RzTypeDB *typedb, const char *name, bool multiline) {
-	RzBaseType *btype = rz_type_db_get_union(typedb, name);
-	if (!btype) {
-		return;
-	}
-	core_types_union_print_c(typedb, btype, multiline);
-}
-
 RZ_IPI void rz_core_types_union_print_c_all(RzTypeDB *typedb, bool multiline) {
 	RzList *unionlist = rz_type_db_get_base_types_of_kind(typedb, RZ_BASE_TYPE_KIND_UNION);
 	RzListIter *it;
 	RzBaseType *btype;
 	rz_list_foreach (unionlist, it, btype) {
-		core_types_union_print_c(typedb, btype, multiline);
+		rz_core_types_union_print_c(typedb, btype, multiline);
 	}
 	rz_list_free(unionlist);
 }
 
 // Structures
 
-static void core_types_struct_print(RzCore *core, RzBaseType *btype, RzOutputMode mode, PJ *pj) {
+RZ_IPI void rz_core_types_struct_print(RzCore *core, const RzBaseType *btype, RzOutputMode mode, PJ *pj) {
 	rz_return_if_fail(core && btype);
 	rz_return_if_fail(btype->kind == RZ_BASE_TYPE_KIND_STRUCT);
+
 	switch (mode) {
 	case RZ_OUTPUT_MODE_JSON: {
 		rz_return_if_fail(pj);
@@ -345,16 +314,6 @@ static void core_types_struct_print(RzCore *core, RzBaseType *btype, RzOutputMod
 	}
 }
 
-RZ_IPI void rz_core_types_struct_print(RzCore *core, const char *name, RzOutputMode mode, PJ *pj) {
-	rz_return_if_fail(name);
-	RzTypeDB *typedb = core->analysis->typedb;
-	RzBaseType *btype = rz_type_db_get_struct(typedb, name);
-	if (!btype) {
-		return;
-	}
-	core_types_struct_print(core, btype, mode, pj);
-}
-
 RZ_IPI void rz_core_types_struct_print_all(RzCore *core, RzOutputMode mode) {
 	RzList *structlist = rz_type_db_get_base_types_of_kind(core->analysis->typedb, RZ_BASE_TYPE_KIND_STRUCT);
 	RzListIter *it;
@@ -364,7 +323,7 @@ RZ_IPI void rz_core_types_struct_print_all(RzCore *core, RzOutputMode mode) {
 	}
 	RzBaseType *btype;
 	rz_list_foreach (structlist, it, btype) {
-		core_types_struct_print(core, btype, mode, pj);
+		rz_core_types_struct_print(core, btype, mode, pj);
 	}
 	rz_list_free(structlist);
 	if (mode == RZ_OUTPUT_MODE_JSON) {
@@ -374,9 +333,10 @@ RZ_IPI void rz_core_types_struct_print_all(RzCore *core, RzOutputMode mode) {
 	}
 }
 
-static void core_types_struct_print_c(RzTypeDB *typedb, RzBaseType *btype, bool multiline) {
+RZ_IPI void rz_core_types_struct_print_c(RzTypeDB *typedb, const RzBaseType *btype, bool multiline) {
 	rz_return_if_fail(btype);
 	rz_return_if_fail(btype->kind == RZ_BASE_TYPE_KIND_STRUCT);
+
 	char *separator;
 	if (!rz_vector_empty(&btype->struct_data.members)) {
 		rz_cons_printf("struct %s {%s", btype->name, multiline ? "\n" : "");
@@ -410,30 +370,22 @@ static void core_types_struct_print_c(RzTypeDB *typedb, RzBaseType *btype, bool 
 	}
 }
 
-RZ_IPI void rz_core_types_struct_print_c(RzTypeDB *typedb, const char *name, bool multiline) {
-	rz_return_if_fail(name);
-	RzBaseType *btype = rz_type_db_get_struct(typedb, name);
-	if (!btype) {
-		return;
-	}
-	core_types_struct_print_c(typedb, btype, multiline);
-}
-
 RZ_IPI void rz_core_types_struct_print_c_all(RzTypeDB *typedb, bool multiline) {
 	RzList *structlist = rz_type_db_get_base_types_of_kind(typedb, RZ_BASE_TYPE_KIND_STRUCT);
 	RzListIter *it;
 	RzBaseType *btype;
 	rz_list_foreach (structlist, it, btype) {
-		core_types_struct_print_c(typedb, btype, multiline);
+		rz_core_types_struct_print_c(typedb, btype, multiline);
 	}
 	rz_list_free(structlist);
 }
 
 // Typedefs
 
-static void core_types_typedef_print(RzCore *core, RzBaseType *btype, RzOutputMode mode, PJ *pj) {
+RZ_IPI void rz_core_types_typedef_print(RzCore *core, const RzBaseType *btype, RzOutputMode mode, PJ *pj) {
 	rz_return_if_fail(core && btype);
 	rz_return_if_fail(btype->kind == RZ_BASE_TYPE_KIND_TYPEDEF);
+
 	char *typestr = rz_type_as_string(core->analysis->typedb, btype->type);
 	switch (mode) {
 	case RZ_OUTPUT_MODE_JSON: {
@@ -458,16 +410,6 @@ static void core_types_typedef_print(RzCore *core, RzBaseType *btype, RzOutputMo
 	free(typestr);
 }
 
-RZ_IPI void rz_core_types_typedef_print(RzCore *core, const char *name, RzOutputMode mode, PJ *pj) {
-	rz_return_if_fail(name);
-	RzTypeDB *typedb = core->analysis->typedb;
-	RzBaseType *btype = rz_type_db_get_typedef(typedb, name);
-	if (!btype) {
-		return;
-	}
-	core_types_typedef_print(core, btype, mode, pj);
-}
-
 RZ_IPI void rz_core_types_typedef_print_all(RzCore *core, RzOutputMode mode) {
 	RzList *typedeflist = rz_type_db_get_base_types_of_kind(core->analysis->typedb, RZ_BASE_TYPE_KIND_TYPEDEF);
 	RzListIter *it;
@@ -477,7 +419,7 @@ RZ_IPI void rz_core_types_typedef_print_all(RzCore *core, RzOutputMode mode) {
 	}
 	RzBaseType *btype;
 	rz_list_foreach (typedeflist, it, btype) {
-		core_types_typedef_print(core, btype, mode, pj);
+		rz_core_types_typedef_print(core, btype, mode, pj);
 	}
 	rz_list_free(typedeflist);
 	if (mode == RZ_OUTPUT_MODE_JSON) {
@@ -487,20 +429,13 @@ RZ_IPI void rz_core_types_typedef_print_all(RzCore *core, RzOutputMode mode) {
 	}
 }
 
-static void core_types_typedef_print_c(RzTypeDB *typedb, RzBaseType *btype) {
+RZ_IPI void rz_core_types_typedef_print_c(RzTypeDB *typedb, const RzBaseType *btype) {
 	rz_return_if_fail(btype);
 	rz_return_if_fail(btype->kind == RZ_BASE_TYPE_KIND_TYPEDEF);
+
 	char *typestr = rz_type_as_string(typedb, btype->type);
 	rz_cons_printf("typedef %s %s;\n", typestr, btype->name);
 	free(typestr);
-}
-
-RZ_IPI void rz_core_types_typedef_print_c(RzTypeDB *typedb, const char *typedef_name) {
-	RzBaseType *btype = rz_type_db_get_typedef(typedb, typedef_name);
-	if (!btype) {
-		return;
-	}
-	core_types_typedef_print_c(typedb, btype);
 }
 
 RZ_IPI void rz_core_types_typedef_print_c_all(RzTypeDB *typedb) {
@@ -508,14 +443,14 @@ RZ_IPI void rz_core_types_typedef_print_c_all(RzTypeDB *typedb) {
 	RzListIter *it;
 	RzBaseType *btype;
 	rz_list_foreach (typedeflist, it, btype) {
-		core_types_typedef_print_c(typedb, btype);
+		rz_core_types_typedef_print_c(typedb, btype);
 	}
 	rz_list_free(typedeflist);
 }
 
 // Function types
 
-RZ_IPI void rz_types_function_print(RzTypeDB *typedb, const char *function, RzOutputMode mode, PJ *pj) {
+RZ_IPI void rz_core_types_function_print(RzTypeDB *typedb, const char *function, RzOutputMode mode, PJ *pj) {
 	rz_return_if_fail(function);
 	RzCallable *callable = rz_type_func_get(typedb, function);
 	if (!callable) {
@@ -561,7 +496,7 @@ RZ_IPI void rz_core_types_function_print_all(RzCore *core, RzOutputMode mode) {
 	RzListIter *iter;
 	char *name;
 	rz_list_foreach (l, iter, name) {
-		rz_types_function_print(core->analysis->typedb, name, mode, pj);
+		rz_core_types_function_print(core->analysis->typedb, name, mode, pj);
 	}
 	rz_list_free(l);
 	if (mode == RZ_OUTPUT_MODE_JSON) {
@@ -588,7 +523,7 @@ static bool nonreturn_print_json(RzCore *core, RzList *noretl) {
 	PJ *pj = pj_new();
 	pj_a(pj);
 	rz_list_foreach (noretl, it, s) {
-		pj_k(pj, s);
+		pj_s(pj, s);
 	}
 	pj_end(pj);
 	rz_cons_println(pj_string(pj));
@@ -1044,6 +979,15 @@ RZ_IPI void rz_core_types_print_all(RzCore *core, RzOutputMode mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
 		rz_list_foreach (types, it, btype) {
 			rz_cons_println(btype->name);
+		}
+		break;
+	case RZ_OUTPUT_MODE_RIZIN:
+		rz_list_foreach (types, it, btype) {
+			char *fmt = rz_type_format(core->analysis->typedb, btype->name);
+			if (fmt) {
+				rz_cons_printf("pf.%s %s\n", btype->name, fmt);
+				free(fmt);
+			}
 		}
 		break;
 	default:

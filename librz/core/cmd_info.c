@@ -332,7 +332,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_section_bars_handler(RzCore *core, int argc, cons
 		RzInterval vitv = (RzInterval){ section->vaddr, section->vsize };
 
 		rz_num_units(humansz, sizeof(humansz), section->size);
-		RzListInfo *info = rz_listinfo_new(section->name, pitv, vitv, section->perm, strdup(humansz));
+		RzListInfo *info = rz_listinfo_new(section->name, pitv, vitv, section->perm, humansz);
 		if (!info) {
 			RZ_LOG_ERROR("Cannot print section bars\n");
 			goto list_err;
