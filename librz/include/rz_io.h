@@ -44,8 +44,8 @@ typedef void *rz_ptrace_data_t;
 #define RZ_PTRACE_NODATA NULL
 #else
 typedef int rz_ptrace_request_t;
-typedef int rz_ptrace_data_t;
-#define RZ_PTRACE_NODATA 0
+typedef void *rz_ptrace_data_t;
+#define RZ_PTRACE_NODATA NULL
 #endif
 #endif
 #endif
