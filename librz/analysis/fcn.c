@@ -1830,7 +1830,9 @@ RZ_API RZ_OWN char *rz_analysis_function_get_signature(RZ_NONNULL RzAnalysisFunc
 	}
 	char *signature = rz_type_callable_as_string(a->typedb, callable);
 	rz_type_callable_free(callable);
-	return signature;
+	char *result = rz_str_newf("%s;", signature);
+	free(signature);
+	return result;
 }
 
 /**

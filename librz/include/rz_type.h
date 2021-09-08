@@ -394,7 +394,9 @@ RZ_API RZ_BORROW RzType *rz_type_func_args_type(RzTypeDB *typedb, RZ_NONNULL con
 RZ_API RZ_BORROW const char *rz_type_func_args_name(RzTypeDB *typedb, RZ_NONNULL const char *func_name, int i);
 RZ_API bool rz_type_func_arg_add(RzTypeDB *typedb, RZ_NONNULL const char *func_name, RZ_NONNULL const char *arg_name, RZ_OWN RZ_NONNULL RzType *arg_type);
 
+RZ_API bool rz_type_is_callable(RZ_NONNULL const RzType *type);
 RZ_API bool rz_type_is_callable_ptr(RZ_NONNULL const RzType *type);
+RZ_API bool rz_type_is_callable_ptr_nested(RZ_NONNULL const RzType *type);
 RZ_API RZ_OWN char *rz_type_callable_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzCallable *callable);
 RZ_API RZ_OWN char *rz_type_callable_ptr_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);
 

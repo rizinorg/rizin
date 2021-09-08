@@ -868,7 +868,7 @@ static char *type_as_string_decl(const RzTypeDB *typedb, RZ_NONNULL const RzType
 	}
 	case RZ_TYPE_KIND_POINTER: {
 		// A pointer to the function is a special case
-		if (rz_type_is_callable_ptr(type)) {
+		if (rz_type_is_callable_ptr_nested(type)) {
 			char *typestr = rz_type_callable_ptr_as_string(typedb, type);
 			rz_strbuf_append(buf, typestr);
 			free(typestr);
@@ -944,7 +944,7 @@ static char *type_as_string_identifier_decl(const RzTypeDB *typedb, RZ_NONNULL c
 	}
 	case RZ_TYPE_KIND_POINTER: {
 		// A pointer to the function is a special case
-		if (rz_type_is_callable_ptr(type)) {
+		if (rz_type_is_callable_ptr_nested(type)) {
 			char *typestr = rz_type_callable_ptr_as_string(typedb, type);
 			rz_strbuf_append(buf, typestr);
 			free(typestr);

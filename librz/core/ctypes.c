@@ -235,7 +235,7 @@ RZ_IPI void rz_core_types_union_print_c(RzTypeDB *typedb, const RzBaseType *btyp
 					memb->name, memb->type->array.count);
 			} else if (memb->type->kind == RZ_TYPE_KIND_POINTER) {
 				// A pointer to the function is a special case
-				if (rz_type_is_callable_ptr(memb->type)) {
+				if (rz_type_is_callable_ptr_nested(memb->type)) {
 					rz_cons_printf("%s%s", separator, membtype);
 				} else {
 					rz_cons_printf("%s%s%s", separator, membtype, memb->name);
@@ -350,7 +350,7 @@ RZ_IPI void rz_core_types_struct_print_c(RzTypeDB *typedb, const RzBaseType *bty
 					memb->name, memb->type->array.count);
 			} else if (memb->type->kind == RZ_TYPE_KIND_POINTER) {
 				// A pointer to the function is a special case
-				if (rz_type_is_callable_ptr(memb->type)) {
+				if (rz_type_is_callable_ptr_nested(memb->type)) {
 					rz_cons_printf("%s%s", separator, membtype);
 				} else {
 					rz_cons_printf("%s%s%s", separator, membtype, memb->name);
@@ -481,7 +481,9 @@ RZ_IPI void rz_core_types_function_print(RzTypeDB *typedb, const char *function,
 		pj_end(pj);
 	} break;
 	default: {
-		rz_cons_println(rz_type_callable_as_string(typedb, callable));
+		char *str = rz_type_callable_as_string(typedb, callable);
+		rz_cons_printf("%s;\n", str);
+		free(str);
 	} break;
 	}
 	free(ret);

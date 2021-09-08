@@ -187,10 +187,14 @@ RZ_API RZ_OWN char *rz_type_db_base_type_as_string(const RzTypeDB *typedb, RZ_NO
 		RzTypeStructMember *memb;
 		rz_vector_foreach(&type->struct_data.members, memb) {
 			char *declaration = rz_type_identifier_declaration_as_string(typedb, memb->type, memb->name);
-			rz_strbuf_appendf(buf, "%s %s; ", declaration, memb->name);
+			if (rz_type_is_callable(memb->type) || rz_type_is_callable_ptr_nested(memb->type)) {
+				rz_strbuf_appendf(buf, "%s; ", declaration);
+			} else {
+				rz_strbuf_appendf(buf, "%s %s; ", declaration, memb->name);
+			}
 			free(declaration);
 		}
-		rz_strbuf_append(buf, " }");
+		rz_strbuf_append(buf, "}");
 		break;
 	}
 	case RZ_BASE_TYPE_KIND_ENUM: {
@@ -199,7 +203,7 @@ RZ_API RZ_OWN char *rz_type_db_base_type_as_string(const RzTypeDB *typedb, RZ_NO
 		rz_vector_foreach(&type->enum_data.cases, cas) {
 			rz_strbuf_appendf(buf, "%s = 0x%" PFMT64x ", ", cas->name, cas->val);
 		}
-		rz_strbuf_append(buf, " }");
+		rz_strbuf_append(buf, "}");
 		break;
 	}
 	case RZ_BASE_TYPE_KIND_UNION: {
@@ -207,10 +211,14 @@ RZ_API RZ_OWN char *rz_type_db_base_type_as_string(const RzTypeDB *typedb, RZ_NO
 		RzTypeUnionMember *memb;
 		rz_vector_foreach(&type->union_data.members, memb) {
 			char *declaration = rz_type_identifier_declaration_as_string(typedb, memb->type, memb->name);
-			rz_strbuf_appendf(buf, "%s %s; ", declaration, memb->name);
+			if (rz_type_is_callable(memb->type) || rz_type_is_callable_ptr_nested(memb->type)) {
+				rz_strbuf_appendf(buf, "%s; ", declaration);
+			} else {
+				rz_strbuf_appendf(buf, "%s %s; ", declaration, memb->name);
+			}
 			free(declaration);
 		}
-		rz_strbuf_append(buf, " }");
+		rz_strbuf_append(buf, "}");
 		break;
 	}
 	case RZ_BASE_TYPE_KIND_TYPEDEF: {

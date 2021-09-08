@@ -99,14 +99,14 @@ static bool test_types_get_base_type_struct(void) {
 	mu_assert_true(rz_type_atomic_str_eq(typedb, member->type, "int32_t"), "Incorrect type for struct member");
 	mu_assert_streq(member->name, "cow", "Incorrect name for struct member");
 
-	mu_assert_streq(rz_type_db_base_type_as_string(typedb, base), "struct kappa { int32_t bar; int32_t cow;  }", "Incorrect conversion of struct to string");
+	mu_assert_streq(rz_type_db_base_type_as_string(typedb, base), "struct kappa { int32_t bar; int32_t cow; }", "Incorrect conversion of struct to string");
 
 	RzBaseType *base2 = rz_type_db_get_base_type(typedb, "lappa");
 	mu_assert_notnull(base2, "Couldn't create get base type of struct \"lappa\"");
 
 	mu_assert_eq(RZ_BASE_TYPE_KIND_STRUCT, base2->kind, "Wrong base type");
 	mu_assert_streq(base2->name, "lappa", "type name");
-	mu_assert_streq(rz_type_db_base_type_as_string(typedb, base2), "struct lappa { int32_t bar; struct kappa cow;  }", "Incorrect conversion of struct to string");
+	mu_assert_streq(rz_type_db_base_type_as_string(typedb, base2), "struct lappa { int32_t bar; struct kappa cow; }", "Incorrect conversion of struct to string");
 
 	rz_type_db_free(typedb);
 	mu_end;
@@ -138,13 +138,13 @@ static bool test_types_get_base_type_union(void) {
 	mu_assert_true(rz_type_atomic_str_eq(typedb, member->type, "int32_t"), "Incorrect type for union member");
 	mu_assert_streq(member->name, "cow", "Incorrect name for union member");
 
-	mu_assert_streq(rz_type_db_base_type_as_string(typedb, base), "union kappa { int32_t bar; int32_t cow;  }", "Incorrect conversion of union to string");
+	mu_assert_streq(rz_type_db_base_type_as_string(typedb, base), "union kappa { int32_t bar; int32_t cow; }", "Incorrect conversion of union to string");
 
 	RzBaseType *base2 = rz_type_db_get_base_type(typedb, "lappa");
 	mu_assert_notnull(base2, "Couldn't create get base type of union \"lappa\"");
 	mu_assert_eq(RZ_BASE_TYPE_KIND_UNION, base2->kind, "Wrong base type");
 	mu_assert_streq(base2->name, "lappa", "type name");
-	mu_assert_streq(rz_type_db_base_type_as_string(typedb, base2), "union lappa { int32_t bar; union kappa cow;  }", "Incorrect conversion of union to string");
+	mu_assert_streq(rz_type_db_base_type_as_string(typedb, base2), "union lappa { int32_t bar; union kappa cow; }", "Incorrect conversion of union to string");
 
 	rz_type_db_free(typedb);
 	mu_end;
@@ -464,7 +464,8 @@ static bool test_array_types(void) {
 	mu_end;
 }
 
-static char *func_ptr_struct = "struct bla { int a; wchar_t (*func)(int a, const char *b); }";
+static char *func_ptr_struct = "struct bla { int a; wchar_t (*func)(int a, const char * b); }";
+static char *func_double_ptr_struct = "struct blabla { int a; wchar_t (**funk)(int a, const char * b); }";
 
 static bool test_struct_func_types(void) {
 	RzTypeDB *typedb = rz_type_db_new();
@@ -474,16 +475,17 @@ static bool test_struct_func_types(void) {
 	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
 
 	char *error_msg = NULL;
+	// Sturcture type with a function pointer
 	RzType *ttype = rz_type_parse_string_single(typedb->parser, func_ptr_struct, &error_msg);
 	mu_assert_notnull(ttype, "type parse successfull");
 	mu_assert_true(ttype->kind == RZ_TYPE_KIND_IDENTIFIER, "is identifier");
 	mu_assert_false(ttype->identifier.is_const, "identifier not const");
 	mu_assert_streq(ttype->identifier.name, "bla", "bla struct");
 
-	// Base type
 	RzBaseType *base = rz_type_db_get_base_type(typedb, "bla");
 	mu_assert_eq(RZ_BASE_TYPE_KIND_STRUCT, base->kind, "not struct");
 	mu_assert_streq(base->name, "bla", "type name");
+	mu_assert_streq_free(rz_type_db_base_type_as_string(typedb, base), func_ptr_struct, "type as string with fcn ptr string");
 
 	RzTypeStructMember *member;
 
@@ -501,6 +503,42 @@ static bool test_struct_func_types(void) {
 	mu_assert_streq(rz_type_as_string(typedb, call->ret), "wchar_t", "function return type");
 
 	RzCallableArg *arg;
+	arg = *rz_pvector_index_ptr(call->args, 0);
+	mu_assert_streq(arg->name, "a", "argument \"a\"");
+	mu_assert_streq(rz_type_as_string(typedb, arg->type), "int", "argument \"a\" type");
+
+	arg = *rz_pvector_index_ptr(call->args, 1);
+	mu_assert_streq(arg->name, "b", "argument \"b\"");
+	mu_assert_streq(rz_type_as_string(typedb, arg->type), "const char *", "argument \"b\" type");
+
+	rz_type_free(ttype);
+
+	// Structure type with a pointer to a function pointer
+	ttype = rz_type_parse_string_single(typedb->parser, func_double_ptr_struct, &error_msg);
+	mu_assert_notnull(ttype, "type parse successfull");
+	mu_assert_true(ttype->kind == RZ_TYPE_KIND_IDENTIFIER, "is identifier");
+	mu_assert_false(ttype->identifier.is_const, "identifier not const");
+	mu_assert_streq(ttype->identifier.name, "blabla", "blabla struct");
+
+	base = rz_type_db_get_base_type(typedb, "blabla");
+	mu_assert_eq(RZ_BASE_TYPE_KIND_STRUCT, base->kind, "not struct");
+	mu_assert_streq(base->name, "blabla", "type name");
+	mu_assert_streq_free(rz_type_db_base_type_as_string(typedb, base), func_double_ptr_struct, "type as string with fcn ptr string");
+
+	member = rz_vector_index_ptr(&base->struct_data.members, 0);
+	mu_assert_true(rz_type_atomic_str_eq(typedb, member->type, "int"), "Incorrect type for struct member");
+	mu_assert_streq(member->name, "a", "Incorrect name for struct member");
+	mu_assert_eq(RZ_TYPE_KIND_IDENTIFIER, member->type->kind, "not struct");
+
+	member = rz_vector_index_ptr(&base->struct_data.members, 1);
+	mu_assert_streq(member->name, "funk", "Incorrect name for struct member");
+	mu_assert_eq(RZ_TYPE_KIND_POINTER, member->type->kind, "not function pointer's pointer");
+	mu_assert_eq(RZ_TYPE_KIND_POINTER, member->type->pointer.type->kind, "not function pointer's pointer");
+	mu_assert_eq(RZ_TYPE_KIND_CALLABLE, member->type->pointer.type->pointer.type->kind, "not function pointer's pointer");
+
+	call = member->type->pointer.type->pointer.type->callable;
+	mu_assert_streq(rz_type_as_string(typedb, call->ret), "wchar_t", "function return type");
+
 	arg = *rz_pvector_index_ptr(call->args, 0);
 	mu_assert_streq(arg->name, "a", "argument \"a\"");
 	mu_assert_streq(rz_type_as_string(typedb, arg->type), "int", "argument \"a\" type");
