@@ -123,10 +123,9 @@ int bsd_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 bool bsd_generate_corefile(RzDebug *dbg, char *path, RzBuffer *dest) {
 #if defined(__NetBSD__)
 	return ptrace(PT_DUMPCORE, dbg->pid, path, strlen(path)) != -1;
-#elif defined(__FreeBSD__)
-	// TODO when FreeBSD 14 is out or at least the interface stabilized
-	// and will most likely use the RzBuffer part
-	return false;
+#elif defined(__FreeBSD__) && __FreeBSD_version >= 1400030
+	struct ptrace_coredump pc = { .pc_fd = dest->fd, .pc_flags = PC_ALL, .pc_limit = 0 };
+	return ptrace(PT_COREDUMP, dbg->pid, (void *)&pc, sizeof(pc)) != -1;
 #else
 	return false;
 #endif

@@ -339,6 +339,7 @@ userconf.set10('HAVE_DECL_PROCCTL_ASLR_CTL', ok)
 
 if host_machine.system() == 'freebsd'
   add_project_link_arguments('-Wl,--unresolved-symbols,ignore-in-object-files', language: 'c')
+  add_project_link_arguments('-Wl,--allow-shlib-undefined', language: 'c')
 endif
 
 lrt = []
