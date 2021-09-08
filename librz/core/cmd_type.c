@@ -634,6 +634,7 @@ RZ_IPI RzCmdStatus rz_type_list_typedef_handler(RzCore *core, int argc, const ch
 		RzBaseType *btype = rz_type_db_get_typedef(core->analysis->typedb, argv[1]);
 		if (!btype) {
 			RZ_LOG_ERROR("Cannot find \"%s\" typedef type\n", argv[1]);
+			pj_free(pj);
 			return RZ_CMD_STATUS_ERROR;
 		}
 		rz_core_types_typedef_print(core, btype, mode, pj);
