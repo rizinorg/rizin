@@ -809,21 +809,6 @@ RZ_API bool rz_core_file_loadlib(RzCore *core, const char *lib, ut64 libaddr) {
 	return ret;
 }
 
-RZ_API int rz_core_bin_rebase(RzCore *core, ut64 baddr) {
-	if (!core || !core->bin || !core->bin->cur) {
-		return 0;
-	}
-	if (baddr == UT64_MAX) {
-		return 0;
-	}
-	RzBinFile *bf = core->bin->cur;
-	bf->o->opts.baseaddr = baddr;
-	bf->o->opts.loadaddr = baddr;
-	bf->o->opts.patch_relocs = true;
-	rz_bin_object_set_items(bf, bf->o);
-	return 1;
-}
-
 static void load_scripts_for(RzCore *core, const char *name) {
 	// TODO:
 	char *file;

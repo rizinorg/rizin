@@ -329,7 +329,6 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 		// XXX: this will reload the bin using the buffer.
 		// An assumption is made that assumes there is an underlying
 		// plugin that will be used to load the bin (e.g. malloc://)
-		// TODO: Might be nice to reload a bin at a specified offset?
 		core_bin_reload(core, NULL, input[2] ? rz_num_math(core->num, input + 3) : 0);
 		rz_core_block_read(core);
 		break;
