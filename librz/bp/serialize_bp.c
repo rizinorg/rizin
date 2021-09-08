@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2021 DMaroo <dhruvmaru007@gmail.com>
+// SPDX-FileCopyrightText: 2021 Dhruv Maroo <dhruvmaru007@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util/rz_serialize.h>
