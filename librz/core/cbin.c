@@ -5124,6 +5124,7 @@ RZ_API bool rz_core_bin_sections_mapping_print(RzCore *core, RzBinFile *bf, RzCm
 		rz_table_add_row_columnsf(state->d.t, "s", rz_strbuf_get(sb));
 		rz_strbuf_free(sb);
 	}
+	rz_vector_free(maps);
 
 	rz_cmd_state_output_array_end(state);
 	return true;
