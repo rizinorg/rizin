@@ -2072,11 +2072,11 @@ RZ_API bool rz_core_bin_imports_print(RzCore *core, RzBinFile *bf, RzCmdStateOut
 
 		if (filter && filter->offset != UT64_MAX) {
 			if (!is_in_symbol_range(addr, 1, filter->offset)) {
-				continue;
+				goto next;
 			}
 		}
 		if (filter && filter->name && strcmp(import->name, filter->name)) {
-			continue;
+			goto next;
 		}
 
 		if (RZ_STR_ISNOTEMPTY(import->classname)) {
@@ -2142,6 +2142,7 @@ RZ_API bool rz_core_bin_imports_print(RzCore *core, RzBinFile *bf, RzCmdStateOut
 			rz_warn_if_reached();
 			break;
 		}
+	next:
 		RZ_FREE(symname);
 		RZ_FREE(libname);
 	}
@@ -5124,6 +5125,7 @@ RZ_API bool rz_core_bin_sections_mapping_print(RzCore *core, RzBinFile *bf, RzCm
 		rz_table_add_row_columnsf(state->d.t, "s", rz_strbuf_get(sb));
 		rz_strbuf_free(sb);
 	}
+	rz_vector_free(maps);
 
 	rz_cmd_state_output_array_end(state);
 	return true;

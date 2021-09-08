@@ -364,6 +364,7 @@ RZ_IPI RzCmdStatus rz_type_list_enum_handler(RzCore *core, int argc, const char 
 			RzBaseType *btype = rz_type_db_get_enum(core->analysis->typedb, argv[1]);
 			if (!btype) {
 				RZ_LOG_ERROR("Cannot find \"%s\" enum type\n", argv[1]);
+				pj_free(pj);
 				return RZ_CMD_STATUS_ERROR;
 			}
 			rz_core_types_enum_print(core, btype, mode, pj);
@@ -580,6 +581,7 @@ RZ_IPI RzCmdStatus rz_type_list_structure_handler(RzCore *core, int argc, const 
 			RzBaseType *btype = rz_type_db_get_struct(core->analysis->typedb, argv[1]);
 			if (!btype) {
 				RZ_LOG_ERROR("Cannot find \"%s\" struct type\n", argv[1]);
+				pj_free(pj);
 				return RZ_CMD_STATUS_ERROR;
 			}
 			rz_core_types_struct_print(core, btype, mode, pj);
@@ -632,6 +634,7 @@ RZ_IPI RzCmdStatus rz_type_list_typedef_handler(RzCore *core, int argc, const ch
 		RzBaseType *btype = rz_type_db_get_typedef(core->analysis->typedb, argv[1]);
 		if (!btype) {
 			RZ_LOG_ERROR("Cannot find \"%s\" typedef type\n", argv[1]);
+			pj_free(pj);
 			return RZ_CMD_STATUS_ERROR;
 		}
 		rz_core_types_typedef_print(core, btype, mode, pj);
@@ -669,6 +672,7 @@ RZ_IPI RzCmdStatus rz_type_list_union_handler(RzCore *core, int argc, const char
 			RzBaseType *btype = rz_type_db_get_union(core->analysis->typedb, argv[1]);
 			if (!btype) {
 				RZ_LOG_ERROR("Cannot find \"%s\" union type\n", argv[1]);
+				pj_free(pj);
 				return RZ_CMD_STATUS_ERROR;
 			}
 			rz_core_types_union_print(core, btype, mode, pj);
