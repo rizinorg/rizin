@@ -883,7 +883,7 @@ static void bin_section_map_fini(void *e, void *user) {
  *
  * \return A RzVector* with RzBinSectionMap structure inside.
  **/
-RZ_API RzVector *rz_bin_object_sections_mapping_list(RzBinObject *obj) {
+RZ_API RZ_OWN RzVector *rz_bin_object_sections_mapping_list(RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 
 	const RzList *all = rz_bin_object_get_sections_all(obj);
