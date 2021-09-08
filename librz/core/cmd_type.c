@@ -581,6 +581,7 @@ RZ_IPI RzCmdStatus rz_type_list_structure_handler(RzCore *core, int argc, const 
 			RzBaseType *btype = rz_type_db_get_struct(core->analysis->typedb, argv[1]);
 			if (!btype) {
 				RZ_LOG_ERROR("Cannot find \"%s\" struct type\n", argv[1]);
+				pj_free(pj);
 				return RZ_CMD_STATUS_ERROR;
 			}
 			rz_core_types_struct_print(core, btype, mode, pj);
