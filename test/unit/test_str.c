@@ -248,7 +248,7 @@ bool test_rz_str_word_count(void) {
 
 bool test_rz_str_ichr(void) {
 	char *test = "rrrrrrizin";
-	char *out = rz_str_ichr(test, 'r');
+	const char *out = rz_str_ichr(test, 'r');
 	mu_assert_streq(out, "izin",
 		"string after the first non-r character in rrrrrrizin");
 	mu_end;

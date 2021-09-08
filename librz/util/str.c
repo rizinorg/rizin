@@ -65,7 +65,8 @@ RZ_API const char *rz_str_enc_as_string(RzStrEnc enc) {
 	}
 }
 
-RZ_API int rz_str_casecmp(const char *s1, const char *s2) {
+RZ_API int rz_str_casecmp(RZ_NONNULL const char *s1, RZ_NONNULL const char *s2) {
+	rz_return_val_if_fail(s1 && s2, -1);
 	int res;
 #ifdef _MSC_VER
 	res = stricmp(s1, s2);
@@ -78,7 +79,8 @@ RZ_API int rz_str_casecmp(const char *s1, const char *s2) {
 	return res;
 }
 
-RZ_API int rz_str_ncasecmp(const char *s1, const char *s2, size_t n) {
+RZ_API int rz_str_ncasecmp(RZ_NONNULL const char *s1, RZ_NONNULL const char *s2, size_t n) {
+	rz_return_val_if_fail(s1 && s2, -1);
 #ifdef _MSC_VER
 	return _strnicmp(s1, s2, n);
 #else
@@ -86,9 +88,9 @@ RZ_API int rz_str_ncasecmp(const char *s1, const char *s2, size_t n) {
 #endif
 }
 
-// GOOD
 // In-place replace the first instance of the character a, with the character b.
-RZ_API int rz_str_replace_ch(char *s, char a, char b, bool global) {
+RZ_API int rz_str_replace_ch(RZ_NONNULL char *s, char a, char b, bool global) {
+	rz_return_val_if_fail(s, -1);
 	int ret = 0;
 	char *o = s;
 	if (!s || a == b) {
@@ -114,15 +116,18 @@ RZ_API int rz_str_replace_ch(char *s, char a, char b, bool global) {
 	return ret;
 }
 
-RZ_API int rz_str_replace_char_once(char *s, int a, int b) {
+RZ_API int rz_str_replace_char_once(RZ_NONNULL char *s, int a, int b) {
+	rz_return_val_if_fail(s, -1);
 	return rz_str_replace_ch(s, a, b, false);
 }
 
-RZ_API int rz_str_replace_char(char *s, int a, int b) {
+RZ_API int rz_str_replace_char(RZ_NONNULL char *s, int a, int b) {
+	rz_return_val_if_fail(s, -1);
 	return rz_str_replace_ch(s, a, b, true);
 }
 
-RZ_API void rz_str_remove_char(char *str, char c) {
+RZ_API void rz_str_remove_char(RZ_NONNULL char *str, char c) {
+	rz_return_if_fail(str);
 	while (*str) {
 		if (*str == c) {
 			memmove(str, str + 1, strlen(str + 1) + 1);
@@ -132,7 +137,8 @@ RZ_API void rz_str_remove_char(char *str, char c) {
 	}
 }
 
-RZ_API void rz_str_reverse(char *str) {
+RZ_API void rz_str_reverse(RZ_NONNULL char *str) {
+	rz_return_if_fail(str);
 	int i, len = strlen(str);
 	int half = len / 2;
 	for (i = 0; i < half; i++) {
@@ -144,7 +150,7 @@ RZ_API void rz_str_reverse(char *str) {
 
 // TODO: do not use toupper.. must support modes to also append lowercase chars like in r1
 // TODO: this functions needs some stabilization
-RZ_API int rz_str_bits(char *strout, const ut8 *buf, int len, const char *bitz) {
+RZ_API int rz_str_bits(RZ_NONNULL char *strout, const ut8 *buf, int len, const char *bitz) {
 	int i, j, idx;
 	if (bitz) {
 		for (i = j = 0; i < len && (!bitz || bitz[i]); i++) {
@@ -193,7 +199,8 @@ static void trimbits(char *b) {
 // Set 'strout' to the binary representation of the input value.
 // strout must be a char array of 65 or greater.
 // The string is then trimmed using the "trimbits" function above.
-RZ_API int rz_str_bits64(char *strout, ut64 in) {
+RZ_API int rz_str_bits64(RZ_NONNULL char *strout, ut64 in) {
+	rz_return_val_if_fail(strout, 0);
 	int i, bit, count = 0;
 	count = 0;
 	for (i = (sizeof(in) * 8) - 1; i >= 0; i--) {
@@ -211,11 +218,8 @@ RZ_API int rz_str_bits64(char *strout, ut64 in) {
 	return count;
 }
 
-/**
- * function: rz_str_bits_from_num
- *
- */
-RZ_API ut64 rz_str_bits_from_string(const char *buf, const char *bitz) {
+RZ_API ut64 rz_str_bits_from_string(RZ_NONNULL const char *buf, RZ_NONNULL const char *bitz) {
+	rz_return_val_if_fail(buf && bitz, 0);
 	ut64 out = 0LL;
 	/* return the numeric value associated to a string (rflags) */
 	for (; *buf; buf++) {
@@ -233,7 +237,8 @@ RZ_API ut64 rz_str_bits_from_string(const char *buf, const char *bitz) {
 	return out;
 }
 
-RZ_API int rz_str_binstr2bin(const char *str, ut8 *out, int outlen) {
+RZ_API int rz_str_binstr2bin(RZ_NONNULL const char *str, RZ_NONNULL ut8 *out, int outlen) {
+	rz_return_val_if_fail(str && out, 0);
 	int n, i, j, k, ret, len;
 	len = strlen(str);
 	for (n = i = 0; i < len; i += 8) {
@@ -267,7 +272,8 @@ RZ_API int rz_str_binstr2bin(const char *str, ut8 *out, int outlen) {
 
 // Returns the permissions as in integer given an input in the form of rwx, rx,
 // etc.
-RZ_API int rz_str_rwx(const char *str) {
+RZ_API int rz_str_rwx(RZ_NONNULL const char *str) {
+	rz_return_val_if_fail(str, 0);
 	int ret = atoi(str);
 	if (!ret) {
 		ret |= strchr(str, 'm') ? 16 : 0;
@@ -290,7 +296,8 @@ RZ_API const char *rz_str_rwx_i(int rwx) {
 
 // If up is true, upcase all characters in the string, otherwise downcase all
 // characters in the string.
-RZ_API void rz_str_case(char *str, bool up) {
+RZ_API void rz_str_case(RZ_NONNULL char *str, bool up) {
+	rz_return_if_fail(str);
 	if (up) {
 		char oc = 0;
 		for (; *str; oc = *str++) {
@@ -303,7 +310,8 @@ RZ_API void rz_str_case(char *str, bool up) {
 	}
 }
 
-RZ_API char *rz_str_home(const char *str) {
+RZ_API RZ_OWN char *rz_str_home(RZ_NONNULL const char *str) {
+	rz_return_val_if_fail(str, NULL);
 	char *dst, *home = rz_sys_getenv(RZ_SYS_HOME);
 	size_t length;
 	if (!home) {
@@ -332,11 +340,11 @@ fail:
 }
 
 // Compute a 64 bit DJB hash of a string.
-RZ_API ut64 rz_str_hash64(const char *s) {
-	ut64 len, h = 5381;
+RZ_API ut64 rz_str_hash64(RZ_NULLABLE const char *s) {
 	if (!s) {
 		return 0;
 	}
+	ut64 len, h = 5381;
 	for (len = strlen(s); len > 0; len--) {
 		h = (h ^ (h << 5)) ^ *s++;
 	}
@@ -344,11 +352,12 @@ RZ_API ut64 rz_str_hash64(const char *s) {
 }
 
 // Compute a 32bit DJB hash of a string.
-RZ_API ut32 rz_str_hash(const char *s) {
+RZ_API ut32 rz_str_hash(RZ_NULLABLE const char *s) {
 	return (ut32)rz_str_hash64(s);
 }
 
-RZ_API int rz_str_delta(char *p, char a, char b) {
+RZ_API int rz_str_delta(RZ_NONNULL const char *p, char a, char b) {
+	rz_return_val_if_fail(p, 0);
 	char *_a = strchr(p, a);
 	char *_b = strchr(p, b);
 	return (!_a || !_b) ? 0 : (_a - _b);
@@ -360,7 +369,7 @@ RZ_API int rz_str_delta(char *p, char a, char b) {
  * Replaces all instances of \p ch in \p str with a NULL byte and it returns
  * the number of split strings.
  */
-RZ_API size_t rz_str_split(char *str, char ch) {
+RZ_API size_t rz_str_split(RZ_NONNULL char *str, char ch) {
 	rz_return_val_if_fail(str, 0);
 	size_t i;
 	char *p;
@@ -377,12 +386,12 @@ RZ_API size_t rz_str_split(char *str, char ch) {
 // And the last by \0\0
 // Separates by words and skip spaces.
 // Returns the number of tokens that the string is tokenized into.
-RZ_API int rz_str_word_set0(char *str) {
-	int i, quote = 0;
-	char *p;
+RZ_API int rz_str_word_set0(RZ_NULLABLE char *str) {
 	if (!str || !*str) {
 		return 0;
 	}
+	int i, quote = 0;
+	char *p;
 	for (i = 0; str[i] && str[i + 1]; i++) {
 		if (i > 0 && str[i - 1] == ' ' && str[i] == ' ') {
 			int len = strlen(str + i);
@@ -425,14 +434,14 @@ RZ_API int rz_str_word_set0(char *str) {
 	return i;
 }
 
-RZ_API int rz_str_word_set0_stack(char *str) {
+RZ_API int rz_str_word_set0_stack(RZ_NULLABLE char *str) {
+	if (!str || !*str) {
+		return 0;
+	}
 	int i;
 	char *p, *q;
 	RzStack *s;
 	void *pop;
-	if (!str || !*str) {
-		return 0;
-	}
 	for (i = 0; str[i] && str[i + 1]; i++) {
 		if (i > 0 && str[i - 1] == ' ' && str[i] == ' ') {
 			memmove(str + i, str + i + 1, strlen(str + i));
@@ -502,13 +511,13 @@ RZ_API int rz_str_word_set0_stack(char *str) {
 	return i;
 }
 
-RZ_API char *rz_str_word_get0set(char *stra, int stralen, int idx, const char *newstr, int *newlen) {
-	char *p = NULL;
-	char *out;
-	int alen, blen, nlen;
+RZ_API RZ_OWN char *rz_str_word_get0set(RZ_NULLABLE char *stra, int stralen, int idx, RZ_NULLABLE const char *newstr, int *newlen) {
 	if (!stra && !newstr) {
 		return NULL;
 	}
+	char *p = NULL;
+	char *out;
+	int alen, blen, nlen;
 	if (stra) {
 		p = (char *)rz_str_word_get0(stra, idx);
 	}
@@ -552,12 +561,14 @@ RZ_API char *rz_str_word_get0set(char *stra, int stralen, int idx, const char *n
 // Get the idx'th entry of a tokenized string.
 // XXX: Warning! this function is UNSAFE, check that the string has, at least,
 // idx+1 tokens.
-RZ_API const char *rz_str_word_get0(const char *str, int idx) {
-	int i;
-	const char *ptr = str;
-	if (!ptr || idx < 0 /* prevent crashes with negative index */) {
+RZ_API RZ_BORROW const char *rz_str_word_get0(RZ_NONNULL const char *str, int idx) {
+	rz_return_val_if_fail(str, NULL);
+	/* prevent crashes with negative index */
+	if (idx < 0) {
 		return "";
 	}
+	int i;
+	const char *ptr = str;
 	for (i = 0; i != idx; i++) {
 		ptr = rz_str_word_get_next0(ptr);
 	}
@@ -565,7 +576,8 @@ RZ_API const char *rz_str_word_get0(const char *str, int idx) {
 }
 
 // Return the number of times that the character ch appears in the string.
-RZ_API int rz_str_char_count(const char *string, char ch) {
+RZ_API int rz_str_char_count(RZ_NONNULL const char *string, char ch) {
+	rz_return_val_if_fail(string, 0);
 	int i, count = 0;
 	for (i = 0; string[i]; i++) {
 		if (string[i] == ch) {
@@ -591,13 +603,15 @@ static const char *word_get_first(const char *text) {
 	return text;
 }
 
-RZ_API char *rz_str_word_get_first(const char *text) {
+RZ_API RZ_OWN char *rz_str_word_get_first(RZ_NONNULL const char *text) {
+	rz_return_val_if_fail(text, NULL);
 	return strdup(word_get_first(text));
 }
 
 // Counts the number of words (separated by separator characters: newlines, tabs,
 // return, space). See rz_util.h for more details of the IS_SEPARATOR macro.
-RZ_API int rz_str_word_count(const char *string) {
+RZ_API int rz_str_word_count(RZ_NONNULL const char *string) {
+	rz_return_val_if_fail(string, 0);
 	int word;
 	const char *text = word_get_first(string);
 
@@ -614,7 +628,8 @@ RZ_API int rz_str_word_count(const char *string) {
 // TODO: make this const-correct.
 // XXX if the string is only made up of chr, then the pointer will just point to
 // a null byte!
-RZ_API char *rz_str_ichr(char *str, char chr) {
+RZ_API RZ_BORROW const char *rz_str_ichr(RZ_NONNULL const char *str, char chr) {
+	rz_return_val_if_fail(str, NULL);
 	while (*str == chr) {
 		str++;
 	}
@@ -623,20 +638,20 @@ RZ_API char *rz_str_ichr(char *str, char chr) {
 
 // Returns a pointer to the last instance of the character chr in the input
 // string.
-RZ_API const char *rz_str_lchr(const char *str, char chr) {
-	if (str) {
-		int len = strlen(str);
-		for (; len >= 0; len--) {
-			if (str[len] == chr) {
-				return str + len;
-			}
+RZ_API RZ_BORROW const char *rz_str_lchr(RZ_NONNULL const char *str, char chr) {
+	rz_return_val_if_fail(str, NULL);
+	int len = strlen(str);
+	for (; len >= 0; len--) {
+		if (str[len] == chr) {
+			return str + len;
 		}
 	}
 	return NULL;
 }
 
 /* find the last char chr in the substring str[start:end] with end not included */
-RZ_API const char *rz_sub_str_lchr(const char *str, int start, int end, char chr) {
+RZ_API RZ_BORROW const char *rz_sub_str_lchr(RZ_NONNULL const char *str, int start, int end, char chr) {
+	rz_return_val_if_fail(str, NULL);
 	do {
 		end--;
 	} while (str[end] != chr && end >= start);
@@ -644,14 +659,16 @@ RZ_API const char *rz_sub_str_lchr(const char *str, int start, int end, char chr
 }
 
 /* find the first char chr in the substring str[start:end] with end not included */
-RZ_API const char *rz_sub_str_rchr(const char *str, int start, int end, char chr) {
+RZ_API RZ_BORROW const char *rz_sub_str_rchr(RZ_NONNULL const char *str, int start, int end, char chr) {
+	rz_return_val_if_fail(str, NULL);
 	while (str[start] && str[start] != chr && start < end) {
 		start++;
 	}
 	return str[start] == chr ? str + start : NULL;
 }
 
-RZ_API const char *rz_str_sep(const char *base, const char *sep) {
+RZ_API RZ_BORROW const char *rz_str_sep(RZ_NONNULL const char *base, RZ_NONNULL const char *sep) {
+	rz_return_val_if_fail(base && sep, NULL);
 	int i;
 	while (*base) {
 		for (i = 0; sep[i]; i++) {
@@ -664,7 +681,8 @@ RZ_API const char *rz_str_sep(const char *base, const char *sep) {
 	return NULL;
 }
 
-RZ_API const char *rz_str_rsep(const char *base, const char *p, const char *sep) {
+RZ_API RZ_BORROW const char *rz_str_rsep(RZ_NONNULL const char *base, RZ_NONNULL const char *p, RZ_NONNULL const char *sep) {
+	rz_return_val_if_fail(base && p && sep, NULL);
 	int i;
 	while (p >= base) {
 		for (i = 0; sep[i]; i++) {
@@ -677,7 +695,8 @@ RZ_API const char *rz_str_rsep(const char *base, const char *p, const char *sep)
 	return NULL;
 }
 
-RZ_API const char *rz_str_rstr(const char *base, const char *p) {
+RZ_API RZ_BORROW const char *rz_str_rstr(RZ_NONNULL const char *base, RZ_NONNULL const char *p) {
+	rz_return_val_if_fail(base && p, NULL);
 	char *s = strdup(base);
 	char *k = strdup(p);
 	rz_str_reverse(s);
@@ -692,7 +711,7 @@ RZ_API const char *rz_str_rstr(const char *base, const char *p) {
 	return r;
 }
 
-RZ_API const char *rz_str_rchr(const char *base, const char *p, int ch) {
+RZ_API RZ_BORROW const char *rz_str_rchr(RZ_NONNULL const char *base, RZ_NULLABLE const char *p, int ch) {
 	rz_return_val_if_fail(base, NULL);
 	if (!p) {
 		return strrchr(base, ch);
@@ -705,7 +724,8 @@ RZ_API const char *rz_str_rchr(const char *base, const char *p, int ch) {
 	return (p >= base) ? p : NULL;
 }
 
-RZ_API const char *rz_str_nstr(const char *s, const char *find, int slen) {
+RZ_API RZ_BORROW const char *rz_str_nstr(RZ_NONNULL const char *s, RZ_NONNULL const char *find, int slen) {
+	rz_return_val_if_fail(s && find, NULL);
 	char c, sc;
 	size_t len;
 
@@ -727,14 +747,14 @@ RZ_API const char *rz_str_nstr(const char *s, const char *find, int slen) {
 }
 
 // Returns a new heap-allocated copy of str.
-// XXX what's the diff with rz_str_dup ?
-RZ_API char *rz_str_new(const char *str) {
+RZ_API RZ_OWN char *rz_str_new(RZ_NULLABLE const char *str) {
 	return str ? strdup(str) : NULL;
 }
 
 // Returns a new heap-allocated copy of str, sets str[len] to '\0'.
 // If the input str is longer than len, it will be truncated.
-RZ_API char *rz_str_newlen(const char *str, int len) {
+RZ_API RZ_OWN char *rz_str_newlen(RZ_NONNULL const char *str, int len) {
+	rz_return_val_if_fail(str, NULL);
 	if (len < 0) {
 		return NULL;
 	}
@@ -746,10 +766,8 @@ RZ_API char *rz_str_newlen(const char *str, int len) {
 	return buf;
 }
 
-RZ_API char *rz_str_trunc_ellipsis(const char *str, int len) {
-	if (!str) {
-		return NULL;
-	}
+RZ_API RZ_OWN char *rz_str_trunc_ellipsis(RZ_NULLABLE const char *str, int len) {
+	rz_return_val_if_fail(str, NULL);
 	if (strlen(str) < len) {
 		return strdup(str);
 	}
@@ -760,7 +778,7 @@ RZ_API char *rz_str_trunc_ellipsis(const char *str, int len) {
 	return buf;
 }
 
-RZ_API char *rz_str_newf(const char *fmt, ...) {
+RZ_API RZ_OWN char *rz_str_newf(RZ_NONNULL const char *fmt, ...) {
 	rz_return_val_if_fail(fmt, NULL);
 	va_list ap, ap2;
 
@@ -786,7 +804,7 @@ RZ_API char *rz_str_newf(const char *fmt, ...) {
  *
  * 	This API behaves like strlcpy or strscpy.
  */
-RZ_API size_t rz_str_ncpy(char *dst, const char *src, size_t dst_size) {
+RZ_API size_t rz_str_ncpy(RZ_NONNULL char *dst, RZ_NONNULL const char *src, size_t dst_size) {
 	rz_return_val_if_fail(dst && src, 0);
 
 	// do not do anything if dst_size is 0
@@ -804,7 +822,7 @@ RZ_API size_t rz_str_ncpy(char *dst, const char *src, size_t dst_size) {
 
 /* memccmp("foo.bar", "foo.cow, '.') == 0 */
 // Returns 1 if src and dst are equal up until the first instance of ch in src.
-RZ_API bool rz_str_ccmp(const char *dst, const char *src, int ch) {
+RZ_API bool rz_str_ccmp(RZ_NONNULL const char *dst, RZ_NONNULL const char *src, int ch) {
 	rz_return_val_if_fail(dst && src, false);
 	int i;
 	for (i = 0; src[i] && src[i] != ch; i++) {
@@ -816,10 +834,8 @@ RZ_API bool rz_str_ccmp(const char *dst, const char *src, int ch) {
 }
 
 // Returns true if item is in sep-separated list
-RZ_API bool rz_str_cmp_list(const char *list, const char *item, char sep) {
-	if (!list || !item) {
-		return false;
-	}
+RZ_API bool rz_str_cmp_list(RZ_NONNULL const char *list, RZ_NONNULL const char *item, char sep) {
+	rz_return_val_if_fail(list && item, false);
 	int i = 0, j = 0;
 	for (; list[i] && list[i] != sep; i++, j++) {
 		if (item[j] != list[i]) {
@@ -837,7 +853,7 @@ RZ_API bool rz_str_cmp_list(const char *list, const char *item, char sep) {
 }
 
 // like strncmp, but checking for null pointers
-RZ_API int rz_str_cmp(const char *a, const char *b, int len) {
+RZ_API int rz_str_cmp(RZ_NULLABLE const char *a, RZ_NULLABLE const char *b, int len) {
 	if ((a == b) || (!a && !b)) {
 		return 0;
 	}
@@ -854,7 +870,8 @@ RZ_API int rz_str_cmp(const char *a, const char *b, int len) {
 }
 
 // Copies all characters from src to dst up until the character 'ch'.
-RZ_API int rz_str_ccpy(char *dst, char *src, int ch) {
+RZ_API int rz_str_ccpy(RZ_NONNULL char *dst, RZ_NONNULL const char *src, int ch) {
+	rz_return_val_if_fail(dst && src, 0);
 	int i;
 	for (i = 0; src[i] && src[i] != ch; i++) {
 		dst[i] = src[i];
@@ -863,7 +880,8 @@ RZ_API int rz_str_ccpy(char *dst, char *src, int ch) {
 	return i;
 }
 
-RZ_API char *rz_str_ndup(const char *ptr, int len) {
+RZ_API RZ_OWN char *rz_str_ndup(RZ_NONNULL const char *ptr, int len) {
+	rz_return_val_if_fail(ptr, NULL);
 	if (len < 0) {
 		return NULL;
 	}
@@ -876,18 +894,19 @@ RZ_API char *rz_str_ndup(const char *ptr, int len) {
 	return out;
 }
 
-// TODO: deprecate?
-RZ_API char *rz_str_dup(char *ptr, const char *string) {
+RZ_API RZ_DEPRECATE RZ_OWN char *rz_str_dup(RZ_NULLABLE char *ptr, RZ_NONNULL const char *string) {
+	rz_return_val_if_fail(string, NULL);
 	char *str = rz_str_new(string);
 	free(ptr); // in case ptr == string
 	return str;
 }
 
-RZ_API char *rz_str_prepend(char *ptr, const char *string) {
-	int slen, plen;
+RZ_API RZ_OWN char *rz_str_prepend(RZ_NULLABLE char *ptr, RZ_NONNULL const char *string) {
+	rz_return_val_if_fail(string, NULL);
 	if (!ptr) {
 		return strdup(string);
 	}
+	int slen, plen;
 	plen = strlen(ptr);
 	slen = strlen(string);
 	ptr = realloc(ptr, slen + plen + 1);
@@ -899,14 +918,16 @@ RZ_API char *rz_str_prepend(char *ptr, const char *string) {
 	return ptr;
 }
 
-RZ_API char *rz_str_appendlen(char *ptr, const char *string, int slen) {
+RZ_API RZ_OWN char *rz_str_appendlen(RZ_NULLABLE char *ptr, RZ_NONNULL const char *string, int slen) {
+	rz_return_val_if_fail(string, NULL);
 	char *msg = rz_str_newlen(string, slen);
 	char *ret = rz_str_append(ptr, msg);
 	free(msg);
 	return ret;
 }
 
-RZ_API char *rz_str_append_owned(char *ptr, char *string) {
+RZ_API RZ_OWN char *rz_str_append_owned(RZ_NULLABLE char *ptr, RZ_OWN RZ_NONNULL char *string) {
+	rz_return_val_if_fail(string, NULL);
 	if (!ptr) {
 		return string;
 	}
@@ -919,7 +940,8 @@ RZ_API char *rz_str_append_owned(char *ptr, char *string) {
  * first argument must be allocated
  * return: the pointer ptr resized to string size.
  */
-RZ_API char *rz_str_append(char *ptr, const char *string) {
+RZ_API RZ_OWN char *rz_str_append(RZ_NULLABLE char *ptr, RZ_NONNULL const char *string) {
+	rz_return_val_if_fail(string, NULL);
 	if (string && !ptr) {
 		return strdup(string);
 	}
@@ -938,7 +960,7 @@ RZ_API char *rz_str_append(char *ptr, const char *string) {
 	return ptr;
 }
 
-RZ_API char *rz_str_appendf(char *ptr, const char *fmt, ...) {
+RZ_API RZ_OWN char *rz_str_appendf(RZ_NULLABLE char *ptr, RZ_NONNULL const char *fmt, ...) {
 	rz_return_val_if_fail(fmt, NULL);
 	va_list ap, ap2;
 
@@ -961,7 +983,7 @@ RZ_API char *rz_str_appendf(char *ptr, const char *fmt, ...) {
 	return ptr;
 }
 
-RZ_API char *rz_str_appendch(char *x, char y) {
+RZ_API RZ_OWN char *rz_str_appendch(RZ_NULLABLE char *x, char y) {
 	char b[2] = { y, 0 };
 	return rz_str_append(x, b);
 }
@@ -1802,7 +1824,7 @@ RZ_API size_t rz_str_ansi_len(const char *str) {
 	return rz_str_ansi_nlen(str, 0);
 }
 
-RZ_API size_t rz_str_nlen(const char *str, size_t n) {
+RZ_API size_t rz_str_nlen(RZ_NONNULL const char *str, size_t n) {
 	rz_return_val_if_fail(str, 0);
 #if HAVE_STRNLEN
 	return strnlen(str, n);
@@ -1817,12 +1839,13 @@ RZ_API size_t rz_str_nlen(const char *str, size_t n) {
 #endif
 }
 
-// to handle wide string as well
+//to handle wide string as well
 // XXX can be error prone
-RZ_API size_t rz_str_nlen_w(const char *str, int n) {
+RZ_API size_t rz_str_nlen_w(RZ_NONNULL const char *str, size_t n) {
+	rz_return_val_if_fail(str, 0);
 	size_t len = 0;
 	if (str) {
-		while (*str && n > 0) {
+		while (*str && n) {
 			len++;
 			str++;
 			if (!*str) {
@@ -2102,6 +2125,8 @@ RZ_API char *rz_str_ansi_crop(const char *str, ut32 x, ut32 y, ut32 x2, ut32 y2)
 }
 
 RZ_API size_t rz_str_utf8_codepoint(const char *s, size_t left) {
+	rz_return_val_if_fail(s, 0);
+
 	if ((*s & 0x80) != 0x80) {
 		return 0;
 	} else if ((*s & 0xe0) == 0xc0 && left >= 1) {
@@ -2796,16 +2821,14 @@ RZ_API int rz_str_utf16_to_utf8(ut8 *dst, int len_dst, const ut8 *src, int len_s
 	return len_dst;
 }
 
-RZ_API char *rz_str_utf16_decode(const ut8 *s, int len) {
+RZ_API RZ_OWN char *rz_str_utf16_decode(RZ_NONNULL const ut8 *s, int len) {
+	rz_return_val_if_fail(s, NULL);
 	int i = 0;
 	int j = 0;
 	char *result = NULL;
 	int count_unicode = 0;
 	int count_ascii = 0;
 	int lenresult = 0;
-	if (!s) {
-		return NULL;
-	}
 	for (i = 0; i < len && (s[i] || s[i + 1]); i += 2) {
 		if (!s[i + 1] && 0x20 <= s[i] && s[i] <= 0x7E) {
 			++count_ascii;
@@ -2828,18 +2851,16 @@ RZ_API char *rz_str_utf16_decode(const ut8 *s, int len) {
 }
 
 // TODO: kill this completely, it makes no sense:
-RZ_API char *rz_str_utf16_encode(const char *s, int len) {
-	int i;
-	char ch[4], *d, *od, *tmp;
-	if (!s) {
-		return NULL;
-	}
+RZ_API RZ_OWN char *rz_str_utf16_encode(RZ_NONNULL const char *s, int len) {
+	rz_return_val_if_fail(s, NULL);
 	if (len < 0) {
 		len = strlen(s);
 	}
 	if ((len * 7) + 1 < len) {
 		return NULL;
 	}
+	int i;
+	char ch[4], *d, *od, *tmp;
 	od = d = malloc(1 + (len * 7));
 	if (!d) {
 		return NULL;
@@ -2873,19 +2894,14 @@ RZ_API char *rz_str_utf16_encode(const char *s, int len) {
 	return tmp;
 }
 
-RZ_API char *rz_str_prefix_all(const char *s, const char *pfx) {
+RZ_API RZ_OWN char *rz_str_prefix_all(RZ_NONNULL const char *s, RZ_NONNULL const char *pfx) {
+	rz_return_val_if_fail(s && pfx, NULL);
 	const char *os = s;
 	char *p;
 	int newlines = 1;
 	int len = 0;
 	int pfx_len = 0;
 
-	if (!s) {
-		return strdup(pfx);
-	}
-	if (!pfx) {
-		return strdup(s);
-	}
 	len = strlen(s);
 	pfx_len = strlen(pfx);
 	for (os = s; *os; os++) {
@@ -2946,7 +2962,7 @@ RZ_API void rz_str_truncate_cmd(char *string) {
 	}
 }
 
-RZ_API const char *rz_str_closer_chr(const char *b, const char *s) {
+RZ_API const char *rz_str_closer_chr(RZ_NONNULL const char *b, RZ_NONNULL const char *s) {
 	const char *a;
 	while (*b) {
 		for (a = s; *a; a++) {
@@ -2959,32 +2975,31 @@ RZ_API const char *rz_str_closer_chr(const char *b, const char *s) {
 	return NULL;
 }
 
-RZ_API int rz_str_bounds(const char *_str, int *h) {
+RZ_API int rz_str_bounds(RZ_NONNULL const char *_str, RZ_NULLABLE int *h) {
+	rz_return_val_if_fail(_str, 0);
 	const char *str, *ptr;
 	int W = 0, H = 0;
 	int cw = 0;
 
-	if (_str) {
-		ptr = str = _str;
-		while (*str) {
-			if (*str == '\n') {
-				H++;
-				cw = rz_str_ansi_nlen(ptr, (size_t)(str - ptr));
-				if (cw > W) {
-					W = cw;
-				}
-				cw = 0;
-				ptr = str + 1;
+	ptr = str = _str;
+	while (*str) {
+		if (*str == '\n') {
+			H++;
+			cw = rz_str_ansi_nlen(ptr, (size_t)(str - ptr));
+			if (cw > W) {
+				W = cw;
 			}
-			str++;
-			cw++;
+			cw = 0;
+			ptr = str + 1;
 		}
-		if (*str == '\n') { // skip last newline
-			H--;
-		}
-		if (h) {
-			*h = H;
-		}
+		str++;
+		cw++;
+	}
+	if (*str == '\n') { // skip last newline
+		H--;
+	}
+	if (h) {
+		*h = H;
 	}
 	return W;
 }
@@ -2992,11 +3007,12 @@ RZ_API int rz_str_bounds(const char *_str, int *h) {
 /* crop a string like it is in a rectangle with the upper-left corner at (x, y)
  * coordinates and the bottom-right corner at (x2, y2) coordinates. The result
  * is a newly allocated string, that should be deallocated by the user */
-RZ_API char *rz_str_crop(const char *str, unsigned int x, unsigned int y,
+RZ_API RZ_OWN char *rz_str_crop(RZ_NONNULL const char *str, unsigned int x, unsigned int y,
 	unsigned int x2, unsigned int y2) {
+	rz_return_val_if_fail(str, NULL);
 	char *r, *ret;
 	unsigned int ch = 0, cw = 0;
-	if (x2 < 1 || y2 < 1 || !str) {
+	if (x2 < 1 || y2 < 1) {
 		return strdup("");
 	}
 	r = ret = strdup(str);
@@ -3034,15 +3050,15 @@ RZ_API char *rz_str_crop(const char *str, unsigned int x, unsigned int y,
 	return ret;
 }
 
-RZ_API const char *rz_str_tok(const char *str1, const char b, size_t len) {
+RZ_API RZ_BORROW const char *rz_str_tok(RZ_NULLABLE const char *str1, const char b, size_t len) {
 	const char *p = str1;
-	size_t i = 0;
 	if (!p || !*p) {
 		return p;
 	}
 	if (len == -1) {
 		len = strlen(str1);
 	}
+	size_t i = 0;
 	for (; i < len; i++, p++) {
 		if (*p == b) {
 			break;
@@ -3054,11 +3070,11 @@ RZ_API const char *rz_str_tok(const char *str1, const char b, size_t len) {
 	return p;
 }
 
-RZ_API int rz_str_do_until_token(str_operation op, char *str, const char tok) {
-	int ret;
+RZ_API int rz_str_do_until_token(str_operation op, RZ_NULLABLE char *str, const char tok) {
 	if (!str) {
 		return -1;
 	}
+	int ret;
 	if (!op) {
 		for (ret = 0; (str[ret] != tok) && str[ret]; ret++) {
 			// empty body
@@ -3084,7 +3100,8 @@ RZ_API const char *rz_str_pad(const char ch, int sz) {
 	return pad;
 }
 
-RZ_API char *rz_str_repeat(const char *ch, int sz) {
+RZ_API RZ_OWN char *rz_str_repeat(RZ_NONNULL const char *ch, int sz) {
+	rz_return_val_if_fail(ch, NULL);
 	int i;
 	if (sz < 0) {
 		sz = 0;
@@ -3099,11 +3116,11 @@ RZ_API char *rz_str_repeat(const char *ch, int sz) {
 	return rz_strbuf_drain(buf);
 }
 
-RZ_API char *rz_str_between(const char *cmt, const char *prefix, const char *suffix) {
-	char *c0, *c1;
+RZ_API RZ_OWN char *rz_str_between(RZ_NULLABLE const char *cmt, RZ_NULLABLE const char *prefix, RZ_NULLABLE const char *suffix) {
 	if (!cmt || !prefix || !suffix || !*cmt) {
 		return NULL;
 	}
+	char *c0, *c1;
 	c0 = strstr(cmt, prefix);
 	if (c0) {
 		c1 = strstr(c0 + strlen(prefix), suffix);
@@ -3114,7 +3131,7 @@ RZ_API char *rz_str_between(const char *cmt, const char *prefix, const char *suf
 	return NULL;
 }
 
-RZ_API bool rz_str_startswith(const char *str, const char *needle) {
+RZ_API bool rz_str_startswith(RZ_NONNULL const char *str, RZ_NONNULL const char *needle) {
 	rz_return_val_if_fail(str && needle, false);
 	if (str == needle) {
 		return true;
@@ -3122,7 +3139,7 @@ RZ_API bool rz_str_startswith(const char *str, const char *needle) {
 	return !strncmp(str, needle, strlen(needle));
 }
 
-RZ_API bool rz_str_endswith(const char *str, const char *needle) {
+RZ_API bool rz_str_endswith(RZ_NONNULL const char *str, RZ_NONNULL const char *needle) {
 	rz_return_val_if_fail(str && needle, false);
 	if (!*needle) {
 		return true;
@@ -3135,7 +3152,7 @@ RZ_API bool rz_str_endswith(const char *str, const char *needle) {
 	return !strcmp(str + (slen - nlen), needle);
 }
 
-static RzList *str_split_list_common(char *str, const char *c, int n, bool trim, bool dup) {
+static RZ_OWN RzList *str_split_list_common(RZ_NONNULL char *str, RZ_NONNULL const char *c, int n, bool trim, bool dup) {
 	rz_return_val_if_fail(str && c, NULL);
 	RzList *lst = rz_list_newf(dup ? free : NULL);
 	char *aux = str;
@@ -3172,7 +3189,7 @@ static RzList *str_split_list_common(char *str, const char *c, int n, bool trim,
  * \param c Delimiter string used to split \p str
  * \param n If > 0 at most this number of delimiters are considered.
  */
-RZ_API RzList *rz_str_split_list(char *str, const char *c, int n) {
+RZ_API RZ_OWN RzList *rz_str_split_list(RZ_NONNULL char *str, RZ_NONNULL const char *c, int n) {
 	rz_return_val_if_fail(str && c, NULL);
 	return str_split_list_common(str, c, n, true, false);
 }
@@ -3188,11 +3205,11 @@ RZ_API RzList *rz_str_split_list(char *str, const char *c, int n) {
  * \param c Delimiter string used to split \p str
  * \param trim If true each token is considered without trailing/leading whitespaces.
  */
-RZ_API RzList *rz_str_split_duplist(const char *_str, const char *c, bool trim) {
-	rz_return_val_if_fail(_str && c, NULL);
-	char *str = strdup(_str);
-	RzList *res = str_split_list_common(str, c, 0, trim, true);
-	free(str);
+RZ_API RZ_OWN RzList *rz_str_split_duplist(RZ_NONNULL const char *str, RZ_NONNULL const char *c, bool trim) {
+	rz_return_val_if_fail(str && c, NULL);
+	char *str1 = strdup(str);
+	RzList *res = str_split_list_common(str1, c, 0, trim, true);
+	free(str1);
 	return res;
 }
 
@@ -3209,11 +3226,11 @@ RZ_API RzList *rz_str_split_duplist(const char *_str, const char *c, bool trim) 
  * \param n If > 0 at most this number of delimiters are considered.
  * \param trim If true each token is considered without trailing/leading whitespaces.
  */
-RZ_API RzList *rz_str_split_duplist_n(const char *_str, const char *c, int n, bool trim) {
-	rz_return_val_if_fail(_str && c, NULL);
-	char *str = strdup(_str);
-	RzList *res = str_split_list_common(str, c, n, trim, true);
-	free(str);
+RZ_API RZ_OWN RzList *rz_str_split_duplist_n(RZ_NONNULL const char *str, RZ_NONNULL const char *c, int n, bool trim) {
+	rz_return_val_if_fail(str && c, NULL);
+	char *str1 = strdup(str);
+	RzList *res = str_split_list_common(str1, c, n, trim, true);
+	free(str1);
 	return res;
 }
 
@@ -3227,7 +3244,7 @@ RZ_API RzList *rz_str_split_duplist_n(const char *_str, const char *c, int n, bo
  * \param str Input string to split
  * \param count Pointer to a size_t variable that can hold the number of lines.
  */
-RZ_API size_t *rz_str_split_lines(char *str, size_t *count) {
+RZ_API RZ_OWN size_t *rz_str_split_lines(RZ_NONNULL char *str, size_t *count) {
 	rz_return_val_if_fail(str, NULL);
 	RzList *l = str_split_list_common(str, "\n", 0, false, false);
 	if (!l) {
@@ -3251,7 +3268,7 @@ RZ_API size_t *rz_str_split_lines(char *str, size_t *count) {
 	return res;
 }
 
-RZ_API bool rz_str_isnumber(const char *str) {
+RZ_API bool rz_str_isnumber(RZ_NULLABLE const char *str) {
 	if (!str || (!IS_DIGIT(*str) && *str != '-')) {
 		return false;
 	}
@@ -3266,11 +3283,11 @@ RZ_API bool rz_str_isnumber(const char *str) {
 }
 
 /* TODO: optimize to start searching by the end of the string */
-RZ_API const char *rz_str_last(const char *str, const char *ch) {
-	char *ptr, *end = NULL;
+RZ_API const char *rz_str_last(RZ_NULLABLE const char *str, RZ_NULLABLE const char *ch) {
 	if (!str || !ch) {
 		return NULL;
 	}
+	char *ptr, *end = NULL;
 	do {
 		ptr = strstr(str, ch);
 		if (!ptr) {
@@ -3358,7 +3375,7 @@ static char *strchr_skip_color_codes(const char *s, int c) {
 
 // Global buffer to speed up colorizing performance
 
-RZ_API char *rz_str_highlight(char *str, const char *word, const char *color, const char *color_reset) {
+RZ_API RZ_OWN char *rz_str_highlight(RZ_NULLABLE char *str, const char *word, const char *color, const char *color_reset) {
 	if (!str || !*str) {
 		return NULL;
 	}
@@ -3423,14 +3440,13 @@ RZ_API char *rz_str_highlight(char *str, const char *word, const char *color, co
 	return strdup(o);
 }
 
-RZ_API wchar_t *rz_str_mb_to_wc_l(const char *buf, int len) {
-	wchar_t *res_buf = NULL;
-	size_t sz;
-	bool fail = true;
-
+RZ_API RZ_OWN wchar_t *rz_str_mb_to_wc_l(RZ_NULLABLE const char *buf, int len) {
 	if (!buf || len <= 0) {
 		return NULL;
 	}
+	wchar_t *res_buf = NULL;
+	size_t sz;
+	bool fail = true;
 	sz = mbstowcs(NULL, buf, len);
 	if (sz == (size_t)-1) {
 		goto err_r_str_mb_to_wc;
@@ -3451,13 +3467,12 @@ err_r_str_mb_to_wc:
 	return res_buf;
 }
 
-RZ_API char *rz_str_wc_to_mb_l(const wchar_t *buf, int len) {
-	char *res_buf = NULL;
-	size_t sz;
-
+RZ_API RZ_OWN char *rz_str_wc_to_mb_l(RZ_NULLABLE const wchar_t *buf, int len) {
 	if (!buf || len <= 0) {
 		return NULL;
 	}
+	char *res_buf = NULL;
+	size_t sz;
 	sz = wcstombs(NULL, buf, 0);
 	if (sz == (size_t)-1) {
 		goto err_r_str_wc_to_mb;
@@ -3477,21 +3492,21 @@ err_r_str_wc_to_mb:
 	return NULL;
 }
 
-RZ_API char *rz_str_wc_to_mb(const wchar_t *buf) {
+RZ_API RZ_OWN char *rz_str_wc_to_mb(RZ_NULLABLE const wchar_t *buf) {
 	if (!buf) {
 		return NULL;
 	}
 	return rz_str_wc_to_mb_l(buf, wcslen(buf));
 }
 
-RZ_API wchar_t *rz_str_mb_to_wc(const char *buf) {
+RZ_API RZ_OWN wchar_t *rz_str_mb_to_wc(RZ_NULLABLE const char *buf) {
 	if (!buf) {
 		return NULL;
 	}
 	return rz_str_mb_to_wc_l(buf, strlen(buf));
 }
 
-RZ_API char *rz_str_from_ut64(ut64 val) {
+RZ_API RZ_OWN char *rz_str_from_ut64(ut64 val) {
 	int i = 0;
 	char *v = (char *)&val;
 	char *str = (char *)calloc(1, 9);
@@ -3504,7 +3519,8 @@ RZ_API char *rz_str_from_ut64(ut64 val) {
 	return str;
 }
 
-RZ_API int rz_snprintf(char *string, int len, const char *fmt, ...) {
+RZ_API int rz_snprintf(RZ_NONNULL char *string, int len, RZ_NONNULL const char *fmt, ...) {
+	rz_return_val_if_fail(string && fmt, 0);
 	va_list ap;
 	va_start(ap, fmt);
 	int ret = vsnprintf(string, len, fmt, ap);
@@ -3514,13 +3530,12 @@ RZ_API int rz_snprintf(char *string, int len, const char *fmt, ...) {
 }
 
 // Strips all the lines in str that contain key
-RZ_API void rz_str_stripLine(char *str, const char *key) {
-	size_t i, j, klen, slen, off;
-	const char *ptr;
-
+RZ_API void rz_str_stripLine(RZ_NULLABLE char *str, RZ_NULLABLE const char *key) {
 	if (!str || !key) {
 		return;
 	}
+	size_t i, j, klen, slen, off;
+	const char *ptr;
 	klen = strlen(key);
 	slen = strlen(str);
 
@@ -3549,7 +3564,7 @@ RZ_API void rz_str_stripLine(char *str, const char *key) {
 	}
 }
 
-RZ_API char *rz_str_list_join(RzList *str, const char *sep) {
+RZ_API RZ_OWN char *rz_str_list_join(RzList *str, RZ_NONNULL const char *sep) {
 	RzStrBuf *sb = rz_strbuf_new("");
 	const char *p;
 	while ((p = rz_list_pop_head(str))) {
@@ -3561,7 +3576,8 @@ RZ_API char *rz_str_list_join(RzList *str, const char *sep) {
 	return rz_strbuf_drain(sb);
 }
 
-RZ_API char *rz_str_array_join(const char **a, size_t n, const char *sep) {
+RZ_API RZ_OWN char *rz_str_array_join(RZ_NONNULL const char **a, size_t n, RZ_NONNULL const char *sep) {
+	rz_return_val_if_fail(a && sep, NULL);
 	RzStrBuf *sb = rz_strbuf_new("");
 	size_t i;
 
@@ -3577,7 +3593,8 @@ RZ_API char *rz_str_array_join(const char **a, size_t n, const char *sep) {
 }
 
 /* return the number of arguments expected as extra arguments */
-RZ_API int rz_str_fmtargs(const char *fmt) {
+RZ_API int rz_str_fmtargs(RZ_NONNULL const char *fmt) {
+	rz_return_val_if_fail(fmt, 0);
 	int n = 0;
 	while (*fmt) {
 		if (*fmt == '%') {
@@ -3600,19 +3617,23 @@ RZ_API const char *rz_str_bool(int b) {
 	return b ? "true" : "false";
 }
 
-RZ_API bool rz_str_is_true(const char *s) {
+RZ_API bool rz_str_is_true(RZ_NONNULL const char *s) {
+	rz_return_val_if_fail(s, false);
 	return !rz_str_casecmp("yes", s) || !rz_str_casecmp("on", s) || !rz_str_casecmp("true", s) || !rz_str_casecmp("1", s);
 }
 
-RZ_API bool rz_str_is_false(const char *s) {
+RZ_API bool rz_str_is_false(RZ_NONNULL const char *s) {
+	rz_return_val_if_fail(s, false);
 	return !rz_str_casecmp("no", s) || !rz_str_casecmp("off", s) || !rz_str_casecmp("false", s) || !rz_str_casecmp("0", s) || !*s;
 }
 
-RZ_API bool rz_str_is_bool(const char *val) {
+RZ_API bool rz_str_is_bool(RZ_NONNULL const char *val) {
+	rz_return_val_if_fail(val, false);
 	return rz_str_is_true(val) || rz_str_is_false(val);
 }
 
-RZ_API char *rz_str_nextword(char *s, char ch) {
+RZ_API char *rz_str_nextword(RZ_NONNULL char *s, char ch) {
+	rz_return_val_if_fail(s, NULL);
 	char *p = strchr(s, ch);
 	if (!p) {
 		return NULL;
@@ -3621,7 +3642,8 @@ RZ_API char *rz_str_nextword(char *s, char ch) {
 	return p;
 }
 
-RZ_API char *rz_str_scale(const char *s, int w, int h) {
+RZ_API RZ_OWN char *rz_str_scale(RZ_NONNULL const char *s, int w, int h) {
+	rz_return_val_if_fail(s, NULL);
 	// count lines and rows in (s) string
 	// compute how many lines we should remove or combine
 	// return a string containing
@@ -3664,7 +3686,7 @@ RZ_API char *rz_str_scale(const char *s, int w, int h) {
 	return join;
 }
 
-RZ_API const char *rz_str_str_xy(const char *s, const char *word, const char *prev, int *x, int *y) {
+RZ_API RZ_BORROW const char *rz_str_str_xy(RZ_NONNULL const char *s, RZ_NONNULL const char *word, const char *prev, int *x, int *y) {
 	rz_return_val_if_fail(s && word && x && y, NULL);
 	rz_return_val_if_fail(word[0] != '\0' && word[0] != '\n', NULL);
 	const char *src = prev ? prev + 1 : s;
@@ -3692,11 +3714,11 @@ RZ_API const char *rz_str_str_xy(const char *s, const char *word, const char *pr
  * space. Spaces at the beginning of \p string will be maintained, trailing
  * whitespaces at the end of each split line is removed.
  *
- * @param string a writable string, it will be modified by the function
- * @param width the maximum size of each line. It will be respected only if
+ * \param str a writable string, it will be modified by the function
+ * \param width the maximum size of each line. It will be respected only if
  *              possible, as the function won't split words.
  */
-RZ_API RzList *rz_str_wrap(char *str, size_t width) {
+RZ_API RZ_OWN RzList *rz_str_wrap(RZ_NONNULL char *str, size_t width) {
 	rz_return_val_if_fail(str, NULL);
 
 	RzList *res = rz_list_new();
@@ -3759,7 +3781,7 @@ RZ_API RzList *rz_str_wrap(char *str, size_t width) {
 #define RZ_STR_PKG_VERSION_STRING ""
 #endif
 
-RZ_API char *rz_str_version(const char *program) {
+RZ_API RZ_OWN char *rz_str_version(RZ_NULLABLE const char *program) {
 	RzStrBuf *sb = rz_strbuf_new(NULL);
 	if (program) {
 		rz_strbuf_appendf(sb, "%s ", program);

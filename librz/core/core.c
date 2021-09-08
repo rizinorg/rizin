@@ -1417,7 +1417,7 @@ static bool find_e_opts(RzCore *core, RzLineCompletion *completion, RzLineBuffer
 	}
 	RzListIter *iter;
 	char *option;
-	char *p = (char *)strchr(buf->data, '=');
+	const char *p = strchr(buf->data, '=');
 	p = rz_str_ichr(p + 1, ' ');
 	int n = strlen(p);
 	rz_list_foreach (node->options, iter, option) {
