@@ -631,19 +631,21 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 				parser_debug(state, "Union \"%s\" was forward-defined before\n", name);
 				if (!(*tpair = c_parser_new_union_naked_type(state, name))) {
 					parser_error(state, "Cannot create \"%s\" naked union type in the context\n", name);
-					return -1;
+					result = -1;
+					goto unexit;
 				}
-				return 0;
+				goto unexit;
 			}
 			// We still could create the "forward looking union declaration"
 			// The parser then can augment the definition
 			if (!(*tpair = c_parser_new_union_forward_definition(state, name))) {
 				parser_error(state, "Cannot create \"%s\" forward union definition in the context\n", name);
-				return -1;
+				result = -1;
+				goto unexit;
 			}
-			return 0;
+			goto unexit;
 		} else {
-			return 0;
+			goto unexit;
 		}
 	}
 
