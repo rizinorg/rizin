@@ -186,7 +186,7 @@ RzCoreSymCacheElement *rz_coresym_cache_element_new(RzBinFile *bf, RzBuffer *buf
 
 	if (UT32_MUL_OVFCHK(hdr->n_segments, sizeof(RzCoreSymCacheElementSegment))) {
 		goto beach;
-	} else if (UT32_MUL_OVFCHK(hdr->n_segments, sizeof(RzCoreSymCacheElementSection))) {
+	} else if (UT32_MUL_OVFCHK(hdr->n_sections, sizeof(RzCoreSymCacheElementSection))) {
 		goto beach;
 	} else if (UT32_MUL_OVFCHK(hdr->n_symbols, sizeof(RzCoreSymCacheElementSymbol))) {
 		goto beach;
