@@ -169,23 +169,6 @@ static const char *help_msg_oonn[] = {
 	NULL
 };
 
-static bool core_bin_reload(RzCore *r, const char *file, ut64 baseaddr) {
-	RzCoreFile *cf = rz_core_file_cur(r);
-	if (!cf) {
-		return false;
-	}
-	RzBinFile *obf = rz_bin_file_find_by_fd(r->bin, cf->fd);
-	if (!obf) {
-		return false;
-	}
-	RzBinFile *nbf = rz_bin_reload(r->bin, obf, baseaddr);
-	if (!nbf) {
-		return false;
-	}
-	rz_core_bin_apply_all_info(r, nbf);
-	return true;
-}
-
 // HONOR bin.at
 static void cmd_open_bin(RzCore *core, const char *input) {
 	const char *value = NULL;
@@ -329,7 +312,7 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 		// XXX: this will reload the bin using the buffer.
 		// An assumption is made that assumes there is an underlying
 		// plugin that will be used to load the bin (e.g. malloc://)
-		core_bin_reload(core, NULL, input[2] ? rz_num_math(core->num, input + 3) : 0);
+		rz_core_file_reload(core, NULL, input[2] ? rz_num_math(core->num, input + 3) : 0);
 		rz_core_block_read(core);
 		break;
 	case 'f':

@@ -368,6 +368,23 @@ RZ_API bool rz_core_bin_apply_all_info(RzCore *r, RzBinFile *binfile) {
 	return true;
 }
 
+RZ_API bool rz_core_file_reload(RzCore *r, const char *file, ut64 baseaddr) {
+	RzCoreFile *cf = rz_core_file_cur(r);
+	if (!cf) {
+		return false;
+	}
+	RzBinFile *obf = rz_bin_file_find_by_fd(r->bin, cf->fd);
+	if (!obf) {
+		return false;
+	}
+	RzBinFile *nbf = rz_bin_reload(r->bin, obf, baseaddr);
+	if (!nbf) {
+		return false;
+	}
+	rz_core_bin_apply_all_info(r, nbf);
+	return true;
+}
+
 static bool add_footer(RzCmdStateOutput *main_state, RzCmdStateOutput *state) {
 	if (state->mode == RZ_OUTPUT_MODE_TABLE) {
 		char *s = rz_table_tostring(state->d.t);
