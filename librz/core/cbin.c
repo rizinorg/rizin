@@ -2072,11 +2072,11 @@ RZ_API bool rz_core_bin_imports_print(RzCore *core, RzBinFile *bf, RzCmdStateOut
 
 		if (filter && filter->offset != UT64_MAX) {
 			if (!is_in_symbol_range(addr, 1, filter->offset)) {
-				continue;
+				goto next;
 			}
 		}
 		if (filter && filter->name && strcmp(import->name, filter->name)) {
-			continue;
+			goto next;
 		}
 
 		if (RZ_STR_ISNOTEMPTY(import->classname)) {
@@ -2142,6 +2142,7 @@ RZ_API bool rz_core_bin_imports_print(RzCore *core, RzBinFile *bf, RzCmdStateOut
 			rz_warn_if_reached();
 			break;
 		}
+	next:
 		RZ_FREE(symname);
 		RZ_FREE(libname);
 	}
