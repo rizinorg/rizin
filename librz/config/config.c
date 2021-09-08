@@ -547,12 +547,13 @@ RZ_API bool rz_config_unserialize(RZ_NONNULL RzConfig *config, RZ_NONNULL Sdb *d
 }
 
 RZ_API bool rz_config_eval(RzConfig *cfg, const char *str) {
-	char *s = rz_str_trim_dup(str);
-	char *eq = strchr(s, '=');
-	if (!eq) {
+	char *name = rz_str_trim_dup(str);
+	char *value = strchr(name, '=');
+	if (!value) {
 		return false;
 	}
-	*eq++ = 0;
-	rz_config_set(cfg, s, eq);
+	*value++ = 0;
+	rz_config_set(cfg, name, value);
+	free(name);
 	return true;
 }

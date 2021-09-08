@@ -1198,7 +1198,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			rz_core_seek(r, mapaddr, true);
 		}
 		rz_list_foreach (evals, iter, cmdn) {
-			rz_config_eval(r->config, opt.arg);
+			rz_config_eval(r->config, cmdn);
 			rz_cons_flush();
 		}
 		if (asmarch) {
@@ -1272,7 +1272,8 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		}
 
 		rz_list_foreach (evals, iter, cmdn) {
-			rz_config_eval(r->config, opt.arg);
+			rz_config_eval(r->config, cmdn);
+			rz_cons_flush();
 		}
 
 		// no flagspace selected by default the beginning
@@ -1295,7 +1296,8 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		rz_core_block_read(r);
 
 		rz_list_foreach (evals, iter, cmdn) {
-			rz_config_eval(r->config, opt.arg);
+			rz_config_eval(r->config, cmdn);
+			rz_cons_flush();			
 		}
 		if (asmarch) {
 			rz_config_set(r->config, "asm.arch", asmarch);
