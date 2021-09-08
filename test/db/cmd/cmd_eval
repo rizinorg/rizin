@@ -88,7 +88,7 @@ e scr.highlight.grep
 e scr.rainbow
 EOF
 EXPECT=<<EOF
-scr.highlight.grep  =scr.rainbow =true
+ scr.highlight.grep =scr.rainbow =true
 false
 false
 EOF

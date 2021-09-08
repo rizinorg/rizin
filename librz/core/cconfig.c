@@ -1808,7 +1808,9 @@ static void config_print_node(RzConfig *cfg, RzConfigNode *node, RzCmdStateOutpu
 		rz_cons_printf("%s=%s\n", node->name, node->value);
 		break;
 	case RZ_OUTPUT_MODE_RIZIN:
-		rz_cons_printf("e %s=%s\n", node->name, rz_cmd_escape_arg(node->value, RZ_CMD_ESCAPE_ONE_ARG));
+		es = rz_cmd_escape_arg(node->value, RZ_CMD_ESCAPE_ONE_ARG);
+		rz_cons_printf("e %s=%s\n", node->name, es);
+		free(es);
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
 		rz_cons_printf("%20s: %s\n", node->name,

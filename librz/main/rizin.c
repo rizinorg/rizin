@@ -1297,7 +1297,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 
 		rz_list_foreach (evals, iter, cmdn) {
 			rz_config_eval(r->config, cmdn);
-			rz_cons_flush();			
+			rz_cons_flush();
 		}
 		if (asmarch) {
 			rz_config_set(r->config, "asm.arch", asmarch);
