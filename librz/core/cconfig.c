@@ -1826,7 +1826,6 @@ RZ_API void rz_core_config_print_all(RzConfig *cfg, const char *str, RzCmdStateO
 	rz_return_if_fail(cfg);
 	RzConfigNode *node;
 	RzListIter *iter;
-	int len = 0;
 	PJ *pj = state->d.pj;
 	RzOutputMode mode = state->mode;
 
@@ -1836,13 +1835,8 @@ RZ_API void rz_core_config_print_all(RzConfig *cfg, const char *str, RzCmdStateO
 		pj_o(pj);
 	}
 
-	if (RZ_STR_ISNOTEMPTY(str)) {
-		len = strlen(str);
-		len--;
-	}
-
 	rz_list_foreach (cfg->nodes, iter, node) {
-		if (!str || (!strncmp(str, node->name, len))) {
+		if (rz_str_startswith(node->name, str)) {
 			config_print_node(cfg, node, state);
 		}
 	}
