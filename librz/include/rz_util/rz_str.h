@@ -214,7 +214,7 @@ RZ_API char *rz_str_escape_utf8_for_json(const char *s, int len);
 RZ_API char *rz_str_escape_mutf8_for_json(const char *s, int len);
 RZ_API char *rz_str_home(const char *str);
 RZ_API char *rz_str_rz_prefix(const char *str);
-RZ_API size_t rz_str_nlen(const char *s, int n);
+RZ_API size_t rz_str_nlen(const char *s, size_t n);
 RZ_API size_t rz_str_nlen_w(const char *s, int n);
 RZ_API size_t rz_wstr_clen(const char *s);
 RZ_API char *rz_str_prepend(char *ptr, const char *string);

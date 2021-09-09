@@ -579,7 +579,7 @@ RZ_API RZ_OWN char *rz_buf_get_nstring(RzBuffer *b, ut64 addr, size_t size) {
 			return NULL;
 		}
 
-		size_t count = strnlen(tmp, r);
+		size_t count = rz_str_nlen(tmp, r);
 		rz_strbuf_append_n(buf, tmp, count);
 
 		if (count > size) {
