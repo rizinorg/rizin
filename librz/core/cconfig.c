@@ -1822,6 +1822,13 @@ static void config_print_node(RzConfig *cfg, RzConfigNode *node, RzCmdStateOutpu
 	}
 }
 
+/**
+ * \brief Prints the configuation variables with their description and its values
+ *
+ * \param cfg reference to RzConfig
+ * \param str reference to the key that can be passed to filter the output
+ * \param state reference to RzCmdStateOutput
+ */
 RZ_API void rz_core_config_print_all(RzConfig *cfg, const char *str, RzCmdStateOutput *state) {
 	rz_return_if_fail(cfg);
 	RzConfigNode *node;
