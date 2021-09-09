@@ -6490,7 +6490,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "c", "compare memory", rz_cmd_cmp },
 		{ "C", "code metadata", rz_cmd_meta },
 		{ "d", "debugger operations", rz_cmd_debug },
-		{ "e", "evaluate configuration variable", rz_cmd_eval },
 		{ "f", "get/set flags", rz_cmd_flag },
 		{ "g", "egg manipulation", rz_cmd_egg },
 		{ "k", "perform sdb query", rz_cmd_kuery },

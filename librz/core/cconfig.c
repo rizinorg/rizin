@@ -1737,6 +1737,122 @@ RZ_API bool rz_core_esil_cmd(RzAnalysisEsil *esil, const char *cmd, ut64 a1, ut6
 	return false;
 }
 
+static void config_print_node(RzConfig *cfg, RzConfigNode *node, RzCmdStateOutput *state) {
+	rz_return_if_fail(cfg && node && state);
+	char *option;
+	bool isFirst;
+	RzOutputMode mode = state->mode;
+	PJ *pj = state->d.pj;
+	RzListIter *iter;
+	char *es = NULL;
+
+	switch (mode) {
+	case RZ_OUTPUT_MODE_JSON:
+		if (rz_str_isnumber(node->value)) {
+			pj_kn(pj, node->name, rz_num_math(NULL, node->value));
+			return;
+		} else if (rz_str_is_bool(node->value)) {
+			pj_kb(pj, node->name, (node->value));
+			return;
+		} else {
+			pj_ks(pj, node->name, node->value);
+		}
+		break;
+	case RZ_OUTPUT_MODE_LONG_JSON:
+		pj_o(pj);
+		pj_ks(pj, "name", node->name);
+		if (rz_str_isnumber(node->value)) {
+			pj_kn(pj, "value", rz_num_math(NULL, node->value));
+		} else if (rz_str_is_bool(node->value)) {
+			pj_kb(pj, "value", (node->value));
+		} else {
+			pj_ks(pj, "value", node->value);
+		}
+		pj_ks(pj, "type", rz_config_node_type(node));
+		es = rz_str_escape(node->desc);
+		if (es) {
+			pj_ks(pj, "desc", es);
+			free(es);
+		}
+		pj_kb(pj, "ro", rz_config_node_is_ro(node));
+		if (!rz_list_empty(node->options)) {
+			pj_ka(pj, "options");
+			rz_list_foreach (node->options, iter, option) {
+				pj_s(pj, option);
+			}
+			pj_end(pj);
+		}
+		pj_end(pj);
+		break;
+	case RZ_OUTPUT_MODE_LONG:
+		rz_cons_printf("%s = %s %s; %s",
+			node->name, node->value,
+			rz_config_node_is_ro(node) ? "(ro)" : "",
+			node->desc);
+		if (!rz_list_empty(node->options)) {
+			isFirst = true;
+			rz_cons_printf(" [");
+			rz_list_foreach (node->options, iter, option) {
+				if (isFirst) {
+					isFirst = false;
+				} else {
+					rz_cons_printf(", ");
+				}
+				rz_cons_printf("%s", option);
+			}
+			rz_cons_printf("]");
+		}
+		rz_cons_println("");
+		break;
+	case RZ_OUTPUT_MODE_QUIET:
+		rz_cons_printf("%s=%s\n", node->name, node->value);
+		break;
+	case RZ_OUTPUT_MODE_RIZIN:
+		es = rz_cmd_escape_arg(node->value, RZ_CMD_ESCAPE_ONE_ARG);
+		rz_cons_printf("e %s=%s\n", node->name, es);
+		free(es);
+		break;
+	case RZ_OUTPUT_MODE_STANDARD:
+		rz_cons_printf("%20s: %s\n", node->name,
+			node->desc ? node->desc : "");
+		break;
+	default:
+		rz_warn_if_reached();
+		break;
+	}
+}
+
+/**
+ * \brief Prints the configuation variables with their description and its values
+ *
+ * \param cfg reference to RzConfig
+ * \param str reference to the key that can be passed to filter the output
+ * \param state reference to RzCmdStateOutput
+ */
+RZ_API void rz_core_config_print_all(RzConfig *cfg, const char *str, RzCmdStateOutput *state) {
+	rz_return_if_fail(cfg);
+	RzConfigNode *node;
+	RzListIter *iter;
+	PJ *pj = state->d.pj;
+	RzOutputMode mode = state->mode;
+
+	if (mode == RZ_OUTPUT_MODE_LONG_JSON) {
+		pj_a(pj);
+	} else if (mode == RZ_OUTPUT_MODE_JSON) {
+		pj_o(pj);
+	}
+
+	rz_list_foreach (cfg->nodes, iter, node) {
+		if (rz_str_startswith(node->name, str)) {
+			config_print_node(cfg, node, state);
+		}
+	}
+
+	if (mode == RZ_OUTPUT_MODE_LONG_JSON || mode == RZ_OUTPUT_MODE_JSON) {
+		pj_end(pj);
+	}
+}
+
 static bool cb_cmd_esil_ioer(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -2789,7 +2905,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	if (!cfg) {
 		return 0;
 	}
-	cfg->cb_printf = rz_cons_printf;
 	cfg->num = core->num;
 	/* dir.prefix is used in other modules, set it first */
 	{

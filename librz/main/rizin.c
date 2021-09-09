@@ -519,7 +519,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			if (!strcmp(opt.arg, "q")) {
 				rz_core_cmd0(r, "eq");
 			} else {
-				rz_config_eval(r->config, opt.arg, false);
+				rz_config_eval(r->config, opt.arg);
 				rz_list_append(evals, (void *)opt.arg);
 			}
 			break;
@@ -1198,7 +1198,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			rz_core_seek(r, mapaddr, true);
 		}
 		rz_list_foreach (evals, iter, cmdn) {
-			rz_config_eval(r->config, cmdn, false);
+			rz_config_eval(r->config, cmdn);
 			rz_cons_flush();
 		}
 		if (asmarch) {
@@ -1272,7 +1272,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		}
 
 		rz_list_foreach (evals, iter, cmdn) {
-			rz_config_eval(r->config, cmdn, false);
+			rz_config_eval(r->config, cmdn);
 			rz_cons_flush();
 		}
 
@@ -1296,7 +1296,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		rz_core_block_read(r);
 
 		rz_list_foreach (evals, iter, cmdn) {
-			rz_config_eval(r->config, cmdn, false);
+			rz_config_eval(r->config, cmdn);
 			rz_cons_flush();
 		}
 		if (asmarch) {
