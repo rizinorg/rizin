@@ -377,7 +377,7 @@ tt boo_t
 EOF
 EXPECT=<<EOF
 foo_t = const char ***
-boo_t = const char *** const*** const* const* const
+boo_t = const char *** const *** const * const * const 
 EOF
 RUN
 
@@ -456,7 +456,7 @@ CMDS=<<EOF
 tf write
 EOF
 EXPECT=<<EOF
-ssize_t write(int fd, const char * ptr, size_t nbytes);
+ssize_t write(int fd, const char *ptr, size_t nbytes);
 EOF
 RUN
 
@@ -1897,7 +1897,7 @@ af
 tf main
 EOF
 EXPECT=<<EOF
-int main(int argc, char ** argv, char ** envp);
+int main(int argc, char **argv, char **envp);
 EOF
 RUN
 
@@ -1921,15 +1921,15 @@ e analysis.vars.stackname=true
 s 0x4e2420
 af
 afs
-"afs void no_type(int a, char ** b);"
+"afs void no_type(int a, char **b);"
 afs
-"afs char type(int a, char ** b);"
+"afs char type(int a, char **b);"
 afs
 EOF
 EXPECT=<<EOF
 void fcn.004e2420(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg5, int64_t arg6, int64_t arg_8h);
-void no_type(int a, char ** b);
-char type(int a, char ** b);
+void no_type(int a, char **b);
+char type(int a, char **b);
 EOF
 RUN
 
@@ -1958,7 +1958,7 @@ af
 afs
 EOF
 EXPECT=<<EOF
-size_t strlen(const char * s);
+size_t strlen(const char *s);
 EOF
 RUN
 

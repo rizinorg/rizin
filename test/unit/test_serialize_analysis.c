@@ -563,7 +563,6 @@ bool test_analysis_var_save() {
 	RzType *t_const_char_ptr = rz_type_pointer_of_base_type_str(analysis->typedb, "char", false);
 	mu_assert_notnull(t_const_char_ptr, "has char* type");
 	t_const_char_ptr->pointer.type->identifier.is_const = true;
-	eprintf("type is \"%s\"\n", rz_type_as_string(analysis->typedb, t_const_char_ptr));
 	RzBaseType *bt_struct_something = rz_type_base_type_new(RZ_BASE_TYPE_KIND_STRUCT);
 	mu_assert_notnull(bt_struct_something, "create struct something base type");
 	bt_struct_something->name = strdup("something");
@@ -628,7 +627,7 @@ bool test_analysis_var_load() {
 	RzType *t_uint64_t = rz_type_identifier_of_base_type_str(analysis->typedb, "uint64_t");
 	mu_assert_notnull(t_uint64_t, "has uint64_t type");
 	RzType *t_const_char_ptr = rz_type_pointer_of_base_type_str(analysis->typedb, "char", true);
-	mu_assert_notnull(t_const_char_ptr, "has const char* type");
+	mu_assert_notnull(t_const_char_ptr, "has \"const char *\" type");
 
 	RzRegItem *rax = rz_reg_get(analysis->reg, "rax", -1);
 	RzAnalysisVar *v = rz_analysis_function_get_var(f, RZ_ANALYSIS_VAR_KIND_REG, rax->index);
@@ -670,7 +669,6 @@ bool test_analysis_var_load() {
 	mu_assert_eq(v->type->kind, RZ_TYPE_KIND_POINTER, "var type");
 	mu_assert_notnull(v->type->pointer.type, "var type");
 	mu_assert_eq(v->type->pointer.type->kind, RZ_TYPE_KIND_IDENTIFIER, "var type");
-	eprintf("var type is \"%s\"\n", rz_type_as_string(analysis->typedb, v->type));
 	mu_assert_true(v->type->pointer.type->identifier.is_const, "var type");
 	mu_assert_true(rz_type_atomic_str_eq(analysis->typedb, v->type->pointer.type, "char"), "var type");
 	mu_assert("var arg", !v->isarg);
