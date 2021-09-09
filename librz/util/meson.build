@@ -15,6 +15,7 @@ rz_util_sources = [
   'calc.c',
   'chmod.c',
   'debruijn.c',
+  'ebcdic.c',
   'event.c',
   'file.c',
   'flist.c',
