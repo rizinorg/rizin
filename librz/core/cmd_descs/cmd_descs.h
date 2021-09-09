@@ -25,7 +25,6 @@ RZ_IPI RzCmdStatus rz_tasks_delete_all_handler(RzCore *core, int argc, const cha
 RZ_IPI RzCmdStatus rz_tasks_wait_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_cmd_macro(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_pointer_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI int rz_cmd_stdin(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_interpret_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_interpret_script_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_repeat_forward_handler(RzCore *core, int argc, const char **argv);
@@ -165,7 +164,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_heap_block_flag_handler(RzCore *core, int argc, 
 RZ_IPI int rz_cmd_debug_heap_jemalloc(void *data, const char *input);
 RZ_IPI int rz_cmd_debug(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_eval_getset_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI RzCmdStatus rz_eval_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+RZ_IPI RzCmdStatus rz_eval_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_eval_reset_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_eval_bool_invert_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_eval_color(void *data, const char *input);

@@ -489,10 +489,6 @@ static const RzCmdDescHelp pointer_help = {
 	.args = pointer_args,
 };
 
-static const RzCmdDescHelp cmd_stdin_help = {
-	.summary = "Open cfg.editor and run script",
-};
-
 static const RzCmdDescHelp dot__help = {
 	.summary = "Interpret commands",
 };
@@ -5520,9 +5516,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *pointer_cd = rz_cmd_desc_argv_new(core->rcmd, root_cd, "*", rz_pointer_handler, &pointer_help);
 	rz_warn_if_fail(pointer_cd);
 
-	RzCmdDesc *cmd_stdin_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "-", rz_cmd_stdin, &cmd_stdin_help);
-	rz_warn_if_fail(cmd_stdin_cd);
-
 	RzCmdDesc *dot__cd = rz_cmd_desc_group_new(core->rcmd, root_cd, ".", rz_interpret_handler, &interpret_help, &dot__help);
 	rz_warn_if_fail(dot__cd);
 	RzCmdDesc *interpret_script_cd = rz_cmd_desc_argv_new(core->rcmd, dot__cd, ". ", rz_interpret_script_handler, &interpret_script_help);
@@ -5919,7 +5912,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *e_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "e", rz_eval_getset_handler, &eval_getset_help, &e_help);
 	rz_warn_if_fail(e_cd);
-	RzCmdDesc *eval_list_cd = rz_cmd_desc_argv_modes_new(core->rcmd, e_cd, "el", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_LONG | RZ_OUTPUT_MODE_LONG_JSON, rz_eval_list_handler, &eval_list_help);
+	RzCmdDesc *eval_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, e_cd, "el", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_LONG | RZ_OUTPUT_MODE_LONG_JSON, rz_eval_list_handler, &eval_list_help);
 	rz_warn_if_fail(eval_list_cd);
 
 	RzCmdDesc *eval_reset_cd = rz_cmd_desc_argv_new(core->rcmd, e_cd, "e-", rz_eval_reset_handler, &eval_reset_help);

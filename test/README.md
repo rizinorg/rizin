@@ -161,6 +161,7 @@ You must end the test by adding RUN keyword
 
 * For portability reasons do not use shell pipes, use `~`
 * dont use `pd` if not necessary, use `pi`
+* All tests use the UTC timezone for consistency.
 
 # Unit tests
 

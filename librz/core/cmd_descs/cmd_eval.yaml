@@ -31,6 +31,7 @@ commands:
             comment: "Set asm.bytes to true and asm.offset to false"
   - name: el
     cname: eval_list
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
     summary: List config variables with their descriptions
     modes:
       - RZ_OUTPUT_MODE_STANDARD

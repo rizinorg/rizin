@@ -251,7 +251,7 @@ RZ_API RzList *rz_core_asm_strsearch(RzCore *core, const char *input, ut64 from,
 		idx = 0, matchcount = 0;
 		while (addrbytes * (idx + 1) <= core->blocksize) {
 			ut64 addr = at + idx;
-			if (addr >= to) {
+			if (addr > to) {
 				break;
 			}
 			rz_asm_set_pc(core->rasm, addr);

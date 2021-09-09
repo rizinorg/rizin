@@ -924,15 +924,6 @@ RZ_IPI RzCmdStatus rz_ls_handler(RzCore *core, int argc, const char **argv) {
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI int rz_cmd_stdin(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	if (input[0] == '?') {
-		rz_cons_printf("Usage: '-' '.-' '. -' do the same\n");
-		return false;
-	}
-	return rz_core_run_script(core, "-");
-}
-
 RZ_IPI int rz_cmd_interpret(void *data, const char *input) {
 	char *str, *ptr, *eol, *rbuf, *filter, *inp;
 	const char *host, *port, *cmd;
@@ -4497,8 +4488,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(arged_stmt) {
 			eprintf("Did you want to see the help? Try `%s` without any argument.\n", cmdname);
 		}
 	} else if (res == RZ_CMD_STATUS_ERROR) {
-		const char *cmdname = rz_cmd_parsed_args_cmd(pr_args);
-		RZ_LOG_DEBUG("Something wrong during the execution of `%s` command.\n", cmdname);
+		RZ_LOG_DEBUG("Something wrong during the execution of `%s` command.\n", rz_cmd_parsed_args_cmd(pr_args));
 	}
 
 err:
@@ -6489,7 +6479,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "&", "tasks", rz_cmd_tasks },
 		{ "(", "macro", rz_cmd_macro },
 		{ "*", "pointer read/write", rz_cmd_pointer },
-		{ "-", "open cfg.editor and run script", rz_cmd_stdin },
 		{ ".", "interpret", rz_cmd_interpret },
 		{ "/", "search kw, pattern aes", rz_cmd_search },
 		{ "R", "io pipe", rz_cmd_remote },
@@ -6501,7 +6490,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "c", "compare memory", rz_cmd_cmp },
 		{ "C", "code metadata", rz_cmd_meta },
 		{ "d", "debugger operations", rz_cmd_debug },
-		{ "e", "evaluate configuration variable", rz_cmd_eval },
 		{ "f", "get/set flags", rz_cmd_flag },
 		{ "g", "egg manipulation", rz_cmd_egg },
 		{ "k", "perform sdb query", rz_cmd_kuery },
