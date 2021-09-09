@@ -558,6 +558,7 @@ RZ_API bool rz_config_eval(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *str)
 	char *name = rz_str_trim_dup(str);
 	char *value = strchr(name, '=');
 	if (!value) {
+		free(name);
 		return false;
 	}
 	*value++ = 0;
