@@ -655,9 +655,6 @@ bool test_rz_str_nlen(void) {
 	mu_assert_eq(rz_str_nlen("A", 0), 0, "0 n should give 0");
 	mu_assert_eq(rz_str_nlen("A", 1), 1, "1 n should give 1");
 	mu_assert_eq(rz_str_nlen("A", 2), 1, "1 n should give 1 for 'A'");
-	mu_assert_eq(rz_str_nlen("A", -100), 0, "-100 n should give 0 for 'A'");
-	mu_assert_eq(rz_str_nlen("", -100), 0, "-100 n should give 0 for ''");
-	mu_assert_eq(rz_str_nlen(NULL, -100), 0, "-100 n should give 0 for NULL");
 	mu_end;
 }
 
