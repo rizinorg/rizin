@@ -491,12 +491,19 @@ NAME=enum32
 FILE==
 CMDS=<<EOF
 td "enum v { t=0x123, p=0x321 };"
+tcd v
+tc v
 tec v
 te v
 te v 0x123
 te v 0x321
 EOF
 EXPECT=<<EOF
+enum v {t = 291, p = 801};
+enum v {
+	t = 291,
+	p = 801
+};
 enum v {
 	t = 291,
 	p = 801
@@ -512,12 +519,19 @@ NAME=enum64
 FILE==
 CMDS=<<EOF
 td "enum v { t=0x8000000000000001, p=0x8000000000000008 };"
+tcd v
+tc v
 tec v
 te v
 te v 0x8000000000000001
 te v 0x8000000000000008
 EOF
 EXPECT=<<EOF
+enum v {t = 9223372036854775809, p = 9223372036854775816};
+enum v {
+	t = 9223372036854775809,
+	p = 9223372036854775816
+};
 enum v {
 	t = 9223372036854775809,
 	p = 9223372036854775816
