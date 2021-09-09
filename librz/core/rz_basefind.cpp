@@ -16,7 +16,7 @@
 //          rz_core_sources = ['rz_basefind.cpp', ...] - replace by 'rz_basefind.c'
 //TODO Implement multithreading.
 
-#include "rz_basefind.h"
+//#include "rz_basefind.h"
 #include <algorithm>
 #include <climits>
 #include <cstdint>
@@ -32,6 +32,10 @@ typedef uint32_t offset_t;
 typedef std::vector<std::pair<offset_t, unsigned>> ptable; //pointer table
 typedef std::unordered_set<offset_t> stable; //string table
 typedef std::vector<std::pair<offset_t, unsigned>> scorecard;
+//struct rz_basefind_t {
+//	offset_t offset;
+//	unsigned score;
+//} RzBasefinds;
 
 class stringScanner {
       private:

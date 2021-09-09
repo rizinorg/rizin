@@ -10,7 +10,7 @@ rz_core_sources = [
   'carg.c',
   'cautocmpl.c',
   'cbin.c',
-  'rz_basefind.cpp',
+  'rz_basefind.c',
   'cconfig.c',
   'cdebug.c',
   'cdwarf.c',

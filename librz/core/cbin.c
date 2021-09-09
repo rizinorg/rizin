@@ -4,6 +4,7 @@
 
 #include <rz_core.h>
 #include <rz_config.h>
+#include <rz_list.h>
 #include "rz_util.h"
 #include "rz_util/rz_time.h"
 #include <rz_basefind.h>
@@ -2807,9 +2808,63 @@ static int bin_symbols(RzCore *r, PJ *pj, int mode, int va, ut64 at, const char 
 }
 
 static int bin_basefind(RzCore *r, PJ *pj, int mode, int va) {
-	const char *infile = r->bin->file;
-	char *s = rz_bin_basefind(infile);
-	rz_cons_printf("%s\n", s);
+	//	const char *infile = r->bin->file;
+	//	char *rez = rz_bin_basefind(infile);
+	//	rz_cons_printf("%s\n", rez);
+
+	//	//как в вектро передовать структуры
+	//        RzVector *test_annotations = rz_vector_new(sizeof(RzCodeAnnotation), NULL, NULL);
+	//        RzCodeAnnotation annotation;
+	//        // rz_vector_init (&test_annotations, sizeof (RzCodeAnnotation), NULL, NULL);
+	//        //Code Annotations for a hello world program
+	//        annotation = make_code_annotation(1, 5, RZ_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT, 123, RZ_SYNTAX_HIGHLIGHT_TYPE_DATATYPE);
+	//        rz_vector_push(test_annotations, &annotation); //1
+	//	struct RzBasefinds {
+	//		uint32_t offset;
+	//		uint32_t score;
+	//	};
+	//	struct RzBasefinds basefinds;
+	//	basefinds.offset = 100;
+	//	basefinds.score = 100;
+	//	//rz_cons_printf("%u\n", basefinds.score);
+	//	RzVector *test_basefind = rz_vector_new(sizeof(struct RzBasefinds), NULL, NULL);
+	//	rz_vector_push(test_basefind, &basefinds);
+	//	rz_vector_push(test_basefind, &basefinds);
+	//	rz_vector_push(test_basefind, &basefinds);
+	//
+	//	struct RzBasefinds *it;
+	//	rz_vector_foreach(test_basefind, it) {
+	//		rz_cons_printf("%u %u \n", basefinds.score, basefinds.offset);
+	//	}
+	//
+	//	RzIO *io = rz_io_new();
+
+	// rz_io_write(r->io, (ut8 *)"ZZZZZZZZZZZZZZZ", 15);
+	int fileSize = 100;
+	RzVector *file = rz_vector_new(sizeof(ut8), NULL, NULL);
+	rz_vector_reserve(file, fileSize);
+	ut8 buf[fileSize];
+	//	rz_io_open(r->io, "file", RZ_PERM_R, 0);
+	rz_io_read(r->io, buf, fileSize);
+
+	for (int i = 0; i < sizeof(buf); ++i) {
+		printf("buf file %d\n", buf[i]);
+	}
+
+	//	rz_io_open(io, "malloc://15", RZ_PERM_RW, 0);
+	//	rz_io_write(io, (ut8 *)"ZZZZZZZZZZZZZZZ", 15);
+
+	//	char *in = "jfhjd";
+	//	rz_vector_push(file, &in);
+	//	rz_vector_push(file, &in);
+	//
+	//	ut64 sz = rz_io_size(r->io);
+	//	RzVector f;
+	//	rz_vector_init(&f, sizeof(ut8), NULL, NULL);
+	//
+	//	rz_io_read(r->io, file, rz_io_size(r->io));
+	//	rz_cons_printf("%lld\n", sz);
+	//	rz_cons_printf("%s\n", infile);
 }
 
 static char *build_hash_string(PJ *pj, int mode, const char *chksum, ut8 *data, ut32 datalen) {
