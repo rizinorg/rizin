@@ -991,7 +991,26 @@ int parse_enum_node(CParserState *state, TSNode node, const char *text, ParserTy
 			}
 			char *real_identifier = ts_node_sub_string(member_identifier, text);
 			parser_debug(state, "enum member: %s\n", real_identifier);
-			free(real_identifier);
+			// Add an enum case
+			RzVector *cases = &enum_pair->btype->enum_data.cases;
+			// In this case we just increment previous value by 1
+			st64 derived_val = 0;
+			if (!rz_vector_empty(cases)) {
+				RzTypeEnumCase *lastcase = rz_vector_tail(cases);
+				derived_val = lastcase->val + 1;
+			}
+			RzTypeEnumCase cas = {
+				.name = real_identifier,
+				.val = derived_val
+			};
+			void *element = rz_vector_push(cases, &cas); // returns null if no space available
+			if (!element) {
+				parser_error(state, "Error appending enum case to the base type\n");
+				free(cas.name);
+				free(enum_pair);
+				result = -1;
+				goto rexit;
+			}
 		} else {
 			// It's a proper field, like "A = 1,"
 			TSNode member_identifier = ts_node_child_by_field_name(child, "name", 4);

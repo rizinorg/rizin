@@ -372,6 +372,47 @@ static bool test_types_get_base_types_of_kind(void) {
 	mu_end;
 }
 
+static char *test_enum = "enum BLA { FOO = 0x1, BOO, GOO = 0xFFFF }";
+static char *test_enum_output = "enum BLA { FOO = 0x1, BOO = 0x2, GOO = 0xffff, }";
+
+static bool test_enum_types(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
+	const char *dir_prefix = rz_sys_prefix(NULL);
+	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
+
+	char *error_msg = NULL;
+	RzType *ttype = rz_type_parse_string_single(typedb->parser, test_enum, &error_msg);
+	mu_assert_notnull(ttype, "type parse successfull");
+	mu_assert_true(ttype->kind == RZ_TYPE_KIND_IDENTIFIER, "is identifier");
+	mu_assert_false(ttype->identifier.is_const, "identifier not const");
+	mu_assert_streq(ttype->identifier.name, "BLA", "BLA enum");
+
+	RzBaseType *base = rz_type_db_get_base_type(typedb, "BLA");
+	mu_assert_eq(RZ_BASE_TYPE_KIND_ENUM, base->kind, "not enum");
+	mu_assert_streq(base->name, "BLA", "type name");
+	mu_assert_streq_free(rz_type_db_base_type_as_string(typedb, base), test_enum_output, "enum type as string");
+
+	RzTypeEnumCase *cas;
+
+	cas = rz_vector_index_ptr(&base->enum_data.cases, 0);
+	mu_assert_streq(cas->name, "FOO", "Incorrect name for enum case 0");
+	mu_assert_eq(cas->val, 1, "Incorrect value for enum case 0");
+
+	cas = rz_vector_index_ptr(&base->enum_data.cases, 1);
+	mu_assert_streq(cas->name, "BOO", "Incorrect name for enum case 1");
+	mu_assert_eq(cas->val, 2, "Incorrect value for enum case 1");
+
+	cas = rz_vector_index_ptr(&base->enum_data.cases, 2);
+	mu_assert_streq(cas->name, "GOO", "Incorrect name for enum case 2");
+	mu_assert_eq(cas->val, 0xFFFF, "Incorrect value for enum case 2");
+
+	rz_type_free(ttype);
+	rz_type_db_free(typedb);
+	mu_end;
+}
+
 static bool test_const_types(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
@@ -654,6 +695,7 @@ int all_tests() {
 	mu_run_test(test_types_get_base_type_not_found);
 	mu_run_test(test_types_get_base_types);
 	mu_run_test(test_types_get_base_types_of_kind);
+	mu_run_test(test_enum_types);
 	mu_run_test(test_const_types);
 	mu_run_test(test_array_types);
 	mu_run_test(test_struct_func_types);
