@@ -308,6 +308,7 @@ int rz_test_main(int argc, const char **argv) {
 	}
 	atexit(rz_subprocess_fini);
 
+	rz_sys_setenv("TZ", "UTC");
 	ut64 time_start = rz_time_now_mono();
 	RzTestState state = { 0 };
 	state.run_config.rz_cmd = rizin_cmd ? rizin_cmd : RIZIN_CMD_DEFAULT;
