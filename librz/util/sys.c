@@ -44,7 +44,7 @@ static char **env = NULL;
 #if __APPLE__
 #include <errno.h>
 
-#if HAVE_ENVIRON
+#if HAVE_ENVIRON || __APPLE__
 #include <execinfo.h>
 #endif
 // iOS don't have this we can't hardcode
@@ -1259,7 +1259,9 @@ RZ_API char **rz_sys_get_environ(void) {
 
 RZ_API void rz_sys_set_environ(char **e) {
 	env = e;
-#if HAVE_ENVIRON
+#if __APPLE__ && !HAVE_ENVIRON
+	*_NSGetEnviron() = e;
+#elif HAVE_ENVIRON
 	environ = e;
 #endif
 }
