@@ -7,272 +7,522 @@
 #include <rz_util.h>
 #include <rz_type.h>
 #include <string.h>
-#include <sdb.h>
 
-// Function prototypes api
-RZ_API bool rz_type_func_exist(RzTypeDB *typedb, const char *func_name) {
-	rz_return_val_if_fail(typedb && func_name, false);
-	Sdb *TDB = typedb->sdb_types;
-	const char *fcn = sdb_const_get(TDB, func_name, 0);
-	return fcn && !strcmp(fcn, "func");
-}
-
-RZ_API bool rz_type_func_has_args(RzTypeDB *typedb, const char *func_name) {
-	rz_return_val_if_fail(typedb && func_name, false);
-	Sdb *TDB = typedb->sdb_types;
-	const char *query = sdb_fmt("func.%s.args", func_name);
-	const char *fcn = sdb_const_get(TDB, query, 0);
-	return (fcn != NULL);
-}
-
-RZ_API const char *rz_type_func_ret(RzTypeDB *typedb, const char *func_name) {
-	rz_return_val_if_fail(typedb && func_name, NULL);
-	Sdb *TDB = typedb->sdb_types;
-	const char *query = sdb_fmt("func.%s.ret", func_name);
-	return sdb_const_get(TDB, query, 0);
-}
-
-RZ_API const char *rz_type_func_cc(RzTypeDB *typedb, const char *func_name) {
-	rz_return_val_if_fail(typedb && func_name, NULL);
-	Sdb *TDB = typedb->sdb_types;
-	const char *query = sdb_fmt("func.%s.cc", func_name);
-	return sdb_const_get(TDB, query, 0);
-}
-
-RZ_API int rz_type_func_args_count(RzTypeDB *typedb, const char *func_name) {
-	rz_return_val_if_fail(typedb && func_name, 0);
-	Sdb *TDB = typedb->sdb_types;
-	const char *query = sdb_fmt("func.%s.args", func_name);
-	return sdb_num_get(TDB, query, 0);
-}
-
-RZ_API RZ_OWN char *rz_type_func_args_type(RzTypeDB *typedb, RZ_NONNULL const char *func_name, int i) {
-	rz_return_val_if_fail(typedb && func_name, NULL);
-	Sdb *TDB = typedb->sdb_types;
-	const char *query = sdb_fmt("func.%s.arg.%d", func_name, i);
-	char *ret = sdb_get(TDB, query, 0);
-	if (ret) {
-		char *comma = strchr(ret, ',');
-		if (comma) {
-			*comma = 0;
-			return ret;
-		}
-		free(ret);
-	}
-	return NULL;
-}
-
-RZ_API const char *rz_type_func_args_name(RzTypeDB *typedb, RZ_NONNULL const char *func_name, int i) {
-	rz_return_val_if_fail(typedb && func_name, NULL);
-	Sdb *TDB = typedb->sdb_types;
-	const char *query = sdb_fmt("func.%s.arg.%d", func_name, i);
-	const char *get = sdb_const_get(TDB, query, 0);
-	if (get) {
-		char *ret = strchr(get, ',');
-		return ret == 0 ? ret : ret + 1;
-	}
-	return NULL;
-}
-
-RZ_API bool rz_type_func_arg_count_set(RzTypeDB *typedb, RZ_NONNULL const char *func_name, int arg_count) {
-	rz_return_val_if_fail(typedb && func_name, NULL);
-	Sdb *TDB = typedb->sdb_types;
-	bool result = false;
-	RzStrBuf key, value;
-	rz_strbuf_init(&key);
-	rz_strbuf_init(&value);
-	if (!rz_strbuf_setf(&key, "func.%s.args", func_name) ||
-		!rz_strbuf_setf(&value, "%d", arg_count)) {
-		goto exit;
-	}
-	sdb_set(TDB, rz_strbuf_get(&key), rz_strbuf_get(&value), 0);
-exit:
-	rz_strbuf_fini(&key);
-	rz_strbuf_fini(&value);
-	return result;
-}
-
-RZ_API bool rz_type_func_arg_set(RzTypeDB *typedb, RZ_NONNULL const char *func_name, int i, RZ_NONNULL const char *arg_name, RZ_NONNULL const char *arg_type) {
-	rz_return_val_if_fail(typedb && func_name, NULL);
-	Sdb *TDB = typedb->sdb_types;
-	bool result = false;
-	RzStrBuf key, value;
-	rz_strbuf_init(&key);
-	rz_strbuf_init(&value);
-	if (!rz_strbuf_setf(&key, "func.%s.arg.%d", func_name, i) ||
-		!rz_strbuf_setf(&value, "%s,%s", arg_type, arg_name)) {
-		goto exit;
-	}
-	sdb_set(TDB, rz_strbuf_get(&key), rz_strbuf_get(&value), 0);
-exit:
-	rz_strbuf_fini(&key);
-	rz_strbuf_fini(&value);
-	return result;
-}
-
-RZ_API bool rz_type_func_ret_set(RzTypeDB *typedb, const char *func_name, const char *type) {
-	rz_return_val_if_fail(typedb && func_name && type, NULL);
-	Sdb *TDB = typedb->sdb_types;
-	char *sdb_type = rz_str_newf("type.%s", type);
-	if (!sdb_exists(TDB, sdb_type)) {
-		free(sdb_type);
-		return false;
-	}
-	free(sdb_type);
-	const char *query = sdb_fmt("func.%s.ret=%s", func_name, type);
-	return sdb_querys(TDB, NULL, 0, query);
-}
-
-#define MIN_MATCH_LEN 4
-
-static inline bool is_function(const char *name) {
-	return name && !strcmp("func", name);
-}
-
-static RZ_OWN char *type_func_try_guess(Sdb *TDB, RZ_NONNULL char *name) {
-	if (strlen(name) < MIN_MATCH_LEN) {
+/**
+ * \brief Creates a new RzCallable type
+ *
+ * \param name Name of the callable type
+ * \param type A return type of the callable type
+ */
+RZ_API RZ_OWN RzCallable *rz_type_callable_new(RZ_NULLABLE const char *name) {
+	RzCallable *callable = RZ_NEW0(RzCallable);
+	if (!callable) {
 		return NULL;
 	}
+	callable->ret = NULL;
+	callable->name = name ? strdup(name) : NULL;
+	callable->args = rz_pvector_new((RzPVectorFree)rz_type_callable_arg_free);
+	return callable;
+}
 
-	const char *res = sdb_const_get(TDB, name, NULL);
-	if (is_function(res)) {
-		return strdup(name);
+/**
+ * \brief Creates an exact clone of the RzCallable type
+ *
+ * \param callable RzCallable instance to clone
+ */
+RZ_API RZ_OWN RzCallable *rz_type_callable_clone(RZ_BORROW RZ_NONNULL const RzCallable *callable) {
+	rz_return_val_if_fail(callable, NULL);
+	RzCallable *newcallable = RZ_NEW0(RzCallable);
+	if (!newcallable) {
+		return NULL;
 	}
-
-	return NULL;
-}
-
-static inline bool is_auto_named(char *func_name, size_t slen) {
-	return slen > 4 && (rz_str_startswith(func_name, "fcn.") || rz_str_startswith(func_name, "loc."));
-}
-
-static inline bool has_rz_prefixes(char *func_name, int offset, size_t slen) {
-	return slen > 4 && (offset + 3 < slen) && func_name[offset + 3] == '.';
-}
-
-static char *strip_rz_prefixes(char *func_name, size_t slen) {
-	// strip r2 prefixes (sym, sym.imp, etc')
-	int offset = 0;
-
-	while (has_rz_prefixes(func_name, offset, slen)) {
-		offset += 4;
+	newcallable->ret = callable->ret ? rz_type_clone(callable->ret) : NULL;
+	newcallable->name = callable->name ? strdup(callable->name) : NULL;
+	newcallable->args = rz_pvector_new((RzPVectorFree)rz_type_callable_arg_free);
+	void **it;
+	rz_pvector_foreach (callable->args, it) {
+		RzCallableArg *arg = *it;
+		rz_pvector_push(newcallable->args, rz_type_callable_arg_clone(arg));
 	}
-
-	return func_name + offset;
+	return newcallable;
 }
 
-static char *strip_common_prefixes_stdlib(char *func_name) {
-	// strip common prefixes from standard lib functions
-	if (rz_str_startswith(func_name, "__isoc99_")) {
-		func_name += 9;
-	} else if (rz_str_startswith(func_name, "__libc_") && !strstr(func_name, "_main")) {
-		func_name += 7;
-	} else if (rz_str_startswith(func_name, "__GI_")) {
-		func_name += 5;
+/**
+ * \brief Frees the RzCallable
+ *
+ * \param callable RzCallable type
+ */
+RZ_API void rz_type_callable_free(RZ_NONNULL RzCallable *callable) {
+	rz_type_free(callable->ret);
+	rz_pvector_free(callable->args);
+	free(callable->name);
+	free(callable);
+}
+
+/**
+ * \brief Creates a new RzCallableArg given the name and type
+ *
+ * \param typedb RzTypeDB instance
+ * \param name Name of the argument
+ * \param type RzType type of the argument
+ */
+RZ_API RZ_OWN RzCallableArg *rz_type_callable_arg_new(RzTypeDB *typedb, RZ_NONNULL const char *name, RZ_OWN RZ_NONNULL RzType *type) {
+	rz_return_val_if_fail(typedb && name && type, NULL);
+	RzCallableArg *arg = RZ_NEW0(RzCallableArg);
+	if (!arg) {
+		return NULL;
 	}
-
-	return func_name;
+	arg->name = strdup(name);
+	arg->type = type;
+	return arg;
 }
 
-static char *strip_dll_prefix(char *func_name) {
-	char *tmp = strstr(func_name, "dll_");
-	if (tmp) {
-		return tmp + 3;
+/**
+ * \brief Creates am exact clone of RzCallableArg
+ *
+ * \param arg RzCallable argument pointer
+ */
+RZ_API RZ_OWN RzCallableArg *rz_type_callable_arg_clone(RZ_BORROW RZ_NONNULL const RzCallableArg *arg) {
+	rz_return_val_if_fail(arg, NULL);
+	RzCallableArg *newarg = RZ_NEW0(RzCallableArg);
+	if (!newarg) {
+		return NULL;
 	}
-
-	return func_name;
+	newarg->name = strdup(arg->name);
+	newarg->type = rz_type_clone(arg->type);
+	return newarg;
 }
 
-static void clean_function_name(char *func_name) {
-	char *last = (char *)rz_str_lchr(func_name, '_');
-	if (!last || !rz_str_isnumber(last + 1)) {
+/**
+ * \brief Frees the RzCallableArg
+ *
+ * \param arg RzCallableArg instance
+ */
+RZ_API void rz_type_callable_arg_free(RzCallableArg *arg) {
+	if (!arg) {
 		return;
 	}
-
-	*last = '\0';
+	free(arg->name);
+	rz_type_free(arg->type);
+	free(arg);
 }
 
-// TODO:
-// - symbol names are long and noisy, some of them might not be matched due
-//	 to additional information added around name
-RZ_API RZ_OWN char *rz_type_func_guess(RzTypeDB *typedb, RZ_NONNULL char *func_name) {
-	rz_return_val_if_fail(typedb && func_name, NULL);
-	Sdb *TDB = typedb->sdb_types;
-	char *str = func_name;
-	char *result = NULL;
+/**
+ * \brief Adds a new argument to the RzCallable
+ *
+ * \param callable RzCallable instance
+ * \param arg Argument to add
+ */
+RZ_API bool rz_type_callable_arg_add(RZ_NONNULL RzCallable *callable, RZ_OWN RZ_NONNULL RzCallableArg *arg) {
+	rz_return_val_if_fail(callable && arg, false);
+	rz_pvector_push(callable->args, arg);
+	return true;
+}
 
-	size_t slen = strlen(str);
-	if (slen < MIN_MATCH_LEN || is_auto_named(str, slen)) {
+// Function prototypes api
+
+/**
+ * \brief Creates a new RzCallable type
+ *
+ * \param typedb RzTypeDB instance
+ * \param name Name of the callable type
+ * \param type A return type of the callable type
+ */
+RZ_API RZ_OWN RzCallable *rz_type_func_new(RzTypeDB *typedb, RZ_NONNULL const char *name, RZ_OWN RZ_NULLABLE RzType *type) {
+	rz_return_val_if_fail(typedb && name, NULL);
+	RzCallable *callable = rz_type_callable_new(name);
+	if (!callable) {
 		return NULL;
 	}
+	callable->ret = type;
+	return callable;
+}
 
-	str = strip_rz_prefixes(str, slen);
-	str = strip_common_prefixes_stdlib(str);
-	str = strip_dll_prefix(str);
-
-	if ((result = type_func_try_guess(TDB, str))) {
-		return result;
+/**
+ * \brief Stores RzCallable type in the types database
+ *
+ * \param typedb Type Database instance
+ * \param callable RzCallable type to save
+ */
+RZ_API bool rz_type_func_save(RzTypeDB *typedb, RZ_NONNULL RzCallable *callable) {
+	rz_return_val_if_fail(typedb && callable && callable->name, NULL);
+	if (rz_type_func_exist(typedb, callable->name)) {
+		return false;
 	}
+	ht_pp_insert(typedb->callables, callable->name, callable);
+	return true;
+}
 
-	str = strdup(str);
-	clean_function_name(str);
-
-	if (*str == '_' && (result = type_func_try_guess(TDB, str + 1))) {
-		free(str);
-		return result;
+/**
+ * \brief Returns the RzCallable from the database by name
+ *
+ * \param typedb Type Database instance
+ * \param name RzCallable (function) name to search
+ */
+RZ_API RZ_BORROW RzCallable *rz_type_func_get(RzTypeDB *typedb, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(typedb && name, NULL);
+	bool found = false;
+	RzCallable *callable = ht_pp_find(typedb->callables, name, &found);
+	if (!found || !callable) {
+		RZ_LOG_DEBUG("Cannot find function type \"%s\"\n", name);
+		return NULL;
 	}
+	return callable;
+}
 
-	free(str);
+/**
+ * \brief Removes RzCallable type from the types database
+ *
+ * \param typedb Type Database instance
+ * \param name Name of the callable to search
+ */
+RZ_API bool rz_type_func_delete(RzTypeDB *typedb, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(typedb && name, NULL);
+	ht_pp_delete(typedb->callables, name);
+	return true;
+}
+
+static void callables_ht_free(HtPPKv *kv) {
+	rz_type_callable_free(kv->value);
+}
+
+/**
+ * \brief Removes all RzCallable types
+ */
+RZ_API void rz_type_func_delete_all(RzTypeDB *typedb) {
+	ht_pp_free(typedb->callables);
+	typedb->callables = ht_pp_new(NULL, callables_ht_free, NULL);
+}
+
+/**
+ * \brief Checks if the RzCallable type exists in the database given the name
+ *
+ * \param typedb Type Database instance
+ * \param name Name of the callable to search
+ */
+RZ_API bool rz_type_func_exist(RzTypeDB *typedb, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(typedb && name, false);
+	bool found = false;
+	return ht_pp_find(typedb->callables, name, &found) && found;
+}
+
+/**
+ * \brief Searches for the RzCallable type in types database and returns return type
+ *
+ * \param typedb Type Database instance
+ * \param name Name of the callable to search
+ */
+RZ_API RZ_BORROW RzType *rz_type_func_ret(RzTypeDB *typedb, const char *name) {
+	rz_return_val_if_fail(typedb && name, NULL);
+	RzCallable *callable = rz_type_func_get(typedb, name);
+	if (!callable) {
+		return NULL;
+	}
+	return callable->ret;
+}
+
+/**
+ * \brief Searches for the RzCallable type in types database and returns calling convention
+ *
+ * \param typedb Type Database instance
+ * \param name Name of the callable to search
+ */
+RZ_API RZ_BORROW const char *rz_type_func_cc(RzTypeDB *typedb, const char *name) {
+	rz_return_val_if_fail(typedb && name, NULL);
+	RzCallable *callable = rz_type_func_get(typedb, name);
+	if (!callable) {
+		return NULL;
+	}
+	return callable->cc;
+}
+
+/**
+ * \brief Searches for the RzCallable type in types database and set the calling convention
+ *
+ * \param typedb Type Database instance
+ * \param name Name of the callable to search
+ * \param name Name of the calling convention to set
+ */
+RZ_API bool rz_type_func_cc_set(RzTypeDB *typedb, const char *name, const char *cc) {
+	rz_return_val_if_fail(typedb && name, NULL);
+	RzCallable *callable = rz_type_func_get(typedb, name);
+	if (!callable) {
+		return false;
+	}
+	callable->cc = strdup(cc);
+	return true;
+}
+
+/**
+ * \brief Searches for the RzCallable type in types database and returns arguments' count
+ *
+ * \param typedb Type Database instance
+ * \param name Name of the callable to search
+ */
+RZ_API int rz_type_func_args_count(RzTypeDB *typedb, const char *name) {
+	rz_return_val_if_fail(typedb && name, 0);
+	RzCallable *callable = rz_type_func_get(typedb, name);
+	if (!callable) {
+		return -1;
+	}
+	return rz_pvector_len(callable->args);
+}
+
+/**
+ * \brief Searches for the RzCallable type in types database and returns argument type
+ *
+ * \param typedb Type Database instance
+ * \param name Name of the callable to search
+ * \param i Index of the argument go get type of
+ */
+RZ_API RZ_BORROW RzType *rz_type_func_args_type(RzTypeDB *typedb, RZ_NONNULL const char *name, int i) {
+	rz_return_val_if_fail(typedb && name, NULL);
+	RzCallable *callable = rz_type_func_get(typedb, name);
+	if (!callable) {
+		return NULL;
+	}
+	if (i >= rz_pvector_len(callable->args)) {
+		return NULL;
+	}
+	RzCallableArg *arg = *rz_pvector_index_ptr(callable->args, i);
+	if (!arg) {
+		rz_warn_if_reached(); // should not happen in the types database
+		return NULL;
+	}
+	return arg->type;
+}
+
+/**
+ * \brief Searches for the RzCallable type in types database and returns argument name
+ *
+ * \param typedb Type Database instance
+ * \param name Name of the callable to search
+ * \param i Index of the argument go get type of
+ */
+RZ_API RZ_BORROW const char *rz_type_func_args_name(RzTypeDB *typedb, RZ_NONNULL const char *name, int i) {
+	rz_return_val_if_fail(typedb && name, NULL);
+	RzCallable *callable = rz_type_func_get(typedb, name);
+	if (!callable) {
+		return NULL;
+	}
+	if (i >= rz_pvector_len(callable->args)) {
+		return NULL;
+	}
+	RzCallableArg *arg = *rz_pvector_index_ptr(callable->args, i);
+	if (!arg) {
+		rz_warn_if_reached(); // should not happen in the types database
+		return NULL;
+	}
+	return arg->name;
+}
+
+/**
+ * \brief Adds a new argument to the RzCallable type at the end of the arguments vector
+ *
+ * \param typedb Type Database instance
+ * \param func_name Name of the callable to search
+ * \param arg_name Name of the new argument
+ * \param arg_type RzType type of the new argument
+ */
+RZ_API bool rz_type_func_arg_add(RzTypeDB *typedb, RZ_NONNULL const char *func_name, RZ_NONNULL const char *arg_name, RZ_OWN RZ_NONNULL RzType *arg_type) {
+	rz_return_val_if_fail(typedb && func_name, NULL);
+	RzCallable *callable = rz_type_func_get(typedb, func_name);
+	if (!callable) {
+		return false;
+	}
+	RzCallableArg *arg = rz_type_callable_arg_new(typedb, arg_name, arg_type);
+	if (!arg) {
+		return false;
+	}
+	rz_pvector_push(callable->args, arg);
+	return true;
+}
+
+/**
+ * \brief Sets the new return type for the RzCallable
+ *
+ * \param typedb Type Database instance
+ * \param name Name of the callable to search
+ * \param type RzType return type
+ */
+RZ_API bool rz_type_func_ret_set(RzTypeDB *typedb, const char *name, RZ_OWN RZ_NONNULL RzType *type) {
+	rz_return_val_if_fail(typedb && name && type, NULL);
+	RzCallable *callable = rz_type_func_get(typedb, name);
+	if (!callable) {
+		return false;
+	}
+	callable->ret = type;
+	return true;
+}
+
+/**
+ * \brief Checks if the RzType is the pointer to the RzCallable
+ *
+ * \param typedb Types Database instance
+ * \param type RzCallable
+ */
+RZ_API bool rz_type_is_callable_ptr(RZ_NONNULL const RzType *type) {
+	rz_return_val_if_fail(type, NULL);
+	if (type->kind != RZ_TYPE_KIND_POINTER) {
+		return false;
+	}
+	if (type->pointer.type->kind == RZ_TYPE_KIND_CALLABLE) {
+		return true;
+	} else if (type->pointer.type->kind == RZ_TYPE_KIND_POINTER) {
+		return rz_type_is_callable_ptr(type->pointer.type);
+	}
+	return false;
+}
+
+static RZ_OWN char *callable_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzCallable *callable, bool is_ptr) {
+	rz_return_val_if_fail(typedb && callable, NULL);
+
+	RzStrBuf *buf = rz_strbuf_new("");
+	if (callable->noret) {
+		rz_strbuf_append(buf, "__attribute__((noreturn)) ");
+	}
+	const char *ret_str = callable->ret ? rz_type_as_string(typedb, callable->ret) : NULL;
+	const char *callable_name = is_ptr ? rz_str_newf("(*%s)", rz_str_get(callable->name)) : rz_str_get(callable->name);
+	rz_strbuf_appendf(buf, "%s %s(", ret_str ? ret_str : "void", callable_name);
+	void **it;
+	bool first = true;
+	rz_pvector_foreach (callable->args, it) {
+		RzCallableArg *arg = *it;
+		if (arg) {
+			char *argtype = rz_type_as_string(typedb, arg->type);
+			const char *comma = first ? "" : ", ";
+			rz_strbuf_appendf(buf, "%s%s %s", comma, argtype, rz_str_get(arg->name));
+			first = false;
+			free(argtype);
+		}
+	}
+	rz_strbuf_append(buf, ");");
+	char *result = rz_strbuf_drain(buf);
 	return result;
 }
 
-RZ_API RZ_OWN RzList *rz_type_noreturn_functions(RzTypeDB *typedb) {
-	rz_return_val_if_fail(typedb, NULL);
-	RzList *noretl = rz_list_newf(free);
-	SdbKv *kv;
-	SdbListIter *iter;
-	SdbList *l = sdb_foreach_list(typedb->sdb_types, true);
-	ls_foreach (l, iter, kv) {
-		const char *k = sdbkv_key(kv);
-		if (!strncmp(k, "func.", 5) && strstr(k, ".noreturn")) {
-			char *s = strdup(k + 5);
-			char *d = strchr(s, '.');
-			if (d) {
-				*d = 0;
-			}
-			rz_list_append(noretl, strdup(s));
-			free(s);
-		}
-		if (!strncmp(k, "addr.", 5)) {
-			char *off;
-			if (!(off = strdup(k + 5))) {
-				break;
-			}
-			char *ptr = strstr(off, ".noreturn");
-			if (ptr) {
-				*ptr = 0;
-				char *addr = rz_str_newf("0x%s", off);
-				rz_list_append(noretl, addr);
-			}
-			free(off);
-		}
+/**
+ * \brief Returns the callable pointer C representation
+ *
+ * \param typedb Types Database instance
+ * \param callable RzCallable instance
+ */
+RZ_API RZ_OWN char *rz_type_callable_ptr_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *type) {
+	rz_return_val_if_fail(typedb && type, NULL);
+	rz_return_val_if_fail(type->kind == RZ_TYPE_KIND_POINTER, NULL);
+
+	if (type->pointer.type->kind == RZ_TYPE_KIND_CALLABLE) {
+		return callable_as_string(typedb, type->pointer.type->callable, true);
+	} else {
+		return rz_type_callable_ptr_as_string(typedb, type->pointer.type);
 	}
-	ls_free(l);
-	return noretl;
 }
 
+/**
+ * \brief Returns the callable C representation
+ *
+ * \param typedb Types Database instance
+ * \param callable RzCallable instance
+ */
+RZ_API RZ_OWN char *rz_type_callable_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzCallable *callable) {
+	rz_return_val_if_fail(typedb && callable, NULL);
+	return callable_as_string(typedb, callable, false);
+}
+
+/**
+ * \brief Checks if the RzCallable type is defined as "noreturn"
+ *
+ * \param typedb Types Database instance
+ * \param name Name of the RzCallable type
+ */
 RZ_API bool rz_type_func_is_noreturn(RzTypeDB *typedb, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(typedb && name, false);
-	return sdb_bool_get(typedb->sdb_types, sdb_fmt("func.%s.noreturn", name), NULL);
+	RzCallable *callable = rz_type_func_get(typedb, name);
+	if (!callable) {
+		return NULL;
+	}
+	return callable->noret;
 }
 
+/**
+ * \brief Adds the "noreturn" attribute to the RzCallable type
+ *
+ * \param typedb Types Database instance
+ * \param name Name of the RzCallable type
+ */
 RZ_API bool rz_type_func_noreturn_add(RzTypeDB *typedb, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(typedb && name, false);
-	return sdb_bool_set(typedb->sdb_types, sdb_fmt("func.%s.noreturn", name), true, 0);
+	// If the function exists with the specified name already, we set the noreturn flag for it
+	RzCallable *callable = rz_type_func_get(typedb, name);
+	if (callable) {
+		callable->noret = true;
+	} else {
+		// If it doesn't - we create a new dummy RzCallable for it
+		// The return type is default and no arguments
+		callable = rz_type_func_new(typedb, name, NULL);
+		if (!callable) {
+			return false;
+		}
+		callable->noret = true;
+		rz_type_func_save(typedb, callable);
+	}
+	return true;
 }
 
+/**
+ * \brief Drops the "noreturn" attribute from the RzCallable type
+ *
+ * \param typedb Types Database instance
+ * \param name Name of the RzCallable type
+ */
 RZ_API bool rz_type_func_noreturn_drop(RzTypeDB *typedb, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(typedb && name, false);
-	sdb_unset(typedb->sdb_types, sdb_fmt("func.%s.noreturn", name), 0);
+	RzCallable *callable = rz_type_func_get(typedb, name);
+	if (!callable) {
+		return false;
+	}
+	callable->noret = false;
 	return true;
+}
+
+// Listing function types
+
+static bool function_names_collect_cb(void *user, const void *k, const void *v) {
+	RzList *l = (RzList *)user;
+	RzCallable *callable = (RzCallable *)v;
+	rz_list_append(l, strdup(callable->name));
+	return true;
+}
+
+/**
+ * \brief Returns the list of all function type names
+ *
+ * \param typedb Types Database instance
+ */
+RZ_API RZ_OWN RzList *rz_type_function_names(RzTypeDB *typedb) {
+	rz_return_val_if_fail(typedb, NULL);
+	RzList *result = rz_list_newf(free);
+	ht_pp_foreach(typedb->callables, function_names_collect_cb, result);
+	return result;
+}
+
+static bool noreturn_function_names_collect_cb(void *user, const void *k, const void *v) {
+	RzList *l = (RzList *)user;
+	RzCallable *callable = (RzCallable *)v;
+	if (callable->noret) {
+		rz_list_append(l, strdup(callable->name));
+	}
+	return true;
+}
+
+/**
+ * \brief Returns the list of all noreturn function type names
+ *
+ * \param typedb Types Database instance
+ */
+RZ_API RZ_OWN RzList *rz_type_noreturn_function_names(RzTypeDB *typedb) {
+	rz_return_val_if_fail(typedb, NULL);
+	RzList *noretl = rz_list_newf(free);
+	ht_pp_foreach(typedb->callables, noreturn_function_names_collect_cb, noretl);
+	return noretl;
 }

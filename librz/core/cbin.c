@@ -173,7 +173,20 @@ static ut64 rva(RzBinObject *o, ut64 paddr, ut64 vaddr, int va) {
 
 RZ_API void rz_core_bin_options_init(RzCore *core, RZ_OUT RzBinOptions *opts, int fd, ut64 baseaddr, ut64 loadaddr) {
 	rz_return_if_fail(core && opts);
-	rz_bin_options_init(opts, fd, baseaddr, loadaddr, rz_config_get_b(core->config, "bin.relocs"), core->bin->rawstr);
+
+	bool patch_relocs = rz_config_get_b(core->config, "bin.relocs");
+
+	rz_bin_options_init(
+		opts,
+		fd,
+		baseaddr,
+		loadaddr,
+		patch_relocs,
+		core->bin->rawstr);
+
+	opts->obj_opts.elf_load_sections = rz_config_get_b(core->config, "elf.load.sections");
+	opts->obj_opts.elf_checks_sections = rz_config_get_b(core->config, "elf.checks.sections");
+	opts->obj_opts.elf_checks_segments = rz_config_get_b(core->config, "elf.checks.segments");
 }
 
 RZ_API int rz_core_bin_set_by_fd(RzCore *core, ut64 bin_fd) {
@@ -227,15 +240,11 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 			} else if (IS_MODE_SET(mode)) {
 				char *code = rz_str_newf("%s;", v);
 				char *error_msg = NULL;
-				char *out = rz_type_parse_c_string(core->analysis->typedb, code, &error_msg);
-				free(code);
-				if (error_msg) {
+				RzTypeDB *typedb = core->analysis->typedb;
+				int result = rz_type_parse_string_stateless(typedb->parser, code, &error_msg);
+				if (result && error_msg) {
 					eprintf("%s", error_msg);
 					free(error_msg);
-				}
-				if (out) {
-					rz_type_db_save_parsed_type(core->analysis->typedb, out);
-					free(out);
 				}
 			}
 		}
@@ -449,7 +458,7 @@ RZ_API bool rz_core_bin_apply_strings(RzCore *r, RzBinFile *binfile) {
 		return false;
 	}
 	int va = (binfile->o && binfile->o->info && binfile->o->info->has_va) ? VA_TRUE : VA_FALSE;
-	rz_flag_space_set(r->flags, RZ_FLAGS_FS_STRINGS);
+	rz_flag_space_push(r->flags, RZ_FLAGS_FS_STRINGS);
 	rz_cons_break_push(NULL, NULL);
 	RzListIter *iter;
 	RzBinString *string;
@@ -474,6 +483,7 @@ RZ_API bool rz_core_bin_apply_strings(RzCore *r, RzBinFile *binfile) {
 		free(str);
 		free(f_name);
 	}
+	rz_flag_space_pop(r->flags);
 	rz_cons_break_pop();
 	return true;
 }
@@ -531,7 +541,7 @@ RZ_API bool rz_core_bin_apply_config(RzCore *r, RzBinFile *binfile) {
 		rz_config_set(r->config, "analysis.cc", info->default_cc);
 	}
 	const char *dir_prefix = rz_config_get(r->config, "dir.prefix");
-	char *spath = rz_str_newf("%s/" RZ_SDB_FCNSIGN "/spec.sdb", dir_prefix);
+	char *spath = rz_str_newf("%s/" RZ_SDB_TYPES "/spec.sdb", dir_prefix);
 	if (spath && rz_file_exists(spath)) {
 		sdb_concat_by_path(r->analysis->sdb_fmts, spath);
 	}
@@ -550,8 +560,9 @@ RZ_API bool rz_core_bin_apply_main(RzCore *r, RzBinFile *binfile, bool va) {
 		return false;
 	}
 	ut64 addr = va ? rz_bin_object_addr_with_base(o, binmain->vaddr) : binmain->paddr;
-	rz_flag_space_set(r->flags, RZ_FLAGS_FS_SYMBOLS);
+	rz_flag_space_push(r->flags, RZ_FLAGS_FS_SYMBOLS);
 	rz_flag_set(r->flags, "main", addr, r->blocksize);
+	rz_flag_space_pop(r->flags);
 	return true;
 }
 
@@ -610,6 +621,7 @@ RZ_API bool rz_core_bin_apply_entry(RzCore *core, RzBinFile *binfile, bool va) {
 	RzListIter *iter;
 	RzBinAddr *entry = NULL;
 	int i = 0, init_i = 0, fini_i = 0, preinit_i = 0;
+	rz_flag_space_push(core->flags, RZ_FLAGS_FS_SYMBOLS);
 	rz_list_foreach (entries, iter, entry) {
 		ut64 paddr = entry->paddr;
 		ut64 hpaddr = UT64_MAX;
@@ -625,7 +637,6 @@ RZ_API bool rz_core_bin_apply_entry(RzCore *core, RzBinFile *binfile, bool va) {
 		if (!type) {
 			type = "unknown";
 		}
-		rz_flag_space_set(core->flags, RZ_FLAGS_FS_SYMBOLS);
 		char str[RZ_FLAG_NAME_SIZE];
 		if (entry->type == RZ_BIN_ENTRY_TYPE_INIT) {
 			snprintf(str, RZ_FLAG_NAME_SIZE, "entry.init%i", init_i++);
@@ -641,6 +652,7 @@ RZ_API bool rz_core_bin_apply_entry(RzCore *core, RzBinFile *binfile, bool va) {
 			rz_meta_set(core->analysis, RZ_META_TYPE_DATA, hvaddr, entry->bits / 8, NULL);
 		}
 	}
+	rz_flag_space_pop(core->flags);
 	if (entry) {
 		ut64 at = rva(o, entry->paddr, entry->vaddr, va);
 		rz_core_seek(core, at, false);
@@ -829,7 +841,7 @@ RZ_API bool rz_core_bin_apply_sections(RzCore *core, RzBinFile *binfile, bool va
 	RzList *sections = o->sections;
 
 	// make sure both flag spaces exist.
-	rz_flag_space_set(core->flags, RZ_FLAGS_FS_SEGMENTS);
+	rz_flag_space_push(core->flags, RZ_FLAGS_FS_SEGMENTS);
 	rz_flag_space_set(core->flags, RZ_FLAGS_FS_SECTIONS);
 
 	bool segments_only = true;
@@ -887,6 +899,7 @@ RZ_API bool rz_core_bin_apply_sections(RzCore *core, RzBinFile *binfile, bool va
 			RZ_FREE(str);
 		}
 	}
+	rz_flag_space_pop(core->flags);
 
 	return true;
 }
@@ -1109,7 +1122,7 @@ RZ_API bool rz_core_bin_apply_relocs(RzCore *core, RzBinFile *binfile, bool va_b
 		}
 	}
 
-	rz_flag_space_set(core->flags, RZ_FLAGS_FS_RELOCS);
+	rz_flag_space_push(core->flags, RZ_FLAGS_FS_RELOCS);
 
 	Sdb *db = NULL;
 	char *sdb_module = NULL;
@@ -1134,6 +1147,7 @@ RZ_API bool rz_core_bin_apply_relocs(RzCore *core, RzBinFile *binfile, bool va_b
 	}
 	RZ_FREE(sdb_module);
 	sdb_free(db);
+	rz_flag_space_pop(core->flags);
 
 	return relocs != NULL;
 }
@@ -1327,7 +1341,7 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 	const char *lang = bin_demangle ? rz_config_get(core->config, "bin.lang") : NULL;
 
 	rz_spaces_push(&core->analysis->meta_spaces, "bin");
-	rz_flag_space_set(core->flags, RZ_FLAGS_FS_SYMBOLS);
+	rz_flag_space_push(core->flags, RZ_FLAGS_FS_SYMBOLS);
 
 	RzList *symbols = rz_bin_get_symbols(core->bin);
 	size_t count = 0;
@@ -1414,6 +1428,7 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 	}
 
 	rz_spaces_pop(&core->analysis->meta_spaces);
+	rz_flag_space_pop(core->flags);
 	return true;
 }
 
@@ -1428,7 +1443,7 @@ RZ_API bool rz_core_bin_apply_classes(RzCore *core, RzBinFile *binfile) {
 		return false;
 	}
 
-	rz_flag_space_set(core->flags, RZ_FLAGS_FS_CLASSES);
+	rz_flag_space_push(core->flags, RZ_FLAGS_FS_CLASSES);
 
 	RzListIter *iter;
 	RzBinClass *c;
@@ -1457,7 +1472,7 @@ RZ_API bool rz_core_bin_apply_classes(RzCore *core, RzBinFile *binfile) {
 			}
 		}
 	}
-
+	rz_flag_space_pop(core->flags);
 	return true;
 }
 
@@ -1478,7 +1493,7 @@ RZ_API bool rz_core_bin_apply_resources(RzCore *core, RzBinFile *binfile) {
 	if (!(sdb = sdb_ns_path(core->sdb, pe_path, 0))) {
 		return false;
 	}
-	rz_flag_space_set(core->flags, RZ_FLAGS_FS_RESOURCES);
+	rz_flag_space_push(core->flags, RZ_FLAGS_FS_RESOURCES);
 	while (true) {
 		char key[64];
 		char *timestr = sdb_get(sdb, rz_strf(key, "resource.%d.timestr", index), 0);
@@ -1490,6 +1505,7 @@ RZ_API bool rz_core_bin_apply_resources(RzCore *core, RzBinFile *binfile) {
 		rz_flag_set(core->flags, rz_strf(key, "resource.%d", index), vaddr, size);
 		index++;
 	}
+	rz_flag_space_pop(core->flags);
 	return true;
 }
 

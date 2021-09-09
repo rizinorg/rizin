@@ -399,7 +399,7 @@ RUN
 
 NAME=rz-ax -h~Usage?"
 FILE==
-CMDS=!!rz-ax -h~Usage?
+CMDS=!rz-ax -h~Usage?
 EXPECT=<<EOF
 1
 EOF

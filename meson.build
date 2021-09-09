@@ -267,6 +267,18 @@ if get_option('use_libuv')
   endif
 endif
 
+# handle tree-sitter
+r = run_command(py3_exe, check_meson_subproject_py, 'tree-sitter')
+if r.returncode() == 1 and get_option('subprojects_check')
+  error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+endif
+
+tree_sitter_dep = dependency('tree-sitter', required: get_option('use_sys_tree_sitter'), static: is_static_build, fallback: [])
+if not tree_sitter_dep.found()
+  tree_sitter_proj = subproject('tree-sitter', default_options: ['default_library=static'])
+  tree_sitter_dep = tree_sitter_proj.get_variable('tree_sitter_dep')
+endif
+
 has_debugger = get_option('debugger')
 have_ptrace = not ['windows', 'cygwin', 'sunos', 'haiku'].contains(host_machine.system())
 use_ptrace_wrap = ['linux'].contains(host_machine.system())
@@ -297,6 +309,7 @@ userconf.set10('HAVE_LIB_XXHASH', xxhash_dep.found())
 userconf.set10('USE_LIB_XXHASH', xxhash_dep.found())
 userconf.set10('DEBUGGER', has_debugger)
 userconf.set('PREFIX', rizin_prefix)
+userconf.set('BINDIR', rizin_bindir)
 userconf.set('LIBDIR', rizin_libdir)
 userconf.set('INCLUDEDIR', rizin_incdir)
 userconf.set('DATADIR_RZ', rizin_datdir_rz)
@@ -335,6 +348,11 @@ code = '#include <unistd.h>\nextern char **environ;\nint main() { char **env = e
 have_environ = cc.links(code, name: 'have extern char **environ')
 userconf.set10('HAVE_ENVIRON', have_environ)
 message('HAVE_ENVIRON: @0@'.format(have_environ))
+
+code = '#if __is_target_os(ios)\nint x = 0;\n#endif\nint main() { x++; }'
+is_ios = cc.links(code, name: 'target is ios')
+userconf.set10('IS_IOS', is_ios)
+message('IS_IOS: @0@'.format(is_ios))
 
 foreach item : [
     ['arc4random_uniform', '#include <stdlib.h>', []],

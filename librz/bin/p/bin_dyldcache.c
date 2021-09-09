@@ -58,12 +58,12 @@ static bool check_buffer(RzBuffer *buf) {
 	return !strcmp(hdr, "dyld_v1   arm64") || !strcmp(hdr, "dyld_v1  arm64e") || !strcmp(hdr, "dyld_v1  x86_64") || !strcmp(hdr, "dyld_v1 x86_64h");
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
 	RzDyldCache *cache = rz_dyldcache_new_buf(buf);
 	if (!cache) {
 		return false;
 	}
-	*bin_obj = cache;
+	obj->bin_obj = cache;
 	return true;
 }
 

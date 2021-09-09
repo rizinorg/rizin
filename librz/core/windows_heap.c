@@ -5,6 +5,7 @@
 #include <TlHelp32.h>
 #include <windows_heap.h>
 #include "..\..\debug\p\native\maps\windows_maps.h"
+#include "..\..\bin\pdb\pdb_downloader.h"
 
 /*
 *	Viewer discretion advised: Spaghetti code ahead
@@ -251,79 +252,112 @@ static void free_extra_info(PDEBUG_HEAP_INFORMATION heap) {
 	}
 }
 
+static inline bool has_heap_globals(void) {
+	return RtlpHpHeapGlobalsOffset && RtlpLFHKeyOffset;
+}
+
 static bool GetHeapGlobalsOffset(RzDebug *dbg, HANDLE h_proc) {
+	if (has_heap_globals()) {
+		return true;
+	}
+	RzCore *core = dbg->corebind.core;
 	RzList *modules = rz_w32_dbg_modules(dbg);
 	RzListIter *it;
 	RzDebugMap *map;
 	bool found = false;
-	const char ntdll[] = "ntdll.dll";
-	static ut64 lastNdtllAddr = 0;
 	rz_list_foreach (modules, it, map) {
-		if (!strncmp(map->name, ntdll, sizeof(ntdll))) {
+		if (!strcmp(map->name, "ntdll.dll")) {
 			found = true;
 			break;
 		}
 	}
 	if (!found) {
-		eprintf("ntdll.dll not loaded.");
+		eprintf("ntdll.dll not loaded.\n");
 		rz_list_free(modules);
 		return false;
 	}
-	bool doopen = lastNdtllAddr != map->addr;
-	char *ntdllopen = dbg->corebind.cmdstrf(dbg->corebind.core, "ob~%s", ntdll);
-	if (*ntdllopen) {
-		char *saddr = strtok(ntdllopen, " ");
-		size_t i;
-		for (i = 0; i < 3; i++) {
-			saddr = strtok(NULL, " ");
-		}
-		if (doopen) {
-			// Close to reopen at the right address
-			int fd = atoi(ntdllopen);
-			dbg->corebind.cmdstrf(dbg->corebind.core, "o-%d", fd);
-			RtlpHpHeapGlobalsOffset = RtlpLFHKeyOffset = 0;
-		}
+
+	ut64 baseaddr = map->addr;
+
+	// Open ntdll.dll file
+	int fd;
+	if ((fd = rz_io_fd_open(core->io, map->file, RZ_PERM_R, 0)) == -1) {
+		rz_list_free(modules);
+		return false;
 	}
 
-	if (doopen) {
-		char *ntdllpath = rz_lib_path("ntdll");
-		eprintf("Opening %s\n", ntdllpath);
-		dbg->corebind.cmdf(dbg->corebind.core, "o %s 0x%" PFMT64x "", ntdllpath, map->addr);
-		lastNdtllAddr = map->addr;
-		free(ntdllpath);
-	}
 	rz_list_free(modules);
 
-	if (!RtlpHpHeapGlobalsOffset || !RtlpLFHKeyOffset) {
-		char *res = dbg->corebind.cmdstrf(dbg->corebind.core, "idpi~RtlpHpHeapGlobals");
-		if (!*res) {
-			// Try downloading the pdb
-			free(res);
-			dbg->corebind.cmd(dbg->corebind.core, "idpd");
-			res = dbg->corebind.cmdstrf(dbg->corebind.core, "idpi~RtlpHpHeapGlobals");
+	// Load ntdll.dll in RzBin to get its GUID
+	RzBinOptions opt = { 0 };
+	opt.fd = fd;
+	opt.sz = rz_io_fd_size(core->io, fd);
+	opt.obj_opts.baseaddr = baseaddr;
+	RzBinFile *obf = rz_bin_cur(core->bin);
+	RzBinFile *bf = rz_bin_open_io(core->bin, &opt);
+	if (!bf) {
+		rz_io_fd_close(core->io, fd);
+		return false;
+	}
+	RzBinInfo *info = rz_bin_get_info(core->bin);
+	if (!info) {
+		goto fail;
+	}
+	char *pdb_path = rz_str_newf("%s\\ntdll.pdb\\%s\\ntdll.pdb",
+		rz_config_get(core->config, "pdb.symstore"), info->guid);
+	if (!pdb_path) {
+		goto fail;
+	}
+	if (!rz_file_exists(pdb_path)) {
+		// Download ntdll.pdb
+		SPDBOptions opts;
+		opts.user_agent = rz_config_get(core->config, "pdb.useragent");
+		opts.extract = rz_config_get_i(core->config, "pdb.extract");
+		opts.symbol_store_path = rz_config_get(core->config, "pdb.symstore");
+		opts.symbol_server = rz_config_get(core->config, "pdb.server");
+		if (rz_bin_pdb_download(core, NULL, false, &opts)) {
+			eprintf("Failed to download ntdll.pdb file\n");
+			free(pdb_path);
+			goto fail;
 		}
-		if (*res) {
-			RtlpHpHeapGlobalsOffset = rz_num_math(NULL, res);
-		} else {
-			free(res);
-			return false;
-		}
-		free(res);
-		res = dbg->corebind.cmdstrf(dbg->corebind.core, "idpi~RtlpLFHKey");
-		if (*res) {
-			RtlpLFHKeyOffset = rz_num_math(NULL, res);
-		}
-		free(res);
 	}
 
-	if (doopen) {
-		// Close ntdll.dll
-		char *res = dbg->corebind.cmdstrf(dbg->corebind.core, "o~%s", ntdll);
-		int fd = atoi(res);
-		free(res);
-		dbg->corebind.cmdf(dbg->corebind.core, "o-%d", fd);
+	// Get ntdll.dll PDB info and parse json output
+	PJ *pj = pj_new();
+	if (!rz_core_pdb_info(core, pdb_path, pj, RZ_MODE_JSON)) {
+		pj_free(pj);
+		free(pdb_path);
+		goto fail;
 	}
-	return true;
+	free(pdb_path);
+	char *j = pj_drain(pj);
+	RzJson *json = rz_json_parse(j);
+	if (!json) {
+		RZ_LOG_ERROR("rz_core_pdb_info returned invalid JSON");
+		free(j);
+		goto fail;
+	}
+
+	// Go through gvars array and search for the heap globals symbols
+	const RzJson *gvars = rz_json_get(json, "gvars");
+	gvars = gvars->children.first;
+	do {
+		const RzJson *gdata_name = rz_json_get(gvars, "gdata_name");
+		if (!strcmp(gdata_name->str_value, "RtlpHpHeapGlobals")) {
+			const RzJson *address = rz_json_get(gvars, "address");
+			RtlpHpHeapGlobalsOffset = address->num.u_value;
+		} else if (!strcmp(gdata_name->str_value, "RtlpLFHKey")) {
+			const RzJson *address = rz_json_get(gvars, "address");
+			RtlpLFHKeyOffset = address->num.u_value;
+		}
+	} while ((gvars = gvars->next) && !has_heap_globals());
+
+	free(json);
+fail:
+	rz_bin_file_delete(core->bin, bf);
+	rz_bin_file_set_cur_binfile(core->bin, obf);
+	rz_io_fd_close(core->io, fd);
+	return has_heap_globals();
 }
 
 static bool GetLFHKey(RzDebug *dbg, HANDLE h_proc, bool segment, WPARAM *lfhKey) {
@@ -390,8 +424,8 @@ static DWORD WINAPI __th_QueryDebugBuffer(void *param) {
 	params->fin = true;
 	if (params->hanged) {
 		RtlDestroyQueryDebugBuffer(params->db);
+		free(params);
 	}
-	free(params);
 	return 0;
 }
 

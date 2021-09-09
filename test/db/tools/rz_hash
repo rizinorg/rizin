@@ -403,7 +403,7 @@ RUN
 
 NAME=rz-hash -v~commit?"
 FILE==
-CMDS=!!rz-hash -v~commit?
+CMDS=!rz-hash -v~commit?
 EXPECT=<<EOF
 1
 EOF

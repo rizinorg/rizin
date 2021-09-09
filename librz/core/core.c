@@ -245,7 +245,10 @@ static char *getNameDelta(RzCore *core, ut64 addr) {
 	RzFlagItem *item = rz_flag_get_at(core->flags, addr, true);
 	if (item) {
 		if (item->offset != addr) {
-			return rz_str_newf("%s + %d", item->name, (int)(addr - item->offset));
+			const char *name = core->flags->realnames
+				? item->realname
+				: item->name;
+			return rz_str_newf("%s+%" PFMT64u, name, addr - item->offset);
 		}
 		return strdup(item->name);
 	}

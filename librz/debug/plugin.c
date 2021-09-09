@@ -51,20 +51,7 @@ RZ_API bool rz_debug_use(RzDebug *dbg, const char *str) {
 	if (dbg->cur->init) {
 		dbg->cur->init(dbg, &dbg->plugin_data);
 	}
-	if (dbg->cur->reg_profile) {
-		char *p = dbg->cur->reg_profile(dbg);
-		if (p) {
-			rz_reg_set_profile_string(dbg->reg, p);
-			if (dbg->analysis && dbg->reg != dbg->analysis->reg) {
-				rz_reg_free(dbg->analysis->reg);
-				dbg->analysis->reg = dbg->reg;
-			}
-			rz_reg_set_profile_string(dbg->reg, p);
-			free(p);
-		} else {
-			eprintf("Cannot retrieve reg profile from debug plugin (%s)\n", dbg->cur->name);
-		}
-	}
+	rz_debug_reg_profile_sync(dbg);
 	return true;
 }
 

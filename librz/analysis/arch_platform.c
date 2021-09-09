@@ -28,6 +28,7 @@ RZ_API RZ_OWN RzArchPlatformTarget *rz_arch_platform_target_new() {
 	target->platforms = ht_up_new0();
 	if (!target->platforms) {
 		free(target);
+		return NULL;
 	}
 	return target;
 }
@@ -56,7 +57,7 @@ RZ_API void rz_arch_platform_item_free(RzArchPlatformItem *item) {
 }
 
 static bool sdb_load_platform_profile(RZ_NONNULL RzArchPlatformTarget *t, RZ_NONNULL Sdb *sdb) {
-	rz_return_val_if_fail(t && sdb, NULL);
+	rz_return_val_if_fail(t && sdb, false);
 	SdbKv *kv;
 	SdbListIter *iter;
 	SdbList *l = sdb_foreach_list(sdb, false);
@@ -70,12 +71,12 @@ static bool sdb_load_platform_profile(RZ_NONNULL RzArchPlatformTarget *t, RZ_NON
 			argument_key = rz_str_newf("%s.address", item->name);
 			if (!argument_key) {
 				rz_arch_platform_item_free(item);
-				return NULL;
+				return false;
 			}
 			ut64 address = sdb_num_get(sdb, argument_key, NULL);
 			if (!address) {
 				rz_arch_platform_item_free(item);
-				return NULL;
+				return false;
 			}
 
 			argument_key = rz_str_newf("%s.comment", item->name);
@@ -90,7 +91,7 @@ static bool sdb_load_platform_profile(RZ_NONNULL RzArchPlatformTarget *t, RZ_NON
 }
 
 static bool sdb_load_arch_platform_by_path(RZ_NONNULL RzArchPlatformTarget *t, RZ_NONNULL const char *path) {
-	rz_return_val_if_fail(t && path, NULL);
+	rz_return_val_if_fail(t && path, false);
 	if (!path) {
 		return false;
 	}
@@ -111,7 +112,7 @@ static bool sdb_load_arch_platform_by_path(RZ_NONNULL RzArchPlatformTarget *t, R
  * \param path reference to path of the SDB file
  */
 RZ_API bool rz_arch_load_platform_sdb(RZ_NONNULL RzArchPlatformTarget *t, RZ_NONNULL const char *path) {
-	rz_return_val_if_fail(t && path, NULL);
+	rz_return_val_if_fail(t && path, false);
 	if (!path) {
 		return false;
 	}
@@ -135,7 +136,7 @@ RZ_API bool rz_arch_platform_init(RzArchPlatformTarget *t, RZ_NONNULL const char
 	if (!platform) {
 		return false;
 	}
-	rz_return_val_if_fail(arch && cpu && dir_prefix, NULL);
+	rz_return_val_if_fail(arch && cpu && dir_prefix, false);
 	char *path = rz_str_newf(RZ_JOIN_4_PATHS("%s", RZ_SDB, "asm/platforms", "%s-%s-%s.sdb"),
 		dir_prefix, arch, cpu, platform);
 	if (!path) {

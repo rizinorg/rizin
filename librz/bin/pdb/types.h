@@ -12,14 +12,12 @@
 
 // TODO: Move to a general macros in rz_util/rz_types
 
-///////////////////////////////////////////////////////////////////////////////
 #define GET_PAGE(pn, off, pos, page_size) \
 	{ \
 		(pn) = (pos) / (page_size); \
 		(off) = (pos) % (page_size); \
 	}
 
-///////////////////////////////////////////////////////////////////////////////
 #define READ_PAGES(start_indx, end_indx) \
 	{ \
 		for (i = start_indx; i < end_indx; i++) { \
@@ -29,13 +27,10 @@
 		} \
 	}
 
-///////////////////////////////////////////////////////////////////////////////
 #define SWAP_UINT16(x) (((x) >> 8) | ((x) << 8))
 
-///////////////////////////////////////////////////////////////////////////////
 #define SWAP_UINT32(x) (((x) >> 24) | (((x)&0x00FF0000) >> 8) | (((x)&0x0000FF00) << 8) | ((x) << 24))
 
-///////////////////////////////////////////////////////////////////////////////
 #define CAN_READ(curr_read_bytes, bytes_for_read, max_len) \
 	{ \
 		if ((((curr_read_bytes) + (bytes_for_read)) > (max_len))) { \
@@ -43,14 +38,12 @@
 		} \
 	}
 
-///////////////////////////////////////////////////////////////////////////////
 #define UPDATE_DATA(src, curr_read_bytes, bytes_for_read) \
 	{ \
 		(src) += (bytes_for_read); \
 		(curr_read_bytes) += (bytes_for_read); \
 	}
 
-///////////////////////////////////////////////////////////////////////////////
 #define PEEK_READ1(curr_read_bytes, max_len, dst, src, type_name) \
 	{ \
 		CAN_READ((curr_read_bytes), 1, (max_len)); \
@@ -71,7 +64,7 @@
 		CAN_READ((curr_read_bytes), 8, (max_len)); \
 		(dst) = (type_name)rz_read_le64(src); \
 	}
-///////////////////////////////////////////////////////////////////////////////
+
 #define READ1(curr_read_bytes, max_len, dst, src, type_name) \
 	{ \
 		PEEK_READ1((curr_read_bytes), (max_len), (dst), (src), type_name); \
@@ -96,7 +89,6 @@
 		UPDATE_DATA((src), (curr_read_bytes), 8); \
 	}
 
-///////////////////////////////////////////////////////////////////////////////
 #define PAD_ALIGN(pad, curr_read_bytes, src, max_len) \
 	{ \
 		int tmp = 0; \
@@ -119,28 +111,11 @@ typedef struct RZ_STREAM_FILE_ {
 } RZ_STREAM_FILE;
 
 typedef void (*free_func)(void *);
-typedef void (*get_value_name)(void *type, char **res_name);
-typedef void (*get_value)(void *type, int *res);
-typedef void (*get_value_name_len)(void *type, int *res);
-typedef void (*get_member_list)(void *type, RzList **l);
-typedef int (*get_arg_type_)(void *type, void **ret_type);
-typedef int (*get_val_type)(void *type, void **ret_type);
-
-typedef get_val_type get_element_type_;
-typedef get_val_type get_index_type_;
-typedef get_val_type get_base_type_;
-typedef get_arg_type_ get_derived_;
-typedef get_arg_type_ get_vshape_;
-typedef get_arg_type_ get_utype_;
-typedef get_val_type get_return_type_;
-typedef get_val_type get_class_type_;
-typedef get_val_type get_this_type_;
-typedef get_arg_type_ get_arglist_;
-typedef get_arg_type_ get_index_;
-typedef get_arg_type_ get_mlist_;
-typedef get_arg_type_ get_modified_type_;
-typedef get_value get_index_val;
-typedef get_value_name get_print_type_;
+typedef char *(*get_value_name)(void *type);
+typedef ut64 (*get_value)(void *type);
+typedef RzList *(*get_member_list)(void *type);
+typedef bool (*is_dwref_type)(void *type);
+typedef void (*get_print_type_)(void *type, char **name);
 
 // start of refactoring the simple type to mode and kind
 typedef enum {
@@ -233,6 +208,7 @@ typedef enum {
 	eT_NOTTRANS = 0x00000007,
 	eT_BIT = 0x00000060,
 	eT_PASCHAR = 0x00000061,
+	T_BOOL32FF = 0x00000062,
 
 	eT_CHAR = 0x00000010,
 	eT_PCHAR = 0x00000110,
@@ -265,6 +241,22 @@ typedef enum {
 	eT_32PWCHAR = 0x00000471,
 	eT_32PFWCHAR = 0x00000571,
 	eT_64PWCHAR = 0x00000671,
+
+	eT_CHAR16 = 0x0000007a, // 16-bit unicode char
+	eT_PCHAR16 = 0x0000017a, // 16 bit pointer to a 16-bit unicode char
+	eT_PFCHAR16 = 0x0000027a, // 16:16 far pointer to a 16-bit unicode char
+	eT_PHCHAR16 = 0x0000037a, // 16:16 huge pointer to a 16-bit unicode char
+	eT_32PCHAR16 = 0x0000047a, // 32 bit pointer to a 16-bit unicode char
+	eT_32PFCHAR16 = 0x0000057a, // 16:32 pointer to a 16-bit unicode char
+	eT_64PCHAR16 = 0x0000067a, // 64 bit pointer to a 16-bit unicode char
+
+	eT_CHAR32 = 0x0000007b, // 32-bit unicode char
+	eT_PCHAR32 = 0x0000017b, // 16 bit pointer to a 32-bit unicode char
+	eT_PFCHAR32 = 0x0000027b, // 16:16 far pointer to a 32-bit unicode char
+	eT_PHCHAR32 = 0x0000037b, // 16:16 huge pointer to a 32-bit unicode char
+	eT_32PCHAR32 = 0x0000047b, // 32 bit pointer to a 32-bit unicode char
+	eT_32PFCHAR32 = 0x0000057b, // 16:32 pointer to a 32-bit unicode char
+	eT_64PCHAR32 = 0x0000067b, // 64 bit pointer to a 32-bit unicode char
 
 	eT_BYTE = 0x00000068,
 	eT_PBYTE = 0x00000168,
@@ -410,6 +402,14 @@ typedef enum {
 	eT_32PFUINT128 = 0x00000579,
 	eT_64PUINT128 = 0x00000679,
 
+	eT_REAL16 = 0x00000046, // 16 bit real
+	eT_PREAL16 = 0x00000146, // 16 bit pointer to 16 bit real
+	eT_PFREAL16 = 0x00000246, // 16:16 far pointer to 16 bit real
+	eT_PHREAL16 = 0x00000346, // 16:16 huge pointer to 16 bit real
+	eT_32PREAL16 = 0x00000446, // 32 bit pointer to 16 bit real
+	eT_32PFREAL16 = 0x00000546, // 16:32 pointer to 16 bit real
+	eT_64PREAL16 = 0x00000646, // 64 bit pointer to 16 bit real
+
 	eT_REAL32 = 0x00000040,
 	eT_PREAL32 = 0x00000140,
 	eT_PFREAL32 = 0x00000240,
@@ -417,6 +417,14 @@ typedef enum {
 	eT_32PREAL32 = 0x00000440,
 	eT_32PFREAL32 = 0x00000540,
 	eT_64PREAL32 = 0x00000640,
+
+	eT_REAL32PP = 0x00000045, //PP real
+	eT_PREAL32PP = 0x00000145,
+	eT_PFREAL32PP = 0x00000245,
+	eT_PHREAL32PP = 0x00000345,
+	eT_32PREAL32PP = 0x00000445,
+	eT_32PFREAL32PP = 0x00000545,
+	eT_64PREAL32PP = 0x00000645,
 
 	eT_REAL48 = 0x00000044,
 	eT_PREAL48 = 0x00000144,
@@ -553,7 +561,10 @@ typedef enum {
 	eTRICALL = 0x00000013,
 	eSH5CALL = 0x00000014,
 	eM32RCALL = 0x00000015,
-	eRESERVED = 0x00000016,
+	eCLRCALL = 0x00000016,
+	eINLINE = 0x00000017,
+	eNEAR_VEC = 0X00000018,
+	eRESERVED = 0x00000019,
 	eMAX_CV_CALL
 } ECV_CALL;
 
@@ -618,11 +629,21 @@ typedef union {
 	ut16 fldattr;
 } UCV_fldattr;
 
+typedef union {
+	struct CV_funcattr {
+		unsigned char cxxreturnudt : 1; // true if C++ style ReturnUDT
+		unsigned char ctor : 1; // true if func is an instance constructor
+		unsigned char ctorvbase : 1; // true if func is an instance constructor of a class with virtual bases
+		unsigned char unused : 5; // unused
+	} bits;
+	ut8 funcattr;
+} UCV_funcattr;
+
 RZ_PACKED(
 	typedef struct {
 		ut16 return_type;
 		ECV_CALL call_conv;
-		ut8 reserved;
+		UCV_funcattr func_attr;
 		ut16 parm_count;
 		ut32 arg_list;
 		ut8 pad;
@@ -635,7 +656,7 @@ RZ_PACKED(
 		ut32 class_type;
 		ut32 this_type;
 		ECV_CALL call_conv; // 1 byte
-		ut8 reserved;
+		UCV_funcattr func_attr;
 		ut16 parm_count;
 		ut32 arglist;
 		st32 this_adjust;
@@ -792,57 +813,18 @@ SNoVal;
 
 RZ_PACKED(
 	typedef struct {
-		char value;
-		SCString name;
+		ut16 type_index;
+		void *data;
+		bool is_integer;
 	})
-SVal_LF_CHAR;
-
-RZ_PACKED(
-	typedef struct {
-		st16 value;
-		SCString name;
-	})
-SVal_LF_SHORT;
-
-RZ_PACKED(
-	typedef struct {
-		ut16 value;
-		SCString name;
-	})
-SVal_LF_USHORT;
-
-typedef struct {
-	st32 value;
-	SCString name;
-} SVal_LF_LONG;
-
-typedef struct {
-	ut32 value;
-	SCString name;
-} SVal_LF_ULONG;
-
-typedef struct {
-	st64 value;
-	SCString name;
-} SVal_LF_QUADWORD;
-
-typedef struct {
-	ut64 value;
-	SCString name;
-} SVal_LF_UQUADWORD;
-
-RZ_PACKED(
-	typedef struct {
-		ut16 value_or_type;
-		void *name_or_val;
-	})
-SVal;
+SNumeric;
 
 RZ_PACKED(
 	typedef struct {
 		ut32 element_type;
 		ut32 index_type;
-		SVal size;
+		SNumeric size;
+		SCString name;
 		ut8 pad;
 	})
 SLF_ARRAY;
@@ -854,7 +836,8 @@ RZ_PACKED(
 		ut32 field_list; // type index of LF_FIELD descriptor list
 		ut32 derived; // type index of derived from list if not zero
 		ut32 vshape; // type index of vshape table for this class
-		SVal size;
+		SNumeric size;
+		SCString name;
 		ut8 pad;
 	})
 SLF_STRUCTURE,
@@ -862,10 +845,26 @@ SLF_STRUCTURE,
 
 RZ_PACKED(
 	typedef struct {
+		UCV_PROPERTY prop; // // property attribute field
+		ut16 unknown;
+		ut32 field_list; // type index of LF_FIELD descriptor list
+		ut32 derived; // type index of derived from list if not zero
+		ut32 vshape; // type index of vshape table for this class
+		st16 unknown1;
+		SNumeric size;
+		SCString name;
+		ut8 pad;
+	})
+SLF_STRUCTURE_19,
+	SLF_CLASS_19;
+
+RZ_PACKED(
+	typedef struct {
 		ut16 count;
 		UCV_PROPERTY prop;
 		ut32 field_list;
-		SVal size;
+		SNumeric size;
+		SCString name;
 		ut32 pad;
 	})
 SLF_UNION;
@@ -901,7 +900,8 @@ SLF_ENUM;
 RZ_PACKED(
 	typedef struct {
 		UCV_fldattr fldattr;
-		SVal enum_value;
+		SNumeric enum_value;
+		SCString name;
 		ut8 pad;
 
 		free_func free_;
@@ -920,6 +920,13 @@ SLF_NESTTYPE;
 
 RZ_PACKED(
 	typedef struct {
+		ut16 pad;
+		ut32 index;
+	})
+SLF_VFUNCTAB;
+
+RZ_PACKED(
+	typedef struct {
 		ut16 count;
 		ut32 mlist;
 		SCString name;
@@ -933,7 +940,8 @@ RZ_PACKED(
 	typedef struct {
 		UCV_fldattr fldattr;
 		ut32 index;
-		SVal offset;
+		SNumeric offset;
+		SCString name;
 		ut8 pad;
 
 		// TODO: remove free_
@@ -943,19 +951,33 @@ SLF_MEMBER;
 
 RZ_PACKED(
 	typedef struct {
-		ut32 val;
-		SCString str_data;
+		UCV_fldattr fldattr;
+		ut32 index;
+		ut32 offset_in_vtable;
+		SCString name;
+		ut8 pad;
 	})
-SLF_ONEMETHOD_VAL;
+SLF_ONEMETHOD;
 
 RZ_PACKED(
 	typedef struct {
 		UCV_fldattr fldattr;
 		ut32 index;
-		SLF_ONEMETHOD_VAL val;
+		SNumeric offset;
 		ut8 pad;
 	})
-SLF_ONEMETHOD;
+SLF_BCLASS;
+
+RZ_PACKED(
+	typedef struct {
+		UCV_fldattr fldattr;
+		ut32 direct_vbclass_idx;
+		ut32 vb_pointer_idx;
+		SNumeric vb_pointer_offset;
+		SNumeric vb_offset_from_vbtable;
+	})
+SLF_VBCLASS,
+	SLF_IVBCLASS;
 
 typedef struct {
 	//	ELeafType leaf_type;
@@ -1103,6 +1125,15 @@ typedef enum {
 	eLF_MEMBERMODIFY = 0x00001513, // type record for modifications to members
 	eLF_MANAGED = 0x00001514,
 	eLF_TYPESERVER2 = 0x00001515, // type record describing using of a type server with v7 (GUID) signatures
+	eLF_FUNCTION_ID = 0x00001601,
+	eLF_MEMBER_FUNCTION_ID = 0x00001602,
+	eLF_BUILD_INFO = 0x00001603,
+	eLF_SUBSTRING_LIST = 0x00001604,
+	eLF_STRING_ID = 0x00001605,
+	eLF_USER_DEFINED_TYPE_SOURCE_AND_LINE = 0x00001606,
+	eLF_USER_DEFINED_TYPE_MODULE_SOURCE_AND_LINE = 0x00001607,
+	eLF_CLASS_19 = 0x00001608,
+	eLF_STRUCTURE_19 = 0x00001609,
 
 	/**     the following are numeric leaves.  They are used to indicate the
 	*      size of the following variable length data.  When the numeric
@@ -1160,24 +1191,9 @@ RZ_PACKED(
 		free_func free_;
 		get_value_name get_name;
 		get_value get_val;
-		get_value_name_len get_name_len;
 		get_member_list get_members;
-		get_arg_type_ get_arg_type;
-		get_element_type_ get_element_type;
-		get_index_type_ get_index_type;
-		get_base_type_ get_base_type;
-		get_derived_ get_derived;
-		get_vshape_ get_vshape;
-		get_utype_ get_utype;
-		get_return_type_ get_return_type;
-		get_class_type_ get_class_type;
-		get_this_type_ get_this_type;
-		get_arglist_ get_arglist;
-		get_index_ get_index;
-		get_mlist_ get_mlist;
-		get_modified_type_ get_modified_type;
-		get_value is_fwdref;
 		get_print_type_ get_print_type;
+		is_dwref_type is_fwdref;
 	})
 STypeInfo;
 

@@ -106,6 +106,7 @@ RZ_API bool rz_buf_prepend_bytes(RzBuffer *b, const ut8 *buf, ut64 length);
 RZ_API st64 rz_buf_insert_bytes(RzBuffer *b, ut64 addr, const ut8 *buf, ut64 length);
 RZ_API char *rz_buf_to_string(RzBuffer *b);
 RZ_API char *rz_buf_get_string(RzBuffer *b, ut64 addr);
+RZ_API char *rz_buf_get_nstring(RzBuffer *b, ut64 addr, size_t size);
 RZ_API st64 rz_buf_read(RzBuffer *b, ut8 *buf, ut64 len);
 RZ_API ut8 rz_buf_read8(RzBuffer *b);
 RZ_API st64 rz_buf_fread(RzBuffer *b, ut8 *buf, const char *fmt, int n);

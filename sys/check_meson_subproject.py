@@ -43,9 +43,8 @@ try:
             subproject_dir = os.path.join(meson_root, "subprojects", directory)
             subproject_git_dir = os.path.join(subproject_dir, ".git")
             if os.path.isdir(subproject_dir) and os.path.isdir(subproject_git_dir):
-                head = (
-                    open(os.path.join(subproject_git_dir, "HEAD"), "r").read().strip()
-                )
+                with open(os.path.join(subproject_git_dir, "HEAD"), "r") as f:
+                    head = f.read().strip()
                 if head != revision:
                     sys.exit(1)
 

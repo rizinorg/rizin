@@ -20,10 +20,10 @@
  *
  * After introducing format changes in Rizin, do the following:
  *  * Raise RZ_PROJECT_VERSION by exactly 1.
- *  * Implement a function like `static bool migrate_v1_v2(RzProject *prj, RzSerializeResultInfo *res)`
+ *  * Implement a function like `bool rz_project_migrate_migrate_v1_v2(RzProject *prj, RzSerializeResultInfo *res)`
  *    which edits prj in-place and converts it from the previous to the current version.
  *  * Append this function to the `migrations` array below.
- *  * Implement tests in `test/unit/test_project_migrate.c` that cover all changes.
+ *  * Implement tests in `test/unit/test_project_migrate.c` that cover all changes (see the documentation there).
  */
 
 // --
@@ -49,7 +49,7 @@ bool v1_v2_types_foreach_cb(void *user, const char *k, const char *v) {
 	return true;
 }
 
-static bool migrate_v1_v2(RzProject *prj, RzSerializeResultInfo *res) {
+RZ_API bool rz_project_migrate_v1_v2(RzProject *prj, RzSerializeResultInfo *res) {
 	Sdb *core_db;
 	RZ_SERIALIZE_SUB(prj, core_db, res, "core", return false;);
 	Sdb *analysis_db;
@@ -74,13 +74,72 @@ static bool migrate_v1_v2(RzProject *prj, RzSerializeResultInfo *res) {
 }
 
 // --
+// Migration 2 -> 3
+//
+// Changes from 788fdb3d8ef98f50d61cdee72e0b57c74c814022:
+//  Types database "analysis/types" was converted into two
+//  separate SDBs - types and callables
+//  Thus all "func.*" keys from "/core/analysis/types" should be moved to
+//  "/core/analysis/callables"
+//	Type links information is also separated now from
+//	"/core/analysis/types" to "/core/analysis/typelinks"
+
+typedef struct {
+	RzList /*<char *>*/ *moved_keys; ///< deferred for deletion from the old sdb
+	Sdb *callables_db;
+	Sdb *typelinks_db;
+} V2V3TypesCtx;
+
+bool v2_v3_types_foreach_cb(void *user, const char *k, const char *v) {
+	V2V3TypesCtx *ctx = user;
+	if (rz_str_startswith(k, "func.") || !strcmp(v, "func")) {
+		sdb_set(ctx->callables_db, k, v, 0);
+		rz_list_push(ctx->moved_keys, strdup(k));
+	} else if (rz_str_startswith(k, "link.")) {
+		// Old addresses were stored as hexadecimal numbers without `0x` part
+		// New addresses have them
+		char *tl_key = rz_str_newf("0x%s", k + strlen("link."));
+		sdb_set(ctx->typelinks_db, tl_key, v, 0);
+		free(tl_key);
+		rz_list_push(ctx->moved_keys, strdup(k));
+	}
+	return true;
+}
+
+RZ_API bool rz_project_migrate_v2_v3(RzProject *prj, RzSerializeResultInfo *res) {
+	Sdb *core_db;
+	RZ_SERIALIZE_SUB(prj, core_db, res, "core", return false;);
+	Sdb *analysis_db;
+	RZ_SERIALIZE_SUB(core_db, analysis_db, res, "analysis", return false;);
+	Sdb *types_db;
+	RZ_SERIALIZE_SUB(analysis_db, types_db, res, "types", return false;);
+	V2V3TypesCtx ctx = {
+		.moved_keys = rz_list_newf(free),
+		.callables_db = sdb_ns(analysis_db, "callables", true),
+		.typelinks_db = sdb_ns(analysis_db, "typelinks", true)
+	};
+	if (!ctx.moved_keys || !ctx.callables_db || !ctx.typelinks_db) {
+		return false;
+	}
+	sdb_foreach(types_db, v2_v3_types_foreach_cb, &ctx);
+	RzListIter *it;
+	char *s;
+	rz_list_foreach (ctx.moved_keys, it, s) {
+		sdb_unset(types_db, s, 0);
+	}
+	rz_list_free(ctx.moved_keys);
+	return true;
+}
+
+// --
 
 static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = {
-	migrate_v1_v2
+	rz_project_migrate_v1_v2,
+	rz_project_migrate_v2_v3
 };
 
 /// Migrate the given project to the current version in-place
-RZ_IPI bool rz_project_migrate(RzProject *prj, unsigned long version, RzSerializeResultInfo *res) {
+RZ_API bool rz_project_migrate(RzProject *prj, unsigned long version, RzSerializeResultInfo *res) {
 	RZ_STATIC_ASSERT(RZ_ARRAY_SIZE(migrations) + 1 == RZ_PROJECT_VERSION);
 	while (version < RZ_PROJECT_VERSION) {
 		bool succ = migrations[version - 1](prj, res);

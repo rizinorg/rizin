@@ -1,10 +1,10 @@
 NAME=rz-asm i4004
 FILE==
 CMDS=<<EOF
-!!rz-asm -L~4004
+!rz-asm -L~4004
 EOF
 EXPECT=<<EOF
-_dAe  4          i4004       LGPL3   Intel 4004 microprocessor
+_dA_  4          i4004       LGPL3   Intel 4004 microprocessor
 EOF
 RUN
 
@@ -194,7 +194,7 @@ RUN
 
 NAME=rz-asm -h~Usage?"
 FILE==
-CMDS=!!rz-asm -h~Usage?
+CMDS=!rz-asm -h~Usage?
 EXPECT=<<EOF
 1
 EOF
@@ -274,7 +274,7 @@ RUN
 
 NAME=rz-asm -v~commit?"
 FILE==
-CMDS=!!rz-asm -v~commit?
+CMDS=!rz-asm -v~commit?
 EXPECT=<<EOF
 1
 EOF
@@ -367,17 +367,10 @@ RUN
 
 NAME=rz-asm bswap x64 #8095
 FILE==
-CMDS="!rz-asm -a x86 -b 64 \"bswap rax;bswap rbx;bswap rcx;bswap rdx\""
+CMDS=!rz-asm -a x86 -b 64 "bswap rax;bswap rbx;bswap rcx;bswap rdx"
 EXPECT=<<EOF
 480fc8480fcb480fc9480fca
 EOF
-RUN
-
-NAME=rz-asm bswap x64 #8095 (with single quotes)
-BROKEN=1 # Only on Windows
-FILE==
-CMDS=!rz-asm -a x86 -b 64 'bswap rax;bswap rbx;bswap rcx;bswap rdx'
-EXPECT=480fc8480fcb480fc9480fca
 RUN
 
 NAME=rz-asm mov eax, [eax * 2 + 8]

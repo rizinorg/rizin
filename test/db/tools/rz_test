@@ -36,9 +36,13 @@ RUN
 NAME=bin with space in filename
 FILE=bins/elf/_Exit (42)
 CMDS=i~^file
+ARGS=-e log.level=4
 EXPECT=<<EOF
 file     bins/elf/_Exit (42)
 EOF
 EXPECT_ERR=<<EOF
+WARNING: Neither hash nor gnu_hash exist. Falling back to heuristics for deducing the number of dynamic symbols...
+WARNING: Neither hash nor gnu_hash exist. Falling back to heuristics for deducing the number of dynamic symbols...
+WARNING: Neither hash nor gnu_hash exist. Falling back to heuristics for deducing the number of dynamic symbols...
 EOF
 RUN

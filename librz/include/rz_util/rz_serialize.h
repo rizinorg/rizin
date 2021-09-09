@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: Florian Märkl <info@florianmaerkl.de>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef RZ_SERIALIZE_H

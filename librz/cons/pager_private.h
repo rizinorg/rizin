@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2018 bart1e
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef PAGER_PRIVATE_H
 #define PAGER_PRIVATE_H
 

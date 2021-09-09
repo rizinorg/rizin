@@ -677,7 +677,7 @@ afva@main
 pdf@main
 EOF
 EXPECT=<<EOF
-/ int main (int argc, char **argv);
+/ int main (int argc, char **argv, char **envp);
 |           ; var int32_t var_ch @ fp-0xc
 |           ; var int32_t var_8h @ fp-0x8
 |           ; arg int argc @ r0
@@ -939,7 +939,7 @@ address: 0x568
 opcode: push {r3, lr}
 esilcost: 16
 disasm: push {r3, lr}
-pseudo: push (r3, lr) 
+pseudo: push (r3, lr)
 mnemonic: push
 mask: ffffffff
 prefix: 0

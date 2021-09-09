@@ -66,7 +66,7 @@ static Sdb *get_sdb(RzBinFile *bf) {
 	return ao ? ao->kv : NULL;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
 	ArtObj *ao = RZ_NEW0(ArtObj);
 	if (ao) {
 		ao->kv = sdb_new0();
@@ -77,7 +77,7 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 		ao->buf = rz_buf_ref(buf);
 		art_header_load(ao, ao->kv);
 		sdb_ns_set(sdb, "info", ao->kv);
-		*bin_obj = ao;
+		obj->bin_obj = ao;
 		return true;
 	}
 	return false;

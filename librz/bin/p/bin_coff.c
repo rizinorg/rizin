@@ -31,9 +31,9 @@ static bool rz_coff_is_stripped(struct rz_bin_coff_obj *obj) {
 	return !!(obj->hdr.f_flags & (COFF_FLAGS_TI_F_RELFLG | COFF_FLAGS_TI_F_LNNO | COFF_FLAGS_TI_F_LSYMS));
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	*bin_obj = rz_bin_coff_new_buf(buf, bf->rbin->verbose);
-	return *bin_obj != NULL;
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
+	obj->bin_obj = rz_bin_coff_new_buf(buf, bf->rbin->verbose);
+	return obj->bin_obj != NULL;
 }
 
 static void destroy(RzBinFile *bf) {

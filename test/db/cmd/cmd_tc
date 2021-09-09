@@ -1,9 +1,14 @@
 NAME=tc
 FILE=bins/mach0/objc-employee
-CMDS=.ic*;ts
+ARGS=-b 64
+CMDS=<<EOF
+.ic*
+ts Employee
+ts NSString
+EOF
 EXPECT=<<EOF
-Employee
-NSString
+pf *?w*?*?qpppp (objc_class)isa _shortWord (NSString)_username (NSString)_firstName _wideWord username firstName shortWord wideWord
+pf pqzd p0 p1 str len
 EOF
 RUN
 
@@ -57,11 +62,15 @@ RUN
 
 NAME=tc4
 FILE=bins/mach0/objc-employee
-CMDS=.ic*;tc
+CMDS=<<EOF
+.ic*
+tc "struct Employee"
+tc "struct NSString"
+EOF
 EXPECT=<<EOF
 struct Employee {
 	struct objc_class *isa;
-	int16_t _shortWord;
+	short _shortWord;
 	struct NSString *_username;
 	struct NSString *_firstName;
 	uint64_t _wideWord;
@@ -81,10 +90,29 @@ RUN
 
 NAME=tc iOS14 arm64
 FILE=bins/mach0/objc-employee-ios14-arm64
-CMDS=.ic*;ts
+CMDS=<<EOF
+.ic*
+tsc Employee
+tsc NSString
+EOF
 EXPECT=<<EOF
-Employee
-NSString
+struct Employee {
+	struct objc_class *isa;
+	short _shortWord;
+	struct NSString *_username;
+	struct NSString *_firstName;
+	uint64_t _wideWord;
+	void *username;
+	void *firstName;
+	void *shortWord;
+	void *wideWord;
+};
+struct NSString {
+	void *p0;
+	size_t p1;
+	char *str;
+	int len;
+};
 EOF
 RUN
 
@@ -139,11 +167,15 @@ RUN
 
 NAME=tc4 iOS14 arm64
 FILE=bins/mach0/objc-employee-ios14-arm64
-CMDS=.ic*;tc
+CMDS=<<EOF
+.ic*
+tc "struct Employee"
+tc "struct NSString"
+EOF
 EXPECT=<<EOF
 struct Employee {
 	struct objc_class *isa;
-	int16_t _shortWord;
+	short _shortWord;
 	struct NSString *_username;
 	struct NSString *_firstName;
 	uint64_t _wideWord;
@@ -163,10 +195,29 @@ RUN
 
 NAME=tc iOS14 arm64e
 FILE=bins/mach0/objc-employee-ios14-arm64e
-CMDS=.ic*;ts
+CMDS=<<EOF
+.ic*
+tsc Employee
+tsc NSString
+EOF
 EXPECT=<<EOF
-Employee
-NSString
+struct Employee {
+	struct objc_class *isa;
+	short _shortWord;
+	struct NSString *_username;
+	struct NSString *_firstName;
+	uint64_t _wideWord;
+	void *username;
+	void *firstName;
+	void *shortWord;
+	void *wideWord;
+};
+struct NSString {
+	void *p0;
+	size_t p1;
+	char *str;
+	int len;
+};
 EOF
 RUN
 
@@ -220,11 +271,15 @@ RUN
 
 NAME=tc4 iOS14 arm64e
 FILE=bins/mach0/objc-employee-ios14-arm64e
-CMDS=.ic*;tc
+CMDS=<<EOF
+.ic*
+tc "struct Employee"
+tc "struct NSString"
+EOF
 EXPECT=<<EOF
 struct Employee {
 	struct objc_class *isa;
-	int16_t _shortWord;
+	short _shortWord;
 	struct NSString *_username;
 	struct NSString *_firstName;
 	uint64_t _wideWord;
@@ -242,7 +297,7 @@ struct NSString {
 EOF
 RUN
 
-NAME=tc typedef
+NAME=ttc typedef
 FILE==
 CMDS=<<EOF
 td "typedef char *string;"
@@ -256,16 +311,15 @@ RUN
 NAME=ttj typedef
 FILE==
 CMDS=<<EOF
-t-*
 td "typedef char *string;"
-ttj
+ttj string
 EOF
 EXPECT=<<EOF
-{"string":"char *"}
+{"name":"string","type":"char *"}
 EOF
 RUN
 
-NAME=test cmd tsc 
+NAME=test cmd tsc
 FILE=bins/mach0/objc-employee
 CMDS=<<EOF
 .ic*
@@ -274,7 +328,7 @@ EOF
 EXPECT=<<EOF
 struct Employee {
 	struct objc_class *isa;
-	int16_t _shortWord;
+	short _shortWord;
 	struct NSString *_username;
 	struct NSString *_firstName;
 	uint64_t _wideWord;
@@ -293,8 +347,7 @@ tf main
 tf entry0
 EOF
 EXPECT=<<EOF
-int main (int argc, char ** argv, char ** envp);
-void entry0 ();
+int main(int argc, char ** argv, char ** envp);
 EOF
 RUN
 
@@ -302,7 +355,7 @@ NAME=test cmd tec
 FILE==
 CMDS=<<EOF
 td "enum foo {bar = 1, cow = 3};"
-tec
+tec foo
 EOF
 EXPECT=<<EOF
 enum foo {
@@ -315,13 +368,13 @@ RUN
 NAME=test cmd tuc
 FILE==
 CMDS=<<EOF
-td "union Data {int i,j;};"
-tuc
+td "union Data {int i; int j;};"
+tuc Data
 EOF
 EXPECT=<<EOF
 union Data {
-	int32_t i;
-	int32_t j;
+	int i;
+	int j;
 };
 EOF
 RUN

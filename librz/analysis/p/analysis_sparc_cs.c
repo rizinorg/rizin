@@ -386,7 +386,7 @@ static int archinfo(RzAnalysis *analysis, int q) {
 RzAnalysisPlugin rz_analysis_plugin_sparc_cs = {
 	.name = "sparc",
 	.desc = "Capstone SPARC analysis",
-	.esil = true,
+	.esil = false,
 	.license = "BSD",
 	.arch = "sparc",
 	.bits = 32 | 64,

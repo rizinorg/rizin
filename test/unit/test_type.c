@@ -8,15 +8,6 @@
 #include "minunit.h"
 #include "test_sdb.h"
 
-static void setup_sdb_for_function(Sdb *res) {
-	sdb_set(res, "ExitProcess", "func", 0);
-	sdb_set(res, "ReadFile", "func", 0);
-	sdb_set(res, "memcpy", "func", 0);
-	sdb_set(res, "strchr", "func", 0);
-	sdb_set(res, "__stack_chk_fail", "func", 0);
-	sdb_set(res, "WSAStartup", "func", 0);
-}
-
 static void setup_sdb_for_struct(Sdb *res) {
 	// td "struct kappa {int bar;int cow;};"
 	sdb_set(res, "kappa", "struct", 0);
@@ -44,7 +35,7 @@ static void setup_sdb_for_enum(Sdb *res) {
 }
 
 static void setup_sdb_for_typedef(Sdb *res) {
-	// td typedef char *string;
+	// td "typedef char *string;"
 	sdb_set(res, "string", "typedef", 0);
 	sdb_set(res, "typedef.string", "char *", 0);
 }
@@ -73,9 +64,12 @@ static void setup_sdb_for_not_found(Sdb *res) {
 static bool test_types_get_base_type_struct(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
-	mu_assert_notnull(typedb->sdb_types, "Couldn't create new RzTypeDB.sdb_types");
+	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
 
-	setup_sdb_for_struct(typedb->sdb_types);
+	Sdb *sdb = sdb_new0();
+	setup_sdb_for_struct(sdb);
+	rz_serialize_types_load(sdb, typedb, NULL);
+	sdb_free(sdb);
 
 	RzBaseType *base = rz_type_db_get_base_type(typedb, "kappa");
 	mu_assert_notnull(base, "Couldn't create get base type of struct \"kappa\"");
@@ -87,46 +81,13 @@ static bool test_types_get_base_type_struct(void) {
 
 	member = rz_vector_index_ptr(&base->struct_data.members, 0);
 	mu_assert_eq(member->offset, 0, "Incorrect offset for struct member");
-	mu_assert_streq(member->type, "int32_t", "Incorrect type for struct member");
+	mu_assert_true(rz_type_atomic_str_eq(typedb, member->type, "int32_t"), "Incorrect type for struct member");
 	mu_assert_streq(member->name, "bar", "Incorrect name for struct member");
 
 	member = rz_vector_index_ptr(&base->struct_data.members, 1);
 	mu_assert_eq(member->offset, 4, "Incorrect offset for struct member");
-	mu_assert_streq(member->type, "int32_t", "Incorrect type for struct member");
+	mu_assert_true(rz_type_atomic_str_eq(typedb, member->type, "int32_t"), "Incorrect type for struct member");
 	mu_assert_streq(member->name, "cow", "Incorrect name for struct member");
-
-	rz_type_base_type_free(base);
-	rz_type_db_free(typedb);
-	mu_end;
-}
-
-static bool test_types_save_base_type_struct(void) {
-	RzTypeDB *typedb = rz_type_db_new();
-	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
-	mu_assert_notnull(typedb->sdb_types, "Couldn't create new RzTypeDB.sdb_types");
-
-	RzBaseType *base = rz_type_base_type_new(RZ_BASE_TYPE_KIND_STRUCT);
-	base->name = strdup("kappa");
-
-	RzTypeStructMember member = {
-		.offset = 0,
-		.type = strdup("int32_t"),
-		.name = strdup("bar")
-	};
-	rz_vector_push(&base->struct_data.members, &member);
-
-	member.offset = 4;
-	member.type = strdup("int32_t");
-	member.name = strdup("cow");
-	rz_vector_push(&base->struct_data.members, &member);
-
-	rz_type_db_save_base_type(typedb, base);
-	rz_type_base_type_free(base);
-
-	Sdb *reg = sdb_new0();
-	setup_sdb_for_struct(reg);
-	assert_sdb_eq(typedb->sdb_types, reg, "save struct type");
-	sdb_free(reg);
 
 	rz_type_db_free(typedb);
 	mu_end;
@@ -135,9 +96,12 @@ static bool test_types_save_base_type_struct(void) {
 static bool test_types_get_base_type_union(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
-	mu_assert_notnull(typedb->sdb_types, "Couldn't create new RzTypeDB.sdb_types");
+	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
 
-	setup_sdb_for_union(typedb->sdb_types);
+	Sdb *sdb = sdb_new0();
+	setup_sdb_for_union(sdb);
+	rz_serialize_types_load(sdb, typedb, NULL);
+	sdb_free(sdb);
 
 	RzBaseType *base = rz_type_db_get_base_type(typedb, "kappa");
 	mu_assert_notnull(base, "Couldn't create get base type of union \"kappa\"");
@@ -148,45 +112,12 @@ static bool test_types_get_base_type_union(void) {
 	RzTypeUnionMember *member;
 
 	member = rz_vector_index_ptr(&base->union_data.members, 0);
-	mu_assert_streq(member->type, "int32_t", "Incorrect type for union member");
+	mu_assert_true(rz_type_atomic_str_eq(typedb, member->type, "int32_t"), "Incorrect type for union member");
 	mu_assert_streq(member->name, "bar", "Incorrect name for union member");
 
 	member = rz_vector_index_ptr(&base->union_data.members, 1);
-	mu_assert_streq(member->type, "int32_t", "Incorrect type for union member");
+	mu_assert_true(rz_type_atomic_str_eq(typedb, member->type, "int32_t"), "Incorrect type for union member");
 	mu_assert_streq(member->name, "cow", "Incorrect name for union member");
-
-	rz_type_base_type_free(base);
-	rz_type_db_free(typedb);
-	mu_end;
-}
-
-static bool test_types_save_base_type_union(void) {
-	RzTypeDB *typedb = rz_type_db_new();
-	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
-	mu_assert_notnull(typedb->sdb_types, "Couldn't create new RzTypeDB.sdb_types");
-
-	RzBaseType *base = rz_type_base_type_new(RZ_BASE_TYPE_KIND_UNION);
-	base->name = strdup("kappa");
-
-	RzTypeUnionMember member = {
-		.offset = 0,
-		.type = strdup("int32_t"),
-		.name = strdup("bar")
-	};
-	rz_vector_push(&base->union_data.members, &member);
-
-	member.offset = 0;
-	member.type = strdup("int32_t");
-	member.name = strdup("cow");
-	rz_vector_push(&base->union_data.members, &member);
-
-	rz_type_db_save_base_type(typedb, base);
-	rz_type_base_type_free(base);
-
-	Sdb *reg = sdb_new0();
-	setup_sdb_for_union(reg);
-	assert_sdb_eq(typedb->sdb_types, reg, "save union type");
-	sdb_free(reg);
 
 	rz_type_db_free(typedb);
 	mu_end;
@@ -195,9 +126,12 @@ static bool test_types_save_base_type_union(void) {
 static bool test_types_get_base_type_enum(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
-	mu_assert_notnull(typedb->sdb_types, "Couldn't create new RzTypeDB.sdb_types");
+	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
 
-	setup_sdb_for_enum(typedb->sdb_types);
+	Sdb *sdb = sdb_new0();
+	setup_sdb_for_enum(sdb);
+	rz_serialize_types_load(sdb, typedb, NULL);
+	sdb_free(sdb);
 
 	RzBaseType *base = rz_type_db_get_base_type(typedb, "foo");
 	mu_assert_notnull(base, "Couldn't create get base type of enum \"foo\"");
@@ -213,37 +147,6 @@ static bool test_types_get_base_type_enum(void) {
 	mu_assert_eq(cas->val, 2, "Incorrect value for enum case");
 	mu_assert_streq(cas->name, "secondCase", "Incorrect name for enum case");
 
-	rz_type_base_type_free(base);
-	rz_type_db_free(typedb);
-	mu_end;
-}
-
-static bool test_types_save_base_type_enum(void) {
-	RzTypeDB *typedb = rz_type_db_new();
-	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
-	mu_assert_notnull(typedb->sdb_types, "Couldn't create new RzTypeDB.sdb_types");
-
-	RzBaseType *base = rz_type_base_type_new(RZ_BASE_TYPE_KIND_ENUM);
-	base->name = strdup("foo");
-
-	RzTypeEnumCase cas = {
-		.name = strdup("firstCase"),
-		.val = 1
-	};
-	rz_vector_push(&base->enum_data.cases, &cas);
-
-	cas.name = strdup("secondCase");
-	cas.val = 2;
-	rz_vector_push(&base->enum_data.cases, &cas);
-
-	rz_type_db_save_base_type(typedb, base);
-	rz_type_base_type_free(base);
-
-	Sdb *reg = sdb_new0();
-	setup_sdb_for_enum(reg);
-	assert_sdb_eq(typedb->sdb_types, reg, "save enum type");
-	sdb_free(reg);
-
 	rz_type_db_free(typedb);
 	mu_end;
 }
@@ -251,38 +154,21 @@ static bool test_types_save_base_type_enum(void) {
 static bool test_types_get_base_type_typedef(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
-	mu_assert_notnull(typedb->sdb_types, "Couldn't create new RzTypeDB.sdb_types");
+	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
 
-	setup_sdb_for_typedef(typedb->sdb_types);
+	Sdb *sdb = sdb_new0();
+	setup_sdb_for_typedef(sdb);
+	rz_serialize_types_load(sdb, typedb, NULL);
+	sdb_free(sdb);
 
 	RzBaseType *base = rz_type_db_get_base_type(typedb, "string");
 	mu_assert_notnull(base, "Couldn't create get base type of typedef \"string\"");
 
 	mu_assert_eq(RZ_BASE_TYPE_KIND_TYPEDEF, base->kind, "Wrong base type");
 	mu_assert_streq(base->name, "string", "type name");
-	mu_assert_streq(base->type, "char *", "typedefd type");
-
-	rz_type_base_type_free(base);
-	rz_type_db_free(typedb);
-	mu_end;
-}
-
-static bool test_types_save_base_type_typedef(void) {
-	RzTypeDB *typedb = rz_type_db_new();
-	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
-	mu_assert_notnull(typedb->sdb_types, "Couldn't create new RzTypeDB.sdb_types");
-
-	RzBaseType *base = rz_type_base_type_new(RZ_BASE_TYPE_KIND_TYPEDEF);
-	base->name = strdup("string");
-	base->type = strdup("char *");
-
-	rz_type_db_save_base_type(typedb, base);
-	rz_type_base_type_free(base);
-
-	Sdb *reg = sdb_new0();
-	setup_sdb_for_typedef(reg);
-	assert_sdb_eq(typedb->sdb_types, reg, "save typedef type");
-	sdb_free(reg);
+	mu_assert_eq(base->type->kind, RZ_TYPE_KIND_POINTER, "typedefd type");
+	mu_assert_false(base->type->pointer.is_const, "typedefd type");
+	mu_assert_true(rz_type_atomic_str_eq(typedb, base->type->pointer.type, "char"), "typedefd type");
 
 	rz_type_db_free(typedb);
 	mu_end;
@@ -291,40 +177,19 @@ static bool test_types_save_base_type_typedef(void) {
 static bool test_types_get_base_type_atomic(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
-	mu_assert_notnull(typedb->sdb_types, "Couldn't create new RzTypeDB.sdb_types");
+	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
 
-	setup_sdb_for_atomic(typedb->sdb_types);
+	Sdb *sdb = sdb_new0();
+	setup_sdb_for_atomic(sdb);
+	rz_serialize_types_load(sdb, typedb, NULL);
+	sdb_free(sdb);
 
 	RzBaseType *base = rz_type_db_get_base_type(typedb, "char");
 	mu_assert_notnull(base, "Couldn't create get base type of atomic type \"char\"");
 
 	mu_assert_eq(RZ_BASE_TYPE_KIND_ATOMIC, base->kind, "Wrong base type");
 	mu_assert_streq(base->name, "char", "type name");
-	mu_assert_streq(base->type, "c", "atomic type type");
 	mu_assert_eq(base->size, 8, "atomic type size");
-
-	rz_type_base_type_free(base);
-	rz_type_db_free(typedb);
-	mu_end;
-}
-
-static bool test_types_save_base_type_atomic(void) {
-	RzTypeDB *typedb = rz_type_db_new();
-	mu_assert_notnull(typedb, "Couldn't create new RzTypes");
-	mu_assert_notnull(typedb->sdb_types, "Couldn't create new RzTypes.sdb_types");
-
-	RzBaseType *base = rz_type_base_type_new(RZ_BASE_TYPE_KIND_ATOMIC);
-	base->name = strdup("char");
-	base->type = strdup("c");
-	base->size = 8;
-
-	rz_type_db_save_base_type(typedb, base);
-	rz_type_base_type_free(base);
-
-	Sdb *reg = sdb_new0();
-	setup_sdb_for_atomic(reg);
-	assert_sdb_eq(typedb->sdb_types, reg, "save atomic type");
-	sdb_free(reg);
 
 	rz_type_db_free(typedb);
 	mu_end;
@@ -332,10 +197,14 @@ static bool test_types_save_base_type_atomic(void) {
 
 static bool test_types_get_base_type_not_found(void) {
 	RzTypeDB *typedb = rz_type_db_new();
-	setup_sdb_for_not_found(typedb->sdb_types);
 
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
-	mu_assert_notnull(typedb->sdb_types, "Couldn't create new RzTypeDB.sdb_types");
+	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
+
+	Sdb *sdb = sdb_new0();
+	setup_sdb_for_not_found(sdb);
+	rz_serialize_types_load(sdb, typedb, NULL);
+	sdb_free(sdb);
 
 	RzBaseType *base = rz_type_db_get_base_type(typedb, "non_existant23321312___");
 	mu_assert_null(base, "Should find nothing");
@@ -388,45 +257,47 @@ static void setup_sdb_for_base_types_all(Sdb *res) {
 	sdb_set(res, "enum.bla.0x100", "minusFirstCase", 0);
 	sdb_set(res, "enum.bla.0xf000", "minusSecondCase", 0);
 	// td typedef char *string;
-	sdb_set(res, "string", "typedef", 0);
-	sdb_set(res, "typedef.string", "char *", 0);
 	sdb_set(res, "char", "type", 0);
 	sdb_set(res, "type.char.size", "8", 0);
 	sdb_set(res, "type.char", "c", 0);
+	sdb_set(res, "string", "typedef", 0);
+	sdb_set(res, "typedef.string", "char *", 0);
 }
 
 // RzBaseType name comparator
 static int basetypenamecmp(const void *a, const void *b) {
 	const char *name = (const char *)a;
 	const RzBaseType *btype = (const RzBaseType *)b;
-	return btype->name && strcmp(name, btype->name);
+	return !(btype->name && !strcmp(name, btype->name));
 }
 
 static bool typelist_has(RzList *types, const char *name) {
-	return rz_list_find(types, name, basetypenamecmp);
+	return (rz_list_find(types, name, basetypenamecmp) != NULL);
 }
 
 static bool test_types_get_base_types(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
-	mu_assert_notnull(typedb->sdb_types, "Couldn't create new RzTypeDB.sdb_types");
+	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
 
-	// We remove first all preloaded types
-	rz_type_db_purge(typedb);
-	setup_sdb_for_base_types_all(typedb->sdb_types);
+	Sdb *sdb = sdb_new0();
+	setup_sdb_for_base_types_all(sdb);
+	rz_serialize_types_load(sdb, typedb, NULL);
+	sdb_free(sdb);
 
 	RzList *types = rz_type_db_get_base_types(typedb);
 	mu_assert_notnull(types, "Couldn't get list of all base types");
-	// One additional is `char` as a target for `string` typedef
-	mu_assert_eq(rz_list_length(types), 8, "get all base types");
+	// Additional are `char`, `int32_t`, `int` as a target for `string` typedef
+	mu_assert_eq(rz_list_length(types), 12, "get all base types");
 	mu_assert_true(typelist_has(types, "kappa"), "has kappa");
-	mu_assert_false(typelist_has(types, "dsgdfg"), "has sdfsfd");
 	mu_assert_true(typelist_has(types, "theta"), "has theta");
 	mu_assert_true(typelist_has(types, "omega"), "has omega");
 	mu_assert_true(typelist_has(types, "omicron"), "has omicron");
 	mu_assert_true(typelist_has(types, "foo"), "has foo");
 	mu_assert_true(typelist_has(types, "bla"), "has bla");
 	mu_assert_true(typelist_has(types, "string"), "has string");
+
+	mu_assert_false(typelist_has(types, "dsgdfg"), "has dsgdfg");
 
 	rz_list_free(types);
 	rz_type_db_free(typedb);
@@ -436,10 +307,12 @@ static bool test_types_get_base_types(void) {
 static bool test_types_get_base_types_of_kind(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
-	mu_assert_notnull(typedb->sdb_types, "Couldn't create new RzTypeDB.sdb_types");
+	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
 
-	rz_type_db_purge(typedb);
-	setup_sdb_for_base_types_all(typedb->sdb_types);
+	Sdb *sdb = sdb_new0();
+	setup_sdb_for_base_types_all(sdb);
+	rz_serialize_types_load(sdb, typedb, NULL);
+	sdb_free(sdb);
 
 	RzList *structs = rz_type_db_get_base_types_of_kind(typedb, RZ_BASE_TYPE_KIND_STRUCT);
 	mu_assert_notnull(structs, "Couldn't get list of all struct types");
@@ -472,135 +345,144 @@ static bool test_types_get_base_types_of_kind(void) {
 	mu_end;
 }
 
-bool test_dll_names(void) {
+static bool test_const_types(void) {
 	RzTypeDB *typedb = rz_type_db_new();
-	setup_sdb_for_function(typedb->sdb_types);
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
-	mu_assert_notnull(typedb->sdb_types, "Couldn't create new RzTypeDB.sdb_types");
+	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
+	const char *dir_prefix = rz_sys_prefix(NULL);
+	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
 
-	char *s;
+	char *error_msg = NULL;
+	// Const identifier but not pointer
+	RzType *ttype = rz_type_parse_string_single(typedb->parser, "const char*", &error_msg);
+	mu_assert_notnull(ttype, "\"const char*\" type parse successfull");
+	mu_assert_true(ttype->kind == RZ_TYPE_KIND_POINTER, "is pointer");
+	mu_assert_false(ttype->pointer.is_const, "pointer not const");
+	mu_assert_notnull(ttype->pointer.type, "pointer type is not null");
+	mu_assert_true(ttype->pointer.type->kind == RZ_TYPE_KIND_IDENTIFIER, "pointer type is identifier");
+	mu_assert_true(ttype->pointer.type->identifier.is_const, "identifer is const");
+	rz_type_free(ttype);
 
-	s = rz_type_func_guess(typedb, "sub.KERNEL32.dll_ExitProcess");
-	mu_assert_notnull(s, "dll_ should be ignored");
-	mu_assert_streq(s, "ExitProcess", "dll_ should be ignored");
-	free(s);
+	// Const pointer but not identifier
+	ttype = rz_type_parse_string_single(typedb->parser, "char* const", &error_msg);
+	mu_assert_notnull(ttype, "\"const char*\" type parse successfull");
+	mu_assert_true(ttype->kind == RZ_TYPE_KIND_POINTER, "is pointer");
+	mu_assert_true(ttype->pointer.is_const, "pointer is const");
+	mu_assert_notnull(ttype->pointer.type, "pointer type is not null");
+	mu_assert_true(ttype->pointer.type->kind == RZ_TYPE_KIND_IDENTIFIER, "pointer type is identifier");
+	mu_assert_false(ttype->pointer.type->identifier.is_const, "identifier is not const");
+	rz_type_free(ttype);
 
-	s = rz_type_func_guess(typedb, "sub.dll_ExitProcess_32");
-	mu_assert_notnull(s, "number should be ignored");
-	mu_assert_streq(s, "ExitProcess", "number should be ignored");
-	free(s);
-
-	s = rz_type_func_guess(typedb, "sym.imp.KERNEL32.dll_ReadFile");
-	mu_assert_notnull(s, "dll_ and number should be ignored case 1");
-	mu_assert_streq(s, "ReadFile", "dll_ and number should be ignored case 1");
-	free(s);
-
-	s = rz_type_func_guess(typedb, "sub.VCRUNTIME14.dll_memcpy");
-	mu_assert_notnull(s, "dll_ and number should be ignored case 2");
-	mu_assert_streq(s, "memcpy", "dll_ and number should be ignored case 2");
-	free(s);
-
-	s = rz_type_func_guess(typedb, "sub.KERNEL32.dll_ExitProcess_32");
-	mu_assert_notnull(s, "dll_ and number should be ignored case 3");
-	mu_assert_streq(s, "ExitProcess", "dll_ and number should be ignored case 3");
-	free(s);
-
-	s = rz_type_func_guess(typedb, "WS2_32.dll_WSAStartup");
-	mu_assert_notnull(s, "dll_ and number should be ignored case 4");
-	mu_assert_streq(s, "WSAStartup", "dll_ and number should be ignored case 4");
-	free(s);
+	// Const pointer and identifier
+	ttype = rz_type_parse_string_single(typedb->parser, "const char* const", &error_msg);
+	mu_assert_notnull(ttype, "\"const char*\" type parse successfull");
+	mu_assert_true(ttype->kind == RZ_TYPE_KIND_POINTER, "is pointer");
+	mu_assert_true(ttype->pointer.is_const, "pointer is const");
+	mu_assert_notnull(ttype->pointer.type, "pointer type is not null");
+	mu_assert_true(ttype->pointer.type->kind == RZ_TYPE_KIND_IDENTIFIER, "pointer type is identifier");
+	mu_assert_true(ttype->pointer.type->identifier.is_const, "identifier is const");
+	rz_type_free(ttype);
 
 	rz_type_db_free(typedb);
 	mu_end;
 }
 
-bool test_ignore_prefixes(void) {
+static bool test_array_types(void) {
 	RzTypeDB *typedb = rz_type_db_new();
-	setup_sdb_for_function(typedb->sdb_types);
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
-	mu_assert_notnull(typedb->sdb_types, "Couldn't create new RzTypeDB.sdb_types");
+	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
+	const char *dir_prefix = rz_sys_prefix(NULL);
+	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
 
-	char *s;
+	char *error_msg = NULL;
+	// Zero-sized array
+	RzType *ttype = rz_type_parse_string_single(typedb->parser, "int32_t arr[]", &error_msg);
+	mu_assert_notnull(ttype, "\"int32 arr[]\" type parse successfull");
+	mu_assert_true(ttype->kind == RZ_TYPE_KIND_ARRAY, "is array");
+	mu_assert_eq(ttype->array.count, 0, "zero-sized array");
+	mu_assert_notnull(ttype->array.type, "array type is not null");
+	mu_assert_true(ttype->array.type->kind == RZ_TYPE_KIND_IDENTIFIER, "array type is identifier");
+	mu_assert_streq("int32_t", ttype->array.type->identifier.name, "identifer is \"int32_t\"");
+	rz_type_free(ttype);
 
-	s = rz_type_func_guess(typedb, "fcn.KERNEL32.dll_ExitProcess_32");
-	mu_assert_null(s, "fcn. names should be ignored");
-	free(s);
+	// Real-sized array of arrays
+	ttype = rz_type_parse_string_single(typedb->parser, "unsigned short [6][7]", &error_msg);
+	mu_assert_notnull(ttype, "\"unsigned short arr[6][7]\" type parse successfull");
+	mu_assert_true(ttype->kind == RZ_TYPE_KIND_ARRAY, "is array");
+	mu_assert_eq(ttype->array.count, 6, "6-sized array");
+	mu_assert_notnull(ttype->array.type, "array type is not null");
+	mu_assert_true(ttype->array.type->kind == RZ_TYPE_KIND_ARRAY, "array type is array");
+	mu_assert_eq(ttype->array.type->array.count, 7, "7-sized array");
+	mu_assert_notnull(ttype->array.type->array.type, "array's array type is not null");
+	mu_assert_true(ttype->array.type->array.type->kind == RZ_TYPE_KIND_IDENTIFIER, "array's array type is identifier");
+	mu_assert_streq("unsigned short", ttype->array.type->array.type->identifier.name, "identifer is \"unsigned short\"");
+	rz_type_free(ttype);
 
-	s = rz_type_func_guess(typedb, "loc.KERNEL32.dll_ExitProcess_32");
-	mu_assert_null(s, "loc. names should be ignored");
-	free(s);
+	// Real-sized array of pointers
+	ttype = rz_type_parse_string_single(typedb->parser, "float * arr[5]", &error_msg);
+	mu_assert_notnull(ttype, "\"float * arr[5]\" type parse successfull");
+	mu_assert_true(ttype->kind == RZ_TYPE_KIND_ARRAY, "is array");
+	mu_assert_eq(ttype->array.count, 5, "real-sized array");
+	mu_assert_notnull(ttype->array.type, "array type is not null");
+	mu_assert_true(ttype->array.type->kind == RZ_TYPE_KIND_POINTER, "array type is pointer");
+	mu_assert_false(ttype->array.type->pointer.is_const, "pointer is not const");
+	mu_assert_notnull(ttype->array.type->pointer.type, "pointer type is not null");
+	mu_assert_true(ttype->array.type->pointer.type->kind == RZ_TYPE_KIND_IDENTIFIER, "pointer type is identifier");
+	mu_assert_false(ttype->array.type->pointer.type->identifier.is_const, "identifer is not const");
+
+	mu_assert_streq("float", ttype->array.type->pointer.type->identifier.name, "identifer is \"float\"");
+	rz_type_free(ttype);
 
 	rz_type_db_free(typedb);
 	mu_end;
 }
 
-bool test_remove_rz_prefixes(void) {
+static char *func_ptr_struct = "struct bla { int a; wchar_t (*func)(int a, const char *b); }";
+
+static bool test_struct_func_types(void) {
 	RzTypeDB *typedb = rz_type_db_new();
-	setup_sdb_for_function(typedb->sdb_types);
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
-	mu_assert_notnull(typedb->sdb_types, "Couldn't create new RzTypeDB.sdb_types");
+	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
+	const char *dir_prefix = rz_sys_prefix(NULL);
+	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
 
-	char *s;
+	char *error_msg = NULL;
+	RzType *ttype = rz_type_parse_string_single(typedb->parser, func_ptr_struct, &error_msg);
+	mu_assert_notnull(ttype, "type parse successfull");
+	mu_assert_true(ttype->kind == RZ_TYPE_KIND_IDENTIFIER, "is identifier");
+	mu_assert_false(ttype->identifier.is_const, "identifier not const");
+	mu_assert_streq(ttype->identifier.name, "bla", "bla struct");
 
-	s = rz_type_func_guess(typedb, "sym.imp.ExitProcess");
-	mu_assert_notnull(s, "sym.imp should be ignored");
-	mu_assert_streq(s, "ExitProcess", "sym.imp should be ignored");
-	free(s);
+	// Base type
+	RzBaseType *base = rz_type_db_get_base_type(typedb, "bla");
+	mu_assert_eq(RZ_BASE_TYPE_KIND_STRUCT, base->kind, "not struct");
+	mu_assert_streq(base->name, "bla", "type name");
 
-	s = rz_type_func_guess(typedb, "sym.imp.fcn.ExitProcess");
-	mu_assert_notnull(s, "sym.imp.fcn should be ignored");
-	mu_assert_streq(s, "ExitProcess", "sym.imp.fcn should be ignored");
-	free(s);
+	RzTypeStructMember *member;
 
-	s = rz_type_func_guess(typedb, "longprefix.ExitProcess");
-	mu_assert_null(s, "prefixes longer than 3 should not be ignored");
-	free(s);
+	member = rz_vector_index_ptr(&base->struct_data.members, 0);
+	mu_assert_true(rz_type_atomic_str_eq(typedb, member->type, "int"), "Incorrect type for struct member");
+	mu_assert_streq(member->name, "a", "Incorrect name for struct member");
+	mu_assert_eq(RZ_TYPE_KIND_IDENTIFIER, member->type->kind, "not struct");
 
-	rz_type_db_free(typedb);
-	mu_end;
-}
+	member = rz_vector_index_ptr(&base->struct_data.members, 1);
+	mu_assert_streq(member->name, "func", "Incorrect name for struct member");
+	mu_assert_eq(RZ_TYPE_KIND_POINTER, member->type->kind, "not function pointer");
+	mu_assert_eq(RZ_TYPE_KIND_CALLABLE, member->type->pointer.type->kind, "not function pointer");
 
-bool test_autonames(void) {
-	RzTypeDB *typedb = rz_type_db_new();
-	setup_sdb_for_function(typedb->sdb_types);
-	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
-	mu_assert_notnull(typedb->sdb_types, "Couldn't create new RzTypeDB.sdb_types");
+	RzCallable *call = member->type->pointer.type->callable;
+	mu_assert_streq(rz_type_as_string(typedb, call->ret), "wchar_t", "function return type");
 
-	char *s;
+	RzCallableArg *arg;
+	arg = *rz_pvector_index_ptr(call->args, 0);
+	mu_assert_streq(arg->name, "a", "argument \"a\"");
+	mu_assert_streq(rz_type_as_string(typedb, arg->type), "int", "argument \"a\" type");
 
-	s = rz_type_func_guess(typedb, "sub.strchr_123");
-	mu_assert_null(s, "function that calls common fcns shouldn't be identified as such");
-	free(s);
+	arg = *rz_pvector_index_ptr(call->args, 1);
+	mu_assert_streq(arg->name, "b", "argument \"b\"");
+	mu_assert_streq(rz_type_as_string(typedb, arg->type), "const char *", "argument \"b\" type");
 
-	s = rz_type_func_guess(typedb, "sub.__strchr_123");
-	mu_assert_null(s, "initial _ should not confuse the api");
-	free(s);
-
-	s = rz_type_func_guess(typedb, "sub.__stack_chk_fail_740");
-	mu_assert_null(s, "initial _ should not confuse the api");
-	free(s);
-
-	s = rz_type_func_guess(typedb, "sym.imp.strchr");
-	mu_assert_notnull(s, "sym.imp. should be ignored");
-	mu_assert_streq(s, "strchr", "strchr should be identified");
-	free(s);
-
-	rz_type_db_free(typedb);
-	mu_end;
-}
-
-bool test_initial_underscore(void) {
-	RzTypeDB *typedb = rz_type_db_new();
-	setup_sdb_for_function(typedb->sdb_types);
-	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
-	mu_assert_notnull(typedb->sdb_types, "Couldn't create new RzTypeDB.sdb_types");
-
-	char *s;
-
-	s = rz_type_func_guess(typedb, "sym._strchr");
-	mu_assert_notnull(s, "sym._ should be ignored");
-	mu_assert_streq(s, "strchr", "strchr should be identified");
-	free(s);
+	rz_type_free(ttype);
 
 	rz_type_db_free(typedb);
 	mu_end;
@@ -644,24 +526,17 @@ bool test_references(void) {
 
 int all_tests() {
 	mu_run_test(test_types_get_base_type_struct);
-	mu_run_test(test_types_save_base_type_struct);
 	mu_run_test(test_types_get_base_type_union);
-	mu_run_test(test_types_save_base_type_union);
 	mu_run_test(test_types_get_base_type_enum);
-	mu_run_test(test_types_save_base_type_enum);
 	mu_run_test(test_types_get_base_type_typedef);
-	mu_run_test(test_types_save_base_type_typedef);
 	mu_run_test(test_types_get_base_type_atomic);
-	mu_run_test(test_types_save_base_type_atomic);
 	mu_run_test(test_types_get_base_type_not_found);
 	mu_run_test(test_types_get_base_types);
 	mu_run_test(test_types_get_base_types_of_kind);
-	mu_run_test(test_ignore_prefixes);
-	mu_run_test(test_remove_rz_prefixes);
-	mu_run_test(test_dll_names);
+	mu_run_test(test_const_types);
+	mu_run_test(test_array_types);
+	mu_run_test(test_struct_func_types);
 	mu_run_test(test_references);
-	mu_run_test(test_autonames);
-	mu_run_test(test_initial_underscore);
 	return tests_passed != tests_run;
 }
 

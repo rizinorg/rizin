@@ -16,7 +16,7 @@ static bool check_buffer(RzBuffer *buff) {
 	return false;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
 	ut8 MAJOR_MINOR_VERSION;
 	LuacBinInfo *bin_info_obj = NULL;
 	LuaProto *proto = NULL;
@@ -64,7 +64,7 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 	lua_free_proto_entry(proto);
 	proto = NULL;
 
-	*bin_obj = bin_info_obj;
+	obj->bin_obj = bin_info_obj;
 	return true;
 }
 
@@ -142,7 +142,6 @@ RzBinPlugin rz_bin_plugin_luac = {
 	.symbols = &symbols,
 	.info = &info,
 	.strings = &strings,
-	.fini = NULL
 };
 
 #ifndef RZ_PLUGIN_INCORE

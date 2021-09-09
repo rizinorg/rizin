@@ -42,7 +42,7 @@ static void destroy(RzBinFile *bf) {
 	free(qo);
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
 	lmf_record lrec;
 	lmf_resource lres;
 	lmf_data ldata;
@@ -151,7 +151,7 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 	qo->sections = sections;
 	qo->maps = maps;
 	qo->fixups = fixups;
-	*bin_obj = qo;
+	obj->bin_obj = qo;
 	return true;
 beach:
 	free(qo);
