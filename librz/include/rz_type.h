@@ -228,7 +228,6 @@ RZ_API void rz_type_db_purge(RzTypeDB *typedb);
 
 // Base types
 
-RZ_API void rz_type_base_type(const RzTypeDB *typedb, const RzBaseType *type);
 RZ_API void rz_type_base_type_free(RzBaseType *type);
 RZ_API RZ_OWN RzBaseType *rz_type_base_type_new(RzBaseTypeKind kind);
 
