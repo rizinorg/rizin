@@ -75,7 +75,7 @@ RZ_API bool rz_th_setname(RzThread *th, const char *name) {
 		eprintf("Failed to set thread name\n");
 		return false;
 	}
-#elif __APPLE__
+#elif __APPLE__ && defined(MAC_OS_X_VERSION_10_6)
 	if (pthread_setname_np(name) != 0) {
 		eprintf("Failed to set thread name\n");
 		return false;
@@ -101,7 +101,7 @@ RZ_API bool rz_th_setname(RzThread *th, const char *name) {
 
 RZ_API bool rz_th_getname(RzThread *th, char *name, size_t len) {
 #if defined(HAVE_PTHREAD_NP) && HAVE_PTHREAD_NP
-#if __linux__ || __NetBSD__ || __APPLE__ || __sun
+#if __linux__ || __NetBSD__ || (__APPLE__ && defined(MAC_OS_X_VERSION_10_6)) || __sun
 	if (pthread_getname_np(th->tid, name, len) != 0) {
 		eprintf("Failed to get thread name\n");
 		return false;
