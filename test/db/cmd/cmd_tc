@@ -397,7 +397,7 @@ tf main
 tf entry0
 EOF
 EXPECT=<<EOF
-int main(int argc, char ** argv, char ** envp);
+int main(int argc, char **argv, char **envp);
 EOF
 RUN
 
