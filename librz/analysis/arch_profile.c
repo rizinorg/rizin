@@ -70,6 +70,24 @@ RZ_API void rz_arch_target_free(RzArchTarget *t) {
 	free(t);
 }
 
+/**
+ * \brief Resolves an address and returns the linked mmio
+ */
+RZ_API RZ_BORROW const char *rz_arch_profile_resolve_mmio(RZ_NONNULL RzArchProfile *profile, ut64 address) {
+	rz_return_val_if_fail(profile, NULL);
+
+	return ht_up_find(profile->registers_mmio, (ut64)address, NULL);
+}
+
+/**
+ * \brief Resolves an address and returns the linked extended register
+ */
+RZ_API RZ_BORROW const char *rz_arch_profile_resolve_extended_register(RZ_NONNULL RzArchProfile *profile, ut64 address) {
+	rz_return_val_if_fail(profile, NULL);
+
+	return ht_up_find(profile->registers_extended, (ut64)address, NULL);
+}
+
 static inline bool cpu_reload_needed(RzArchTarget *c, const char *cpu, const char *arch) {
 	if (!c->arch || strcmp(c->arch, arch)) {
 		return true;
