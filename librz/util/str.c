@@ -1794,14 +1794,13 @@ RZ_API size_t rz_str_ansi_len(const char *str) {
 	return rz_str_ansi_nlen(str, 0);
 }
 
-RZ_API size_t rz_str_nlen(const char *str, int n) {
+RZ_API size_t rz_str_nlen(const char *str, size_t n) {
+	rz_return_val_if_fail(str, 0);
 	size_t len = 0;
-	if (str) {
-		while (*str && n > 0) {
-			len++;
-			str++;
-			n--;
-		}
+	while (*str && n) {
+		len++;
+		str++;
+		n--;
 	}
 	return len;
 }
