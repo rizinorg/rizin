@@ -735,6 +735,7 @@ INST_HANDLER(in) { // IN Rd, A
 	RzStrBuf *io_src = __generic_io_dest(a, 0, cpu);
 	op->type2 = 0;
 	op->val = a;
+	op->mmio_address = a;
 	op->family = RZ_ANALYSIS_OP_FAMILY_IO;
 	ESIL_A("%s,r%d,=,", rz_strbuf_get(io_src), r);
 	rz_strbuf_free(io_src);
@@ -1077,6 +1078,7 @@ INST_HANDLER(out) { // OUT A, Rr
 	RzStrBuf *io_dst = __generic_io_dest(a, 1, cpu);
 	op->type2 = 1;
 	op->val = a;
+	op->mmio_address = a;
 	op->family = RZ_ANALYSIS_OP_FAMILY_IO;
 	ESIL_A("r%d,%s,", r, rz_strbuf_get(io_dst));
 	rz_strbuf_free(io_dst);
