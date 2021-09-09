@@ -444,11 +444,11 @@ static bool callable_as_string(RzStrBuf *buf, const RzTypeDB *typedb, RZ_NONNULL
 	rz_pvector_foreach (callable->args, it) {
 		RzCallableArg *arg = *it;
 		if (arg) {
-			char *argtype = rz_type_as_string(typedb, arg->type);
+			char *argstr = rz_type_identifier_declaration_as_string(typedb, arg->type, rz_str_get(arg->name));
 			const char *comma = first ? "" : ", ";
-			rz_strbuf_appendf(buf, "%s%s %s", comma, argtype, rz_str_get(arg->name));
+			rz_strbuf_appendf(buf, "%s%s", comma, argstr);
 			first = false;
-			free(argtype);
+			free(argstr);
 		}
 	}
 	rz_strbuf_append(buf, ")");
