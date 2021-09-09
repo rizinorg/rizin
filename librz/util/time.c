@@ -47,6 +47,7 @@ RZ_API ut64 rz_time_now_mono(void) {
 #endif
 }
 
+/* timeStamp must be a Unix epoch integer */
 RZ_API char *rz_time_stamp_to_str(ut32 timeStamp) {
 #ifdef _MSC_VER
 	time_t rawtime;
@@ -57,22 +58,30 @@ RZ_API char *rz_time_stamp_to_str(ut32 timeStamp) {
 	//tminfo = gmtime (&rawtime);
 	return rz_str_trim_dup(asctime(tminfo));
 #else
-	struct my_timezone {
-		int tz_minuteswest; /* minutes west of Greenwich */
-		int tz_dsttime; /* type of DST correction */
-	} tz;
-	struct timeval tv;
-	int gmtoff;
 	time_t ts = (time_t)timeStamp;
-	gettimeofday(&tv, (void *)&tz);
-	gmtoff = (int)(tz.tz_minuteswest * 60); // in seconds
-	ts += (time_t)gmtoff;
-	char *res = malloc(ASCTIME_BUF_MINLEN);
-	if (res) {
-		ctime_r(&ts, res);
-		rz_str_trim(res); // XXX we probably need an rz_str_trim_dup()
+	struct tm *time;
+	time = gmtime(&ts);
+	time_t gmt_time = mktime(time);
+	time = localtime(&ts);
+	time_t local_time = mktime(time);
+	long diff = (long)difftime(local_time, gmt_time);
+	char *timestr = ctime(&ts);
+	if (timestr) {
+		rz_str_trim(timestr);
+		long hours = diff / 3600;
+		long minutes = diff % 3600 / 60;
+		long seconds = diff % 3600 % 60;
+		if (seconds) {
+			timestr = rz_str_newf("%s UTC%+ld:%ld:%ld", timestr, hours, minutes, seconds);
+		} else if (minutes) {
+			timestr = rz_str_newf("%s UTC%+ld:%ld", timestr, hours, minutes);
+		} else if (hours) {
+			timestr = rz_str_newf("%s UTC%+ld", timestr, hours);
+		} else {
+			timestr = rz_str_newf("%s UTC", timestr);
+		}
 	}
-	return res;
+	return timestr;
 #endif
 }
 
