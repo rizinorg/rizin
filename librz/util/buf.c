@@ -853,6 +853,7 @@ RZ_API bool rz_buf_read8(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut8 *result) 
  * \param result ...
  * \return Return the status of the operation.
  *
+ * \see rz_buf_read8()
  * ...
  */
 RZ_API bool rz_buf_read8_at(RzBuffer *b, ut64 addr, RZ_NONNULL RZ_OUT ut8 *result) {
@@ -867,14 +868,12 @@ RZ_API bool rz_buf_read8_at(RzBuffer *b, ut64 addr, RZ_NONNULL RZ_OUT ut8 *resul
  * \param result ...
  * \return Return the status of the operation.
  *
- * \see rz_read_be16()
- *
  * ...
  */
 RZ_API bool rz_buf_read_be16(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut16 *result) {
 	rz_return_val_if_fail(b && result, false);
 
-	return rz_buf_read_ble16(b, true, result);
+	return rz_buf_read_ble16(b, result, true);
 }
 
 /**
@@ -891,7 +890,7 @@ RZ_API bool rz_buf_read_be16(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut16 *res
 RZ_API bool rz_buf_read_be16_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL RZ_OUT ut16 *result) {
 	rz_return_val_if_fail(b && result, false);
 
-	return rz_buf_read_ble16_at(b, addr, true, result);
+	return rz_buf_read_ble16_at(b, addr, result, true);
 }
 
 /**
@@ -900,13 +899,12 @@ RZ_API bool rz_buf_read_be16_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL RZ
  * \param result ...
  * \return Return the status of the operation.
  *
- * \see rz_read_be32()
  * ...
  */
 RZ_API bool rz_buf_read_be32(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut32 *result) {
 	rz_return_val_if_fail(b && result, false);
 
-	return rz_buf_read_ble32(b, true, result);
+	return rz_buf_read_ble32(b, result, true);
 }
 
 /**
@@ -923,7 +921,7 @@ RZ_API bool rz_buf_read_be32(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut32 *res
 RZ_API bool rz_buf_read_be32_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL RZ_OUT ut32 *result) {
 	rz_return_val_if_fail(b && result, false);
 
-	return rz_buf_read_ble32_at(b, addr, true, result);
+	return rz_buf_read_ble32_at(b, addr, result, true);
 }
 
 /**
@@ -933,14 +931,12 @@ RZ_API bool rz_buf_read_be32_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL RZ
  * \param result ...
  * \return Return the status of the operation.
  *
- * \see rz_read_be64()
- *
  * ...
  */
 RZ_API bool rz_buf_read_be64(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut64 *result) {
 	rz_return_val_if_fail(b && result, false);
 
-	return rz_buf_read_ble64(b, true, result);
+	return rz_buf_read_ble64(b, result, true);
 }
 
 /**
@@ -957,7 +953,7 @@ RZ_API bool rz_buf_read_be64(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut64 *res
 RZ_API bool rz_buf_read_be64_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL RZ_OUT ut64 *result) {
 	rz_return_val_if_fail(b && result, false);
 
-	return rz_buf_read_ble64_at(b, addr, true, result);
+	return rz_buf_read_ble64_at(b, addr, result, true);
 }
 
 /**
@@ -972,7 +968,7 @@ RZ_API bool rz_buf_read_be64_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL RZ
  *
  * ...
  */
-RZ_API bool rz_buf_read_ble16(RZ_NONNULL RzBuffer *b, bool big_endian, RZ_NONNULL RZ_OUT ut16 *result) {
+RZ_API bool rz_buf_read_ble16(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut16 *result, bool big_endian) {
 	rz_return_val_if_fail(b && result, false);
 
 	ut8 tmp[sizeof(ut16)];
@@ -980,7 +976,7 @@ RZ_API bool rz_buf_read_ble16(RZ_NONNULL RzBuffer *b, bool big_endian, RZ_NONNUL
 		return false;
 	}
 
-	*result = big_endian ? rz_read_be16(tmp) : rz_read_le16(tmp);
+	*result = rz_read_ble16(tmp, big_endian);
 	return true;
 }
 
@@ -989,14 +985,15 @@ RZ_API bool rz_buf_read_ble16(RZ_NONNULL RzBuffer *b, bool big_endian, RZ_NONNUL
  * \param b ...
  * \param addr ...
  * \param result ...
+ * \param big_endian ...
  * \return Return the status of the operation.
  *
- * \see rz_read_be16()
- * \see rz_read_le16()
+ * \see rz_read_be16_at()
+ * \see rz_read_le16_at()
  *
  * ...
  */
-RZ_API bool rz_buf_read_ble16_at(RZ_NONNULL RzBuffer *b, ut64 addr, bool big_endian, RZ_NONNULL RZ_OUT ut16 *result) {
+RZ_API bool rz_buf_read_ble16_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL RZ_OUT ut16 *result, bool big_endian) {
 	rz_return_val_if_fail(b && result, false);
 
 	ut8 tmp[sizeof(ut16)];
@@ -1004,7 +1001,7 @@ RZ_API bool rz_buf_read_ble16_at(RZ_NONNULL RzBuffer *b, ut64 addr, bool big_end
 		return false;
 	}
 
-	*result = big_endian ? rz_read_be16(tmp) : rz_read_le16(tmp);
+	*result = rz_read_ble16(tmp, big_endian);
 	return true;
 }
 
@@ -1020,7 +1017,7 @@ RZ_API bool rz_buf_read_ble16_at(RZ_NONNULL RzBuffer *b, ut64 addr, bool big_end
  *
  * ...
  */
-RZ_API bool rz_buf_read_ble32(RZ_NONNULL RzBuffer *b, bool big_endian, RZ_NONNULL RZ_OUT ut32 *result) {
+RZ_API bool rz_buf_read_ble32(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut32 *result, bool big_endian) {
 	rz_return_val_if_fail(b && result, false);
 
 	ut8 tmp[sizeof(ut32)];
@@ -1028,7 +1025,7 @@ RZ_API bool rz_buf_read_ble32(RZ_NONNULL RzBuffer *b, bool big_endian, RZ_NONNUL
 		return false;
 	}
 
-	*result = big_endian ? rz_read_be32(tmp) : rz_read_le32(tmp);
+	*result = rz_read_ble32(tmp, big_endian);
 	return true;
 }
 
@@ -1037,14 +1034,15 @@ RZ_API bool rz_buf_read_ble32(RZ_NONNULL RzBuffer *b, bool big_endian, RZ_NONNUL
  * \param b ...
  * \param addr ...
  * \param result ...
+ * \param big_endian ...
  * \return Return the status of the operation.
  *
- * \see rz_read_be32()
- * \see rz_read_le32()
+ * \see rz_read_be32_at()
+ * \see rz_read_le32_at()
  *
  * ...
  */
-RZ_API bool rz_buf_read_ble32_at(RZ_NONNULL RzBuffer *b, ut64 addr, bool big_endian, RZ_NONNULL RZ_OUT ut32 *result) {
+RZ_API bool rz_buf_read_ble32_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL RZ_OUT ut32 *result, bool big_endian) {
 	rz_return_val_if_fail(b && result, false);
 
 	ut8 tmp[sizeof(ut32)];
@@ -1052,7 +1050,7 @@ RZ_API bool rz_buf_read_ble32_at(RZ_NONNULL RzBuffer *b, ut64 addr, bool big_end
 		return false;
 	}
 
-	*result = big_endian ? rz_read_be32(tmp) : rz_read_le32(tmp);
+	*result = rz_read_ble32(tmp, big_endian);
 	return true;
 }
 
@@ -1068,7 +1066,7 @@ RZ_API bool rz_buf_read_ble32_at(RZ_NONNULL RzBuffer *b, ut64 addr, bool big_end
  *
  * ...
  */
-RZ_API bool rz_buf_read_ble64(RZ_NONNULL RzBuffer *b, bool big_endian, RZ_NONNULL RZ_OUT ut64 *result) {
+RZ_API bool rz_buf_read_ble64(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut64 *result, bool big_endian) {
 	rz_return_val_if_fail(b && result, false);
 
 	ut8 tmp[sizeof(ut64)];
@@ -1076,7 +1074,7 @@ RZ_API bool rz_buf_read_ble64(RZ_NONNULL RzBuffer *b, bool big_endian, RZ_NONNUL
 		return false;
 	}
 
-	*result = big_endian ? rz_read_be64(tmp) : rz_read_le64(tmp);
+	*result = rz_read_ble64(tmp, big_endian);
 	return true;
 }
 
@@ -1085,14 +1083,15 @@ RZ_API bool rz_buf_read_ble64(RZ_NONNULL RzBuffer *b, bool big_endian, RZ_NONNUL
  * \param b ...
  * \param addr ...
  * \param result ...
+ * \param big_endian ...
  * \return Return the status of the operation.
  *
- * \see rz_read_be64()
- * \see rz_read_le64()
+ * \see rz_read_be64_at()
+ * \see rz_read_le64_at()
  *
  * ...
  */
-RZ_API bool rz_buf_read_ble64_at(RZ_NONNULL RzBuffer *b, ut64 addr, bool big_endian, RZ_NONNULL RZ_OUT ut64 *result) {
+RZ_API bool rz_buf_read_ble64_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL RZ_OUT ut64 *result, bool big_endian) {
 	rz_return_val_if_fail(b && result, false);
 
 	ut8 tmp[sizeof(ut64)];
@@ -1100,24 +1099,22 @@ RZ_API bool rz_buf_read_ble64_at(RZ_NONNULL RzBuffer *b, ut64 addr, bool big_end
 		return false;
 	}
 
-	*result = big_endian ? rz_read_be64(tmp) : rz_read_le64(tmp);
+	*result = rz_read_ble64(tmp, big_endian);
 	return true;
 }
 
 /**
- * \brief Read a big little ut16 at the cursor in the buffer.
+ * \brief Read a little endian ut16 at the cursor in the buffer.
  * \param b ...
  * \param result ...
  * \return Return the status of the operation.
- *
- * \see rz_read_le16()
  *
  * ...
  */
 RZ_API bool rz_buf_read_le16(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut16 *result) {
 	rz_return_val_if_fail(b && result, false);
 
-	return rz_buf_read_ble16(b, false, result);
+	return rz_buf_read_ble16(b, result, false);
 }
 
 /**
@@ -1134,7 +1131,7 @@ RZ_API bool rz_buf_read_le16(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut16 *res
 RZ_API bool rz_buf_read_le16_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL RZ_OUT ut16 *result) {
 	rz_return_val_if_fail(b && result, false);
 
-	return rz_buf_read_ble16_at(b, addr, false, result);
+	return rz_buf_read_ble16_at(b, addr, result, false);
 }
 
 /**
@@ -1143,14 +1140,12 @@ RZ_API bool rz_buf_read_le16_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL RZ
  * \param result ...
  * \return Return the status of the operation.
  *
- * \see rz_read_le32()
- *
  * ...
  */
 RZ_API bool rz_buf_read_le32(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut32 *result) {
 	rz_return_val_if_fail(b && result, false);
 
-	return rz_buf_read_ble32(b, false, result);
+	return rz_buf_read_ble32(b, result, false);
 }
 
 /**
@@ -1167,7 +1162,7 @@ RZ_API bool rz_buf_read_le32(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut32 *res
 RZ_API bool rz_buf_read_le32_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL RZ_OUT ut32 *result) {
 	rz_return_val_if_fail(b && result, false);
 
-	return rz_buf_read_ble32_at(b, addr, false, result);
+	return rz_buf_read_ble32_at(b, addr, result, false);
 }
 
 /**
@@ -1176,14 +1171,12 @@ RZ_API bool rz_buf_read_le32_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL RZ
  * \param result ...
  * \return Return the status of the operation.
  *
- * \see rz_read_le64()
- *
  * ...
  */
 RZ_API bool rz_buf_read_le64(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut64 *result) {
 	rz_return_val_if_fail(b && result, false);
 
-	return rz_buf_read_ble64(b, false, result);
+	return rz_buf_read_ble64(b, result, false);
 }
 
 /**
@@ -1200,7 +1193,7 @@ RZ_API bool rz_buf_read_le64(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut64 *res
 RZ_API bool rz_buf_read_le64_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL RZ_OUT ut64 *result) {
 	rz_return_val_if_fail(b && result, false);
 
-	return rz_buf_read_ble64_at(b, addr, false, result);
+	return rz_buf_read_ble64_at(b, addr, result, false);
 }
 
 /**
@@ -1242,6 +1235,340 @@ RZ_API bool rz_buf_set_bytes(RZ_NONNULL RzBuffer *b, RZ_NONNULL const ut8 *buf, 
 	}
 
 	return rz_buf_seek(b, 0, RZ_BUF_SET) >= 0;
+}
+
+/**
+ * \brief Write a byte at the cursor in the buffer.
+ * \param b ...
+ * \param result ...
+ * \return Return the status of the operation.
+ *
+ * ...
+ */
+RZ_API bool rz_buf_write8(RZ_NONNULL RzBuffer *b, ut8 value) {
+	rz_return_val_if_fail(b, false);
+
+	return rz_buf_write(b, &value, sizeof(ut8)) == sizeof(ut8);
+}
+
+/**
+ * \brief Write a byte at the specified address in the buffer.
+ * \param b ...
+ * \param addr ...
+ * \param value ...
+ * \return Return the status of the operation.
+ *
+ * \see rz_buf_write8()
+ *
+ * ...
+ */
+RZ_API bool rz_buf_write8_at(RZ_NONNULL RzBuffer *b, ut64 addr, ut8 value) {
+	rz_return_val_if_fail(b, false);
+
+	return rz_buf_write_at(b, addr, &value, sizeof(ut8)) == sizeof(ut8);
+}
+
+/**
+ * \brief Write a big endian ut16 at the cursor in the buffer.
+ * \param b ...
+ * \param value ...
+ * \return Return the status of the operation.
+ *
+ * ...
+ */
+RZ_API bool rz_buf_write_be16(RZ_NONNULL RzBuffer *b, ut16 value) {
+	rz_return_val_if_fail(b, false);
+
+	return rz_buf_write_ble16(b, value, true);
+}
+
+/**
+ * \brief Write a big endian ut16 at the specified address in the buffer.
+ * \param b ...
+ * \param addr ...
+ * \param value ...
+ * \return Return the status of the operation.
+ *
+ * \see rz_write_be16()
+ *
+ * ...
+ */
+RZ_API bool rz_buf_write_be16_at(RZ_NONNULL RzBuffer *b, ut64 addr, ut16 value) {
+	rz_return_val_if_fail(b, false);
+
+	return rz_buf_write_ble16_at(b, addr, value, true);
+}
+
+/**
+ * \brief Write a big endian ut32 at the cursor in the buffer.
+ * \param b ...
+ * \param value ...
+ * \return Return the status of the operation.
+ *
+ * ...
+ */
+RZ_API bool rz_buf_write_be32(RZ_NONNULL RzBuffer *b, ut32 value) {
+	rz_return_val_if_fail(b, false);
+
+	return rz_buf_write_ble32(b, value, true);
+}
+
+/**
+ * \brief Write a big endian ut32 at the specified address in the buffer.
+ * \param b ...
+ * \param addr ...
+ * \param value ...
+ * \return Return the status of the operation.
+ *
+ * \see rz_write_be32()
+ *
+ * ...
+ */
+RZ_API bool rz_buf_write_be32_at(RZ_NONNULL RzBuffer *b, ut64 addr, ut32 value) {
+	rz_return_val_if_fail(b, false);
+
+	return rz_buf_write_ble32_at(b, addr, value, true);
+}
+
+/**
+ * \brief Write a big endian ut64 at the cursor in the buffer.
+ * \param b ...
+ * \param value ...
+ * \return Return the status of the operation.
+ *
+ * ...
+ */
+RZ_API bool rz_buf_write_be64(RZ_NONNULL RzBuffer *b, ut64 value) {
+	rz_return_val_if_fail(b, false);
+
+	return rz_buf_write_ble64(b, value, true);
+}
+
+/**
+ * \brief Write a big endian ut64 at the specified address in the buffer.
+ * \param b ...
+ * \param addr ...
+ * \param value ...
+ * \return Return the status of the operation.
+ *
+ * \see rz_write_be64()
+ *
+ * ...
+ */
+RZ_API bool rz_buf_write_be64_at(RZ_NONNULL RzBuffer *b, ut64 addr, ut64 value) {
+	rz_return_val_if_fail(b, false);
+
+	return rz_buf_write_ble64_at(b, addr, value, true);
+}
+
+/**
+ * \brief Write a big endian or little endian ut16 at the cursor in the buffer.
+ * \param b ...
+ * \param value ...
+ * \param big_endian ...
+ * \return Return the status of the operation.
+ *
+ * \see rz_write_be16()
+ * \see rz_write_le16()
+ *
+ * ...
+ */
+RZ_API bool rz_buf_write_ble16(RZ_NONNULL RzBuffer *b, ut16 value, bool big_endian) {
+	ut8 tmp[sizeof(ut16)];
+	rz_write_ble16(tmp, value, big_endian);
+
+	return rz_buf_write(b, tmp, sizeof(tmp)) == sizeof(tmp);
+}
+
+/**
+ * \brief Write a big endian or little endian ut16 at the specified address in the buffer.
+ * \param b ...
+ * \param addr ...
+ * \param value ...
+ * \param big_endian ...
+ * \return Return the status of the operation.
+ *
+ * \see rz_write_be16_at()
+ * \see rz_write_le16_at()
+ *
+ * ...
+ */
+RZ_API bool rz_buf_write_ble16_at(RZ_NONNULL RzBuffer *b, ut64 addr, ut16 value, bool big_endian) {
+	ut8 tmp[sizeof(ut16)];
+	rz_write_ble16(tmp, value, big_endian);
+
+	return rz_buf_write_at(b, addr, tmp, sizeof(tmp)) == sizeof(tmp);
+}
+
+/**
+ * \brief Write a big endian or little endian ut32 at the cursor in the buffer.
+ * \param b ...
+ * \param value ...
+ * \param big_endian ...
+ * \return Return the status of the operation.
+ *
+ * \see rz_write_be32()
+ * \see rz_write_le32()
+ *
+ * ...
+ */
+RZ_API bool rz_buf_write_ble32(RZ_NONNULL RzBuffer *b, ut32 value, bool big_endian) {
+	ut8 tmp[sizeof(ut32)];
+	rz_write_ble32(tmp, value, big_endian);
+
+	return rz_buf_write(b, tmp, sizeof(tmp)) == sizeof(tmp);
+}
+
+/**
+ * \brief Write a big endian or little endian ut32 at the specified address in the buffer.
+ * \param b ...
+ * \param addr ...
+ * \param value ...
+ * \param big_endian ...
+ * \return Return the status of the operation.
+ *
+ * \see rz_write_be32_at()
+ * \see rz_write_le32_at()
+ *
+ * ...
+ */
+RZ_API bool rz_buf_write_ble32_at(RZ_NONNULL RzBuffer *b, ut64 addr, ut32 value, bool big_endian) {
+	ut8 tmp[sizeof(ut32)];
+	rz_write_ble32(tmp, value, big_endian);
+
+	return rz_buf_write_at(b, addr, tmp, sizeof(tmp)) == sizeof(tmp);
+}
+
+/**
+ * \brief Write a big endian or little endian ut64 at the cursor in the buffer.
+ * \param b ...
+ * \param value ...
+ * \param big_endian ...
+ * \return Return the status of the operation.
+ *
+ * \see rz_write_be64()
+ * \see rz_write_le64()
+ *
+ * ...
+ */
+RZ_API bool rz_buf_write_ble64(RZ_NONNULL RzBuffer *b, ut64 value, bool big_endian) {
+	ut8 tmp[sizeof(ut64)];
+	rz_write_ble64(tmp, value, big_endian);
+
+	return rz_buf_write(b, tmp, sizeof(tmp)) == sizeof(tmp);
+}
+
+/**
+ * \brief Write a big endian or little endian ut64 at the specified address in the buffer.
+ * \param b ...
+ * \param addr ...
+ * \param value ...
+ * \param big_endian ...
+ * \return Return the status of the operation.
+ *
+ * \see rz_write_be64_at()
+ * \see rz_write_le64_at()
+ *
+ * ...
+ */
+RZ_API bool rz_buf_write_ble64_at(RZ_NONNULL RzBuffer *b, ut64 addr, ut64 value, bool big_endian) {
+	ut8 tmp[sizeof(ut64)];
+	rz_write_ble64(tmp, value, big_endian);
+
+	return rz_buf_write_at(b, addr, tmp, sizeof(tmp)) == sizeof(tmp);
+}
+
+/**
+ * \brief Write a little endian ut16 at the cursor in the buffer.
+ * \param b ...
+ * \param value ...
+ * \return Return the status of the operation.
+ *
+ * ...
+ */
+RZ_API bool rz_buf_write_le16(RZ_NONNULL RzBuffer *b, ut16 value) {
+	rz_return_val_if_fail(b, false);
+
+	return rz_buf_write_ble16(b, value, false);
+}
+
+/**
+ * \brief Write a little endian ut16 at the specified address in the buffer.
+ * \param b ...
+ * \param addr ...
+ * \param value ...
+ * \return Return the status of the operation.
+ *
+ * \see rz_write_le16()
+ *
+ * ...
+ */
+RZ_API bool rz_buf_write_le16_at(RZ_NONNULL RzBuffer *b, ut64 addr, ut16 value) {
+	rz_return_val_if_fail(b, false);
+
+	return rz_buf_write_ble16_at(b, addr, value, false);
+}
+
+/**
+ * \brief Write a little endian ut32 at the cursor in the buffer.
+ * \param b ...
+ * \param value ...
+ * \return Return the status of the operation.
+ *
+ * ...
+ */
+RZ_API bool rz_buf_write_le32(RZ_NONNULL RzBuffer *b, ut32 value) {
+	rz_return_val_if_fail(b, false);
+
+	return rz_buf_write_ble32(b, value, false);
+}
+
+/**
+ * \brief Write a little endian ut32 at the specified address in the buffer.
+ * \param b ...
+ * \param addr ...
+ * \param value ...
+ * \return Return the status of the operation.
+ *
+ * \see rz_write_le32()
+ *
+ * ...
+ */
+RZ_API bool rz_buf_write_le32_at(RZ_NONNULL RzBuffer *b, ut64 addr, ut32 value) {
+	rz_return_val_if_fail(b, false);
+
+	return rz_buf_write_ble32_at(b, addr, value, false);
+}
+
+/**
+ * \brief Write a little endian ut64 at the cursor in the buffer.
+ * \param b ...
+ * \param value ...
+ * \return Return the status of the operation.
+ *
+ * ...
+ */
+RZ_API bool rz_buf_write_le64(RZ_NONNULL RzBuffer *b, ut64 value) {
+	rz_return_val_if_fail(b, false);
+
+	return rz_buf_write_ble64(b, value, false);
+}
+
+/**
+ * \brief Write a little endian ut64 at the specified address in the buffer.
+ * \param b ...
+ * \param addr ...
+ * \param value ...
+ * \return Return the status of the operation.
+ *
+ * \see rz_write_le64()
+ *
+ * ...
+ */
+RZ_API bool rz_buf_write_le64_at(RZ_NONNULL RzBuffer *b, ut64 addr, ut64 value) {
+	rz_return_val_if_fail(b, false);
+
+	return rz_buf_write_ble64_at(b, addr, value, false);
 }
 
 /**
