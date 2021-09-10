@@ -140,6 +140,9 @@ typedef enum {
 /* Must be included before windows.h */
 #include <winsock2.h>
 #include <ws2tcpip.h>
+// this is needed since winsock2.h contains an inline definition
+// error LNK2005: SocketNotificationRetrieveEvents already defined
+static inline UINT32 SocketNotificationRetrieveEvents(OVERLAPPED_ENTRY *notification);
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
