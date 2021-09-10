@@ -49,15 +49,6 @@ RZ_API ut64 rz_time_now_mono(void) {
 
 /* timeStamp must be a Unix epoch integer */
 RZ_API char *rz_time_stamp_to_str(ut32 timeStamp) {
-#ifdef _MSC_VER
-	time_t rawtime;
-	struct tm *tminfo;
-	struct tm tmptm;
-	rawtime = (time_t)timeStamp;
-	tminfo = rz_localtime_r(&rawtime, &tmptm);
-	//tminfo = gmtime (&rawtime);
-	return rz_str_trim_dup(asctime(tminfo));
-#else
 	time_t ts = (time_t)timeStamp;
 	struct tm *time;
 	time = gmtime(&ts);
@@ -82,7 +73,6 @@ RZ_API char *rz_time_stamp_to_str(ut32 timeStamp) {
 		}
 	}
 	return timestr;
-#endif
 }
 
 RZ_API ut32 rz_time_dos_time_stamp_to_posix(ut32 timeStamp) {
