@@ -455,6 +455,63 @@ static bool test_const_types(void) {
 	mu_end;
 }
 
+static char *array = "int a[65][5][0]";
+static char *array_exp1 = "int [65][5][0]";
+static char *array_ptr = "int * const *a[][][][9]";
+static char *array_ptr_exp1 = "int * const *[0][0][0][9]";
+static char *array_ptr_exp2 = "int * const *a[0][0][0][9]";
+static char *struct_array_ptr = "struct alb { const char *b; int * const *a[][][][9]; }";
+static char *struct_array_ptr_exp1 = "struct alb";
+static char *struct_array_ptr_exp2 = "struct alb { const char *b; int * const *a[0][0][0][9]; }";
+static char *struct_array_ptr_exp3 = "struct alb a";
+
+static bool test_type_as_string(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
+	const char *dir_prefix = rz_sys_prefix(NULL);
+	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
+
+	char *error_msg = NULL;
+	RzType *ttype = rz_type_parse_string_single(typedb->parser, array, &error_msg);
+	mu_assert_notnull(ttype, "array type parse successfull");
+	mu_assert_true(ttype->kind == RZ_TYPE_KIND_ARRAY, "is array");
+
+	char *array_str1 = rz_type_as_string(typedb, ttype);
+	char *array_str2 = rz_type_declaration_as_string(typedb, ttype);
+	char *array_str3 = rz_type_identifier_declaration_as_string(typedb, ttype, "a");
+	mu_assert_streq_free(array_str1, array_exp1, "rz_type_as_string");
+	mu_assert_streq_free(array_str2, array_exp1, "rz_type_declaration_as_string");
+	mu_assert_streq_free(array_str3, array, "rz_type_identifier_declaration_as_string");
+	rz_type_free(ttype);
+
+	ttype = rz_type_parse_string_single(typedb->parser, array_ptr, &error_msg);
+	mu_assert_notnull(ttype, "array type parse successfull");
+	mu_assert_true(ttype->kind == RZ_TYPE_KIND_ARRAY, "is array");
+
+	array_str1 = rz_type_as_string(typedb, ttype);
+	array_str2 = rz_type_declaration_as_string(typedb, ttype);
+	array_str3 = rz_type_identifier_declaration_as_string(typedb, ttype, "a");
+	mu_assert_streq_free(array_str1, array_ptr_exp1, "rz_type_as_string");
+	mu_assert_streq_free(array_str2, array_ptr_exp1, "rz_type_declaration_as_string");
+	mu_assert_streq_free(array_str3, array_ptr_exp2, "rz_type_identifier_declaration_as_string");
+	rz_type_free(ttype);
+
+	ttype = rz_type_parse_string_single(typedb->parser, struct_array_ptr, &error_msg);
+	mu_assert_notnull(ttype, "struct type parse successfull");
+
+	array_str1 = rz_type_as_string(typedb, ttype);
+	array_str2 = rz_type_declaration_as_string(typedb, ttype);
+	array_str3 = rz_type_identifier_declaration_as_string(typedb, ttype, "a");
+	mu_assert_streq_free(array_str1, struct_array_ptr_exp1, "rz_type_as_string");
+	mu_assert_streq_free(array_str2, struct_array_ptr_exp2, "rz_type_declaration_as_string");
+	mu_assert_streq_free(array_str3, struct_array_ptr_exp3, "rz_type_identifier_declaration_as_string");
+	rz_type_free(ttype);
+
+	rz_type_db_free(typedb);
+	mu_end;
+}
+
 static bool test_array_types(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
@@ -505,8 +562,8 @@ static bool test_array_types(void) {
 	mu_end;
 }
 
-static char *func_ptr_struct = "struct bla { int a; wchar_t (*func)(int a, const char * b); }";
-static char *func_double_ptr_struct = "struct blabla { int a; wchar_t (**funk)(int a, const char * b); }";
+static char *func_ptr_struct = "struct bla { int a; wchar_t (*func)(int a, const char *b); }";
+static char *func_double_ptr_struct = "struct blabla { int a; wchar_t (**funk)(int a, const char *b); }";
 
 static bool test_struct_func_types(void) {
 	RzTypeDB *typedb = rz_type_db_new();
@@ -569,7 +626,7 @@ static bool test_struct_func_types(void) {
 	member = rz_vector_index_ptr(&base->struct_data.members, 0);
 	mu_assert_true(rz_type_atomic_str_eq(typedb, member->type, "int"), "Incorrect type for struct member");
 	mu_assert_streq(member->name, "a", "Incorrect name for struct member");
-	mu_assert_eq(RZ_TYPE_KIND_IDENTIFIER, member->type->kind, "not struct");
+	mu_assert_eq(RZ_TYPE_KIND_IDENTIFIER, member->type->kind, "not integer");
 
 	member = rz_vector_index_ptr(&base->struct_data.members, 1);
 	mu_assert_streq(member->name, "funk", "Incorrect name for struct member");
@@ -589,7 +646,59 @@ static bool test_struct_func_types(void) {
 	mu_assert_streq(rz_type_as_string(typedb, arg->type), "const char *", "argument \"b\" type");
 
 	rz_type_free(ttype);
+	rz_type_db_free(typedb);
+	mu_end;
+}
 
+static char *array_struct = "struct albalb { int a[65][5][]; }";
+static char *array_struct_test = "struct albalb { int a[65][5][0]; }";
+static char *array_ptr_struct = "struct alb { const char *b; int * const *a[][][][9]; }";
+static char *array_ptr_struct_test = "struct alb { const char *b; int * const *a[0][0][0][9]; }";
+
+static bool test_struct_array_types(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
+	const char *dir_prefix = rz_sys_prefix(NULL);
+	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
+
+	char *error_msg = NULL;
+	// Structure type with a pointer to a function pointer and array
+	RzType *ttype = rz_type_parse_string_single(typedb->parser, array_struct, &error_msg);
+	mu_assert_notnull(ttype, "type parse successfull");
+	mu_assert_true(ttype->kind == RZ_TYPE_KIND_IDENTIFIER, "is identifier");
+	mu_assert_false(ttype->identifier.is_const, "identifier not const");
+	mu_assert_streq(ttype->identifier.name, "albalb", "albalb struct");
+
+	RzBaseType *base = rz_type_db_get_base_type(typedb, "albalb");
+	mu_assert_eq(RZ_BASE_TYPE_KIND_STRUCT, base->kind, "not struct");
+	mu_assert_streq(base->name, "albalb", "type name");
+	mu_assert_streq_free(rz_type_db_base_type_as_string(typedb, base), array_struct_test, "type as string with an array");
+
+	RzTypeStructMember *member = rz_vector_index_ptr(&base->struct_data.members, 0);
+	mu_assert_streq(member->name, "a", "Incorrect name for struct member");
+	mu_assert_eq(RZ_TYPE_KIND_ARRAY, member->type->kind, "not array level 0");
+	mu_assert_eq(65, member->type->array.count, "array level 0 size");
+	mu_assert_eq(RZ_TYPE_KIND_ARRAY, member->type->array.type->kind, "not array level 1");
+	mu_assert_eq(5, member->type->array.type->array.count, "array level 1 size");
+	mu_assert_eq(RZ_TYPE_KIND_ARRAY, member->type->array.type->array.type->kind, "not array level 2");
+	mu_assert_eq(0, member->type->array.type->array.type->array.count, "array level 2 size");
+	mu_assert_eq(RZ_TYPE_KIND_IDENTIFIER, member->type->array.type->array.type->array.type->kind, "not integer");
+	mu_assert_true(rz_type_atomic_str_eq(typedb, member->type->array.type->array.type->array.type, "int"), "Incorrect type for struct member");
+
+	// Structure type with a multidimensional array of pointers
+	ttype = rz_type_parse_string_single(typedb->parser, array_ptr_struct, &error_msg);
+	mu_assert_notnull(ttype, "type parse successfull");
+	mu_assert_true(ttype->kind == RZ_TYPE_KIND_IDENTIFIER, "is identifier");
+	mu_assert_false(ttype->identifier.is_const, "identifier not const");
+	mu_assert_streq(ttype->identifier.name, "alb", "albalb struct");
+
+	base = rz_type_db_get_base_type(typedb, "alb");
+	mu_assert_eq(RZ_BASE_TYPE_KIND_STRUCT, base->kind, "not struct");
+	mu_assert_streq(base->name, "alb", "type name");
+	mu_assert_streq_free(rz_type_db_base_type_as_string(typedb, base), array_ptr_struct_test, "type as string with multidimensional array of pointers");
+
+	rz_type_free(ttype);
 	rz_type_db_free(typedb);
 	mu_end;
 }
@@ -695,10 +804,12 @@ int all_tests() {
 	mu_run_test(test_types_get_base_type_not_found);
 	mu_run_test(test_types_get_base_types);
 	mu_run_test(test_types_get_base_types_of_kind);
+	mu_run_test(test_type_as_string);
 	mu_run_test(test_enum_types);
 	mu_run_test(test_const_types);
 	mu_run_test(test_array_types);
 	mu_run_test(test_struct_func_types);
+	mu_run_test(test_struct_array_types);
 	mu_run_test(test_struct_identifier_without_specifier);
 	mu_run_test(test_union_identifier_without_specifier);
 	mu_run_test(test_references);
