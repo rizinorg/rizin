@@ -91,6 +91,7 @@ RZ_API RZ_OWN RzBuffer *rz_buf_new_with_pointers(const ut8 *bytes, ut64 len, boo
 RZ_API RZ_OWN RzBuffer *rz_buf_new_with_string(RZ_NONNULL const char *msg);
 
 /* methods */
+
 RZ_API RZ_OWN char *rz_buf_get_nstring(RZ_NONNULL RzBuffer *b, ut64 addr, size_t size);
 RZ_API RZ_OWN char *rz_buf_get_string(RZ_NONNULL RzBuffer *b, ut64 addr);
 RZ_API RZ_OWN char *rz_buf_to_string(RZ_NONNULL RzBuffer *b);
@@ -113,12 +114,12 @@ RZ_API bool rz_buf_read_be32(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut32 *res
 RZ_API bool rz_buf_read_be32_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL RZ_OUT ut32 *result);
 RZ_API bool rz_buf_read_be64(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut64 *result);
 RZ_API bool rz_buf_read_be64_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL RZ_OUT ut64 *result);
-RZ_API bool rz_buf_read_ble16(RZ_NONNULL RzBuffer *b, bool big_endian, RZ_NONNULL RZ_OUT ut16 *result);
-RZ_API bool rz_buf_read_ble16_at(RZ_NONNULL RzBuffer *b, ut64 addr, bool big_endian, RZ_NONNULL RZ_OUT ut16 *result);
-RZ_API bool rz_buf_read_ble32(RZ_NONNULL RzBuffer *b, RZ_NONNULL bool big_endian, RZ_OUT ut32 *result);
-RZ_API bool rz_buf_read_ble32_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL bool big_endian, RZ_OUT ut32 *result);
-RZ_API bool rz_buf_read_ble64(RZ_NONNULL RzBuffer *b, bool big_endian, RZ_NONNULL RZ_OUT ut64 *result);
-RZ_API bool rz_buf_read_ble64_at(RZ_NONNULL RzBuffer *b, ut64 addr, bool big_endian, RZ_NONNULL RZ_OUT ut64 *result);
+RZ_API bool rz_buf_read_ble16(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut16 *result, bool big_endian);
+RZ_API bool rz_buf_read_ble16_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL RZ_OUT ut16 *result, bool big_endian);
+RZ_API bool rz_buf_read_ble32(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut32 *result, bool big_endian);
+RZ_API bool rz_buf_read_ble32_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL RZ_OUT ut32 *result, bool big_endian);
+RZ_API bool rz_buf_read_ble64(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut64 *result, bool big_endian);
+RZ_API bool rz_buf_read_ble64_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL RZ_OUT ut64 *result, bool big_endian);
 RZ_API bool rz_buf_read_le16(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut16 *result);
 RZ_API bool rz_buf_read_le16_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL RZ_OUT ut16 *result);
 RZ_API bool rz_buf_read_le32(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut32 *result);
@@ -127,6 +128,26 @@ RZ_API bool rz_buf_read_le64(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut64 *res
 RZ_API bool rz_buf_read_le64_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL RZ_OUT ut64 *result);
 RZ_API bool rz_buf_resize(RZ_NONNULL RzBuffer *b, ut64 newsize);
 RZ_API bool rz_buf_set_bytes(RZ_NONNULL RzBuffer *b, RZ_NONNULL const ut8 *buf, ut64 length);
+RZ_API bool rz_buf_write8(RZ_NONNULL RzBuffer *b, ut8 value);
+RZ_API bool rz_buf_write8_at(RZ_NONNULL RzBuffer *b, ut64 addr, ut8 value);
+RZ_API bool rz_buf_write_be16(RZ_NONNULL RzBuffer *b, ut16 value);
+RZ_API bool rz_buf_write_be16_at(RZ_NONNULL RzBuffer *b, ut64 addr, ut16 value);
+RZ_API bool rz_buf_write_be32(RZ_NONNULL RzBuffer *b, ut32 value);
+RZ_API bool rz_buf_write_be32_at(RZ_NONNULL RzBuffer *b, ut64 addr, ut32 value);
+RZ_API bool rz_buf_write_be64(RZ_NONNULL RzBuffer *b, ut64 value);
+RZ_API bool rz_buf_write_be64_at(RZ_NONNULL RzBuffer *b, ut64 addr, ut64 value);
+RZ_API bool rz_buf_write_ble16(RZ_NONNULL RzBuffer *b, ut16 value, bool big_endian);
+RZ_API bool rz_buf_write_ble16_at(RZ_NONNULL RzBuffer *b, ut64 addr, ut16 value, bool big_endian);
+RZ_API bool rz_buf_write_ble32(RZ_NONNULL RzBuffer *b, ut32 value, bool big_endian);
+RZ_API bool rz_buf_write_ble32_at(RZ_NONNULL RzBuffer *b, ut64 addr, ut32 value, bool big_endian);
+RZ_API bool rz_buf_write_ble64(RZ_NONNULL RzBuffer *b, ut64 value, bool big_endian);
+RZ_API bool rz_buf_write_ble64_at(RZ_NONNULL RzBuffer *b, ut64 addr, ut64 value, bool big_endian);
+RZ_API bool rz_buf_write_le16(RZ_NONNULL RzBuffer *b, ut16 value);
+RZ_API bool rz_buf_write_le16_at(RZ_NONNULL RzBuffer *b, ut64 addr, ut16 value);
+RZ_API bool rz_buf_write_le32(RZ_NONNULL RzBuffer *b, ut32 value);
+RZ_API bool rz_buf_write_le32_at(RZ_NONNULL RzBuffer *b, ut64 addr, ut32 value);
+RZ_API bool rz_buf_write_le64(RZ_NONNULL RzBuffer *b, ut64 value);
+RZ_API bool rz_buf_write_le64_at(RZ_NONNULL RzBuffer *b, ut64 addr, ut64 value);
 RZ_API st64 rz_buf_append_string(RZ_NONNULL RzBuffer *b, RZ_NONNULL const char *str);
 RZ_API st64 rz_buf_fread(RZ_NONNULL RzBuffer *b, RZ_NONNULL ut8 *buf, RZ_NONNULL const char *fmt, int n);
 RZ_API st64 rz_buf_fread_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL ut8 *buf, RZ_NONNULL const char *fmt, int n);
@@ -142,7 +163,6 @@ RZ_API ut64 rz_buf_size(RZ_NONNULL RzBuffer *b);
 RZ_API ut64 rz_buf_tell(RZ_NONNULL RzBuffer *b);
 RZ_API void rz_buf_free(RzBuffer *b);
 RZ_API void rz_buf_set_overflow_byte(RZ_NONNULL RzBuffer *b, ut8 Oxff);
-
 RZ_DEPRECATE RZ_API RZ_BORROW const ut8 *rz_buf_data(RZ_NONNULL RzBuffer *b, ut64 *size);
 
 RZ_API st64 rz_buf_uleb128(RzBuffer *b, ut64 *v);

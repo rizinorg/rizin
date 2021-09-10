@@ -96,7 +96,7 @@ static ut64 get_import_addr_ppc(ELFOBJ *bin, RzBinElfReloc *rel) {
 	}
 
 	ut32 tmp;
-	if (!rz_buf_read_ble32_at(bin->b, p_plt_addr, bin->big_endian, &tmp)) {
+	if (!rz_buf_read_ble32_at(bin->b, p_plt_addr, &tmp, bin->big_endian)) {
 		return UT64_MAX;
 	}
 
