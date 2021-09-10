@@ -22,14 +22,15 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <rz_util.h>
+
 #include "../../include/disas-asm.h"
 #include "../../include/sysdep.h"
 //#include "bfd.h"
 //#include "libbfd.h"
 #include "../../include/xtensa-isa.h"
 #include "../../include/xtensa-isa-internal.h"
-#include "rz_types.h"
-#include "rz_util.h"
+
 extern int filename_cmp (const char *s1, const char *s2);
 xtensa_isa_status xtisa_errno;
 char xtisa_error_msg[1024];
