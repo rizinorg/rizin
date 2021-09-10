@@ -544,8 +544,8 @@ static const ut8 ebcdic_es_page00[256] = {
 };
 
 static const ut8 ebcdic_es_page20[256] = {
-	[0xa7] = 0x5b;
-}
+	[0xa7] = 0x5b,
+};
 
 RZ_API static int
 ebcdic_es_to_unicode(const ut8 src, RzRune *dst) {
@@ -574,7 +574,7 @@ RZ_API static int ebcdic_es_to_ascii(const ut8 src, ut8 *dst) {
 }
 
 RZ_API static int ebcdic_es_from_ascii(ut8 *dst, const ut8 src) {
-	*dst = ebcdic_es_from_uni[src];
+	*dst = ebcdic_es_page00[src];
 	return 1;
 }
 
