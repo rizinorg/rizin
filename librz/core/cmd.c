@@ -5716,13 +5716,26 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_dbgmap_stmt) {
 	RzDebug *dbg = core->dbg;
 	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	if (dbg && dbg->cur && dbg->maps) {
+		RzList *dbg_maps_addrs = rz_list_newf((RzListFree)free);
+		if (!dbg_maps_addrs) {
+			return RZ_CMD_STATUS_INVALID;
+		}
+
 		RzDebugMap *map;
 		RzListIter *iter;
 		rz_list_foreach (dbg->maps, iter, map) {
-			rz_core_seek(core, map->addr, true);
+			int *val = RZ_NEW(int);
+			*val = map->addr;
+			rz_list_append(dbg_maps_addrs, val);
+		}
+
+		int *map_addr;
+		rz_list_foreach (dbg_maps_addrs, iter, map_addr) {
+			rz_core_seek(core, *map_addr, true);
 			RzCmdStatus cmd_res = handle_ts_stmt_tmpseek(state, command);
 			UPDATE_CMD_STATUS_RES(res, cmd_res, err);
 		}
+		rz_list_free(dbg_maps_addrs);
 	}
 err:
 	return res;
