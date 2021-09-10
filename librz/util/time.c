@@ -60,8 +60,8 @@ RZ_API char *rz_time_stamp_to_str(ut32 timeStamp) {
 	if (timestr) {
 		rz_str_trim(timestr);
 		long hours = diff / 3600;
-		long minutes = diff % 3600 / 60;
-		long seconds = diff % 3600 % 60;
+		long minutes = abs(diff % 3600 / 60);
+		long seconds = abs(diff % 3600 % 60);
 		if (seconds) {
 			timestr = rz_str_newf("%s UTC%+ld:%ld:%ld", timestr, hours, minutes, seconds);
 		} else if (minutes) {
