@@ -785,7 +785,7 @@ e asm.offset=false
 e asm.cmt.off=false
 aar
 (pdenc enc; e bin.str.enc=$0; pd 1)
-(pdstr bits; s `axt obj.utf$0be~[1]`; .(pdenc guess); .(pdenc utf$0le); .(pdenc utf$0be))
+(pdstr bits; s `axt @ obj.utf$0be~[1]`; .(pdenc guess); .(pdenc utf$0le); .(pdenc utf$0be))
 .(pdstr 16)
 ?e
 .(pdstr 32)
@@ -809,7 +809,7 @@ e asm.offset=0
 e asm.cmt.off=0
 e bin.str.enc=guess
 aar
-(pdstr flag; s `axt obj.$0~[1]`; pd 1)
+(pdstr flag; s `axt @ obj.$0~[1]`; pd 1)
 .(pdstr utf8_bom)
 .(pdstr utf16le_bom)
 .(pdstr utf16be_bom)

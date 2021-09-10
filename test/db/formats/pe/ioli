@@ -2,7 +2,7 @@ NAME=PE: ioli w32 1
 FILE=bins/pe/ioli/w32/crackme0x00.exe
 CMDS=<<EOF
 aaa
-axt str.250382~?0x401368
+axt @ str.250382~?0x401368
 C~?250382
 EOF
 EXPECT=<<EOF
@@ -16,7 +16,7 @@ FILE=bins/pe/ioli/pocketpc/crackme0x00.arm.exe
 CMDS=<<EOF
 aaa
 pd 1 @ 0x0001108c~?str.250382
-axt str.250382~?
+axt @ str.250382~?
 EOF
 EXPECT=<<EOF
 1
@@ -29,7 +29,7 @@ FILE=bins/pe/ioli/pocketpc/crackme0x00.arm.exe
 CMDS=<<EOF
 aae 0x0001108c
 pd 1 @ 0x0001108c~?str.250382
-axt str.250382~?
+axt @ str.250382~?
 EOF
 EXPECT=<<EOF
 1

@@ -80,7 +80,7 @@ NAME=aaa with axt
 FILE=bins/pe/keygen.exe
 CMDS=<<EOF
 aar
-axt 0x4bffb0
+axt @ 0x4bffb0
 EOF
 EXPECT=<<EOF
 (nofunc) 0x4bfe53 [DATA] mov edx, 0x4bffb0
