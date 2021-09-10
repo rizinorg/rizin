@@ -488,14 +488,14 @@ bool test_pdb_type_save(void) {
 	mu_assert_true(has_union_member(m64_union, "m64_u64"), "m64_u64");
 	// Test member types also
 	mu_assert_true(has_union_member_type(analysis->typedb, m64_union, "m64_u64", "uint64_t"), "m64_u64 type");
-	mu_assert_true(has_union_member_type(analysis->typedb, m64_union, "m64_f32", "float[8]"), "m64_f32 type");
-	mu_assert_true(has_union_member_type(analysis->typedb, m64_union, "m64_i8", "char[8]"), "m64_i8 type");
-	mu_assert_true(has_union_member_type(analysis->typedb, m64_union, "m64_i32", "int32_t[8]"), "m64_i32 type");
-	mu_assert_true(has_union_member_type(analysis->typedb, m64_union, "m64_i16", "uint16_t[8]"), "m64_i16 type");
+	mu_assert_true(has_union_member_type(analysis->typedb, m64_union, "m64_f32", "float [8]"), "m64_f32 type");
+	mu_assert_true(has_union_member_type(analysis->typedb, m64_union, "m64_i8", "char [8]"), "m64_i8 type");
+	mu_assert_true(has_union_member_type(analysis->typedb, m64_union, "m64_i32", "int32_t [8]"), "m64_i32 type");
+	mu_assert_true(has_union_member_type(analysis->typedb, m64_union, "m64_i16", "uint16_t [8]"), "m64_i16 type");
 	mu_assert_true(has_union_member_type(analysis->typedb, m64_union, "m64_i64", "int64_t"), "m64_i64 type");
-	mu_assert_true(has_union_member_type(analysis->typedb, m64_union, "m64_u8", "uint8_t[8]"), "m64_u8 type");
-	mu_assert_true(has_union_member_type(analysis->typedb, m64_union, "m64_u16", "uint16_t[8]"), "m64_u16 type");
-	mu_assert_true(has_union_member_type(analysis->typedb, m64_union, "m64_u32", "uint32_t[8]"), "m64_u32 type");
+	mu_assert_true(has_union_member_type(analysis->typedb, m64_union, "m64_u8", "uint8_t [8]"), "m64_u8 type");
+	mu_assert_true(has_union_member_type(analysis->typedb, m64_union, "m64_u16", "uint16_t [8]"), "m64_u16 type");
+	mu_assert_true(has_union_member_type(analysis->typedb, m64_union, "m64_u32", "uint32_t [8]"), "m64_u32 type");
 
 	mu_assert_false(has_union_member(m64_union, "noSuchMember"), "no such union member");
 	// We dont handle class integration for now, so disable the following unit test.
