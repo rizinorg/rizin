@@ -260,9 +260,11 @@ static bool rz_hash_parse_hexadecimal(const char *option, const char *hexadecima
 
 	if (hexlen < 1 || !hexadecimal) {
 		RZ_LOG_ERROR("rz-hash: error, option %s is empty.\n", option);
+		free(sstdin);
 		return false;
 	} else if (hexlen & 1) {
 		RZ_LOG_ERROR("rz-hash: error, option %s is not a valid hexadecimal (len is not pair: %d).\n", option, hexlen);
+		free(sstdin);
 		return false;
 	}
 	*buffer = NULL;
