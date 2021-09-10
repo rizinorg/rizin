@@ -508,7 +508,7 @@ static const RzRune ebcdic_es_to_uni[256] = {
 	0x38, 0x39, 0x00, 0x00, 0x00, 0x00, 0x00, 0x7f, /* 0xf8-0xff */
 };
 
-static const ut8 ebcdic_es_from_uni[256] = {
+static const ut8 ebcdic_es_page00[256] = {
 	0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, /* 0x00-0x07 */
 	0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, /* 0x08-0x0f */
 	0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, /* 0x10-0x17 */
@@ -543,17 +543,25 @@ static const ut8 ebcdic_es_from_uni[256] = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 0xf8-0xff */
 };
 
-RZ_API static int ebcdic_es_to_unicode(const ut8 src, RzRune *dst) {
+static const ut8 ebcdic_es_page20[256] = {
+	[0xa7] = 0x5b;
+}
+
+RZ_API static int
+ebcdic_es_to_unicode(const ut8 src, RzRune *dst) {
 	*dst = ebcdic_es_to_uni[src];
 	return 1;
 }
 
 RZ_API static int ebcdic_es_from_unicode(ut8 *dst, const RzRune src) {
 	if (src <= 0xff) {
-		*dst = ebcdic_es_from_uni[src];
+		*dst = ebcdic_es_page00[src];
+		return 1;
+	} else if (src >= 0x2000 && src <= 0x20ff) {
+		*dst = ebcdic_es_page20[src & 0xff];
 		return 1;
 	}
-	return 1;
+	return 0;
 }
 
 RZ_API static int ebcdic_es_to_ascii(const ut8 src, ut8 *dst) {
