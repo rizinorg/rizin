@@ -491,12 +491,19 @@ NAME=enum32
 FILE==
 CMDS=<<EOF
 td "enum v { t=0x123, p=0x321 };"
+tcd v
+tc v
 tec v
 te v
 te v 0x123
 te v 0x321
 EOF
 EXPECT=<<EOF
+enum v {t = 291, p = 801};
+enum v {
+	t = 291,
+	p = 801
+};
 enum v {
 	t = 291,
 	p = 801
@@ -512,12 +519,19 @@ NAME=enum64
 FILE==
 CMDS=<<EOF
 td "enum v { t=0x8000000000000001, p=0x8000000000000008 };"
+tcd v
+tc v
 tec v
 te v
 te v 0x8000000000000001
 te v 0x8000000000000008
 EOF
 EXPECT=<<EOF
+enum v {t = 9223372036854775809, p = 9223372036854775816};
+enum v {
+	t = 9223372036854775809,
+	p = 9223372036854775816
+};
 enum v {
 	t = 9223372036854775809,
 	p = 9223372036854775816
@@ -1176,13 +1190,36 @@ e asm.bits=64
 ws hello @ 0xc
 td "struct foo {int x; int (*fp)(int a , int b ); char *b;};"
 ts foo
+tcd foo
+tsc foo
 .ts foo
+td "struct boo {int x; int (***ffp)(int a , int b ); char *b;};"
+ts boo
+tcd boo
+tsc boo
+.ts boo
 EOF
 EXPECT=<<EOF
 pf dpz x (fp)fp b
+struct foo {int x; int (*fp)(int a, int b); char *b;};
+struct foo {
+	int x;
+	int (*fp)(int a, int b);
+	char *b;
+};
   x : 0x00000000 = 0
 (fp)fp : 0x00000004 = (qword)0x0000000000000000
   b : 0x0000000c = "\x05hello"
+pf dpz x (ffp)ffp b
+struct boo {int x; int (***ffp)(int a, int b); char *b;};
+struct boo {
+	int x;
+	int (***ffp)(int a, int b);
+	char *b;
+};
+   x : 0x00000000 = 0
+(ffp)ffp : 0x00000004 = (qword)0x0000000000000000
+   b : 0x0000000c = "\x05hello"
 EOF
 RUN
 

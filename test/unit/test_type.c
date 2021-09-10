@@ -99,14 +99,14 @@ static bool test_types_get_base_type_struct(void) {
 	mu_assert_true(rz_type_atomic_str_eq(typedb, member->type, "int32_t"), "Incorrect type for struct member");
 	mu_assert_streq(member->name, "cow", "Incorrect name for struct member");
 
-	mu_assert_streq(rz_type_db_base_type_as_string(typedb, base), "struct kappa { int32_t bar; int32_t cow;  }", "Incorrect conversion of struct to string");
+	mu_assert_streq(rz_type_db_base_type_as_string(typedb, base), "struct kappa { int32_t bar; int32_t cow; }", "Incorrect conversion of struct to string");
 
 	RzBaseType *base2 = rz_type_db_get_base_type(typedb, "lappa");
 	mu_assert_notnull(base2, "Couldn't create get base type of struct \"lappa\"");
 
 	mu_assert_eq(RZ_BASE_TYPE_KIND_STRUCT, base2->kind, "Wrong base type");
 	mu_assert_streq(base2->name, "lappa", "type name");
-	mu_assert_streq(rz_type_db_base_type_as_string(typedb, base2), "struct lappa { int32_t bar; struct kappa cow;  }", "Incorrect conversion of struct to string");
+	mu_assert_streq(rz_type_db_base_type_as_string(typedb, base2), "struct lappa { int32_t bar; struct kappa cow; }", "Incorrect conversion of struct to string");
 
 	rz_type_db_free(typedb);
 	mu_end;
@@ -138,13 +138,13 @@ static bool test_types_get_base_type_union(void) {
 	mu_assert_true(rz_type_atomic_str_eq(typedb, member->type, "int32_t"), "Incorrect type for union member");
 	mu_assert_streq(member->name, "cow", "Incorrect name for union member");
 
-	mu_assert_streq(rz_type_db_base_type_as_string(typedb, base), "union kappa { int32_t bar; int32_t cow;  }", "Incorrect conversion of union to string");
+	mu_assert_streq(rz_type_db_base_type_as_string(typedb, base), "union kappa { int32_t bar; int32_t cow; }", "Incorrect conversion of union to string");
 
 	RzBaseType *base2 = rz_type_db_get_base_type(typedb, "lappa");
 	mu_assert_notnull(base2, "Couldn't create get base type of union \"lappa\"");
 	mu_assert_eq(RZ_BASE_TYPE_KIND_UNION, base2->kind, "Wrong base type");
 	mu_assert_streq(base2->name, "lappa", "type name");
-	mu_assert_streq(rz_type_db_base_type_as_string(typedb, base2), "union lappa { int32_t bar; union kappa cow;  }", "Incorrect conversion of union to string");
+	mu_assert_streq(rz_type_db_base_type_as_string(typedb, base2), "union lappa { int32_t bar; union kappa cow; }", "Incorrect conversion of union to string");
 
 	rz_type_db_free(typedb);
 	mu_end;
@@ -372,6 +372,47 @@ static bool test_types_get_base_types_of_kind(void) {
 	mu_end;
 }
 
+static char *test_enum = "enum BLA { FOO = 0x1, BOO, GOO = 0xFFFF }";
+static char *test_enum_output = "enum BLA { FOO = 0x1, BOO = 0x2, GOO = 0xffff, }";
+
+static bool test_enum_types(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
+	const char *dir_prefix = rz_sys_prefix(NULL);
+	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
+
+	char *error_msg = NULL;
+	RzType *ttype = rz_type_parse_string_single(typedb->parser, test_enum, &error_msg);
+	mu_assert_notnull(ttype, "type parse successfull");
+	mu_assert_true(ttype->kind == RZ_TYPE_KIND_IDENTIFIER, "is identifier");
+	mu_assert_false(ttype->identifier.is_const, "identifier not const");
+	mu_assert_streq(ttype->identifier.name, "BLA", "BLA enum");
+
+	RzBaseType *base = rz_type_db_get_base_type(typedb, "BLA");
+	mu_assert_eq(RZ_BASE_TYPE_KIND_ENUM, base->kind, "not enum");
+	mu_assert_streq(base->name, "BLA", "type name");
+	mu_assert_streq_free(rz_type_db_base_type_as_string(typedb, base), test_enum_output, "enum type as string");
+
+	RzTypeEnumCase *cas;
+
+	cas = rz_vector_index_ptr(&base->enum_data.cases, 0);
+	mu_assert_streq(cas->name, "FOO", "Incorrect name for enum case 0");
+	mu_assert_eq(cas->val, 1, "Incorrect value for enum case 0");
+
+	cas = rz_vector_index_ptr(&base->enum_data.cases, 1);
+	mu_assert_streq(cas->name, "BOO", "Incorrect name for enum case 1");
+	mu_assert_eq(cas->val, 2, "Incorrect value for enum case 1");
+
+	cas = rz_vector_index_ptr(&base->enum_data.cases, 2);
+	mu_assert_streq(cas->name, "GOO", "Incorrect name for enum case 2");
+	mu_assert_eq(cas->val, 0xFFFF, "Incorrect value for enum case 2");
+
+	rz_type_free(ttype);
+	rz_type_db_free(typedb);
+	mu_end;
+}
+
 static bool test_const_types(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
@@ -464,7 +505,8 @@ static bool test_array_types(void) {
 	mu_end;
 }
 
-static char *func_ptr_struct = "struct bla { int a; wchar_t (*func)(int a, const char *b); }";
+static char *func_ptr_struct = "struct bla { int a; wchar_t (*func)(int a, const char * b); }";
+static char *func_double_ptr_struct = "struct blabla { int a; wchar_t (**funk)(int a, const char * b); }";
 
 static bool test_struct_func_types(void) {
 	RzTypeDB *typedb = rz_type_db_new();
@@ -474,16 +516,17 @@ static bool test_struct_func_types(void) {
 	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
 
 	char *error_msg = NULL;
+	// Sturcture type with a function pointer
 	RzType *ttype = rz_type_parse_string_single(typedb->parser, func_ptr_struct, &error_msg);
 	mu_assert_notnull(ttype, "type parse successfull");
 	mu_assert_true(ttype->kind == RZ_TYPE_KIND_IDENTIFIER, "is identifier");
 	mu_assert_false(ttype->identifier.is_const, "identifier not const");
 	mu_assert_streq(ttype->identifier.name, "bla", "bla struct");
 
-	// Base type
 	RzBaseType *base = rz_type_db_get_base_type(typedb, "bla");
 	mu_assert_eq(RZ_BASE_TYPE_KIND_STRUCT, base->kind, "not struct");
 	mu_assert_streq(base->name, "bla", "type name");
+	mu_assert_streq_free(rz_type_db_base_type_as_string(typedb, base), func_ptr_struct, "type as string with fcn ptr string");
 
 	RzTypeStructMember *member;
 
@@ -511,6 +554,94 @@ static bool test_struct_func_types(void) {
 
 	rz_type_free(ttype);
 
+	// Structure type with a pointer to a function pointer
+	ttype = rz_type_parse_string_single(typedb->parser, func_double_ptr_struct, &error_msg);
+	mu_assert_notnull(ttype, "type parse successfull");
+	mu_assert_true(ttype->kind == RZ_TYPE_KIND_IDENTIFIER, "is identifier");
+	mu_assert_false(ttype->identifier.is_const, "identifier not const");
+	mu_assert_streq(ttype->identifier.name, "blabla", "blabla struct");
+
+	base = rz_type_db_get_base_type(typedb, "blabla");
+	mu_assert_eq(RZ_BASE_TYPE_KIND_STRUCT, base->kind, "not struct");
+	mu_assert_streq(base->name, "blabla", "type name");
+	mu_assert_streq_free(rz_type_db_base_type_as_string(typedb, base), func_double_ptr_struct, "type as string with fcn ptr string");
+
+	member = rz_vector_index_ptr(&base->struct_data.members, 0);
+	mu_assert_true(rz_type_atomic_str_eq(typedb, member->type, "int"), "Incorrect type for struct member");
+	mu_assert_streq(member->name, "a", "Incorrect name for struct member");
+	mu_assert_eq(RZ_TYPE_KIND_IDENTIFIER, member->type->kind, "not integer");
+
+	member = rz_vector_index_ptr(&base->struct_data.members, 1);
+	mu_assert_streq(member->name, "funk", "Incorrect name for struct member");
+	mu_assert_eq(RZ_TYPE_KIND_POINTER, member->type->kind, "not function pointer's pointer");
+	mu_assert_eq(RZ_TYPE_KIND_POINTER, member->type->pointer.type->kind, "not function pointer's pointer");
+	mu_assert_eq(RZ_TYPE_KIND_CALLABLE, member->type->pointer.type->pointer.type->kind, "not function pointer's pointer");
+
+	call = member->type->pointer.type->pointer.type->callable;
+	mu_assert_streq(rz_type_as_string(typedb, call->ret), "wchar_t", "function return type");
+
+	arg = *rz_pvector_index_ptr(call->args, 0);
+	mu_assert_streq(arg->name, "a", "argument \"a\"");
+	mu_assert_streq(rz_type_as_string(typedb, arg->type), "int", "argument \"a\" type");
+
+	arg = *rz_pvector_index_ptr(call->args, 1);
+	mu_assert_streq(arg->name, "b", "argument \"b\"");
+	mu_assert_streq(rz_type_as_string(typedb, arg->type), "const char *", "argument \"b\" type");
+
+	rz_type_free(ttype);
+	rz_type_db_free(typedb);
+	mu_end;
+}
+
+static char *array_struct = "struct albalb { int a[65][5][]; }";
+static char *array_struct_test = "struct albalb { int a[65][5][0]; }";
+static char *array_ptr_struct = "struct alb { const char *b; int * const *a[][][][9]; }";
+static char *array_ptr_struct_test = "struct alb { const char *b; int * const *a[0][0][0][9]; }";
+
+static bool test_struct_array_types(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
+	const char *dir_prefix = rz_sys_prefix(NULL);
+	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
+
+	char *error_msg = NULL;
+	// Structure type with a pointer to a function pointer and array
+	RzType *ttype = rz_type_parse_string_single(typedb->parser, array_struct, &error_msg);
+	mu_assert_notnull(ttype, "type parse successfull");
+	mu_assert_true(ttype->kind == RZ_TYPE_KIND_IDENTIFIER, "is identifier");
+	mu_assert_false(ttype->identifier.is_const, "identifier not const");
+	mu_assert_streq(ttype->identifier.name, "albalb", "albalb struct");
+
+	RzBaseType *base = rz_type_db_get_base_type(typedb, "albalb");
+	mu_assert_eq(RZ_BASE_TYPE_KIND_STRUCT, base->kind, "not struct");
+	mu_assert_streq(base->name, "albalb", "type name");
+	mu_assert_streq_free(rz_type_db_base_type_as_string(typedb, base), array_struct_test, "type as string with an array");
+
+	RzTypeStructMember *member = rz_vector_index_ptr(&base->struct_data.members, 0);
+	mu_assert_streq(member->name, "a", "Incorrect name for struct member");
+	mu_assert_eq(RZ_TYPE_KIND_ARRAY, member->type->kind, "not array level 0");
+	mu_assert_eq(65, member->type->array.count, "array level 0 size");
+	mu_assert_eq(RZ_TYPE_KIND_ARRAY, member->type->array.type->kind, "not array level 1");
+	mu_assert_eq(5, member->type->array.type->array.count, "array level 1 size");
+	mu_assert_eq(RZ_TYPE_KIND_ARRAY, member->type->array.type->array.type->kind, "not array level 2");
+	mu_assert_eq(0, member->type->array.type->array.type->array.count, "array level 2 size");
+	mu_assert_eq(RZ_TYPE_KIND_IDENTIFIER, member->type->array.type->array.type->array.type->kind, "not integer");
+	mu_assert_true(rz_type_atomic_str_eq(typedb, member->type->array.type->array.type->array.type, "int"), "Incorrect type for struct member");
+
+	// Structure type with a multidimensional array of pointers
+	ttype = rz_type_parse_string_single(typedb->parser, array_ptr_struct, &error_msg);
+	mu_assert_notnull(ttype, "type parse successfull");
+	mu_assert_true(ttype->kind == RZ_TYPE_KIND_IDENTIFIER, "is identifier");
+	mu_assert_false(ttype->identifier.is_const, "identifier not const");
+	mu_assert_streq(ttype->identifier.name, "alb", "albalb struct");
+
+	base = rz_type_db_get_base_type(typedb, "alb");
+	mu_assert_eq(RZ_BASE_TYPE_KIND_STRUCT, base->kind, "not struct");
+	mu_assert_streq(base->name, "alb", "type name");
+	mu_assert_streq_free(rz_type_db_base_type_as_string(typedb, base), array_ptr_struct_test, "type as string with multidimensional array of pointers");
+
+	rz_type_free(ttype);
 	rz_type_db_free(typedb);
 	mu_end;
 }
@@ -616,9 +747,11 @@ int all_tests() {
 	mu_run_test(test_types_get_base_type_not_found);
 	mu_run_test(test_types_get_base_types);
 	mu_run_test(test_types_get_base_types_of_kind);
+	mu_run_test(test_enum_types);
 	mu_run_test(test_const_types);
 	mu_run_test(test_array_types);
 	mu_run_test(test_struct_func_types);
+	mu_run_test(test_struct_array_types);
 	mu_run_test(test_struct_identifier_without_specifier);
 	mu_run_test(test_union_identifier_without_specifier);
 	mu_run_test(test_references);

@@ -442,7 +442,7 @@ RZ_API bool rz_type_integral_set_sign(const RzTypeDB *typedb, RZ_NONNULL RzType 
 
 /**
  * \brief RzTypeCond enum to string
- * 
+ *
  * \param cc RzTypeCond
  * \return const char *
  */
@@ -470,7 +470,7 @@ RZ_API RZ_BORROW const char *rz_type_cond_tostring(RzTypeCond cc) {
 
 /**
  * \brief return the inverted condition
- * 
+ *
  * \param cond RzTypeCond
  * \return RzTypeCond
  */
@@ -494,11 +494,11 @@ RZ_API RzTypeCond rz_type_cond_invert(RzTypeCond cond) {
 }
 /**
  * \brief evaluate the type condition on the arguments and return a bool accordingly.
- * 
+ *
  * \param cond RzTypeCond
- * \param arg0 
- * \param arg1 
- * \return bool 
+ * \param arg0
+ * \param arg1
+ * \return bool
  */
 RZ_API bool rz_type_cond_eval(RzTypeCond cond, st64 arg0, st64 arg1) {
 	switch (cond) {
@@ -515,10 +515,10 @@ RZ_API bool rz_type_cond_eval(RzTypeCond cond, st64 arg0, st64 arg1) {
 
 /**
  * \brief Same as rz_type_cond_eval, but it assumes \p arg1 to be 0.
- * 
+ *
  * \param cond RzTypeCond
- * \param arg0 
- * \return bool 
+ * \param arg0
+ * \return bool
  */
 RZ_API bool rz_type_cond_eval_single(RzTypeCond cond, st64 arg0) {
 	switch (cond) {

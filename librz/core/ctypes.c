@@ -229,23 +229,9 @@ RZ_IPI void rz_core_types_union_print_c(RzTypeDB *typedb, const RzBaseType *btyp
 		separator = multiline ? "\t" : "";
 		RzTypeUnionMember *memb;
 		rz_vector_foreach(&btype->union_data.members, memb) {
-			char *membtype = rz_type_identifier_declaration_as_string(typedb, memb->type, memb->name);
-			if (memb->type->kind == RZ_TYPE_KIND_ARRAY) {
-				rz_cons_printf("%s%s %s[%" PFMT64d "]", separator, membtype,
-					memb->name, memb->type->array.count);
-			} else if (memb->type->kind == RZ_TYPE_KIND_POINTER) {
-				// A pointer to the function is a special case
-				if (rz_type_is_callable_ptr(memb->type)) {
-					rz_cons_printf("%s%s", separator, membtype);
-				} else {
-					rz_cons_printf("%s%s%s", separator, membtype, memb->name);
-				}
-			} else if (memb->type->kind == RZ_TYPE_KIND_CALLABLE) {
-				rz_cons_printf("%s%s", separator, membtype);
-			} else {
-				rz_cons_printf("%s%s %s", separator, membtype, memb->name);
-			}
-			free(membtype);
+			char *membdecl = rz_type_identifier_declaration_as_string(typedb, memb->type, memb->name);
+			rz_cons_printf("%s%s", separator, membdecl);
+			free(membdecl);
 			separator = multiline ? ";\n\t" : "; ";
 		}
 		rz_cons_print(";");
@@ -344,23 +330,9 @@ RZ_IPI void rz_core_types_struct_print_c(RzTypeDB *typedb, const RzBaseType *bty
 		RzTypeStructMember *memb;
 		rz_vector_foreach(&btype->struct_data.members, memb) {
 			rz_return_if_fail(memb->type);
-			char *membtype = rz_type_identifier_declaration_as_string(typedb, memb->type, memb->name);
-			if (memb->type->kind == RZ_TYPE_KIND_ARRAY) {
-				rz_cons_printf("%s%s %s[%" PFMT64d "]", separator, membtype,
-					memb->name, memb->type->array.count);
-			} else if (memb->type->kind == RZ_TYPE_KIND_POINTER) {
-				// A pointer to the function is a special case
-				if (rz_type_is_callable_ptr(memb->type)) {
-					rz_cons_printf("%s%s", separator, membtype);
-				} else {
-					rz_cons_printf("%s%s%s", separator, membtype, memb->name);
-				}
-			} else if (memb->type->kind == RZ_TYPE_KIND_CALLABLE) {
-				rz_cons_printf("%s%s", separator, membtype);
-			} else {
-				rz_cons_printf("%s%s %s", separator, membtype, memb->name);
-			}
-			free(membtype);
+			char *membdecl = rz_type_identifier_declaration_as_string(typedb, memb->type, memb->name);
+			rz_cons_printf("%s%s", separator, membdecl);
+			free(membdecl);
 			separator = multiline ? ";\n\t" : "; ";
 		}
 		rz_cons_print(";");
@@ -481,7 +453,9 @@ RZ_IPI void rz_core_types_function_print(RzTypeDB *typedb, const char *function,
 		pj_end(pj);
 	} break;
 	default: {
-		rz_cons_println(rz_type_callable_as_string(typedb, callable));
+		char *str = rz_type_callable_as_string(typedb, callable);
+		rz_cons_printf("%s;\n", str);
+		free(str);
 	} break;
 	}
 	free(ret);

@@ -868,7 +868,7 @@ static char *type_as_string_decl(const RzTypeDB *typedb, RZ_NONNULL const RzType
 	}
 	case RZ_TYPE_KIND_POINTER: {
 		// A pointer to the function is a special case
-		if (rz_type_is_callable_ptr(type)) {
+		if (rz_type_is_callable_ptr_nested(type)) {
 			char *typestr = rz_type_callable_ptr_as_string(typedb, type);
 			rz_strbuf_append(buf, typestr);
 			free(typestr);
@@ -899,28 +899,31 @@ static char *type_as_string_decl(const RzTypeDB *typedb, RZ_NONNULL const RzType
 	return result;
 }
 
-static char *type_as_string_identifier_decl(const RzTypeDB *typedb, RZ_NONNULL const RzType *type, RZ_NONNULL const char *identifier, bool prev_ptr) {
-	rz_return_val_if_fail(typedb && type && identifier, NULL);
+struct HelperBufs {
+	RzStrBuf *arraybuf;
+	RzStrBuf *ptrbuf;
+};
+
+static char *type_as_string_identifier_decl(const RzTypeDB *typedb, RZ_NONNULL const RzType *type, RZ_NONNULL const char *identifier, RZ_NONNULL struct HelperBufs *bufs) {
+	rz_return_val_if_fail(typedb && type && identifier && bufs, NULL);
 
 	RzStrBuf *buf = rz_strbuf_new("");
 	switch (type->kind) {
 	case RZ_TYPE_KIND_IDENTIFIER: {
 		rz_return_val_if_fail(type->identifier.name, NULL);
-		const char *separator = prev_ptr ? " " : "";
 		// Here it can be any of the RzBaseType
 		RzBaseType *btype = rz_type_db_get_base_type(typedb, type->identifier.name);
 		if (!btype) {
-			rz_strbuf_appendf(buf, "%s%s", "unknown_t", separator);
+			rz_strbuf_append(buf, "unknown_t");
 		} else {
 			// If the structure/union is anonymous, then we put declaration inline,
 			// if not - just the name
 			if (!strncmp(type->identifier.name, "anonymous ", 10)) {
 				char *btypestr = btype->kind == RZ_BASE_TYPE_KIND_TYPEDEF ? strdup(btype->name) : rz_type_db_base_type_as_string(typedb, btype);
 				if (type->identifier.is_const) {
-					rz_strbuf_appendf(buf, "const %s%s", btypestr, separator);
+					rz_strbuf_appendf(buf, "const %s", btypestr);
 				} else {
 					rz_strbuf_append(buf, btypestr);
-					rz_strbuf_append(buf, separator);
 				}
 				free(btypestr);
 			} else {
@@ -937,32 +940,33 @@ static char *type_as_string_identifier_decl(const RzTypeDB *typedb, RZ_NONNULL c
 				default:
 					break;
 				}
-				rz_strbuf_appendf(buf, "%s%s", btype->name, separator);
+				rz_strbuf_append(buf, btype->name);
 			}
 		}
+		rz_strbuf_appendf(buf, " %s%s%s", rz_strbuf_drain(bufs->ptrbuf), identifier, rz_strbuf_drain(bufs->arraybuf));
 		break;
 	}
 	case RZ_TYPE_KIND_POINTER: {
 		// A pointer to the function is a special case
-		if (rz_type_is_callable_ptr(type)) {
+		if (rz_type_is_callable_ptr_nested(type)) {
 			char *typestr = rz_type_callable_ptr_as_string(typedb, type);
 			rz_strbuf_append(buf, typestr);
 			free(typestr);
 		} else {
-			char *typestr = type_as_string_identifier_decl(typedb, type->pointer.type, identifier, true);
 			if (type->pointer.is_const) {
-				rz_strbuf_appendf(buf, "%s* const", typestr);
+				rz_strbuf_append(bufs->ptrbuf, " const *");
 			} else {
-				rz_strbuf_appendf(buf, "%s*", typestr);
+				rz_strbuf_append(bufs->ptrbuf, "*");
 			}
+			char *typestr = type_as_string_identifier_decl(typedb, type->pointer.type, identifier, bufs);
+			rz_strbuf_append(buf, typestr);
 			free(typestr);
 		}
 		break;
 	}
 	case RZ_TYPE_KIND_ARRAY: {
-		// Here we don't append the array count since it's done on the
-		// identifier side
-		char *typestr = type_as_string_identifier_decl(typedb, type->array.type, identifier, false);
+		rz_strbuf_appendf(bufs->arraybuf, "[%" PFMT64d "]", type->array.count);
+		char *typestr = type_as_string_identifier_decl(typedb, type->array.type, identifier, bufs);
 		rz_strbuf_append(buf, typestr);
 		free(typestr);
 		break;
@@ -971,8 +975,7 @@ static char *type_as_string_identifier_decl(const RzTypeDB *typedb, RZ_NONNULL c
 		rz_strbuf_append(buf, rz_type_callable_as_string(typedb, type->callable));
 		break;
 	}
-	char *result = rz_strbuf_drain(buf);
-	return result;
+	return rz_strbuf_drain(buf);
 }
 
 /**
@@ -1007,8 +1010,10 @@ RZ_API RZ_OWN char *rz_type_declaration_as_string(const RzTypeDB *typedb, RZ_NON
  */
 RZ_API RZ_OWN char *rz_type_identifier_declaration_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *type, RZ_NONNULL const char *identifier) {
 	rz_return_val_if_fail(typedb && type, NULL);
-	bool is_ptr = type->kind == RZ_TYPE_KIND_POINTER;
-	return type_as_string_identifier_decl(typedb, type, identifier, is_ptr);
+	RzStrBuf *arraybuf = rz_strbuf_new("");
+	RzStrBuf *ptrbuf = rz_strbuf_new("");
+	struct HelperBufs bufs = { arraybuf, ptrbuf };
+	return type_as_string_identifier_decl(typedb, type, identifier, &bufs);
 }
 
 /**
