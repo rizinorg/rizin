@@ -1208,6 +1208,7 @@ RZ_API int rz_main_rz_hash(int argc, const char **argv) {
 		goto rz_main_rz_hash_end;
 	case RZ_HASH_OP_HELP:
 		result = 0;
+		/* fall-thru */
 	default:
 		rz_hash_show_help(false);
 		goto rz_main_rz_hash_end;
