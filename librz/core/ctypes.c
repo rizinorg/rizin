@@ -999,7 +999,7 @@ RZ_IPI bool rz_types_open_file(RzCore *core, const char *path) {
 		}
 	}
 	if (!strcmp(path, "-")) {
-		char *tmp = rz_core_editor(core, "*.h", "");
+		char *tmp = rz_core_editor(core, NULL, "");
 		if (tmp) {
 			char *error_msg = NULL;
 			int result = rz_type_parse_string_stateless(typedb->parser, tmp, &error_msg);
@@ -1024,24 +1024,4 @@ RZ_IPI bool rz_types_open_file(RzCore *core, const char *path) {
 	}
 	free(homefile);
 	return true;
-}
-
-RZ_IPI void rz_types_open_editor(RzCore *core, const char *typename) {
-	RzTypeDB *typedb = core->analysis->typedb;
-	char *str = rz_core_cmd_strf(core, "tc %s", typename ? typename : "");
-	char *tmp = rz_core_editor(core, "*.h", str);
-	if (tmp) {
-		char *error_msg = NULL;
-		int result = rz_type_parse_string_stateless(typedb->parser, tmp, &error_msg);
-		if (result) {
-			// TODO: remove previous types and save new edited types
-			//rz_type_db_purge(typedb);
-		}
-		if (error_msg) {
-			eprintf("%s\n", error_msg);
-			free(error_msg);
-		}
-		free(tmp);
-	}
-	free(str);
 }

@@ -185,7 +185,6 @@ static const RzCmdDescArg type_link_del_args[2];
 static const RzCmdDescArg type_list_noreturn_args[2];
 static const RzCmdDescArg type_noreturn_del_args[2];
 static const RzCmdDescArg type_open_file_args[2];
-static const RzCmdDescArg type_open_editor_args[2];
 static const RzCmdDescArg type_open_sdb_args[2];
 static const RzCmdDescArg type_print_args[3];
 static const RzCmdDescArg type_print_value_args[3];
@@ -4023,21 +4022,6 @@ static const RzCmdDescHelp type_open_file_help = {
 	.args = type_open_file_args,
 };
 
-static const RzCmdDescArg type_open_editor_args[] = {
-	{
-		.name = "type",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp type_open_editor_help = {
-	.summary = "Open cfg.editor to edit types",
-	.args = type_open_editor_args,
-};
-
 static const RzCmdDescArg type_open_sdb_args[] = {
 	{
 		.name = "file",
@@ -6358,9 +6342,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *to_cd = rz_cmd_desc_group_new(core->rcmd, t_cd, "to", rz_type_open_file_handler, &type_open_file_help, &to_help);
 	rz_warn_if_fail(to_cd);
-	RzCmdDesc *type_open_editor_cd = rz_cmd_desc_argv_new(core->rcmd, to_cd, "toe", rz_type_open_editor_handler, &type_open_editor_help);
-	rz_warn_if_fail(type_open_editor_cd);
-
 	RzCmdDesc *type_open_sdb_cd = rz_cmd_desc_argv_new(core->rcmd, to_cd, "tos", rz_type_open_sdb_handler, &type_open_sdb_help);
 	rz_warn_if_fail(type_open_sdb_cd);
 

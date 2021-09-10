@@ -537,12 +537,6 @@ RZ_IPI RzCmdStatus rz_type_open_file_handler(RzCore *core, int argc, const char 
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_type_open_editor_handler(RzCore *core, int argc, const char **argv) {
-	const char *typename = argc > 1 ? argv[1] : NULL;
-	rz_types_open_editor(core, typename);
-	return RZ_CMD_STATUS_OK;
-}
-
 RZ_IPI RzCmdStatus rz_type_open_sdb_handler(RzCore *core, int argc, const char **argv) {
 	rz_type_db_load_sdb(core->analysis->typedb, argv[1]);
 	return RZ_CMD_STATUS_OK;

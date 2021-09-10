@@ -80,7 +80,8 @@ RZ_IPI void rz_core_types_link_show(RzCore *core, ut64 addr);
 RZ_IPI void rz_core_types_print_all(RzCore *core, RzOutputMode mode);
 RZ_IPI void rz_types_define(RzCore *core, const char *type);
 RZ_IPI bool rz_types_open_file(RzCore *core, const char *path);
-RZ_IPI void rz_types_open_editor(RzCore *core, const char *typename);
+RZ_IPI bool rz_types_open_editor_all(RzCore *core);
+RZ_IPI bool rz_types_open_editor_type(RzCore *core, RZ_NONNULL const char *name);
 
 /* agraph.c */
 RZ_IPI void rz_core_agraph_add_node(RzCore *core, const char *title, const char *body, int color);
