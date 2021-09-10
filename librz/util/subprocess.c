@@ -838,6 +838,7 @@ error:
 	if (stdin_pipe[1] != -1) {
 		rz_sys_pipe_close(stdin_pipe[1]);
 	}
+	destroy_child_env(child_env);
 	subprocess_unlock();
 	return NULL;
 }
