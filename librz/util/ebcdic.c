@@ -573,7 +573,7 @@ RZ_API static int ebcdic_es_from_ascii(ut8 *dst, const ut8 src) {
 RZ_API static bool rz_is_ebcdic(const ut8 *str) {
 	ut8 *p = str;
 	while (*p != 0x00) {
-		if (*p >= 0x7f) {
+		if (*p > 0x7f) {
 			return true;
 		}
 		p++;
