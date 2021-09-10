@@ -608,7 +608,7 @@ RZ_API int rz_str_ebcdic_es_from_ascii(RZ_NONNULL RZ_OUT ut8 *dst, const ut8 src
 
 RZ_API bool rz_str_is_ebcdic(RZ_NONNULL const ut8 *str) {
 	rz_return_val_if_fail(str, false);
-	ut8 *p = str;
+	const ut8 *p = str;
 	while (*p != 0x00) {
 		if (*p > 0x7f) {
 			return true;
