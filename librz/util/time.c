@@ -51,10 +51,26 @@ RZ_API ut64 rz_time_now_mono(void) {
 RZ_API char *rz_time_stamp_to_str(ut32 timeStamp) {
 	time_t ts = (time_t)timeStamp;
 	struct tm *time;
-	time = gmtime(&ts);
-	time_t gmt_time = mktime(time);
 	time = localtime(&ts);
+#ifdef _MSC_VER
+	// Hack on Windows to prevent mktime() from returning -1 when the
+	// timestamp is close to 0. Fortunately, Windows doesn't seem to support
+	// the concept of a location's timezone changing on a politician's whim,
+	// and neither 1969 nor 1970 are leap years.
+	bool advance_1_year = false;
+	if (time->tm_year == 69 || time->tm_year == 70) {
+		time->tm_year++;
+		advance_1_year = true;
+	}
+#endif
 	time_t local_time = mktime(time);
+	time = gmtime(&ts);
+#ifdef _MSC_VER
+	if (advance_1_year) {
+		time->tm_year++;
+	}
+#endif
+	time_t gmt_time = mktime(time);
 	long diff = (long)difftime(local_time, gmt_time);
 	char *timestr = ctime(&ts);
 	if (timestr) {
