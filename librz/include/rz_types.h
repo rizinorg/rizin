@@ -137,12 +137,15 @@ typedef enum {
 #endif
 #if __WINDOWS__ || _WIN32
 #ifdef _MSC_VER
+#include <sdkddkver.h>
+#ifdef NTDDI_WIN10_TH2
+/* Avoid using Developer Preview and default to Windows 10/Windows Server 2016 */
+#define _WIN32_WINNT  _WIN32_WINNT_WIN10
+#define NTDDI_VERSION NTDDI_WIN10
+#endif
 /* Must be included before windows.h */
 #include <winsock2.h>
 #include <ws2tcpip.h>
-// this is needed since winsock2.h contains an inline definition
-// error LNK2005: SocketNotificationRetrieveEvents already defined
-static inline UINT32 SocketNotificationRetrieveEvents(OVERLAPPED_ENTRY *notification);
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
