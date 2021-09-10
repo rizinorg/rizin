@@ -26,7 +26,7 @@
 #include "libhppa.h"
 #include "opcode/hppa.h"
 #include <string.h>
-#include <rz_types.h>
+#include <rz_types_base.h>
 
 /* Integer register names, indexed by the numbers which appear in the
    opcodes.  */
