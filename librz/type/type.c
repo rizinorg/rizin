@@ -977,9 +977,12 @@ static char *type_as_string_identifier_decl(const RzTypeDB *typedb, RZ_NONNULL c
 		free(typestr);
 		break;
 	}
-	case RZ_TYPE_KIND_CALLABLE:
-		rz_strbuf_append(buf, rz_type_callable_as_string(typedb, type->callable));
+	case RZ_TYPE_KIND_CALLABLE: {
+		char *callstr = rz_type_callable_as_string(typedb, type->callable);
+		rz_strbuf_append(buf, callstr);
+		free(callstr);
 		break;
+	}
 	}
 	return rz_strbuf_drain(buf);
 }
