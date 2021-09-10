@@ -48,17 +48,6 @@ ok
 EOF
 RUN
 
-NAME=yank-segfault4
-FILE==
-CMDS=<<EOF
-y 1000000000
-?e ok
-EOF
-EXPECT=<<EOF
-ok
-EOF
-RUN
-
 NAME=yank-doublefree
 FILE==
 CMDS=<<EOF
