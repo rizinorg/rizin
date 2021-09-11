@@ -2286,7 +2286,7 @@ RZ_API bool rz_core_bin_relocs_print(RzCore *core, RzBinFile *bf, RzCmdStateOutp
 						: NULL;
 			if (bin_demangle) {
 				char *mn = rz_bin_demangle(core->bin->cur, NULL, name, addr, keep_lib);
-				if (mn && *mn) {
+				if (RZ_STR_ISNOTEMPTY(mn)) {
 					free(name);
 					name = mn;
 				}
@@ -3641,7 +3641,7 @@ static void bin_class_print_rizin(RzCore *r, RzBinClass *c, ut64 at_min) {
 	}
 
 	// C struct
-	if (bf->o->lang == RZ_BIN_LANGUAGE_C || bf->o->lang == RZ_BIN_LANGUAGE_CXX) {
+	if (bf->o->lang == RZ_BIN_LANGUAGE_C || bf->o->lang == RZ_BIN_LANGUAGE_CXX || bf->o->lang == RZ_BIN_LANGUAGE_OBJC) {
 		rz_cons_printf("td \"struct %s {", c->name);
 		rz_list_foreach (c->fields, iter2, f) {
 			char *n = objc_name_toc(f->name);

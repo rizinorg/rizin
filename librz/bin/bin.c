@@ -1353,6 +1353,11 @@ RZ_API char *rz_bin_demangle(RzBinFile *bf, const char *language, const char *sy
 	}
 	RzBin *bin = bf ? bf->rbin : NULL;
 	RzBinObject *o = bf ? bf->o : NULL;
+
+	if (!language && o && o->info && o->info->lang) {
+		language = o->info->lang;
+	}
+
 	RzListIter *iter;
 	const char *lib = NULL;
 	if (!strncmp(symbol, "reloc.", 6)) {
@@ -1363,6 +1368,9 @@ RZ_API char *rz_bin_demangle(RzBinFile *bf, const char *language, const char *sy
 	}
 	if (!strncmp(symbol, "imp.", 4)) {
 		symbol += 4;
+	}
+	if (!strncmp(symbol, "target.", 7)) {
+		symbol += 7;
 	}
 	if (o) {
 		bool found = false;
@@ -1411,6 +1419,15 @@ RZ_API char *rz_bin_demangle(RzBinFile *bf, const char *language, const char *sy
 	char *demangled = NULL;
 	switch (type) {
 	case RZ_BIN_LANGUAGE_UNKNOWN: return NULL;
+	case RZ_BIN_LANGUAGE_KOTLIN:
+		/* fall-thru */
+	case RZ_BIN_LANGUAGE_GROOVY:
+		/* fall-thru */
+	case RZ_BIN_LANGUAGE_DART:
+		/* fall-thru */
+	case RZ_BIN_LANGUAGE_JAVA: demangled = rz_demangler_java(symbol); break;
+	case RZ_BIN_LANGUAGE_OBJC: demangled = rz_demangler_objc(symbol); break;
+	case RZ_BIN_LANGUAGE_MSVC: demangled = rz_demangler_msvc(symbol); break;
 	case RZ_BIN_LANGUAGE_RUST: demangled = bin_demangle_rust(bf, symbol, vaddr); break;
 	case RZ_BIN_LANGUAGE_CXX: demangled = bin_demangle_cxx(bf, symbol, vaddr); break;
 	default: rz_demangler_resolve(symbol, language, &demangled);

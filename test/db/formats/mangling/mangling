@@ -1,6 +1,6 @@
 NAME=m128 parsing test
 FILE==
-CMDS=!rz-bin -D cxx "_ZNSt2147483648ios_base4InitD1Ev"
+CMDS=!rz-bin -D c++ "_ZNSt2147483648ios_base4InitD1Ev"
 EXPECT=<<EOF
 _ZNSt2147483648ios_base4InitD1Ev
 EOF

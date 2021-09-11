@@ -157,7 +157,7 @@ RZ_API int rz_bin_language_detect(RzBinFile *binfile) {
 		info->lang = "c++";
 		return language_apply_blocks_mask(RZ_BIN_LANGUAGE_CXX, is_blocks);
 	} else if (!info->lang) {
-		return RZ_BIN_LANGUAGE_UNKNOWN;
+		info->lang = "c";
 	} else if (strstr(info->lang, "java")) {
 		return RZ_BIN_LANGUAGE_JAVA;
 	}

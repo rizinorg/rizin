@@ -292,7 +292,7 @@ typedef struct rz_bin_object_t {
 	RzBinInfo *info;
 	RzBinAddr *binsym[RZ_BIN_SPECIAL_SYMBOL_LAST];
 	struct rz_bin_plugin_t *plugin;
-	int lang;
+	RzBinLanguage lang;
 	RZ_DEPRECATE Sdb *kv; ///< deprecated, put info in C structures instead of this
 	HtUP *addrzklassmethod;
 	void *bin_obj; // internal pointer used by formats
