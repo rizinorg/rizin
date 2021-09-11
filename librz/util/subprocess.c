@@ -630,6 +630,9 @@ static char **create_child_env(const char *envvars[], const char *envvals[], siz
 	char **ep;
 	size_t new_env_size = env_size, size = 0;
 	size_t *positions = RZ_NEWS(size_t, env_size);
+	if (!positions) {
+		return NULL;
+	}
 	for (size_t i = 0; i < env_size; i++) {
 		positions[i] = SIZE_MAX;
 	}
@@ -652,6 +655,10 @@ static char **create_child_env(const char *envvars[], const char *envvals[], siz
 	}
 
 	char **new_env = RZ_NEWS(char *, size + new_env_size + 1);
+	if (!new_env) {
+		free(positions);
+		return NULL;
+	}
 	for (size_t i = 0; i < size; i++) {
 		new_env[i] = strdup(environ[i]);
 	}
@@ -676,6 +683,9 @@ static char **create_child_env(const char *envvars[], const char *envvals[], siz
 }
 
 static void destroy_child_env(char **child_env) {
+	if (!child_env) {
+		return;
+	}
 	char **ep;
 	for (ep = child_env; *ep; ep++) {
 		free(*ep);
@@ -684,6 +694,8 @@ static void destroy_child_env(char **child_env) {
 }
 
 RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
+	RzSubprocess *proc = NULL;
+	char **child_env = NULL;
 	char **argv = calloc(opt->args_size + 2, sizeof(char *));
 	if (!argv) {
 		return NULL;
@@ -694,7 +706,7 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 	}
 	// done by calloc: argv[args_size + 1] = NULL;
 	subprocess_lock();
-	RzSubprocess *proc = RZ_NEW0(RzSubprocess);
+	proc = RZ_NEW0(RzSubprocess);
 	if (!proc) {
 		goto error;
 	}
@@ -756,7 +768,7 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 
 	// Let's create the environment for the child in the parent, with malloc,
 	// because we can't use functions that lock after fork
-	char **child_env = create_child_env(opt->envvars, opt->envvals, opt->env_size);
+	child_env = create_child_env(opt->envvars, opt->envvals, opt->env_size);
 
 	proc->pid = rz_sys_fork();
 	if (proc->pid == -1) {
@@ -838,6 +850,7 @@ error:
 	if (stdin_pipe[1] != -1) {
 		rz_sys_pipe_close(stdin_pipe[1]);
 	}
+	destroy_child_env(child_env);
 	subprocess_unlock();
 	return NULL;
 }
@@ -934,14 +947,14 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
 		if (stdout_enabled && FD_ISSET(proc->stdout_fd, &rfds)) {
 			timedout = false;
 			size_t r = read_to_strbuf(&proc->out, proc->stdout_fd, &stdout_eof, n_bytes);
-			if (r >= 0 && n_bytes) {
+			if (r > 0 && n_bytes) {
 				n_bytes -= r;
 			}
 		}
 		if (stderr_enabled && FD_ISSET(proc->stderr_fd, &rfds)) {
 			timedout = false;
 			size_t r = read_to_strbuf(&proc->err, proc->stderr_fd, &stderr_eof, n_bytes);
-			if (r >= 0 && n_bytes) {
+			if (r > 0 && n_bytes) {
 				n_bytes -= r;
 			}
 		}

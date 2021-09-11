@@ -455,6 +455,63 @@ static bool test_const_types(void) {
 	mu_end;
 }
 
+static char *array = "int a[65][5][0]";
+static char *array_exp1 = "int [65][5][0]";
+static char *array_ptr = "int * const *a[][][][9]";
+static char *array_ptr_exp1 = "int * const *[0][0][0][9]";
+static char *array_ptr_exp2 = "int * const *a[0][0][0][9]";
+static char *struct_array_ptr = "struct alb { const char *b; int * const *a[][][][9]; }";
+static char *struct_array_ptr_exp1 = "struct alb";
+static char *struct_array_ptr_exp2 = "struct alb { const char *b; int * const *a[0][0][0][9]; }";
+static char *struct_array_ptr_exp3 = "struct alb a";
+
+static bool test_type_as_string(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
+	const char *dir_prefix = rz_sys_prefix(NULL);
+	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
+
+	char *error_msg = NULL;
+	RzType *ttype = rz_type_parse_string_single(typedb->parser, array, &error_msg);
+	mu_assert_notnull(ttype, "array type parse successfull");
+	mu_assert_true(ttype->kind == RZ_TYPE_KIND_ARRAY, "is array");
+
+	char *array_str1 = rz_type_as_string(typedb, ttype);
+	char *array_str2 = rz_type_declaration_as_string(typedb, ttype);
+	char *array_str3 = rz_type_identifier_declaration_as_string(typedb, ttype, "a");
+	mu_assert_streq_free(array_str1, array_exp1, "rz_type_as_string");
+	mu_assert_streq_free(array_str2, array_exp1, "rz_type_declaration_as_string");
+	mu_assert_streq_free(array_str3, array, "rz_type_identifier_declaration_as_string");
+	rz_type_free(ttype);
+
+	ttype = rz_type_parse_string_single(typedb->parser, array_ptr, &error_msg);
+	mu_assert_notnull(ttype, "array type parse successfull");
+	mu_assert_true(ttype->kind == RZ_TYPE_KIND_ARRAY, "is array");
+
+	array_str1 = rz_type_as_string(typedb, ttype);
+	array_str2 = rz_type_declaration_as_string(typedb, ttype);
+	array_str3 = rz_type_identifier_declaration_as_string(typedb, ttype, "a");
+	mu_assert_streq_free(array_str1, array_ptr_exp1, "rz_type_as_string");
+	mu_assert_streq_free(array_str2, array_ptr_exp1, "rz_type_declaration_as_string");
+	mu_assert_streq_free(array_str3, array_ptr_exp2, "rz_type_identifier_declaration_as_string");
+	rz_type_free(ttype);
+
+	ttype = rz_type_parse_string_single(typedb->parser, struct_array_ptr, &error_msg);
+	mu_assert_notnull(ttype, "struct type parse successfull");
+
+	array_str1 = rz_type_as_string(typedb, ttype);
+	array_str2 = rz_type_declaration_as_string(typedb, ttype);
+	array_str3 = rz_type_identifier_declaration_as_string(typedb, ttype, "a");
+	mu_assert_streq_free(array_str1, struct_array_ptr_exp1, "rz_type_as_string");
+	mu_assert_streq_free(array_str2, struct_array_ptr_exp2, "rz_type_declaration_as_string");
+	mu_assert_streq_free(array_str3, struct_array_ptr_exp3, "rz_type_identifier_declaration_as_string");
+	rz_type_free(ttype);
+
+	rz_type_db_free(typedb);
+	mu_end;
+}
+
 static bool test_array_types(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
@@ -505,8 +562,8 @@ static bool test_array_types(void) {
 	mu_end;
 }
 
-static char *func_ptr_struct = "struct bla { int a; wchar_t (*func)(int a, const char * b); }";
-static char *func_double_ptr_struct = "struct blabla { int a; wchar_t (**funk)(int a, const char * b); }";
+static char *func_ptr_struct = "struct bla { int a; wchar_t (*func)(int a, const char *b); }";
+static char *func_double_ptr_struct = "struct blabla { int a; wchar_t (**funk)(int a, const char *b); }";
 
 static bool test_struct_func_types(void) {
 	RzTypeDB *typedb = rz_type_db_new();
@@ -747,6 +804,7 @@ int all_tests() {
 	mu_run_test(test_types_get_base_type_not_found);
 	mu_run_test(test_types_get_base_types);
 	mu_run_test(test_types_get_base_types_of_kind);
+	mu_run_test(test_type_as_string);
 	mu_run_test(test_enum_types);
 	mu_run_test(test_const_types);
 	mu_run_test(test_array_types);

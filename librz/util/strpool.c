@@ -48,7 +48,7 @@ RZ_API char *rz_strpool_alloc(RzStrpool *p, int l) {
 		ret = realloc(p->str, p->size);
 		if (!ret) {
 			eprintf("Realloc failed!\n");
-			free(p->str);
+			RZ_FREE(p->str);
 			return NULL;
 		}
 		p->str = ret;
@@ -92,7 +92,7 @@ RZ_API int rz_strpool_fit(RzStrpool *p) {
 	s = realloc(p->str, p->len);
 	if (!s) {
 		eprintf("Realloc failed!\n");
-		free(p->str);
+		RZ_FREE(p->str);
 		return false;
 	}
 	p->str = s;

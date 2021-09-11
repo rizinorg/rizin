@@ -53,7 +53,7 @@ static void find_functions(RzCore *core, size_t count) {
 	switch (count) {
 	case 0: cmd = "aa"; break;
 	case 1: cmd = "aaa"; break;
-	case 2: cmd = "aaaa"; break;
+	default: cmd = "aaaa"; break;
 	}
 	rz_core_cmd0(core, cmd);
 }

@@ -5804,7 +5804,7 @@ toro:
 			if (ds->immtrim) {
 				free(ds->opstr);
 				ds->opstr = strdup(rz_asm_op_get_asm(&ds->asmop));
-				rz_parse_immtrim(ds->opstr);
+				ds->opstr = rz_parse_immtrim(ds->opstr);
 			}
 		}
 		if (ds->asm_instr) {
