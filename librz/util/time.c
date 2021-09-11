@@ -69,6 +69,7 @@ RZ_API char *rz_time_stamp_to_str(ut32 timeStamp) {
 	}
 #endif
 	time_t local_time = mktime(time);
+	bool err = gmt_time == -1 || local_time == -1;
 	long diff = (long)difftime(local_time, gmt_time);
 	char *timestr = ctime(&ts);
 	if (timestr) {
@@ -76,7 +77,9 @@ RZ_API char *rz_time_stamp_to_str(ut32 timeStamp) {
 		long hours = diff / 3600;
 		long minutes = abs(diff % 3600 / 60);
 		long seconds = abs(diff % 3600 % 60);
-		if (seconds) {
+		if (err) {
+			timestr = rz_str_newf("%s ERR", timestr);
+		} else if (seconds) {
 			timestr = rz_str_newf("%s UTC%+ld:%ld:%ld", timestr, hours, minutes, seconds);
 		} else if (minutes) {
 			timestr = rz_str_newf("%s UTC%+ld:%ld", timestr, hours, minutes);
