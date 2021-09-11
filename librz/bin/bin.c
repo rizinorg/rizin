@@ -1300,7 +1300,7 @@ RZ_API const RzBinLdrPlugin *rz_bin_ldrplugin_get(RzBin *bin, const char *name) 
 static char *bin_demangle_cxx(RzBinFile *bf, const char *symbol, ut64 vaddr) {
 	char *out = rz_demangler_cxx(symbol);
 	if (!out || !bf) {
-		return NULL;
+		return out;
 	}
 	char *sign = (char *)strchr(out, '(');
 	if (!sign) {
