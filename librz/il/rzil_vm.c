@@ -548,11 +548,61 @@ RZ_API RzPVector *rz_il_make_oplist(int num, ...) {
 	return oplist;
 }
 
-// TODO : check types and auto convertion to all these evaluate functions
+// WARN : convertion breaks the original data
+static RzILBool *bitv_to_bool(RzILBitVector *bitv) {
+	RzILBool *result;
+	if (rz_il_bv_is_zero_vector(bitv)) {
+		result = rz_il_new_bool(false);
+	} else {
+		result = rz_il_new_bool(true);
+	}
+
+	rz_il_bv_free(bitv);
+	return result;
+}
+
+static RzILVal *bitv_to_val(RzILBitVector *bitv) {
+	RzILVal *ret = rz_il_new_value();
+	ret->type = RZIL_VAR_TYPE_BV;
+	ret->data.bv = bitv;
+	return ret;
+}
+
+static RzILVal *bool_to_val(RzILBool *b) {
+	RzILVal *ret = rz_il_new_value();
+	ret->type = RZIL_VAR_TYPE_BOOL;
+	ret->data.b = b;
+	return ret;
+}
+
+static RzILBool *val_to_bool(RzILVal *val) {
+	RzILBool *ret;
+	if (val->type != RZIL_VAR_TYPE_BOOL) {
+		RZ_LOG_ERROR("BAD VALUE TYPE\n");
+		return NULL;
+	}
+
+	ret = val->data.b;
+	RZ_FREE(val);
+	return ret;
+}
+
+static RzILBitVector *val_to_bitv(RzILVal *val) {
+	RzILBitVector *ret;
+	if (val->type != RZIL_VAR_TYPE_BV) {
+		RZ_LOG_ERROR("BAD VALUE TYPE\n");
+		return NULL;
+	}
+
+	ret = val->data.bv;
+	RZ_FREE(val);
+	return ret;
+}
+
 // VM auto convertion
 RzILBitVector *rz_il_evaluate_bitv(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
 	// check type and auto convertion between bitv/bool/val
-	void *result = rz_il_parse_op_root(vm, op, type);
+	void *input = rz_il_parse_op_root(vm, op, type);
 	RZIL_OP_ARG_TYPE t = *type;
 
 	// check if type is bitv
@@ -560,12 +610,16 @@ RzILBitVector *rz_il_evaluate_bitv(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *typ
 	// else report error
 	switch (t) {
 	case RZIL_OP_ARG_BITV:
-		return (RzILBitVector *)result;
+		return (RzILBitVector *)input;
 	case RZIL_OP_ARG_BOOL:
-		break;
+		*type = RZIL_OP_ARG_BOOL;
+		RZ_LOG_ERROR("TODO : BOOL TO BITV\n");
+		return NULL;
 	case RZIL_OP_ARG_VAL:
-		break;
+		*type = RZIL_OP_ARG_BITV;
+		return val_to_bitv(input);
 	case RZIL_OP_ARG_EFF:
+	case RZIL_OP_ARG_MEM:
 	default:
 		RZ_LOG_ERROR("BAD TYPE DETECTED\n");
 		break;
@@ -576,17 +630,76 @@ RzILBitVector *rz_il_evaluate_bitv(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *typ
 
 RzILBool *rz_il_evaluate_bool(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
 	void *result = rz_il_parse_op_root(vm, op, type);
-	return result;
+	RZIL_OP_ARG_TYPE t = *type;
+
+	// check if type is bitv
+	// else, convert to bitv if possible
+	// else report error
+	switch (t) {
+	case RZIL_OP_ARG_BITV:
+		*type = RZIL_OP_ARG_BOOL;
+		return bitv_to_bool(result);
+	case RZIL_OP_ARG_BOOL:
+		return result;
+	case RZIL_OP_ARG_VAL:
+		*type = RZIL_OP_ARG_BOOL;
+		return val_to_bool(result);
+	case RZIL_OP_ARG_EFF:
+	case RZIL_OP_ARG_MEM:
+	default:
+		RZ_LOG_ERROR("BAD TYPE DETECTED\n");
+		break;
+	}
+
+	return NULL;
 }
 
 RzILVal *rz_il_evaluate_val(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
 	void *result = rz_il_parse_op_root(vm, op, type);
-	return result;
+	RZIL_OP_ARG_TYPE t = *type;
+
+	// check if type is bitv
+	// else, convert to bitv if possible
+	// else report error
+	switch (t) {
+	case RZIL_OP_ARG_BITV:
+		*type = RZIL_OP_ARG_VAL;
+		return bitv_to_val(result);
+	case RZIL_OP_ARG_BOOL:
+		*type = RZIL_OP_ARG_VAL;
+		return bool_to_val(result);
+	case RZIL_OP_ARG_VAL:
+		return result;
+	case RZIL_OP_ARG_EFF:
+	case RZIL_OP_ARG_MEM:
+	default:
+		RZ_LOG_ERROR("BAD TYPE DETECTED\n");
+		break;
+	}
+
+	return NULL;
 }
 
 RzILEffect *rz_il_evaluate_effect(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
 	void *result = rz_il_parse_op_root(vm, op, type);
-	return result;
+	RZIL_OP_ARG_TYPE t = *type;
+
+	// check if type is bitv
+	// else, convert to bitv if possible
+	// else report error
+	switch (t) {
+	case RZIL_OP_ARG_EFF:
+		return result;
+	case RZIL_OP_ARG_BITV:
+	case RZIL_OP_ARG_BOOL:
+	case RZIL_OP_ARG_VAL:
+	case RZIL_OP_ARG_MEM:
+	default:
+		RZ_LOG_ERROR("BAD TYPE DETECTED\n");
+		break;
+	}
+
+	return NULL;
 }
 
 // recursively parse and evaluate
