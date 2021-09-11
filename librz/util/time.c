@@ -65,13 +65,7 @@ RZ_API char *rz_time_stamp_to_str(ut32 timeStamp) {
 	time = localtime(&ts);
 #ifdef _MSC_VER
 	if (advance_1_day) {
-		if (time->tm_mday == 31 && time->tm_mon == 11 && time->tm_year == 69) {
-			time->tm_mday = 1;
-			time->tm_mon = 0;
-			time->tm_year = 70;
-		} else {
-			time->tm_mday++;
-		}
+		time->tm_mday++;
 	}
 #endif
 	time_t local_time = mktime(time);
