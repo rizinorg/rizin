@@ -47,33 +47,50 @@ RZ_API ut64 rz_time_now_mono(void) {
 #endif
 }
 
+/* timeStamp must be a Unix epoch integer */
 RZ_API char *rz_time_stamp_to_str(ut32 timeStamp) {
-#ifdef _MSC_VER
-	time_t rawtime;
-	struct tm *tminfo;
-	struct tm tmptm;
-	rawtime = (time_t)timeStamp;
-	tminfo = rz_localtime_r(&rawtime, &tmptm);
-	//tminfo = gmtime (&rawtime);
-	return rz_str_trim_dup(asctime(tminfo));
-#else
-	struct my_timezone {
-		int tz_minuteswest; /* minutes west of Greenwich */
-		int tz_dsttime; /* type of DST correction */
-	} tz;
-	struct timeval tv;
-	int gmtoff;
+	char timestr_buf[ASCTIME_BUF_MINLEN];
 	time_t ts = (time_t)timeStamp;
-	gettimeofday(&tv, (void *)&tz);
-	gmtoff = (int)(tz.tz_minuteswest * 60); // in seconds
-	ts += (time_t)gmtoff;
-	char *res = malloc(ASCTIME_BUF_MINLEN);
-	if (res) {
-		ctime_r(&ts, res);
-		rz_str_trim(res); // XXX we probably need an rz_str_trim_dup()
+	struct tm time;
+	rz_gmtime_r(&ts, &time);
+#if __WINDOWS__
+	// Hack on Windows to prevent mktime() from returning -1 when the
+	// timestamp is close to 0.
+	bool advance_1_day = false;
+	if (time.tm_mday == 1 && time.tm_mon == 0 && time.tm_year == 70) {
+		time.tm_mday++;
+		advance_1_day = true;
 	}
-	return res;
 #endif
+	time_t gmt_time = mktime(&time);
+	rz_localtime_r(&ts, &time);
+#if __WINDOWS__
+	if (advance_1_day) {
+		time.tm_mday++;
+	}
+#endif
+	time_t local_time = mktime(&time);
+	bool err = gmt_time == -1 || local_time == -1;
+	long diff = (long)difftime(local_time, gmt_time);
+	char *timestr = rz_ctime_r(&ts, timestr_buf);
+	if (timestr) {
+		rz_str_trim(timestr);
+		long hours = diff / 3600;
+		long minutes = abs(diff % 3600 / 60);
+		long seconds = abs(diff % 3600 % 60);
+		if (err) {
+			timestr = rz_str_newf("%s ERR", timestr);
+		} else if (seconds) {
+			timestr = rz_str_newf("%s UTC%+ld:%ld:%ld", timestr, hours, minutes, seconds);
+		} else if (minutes) {
+			timestr = rz_str_newf("%s UTC%+ld:%ld", timestr, hours, minutes);
+		} else if (hours) {
+			timestr = rz_str_newf("%s UTC%+ld", timestr, hours);
+		} else {
+			timestr = rz_str_newf("%s UTC", timestr);
+		}
+	}
+	return timestr;
 }
 
 RZ_API ut32 rz_time_dos_time_stamp_to_posix(ut32 timeStamp) {
