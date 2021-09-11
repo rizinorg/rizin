@@ -197,7 +197,7 @@ RZ_API bool rz_file_is_abspath(const char *file) {
 
 RZ_API char *rz_file_abspath_rel(const char *cwd, const char *file) {
 	char *ret = NULL;
-	if (!file || !strcmp(file, ".") || !strcmp(file, "./")) {
+	if (RZ_STR_ISEMPTY(file) || !strcmp(file, ".") || !strcmp(file, "./")) {
 		return strdup(cwd);
 	}
 	if (strstr(file, "://")) {
