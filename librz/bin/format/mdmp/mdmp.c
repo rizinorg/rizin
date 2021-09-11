@@ -357,43 +357,43 @@ static bool read_hdr(RzBuffer *b, struct minidump_header *hdr) {
 
 	bool result = true;
 
-	ut32 signature;
+	ut32 signature = 0;
 	if (!rz_buf_read_le32(b, &signature)) {
 		result = false;
 	}
 	hdr->signature = signature;
 
-	ut32 version;
+	ut32 version = 0;
 	if (!rz_buf_read_le32(b, &version)) {
 		result = false;
 	}
 	hdr->version = version;
 
-	ut32 number_of_streams;
+	ut32 number_of_streams = 0;
 	if (!rz_buf_read_le32(b, &number_of_streams)) {
 		result = false;
 	}
 	hdr->number_of_streams = number_of_streams;
 
-	ut32 stream_directory_rva;
+	ut32 stream_directory_rva = 0;
 	if (!rz_buf_read_le32(b, &stream_directory_rva)) {
 		result = false;
 	}
 	hdr->stream_directory_rva = stream_directory_rva;
 
-	ut32 check_sum;
+	ut32 check_sum = 0;
 	if (!rz_buf_read_le32(b, &check_sum)) {
 		result = false;
 	}
 	hdr->check_sum = check_sum;
 
-	ut32 reserved;
+	ut32 reserved = 0;
 	if (!rz_buf_read_le32(b, &reserved)) {
 		result = false;
 	}
 	hdr->reserved = reserved;
 
-	ut64 flags;
+	ut64 flags = 0;
 	if (!rz_buf_read_le64(b, &flags)) {
 		result = false;
 	}
