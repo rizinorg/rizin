@@ -73,6 +73,7 @@ RZ_API int rz_main_rz_run(int argc, const char **argv) {
 	ret = rz_run_config_env(p);
 	if (ret) {
 		printf("error while configuring the environment.\n");
+		rz_run_free(p);
 		return 1;
 	}
 	ret = rz_run_start(p);

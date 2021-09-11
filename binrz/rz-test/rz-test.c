@@ -344,6 +344,7 @@ int rz_test_main(int argc, const char **argv) {
 		int i;
 		for (i = opt.ind; i < argc; i++) {
 			const char *arg = argv[i];
+			char *alloc_arg = NULL;
 			if (*arg == '@') {
 				arg++;
 				eprintf("Category: %s\n", arg);
@@ -370,7 +371,7 @@ int rz_test_main(int argc, const char **argv) {
 				} else if (!strcmp(arg, "cmds")) {
 					arg = "db";
 				} else {
-					arg = rz_str_newf("db/%s", arg + 1);
+					arg = alloc_arg = rz_str_newf("db/%s", arg + 1);
 				}
 			}
 			char *tf = rz_file_abspath_rel(cwd, arg);
@@ -378,9 +379,11 @@ int rz_test_main(int argc, const char **argv) {
 				eprintf("Failed to load tests from \"%s\"\n", tf);
 				rz_test_test_database_free(state.db);
 				free(tf);
+				free(alloc_arg);
 				ret = -1;
 				goto beach;
 			}
+			RZ_FREE(alloc_arg);
 			free(tf);
 		}
 	} else {

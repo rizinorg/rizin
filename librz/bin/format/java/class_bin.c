@@ -1040,7 +1040,7 @@ RZ_API RZ_OWN RzList *rz_bin_java_class_strings(RZ_NONNULL RzBinJavaClass *bin) 
 }
 
 static char *add_class_name_to_name(char *name, char *classname) {
-	if (classname && name) {
+	if (classname) {
 		return rz_str_newf("%s.%s", classname, name);
 	}
 	return strdup(name);
