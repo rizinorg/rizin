@@ -255,7 +255,19 @@ if r.returncode() == 1 and get_option('subprojects_check')
   error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
 endif
 
-libdemangle_proj = subproject('libdemangle', default_options: ['default_library=static'])
+libdemangle_options = ['default_library=static']
+if get_option('use_gpl')
+  libdemangle_options += 'use_gpl=true'
+else
+  libdemangle_options += 'use_gpl=false'
+endif
+if get_option('use_swift_demangler')
+  libdemangle_options += 'use_swift_demangler=true'
+else
+  libdemangle_options += 'use_swift_demangler=false'
+endif
+
+libdemangle_proj = subproject('libdemangle', default_options: libdemangle_options)
 libdemangle_dep = libdemangle_proj.get_variable('libdemangle_dep')
 
 # handle openssl library
@@ -271,11 +283,7 @@ if get_option('use_libuv')
 
   libuv_dep = dependency('libuv', version: '>=1.0.0', required: get_option('use_sys_libuv'), static: is_static_build)
   if not libuv_dep.found()
-    libuv_proj = subproject('libuv', default_options: [
-      'default_library=static',
-      'use_gpl=' + get_option('use_gpl'),
-      'use_swift_demangler=' + get_option('use_swift_demangler'),
-    ])
+    libuv_proj = subproject('libuv', default_options: ['default_library=static'])
     libuv_dep = libuv_proj.get_variable('libuv_dep')
   endif
 endif
