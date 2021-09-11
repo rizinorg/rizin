@@ -622,10 +622,7 @@ static void selection_widget_down(int steps) {
 }
 
 static void print_rline_task(void *_core) {
-	RzCore *core = (RzCore *)_core;
-	if (core->cons->context->color_mode) {
-		rz_cons_clear_line(0);
-	}
+	rz_cons_clear_line(0);
 	rz_cons_printf("%s%s%s", Color_RESET, I.prompt, I.buffer.data);
 	rz_cons_flush();
 }
@@ -975,8 +972,8 @@ static void __print_prompt(void) {
 		rz_cons_gotoxy(0, cons->rows);
 		rz_cons_flush();
 	}
+	rz_cons_clear_line(0);
 	if (cons->context->color_mode > 0) {
-		rz_cons_clear_line(0);
 		printf("\r%s%s", Color_RESET, I.prompt);
 	} else {
 		printf("\r%s", I.prompt);
@@ -1416,7 +1413,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 #endif
 		bool o_do_setup_match = I.history.do_setup_match;
 		I.history.do_setup_match = true;
-		if (I.echo && cons->context->color_mode) {
+		if (I.echo) {
 			rz_cons_clear_line(0);
 		}
 		(void)rz_cons_get_size(&rows);
