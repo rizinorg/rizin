@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bin.h>
-#include <rz_types.h>
+#include <rz_demangler.h>
 #include <rz_util.h>
 #include <rz_lib.h>
 #include <rz_io.h>
@@ -1295,4 +1295,130 @@ RZ_API const RzBinLdrPlugin *rz_bin_ldrplugin_get(RzBin *bin, const char *name) 
 		}
 	}
 	return NULL;
+}
+
+static char *bin_demangle_cxx(RzBinFile *bf, const char *symbol, ut64 vaddr) {
+	char *out = rz_demangler_cxx(symbol);
+	if (!out || !bf) {
+		return NULL;
+	}
+	char *sign = (char *)strchr(out, '(');
+	if (!sign) {
+		return out;
+	}
+
+	char *str = out;
+	char *ptr = NULL;
+	char *method_name = NULL;
+	for (;;) {
+		ptr = strstr(str, "::");
+		if (!ptr || ptr > sign) {
+			break;
+		}
+		method_name = ptr;
+		str = ptr + 1;
+	}
+
+	if (RZ_STR_ISEMPTY(method_name)) {
+		return out;
+	}
+
+	*method_name = 0;
+	RzBinSymbol *sym = rz_bin_file_add_method(bf, out, method_name + 2, 0);
+	if (sym) {
+		if (sym->vaddr != 0 && sym->vaddr != vaddr) {
+			RZ_LOG_INFO("Duplicated method found: %s\n", sym->name);
+		}
+		if (sym->vaddr == 0) {
+			sym->vaddr = vaddr;
+		}
+	}
+	*method_name = ':';
+	return out;
+}
+
+RZ_API char *bin_demangle_rust(RzBinFile *binfile, const char *symbol, ut64 vaddr) {
+	char *str = NULL;
+	if (!(str = bin_demangle_cxx(binfile, symbol, vaddr))) {
+		return str;
+	}
+	free(str);
+	return rz_demangler_rust(symbol);
+}
+
+RZ_API char *rz_bin_demangle(RzBinFile *bf, const char *language, const char *symbol, ut64 vaddr, bool libs) {
+	RzBinLanguage type = RZ_BIN_LANGUAGE_UNKNOWN;
+	if (RZ_STR_ISEMPTY(symbol)) {
+		return NULL;
+	}
+	RzBin *bin = bf ? bf->rbin : NULL;
+	RzBinObject *o = bf ? bf->o : NULL;
+	RzListIter *iter;
+	const char *lib = NULL;
+	if (!strncmp(symbol, "reloc.", 6)) {
+		symbol += 6;
+	}
+	if (!strncmp(symbol, "sym.", 4)) {
+		symbol += 4;
+	}
+	if (!strncmp(symbol, "imp.", 4)) {
+		symbol += 4;
+	}
+	if (o) {
+		bool found = false;
+		rz_list_foreach (o->libs, iter, lib) {
+			size_t len = strlen(lib);
+			if (!rz_str_ncasecmp(symbol, lib, len)) {
+				symbol += len;
+				if (*symbol == '_') {
+					symbol++;
+				}
+				found = true;
+				break;
+			}
+		}
+		if (!found) {
+			lib = NULL;
+		}
+		size_t len = strlen(bin->file);
+		if (!rz_str_ncasecmp(symbol, bin->file, len)) {
+			lib = bin->file;
+			symbol += len;
+			if (*symbol == '_') {
+				symbol++;
+			}
+		}
+	}
+
+	if (RZ_STR_ISEMPTY(symbol)) {
+		return NULL;
+	}
+
+	if (!strncmp(symbol, "__", 2)) {
+		if (symbol[2] == 'T') {
+			type = RZ_BIN_LANGUAGE_SWIFT;
+		} else {
+			type = RZ_BIN_LANGUAGE_CXX;
+		}
+	}
+
+	if (type == RZ_BIN_LANGUAGE_UNKNOWN) {
+		type = rz_bin_language_to_id(language);
+		// ignore "with blocks"
+		type = RZ_BIN_LANGUAGE_MASK(type);
+		language = rz_bin_language_to_string(type);
+	}
+	char *demangled = NULL;
+	switch (type) {
+	case RZ_BIN_LANGUAGE_UNKNOWN: return NULL;
+	case RZ_BIN_LANGUAGE_RUST: demangled = bin_demangle_rust(bf, symbol, vaddr); break;
+	case RZ_BIN_LANGUAGE_CXX: demangled = bin_demangle_cxx(bf, symbol, vaddr); break;
+	default: rz_demangler_resolve(symbol, language, &demangled);
+	}
+	if (libs && demangled && lib) {
+		char *d = rz_str_newf("%s_%s", lib, demangled);
+		free(demangled);
+		demangled = d;
+	}
+	return demangled;
 }

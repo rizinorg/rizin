@@ -30,10 +30,6 @@ RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *binfile, RzBinPlugin *plugin, R
 RZ_IPI RzBinObject *rz_bin_object_get_cur(RzBin *bin);
 RZ_IPI RzBinObject *rz_bin_object_find_by_arch_bits(RzBinFile *binfile, const char *arch, int bits, const char *name);
 
-RZ_IPI const char *rz_bin_lang_tostring(int lang);
-RZ_IPI int rz_bin_lang_type(RzBinFile *binfile, const char *def, const char *sym);
-RZ_IPI bool rz_bin_lang_swift(RzBinFile *binfile);
-
 RZ_IPI void rz_bin_class_free(RzBinClass *c);
 RZ_IPI RzBinSymbol *rz_bin_class_add_method(RzBinFile *binfile, const char *classname, const char *name, int nargs);
 RZ_IPI void rz_bin_class_add_field(RzBinFile *binfile, const char *classname, const char *name);

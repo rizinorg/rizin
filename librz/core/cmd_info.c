@@ -2,36 +2,12 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <string.h>
-#include "rz_bin.h"
-#include "rz_config.h"
-#include "rz_cons.h"
-#include "rz_core.h"
+#include <rz_bin.h>
+#include <rz_config.h>
+#include <rz_cons.h>
+#include <rz_core.h>
+#include <rz_demangler.h>
 #include "../bin/pdb/pdb_downloader.h"
-
-static bool demangle_internal(RzCore *core, const char *lang, const char *s) {
-	char *res = NULL;
-	int type = rz_bin_demangle_type(lang);
-	switch (type) {
-	case RZ_BIN_NM_CXX: res = rz_bin_demangle_cxx(core->bin->cur, s, 0); break;
-	case RZ_BIN_NM_JAVA: res = rz_bin_demangle_java(s); break;
-	case RZ_BIN_NM_OBJC: res = rz_bin_demangle_objc(NULL, s); break;
-	case RZ_BIN_NM_SWIFT: res = rz_bin_demangle_swift(s, core->bin->demanglercmd); break;
-	case RZ_BIN_NM_DLANG: res = rz_bin_demangle_plugin(core->bin, "dlang", s); break;
-	case RZ_BIN_NM_MSVC: res = rz_bin_demangle_msvc(s); break;
-	case RZ_BIN_NM_RUST: res = rz_bin_demangle_rust(core->bin->cur, s, 0); break;
-	default:
-		rz_bin_demangle_list(core->bin);
-		return true;
-	}
-	if (res) {
-		if (*res) {
-			rz_cons_printf("%s\n", res);
-		}
-		free(res);
-		return false;
-	}
-	return true;
-}
 
 static int bin_is_executable(RzBinObject *obj) {
 	RzListIter *it;
@@ -580,8 +556,21 @@ RZ_IPI RzCmdStatus rz_cmd_info_pdb_download_handler(RzCore *core, int argc, cons
 	return RZ_CMD_STATUS_OK;
 }
 
+static bool print_demangler_info(const RzDemanglerPlugin *plugin, void *user) {
+	(void)user;
+	rz_cons_printf("%-6s %-8s %s\n", plugin->language, plugin->license, plugin->author);
+	return true;
+}
+
 RZ_IPI RzCmdStatus rz_cmd_info_demangle_handler(RzCore *core, int argc, const char **argv) {
-	return bool2status(demangle_internal(core, argv[1], argv[2]));
+	char *output = NULL;
+	if (!rz_demangler_resolve(argv[2], argv[1], &output)) {
+		rz_demangler_plugin_iterate((RzDemanglerIter)print_demangler_info, NULL);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cons_println(output ? output : argv[2]);
+	free(output);
+	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_memory_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {

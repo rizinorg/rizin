@@ -334,6 +334,7 @@ include_files =[
   'include/rz_core.h',
   'include/rz_crypto.h',
   'include/rz_debug.h',
+  'include/rz_demangler.h',
   'include/rz_diff.h',
   'include/rz_egg.h',
   'include/rz_main.h',

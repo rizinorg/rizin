@@ -249,6 +249,15 @@ if sys_xxhash_opt.auto() or sys_xxhash_opt.disabled()
   xxhash_dep = xxhash_proj.get_variable('xxhash_dep')
 endif
 
+# handle libdemangle
+r = run_command(py3_exe, check_meson_subproject_py, 'libdemangle')
+if r.returncode() == 1 and get_option('subprojects_check')
+  error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+endif
+
+libdemangle_proj = subproject('libdemangle', default_options: ['default_library=static'])
+libdemangle_dep = libdemangle_proj.get_variable('libdemangle_dep')
+
 # handle openssl library
 sys_openssl = dependency('openssl', required: get_option('use_sys_openssl'), static: is_static_build)
 
@@ -262,7 +271,11 @@ if get_option('use_libuv')
 
   libuv_dep = dependency('libuv', version: '>=1.0.0', required: get_option('use_sys_libuv'), static: is_static_build)
   if not libuv_dep.found()
-    libuv_proj = subproject('libuv', default_options: ['default_library=static'])
+    libuv_proj = subproject('libuv', default_options: [
+      'default_library=static',
+      'use_gpl=' + get_option('use_gpl'),
+      'use_swift_demangler=' + get_option('use_swift_demangler'),
+    ])
     libuv_dep = libuv_proj.get_variable('libuv_dep')
   endif
 endif
@@ -332,6 +345,7 @@ userconf.set10('WANT_DYLINK', true)
 userconf.set10('HAVE_PTRACE', have_ptrace)
 userconf.set10('USE_PTRACE_WRAP', use_ptrace_wrap)
 userconf.set10('WITH_GPL', true)
+userconf.set10('WITH_SWIFT_DEMANGLER', get_option('use_swift_demangler'))
 userconf.set10('RZ_BUILD_DEBUG', get_option('buildtype').startswith('debug'))
 ok = cc.has_header_symbol('sys/personality.h', 'ADDR_NO_RANDOMIZE')
 userconf.set10('HAVE_DECL_ADDR_NO_RANDOMIZE', ok)
@@ -524,6 +538,7 @@ if host_machine.system() == 'windows'
     build_root / 'librz' / 'config',
     build_root / 'librz' / 'cons',
     build_root / 'librz' / 'core',
+    build_root / 'librz' / 'demangler',
     build_root / 'librz' / 'diff',
     build_root / 'librz' / 'crypto',
     build_root / 'librz' / 'debug',
@@ -545,6 +560,7 @@ if host_machine.system() == 'windows'
 endif
 
 subdir('librz/util')
+subdir('librz/demangler')
 subdir('librz/socket')
 subdir('librz/hash')
 subdir('librz/crypto')
@@ -635,6 +651,7 @@ if meson.is_subproject()
       rz_syscall_dep,
       rz_type_dep,
       rz_diff_dep,
+      rz_demangler_dep,
       rz_util_dep
     ],
     include_directories: include_directories('.', 'librz/include'),
@@ -700,6 +717,8 @@ summary({
 }, section: 'Directories')
 
 summary({
+  'GPL code': get_option('use_gpl'),
+  'Swift demangler': get_option('use_swift_demangler'),
   'Debugger enabled': has_debugger,
   'System magic library': sys_magic.found() and sys_magic.type_name() != 'internal',
   'System xxhash library': xxhash_dep.found() and xxhash_dep.type_name() != 'internal',

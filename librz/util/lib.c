@@ -10,27 +10,48 @@ RZ_LIB_VERSION(rz_lib);
 #define IFDBG if (__has_debug)
 static bool __has_debug = false;
 
-/* XXX : this must be registered in runtime */
-static const char *rz_lib_types[] = {
-	"io", "dbg", "lang", "asm", "analysis", "parse", "bin", "bin_xtr", "bin_ldr",
-	"bp", "syscall", "fastcall", "crypto", "core", "egg", NULL
+typedef struct rz_lib_type_name_t {
+	RzLibType id;
+	const char *name;
+} RzLibTypeName;
+
+static RzLibTypeName rz_lib_types[] = {
+	{ RZ_LIB_TYPE_IO, "io" },
+	{ RZ_LIB_TYPE_DBG, "dbg" },
+	{ RZ_LIB_TYPE_LANG, "lang" },
+	{ RZ_LIB_TYPE_ASM, "asm" },
+	{ RZ_LIB_TYPE_ANALYSIS, "analysis" },
+	{ RZ_LIB_TYPE_PARSE, "parse" },
+	{ RZ_LIB_TYPE_BIN, "bin" },
+	{ RZ_LIB_TYPE_BIN_XTR, "bin_xtr" },
+	{ RZ_LIB_TYPE_BIN_LDR, "bin_ldr" },
+	{ RZ_LIB_TYPE_BP, "bp" },
+	{ RZ_LIB_TYPE_SYSCALL, "syscall" },
+	{ RZ_LIB_TYPE_FASTCALL, "fastcall" },
+	{ RZ_LIB_TYPE_CRYPTO, "crypto" },
+	{ RZ_LIB_TYPE_MD, "msgdigest" },
+	{ RZ_LIB_TYPE_CORE, "core" },
+	{ RZ_LIB_TYPE_EGG, "egg" },
+	{ RZ_LIB_TYPE_DEMANGLER, "demangler" },
+	{ RZ_LIB_TYPE_LAST, "" },
 };
 
-static const char *__lib_types_get(int idx) {
-	if (idx < 0 || idx > RZ_LIB_TYPE_LAST - 1) {
-		return "unk";
+static const char *__lib_types_get(int id) {
+	for (int i = 0; i < RZ_ARRAY_SIZE(rz_lib_types); ++i) {
+		if (id == rz_lib_types[i].id) {
+			return rz_lib_types[i].name;
+		}
 	}
-	return rz_lib_types[idx];
+	return "unk";
 }
 
 RZ_API int rz_lib_types_get_i(const char *str) {
-	int i;
-	for (i = 0; rz_lib_types[i]; i++) {
-		if (!strcmp(str, rz_lib_types[i])) {
-			return i;
+	for (int i = 0; i < RZ_ARRAY_SIZE(rz_lib_types); ++i) {
+		if (!strcmp(str, rz_lib_types[i].name)) {
+			return rz_lib_types[i].id;
 		}
 	}
-	return -1;
+	return RZ_LIB_TYPE_UNK;
 }
 
 RZ_API void *rz_lib_dl_open(const char *libname) {
@@ -477,7 +498,6 @@ RZ_API void rz_lib_list(RzLib *lib) {
 	RzListIter *iter;
 	RzLibPlugin *p;
 	rz_list_foreach (lib->plugins, iter, p) {
-		printf(" %5s %p %s \n", __lib_types_get(p->type),
-			p->dl_handler, p->file);
+		printf(" %5s %p %s \n", __lib_types_get(p->type), p->dl_handler, p->file);
 	}
 }

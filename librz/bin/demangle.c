@@ -2,66 +2,8 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bin.h>
+#include <rz_demangler.h>
 #include "i/private.h"
-#include <cxx/demangle.h>
-
-RZ_API void rz_bin_demangle_list(RzBin *bin) {
-	const char *langs[] = { "c++", "java", "objc", "swift", "dlang", "msvc", "rust", NULL };
-	RzBinPlugin *plugin;
-	RzListIter *it;
-	int i;
-	if (!bin) {
-		return;
-	}
-	for (i = 0; langs[i]; i++) {
-		bin->cb_printf("%s\n", langs[i]);
-	}
-	rz_list_foreach (bin->plugins, it, plugin) {
-		if (plugin->demangle) {
-			bin->cb_printf("%s\n", plugin->name);
-		}
-	}
-}
-
-RZ_API char *rz_bin_demangle_plugin(RzBin *bin, const char *name, const char *str) {
-	RzBinPlugin *plugin;
-	RzListIter *it;
-	if (bin && name && str) {
-		rz_list_foreach (bin->plugins, it, plugin) {
-			if (plugin->demangle && !strncmp(plugin->name, name, strlen(plugin->name))) {
-				return plugin->demangle(str);
-			}
-		}
-	}
-	return NULL;
-}
-
-RZ_API int rz_bin_demangle_type(const char *str) {
-	if (str && *str) {
-		if (!strcmp(str, "swift")) {
-			return RZ_BIN_NM_SWIFT;
-		}
-		if (!strcmp(str, "java")) {
-			return RZ_BIN_NM_JAVA;
-		}
-		if (!strcmp(str, "objc")) {
-			return RZ_BIN_NM_OBJC;
-		}
-		if (!strcmp(str, "cxx") || !strcmp(str, "c++")) {
-			return RZ_BIN_NM_CXX;
-		}
-		if (!strcmp(str, "dlang")) {
-			return RZ_BIN_NM_DLANG;
-		}
-		if (!strcmp(str, "msvc")) {
-			return RZ_BIN_NM_MSVC;
-		}
-		if (!strcmp(str, "rust")) {
-			return RZ_BIN_NM_RUST;
-		}
-	}
-	return RZ_BIN_NM_NONE;
-}
 
 RZ_API char *rz_bin_demangle(RzBinFile *bf, const char *def, const char *str, ut64 vaddr, bool libs) {
 	int type = -1;

@@ -4,8 +4,9 @@
 
 #include <rz_core.h>
 #include <rz_config.h>
-#include "rz_util.h"
-#include "rz_util/rz_time.h"
+#include <rz_demangler.h>
+#include <rz_util.h>
+#include <rz_util/rz_time.h>
 
 #define is_in_range(at, from, sz) ((at) >= (from) && (at) < ((from) + (sz)))
 
@@ -3526,7 +3527,7 @@ static inline char *demangle_type(const char *any) {
 		return strdup("unknown");
 	}
 	switch (any[0]) {
-	case 'L': return rz_bin_demangle_java(any);
+	case 'L': return rz_demangler_java(any);
 	case 'B': return strdup("byte");
 	case 'C': return strdup("char");
 	case 'D': return strdup("double");
@@ -3584,7 +3585,7 @@ static void classdump_java(RzCore *r, RzBinClass *c) {
 	rz_list_foreach (c->methods, iter3, sym) {
 		const char *mn = sym->dname ? sym->dname : sym->name;
 		visibility = resolve_java_visibility(sym->visibility_str);
-		char *dem = rz_bin_demangle_java(mn);
+		char *dem = rz_demangler_java(mn);
 		if (!dem) {
 			dem = strdup(mn);
 		} else if (simplify && dem && package && classname) {
@@ -3640,7 +3641,7 @@ static void bin_class_print_rizin(RzCore *r, RzBinClass *c, ut64 at_min) {
 	}
 
 	// C struct
-	if (!(bf->o->lang == RZ_BIN_NM_JAVA || (bf->o->info && bf->o->info->lang && strstr(bf->o->info->lang, "dalvik")))) {
+	if (bf->o->lang == RZ_BIN_LANGUAGE_C || bf->o->lang == RZ_BIN_LANGUAGE_CXX) {
 		rz_cons_printf("td \"struct %s {", c->name);
 		rz_list_foreach (c->fields, iter2, f) {
 			char *n = objc_name_toc(f->name);
@@ -3670,20 +3671,21 @@ RZ_API bool rz_core_bin_class_as_source_print(RzCore *core, RzBinFile *bf, const
 			continue;
 		}
 		found = true;
-		switch (bf->o->lang & (~RZ_BIN_NM_BLOCKS)) {
-		case RZ_BIN_NM_KOTLIN:
-		case RZ_BIN_NM_GROOVY:
-		case RZ_BIN_NM_JAVA:
+		switch (bf->o->lang & (~RZ_BIN_LANGUAGE_BLOCKS)) {
+		case RZ_BIN_LANGUAGE_KOTLIN:
+		case RZ_BIN_LANGUAGE_GROOVY:
+		case RZ_BIN_LANGUAGE_DART:
+		case RZ_BIN_LANGUAGE_JAVA:
 			classdump_java(core, c);
 			break;
-		case RZ_BIN_NM_SWIFT:
-		case RZ_BIN_NM_OBJC:
+		case RZ_BIN_LANGUAGE_SWIFT:
+		case RZ_BIN_LANGUAGE_OBJC:
 			classdump_objc(core, c);
 			break;
-		case RZ_BIN_NM_CXX:
+		case RZ_BIN_LANGUAGE_CXX:
 			classdump_cpp(core, c);
 			break;
-		case RZ_BIN_NM_C:
+		case RZ_BIN_LANGUAGE_C:
 			classdump_c(core, c);
 			break;
 		default:
