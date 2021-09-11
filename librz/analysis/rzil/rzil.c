@@ -94,7 +94,7 @@ RZ_API void rz_analysis_set_rzil_op(RzAnalysisRzil *rzil, ut64 addr, RzPVector *
 	rz_il_free_bv_addr(bv_addr);
 }
 
-static void rz_analysis_rzil_parse_pvector(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzAnalysisRzilOp *ops) {
+static void rz_analysis_rzil_parse_root(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzAnalysisRzilOp *ops) {
 	rz_return_if_fail(analysis && rzil);
 
 	// RZIL disabled
@@ -102,24 +102,9 @@ static void rz_analysis_rzil_parse_pvector(RzAnalysis *analysis, RzAnalysisRzil 
 		return;
 	}
 
-	RzILVM *vm = rzil->vm;
-	RzPVector *op_list = ops->ops;
-
-	if (!ops->ops) {
-		return;
-	}
-
 	// 1. step exec the op
-	rz_il_vm_list_step(vm, op_list);
-
 	// 2. call trace to collect trace info
-	rz_analysis_rzil_trace_op(analysis, rzil, ops);
-
 	// 3. call stats to collect stats info
-	rz_analysis_rzil_record_stats(analysis, rzil, ops);
-
-	// 4. clean the temp
-	rz_il_clean_temps(vm);
 }
 
 /**
@@ -158,5 +143,6 @@ RZ_API void rz_analysis_rzil_collect_info(RzAnalysis *analysis, RzAnalysisRzil *
 	// TODO : Add register change for sync with analysis->register
 
 	// Parse and emulate RZIL opcode, and collect `trace` and `stats` info
-	rz_analysis_rzil_parse_pvector(analysis, rzil, op->rzil_op);
+	// Use new op struct for parsing
+	rz_analysis_rzil_parse_root(analysis, rzil, op->rzil_op);
 }

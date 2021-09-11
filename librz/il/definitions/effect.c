@@ -15,7 +15,7 @@ RZ_API RzILDataEffect *rz_il_effect_new_data(void) {
 	}
 	ret->operation = 0;
 	ret->var_name = NULL;
-	ret->val_index = -1;
+	ret->val = NULL;
 	return ret;
 }
 
@@ -164,7 +164,7 @@ static char *data_effect_as_string(RzILDataEffect *eff) {
 	if (!eff) {
 		return NULL;
 	}
-	return rz_str_newf("[Data Eff] varname A: %s, valindex : %d\n", eff->var_name, eff->val_index);
+	return rz_str_newf("[Data Eff] varname A: %s\n", eff->var_name);
 }
 
 /**

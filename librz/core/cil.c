@@ -474,7 +474,6 @@ RZ_IPI void rz_core_rzil_step(RzCore *core) {
 
 	if (oplist) {
 		rz_il_vm_list_step(vm, oplist);
-		rz_il_clean_temps(vm);
 	} else {
 		eprintf("Invalid instruction detected or reach the end of code\n");
 	}

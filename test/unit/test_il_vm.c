@@ -106,56 +106,6 @@ static bool test_rzil_vm_basic_operation() {
 	mu_end;
 }
 
-static bool test_rzil_vm_temps() {
-	RzILVM *vm = RZ_NEW0(struct rz_il_vm_t);
-	rz_il_vm_init(vm, 0, 8, 16);
-
-	RzILBool *t = rz_il_new_bool(true);
-	RzILBitVector *bv = rz_il_bv_new_from_ut32(8, 42);
-	RzILVal *val = rz_il_new_value();
-
-	RzILBool *temp_bool;
-	RzILBitVector *temp_bv;
-	RzILVal *temp_val;
-
-	rz_il_make_bool_temp(vm, 0, t);
-	temp_bool = rz_il_get_bool_temp(vm, 0);
-	mu_assert_eq(temp_bool, t, "Make and fetch temporary bool value");
-
-	rz_il_make_bv_temp(vm, 1, bv);
-	temp_bv = rz_il_get_bv_temp(vm, 1);
-	mu_assert_eq(temp_bv, bv, "Make and fetch bitvector temporary value");
-
-	rz_il_make_val_temp(vm, 2, val);
-	temp_val = rz_il_get_val_temp(vm, 2);
-	mu_assert_eq(temp_val, val, "Make and fetch RzILVal value");
-
-	// check bitvector temporary value directly
-	RzILTemp temp;
-	temp = vm->temp_value_list[1];
-	mu_assert_eq(temp->type, RZIL_TEMP_BV, "Temp type is bitv");
-
-	// automatically convert bitv to bool
-	// bitvector (42) -> bool (true)
-	temp_bool = rz_il_get_bool_temp(vm, 1);
-	mu_assert_eq(temp_bool->b, true, "Test bitv to bool");
-
-	temp = vm->temp_value_list[1];
-	mu_assert_eq(temp->type, RZIL_TEMP_BOOL, "Temp type is bool now");
-
-	// automatically convert bool to RzILVal
-	temp_val = rz_il_get_val_temp(vm, 1);
-	temp = vm->temp_value_list[1];
-	mu_assert_eq(temp->type, RZIL_TEMP_VAL, "Temp type is RzILVal now");
-
-	mu_assert_eq(temp_val->type, RZIL_VAR_TYPE_BOOL, "RzILVal contains a bool");
-	mu_assert_eq(temp_val->data.b->b, true, "Bool value is the same");
-
-	rz_il_clean_temps(vm);
-	rz_il_vm_close(vm);
-	mu_end;
-}
-
 static bool test_rzil_vm_operation() {
 	RzILVM *vm = RZ_NEW0(struct rz_il_vm_t);
 	rz_il_vm_init(vm, 0, 8, 16);
@@ -190,7 +140,6 @@ static bool test_rzil_vm_operation() {
 bool all_tests() {
 	mu_run_test(test_rzil_vm_init);
 	mu_run_test(test_rzil_vm_basic_operation);
-	mu_run_test(test_rzil_vm_temps);
 	mu_run_test(test_rzil_vm_operation);
 	return tests_passed != tests_run;
 }

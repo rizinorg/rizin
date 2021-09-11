@@ -4,11 +4,11 @@
 #include <rz_il/rzil_vm.h>
 #include <rz_il/rzil_opcodes.h>
 
-void rz_il_handler_load(RzILVM *vm, RzILOp *op) {
+void *rz_il_handler_load(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
 	RzILOpLoad *op_load = op->op.load;
 	RzILMem m = vm->mems[op_load->mem];
 
-	RzILBitVector *addr = rz_il_get_bv_temp(vm, op_load->key);
+	RzILBitVector *addr = rz_il_evaluate_bitv(vm, op_load->key, type);
 	RzILBitVector *ret = rz_il_mem_load(m, addr);
 	if (ret == NULL) {
 		// empty address --> first access
@@ -17,17 +17,22 @@ void rz_il_handler_load(RzILVM *vm, RzILOp *op) {
 		rz_il_mem_store(m, addr, empty);
 		ret = empty;
 	}
-	rz_il_make_bv_temp(vm, op_load->ret, ret);
+
+	rz_il_bv_free(addr);
+	*type = RZIL_OP_ARG_BITV;
+	return ret;
 }
 
-void rz_il_handler_store(RzILVM *vm, RzILOp *op) {
+void *rz_il_handler_store(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
 	RzILOpStore *op_store = op->op.store;
 	RzILMem m = vm->mems[op_store->mem];
 
-	RzILBitVector *addr = rz_il_get_bv_temp(vm, op_store->key);
-	RzILBitVector *value = rz_il_get_bv_temp(vm, op_store->value);
+	RzILBitVector *addr = rz_il_evaluate_bitv(vm, op_store->key, type);
+	RzILBitVector *value = rz_il_evaluate_bitv(vm, op_store->value, type);
 
 	rz_il_mem_store(m, addr, value);
+	rz_il_bv_free(addr);
 
-	// drop the return, it's `mem` type but we don't need it now
+	*type = RZIL_OP_ARG_MEM;
+	return m;
 }

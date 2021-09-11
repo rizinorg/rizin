@@ -4,37 +4,49 @@
 #include <rz_il/rzil_opcodes.h>
 #include <rz_il/rzil_vm.h>
 
-void rz_il_handler_b0(RzILVM *vm, RzILOp *op) {
-	RzILOpB0 *op_b0 = op->op.b0;
-	rz_il_make_bool_temp(vm, op_b0->ret, rz_il_new_bool(false));
+void *rz_il_handler_b0(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
+	RzILBool *ret = rz_il_new_bool(false);
+	*type = RZIL_OP_ARG_BOOL;
+	return ret;
 }
 
-void rz_il_handler_b1(RzILVM *vm, RzILOp *op) {
-	RzILOpB1 *op_b1 = op->op.b1;
-	rz_il_make_bool_temp(vm, op_b1->ret, rz_il_new_bool(true));
+void *rz_il_handler_b1(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
+	RzILBool *ret = rz_il_new_bool(true);
+	*type = RZIL_OP_ARG_BOOL;
+	return ret;
 }
 
-void rz_il_handler_and_(RzILVM *vm, RzILOp *op) {
+void *rz_il_handler_and_(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
 	RzILOpAnd_ *op_and_ = op->op.and_;
-	RzILBool *x = rz_il_get_bool_temp(vm, op_and_->x);
-	RzILBool *y = rz_il_get_bool_temp(vm, op_and_->y);
+	RzILBool *x = rz_il_evaluate_bool(vm, op_and_->x, type);
+	RzILBool *y = rz_il_evaluate_bool(vm, op_and_->y, type);
 
 	RzILBool *result = rz_il_bool_and(x, y);
-	rz_il_make_bool_temp(vm, op_and_->ret, result);
+	rz_il_free_bool(x);
+	rz_il_free_bool(y);
+
+	*type = RZIL_OP_ARG_BOOL;
+	return result;
 }
 
-void rz_il_handler_or_(RzILVM *vm, RzILOp *op) {
+void *rz_il_handler_or_(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
 	RzILOpOr_ *op_or_ = op->op.or_;
-	RzILBool *x = rz_il_get_bool_temp(vm, op_or_->x);
-	RzILBool *y = rz_il_get_bool_temp(vm, op_or_->y);
+	RzILBool *x = rz_il_evaluate_bool(vm, op_or_->x, type);
+	RzILBool *y = rz_il_evaluate_bool(vm, op_or_->y, type);
 
 	RzILBool *result = rz_il_bool_or(x, y);
-	rz_il_make_bool_temp(vm, op_or_->ret, result);
+	rz_il_free_bool(x);
+	rz_il_free_bool(y);
+
+	*type = RZIL_OP_ARG_BOOL;
+	return result;
 }
 
-void rz_il_handler_inv(RzILVM *vm, RzILOp *op) {
+void *rz_il_handler_inv(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
 	RzILOpInv *op_inv = op->op.inv;
-	RzILBool *x = rz_il_get_bool_temp(vm, op_inv->x);
+	RzILBool *x = rz_il_evaluate_bool(vm, op_inv->x, type);
+	rz_il_free_bool(x);
+
 	RzILBool *result = rz_il_bool_not(x);
-	rz_il_make_bool_temp(vm, op_inv->ret, result);
+	return result;
 }

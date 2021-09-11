@@ -40,7 +40,6 @@
 struct rzil_op_int_t {
 	ut32 length; ///< s -- sort(type), length of bitvector
 	int value; ///< x -- value of bitvector
-	RzIL_BITV int ret; ///< index of RzILBitVector in temp_value_list
 };
 
 /**
@@ -50,8 +49,7 @@ struct rzil_op_int_t {
  *  [LSB] lsb x is the least significant bit of x.
  */
 struct rzil_op_msb_lsb_t {
-	RzIL_BITV int bv; ///< index of bitvector operand
-	RzIL_BOOL int ret; ///< index of return RzILBool value in temp_value_list
+	RzIL_BITV void *bv; ///< index of bitvector operand
 };
 
 /**
@@ -61,8 +59,7 @@ struct rzil_op_msb_lsb_t {
  *  neg x is two-complement unary minus
  */
 struct rzil_op_neg_t {
-	RzIL_BITV int bv; ///< index of bitvector operand
-	RzIL_BITV int ret; ///< index of return RzILBitVector value in temp_value_list
+	RzIL_BITV void *bv; ///< index of bitvector operand
 };
 
 /**
@@ -72,8 +69,7 @@ struct rzil_op_neg_t {
  *  neg x is one-complement unary minus
  */
 struct rzil_op_not_t {
-	RzIL_BITV int bv; ///< index of bitvector operand
-	RzIL_BITV int ret; ///< index of return RzILBitVector value in temp_value_list
+	RzIL_BITV void *bv; ///< index of bitvector operand
 };
 
 /**
@@ -92,9 +88,8 @@ struct rzil_op_not_t {
  *  [LOGXOR] logxor x y is a bitwise logical xor of x and y.
  */
 struct rzil_op_alg_log_operations_t {
-	RzIL_BITV int x; ///< index of Operand 1
-	RzIL_BITV int y; ///< index of Operand 2
-	RzIL_BITV int ret; ///< index of store result in temp_value_list
+	RzIL_BITV void *x; ///< index of Operand 1
+	RzIL_BITV void *y; ///< index of Operand 2
 };
 
 /**
@@ -105,9 +100,8 @@ struct rzil_op_alg_log_operations_t {
  *  [ULE] ule x y binary predicate for unsigned less than or equal
  */
 struct rzil_op_sle_ule_t {
-	RzIL_BITV int x; ///< index of operand 1
-	RzIL_BITV int y; ///< index of operand 2
-	RzIL_BOOL int ret; ///< index of store bool result in temp_value_list
+	RzIL_BITV void *x; ///< index of operand 1
+	RzIL_BITV void *y; ///< index of operand 2
 };
 
 /**
@@ -118,10 +112,9 @@ struct rzil_op_sle_ule_t {
  *  [RSHIFT] shiftr s x m shifts x right by m bits filling with s.
  */
 struct rzil_op_shift_t {
-	RzIL_BOOL int fill_bit; ///< index of fill bit
-	RzIL_BITV int x; ///< index of operand 1
-	RzIL_BITV int y; ///< index of operand 2
-	RzIL_BITV int ret; ///< index of store bitvector result
+	RzIL_BOOL void *fill_bit; ///< index of fill bit
+	RzIL_BITV void *x; ///< index of operand 1
+	RzIL_BITV void *y; ///< index of operand 2
 };
 
 /**
@@ -132,8 +125,7 @@ struct rzil_op_shift_t {
  *  normally we set ret to -1 to show that no more effect after perform this one
  */
 struct rzil_op_perform_t {
-	RzIL_EFF int eff; ///< index of effect to perform
-	RzIL_EFF int ret; ///< index of store bitvector result
+	RzIL_EFF void *eff; ///< index of effect to perform
 };
 
 /**
@@ -144,8 +136,7 @@ struct rzil_op_perform_t {
  */
 struct rzil_op_set_t {
 	RzIL_VAR const char *v; ///< name of variable, const one
-	RzIL_PURE_VAL int x; ///< index of RzILVal
-	RzIL_EFF int ret; ///< index of store Effect result
+	RzIL_PURE_VAL void *x; ///< index of RzILVal
 };
 
 /**
@@ -155,8 +146,7 @@ struct rzil_op_set_t {
  *  jmp dst passes the control to a program located at dst.
  */
 struct rzil_op_jmp_t {
-	RzIL_BITV int dst; ///< index of destination address (RzILBitVector)
-	RzIL_EFF int ret_ctrl_eff; ///< index of store control effect
+	RzIL_BITV void *dst; ///< index of destination address (RzILBitVector)
 };
 
 /**
@@ -167,7 +157,6 @@ struct rzil_op_jmp_t {
  */
 struct rzil_op_goto_t {
 	RzIL_LABLE const char *lbl; ///< name of the label, const one
-	RzIL_EFF int ret_ctrl_eff; ///< index of store control effect
 };
 
 /**
@@ -177,9 +166,8 @@ struct rzil_op_goto_t {
  *  seq x y performs effect x, after that perform effect y. Pack two effects into one.
  */
 struct rzil_op_seq_t {
-	RzIL_EFF int x; ///< index of the first effect
-	RzIL_EFF int y; ///< index of the second effect
-	RzIL_EFF int ret; ///< index of store the packed effect
+	RzIL_EFF void *x; ///< index of the first effect
+	RzIL_EFF void *y; ///< index of the second effect
 };
 
 /**
@@ -189,9 +177,8 @@ struct rzil_op_seq_t {
  *  blk lbl data ctrl a labeled sequence of effects.
  */
 struct rzil_op_blk_t {
-	RzIL_EFF int data_eff; ///< index of data_eff
-	RzIL_EFF int ctrl_eff; ///< index of ctrl_eff
-	RzIL_EFF int ret; ///< index of store the packed effect
+	RzIL_EFF void *data_eff; ///< index of data_eff
+	RzIL_EFF void *ctrl_eff; ///< index of ctrl_eff
 };
 
 /**
@@ -201,9 +188,8 @@ struct rzil_op_blk_t {
  *  repeat c data repeats data effects until the condition c holds.
  */
 struct rzil_op_repeat_t {
-	RzIL_BOOL int condition; ///< index of BOOL condition
-	RzIL_EFF int data_eff; ///< index of data effect
-	RzIL_EFF int ret; ///< index of data effect result
+	RzIL_BOOL void *condition; ///< index of BOOL condition
+	RzIL_EFF void *data_eff; ///< index of data effect
 };
 
 /**
@@ -213,10 +199,9 @@ struct rzil_op_repeat_t {
  *  branch c lhs rhs if c holds then performs lhs else rhs.
  */
 struct rzil_op_branch_t {
-	RzIL_BOOL int condition; ///< index of BOOL condition
-	RzIL_EFF int true_eff; ///< index of true effect, set to -1 means do nothing
-	RzIL_EFF int false_eff; ///< index of false effect, set to -1 means do nothing
-	RzIL_EFF int ret; ///< index of store the chosen effect
+	RzIL_BOOL void *condition; ///< index of BOOL condition
+	RzIL_EFF void *true_eff; ///< index of true effect, set to -1 means do nothing
+	RzIL_EFF void *false_eff; ///< index of false effect, set to -1 means do nothing
 };
 
 /**
@@ -226,10 +211,9 @@ struct rzil_op_branch_t {
  *  ite c x y is x if c evaluates to b1 else y.
  */
 struct rzil_op_ite_t {
-	RzIL_BOOL int condition; ///< index of BOOL condition
-	RzIL_PURE_VAL int x; ///< index of RzILVal operand 1
-	RzIL_PURE_VAL int y; ///< index of RzILVal operand 2
-	RzIL_PURE_VAL int ret; ///< index of the chosen RzILVal
+	RzIL_BOOL void *condition; ///< index of BOOL condition
+	RzIL_PURE_VAL void *x; ///< index of RzILVal operand 1
+	RzIL_PURE_VAL void *y; ///< index of RzILVal operand 2
 };
 
 /**
@@ -240,7 +224,6 @@ struct rzil_op_ite_t {
  */
 struct rzil_op_var_t {
 	RzIL_VAR const char *v; ///< name of variable, const one
-	RzIL_PURE_VAL int ret; ///< index of RzILVal value of the variable
 };
 
 /**
@@ -249,9 +232,7 @@ struct rzil_op_var_t {
  *
  *  unk s an unknown value of sort s. This term explicitly denotes a term with undefined or unknown value.
  */
-struct rzil_op_unk_t {
-	RzIL_PURE_VAL int ret; ///< index of store the UNK
-};
+struct rzil_op_unk_t {};
 
 /**
  *  \struct rzil_op_b_t
@@ -260,9 +241,7 @@ struct rzil_op_unk_t {
  *  [B0] b0 is false aka 0 bit
  *  [B1] b1 is true aka 1 bit
  */
-struct rzil_op_b_t {
-	RzIL_BOOL int ret; ///< index of store the B0/B1
-};
+struct rzil_op_b_t {};
 
 /**
  *  \struct rzil_op_and__t
@@ -271,9 +250,8 @@ struct rzil_op_b_t {
  *  and_ x y is a conjunction of x and y.
  */
 struct rzil_op_and__t {
-	RzIL_BOOL int x; ///< index of the BOOL operand
-	RzIL_BOOL int y; ///< index of the BOOL operand
-	RzIL_BOOL int ret; ///< index of store the BOOL result
+	RzIL_BOOL void *x; ///< index of the BOOL operand
+	RzIL_BOOL void *y; ///< index of the BOOL operand
 };
 
 /**
@@ -283,9 +261,8 @@ struct rzil_op_and__t {
  *  or_ x y is a disjunction of x and y.
  */
 struct rzil_op_or__t {
-	RzIL_BOOL int x; ///< index of the BOOL operand
-	RzIL_BOOL int y; ///< index of the BOOL operand
-	RzIL_BOOL int ret; ///< index of store the BOOL result
+	RzIL_BOOL void *x; ///< index of the BOOL operand
+	RzIL_BOOL void *y; ///< index of the BOOL operand
 };
 
 /**
@@ -295,8 +272,8 @@ struct rzil_op_or__t {
  *  inv x inverts x.
  */
 struct rzil_op_inv_t {
-	RzIL_BOOL int x; ///< index of the BOOL operand
-	RzIL_BOOL int ret; ///< index of store the BOOL result
+	RzIL_BOOL void *x; ///< index of the BOOL operand
+	RzIL_BOOL void *ret; ///< index of store the BOOL result
 };
 
 /**
@@ -307,8 +284,7 @@ struct rzil_op_inv_t {
  */
 struct rzil_op_load_t {
 	RzIL_MEM int mem; ///< index of the memory in VM (different from the temp_val_list)
-	RzIL_BITV int key; ///< index of the RzILBitVector key (address)
-	RzIL_BITV int ret; ///< index of store the data loaded from memory
+	RzIL_BITV void *key; ///< index of the RzILBitVector key (address)
 };
 
 /**
@@ -319,9 +295,8 @@ struct rzil_op_load_t {
  */
 struct rzil_op_store_t {
 	RzIL_MEM int mem; ///< index of memory in VM
-	RzIL_BITV int key; ///< index of the RzILBitVector key (address)
-	RzIL_BITV int value; ///< index of the RzILVal value (data) to store
-	RzIL_MEM int ret; ///< The returned Mem index.
+	RzIL_BITV void *key; ///< index of the RzILBitVector key (address)
+	RzIL_BITV void *value; ///< index of the RzILVal value (data) to store
 };
 
 // TODO : a better way to map enum to string

@@ -420,7 +420,6 @@ static bool test_rzil_effect() {
 	RzILDataEffect *d_eff = rz_il_effect_new_data();
 	mu_assert_notnull(d_eff, "Create empty data effect");
 	mu_assert_null(d_eff->var_name, "Empty data effect doesn't have variable name");
-	mu_assert_eq(d_eff->val_index, -1, "Empty data effect doesn't have new value");
 
 	RzILEffect *data_effect, *contrl_effect;
 	// wrap data effect

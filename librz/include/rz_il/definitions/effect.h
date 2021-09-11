@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <rz_util.h>
 #include <rz_type.h>
-#include "bitvector.h"
+#include "value.h"
 
 typedef enum {
 	EFFECT_TYPE_NON, // perform none effect will not affect data / control, used for passing info
@@ -49,7 +49,7 @@ struct rzil_control_effect_t {
 
 struct rzil_data_effect_t {
 	const char *var_name; ///< Name of variable, const one
-	int val_index; ///< index to the new value
+	RzILVal *val;
 	DATA_EFF_OPERATION operation; ///< operation to value and variable
 };
 

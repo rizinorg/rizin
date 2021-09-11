@@ -66,12 +66,8 @@ RZ_API void rz_il_vm_add_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL char *name, int l
  * \param temp_val_index int, the index of temporary value you attempt to fortify
  * \return val RzILVal, pointer to the fortified value
  */
-RZ_API RzILVal *rz_il_vm_fortify_val(RzILVM *vm, int temp_val_index) {
-	RzILVal *val = rz_il_get_val_temp(vm, temp_val_index);
+RZ_API RzILVal *rz_il_vm_fortify_val(RzILVM *vm, RzILVal *val) {
 	rz_il_add_to_bag(vm->vm_global_value_set, val);
-
-	rz_il_empty_temp(vm, temp_val_index);
-	rz_il_make_val_temp(vm, temp_val_index, rz_il_dup_value(val));
 	return val;
 }
 
@@ -81,16 +77,15 @@ RZ_API RzILVal *rz_il_vm_fortify_val(RzILVM *vm, int temp_val_index) {
  * \param temp_val_index int, the index of temporary value you attempt to fortify
  * \return val RzILVal, pointer to the fortified value
  */
-RZ_API RzILVal *rz_il_vm_fortify_bitv(RzILVM *vm, int temp_val_index) {
+RZ_API RzILVal *rz_il_vm_fortify_bitv(RzILVM *vm, RzILBitVector *bitv) {
 	RzILVal *val = rz_il_new_value();
 	if (!val) {
 		return NULL;
 	}
 	val->type = RZIL_VAR_TYPE_BV;
-	val->data.bv = rz_il_get_bv_temp(vm, temp_val_index);
-	rz_il_add_to_bag(vm->vm_global_value_set, val);
+	val->data.bv = bitv;
 
-	rz_il_empty_temp(vm, temp_val_index);
+	rz_il_add_to_bag(vm->vm_global_value_set, val);
 	return val;
 }
 
@@ -100,16 +95,15 @@ RZ_API RzILVal *rz_il_vm_fortify_bitv(RzILVM *vm, int temp_val_index) {
  * \param temp_val_index int, the index of temporary value you attempt to fortify
  * \return val RzILVal, pointer to the fortified value
  */
-RZ_API RzILVal *rz_il_vm_fortify_bool(RzILVM *vm, int temp_val_index) {
+RZ_API RzILVal *rz_il_vm_fortify_bool(RzILVM *vm, RzILBool *b) {
 	RzILVal *val = rz_il_new_value();
 	if (!val) {
 		return NULL;
 	}
 	val->type = RZIL_VAR_TYPE_BOOL;
-	val->data.b = rz_il_get_bool_temp(vm, temp_val_index);
-	rz_il_add_to_bag(vm->vm_global_value_set, val);
+	val->data.b = b;
 
-	rz_il_empty_temp(vm, temp_val_index);
+	rz_il_add_to_bag(vm->vm_global_value_set, val);
 	return val;
 }
 
@@ -524,6 +518,16 @@ RZ_API void rz_il_clean_temps(RzILVM *vm) {
 }
 
 /**
+ * Store an opcode list to address
+ * \param vm RzILVM, pointer to VM
+ * \param addr RzILBitVector, address of this opcode list
+ * \param oplist RzPVector of RzILOp, core theory opcodes
+ */
+RZ_API void rz_il_vm_store_opcodes_to_addr(RzILVM *vm, RzILBitVector *addr, RzPVector *oplist) {
+	ht_pp_insert(vm->ct_opcodes, addr, oplist);
+}
+
+/**
  * Make a core theory opcode vector
  * \param num int, number of total opcodes
  * \param ... op RzILOp, op will be pushed to vector one by one
@@ -544,58 +548,49 @@ RZ_API RzPVector *rz_il_make_oplist(int num, ...) {
 	return oplist;
 }
 
-/**
- * Make a core theory opcode vector, and set id for every opcode
- * \param id ut64, set id for every opcode in this list
- * \param num int, number of total opcodes
- * \param ... op RzILOp, op will be pushed to vector one by one
- * \return oplist RzPVector*, pointer to the opcode
- */
-RZ_API RzPVector *rz_il_make_oplist_with_id(ut64 id, int num, ...) {
-	va_list args;
-	RzILOp *cur_op;
-	RzPVector *oplist = rz_pvector_new((RzPVectorFree)rz_il_free_op);
-	if (!oplist) {
-		RZ_LOG_ERROR("Fail to create pvector for oplist\n");
-		return NULL;
+// TODO : check types and auto convertion to all these evaluate functions
+// VM auto convertion
+RzILBitVector *rz_il_evaluate_bitv(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
+	// check type and auto convertion between bitv/bool/val
+	void *result = rz_il_parse_op_root(vm, op, type);
+	RZIL_OP_ARG_TYPE t = *type;
+
+	// check if type is bitv
+	// else, convert to bitv if possible
+	// else report error
+	switch (t) {
+	case RZIL_OP_ARG_BITV:
+		return (RzILBitVector *)result;
+	case RZIL_OP_ARG_BOOL:
+		break;
+	case RZIL_OP_ARG_VAL:
+		break;
+	case RZIL_OP_ARG_EFF:
+	default:
+		RZ_LOG_ERROR("BAD TYPE DETECTED\n");
+		break;
 	}
 
-	va_start(args, num);
-	for (int i = 0; i < num; ++i) {
-		cur_op = va_arg(args, RzILOp *);
-		cur_op->id = id;
-		rz_pvector_push(oplist, cur_op);
-	}
-	va_end(args);
-
-	return oplist;
+	return NULL;
 }
 
-/**
- * Store an opcode list to address
- * \param vm RzILVM, pointer to VM
- * \param addr RzILBitVector, address of this opcode list
- * \param oplist RzPVector of RzILOp, core theory opcodes
- */
-RZ_API void rz_il_vm_store_opcodes_to_addr(RzILVM *vm, RzILBitVector *addr, RzPVector *oplist) {
-	ht_pp_insert(vm->ct_opcodes, addr, oplist);
+RzILBool *rz_il_evaluate_bool(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
+	void *result = rz_il_parse_op_root(vm, op, type);
+	return result;
 }
 
-/**
- * Load an opcode list at current pc
- * \param vm RzILVM, pointer to VM
- * \return oplist RzPvector of RzILOp, core theory opcodes
- */
-RZ_API RzPVector *rz_il_vm_load_opcodes_at_pc(RzILVM *vm) {
-	return ht_pp_find(vm->ct_opcodes, vm->pc, NULL);
+RzILVal *rz_il_evaluate_val(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
+	void *result = rz_il_parse_op_root(vm, op, type);
+	return result;
 }
 
-/**
- * Load an opcode list at address
- * \param vm RzILVM, pointer to VM
- * \param addr RzILBitVector, address to load ops
- * \return oplist RzPvector of RzILOp, core theory opcodes
- */
-RZ_API RzPVector *rz_il_vm_load_opcodes(RzILVM *vm, RzILBitVector *addr) {
-	return ht_pp_find(vm->ct_opcodes, addr, NULL);
+RzILEffect *rz_il_evaluate_effect(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
+	void *result = rz_il_parse_op_root(vm, op, type);
+	return result;
+}
+
+// recursively parse and evaluate
+void *rz_il_parse_op_root(RzILVM *vm, RzILOp *root, RZIL_OP_ARG_TYPE *type) {
+	RzILOpHandler handler = vm->op_handler_table[root->code];
+	return handler(vm, root, type);
 }
