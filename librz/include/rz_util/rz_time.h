@@ -10,7 +10,7 @@
 #define RZ_NSEC_PER_USEC 1000ULL
 #define RZ_USEC_PER_MSEC 1000ULL
 
-#define ASCTIME_BUF_MINLEN (26)
+#define ASCTIME_BUF_MINLEN 26
 
 // wall clock time in microseconds
 RZ_API ut64 rz_time_now(void);

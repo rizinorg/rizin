@@ -49,29 +49,30 @@ RZ_API ut64 rz_time_now_mono(void) {
 
 /* timeStamp must be a Unix epoch integer */
 RZ_API char *rz_time_stamp_to_str(ut32 timeStamp) {
+	char timestr_buf[ASCTIME_BUF_MINLEN];
 	time_t ts = (time_t)timeStamp;
-	struct tm *time;
-	time = gmtime(&ts);
+	struct tm time;
+	rz_gmtime_r(&ts, &time);
 #if __WINDOWS__
 	// Hack on Windows to prevent mktime() from returning -1 when the
 	// timestamp is close to 0.
 	bool advance_1_day = false;
-	if (time->tm_mday == 1 && time->tm_mon == 0 && time->tm_year == 70) {
-		time->tm_mday++;
+	if (time.tm_mday == 1 && time.tm_mon == 0 && time.tm_year == 70) {
+		time.tm_mday++;
 		advance_1_day = true;
 	}
 #endif
-	time_t gmt_time = mktime(time);
-	time = localtime(&ts);
+	time_t gmt_time = mktime(&time);
+	rz_localtime_r(&ts, &time);
 #if __WINDOWS__
 	if (advance_1_day) {
-		time->tm_mday++;
+		time.tm_mday++;
 	}
 #endif
-	time_t local_time = mktime(time);
+	time_t local_time = mktime(&time);
 	bool err = gmt_time == -1 || local_time == -1;
 	long diff = (long)difftime(local_time, gmt_time);
-	char *timestr = ctime(&ts);
+	char *timestr = rz_ctime_r(&ts, timestr_buf);
 	if (timestr) {
 		rz_str_trim(timestr);
 		long hours = diff / 3600;
