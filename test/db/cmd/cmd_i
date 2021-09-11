@@ -5157,7 +5157,7 @@ EXPECT=<<EOF
     "vaddr": 4198784,
     "size": 5672,
     "lang": "LANG_NEUTRAL",
-    "timestamp": "Thu Jan  1 00:00:00 1970"
+    "timestamp": "Thu Jan  1 00:00:00 1970 UTC"
   },
   {
     "name": "10",
@@ -5166,7 +5166,7 @@ EXPECT=<<EOF
     "vaddr": 4205072,
     "size": 76,
     "lang": "LANG_NEUTRAL",
-    "timestamp": "Thu Jan  1 00:00:00 1970"
+    "timestamp": "Thu Jan  1 00:00:00 1970 UTC"
   },
   {
     "name": "788",
@@ -5175,7 +5175,7 @@ EXPECT=<<EOF
     "vaddr": 4204464,
     "size": 20,
     "lang": "LANG_NEUTRAL",
-    "timestamp": "Thu Jan  1 00:00:00 1970"
+    "timestamp": "Thu Jan  1 00:00:00 1970 UTC"
   },
   {
     "name": "1",
@@ -5184,7 +5184,7 @@ EXPECT=<<EOF
     "vaddr": 4204496,
     "size": 452,
     "lang": "LANG_NEUTRAL",
-    "timestamp": "Thu Jan  1 00:00:00 1970"
+    "timestamp": "Thu Jan  1 00:00:00 1970 UTC"
   },
   {
     "name": "1",
@@ -5193,7 +5193,7 @@ EXPECT=<<EOF
     "vaddr": 4204960,
     "size": 74,
     "lang": "LANG_NEUTRAL",
-    "timestamp": "Thu Jan  1 00:00:00 1970"
+    "timestamp": "Thu Jan  1 00:00:00 1970 UTC"
   }
 ]
 EOF
