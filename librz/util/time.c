@@ -56,7 +56,7 @@ RZ_API char *rz_time_stamp_to_str(ut32 timeStamp) {
 	// Hack on Windows to prevent mktime() from returning -1 when the
 	// timestamp is close to 0. Fortunately, Windows doesn't seem to support
 	// the concept of a location's timezone changing on a politician's whim,
-	// and neither 1969 nor 1970 are leap years.
+	// and neither 1969, 1970 nor 1971 are leap years.
 	bool advance_1_year = false;
 	if (time->tm_year == 69 || time->tm_year == 70) {
 		time->tm_year++;
