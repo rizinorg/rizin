@@ -54,20 +54,24 @@ RZ_API char *rz_time_stamp_to_str(ut32 timeStamp) {
 	time = gmtime(&ts);
 #ifdef _MSC_VER
 	// Hack on Windows to prevent mktime() from returning -1 when the
-	// timestamp is close to 0. Fortunately, Windows doesn't seem to support
-	// the concept of a location's timezone changing on a politician's whim,
-	// and neither 1970 nor 1971 are leap years.
-	bool advance_1_year = false;
-	if (time->tm_year == 70) {
-		time->tm_year++;
-		advance_1_year = true;
+	// timestamp is close to 0.
+	bool advance_1_day = false;
+	if (time->tm_mday == 1 && time->tm_mon == 0 && time->tm_year == 70) {
+		time->tm_mday++;
+		advance_1_day = true;
 	}
 #endif
 	time_t gmt_time = mktime(time);
 	time = localtime(&ts);
 #ifdef _MSC_VER
-	if (advance_1_year) {
-		time->tm_year++;
+	if (advance_1_day) {
+		if (time->tm_mday == 31 && time->tm_mon == 11 && time->tm_year == 69) {
+			time->tm_mday = 1;
+			time->tm_mon = 0;
+			time->tm_year = 70;
+		} else {
+			time->tm_mday++;
+		}
 	}
 #endif
 	time_t local_time = mktime(time);
