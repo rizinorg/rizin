@@ -12,6 +12,7 @@
 #include <string.h>
 #include <rz_main.h>
 #include <rz_core.h>
+#include <rz_demangler.h>
 
 typedef struct {
 	RzLib *l;
@@ -474,6 +475,8 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 		free(r2bits);
 	}
 
+	rz_demangler_plugin_init();
+
 	RzGetopt opt;
 	rz_getopt_init(&opt, argc, argv, "a:Ab:Bc:CdDeEf:F:hi:jk:l:L@:o:O:pqrs:vwx");
 	while ((c = rz_getopt_next(&opt)) != -1) {
@@ -563,11 +566,13 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 			if (*opt.arg == '?') {
 				printf("att\nintel\nmasm\njz\nregnum\n");
 				__as_free(as);
+				rz_demangler_plugin_fini();
 				return 0;
 			} else {
 				int syntax = rz_asm_syntax_from_string(opt.arg);
 				if (syntax == -1) {
 					__as_free(as);
+					rz_demangler_plugin_fini();
 					return 1;
 				}
 				rz_asm_set_syntax(as->a, syntax);
@@ -802,5 +807,6 @@ beach:
 	if (fd != -1) {
 		close(fd);
 	}
+	rz_demangler_plugin_fini();
 	return ret;
 }

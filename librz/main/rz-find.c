@@ -7,6 +7,7 @@
 #include <rz_main.h>
 #include <rz_types.h>
 #include <rz_search.h>
+#include <rz_demangler.h>
 #include <rz_util.h>
 #include <rz_util/rz_print.h>
 #include <rz_cons.h>
@@ -352,6 +353,7 @@ static int rzfind_open(RzfindOptions *ro, const char *file) {
 RZ_API int rz_main_rz_find(int argc, const char **argv) {
 	RzfindOptions ro;
 	rzfind_options_init(&ro);
+	rz_demangler_plugin_init();
 
 	int c;
 	const char *file = NULL;
@@ -414,6 +416,7 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 			char *data = rz_file_slurp(opt.arg, &data_size);
 			if (!data) {
 				eprintf("Cannot slurp '%s'\n", opt.arg);
+				rz_demangler_plugin_fini();
 				return 1;
 			}
 			char *hexdata = rz_hex_bin2strdup((ut8 *)data, data_size);
@@ -441,8 +444,10 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 			ro.quiet = true;
 			break;
 		case 'v':
+			rz_demangler_plugin_fini();
 			return rz_main_version_print("rz-find");
 		case 'h':
+			rz_demangler_plugin_fini();
 			return show_help(argv[0], 0);
 		case 'z':
 			ro.mode = RZ_SEARCH_STRING;
@@ -451,6 +456,7 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 			ro.showstr = true;
 			break;
 		default:
+			rz_demangler_plugin_fini();
 			return show_help(argv[0], 1);
 		}
 	}
@@ -478,5 +484,6 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 	if (ro.json) {
 		printf("]\n");
 	}
+	rz_demangler_plugin_fini();
 	return 0;
 }
