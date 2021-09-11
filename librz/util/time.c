@@ -52,7 +52,7 @@ RZ_API char *rz_time_stamp_to_str(ut32 timeStamp) {
 	time_t ts = (time_t)timeStamp;
 	struct tm *time;
 	time = gmtime(&ts);
-#ifdef _MSC_VER
+#if __WINDOWS__
 	// Hack on Windows to prevent mktime() from returning -1 when the
 	// timestamp is close to 0.
 	bool advance_1_day = false;
@@ -63,7 +63,7 @@ RZ_API char *rz_time_stamp_to_str(ut32 timeStamp) {
 #endif
 	time_t gmt_time = mktime(time);
 	time = localtime(&ts);
-#ifdef _MSC_VER
+#if __WINDOWS__
 	if (advance_1_day) {
 		time->tm_mday++;
 	}
