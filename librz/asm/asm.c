@@ -1019,6 +1019,7 @@ RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 				if (op.buf_inc && rz_buf_size(op.buf_inc) > 1) {
 					char *inc = rz_buf_to_string(op.buf_inc);
 					rz_buf_free(op.buf_inc);
+					op.buf_inc = NULL;
 					if (inc) {
 						ret += rz_hex_str2bin(inc, acode->bytes + idx + ret);
 						free(inc);
