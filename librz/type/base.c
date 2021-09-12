@@ -229,3 +229,25 @@ RZ_API RZ_OWN char *rz_type_db_base_type_as_string(const RzTypeDB *typedb, RZ_NO
 	char *bufstr = rz_strbuf_drain(buf);
 	return bufstr;
 }
+
+/**
+ * \brief Searches for the compound RzBaseType in the types database given the name
+ *
+ *	Returns all types except atomic - structures, unions, enums, typedefs
+ *
+ * \param typedb Type Database instance
+ * \param name Name of the RzBaseType
+ */
+RZ_API RZ_BORROW RzBaseType *rz_type_db_get_compound_type(const RzTypeDB *typedb, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(name, NULL);
+	RzBaseType *t = rz_type_db_get_base_type(typedb, name);
+	if (!t) {
+		RZ_LOG_ERROR("Cannot find type \"%s\"\n", name);
+		return NULL;
+	}
+	if (t->kind == RZ_BASE_TYPE_KIND_ATOMIC) {
+		RZ_LOG_ERROR("Atomic type \"%s\"\n", name);
+		return NULL;
+	}
+	return t;
+}

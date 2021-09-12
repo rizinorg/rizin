@@ -1184,3 +1184,44 @@ RZ_API void rz_type_free(RZ_NULLABLE RzType *type) {
 	}
 	free(type);
 }
+
+/**
+ * \brief Edits the existing base type given the new C code
+ *
+ * Searches the base type in the types database given the \p name.
+ * If it exists - parses the \p typestr as the new C type. If there is
+ * any error during the parsing it restores the original type in the
+ * database.
+ *
+ * \param typedb Type Database instance
+ * \param name Name of the base type
+ * \param typestr C string of the new definition of the type
+ */
+RZ_API bool rz_type_db_edit_base_type(RzTypeDB *typedb, RZ_NONNULL const char *name, RZ_NONNULL const char *typestr) {
+	rz_return_val_if_fail(name && typestr, false);
+	RzBaseType *t = rz_type_db_get_compound_type(typedb, name);
+	if (!t) {
+		return false;
+	}
+	// Remove the original type first
+	// but do not free them
+	void *freefn = (void *)typedb->types->opt.freefn;
+	typedb->types->opt.freefn = NULL;
+	ht_pp_delete(typedb->types, t->name);
+	typedb->types->opt.freefn = freefn;
+	char *error_msg = NULL;
+	int result = rz_type_parse_string_stateless(typedb->parser, typestr, &error_msg);
+	if (result) {
+		if (error_msg) {
+			RZ_LOG_ERROR("%s\n", error_msg);
+		}
+		free(error_msg);
+		// There is an error during the parsing thus we restore the old type
+		// We insert the type back
+		ht_pp_insert(typedb->types, t->name, t);
+		return false;
+	}
+	// Free now unnecessary old base type
+	rz_type_base_type_free(t);
+	return true;
+}
