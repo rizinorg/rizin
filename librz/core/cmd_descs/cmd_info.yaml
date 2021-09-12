@@ -137,22 +137,24 @@ commands:
               - RZ_OUTPUT_MODE_JSON
             args: []
   - name: iD
-    cname: cmd_info_demangle
     summary: Demangle symbol for given language
-    args:
-      - name: lang
-        type: RZ_CMD_ARG_TYPE_CHOICES
-        choices:
-          - c++
-          - java
-          - objc
-          - swift
-          - dlang
-          - msvc
-          - rust
-      - name: symbol
-        type: RZ_CMD_ARG_TYPE_STRING
     subcommands:
+      - name: iD
+        cname: cmd_info_demangle
+        summary: Demangle symbol for given language
+        args:
+          - name: lang
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            choices:
+              - c++
+              - java
+              - objc
+              - swift
+              - dlang
+              - msvc
+              - rust
+          - name: symbol
+            type: RZ_CMD_ARG_TYPE_STRING
       - name: iDl
         summary: Lists the available demanglers
         cname: cmd_info_demangle_list

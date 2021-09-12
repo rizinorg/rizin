@@ -2905,6 +2905,9 @@ static const RzCmdDescHelp cmd_info_pdb_download_help = {
 	.args = cmd_info_pdb_download_args,
 };
 
+static const RzCmdDescHelp iD_help = {
+	.summary = "Demangle symbol for given language",
+};
 static const char *cmd_info_demangle_lang_choices[] = { "c++", "java", "objc", "swift", "dlang", "msvc", "rust", NULL };
 static const RzCmdDescArg cmd_info_demangle_args[] = {
 	{
@@ -2925,6 +2928,7 @@ static const RzCmdDescHelp cmd_info_demangle_help = {
 	.summary = "Demangle symbol for given language",
 	.args = cmd_info_demangle_args,
 };
+
 static const RzCmdDescArg cmd_info_demangle_list_args[] = {
 	{ 0 },
 };
@@ -6553,9 +6557,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_info_pdb_download_cd = rz_cmd_desc_argv_state_new(core->rcmd, idp_cd, "idpd", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_info_pdb_download_handler, &cmd_info_pdb_download_help);
 	rz_warn_if_fail(cmd_info_pdb_download_cd);
 
-	RzCmdDesc *cmd_info_demangle_cd = rz_cmd_desc_group_new(core->rcmd, i_cd, "iD", NULL, NULL, &cmd_info_demangle_help);
-	rz_warn_if_fail(cmd_info_demangle_cd);
-	RzCmdDesc *cmd_info_demangle_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, cmd_info_demangle_cd, "iDl", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_demangle_list_handler, &cmd_info_demangle_list_help);
+	RzCmdDesc *iD_cd = rz_cmd_desc_group_new(core->rcmd, i_cd, "iD", rz_cmd_info_demangle_handler, &cmd_info_demangle_help, &iD_help);
+	rz_warn_if_fail(iD_cd);
+	RzCmdDesc *cmd_info_demangle_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, iD_cd, "iDl", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_demangle_list_handler, &cmd_info_demangle_list_help);
 	rz_warn_if_fail(cmd_info_demangle_list_cd);
 	rz_cmd_desc_set_default_mode(cmd_info_demangle_list_cd, RZ_OUTPUT_MODE_TABLE);
 
