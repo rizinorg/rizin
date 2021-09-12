@@ -152,6 +152,17 @@ commands:
           - rust
       - name: symbol
         type: RZ_CMD_ARG_TYPE_STRING
+    subcommands:
+      - name: iDl
+        summary: Lists the available demanglers
+        cname: cmd_info_demangle_list
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        default_mode: RZ_OUTPUT_MODE_TABLE
+        modes:
+          - RZ_OUTPUT_MODE_TABLE
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+        args: []
   - name: ie
     cname: cmd_info_entry
     summary: List entrypoints
