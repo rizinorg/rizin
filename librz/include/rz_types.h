@@ -139,7 +139,6 @@ typedef enum {
 #ifdef _MSC_VER
 #ifdef NTDDI_WIN10_TH2
 /* Avoid using Developer Preview and default to Windows 10/Windows Server 2016 */
-#define WINVER 0x0A00
 #define _WIN32_WINNT  _WIN32_WINNT_WIN10
 #define NTDDI_VERSION NTDDI_WIN10
 #endif
