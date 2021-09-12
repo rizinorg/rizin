@@ -60,7 +60,7 @@ void *rz_il_handler_set(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
 
 	RzILEffect *eff = rz_il_effect_new(EFFECT_TYPE_DATA);
 	eff->data_eff->var_name = set_op->v;
-	eff->data_eff->val = set_op->x;
+	eff->data_eff->val = rz_il_evaluate_val(vm, set_op->x, type);
 
 	// store effect in the temporay list
 	*type = RZIL_OP_ARG_EFF;

@@ -156,7 +156,7 @@ RzPVector *bf_inc(RzILVM *vm, ut64 id) {
 	store->op.store->key = var_2;
 	store->op.store->value = add;
 
-	RzPVector *oplist = rz_il_make_oplist(6, store);
+	RzPVector *oplist = rz_il_make_oplist(1, store);
 	return oplist;
 }
 

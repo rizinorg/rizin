@@ -45,8 +45,8 @@ void *rz_il_handler_or_(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
 void *rz_il_handler_inv(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
 	RzILOpInv *op_inv = op->op.inv;
 	RzILBool *x = rz_il_evaluate_bool(vm, op_inv->x, type);
+	RzILBool *result = rz_il_bool_not(x);
 	rz_il_free_bool(x);
 
-	RzILBool *result = rz_il_bool_not(x);
 	return result;
 }

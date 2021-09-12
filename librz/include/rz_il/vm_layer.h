@@ -10,8 +10,7 @@ RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, int addr_size, int data_s
 RZ_API void rz_il_vm_close(RzILVM *vm);
 void rz_il_vm_step(RzILVM *vm, RzILOp *root);
 RZ_API void rz_il_vm_list_step(RzILVM *vm, RzPVector *op_list);
-int rz_il_vm_printer_step(RzILOp *op, char **helper);
-void rz_il_vm_list_printer_step(RzPVector *op_list);
+void rz_il_vm_list_printer_step_l(RzPVector *op_list);
 
 // Memory operations
 RZ_API RzILMem rz_il_vm_add_mem(RzILVM *vm, int min_unit_size);

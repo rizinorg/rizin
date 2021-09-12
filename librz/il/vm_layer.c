@@ -333,8 +333,7 @@ RZ_API RzILMem rz_il_vm_mem_store(RzILVM *vm, int mem_index, RzILBitVector *key,
 }
 
 void rz_il_vm_step(RzILVM *vm, RzILOp *root) {
-	// init
-	RZIL_OP_ARG_TYPE type = RZIL_OP_ARG_EFF;
+	RZIL_OP_ARG_TYPE type = RZIL_OP_ARG_INIT;
 	rz_il_parse_op_root(vm, root, &type);
 }
 
@@ -344,4 +343,11 @@ RZ_API void rz_il_vm_list_step(RzILVM *vm, RzPVector *op_list) {
 		RzILOp *root = *iter;
 		rz_il_vm_step(vm, root);
 	}
+
+	RzILBitVector *one = rz_il_bv_new(vm->pc->len);
+	rz_il_bv_set(one, 0, true); // set one = 1
+	RzILBitVector *next_pc = rz_il_bv_add(vm->pc, one);
+	rz_il_bv_free(vm->pc);
+	rz_il_bv_free(one);
+	vm->pc = next_pc;
 }

@@ -20,6 +20,7 @@ typedef enum {
 	RZIL_OP_ARG_VAL,
 	RZIL_OP_ARG_EFF,
 	RZIL_OP_ARG_MEM,
+	RZIL_OP_ARG_INIT
 } RZIL_OP_ARG_TYPE;
 
 typedef struct rz_il_vm_t RzILVM;
