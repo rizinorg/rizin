@@ -21,7 +21,7 @@ static RzList *demangler_plugins = NULL;
 DEFINE_DEMANGLER_PLUGIN(cpp, "c++", "GPL-2", "Free Software Foundation", libdemangle_handler_cxx);
 #endif
 #if WITH_SWIFT_DEMANGLER
-DEFINE_DEMANGLER_PLUGIN(swift, "swift", "LGPL3", "pancake", libdemangle_handler_swift);
+DEFINE_DEMANGLER_PLUGIN(swift, "swift", "MIT", "pancake", libdemangle_handler_swift);
 #endif
 
 DEFINE_DEMANGLER_PLUGIN(java, "java", "LGPL3", "deroad", libdemangle_handler_java);

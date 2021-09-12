@@ -891,7 +891,16 @@ NAME=rz-bin -D Unsupported
 FILE=--
 CMDS=!rz-bin -D XXX LOLILOL
 EXPECT_ERR=<<EOF
-Unsupported demangler
+EOF
+EXPECT=<<EOF
+Language 'XXX' is unsupported
+List of supported languages:
+c++    GPL-2    Free Software Foundation
+swift  MIT      pancake
+java   LGPL3    deroad
+msvc   LGPL3    inisider
+objc   LGPL3    pancake
+rust   LGPL3    pancake
 EOF
 RUN
 
