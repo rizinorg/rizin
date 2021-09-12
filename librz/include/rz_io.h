@@ -42,6 +42,10 @@ typedef void *rz_ptrace_data_t;
 typedef int rz_ptrace_request_t;
 typedef void *rz_ptrace_data_t;
 #define RZ_PTRACE_NODATA NULL
+#elif __APPLE__
+typedef int rz_ptrace_request_t;
+typedef int rz_ptrace_data_t;
+#define RZ_PTRACE_NODATA 0
 #else
 typedef int rz_ptrace_request_t;
 typedef void *rz_ptrace_data_t;
