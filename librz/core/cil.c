@@ -462,7 +462,7 @@ RZ_IPI void rz_core_rzil_step(RzCore *core) {
 		return;
 	}
 
-	ut64 addr =rz_il_bv_to_ut64(vm->pc);
+	ut64 addr = rz_il_bv_to_ut64(vm->pc);
 
 	// try load from vm
 	// fetch and parse if no opcode
