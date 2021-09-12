@@ -33,7 +33,7 @@ static RzLibTypeName rz_lib_types[] = {
 	{ RZ_LIB_TYPE_CORE, "core" },
 	{ RZ_LIB_TYPE_EGG, "egg" },
 	{ RZ_LIB_TYPE_DEMANGLER, "demangler" },
-	{ RZ_LIB_TYPE_LAST, "" },
+	{ RZ_LIB_TYPE_UNKNOWN, "unknown" },
 };
 
 static const char *__lib_types_get(int id) {
@@ -51,7 +51,7 @@ RZ_API int rz_lib_types_get_i(const char *str) {
 			return rz_lib_types[i].id;
 		}
 	}
-	return RZ_LIB_TYPE_UNK;
+	return RZ_LIB_TYPE_UNKNOWN;
 }
 
 RZ_API void *rz_lib_dl_open(const char *libname) {

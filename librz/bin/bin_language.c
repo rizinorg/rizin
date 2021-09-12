@@ -55,7 +55,16 @@ static inline bool check_dart(RzBinSymbol *sym) {
 	return strstr(sym->name, "io_flutter_");
 }
 
-RZ_API int rz_bin_language_detect(RzBinFile *binfile) {
+/**
+ * \brief Tries to detect which language is used in the binary based on symbols and libraries
+ *
+ * Currently this method can detect the language only from bins that are either ELF, PE,
+ * Mach-O, Java Class and Dex.
+ * 
+ * The current supported languages are: c, cxx, dart, dlang, go, groovy, java, kotlin, msvc,
+ * objc, rust, swift.
+ */
+RZ_API RzBinLanguage rz_bin_language_detect(RzBinFile *binfile) {
 	rz_return_val_if_fail(binfile && binfile->o, RZ_BIN_LANGUAGE_UNKNOWN);
 	RzBinObject *o = binfile->o;
 	RzBinInfo *info = o->info;
@@ -164,6 +173,9 @@ RZ_API int rz_bin_language_detect(RzBinFile *binfile) {
 	return language_apply_blocks_mask(RZ_BIN_LANGUAGE_C, is_blocks);
 }
 
+/**
+ * \brief returns the language identifier based on the given lang name
+ */
 RZ_API RzBinLanguage rz_bin_language_to_id(const char *language) {
 	if (RZ_STR_ISEMPTY(language)) {
 		return RZ_BIN_LANGUAGE_UNKNOWN;
@@ -197,6 +209,9 @@ RZ_API RzBinLanguage rz_bin_language_to_id(const char *language) {
 	return RZ_BIN_LANGUAGE_UNKNOWN;
 }
 
+/**
+ * \brief returns the language name based on the given language identifier
+ */
 RZ_API const char *rz_bin_language_to_string(RzBinLanguage language) {
 	switch (RZ_BIN_LANGUAGE_MASK(language)) {
 	case RZ_BIN_LANGUAGE_SWIFT:

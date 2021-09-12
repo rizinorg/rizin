@@ -31,7 +31,7 @@ RZ_API RZ_OWN char *rz_demangler_msvc(RZ_NONNULL const char *symbol);
 
 RZ_API bool rz_demangler_plugin_init();
 RZ_API void rz_demangler_plugin_fini();
-RZ_API void rz_demangler_plugin_iterate(RzDemanglerIter iter, void *data);
+RZ_API void rz_demangler_plugin_iterate(RZ_NONNULL RzDemanglerIter iter, RZ_NULLABLE void *data);
 RZ_API bool rz_demangler_plugin_add(RZ_NONNULL RzDemanglerPlugin *plugin);
 RZ_API RZ_BORROW const RzDemanglerPlugin *rz_demangler_plugin_get(RZ_NONNULL const char *language);
 RZ_API bool rz_demangler_resolve(RZ_NULLABLE const char *symbol, RZ_NONNULL const char *language, RZ_NONNULL RZ_OWN char **output);

@@ -66,7 +66,6 @@ typedef RzLibStruct *(*RzLibStructFunc)(void);
 
 // order matters because of librz/util/lib.c
 typedef enum {
-	RZ_LIB_TYPE_UNK = 0,
 	RZ_LIB_TYPE_IO, /* io layer */
 	RZ_LIB_TYPE_DBG, /* debugger */
 	RZ_LIB_TYPE_LANG, /* language */
@@ -84,7 +83,7 @@ typedef enum {
 	RZ_LIB_TYPE_CORE, /* RzCore commands */
 	RZ_LIB_TYPE_EGG, /* rz_egg plugin */
 	RZ_LIB_TYPE_DEMANGLER, /* demanglers */
-	RZ_LIB_TYPE_LAST
+	RZ_LIB_TYPE_UNKNOWN
 } RzLibType;
 
 typedef struct rz_lib_t {

@@ -1416,6 +1416,9 @@ RZ_API char *rz_bin_demangle(RzBinFile *bf, const char *language, const char *sy
 		type = RZ_BIN_LANGUAGE_MASK(type);
 		language = rz_bin_language_to_string(type);
 	}
+	if (!language) {
+		return NULL;
+	}
 	char *demangled = NULL;
 	switch (type) {
 	case RZ_BIN_LANGUAGE_UNKNOWN: return NULL;

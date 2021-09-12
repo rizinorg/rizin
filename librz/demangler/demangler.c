@@ -32,12 +32,15 @@ DEFINE_DEMANGLER_PLUGIN(rust, "rust", "LGPL3", "pancake", libdemangle_handler_ru
 RZ_LIB_VERSION(rz_demangler);
 
 /**
- * /brief demangles java mangled strings
+ * \brief Demangles java symbols
  */
 RZ_API RZ_OWN char *rz_demangler_java(RZ_NULLABLE const char *symbol) {
 	return libdemangle_handler_java(symbol);
 }
 
+/**
+ * \brief Demangles c++ symbols
+ */
 RZ_API RZ_OWN char *rz_demangler_cxx(RZ_NONNULL const char *symbol) {
 #if WITH_GPL
 	return libdemangle_handler_cxx(symbol);
@@ -46,18 +49,30 @@ RZ_API RZ_OWN char *rz_demangler_cxx(RZ_NONNULL const char *symbol) {
 #endif
 }
 
+/**
+ * \brief Demangles objc symbols
+ */
 RZ_API RZ_OWN char *rz_demangler_objc(RZ_NONNULL const char *symbol) {
 	return libdemangle_handler_objc(symbol);
 }
 
+/**
+ * \brief Demangles rust symbols
+ */
 RZ_API RZ_OWN char *rz_demangler_rust(RZ_NONNULL const char *symbol) {
 	return libdemangle_handler_rust(symbol);
 }
 
+/**
+ * \brief Demangles microsft vc symbols
+ */
 RZ_API RZ_OWN char *rz_demangler_msvc(RZ_NONNULL const char *symbol) {
 	return libdemangle_handler_msvc(symbol);
 }
 
+/**
+ * \brief Initializes the plugin list and sets the default demanglers
+ */
 RZ_API bool rz_demangler_plugin_init() {
 	if (demangler_plugins) {
 		return false;
@@ -92,12 +107,22 @@ RZ_API bool rz_demangler_plugin_init() {
 	return true;
 }
 
+/**
+ * \brief Frees the plugin list
+ */
 RZ_API void rz_demangler_plugin_fini() {
 	rz_list_free(demangler_plugins);
 	demangler_plugins = NULL;
 }
 
-RZ_API void rz_demangler_plugin_iterate(RzDemanglerIter iter, void *data) {
+/**
+ * \brief Iterates over the plugin list
+ * 
+ * Iterates over the plugin list and passes a RzDemanglerPlugin pointer
+ * to the iter function; if the iter function returns false, then the
+ * iteration is halted.
+ */
+RZ_API void rz_demangler_plugin_iterate(RZ_NONNULL RzDemanglerIter iter, RZ_NULLABLE void *data) {
 	rz_return_if_fail(iter);
 	const RzDemanglerPlugin *plugin;
 	RzListIter *it;
@@ -109,6 +134,11 @@ RZ_API void rz_demangler_plugin_iterate(RzDemanglerIter iter, void *data) {
 	}
 }
 
+/**
+ * \brief Adds a new demangler plugin to the plugin list
+ * 
+ * If two plugins handles the same language, then the old plugin is removed.
+ */
 RZ_API bool rz_demangler_plugin_add(RZ_NONNULL RzDemanglerPlugin *plugin) {
 	rz_return_val_if_fail(demangler_plugins && plugin && plugin->language, false);
 	rz_warn_if_fail(plugin->author);
@@ -128,6 +158,11 @@ RZ_API bool rz_demangler_plugin_add(RZ_NONNULL RzDemanglerPlugin *plugin) {
 	return rz_list_append(demangler_plugins, plugin);
 }
 
+/**
+ * \brief Returns a demangler plugin pointer based on the language that is found
+ * 
+ * This function returns NULL only when the requested language is not available.
+ */
 RZ_API RZ_BORROW const RzDemanglerPlugin *rz_demangler_plugin_get(RZ_NONNULL const char *language) {
 	rz_return_val_if_fail(RZ_STR_ISNOTEMPTY(language) && demangler_plugins, NULL);
 
@@ -142,6 +177,11 @@ RZ_API RZ_BORROW const RzDemanglerPlugin *rz_demangler_plugin_get(RZ_NONNULL con
 	return NULL;
 }
 
+/**
+ * \brief Resolves a symbol based on its language and return an output that needs to be freed
+ * 
+ * This function fails only when the requested language is not available.
+ */
 RZ_API bool rz_demangler_resolve(RZ_NULLABLE const char *symbol, RZ_NONNULL const char *language, RZ_NONNULL RZ_OWN char **output) {
 	rz_return_val_if_fail(language && demangler_plugins && output, false);
 

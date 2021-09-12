@@ -716,10 +716,6 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		}
 		free(tmp);
 	}
-	if ((tmp = rz_sys_getenv("RZ_BIN_DMNGLRCMD"))) {
-		rz_config_set(core.config, "cmd.demangle", tmp);
-		free(tmp);
-	}
 	if ((tmp = rz_sys_getenv("RZ_BIN_LANG"))) {
 		rz_config_set(core.config, "bin.lang", tmp);
 		free(tmp);
