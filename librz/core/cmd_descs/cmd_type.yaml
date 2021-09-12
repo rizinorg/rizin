@@ -218,11 +218,10 @@ commands:
             type: RZ_CMD_ARG_TYPE_FILE
       - name: toe
         cname: type_open_editor
-        summary: Open cfg.editor to edit types
+        summary: Open cfg.editor to edit type
         args:
           - name: type
             type: RZ_CMD_ARG_TYPE_STRING
-            optional: true
       - name: tos
         cname: type_open_sdb
         summary: Open SDB file and load types from it
