@@ -254,6 +254,7 @@ jobs:
   build-centos7:
     name: Build on CentOS 7
     runs-on: ubuntu-latest
+    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'centos') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable' || github.event_name == 'schedule'
     container: centos:7
     steps:
     - name: Install tools
@@ -284,6 +285,7 @@ jobs:
 
   build-debian:
     name: Build on old Debian ${{ matrix.container }}
+    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'debian') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable' || github.event_name == 'schedule'
     strategy:
         matrix:
             container:
@@ -355,6 +357,7 @@ jobs:
 
   build-static:
     name: Build static
+    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'static') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable' || github.event_name == 'schedule'
     runs-on: ubuntu-20.04
     container:
         image: alpine:edge
@@ -405,6 +408,7 @@ jobs:
 
   create-tarball:
     name: Create source tarball
+    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'extras') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable'
     runs-on: ubuntu-latest
     outputs:
         version: ${{ steps.extract_version.outputs.version }}
@@ -435,6 +439,7 @@ jobs:
 
   test-tarball:
     name: Test source tarball
+    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'extras') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable'
     runs-on: ubuntu-latest
     needs: [create-tarball]
     steps:
@@ -465,6 +470,7 @@ jobs:
   build-osx-pkg:
     name: Build OSX package
     runs-on: macos-latest
+    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'osx') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
     needs: [build-and-test]
     steps:
     - uses: actions/checkout@v2
@@ -485,6 +491,7 @@ jobs:
   build-windows:
     name: Build Windows zip/installer ${{ matrix.name }}
     runs-on: windows-latest
+    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'windows') || (github.event_name == 'push' && (contains(github.ref, 'release-') || github.ref == 'refs/heads/stable'))
     needs: [build-and-test]
     strategy:
       fail-fast: false
@@ -543,6 +550,7 @@ jobs:
   build-android:
     name: Build Android ${{ matrix.name }} package
     runs-on: ubuntu-latest
+    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'android') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
     needs: [build-and-test]
     strategy:
       fail-fast: false
@@ -569,6 +577,7 @@ jobs:
 
 #  build-extras:
 #    name: Build rizin extras and rzpipe
+#    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'extras') || contains(github.ref, 'release-') || github.event_name == 'schedule'
 #    needs: [test-tarball]
 #    runs-on: ubuntu-latest
 #    env:
@@ -609,6 +618,7 @@ jobs:
 
   build-rzpipe:
     name: Build rizin rzpipe
+    if: contains(github.head_ref, 'dist') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable' || github.event_name == 'schedule'
     needs: [test-tarball]
     runs-on: ubuntu-latest
     env:
