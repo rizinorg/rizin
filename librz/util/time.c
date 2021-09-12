@@ -76,8 +76,8 @@ RZ_API char *rz_time_stamp_to_str(ut32 timeStamp) {
 	if (timestr) {
 		rz_str_trim(timestr);
 		long hours = diff / 3600;
-		long minutes = abs(diff % 3600 / 60);
-		long seconds = abs(diff % 3600 % 60);
+		long minutes = labs(diff % 3600 / 60);
+		long seconds = labs(diff % 3600 % 60);
 		if (err) {
 			timestr = rz_str_newf("%s ERR", timestr);
 		} else if (seconds) {
