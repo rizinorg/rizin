@@ -140,6 +140,8 @@ typedef enum {
 #include <sdkddkver.h>
 #ifdef NTDDI_WIN10_TH2
 /* Avoid using Developer Preview and default to Windows 10/Windows Server 2016 */
+#undef _WIN32_WINNT
+#undef NTDDI_VERSION
 #define _WIN32_WINNT  _WIN32_WINNT_WIN10
 #define NTDDI_VERSION NTDDI_WIN10
 #endif
