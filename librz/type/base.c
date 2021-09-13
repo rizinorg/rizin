@@ -214,9 +214,14 @@ RZ_API RZ_OWN char *rz_type_db_base_type_as_string(const RzTypeDB *typedb, RZ_NO
 		break;
 	}
 	case RZ_BASE_TYPE_KIND_TYPEDEF: {
-		char *ttype = rz_type_as_string(typedb, type->type);
-		rz_strbuf_appendf(buf, "typedef %s %s;", ttype, type->name);
-		free(ttype);
+		char *typestr = rz_type_as_string(typedb, type->type);
+		// Typedef of the callable is a special case
+		if (rz_type_is_callable_ptr_nested(type->type)) {
+			rz_strbuf_appendf(buf, "typedef %s;", typestr);
+		} else {
+			rz_strbuf_appendf(buf, "typedef %s %s;", typestr, type->name);
+		}
+		free(typestr);
 		break;
 	}
 	case RZ_BASE_TYPE_KIND_ATOMIC:
