@@ -15,6 +15,7 @@ sources:
     - https://github.com/rizinorg/rizin
     - https://github.com/rizinorg/rizin-testbins
 tasks:
+    - skip: echo "${GITHUB_REF}" | grep -E '^refs/(heads/(dev|stable|bsd-.+)|tags/.+)$' || complete-build
     - rzpipe: |
         sudo python3 -m ensurepip
         sudo python3 -m pip install 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
