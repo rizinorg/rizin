@@ -54,8 +54,8 @@ RZ_API char *rz_time_stamp_to_str(ut32 timeStamp) {
 	struct tm time;
 	rz_gmtime_r(&ts, &time);
 #if __WINDOWS__ || __OpenBSD__
-	// Adjustment on Windows and OpenBSD so that mktime() returns proper
-	// values when the timestamp is close to 0.
+	// Hack on Windows and OpenBSD so that mktime() returns proper values
+	// when the timestamp is close to 0.
 	bool advance_1_day = false;
 	if (time.tm_mday == 1 && time.tm_mon == 0 && time.tm_year == 70) {
 		time.tm_mday++;
