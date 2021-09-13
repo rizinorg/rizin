@@ -253,12 +253,8 @@ RUN
 NAME=pt print unix epoch time (UTC+7:30)
 FILE=--
 CMDS=<<EOF
-# TODO: Fix ?lq `env asdfghjkl`
-$windir=env windir
-?lq `$windir`
-?? env TZ=UTC-7:30
-?lq `$windir`  # TODO: This should not be necessary
-?! env TZ=UTC+7:30
+# If TZ is set using UTC, the sign must be reversed
+env TZ=UTC-7:30
 !rizin -c 'b 0x100;pt' -q bins/elf/ls
 EOF
 EXPECT=<<EOF
@@ -332,10 +328,8 @@ RUN
 NAME=pt print unix epoch time (UTC-10)
 FILE=--
 CMDS=<<EOF
-$windir=env windir
-?lq `$windir`
-?! env TZ=UTC-10
-?? env TZ=UTC+10
+# If TZ is set using UTC, the sign must be reversed
+env TZ=UTC+10
 !rizin -c 'b 0x100;pt' -q bins/elf/ls
 EOF
 EXPECT=<<EOF
