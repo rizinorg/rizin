@@ -355,6 +355,41 @@ ERROR: Cannot find "xoo" union type
 EOF
 RUN
 
+NAME=td with comments
+FILE==
+CMDS=<<EOF
+td "typedef /* fff */ unsigned int uint; // ggg "
+td "union bla { uint b; /* qwe */ };"
+td "struct foo { uint b; /* qwe */ char *foo[5]; };"
+td "enum bar { A = 0, /* qwe */ B, G, /* ewq */ }"
+tu bla
+tuc bla
+ts foo
+tsc foo
+te bar
+tec bar
+EOF
+EXPECT=<<EOF
+pf i b
+union bla {
+	uint b;
+};
+pf i[5]*c b foo
+struct foo {
+	uint b;
+	char *foo[5];
+};
+A = 0x0
+B = 0x1
+G = 0x2
+enum bar {
+	A = 0,
+	B = 1,
+	G = 2
+};
+EOF
+RUN
+
 NAME=typedef
 FILE==
 CMDS=<<EOF
@@ -364,6 +399,21 @@ t~?Abracadabra
 EOF
 EXPECT=<<EOF
 0
+EOF
+RUN
+
+NAME=typedef function
+FILE==
+CMDS=<<EOF
+td "typedef uint8_t ( *bla)(const char *bla, void *foo);"
+tt bla
+ttc bla
+tf bla
+EOF
+EXPECT=<<EOF
+bla = uint8_t (*bla)(const char *bla, void *foo)
+typedef uint8_t (*bla)(const char *bla, void *foo);
+uint8_t bla(const char *bla, void *foo);
 EOF
 RUN
 
