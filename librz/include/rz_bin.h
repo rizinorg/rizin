@@ -998,7 +998,7 @@ RZ_API RzBinVirtualFile *rz_bin_object_get_virtual_file(RzBinObject *o, const ch
 RZ_API void rz_bin_mem_free(void *data);
 
 // demangle functions
-RZ_API char *rz_bin_demangle(RzBinFile *bf, const char *language, const char *symbol, ut64 vaddr, bool libs);
+RZ_API RZ_OWN char *rz_bin_demangle(RZ_NULLABLE RzBinFile *bf, RZ_NULLABLE const char *language, RZ_NULLABLE const char *symbol, ut64 vaddr, bool libs);
 RZ_API const char *rz_bin_get_meth_flag_string(ut64 flag, bool compact);
 
 RZ_API RzBinSection *rz_bin_get_section_at(RzBinObject *o, ut64 off, int va);

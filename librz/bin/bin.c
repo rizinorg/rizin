@@ -1337,7 +1337,7 @@ static char *bin_demangle_cxx(RzBinFile *bf, const char *symbol, ut64 vaddr) {
 	return out;
 }
 
-RZ_API char *bin_demangle_rust(RzBinFile *binfile, const char *symbol, ut64 vaddr) {
+static char *bin_demangle_rust(RzBinFile *binfile, const char *symbol, ut64 vaddr) {
 	char *str = NULL;
 	if (!(str = bin_demangle_cxx(binfile, symbol, vaddr))) {
 		return str;
@@ -1346,11 +1346,21 @@ RZ_API char *bin_demangle_rust(RzBinFile *binfile, const char *symbol, ut64 vadd
 	return rz_demangler_rust(symbol);
 }
 
-RZ_API char *rz_bin_demangle(RzBinFile *bf, const char *language, const char *symbol, ut64 vaddr, bool libs) {
-	RzBinLanguage type = RZ_BIN_LANGUAGE_UNKNOWN;
+/**
+ * \brief Demangles a symbol based on the language or the RzBinFile data
+ * 
+ * This function demangles a symbol based on the language or the RzBinFile data
+ * When a c++ or rust is selected as language, it will add methods into the
+ * RzBinFile structure based on the demangled symbol.
+ * When libs is set to true, the demangled symbol will be appended to the
+ * library name <libname>_<demangled symbol>.
+ */
+RZ_API RZ_OWN char *rz_bin_demangle(RZ_NULLABLE RzBinFile *bf, RZ_NULLABLE const char *language, RZ_NULLABLE const char *symbol, ut64 vaddr, bool libs) {
 	if (RZ_STR_ISEMPTY(symbol)) {
 		return NULL;
 	}
+
+	RzBinLanguage type = RZ_BIN_LANGUAGE_UNKNOWN;
 	RzBin *bin = bf ? bf->rbin : NULL;
 	RzBinObject *o = bf ? bf->o : NULL;
 
