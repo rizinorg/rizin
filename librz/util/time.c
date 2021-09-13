@@ -53,9 +53,9 @@ RZ_API char *rz_time_stamp_to_str(ut32 timeStamp) {
 	time_t ts = (time_t)timeStamp;
 	struct tm time;
 	rz_gmtime_r(&ts, &time);
-#if __WINDOWS__
-	// Hack on Windows to prevent mktime() from returning -1 when the
-	// timestamp is close to 0.
+#if __WINDOWS__ || __OpenBSD__
+	// Adjustment on Windows and OpenBSD so that mktime() returns proper
+	// values when the timestamp is close to 0.
 	bool advance_1_day = false;
 	if (time.tm_mday == 1 && time.tm_mon == 0 && time.tm_year == 70) {
 		time.tm_mday++;
@@ -64,7 +64,7 @@ RZ_API char *rz_time_stamp_to_str(ut32 timeStamp) {
 #endif
 	time_t gmt_time = mktime(&time);
 	rz_localtime_r(&ts, &time);
-#if __WINDOWS__
+#if __WINDOWS__ || __OpenBSD__
 	if (advance_1_day) {
 		time.tm_mday++;
 	}
