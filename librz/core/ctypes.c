@@ -431,7 +431,12 @@ RZ_IPI RZ_OWN char *rz_core_types_typedef_as_c(RzTypeDB *typedb, const RzBaseTyp
 		rz_strbuf_free(buf);
 		return NULL;
 	}
-	rz_strbuf_appendf(buf, "typedef %s %s;\n", typestr, btype->name);
+	// Typedef of the callable is a special case
+	if (rz_type_is_callable_ptr_nested(btype->type)) {
+		rz_strbuf_appendf(buf, "typedef %s;\n", typestr);
+	} else {
+		rz_strbuf_appendf(buf, "typedef %s %s;\n", typestr, btype->name);
+	}
 	free(typestr);
 	return rz_strbuf_drain(buf);
 }
