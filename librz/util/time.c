@@ -47,6 +47,16 @@ RZ_API ut64 rz_time_now_mono(void) {
 #endif
 }
 
+/* Valid only from midnight 31 Dec 1969 until Jan 1970 */
+static inline long get_seconds_since_12am31Dec1969(struct tm *time) {
+	if (time->tm_mday == 31 && time->tm_mon == 11 && time->tm_year == 69) {
+		return time->tm_hour * 3600 + time->tm_min * 60 + time->tm_sec;
+	} else if (time->tm_mon == 0 && time->tm_year == 70) {
+		return 86400 + (time->tm_mday - 1) * 86400 + time->tm_hour * 3600 + time->tm_min * 60 + time->tm_sec;
+	}
+	return -1;
+}
+
 /* timeStamp must be a Unix epoch integer */
 RZ_API char *rz_time_stamp_to_str(ut32 timeStamp) {
 	char timestr_buf[ASCTIME_BUF_MINLEN];
@@ -55,14 +65,19 @@ RZ_API char *rz_time_stamp_to_str(ut32 timeStamp) {
 	rz_gmtime_r(&ts, &gmt_tm);
 	struct tm local_tm;
 	rz_localtime_r(&ts, &local_tm);
+	time_t gmt_time;
+	time_t local_time;
+	long diff;
 	if (gmt_tm.tm_mday == 1 && gmt_tm.tm_mon == 0 && gmt_tm.tm_year == 70) {
-		gmt_tm.tm_mday++;
-		local_tm.tm_mday++;
+		gmt_time = get_seconds_since_12am31Dec1969(&gmt_tm);
+		local_time = get_seconds_since_12am31Dec1969(&local_tm);
+		diff = local_time - gmt_time;
+	} else {
+		gmt_time = mktime(&gmt_tm);
+		local_time = mktime(&local_tm);
+		diff = (long)difftime(local_time, gmt_time);
 	}
-	time_t gmt_time = mktime(&gmt_tm);
-	time_t local_time = mktime(&local_tm);
 	bool err = gmt_time == -1 || local_time == -1;
-	long diff = (long)difftime(local_time, gmt_time);
 	char *timestr = rz_ctime_r(&ts, timestr_buf);
 	if (timestr) {
 		rz_str_trim(timestr);
