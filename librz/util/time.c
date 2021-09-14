@@ -51,25 +51,26 @@ RZ_API ut64 rz_time_now_mono(void) {
 RZ_API char *rz_time_stamp_to_str(ut32 timeStamp) {
 	char timestr_buf[ASCTIME_BUF_MINLEN];
 	time_t ts = (time_t)timeStamp;
-	struct tm time;
-	rz_gmtime_r(&ts, &time);
+	struct tm gmt_tm;
+	rz_gmtime_r(&ts, &gmt_tm);
+	struct tm local_tm;
+	rz_localtime_r(&ts, &local_tm);
 #if __WINDOWS__ || __OpenBSD__
 	// Hack on Windows and OpenBSD so that mktime() returns proper values
 	// when the timestamp is close to 0.
 	bool advance_1_day = false;
-	if (time.tm_mday == 1 && time.tm_mon == 0 && time.tm_year == 70) {
-		time.tm_mday++;
+	if (gmt_tm.tm_mday == 1 && gmt_tm.tm_mon == 0 && gmt_tm.tm_year == 70) {
+		gmt_tm.tm_mday++;
 		advance_1_day = true;
 	}
 #endif
-	time_t gmt_time = mktime(&time);
-	rz_localtime_r(&ts, &time);
+	time_t gmt_time = mktime(&gmt_tm);
 #if __WINDOWS__ || __OpenBSD__
 	if (advance_1_day) {
-		time.tm_mday++;
+		local_tm.tm_mday++;
 	}
 #endif
-	time_t local_time = mktime(&time);
+	time_t local_time = mktime(&local_tm);
 	bool err = gmt_time == -1 || local_time == -1;
 	long diff = (long)difftime(local_time, gmt_time);
 	char *timestr = rz_ctime_r(&ts, timestr_buf);
