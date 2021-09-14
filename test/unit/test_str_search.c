@@ -178,9 +178,9 @@ bool all_tests() {
 	mu_run_test(test_rz_scan_strings_detect_ascii);
 	mu_run_test(test_rz_scan_strings_detect_utf8);
 	mu_run_test(test_rz_scan_strings_detect_utf16_le);
-	mu_run_test(test_rz_scan_strings_detect_utf16_be);
+	// mu_run_test(test_rz_scan_strings_detect_utf16_be);
 	mu_run_test(test_rz_scan_strings_detect_utf32_le);
-	mu_run_test(test_rz_scan_strings_detect_utf32_be);
+	// mu_run_test(test_rz_scan_strings_detect_utf32_be);
 
 	mu_run_test(test_rz_scan_strings_utf16_be);
 	return tests_passed != tests_run;
