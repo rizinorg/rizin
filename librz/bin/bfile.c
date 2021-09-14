@@ -852,7 +852,12 @@ static inline bool add_file_hash(RzMsgDigest *md, const char *name, RzList *list
 		return false;
 	}
 
-	rz_hex_bin2str(digest, digest_size, hash);
+	if (!strcmp(name, "entropy")) {
+		double entropy = rz_read_be_double(digest);
+		rz_strf(hash, "%f", entropy);
+	} else {
+		rz_hex_bin2str(digest, digest_size, hash);
+	}
 
 	RzBinFileHash *fh = RZ_NEW0(RzBinFileHash);
 	if (!fh) {
@@ -867,10 +872,10 @@ static inline bool add_file_hash(RzMsgDigest *md, const char *name, RzList *list
 }
 
 /**
- * Return a list of RzBinFileHash structures with the hashes md5, sha1, sha256
+ * Return a list of RzBinFileHash structures with the hashes md5, sha1, sha256, crc32 and entropy
  * computed over the whole \p bf .
  */
-RZ_API RzList *rz_bin_file_compute_hashes(RzBin *bin, RzBinFile *bf, ut64 limit) {
+RZ_API RzList *rz_bin_file_compute_hashes(RzBin *bin, RzBinFile *bf) {
 	rz_return_val_if_fail(bin && bf && bf->o, NULL);
 	ut64 buf_len = 0, r = 0;
 	RzBinObject *o = bf->o;
@@ -885,14 +890,6 @@ RZ_API RzList *rz_bin_file_compute_hashes(RzBin *bin, RzBinFile *bf, ut64 limit)
 	}
 
 	buf_len = rz_io_desc_size(iod);
-	// By SLURP_LIMIT normally cannot compute ...
-	if (buf_len > limit) {
-		if (bin->verbose) {
-			eprintf("Warning: rz_bin_file_hash: file exceeds bin.hashlimit\n");
-		}
-		return NULL;
-	}
-
 	buf = malloc(blocksize);
 	if (!buf) {
 		eprintf("Cannot allocate computation buffer\n");
@@ -912,7 +909,9 @@ RZ_API RzList *rz_bin_file_compute_hashes(RzBin *bin, RzBinFile *bf, ut64 limit)
 
 	if (!rz_msg_digest_configure(md, "md5") ||
 		!rz_msg_digest_configure(md, "sha1") ||
-		!rz_msg_digest_configure(md, "sha256")) {
+		!rz_msg_digest_configure(md, "sha256") ||
+		!rz_msg_digest_configure(md, "crc32") ||
+		!rz_msg_digest_configure(md, "entropy")) {
 		goto rz_bin_file_compute_hashes_bad;
 	}
 	if (!rz_msg_digest_init(md)) {
@@ -947,7 +946,9 @@ RZ_API RzList *rz_bin_file_compute_hashes(RzBin *bin, RzBinFile *bf, ut64 limit)
 
 	if (!add_file_hash(md, "md5", file_hashes) ||
 		!add_file_hash(md, "sha1", file_hashes) ||
-		!add_file_hash(md, "sha256", file_hashes)) {
+		!add_file_hash(md, "sha256", file_hashes) ||
+		!add_file_hash(md, "crc32", file_hashes) ||
+		!add_file_hash(md, "entropy", file_hashes)) {
 		goto rz_bin_file_compute_hashes_bad;
 	}
 

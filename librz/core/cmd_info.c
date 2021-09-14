@@ -609,7 +609,6 @@ RZ_IPI RzCmdStatus rz_cmd_info_resources_handler(RzCore *core, int argc, const c
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_hashes_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	ut64 limit = rz_config_get_i(core->config, "bin.hashlimit");
 	RzBinInfo *info = rz_bin_get_info(core->bin);
 	if (!info) {
 		eprintf("Cannot get bin info\n");
@@ -618,7 +617,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_hashes_handler(RzCore *core, int argc, const char
 
 	GET_CHECK_CUR_BINFILE(core);
 
-	RzList *new_hashes = rz_bin_file_compute_hashes(core->bin, bf, limit);
+	RzList *new_hashes = rz_bin_file_compute_hashes(core->bin, bf);
 	RzList *old_hashes = rz_bin_file_set_hashes(core->bin, new_hashes);
 	bool equal = true;
 	if (!rz_list_empty(new_hashes) && !rz_list_empty(old_hashes)) {

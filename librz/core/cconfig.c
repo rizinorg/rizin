@@ -3233,7 +3233,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("asm.payloads", "false", "Show payload bytes in disasm");
 
 	/* bin */
-	SETPREF("bin.hashlimit", "10M", "Only compute hash when opening a file if smaller than this size");
 	SETCB("bin.usextr", "true", &cb_usextr, "Use extract plugins when loading files");
 	SETCB("bin.useldr", "true", &cb_useldr, "Use loader plugins when loading files");
 	SETCB("bin.str.purge", "", &cb_strpurge, "Purge strings (e bin.str.purge=? provides more detail)");

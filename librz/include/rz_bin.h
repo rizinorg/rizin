@@ -961,7 +961,7 @@ RZ_API bool rz_bin_file_set_cur_by_id(RzBin *bin, ut32 bin_id);
 RZ_API bool rz_bin_file_set_cur_by_name(RzBin *bin, const char *name);
 RZ_API ut64 rz_bin_file_delete_all(RzBin *bin);
 RZ_API bool rz_bin_file_delete(RzBin *bin, RzBinFile *bf);
-RZ_API RzList *rz_bin_file_compute_hashes(RzBin *bin, RzBinFile *bf, ut64 limit);
+RZ_API RzList *rz_bin_file_compute_hashes(RzBin *bin, RzBinFile *bf);
 RZ_API RzList *rz_bin_file_set_hashes(RzBin *bin, RzList *new_hashes);
 RZ_API RzBinPlugin *rz_bin_file_cur_plugin(RzBinFile *binfile);
 RZ_API void rz_bin_file_hash_free(RzBinFileHash *fhash);
