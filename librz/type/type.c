@@ -1278,7 +1278,7 @@ RZ_API RZ_OWN char *rz_type_as_pretty_string(const RzTypeDB *typedb, RZ_NONNULL 
 	rz_return_val_if_fail(typedb && type, NULL);
 
 	HtPP *used_types = ht_pp_new0();
-	char *pretty_type =  type_as_pretty_string(typedb, type, identifier, used_types, opts, unfold_level, 0);
+	char *pretty_type = type_as_pretty_string(typedb, type, identifier, used_types, opts, unfold_level, 0);
 	ht_pp_free(used_types);
 	return pretty_type;
 }
