@@ -451,6 +451,7 @@ int rz_test_main(int argc, const char **argv) {
 		RzThread *th = rz_th_new(worker_th, &state, 0);
 		if (!th) {
 			eprintf("Failed to start thread.\n");
+			rz_th_lock_leave(state.lock);
 			exit(-1);
 		}
 		rz_pvector_push(&workers, th);
