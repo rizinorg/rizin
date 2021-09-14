@@ -234,7 +234,9 @@ static RzCmdStatus types_xrefs_function(RzCore *core, ut64 addr) {
 	}
 	RzList *uniq = rz_analysis_types_from_fcn(core->analysis, fcn);
 	rz_list_foreach (uniq, iter, type) {
-		rz_cons_println(rz_type_as_string(core->analysis->typedb, type));
+		char *typestr = rz_type_as_string(core->analysis->typedb, type);
+		rz_cons_println(typestr);
+		free(typestr);
 	}
 	rz_list_free(uniq);
 	return RZ_CMD_STATUS_OK;
