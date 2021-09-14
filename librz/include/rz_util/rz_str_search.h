@@ -30,23 +30,8 @@ typedef struct {
 	size_t min_str_length; ///< Minimum string length
 } RzUtilStrScanOptions;
 
-/**
- * Free a RzDetectedString
- */
 RZ_API void rz_detected_string_free(RzDetectedString *str);
 
-/**
- * \brief Look for strings in an RzBuffer.
- * \param buf_to_scan Pointer to a RzBuffer to scan
- * \param list Pointer to a list that will be populated with the found strings
- * \param opt Pointer to a RzUtilStrScanOptions that specifies search parameters
- * \param from Minimum address to scan
- * \param to Maximum address to scan
- * \param type Type of strings to search
- * \return Number of strings found
- *
- * Used to look for strings in a give RzBuffer. The function can also automatically detect string types.
- */
 RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrScanOptions *opt,
 	const ut64 from, const ut64 to, RzStrEnc type);
 

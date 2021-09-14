@@ -9,6 +9,9 @@ typedef enum {
 	STRING_OK,
 } FalsePositiveResult;
 
+/**
+ * Free a RzDetectedString
+ */
 RZ_API void rz_detected_string_free(RzDetectedString *str) {
 	if (str) {
 		free(str->string);
@@ -71,7 +74,7 @@ static FalsePositiveResult reduce_false_positives(const RzUtilStrScanOptions *op
 	return STRING_OK;
 }
 
-static ut64 adjust_offset(RzStrEnc str_type, ut8 *buf, const ut64 str_start) {
+static ut64 adjust_offset(RzStrEnc str_type, const ut8 *buf, const ut64 str_start) {
 	switch (str_type) {
 	case RZ_STRING_ENC_UTF16LE:
 		if (str_start > 1) {
@@ -112,6 +115,168 @@ static ut64 adjust_offset(RzStrEnc str_type, ut8 *buf, const ut64 str_start) {
 	return 0;
 }
 
+static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut64 needle, const ut64 to,
+	RzStrEnc str_type, bool ascii_only, const RzUtilStrScanOptions *opt) {
+	rz_return_val_if_fail(str_type != RZ_STRING_ENC_GUESS, NULL);
+
+	ut8 tmp[opt->buf_size];
+	ut64 str_addr = needle;
+	int rc, i, runes;
+
+	/* Eat a whole C string */
+	runes = 0;
+	rc = 0;
+	for (i = 0; i < sizeof(tmp) - 4 && needle < to; i += rc) {
+		RzRune r = { 0 };
+
+		if (str_type == RZ_STRING_ENC_UTF32LE) {
+			rc = rz_utf32le_decode(buf + needle - from, to - needle, &r);
+			if (rc) {
+				rc = 4;
+			}
+		} else if (str_type == RZ_STRING_ENC_UTF16LE) {
+			rc = rz_utf16le_decode(buf + needle - from, to - needle, &r);
+			if (rc == 1) {
+				rc = 2;
+			}
+		} else if (str_type == RZ_STRING_ENC_UTF32BE) {
+			rc = rz_utf32be_decode(buf + needle - from, to - needle, &r);
+			if (rc) {
+				rc = 4;
+			}
+		} else if (str_type == RZ_STRING_ENC_UTF16BE) {
+			rc = rz_utf16be_decode(buf + needle - from, to - needle, &r);
+			if (rc == 1) {
+				rc = 2;
+			}
+		} else {
+			rc = rz_utf8_decode(buf + needle - from, to - needle, &r);
+			if (rc > 1) {
+				str_type = RZ_STRING_ENC_UTF8;
+			}
+		}
+
+		/* Invalid sequence detected */
+		if (!rc || (ascii_only && r > 0x7f)) {
+			needle++;
+			break;
+		}
+
+		needle += rc;
+
+		if (rz_isprint(r) && r != '\\') {
+			if (str_type == RZ_STRING_ENC_UTF32LE || str_type == RZ_STRING_ENC_UTF32BE) {
+				if (r == 0xff) {
+					r = 0;
+				}
+			}
+			rc = rz_utf8_encode(tmp + i, r);
+			runes++;
+		} else if (r && r < 0x100 && strchr("\b\v\f\n\r\t\a\033\\", (char)r)) {
+			if ((i + 32) < sizeof(tmp) && r < 93) {
+				tmp[i + 0] = '\\';
+				tmp[i + 1] = "       abtnvfr             e  "
+					     "                              "
+					     "                              "
+					     "  \\"[r];
+			} else {
+				// string too long
+				break;
+			}
+			rc = 2;
+			runes++;
+		} else {
+			/* \0 marks the end of C-strings */
+			break;
+		}
+	}
+
+	tmp[i++] = '\0';
+
+	if (runes < opt->min_str_length && runes >= 2 && str_type == RZ_STRING_ENC_LATIN1 && needle < to) {
+		// back up past the \0 to the last char just in case it starts a wide string
+		needle -= 2;
+	}
+	if (runes >= opt->min_str_length) {
+		FalsePositiveResult false_positive_result = reduce_false_positives(opt, tmp, i - 1, str_type);
+		if (false_positive_result == SKIP_STRING) {
+			return NULL;
+		} else if (false_positive_result == RETRY_ASCII) {
+			return process_one_string(buf, from, str_addr, to, str_type, true, opt);
+		}
+
+		RzDetectedString *ds = RZ_NEW0(RzDetectedString);
+		if (!ds) {
+			return NULL;
+		}
+		ds->type = str_type;
+		ds->length = runes;
+		ds->size = needle - str_addr;
+		ds->addr = str_addr;
+
+		ut64 off_adj = adjust_offset(str_type, buf, ds->addr - from);
+		ds->addr -= off_adj;
+		ds->size += off_adj;
+
+		ds->string = rz_str_ndup((const char *)tmp, i);
+		return ds;
+	}
+
+	return NULL;
+}
+
+static inline bool can_be_utf16_le(ut8 *buf, ut64 size) {
+	int rc = rz_utf8_decode(buf, size, NULL);
+	if (!rc) {
+		return false;
+	}
+
+	if (size - rc < 5) {
+		return false;
+	}
+	char *w = (char *)buf + rc;
+	return !w[0] && w[1] && !w[2] && w[3] && !w[4];
+}
+
+static inline bool can_be_utf16_be(ut8 *buf, ut64 size) {
+	if (size < 7) {
+		return false;
+	}
+	return !buf[0] && buf[1] && !buf[2] && buf[3] && !buf[4] && buf[5] && !buf[6];
+}
+
+static inline bool can_be_utf32_le(ut8 *buf, ut64 size) {
+	int rc = rz_utf8_decode(buf, size, NULL);
+	if (!rc) {
+		return false;
+	}
+
+	if (size - rc < 5) {
+		return false;
+	}
+	char *w = (char *)buf + rc;
+	return !w[0] && !w[1] && !w[2] && w[3] && !w[4];
+}
+
+static inline bool can_be_utf32_be(ut8 *buf, ut64 size) {
+	if (size < 7) {
+		return false;
+	}
+	return !buf[0] && !buf[1] && !buf[2] && buf[3] && !buf[4] && !buf[5] && !buf[6];
+}
+
+/**
+ * \brief Look for strings in an RzBuffer.
+ * \param buf_to_scan Pointer to a RzBuffer to scan
+ * \param list Pointer to a list that will be populated with the found strings
+ * \param opt Pointer to a RzUtilStrScanOptions that specifies search parameters
+ * \param from Minimum address to scan
+ * \param to Maximum address to scan
+ * \param type Type of strings to search
+ * \return Number of strings found
+ *
+ * Used to look for strings in a give RzBuffer. The function can also automatically detect string types.
+ */
 RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrScanOptions *opt,
 	const ut64 from, const ut64 to, RzStrEnc type) {
 
@@ -127,10 +292,9 @@ RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrS
 		return -1;
 	}
 
-	ut8 tmp[opt->buf_size];
-	ut64 str_start, needle = from;
-	int count = 0, i, rc, runes;
-	RzStrEnc str_type = RZ_STRING_ENC_GUESS;
+	ut64 needle;
+	int count = 0;
+	RzStrEnc str_type = type;
 
 	int len = to - from;
 	ut8 *buf = calloc(len, 1);
@@ -139,166 +303,74 @@ RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrS
 		return -1;
 	}
 
-	bool ascii_only = false;
-
 	rz_buf_read_at(buf_to_scan, from, buf, len);
-	// may oobread
+
+	needle = from;
 	while (needle < to) {
-		ut64 original_needle = needle;
-		bool is_wide_be_str = false;
+		if (type == RZ_STRING_ENC_GUESS) {
+			if (can_be_utf32_le(buf + needle - from, to - needle)) {
+				str_type = RZ_STRING_ENC_UTF32LE;
+			} else if (can_be_utf16_le(buf + needle - from, to - needle)) {
+				str_type = RZ_STRING_ENC_UTF16LE;
+			} else if (can_be_utf32_be(buf + needle - from, to - needle)) {
+				str_type = RZ_STRING_ENC_UTF32BE;
+			} else if (can_be_utf16_be(buf + needle - from, to - needle)) {
+				if (to - needle > 1 && can_be_utf16_le(buf + needle - from + 1, to - needle - 1)) {
+					// The string can be either utf16-le or utf16-be, let's take the longest
+					RzDetectedString *ds_le = process_one_string(buf, from, needle + 1, to, RZ_STRING_ENC_UTF16LE, false, opt);
+					RzDetectedString *ds_be = process_one_string(buf, from, needle, to, RZ_STRING_ENC_UTF16BE, false, opt);
 
-		char ch = *(buf + needle - from);
-		if (ch == 0 && type == RZ_STRING_ENC_GUESS) {
-			char *w = (char *)buf + needle + 1 - from;
-			if ((to - needle) > 6 + 1) {
-				bool is_wide32_be = !w[0] && !w[1] && w[2] && !w[3] && !w[4] && !w[5];
-				bool is_wide_be = w[0] && !w[1] && w[2] && !w[3] && w[4] && !w[5];
-				if (is_wide32_be) {
-					is_wide_be_str = true;
-					str_type = RZ_STRING_ENC_UTF32BE;
-					rc = 4;
-				} else if (is_wide_be) {
-					is_wide_be_str = true;
-					str_type = RZ_STRING_ENC_UTF16BE;
-					rc = 2;
-				}
-			}
-		}
+					RzDetectedString *to_add = NULL;
+					RzDetectedString *to_delete = NULL;
+					ut64 needle_offset = 0;
 
-		if (!is_wide_be_str) {
-			rc = rz_utf8_decode(buf + needle - from, to - needle, NULL);
-			if (!rc) {
-				needle++;
-				continue;
-			}
-
-			if (type == RZ_STRING_ENC_GUESS) {
-				char *w = (char *)buf + needle + rc - from;
-				if ((to - needle) > 5 + rc) {
-					bool is_wide32_le = !w[0] && !w[1] && !w[2] && w[3] && !w[4];
-					bool is_wide_le = !w[0] && w[1] && !w[2] && w[3] && !w[4];
-
-					if (is_wide32_le) {
-						str_type = RZ_STRING_ENC_UTF32LE;
-					} else if (is_wide_le) {
-						str_type = RZ_STRING_ENC_UTF16LE;
+					if (!ds_le && !ds_be) {
+						needle++;
+						continue;
+					} else if (!ds_be) {
+						to_add = ds_le;
+						needle_offset = ds_le->size + 1;
+					} else if (!ds_le) {
+						to_add = ds_be;
+						needle_offset = ds_be->size;
+					} else if (ds_le->size >= ds_be->size) {
+						to_add = ds_le;
+						to_delete = ds_be;
+						needle_offset = ds_le->size + 1;
 					} else {
-						str_type = RZ_STRING_ENC_LATIN1;
+						to_add = ds_be;
+						to_delete = ds_le;
+						needle_offset = ds_be->size;
 					}
-				} else {
-					str_type = RZ_STRING_ENC_LATIN1;
+
+					count++;
+					needle += needle_offset;
+					rz_list_append(list, to_add);
+					rz_detected_string_free(to_delete);
+					continue;
 				}
-			} else if (type == RZ_STRING_ENC_UTF8) {
-				str_type = RZ_STRING_ENC_LATIN1; // initial assumption
+				str_type = RZ_STRING_ENC_UTF16BE;
 			} else {
-				str_type = type;
+				int rc = rz_utf8_decode(buf + needle - from, to - needle, NULL);
+				if (!rc) {
+					needle++;
+					continue;
+				}
+				str_type = RZ_STRING_ENC_LATIN1;
 			}
+		} else if (type == RZ_STRING_ENC_UTF8) {
+			str_type = RZ_STRING_ENC_LATIN1; // initial assumption
 		}
 
-		runes = 0;
-		str_start = needle;
-
-		/* Eat a whole C string */
-		for (i = 0; i < sizeof(tmp) - 4 && needle < to; i += rc) {
-			RzRune r = { 0 };
-
-			if (str_type == RZ_STRING_ENC_UTF32LE) {
-				rc = rz_utf32le_decode(buf + needle - from, to - needle, &r);
-				if (rc) {
-					rc = 4;
-				}
-			} else if (str_type == RZ_STRING_ENC_UTF16LE) {
-				rc = rz_utf16le_decode(buf + needle - from, to - needle, &r);
-				if (rc == 1) {
-					rc = 2;
-				}
-			} else if (str_type == RZ_STRING_ENC_UTF32BE) {
-				rc = rz_utf32be_decode(buf + needle - from, to - needle, &r);
-				if (rc) {
-					rc = 4;
-				}
-			} else if (str_type == RZ_STRING_ENC_UTF16BE) {
-				rc = rz_utf16be_decode(buf + needle - from, to - needle, &r);
-				if (rc == 1) {
-					rc = 2;
-				}
-			} else {
-				rc = rz_utf8_decode(buf + needle - from, to - needle, &r);
-				if (rc > 1) {
-					str_type = RZ_STRING_ENC_UTF8;
-				}
-			}
-
-			/* Invalid sequence detected */
-			if (!rc || (ascii_only && r > 0x7f)) {
-				needle++;
-				break;
-			}
-
-			needle += rc;
-
-			if (rz_isprint(r) && r != '\\') {
-				if (str_type == RZ_STRING_ENC_UTF32LE || str_type == RZ_STRING_ENC_UTF32BE) {
-					if (r == 0xff) {
-						r = 0;
-					}
-				}
-				rc = rz_utf8_encode(tmp + i, r);
-				runes++;
-			} else if (r && r < 0x100 && strchr("\b\v\f\n\r\t\a\033\\", (char)r)) {
-				if ((i + 32) < sizeof(tmp) && r < 93) {
-					tmp[i + 0] = '\\';
-					tmp[i + 1] = "       abtnvfr             e  "
-						     "                              "
-						     "                              "
-						     "  \\"[r];
-				} else {
-					// string too long
-					break;
-				}
-				rc = 2;
-				runes++;
-			} else {
-				/* \0 marks the end of C-strings */
-				break;
-			}
+		RzDetectedString *ds = process_one_string(buf, from, needle, to, str_type, false, opt);
+		if (!ds) {
+			needle++;
+			continue;
 		}
 
-		tmp[i++] = '\0';
-
-		if (runes < opt->min_str_length && runes >= 2 && str_type == RZ_STRING_ENC_LATIN1 && needle < to) {
-			// back up past the \0 to the last char just in case it starts a wide string
-			needle -= 2;
-		}
-		if (runes >= opt->min_str_length) {
-			FalsePositiveResult false_positive_result = reduce_false_positives(opt, tmp, i - 1, str_type);
-			if (false_positive_result == SKIP_STRING) {
-				needle = original_needle + 1;
-				continue;
-			} else if (false_positive_result == RETRY_ASCII) {
-				ascii_only = true;
-				needle = str_start;
-				continue;
-			}
-
-			RzDetectedString *ds = RZ_NEW0(RzDetectedString);
-			if (!ds) {
-				break;
-			}
-			ds->type = str_type;
-			ds->length = runes;
-			ds->size = needle - str_start;
-
-			count++;
-
-			str_start -= adjust_offset(str_type, buf, str_start - from);
-			ds->addr = str_start;
-			ds->string = rz_str_ndup((const char *)tmp, i);
-			rz_list_append(list, ds);
-		} else {
-			needle = original_needle + 1;
-		}
-		ascii_only = false;
+		count++;
+		rz_list_append(list, ds);
+		needle += ds->size;
 	}
 	free(buf);
 	return count;

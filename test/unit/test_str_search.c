@@ -150,7 +150,7 @@ bool test_rz_scan_strings_detect_utf32_be(void) {
 
 bool test_rz_scan_strings_utf16_be(void) {
 	static const unsigned char str[] =
-		"\xff\xfftorre, alfiere\xff\xff\x04\x41\x04\x3b\x04\x3e\x04\x3d\x00\x2c\x00\x20\x04\x3b\x04\x30\x04\x34\x04\x4c\x04\x4f";
+		"\xff\xfftorre, alfiere\xff\x00\x04\x41\x04\x3b\x04\x3e\x04\x3d\x00\x2c\x00\x20\x04\x3b\x04\x30\x04\x34\x04\x4c\x04\x4f";
 
 	RzBuffer *buf = rz_buf_new_with_bytes(str, sizeof(str));
 
@@ -160,9 +160,9 @@ bool test_rz_scan_strings_utf16_be(void) {
 
 	RzDetectedString *s = rz_list_get_n(str_list, 0);
 
+	mu_assert_eq(s->addr, 18, "rz_scan_strings utf16be, address");
 	mu_assert_streq(s->string, "\xd1\x81\xd0\xbb\xd0\xbe\xd0\xbd\x2c\x20\xd0\xbb\xd0\xb0\xd0\xb4\xd1\x8c\xd1\x8f",
 		"rz_scan_strings utf16be, different string");
-	mu_assert_eq(s->addr, 18, "rz_scan_strings utf16be, address");
 	mu_assert_eq(s->type, RZ_STRING_ENC_UTF16BE, "rz_scan_strings utf16be, string type");
 
 	rz_detected_string_free(s);
