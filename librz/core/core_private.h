@@ -120,9 +120,6 @@ RZ_IPI void rz_core_debug_attach(RzCore *core, int pid);
 RZ_IPI void rz_core_io_file_open(RzCore *core, int fd);
 RZ_IPI void rz_core_io_file_reopen(RzCore *core, int fd, int perms);
 
-/* cmd_eval.c */
-RZ_IPI bool rz_core_load_theme(RzCore *core, const char *name);
-
 /* cmd_seek.c */
 
 RZ_IPI bool rz_core_seek_to_register(RzCore *core, const char *input, bool is_silent);
