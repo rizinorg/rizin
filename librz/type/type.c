@@ -1038,6 +1038,251 @@ RZ_API RZ_OWN char *rz_type_identifier_declaration_as_string(const RzTypeDB *typ
 	return type_as_string_identifier_decl(typedb, type, identifier, &bufs);
 }
 
+struct PrettyHelperBufs {
+	RzStrBuf *typename;
+	RzStrBuf *pointerbuf;
+	RzStrBuf *arraybuf;
+};
+
+static bool type_decl_as_pretty_string(const RzTypeDB *typedb, const RzType *type, HtPP *used_types, struct PrettyHelperBufs phbuf, bool *self_ref, char **self_ref_typename) {
+	rz_return_val_if_fail(typedb && type && used_types && self_ref, false);
+
+	bool is_anon = false;
+	switch (type->kind) {
+	case RZ_TYPE_KIND_IDENTIFIER: {
+		if (!type->identifier.name) {
+			return false;
+		}
+		is_anon = !strncmp(type->identifier.name, "anonymous ", 10);
+		*self_ref = false;
+		ht_pp_find(used_types, type->identifier.name, self_ref);
+		*self_ref = *self_ref && strncmp(type->identifier.name, "anonymous ", 10); // no self_ref for anon types
+		*self_ref_typename = *self_ref ? strdup(type->identifier.name) : NULL;
+
+		RzBaseType *btype = rz_type_db_get_base_type(typedb, type->identifier.name);
+		if (!btype) {
+			rz_strbuf_append(phbuf.typename, "unknown_t");
+		} else {
+			switch (btype->kind) {
+			case RZ_BASE_TYPE_KIND_STRUCT:
+				rz_strbuf_appendf(phbuf.typename, "%sstruct %s", type->identifier.is_const ? "const " : "", is_anon ? "" : btype->name);
+				break;
+			case RZ_BASE_TYPE_KIND_UNION:
+				rz_strbuf_appendf(phbuf.typename, "%sunion %s", type->identifier.is_const ? "const " : "", is_anon ? "" : btype->name);
+				break;
+			case RZ_BASE_TYPE_KIND_ENUM:
+				rz_strbuf_appendf(phbuf.typename, "%senum %s", type->identifier.is_const ? "const " : "", is_anon ? "" : btype->name);
+				break;
+			case RZ_BASE_TYPE_KIND_TYPEDEF: {
+				char *typestr = rz_type_as_string(typedb, btype->type);
+				rz_strbuf_appendf(phbuf.typename, "typedef %s", typestr);
+				free(typestr);
+				break;
+			}
+			case RZ_BASE_TYPE_KIND_ATOMIC:
+				rz_strbuf_appendf(phbuf.typename, "%s%s", type->identifier.is_const ? "const " : "", btype->name);
+				break;
+			default:
+				rz_warn_if_reached();
+				break;
+			}
+		}
+		break;
+	}
+	case RZ_TYPE_KIND_POINTER:
+		rz_strbuf_append(phbuf.pointerbuf, "*");
+		rz_strbuf_appendf(phbuf.pointerbuf, "%s", type->pointer.is_const ? "const " : "");
+		type_decl_as_pretty_string(typedb, type->pointer.type, used_types, phbuf, self_ref, self_ref_typename);
+		break;
+	case RZ_TYPE_KIND_ARRAY:
+		if (type->array.count) {
+			rz_strbuf_appendf(phbuf.arraybuf, "[%" PFMT64d "]", type->array.count);
+		} else {
+			rz_strbuf_append(phbuf.arraybuf, "[]");
+		}
+		type_decl_as_pretty_string(typedb, type->array.type, used_types, phbuf, self_ref, self_ref_typename);
+		break;
+	case RZ_TYPE_KIND_CALLABLE:
+		break;
+	default:
+		rz_warn_if_reached();
+		break;
+	}
+
+	return true;
+}
+
+static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, const char *identifier, HtPP *used_types, unsigned int opts, int unfold_level, int indent_level) {
+	rz_return_val_if_fail(typedb && type, NULL);
+
+	if (unfold_level < 0) { // recursion base case
+		return NULL;
+	}
+	bool print_id = opts & RZ_TYPE_PRINT_IDENTIFIER;
+	rz_return_val_if_fail(identifier || !print_id, NULL); // cannot print id if no identifier provided
+	if (!print_id) {
+		identifier = NULL; // set NULL if we don't want to print it
+	}
+	bool multiline = opts & RZ_TYPE_PRINT_MULTILINE;
+	bool anon_only = opts & RZ_TYPE_PRINT_UNFOLD_ANONYMOUS_ONLY;
+	if (unfold_level < 0) { // any negative number means maximum unfolding
+		unfold_level = INT32_MAX;
+	}
+	bool unfold_all = !anon_only && unfold_level;
+	bool unfold_anon = unfold_level;
+	int indent = 0;
+	char *separator = " ";
+	if (multiline) {
+		indent = indent_level; // indent only if multiline
+		separator = "\n";
+	}
+
+	RzStrBuf *buf = rz_strbuf_new("");
+	for (int i = 0; i < indent; i++) {
+		rz_strbuf_append(buf, "\t");
+	}
+	// bool is_anon = false;
+	// if (type->kind == RZ_TYPE_KIND_IDENTIFIER) {
+	// 	if (!type->identifier.name) {
+	// 		rz_strbuf_free(buf);
+	// 		return NULL;
+	// 	}
+	// 	is_anon = !strncmp(type->identifier.name, "anonymous ", 10);
+	// }
+	RzStrBuf *typename = rz_strbuf_new("");
+	RzStrBuf *pointer_buf = rz_strbuf_new("");
+	RzStrBuf *array_buf = rz_strbuf_new("");
+	struct PrettyHelperBufs phbuf = { typename, pointer_buf, array_buf };
+	bool self_ref = false;
+	char *self_ref_typename = NULL;
+	bool decl = type_decl_as_pretty_string(typedb, type, used_types, phbuf, &self_ref, &self_ref_typename);
+	if (!decl) {
+		rz_strbuf_free(buf);
+		rz_strbuf_free(typename);
+		rz_strbuf_free(pointer_buf);
+		rz_strbuf_free(array_buf);
+		return NULL;
+	}
+	// ht_pp_find(used_types, type->identifier.name, &self_ref);
+	// self_ref = self_ref && strncmp(type->identifier.name, "anonymous ", 10); // no self_ref for anon types
+	if (self_ref) {
+		unfold_anon = unfold_all = unfold_level = 0; // no unfold
+	} else if (self_ref_typename) {
+		ht_pp_insert(used_types, self_ref_typename, NULL); // add this type to the ht
+	}
+	// bool pointer = type->kind == RZ_TYPE_KIND_POINTER;
+	// bool array = type->kind == RZ_TYPE_KIND_ARRAY;
+	// bool callable = type->kind == RZ_TYPE_KIND_CALLABLE;
+	RzBaseType *btype = NULL;
+	bool is_anon = false;
+	if (type->kind == RZ_TYPE_KIND_IDENTIFIER) {
+		is_anon = !strncmp(type->identifier.name, "anonymous ", 10);
+		btype = rz_type_db_get_base_type(typedb, type->identifier.name);
+	}
+	char *typename_str = rz_strbuf_drain(phbuf.typename);
+	char *pointer_str = rz_strbuf_drain(phbuf.pointerbuf);
+	char *array_str = rz_strbuf_drain(phbuf.arraybuf);
+	rz_strbuf_append(buf, typename_str);
+
+	if (btype) {
+		// 	rz_strbuf_append(buf, "unknown_t");
+		// } else {
+		if (type->kind == RZ_TYPE_KIND_CALLABLE) {
+			char *callstr = rz_type_callable_as_string(typedb, type->callable);
+			rz_strbuf_append(buf, callstr);
+			free(callstr);
+		} else {
+			switch (btype->kind) {
+			case RZ_BASE_TYPE_KIND_STRUCT:
+				if (unfold_all || (is_anon && unfold_anon)) {
+					rz_strbuf_appendf(buf, " {%s", multiline ? "\n" : "  ");
+					RzTypeStructMember *memb;
+					rz_vector_foreach(&btype->struct_data.members, memb) {
+						char *unfold = type_as_pretty_string(typedb, memb->type, memb->name, used_types, opts, unfold_level - 1, indent_level + 1);
+						rz_strbuf_appendf(buf, "%s%s", unfold, separator);
+						free(unfold);
+					}
+					for (int i = 0; i < indent; i++) {
+						rz_strbuf_append(buf, "\t");
+					}
+					rz_strbuf_append(buf, "}");
+				}
+				break;
+			case RZ_BASE_TYPE_KIND_UNION:
+				if (unfold_all || (is_anon && unfold_anon)) {
+					rz_strbuf_appendf(buf, " {%s", multiline ? "\n" : "  ");
+					RzTypeUnionMember *memb;
+					rz_vector_foreach(&btype->struct_data.members, memb) {
+						char *unfold = type_as_pretty_string(typedb, memb->type, memb->name, used_types, opts, unfold_level - 1, indent_level + 1);
+						rz_strbuf_appendf(buf, "%s%s", unfold, separator);
+						free(unfold);
+					}
+					for (int i = 0; i < indent; i++) {
+						rz_strbuf_append(buf, "\t");
+					}
+					rz_strbuf_append(buf, "}");
+				}
+				break;
+			case RZ_BASE_TYPE_KIND_ENUM:
+				if (unfold_all || (is_anon && unfold_anon)) {
+					RzTypeEnumCase *cas;
+					rz_strbuf_appendf(buf, " {%s", multiline ? "\n" : "  ");
+					rz_vector_foreach(&btype->enum_data.cases, cas) {
+						for (int i = 0; i < indent; i++) {
+							rz_strbuf_append(buf, "\t");
+						}
+						rz_strbuf_appendf(buf, "%s = 0x%" PFMT64x ",%s", cas->name, cas->val, separator);
+					}
+					for (int i = 0; i < indent; i++) {
+						rz_strbuf_append(buf, "\t");
+					}
+					rz_strbuf_append(buf, "}");
+				}
+				break;
+			case RZ_BASE_TYPE_KIND_TYPEDEF: {
+				char *typestr = rz_type_as_string(typedb, btype->type);
+				// Typedef of the callable is a special case
+				if (!rz_type_is_callable_ptr_nested(btype->type)) {
+					rz_strbuf_appendf(buf, " %s;", btype->name);
+				}
+				free(typestr);
+				break;
+			}
+			case RZ_BASE_TYPE_KIND_ATOMIC:
+				break;
+			default:
+				rz_warn_if_reached();
+				break;
+			}
+		}
+	}
+
+	if (strnlen(pointer_str, 1) != 0 || identifier || strnlen(array_str, 1) != 0) {
+		rz_strbuf_append(buf, " ");
+	}
+	rz_strbuf_appendf(buf, "%s%s%s", pointer_str, identifier ?: "", array_str);
+	rz_strbuf_append(buf, ";");
+	if (self_ref_typename) {
+		ht_pp_delete(used_types, self_ref_typename);
+		free(self_ref_typename);
+	}
+	free(typename_str);
+	free(pointer_str);
+	free(array_str);
+
+	char *pretty_type = rz_strbuf_drain(buf);
+	return pretty_type;
+}
+
+RZ_API RZ_OWN char *rz_type_as_pretty_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *type, RZ_NULLABLE const char *identifier, unsigned int opts, int unfold_level) {
+	rz_return_val_if_fail(typedb && type, NULL);
+
+	HtPP *used_types = ht_pp_new0();
+	char *pretty_type =  type_as_pretty_string(typedb, type, identifier, used_types, opts, unfold_level, 0);
+	ht_pp_free(used_types);
+	return pretty_type;
+}
+
 /**
  * \brief Returns the type C identifier
  *

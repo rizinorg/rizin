@@ -205,6 +205,12 @@ typedef struct rz_type_constraint_t {
 	ut64 val;
 } RzTypeConstraint;
 
+typedef enum {
+	RZ_TYPE_PRINT_IDENTIFIER = 1 << 0,
+	RZ_TYPE_PRINT_MULTILINE = 1 << 1,
+	RZ_TYPE_PRINT_UNFOLD_ANONYMOUS_ONLY = 1 << 2
+} RzTypePrintOpts;
+
 #ifdef RZ_API
 
 RZ_API RzTypeDB *rz_type_db_new();
@@ -254,7 +260,7 @@ RZ_API bool rz_types_equal(RZ_NONNULL const RzType *type1, RZ_NONNULL const RzTy
 RZ_API RZ_OWN char *rz_type_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);
 RZ_API RZ_OWN char *rz_type_declaration_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);
 RZ_API RZ_OWN char *rz_type_identifier_declaration_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *type, RZ_NONNULL const char *identifier);
-
+RZ_API RZ_OWN char *rz_type_as_pretty_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *type, RZ_NULLABLE const char *identifier, unsigned int opts, int unfold_level);
 RZ_API void rz_type_free(RzType *type);
 RZ_API bool rz_type_exists(RzTypeDB *typedb, RZ_NONNULL const char *name);
 RZ_API int rz_type_kind(RzTypeDB *typedb, const char *name);
