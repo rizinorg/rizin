@@ -1141,14 +1141,6 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 	for (int i = 0; i < indent; i++) {
 		rz_strbuf_append(buf, "\t");
 	}
-	// bool is_anon = false;
-	// if (type->kind == RZ_TYPE_KIND_IDENTIFIER) {
-	// 	if (!type->identifier.name) {
-	// 		rz_strbuf_free(buf);
-	// 		return NULL;
-	// 	}
-	// 	is_anon = !strncmp(type->identifier.name, "anonymous ", 10);
-	// }
 	RzStrBuf *typename = rz_strbuf_new("");
 	RzStrBuf *pointer_buf = rz_strbuf_new("");
 	RzStrBuf *array_buf = rz_strbuf_new("");
@@ -1163,16 +1155,12 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 		rz_strbuf_free(array_buf);
 		return NULL;
 	}
-	// ht_pp_find(used_types, type->identifier.name, &self_ref);
-	// self_ref = self_ref && strncmp(type->identifier.name, "anonymous ", 10); // no self_ref for anon types
 	if (self_ref) {
-		unfold_anon = unfold_all = unfold_level = 0; // no unfold
+		unfold_level = 0; // no unfold
+		unfold_anon = unfold_all = false;
 	} else if (self_ref_typename) {
 		ht_pp_insert(used_types, self_ref_typename, NULL); // add this type to the ht
 	}
-	// bool pointer = type->kind == RZ_TYPE_KIND_POINTER;
-	// bool array = type->kind == RZ_TYPE_KIND_ARRAY;
-	// bool callable = type->kind == RZ_TYPE_KIND_CALLABLE;
 	RzBaseType *btype = NULL;
 	bool is_anon = false;
 	if (type->kind == RZ_TYPE_KIND_IDENTIFIER) {
@@ -1185,8 +1173,6 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 	rz_strbuf_append(buf, typename_str);
 
 	if (btype) {
-		// 	rz_strbuf_append(buf, "unknown_t");
-		// } else {
 		if (type->kind == RZ_TYPE_KIND_CALLABLE) {
 			char *callstr = rz_type_callable_as_string(typedb, type->callable);
 			rz_strbuf_append(buf, callstr);
