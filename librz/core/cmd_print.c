@@ -3230,6 +3230,19 @@ RZ_IPI RzCmdStatus rz_cmd_print_msg_digest_algo_list_handler(RzCore *core, int a
 	return rz_core_hash_plugins_print(state);
 }
 
+RZ_IPI RzCmdStatus rz_cmd_print_magic_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
+		PJ *pj = pj_new();
+		rz_core_magic(core, argv[1], true, pj);
+		rz_cons_println(pj_string(pj));
+		pj_free(pj);
+	} else {
+		// XXX: need cmd_magic header for rz_core_magic
+		rz_core_magic(core, argv[1], true, NULL);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
 // XXX blocksize is missing
 static void cmd_print_pv(RzCore *core, const char *input, bool useBytes) {
 	const char *stack[] = {
