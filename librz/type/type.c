@@ -1159,7 +1159,7 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 		unfold_level = 0; // no unfold
 		unfold_anon = unfold_all = false;
 	} else if (self_ref_typename) {
-		ht_pp_insert(used_types, self_ref_typename, NULL); // add this type to the ht
+		ht_pp_insert(used_types, self_ref_typename, NULL); // add the type to the ht
 	}
 	RzBaseType *btype = NULL;
 	bool is_anon = false;
@@ -1191,7 +1191,7 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 					for (int i = 0; i < indent; i++) {
 						rz_strbuf_append(buf, "\t");
 					}
-					rz_strbuf_append(buf, "}");
+					rz_strbuf_appendf(buf, "%s}", multiline ? "" : " ");
 				}
 				break;
 			case RZ_BASE_TYPE_KIND_UNION:
@@ -1206,7 +1206,7 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 					for (int i = 0; i < indent; i++) {
 						rz_strbuf_append(buf, "\t");
 					}
-					rz_strbuf_append(buf, "}");
+					rz_strbuf_appendf(buf, "%s}", multiline ? "" : " ");
 				}
 				break;
 			case RZ_BASE_TYPE_KIND_ENUM:
@@ -1222,14 +1222,15 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 					for (int i = 0; i < indent; i++) {
 						rz_strbuf_append(buf, "\t");
 					}
-					rz_strbuf_append(buf, "}");
+					rz_strbuf_appendf(buf, "%s}", multiline ? "" : " ");
 				}
 				break;
 			case RZ_BASE_TYPE_KIND_TYPEDEF: {
+				identifier = NULL; // no need for identifier in typedefs
 				char *typestr = rz_type_as_string(typedb, btype->type);
 				// Typedef of the callable is a special case
 				if (!rz_type_is_callable_ptr_nested(btype->type)) {
-					rz_strbuf_appendf(buf, " %s;", btype->name);
+					rz_strbuf_appendf(buf, " %s", btype->name);
 				}
 				free(typestr);
 				break;
