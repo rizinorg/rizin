@@ -367,6 +367,7 @@ RZ_IPI RZ_OWN char *rz_core_types_struct_as_c_all(RzTypeDB *typedb, bool multili
 		if (str) {
 			rz_strbuf_append(buf, str);
 		}
+		free(str);
 	}
 	rz_list_free(structlist);
 	return rz_strbuf_drain(buf);
