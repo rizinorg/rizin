@@ -232,14 +232,17 @@ static void types_xrefs_summary(RzCore *core) {
 static RzCmdStatus types_xrefs_function(RzCore *core, ut64 addr) {
 	RzType *type;
 	RzListIter *iter;
-	RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, addr);
+	RzAnalysis *analysis = core->analysis;
+	RzAnalysisFunction *fcn = rz_analysis_get_function_at(analysis, addr);
 	if (!fcn) {
 		RZ_LOG_ERROR("Cannot find function at 0x%08" PFMT64x "\n", addr);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	RzList *uniq = rz_analysis_types_from_fcn(core->analysis, fcn);
+	RzList *uniq = rz_analysis_types_from_fcn(analysis, fcn);
 	rz_list_foreach (uniq, iter, type) {
-		rz_cons_println(rz_type_as_string(core->analysis->typedb, type));
+		char *str = rz_type_as_string(analysis->typedb, type);
+		rz_cons_println(str);
+		free(str);
 	}
 	rz_list_free(uniq);
 	return RZ_CMD_STATUS_OK;
