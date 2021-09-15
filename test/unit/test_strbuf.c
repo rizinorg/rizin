@@ -25,6 +25,28 @@ bool test_rz_strbuf_append(void) {
 	mu_end;
 }
 
+bool test_rz_strbuf_strip(void) {
+	RzStrBuf *buf = rz_strbuf_new("alpha|beta|gamma|epsilon|zeta|eta|theta|iota|kappa");
+	rz_strbuf_strip(buf, 34);
+	char *str = rz_strbuf_drain(buf);
+	mu_assert_streq(str, "alpha|beta|gamma", "ptr to buf stripping fails");
+	free(str);
+
+	buf = rz_strbuf_new("alpha|beta|gamma|delta");
+	rz_strbuf_strip(buf, 12);
+	str = rz_strbuf_drain(buf);
+	mu_assert_streq(str, "alpha|beta", "buf to buf stripping fails");
+	free(str);
+
+	buf = rz_strbuf_new("alpha|beta|gamma|epsilon|zeta|eta|theta|iota|kappa");
+	rz_strbuf_strip(buf, 11);
+	str = rz_strbuf_drain(buf);
+	mu_assert_streq(str, "alpha|beta|gamma|epsilon|zeta|eta|theta", "ptr to ptr stripping fails");
+	free(str);
+
+	mu_end;
+}
+
 bool test_rz_strbuf_strong_string(void) {
 	// small string
 	RzStrBuf *sa = rz_strbuf_new("");
@@ -221,6 +243,7 @@ bool test_rz_strbuf_initf(void) {
 
 bool all_tests() {
 	mu_run_test(test_rz_strbuf_append);
+	mu_run_test(test_rz_strbuf_strip);
 	mu_run_test(test_rz_strbuf_strong_string);
 	mu_run_test(test_rz_strbuf_strong_binary);
 	mu_run_test(test_rz_strbuf_weak_string);
