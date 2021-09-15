@@ -11,6 +11,7 @@ static bool rz_io_ar_plugin_open(RzIO *io, const char *file, bool many) {
 }
 
 static RzIODesc *rz_io_ar_open(RzIO *io, const char *file, int perm, int mode) {
+	rz_return_val_if_fail(io && file, NULL);
 	RzIODesc *res = NULL;
 	char *uri = strdup(file);
 	if (!uri) {
