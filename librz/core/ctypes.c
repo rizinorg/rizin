@@ -154,6 +154,7 @@ RZ_IPI RZ_OWN char *rz_core_types_enum_as_c_all(RzTypeDB *typedb, bool multiline
 		if (str) {
 			rz_strbuf_append(buf, str);
 		}
+		free(str);
 	}
 	rz_list_free(enumlist);
 	return rz_strbuf_drain(buf);
@@ -260,6 +261,7 @@ RZ_IPI RZ_OWN char *rz_core_types_union_as_c_all(RzTypeDB *typedb, bool multilin
 		if (str) {
 			rz_strbuf_append(buf, str);
 		}
+		free(str);
 	}
 	rz_list_free(unionlist);
 	return rz_strbuf_drain(buf);
@@ -367,6 +369,7 @@ RZ_IPI RZ_OWN char *rz_core_types_struct_as_c_all(RzTypeDB *typedb, bool multili
 		if (str) {
 			rz_strbuf_append(buf, str);
 		}
+		free(str);
 	}
 	rz_list_free(structlist);
 	return rz_strbuf_drain(buf);
@@ -451,6 +454,7 @@ RZ_IPI RZ_OWN char *rz_core_types_typedef_as_c_all(RzTypeDB *typedb) {
 		if (str) {
 			rz_strbuf_append(buf, str);
 		}
+		free(str);
 	}
 	rz_list_free(typedeflist);
 	return rz_strbuf_drain(buf);
@@ -507,14 +511,12 @@ RZ_IPI void rz_core_types_function_print(RzTypeDB *typedb, const char *function,
 		pj_a(pj);
 		rz_pvector_foreach (callable->args, it) {
 			RzCallableArg *arg = (RzCallableArg *)*it;
+			char *typestr = rz_type_as_string(typedb, arg->type);
 			pj_o(pj);
-			pj_ks(pj, "type", rz_type_as_string(typedb, arg->type));
-			if (arg->name) {
-				pj_ks(pj, "name", arg->name);
-			} else {
-				pj_ks(pj, "name", "(null)");
-			}
+			pj_ks(pj, "type", rz_str_get_null(typestr));
+			pj_ks(pj, "name", rz_str_get_null(arg->name));
 			pj_end(pj);
+			free(typestr);
 		}
 		pj_end(pj);
 		pj_end(pj);
@@ -674,7 +676,7 @@ static void set_offset_hint(RzCore *core, RzAnalysisOp *op, RZ_BORROW RzTypePath
 	if (tpath->typ->kind != RZ_TYPE_KIND_IDENTIFIER) {
 		return;
 	}
-	const char *cmt = (offimm == 0) ? tpath->path : rz_type_as_string(core->analysis->typedb, tpath->typ);
+	char *cmt = (offimm == 0) ? strdup(tpath->path) : rz_type_as_string(core->analysis->typedb, tpath->typ);
 	if (offimm > 0) {
 		// Set only the type path as the analysis hint
 		// only and only if the types are the exact match between
@@ -686,6 +688,7 @@ static void set_offset_hint(RzCore *core, RzAnalysisOp *op, RZ_BORROW RzTypePath
 		}
 	} else if (cmt && rz_analysis_op_ismemref(op->type)) {
 		rz_meta_set_string(core->analysis, RZ_META_TYPE_VARTYPE, at, cmt);
+		free(cmt);
 	}
 }
 
