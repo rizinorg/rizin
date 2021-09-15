@@ -6901,6 +6901,9 @@ RZ_IPI bool rz_analysis_var_global_list_show(RzAnalysis *analysis, RzCmdStateOut
 	}
 	rz_list_foreach (global_vars, it, glob) {
 		var_type = rz_type_as_string(analysis->typedb, glob->type);
+		if (!var_type) {
+			continue;
+		}
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_STANDARD:
 			rz_cons_printf("global %s %s @ 0x%" PFMT64x "\n",
@@ -6918,6 +6921,7 @@ RZ_IPI bool rz_analysis_var_global_list_show(RzAnalysis *analysis, RzCmdStateOut
 		default:
 			break;
 		}
+		free(var_type);
 	}
 	rz_cmd_state_output_array_end(state);
 	rz_list_free(global_vars);
