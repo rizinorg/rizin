@@ -563,13 +563,14 @@ RZ_API void rz_serialize_analysis_var_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalys
 	rz_return_if_fail(j && var);
 	char *vartype = rz_type_as_string(var->fcn->analysis->typedb, var->type);
 	if (!vartype) {
-		eprintf("Variable \"%s\" has undefined type\n", var->name);
+		RZ_LOG_ERROR("Variable \"%s\" has undefined type\n", var->name);
 		return;
 	}
 	pj_o(j);
 	pj_ks(j, "name", var->name);
 	// FIXME: Save it properly?
 	pj_ks(j, "type", vartype);
+	free(vartype);
 	switch (var->kind) {
 	case RZ_ANALYSIS_VAR_KIND_REG:
 		pj_ks(j, "kind", "r");
