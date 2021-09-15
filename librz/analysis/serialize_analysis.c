@@ -568,7 +568,7 @@ RZ_API void rz_serialize_analysis_var_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalys
 	}
 	pj_o(j);
 	pj_ks(j, "name", var->name);
-	// FIXME: Save it properly?
+	// TODO: Save it properly instead of using the C representation
 	pj_ks(j, "type", vartype);
 	free(vartype);
 	switch (var->kind) {
@@ -881,7 +881,7 @@ RZ_API void rz_serialize_analysis_global_var_save(RZ_NONNULL Sdb *db, RZ_NONNULL
 	rz_rbtree_foreach (anal->global_var_tree, it, var, RzAnalysisVarGlobal, rb) {
 		vartype = rz_type_as_string(anal->typedb, var->type);
 		if (!vartype) {
-			eprintf("Global variable \"%s\" has undefined type\n", var->name);
+			RZ_LOG_ERROR("Global variable \"%s\" has undefined type\n", var->name);
 			pj_free(j);
 			return;
 		}
@@ -890,7 +890,9 @@ RZ_API void rz_serialize_analysis_global_var_save(RZ_NONNULL Sdb *db, RZ_NONNULL
 		pj_o(j);
 		pj_ks(j, "name", var->name);
 		pj_ks(j, "addr", addr);
+		// TODO: Save it properly instead of using the C representation
 		pj_ks(j, "type", vartype);
+		free(vartype);
 		if (!rz_vector_empty(&var->constraints)) {
 			pj_ka(j, "constrs");
 			RzTypeConstraint *constr;
