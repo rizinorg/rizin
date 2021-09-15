@@ -327,7 +327,7 @@ RZ_API bool rz_strbuf_strip(RzStrBuf *buf, int n) {
 		buf->len -= n;
 		buf->ptrlen -= n;
 	} else if (buf->len - n < sizeof(buf->buf)) {
-		memcpy(buf->buf, buf->ptr, sizeof(buf->len) - n);
+		memcpy(buf->buf, buf->ptr, buf->len - n);
 		*(buf->buf + sizeof(buf->len) - n) = '\0';
 		free(buf->ptr);
 		buf->ptr = NULL;
@@ -341,6 +341,7 @@ RZ_API bool rz_strbuf_strip(RzStrBuf *buf, int n) {
 		}
 		buf->ptr = temp;
 		buf->len -= n;
+		*(buf->ptr + buf->len) = '\0';
 		buf->ptrlen -= n;
 	}
 
