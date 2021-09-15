@@ -509,14 +509,12 @@ RZ_IPI void rz_core_types_function_print(RzTypeDB *typedb, const char *function,
 		pj_a(pj);
 		rz_pvector_foreach (callable->args, it) {
 			RzCallableArg *arg = (RzCallableArg *)*it;
+			char *typestr = rz_type_as_string(typedb, arg->type);
 			pj_o(pj);
-			pj_ks(pj, "type", rz_type_as_string(typedb, arg->type));
-			if (arg->name) {
-				pj_ks(pj, "name", arg->name);
-			} else {
-				pj_ks(pj, "name", "(null)");
-			}
+			pj_ks(pj, "type", rz_str_get_null(typestr));
+			pj_ks(pj, "name", rz_str_get_null(arg->name));
 			pj_end(pj);
+			free(typestr);
 		}
 		pj_end(pj);
 		pj_end(pj);
