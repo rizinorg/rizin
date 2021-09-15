@@ -6798,7 +6798,7 @@ RZ_IPI char *rz_core_analysis_var_display(RzCore *core, RzAnalysisVar *var, bool
 	RzAnalysis *analysis = core->analysis;
 	RzStrBuf *sb = rz_strbuf_new(NULL);
 	char *vartype = rz_type_as_string(core->analysis->typedb, var->type);
-	const char *fmt = rz_type_format(analysis->typedb, vartype);
+	char *fmt = rz_type_format(analysis->typedb, vartype);
 	RzRegItem *i;
 	if (!fmt) {
 		RZ_LOG_DEBUG("type:%s doesn't exist\n", vartype);
@@ -6852,6 +6852,7 @@ RZ_IPI char *rz_core_analysis_var_display(RzCore *core, RzAnalysisVar *var, bool
 		break;
 	}
 	}
+	free(fmt);
 	return rz_strbuf_drain(sb);
 }
 
