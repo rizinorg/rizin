@@ -213,13 +213,18 @@ static void types_xrefs_summary(RzCore *core) {
 	RzType *type;
 	RzListIter *iter, *iter2;
 	RzAnalysisFunction *fcn;
-	rz_list_foreach (core->analysis->fcns, iter, fcn) {
-		RzList *uniq = rz_analysis_types_from_fcn(core->analysis, fcn);
+	RzAnalysis *analysis = core->analysis;
+	rz_list_foreach (analysis->fcns, iter, fcn) {
+		RzList *uniq = rz_analysis_types_from_fcn(analysis, fcn);
 		if (rz_list_length(uniq)) {
 			rz_cons_printf("%s: ", fcn->name);
 		}
 		rz_list_foreach (uniq, iter2, type) {
-			rz_cons_printf("%s%s", rz_type_as_string(core->analysis->typedb, type), iter2->n ? "," : "\n");
+			char *str = rz_type_as_string(analysis->typedb, type);
+			if (str) {
+				rz_cons_printf("%s%s", str, iter2->n ? "," : "\n");
+			}
+			free(str);
 		}
 	}
 }
@@ -227,14 +232,17 @@ static void types_xrefs_summary(RzCore *core) {
 static RzCmdStatus types_xrefs_function(RzCore *core, ut64 addr) {
 	RzType *type;
 	RzListIter *iter;
-	RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, addr);
+	RzAnalysis *analysis = core->analysis;
+	RzAnalysisFunction *fcn = rz_analysis_get_function_at(analysis, addr);
 	if (!fcn) {
 		RZ_LOG_ERROR("Cannot find function at 0x%08" PFMT64x "\n", addr);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	RzList *uniq = rz_analysis_types_from_fcn(core->analysis, fcn);
+	RzList *uniq = rz_analysis_types_from_fcn(analysis, fcn);
 	rz_list_foreach (uniq, iter, type) {
-		rz_cons_println(rz_type_as_string(core->analysis->typedb, type));
+		char *str = rz_type_as_string(analysis->typedb, type);
+		rz_cons_println(str);
+		free(str);
 	}
 	rz_list_free(uniq);
 	return RZ_CMD_STATUS_OK;
