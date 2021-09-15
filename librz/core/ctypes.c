@@ -451,6 +451,7 @@ RZ_IPI RZ_OWN char *rz_core_types_typedef_as_c_all(RzTypeDB *typedb) {
 		if (str) {
 			rz_strbuf_append(buf, str);
 		}
+		free(str);
 	}
 	rz_list_free(typedeflist);
 	return rz_strbuf_drain(buf);
