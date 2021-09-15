@@ -82,6 +82,8 @@ RZ_API void rz_type_db_free(RzTypeDB *typedb) {
 	ht_pp_free(typedb->types);
 	ht_pp_free(typedb->formats);
 	free((void *)typedb->target->default_type);
+	free(typedb->target->os);
+	free(typedb->target->cpu);
 	free(typedb->target);
 	free(typedb);
 }
@@ -156,7 +158,8 @@ RZ_API void rz_type_db_set_bits(RzTypeDB *typedb, int bits) {
  * \param os Operating system name to set
  */
 RZ_API void rz_type_db_set_os(RzTypeDB *typedb, const char *os) {
-	typedb->target->os = os;
+	free(typedb->target->os);
+	typedb->target->os = os ? strdup(os) : NULL;
 }
 
 /**
@@ -169,7 +172,8 @@ RZ_API void rz_type_db_set_os(RzTypeDB *typedb, const char *os) {
  * \param cpu Architecture name to set
  */
 RZ_API void rz_type_db_set_cpu(RzTypeDB *typedb, const char *cpu) {
-	typedb->target->cpu = cpu;
+	free(typedb->target->cpu);
+	typedb->target->cpu = cpu ? strdup(cpu) : NULL;
 }
 
 /**
