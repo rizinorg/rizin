@@ -134,10 +134,14 @@ RZ_API RzPVector *rz_test_load_cmd_test_file(const char *file) {
 		if (*line == '#') {
 			continue;
 		}
+
 		char *val = strchr(line, '=');
 		if (val) {
 			*val = '\0';
 			val++;
+		} else if (!val && !(strcmp(line, "RUN") == 0)) {
+			eprintf("Error: No value for key \"%s\".\n", line);
+			goto fail;
 		}
 
 		// RUN is the only cmd without value
@@ -166,10 +170,6 @@ RZ_API RzPVector *rz_test_load_cmd_test_file(const char *file) {
 		if (test->field.value) { \
 			free(test->field.value); \
 			eprintf(LINEFMT "Warning: Duplicate key \"%s\"\n", file, linenum, key); \
-		} \
-		if (!val) { \
-			eprintf(LINEFMT "Error: No value for key \"%s\"\n", file, linenum, key); \
-			goto fail; \
 		} \
 		test->field.line_begin = linenum; \
 		test->field.value = read_string_val(&nextline, val, &linenum); \
