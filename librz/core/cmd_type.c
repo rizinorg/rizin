@@ -213,13 +213,18 @@ static void types_xrefs_summary(RzCore *core) {
 	RzType *type;
 	RzListIter *iter, *iter2;
 	RzAnalysisFunction *fcn;
-	rz_list_foreach (core->analysis->fcns, iter, fcn) {
-		RzList *uniq = rz_analysis_types_from_fcn(core->analysis, fcn);
+	RzAnalysis *analysis = core->analysis;
+	rz_list_foreach (analysis->fcns, iter, fcn) {
+		RzList *uniq = rz_analysis_types_from_fcn(analysis, fcn);
 		if (rz_list_length(uniq)) {
 			rz_cons_printf("%s: ", fcn->name);
 		}
 		rz_list_foreach (uniq, iter2, type) {
-			rz_cons_printf("%s%s", rz_type_as_string(core->analysis->typedb, type), iter2->n ? "," : "\n");
+			char *str = rz_type_as_string(analysis->typedb, type);
+			if (str) {
+				rz_cons_printf("%s%s", str, iter2->n ? "," : "\n");
+			}
+			free(str);
 		}
 	}
 }
