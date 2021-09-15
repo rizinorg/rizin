@@ -206,9 +206,9 @@ typedef struct rz_type_constraint_t {
 } RzTypeConstraint;
 
 typedef enum {
-	RZ_TYPE_PRINT_IDENTIFIER = 1 << 0,
-	RZ_TYPE_PRINT_MULTILINE = 1 << 1,
-	RZ_TYPE_PRINT_UNFOLD_ANONYMOUS_ONLY = 1 << 2
+	RZ_TYPE_PRINT_IDENTIFIER = 1 << 0, // print the variable name/identifier
+	RZ_TYPE_PRINT_MULTILINE = 1 << 1, // print multiline string (every single type on a single line)
+	RZ_TYPE_PRINT_UNFOLD_ANONYMOUS_ONLY = 1 << 2 // only unfold anonymous structs/unions/enums
 } RzTypePrintOpts;
 
 #ifdef RZ_API

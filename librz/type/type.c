@@ -1261,6 +1261,16 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 	return pretty_type;
 }
 
+/**
+ * \brief Return a string contining the type pretty printed according to the options provided
+ * 
+ * \param typedb typedb for the current analysis
+ * \param type type to be pretty printed
+ * \param identifier name of the variable of the given type (RZ_NULLABLE)
+ * \param opts options for pretty printing (see RzTypePrintOpts)
+ * \param unfold_level level of unfolding to do in case of nested structures/unions (any negative number means maximum unfolding, i.e. INT32_MAX. 0 means no unfolding, just the typename and identifier, if any)
+ * \return char* string in pretty printed form, ending with a ";"
+ */
 RZ_API RZ_OWN char *rz_type_as_pretty_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *type, RZ_NULLABLE const char *identifier, unsigned int opts, int unfold_level) {
 	rz_return_val_if_fail(typedb && type, NULL);
 
