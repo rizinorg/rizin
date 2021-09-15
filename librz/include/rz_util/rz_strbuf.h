@@ -26,6 +26,7 @@ RZ_API bool rz_strbuf_append_n(RzStrBuf *sb, const char *s, size_t l);
 RZ_API bool rz_strbuf_prepend(RzStrBuf *sb, const char *s);
 RZ_API bool rz_strbuf_appendf(RzStrBuf *sb, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
 RZ_API bool rz_strbuf_vappendf(RzStrBuf *sb, const char *fmt, va_list ap);
+RZ_API bool rz_strbuf_strip(RzStrBuf *buf, int n);
 RZ_API char *rz_strbuf_get(RzStrBuf *sb);
 RZ_API RZ_OWN char *rz_strbuf_drain(RzStrBuf *sb);
 RZ_API RZ_OWN char *rz_strbuf_drain_nofree(RzStrBuf *sb);

@@ -307,6 +307,46 @@ RZ_API bool rz_strbuf_vappendf(RzStrBuf *sb, const char *fmt, va_list ap) {
 	return ret;
 }
 
+/**
+ * \brief Strips the last n characters from the buffer
+ * 
+ * \param buf Buffer to strip
+ * \param n Number of bytes to strip
+ * \return bool true if successfull, false otherwise (buffer won't be modified in this case)
+ */
+RZ_API bool rz_strbuf_strip(RzStrBuf *buf, int n) {
+	if (buf->weakref || n > buf->len) {
+		return false;
+	}
+	if (n == 0) {
+		return true;
+	}
+
+	if (buf->len < sizeof(buf->buf)) {
+		*(buf->buf + buf->len - n) = '\0';
+		buf->len -= n;
+		buf->ptrlen -= n;
+	} else if (buf->len - n < sizeof(buf->buf)) {
+		memcpy(buf->buf, buf->ptr, sizeof(buf->len) - n);
+		*(buf->buf + sizeof(buf->len) - n) = '\0';
+		free(buf->ptr);
+		buf->ptr = NULL;
+		buf->len -= n;
+		buf->ptrlen = buf->len + 1;
+	} else {
+		void *temp = realloc(buf->ptr, buf->len - n);
+		if (!temp) {
+			RZ_LOG_ERROR("realloc failed\n");
+			return false;
+		}
+		buf->ptr = temp;
+		buf->len -= n;
+		buf->ptrlen -= n;
+	}
+
+	return true;
+}
+
 RZ_API char *rz_strbuf_get(RzStrBuf *sb) {
 	rz_return_val_if_fail(sb, NULL);
 	return sb->ptr ? sb->ptr : sb->buf;
