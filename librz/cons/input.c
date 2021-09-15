@@ -573,9 +573,6 @@ static int __cons_readchar_w32(ut32 usec) {
 				resizeWin();
 			}
 		}
-		if (I->vtmode != 2 && !I->term_xterm) {
-			FlushConsoleInputBuffer(h);
-		}
 	} while (ch == 0);
 	SetConsoleMode(h, mode);
 	return ch;
