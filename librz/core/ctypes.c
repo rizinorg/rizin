@@ -676,7 +676,7 @@ static void set_offset_hint(RzCore *core, RzAnalysisOp *op, RZ_BORROW RzTypePath
 	if (tpath->typ->kind != RZ_TYPE_KIND_IDENTIFIER) {
 		return;
 	}
-	const char *cmt = (offimm == 0) ? tpath->path : rz_type_as_string(core->analysis->typedb, tpath->typ);
+	char *cmt = (offimm == 0) ? strdup(tpath->path) : rz_type_as_string(core->analysis->typedb, tpath->typ);
 	if (offimm > 0) {
 		// Set only the type path as the analysis hint
 		// only and only if the types are the exact match between
@@ -688,6 +688,7 @@ static void set_offset_hint(RzCore *core, RzAnalysisOp *op, RZ_BORROW RzTypePath
 		}
 	} else if (cmt && rz_analysis_op_ismemref(op->type)) {
 		rz_meta_set_string(core->analysis, RZ_META_TYPE_VARTYPE, at, cmt);
+		free(cmt);
 	}
 }
 
