@@ -613,9 +613,9 @@ static bool database_load(RzTestDatabase *db, const char *path, int depth) {
 				continue;
 			}
 			if ((!strcmp(path, "archos") || rz_str_endswith(path, RZ_SYS_DIR "archos")) && strcmp(subname, RZ_TEST_ARCH_OS) &&
-				!(!strcmp(subname, "not-windows-x64") &&
-					!rz_str_startswith(RZ_TEST_ARCH_OS, "windows-") &&
-					rz_str_endswith(RZ_TEST_ARCH_OS, "-x64"))) {
+				!(rz_str_startswith(subname, "not-") &&
+					strcmp(RZ_TEST_ARCH_OS, subname + strlen("not-")) &&
+					rz_str_endswith(RZ_TEST_ARCH_OS, strrchr(subname, '-')))) {
 				eprintf("Skipping %s" RZ_SYS_DIR "%s because it does not match the current platform.\n", path, subname);
 				continue;
 			}
