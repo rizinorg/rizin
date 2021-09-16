@@ -20,7 +20,6 @@ RZ_API RZ_OWN RzAnalysisVarGlobal *rz_analysis_var_global_new(RZ_NONNULL const c
 	}
 	glob->name = strdup(name);
 	glob->addr = addr;
-	glob->flag_item = NULL;
 	glob->analysis = NULL;
 
 	return glob;
@@ -64,7 +63,9 @@ RZ_API RZ_OWN bool rz_analysis_var_global_add(RzAnalysis *analysis, RZ_NONNULL R
 	}
 
 	global_var->analysis = analysis;
-	global_var->flag_item = rz_flag_set(global_var->analysis->flb.f, global_var->name, global_var->addr, rz_type_db_get_bitsize(global_var->analysis->typedb, global_var->type) / 8);
+	rz_flag_space_push(global_var->analysis->flb.f, "globals");
+	rz_flag_set(global_var->analysis->flb.f, global_var->name, global_var->addr, rz_type_db_get_bitsize(global_var->analysis->typedb, global_var->type) / 8);
+	rz_flag_space_pop(global_var->analysis->flb.f);
 
 	return true;
 }
@@ -79,18 +80,35 @@ RZ_API void rz_analysis_var_global_free(RzAnalysisVarGlobal *glob) {
 	if (!glob) {
 		return;
 	}
-
+	RzFlagItem *flag = rz_analysis_var_global_get_flag_item(glob);
+	if (flag) {
+		rz_flag_unset(glob->analysis->flb.f, flag);
+	}
 	RZ_FREE(glob->name);
 	rz_type_free(glob->type);
 	rz_vector_fini(&glob->constraints);
-
-	if (glob->flag_item && glob->analysis && !rz_flag_unset(glob->analysis->flb.f, glob->flag_item)) {
-		RZ_LOG_ERROR("Failed to unset flag for global variable %s at 0x%" PFMT64x "\n", glob->name, glob->addr);
-	}
-
-	glob->flag_item = NULL;
-	glob->analysis = NULL;
 	RZ_FREE(glob);
+}
+
+/**
+ * \brief Get the flag item corresponding to the given variable
+ *
+ * This will search for the matching flag that has been created along with the global variable.
+ * It can happen that the flag has manually been deleted, in which case this returns NULL.
+ *
+ * \return a flag item or NULL
+ */
+RZ_API RZ_NULLABLE RzFlagItem *rz_analysis_var_global_get_flag_item(RzAnalysisVarGlobal *glob) {
+	rz_return_val_if_fail(glob, NULL);
+	RzAnalysis *a = glob->analysis;
+	if (!a) {
+		return NULL;
+	}
+	RzFlagItem *r = rz_flag_get(a->flb.f, glob->name);
+	if (r && r->offset != glob->addr) {
+		return NULL;
+	}
+	return r;
 }
 
 /**
@@ -263,13 +281,14 @@ RZ_API bool rz_analysis_var_global_rename(RzAnalysis *analysis, RZ_NONNULL const
 		RZ_LOG_ERROR("Global variable '%s' does not exist!\n", old_name);
 		return false;
 	}
-	RZ_FREE(glob->name);
-	glob->name = strdup(newname);
 
-	if (glob->flag_item) {
-		rz_flag_rename(analysis->flb.f, glob->flag_item, newname);
+	RzFlagItem *flag = rz_analysis_var_global_get_flag_item(glob);
+	if (flag) {
+		rz_flag_rename(analysis->flb.f, flag, newname);
 	}
 
+	RZ_FREE(glob->name);
+	glob->name = strdup(newname);
 	return ht_pp_update_key(analysis->ht_global_var, old_name, newname);
 }
 
@@ -285,8 +304,9 @@ RZ_API void rz_analysis_var_global_set_type(RzAnalysisVarGlobal *glob, RZ_NONNUL
 	rz_type_free(glob->type);
 	glob->type = type;
 
-	if (glob->analysis && glob->flag_item) {
-		glob->flag_item->size = rz_type_db_get_bitsize(glob->analysis->typedb, glob->type) / 8;
+	RzFlagItem *flag = rz_analysis_var_global_get_flag_item(glob);
+	if (flag) {
+		flag->size = rz_type_db_get_bitsize(glob->analysis->typedb, glob->type) / 8;
 	}
 }
 
