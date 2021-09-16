@@ -323,26 +323,29 @@ static RzILVal *bool_to_val(RzILBool *b) {
 	return ret;
 }
 
-static RzILBool *val_to_bool(RzILVal *val) {
-	RzILBool *ret;
-	if (val->type != RZIL_VAR_TYPE_BOOL) {
-		RZ_LOG_ERROR("BAD VALUE TYPE\n");
-		return NULL;
-	}
-
-	ret = val->data.b;
-	RZ_FREE(val);
-	return ret;
-}
-
 static RzILBitVector *val_to_bitv(RzILVal *val) {
 	RzILBitVector *ret;
 	if (val->type != RZIL_VAR_TYPE_BV) {
-		RZ_LOG_ERROR("BAD VALUE TYPE\n");
+		RZ_LOG_ERROR("RzIL : Expected bool, but UNK/BOOL detected\n");
 		return NULL;
 	}
 
 	ret = val->data.bv;
+	RZ_FREE(val);
+	return ret;
+}
+
+static RzILBool *val_to_bool(RzILVal *val) {
+	RzILBool *ret;
+	if (val->type != RZIL_VAR_TYPE_BOOL) {
+		if (val->type == RZIL_VAR_TYPE_BV) {
+			return bitv_to_bool(val_to_bitv(val));
+		}
+		RZ_LOG_ERROR("RzIL : Expected bool, but UNK detected\n");
+		return NULL;
+	}
+
+	ret = val->data.b;
 	RZ_FREE(val);
 	return ret;
 }
@@ -369,7 +372,7 @@ RzILBitVector *rz_il_evaluate_bitv(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *typ
 	case RZIL_OP_ARG_EFF:
 	case RZIL_OP_ARG_MEM:
 	default:
-		RZ_LOG_ERROR("BAD TYPE DETECTED\n");
+		RZ_LOG_ERROR("RzIL : Expected bitvector, but bad argument type detected\n");
 		break;
 	}
 
@@ -395,7 +398,7 @@ RzILBool *rz_il_evaluate_bool(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
 	case RZIL_OP_ARG_EFF:
 	case RZIL_OP_ARG_MEM:
 	default:
-		RZ_LOG_ERROR("BAD TYPE DETECTED\n");
+		RZ_LOG_ERROR("RzIL : Expected bitvector, but bad argument type detected\n");
 		break;
 	}
 
@@ -421,7 +424,7 @@ RzILVal *rz_il_evaluate_val(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
 	case RZIL_OP_ARG_EFF:
 	case RZIL_OP_ARG_MEM:
 	default:
-		RZ_LOG_ERROR("BAD TYPE DETECTED\n");
+		RZ_LOG_ERROR("BRzIL : Expected bitvector, but bad argument type detected\n");
 		break;
 	}
 
@@ -443,7 +446,7 @@ RzILEffect *rz_il_evaluate_effect(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type
 	case RZIL_OP_ARG_VAL:
 	case RZIL_OP_ARG_MEM:
 	default:
-		RZ_LOG_ERROR("BAD TYPE DETECTED\n");
+		RZ_LOG_ERROR("RzIL : Expected bitvector, but bad argument type detected\n");
 		break;
 	}
 

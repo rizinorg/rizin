@@ -318,6 +318,11 @@ void rz_il_vm_step(RzILVM *vm, RzILOp *root) {
 	rz_il_parse_op_root(vm, root, &type);
 }
 
+/**
+ * Execute the opcodes uplifted from raw instructions
+ * /param vm pointer to VM
+ * /param op_list, a list of op roots.
+ */
 RZ_API void rz_il_vm_list_step(RzILVM *vm, RzPVector *op_list) {
 	void **iter;
 	rz_pvector_foreach (op_list, iter) {
