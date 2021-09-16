@@ -796,6 +796,16 @@ struct HelperBufs {
 	RzStrBuf *ptrbuf;
 };
 
+static void helper_bufs_init(struct HelperBufs *hbs) {
+	hbs->arraybuf = rz_strbuf_new("");
+	hbs->ptrbuf = rz_strbuf_new("");
+}
+
+static void helper_bufs_fini(struct HelperBufs *hbs) {
+	rz_strbuf_free(hbs->arraybuf);
+	rz_strbuf_free(hbs->ptrbuf);
+}
+
 static char *type_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *type, RZ_NONNULL struct HelperBufs *bufs) {
 	rz_return_val_if_fail(typedb && type && bufs, NULL);
 
@@ -823,7 +833,7 @@ static char *type_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *typ
 			rz_strbuf_append(buf, btype->name);
 		}
 		if (!rz_strbuf_is_empty(bufs->ptrbuf) || !rz_strbuf_is_empty(bufs->arraybuf)) {
-			rz_strbuf_appendf(buf, " %s%s", rz_strbuf_drain(bufs->ptrbuf), rz_strbuf_drain(bufs->arraybuf));
+			rz_strbuf_appendf(buf, " %s%s", rz_strbuf_get(bufs->ptrbuf), rz_strbuf_get(bufs->arraybuf));
 		}
 		break;
 	}
@@ -883,7 +893,7 @@ static char *type_as_string_decl(const RzTypeDB *typedb, RZ_NONNULL const RzType
 			free(btypestr);
 		}
 		if (!rz_strbuf_is_empty(bufs->ptrbuf) || !rz_strbuf_is_empty(bufs->arraybuf)) {
-			rz_strbuf_appendf(buf, " %s%s", rz_strbuf_drain(bufs->ptrbuf), rz_strbuf_drain(bufs->arraybuf));
+			rz_strbuf_appendf(buf, " %s%s", rz_strbuf_get(bufs->ptrbuf), rz_strbuf_get(bufs->arraybuf));
 		}
 		break;
 	}
@@ -962,7 +972,7 @@ static char *type_as_string_identifier_decl(const RzTypeDB *typedb, RZ_NONNULL c
 				rz_strbuf_append(buf, btype->name);
 			}
 		}
-		rz_strbuf_appendf(buf, " %s%s%s", rz_strbuf_drain(bufs->ptrbuf), identifier, rz_strbuf_drain(bufs->arraybuf));
+		rz_strbuf_appendf(buf, " %s%s%s", rz_strbuf_get(bufs->ptrbuf), identifier, rz_strbuf_get(bufs->arraybuf));
 		break;
 	}
 	case RZ_TYPE_KIND_POINTER: {
@@ -1008,10 +1018,11 @@ static char *type_as_string_identifier_decl(const RzTypeDB *typedb, RZ_NONNULL c
  */
 RZ_API RZ_OWN char *rz_type_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *type) {
 	rz_return_val_if_fail(typedb && type, NULL);
-	RzStrBuf *arraybuf = rz_strbuf_new("");
-	RzStrBuf *ptrbuf = rz_strbuf_new("");
-	struct HelperBufs bufs = { arraybuf, ptrbuf };
-	return type_as_string(typedb, type, &bufs);
+	struct HelperBufs bufs;
+	helper_bufs_init(&bufs);
+	char *r = type_as_string(typedb, type, &bufs);
+	helper_bufs_fini(&bufs);
+	return r;
 }
 
 /**
@@ -1022,10 +1033,11 @@ RZ_API RZ_OWN char *rz_type_as_string(const RzTypeDB *typedb, RZ_NONNULL const R
  */
 RZ_API RZ_OWN char *rz_type_declaration_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *type) {
 	rz_return_val_if_fail(typedb && type, NULL);
-	RzStrBuf *arraybuf = rz_strbuf_new("");
-	RzStrBuf *ptrbuf = rz_strbuf_new("");
-	struct HelperBufs bufs = { arraybuf, ptrbuf };
-	return type_as_string_decl(typedb, type, &bufs);
+	struct HelperBufs bufs;
+	helper_bufs_init(&bufs);
+	char *r = type_as_string_decl(typedb, type, &bufs);
+	helper_bufs_fini(&bufs);
+	return r;
 }
 
 /**
@@ -1036,10 +1048,11 @@ RZ_API RZ_OWN char *rz_type_declaration_as_string(const RzTypeDB *typedb, RZ_NON
  */
 RZ_API RZ_OWN char *rz_type_identifier_declaration_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *type, RZ_NONNULL const char *identifier) {
 	rz_return_val_if_fail(typedb && type, NULL);
-	RzStrBuf *arraybuf = rz_strbuf_new("");
-	RzStrBuf *ptrbuf = rz_strbuf_new("");
-	struct HelperBufs bufs = { arraybuf, ptrbuf };
-	return type_as_string_identifier_decl(typedb, type, identifier, &bufs);
+	struct HelperBufs bufs;
+	helper_bufs_init(&bufs);
+	char *r = type_as_string_identifier_decl(typedb, type, identifier, &bufs);
+	helper_bufs_fini(&bufs);
+	return r;
 }
 
 /**
