@@ -162,7 +162,8 @@ static int string_scan_range(RzList *list, RzBinFile *bf, int min,
 	RzUtilStrScanOptions scan_opt = {
 		.buf_size = 2048,
 		.max_uni_blocks = 4,
-		.min_str_length = min
+		.min_str_length = min,
+		.prefer_big_endian = false
 	};
 
 	int count = rz_scan_strings(bf->buf, str_list, &scan_opt, from, to, type);

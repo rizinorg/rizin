@@ -7,7 +7,8 @@
 static RzUtilStrScanOptions g_opt = {
 	.buf_size = 2048,
 	.max_uni_blocks = 4,
-	.min_str_length = 4
+	.min_str_length = 4,
+	.prefer_big_endian = false
 };
 
 bool test_rz_scan_strings_detect_ascii(void) {
@@ -58,6 +59,8 @@ bool test_rz_scan_strings_detect_utf16_le(void) {
 	RzBuffer *buf = rz_buf_new_with_bytes(str, sizeof(str));
 
 	RzList *str_list = rz_list_new();
+
+	g_opt.prefer_big_endian = false;
 	int n = rz_scan_strings(buf, str_list, &g_opt, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_GUESS);
 	mu_assert_eq(n, 1, "rz_scan_strings utf16le, number of strings");
 
@@ -82,6 +85,8 @@ bool test_rz_scan_strings_detect_utf16_be(void) {
 	RzBuffer *buf = rz_buf_new_with_bytes(str, sizeof(str));
 
 	RzList *str_list = rz_list_new();
+
+	g_opt.prefer_big_endian = true;
 	int n = rz_scan_strings(buf, str_list, &g_opt, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_GUESS);
 	mu_assert_eq(n, 1, "rz_scan_strings utf16be, number of strings");
 
@@ -109,6 +114,8 @@ bool test_rz_scan_strings_detect_utf32_le(void) {
 	RzBuffer *buf = rz_buf_new_with_bytes(str, sizeof(str));
 
 	RzList *str_list = rz_list_new();
+
+	g_opt.prefer_big_endian = false;
 	int n = rz_scan_strings(buf, str_list, &g_opt, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_GUESS);
 	mu_assert_eq(n, 1, "rz_scan_strings utf32le, number of strings");
 
@@ -136,6 +143,8 @@ bool test_rz_scan_strings_detect_utf32_be(void) {
 	RzBuffer *buf = rz_buf_new_with_bytes(str, sizeof(str));
 
 	RzList *str_list = rz_list_new();
+
+	g_opt.prefer_big_endian = true;
 	int n = rz_scan_strings(buf, str_list, &g_opt, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_GUESS);
 	mu_assert_eq(n, 1, "rz_scan_strings utf32be, number of strings");
 
@@ -157,6 +166,8 @@ bool test_rz_scan_strings_utf16_be(void) {
 	RzBuffer *buf = rz_buf_new_with_bytes(str, sizeof(str));
 
 	RzList *str_list = rz_list_new();
+
+	g_opt.prefer_big_endian = true;
 	int n = rz_scan_strings(buf, str_list, &g_opt, 16, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_UTF16BE);
 	mu_assert_eq(n, 1, "rz_scan_strings utf16be, number of strings");
 
@@ -177,9 +188,9 @@ bool all_tests() {
 	mu_run_test(test_rz_scan_strings_detect_ascii);
 	mu_run_test(test_rz_scan_strings_detect_utf8);
 	mu_run_test(test_rz_scan_strings_detect_utf16_le);
-	// mu_run_test(test_rz_scan_strings_detect_utf16_be);
+	mu_run_test(test_rz_scan_strings_detect_utf16_be);
 	mu_run_test(test_rz_scan_strings_detect_utf32_le);
-	// mu_run_test(test_rz_scan_strings_detect_utf32_be);
+	mu_run_test(test_rz_scan_strings_detect_utf32_be);
 
 	mu_run_test(test_rz_scan_strings_utf16_be);
 	return tests_passed != tests_run;

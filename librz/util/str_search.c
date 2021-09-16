@@ -330,10 +330,14 @@ RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrS
 					} else if (!ds_le) {
 						to_add = ds_be;
 						needle_offset = ds_be->size;
-					} else {
+					} else if (!opt->prefer_big_endian) {
 						to_add = ds_le;
 						to_delete = ds_be;
 						needle_offset = ds_le->size + 3;
+					} else {
+						to_add = ds_be;
+						to_delete = ds_le;
+						needle_offset = ds_le->size;
 					}
 
 					count++;
@@ -362,10 +366,14 @@ RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrS
 					} else if (!ds_le) {
 						to_add = ds_be;
 						needle_offset = ds_be->size;
-					} else {
+					} else if (!opt->prefer_big_endian) {
 						to_add = ds_le;
 						to_delete = ds_be;
 						needle_offset = ds_le->size + 1;
+					} else {
+						to_add = ds_be;
+						to_delete = ds_le;
+						needle_offset = ds_le->size;
 					}
 
 					count++;
