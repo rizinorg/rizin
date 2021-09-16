@@ -27,21 +27,34 @@ bool test_rz_strbuf_append(void) {
 
 bool test_rz_strbuf_strip(void) {
 	RzStrBuf *buf = rz_strbuf_new("alpha|beta|gamma|epsilon|zeta|eta|theta|iota|kappa");
-	rz_strbuf_strip(buf, 34);
+	mu_assert_true(rz_strbuf_strip(buf, 34), "returned false");
 	char *str = rz_strbuf_drain(buf);
 	mu_assert_streq(str, "alpha|beta|gamma", "ptr to buf stripping fails");
 	free(str);
 
 	buf = rz_strbuf_new("alpha|beta|gamma|delta");
-	rz_strbuf_strip(buf, 12);
+	mu_assert_true(rz_strbuf_strip(buf, 12), "returned false");
 	str = rz_strbuf_drain(buf);
 	mu_assert_streq(str, "alpha|beta", "buf to buf stripping fails");
 	free(str);
 
 	buf = rz_strbuf_new("alpha|beta|gamma|epsilon|zeta|eta|theta|iota|kappa");
-	rz_strbuf_strip(buf, 11);
+	mu_assert_true(rz_strbuf_strip(buf, 11), "returned false");
 	str = rz_strbuf_drain(buf);
 	mu_assert_streq(str, "alpha|beta|gamma|epsilon|zeta|eta|theta", "ptr to ptr stripping fails");
+	free(str);
+
+	buf = rz_strbuf_new("alpha|beta|gamma");
+	mu_assert_false(rz_strbuf_strip(buf, 30), "stripped more than length");
+	mu_assert_true(rz_strbuf_strip(buf, 16), "returned false");
+	str = rz_strbuf_drain(buf);
+	mu_assert_streq(str, "", "complete stripping fails (buf)");
+	free(str);
+
+	buf = rz_strbuf_new("alpha|beta|gamma|epsilon|zeta|eta|theta|iota|kappa");
+	mu_assert_true(rz_strbuf_strip(buf, 50), "returned false");
+	str = rz_strbuf_drain(buf);
+	mu_assert_streq(str, "", "complete stripping fails (ptr)");
 	free(str);
 
 	mu_end;
