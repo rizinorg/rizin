@@ -1,4 +1,3 @@
-
 // SPDX-FileCopyrightText: 2021 borzacchiello <lucaborza@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 

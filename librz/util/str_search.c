@@ -71,7 +71,7 @@ static FalsePositiveResult reduce_false_positives(const RzUtilStrScanOptions *op
 		}
 		break;
 	default:
-		return STRING_OK;
+		break;
 	}
 
 	return STRING_OK;
@@ -120,6 +120,7 @@ static ut64 adjust_offset(RzStrEnc str_type, const ut8 *buf, const ut64 str_star
 
 static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut64 needle, const ut64 to,
 	RzStrEnc str_type, bool ascii_only, const RzUtilStrScanOptions *opt) {
+
 	rz_return_val_if_fail(str_type != RZ_STRING_ENC_GUESS, NULL);
 
 	ut8 tmp[opt->buf_size];
@@ -196,10 +197,6 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 
 	tmp[i++] = '\0';
 
-	if (runes < opt->min_str_length && runes >= 2 && str_type == RZ_STRING_ENC_LATIN1 && needle < to) {
-		// back up past the \0 to the last char just in case it starts a wide string
-		needle -= 2;
-	}
 	if (runes >= opt->min_str_length) {
 		FalsePositiveResult false_positive_result = reduce_false_positives(opt, tmp, i - 1, str_type);
 		if (false_positive_result == SKIP_STRING) {
@@ -302,7 +299,6 @@ RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrS
 	int len = to - from;
 	ut8 *buf = calloc(len, 1);
 	if (!buf) {
-		free(buf);
 		return -1;
 	}
 
@@ -316,7 +312,6 @@ RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrS
 			} else if (can_be_utf16_le(buf + needle - from, to - needle)) {
 				str_type = RZ_STRING_ENC_UTF16LE;
 			} else if (can_be_utf32_be(buf + needle - from, to - needle)) {
-				str_type = RZ_STRING_ENC_UTF32BE;
 				if (to - needle > 3 && can_be_utf32_le(buf + needle - from + 3, to - needle - 3)) {
 					// The string can be either utf32-le or utf32-be
 					RzDetectedString *ds_le = process_one_string(buf, from, needle + 3, to, RZ_STRING_ENC_UTF32LE, false, opt);
@@ -347,6 +342,7 @@ RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrS
 					rz_detected_string_free(to_delete);
 					continue;
 				}
+				str_type = RZ_STRING_ENC_UTF32BE;
 			} else if (can_be_utf16_be(buf + needle - from, to - needle)) {
 				if (to - needle > 1 && can_be_utf16_le(buf + needle - from + 1, to - needle - 1)) {
 					// The string can be either utf16-le or utf16-be
