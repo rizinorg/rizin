@@ -117,7 +117,6 @@ static bool get_relocs_entry(ELFOBJ *bin, RzBinElfSection *section, RzVector /*<
 		if (!get_reloc_entry(bin, &tmp, segment->offset + entry_offset, segment->mode)) {
 			return false;
 		}
-
 		fix_rva_and_offset(bin, &tmp, section);
 
 		if (!rz_vector_push(relocs, &tmp)) {
@@ -244,7 +243,7 @@ RZ_OWN RzVector /*<RzBinElfReloc>*/ *Elf_(rz_bin_elf_relocs_new)(RZ_NONNULL ELFO
 bool Elf_(rz_bin_elf_has_relocs)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, false);
 
-	return bin->relocs;
+	return bin->relocs && (rz_vector_len(bin->relocs) > 0);
 }
 
 size_t Elf_(rz_bin_elf_get_relocs_count)(RZ_NONNULL ELFOBJ *bin) {

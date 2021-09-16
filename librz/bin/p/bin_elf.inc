@@ -1020,9 +1020,17 @@ static void patch_reloc_hexagon(RZ_INOUT RzBuffer *buf_patched, const ut64 patch
 	}
 }
 
+// AARCH64-specific defines
+// Take the PAGE component of an address or offset.
+#define PG(x)         ((x) & ~0xFFFULL)
+#define PG_OFFSET(x)  ((x) & 0xFFFULL)
+#define ADR_IMM_MASK1 (((1U << 2) - 1) << 29)
+#define ADR_IMM_MASK2 (((1U << 19) - 1) << 5)
+#define ADR_IMM_MASK3 (((1U << 19) - 1) << 2)
+
 static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel, ut64 S, ut64 B, ut64 L, ut64 GOT) {
 	ut16 e_machine = obj->ehdr.e_machine;
-	ut64 val = 0;
+	ut64 val = 0, keep, orig;
 	ut64 A = rel->addend, P = rel->vaddr;
 	RzBinRelocFormularSymbols formular_sym = { .A = A, .B = B, .GOT = GOT, .L = L, .S = S, .P = P, .MB = 0, .G = 0, .GP = 0, .T = 0, .TLS = 0 };
 	ut64 patch_addr = rel->paddr != UT64_MAX ? rel->paddr : Elf_(rz_bin_elf_v2p)(obj, rel->vaddr);
@@ -1041,8 +1049,37 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 		rz_buf_write_ble32_at(obj->buf_patched, patch_addr, val, obj->big_endian);
 		break;
 	case EM_AARCH64:
-		val = S + A;
-		rz_write_le64(buf, val);
+		rz_buf_read_at(obj->buf_patched, patch_addr, buf, 8);
+		switch (rel->type) {
+		case RZ_AARCH64_ADR_PREL_PG_HI21:
+		case RZ_AARCH64_ADR_PREL_PG_HI21_NC:
+		case RZ_AARCH64_ADR_GOT_PAGE:
+			// Reencode ADR imm
+			orig = rz_read_le32(buf);
+			keep = orig & ~(ADR_IMM_MASK1 | ADR_IMM_MASK2);
+			val = PG(S + A) - PG(P);
+			rz_write_le32(buf, keep | ((val & RZ_BIT_MASK32(2, 0)) << 29) | ((val & ADR_IMM_MASK3) << 3));
+			orig = rz_read_le32(buf);
+			break;
+		case RZ_AARCH64_JUMP26:
+		case RZ_AARCH64_CALL26:
+			// Reencode 26 bits of the offset
+			keep = rz_read_le32(buf) & ~RZ_BIT_MASK32(26, 0);
+			val = S + A;
+			rz_write_le32(buf, keep | (val & RZ_BIT_MASK32(26, 0)));
+			break;
+		case RZ_AARCH64_ADD_ABS_LO12_NC:
+		case RZ_AARCH64_LD64_GOT_LO12_NC:
+			// Reencode ADD or LD/ST imm
+			keep = rz_read_le32(buf) & ~(RZ_BIT_MASK32(12, 0) << 10);
+			val = PG_OFFSET(S + A);
+			rz_write_le32(buf, keep | ((val & RZ_BIT_MASK32(12, 0)) << 10));
+			break;
+		default:
+			val = S + A;
+			rz_write_le64(buf, val);
+			break;
+		}
 		rz_buf_write_at(obj->buf_patched, patch_addr, buf, 8);
 		break;
 	case EM_PPC64: {
@@ -1281,9 +1318,11 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 		case RZ_386_PC16: ADD(16, -P);
 		case RZ_386_8: ADD(8, 0);
 		case RZ_386_PC8: ADD(8, -P);
-		case RZ_386_COPY: ADD(32, 0); // XXX: copy symbol at runtime
+		case RZ_386_COPY: ADD(32, 0); // copy symbol at runtime
 		case RZ_386_IRELATIVE: r->is_ifunc = true; SET(32);
-		default: break;
+		default:
+			RZ_LOG_WARN("unimplemented ELF/X86_32 reloc type %d\n", rel->type);
+			break;
 		}
 		break;
 	case EM_X86_64:
@@ -1303,9 +1342,11 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 		case RZ_X86_64_8: ADD(8, 0);
 		case RZ_X86_64_PC8: ADD(8, -P);
 		case RZ_X86_64_GOTPCREL: ADD(64, GOT - P);
-		case RZ_X86_64_COPY: ADD(64, 0); // XXX: copy symbol at runtime
+		case RZ_X86_64_COPY: ADD(64, 0); // copy symbol at runtime
 		case RZ_X86_64_IRELATIVE: r->is_ifunc = true; SET(64);
-		default: break;
+		default:
+			RZ_LOG_WARN("unimplemented ELF/X86_64 reloc type %d\n", rel->type);
+			break;
 		}
 		break;
 	case EM_ARM:
@@ -1358,12 +1399,26 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	case EM_AARCH64:
 		switch (rel->type) {
 		case RZ_AARCH64_NONE: break;
+		case RZ_AARCH64_ABS64: ADD(64, 0);
 		case RZ_AARCH64_ABS32: ADD(32, 0);
 		case RZ_AARCH64_ABS16: ADD(16, 0);
+		case RZ_AARCH64_PREL64: ADD(64, 0);
+		case RZ_AARCH64_PREL32: ADD(32, 0);
+		case RZ_AARCH64_PREL16: ADD(16, 0);
 		case RZ_AARCH64_GLOB_DAT: SET(64);
 		case RZ_AARCH64_JUMP_SLOT: SET(64);
 		case RZ_AARCH64_RELATIVE: ADD(64, B);
-		default: break; // reg relocations
+		case RZ_AARCH64_ADD_ABS_LO12_NC: ADD(16, 0);
+		case RZ_AARCH64_JUMP26: ADD(32, 0);
+		case RZ_AARCH64_CALL26: ADD(32, 0);
+		case RZ_AARCH64_LD64_GOT_LO12_NC: ADD(32, 0);
+		// Page-relative relocations
+		case RZ_AARCH64_ADR_GOT_PAGE: ADD(32, 0);
+		case RZ_AARCH64_ADR_PREL_PG_HI21: ADD(32, 0);
+		case RZ_AARCH64_ADR_PREL_PG_HI21_NC: ADD(32, 0);
+		default:
+			RZ_LOG_WARN("unimplemented ELF/AARCH64 reloc type %d\n", rel->type);
+			break;
 		}
 		break;
 	case EM_PPC:
