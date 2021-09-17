@@ -745,9 +745,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		RZ_FREE(debugbackend);
 		return main_help(help > 1 ? 2 : 0);
 	}
-#if __WINDOWS__
-	pfile = rz_acp_to_utf8(pfile);
-#endif // __WINDOWS__
 	if (customRarunProfile) {
 		char *tfn = rz_file_temp(".rz-run");
 		if (!rz_file_dump(tfn, (const ut8 *)customRarunProfile, strlen(customRarunProfile), 0)) {
@@ -943,9 +940,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 					if (!strstr(pfile, "://")) {
 						opt.ind--; // take filename
 					}
-#if __WINDOWS__
-					pfile = rz_acp_to_utf8(pfile);
-#endif // __WINDOWS__
 					fh = rz_core_file_open(r, pfile, perms, mapaddr);
 					iod = (r->io && fh) ? rz_io_desc_get(r->io, fh->fd) : NULL;
 					if (!strcmp(debugbackend, "gdb")) {
@@ -1015,9 +1009,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 					RZ_FREE(path);
 				}
 #else
-#if __WINDOWS__
-				f = rz_acp_to_utf8(f);
-#endif // __WINDOWS__
 				if (f) {
 					char *escaped_path = rz_str_arg_escape(f);
 					pfile = rz_str_append(pfile, escaped_path);
@@ -1064,9 +1055,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				RZ_FREE(pfile);
 				while (opt.ind < argc) {
 					pfile = strdup(argv[opt.ind++]);
-#if __WINDOWS__
-					pfile = rz_acp_to_utf8(pfile);
-#endif
 					fh = rz_core_file_open(r, pfile, perms, mapaddr);
 					if (!fh && perms & RZ_PERM_W) {
 						perms |= RZ_PERM_CREAT;
