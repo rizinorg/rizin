@@ -1107,9 +1107,9 @@ static bool type_decl_as_pretty_string(const RzTypeDB *typedb, const RzType *typ
 		break;
 	}
 	case RZ_TYPE_KIND_POINTER:
+		type_decl_as_pretty_string(typedb, type->pointer.type, used_types, phbuf, self_ref, self_ref_typename);
 		rz_strbuf_append(phbuf.pointerbuf, "*");
 		rz_strbuf_appendf(phbuf.pointerbuf, "%s", type->pointer.is_const ? "const " : "");
-		type_decl_as_pretty_string(typedb, type->pointer.type, used_types, phbuf, self_ref, self_ref_typename);
 		break;
 	case RZ_TYPE_KIND_ARRAY:
 		if (type->array.count) {
@@ -1136,7 +1136,6 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 		return NULL;
 	}
 	bool print_id = opts & RZ_TYPE_PRINT_IDENTIFIER;
-	rz_return_val_if_fail(identifier || !print_id, NULL); // cannot print id if no identifier provided
 	if (!print_id) {
 		identifier = NULL; // set NULL if we don't want to print it
 	}
@@ -1266,7 +1265,7 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 	if (strnlen(pointer_str, 1) != 0 || identifier || strnlen(array_str, 1) != 0) {
 		rz_strbuf_append(buf, " ");
 	}
-	rz_strbuf_appendf(buf, "%s%s%s", pointer_str, identifier ? identifier : "", array_str);
+	rz_strbuf_appendf(buf, "%s%s%s", pointer_str ? pointer_str : "", identifier ? identifier : "", array_str ? array_str : "");
 	rz_strbuf_append(buf, ";");
 	if (self_ref_typename) {
 		ht_pp_delete(used_types, self_ref_typename);
