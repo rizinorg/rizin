@@ -512,6 +512,40 @@ static bool test_type_as_string(void) {
 	mu_end;
 }
 
+static char *pretty_complex_const_pointer = "const char **const *const c[4];";
+static char *pretty_struct_array_ptr = "struct alb {  const char *b; int *const *a[][][][9];  };";
+static char *pretty_struct_array_ptr_multiline = "struct alb {\n"
+						 "\tconst char *b;\n"
+						 "\tint *const *a[][][][9];\n"
+						 "} leet;";
+
+static bool test_type_as_pretty_string(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
+	const char *dir_prefix = rz_sys_prefix(NULL);
+	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
+
+	char *error_msg = NULL;
+	RzType *ttype = rz_type_parse_string_single(typedb->parser, pretty_complex_const_pointer, &error_msg);
+	mu_assert_notnull(ttype, "complex const pointer type parse unsuccessfull");
+	char *pretty_str = rz_type_as_pretty_string(typedb, ttype, "c", RZ_TYPE_PRINT_IDENTIFIER, 1);
+	mu_assert_streq(pretty_str, pretty_complex_const_pointer, "complex const pointer type is ugly");
+	free(pretty_str);
+
+	error_msg = NULL;
+	ttype = rz_type_parse_string_single(typedb->parser, pretty_struct_array_ptr, &error_msg);
+	mu_assert_notnull(ttype, "struct array ptr type parse unsuccessfull");
+	pretty_str = rz_type_as_pretty_string(typedb, ttype, NULL, RZ_TYPE_PRINT_IDENTIFIER, 2);
+	mu_assert_streq(pretty_str, pretty_struct_array_ptr, "struct array ptr type is ugly");
+	free(pretty_str);
+	pretty_str = rz_type_as_pretty_string(typedb, ttype, "leet", RZ_TYPE_PRINT_IDENTIFIER | RZ_TYPE_PRINT_MULTILINE, 1);
+	mu_assert_streq(pretty_str, pretty_struct_array_ptr_multiline, "struct array ptr multiline type is ugly");
+	free(pretty_str);
+
+	mu_end;
+}
+
 static bool test_array_types(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
@@ -837,6 +871,7 @@ int all_tests() {
 	mu_run_test(test_types_get_base_types);
 	mu_run_test(test_types_get_base_types_of_kind);
 	mu_run_test(test_type_as_string);
+	mu_run_test(test_type_as_pretty_string);
 	mu_run_test(test_enum_types);
 	mu_run_test(test_const_types);
 	mu_run_test(test_array_types);
