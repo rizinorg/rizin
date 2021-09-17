@@ -388,6 +388,11 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 		TSNode child = ts_node_named_child(struct_body, i);
 		const char *node_type = ts_node_type(child);
 
+		// Skip comments
+		if (!strcmp(node_type, "comment")) {
+			continue;
+		}
+
 		// Parse the type qualifier first (if present)
 		// FIXME: There could be multiple different type qualifiers in one declaration
 		bool is_const = false;
@@ -448,8 +453,9 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 		// Thus it has the additional node after the declarator
 		TSNode bitfield_clause = ts_node_next_named_sibling(field_declarator);
 		if (!ts_node_is_null(bitfield_clause)) {
+			const char *bfnode_type = ts_node_type(field_type);
 			// As per C standard bitfields are defined only for atomic types, particularly "int"
-			if (strcmp(ts_node_type(field_type), "primitive_type")) {
+			if (strcmp(bfnode_type, "primitive_type") && strcmp(bfnode_type, "type_identifier")) {
 				parser_error(state, "ERROR: Struct bitfield cannot contain non-primitive bitfield!\n");
 				node_malformed_error(state, child, text, "struct field");
 				result = -1;
@@ -672,6 +678,11 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 		TSNode child = ts_node_named_child(union_body, i);
 		const char *node_type = ts_node_type(child);
 
+		// Skip comments
+		if (!strcmp(node_type, "comment")) {
+			continue;
+		}
+
 		// Parse the type qualifier first (if present)
 		// FIXME: There could be multiple different type qualifiers in one declaration
 		bool is_const = false;
@@ -731,8 +742,9 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 		// Thus it has the additional node after the declarator
 		TSNode bitfield_clause = ts_node_next_named_sibling(field_declarator);
 		if (!ts_node_is_null(bitfield_clause)) {
+			const char *bfnode_type = ts_node_type(field_type);
 			// As per C standard bitfields are defined only for atomic types, particularly "int"
-			if (strcmp(ts_node_type(field_type), "primitive_type")) {
+			if (strcmp(bfnode_type, "primitive_type") && strcmp(bfnode_type, "type_identifier")) {
 				parser_error(state, "ERROR: Union bitfield cannot contain non-primitive bitfield!\n");
 				node_malformed_error(state, child, text, "union field");
 				result = -1;
@@ -948,6 +960,12 @@ int parse_enum_node(CParserState *state, TSNode node, const char *text, ParserTy
 		parser_debug(state, "enum: processing %d field...\n", i);
 		TSNode child = ts_node_named_child(enum_body, i);
 		const char *node_type = ts_node_type(child);
+
+		// Skip comments
+		if (!strcmp(node_type, "comment")) {
+			continue;
+		}
+
 		// Every field should have (field_declaration) AST clause
 		if (strcmp(node_type, "enumerator")) {
 			parser_error(state, "ERROR: Enum member AST should contain (enumerator) node!\n");

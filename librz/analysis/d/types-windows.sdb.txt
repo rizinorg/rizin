@@ -260,6 +260,16 @@ typedef.PRECTL=struct _RECT*
 LPRECTL=typedef
 typedef.LPRECTL=struct _RECT*
 
+_SMALL_RECT=struct
+struct._SMALL_RECT=Left,Top,Right,Bottom
+struct._SMALL_RECT.Left=SHORT,0,0
+struct._SMALL_RECT.Top=SHORT,2,0
+struct._SMALL_RECT.Right=SHORT,4,0
+struct._SMALL_RECT.Bottom=SHORT,6,0
+
+SMALL_RECT=typedef
+typedef.SMALL_RECT=struct _SMALL_RECT
+
 tagSIZE=struct
 struct.tagSIZE=cx,cy
 struct.tagSIZE.cx=LONG,0,0
@@ -617,6 +627,12 @@ typedef.LPWSTR=WCHAR*
 LPWCH=typedef
 typedef.LPWCH=WCHAR*
 
+LPCWCH=typedef
+typedef.LPCWCH=const WCHAR*
+
+PCNZWCH=typedef
+typedef.PCNZWCH=const WCHAR*
+
 PACTCTX=type
 type.PACTCTX=p
 type.PACTCTX.size=32
@@ -668,10 +684,12 @@ typedef.LPFILETIME=FILETIME*
 PFILETIME=typedef
 typedef.PFILETIME=LPFILETIME
 
-LPCSTR=type
+LPCSTR=typedef
+typedef.LPCSTR=const char*
 type.LPCSTR=s
 
-LPCWSTR=type
+LPCWSTR=typedef
+typedef.LPCWSTR=const WCHAR*
 type.LPCWSTR=z
 
 HCERTSTORE=typedef
@@ -940,7 +958,8 @@ type.LPWIN32_FIND_DATAW=p
 PWSTR=typedef
 typedef.PWSTR=LPWSTR
 
-LPWCH=type
+LPWCH=typedef
+typedef.LPWCH=WCHAR*
 type.LPWCH=z
 
 FINDEX_SEARCH_OPS=typedef
@@ -964,7 +983,8 @@ typedef.FINDEX_INFO_LEVELS=int
 LPLDT_ENTRY=type
 type.LPLDT_ENTRY=p
 
-LPCCH=type
+LPCCH=typedef
+typedef.LPCCH=const CHAR*
 type.LPCCH=p
 
 LPMEMORYSTATUS=type
@@ -2270,3 +2290,20 @@ timespec=struct
 struct.timespec=tv_sec,tv_nsec
 struct.timespec.tv_sec=long,0,0
 struct.timespec.tv_nsec=long,8,0
+
+_fd_set=struct
+struct._fd_set=fd_count,fd_array
+struct._fd_set.fd_count=u_int,0,0
+struct._fd_set.fd_array=SOCKET,0,64
+
+fd_set=typedef
+typedef.fd_set=struct _fd_set
+
+FD_SET=typedef
+typedef.FD_SET=struct _fd_set
+
+PFD_SET=typedef
+typedef.PFD_SET=struct _fd_set*
+
+LPFD_SET=typedef
+typedef.LPFD_SET=struct _fd_set*

@@ -123,33 +123,41 @@ RZ_IPI void rz_core_types_enum_print_all(RzCore *core, RzOutputMode mode) {
 	}
 }
 
-RZ_IPI void rz_core_types_enum_print_c(RzTypeDB *typedb, const RzBaseType *btype, bool multiline) {
-	rz_return_if_fail(btype);
-	rz_return_if_fail(btype->kind == RZ_BASE_TYPE_KIND_ENUM);
+RZ_IPI RZ_OWN char *rz_core_types_enum_as_c(RzTypeDB *typedb, const RzBaseType *btype, bool multiline) {
+	rz_return_val_if_fail(btype, NULL);
+	rz_return_val_if_fail(btype->kind == RZ_BASE_TYPE_KIND_ENUM, NULL);
 
 	char *separator;
+	RzStrBuf *buf = rz_strbuf_new("");
 	if (!rz_vector_empty(&btype->enum_data.cases)) {
-		rz_cons_printf("enum %s {%s", btype->name, multiline ? "\n" : "");
+		rz_strbuf_appendf(buf, "enum %s {%s", btype->name, multiline ? "\n" : "");
 		separator = multiline ? "\t" : "";
 		RzTypeEnumCase *cas;
 		rz_vector_foreach(&btype->enum_data.cases, cas) {
-			rz_cons_printf("%s%s = %" PFMT64u, separator, cas->name, cas->val);
+			rz_strbuf_appendf(buf, "%s%s = %" PFMT64u, separator, cas->name, cas->val);
 			separator = multiline ? ",\n\t" : ", ";
 		}
-		rz_cons_println(multiline ? "\n};" : "};");
+		rz_strbuf_append(buf, multiline ? "\n};\n" : "};\n");
 	} else {
-		rz_cons_printf("enum %s {};\n", btype->name);
+		rz_strbuf_appendf(buf, "enum %s {};\n", btype->name);
 	}
+	return rz_strbuf_drain(buf);
 }
 
-RZ_IPI void rz_core_types_enum_print_c_all(RzTypeDB *typedb, bool multiline) {
+RZ_IPI RZ_OWN char *rz_core_types_enum_as_c_all(RzTypeDB *typedb, bool multiline) {
 	RzList *enumlist = rz_type_db_get_base_types_of_kind(typedb, RZ_BASE_TYPE_KIND_ENUM);
 	RzListIter *it;
 	RzBaseType *btype;
+	RzStrBuf *buf = rz_strbuf_new("");
 	rz_list_foreach (enumlist, it, btype) {
-		rz_core_types_enum_print_c(typedb, btype, multiline);
+		char *str = rz_core_types_enum_as_c(typedb, btype, multiline);
+		if (str) {
+			rz_strbuf_append(buf, str);
+		}
+		free(str);
 	}
 	rz_list_free(enumlist);
+	return rz_strbuf_drain(buf);
 }
 
 // Unions
@@ -219,36 +227,44 @@ RZ_IPI void rz_core_types_union_print_all(RzCore *core, RzOutputMode mode) {
 	}
 }
 
-RZ_IPI void rz_core_types_union_print_c(RzTypeDB *typedb, const RzBaseType *btype, bool multiline) {
-	rz_return_if_fail(btype);
-	rz_return_if_fail(btype->kind == RZ_BASE_TYPE_KIND_UNION);
+RZ_IPI RZ_OWN char *rz_core_types_union_as_c(RzTypeDB *typedb, const RzBaseType *btype, bool multiline) {
+	rz_return_val_if_fail(btype, NULL);
+	rz_return_val_if_fail(btype->kind == RZ_BASE_TYPE_KIND_UNION, NULL);
 
 	char *separator;
+	RzStrBuf *buf = rz_strbuf_new("");
 	if (!rz_vector_empty(&btype->enum_data.cases)) {
-		rz_cons_printf("union %s {%s", btype->name, multiline ? "\n" : "");
+		rz_strbuf_appendf(buf, "union %s {%s", btype->name, multiline ? "\n" : "");
 		separator = multiline ? "\t" : "";
 		RzTypeUnionMember *memb;
 		rz_vector_foreach(&btype->union_data.members, memb) {
 			char *membdecl = rz_type_identifier_declaration_as_string(typedb, memb->type, memb->name);
-			rz_cons_printf("%s%s", separator, membdecl);
+			rz_strbuf_appendf(buf, "%s%s", separator, membdecl);
 			free(membdecl);
 			separator = multiline ? ";\n\t" : "; ";
 		}
-		rz_cons_print(";");
-		rz_cons_println(multiline ? "\n};" : "};");
+		rz_strbuf_append(buf, ";");
+		rz_strbuf_append(buf, multiline ? "\n};\n" : "};\n");
 	} else {
-		rz_cons_printf("union %s {};\n", btype->name);
+		rz_strbuf_appendf(buf, "union %s {};\n", btype->name);
 	}
+	return rz_strbuf_drain(buf);
 }
 
-RZ_IPI void rz_core_types_union_print_c_all(RzTypeDB *typedb, bool multiline) {
+RZ_IPI RZ_OWN char *rz_core_types_union_as_c_all(RzTypeDB *typedb, bool multiline) {
 	RzList *unionlist = rz_type_db_get_base_types_of_kind(typedb, RZ_BASE_TYPE_KIND_UNION);
 	RzListIter *it;
 	RzBaseType *btype;
+	RzStrBuf *buf = rz_strbuf_new("");
 	rz_list_foreach (unionlist, it, btype) {
-		rz_core_types_union_print_c(typedb, btype, multiline);
+		char *str = rz_core_types_union_as_c(typedb, btype, multiline);
+		if (str) {
+			rz_strbuf_append(buf, str);
+		}
+		free(str);
 	}
 	rz_list_free(unionlist);
+	return rz_strbuf_drain(buf);
 }
 
 // Structures
@@ -319,37 +335,44 @@ RZ_IPI void rz_core_types_struct_print_all(RzCore *core, RzOutputMode mode) {
 	}
 }
 
-RZ_IPI void rz_core_types_struct_print_c(RzTypeDB *typedb, const RzBaseType *btype, bool multiline) {
-	rz_return_if_fail(btype);
-	rz_return_if_fail(btype->kind == RZ_BASE_TYPE_KIND_STRUCT);
+RZ_IPI RZ_OWN char *rz_core_types_struct_as_c(RzTypeDB *typedb, const RzBaseType *btype, bool multiline) {
+	rz_return_val_if_fail(btype, NULL);
+	rz_return_val_if_fail(btype->kind == RZ_BASE_TYPE_KIND_STRUCT, NULL);
 
 	char *separator;
+	RzStrBuf *buf = rz_strbuf_new("");
 	if (!rz_vector_empty(&btype->struct_data.members)) {
-		rz_cons_printf("struct %s {%s", btype->name, multiline ? "\n" : "");
+		rz_strbuf_appendf(buf, "struct %s {%s", btype->name, multiline ? "\n" : "");
 		separator = multiline ? "\t" : "";
 		RzTypeStructMember *memb;
 		rz_vector_foreach(&btype->struct_data.members, memb) {
-			rz_return_if_fail(memb->type);
 			char *membdecl = rz_type_identifier_declaration_as_string(typedb, memb->type, memb->name);
-			rz_cons_printf("%s%s", separator, membdecl);
+			rz_strbuf_appendf(buf, "%s%s", separator, membdecl);
 			free(membdecl);
 			separator = multiline ? ";\n\t" : "; ";
 		}
-		rz_cons_print(";");
-		rz_cons_println(multiline ? "\n};" : "};");
+		rz_strbuf_append(buf, ";");
+		rz_strbuf_append(buf, multiline ? "\n};\n" : "};\n");
 	} else {
-		rz_cons_printf("struct %s {};\n", btype->name);
+		rz_strbuf_appendf(buf, "struct %s {};\n", btype->name);
 	}
+	return rz_strbuf_drain(buf);
 }
 
-RZ_IPI void rz_core_types_struct_print_c_all(RzTypeDB *typedb, bool multiline) {
+RZ_IPI RZ_OWN char *rz_core_types_struct_as_c_all(RzTypeDB *typedb, bool multiline) {
 	RzList *structlist = rz_type_db_get_base_types_of_kind(typedb, RZ_BASE_TYPE_KIND_STRUCT);
 	RzListIter *it;
 	RzBaseType *btype;
+	RzStrBuf *buf = rz_strbuf_new("");
 	rz_list_foreach (structlist, it, btype) {
-		rz_core_types_struct_print_c(typedb, btype, multiline);
+		char *str = rz_core_types_struct_as_c(typedb, btype, multiline);
+		if (str) {
+			rz_strbuf_append(buf, str);
+		}
+		free(str);
 	}
 	rz_list_free(structlist);
+	return rz_strbuf_drain(buf);
 }
 
 // Typedefs
@@ -401,23 +424,71 @@ RZ_IPI void rz_core_types_typedef_print_all(RzCore *core, RzOutputMode mode) {
 	}
 }
 
-RZ_IPI void rz_core_types_typedef_print_c(RzTypeDB *typedb, const RzBaseType *btype) {
-	rz_return_if_fail(btype);
-	rz_return_if_fail(btype->kind == RZ_BASE_TYPE_KIND_TYPEDEF);
+RZ_IPI RZ_OWN char *rz_core_types_typedef_as_c(RzTypeDB *typedb, const RzBaseType *btype) {
+	rz_return_val_if_fail(btype, NULL);
+	rz_return_val_if_fail(btype->kind == RZ_BASE_TYPE_KIND_TYPEDEF, NULL);
 
+	RzStrBuf *buf = rz_strbuf_new("");
 	char *typestr = rz_type_as_string(typedb, btype->type);
-	rz_cons_printf("typedef %s %s;\n", typestr, btype->name);
+	if (!typestr) {
+		rz_strbuf_free(buf);
+		return NULL;
+	}
+	// Typedef of the callable is a special case
+	if (rz_type_is_callable_ptr_nested(btype->type)) {
+		rz_strbuf_appendf(buf, "typedef %s;\n", typestr);
+	} else {
+		rz_strbuf_appendf(buf, "typedef %s %s;\n", typestr, btype->name);
+	}
 	free(typestr);
+	return rz_strbuf_drain(buf);
 }
 
-RZ_IPI void rz_core_types_typedef_print_c_all(RzTypeDB *typedb) {
+RZ_IPI RZ_OWN char *rz_core_types_typedef_as_c_all(RzTypeDB *typedb) {
 	RzList *typedeflist = rz_type_db_get_base_types_of_kind(typedb, RZ_BASE_TYPE_KIND_TYPEDEF);
 	RzListIter *it;
 	RzBaseType *btype;
+	RzStrBuf *buf = rz_strbuf_new("");
 	rz_list_foreach (typedeflist, it, btype) {
-		rz_core_types_typedef_print_c(typedb, btype);
+		char *str = rz_core_types_typedef_as_c(typedb, btype);
+		if (str) {
+			rz_strbuf_append(buf, str);
+		}
+		free(str);
 	}
 	rz_list_free(typedeflist);
+	return rz_strbuf_drain(buf);
+}
+
+RZ_IPI RZ_OWN char *rz_core_base_type_as_c(RzCore *core, RZ_NONNULL RzBaseType *type, bool multiline) {
+	rz_return_val_if_fail(type, NULL);
+
+	switch (type->kind) {
+	case RZ_BASE_TYPE_KIND_STRUCT:
+		return rz_core_types_struct_as_c(core->analysis->typedb, type, multiline);
+	case RZ_BASE_TYPE_KIND_UNION:
+		return rz_core_types_union_as_c(core->analysis->typedb, type, multiline);
+	case RZ_BASE_TYPE_KIND_ENUM:
+		return rz_core_types_enum_as_c(core->analysis->typedb, type, multiline);
+	case RZ_BASE_TYPE_KIND_TYPEDEF:
+		return rz_core_types_typedef_as_c(core->analysis->typedb, type);
+	case RZ_BASE_TYPE_KIND_ATOMIC:
+		return strdup(type->name);
+	default:
+		rz_warn_if_reached();
+		return NULL;
+	}
+	return NULL;
+}
+
+RZ_IPI RZ_OWN char *rz_core_types_as_c(RzCore *core, RZ_NONNULL const char *name, bool multiline) {
+	rz_return_val_if_fail(name, NULL);
+
+	RzBaseType *btype = rz_type_db_get_base_type(core->analysis->typedb, name);
+	if (!btype) {
+		return false;
+	}
+	return rz_core_base_type_as_c(core, btype, multiline);
 }
 
 // Function types
@@ -440,14 +511,12 @@ RZ_IPI void rz_core_types_function_print(RzTypeDB *typedb, const char *function,
 		pj_a(pj);
 		rz_pvector_foreach (callable->args, it) {
 			RzCallableArg *arg = (RzCallableArg *)*it;
+			char *typestr = rz_type_as_string(typedb, arg->type);
 			pj_o(pj);
-			pj_ks(pj, "type", rz_type_as_string(typedb, arg->type));
-			if (arg->name) {
-				pj_ks(pj, "name", arg->name);
-			} else {
-				pj_ks(pj, "name", "(null)");
-			}
+			pj_ks(pj, "type", rz_str_get_null(typestr));
+			pj_ks(pj, "name", rz_str_get_null(arg->name));
 			pj_end(pj);
+			free(typestr);
 		}
 		pj_end(pj);
 		pj_end(pj);
@@ -607,7 +676,7 @@ static void set_offset_hint(RzCore *core, RzAnalysisOp *op, RZ_BORROW RzTypePath
 	if (tpath->typ->kind != RZ_TYPE_KIND_IDENTIFIER) {
 		return;
 	}
-	const char *cmt = (offimm == 0) ? tpath->path : rz_type_as_string(core->analysis->typedb, tpath->typ);
+	char *cmt = (offimm == 0) ? strdup(tpath->path) : rz_type_as_string(core->analysis->typedb, tpath->typ);
 	if (offimm > 0) {
 		// Set only the type path as the analysis hint
 		// only and only if the types are the exact match between
@@ -619,6 +688,7 @@ static void set_offset_hint(RzCore *core, RzAnalysisOp *op, RZ_BORROW RzTypePath
 		}
 	} else if (cmt && rz_analysis_op_ismemref(op->type)) {
 		rz_meta_set_string(core->analysis, RZ_META_TYPE_VARTYPE, at, cmt);
+		free(cmt);
 	}
 }
 
@@ -1004,21 +1074,21 @@ RZ_IPI bool rz_types_open_file(RzCore *core, const char *path) {
 			char *error_msg = NULL;
 			int result = rz_type_parse_string_stateless(typedb->parser, tmp, &error_msg);
 			if (result && error_msg) {
-				eprintf("%s", error_msg);
+				RZ_LOG_ERROR("%s", error_msg);
 				free(error_msg);
 			}
 			free(tmp);
 		}
 	} else {
 		if (!rz_file_exists(path)) {
-			eprintf("File \"%s\" does not exist\n", path);
+			RZ_LOG_ERROR("File \"%s\" does not exist\n", path);
 			free(homefile);
 			return false;
 		}
 		char *error_msg = NULL;
 		int result = rz_type_parse_file_stateless(typedb->parser, path, dir, &error_msg);
 		if (result && error_msg) {
-			eprintf("%s", error_msg);
+			RZ_LOG_ERROR("%s", error_msg);
 			free(error_msg);
 		}
 	}
@@ -1026,22 +1096,24 @@ RZ_IPI bool rz_types_open_file(RzCore *core, const char *path) {
 	return true;
 }
 
-RZ_IPI void rz_types_open_editor(RzCore *core, const char *typename) {
+RZ_IPI bool rz_types_open_editor(RzCore *core, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(name, false);
 	RzTypeDB *typedb = core->analysis->typedb;
-	char *str = rz_core_cmd_strf(core, "tc %s", typename ? typename : "");
-	char *tmp = rz_core_editor(core, "*.h", str);
+	RzBaseType *t = rz_type_db_get_compound_type(typedb, name);
+	if (!t) {
+		return false;
+	}
+	char *str = rz_core_base_type_as_c(core, t, true);
+	if (!str) {
+		RZ_LOG_ERROR("Cannot generate C representation of type \"%s\"\n", name);
+		return false;
+	}
+	bool result = false;
+	char *tmp = rz_core_editor(core, NULL, str);
 	if (tmp) {
-		char *error_msg = NULL;
-		int result = rz_type_parse_string_stateless(typedb->parser, tmp, &error_msg);
-		if (result) {
-			// TODO: remove previous types and save new edited types
-			//rz_type_db_purge(typedb);
-		}
-		if (error_msg) {
-			eprintf("%s\n", error_msg);
-			free(error_msg);
-		}
+		result = rz_type_db_edit_base_type(typedb, t->name, tmp);
 		free(tmp);
 	}
 	free(str);
+	return result;
 }

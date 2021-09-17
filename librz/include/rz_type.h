@@ -18,9 +18,9 @@ extern "C" {
 RZ_LIB_VERSION_HEADER(rz_type);
 
 typedef struct rz_type_target_t {
-	const char *cpu;
+	char *cpu;
 	int bits;
-	const char *os;
+	char *os;
 	bool big_endian;
 	const char *default_type;
 } RzTypeTarget;
@@ -236,6 +236,7 @@ RZ_API void rz_type_base_struct_member_free(void *e, void *user);
 RZ_API void rz_type_base_union_member_free(void *e, void *user);
 
 RZ_API RZ_BORROW RzBaseType *rz_type_db_get_base_type(const RzTypeDB *typedb, RZ_NONNULL const char *name);
+RZ_API RZ_BORROW RzBaseType *rz_type_db_get_compound_type(const RzTypeDB *typedb, RZ_NONNULL const char *name);
 RZ_API void rz_type_db_save_base_type(const RzTypeDB *typedb, const RzBaseType *type);
 RZ_API bool rz_type_db_delete_base_type(RzTypeDB *typedb, RZ_NONNULL RzBaseType *type);
 
@@ -243,6 +244,7 @@ RZ_API RZ_OWN RzList /* RzBaseType */ *rz_type_db_get_base_types_of_kind(const R
 RZ_API RZ_OWN RzList /* RzBaseType */ *rz_type_db_get_base_types(const RzTypeDB *typedb);
 
 RZ_API RZ_OWN char *rz_type_db_base_type_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzBaseType *type);
+RZ_API bool rz_type_db_edit_base_type(RzTypeDB *typedb, RZ_NONNULL const char *name, RZ_NONNULL const char *typestr);
 
 // Compound types
 

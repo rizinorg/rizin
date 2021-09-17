@@ -603,11 +603,11 @@ static bool test_struct_func_types(void) {
 	RzCallableArg *arg;
 	arg = *rz_pvector_index_ptr(call->args, 0);
 	mu_assert_streq(arg->name, "a", "argument \"a\"");
-	mu_assert_streq(rz_type_as_string(typedb, arg->type), "int", "argument \"a\" type");
+	mu_assert_streq_free(rz_type_as_string(typedb, arg->type), "int", "argument \"a\" type");
 
 	arg = *rz_pvector_index_ptr(call->args, 1);
 	mu_assert_streq(arg->name, "b", "argument \"b\"");
-	mu_assert_streq(rz_type_as_string(typedb, arg->type), "const char *", "argument \"b\" type");
+	mu_assert_streq_free(rz_type_as_string(typedb, arg->type), "const char *", "argument \"b\" type");
 
 	rz_type_free(ttype);
 
@@ -635,15 +635,15 @@ static bool test_struct_func_types(void) {
 	mu_assert_eq(RZ_TYPE_KIND_CALLABLE, member->type->pointer.type->pointer.type->kind, "not function pointer's pointer");
 
 	call = member->type->pointer.type->pointer.type->callable;
-	mu_assert_streq(rz_type_as_string(typedb, call->ret), "wchar_t", "function return type");
+	mu_assert_streq_free(rz_type_as_string(typedb, call->ret), "wchar_t", "function return type");
 
 	arg = *rz_pvector_index_ptr(call->args, 0);
 	mu_assert_streq(arg->name, "a", "argument \"a\"");
-	mu_assert_streq(rz_type_as_string(typedb, arg->type), "int", "argument \"a\" type");
+	mu_assert_streq_free(rz_type_as_string(typedb, arg->type), "int", "argument \"a\" type");
 
 	arg = *rz_pvector_index_ptr(call->args, 1);
 	mu_assert_streq(arg->name, "b", "argument \"b\"");
-	mu_assert_streq(rz_type_as_string(typedb, arg->type), "const char *", "argument \"b\" type");
+	mu_assert_streq_free(rz_type_as_string(typedb, arg->type), "const char *", "argument \"b\" type");
 
 	rz_type_free(ttype);
 	rz_type_db_free(typedb);
@@ -759,6 +759,38 @@ static bool test_union_identifier_without_specifier(void) {
 	mu_end;
 }
 
+static char *edit_array_old = "int a[65][5][0]";
+static char *edit_struct_array_ptr_old = "struct alb { const char *b; int * const *a[0][0][0][9]; }";
+static char *edit_struct_array_ptr_new = "struct alb { wchar_t * const b; int ***a[8][8][8]; float c; }";
+
+static bool test_edit_types(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
+	const char *dir_prefix = rz_sys_prefix(NULL);
+	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
+
+	char *error_msg = NULL;
+	RzType *ttype = rz_type_parse_string_single(typedb->parser, edit_array_old, &error_msg);
+	mu_assert_notnull(ttype, "array type parse successfull");
+	const char *id1 = rz_type_identifier(ttype);
+	mu_assert_false(rz_type_db_edit_base_type(typedb, id1, edit_array_old), "edit atomic base type");
+
+	ttype = rz_type_parse_string_single(typedb->parser, edit_struct_array_ptr_old, &error_msg);
+	mu_assert_notnull(ttype, "struct type parse successfull");
+	char *struct_str1 = rz_type_declaration_as_string(typedb, ttype);
+	mu_assert_streq_free(struct_str1, edit_struct_array_ptr_old, "rz_type_declaration_as_string");
+	const char *id2 = rz_type_identifier(ttype);
+	mu_assert_true(rz_type_db_edit_base_type(typedb, id2, edit_struct_array_ptr_new), "edit struct base type");
+	char *struct_str2 = rz_type_declaration_as_string(typedb, ttype);
+	mu_assert_streq_free(struct_str2, edit_struct_array_ptr_new, "rz_type_declaration_as_string (new)");
+
+	rz_type_free(ttype);
+
+	rz_type_db_free(typedb);
+	mu_end;
+}
+
 /* references */
 typedef struct {
 	const char *name;
@@ -812,6 +844,7 @@ int all_tests() {
 	mu_run_test(test_struct_array_types);
 	mu_run_test(test_struct_identifier_without_specifier);
 	mu_run_test(test_union_identifier_without_specifier);
+	mu_run_test(test_edit_types);
 	mu_run_test(test_references);
 	return tests_passed != tests_run;
 }

@@ -1233,6 +1233,7 @@ RZ_API void rz_analysis_var_list_show(RzAnalysis *analysis, RzAnalysisFunction *
 				RzRegItem *i = rz_reg_index_get(analysis->reg, var->delta);
 				if (!i) {
 					eprintf("Register not found");
+					free(vartype);
 					break;
 				}
 				analysis->cb_printf("afv%c %s %s %s @ 0x%" PFMT64x "\n",

@@ -4026,15 +4026,13 @@ static const RzCmdDescHelp type_open_file_help = {
 static const RzCmdDescArg type_open_editor_args[] = {
 	{
 		.name = "type",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
+		.type = RZ_CMD_ARG_TYPE_ANY_TYPE,
 
 	},
 	{ 0 },
 };
 static const RzCmdDescHelp type_open_editor_help = {
-	.summary = "Open cfg.editor to edit types",
+	.summary = "Open cfg.editor to edit type",
 	.args = type_open_editor_args,
 };
 

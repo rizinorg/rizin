@@ -214,9 +214,14 @@ RZ_API RZ_OWN char *rz_type_db_base_type_as_string(const RzTypeDB *typedb, RZ_NO
 		break;
 	}
 	case RZ_BASE_TYPE_KIND_TYPEDEF: {
-		char *ttype = rz_type_as_string(typedb, type->type);
-		rz_strbuf_appendf(buf, "typedef %s %s;", ttype, type->name);
-		free(ttype);
+		char *typestr = rz_type_as_string(typedb, type->type);
+		// Typedef of the callable is a special case
+		if (rz_type_is_callable_ptr_nested(type->type)) {
+			rz_strbuf_appendf(buf, "typedef %s;", typestr);
+		} else {
+			rz_strbuf_appendf(buf, "typedef %s %s;", typestr, type->name);
+		}
+		free(typestr);
 		break;
 	}
 	case RZ_BASE_TYPE_KIND_ATOMIC:
@@ -228,4 +233,26 @@ RZ_API RZ_OWN char *rz_type_db_base_type_as_string(const RzTypeDB *typedb, RZ_NO
 	}
 	char *bufstr = rz_strbuf_drain(buf);
 	return bufstr;
+}
+
+/**
+ * \brief Searches for the compound RzBaseType in the types database given the name
+ *
+ *	Returns all types except atomic - structures, unions, enums, typedefs
+ *
+ * \param typedb Type Database instance
+ * \param name Name of the RzBaseType
+ */
+RZ_API RZ_BORROW RzBaseType *rz_type_db_get_compound_type(const RzTypeDB *typedb, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(name, NULL);
+	RzBaseType *t = rz_type_db_get_base_type(typedb, name);
+	if (!t) {
+		RZ_LOG_ERROR("Cannot find type \"%s\"\n", name);
+		return NULL;
+	}
+	if (t->kind == RZ_BASE_TYPE_KIND_ATOMIC) {
+		RZ_LOG_ERROR("Atomic type \"%s\"\n", name);
+		return NULL;
+	}
+	return t;
 }

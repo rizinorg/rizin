@@ -2203,10 +2203,10 @@ static bool scr_vtmode(void *user, void *data) {
 	GetConsoleMode(input, &mode);
 	if (node->i_value == 2) {
 		SetConsoleMode(input, mode & ENABLE_VIRTUAL_TERMINAL_INPUT);
-		rz_cons_singleton()->term_raw = ENABLE_VIRTUAL_TERMINAL_INPUT;
+		rz_cons_singleton()->term_raw |= ENABLE_VIRTUAL_TERMINAL_INPUT;
 	} else {
 		SetConsoleMode(input, mode & ~ENABLE_VIRTUAL_TERMINAL_INPUT);
-		rz_cons_singleton()->term_raw = 0;
+		rz_cons_singleton()->term_raw &= ~ENABLE_VIRTUAL_TERMINAL_INPUT;
 	}
 	HANDLE streams[] = { GetStdHandle(STD_OUTPUT_HANDLE), GetStdHandle(STD_ERROR_HANDLE) };
 	int i;

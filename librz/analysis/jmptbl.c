@@ -284,7 +284,7 @@ RZ_API bool rz_analysis_get_delta_jmptbl_info(RZ_NONNULL RzAnalysis *analysis, R
 	rz_return_val_if_fail(analysis && fcn && params, false);
 	bool isValid = false;
 	bool foundCmp = false;
-	int i;
+	ut64 i;
 
 	RzAnalysisOp tmp_aop = { 0 };
 	if (lea_address > jmp_address) {
