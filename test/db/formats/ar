@@ -57,3 +57,224 @@ EXPECT=<<EOF
 0x00000000  6c6f 6e67 7370 6163 650a ffff ffff ffff  longspace.......
 EOF
 RUN
+
+NAME=ar load many
+FILE=ar://bins/ar/libgdbr.a
+CMDS=o ; is ; ou 5 ; is ; ou 10 ; is
+EXPECT=<<EOF
+ 3 * r-x 0x000036c0 ar://bins/ar/libgdbr.a//libgdbr.o
+ 4 - r-x 0x000048d8 ar://bins/ar/libgdbr.a//packet.o
+ 5 - r-x 0x00004388 ar://bins/ar/libgdbr.a//arch.o
+ 6 - r-x 0x000042e0 ar://bins/ar/libgdbr.a//common.o
+ 7 - r-x 0x00003008 ar://bins/ar/libgdbr.a//utils.o
+ 8 - r-x 0x00008b10 ar://bins/ar/libgdbr.a//core.o
+ 9 - r-x 0x00006e30 ar://bins/ar/libgdbr.a//xml.o
+10 - r-x 0x0001b898 ar://bins/ar/libgdbr.a//core.o
+11 - r-x 0x00013b38 ar://bins/ar/libgdbr.a//responses.o
+12 - r-x 0x000008b8 vfile://0/reloc-targets
+13 - r-x 0x000036c0 vfile://0/patched
+14 - r-x 0x00000aa8 vfile://1/reloc-targets
+15 - r-x 0x000048d8 vfile://1/patched
+16 - r-x 0x00000110 vfile://2/reloc-targets
+17 - r-x 0x00004388 vfile://2/patched
+18 - r-x 0x00000a80 vfile://3/reloc-targets
+19 - r-x 0x000042e0 vfile://3/patched
+20 - r-x 0x00000608 vfile://4/reloc-targets
+21 - r-x 0x00003008 vfile://4/patched
+22 - r-x 0x000015c8 vfile://5/reloc-targets
+23 - r-x 0x00008b10 vfile://5/patched
+24 - r-x 0x00000f80 vfile://6/reloc-targets
+25 - r-x 0x00006e30 vfile://6/patched
+26 - r-x 0x00005330 vfile://7/reloc-targets
+27 - r-x 0x0001b898 vfile://7/patched
+28 - rw- 0x00000028 null://40
+29 - r-x 0x00003ff0 vfile://8/reloc-targets
+30 - r-x 0x00013b38 vfile://8/patched
+31 - r-x 0x000008b8 vfile://9/reloc-targets
+32 - r-x 0x000036c0 vfile://9/patched
+nth paddr      vaddr      bind   type   size lib name                      
+---------------------------------------------------------------------------
+1   ---------- 0x00000000 LOCAL  FILE   0        libgdbr.c
+2   0x00000040 0x08000040 LOCAL  SECT   0        .text
+3   0x00000444 0x08000444 LOCAL  SECT   0        .data
+4   0x00000444 0x08000444 LOCAL  SECT   0        .bss
+5   0x00000450 0x08000450 LOCAL  SECT   0        .rodata
+6   0x000004b0 0x080004b0 LOCAL  OBJ    22       __func__.6092
+7   0x000004c6 0x080004c6 LOCAL  SECT   0        .debug_info
+8   0x00000a5f 0x08000a5f LOCAL  SECT   0        .debug_abbrev
+9   0x00000b41 0x08000b41 LOCAL  SECT   0        .debug_aranges
+10  0x00000b71 0x08000b71 LOCAL  SECT   0        .debug_line
+11  0x00000cd7 0x08000cd7 LOCAL  SECT   0        .debug_str
+12  0x00001217 0x08001217 LOCAL  SECT   0        .note.GNU-stack
+13  0x00001218 0x08001218 LOCAL  SECT   0        .eh_frame
+14  0x000011fc 0x080011fc LOCAL  SECT   0        .comment
+15  0x00000040 0x08000040 GLOBAL FUNC   484      gdbr_init
+21  0x00000224 0x08000224 GLOBAL FUNC   452      gdbr_set_architecture
+32  0x000003e8 0x080003e8 GLOBAL FUNC   92       gdbr_cleanup
+16  0x00000000 0x08000000 GLOBAL NOTYPE 16       imp._GLOBAL_OFFSET_TABLE_
+17  0x00000000 0x08000000 GLOBAL NOTYPE 16       imp.memset
+18  0x00000000 0x08000000 GLOBAL NOTYPE 16       imp.calloc
+19  0x00000000 0x08000000 GLOBAL NOTYPE 16       imp.free
+20  0x00000000 0x08000000 GLOBAL NOTYPE 16       imp.r_socket_new
+22  0x00000000 0x08000000 GLOBAL NOTYPE 16       imp.strcmp
+23  0x00000000 0x08000000 GLOBAL NOTYPE 16       imp.gdb_regs_mips
+24  0x00000000 0x08000000 GLOBAL NOTYPE 16       imp.gdb_regs_lm32
+25  0x00000000 0x08000000 GLOBAL NOTYPE 16       imp.gdb_regs_avr
+26  0x00000000 0x08000000 GLOBAL NOTYPE 16       imp.gdb_regs_x86_32
+27  0x00000000 0x08000000 GLOBAL NOTYPE 16       imp.gdb_regs_x86_64
+28  0x00000000 0x08000000 GLOBAL NOTYPE 16       imp.stderr
+29  0x00000000 0x08000000 GLOBAL NOTYPE 16       imp.fprintf
+30  0x00000000 0x08000000 GLOBAL NOTYPE 16       imp.gdb_regs_arm32
+31  0x00000000 0x08000000 GLOBAL NOTYPE 16       imp.gdb_regs_aarch64
+switched to fd 5 arch.o
+nth paddr      vaddr      bind   type size lib name             
+----------------------------------------------------------------
+1   ---------- 0x00000000 LOCAL  FILE 0        arch.c
+2   0x00000040 0x00000040 LOCAL  SECT 0        .text
+3   0x00000040 0x00000040 LOCAL  SECT 0        .data
+4   0x000036b0 0x000036b0 LOCAL  SECT 0        .bss
+5   0x000036b0 0x000036b0 LOCAL  SECT 0        .debug_info
+6   0x00003781 0x00003781 LOCAL  SECT 0        .debug_abbrev
+7   0x00003805 0x00003805 LOCAL  SECT 0        .debug_aranges
+8   0x00003825 0x00003825 LOCAL  SECT 0        .debug_line
+9   0x0000387b 0x0000387b LOCAL  SECT 0        .debug_str
+10  0x00003985 0x00003985 LOCAL  SECT 0        .note.GNU-stack
+11  0x0000396a 0x0000396a LOCAL  SECT 0        .comment
+12  0x00000040 0x00000040 GLOBAL OBJ  1200     gdb_regs_x86_64
+13  0x00000500 0x00000500 GLOBAL OBJ  816      gdb_regs_x86_32
+14  0x00000840 0x00000840 GLOBAL OBJ  1296     gdb_regs_arm32
+15  0x00000d60 0x00000d60 GLOBAL OBJ  3312     gdb_regs_aarch64
+16  0x00001a60 0x00001a60 GLOBAL OBJ  1920     gdb_regs_lm32
+17  0x000021e0 0x000021e0 GLOBAL OBJ  3552     gdb_regs_mips
+18  0x00002fc0 0x00002fc0 GLOBAL OBJ  1776     gdb_regs_avr
+switched to fd 10 core.o
+nth paddr      vaddr      bind   type   size lib name                        
+-----------------------------------------------------------------------------
+1   ---------- 0x00000000 LOCAL  FILE   0        core.c
+2   0x00000040 0x00000040 LOCAL  SECT   0        .text
+3   0x00003c3c 0x00003c3c LOCAL  SECT   0        .data
+4   0x00003c40 0x00003c40 LOCAL  SECT   0        .bss
+5   0x00000040 0x00000040 LOCAL  FUNC   276      set_interface_attribs
+6   0x00003c40 0x00003c40 LOCAL  OBJ    32       reg_cache
+7   0x00000154 0x00000154 LOCAL  FUNC   96       reg_cache_init
+8   0x00003c40 0x00003c40 LOCAL  SECT   0        .rodata
+9   0x000001b4 0x000001b4 LOCAL  FUNC   177      gdbr_connect_lldb
+10  0x00000f87 0x00000f87 LOCAL  FUNC   157      gdbr_read_registers_lldb
+11  0x00004080 0x00004080 LOCAL  OBJ    17       __func__.10461
+12  0x00003c3c 0x00003c3c LOCAL  OBJ    4        P.10515
+13  0x00003c60 0x00003c60 LOCAL  OBJ    8        cur_desc
+14  0x000021cb 0x000021cb LOCAL  FUNC   57       _sigint_handler
+15  0x00004098 0x00004098 LOCAL  OBJ    15       __func__.10626
+16  0x000040a8 0x000040a8 LOCAL  OBJ    15       __func__.10638
+17  0x000040c0 0x000040c0 LOCAL  OBJ    16       __func__.10645
+18  0x000040d0 0x000040d0 LOCAL  SECT   0        .debug_info
+19  0x00007b54 0x00007b54 LOCAL  SECT   0        .debug_abbrev
+20  0x00007cdd 0x00007cdd LOCAL  SECT   0        .debug_aranges
+21  0x00007d0d 0x00007d0d LOCAL  SECT   0        .debug_line
+22  0x00008339 0x00008339 LOCAL  SECT   0        .debug_str
+23  0x0000a1b2 0x0000a1b2 LOCAL  SECT   0        .note.GNU-stack
+24  0x0000a1b8 0x0000a1b8 LOCAL  SECT   0        .eh_frame
+25  0x0000a197 0x0000a197 LOCAL  SECT   0        .comment
+38  0x00000265 0x00000265 GLOBAL FUNC   1105     gdbr_connect
+48  0x00000879 0x00000879 GLOBAL FUNC   390      gdbr_check_vcont
+49  0x0000073e 0x0000073e GLOBAL FUNC   315      gdbr_select
+51  0x000006b6 0x000006b6 GLOBAL FUNC   136      gdbr_disconnect
+56  0x000009ff 0x000009ff GLOBAL FUNC   79       gdbr_stop_reason
+58  0x00000a4e 0x00000a4e GLOBAL FUNC   167      gdbr_check_extended_mode
+59  0x00000af5 0x00000af5 GLOBAL FUNC   298      gdbr_attach
+62  0x00000c1f 0x00000c1f GLOBAL FUNC   95       gdbr_detach
+63  0x00000c7e 0x00000c7e GLOBAL FUNC   313      gdbr_detach_pid
+64  0x00000db7 0x00000db7 GLOBAL FUNC   144      gdbr_kill
+65  0x00000e47 0x00000e47 GLOBAL FUNC   320      gdbr_kill_pid
+68  0x00001024 0x00001024 GLOBAL FUNC   314      gdbr_read_registers
+70  0x0000115e 0x0000115e GLOBAL FUNC   954      gdbr_read_memory
+75  0x00001518 0x00001518 GLOBAL FUNC   709      gdbr_write_memory
+78  0x000017dd 0x000017dd GLOBAL FUNC   149      gdbr_step
+79  0x00002204 0x00002204 GLOBAL FUNC   870      send_vcont
+80  0x00001872 0x00001872 GLOBAL FUNC   309      gdbr_continue
+82  0x000019a7 0x000019a7 GLOBAL FUNC   251      gdbr_write_bin_registers
+84  0x00001aa2 0x00001aa2 GLOBAL FUNC   365      gdbr_write_register
+86  0x00001c0f 0x00001c0f GLOBAL FUNC   395      gdbr_write_reg
+87  0x00001d9a 0x00001d9a GLOBAL FUNC   970      gdbr_write_registers
+92  0x00002164 0x00002164 GLOBAL FUNC   103      test_command
+97  0x0000256a 0x0000256a GLOBAL FUNC   426      set_bp
+99  0x00002714 0x00002714 GLOBAL FUNC   47       gdbr_set_bp
+100 0x00002743 0x00002743 GLOBAL FUNC   47       gdbr_set_hwbp
+101 0x00002772 0x00002772 GLOBAL FUNC   42       gdbr_remove_bp
+102 0x000027c6 0x000027c6 GLOBAL FUNC   419      remove_bp
+103 0x0000279c 0x0000279c GLOBAL FUNC   42       gdbr_remove_hwbp
+105 0x00002969 0x00002969 GLOBAL FUNC   453      gdbr_open_file
+107 0x00002b2e 0x00002b2e GLOBAL FUNC   496      gdbr_read_file
+109 0x00002d1e 0x00002d1e GLOBAL FUNC   249      gdbr_close_file
+111 0x00002e17 0x00002e17 GLOBAL FUNC   14       gdbr_invalidate_reg_cache
+112 0x00002e25 0x00002e25 GLOBAL FUNC   729      gdbr_send_qRcmd
+115 0x000030fe 0x000030fe GLOBAL FUNC   655      gdbr_exec_file_read
+117 0x0000338d 0x0000338d GLOBAL FUNC   467      gdbr_is_thread_dead
+118 0x00003560 0x00003560 GLOBAL FUNC   842      gdbr_threads_list
+124 0x000038aa 0x000038aa GLOBAL FUNC   912      gdbr_get_baddr
+26  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp._GLOBAL_OFFSET_TABLE_
+27  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.memset
+28  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.tcgetattr
+29  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.cfsetospeed
+30  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.cfsetispeed
+31  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.tcsetattr
+32  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.__stack_chk_fail
+33  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.malloc
+34  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.gdbr_read_target_xml
+35  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.send_msg
+36  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.read_packet
+37  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.send_ack
+39  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.r_strbuf_init
+40  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.getenv
+41  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.strtoul
+42  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.snprintf
+43  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.r_socket_connect_serial
+44  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.r_socket_connect
+45  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.handle_qSupported
+46  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.strncmp
+47  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.handle_qC
+50  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.strcmp
+52  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.r_socket_close
+53  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.free
+54  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.write_thread_id
+55  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.strtok
+57  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.handle_stop_reason
+60  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.calloc
+61  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.handle_attach
+66  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.handle_lldb_read_reg
+67  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.memcpy
+69  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.handle_g
+71  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.stderr
+72  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.fprintf
+73  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.handle_m
+74  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.memmove
+76  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.pack_hex
+77  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.handle_M
+81  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.strncpy
+83  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.handle_G
+85  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.handle_P
+88  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.strlen
+89  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.strchr
+90  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.strcpy
+91  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.hex2char
+93  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.hexdump
+94  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.r_socket_write
+95  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.signal
+96  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.handle_cont
+98  0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.handle_setbp
+104 0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.handle_removebp
+106 0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.handle_vFile_open
+108 0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.handle_vFile_pread
+110 0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.handle_vFile_close
+113 0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.__ctype_b_loc
+114 0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.unpack_hex
+116 0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.r_str_append
+119 0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.r_list_new
+120 0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.read_thread_id
+121 0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.strdup
+122 0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.r_list_free
+123 0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.r_list_append
+125 0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.r_str_startswith
+126 0x00000000 0x00000000 GLOBAL NOTYPE 16       imp.strtoull
+EOF
+RUN
