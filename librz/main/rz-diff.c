@@ -547,14 +547,7 @@ static RzCoreFile *rz_diff_load_file_with_core(const char *filename, const char 
 	rz_config_set_b(core->config, "scr.interactive", false);
 	rz_config_set_b(core->config, "cfg.debug", false);
 	core->print->scr_prompt = false;
-
-#if __WINDOWS__
-	char *winpath = rz_acp_to_utf8(filename);
-	cfile = rz_core_file_open(core, winpath, 0, 0);
-	free(winpath);
-#else
 	cfile = rz_core_file_open(core, filename, 0, 0);
-#endif
 	if (!cfile) {
 		rz_diff_error("cannot open file '%s'\n", filename);
 		goto rz_diff_load_file_with_core_fail;
