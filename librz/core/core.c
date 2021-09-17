@@ -8,6 +8,7 @@
 #if __UNIX__
 #include <signal.h>
 #endif
+#include "core_private.h"
 
 #define DB core->sdb
 
@@ -2670,6 +2671,9 @@ RZ_API void rz_core_free(RzCore *c) {
 RZ_API void rz_core_prompt_loop(RzCore *r) {
 	int ret;
 	do {
+		if (rz_config_get_b(r->config, "dbg.status")) {
+			rz_core_debug_print_status(r);
+		}
 		int err = rz_core_prompt(r, false);
 		if (err < 1) {
 			// handle ^D

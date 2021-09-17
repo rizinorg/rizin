@@ -4137,9 +4137,10 @@ RZ_API int rz_core_esil_step_back(RzCore *core) {
 	RzAnalysisEsil *esil = core->analysis->esil;
 	if (esil->trace->idx > 0) {
 		rz_analysis_esil_trace_restore(esil, esil->trace->idx - 1);
+		rz_core_regs2flags(core);
 		return 1;
 	}
-	return -1;
+	return 0;
 }
 
 RZ_API bool rz_core_esil_continue_back(RzCore *core) {
@@ -4174,6 +4175,8 @@ RZ_API bool rz_core_esil_continue_back(RzCore *core) {
 
 	// Return to the nearest breakpoint or jump back to the first index if a breakpoint wasn't found
 	rz_analysis_esil_trace_restore(esil, idx);
+
+	rz_core_regs2flags(core);
 
 	return true;
 }
@@ -7835,6 +7838,7 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 			rz_cmd_analysis_calls(core, input + 1, false, false);
 			break;
 		}
+		break;
 	case 'j': // "aaj"
 		cmd_analysis_jumps(core, input + 1);
 		break;

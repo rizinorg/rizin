@@ -115,6 +115,7 @@ RZ_IPI void rz_core_debug_single_step_over(RzCore *core);
 RZ_IPI void rz_core_debug_breakpoint_toggle(RzCore *core, ut64 addr);
 RZ_IPI void rz_core_debug_continue(RzCore *core);
 RZ_IPI void rz_core_debug_attach(RzCore *core, int pid);
+RZ_IPI void rz_core_debug_print_status(RzCore *core);
 
 /* cfile.c */
 RZ_IPI void rz_core_io_file_open(RzCore *core, int fd);

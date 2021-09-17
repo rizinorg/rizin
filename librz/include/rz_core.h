@@ -71,6 +71,7 @@ RZ_LIB_VERSION_HEADER(rz_core);
 #define RZ_FLAGS_FS_MMIO_REGISTERS          "registers.mmio"
 #define RZ_FLAGS_FS_MMIO_REGISTERS_EXTENDED "registers.extended"
 #define RZ_FLAGS_FS_PLATFORM_PORTS          "platform.ports"
+#define RZ_FLAGS_FS_GLOBALS                 "globals"
 
 #define RZ_GRAPH_FORMAT_NO     0
 #define RZ_GRAPH_FORMAT_GMLFCN 1

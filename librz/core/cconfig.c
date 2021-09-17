@@ -1154,9 +1154,6 @@ static bool cb_cfgdebug(void *user, void *data) {
 		const char *dbgbackend = rz_config_get(core->config, "dbg.backend");
 		core->bin->is_debugger = true;
 		rz_debug_use(core->dbg, dbgbackend);
-		if (!strcmp(rz_config_get(core->config, "cmd.prompt"), "")) {
-			rz_config_set(core->config, "cmd.prompt", ".dr*");
-		}
 		if (!strcmp(dbgbackend, "bf")) {
 			rz_config_set(core->config, "asm.arch", "bf");
 		}
@@ -1452,20 +1449,6 @@ static bool cb_dbg_args(void *user, void *data) {
 		core->io->args = NULL;
 	} else {
 		core->io->args = strdup(node->value);
-	}
-	return true;
-}
-
-static bool cb_dbgstatus(void *user, void *data) {
-	RzCore *r = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	if (rz_config_get_i(r->config, "cfg.debug")) {
-		if (node->i_value) {
-			rz_config_set(r->config, "cmd.prompt",
-				".dr*; drd; sr PC;pi 1;s-");
-		} else {
-			rz_config_set(r->config, "cmd.prompt", ".dr*");
-		}
 	}
 	return true;
 }
@@ -2203,10 +2186,10 @@ static bool scr_vtmode(void *user, void *data) {
 	GetConsoleMode(input, &mode);
 	if (node->i_value == 2) {
 		SetConsoleMode(input, mode & ENABLE_VIRTUAL_TERMINAL_INPUT);
-		rz_cons_singleton()->term_raw = ENABLE_VIRTUAL_TERMINAL_INPUT;
+		rz_cons_singleton()->term_raw |= ENABLE_VIRTUAL_TERMINAL_INPUT;
 	} else {
 		SetConsoleMode(input, mode & ~ENABLE_VIRTUAL_TERMINAL_INPUT);
-		rz_cons_singleton()->term_raw = 0;
+		rz_cons_singleton()->term_raw &= ~ENABLE_VIRTUAL_TERMINAL_INPUT;
 	}
 	HANDLE streams[] = { GetStdHandle(STD_OUTPUT_HANDLE), GetStdHandle(STD_ERROR_HANDLE) };
 	int i;
@@ -3400,7 +3383,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("dbg.trace_continue", "true", &cb_dbg_trace_continue, "Trace every instruction between the initial PC position and the PC position at the end of continue's execution");
 	SETCB("dbg.create_new_console", "true", &cb_dbg_create_new_console, "Create a new console window for the debugee on debug start");
 	/* debug */
-	SETCB("dbg.status", "false", &cb_dbgstatus, "Set cmd.prompt to '.dr*' or '.dr*;drd;sr PC;pi 1;shu'");
+	SETBPREF("dbg.status", "false", "Set cmd.prompt to '.dr*' or '.dr*;drd;sr PC;pi 1;shu'");
 #if DEBUGGER
 	SETCB("dbg.backend", "native", &cb_dbgbackend, "Select the debugger backend");
 #else
