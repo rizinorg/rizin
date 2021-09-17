@@ -99,7 +99,7 @@ static bool is_arrow;
 
 RZ_API int rz_cons_arrow_to_hjkl(int ch) {
 #if __WINDOWS__
-	if (I->vtmode != 2) {
+	if (I->vtmode != RZ_VIRT_TERM_MODE_COMPLETE) {
 		if (is_arrow) {
 			switch (ch) {
 			case VK_DOWN: // key down
@@ -442,7 +442,7 @@ static int __cons_readchar_w32(ut32 usec) {
 	h = GetStdHandle(STD_INPUT_HANDLE);
 	GetConsoleMode(h, &mode);
 	DWORD newmode = ENABLE_WINDOW_INPUT;
-	if (I->vtmode == 2) {
+	if (I->vtmode == RZ_VIRT_TERM_MODE_COMPLETE) {
 		newmode |= ENABLE_VIRTUAL_TERMINAL_INPUT;
 	}
 	newmode |= mode;
