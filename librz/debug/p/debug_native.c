@@ -760,6 +760,24 @@ static int io_perms_to_prot(int io_perms) {
 	return prot_perms;
 }
 
+#if __linux__
+static int sys_thp_mode(void) {
+	const char *thp = "/sys/kernel/mm/transparent_hugepage/enabled";
+	int ret = 0;
+	char *val = rz_file_slurp(thp, NULL);
+	if (val) {
+		if (strstr(val, "[madvise]")) {
+			ret = 1;
+		} else if (strstr(val, "[always]")) {
+			ret = 2;
+		}
+		free(val);
+	}
+
+	return ret;
+}
+#endif
+
 static int linux_map_thp(RzDebug *dbg, ut64 addr, int size) {
 #if !defined(__ANDROID__) && defined(MADV_HUGEPAGE)
 	RzBuffer *buf = NULL;
@@ -778,13 +796,15 @@ static int linux_map_thp(RzDebug *dbg, ut64 addr, int size) {
 		return false;
 	}
 
+#if __linux__
 	// In always mode, is more into mmap syscall level
 	// even though the address might not have the 'hg'
 	// vmflags
-	if (rz_sys_thp_mode() != 1) {
+	if (sys_thp_mode() != 1) {
 		eprintf("transparent huge page mode is not in madvise mode\n");
 		return false;
 	}
+#endif
 
 	int num = rz_syscall_get_num(dbg->analysis->syscall, "madvise");
 

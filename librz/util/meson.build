@@ -50,6 +50,7 @@ rz_util_sources = [
   'stack.c',
   'str.c',
   'str_constpool.c',
+  'str_search.c',
   'str_trim.c',
   'strbuf.c',
   'strpool.c',

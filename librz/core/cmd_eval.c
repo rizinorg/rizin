@@ -113,7 +113,7 @@ static bool nextpal_item(RzCore *core, int mode, const char *file, int ctr) {
 	return true;
 }
 
-RZ_IPI bool rz_core_load_theme(RzCore *core, const char *name) {
+RZ_API bool rz_core_load_theme(RzCore *core, const char *name) {
 	bool failed = false;
 	char *path;
 	if (!name || !*name) {

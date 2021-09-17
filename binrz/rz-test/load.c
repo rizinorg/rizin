@@ -134,10 +134,14 @@ RZ_API RzPVector *rz_test_load_cmd_test_file(const char *file) {
 		if (*line == '#') {
 			continue;
 		}
+
 		char *val = strchr(line, '=');
 		if (val) {
 			*val = '\0';
 			val++;
+		} else if (!val && !(strcmp(line, "RUN") == 0)) {
+			eprintf("Error: No value for key \"%s\".\n", line);
+			goto fail;
 		}
 
 		// RUN is the only cmd without value
@@ -166,10 +170,6 @@ RZ_API RzPVector *rz_test_load_cmd_test_file(const char *file) {
 		if (test->field.value) { \
 			free(test->field.value); \
 			eprintf(LINEFMT "Warning: Duplicate key \"%s\"\n", file, linenum, key); \
-		} \
-		if (!val) { \
-			eprintf(LINEFMT "Error: No value for key \"%s\"\n", file, linenum, key); \
-			goto fail; \
 		} \
 		test->field.line_begin = linenum; \
 		test->field.value = read_string_val(&nextline, val, &linenum); \
@@ -612,7 +612,10 @@ static bool database_load(RzTestDatabase *db, const char *path, int depth) {
 				eprintf("Skipping %s" RZ_SYS_DIR "%s because it requires additional dependencies.\n", path, subname);
 				continue;
 			}
-			if ((!strcmp(path, "archos") || rz_str_endswith(path, RZ_SYS_DIR "archos")) && strcmp(subname, RZ_TEST_ARCH_OS)) {
+			if ((!strcmp(path, "archos") || rz_str_endswith(path, RZ_SYS_DIR "archos")) && strcmp(subname, RZ_TEST_ARCH_OS) &&
+				!(rz_str_startswith(subname, "not-") &&
+					strcmp(RZ_TEST_ARCH_OS, subname + strlen("not-")) &&
+					rz_str_endswith(RZ_TEST_ARCH_OS, strrchr(subname, '-')))) {
 				eprintf("Skipping %s" RZ_SYS_DIR "%s because it does not match the current platform.\n", path, subname);
 				continue;
 			}

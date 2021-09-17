@@ -18,9 +18,9 @@ extern "C" {
 RZ_LIB_VERSION_HEADER(rz_type);
 
 typedef struct rz_type_target_t {
-	const char *cpu;
+	char *cpu;
 	int bits;
-	const char *os;
+	char *os;
 	bool big_endian;
 	const char *default_type;
 } RzTypeTarget;
