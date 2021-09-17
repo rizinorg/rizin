@@ -123,14 +123,17 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 
 	rz_return_val_if_fail(str_type != RZ_STRING_ENC_GUESS, NULL);
 
-	ut8 tmp[opt->buf_size];
+	ut8 *tmp = malloc(opt->buf_size);
+	if (!tmp) {
+		return NULL;
+	}
 	ut64 str_addr = needle;
 	int rc, i, runes;
 
 	/* Eat a whole C string */
 	runes = 0;
 	rc = 0;
-	for (i = 0; i < sizeof(tmp) - 4 && needle < to; i += rc) {
+	for (i = 0; i < opt->buf_size - 4 && needle < to; i += rc) {
 		RzRune r = { 0 };
 
 		if (str_type == RZ_STRING_ENC_UTF32LE) {
@@ -177,7 +180,7 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 			rc = rz_utf8_encode(tmp + i, r);
 			runes++;
 		} else if (r && r < 0x100 && strchr("\b\v\f\n\r\t\a\033\\", (char)r)) {
-			if ((i + 32) < sizeof(tmp) && r < 93) {
+			if ((i + 32) < opt->buf_size && r < 93) {
 				tmp[i + 0] = '\\';
 				tmp[i + 1] = "       abtnvfr             e  "
 					     "                              "
@@ -200,13 +203,16 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 	if (runes >= opt->min_str_length) {
 		FalsePositiveResult false_positive_result = reduce_false_positives(opt, tmp, i - 1, str_type);
 		if (false_positive_result == SKIP_STRING) {
+			free(tmp);
 			return NULL;
 		} else if (false_positive_result == RETRY_ASCII) {
+			free(tmp);
 			return process_one_string(buf, from, str_addr, to, str_type, true, opt);
 		}
 
 		RzDetectedString *ds = RZ_NEW0(RzDetectedString);
 		if (!ds) {
+			free(tmp);
 			return NULL;
 		}
 		ds->type = str_type;
@@ -219,9 +225,11 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 		ds->size += off_adj;
 
 		ds->string = rz_str_ndup((const char *)tmp, i);
+		free(tmp);
 		return ds;
 	}
 
+	free(tmp);
 	return NULL;
 }
 
