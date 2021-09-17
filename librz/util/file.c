@@ -836,8 +836,8 @@ RZ_API bool rz_file_rm(const char *file) {
 	}
 	if (rz_file_is_directory(file)) {
 #if __WINDOWS__
-		LPTSTR file_ = rz_sys_conv_utf8_to_win(file);
-		bool ret = RemoveDirectory(file_);
+		LPWSTR file_ = rz_utf8_to_utf16(file);
+		bool ret = RemoveDirectoryW(file_);
 
 		free(file_);
 		return !ret;
@@ -846,8 +846,8 @@ RZ_API bool rz_file_rm(const char *file) {
 #endif
 	} else {
 #if __WINDOWS__
-		LPTSTR file_ = rz_sys_conv_utf8_to_win(file);
-		bool ret = DeleteFile(file_);
+		LPWSTR file_ = rz_utf8_to_utf16(file);
+		bool ret = DeleteFileW(file_);
 
 		free(file_);
 		return !ret;
@@ -877,7 +877,6 @@ repeat:
 
 #if __WINDOWS__
 static RzMmap *file_mmap(RzMmap *m) {
-	LPTSTR file_ = rz_sys_conv_utf8_to_win(m->filename);
 	bool is_write = (m->perm & O_WRONLY) || (m->perm & O_RDWR);
 	HANDLE fh = (HANDLE)_get_osfhandle(m->fd);
 	m->len = (DWORD)GetFileSize(fh, (LPDWORD)((char *)&m->len + sizeof(DWORD)));
@@ -886,7 +885,7 @@ static RzMmap *file_mmap(RzMmap *m) {
 		goto err;
 	}
 	if (m->len != 0) {
-		m->fm = CreateFileMapping(fh,
+		m->fm = CreateFileMappingW(fh,
 			NULL,
 			is_write ? PAGE_READWRITE : PAGE_READONLY,
 			0, 0, NULL);
@@ -905,7 +904,6 @@ static RzMmap *file_mmap(RzMmap *m) {
 	return m;
 err:
 	rz_file_mmap_free(m);
-	free(file_);
 	return NULL;
 }
 #elif __UNIX__
@@ -1032,16 +1030,16 @@ RZ_API int rz_file_mkstemp(RZ_NULLABLE const char *prefix, char **oname) {
 		prefix = "rz";
 	}
 #if __WINDOWS__
-	LPTSTR name = NULL;
-	LPTSTR path_ = rz_sys_conv_utf8_to_win(path);
-	LPTSTR prefix_ = rz_sys_conv_utf8_to_win(prefix);
+	LPWSTR name = malloc(sizeof(WCHAR) * (MAX_PATH + 1));
+	LPWSTR path_ = rz_utf8_to_utf16(path);
+	LPWSTR prefix_ = prefix ? rz_utf8_to_utf16(prefix) : _wcsdup(L"");
 
-	name = (LPTSTR)malloc(sizeof(TCHAR) * (MAX_PATH + 1));
-	if (!name) {
+	if (!(name && path_ && prefix_)) {
 		goto err_r_file_mkstemp;
 	}
-	if (GetTempFileName(path_, prefix_, 0, name)) {
-		char *name_ = rz_sys_conv_win_to_utf8(name);
+
+	if (GetTempFileNameW(path_, prefix_, 0, name)) {
+		char *name_ = rz_utf16_to_utf8(name);
 		h = rz_sys_open(name_, O_RDWR | O_EXCL | O_BINARY, 0644);
 		if (oname) {
 			if (h != -1) {
@@ -1101,28 +1099,23 @@ err_r_file_mkstemp:
 
 RZ_API char *rz_file_tmpdir(void) {
 #if __WINDOWS__
-	LPTSTR tmpdir;
 	char *path = NULL;
 	DWORD len = 0;
 
-	tmpdir = (LPTSTR)calloc(1, sizeof(TCHAR) * (MAX_PATH + 1));
+	LPWSTR tmpdir = calloc(1, sizeof(WCHAR) * (MAX_PATH + 1));
 	if (!tmpdir) {
 		return NULL;
 	}
-	if ((len = GetTempPath(MAX_PATH + 1, tmpdir)) == 0) {
+	if ((len = GetTempPathW(MAX_PATH + 1, tmpdir)) == 0) {
 		path = rz_sys_getenv("TEMP");
 		if (!path) {
 			path = strdup("C:\\WINDOWS\\Temp\\");
 		}
 	} else {
 		tmpdir[len] = 0;
-		DWORD(WINAPI * glpn)
-		(LPCTSTR, LPCTSTR, DWORD) = rz_lib_dl_sym(GetModuleHandle(TEXT("kernel32.dll")), W32_TCALL("GetLongPathName"));
-		if (glpn) {
-			// Windows XP sometimes returns short path name
-			glpn(tmpdir, tmpdir, MAX_PATH + 1);
-		}
-		path = rz_sys_conv_win_to_utf8(tmpdir);
+		// Windows XP sometimes returns short path name
+		GetLongPathNameW(tmpdir, tmpdir, MAX_PATH + 1);
+		path = rz_utf16_to_utf8(tmpdir);
 	}
 	free(tmpdir);
 	// Windows 7, stat() function fail if tmpdir ends with '\\'
@@ -1157,15 +1150,15 @@ RZ_API bool rz_file_copy(const char *src, const char *dst) {
 #if HAVE_COPYFILE
 	return copyfile(src, dst, 0, COPYFILE_DATA | COPYFILE_XATTR) != -1;
 #elif __WINDOWS__
-	PTCHAR s = rz_sys_conv_utf8_to_win(src);
-	PTCHAR d = rz_sys_conv_utf8_to_win(dst);
+	PWCHAR s = rz_utf8_to_utf16(src);
+	PWCHAR d = rz_utf8_to_utf16(dst);
 	if (!s || !d) {
 		RZ_LOG_ERROR("rz_file_copy: Failed to allocate memory\n");
 		free(s);
 		free(d);
 		return false;
 	}
-	bool ret = CopyFile(s, d, 0);
+	bool ret = CopyFileW(s, d, 0);
 	if (!ret) {
 		rz_sys_perror("rz_file_copy");
 	}
@@ -1194,6 +1187,9 @@ static void recursive_search_glob(const char *path, const char *glob, RzList *li
 			continue;
 		}
 		char *filename = malloc(strlen(path) + strlen(file) + 2);
+		if (!filename) {
+			return;
+		}
 		strcpy(filename, path);
 		strcat(filename, file);
 		if (rz_file_is_directory(filename)) {
