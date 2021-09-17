@@ -8,7 +8,6 @@ RZ_API int rz_core_setup_debugger(RzCore *r, const char *debugbackend, bool atta
 	int pid, *p = NULL;
 	bool is_gdb = !strcmp(debugbackend, "gdb");
 	RzIODesc *fd = r->file ? rz_io_desc_get(r->io, r->file->fd) : NULL;
-	const char *prompt = NULL;
 
 	p = fd ? fd->data : NULL;
 	rz_config_set_i(r->config, "cfg.debug", 1);
@@ -48,17 +47,6 @@ RZ_API int rz_core_setup_debugger(RzCore *r, const char *debugbackend, bool atta
 	}
 	rz_core_seek_to_register(r, "PC", false);
 
-	/* set the prompt if it's not been set already by the callbacks */
-	prompt = rz_config_get(r->config, "cmd.prompt");
-	if (prompt && !strcmp(prompt, "")) {
-		if (rz_config_get_i(r->config, "dbg.status")) {
-			rz_config_set(r->config, "cmd.prompt", ".dr*;drd;sr PC;pi 1;shu");
-		} else {
-			rz_config_set(r->config, "cmd.prompt", ".dr*");
-		}
-	}
-	rz_config_set(r->config, "cmd.vprompt", ".dr*");
-	rz_config_set(r->config, "cmd.gprompt", ".dr*");
 	return true;
 }
 
