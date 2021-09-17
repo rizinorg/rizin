@@ -836,20 +836,20 @@ RZ_API bool rz_file_rm(const char *file) {
 	}
 	if (rz_file_is_directory(file)) {
 #if __WINDOWS__
-		LPWSTR file_ = rz_utf8_to_utf16(file);
-		bool ret = RemoveDirectoryW(file_);
+		LPWSTR wfile = rz_utf8_to_utf16(file);
+		bool ret = RemoveDirectoryW(wfile);
 
-		free(file_);
+		free(wfile);
 		return !ret;
 #else
 		return !rmdir(file);
 #endif
 	} else {
 #if __WINDOWS__
-		LPWSTR file_ = rz_utf8_to_utf16(file);
-		bool ret = DeleteFileW(file_);
+		LPWSTR wfile = rz_utf8_to_utf16(file);
+		bool ret = DeleteFileW(wfile);
 
-		free(file_);
+		free(wfile);
 		return !ret;
 #else
 		return !unlink(file);
@@ -1030,32 +1030,32 @@ RZ_API int rz_file_mkstemp(RZ_NULLABLE const char *prefix, char **oname) {
 		prefix = "rz";
 	}
 #if __WINDOWS__
-	LPWSTR name = malloc(sizeof(WCHAR) * (MAX_PATH + 1));
-	LPWSTR path_ = rz_utf8_to_utf16(path);
-	LPWSTR prefix_ = prefix ? rz_utf8_to_utf16(prefix) : _wcsdup(L"");
+	LPWSTR wname = malloc(sizeof(WCHAR) * (MAX_PATH + 1));
+	LPWSTR wpath = rz_utf8_to_utf16(path);
+	LPWSTR wprefix = prefix ? rz_utf8_to_utf16(prefix) : _wcsdup(L"");
 
-	if (!(name && path_ && prefix_)) {
+	if (!(wname && wpath && wprefix)) {
 		goto err_r_file_mkstemp;
 	}
 
-	if (GetTempFileNameW(path_, prefix_, 0, name)) {
-		char *name_ = rz_utf16_to_utf8(name);
-		h = rz_sys_open(name_, O_RDWR | O_EXCL | O_BINARY, 0644);
+	if (GetTempFileNameW(wpath, wprefix, 0, wname)) {
+		char *name = rz_utf16_to_utf8(wname);
+		h = rz_sys_open(name, O_RDWR | O_EXCL | O_BINARY, 0644);
 		if (oname) {
 			if (h != -1) {
-				*oname = name_;
+				*oname = name;
 			} else {
 				*oname = NULL;
-				free(name_);
+				free(name);
 			}
 		} else {
-			free(name_);
+			free(name);
 		}
 	}
 err_r_file_mkstemp:
-	free(name);
-	free(path_);
-	free(prefix_);
+	free(wname);
+	free(wpath);
+	free(wprefix);
 #else
 	char pfxx[1024];
 	const char *suffix = strchr(prefix, '*');
