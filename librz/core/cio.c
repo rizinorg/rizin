@@ -8,7 +8,6 @@ RZ_API int rz_core_setup_debugger(RzCore *r, const char *debugbackend, bool atta
 	int pid, *p = NULL;
 	bool is_gdb = !strcmp(debugbackend, "gdb");
 	RzIODesc *fd = r->file ? rz_io_desc_get(r->io, r->file->fd) : NULL;
-	const char *prompt = NULL;
 
 	p = fd ? fd->data : NULL;
 	rz_config_set_i(r->config, "cfg.debug", 1);
