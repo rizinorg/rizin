@@ -7835,6 +7835,7 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 			rz_cmd_analysis_calls(core, input + 1, false, false);
 			break;
 		}
+		break;
 	case 'j': // "aaj"
 		cmd_analysis_jumps(core, input + 1);
 		break;

@@ -221,7 +221,7 @@ commands:
         summary: Open cfg.editor to edit type
         args:
           - name: type
-            type: RZ_CMD_ARG_TYPE_STRING
+            type: RZ_CMD_ARG_TYPE_ANY_TYPE
       - name: tos
         cname: type_open_sdb
         summary: Open SDB file and load types from it

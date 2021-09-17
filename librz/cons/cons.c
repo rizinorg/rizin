@@ -608,7 +608,8 @@ RZ_API RzCons *rz_cons_new(void) {
 #elif __WINDOWS__
 	h = GetStdHandle(STD_INPUT_HANDLE);
 	GetConsoleMode(h, &I.term_buf);
-	I.term_raw = 0;
+	I.term_buf |= ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT;
+	I.term_raw = ~(ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT);
 	if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)__w32_control, TRUE)) {
 		eprintf("rz_cons: Cannot set control console handler\n");
 	}
@@ -1611,17 +1612,19 @@ RZ_API void rz_cons_set_raw(bool is_raw) {
 		tcsetattr(0, TCSANOW, &I.term_buf);
 	}
 #elif __WINDOWS__
+	DWORD mode;
+	GetConsoleMode(h, &mode);
 	if (is_raw) {
 		if (I.term_xterm) {
 			rz_sys_xsystem("stty raw -echo");
 		} else {
-			SetConsoleMode(h, I.term_raw);
+			SetConsoleMode(h, mode & I.term_raw);
 		}
 	} else {
 		if (I.term_xterm) {
 			rz_sys_xsystem("stty -raw echo");
 		} else {
-			SetConsoleMode(h, I.term_buf);
+			SetConsoleMode(h, mode | I.term_buf);
 		}
 	}
 #else

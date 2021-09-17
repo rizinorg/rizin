@@ -28,14 +28,7 @@ static RzCore *opencore(const char *fname) {
 	rz_core_loadlibs(c, RZ_CORE_LOADLIBS_ALL, NULL);
 	rz_config_set_i(c->config, "scr.interactive", false);
 	if (fname) {
-#if __WINDOWS__
-		char *winf = rz_acp_to_utf8(fname);
-		rfile = rz_core_file_open(c, winf, 0, 0);
-		free(winf);
-#else
 		rfile = rz_core_file_open(c, fname, 0, 0);
-#endif
-
 		if (!rfile) {
 			eprintf("Could not open file %s\n", fname);
 			rz_core_free(c);

@@ -508,7 +508,7 @@ RZ_API char *rz_sys_getdir(void) {
 #endif
 }
 
-RZ_API int rz_sys_chdir(const char *s) {
+RZ_API bool rz_sys_chdir(const char *s) {
 	rz_return_val_if_fail(s, 0);
 	return chdir(s) == 0;
 }
@@ -555,26 +555,6 @@ RZ_API bool rz_sys_aslr(int val) {
 #elif __DragonFly__
 #endif
 	return ret;
-}
-
-RZ_API int rz_sys_thp_mode(void) {
-#if __linux__
-	const char *thp = "/sys/kernel/mm/transparent_hugepage/enabled";
-	int ret = 0;
-	char *val = rz_file_slurp(thp, NULL);
-	if (val) {
-		if (strstr(val, "[madvise]")) {
-			ret = 1;
-		} else if (strstr(val, "[always]")) {
-			ret = 2;
-		}
-		free(val);
-	}
-
-	return ret;
-#else
-	return 0;
-#endif
 }
 
 #if __UNIX__

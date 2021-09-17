@@ -71,6 +71,7 @@ RZ_LIB_VERSION_HEADER(rz_core);
 #define RZ_FLAGS_FS_MMIO_REGISTERS          "registers.mmio"
 #define RZ_FLAGS_FS_MMIO_REGISTERS_EXTENDED "registers.extended"
 #define RZ_FLAGS_FS_PLATFORM_PORTS          "platform.ports"
+#define RZ_FLAGS_FS_GLOBALS                 "globals"
 
 #define RZ_GRAPH_FORMAT_NO     0
 #define RZ_GRAPH_FORMAT_GMLFCN 1
@@ -416,6 +417,7 @@ RZ_API bool rz_core_plugin_fini(RzCore *core);
 //#define rz_core_ncast(x) (RzCore*)(size_t)(x)
 RZ_API RzList *rz_core_list_themes(RzCore *core);
 RZ_API char *rz_core_get_theme(void);
+RZ_API bool rz_core_load_theme(RzCore *core, const char *name);
 RZ_API void rz_core_theme_nextpal(RzCore *core, int mode);
 RZ_API const char *rz_core_get_section_name(RzCore *core, ut64 addr);
 RZ_API RzCons *rz_core_get_cons(RzCore *core);
