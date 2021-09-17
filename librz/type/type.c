@@ -1236,6 +1236,8 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 						}
 						rz_strbuf_appendf(buf, "%s = 0x%" PFMT64x ",%s", cas->name, cas->val, separator);
 					}
+					rz_strbuf_slice(buf, 0, rz_strbuf_length(buf) - 2);
+					rz_strbuf_append(buf, separator);
 					for (int i = 0; i < indent; i++) {
 						rz_strbuf_append(buf, "\t");
 					}
