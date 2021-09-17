@@ -414,6 +414,7 @@ rz_util_files = [
   'include/rz_util/rz_stack.h',
   'include/rz_util/rz_str.h',
   'include/rz_util/rz_str_constpool.h',
+  'include/rz_util/rz_str_search.h',
   'include/rz_util/rz_str_util.h',
   'include/rz_util/rz_strbuf.h',
   'include/rz_util/rz_strpool.h',
