@@ -434,7 +434,7 @@ static char *flagname_attr(const char *attr_type, const char *class_name, const 
 		free(class_name_sanitized);
 		return NULL;
 	}
-	char *r = sdb_fmt("%s.%s.%s", attr_type, class_name, attr_id);
+	char *r = rz_str_newf("%s.%s.%s", attr_type, class_name, attr_id);
 	free(class_name_sanitized);
 	free(attr_id_sanitized);
 	return r;
@@ -608,10 +608,18 @@ RZ_API RzAnalysisClassErr rz_analysis_class_method_get(RzAnalysis *analysis, con
 	meth->addr = rz_num_math(NULL, cur);
 	cur = next;
 
+	if (!cur) {
+		free(content);
+		return RZ_ANALYSIS_CLASS_ERR_OTHER;
+	}
 	sdb_anext(cur, &next);
 	meth->vtable_offset = atoll(cur);
 	cur = next;
 
+	if (!cur) {
+		free(content);
+		return RZ_ANALYSIS_CLASS_ERR_OTHER;
+	}
 	sdb_anext(cur, &next);
 	meth->method_type = rz_num_math(NULL, cur);
 	cur = next;
@@ -674,7 +682,11 @@ RZ_API RzAnalysisClassErr rz_analysis_class_method_set(RzAnalysis *analysis, con
 	if (err != RZ_ANALYSIS_CLASS_ERR_SUCCESS) {
 		return err;
 	}
-	rz_analysis_class_set_flag(analysis, flagname_method(class_name, meth->name), meth->addr, 0);
+	char *fn = flagname_method(class_name, meth->name);
+	if (fn) {
+		rz_analysis_class_set_flag(analysis, fn, meth->addr, 0);
+		free(fn);
+	}
 	return RZ_ANALYSIS_CLASS_ERR_SUCCESS;
 }
 
@@ -690,9 +702,13 @@ RZ_API RzAnalysisClassErr rz_analysis_class_method_rename(RzAnalysis *analysis, 
 	if (err != RZ_ANALYSIS_CLASS_ERR_SUCCESS) {
 		return err;
 	}
-	rz_analysis_class_rename_flag(analysis,
-		flagname_method(class_name, old_meth_name),
-		flagname_method(class_name, new_meth_name));
+	char *old_fn = flagname_method(class_name, old_meth_name);
+	char *new_fn = flagname_method(class_name, new_meth_name);
+	if (old_fn && new_fn) {
+		rz_analysis_class_rename_flag(analysis, old_fn, new_fn);
+	}
+	free(old_fn);
+	free(new_fn);
 	return RZ_ANALYSIS_CLASS_ERR_SUCCESS;
 }
 
@@ -703,9 +719,13 @@ static void rz_analysis_class_method_rename_class(RzAnalysis *analysis, const ch
 	}
 	char *cur;
 	sdb_aforeach(cur, array) {
-		rz_analysis_class_rename_flag(analysis,
-			flagname_method(old_class_name, cur),
-			flagname_method(new_class_name, cur));
+		char *old_fn = flagname_method(old_class_name, cur);
+		char *new_fn = flagname_method(new_class_name, cur);
+		if (old_fn && new_fn) {
+			rz_analysis_class_rename_flag(analysis, old_fn, new_fn);
+		}
+		free(old_fn);
+		free(new_fn);
 		sdb_aforeach_next(cur);
 	}
 	free(array);
@@ -718,7 +738,11 @@ static void rz_analysis_class_method_delete_class(RzAnalysis *analysis, const ch
 	}
 	char *cur;
 	sdb_aforeach(cur, array) {
-		rz_analysis_class_unset_flag(analysis, flagname_method(class_name, cur));
+		char *fn = flagname_method(class_name, cur);
+		if (fn) {
+			rz_analysis_class_unset_flag(analysis, fn);
+		}
+		free(fn);
 		sdb_aforeach_next(cur);
 	}
 	free(array);
@@ -736,7 +760,11 @@ RZ_API RzAnalysisClassErr rz_analysis_class_method_delete(RzAnalysis *analysis, 
 	}
 	RzAnalysisClassErr err = rz_analysis_class_delete_attr_raw(analysis, class_name_sanitized, RZ_ANALYSIS_CLASS_ATTR_TYPE_METHOD, meth_name_sanitized);
 	if (err == RZ_ANALYSIS_CLASS_ERR_SUCCESS) {
-		rz_analysis_class_unset_flag(analysis, flagname_method(class_name_sanitized, meth_name_sanitized));
+		char *fn = flagname_method(class_name_sanitized, meth_name_sanitized);
+		if (fn) {
+			rz_analysis_class_unset_flag(analysis, fn);
+		}
+		free(fn);
 	}
 	free(class_name_sanitized);
 	free(meth_name_sanitized);
@@ -1040,9 +1068,13 @@ static void rz_analysis_class_vtable_rename_class(RzAnalysis *analysis, const ch
 	}
 	char *cur;
 	sdb_aforeach(cur, array) {
-		rz_analysis_class_rename_flag(analysis,
-			flagname_vtable(old_class_name, cur),
-			flagname_vtable(new_class_name, cur));
+		char *old_fn = flagname_vtable(old_class_name, cur);
+		char *new_fn = flagname_vtable(new_class_name, cur);
+		if (old_fn && new_fn) {
+			rz_analysis_class_rename_flag(analysis, old_fn, new_fn);
+		}
+		free(old_fn);
+		free(new_fn);
 		sdb_aforeach_next(cur);
 	}
 	free(array);
