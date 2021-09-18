@@ -763,8 +763,12 @@ RZ_API RzVector /*<RzAnalysisMethod>*/ *rz_analysis_class_method_get_all(RzAnaly
 }
 
 RZ_API RzAnalysisClassErr rz_analysis_class_method_set(RzAnalysis *analysis, const char *class_name, RzAnalysisMethod *meth) {
-	char *content = sdb_fmt("%" PFMT64u "%c%" PFMT64d "%c%" PFMT32u "%c%s", meth->addr, SDB_RS, meth->vtable_offset, SDB_RS, meth->method_type, SDB_RS, meth->real_name);
+	char *content = rz_str_newf("%" PFMT64u "%c%" PFMT64d "%c%" PFMT32u "%c%s", meth->addr, SDB_RS, meth->vtable_offset, SDB_RS, meth->method_type, SDB_RS, meth->real_name);
+	if (!content) {
+		return RZ_ANALYSIS_CLASS_ERR_OTHER;
+	}
 	RzAnalysisClassErr err = rz_analysis_class_set_attr(analysis, class_name, RZ_ANALYSIS_CLASS_ATTR_TYPE_METHOD, meth->name, content);
+	free(content);
 	if (err != RZ_ANALYSIS_CLASS_ERR_SUCCESS) {
 		return err;
 	}
@@ -952,7 +956,10 @@ RZ_API RzVector /*<RzAnalysisBaseClass>*/ *rz_analysis_class_base_get_all(RzAnal
 }
 
 static RzAnalysisClassErr rz_analysis_class_base_set_raw(RzAnalysis *analysis, const char *class_name, RzAnalysisBaseClass *base, const char *base_class_name_sanitized) {
-	char *content = sdb_fmt("%s" SDB_SS "%" PFMT64u, base_class_name_sanitized, base->offset);
+	char *content = rz_str_newf("%s" SDB_SS "%" PFMT64u, base_class_name_sanitized, base->offset);
+	if (!content) {
+		return RZ_ANALYSIS_CLASS_ERR_OTHER;
+	}
 	RzAnalysisClassErr err;
 	if (base->id) {
 		err = rz_analysis_class_set_attr(analysis, class_name, RZ_ANALYSIS_CLASS_ATTR_TYPE_BASE, base->id, content);
@@ -964,6 +971,7 @@ static RzAnalysisClassErr rz_analysis_class_base_set_raw(RzAnalysis *analysis, c
 			err = RZ_ANALYSIS_CLASS_ERR_OTHER;
 		}
 	}
+	free(content);
 	return err;
 }
 
@@ -1151,9 +1159,14 @@ RZ_API RzAnalysisClassErr rz_analysis_class_vtable_set(RzAnalysis *analysis, con
 	}
 	rz_vector_free(vtables);
 
-	char *content = sdb_fmt("0x%" PFMT64x SDB_SS "%" PFMT64u SDB_SS "%" PFMT64u, vtable->addr, vtable->offset, vtable->size);
+	char *content = rz_str_newf("0x%" PFMT64x SDB_SS "%" PFMT64u SDB_SS "%" PFMT64u, vtable->addr, vtable->offset, vtable->size);
+	if (!content) {
+		return RZ_ANALYSIS_CLASS_ERR_OTHER;
+	}
 	if (vtable->id) {
-		return rz_analysis_class_set_attr(analysis, class_name, RZ_ANALYSIS_CLASS_ATTR_TYPE_VTABLE, vtable->id, content);
+		RzAnalysisClassErr r = rz_analysis_class_set_attr(analysis, class_name, RZ_ANALYSIS_CLASS_ATTR_TYPE_VTABLE, vtable->id, content);
+		free(content);
+		return r;
 	}
 
 	vtable->id = malloc(16);
@@ -1161,6 +1174,7 @@ RZ_API RzAnalysisClassErr rz_analysis_class_vtable_set(RzAnalysis *analysis, con
 		return RZ_ANALYSIS_CLASS_ERR_OTHER;
 	}
 	RzAnalysisClassErr err = rz_analysis_class_add_attr_unique(analysis, class_name, RZ_ANALYSIS_CLASS_ATTR_TYPE_VTABLE, content, vtable->id, 16);
+	free(content);
 	if (err != RZ_ANALYSIS_CLASS_ERR_SUCCESS) {
 		return err;
 	}
