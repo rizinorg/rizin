@@ -592,10 +592,14 @@ static inline bool skip_archos(const char *subname) {
 	if (!strcmp(subname, RZ_TEST_ARCH_OS)) {
 		return false;
 	}
-	if (rz_str_startswith(subname, "not-") &&
-		strcmp(RZ_TEST_ARCH_OS, subname + strlen("not-")) &&
-		rz_str_endswith(RZ_TEST_ARCH_OS, strrchr(subname, '-'))) {
-		return false;
+	if (rz_str_startswith(subname, "not-")) {
+		const char *neg_subname = subname + strlen("not-");
+		const char *second_dash = strchr(neg_subname, '-');
+		rz_return_val_if_fail(second_dash, true);
+		if (strncmp(RZ_TEST_ARCH_OS, neg_subname, second_dash - neg_subname) &&
+			(rz_str_endswith(RZ_TEST_ARCH_OS, strrchr(subname, '-')) || rz_str_endswith(subname, "-any"))) {
+			return false;
+		}
 	}
 	return true;
 }
