@@ -1303,6 +1303,8 @@ static int rz_debug_native_drx(RzDebug *dbg, int n, ut64 addr, int sz, int rwx, 
 	set_drx_regs(dbg, regs, NUM_DRX_REGISTERS);
 
 	return retval;
+#else
+	eprintf("drx: Unsupported platform\n");
 #endif
 	return -1;
 }
@@ -1663,7 +1665,9 @@ RzDebugPlugin rz_debug_plugin_native = {
 	.modules_get = rz_debug_native_modules_get,
 	.map_protect = rz_debug_native_map_protect,
 	.breakpoint = rz_debug_native_bp,
+#if __i386__ || __x86_64__
 	.drx = rz_debug_native_drx,
+#endif
 	.gcore = rz_debug_gcore,
 };
 
