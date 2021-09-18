@@ -12,13 +12,18 @@
  * 3. EBCDIC-UK
  * 4. EBCDIC-US
  * 5. EBCDIC-ES
+ * 
  * see:
- *  * https://www.ibm.com/docs/en/zos/2.3.0?topic=sets-coded-character-sorted-by-ccsid
- *  * https://www.compart.com/en/unicode/search?q=EBCDIC#char-sets
+ *  - https://www.ibm.com/docs/en/zos/2.3.0?topic=sets-coded-character-sorted-by-ccsid
+ *  - https://www.compart.com/en/unicode/search?q=EBCDIC#char-sets
  * 
  */
 
-/// IBM037 \see https://www.compart.com/en/unicode/charsets/IBM037
+/**
+ * \name IBM037
+ * see https://www.compart.com/en/unicode/charsets/IBM037
+ */
+/// @{
 static const RzRune ibm037_to_uni[256] = {
 	0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, /* 0x00-0x07 */
 	0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, /* 0x08-0x0f */
@@ -89,12 +94,26 @@ static const ut8 ibm037_from_uni[256] = {
 	0x70, 0xdd, 0xde, 0xdb, 0xdc, 0x8d, 0x8e, 0xdf, /* 0xf8-0xff */
 };
 
+/**
+ * \brief Convert an ibm037 char into an unicode RzRune
+ * 
+ * \param src ibm037 char
+ * \param dst unicode RzRune
+ * \retval 0 if \p dst is null
+ * \retval 1 if convert successful
+ */
 RZ_API int rz_str_ibm037_to_unicode(const ut8 src, RZ_NONNULL RZ_OUT RzRune *dst) {
 	rz_return_val_if_fail(dst, 0);
 	*dst = ibm037_to_uni[src];
 	return 1;
 }
 
+/**
+ * \brief Convert an unicode RzRune into an ibm037 char
+ * 
+ * \param dst ibm037 char
+ * \param src unicode RzRune
+ */
 RZ_API int rz_str_ibm037_from_unicode(RZ_NONNULL RZ_OUT ut8 *dst, const RzRune src) {
 	rz_return_val_if_fail(dst, 0);
 	if (src <= 0xff) {
@@ -104,6 +123,12 @@ RZ_API int rz_str_ibm037_from_unicode(RZ_NONNULL RZ_OUT ut8 *dst, const RzRune s
 	return 0;
 }
 
+/**
+ * \brief Convert an ibm037 char into an ascii char
+ * 
+ * \param dst ibm037 char
+ * \param src ascii char
+ */
 RZ_API int rz_str_ibm037_to_ascii(const ut8 src, RZ_NONNULL RZ_OUT ut8 *dst) {
 	rz_return_val_if_fail(dst, 0);
 	ut8 c = ibm037_to_uni[src];
@@ -114,13 +139,26 @@ RZ_API int rz_str_ibm037_to_ascii(const ut8 src, RZ_NONNULL RZ_OUT ut8 *dst) {
 	return 0;
 }
 
+/**
+ * \brief Convert an ascii char into an ibm037 char
+ * 
+ * \param dst ibm037 char
+ * \param src ascii char
+ */
 RZ_API int rz_str_ibm037_from_ascii(RZ_NONNULL RZ_OUT ut8 *dst, const ut8 src) {
 	rz_return_val_if_fail(dst, 0);
 	*dst = ibm037_from_uni[src];
 	return 1;
 }
 
-/// IBM290, \see https://www.compart.com/en/unicode/charsets/IBM290
+/// @}
+
+/**
+ * \name IBM290
+ * see https://www.compart.com/en/unicode/charsets/IBM290
+ */
+
+/// @{
 static const RzRune ibm290_to_uni[256] = {
 	0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, /* 0x00-0x07 */
 	0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, /* 0x08-0x0f */
@@ -258,12 +296,14 @@ static const ut8 ibm290_page30[256] = {
 
 };
 
+/// Convert an ibm290 char into an unicode RzRune
 RZ_API int rz_str_ibm290_to_unicode(const ut8 src, RZ_NONNULL RZ_OUT RzRune *dst) {
 	rz_return_val_if_fail(dst, 0);
 	*dst = ibm290_to_uni[src];
 	return 1;
 }
 
+/// Convert an unicode RzRune into an ibm290 char
 RZ_API int rz_str_ibm290_from_unicode(RZ_NONNULL RZ_OUT ut8 *dst, const RzRune src) {
 	rz_return_val_if_fail(dst, 0);
 	if (src <= 0xff) {
@@ -276,6 +316,7 @@ RZ_API int rz_str_ibm290_from_unicode(RZ_NONNULL RZ_OUT ut8 *dst, const RzRune s
 	return 0;
 }
 
+/// Convert an ibm290 char into an ascii char
 RZ_API int rz_str_ibm290_to_ascii(const ut8 src, RZ_NONNULL RZ_OUT ut8 *dst) {
 	rz_return_val_if_fail(dst, 0);
 	ut8 c = ibm290_to_uni[src];
@@ -286,13 +327,21 @@ RZ_API int rz_str_ibm290_to_ascii(const ut8 src, RZ_NONNULL RZ_OUT ut8 *dst) {
 	return 0;
 }
 
+/// Convert an ascii char into an ibm290 char
 RZ_API int rz_str_ibm290_from_ascii(RZ_NONNULL RZ_OUT ut8 *dst, const ut8 src) {
 	rz_return_val_if_fail(dst, 0);
 	*dst = ibm290_page00[src];
 	return 1;
 }
 
-/// EBCDIC-UK, \see https://www.compart.com/en/unicode/charsets/EBCDIC-UK
+/// @}
+
+/**
+ * \name EBCDIC-UK
+ * see https://www.compart.com/en/unicode/charsets/EBCDIC-UK
+ */
+
+/// @{
 static const RzRune ebcdic_uk_to_uni[256] = {
 	0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, /* 0x00-0x07 */
 	0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, /* 0x08-0x0f */
@@ -363,12 +412,14 @@ static const ut8 ebcdic_uk_from_uni[256] = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 0xf8-0xff */
 };
 
+/// Convert an ebcdic_uk char into an unicode RzRune
 RZ_API int rz_str_ebcdic_uk_to_unicode(const ut8 src, RZ_NONNULL RZ_OUT RzRune *dst) {
 	rz_return_val_if_fail(dst, 0);
 	*dst = ebcdic_uk_to_uni[src];
 	return 1;
 }
 
+/// Convert an unicode RzRune into an ebcdic_uk char
 RZ_API int rz_str_ebcdic_uk_from_unicode(RZ_NONNULL RZ_OUT ut8 *dst, const RzRune src) {
 	rz_return_val_if_fail(dst, 0);
 	if (src <= 0xff) {
@@ -378,6 +429,7 @@ RZ_API int rz_str_ebcdic_uk_from_unicode(RZ_NONNULL RZ_OUT ut8 *dst, const RzRun
 	return 0;
 }
 
+/// Convert an ebcdic_uk char into an ascii char
 RZ_API int rz_str_ebcdic_uk_to_ascii(const ut8 src, RZ_NONNULL RZ_OUT ut8 *dst) {
 	rz_return_val_if_fail(dst, 0);
 	ut8 c = ebcdic_uk_to_uni[src];
@@ -388,13 +440,21 @@ RZ_API int rz_str_ebcdic_uk_to_ascii(const ut8 src, RZ_NONNULL RZ_OUT ut8 *dst) 
 	return 0;
 }
 
+/// Convert an ascii char into an ebcdic_uk char
 RZ_API int rz_str_ebcdic_uk_from_ascii(RZ_NONNULL RZ_OUT ut8 *dst, const ut8 src) {
 	rz_return_val_if_fail(dst, 0);
 	*dst = ebcdic_uk_from_uni[src];
 	return 1;
 }
 
-/// EBCDIC-US, \see https://www.compart.com/en/unicode/charsets/EBCDIC-US
+/// @}
+
+/**
+ * \name EBCDIC-US
+ * see https://www.compart.com/en/unicode/charsets/EBCDIC-US
+ */
+
+/// @{
 static const RzRune ebcdic_us_to_uni[256] = {
 	0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, /* 0x00-0x07 */
 	0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, /* 0x08-0x0f */
@@ -465,12 +525,15 @@ static const ut8 ebcdic_us_from_uni[256] = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 0xf8-0xff */
 };
 
+
+/// Convert an ebcdic_us char into an unicode RzRune
 RZ_API int rz_str_ebcdic_us_to_unicode(const ut8 src, RZ_NONNULL RZ_OUT RzRune *dst) {
 	rz_return_val_if_fail(dst, 0);
 	*dst = ebcdic_us_to_uni[src];
 	return 1;
 }
 
+/// Convert an unicode RzRune into an ebcdic_us char
 RZ_API int rz_str_ebcdic_us_from_unicode(RZ_NONNULL RZ_OUT ut8 *dst, const RzRune src) {
 	rz_return_val_if_fail(dst, 0);
 	if (src <= 0xff) {
@@ -480,6 +543,7 @@ RZ_API int rz_str_ebcdic_us_from_unicode(RZ_NONNULL RZ_OUT ut8 *dst, const RzRun
 	return 0;
 }
 
+/// Convert an ebcdic_us char into an ascii char
 RZ_API int rz_str_ebcdic_us_to_ascii(const ut8 src, RZ_NONNULL RZ_OUT ut8 *dst) {
 	rz_return_val_if_fail(dst, 0);
 	ut8 c = ebcdic_us_to_uni[src];
@@ -490,13 +554,21 @@ RZ_API int rz_str_ebcdic_us_to_ascii(const ut8 src, RZ_NONNULL RZ_OUT ut8 *dst) 
 	return 0;
 }
 
+/// Convert an ascii char into an ebcdic_us char
 RZ_API int rz_str_ebcdic_us_from_ascii(RZ_NONNULL RZ_OUT ut8 *dst, const ut8 src) {
 	rz_return_val_if_fail(dst, 0);
 	*dst = ebcdic_us_from_uni[src];
 	return 1;
 }
 
-/// EBCDIC-ES, \see https://www.compart.com/en/unicode/charsets/EBCDIC-ES
+/// @}
+
+
+/**
+ * \name EBCDIC-ES
+ * see https://www.compart.com/en/unicode/charsets/EBCDIC-ES
+ */
+/// @{
 static const RzRune ebcdic_es_to_uni[256] = {
 	0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, /* 0x00-0x07 */
 	0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, /* 0x08-0x0f */
@@ -571,13 +643,14 @@ static const ut8 ebcdic_es_page20[256] = {
 	[0xa7] = 0x5b,
 };
 
-RZ_API int
-rz_str_ebcdic_es_to_unicode(const ut8 src, RZ_NONNULL RZ_OUT RzRune *dst) {
+/// Convert an ebcdic_es char into an unicode RzRune
+RZ_API int rz_str_ebcdic_es_to_unicode(const ut8 src, RZ_NONNULL RZ_OUT RzRune *dst) {
 	rz_return_val_if_fail(dst, 0);
 	*dst = ebcdic_es_to_uni[src];
 	return 1;
 }
 
+/// Convert an unicode RzRune into an ebcdic_es char
 RZ_API int rz_str_ebcdic_es_from_unicode(RZ_NONNULL RZ_OUT ut8 *dst, const RzRune src) {
 	rz_return_val_if_fail(dst, 0);
 	if (src <= 0xff) {
@@ -590,6 +663,7 @@ RZ_API int rz_str_ebcdic_es_from_unicode(RZ_NONNULL RZ_OUT ut8 *dst, const RzRun
 	return 0;
 }
 
+/// Convert an ebcdic_es char into an ascii char
 RZ_API int rz_str_ebcdic_es_to_ascii(const ut8 src, RZ_NONNULL RZ_OUT ut8 *dst) {
 	rz_return_val_if_fail(dst, 0);
 	ut8 c = ebcdic_es_to_uni[src];
@@ -600,12 +674,16 @@ RZ_API int rz_str_ebcdic_es_to_ascii(const ut8 src, RZ_NONNULL RZ_OUT ut8 *dst) 
 	return 0;
 }
 
+/// Convert an ascii char into an ebcdic char
 RZ_API int rz_str_ebcdic_es_from_ascii(RZ_NONNULL RZ_OUT ut8 *dst, const ut8 src) {
 	rz_return_val_if_fail(dst, 0);
 	*dst = ebcdic_es_page00[src];
 	return 1;
 }
 
+/// @}
+
+/// Is a string ebcdic encoded?
 RZ_API bool rz_str_is_ebcdic(RZ_NONNULL const ut8 *str) {
 	rz_return_val_if_fail(str, false);
 	const ut8 *p = str;
