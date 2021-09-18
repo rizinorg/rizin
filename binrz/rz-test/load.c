@@ -588,6 +588,18 @@ static RzTestType test_type_for_path(const char *path, bool *load_plugins) {
 	return ret;
 }
 
+static inline bool skip_archos(const char *subname) {
+	if (!strcmp(subname, RZ_TEST_ARCH_OS)) {
+		return false;
+	}
+	if (rz_str_startswith(subname, "not-") &&
+		strcmp(RZ_TEST_ARCH_OS, subname + strlen("not-")) &&
+		rz_str_endswith(RZ_TEST_ARCH_OS, strrchr(subname, '-'))) {
+		return false;
+	}
+	return true;
+}
+
 static bool database_load(RzTestDatabase *db, const char *path, int depth) {
 	if (depth <= 0) {
 		eprintf("Directories for loading tests too deep: %s\n", path);
@@ -612,10 +624,7 @@ static bool database_load(RzTestDatabase *db, const char *path, int depth) {
 				eprintf("Skipping %s" RZ_SYS_DIR "%s because it requires additional dependencies.\n", path, subname);
 				continue;
 			}
-			if ((!strcmp(path, "archos") || rz_str_endswith(path, RZ_SYS_DIR "archos")) && strcmp(subname, RZ_TEST_ARCH_OS) &&
-				!(rz_str_startswith(subname, "not-") &&
-					strcmp(RZ_TEST_ARCH_OS, subname + strlen("not-")) &&
-					rz_str_endswith(RZ_TEST_ARCH_OS, strrchr(subname, '-')))) {
+			if ((!strcmp(path, "archos") || rz_str_endswith(path, RZ_SYS_DIR "archos")) && skip_archos(subname)) {
 				eprintf("Skipping %s" RZ_SYS_DIR "%s because it does not match the current platform.\n", path, subname);
 				continue;
 			}
