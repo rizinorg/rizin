@@ -589,6 +589,7 @@ static RzTestType test_type_for_path(const char *path, bool *load_plugins) {
 }
 
 static inline bool skip_archos(const char *subname) {
+	rz_return_val_if_fail(subname, true);
 	if (!strcmp(subname, RZ_TEST_ARCH_OS)) {
 		return false;
 	}
