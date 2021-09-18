@@ -525,7 +525,6 @@ static const ut8 ebcdic_us_from_uni[256] = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 0xf8-0xff */
 };
 
-
 /// Convert an ebcdic_us char into an unicode RzRune
 RZ_API int rz_str_ebcdic_us_to_unicode(const ut8 src, RZ_NONNULL RZ_OUT RzRune *dst) {
 	rz_return_val_if_fail(dst, 0);
@@ -562,7 +561,6 @@ RZ_API int rz_str_ebcdic_us_from_ascii(RZ_NONNULL RZ_OUT ut8 *dst, const ut8 src
 }
 
 /// @}
-
 
 /**
  * \name EBCDIC-ES
