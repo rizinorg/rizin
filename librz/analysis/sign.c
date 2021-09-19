@@ -1014,7 +1014,7 @@ RZ_API bool rz_sign_add_addr(RzAnalysis *a, const char *name, ut64 addr) {
 
 	RzSignItem *it = rz_sign_item_new();
 	if (!it) {
-		return NULL;
+		return false;
 	}
 	it->name = rz_str_new(name);
 	it->space = rz_spaces_current(&a->zign_spaces);

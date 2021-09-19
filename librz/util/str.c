@@ -777,7 +777,7 @@ RZ_API size_t rz_str_ncpy(char *dst, const char *src, size_t dst_size) {
 /* memccmp("foo.bar", "foo.cow, '.') == 0 */
 // Returns 1 if src and dst are equal up until the first instance of ch in src.
 RZ_API bool rz_str_ccmp(const char *dst, const char *src, int ch) {
-	rz_return_val_if_fail(dst && src, NULL);
+	rz_return_val_if_fail(dst && src, false);
 	int i;
 	for (i = 0; src[i] && src[i] != ch; i++) {
 		if (dst[i] != src[i]) {
