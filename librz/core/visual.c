@@ -4036,7 +4036,7 @@ RZ_API int rz_core_visual(RzCore *core, const char *input) {
 		if (!skip) {
 			ch = rz_cons_readchar();
 
-			if (I->vtmode == 2 && !is_mintty(core->cons)) {
+			if (I->vtmode == RZ_VIRT_TERM_MODE_COMPLETE && !is_mintty(core->cons)) {
 				// Prevent runaway scrolling
 				if (IS_PRINTABLE(ch) || ch == '\t' || ch == '\n') {
 					flush_stdin();

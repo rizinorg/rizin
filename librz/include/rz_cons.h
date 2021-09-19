@@ -446,10 +446,18 @@ typedef void (*RzConsSleepEndCallback)(void *core, void *user);
 typedef void (*RzConsQueueTaskOneshot)(void *core, void *task, void *user);
 typedef void (*RzConsFunctionKey)(void *core, int fkey);
 
-typedef enum { COLOR_MODE_DISABLED = 0,
+typedef enum {
+	COLOR_MODE_DISABLED = 0,
 	COLOR_MODE_16,
 	COLOR_MODE_256,
-	COLOR_MODE_16M } RzConsColorMode;
+	COLOR_MODE_16M
+} RzConsColorMode;
+
+typedef enum {
+	RZ_VIRT_TERM_MODE_DISABLE = 0, ///< Windows only: Use console c api for everything (Windows <= 8)
+	RZ_VIRT_TERM_MODE_OUTPUT_ONLY, ///< Windows only: Use console c api for input, but output on VT (Windows >= 10)
+	RZ_VIRT_TERM_MODE_COMPLETE, ///< All the sequences goes through VT (Windows Terminal, mintty, all OSs)
+} RzVirtTermMode;
 
 typedef struct rz_cons_context_t {
 	RzConsGrep grep;
@@ -537,7 +545,7 @@ typedef struct rz_cons_t {
 	const char **vline;
 	int refcnt;
 	RZ_DEPRECATE bool newline;
-	int vtmode;
+	RzVirtTermMode vtmode;
 	bool flush;
 	bool use_utf8; // use utf8 features
 	bool use_utf8_curvy; // use utf8 curved corners
@@ -858,7 +866,7 @@ RZ_API int rz_cons_pipe_open(const char *file, int fdn, int append);
 RZ_API void rz_cons_pipe_close(int fd);
 
 #if __WINDOWS__
-RZ_API int rz_cons_is_vtcompat(void);
+RZ_API RzVirtTermMode rz_cons_detect_vt_mode(void);
 RZ_API void rz_cons_w32_clear(void);
 RZ_API void rz_cons_w32_gotoxy(int fd, int x, int y);
 RZ_API int rz_cons_w32_print(const char *ptr, int len, bool vmode);
@@ -1138,7 +1146,7 @@ struct rz_line_t {
 	RzLineHud *hud;
 	RzList *sdbshell_hist;
 	RzListIter *sdbshell_hist_iter;
-	int vtmode;
+	RzVirtTermMode vtmode;
 }; /* RzLine */
 
 #ifdef RZ_API

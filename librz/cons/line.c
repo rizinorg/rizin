@@ -26,9 +26,9 @@ RZ_API RzLine *rz_line_new(void) {
 	I.kill_ring = rz_list_newf(NULL);
 	I.kill_ring_ptr = -1;
 #if __WINDOWS__
-	I.vtmode = rz_cons_is_vtcompat();
+	I.vtmode = rz_cons_detect_vt_mode();
 #else
-	I.vtmode = 2;
+	I.vtmode = RZ_VIRT_TERM_MODE_COMPLETE;
 #endif
 	if (!rz_line_dietline_init()) {
 		eprintf("error: rz_line_dietline_init\n");
