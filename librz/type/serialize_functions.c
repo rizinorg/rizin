@@ -134,7 +134,7 @@ static bool filter_func(void *user, const char *k, const char *v) {
 }
 
 static bool sdb_load_callables(RzTypeDB *typedb, Sdb *sdb) {
-	rz_return_val_if_fail(typedb && sdb, NULL);
+	rz_return_val_if_fail(typedb && sdb, false);
 	HtPP *type_str_cache = ht_pp_new0(); // cache from a known C type extr to its RzType representation for skipping the parser if possible
 	if (!type_str_cache) {
 		return false;

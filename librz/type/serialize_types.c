@@ -317,7 +317,7 @@ error:
 }
 
 bool sdb_load_base_types(RzTypeDB *typedb, Sdb *sdb) {
-	rz_return_val_if_fail(typedb && sdb, NULL);
+	rz_return_val_if_fail(typedb && sdb, false);
 	SdbKv *kv;
 	SdbListIter *iter;
 	SdbList *l = sdb_foreach_list(sdb, false);

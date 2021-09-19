@@ -14,9 +14,9 @@
  * \param addr The address to check the link at
  */
 RZ_API bool rz_analysis_type_link_exists(RzAnalysis *analysis, ut64 addr) {
-	rz_return_val_if_fail(analysis, NULL);
+	rz_return_val_if_fail(analysis, false);
 	if (addr == UT64_MAX) {
-		return NULL;
+		return false;
 	}
 	bool found = false;
 	return ht_up_find(analysis->type_links, addr, &found) && found;
