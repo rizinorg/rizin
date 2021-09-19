@@ -61,7 +61,7 @@ static void addr_to_string(struct sockaddr_storage *ss, char *buffer, int buflen
 #endif
 
 int bsd_handle_signals(RzDebug *dbg) {
-#if __KFBSD__
+#if __KFBSD__ || __NetBSD__
 	// Trying to figure out a bit by the signal
 	struct ptrace_lwpinfo linfo = { 0 };
 	siginfo_t siginfo;
@@ -81,7 +81,21 @@ int bsd_handle_signals(RzDebug *dbg) {
 		return 0;
 	}
 
+#if __KFBSD__
 	siginfo = linfo.pl_siginfo;
+#else
+	struct ptrace_siginfo sinfo = { 0 };
+	if (ptrace(PT_GET_SIGINFO, dbg->pid, (char *)&sinfo, sizeof(sinfo)) == -1) {
+		if (errno == ESRCH) {
+			dbg->reason.type = RZ_DEBUG_REASON_DEAD;
+			return 0;
+		}
+		rz_sys_perror("ptrace PTRACE_GET_SIGINFO");
+		return -1;
+	}
+
+	siginfo = sinfo.psi_siginfo;
+#endif
 	dbg->reason.type = RZ_DEBUG_REASON_SIGNAL;
 	dbg->reason.signum = siginfo.si_signo;
 
