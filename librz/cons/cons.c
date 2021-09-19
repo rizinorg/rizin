@@ -140,7 +140,7 @@ static void __break_signal(int sig) {
 
 static inline void __cons_write_ll(const char *buf, int len) {
 #if __WINDOWS__
-	if (I.vtmode) {
+	if (I.vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
 		rz_xwrite(I.fdout, buf, len);
 	} else {
 		if (I.fdout == 1) {
@@ -493,7 +493,7 @@ RZ_API bool rz_cons_enable_mouse(const bool enable) {
 		return I.mouse;
 	}
 #if __WINDOWS__
-	if (I.vtmode == 2) {
+	if (I.vtmode == RZ_VIRT_TERM_MODE_COMPLETE) {
 #endif
 		const char *click = enable
 			? "\x1b[?1000;1006;1015h"
@@ -589,10 +589,10 @@ RZ_API RzCons *rz_cons_new(void) {
 #if __WINDOWS__
 	I.old_cp = GetConsoleCP();
 	I.old_ocp = GetConsoleOutputCP();
-	I.vtmode = rz_cons_is_vtcompat();
+	I.vtmode = rz_cons_detect_vt_mode();
 	set_console_codepage_to_utf8();
 #else
-	I.vtmode = 2;
+	I.vtmode = RZ_VIRT_TERM_MODE_COMPLETE;
 #endif
 #if EMSCRIPTEN
 	/* do nothing here :? */
@@ -721,7 +721,7 @@ RZ_API void rz_cons_fill_line(void) {
 
 RZ_API void rz_cons_clear_line(int std_err) {
 #if __WINDOWS__
-	if (I.vtmode) {
+	if (I.vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
 		fprintf(std_err ? stderr : stdout, "%s", RZ_CONS_CLEAR_LINE);
 	} else {
 		char white[1024];
@@ -1036,7 +1036,7 @@ RZ_API void rz_cons_visual_flush(void) {
 	if (!I.null) {
 /* TODO: this ifdef must go in the function body */
 #if __WINDOWS__
-		if (I.vtmode) {
+		if (I.vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
 			rz_cons_visual_write(I.context->buffer);
 		} else {
 			rz_cons_w32_print(I.context->buffer, I.context->buffer_len, true);
@@ -1071,7 +1071,7 @@ RZ_API void rz_cons_print_fps(int col) {
 		col = 12;
 	}
 #ifdef __WINDOWS__
-	if (I.vtmode) {
+	if (I.vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
 		eprintf("\x1b[0;%dH[%d FPS] \n", w - col, fps);
 	} else {
 		rz_cons_w32_gotoxy(2, w - col, 0);
@@ -1510,19 +1510,19 @@ RZ_API int rz_cons_get_size(int *rows) {
 }
 
 #if __WINDOWS__
-RZ_API int rz_cons_is_vtcompat(void) {
+RZ_API RzVirtTermMode rz_cons_detect_vt_mode(void) {
 	DWORD major;
 	DWORD minor;
 	DWORD release = 0;
 	char *wt_session = rz_sys_getenv("WT_SESSION");
 	if (wt_session) {
 		free(wt_session);
-		return 2;
+		return RZ_VIRT_TERM_MODE_COMPLETE;
 	}
 	char *alacritty = rz_sys_getenv("ALACRITTY_LOG");
 	if (alacritty) {
 		free(alacritty);
-		return 1;
+		return RZ_VIRT_TERM_MODE_OUTPUT_ONLY;
 	}
 	char *term = rz_sys_getenv("TERM");
 	if (term) {
@@ -1537,9 +1537,9 @@ RZ_API int rz_cons_is_vtcompat(void) {
 	char *ansicon = rz_sys_getenv("ANSICON");
 	if (ansicon) {
 		free(ansicon);
-		return 1;
+		return RZ_VIRT_TERM_MODE_OUTPUT_ONLY;
 	}
-	bool win_support = 0;
+	RzVirtTermMode win_support = RZ_VIRT_TERM_MODE_DISABLE;
 	RSysInfo *info = rz_sys_info();
 	if (info && info->version) {
 		char *dot = strtok(info->version, ".");
@@ -1550,7 +1550,7 @@ RZ_API int rz_cons_is_vtcompat(void) {
 			release = atoi(info->release);
 		}
 		if (major > 10 || (major == 10 && minor > 0) || (major == 10 && minor == 0 && release >= 1703)) {
-			win_support = 1;
+			win_support = RZ_VIRT_TERM_MODE_OUTPUT_ONLY;
 		}
 	}
 	rz_sys_info_free(info);
@@ -1560,7 +1560,7 @@ RZ_API int rz_cons_is_vtcompat(void) {
 
 RZ_API void rz_cons_show_cursor(int cursor) {
 #if __WINDOWS__
-	if (I.vtmode) {
+	if (I.vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
 #endif
 		rz_xwrite(1, cursor ? "\x1b[?25h" : "\x1b[?25l", 6);
 #if __WINDOWS__
@@ -1664,7 +1664,7 @@ RZ_API bool rz_cons_set_cup(bool enable) {
 	}
 	fflush(stdout);
 #elif __WINDOWS__
-	if (I.vtmode) {
+	if (I.vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
 		if (enable) {
 			const char *code = enable // xterm + xterm-color
 				? "\x1b[?1049h\x1b"
@@ -1968,7 +1968,7 @@ RZ_API void rz_cons_cmd_help(const char *help[], bool use_color) {
 }
 
 RZ_API void rz_cons_clear_buffer(void) {
-	if (I.vtmode) {
+	if (I.vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
 		rz_xwrite(1, "\x1b"
 			     "c\x1b[3J",
 			6);

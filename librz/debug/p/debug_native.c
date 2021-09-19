@@ -93,7 +93,7 @@ RZ_API RzList *rz_w32_dbg_maps(RzDebug *);
 
 #if !__WINDOWS__ && !(__linux__ && !defined(WAIT_ON_ALL_CHILDREN))
 static int rz_debug_handle_signals(RzDebug *dbg) {
-#if __KFBSD__
+#if __KFBSD__ || __NetBSD__
 	return bsd_handle_signals(dbg);
 #else
 	eprintf("Warning: signal handling is not supported on this platform\n");
@@ -518,7 +518,7 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 			 *
 			 * this might modify dbg->reason.signum
 			 */
-#if __OpenBSD__ || __NetBSD__
+#if __OpenBSD__
 			reason = RZ_DEBUG_REASON_BREAKPOINT;
 #else
 			if (rz_debug_handle_signals(dbg) != 0) {

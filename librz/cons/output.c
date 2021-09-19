@@ -25,7 +25,7 @@ RZ_API void rz_cons_w32_clear(void) {
 	static CONSOLE_SCREEN_BUFFER_INFO csbi;
 	COORD startCoords;
 	DWORD dummy;
-	if (I->vtmode) {
+	if (I->vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
 		rz_cons_strcat(Color_RESET RZ_CONS_CLEAR_SCREEN);
 		return;
 	}
@@ -55,7 +55,7 @@ RZ_API void rz_cons_w32_gotoxy(int fd, int x, int y) {
 	COORD coord;
 	coord.X = x;
 	coord.Y = y;
-	if (I->vtmode) {
+	if (I->vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
 		rz_cons_printf("\x1b[%d;%dH", y, x);
 		return;
 	}
@@ -411,7 +411,7 @@ RZ_API int rz_cons_win_vhprintf(DWORD hdl, bool vmode, const char *fmt, va_list 
 	FILE *con = hdl == STD_OUTPUT_HANDLE ? stdout : stderr;
 	if (!strchr(fmt, '%')) {
 		size_t len = strlen(fmt);
-		if (I->vtmode) {
+		if (I->vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
 			return fwrite(fmt, 1, len, con);
 		}
 		return rz_cons_w32_hprint(hdl, fmt, len, vmode);
@@ -422,7 +422,7 @@ RZ_API int rz_cons_win_vhprintf(DWORD hdl, bool vmode, const char *fmt, va_list 
 	char *buf = calloc(1, num_chars);
 	if (buf) {
 		(void)vsnprintf(buf, num_chars, fmt, ap);
-		if (I->vtmode) {
+		if (I->vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
 			ret = fwrite(buf, 1, num_chars - 1, con);
 		} else {
 			ret = rz_cons_w32_hprint(hdl, buf, num_chars - 1, vmode);
