@@ -3263,7 +3263,7 @@ static void parse_relocation_info(struct MACH0_(obj_t) * bin, RzSkipList *relocs
 	size_t i;
 	for (i = 0; i < num; i++) {
 		struct relocation_info a_info = info[i];
-		ut32 sym_num = a_info.rz_symbolnum;
+		ut32 sym_num = a_info.r_symbolnum;
 		if (sym_num > bin->nsymtab) {
 			continue;
 		}
@@ -3281,13 +3281,13 @@ static void parse_relocation_info(struct MACH0_(obj_t) * bin, RzSkipList *relocs
 			return;
 		}
 
-		reloc->addr = offset_to_vaddr(bin, a_info.rz_address);
-		reloc->offset = a_info.rz_address;
+		reloc->addr = offset_to_vaddr(bin, a_info.r_address);
+		reloc->offset = a_info.r_address;
 		reloc->ord = sym_num;
-		reloc->type = a_info.rz_type; // enum RelocationInfoType
-		reloc->external = a_info.rz_extern;
-		reloc->pc_relative = a_info.rz_pcrel;
-		reloc->size = a_info.rz_length;
+		reloc->type = a_info.r_type; // enum RelocationInfoType
+		reloc->external = a_info.r_extern;
+		reloc->pc_relative = a_info.r_pcrel;
+		reloc->size = a_info.r_length;
 		rz_str_ncpy(reloc->name, sym_name, sizeof(reloc->name) - 1);
 		rz_skiplist_insert(relocs, reloc);
 		free(sym_name);
