@@ -8,7 +8,7 @@
 #include <sdb.h>
 
 static bool typelinks_load_sdb(RzAnalysis *analysis, Sdb *sdb) {
-	rz_return_val_if_fail(analysis && sdb, NULL);
+	rz_return_val_if_fail(analysis && sdb, false);
 	RzType *type;
 	SdbKv *kv;
 	SdbListIter *iter;
