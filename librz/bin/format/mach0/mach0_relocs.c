@@ -115,7 +115,12 @@ static int parse_import_ptr(struct MACH0_(obj_t) * bin, struct reloc_t *reloc, i
 	return false;
 }
 
-RzSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) * bin) {
+RZ_BORROW RzSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) * bin) {
+	rz_return_val_if_fail(bin, NULL);
+	if (bin->relocs_parsed) {
+		return bin->relocs;
+	}
+	bin->relocs_parsed = true;
 	RzSkipList *relocs = NULL;
 	RzPVector *threaded_binds = NULL;
 	size_t wordsize = get_word_size(bin);
@@ -352,7 +357,7 @@ RzSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) * bin) {
 					seg_idx = imm;
 					if (seg_idx >= bin->nsegs) {
 						RZ_LOG_ERROR("Error: BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB"
-							" has unexistent segment %d\n",
+							     " has unexistent segment %d\n",
 							seg_idx);
 						free(opcodes);
 						rz_skiplist_free(relocs);
@@ -441,8 +446,7 @@ RzSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) * bin) {
 				default:
 					RZ_LOG_ERROR("Error: unknown bind opcode 0x%02x in dyld_info\n", *p);
 					RZ_FREE(opcodes);
-					rz_pvector_free(threaded_binds);
-					return relocs;
+					goto beach;
 				}
 			}
 
@@ -491,5 +495,6 @@ RzSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) * bin) {
 	}
 beach:
 	rz_pvector_free(threaded_binds);
+	bin->relocs = relocs;
 	return relocs;
 }

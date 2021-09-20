@@ -454,8 +454,6 @@ static RzList *relocs(RzBinFile *bf) {
 		rz_list_append(ret, ptr);
 	}
 
-	rz_skiplist_free(relocs);
-
 	return ret;
 }
 
@@ -677,12 +675,10 @@ static RzList *patch_relocs(RzBinFile *bf) {
 	}
 	ht_uu_free(relocs_by_sym);
 	rz_list_free(ext_relocs);
-	rz_skiplist_free(all_relocs);
 	return ret;
 
 beach:
 	rz_list_free(ext_relocs);
-	rz_skiplist_free(all_relocs);
 	rz_io_desc_free(gotrzdesc);
 	rz_list_free(ret);
 	ht_uu_free(relocs_by_sym);

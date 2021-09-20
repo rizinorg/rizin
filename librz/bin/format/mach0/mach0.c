@@ -2094,6 +2094,7 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) * mo) {
 		}
 		free(mo->chained_starts);
 	}
+	rz_skiplist_free(mo->relocs);
 	rz_buf_free(mo->b);
 	free(mo);
 	return NULL;

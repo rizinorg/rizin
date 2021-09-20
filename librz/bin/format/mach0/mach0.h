@@ -177,6 +177,8 @@ struct MACH0_(obj_t) {
 	ut64 (*va2pa)(ut64 p, ut32 *offset, ut32 *left, RzBinFile *bf);
 	struct symbol_t *symbols;
 	ut64 main_addr;
+	RzSkipList *relocs;
+	bool relocs_parsed; ///< whether relocs have already been parsed and relocs is filled (or NULL on error)
 };
 
 #define MACH0_VFILE_NAME_REBASED_STRIPPED "rebased_stripped"
@@ -195,7 +197,7 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) * bin);
 const RzList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) * bin);
 void MACH0_(pull_symbols)(struct MACH0_(obj_t) * mo, RzBinSymbolCallback cb, void *user);
 struct import_t *MACH0_(get_imports)(struct MACH0_(obj_t) * bin);
-RzSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) * bin);
+RZ_BORROW RzSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) * bin);
 struct addr_t *MACH0_(get_entrypoint)(struct MACH0_(obj_t) * bin);
 struct lib_t *MACH0_(get_libs)(struct MACH0_(obj_t) * bin);
 ut64 MACH0_(get_baddr)(struct MACH0_(obj_t) * bin);
