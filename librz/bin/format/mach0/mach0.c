@@ -12,10 +12,10 @@
 
 // TODO: deprecate bprintf and Eprintf and use RZ_LOG_*() instead
 #define bprintf \
-	if (bin->verbose) \
+	if (bin->options.verbose) \
 	eprintf
 #define Eprintf \
-	if (mo->verbose) \
+	if (mo->options.verbose) \
 	eprintf
 
 typedef struct {
@@ -236,7 +236,7 @@ static bool init_hdr(struct MACH0_(obj_t) * bin) {
 	ut8 machohdrbytes[sizeof(struct MACH0_(mach_header))] = { 0 };
 	int len;
 
-	if (rz_buf_read_at(bin->b, 0 + bin->header_at, magicbytes, 4) < 1) {
+	if (rz_buf_read_at(bin->b, 0 + bin->options.header_at, magicbytes, 4) < 1) {
 		return false;
 	}
 	if (rz_read_le32(magicbytes) == 0xfeedface) {
@@ -254,7 +254,7 @@ static bool init_hdr(struct MACH0_(obj_t) * bin) {
 	} else {
 		return false; // object files are magic == 0, but body is different :?
 	}
-	len = rz_buf_read_at(bin->b, 0 + bin->header_at, machohdrbytes, sizeof(machohdrbytes));
+	len = rz_buf_read_at(bin->b, 0 + bin->options.header_at, machohdrbytes, sizeof(machohdrbytes));
 	if (len != sizeof(machohdrbytes)) {
 		bprintf("Error: read (hdr)\n");
 		return false;
@@ -946,7 +946,7 @@ static bool parse_signature(struct MACH0_(obj_t) * bin, ut64 off) {
 					free(ident);
 				}
 			} else {
-				if (bin->verbose) {
+				if (bin->options.verbose) {
 					eprintf("Invalid code slot size\n");
 				}
 			}
@@ -955,12 +955,12 @@ static bool parse_signature(struct MACH0_(obj_t) * bin, ut64 off) {
 		case CSSLOT_RESOURCEDIR: // 3;
 		case CSSLOT_APPLICATION: // 4;
 			// TODO: parse those codesign slots
-			if (bin->verbose) {
+			if (bin->options.verbose) {
 				eprintf("TODO: Some codesign slots are not yet supported\n");
 			}
 			break;
 		default:
-			if (bin->verbose) {
+			if (bin->options.verbose) {
 				eprintf("Unknown Code signature slot %d\n", idx.type);
 			}
 			break;
@@ -1691,7 +1691,7 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 		//return false;
 	}
 	//bprintf ("Commands: %d\n", bin->hdr.ncmds);
-	for (i = 0, off = sizeof(struct MACH0_(mach_header)) + bin->header_at;
+	for (i = 0, off = sizeof(struct MACH0_(mach_header)) + bin->options.header_at;
 		i < bin->hdr.ncmds; i++, off += lc.cmdsize) {
 		if (off > bin->size || off + sizeof(struct load_command) > bin->size) {
 			bprintf("mach0: out of bounds command\n");
@@ -1962,7 +1962,7 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 		}
 	}
 	bool has_chained_fixups = false;
-	for (i = 0, off = sizeof(struct MACH0_(mach_header)) + bin->header_at;
+	for (i = 0, off = sizeof(struct MACH0_(mach_header)) + bin->options.header_at;
 		i < bin->hdr.ncmds; i++, off += lc.cmdsize) {
 		len = rz_buf_read_at(bin->b, off, loadc, sizeof(struct load_command));
 		if (len < 1) {
@@ -1989,7 +1989,7 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 		switch (lc.cmd) {
 		case LC_DATA_IN_CODE:
 			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%d.cmd", i), "data_in_code", 0);
-			if (bin->verbose) {
+			if (bin->options.verbose) {
 				ut8 buf[8];
 				rz_buf_read_at(bin->b, off + 8, buf, sizeof(buf));
 				ut32 dataoff = rz_read_ble32(buf, bin->big_endian);
@@ -2013,7 +2013,7 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 			}
 			break;
 		case LC_DYLD_EXPORTS_TRIE:
-			if (bin->verbose) {
+			if (bin->options.verbose) {
 				ut8 buf[8];
 				rz_buf_read_at(bin->b, off + 8, buf, sizeof(buf));
 				ut32 dataoff = rz_read_ble32(buf, bin->big_endian);
@@ -2026,7 +2026,7 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 			if (rz_buf_read_at(bin->b, off + 8, buf, sizeof(buf)) == sizeof(buf)) {
 				ut32 dataoff = rz_read_ble32(buf, bin->big_endian);
 				ut32 datasize = rz_read_ble32(buf + 4, bin->big_endian);
-				if (bin->verbose) {
+				if (bin->options.verbose) {
 					eprintf("chained fixups at 0x%x size %d\n", dataoff, datasize);
 				}
 				has_chained_fixups = parse_chained_fixups(bin, dataoff, datasize);
@@ -2037,7 +2037,7 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 
 	if (!has_chained_fixups && bin->hdr.cputype == CPU_TYPE_ARM64 &&
 		(bin->hdr.cpusubtype & ~CPU_SUBTYPE_MASK) == CPU_SUBTYPE_ARM64E) {
-		if (bin->verbose) {
+		if (bin->options.verbose) {
 			eprintf("reconstructing chained fixups\n");
 		}
 		reconstruct_chained_fixup(bin);
@@ -2094,6 +2094,7 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) * mo) {
 		}
 		free(mo->chained_starts);
 	}
+	rz_pvector_free(mo->patchable_relocs);
 	rz_skiplist_free(mo->relocs);
 	rz_buf_free(mo->b);
 	free(mo);
@@ -2104,6 +2105,7 @@ void MACH0_(opts_set_default)(struct MACH0_(opts_t) * options, RzBinFile *bf) {
 	rz_return_if_fail(options && bf && bf->rbin);
 	options->header_at = 0;
 	options->verbose = bf->rbin->verbose;
+	options->patch_relocs = true;
 }
 
 static void *duplicate_ptr(void *p) {
@@ -2126,8 +2128,7 @@ struct MACH0_(obj_t) * MACH0_(mach0_new)(const char *file, struct MACH0_(opts_t)
 		return NULL;
 	}
 	if (options) {
-		bin->verbose = options->verbose;
-		bin->header_at = options->header_at;
+		bin->options = *options;
 	}
 	bin->file = file;
 	size_t binsz;
@@ -2161,8 +2162,7 @@ struct MACH0_(obj_t) * MACH0_(new_buf)(RzBuffer *buf, struct MACH0_(opts_t) * op
 		bin->kv = sdb_new(NULL, "bin.mach0", 0);
 		bin->size = rz_buf_size(bin->b);
 		if (options) {
-			bin->verbose = options->verbose;
-			bin->header_at = options->header_at;
+			bin->options = *options;
 		}
 		if (!init(bin)) {
 			return MACH0_(mach0_free)(bin);
@@ -2209,6 +2209,8 @@ RzList *MACH0_(get_virtual_files)(RzBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
+
+	// rebasing+stripping for arm64e
 	struct MACH0_(obj_t) *obj = bf->o->bin_obj;
 	if (MACH0_(needs_rebasing_and_stripping)(obj)) {
 		RzBinVirtualFile *vf = RZ_NEW0(RzBinVirtualFile);
@@ -2220,10 +2222,43 @@ RzList *MACH0_(get_virtual_files)(RzBinFile *bf) {
 		vf->name = strdup(MACH0_VFILE_NAME_REBASED_STRIPPED);
 		rz_list_push(ret, vf);
 	}
+
+	// clang-format off
+	// relocs
+	MACH0_(patch_relocs)(bf, obj);
+	// clang-format: on
+	// virtual file for reloc targets (where the relocs will point into)
+	ut64 rtmsz = MACH0_(reloc_targets_vfile_size)(obj);
+	if (rtmsz) {
+		RzBuffer *buf = rz_buf_new_empty(rtmsz);
+		if (!buf) {
+			return ret;
+		}
+		RzBinVirtualFile *vf = RZ_NEW0(RzBinVirtualFile);
+		if (!vf) {
+			rz_buf_free(buf);
+			return ret;
+		}
+		vf->buf = buf;
+		vf->buf_owned = true;
+		vf->name = strdup(MACH0_VFILE_NAME_RELOC_TARGETS);
+		rz_list_push(ret, vf);
+	}
+	// virtual file mirroring the raw file, but with relocs patched
+	if (obj->buf_patched) {
+		RzBinVirtualFile *vf = RZ_NEW0(RzBinVirtualFile);
+		if (!vf) {
+			return ret;
+		}
+		vf->buf = obj->buf_patched;
+		vf->buf_owned = false;
+		vf->name = strdup(MACH0_VFILE_NAME_PATCHED);
+		rz_list_push(ret, vf);
+	}
 	return ret;
 }
 
-RzList *MACH0_(get_maps)(RzBinFile *bf) {
+RzList *MACH0_(get_maps_unpatched)(RzBinFile *bf) {
 	rz_return_val_if_fail(bf, NULL);
 	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
 	RzList *ret = rz_list_newf((RzListFree)rz_bin_map_free);
@@ -2255,6 +2290,21 @@ RzList *MACH0_(get_maps)(RzBinFile *bf) {
 		}
 		rz_list_append(ret, map);
 	}
+	return ret;
+}
+
+RzList *MACH0_(get_maps)(RzBinFile *bf) {
+	RzList *ret = MACH0_(get_maps_unpatched)(bf);
+	if (!ret) {
+		return NULL;
+	}
+	struct MACH0_(obj_t) *obj = bf->o->bin_obj;
+	// clang-format off
+	MACH0_(patch_relocs)(bf, obj);
+	// clang-format on
+	rz_bin_relocs_patch_maps(ret, obj->buf_patched, bf->o->boffset,
+		MACH0_(reloc_targets_map_base)(bf, obj), MACH0_(reloc_targets_vfile_size)(obj),
+		MACH0_VFILE_NAME_PATCHED, MACH0_VFILE_NAME_RELOC_TARGETS);
 	return ret;
 }
 
@@ -2635,13 +2685,13 @@ static int walk_exports(struct MACH0_(obj_t) * bin, RExportsIterator iterator, v
 				if (res == UT64_MAX) {
 					break;
 				}
-				resolver = res + bin->header_at;
+				resolver = res + bin->options.header_at;
 			} else if (isReexport) {
 				p += strlen((char *)p) + 1;
 				// TODO: handle this
 			}
 			if (!isReexport) {
-				offset += bin->header_at;
+				offset += bin->options.header_at;
 			}
 			if (iterator && !isReexport) {
 				char *name = NULL;

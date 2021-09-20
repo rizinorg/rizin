@@ -7,6 +7,7 @@ rz_bin_sources = [
   'filter.c',
   'bfile.c',
   'bobj.c',
+  'relocs_patch.c',
   'p/bin_any.c',
   'p/bin_art.c',
   'p/bin_avr.c',

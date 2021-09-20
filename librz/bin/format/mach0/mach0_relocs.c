@@ -1,10 +1,12 @@
 // SPDX-FileCopyrightText: 2021 Florian Märkl <info@florianmaerkl.de>
+// SPDX-FileCopyrightText: 2020 Francesco Tamagni <mrmacete@protonmail.ch>
 // SPDX-FileCopyrightText: 2010-2020 nibble <nibble.ds@gmail.com>
 // SPDX-FileCopyrightText: 2010-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util.h>
 #include "mach0.h"
+#include <ht_uu.h>
 
 #include "mach0_utils.inc"
 
@@ -55,7 +57,7 @@ static void parse_relocation_info(struct MACH0_(obj_t) * bin, RzSkipList *relocs
 		reloc->type = a_info.r_type; // enum RelocationInfoType
 		reloc->external = a_info.r_extern;
 		reloc->pc_relative = a_info.r_pcrel;
-		reloc->size = a_info.r_length;
+		reloc->size = 1 << a_info.r_length; // macho/reloc.h says: 0=byte, 1=word, 2=long, 3=quad
 		rz_str_ncpy(reloc->name, sym_name, sizeof(reloc->name) - 1);
 		rz_skiplist_insert(relocs, reloc);
 		free(sym_name);
@@ -497,4 +499,147 @@ beach:
 	rz_pvector_free(threaded_binds);
 	bin->relocs = relocs;
 	return relocs;
+}
+
+static RzPVector *get_patchable_relocs(struct MACH0_(obj_t) * obj) {
+	if (!obj->options.patch_relocs) {
+		return NULL;
+	}
+	if (obj->patchable_relocs) {
+		return obj->patchable_relocs;
+	}
+	RzSkipList *relocs = MACH0_(get_relocs)(obj);
+	if (!relocs) {
+		return NULL;
+	}
+	obj->patchable_relocs = rz_pvector_new(NULL);
+	if (!obj->patchable_relocs) {
+		return NULL;
+	}
+	RzSkipListNode *it;
+	struct reloc_t *reloc;
+	rz_skiplist_foreach (relocs, it, reloc) {
+		if (!reloc->external) {
+			// right now, we only care about patching external relocs
+			// others might be interesting too in the future though, for example in object files.
+			continue;
+		}
+		rz_pvector_push(obj->patchable_relocs, reloc);
+	}
+	return obj->patchable_relocs;
+}
+
+RZ_API bool MACH0_(needs_reloc_patching)(struct MACH0_(obj_t) * obj) {
+	rz_return_val_if_fail(obj, false);
+	RzPVector *patchable_relocs = get_patchable_relocs(obj);
+	return patchable_relocs && rz_pvector_len(patchable_relocs);
+}
+
+static ut64 reloc_target_size(struct MACH0_(obj_t) * obj) {
+	int bits = MACH0_(get_bits_from_hdr)(&obj->hdr);
+	if (bits) {
+		return 8;
+	}
+	return bits / 8;
+}
+
+/// size of the artificial reloc target vfile
+RZ_API ut64 MACH0_(reloc_targets_vfile_size)(struct MACH0_(obj_t) * obj) {
+	RzPVector *patchable_relocs = get_patchable_relocs(obj);
+	if (!patchable_relocs) {
+		return 0;
+	}
+	return rz_pvector_len(patchable_relocs) * reloc_target_size(obj);
+}
+
+/// base vaddr where to map the artificial reloc target vfile
+RZ_API ut64 MACH0_(reloc_targets_map_base)(RzBinFile *bf, struct MACH0_(obj_t) * obj) {
+	if (obj->reloc_targets_map_base_calculated) {
+		return obj->reloc_targets_map_base;
+	}
+	RzList *maps = MACH0_(get_maps_unpatched)(bf);
+	obj->reloc_targets_map_base = rz_bin_relocs_patch_find_targets_map_base(maps, reloc_target_size(obj));
+	rz_list_free(maps);
+	obj->reloc_targets_map_base_calculated = true;
+	return obj->reloc_targets_map_base;
+}
+
+static bool _patch_reloc(struct MACH0_(obj_t) * bin, struct reloc_t *reloc, ut64 symbol_at) {
+	ut64 pc = reloc->addr;
+	ut64 ins_len = 0;
+
+	switch (bin->hdr.cputype) {
+	case CPU_TYPE_X86_64: {
+		switch (reloc->type) {
+		case X86_64_RELOC_UNSIGNED:
+			break;
+		case X86_64_RELOC_BRANCH:
+			pc -= 1;
+			ins_len = 5;
+			break;
+		default:
+			RZ_LOG_ERROR("Warning: unsupported reloc type for X86_64 (%d), please file a bug.\n", reloc->type);
+			return false;
+		}
+		break;
+	}
+	case CPU_TYPE_ARM64:
+	case CPU_TYPE_ARM64_32:
+		pc = reloc->addr & ~3;
+		ins_len = 4;
+		break;
+	case CPU_TYPE_ARM:
+		break;
+	default:
+		RZ_LOG_ERROR("Warning: unsupported architecture for patching relocs, please file a bug. %s\n", MACH0_(get_cputype_from_hdr)(&bin->hdr));
+		return false;
+	}
+
+	ut64 val = symbol_at;
+	if (reloc->pc_relative) {
+		val = symbol_at - pc - ins_len;
+	}
+
+	ut8 buf[8];
+	rz_write_ble(buf, val, false, reloc->size * 8);
+	rz_buf_write_at(bin->buf_patched, reloc->offset, buf, RZ_MIN(sizeof(buf), reloc->size));
+	return true;
+}
+
+/**
+ * \brief Patching of external relocs in a sparse overlay buffer
+ *
+ * see also mach0_rebase.c for additional modification of the data that might happen.
+ */
+RZ_API void MACH0_(patch_relocs)(RzBinFile *bf, struct MACH0_(obj_t) * obj) {
+	rz_return_if_fail(obj);
+	if (obj->relocs_patched || !MACH0_(needs_reloc_patching)(obj)) {
+		return;
+	}
+	obj->relocs_patched = true; // run this function just once (lazy relocs patching)
+	ut64 cdsz = reloc_target_size(obj);
+	ut64 size = MACH0_(reloc_targets_vfile_size)(obj);
+	if (!size) {
+		return;
+	}
+	RzBinRelocTargetBuilder *targets = rz_bin_reloc_target_builder_new(cdsz, MACH0_(reloc_targets_map_base)(bf, obj));
+	if (!targets) {
+		return;
+	}
+	obj->buf_patched = rz_buf_new_sparse_overlay(obj->b, RZ_BUF_SPARSE_WRITE_MODE_SPARSE);
+	if (!obj->buf_patched) {
+		rz_bin_reloc_target_builder_free(targets);
+		return;
+	}
+	RzPVector *patchable_relocs = get_patchable_relocs(obj);
+	void **it;
+	rz_pvector_foreach (patchable_relocs, it) {
+		struct reloc_t *reloc = *it;
+		ut64 sym_addr = rz_bin_reloc_target_builder_get_target(targets, reloc->ord);
+		reloc->target = sym_addr;
+		_patch_reloc(obj, reloc, sym_addr);
+	}
+	rz_bin_reloc_target_builder_free(targets);
+	// from now on, all writes should propagate through to the actual file
+	rz_buf_sparse_set_write_mode(obj->buf_patched, RZ_BUF_SPARSE_WRITE_MODE_THROUGH);
 }
