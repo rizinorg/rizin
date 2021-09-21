@@ -937,6 +937,47 @@ bool test_rz_buf_sparse_populated_in(void) {
 	mu_end;
 }
 
+bool test_rz_buf_sparse_size(void) {
+	RzBuffer *b = rz_buf_new_sparse(0x42);
+	mu_assert_notnull(b, "rz_buf_new_sparse failed");
+	mu_assert_eq(rz_buf_size(b), 0, "buf sz");
+
+	rz_buf_write_at(b, 0x10, (const ut8 *)"Not", 3);
+	rz_buf_write_at(b, 0x14, (const ut8 *)"Naming", 6);
+	rz_buf_write_at(b, 0x1f, (const ut8 *)"Names", 5);
+	rz_buf_write_at(b, 0x1b, (const ut8 *)"Any", 3);
+	mu_assert_eq(rz_buf_size(b), 0x24, "buf sz");
+
+	rz_buf_free(b);
+	mu_end;
+}
+
+bool test_rz_buf_sparse_overlay_size(void) {
+	ut8 tmp[0x100];
+	for (size_t i = 0; i < sizeof(tmp); i++) {
+		tmp[i] = i;
+	}
+	RzBuffer *base = rz_buf_new_with_bytes(tmp, sizeof(tmp));
+	rz_buf_set_overflow_byte(base, 0x42);
+
+	RzBuffer *b = rz_buf_new_sparse_overlay(base, RZ_BUF_SPARSE_WRITE_MODE_SPARSE);
+	mu_assert_notnull(b, "rz_buf_new_sparse_overlay failed");
+	rz_buf_set_overflow_byte(b, 0x24);
+	mu_assert_eq(rz_buf_size(b), 0x100, "buf sz");
+
+	rz_buf_write_at(b, 0x10, (const ut8 *)"Not", 3);
+	rz_buf_write_at(b, 0x14, (const ut8 *)"Naming", 6);
+	rz_buf_write_at(b, 0x1f, (const ut8 *)"Names", 5);
+	rz_buf_write_at(b, 0x1b, (const ut8 *)"Any", 3);
+	mu_assert_eq(rz_buf_size(b), 0x100, "buf sz");
+
+	rz_buf_write_at(b, 0x200, (const ut8 *)"Mire", 4);
+	mu_assert_eq(rz_buf_size(b), 0x204, "buf sz");
+
+	rz_buf_free(b);
+	mu_end;
+}
+
 bool test_rz_buf_bytes_steal(void) {
 	RzBuffer *b;
 	const char *content = "Something To\nSay Here..";
@@ -1241,6 +1282,8 @@ int all_tests() {
 	mu_run_test(test_rz_buf_sparse_fuzz);
 	mu_run_test(test_rz_buf_sparse_overlay);
 	mu_run_test(test_rz_buf_sparse_populated_in);
+	mu_run_test(test_rz_buf_sparse_size);
+	mu_run_test(test_rz_buf_sparse_overlay_size);
 	mu_run_test(test_rz_buf_bytes_steal);
 	mu_run_test(test_rz_buf_format);
 	mu_run_test(test_rz_buf_get_string);
