@@ -363,7 +363,8 @@ static void autocmplt_cmd_arg_eval_full(RzCore *core, RzLineNSCompletionResult *
 	if (!eq) {
 		// autocomplete only the key
 		res->end_string = "";
-		return autocmplt_cmd_arg_eval_key(core, res, s, len);
+		autocmplt_cmd_arg_eval_key(core, res, s, len);
+		return;
 	}
 
 	char *k = rz_str_ndup(s, eq - s);

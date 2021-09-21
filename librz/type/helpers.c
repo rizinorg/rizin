@@ -191,7 +191,7 @@ RZ_API bool rz_type_atomic_eq(const RzTypeDB *typedb, RZ_NONNULL const RzType *t
 	RzBaseType *btyp1 = rz_type_db_get_base_type(typedb, typ1->identifier.name);
 	RzBaseType *btyp2 = rz_type_db_get_base_type(typedb, typ2->identifier.name);
 	if (!btyp1 || !btyp2) {
-		return NULL;
+		return false;
 	}
 	rz_return_val_if_fail(btyp1->kind == RZ_BASE_TYPE_KIND_ATOMIC && btyp2->kind == RZ_BASE_TYPE_KIND_ATOMIC, false);
 	return btyp1->name == btyp2->name && btyp1->size == btyp2->size;
@@ -214,7 +214,7 @@ RZ_API bool rz_type_atomic_str_eq(const RzTypeDB *typedb, RZ_NONNULL const RzTyp
 	RzBaseType *btyp1 = rz_type_db_get_base_type(typedb, typ1->identifier.name);
 	RzBaseType *btyp2 = rz_type_db_get_base_type(typedb, name);
 	if (!btyp1 || !btyp2) {
-		return NULL;
+		return false;
 	}
 	rz_return_val_if_fail(btyp1->kind == RZ_BASE_TYPE_KIND_ATOMIC && btyp2->kind == RZ_BASE_TYPE_KIND_ATOMIC, false);
 	return btyp1->name == btyp2->name && btyp1->size == btyp2->size;

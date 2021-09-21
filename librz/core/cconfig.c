@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
+#include <rz_cons.h>
 
 #include "core_private.h"
 
@@ -2176,15 +2177,15 @@ static bool cb_scrhighlight(void *user, void *data) {
 static bool scr_vtmode(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (rz_str_is_true(node->value)) {
-		node->i_value = 1;
+		node->i_value = RZ_VIRT_TERM_MODE_OUTPUT_ONLY;
 	}
-	node->i_value = node->i_value > 2 ? 2 : node->i_value;
+	node->i_value = node->i_value > RZ_VIRT_TERM_MODE_COMPLETE ? RZ_VIRT_TERM_MODE_COMPLETE : node->i_value;
 	rz_line_singleton()->vtmode = rz_cons_singleton()->vtmode = node->i_value;
 
 	DWORD mode;
 	HANDLE input = GetStdHandle(STD_INPUT_HANDLE);
 	GetConsoleMode(input, &mode);
-	if (node->i_value == 2) {
+	if (node->i_value == RZ_VIRT_TERM_MODE_COMPLETE) {
 		SetConsoleMode(input, mode & ENABLE_VIRTUAL_TERMINAL_INPUT);
 		rz_cons_singleton()->term_raw |= ENABLE_VIRTUAL_TERMINAL_INPUT;
 	} else {
@@ -2193,7 +2194,7 @@ static bool scr_vtmode(void *user, void *data) {
 	}
 	HANDLE streams[] = { GetStdHandle(STD_OUTPUT_HANDLE), GetStdHandle(STD_ERROR_HANDLE) };
 	int i;
-	if (node->i_value > 0) {
+	if (node->i_value > RZ_VIRT_TERM_MODE_DISABLE) {
 		for (i = 0; i < RZ_ARRAY_SIZE(streams); i++) {
 			GetConsoleMode(streams[i], &mode);
 			SetConsoleMode(streams[i],

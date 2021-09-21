@@ -293,16 +293,17 @@ static TypeFormatPair *get_atomic_type(RzTypeDB *typedb, Sdb *sdb, const char *s
 	ttype->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED;
 	base_type->type = ttype;
 
-	char key[SDB_MAX_KEY + 1];
 	base_type->name = strdup(sname);
-	base_type->size = sdb_num_get(sdb, rz_strf(key, "type.%s.size", sname), 0);
+	RzStrBuf key;
+	base_type->size = sdb_num_get(sdb, rz_strbuf_initf(&key, "type.%s.size", sname), 0);
 	RzTypeTypeclass typeclass = RZ_TYPE_TYPECLASS_NONE;
-	const char *tclass = sdb_const_get(sdb, rz_strf(key, "type.%s.typeclass", sname), 0);
+	const char *tclass = sdb_const_get(sdb, rz_strbuf_setf(&key, "type.%s.typeclass", sname), 0);
 	if (tclass) {
 		typeclass = rz_type_typeclass_from_string(tclass);
 	}
 	set_base_type_typeclass(base_type, typeclass);
-	const char *format = sdb_const_get(sdb, rz_strf(key, "type.%s", sname), 0);
+	const char *format = sdb_const_get(sdb, rz_strbuf_setf(&key, "type.%s", sname), 0);
+	rz_strbuf_fini(&key);
 
 	TypeFormatPair *tpair = RZ_NEW0(TypeFormatPair);
 	tpair->type = base_type;
@@ -316,7 +317,7 @@ error:
 }
 
 bool sdb_load_base_types(RzTypeDB *typedb, Sdb *sdb) {
-	rz_return_val_if_fail(typedb && sdb, NULL);
+	rz_return_val_if_fail(typedb && sdb, false);
 	SdbKv *kv;
 	SdbListIter *iter;
 	SdbList *l = sdb_foreach_list(sdb, false);
