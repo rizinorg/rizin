@@ -5243,3 +5243,22 @@ RZ_API bool rz_core_bin_archs_print(RzBin *bin, RzCmdStateOutput *state) {
 	rz_cmd_state_output_array_end(state);
 	return true;
 }
+
+RZ_API bool rz_core_bin_pdb_load(RZ_NONNULL RzCore *core, RZ_NONNULL const char *filename) {
+	rz_cons_push();
+	rz_core_pdb_info(core, filename, NULL, RZ_MODE_RIZINCMD);
+	const char *buf = rz_cons_get_buffer();
+	if (!buf) {
+		rz_cons_pop();
+		return false;
+	}
+	char *s = strdup(buf);
+	rz_cons_pop();
+	if (!s) {
+		return false;
+	}
+
+	RzCmdStatus status = rz_core_cmd_rzshell(core, s, 0);
+	free(s);
+	return status == RZ_CMD_STATUS_OK;
+}
