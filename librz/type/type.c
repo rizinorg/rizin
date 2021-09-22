@@ -1208,7 +1208,7 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 		switch (btype->kind) {
 		case RZ_BASE_TYPE_KIND_STRUCT:
 			if (unfold_all || (is_anon && unfold_anon)) {
-				rz_strbuf_appendf(buf, " {%s", multiline ? "\n" : "  ");
+				rz_strbuf_appendf(buf, " {%s", multiline ? "\n" : " ");
 				RzTypeStructMember *memb;
 				rz_vector_foreach(&btype->struct_data.members, memb) {
 					char *unfold = type_as_pretty_string(typedb, memb->type, memb->name, used_types, opts, unfold_level - 1, indent_level + 1);
@@ -1218,12 +1218,12 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 				for (int i = 0; i < indent; i++) {
 					rz_strbuf_append(buf, "\t");
 				}
-				rz_strbuf_appendf(buf, "%s}", multiline ? "" : " ");
+				rz_strbuf_append(buf, "}");
 			}
 			break;
 		case RZ_BASE_TYPE_KIND_UNION:
 			if (unfold_all || (is_anon && unfold_anon)) {
-				rz_strbuf_appendf(buf, " {%s", multiline ? "\n" : "  ");
+				rz_strbuf_appendf(buf, " {%s", multiline ? "\n" : " ");
 				RzTypeUnionMember *memb;
 				rz_vector_foreach(&btype->struct_data.members, memb) {
 					char *unfold = type_as_pretty_string(typedb, memb->type, memb->name, used_types, opts, unfold_level - 1, indent_level + 1);
@@ -1233,13 +1233,13 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 				for (int i = 0; i < indent; i++) {
 					rz_strbuf_append(buf, "\t");
 				}
-				rz_strbuf_appendf(buf, "%s}", multiline ? "" : " ");
+				rz_strbuf_append(buf, "}");
 			}
 			break;
 		case RZ_BASE_TYPE_KIND_ENUM:
 			if (unfold_all || (is_anon && unfold_anon)) {
 				RzTypeEnumCase *cas;
-				rz_strbuf_appendf(buf, " {%s", multiline ? "\n" : "  ");
+				rz_strbuf_appendf(buf, " {%s", multiline ? "\n" : " ");
 				if (multiline) {
 					indent++; // no recursive call, so manually need to update indent
 				}
@@ -1257,7 +1257,7 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 				for (int i = 0; i < indent; i++) {
 					rz_strbuf_append(buf, "\t");
 				}
-				rz_strbuf_appendf(buf, "%s}", multiline ? "" : " ");
+				rz_strbuf_append(buf, "}");
 			}
 			break;
 		case RZ_BASE_TYPE_KIND_TYPEDEF:

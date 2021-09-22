@@ -513,14 +513,14 @@ static bool test_type_as_string(void) {
 }
 
 static char *pretty_complex_const_pointer = "const char **const *const c[4];";
-static char *pretty_struct_array_ptr_func_ptr = "struct alb {  const char *b; int *const *a[][][][9]; wchar_t (*funk)(int a, const char *b); time_t t;  };";
+static char *pretty_struct_array_ptr_func_ptr = "struct alb { const char *b; int *const *a[][][][9]; wchar_t (*funk)(int a, const char *b); time_t t; };";
 static char *pretty_struct_array_ptr_func_ptr_multiline = "struct alb {\n"
 							  "\tconst char *b;\n"
 							  "\tint *const *a[][][][9];\n"
 							  "\twchar_t (*funk)(int a, const char *b);\n"
 							  "\ttime_t t;\n"
 							  "} leet;";
-static char *pretty_struct_in_struct = "struct joy {  int a; char c; struct alb ania; int j;  };";
+static char *pretty_struct_in_struct = "struct joy { int a; char c; struct alb ania; int j; };";
 static char *pretty_struct_in_struct_multiline = "struct joy {\n"
 						 "\tint a;\n"
 						 "\tchar c;\n"
@@ -538,7 +538,7 @@ static char *pretty_struct_in_struct_multiline_unfold = "struct joy {\n"
 							"\t} ania;\n"
 							"\tint j;\n"
 							"} multunfold;";
-static char *pretty_union_of_struct = "union alpha {  struct joy bla; struct {  int foo; char bar;  } baz;  };";
+static char *pretty_union_of_struct = "union alpha { struct joy bla; struct { int foo; char bar; } baz; };";
 static char *pretty_union_of_struct_multiline1 = "union alpha {\n"
 						 "\tstruct joy {\n"
 						 "\t\tint a;\n"
@@ -575,7 +575,7 @@ static char *pretty_union_of_struct_max_multiline = "union alpha {\n"
 						    "\t\tchar bar;\n"
 						    "\t} baz;\n"
 						    "} maxmult;";
-static char *pretty_enum = "enum MCU {  IRON = 0x1001, HAWK = 0x337, DOCS = 0x1337, CAPM = 0x2077  };";
+static char *pretty_enum = "enum MCU { IRON = 0x1001, HAWK = 0x337, DOCS = 0x1337, CAPM = 0x2077 };";
 static char *pretty_enum_multiline = "enum MCU {\n"
 				     "\tIRON = 0x1001,\n"
 				     "\tHAWK = 0x337,\n"
