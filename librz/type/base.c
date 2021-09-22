@@ -50,7 +50,7 @@ RZ_API RZ_BORROW RzBaseType *rz_type_db_get_base_type(const RzTypeDB *typedb, RZ
  * \param type RzBaseType to remove
  */
 RZ_API bool rz_type_db_delete_base_type(RzTypeDB *typedb, RZ_NONNULL RzBaseType *type) {
-	rz_return_val_if_fail(typedb && type && type->name, NULL);
+	rz_return_val_if_fail(typedb && type && type->name, false);
 	ht_pp_delete(typedb->types, type->name);
 	return true;
 }

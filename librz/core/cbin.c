@@ -2651,8 +2651,8 @@ static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzList *l
 
 			switch (string->type) {
 			case RZ_STRING_TYPE_UTF8:
-			case RZ_STRING_TYPE_WIDE:
-			case RZ_STRING_TYPE_WIDE32:
+			case RZ_STRING_TYPE_WIDE_LE:
+			case RZ_STRING_TYPE_WIDE32_LE:
 				block_list = rz_utf_block_list((const ut8 *)string->string, -1, NULL);
 				if (block_list) {
 					if (block_list[0] == 0 && block_list[1] == -1) {
@@ -2704,8 +2704,8 @@ static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzList *l
 			RzStrBuf *buf = rz_strbuf_new(str);
 			switch (string->type) {
 			case RZ_STRING_TYPE_UTF8:
-			case RZ_STRING_TYPE_WIDE:
-			case RZ_STRING_TYPE_WIDE32:
+			case RZ_STRING_TYPE_WIDE_LE:
+			case RZ_STRING_TYPE_WIDE32_LE:
 				block_list = rz_utf_block_list((const ut8 *)string->string, -1, NULL);
 				if (block_list) {
 					if (block_list[0] == 0 && block_list[1] == -1) {
@@ -5242,4 +5242,23 @@ RZ_API bool rz_core_bin_archs_print(RzBin *bin, RzCmdStateOutput *state) {
 
 	rz_cmd_state_output_array_end(state);
 	return true;
+}
+
+RZ_API bool rz_core_bin_pdb_load(RZ_NONNULL RzCore *core, RZ_NONNULL const char *filename) {
+	rz_cons_push();
+	rz_core_pdb_info(core, filename, NULL, RZ_MODE_RIZINCMD);
+	const char *buf = rz_cons_get_buffer();
+	if (!buf) {
+		rz_cons_pop();
+		return false;
+	}
+	char *s = strdup(buf);
+	rz_cons_pop();
+	if (!s) {
+		return false;
+	}
+
+	RzCmdStatus status = rz_core_cmd_rzshell(core, s, 0);
+	free(s);
+	return status == RZ_CMD_STATUS_OK;
 }

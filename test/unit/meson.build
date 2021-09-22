@@ -87,6 +87,7 @@ if get_option('enable_tests')
     'stack',
     'str',
     'strbuf',
+    'str_search',
     'subprocess',
     'table',
     'task',

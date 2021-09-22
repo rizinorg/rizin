@@ -96,7 +96,7 @@ static inline bool cpu_reload_needed(RzArchTarget *c, const char *cpu, const cha
 }
 
 static bool sdb_load_arch_profile(RzArchTarget *t, Sdb *sdb) {
-	rz_return_val_if_fail(t && sdb, NULL);
+	rz_return_val_if_fail(t && sdb, false);
 	SdbKv *kv;
 	SdbListIter *iter;
 	SdbList *l = sdb_foreach_list(sdb, false);

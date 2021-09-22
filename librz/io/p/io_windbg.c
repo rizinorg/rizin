@@ -385,6 +385,10 @@ static bool windbg_check(RzIO *io, const char *uri, bool many) {
 	return !strncmp(uri, WINDBGURI, strlen(WINDBGURI));
 }
 
+static inline bool cur_dbg_plugin_is_windbg(RzDebug *dbg) {
+	return dbg && dbg->cur && !strcmp(dbg->cur->name, "windbg");
+}
+
 typedef enum {
 	TARGET_LOCAL_SPAWN,
 	TARGET_LOCAL_ATTACH,
@@ -569,24 +573,31 @@ static RzIODesc *windbg_open(RzIO *io, const char *uri, int perm, int mode) {
 remote_client:
 	fd = rz_io_desc_new(io, &rz_io_plugin_windbg, uri, perm | RZ_PERM_X, mode, idbg);
 	fd->name = strdup(args);
-	core->dbg->plugin_data = idbg;
-	io->corebind.cmd(io->corebind.core, "dL windbg");
+	if (cur_dbg_plugin_is_windbg(core->dbg)) {
+		core->dbg->plugin_data = idbg;
+	}
 	return fd;
 }
 
 static int windbg_close(RzIODesc *fd) {
 	DbgEngContext *idbg = fd->data;
+	if (!idbg) {
+		return 0;
+	}
+	fd->data = NULL;
 	RzCore *core = fd->io->corebind.core;
 	if (idbg->server) {
 		ITHISCALL(dbgClient, EndSession, DEBUG_END_DISCONNECT);
 		ITHISCALL(dbgClient, DisconnectProcessServer, idbg->server);
 		idbg->server = 0ULL;
 	} else {
-		ITHISCALL(dbgClient, EndSession, DEBUG_END_PASSIVE);
+		ITHISCALL(dbgClient, EndSession, DEBUG_END_ACTIVE_DETACH);
+	}
+	if (cur_dbg_plugin_is_windbg(core->dbg)) {
+		core->dbg->plugin_data = NULL;
 	}
 	__free_context(idbg);
-	core->dbg->plugin_data = NULL;
-	return 1;
+	return 0;
 }
 
 static ut64 windbg_lseek(RzIO *io, RzIODesc *fd, ut64 offset, int whence) {
