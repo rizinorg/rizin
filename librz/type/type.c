@@ -1073,7 +1073,7 @@ static bool type_decl_as_pretty_string(const RzTypeDB *typedb, const RzType *typ
 		is_anon = !strncmp(type->identifier.name, "anonymous ", 10);
 		*self_ref = false;
 		ht_pp_find(used_types, type->identifier.name, self_ref);
-		*self_ref = *self_ref && strncmp(type->identifier.name, "anonymous ", 10); // no self_ref for anon types
+		*self_ref = *self_ref && !is_anon; // no self_ref for anon types
 		*self_ref_typename = *self_ref ? strdup(type->identifier.name) : NULL;
 
 		RzBaseType *btype = rz_type_db_get_base_type(typedb, type->identifier.name);
@@ -1114,7 +1114,7 @@ static bool type_decl_as_pretty_string(const RzTypeDB *typedb, const RzType *typ
 		break;
 	}
 	case RZ_TYPE_KIND_POINTER:
-		if (rz_type_is_callable_ptr_nested(type)) {
+		if (rz_type_is_callable_ptr_nested(type)) { // function pointers
 			char *typestr = rz_type_callable_ptr_as_string(typedb, type);
 			rz_strbuf_append(phbuf.typename, typestr);
 			free(typestr);
@@ -1127,7 +1127,7 @@ static bool type_decl_as_pretty_string(const RzTypeDB *typedb, const RzType *typ
 	case RZ_TYPE_KIND_ARRAY:
 		if (type->array.count) {
 			rz_strbuf_appendf(phbuf.arraybuf, "[%" PFMT64d "]", type->array.count);
-		} else {
+		} else { // variable length arrays
 			rz_strbuf_append(phbuf.arraybuf, "[]");
 		}
 		type_decl_as_pretty_string(typedb, type->array.type, used_types, phbuf, self_ref, self_ref_typename);
@@ -1154,7 +1154,7 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 	}
 	bool multiline = opts & RZ_TYPE_PRINT_MULTILINE;
 	bool anon_only = opts & RZ_TYPE_PRINT_UNFOLD_ANONYMOUS_ONLY;
-	if (indent_level == 0) {
+	if (indent_level == 0) { // for the root type, disregard anon_only
 		anon_only = false;
 	}
 	bool unfold_all = !anon_only && unfold_level;
@@ -1184,7 +1184,7 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 		rz_strbuf_free(array_buf);
 		return NULL;
 	}
-	if (self_ref) {
+	if (self_ref) { // in case of self referntial type
 		unfold_level = 0; // no unfold
 		unfold_anon = unfold_all = false;
 	} else if (self_ref_typename) {
@@ -1197,7 +1197,7 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 		btype = rz_type_db_get_base_type(typedb, type->identifier.name);
 	}
 	if ((type->kind == RZ_TYPE_KIND_POINTER && rz_type_is_callable_ptr_nested(type)) || type->kind == RZ_TYPE_KIND_CALLABLE) {
-		identifier = NULL; // no need to separately print identifier for funtion pointers or functions
+		identifier = NULL; // no need to separately print identifier for function pointers or functions
 	}
 	char *typename_str = rz_strbuf_drain(phbuf.typename);
 	char *pointer_str = rz_strbuf_drain(phbuf.pointerbuf);
@@ -1271,7 +1271,7 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 	}
 
 	if (strnlen(pointer_str, 1) != 0 || identifier || strnlen(array_str, 1) != 0) {
-		rz_strbuf_append(buf, " ");
+		rz_strbuf_append(buf, " "); // add space only if the type is pointer or an array or has an identifier
 	}
 	rz_strbuf_appendf(buf, "%s%s%s", pointer_str ? pointer_str : "", identifier ? identifier : "", array_str ? array_str : "");
 	rz_strbuf_append(buf, ";");
@@ -1303,7 +1303,11 @@ RZ_API RZ_OWN char *rz_type_as_pretty_string(const RzTypeDB *typedb, RZ_NONNULL 
 	if (unfold_level < 0) { // any negative number means maximum unfolding
 		unfold_level = INT32_MAX;
 	}
-	HtPP *used_types = ht_pp_new0();
+	HtPP *used_types = ht_pp_new0(); // use a hash table to keep track of unfolded types
+	if (!used_types) {
+		RZ_LOG_ERROR("Failed to create hashtable while pretty printing types")
+		return NULL;
+	}
 	char *pretty_type = type_as_pretty_string(typedb, type, identifier, used_types, opts, unfold_level, 0);
 	ht_pp_free(used_types);
 	return pretty_type;
