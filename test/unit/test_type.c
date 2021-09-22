@@ -515,11 +515,11 @@ static bool test_type_as_string(void) {
 static char *pretty_complex_const_pointer = "const char **const *const c[4];";
 static char *pretty_struct_array_ptr_func_ptr = "struct alb {  const char *b; int *const *a[][][][9]; wchar_t (*funk)(int a, const char *b); time_t t;  };";
 static char *pretty_struct_array_ptr_func_ptr_multiline = "struct alb {\n"
-						 "\tconst char *b;\n"
-						 "\tint *const *a[][][][9];\n"
-						 "\twchar_t (*funk)(int a, const char *b);\n"
-						 "\ttime_t t;\n"
-						 "} leet;";
+							  "\tconst char *b;\n"
+							  "\tint *const *a[][][][9];\n"
+							  "\twchar_t (*funk)(int a, const char *b);\n"
+							  "\ttime_t t;\n"
+							  "} leet;";
 static char *pretty_struct_in_struct = "struct joy {  int a; char c; struct alb ania; int j;  };";
 static char *pretty_struct_in_struct_multiline = "struct joy {\n"
 						 "\tint a;\n"
@@ -566,7 +566,7 @@ static char *pretty_union_of_struct_max_multiline = "union alpha {\n"
 						    "\t\t\tconst char *b;\n"
 						    "\t\t\tint *const *a[][][][9];\n"
 						    "\t\t\twchar_t (*funk)(int a, const char *b);\n"
-							"\t\t\ttime_t t;\n"
+						    "\t\t\ttime_t t;\n"
 						    "\t\t} ania;\n"
 						    "\t\tint j;\n"
 						    "\t} bla;\n"
