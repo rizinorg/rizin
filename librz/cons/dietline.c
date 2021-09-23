@@ -1792,6 +1792,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 								break;
 							}
 							rz_cons_readchar();
+							ch = rz_cons_readchar();
 						}
 #if __WINDOWS__
 						else {
