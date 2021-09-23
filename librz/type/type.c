@@ -1195,8 +1195,7 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 	if (type->kind == RZ_TYPE_KIND_IDENTIFIER) {
 		is_anon = !strncmp(type->identifier.name, "anonymous ", 10);
 		btype = rz_type_db_get_base_type(typedb, type->identifier.name);
-	}
-	if ((type->kind == RZ_TYPE_KIND_POINTER && rz_type_is_callable_ptr_nested(type)) || type->kind == RZ_TYPE_KIND_CALLABLE) {
+	} else if ((type->kind == RZ_TYPE_KIND_POINTER && rz_type_is_callable_ptr_nested(type)) || type->kind == RZ_TYPE_KIND_CALLABLE) {
 		identifier = NULL; // no need to separately print identifier for function pointers or functions
 	}
 	char *typename_str = rz_strbuf_drain(phbuf.typename);
