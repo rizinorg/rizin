@@ -273,7 +273,12 @@ RZ_IPI RzCmdStatus rz_quit_kill_save_handler(RzCore *core, int argc, const char 
 RZ_IPI RzCmdStatus rz_quit_kill_nosave_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_quit_nokill_nosave_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_quit_nokill_save_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI int rz_cmd_resize(void *data, const char *input);
+RZ_IPI RzCmdStatus rz_resize_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_resize_remove_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_resize_insert_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_rebase_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_remove_file_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_resize_human_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_seek_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_seek_padded_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_seek_base_handler(RzCore *core, int argc, const char **argv);
