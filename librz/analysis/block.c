@@ -516,20 +516,25 @@ RZ_API bool rz_analysis_block_recurse_depth_first(RzAnalysisBlock *block, RzAnal
 		} else if (cur_bb->fail != UT64_MAX && !ht_up_find_kv(visited, cur_bb->fail, NULL)) {
 			cur_bb = rz_analysis_get_block_at(analysis, cur_bb->fail);
 		} else {
-			RzAnalysisCaseOp *cop = NULL;
 			if (cur_bb->switch_op && !cur_ctx->switch_it) {
-				cur_ctx->switch_it = cur_bb->switch_op->cases->head;
-				cop = rz_list_first(cur_bb->switch_op->cases);
+				cur_ctx->switch_it = rz_list_head(cur_bb->switch_op->cases);
 			} else if (cur_ctx->switch_it) {
-				while ((cur_ctx->switch_it = rz_list_iter_get_next(cur_ctx->switch_it))) {
-					cop = rz_list_iter_get_data(cur_ctx->switch_it);
-					if (!ht_up_find_kv(visited, cop->jump, NULL)) {
+				cur_ctx->switch_it = rz_list_iter_get_next(cur_ctx->switch_it);
+			}
+			if (cur_ctx->switch_it) {
+				RzAnalysisCaseOp *cop = rz_list_iter_get_data(cur_ctx->switch_it);
+				while (ht_up_find_kv(visited, cop->jump, NULL)) {
+					cur_ctx->switch_it = rz_list_iter_get_next(cur_ctx->switch_it);
+					if (!cur_ctx->switch_it) {
+						cop = NULL;
 						break;
 					}
-					cop = NULL;
+					cop = rz_list_iter_get_data(cur_ctx->switch_it);
 				}
+				cur_bb = cop ? rz_analysis_get_block_at(analysis, cop->jump) : NULL;
+			} else {
+				cur_bb = NULL;
 			}
-			cur_bb = cop ? rz_analysis_get_block_at(analysis, cop->jump) : NULL;
 		}
 		if (cur_bb) {
 			RecurseDepthFirstCtx ctx = { cur_bb, NULL };
