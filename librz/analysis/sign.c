@@ -1736,20 +1736,14 @@ static void print_function_args_json(PJ *pj, char *arg_type) {
 static void list_types_json(RzSignItem *it, PJ *pj) {
 	pj_ka(pj, "types");
 
-	int i = 0;
 	char *element = NULL;
+	char *sep = NULL;
 	RzListIter *iter = NULL;
 
 	rz_list_foreach (it->types, iter, element) {
-		char *t = strdup(element);
-		char *sep = NULL;
-		if (i > 0 && (sep = strchr(t, '='))) {
-			*sep = '\0';
-			++sep;
-			print_function_args_json(pj, sep);
+		if ((sep = strchr(element, '='))) {
+			print_function_args_json(pj, sep + 1);
 		}
-		free(t);
-		i++;
 	}
 	pj_end(pj);
 }
