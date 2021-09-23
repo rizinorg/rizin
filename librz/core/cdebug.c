@@ -320,6 +320,9 @@ RZ_IPI bool rz_core_debug_reg_list(RzCore *core, int type, int size, PJ *pj, int
 			if (size != 0 && size != item->size) {
 				continue;
 			}
+			if (rz_reg_is_system_reg(item, core->analysis->cur->arch)) {
+				continue;
+			}
 		}
 		// Is this register being asked?
 		if (dbg->q_regs) {
