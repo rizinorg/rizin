@@ -409,3 +409,18 @@ RZ_API RzRegSet *rz_reg_regset_get(RzReg *r, int type) {
 	RzRegSet *rs = &r->regset[type];
 	return rs->arena ? rs : NULL;
 }
+
+RZ_API bool rz_reg_is_system_reg(const RzRegItem *reg, const char *arch) {
+	rz_return_val_if_fail(reg && arch, false);
+
+	if (!strcmp(arch, "arm")) {
+		char *sys_seq;
+		if ((sys_seq = strstr(reg->name, "_EL"))) {
+			if (IS_DIGIT(sys_seq[3]) && sys_seq[3] - '0' < 4) { // "_ELx", x from 0 to 3
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
