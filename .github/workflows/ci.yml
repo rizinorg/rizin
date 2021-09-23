@@ -575,6 +575,32 @@ jobs:
         name: rizin-android-${{ matrix.name }}
         path: /tmp/rizin-android-${{ matrix.name }}.tar.gz
 
+  build-cpp:
+    name: Include Rizin headers from C++ program
+    runs-on: ubuntu-latest
+    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'cpp') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
+    needs: [build-and-test]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: sudo apt-get --assume-yes install pax wget unzip python3-wheel python3-setuptools python3-pip
+    - name: Install meson and ninja
+      run: sudo pip3 install meson ninja PyYAML
+    - name: Compile & Install Rizin
+      run: |
+        export PATH=${HOME}/bin:${HOME}/Library/Python/3.8/bin:${HOME}/Library/Python/3.9/bin:${HOME}/.local/bin:${PATH}
+        meson --buildtype release --prefix=/usr build
+        ninja -C build && sudo ninja -C build install
+    - name: Compile C++ test
+      run: |
+        export PATH=${HOME}/bin:${HOME}/Library/Python/3.8/bin:${HOME}/Library/Python/3.9/bin:${HOME}/.local/bin:${PATH}
+        meson --prefix=/usr build-cpp-test ./test/unit/cpp
+        meson compile -C build-cpp-test
+    - name: Run C++ test
+      run: |
+        export PATH=${HOME}/bin:${HOME}/Library/Python/3.8/bin:${HOME}/Library/Python/3.9/bin:${HOME}/.local/bin:${PATH}
+        meson test -C build-cpp-test
+
 #  build-extras:
 #    name: Build rizin extras and rzpipe
 #    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'extras') || contains(github.ref, 'release-') || github.event_name == 'schedule'
@@ -729,6 +755,7 @@ jobs:
       build-debian,
       build-static,
       build-android,
+      build-cpp,
       test-osx-pkg,
       test-windows-clang_cl,
       build-rzpipe
