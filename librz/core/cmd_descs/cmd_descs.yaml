@@ -291,9 +291,8 @@ commands:
     summary: Alias for 'px' (print hexadecimal)
     type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: y
-    cname: cmd_yank
     summary: Yank/paste bytes from/to memory
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    subcommands: cmd_yank
   - name: z
     summary: Zignatures management
     subcommands: cmd_zign

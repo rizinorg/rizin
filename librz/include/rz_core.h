@@ -604,21 +604,22 @@ RZ_API void rz_core_fortune_list(RzCore *core);
 RZ_API void rz_core_fortune_print_random(RzCore *core);
 
 #define RZ_CORE_FOREIGN_ADDR -1
-RZ_API int rz_core_yank(RzCore *core, ut64 addr, int len);
-RZ_API int rz_core_yank_string(RzCore *core, ut64 addr, int maxlen);
-RZ_API bool rz_core_yank_hexpair(RzCore *core, const char *input);
-RZ_API int rz_core_yank_paste(RzCore *core, ut64 addr, int len);
-RZ_API int rz_core_yank_set(RzCore *core, ut64 addr, const ut8 *buf, ut32 len); // set yank buffer bytes
-RZ_API int rz_core_yank_set_str(RzCore *core, ut64 addr, const char *buf, ut32 len); // Null terminate the bytes
-RZ_API int rz_core_yank_to(RzCore *core, const char *arg);
-RZ_API bool rz_core_yank_dump(RzCore *core, ut64 pos, int format);
-RZ_API int rz_core_yank_hexdump(RzCore *core, ut64 pos);
-RZ_API int rz_core_yank_cat(RzCore *core, ut64 pos);
-RZ_API int rz_core_yank_cat_string(RzCore *core, ut64 pos);
-RZ_API int rz_core_yank_hud_file(RzCore *core, const char *input);
-RZ_API int rz_core_yank_hud_path(RzCore *core, const char *input, int dir);
-RZ_API bool rz_core_yank_file_ex(RzCore *core, const char *input);
-RZ_API int rz_core_yank_file_all(RzCore *core, const char *input);
+RZ_API RZ_OWN char *rz_core_yank_as_string(RzCore *core, ut64 pos);
+RZ_API bool rz_core_yank(RzCore *core, ut64 addr, ut64 len);
+RZ_API bool rz_core_yank_string(RzCore *core, ut64 addr, ut64 maxlen);
+RZ_API bool rz_core_yank_hexpair(RzCore *core, const char *str);
+RZ_API bool rz_core_yank_paste(RzCore *core, ut64 addr, ut64 len);
+RZ_API bool rz_core_yank_set(RzCore *core, ut64 addr, RZ_NONNULL const ut8 *buf, ut64 len);
+RZ_API bool rz_core_yank_set_str(RzCore *core, ut64 addr, RZ_NONNULL const char *str);
+RZ_API bool rz_core_yank_to(RzCore *core, ut64 len, ut64 addr);
+RZ_API bool rz_core_yank_dump(RzCore *core, ut64 pos, RzCmdStateOutput *state);
+RZ_API bool rz_core_yank_print_hexdump(RzCore *core, ut64 pos);
+RZ_API bool rz_core_yank_print(RzCore *core, ut64 pos);
+RZ_API bool rz_core_yank_print_string(RzCore *core, ut64 pos);
+RZ_API bool rz_core_yank_hud_file(RzCore *core, const char *input);
+RZ_API bool rz_core_yank_hud_path(RzCore *core, const char *input, int dir);
+RZ_API bool rz_core_yank_file(RzCore *core, ut64 len, ut64 addr, const char *filename);
+RZ_API bool rz_core_yank_file_all(RzCore *core, const char *filename);
 
 #define RZ_CORE_LOADLIBS_ENV    1
 #define RZ_CORE_LOADLIBS_HOME   2

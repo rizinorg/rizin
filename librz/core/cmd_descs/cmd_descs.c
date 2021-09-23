@@ -243,6 +243,16 @@ static const RzCmdDescArg write_from_io_args[3];
 static const RzCmdDescArg write_from_io_xchg_args[3];
 static const RzCmdDescArg write_from_file_args[4];
 static const RzCmdDescArg write_from_socket_args[3];
+static const RzCmdDescArg yank_args[2];
+static const RzCmdDescArg yank_file_args[3];
+static const RzCmdDescArg yank_whole_file_args[2];
+static const RzCmdDescArg yank_print_args[2];
+static const RzCmdDescArg yank_string_print_args[2];
+static const RzCmdDescArg yank_to_args[3];
+static const RzCmdDescArg yank_hexpairs_args[2];
+static const RzCmdDescArg yank_hex_print_args[2];
+static const RzCmdDescArg yank_paste_args[2];
+static const RzCmdDescArg yank_string_args[2];
 static const RzCmdDescArg zign_best_args[2];
 static const RzCmdDescArg zign_best_name_args[3];
 static const RzCmdDescArg zign_delete_args[2];
@@ -5185,8 +5195,169 @@ static const RzCmdDescHelp cmd_hexdump_help = {
 	.summary = "Alias for 'px' (print hexadecimal)",
 };
 
-static const RzCmdDescHelp cmd_yank_help = {
+static const RzCmdDescHelp y_help = {
 	.summary = "Yank/paste bytes from/to memory",
+};
+static const RzCmdDescArg yank_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp yank_help = {
+	.summary = "Yank bytes / Show yank contents",
+	.args = yank_args,
+};
+
+static const RzCmdDescArg yank_editor_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp yank_editor_help = {
+	.summary = "Open cfg.editor to edit the clipboard",
+	.args = yank_editor_args,
+};
+
+static const RzCmdDescArg yank_file_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "file",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp yank_file_help = {
+	.summary = "Yank [len] bytes from file",
+	.args = yank_file_args,
+};
+
+static const RzCmdDescArg yank_whole_file_args[] = {
+	{
+		.name = "file",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp yank_whole_file_help = {
+	.summary = "Yank whole file into clipboard",
+	.args = yank_whole_file_args,
+};
+
+static const RzCmdDescArg yank_print_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp yank_print_help = {
+	.summary = "Print contents of clipboards as raw data",
+	.args = yank_print_args,
+};
+
+static const RzCmdDescArg yank_string_print_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp yank_string_print_help = {
+	.summary = "Print contents of clipboards as string",
+	.args = yank_string_print_args,
+};
+
+static const RzCmdDescArg yank_to_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "offset",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp yank_to_help = {
+	.summary = "Copy [len] bytes from current seek to [offset]",
+	.args = yank_to_args,
+};
+
+static const RzCmdDescArg yank_hexpairs_args[] = {
+	{
+		.name = "string",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp yank_hexpairs_help = {
+	.summary = "Yank from hexpairs string",
+	.args = yank_hexpairs_args,
+};
+
+static const RzCmdDescArg yank_hex_print_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp yank_hex_print_help = {
+	.summary = "Print contents of clipboard in hexadecimal",
+	.args = yank_hex_print_args,
+};
+
+static const RzCmdDescArg yank_paste_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp yank_paste_help = {
+	.summary = "Paste [len] bytes from yank clipboard",
+	.args = yank_paste_args,
+};
+
+static const RzCmdDescArg yank_string_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp yank_string_help = {
+	.summary = "Copy NULL-terminated string into clipboard",
+	.args = yank_string_args,
 };
 
 static const RzCmdDescHelp z_help = {
@@ -6943,8 +7114,37 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_hexdump_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "x", rz_cmd_hexdump, &cmd_hexdump_help);
 	rz_warn_if_fail(cmd_hexdump_cd);
 
-	RzCmdDesc *cmd_yank_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "y", rz_cmd_yank, &cmd_yank_help);
-	rz_warn_if_fail(cmd_yank_cd);
+	RzCmdDesc *y_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "y", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_yank_handler, &yank_help, &y_help);
+	rz_warn_if_fail(y_cd);
+	RzCmdDesc *yank_editor_cd = rz_cmd_desc_argv_new(core->rcmd, y_cd, "ye", rz_yank_editor_handler, &yank_editor_help);
+	rz_warn_if_fail(yank_editor_cd);
+
+	RzCmdDesc *yank_file_cd = rz_cmd_desc_argv_new(core->rcmd, y_cd, "yf", rz_yank_file_handler, &yank_file_help);
+	rz_warn_if_fail(yank_file_cd);
+
+	RzCmdDesc *yank_whole_file_cd = rz_cmd_desc_argv_new(core->rcmd, y_cd, "yfa", rz_yank_whole_file_handler, &yank_whole_file_help);
+	rz_warn_if_fail(yank_whole_file_cd);
+
+	RzCmdDesc *yank_print_cd = rz_cmd_desc_argv_new(core->rcmd, y_cd, "yp", rz_yank_print_handler, &yank_print_help);
+	rz_warn_if_fail(yank_print_cd);
+
+	RzCmdDesc *yank_string_print_cd = rz_cmd_desc_argv_new(core->rcmd, y_cd, "ys", rz_yank_string_print_handler, &yank_string_print_help);
+	rz_warn_if_fail(yank_string_print_cd);
+
+	RzCmdDesc *yank_to_cd = rz_cmd_desc_argv_new(core->rcmd, y_cd, "yt", rz_yank_to_handler, &yank_to_help);
+	rz_warn_if_fail(yank_to_cd);
+
+	RzCmdDesc *yank_hexpairs_cd = rz_cmd_desc_argv_new(core->rcmd, y_cd, "ywx", rz_yank_hexpairs_handler, &yank_hexpairs_help);
+	rz_warn_if_fail(yank_hexpairs_cd);
+
+	RzCmdDesc *yank_hex_print_cd = rz_cmd_desc_argv_new(core->rcmd, y_cd, "yx", rz_yank_hex_print_handler, &yank_hex_print_help);
+	rz_warn_if_fail(yank_hex_print_cd);
+
+	RzCmdDesc *yank_paste_cd = rz_cmd_desc_argv_new(core->rcmd, y_cd, "yy", rz_yank_paste_handler, &yank_paste_help);
+	rz_warn_if_fail(yank_paste_cd);
+
+	RzCmdDesc *yank_string_cd = rz_cmd_desc_argv_new(core->rcmd, y_cd, "yz", rz_yank_string_handler, &yank_string_help);
+	rz_warn_if_fail(yank_string_cd);
 
 	RzCmdDesc *z_cd = rz_cmd_desc_group_modes_new(core->rcmd, root_cd, "z", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_SDB, rz_zign_show_handler, &zign_show_help, &z_help);
 	rz_warn_if_fail(z_cd);
