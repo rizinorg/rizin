@@ -1296,10 +1296,16 @@ RZ_IPI int rz_cmd_zign(void *data, const char *input) {
 
 	switch (*input) {
 	case '\0':
+		rz_sign_list(core->analysis, RZ_OUTPUT_MODE_STANDARD);
+		break;
 	case '*': // "z*"
+		rz_sign_list(core->analysis, RZ_OUTPUT_MODE_RIZIN);
+		break;
 	case 'q': // "zq"
+		rz_sign_list(core->analysis, RZ_OUTPUT_MODE_QUIET);
+		break;
 	case 'j': // "zj"
-		rz_sign_list(core->analysis, *input);
+		rz_sign_list(core->analysis, RZ_OUTPUT_MODE_JSON);
 		break;
 	case 'k': // "zk"
 		rz_core_kuery_print(core, "analysis/zigns/*");
@@ -1342,16 +1348,10 @@ RZ_IPI RzCmdStatus rz_zign_show_handler(RzCore *core, int argc, const char **arg
 	char *out;
 	switch (mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
-		rz_sign_list(core->analysis, '\0');
-		return RZ_CMD_STATUS_OK;
 	case RZ_OUTPUT_MODE_QUIET:
-		rz_sign_list(core->analysis, 'q');
-		return RZ_CMD_STATUS_OK;
 	case RZ_OUTPUT_MODE_JSON:
-		rz_sign_list(core->analysis, 'j');
-		return RZ_CMD_STATUS_OK;
 	case RZ_OUTPUT_MODE_RIZIN:
-		rz_sign_list(core->analysis, '*');
+		rz_sign_list(core->analysis, mode);
 		return RZ_CMD_STATUS_OK;
 	case RZ_OUTPUT_MODE_SDB:
 		out = sdb_querys(core->sdb, NULL, 0, "analysis/zigns/*");

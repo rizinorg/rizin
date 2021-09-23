@@ -1566,7 +1566,7 @@ RZ_API bool rz_sign_diff_by_name(RzAnalysis *a, RzSignOptions *options, const ch
 struct ctxListCB {
 	RzAnalysis *analysis;
 	int idx;
-	int format;
+	RzOutputMode mode;
 	PJ *pj;
 };
 
@@ -1575,7 +1575,7 @@ struct ctxGetListCB {
 	RzList *list;
 };
 
-static void listBytes(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
+static void listBytes(RzAnalysis *a, RzSignItem *it, PJ *pj, RzOutputMode mode) {
 	RzSignBytes *bytes = it->bytes;
 
 	if (!bytes->bytes) {
@@ -1597,15 +1597,15 @@ static void listBytes(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
 		return;
 	}
 
-	if (format == '*') {
+	if (mode == RZ_OUTPUT_MODE_RIZIN) {
 		if (masked == bytes->size) {
 			a->cb_printf("za %s b %s\n", it->name, strbytes);
 		} else {
 			a->cb_printf("za %s b %s:%s\n", it->name, strbytes, strmask);
 		}
-	} else if (format == 'q') {
+	} else if (mode == RZ_OUTPUT_MODE_QUIET) {
 		a->cb_printf(" b(%d/%d)", masked, bytes->size);
-	} else if (format == 'j') {
+	} else if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_ks(pj, "bytes", strbytes);
 		pj_ks(pj, "mask", strmask);
 	} else {
@@ -1617,16 +1617,16 @@ static void listBytes(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
 	free(strmask);
 }
 
-static void listGraph(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
+static void listGraph(RzAnalysis *a, RzSignItem *it, PJ *pj, RzOutputMode mode) {
 	RzSignGraph *graph = it->graph;
 
-	if (format == 'q') {
+	if (mode == RZ_OUTPUT_MODE_QUIET) {
 		a->cb_printf(" g(cc=%d,nb=%d,e=%d,eb=%d,h=%d)",
 			graph->cc, graph->nbbs, graph->edges, graph->ebbs, graph->bbsum);
-	} else if (format == '*') {
+	} else if (mode == RZ_OUTPUT_MODE_RIZIN) {
 		a->cb_printf("za %s g cc=%d nbbs=%d edges=%d ebbs=%d bbsum=%d\n",
 			it->name, graph->cc, graph->nbbs, graph->edges, graph->ebbs, graph->bbsum);
-	} else if (format == 'j') {
+	} else if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_ko(pj, "graph");
 		pj_kN(pj, "cc", graph->cc);
 		pj_kN(pj, "nbbs", graph->nbbs);
@@ -1640,14 +1640,14 @@ static void listGraph(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
 	}
 }
 
-static void listComment(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
+static void listComment(RzAnalysis *a, RzSignItem *it, PJ *pj, RzOutputMode mode) {
 	if (it->comment) {
-		if (format == 'q') {
+		if (mode == RZ_OUTPUT_MODE_QUIET) {
 			//	a->cb_printf (" addr(0x%08"PFMT64x")", it->addr);
 			a->cb_printf("\n ; %s\n", it->comment);
-		} else if (format == '*') {
+		} else if (mode == RZ_OUTPUT_MODE_RIZIN) {
 			a->cb_printf("%s\n", it->comment); // comment injection via CCu..
-		} else if (format == 'j') {
+		} else if (mode == RZ_OUTPUT_MODE_JSON) {
 			pj_ks(pj, "comments", it->comment);
 		} else {
 			a->cb_printf("  comment: 0x%08" PFMT64x "\n", it->addr);
@@ -1655,14 +1655,14 @@ static void listComment(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
 	}
 }
 
-static void listRealname(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
+static void listRealname(RzAnalysis *a, RzSignItem *it, PJ *pj, RzOutputMode mode) {
 	if (it->realname) {
-		if (format == 'q') {
+		if (mode == RZ_OUTPUT_MODE_QUIET) {
 			//	a->cb_printf (" addr(0x%08"PFMT64x")", it->addr);
-		} else if (format == '*') {
+		} else if (mode == RZ_OUTPUT_MODE_RIZIN) {
 			a->cb_printf("za %s n %s\n", it->name, it->realname);
 			a->cb_printf("afn %s @ 0x%08" PFMT64x "\n", it->realname, it->addr);
-		} else if (format == 'j') {
+		} else if (mode == RZ_OUTPUT_MODE_JSON) {
 			pj_ks(pj, "realname", it->realname);
 		} else {
 			a->cb_printf("  realname: %s\n", it->realname);
@@ -1670,12 +1670,12 @@ static void listRealname(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
 	}
 }
 
-static void listOffset(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
-	if (format == 'q') {
+static void listOffset(RzAnalysis *a, RzSignItem *it, PJ *pj, RzOutputMode mode) {
+	if (mode == RZ_OUTPUT_MODE_QUIET) {
 		//	a->cb_printf (" addr(0x%08"PFMT64x")", it->addr);
-	} else if (format == '*') {
+	} else if (mode == RZ_OUTPUT_MODE_RIZIN) {
 		a->cb_printf("za %s o 0x%08" PFMT64x "\n", it->name, it->addr);
-	} else if (format == 'j') {
+	} else if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_kN(pj, "addr", it->addr);
 	} else {
 		a->cb_printf("  addr: 0x%08" PFMT64x "\n", it->addr);
@@ -1748,16 +1748,16 @@ static void list_types_json(RzSignItem *it, PJ *pj) {
 	pj_end(pj);
 }
 
-static void list_sign_list(RzAnalysis *a, RzList *l, PJ *pj, int fmt, int type, const char *name) {
+static void list_sign_list(RzAnalysis *a, RzList *l, PJ *pj, RzOutputMode mode, int type, const char *name) {
 	const char *tname = sign_type_to_name(type);
-	switch (fmt) {
-	case '*':
+	switch (mode) {
+	case RZ_OUTPUT_MODE_RIZIN:
 		a->cb_printf("za %s %c ", name, type);
 		break;
-	case 'q':
+	case RZ_OUTPUT_MODE_QUIET:
 		a->cb_printf(" %s(%d)", tname, rz_list_length(l));
 		return;
-	case 'j':
+	case RZ_OUTPUT_MODE_JSON:
 		pj_ka(pj, tname);
 		break;
 	default:
@@ -1771,13 +1771,13 @@ static void list_sign_list(RzAnalysis *a, RzList *l, PJ *pj, int fmt, int type, 
 	RzListIter *iter = NULL;
 	rz_list_foreach (l, iter, ref) {
 		if (i > 0) {
-			if (fmt == '*') {
+			if (mode == RZ_OUTPUT_MODE_RIZIN) {
 				a->cb_printf(" ");
-			} else if (fmt != 'j') {
+			} else if (mode != RZ_OUTPUT_MODE_JSON) {
 				a->cb_printf(", ");
 			}
 		}
-		if (fmt == 'j') {
+		if (mode == RZ_OUTPUT_MODE_JSON) {
 			pj_s(pj, ref);
 		} else {
 			a->cb_printf("%s", ref);
@@ -1785,29 +1785,29 @@ static void list_sign_list(RzAnalysis *a, RzList *l, PJ *pj, int fmt, int type, 
 		i++;
 	}
 
-	if (fmt == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
 	} else {
 		a->cb_printf("\n");
 	}
 }
 
-static void listHash(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
+static void listHash(RzAnalysis *a, RzSignItem *it, PJ *pj, RzOutputMode mode) {
 	if (!it->hash) {
 		return;
 	}
-	switch (format) {
-	case 'q':
+	switch (mode) {
+	case RZ_OUTPUT_MODE_QUIET:
 		if (it->hash->bbhash) {
 			a->cb_printf(" h(%08x)", rz_str_hash(it->hash->bbhash));
 		}
 		break;
-	case '*':
+	case RZ_OUTPUT_MODE_RIZIN:
 		if (it->hash->bbhash) {
 			a->cb_printf("za %s h %s\n", it->name, it->hash->bbhash);
 		}
 		break;
-	case 'j':
+	case RZ_OUTPUT_MODE_JSON:
 		pj_ko(pj, "hash");
 		if (it->hash->bbhash) {
 			pj_ks(pj, "bbhash", it->hash->bbhash);
@@ -1827,22 +1827,22 @@ static int listCB(RzSignItem *it, void *user) {
 	RzAnalysis *a = ctx->analysis;
 
 	// Start item
-	if (ctx->format == 'j') {
+	if (ctx->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_o(ctx->pj);
 	}
 
 	// Zignspace and name (except for rizin format)
-	if (ctx->format == '*') {
+	if (ctx->mode == RZ_OUTPUT_MODE_RIZIN) {
 		if (it->space) {
 			a->cb_printf("zs %s\n", it->space->name);
 		} else {
 			a->cb_printf("zs *\n");
 		}
-	} else if (ctx->format == 'q') {
+	} else if (ctx->mode == RZ_OUTPUT_MODE_QUIET) {
 		a->cb_printf("0x%08" PFMT64x " ", it->addr);
 		const char *pad = rz_str_pad(' ', 30 - strlen(it->name));
 		a->cb_printf("%s:%s", it->name, pad);
-	} else if (ctx->format == 'j') {
+	} else if (ctx->mode == RZ_OUTPUT_MODE_JSON) {
 		if (it->space) {
 			pj_ks(ctx->pj, "zignspace", it->space->name);
 		}
@@ -1856,78 +1856,77 @@ static int listCB(RzSignItem *it, void *user) {
 
 	// Bytes pattern
 	if (it->bytes) {
-		listBytes(a, it, ctx->pj, ctx->format);
-	} else if (ctx->format == 'j') {
+		listBytes(a, it, ctx->pj, ctx->mode);
+	} else if (ctx->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_ks(ctx->pj, "bytes", "");
 	}
 
 	// Graph metrics
 	if (it->graph) {
-		listGraph(a, it, ctx->pj, ctx->format);
-	} else if (ctx->format == 'j') {
+		listGraph(a, it, ctx->pj, ctx->mode);
+	} else if (ctx->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_ko(ctx->pj, "graph");
 		pj_end(ctx->pj);
 	}
 
 	// Offset
 	if (it->addr != UT64_MAX) {
-		listOffset(a, it, ctx->pj, ctx->format);
-	} else if (ctx->format == 'j') {
+		listOffset(a, it, ctx->pj, ctx->mode);
+	} else if (ctx->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_kN(ctx->pj, "addr", -1);
 	}
 	// Name
 	if (it->realname) {
-		listRealname(a, it, ctx->pj, ctx->format);
+		listRealname(a, it, ctx->pj, ctx->mode);
 	}
 	// Comments
 	if (it->comment) {
-		listComment(a, it, ctx->pj, ctx->format);
+		listComment(a, it, ctx->pj, ctx->mode);
 	}
 	// XReferences From
 	if (it->xrefs_from) {
-		list_sign_list(a, it->xrefs_from, ctx->pj, ctx->format, RZ_SIGN_XREFS_FROM, it->name);
-	} else if (ctx->format == 'j') {
+		list_sign_list(a, it->xrefs_from, ctx->pj, ctx->mode, RZ_SIGN_XREFS_FROM, it->name);
+	} else if (ctx->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_ka(ctx->pj, "xrefs_from");
 		pj_end(ctx->pj);
 	}
 	// XReferences To
 	if (it->xrefs_to) {
-		list_sign_list(a, it->xrefs_to, ctx->pj, ctx->format, RZ_SIGN_XREFS_TO, it->name);
-	} else if (ctx->format == 'j') {
+		list_sign_list(a, it->xrefs_to, ctx->pj, ctx->mode, RZ_SIGN_XREFS_TO, it->name);
+	} else if (ctx->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_ka(ctx->pj, "xrefs_to");
 		pj_end(ctx->pj);
 	}
 	// Vars
 	if (it->vars) {
-		list_sign_list(a, it->vars, ctx->pj, ctx->format, RZ_SIGN_VARS, it->name);
-	} else if (ctx->format == 'j') {
+		list_sign_list(a, it->vars, ctx->pj, ctx->mode, RZ_SIGN_VARS, it->name);
+	} else if (ctx->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_ka(ctx->pj, "vars");
 		pj_end(ctx->pj);
 	}
 	// Types
 	if (it->types) {
-		if (ctx->format == 'j') {
+		if (ctx->mode == RZ_OUTPUT_MODE_JSON) {
 			list_types_json(it, ctx->pj);
 		} else {
-			list_sign_list(a, it->types, ctx->pj, ctx->format, RZ_SIGN_TYPES, it->name);
+			list_sign_list(a, it->types, ctx->pj, ctx->mode, RZ_SIGN_TYPES, it->name);
 		}
-	} else if (ctx->format == 'j') {
+	} else if (ctx->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_ka(ctx->pj, "types");
 		pj_end(ctx->pj);
 	}
 	// Hash
 	if (it->hash) {
-		listHash(a, it, ctx->pj, ctx->format);
-	} else if (ctx->format == 'j') {
+		listHash(a, it, ctx->pj, ctx->mode);
+	} else if (ctx->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_ko(ctx->pj, "hash");
 		pj_end(ctx->pj);
 	}
 
 	// End item
-	if (ctx->format == 'j') {
+	if (ctx->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(ctx->pj);
-	}
-	if (ctx->format == 'q') {
+	} else if (ctx->mode == RZ_OUTPUT_MODE_QUIET) {
 		a->cb_printf("\n");
 	}
 
@@ -1935,19 +1934,19 @@ static int listCB(RzSignItem *it, void *user) {
 	return true;
 }
 
-RZ_API void rz_sign_list(RzAnalysis *a, int format) {
+RZ_API void rz_sign_list(RzAnalysis *a, RzOutputMode mode) {
 	rz_return_if_fail(a);
 	PJ *pj = NULL;
 
-	if (format == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj = pj_new();
 		pj_a(pj);
 	}
 
-	struct ctxListCB ctx = { a, 0, format, pj };
+	struct ctxListCB ctx = { a, 0, mode, pj };
 	rz_sign_foreach(a, listCB, &ctx);
 
-	if (format == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
 		a->cb_printf("%s\n", pj_string(pj));
 		pj_free(pj);

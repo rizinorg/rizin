@@ -32,7 +32,7 @@ typedef enum {
 	RZ_SIGN_VARS = 'v', // variables
 	RZ_SIGN_TYPES = 't', // types
 	RZ_SIGN_BBHASH = 'h', // basic block hash
-	RZ_SIGN_END = '\x00', // used for sentenal value
+	RZ_SIGN_END = '\x00', // used for sentinel value
 } RzSignType;
 
 typedef struct rz_sign_graph_t {
@@ -117,7 +117,7 @@ RZ_API bool rz_sign_add_xrefs(RzAnalysis *a, const char *name, RzList *xrefs);
 RZ_API bool rz_sign_add_vars(RzAnalysis *a, const char *name, RzList *vars);
 RZ_API bool rz_sign_add_types(RzAnalysis *a, const char *name, RzList *vars);
 RZ_API bool rz_sign_delete(RzAnalysis *a, const char *name);
-RZ_API void rz_sign_list(RzAnalysis *a, int format);
+RZ_API void rz_sign_list(RzAnalysis *a, RzOutputMode mode);
 RZ_API RzList *rz_sign_get_list(RzAnalysis *a);
 RZ_API bool rz_sign_add_hash(RzAnalysis *a, const char *name, int type, const char *val, int len);
 RZ_API bool rz_sign_add_bb_hash(RzAnalysis *a, RzAnalysisFunction *fcn, const char *name);
