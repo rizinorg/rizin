@@ -27,8 +27,8 @@ typedef enum {
 	RZ_SIGN_GRAPH = 'g', // graph metrics
 	RZ_SIGN_OFFSET = 'o', // addr
 	RZ_SIGN_NAME = 'n', // real name
-	RZ_SIGN_REFS = 'r', // xrefs from
-	RZ_SIGN_XREFS = 'x', // xrefs to
+	RZ_SIGN_XREFS_FROM = 'r', // xrefs from
+	RZ_SIGN_XREFS_TO = 'x', // xrefs to
 	RZ_SIGN_VARS = 'v', // variables
 	RZ_SIGN_TYPES = 't', // types
 	RZ_SIGN_BBHASH = 'h', // basic block hash

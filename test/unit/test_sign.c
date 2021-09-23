@@ -133,8 +133,8 @@ static bool test_analysis_sign_za_ppc(void) {
 	it->name = zigname;
 	rz_sign_addto_item(core->analysis, it, fcn, RZ_SIGN_GRAPH);
 	rz_sign_addto_item(core->analysis, it, fcn, RZ_SIGN_BYTES);
-	rz_sign_addto_item(core->analysis, it, fcn, RZ_SIGN_XREFS);
-	rz_sign_addto_item(core->analysis, it, fcn, RZ_SIGN_REFS);
+	rz_sign_addto_item(core->analysis, it, fcn, RZ_SIGN_XREFS_TO);
+	rz_sign_addto_item(core->analysis, it, fcn, RZ_SIGN_XREFS_FROM);
 	rz_sign_addto_item(core->analysis, it, fcn, RZ_SIGN_VARS);
 	rz_sign_addto_item(core->analysis, it, fcn, RZ_SIGN_TYPES);
 	rz_sign_addto_item(core->analysis, it, fcn, RZ_SIGN_BBHASH);
@@ -208,8 +208,8 @@ static bool test_analysis_sign_za_mips(void) {
 	it->name = zigname;
 	rz_sign_addto_item(core->analysis, it, fcn, RZ_SIGN_GRAPH);
 	rz_sign_addto_item(core->analysis, it, fcn, RZ_SIGN_BYTES);
-	rz_sign_addto_item(core->analysis, it, fcn, RZ_SIGN_XREFS);
-	rz_sign_addto_item(core->analysis, it, fcn, RZ_SIGN_REFS);
+	rz_sign_addto_item(core->analysis, it, fcn, RZ_SIGN_XREFS_TO);
+	rz_sign_addto_item(core->analysis, it, fcn, RZ_SIGN_XREFS_FROM);
 	rz_sign_addto_item(core->analysis, it, fcn, RZ_SIGN_VARS);
 	rz_sign_addto_item(core->analysis, it, fcn, RZ_SIGN_TYPES);
 	rz_sign_addto_item(core->analysis, it, fcn, RZ_SIGN_BBHASH);

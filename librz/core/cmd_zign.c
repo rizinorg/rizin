@@ -129,8 +129,8 @@ static void addFcnZign(RzCore *core, RzAnalysisFunction *fcn, const char *name) 
 	it->space = rz_spaces_current(&core->analysis->zign_spaces);
 	rz_sign_addto_item(core->analysis, it, fcn, RZ_SIGN_GRAPH);
 	rz_sign_addto_item(core->analysis, it, fcn, RZ_SIGN_BYTES);
-	rz_sign_addto_item(core->analysis, it, fcn, RZ_SIGN_XREFS);
-	rz_sign_addto_item(core->analysis, it, fcn, RZ_SIGN_REFS);
+	rz_sign_addto_item(core->analysis, it, fcn, RZ_SIGN_XREFS_TO);
+	rz_sign_addto_item(core->analysis, it, fcn, RZ_SIGN_XREFS_FROM);
 	rz_sign_addto_item(core->analysis, it, fcn, RZ_SIGN_VARS);
 	rz_sign_addto_item(core->analysis, it, fcn, RZ_SIGN_TYPES);
 	rz_sign_addto_item(core->analysis, it, fcn, RZ_SIGN_BBHASH);
@@ -294,9 +294,9 @@ static bool addZign(RzCore *core, const char *name, int type, RzList *args) {
 		return addNameZign(core, name, args);
 	case RZ_SIGN_OFFSET:
 		return addOffsetZign(core, name, args);
-	case RZ_SIGN_REFS:
+	case RZ_SIGN_XREFS_FROM:
 		return rz_sign_add_refs(core->analysis, name, args);
-	case RZ_SIGN_XREFS:
+	case RZ_SIGN_XREFS_TO:
 		return rz_sign_add_xrefs(core->analysis, name, args);
 	case RZ_SIGN_VARS:
 		return rz_sign_add_vars(core->analysis, name, args);
@@ -689,7 +689,7 @@ static int fcnMatchCB(RzSignItem *it, RzAnalysisFunction *fcn, RzSignType *types
 			prefix = "offset";
 			ctx->offset_count++;
 			break;
-		case RZ_SIGN_REFS:
+		case RZ_SIGN_XREFS_FROM:
 			prefix = "refs";
 			ctx->refs_count++;
 			break;
@@ -804,7 +804,7 @@ static bool fill_search_metrics(RzSignSearchMetrics *sm, RzCore *c, void *user) 
 	unsigned int i = 0;
 	search_add_to_types(c, sm, RZ_SIGN_GRAPH, "zign.match.graph", &i);
 	search_add_to_types(c, sm, RZ_SIGN_OFFSET, "zign.match.offset", &i);
-	search_add_to_types(c, sm, RZ_SIGN_REFS, "zign.match.refs", &i);
+	search_add_to_types(c, sm, RZ_SIGN_XREFS_FROM, "zign.match.refs", &i);
 	search_add_to_types(c, sm, RZ_SIGN_BBHASH, "zign.match.hash", &i);
 	search_add_to_types(c, sm, RZ_SIGN_TYPES, "zign.match.types", &i);
 #if 0

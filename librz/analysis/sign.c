@@ -298,15 +298,15 @@ RZ_API bool rz_sign_deserialize(RzAnalysis *a, RzSignItem *it, const char *k, co
 			DBL_VAL_FAIL((it->addr != UT64_MAX), RZ_SIGN_OFFSET);
 			it->addr = atoll(token);
 			break;
-		case RZ_SIGN_REFS:
-			DBL_VAL_FAIL(it->xrefs_from, RZ_SIGN_REFS);
+		case RZ_SIGN_XREFS_FROM:
+			DBL_VAL_FAIL(it->xrefs_from, RZ_SIGN_XREFS_FROM);
 			if (!(it->xrefs_from = do_reflike_sig(token))) {
 				success = false;
 				goto out;
 			}
 			break;
-		case RZ_SIGN_XREFS:
-			DBL_VAL_FAIL(it->xrefs_to, RZ_SIGN_XREFS);
+		case RZ_SIGN_XREFS_TO:
+			DBL_VAL_FAIL(it->xrefs_to, RZ_SIGN_XREFS_TO);
 			if (!(it->xrefs_to = do_reflike_sig(token))) {
 				success = false;
 				goto out;
@@ -480,10 +480,10 @@ static void serialize(RzAnalysis *a, RzSignItem *it, char *k, char *v) {
 			it->graph->ebbs, it->graph->bbsum);
 	}
 	if (refs) {
-		rz_strbuf_appendf(sb, "|%c:%s", RZ_SIGN_REFS, refs);
+		rz_strbuf_appendf(sb, "|%c:%s", RZ_SIGN_XREFS_FROM, refs);
 	}
 	if (xrefs) {
-		rz_strbuf_appendf(sb, "|%c:%s", RZ_SIGN_XREFS, xrefs);
+		rz_strbuf_appendf(sb, "|%c:%s", RZ_SIGN_XREFS_TO, xrefs);
 	}
 	if (vars) {
 		rz_strbuf_appendf(sb, "|%c:%s", RZ_SIGN_VARS, vars);
@@ -926,9 +926,9 @@ RZ_API bool rz_sign_addto_item(RzAnalysis *a, RzSignItem *it, RzAnalysisFunction
 		return !it->graph && (it->graph = rz_sign_fcn_graph(fcn));
 	case RZ_SIGN_BYTES:
 		return !it->bytes && (it->bytes = rz_sign_fcn_bytes(a, fcn));
-	case RZ_SIGN_XREFS:
+	case RZ_SIGN_XREFS_TO:
 		return !it->xrefs_to && (it->xrefs_to = rz_sign_fcn_xrefs_to(a, fcn));
-	case RZ_SIGN_REFS:
+	case RZ_SIGN_XREFS_FROM:
 		return !it->xrefs_from && (it->xrefs_from = rz_sign_fcn_xrefs_from(a, fcn));
 	case RZ_SIGN_VARS:
 		return !it->vars && (it->vars = rz_sign_fcn_vars(a, fcn));
@@ -1698,9 +1698,9 @@ static inline const char *sign_type_to_name(int type) {
 		return "addr";
 	case RZ_SIGN_NAME:
 		return "name";
-	case RZ_SIGN_REFS:
+	case RZ_SIGN_XREFS_FROM:
 		return "xrefs_from";
-	case RZ_SIGN_XREFS:
+	case RZ_SIGN_XREFS_TO:
 		return "xrefs_to";
 	case RZ_SIGN_VARS:
 		return "vars";
@@ -1885,14 +1885,14 @@ static int listCB(RzSignItem *it, void *user) {
 	}
 	// XReferences From
 	if (it->xrefs_from) {
-		list_sign_list(a, it->xrefs_from, ctx->pj, ctx->format, RZ_SIGN_REFS, it->name);
+		list_sign_list(a, it->xrefs_from, ctx->pj, ctx->format, RZ_SIGN_XREFS_FROM, it->name);
 	} else if (ctx->format == 'j') {
 		pj_ka(ctx->pj, "xrefs_from");
 		pj_end(ctx->pj);
 	}
 	// XReferences To
 	if (it->xrefs_to) {
-		list_sign_list(a, it->xrefs_to, ctx->pj, ctx->format, RZ_SIGN_XREFS, it->name);
+		list_sign_list(a, it->xrefs_to, ctx->pj, ctx->format, RZ_SIGN_XREFS_TO, it->name);
 	} else if (ctx->format == 'j') {
 		pj_ka(ctx->pj, "xrefs_to");
 		pj_end(ctx->pj);
@@ -2309,7 +2309,7 @@ static int match_metrics(RzSignItem *it, void *user) {
 		types[count++] = RZ_SIGN_BBHASH;
 	}
 	if (fit->xrefs_from && !str_list_cmp(it->xrefs_from, fit->xrefs_from)) {
-		types[count++] = RZ_SIGN_REFS;
+		types[count++] = RZ_SIGN_XREFS_FROM;
 	}
 	if (fit->vars && !str_list_cmp(it->vars, fit->vars)) {
 		types[count++] = RZ_SIGN_VARS;
