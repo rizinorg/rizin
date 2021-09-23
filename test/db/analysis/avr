@@ -468,7 +468,7 @@ FILE=bins/firmware/arduino_avr.bin
 CMDS=<<EOF
 e asm.arch=avr
 aaa
-axt 0x28a
+axt @ 0x28a
 EOF
 EXPECT=<<EOF
 fcn.0000029e 0x328 [CODE] jmp 0x28a
@@ -669,7 +669,7 @@ FILE=bins/firmware/arduino_avr.bin
 CMDS=<<EOF
 e asm.arch=avr
 aac @ 0
-axt 0x4ec
+axt @ 0x4ec
 EOF
 EXPECT=<<EOF
 fcn.00000360 0x3e2 [CALL] call fcn.000004ec
@@ -681,7 +681,7 @@ FILE=bins/firmware/arduino_avr.bin
 CMDS=<<EOF
 e asm.arch=avr
 aaa
-axt 0x4ec
+axt @ 0x4ec
 EOF
 EXPECT=<<EOF
 fcn.00000360 0x3e2 [CALL] call fcn.000004ec

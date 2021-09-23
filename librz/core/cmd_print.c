@@ -4196,7 +4196,7 @@ static void _pointer_table(RzCore *core, ut64 origin, ut64 offset, const ut8 *bu
 		case '*':
 			rz_cons_printf("CC-@ 0x%08" PFMT64x "\n", origin);
 			rz_cons_printf("CC switch table @ 0x%08" PFMT64x "\n", origin);
-			rz_cons_printf("axd 0x%" PFMT64x " 0x%08" PFMT64x "\n", origin, offset);
+			rz_cons_printf("axd 0x%" PFMT64x " @ 0x%08" PFMT64x "\n", origin, offset);
 			break;
 		case '.':
 			rz_meta_del(core->analysis, RZ_META_TYPE_COMMENT, origin, 1);
@@ -4225,8 +4225,8 @@ static void _pointer_table(RzCore *core, ut64 origin, ut64 offset, const ut8 *bu
 		}
 		if (mode == '*') {
 			rz_cons_printf("af case.%d.0x%" PFMT64x " 0x%08" PFMT64x "\n", n, offset, addr);
-			rz_cons_printf("ax 0x%" PFMT64x " 0x%08" PFMT64x "\n", offset, addr);
-			rz_cons_printf("ax 0x%" PFMT64x " 0x%08" PFMT64x "\n", addr, offset); // wrong, but useful because forward xrefs dont work :?
+			rz_cons_printf("ax 0x%" PFMT64x " @ 0x%08" PFMT64x "\n", offset, addr);
+			rz_cons_printf("ax 0x%" PFMT64x " @ 0x%08" PFMT64x "\n", addr, offset); // wrong, but useful because forward xrefs dont work :?
 			// FIXME: "aho" doesn't accept anything here after the "case" word
 			rz_cons_printf("aho case 0x%" PFMT64x " 0x%08" PFMT64x " @ 0x%08" PFMT64x "\n", (ut64)i, addr, offset + i); // wrong, but useful because forward xrefs dont work :?
 			rz_cons_printf("ahs %d @ 0x%08" PFMT64x "\n", step, offset + i);

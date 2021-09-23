@@ -136,24 +136,24 @@ afvb -20 var_14h int64_t @ 0x100000da0
 afvb -16 var_10h int64_t @ 0x100000da0
 afvb -1 var_1h int64_t @ 0x100000da0
 afvr rdi arg1 int64_t @ 0x100000da0
-axd 0x100000ec0 0x100000dd0
-axc 0x100000de4 0x100000de2
-axc 0x100000e00 0x100000de2
-axc 0x100000e2a 0x100000de2
-axc 0x100000e54 0x100000de2
-axc 0x100000e90 0x100000de2
-axc 0x100000e99 0x100000dfb
-axc 0x100000e25 0x100000e17
-axc 0x100000eba 0x100000e20
-axc 0x100000e99 0x100000e25
-axc 0x100000e4f 0x100000e41
-axc 0x100000eba 0x100000e4a
-axc 0x100000e99 0x100000e4f
-axc 0x100000e8b 0x100000e7d
-axc 0x100000eba 0x100000e86
-axc 0x100000e99 0x100000e8b
-axc 0x100000eba 0x100000e94
-axc 0x100000e9e 0x100000e99
+axd 0x100000ec0 @ 0x100000dd0
+axc 0x100000de4 @ 0x100000de2
+axc 0x100000e00 @ 0x100000de2
+axc 0x100000e2a @ 0x100000de2
+axc 0x100000e54 @ 0x100000de2
+axc 0x100000e90 @ 0x100000de2
+axc 0x100000e99 @ 0x100000dfb
+axc 0x100000e25 @ 0x100000e17
+axc 0x100000eba @ 0x100000e20
+axc 0x100000e99 @ 0x100000e25
+axc 0x100000e4f @ 0x100000e41
+axc 0x100000eba @ 0x100000e4a
+axc 0x100000e99 @ 0x100000e4f
+axc 0x100000e8b @ 0x100000e7d
+axc 0x100000eba @ 0x100000e86
+axc 0x100000e99 @ 0x100000e8b
+axc 0x100000eba @ 0x100000e94
+axc 0x100000e9e @ 0x100000e99
 afS 8 @ 0x100000da0
 
 EOF
@@ -2047,24 +2047,24 @@ RUN
 NAME=ax-
 FILE==
 CMDS=<<EOF
-ax 10 20
-axq
-ax-10 20
-axq
+ax 10 @ 20
+axlq
+ax- 10 20
+axlq
 EOF
 EXPECT=<<EOF
 0x00000014 -> 0x0000000a  UNKNOWN
 EOF
 RUN
 
-NAME=ax-@
+NAME=ax-
 FILE==
 CMDS=<<EOF
 s 20
 ax 10
-axq
-ax-10
-axq
+axlq
+ax- 10
+axlq
 EOF
 EXPECT=<<EOF
 0x00000014 -> 0x0000000a  UNKNOWN
@@ -2075,9 +2075,9 @@ NAME=ax-*
 FILE==
 CMDS=<<EOF
 ax 10
-ax
+axl
 ax-*
-ax
+axl
 EOF
 EXPECT=<<EOF
                                        ? 0x0 ->   UNKNOWN -> 0xa
@@ -2088,7 +2088,7 @@ NAME=axt unknown function
 FILE=bins/pe/lab11.malware
 CMDS=<<EOF
 aaa
-axt fcn.00401270
+axt @ fcn.00401270
 EOF
 EXPECT=<<EOF
 (nofunc) 0x401a1d [CALL] call fcn.00401270
@@ -2103,10 +2103,10 @@ e analysis.arch=x86
 e scr.color=false
 e scr.wheel=false
 aa
-axt str.Sdvvzrug_RN
+axt @ str.Sdvvzrug_RN
 s str.Sdvvzrug_RN
 axt
-axf 0x804848a
+axf @ 0x804848a
 s 0x804848a
 axf
 EOF
@@ -2186,13 +2186,13 @@ CMDS=<<EOF
 e analysis.strings=true
 aa
 aae
-axt 0x00001d89
-axt 0x00001da0
-axt 0x00001db7
-axt 0x00001dd1
-axt 0x00001de8
-axt 0x00001df4
-axt 0x00001e09
+axt @ 0x00001d89
+axt @ 0x00001da0
+axt @ 0x00001db7
+axt @ 0x00001dd1
+axt @ 0x00001de8
+axt @ 0x00001df4
+axt @ 0x00001e09
 EOF
 EXPECT=<<EOF
 main 0x1457 [STRING] lea eax, str.Take_the_Red_Pill
@@ -2219,15 +2219,15 @@ RUN
 NAME=delete references with ax-
 FILE==
 CMDS=<<EOF
-ax 10 20
-axq
+ax 10 @ 20
+axlq
 ax- 10
-axq
-ax 10 20
-ax 30 40
-axq
+axlq
+ax 10 @ 20
+ax 30 @ 40
+axlq
 ax-*
-axq
+axlq
 EOF
 EXPECT=<<EOF
 0x00000014 -> 0x0000000a  UNKNOWN
@@ -2256,13 +2256,13 @@ e analysis.strings=true
 e asm.sub.rel=false
 aa
 aae
-axt 0x00001d89
-axt 0x00001da0
-axt 0x00001db7
-axt 0x00001dd1
-axt 0x00001de8
-axt 0x00001df4
-axt 0x00001e09
+axt @ 0x00001d89
+axt @ 0x00001da0
+axt @ 0x00001db7
+axt @ 0x00001dd1
+axt @ 0x00001de8
+axt @ 0x00001df4
+axt @ 0x00001e09
 EOF
 EXPECT=<<EOF
 main 0x1457 [STRING] lea eax, [esi - 0x2277]
@@ -2323,7 +2323,7 @@ NAME=axs
 FILE==
 CMDS=<<EOF
 axs 0x10
-axq
+axlq
 EOF
 EXPECT=<<EOF
 0x00000000 -> 0x00000010  STRING
@@ -2417,7 +2417,7 @@ NAME=xrefs and overlapping basic blocks
 FILE=bins/elf/analysis/ls-linux-x86_64-zlul
 CMDS=<<EOF
 aaa
-axt main
+axt @ main
 EOF
 EXPECT=<<EOF
 entry0 0x40488d [DATA] mov rdi, main
@@ -3275,7 +3275,7 @@ f~switch
 f~case.
 C~Cd 4
 ah
-axf 0x59d
+axf @ 0x59d
 afb 0x59d
 EOF
 EXPECT=<<EOF
@@ -3900,8 +3900,8 @@ FILE=bins/pe/libzmq-v100-mt-4_0_4.dll
 CMDS=<<EOF
 aa
 aac
-axg 0x1004aa5e
-axgj 0x1004aa5e~{}
+axg @ 0x1004aa5e
+axgj @ 0x1004aa5e~{}
 EOF
 EXPECT=<<EOF
 - 0x1004aa5e fcn 0x1004aa5e fcn.1004aa5e
