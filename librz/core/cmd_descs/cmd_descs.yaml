@@ -254,9 +254,8 @@ commands:
     summary: Quit rizin
     subcommands: cmd_quit
   - name: r
-    cname: cmd_resize
+    subcommands: cmd_resize
     summary: Resize file
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: s
     summary: Seek commands
     subcommands: cmd_seek
