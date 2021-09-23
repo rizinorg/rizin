@@ -795,7 +795,11 @@ static void print_log(RzTestState *state, ut64 prev_completed, ut64 prev_paths_c
 	print_new_results(state, prev_completed);
 	ut64 paths_completed = rz_pvector_len(&state->completed_paths);
 	for (; prev_paths_completed < paths_completed; prev_paths_completed++) {
-		printf("[**] %50s ", (const char *)rz_pvector_at(&state->completed_paths, prev_paths_completed));
+		const char *name = (const char *)rz_pvector_at(&state->completed_paths, prev_paths_completed);
+		if (!name) {
+			name = "unknown path. something is very wrong.";
+		}
+		printf("[**] %50s ", name);
 		print_state_counts(state);
 		printf("\n");
 		fflush(stdout);
