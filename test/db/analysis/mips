@@ -44,7 +44,7 @@ e asm.bytes=true
 aae @entry0
 pd 1 @0x00406228
 fs strings
-axt str.busybox
+axt @str.busybox
 EOF
 EXPECT=<<EOF
             0x00406228      fcc38424       addiu a0, a0, -0x3c04       ; 0x44c3fc ; "busybox" ; str.busybox
@@ -84,7 +84,7 @@ NAME=gp-based ref
 FILE=bins/elf/analysis/mips-hello
 CMDS=<<EOF
 aae @entry0
-axt str.Hello_World
+axt @ str.Hello_World
 EOF
 EXPECT=<<EOF
 (nofunc); str.Hello_World 0x805c4 [DATA] addiu a0, v0, str.Hello_World
