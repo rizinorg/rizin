@@ -233,6 +233,7 @@ RZ_API bool rz_sign_deserialize(RzAnalysis *a, RzSignItem *it, const char *k, co
 	}
 
 	it->space = rz_spaces_add(&a->zign_spaces, rz_str_word_get0(k2, 1));
+	free(it->name);
 	it->name = rz_str_new(rz_str_word_get0(k2, 2));
 
 	// remove newline at end
@@ -2185,10 +2186,12 @@ static int addSearchKwCB(RzSignItem *it, void *user) {
 
 	if (!bytes) {
 		eprintf("Cannot find bytes for this signature: %s\n", it->name);
+		rz_sign_item_free(it);
 		return 1;
 	}
 
 	if (ctx->minsz && bytes->size < ctx->minsz) {
+		rz_sign_item_free(it);
 		return 1;
 	}
 	rz_list_append(ss->items, it);

@@ -1145,6 +1145,7 @@ static void reloc_set_flag(RzCore *r, RzBinReloc *reloc, const char *prefix, ut6
 	if (existing && existing->offset == flag_addr) {
 		// Mostly important for target flags.
 		// We don't want hundreds of reloc.target.<fcnname>.<xyz> flags at the same location
+		free(reloc_name);
 		return;
 	}
 	RzFlagItem *fi = rz_flag_set_next(r->flags, flagname, flag_addr, bin_reloc_size(reloc));
