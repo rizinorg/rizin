@@ -16,6 +16,7 @@ static bool check_buffer(RzBuffer *b) {
 
 	ut16 idx;
 	if (!rz_buf_read_le16_at(b, 0x3c, &idx)) {
+		return false;
 	}
 
 	if ((ut64)idx + 26 < length) {

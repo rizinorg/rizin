@@ -3268,20 +3268,20 @@ static bool fcn_print_detail(RzCore *core, RzAnalysisFunction *fcn) {
 	rz_list_foreach (xrefs, refiter, xrefi) {
 		switch (xrefi->type) {
 		case RZ_ANALYSIS_REF_TYPE_CALL:
-			rz_cons_printf("axC 0x%" PFMT64x " 0x%" PFMT64x "\n", xrefi->to, xrefi->from);
+			rz_cons_printf("axC 0x%" PFMT64x " @ 0x%" PFMT64x "\n", xrefi->to, xrefi->from);
 			break;
 		case RZ_ANALYSIS_REF_TYPE_DATA:
-			rz_cons_printf("axd 0x%" PFMT64x " 0x%" PFMT64x "\n", xrefi->to, xrefi->from);
+			rz_cons_printf("axd 0x%" PFMT64x " @ 0x%" PFMT64x "\n", xrefi->to, xrefi->from);
 			break;
 		case RZ_ANALYSIS_REF_TYPE_CODE:
-			rz_cons_printf("axc 0x%" PFMT64x " 0x%" PFMT64x "\n", xrefi->to, xrefi->from);
+			rz_cons_printf("axc 0x%" PFMT64x " @ 0x%" PFMT64x "\n", xrefi->to, xrefi->from);
 			break;
 		case RZ_ANALYSIS_REF_TYPE_STRING:
-			rz_cons_printf("axs 0x%" PFMT64x " 0x%" PFMT64x "\n", xrefi->to, xrefi->from);
+			rz_cons_printf("axs 0x%" PFMT64x " @ 0x%" PFMT64x "\n", xrefi->to, xrefi->from);
 			break;
 		case RZ_ANALYSIS_REF_TYPE_NULL:
 		default:
-			rz_cons_printf("ax 0x%" PFMT64x " 0x%" PFMT64x "\n", xrefi->to, xrefi->from);
+			rz_cons_printf("ax 0x%" PFMT64x " @ 0x%" PFMT64x "\n", xrefi->to, xrefi->from);
 			break;
 		}
 	}
@@ -4206,7 +4206,7 @@ static bool found_xref(RzCore *core, ut64 at, ut64 xref_to, RzAnalysisXRefType t
 		case RZ_ANALYSIS_REF_TYPE_DATA: cmd = "axd"; break;
 		default: cmd = "ax"; break;
 		}
-		rz_cons_printf("%s 0x%08" PFMT64x " 0x%08" PFMT64x "\n", cmd, xref_to, at);
+		rz_cons_printf("%s 0x%08" PFMT64x " @ 0x%08" PFMT64x "\n", cmd, xref_to, at);
 		if (cfg_analysis_strings && type == RZ_ANALYSIS_REF_TYPE_DATA) {
 			char *str_flagname = is_string_at(core, xref_to, &len);
 			if (str_flagname) {
@@ -6803,7 +6803,7 @@ RZ_IPI char *rz_core_analysis_var_display(RzCore *core, RzAnalysisVar *var, bool
 	RzAnalysis *analysis = core->analysis;
 	RzStrBuf *sb = rz_strbuf_new(NULL);
 	char *vartype = rz_type_as_string(core->analysis->typedb, var->type);
-	const char *fmt = rz_type_format(analysis->typedb, vartype);
+	char *fmt = rz_type_format(analysis->typedb, vartype);
 	RzRegItem *i;
 	if (!fmt) {
 		RZ_LOG_DEBUG("type:%s doesn't exist\n", vartype);
@@ -6857,6 +6857,7 @@ RZ_IPI char *rz_core_analysis_var_display(RzCore *core, RzAnalysisVar *var, bool
 		break;
 	}
 	}
+	free(fmt);
 	return rz_strbuf_drain(sb);
 }
 
@@ -6906,6 +6907,9 @@ RZ_IPI bool rz_analysis_var_global_list_show(RzAnalysis *analysis, RzCmdStateOut
 	}
 	rz_list_foreach (global_vars, it, glob) {
 		var_type = rz_type_as_string(analysis->typedb, glob->type);
+		if (!var_type) {
+			continue;
+		}
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_STANDARD:
 			rz_cons_printf("global %s %s @ 0x%" PFMT64x "\n",
@@ -6923,6 +6927,7 @@ RZ_IPI bool rz_analysis_var_global_list_show(RzAnalysis *analysis, RzCmdStateOut
 		default:
 			break;
 		}
+		free(var_type);
 	}
 	rz_cmd_state_output_array_end(state);
 	rz_list_free(global_vars);
@@ -7136,7 +7141,7 @@ static void _CbInRangeAav(RzCore *core, ut64 from, ut64 to, int vsize, void *use
 		}
 	}
 	if (pretend) {
-		rz_cons_printf("ax 0x%" PFMT64x " 0x%" PFMT64x "\n", to, from);
+		rz_cons_printf("ax 0x%" PFMT64x " @ 0x%" PFMT64x "\n", to, from);
 		rz_cons_printf("Cd %d @ 0x%" PFMT64x "\n", vsize, from);
 		rz_cons_printf("f+ aav.0x%08" PFMT64x "= 0x%08" PFMT64x, to, to);
 	} else {

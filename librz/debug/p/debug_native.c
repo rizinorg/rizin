@@ -93,7 +93,7 @@ RZ_API RzList *rz_w32_dbg_maps(RzDebug *);
 
 #if !__WINDOWS__ && !(__linux__ && !defined(WAIT_ON_ALL_CHILDREN))
 static int rz_debug_handle_signals(RzDebug *dbg) {
-#if __KFBSD__
+#if __KFBSD__ || __NetBSD__
 	return bsd_handle_signals(dbg);
 #else
 	eprintf("Warning: signal handling is not supported on this platform\n");
@@ -518,7 +518,7 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 			 *
 			 * this might modify dbg->reason.signum
 			 */
-#if __OpenBSD__ || __NetBSD__
+#if __OpenBSD__
 			reason = RZ_DEBUG_REASON_BREAKPOINT;
 #else
 			if (rz_debug_handle_signals(dbg) != 0) {
@@ -760,6 +760,24 @@ static int io_perms_to_prot(int io_perms) {
 	return prot_perms;
 }
 
+#if __linux__
+static int sys_thp_mode(void) {
+	const char *thp = "/sys/kernel/mm/transparent_hugepage/enabled";
+	int ret = 0;
+	char *val = rz_file_slurp(thp, NULL);
+	if (val) {
+		if (strstr(val, "[madvise]")) {
+			ret = 1;
+		} else if (strstr(val, "[always]")) {
+			ret = 2;
+		}
+		free(val);
+	}
+
+	return ret;
+}
+#endif
+
 static int linux_map_thp(RzDebug *dbg, ut64 addr, int size) {
 #if !defined(__ANDROID__) && defined(MADV_HUGEPAGE)
 	RzBuffer *buf = NULL;
@@ -778,13 +796,15 @@ static int linux_map_thp(RzDebug *dbg, ut64 addr, int size) {
 		return false;
 	}
 
+#if __linux__
 	// In always mode, is more into mmap syscall level
 	// even though the address might not have the 'hg'
 	// vmflags
-	if (rz_sys_thp_mode() != 1) {
+	if (sys_thp_mode() != 1) {
 		eprintf("transparent huge page mode is not in madvise mode\n");
 		return false;
 	}
+#endif
 
 	int num = rz_syscall_get_num(dbg->analysis->syscall, "madvise");
 
@@ -1545,15 +1565,19 @@ static int rz_debug_setup_ownership (int fd, RzDebug *dbg) {
 }
 #endif
 
-static bool rz_debug_gcore(RzDebug *dbg, RzBuffer *dest) {
+static bool rz_debug_gcore(RzDebug *dbg, char *path, RzBuffer *dest) {
 #if __APPLE__
+	(void)path;
 	return xnu_generate_corefile(dbg, dest);
 #elif __linux__ && (__x86_64__ || __i386__ || __arm__ || __arm64__)
+	(void)path;
 #if __ANDROID__
 	return false;
 #else
 	return linux_generate_corefile(dbg, dest);
 #endif
+#elif __KFBSD__ || __NetBSD__
+	return bsd_generate_corefile(dbg, path, dest);
 #else
 	return false;
 #endif

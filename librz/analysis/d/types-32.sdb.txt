@@ -50,3 +50,8 @@ id_t=type
 type.id_t=d
 type.id_t.size=32
 type.id_t.typeclass=Integral
+
+unknown_t=type
+type.unknown_t=d
+type.unknown_t.size=32
+type.unknown_t.typeclass=Integral

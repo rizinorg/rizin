@@ -8,6 +8,7 @@
 #if __UNIX__
 #include <signal.h>
 #endif
+#include "core_private.h"
 
 #define DB core->sdb
 
@@ -876,8 +877,6 @@ static const char *rizin_argv[] = {
 	"as?", "as", "asc", "asca", "asf", "asj", "asl", "ask",
 	"av?", "av", "avj", "av*", "avr", "avra", "avraj", "avrr", "avrD",
 	"at",
-	"ax?", "ax", "ax*", "ax-", "ax-*", "axc", "axC", "axg", "axg*", "axgj", "axd", "axw", "axj",
-	"axt", "axf", "ax.", "axff", "axffj", "axs",
 	"b?", "b", "b+", "b-", "bf", "bm",
 	"c?", "c", "c1", "c2", "c4", "c8", "cc", "ccd", "cf", "cg?", "cg", "cgf", "cgff", "cgfc", "cgfn", "cgo",
 	"cu?", "cu", "cu1", "cu2", "cu4", "cu8", "cud",
@@ -2670,6 +2669,9 @@ RZ_API void rz_core_free(RzCore *c) {
 RZ_API void rz_core_prompt_loop(RzCore *r) {
 	int ret;
 	do {
+		if (rz_config_get_b(r->config, "dbg.status")) {
+			rz_core_debug_print_status(r);
+		}
 		int err = rz_core_prompt(r, false);
 		if (err < 1) {
 			// handle ^D

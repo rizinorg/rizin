@@ -852,9 +852,9 @@ static bool parse_signature(struct MACH0_(obj_t) * bin, ut64 off) {
 		return true;
 	}
 
-	if (!rz_buf_read_ble32_at(bin->b, data, mach0_endian, &super.blob.magic) ||
-		!rz_buf_read_ble32_at(bin->b, data + 4, mach0_endian, &super.blob.length) ||
-		!rz_buf_read_ble32_at(bin->b, data + 8, mach0_endian, &super.count)) {
+	if (!rz_buf_read_ble32_at(bin->b, data, &super.blob.magic, mach0_endian) ||
+		!rz_buf_read_ble32_at(bin->b, data + 4, &super.blob.length, mach0_endian) ||
+		!rz_buf_read_ble32_at(bin->b, data + 8, &super.count, mach0_endian)) {
 		return false;
 	}
 
@@ -890,8 +890,8 @@ static bool parse_signature(struct MACH0_(obj_t) * bin, ut64 off) {
 					break;
 				}
 				struct blob_t entitlements = { 0 };
-				if (!rz_buf_read_ble32_at(bin->b, off, mach0_endian, &entitlements.magic) ||
-					!rz_buf_read_ble32_at(bin->b, off + 4, mach0_endian, &entitlements.length)) {
+				if (!rz_buf_read_ble32_at(bin->b, off, &entitlements.magic, mach0_endian) ||
+					!rz_buf_read_ble32_at(bin->b, off + 4, &entitlements.length, mach0_endian)) {
 					break;
 				}
 				len = entitlements.length - sizeof(struct blob_t);
@@ -3070,7 +3070,7 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) * bin) {
 			}
 		}
 
-		for (i = 0; i < bin->nsymtab; i++) {
+		for (i = 0; i < bin->nsymtab && i < symbols_count; i++) {
 			struct MACH0_(nlist) *st = &bin->symtab[i];
 			if (st->n_type & N_STAB) {
 				continue;
@@ -4292,7 +4292,7 @@ void MACH0_(mach_headerfields)(RzBinFile *bf) {
 			break;
 		case LC_ID_DYLIB: { // install_name_tool
 			ut32 str_off;
-			if (!rz_buf_read_ble32_at(buf, addr, isBe, &str_off)) {
+			if (!rz_buf_read_ble32_at(buf, addr, &str_off, isBe)) {
 				break;
 			}
 
@@ -4369,7 +4369,7 @@ void MACH0_(mach_headerfields)(RzBinFile *bf) {
 		case LC_LOAD_DYLIB:
 		case LC_LOAD_WEAK_DYLIB: {
 			ut32 str_off;
-			if (!rz_buf_read_ble32_at(buf, addr, isBe, &str_off)) {
+			if (!rz_buf_read_ble32_at(buf, addr, &str_off, isBe)) {
 				break;
 			}
 			char *load_dylib = rz_buf_get_string(buf, addr + str_off - 8);
@@ -4486,11 +4486,11 @@ RzList *MACH0_(mach_fields)(RzBinFile *bf) {
 	int n;
 	for (n = 0; n < mh->ncmds; n++) {
 		ut32 lcType;
-		if (!rz_buf_read_ble32_at(buf, paddr, isBe, &lcType)) {
+		if (!rz_buf_read_ble32_at(buf, paddr, &lcType, isBe)) {
 			break;
 		}
 		ut32 word;
-		if (!rz_buf_read_ble32_at(buf, paddr + 4, isBe, &word)) {
+		if (!rz_buf_read_ble32_at(buf, paddr + 4, &word, isBe)) {
 			break;
 		}
 		if (paddr + 8 > length) {

@@ -80,8 +80,8 @@ NAME=tc4
 FILE=bins/mach0/objc-employee
 CMDS=<<EOF
 .ic*
-tc "struct Employee"
-tc "struct NSString"
+tc Employee
+tc NSString
 EOF
 EXPECT=<<EOF
 struct Employee {
@@ -202,8 +202,8 @@ NAME=tc4 iOS14 arm64
 FILE=bins/mach0/objc-employee-ios14-arm64
 CMDS=<<EOF
 .ic*
-tc "struct Employee"
-tc "struct NSString"
+tc Employee
+tc NSString
 EOF
 EXPECT=<<EOF
 struct Employee {
@@ -323,8 +323,8 @@ NAME=tc4 iOS14 arm64e
 FILE=bins/mach0/objc-employee-ios14-arm64e
 CMDS=<<EOF
 .ic*
-tc "struct Employee"
-tc "struct NSString"
+tc Employee
+tc NSString
 EOF
 EXPECT=<<EOF
 struct Employee {
@@ -397,7 +397,7 @@ tf main
 tf entry0
 EOF
 EXPECT=<<EOF
-int main(int argc, char ** argv, char ** envp);
+int main(int argc, char **argv, char **envp);
 EOF
 RUN
 

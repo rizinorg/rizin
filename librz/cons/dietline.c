@@ -224,7 +224,7 @@ static int rz_line_readchar_win(ut8 *s, int slen) { // this function handle the 
 	void *bed;
 
 	h = GetStdHandle(STD_INPUT_HANDLE);
-	DWORD new_mode = I.vtmode == 2 ? ENABLE_VIRTUAL_TERMINAL_INPUT : 0;
+	DWORD new_mode = I.vtmode == RZ_VIRT_TERM_MODE_COMPLETE ? ENABLE_VIRTUAL_TERMINAL_INPUT : 0;
 	GetConsoleMode(h, &mode);
 	SetConsoleMode(h, new_mode);
 	if (I.zerosep) {
@@ -622,10 +622,7 @@ static void selection_widget_down(int steps) {
 }
 
 static void print_rline_task(void *_core) {
-	RzCore *core = (RzCore *)_core;
-	if (core->cons->context->color_mode) {
-		rz_cons_clear_line(0);
-	}
+	rz_cons_clear_line(0);
 	rz_cons_printf("%s%s%s", Color_RESET, I.prompt, I.buffer.data);
 	rz_cons_flush();
 }
@@ -975,8 +972,8 @@ static void __print_prompt(void) {
 		rz_cons_gotoxy(0, cons->rows);
 		rz_cons_flush();
 	}
+	rz_cons_clear_line(0);
 	if (cons->context->color_mode > 0) {
-		rz_cons_clear_line(0);
 		printf("\r%s%s", Color_RESET, I.prompt);
 	} else {
 		printf("\r%s", I.prompt);
@@ -1416,7 +1413,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 #endif
 		bool o_do_setup_match = I.history.do_setup_match;
 		I.history.do_setup_match = true;
-		if (I.echo && cons->context->color_mode) {
+		if (I.echo) {
 			rz_cons_clear_line(0);
 		}
 		(void)rz_cons_get_size(&rows);
@@ -1614,7 +1611,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 			break;
 		case 27: // esc-5b-41-00-00 alt/meta key
 #if __WINDOWS__
-			if (I.vtmode != 2) {
+			if (I.vtmode != RZ_VIRT_TERM_MODE_COMPLETE) {
 				memmove(buf, buf + 1, strlen(buf));
 				if (!buf[0]) {
 					buf[0] = -1;
@@ -1676,7 +1673,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 				}
 				break;
 			default:
-				if (I.vtmode == 2) {
+				if (I.vtmode == RZ_VIRT_TERM_MODE_COMPLETE) {
 					buf[1] = rz_cons_readchar_timeout(50);
 					if (buf[1] == -1) { // alt+e
 						rz_cons_break_pop();
@@ -1688,7 +1685,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 					switch (buf[1]) {
 					case '3': // supr
 						__delete_next_char();
-						if (I.vtmode == 2) {
+						if (I.vtmode == RZ_VIRT_TERM_MODE_COMPLETE) {
 							buf[1] = rz_cons_readchar();
 							if (buf[1] == -1) {
 								rz_cons_break_pop();
@@ -1697,7 +1694,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 						}
 						break;
 					case '5': // pag up
-						if (I.vtmode == 2) {
+						if (I.vtmode == RZ_VIRT_TERM_MODE_COMPLETE) {
 							buf[1] = rz_cons_readchar();
 						}
 						if (I.hud) {
@@ -1712,7 +1709,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 						}
 						break;
 					case '6': // pag down
-						if (I.vtmode == 2) {
+						if (I.vtmode == RZ_VIRT_TERM_MODE_COMPLETE) {
 							buf[1] = rz_cons_readchar();
 						}
 						if (I.hud) {
@@ -1787,7 +1784,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 						__move_cursor_left();
 						break;
 					case 0x31: // control + arrow
-						if (I.vtmode == 2) {
+						if (I.vtmode == RZ_VIRT_TERM_MODE_COMPLETE) {
 							ch = rz_cons_readchar();
 							if (ch == 0x7e) { // HOME in screen/tmux
 								// corresponding END is 0x34 below (the 0x7e is ignored there)
@@ -1836,7 +1833,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 							}
 							break;
 						default:
-							if (I.vtmode == 2) {
+							if (I.vtmode == RZ_VIRT_TERM_MODE_COMPLETE) {
 								if (I.cb_fkey) {
 									I.cb_fkey(I.user, fkey);
 								}

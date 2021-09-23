@@ -748,7 +748,6 @@ typedef struct rz_analysis_var_global_t {
 	ut64 addr; ///< address of the global variable
 	RzType *type; ///< type of the variable
 	RzVector /*<RzTypeConstraint>*/ constraints;
-	RZ_BORROW RzFlagItem *flag_item; ///< flag corresponding to the global variable
 	RZ_BORROW RzAnalysis *analysis; ///< analysis pertaining to this global variable
 } RzAnalysisVarGlobal;
 
@@ -833,6 +832,7 @@ typedef struct rz_analysis_op_t {
 	int ptrsize; /* f.ex: zero extends for 8, 16 or 32 bits only */
 	st64 stackptr; /* stack pointer */
 	int refptr; /* if (0) ptr = "reference" else ptr = "load memory of refptr bytes" */
+	ut64 mmio_address; // mmio address
 	RzAnalysisValue *src[3];
 	RzAnalysisValue *dst;
 	RzList *access; /* RzAnalysisValue access information */
@@ -1575,7 +1575,7 @@ RZ_API const char *rz_analysis_xrefs_type_tostring(RzAnalysisXRefType type);
 RZ_API RzAnalysisXRefType rz_analysis_xrefs_type(char ch);
 RZ_API RzList *rz_analysis_xrefs_get_to(RzAnalysis *analysis, ut64 addr);
 RZ_API RzList *rz_analysis_xrefs_get_from(RzAnalysis *analysis, ut64 addr);
-RZ_API void rz_analysis_xrefs_list(RzAnalysis *analysis, int rad);
+RZ_API RzList *rz_analysis_xrefs_list(RzAnalysis *analysis);
 RZ_API RzList *rz_analysis_function_get_xrefs_from(RzAnalysisFunction *fcn);
 RZ_API RzList *rz_analysis_function_get_xrefs_to(RzAnalysisFunction *fcn);
 RZ_API bool rz_analysis_xrefs_set(RzAnalysis *analysis, ut64 from, ut64 to, RzAnalysisXRefType type);
@@ -1641,6 +1641,7 @@ RZ_API void rz_analysis_fcn_vars_add_types(RzAnalysis *analysis, RZ_NONNULL RzAn
 RZ_API RZ_OWN RzAnalysisVarGlobal *rz_analysis_var_global_new(RZ_NONNULL const char *name, ut64 addr);
 RZ_API RZ_OWN bool rz_analysis_var_global_add(RzAnalysis *analysis, RZ_NONNULL RzAnalysisVarGlobal *global_var);
 RZ_API void rz_analysis_var_global_free(RzAnalysisVarGlobal *glob);
+RZ_API RZ_NULLABLE RzFlagItem *rz_analysis_var_global_get_flag_item(RzAnalysisVarGlobal *glob);
 RZ_API bool rz_analysis_var_global_delete(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisVarGlobal *glob);
 RZ_API bool rz_analysis_var_global_delete_byname(RzAnalysis *analysis, RZ_NONNULL const char *name);
 RZ_API bool rz_analysis_var_global_delete_byaddr_at(RzAnalysis *analysis, ut64 addr);

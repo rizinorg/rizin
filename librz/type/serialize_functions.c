@@ -54,15 +54,15 @@ static RzCallable *get_callable_type(RzTypeDB *typedb, Sdb *sdb, const char *nam
 		return NULL;
 	}
 
-	char key[SDB_MAX_KEY + 1];
-	size_t arguments = sdb_num_get(sdb, rz_strf(key, "func.%s.args", name), 0);
+	RzStrBuf key;
+	size_t arguments = sdb_num_get(sdb, rz_strbuf_initf(&key, "func.%s.args", name), 0);
 	if (arguments > 0 && !rz_pvector_reserve(callable->args, arguments)) {
 		goto error;
 	}
 
 	int i;
 	for (i = 0; i < arguments; i++) {
-		char *values = sdb_get(sdb, rz_strf(key, "func.%s.arg.%d", name, i), NULL);
+		char *values = sdb_get(sdb, rz_strbuf_setf(&key, "func.%s.arg.%d", name, i), NULL);
 
 		if (!values) {
 			goto error;
@@ -98,7 +98,7 @@ static RzCallable *get_callable_type(RzTypeDB *typedb, Sdb *sdb, const char *nam
 		}
 	}
 
-	const char *rettype = sdb_const_get(sdb, rz_strf(key, "func.%s.ret", name), 0);
+	const char *rettype = sdb_const_get(sdb, rz_strbuf_setf(&key, "func.%s.ret", name), 0);
 	if (!rettype) {
 		// best we can do for a broken database
 		rettype = "void";
@@ -114,8 +114,9 @@ static RzCallable *get_callable_type(RzTypeDB *typedb, Sdb *sdb, const char *nam
 	callable->ret = ttype;
 
 	// Optional "noreturn" attribute
-	callable->noret = sdb_bool_get(sdb, rz_strf(key, "func.%s.noreturn", name), 0);
+	callable->noret = sdb_bool_get(sdb, rz_strbuf_setf(&key, "func.%s.noreturn", name), 0);
 
+	rz_strbuf_fini(&key);
 	rz_list_free(cache_newly_added);
 	return callable;
 
@@ -124,6 +125,7 @@ error:
 	type_string_cache_rollback(type_str_cache, cache_newly_added);
 	rz_list_free(cache_newly_added);
 	rz_type_callable_free(callable);
+	rz_strbuf_fini(&key);
 	return NULL;
 }
 
@@ -132,7 +134,7 @@ static bool filter_func(void *user, const char *k, const char *v) {
 }
 
 static bool sdb_load_callables(RzTypeDB *typedb, Sdb *sdb) {
-	rz_return_val_if_fail(typedb && sdb, NULL);
+	rz_return_val_if_fail(typedb && sdb, false);
 	HtPP *type_str_cache = ht_pp_new0(); // cache from a known C type extr to its RzType representation for skipping the parser if possible
 	if (!type_str_cache) {
 		return false;

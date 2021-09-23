@@ -169,6 +169,12 @@ typedef.SIZE_T=size_t
 USHORT=typedef
 typedef.USHORT=unsigned short
 
+PFLOAT=typedef
+typedef.PFLOAT=FLOAT*
+
+PDOUBLE=typedef
+typedef.PDOUBLE=DOUBLE*
+
 PDWORDLONG=typedef
 typedef.PDWORDLONG=DWORDLONG*
 
@@ -180,6 +186,9 @@ typedef.LPDWORD=DWORD*
 
 BSTR=typedef
 typedef.BSTR=WCHAR*
+
+PZZSTR=typedef
+typedef.PZZSTR=CHAR*
 
 PUCHAR=typedef
 typedef.PUCHAR=UCHAR*
@@ -201,11 +210,6 @@ struct.tagPOINT=x,y
 struct.tagPOINT.x=LONG,0,0
 struct.tagPOINT.y=LONG,8,0
 
-_POINT=struct
-struct._POINT=x,y
-struct._POINT.x=LONG,0,0
-struct._POINT.y=LONG,8,0
-
 POINT=typedef
 typedef.POINT=struct tagPOINT
 
@@ -216,10 +220,10 @@ LPPOINT=typedef
 typedef.LPPOINT=struct tagPOINT*
 
 POINTL=typedef
-typedef.POINTL=struct _POINT
+typedef.POINTL=struct tagPOINT
 
 PPOINTL=typedef
-typedef.PPOINTL=struct _POINT*
+typedef.PPOINTL=struct tagPOINT*
 
 tagRECT=struct
 struct.tagRECT=left,top,right,bottom
@@ -255,6 +259,16 @@ typedef.PRECTL=struct _RECT*
 
 LPRECTL=typedef
 typedef.LPRECTL=struct _RECT*
+
+_SMALL_RECT=struct
+struct._SMALL_RECT=Left,Top,Right,Bottom
+struct._SMALL_RECT.Left=SHORT,0,0
+struct._SMALL_RECT.Top=SHORT,2,0
+struct._SMALL_RECT.Right=SHORT,4,0
+struct._SMALL_RECT.Bottom=SHORT,6,0
+
+SMALL_RECT=typedef
+typedef.SMALL_RECT=struct _SMALL_RECT
 
 tagSIZE=struct
 struct.tagSIZE=cx,cy
@@ -368,6 +382,9 @@ _EXCEPTION_REGISTRATION_RECORD=struct
 struct._EXCEPTION_REGISTRATION_RECORD=Next,Handler
 struct._EXCEPTION_REGISTRATION_RECORD.Next=struct _EXCEPTION_REGISTRATION_RECORD*,0,0
 struct._EXCEPTION_REGISTRATION_RECORD.Handler=VOID*,8,0
+
+LPTOP_LEVEL_EXCEPTION_FILTER=typedef
+typedef.LPTOP_LEVEL_EXCEPTION_FILTER=void*
 
 _SECURITY_ATTRIBUTES=struct
 struct._SECURITY_ATTRIBUTES=nLength,lpSecurityDescriptor,bInheritHandle
@@ -610,6 +627,12 @@ typedef.LPWSTR=WCHAR*
 LPWCH=typedef
 typedef.LPWCH=WCHAR*
 
+LPCWCH=typedef
+typedef.LPCWCH=const WCHAR*
+
+PCNZWCH=typedef
+typedef.PCNZWCH=const WCHAR*
+
 PACTCTX=type
 type.PACTCTX=p
 type.PACTCTX.size=32
@@ -661,10 +684,12 @@ typedef.LPFILETIME=FILETIME*
 PFILETIME=typedef
 typedef.PFILETIME=LPFILETIME
 
-LPCSTR=type
+LPCSTR=typedef
+typedef.LPCSTR=const char*
 type.LPCSTR=s
 
-LPCWSTR=type
+LPCWSTR=typedef
+typedef.LPCWSTR=const WCHAR*
 type.LPCWSTR=z
 
 HCERTSTORE=typedef
@@ -848,6 +873,39 @@ type.PRUNTIME_FUNCTION=p
 PGET_RUNTIME_FUNCTION_CALLBACK=type
 type.PGET_RUNTIME_FUNCTION_CALLBACK=p
 
+_IMAGE_CE_RUNTIME_FUNCTION_ENTRY=struct
+struct._IMAGE_CE_RUNTIME_FUNCTION_ENTRY=BeginAddress,UnwindData
+struct._IMAGE_CE_RUNTIME_FUNCTION_ENTRY.BeginAddress=ULONG,0,0
+struct._IMAGE_CE_RUNTIME_FUNCTION_ENTRY.UnwindData=ULONG,4,0
+
+IMAGE_CE_RUNTIME_FUNCTION_ENTRY=typedef
+typedef.IMAGE_CE_RUNTIME_FUNCTION_ENTRY=struct _IMAGE_CE_RUNTIME_FUNCTION_ENTRY
+
+PIMAGE_CE_RUNTIME_FUNCTION_ENTRY=typedef
+typedef.PIMAGE_CE_RUNTIME_FUNCTION_ENTRY=struct _IMAGE_CE_RUNTIME_FUNCTION_ENTRY*
+
+_IMAGE_ARM_RUNTIME_FUNCTION_ENTRY=struct
+struct._IMAGE_ARM_RUNTIME_FUNCTION_ENTRY=BeginAddress,UnwindData
+struct._IMAGE_ARM_RUNTIME_FUNCTION_ENTRY.BeginAddress=ULONG,0,0
+struct._IMAGE_ARM_RUNTIME_FUNCTION_ENTRY.UnwindData=ULONG,4,0
+
+IMAGE_ARM_RUNTIME_FUNCTION_ENTRY=typedef
+typedef.IMAGE_ARM_RUNTIME_FUNCTION_ENTRY=struct _IMAGE_ARM_RUNTIME_FUNCTION_ENTRY
+
+PIMAGE_ARM_RUNTIME_FUNCTION_ENTRY=typedef
+typedef.PIMAGE_ARM_RUNTIME_FUNCTION_ENTRY=struct _IMAGE_ARM_RUNTIME_FUNCTION_ENTRY*
+
+_IMAGE_ARM64_RUNTIME_FUNCTION_ENTRY=struct
+struct._IMAGE_ARM64_RUNTIME_FUNCTION_ENTRY=BeginAddress,UnwindData
+struct._IMAGE_ARM64_RUNTIME_FUNCTION_ENTRY.BeginAddress=ULONG,0,0
+struct._IMAGE_ARM64_RUNTIME_FUNCTION_ENTRY.UnwindData=ULONG,4,0
+
+IMAGE_ARM64_RUNTIME_FUNCTION_ENTRY=typedef
+typedef.IMAGE_ARM64_RUNTIME_FUNCTION_ENTRY=struct _IMAGE_ARM64_RUNTIME_FUNCTION_ENTRY
+
+PIMAGE_ARM64_RUNTIME_FUNCTION_ENTRY=typedef
+typedef.PIMAGE_ARM64_RUNTIME_FUNCTION_ENTRY=struct _IMAGE_ARM64_RUNTIME_FUNCTION_ENTRY*
+
 PEXCEPTION_ROUTINE=type
 type.PEXCEPTION_ROUTINE=p
 
@@ -900,7 +958,8 @@ type.LPWIN32_FIND_DATAW=p
 PWSTR=typedef
 typedef.PWSTR=LPWSTR
 
-LPWCH=type
+LPWCH=typedef
+typedef.LPWCH=WCHAR*
 type.LPWCH=z
 
 FINDEX_SEARCH_OPS=typedef
@@ -924,7 +983,8 @@ typedef.FINDEX_INFO_LEVELS=int
 LPLDT_ENTRY=type
 type.LPLDT_ENTRY=p
 
-LPCCH=type
+LPCCH=typedef
+typedef.LPCCH=const CHAR*
 type.LPCCH=p
 
 LPMEMORYSTATUS=type
@@ -956,6 +1016,12 @@ type.PSECURE_MEMORY_CACHE_CALLBACK=p
 
 LPCOMMCONFIG=type
 type.LPCOMMCONFIG=p
+
+RETURN_TYPE=typedef
+typedef.RETURN_TYPE=DWORD
+
+CONFIGRET=typedef
+typedef.CONFIGRET=RETURN_TYPE
 
 UINT_PTR=typedef
 typedef.UINT_PTR=UINT*
@@ -1086,6 +1152,30 @@ typedef.AUDIT_EVENT_TYPE=int
 WAITORTIMERCALLBACK=type
 type.WAITORTIMERCALLBACK=p
 
+_SHITEMID=struct
+struct._SHITEMID=cb,abID
+struct._SHITEMID.cb=USHORT,0,0
+struct._SHITEMID.abID=BYTE,2,1
+
+SHITEMID=typedef
+typedef.SHITEMID=struct _SHITEMID
+
+_ITEMIDLIST=struct
+struct._ITEMIDLIST=mkid
+struct._ITEMIDLIST.mkid=SHITEMID,0,0
+
+ITEMIDLIST=typedef
+typedef.ITEMIDLIST=struct _ITEMIDLIST
+
+LPITEMIDLIST=typedef
+typedef.LPITEMIDLIST=struct _ITEMIDLIST*
+
+LPCITEMIDLIST=typedef
+typedef.LPCITEMIDLIST=const struct _ITEMIDLIST*
+
+PIDLIST_ABSOLUTE=typedef
+typedef.PIDLIST_ABSOLUTE=LPITEMIDLIST
+
 READ_DIRECTORY_NOTIFY_INFORMATION_CLASS=typedef
 typedef.READ_DIRECTORY_NOTIFY_INFORMATION_CLASS=int
 
@@ -1215,8 +1305,16 @@ type.PCONSOLE_FONT_INFO=p
 PCONSOLE_SCREEN_BUFFER_INFOEX=type
 type.PCONSOLE_SCREEN_BUFFER_INFOEX=p
 
-PCOORD=type
-type.PCOORD=p
+_COORD=struct
+struct._COORD=X,Y
+struct._COORD.X=SHORT,0,0
+struct._COORD.Y=SHORT,2,0
+
+COORD=typedef
+typedef.COORD=struct _COORD
+
+PCOORD=typedef
+typedef.PCOORD=struct _COORD*
 
 PCONSOLE_SELECTION_INFO=type
 type.PCONSOLE_SELECTION_INFO=p
@@ -1227,8 +1325,21 @@ type.PHANDLER_ROUTINE=p
 HPCON=type
 type.HPCON=p
 
-PCHAR_INFO=type
-type.PCHAR_INFO=p
+_CHAR_INFO_Char=union
+union._CHAR_INFO_Char=UnicodeChar,AsciiChar
+union._CHAR_INFO_Char.UnicodeChar=WCHAR,0,0
+union._CHAR_INFO_Char.AsciiChar=CHAR,0,0
+
+_CHAR_INFO=struct
+struct._CHAR_INFO=Char,Attributes
+struct._CHAR_INFO.Char=union _CHAR_INFO_Char,0,0
+struct._CHAR_INFO.Attributes=WORD,2,0
+
+CHAR_INFO=typedef
+typedef.CHAR_INFO=struct _CHAR_INFO
+
+PCHAR_INFO=typedef
+typedef.PCHAR_INFO=struct _CHAR_INFO*
 
 PSMALL_RECT=type
 type.PSMALL_RECT=p
@@ -1458,6 +1569,9 @@ type.SENDASYNCPROC=p
 
 DPI_AWARENESS=typedef
 typedef.DPI_AWARENESS=int
+
+DPI_AWARENESS_CONTEXT=typedef
+typedef.DPI_AWARENESS_CONTEXT=HANDLE
 
 tagFEEDBACK_TYPE=enum
 enum.tagFEEDBACK_TYPE=FEEDBACK_TOUCH_CONTACTVISUALIZATION,FEEDBACK_PEN_BARRELVISUALIZATION,FEEDBACK_PEN_TAP,FEEDBACK_PEN_DOUBLETAP,FEEDBACK_PEN_PRESSANDHOLD,FEEDBACK_PEN_RIGHTTAP,FEEDBACK_TOUCH_TAP,FEEDBACK_TOUCH_DOUBLETAP,FEEDBACK_TOUCH_PRESSANDHOLD,FEEDBACK_TOUCH_RIGHTTAP,FEEDBACK_GESTURE_PRESSANDTAP,FEEDBACK_MAX
@@ -2053,6 +2167,9 @@ type.LPPICTDESC=p
 LPCLSID=type
 type.LPCLSID=p
 
+VARTYPE=typedef
+typedef.VARTYPE=unsigned short
+
 OLE_COLOR=typedef
 typedef.OLE_COLOR=DWORD
 
@@ -2125,6 +2242,28 @@ type.PCOMPRESSOR_HANDLE=p
 COMPRESS_INFORMATION_CLASS=typedef
 typedef.COMPRESS_INFORMATION_CLASS=int
 
+_SERVICE_STATUS=struct
+struct._SERVICE_STATUS=dwDeviceType,dwCurrentState,dwControlsAccepted,dwWin32ExitCode,dwServiceSpecificExitCode,dwCheckPoint,dwWaitHint
+struct._SERVICE_STATUS.dwDeviceType=DWORD,0,0
+struct._SERVICE_STATUS.dwCurrentState=DWORD,4,0
+struct._SERVICE_STATUS.dwControlsAccepted=DWORD,8,0
+struct._SERVICE_STATUS.dwWin32ExitCode=DWORD,12,0
+struct._SERVICE_STATUS.dwServiceSpecificExitCode=DWORD,16,0
+struct._SERVICE_STATUS.dwCheckPoint=DWORD,20,0
+struct._SERVICE_STATUS.dwWaitHint=DWORD,24,0
+
+SERVICE_STATUS=typedef
+typedef.SERVICE_STATUS=struct _SERVICE_STATUS
+
+LPSERVICE_STATUS=typedef
+typedef.LPSERVICE_STATUS=struct _SERVICE_STATUS*
+
+SERVICE_STATUS_HANDLE=typedef
+typedef.SERVICE_STATUS_HANDLE=HANDLE
+
+HOOKPROC=typedef
+typedef.HOOKPROC=void *
+
 tagDEC=struct
 struct.tagDEC=wReserved,scale,sign,Hi32,Lo64
 struct.tagDEC.wReserved=USHORT,0,0
@@ -2151,3 +2290,20 @@ timespec=struct
 struct.timespec=tv_sec,tv_nsec
 struct.timespec.tv_sec=long,0,0
 struct.timespec.tv_nsec=long,8,0
+
+_fd_set=struct
+struct._fd_set=fd_count,fd_array
+struct._fd_set.fd_count=u_int,0,0
+struct._fd_set.fd_array=SOCKET,0,64
+
+fd_set=typedef
+typedef.fd_set=struct _fd_set
+
+FD_SET=typedef
+typedef.FD_SET=struct _fd_set
+
+PFD_SET=typedef
+typedef.PFD_SET=struct _fd_set*
+
+LPFD_SET=typedef
+typedef.LPFD_SET=struct _fd_set*

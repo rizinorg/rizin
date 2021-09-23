@@ -308,6 +308,7 @@ int rz_test_main(int argc, const char **argv) {
 	}
 	atexit(rz_subprocess_fini);
 
+	rz_sys_setenv("TZ", "UTC");
 	ut64 time_start = rz_time_now_mono();
 	RzTestState state = { 0 };
 	state.run_config.rz_cmd = rizin_cmd ? rizin_cmd : RIZIN_CMD_DEFAULT;
@@ -343,6 +344,7 @@ int rz_test_main(int argc, const char **argv) {
 		int i;
 		for (i = opt.ind; i < argc; i++) {
 			const char *arg = argv[i];
+			char *alloc_arg = NULL;
 			if (*arg == '@') {
 				arg++;
 				eprintf("Category: %s\n", arg);
@@ -369,7 +371,7 @@ int rz_test_main(int argc, const char **argv) {
 				} else if (!strcmp(arg, "cmds")) {
 					arg = "db";
 				} else {
-					arg = rz_str_newf("db/%s", arg + 1);
+					arg = alloc_arg = rz_str_newf("db/%s", arg + 1);
 				}
 			}
 			char *tf = rz_file_abspath_rel(cwd, arg);
@@ -377,9 +379,11 @@ int rz_test_main(int argc, const char **argv) {
 				eprintf("Failed to load tests from \"%s\"\n", tf);
 				rz_test_test_database_free(state.db);
 				free(tf);
+				free(alloc_arg);
 				ret = -1;
 				goto beach;
 			}
+			RZ_FREE(alloc_arg);
 			free(tf);
 		}
 	} else {
@@ -447,6 +451,7 @@ int rz_test_main(int argc, const char **argv) {
 		RzThread *th = rz_th_new(worker_th, &state, 0);
 		if (!th) {
 			eprintf("Failed to start thread.\n");
+			rz_th_lock_leave(state.lock);
 			exit(-1);
 		}
 		rz_pvector_push(&workers, th);

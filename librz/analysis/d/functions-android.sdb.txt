@@ -1,20 +1,20 @@
 __android_log_print=func
 func.__android_log_print.args=3
-func.__android_log_print.arg.0=androidLogPriority,prio
+func.__android_log_print.arg.0=enum androidLogPriority,prio
 func.__android_log_print.arg.1=const char *,tag
 func.__android_log_print.arg.2=const char *,fmt
 func.__android_log_print.ret=int
 
 __android_log_write=func
 func.__android_log_write.args=3
-func.__android_log_write.arg.0=androidLogPriority,prio
+func.__android_log_write.arg.0=enum androidLogPriority,prio
 func.__android_log_write.arg.1=const char *,tag
 func.__android_log_write.arg.2=const char *,fmt
 func.__android_log_write.ret=int
 
 __android_log_vprint=func
 func.__android_log_vprint.args=3
-func.__android_log_vprint.arg.0=androidLogPriority,prio
+func.__android_log_vprint.arg.0=enum androidLogPriority,prio
 func.__android_log_vprint.arg.1=const char *,tag
 func.__android_log_vprint.arg.2=const char *,fmt
 func.__android_log_vprint.ret=int

@@ -99,7 +99,7 @@ static bool is_arrow;
 
 RZ_API int rz_cons_arrow_to_hjkl(int ch) {
 #if __WINDOWS__
-	if (I->vtmode != 2) {
+	if (I->vtmode != RZ_VIRT_TERM_MODE_COMPLETE) {
 		if (is_arrow) {
 			switch (ch) {
 			case VK_DOWN: // key down
@@ -442,7 +442,7 @@ static int __cons_readchar_w32(ut32 usec) {
 	h = GetStdHandle(STD_INPUT_HANDLE);
 	GetConsoleMode(h, &mode);
 	DWORD newmode = ENABLE_WINDOW_INPUT;
-	if (I->vtmode == 2) {
+	if (I->vtmode == RZ_VIRT_TERM_MODE_COMPLETE) {
 		newmode |= ENABLE_VIRTUAL_TERMINAL_INPUT;
 	}
 	newmode |= mode;
@@ -504,7 +504,7 @@ static int __cons_readchar_w32(ut32 usec) {
 
 			if (irInBuf.EventType == KEY_EVENT) {
 				if (irInBuf.Event.KeyEvent.bKeyDown) {
-					bCtrl = irInBuf.Event.KeyEvent.dwControlKeyState & 8;
+					bCtrl = irInBuf.Event.KeyEvent.dwControlKeyState & LEFT_CTRL_PRESSED;
 					if (irInBuf.Event.KeyEvent.uChar.UnicodeChar) {
 						char *tmp = rz_utf16_to_utf8_l(&irInBuf.Event.KeyEvent.uChar.UnicodeChar, 1);
 						if (tmp) {
@@ -572,9 +572,6 @@ static int __cons_readchar_w32(ut32 usec) {
 			if (irInBuf.EventType == WINDOW_BUFFER_SIZE_EVENT) {
 				resizeWin();
 			}
-		}
-		if (I->vtmode != 2 && !I->term_xterm) {
-			FlushConsoleInputBuffer(h);
 		}
 	} while (ch == 0);
 	SetConsoleMode(h, mode);

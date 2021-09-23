@@ -114,8 +114,8 @@ FILE=bins/mach0/hello-objc
 CMDS=<<EOF
 e analysis.jmp.cref=true
 aao
-ax~?
-ax~selref
+axl~?
+axl~selref
 EOF
 EXPECT=<<EOF
 92
@@ -131,7 +131,7 @@ RUN
 
 NAME=aao hello-objc methods references
 FILE=bins/mach0/hello-objc
-CMDS=aao;ax~method
+CMDS=aao;axl~method
 EXPECT=<<EOF
               section.0.__TEXT.__text+20 0x100000db4 ->      CODE -> 0x100000df0 method.Person.name
                                  main+45 0x100000e7d ->      CODE -> 0x100000e20 method.Person.setName:

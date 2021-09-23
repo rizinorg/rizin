@@ -11,9 +11,17 @@ static bool rz_io_ar_plugin_open(RzIO *io, const char *file, bool many) {
 }
 
 static RzIODesc *rz_io_ar_open(RzIO *io, const char *file, int perm, int mode) {
+	rz_return_val_if_fail(io && file, NULL);
 	RzIODesc *res = NULL;
-	char *url = strdup(file);
-	char *arname = strstr(url, "://") + 3;
+	char *uri = strdup(file);
+	if (!uri) {
+		return NULL;
+	}
+	const char *arname = strstr(uri, "://");
+	if (!arname) {
+		goto err;
+	}
+	arname += 3;
 	char *filename = strstr(arname, "//");
 	if (filename) {
 		*filename = 0;
@@ -21,10 +29,16 @@ static RzIODesc *rz_io_ar_open(RzIO *io, const char *file, int perm, int mode) {
 	}
 
 	RzArFp *arf = ar_open_file(arname, rz_sys_open_perms(perm), filename);
-	if (arf) {
-		res = rz_io_desc_new(io, &rz_io_plugin_ar, filename, perm, mode, arf);
+	if (!arf) {
+		goto err;
 	}
-	free(url);
+	res = rz_io_desc_new(io, &rz_io_plugin_ar, filename, perm, mode, arf);
+	if (!res) {
+		goto err;
+	}
+	res->name = strdup(filename);
+err:
+	free(uri);
 	return res;
 }
 

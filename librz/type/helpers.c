@@ -191,7 +191,7 @@ RZ_API bool rz_type_atomic_eq(const RzTypeDB *typedb, RZ_NONNULL const RzType *t
 	RzBaseType *btyp1 = rz_type_db_get_base_type(typedb, typ1->identifier.name);
 	RzBaseType *btyp2 = rz_type_db_get_base_type(typedb, typ2->identifier.name);
 	if (!btyp1 || !btyp2) {
-		return NULL;
+		return false;
 	}
 	rz_return_val_if_fail(btyp1->kind == RZ_BASE_TYPE_KIND_ATOMIC && btyp2->kind == RZ_BASE_TYPE_KIND_ATOMIC, false);
 	return btyp1->name == btyp2->name && btyp1->size == btyp2->size;
@@ -214,7 +214,7 @@ RZ_API bool rz_type_atomic_str_eq(const RzTypeDB *typedb, RZ_NONNULL const RzTyp
 	RzBaseType *btyp1 = rz_type_db_get_base_type(typedb, typ1->identifier.name);
 	RzBaseType *btyp2 = rz_type_db_get_base_type(typedb, name);
 	if (!btyp1 || !btyp2) {
-		return NULL;
+		return false;
 	}
 	rz_return_val_if_fail(btyp1->kind == RZ_BASE_TYPE_KIND_ATOMIC && btyp2->kind == RZ_BASE_TYPE_KIND_ATOMIC, false);
 	return btyp1->name == btyp2->name && btyp1->size == btyp2->size;
@@ -442,7 +442,7 @@ RZ_API bool rz_type_integral_set_sign(const RzTypeDB *typedb, RZ_NONNULL RzType 
 
 /**
  * \brief RzTypeCond enum to string
- * 
+ *
  * \param cc RzTypeCond
  * \return const char *
  */
@@ -470,7 +470,7 @@ RZ_API RZ_BORROW const char *rz_type_cond_tostring(RzTypeCond cc) {
 
 /**
  * \brief return the inverted condition
- * 
+ *
  * \param cond RzTypeCond
  * \return RzTypeCond
  */
@@ -494,11 +494,11 @@ RZ_API RzTypeCond rz_type_cond_invert(RzTypeCond cond) {
 }
 /**
  * \brief evaluate the type condition on the arguments and return a bool accordingly.
- * 
+ *
  * \param cond RzTypeCond
- * \param arg0 
- * \param arg1 
- * \return bool 
+ * \param arg0
+ * \param arg1
+ * \return bool
  */
 RZ_API bool rz_type_cond_eval(RzTypeCond cond, st64 arg0, st64 arg1) {
 	switch (cond) {
@@ -515,10 +515,10 @@ RZ_API bool rz_type_cond_eval(RzTypeCond cond, st64 arg0, st64 arg1) {
 
 /**
  * \brief Same as rz_type_cond_eval, but it assumes \p arg1 to be 0.
- * 
+ *
  * \param cond RzTypeCond
- * \param arg0 
- * \return bool 
+ * \param arg0
+ * \return bool
  */
 RZ_API bool rz_type_cond_eval_single(RzTypeCond cond, st64 arg0) {
 	switch (cond) {

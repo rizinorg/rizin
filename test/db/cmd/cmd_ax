@@ -4,7 +4,7 @@ CMDS=<<EOF
 e analysis.jmp.cref=true
 aaa
 s 0x804969c
-ax~0x804969c
+axl~0x804969c
 axtj~{}
 EOF
 EXPECT=<<EOF
@@ -12,10 +12,8 @@ EXPECT=<<EOF
 [
   {
     "from": 134513350,
-    "type": "CODE",
-    "opcode": "jmp dword [0x804969c]",
-    "name": "section..plt+6",
-    "refname": "section..got.plt+8"
+    "to": 134518428,
+    "type": "CODE"
   }
 ]
 EOF
@@ -40,24 +38,12 @@ C 0x44 add byte [rax], al
 EOF
 RUN
 
-NAME=axj
+NAME=axlj
 FILE=bins/elf/analysis/hello-utf-16
 CMDS=<<EOF
 aa
 s sym.imp.wprintf
-axj~{[1].name}
-EOF
-EXPECT=<<EOF
-section..init+16
-EOF
-RUN
-
-NAME=axj
-FILE=bins/elf/analysis/hello-utf-16
-CMDS=<<EOF
-aa
-s sym.imp.wprintf
-axj~{[0].to}
+axlj~{[0].to}
 EOF
 EXPECT=<<EOF
 6295544

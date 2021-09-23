@@ -54,12 +54,19 @@ static bool __is_target_kernel(DbgEngContext *idbg) {
 	return false;
 }
 
+static inline bool io_desc_is_windbg(RzIO *io) {
+	return io && io->desc && io->desc->plugin && !strcmp(io->desc->plugin->name, "windbg");
+}
+
 static bool windbg_init(RzDebug *dbg, void **user) {
 	DbgEngContext *idbg = dbg->plugin_data;
-	if (!idbg || !idbg->initialized) {
-		return false;
+	if (!idbg) {
+		if (!io_desc_is_windbg(dbg->iob.io)) {
+			return false;
+		}
+		idbg = dbg->plugin_data = dbg->iob.io->desc->data;
 	}
-	return true;
+	return idbg->initialized;
 }
 
 static int windbg_step(RzDebug *dbg) {
@@ -72,12 +79,16 @@ static int windbg_step(RzDebug *dbg) {
 static int windbg_select(RzDebug *dbg, int pid, int tid) {
 	DbgEngContext *idbg = dbg->plugin_data;
 	rz_return_val_if_fail(idbg && idbg->initialized, 0);
-	ULONG Id = tid;
+	ULONG process_id = pid;
+	ULONG thread_id = tid;
 	if (!__is_target_kernel(idbg)) {
-		ITHISCALL(dbgSysObj, GetThreadIdBySystemId, tid, &Id);
+		ITHISCALL(dbgSysObj, GetProcessIdBySystemId, pid, &process_id);
+		ITHISCALL(dbgSysObj, GetThreadIdBySystemId, tid, &thread_id);
 	}
-	if (SUCCEEDED(ITHISCALL(dbgSysObj, SetCurrentThreadId, Id))) {
-		return 1;
+	if (SUCCEEDED(ITHISCALL(dbgSysObj, SetCurrentProcessId, process_id))) {
+		if (SUCCEEDED(ITHISCALL(dbgSysObj, SetCurrentThreadId, thread_id))) {
+			return 1;
+		}
 	}
 	return 0;
 }
@@ -143,9 +154,9 @@ static int windbg_wait(RzDebug *dbg, int pid) {
 	HRESULT hr;
 	while ((hr = ITHISCALL(dbgCtrl, WaitForEvent, DEBUG_WAIT_DEFAULT, timeout)) == S_FALSE) {
 		if (do_break) {
-			ITHISCALL(dbgCtrl, SetExecutionStatus, DEBUG_STATUS_BREAK);
 			do_break = false;
 			rz_cons_break_pop();
+			windbg_select(dbg, dbg->pid, dbg->tid);
 			return RZ_DEBUG_REASON_USERSUSP;
 		}
 	}
@@ -493,7 +504,9 @@ static int windbg_detach(RzDebug *dbg, int pid) {
 
 static bool windbg_kill(RzDebug *dbg, int pid, int tid, int sig) {
 	DbgEngContext *idbg = dbg->plugin_data;
-	rz_return_val_if_fail(idbg && idbg->initialized, false);
+	if (!idbg || !idbg->initialized) {
+		return false;
+	}
 	if (!sig) {
 		ULONG exit_code, class, qualifier;
 		if (SUCCEEDED(ITHISCALL(dbgCtrl, GetDebuggeeType, &class, &qualifier))) {
@@ -505,7 +518,7 @@ static bool windbg_kill(RzDebug *dbg, int pid, int tid, int sig) {
 			}
 		}
 		if (FAILED(ITHISCALL(dbgClient, GetExitCode, &exit_code))) {
-			return false;
+			return true;
 		}
 		return exit_code == STILL_ACTIVE;
 	}
@@ -562,9 +575,10 @@ static RzDebugInfo *windbg_info(RzDebug *dbg, const char *arg) {
 	return NULL;
 }
 
-static bool windbg_gcore(RzDebug *dbg, RzBuffer *dest) {
+static bool windbg_gcore(RzDebug *dbg, char *p, RzBuffer *dest) {
 	DbgEngContext *idbg = dbg->plugin_data;
 	rz_return_val_if_fail(idbg && idbg->initialized, false);
+	(void)p;
 	char *path = rz_sys_getenv(RZ_SYS_TMP);
 	if (RZ_STR_ISEMPTY(path)) {
 		free(path);

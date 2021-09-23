@@ -388,6 +388,11 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 		TSNode child = ts_node_named_child(struct_body, i);
 		const char *node_type = ts_node_type(child);
 
+		// Skip comments
+		if (!strcmp(node_type, "comment")) {
+			continue;
+		}
+
 		// Parse the type qualifier first (if present)
 		// FIXME: There could be multiple different type qualifiers in one declaration
 		bool is_const = false;
@@ -448,8 +453,9 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 		// Thus it has the additional node after the declarator
 		TSNode bitfield_clause = ts_node_next_named_sibling(field_declarator);
 		if (!ts_node_is_null(bitfield_clause)) {
+			const char *bfnode_type = ts_node_type(field_type);
 			// As per C standard bitfields are defined only for atomic types, particularly "int"
-			if (strcmp(ts_node_type(field_type), "primitive_type")) {
+			if (strcmp(bfnode_type, "primitive_type") && strcmp(bfnode_type, "type_identifier")) {
 				parser_error(state, "ERROR: Struct bitfield cannot contain non-primitive bitfield!\n");
 				node_malformed_error(state, child, text, "struct field");
 				result = -1;
@@ -631,19 +637,21 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 				parser_debug(state, "Union \"%s\" was forward-defined before\n", name);
 				if (!(*tpair = c_parser_new_union_naked_type(state, name))) {
 					parser_error(state, "Cannot create \"%s\" naked union type in the context\n", name);
-					return -1;
+					result = -1;
+					goto unexit;
 				}
-				return 0;
+				goto unexit;
 			}
 			// We still could create the "forward looking union declaration"
 			// The parser then can augment the definition
 			if (!(*tpair = c_parser_new_union_forward_definition(state, name))) {
 				parser_error(state, "Cannot create \"%s\" forward union definition in the context\n", name);
-				return -1;
+				result = -1;
+				goto unexit;
 			}
-			return 0;
+			goto unexit;
 		} else {
-			return 0;
+			goto unexit;
 		}
 	}
 
@@ -669,6 +677,11 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 		parser_debug(state, "union: processing %d field...\n", i);
 		TSNode child = ts_node_named_child(union_body, i);
 		const char *node_type = ts_node_type(child);
+
+		// Skip comments
+		if (!strcmp(node_type, "comment")) {
+			continue;
+		}
 
 		// Parse the type qualifier first (if present)
 		// FIXME: There could be multiple different type qualifiers in one declaration
@@ -729,8 +742,9 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 		// Thus it has the additional node after the declarator
 		TSNode bitfield_clause = ts_node_next_named_sibling(field_declarator);
 		if (!ts_node_is_null(bitfield_clause)) {
+			const char *bfnode_type = ts_node_type(field_type);
 			// As per C standard bitfields are defined only for atomic types, particularly "int"
-			if (strcmp(ts_node_type(field_type), "primitive_type")) {
+			if (strcmp(bfnode_type, "primitive_type") && strcmp(bfnode_type, "type_identifier")) {
 				parser_error(state, "ERROR: Union bitfield cannot contain non-primitive bitfield!\n");
 				node_malformed_error(state, child, text, "union field");
 				result = -1;
@@ -946,6 +960,12 @@ int parse_enum_node(CParserState *state, TSNode node, const char *text, ParserTy
 		parser_debug(state, "enum: processing %d field...\n", i);
 		TSNode child = ts_node_named_child(enum_body, i);
 		const char *node_type = ts_node_type(child);
+
+		// Skip comments
+		if (!strcmp(node_type, "comment")) {
+			continue;
+		}
+
 		// Every field should have (field_declaration) AST clause
 		if (strcmp(node_type, "enumerator")) {
 			parser_error(state, "ERROR: Enum member AST should contain (enumerator) node!\n");
@@ -989,7 +1009,26 @@ int parse_enum_node(CParserState *state, TSNode node, const char *text, ParserTy
 			}
 			char *real_identifier = ts_node_sub_string(member_identifier, text);
 			parser_debug(state, "enum member: %s\n", real_identifier);
-			free(real_identifier);
+			// Add an enum case
+			RzVector *cases = &enum_pair->btype->enum_data.cases;
+			// In this case we just increment previous value by 1
+			st64 derived_val = 0;
+			if (!rz_vector_empty(cases)) {
+				RzTypeEnumCase *lastcase = rz_vector_tail(cases);
+				derived_val = lastcase->val + 1;
+			}
+			RzTypeEnumCase cas = {
+				.name = real_identifier,
+				.val = derived_val
+			};
+			void *element = rz_vector_push(cases, &cas); // returns null if no space available
+			if (!element) {
+				parser_error(state, "Error appending enum case to the base type\n");
+				free(cas.name);
+				free(enum_pair);
+				result = -1;
+				goto rexit;
+			}
 		} else {
 			// It's a proper field, like "A = 1,"
 			TSNode member_identifier = ts_node_child_by_field_name(child, "name", 4);

@@ -25,7 +25,7 @@ bits     16
 retguard false
 class    PE32
 cmp.csum 0x0000584b
-compiled Thu Aug 12 03:57:16 2021
+compiled Thu Aug 12 03:57:16 2021 UTC
 compiler N/A
 dbg_file N/A
 endian   LE

@@ -47,33 +47,56 @@ RZ_API ut64 rz_time_now_mono(void) {
 #endif
 }
 
-RZ_API char *rz_time_stamp_to_str(ut32 timeStamp) {
-#ifdef _MSC_VER
-	time_t rawtime;
-	struct tm *tminfo;
-	struct tm tmptm;
-	rawtime = (time_t)timeStamp;
-	tminfo = rz_localtime_r(&rawtime, &tmptm);
-	//tminfo = gmtime (&rawtime);
-	return rz_str_trim_dup(asctime(tminfo));
-#else
-	struct my_timezone {
-		int tz_minuteswest; /* minutes west of Greenwich */
-		int tz_dsttime; /* type of DST correction */
-	} tz;
-	struct timeval tv;
-	int gmtoff;
-	time_t ts = (time_t)timeStamp;
-	gettimeofday(&tv, (void *)&tz);
-	gmtoff = (int)(tz.tz_minuteswest * 60); // in seconds
-	ts += (time_t)gmtoff;
-	char *res = malloc(ASCTIME_BUF_MINLEN);
-	if (res) {
-		ctime_r(&ts, res);
-		rz_str_trim(res); // XXX we probably need an rz_str_trim_dup()
+/* Valid only from midnight 31 Dec 1969 until Jan 1970 */
+static inline long get_seconds_since_12am31Dec1969(struct tm *time) {
+	if (time->tm_mday == 31 && time->tm_mon == 11 && time->tm_year == 69) {
+		return time->tm_hour * 3600 + time->tm_min * 60 + time->tm_sec;
+	} else if (time->tm_mon == 0 && time->tm_year == 70) {
+		return 86400 + (time->tm_mday - 1) * 86400 + time->tm_hour * 3600 + time->tm_min * 60 + time->tm_sec;
 	}
-	return res;
-#endif
+	return -1;
+}
+
+/* timeStamp must be a Unix epoch integer */
+RZ_API char *rz_time_stamp_to_str(ut32 timeStamp) {
+	char timestr_buf[ASCTIME_BUF_MINLEN];
+	time_t ts = (time_t)timeStamp;
+	struct tm gmt_tm;
+	rz_gmtime_r(&ts, &gmt_tm);
+	struct tm local_tm;
+	rz_localtime_r(&ts, &local_tm);
+	time_t gmt_time;
+	time_t local_time;
+	long diff;
+	if (gmt_tm.tm_mday == 1 && gmt_tm.tm_mon == 0 && gmt_tm.tm_year == 70) {
+		gmt_time = get_seconds_since_12am31Dec1969(&gmt_tm);
+		local_time = get_seconds_since_12am31Dec1969(&local_tm);
+		diff = local_time - gmt_time;
+	} else {
+		gmt_time = mktime(&gmt_tm);
+		local_time = mktime(&local_tm);
+		diff = (long)difftime(local_time, gmt_time);
+	}
+	bool err = gmt_time == -1 || local_time == -1;
+	char *timestr = rz_ctime_r(&ts, timestr_buf);
+	if (timestr) {
+		rz_str_trim(timestr);
+		long hours = diff / 3600;
+		long minutes = labs(diff % 3600 / 60);
+		long seconds = labs(diff % 3600 % 60);
+		if (err) {
+			timestr = rz_str_newf("%s ERR", timestr);
+		} else if (seconds) {
+			timestr = rz_str_newf("%s UTC%+ld:%ld:%ld", timestr, hours, minutes, seconds);
+		} else if (minutes) {
+			timestr = rz_str_newf("%s UTC%+ld:%ld", timestr, hours, minutes);
+		} else if (hours) {
+			timestr = rz_str_newf("%s UTC%+ld", timestr, hours);
+		} else {
+			timestr = rz_str_newf("%s UTC", timestr);
+		}
+	}
+	return timestr;
 }
 
 RZ_API ut32 rz_time_dos_time_stamp_to_posix(ut32 timeStamp) {

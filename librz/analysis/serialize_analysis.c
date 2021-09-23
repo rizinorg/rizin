@@ -563,13 +563,14 @@ RZ_API void rz_serialize_analysis_var_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalys
 	rz_return_if_fail(j && var);
 	char *vartype = rz_type_as_string(var->fcn->analysis->typedb, var->type);
 	if (!vartype) {
-		eprintf("Variable \"%s\" has undefined type\n", var->name);
+		RZ_LOG_ERROR("Variable \"%s\" has undefined type\n", var->name);
 		return;
 	}
 	pj_o(j);
 	pj_ks(j, "name", var->name);
-	// FIXME: Save it properly?
+	// TODO: Save it properly instead of using the C representation
 	pj_ks(j, "type", vartype);
+	free(vartype);
 	switch (var->kind) {
 	case RZ_ANALYSIS_VAR_KIND_REG:
 		pj_ks(j, "kind", "r");
@@ -880,7 +881,7 @@ RZ_API void rz_serialize_analysis_global_var_save(RZ_NONNULL Sdb *db, RZ_NONNULL
 	rz_rbtree_foreach (anal->global_var_tree, it, var, RzAnalysisVarGlobal, rb) {
 		vartype = rz_type_as_string(anal->typedb, var->type);
 		if (!vartype) {
-			eprintf("Global variable \"%s\" has undefined type\n", var->name);
+			RZ_LOG_ERROR("Global variable \"%s\" has undefined type\n", var->name);
 			pj_free(j);
 			return;
 		}
@@ -889,7 +890,9 @@ RZ_API void rz_serialize_analysis_global_var_save(RZ_NONNULL Sdb *db, RZ_NONNULL
 		pj_o(j);
 		pj_ks(j, "name", var->name);
 		pj_ks(j, "addr", addr);
+		// TODO: Save it properly instead of using the C representation
 		pj_ks(j, "type", vartype);
+		free(vartype);
 		if (!rz_vector_empty(&var->constraints)) {
 			pj_ka(j, "constrs");
 			RzTypeConstraint *constr;
@@ -2259,6 +2262,12 @@ RZ_API bool rz_serialize_analysis_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis
 	SUB("xrefs", rz_serialize_analysis_xrefs_load(subdb, analysis, res));
 
 	SUB("blocks", rz_serialize_analysis_blocks_load(subdb, analysis, diff_parser, res));
+
+	SUB("classes", rz_serialize_analysis_classes_load(subdb, analysis, res));
+	SUB("types", rz_serialize_analysis_types_load(subdb, analysis, res));
+	SUB("callables", rz_serialize_analysis_callables_load(subdb, analysis, res));
+	SUB("typelinks", rz_serialize_analysis_typelinks_load(subdb, analysis, res));
+
 	// All bbs have ref=1 now
 	SUB("functions", rz_serialize_analysis_functions_load(subdb, analysis, diff_parser, res));
 	SUB("noreturn", rz_serialize_analysis_function_noreturn_load(subdb, analysis, res));
@@ -2281,10 +2290,6 @@ RZ_API bool rz_serialize_analysis_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis
 
 	SUB("meta", rz_serialize_analysis_meta_load(subdb, analysis, res));
 	SUB("hints", rz_serialize_analysis_hints_load(subdb, analysis, res));
-	SUB("classes", rz_serialize_analysis_classes_load(subdb, analysis, res));
-	SUB("types", rz_serialize_analysis_types_load(subdb, analysis, res));
-	SUB("callables", rz_serialize_analysis_callables_load(subdb, analysis, res));
-	SUB("typelinks", rz_serialize_analysis_typelinks_load(subdb, analysis, res));
 	SUB("zigns", rz_serialize_analysis_sign_load(subdb, analysis, res));
 	SUB("imports", rz_serialize_analysis_imports_load(subdb, analysis, res));
 	SUB("pins", rz_serialize_analysis_pin_load(subdb, analysis, res));

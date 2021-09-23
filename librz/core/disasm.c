@@ -1036,6 +1036,7 @@ static const char *get_reg_at(RzAnalysisFunction *fcn, st64 delta, ut64 addr) {
 
 static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 	RzCore *core = ds->core;
+
 	if (ds->use_esil) {
 		free(ds->opstr);
 		if (*RZ_STRBUF_SAFEGET(&ds->analop.esil)) {
@@ -1074,6 +1075,30 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 		}
 	}
 
+	if (ds->analop.mmio_address != UT64_MAX) {
+		char number[32];
+		rz_strf(number, "0x%" PFMT64x, ds->analop.mmio_address);
+
+		RzArchTarget *arch_target = core->analysis->arch_target;
+
+		const char *resolved = rz_arch_profile_resolve_mmio(arch_target->profile, ds->analop.mmio_address);
+		if (resolved) {
+			ds->opstr = rz_str_replace(ds->opstr, number, resolved, 0);
+		}
+	}
+
+	if (ds->analop.ptr != UT64_MAX) {
+		char number[32];
+		rz_strf(number, "0x%" PFMT64x, ds->analop.ptr);
+
+		RzArchTarget *arch_target = core->analysis->arch_target;
+
+		const char *resolved = rz_arch_profile_resolve_extended_register(arch_target->profile, ds->analop.ptr);
+		if (resolved) {
+			ds->opstr = rz_str_replace(ds->opstr, number, resolved, 0);
+		}
+	}
+
 	/* initialize */
 	core->parser->subrel = rz_config_get_b(core->config, "asm.sub.rel");
 	core->parser->subreg = rz_config_get_b(core->config, "asm.sub.reg");
@@ -1087,8 +1112,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 		core->parser->get_op_ireg = get_op_ireg;
 		core->parser->get_ptr_at = get_ptr_at;
 		core->parser->get_reg_at = get_reg_at;
-		rz_parse_subvar(core->parser, f, at, ds->analop.size,
-			ds->opstr, ds->strsub, sizeof(ds->strsub));
+		rz_parse_subvar(core->parser, f, at, ds->analop.size, ds->opstr, ds->strsub, sizeof(ds->strsub));
 		if (*ds->strsub) {
 			free(ds->opstr);
 			ds->opstr = strdup(ds->strsub);
@@ -5780,7 +5804,7 @@ toro:
 			if (ds->immtrim) {
 				free(ds->opstr);
 				ds->opstr = strdup(rz_asm_op_get_asm(&ds->asmop));
-				rz_parse_immtrim(ds->opstr);
+				ds->opstr = rz_parse_immtrim(ds->opstr);
 			}
 		}
 		if (ds->asm_instr) {

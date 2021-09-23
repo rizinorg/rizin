@@ -2072,11 +2072,11 @@ RZ_API bool rz_core_bin_imports_print(RzCore *core, RzBinFile *bf, RzCmdStateOut
 
 		if (filter && filter->offset != UT64_MAX) {
 			if (!is_in_symbol_range(addr, 1, filter->offset)) {
-				continue;
+				goto next;
 			}
 		}
 		if (filter && filter->name && strcmp(import->name, filter->name)) {
-			continue;
+			goto next;
 		}
 
 		if (RZ_STR_ISNOTEMPTY(import->classname)) {
@@ -2142,6 +2142,7 @@ RZ_API bool rz_core_bin_imports_print(RzCore *core, RzBinFile *bf, RzCmdStateOut
 			rz_warn_if_reached();
 			break;
 		}
+	next:
 		RZ_FREE(symname);
 		RZ_FREE(libname);
 	}
@@ -2650,8 +2651,8 @@ static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzList *l
 
 			switch (string->type) {
 			case RZ_STRING_TYPE_UTF8:
-			case RZ_STRING_TYPE_WIDE:
-			case RZ_STRING_TYPE_WIDE32:
+			case RZ_STRING_TYPE_WIDE_LE:
+			case RZ_STRING_TYPE_WIDE32_LE:
 				block_list = rz_utf_block_list((const ut8 *)string->string, -1, NULL);
 				if (block_list) {
 					if (block_list[0] == 0 && block_list[1] == -1) {
@@ -2703,8 +2704,8 @@ static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzList *l
 			RzStrBuf *buf = rz_strbuf_new(str);
 			switch (string->type) {
 			case RZ_STRING_TYPE_UTF8:
-			case RZ_STRING_TYPE_WIDE:
-			case RZ_STRING_TYPE_WIDE32:
+			case RZ_STRING_TYPE_WIDE_LE:
+			case RZ_STRING_TYPE_WIDE32_LE:
 				block_list = rz_utf_block_list((const ut8 *)string->string, -1, NULL);
 				if (block_list) {
 					if (block_list[0] == 0 && block_list[1] == -1) {
@@ -3591,18 +3592,6 @@ static void classdump_java(RzCore *r, RzBinClass *c) {
 	free(package);
 	free(classname);
 	rz_cons_printf("}\n\n");
-}
-
-static inline bool is_java_lang(RzBinFile *bf) {
-	if (!bf || !bf->o) {
-		return false;
-	} else if (bf->o->lang == RZ_BIN_NM_JAVA) {
-		return true;
-	} else if (!bf->o->info || !bf->o->info->lang) {
-		return false;
-	}
-	const char *lang = bf->o->info->lang;
-	return strstr(lang, "dalvik") || strstr(lang, "java") || strstr(lang, "kotlin");
 }
 
 static void bin_class_print_rizin(RzCore *r, RzBinClass *c, ut64 at_min) {
@@ -5136,6 +5125,7 @@ RZ_API bool rz_core_bin_sections_mapping_print(RzCore *core, RzBinFile *bf, RzCm
 		rz_table_add_row_columnsf(state->d.t, "s", rz_strbuf_get(sb));
 		rz_strbuf_free(sb);
 	}
+	rz_vector_free(maps);
 
 	rz_cmd_state_output_array_end(state);
 	return true;
@@ -5252,4 +5242,23 @@ RZ_API bool rz_core_bin_archs_print(RzBin *bin, RzCmdStateOutput *state) {
 
 	rz_cmd_state_output_array_end(state);
 	return true;
+}
+
+RZ_API bool rz_core_bin_pdb_load(RZ_NONNULL RzCore *core, RZ_NONNULL const char *filename) {
+	rz_cons_push();
+	rz_core_pdb_info(core, filename, NULL, RZ_MODE_RIZINCMD);
+	const char *buf = rz_cons_get_buffer();
+	if (!buf) {
+		rz_cons_pop();
+		return false;
+	}
+	char *s = strdup(buf);
+	rz_cons_pop();
+	if (!s) {
+		return false;
+	}
+
+	RzCmdStatus status = rz_core_cmd_rzshell(core, s, 0);
+	free(s);
+	return status == RZ_CMD_STATUS_OK;
 }

@@ -3013,10 +3013,14 @@ static bool type_to_format_pair(const RzTypeDB *typedb, RzStrBuf *format, RzStrB
 		return type_to_format_pair(typedb, format, fields, identifier, type->array.type);
 	} else if (type->kind == RZ_TYPE_KIND_POINTER) {
 		// We can't print anything useful for function type pointer
-		if (rz_type_is_callable_ptr(type)) {
+		if (rz_type_is_callable_ptr_nested(type)) {
 			// Thus we consider this is just a `void *` pointer
 			rz_strbuf_append(format, "p");
-			rz_strbuf_appendf(fields, "%s ", type->callable->name);
+			const char *name = rz_type_identifier(type);
+			// Callables are allowed to have empty names
+			if (name) {
+				rz_strbuf_appendf(fields, "%s ", name);
+			}
 		} else {
 			rz_strbuf_append(format, "*");
 			return type_to_format_pair(typedb, format, fields, identifier, type->pointer.type);
@@ -3025,7 +3029,10 @@ static bool type_to_format_pair(const RzTypeDB *typedb, RzStrBuf *format, RzStrB
 		// We can't print anything useful for function type
 		// Thus we consider this is just a `void *` pointer
 		rz_strbuf_append(format, "p");
-		rz_strbuf_appendf(fields, "%s ", type->callable->name);
+		// Callables are allowed to have empty names
+		if (type->callable->name) {
+			rz_strbuf_appendf(fields, "%s ", type->callable->name);
+		}
 	}
 	return true;
 }
