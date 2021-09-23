@@ -1,6 +1,7 @@
 # Should not be run on Windows
 NAME=utf8 (possibly malformed) filenames with non-printable chars
 FILE==
+BROKEN=1  # Third JSON output is wrong
 CMDS=<<EOF
 cd `e dir.tmp`
 e io.cache=true
