@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2014 defragger <rlaemmert@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef GDB_SERVER_CORE_H
 #define GDB_SERVER_CORE_H
 

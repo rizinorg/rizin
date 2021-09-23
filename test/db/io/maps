@@ -14,10 +14,10 @@ EOF
 EXPECT=<<EOF
 9090
 0000
- 2 fd: 4 +0x00000000 0x00000000 - 0x000003ff rw- 
- 1 fd: 3 +0x00000000 0x00000000 - 0x000003ff rw- 
  1 fd: 3 +0x00000000 0x00000000 - 0x000003ff rw- 
  2 fd: 4 +0x00000000 0x00000000 - 0x000003ff rw- 
+ 2 fd: 4 +0x00000000 0x00000000 - 0x000003ff rw- 
+ 1 fd: 3 +0x00000000 0x00000000 - 0x000003ff rw- 
 9090
 EOF
 RUN
@@ -62,7 +62,7 @@ EOF
 RUN
 
 NAME=om 0x100;x@0xff
-FILE=-
+FILE==
 CMDS=<<EOF
 e io.va=false
 e file.nowarn=true
@@ -77,7 +77,7 @@ EOF
 RUN
 
 NAME=o - 0x9000;x@0x8f00
-FILE=-
+FILE==
 CMDS=<<EOF
 o malloc://128 0x9000 > /dev/null
 e io.va=true
@@ -91,7 +91,7 @@ EOF
 RUN
 
 NAME=omfg all rwx
-FILE=-
+FILE==
 CMDS=<<EOF
 e scr.null=true
 o malloc://32 0x400
@@ -107,7 +107,7 @@ EOF
 RUN
 
 NAME=Opening a new map doesnt set io.a to false
-FILE=-
+FILE==
 CMDS=<<EOF
 e io.va
 e scr.null=true
@@ -122,7 +122,7 @@ EOF
 RUN
 
 NAME=omf one mapping
-FILE=-
+FILE==
 CMDS=<<EOF
 omf 1 rwx
 om~rwx~?
@@ -179,13 +179,15 @@ $initial_map |.
 om               # Output must be the same as initial om
 EOF
 EXPECT=<<EOF
- 3 fd: 3 +0x00000000 0x08048000 - 0x08048a67 r-x fmap.LOAD0
- 2 fd: 3 +0x00000ed4 0x08049ed4 - 0x0804a01f r-- fmap.LOAD1
- 1 fd: 4 +0x00000000 0x0804a020 - 0x0804a023 rw- mmap.LOAD1
+ 1 fd: 4 +0x00000000 0x0804a02c - 0x0804a03f r-- vmap.reloc-targets
+ 2 fd: 3 +0x00000000 0x08048000 - 0x08048a67 r-x fmap.LOAD0
+ 3 fd: 5 +0x00000000 0x0804a020 - 0x0804a023 rw- mmap.LOAD1
+ 4 fd: 3 +0x00000ed4 0x08049ed4 - 0x0804a01f r-- fmap.LOAD1
 ----
 ----
+ 1 fd: 3 +0x00000ed4 0x08049ed4 - 0x0804a01f r-- fmap.LOAD1
+ 2 fd: 5 +0x00000000 0x0804a020 - 0x0804a023 rw- mmap.LOAD1
  3 fd: 3 +0x00000000 0x08048000 - 0x08048a67 r-x fmap.LOAD0
- 2 fd: 3 +0x00000ed4 0x08049ed4 - 0x0804a01f r-- fmap.LOAD1
- 1 fd: 4 +0x00000000 0x0804a020 - 0x0804a023 rw- mmap.LOAD1
+ 4 fd: 4 +0x00000000 0x0804a02c - 0x0804a03f r-- vmap.reloc-targets
 EOF
 RUN

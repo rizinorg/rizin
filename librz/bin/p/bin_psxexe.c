@@ -17,7 +17,7 @@ static bool check_buffer(RzBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *b, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *sdb) {
 	return check_buffer(b);
 }
 
@@ -74,7 +74,6 @@ static RzList *sections(RzBinFile *bf) {
 	sect->vaddr = psxheader.t_addr;
 	sect->vsize = psxheader.t_size;
 	sect->perm = RZ_PERM_RX;
-	sect->add = true;
 	sect->has_strings = true;
 
 	rz_list_append(ret, sect);
@@ -121,6 +120,7 @@ RzBinPlugin rz_bin_plugin_psxexe = {
 	.load_buffer = &load_buffer,
 	.check_buffer = &check_buffer,
 	.info = &info,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
 	.entries = &entries,
 	.strings = &strings,

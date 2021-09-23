@@ -16,7 +16,7 @@ static bool check_buffer(RzBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
 	return check_buffer(buf);
 }
 
@@ -24,8 +24,8 @@ static ut64 baddr(RzBinFile *bf) {
 	return 0LL;
 }
 
-static RzBinAddr *binsym(RzBinFile *bf, int type) {
-	if (type == RZ_BIN_SYM_MAIN && bf && bf->buf) {
+static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
+	if (type == RZ_BIN_SPECIAL_SYMBOL_MAIN && bf && bf->buf) {
 		ut8 init_jmp[4];
 		RzBinAddr *ret = RZ_NEW0(RzBinAddr);
 		if (!ret) {
@@ -60,61 +60,25 @@ static RzList *entries(RzBinFile *bf) {
 }
 
 static RzList *sections(RzBinFile *bf) {
-	ut8 bank;
-	int i;
-	RzList *ret;
-
-	if (!bf) {
+	if (!bf || !bf->buf) {
 		return NULL;
 	}
-
-	ret = rz_list_new();
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_section_free);
 	if (!ret) {
 		return NULL;
 	}
-
-	rz_buf_read_at(bf->buf, 0x148, &bank, 1);
-	bank = gb_get_rombanks(bank);
-#ifdef _MSC_VER
-	RzBinSection **rombank = (RzBinSection **)malloc(sizeof(RzBinSection *) * bank);
-#else
-	RzBinSection *rombank[bank];
-#endif
-
-	if (!bf->buf) {
-		free(ret);
-#ifdef _MSC_VER
-		free(rombank);
-#endif
-		return NULL;
+	ut8 bank_id;
+	rz_buf_read_at(bf->buf, 0x148, &bank_id, 1);
+	int banks_count = gb_get_rombanks(bank_id);
+	for (size_t i = 0; i < banks_count; i++) {
+		RzBinSection *section = RZ_NEW0(RzBinSection);
+		section->name = rz_str_newf("rombank%02x", (unsigned int)i);
+		section->paddr = i * 0x4000;
+		section->vaddr = i ? (i * 0x10000 - 0xc000) : 0;
+		section->size = section->vsize = 0x4000;
+		section->perm = rz_str_rwx("rx");
+		rz_list_append(ret, section);
 	}
-
-	ret->free = free;
-
-	rombank[0] = RZ_NEW0(RzBinSection);
-	rombank[0]->name = strdup("rombank00");
-	rombank[0]->paddr = 0;
-	rombank[0]->size = 0x4000;
-	rombank[0]->vsize = 0x4000;
-	rombank[0]->vaddr = 0;
-	rombank[0]->perm = rz_str_rwx("rx");
-	rombank[0]->add = true;
-
-	rz_list_append(ret, rombank[0]);
-
-	for (i = 1; i < bank; i++) {
-		rombank[i] = RZ_NEW0(RzBinSection);
-		rombank[i]->name = rz_str_newf("rombank%02x", i);
-		rombank[i]->paddr = i * 0x4000;
-		rombank[i]->vaddr = i * 0x10000 - 0xc000; //spaaaaaaaaaaaaaaaace!!!
-		rombank[i]->size = rombank[i]->vsize = 0x4000;
-		rombank[i]->perm = rz_str_rwx("rx");
-		rombank[i]->add = true;
-		rz_list_append(ret, rombank[i]);
-	}
-#ifdef _MSC_VER
-	free(rombank);
-#endif
 	return ret;
 }
 
@@ -122,10 +86,9 @@ static RzList *symbols(RzBinFile *bf) {
 	RzList *ret = NULL;
 	RzBinSymbol *ptr[13];
 	int i;
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_list_newf((RzListFree)rz_bin_symbol_free))) {
 		return NULL;
 	}
-	ret->free = free;
 
 	for (i = 0; i < 8; i++) {
 		if (!(ptr[i] = RZ_NEW0(RzBinSymbol))) {
@@ -293,6 +256,7 @@ RzBinPlugin rz_bin_plugin_ningb = {
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
 	.symbols = &symbols,
 	.info = &info,

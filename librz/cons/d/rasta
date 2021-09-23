@@ -50,7 +50,7 @@ ec graph.box3 red
 ec graph.box4 red
 ec graph.true green
 ec graph.false red
-ec graph.trufae green
+ec graph.ujump green
 ec graph.current green
 ec graph.traced yellow
 

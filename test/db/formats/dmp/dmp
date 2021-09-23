@@ -11,30 +11,41 @@ FILE=bins/dmp/bmp.dmp
 CMDS=iI
 EXPECT=<<EOF
 arch     x86
-baddr    0xffffffffffffffff
-binsz    88428600
+cpu      N/A
+baddr    ----------
+binsz    0x05455038
 bintype  dmp64
 bits     64
-canary   false
 retguard false
-crypto   false
-endian   little
-havecode true
-laddr    0x0
-linenum  false
-lsyms    false
+class    N/A
+compiler N/A
+dbg_file N/A
+endian   LE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
+laddr    0x00000000
+lang     N/A
 machine  AMD64
 maxopsz  16
 minopsz  1
-nx       false
 os       Unknown
+cc       N/A
 pcalign  0
-pic      false
-relocs   false
+rpath    N/A
+subsys   
+stripped false
+crypto   false
+havecode true
+va       true
 sanitiz  false
 static   true
-stripped false
-va       true
+linenum  false
+lsyms    false
+canary   false
+PIE      false
+RELROCS  false
+NX       false
 EOF
 RUN
 
@@ -68,11 +79,11 @@ BITMAP_DUMP:
 EOF
 RUN
 
-NAME=: DMP BMP Page sections
+NAME=: DMP BMP Page maps
 FILE=bins/dmp/bmp.dmp
-CMDS=iS~?
+CMDS=om~?
 EXPECT=<<EOF
-21582
+21579
 EOF
 RUN
 

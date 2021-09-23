@@ -12,9 +12,7 @@ RUN
 
 NAME=Xcode symbols cache (header)
 FILE=bins/mach0/D9A37B67-F10A-35AA-A852-ABFBBECC03AE.symbols
-CMDS=<<EOF
-ih~{:
-EOF
+CMDS=iH~{:
 EXPECT=<<EOF
 cs_version: 1
 size: 7406
@@ -30,9 +28,7 @@ RUN
 
 NAME=Xcode symbols cache new (header)
 FILE=bins/mach0/D9A37B67-F10A-35AA-A852-ABFBBECC03AE-new.symbols
-CMDS=<<EOF
-ih~{:
-EOF
+CMDS=iH~{:
 EXPECT=<<EOF
 cs_version: 1
 size: 7231
@@ -151,104 +147,172 @@ RUN
 NAME=Xcode symbols cache (symbols)
 FILE=bins/mach0/D9A37B67-F10A-35AA-A852-ABFBBECC03AE.symbols
 CMDS=<<EOF
-is*~SceneDelegate
+is~SceneDelegate
 EOF
 EXPECT=<<EOF
-"f sym.__SceneDelegate_scene:willConnectToSession:options: 4 0x100006514"
-"f sym.__SceneDelegate_sceneDidDisconnect: 4 0x100006518"
-"f sym.__SceneDelegate_sceneDidBecomeActive: 4 0x10000651c"
-"f sym.__SceneDelegate_sceneWillResignActive: 4 0x100006520"
-"f sym.__SceneDelegate_sceneWillEnterForeground: 4 0x100006524"
-"f sym.__SceneDelegate_sceneDidEnterBackground: 4 0x100006528"
-"f sym.__SceneDelegate_window 16 0x10000652c"
-"f sym.__SceneDelegate_setWindow: 20 0x10000653c"
-"f sym.__SceneDelegate_.cxx_destruct 20 0x100006550"
-"f sym.__OBJC_LABEL_PROTOCOL___UISceneDelegate 8 0x1000080b0"
-"f sym.__OBJC_LABEL_PROTOCOL___UIWindowSceneDelegate 8 0x1000080b8"
-"f sym.__OBJC___PROTOCOL_REFS_UISceneDelegate 24 0x100008f50"
-"f sym.__OBJC___PROTOCOL_INSTANCE_METHODS_OPT_UISceneDelegate 296 0x100008f68"
-"f sym.__OBJC___PROTOCOL_METHOD_TYPES_UISceneDelegate 96 0x100009090"
-"f sym.__OBJC___PROTOCOL_REFS_UIWindowSceneDelegate 24 0x1000090f0"
-"f sym.__OBJC___PROTOCOL_INSTANCE_METHODS_OPT_UIWindowSceneDelegate 128 0x100009108"
-"f sym.__OBJC___PROP_LIST_UIWindowSceneDelegate 24 0x100009188"
-"f sym.__OBJC___PROTOCOL_METHOD_TYPES_UIWindowSceneDelegate 40 0x1000091a0"
-"f sym.__OBJC_CLASS_PROTOCOLS___SceneDelegate 24 0x1000091c8"
-"f sym.__OBJC_METACLASS_RO___SceneDelegate 72 0x1000091e0"
-"f sym.__OBJC___INSTANCE_METHODS_SceneDelegate 224 0x100009228"
-"f sym.__OBJC___INSTANCE_VARIABLES_SceneDelegate 40 0x100009308"
-"f sym.__OBJC___PROP_LIST_SceneDelegate 88 0x100009330"
-"f sym.__OBJC_CLASS_RO___SceneDelegate 72 0x100009388"
-"f sym._OBJC_IVAR___SceneDelegate._window 4 0x100009408"
-"f sym._OBJC_METACLASS___SceneDelegate 40 0x1000094b0"
-"f sym._OBJC_CLASS___SceneDelegate 40 0x1000094d8"
-"f sym.__OBJC_PROTOCOL___UISceneDelegate 96 0x1000095c8"
-"f sym.__OBJC_PROTOCOL___UIWindowSceneDelegate 96 0x100009628"
+0   0x00006514 0x100006514 NONE FUNC 4        -[SceneDelegate scene:willConnectToSession:options:]
+0   0x00006518 0x100006518 NONE FUNC 4        -[SceneDelegate sceneDidDisconnect:]
+0   0x0000651c 0x10000651c NONE FUNC 4        -[SceneDelegate sceneDidBecomeActive:]
+0   0x00006520 0x100006520 NONE FUNC 4        -[SceneDelegate sceneWillResignActive:]
+0   0x00006524 0x100006524 NONE FUNC 4        -[SceneDelegate sceneWillEnterForeground:]
+0   0x00006528 0x100006528 NONE FUNC 4        -[SceneDelegate sceneDidEnterBackground:]
+0   0x0000652c 0x10000652c NONE FUNC 16       -[SceneDelegate window]
+0   0x0000653c 0x10000653c NONE FUNC 20       -[SceneDelegate setWindow:]
+0   0x00006550 0x100006550 NONE FUNC 20       -[SceneDelegate .cxx_destruct]
+0   0x000080b0 0x1000080b0 NONE FUNC 8        _OBJC_LABEL_PROTOCOL_$_UISceneDelegate
+0   0x000080b8 0x1000080b8 NONE FUNC 8        _OBJC_LABEL_PROTOCOL_$_UIWindowSceneDelegate
+0   0x00008f50 0x100008f50 NONE FUNC 24       _OBJC_$_PROTOCOL_REFS_UISceneDelegate
+0   0x00008f68 0x100008f68 NONE FUNC 296      _OBJC_$_PROTOCOL_INSTANCE_METHODS_OPT_UISceneDelegate
+0   0x00009090 0x100009090 NONE FUNC 96       _OBJC_$_PROTOCOL_METHOD_TYPES_UISceneDelegate
+0   0x000090f0 0x1000090f0 NONE FUNC 24       _OBJC_$_PROTOCOL_REFS_UIWindowSceneDelegate
+0   0x00009108 0x100009108 NONE FUNC 128      _OBJC_$_PROTOCOL_INSTANCE_METHODS_OPT_UIWindowSceneDelegate
+0   0x00009188 0x100009188 NONE FUNC 24       _OBJC_$_PROP_LIST_UIWindowSceneDelegate
+0   0x000091a0 0x1000091a0 NONE FUNC 40       _OBJC_$_PROTOCOL_METHOD_TYPES_UIWindowSceneDelegate
+0   0x000091c8 0x1000091c8 NONE FUNC 24       _OBJC_CLASS_PROTOCOLS_$_SceneDelegate
+0   0x000091e0 0x1000091e0 NONE FUNC 72       _OBJC_METACLASS_RO_$_SceneDelegate
+0   0x00009228 0x100009228 NONE FUNC 224      _OBJC_$_INSTANCE_METHODS_SceneDelegate
+0   0x00009308 0x100009308 NONE FUNC 40       _OBJC_$_INSTANCE_VARIABLES_SceneDelegate
+0   0x00009330 0x100009330 NONE FUNC 88       _OBJC_$_PROP_LIST_SceneDelegate
+0   0x00009388 0x100009388 NONE FUNC 72       _OBJC_CLASS_RO_$_SceneDelegate
+0   0x00009408 0x100009408 NONE FUNC 4        OBJC_IVAR_$_SceneDelegate._window
+0   0x000094b0 0x1000094b0 NONE FUNC 40       OBJC_METACLASS_$_SceneDelegate
+0   0x000094d8 0x1000094d8 NONE FUNC 40       OBJC_CLASS_$_SceneDelegate
+0   0x000095c8 0x1000095c8 NONE FUNC 96       _OBJC_PROTOCOL_$_UISceneDelegate
+0   0x00009628 0x100009628 NONE FUNC 96       _OBJC_PROTOCOL_$_UIWindowSceneDelegate
 EOF
 RUN
 
 NAME=Xcode symbols cache new (symbols)
 FILE=bins/mach0/D9A37B67-F10A-35AA-A852-ABFBBECC03AE-new.symbols
 CMDS=<<EOF
-is*~SceneDelegate
+is~SceneDelegate
 EOF
 EXPECT=<<EOF
-"f sym.__SceneDelegate_scene:willConnectToSession:options: 4 0x100006514"
-"f sym.__SceneDelegate_sceneDidDisconnect: 4 0x100006518"
-"f sym.__SceneDelegate_sceneDidBecomeActive: 4 0x10000651c"
-"f sym.__SceneDelegate_sceneWillResignActive: 4 0x100006520"
-"f sym.__SceneDelegate_sceneWillEnterForeground: 4 0x100006524"
-"f sym.__SceneDelegate_sceneDidEnterBackground: 4 0x100006528"
-"f sym.__SceneDelegate_window 16 0x10000652c"
-"f sym.__SceneDelegate_setWindow: 20 0x10000653c"
-"f sym.__SceneDelegate_.cxx_destruct 20 0x100006550"
-"f sym.__OBJC_LABEL_PROTOCOL___UISceneDelegate 8 0x1000080b0"
-"f sym.__OBJC_LABEL_PROTOCOL___UIWindowSceneDelegate 8 0x1000080b8"
-"f sym.__OBJC___PROTOCOL_REFS_UISceneDelegate 24 0x100008f50"
-"f sym.__OBJC___PROTOCOL_INSTANCE_METHODS_OPT_UISceneDelegate 296 0x100008f68"
-"f sym.__OBJC___PROTOCOL_METHOD_TYPES_UISceneDelegate 96 0x100009090"
-"f sym.__OBJC___PROTOCOL_REFS_UIWindowSceneDelegate 24 0x1000090f0"
-"f sym.__OBJC___PROTOCOL_INSTANCE_METHODS_OPT_UIWindowSceneDelegate 128 0x100009108"
-"f sym.__OBJC___PROP_LIST_UIWindowSceneDelegate 24 0x100009188"
-"f sym.__OBJC___PROTOCOL_METHOD_TYPES_UIWindowSceneDelegate 40 0x1000091a0"
-"f sym.__OBJC_CLASS_PROTOCOLS___SceneDelegate 24 0x1000091c8"
-"f sym.__OBJC_METACLASS_RO___SceneDelegate 72 0x1000091e0"
-"f sym.__OBJC___INSTANCE_METHODS_SceneDelegate 224 0x100009228"
-"f sym.__OBJC___INSTANCE_VARIABLES_SceneDelegate 40 0x100009308"
-"f sym.__OBJC___PROP_LIST_SceneDelegate 88 0x100009330"
-"f sym.__OBJC_CLASS_RO___SceneDelegate 72 0x100009388"
-"f sym._OBJC_IVAR___SceneDelegate._window 4 0x100009408"
-"f sym._OBJC_METACLASS___SceneDelegate 40 0x1000094b0"
-"f sym._OBJC_CLASS___SceneDelegate 40 0x1000094d8"
-"f sym.__OBJC_PROTOCOL___UISceneDelegate 96 0x1000095c8"
-"f sym.__OBJC_PROTOCOL___UIWindowSceneDelegate 96 0x100009628"
+0   0x00006514 0x100006514 NONE FUNC 4        -[SceneDelegate scene:willConnectToSession:options:]
+0   0x00006518 0x100006518 NONE FUNC 4        -[SceneDelegate sceneDidDisconnect:]
+0   0x0000651c 0x10000651c NONE FUNC 4        -[SceneDelegate sceneDidBecomeActive:]
+0   0x00006520 0x100006520 NONE FUNC 4        -[SceneDelegate sceneWillResignActive:]
+0   0x00006524 0x100006524 NONE FUNC 4        -[SceneDelegate sceneWillEnterForeground:]
+0   0x00006528 0x100006528 NONE FUNC 4        -[SceneDelegate sceneDidEnterBackground:]
+0   0x0000652c 0x10000652c NONE FUNC 16       -[SceneDelegate window]
+0   0x0000653c 0x10000653c NONE FUNC 20       -[SceneDelegate setWindow:]
+0   0x00006550 0x100006550 NONE FUNC 20       -[SceneDelegate .cxx_destruct]
+0   0x000080b0 0x1000080b0 NONE FUNC 8        _OBJC_LABEL_PROTOCOL_$_UISceneDelegate
+0   0x000080b8 0x1000080b8 NONE FUNC 8        _OBJC_LABEL_PROTOCOL_$_UIWindowSceneDelegate
+0   0x00008f50 0x100008f50 NONE FUNC 24       _OBJC_$_PROTOCOL_REFS_UISceneDelegate
+0   0x00008f68 0x100008f68 NONE FUNC 296      _OBJC_$_PROTOCOL_INSTANCE_METHODS_OPT_UISceneDelegate
+0   0x00009090 0x100009090 NONE FUNC 96       _OBJC_$_PROTOCOL_METHOD_TYPES_UISceneDelegate
+0   0x000090f0 0x1000090f0 NONE FUNC 24       _OBJC_$_PROTOCOL_REFS_UIWindowSceneDelegate
+0   0x00009108 0x100009108 NONE FUNC 128      _OBJC_$_PROTOCOL_INSTANCE_METHODS_OPT_UIWindowSceneDelegate
+0   0x00009188 0x100009188 NONE FUNC 24       _OBJC_$_PROP_LIST_UIWindowSceneDelegate
+0   0x000091a0 0x1000091a0 NONE FUNC 40       _OBJC_$_PROTOCOL_METHOD_TYPES_UIWindowSceneDelegate
+0   0x000091c8 0x1000091c8 NONE FUNC 24       _OBJC_CLASS_PROTOCOLS_$_SceneDelegate
+0   0x000091e0 0x1000091e0 NONE FUNC 72       _OBJC_METACLASS_RO_$_SceneDelegate
+0   0x00009228 0x100009228 NONE FUNC 224      _OBJC_$_INSTANCE_METHODS_SceneDelegate
+0   0x00009308 0x100009308 NONE FUNC 40       _OBJC_$_INSTANCE_VARIABLES_SceneDelegate
+0   0x00009330 0x100009330 NONE FUNC 88       _OBJC_$_PROP_LIST_SceneDelegate
+0   0x00009388 0x100009388 NONE FUNC 72       _OBJC_CLASS_RO_$_SceneDelegate
+0   0x00009408 0x100009408 NONE FUNC 4        OBJC_IVAR_$_SceneDelegate._window
+0   0x000094b0 0x1000094b0 NONE FUNC 40       OBJC_METACLASS_$_SceneDelegate
+0   0x000094d8 0x1000094d8 NONE FUNC 40       OBJC_CLASS_$_SceneDelegate
+0   0x000095c8 0x1000095c8 NONE FUNC 96       _OBJC_PROTOCOL_$_UISceneDelegate
+0   0x00009628 0x100009628 NONE FUNC 96       _OBJC_PROTOCOL_$_UIWindowSceneDelegate
 EOF
 RUN
 
 NAME=Xcode symbols cache (line numbers)
 FILE=bins/mach0/D9A37B67-F10A-35AA-A852-ABFBBECC03AE.symbols
 CMDS=<<EOF
-CL `is~viewDidLoad[2]`
-CL 0x100006430
+ix
+?e --
+ix.@`is~viewDidLoad[2]`
+ix.@0x100006430
 EOF
 EXPECT=<<EOF
-file: /Users/ftamagni/src/TestRTTI/TestRTTI/ViewController.m
-line: 17
-file: /Users/ftamagni/src/TestRTTI/TestRTTI/AppDelegate.m
-line: 30
+0x1000063c8	/Users/ftamagni/src/TestRTTI/TestRTTI/ViewController.m	17
+0x1000063d4	/Users/ftamagni/src/TestRTTI/TestRTTI/ViewController.m	18
+0x1000063f0	/Users/ftamagni/src/TestRTTI/TestRTTI/ViewController.m	20
+0x1000063fc	/Users/ftamagni/src/TestRTTI/TestRTTI/AppDelegate.m	21
+0x100006404	/Users/ftamagni/src/TestRTTI/TestRTTI/AppDelegate.m	27
+0x100006420	/Users/ftamagni/src/TestRTTI/TestRTTI/AppDelegate.m	30
+0x100006430	/Users/ftamagni/src/TestRTTI/TestRTTI/AppDelegate.m	30
+0x100006440	/Users/ftamagni/src/TestRTTI/TestRTTI/AppDelegate.m	-
+0x100006444	/Users/ftamagni/src/TestRTTI/TestRTTI/AppDelegate.m	30
+0x100006454	/Users/ftamagni/src/TestRTTI/TestRTTI/AppDelegate.m	30
+0x100006474	/Users/ftamagni/src/TestRTTI/TestRTTI/AppDelegate.m	30
+0x10000647c	/Users/ftamagni/src/TestRTTI/TestRTTI/AppDelegate.m	31
+0x100006490	/Users/ftamagni/src/TestRTTI/TestRTTI/AppDelegate.m	38
+0x100006494	/Users/ftamagni/src/TestRTTI/TestRTTI/main.m	12
+0x1000064ac	/Users/ftamagni/src/TestRTTI/TestRTTI/main.m	14
+0x1000064b4	/Users/ftamagni/src/TestRTTI/TestRTTI/main.m	16
+0x1000064c8	/Users/ftamagni/src/TestRTTI/TestRTTI/main.m	16
+0x1000064cc	/Users/ftamagni/src/TestRTTI/TestRTTI/main.m	-
+0x1000064d0	/Users/ftamagni/src/TestRTTI/TestRTTI/main.m	16
+0x1000064d8	/Users/ftamagni/src/TestRTTI/TestRTTI/main.m	17
+0x1000064e0	/Users/ftamagni/src/TestRTTI/TestRTTI/main.m	18
+0x1000064f8	/Users/ftamagni/src/TestRTTI/TestRTTI/main.m	19
+0x100006514	/Users/ftamagni/src/TestRTTI/TestRTTI/SceneDelegate.m	22
+0x100006518	/Users/ftamagni/src/TestRTTI/TestRTTI/SceneDelegate.m	30
+0x10000651c	/Users/ftamagni/src/TestRTTI/TestRTTI/SceneDelegate.m	36
+0x100006520	/Users/ftamagni/src/TestRTTI/TestRTTI/SceneDelegate.m	42
+0x100006524	/Users/ftamagni/src/TestRTTI/TestRTTI/SceneDelegate.m	48
+0x100006528	/Users/ftamagni/src/TestRTTI/TestRTTI/SceneDelegate.m	55
+0x10000652c	/Users/ftamagni/src/TestRTTI/TestRTTI/SceneDelegate.h	13
+0x10000653c	/Users/ftamagni/src/TestRTTI/TestRTTI/SceneDelegate.h	13
+0x100006540	/Users/ftamagni/src/TestRTTI/TestRTTI/SceneDelegate.h	-
+0x100006550	/Users/ftamagni/src/TestRTTI/TestRTTI/SceneDelegate.m	15
+0x100006564	-	-
+--
+0x1000063c8	/Users/ftamagni/src/TestRTTI/TestRTTI/ViewController.m	17
+0x100006430	/Users/ftamagni/src/TestRTTI/TestRTTI/AppDelegate.m	30
 EOF
 RUN
 
 NAME=Xcode symbols cache new (line numbers)
 FILE=bins/mach0/D9A37B67-F10A-35AA-A852-ABFBBECC03AE-new.symbols
 CMDS=<<EOF
-CL `is~viewDidLoad[2]`
-CL 0x100006430
+ix
+?e --
+ix.@`is~viewDidLoad[2]`
+ix.@0x100006430
 EOF
 EXPECT=<<EOF
-file: /Users/ftamagni/src/TestRTTI/TestRTTI/ViewController.m
-line: 17
-file: /Users/ftamagni/src/TestRTTI/TestRTTI/AppDelegate.m
-line: 30
+0x1000063c8	/Users/ftamagni/src/TestRTTI/TestRTTI/ViewController.m	17
+0x1000063d4	/Users/ftamagni/src/TestRTTI/TestRTTI/ViewController.m	18
+0x1000063f0	/Users/ftamagni/src/TestRTTI/TestRTTI/ViewController.m	20
+0x1000063fc	/Users/ftamagni/src/TestRTTI/TestRTTI/AppDelegate.m	18
+0x100006404	/Users/ftamagni/src/TestRTTI/TestRTTI/AppDelegate.m	27
+0x100006420	/Users/ftamagni/src/TestRTTI/TestRTTI/AppDelegate.m	30
+0x100006430	/Users/ftamagni/src/TestRTTI/TestRTTI/AppDelegate.m	30
+0x100006440	/Users/ftamagni/src/TestRTTI/TestRTTI/AppDelegate.m	-
+0x100006444	/Users/ftamagni/src/TestRTTI/TestRTTI/AppDelegate.m	30
+0x100006454	/Users/ftamagni/src/TestRTTI/TestRTTI/AppDelegate.m	30
+0x100006474	/Users/ftamagni/src/TestRTTI/TestRTTI/AppDelegate.m	30
+0x10000647c	/Users/ftamagni/src/TestRTTI/TestRTTI/AppDelegate.m	31
+0x100006490	/Users/ftamagni/src/TestRTTI/TestRTTI/AppDelegate.m	34
+0x100006494	/Users/ftamagni/src/TestRTTI/TestRTTI/main.m	12
+0x1000064ac	/Users/ftamagni/src/TestRTTI/TestRTTI/main.m	14
+0x1000064b4	/Users/ftamagni/src/TestRTTI/TestRTTI/main.m	16
+0x1000064c8	/Users/ftamagni/src/TestRTTI/TestRTTI/main.m	16
+0x1000064cc	/Users/ftamagni/src/TestRTTI/TestRTTI/main.m	-
+0x1000064d0	/Users/ftamagni/src/TestRTTI/TestRTTI/main.m	16
+0x1000064d8	/Users/ftamagni/src/TestRTTI/TestRTTI/main.m	17
+0x1000064e0	/Users/ftamagni/src/TestRTTI/TestRTTI/main.m	18
+0x1000064f8	/Users/ftamagni/src/TestRTTI/TestRTTI/main.m	19
+0x100006514	/Users/ftamagni/src/TestRTTI/TestRTTI/SceneDelegate.m	18
+0x100006518	/Users/ftamagni/src/TestRTTI/TestRTTI/SceneDelegate.m	25
+0x10000651c	/Users/ftamagni/src/TestRTTI/TestRTTI/SceneDelegate.m	33
+0x100006520	/Users/ftamagni/src/TestRTTI/TestRTTI/SceneDelegate.m	39
+0x100006524	/Users/ftamagni/src/TestRTTI/TestRTTI/SceneDelegate.m	45
+0x100006528	/Users/ftamagni/src/TestRTTI/TestRTTI/SceneDelegate.m	51
+0x10000652c	/Users/ftamagni/src/TestRTTI/TestRTTI/SceneDelegate.h	13
+0x10000653c	/Users/ftamagni/src/TestRTTI/TestRTTI/SceneDelegate.h	13
+0x100006540	/Users/ftamagni/src/TestRTTI/TestRTTI/SceneDelegate.h	-
+0x100006550	/Users/ftamagni/src/TestRTTI/TestRTTI/SceneDelegate.m	15
+0x100006564	-	-
+--
+0x1000063c8	/Users/ftamagni/src/TestRTTI/TestRTTI/ViewController.m	17
+0x100006430	/Users/ftamagni/src/TestRTTI/TestRTTI/AppDelegate.m	30
 EOF
 RUN
 

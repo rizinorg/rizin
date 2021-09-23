@@ -1,0 +1,175 @@
+NAME=MAIN_ABI : arm-linux_android_abi detect
+FILE=bins/abi_bins/elf/platforms/arm-linux-androideabi-echo
+CMDS=<<EOF
+ie
+iI~arch,machine,bits,vaddr
+EOF
+EXPECT=<<EOF
+vaddr      paddr      hvaddr     haddr      type    
+----------------------------------------------------
+0x00008440 0x00000440 0x00008018 0x00000018 program
+arch     arm
+bits     32
+machine  ARM
+EOF
+RUN
+
+NAME=MAIN_ABI : arm-linux_gnu_guneabi detect
+FILE=bins/abi_bins/elf/platforms/arm-linux-gnueabi-echo
+CMDS=<<EOF
+ie
+iI~arch,machine,bits,vaddr
+EOF
+EXPECT=<<EOF
+vaddr      paddr      hvaddr     haddr      type    
+----------------------------------------------------
+0x00008438 0x00000438 0x00008018 0x00000018 program
+arch     arm
+bits     32
+machine  ARM
+EOF
+RUN
+
+NAME=MAIN_ABI : mips-linux-gnu-echo detect
+FILE=bins/abi_bins/elf/platforms/mips-linux-gnu-echo
+CMDS=<<EOF
+ie
+iI~arch,machine,bits,vaddr
+EOF
+EXPECT=<<EOF
+vaddr      paddr      hvaddr     haddr      type    
+----------------------------------------------------
+0x004006a0 0x000006a0 0x00400018 0x00000018 program
+arch     mips
+bits     32
+machine  MIPS R3000
+EOF
+RUN
+
+NAME=MAIN_ABI : mips64-linux-gnueabi detect
+FILE=bins/abi_bins/elf/platforms/mips64-linux-gnueabi-echo
+CMDS=<<EOF
+ie
+iI~arch,machine,bits,vaddr
+EOF
+EXPECT=<<EOF
+vaddr       paddr      hvaddr      haddr      type    
+------------------------------------------------------
+0x120000af0 0x00000af0 0x120000018 0x00000018 program
+arch     mips
+bits     64
+machine  MIPS R3000
+EOF
+RUN
+
+NAME=MAIN_ABI : powerpc-linux-gnu detect
+FILE=bins/abi_bins/elf/platforms/powerpc-linux-gnu-symexec-guess
+CMDS=<<EOF
+ie
+iI~arch,machine,bits,vaddr
+EOF
+EXPECT=<<EOF
+vaddr      paddr      hvaddr     haddr      type    
+----------------------------------------------------
+0x10000320 0x00000320 0x10000018 0x00000018 program
+arch     ppc
+bits     32
+machine  PowerPC
+EOF
+RUN
+
+NAME=MAIN_ABI : powerpc32-linux-gnu detect
+FILE=bins/abi_bins/elf/platforms/powerpc32-linux-gnu-echo
+CMDS=<<EOF
+ie
+iI~arch,machine,bits,vaddr
+EOF
+EXPECT=<<EOF
+vaddr      paddr      hvaddr     haddr      type    
+----------------------------------------------------
+0x10000420 0x00000420 0x10000018 0x00000018 program
+arch     ppc
+bits     32
+machine  PowerPC
+EOF
+RUN
+
+NAME=MAIN_ABI : x86_64-linux-gnu detect
+FILE=bins/abi_bins/elf/platforms/x86_64-linux-gnu-echo
+CMDS=<<EOF
+ie;
+iI~arch,machine,bits,vaddr
+EOF
+EXPECT=<<EOF
+vaddr      paddr      hvaddr     haddr      type    
+----------------------------------------------------
+0x00400600 0x00000600 0x00400018 0x00000018 program
+arch     x86
+bits     64
+machine  AMD x86-64 architecture
+EOF
+RUN
+
+NAME=MAIN_ABI : x86_64-macho detect
+FILE=bins/abi_bins/elf/platforms/x86_64-macho-echo
+CMDS=<<EOF
+ie;
+iI~arch,machine,bits,vaddr
+EOF
+EXPECT=<<EOF
+vaddr       paddr      hvaddr     haddr      type    
+-----------------------------------------------------
+0x100000e50 0x00000e50 ---------- 0x000004b8 program
+arch     x86
+bits     64
+machine  x86 64 all
+EOF
+RUN
+
+NAME=MAIN_ABI : x86-linux-gnu detect
+FILE=bins/abi_bins/elf/platforms/x86-linux-gnu-echo
+CMDS=<<EOF
+ie
+iI~arch,machine,bits,vaddr
+EOF
+EXPECT=<<EOF
+vaddr      paddr      hvaddr     haddr      type    
+----------------------------------------------------
+0x08048440 0x00000440 0x08048018 0x00000018 program
+arch     x86
+bits     32
+machine  Intel 80386
+EOF
+RUN
+
+NAME=MAIN_ABI : i686-w64-mingw32 detect
+FILE=bins/abi_bins/pe/platforms/i686-w64-mingw32-echo
+CMDS=<<EOF
+ie
+iI~arch,machine,bits,vaddr
+EOF
+EXPECT=<<EOF
+vaddr      paddr      hvaddr     haddr      type    
+----------------------------------------------------
+0x004014e0 0x000008e0 ---------- 0x000000a8 program
+arch     x86
+bits     32
+machine  i386
+EOF
+RUN
+
+NAME=MAIN_ABI : x86_64-w64-mingw32 detect
+FILE=bins/abi_bins/pe/platforms/x86_64-w64-mingw32-echo
+CMDS=<<EOF
+ie
+iI~arch,machine,bits,vaddr
+EOF
+EXPECT=<<EOF
+vaddr      paddr      hvaddr     haddr      type    
+----------------------------------------------------
+0x004014d0 0x00000ad0 ---------- 0x000000a8 program
+arch     x86
+bits     64
+machine  AMD 64
+EOF
+RUN

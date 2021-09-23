@@ -98,7 +98,7 @@ static char *rzk__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 		(void)run_ioctl_command(io, fd, cmd);
 		return NULL;
 #else
-		eprintf("Try: '=!mod'\n    '.=!mod'\n");
+		eprintf("Try: 'R!mod'\n    '.R!mod'\n");
 #endif
 	}
 	return NULL;

@@ -94,11 +94,10 @@ typedef struct rz_print_t {
 	RzPrintHasRefs hasrefs;
 	RzPrintCommentCallback get_comments;
 	RzPrintSectionGet get_section_name;
-	Sdb *formats;
 	Sdb *sdb_types;
 	RzCons *cons;
 	RzConsBind consbind;
-	RNum *num;
+	RzNum *num;
 	RzReg *reg;
 	RzRegItem *(*get_register)(RzReg *reg, const char *name, int type);
 	ut64 (*get_register_value)(RzReg *reg, RzRegItem *item);
@@ -134,7 +133,7 @@ RZ_API void rz_print_set_is_interrupted_cb(RzPrintIsInterruptedCallback cb);
 
 /* ... */
 RZ_API char *rz_print_hexpair(RzPrint *p, const char *str, int idx);
-RZ_API void rz_print_hex_from_bin(RzPrint *p, char *bin_str);
+RZ_API void rz_print_hex_from_base2(RzPrint *p, char *bin_str);
 RZ_API RzPrint *rz_print_new(void);
 RZ_API RzPrint *rz_print_free(RzPrint *p);
 RZ_API bool rz_print_mute(RzPrint *p, int x);
@@ -176,9 +175,7 @@ RZ_API void rz_print_code(RzPrint *p, ut64 addr, const ut8 *buf, int len, char l
 #define RZ_PRINT_DOT       (1 << 7)
 #define RZ_PRINT_QUIET     (1 << 8)
 #define RZ_PRINT_STRUCT    (1 << 9)
-RZ_API int rz_print_format_struct_size(RzPrint *p, const char *format, int mode, int n);
-RZ_API int rz_print_format(RzPrint *p, ut64 seek, const ut8 *buf, const int len, const char *fmt, int elem, const char *setval, char *field);
-RZ_API const char *rz_print_format_byname(RzPrint *p, const char *name);
+
 RZ_API void rz_print_offset(RzPrint *p, ut64 off, int invert, int opt, int dec, int delta, const char *label);
 RZ_API void rz_print_offset_sg(RzPrint *p, ut64 off, int invert, int offseg, int seggrn, int offdec, int delta, const char *label);
 #define RZ_PRINT_STRING_WIDE      1

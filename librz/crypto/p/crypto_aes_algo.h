@@ -1,16 +1,20 @@
+// SPDX-FileCopyrightText: karl malbrain <malbrain@yahoo.com>
+// SPDX-License-Identifier: MS-PL
+
 #ifndef CRYPTO_AES_ALGO_H
 #define CRYPTO_AES_ALGO_H
 
 #include <rz_crypto.h>
+#include <rz_util.h>
 #include <rz_crypto/rz_aes.h>
 #include <memory.h>
 
-struct aes_state {
+typedef struct aes_state {
 	ut8 key[32];
 	int key_size;
 	int columns;
 	int rounds;
-};
+} aes_state_t;
 
 /* forward tables */
 
@@ -267,7 +271,7 @@ static const ut32 U3[256] = { UT };
 #undef V
 #undef UT
 
-void aes_encrypt(struct aes_state *, ut8 *, ut8 *);
-void aes_decrypt(struct aes_state *, ut8 *, ut8 *);
+void aes_encrypt(aes_state_t *st, ut8 *in, ut8 *result);
+void aes_decrypt(aes_state_t *st, ut8 *in, ut8 *result);
 
 #endif

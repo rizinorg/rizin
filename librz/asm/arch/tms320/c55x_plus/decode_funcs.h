@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2013-2021 th0rpe <josediazfer@yahoo.es>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef DECODE_FUNCS_H
 #define DECODE_FUNCS_H
 

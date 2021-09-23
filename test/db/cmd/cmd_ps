@@ -50,19 +50,8 @@ abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
 EOF
 RUN
 
-NAME=psj ascii (#9064)
-FILE=-
-CMDS=<<EOF
-"wz ...\"..����..."
-psj 13
-EOF
-EXPECT=<<EOF
-{"string":"...\"..\u00ef\u00bf\u00bd\u00ef\u00bf\u00bd\u00ef","offset":0,"section":"unknown","length":13,"type":"utf"}
-EOF
-RUN
-
 NAME=psx escapes newlines (#10037)
-FILE=-
+FILE==
 CMDS=<<EOF
 wz abc\n123\n
 psx 9
@@ -73,7 +62,7 @@ EOF
 RUN
 
 NAME=ps N and initial nulls (#10037)
-FILE=-
+FILE==
 CMDS=<<EOF
 ps 1
 ps 2
@@ -91,7 +80,7 @@ EOF
 RUN
 
 NAME=ps+ libc++ 16bit error
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=16

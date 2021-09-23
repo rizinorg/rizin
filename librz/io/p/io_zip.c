@@ -138,7 +138,7 @@ static int rz_io_zip_slurp_file(RzIOZipFileObj *zfo) {
 			return false;
 		}
 		if (!zfo->b) {
-			zfo->b = rz_buf_new();
+			zfo->b = rz_buf_new_with_bytes(NULL, 0);
 		}
 		zip_stat_init(&sb);
 		if (zfo->b && !zip_stat_index(zipArch, zfo->entry, 0, &sb)) {
@@ -157,25 +157,28 @@ static int rz_io_zip_slurp_file(RzIOZipFileObj *zfo) {
 	return res;
 }
 
-RzList *rz_io_zip_get_files(char *archivename, ut32 perm, int mode, int rw) {
+RzList *rz_io_zip_get_files(const char *archivename, ut32 perm, int mode, int rw) {
 	struct zip *zipArch = rz_io_zip_open_archive(archivename, perm, mode, rw);
 	ut64 num_entries = 0, i = 0;
-	RzList *files = NULL;
 	struct zip_stat sb;
-	char *name;
-	if (zipArch) {
-		files = rz_list_newf(free);
-		if (!files) {
-			zip_close(zipArch);
-			return NULL;
-		}
-		num_entries = zip_get_num_files(zipArch);
-		for (i = 0; i < num_entries; i++) {
-			zip_stat_init(&sb);
-			zip_stat_index(zipArch, i, 0, &sb);
-			if ((name = strdup(sb.name))) {
-				rz_list_append(files, name);
-			}
+	char *name = NULL;
+	RzList *files = NULL;
+	if (!zipArch) {
+		return NULL;
+	}
+
+	files = rz_list_newf(free);
+	if (!files) {
+		zip_close(zipArch);
+		return NULL;
+	}
+
+	num_entries = zip_get_num_files(zipArch);
+	for (i = 0; i < num_entries; i++) {
+		zip_stat_init(&sb);
+		zip_stat_index(zipArch, i, 0, &sb);
+		if ((name = strdup(sb.name))) {
+			rz_list_append(files, name);
 		}
 	}
 	zip_close(zipArch);
@@ -233,7 +236,7 @@ static void rz_io_zip_free_zipfileobj(RzIOZipFileObj *zfo) {
 RzIOZipFileObj *rz_io_zip_create_new_file(const char *archivename, const char *filename, struct zip_stat *sb, ut32 perm, int mode, int rw) {
 	RzIOZipFileObj *zfo = RZ_NEW0(RzIOZipFileObj);
 	if (zfo) {
-		zfo->b = rz_buf_new();
+		zfo->b = rz_buf_new_with_bytes(NULL, 0);
 		zfo->archivename = strdup(archivename);
 		zfo->name = strdup(sb ? sb->name : filename);
 		zfo->entry = !sb ? -1 : sb->index;
@@ -370,9 +373,83 @@ char *rz_io_zip_get_by_file_idx(const char *archivename, const char *idx, ut32 p
 	return filename;
 }
 
+static char *find_ipa_binary(const char *filename, int rw, int mode) {
+	RzList *files = NULL;
+	RzListIter *iter;
+	char *name;
+	int app_size = 0;
+	const char *app_name;
+	const char *last_slash;
+
+	char *zip_filename = NULL;
+	files = rz_io_zip_get_files(filename, 0, mode, rw);
+
+	rz_list_foreach (files, iter, name) {
+		/* Find matching file */
+		app_name = strstr(name, ".app/");
+		if (!app_name) {
+			continue;
+		}
+		last_slash = rz_str_rchr(name, app_name, '/');
+		if (!last_slash) {
+			continue;
+		}
+		app_size = (app_name - last_slash) - 1;
+		zip_filename = rz_str_newf("//Payload/%.*s.app/%.*s", app_size, last_slash + 1, app_size, last_slash + 1);
+		if (zip_filename && !strcmp(name, zip_filename + 2)) {
+			break;
+		}
+		RZ_FREE(zip_filename);
+	}
+	rz_list_free(files);
+
+	return zip_filename;
+}
+
+static char *find_apk_binary(const char *filename, int rw, int mode, RzIO *io) {
+	RzList *files = NULL;
+	RzListIter *iter = NULL;
+	char *name = NULL;
+	RzIOZipFileObj *zfo = NULL;
+	char *zip_filename = rz_str_newf("//%s//classes.dex", filename);
+	files = rz_io_zip_get_files(filename, 0, mode, rw);
+
+	if (files) {
+		rz_list_foreach (files, iter, name) {
+			/* Find matching file */
+			if (!strcmp(name, "classes.dex")) {
+				continue;
+			} else if (rz_str_endswith(name, ".dex")) {
+				RZ_LOG_INFO("Adding extra IO descriptor to file %s\n", name);
+				zfo = rz_io_zip_alloc_zipfileobj(filename, name, ZIP_CREATE, mode, rw);
+				if (!zfo) {
+					eprintf("Error: cannot allocate zip file object.\n");
+					continue;
+				}
+				if (zfo->entry == -1) {
+					if (!rw) {
+						eprintf("Warning: File %s does not exist.\n", name);
+						rz_io_zip_free_zipfileobj(zfo);
+						continue;
+					}
+					eprintf("Warning: File %s does not exist, creating a new one.\n", name);
+				}
+				zfo->io_backref = io;
+				RzIODesc *desc = rz_io_desc_new(io, &rz_io_plugin_zip,
+					zfo->name, rw, mode, zfo);
+				desc->name = strdup(name);
+				rz_io_desc_add(io, desc);
+			}
+		}
+		rz_list_free(files);
+	}
+
+	return zip_filename;
+}
+
 static RzIODesc *rz_io_zip_open(RzIO *io, const char *file, int rw, int mode) {
 	RzIODesc *res = NULL;
-	char *pikaboo, *tmp;
+	char *uri_path, *tmp;
 	RzIOZipFileObj *zfo = NULL;
 	char *zip_uri = NULL, *zip_filename = NULL, *filename_in_zipfile = NULL;
 
@@ -383,50 +460,22 @@ static RzIODesc *rz_io_zip_open(RzIO *io, const char *file, int rw, int mode) {
 	if (!zip_uri) {
 		return NULL;
 	}
-	pikaboo = strstr(zip_uri, "://");
-	if (pikaboo) {
-		tmp = strstr(pikaboo + 3, "//");
+	uri_path = strstr(zip_uri, "://");
+	if (uri_path) {
+		tmp = strstr(uri_path + 3, "//");
 		zip_filename = tmp ? strdup(tmp) : NULL;
 		// 1) Tokenize to the '//' and find the base file directory ('/')
 		if (!zip_filename) {
 			if (!strncmp(zip_uri, "apk://", 6)) {
-				zip_filename = rz_str_newf("//%s//classes.dex", pikaboo + 3);
+				zip_filename = find_apk_binary(uri_path + 3, rw, mode, io);
 			} else if (!strncmp(zip_uri, "ipa://", 6)) {
-				RzList *files = NULL;
-				RzListIter *iter;
-				char *name;
-				zip_filename = strdup(pikaboo + 3);
-				files = rz_io_zip_get_files(zip_filename, 0, mode, rw);
-
-				if (files) {
-					rz_list_foreach (files, iter, name) {
-						/* Find matching file */
-						char *bin_name = strstr(name, ".app/");
-						if (bin_name) {
-							const char *slash = rz_str_rchr(name, bin_name, '/');
-							if (slash) {
-								bin_name = rz_str_ndup(slash + 1, (bin_name - slash) - 1);
-								char *chkstr = rz_str_newf("Payload/%s.app/%s", bin_name, bin_name);
-								if (!strcmp(name, chkstr)) {
-									free(zip_filename);
-									zip_filename = rz_str_newf("//%s", chkstr);
-									free(chkstr);
-									free(bin_name);
-									break;
-								}
-								free(chkstr);
-								free(bin_name);
-							}
-						}
-					}
-					rz_list_free(files);
-				}
+				zip_filename = find_ipa_binary(uri_path + 3, rw, mode);
 			} else {
-				zip_filename = strdup(pikaboo + 1);
+				zip_filename = strdup(uri_path + 1);
 			}
 		} else {
 			free(zip_filename);
-			zip_filename = strdup(pikaboo + 1);
+			zip_filename = strdup(uri_path + 1);
 		}
 	}
 	tmp = zip_filename;
@@ -455,7 +504,7 @@ static RzIODesc *rz_io_zip_open(RzIO *io, const char *file, int rw, int mode) {
 		} else {
 			filename_in_zipfile = rz_str_newf("%s", zip_filename);
 			RZ_FREE(tmp);
-			zip_filename = strdup(pikaboo + 3);
+			zip_filename = strdup(uri_path + 3);
 			if (!strcmp(zip_filename, filename_in_zipfile)) {
 				//RZ_FREE (zip_filename);
 				RZ_FREE(filename_in_zipfile);
@@ -496,7 +545,7 @@ static RzIODesc *rz_io_zip_open(RzIO *io, const char *file, int rw, int mode) {
 
 	if (zfo) {
 		if (zfo->entry == -1) {
-			eprintf("Warning: File did not exist, creating a new one.\n");
+			eprintf("Warning: File %s does not exist, creating a new one.\n", filename_in_zipfile);
 		}
 		zfo->io_backref = io;
 		res = rz_io_desc_new(io, &rz_io_plugin_zip,

@@ -33,7 +33,11 @@ def simple_git_execution(args):
 
 def parse():
     if len(sys.argv) <= 3:
-        print("Usage: %s <git_executable_path> <repo_path> [git_args...]")
+        print(
+            "Usage: {} <git_executable_path> <repo_path> [git_args...]".format(
+                sys.argv[0]
+            )
+        )
         sys.exit(1)
 
     git_exe = sys.argv[1]

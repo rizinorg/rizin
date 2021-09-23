@@ -17,6 +17,7 @@ extern "C" {
 #include <rz_util/rz_str.h>
 #include <rz_util/rz_str_constpool.h>
 #include <rz_util/rz_sys.h>
+#include <rz_util/rz_utf8.h>
 #include <rz_util/rz_file.h>
 #include <rz_vector.h>
 #include <sdb.h>
@@ -263,13 +264,13 @@ typedef struct rz_cons_palette_t {
 	RzColor graph_box4;
 	RzColor graph_true;
 	RzColor graph_false;
-	RzColor graph_trufae;
+	RzColor graph_ujump;
 	RzColor graph_traced;
 	RzColor graph_current;
-	RzColor graph_diff_match;
-	RzColor graph_diff_unmatch;
-	RzColor graph_diff_unknown;
-	RzColor graph_diff_new;
+	RzColor diff_match;
+	RzColor diff_unmatch;
+	RzColor diff_unknown;
+	RzColor diff_new;
 } RzConsPalette;
 
 typedef struct rz_cons_printable_palette_t {
@@ -337,13 +338,13 @@ typedef struct rz_cons_printable_palette_t {
 	char *graph_box2;
 	char *graph_box3;
 	char *graph_box4;
-	char *graph_diff_match;
-	char *graph_diff_unmatch;
-	char *graph_diff_unknown;
-	char *graph_diff_new;
+	char *diff_match;
+	char *diff_unmatch;
+	char *diff_unknown;
+	char *diff_new;
 	char *graph_true;
 	char *graph_false;
-	char *graph_trufae;
+	char *graph_ujump;
 	char *graph_traced;
 	char *graph_current;
 	char **rainbow; // rainbow
@@ -413,8 +414,10 @@ typedef struct rz_cons_canvas_t {
 #define RUNE_CORNER_BL       "└"
 #define RUNE_CORNER_TL       "┌"
 #define RUNE_CORNER_TR       "┐"
-#define RUNE_ARROW_RIGHT     ">"
-#define RUNE_ARROW_LEFT      "<"
+#define RUNE_ARROW_RIGHT     "ᐳ"
+#define RUNE_ARROW_LEFT      "ᐸ"
+#define RUNE_ARROW_UP        "ᐱ"
+#define RUNE_ARROW_DOWN      "ᐯ"
 #define RUNE_CURVE_CORNER_TL "╭"
 #define RUNE_CURVE_CORNER_TR "╮"
 #define RUNE_CURVE_CORNER_BR "╯"
@@ -443,10 +446,18 @@ typedef void (*RzConsSleepEndCallback)(void *core, void *user);
 typedef void (*RzConsQueueTaskOneshot)(void *core, void *task, void *user);
 typedef void (*RzConsFunctionKey)(void *core, int fkey);
 
-typedef enum { COLOR_MODE_DISABLED = 0,
+typedef enum {
+	COLOR_MODE_DISABLED = 0,
 	COLOR_MODE_16,
 	COLOR_MODE_256,
-	COLOR_MODE_16M } RzConsColorMode;
+	COLOR_MODE_16M
+} RzConsColorMode;
+
+typedef enum {
+	RZ_VIRT_TERM_MODE_DISABLE = 0, ///< Windows only: Use console c api for everything (Windows <= 8)
+	RZ_VIRT_TERM_MODE_OUTPUT_ONLY, ///< Windows only: Use console c api for input, but output on VT (Windows >= 10)
+	RZ_VIRT_TERM_MODE_COMPLETE, ///< All the sequences goes through VT (Windows Terminal, mintty, all OSs)
+} RzVirtTermMode;
 
 typedef struct rz_cons_context_t {
 	RzConsGrep grep;
@@ -518,8 +529,9 @@ typedef struct rz_cons_t {
 #elif __WINDOWS__
 	DWORD term_raw, term_buf, term_xterm;
 	UINT old_cp;
+	UINT old_ocp;
 #endif
-	RNum *num;
+	RzNum *num;
 	/* Pager (like more or less) to use if the output doesn't fit on the
 	 * current window. If NULL or "" no pager is used. */
 	char *pager;
@@ -533,7 +545,7 @@ typedef struct rz_cons_t {
 	const char **vline;
 	int refcnt;
 	RZ_DEPRECATE bool newline;
-	int vtmode;
+	RzVirtTermMode vtmode;
 	bool flush;
 	bool use_utf8; // use utf8 features
 	bool use_utf8_curvy; // use utf8 curved corners
@@ -854,7 +866,7 @@ RZ_API int rz_cons_pipe_open(const char *file, int fdn, int append);
 RZ_API void rz_cons_pipe_close(int fd);
 
 #if __WINDOWS__
-RZ_API int rz_cons_is_vtcompat(void);
+RZ_API RzVirtTermMode rz_cons_detect_vt_mode(void);
 RZ_API void rz_cons_w32_clear(void);
 RZ_API void rz_cons_w32_gotoxy(int fd, int x, int y);
 RZ_API int rz_cons_w32_print(const char *ptr, int len, bool vmode);
@@ -879,7 +891,7 @@ RZ_API void rz_cons_context_break_pop(RzConsContext *context, bool sig);
 RZ_API char *rz_cons_editor(const char *file, const char *str);
 RZ_API void rz_cons_reset(void);
 RZ_API void rz_cons_reset_colors(void);
-RZ_API void rz_cons_print_clear(void);
+RZ_API void rz_cons_goto_origin_reset(void);
 RZ_API void rz_cons_echo(const char *msg);
 RZ_API void rz_cons_zero(void);
 RZ_API void rz_cons_highlight(const char *word);
@@ -931,6 +943,7 @@ RZ_API void rz_cons_log_stub(const char *output, const char *funcname, const cha
 /* input */
 RZ_API int rz_cons_controlz(int ch);
 RZ_API int rz_cons_readchar(void);
+RZ_API bool rz_cons_readbuffer_readchar(char *ch);
 RZ_API bool rz_cons_readpush(const char *str, int len);
 RZ_API void rz_cons_readflush(void);
 RZ_API void rz_cons_switchbuf(bool active);
@@ -970,6 +983,7 @@ RZ_API char *rz_cons_hud_string(const char *s);
 RZ_API char *rz_cons_hud_file(const char *f);
 
 RZ_API const char *rz_cons_get_buffer(void);
+RZ_API RZ_OWN char *rz_cons_get_buffer_dup(void);
 RZ_API int rz_cons_get_buffer_len(void);
 RZ_API void rz_cons_grep_help(void);
 RZ_API void rz_cons_grep_parsecmd(char *cmd, const char *quotestr);
@@ -1132,7 +1146,7 @@ struct rz_line_t {
 	RzLineHud *hud;
 	RzList *sdbshell_hist;
 	RzListIter *sdbshell_hist_iter;
-	int vtmode;
+	RzVirtTermMode vtmode;
 }; /* RzLine */
 
 #ifdef RZ_API

@@ -97,7 +97,7 @@ struct rz_bin_fatmach0_obj_t *rz_bin_fatmach0_new(const char *file) {
 	if (!buf) {
 		return rz_bin_fatmach0_free(bin);
 	}
-	bin->b = rz_buf_new();
+	bin->b = rz_buf_new_with_bytes(NULL, 0);
 	if (!rz_buf_set_bytes(bin->b, buf, bin->size)) {
 		free(buf);
 		return rz_bin_fatmach0_free(bin);
@@ -130,7 +130,7 @@ struct rz_bin_fatmach0_obj_t *rz_bin_fatmach0_from_bytes_new(const ut8 *buf, ut6
 	if (!buf) {
 		return rz_bin_fatmach0_free(bin);
 	}
-	bin->b = rz_buf_new();
+	bin->b = rz_buf_new_with_bytes(NULL, 0);
 	bin->size = size;
 	if (!rz_buf_set_bytes(bin->b, buf, size)) {
 		return rz_bin_fatmach0_free(bin);

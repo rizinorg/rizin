@@ -1,174 +1,215 @@
-// SPDX-FileCopyrightText: 2011 earada <pkedurat@gmail.com>
+// SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#ifndef DEX_H
-#define DEX_H
+#ifndef RZ_DEX_H
+#define RZ_DEX_H
 
 #include <rz_types.h>
 #include <rz_util.h>
-#include <rz_lib.h>
 #include <rz_bin.h>
 
-#define RZ_BIN_DEX_MAXSTR 256
-#define DEX_CLASS_SIZE    (32)
-#define LEB_MAX_SIZE      6
+typedef enum {
+	DEX_MAP_ITEM_TYPE_HEADER_ITEM = 0x0000,
+	DEX_MAP_ITEM_TYPE_STRING_ID_ITEM = 0x0001,
+	DEX_MAP_ITEM_TYPE_TYPE_ID_ITEM = 0x0002,
+	DEX_MAP_ITEM_TYPE_PROTO_ID_ITEM = 0x0003,
+	DEX_MAP_ITEM_TYPE_FIELD_ID_ITEM = 0x0004,
+	DEX_MAP_ITEM_TYPE_METHOD_ID_ITEM = 0x0005,
+	DEX_MAP_ITEM_TYPE_CLASS_DEF_ITEM = 0x0006,
+	DEX_MAP_ITEM_TYPE_CALL_SITE_ID_ITEM = 0x0007,
+	DEX_MAP_ITEM_TYPE_METHOD_HANDLE_ITEM = 0x0008,
+	DEX_MAP_ITEM_TYPE_MAP_LIST = 0x1000,
+	DEX_MAP_ITEM_TYPE_TYPE_LIST = 0x1001,
+	DEX_MAP_ITEM_TYPE_ANNOTATION_SET_REF_LIST = 0x1002,
+	DEX_MAP_ITEM_TYPE_ANNOTATION_SET_ITEM = 0x1003,
+	DEX_MAP_ITEM_TYPE_CLASS_DATA_ITEM = 0x2000,
+	DEX_MAP_ITEM_TYPE_CODE_ITEM = 0x2001,
+	DEX_MAP_ITEM_TYPE_STRING_DATA_ITEM = 0x2002,
+	DEX_MAP_ITEM_TYPE_DEBUG_INFO_ITEM = 0x2003,
+	DEX_MAP_ITEM_TYPE_ANNOTATION_ITEM = 0x2004,
+	DEX_MAP_ITEM_TYPE_ENCODED_ARRAY_ITEM = 0x2005,
+	DEX_MAP_ITEM_TYPE_ANNOTATIONS_DIRECTORY_ITEM = 0x2006,
+	DEX_MAP_ITEM_TYPE_HIDDENAPI_CLASS_DATA_ITEM = 0xF000,
+} DexMapItemType;
 
-/* method flags */
-#define RZ_DEX_METH_PUBLIC                0x0001
-#define RZ_DEX_METH_PRIVATE               0x0002
-#define RZ_DEX_METH_PROTECTED             0x0004
-#define RZ_DEX_METH_STATIC                0x0008
-#define RZ_DEX_METH_FINAL                 0x0010
-#define RZ_DEX_METH_SYNCHRONIZED          0x0020
-#define RZ_DEX_METH_BRIDGE                0x0040
-#define RZ_DEX_METH_VARARGS               0x0080
-#define RZ_DEX_METH_NATIVE                0x0100
-#define RZ_DEX_METH_ABSTRACT              0x0400
-#define RZ_DEX_METH_STRICT                0x0800
-#define RZ_DEX_METH_SYNTHETIC             0x1000
-#define RZ_DEX_METH_MIRANDA               0x8000
-#define RZ_DEX_METH_CONSTRUCTOR           0x10000
-#define RZ_DEX_METH_DECLARED_SYNCHRONIZED 0x20000
+typedef enum {
+	ACCESS_FLAG_PUBLIC /*               */ = 0x00001,
+	ACCESS_FLAG_PRIVATE /*              */ = 0x00002,
+	ACCESS_FLAG_PROTECTED /*            */ = 0x00004,
+	ACCESS_FLAG_STATIC /*               */ = 0x00008,
+	ACCESS_FLAG_FINAL /*                */ = 0x00010,
+	ACCESS_FLAG_SYNCHRONIZED /*         */ = 0x00020,
+	ACCESS_FLAG_BRIDGE /*               */ = 0x00040,
+	ACCESS_FLAG_VARARGS /*              */ = 0x00080,
+	ACCESS_FLAG_NATIVE /*               */ = 0x00100,
+	ACCESS_FLAG_INTERFACE /*            */ = 0x00200,
+	ACCESS_FLAG_ABSTRACT /*             */ = 0x00400,
+	ACCESS_FLAG_STRICT /*               */ = 0x00800,
+	ACCESS_FLAG_SYNTHETIC /*            */ = 0x01000,
+	ACCESS_FLAG_ANNOTATION /*           */ = 0x02000,
+	ACCESS_FLAG_ENUM /*                 */ = 0x04000,
+	ACCESS_FLAG_MODULE /*               */ = 0x08000,
+	ACCESS_FLAG_CONSTRUCTOR /*          */ = 0x10000,
+	ACCESS_FLAG_DECLARED_SYNCHRONIZED /**/ = 0x20000
+} DexAccessFlag;
 
-RZ_PACKED(
-	typedef struct dex_header_t {
-		ut8 magic[8];
-		ut32 checksum;
-		ut8 signature[20];
-		ut32 size;
-		ut32 header_size;
-		ut32 endian;
-		ut32 linksection_size;
-		ut32 linksection_offset;
-		ut32 map_offset;
-		ut32 strings_size;
-		ut32 strings_offset;
-		ut32 types_size;
-		ut32 types_offset;
-		ut32 prototypes_size;
-		ut32 prototypes_offset;
-		ut32 fields_size;
-		ut32 fields_offset;
-		ut32 method_size;
-		ut32 method_offset;
-		ut32 class_size;
-		ut32 class_offset;
-		ut32 data_size;
-		ut32 data_offset;
-	})
-DexHeader;
-
-RZ_PACKED(
-	typedef struct dex_proto_t {
-		ut32 shorty_id;
-		ut32 return_type_id;
-		ut32 parameters_off;
-	})
-DexProto;
-
-typedef struct dex_type_t {
-	ut32 descriptor_id;
-} DexType;
-
-// #pragma pack(1)
-typedef struct dex_field_t {
-	ut16 class_id;
-	ut16 type_id;
-	ut32 name_id;
-} DexField;
-
-RZ_PACKED(
-	typedef struct dex_method_t {
-		ut16 class_id;
-		ut16 proto_id;
-		ut32 name_id;
-	})
-RzBinDexMethod;
-
-RZ_PACKED(
-	typedef struct dex_class_t {
-		ut32 class_id; // index into typeids
-		ut32 access_flags;
-		ut32 super_class;
-		ut32 interfaces_offset;
-		ut32 source_file;
-		ut32 anotations_offset;
-		ut32 class_data_offset;
-		ut32 static_values_offset;
-		struct dex_class_data_item_t *class_data;
-	})
-RzBinDexClass;
-
-RZ_PACKED(
-	typedef struct dex_class_data_item_t {
-		ut64 static_fields_size;
-		ut64 instance_fields_size;
-		ut64 direct_methods_size;
-		ut64 virtual_methods_size;
-	})
-RzBinDexClassData;
-
-typedef struct rz_bin_dex_obj_t {
-	int size;
-	const char *file;
-	RzBuffer *b;
-	struct dex_header_t header;
-	ut32 *strings;
-	struct dex_type_t *types;
-	struct dex_proto_t *protos;
-	struct dex_field_t *fields;
-	struct dex_method_t *methods;
-	struct dex_class_t *classes;
-	RzList *methods_list;
-	RzList *trycatch_list;
-	RzList *imports_list;
-	RzList *classes_list;
-	RzList *lines_list;
-	ut64 code_from;
-	ut64 code_to;
-	char *version;
-	Sdb *kv;
-	char **cal_strings;
-} RzBinDexObj;
-
-struct rz_bin_dex_str_t {
-	char str[RZ_BIN_DEX_MAXSTR];
+typedef struct dex_map_item_t {
+	ut16 map_type; /* DexMapItemType */
+	ut16 unused;
+	ut32 map_size;
+	ut32 map_offset;
 	ut64 offset;
-	ut64 ordinal;
-	int size;
-	int last;
-};
+} DexMapItem;
+#define DEX_MAP_ITEM_SIZE (12)
 
-struct dex_encoded_type_addr_pair_t {
-	ut64 type_idx;
-	ut64 addr;
-};
+typedef struct dex_string_t {
+	ut64 size;
+	ut64 offset;
+	char *data;
+} DexString;
+// DexString structure size is variable.
 
-struct dex_encoded_catch_handler_t {
-	st64 size;
-	struct dex_encoded_type_addr_pair_t *handlers;
-	ut64 catch_all_addr;
-};
+typedef ut32 DexTypeId;
+#define DEX_TYPE_ID_SIZE (sizeof(DexTypeId))
 
-struct dex_debug_position_t {
+typedef struct dex_proto_id_t {
+	ut32 shorty_idx;
+	ut32 return_type_idx;
+	ut32 type_list_size;
+	ut16 *type_list;
+	ut64 offset;
+} DexProtoId;
+#define DEX_PROTO_ID_SIZE (0xC)
+
+typedef struct dex_field_id_t {
+	ut16 class_idx;
+	ut16 type_idx;
+	ut32 name_idx;
+	ut64 offset;
+} DexFieldId;
+#define DEX_FIELD_ID_SIZE (8)
+
+typedef struct dex_method_id_t {
+	ut16 class_idx;
+	ut16 proto_idx;
+	ut32 name_idx;
+	ut64 offset;
+	/* code_* values are filled when parsing EncodedMethod */
+	ut64 code_offset;
+	ut64 code_size;
+} DexMethodId;
+#define DEX_METHOD_ID_SIZE (8)
+
+typedef struct dex_encoded_field_t {
+	ut64 offset;
+	ut64 field_idx;
+	ut64 access_flags;
+} DexEncodedField;
+
+typedef struct dex_encoded_method_t {
+	ut64 offset;
+	ut64 method_idx;
+	ut64 access_flags;
+
+	/* core related data */
+	ut16 registers_size;
+	ut16 ins_size;
+	ut16 outs_size;
+	ut16 tries_size;
+	ut32 debug_info_offset;
+	ut32 code_size;
+	ut64 code_offset;
+	/*ut16 padding*/
+	/*try_item[tries_size]*/
+	/*encoded_catch_handler_list handlers */
+} DexEncodedMethod;
+
+typedef struct dex_class_def_t {
+	ut32 class_idx;
+	ut32 access_flags;
+	ut32 superclass_idx;
+	ut32 interfaces_offset;
 	ut32 source_file_idx;
-	ut64 address;
-	ut64 line;
-};
+	ut32 annotations_offset;
+	ut32 class_data_offset;
+	ut32 static_values_offset;
+	ut64 offset;
 
-struct dex_debug_local_t {
-	const char *name;
-	const char *descriptor;
-	const char *signature;
-	ut16 startAddress;
-	bool live;
-	int reg;
-	ut16 endAddress;
-};
+	RzList /*<DexEncodedField>*/ *static_fields;
+	RzList /*<DexEncodedField>*/ *instance_fields;
+	RzList /*<DexEncodedMethod>*/ *direct_methods;
+	RzList /*<DexEncodedMethod>*/ *virtual_methods;
+} DexClassDef;
+#define DEX_CLASS_DEF_SIZE (0x20)
 
-char *rz_bin_dex_get_version(struct rz_bin_dex_obj_t *bin);
-void rz_bin_dex_free(struct rz_bin_dex_obj_t *bin);
-struct rz_bin_dex_obj_t *rz_bin_dex_new_buf(RzBuffer *buf);
-struct rz_bin_dex_str_t *rz_bin_dex_get_strings(struct rz_bin_dex_obj_t *bin);
+typedef struct dex_t {
+	ut64 header_offset;
+	ut8 magic[4];
+	ut8 version[4];
+	ut32 checksum;
+	ut64 checksum_offset;
+	ut8 signature[20];
+	ut64 signature_offset;
+	ut32 file_size;
+	ut32 header_size;
+	ut32 endian_tag;
+	ut32 link_size;
+	ut32 link_offset;
+	ut32 map_offset;
+	ut32 string_ids_size;
+	ut32 string_ids_offset;
+	ut32 type_ids_size;
+	ut32 type_ids_offset;
+	ut32 proto_ids_size;
+	ut32 proto_ids_offset;
+	ut32 field_ids_size;
+	ut32 field_ids_offset;
+	ut32 method_ids_size;
+	ut32 method_ids_offset;
+	ut32 class_defs_size;
+	ut32 class_defs_offset;
+	ut32 data_size;
+	ut32 data_offset;
 
-#endif
+	/* lists */
+	RzList /*<DexMapItem>*/ *map_items;
+	RzList /*<DexString>*/ *strings;
+	RzList /*<DexProtoId>*/ *proto_ids;
+	RzList /*<DexFieldId>*/ *field_ids;
+	RzList /*<DexMethodId>*/ *method_ids;
+	RzList /*<DexClassDef>*/ *class_defs;
+
+	DexTypeId *types;
+} RzBinDex;
+
+RZ_API RZ_OWN RzBinDex *rz_bin_dex_new(RZ_NONNULL RzBuffer *buf, ut64 base, RZ_NONNULL Sdb *kv);
+RZ_API void rz_bin_dex_free(RZ_NULLABLE RzBinDex *dex);
+
+RZ_API RZ_OWN char *rz_bin_dex_version(RZ_NONNULL RzBinDex *dex);
+RZ_API ut64 rz_bin_dex_debug_info(RZ_NONNULL RzBinDex *dex);
+
+RZ_API RZ_OWN RzList /*<RzBinString*>*/ *rz_bin_dex_strings(RZ_NONNULL RzBinDex *dex);
+RZ_API RZ_OWN RzList /*<RzBinClass*>*/ *rz_bin_dex_classes(RZ_NONNULL RzBinDex *dex);
+RZ_API RZ_OWN RzList /*<RzBinField*>*/ *rz_bin_dex_fields(RZ_NONNULL RzBinDex *dex);
+RZ_API RZ_OWN RzList /*<RzBinSection*>*/ *rz_bin_dex_sections(RZ_NONNULL RzBinDex *dex);
+RZ_API RZ_OWN RzList /*<RzBinSymbol*>*/ *rz_bin_dex_symbols(RZ_NONNULL RzBinDex *dex);
+RZ_API RZ_OWN RzList /*<RzBinSymbol*>*/ *rz_bin_dex_imports(RZ_NONNULL RzBinDex *dex);
+RZ_API RZ_OWN RzList /*<char*>*/ *rz_bin_dex_libraries(RZ_NONNULL RzBinDex *dex);
+RZ_API RZ_OWN RzBinAddr *rz_bin_dex_resolve_symbol(RZ_NONNULL RzBinDex *dex, RzBinSpecialSymbol resolve);
+RZ_API RZ_OWN RzList /*<RzBinAddr*>*/ *rz_bin_dex_entrypoints(RZ_NONNULL RzBinDex *dex);
+
+RZ_API RZ_OWN char *rz_bin_dex_resolve_method_by_idx(RZ_NONNULL RzBinDex *dex, ut32 method_idx);
+RZ_API RZ_OWN char *rz_bin_dex_resolve_field_by_idx(RZ_NONNULL RzBinDex *dex, ut32 field_idx);
+RZ_API RZ_OWN char *rz_bin_dex_resolve_class_by_idx(RZ_NONNULL RzBinDex *dex, ut32 class_idx);
+RZ_API RZ_OWN char *rz_bin_dex_resolve_string_by_idx(RZ_NONNULL RzBinDex *dex, ut32 string_idx);
+RZ_API RZ_OWN char *rz_bin_dex_resolve_proto_by_idx(RZ_NONNULL RzBinDex *dex, ut32 proto_idx);
+
+RZ_API ut64 rz_bin_dex_resolve_string_offset_by_idx(RZ_NONNULL RzBinDex *dex, ut32 string_idx);
+RZ_API ut64 rz_bin_dex_resolve_type_id_offset_by_idx(RZ_NONNULL RzBinDex *dex, ut32 type_idx);
+RZ_API ut64 rz_bin_dex_resolve_method_offset_by_idx(RZ_NONNULL RzBinDex *dex, ut32 method_idx);
+
+RZ_API void rz_bin_dex_checksum(RZ_NONNULL RzBinDex *dex, RZ_NONNULL RzBinHash *hash);
+RZ_API void rz_bin_dex_sha1(RZ_NONNULL RzBinDex *dex, RZ_NONNULL RzBinHash *hash);
+
+#endif /* RZ_DEX_H */

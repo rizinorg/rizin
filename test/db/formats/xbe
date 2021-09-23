@@ -7,9 +7,11 @@ RUN
 
 NAME=entrypoint decoding
 FILE=bins/xbe/default.xbe
-CMDS=ie~addr
+CMDS=ie
 EXPECT=<<EOF
-vaddr=0x00011000 paddr=0x00001000 haddr=-1 type=program
+vaddr      paddr      hvaddr     haddr      type    
+----------------------------------------------------
+0x00011000 0x00001000 ---------- ---------- program
 EOF
 RUN
 
@@ -25,10 +27,8 @@ NAME=decoding the thunk table
 FILE=bins/xbe/default.xbe
 CMDS=is
 EXPECT=<<EOF
-[Symbols]
-
-nth paddr      vaddr      bind type size lib name
--------------------------------------------------
+nth paddr      vaddr      bind type size lib name       
+--------------------------------------------------------
 0   0x000016c0 0x000116c0 NONE NONE 4        kt.sprintf
 EOF
 RUN

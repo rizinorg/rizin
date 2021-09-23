@@ -1,0 +1,10 @@
+NAME=LANGUAGES : go detection
+FILE=bins/abi_bins/elf/languages/go/bubble_sort
+CMDS=<<EOF
+iI~machine,lang
+EOF
+EXPECT=<<EOF
+lang     go
+machine  AMD x86-64 architecture
+EOF
+RUN

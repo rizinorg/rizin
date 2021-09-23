@@ -24,8 +24,8 @@ RZ_API RzDebugPid *rz_debug_pid_free(RzDebugPid *pid) {
 }
 
 RZ_API RzList *rz_debug_pids(RzDebug *dbg, int pid) {
-	if (dbg && dbg->h && dbg->h->pids) {
-		return dbg->h->pids(dbg, pid);
+	if (dbg && dbg->cur && dbg->cur->pids) {
+		return dbg->cur->pids(dbg, pid);
 	}
 	return NULL;
 }
@@ -35,8 +35,8 @@ RZ_API int rz_debug_pid_list(RzDebug *dbg, int pid, char fmt) {
 	RzList *list;
 	RzListIter *iter;
 	RzDebugPid *p;
-	if (dbg && dbg->h && dbg->h->pids) {
-		list = dbg->h->pids(dbg, RZ_MAX(0, pid));
+	if (dbg && dbg->cur && dbg->cur->pids) {
+		list = dbg->cur->pids(dbg, RZ_MAX(0, pid));
 		if (!list) {
 			return false;
 		}
@@ -81,8 +81,8 @@ RZ_API int rz_debug_thread_list(RzDebug *dbg, int pid, char fmt) {
 	if (pid == -1) {
 		return false;
 	}
-	if (dbg && dbg->h && dbg->h->threads) {
-		list = dbg->h->threads(dbg, pid);
+	if (dbg && dbg->cur && dbg->cur->threads) {
+		list = dbg->cur->threads(dbg, pid);
 		if (!list) {
 			return false;
 		}
@@ -100,7 +100,24 @@ RZ_API int rz_debug_thread_list(RzDebug *dbg, int pid, char fmt) {
 
 				fcn = rz_analysis_get_fcn_in(dbg->analysis, p->pc, 0);
 				if (fcn) {
-					rz_strbuf_appendf(path, " in %s+0x%" PFMT64x, fcn->name, (p->pc - fcn->addr));
+					if (p->pc == fcn->addr) {
+						rz_strbuf_appendf(path, " at %s", fcn->name);
+					} else {
+						st64 delta = p->pc - fcn->addr;
+						char sign = delta >= 0 ? '+' : '-';
+						rz_strbuf_appendf(path, " in %s%c%" PFMT64u, fcn->name, sign, RZ_ABS(delta));
+					}
+				} else {
+					const char *flag_name = dbg->corebind.getName(dbg->corebind.core, p->pc);
+					if (flag_name) {
+						rz_strbuf_appendf(path, " at %s", flag_name);
+					} else {
+						char *name_delta = dbg->corebind.getNameDelta(dbg->corebind.core, p->pc);
+						if (name_delta) {
+							rz_strbuf_appendf(path, " in %s", name_delta);
+							free(name_delta);
+						}
+					}
 				}
 			}
 			switch (fmt) {

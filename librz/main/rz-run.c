@@ -31,7 +31,7 @@ RZ_API int rz_main_rz_run(int argc, const char **argv) {
 		return 1;
 	}
 	if (!strcmp(argv[1], "-v")) {
-		return rz_main_version_print("rz_run");
+		return rz_main_version_print("rz-run");
 	}
 	const char *file = argv[1];
 	if (!strcmp(file, "-t")) {
@@ -73,6 +73,7 @@ RZ_API int rz_main_rz_run(int argc, const char **argv) {
 	ret = rz_run_config_env(p);
 	if (ret) {
 		printf("error while configuring the environment.\n");
+		rz_run_free(p);
 		return 1;
 	}
 	ret = rz_run_start(p);

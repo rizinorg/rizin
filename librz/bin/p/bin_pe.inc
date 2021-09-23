@@ -20,12 +20,12 @@ static Sdb *get_sdb(RzBinFile *bf) {
 	return bin ? bin->kv : NULL;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	rz_return_val_if_fail(bf && bin_obj && buf, false);
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
+	rz_return_val_if_fail(bf && obj && buf, false);
 	struct PE_(rz_bin_pe_obj_t) *res = PE_(rz_bin_pe_new_buf)(buf, bf->rbin->verbose);
 	if (res) {
 		sdb_ns_set(sdb, "info", res->kv);
-		*bin_obj = res;
+		obj->bin_obj = res;
 		return true;
 	}
 	return false;
@@ -40,13 +40,15 @@ static ut64 baddr(RzBinFile *bf) {
 	return PE_(rz_bin_pe_get_image_base)(bf->o->bin_obj);
 }
 
-static RzBinAddr *binsym(RzBinFile *bf, int type) {
+static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
 	struct rz_bin_pe_addr_t *peaddr = NULL;
 	RzBinAddr *ret = NULL;
 	if (bf && bf->o && bf->o->bin_obj) {
 		switch (type) {
-		case RZ_BIN_SYM_MAIN:
+		case RZ_BIN_SPECIAL_SYMBOL_MAIN:
 			peaddr = PE_(rz_bin_pe_get_main_vaddr)(bf->o->bin_obj);
+			break;
+		default:
 			break;
 		}
 	}
@@ -119,6 +121,64 @@ static RzList *entries(RzBinFile *bf) {
 	return ret;
 }
 
+static ut32 perm_of_section_perm(ut64 perm) {
+	ut32 r = 0;
+	if (RZ_BIN_PE_SCN_IS_EXECUTABLE(perm)) {
+		r |= RZ_PERM_X;
+		r |= RZ_PERM_R; // implicit
+	}
+	if (RZ_BIN_PE_SCN_IS_WRITABLE(perm)) {
+		r |= RZ_PERM_W;
+	}
+	if (RZ_BIN_PE_SCN_IS_READABLE(perm)) {
+		r |= RZ_PERM_R;
+	}
+	if (RZ_BIN_PE_SCN_IS_SHAREABLE(perm)) {
+		r |= RZ_PERM_SHAR;
+	}
+	return r;
+}
+
+static RzList *maps(RzBinFile *bf) {
+	struct PE_(rz_bin_pe_obj_t) *bin = (struct PE_(rz_bin_pe_obj_t) *)bf->o->bin_obj;
+	struct rz_bin_pe_section_t *sections = NULL;
+	if (!bin || !(sections = bin->sections)) {
+		return NULL;
+	}
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_map_free);
+	if (!ret) {
+		return NULL;
+	}
+	ut64 ba = baddr(bf);
+	PE_(rz_bin_pe_check_sections)
+	(bin, &sections);
+	for (size_t i = 0; !sections[i].last; i++) {
+		RzBinMap *map = RZ_NEW0(RzBinMap);
+		if (!map) {
+			break;
+		}
+		map->paddr = sections[i].paddr;
+		map->name = strdup((char *)sections[i].name);
+		map->psize = sections[i].size;
+		if (map->psize > bin->size) {
+			if (sections[i].vsize < bin->size) {
+				map->psize = sections[i].vsize;
+			} else {
+				//hack give it page size
+				map->psize = 4096;
+			}
+		}
+		map->vsize = sections[i].vsize;
+		if (!map->vsize && map->psize) {
+			map->vsize = map->psize;
+		}
+		map->vaddr = sections[i].vaddr + ba;
+		map->perm = perm_of_section_perm(sections[i].perm);
+		rz_list_append(ret, map);
+	}
+	return ret;
+}
+
 static RzList *sections(RzBinFile *bf) {
 	RzList *ret = NULL;
 	RzBinSection *ptr = NULL;
@@ -139,44 +199,13 @@ static RzList *sections(RzBinFile *bf) {
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			break;
 		}
-		if (sections[i].name[0]) {
-			ptr->name = strdup((char *)sections[i].name);
-		} else {
-			ptr->name = strdup("");
-		}
+		ptr->name = strdup((char *)sections[i].name);
 		ptr->size = sections[i].size;
-		if (ptr->size > bin->size) {
-			if (sections[i].vsize < bin->size) {
-				ptr->size = sections[i].vsize;
-			} else {
-				//hack give it page size
-				ptr->size = 4096;
-			}
-		}
 		ptr->vsize = sections[i].vsize;
-		if (!ptr->vsize && ptr->size) {
-			ptr->vsize = ptr->size;
-		}
 		ptr->flags = sections[i].flags;
 		ptr->paddr = sections[i].paddr;
 		ptr->vaddr = sections[i].vaddr + ba;
-
-		ptr->add = true;
-		ptr->perm = 0;
-		if (RZ_BIN_PE_SCN_IS_EXECUTABLE(sections[i].perm)) {
-			ptr->perm |= RZ_PERM_X;
-			ptr->perm |= RZ_PERM_R; // implicit
-		}
-		if (RZ_BIN_PE_SCN_IS_WRITABLE(sections[i].perm)) {
-			ptr->perm |= RZ_PERM_W;
-		}
-		if (RZ_BIN_PE_SCN_IS_READABLE(sections[i].perm)) {
-			ptr->perm |= RZ_PERM_R;
-		}
-		// this is causing may tests to fail because rx != srx
-		if (RZ_BIN_PE_SCN_IS_SHAREABLE(sections[i].perm)) {
-			ptr->perm |= RZ_PERM_SHAR;
-		}
+		ptr->perm = perm_of_section_perm(sections[i].perm);
 		if ((ptr->perm & RZ_PERM_RW) && !(ptr->perm & RZ_PERM_X) && ptr->size > 0) {
 			if (!strcmp(ptr->name, ".rsrc") ||
 				!strcmp(ptr->name, ".data") ||
@@ -198,16 +227,28 @@ static void find_pe_overlay(RzBinFile *bf) {
 	}
 }
 
+static inline bool is_thumb(struct PE_(rz_bin_pe_obj_t) * bin, ut64 address) {
+	switch (bin->nt_headers->file_header.Machine) {
+	case PE_IMAGE_FILE_MACHINE_ARM:
+	case PE_IMAGE_FILE_MACHINE_ARMNT:
+		return address & 1;
+	default:
+		return false;
+	}
+}
+
 static RzList *symbols(RzBinFile *bf) {
 	RzList *ret = NULL;
 	RzBinSymbol *ptr = NULL;
 	struct rz_bin_pe_export_t *symbols = NULL;
 	struct rz_bin_pe_import_t *imports = NULL;
+	struct PE_(rz_bin_pe_obj_t) *bin = bf->o->bin_obj;
 	int i;
 
-	if (!(ret = rz_list_newf(free))) {
+	if (!(ret = rz_list_newf((RzListFree)rz_bin_symbol_free))) {
 		return NULL;
 	}
+	int file_bits = PE_(rz_bin_pe_get_bits(bin));
 	if ((symbols = PE_(rz_bin_pe_get_exports)(bf->o->bin_obj))) {
 		for (i = 0; !symbols[i].last; i++) {
 			if (!(ptr = RZ_NEW0(RzBinSymbol))) {
@@ -220,8 +261,15 @@ static RzList *symbols(RzBinFile *bf) {
 			ptr->bind = RZ_BIN_BIND_GLOBAL_STR;
 			ptr->type = RZ_BIN_TYPE_FUNC_STR;
 			ptr->size = 0;
-			ptr->vaddr = symbols[i].vaddr;
-			ptr->paddr = symbols[i].paddr;
+			if (is_thumb(bin, symbols[i].vaddr)) {
+				ptr->bits = 16;
+				ptr->vaddr = symbols[i].vaddr - 1;
+				ptr->paddr = symbols[i].paddr - 1;
+			} else {
+				ptr->bits = file_bits;
+				ptr->vaddr = symbols[i].vaddr;
+				ptr->paddr = symbols[i].paddr;
+			}
 			ptr->ordinal = symbols[i].ordinal;
 			rz_list_append(ret, ptr);
 		}
@@ -263,7 +311,7 @@ static void filter_import(ut8 *n) {
 }
 
 static RzList *imports(RzBinFile *bf) {
-	RzList *ret = NULL, *relocs = NULL;
+	RzList *relocs = NULL;
 	RzBinImport *ptr = NULL;
 	RzBinReloc *rel = NULL;
 	struct rz_bin_pe_import_t *imports = NULL;
@@ -272,7 +320,8 @@ static RzList *imports(RzBinFile *bf) {
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	if (!(ret = rz_list_newf(rz_bin_import_free))) {
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_import_free);
+	if (!ret) {
 		return NULL;
 	}
 
@@ -474,7 +523,6 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->bits = PE_(rz_bin_pe_get_bits)(bf->o->bin_obj);
 	ret->big_endian = PE_(rz_bin_pe_is_big_endian)(bf->o->bin_obj);
 	ret->dbg_info = 0;
-	ret->has_lit = true;
 	ret->has_canary = has_canary(bf);
 	ret->has_nx = haschr(bf, IMAGE_DLL_CHARACTERISTICS_NX_COMPAT);
 	ret->has_pi = haschr(bf, IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE);
@@ -482,7 +530,6 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->actual_checksum = strdup(sdb_fmt("0x%08x", actual_checksum));
 	ret->pe_overlay = pe_overlay > 0;
 	ret->signature = bin ? bin->is_signed : false;
-	ret->file_hashes = rz_list_newf((RzListFree)rz_bin_file_hash_free);
 	Sdb *db = sdb_ns(bf->sdb, "pe", true);
 	sdb_bool_set(db, "canary", has_canary(bf), 0);
 	sdb_bool_set(db, "highva", haschr(bf, IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA), 0);

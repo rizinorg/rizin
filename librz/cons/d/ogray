@@ -39,7 +39,7 @@ ec ucall rgb:f72 rgb:333
 ec ujmp rgb:f72
 ec graph.true rgb:f72
 ec graph.false rgb:777
-ec graph.trufae rgb:ddd
+ec graph.ujump rgb:ddd
 ec graph.current rgb:f72
 ec graph.traced rgb:f00
 ec graph.box rgb:fff

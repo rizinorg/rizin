@@ -274,7 +274,7 @@ EXPECT=<<EOF
   0x0000009e               92e0  ldi r25, 0x02
   0x000000a0           0e94d808  call 0x11b0
 
-  0x000000c4               1082  std z+0, r1
+  0x000000c4               1082  st Z, r1
   0x000000c6               60e0  ldi r22, 0x00
   0x000000c8               71e0  ldi r23, 0x01
   0x000000ca               c801  movw r24, r16
@@ -321,7 +321,7 @@ EXPECT=<<EOF
   0x00000160               92e0  ldi r25, 0x02
   0x00000162           0e946b04  call 0x8d6
 
-  0x000001b6               1082  std z+0, r1
+  0x000001b6               1082  st Z, r1
   0x000001b8               6fe8  ldi r22, 0x8f
   0x000001ba               71e0  ldi r23, 0x01
   0x000001bc               c801  movw r24, r16

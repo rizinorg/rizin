@@ -1,5 +1,5 @@
 NAME=wfx
-FILE=-
+FILE==
 CMDS=<<EOF
 w hello
 w world @ 0x20

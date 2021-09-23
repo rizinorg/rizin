@@ -1,5 +1,5 @@
 NAME=ands (opcode) triggers zf
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -16,7 +16,7 @@ EOF
 RUN
 
 NAME=ands (opcode) triggers zf off
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -33,7 +33,7 @@ EOF
 RUN
 
 NAME=ands triggers zf
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -50,7 +50,7 @@ EOF
 RUN
 
 NAME=ands triggers zf off
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -67,7 +67,7 @@ EOF
 RUN
 
 NAME=and (no s flag) does not trigger zf
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -84,7 +84,7 @@ EOF
 RUN
 
 NAME=and (no s flag) does not trigger zf off
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -101,7 +101,7 @@ EOF
 RUN
 
 NAME=orrs triggers zf
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -118,7 +118,7 @@ EOF
 RUN
 
 NAME=orrs triggers zf off
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -135,7 +135,7 @@ EOF
 RUN
 
 NAME=orrs (opcode) triggers zf
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -152,7 +152,7 @@ EOF
 RUN
 
 NAME=orrs (opcode) triggers zf off
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -169,7 +169,7 @@ EOF
 RUN
 
 NAME=orr (no s flag) does not trigger zf
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -186,7 +186,7 @@ EOF
 RUN
 
 NAME=orr (no s flag) does not trigger zf off
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -203,7 +203,7 @@ EOF
 RUN
 
 NAME=adds triggers zf
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -220,7 +220,7 @@ EOF
 RUN
 
 NAME=adds triggers zf off
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -238,7 +238,7 @@ EOF
 RUN
 
 NAME=add (no s flag) does not trigger zf
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -255,7 +255,7 @@ EOF
 RUN
 
 NAME=add (no s flag) does not trigger zf off
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -273,7 +273,7 @@ EOF
 RUN
 
 NAME=eors (opcode) triggers zf
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -290,7 +290,7 @@ EOF
 RUN
 
 NAME=eors (opcode) triggers zf off
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -308,7 +308,7 @@ EOF
 RUN
 
 NAME=eors triggers zf
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -325,7 +325,7 @@ EOF
 RUN
 
 NAME=eors triggers zf off
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -343,7 +343,7 @@ EOF
 RUN
 
 NAME=eor (no s flag) does not trigger zf
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -360,7 +360,7 @@ EOF
 RUN
 
 NAME=eor (no s flag) does not trigger zf off
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -378,7 +378,7 @@ EOF
 RUN
 
 NAME=subs triggers zf and cf
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -395,7 +395,7 @@ EOF
 RUN
 
 NAME=subs triggers cf and zf off
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -412,7 +412,7 @@ EOF
 RUN
 
 NAME=sub (no s flag) does not trigger zf
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -429,7 +429,7 @@ EOF
 RUN
 
 NAME=sub (no s flag) does not trigger zf off
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -526,7 +526,7 @@ EOF
 RUN
 
 NAME=tst nz
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.bytes=true
 e asm.arch=arm
@@ -633,6 +633,263 @@ ar r1
 EOF
 EXPECT=<<EOF
 0x000000aa
+EOF
+RUN
+
+NAME=ldrd r2, r3, [r1]
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r1=8
+# put value at r1 into r2 and at r1+4 into r3
+wx d020c1e1 # ldrd r2,r3,[r1]
+wx ddccbbaa @ 8
+wx efbeadde @ 12
+aes
+ar r2
+ar r3
+EOF
+EXPECT=<<EOF
+0xaabbccdd
+0xdeadbeef
+EOF
+RUN
+
+NAME=ldrd r2, r3, [r1, #4]
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r1=4
+# put value at r1+4 into r2 and at r1+4+4 into r3
+wx d420c1e1 # ldrd r2,r3,[r1, 4]
+wx ddccbbaa @ 8
+wx efbeadde @ 12
+aes
+ar r2
+ar r3
+EOF
+EXPECT=<<EOF
+0xaabbccdd
+0xdeadbeef
+EOF
+RUN
+
+NAME=ldrd r2, r3, [pc, #4]
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+# put value at pc+4 into r2 and at pc+4+4 into r3
+wx d420CFe1 # ldrd r2, r3, [pc, #4]
+wx ddccbbaa @ 12
+wx efbeadde @ 16
+aes
+ar r2
+ar r3
+EOF
+EXPECT=<<EOF
+0xaabbccdd
+0xdeadbeef
+EOF
+RUN
+
+NAME=ldrd r2, r3, [r1, #4]!
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r1=4
+# put value at r1+4 into r2 and at r1+4+4 into r3 then put r1+4 into r1
+wx d420e1e1 # ldrd r2, r3, [r1, #4]!
+wx ddccbbaa @ 8
+wx efbeadde @ 12
+aes
+ar r1
+ar r2
+ar r3
+EOF
+EXPECT=<<EOF
+0x00000008
+0xaabbccdd
+0xdeadbeef
+EOF
+RUN
+
+NAME=ldrd r2, r3, [r1], #4
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r1=8
+# put value at r1 into r2 and at r1+4 into r3 then put r1+4 into r1
+wx d420c1e0 # ldrd r2,r3,[r1], 4
+wx ddccbbaa @ 8
+wx efbeadde @ 12
+aes
+ar r1
+ar r2
+ar r3
+EOF
+EXPECT=<<EOF
+0x0000000c
+0xaabbccdd
+0xdeadbeef
+EOF
+RUN
+
+NAME=ldrd r2, r3, [r1, r4]
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r1=4
+ar r4=4
+# put value at r1+r4 into r2 and at r1+r4+4 into r3
+wx d42081e1 # ldrd r2,r3,[r1, r4]
+wx ddccbbaa @ 8
+wx efbeadde @ 12
+aes
+ar r2
+ar r3
+EOF
+EXPECT=<<EOF
+0xaabbccdd
+0xdeadbeef
+EOF
+RUN
+
+NAME=ldrd r2, r3, [r1, -r4]
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r1=12
+ar r4=4
+# put value at r1-r4 into r2 and at r1-r4+4 into r3
+wx d42001e1 # ldrd r2,r3,[r1, -r4]
+wx ddccbbaa @ 8
+wx efbeadde @ 12
+aes
+ar r2
+ar r3
+EOF
+EXPECT=<<EOF
+0xaabbccdd
+0xdeadbeef
+EOF
+RUN
+
+NAME=ldrd r2, r3, [pc, r4]
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r4=4
+# put value at pc+r4 into r2 and at pc+r4+4 into r3
+wx d4208fe1 # ldrd r2, r3, [pc, r4]
+wx ddccbbaa @ 12
+wx efbeadde @ 16
+aes
+ar r2
+ar r3
+EOF
+EXPECT=<<EOF
+0xaabbccdd
+0xdeadbeef
+EOF
+RUN
+
+NAME=ldrd r2, r3, [r1, r4]!
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r1=4
+ar r4=4
+# put value at r1+r4 into r2 and at r1+r4+4 into r3 then put r1+r4 into r1
+wx d420a1e1 # ldrd r2,r3,[r1, r4]!
+wx ddccbbaa @ 8
+wx efbeadde @ 12
+aes
+ar r1
+ar r2
+ar r3
+EOF
+EXPECT=<<EOF
+0x00000008
+0xaabbccdd
+0xdeadbeef
+EOF
+RUN
+
+NAME=ldrd r2, r3, [r1, -r4]!
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r1=12
+ar r4=4
+# put value at r1-r4 into r2 and at r1-r4+4 into r3 then put r1-r4 into r1
+wx d42021e1 # ldrd r2,r3,[r1, -r4]!
+wx ddccbbaa @ 8
+wx efbeadde @ 12
+aes
+ar r1
+ar r2
+ar r3
+EOF
+EXPECT=<<EOF
+0x00000008
+0xaabbccdd
+0xdeadbeef
+EOF
+RUN
+
+NAME=ldrd r2, r3, [r1], r4
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r1=8
+ar r4=4
+# put value at r1 into r2 and at r1+4 into r3 then put r1+r4 into r1
+wx d42081e0 # ldrd r2,r3,[r1], r4
+wx ddccbbaa @ 8
+wx efbeadde @ 12
+aes
+ar r1
+ar r2
+ar r3
+EOF
+EXPECT=<<EOF
+0x0000000c
+0xaabbccdd
+0xdeadbeef
+EOF
+RUN
+
+NAME=ldrd r2, r3, [r1], -r4
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r1=8
+ar r4=4
+# put value at r1 into r2 and at r1+4 into r3 then put r1-r4 into r1
+wx d42001e0 # ldrd r2,r3,[r1], -r4
+wx ddccbbaa @ 8
+wx efbeadde @ 12
+aes
+ar r1
+ar r2
+ar r3
+EOF
+EXPECT=<<EOF
+0x00000004
+0xaabbccdd
+0xdeadbeef
 EOF
 RUN
 
@@ -2447,7 +2704,7 @@ EOF
 RUN
 
 NAME=stmib no writeback
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -2466,7 +2723,7 @@ EOF
 RUN
 
 NAME=stmda writeback
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -2485,7 +2742,7 @@ EOF
 RUN
 
 NAME=stmdb no writeback
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -2571,7 +2828,7 @@ EOF
 RUN
 
 NAME=ldmda no writeback
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -2592,7 +2849,7 @@ EOF
 RUN
 
 NAME=ldmdb writeback
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -2613,7 +2870,7 @@ EOF
 RUN
 
 NAME=ldm no writeback
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -2634,7 +2891,7 @@ EOF
 RUN
 
 NAME=ldmib writeback
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32

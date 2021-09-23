@@ -10,13 +10,13 @@ EOF
 RUN
 
 NAME=PDB downloader json
-FILE=-
+FILE==
 CMDS=<<EOF
 %RZ_CURL=1
-!!rz-bin -PPj bins/pdb/user32.dll
+!rz-bin -PPj bins/pdb/user32.dll
 EOF
 EXPECT=<<EOF
-{"pdb":{"file":"user32.pdb","download":true},"pdb":false}
+{"pdb":{"file":"user32.pdb","download":true}}
 EOF
 RUN
 
@@ -32,18 +32,18 @@ EOF
 RUN
 
 NAME=idp 404
-FILE=-
+FILE==
 CMDS=<<EOF
 idp 404.pdb
 EOF
 EXPECT=
 EXPECT_ERR=<<EOF
-Cannot open file
+ERROR: Cannot open file '404.pdb'
 EOF
 RUN
 
 NAME=idp and baddr
-FILE=-
+FILE==
 CMDS=<<EOF
 e bin.baddr=0
 idp bins/pdb/Project1.pdb
@@ -66,6 +66,22 @@ R2_TEST_STRUCT
 EOF
 RUN
 
+NAME=find class CTest2 # has LF_BCLASS
+FILE=bins/pdb/vs2019_cpp_override.pdb
+CMDS=!rz-bin -P ${RZ_FILE} | grep -ao "struct CTest2"
+EXPECT=<<EOF
+struct CTest2
+EOF
+RUN
+
+NAME=find class _onexit_table_t # LF_STRUCTURE_19
+FILE=bins/pdb/vs2019_cpp_override.pdb
+CMDS=!rz-bin -P ${RZ_FILE} | grep -ao _onexit_table_t
+EXPECT=<<EOF
+_onexit_table_t
+EOF
+RUN
+
 NAME=find union R2_TEST_UNION
 FILE=bins/pdb/Project1.pdb
 CMDS=!rz-bin -P ${RZ_FILE} | grep -ao R2_TEST_UNION
@@ -82,11 +98,35 @@ R2_TEST_ENUM
 EOF
 RUN
 
+NAME=find enum _RTC_ErrorNumber
+FILE=bins/pdb/vs2019_cpp_override.pdb
+CMDS=!rz-bin -P ${RZ_FILE} | grep -ao _RTC_ErrorNumber
+EXPECT=<<EOF
+_RTC_ErrorNumber
+EOF
+RUN
+
+NAME=find enum member of _RTC_ErrorNumber
+FILE=bins/pdb/vs2019_cpp_override.pdb
+CMDS=!rz-bin -P ${RZ_FILE} | grep -ao _RTC_ILLEGAL
+EXPECT=<<EOF
+_RTC_ILLEGAL
+EOF
+RUN
+
 NAME=member1 offset of structure R2_TEST_STRUCT
 FILE=bins/pdb/Project1.pdb
 CMDS=!rz-bin -P ${RZ_FILE} | grep r2_struct_var_1 | grep -ao 0x0
 EXPECT=<<EOF
 0x0
+EOF
+RUN
+
+NAME=member2 offset of structure _onexit_table_t # LF_STRUCTURE_19
+FILE=bins/pdb/vs2019_cpp_override.pdb
+CMDS=!rz-bin -P ${RZ_FILE} | grep "void\ \*\*\ _last" | grep -ao 0x4
+EXPECT=<<EOF
+0x4
 EOF
 RUN
 
@@ -104,6 +144,14 @@ FILE=bins/pdb/Project1.pdb
 CMDS=!rz-bin -P ${RZ_FILE} | grep -ao r2_struct_var_1
 EXPECT=<<EOF
 r2_struct_var_1
+EOF
+RUN
+
+NAME=member1 of structure _onexit_table_t # LF_STRUCTURE_19
+FILE=bins/pdb/vs2019_cpp_override.pdb
+CMDS=!rz-bin -P ${RZ_FILE} | grep -ao "void\ \*\*\ _first"
+EXPECT=<<EOF
+void ** _first
 EOF
 RUN
 
@@ -136,6 +184,14 @@ FILE=bins/pdb/Project1.pdb
 CMDS=!rz-bin -P ${RZ_FILE} | grep R2_TEST_STRUCT | grep -ao 0x8
 EXPECT=<<EOF
 0x8
+EOF
+RUN
+
+NAME=check size of structure _onexit_table_t # LF_STRUCTURE_19
+FILE=bins/pdb/vs2019_cpp_override.pdb
+CMDS=!rz-bin -P ${RZ_FILE} | grep _onexit_table_t | grep -ao 0xc
+EXPECT=<<EOF
+0xc
 EOF
 RUN
 
@@ -236,7 +292,7 @@ EOF
 RUN
 
 NAME=PDB set flag realname
-FILE=-
+FILE==
 CMDS=<<EOF
 idp bins/pdb/Project1.pdb
 fN @ 0x00011000

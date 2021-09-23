@@ -30,6 +30,7 @@ RZ_API void rz_analysis_op_init(RzAnalysisOp *op) {
 		op->refptr = 0;
 		op->val = UT64_MAX;
 		op->disp = UT64_MAX;
+		op->mmio_address = UT64_MAX;
 	}
 }
 

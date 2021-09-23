@@ -14,7 +14,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#if __APPLE__ && LIBC_HAVE_FORK
+#if __APPLE__ && HAVE_FORK
 #if !__POWERPC__
 #include <spawn.h>
 #endif
@@ -32,6 +32,17 @@
 #include <mach-o/nlist.h>
 #endif
 
+#if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
+#if defined(__APPLE__) || defined(__NetBSD__) || defined(__OpenBSD__)
+#include <util.h>
+#elif defined(__FreeBSD__) || defined(__DragonFly__)
+#include <libutil.h>
+#else
+#include <pty.h>
+#include <utmp.h>
+#endif
+#endif
+
 #if __UNIX__
 #include <sys/ioctl.h>
 #include <sys/resource.h>
@@ -42,14 +53,12 @@
 #endif
 #if __linux__ && !__ANDROID__
 #include <sys/personality.h>
-#include <pty.h>
-#include <utmp.h>
 #endif
-#if defined(__APPLE__) || defined(__NetBSD__) || defined(__OpenBSD__)
-#include <util.h>
-#elif defined(__FreeBSD__) || defined(__DragonFly__)
+#if defined(__FreeBSD__) || defined(__DragonFly__)
+#if HAVE_DECL_PROCCTL_ASLR_CTL
+#include <sys/procctl.h>
+#endif
 #include <sys/sysctl.h>
-#include <libutil.h>
 #endif
 #endif
 #ifdef _MSC_VER
@@ -58,14 +67,7 @@
 #define pid_t int
 #endif
 
-#if EMSCRIPTEN
-#undef HAVE_PTY
-#define HAVE_PTY 0
-#else
-#define HAVE_PTY __UNIX__ && !__ANDROID__ && LIBC_HAVE_FORK && !__sun
-#endif
-
-#if HAVE_PTY
+#if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
 static int (*dyn_openpty)(int *amaster, int *aslave, char *name, struct termios *termp, struct winsize *winp) = NULL;
 static int (*dyn_login_tty)(int fd) = NULL;
 static id_t (*dyn_forkpty)(int *amaster, char *name, struct termios *termp, struct winsize *winp) = NULL;
@@ -275,6 +277,12 @@ static void setASLR(RzRunProfile *r, int enabled) {
 	// the right way is to disable the aslr bit in the spawn call
 #elif __FreeBSD__ || __NetBSD__ || __DragonFly__
 	rz_sys_aslr(enabled);
+#if HAVE_DECL_PROCCTL_ASLR_CTL
+	int disabled = PROC_ASLR_FORCE_DISABLE;
+	if (procctl(P_PID, getpid(), PROC_ASLR_CTL, &disabled) == -1) {
+		rz_sys_aslr(0);
+	}
+#endif
 #else
 	// not supported for this platform
 #endif
@@ -282,7 +290,7 @@ static void setASLR(RzRunProfile *r, int enabled) {
 
 #if __APPLE__ && !__POWERPC__
 #else
-#if HAVE_PTY
+#if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
 static void restore_saved_fd(int saved, bool restore, int fd) {
 	if (saved == -1) {
 		return;
@@ -295,7 +303,7 @@ static void restore_saved_fd(int saved, bool restore, int fd) {
 #endif
 
 static int handle_redirection_proc(const char *cmd, bool in, bool out, bool err) {
-#if HAVE_PTY
+#if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
 	if (!dyn_forkpty) {
 		// No forkpty api found, maybe we should fallback to just fork without any pty allocated
 		return -1;
@@ -396,12 +404,12 @@ static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
 			if (rz_sys_pipe(pipes, true) != -1) {
 				size_t cmdl = strlen(cmd) - 2;
 				if (write(pipes[1], cmd + 1, cmdl) != cmdl) {
-					eprintf("[ERROR] rz_run: Cannot write to the pipe\n");
+					eprintf("[ERROR] rz-run: Cannot write to the pipe\n");
 					close(0);
 					return 1;
 				}
 				if (write(pipes[1], "\n", 1) != 1) {
-					eprintf("[ERROR] rz_run: Cannot write to the pipe\n");
+					eprintf("[ERROR] rz-run: Cannot write to the pipe\n");
 					close(0);
 					return 1;
 				}
@@ -410,7 +418,7 @@ static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
 				rz_sys_pipe_close(pipes[0]);
 				rz_sys_pipe_close(pipes[1]);
 			} else {
-				eprintf("[ERROR] rz_run: Cannot create pipe\n");
+				eprintf("[ERROR] rz-run: Cannot create pipe\n");
 			}
 		}
 #else
@@ -436,7 +444,7 @@ static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
 #endif
 		f = open(cmd, flag, mode);
 		if (f < 0) {
-			eprintf("[ERROR] rz_run: Cannot open: %s\n", cmd);
+			eprintf("[ERROR] rz-run: Cannot open: %s\n", cmd);
 			return 1;
 		}
 #define DUP(x) \
@@ -497,7 +505,7 @@ RZ_API bool rz_run_parseline(RzRunProfile *p, const char *b) {
 	} else if (!strcmp(b, "aslr")) {
 		p->_aslr = parseBool(e);
 	} else if (!strcmp(b, "pid")) {
-		p->_pid = atoi(e);
+		p->_pid = parseBool(e);
 	} else if (!strcmp(b, "pidfile")) {
 		p->_pidfile = strdup(e);
 	} else if (!strcmp(b, "connect")) {
@@ -627,7 +635,7 @@ RZ_API const char *rz_run_help(void) {
 	       "# arg2=hello\n"
 	       "# arg3=\"hello\\nworld\"\n"
 	       "# arg4=:048490184058104849\n"
-	       "# arg5=:!rz_gg -p n50 -d 10:0x8048123\n"
+	       "# arg5=:!rz-gg -p n50 -d 10:0x8048123\n"
 	       "# arg6=@arg.txt\n"
 	       "# arg7=@300@ABCD # 300 chars filled with ABCD pattern\n"
 	       "# system=rizin -\n"
@@ -669,7 +677,7 @@ RZ_API const char *rz_run_help(void) {
 	       "# nice=5\n";
 }
 
-#if HAVE_PTY
+#if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
 static int fd_forward(int in_fd, int out_fd, char **buff) {
 	int size = 0;
 
@@ -720,7 +728,7 @@ static RzThreadFunctionRet exit_process(RzThread *th) {
 #endif
 
 static int redirect_socket_to_pty(RzSocket *sock) {
-#if HAVE_PTY
+#if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
 	// directly duplicating the fds using dup2() creates problems
 	// in case of interactive applications
 	int fdm, fds;
@@ -800,7 +808,7 @@ static int redirect_socket_to_pty(RzSocket *sock) {
 RZ_API int rz_run_config_env(RzRunProfile *p) {
 	int ret;
 
-#if HAVE_PTY
+#if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
 	dyn_init();
 #endif
 
@@ -868,7 +876,7 @@ RZ_API int rz_run_config_env(RzRunProfile *p) {
 		RzSocket *child, *fd = rz_socket_new(0);
 		bool is_child = false;
 		if (!rz_socket_listen(fd, p->_listen, NULL)) {
-			eprintf("rz_run: cannot listen\n");
+			eprintf("rz-run: cannot listen\n");
 			rz_socket_free(fd);
 			return 1;
 		}
@@ -880,7 +888,7 @@ RZ_API int rz_run_config_env(RzRunProfile *p) {
 				if (p->_dofork && !p->_dodebug) {
 					pid_t child_pid = rz_sys_fork();
 					if (child_pid == -1) {
-						eprintf("rz_run: cannot fork\n");
+						eprintf("rz-run: cannot fork\n");
 						rz_socket_free(child);
 						rz_socket_free(fd);
 						return 1;
@@ -990,14 +998,14 @@ RZ_API int rz_run_config_env(RzRunProfile *p) {
 			close(0);
 			dup2(f2[0], 0);
 		} else {
-			eprintf("[ERROR] rz_run: Cannot create pipe\n");
+			eprintf("[ERROR] rz-run: Cannot create pipe\n");
 			return 1;
 		}
 		inp = getstr(p->_input);
 		if (inp) {
 			size_t inpl = strlen(inp);
 			if (write(f2[1], inp, inpl) != inpl) {
-				eprintf("[ERROR] rz_run: Cannot write to the pipe\n");
+				eprintf("[ERROR] rz-run: Cannot write to the pipe\n");
 			}
 			rz_sys_pipe_close(f2[1]);
 			free(inp);
@@ -1014,9 +1022,13 @@ RZ_API int rz_run_config_env(RzRunProfile *p) {
 	}
 	if (p->_libpath) {
 #if __WINDOWS__
-		eprintf("rz_run: libpath unsupported for this platform\n");
+		eprintf("rz-run: libpath unsupported for this platform\n");
 #elif __HAIKU__
-		rz_sys_setenv("LIBRARY_PATH", p->_libpath);
+		char *orig = rz_sys_getenv("LIBRARY_PATH");
+		char *newlib = rz_str_newf("%s:%s", p->_libpath, orig);
+		rz_sys_setenv("LIBRARY_PATH", newlib);
+		free(newlib);
+		free(orig);
 #elif __APPLE__
 		rz_sys_setenv("DYLD_LIBRARY_PATH", p->_libpath);
 #else
@@ -1064,12 +1076,12 @@ RZ_API int rz_run_config_env(RzRunProfile *p) {
 
 // NOTE: return value is like in unix return code (0 = ok, 1 = not ok)
 RZ_API int rz_run_start(RzRunProfile *p) {
-#if LIBC_HAVE_FORK
+#if HAVE_EXECVE
 	if (p->_execve) {
 		exit(rz_sys_execv(p->_program, (char *const *)p->_args));
 	}
 #endif
-#if __APPLE__ && !__POWERPC__ && LIBC_HAVE_FORK
+#if __APPLE__ && !__POWERPC__ && HAVE_FORK
 	posix_spawnattr_t attr = { 0 };
 	pid_t pid = -1;
 	int ret;
@@ -1185,7 +1197,7 @@ RZ_API int rz_run_start(RzRunProfile *p) {
 				p->_program = progpath;
 			} else {
 				free(progpath);
-				eprintf("rz_run: %s: file not found\n", p->_program);
+				eprintf("rz-run: %s: file not found\n", p->_program);
 				return 1;
 			}
 		}
@@ -1217,7 +1229,7 @@ RZ_API int rz_run_start(RzRunProfile *p) {
 #endif
 
 		if (p->_nice) {
-#if __UNIX__ && !defined(__HAIKU__)
+#if HAVE_NICE
 			if (nice(p->_nice) == -1) {
 				return 1;
 			}
@@ -1245,13 +1257,12 @@ RZ_API int rz_run_start(RzRunProfile *p) {
 				}
 			}
 			setsid();
-#if !LIBC_HAVE_FORK
+#if HAVE_EXECVE
 			exit(rz_sys_execv(p->_program, (char *const *)p->_args));
 #endif
 #endif
 		}
-// TODO: must be HAVE_EXECVE
-#if LIBC_HAVE_FORK
+#if HAVE_EXECVE
 		exit(rz_sys_execv(p->_program, (char *const *)p->_args));
 #endif
 	}

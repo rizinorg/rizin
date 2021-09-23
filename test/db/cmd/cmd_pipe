@@ -1,5 +1,5 @@
 NAME=pipe args
-FILE=-
+FILE==
 CMDS=#!pipe echo hello world
 EXPECT=<<EOF
 hello world
@@ -30,6 +30,19 @@ Disassembly of entry0:
 |           0x08049026      sub   esp, 0xc
 |           0x08049029      push  0x2a                                 ; '*' ; 42
 \           0x0804902b      call  sym.imp._Exit                        ; void _Exit(int status)
+
+EOF
+RUN
+
+NAME=rzpipe load project
+FILE=--
+CMDS=<<EOF
+?q `env~?^ASAN=1$`
+?+ env LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
+!python3 -c 'import rzpipe;rz=rzpipe.open("--");rz.cmd("Po bins/other/ls.rzdb");print(rz.cmd("?v custom_main"))'
+EOF
+EXPECT=<<EOF
+0x4070
 
 EOF
 RUN

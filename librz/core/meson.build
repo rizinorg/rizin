@@ -12,9 +12,15 @@ rz_core_sources = [
   'cbin.c',
   'cconfig.c',
   'cdebug.c',
+  'cdwarf.c',
+  'chash.c',
+  'cheap.c',
   'cio.c',
+  'cil.c',
+  'clang.c',
+  'cparser.c',
   'cmd.c',
-  cmd_descs_c,
+  cmd_descs_ch,
   #'cmd_analysis.c',
   'cmd_api.c',
   #'cmd_cmp.c',
@@ -22,7 +28,6 @@ rz_core_sources = [
   #'cmd_egg.c',
   #'cmd_eval.c',
   #'cmd_flag.c',
-  #'cmd_hash.c',
   #'cmd_help.c',
   #'cmd_info.c',
   #'cmd_log.c',
@@ -30,6 +35,7 @@ rz_core_sources = [
   #'cmd_magic.c',
   #'cmd_meta.c',
   #'cmd_open.c',
+  #'cmd_plugins.c',
   #'cmd_print.c',
   #'cmd_project.c',
   #'cmd_quit.c',
@@ -42,9 +48,9 @@ rz_core_sources = [
   'core.c',
   'disasm.c',
   'cfile.c',
+  'cvfile.c',
   'fortune.c',
   'gdiff.c',
-  'zdiff.c',
   'agraph.c',
   'hack.c',
   'libs.c',
@@ -52,6 +58,7 @@ rz_core_sources = [
   'panels.c',
   'cplugin.c',
   'project.c',
+  'project_migrate.c',
   'rtr.c',
   #'rtr_http.c',
   #'rtr_shell.c',
@@ -76,10 +83,11 @@ else
   rz_core_sources += 'windows_heap.c'
   rz_core_inc += ['../../shlr/heap/include/rz_windows']
 endif
-rz_core_inc = [platform_inc, include_directories(rz_core_inc)]
+rz_core_inc = [platform_inc, include_directories(rz_core_inc), 'cmd_descs']
 
 rz_core_deps = [
   rz_util_dep,
+  rz_diff_dep,
   rz_magic_dep,
   rz_socket_dep,
   rz_flag_dep,
@@ -96,13 +104,15 @@ rz_core_deps = [
   rz_egg_dep,
   rz_search_dep,
   rz_analysis_dep,
+  rz_type_dep,
   rz_debug_dep,
   rz_config_dep,
   rz_bin_dep,
   platform_deps,
   gdb_dep,
+  shell_parser_dep,
   lrt,
-  shell_parser_dep
+  mth
 ]
 
 if libuv_dep.found()
@@ -131,12 +141,14 @@ pkgconfig_mod.generate(
   libraries: pkgcfg_sanitize_libs,
   requires: pkgconfig_magic_requires + [
     'rz_util',
+    'rz_diff',
     'rz_reg',
     'rz_syscall',
     'rz_search',
     'rz_cons',
     'rz_analysis',
     'rz_socket',
+    'rz_type',
     'rz_io',
     'rz_lang',
     'rz_hash',

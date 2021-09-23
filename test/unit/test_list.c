@@ -460,6 +460,29 @@ bool test_rz_list_clone(void) {
 	mu_end;
 }
 
+bool test_rz_list_find_ptr(void) {
+	RzList *l = rz_list_new();
+	rz_list_push(l, (void *)42);
+	rz_list_push(l, (void *)1337);
+	rz_list_push(l, (void *)42);
+
+	RzListIter *it = rz_list_find_ptr(l, (void *)42);
+	mu_assert_notnull(it, "find_ptr");
+	mu_assert_ptreq(it, rz_list_head(l), "find_ptr");
+
+	RzListIter *expect = rz_list_iter_get_next(it);
+	mu_assert_notnull(it, "expect next");
+	it = rz_list_find_ptr(l, (void *)1337);
+	mu_assert_notnull(it, "find_ptr");
+	mu_assert_ptreq(it, expect, "find_ptr");
+
+	it = rz_list_find_ptr(l, (void *)123);
+	mu_assert_null(it, "find_ptr");
+
+	rz_list_free(l);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_rz_list_size);
 	mu_run_test(test_rz_list_values);
@@ -477,6 +500,7 @@ int all_tests() {
 	mu_run_test(test_rz_list_set_get);
 	mu_run_test(test_rz_list_reverse);
 	mu_run_test(test_rz_list_clone);
+	mu_run_test(test_rz_list_find_ptr);
 	return tests_passed != tests_run;
 }
 

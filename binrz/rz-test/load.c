@@ -134,10 +134,14 @@ RZ_API RzPVector *rz_test_load_cmd_test_file(const char *file) {
 		if (*line == '#') {
 			continue;
 		}
+
 		char *val = strchr(line, '=');
 		if (val) {
 			*val = '\0';
 			val++;
+		} else if (!val && !(strcmp(line, "RUN") == 0)) {
+			eprintf("Error: No value for key \"%s\".\n", line);
+			goto fail;
 		}
 
 		// RUN is the only cmd without value
@@ -166,10 +170,6 @@ RZ_API RzPVector *rz_test_load_cmd_test_file(const char *file) {
 		if (test->field.value) { \
 			free(test->field.value); \
 			eprintf(LINEFMT "Warning: Duplicate key \"%s\"\n", file, linenum, key); \
-		} \
-		if (!val) { \
-			eprintf(LINEFMT "Error: No value for key \"%s\"\n", file, linenum, key); \
-			goto fail; \
 		} \
 		test->field.line_begin = linenum; \
 		test->field.value = read_string_val(&nextline, val, &linenum); \
@@ -406,10 +406,12 @@ RZ_API RzPVector *rz_test_load_asm_test_file(RzStrConstPool *strpool, const char
 		int bytesz = rz_hex_str2bin(hex, bytes);
 		if (bytesz == 0) {
 			eprintf(LINEFMT "Error: Expected hex chars.\n", file, linenum);
+			free(bytes);
 			goto fail;
 		}
 		if (bytesz < 0) {
 			eprintf(LINEFMT "Error: Odd number of hex chars: %s\n", file, linenum, hex);
+			free(bytes);
 			goto fail;
 		}
 
@@ -586,6 +588,23 @@ static RzTestType test_type_for_path(const char *path, bool *load_plugins) {
 	return ret;
 }
 
+static inline bool skip_archos(const char *subname) {
+	rz_return_val_if_fail(subname, true);
+	if (!strcmp(subname, RZ_TEST_ARCH_OS)) {
+		return false;
+	}
+	if (rz_str_startswith(subname, "not-")) {
+		const char *neg_subname = subname + strlen("not-");
+		const char *second_dash = strchr(neg_subname, '-');
+		rz_return_val_if_fail(second_dash, true);
+		if (strncmp(RZ_TEST_ARCH_OS, neg_subname, second_dash - neg_subname) &&
+			(rz_str_endswith(RZ_TEST_ARCH_OS, strrchr(subname, '-')) || rz_str_endswith(subname, "-any"))) {
+			return false;
+		}
+	}
+	return true;
+}
+
 static bool database_load(RzTestDatabase *db, const char *path, int depth) {
 	if (depth <= 0) {
 		eprintf("Directories for loading tests too deep: %s\n", path);
@@ -610,7 +629,7 @@ static bool database_load(RzTestDatabase *db, const char *path, int depth) {
 				eprintf("Skipping %s" RZ_SYS_DIR "%s because it requires additional dependencies.\n", path, subname);
 				continue;
 			}
-			if ((!strcmp(path, "archos") || rz_str_endswith(path, RZ_SYS_DIR "archos")) && strcmp(subname, RZ_TEST_ARCH_OS)) {
+			if ((!strcmp(path, "archos") || rz_str_endswith(path, RZ_SYS_DIR "archos")) && skip_archos(subname)) {
 				eprintf("Skipping %s" RZ_SYS_DIR "%s because it does not match the current platform.\n", path, subname);
 				continue;
 			}

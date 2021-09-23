@@ -90,9 +90,9 @@ static int __close(RzIODesc *fd) {
 static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 	lprintf("system command (%s)\n", cmd);
 	if (!strcmp(cmd, "help")) {
-		lprintf("Usage: =!cmd args\n"
-			" =!:<bochscmd>      - Send a bochs command.\n"
-			" =!dobreak          - pause bochs.\n");
+		lprintf("Usage: R!cmd args\n"
+			" R!:<bochscmd>      - Send a bochs command.\n"
+			" R!dobreak          - pause bochs.\n");
 		lprintf("io_system: Enviando commando bochs\n");
 		bochs_send_cmd(desc, &cmd[1], true);
 		io->cb_printf("%s\n", desc->data);

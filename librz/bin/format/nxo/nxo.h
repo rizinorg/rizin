@@ -62,6 +62,8 @@ typedef struct {
 	RzList *methods_list;
 	RzList *imports_list;
 	RzList *classes_list;
+	RZ_NULLABLE RzBuffer *decompressed; /// nso-only
+	void *header;
 } RzBinNXOObj;
 
 void parseMod(RzBuffer *buf, RzBinNXOObj *bin, ut32 mod0, ut64 baddr);

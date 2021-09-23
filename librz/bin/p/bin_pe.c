@@ -10,7 +10,12 @@ static bool check_buffer(RzBuffer *b) {
 	if (length <= 0x3d) {
 		return false;
 	}
-	ut16 idx = rz_buf_read_le16_at(b, 0x3c);
+
+	ut16 idx;
+	if (!rz_buf_read_le16_at(b, 0x3c, &idx)) {
+		return false;
+	}
+
 	if (idx + 26 < length) {
 		/* Here PE signature for usual PE files
 		 * and PL signature for Phar Lap TNT DOS extender 32bit executables
@@ -36,7 +41,7 @@ static bool check_buffer(RzBuffer *b) {
 static RzBuffer *create(RzBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt) {
 	ut32 hdrsize, p_start, p_opthdr, p_sections, p_lsrlc, n;
 	ut32 baddr = 0x400000;
-	RzBuffer *buf = rz_buf_new();
+	RzBuffer *buf = rz_buf_new_with_bytes(NULL, 0);
 
 #define B(x, y)    rz_buf_append_bytes(buf, (const ut8 *)(x), y)
 #define H(x)       rz_buf_append_ut16(buf, x)
@@ -125,7 +130,7 @@ static char *signature(RzBinFile *bf, bool json) {
 }
 
 static RzList *fields(RzBinFile *bf) {
-	RzList *ret = rz_list_newf(rz_bin_field_free);
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_field_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -451,8 +456,6 @@ static void header(RzBinFile *bf) {
 	}
 }
 
-extern struct rz_bin_write_t rz_bin_write_pe;
-
 RzBinPlugin rz_bin_plugin_pe = {
 	.name = "pe",
 	.desc = "PE bin plugin",
@@ -464,6 +467,7 @@ RzBinPlugin rz_bin_plugin_pe = {
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,
+	.maps = &maps,
 	.sections = &sections,
 	.signature = &signature,
 	.symbols = &symbols,
@@ -476,7 +480,6 @@ RzBinPlugin rz_bin_plugin_pe = {
 	.minstrlen = 4,
 	.create = &create,
 	.get_vaddr = &get_vaddr,
-	.write = &rz_bin_write_pe,
 	.hashes = &compute_hashes,
 	.section_flag_to_rzlist = &PE_(section_flag_to_rzlist),
 };

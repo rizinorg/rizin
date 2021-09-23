@@ -6,29 +6,29 @@ Command substitution used as simple arg $(
 
 ---
 
-(commands
-  (arged_command command: (cmd_identifier)
+(statements
+  (arged_stmt command: (cmd_identifier)
     args: (args
             (arg (cmd_substitution_arg
-	      (arged_command command: (cmd_identifier)
+	      (arged_stmt command: (cmd_identifier)
 	        args: (args (arg (arg_identifier)))))))))
 
 =======================================
-Command substitution with multiple commands
+Command substitution with multiple statements
 =======================================
 
 ?e $(p8 10; p8 4 @ 0xdeadbeef)
 
 ---
 
-(commands
-  (arged_command command: (cmd_identifier)
+(statements
+  (arged_stmt command: (cmd_identifier)
     args: (args
             (arg (cmd_substitution_arg
-	      (arged_command command: (cmd_identifier)
+	      (arged_stmt command: (cmd_identifier)
 	        args: (args (arg (arg_identifier))))
-	      (tmp_seek_command
-	        (arged_command command: (cmd_identifier)
+	      (tmp_seek_stmt
+	        (arged_stmt command: (cmd_identifier)
 	          args: (args (arg (arg_identifier))))
 		(args (arg (arg_identifier)))))))))
 
@@ -42,11 +42,11 @@ Command substitution used as simple arg `
 
 ---
 
-(commands
-  (arged_command command: (cmd_identifier)
+(statements
+  (arged_stmt command: (cmd_identifier)
     args: (args
             (arg (cmd_substitution_arg
-	      (arged_command command: (cmd_identifier)
+	      (arged_stmt command: (cmd_identifier)
 	        args: (args (arg (arg_identifier)))))))))
 
 
@@ -58,12 +58,12 @@ Nested command substitution
 
 ---
 
-(commands
-  (arged_command command: (cmd_identifier)
+(statements
+  (arged_stmt command: (cmd_identifier)
     args: (args (arg (cmd_substitution_arg
-	         (arged_command command: (cmd_identifier)
+	         (arged_stmt command: (cmd_identifier)
 	           args: (args (arg (cmd_substitution_arg
-		           (arged_command command: (cmd_identifier)
+		           (arged_stmt command: (cmd_identifier)
 			     args: (args (arg (arg_identifier)))))))))))))
 
 
@@ -75,14 +75,14 @@ Nested command substitution 2
 
 ---
 
-(commands
-  (arged_command (cmd_identifier)
+(statements
+  (arged_stmt (cmd_identifier)
     (args (arg (concatenation
                  (arg_identifier)
                  (cmd_substitution_arg
-                   (arged_command (cmd_identifier)
+                   (arged_stmt (cmd_identifier)
                      (args (arg (concatenation
 		                  (arg_identifier)
 				  (cmd_substitution_arg
-				    (arged_command (cmd_identifier)
+				    (arged_stmt (cmd_identifier)
 				      (args (arg (arg_identifier)))))))))))))))

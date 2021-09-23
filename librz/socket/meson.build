@@ -11,9 +11,16 @@ rz_socket_sources = [
 ]
 
 dependencies = [utl, rz_util_dep, platform_deps]
+rz_socket_deps = []
 
 if sys_openssl.found()
   dependencies += [sys_openssl]
+endif
+
+if host_machine.system() == 'haiku'
+  dependencies += [
+    cc.find_library('network')
+  ]
 endif
 
 rz_socket = library('rz_socket', rz_socket_sources,

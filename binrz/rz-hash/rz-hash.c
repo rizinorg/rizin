@@ -3,6 +3,9 @@
 
 #include <rz_main.h>
 
-int main(int argc, const char **argv) {
-	return rz_main_rz_hash(argc, argv);
+int MAIN_NAME(int argc, const ARGV_TYPE **argv) {
+	char **utf8_argv = ARGV_TYPE_TO_UTF8(argc, argv);
+	int ret = rz_main_rz_hash(argc, (const char **)utf8_argv);
+	FREE_UTF8_ARGV(argc, utf8_argv);
+	return ret;
 }

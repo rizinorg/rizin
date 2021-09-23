@@ -41,7 +41,7 @@ RZ_LIB_VERSION_HEADER(rz_asm);
 	(x && x->binb.bin && x->binb.get_offset) ? x->binb.get_offset(x->binb.bin, y, z) : -1
 
 #define RZ_ASM_GET_NAME(x, y, z) \
-	(x && x->binb.bin && x->binb.get_name) ? x->binb.get_name(x->binb.bin, y, z, x->pseudo) : NULL
+	(x && x->binb.bin && x->binb.get_name) ? x->binb.get_name(x->binb.bin, y, z) : NULL
 
 enum {
 	RZ_ASM_SYNTAX_NONE = 0,
@@ -108,8 +108,9 @@ typedef struct rz_asm_t {
 	RzParse *ofilter;
 	Sdb *pair;
 	RzSyscall *syscall;
-	RNum *num;
+	RzNum *num;
 	char *features;
+	char *platforms;
 	int invhex; // invalid instructions displayed in hex
 	int pcalign;
 	int dataalign;
@@ -139,6 +140,7 @@ typedef struct rz_asm_plugin_t {
 	RzAsmModifyCallback modify;
 	char *(*mnemonics)(RzAsm *a, int id, bool json);
 	const char *features;
+	const char *platforms;
 } RzAsmPlugin;
 
 #ifdef RZ_API
@@ -227,6 +229,7 @@ extern RzAsmPlugin rz_asm_plugin_java;
 extern RzAsmPlugin rz_asm_plugin_lanai_gnu;
 extern RzAsmPlugin rz_asm_plugin_lh5801;
 extern RzAsmPlugin rz_asm_plugin_lm32;
+extern RzAsmPlugin rz_asm_plugin_luac;
 extern RzAsmPlugin rz_asm_plugin_m68k_cs;
 extern RzAsmPlugin rz_asm_plugin_m680x_cs;
 extern RzAsmPlugin rz_asm_plugin_malbolge;
@@ -258,7 +261,6 @@ extern RzAsmPlugin rz_asm_plugin_v810;
 extern RzAsmPlugin rz_asm_plugin_v850;
 extern RzAsmPlugin rz_asm_plugin_vax;
 extern RzAsmPlugin rz_asm_plugin_wasm;
-extern RzAsmPlugin rz_asm_plugin_ws;
 extern RzAsmPlugin rz_asm_plugin_x86_as;
 extern RzAsmPlugin rz_asm_plugin_x86_cs;
 extern RzAsmPlugin rz_asm_plugin_x86_nasm;

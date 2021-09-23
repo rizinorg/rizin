@@ -70,14 +70,14 @@ static struct {
 	{ "graph.box4", rz_offsetof(RzConsPrintablePalette, graph_box4), rz_offsetof(RzConsPalette, graph_box4) },
 	{ "graph.true", rz_offsetof(RzConsPrintablePalette, graph_true), rz_offsetof(RzConsPalette, graph_true) },
 	{ "graph.false", rz_offsetof(RzConsPrintablePalette, graph_false), rz_offsetof(RzConsPalette, graph_false) },
-	{ "graph.trufae", rz_offsetof(RzConsPrintablePalette, graph_trufae), rz_offsetof(RzConsPalette, graph_trufae) },
+	{ "graph.ujump", rz_offsetof(RzConsPrintablePalette, graph_ujump), rz_offsetof(RzConsPalette, graph_ujump) },
 	{ "graph.current", rz_offsetof(RzConsPrintablePalette, graph_current), rz_offsetof(RzConsPalette, graph_current) },
 	{ "graph.traced", rz_offsetof(RzConsPrintablePalette, graph_traced), rz_offsetof(RzConsPalette, graph_traced) },
 
-	{ "graph.diff.unknown", rz_offsetof(RzConsPrintablePalette, graph_diff_unknown), rz_offsetof(RzConsPalette, graph_diff_unknown) },
-	{ "graph.diff.new", rz_offsetof(RzConsPrintablePalette, graph_diff_new), rz_offsetof(RzConsPalette, graph_diff_new) },
-	{ "graph.diff.match", rz_offsetof(RzConsPrintablePalette, graph_diff_match), rz_offsetof(RzConsPalette, graph_diff_match) },
-	{ "graph.diff.unmatch", rz_offsetof(RzConsPrintablePalette, graph_diff_unmatch), rz_offsetof(RzConsPalette, graph_diff_unmatch) },
+	{ "diff.unknown", rz_offsetof(RzConsPrintablePalette, diff_unknown), rz_offsetof(RzConsPalette, diff_unknown) },
+	{ "diff.new", rz_offsetof(RzConsPrintablePalette, diff_new), rz_offsetof(RzConsPalette, diff_new) },
+	{ "diff.match", rz_offsetof(RzConsPrintablePalette, diff_match), rz_offsetof(RzConsPalette, diff_match) },
+	{ "diff.unmatch", rz_offsetof(RzConsPrintablePalette, diff_unmatch), rz_offsetof(RzConsPalette, diff_unmatch) },
 
 	{ "gui.cflow", rz_offsetof(RzConsPrintablePalette, gui_cflow), rz_offsetof(RzConsPalette, gui_cflow) },
 	{ "gui.dataoffset", rz_offsetof(RzConsPrintablePalette, gui_dataoffset), rz_offsetof(RzConsPalette, gui_dataoffset) },
@@ -126,29 +126,28 @@ static inline ut8 rgbnum(const char ch1, const char ch2) {
 }
 
 static void __cons_pal_update_event(RzConsContext *ctx) {
-	Sdb *db = sdb_new0();
-	int i, n = 0;
+	RzPVector sorter;
+	rz_pvector_init(&sorter, NULL);
 	/* Compute cons->pal values */
-	for (i = 0; keys[i].name; i++) {
+	for (int i = 0; keys[i].name; i++) {
 		RzColor *rcolor = (RzColor *)(((ut8 *)&(ctx->cpal)) + keys[i].coff);
 		char **color = (char **)(((ut8 *)&(ctx->pal)) + keys[i].off);
 		// Color is dynamically allocated, needs to be freed
 		RZ_FREE(*color);
 		*color = rz_cons_rgb_str_mode(ctx->color_mode, NULL, 0, rcolor);
-		const char *rgb = sdb_fmt("rgb:%02x%02x%02x", rcolor->r, rcolor->g, rcolor->b);
-		sdb_set(db, rgb, "1", 0);
+		char *rgb = rz_str_newf("rgb:%02x%02x%02x", rcolor->r, rcolor->g, rcolor->b);
+		rz_pvector_push(&sorter, rgb);
 	}
-	SdbList *list = sdb_foreach_list(db, true);
-	SdbListIter *iter;
-	SdbKv *kv;
+	rz_pvector_sort(&sorter, (RzPVectorComparator)strcmp);
 	rz_cons_rainbow_free(ctx);
-	rz_cons_rainbow_new(ctx, list->length);
-	ls_foreach (list, iter, kv) {
-		ctx->pal.rainbow[n++] = strdup(sdbkv_key(kv));
+	rz_cons_rainbow_new(ctx, rz_pvector_len(&sorter));
+	int n = 0;
+	void **iter;
+	rz_pvector_foreach (&sorter, iter) {
+		ctx->pal.rainbow[n++] = (char *)(*iter);
 	}
 	ctx->pal.rainbow_sz = n;
-	ls_free(list);
-	sdb_free(db);
+	rz_pvector_fini(&sorter);
 }
 
 RZ_API void rz_cons_pal_init(RzConsContext *ctx) {
@@ -230,13 +229,13 @@ RZ_API void rz_cons_pal_init(RzConsContext *ctx) {
 	ctx->cpal.graph_box4 = (RzColor)RzColor_GRAY;
 	ctx->cpal.graph_true = (RzColor)RzColor_GREEN;
 	ctx->cpal.graph_false = (RzColor)RzColor_RED;
-	ctx->cpal.graph_trufae = (RzColor)RzColor_BLUE; // single jump
+	ctx->cpal.graph_ujump = (RzColor)RzColor_BLUE; // single jump
 	ctx->cpal.graph_traced = (RzColor)RzColor_YELLOW;
 	ctx->cpal.graph_current = (RzColor)RzColor_BLUE;
-	ctx->cpal.graph_diff_unknown = (RzColor)RzColor_MAGENTA;
-	ctx->cpal.graph_diff_new = (RzColor)RzColor_RED;
-	ctx->cpal.graph_diff_match = (RzColor)RzColor_GRAY;
-	ctx->cpal.graph_diff_unmatch = (RzColor)RzColor_YELLOW;
+	ctx->cpal.diff_unknown = (RzColor)RzColor_MAGENTA;
+	ctx->cpal.diff_new = (RzColor)RzColor_RED;
+	ctx->cpal.diff_match = (RzColor)RzColor_GRAY;
+	ctx->cpal.diff_unmatch = (RzColor)RzColor_YELLOW;
 
 	rz_cons_pal_free(ctx);
 	ctx->pal.reset = Color_RESET; // reset is not user accessible, const char* is ok
@@ -628,7 +627,7 @@ RZ_API RzColor rz_cons_pal_get(const char *key) {
 	for (i = 0; keys[i].name; i++) {
 		if (!strcmp(key, keys[i].name)) {
 			rcolor = RZCOLOR_AT(i);
-			return rcolor ? *rcolor : (RzColor)RzColor_NULL;
+			return *rcolor;
 		}
 	}
 	return (RzColor)RzColor_NULL;

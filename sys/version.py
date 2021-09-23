@@ -12,7 +12,7 @@ meson_file = "meson.build"
 if len(sys.argv) > 1:
     meson_file = os.path.join(sys.argv[1], meson_file)
 
-with open(meson_file, "r") as f:
+with open(meson_file, "r", encoding="utf8") as f:
     # Read only first 10 lines of the meson file, looking for 'version: ' string
     for i in range(10):
         fields = [x.strip() for x in f.readline().strip().split(":")]

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2014 Ilya V. Matveychikov <i.matveychikov@milabs.ru>
+# SPDX-License-Identifier: LGPL-3.0-only
+
 use Data::Dumper;
 
 #

@@ -3,10 +3,11 @@ FILE=bins/dex/HelloWorld.dex
 CMDS=e io.va=0; aa; afl
 EXPECT=<<EOF
 0x0000025c    1 34           entry0
-0x00000238    1 20           method.public.constructor.LHello.LHello.method._init___V
-0x00000290    1 84           method.public.LHello.LHello.method.foo_I_V
-0x000002f4    1 20           method.public.constructor.LWorld.LWorld.method._init___V
-0x00000318    1 68           method.public.LWorld.LWorld.method.foo_I_V
+0x00000238    1 20           method.public.constructor.LHello_._init___V
+0x00000290    1 84           method.public.LHello_.foo_I_V
+0x000002f4    1 20           method.public.constructor.LWorld_._init___V
+0x00000318    1 68           method.public.LWorld_.foo_I_V
+0x00000000    4 72           sym.Ljava_lang_System_.out
 EOF
 RUN
 
@@ -20,8 +21,23 @@ RUN
 
 NAME=Dalvik HelloWorld func xref
 FILE=bins/dex/HelloWorld.dex
-CMDS=e io.va=0; aa; axt @ sym.LHello.method._init___V
+CMDS=aa; axt @sym.LHello_._init___V
 EXPECT=<<EOF
-entry0 0x26e [CALL] invoke-direct {v0}, LHello.<init>()V ; 0x0
+sym.Ljava_lang_System_.out 0x24 [CALL] invoke-direct {}, LHello;-><init>()V
+sym.Ljava_lang_System_.out 0x3c [CALL] invoke-direct {}, LHello;-><init>()V
+entry0 0x26e [CALL] invoke-direct {v0}, LHello;-><init>()V
+method.public.LHello_.foo_I_V 0x298 [CALL] invoke-direct {v1}, Ljava/lang/StringBuilder;-><init>()V
+method.public.constructor.LWorld_._init___V; [03] -r-x section size 20 named code.World._init 0x2f4 [CALL] invoke-direct {v1}, Ljava/lang/Object;-><init>()V
+method.public.LWorld_.foo_I_V 0x320 [CALL] invoke-direct {v1}, Ljava/lang/StringBuilder;-><init>()V
+EOF
+RUN
+
+NAME=Dalvik resolve virtual methods called via invoke-virtual
+FILE=apk://bins/dex/org.radare.radare2installer.apk
+CMDS=e scr.prompt=false ; aaa ; axt @ sym.Lcom_ice_tar_TarEntry_.getUserName__Ljava_lang_String
+EXPECT=<<EOF
+entry0 0xc8ba [CALL] invoke-virtual {v1}, Lcom/ice/tar/TarEntry;->getUserName()Ljava/lang/String;
+entry0 0xc9e6 [CALL] invoke-virtual {v1}, Lcom/ice/tar/TarEntry;->getUserName()Ljava/lang/String;
+method.public.Lcom_ice_tar_TarEntry_.toString__Ljava_lang_String 0xf04a [CALL] invoke-virtual {v4}, Lcom/ice/tar/TarEntry;->getUserName()Ljava/lang/String;
 EOF
 RUN

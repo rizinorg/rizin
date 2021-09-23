@@ -707,7 +707,7 @@ RZ_API char *rz_str_new(const char *str) {
 // Returns a new heap-allocated copy of str, sets str[len] to '\0'.
 // If the input str is longer than len, it will be truncated.
 RZ_API char *rz_str_newlen(const char *str, int len) {
-	if (len < 1) {
+	if (len < 0) {
 		return NULL;
 	}
 	char *buf = malloc(len + 1);
@@ -733,6 +733,7 @@ RZ_API char *rz_str_trunc_ellipsis(const char *str, int len) {
 }
 
 RZ_API char *rz_str_newf(const char *fmt, ...) {
+	rz_return_val_if_fail(fmt, NULL);
 	va_list ap, ap2;
 
 	va_start(ap, fmt);
@@ -752,26 +753,31 @@ RZ_API char *rz_str_newf(const char *fmt, ...) {
 	return p;
 }
 
-// Secure string copy with null terminator (like strlcpy or strscpy but ours
-RZ_API size_t rz_str_ncpy(char *dst, const char *src, size_t n) {
-	size_t i;
+/**
+ * \brief Secure string copy with null terminator
+ *
+ * 	This API behaves like strlcpy or strscpy.
+ */
+RZ_API size_t rz_str_ncpy(char *dst, const char *src, size_t dst_size) {
+	rz_return_val_if_fail(dst && src, 0);
 
-	// do not do anything if n is 0
-	if (n == 0) {
+	// do not do anything if dst_size is 0
+	if (dst_size == 0) {
 		return 0;
 	}
-
-	n--;
-	for (i = 0; src[i] && n > 0; i++, n--) {
-		dst[i] = src[i];
-	}
-	dst[i] = 0;
-	return i;
+#if HAVE_STRLCPY
+	return strlcpy(dst, src, dst_size);
+#else
+	strncpy(dst, src, dst_size - 1);
+	dst[dst_size - 1] = '\0';
+	return strlen(src);
+#endif
 }
 
 /* memccmp("foo.bar", "foo.cow, '.') == 0 */
 // Returns 1 if src and dst are equal up until the first instance of ch in src.
 RZ_API bool rz_str_ccmp(const char *dst, const char *src, int ch) {
+	rz_return_val_if_fail(dst && src, false);
 	int i;
 	for (i = 0; src[i] && src[i] != ch; i++) {
 		if (dst[i] != src[i]) {
@@ -904,6 +910,7 @@ RZ_API char *rz_str_append(char *ptr, const char *string) {
 }
 
 RZ_API char *rz_str_appendf(char *ptr, const char *fmt, ...) {
+	rz_return_val_if_fail(fmt, NULL);
 	va_list ap, ap2;
 
 	va_start(ap, fmt);
@@ -1512,150 +1519,6 @@ RZ_API char *rz_str_escape_utf32be(const char *buf, int buf_size, bool show_asci
 	return rz_str_escape_utf(buf, buf_size, RZ_STRING_ENC_UTF32BE, show_asciidot, esc_bslash, false);
 }
 
-RZ_API char *rz_str_encoded_json(const char *buf, int buf_size, int encoding) {
-	rz_return_val_if_fail(buf, NULL);
-	size_t buf_sz = buf_size < 0 ? strlen(buf) : buf_size;
-	char *encoded_str;
-
-	if (encoding == PJ_ENCODING_STR_BASE64) {
-		encoded_str = rz_base64_encode_dyn((const ut8 *)buf, buf_sz);
-	} else if (encoding == PJ_ENCODING_STR_HEX || encoding == PJ_ENCODING_STR_ARRAY) {
-		size_t loop = 0;
-		size_t i = 0;
-		size_t increment = encoding == PJ_ENCODING_STR_ARRAY ? 4 : 2;
-
-		if (!SZT_MUL_OVFCHK(((buf_sz * increment) + 1), SZT_MAX)) {
-			return NULL;
-		}
-		size_t new_sz = (buf_sz * increment) + 1;
-
-		encoded_str = malloc(new_sz);
-		if (!encoded_str) {
-			return NULL;
-		}
-
-		const char *format = encoding == PJ_ENCODING_STR_ARRAY ? "%03u," : "%02X";
-		while (buf[loop] != '\0' && i < (new_sz - 1)) {
-			snprintf(encoded_str + i, new_sz - i, format, (ut8)buf[loop]);
-			loop++;
-			i += increment;
-		}
-		if (encoding == PJ_ENCODING_STR_ARRAY && i) {
-			// get rid of the trailing comma
-			encoded_str[i - 1] = '\0';
-		} else {
-			encoded_str[i] = '\0';
-		}
-	} else if (encoding == PJ_ENCODING_STR_STRIP) {
-		encoded_str = rz_str_escape_utf8_for_json_strip(buf, buf_sz);
-	} else {
-		encoded_str = rz_str_escape_utf8_for_json(buf, buf_sz);
-	}
-	return encoded_str;
-}
-
-RZ_API char *rz_str_escape_utf8_for_json_strip(const char *buf, int buf_size) {
-	char *new_buf, *q;
-	const char *p, *end;
-	RzRune ch;
-	int i, len, ch_bytes;
-
-	if (!buf) {
-		return NULL;
-	}
-	len = buf_size < 0 ? strlen(buf) : buf_size;
-	end = buf + len;
-	/* Worst case scenario, we convert every byte to \u00hh */
-	new_buf = malloc(1 + (len * 6));
-	if (!new_buf) {
-		return NULL;
-	}
-	p = buf;
-	q = new_buf;
-	while (p < end) {
-		ch_bytes = rz_utf8_decode((ut8 *)p, end - p, &ch);
-		if (ch_bytes == 1) {
-			switch (*p) {
-			case '\n':
-				*q++ = '\\';
-				*q++ = 'n';
-				break;
-			case '\r':
-				*q++ = '\\';
-				*q++ = 'r';
-				break;
-			case '\\':
-				*q++ = '\\';
-				*q++ = '\\';
-				break;
-			case '\t':
-				*q++ = '\\';
-				*q++ = 't';
-				break;
-			case '"':
-				*q++ = '\\';
-				*q++ = '"';
-				break;
-			case '\f':
-				*q++ = '\\';
-				*q++ = 'f';
-				break;
-			case '\b':
-				*q++ = '\\';
-				*q++ = 'b';
-				break;
-			default:
-				if (IS_PRINTABLE(*p)) {
-					*q++ = *p;
-				}
-			}
-		} else if (ch_bytes == 4) {
-			if (rz_isprint(ch)) {
-				// Assumes buf is UTF8-encoded
-				for (i = 0; i < ch_bytes; i++) {
-					*q++ = *(p + i);
-				}
-			} else {
-				RzRune high, low;
-				ch -= 0x10000;
-				high = 0xd800 + (ch >> 10 & 0x3ff);
-				low = 0xdc00 + (ch & 0x3ff);
-				*q++ = '\\';
-				*q++ = 'u';
-				for (i = 2; i >= 0; i -= 2) {
-					*q++ = "0123456789abcdef"[high >> 4 * (i + 1) & 0xf];
-					*q++ = "0123456789abcdef"[high >> 4 * i & 0xf];
-				}
-				*q++ = '\\';
-				*q++ = 'u';
-				for (i = 2; i >= 0; i -= 2) {
-					*q++ = "0123456789abcdef"[low >> 4 * (i + 1) & 0xf];
-					*q++ = "0123456789abcdef"[low >> 4 * i & 0xf];
-				}
-			}
-		} else if (ch_bytes > 1) {
-			if (rz_isprint(ch)) {
-				// Assumes buf is UTF8-encoded
-				for (i = 0; i < ch_bytes; i++) {
-					*q++ = *(p + i);
-				}
-			} else {
-				*q++ = '\\';
-				*q++ = 'u';
-				for (i = 2; i >= 0; i -= 2) {
-					*q++ = "0123456789abcdef"[ch >> 4 * (i + 1) & 0xf];
-					*q++ = "0123456789abcdef"[ch >> 4 * i & 0xf];
-				}
-			}
-		} else {
-			ch_bytes = 1;
-		}
-		p += ch_bytes;
-	}
-	*q = '\0';
-	return new_buf;
-}
-
 RZ_API char *rz_str_escape_utf8_for_json(const char *buf, int buf_size) {
 	char *new_buf, *q;
 	const char *p, *end;
@@ -1757,12 +1620,7 @@ RZ_API char *rz_str_escape_utf8_for_json(const char *buf, int buf_size) {
 				}
 			}
 		} else { // ch_bytes == 0
-			// Outside JSON spec, but apparently no better
-			// alternative if need to reconstruct the original string
-			*q++ = '\\';
-			*q++ = 'x';
-			*q++ = "0123456789abcdef"[*p >> 4 & 0xf];
-			*q++ = "0123456789abcdef"[*p & 0xf];
+			// invalid utf-8
 			ch_bytes = 1;
 		}
 		p += ch_bytes;
@@ -2616,7 +2474,7 @@ RZ_API size_t rz_str_len_utf8_ansi(const char *str) {
 			i += chlen - 1;
 		} else if ((ch & 0xc0) != 0x80) { // utf8
 			len++;
-			if (rz_str_char_fullwidth(str + i, 4)) {
+			if (rz_str_char_fullwidth(str + i, chlen)) {
 				fullwidths++;
 			}
 		}
@@ -2693,21 +2551,13 @@ RZ_API void rz_str_range_foreach(const char *r, RzStrRangeCallback cb, void *u) 
 
 RZ_API bool rz_str_range_in(const char *r, ut64 addr) {
 	const char *p = r;
-	ut64 min = UT64_MAX;
-	ut64 max = 0;
 	if (!r) {
 		return false;
 	}
 	for (; *r; r++) {
 		if (*r == ',') {
-			if (max == 0) {
-				if (addr == rz_num_get(NULL, p)) {
-					return true;
-				}
-			} else {
-				if (addr >= min && addr <= rz_num_get(NULL, p)) {
-					return true;
-				}
+			if (addr == rz_num_get(NULL, p)) {
+				return true;
 			}
 			p = r + 1;
 		}
@@ -3510,17 +3360,16 @@ err_r_str_mb_to_wc:
 
 RZ_API char *rz_str_wc_to_mb_l(const wchar_t *buf, int len) {
 	char *res_buf = NULL;
-	bool fail = true;
 	size_t sz;
 
 	if (!buf || len <= 0) {
 		return NULL;
 	}
-	sz = wcstombs(NULL, buf, len);
+	sz = wcstombs(NULL, buf, 0);
 	if (sz == (size_t)-1) {
 		goto err_r_str_wc_to_mb;
 	}
-	res_buf = (char *)calloc(1, (sz + 1) * sizeof(char));
+	res_buf = RZ_NEWS0(char, sz + 1);
 	if (!res_buf) {
 		goto err_r_str_wc_to_mb;
 	}
@@ -3528,12 +3377,11 @@ RZ_API char *rz_str_wc_to_mb_l(const wchar_t *buf, int len) {
 	if (sz == (size_t)-1) {
 		goto err_r_str_wc_to_mb;
 	}
-	fail = false;
-err_r_str_wc_to_mb:
-	if (fail) {
-		RZ_FREE(res_buf);
-	}
 	return res_buf;
+
+err_r_str_wc_to_mb:
+	free(res_buf);
+	return NULL;
 }
 
 RZ_API char *rz_str_wc_to_mb(const wchar_t *buf) {
@@ -3703,7 +3551,7 @@ RZ_API char *rz_str_scale(const char *s, int w, int h) {
 	int curline = -1;
 	char *linetext = (char *)rz_str_pad(' ', w);
 	for (i = 0; i < h; i++) {
-		int zoomedline = i * ((float)rows / h);
+		int zoomedline = i * (int)((float)rows / h);
 		const char *srcline = rz_list_get_n(lines, zoomedline);
 		int cols = strlen(srcline);
 		for (j = 0; j < w; j++) {
@@ -3717,7 +3565,10 @@ RZ_API char *rz_str_scale(const char *s, int w, int h) {
 		memset(linetext, ' ', w);
 	}
 	free(str);
-	return rz_str_list_join(out, "\n");
+
+	char *join = rz_str_list_join(out, "\n");
+	rz_list_free(out);
+	return join;
 }
 
 RZ_API const char *rz_str_str_xy(const char *s, const char *word, const char *prev, int *x, int *y) {
@@ -3756,6 +3607,9 @@ RZ_API RzList *rz_str_wrap(char *str, size_t width) {
 	rz_return_val_if_fail(str, NULL);
 
 	RzList *res = rz_list_new();
+	if (!res) {
+		return NULL;
+	}
 	char *p, *start_line = str;
 	char *first_space = NULL, *last_space = NULL;
 
@@ -3766,12 +3620,12 @@ RZ_API RzList *rz_str_wrap(char *str, size_t width) {
 
 	do {
 		p++;
-		if (!*p || isspace(*p)) {
-			if (p != last_space + 1) {
+		if (!*p || isspace((int)*p)) {
+			if (!last_space || p != last_space + 1) {
 				if (p - start_line > width && first_space) {
 					rz_list_append(res, start_line);
 					*first_space = '\0';
-					start_line = last_space ? last_space + 1 : p;
+					start_line = last_space + 1;
 				}
 				first_space = p;
 			}
@@ -3779,7 +3633,7 @@ RZ_API RzList *rz_str_wrap(char *str, size_t width) {
 		}
 	} while (*p);
 	p--;
-	while (p >= str && isspace(*p)) {
+	while (p >= str && isspace((int)*p)) {
 		*p = '\0';
 		p--;
 	}

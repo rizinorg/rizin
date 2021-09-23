@@ -9,39 +9,32 @@ static void set_fcn_args_info(RzAnalysisFuncArg *arg, RzAnalysis *analysis, cons
 	if (!fcn_name || !arg || !analysis) {
 		return;
 	}
-	Sdb *TDB = analysis->sdb_types;
-	arg->name = rz_type_func_args_name(TDB, fcn_name, arg_num);
-	arg->orig_c_type = rz_type_func_args_type(TDB, fcn_name, arg_num);
+	arg->name = rz_type_func_args_name(analysis->typedb, fcn_name, arg_num);
+	arg->orig_c_type = rz_type_func_args_type(analysis->typedb, fcn_name, arg_num);
 	if (!arg->name || !arg->orig_c_type) {
 		eprintf("Missing type for function argument (%s)\n", fcn_name);
 		return;
 	}
-	if (!strncmp("const ", arg->orig_c_type, 6)) {
-		arg->c_type = arg->orig_c_type + 6;
-	} else {
-		arg->c_type = arg->orig_c_type;
-	}
-	const char *query = sdb_fmt("type.%s", arg->c_type);
-	arg->fmt = sdb_const_get(TDB, query, 0);
-	const char *t_query = sdb_fmt("type.%s.size", arg->c_type);
-	arg->size = sdb_num_get(TDB, t_query, 0) / 8;
+	arg->c_type = arg->orig_c_type;
+	arg->fmt = rz_type_as_format(analysis->typedb, arg->c_type);
+	arg->size = rz_type_db_get_bitsize(analysis->typedb, arg->c_type) / 8;
 	arg->cc_source = rz_analysis_cc_arg(analysis, cc, arg_num);
 }
 
 RZ_API char *resolve_fcn_name(RzAnalysis *analysis, const char *func_name) {
 	const char *str = func_name;
 	const char *name = func_name;
-	if (rz_type_func_exist(analysis->sdb_types, func_name)) {
+	if (rz_type_func_exist(analysis->typedb, func_name)) {
 		return strdup(func_name);
 	}
 	while ((str = strchr(str, '.'))) {
 		name = str + 1;
 		str++;
 	}
-	if (rz_type_func_exist(analysis->sdb_types, name)) {
+	if (rz_type_func_exist(analysis->typedb, name)) {
 		return strdup(name);
 	}
-	return rz_type_func_guess(analysis->sdb_types, (char *)func_name);
+	return rz_analysis_function_name_guess(analysis->typedb, (char *)func_name);
 }
 
 static ut64 get_buf_val(ut8 *buf, int endian, int width) {
@@ -206,6 +199,7 @@ RZ_API void rz_core_print_func_args(RzCore *core) {
 			//	print_arg_str (0, "void", color);
 			//}
 		}
+		rz_list_free(list);
 	}
 	rz_analysis_op_fini(op);
 }
@@ -214,7 +208,6 @@ static void rz_analysis_fcn_arg_free(RzAnalysisFuncArg *arg) {
 	if (!arg) {
 		return;
 	}
-	free(arg->orig_c_type);
 	free(arg);
 }
 
@@ -223,14 +216,13 @@ RZ_API RzList *rz_core_get_func_args(RzCore *core, const char *fcn_name) {
 	if (!fcn_name || !core->analysis) {
 		return NULL;
 	}
-	Sdb *TDB = core->analysis->sdb_types;
-	RzList *list = rz_list_newf((RzListFree)rz_analysis_fcn_arg_free);
 	char *key = resolve_fcn_name(core->analysis, fcn_name);
 	if (!key) {
 		return NULL;
 	}
+	RzList *list = rz_list_newf((RzListFree)rz_analysis_fcn_arg_free);
 	const char *sp = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_SP);
-	int nargs = rz_type_func_args_count(TDB, key);
+	int nargs = rz_type_func_args_count(core->analysis->typedb, key);
 	if (!rz_analysis_cc_func(core->analysis, key)) {
 		return NULL;
 	}

@@ -6,7 +6,7 @@
 
 /* dex/dwarf uleb128 implementation */
 
-RZ_API const ut8 *rz_uleb128(const ut8 *data, int datalen, ut64 *v, const char **error) {
+RZ_API const ut8 *rz_uleb128(const ut8 *data, int datalen, RZ_NULLABLE ut64 *v, const char **error) {
 	ut8 c;
 	ut64 s, sum = 0;
 	const ut8 *data_end;

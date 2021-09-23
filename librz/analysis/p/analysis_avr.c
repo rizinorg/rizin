@@ -17,7 +17,7 @@ https://en.wikipedia.org/wiki/Atmel_AVR_instruction_set
 #include <rz_asm.h>
 #include <rz_analysis.h>
 
-#include "../../asm/arch/avr/disasm.h"
+#include "../../asm/arch/avr/disassembler.h"
 
 static RDESContext desctx;
 
@@ -735,6 +735,7 @@ INST_HANDLER(in) { // IN Rd, A
 	RzStrBuf *io_src = __generic_io_dest(a, 0, cpu);
 	op->type2 = 0;
 	op->val = a;
+	op->mmio_address = a;
 	op->family = RZ_ANALYSIS_OP_FAMILY_IO;
 	ESIL_A("%s,r%d,=,", rz_strbuf_get(io_src), r);
 	rz_strbuf_free(io_src);
@@ -1077,6 +1078,7 @@ INST_HANDLER(out) { // OUT A, Rr
 	RzStrBuf *io_dst = __generic_io_dest(a, 1, cpu);
 	op->type2 = 1;
 	op->val = a;
+	op->mmio_address = a;
 	op->family = RZ_ANALYSIS_OP_FAMILY_IO;
 	ESIL_A("r%d,%s,", r, rz_strbuf_get(io_dst));
 	rz_strbuf_free(io_dst);
@@ -1638,19 +1640,19 @@ static int avr_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 	CPU_MODEL *cpu;
 	ut64 offset;
 	int size = -1;
-	char mnemonic[32] = { 0 };
 
 	set_invalid_op(op, addr);
 
-	size = avr_decode(mnemonic, addr, buf, len);
-	if (!strcmp(mnemonic, "invalid") ||
-		!strcmp(mnemonic, "truncated")) {
-		op->eob = true;
-		op->mnemonic = strdup(mnemonic);
-		return -1;
+	RzStrBuf *sb = rz_strbuf_new("invalid");
+	if (len > 1) {
+		size = avr_disassembler(buf, len, addr, analysis->big_endian, sb);
 	}
+	op->mnemonic = rz_strbuf_drain(sb);
 
-	if (!op) {
+	if (!op->mnemonic) {
+		return -1;
+	} else if (!strcmp(op->mnemonic, "invalid")) {
+		op->eob = true;
 		return -1;
 	}
 
@@ -1662,22 +1664,21 @@ static int avr_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		offset = 0;
 		rz_analysis_esil_reg_write(analysis->esil, "_prog", offset);
 
-		offset += (1 << cpu->pc);
+		offset += (1 << analysis->arch_target->profile->pc);
 		rz_analysis_esil_reg_write(analysis->esil, "_io", offset);
 
-		offset += const_get_value(const_by_name(cpu, CPU_CONST_PARAM, "sram_start"));
+		offset += analysis->arch_target->profile->sram_start;
 		rz_analysis_esil_reg_write(analysis->esil, "_sram", offset);
 
-		offset += const_get_value(const_by_name(cpu, CPU_CONST_PARAM, "sram_size"));
+		offset += analysis->arch_target->profile->sram_size;
 		rz_analysis_esil_reg_write(analysis->esil, "_eeprom", offset);
 
-		offset += const_get_value(const_by_name(cpu, CPU_CONST_PARAM, "eeprom_size"));
+		offset += analysis->arch_target->profile->eeprom_size;
 		rz_analysis_esil_reg_write(analysis->esil, "_page", offset);
 	}
 	// process opcode
 	avr_op_analyze(analysis, op, addr, buf, len, cpu);
 
-	op->mnemonic = strdup(mnemonic);
 	op->size = size;
 
 	return size;

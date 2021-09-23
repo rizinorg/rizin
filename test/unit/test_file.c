@@ -69,6 +69,8 @@ bool test_rz_file_mmap(void) {
 	mu_assert_eq(m->base, 0xdead0000, "base address is right");
 	mu_assert_eq(m->perm, O_RDWR | O_CREAT, "mmaped perm should be ok");
 	rz_file_mmap_resize(m, 0x10);
+	// Sometimes rz_file_mmap_resize() can free file, we should ensure it doesn't do that
+	mu_assert_notnull(m, "mmaped file should not be freed after resize");
 	mu_assert_eq(m->len, 0x10, "mmaped file should be empty");
 	mu_assert_eq(m->base, 0xdead0000, "base address is right");
 	strcpy((char *)m->buf, "1234567890ABCDEF");

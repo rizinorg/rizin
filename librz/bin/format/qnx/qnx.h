@@ -89,6 +89,7 @@ RZ_PACKED(
 		lmf_header lmfh;
 		RzList *fixups;
 		RzList *sections;
+		RzList *maps;
 		lmf_rw_end rwend;
 	})
 QnxObj;

@@ -7,26 +7,38 @@ p8 0x30 @ 0x0801
 EOF
 EXPECT=<<EOF
 arch     6502
-baddr    0x801
-binsz    38
+cpu      N/A
+baddr    0x00000801
+binsz    0x00000026
+bintype  N/A
 bits     8
-canary   false
 retguard false
-crypto   false
-endian   little
-havecode true
-laddr    0x0
-linenum  false
-lsyms    false
+class    N/A
+compiler N/A
+dbg_file N/A
+endian   LE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
+laddr    0x00000000
+lang     N/A
 machine  Commodore 64
-nx       false
 os       c64
-pic      false
-relocs   false
+cc       N/A
+rpath    N/A
+subsys   
+stripped false
+crypto   false
+havecode true
+va       true
 sanitiz  false
 static   true
-stripped false
-va       true
+linenum  false
+lsyms    false
+canary   false
+PIE      false
+RELROCS  false
+NX       false
 0c08e2079e2032303632000000a941a2ff9dff03cad0faad2408a2ff9dffd7cad0fa6005ffffffffffffffffffffffff
 EOF
 RUN

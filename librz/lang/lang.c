@@ -7,10 +7,6 @@
 RZ_LIB_VERSION(rz_lang);
 
 #include "p/pipe.c" // hardcoded
-#include "p/vala.c" // hardcoded
-#include "p/rust.c" // hardcoded
-#include "p/zig.c" // hardcoded
-#include "p/spp.c" // hardcoded
 #include "p/c.c" // hardcoded
 #include "p/lib.c"
 #if __UNIX__
@@ -48,10 +44,6 @@ RZ_API RzLang *rz_lang_new(void) {
 	rz_lang_add(lang, &rz_lang_plugin_c);
 	rz_lang_add(lang, &rz_lang_plugin_cpipe);
 #endif
-	rz_lang_add(lang, &rz_lang_plugin_vala);
-	rz_lang_add(lang, &rz_lang_plugin_rust);
-	rz_lang_add(lang, &rz_lang_plugin_zig);
-	rz_lang_add(lang, &rz_lang_plugin_spp);
 	rz_lang_add(lang, &rz_lang_plugin_pipe);
 	rz_lang_add(lang, &rz_lang_plugin_lib);
 
@@ -136,23 +128,6 @@ RZ_API bool rz_lang_add(RzLang *lang, RzLangPlugin *foo) {
 		return true;
 	}
 	return false;
-}
-
-/* TODO: deprecate all list methods */
-RZ_API bool rz_lang_list(RzLang *lang) {
-	RzListIter *iter;
-	RzLangPlugin *h;
-	if (!lang) {
-		return false;
-	}
-	rz_list_foreach (lang->langs, iter, h) {
-		const char *license = h->license
-			? h->license
-			: "???";
-		lang->cb_printf("%s: (%s) %s\n",
-			h->name, license, h->desc);
-	}
-	return true;
 }
 
 RZ_API RzLangPlugin *rz_lang_get_by_extension(RzLang *lang, const char *ext) {

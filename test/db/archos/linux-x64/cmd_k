@@ -1,0 +1,19 @@
+NAME=1: k syscall/
+FILE=malloc://512
+CMDS=<<EOF
+k syscall/0x80.4
+EOF
+EXPECT=<<EOF
+stat
+EOF
+RUN
+
+NAME=2: k syscall/
+FILE=malloc://512
+CMDS=<<EOF
+k syscall/stat
+EOF
+EXPECT=<<EOF
+0x80,4,2,
+EOF
+RUN

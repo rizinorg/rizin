@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2021 eagleoflqj <liumeo@pku.edu.cn>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef IO_MEMORY_H
 #define IO_MEMORY_H
 

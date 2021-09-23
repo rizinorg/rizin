@@ -3,10 +3,8 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_analysis.h>
-#include <rz_analysis.h>
-#include <rz_hash.h>
+#include <rz_msg_digest.h>
 #include <ht_uu.h>
-
 #include <assert.h>
 
 #define unwrap(rbnode) container_of(rbnode, RzAnalysisBlock, _rb)
@@ -351,10 +349,10 @@ RZ_API bool rz_analysis_block_merge(RzAnalysisBlock *a, RzAnalysisBlock *b) {
 	a->jump = b->jump;
 	a->fail = b->fail;
 	if (a->switch_op) {
-		rz_analysis_switch_op_free(a->switch_op);
 		if (a->analysis->verbose) {
 			eprintf("Dropping switch table at 0x%" PFMT64x " of block at 0x%" PFMT64x "\n", a->switch_op->addr, a->addr);
 		}
+		rz_analysis_switch_op_free(a->switch_op);
 	}
 	a->switch_op = b->switch_op;
 	b->switch_op = NULL;

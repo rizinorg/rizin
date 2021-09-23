@@ -83,7 +83,7 @@ EXPECT=<<EOF
 0x00106cd0    4 50           fcn.00106cd0
 0x00106d02    1 22           sym.__realloc_r
 0x0010722c   12 150          sym.__sbrk
-0x001072c2   15 240  -> 198  sym.___swbuf_r
+0x001072c2   11 142          sym.___swbuf_r
 0x001073ba    1 18           sym.___swbuf
 0x001073d0    5 70           sym.__wcrtomb_r
 0x00107416    1 20           sym._wcrtomb
@@ -280,7 +280,7 @@ EXPECT=<<EOF
 0x00114130    1 36           fcn.00114130
 0x00114afc    1 20           sym._vfiprintf
 0x00114b14    1 90           sym.___sbprintf_1
-0x00114ba8   15 240  -> 198  sym.___swbuf_r
+0x00114ba8   11 142          sym.___swbuf_r
 0x00114ca0    1 18           sym.___swbuf
 0x00114cb6    5 58           sym.__wctomb_r
 0x00114cf0    1 18           sym.__write
@@ -340,7 +340,7 @@ EXPECT=<<EOF
 0x00102ec0    7 158          sym._cmd_print
 0x00102f5e    7 180          sym._cmd_bytedump
 0x00103012    8 236          sym._cmd_search
-0x0010333c   10 318  -> 242  sym._cmd_bsize
+0x0010333c    4 116          sym._cmd_bsize
 0x0010347a    2 46           sym._cmd_seek
 0x00103674   10 244          sym._cmd_dump
 0x00103768    5 190          sym._cmd_load
@@ -360,34 +360,39 @@ RUN
 
 NAME=v850 random pseudo
 FILE=bins/elf/ld-2.27.so
-BROKEN=1
 CMDS=<<EOF
 sd +128
 e asm.arch=v850
-e asm.parser=v850.pseudo
 e asm.pseudo=true
 b 64
 pi~=
 EOF
 EXPECT=<<EOF
-r8[0x1047] = (byte) r24
+*(r8 + 0x1047) = (byte) r24
 r0 = r0
 r0 = r0
+r9 = ~r31
+r1 = ~r4
 r0 = r0
 r0 = r0
-r0 == 0xa
-r17 = 0x388 | r13
+r13 = 8
+r13 = 0
+r9 = r2
+r17 = r13 | 0x388
 r0 = r0
 r9 = r0
-r11 = (0x8548 << 16) + r26
-r2 == -0xc
-r9 = r3
-r9 = r3
+r3 = ~r4
+r11 = (0x8548 << XX) + r26
+r6 = r18 | 0
 r9 = r16
+r10 = r3 | 0
 r9 = r8
-r2 /= r19
-r9 /= r19
-r0 = r20
+r9 = r16
+r22 = r5 | 0
+r4 == -1
+r17 = r8 & 0
+r0 = ~r2
+r25 = (byte) *(r8805 + 0x5)
 r9 = r0
 EOF
 RUN

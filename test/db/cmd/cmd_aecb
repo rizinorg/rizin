@@ -5,7 +5,6 @@ e asm.emu=true
 e asm.bits=64
 e asm.arch=x86
 e emu.write=true
-e io.cache=true
 s loc.main
 aei
 aeim
@@ -36,7 +35,6 @@ e asm.emu=true
 e asm.bits=64
 e asm.arch=x86
 e emu.write=true
-e io.cache=true
 s loc.main
 aei
 aeim

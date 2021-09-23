@@ -3,7 +3,6 @@
 
 #include <ht_uu.h>
 #include <rz_core.h>
-#include <rz_hash.h>
 #include "rz_io.h"
 #include "rz_list.h"
 #include "rz_types_base.h"
@@ -214,13 +213,13 @@ static int search_hash(RzCore *core, const char *hashname, const char *hashstr, 
 				if (rz_cons_is_breaked()) {
 					break;
 				}
-				char *s = rz_hash_to_string(NULL, hashname, buf + i, len);
-				if (!(i % 5)) {
-					eprintf("%d\r", i);
-				}
+				char *s = rz_msg_digest_calculate_small_block_string(hashname, buf + i, len, NULL, false);
 				if (!s) {
 					eprintf("Hash fail\n");
 					break;
+				}
+				if (!(i % 5)) {
+					eprintf("%d\r", i);
 				}
 				// eprintf ("0x%08"PFMT64x" %s\n", from+i, s);
 				if (!strcmp(s, hashstr)) {
@@ -261,8 +260,7 @@ static void cmd_search_bin(RzCore *core, RzInterval itv) {
 			if (plug->size) {
 				RzBinOptions opt = {
 					.pluginname = plug->name,
-					.baseaddr = 0,
-					.loadaddr = 0,
+					.obj_opts = { 0 },
 					.sz = 4096,
 					.xtr_idx = 0,
 					.rawstr = core->bin->rawstr,
@@ -634,7 +632,8 @@ RZ_API RzList *rz_core_get_boundaries_prot(RzCore *core, int perm, const char *m
 			int rwx = m ? m->perm : part->map->perm;
 #else
 		void **it;
-		rz_pvector_foreach (&core->io->maps, it) {
+		RzPVector *maps = rz_io_maps(core->io);
+		rz_pvector_foreach (maps, it) {
 			RzIOMap *map = *it;
 			ut64 from = rz_itv_begin(map->itv);
 			ut64 to = rz_itv_end(map->itv);
@@ -666,7 +665,8 @@ RZ_API RzList *rz_core_get_boundaries_prot(RzCore *core, int perm, const char *m
 		// bool only = (bool)(size_t)strstr (mode, ".only");
 
 		void **it;
-		rz_pvector_foreach (&core->io->maps, it) {
+		RzPVector *maps = rz_io_maps(core->io);
+		rz_pvector_foreach (maps, it) {
 			RzIOMap *map = *it;
 			ut64 from = rz_itv_begin(map->itv);
 			//ut64 to = rz_itv_end (map->itv);
@@ -754,7 +754,8 @@ RZ_API RzList *rz_core_get_boundaries_prot(RzCore *core, int perm, const char *m
 			if (from == UT64_MAX) {
 				int mask = 1;
 				void **it;
-				rz_pvector_foreach (&core->io->maps, it) {
+				RzPVector *maps = rz_io_maps(core->io);
+				rz_pvector_foreach (maps, it) {
 					RzIOMap *map = *it;
 					ut64 from = rz_itv_begin(map->itv);
 					ut64 size = rz_itv_size(map->itv);
@@ -1916,22 +1917,22 @@ static void do_ref_search(RzCore *core, ut64 addr, ut64 from, ut64 to, struct se
 	const int size = 12;
 	char str[512];
 	RzAnalysisFunction *fcn;
-	RzAnalysisRef *ref;
+	RzAnalysisXRef *xref;
 	RzListIter *iter;
 	ut8 buf[12];
 	RzAsmOp asmop;
-	RzList *list = rz_analysis_xrefs_get(core->analysis, addr);
+	RzList *list = rz_analysis_xrefs_get_to(core->analysis, addr);
 	if (list) {
-		rz_list_foreach (list, iter, ref) {
-			rz_io_read_at(core->io, ref->addr, buf, size);
-			rz_asm_set_pc(core->rasm, ref->addr);
+		rz_list_foreach (list, iter, xref) {
+			rz_io_read_at(core->io, xref->from, buf, size);
+			rz_asm_set_pc(core->rasm, xref->from);
 			rz_asm_disassemble(core->rasm, &asmop, buf, size);
-			fcn = rz_analysis_get_fcn_in(core->analysis, ref->addr, 0);
-			RzAnalysisHint *hint = rz_analysis_hint_get(core->analysis, ref->addr);
-			rz_parse_filter(core->parser, ref->addr, core->flags, hint, rz_strbuf_get(&asmop.buf_asm),
+			fcn = rz_analysis_get_fcn_in(core->analysis, xref->from, 0);
+			RzAnalysisHint *hint = rz_analysis_hint_get(core->analysis, xref->from);
+			rz_parse_filter(core->parser, xref->from, core->flags, hint, rz_strbuf_get(&asmop.buf_asm),
 				str, sizeof(str), core->print->big_endian);
 			rz_analysis_hint_free(hint);
-			const char *comment = rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, ref->addr);
+			const char *comment = rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, xref->from);
 			char *print_comment = NULL;
 			const char *nl = comment ? strchr(comment, '\n') : NULL;
 			if (nl) { // display only until the first newline
@@ -1941,12 +1942,12 @@ static void do_ref_search(RzCore *core, ut64 addr, ut64 from, ut64 to, struct se
 				? rz_str_newf("%s; %s", fcn ? fcn->name : "(nofunc)", comment)
 				: rz_str_newf("%s", fcn ? fcn->name : "(nofunc)");
 			free(print_comment);
-			if (from <= ref->addr && to >= ref->addr) {
+			if (from <= xref->from && to >= xref->from) {
 				rz_cons_printf("%s 0x%" PFMT64x " [%s] %s\n",
-					buf_fcn, ref->addr, rz_analysis_xrefs_type_tostring(ref->type), str);
+					buf_fcn, xref->from, rz_analysis_xrefs_type_tostring(xref->type), str);
 				if (*param->cmd_hit) {
 					ut64 here = core->offset;
-					rz_core_seek(core, ref->addr, true);
+					rz_core_seek(core, xref->from, true);
 					rz_core_cmd(core, param->cmd_hit, 0);
 					rz_core_seek(core, here, true);
 				}
@@ -2654,6 +2655,7 @@ static ut8 *v_writebuf(RzCore *core, RzList *nums, int len, char ch, int bsize) 
 			break;
 		}
 		if (ptr > ptr + bsize) {
+			free(buf);
 			return NULL;
 		}
 	}
@@ -2748,7 +2750,10 @@ static void incDigitBuffer(ut8 *buf, int bufsz) {
 
 static void search_collisions(RzCore *core, const char *hashName, const ut8 *hashValue, int hashLength, int mode) {
 	ut8 RZ_ALIGNED(8) cmphash[128];
-	int i, algoType = RZ_HASH_CRC32;
+	const RzMsgDigestPlugin *crc32 = rz_msg_digest_plugin_by_name("crc32");
+	ut8 *digest = NULL;
+
+	int i = 0;
 	int bufsz = core->blocksize;
 	ut8 *buf = calloc(1, bufsz);
 	if (!buf) {
@@ -2762,19 +2767,12 @@ static void search_collisions(RzCore *core, const char *hashName, const ut8 *has
 	}
 	memcpy(cmphash, hashValue, hashLength);
 
-	ut64 hashBits = rz_hash_name_to_bits(hashName);
-	int hashSize = rz_hash_size(hashBits);
-	if (hashLength != hashSize) {
-		eprintf("Invalid hash size %d vs %d\n", hashLength, hashSize);
+	if (hashLength != 4) {
+		eprintf("Invalid hash size %d (expected 4)\n", hashLength);
 		free(buf);
 		return;
 	}
 
-	RzHash *ctx = rz_hash_new(true, algoType);
-	if (!ctx) {
-		free(buf);
-		return;
-	}
 	rz_cons_break_push(NULL, NULL);
 	ut64 prev = rz_time_now_mono();
 	ut64 inc = 0;
@@ -2819,25 +2817,23 @@ static void search_collisions(RzCore *core, const char *hashName, const ut8 *has
 			eprintf(" \"%s\"", buf);
 		}
 
-		rz_hash_do_begin(ctx, hashBits);
-		(void)rz_hash_calculate(ctx, hashBits, buf, bufsz);
-		rz_hash_do_end(ctx, hashBits);
+		crc32->small_block(buf, bufsz, &digest, NULL);
 
 		eprintf(" digest:");
 		for (i = 0; i < hashLength; i++) {
-			eprintf("%02x", ctx->digest[i]);
+			eprintf("%02x", digest[i]);
 		}
 		eprintf(" (%d h/s)  \r", mount);
-		if (!memcmp(hashValue, ctx->digest, hashLength)) {
+		if (!memcmp(hashValue, digest, hashLength)) {
 			eprintf("\nCOLLISION FOUND!\n");
 			rz_print_hexdump(core->print, core->offset, buf, bufsz, 0, 16, 0);
 			rz_cons_flush();
 		}
+		RZ_FREE(digest);
 		inc++;
 	}
 	rz_cons_break_pop();
 	free(buf);
-	rz_hash_free(ctx);
 }
 
 static void __core_cmd_search_asm_infinite(RzCore *core, const char *arg) {
@@ -2979,7 +2975,7 @@ RZ_IPI int rz_cmd_search(void *data, const char *input) {
 		param.outmode = RZ_MODE_JSON;
 		param_offset++;
 	}
-	param.pj = rz_core_pj_new(core);
+	param.pj = pj_new();
 
 reread:
 	switch (*input) {
@@ -3286,6 +3282,7 @@ reread:
 		{
 			RzSearchKeyword *kw;
 			kw = rz_search_keyword_new_hex("308200003082", "ffff0000ffff", NULL);
+			rz_search_reset(core->search, RZ_SEARCH_KEYWORD);
 			if (kw) {
 				rz_search_kw_add(core->search, kw);
 				// eprintf ("Searching %d byte(s)...\n", kw->keyword_length);
@@ -3556,6 +3553,7 @@ reread:
 			goto beach;
 		}
 		ignorecase = true;
+		// fallthrough
 	case 'j': // "/j"
 		if (input[0] == 'j' && input[1] == ' ') {
 			param.outmode = RZ_MODE_JSON;

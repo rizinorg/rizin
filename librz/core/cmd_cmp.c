@@ -765,7 +765,7 @@ RZ_IPI int rz_cmd_cmp(void *data, const char *input) {
 		case 'f': // "cgf"
 			eprintf("TODO: agf is experimental\n");
 			rz_analysis_diff_setup(core->analysis, true, -1, -1);
-			rz_core_gdiff_fcn(core, core->offset,
+			rz_core_gdiff_function_1_file(core, core->offset,
 				rz_num_math(core->num, input + 2));
 			return false;
 		case ' ':
@@ -809,8 +809,8 @@ RZ_IPI int rz_cmd_cmp(void *data, const char *input) {
 
 		rz_core_bin_load(core2, file2,
 			rz_config_get_i(core->config, "bin.baddr"));
-		rz_core_gdiff(core, core2);
-		rz_core_diff_show(core, core2);
+		rz_core_gdiff_2_files(core, core2);
+		rz_core_diff_show(core, core2, false);
 		/* exchange a segfault with a memleak */
 		core2->config = NULL;
 		rz_core_free(core2);

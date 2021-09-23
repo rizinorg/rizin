@@ -14,6 +14,7 @@
 
 #include <rz_lib.h>
 #include <rz_crypto.h>
+#include <rz_util.h>
 
 // license:BSD-3-Clause
 // copyright-holders:Paul Leaman, Andreas Naive, Nicola Salmoria,Charles MacDonald
@@ -2884,9 +2885,10 @@ main(cps_state,cps2crypt) {
 }
 #endif
 
-static ut32 cps2key[2] = { 0 };
-
 static bool set_key(RzCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
+	rz_return_val_if_fail(cry->user && key, false);
+	ut32 *cps2key = (ut32 *)cry->user;
+
 	cry->dir = direction;
 	if (keylen == 8) {
 		/* fix key endianness */
@@ -2908,7 +2910,14 @@ static bool cps2_use(const char *algo) {
 }
 
 static bool update(RzCrypto *cry, const ut8 *buf, int len) {
+	rz_return_val_if_fail(cry->user, false);
+	ut32 *cps2key = (ut32 *)cry->user;
+
 	ut8 *output = calloc(1, len);
+	if (!output) {
+		return false;
+	}
+
 	/* TODO : control decryption errors */
 	cps2_crypt(cry->dir, (const ut16 *)buf, (ut16 *)output, len, cps2key, UPPER_LIMIT);
 	rz_crypto_append(cry, output, len);
@@ -2916,12 +2925,30 @@ static bool update(RzCrypto *cry, const ut8 *buf, int len) {
 	return true;
 }
 
+static bool cps2_init(RzCrypto *cry) {
+	rz_return_val_if_fail(cry, false);
+
+	cry->user = RZ_NEWS0(ut32, 2);
+	return cry->user != NULL;
+}
+
+static bool cps2_fini(RzCrypto *cry) {
+	rz_return_val_if_fail(cry, false);
+
+	free(cry->user);
+	return true;
+}
+
 RzCryptoPlugin rz_crypto_plugin_cps2 = {
 	.name = "cps2",
+	.author = "pancake,esanfelix,pof",
+	.license = "LGPL-3",
 	.set_key = set_key,
 	.get_key_size = get_key_size,
 	.use = cps2_use,
-	.update = update
+	.update = update,
+	.init = cps2_init,
+	.fini = cps2_fini,
 };
 
 #ifndef RZ_PLUGIN_INCORE

@@ -1,5 +1,5 @@
 NAME=dmh crash without arena/heap map
-FILE=-
+FILE==
 ARGS=
 CMDS=<<EOF
 dmh

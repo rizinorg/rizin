@@ -1,5 +1,5 @@
 NAME=ah- offset
-FILE=-
+FILE==
 CMDS=<<EOF
 ahi 10 @ 0
 ahi 8 @ 16
@@ -19,7 +19,7 @@ EOF
 RUN
 
 NAME=ah-offset
-FILE=-
+FILE==
 CMDS=<<EOF
 ahi 10 @ 0
 ahi 8 @ 16
@@ -39,7 +39,7 @@ EOF
 RUN
 
 NAME=ah
-FILE=-
+FILE==
 CMDS=<<EOF
 s 0x1337
 aha ppc
@@ -86,7 +86,7 @@ EOF
 RUN
 
 NAME=ah*
-FILE=-
+FILE==
 CMDS=<<EOF
 s 0x1337
 aha ppc
@@ -148,7 +148,7 @@ EOF
 RUN
 
 NAME=ahj
-FILE=-
+FILE==
 CMDS=<<EOF
 s 0x1337
 aha ppc
@@ -207,7 +207,7 @@ EOF
 RUN
 
 NAME=arch hints for ranges
-FILE=-
+FILE==
 CMDS=<<EOF
 aha arm @ 0x42
 aha 0 @ 0x84
@@ -250,7 +250,7 @@ EOF
 RUN
 
 NAME=bits hints for ranges
-FILE=-
+FILE==
 CMDS=<<EOF
 ahb 16 @ 0x42
 ahb 0 @ 0x84

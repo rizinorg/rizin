@@ -107,8 +107,9 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	return false;
 }
 
-static int parse(RzParse *p, const char *data, char *str) {
+static bool parse(RzParse *p, const char *data, RzStrBuf *sb) {
 	char w0[256], w1[256], w2[256], w3[256];
+	char str[1024] = { 0 };
 	int i, len = strlen(data), n;
 	char *buf, *ptr, *optr, *num;
 
@@ -210,10 +211,11 @@ static int parse(RzParse *p, const char *data, char *str) {
 		char *s = strdup(str);
 		s = rz_str_replace(s, "+ -", "- ", 1);
 		s = rz_str_replace(s, "- -", "+ ", 1);
-		strcpy(str, s);
+		rz_strf(str, "%s", s);
 		free(s);
 	}
 	free(buf);
+	rz_strbuf_set(sb, str);
 	return true;
 }
 

@@ -65,9 +65,6 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->rpath = strdup("NONE");
 	ret->type = strdup("MDMP (MiniDump crash report data)");
 
-	// FIXME: Needed to fix issue with PLT resolving. Can we get away with setting this for all children bins?
-	ret->has_lit = true;
-
 	sdb_set(bf->sdb, "mdmp.flags", sdb_fmt("0x%08" PFMT64x, obj->hdr->flags), 0);
 	sdb_num_set(bf->sdb, "mdmp.streams", obj->hdr->number_of_streams, 0);
 
@@ -168,20 +165,61 @@ static RzList *libs(RzBinFile *bf) {
 	return ret;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
 	rz_return_val_if_fail(buf, false);
 	struct rz_bin_mdmp_obj *res = rz_bin_mdmp_new_buf(buf);
 	if (res) {
 		sdb_ns_set(sdb, "info", res->kv);
-		*bin_obj = res;
+		obj->bin_obj = res;
 		return true;
 	}
 	return false;
 }
 
-static RzList *sections(RzBinFile *bf) {
+static RzList *maps(RzBinFile *bf) {
+	struct rz_bin_mdmp_obj *obj = (struct rz_bin_mdmp_obj *)bf->o->bin_obj;
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_map_free);
+	if (!ret) {
+		return NULL;
+	}
+
+	RzListIter *it;
 	struct minidump_memory_descriptor *memory;
+	rz_list_foreach (obj->streams.memories, it, memory) {
+		RzBinMap *map = RZ_NEW0(RzBinMap);
+		if (!map) {
+			return ret;
+		}
+		map->paddr = (memory->memory).rva;
+		map->psize = (memory->memory).data_size;
+		map->vaddr = memory->start_of_memory_range;
+		map->vsize = (memory->memory).data_size;
+		map->perm = rz_bin_mdmp_get_perm(obj, map->vaddr);
+		map->name = rz_str_newf("memory.0x%" PFMT64x, map->vaddr);
+		rz_list_append(ret, map);
+	}
+
+	ut64 index = obj->streams.memories64.base_rva;
 	struct minidump_memory_descriptor64 *memory64;
+	rz_list_foreach (obj->streams.memories64.memories, it, memory64) {
+		RzBinMap *map = RZ_NEW0(RzBinMap);
+		if (!map) {
+			return ret;
+		}
+		map->paddr = index;
+		map->psize = memory64->data_size;
+		map->vaddr = memory64->start_of_memory_range;
+		map->vsize = memory64->data_size;
+		map->perm = rz_bin_mdmp_get_perm(obj, map->vaddr);
+		map->name = rz_str_newf("memory64.0x%" PFMT64x, map->vaddr);
+		rz_list_append(ret, map);
+		index += memory64->data_size;
+	}
+
+	return ret;
+}
+
+static RzList *sections(RzBinFile *bf) {
 	struct minidump_module *module;
 	struct minidump_string *str;
 	struct rz_bin_mdmp_obj *obj;
@@ -190,54 +228,11 @@ static RzList *sections(RzBinFile *bf) {
 	RzList *ret, *pe_secs;
 	RzListIter *it, *it0;
 	RzBinSection *ptr;
-	ut64 index;
 
 	obj = (struct rz_bin_mdmp_obj *)bf->o->bin_obj;
 
-	if (!(ret = rz_list_newf(free))) {
+	if (!(ret = rz_list_newf((RzListFree)rz_bin_section_free))) {
 		return NULL;
-	}
-
-	/* TODO: Can't remove the memories from this section until get_vaddr is
-	** implemented correctly, currently it is never called!?!? Is it a
-	** relic? */
-	rz_list_foreach (obj->streams.memories, it, memory) {
-		if (!(ptr = RZ_NEW0(RzBinSection))) {
-			return ret;
-		}
-
-		ptr->name = strdup("Memory_Section");
-		ptr->paddr = (memory->memory).rva;
-		ptr->size = (memory->memory).data_size;
-		ptr->vaddr = memory->start_of_memory_range;
-		ptr->vsize = (memory->memory).data_size;
-		ptr->add = true;
-		ptr->has_strings = false;
-
-		ptr->perm = rz_bin_mdmp_get_perm(obj, ptr->vaddr);
-
-		rz_list_append(ret, ptr);
-	}
-
-	index = obj->streams.memories64.base_rva;
-	rz_list_foreach (obj->streams.memories64.memories, it, memory64) {
-		if (!(ptr = RZ_NEW0(RzBinSection))) {
-			return ret;
-		}
-
-		ptr->name = strdup("Memory_Section");
-		ptr->paddr = index;
-		ptr->size = memory64->data_size;
-		ptr->vaddr = memory64->start_of_memory_range;
-		ptr->vsize = memory64->data_size;
-		ptr->add = true;
-		ptr->has_strings = false;
-
-		ptr->perm = rz_bin_mdmp_get_perm(obj, ptr->vaddr);
-
-		rz_list_append(ret, ptr);
-
-		index += memory64->data_size;
 	}
 
 	// XXX: Never add here as they are covered above
@@ -272,7 +267,6 @@ static RzList *sections(RzBinFile *bf) {
 		ptr->vsize = module->size_of_image;
 		ptr->paddr = rz_bin_mdmp_get_paddr(obj, ptr->vaddr);
 		ptr->size = module->size_of_image;
-		ptr->add = false;
 		ptr->has_strings = false;
 		/* As this is an encompassing section we will set the RWX to 0 */
 		ptr->perm = 0;
@@ -406,10 +400,11 @@ static RzList *imports(RzBinFile *bf) {
 	struct rz_bin_mdmp_obj *obj;
 	struct Pe32_rz_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_rz_bin_mdmp_pe_bin *pe64_bin;
-	RzList *ret = NULL, *list;
+	RzList *list;
 	RzListIter *it;
 
-	if (!(ret = rz_list_newf(rz_bin_import_free))) {
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_import_free);
+	if (!ret) {
 		return NULL;
 	}
 
@@ -439,7 +434,7 @@ static RzList *symbols(RzBinFile *bf) {
 	RzList *ret, *list;
 	RzListIter *it;
 
-	if (!(ret = rz_list_newf(rz_bin_symbol_free))) {
+	if (!(ret = rz_list_newf((RzListFree)rz_bin_symbol_free))) {
 		return NULL;
 	}
 
@@ -480,6 +475,7 @@ RzBinPlugin rz_bin_plugin_mdmp = {
 	.check_buffer = &check_buffer,
 	.mem = &mem,
 	.relocs = &relocs,
+	.maps = &maps,
 	.sections = &sections,
 	.symbols = &symbols,
 };

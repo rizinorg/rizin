@@ -183,7 +183,10 @@ RZ_API bool rz_meta_set(RzAnalysis *a, RzAnalysisMetaType type, ut64 addr, ut64 
 }
 
 RZ_API bool rz_meta_set_with_subtype(RzAnalysis *m, RzAnalysisMetaType type, int subtype, ut64 addr, ut64 size, const char *str) {
-	rz_return_val_if_fail(m && size, false);
+	rz_return_val_if_fail(m, false);
+	if (size < 1) {
+		return false;
+	}
 	ut64 end = addr + size - 1;
 	if (end < addr) {
 		end = UT64_MAX;

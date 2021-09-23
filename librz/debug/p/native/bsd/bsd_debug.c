@@ -61,7 +61,7 @@ static void addr_to_string(struct sockaddr_storage *ss, char *buffer, int buflen
 #endif
 
 int bsd_handle_signals(RzDebug *dbg) {
-#if __KFBSD__
+#if __KFBSD__ || __NetBSD__
 	// Trying to figure out a bit by the signal
 	struct ptrace_lwpinfo linfo = { 0 };
 	siginfo_t siginfo;
@@ -81,7 +81,21 @@ int bsd_handle_signals(RzDebug *dbg) {
 		return 0;
 	}
 
+#if __KFBSD__
 	siginfo = linfo.pl_siginfo;
+#else
+	struct ptrace_siginfo sinfo = { 0 };
+	if (ptrace(PT_GET_SIGINFO, dbg->pid, (char *)&sinfo, sizeof(sinfo)) == -1) {
+		if (errno == ESRCH) {
+			dbg->reason.type = RZ_DEBUG_REASON_DEAD;
+			return 0;
+		}
+		rz_sys_perror("ptrace PTRACE_GET_SIGINFO");
+		return -1;
+	}
+
+	siginfo = sinfo.psi_siginfo;
+#endif
 	dbg->reason.type = RZ_DEBUG_REASON_SIGNAL;
 	dbg->reason.signum = siginfo.si_signo;
 
@@ -120,6 +134,16 @@ int bsd_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 	return (r == 0 ? true : false);
 }
 
+bool bsd_generate_corefile(RzDebug *dbg, char *path, RzBuffer *dest) {
+#if defined(__NetBSD__)
+	return ptrace(PT_DUMPCORE, dbg->pid, path, strlen(path)) != -1;
+#elif defined(__FreeBSD__) && __FreeBSD_version >= 1400030
+	struct ptrace_coredump pc = { .pc_fd = dest->fd, .pc_flags = PC_ALL, .pc_limit = 0 };
+	return ptrace(PT_COREDUMP, dbg->pid, (void *)&pc, sizeof(pc)) != -1;
+#else
+	return false;
+#endif
+}
 RzDebugInfo *bsd_info(RzDebug *dbg, const char *arg) {
 #if __KFBSD__
 	struct kinfo_proc *kp;
@@ -494,7 +518,10 @@ RzList *bsd_desc_list(int pid) {
 		case KF_TYPE_PIPE: type = 'p'; break;
 		case KF_TYPE_FIFO: type = 'f'; break;
 		case KF_TYPE_KQUEUE: type = 'k'; break;
+#if __FreeBSD_version < 1300130
+		// removed in https://reviews.freebsd.org/D27302
 		case KF_TYPE_CRYPTO: type = 'c'; break;
+#endif
 		case KF_TYPE_MQUEUE: type = 'm'; break;
 		case KF_TYPE_SHM: type = 'h'; break;
 		case KF_TYPE_PTS: type = 't'; break;

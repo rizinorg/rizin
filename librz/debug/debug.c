@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2009-2018 pancake <pancake@nopcode.org>
 // SPDX-FileCopyrightText: 2009-2018 jduck <github.jdrake@qoop.org>
-// SPDX-FileCopyrightText: 2009-2018 TheLemonMan <thatlemon@gmail.com>
+// SPDX-FileCopyrightText: 2009-2018 LemonBoy <thatlemon@gmail.com>
 // SPDX-FileCopyrightText: 2009-2018 saucec0de
 // SPDX-License-Identifier: LGPL-3.0-only
 
@@ -15,13 +15,13 @@ RZ_LIB_VERSION(rz_debug);
 #define DBG_BUF_SIZE 512
 
 RZ_API RzDebugInfo *rz_debug_info(RzDebug *dbg, const char *arg) {
-	if (!dbg || !dbg->h || !dbg->h->info) {
+	if (!dbg || !dbg->cur || !dbg->cur->info) {
 		return NULL;
 	}
 	if (dbg->pid < 0) {
 		return NULL;
 	}
-	return dbg->h->info(dbg, arg);
+	return dbg->cur->info(dbg, arg);
 }
 
 RZ_API void rz_debug_info_free(RzDebugInfo *rdi) {
@@ -47,8 +47,8 @@ RZ_API void rz_debug_bp_update(RzDebug *dbg) {
 }
 
 static int rz_debug_drx_at(RzDebug *dbg, ut64 addr) {
-	if (dbg && dbg->h && dbg->h->drx) {
-		return dbg->h->drx(dbg, 0, addr, 0, 0, 0, DRX_API_GET_BP);
+	if (dbg && dbg->cur && dbg->cur->drx) {
+		return dbg->cur->drx(dbg, 0, addr, 0, 0, 0, DRX_API_GET_BP);
 	}
 	return -1;
 }
@@ -342,7 +342,7 @@ RZ_API RzBreakpointItem *rz_debug_bp_add(RzDebug *dbg, ut64 addr, int hw, bool w
 	return bpi;
 }
 
-static const char *rz_debug_str_callback(RNum *userptr, ut64 off, int *ok) {
+static const char *rz_debug_str_callback(RzNum *userptr, ut64 off, int *ok) {
 	// RzDebug *dbg = (RzDebug *)userptr;
 	eprintf("rz_debug_str_callback has been called. this should not happen\n");
 	return NULL;
@@ -383,7 +383,8 @@ RZ_API RzDebug *rz_debug_new(int hard) {
 	dbg->cb_printf = (void *)printf;
 	dbg->reg = rz_reg_new();
 	dbg->num = rz_num_new(rz_debug_num_callback, rz_debug_str_callback, dbg);
-	dbg->h = NULL;
+	dbg->cur = NULL;
+	dbg->plugin_data = NULL;
 	dbg->threads = NULL;
 	dbg->hitinfo = 1;
 	/* TODO: needs a redesign? */
@@ -439,8 +440,8 @@ RZ_API RzDebug *rz_debug_free(RzDebug *dbg) {
 
 RZ_API int rz_debug_attach(RzDebug *dbg, int pid) {
 	int ret = false;
-	if (dbg && dbg->h && dbg->h->attach) {
-		ret = dbg->h->attach(dbg, pid);
+	if (dbg && dbg->cur && dbg->cur->attach) {
+		ret = dbg->cur->attach(dbg, pid);
 		if (ret != -1) {
 			rz_debug_select(dbg, pid, ret); //dbg->pid, dbg->tid);
 		}
@@ -450,22 +451,22 @@ RZ_API int rz_debug_attach(RzDebug *dbg, int pid) {
 
 /* stop execution of child process */
 RZ_API int rz_debug_stop(RzDebug *dbg) {
-	if (dbg && dbg->h && dbg->h->stop) {
-		return dbg->h->stop(dbg);
+	if (dbg && dbg->cur && dbg->cur->stop) {
+		return dbg->cur->stop(dbg);
 	}
 	return false;
 }
 
 RZ_API bool rz_debug_set_arch(RzDebug *dbg, const char *arch, int bits) {
-	if (arch && dbg && dbg->h) {
+	if (arch && dbg && dbg->cur) {
 		switch (bits) {
 		case 27:
-			if (dbg->h->bits == 27) {
+			if (dbg->cur->bits == 27) {
 				dbg->bits = 27;
 			}
 			break;
 		case 32:
-			if (dbg->h->bits & RZ_SYS_BITS_32) {
+			if (dbg->cur->bits & RZ_SYS_BITS_32) {
 				dbg->bits = RZ_SYS_BITS_32;
 			}
 			break;
@@ -473,12 +474,12 @@ RZ_API bool rz_debug_set_arch(RzDebug *dbg, const char *arch, int bits) {
 			dbg->bits = RZ_SYS_BITS_64;
 			break;
 		}
-		if (!dbg->h->bits) {
-			dbg->bits = dbg->h->bits;
-		} else if (!(dbg->h->bits & dbg->bits)) {
-			dbg->bits = dbg->h->bits & RZ_SYS_BITS_64;
+		if (!dbg->cur->bits) {
+			dbg->bits = dbg->cur->bits;
+		} else if (!(dbg->cur->bits & dbg->bits)) {
+			dbg->bits = dbg->cur->bits & RZ_SYS_BITS_64;
 			if (!dbg->bits) {
-				dbg->bits = dbg->h->bits & RZ_SYS_BITS_32;
+				dbg->bits = dbg->cur->bits & RZ_SYS_BITS_32;
 			}
 			if (!dbg->bits) {
 				dbg->bits = RZ_SYS_BITS_32;
@@ -571,8 +572,8 @@ RZ_API int rz_debug_start(RzDebug *dbg, const char *cmd) {
 
 RZ_API int rz_debug_detach(RzDebug *dbg, int pid) {
 	int ret = 0;
-	if (dbg->h && dbg->h->detach) {
-		ret = dbg->h->detach(dbg, pid);
+	if (dbg->cur && dbg->cur->detach) {
+		ret = dbg->cur->detach(dbg, pid);
 		if (dbg->pid == pid) {
 			dbg->pid = -1;
 			dbg->tid = -1;
@@ -592,20 +593,12 @@ RZ_API bool rz_debug_select(RzDebug *dbg, int pid, int tid) {
 	if (tid < 0) {
 		tid = pid;
 	}
-	if (pid != -1 && tid != -1) {
-		if ((pid != dbg->pid || tid != dbg->tid) && dbg->verbose) {
-			eprintf("= attach %d %d\n", pid, tid);
-		}
-	} else {
-		if (dbg->pid != -1) {
-			eprintf("Child %d is dead\n", dbg->pid);
-		}
-	}
-	if (pid < 0 || tid < 0) {
-		return false;
+
+	if ((pid != dbg->pid || tid != dbg->tid) && dbg->verbose) {
+		eprintf("= attach %d %d\n", pid, tid);
 	}
 
-	if (dbg->h && dbg->h->select && !dbg->h->select(dbg, pid, tid)) {
+	if (dbg->cur && dbg->cur->select && !dbg->cur->select(dbg, pid, tid)) {
 		return false;
 	}
 
@@ -695,8 +688,8 @@ RZ_API RzDebugReasonType rz_debug_wait(RzDebug *dbg, RzBreakpointItem **bp) {
 	}
 
 	/* if our debugger plugin has wait */
-	if (dbg->h && dbg->h->wait) {
-		reason = dbg->h->wait(dbg, dbg->pid);
+	if (dbg->cur && dbg->cur->wait) {
+		reason = dbg->cur->wait(dbg, dbg->pid);
 		if (reason == RZ_DEBUG_REASON_DEAD) {
 			eprintf("\n==> Process finished\n\n");
 			RzEventDebugProcessFinished event = {
@@ -852,6 +845,7 @@ RZ_API int rz_debug_step_soft(RzDebug *dbg) {
 		}
 		br = 1;
 		break;
+	case RZ_ANALYSIS_OP_TYPE_UJMP:
 	case RZ_ANALYSIS_OP_TYPE_UCALL:
 	case RZ_ANALYSIS_OP_TYPE_MJMP:
 		if (op.ireg) {
@@ -866,7 +860,6 @@ RZ_API int rz_debug_step_soft(RzDebug *dbg) {
 		}
 		br = 1;
 		break;
-	case RZ_ANALYSIS_OP_TYPE_UJMP:
 	default:
 		next[0] = op.addr + op.size;
 		br = 1;
@@ -911,7 +904,7 @@ RZ_API int rz_debug_step_hard(RzDebug *dbg, RzBreakpointItem **pb) {
 		}
 	}
 
-	if (!dbg->h->step(dbg)) {
+	if (!dbg->cur->step(dbg)) {
 		return false;
 	}
 
@@ -951,7 +944,7 @@ RZ_API int rz_debug_step(RzDebug *dbg, int steps) {
 		steps = 1;
 	}
 
-	if (!dbg || !dbg->h) {
+	if (!dbg || !dbg->cur) {
 		return steps_taken;
 	}
 
@@ -1027,14 +1020,14 @@ RZ_API int rz_debug_step_over(RzDebug *dbg, int steps) {
 		steps = 1;
 	}
 
-	if (dbg->h && dbg->h->step_over) {
+	if (dbg->cur && dbg->cur->step_over) {
 		for (; steps_taken < steps; steps_taken++) {
 			if (dbg->session && dbg->recoil_mode == RZ_DBG_RECOIL_NONE) {
 				dbg->session->cnum++;
 				dbg->session->maxcnum++;
 				rz_debug_trace_ins_before(dbg);
 			}
-			if (!dbg->h->step_over(dbg)) {
+			if (!dbg->cur->step_over(dbg)) {
 				return steps_taken;
 			}
 			if (dbg->session && dbg->recoil_mode == RZ_DBG_RECOIL_NONE) {
@@ -1168,13 +1161,13 @@ repeat:
 		}
 		reason = dbg->session->reasontype;
 		bp = dbg->session->bp;
-	} else if (dbg->h && dbg->h->cont) {
+	} else if (dbg->cur && dbg->cur->cont) {
 		/* handle the stage-2 of breakpoints */
 		if (!rz_debug_recoil(dbg, RZ_DBG_RECOIL_CONTINUE)) {
 			return 0;
 		}
 		/* tell the inferior to go! */
-		ret = dbg->h->cont(dbg, dbg->pid, dbg->tid, sig);
+		ret = dbg->cur->cont(dbg, dbg->pid, dbg->tid, sig);
 		//XXX(jjd): why? //dbg->reason.signum = 0;
 		reason = rz_debug_wait(dbg, &bp);
 	} else {
@@ -1183,7 +1176,7 @@ repeat:
 
 	if (dbg->corebind.core) {
 		RzCore *core = (RzCore *)dbg->corebind.core;
-		RNum *num = core->num;
+		RzNum *num = core->num;
 		if (reason == RZ_DEBUG_REASON_COND) {
 			if (bp && bp->cond && dbg->corebind.cmd) {
 				dbg->corebind.cmd(dbg->corebind.core, bp->cond);
@@ -1491,10 +1484,10 @@ static int show_syscall(RzDebug *dbg, const char *sysreg) {
 
 RZ_API int rz_debug_continue_syscalls(RzDebug *dbg, int *sc, int n_sc) {
 	int i, err, reg, ret = false;
-	if (!dbg || !dbg->h || rz_debug_is_dead(dbg)) {
+	if (!dbg || !dbg->cur || rz_debug_is_dead(dbg)) {
 		return false;
 	}
-	if (!dbg->h->contsc) {
+	if (!dbg->cur->contsc) {
 		/* user-level syscall tracing */
 		rz_debug_continue_until_optype(dbg, RZ_ANALYSIS_OP_TYPE_SWI, 0);
 		return show_syscall(dbg, "A0");
@@ -1522,7 +1515,7 @@ RZ_API int rz_debug_continue_syscalls(RzDebug *dbg, int *sc, int n_sc) {
 		 * return value after... */
 		rz_debug_step(dbg, 1);
 #endif
-		dbg->h->contsc(dbg, dbg->pid, 0); // TODO handle return value
+		dbg->cur->contsc(dbg, dbg->pid, 0); // TODO handle return value
 		// wait until continuation
 		reason = rz_debug_wait(dbg, NULL);
 		if (reason == RZ_DEBUG_REASON_DEAD || rz_debug_is_dead(dbg)) {
@@ -1567,8 +1560,8 @@ RZ_API int rz_debug_continue_syscall(RzDebug *dbg, int sc) {
 // TODO: remove from here? this is code injection!
 RZ_API int rz_debug_syscall(RzDebug *dbg, int num) {
 	bool ret = true;
-	if (dbg->h->contsc) {
-		ret = dbg->h->contsc(dbg, dbg->pid, num);
+	if (dbg->cur->contsc) {
+		ret = dbg->cur->contsc(dbg, dbg->pid, num);
 	}
 	eprintf("TODO: show syscall information\n");
 	/* rz_testc task? ala inject? */
@@ -1579,9 +1572,9 @@ RZ_API int rz_debug_kill(RzDebug *dbg, int pid, int tid, int sig) {
 	if (rz_debug_is_dead(dbg)) {
 		return false;
 	}
-	if (dbg->h && dbg->h->kill) {
+	if (dbg->cur && dbg->cur->kill) {
 		if (pid > 0) {
-			return dbg->h->kill(dbg, pid, tid, sig);
+			return dbg->cur->kill(dbg, pid, tid, sig);
 		}
 		return -1;
 	}
@@ -1590,40 +1583,40 @@ RZ_API int rz_debug_kill(RzDebug *dbg, int pid, int tid, int sig) {
 }
 
 RZ_API RzList *rz_debug_frames(RzDebug *dbg, ut64 at) {
-	if (dbg && dbg->h && dbg->h->frames) {
-		return dbg->h->frames(dbg, at);
+	if (dbg && dbg->cur && dbg->cur->frames) {
+		return dbg->cur->frames(dbg, at);
 	}
 	return NULL;
 }
 
 /* TODO: Implement fork and clone */
 RZ_API int rz_debug_child_fork(RzDebug *dbg) {
-	//if (dbg && dbg->h && dbg->h->frames)
-	//return dbg->h->frames (dbg);
+	//if (dbg && dbg->cur && dbg->cur->frames)
+	//return dbg->cur->frames (dbg);
 	return 0;
 }
 
 RZ_API int rz_debug_child_clone(RzDebug *dbg) {
-	//if (dbg && dbg->h && dbg->h->frames)
-	//return dbg->h->frames (dbg);
+	//if (dbg && dbg->cur && dbg->cur->frames)
+	//return dbg->cur->frames (dbg);
 	return 0;
 }
 
 RZ_API bool rz_debug_is_dead(RzDebug *dbg) {
-	if (!dbg->h) {
+	if (!dbg->cur) {
 		return false;
 	}
 	// workaround for debug.io.. should be generic
-	if (!strcmp(dbg->h->name, "io")) {
+	if (!strcmp(dbg->cur->name, "io")) {
 		return false;
 	}
-	bool is_dead = (dbg->pid == -1 && strncmp(dbg->h->name, "gdb", 3)) || (dbg->reason.type == RZ_DEBUG_REASON_DEAD);
-	if (dbg->pid > 0 && dbg->h && dbg->h->kill) {
-		is_dead = !dbg->h->kill(dbg, dbg->pid, false, 0);
+	bool is_dead = (dbg->pid == -1 && strncmp(dbg->cur->name, "gdb", 3)) || (dbg->reason.type == RZ_DEBUG_REASON_DEAD);
+	if (dbg->pid > 0 && dbg->cur && dbg->cur->kill) {
+		is_dead = !dbg->cur->kill(dbg, dbg->pid, false, 0);
 	}
 #if 0
-	if (!is_dead && dbg->h && dbg->h->kill) {
-		is_dead = !dbg->h->kill (dbg, dbg->pid, false, 0);
+	if (!is_dead && dbg->cur && dbg->cur->kill) {
+		is_dead = !dbg->cur->kill (dbg, dbg->pid, false, 0);
 	}
 #endif
 	if (is_dead) {
@@ -1633,28 +1626,28 @@ RZ_API bool rz_debug_is_dead(RzDebug *dbg) {
 }
 
 RZ_API int rz_debug_map_protect(RzDebug *dbg, ut64 addr, int size, int perms) {
-	if (dbg && dbg->h && dbg->h->map_protect) {
-		return dbg->h->map_protect(dbg, addr, size, perms);
+	if (dbg && dbg->cur && dbg->cur->map_protect) {
+		return dbg->cur->map_protect(dbg, addr, size, perms);
 	}
 	return false;
 }
 
 RZ_API void rz_debug_drx_list(RzDebug *dbg) {
-	if (dbg && dbg->h && dbg->h->drx) {
-		dbg->h->drx(dbg, 0, 0, 0, 0, 0, DRX_API_LIST);
+	if (dbg && dbg->cur && dbg->cur->drx) {
+		dbg->cur->drx(dbg, 0, 0, 0, 0, 0, DRX_API_LIST);
 	}
 }
 
 RZ_API int rz_debug_drx_set(RzDebug *dbg, int idx, ut64 addr, int len, int rwx, int g) {
-	if (dbg && dbg->h && dbg->h->drx) {
-		return dbg->h->drx(dbg, idx, addr, len, rwx, g, DRX_API_SET_BP);
+	if (dbg && dbg->cur && dbg->cur->drx) {
+		return dbg->cur->drx(dbg, idx, addr, len, rwx, g, DRX_API_SET_BP);
 	}
 	return false;
 }
 
 RZ_API int rz_debug_drx_unset(RzDebug *dbg, int idx) {
-	if (dbg && dbg->h && dbg->h->drx) {
-		return dbg->h->drx(dbg, idx, 0, -1, 0, 0, DRX_API_REMOVE_BP);
+	if (dbg && dbg->cur && dbg->cur->drx) {
+		return dbg->cur->drx(dbg, idx, 0, -1, 0, 0, DRX_API_REMOVE_BP);
 	}
 	return false;
 }

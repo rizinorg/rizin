@@ -29,8 +29,8 @@ fi
 if [ "${RZ_SYS_OPENSSL}" != "" ] ; then
 	OPTS="${OPTS} -D use_sys_openssl=${RZ_SYS_OPENSSL}"
 fi
-if [ "${RZ_NEWSHELL}" != "" ] ; then
-	OPTS="${OPTS} -D use_treesitter=${RZ_NEWSHELL}"
+if [ "${RZ_RZSHELL}" != "" ] ; then
+	OPTS="${OPTS} -D use_treesitter=${RZ_RZSHELL}"
 fi
 if [ "${COVERAGE}" == "1" ] ; then
 	OPTS="${OPTS} -Db_coverage=true"

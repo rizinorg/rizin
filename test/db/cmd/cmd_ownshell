@@ -1,5 +1,5 @@
 NAME=mkdir; ls
-FILE=-
+FILE==
 CMDS=<<EOF
 mkdir .tmp
 rm .tmp/blah/bleh
@@ -16,7 +16,7 @@ EOF
 RUN
 
 NAME=mkdir -p (without specifying directory)
-FILE=-
+FILE==
 CMDS=mkdir -p
 EXPECT=<<EOF
 Usage: mkdir [-p] [directory]
@@ -24,7 +24,7 @@ EOF
 RUN
 
 NAME=mkdir -p
-FILE=-
+FILE==
 BROKEN=1
 CMDS=<<EOF
 rm /tmp/foo/bar/foo/fooz

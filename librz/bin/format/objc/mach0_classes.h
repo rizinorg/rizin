@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2015 inisider <inisider@gmail.com>
+// SPDX-FileCopyrightText: 2018-2019 Francesco Tamagni <mrmacete@protonmail.ch>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_bin.h>
 
 #include "mach0/mach0_specs.h"
@@ -18,7 +22,7 @@
 #define MACH0_CLASSES_H
 
 RZ_API RzList *MACH0_(parse_classes)(RzBinFile *bf);
-RZ_API void MACH0_(get_class_t)(mach0_ut p, RzBinFile *bf, RzBinClass *klass, bool dupe, RzSkipList *relocs);
-RZ_API void MACH0_(get_category_t)(mach0_ut p, RzBinFile *bf, RzBinClass *klass, RzSkipList *relocs);
+RZ_API void MACH0_(get_class_t)(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinClass *klass, bool dupe, RzSkipList *relocs);
+RZ_API void MACH0_(get_category_t)(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinClass *klass, RzSkipList *relocs);
 
 #endif // MACH0_CLASSES_H

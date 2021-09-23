@@ -1,23 +1,44 @@
 NAME=tc
 FILE=bins/mach0/objc-employee
-CMDS=.ic*;ts
+ARGS=-b 64
+CMDS=<<EOF
+.ic*
+ts Employee
+ts NSString
+EOF
 EXPECT=<<EOF
-Employee
-NSString
+pf *?w*?*?qpppp (objc_class)isa _shortWord (NSString)_username (NSString)_firstName _wideWord username firstName shortWord wideWord
+pf pqzd p0 p1 str len
 EOF
 RUN
 
 NAME=tc2
 FILE=bins/mach0/objc-employee
-CMDS=icc*
+BROKEN=1
+CMDS=icc
 EXPECT=<<EOF
-typedef struct class_Employee {
-    struct objc_class * isa; // 0
-    short _shortWord; // 8
-    struct NSString* _username; // 16
-    struct NSString* _firstName; // 24
-    uint64_t _wideWord; // 32
-} Employee;
+@interface Employee : NSObject
+{
+  s Employee::(ivar)_shortWord
+  @"NSString" Employee::(ivar)_username
+  @"NSString" Employee::(ivar)_firstName
+  Q Employee::(ivar)_wideWord
+}
+- (void) helloWorld
+- (id) sayHello
+- (unknown) p0
+- (unknown) p1
+- (unknown) p2
+- (unknown) p3
+- (unknown) base
+- (id) username
+- (void) setUsername:
+- (id) firstName
+- (void) setFirstName:
+- (short) shortWord
+- (unsigned long long) wideWord
++ (id) sayHello
+@end
 EOF
 RUN
 
@@ -26,8 +47,17 @@ FILE=bins/mach0/objc-employee
 CMDS=ic*
 EXPECT=<<EOF
 fs classes
-"f class.Employee = 0x100001ae0"
-"f super.Employee.NSObject = 0"
+"f class.public.Employee = 0x100001ae0"
+"f super.public.Employee.NSObject = 0"
+"f field.Employee.isa = 0x00000000"
+"f field.Employee.Employee::_ivar__shortWord = 0x100003328"
+"f field.Employee.Employee::_ivar__username = 0x100003330"
+"f field.Employee.Employee::_ivar__firstName = 0x100003338"
+"f field.Employee.Employee::_ivar__wideWord = 0x100003340"
+"f field.Employee.Employee::_property_username = 0x00000000"
+"f field.Employee.Employee::_property_firstName = 0x00000000"
+"f field.Employee.Employee::_property_shortWord = 0x00000000"
+"f field.Employee.Employee::_property_wideWord = 0x00000000"
 "f method.Employee.helloWorld = 0x100001ae0"
 "f method.Employee.sayHello = 0x100001b10"
 "f method.Employee.p0 = 0x100001b40"
@@ -42,26 +72,21 @@ fs classes
 "f method.Employee.shortWord = 0x100001cf0"
 "f method.Employee.wideWord = 0x100001d10"
 "f method.class.Employee.sayHello = 0x100001be0"
-"f field.Employee.isa = 0x00000000"
-"f field.Employee.Employee::(ivar)_shortWord = 0x100003328"
-"f field.Employee.Employee::(ivar)_username = 0x100003330"
-"f field.Employee.Employee::(ivar)_firstName = 0x100003338"
-"f field.Employee.Employee::(ivar)_wideWord = 0x100003340"
-"f field.Employee.Employee::(property)username = 0x00000000"
-"f field.Employee.Employee::(property)firstName = 0x00000000"
-"f field.Employee.Employee::(property)shortWord = 0x00000000"
-"f field.Employee.Employee::(property)wideWord = 0x00000000"
 td "struct Employee { struct objc_class * isa; short _shortWord; struct NSString* _username; struct NSString* _firstName; uint64_t _wideWord; void* username; void* firstName; void* shortWord; void* wideWord;};"
 EOF
 RUN
 
 NAME=tc4
 FILE=bins/mach0/objc-employee
-CMDS=.ic*;tc
+CMDS=<<EOF
+.ic*
+tc Employee
+tc NSString
+EOF
 EXPECT=<<EOF
 struct Employee {
 	struct objc_class *isa;
-	int16_t _shortWord;
+	short _shortWord;
 	struct NSString *_username;
 	struct NSString *_firstName;
 	uint64_t _wideWord;
@@ -81,24 +106,60 @@ RUN
 
 NAME=tc iOS14 arm64
 FILE=bins/mach0/objc-employee-ios14-arm64
-CMDS=.ic*;ts
+CMDS=<<EOF
+.ic*
+tsc Employee
+tsc NSString
+EOF
 EXPECT=<<EOF
-Employee
-NSString
+struct Employee {
+	struct objc_class *isa;
+	short _shortWord;
+	struct NSString *_username;
+	struct NSString *_firstName;
+	uint64_t _wideWord;
+	void *username;
+	void *firstName;
+	void *shortWord;
+	void *wideWord;
+};
+struct NSString {
+	void *p0;
+	size_t p1;
+	char *str;
+	int len;
+};
 EOF
 RUN
 
 NAME=tc2 iOS14 arm64
 FILE=bins/mach0/objc-employee-ios14-arm64
-CMDS=icc*
+CMDS=icc
+BROKEN=1
 EXPECT=<<EOF
-typedef struct class_Employee {
-    struct objc_class * isa; // 0
-    short _shortWord; // 8
-    struct NSString* _username; // 16
-    struct NSString* _firstName; // 24
-    uint64_t _wideWord; // 32
-} Employee;
+@interface Employee : NSObject
+{
+  s Employee::(ivar)_shortWord
+  @"NSString" Employee::(ivar)_username
+  @"NSString" Employee::(ivar)_firstName
+  Q Employee::(ivar)_wideWord
+}
+- (void) sayHello
+- (void) helloWorld
+- (unknown) p0
+- (unknown) p1
+- (unknown) p2
+- (unknown) p3
+- (unknown) base
+- (id) username
+- (void) setUsername:
+- (id) firstName
+- (void) setFirstName:
+- (short) shortWord
+- (unsigned long long) wideWord
+- (void) .cxx_destruct
++ (void) sayHello
+@end
 EOF
 RUN
 
@@ -107,8 +168,17 @@ FILE=bins/mach0/objc-employee-ios14-arm64
 CMDS=ic*
 EXPECT=<<EOF
 fs classes
-"f class.Employee = 0x100007958"
-"f super.Employee.NSObject = 0"
+"f class.public.Employee = 0x100007958"
+"f super.public.Employee.NSObject = 0"
+"f field.Employee.isa = 0x00000000"
+"f field.Employee.Employee::_ivar__shortWord = 0x10000c228"
+"f field.Employee.Employee::_ivar__username = 0x10000c22c"
+"f field.Employee.Employee::_ivar__firstName = 0x10000c230"
+"f field.Employee.Employee::_ivar__wideWord = 0x10000c234"
+"f field.Employee.Employee::_property_username = 0x00000000"
+"f field.Employee.Employee::_property_firstName = 0x00000000"
+"f field.Employee.Employee::_property_shortWord = 0x00000000"
+"f field.Employee.Employee::_property_wideWord = 0x00000000"
 "f method.Employee.sayHello = 0x100007984"
 "f method.Employee.helloWorld = 0x1000079b0"
 "f method.Employee.p0 = 0x1000079dc"
@@ -124,26 +194,21 @@ fs classes
 "f method.Employee.wideWord = 0x100007b44"
 "f method.Employee..cxx_destruct = 0x100007b60"
 "f method.class.Employee.sayHello = 0x100007958"
-"f field.Employee.isa = 0x00000000"
-"f field.Employee.Employee::(ivar)_shortWord = 0x10000c228"
-"f field.Employee.Employee::(ivar)_username = 0x10000c22c"
-"f field.Employee.Employee::(ivar)_firstName = 0x10000c230"
-"f field.Employee.Employee::(ivar)_wideWord = 0x10000c234"
-"f field.Employee.Employee::(property)username = 0x00000000"
-"f field.Employee.Employee::(property)firstName = 0x00000000"
-"f field.Employee.Employee::(property)shortWord = 0x00000000"
-"f field.Employee.Employee::(property)wideWord = 0x00000000"
 td "struct Employee { struct objc_class * isa; short _shortWord; struct NSString* _username; struct NSString* _firstName; uint64_t _wideWord; void* username; void* firstName; void* shortWord; void* wideWord;};"
 EOF
 RUN
 
 NAME=tc4 iOS14 arm64
 FILE=bins/mach0/objc-employee-ios14-arm64
-CMDS=.ic*;tc
+CMDS=<<EOF
+.ic*
+tc Employee
+tc NSString
+EOF
 EXPECT=<<EOF
 struct Employee {
 	struct objc_class *isa;
-	int16_t _shortWord;
+	short _shortWord;
 	struct NSString *_username;
 	struct NSString *_firstName;
 	uint64_t _wideWord;
@@ -163,68 +228,15 @@ RUN
 
 NAME=tc iOS14 arm64e
 FILE=bins/mach0/objc-employee-ios14-arm64e
-CMDS=.ic*;ts
-EXPECT=<<EOF
-Employee
-NSString
+CMDS=<<EOF
+.ic*
+tsc Employee
+tsc NSString
 EOF
-RUN
-
-NAME=tc2 iOS14 arm64e
-FILE=bins/mach0/objc-employee-ios14-arm64e
-CMDS=icc*
-EXPECT=<<EOF
-typedef struct class_Employee {
-    struct objc_class * isa; // 0
-    short _shortWord; // 8
-    struct NSString* _username; // 16
-    struct NSString* _firstName; // 24
-    uint64_t _wideWord; // 32
-} Employee;
-EOF
-RUN
-
-NAME=tc3 iOS14 arm64e
-FILE=bins/mach0/objc-employee-ios14-arm64e
-CMDS=ic*
-EXPECT=<<EOF
-fs classes
-"f class.Employee = 0x1000079a8"
-"f method.Employee.sayHello = 0x1000079d8"
-"f method.Employee.helloWorld = 0x100007a08"
-"f method.Employee.p0 = 0x100007a38"
-"f method.Employee.p1 = 0x100007a54"
-"f method.Employee.p2 = 0x100007a70"
-"f method.Employee.p3 = 0x100007a8c"
-"f method.Employee.base = 0x100007aa8"
-"f method.Employee.username = 0x100007ac0"
-"f method.Employee.setUsername: = 0x100007ae8"
-"f method.Employee.firstName = 0x100007b24"
-"f method.Employee.setFirstName: = 0x100007b4c"
-"f method.Employee.shortWord = 0x100007b88"
-"f method.Employee.wideWord = 0x100007ba8"
-"f method.Employee..cxx_destruct = 0x100007bc4"
-"f method.class.Employee.sayHello = 0x1000079a8"
-"f field.Employee.isa = 0x00000000"
-"f field.Employee.Employee::(ivar)_shortWord = 0x10000c1d8"
-"f field.Employee.Employee::(ivar)_username = 0x10000c1dc"
-"f field.Employee.Employee::(ivar)_firstName = 0x10000c1e0"
-"f field.Employee.Employee::(ivar)_wideWord = 0x10000c1e4"
-"f field.Employee.Employee::(property)username = 0x00000000"
-"f field.Employee.Employee::(property)firstName = 0x00000000"
-"f field.Employee.Employee::(property)shortWord = 0x00000000"
-"f field.Employee.Employee::(property)wideWord = 0x00000000"
-td "struct Employee { struct objc_class * isa; short _shortWord; struct NSString* _username; struct NSString* _firstName; uint64_t _wideWord; void* username; void* firstName; void* shortWord; void* wideWord;};"
-EOF
-RUN
-
-NAME=tc4 iOS14 arm64e
-FILE=bins/mach0/objc-employee-ios14-arm64e
-CMDS=.ic*;tc
 EXPECT=<<EOF
 struct Employee {
 	struct objc_class *isa;
-	int16_t _shortWord;
+	short _shortWord;
 	struct NSString *_username;
 	struct NSString *_firstName;
 	uint64_t _wideWord;
@@ -242,8 +254,101 @@ struct NSString {
 EOF
 RUN
 
-NAME=tc typedef
-FILE=-
+NAME=tc2 iOS14 arm64e
+FILE=bins/mach0/objc-employee-ios14-arm64e
+CMDS=icc
+BROKEN=1
+EXPECT=<<EOF
+@interface Employee
+{
+  s Employee::(ivar)_shortWord
+  @"NSString" Employee::(ivar)_username
+  @"NSString" Employee::(ivar)_firstName
+  Q Employee::(ivar)_wideWord
+}
+- (void) sayHello
+- (void) helloWorld
+- (unknown) p0
+- (unknown) p1
+- (unknown) p2
+- (unknown) p3
+- (unknown) base
+- (id) username
+- (void) setUsername:
+- (id) firstName
+- (void) setFirstName:
+- (short) shortWord
+- (unsigned long long) wideWord
+- (void) .cxx_destruct
++ (void) sayHello
+@end
+EOF
+RUN
+
+NAME=tc3 iOS14 arm64e
+FILE=bins/mach0/objc-employee-ios14-arm64e
+CMDS=ic*
+EXPECT=<<EOF
+fs classes
+"f class.public.Employee = 0x1000079a8"
+"f field.Employee.isa = 0x00000000"
+"f field.Employee.Employee::_ivar__shortWord = 0x10000c1d8"
+"f field.Employee.Employee::_ivar__username = 0x10000c1dc"
+"f field.Employee.Employee::_ivar__firstName = 0x10000c1e0"
+"f field.Employee.Employee::_ivar__wideWord = 0x10000c1e4"
+"f field.Employee.Employee::_property_username = 0x00000000"
+"f field.Employee.Employee::_property_firstName = 0x00000000"
+"f field.Employee.Employee::_property_shortWord = 0x00000000"
+"f field.Employee.Employee::_property_wideWord = 0x00000000"
+"f method.Employee.sayHello = 0x1000079d8"
+"f method.Employee.helloWorld = 0x100007a08"
+"f method.Employee.p0 = 0x100007a38"
+"f method.Employee.p1 = 0x100007a54"
+"f method.Employee.p2 = 0x100007a70"
+"f method.Employee.p3 = 0x100007a8c"
+"f method.Employee.base = 0x100007aa8"
+"f method.Employee.username = 0x100007ac0"
+"f method.Employee.setUsername: = 0x100007ae8"
+"f method.Employee.firstName = 0x100007b24"
+"f method.Employee.setFirstName: = 0x100007b4c"
+"f method.Employee.shortWord = 0x100007b88"
+"f method.Employee.wideWord = 0x100007ba8"
+"f method.Employee..cxx_destruct = 0x100007bc4"
+"f method.class.Employee.sayHello = 0x1000079a8"
+td "struct Employee { struct objc_class * isa; short _shortWord; struct NSString* _username; struct NSString* _firstName; uint64_t _wideWord; void* username; void* firstName; void* shortWord; void* wideWord;};"
+EOF
+RUN
+
+NAME=tc4 iOS14 arm64e
+FILE=bins/mach0/objc-employee-ios14-arm64e
+CMDS=<<EOF
+.ic*
+tc Employee
+tc NSString
+EOF
+EXPECT=<<EOF
+struct Employee {
+	struct objc_class *isa;
+	short _shortWord;
+	struct NSString *_username;
+	struct NSString *_firstName;
+	uint64_t _wideWord;
+	void *username;
+	void *firstName;
+	void *shortWord;
+	void *wideWord;
+};
+struct NSString {
+	void *p0;
+	size_t p1;
+	char *str;
+	int len;
+};
+EOF
+RUN
+
+NAME=ttc typedef
+FILE==
 CMDS=<<EOF
 td "typedef char *string;"
 ttc string
@@ -254,18 +359,17 @@ EOF
 RUN
 
 NAME=ttj typedef
-FILE=-
+FILE==
 CMDS=<<EOF
-t-*
 td "typedef char *string;"
-ttj
+ttj string
 EOF
 EXPECT=<<EOF
-{"string":"char *"}
+{"name":"string","type":"char *"}
 EOF
 RUN
 
-NAME=test cmd tsc 
+NAME=test cmd tsc
 FILE=bins/mach0/objc-employee
 CMDS=<<EOF
 .ic*
@@ -274,7 +378,7 @@ EOF
 EXPECT=<<EOF
 struct Employee {
 	struct objc_class *isa;
-	int16_t _shortWord;
+	short _shortWord;
 	struct NSString *_username;
 	struct NSString *_firstName;
 	uint64_t _wideWord;
@@ -293,16 +397,15 @@ tf main
 tf entry0
 EOF
 EXPECT=<<EOF
-int main (int argc, char ** argv, char ** envp);
-void entry0 ();
+int main(int argc, char **argv, char **envp);
 EOF
 RUN
 
 NAME=test cmd tec
-FILE=-
+FILE==
 CMDS=<<EOF
 td "enum foo {bar = 1, cow = 3};"
-tec
+tec foo
 EOF
 EXPECT=<<EOF
 enum foo {
@@ -313,15 +416,29 @@ EOF
 RUN
 
 NAME=test cmd tuc
-FILE=-
+FILE==
 CMDS=<<EOF
-td "union Data {int i,j;};"
-tuc
+td "union Data {int i; int j;};"
+tuc Data
 EOF
 EXPECT=<<EOF
 union Data {
-	int32_t i;
-	int32_t j;
+	int i;
+	int j;
 };
+EOF
+RUN
+
+NAME=test cmd tsj
+FILE==
+CMDS=<<EOF
+td "struct foo {};"
+tsj foo
+td "struct foo2 {int a; int b;};"
+tsj foo2
+EOF
+EXPECT=<<EOF
+{"name":"foo","members":{}}
+{"name":"foo2","members":{"a":"int","b":"int"}}
 EOF
 RUN

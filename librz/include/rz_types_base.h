@@ -219,8 +219,6 @@ typedef struct _utX {
 #endif
 
 #if APPLE_SDK_IPHONESIMULATOR
-#undef LIBC_HAVE_FORK
-#define LIBC_HAVE_FORK 0
 #undef DEBUGGER
 #define DEBUGGER 0
 #endif

@@ -184,7 +184,7 @@ static int rsp_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 	case RSP_OP_SLTI:
 	case RSP_OP_SLTIU:
 		op->type = RZ_ANALYSIS_OP_TYPE_CMOV;
-		op->cond = RZ_ANALYSIS_COND_LT;
+		op->cond = RZ_TYPE_COND_LT;
 		op->dst = parsed_operands[0].value;
 		op->src[0] = parsed_operands[1].value;
 		op->src[1] = parsed_operands[2].value;
@@ -219,7 +219,7 @@ static int rsp_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		break;
 	case RSP_OP_BEQ:
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-		op->cond = RZ_ANALYSIS_COND_EQ;
+		op->cond = RZ_TYPE_COND_EQ;
 		op->dst = rz_analysis_value_new();
 		op->dst->reg = rz_reg_get(analysis->reg, "PC", RZ_REG_TYPE_GPR);
 		op->src[0] = parsed_operands[0].value;
@@ -228,7 +228,7 @@ static int rsp_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		break;
 	case RSP_OP_BNE:
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-		op->cond = RZ_ANALYSIS_COND_NE;
+		op->cond = RZ_TYPE_COND_NE;
 		op->dst = rz_analysis_value_new();
 		op->dst->reg = rz_reg_get(analysis->reg, "PC", RZ_REG_TYPE_GPR);
 		op->src[0] = parsed_operands[0].value;
@@ -237,7 +237,7 @@ static int rsp_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		break;
 	case RSP_OP_BLEZ:
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-		op->cond = RZ_ANALYSIS_COND_LE;
+		op->cond = RZ_TYPE_COND_LE;
 		op->dst = rz_analysis_value_new();
 		op->dst->reg = rz_reg_get(analysis->reg, "PC", RZ_REG_TYPE_GPR);
 		op->src[0] = parsed_operands[0].value;
@@ -247,7 +247,7 @@ static int rsp_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		break;
 	case RSP_OP_BGTZ:
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-		op->cond = RZ_ANALYSIS_COND_GT;
+		op->cond = RZ_TYPE_COND_GT;
 		op->dst = rz_analysis_value_new();
 		op->dst->reg = rz_reg_get(analysis->reg, "PC", RZ_REG_TYPE_GPR);
 		op->src[0] = parsed_operands[0].value;
@@ -257,7 +257,7 @@ static int rsp_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		break;
 	case RSP_OP_BLTZ:
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-		op->cond = RZ_ANALYSIS_COND_LT;
+		op->cond = RZ_TYPE_COND_LT;
 		op->dst = rz_analysis_value_new();
 		op->dst->reg = rz_reg_get(analysis->reg, "PC", RZ_REG_TYPE_GPR);
 		op->src[0] = parsed_operands[0].value;
@@ -267,7 +267,7 @@ static int rsp_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		break;
 	case RSP_OP_BGEZ:
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-		op->cond = RZ_ANALYSIS_COND_GE;
+		op->cond = RZ_TYPE_COND_GE;
 		op->dst = rz_analysis_value_new();
 		op->dst->reg = rz_reg_get(analysis->reg, "PC", RZ_REG_TYPE_GPR);
 		op->src[0] = parsed_operands[0].value;
@@ -277,7 +277,7 @@ static int rsp_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		break;
 	case RSP_OP_BLTZAL:
 		op->type = RZ_ANALYSIS_OP_TYPE_CCALL;
-		op->cond = RZ_ANALYSIS_COND_LT;
+		op->cond = RZ_TYPE_COND_LT;
 		op->dst = rz_analysis_value_new();
 		op->dst->reg = rz_reg_get(analysis->reg, "PC", RZ_REG_TYPE_GPR);
 		op->src[0] = parsed_operands[0].value;
@@ -286,7 +286,7 @@ static int rsp_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		break;
 	case RSP_OP_BGEZAL:
 		op->type = RZ_ANALYSIS_OP_TYPE_CCALL;
-		op->cond = RZ_ANALYSIS_COND_GE;
+		op->cond = RZ_TYPE_COND_GE;
 		op->dst = rz_analysis_value_new();
 		op->dst->reg = rz_reg_get(analysis->reg, "PC", RZ_REG_TYPE_GPR);
 		op->src[0] = parsed_operands[0].value;
@@ -435,19 +435,19 @@ static int rsp_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		break;
 	case RSP_OP_VLT:
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
-		op->cond = RZ_ANALYSIS_COND_LT;
+		op->cond = RZ_TYPE_COND_LT;
 		break;
 	case RSP_OP_VEQ:
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
-		op->cond = RZ_ANALYSIS_COND_EQ;
+		op->cond = RZ_TYPE_COND_EQ;
 		break;
 	case RSP_OP_VNE:
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
-		op->cond = RZ_ANALYSIS_COND_NE;
+		op->cond = RZ_TYPE_COND_NE;
 		break;
 	case RSP_OP_VGE:
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
-		op->cond = RZ_ANALYSIS_COND_GE;
+		op->cond = RZ_TYPE_COND_GE;
 		break;
 	case RSP_OP_VCL:
 		op->type = RZ_ANALYSIS_OP_TYPE_UNK;

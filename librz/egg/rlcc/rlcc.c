@@ -191,7 +191,7 @@ int main(int argc, char **argv) {
 	if (err != NULL) {
 		mpc_err_print(err);
 		mpc_err_delete(err);
-		exit(1);
+		return -1;
 	}
 
 #if 1

@@ -4,7 +4,6 @@
 #include <rz_core.h>
 #include <rz_cons.h>
 #include "core_private.h"
-#include "cmd_descs/cmd_descs.h"
 
 #define NPF  5
 #define PIDX (RZ_ABS(core->printidx % NPF))
@@ -261,8 +260,9 @@ static bool __core_visual_gogo(RzCore *core, int ch) {
 	case 'g':
 		if (core->io->va) {
 			RzIOMap *map = rz_io_map_get(core->io, core->offset);
-			if (!map && !rz_pvector_empty(&core->io->maps)) {
-				map = rz_pvector_at(&core->io->maps, rz_pvector_len(&core->io->maps) - 1);
+			RzPVector *maps = rz_io_maps(core->io);
+			if (!map && !rz_pvector_empty(maps)) {
+				map = rz_pvector_at(maps, rz_pvector_len(maps) - 1);
 			}
 			if (map) {
 				rz_core_seek_and_save(core, rz_itv_begin(map->itv), true);
@@ -271,10 +271,11 @@ static bool __core_visual_gogo(RzCore *core, int ch) {
 			rz_core_seek_and_save(core, 0, true);
 		}
 		return true;
-	case 'G':
+	case 'G': {
 		map = rz_io_map_get(core->io, core->offset);
-		if (!map && !rz_pvector_empty(&core->io->maps)) {
-			map = rz_pvector_at(&core->io->maps, 0);
+		RzPVector *maps = rz_io_maps(core->io);
+		if (!map && !rz_pvector_empty(maps)) {
+			map = rz_pvector_at(maps, 0);
 		}
 		if (map) {
 			RzPrint *p = core->print;
@@ -287,6 +288,7 @@ static bool __core_visual_gogo(RzCore *core, int ch) {
 			rz_core_seek_and_save(core, rz_itv_end(map->itv) - (scr_rows - 2) * scols, true);
 		}
 		return true;
+	}
 	}
 	return false;
 }
@@ -347,7 +349,7 @@ static const char *help_msg_visual[] = {
 	"O", "toggle asm.pseudo and asm.esil",
 	"p/P", "rotate print modes (hex, disasm, debug, words, buf)",
 	"q", "back to rizin shell",
-	"r", "toggle callhints/jmphints/leahints",
+	"r", "toggle call/jmp/lea hints",
 	"R", "randomize color palette (ecr)",
 	"sS", "step / step over",
 	"tT", "tt new tab, t[1-9] switch to nth tab, t= name tab, t- close tab",
@@ -591,7 +593,7 @@ repeat:
 	case 'e':
 		rz_strbuf_appendf(p, "Visual Evals:\n\n");
 		rz_strbuf_appendf(p,
-			" E      toggle asm.leahints\n"
+			" E      toggle asm.hint.lea\n"
 			" &      rotate asm.bits=16,32,64\n");
 		ret = rz_cons_less_str(rz_strbuf_get(p), "?");
 		break;
@@ -1289,26 +1291,26 @@ static void addComment(RzCore *core, ut64 addr) {
 	rz_cons_set_raw(true);
 }
 
-static int follow_ref(RzCore *core, RzList *xrefs, int choice, int xref) {
-	RzAnalysisRef *refi = rz_list_get_n(xrefs, choice);
-	if (refi) {
+static int follow_ref(RzCore *core, RzList *xrefs, int choice, bool xref_to) {
+	RzAnalysisXRef *xrefi = rz_list_get_n(xrefs, choice);
+	if (xrefi) {
 		if (core->print->cur_enabled) {
 			core->print->cur = 0;
 		}
-		ut64 addr = refi->addr;
+		ut64 addr = xref_to ? xrefi->from : xrefi->to;
 		rz_core_seek_and_save(core, addr, true);
 		return 1;
 	}
 	return 0;
 }
 
-RZ_API int rz_core_visual_refs(RzCore *core, bool xref, bool fcnInsteadOfAddr) {
+RZ_API int rz_core_visual_xrefs(RzCore *core, bool xref_to, bool fcnInsteadOfAddr) {
 	ut64 cur_ref_addr = UT64_MAX;
 	int ret = 0;
 	char ch;
 	int count = 0;
 	RzList *xrefs = NULL;
-	RzAnalysisRef *refi;
+	RzAnalysisXRef *xrefi;
 	RzListIter *iter;
 	int skip = 0;
 	int idx = 0;
@@ -1324,21 +1326,21 @@ repeat:
 	if (xrefsMode) {
 		RzAnalysisFunction *fun = rz_analysis_get_fcn_in(core->analysis, addr, RZ_ANALYSIS_FCN_TYPE_NULL);
 		if (fun) {
-			if (xref) { //  function xrefs
-				xrefs = rz_analysis_xrefs_get(core->analysis, addr);
-				//XXX xrefs = rz_analysis_fcn_get_xrefs (core->analysis, fun);
+			if (xref_to) { //  function xrefs
+				xrefs = rz_analysis_xrefs_get_to(core->analysis, addr);
+				//XXX xrefs = rz_analysis_function_get_xrefs_to(core->analysis, fun);
 				// this function is buggy so we must get the xrefs of the addr
 			} else { // functon refs
-				xrefs = rz_analysis_function_get_refs(fun);
+				xrefs = rz_analysis_function_get_xrefs_from(fun);
 			}
 		} else {
 			xrefs = NULL;
 		}
 	} else {
-		if (xref) { // address xrefs
-			xrefs = rz_analysis_xrefs_get(core->analysis, addr);
+		if (xref_to) { // address xrefs
+			xrefs = rz_analysis_xrefs_get_to(core->analysis, addr);
 		} else { // address refs
-			xrefs = rz_analysis_refs_get(core->analysis, addr);
+			xrefs = rz_analysis_xrefs_get_from(core->analysis, addr);
 		}
 	}
 
@@ -1349,13 +1351,13 @@ repeat:
 			? rz_str_newf("0x%016" PFMT64x, addr)
 			: rz_str_newf("0x%08" PFMT64x, addr);
 		rz_cons_printf("[%s%srefs]> %s # (TAB/jk/q/?) ",
-			xrefsMode ? "fcn." : "addr.", xref ? "x" : "", address);
+			xrefsMode ? "fcn." : "addr.", xref_to ? "x" : "", address);
 		free(address);
 	}
 	if (!xrefs || rz_list_empty(xrefs)) {
 		rz_list_free(xrefs);
 		xrefs = NULL;
-		rz_cons_printf("\n\n(no %srefs)\n", xref ? "x" : "");
+		rz_cons_printf("\n\n(no %srefs)\n", xref_to ? "x" : "");
 	} else {
 		int h, w = rz_cons_get_size(&h);
 		bool asm_bytes = rz_config_get_b(core->config, "asm.bytes");
@@ -1369,7 +1371,9 @@ repeat:
 		rows -= 4;
 		idx = 0;
 		ut64 curat = UT64_MAX;
-		rz_list_foreach (xrefs, iter, refi) {
+		rz_list_foreach (xrefs, iter, xrefi) {
+			ut64 xaddr1 = xref_to ? xrefi->from : xrefi->to;
+			ut64 xaddr2 = xref_to ? xrefi->to : xrefi->from;
 			if (idx - skip > maxcount) {
 				rz_cons_printf("...");
 				break;
@@ -1384,16 +1388,16 @@ repeat:
 					snprintf(cstr, sizeof(cstr), "%d", count);
 				}
 				if (idx == skip) {
-					cur_ref_addr = refi->addr;
+					cur_ref_addr = xaddr1;
 				}
-				RzAnalysisFunction *fun = rz_analysis_get_fcn_in(core->analysis, refi->addr, RZ_ANALYSIS_FCN_TYPE_NULL);
+				RzAnalysisFunction *fun = rz_analysis_get_fcn_in(core->analysis, xaddr1, RZ_ANALYSIS_FCN_TYPE_NULL);
 				char *name;
 				if (fun) {
 					name = strdup(fun->name);
 				} else {
-					RzFlagItem *f = rz_flag_get_at(core->flags, refi->addr, true);
+					RzFlagItem *f = rz_flag_get_at(core->flags, xaddr1, true);
 					if (f) {
-						name = rz_str_newf("%s + %" PFMT64d, f->name, refi->addr - f->offset);
+						name = rz_str_newf("%s + %" PFMT64d, f->name, xaddr1 - f->offset);
 					} else {
 						name = strdup("unk");
 					}
@@ -1406,35 +1410,35 @@ repeat:
 					name[0] = 0;
 				}
 
-				const char *cmt = rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, refi->addr);
+				const char *cmt = rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, xaddr1);
 				if (cmt) {
 					cmt = rz_str_trim_head_ro(cmt);
 					rz_cons_printf(" %d [%s] 0x%08" PFMT64x " 0x%08" PFMT64x " %s %sref (%s) ; %s\n",
-						idx, cstr, refi->at, refi->addr,
-						rz_analysis_xrefs_type_tostring(refi->type),
-						xref ? "x" : "", name, cmt);
+						idx, cstr, xaddr2, xaddr1,
+						rz_analysis_xrefs_type_tostring(xrefi->type),
+						xref_to ? "x" : "", name, cmt);
 				}
 				free(name);
 				if (idx == skip) {
 					free(dis);
-					curat = refi->addr;
-					char *res = rz_core_cmd_strf(core, "pd 4 @ 0x%08" PFMT64x "@e:asm.flags.limit=1", refi->at);
+					curat = xaddr1;
+					char *res = rz_core_cmd_strf(core, "pd 4 @ 0x%08" PFMT64x "@e:asm.flags.limit=1", xaddr2);
 					// TODO: show disasm with context. not seek addr
-					// dis = rz_core_cmd_strf (core, "pd $r-4 @ 0x%08"PFMT64x, refi->addr);
+					// dis = rz_core_cmd_strf (core, "pd $r-4 @ 0x%08"PFMT64x, xaddr);
 					dis = NULL;
 					res = rz_str_appendf(res, "; ---------------------------\n");
 					switch (printMode) {
 					case 0:
-						dis = rz_core_cmd_strf(core, "pd $r-4 @ 0x%08" PFMT64x, refi->addr);
+						dis = rz_core_cmd_strf(core, "pd $r-4 @ 0x%08" PFMT64x, xaddr1);
 						break;
 					case 1:
-						dis = rz_core_cmd_strf(core, "pd @ 0x%08" PFMT64x "-32", refi->addr);
+						dis = rz_core_cmd_strf(core, "pd @ 0x%08" PFMT64x "-32", xaddr1);
 						break;
 					case 2:
-						dis = rz_core_cmd_strf(core, "px @ 0x%08" PFMT64x, refi->addr);
+						dis = rz_core_cmd_strf(core, "px @ 0x%08" PFMT64x, xaddr1);
 						break;
 					case 3:
-						dis = rz_core_cmd_strf(core, "pds @ 0x%08" PFMT64x, refi->addr);
+						dis = rz_core_cmd_strf(core, "pds @ 0x%08" PFMT64x, xaddr1);
 						break;
 					}
 					if (dis) {
@@ -1526,11 +1530,11 @@ repeat:
 		rz_core_cmd0(core, "?i highlight;e scr.highlight=`yp`");
 		goto repeat;
 	} else if (ch == 'x' || ch == '<') {
-		xref = true;
+		xref_to = true;
 		xrefsMode = !xrefsMode;
 		goto repeat;
 	} else if (ch == 'X' || ch == '>') {
-		xref = false;
+		xref_to = false;
 		xrefsMode = !xrefsMode;
 		goto repeat;
 	} else if (ch == 'J') {
@@ -1561,9 +1565,9 @@ repeat:
 		}
 		goto repeat;
 	} else if (ch == ' ' || ch == '\n' || ch == '\r' || ch == 'l') {
-		ret = follow_ref(core, xrefs, skip, xref);
+		ret = follow_ref(core, xrefs, skip, xref_to);
 	} else if (IS_DIGIT(ch)) {
-		ret = follow_ref(core, xrefs, ch - 0x30, xref);
+		ret = follow_ref(core, xrefs, ch - 0x30, xref_to);
 	} else if (ch != 'q' && ch != 'Q' && ch != 'h') {
 		goto repeat;
 	}
@@ -2075,7 +2079,6 @@ RZ_API void rz_core_visual_browse(RzCore *core, const char *input) {
 		" q  quit\n"
 		" r  ROP gadgets\n"
 		" s  symbols\n"
-		" t  types\n"
 		" T  themes\n"
 		" v  vars\n"
 		" x  xrefs\n"
@@ -2138,9 +2141,6 @@ RZ_API void rz_core_visual_browse(RzCore *core, const char *input) {
 		case 'C': // "vbC"
 			rz_core_visual_comments(core);
 			break;
-		case 't': // "vbt"
-			rz_core_visual_types(core);
-			break;
 		case 'T': // "vbT"
 			rz_core_cmd0(core, "eco $(eco~...)");
 			break;
@@ -2161,10 +2161,10 @@ RZ_API void rz_core_visual_browse(RzCore *core, const char *input) {
 			rz_core_cmd0(core, "s $(dm~...)");
 			break;
 		case 'x':
-			rz_core_visual_refs(core, true, true);
+			rz_core_visual_xrefs(core, true, true);
 			break;
 		case 'X':
-			rz_core_visual_refs(core, false, true);
+			rz_core_visual_xrefs(core, false, true);
 			break;
 		case 'h': // seek history
 			rz_core_cmdf(core, "sh~...");
@@ -2725,10 +2725,10 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			rz_core_visual_colors(core);
 			break;
 		case 'x':
-			rz_core_visual_refs(core, true, false);
+			rz_core_visual_xrefs(core, true, false);
 			break;
 		case 'X':
-			rz_core_visual_refs(core, false, false);
+			rz_core_visual_xrefs(core, false, false);
 			break;
 		case 'r':
 			// TODO: toggle shortcut hotkeys
@@ -3244,13 +3244,14 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 						if (s) {
 							entry = s->vaddr;
 						} else {
-							RzIOMap *map = rz_pvector_pop(&core->io->maps);
+							RzPVector *maps = rz_io_maps(core->io);
+							RzIOMap *map = rz_pvector_pop(maps);
 							if (map) {
 								entry = map->itv.addr;
 							} else {
 								entry = rz_config_get_i(core->config, "bin.baddr");
 							}
-							rz_pvector_push_front(&core->io->maps, map);
+							rz_pvector_push_front(maps, map);
 						}
 					}
 					if (entry != UT64_MAX) {
@@ -3754,13 +3755,11 @@ static void visual_refresh(RzCore *core) {
 
 	int w = visual_responsive(core);
 
-	if (autoblocksize) {
-		rz_cons_gotoxy(0, 0);
-	} else {
+	if (!autoblocksize) {
 		rz_cons_clear();
 	}
+	rz_cons_goto_origin_reset();
 	rz_cons_flush();
-	rz_cons_print_clear();
 
 	int hex_cols = rz_config_get_i(core->config, "hex.cols");
 	int split_w = 12 + 4 + hex_cols + (hex_cols * 3);
@@ -3858,7 +3857,7 @@ static void visual_refresh(RzCore *core) {
 		rz_cons_reset();
 	}
 	if (core->scr_gadgets) {
-		rz_core_cmd0(core, "pg");
+		rz_core_gadget_print(core);
 		rz_cons_flush();
 	}
 	core->cons->blankline = false;
@@ -4009,7 +4008,6 @@ RZ_API int rz_core_visual(RzCore *core, const char *input) {
 			printfmtSingle[2] = debugstr;
 		}
 #endif
-		rz_cons_show_cursor(false);
 		rz_cons_enable_mouse(rz_config_get_b(core->config, "scr.wheel"));
 		core->cons->event_resize = NULL; // avoid running old event with new data
 		core->cons->event_data = core;
@@ -4038,7 +4036,7 @@ RZ_API int rz_core_visual(RzCore *core, const char *input) {
 		if (!skip) {
 			ch = rz_cons_readchar();
 
-			if (I->vtmode == 2 && !is_mintty(core->cons)) {
+			if (I->vtmode == RZ_VIRT_TERM_MODE_COMPLETE && !is_mintty(core->cons)) {
 				// Prevent runaway scrolling
 				if (IS_PRINTABLE(ch) || ch == '\t' || ch == '\n') {
 					flush_stdin();

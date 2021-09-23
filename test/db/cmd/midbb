@@ -14,7 +14,7 @@ e asm.bb.middle=false
 pD 0x560eb3-$$
 EOF
 EXPECT=<<EOF
-/ fcn.00560e67 (int32_t arg_0h);
+/ fcn.00560e67 (int32_t arg_4h);
 |           0x00560e67      push  esi
 |       ,=< 0x00560e68      jmp   0x560e7d
         |   0x00560e6d      push  ecx
@@ -50,7 +50,7 @@ EXPECT=<<EOF
 |      ||   0x00560eb1      pop   edx
 |      ||   0x00560eb2      pop   eax
 
-/ fcn.00560e67 (int32_t arg_0h);
+/ fcn.00560e67 (int32_t arg_4h);
 |           0x00560e67      push  esi
 |       ,=< 0x00560e68      jmp   0x560e7d
         |   0x00560e6d      push  ecx
@@ -83,13 +83,12 @@ EOF
 RUN
 
 NAME=asm.bb.middle json
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 e analysis.nopskip=false
 e analysis.jmp.mid=true
-e io.cache=true
 wx 0f1f440000b8210000c1ebfdbb2c000000ebf0
 af
 ?e
@@ -147,7 +146,7 @@ EXPECT=<<EOF
     "reloc": false,
     "type_num": 17,
     "type2_num": 0,
-    "xrefs": [
+    "xrefs_to": [
       {
         "addr": 17,
         "type": "CODE"
@@ -188,7 +187,7 @@ EXPECT=<<EOF
     "reloc": false,
     "type_num": 22,
     "type2_num": 0,
-    "xrefs": [
+    "xrefs_to": [
       {
         "addr": 10,
         "type": "CODE"
@@ -212,7 +211,7 @@ EXPECT=<<EOF
     "reloc": false,
     "type_num": 9,
     "type2_num": 0,
-    "refs": [
+    "xrefs_from": [
       {
         "addr": 44,
         "type": "DATA"
@@ -235,7 +234,7 @@ EXPECT=<<EOF
     "type_num": 1,
     "type2_num": 0,
     "jump": 3,
-    "refs": [
+    "xrefs_from": [
       {
         "addr": 3,
         "type": "CODE"
@@ -300,7 +299,7 @@ EXPECT=<<EOF
     "type_num": 1,
     "type2_num": 0,
     "jump": 9,
-    "refs": [
+    "xrefs_from": [
       {
         "addr": 9,
         "type": "CODE"
@@ -324,7 +323,7 @@ EXPECT=<<EOF
     "reloc": false,
     "type_num": 9,
     "type2_num": 0,
-    "refs": [
+    "xrefs_from": [
       {
         "addr": 44,
         "type": "DATA"
@@ -347,7 +346,7 @@ EXPECT=<<EOF
     "type_num": 1,
     "type2_num": 0,
     "jump": 3,
-    "refs": [
+    "xrefs_from": [
       {
         "addr": 3,
         "type": "CODE"
@@ -397,7 +396,7 @@ EXPECT=<<EOF
       "reloc": false,
       "type_num": 17,
       "type2_num": 0,
-      "xrefs": [
+      "xrefs_to": [
         {
           "addr": 17,
           "type": "CODE"
@@ -438,7 +437,7 @@ EXPECT=<<EOF
       "type_num": 1,
       "type2_num": 0,
       "jump": 9,
-      "refs": [
+      "xrefs_from": [
         {
           "addr": 9,
           "type": "CODE"
@@ -461,7 +460,7 @@ EXPECT=<<EOF
       "reloc": false,
       "type_num": 22,
       "type2_num": 0,
-      "xrefs": [
+      "xrefs_to": [
         {
           "addr": 10,
           "type": "CODE"
@@ -485,7 +484,7 @@ EXPECT=<<EOF
       "reloc": false,
       "type_num": 9,
       "type2_num": 0,
-      "refs": [
+      "xrefs_from": [
         {
           "addr": 44,
           "type": "DATA"
@@ -508,7 +507,7 @@ EXPECT=<<EOF
       "type_num": 1,
       "type2_num": 0,
       "jump": 3,
-      "refs": [
+      "xrefs_from": [
         {
           "addr": 3,
           "type": "CODE"
@@ -521,14 +520,13 @@ EOF
 RUN
 
 NAME=asm.bb.middle and pdi
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.bytes=true
 e asm.arch=x86
 e asm.bits=64
 e analysis.nopskip=false
 e analysis.jmp.mid=true
-e io.cache=true
 wx 0f1f440000b8210000c1ebfdbb2c000000ebf0
 af
 e asm.bb.middle=true
@@ -557,13 +555,12 @@ EOF
 RUN
 
 NAME=asm.bb.middle and pif
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 e analysis.nopskip=false
 e analysis.jmp.mid=true
-e io.cache=true
 wx 0f1f440000b8210000c1ebfdbb2c000000ebf0
 af
 e asm.bb.middle=true

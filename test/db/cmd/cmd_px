@@ -333,7 +333,7 @@ EOF
 RUN
 
 NAME=pxe
-FILE=-
+FILE==
 CMDS=<<EOF
 woe 0 0xff 1
 pxe 256

@@ -51,8 +51,6 @@ RZ_API bool rz_name_filter(char *name, int maxlen, bool strict) {
 		}
 		if (!rz_name_validate_char(*name, strict) && *name != '\\') {
 			*name = '_';
-			//		rz_str_ccpy (name, name+1, 0);
-			//name--;
 		}
 	}
 	while (i > 0) {

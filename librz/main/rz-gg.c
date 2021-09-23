@@ -308,7 +308,7 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 		case 'v':
 			free(sequence);
 			rz_egg_free(egg);
-			return rz_main_version_print("rz_gg");
+			return rz_main_version_print("rz-gg");
 		case 'z':
 			show_str = 1;
 			break;
@@ -520,7 +520,7 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 
 	// apply patches
 	if (!egg->bin) {
-		egg->bin = rz_buf_new();
+		egg->bin = rz_buf_new_with_bytes(NULL, 0);
 	}
 	if (!rz_egg_get_bin(egg)) {
 		eprintf("rz_egg_get_bin: invalid egg :(\n");

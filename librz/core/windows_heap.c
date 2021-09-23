@@ -5,6 +5,7 @@
 #include <TlHelp32.h>
 #include <windows_heap.h>
 #include "..\..\debug\p\native\maps\windows_maps.h"
+#include "..\..\bin\pdb\pdb_downloader.h"
 
 /*
 *	Viewer discretion advised: Spaghetti code ahead
@@ -65,6 +66,16 @@ static size_t RtlpLFHKeyOffset = 0;
 		return; \
 	}
 
+#define CHECK_INFO_RETURN_NULL(heapInfo) \
+	if (!heapInfo) { \
+		eprintf("It wasn't possible to get the heap information\n"); \
+		return NULL; \
+	} \
+	if (!heapInfo->count) { \
+		rz_cons_print("No heaps for this process\n"); \
+		return NULL; \
+	}
+
 #define UPDATE_FLAGS(hb, flags) \
 	if (((flags)&0xf1) || ((flags)&0x0200)) { \
 		hb->dwFlags = LF32_FIXED; \
@@ -121,7 +132,7 @@ static char *get_type(WPARAM flags) {
 	return rz_str_newf("%s %s%s", state, heaptype, type);
 }
 
-static bool init_func(void) {
+static bool initialize_windows_ntdll_query_api_functions(void) {
 	HANDLE ntdll = LoadLibrary(TEXT("ntdll.dll"));
 	if (!ntdll) {
 		return false;
@@ -251,79 +262,112 @@ static void free_extra_info(PDEBUG_HEAP_INFORMATION heap) {
 	}
 }
 
+static inline bool has_heap_globals(void) {
+	return RtlpHpHeapGlobalsOffset && RtlpLFHKeyOffset;
+}
+
 static bool GetHeapGlobalsOffset(RzDebug *dbg, HANDLE h_proc) {
+	if (has_heap_globals()) {
+		return true;
+	}
+	RzCore *core = dbg->corebind.core;
 	RzList *modules = rz_w32_dbg_modules(dbg);
 	RzListIter *it;
 	RzDebugMap *map;
 	bool found = false;
-	const char ntdll[] = "ntdll.dll";
-	static ut64 lastNdtllAddr = 0;
 	rz_list_foreach (modules, it, map) {
-		if (!strncmp(map->name, ntdll, sizeof(ntdll))) {
+		if (!strcmp(map->name, "ntdll.dll")) {
 			found = true;
 			break;
 		}
 	}
 	if (!found) {
-		eprintf("ntdll.dll not loaded.");
+		eprintf("ntdll.dll not loaded.\n");
 		rz_list_free(modules);
 		return false;
 	}
-	bool doopen = lastNdtllAddr != map->addr;
-	char *ntdllopen = dbg->corebind.cmdstrf(dbg->corebind.core, "ob~%s", ntdll);
-	if (*ntdllopen) {
-		char *saddr = strtok(ntdllopen, " ");
-		size_t i;
-		for (i = 0; i < 3; i++) {
-			saddr = strtok(NULL, " ");
-		}
-		if (doopen) {
-			// Close to reopen at the right address
-			int fd = atoi(ntdllopen);
-			dbg->corebind.cmdstrf(dbg->corebind.core, "o-%d", fd);
-			RtlpHpHeapGlobalsOffset = RtlpLFHKeyOffset = 0;
-		}
+
+	ut64 baseaddr = map->addr;
+
+	// Open ntdll.dll file
+	int fd;
+	if ((fd = rz_io_fd_open(core->io, map->file, RZ_PERM_R, 0)) == -1) {
+		rz_list_free(modules);
+		return false;
 	}
 
-	if (doopen) {
-		char *ntdllpath = rz_lib_path("ntdll");
-		eprintf("Opening %s\n", ntdllpath);
-		dbg->corebind.cmdf(dbg->corebind.core, "o %s 0x%" PFMT64x "", ntdllpath, map->addr);
-		lastNdtllAddr = map->addr;
-		free(ntdllpath);
-	}
 	rz_list_free(modules);
 
-	if (!RtlpHpHeapGlobalsOffset || !RtlpLFHKeyOffset) {
-		char *res = dbg->corebind.cmdstrf(dbg->corebind.core, "idpi~RtlpHpHeapGlobals");
-		if (!*res) {
-			// Try downloading the pdb
-			free(res);
-			dbg->corebind.cmd(dbg->corebind.core, "idpd");
-			res = dbg->corebind.cmdstrf(dbg->corebind.core, "idpi~RtlpHpHeapGlobals");
+	// Load ntdll.dll in RzBin to get its GUID
+	RzBinOptions opt = { 0 };
+	opt.fd = fd;
+	opt.sz = rz_io_fd_size(core->io, fd);
+	opt.obj_opts.baseaddr = baseaddr;
+	RzBinFile *obf = rz_bin_cur(core->bin);
+	RzBinFile *bf = rz_bin_open_io(core->bin, &opt);
+	if (!bf) {
+		rz_io_fd_close(core->io, fd);
+		return false;
+	}
+	RzBinInfo *info = rz_bin_get_info(core->bin);
+	if (!info) {
+		goto fail;
+	}
+	char *pdb_path = rz_str_newf("%s\\ntdll.pdb\\%s\\ntdll.pdb",
+		rz_config_get(core->config, "pdb.symstore"), info->guid);
+	if (!pdb_path) {
+		goto fail;
+	}
+	if (!rz_file_exists(pdb_path)) {
+		// Download ntdll.pdb
+		SPDBOptions opts;
+		opts.user_agent = rz_config_get(core->config, "pdb.useragent");
+		opts.extract = rz_config_get_i(core->config, "pdb.extract");
+		opts.symbol_store_path = rz_config_get(core->config, "pdb.symstore");
+		opts.symbol_server = rz_config_get(core->config, "pdb.server");
+		if (rz_bin_pdb_download(core, NULL, false, &opts)) {
+			eprintf("Failed to download ntdll.pdb file\n");
+			free(pdb_path);
+			goto fail;
 		}
-		if (*res) {
-			RtlpHpHeapGlobalsOffset = rz_num_math(NULL, res);
-		} else {
-			free(res);
-			return false;
-		}
-		free(res);
-		res = dbg->corebind.cmdstrf(dbg->corebind.core, "idpi~RtlpLFHKey");
-		if (*res) {
-			RtlpLFHKeyOffset = rz_num_math(NULL, res);
-		}
-		free(res);
 	}
 
-	if (doopen) {
-		// Close ntdll.dll
-		char *res = dbg->corebind.cmdstrf(dbg->corebind.core, "o~%s", ntdll);
-		int fd = atoi(res);
-		free(res);
-		dbg->corebind.cmdf(dbg->corebind.core, "o-%d", fd);
+	// Get ntdll.dll PDB info and parse json output
+	PJ *pj = pj_new();
+	if (!rz_core_pdb_info(core, pdb_path, pj, RZ_MODE_JSON)) {
+		pj_free(pj);
+		free(pdb_path);
+		goto fail;
 	}
-	return true;
+	free(pdb_path);
+	char *j = pj_drain(pj);
+	RzJson *json = rz_json_parse(j);
+	if (!json) {
+		RZ_LOG_ERROR("rz_core_pdb_info returned invalid JSON");
+		free(j);
+		goto fail;
+	}
+
+	// Go through gvars array and search for the heap globals symbols
+	const RzJson *gvars = rz_json_get(json, "gvars");
+	gvars = gvars->children.first;
+	do {
+		const RzJson *gdata_name = rz_json_get(gvars, "gdata_name");
+		if (!strcmp(gdata_name->str_value, "RtlpHpHeapGlobals")) {
+			const RzJson *address = rz_json_get(gvars, "address");
+			RtlpHpHeapGlobalsOffset = address->num.u_value;
+		} else if (!strcmp(gdata_name->str_value, "RtlpLFHKey")) {
+			const RzJson *address = rz_json_get(gvars, "address");
+			RtlpLFHKeyOffset = address->num.u_value;
+		}
+	} while ((gvars = gvars->next) && !has_heap_globals());
+
+	free(json);
+fail:
+	rz_bin_file_delete(core->bin, bf);
+	rz_bin_file_set_cur_binfile(core->bin, obf);
+	rz_io_fd_close(core->io, fd);
+	return has_heap_globals();
 }
 
 static bool GetLFHKey(RzDebug *dbg, HANDLE h_proc, bool segment, WPARAM *lfhKey) {
@@ -390,8 +434,8 @@ static DWORD WINAPI __th_QueryDebugBuffer(void *param) {
 	params->fin = true;
 	if (params->hanged) {
 		RtlDestroyQueryDebugBuffer(params->db);
+		free(params);
 	}
-	free(params);
 	return 0;
 }
 
@@ -714,11 +758,9 @@ static bool GetSegmentHeapBlocks(RzDebug *dbg, HANDLE h_proc, PVOID heapBase, PH
 }
 
 static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RzDebug *dbg) {
-	/*
-		TODO:
-			Break this behemoth
-			x86 vs x64 vs WOW64	(use dbg->bits or new structs or just a big union with both versions)
-	*/
+	// TODO:
+	// - Break this behemoth
+	// - x86 vs x64 vs WOW64 (use dbg->bits or new structs or just a big union with both versions)
 #if defined(_M_X64)
 	if (dbg->bits == RZ_SYS_BITS_32) {
 		return NULL; // Nope nope nope
@@ -945,10 +987,8 @@ err:
 }
 
 static PHeapBlock GetSingleSegmentBlock(RzDebug *dbg, HANDLE h_proc, PSEGMENT_HEAP heapBase, WPARAM offset) {
-	/*
-	*	TODO:
-	*		- Backend (Is this needed?)
-	*/
+	// TODO:
+	// - Backend (Is this needed?)
 	PHeapBlock hb = RZ_NEW0(HeapBlock);
 	if (!hb) {
 		RZ_LOG_ERROR("GetSingleSegmentBlock: Allocation failed.\n");
@@ -1174,7 +1214,8 @@ static RzTable *__new_heapblock_tbl(void) {
 	return tbl;
 }
 
-static void w32_list_heaps(RzCore *core, const char format) {
+RZ_IPI void rz_heap_list_w32(RzCore *core, RzOutputMode mode) {
+	initialize_windows_ntdll_query_api_functions();
 	ULONG pid = core->dbg->pid;
 	PDEBUG_BUFFER db = InitHeapInfo(core->dbg, PDI_HEAPS | PDI_HEAP_BLOCKS);
 	if (!db) {
@@ -1198,25 +1239,22 @@ static void w32_list_heaps(RzCore *core, const char format) {
 	pj_a(pj);
 	for (i = 0; i < heapInfo->count; i++) {
 		DEBUG_HEAP_INFORMATION heap = heapInfo->heaps[i];
-		switch (format) {
-		case 'j':
+		if (mode == RZ_OUTPUT_MODE_JSON) {
 			pj_o(pj);
 			pj_kN(pj, "address", (ut64)heap.Base);
 			pj_kN(pj, "count", (ut64)heap.BlockCount);
 			pj_kN(pj, "allocated", (ut64)heap.Allocated);
 			pj_kN(pj, "committed", (ut64)heap.Committed);
 			pj_end(pj);
-			break;
-		default:
+		} else {
 			rz_table_add_rowf(tbl, "xnnn", (ut64)heap.Base, (ut64)heap.BlockCount, (ut64)heap.Allocated, (ut64)heap.Committed);
-			break;
 		}
 		if (!(db->InfoClassMask & PDI_HEAP_BLOCKS)) {
 			free_extra_info(&heap);
 			RZ_FREE(heap.Blocks);
 		}
 	}
-	if (format == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
 		rz_cons_println(pj_string(pj));
 	} else {
@@ -1227,7 +1265,7 @@ static void w32_list_heaps(RzCore *core, const char format) {
 	RtlDestroyQueryDebugBuffer(db);
 }
 
-static void w32_list_heaps_blocks(RzCore *core, const char format) {
+static void w32_list_heaps_blocks(RzCore *core, RzOutputMode mode, bool flag) {
 	DWORD pid = core->dbg->pid;
 	PDEBUG_BUFFER db;
 	if (__is_windows_ten()) {
@@ -1248,19 +1286,17 @@ static void w32_list_heaps_blocks(RzCore *core, const char format) {
 	pj_a(pj);
 	for (i = 0; i < heapInfo->count; i++) {
 		bool go = true;
-		switch (format) {
-		case 'f':
+		if (flag) {
 			if (heapInfo->heaps[i].BlockCount > 50000) {
 				go = rz_cons_yesno('n', "Are you sure you want to add %lu flags? (y/N)", heapInfo->heaps[i].BlockCount);
 			}
-			break;
-		case 'j':
+		} else if (mode == RZ_OUTPUT_MODE_JSON) {
 			pj_o(pj);
 			pj_kN(pj, "heap", (WPARAM)heapInfo->heaps[i].Base);
 			pj_k(pj, "blocks");
 			pj_a(pj);
-			break;
 		}
+
 		char *type;
 		if (GetFirstHeapBlock(&heapInfo->heaps[i], block) & go) {
 			do {
@@ -1271,14 +1307,13 @@ static void w32_list_heaps_blocks(RzCore *core, const char format) {
 				ut64 granularity = block->extraInfo ? block->extraInfo->granularity : heapInfo->heaps[i].Granularity;
 				ut64 address = (ut64)block->dwAddress - granularity;
 				ut64 unusedBytes = block->extraInfo ? block->extraInfo->unusedBytes : 0;
-				switch (format) {
-				case 'f': {
+				if (flag) {
 					char *name = rz_str_newf("alloc.%" PFMT64x "", address);
-					rz_flag_set(core->flags, name, address, block->dwSize);
+					if (!rz_flag_set(core->flags, name, address, block->dwSize)) {
+						eprintf("Flag couldn't be set for block at 0x%" PFMT64x, address);
+					}
 					free(name);
-					break;
-				}
-				case 'j':
+				} else if (mode == RZ_OUTPUT_MODE_JSON) {
 					pj_o(pj);
 					pj_kN(pj, "header_address", address);
 					pj_kN(pj, "user_address", (ut64)block->dwAddress);
@@ -1286,14 +1321,12 @@ static void w32_list_heaps_blocks(RzCore *core, const char format) {
 					pj_kN(pj, "size", block->dwSize);
 					pj_ks(pj, "type", type);
 					pj_end(pj);
-					break;
-				default:
+				} else {
 					rz_table_add_rowf(tbl, "xxnnns", address, (ut64)block->dwAddress, block->dwSize, granularity, unusedBytes, type);
-					break;
 				}
 			} while (GetNextHeapBlock(&heapInfo->heaps[i], block));
 		}
-		if (format == 'j') {
+		if (mode == RZ_OUTPUT_MODE_JSON) {
 			pj_end(pj);
 			pj_end(pj);
 		}
@@ -1303,10 +1336,10 @@ static void w32_list_heaps_blocks(RzCore *core, const char format) {
 			RZ_FREE(heapInfo->heaps[i].Blocks);
 		}
 	}
-	if (format == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
 		rz_cons_println(pj_string(pj));
-	} else if (format != 'f') {
+	} else if (!flag) {
 		rz_cons_println(rz_table_tostring(tbl));
 	}
 	rz_table_free(tbl);
@@ -1314,83 +1347,145 @@ static void w32_list_heaps_blocks(RzCore *core, const char format) {
 	RtlDestroyQueryDebugBuffer(db);
 }
 
-static const char *help_msg[] = {
-	"Usage:", " dmh[?|b][f|j]", " # Memory map heap",
-	"dmh[j]", "", "List process heaps",
-	"dmhb[?] [addr]", "", "List process heap blocks",
-	NULL
-};
-
-static const char *help_msg_block[] = {
-	"Usage:", " dmhb[f|j]", " # Memory map heap",
-	"dmhb [addr]", "", "List allocated heap blocks",
-	"dmhbf", "", "Create flags for each allocated block",
-	"dmhbj [addr]", "", "Print output in JSON format",
-	NULL
-};
-
-static void cmd_debug_map_heap_block_win(RzCore *core, const char *input) {
-	char *space = strchr(input, ' ');
+RZ_IPI void rz_heap_debug_block_win(RzCore *core, const char *addr, RzOutputMode mode, bool flag) {
+	initialize_windows_ntdll_query_api_functions();
 	ut64 off = 0;
-	if (space) {
-		off = rz_num_math(core->num, space + 1);
-		PHeapBlock hb = GetSingleBlock(core->dbg, off);
-		if (hb) {
-			ut64 granularity = hb->extraInfo->granularity;
-			char *type = get_type(hb->dwFlags);
-			if (!type) {
-				type = "";
-			}
-			PJ *pj = pj_new();
-			RzTable *tbl = __new_heapblock_tbl();
-			ut64 headerAddr = off - granularity;
-			switch (input[0]) {
-			case ' ':
-				rz_table_add_rowf(tbl, "xxnnns", headerAddr, off, (ut64)hb->dwSize, granularity, (ut64)hb->extraInfo->unusedBytes, type);
-				rz_cons_println(rz_table_tostring(tbl));
-				break;
-			case 'j':
-				pj_o(pj);
-				pj_kN(pj, "header_address", headerAddr);
-				pj_kN(pj, "user_address", off);
-				pj_ks(pj, "type", type);
-				pj_kN(pj, "size", hb->dwSize);
-				if (hb->extraInfo->unusedBytes) {
-					pj_kN(pj, "unused", hb->extraInfo->unusedBytes);
-				}
-				pj_end(pj);
-				rz_cons_println(pj_string(pj));
-			}
-			free(hb->extraInfo);
-			free(hb);
-			rz_table_free(tbl);
-			pj_free(pj);
-		}
+	if (!addr) {
+		w32_list_heaps_blocks(core, mode, flag);
 		return;
 	}
-	switch (input[0]) {
-	case '\0':
-	case 'f':
-	case 'j':
-		w32_list_heaps_blocks(core, input[0]);
-		break;
-	default:
-		rz_core_cmd_help(core, help_msg_block);
+
+	off = rz_num_math(core->num, addr);
+	PHeapBlock hb = GetSingleBlock(core->dbg, off);
+	if (!hb) {
+		return;
 	}
+	ut64 granularity = hb->extraInfo->granularity;
+	char *type = get_type(hb->dwFlags);
+	if (!type) {
+		type = "";
+	}
+	PJ *pj = pj_new();
+	RzTable *tbl = __new_heapblock_tbl();
+	ut64 headerAddr = off - granularity;
+	if (mode == RZ_OUTPUT_MODE_STANDARD) {
+		rz_table_add_rowf(tbl, "xxnnns", headerAddr, off, (ut64)hb->dwSize, granularity, (ut64)hb->extraInfo->unusedBytes, type);
+		rz_cons_println(rz_table_tostring(tbl));
+	} else if (mode == RZ_OUTPUT_MODE_JSON) {
+		pj_o(pj);
+		pj_kN(pj, "header_address", headerAddr);
+		pj_kN(pj, "user_address", off);
+		pj_ks(pj, "type", type);
+		pj_kN(pj, "size", hb->dwSize);
+		if (hb->extraInfo->unusedBytes) {
+			pj_kN(pj, "unused", hb->extraInfo->unusedBytes);
+		}
+		pj_end(pj);
+		rz_cons_println(pj_string(pj));
+	}
+	free(hb->extraInfo);
+	free(hb);
+	rz_table_free(tbl);
+	pj_free(pj);
 }
 
-static int cmd_debug_map_heap_win(RzCore *core, const char *input) {
-	init_func();
-	switch (input[0]) {
-	case '?': // dmh?
-		rz_core_cmd_help(core, help_msg);
-		break;
-	case 'b': // dmhb
-		cmd_debug_map_heap_block_win(core, input + 1);
-		break;
-	default:
-		w32_list_heaps(core, input[0]);
-		break;
+RZ_IPI RzList *rz_heap_blocks_list(RzCore *core) {
+	initialize_windows_ntdll_query_api_functions();
+	DWORD pid = core->dbg->pid;
+	PDEBUG_BUFFER db;
+	RzList *blocks_list = rz_list_newf(free);
+	if (__is_windows_ten()) {
+		db = GetHeapBlocks(pid, core->dbg);
+	} else {
+		db = InitHeapInfo(core->dbg, PDI_HEAPS | PDI_HEAP_BLOCKS);
 	}
-	return true;
+	if (!db) {
+		eprintf("Couldn't get heap info.\n");
+		return blocks_list;
+	}
+
+	PHeapInformation heapInfo = db->HeapInformation;
+	CHECK_INFO_RETURN_NULL(heapInfo);
+	HeapBlock *block = malloc(sizeof(HeapBlock));
+	for (int i = 0; i < heapInfo->count; i++) {
+		bool go = true;
+		char *type;
+		if (GetFirstHeapBlock(&heapInfo->heaps[i], block) & go) {
+			do {
+				type = get_type(block->dwFlags);
+				if (!type) {
+					type = "";
+				}
+				ut64 granularity = block->extraInfo ? block->extraInfo->granularity : heapInfo->heaps[i].Granularity;
+				ut64 address = (ut64)block->dwAddress - granularity;
+				ut64 unusedBytes = block->extraInfo ? block->extraInfo->unusedBytes : 0;
+
+				// add blocks to list
+				RzWindowsHeapBlock *heap_block = RZ_NEW0(RzWindowsHeapBlock);
+				if (!heap_block) {
+					rz_list_free(blocks_list);
+					RtlDestroyQueryDebugBuffer(db);
+					return NULL;
+				}
+				heap_block->headerAddress = address;
+				heap_block->userAddress = (ut64)block->dwAddress;
+				heap_block->size = block->dwSize;
+				strcpy(heap_block->type, type);
+				heap_block->unusedBytes = unusedBytes;
+				heap_block->granularity = granularity;
+
+				rz_list_append(blocks_list, heap_block);
+			} while (GetNextHeapBlock(&heapInfo->heaps[i], block));
+		}
+		if (!(db->InfoClassMask & PDI_HEAP_BLOCKS)) {
+			// RtlDestroyQueryDebugBuffer wont free this for some reason
+			free_extra_info(&heapInfo->heaps[i]);
+			RZ_FREE(heapInfo->heaps[i].Blocks);
+		}
+	}
+	RtlDestroyQueryDebugBuffer(db);
+	return blocks_list;
+}
+
+RZ_IPI RzList *rz_heap_list(RzCore *core) {
+	initialize_windows_ntdll_query_api_functions();
+	ULONG pid = core->dbg->pid;
+	PDEBUG_BUFFER db = InitHeapInfo(core->dbg, PDI_HEAPS | PDI_HEAP_BLOCKS);
+	if (!db) {
+		if (__is_windows_ten()) {
+			db = GetHeapBlocks(pid, core->dbg);
+		}
+		if (!db) {
+			eprintf("Couldn't get heap info.\n");
+			return NULL;
+		}
+	}
+
+	RzList *heaps_list = rz_list_newf(free);
+	PHeapInformation heapInfo = db->HeapInformation;
+	CHECK_INFO_RETURN_NULL(heapInfo);
+	for (int i = 0; i < heapInfo->count; i++) {
+		DEBUG_HEAP_INFORMATION heap = heapInfo->heaps[i];
+		// add heaps to list
+		RzWindowsHeapInfo *rzHeapInfo = RZ_NEW0(RzWindowsHeapInfo);
+		if (!rzHeapInfo) {
+			rz_list_free(heaps_list);
+			RtlDestroyQueryDebugBuffer(db);
+			return NULL;
+		}
+		rzHeapInfo->base = (ut64)heap.Base;
+		rzHeapInfo->blockCount = (ut64)heap.BlockCount;
+		rzHeapInfo->allocated = (ut64)heap.Allocated;
+		rzHeapInfo->committed = (ut64)heap.Committed;
+
+		rz_list_append(heaps_list, rzHeapInfo);
+
+		if (!(db->InfoClassMask & PDI_HEAP_BLOCKS)) {
+			free_extra_info(&heap);
+			RZ_FREE(heap.Blocks);
+		}
+	}
+
+	RtlDestroyQueryDebugBuffer(db);
+	return heaps_list;
 }

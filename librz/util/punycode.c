@@ -65,37 +65,34 @@ ut8 *utf32toutf8(ut32 *input) {
 	return result;
 }
 
-ut32 *utf8toutf32(const ut8 *input) {
+ut32 *utf8toutf32(const ut8 *input, int len) {
 	if (!input) {
 		eprintf("ERROR input is null\n");
 		return NULL;
 	}
 
-	int i = 0;
-	int j = 0;
 	int val = 0;
-	int len = strlen((const char *)input);
-	ut32 *result = calloc(strlen((const char *)input) + 1, 4);
+	ut32 *result = calloc(len + 1, 4);
 
 	if (!result) {
 		eprintf("ERROR: out of memory\n");
 		return NULL;
 	}
 
-	while (i < len) {
+	for (int i = 0, j = 0; i < len; j++) {
 		if (input[i] >> 7 == 0) {
 			val = input[i];
 			i += 1;
-		} else if (input[i] >> 5 == 0x6) {
+		} else if (input[i] >> 5 == 0x6 && (len - i) > 1) {
 			val = (((input[i] & 0x1f) << 6) & 0xfc0) |
 				(input[i + 1] & 0x3f);
 			i += 2;
-		} else if (input[i] >> 4 == 0xe) {
+		} else if (input[i] >> 4 == 0xe && (len - i) > 2) {
 			val = (((input[i] & 0xf) << 12) & 0xf000) |
 				(((input[i + 1] & 0x3f) << 6) & 0xffc0) |
 				(input[i + 2] & 0x3f);
 			i += 3;
-		} else if (input[i] >> 3 == 0x1e) {
+		} else if (input[i] >> 3 == 0x1e && (len - i) > 3) {
 			val = (((input[i] & 0xf) << 18) & 0x1c0000) |
 				(((input[i + 1] & 0x3f) << 12) & 0x1ff000) |
 				(((input[i + 2] & 0x3f) << 6) & 0x1fffc0) |
@@ -107,7 +104,6 @@ ut32 *utf8toutf32(const ut8 *input) {
 			return NULL;
 		}
 		result[j] = val;
-		j++;
 	}
 
 	return result;
@@ -192,7 +188,7 @@ RZ_API char *rz_punycode_encode(const ut8 *src, int srclen, int *dstlen) {
 		return NULL;
 	}
 
-	actualsrc = utf8toutf32(src);
+	actualsrc = utf8toutf32(src, srclen);
 	if (!actualsrc) {
 		return NULL;
 	}

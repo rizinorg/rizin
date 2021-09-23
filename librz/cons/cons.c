@@ -140,7 +140,7 @@ static void __break_signal(int sig) {
 
 static inline void __cons_write_ll(const char *buf, int len) {
 #if __WINDOWS__
-	if (I.vtmode) {
+	if (I.vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
 		rz_xwrite(I.fdout, buf, len);
 	} else {
 		if (I.fdout == 1) {
@@ -493,7 +493,7 @@ RZ_API bool rz_cons_enable_mouse(const bool enable) {
 		return I.mouse;
 	}
 #if __WINDOWS__
-	if (I.vtmode == 2) {
+	if (I.vtmode == RZ_VIRT_TERM_MODE_COMPLETE) {
 #endif
 		const char *click = enable
 			? "\x1b[?1000;1006;1015h"
@@ -527,6 +527,30 @@ RZ_API bool rz_cons_enable_mouse(const bool enable) {
 	return false;
 #endif
 }
+
+#if __WINDOWS__
+static void set_console_codepage_to_utf8(void) {
+	if (IsValidCodePage(CP_UTF8)) {
+		if (!SetConsoleOutputCP(CP_UTF8)) {
+			rz_sys_perror("SetConsoleCP");
+		}
+		if (!SetConsoleCP(CP_UTF8)) {
+			rz_sys_perror("SetConsoleCP");
+		}
+	} else {
+		RZ_LOG_INFO("UTF-8 Codepage not installed.\n");
+	}
+}
+
+static void restore_console_codepage(void) {
+	if (!SetConsoleCP(I.old_cp)) {
+		rz_sys_perror("SetConsoleCP");
+	}
+	if (!SetConsoleOutputCP(I.old_ocp)) {
+		rz_sys_perror("SetConsoleOutputCP");
+	}
+}
+#endif
 
 // Stub function that cb_main_output gets pointed to in util/log.c by rz_cons_new
 // This allows Cutter to set per-task logging redirection
@@ -563,10 +587,12 @@ RZ_API RzCons *rz_cons_new(void) {
 	I.num = NULL;
 	I.null = 0;
 #if __WINDOWS__
-	I.old_cp = GetConsoleOutputCP();
-	I.vtmode = rz_cons_is_vtcompat();
+	I.old_cp = GetConsoleCP();
+	I.old_ocp = GetConsoleOutputCP();
+	I.vtmode = rz_cons_detect_vt_mode();
+	set_console_codepage_to_utf8();
 #else
-	I.vtmode = 2;
+	I.vtmode = RZ_VIRT_TERM_MODE_COMPLETE;
 #endif
 #if EMSCRIPTEN
 	/* do nothing here :? */
@@ -582,7 +608,8 @@ RZ_API RzCons *rz_cons_new(void) {
 #elif __WINDOWS__
 	h = GetStdHandle(STD_INPUT_HANDLE);
 	GetConsoleMode(h, &I.term_buf);
-	I.term_raw = 0;
+	I.term_buf |= ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT;
+	I.term_raw = ~(ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT);
 	if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)__w32_control, TRUE)) {
 		eprintf("rz_cons: Cannot set control console handler\n");
 	}
@@ -601,11 +628,7 @@ RZ_API RzCons *rz_cons_new(void) {
 RZ_API RzCons *rz_cons_free(void) {
 #if __WINDOWS__
 	rz_cons_enable_mouse(false);
-	if (I.old_cp) {
-		(void)SetConsoleOutputCP(I.old_cp);
-		// chcp doesn't pick up the code page switch for some reason
-		(void)rz_sys_cmdf("chcp %u > NUL", I.old_cp);
-	}
+	restore_console_codepage();
 #endif
 	I.refcnt--;
 	if (I.refcnt != 0) {
@@ -672,8 +695,9 @@ RZ_API void rz_cons_gotoxy(int x, int y) {
 #endif
 }
 
-RZ_API void rz_cons_print_clear(void) {
-	rz_cons_strcat("\x1b[0;0H\x1b[0m");
+RZ_API void rz_cons_goto_origin_reset(void) {
+	rz_cons_gotoxy(0, 0);
+	rz_cons_strcat(Color_RESET);
 }
 
 RZ_API void rz_cons_fill_line(void) {
@@ -697,7 +721,7 @@ RZ_API void rz_cons_fill_line(void) {
 
 RZ_API void rz_cons_clear_line(int std_err) {
 #if __WINDOWS__
-	if (I.vtmode) {
+	if (I.vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
 		fprintf(std_err ? stderr : stdout, "%s", RZ_CONS_CLEAR_LINE);
 	} else {
 		char white[1024];
@@ -754,9 +778,20 @@ RZ_API void rz_cons_reset(void) {
 	CTX(pageable) = true;
 }
 
+/**
+ * \brief Return the current RzCons buffer
+ */
 RZ_API const char *rz_cons_get_buffer(void) {
 	//check len otherwise it will return trash
 	return I.context->buffer_len ? I.context->buffer : NULL;
+}
+
+/**
+ * \brief Return a newly allocated buffer containing what's currently in RzCons buffer
+ */
+RZ_API char *rz_cons_get_buffer_dup(void) {
+	const char *s = rz_cons_get_buffer();
+	return s ? strdup(s) : NULL;
 }
 
 RZ_API int rz_cons_get_buffer_len(void) {
@@ -1001,7 +1036,7 @@ RZ_API void rz_cons_visual_flush(void) {
 	if (!I.null) {
 /* TODO: this ifdef must go in the function body */
 #if __WINDOWS__
-		if (I.vtmode) {
+		if (I.vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
 			rz_cons_visual_write(I.context->buffer);
 		} else {
 			rz_cons_w32_print(I.context->buffer, I.context->buffer_len, true);
@@ -1036,7 +1071,7 @@ RZ_API void rz_cons_print_fps(int col) {
 		col = 12;
 	}
 #ifdef __WINDOWS__
-	if (I.vtmode) {
+	if (I.vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
 		eprintf("\x1b[0;%dH[%d FPS] \n", w - col, fps);
 	} else {
 		rz_cons_w32_gotoxy(2, w - col, 0);
@@ -1144,17 +1179,16 @@ RZ_API void rz_cons_printf_list(const char *format, va_list ap) {
 	if (strchr(format, '%')) {
 		if (palloc(MOAR + strlen(format) * 20)) {
 		club:
-			size = I.context->buffer_sz - I.context->buffer_len - 1; /* remaining space in I.context->buffer */
+			size = I.context->buffer_sz - I.context->buffer_len; /* remaining space in I.context->buffer */
 			written = vsnprintf(I.context->buffer + I.context->buffer_len, size, format, ap3);
 			if (written >= size) { /* not all bytes were written */
-				if (palloc(written)) {
+				if (palloc(written + 1)) { /* + 1 byte for \0 termination */
 					va_end(ap3);
 					va_copy(ap3, ap2);
 					goto club;
 				}
 			}
 			I.context->buffer_len += written;
-			I.context->buffer[I.context->buffer_len] = 0;
 		}
 	} else {
 		rz_cons_strcat(format);
@@ -1476,19 +1510,19 @@ RZ_API int rz_cons_get_size(int *rows) {
 }
 
 #if __WINDOWS__
-RZ_API int rz_cons_is_vtcompat(void) {
+RZ_API RzVirtTermMode rz_cons_detect_vt_mode(void) {
 	DWORD major;
 	DWORD minor;
 	DWORD release = 0;
 	char *wt_session = rz_sys_getenv("WT_SESSION");
 	if (wt_session) {
 		free(wt_session);
-		return 2;
+		return RZ_VIRT_TERM_MODE_COMPLETE;
 	}
 	char *alacritty = rz_sys_getenv("ALACRITTY_LOG");
 	if (alacritty) {
 		free(alacritty);
-		return 1;
+		return RZ_VIRT_TERM_MODE_OUTPUT_ONLY;
 	}
 	char *term = rz_sys_getenv("TERM");
 	if (term) {
@@ -1503,9 +1537,9 @@ RZ_API int rz_cons_is_vtcompat(void) {
 	char *ansicon = rz_sys_getenv("ANSICON");
 	if (ansicon) {
 		free(ansicon);
-		return 1;
+		return RZ_VIRT_TERM_MODE_OUTPUT_ONLY;
 	}
-	bool win_support = 0;
+	RzVirtTermMode win_support = RZ_VIRT_TERM_MODE_DISABLE;
 	RSysInfo *info = rz_sys_info();
 	if (info && info->version) {
 		char *dot = strtok(info->version, ".");
@@ -1516,7 +1550,7 @@ RZ_API int rz_cons_is_vtcompat(void) {
 			release = atoi(info->release);
 		}
 		if (major > 10 || (major == 10 && minor > 0) || (major == 10 && minor == 0 && release >= 1703)) {
-			win_support = 1;
+			win_support = RZ_VIRT_TERM_MODE_OUTPUT_ONLY;
 		}
 	}
 	rz_sys_info_free(info);
@@ -1526,7 +1560,7 @@ RZ_API int rz_cons_is_vtcompat(void) {
 
 RZ_API void rz_cons_show_cursor(int cursor) {
 #if __WINDOWS__
-	if (I.vtmode) {
+	if (I.vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
 #endif
 		rz_xwrite(1, cursor ? "\x1b[?25h" : "\x1b[?25l", 6);
 #if __WINDOWS__
@@ -1578,17 +1612,19 @@ RZ_API void rz_cons_set_raw(bool is_raw) {
 		tcsetattr(0, TCSANOW, &I.term_buf);
 	}
 #elif __WINDOWS__
+	DWORD mode;
+	GetConsoleMode(h, &mode);
 	if (is_raw) {
 		if (I.term_xterm) {
 			rz_sys_xsystem("stty raw -echo");
 		} else {
-			SetConsoleMode(h, I.term_raw);
+			SetConsoleMode(h, mode & I.term_raw);
 		}
 	} else {
 		if (I.term_xterm) {
 			rz_sys_xsystem("stty -raw echo");
 		} else {
-			SetConsoleMode(h, I.term_buf);
+			SetConsoleMode(h, mode | I.term_buf);
 		}
 	}
 #else
@@ -1600,30 +1636,6 @@ RZ_API void rz_cons_set_raw(bool is_raw) {
 
 RZ_API void rz_cons_set_utf8(bool b) {
 	I.use_utf8 = b;
-#if __WINDOWS__
-	if (b) {
-		if (IsValidCodePage(CP_UTF8)) {
-			if (!SetConsoleOutputCP(CP_UTF8)) {
-				rz_sys_perror("rz_cons_set_utf8");
-			}
-#if UNICODE
-			UINT inCP = CP_UTF8;
-#else
-			UINT inCP = GetACP();
-#endif
-			if (!SetConsoleCP(inCP)) {
-				rz_sys_perror("rz_cons_set_utf8");
-			}
-		} else {
-			RZ_LOG_WARN("UTF-8 Codepage not installed.\n");
-		}
-	} else {
-		UINT acp = GetACP();
-		if (!SetConsoleCP(acp) || !SetConsoleOutputCP(acp)) {
-			rz_sys_perror("rz_cons_set_utf8");
-		}
-	}
-#endif
 }
 
 RZ_API void rz_cons_invert(int set, int color) {
@@ -1652,7 +1664,7 @@ RZ_API bool rz_cons_set_cup(bool enable) {
 	}
 	fflush(stdout);
 #elif __WINDOWS__
-	if (I.vtmode) {
+	if (I.vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
 		if (enable) {
 			const char *code = enable // xterm + xterm-color
 				? "\x1b[?1049h\x1b"
@@ -1956,7 +1968,7 @@ RZ_API void rz_cons_cmd_help(const char *help[], bool use_color) {
 }
 
 RZ_API void rz_cons_clear_buffer(void) {
-	if (I.vtmode) {
+	if (I.vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
 		rz_xwrite(1, "\x1b"
 			     "c\x1b[3J",
 			6);

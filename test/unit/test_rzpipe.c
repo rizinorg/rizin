@@ -4,10 +4,11 @@
 #include <rz_util.h>
 #include <rz_socket.h>
 #include "minunit.h"
+#include "test_config.h"
 
 static bool test_rzpipe(void) {
 #ifndef __WINDOWS__
-	RzPipe *r = rzpipe_open("rizin -q0 -");
+	RzPipe *r = rzpipe_open(RIZIN_BUILD_PATH " -q0 =");
 	mu_assert("rzpipe can spawn", r);
 	char *hello = rzpipe_cmd(r, "?e hello world");
 	mu_assert_streq(hello, "hello world\n", "rzpipe hello world");

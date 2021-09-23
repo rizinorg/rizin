@@ -1,4 +1,4 @@
-#!/usr/bin/rz_gg -X
+#!/usr/bin/rz-gg -X
 main();
 
 // OSX syscall definitions

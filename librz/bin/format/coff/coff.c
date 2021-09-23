@@ -10,7 +10,7 @@
 	if (obj->verbose) \
 	eprintf
 
-bool rz_coff_supported_arch(const ut8 *buf) {
+RZ_API bool rz_coff_supported_arch(const ut8 *buf) {
 	ut16 arch = *(ut16 *)buf;
 	switch (arch) {
 	case COFF_FILE_MACHINE_AMD64:
@@ -28,7 +28,21 @@ bool rz_coff_supported_arch(const ut8 *buf) {
 	}
 }
 
-char *rz_coff_symbol_name(struct rz_bin_coff_obj *obj, void *ptr) {
+RZ_API ut64 rz_coff_perms_from_section_flags(ut32 flags) {
+	ut32 r = 0;
+	if (flags & COFF_SCN_MEM_READ) {
+		r |= RZ_PERM_R;
+	}
+	if (flags & COFF_SCN_MEM_WRITE) {
+		r |= RZ_PERM_W;
+	}
+	if (flags & COFF_SCN_MEM_EXECUTE) {
+		r |= RZ_PERM_X;
+	}
+	return r;
+}
+
+RZ_API char *rz_coff_symbol_name(struct rz_bin_coff_obj *obj, void *ptr) {
 	char n[256] = { 0 };
 	int len = 0, offset = 0;
 	union {
@@ -39,18 +53,18 @@ char *rz_coff_symbol_name(struct rz_bin_coff_obj *obj, void *ptr) {
 		};
 	} *p = ptr;
 	if (!ptr) {
-		return NULL;
+		return strdup("");
 	}
 	if (p->zero) {
 		return rz_str_ndup(p->name, 8);
 	}
 	offset = obj->hdr.f_symptr + obj->hdr.f_nsyms * sizeof(struct coff_symbol) + p->offset;
 	if (offset > obj->size) {
-		return NULL;
+		return strdup("");
 	}
 	len = rz_buf_read_at(obj->b, offset, (ut8 *)n, sizeof(n));
 	if (len < 1) {
-		return NULL;
+		return strdup("");
 	}
 	/* ensure null terminated string */
 	n[sizeof(n) - 1] = 0;
@@ -67,7 +81,7 @@ static int rz_coff_rebase_sym(struct rz_bin_coff_obj *obj, RzBinAddr *addr, stru
 
 /* Try to get a valid entrypoint using the methods outlined in
  * http://ftp.gnu.org/old-gnu/Manuals/ld-2.9.1/html_mono/ld.html#SEC24 */
-RzBinAddr *rz_coff_get_entry(struct rz_bin_coff_obj *obj) {
+RZ_API RzBinAddr *rz_coff_get_entry(struct rz_bin_coff_obj *obj) {
 	RzBinAddr *addr = RZ_NEW0(RzBinAddr);
 	int i;
 	if (!addr) {
@@ -115,7 +129,11 @@ RzBinAddr *rz_coff_get_entry(struct rz_bin_coff_obj *obj) {
 }
 
 static bool rz_bin_coff_init_hdr(struct rz_bin_coff_obj *obj) {
-	ut16 magic = rz_buf_read_ble16_at(obj->b, 0, COFF_IS_LITTLE_ENDIAN);
+	ut16 magic;
+	if (!rz_buf_read_ble16_at(obj->b, 0, &magic, COFF_IS_LITTLE_ENDIAN)) {
+		return false;
+	}
+
 	switch (magic) {
 	case COFF_FILE_MACHINE_H8300:
 	case COFF_FILE_MACHINE_AMD29KBE:
@@ -219,6 +237,7 @@ static int rz_bin_coff_init(struct rz_bin_coff_obj *obj, RzBuffer *buf, bool ver
 	obj->verbose = verbose;
 	obj->sym_ht = ht_up_new0();
 	obj->imp_ht = ht_up_new0();
+	obj->imp_index = ht_uu_new0();
 	if (!rz_bin_coff_init_hdr(obj)) {
 		bprintf("Warning: failed to init hdr\n");
 		return false;
@@ -239,17 +258,19 @@ static int rz_bin_coff_init(struct rz_bin_coff_obj *obj, RzBuffer *buf, bool ver
 	return true;
 }
 
-void rz_bin_coff_free(struct rz_bin_coff_obj *obj) {
+RZ_API void rz_bin_coff_free(struct rz_bin_coff_obj *obj) {
 	ht_up_free(obj->sym_ht);
 	ht_up_free(obj->imp_ht);
+	ht_uu_free(obj->imp_index);
 	free(obj->scn_va);
 	free(obj->scn_hdrs);
 	free(obj->symbols);
+	rz_buf_free(obj->buf_patched);
 	rz_buf_free(obj->b);
 	free(obj);
 }
 
-struct rz_bin_coff_obj *rz_bin_coff_new_buf(RzBuffer *buf, bool verbose) {
+RZ_API struct rz_bin_coff_obj *rz_bin_coff_new_buf(RzBuffer *buf, bool verbose) {
 	struct rz_bin_coff_obj *bin = RZ_NEW0(struct rz_bin_coff_obj);
 	rz_bin_coff_init(bin, buf, verbose);
 	return bin;

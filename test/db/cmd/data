@@ -1,5 +1,5 @@
 NAME=cmp data
-FILE=-
+FILE==
 CMDS=<<EOF
 b 16
 wx 41

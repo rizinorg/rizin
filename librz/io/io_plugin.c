@@ -11,31 +11,37 @@ static RzIOPlugin *io_static_plugins[] = {
 	RZ_IO_STATIC_PLUGINS
 };
 
-RZ_API bool rz_io_plugin_add(RzIO *io, RzIOPlugin *plugin) {
+RZ_API bool rz_io_plugin_add(RzIO *io, RZ_BORROW RzIOPlugin *plugin) {
 	if (!io || !io->plugins || !plugin || !plugin->name) {
 		return false;
 	}
-	ls_append(io->plugins, plugin);
+	RzListIter *it;
+	RzIOPlugin *nplugin;
+	rz_list_foreach (io->plugins, it, nplugin) {
+		if (!strcmp(nplugin->name, plugin->name)) {
+			return false;
+		}
+	}
+	nplugin = RZ_NEW0(RzIOPlugin);
+	if (!nplugin) {
+		return false;
+	}
+	memcpy(nplugin, plugin, sizeof(RzIOPlugin));
+	rz_list_append(io->plugins, nplugin);
 	return true;
 }
 
 RZ_API bool rz_io_plugin_init(RzIO *io) {
-	RzIOPlugin *static_plugin;
 	int i;
 	if (!io) {
 		return false;
 	}
-	io->plugins = ls_newf(free);
+	io->plugins = rz_list_newf(free);
 	for (i = 0; io_static_plugins[i]; i++) {
 		if (!io_static_plugins[i]->name) {
 			continue;
 		}
-		static_plugin = RZ_NEW0(RzIOPlugin);
-		if (!static_plugin) {
-			return false;
-		}
-		memcpy(static_plugin, io_static_plugins[i], sizeof(RzIOPlugin));
-		rz_io_plugin_add(io, static_plugin);
+		rz_io_plugin_add(io, io_static_plugins[i]);
 	}
 	return true;
 }
@@ -48,9 +54,9 @@ RZ_API RzIOPlugin *rz_io_plugin_get_default(RzIO *io, const char *filename, bool
 }
 
 RZ_API RzIOPlugin *rz_io_plugin_resolve(RzIO *io, const char *filename, bool many) {
-	SdbListIter *iter;
+	RzListIter *iter;
 	RzIOPlugin *ret;
-	ls_foreach (io->plugins, iter, ret) {
+	rz_list_foreach (io->plugins, iter, ret) {
 		if (!ret || !ret->check) {
 			continue;
 		}
@@ -62,98 +68,14 @@ RZ_API RzIOPlugin *rz_io_plugin_resolve(RzIO *io, const char *filename, bool man
 }
 
 RZ_API RzIOPlugin *rz_io_plugin_byname(RzIO *io, const char *name) {
-	SdbListIter *iter;
+	RzListIter *iter;
 	RzIOPlugin *iop;
-	ls_foreach (io->plugins, iter, iop) {
+	rz_list_foreach (io->plugins, iter, iop) {
 		if (!strcmp(name, iop->name)) {
 			return iop;
 		}
 	}
 	return rz_io_plugin_get_default(io, name, false);
-}
-
-RZ_API int rz_io_plugin_list(RzIO *io) {
-	RzIOPlugin *plugin;
-	SdbListIter *iter;
-	char str[4];
-	int n = 0;
-
-	ls_foreach (io->plugins, iter, plugin) {
-		str[0] = 'r';
-		str[1] = plugin->write ? 'w' : '_';
-		str[2] = plugin->isdbg ? 'd' : '_';
-		str[3] = 0;
-		io->cb_printf("%s  %-8s %s (%s)",
-			str, plugin->name,
-			plugin->desc, plugin->license);
-		if (plugin->uris) {
-			io->cb_printf(" %s", plugin->uris);
-		}
-		if (plugin->version) {
-			io->cb_printf(" v%s", plugin->version);
-		}
-		if (plugin->author) {
-			io->cb_printf(" %s", plugin->author);
-		}
-		io->cb_printf("\n");
-		n++;
-	}
-	return n;
-}
-
-RZ_API int rz_io_plugin_list_json(RzIO *io) {
-	RzIOPlugin *plugin;
-	SdbListIter *iter;
-	PJ *pj = pj_new();
-	if (!pj) {
-		return 0;
-	}
-
-	char str[4];
-	int n = 0;
-	pj_o(pj);
-	pj_k(pj, "io_plugins");
-	pj_a(pj);
-	ls_foreach (io->plugins, iter, plugin) {
-		str[0] = 'r';
-		str[1] = plugin->write ? 'w' : '_';
-		str[2] = plugin->isdbg ? 'd' : '_';
-		str[3] = 0;
-
-		pj_o(pj);
-		pj_ks(pj, "permissions", str);
-		pj_ks(pj, "name", plugin->name);
-		pj_ks(pj, "description", plugin->desc);
-		pj_ks(pj, "license", plugin->license);
-
-		if (plugin->uris) {
-			char *uri;
-			char *uris = strdup(plugin->uris);
-			RzList *plist = rz_str_split_list(uris, ",", 0);
-			RzListIter *piter;
-			pj_k(pj, "uris");
-			pj_a(pj);
-			rz_list_foreach (plist, piter, uri) {
-				pj_s(pj, uri);
-			}
-			pj_end(pj);
-			rz_list_free(plist);
-			free(uris);
-		}
-		if (plugin->version) {
-			pj_ks(pj, "version", plugin->version);
-		}
-		if (plugin->author) {
-			pj_ks(pj, "author", plugin->author);
-		}
-		pj_end(pj);
-		n++;
-	}
-	pj_end(pj);
-	pj_end(pj);
-	io->cb_printf("%s", pj_string(pj));
-	pj_free(pj);
-	return n;
 }
 
 RZ_API int rz_io_plugin_read(RzIODesc *desc, ut8 *buf, int len) {

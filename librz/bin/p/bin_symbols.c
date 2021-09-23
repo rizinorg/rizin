@@ -132,7 +132,6 @@ static RzBinSection *bin_section_from_section(RzCoreSymCacheElementSection *sect
 	s->vsize = s->size;
 	s->paddr = sect->paddr;
 	s->vaddr = sect->vaddr;
-	s->add = true;
 	s->perm = strstr(s->name, "TEXT") ? 5 : 4;
 	s->is_segment = false;
 	return s;
@@ -151,7 +150,6 @@ static RzBinSection *bin_section_from_segment(RzCoreSymCacheElementSegment *seg)
 	s->vsize = seg->vsize;
 	s->paddr = seg->paddr;
 	s->vaddr = seg->vaddr;
-	s->add = true;
 	s->perm = strstr(s->name, "TEXT") ? 5 : 4;
 	s->is_segment = true;
 	return s;
@@ -251,7 +249,7 @@ static RzCoreSymCacheElement *parseDragons(RzBinFile *bf, RzBuffer *buf, int off
 	return rz_coresym_cache_element_new(bf, buf, off + 16, bits, file_name);
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
 #if 0
 	SYMBOLS HEADER
 
@@ -288,12 +286,9 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 		}
 	}
 	RzCoreSymCacheElement *element = parseDragons(bf, buf, sm.addr + sm.size, sm.bits, file_name);
-	if (element) {
-		*bin_obj = element;
-		return true;
-	}
+	obj->bin_obj = element;
 	free(file_name);
-	return false;
+	return obj->bin_obj != NULL;
 }
 
 static RzList *sections(RzBinFile *bf) {
@@ -429,6 +424,35 @@ static void header(RzBinFile *bf) {
 	pj_free(pj);
 }
 
+static RzBinSourceLineInfo *lines(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o, NULL);
+	RzCoreSymCacheElement *element = bf->o->bin_obj;
+	if (!element || !element->hdr) {
+		return NULL;
+	}
+	RzBinSourceLineInfoBuilder alice;
+	rz_bin_source_line_info_builder_init(&alice);
+	if (element->lined_symbols) {
+		for (size_t i = 0; i < element->hdr->n_lined_symbols; i++) {
+			RzCoreSymCacheElementLinedSymbol *lsym = &element->lined_symbols[i];
+			ut64 addr = rz_coresym_cache_element_pa2va(element, lsym->sym.paddr);
+			ut32 sz = lsym->sym.size;
+			rz_bin_source_line_info_builder_push_sample(&alice, addr, lsym->flc.line, lsym->flc.col, lsym->flc.file);
+			rz_bin_source_line_info_builder_push_sample(&alice, addr + (sz ? sz : 1), 0, 0, NULL);
+		}
+	}
+	if (element->line_info) {
+		for (size_t i = 0; i < element->hdr->n_line_info; i++) {
+			RzCoreSymCacheElementLineInfo *info = &element->line_info[i];
+			ut64 addr = rz_coresym_cache_element_pa2va(element, info->paddr);
+			ut32 sz = info->size;
+			rz_bin_source_line_info_builder_push_sample(&alice, addr, info->flc.line, info->flc.col, info->flc.file);
+			rz_bin_source_line_info_builder_push_sample(&alice, addr + (sz ? sz : 1), 0, 0, NULL);
+		}
+	}
+	return rz_bin_source_line_info_builder_build_and_fini(&alice);
+}
+
 RzBinPlugin rz_bin_plugin_symbols = {
 	.name = "symbols",
 	.desc = "Apple Symbols file",
@@ -436,12 +460,14 @@ RzBinPlugin rz_bin_plugin_symbols = {
 	.load_buffer = &load_buffer,
 	.check_buffer = &check_buffer,
 	.symbols = &symbols,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
 	.size = &size,
 	.baddr = &baddr,
 	.info = &info,
 	.header = &header,
 	.destroy = &destroy,
+	.lines = lines
 };
 
 #ifndef RZ_PLUGIN_INCORE

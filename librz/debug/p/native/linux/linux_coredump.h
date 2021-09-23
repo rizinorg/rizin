@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2016 Oscar Salvador <osalvador.vilardaga@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 /* coredump api */
 
 #ifndef LINUX_COREDUMP_H

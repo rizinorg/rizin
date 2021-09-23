@@ -1,0 +1,29 @@
+NAME=LANGUAGES : asm detection
+FILE=bins/abi_bins/elf/languages/assembly/ref_marking
+CMDS=<<EOF
+iI~compiler,lang
+EOF
+EXPECT=<<EOF
+compiler GCC: (GNU) 10.2.0
+lang     c
+EOF
+RUN
+
+NAME=LANGUAGES : ref marking
+FILE=bins/abi_bins/elf/languages/assembly/ref_marking
+ARGS=-A
+CMDS=<<EOF
+e scr.utf8=false
+s loc.foo2
+pdf
+EOF
+EXPECT=<<EOF
+            ; CALL XREF from main @ 0x112b
+/ loc.foo2 ();
+|           0x00001121      lea   rdi, [rdi + 0x20]                    ; ref_marking_3.s:12     lea rdi, [rdi + 0x20]
+|           0x00001125      call  loc.foo1                             ; ref_marking_3.s:13     call foo1
+\           0x0000112a      ret                                        ; ref_marking_3.s:14     ret
+EOF
+BROKEN=1
+RUN
+

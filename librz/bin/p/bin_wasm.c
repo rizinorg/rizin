@@ -24,11 +24,11 @@ static bool find_export(const ut32 *p, const RzBinWasmExportEntry *q) {
 	return q->index != (*p);
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	rz_return_val_if_fail(bf && buf && rz_buf_size(buf) != UT64_MAX, NULL);
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
+	rz_return_val_if_fail(bf && buf && rz_buf_size(buf) != UT64_MAX, false);
 
 	if (check_buffer(buf)) {
-		*bin_obj = rz_bin_wasm_init(bf, buf);
+		obj->bin_obj = rz_bin_wasm_init(bf, buf);
 		return true;
 	}
 	return false;
@@ -42,7 +42,7 @@ static ut64 baddr(RzBinFile *bf) {
 	return 0;
 }
 
-static RzBinAddr *binsym(RzBinFile *bf, int type) {
+static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
 	return NULL; // TODO
 }
 
@@ -112,7 +112,6 @@ static RzList *sections(RzBinFile *bf) {
 		ptr->vsize = sec->payload_len;
 		ptr->vaddr = sec->offset;
 		ptr->paddr = sec->offset;
-		ptr->add = true;
 		// TODO permissions
 		ptr->perm = 0;
 		rz_list_append(ret, ptr);
@@ -129,7 +128,7 @@ static RzList *symbols(RzBinFile *bf) {
 		return NULL;
 	}
 	bin = bf->o->bin_obj;
-	if (!(ret = rz_list_newf((RzListFree)free))) {
+	if (!(ret = rz_list_newf((RzListFree)rz_bin_symbol_free))) {
 		return NULL;
 	}
 	if (!(codes = rz_bin_wasm_get_codes(bin))) {
@@ -234,13 +233,13 @@ static RzList *imports(RzBinFile *bf) {
 	RzBinWasmObj *bin = NULL;
 	RzList *imports = NULL;
 	RzBinImport *ptr = NULL;
-	RzList *ret = NULL;
 
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
 	bin = bf->o->bin_obj;
-	if (!(ret = rz_list_newf(rz_bin_import_free))) {
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_import_free);
+	if (!ret) {
 		return NULL;
 	}
 	if (!(imports = rz_bin_wasm_get_imports(bin))) {
@@ -315,7 +314,7 @@ static ut64 size(RzBinFile *bf) {
 
 /* inspired in http://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */
 static RzBuffer *create(RzBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt) {
-	RzBuffer *buf = rz_buf_new();
+	RzBuffer *buf = rz_buf_new_with_bytes(NULL, 0);
 #define B(x, y) rz_buf_append_bytes(buf, (const ut8 *)(x), y)
 #define D(x)    rz_buf_append_ut32(buf, x)
 	B("\x00"
@@ -336,6 +335,7 @@ RzBinPlugin rz_bin_plugin_wasm = {
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
 	.symbols = &symbols,
 	.imports = &imports,

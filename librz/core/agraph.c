@@ -9,7 +9,6 @@
 #include <ctype.h>
 #include <limits.h>
 #include "core_private.h"
-#include "cmd_descs/cmd_descs.h"
 
 static int mousemode = 0;
 static int disMode = 0;
@@ -338,9 +337,9 @@ static char *get_node_color(int color, int cur) {
 		return cur ? cons->context->pal.graph_box2 : cons->context->pal.graph_box;
 	}
 	return color ? (
-			       color == RZ_ANALYSIS_DIFF_TYPE_MATCH ? cons->context->pal.graph_diff_match : color == RZ_ANALYSIS_DIFF_TYPE_UNMATCH ? cons->context->pal.graph_diff_unmatch
-																		   : cons->context->pal.graph_diff_new)
-		     : cons->context->pal.graph_diff_unknown;
+			       color == RZ_ANALYSIS_DIFF_TYPE_MATCH ? cons->context->pal.diff_match : color == RZ_ANALYSIS_DIFF_TYPE_UNMATCH ? cons->context->pal.diff_unmatch
+																	     : cons->context->pal.diff_new)
+		     : cons->context->pal.diff_unknown;
 }
 
 static void normal_RzANode_print(const RzAGraph *g, const RzANode *n, int cur) {
@@ -2452,8 +2451,7 @@ static bool get_cgnodes(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 	RzAnalysisFunction *f = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
 	RzANode *node, *fcn_anode;
 	RzListIter *iter;
-	RzAnalysisRef *ref;
-	RzList *refs;
+	RzAnalysisXRef *xref;
 	if (!f) {
 		return false;
 	}
@@ -2474,22 +2472,22 @@ static bool get_cgnodes(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 	fcn_anode->x = 10;
 	fcn_anode->y = 3;
 
-	refs = rz_analysis_function_get_refs(fcn);
-	rz_list_foreach (refs, iter, ref) {
-		title = get_title(ref->addr);
+	RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
+	rz_list_foreach (xrefs, iter, xref) {
+		title = get_title(xref->to);
 		if (rz_agraph_get_node(g, title) != NULL) {
 			continue;
 		}
 		free(title);
 
 		int size = 0;
-		RzAnalysisBlock *bb = rz_analysis_find_most_relevant_block_in(core->analysis, ref->addr);
+		RzAnalysisBlock *bb = rz_analysis_find_most_relevant_block_in(core->analysis, xref->to);
 		if (bb) {
 			size = bb->size;
 		}
 
-		char *body = get_body(core, ref->addr, size, mode2opts(g));
-		title = get_title(ref->addr);
+		char *body = get_body(core, xref->to, size, mode2opts(g));
+		title = get_title(xref->to);
 
 		node = rz_agraph_add_node(g, title, body);
 		if (!node) {
@@ -2504,7 +2502,7 @@ static bool get_cgnodes(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 
 		rz_agraph_add_edge(g, fcn_anode, node);
 	}
-	rz_list_free(refs);
+	rz_list_free(xrefs);
 
 	return true;
 }
@@ -4028,7 +4026,7 @@ static void graph_breakpoint(RzCore *core) {
 }
 
 static void graph_continue(RzCore *core) {
-	rz_debug_continue_oldhandler(core, "");
+	rz_core_debug_continue(core);
 }
 static void applyDisMode(RzCore *core) {
 	switch (disMode) {
@@ -4061,7 +4059,7 @@ static char *get_graph_string(RzCore *core, RzAGraph *g) {
 	rz_config_set_i(core->config, "scr.color", 0);
 	rz_config_set_i(core->config, "scr.utf8", 0);
 	rz_core_visual_graph(core, g, NULL, false);
-	char *s = strdup(rz_cons_get_buffer());
+	char *s = rz_cons_get_buffer_dup();
 	rz_cons_reset();
 	rz_config_set_i(core->config, "scr.color", c);
 	rz_config_set_i(core->config, "scr.utf8", u);
@@ -4270,15 +4268,6 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 			agraph_update_seek(g, get_anode(g->curnode), true);
 			// update scroll (with minor shift)
 			break;
-			// Those hardcoded keys are useful only for aegi, should add subcommand of ag to set key actions
-		case '1':
-			rz_core_seek_opcode(core, 1, false);
-			rz_core_cmd0(core, ".aeg*");
-			break;
-		case '2':
-			rz_core_seek_opcode(core, -1, false);
-			rz_core_cmd0(core, ".aeg*");
-			break;
 		case '=': { // TODO: edit
 			showcursor(core, true);
 			const char *cmd = rz_config_get(core->config, "cmd.gprompt");
@@ -4342,7 +4331,7 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 			}
 			break;
 		case '<':
-			// rz_core_visual_refs (core, true, false);
+			// rz_core_visual_xrefs (core, true, false);
 			if (fcn) {
 				rz_core_agraph_reset(core);
 				rz_core_cmd0(core, ".axtg $FB");
@@ -4392,8 +4381,8 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 			if (block) {
 				rz_core_seek(core, block->addr, false);
 			}
-			if ((key == 'x' && !rz_core_visual_refs(core, true, true)) ||
-				(key == 'X' && !rz_core_visual_refs(core, false, true))) {
+			if ((key == 'x' && !rz_core_visual_xrefs(core, true, true)) ||
+				(key == 'X' && !rz_core_visual_xrefs(core, false, true))) {
 				rz_core_seek(core, old_off, false);
 			}
 			break;

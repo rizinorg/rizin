@@ -54,7 +54,7 @@ static bool check_buffer(RzBuffer *buf) {
 	return false;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
 	if (rz_buf_size(buf) < sizeof(DolHeader)) {
 		return false;
 	}
@@ -73,7 +73,7 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 	}
 	free(lowername);
 	rz_buf_fread_at(bf->buf, 0, (void *)dol, "67I", 1);
-	*bin_obj = dol;
+	obj->bin_obj = dol;
 	return true;
 
 lowername_err:
@@ -105,7 +105,6 @@ static RzList *sections(RzBinFile *bf) {
 		s->size = dol->text_size[i];
 		s->vsize = s->size;
 		s->perm = rz_str_rwx("r-x");
-		s->add = true;
 		rz_list_append(ret, s);
 	}
 	/* data sections */
@@ -120,7 +119,6 @@ static RzList *sections(RzBinFile *bf) {
 		s->size = dol->data_size[i];
 		s->vsize = s->size;
 		s->perm = rz_str_rwx("r--");
-		s->add = true;
 		rz_list_append(ret, s);
 	}
 	/* bss section */
@@ -131,7 +129,6 @@ static RzList *sections(RzBinFile *bf) {
 	s->size = dol->bss_size;
 	s->vsize = s->size;
 	s->perm = rz_str_rwx("rw-");
-	s->add = true;
 	rz_list_append(ret, s);
 
 	return ret;
@@ -178,6 +175,7 @@ RzBinPlugin rz_bin_plugin_dol = {
 	.baddr = &baddr,
 	.check_buffer = &check_buffer,
 	.entries = &entries,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
 	.info = &info,
 };

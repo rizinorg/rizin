@@ -128,7 +128,8 @@ librz/include/sdb
 peda-session-*
 /.vs
 .cache/
-subprojects/capstone-bundled/
+test/.tmp/*
+subprojects/capstone-*/
 subprojects/libuv-*/
 subprojects/libzip-*/
 subprojects/lz4-*/

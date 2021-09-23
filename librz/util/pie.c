@@ -18,8 +18,8 @@ static void drawSectorLine(char *out, int size, int percent) {
 	double foo = 0.1;
 	for (i = (size - 1) / 2; i < (size - 3); i++) {
 		x = y = (size - 1) / 2;
-		x += cos(A) * foo + 1;
-		y += sin(A) * foo + 1;
+		x += (int)(cos(A) * foo) + 1;
+		y += (int)(sin(A) * foo) + 1;
 		foo += 1.1;
 		O = '.';
 	}

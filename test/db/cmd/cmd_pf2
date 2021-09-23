@@ -1,8 +1,7 @@
 NAME=PE JSON test
 FILE=bins/pe/ch22.exe
-ARGS=-nn
+ARGS=-e asm.bits=32 -nn
 CMDS=<<EOF
-e asm.bits=32
 s 0x80
 pfj.pe_nt_image_headers32
 EOF
@@ -205,40 +204,8 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pf rop64
-FILE=malloc://1024
-CMDS=<<EOF
-e asm.arch=x86
-e asm.bits=64
-wx 5558 @ 0x22
-wv8 0x22 @ 0x50
-wv8 0x23 @ 0x58
-pf *D*D @ 0x50
-EOF
-EXPECT=<<EOF
-(*0x22)push rbp
-(*0x23)pop rax
-EOF
-RUN
-
-NAME=pf rop32
-FILE=malloc://1024
-CMDS=<<EOF
-e asm.arch=x86
-e asm.bits=32
-wx 5558 @ 0x22
-wv4 0x22 @ 0x50
-wv4 0x23 @ 0x54
-pf *D*D @ 0x50
-EOF
-EXPECT=<<EOF
-(*0x22)push ebp
-(*0x23)pop eax
-EOF
-RUN
-
 NAME=pf *z (64bit addr)
-FILE=-
+FILE==
 CMDS=<<EOF
 e io.cache=true
 e asm.bits=64
@@ -261,7 +228,7 @@ EOF
 RUN
 
 NAME=pf F max precision (#13027)
-FILE=-
+FILE==
 CMDS=<<EOF
 wv8 0x400921fb54442d18
 pf F
@@ -279,7 +246,7 @@ EOF
 RUN
 
 NAME=pf f max precision
-FILE=-
+FILE==
 CMDS=<<EOF
 wv4 0x40490fdb
 pf f
@@ -290,7 +257,7 @@ EOF
 RUN
 
 NAME=pfj z not-at-start fix
-FILE=-
+FILE==
 CMDS=<<EOF
 wx 46
 wz ABCDE @ 0x1
@@ -305,7 +272,7 @@ EOF
 RUN
 
 NAME=pf/pfj z with size
-FILE=-
+FILE==
 CMDS=<<EOF
 wz ABCDE
 (pf2 format; pf $0; pfj $0)
@@ -402,12 +369,12 @@ EXPECT=<<EOF
 
  1 fd: 3 +0x00000000 0x000003e8 - 0x00000be7 rwx 
 ----
- 2 fd: 3 +0x00000400 0x000007e8 - 0x00000be7 rwx 
  1 fd: 3 +0x00000000 0x000003e8 - 0x000007e7 rwx 
+ 2 fd: 3 +0x00000400 0x000007e8 - 0x00000be7 rwx 
 0x000007e7 = "CD"
 ----
- 2 fd: 3 +0x00000400 0x000007e8 - 0x00000be7 -wx 
  1 fd: 3 +0x00000000 0x000003e8 - 0x000007e7 rwx 
+ 2 fd: 3 +0x00000400 0x000007e8 - 0x00000be7 -wx 
 0x000007e7 = ovf "C"
 ----
  1 fd: 3 +0x00000000 0x000003e8 - 0x000007e7 rwx 
@@ -443,12 +410,12 @@ EXPECT=<<EOF
 [{"type":"z","offset":3046,"value":"AB","overflow":true}]
 [{"type":"z","offset":3046,"value":"AB","overflow":true}]
 [{"type":"z","offset":1048575,"value":"","overflow":true}]
-[{"type":"z","offset":1048575,"value":"\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff","overflow":true}]
+[{"type":"z","offset":1048575,"value":"","overflow":true}]
 EOF
 RUN
 
 NAME=pf?
-FILE=-
+FILE==
 CMDS=<<EOF
 pfo elf32
 pf?elf_header
@@ -461,7 +428,7 @@ EOF
 RUN
 
 NAME=pf? struct not defined
-FILE=-
+FILE==
 CMDS=pf?cat_sat_on_keyboard
 EXPECT_ERR=<<EOF
 Struct cat_sat_on_keyboard is not defined
@@ -499,7 +466,7 @@ EOF
 RUN
 
 NAME=pfc N# and n#
-FILE=-
+FILE==
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 (wneg num size; wv$1 -$0; sd +$1)

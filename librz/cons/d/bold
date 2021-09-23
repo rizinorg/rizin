@@ -52,7 +52,7 @@ ec push white
 ec ret rgb:777
 ec swi black red bold
 ec trap red
-ec graph.trufae rgb:ddd
+ec graph.ujump rgb:ddd
 ec graph.current rgb:f72
 ec graph.traced rgb:f00
 ec gui.cflow rgb:f72

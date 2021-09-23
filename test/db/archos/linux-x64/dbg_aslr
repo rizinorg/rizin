@@ -15,7 +15,7 @@ ARGS=-d
 CMDS=<<EOF
 ?v main-`dmm~pie[0]`
 doc
-?v main-`dmm~pie[0]`
+?v main
 EOF
 EXPECT=<<EOF
 0x5c5

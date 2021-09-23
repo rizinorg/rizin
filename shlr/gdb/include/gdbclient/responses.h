@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2014 defragger <rlaemmert@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 /*! For handling responses from gdbserver */
 /**
  * See Appendix E in the gdb manual (GDB Remote Serial Protocol)

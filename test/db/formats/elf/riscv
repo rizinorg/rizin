@@ -1,4 +1,4 @@
-NAME=avr entrypoint
+NAME=riscv parsed elf search 'str'
 FILE=bins/elf/ip-riscv
 CMDS=ii~str
 EXPECT=<<EOF

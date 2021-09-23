@@ -9,7 +9,12 @@ static bool check_buffer(RzBuffer *b) {
 	if (length < 2) {
 		return false;
 	}
-	ut16 idx = rz_buf_read_le16_at(b, 0x3c);
+
+	ut16 idx;
+	if (!rz_buf_read_le16_at(b, 0x3c, &idx)) {
+		return false;
+	}
+
 	if ((ut64)idx + 26 < length) {
 		ut8 buf[2];
 		rz_buf_read_at(b, 0, buf, sizeof(buf));
@@ -26,11 +31,11 @@ static bool check_buffer(RzBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	rz_return_val_if_fail(bf && bin_obj && buf, false);
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
+	rz_return_val_if_fail(bf && obj && buf, false);
 	rz_bin_le_obj_t *res = rz_bin_le_new_buf(buf);
 	if (res) {
-		*bin_obj = res;
+		obj->bin_obj = res;
 		return true;
 	}
 	return false;
@@ -154,6 +159,7 @@ RzBinPlugin rz_bin_plugin_le = {
 	.destroy = &destroy,
 	.info = &info,
 	.header = &header,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
 	.entries = &entries,
 	.symbols = &symbols,

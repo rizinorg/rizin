@@ -14,18 +14,6 @@
 	} \
 	static int __lib_##x##_dt(RzLibPlugin *pl, void *p, void *u) { return true; }
 
-#define CB_COPY(x, y) \
-	static int __lib_##x##_cb(RzLibPlugin *pl, void *user, void *data) { \
-		struct rz_##x##_plugin_t *hand = (struct rz_##x##_plugin_t *)data; \
-		struct rz_##x##_plugin_t *instance; \
-		RzCore *core = (RzCore *)user; \
-		instance = RZ_NEW(struct rz_##x##_plugin_t); \
-		memcpy(instance, hand, sizeof(struct rz_##x##_plugin_t)); \
-		rz_##x##_add(core->y, instance); \
-		return true; \
-	} \
-	static int __lib_##x##_dt(RzLibPlugin *pl, void *p, void *u) { return true; }
-
 // XXX api consistency issues
 static int __lib_core_cb(RzLibPlugin *pl, void *user, void *data) {
 	struct rz_core_plugin_t *hand = (struct rz_core_plugin_t *)data;
@@ -40,7 +28,7 @@ static int __lib_core_dt(RzLibPlugin *pl, void *p, void *u) {
 }
 
 #define rz_io_add rz_io_plugin_add
-CB_COPY(io, io)
+CB(io, io)
 #define rz_debug_add rz_debug_plugin_add
 CB(debug, dbg)
 #define rz_bp_add rz_bp_plugin_add
@@ -49,6 +37,7 @@ CB(lang, lang)
 CB(analysis, analysis)
 CB(asm, rasm)
 CB(parse, parser)
+#define rz_bin_add rz_bin_plugin_add
 CB(bin, bin)
 CB(egg, egg)
 

@@ -198,11 +198,7 @@ RZ_API char *rz_bin_demangle_swift(const char *s, bool syscmd) {
 	if (!strncmp(s, "__", 2)) {
 		s = s + 2;
 	}
-#if 0
-	const char *element[] = {
-		"module", "class", "method", NULL
-	};
-#endif
+
 	char *res = swift_demangle_lib(s);
 	if (res) {
 		return res;
@@ -263,8 +259,8 @@ RZ_API char *rz_bin_demangle_swift(const char *s, bool syscmd) {
 			}
 			break;
 		case 'I': // interfaces
-			/* TODO */
-			break;
+			// TODO
+			return NULL;
 		}
 	}
 	if (tail) {
@@ -294,18 +290,10 @@ RZ_API char *rz_bin_demangle_swift(const char *s, bool syscmd) {
 			tail = "..init.witnesstable";
 			p += 4;
 		}
-#if 0
-		if (!strncmp (p+1, "C", 2)) {
-			strcat (out, "class ");
-			p += 3;
-		}
-#endif
 		getnum(q, &len);
 		q = numpos(p);
-		//printf ("(%s)\n", getstring (p, (q-p)));
 		for (i = 0, len = 1; len && q < q_end; q += len, i++) {
 			if (*q == 'P') {
-				//		printf ("PUBLIC: ");
 				q++;
 			}
 			q = getnum(q, &len);
@@ -316,10 +304,6 @@ RZ_API char *rz_bin_demangle_swift(const char *s, bool syscmd) {
 			if (len == 2 && !strcmp(str, "ee")) {
 				strcat(out, "Swift");
 			} else {
-#if 0
-				printf ("%s %d %s\n", element[i],
-						len, getstring (q, len));
-#endif
 				// push string
 				if (i && *out) {
 					strcat(out, ".");
@@ -338,12 +322,7 @@ RZ_API char *rz_bin_demangle_swift(const char *s, bool syscmd) {
 			if (attr && *q == 'R') {
 				attr = NULL;
 				q += 3;
-				//q = p + 1;
-				//				//printf ("Template (%s)\n", attr);
-			} else {
-				//printf ("Findus (%s)\n", q);
 			}
-			//			return 0;
 		}
 		/* parse accessors */
 		if (attr) {
@@ -352,20 +331,13 @@ RZ_API char *rz_bin_demangle_swift(const char *s, bool syscmd) {
 			/* get field name and then type */
 			resolve(types, q, &attr);
 
-			//printf ("Accessor: %s\n", attr);
 			q = getnum(q + 1, &len);
 			name = getstring(q, len);
-#if 0
-			if (name && *name) {
-				printf ("Field Name: %s\n", name);
-			}
-#endif
 			if (len < strlen(q)) {
 				resolve(types, q + len, &attr2);
 			} else {
 				resolve(types, q, &attr2);
 			}
-			//			printf ("Field Type: %s\n", attr2);
 
 			do {
 				if (name && *name) {
@@ -425,7 +397,6 @@ RZ_API char *rz_bin_demangle_swift(const char *s, bool syscmd) {
 						if (attr) {
 							strcat(out, attr);
 						}
-						//p = q + 7;
 						q = p = q + 1;
 						attr = "";
 						break;
@@ -460,7 +431,6 @@ RZ_API char *rz_bin_demangle_swift(const char *s, bool syscmd) {
 					break;
 				case 'G':
 					q += 2;
-					//printf ("GENERIC\n");
 					if (!strncmp(q, "_V", 2)) {
 						q += 2;
 					}
@@ -472,7 +442,6 @@ RZ_API char *rz_bin_demangle_swift(const char *s, bool syscmd) {
 				case '_':
 					// it's return value time!
 					p = resolve(types, q + 1, &attr); // type
-					//printf ("RETURN TYPE %s\n", attr);
 					break;
 				default:
 					p = resolve(types, q, &attr); // type
@@ -483,8 +452,6 @@ RZ_API char *rz_bin_demangle_swift(const char *s, bool syscmd) {
 					if (attr && !strcmp(attr, "generic")) {
 						is_generic = 1;
 					}
-					//printf ("TYPE: %s LEN %d VALUE %s\n",
-					//	attr, len, getstring (q, len));
 					if (!len) {
 						if (retmode) {
 							if (q + 1 > q_end) {
@@ -517,7 +484,6 @@ RZ_API char *rz_bin_demangle_swift(const char *s, bool syscmd) {
 								strcat(out, is_generic ? "<" : "(");
 								is_first = 0;
 							}
-							//printf ("ISLAST (%s)\n", q+len);
 							is_last = q[len];
 							if (attr) {
 								STRCAT_BOUNDS(strlen(attr));
@@ -571,8 +537,6 @@ RZ_API char *rz_bin_demangle_swift(const char *s, bool syscmd) {
 				}
 			}
 		}
-	} else {
-		//printf ("Unsupported type: %c\n", *p);
 	}
 	if (*out) {
 		if (tail) {

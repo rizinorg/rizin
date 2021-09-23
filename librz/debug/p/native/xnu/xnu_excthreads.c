@@ -116,7 +116,6 @@ static bool is_thumb_32(ut16 op) {
 #endif
 
 static int modify_trace_bit(RzDebug *dbg, xnu_thread_t *th, int enable) {
-	int i = 0;
 	int ret = xnu_thread_get_drx(dbg, th);
 	if (!ret) {
 		eprintf("error to get drx registers modificy_trace_bit arm\n");
@@ -140,6 +139,7 @@ static int modify_trace_bit(RzDebug *dbg, xnu_thread_t *th, int enable) {
 	} else
 #elif __arm || __arm__ || __armv7 || __armv7__
 	if (th->flavor == ARM_DEBUG_STATE) {
+		int i = 0;
 		arm_debug_state_t *state = &th->debug.drx;
 		RZ_REG_T *regs;
 		ret = xnu_thread_get_gpr(dbg, th);

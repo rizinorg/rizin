@@ -134,7 +134,7 @@ static bool vtable_is_addr_vtable_start_itanium(RVTableContext *context, RzBinSe
 }
 
 static bool vtable_is_addr_vtable_start_msvc(RVTableContext *context, ut64 curAddress) {
-	RzAnalysisRef *xref;
+	RzAnalysisXRef *xref;
 	RzListIter *xrefIter;
 
 	if (!curAddress || curAddress == UT64_MAX) {
@@ -144,19 +144,19 @@ static bool vtable_is_addr_vtable_start_msvc(RVTableContext *context, ut64 curAd
 		return false;
 	}
 	// total xref's to curAddress
-	RzList *xrefs = rz_analysis_xrefs_get(context->analysis, curAddress);
+	RzList *xrefs = rz_analysis_xrefs_get_to(context->analysis, curAddress);
 	if (rz_list_empty(xrefs)) {
 		rz_list_free(xrefs);
 		return false;
 	}
 	rz_list_foreach (xrefs, xrefIter, xref) {
 		// section in which currenct xref lies
-		if (vtable_addr_in_text_section(context, xref->addr)) {
+		if (vtable_addr_in_text_section(context, xref->from)) {
 			ut8 buf[VTABLE_BUFF_SIZE];
-			context->analysis->iob.read_at(context->analysis->iob.io, xref->addr, buf, sizeof(buf));
+			context->analysis->iob.read_at(context->analysis->iob.io, xref->from, buf, sizeof(buf));
 
 			RzAnalysisOp analop = { 0 };
-			rz_analysis_op(context->analysis, &analop, xref->addr, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
+			rz_analysis_op(context->analysis, &analop, xref->from, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
 
 			if (analop.type == RZ_ANALYSIS_OP_TYPE_MOV || analop.type == RZ_ANALYSIS_OP_TYPE_LEA) {
 				rz_list_free(xrefs);
@@ -206,7 +206,7 @@ RZ_API RVTableInfo *rz_analysis_vtable_parse_at(RVTableContext *context, ut64 ad
 		addr += context->word_size;
 
 		// a ref means the vtable has ended
-		RzList *ll = rz_analysis_xrefs_get(context->analysis, addr);
+		RzList *ll = rz_analysis_xrefs_get_to(context->analysis, addr);
 		if (!rz_list_empty(ll)) {
 			rz_list_free(ll);
 			break;
@@ -285,7 +285,7 @@ RZ_API RzList *rz_analysis_vtable_search(RVTableContext *context) {
 	return vtables;
 }
 
-RZ_API void rz_analysis_list_vtables(RzAnalysis *analysis, int rad) {
+RZ_API void rz_analysis_list_vtables(RzAnalysis *analysis, RzOutputMode mode) {
 	RVTableContext context;
 	rz_analysis_vtable_begin(analysis, &context);
 
@@ -296,9 +296,10 @@ RZ_API void rz_analysis_list_vtables(RzAnalysis *analysis, int rad) {
 
 	RzList *vtables = rz_analysis_vtable_search(&context);
 
-	if (rad == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		PJ *pj = pj_new();
 		if (!pj) {
+			rz_list_free(vtables);
 			return;
 		}
 		pj_a(pj);
@@ -320,7 +321,7 @@ RZ_API void rz_analysis_list_vtables(RzAnalysis *analysis, int rad) {
 		pj_end(pj);
 		rz_cons_println(pj_string(pj));
 		pj_free(pj);
-	} else if (rad == '*') {
+	} else if (mode == RZ_OUTPUT_MODE_RIZIN) {
 		rz_list_foreach (vtables, vtableIter, table) {
 			rz_cons_printf("f vtable.0x%08" PFMT64x " %" PFMT64d " @ 0x%08" PFMT64x "\n",
 				table->saddr,

@@ -13,7 +13,7 @@ RZ_LIB_VERSION(rz_flag);
 #define IS_FI_IN_SPACE(fi, sp)  (!(sp) || (fi)->space == (sp))
 #define STRDUP_OR_NULL(s)       (!RZ_STR_ISEMPTY(s) ? strdup(s) : NULL)
 
-static const char *str_callback(RNum *user, ut64 off, int *ok) {
+static const char *str_callback(RzNum *user, ut64 off, int *ok) {
 	RzFlag *f = (RzFlag *)user;
 	if (ok) {
 		*ok = 0;
@@ -45,7 +45,7 @@ static int flag_skiplist_cmp(const void *va, const void *vb) {
 	return a->off < b->off ? -1 : 1;
 }
 
-static ut64 num_callback(RNum *user, const char *name, int *ok) {
+static ut64 num_callback(RzNum *user, const char *name, int *ok) {
 	RzFlag *f = (RzFlag *)user;
 	if (ok) {
 		*ok = 0;
@@ -295,7 +295,6 @@ struct print_flag_t {
 	ut64 range_to;
 	RzSpace *fs;
 	bool real;
-	const char *pfx;
 };
 
 static bool print_flag_json(RzFlagItem *flag, void *user) {
@@ -347,9 +346,8 @@ static bool print_flag_rad(RzFlagItem *flag, void *user) {
 				flag->name, comment_b64 ? comment_b64 : "");
 		}
 	} else {
-		u->f->cb_printf("f %s %" PFMT64d " 0x%08" PFMT64x "%s%s %s\n",
+		u->f->cb_printf("f %s %" PFMT64d " 0x%08" PFMT64x " %s\n",
 			flag->name, flag->size, flag->offset,
-			u->pfx ? "+" : "", u->pfx ? u->pfx : "",
 			comment_b64 ? comment_b64 : "");
 	}
 
@@ -429,7 +427,6 @@ RZ_API void rz_flag_list(RzFlag *f, int rad, const char *pfx) {
 			.range_from = range_from,
 			.range_to = range_to,
 			.fs = NULL,
-			.pfx = pfx
 		};
 		rz_flag_foreach_space(f, rz_flag_space_cur(f), print_flag_rad, &u);
 		break;
@@ -477,7 +474,7 @@ static RzFlagItem *evalFlag(RzFlag *f, RzFlagItem *item) {
 /* return true if flag.* exist at offset. Otherwise, false is returned.
  * For example (f, "sym", 3, 0x1000)*/
 RZ_API bool rz_flag_exist_at(RzFlag *f, const char *flag_prefix, ut16 fp_size, ut64 off) {
-	rz_return_val_if_fail(f && flag_prefix, NULL);
+	rz_return_val_if_fail(f && flag_prefix, false);
 	RzListIter *iter = NULL;
 	RzFlagItem *item = NULL;
 	const RzList *list = rz_flag_get_list(f, off);

@@ -42,7 +42,7 @@ MARKER_META_REGISTER = "_MREG_"
 MARKER_WIDTH_MARKER = "_WIDTH_"
 MARKER_SEGREG_MARKER = "_SEGREG_"
 CONCURRENCY = 8
-ASM_ENGINE = "x86.nz"  # See rz_asm -L. Note this script is not x86-specific
+ASM_ENGINE = "x86.nz"  # See rz-asm -L. Note this script is not x86-specific
 DISASM_ENGINE = "x86"  # capstone
 REFERENCE_ASM_ENGINE = "x86.ks"
 REFERENCE_DISASM_ENGINE = None  # no alternative right now
@@ -151,30 +151,30 @@ def main():
     with open(sys.argv[1], "rb") as f:
         input_data = f.read()
 
-    pool = ProcessPoolExecutor(CONCURRENCY)
-    for offset in range(0, fsize - 20, CONCURRENCY):
-        inputs = [
-            hexlify(input_data[o : o + MAX_OPLEN])
-            for o in range(offset, offset + CONCURRENCY)
-        ]
-        tasks = pool.map(check_hexpairs, inputs)
-        for res in tasks:
-            if not res:
-                continue
-            inskey = res["case"]
-            insmkey = res["metacase"]
-            insmmkey = res["metametacase"]
-            meta_meta_cases[insmmkey] = meta_meta_cases.get(insmmkey, 0) + 1
-            meta_cases[insmkey] = meta_cases.get(insmkey, 0) + 1
-            if (
-                meta_cases[insmkey] > MAX_METACASE_EXAMPLES
-                or meta_meta_cases[insmmkey] > MAX_META_META_CASE_EXAMPLES
-            ):
-                pass
-            elif inskey not in cases:
-                cases[inskey] = cases.get(inskey, 0) + 1
-                print("%s\n" % json.dumps(res, indent=4))
-    return 0
+    with ProcessPoolExecutor(CONCURRENCY) as pool:
+        for offset in range(0, fsize - 20, CONCURRENCY):
+            inputs = [
+                hexlify(input_data[o : o + MAX_OPLEN])
+                for o in range(offset, offset + CONCURRENCY)
+            ]
+            tasks = pool.map(check_hexpairs, inputs)
+            for res in tasks:
+                if not res:
+                    continue
+                inskey = res["case"]
+                insmkey = res["metacase"]
+                insmmkey = res["metametacase"]
+                meta_meta_cases[insmmkey] = meta_meta_cases.get(insmmkey, 0) + 1
+                meta_cases[insmkey] = meta_cases.get(insmkey, 0) + 1
+                if (
+                    meta_cases[insmkey] > MAX_METACASE_EXAMPLES
+                    or meta_meta_cases[insmmkey] > MAX_META_META_CASE_EXAMPLES
+                ):
+                    pass
+                elif inskey not in cases:
+                    cases[inskey] = cases.get(inskey, 0) + 1
+                    print("%s\n" % json.dumps(res, indent=4))
+        return 0
 
 
 if __name__ == "__main__":

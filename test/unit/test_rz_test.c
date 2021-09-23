@@ -21,7 +21,7 @@ bool test_rz_test_database_load_cmd(void) {
 	mu_assert_eq(test->type, RZ_TEST_TYPE_CMD, "test type");
 	RzCmdTest *cmd_test = test->cmd_test;
 	mu_assert_streq(cmd_test->name.value, "multiline0", "name");
-	mu_assert_streq(cmd_test->file.value, "-", "file");
+	mu_assert_streq(cmd_test->file.value, "=", "file");
 	mu_assert_streq(cmd_test->cmds.value, "rm -rf /\n", "cmds");
 	mu_assert_streq(cmd_test->expect.value, "expected\noutput\n", "expect");
 	mu_assert_eq(cmd_test->expect.line_begin, 6, "line begin");
@@ -66,56 +66,62 @@ bool test_rz_test_fix(void) {
 	result0->test = rz_pvector_at(&db->tests, 0);
 	result0->result = RZ_TEST_RESULT_FAILED;
 	result0->proc_out = RZ_NEW0(RzSubprocessOutput);
-	result0->proc_out->out = strdup("fixed\nresult\nfor\n0\n");
-	result0->proc_out->err = strdup("");
+	result0->proc_out->out = (ut8 *)strdup("fixed\nresult\nfor\n0\n");
+	result0->proc_out->out_len = strlen((char *)result0->proc_out->out);
+	result0->proc_out->err = (ut8 *)strdup("");
+	result0->proc_out->err_len = strlen((char *)result0->proc_out->err);
 
 	RzTestResultInfo *result1 = RZ_NEW0(RzTestResultInfo);
 	rz_pvector_push(results, result1);
 	result1->test = rz_pvector_at(&db->tests, 1);
 	result1->result = RZ_TEST_RESULT_FAILED;
 	result1->proc_out = RZ_NEW0(RzSubprocessOutput);
-	result1->proc_out->out = strdup("fixed\nresult\nfor\n1\n");
-	result1->proc_out->err = strdup("");
+	result1->proc_out->out = (ut8 *)strdup("fixed\nresult\nfor\n1\n");
+	result1->proc_out->out_len = strlen((char *)result1->proc_out->out);
+	result1->proc_out->err = (ut8 *)strdup("");
+	result1->proc_out->err_len = strlen((char *)result1->proc_out->err);
 
 	RzTestResultInfo *result2 = RZ_NEW0(RzTestResultInfo);
 	rz_pvector_push(results, result2);
 	result2->test = rz_pvector_at(&db->tests, 2);
 	result2->result = RZ_TEST_RESULT_FAILED;
 	result2->proc_out = RZ_NEW0(RzSubprocessOutput);
-	result2->proc_out->out = strdup("fixed\nresult\nfor\n2\n");
-	result2->proc_out->err = strdup("");
+	result2->proc_out->out = (ut8 *)strdup("fixed\nresult\nfor\n2\n");
+	result2->proc_out->out_len = strlen((char *)result2->proc_out->out);
+	result2->proc_out->err = (ut8 *)strdup("");
+	result2->proc_out->err_len = strlen((char *)result2->proc_out->err);
 
 	RzTestResultInfo *result3 = RZ_NEW0(RzTestResultInfo);
 	rz_pvector_push(results, result3);
 	result3->test = rz_pvector_at(&db->tests, 3);
 	result3->result = RZ_TEST_RESULT_FAILED;
 	result3->proc_out = RZ_NEW0(RzSubprocessOutput);
-	result3->proc_out->out = strdup("fixed\nresult\nfor\n3\n");
-	result3->proc_out->err = strdup("");
+	result3->proc_out->out = (ut8 *)strdup("fixed\nresult\nfor\n3\n");
+	result3->proc_out->err = (ut8 *)strdup("");
 
 	char *content = rz_file_slurp(FILENAME, NULL);
 	mu_assert("test file", content);
 
 	char *newc = replace_cmd_kv(result0->test->path, content, result0->test->cmd_test->expect.line_begin,
-		result0->test->cmd_test->expect.line_end, "EXPECT", result0->proc_out->out, results);
+		result0->test->cmd_test->expect.line_end, "EXPECT", (char *)result0->proc_out->out, results);
 	mu_assert("fixed", newc);
 	free(content);
 	content = newc;
 
 	newc = replace_cmd_kv(result1->test->path, content, result1->test->cmd_test->expect.line_begin,
-		result1->test->cmd_test->expect.line_end, "EXPECT", result1->proc_out->out, results);
+		result1->test->cmd_test->expect.line_end, "EXPECT", (char *)result1->proc_out->out, results);
 	mu_assert("fixed", newc);
 	free(content);
 	content = newc;
 
 	newc = replace_cmd_kv(result2->test->path, content, result2->test->cmd_test->expect.line_begin,
-		result2->test->cmd_test->expect.line_end, "EXPECT", result2->proc_out->out, results);
+		result2->test->cmd_test->expect.line_end, "EXPECT", (char *)result2->proc_out->out, results);
 	mu_assert("fixed", newc);
 	free(content);
 	content = newc;
 
 	newc = replace_cmd_kv(result3->test->path, content, result3->test->cmd_test->expect.line_begin,
-		result3->test->cmd_test->expect.line_end, "EXPECT", result3->proc_out->out, results);
+		result3->test->cmd_test->expect.line_end, "EXPECT", (char *)result3->proc_out->out, results);
 	mu_assert("fixed", newc);
 	free(content);
 	content = newc;
@@ -124,7 +130,7 @@ bool test_rz_test_fix(void) {
 
 	mu_assert_streq(content,
 		"NAME=multiline0\n"
-		"FILE=-\n"
+		"FILE==\n"
 		"CMDS=<<EOF\n"
 		"rm -rf /\n"
 		"EOF\n"
@@ -137,7 +143,7 @@ bool test_rz_test_fix(void) {
 		"RUN\n"
 		"\n"
 		"NAME=singleline0\n"
-		"FILE=-\n"
+		"FILE==\n"
 		"CMDS=<<EOF\n"
 		"rm -rf\n"
 		"EOF\n"
@@ -150,7 +156,7 @@ bool test_rz_test_fix(void) {
 		"RUN\n"
 		"\n"
 		"NAME=multiline1\n"
-		"FILE=-\n"
+		"FILE==\n"
 		"CMDS=<<EOF\n"
 		"rm -rf\n"
 		"EOF\n"
@@ -163,7 +169,7 @@ bool test_rz_test_fix(void) {
 		"RUN\n"
 		"\n"
 		"NAME=singleline1\n"
-		"FILE=-\n"
+		"FILE==\n"
 		"CMDS=<<EOF\n"
 		"rm -rf\n"
 		"EOF\n"

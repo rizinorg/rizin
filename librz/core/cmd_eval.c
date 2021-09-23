@@ -5,31 +5,6 @@
 #include <stdbool.h>
 #include "rz_core.h"
 
-static const char *help_msg_e[] = {
-	"Usage:", "e [var[=value]]", "Evaluable vars",
-	"e", "?asm.bytes", "show description",
-	"e", "??", "list config vars with description",
-	"e", " a", "get value of var 'a'",
-	"e", " a=b", "set var 'a' the 'b' value",
-	"e var=?", "", "print all valid values of var",
-	"e var=??", "", "print all valid values of var with description",
-	"e.", "a=b", "same as 'e a=b' but without using a space",
-	"e,", "k=v,k=v,k=v", "comma separated k[=v]",
-	"e-", "", "reset config vars",
-	"e*", "", "dump config vars in r commands",
-	"e!", "a", "invert the boolean value of 'a' var",
-	"ec", " [k] [color]", "set color for given key (prompt, offset, ...)",
-	"ee", "var", "open editor to change the value of var",
-	"ej", "", "list config vars in JSON",
-	"env", " [k[=v]]", "get/set environment variable",
-	"er", " [key]", "set config key as readonly. no way back",
-	"es", " [space]", "list all eval spaces [or keys]",
-	"et", " [key]", "show type of given config variable",
-	"ev", " [key]", "list config vars in verbose format",
-	"evj", " [key]", "list config vars in verbose format in JSON",
-	NULL
-};
-
 static const char *help_msg_ec[] = {
 	"Usage ec[s?] [key][[=| ]fg] [bg]", "", "",
 	"ec", " [key]", "list all/key color keys",
@@ -138,7 +113,7 @@ static bool nextpal_item(RzCore *core, int mode, const char *file, int ctr) {
 	return true;
 }
 
-RZ_IPI bool rz_core_load_theme(RzCore *core, const char *name) {
+RZ_API bool rz_core_load_theme(RzCore *core, const char *name) {
 	bool failed = false;
 	char *path;
 	if (!name || !*name) {
@@ -220,7 +195,6 @@ RZ_IPI void rz_core_theme_nextpal(RzCore *core, int mode) {
 	int ctr = 0;
 	char *home = rz_str_home(RZ_HOME_THEMES RZ_SYS_DIR);
 
-	getNext = false;
 	if (mode == 'j') {
 		rz_cons_printf("[");
 	}
@@ -237,8 +211,6 @@ RZ_IPI void rz_core_theme_nextpal(RzCore *core, int mode) {
 					}
 					eprintf("%s %s %s\n", rz_str_get_null(nfn), curtheme, fn);
 					if (nfn && !strcmp(nfn, curtheme)) {
-						rz_list_free(files);
-						files = NULL;
 						free(curtheme);
 						curtheme = strdup(fn);
 						RZ_FREE(home);
@@ -246,16 +218,15 @@ RZ_IPI void rz_core_theme_nextpal(RzCore *core, int mode) {
 					}
 				} else {
 					if (!nextpal_item(core, mode, fn, ctr++)) {
-						rz_list_free(files);
-						files = NULL;
 						RZ_FREE(home);
 						goto done;
 					}
 				}
 			}
 		}
-		rz_list_free(files);
 		RZ_FREE(home);
+		rz_list_free(files);
+		files = NULL;
 	}
 
 	path = rz_str_rz_prefix(RZ_THEMES RZ_SYS_DIR);
@@ -287,11 +258,6 @@ RZ_IPI void rz_core_theme_nextpal(RzCore *core, int mode) {
 
 done:
 	free(path);
-	if (getNext) {
-		RZ_FREE(curtheme);
-		rz_core_theme_nextpal(core, mode);
-		return;
-	}
 	if (mode == 'l' && !curtheme && !rz_list_empty(files)) {
 		//rz_core_theme_nextpal (core, mode);
 	} else if (mode == 'n' || mode == 'p') {
@@ -300,7 +266,6 @@ done:
 		}
 	}
 	rz_list_free(files);
-	files = NULL;
 	if (mode == 'j') {
 		rz_cons_printf("]\n");
 	}
@@ -508,145 +473,7 @@ RZ_IPI int rz_eval_color(void *data, const char *input) {
 	return 0;
 }
 
-RZ_IPI int rz_cmd_eval(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	switch (input[0]) {
-	case '\0': // "e"
-		rz_config_list(core->config, NULL, 0);
-		break;
-	case '?': // "e?"
-	default:
-		switch (input[1]) {
-		case '\0': rz_core_cmd_help(core, help_msg_e); break;
-		case '?': rz_config_list(core->config, input + 2, 2); break;
-		default: rz_config_list(core->config, input + 1, 2); break;
-		}
-		break;
-	case 't': // "et"
-		if (input[1] == 'a') {
-			rz_cons_printf("%s\n", (rz_num_rand(10) % 2) ? "wen" : "son");
-		} else if (input[1] == ' ' && input[2]) {
-			RzConfigNode *node = rz_config_node_get(core->config, input + 2);
-			if (node) {
-				const char *type = rz_config_node_type(node);
-				if (type && *type) {
-					rz_cons_println(type);
-				}
-			}
-		} else {
-			eprintf("Usage: et [varname]  ; show type of eval var\n");
-		}
-		break;
-	case 'n': // "en"
-		if (!strchr(input, '=')) {
-			char *var, *p;
-			var = strchr(input, ' ');
-			if (var)
-				while (*var == ' ')
-					var++;
-			p = rz_sys_getenv(var);
-			if (p) {
-				rz_cons_println(p);
-				free(p);
-			} else {
-				char **e = rz_sys_get_environ();
-				while (e && *e) {
-					rz_cons_println(*e);
-					e++;
-				}
-			}
-		} else if (strlen(input) > 3) {
-			char *v, *k = strdup(input + 3);
-			if (!k)
-				break;
-			v = strchr(k, '=');
-			if (v) {
-				*v++ = 0;
-				rz_str_trim(k);
-				rz_str_trim(v);
-				rz_sys_setenv(k, v);
-			}
-			free(k);
-		}
-		return true;
-	case 'x': // exit
-		// XXX we need headers for the cmd_xxx files.
-		return rz_cmd_quit(data, "");
-	case 'j': // json
-		rz_config_list(core->config, NULL, 'j');
-		break;
-	case 'v': // verbose
-		rz_config_list(core->config, input + 1, 'v');
-		break;
-	case 'q': // quiet list of eval keys
-		rz_config_list(core->config, NULL, 'q');
-		break;
-	case 'c': // "ec"
-		rz_eval_color(core, input + 1);
-		break;
-	case 'e': // "ee"
-		if (input[1] == ' ') {
-			char *p;
-			const char *input2 = strchr(input + 2, ' ');
-			input2 = (input2) ? input2 + 1 : input + 2;
-			const char *val = rz_config_get(core->config, input2);
-			p = rz_core_editor(core, NULL, val);
-			if (p) {
-				rz_str_replace_char(p, '\n', ';');
-				rz_config_set(core->config, input2, p);
-			}
-		} else {
-			eprintf("Usage: ee varname # use $EDITOR to edit this config value\n");
-		}
-		break;
-	case '!': // "e!"
-		input = rz_str_trim_head_ro(input + 1);
-		if (!rz_config_toggle(core->config, input)) {
-			eprintf("rz_config: '%s' is not a boolean variable.\n", input);
-		}
-		break;
-	case 's': // "es"
-		rz_config_list(core->config, (input[1]) ? input + 1 : NULL, 's');
-		break;
-	case '-': // "e-"
-		rz_core_config_init(core);
-		//eprintf ("BUG: 'e-' command locks the eval hashtable. patches are welcome :)\n");
-		break;
-	case '*': // "e*"
-		rz_config_list(core->config, NULL, 1);
-		break;
-	case 'r': // "er"
-		if (input[1]) {
-			const char *key = input + ((input[1] == ' ') ? 2 : 1);
-			if (!rz_config_readonly(core->config, key)) {
-				eprintf("cannot find key '%s'\n", key);
-			}
-		} else {
-			eprintf("Usage: er [key]  # make an eval key PERMANENTLY read only\n");
-		}
-		break;
-	case ',': // "e."
-		rz_config_eval(core->config, input + 1, true);
-		break;
-	case '.': // "e "
-	case ' ': // "e "
-		if (rz_str_endswith(input, ".")) {
-			rz_config_list(core->config, input + 1, 0);
-		} else {
-			// XXX we cant do "e cmd.gprompt=dr=", because the '=' is a token, and quotes dont affect him
-			rz_config_eval(core->config, input + 1, false);
-		}
-		break;
-	}
-	return 0;
-}
-
 RZ_IPI RzCmdStatus rz_eval_getset_handler(RzCore *core, int argc, const char **argv) {
-	if (argc == 1) {
-		rz_config_list(core->config, NULL, 0);
-		return RZ_CMD_STATUS_OK;
-	}
-
 	int i;
 	for (i = 1; i < argc; i++) {
 		RzList *l = rz_str_split_duplist_n(argv[i], "=", 1, false);
@@ -665,7 +492,11 @@ RZ_IPI RzCmdStatus rz_eval_getset_handler(RzCore *core, int argc, const char **a
 
 		if (llen == 1 && rz_str_endswith(key, ".")) {
 			// no value was set, only key with ".". List possible sub-keys.
-			rz_config_list(core->config, key, false);
+			RzCmdStateOutput state = { 0 };
+			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET);
+			rz_core_config_print_all(core->config, key, &state);
+			rz_cmd_state_output_print(&state);
+			rz_cmd_state_output_fini(&state);
 		} else if (llen == 1) {
 			// no value was set, show the value of the key
 			const char *v = rz_config_get(core->config, key);
@@ -678,39 +509,14 @@ RZ_IPI RzCmdStatus rz_eval_getset_handler(RzCore *core, int argc, const char **a
 			char *value = rz_list_get_n(l, 1);
 			rz_config_set(core->config, key, value);
 		}
-
 		rz_list_free(l);
 	}
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_eval_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+RZ_IPI RzCmdStatus rz_eval_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	const char *arg = argc > 1 ? argv[1] : "";
-	switch (mode) {
-	case RZ_OUTPUT_MODE_STANDARD:
-		rz_config_list(core->config, arg, 2);
-		break;
-	case RZ_OUTPUT_MODE_JSON:
-		rz_config_list(core->config, arg, 'j');
-		break;
-	case RZ_OUTPUT_MODE_RIZIN:
-		rz_config_list(core->config, arg, 1);
-		break;
-	case RZ_OUTPUT_MODE_QUIET:
-		rz_config_list(core->config, arg, 'q');
-		break;
-	case RZ_OUTPUT_MODE_LONG:
-		rz_config_list(core->config, arg, 'v');
-		break;
-	case RZ_OUTPUT_MODE_LONG_JSON: {
-		char *a = rz_str_newf("j%s", arg);
-		rz_config_list(core->config, a, 'v');
-		free(a);
-		break;
-	}
-	default:
-		return RZ_CMD_STATUS_ERROR;
-	}
+	rz_core_config_print_all(core->config, arg, state);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -751,7 +557,34 @@ RZ_IPI RzCmdStatus rz_eval_readonly_handler(RzCore *core, int argc, const char *
 
 RZ_IPI RzCmdStatus rz_eval_spaces_handler(RzCore *core, int argc, const char **argv) {
 	const char *arg = argc > 1 ? argv[1] : "";
-	rz_config_list(core->config, arg, 's');
+	RzConfigNode *node;
+	RzListIter *iter;
+	char *oldSpace = NULL;
+	rz_list_foreach (core->config->nodes, iter, node) {
+		char *space = strdup(node->name);
+		char *dot = strchr(space, '.');
+		if (dot) {
+			*dot = 0;
+		}
+		if (arg && *arg) {
+			if (!strcmp(arg, space)) {
+				rz_cons_println(dot + 1);
+			}
+			free(space);
+			continue;
+		} else if (oldSpace) {
+			if (!strcmp(space, oldSpace)) {
+				free(space);
+				continue;
+			}
+			free(oldSpace);
+			oldSpace = space;
+		} else {
+			oldSpace = space;
+		}
+		rz_cons_println(space);
+	}
+	free(oldSpace);
 	return RZ_CMD_STATUS_OK;
 }
 

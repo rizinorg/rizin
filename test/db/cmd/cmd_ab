@@ -5,7 +5,7 @@ e analysis.calls=false
 af
 echo $(ablq)
 abt
-ablt fail/str/0x,addr/cols/size/jump/calls
+ablt fail/str/0x:addr/cols/size/jump/calls
 abl~?
 aflc
 aa
@@ -77,7 +77,7 @@ NAME=ablt xrefs
 FILE=bins/mach0/mac-ls2
 CMDS=<<EOF
 aa
-abl, addr/cols/xrefs,xrefs/str/0x
+abl, addr/cols/xrefs:xrefs/str/0x
 EOF
 EXPECT=<<EOF
 .------------------------------------------------------------------------------------------------------------------.

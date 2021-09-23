@@ -1,0 +1,58 @@
+NAME=LANGUAGES : ada detection
+FILE=bins/abi_bins/elf/languages/ada/ada_test
+CMDS=<<EOF
+iI~compiler
+EOF
+EXPECT=<<EOF
+compiler GCC: (GNU) 6.2.1 20160916 (Red Hat 6.2.1-2) GCC: (GNU) 6.3.1 20161221 (Red Hat 6.3.1-1)
+EOF
+RUN
+
+NAME=LANGUAGES : ada detection
+FILE=bins/abi_bins/elf/languages/ada/ada_test
+BROKEN=1
+CMDS=<<EOF
+iI~lang
+EOF
+EXPECT=<<EOF
+lang     ada
+EOF
+RUN
+
+NAME=LANGUAGES : ada
+FILE=bins/abi_bins/elf/languages/ada/tree_traversal
+CMDS=<<EOF
+ii~ada
+EOF
+EXPECT=<<EOF
+11  0x00403400 GLOBAL FUNC       ada__finalization__Oeq__3
+12  0x00403410 GLOBAL FUNC       ada__tags___elabb
+26  0x004034e0 GLOBAL FUNC       ada__tags__needs_finalization
+27  0x004034f0 GLOBAL FUNC       ada__tags__check_tsd
+28  0x00403500 GLOBAL FUNC       ada__strings__maps___elabs
+29  0x00403510 GLOBAL FUNC       ada__containers___elabs
+30  0x00403520 GLOBAL FUNC       ada__text_io___elabs
+31  0x00403530 GLOBAL FUNC       ada__containers__helpers__tamper_countsIP
+39  0x004035b0 GLOBAL FUNC       system__standard_library__adafinal
+40  0x004035c0 GLOBAL FUNC       ada__finalization__controlledSW__2
+42  0x004035e0 GLOBAL FUNC       ada__tags__offset_to_top
+49  0x00403650 GLOBAL FUNC       ada__text_io___elabb
+56  0x004036c0 GLOBAL FUNC       ada__text_io__put__4
+57  0x004036d0 GLOBAL FUNC       ada__finalization__controlledSR__2
+60  0x00403700 GLOBAL FUNC       ada__exceptions__triggered_by_abort
+62  0x00403720 GLOBAL FUNC       ada__strings__maps__constants___elabs
+64  0x00403740 GLOBAL FUNC       ada__finalization__controlledIP
+67  0x00403760 GLOBAL FUNC       ada__tags__dispatch_table_wrapperIP
+68  0x00403770 GLOBAL FUNC       ada__finalization___elabs
+72  0x004037b0 GLOBAL FUNC       ada__tags___elabs
+74  0x004037d0 GLOBAL FUNC       ada__io_exceptions___elabs
+75  0x004037e0 GLOBAL FUNC       ada__text_io__finalize_spec
+76  0x004037f0 GLOBAL FUNC       _ada_system__address_image
+78  0x00403810 GLOBAL FUNC       ada__tags__dt
+83  0x00403860 GLOBAL FUNC       ada__tags__register_interface_offset
+84  0x00403870 GLOBAL FUNC       ada__strings___elabs
+85  0x00403880 GLOBAL FUNC       ada__streams___elabs
+87  0x004038a0 GLOBAL FUNC       ada__text_io__new_line__2
+90  0x004038d0 GLOBAL FUNC       ada__finalization__limited_controlledIP
+EOF
+RUN

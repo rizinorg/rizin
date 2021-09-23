@@ -42,7 +42,6 @@ int gettimeofday(struct timeval *p, void *tz);
 #include "rz_util/rz_time.h"
 #include "rz_util/rz_debruijn.h"
 #include "rz_util/rz_cache.h"
-#include "rz_util/rz_ctypes.h"
 #include "rz_util/rz_file.h"
 #include "rz_util/rz_hex.h"
 #include "rz_util/rz_log.h"
@@ -62,6 +61,7 @@ int gettimeofday(struct timeval *p, void *tz);
 #include "rz_util/rz_str.h"
 #include "rz_util/rz_ascii_table.h"
 #include "rz_util/rz_strbuf.h"
+#include "rz_util/rz_str_search.h"
 #include "rz_util/rz_strpool.h"
 #include "rz_util/rz_str_constpool.h"
 #include "rz_util/rz_sys.h"
@@ -78,6 +78,7 @@ int gettimeofday(struct timeval *p, void *tz);
 #include "rz_util/rz_protobuf.h"
 #include "rz_util/rz_big.h"
 #include "rz_util/rz_subprocess.h"
+#include "rz_util/rz_luhn.h"
 // requires io, core, ... #include "rz_util/rz_print.h"
 
 #ifdef __cplusplus

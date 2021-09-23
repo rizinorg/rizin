@@ -1,0 +1,94 @@
+# SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+---
+name: cmd_print
+commands:
+  - name: pg
+    summary: Print gadgets
+    cname: cmd_print_gadget
+    subcommands:
+      - name: pg
+        summary: Add a new gadget / Print all existing gadgets
+        cname: cmd_print_gadget_add
+        args:
+          - name: x
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+          - name: y
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+          - name: w
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+          - name: h
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+          - name: cmd
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: pg*
+        summary: Print all gadgets as Rizin commands
+        cname: cmd_print_gadget_print_as_rizin
+        args: []
+      - name: pg-*
+        summary: Remove all gadgets
+        cname: cmd_print_gadget_remove
+        args: []
+      - name: pgm
+        summary: Move the position of the n-th gadget
+        cname: cmd_print_gadget_move
+        args:
+          - name: n
+            type: RZ_CMD_ARG_TYPE_NUM
+          - name: x
+            type: RZ_CMD_ARG_TYPE_NUM
+          - name: y
+            type: RZ_CMD_ARG_TYPE_NUM
+          - name: w
+            type: RZ_CMD_ARG_TYPE_NUM
+          - name: h
+            type: RZ_CMD_ARG_TYPE_NUM
+  - name: ph
+    summary: Print hash/message digest or entropy
+    cname: cmd_print_default
+    subcommands:
+      - name: ph
+        summary: Prints a hash/message digest or entropy (use @! to change the block size)
+        cname: cmd_print_msg_digest
+        args:
+          - name: algo
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: phl
+        summary: Lists all the supported algorithms
+        cname: cmd_print_msg_digest_algo_list
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+        args: []
+  - name: pt
+    summary: Print timestamps
+    cname: cmd_print_timestamp
+    subcommands:
+      - name: pt
+        summary: Print UNIX epoch time (32 bit `cfg.bigendian`, since January 1, 1970)
+        cname: cmd_print_timestamp_unix
+        args: []
+      - name: pt.
+        summary: Print the current time
+        args: []
+        cname: cmd_print_timestamp_current
+      - name: ptd
+        summary: Print MS-DOS time (32 bit `cfg.bigendian`, since January 1, 1980)
+        cname: cmd_print_timestamp_dos
+        args: []
+      - name: pth
+        summary: Print Mac HFS time (32 bit `cfg.bigendian`, since January 1, 1904)
+        cname: cmd_print_timestamp_hfs
+        args: []
+      - name: ptn
+        summary: Print NTFS time (64 bit `cfg.bigendian`, since January 1, 1601)
+        cname: cmd_print_timestamp_ntfs
+        args: []

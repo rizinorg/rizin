@@ -31,7 +31,6 @@ call = 4
 #error Old Capstone not supported
 #endif
 
-#define esilprintf(op, fmt, ...) rz_strbuf_setf(&op->esil, fmt, ##__VA_ARGS__)
 #define opexprintf(op, fmt, ...) rz_strbuf_setf(&op->opex, fmt, ##__VA_ARGS__)
 #define INSOP(n)                 insn->detail->x86.operands[n]
 #define INSOPS                   insn->detail->x86.op_count
@@ -346,20 +345,20 @@ static char *getarg(struct Getarg *gop, int n, int set, char *setop, int sel, ut
 static int cond_x862r2(int id) {
 	switch (id) {
 	case X86_INS_JE:
-		return RZ_ANALYSIS_COND_EQ;
+		return RZ_TYPE_COND_EQ;
 	case X86_INS_JNE:
-		return RZ_ANALYSIS_COND_NE;
+		return RZ_TYPE_COND_NE;
 	case X86_INS_JB:
 	case X86_INS_JL:
-		return RZ_ANALYSIS_COND_LT;
+		return RZ_TYPE_COND_LT;
 	case X86_INS_JBE:
 	case X86_INS_JLE:
-		return RZ_ANALYSIS_COND_LE;
+		return RZ_TYPE_COND_LE;
 	case X86_INS_JG:
 	case X86_INS_JA:
-		return RZ_ANALYSIS_COND_GT;
+		return RZ_TYPE_COND_GT;
 	case X86_INS_JAE:
-		return RZ_ANALYSIS_COND_GE;
+		return RZ_TYPE_COND_GE;
 	case X86_INS_JS:
 	case X86_INS_JNS:
 	case X86_INS_JO:
@@ -704,9 +703,9 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	// has the same pneumonic for two different opcodes!). We can decide which
 	// of the two it is based on the operands.
 	// For more information, see:
-	// http://x86.renejeschke.de/html/file_module_x86_id_203.html
+	// https://mudongliang.github.io/x86/html/file_module_x86_id_203.html
 	//               (vs)
-	// http://x86.renejeschke.de/html/file_module_x86_id_204.html
+	// https://mudongliang.github.io/x86/html/file_module_x86_id_204.html
 	case X86_INS_MOVSD:
 		// Handle "Move Scalar Double-Precision Floating-Point Value"
 		if (is_xmm_reg(INSOP(0)) || is_xmm_reg(INSOP(1))) {
@@ -756,7 +755,6 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case X86_INS_MOVBE:
 	case X86_INS_MOVSX:
 	case X86_INS_MOVSXD:
-	case X86_INS_MOVD:
 	case X86_INS_MOVQ:
 	case X86_INS_MOVDQU:
 	case X86_INS_MOVDQA:
@@ -821,6 +819,22 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			break;
 		}
 	} break;
+	case X86_INS_MOVD:
+		if (is_xmm_reg(INSOP(0))) {
+			if (!is_xmm_reg(INSOP(1))) {
+				src = getarg(&gop, 1, 0, NULL, SRC_AR, NULL);
+				dst = getarg(&gop, 0, 0, NULL, DST_AR, NULL);
+				esilprintf(op, "%s,%sl,=", src, dst);
+			}
+		}
+		if (is_xmm_reg(INSOP(1))) {
+			if (!is_xmm_reg(INSOP(0))) {
+				src = getarg(&gop, 1, 0, NULL, SRC_AR, NULL);
+				dst = getarg(&gop, 0, 1, NULL, DST_AR, NULL);
+				esilprintf(op, "%sl,%s", src, dst);
+			}
+		}
+		break;
 	case X86_INS_ROL:
 	case X86_INS_RCL:
 		// TODO: RCL Still does not work as intended
@@ -2037,6 +2051,7 @@ static void set_access_info(RzReg *reg, RzAnalysisOp *op, csh *handle, cs_insn *
 static void set_src_dst(RzReg *reg, RzAnalysisValue *val, csh *handle, cs_insn *insn, int x) {
 	switch (INSOP(x).type) {
 	case X86_OP_MEM:
+		val->type = RZ_ANALYSIS_VAL_MEM;
 		val->mul = INSOP(x).mem.scale;
 		val->delta = INSOP(x).mem.disp;
 		val->memref = INSOP(x).size;
@@ -2045,9 +2060,11 @@ static void set_src_dst(RzReg *reg, RzAnalysisValue *val, csh *handle, cs_insn *
 		val->regdelta = cs_reg2reg(reg, handle, INSOP(x).mem.index);
 		break;
 	case X86_OP_REG:
+		val->type = RZ_ANALYSIS_VAL_REG;
 		val->reg = cs_reg2reg(reg, handle, INSOP(x).reg);
 		break;
 	case X86_OP_IMM:
+		val->type = RZ_ANALYSIS_VAL_IMM;
 		val->imm = INSOP(x).imm;
 		break;
 	default:
@@ -3367,7 +3384,39 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 			//"drx	dr4	.32	16	0\n"
 			//"drx	dr5	.32	20	0\n"
 			"drx	dr6	.32	24	0\n"
-			"drx	dr7	.32	28	0\n";
+			"drx	dr7	.32	28	0\n"
+			"xmm@fpu    xmm0  .128 160  4\n"
+			"fpu    xmm0l .64 160  0\n"
+			"fpu    xmm0h .64 168  0\n"
+
+			"xmm@fpu    xmm1  .128 176  4\n"
+			"fpu    xmm1l .64 176  0\n"
+			"fpu    xmm1h .64 184  0\n"
+
+			"xmm@fpu    xmm2  .128 192  4\n"
+			"fpu    xmm2l .64 192  0\n"
+			"fpu    xmm2h .64 200  0\n"
+
+			"xmm@fpu    xmm3  .128 208  4\n"
+			"fpu    xmm3l .64 208  0\n"
+			"fpu    xmm3h .64 216  0\n"
+
+			"xmm@fpu    xmm4  .128 224  4\n"
+			"fpu    xmm4l .64 224  0\n"
+			"fpu    xmm4h .64 232  0\n"
+
+			"xmm@fpu    xmm5  .128 240  4\n"
+			"fpu    xmm5l .64 240  0\n"
+			"fpu    xmm5h .64 248  0\n"
+
+			"xmm@fpu    xmm6  .128 256  4\n"
+			"fpu    xmm6l .64 256  0\n"
+			"fpu    xmm6h .64 264  0\n"
+
+			"xmm@fpu    xmm7  .128 272  4\n"
+			"fpu    xmm7l .64 272  0\n"
+			"fpu    xmm7h .64 280  0\n";
+
 		break;
 	case 64: {
 		const char *cc = rz_analysis_cc_default(analysis);
@@ -3539,36 +3588,36 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 			"fpu    st7 .64 144  0\n"
 
 			"xmm@fpu    xmm0  .128 160  4\n"
-			"fpu    xmm0h .64 160  0\n"
-			"fpu    xmm0l .64 168  0\n"
+			"fpu    xmm0l .64 160  0\n"
+			"fpu    xmm0h .64 168  0\n"
 
 			"xmm@fpu    xmm1  .128 176  4\n"
-			"fpu    xmm1h .64 176  0\n"
-			"fpu    xmm1l .64 184  0\n"
+			"fpu    xmm1l .64 176  0\n"
+			"fpu    xmm1h .64 184  0\n"
 
 			"xmm@fpu    xmm2  .128 192  4\n"
-			"fpu    xmm2h .64 192  0\n"
-			"fpu    xmm2l .64 200  0\n"
+			"fpu    xmm2l .64 192  0\n"
+			"fpu    xmm2h .64 200  0\n"
 
 			"xmm@fpu    xmm3  .128 208  4\n"
-			"fpu    xmm3h .64 208  0\n"
-			"fpu    xmm3l .64 216  0\n"
+			"fpu    xmm3l .64 208  0\n"
+			"fpu    xmm3h .64 216  0\n"
 
 			"xmm@fpu    xmm4  .128 224  4\n"
-			"fpu    xmm4h .64 224  0\n"
-			"fpu    xmm4l .64 232  0\n"
+			"fpu    xmm4l .64 224  0\n"
+			"fpu    xmm4h .64 232  0\n"
 
 			"xmm@fpu    xmm5  .128 240  4\n"
-			"fpu    xmm5h .64 240  0\n"
-			"fpu    xmm5l .64 248  0\n"
+			"fpu    xmm5l .64 240  0\n"
+			"fpu    xmm5h .64 248  0\n"
 
 			"xmm@fpu    xmm6  .128 256  4\n"
-			"fpu    xmm6h .64 256  0\n"
-			"fpu    xmm6l .64 264  0\n"
+			"fpu    xmm6l .64 256  0\n"
+			"fpu    xmm6h .64 264  0\n"
 
 			"xmm@fpu    xmm7  .128 272  4\n"
-			"fpu    xmm7h .64 272  0\n"
-			"fpu    xmm7l .64 280  0\n"
+			"fpu    xmm7l .64 272  0\n"
+			"fpu    xmm7h .64 280  0\n"
 			"fpu    x64   .64 288  0\n");
 		return prof;
 	}

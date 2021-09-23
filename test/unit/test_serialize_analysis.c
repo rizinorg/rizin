@@ -479,6 +479,60 @@ bool test_analysis_function_load() {
 	mu_end;
 }
 
+static Sdb *noreturn_ref_db() {
+	Sdb *db = sdb_new0();
+	sdb_bool_set(db, "addr.8000500.noreturn", true, 0);
+	sdb_bool_set(db, "addr.8000555.noreturn", true, 0);
+	sdb_bool_set(db, "addr.8000610.noreturn", true, 0);
+	sdb_bool_set(db, "addr.8000632.noreturn", true, 0);
+	return db;
+}
+
+bool test_analysis_function_noreturn_save() {
+	RzAnalysis *analysis = rz_analysis_new();
+
+	rz_analysis_noreturn_add(analysis, NULL, 0x800800);
+	bool has = sdb_bool_get(analysis->sdb_noret, "addr.800800.noreturn", 0);
+	mu_assert_true(has, "noreturn add error");
+	rz_analysis_noreturn_drop(analysis, "0x800800");
+	bool hasnt = sdb_bool_get(analysis->sdb_noret, "addr.800800.noreturn", 0);
+	mu_assert_false(hasnt, "noreturn drop error");
+
+	rz_analysis_noreturn_add(analysis, NULL, 0x8000500);
+	rz_analysis_noreturn_add(analysis, NULL, 0x8000555);
+	rz_analysis_noreturn_add(analysis, NULL, 0x8000610);
+	rz_analysis_noreturn_add(analysis, NULL, 0x8000632);
+	Sdb *db = sdb_new0();
+	rz_serialize_analysis_function_noreturn_save(db, analysis);
+
+	Sdb *expected = noreturn_ref_db();
+	assert_sdb_eq(db, expected, "function noreturn save");
+	sdb_free(db);
+	sdb_free(expected);
+	rz_analysis_free(analysis);
+	mu_end;
+}
+
+bool test_analysis_function_noreturn_load() {
+	RzAnalysis *analysis = rz_analysis_new();
+	Sdb *db = noreturn_ref_db();
+	bool succ = rz_serialize_analysis_function_noreturn_load(db, analysis, NULL);
+	sdb_free(db);
+	mu_assert("load success", succ);
+
+	bool has = sdb_bool_get(analysis->sdb_noret, "addr.8000500.noreturn", 0);
+	has &= sdb_bool_get(analysis->sdb_noret, "addr.8000555.noreturn", 0);
+	has &= sdb_bool_get(analysis->sdb_noret, "addr.8000610.noreturn", 0);
+	has &= sdb_bool_get(analysis->sdb_noret, "addr.8000632.noreturn", 0);
+	mu_assert_true(has, "noreturn load error");
+
+	bool hasnt = sdb_bool_get(analysis->sdb_noret, "addr.800800.noreturn", 0);
+	mu_assert_false(hasnt, "noreturn should not exist");
+
+	rz_analysis_free(analysis);
+	mu_end;
+}
+
 Sdb *vars_ref_db() {
 	Sdb *db = sdb_new0();
 	sdb_set(db, "0x539", "{\"name\":\"hirsch\",\"bits\":64,\"type\":0,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"diff\":{},\"bbs\":[],"
@@ -492,34 +546,52 @@ Sdb *vars_ref_db() {
 }
 
 bool test_analysis_var_save() {
+	const char *dir_prefix = rz_sys_prefix(NULL);
 	RzAnalysis *analysis = rz_analysis_new();
 	rz_analysis_use(analysis, "x86");
 	rz_analysis_set_bits(analysis, 64);
+	rz_type_db_init(analysis->typedb, dir_prefix, "x86", 64, "linux");
 
 	RzAnalysisFunction *f = rz_analysis_create_function(analysis, "hirsch", 1337, RZ_ANALYSIS_FCN_TYPE_NULL, NULL);
 
 	RzRegItem *rax = rz_reg_get(analysis->reg, "rax", -1);
-	RzAnalysisVar *v = rz_analysis_function_set_var(f, rax->index, RZ_ANALYSIS_VAR_KIND_REG, "int64_t", 0, true, "arg_rax");
+
+	RzType *t_int64_t = rz_type_identifier_of_base_type_str(analysis->typedb, "int64_t");
+	mu_assert_notnull(t_int64_t, "has int64_t type");
+	RzType *t_uint64_t = rz_type_identifier_of_base_type_str(analysis->typedb, "uint64_t");
+	mu_assert_notnull(t_uint64_t, "has uint64_t type");
+	RzType *t_const_char_ptr = rz_type_pointer_of_base_type_str(analysis->typedb, "char", false);
+	mu_assert_notnull(t_const_char_ptr, "has char* type");
+	t_const_char_ptr->pointer.type->identifier.is_const = true;
+	RzBaseType *bt_struct_something = rz_type_base_type_new(RZ_BASE_TYPE_KIND_STRUCT);
+	mu_assert_notnull(bt_struct_something, "create struct something base type");
+	bt_struct_something->name = strdup("something");
+	rz_type_db_save_base_type(analysis->typedb, bt_struct_something);
+	RzType *t_struct_something = rz_type_identifier_of_base_type(analysis->typedb, bt_struct_something, false);
+	mu_assert_notnull(t_struct_something, "create struct something type");
+	t_struct_something->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_STRUCT;
+
+	RzAnalysisVar *v = rz_analysis_function_set_var(f, rax->index, RZ_ANALYSIS_VAR_KIND_REG, t_int64_t, 0, true, "arg_rax");
 	rz_analysis_var_set_access(v, "rax", 1340, RZ_ANALYSIS_VAR_ACCESS_TYPE_READ, 42);
 	rz_analysis_var_set_access(v, "rbx", 1350, RZ_ANALYSIS_VAR_ACCESS_TYPE_READ | RZ_ANALYSIS_VAR_ACCESS_TYPE_WRITE, 13);
 	rz_analysis_var_set_access(v, "rcx", 1360, RZ_ANALYSIS_VAR_ACCESS_TYPE_WRITE, 123);
 
 	ut64 val = 0;
-	_RzAnalysisCond cond;
-	for (cond = RZ_ANALYSIS_COND_AL; cond <= RZ_ANALYSIS_COND_LS; cond++) {
+	RzTypeCond cond;
+	for (cond = RZ_TYPE_COND_AL; cond <= RZ_TYPE_COND_LS; cond++) {
 		val += 42;
-		RzAnalysisVarConstraint constr = {
+		RzTypeConstraint constr = {
 			.cond = cond,
 			.val = val
 		};
 		rz_analysis_var_add_constraint(v, &constr);
 	}
 
-	v = rz_analysis_function_set_var(f, 0x10, RZ_ANALYSIS_VAR_KIND_SPV, "const char *", 0, false, "var_sp");
+	v = rz_analysis_function_set_var(f, 0x10, RZ_ANALYSIS_VAR_KIND_SPV, t_const_char_ptr, 0, false, "var_sp");
 	rz_analysis_var_set_access(v, "rsp", 1340, RZ_ANALYSIS_VAR_ACCESS_TYPE_WRITE, 321);
 
-	rz_analysis_function_set_var(f, -0x10, RZ_ANALYSIS_VAR_KIND_BPV, "struct something", 0, false, "var_bp");
-	v = rz_analysis_function_set_var(f, 0x10, RZ_ANALYSIS_VAR_KIND_BPV, "uint64_t", 0, true, "arg_bp");
+	rz_analysis_function_set_var(f, -0x10, RZ_ANALYSIS_VAR_KIND_BPV, t_struct_something, 0, false, "var_bp");
+	v = rz_analysis_function_set_var(f, 0x10, RZ_ANALYSIS_VAR_KIND_BPV, t_uint64_t, 0, true, "arg_bp");
 	v->comment = strdup("I have no idea what this var does");
 
 	Sdb *db = sdb_new0();
@@ -534,9 +606,11 @@ bool test_analysis_var_save() {
 }
 
 bool test_analysis_var_load() {
+	const char *dir_prefix = rz_sys_prefix(NULL);
 	RzAnalysis *analysis = rz_analysis_new();
 	rz_analysis_use(analysis, "x86");
 	rz_analysis_set_bits(analysis, 64);
+	rz_type_db_init(analysis->typedb, dir_prefix, "x86", 64, "linux");
 
 	Sdb *db = vars_ref_db();
 	RzSerializeAnalDiffParser diff_parser = rz_serialize_analysis_diff_parser_new();
@@ -548,12 +622,19 @@ bool test_analysis_var_load() {
 
 	mu_assert_eq(rz_pvector_len(&f->vars), 4, "vars count");
 
+	RzType *t_int64_t = rz_type_identifier_of_base_type_str(analysis->typedb, "int64_t");
+	mu_assert_notnull(t_int64_t, "has int64_t type");
+	RzType *t_uint64_t = rz_type_identifier_of_base_type_str(analysis->typedb, "uint64_t");
+	mu_assert_notnull(t_uint64_t, "has uint64_t type");
+	RzType *t_const_char_ptr = rz_type_pointer_of_base_type_str(analysis->typedb, "char", true);
+	mu_assert_notnull(t_const_char_ptr, "has \"const char *\" type");
+
 	RzRegItem *rax = rz_reg_get(analysis->reg, "rax", -1);
 	RzAnalysisVar *v = rz_analysis_function_get_var(f, RZ_ANALYSIS_VAR_KIND_REG, rax->index);
 	mu_assert_notnull(v, "var");
 	mu_assert_streq(v->regname, "rax", "var regname");
 	mu_assert_streq(v->name, "arg_rax", "var name");
-	mu_assert_streq(v->type, "int64_t", "var type");
+	mu_assert_true(rz_type_atomic_str_eq(analysis->typedb, v->type, "int64_t"), "var type");
 	mu_assert("var arg", v->isarg);
 
 	mu_assert_eq(v->accesses.len, 3, "accesses count");
@@ -572,12 +653,12 @@ bool test_analysis_var_load() {
 	RzPVector *used = rz_analysis_function_get_vars_used_at(f, 1340);
 	mu_assert("var used", rz_pvector_contains(used, v));
 
-	mu_assert_eq(v->constraints.len, RZ_ANALYSIS_COND_LS + 1, "constraints count");
+	mu_assert_eq(v->constraints.len, RZ_TYPE_COND_LS + 1, "constraints count");
 	ut64 val = 0;
-	_RzAnalysisCond cond;
-	for (cond = RZ_ANALYSIS_COND_AL; cond <= RZ_ANALYSIS_COND_LS; cond++) {
+	RzTypeCond cond;
+	for (cond = RZ_TYPE_COND_AL; cond <= RZ_TYPE_COND_LS; cond++) {
 		val += 42;
-		RzAnalysisVarConstraint *constr = rz_vector_index_ptr(&v->constraints, (size_t)(cond - RZ_ANALYSIS_COND_AL));
+		RzTypeConstraint *constr = rz_vector_index_ptr(&v->constraints, (size_t)(cond - RZ_TYPE_COND_AL));
 		mu_assert_eq(constr->cond, cond, "constraint cond");
 		mu_assert_eq(constr->val, val, "constraint val");
 	}
@@ -585,7 +666,11 @@ bool test_analysis_var_load() {
 	v = rz_analysis_function_get_var(f, RZ_ANALYSIS_VAR_KIND_SPV, 0x10);
 	mu_assert_notnull(v, "var");
 	mu_assert_streq(v->name, "var_sp", "var name");
-	mu_assert_streq(v->type, "const char *", "var type");
+	mu_assert_eq(v->type->kind, RZ_TYPE_KIND_POINTER, "var type");
+	mu_assert_notnull(v->type->pointer.type, "var type");
+	mu_assert_eq(v->type->pointer.type->kind, RZ_TYPE_KIND_IDENTIFIER, "var type");
+	mu_assert_true(v->type->pointer.type->identifier.is_const, "var type");
+	mu_assert_true(rz_type_atomic_str_eq(analysis->typedb, v->type->pointer.type, "char"), "var type");
 	mu_assert("var arg", !v->isarg);
 	mu_assert_eq(v->accesses.len, 1, "accesses count");
 	acc = rz_vector_index_ptr(&v->accesses, 0);
@@ -598,14 +683,16 @@ bool test_analysis_var_load() {
 	v = rz_analysis_function_get_var(f, RZ_ANALYSIS_VAR_KIND_BPV, -0x10);
 	mu_assert_notnull(v, "var");
 	mu_assert_streq(v->name, "var_bp", "var name");
-	mu_assert_streq(v->type, "struct something", "var type");
+	mu_assert_eq(v->type->kind, RZ_TYPE_KIND_IDENTIFIER, "var type");
+	mu_assert_eq(v->type->identifier.kind, RZ_TYPE_IDENTIFIER_KIND_STRUCT, "var type");
+	mu_assert_streq(v->type->identifier.name, "something", "var type");
 	mu_assert("var arg", !v->isarg);
 	mu_assert_eq(v->accesses.len, 0, "accesses count");
 
 	v = rz_analysis_function_get_var(f, RZ_ANALYSIS_VAR_KIND_BPV, 0x10);
 	mu_assert_notnull(v, "var");
 	mu_assert_streq(v->name, "arg_bp", "var name");
-	mu_assert_streq(v->type, "uint64_t", "var type");
+	mu_assert_true(rz_type_atomic_str_eq(analysis->typedb, v->type, "uint64_t"), "var type");
 	mu_assert("var arg", v->isarg);
 	mu_assert_eq(v->accesses.len, 0, "accesses count");
 	mu_assert_streq(v->comment, "I have no idea what this var does", "var comment");
@@ -656,43 +743,43 @@ bool test_analysis_xrefs_load() {
 
 	RzList *xrefs = rz_analysis_xrefs_get_from(analysis, 0x1337);
 	mu_assert_eq(rz_list_length(xrefs), 2, "xrefs from count");
-	mu_assert_eq(((RzAnalysisRef *)rz_list_get_n(xrefs, 0))->addr, 4242, "xref to");
-	mu_assert_eq(((RzAnalysisRef *)rz_list_get_n(xrefs, 0))->at, 0x1337, "xref addr");
-	mu_assert_eq(((RzAnalysisRef *)rz_list_get_n(xrefs, 0))->type, RZ_ANALYSIS_REF_TYPE_NULL, "xref type");
-	mu_assert_eq(((RzAnalysisRef *)rz_list_get_n(xrefs, 1))->addr, 4243, "xref to");
-	mu_assert_eq(((RzAnalysisRef *)rz_list_get_n(xrefs, 1))->at, 0x1337, "xref addr");
-	mu_assert_eq(((RzAnalysisRef *)rz_list_get_n(xrefs, 1))->type, RZ_ANALYSIS_REF_TYPE_CODE, "xref type");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->from, 0x1337, "xref from");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->to, 4242, "xref to");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->type, RZ_ANALYSIS_REF_TYPE_NULL, "xref type");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 1))->from, 0x1337, "xref from");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 1))->to, 4243, "xref to");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 1))->type, RZ_ANALYSIS_REF_TYPE_CODE, "xref type");
 	rz_list_free(xrefs);
 
 	xrefs = rz_analysis_xrefs_get_from(analysis, 1234);
 	mu_assert_eq(rz_list_length(xrefs), 1, "xrefs from count");
-	mu_assert_eq(((RzAnalysisRef *)rz_list_get_n(xrefs, 0))->addr, 4243, "xref to");
-	mu_assert_eq(((RzAnalysisRef *)rz_list_get_n(xrefs, 0))->at, 1234, "xref addr");
-	mu_assert_eq(((RzAnalysisRef *)rz_list_get_n(xrefs, 0))->type, RZ_ANALYSIS_REF_TYPE_CALL, "xref type");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->from, 1234, "xref from");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->to, 4243, "xref to");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->type, RZ_ANALYSIS_REF_TYPE_CALL, "xref type");
 	rz_list_free(xrefs);
 
 	xrefs = rz_analysis_xrefs_get_from(analysis, 42);
 	mu_assert_eq(rz_list_length(xrefs), 1, "xrefs from count");
-	mu_assert_eq(((RzAnalysisRef *)rz_list_get_n(xrefs, 0))->addr, 4321, "xref to");
-	mu_assert_eq(((RzAnalysisRef *)rz_list_get_n(xrefs, 0))->at, 42, "xref addr");
-	mu_assert_eq(((RzAnalysisRef *)rz_list_get_n(xrefs, 0))->type, RZ_ANALYSIS_REF_TYPE_DATA, "xref type");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->from, 42, "xref from");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->to, 4321, "xref to");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->type, RZ_ANALYSIS_REF_TYPE_DATA, "xref type");
 	rz_list_free(xrefs);
 
 	xrefs = rz_analysis_xrefs_get_from(analysis, 666);
 	mu_assert_eq(rz_list_length(xrefs), 1, "xrefs from count");
-	mu_assert_eq(((RzAnalysisRef *)rz_list_get_n(xrefs, 0))->addr, 333, "xref to");
-	mu_assert_eq(((RzAnalysisRef *)rz_list_get_n(xrefs, 0))->at, 666, "xref addr");
-	mu_assert_eq(((RzAnalysisRef *)rz_list_get_n(xrefs, 0))->type, RZ_ANALYSIS_REF_TYPE_STRING, "xref type");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->from, 666, "xref from");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->to, 333, "xref to");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->type, RZ_ANALYSIS_REF_TYPE_STRING, "xref type");
 	rz_list_free(xrefs);
 
-	xrefs = rz_analysis_xrefs_get(analysis, 4243);
+	xrefs = rz_analysis_xrefs_get_to(analysis, 4243);
 	mu_assert_eq(rz_list_length(xrefs), 2, "xrefs to count");
-	mu_assert_eq(((RzAnalysisRef *)rz_list_get_n(xrefs, 0))->addr, 1234, "xref to");
-	mu_assert_eq(((RzAnalysisRef *)rz_list_get_n(xrefs, 0))->at, 4243, "xref addr");
-	mu_assert_eq(((RzAnalysisRef *)rz_list_get_n(xrefs, 0))->type, RZ_ANALYSIS_REF_TYPE_CALL, "xref type");
-	mu_assert_eq(((RzAnalysisRef *)rz_list_get_n(xrefs, 1))->addr, 0x1337, "xref to");
-	mu_assert_eq(((RzAnalysisRef *)rz_list_get_n(xrefs, 1))->at, 4243, "xref addr");
-	mu_assert_eq(((RzAnalysisRef *)rz_list_get_n(xrefs, 1))->type, RZ_ANALYSIS_REF_TYPE_CODE, "xref type");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->from, 1234, "xref from");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->to, 4243, "xref to");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->type, RZ_ANALYSIS_REF_TYPE_CALL, "xref type");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 1))->from, 0x1337, "xref from");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 1))->to, 4243, "xref to");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 1))->type, RZ_ANALYSIS_REF_TYPE_CODE, "xref type");
 	rz_list_free(xrefs);
 
 	sdb_free(db);
@@ -1250,187 +1337,6 @@ bool test_analysis_classes_load() {
 	mu_end;
 }
 
-Sdb *types_ref_db() {
-	Sdb *db = sdb_new0();
-	sdb_set(db, "snatcher", "union", 0);
-	sdb_set(db, "struct.junker.gillian", "char *,0,0", 0);
-	sdb_set(db, "junker", "struct", 0);
-	sdb_set(db, "typedef.human", "union snatcher", 0);
-	sdb_set(db, "union.snatcher.random", "int,0,0", 0);
-	sdb_set(db, "human", "typedef", 0);
-	sdb_set(db, "struct.junker.seed", "uint64_t,8,0", 0);
-	sdb_set(db, "union.snatcher", "random,hajile", 0);
-	sdb_set(db, "struct.junker", "gillian,seed", 0);
-	sdb_set(db, "union.snatcher.hajile", "uint32_t,0,0", 0);
-	sdb_set(db, "badchar", "type", 0);
-	sdb_set(db, "type.badchar.size", "16", 0);
-	sdb_set(db, "type.badchar", "c", 0);
-	sdb_set(db, "enum.mika", "ELIJAH,MODNAR", 0);
-	sdb_set(db, "enum.mika.MODNAR", "0x539", 0);
-	sdb_set(db, "enum.mika.ELIJAH", "0x2a", 0);
-	sdb_set(db, "enum.mika.0x2a", "ELIJAH", 0);
-	sdb_set(db, "mika", "enum", 0);
-	sdb_set(db, "enum.mika.0x539", "MODNAR", 0);
-	return db;
-}
-
-bool test_analysis_types_save() {
-	RzAnalysis *analysis = rz_analysis_new();
-
-	// struct
-	RzAnalysisBaseType *type = rz_analysis_base_type_new(RZ_ANALYSIS_BASE_TYPE_KIND_STRUCT);
-	type->name = strdup("junker");
-
-	RzAnalysisStructMember member;
-	member.name = strdup("gillian");
-	member.offset = 0;
-	member.type = strdup("char *");
-	rz_vector_push(&type->struct_data.members, &member);
-
-	member.name = strdup("seed");
-	member.offset = 8;
-	member.type = strdup("uint64_t");
-	rz_vector_push(&type->struct_data.members, &member);
-
-	rz_analysis_save_base_type(analysis, type);
-	rz_analysis_base_type_free(type);
-
-	// union
-	type = rz_analysis_base_type_new(RZ_ANALYSIS_BASE_TYPE_KIND_UNION);
-	type->name = strdup("snatcher");
-
-	RzAnalysisUnionMember mumber;
-	mumber.name = strdup("random");
-	mumber.offset = 0;
-	mumber.type = strdup("int");
-	rz_vector_push(&type->union_data.members, &mumber);
-
-	mumber.name = strdup("hajile");
-	mumber.offset = 0;
-	mumber.type = strdup("uint32_t");
-	rz_vector_push(&type->union_data.members, &mumber);
-
-	rz_analysis_save_base_type(analysis, type);
-	rz_analysis_base_type_free(type);
-
-	// enum
-	type = rz_analysis_base_type_new(RZ_ANALYSIS_BASE_TYPE_KIND_ENUM);
-	type->name = strdup("mika");
-
-	RzAnalysisEnumCase cas;
-	cas.name = strdup("ELIJAH");
-	cas.val = 42;
-	rz_vector_push(&type->enum_data.cases, &cas);
-
-	cas.name = strdup("MODNAR");
-	cas.val = 1337;
-	rz_vector_push(&type->enum_data.cases, &cas);
-
-	rz_analysis_save_base_type(analysis, type);
-	rz_analysis_base_type_free(type);
-
-	// typedef
-	type = rz_analysis_base_type_new(RZ_ANALYSIS_BASE_TYPE_KIND_TYPEDEF);
-	type->name = strdup("human");
-	type->type = strdup("union snatcher");
-	rz_analysis_save_base_type(analysis, type);
-	rz_analysis_base_type_free(type);
-
-	// atomic
-	type = rz_analysis_base_type_new(RZ_ANALYSIS_BASE_TYPE_KIND_ATOMIC);
-	type->name = strdup("badchar");
-	type->size = 16;
-	type->type = strdup("c");
-	rz_analysis_save_base_type(analysis, type);
-	rz_analysis_base_type_free(type);
-
-	Sdb *db = sdb_new0();
-	rz_serialize_analysis_types_save(db, analysis);
-
-	Sdb *expected = types_ref_db();
-	assert_sdb_eq(db, expected, "types save");
-	sdb_free(db);
-	sdb_free(expected);
-	rz_analysis_free(analysis);
-	mu_end;
-}
-
-bool test_analysis_types_load() {
-	RzAnalysis *analysis = rz_analysis_new();
-	Sdb *db = types_ref_db();
-	bool succ = rz_serialize_analysis_types_load(db, analysis, NULL);
-	sdb_free(db);
-	mu_assert("load success", succ);
-
-	// struct
-	RzAnalysisBaseType *type = rz_analysis_get_base_type(analysis, "junker");
-	mu_assert_notnull(type, "get type");
-	mu_assert_eq(type->kind, RZ_ANALYSIS_BASE_TYPE_KIND_STRUCT, "type kind");
-	mu_assert_eq(type->struct_data.members.len, 2, "members count");
-
-	RzAnalysisStructMember *member = rz_vector_index_ptr(&type->struct_data.members, 0);
-	mu_assert_streq(member->name, "gillian", "member name");
-	mu_assert_eq(member->offset, 0, "member offset");
-	mu_assert_streq(member->type, "char *", "member type");
-
-	member = rz_vector_index_ptr(&type->struct_data.members, 1);
-	mu_assert_streq(member->name, "seed", "member name");
-	mu_assert_eq(member->offset, 8, "member offset");
-	mu_assert_streq(member->type, "uint64_t", "member type");
-
-	rz_analysis_base_type_free(type);
-
-	// union
-	type = rz_analysis_get_base_type(analysis, "snatcher");
-	mu_assert_notnull(type, "get type");
-	mu_assert_eq(type->kind, RZ_ANALYSIS_BASE_TYPE_KIND_UNION, "type kind");
-	mu_assert_eq(type->union_data.members.len, 2, "members count");
-
-	RzAnalysisUnionMember *mumber = rz_vector_index_ptr(&type->union_data.members, 0);
-	mu_assert_streq(mumber->name, "random", "member name");
-	mu_assert_streq(mumber->type, "int", "member type");
-
-	mumber = rz_vector_index_ptr(&type->union_data.members, 1);
-	mu_assert_streq(mumber->name, "hajile", "member name");
-	mu_assert_streq(mumber->type, "uint32_t", "member type");
-
-	rz_analysis_base_type_free(type);
-
-	// enum
-	type = rz_analysis_get_base_type(analysis, "mika");
-	mu_assert_notnull(type, "get type");
-	mu_assert_eq(type->kind, RZ_ANALYSIS_BASE_TYPE_KIND_ENUM, "type kind");
-	mu_assert_eq(type->enum_data.cases.len, 2, "cases count");
-
-	RzAnalysisEnumCase *cas = rz_vector_index_ptr(&type->enum_data.cases, 0);
-	mu_assert_streq(cas->name, "ELIJAH", "case name");
-	mu_assert_eq(cas->val, 42, "case value");
-
-	cas = rz_vector_index_ptr(&type->enum_data.cases, 1);
-	mu_assert_streq(cas->name, "MODNAR", "case name");
-	mu_assert_eq(cas->val, 1337, "case value");
-
-	rz_analysis_base_type_free(type);
-
-	// typedef
-	type = rz_analysis_get_base_type(analysis, "human");
-	mu_assert_notnull(type, "get type");
-	mu_assert_eq(type->kind, RZ_ANALYSIS_BASE_TYPE_KIND_TYPEDEF, "type kind");
-	mu_assert_streq(type->type, "union snatcher", "typedefd type");
-	rz_analysis_base_type_free(type);
-
-	// atomic
-	type = rz_analysis_get_base_type(analysis, "badchar");
-	mu_assert_notnull(type, "get type");
-	mu_assert_eq(type->kind, RZ_ANALYSIS_BASE_TYPE_KIND_ATOMIC, "type kind");
-	mu_assert_eq(type->size, 16, "atomic type size");
-	mu_assert_streq(type->type, "c", "atomic type");
-	rz_analysis_base_type_free(type);
-
-	rz_analysis_free(analysis);
-	mu_end;
-}
-
 Sdb *sign_ref_db() {
 	Sdb *db = sdb_new0();
 	Sdb *spaces = sdb_ns(db, "spaces", true);
@@ -1465,13 +1371,13 @@ bool test_analysis_sign_save() {
 
 	item->addr = 0x1337;
 
-	item->refs = rz_list_newf(free);
-	rz_list_append(item->refs, strdup("gwonam"));
-	rz_list_append(item->refs, strdup("link"));
+	item->xrefs_from = rz_list_newf(free);
+	rz_list_append(item->xrefs_from, strdup("gwonam"));
+	rz_list_append(item->xrefs_from, strdup("link"));
 
-	item->xrefs = rz_list_newf(free);
-	rz_list_append(item->xrefs, strdup("king"));
-	rz_list_append(item->xrefs, strdup("ganon"));
+	item->xrefs_to = rz_list_newf(free);
+	rz_list_append(item->xrefs_to, strdup("king"));
+	rz_list_append(item->xrefs_to, strdup("ganon"));
 
 	item->vars = rz_list_newf(free);
 	rz_list_append(item->vars, strdup("r16"));
@@ -1529,14 +1435,14 @@ bool test_analysis_sign_load() {
 	mu_assert_eq(item->graph->edges, 12, "graph edges");
 	mu_assert_eq(item->graph->nbbs, 11, "graph nbbs");
 	mu_assert_eq(item->addr, 0x1337, "addr");
-	mu_assert_notnull(item->refs, "refs");
-	mu_assert_eq(rz_list_length(item->refs), 2, "refs count");
-	mu_assert_streq(rz_list_get_n(item->refs, 0), "gwonam", "ref");
-	mu_assert_streq(rz_list_get_n(item->refs, 1), "link", "ref");
-	mu_assert_notnull(item->xrefs, "xrefs");
-	mu_assert_eq(rz_list_length(item->xrefs), 2, "xrefs count");
-	mu_assert_streq(rz_list_get_n(item->xrefs, 0), "king", "xref");
-	mu_assert_streq(rz_list_get_n(item->xrefs, 1), "ganon", "xref");
+	mu_assert_notnull(item->xrefs_from, "xrefs_from");
+	mu_assert_eq(rz_list_length(item->xrefs_from), 2, "xrefs_from count");
+	mu_assert_streq(rz_list_get_n(item->xrefs_from, 0), "gwonam", "xrefs_from");
+	mu_assert_streq(rz_list_get_n(item->xrefs_from, 1), "link", "xrefs_from");
+	mu_assert_notnull(item->xrefs_to, "xrefs_to");
+	mu_assert_eq(rz_list_length(item->xrefs_to), 2, "xrefs_to count");
+	mu_assert_streq(rz_list_get_n(item->xrefs_to, 0), "king", "xrefs_to");
+	mu_assert_streq(rz_list_get_n(item->xrefs_to, 1), "ganon", "xrefs_to");
 	mu_assert_notnull(item->vars, "vars");
 	mu_assert_eq(rz_list_length(item->vars), 3, "vars count");
 	mu_assert_streq(rz_list_get_n(item->vars, 0), "r16", "var");
@@ -1622,6 +1528,9 @@ Sdb *analysis_ref_db() {
 	sdb_set(functions, "0x4d2", "{\"name\":\"effekt\",\"bits\":32,\"type\":1,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"diff\":{},\"bbs\":[1337]}", 0);
 	sdb_set(functions, "0x539", "{\"name\":\"hirsch\",\"bits\":32,\"type\":0,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"diff\":{},\"bbs\":[1337,1234]}", 0);
 
+	Sdb *noret = sdb_ns(db, "noreturn", true);
+	sdb_bool_set(noret, "addr.800800.noreturn", true, 0);
+
 	Sdb *xrefs = sdb_ns(db, "xrefs", true);
 	sdb_set(xrefs, "0x42", "[{\"to\":1337,\"type\":\"C\"}]", 0);
 	sdb_set(xrefs, "0x539", "[{\"to\":12648430,\"type\":\"d\"}]", 0);
@@ -1642,11 +1551,6 @@ Sdb *analysis_ref_db() {
 	sdb_set(class_attrs, "attrtypes.Aeropause", "method", 0);
 	sdb_set(class_attrs, "attr.Aeropause.method", "some_meth", 0);
 	sdb_set(class_attrs, "attr.Aeropause.method.some_meth", "4919,42,0,some_meth", 0);
-
-	Sdb *types = sdb_ns(db, "types", true);
-	sdb_set(types, "badchar", "type", 0);
-	sdb_set(types, "type.badchar.size", "16", 0);
-	sdb_set(types, "type.badchar", "c", 0);
 
 	Sdb *zigns = sdb_ns(db, "zigns", true);
 	Sdb *zign_spaces = sdb_ns(zigns, "spaces", true);
@@ -1672,6 +1576,11 @@ Sdb *analysis_ref_db() {
 	sdb_set(cc, "cc.sectarian.argn", "stack", 0);
 	sdb_set(cc, "sectarian", "cc", 0);
 
+	sdb_ns(db, "types", true);
+	sdb_ns(db, "callables", true);
+	sdb_ns(db, "typelinks", true);
+	sdb_ns(db, "vars", true);
+
 	return db;
 }
 
@@ -1691,6 +1600,8 @@ bool test_analysis_save() {
 	rz_analysis_block_unref(ba);
 	rz_analysis_block_unref(bb);
 
+	rz_analysis_noreturn_add(analysis, NULL, 0x800800);
+
 	rz_analysis_xrefs_set(analysis, 0x42, 1337, RZ_ANALYSIS_REF_TYPE_CALL);
 	rz_analysis_xrefs_set(analysis, 1337, 0xc0ffee, RZ_ANALYSIS_REF_TYPE_DATA);
 
@@ -1709,13 +1620,6 @@ bool test_analysis_save() {
 	rz_analysis_class_method_set(analysis, "Aeropause", &crystal);
 	rz_analysis_class_method_fini(&crystal);
 
-	RzAnalysisBaseType *type = rz_analysis_base_type_new(RZ_ANALYSIS_BASE_TYPE_KIND_ATOMIC);
-	type->name = strdup("badchar");
-	type->size = 16;
-	type->type = strdup("c");
-	rz_analysis_save_base_type(analysis, type);
-	rz_analysis_base_type_free(type);
-
 	rz_spaces_set(&analysis->zign_spaces, "koridai");
 	rz_sign_add_comment(analysis, "sym.boring", "gee it sure is boring around here");
 
@@ -1731,6 +1635,12 @@ bool test_analysis_save() {
 	Sdb *db = sdb_new0();
 	rz_serialize_analysis_save(db, analysis);
 
+	// Remove `types` namespace first
+	sdb_ns_unset(db, "types", NULL);
+	sdb_ns(db, "types", true);
+	sdb_ns(db, "callables", true);
+	sdb_ns(db, "typelinks", true);
+
 	Sdb *expected = analysis_ref_db();
 	assert_sdb_eq(db, expected, "analysis save");
 	sdb_free(db);
@@ -1741,6 +1651,9 @@ bool test_analysis_save() {
 
 bool test_analysis_load() {
 	RzAnalysis *analysis = rz_analysis_new();
+
+	const char *dir_prefix = rz_sys_prefix(NULL);
+	rz_type_db_init(analysis->typedb, dir_prefix, "x86", 64, "linux");
 
 	Sdb *db = analysis_ref_db();
 	bool succ = rz_serialize_analysis_load(db, analysis, NULL);
@@ -1779,13 +1692,6 @@ bool test_analysis_load() {
 	mu_assert_streq(meth->name, "some_meth", "method name");
 	rz_vector_free(vals);
 
-	RzAnalysisBaseType *type = rz_analysis_get_base_type(analysis, "badchar");
-	mu_assert_notnull(type, "get type");
-	mu_assert_eq(type->kind, RZ_ANALYSIS_BASE_TYPE_KIND_ATOMIC, "type kind");
-	mu_assert_eq(type->size, 16, "atomic type size");
-	mu_assert_streq(type->type, "c", "atomic type");
-	rz_analysis_base_type_free(type);
-
 	rz_spaces_set(&analysis->zign_spaces, "koridai");
 	RzSignItem *item = rz_sign_get_item(analysis, "sym.boring");
 	mu_assert_notnull(item, "get item in space");
@@ -1821,6 +1727,8 @@ int all_tests() {
 	mu_run_test(test_analysis_block_load);
 	mu_run_test(test_analysis_function_save);
 	mu_run_test(test_analysis_function_load);
+	mu_run_test(test_analysis_function_noreturn_save);
+	mu_run_test(test_analysis_function_noreturn_load);
 	mu_run_test(test_analysis_var_save);
 	mu_run_test(test_analysis_var_load);
 	mu_run_test(test_analysis_xrefs_save);
@@ -1831,8 +1739,6 @@ int all_tests() {
 	mu_run_test(test_analysis_hints_load);
 	mu_run_test(test_analysis_classes_save);
 	mu_run_test(test_analysis_classes_load);
-	mu_run_test(test_analysis_types_save);
-	mu_run_test(test_analysis_types_load);
 	mu_run_test(test_analysis_sign_save);
 	mu_run_test(test_analysis_sign_load);
 	mu_run_test(test_analysis_cc_save);

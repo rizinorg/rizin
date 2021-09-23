@@ -1,5 +1,5 @@
 project('rizin', 'c',
-  version: 'v0.2.0-git',
+  version: 'v0.3.0-git',
   license: 'LGPL3',
   meson_version: '>=0.55.0',
   default_options: [
@@ -17,6 +17,7 @@ create_tags_rz_py = files('sys/create_tags_rz.py')
 syscall_preprocessing_py = files('sys/syscall_preprocessing.py')
 check_meson_subproject_py = files('sys/check_meson_subproject.py')
 git_exe_repo_py = files('sys/meson_git_wrapper.py')
+tree_sitter_wrap_py = files('sys/meson_tree_sitter_generate.py')
 
 is_static_build = get_option('static_runtime')
 if is_static_build and get_option('default_library') != 'static'
@@ -54,8 +55,8 @@ version_commit = '0'
 
 gittip = ''
 
-git_dir_exists = run_command(py3_exe, '-c', '__import__("sys").exit(0 if __import__("os").path.isdir(".git") else 1)')
-if git_exe.found() and git_dir_exists.returncode() == 0
+fs = import('fs')
+if git_exe.found() and fs.exists('.git')
   # Get gittip
   git_rev_parse = run_command(py3_exe, git_exe_repo_py, git_exe, repo, 'rev-parse', 'HEAD')
   if git_rev_parse.returncode() == 0
@@ -147,7 +148,7 @@ endif
 
 if get_option('default_library') == 'shared'
   if cc.has_argument('-fvisibility=hidden')
-    add_project_arguments('-fvisibility=hidden', language: 'c')
+    add_global_arguments('-fvisibility=hidden', language: 'c')
   endif
 endif
 
@@ -266,8 +267,20 @@ if get_option('use_libuv')
   endif
 endif
 
+# handle tree-sitter
+r = run_command(py3_exe, check_meson_subproject_py, 'tree-sitter')
+if r.returncode() == 1 and get_option('subprojects_check')
+  error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+endif
+
+tree_sitter_dep = dependency('tree-sitter', required: get_option('use_sys_tree_sitter'), static: is_static_build, fallback: [])
+if not tree_sitter_dep.found()
+  tree_sitter_proj = subproject('tree-sitter', default_options: ['default_library=static'])
+  tree_sitter_dep = tree_sitter_proj.get_variable('tree_sitter_dep')
+endif
+
 has_debugger = get_option('debugger')
-have_ptrace = not ['windows', 'cygwin', 'sunos'].contains(host_machine.system())
+have_ptrace = not ['windows', 'cygwin', 'sunos', 'haiku'].contains(host_machine.system())
 use_ptrace_wrap = ['linux'].contains(host_machine.system())
 
 have_ptrace = have_ptrace and has_debugger
@@ -296,6 +309,7 @@ userconf.set10('HAVE_LIB_XXHASH', xxhash_dep.found())
 userconf.set10('USE_LIB_XXHASH', xxhash_dep.found())
 userconf.set10('DEBUGGER', has_debugger)
 userconf.set('PREFIX', rizin_prefix)
+userconf.set('BINDIR', rizin_bindir)
 userconf.set('LIBDIR', rizin_libdir)
 userconf.set('INCLUDEDIR', rizin_incdir)
 userconf.set('DATADIR_RZ', rizin_datdir_rz)
@@ -318,17 +332,31 @@ userconf.set10('WANT_DYLINK', true)
 userconf.set10('HAVE_PTRACE', have_ptrace)
 userconf.set10('USE_PTRACE_WRAP', use_ptrace_wrap)
 userconf.set10('WITH_GPL', true)
+userconf.set10('RZ_BUILD_DEBUG', get_option('buildtype').startswith('debug'))
 ok = cc.has_header_symbol('sys/personality.h', 'ADDR_NO_RANDOMIZE')
 userconf.set10('HAVE_DECL_ADDR_NO_RANDOMIZE', ok)
+ok = cc.has_header_symbol('sys/procctl.h', 'PROC_ASLR_CTL')
+userconf.set10('HAVE_DECL_PROCCTL_ASLR_CTL', ok)
 
 if host_machine.system() == 'freebsd'
   add_project_link_arguments('-Wl,--unresolved-symbols,ignore-in-object-files', language: 'c')
+  add_project_link_arguments('-Wl,--allow-shlib-undefined', language: 'c')
 endif
 
 lrt = []
 if not cc.has_function('clock_gettime', prefix: '#include <time.h>') and cc.has_header_symbol('features.h', '__GLIBC__')
   lrt = cc.find_library('rt', required: true, static: is_static_build)
 endif
+
+code = '#include <unistd.h>\nextern char **environ;\nint main() { char **env = environ; }'
+have_environ = cc.links(code, name: 'have extern char **environ')
+userconf.set10('HAVE_ENVIRON', have_environ)
+message('HAVE_ENVIRON: @0@'.format(have_environ))
+
+code = '#if __is_target_os(ios)\nint x = 0;\n#endif\nint main() { x++; }'
+is_ios = cc.links(code, name: 'target is ios')
+userconf.set10('IS_IOS', is_ios)
+message('IS_IOS: @0@'.format(is_ios))
 
 foreach item : [
     ['arc4random_uniform', '#include <stdlib.h>', []],
@@ -344,7 +372,13 @@ foreach item : [
     ['execl', '#include <unistd.h>', []],
     ['system', '#include <stdlib.h>', []],
     ['fork', '#include <unistd.h>', []],
-    ['pipe2', '#define _GNU_SOURCE\n#include <fcntl.h>\n#include <unistd.h>', []]
+    ['nice', '#include <unistd.h>', []],
+    ['copyfile', '#include <copyfile.h>', []],
+    ['strlcpy', '#include <string.h>', []],
+    ['openpty', '', [utl]],
+    ['forkpty', '', [utl]],
+    ['login_tty', '', [utl]],
+    ['pipe2', '#define _GNU_SOURCE\n#include <fcntl.h>\n#include <unistd.h>', []],
   ]
   func = item[0]
   ok = cc.has_function(func, prefix: item[1], dependencies: item[2])
@@ -422,7 +456,7 @@ if r.returncode() == 1 and get_option('subprojects_check')
 endif
 
 sdb_proj = subproject('sdb', default_options: ['default_library=static', 'sdb_includedir=' + rizin_incdir])
-sdb_dep = sdb_proj.get_variable('sdb_dep')
+sdb_dep = sdb_proj.get_variable('sdb_whole_dep')
 sdb_exe  = sdb_proj.get_variable('sdb_native_exe')
 
 sdb_gen_cmd = [
@@ -439,14 +473,14 @@ spp_files = [
 spp_inc = [platform_inc, include_directories('shlr/spp')]
 
 librzspp = static_library('rzspp', spp_files,
-  dependencies: sdb_dep,
+  dependencies: sdb_dep.partial_dependency(includes: true),
   include_directories: spp_inc,
   c_args: ['-DHAVE_R_UTIL', '-DUSE_R2=1'],
   implicit_include_directories: false
 )
 
 spp_dep = declare_dependency(
-  link_with: librzspp,
+  link_whole: librzspp,
   include_directories: spp_inc
 )
 
@@ -484,6 +518,7 @@ if host_machine.system() == 'windows'
     build_root / 'librz' / 'config',
     build_root / 'librz' / 'cons',
     build_root / 'librz' / 'core',
+    build_root / 'librz' / 'diff',
     build_root / 'librz' / 'crypto',
     build_root / 'librz' / 'debug',
     build_root / 'librz' / 'egg',
@@ -498,6 +533,7 @@ if host_machine.system() == 'windows'
     build_root / 'librz' / 'search',
     build_root / 'librz' / 'socket',
     build_root / 'librz' / 'syscall',
+    build_root / 'librz' / 'type',
     build_root / 'librz' / 'util',
   ]
 endif
@@ -509,6 +545,7 @@ subdir('librz/crypto')
 subdir('shlr')
 
 subdir('librz/cons')
+subdir('librz/diff')
 subdir('shlr/gdb')
 subdir('librz/io')
 subdir('librz/bp')
@@ -522,6 +559,7 @@ subdir('librz/config')
 subdir('librz/parse')
 subdir('librz/lang')
 subdir('librz/asm')
+subdir('librz/type')
 subdir('librz/analysis')
 subdir('librz/egg')
 subdir('librz/debug')
@@ -529,8 +567,11 @@ subdir('librz/core')
 
 subdir('librz/analysis/d')
 subdir('librz/asm/d')
+subdir('librz/asm/cpus')
+subdir('librz/asm/platforms')
 subdir('librz/bin/d')
 subdir('librz/syscall/d')
+subdir('librz/reg/d')
 subdir('librz/cons/d')
 subdir('librz/magic/d')
 subdir('librz/flag/d')
@@ -586,6 +627,8 @@ if meson.is_subproject()
       rz_search_dep,
       rz_socket_dep,
       rz_syscall_dep,
+      rz_type_dep,
+      rz_diff_dep,
       rz_util_dep
     ],
     include_directories: include_directories('.', 'librz/include'),
@@ -601,6 +644,7 @@ if get_option('use_webui')
 endif
 
 subdir('test/unit')
+subdir('test/integration')
 
 install_data(
   'doc/fortunes.fun',
@@ -621,7 +665,8 @@ if cli_enabled
     'man/rz-run.1',
     'man/rz-asm.1',
     'man/rz-ax.1',
-    'man/rz-esil.7'
+    'man/rz-sign.1',
+    'man/rz-esil.7',
   )
 
   install_data('doc/hud',

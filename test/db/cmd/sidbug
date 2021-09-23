@@ -7,7 +7,7 @@ EOF
 RUN
 
 NAME=sidbug2
-FILE=-
+FILE==
 CMDS=<<EOF
 e search.from=0
 e search.to=10

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2014 defragger <rlaemmert@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 /* For handling parsing xml from gdbserver */
 
 #ifndef GDBCLIENT_XML_H

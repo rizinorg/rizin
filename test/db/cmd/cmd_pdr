@@ -53,14 +53,13 @@ EOF
 RUN
 
 NAME=pdrj and pirj ignore asm.bb.middle
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.bytes=true
 e asm.arch=x86
 e asm.bits=64
 e analysis.nopskip=false
 e analysis.jmp.mid=true
-e io.cache=true
 wx 0f1f440000b8210000c1ebfdbb2c000000ebf0
 af
 e asm.bb.middle=true
@@ -125,7 +124,7 @@ EXPECT=<<EOF
     "reloc": false,
     "type_num": 17,
     "type2_num": 0,
-    "xrefs": [
+    "xrefs_to": [
       {
         "addr": 17,
         "type": "CODE"
@@ -166,7 +165,7 @@ EXPECT=<<EOF
     "type_num": 1,
     "type2_num": 0,
     "jump": 9,
-    "refs": [
+    "xrefs_from": [
       {
         "addr": 9,
         "type": "CODE"
@@ -189,7 +188,7 @@ EXPECT=<<EOF
     "reloc": false,
     "type_num": 22,
     "type2_num": 0,
-    "xrefs": [
+    "xrefs_to": [
       {
         "addr": 10,
         "type": "CODE"
@@ -213,7 +212,7 @@ EXPECT=<<EOF
     "reloc": false,
     "type_num": 9,
     "type2_num": 0,
-    "refs": [
+    "xrefs_from": [
       {
         "addr": 44,
         "type": "DATA"
@@ -236,7 +235,7 @@ EXPECT=<<EOF
     "type_num": 1,
     "type2_num": 0,
     "jump": 3,
-    "refs": [
+    "xrefs_from": [
       {
         "addr": 3,
         "type": "CODE"
@@ -288,7 +287,7 @@ jmp 3
     "reloc": false,
     "type_num": 17,
     "type2_num": 0,
-    "xrefs": [
+    "xrefs_to": [
       {
         "addr": 17,
         "type": "CODE"
@@ -329,7 +328,7 @@ jmp 3
     "type_num": 1,
     "type2_num": 0,
     "jump": 9,
-    "refs": [
+    "xrefs_from": [
       {
         "addr": 9,
         "type": "CODE"
@@ -352,7 +351,7 @@ jmp 3
     "reloc": false,
     "type_num": 22,
     "type2_num": 0,
-    "xrefs": [
+    "xrefs_to": [
       {
         "addr": 10,
         "type": "CODE"
@@ -376,7 +375,7 @@ jmp 3
     "reloc": false,
     "type_num": 9,
     "type2_num": 0,
-    "refs": [
+    "xrefs_from": [
       {
         "addr": 44,
         "type": "DATA"
@@ -399,7 +398,7 @@ jmp 3
     "type_num": 1,
     "type2_num": 0,
     "jump": 3,
-    "refs": [
+    "xrefs_from": [
       {
         "addr": 3,
         "type": "CODE"
@@ -431,7 +430,7 @@ EXPECT=<<EOF
 | 0x00005b5f      48d1fe         sar   rsi, 1
 | 0x00005b62      7414           je    0x5b78
 | ----------- true: 0x00005b78  false: 0x00005b64
-| 0x00005b64      488b053dc401.  mov   rax, qword [reloc._ITM_registerTMCloneTable] ; [0x21fa8:8]=0
+| 0x00005b64      488b053dc401.  mov   rax, qword [reloc._ITM_registerTMCloneTable] ; [0x21fa8:8]=0x23ea0 reloc.target._ITM_registerTMCloneTable
 | 0x00005b6b      4885c0         test  rax, rax
 | 0x00005b6e      7408           je    0x5b78
 | ----------- true: 0x00005b78  false: 0x00005b70

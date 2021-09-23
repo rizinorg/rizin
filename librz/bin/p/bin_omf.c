@@ -8,12 +8,12 @@
 #include <rz_bin.h>
 #include "omf/omf.h"
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *b, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *sdb) {
 	ut64 size;
 	const ut8 *buf = rz_buf_data(b, &size);
 	rz_return_val_if_fail(buf, false);
-	*bin_obj = rz_bin_internal_omf_load(buf, size);
-	return *bin_obj != NULL;
+	obj->bin_obj = rz_bin_internal_omf_load(buf, size);
+	return obj->bin_obj;
 }
 
 static void destroy(RzBinFile *bf) {
@@ -30,7 +30,12 @@ static bool check_buffer(RzBuffer *b) {
 	if (ch != 0x80 && ch != 0x82) {
 		return false;
 	}
-	ut16 rec_size = rz_buf_read_le16_at(b, 1);
+
+	ut16 rec_size;
+	if (!rz_buf_read_le16_at(b, 1, &rec_size)) {
+		return false;
+	}
+
 	ut8 str_size;
 	(void)rz_buf_read_at(b, 3, &str_size, 1);
 	ut64 length = rz_buf_size(b);
@@ -110,11 +115,9 @@ static RzList *symbols(RzBinFile *bf) {
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_list_newf((RzListFree)rz_bin_symbol_free))) {
 		return NULL;
 	}
-
-	ret->free = free;
 
 	while (ct_sym < ((rz_bin_omf_obj *)bf->o->bin_obj)->nb_symbol) {
 		if (!(sym = RZ_NEW0(RzBinSymbol))) {
@@ -148,7 +151,6 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->arch = strdup("x86");
 	ret->big_endian = false;
 	ret->has_va = true;
-	ret->has_lit = true;
 	ret->bits = rz_bin_omf_get_bits(bf->o->bin_obj);
 	ret->dbg_info = 0;
 	ret->has_nx = false;
@@ -168,6 +170,7 @@ RzBinPlugin rz_bin_plugin_omf = {
 	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.entries = &entries,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
 	.symbols = &symbols,
 	.info = &info,

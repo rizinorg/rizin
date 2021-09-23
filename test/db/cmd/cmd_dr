@@ -1,5 +1,5 @@
 NAME=drrj color
-FILE=-
+FILE==
 ARGS=-a x86 -b 32 -m 0x10000
 CMDS=<<EOF
 e scr.color=1

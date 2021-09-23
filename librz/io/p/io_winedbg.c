@@ -139,7 +139,7 @@ static int __close(RzIODesc *fd) {
 		return -1;
 	}
 	// XXX
-	rz_sys_cmdf("pkill rz_run");
+	rz_sys_cmdf("pkill rz-run");
 	return 0;
 }
 

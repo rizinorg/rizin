@@ -15,7 +15,7 @@ static bool check_buffer(RzBuffer *b) {
 	return !memcmp(lict, lic_gba, 156);
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
 	return check_buffer(buf);
 }
 
@@ -66,8 +66,11 @@ static RzBinInfo *info(RzBinFile *bf) {
 static RzList *sections(RzBinFile *bf) {
 	RzList *ret = NULL;
 	RzBinSection *s = RZ_NEW0(RzBinSection);
+	if (!s) {
+		return NULL;
+	}
 	ut64 sz = rz_buf_size(bf->buf);
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_list_newf((RzListFree)rz_bin_section_free))) {
 		free(s);
 		return NULL;
 	}
@@ -77,7 +80,6 @@ static RzList *sections(RzBinFile *bf) {
 	s->size = sz;
 	s->vsize = 0x2000000;
 	s->perm = RZ_PERM_RX;
-	s->add = true;
 
 	rz_list_append(ret, s);
 	return ret;
@@ -91,6 +93,7 @@ RzBinPlugin rz_bin_plugin_ningba = {
 	.check_buffer = &check_buffer,
 	.entries = &entries,
 	.info = &info,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
 };
 

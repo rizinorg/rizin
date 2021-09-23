@@ -1,5 +1,5 @@
 NAME=pf QeQ
-FILE=-
+FILE==
 CMDS=<<EOF
 b 256
 woe 0x11
@@ -19,12 +19,12 @@ EOF
 RUN
 
 NAME=pf.-x
-FILE=-
+FILE==
 CMDS=<<EOF
 pf.foo xxd
-pf.
+pf.~foo
 pf.-foo
-pf.
+pf.~foo
 EOF
 EXPECT=<<EOF
 pf.foo xxd
@@ -32,12 +32,12 @@ EOF
 RUN
 
 NAME=pf.-*
-FILE=-
+FILE==
 CMDS=<<EOF
 pf.foo xxd
-pf.
+pf.~foo
 pf.-*
-pf.
+pf.~foo
 EOF
 EXPECT=<<EOF
 pf.foo xxd
@@ -45,7 +45,7 @@ EOF
 RUN
 
 NAME=pf i foo @x:0x01
-FILE=-
+FILE==
 ARGS=-a x86 -b 32
 CMDS=pf i foo @x:0x01
 EXPECT=<<EOF
@@ -54,7 +54,7 @@ EOF
 RUN
 
 NAME=pf [3]ub
-FILE=-
+FILE==
 CMDS=pf [3]ub
 EXPECT=<<EOF
 0x00000000 = [ 0, 0, 0 ]
@@ -63,16 +63,17 @@ EOF
 RUN
 
 NAME=Cf main
-FILE=-
+FILE==
 CMDS=Cf main;C*
 EXPECT=<<EOF
 EOF
 RUN
 
-NAME=Cf 1 main
-FILE=-
-CMDS=Cf 1 main;C*
+NAME=Cf 1 n2
+FILE==
+CMDS=Cf 1 n2;C*
 EXPECT=<<EOF
+Cf 1 n2 @ 0x00000000
 EOF
 RUN
 
@@ -681,7 +682,6 @@ NAME=PE test
 FILE=bins/pe/ch22.exe
 ARGS=-nn
 CMDS=<<EOF
-e asm.bits=32
 s 0x80
 pf.pe_nt_image_headers32
 EOF
@@ -813,7 +813,11 @@ RUN
 
 NAME=Infinite Recursion segfault 1
 FILE=malloc://1024
-CMDS=pf._NT_TIB ? (_NT_TIB)Self ; pf._NT_TIB > /dev/null ; pf.
+CMDS=<<EOF
+pf._NT_TIB ? (_NT_TIB)Self
+pf._NT_TIB > /dev/null
+pf.~NT_TIB
+EOF
 EXPECT=<<EOF
 pf._NT_TIB ? (_NT_TIB)Self
 EOF
@@ -821,9 +825,13 @@ RUN
 
 NAME=Infinite Recursion segfault 2
 FILE=malloc://1024
-CMDS=pf._NT_TIB ?ppppip? (_EXCEPTION_REGISTRATION_RECORD)ExceptionList StackBase StackLimit SubSystemTib FiberData Version ArbitraryUserPointer (_NT_TIB)Self ; pf._NT_TIB > /dev/null ; pf.
+CMDS=<<EOF
+pf._NT_TIB pppppip? ExceptionList StackBase StackLimit SubSystemTib FiberData Version ArbitraryUserPointer (_NT_TIB)Self
+pf._NT_TIB > /dev/null
+pf.~NT_TIB
+EOF
 EXPECT=<<EOF
-pf._NT_TIB ?ppppip? (_EXCEPTION_REGISTRATION_RECORD)ExceptionList StackBase StackLimit SubSystemTib FiberData Version ArbitraryUserPointer (_NT_TIB)Self
+pf._NT_TIB pppppip? ExceptionList StackBase StackLimit SubSystemTib FiberData Version ArbitraryUserPointer (_NT_TIB)Self
 EOF
 RUN
 
@@ -878,7 +886,7 @@ EOF
 RUN
 
 NAME=pf z, scr.strconv and str.escbslash
-FILE=-
+FILE==
 CMDS=<<EOF
 wz \x7fabc\\123\n
 (print strconv escbslash; e scr.strconv=$0; e str.escbslash=$1; pf z)
@@ -896,7 +904,7 @@ EOF
 RUN
 
 NAME=pfj and triply-nested struct
-FILE=-
+FILE==
 CMDS=<<EOF
 wv2 0x1234
 wv4 0x56789abc @ 0x2
@@ -955,7 +963,7 @@ EOF
 RUN
 
 NAME=pfj and Matryoshka dolls
-FILE=-
+FILE==
 CMDS=<<EOF
 wx 7f
 wv8 0xdef0123456789abc @ 0x1

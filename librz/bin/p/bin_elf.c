@@ -5,22 +5,95 @@
 
 #include "bin_elf.inc"
 
+static void destroy(RzBinFile *bf) {
+	Elf_(rz_bin_elf_free)(bf->o->bin_obj);
+}
+
 static void headers32(RzBinFile *bf) {
 #define p bf->rbin->cb_printf
-	p("0x00000000  ELF MAGIC   0x%08x\n", rz_buf_read_le32_at(bf->buf, 0));
-	p("0x00000010  Type        0x%04x\n", rz_buf_read_le16_at(bf->buf, 0x10));
-	p("0x00000012  Machine     0x%04x\n", rz_buf_read_le16_at(bf->buf, 0x12));
-	p("0x00000014  Version     0x%08x\n", rz_buf_read_le32_at(bf->buf, 0x14));
-	p("0x00000018  Entrypoint  0x%08x\n", rz_buf_read_le32_at(bf->buf, 0x18));
-	p("0x0000001c  PhOff       0x%08x\n", rz_buf_read_le32_at(bf->buf, 0x1c));
-	p("0x00000020  ShOff       0x%08x\n", rz_buf_read_le32_at(bf->buf, 0x20));
-	p("0x00000024  Flags       0x%08x\n", rz_buf_read_le32_at(bf->buf, 0x24));
-	p("0x00000028  EhSize      %d\n", rz_buf_read_le16_at(bf->buf, 0x28));
-	p("0x0000002a  PhentSize   %d\n", rz_buf_read_le16_at(bf->buf, 0x2a));
-	p("0x0000002c  PhNum       %d\n", rz_buf_read_le16_at(bf->buf, 0x2c));
-	p("0x0000002e  ShentSize   %d\n", rz_buf_read_le16_at(bf->buf, 0x2e));
-	p("0x00000030  ShNum       %d\n", rz_buf_read_le16_at(bf->buf, 0x30));
-	p("0x00000032  ShrStrndx   %d\n", rz_buf_read_le16_at(bf->buf, 0x32));
+	ut32 magic;
+	if (!rz_buf_read_le32_at(bf->buf, 0, &magic)) {
+		return;
+	}
+	p("0x00000000  ELF MAGIC   0x%08x\n", magic);
+
+	ut16 type;
+	if (!rz_buf_read_le16_at(bf->buf, 0x10, &type)) {
+		return;
+	}
+	p("0x00000010  Type        0x%04x\n", type);
+
+	ut16 machine;
+	if (!rz_buf_read_le16_at(bf->buf, 0x12, &machine)) {
+		return;
+	}
+	p("0x00000012  Machine     0x%04x\n", machine);
+
+	ut32 version;
+	if (!rz_buf_read_le32_at(bf->buf, 0x14, &version)) {
+		return;
+	}
+	p("0x00000014  Version     0x%08x\n", version);
+
+	ut32 entry;
+	if (!rz_buf_read_le32_at(bf->buf, 0x18, &entry)) {
+		return;
+	}
+	p("0x00000018  Entrypoint  0x%08x\n", entry);
+
+	ut32 phoff;
+	if (!rz_buf_read_le32_at(bf->buf, 0x1c, &phoff)) {
+		return;
+	}
+	p("0x0000001c  PhOff       0x%08x\n", phoff);
+
+	ut32 shoff;
+	if (!rz_buf_read_le32_at(bf->buf, 0x20, &shoff)) {
+		return;
+	}
+	p("0x00000020  ShOff       0x%08x\n", shoff);
+
+	ut32 flags;
+	if (!rz_buf_read_le32_at(bf->buf, 0x24, &flags)) {
+		return;
+	}
+	p("0x00000024  Flags       0x%08x\n", flags);
+
+	ut16 ehsize;
+	if (!rz_buf_read_le16_at(bf->buf, 0x28, &ehsize)) {
+		return;
+	}
+	p("0x00000028  EhSize      %d\n", ehsize);
+
+	ut16 phentsize;
+	if (!rz_buf_read_le16_at(bf->buf, 0x2a, &phentsize)) {
+		return;
+	}
+	p("0x0000002a  PhentSize   %d\n", phentsize);
+
+	ut16 phnum;
+	if (!rz_buf_read_le16_at(bf->buf, 0x2c, &phnum)) {
+		return;
+	}
+	p("0x0000002c  PhNum       %d\n", phnum);
+
+	ut16 shentsize;
+	if (!rz_buf_read_le16_at(bf->buf, 0x2e, &shentsize)) {
+		return;
+	}
+	p("0x0000002e  ShentSize   %d\n", shentsize);
+
+	ut16 shnum;
+	if (!rz_buf_read_le16_at(bf->buf, 0x30, &shnum)) {
+		return;
+	}
+	p("0x00000030  ShNum       %d\n", shnum);
+
+	ut16 shrstrndx;
+	if (!rz_buf_read_le16_at(bf->buf, 0x32, &shrstrndx)) {
+		return;
+	}
+	p("0x00000032  ShrStrndx   %d\n", shrstrndx);
 }
 
 static bool check_buffer(RzBuffer *buf) {
@@ -30,7 +103,6 @@ static bool check_buffer(RzBuffer *buf) {
 }
 
 extern struct rz_bin_dbginfo_t rz_bin_dbginfo_elf;
-extern struct rz_bin_write_t rz_bin_write_elf;
 
 static RzBuffer *create(RzBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt) {
 	rz_return_val_if_fail(bin && opt && opt->arch, NULL);
@@ -41,7 +113,7 @@ static RzBuffer *create(RzBin *bin, const ut8 *code, int codelen, const ut8 *dat
 	ut16 ehdrsz, phdrsz;
 	ut32 p_vaddr, p_paddr, p_fs, p_fs2;
 	ut32 baddr;
-	RzBuffer *buf = rz_buf_new();
+	RzBuffer *buf = rz_buf_new_with_bytes(NULL, 0);
 
 	bool is_arm = !strcmp(opt->arch, "arm");
 	// XXX: hardcoded
@@ -139,12 +211,13 @@ RzBinPlugin rz_bin_plugin_elf = {
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
 	.load_buffer = &load_buffer,
-	.destroy = &destroy,
 	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.boffset = &boffset,
 	.binsym = &binsym,
 	.entries = &entries,
+	.virtual_files = &virtual_files,
+	.maps = &maps,
 	.sections = &sections,
 	.symbols = &symbols,
 	.minstrlen = 4,
@@ -155,15 +228,12 @@ RzBinPlugin rz_bin_plugin_elf = {
 	.size = &size,
 	.libs = &libs,
 	.relocs = &relocs,
-	.patch_relocs = &patch_relocs,
-	.dbginfo = &rz_bin_dbginfo_elf,
 	.create = &create,
-	.write = &rz_bin_write_elf,
 	.file_type = &get_file_type,
 	.regstate = &regstate,
-	.maps = &maps,
-	.section_type_to_string = &Elf_(section_type_to_string),
-	.section_flag_to_rzlist = &Elf_(section_flag_to_rzlist),
+	.section_type_to_string = &Elf_(rz_bin_elf_section_type_to_string),
+	.section_flag_to_rzlist = &Elf_(rz_bin_elf_section_flag_to_rzlist),
+	.destroy = destroy,
 };
 
 #ifndef RZ_PLUGIN_INCORE

@@ -85,7 +85,7 @@ static Sdb *get_sdb(RzBinFile *bf) {
 	return ao ? ao->kv : NULL;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
 	BootImageObj *bio = RZ_NEW0(BootImageObj);
 	if (!bio) {
 		return false;
@@ -101,7 +101,7 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 		return false;
 	}
 	sdb_ns_set(sdb, "info", bio->kv);
-	*bin_obj = bio;
+	obj->bin_obj = bio;
 	return true;
 }
 
@@ -196,7 +196,6 @@ static RzList *sections(RzBinFile *bf) {
 	ptr->paddr = 0;
 	ptr->vaddr = 0;
 	ptr->perm = RZ_PERM_R; // r--
-	ptr->add = true;
 	rz_list_append(ret, ptr);
 
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
@@ -208,7 +207,6 @@ static RzList *sections(RzBinFile *bf) {
 	ptr->paddr = bi->page_size;
 	ptr->vaddr = bi->kernel_addr;
 	ptr->perm = RZ_PERM_R; // r--
-	ptr->add = true;
 	rz_list_append(ret, ptr);
 
 	if (bi->ramdisk_size > 0) {
@@ -222,7 +220,6 @@ static RzList *sections(RzBinFile *bf) {
 		ptr->paddr = ROUND_DOWN(base, bi->page_size);
 		ptr->vaddr = bi->ramdisk_addr;
 		ptr->perm = RZ_PERM_RX; // r-x
-		ptr->add = true;
 		rz_list_append(ret, ptr);
 	}
 
@@ -237,7 +234,6 @@ static RzList *sections(RzBinFile *bf) {
 		ptr->paddr = ROUND_DOWN(base, bi->page_size);
 		ptr->vaddr = bi->second_addr;
 		ptr->perm = RZ_PERM_RX; // r-x
-		ptr->add = true;
 		rz_list_append(ret, ptr);
 	}
 
@@ -253,6 +249,7 @@ RzBinPlugin rz_bin_plugin_bootimg = {
 	.destroy = &destroy,
 	.check_buffer = &check_buffer,
 	.baddr = &baddr,
+	.maps = rz_bin_maps_of_file_sections,
 	.sections = &sections,
 	.entries = entries,
 	.strings = &strings,

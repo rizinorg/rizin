@@ -88,6 +88,10 @@ static inline RzIntervalNode *rz_interval_tree_iter_get(RzIntervalTreeIter *it) 
 	return rz_rbtree_iter_get(it, RzIntervalNode, node);
 }
 
+static inline bool rz_interval_tree_empty(RzIntervalTree *tree) {
+	return tree->root == NULL;
+}
+
 #define rz_interval_tree_foreach(tree, it, dat) \
 	for ((it) = rz_rbtree_first(&(tree)->root->node); rz_rbtree_iter_has(&it) && (dat = rz_interval_tree_iter_get(&it)->data); rz_rbtree_iter_next(&(it)))
 

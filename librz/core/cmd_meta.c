@@ -24,7 +24,6 @@ static const char *help_msg_C[] = {
 	"CCa", "[+-] [addr] [text]", "add/remove comment at given address",
 	"CCu", " [comment-text] [@addr]", "add unique comment",
 	"CF", "[sz] [fcn-sign..] [@addr]", "function signature",
-	"CL", "[-][*] [file:line] [addr]", "show or add 'code line' information (bininfo)",
 	"CS", "[-][space]", "manage meta-spaces to filter comments, etc..",
 	"C[Cthsdmf]", "", "list comments/types/hidden/strings/data/magic/formatted in human friendly form",
 	"C[Cthsdmf]*", "", "list comments/types/hidden/strings/data/magic/formatted in rizin commands",
@@ -135,206 +134,11 @@ static const char *help_msg_Cvs[] = {
 	NULL
 };
 
-static int remove_meta_offset(RzCore *core, ut64 offset) {
-	char aoffset[64];
-	char *aoffsetptr = sdb_itoa(offset, aoffset, 16);
-	if (!aoffsetptr) {
-		eprintf("Failed to convert %" PFMT64x " to a key", offset);
-		return -1;
-	}
-	return sdb_unset(core->bin->cur->sdb_addrinfo, aoffsetptr, 0);
-}
-
-static bool print_meta_offset(RzCore *core, ut64 addr) {
-	int line, line_old, i;
-	char file[1024];
-
-	int ret = rz_bin_addr2line(core->bin, addr, file, sizeof(file) - 1, &line);
-	if (ret) {
-		rz_cons_printf("file: %s\nline: %d\n", file, line);
-		line_old = line;
-		if (line >= 2) {
-			line -= 2;
-		}
-		if (rz_file_exists(file)) {
-			for (i = 0; i < 5; i++) {
-				char *row = rz_file_slurp_line(file, line + i, 0);
-				if (row) {
-					rz_cons_printf("%c %.3x  %s\n", line + i == line_old ? '>' : ' ', line + i, row);
-					free(row);
-				}
-			}
-		} else {
-			eprintf("Cannot open '%s'\n", file);
-		}
-	}
-	return ret;
-}
-
-#if 0
-static int remove_meta_fileline(RzCore *core, const char *file_line) {
-	return sdb_unset (core->bin->cur->sdb_addrinfo, file_line, 0);
-}
-
-static int print_meta_fileline(RzCore *core, const char *file_line) {
-	char *meta_info = sdb_get (core->bin->cur->sdb_addrinfo, file_line, 0);
-	if (meta_info) {
-		rz_cons_printf ("Meta info %s\n", meta_info);
-	} else {
-		rz_cons_printf ("No meta info for %s found\n", file_line);
-	}
-	return 0;
-}
-#endif
-
-static ut64 filter_offset = UT64_MAX;
-static int filter_format = 0;
-static size_t filter_count = 0;
-
-static bool print_addrinfo(void *user, const char *k, const char *v) {
-	ut64 offset = sdb_atoi(k);
-	if (!offset || offset == UT64_MAX) {
-		return true;
-	}
-	char *subst = strdup(v);
-	char *colonpos = strchr(subst, '|'); // XXX keep only : for simplicity?
-	if (!colonpos) {
-		colonpos = strchr(subst, ':');
-	}
-	if (!colonpos) {
-		rz_cons_printf("%s\n", subst);
-	}
-	if (colonpos && (filter_offset == UT64_MAX || filter_offset == offset)) {
-		if (filter_format) {
-			*colonpos = ':';
-			rz_cons_printf("CL %s %s\n", k, subst);
-		} else {
-			*colonpos = 0;
-			rz_cons_printf("file: %s\nline: %s\n", subst, colonpos + 1);
-		}
-		filter_count++;
-	}
-	free(subst);
-
-	return true;
-}
-
 RZ_IPI void rz_core_meta_comment_add(RzCore *core, const char *comment, ut64 addr) {
 	const char *oldcomment = rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, addr);
 	if (!oldcomment || (oldcomment && !strstr(oldcomment, comment))) {
 		rz_meta_set_string(core->analysis, RZ_META_TYPE_COMMENT, addr, comment);
 	}
-}
-
-static int cmd_meta_add_fileline(Sdb *s, char *fileline, ut64 offset) {
-	char aoffset[64];
-	char *aoffsetptr = sdb_itoa(offset, aoffset, 16);
-
-	if (!aoffsetptr) {
-		return -1;
-	}
-	if (!sdb_add(s, aoffsetptr, fileline, 0)) {
-		sdb_set(s, aoffsetptr, fileline, 0);
-	}
-	if (!sdb_add(s, fileline, aoffsetptr, 0)) {
-		sdb_set(s, fileline, aoffsetptr, 0);
-	}
-	return 0;
-}
-
-static int cmd_meta_lineinfo(RzCore *core, const char *input) {
-	int ret;
-	ut64 offset = UT64_MAX; // use this as error value
-	bool remove = false;
-	int all = false;
-	const char *p = input;
-	char *file_line = NULL;
-	char *pheap = NULL;
-
-	if (*p == '?') {
-		eprintf("Usage: CL[.-*?] [addr] [file:line]\n");
-		eprintf("or: CL [addr] base64:[string]\n");
-		free(pheap);
-		return 0;
-	}
-	if (*p == '-') {
-		p++;
-		remove = true;
-	}
-	if (*p == '.') {
-		p++;
-		offset = core->offset;
-	}
-	if (*p == ' ') {
-		p = rz_str_trim_head_ro(p + 1);
-		char *arg = strchr(p, ' ');
-		if (!arg) {
-			offset = rz_num_math(core->num, p);
-			p = "";
-		}
-	} else if (*p == '*') {
-		p++;
-		all = true;
-		filter_format = '*';
-	} else {
-		filter_format = 0;
-	}
-
-	if (all) {
-		if (remove) {
-			sdb_reset(core->bin->cur->sdb_addrinfo);
-		} else {
-			sdb_foreach(core->bin->cur->sdb_addrinfo, print_addrinfo, NULL);
-		}
-		free(pheap);
-		return 0;
-	}
-
-	p = rz_str_trim_head_ro(p);
-	char *myp = strdup(p);
-	char *sp = strchr(myp, ' ');
-	if (sp) {
-		*sp = 0;
-		sp++;
-		if (offset == UT64_MAX) {
-			offset = rz_num_math(core->num, myp);
-		}
-
-		if (!strncmp(sp, "base64:", 7)) {
-			int len = 0;
-			ut8 *o = sdb_decode(sp + 7, &len);
-			if (!o) {
-				eprintf("Invalid base64\n");
-				return 0;
-			}
-			sp = pheap = (char *)o;
-		}
-		RzBinFile *bf = rz_bin_cur(core->bin);
-		ret = 0;
-		if (bf && bf->sdb_addrinfo) {
-			ret = cmd_meta_add_fileline(bf->sdb_addrinfo, sp, offset);
-		} else {
-			eprintf("TODO: Support global SdbAddrinfo or dummy rbinfile to handlee this case\n");
-		}
-		free(file_line);
-		free(myp);
-		free(pheap);
-		return ret;
-	}
-	free(myp);
-	if (remove) {
-		remove_meta_offset(core, offset);
-	} else {
-		// taken from r2 // TODO: we should move this addrinfo sdb logic into RzBin.. use HT
-		filter_offset = offset;
-		filter_count = 0;
-		sdb_foreach(core->bin->cur->sdb_addrinfo, print_addrinfo, NULL);
-		if (filter_count == 0) {
-			print_meta_offset(core, offset);
-		}
-	}
-	free(pheap);
-	return 0;
 }
 
 static int cmd_meta_comment(RzCore *core, const char *input) {
@@ -750,7 +554,7 @@ static int cmd_meta_others(RzCore *core, const char *input) {
 					if (p) {
 						p = (char *)rz_str_trim_head_ro(p);
 						if (*p == '.') {
-							const char *realformat = rz_print_format_byname(core->print, p + 1);
+							const char *realformat = rz_type_db_format_get(core->analysis->typedb, p + 1);
 							if (realformat) {
 								p = (char *)realformat;
 							} else {
@@ -759,20 +563,23 @@ static int cmd_meta_others(RzCore *core, const char *input) {
 							}
 						}
 						if (n < 1) {
-							n = rz_print_format_struct_size(core->print, p, 0, 0);
+							n = rz_type_format_struct_size(core->analysis->typedb, p, 0, 0);
 							if (n < 1) {
 								eprintf("Warning: Cannot resolve struct size for '%s'\n", p);
 								n = 32; //
 							}
 						}
-						//make sure we do not overflow on rz_print_format
+						//make sure we do not overflow on rz_type_format
 						if (n > core->blocksize) {
 							n = core->blocksize;
 						}
-						int r = rz_print_format(core->print, addr, core->block,
+						char *format = rz_type_format_data(core->analysis->typedb, core->print, addr, core->block,
 							n, p, 0, NULL, NULL);
-						if (r < 0) {
+						if (!format) {
 							n = -1;
+						} else {
+							rz_cons_print(format);
+							free(format);
 						}
 					} else {
 						eprintf("Usage: Cf [size] [pf-format-string]\n");
@@ -1010,9 +817,6 @@ RZ_IPI int rz_cmd_meta(void *data, const char *input) {
 		rz_meta_print_list_at(core->analysis, core->offset, 0);
 		break;
 	}
-	case 'L': // "CL"
-		cmd_meta_lineinfo(core, input + 1);
-		break;
 	case 'C': // "CC"
 		cmd_meta_comment(core, input);
 		break;
@@ -1043,7 +847,7 @@ RZ_IPI int rz_cmd_meta(void *data, const char *input) {
 		f = rz_analysis_get_fcn_in(core->analysis, core->offset,
 			RZ_ANALYSIS_FCN_TYPE_FCN | RZ_ANALYSIS_FCN_TYPE_SYM);
 		if (f) {
-			rz_analysis_str_to_fcn(core->analysis, f, input + 2);
+			rz_analysis_function_set_type_str(core->analysis, f, input + 2);
 		} else {
 			eprintf("Cannot find function here\n");
 		}

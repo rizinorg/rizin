@@ -17,8 +17,8 @@ static Sdb *get_sdb(RzBinFile *bf) {
 	return bin ? bin->kv : NULL;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *b, ut64 loadaddr, Sdb *sdb) {
-	rz_return_val_if_fail(bf && bin_obj && b, false);
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *sdb) {
+	rz_return_val_if_fail(bf && obj && b, false);
 	ut64 sz = rz_buf_size(b);
 	if (sz == 0 || sz == UT64_MAX) {
 		return false;
@@ -27,7 +27,7 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *b, ut64 loadadd
 	if (res) {
 		sdb_ns_set(sdb, "info", res->kv);
 	}
-	*bin_obj = res;
+	obj->bin_obj = res;
 	return true;
 }
 
@@ -39,14 +39,16 @@ static ut64 baddr(RzBinFile *bf) {
 	return rz_bin_te_get_image_base(bf->o->bin_obj);
 }
 
-static RzBinAddr *binsym(RzBinFile *bf, int type) {
+static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
 	RzBinAddr *ret = NULL;
 	switch (type) {
-	case RZ_BIN_SYM_MAIN:
+	case RZ_BIN_SPECIAL_SYMBOL_MAIN:
 		if (!(ret = RZ_NEW(RzBinAddr))) {
 			return NULL;
 		}
 		ret->paddr = ret->vaddr = rz_bin_te_get_main_paddr(bf->o->bin_obj);
+		break;
+	default:
 		break;
 	}
 	return ret;
@@ -93,7 +95,6 @@ static RzList *sections(RzBinFile *bf) {
 		ptr->paddr = sections[i].paddr;
 		ptr->vaddr = sections[i].vaddr;
 		ptr->perm = 0;
-		ptr->add = true;
 		if (RZ_BIN_TE_SCN_IS_EXECUTABLE(sections[i].flags)) {
 			ptr->perm |= RZ_PERM_X;
 		}
@@ -159,6 +160,7 @@ RzBinPlugin rz_bin_plugin_te = {
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
 	.info = &info,
 	.minstrlen = 4,

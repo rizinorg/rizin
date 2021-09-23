@@ -37,16 +37,6 @@
 #include "arcompact-dis.h"
 
 #include <stdlib.h>
-  /*
-    warning: implicit declaration of function `eprintf'
-    if dbg is 1 then this definition is required
-  */
-//#define eprintf(x,y...) fprintf(stderr,x,##y)
-#include "rz_types.h"
-
-#ifndef dbg
-#define dbg (0)
-#endif
 
 /* Classification of the opcodes for the decoder to print 
    the instructions.  */
@@ -86,8 +76,9 @@ typedef enum
 #define PUT_NEXT_WORD_IN(a)						\
   do									\
     {									\
-      if (is_limm == 1 && !NEXT_WORD (1))				\
+      if (is_limm == 1 && !NEXT_WORD (1)) {				\
 	mwerror (state, _("Illegal limm reference in last instruction!\n")); \
+      } \
       (a) = state->words[1];						\
     }									\
   while (0)
@@ -256,6 +247,11 @@ arc_sprintf (struct arcDisState *state, char *buf, const char *format, ...)
   va_list ap;
 
   va_start (ap, format);
+
+  if (!buf || !format) {
+    va_end (ap);
+    return;
+  }
 
   bp = buf;
   *bp = 0;
@@ -890,10 +886,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState * state)
       CHECK_FIELD_A ();
       CHECK_FIELD_B ();
       CHECK_FIELD_C ();
-      if (dbg) {
-	      printf ("5:b reg %d %d c reg %d %d  \n",
-		      fieldBisReg, fieldB, fieldCisReg, fieldC);
-      }
       state->_offset = 0;
       state->_ea_present = 1;
       if (fieldBisReg) {
@@ -931,10 +923,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState * state)
       CHECK_FIELD_A ();
       fieldC = FIELDD (state->words[0]);
 
-      if (dbg) {
-	      eprintf ("6:b reg %d %d c 0x%x  \n",
-		      fieldBisReg, fieldB, fieldC);
-      }
       state->_ea_present = 1;
       state->_offset = fieldC;
       state->_mem_load = 1;
@@ -979,10 +967,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState * state)
       fieldA = FIELDD(state->words[0]); /* shimm */
 
       /* [B,A offset] */
-      if (dbg) {
-	      eprintf ("7:b reg %d %x off %x\n",
-		      fieldBisReg, fieldB, fieldA);
-      }
       state->_ea_present = 1;
       state->_offset = fieldA;
       if (fieldBisReg) {

@@ -13,9 +13,9 @@ static Sdb *get_sdb(RzBinFile *bf) {
 	return bin ? bin->kv : NULL;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *b, ut64 loadaddr, Sdb *sdb) {
-	*bin_obj = rz_bin_zimg_new_buf(b);
-	return *bin_obj != NULL;
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *sdb) {
+	obj->bin_obj = rz_bin_zimg_new_buf(b);
+	return obj->bin_obj != NULL;
 }
 
 static ut64 baddr(RzBinFile *bf) {

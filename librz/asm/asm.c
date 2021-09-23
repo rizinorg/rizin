@@ -23,13 +23,8 @@ static RzAsmPlugin *asm_static_plugins[] = { RZ_ASM_STATIC_PLUGINS };
 
 static void parseHeap(RzParse *p, RzStrBuf *s) {
 	char *op_buf_asm = rz_strbuf_get(s);
-	size_t len = rz_strbuf_length(s);
-	char *out = malloc(64 + (len * 2));
+	char *out = rz_parse_pseudocode(p, op_buf_asm);
 	if (out) {
-		*out = 0;
-		strcpy(out, op_buf_asm);
-		// XXX we shouldn't pad here because we have t orefactor the RzParse API to handle boundaries and chunks properly
-		rz_parse_parse(p, op_buf_asm, out);
 		rz_strbuf_set(s, out);
 		free(out);
 	}
@@ -321,7 +316,7 @@ RZ_API bool rz_asm_use(RzAsm *a, const char *name) {
 		return true;
 	}
 	rz_list_foreach (a->plugins, iter, h) {
-		if (!strcmp(h->name, name) && h->arch) {
+		if (h->arch && h->name && !strcmp(h->name, name)) {
 			if (!a->cur || (a->cur && strcmp(a->cur->arch, h->arch))) {
 				plugin_fini(a);
 				char *rzprefix = rz_str_rz_prefix(RZ_SDB_OPCODES);
@@ -334,7 +329,7 @@ RZ_API bool rz_asm_use(RzAsm *a, const char *name) {
 				}
 				free(rzprefix);
 			}
-			if (h && h->init && !h->init(&a->plugin_data)) {
+			if (h->init && !h->init(&a->plugin_data)) {
 				RZ_LOG_ERROR("asm plugin '%s' failed to initialize.\n", h->name);
 				return false;
 			}
@@ -575,7 +570,11 @@ RZ_API int rz_asm_assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
 		return 0;
 	}
 	if (a->ifilter) {
-		rz_parse_parse(a->ifilter, buf, b);
+		char *tmp = rz_parse_pseudocode(a->ifilter, buf);
+		if (tmp) {
+			free(b);
+			b = tmp;
+		}
 	}
 	rz_str_case(b, 0); // to-lower
 	memset(op, 0, sizeof(RzAsmOp));
@@ -659,8 +658,11 @@ RZ_API RzAsmCode *rz_asm_mdisassemble_hexstr(RzAsm *a, RzParse *p, const char *h
 	}
 	RzAsmCode *ret = rz_asm_mdisassemble(a, buf, (ut64)len);
 	if (ret && p) {
-		// XXX this can crash
-		rz_parse_parse(p, ret->assembly, ret->assembly);
+		char *tmp = rz_parse_pseudocode(p, ret->assembly);
+		if (tmp) {
+			free(ret->assembly);
+			ret->assembly = tmp;
+		}
 	}
 	free(buf);
 	return ret;
@@ -987,9 +989,6 @@ RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 			} else { /* Instruction */
 				char *str = ptr_start;
 				rz_str_trim(str);
-				if (a->ifilter) {
-					rz_parse_parse(a->ifilter, ptr_start, ptr_start);
-				}
 				if (acode->equs) {
 					if (!*ptr_start) {
 						continue;
@@ -1020,6 +1019,7 @@ RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 				if (op.buf_inc && rz_buf_size(op.buf_inc) > 1) {
 					char *inc = rz_buf_to_string(op.buf_inc);
 					rz_buf_free(op.buf_inc);
+					op.buf_inc = NULL;
 					if (inc) {
 						ret += rz_hex_str2bin(inc, acode->bytes + idx + ret);
 						free(inc);

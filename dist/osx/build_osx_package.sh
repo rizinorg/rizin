@@ -2,7 +2,7 @@
 #
 # Script to create a OSX .pkg file to install Rizin
 
-VERSION=$(./sys/version.py)
+VERSION=$(python3 ./sys/version.py)
 RIZINDIR=$(pwd)
 RIZININSTALL=/tmp/rizin-install
 OSXPKGDIR=/tmp/osxpkgtmp

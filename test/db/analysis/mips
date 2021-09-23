@@ -17,7 +17,7 @@ aae
 aflc
 EOF
 EXPECT=<<EOF
-428
+436
 EOF
 RUN
 
@@ -92,7 +92,7 @@ EOF
 RUN
 
 NAME=assembler
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=mips.gnu
 e asm.bits=32
@@ -114,7 +114,7 @@ EOF
 RUN
 
 NAME=with-spaces
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=mips.gnu
 e asm.bits=32
@@ -161,7 +161,7 @@ pd 1
 EOF
 EXPECT=<<EOF
             0x80100000      0000beaf       sw    fp, (sp)
-            0x80100000      0000beaf       [sp + 0] = fp
+            0x80100000      0000beaf       word [sp] = fp
 EOF
 RUN
 

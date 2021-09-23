@@ -1,5 +1,5 @@
 NAME=zs unset
-FILE=-
+FILE==
 CMDS=<<EOF
 zs test1
 za foo1 b aabbccdd
@@ -30,7 +30,7 @@ EOF
 RUN
 
 NAME=zsr newname
-FILE=-
+FILE==
 CMDS=<<EOF
 zs test1
 za foo1 b aabbccdd
@@ -62,7 +62,7 @@ EOF
 RUN
 
 NAME=zsr newname (dupplicated name)
-FILE=-
+FILE==
 CMDS=<<EOF
 zs test1
 za foo1 b aabbccdd
@@ -94,7 +94,7 @@ EOF
 RUN
 
 NAME=zsr newname (root zs)
-FILE=-
+FILE==
 CMDS=<<EOF
 zs test1
 za foo1 b aabbccdd
@@ -125,7 +125,7 @@ EOF
 RUN
 
 NAME=z-
-FILE=-
+FILE==
 CMDS=<<EOF
 zs test
 za foo b aa
@@ -177,7 +177,7 @@ EOF
 RUN
 
 NAME=z-*
-FILE=-
+FILE==
 CMDS=<<EOF
 zs test1
 za foo1 b aabbccdd
@@ -199,7 +199,7 @@ EOF
 RUN
 
 NAME=za b and binmasks
-FILE=-
+FILE==
 CMDS=<<EOF
 za test b .abbc.dd..
 z
@@ -212,7 +212,7 @@ EOF
 RUN
 
 NAME=za b zero mask
-FILE=-
+FILE==
 CMDS=<<EOF
 za test b ....
 z
@@ -222,7 +222,7 @@ EOF
 RUN
 
 NAME=za g
-FILE=-
+FILE==
 CMDS=<<EOF
 za test g cc=1 nbbs=2 edges=3 ebbs=4
 z
@@ -234,7 +234,7 @@ EOF
 RUN
 
 NAME=za o
-FILE=-
+FILE==
 CMDS=<<EOF
 za test o 0x8048123
 z
@@ -246,14 +246,14 @@ EOF
 RUN
 
 NAME=za r
-FILE=-
+FILE==
 CMDS=<<EOF
 za test r sym1 sym3 sym2
 z
 EOF
 EXPECT=<<EOF
 test:
-  refs: sym1, sym3, sym2
+  xrefs_from: sym1, sym3, sym2
 EOF
 RUN
 
@@ -429,9 +429,9 @@ zigs:main:
   graph: cc=1 nbbs=1 edges=0 ebbs=1 bbsum=32
   addr: 0x0040055b
   realname: main
-  refs: sym.print
+  xrefs_from: sym.print
   vars: b-12, b-24, r82, r78
-  types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv"
+  types: func.main.ret="int", func.main.args=3, func.main.arg.0="int,argc", func.main.arg.1="char **,argv", func.main.arg.2="char **,envp"
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
 RUN
@@ -452,9 +452,9 @@ zigs:main:
   graph: cc=1 nbbs=1 edges=0 ebbs=1 bbsum=32
   addr: 0x0040055b
   realname: main
-  refs: sym.print
+  xrefs_from: sym.print
   vars: b-12, b-24, r82, r78
-  types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv"
+  types: func.main.ret="int", func.main.args=3, func.main.arg.0="int,argc", func.main.arg.1="char **,argv", func.main.arg.2="char **,envp"
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
 RUN
@@ -473,9 +473,9 @@ main:
   mask: ffffffffffffffffffffffffffffffff00000000ff00000000ffffffffffffff
   graph: cc=1 nbbs=1 edges=0 ebbs=1 bbsum=32
   addr: 0x0040055b
-  refs: sym.print
+  xrefs_from: sym.print
   vars: b-12, b-24, r82, r78
-  types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv"
+  types: func.main.ret="int", func.main.args=3, func.main.arg.0="int,argc", func.main.arg.1="char **,argv", func.main.arg.2="char **,envp"
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
 RUN
@@ -496,9 +496,9 @@ foobar:
   graph: cc=1 nbbs=1 edges=0 ebbs=1 bbsum=32
   addr: 0x0040055b
   realname: main
-  refs: sym.print
+  xrefs_from: sym.print
   vars: b-12, b-24, r82, r78
-  types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv"
+  types: func.main.ret="int", func.main.args=3, func.main.arg.0="int,argc", func.main.arg.1="char **,argv", func.main.arg.2="char **,envp"
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
 RUN
@@ -518,9 +518,9 @@ foobar:
   graph: cc=1 nbbs=1 edges=0 ebbs=1 bbsum=32
   addr: 0x0040055b
   realname: main
-  refs: sym.print
+  xrefs_from: sym.print
   vars: b-12, b-24, r82, r78
-  types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv"
+  types: func.main.ret="int", func.main.args=3, func.main.arg.0="int,argc", func.main.arg.1="char **,argv", func.main.arg.2="char **,envp"
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
 RUN
@@ -705,8 +705,8 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=af ; af ; zfs libc-v7.sig - newshell
-ARGS=-ecfg.newshell=true
+NAME=af ; af ; zfs libc-v7.sig - rzshell
+ARGS=-ecfg.oldshell=false
 FILE=bins/elf/analysis/pid_stripped
 CMDS=s 0x4e2420 ; af ; s 0x4e25c7 ; af ; zfs bins/other/sigs/libc-v7.sig ; afl ~4e2420
 EXPECT=<<EOF
@@ -748,8 +748,8 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=af ; af ; zfs libc-v10.sig - newshell
-ARGS=-ecfg.newshell=true
+NAME=af ; af ; zfs libc-v10.sig - rzshell
+ARGS=-ecfg.oldshell=false
 FILE=bins/elf/analysis/pid_stripped
 CMDS=s 0x4e2420 ; af ; s 0x4e25c7 ; af ; zfs bins/other/sigs/libc-v10.sig ; afl ~4e2420
 EXPECT=<<EOF
@@ -902,7 +902,7 @@ EXPECT=<<EOF
 0x0045a8c0 132 flirt.__sigsetjmp
 0x0045abc0 6232 flirt._quicksort
 0x0045c620 19 flirt.__libc_secure_getenv
-0x0045ce30 10673 flirt.group_number
+0x0045ce30 10704 flirt.group_number
 0x0045f800 13172 flirt._IO_vfprintf_internal
 0x00462b80 976 flirt.hack_digit
 0x00465a50 11033 flirt.___printf_fp
@@ -1199,7 +1199,7 @@ zaf fcn.00484d40 fcn.00484d40
 zj
 EOF
 EXPECT=<<EOF
-[{"name":"fcn.00484d40","bytes":"55534883ec08488b1f4885db741b4889fd4889dfe857b7f7ff4801d8803800751748c74500000000004883c4084889d85b5dc30f1f440000c600004883c001488945004883c4084889d85b5dc3","mask":"ffffffffffffffffffffffffff00ffffffffffffff00000000ffffffffffffff00ffffffffffffffffffffffffffffffffffff0000000000ffffffffffffffffffffffffffffffffffffffffff","graph":{"cc":4,"nbbs":5,"edges":5,"ebbs":2,"bbsum":72},"addr":4738368,"refs":[],"xrefs":[],"vars":["r82"],"types":[{"name":"arg1","type":"int64_t"}],"hash":{"bbhash":"8ff8a5c7f84179483b764fbb18dc4c44f39da6527a0a16485c7ae519f00e687f"}}]
+[{"name":"fcn.00484d40","bytes":"55534883ec08488b1f4885db741b4889fd4889dfe857b7f7ff4801d8803800751748c74500000000004883c4084889d85b5dc30f1f440000c600004883c001488945004883c4084889d85b5dc3","mask":"ffffffffffffffffffffffffff00ffffffffffffff00000000ffffffffffffff00ffffffffffffffffffffffffffffffffffff0000000000ffffffffffffffffffffffffffffffffffffffffff","graph":{"cc":4,"nbbs":5,"edges":5,"ebbs":2,"bbsum":72},"addr":4738368,"xrefs_from":[],"xrefs_to":[],"vars":["r82"],"types":[{"name":"arg1","type":"int64_t"}],"hash":{"bbhash":"8ff8a5c7f84179483b764fbb18dc4c44f39da6527a0a16485c7ae519f00e687f"}}]
 EOF
 RUN
 
@@ -1271,6 +1271,7 @@ za sym.deregister_tm_clones b e8e400000081c26b2f00008d8a180000008d821800000039c8
 za sym.deregister_tm_clones g cc=4 nbbs=4 edges=4 ebbs=2 bbsum=52
 za sym.deregister_tm_clones o 0x00001090
 za sym.deregister_tm_clones r sym.__x86.get_pc_thunk.dx
+za sym.deregister_tm_clones t func.sym.deregister_tm_clones.args=0
 za sym.deregister_tm_clones h 903d0936e77ecc1f2e91f7b2eb2476fdc06d7f2ba9501b1436468dbda5d7caaa
 EOF
 RUN
@@ -1288,7 +1289,7 @@ zs *
 za main b 31c075f8ebf689c05090909090c3:ffffff00ff00ffffffffffffffff
 za main g cc=2 nbbs=4 edges=4 ebbs=1 bbsum=18
 za main o 0x00001184
-za main t func.main.ret=int func.main.args=3 func.main.arg.0="int,argc" func.main.arg.1="char **,argv" func.main.arg.2="char **,envp"
+za main t func.main.ret="int" func.main.args=3 func.main.arg.0="int,argc" func.main.arg.1="char **,argv" func.main.arg.2="char **,envp"
 za main h a9f218a725149b64061b9064406b46abe5653b97eb0f88a3e3e0086d1532c898
 EOF
 RUN
@@ -1393,7 +1394,7 @@ za fcn.10002d70 b 38a0000038c000004bfffed4:ffffffffffffffffff000000
 za fcn.10002d70 g cc=12 nbbs=19 edges=29 ebbs=1 bbsum=304
 za fcn.10002d70 o 0x10002d70
 za fcn.10002d70 v b-4096 s4 s-36 s0 s-4136 r5 r6
-za fcn.10002d70 t func.fcn.10002d70.args=4 func.fcn.10002d70.arg.0="int32_t,arg1" func.fcn.10002d70.arg.1="int32_t,arg2" func.fcn.10002d70.arg.2="int32_t,arg_1030h" func.fcn.10002d70.arg.3="int32_t,arg_1034h"
+za fcn.10002d70 t func.fcn.10002d70.args=4 func.fcn.10002d70.arg.0="int32_t,arg1" func.fcn.10002d70.arg.1="int32_t,arg2" func.fcn.10002d70.arg.2="int32_t,arg_1034h" func.fcn.10002d70.arg.3="int32_t,arg_1030h"
 za fcn.10002d70 h b73e65dc846183808d8e385076f9bbcd0b1dcdaa5652254fb55b3b159462a507
 EOF
 RUN
@@ -1473,7 +1474,7 @@ za sym.memset b 200c014e0400028b5f8001f1c80300545f4000f102020054013c084ea2001836
 za sym.memset g cc=28 nbbs=35 edges=47 ebbs=8 bbsum=460
 za sym.memset o 0x00012180
 za sym.memset v r13 r7 r19
-za sym.memset t func.sym.memset.args=3 func.sym.memset.arg.0="void *,s" func.sym.memset.arg.1="int,c" func.sym.memset.arg.2="size_t,n"
+za sym.memset t func.sym.memset.ret="void *" func.sym.memset.args=3 func.sym.memset.arg.0="void *,s" func.sym.memset.arg.1="int,c" func.sym.memset.arg.2="size_t,n"
 za sym.memset h 82e8b18bbf263f9ed0e31d6b68099efe6eb8805a429444f8aa119af00c47369c
 EOF
 RUN
@@ -1741,7 +1742,7 @@ EOF
 RUN
 
 NAME=manually add signatures
-FILE=-
+FILE==
 CMDS=<<EOF
 zs *
 za main b 41574156415541544189fc554889f5534883ec48488b3e64488b042528000000488944243831c067e8b3f40000488d35b6570100bf06000000ff1531ee0100488d3500590100488d3dc4580100ff1565ec0100488d3db7580100ff1538ec0100488d3d499e0000c705e7f001000200000067e899320100c6059a0102000148b80000000000000080488905410202008b05abf00100c705d10002000000000048c705360202000000000048c70523020200ffffffffc6057c0102000083f8020f849c0e000083f8030f85da010000c705c001020000000000be0700000031ff67e81b0a0100c605a301020000488d3d65580100c7059701020000000000c7058901020000000000c6057f01020000c6057701020000c7055501020000000000c6053601020000c7052801020001000000c6051f01020000c6051701020000c705080102000000000048c705f50002000000000048c705e200020000000000c6056001020000ff1575ea01004989c54885c07438b904000000488d15618a0100488d35dae701004889c767e84192000085c00f880c0900004898488d15408a010031ff8b348267e85509010048c7055a00020050000000488d3da9570100ff151dea01004989c54885c074098038000f85060900004c8d6c242031c0be13540000bf010000004c89eaff156aeb010083f8ff740e0f:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00000000ff000000000000ffffffffffff0000000000ff000000000000ff000000000000ff0000000000ff000000000000ff0000000000ff000000000000ff000000000000000000ffff00000000ff000000000000ffffffffffffffffffffff000000000000ff0000000000ff000000000000000000ff00000000000000000000ff00000000000000000000ff000000000000ff0000ffff00000000ff0000ffff00000000ff000000000000000000ffffffffffffffffff00000000ff000000000000ff000000000000ff000000000000000000ff000000000000000000ff000000000000ff000000000000ff000000000000000000ff000000000000ff000000000000000000ff000000000000ff000000000000ff000000000000000000ff00000000000000000000ff00000000000000000000ff000000000000ff0000000000ffffffffffffff00ffffffffffff000000000000ff000000000000ffffffffff00000000ffffffff00000000ffffff000000000000ffffffffffffff00000000ff00000000000000000000ff000000000000ff0000000000ffffffffffffff00ffffffffff00000000ffffffffffffffff00000000ffffffffffffffffff0000000000ffffffff00ff
@@ -1749,7 +1750,7 @@ za main g cc=147 nbbs=226 edges=355 ebbs=8 bbsum=4859
 za main o 0x000040a0
 za main r sym._obstack_begin sym._obstack_begin sym._obstack_begin
 za main v s-64 s-88 s-116 s-96 s-80 s-67 s-65 s-66 s-86 r110 r114
-za main t func.main.ret=int func.main.args=3 func.main.arg.0=\"int,argc\" func.main.arg.1=\"char,**,argv\" func.main.arg.2=\"char,**,envp\"
+za main t func.main.ret="int" func.main.args=3 func.main.arg.0=\"int,argc\" func.main.arg.1=\"char,**,argv\" func.main.arg.2=\"char,**,envp\"
 za main h c82a35182e4217e7d7a4662c066be72bff254100ad71e29492350dba46fad184
 z*
 EOF
@@ -1766,11 +1767,12 @@ EOF
 RUN
 
 NAME=add types and function name on sig match
+BROKEN=1
 FILE=bins/elf/ls
 CMDS=<<EOF
 zs *
 za main o 0x00004070
-za main t func.sym.new_function_name.ret=int func.sym.new_function_name.args=2 func.sym.new_function_name.arg.0=\"int,NEWARGC\" func.sym.new_function_name.arg.1=\"char **,NEWARGV\"
+za main t func.sym.new_function_name.ret="int" func.sym.new_function_name.args=2 func.sym.new_function_name.arg.0="\"int,NEWARGC\"" func.sym.new_function_name.arg.1="\"char **,NEWARGV\""
 za main n sym.new_function_name
 s main
 af
@@ -1780,7 +1782,7 @@ afs
 afn
 EOF
 EXPECT=<<EOF
-int sym.new_function_name (int NEWARGC, char **NEWARGV);
+int sym.new_function_name(int NEWARGC, char ** NEWARGV);
 sym.new_function_name
 EOF
 RUN

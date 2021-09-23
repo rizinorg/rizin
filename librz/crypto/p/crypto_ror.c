@@ -1,5 +1,9 @@
+// SPDX-FileCopyrightText: 2016 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_lib.h>
 #include <rz_crypto.h>
+#include <rz_util.h>
 
 #define NAME "ror"
 
@@ -10,7 +14,7 @@ struct ror_state {
 	int key_size;
 };
 
-static bool ror_init(struct ror_state *const state, const ut8 *key, int keylen) {
+static bool ror_init_state(struct ror_state *const state, const ut8 *key, int keylen) {
 	if (!state || !key || keylen < 1 || keylen > MAX_ror_KEY_SIZE) {
 		return false;
 	}
@@ -31,16 +35,19 @@ static void ror_crypt(struct ror_state *const state, const ut8 *inbuf, ut8 *outb
 	}
 }
 
-static struct ror_state st;
-static int flag = 0;
-
 static bool ror_set_key(RzCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
-	flag = direction;
-	return ror_init(&st, key, keylen);
+	rz_return_val_if_fail(cry->user && key, false);
+	struct ror_state *st = (struct ror_state *)cry->user;
+
+	cry->dir = direction;
+	return ror_init_state(st, key, keylen);
 }
 
 static int ror_get_key_size(RzCrypto *cry) {
-	return st.key_size;
+	rz_return_val_if_fail(cry->user, 0);
+	struct ror_state *st = (struct ror_state *)cry->user;
+
+	return st->key_size;
 }
 
 static bool ror_use(const char *algo) {
@@ -48,27 +55,48 @@ static bool ror_use(const char *algo) {
 }
 
 static bool update(RzCrypto *cry, const ut8 *buf, int len) {
-	if (flag) {
-		eprintf("USE ROL\n");
+	rz_return_val_if_fail(cry->user, false);
+	struct ror_state *st = (struct ror_state *)cry->user;
+
+	if (cry->dir) {
+		eprintf("Use ROL algorithm to decrypt\n");
 		return false;
 	}
 	ut8 *obuf = calloc(1, len);
 	if (!obuf) {
 		return false;
 	}
-	ror_crypt(&st, buf, obuf, len);
+	ror_crypt(st, buf, obuf, len);
 	rz_crypto_append(cry, obuf, len);
 	free(obuf);
 	return true;
 }
 
+static bool ror_init(RzCrypto *cry) {
+	rz_return_val_if_fail(cry, false);
+
+	cry->user = RZ_NEW0(struct ror_state);
+	return cry->user != NULL;
+}
+
+static bool ror_fini(RzCrypto *cry) {
+	rz_return_val_if_fail(cry, false);
+
+	free(cry->user);
+	return true;
+}
+
 RzCryptoPlugin rz_crypto_plugin_ror = {
 	.name = NAME,
+	.author = "pancake",
+	.license = "LGPL-3",
 	.set_key = ror_set_key,
 	.get_key_size = ror_get_key_size,
 	.use = ror_use,
 	.update = update,
 	.final = update,
+	.init = ror_init,
+	.fini = ror_fini,
 };
 
 #ifndef RZ_PLUGIN_INCORE

@@ -967,6 +967,48 @@ static int check_expected_48(RzJson *j) {
 	return MU_PASSED;
 }
 
+static int check_expected_57(RzJson *j) {
+	const RzJson *nonexist = rz_json_get_path(j, "[0].nonexist");
+	mu_assert_null(nonexist, "nonexisting object null");
+
+	// try a few invalid paths
+	mu_assert_null(rz_json_get_path(j, "[].things[0].path"), "invalid path [].things[0].path");
+	mu_assert_null(rz_json_get_path(j, "[0].things[0]."), "invalid path [0].things[0].");
+	mu_assert_null(rz_json_get_path(j, "[0].things[0]."), "invalid path [0].things[0].");
+
+	static const char *paths[] = {
+		"[0].things[0].path",
+		"[0].things[1].path",
+		"[0].things[2].path",
+		"[1].things[0].path",
+		"[1].things[0].child.path",
+		"[1].things[1].path",
+		"[1].things[1].child.path",
+	};
+	for (int i = 1; i < sizeof(paths) / sizeof(paths[0]); i++) {
+		const char *path = paths[i];
+		const RzJson *found = rz_json_get_path(j, path);
+		mu_assert_notnull(found, path);
+		mu_assert_eq(found->type, RZ_JSON_STRING, "type is string");
+		mu_assert_streq(found->str_value, path, "correct object found");
+	}
+	return MU_PASSED;
+}
+
+static int check_expected_58(RzJson *j) {
+	char *json_str =
+		"{\"some-int\":195,\"array1\":[3,5.100000,-7,\"nine\",true,false,\"last\"],"
+		"\"array2\":[\"/*\",\"*/\"],\"some-bool\":true,\"other-bool\":false,"
+		"\"some-dbl\":-0.000100,\"some-null\":null,\"hello\":\"world!\","
+		"\"str1\":\"//\",\"str2\":\"\\\\\","
+		"\"str3\":\"text /*text*/ text\",\"str4\":\"\\\\text\\\\\","
+		"\"str5\":\"\\\\?text\\\\?\",\"str\\t6\\\\\":\"text\\ntext\\ttext\","
+		"\"obj\":{\"KEY\":\"VAL\",\"obj\":{\"KEY\":\"VAL\"}}}";
+	char *jsonstr = rz_json_as_string(j);
+	mu_assert_streq(jsonstr, json_str, "RzJson as string");
+	return MU_PASSED;
+}
+
 JsonTest tests[] = {
 	{ // 0
 		"    {\n      \"some-int\": 195,\n      \"array1\": [ 3, 5.1, -7, \"nin"
@@ -1179,7 +1221,36 @@ JsonTest tests[] = {
 		NULL },
 	{ // 56
 		"{\"hello\":42,/*stuff*/,\"invalid\":123}\n",
-		NULL }
+		NULL },
+	{ // 57
+		"["
+		"{\"things\": ["
+		"    {\"path\": \"[0].things[0].path\"},"
+		"    {\"path\": \"[0].things[1].path\"},"
+		"    {\"path\": \"[0].things[2].path\"}"
+		"]},"
+		"{\"things\": ["
+		"    {\"path\": \"[1].things[0].path\","
+		"      \"child\": {\"path\": \"[1].things[0].child.path\"}"
+		"    },"
+		"    {\"path\": \"[1].things[1].path\","
+		"      \"child\": {\"path\": \"[1].things[1].child.path\"}"
+		"    }"
+		"]}"
+		"]",
+		check_expected_57 },
+	{ // 58
+		"    {\n      \"some-int\": 195,\n      \"array1\": [ 3, 5.1, -7, \"nin"
+		"e\", /*11,*/ true, false, \"last\" ],\n      \"array2\":[\"/*\",\"*/\""
+		"],\n      \"some-bool\": true,\n      \"other-bool\": false,\n      \""
+		"some-dbl\": -1e-4,\n      \"some-null\": null,\n      \"hello\": \"wor"
+		"ld!\",\n      \"str1\": \"//\",\n      \"str2\": \"\\\\\",\n      \"st"
+		"r3\": \"text /*text*/ text\",\n      \"str4\": \"\\\\text\\\\\",\n    "
+		"  \"str5\": \"\\?text\\?\",\n      \"str\\t6\\\\\": \"text\\ntext\\tte"
+		"xt\",\n      //\"other\":"
+		" \"/OTHER/\",\n      \"obj\": {\"KEY\":\"VAL\", \"obj\":{\"KEY\":\"VAL"
+		"\"}}\n    }\n",
+		check_expected_58 },
 };
 
 static int test_json(int test_number, char *input, int (*check)(RzJson *j)) {

@@ -9,29 +9,47 @@ static bool is_kernelcache_buffer(RzBuffer *b) {
 	if (length < sizeof(struct MACH0_(mach_header))) {
 		return false;
 	}
-	ut32 cputype = rz_buf_read_le32_at(b, 4);
+	ut32 cputype;
+	if (!rz_buf_read_le32_at(b, 4, &cputype)) {
+		return false;
+	}
 	if (cputype != CPU_TYPE_ARM64) {
 		return false;
 	}
-	ut32 filetype = rz_buf_read_le32_at(b, 12);
+	ut32 filetype;
+	if (!rz_buf_read_le32_at(b, 12, &filetype)) {
+		return false;
+	}
 	if (filetype == MH_FILESET) {
 		return true;
 	}
-	ut32 flags = rz_buf_read_le32_at(b, 24);
+	ut32 flags;
+	if (!rz_buf_read_le32_at(b, 24, &flags)) {
+		return false;
+	}
 	if (!(flags & MH_PIE)) {
 		return false;
 	}
-
-	int i, ncmds = rz_buf_read_le32_at(b, 16);
+	ut32 ncmds;
+	if (!rz_buf_read_le32_at(b, 16, &ncmds)) {
+		return false;
+	}
 	bool has_unixthread = false;
 	bool has_negative_vaddr = false;
 	bool has_kext = false;
 
 	ut32 cursor = sizeof(struct MACH0_(mach_header));
-	for (i = 0; i < ncmds && cursor < length; i++) {
+	for (size_t i = 0; i < ncmds && cursor < length; i++) {
 
-		ut32 cmdtype = rz_buf_read_le32_at(b, cursor);
-		ut32 cmdsize = rz_buf_read_le32_at(b, cursor + 4);
+		ut32 cmdtype;
+		if (!rz_buf_read_le32_at(b, cursor, &cmdtype)) {
+			return false;
+		}
+
+		ut32 cmdsize;
+		if (!rz_buf_read_le32_at(b, cursor + 4, &cmdsize)) {
+			return false;
+		}
 
 		switch (cmdtype) {
 		case LC_KEXT:
@@ -48,7 +66,12 @@ static bool is_kernelcache_buffer(RzBuffer *b) {
 			if (has_negative_vaddr) {
 				break;
 			}
-			st64 vmaddr = rz_buf_read_le64_at(b, cursor + 24);
+			ut64 tmp;
+			if (!rz_buf_read_le64_at(b, cursor + 24, &tmp)) {
+				return false;
+			}
+
+			st64 vmaddr = convert_to_two_complement_64(tmp);
 			if (vmaddr < 0) {
 				has_negative_vaddr = true;
 			}

@@ -4,13 +4,14 @@
 #include <rz_types.h>
 #include <rz_analysis.h>
 #include <rz_cons.h>
-#include <rz_hash.h>
 #include <rz_util.h>
 #include <rz_reg.h>
 #include <rz_egg.h>
 #include <rz_bp.h>
 #include <rz_io.h>
+#include <rz_msg_digest.h>
 #include <rz_syscall.h>
+#include <rz_cmd.h>
 
 #include <rz_config.h>
 #include "rz_bind.h"
@@ -50,6 +51,13 @@ RZ_LIB_VERSION_HEADER(rz_debug);
 #define PTRACE_SYSCALL    PT_STEP
 #endif
 
+#define CMD_CHECK_DEBUG_DEAD(core) \
+	do { \
+		if (rz_debug_is_dead(core->dbg)) { \
+			rz_cons_println("Debugging is not enabled. Run ood?"); \
+			return RZ_CMD_STATUS_ERROR; \
+		} \
+	} while (0)
 #define SNAP_PAGE_SIZE    4096
 #define CHECK_POINT_LIMIT 0x100000 //TODO: take the benchmark
 /*
@@ -287,14 +295,14 @@ typedef struct rz_debug_t {
 	RzList *q_regs;
 	const char *creg; // current register value
 	RzBreakpoint *bp;
-	void *user; // XXX(jjd): unused?? meant for caller's use??
 	char *snap_path;
 
 	/* io */
 	PrintfCallback cb_printf;
 	RzIOBind iob;
 
-	struct rz_debug_plugin_t *h;
+	struct rz_debug_plugin_t *cur;
+	void *plugin_data;
 	RzList *plugins;
 
 	bool pc_at_bp; /* after a breakpoint, is the pc at the bp? */
@@ -314,7 +322,7 @@ typedef struct rz_debug_t {
 	RzCoreBind corebind;
 	// internal use only
 	int _mode;
-	RNum *num;
+	RzNum *num;
 	RzEgg *egg;
 	bool verbose;
 	bool main_arena_resolved; /* is the main_arena resolved already? */
@@ -358,11 +366,12 @@ typedef struct rz_debug_plugin_t {
 	const char *license;
 	const char *author;
 	const char *version;
-	//const char **archs; // MUST BE DEPRECATED!!!!
 	ut32 bits;
 	const char *arch;
 	int canstep;
 	int keepio;
+	bool (*init)(RzDebug *dbg, void **user);
+	void (*fini)(RzDebug *debug, void *user);
 	/* life */
 	RzDebugInfo *(*info)(RzDebug *dbg, const char *arg);
 	int (*startv)(int argc, char **argv);
@@ -379,24 +388,23 @@ typedef struct rz_debug_plugin_t {
 	int (*step_over)(RzDebug *dbg);
 	int (*cont)(RzDebug *dbg, int pid, int tid, int sig);
 	int (*wait)(RzDebug *dbg, int pid);
-	bool (*gcore)(RzDebug *dbg, RzBuffer *dest);
+	bool (*gcore)(RzDebug *dbg, char *path, RzBuffer *dest);
 	bool (*kill)(RzDebug *dbg, int pid, int tid, int sig);
 	RzList *(*kill_list)(RzDebug *dbg);
 	int (*contsc)(RzDebug *dbg, int pid, int sc);
 	RzList *(*frames)(RzDebug *dbg, ut64 at);
-	RzBreakpointCallback breakpoint;
+	RzBreakpointCallback breakpoint; /// Callback to be used for RzBreakpoint. When called, RzBreakpoint.user points to the RzDebug.
 	// XXX: specify, pid, tid, or RzDebug ?
 	int (*reg_read)(RzDebug *dbg, int type, ut8 *buf, int size);
 	int (*reg_write)(RzDebug *dbg, int type, const ut8 *buf, int size); //XXX struct rz_regset_t regs);
 	char *(*reg_profile)(RzDebug *dbg);
-	int (*set_reg_profile)(const char *str);
+	int (*set_reg_profile)(RzDebug *dbg, const char *str);
 	/* memory */
 	RzList *(*map_get)(RzDebug *dbg);
 	RzList *(*modules_get)(RzDebug *dbg);
 	RzDebugMap *(*map_alloc)(RzDebug *dbg, ut64 addr, int size, bool thp);
 	int (*map_dealloc)(RzDebug *dbg, ut64 addr, int size);
 	int (*map_protect)(RzDebug *dbg, ut64 addr, int size, int perms);
-	int (*init)(RzDebug *dbg);
 	int (*drx)(RzDebug *dbg, int n, ut64 addr, int size, int rwx, int g, int api_type);
 	RzDebugDescPlugin desc;
 	// TODO: use RzList here
@@ -482,7 +490,6 @@ RZ_API int rz_debug_kill_setup(RzDebug *dbg, int sig, int action);
 /* handle.c */
 RZ_API void rz_debug_plugin_init(RzDebug *dbg);
 RZ_API int rz_debug_plugin_set(RzDebug *dbg, const char *str);
-RZ_API int rz_debug_plugin_list(RzDebug *dbg, int mode);
 RZ_API bool rz_debug_plugin_add(RzDebug *dbg, RzDebugPlugin *foo);
 RZ_API bool rz_debug_plugin_set_reg_profile(RzDebug *dbg, const char *str);
 
@@ -494,8 +501,9 @@ RZ_API RzList *rz_debug_map_list_new(void);
 RZ_API RzDebugMap *rz_debug_map_get(RzDebug *dbg, ut64 addr);
 RZ_API RzDebugMap *rz_debug_map_new(char *name, ut64 addr, ut64 addr_end, int perm, int user);
 RZ_API void rz_debug_map_free(RzDebugMap *map);
-RZ_API void rz_debug_map_list(RzDebug *dbg, ut64 addr, const char *input);
+RZ_API void rz_debug_map_print(RzDebug *dbg, ut64 addr, RzCmdStateOutput *state);
 RZ_API void rz_debug_map_list_visual(RzDebug *dbg, ut64 addr, const char *input, int colors);
+RZ_API RzList *rz_debug_map_list(RzDebug *dbg, bool user_map);
 
 /* descriptors */
 RZ_API RzDebugDesc *rz_debug_desc_new(int fd, char *path, int perm, int type, int off);
@@ -509,6 +517,7 @@ RZ_API int rz_debug_desc_write(RzDebug *dbg, int fd, ut64 addr, int len);
 RZ_API int rz_debug_desc_list(RzDebug *dbg, int rad);
 
 /* registers */
+RZ_API bool rz_debug_reg_profile_sync(RzDebug *dbg);
 RZ_API int rz_debug_reg_sync(RzDebug *dbg, int type, int write);
 RZ_API int rz_debug_reg_set(RzDebug *dbg, const char *name, ut64 num);
 RZ_API ut64 rz_debug_reg_get(RzDebug *dbg, const char *name);
@@ -555,7 +564,7 @@ RZ_API int rz_debug_drx_set(RzDebug *dbg, int idx, ut64 addr, int len, int rwx, 
 RZ_API int rz_debug_drx_unset(RzDebug *dbg, int idx);
 
 /* esil */
-RZ_API ut64 rz_debug_num_callback(RNum *userptr, const char *str, int *ok);
+RZ_API ut64 rz_debug_num_callback(RzNum *userptr, const char *str, int *ok);
 RZ_API int rz_debug_esil_stepi(RzDebug *dbg);
 RZ_API ut64 rz_debug_esil_step(RzDebug *dbg, ut32 count);
 RZ_API ut64 rz_debug_esil_continue(RzDebug *dbg);
@@ -584,7 +593,7 @@ RZ_API void rz_debug_session_free(RzDebugSession *session);
 
 RZ_API RzDebugSnap *rz_debug_snap_map(RzDebug *dbg, RzDebugMap *map);
 RZ_API bool rz_debug_snap_contains(RzDebugSnap *snap, ut64 addr);
-RZ_API ut8 *rz_debug_snap_get_hash(RzDebugSnap *snap);
+RZ_API ut8 *rz_debug_snap_get_hash(RzDebugSnap *snap, RzMsgDigestSize *size);
 RZ_API bool rz_debug_snap_is_equal(RzDebugSnap *a, RzDebugSnap *b);
 RZ_API void rz_debug_snap_free(RzDebugSnap *snap);
 

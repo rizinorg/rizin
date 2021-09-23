@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <rz_main.h>
+#include <rz_core.h>
 
 typedef struct {
 	RzLib *l;
@@ -168,110 +169,6 @@ static int show_analinfo(RzAsmState *as, const char *arg, ut64 offset) {
 	return ret;
 }
 
-static const char *has_esil(RzAsmState *as, const char *name) {
-	RzListIter *iter;
-	RzAnalysisPlugin *h;
-	rz_list_foreach (as->analysis->plugins, iter, h) {
-		if (h->name && !strcmp(name, h->name)) {
-			return h->esil ? "Ae" : "A_";
-		}
-	}
-	return "__";
-}
-
-static void rz_asm_list(RzAsmState *as, const char *arch) {
-	int i;
-	char bits[32];
-	const char *feat2, *feat;
-	RzAsmPlugin *h;
-	RzListIter *iter;
-	PJ *pj = pj_new();
-	if (!pj) {
-		return;
-	}
-	if (as->json) {
-		pj_o(pj);
-	}
-	rz_list_foreach (as->a->plugins, iter, h) {
-		if (arch) {
-			if (h->cpus && !strcmp(arch, h->name)) {
-				char *c = strdup(h->cpus);
-				int n = rz_str_split(c, ',');
-				for (i = 0; i < n; i++) {
-					printf("%s\n", rz_str_word_get0(c, i));
-				}
-				free(c);
-				break;
-			}
-		} else {
-			bits[0] = 0;
-			if (h->bits == 27) {
-				strcat(bits, "27");
-			} else if (h->bits == 0) {
-				strcat(bits, "any");
-			} else {
-				if (h->bits & 4) {
-					strcat(bits, "4 ");
-				}
-				if (h->bits & 8) {
-					strcat(bits, "8 ");
-				}
-				if (h->bits & 16) {
-					strcat(bits, "16 ");
-				}
-				if (h->bits & 32) {
-					strcat(bits, "32 ");
-				}
-				if (h->bits & 64) {
-					strcat(bits, "64 ");
-				}
-			}
-			feat = "__";
-			if (h->assemble && h->disassemble) {
-				feat = "ad";
-			}
-			if (h->assemble && !h->disassemble) {
-				feat = "a_";
-			}
-			if (!h->assemble && h->disassemble) {
-				feat = "_d";
-			}
-			feat2 = has_esil(as, h->name);
-			if (as->quiet) {
-				printf("%s\n", h->name);
-			} else if (as->json) {
-				pj_k(pj, h->name);
-				pj_o(pj);
-				pj_k(pj, "bits");
-				pj_a(pj);
-				pj_i(pj, 32);
-				pj_i(pj, 64);
-				pj_end(pj);
-				pj_ks(pj, "license", h->license ? h->license : "unknown");
-				pj_ks(pj, "description", h->desc);
-				pj_ks(pj, "features", feat);
-				pj_end(pj);
-			} else {
-				printf("%s%s  %-9s  %-11s %-7s %s",
-					feat, feat2, bits, h->name,
-					h->license ? h->license : "unknown", h->desc);
-				if (h->author) {
-					printf(" (by %s)", h->author);
-				}
-				if (h->version) {
-					printf(" v%s", h->version);
-				}
-				printf("\n");
-			}
-		}
-	}
-	if (as->json) {
-		pj_end(pj);
-		printf("%s\n", pj_string(pj));
-		pj_free(pj);
-	}
-}
-
 static int rasm_show_help(int v) {
 	if (v < 2) {
 		printf("Usage: rz-asm [-ACdDehLBvw] [-a arch] [-b bits] [-o addr] [-s syntax]\n"
@@ -296,7 +193,7 @@ static int rasm_show_help(int v) {
 		       " -l [len]     Input/Output length\n"
 		       " -L           List Asm plugins: (a=asm, d=disasm, A=analyze, e=ESIL)\n"
 		       " -o,-@ [addr] Set start address for code (default 0)\n"
-		       " -O [file]    Output file name (rz_asm -Bf a.asm -O a)\n"
+		       " -O [file]    Output file name (rz-asm -Bf a.asm -O a)\n"
 		       " -p           Run SPP over input for assembly\n"
 		       " -q           quiet mode\n"
 		       " -r           output in rizin commands\n"
@@ -308,8 +205,8 @@ static int rasm_show_help(int v) {
 		       " If the last argument is '-' reads from stdin\n");
 		printf("Environment:\n"
 		       " RZ_ASM_NOPLUGINS  do not load shared plugins (speedup loading)\n"
-		       " RZ_ASM_ARCH       same as rz_asm -a\n"
-		       " RZ_ASM_BITS       same as rz_asm -b\n"
+		       " RZ_ASM_ARCH       same as rz-asm -a\n"
+		       " RZ_ASM_BITS       same as rz-asm -b\n"
 		       " RZ_DEBUG          if defined, show error messages and crash signal\n"
 		       "");
 	}
@@ -631,10 +528,18 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 		case 'l':
 			len = rz_num_math(NULL, opt.arg);
 			break;
-		case 'L':
-			rz_asm_list(as, opt.argv[opt.ind]);
+		case 'L': {
+			RzCore *core = rz_core_new();
+			RzCmdStateOutput state = { 0 };
+			rz_cmd_state_output_init(&state, as->json ? RZ_OUTPUT_MODE_JSON : RZ_OUTPUT_MODE_STANDARD);
+			rz_core_asm_plugins_print(core, opt.argv[opt.ind], &state);
+			rz_cmd_state_output_print(&state);
+			rz_cmd_state_output_fini(&state);
+			rz_cons_flush();
+			free(core);
 			ret = 1;
 			goto beach;
+		}
 		case '@':
 		case 'o':
 			offset = rz_num_math(NULL, opt.arg);
@@ -672,7 +577,7 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 			if (as->quiet) {
 				printf("%s\n", RZ_VERSION);
 			} else {
-				ret = rz_main_version_print("rz_asm");
+				ret = rz_main_version_print("rz-asm");
 			}
 			goto beach;
 		case 'w':
@@ -694,19 +599,19 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 
 	if (arch) {
 		if (!rz_asm_use(as->a, arch)) {
-			eprintf("rz_asm: Unknown asm plugin '%s'\n", arch);
+			eprintf("rz-asm: Unknown asm plugin '%s'\n", arch);
 			ret = 0;
 			goto beach;
 		}
 		rz_analysis_use(as->analysis, arch);
 	} else if (env_arch) {
 		if (!rz_asm_use(as->a, env_arch)) {
-			eprintf("rz_asm: Unknown asm plugin '%s'\n", env_arch);
+			eprintf("rz-asm: Unknown asm plugin '%s'\n", env_arch);
 			ret = 0;
 			goto beach;
 		}
 	} else if (!rz_asm_use(as->a, "x86")) {
-		eprintf("rz_asm: Cannot find asm.x86 plugin\n");
+		eprintf("rz-asm: Cannot find asm.x86 plugin\n");
 		ret = 0;
 		goto beach;
 	}
@@ -782,7 +687,7 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 			content = rz_file_slurp(file, &length);
 			if (content) {
 				if (length > ST32_MAX) {
-					eprintf("rz_asm: File %s is too big\n", file);
+					eprintf("rz-asm: File %s is too big\n", file);
 					ret = 1;
 				} else {
 					if (len && len > 0 && len < length) {
@@ -808,7 +713,7 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 				}
 				free(content);
 			} else {
-				eprintf("rz_asm: Cannot open file %s\n", file);
+				eprintf("rz-asm: Cannot open file %s\n", file);
 				ret = 1;
 			}
 		}

@@ -65,6 +65,7 @@ commands:
               - g
               - o
               - r
+              - t
               - x
               - h
               - v
@@ -88,6 +89,8 @@ commands:
                 comment: "original offset"
               - text: "r"
                 comment: "references"
+              - text: "t"
+                comment: "types"
               - text: "x"
                 comment: "cross references"
               - text: "h"
@@ -133,6 +136,9 @@ commands:
                 comment: ""
               - text: "za"
                 arg_str: " foo r sym.imp.strcpy sym.imp.sprintf sym.imp.strlen"
+                comment: ""
+              - text: "za"
+                arg_str: " foo t func.sym.imp.strlen.ret=int"
                 comment: ""
               - text: "za"
                 arg_str: " foo h 2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"
@@ -275,10 +281,7 @@ commands:
       - name: zi
         cname: zign_info
         summary: Show zignatures matching information
-        args:
-          - name: commens
-            type: RZ_CMD_ARG_TYPE_STRING
-            optional: true
+        args: []
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON

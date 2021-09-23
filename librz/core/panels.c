@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
-#include "cmd_descs/cmd_descs.h"
 #include "core_private.h"
 
 #define PANEL_NUM_LIMIT 9
@@ -564,7 +563,6 @@ static RzList *__sorted_list(RzCore *core, char *menu[], int count);
 static char *__get_panels_config_dir_path(void);
 static char *__create_panels_config_path(const char *file);
 static void __load_config_menu(RzCore *core);
-static char *__parse_panels_config(const char *cfg, int len);
 
 /* history */
 static int __file_history_up(RzLine *line);
@@ -2110,10 +2108,10 @@ void __handle_refs(RzCore *core, RzPanel *panel, ut64 tmp) {
 	int key = __show_status(core, "xrefs:x refs:X ");
 	switch (key) {
 	case 'x':
-		(void)rz_core_visual_refs(core, true, false);
+		(void)rz_core_visual_xrefs(core, true, false);
 		break;
 	case 'X':
-		(void)rz_core_visual_refs(core, false, false);
+		(void)rz_core_visual_xrefs(core, false, false);
 		break;
 	default:
 		break;
@@ -2426,8 +2424,8 @@ void __move_panel_to_left(RzCore *core, RzPanel *panel, int src) {
 	int i = 1;
 	for (; i < panels->n_panels; i++) {
 		RzPanel *tmp = __get_panel(panels, i);
-		int t_x = ((double)tmp->view->pos.x / (double)w) * (double)new_w + p_w;
-		int t_w = ((double)tmp->view->pos.w / (double)w) * (double)new_w + 1;
+		int t_x = (int)(((double)tmp->view->pos.x / (double)w) * (double)new_w + p_w);
+		int t_w = (int)(((double)tmp->view->pos.w / (double)w) * (double)new_w + 1);
 		__set_geometry(&tmp->view->pos, t_x, tmp->view->pos.y, t_w, tmp->view->pos.h);
 	}
 	__fix_layout(core);
@@ -3134,7 +3132,12 @@ int __load_layout_default_cb(void *user) {
 
 int __close_file_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	rz_core_cmd0(core, "o-*");
+	rz_core_file_close_fd(core, -1);
+	rz_io_close_all(core->io);
+	rz_bin_file_delete_all(core->bin);
+	if (core->files) {
+		rz_list_purge(core->files);
+	}
 	return 0;
 }
 
@@ -3341,7 +3344,7 @@ int __hexpairs_cb(void *user) {
 
 int __continue_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	rz_debug_continue_oldhandler(core, "");
+	rz_core_debug_continue(core);
 	rz_cons_flush();
 	return 0;
 }
@@ -3525,7 +3528,11 @@ int __symbols_cb(void *user) {
 
 int __program_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	rz_core_cmdf(core, "aaa");
+	char *dh_orig = core->dbg->cur
+		? strdup(core->dbg->cur->name)
+		: strdup("esil");
+	rz_core_analysis_all(core);
+	rz_core_analysis_everything(core, false, dh_orig);
 	return 0;
 }
 
@@ -3590,10 +3597,9 @@ int __license_cb(void *user) {
 }
 
 int __version_cb(void *user) {
-	RzCore *core = (RzCore *)user;
-	char *s = rz_core_cmd_str(core, "?V");
-	rz_cons_message(s);
-	free(s);
+	char *v = rz_str_version(NULL);
+	rz_cons_message(v);
+	free(v);
 	return 0;
 }
 
@@ -4750,7 +4756,7 @@ void __panels_refresh(RzCore *core) {
 	}
 	rz_cons_canvas_print(can);
 	if (core->scr_gadgets) {
-		rz_core_cmd0(core, "pg");
+		rz_core_gadget_print(core);
 	}
 	rz_cons_flush();
 	if (rz_cons_singleton()->fps) {
@@ -5299,17 +5305,19 @@ RZ_API void rz_save_panels_layout(RzCore *core, const char *oname) {
 	char *config_path = __create_panels_config_path(name);
 	RzPanels *panels = core->panels;
 	PJ *pj = pj_new();
+	pj_a(pj);
 	for (i = 0; i < panels->n_panels; i++) {
 		RzPanel *panel = __get_panel(panels, i);
 		pj_o(pj);
-		pj_ks(pj, "Title", panel->model->title);
-		pj_ks(pj, "Cmd", panel->model->cmd);
+		pj_ks(pj, "title", panel->model->title);
+		pj_ks(pj, "cmd", panel->model->cmd);
 		pj_kn(pj, "x", panel->view->pos.x);
 		pj_kn(pj, "y", panel->view->pos.y);
 		pj_kn(pj, "w", panel->view->pos.w);
 		pj_kn(pj, "h", panel->view->pos.h);
 		pj_end(pj);
 	}
+	pj_end(pj);
 	FILE *fd = rz_sys_fopen(config_path, "w");
 	if (fd) {
 		char *pjs = pj_drain(pj);
@@ -5320,26 +5328,6 @@ RZ_API void rz_save_panels_layout(RzCore *core, const char *oname) {
 		(void)__show_status(core, "Panels layout saved!");
 	}
 	free(config_path);
-}
-
-char *__parse_panels_config(const char *cfg, int len) {
-	if (RZ_STR_ISEMPTY(cfg) || len < 2) {
-		return NULL;
-	}
-	char *tmp = rz_str_newlen(cfg, len + 1);
-	int i = 0;
-	for (; i < len; i++) {
-		if (tmp[i] == '}') {
-			if (i + 1 < len) {
-				if (tmp[i + 1] == ',') {
-					tmp[i + 1] = '\n';
-				}
-				continue;
-			}
-			tmp[i + 1] = '\n';
-		}
-	}
-	return tmp;
 }
 
 void __load_config_menu(RzCore *core) {
@@ -5375,23 +5363,58 @@ RZ_API bool rz_load_panels_layout(RzCore *core, const char *_name) {
 	__panel_all_clear(panels);
 	panels->n_panels = 0;
 	__set_curnode(core, 0);
-	char *title, *cmd, *x, *y, *w, *h, *p_cfg = panels_config, *tmp_cfg;
-	int i, tmp_count;
-	tmp_cfg = __parse_panels_config(p_cfg, strlen(p_cfg));
-	tmp_count = rz_str_split(tmp_cfg, '\n');
-	for (i = 0; i < tmp_count; i++) {
-		if (RZ_STR_ISEMPTY(tmp_cfg)) {
+
+	RzJson *json = rz_json_parse(panels_config);
+	if (!json || json->type != RZ_JSON_ARRAY) {
+		free(panels_config);
+		return false;
+	}
+	RzJson *child, *baby;
+	const char *title = NULL, *cmd = NULL;
+	int x = 0, y = 0, w = 0, h = 0;
+	// Configuration stored as an array of JSON objects
+	for (child = json->children.first; child; child = child->next) {
+		if (child->type != RZ_JSON_OBJECT) {
 			break;
 		}
-		title = sdb_json_get_str(tmp_cfg, "Title");
-		cmd = sdb_json_get_str(tmp_cfg, "Cmd");
-		(void)rz_str_arg_unescape(cmd);
-		x = sdb_json_get_str(tmp_cfg, "x");
-		y = sdb_json_get_str(tmp_cfg, "y");
-		w = sdb_json_get_str(tmp_cfg, "w");
-		h = sdb_json_get_str(tmp_cfg, "h");
+		size_t params_read = 0;
+		for (baby = child->children.first; baby; baby = baby->next) {
+			if (params_read == 6) {
+				break;
+			}
+			if (baby->type != RZ_JSON_INTEGER && baby->type != RZ_JSON_STRING) {
+				continue;
+			}
+			// Get window title and executed command
+			if (strcmp(baby->key, "title") == 0) {
+				title = baby->str_value;
+				params_read++;
+			} else if (strcmp(baby->key, "cmd") == 0) {
+				cmd = baby->str_value;
+				params_read++;
+				// Parse window geometry
+			} else if (strcmp(baby->key, "x") == 0) {
+				x = baby->num.u_value;
+				params_read++;
+			} else if (strcmp(baby->key, "y") == 0) {
+				y = baby->num.u_value;
+				params_read++;
+			} else if (strcmp(baby->key, "w") == 0) {
+				w = baby->num.u_value;
+				params_read++;
+			} else if (strcmp(baby->key, "h") == 0) {
+				h = baby->num.u_value;
+				params_read++;
+			}
+		}
+		if (!title || !cmd) {
+			eprintf("Malformed Visual Panels config: %s\n", _name);
+			rz_json_free(json);
+			free(panels_config);
+			return false;
+		}
 		RzPanel *p = __get_panel(panels, panels->n_panels);
-		__set_geometry(&p->view->pos, atoi(x), atoi(y), atoi(w), atoi(h));
+		__set_geometry(&p->view->pos, x, y, w, h);
 		__init_panel_param(core, p, title, cmd);
 		if (rz_str_endswith(cmd, "Help")) {
 			p->model->title = rz_str_dup(p->model->title, "Help");
@@ -5399,15 +5422,16 @@ RZ_API bool rz_load_panels_layout(RzCore *core, const char *_name) {
 			RzStrBuf *rsb = rz_strbuf_new(NULL);
 			rz_core_visual_append_help(rsb, "Visual Ascii Art Panels", help_msg_panels);
 			if (!rsb) {
+				rz_json_free(json);
+				free(panels_config);
 				return false;
 			}
 			__set_read_only(core, p, rz_strbuf_drain(rsb));
 		}
-		tmp_cfg += strlen(tmp_cfg) + 1;
 	}
+	rz_json_free(json);
 	free(panels_config);
 	if (!panels->n_panels) {
-		free(tmp_cfg);
 		return false;
 	}
 	__set_refresh_all(core, true, false);
@@ -5972,7 +5996,7 @@ RZ_API bool rz_core_visual_panels_root(RzCore *core, RzPanelsRoot *panels_root) 
 	{
 		const char *l = rz_config_get(core->config, "scr.layout");
 		if (l && *l) {
-			rz_core_cmdf(core, "v %s", l);
+			rz_load_panels_layout(core, l);
 		}
 	}
 	RzPanels *panels = panels_root->panels[panels_root->cur_panels];
@@ -6581,7 +6605,7 @@ repeat:
 	case 'X':
 #if 0
 // already accessible via xX
-		rz_core_visual_refs (core, false, true);
+		rz_core_visual_xrefs (core, false, true);
 		cur->model->addr = core->offset;
 		set_refresh_all (panels, false);
 #endif

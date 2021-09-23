@@ -284,12 +284,35 @@ bool test_line_multicompletion(void) {
 	mu_end;
 }
 
+bool test_line_kill_word(void) {
+	RzCons *cons = rz_cons_new();
+	// Make test reproducible everywhere
+	cons->force_columns = 80;
+	cons->force_rows = 23;
+	rz_line_free();
+	RzLine *line = rz_line_new();
+	line->ns_completion.run = multicompletion_run;
+	cons->line = line;
+
+	// write the string, then do ^b two times to move the index to 10, then ^d to delete the word under the cursor
+	const char instr[] = "pd 10@ hello\x1b\x62\x1b\x62\x1b\x64\n";
+	rz_cons_readpush(instr, sizeof(instr));
+	rz_line_readline();
+
+	mu_assert_eq(line->buffer.index, 3, "index is after 'pd '");
+	mu_assert_streq(line->buffer.data, "pd @ hello", "10 was deleted");
+
+	rz_cons_free();
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_cons);
 	mu_run_test(test_cons_to_html);
 	mu_run_test(test_line_nocompletion);
 	mu_run_test(test_line_onecompletion);
 	mu_run_test(test_line_multicompletion);
+	mu_run_test(test_line_kill_word);
 	return tests_passed != tests_run;
 }
 

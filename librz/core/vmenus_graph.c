@@ -69,17 +69,17 @@ static char *print_item(void *_core, void *_item, bool selected) {
 static RzList *__xrefs(RzCore *core, ut64 addr) {
 	RzList *r = rz_list_newf(free);
 	RzListIter *iter;
-	RzAnalysisRef *ref;
-	RzList *xrefs = rz_analysis_xrefs_get(core->analysis, addr);
-	rz_list_foreach (xrefs, iter, ref) {
-		if (ref->type != 'C') {
+	RzAnalysisXRef *xref;
+	RzList *xrefs = rz_analysis_xrefs_get_to(core->analysis, addr);
+	rz_list_foreach (xrefs, iter, xref) {
+		if (xref->type != 'C') {
 			continue;
 		}
 		RzCoreVisualViewGraphItem *item = RZ_NEW0(RzCoreVisualViewGraphItem);
-		RzFlagItem *f = rz_flag_get_at(core->flags, ref->addr, 0);
-		item->addr = ref->addr;
+		RzFlagItem *f = rz_flag_get_at(core->flags, xref->from, 0);
+		item->addr = xref->from;
 		item->name = f ? f->name : NULL;
-		RzAnalysisFunction *rf = rz_analysis_get_fcn_in(core->analysis, ref->addr, 0);
+		RzAnalysisFunction *rf = rz_analysis_get_fcn_in(core->analysis, xref->from, 0);
 		item->fcn = rf;
 		if (rf) {
 			item->name = rf->name;
@@ -92,21 +92,21 @@ static RzList *__xrefs(RzCore *core, ut64 addr) {
 static RzList *__refs(RzCore *core, ut64 addr) {
 	RzList *r = rz_list_newf(free);
 	RzListIter *iter;
-	RzAnalysisRef *ref;
+	RzAnalysisXRef *xref;
 	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, 0);
 	if (!fcn) {
 		return r;
 	}
-	RzList *refs = rz_analysis_function_get_refs(fcn);
-	rz_list_foreach (refs, iter, ref) {
-		if (ref->type != 'C') {
+	RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
+	rz_list_foreach (xrefs, iter, xref) {
+		if (xref->type != 'C') {
 			continue;
 		}
 		RzCoreVisualViewGraphItem *item = RZ_NEW0(RzCoreVisualViewGraphItem);
-		RzFlagItem *f = rz_flag_get_at(core->flags, ref->addr, 0);
-		item->addr = ref->addr;
+		RzFlagItem *f = rz_flag_get_at(core->flags, xref->to, 0);
+		item->addr = xref->to;
 		item->name = f ? f->name : NULL;
-		RzAnalysisFunction *rf = rz_analysis_get_fcn_in(core->analysis, ref->addr, 0);
+		RzAnalysisFunction *rf = rz_analysis_get_fcn_in(core->analysis, xref->to, 0);
 		if (rf) {
 			item->name = rf->name;
 			item->fcn = rf;

@@ -1,5 +1,5 @@
 NAME=uname
-FILE=-
+FILE==
 BROKEN=
 CMDS=!uname
 EXPECT=<<EOF

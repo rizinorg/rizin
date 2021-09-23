@@ -59,7 +59,7 @@ ec linehl rgb:004
 
 ec graph.true rgb:370
 ec graph.false rgb:a00
-ec graph.trufae rgb:bbb
+ec graph.ujump rgb:bbb
 ec graph.current rgb:7d1
 ec graph.traced rgb:f00
 ec graph.box rgb:950

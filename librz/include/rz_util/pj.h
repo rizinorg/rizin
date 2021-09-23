@@ -8,34 +8,16 @@
 extern "C" {
 #endif
 
-/* new encoding options of j commands */
-typedef enum PJEncodingStr {
-	PJ_ENCODING_STR_DEFAULT = 0,
-	PJ_ENCODING_STR_BASE64,
-	PJ_ENCODING_STR_HEX,
-	PJ_ENCODING_STR_ARRAY,
-	PJ_ENCODING_STR_STRIP
-} PJEncodingStr;
-
-typedef enum PJEncodingNum {
-	PJ_ENCODING_NUM_DEFAULT = 0,
-	PJ_ENCODING_NUM_STR,
-	PJ_ENCODING_NUM_HEX
-} PJEncodingNum;
-
 typedef struct pj_t {
 	RzStrBuf sb;
 	bool is_first;
 	bool is_key;
 	char braces[RZ_PRINT_JSON_DEPTH_LIMIT];
 	int level;
-	PJEncodingStr str_encoding;
-	PJEncodingNum num_encoding;
 } PJ;
 
 /* lifecycle */
 RZ_API PJ *pj_new(void);
-RZ_API PJ *pj_new_with_encoding(PJEncodingStr str_encoding, PJEncodingNum num_encoding);
 RZ_API void pj_free(PJ *j);
 RZ_API void pj_reset(PJ *j); // clear the pj contents, but keep the buffer allocated to re-use it
 RZ_API char *pj_drain(PJ *j);
@@ -89,10 +71,6 @@ RZ_API PJ *pj_kr(PJ *j, const char *k, const unsigned char *v, size_t v_len);
 RZ_API PJ *pj_s(PJ *j, const char *k);
 /* string, raw */
 RZ_API PJ *pj_j(PJ *j, const char *k);
-/* string, encoded */
-RZ_API PJ *pj_se(PJ *j, const char *k);
-/* ut64, encoded */
-RZ_API PJ *pj_ne(PJ *j, ut64 n);
 
 /* formatted primitive types */
 RZ_API PJ *pj_n(PJ *j, ut64 n);

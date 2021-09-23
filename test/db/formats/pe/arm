@@ -1,0 +1,172 @@
+NAME=hello_world_arm.exe - Open
+FILE=bins/pe/hello_world_arm/hello_world_arm.exe
+CMDS=<<EOF
+i
+ie
+is
+iH
+EOF
+EXPECT=<<EOF
+fd       3
+file     bins/pe/hello_world_arm/hello_world_arm.exe
+size     0x1e00
+humansz  7.5K
+mode     r-x
+format   pe
+iorw     false
+block    0x100
+type     EXEC (Executable file)
+arch     arm
+cpu      N/A
+baddr    0x00400000
+binsz    0x00001e00
+bintype  pe
+bits     16
+retguard false
+class    PE32
+cmp.csum 0x0000584b
+compiled Thu Aug 12 03:57:16 2021 UTC
+compiler N/A
+dbg_file N/A
+endian   LE
+hdr.csum 0x00000000
+guid     N/A
+intrp    N/A
+laddr    0x00000000
+lang     c
+machine  ARM Thumb-2
+maxopsz  4
+minopsz  2
+os       windows
+overlay  false
+cc       arm16
+pcalign  2
+rpath    N/A
+signed   false
+subsys   Windows CUI
+stripped false
+crypto   false
+havecode true
+va       true
+sanitiz  false
+static   false
+linenum  false
+lsyms    false
+canary   false
+PIE      true
+RELROCS  false
+NX       true
+vaddr      paddr      hvaddr     haddr      type    
+----------------------------------------------------
+0x004011d4 0x000005d4 ---------- 0x00000108 program
+nth paddr      vaddr      bind type size lib                               name                                           
+--------------------------------------------------------------------------------------------------------------------------
+1   0x00000e00 0x00402000 NONE FUNC 0    KERNEL32.dll                      imp.QueryPerformanceCounter
+2   0x00000e04 0x00402004 NONE FUNC 0    KERNEL32.dll                      imp.GetCurrentProcessId
+3   0x00000e08 0x00402008 NONE FUNC 0    KERNEL32.dll                      imp.GetCurrentThreadId
+4   0x00000e0c 0x0040200c NONE FUNC 0    KERNEL32.dll                      imp.GetSystemTimeAsFileTime
+5   0x00000e10 0x00402010 NONE FUNC 0    KERNEL32.dll                      imp.InitializeSListHead
+6   0x00000e14 0x00402014 NONE FUNC 0    KERNEL32.dll                      imp.SetUnhandledExceptionFilter
+7   0x00000e18 0x00402018 NONE FUNC 0    KERNEL32.dll                      imp.GetModuleHandleW
+8   0x00000e1c 0x0040201c NONE FUNC 0    KERNEL32.dll                      imp.IsProcessorFeaturePresent
+1   0x00000e24 0x00402024 NONE FUNC 0    VCRUNTIME140.dll                  imp.__current_exception
+2   0x00000e28 0x00402028 NONE FUNC 0    VCRUNTIME140.dll                  imp.__current_exception_context
+3   0x00000e2c 0x0040202c NONE FUNC 0    VCRUNTIME140.dll                  imp.__C_specific_handler
+1   0x00000e98 0x00402098 NONE FUNC 0    api-ms-win-crt-stdio-l1-1-0.dll   imp.puts
+2   0x00000e9c 0x0040209c NONE FUNC 0    api-ms-win-crt-stdio-l1-1-0.dll   imp._set_fmode
+3   0x00000ea0 0x004020a0 NONE FUNC 0    api-ms-win-crt-stdio-l1-1-0.dll   imp.__p__commode
+1   0x00000e4c 0x0040204c NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp._get_initial_narrow_environment
+2   0x00000e50 0x00402050 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp._initterm
+3   0x00000e54 0x00402054 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp._seh_filter_exe
+4   0x00000e58 0x00402058 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp.exit
+5   0x00000e5c 0x0040205c NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp._initialize_narrow_environment
+6   0x00000e60 0x00402060 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp._configure_narrow_argv
+7   0x00000e64 0x00402064 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp.__p___argc
+8   0x00000e68 0x00402068 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp.__p___argv
+9   0x00000e6c 0x0040206c NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp._cexit
+10  0x00000e70 0x00402070 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp._c_exit
+11  0x00000e74 0x00402074 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp._register_thread_local_exe_atexit_callback
+12  0x00000e78 0x00402078 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp._set_app_type
+13  0x00000e7c 0x0040207c NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp._exit
+14  0x00000e80 0x00402080 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp.terminate
+15  0x00000e84 0x00402084 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp._initialize_onexit_table
+16  0x00000e88 0x00402088 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp._register_onexit_function
+17  0x00000e8c 0x0040208c NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp._crt_atexit
+18  0x00000e90 0x00402090 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp._initterm_e
+1   0x00000e44 0x00402044 NONE FUNC 0    api-ms-win-crt-math-l1-1-0.dll    imp.__setusermatherr
+1   0x00000e3c 0x0040203c NONE FUNC 0    api-ms-win-crt-locale-l1-1-0.dll  imp._configthreadlocale
+1   0x00000e34 0x00402034 NONE FUNC 0    api-ms-win-crt-heap-l1-1-0.dll    imp._set_new_mode
+PE file header:
+IMAGE_NT_HEADERS
+  Signature : 0x4550
+IMAGE_FILE_HEADERS
+  Machine : 0x1c4
+  NumberOfSections : 0x5
+  TimeDateStamp : 0x61149c1c
+  PointerToSymbolTable : 0x0
+  NumberOfSymbols : 0x0
+  SizeOfOptionalHeader : 0xe0
+  Characteristics : 0x122
+IMAGE_OPTIONAL_HEADERS
+  Magic : 0x10b
+  MajorLinkerVersion : 0xe
+  MinorLinkerVersion : 0x1d
+  SizeOfCode : 0xa00
+  SizeOfInitializedData : 0x1000
+  SizeOfUninitializedData : 0x0
+  AddressOfEntryPoint : 0x11d5
+  BaseOfCode : 0x1000
+  BaseOfData : 0x2000
+  ImageBase : 0x400000
+  SectionAlignment : 0x1000
+  FileAlignment : 0x200
+  MajorOperatingSystemVersion : 0x6
+  MinorOperatingSystemVersion : 0x2
+  MajorImageVersion : 0x0
+  MinorImageVersion : 0x0
+  MajorSubsystemVersion : 0x6
+  MinorSubsystemVersion : 0x2
+  Win32VersionValue : 0x0
+  SizeOfImage : 0x6000
+  SizeOfHeaders : 0x400
+  CheckSum : 0x0
+  Subsystem : 0x3
+  DllCharacteristics : 0x8140
+  SizeOfStackReserve : 0x100000
+  SizeOfStackCommit : 0x1000
+  SizeOfHeapReserve : 0x100000
+  SizeOfHeapCommit : 0x1000
+  LoaderFlags : 0x0
+  NumberOfRvaAndSizes : 0x10
+RICH_FIELDS
+  Product: 258 Name: Linker1400 Version: 30133 Times: 1
+  Product: 260 Name: Utc1900_C Version: 30133 Times: 1
+  Product: 260 Name: Utc1900_C Version: 30034 Times: 9
+  Product: 261 Name: Utc1900_CPP Version: 30034 Times: 17
+  Product: 1 Name: Import0 Version: 0 Times: 41
+  Product: 257 Name: Implib1400 Version: 27412 Times: 3
+  Product: 257 Name: Implib1400 Version: 30034 Times: 2
+  Product: 147 Name: Implib900 Version: 30729 Times: 10
+IMAGE_DIRECTORY_ENTRY_IMPORT
+  VirtualAddress : 0x2494
+  Size : 0xa0
+IMAGE_DIRECTORY_ENTRY_EXCEPTION
+  VirtualAddress : 0x4000
+  Size : 0x120
+IMAGE_DIRECTORY_ENTRY_BASERELOC
+  VirtualAddress : 0x5000
+  Size : 0xac
+IMAGE_DIRECTORY_ENTRY_DEBUG
+  VirtualAddress : 0x20e8
+  Size : 0x1c
+IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG
+  VirtualAddress : 0x2108
+  Size : 0xbc
+IMAGE_DIRECTORY_ENTRY_IAT
+  VirtualAddress : 0x2000
+  Size : 0xa8
+IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT
+  VirtualAddress : 0x0
+  Size : 0xffff
+EOF
+RUN

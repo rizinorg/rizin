@@ -1,5 +1,5 @@
 NAME=asm.os
-FILE=-
+FILE==
 BROKEN=1
 CMDS=e asm.os
 EXPECT=<<EOF

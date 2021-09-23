@@ -31,15 +31,15 @@ RZ_API RzEgg *rz_egg_new(void) {
 	if (!egg) {
 		return NULL;
 	}
-	egg->src = rz_buf_new();
+	egg->src = rz_buf_new_with_bytes(NULL, 0);
 	if (!egg->src) {
 		goto beach;
 	}
-	egg->buf = rz_buf_new();
+	egg->buf = rz_buf_new_with_bytes(NULL, 0);
 	if (!egg->buf) {
 		goto beach;
 	}
-	egg->bin = rz_buf_new();
+	egg->bin = rz_buf_new_with_bytes(NULL, 0);
 	if (!egg->bin) {
 		goto beach;
 	}
@@ -115,9 +115,9 @@ RZ_API void rz_egg_reset(RzEgg *egg) {
 	rz_buf_free(egg->src);
 	rz_buf_free(egg->buf);
 	rz_buf_free(egg->bin);
-	egg->src = rz_buf_new();
-	egg->buf = rz_buf_new();
-	egg->bin = rz_buf_new();
+	egg->src = rz_buf_new_with_bytes(NULL, 0);
+	egg->buf = rz_buf_new_with_bytes(NULL, 0);
+	egg->bin = rz_buf_new_with_bytes(NULL, 0);
 	rz_list_purge(egg->patches);
 }
 
@@ -324,8 +324,8 @@ RZ_API bool rz_egg_assemble_asm(RzEgg *egg, char **asm_list) {
 			eprintf("fail assembling\n");
 		}
 	}
+	bool ret = code ? asmcode != NULL : true;
 	free(code);
-	bool ret = (asmcode != NULL);
 	rz_asm_code_free(asmcode);
 	return ret;
 }
@@ -536,7 +536,7 @@ RZ_API void rz_egg_finalize(RzEgg *egg) {
 	RzListIter *iter;
 	if (!egg->bin) {
 		rz_buf_free(egg->bin);
-		egg->bin = rz_buf_new();
+		egg->bin = rz_buf_new_with_bytes(NULL, 0);
 	}
 	rz_list_foreach (egg->patches, iter, ep) {
 		if (ep->off < 0) {

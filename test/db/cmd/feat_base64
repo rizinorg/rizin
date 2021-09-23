@@ -1,5 +1,5 @@
 NAME=base64 encode
-FILE=-
+FILE==
 CMDS=<<EOF
 b 11
 w hello world
@@ -11,7 +11,7 @@ EOF
 RUN
 
 NAME=base64 decode
-FILE=-
+FILE==
 CMDS=<<EOF
 b 16
 w aGVsbG8gd29ybGQ=

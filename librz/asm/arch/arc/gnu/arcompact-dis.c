@@ -24,6 +24,7 @@
 #include <stdarg.h>
 #include <ansidecl.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "disas-asm.h"
 #include "arc.h"
@@ -31,25 +32,10 @@
 #include "arc-dis.h"
 #include "arcompact-dis.h"
 #include "elf-bfd.h"
-#include "rz_types.h"
 
-  /*
-    warning: implicit declaration of function `eprintf'
-    if dbg is 1 then this definition is required
-  */
 static bfd_vma bfd_getm32 (unsigned int);
 static bfd_vma bfd_getm32_ac (unsigned int) ATTRIBUTE_UNUSED;
 
-
-#ifndef dbg
-#define dbg	(0)
-#endif
-
-  /*
-    Ravi:
-    : undefined reference to `eprintf'
-    if dbg is 1 then this definition is required
-  */
 #undef _NELEM
 #define _NELEM(ary)	(sizeof(ary) / sizeof((ary)[0]))
 
@@ -99,8 +85,9 @@ static bfd_vma bfd_getm32_ac (unsigned int) ATTRIBUTE_UNUSED;
 #define FIELDS9_FLAG(word)     (((BITS(((signed int)(word)),0,5) << 6) | (BITS((word),6,11))) )
 
 #define PUT_NEXT_WORD_IN(a) {		\
-	if (is_limm==1 && !NEXT_WORD(1))       	\
-	  mwerror(state, "Illegal limm reference in last instruction!\n"); \
+          if (is_limm==1 && !NEXT_WORD(1)) { \
+            mwerror(state, "Illegal limm reference in last instruction!\n"); \
+          } \
           if (info->endian == BFD_ENDIAN_LITTLE) { \
             (a) = ((state->words[1] & 0xff00) | (state->words[1] & 0xff)) << 16; \
             (a) |= ((state->words[1] & 0xff0000) | (state->words[1] & 0xff000000)) >> 16;	\
@@ -2713,10 +2700,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       {
         CHECK_FIELD_C();
       }
-      if (dbg) {
-	      printf ("5:b reg %d %d c reg %d %d  \n",
-		      fieldBisReg, fieldB, fieldCisReg, fieldC);
-      }
       state->_offset = 0;
       state->_ea_present = 1;
       if (fieldBisReg) {
@@ -2779,10 +2762,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       fieldC = FIELDD9(state->words[0]);
       fieldCisReg = 0;
 
-      if (dbg) {
-	      eprintf ("6:b reg %d %d c 0x%x  \n",
-		      fieldBisReg, fieldB, fieldC);
-      }
       state->_ea_present = 1;
       state->_offset = fieldC;
       state->_mem_load = 1;
@@ -2831,10 +2810,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       fieldA  = FIELDD9(state->words[0]); /* shimm */
 
       /* [B,A offset] */
-      if (dbg) {
-	      eprintf ("7:b reg %d %x off %x\n",
-		      fieldBisReg, fieldB, fieldA);
-      }
       state->_ea_present = 1;
       state->_offset = fieldA;
       if (fieldBisReg) {

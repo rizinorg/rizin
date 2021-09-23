@@ -1,5 +1,5 @@
 NAME=trailing comment
-FILE=-
+FILE==
 ARGS=-n
 CMDS=<<EOF
 / #
@@ -600,7 +600,7 @@ EOF
 RUN
 
 NAME=/v4 search 4 byte
-FILE=-
+FILE==
 CMDS=<<EOF
 wx 0x12345678aabbccddeeff12345678
 /v4 0x78563412
@@ -612,7 +612,7 @@ EOF
 RUN
 
 NAME=/v4j search 4 byte with json output
-FILE=-
+FILE==
 CMDS=<<EOF
 wx 0x12345678aabbccddeeff12345678
 /v4j 0x78563412
@@ -623,7 +623,7 @@ EOF
 RUN
 
 NAME=/v4 search 8 byte
-FILE=-
+FILE==
 CMDS=<<EOF
 wx 0x12345678aabbccddeeff12345678
 /v4 0x78563412 0xddccbbaa
@@ -634,7 +634,7 @@ EOF
 RUN
 
 NAME=/V4j search 4 byte with json
-FILE=-
+FILE==
 CMDS=<<EOF
 wx 0x12345678aabbccddeeff12345678
 /V4j 0x78563412 0x78563420
@@ -865,7 +865,7 @@ EOF
 RUN
 
 NAME=search by rest of file
-FILE=-
+FILE==
 CMDS=<<EOF
 wx 210a @ 0x10
 /F bins/elf/analysis/hello.raw 48
@@ -876,7 +876,7 @@ EOF
 RUN
 
 NAME=search by rest of file dec/dec
-FILE=-
+FILE==
 CMDS=<<EOF
 wx 0e @ 0x10
 /F bins/elf/analysis/hello.raw 1 1
@@ -887,7 +887,7 @@ EOF
 RUN
 
 NAME=search by part of file dec/hex
-FILE=-
+FILE==
 CMDS=<<EOF
 wx 8048 @ 0x10
 /F bins/elf/analysis/hello.raw 0x1c 0x2

@@ -336,7 +336,8 @@ static char *mnemonics(RzAsm *a, int id, bool json) {
 RzAsmPlugin rz_asm_plugin_arm_cs = {
 	.name = "arm",
 	.desc = "Capstone ARM disassembler",
-	.cpus = ",v8,cortex",
+	.cpus = "v8,cortex,arm1176,cortexA72,cortexA8",
+	.platforms = "bcm2835,omap3430",
 	.features = "v8",
 	.license = "BSD",
 	.arch = "arm",

@@ -1,5 +1,5 @@
 NAME=rcall
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
@@ -54,9 +54,8 @@ ii
 iE
 EOF
 EXPECT=<<EOF
-[Imports]
-nth vaddr      bind   type   lib name
--------------------------------------
+nth vaddr      bind   type   lib name             
+--------------------------------------------------
 3   0x00020060 GLOBAL NOTYPE     _bss_end__
 4   0x000006b0 GLOBAL FUNC       realloc
 5   0x000006c0 GLOBAL FUNC       __cxa_finalize
@@ -72,11 +71,8 @@ nth vaddr      bind   type   lib name
 16  0x00020060 GLOBAL NOTYPE     _end
 17  0x00000710 GLOBAL FUNC       free
 18  0x00000720 GLOBAL FUNC       __cxa_atexit
-
-[Exports]
-
-nth paddr      vaddr      bind   type size lib name
----------------------------------------------------
+nth paddr      vaddr      bind   type size lib name            
+---------------------------------------------------------------
 6   0x0000aa20 0x0000aa20 GLOBAL FUNC 1176     Java_o__003dc_e
 EOF
 RUN
@@ -93,7 +89,7 @@ address: 0x100007f10
 opcode: irg x8, sp, x8
 esilcost: 0
 disasm: irg x8, sp, x8
-pseudo: irg x8,sp,x8 
+pseudo: asm("irg x8, sp, x8")
 mnemonic: irg
 mask: ffffffff
 prefix: 0
@@ -110,7 +106,7 @@ address: 0x100007f14
 opcode: addg x9, x8, 0x20, 0x0
 esilcost: 0
 disasm: addg x9, x8, 0x20, 0x0
-pseudo: addg x9,x8,0x20, 0x0 
+pseudo: asm("addg x9, x8, 0x20, 0x0")
 mnemonic: addg
 mask: ffffffff
 prefix: 0
@@ -126,7 +122,7 @@ EOF
 RUN
 
 NAME=ao mte big endian
-FILE=-
+FILE==
 ARGS=-a arm -b 64 -e cfg.bigendian=true
 CMDS=<<EOF
 wx 91a0090c918201099ac813e8
@@ -141,7 +137,7 @@ address: 0x0
 opcode: addg x12, x8, 0x0, 0x2
 esilcost: 0
 disasm: addg x12, x8, 0x0, 0x2
-pseudo: addg x12,x8,0x0, 0x2 
+pseudo: asm("addg x12, x8, 0x0, 0x2")
 mnemonic: addg
 mask: ffffffff
 prefix: 0
@@ -158,7 +154,7 @@ address: 0x4
 opcode: addg x9, x8, 0x20, 0x0
 esilcost: 0
 disasm: addg x9, x8, 0x20, 0x0
-pseudo: addg x9,x8,0x20, 0x0 
+pseudo: asm("addg x9, x8, 0x20, 0x0")
 mnemonic: addg
 mask: ffffffff
 prefix: 0
@@ -175,7 +171,7 @@ address: 0x8
 opcode: irg x8, sp, x8
 esilcost: 0
 disasm: irg x8, sp, x8
-pseudo: irg x8,sp,x8 
+pseudo: asm("irg x8, sp, x8")
 mnemonic: irg
 mask: ffffffff
 prefix: 0
@@ -191,7 +187,7 @@ EOF
 RUN
 
 NAME=Variable analysis with stp/preindexed str
-FILE=-
+FILE==
 ARGS=-a arm -b 64
 CMDS=<<EOF
 e analysis.vars.stackname=true

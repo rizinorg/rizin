@@ -172,7 +172,6 @@ RZ_API RzPrint *rz_print_new(void) {
 	p->cols = 16;
 	p->cur_enabled = false;
 	p->cur = p->ocur = -1;
-	p->formats = sdb_new0();
 	p->addrmod = 4;
 	p->flags =
 		RZ_PRINT_FLAGS_COLOR |
@@ -200,8 +199,6 @@ RZ_API RzPrint *rz_print_free(RzPrint *p) {
 	if (!p) {
 		return NULL;
 	}
-	sdb_free(p->formats);
-	p->formats = NULL;
 	RZ_FREE(p->strconv_mode);
 	if (p->zoom) {
 		free(p->zoom->buf);
@@ -679,6 +676,7 @@ RZ_API void rz_print_section(RzPrint *p, ut64 at) {
 }
 
 RZ_API void rz_print_hexdump(RzPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step, size_t zoomsz) {
+	rz_return_if_fail(p && buf && len > 0);
 	PrintfCallback printfmt = (PrintfCallback)printf;
 #define print(x) printfmt("%s", x)
 	bool c = p ? (p->flags & RZ_PRINT_FLAGS_COLOR) : false;
@@ -1339,6 +1337,7 @@ RZ_API void rz_print_hexdiff(RzPrint *p, ut64 aa, const ut8 *_a, ut64 ba, const 
 }
 
 RZ_API void rz_print_bytes(RzPrint *p, const ut8 *buf, int len, const char *fmt) {
+	rz_return_if_fail(fmt);
 	int i;
 	if (p) {
 		for (i = 0; i < len; i++) {
@@ -1791,7 +1790,7 @@ static bool issymbol(char c) {
 static bool check_arg_name(RzPrint *print, char *p, ut64 func_addr) {
 	if (func_addr && print->exists_var) {
 		int z;
-		for (z = 0; p[z] && (isalpha(p[z]) || isdigit(p[z]) || p[z] == '_'); z++) {
+		for (z = 0; p[z] && (isalpha((int)p[z]) || isdigit((int)p[z]) || p[z] == '_'); z++) {
 			;
 		}
 		char tmp = p[z];
@@ -2076,40 +2075,59 @@ RZ_API int rz_print_jsondump(RzPrint *p, const ut8 *buf, int len, int wordsize) 
 	return words;
 }
 
-RZ_API void rz_print_hex_from_bin(RzPrint *p, char *bin_str) {
-	int i, j, index;
-	RzPrint myp = { .cb_printf = libc_printf };
-	const int len = strlen(bin_str);
-	if (!len) {
+RZ_API void rz_print_hex_from_base2(RzPrint *p, char *base2) {
+	bool first = true;
+	const int len = strlen(base2);
+	if (len < 1) {
 		return;
 	}
-	ut64 n, *buf = malloc(sizeof(ut64) * ((len + 63) / 64));
-	if (!buf) {
-		eprintf("allocation failed\n");
-		return;
-	}
+
+	RzPrint defprint = { .cb_printf = libc_printf };
 	if (!p) {
-		p = &myp;
+		p = &defprint;
 	}
-	for (i = len - 1, index = 0; i >= 0; i -= 64, index++) {
-		n = 0;
-		for (j = 0; j < 64 && i - j >= 0; j++) {
-			n += (ut64)(bin_str[i - j] - '0') << j;
+
+	// we split each section by 8 bits and have bytes.
+	ut32 bytes_size = (len >> 3) + (len & 7 ? 1 : 0);
+	ut8 *bytes = calloc(bytes_size, sizeof(ut8));
+	if (!bytes) {
+		eprintf("cannot allocate %d bytes\n", bytes_size);
+		return;
+	}
+
+	int c = len & 7;
+	if (c) {
+		// align counter to 8 bits
+		c = 8 - c;
+	}
+	for (int i = 0, j = 0; i < len && j < bytes_size; i++, c++) {
+		if (base2[i] != '1' && base2[i] != '0') {
+			eprintf("invalid base2 number %c at char %d\n", base2[i], i);
+			free(bytes);
+			return;
 		}
-		buf[index] = n;
+		// c & 7 is c % 8
+		if (c > 0 && !(c & 7)) {
+			j++;
+		}
+		bytes[j] <<= 1;
+		bytes[j] |= base2[i] - '0';
 	}
-	index--;
+
 	p->cb_printf("0x");
-	while (buf[index] == 0 && index > 0) {
-		index--;
-	}
-	p->cb_printf("%" PFMT64x, buf[index]);
-	index--;
-	for (i = index; i >= 0; i--) {
-		p->cb_printf("%016" PFMT64x, buf[i]);
+	for (int i = 0; i < bytes_size; ++i) {
+		if (first) {
+			if (i != (bytes_size - 1) && !bytes[i]) {
+				continue;
+			}
+			p->cb_printf("%x", bytes[i]);
+			first = false;
+		} else {
+			p->cb_printf("%02x", bytes[i]);
+		}
 	}
 	p->cb_printf("\n");
-	free(buf);
+	free(bytes);
 }
 
 RZ_API const char *rz_print_rowlog(RzPrint *print, const char *str) {

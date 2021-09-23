@@ -5,7 +5,6 @@
 #include "fpo.h"
 #include "stream_file.h"
 
-///////////////////////////////////////////////////////////////////////////////
 static int parse_fpo_data(char *data, int data_size, int *read_bytes, SFPO_DATA *fpo_data) {
 	int curr_read_bytes = *read_bytes;
 
@@ -20,7 +19,6 @@ static int parse_fpo_data(char *data, int data_size, int *read_bytes, SFPO_DATA 
 	return (*read_bytes - curr_read_bytes);
 }
 
-///////////////////////////////////////////////////////////////////////////////
 static int parse_fpo_data_v2(char *data, int data_size, int *read_bytes, SFPO_DATA_V2 *fpo_data) {
 	int curr_read_bytes = *read_bytes;
 
@@ -30,7 +28,6 @@ static int parse_fpo_data_v2(char *data, int data_size, int *read_bytes, SFPO_DA
 	return (*read_bytes - curr_read_bytes);
 }
 
-///////////////////////////////////////////////////////////////////////////////
 void parse_fpo_stream(void *stream, RZ_STREAM_FILE *stream_file) {
 	int data_size;
 	char *data = 0, *ptmp = 0;
@@ -61,7 +58,6 @@ void parse_fpo_stream(void *stream, RZ_STREAM_FILE *stream_file) {
 	free(data);
 }
 
-///////////////////////////////////////////////////////////////////////////////
 void free_fpo_stream(void *stream) {
 	SFPOStream *fpo_stream = (SFPOStream *)stream;
 	RzListIter *it = 0;
@@ -75,7 +71,6 @@ void free_fpo_stream(void *stream) {
 	rz_list_free(fpo_stream->fpo_data_list);
 }
 
-///////////////////////////////////////////////////////////////////////////////
 void free_fpo_new_stream(void *stream) {
 	SFPONewStream *fpo_stream = (SFPONewStream *)stream;
 	RzListIter *it = 0;
@@ -89,7 +84,6 @@ void free_fpo_new_stream(void *stream) {
 	rz_list_free(fpo_stream->fpo_data_list);
 }
 
-///////////////////////////////////////////////////////////////////////////////
 void parse_fpo_new_stream(void *stream, RZ_STREAM_FILE *stream_file) {
 	int data_size;
 	char *data = 0, *ptmp = 0;

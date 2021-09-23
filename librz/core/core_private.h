@@ -30,63 +30,59 @@ RZ_IPI void rz_core_analysis_esil_default(RzCore *core);
 
 RZ_IPI bool rz_core_analysis_var_rename(RzCore *core, const char *name, const char *newname);
 RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode, char *fcn_name);
-RZ_IPI bool rz_core_analysis_everything(RzCore *core, bool experimental, char *dh_orig);
 RZ_IPI bool rz_core_analysis_function_delete_var(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisVarKind kind, const char *id);
 RZ_IPI char *rz_core_analysis_var_display(RzCore *core, RzAnalysisVar *var, bool add_name);
 RZ_IPI char *rz_core_analysis_all_vars_display(RzCore *core, RzAnalysisFunction *fcn, bool add_name);
+RZ_IPI bool rz_analysis_var_global_list_show(RzAnalysis *analysis, RzCmdStateOutput *state, RZ_NULLABLE const char *name);
 RZ_IPI bool rz_core_analysis_types_propagation(RzCore *core);
 RZ_IPI bool rz_core_analysis_function_set_signature(RzCore *core, RzAnalysisFunction *fcn, const char *newsig);
 RZ_IPI void rz_core_analysis_function_signature_editor(RzCore *core, ut64 addr);
 RZ_IPI void rz_core_analysis_bbs_asciiart(RzCore *core, RzAnalysisFunction *fcn);
 RZ_IPI void rz_core_analysis_fcn_returns(RzCore *core, RzAnalysisFunction *fcn);
-RZ_IPI void rz_core_analysis_bbs_info_print(RzCore *core, RzAnalysisFunction *fcn, RzOutputMode mode);
-RZ_IPI void rz_core_analysis_bb_info_print(RzCore *core, RzAnalysisBlock *bb, ut64 addr, RzOutputMode mode);
+RZ_IPI void rz_core_analysis_bbs_info_print(RzCore *core, RzAnalysisFunction *fcn, RzCmdStateOutput *state);
+RZ_IPI void rz_core_analysis_bb_info_print(RzCore *core, RzAnalysisBlock *bb, ut64 addr, RzCmdStateOutput *state);
 RZ_IPI void rz_core_analysis_function_until(RzCore *core, ut64 addr_end);
 RZ_IPI void rz_core_analysis_value_pointers(RzCore *core, RzOutputMode mode);
 
 /* ctypes.c */
-RZ_IPI RzList *rz_types_calling_conventions(Sdb *db);
-RZ_IPI void rz_core_types_calling_conventions_print(RzCore *core, RzOutputMode mode);
-RZ_IPI RzList *rz_types_enums(Sdb *db);
-RZ_IPI void rz_core_types_enum_print(RzCore *core, const char *enum_name, RzOutputMode mode, PJ *pj);
+// Enums
+RZ_IPI void rz_core_types_enum_print(RzCore *core, const RzBaseType *btype, RzOutputMode mode, PJ *pj);
 RZ_IPI void rz_core_types_enum_print_all(RzCore *core, RzOutputMode mode);
-RZ_IPI void rz_types_enum_print_c(Sdb *TDB, const char *arg, bool multiline);
-RZ_IPI bool rz_core_types_typedef_info(RzCore *core, const char *name);
-RZ_IPI void rz_types_typedef_print_c(Sdb *TDB, const char *typedef_name);
-RZ_IPI void rz_core_list_loaded_typedefs(RzCore *core, RzOutputMode mode);
-RZ_IPI RzList *rz_types_typedefs(Sdb *TDB);
+RZ_IPI RZ_OWN char *rz_core_types_enum_as_c(RzTypeDB *typedb, const RzBaseType *btype, bool multiline);
+RZ_IPI RZ_OWN char *rz_core_types_enum_as_c_all(RzTypeDB *typedb, bool multiline);
+// Unions
+RZ_IPI void rz_core_types_union_print(RzCore *core, const RzBaseType *btype, RzOutputMode mode, PJ *pj);
+RZ_IPI void rz_core_types_union_print_all(RzCore *core, RzOutputMode mode);
+RZ_IPI RZ_OWN char *rz_core_types_union_as_c(RzTypeDB *typedb, const RzBaseType *btype, bool multiline);
+RZ_IPI RZ_OWN char *rz_core_types_union_as_c_all(RzTypeDB *typedb, bool multiline);
+// Structs
+RZ_IPI void rz_core_types_struct_print(RzCore *core, const RzBaseType *btype, RzOutputMode mode, PJ *pj);
+RZ_IPI void rz_core_types_struct_print_all(RzCore *core, RzOutputMode mode);
+RZ_IPI RZ_OWN char *rz_core_types_struct_as_c(RzTypeDB *typedb, const RzBaseType *btype, bool multiline);
+RZ_IPI RZ_OWN char *rz_core_types_struct_as_c_all(RzTypeDB *typedb, bool multiline);
+// Typedefs
+RZ_IPI void rz_core_types_typedef_print(RzCore *core, const RzBaseType *btype, RzOutputMode mode, PJ *pj);
+RZ_IPI void rz_core_types_typedef_print_all(RzCore *core, RzOutputMode mode);
+RZ_IPI RZ_OWN char *rz_core_types_typedef_as_c(RzTypeDB *typedb, const RzBaseType *btype);
+RZ_IPI RZ_OWN char *rz_core_types_typedef_as_c_all(RzTypeDB *typedb);
 
-RZ_IPI RzList *rz_types_unions(Sdb *TDB);
-RZ_IPI RzList *rz_types_structs(Sdb *TDB);
-// Structured types JSON
-RZ_IPI void rz_types_structured_print_json(Sdb *TDB, SdbList *l);
-RZ_IPI void rz_types_union_print_json(Sdb *TDB);
-RZ_IPI void rz_types_struct_print_json(Sdb *TDB);
-// Structured types SDB
-RZ_IPI void rz_types_structured_print_sdb(Sdb *TDB, SdbList *l);
-RZ_IPI void rz_types_union_print_sdb(Sdb *TDB);
-RZ_IPI void rz_types_struct_print_sdb(Sdb *TDB);
-// Structured types C format
-RZ_IPI void rz_types_union_print_c(Sdb *TDB, const char *name, bool multiline);
-RZ_IPI void rz_types_struct_print_c(Sdb *TDB, const char *name, bool multiline);
-RZ_IPI void rz_types_function_print(Sdb *TDB, const char *function, RzOutputMode mode, PJ *pj);
+RZ_IPI RZ_OWN char *rz_core_base_type_as_c(RzCore *core, RZ_NONNULL RzBaseType *type, bool multiline);
+RZ_IPI RZ_OWN char *rz_core_types_as_c(RzCore *core, RZ_NONNULL const char *name, bool multiline);
+
+RZ_IPI void rz_core_types_calling_conventions_print(RzCore *core, RzOutputMode mode);
+RZ_IPI void rz_core_types_function_print(RzTypeDB *typedb, const char *function, RzOutputMode mode, PJ *pj);
 RZ_IPI void rz_core_types_function_print_all(RzCore *core, RzOutputMode mode);
-RZ_IPI RzList *rz_types_function_noreturn(Sdb *db);
 RZ_IPI void rz_core_types_function_noreturn_print(RzCore *core, RzOutputMode mode);
 RZ_IPI void rz_core_types_show_format(RzCore *core, const char *name, RzOutputMode mode);
-RZ_IPI void rz_core_types_struct_print_format_all(RzCore *core, Sdb *TDB);
-RZ_IPI void rz_core_types_union_print_format_all(RzCore *core, Sdb *TDB);
-RZ_IPI RzList *rz_types_links(Sdb *db);
-RZ_IPI void rz_core_types_link_print(RzCore *core, const char *type, ut64 addr, RzOutputMode mode, PJ *pj);
+RZ_IPI void rz_core_types_struct_print_format_all(RzCore *core);
+RZ_IPI void rz_core_types_union_print_format_all(RzCore *core);
+RZ_IPI void rz_core_types_link_print(RzCore *core, RzType *type, ut64 addr, RzOutputMode mode, PJ *pj);
 RZ_IPI void rz_core_types_link_print_all(RzCore *core, RzOutputMode mode);
-RZ_IPI void rz_core_types_link(RzCore *core, const char *type, ut64 addr);
 RZ_IPI void rz_core_types_link_show(RzCore *core, ut64 addr);
 RZ_IPI void rz_core_types_print_all(RzCore *core, RzOutputMode mode);
-RZ_IPI RzList *rz_types_all(Sdb *TDB);
 RZ_IPI void rz_types_define(RzCore *core, const char *type);
-RZ_IPI void rz_types_open_file(RzCore *core, const char *path);
-RZ_IPI void rz_types_open_editor(RzCore *core, const char *typename);
-RZ_IPI void rz_types_open_sdb(RzCore *core, const char *path);
+RZ_IPI bool rz_types_open_file(RzCore *core, const char *path);
+RZ_IPI bool rz_types_open_editor(RzCore *core, const char *typename);
 
 /* agraph.c */
 RZ_IPI void rz_core_agraph_add_node(RzCore *core, const char *title, const char *body, int color);
@@ -104,6 +100,10 @@ RZ_IPI void rz_core_agraph_print_json(RzCore *core);
 RZ_IPI void rz_core_agraph_print_gml(RzCore *core);
 RZ_IPI void rz_core_agraph_print_write(RzCore *core, const char *filename);
 
+RZ_IPI RzCmdStatus rz_core_bin_plugin_print(const RzBinPlugin *bp, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_core_binxtr_plugin_print(const RzBinXtrPlugin *bx, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_core_binldr_plugin_print(const RzBinLdrPlugin *ld, RzCmdStateOutput *state);
+
 /* cdebug.c */
 RZ_IPI bool rz_core_debug_reg_set(RzCore *core, const char *regname, ut64 val, const char *strval);
 RZ_IPI bool rz_core_debug_reg_list(RzCore *core, int type, int size, PJ *pj, int rad, const char *use_color);
@@ -114,13 +114,11 @@ RZ_IPI void rz_core_debug_single_step_over(RzCore *core);
 RZ_IPI void rz_core_debug_breakpoint_toggle(RzCore *core, ut64 addr);
 RZ_IPI void rz_core_debug_continue(RzCore *core);
 RZ_IPI void rz_core_debug_attach(RzCore *core, int pid);
+RZ_IPI void rz_core_debug_print_status(RzCore *core);
 
 /* cfile.c */
 RZ_IPI void rz_core_io_file_open(RzCore *core, int fd);
 RZ_IPI void rz_core_io_file_reopen(RzCore *core, int fd, int perms);
-
-/* cmd_eval.c */
-RZ_IPI bool rz_core_load_theme(RzCore *core, const char *name);
 
 /* cmd_seek.c */
 
@@ -134,4 +132,17 @@ RZ_IPI void rz_core_meta_comment_add(RzCore *core, const char *comment, ut64 add
 
 /* cmd_flag.c */
 RZ_IPI void rz_core_flag_describe(RzCore *core, ut64 addr, bool strict_offset, RzOutputMode mode);
+
+/* cmd_debug.c */
+RZ_IPI void rz_core_dbg_follow_seek_register(RzCore *core);
+RZ_IPI void rz_core_static_debug_stop(void *u);
+
+#if __WINDOWS__
+/* windows_heap.c */
+RZ_IPI RzList *rz_heap_blocks_list(RzCore *core);
+RZ_IPI RzList *rz_heap_list(RzCore *core);
+RZ_IPI void rz_heap_debug_block_win(RzCore *core, const char *addr, RzOutputMode mode, bool flag);
+RZ_IPI void rz_heap_list_w32(RzCore *core, RzOutputMode mode);
+#endif
+
 #endif

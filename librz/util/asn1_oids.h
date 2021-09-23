@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2017-2018 deroad <wargio@libero.it>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef OIDS_H
 #define OIDS_H
 
