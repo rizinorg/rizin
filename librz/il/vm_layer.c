@@ -319,9 +319,9 @@ void rz_il_vm_step(RzILVM *vm, RzILOp *root) {
 }
 
 /**
- * Execute the opcodes uplifted from raw instructions
- * /param vm pointer to VM
- * /param op_list, a list of op roots.
+ * Execute the opcodes uplifted from raw instructions.A list may contain multiple opcode trees
+ * \param vm pointer to VM
+ * \param op_list, a list of op roots.
  */
 RZ_API void rz_il_vm_list_step(RzILVM *vm, RzPVector *op_list) {
 	void **iter;
