@@ -35,7 +35,7 @@ Sdb *get_ref_sdb() {
 bool test_debug_serialize_save() {
 	RzCore *core = rz_core_new();
 	mu_assert_notnull(core, "core null");
-	rz_core_file_open(core, get_auxiliary_path("subprocess-helloworld"), RZ_PERM_RWX, 0);
+	rz_core_file_open(core, get_auxiliary_path("subprocess-helloworld"), RZ_PERM_R, 0);
 	RzDebug *debug = core->dbg;
 	mu_assert_notnull(debug, "debug null");
 
@@ -65,6 +65,7 @@ bool test_debug_serialize_save() {
 	mu_assert_notnull(ref, "ref sdb null");
 	assert_sdb_eq(save_sdb, ref, "saved sdb not same");
 
+	rz_core_file_close(core->file);
 	free(core);
 	free(save_sdb);
 	free(ref);
@@ -75,7 +76,7 @@ bool test_debug_serialize_save() {
 bool test_debug_serialize_load() {
 	RzCore *core = rz_core_new();
 	mu_assert_notnull(core, "core null");
-	rz_core_file_open(core, get_auxiliary_path("subprocess-helloworld"), RZ_PERM_RWX, 0);
+	rz_core_file_open(core, get_auxiliary_path("subprocess-helloworld"), RZ_PERM_R, 0);
 	RzDebug *debug = core->dbg;
 	mu_assert_notnull(debug, "debug null");
 
@@ -102,6 +103,7 @@ bool test_debug_serialize_load() {
 	mu_assert_eq(bp_item->togglehits, 11, "togglehits not equal");
 	mu_assert_eq(bp_item->trace, 2, "trace not equal");
 
+	rz_core_file_close(core->file);
 	free(core);
 	free(load_sdb);
 	free(ref);
