@@ -1087,7 +1087,7 @@ static int run_basic_block_analysis(RzAnalysisTaskItem *item, RzVector *tasks) {
 #endif
 			break;
 		case RZ_ANALYSIS_OP_TYPE_SUB:
-			if (op.val != UT64_MAX && op.val > 0) {
+			if (op.val != UT64_MAX && op.val > 0 && op.val < analysis->opt.jmptbl_maxcount) {
 				// if register is not stack
 				cmpval = op.val;
 			}
@@ -1095,8 +1095,10 @@ static int run_basic_block_analysis(RzAnalysisTaskItem *item, RzVector *tasks) {
 		case RZ_ANALYSIS_OP_TYPE_CMP: {
 			ut64 val = is_x86 ? op.val : op.ptr;
 			if (val) {
-				cmpval = val;
-				bb->cmpval = cmpval;
+				if (val < analysis->opt.jmptbl_maxcount) {
+					cmpval = val;
+				}
+				bb->cmpval = val;
 				bb->cmpreg = op.reg;
 				rz_analysis_cond_free(bb->cond);
 				bb->cond = rz_analysis_cond_new_from_op(&op);
