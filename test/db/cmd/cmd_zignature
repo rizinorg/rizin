@@ -406,7 +406,7 @@ za sym.print b 5548....48......48......48......48....bf........b8........e8.....
 z/
 e analysis.hasnext=0
 aa
-axt 0x400536
+axt @ 0x400536
 EOF
 EXPECT=<<EOF
 main 0x40056f [CALL] call sign.bytes.sym.print_0

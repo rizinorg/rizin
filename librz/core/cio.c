@@ -8,7 +8,6 @@ RZ_API int rz_core_setup_debugger(RzCore *r, const char *debugbackend, bool atta
 	int pid, *p = NULL;
 	bool is_gdb = !strcmp(debugbackend, "gdb");
 	RzIODesc *fd = r->file ? rz_io_desc_get(r->io, r->file->fd) : NULL;
-	const char *prompt = NULL;
 
 	p = fd ? fd->data : NULL;
 	rz_config_set_i(r->config, "cfg.debug", 1);
@@ -48,17 +47,6 @@ RZ_API int rz_core_setup_debugger(RzCore *r, const char *debugbackend, bool atta
 	}
 	rz_core_seek_to_register(r, "PC", false);
 
-	/* set the prompt if it's not been set already by the callbacks */
-	prompt = rz_config_get(r->config, "cmd.prompt");
-	if (prompt && !strcmp(prompt, "")) {
-		if (rz_config_get_i(r->config, "dbg.status")) {
-			rz_config_set(r->config, "cmd.prompt", ".dr*;drd;sr PC;pi 1;shu");
-		} else {
-			rz_config_set(r->config, "cmd.prompt", ".dr*");
-		}
-	}
-	rz_config_set(r->config, "cmd.vprompt", ".dr*");
-	rz_config_set(r->config, "cmd.gprompt", ".dr*");
 	return true;
 }
 
@@ -659,4 +647,221 @@ RZ_API RzCmdStatus rz_core_io_plugins_print(RzIO *io, RzCmdStateOutput *state) {
 	}
 	rz_cmd_state_output_array_end(state);
 	return RZ_CMD_STATUS_OK;
+}
+
+/**
+ * \brief Write a given \p value at the specified \p address, using \p sz bytes
+ *
+ * \param core RzCore reference
+ * \param addr Address where to write the value
+ * \param value Value to write
+ * \param sz Number of bytes to write. Can be 1, 2, 4, 8 or the special value 0
+ *           if you want the function to choose based on \p value (4 if \p value
+ *           is <4GB, 8 otherwise)
+ */
+RZ_API bool rz_core_write_value_at(RzCore *core, ut64 addr, ut64 value, int sz) {
+	rz_return_val_if_fail(sz == 0 || sz == 1 || sz == 2 || sz == 4 || sz == 8, false);
+	ut8 buf[sizeof(ut64)];
+	bool be = rz_config_get_i(core->config, "cfg.bigendian");
+
+	core->num->value = 0;
+	if (sz == 0) {
+		sz = value & UT64_32U ? 8 : 4;
+	}
+
+	switch (sz) {
+	case 1:
+		rz_write_ble8(buf, (ut8)(value & UT8_MAX));
+		break;
+	case 2:
+		rz_write_ble16(buf, (ut16)(value & UT16_MAX), be);
+		break;
+	case 4:
+		rz_write_ble32(buf, (ut32)(value & UT32_MAX), be);
+		break;
+	case 8:
+		rz_write_ble64(buf, value, be);
+		break;
+	default:
+		return false;
+	}
+
+	if (!rz_core_write_at(core, addr, buf, sz)) {
+		RZ_LOG_ERROR("Could not write %d bytes at %" PFMT64x "\n", sz, addr);
+		core->num->value = 1;
+		return false;
+	}
+	if (rz_config_get_i(core->config, "cfg.wseek")) {
+		rz_core_seek_delta(core, sz, true);
+	}
+
+	return true;
+}
+
+/**
+ * \brief Write at \p addr the current value + \p value passed as argument
+ *
+ * The values read/written are considered as integers of \p sz bytes.
+ *
+ * \param core RzCore reference
+ * \param addr Address where to overwrite the value
+ * \param value Value to sum to the existing value in \p addr
+ * \param sz Size of the values, in bytes, to consider. Can be 1, 2, 4, 8.
+ */
+RZ_API bool rz_core_write_value_inc_at(RzCore *core, ut64 addr, st64 value, int sz) {
+	rz_return_val_if_fail(sz == 1 || sz == 2 || sz == 4 || sz == 8, false);
+
+	ut8 buf[sizeof(ut64)];
+	bool be = rz_config_get_i(core->config, "cfg.bigendian");
+
+	if (!rz_io_read_at_mapped(core->io, addr, buf, sz)) {
+		return false;
+	}
+
+	switch (sz) {
+	case 1: {
+		ut8 cur = rz_read_ble8(buf);
+		cur += value;
+		rz_write_ble8(buf, cur);
+		break;
+	}
+	case 2: {
+		ut16 cur = rz_read_ble16(buf, be);
+		cur += value;
+		rz_write_ble16(buf, cur, be);
+		break;
+	}
+	case 4: {
+		ut32 cur = rz_read_ble32(buf, be);
+		cur += value;
+		rz_write_ble32(buf, cur, be);
+		break;
+	}
+	case 8: {
+		ut64 cur = rz_read_ble64(buf, be);
+		cur += value;
+		rz_write_ble64(buf, cur, be);
+		break;
+	}
+	default:
+		rz_warn_if_reached();
+		break;
+	}
+
+	if (!rz_core_write_at(core, addr, buf, sz)) {
+		RZ_LOG_ERROR("Could not write %d bytes at %" PFMT64x "\n", sz, addr);
+		return false;
+	}
+	if (rz_config_get_i(core->config, "cfg.wseek")) {
+		rz_core_seek_delta(core, sz, true);
+	}
+
+	return true;
+}
+
+/**
+ * \brief Write a given string \p s at the specified \p addr
+ *
+ * \param core RzCore reference
+ * \param addr Address where to write the string
+ * \param s String to write. The string is unescaped, meaning that if there is `\n` it becomes 0x0a
+ */
+RZ_API bool rz_core_write_string_at(RzCore *core, ut64 addr, const char *s) {
+	rz_return_val_if_fail(core && s, false);
+
+	char *str = strdup(s);
+	if (!str) {
+		return false;
+	}
+
+	int len = rz_str_unescape(str);
+	if (!rz_core_write_at(core, addr, (const ut8 *)str, len)) {
+		RZ_LOG_ERROR("Could not write '%s' at %" PFMT64x "\n", s, addr);
+		return false;
+	}
+	if (rz_config_get_i(core->config, "cfg.wseek")) {
+		rz_core_seek_delta(core, len, true);
+	}
+	return true;
+}
+
+/**
+ * \brief Write a given string \p s at the specified \p addr encoded as base64.
+ *
+ * \param core RzCore reference
+ * \param addr Address where to write the string
+ * \param s String to encode as base64 and then written.
+ */
+RZ_API bool rz_core_write_base64_at(RzCore *core, ut64 addr, const char *s) {
+	rz_return_val_if_fail(core && s, false);
+
+	bool res = false;
+	size_t str_len = strlen(s) + 1;
+	ut8 *bin_buf = malloc(str_len);
+	if (!bin_buf) {
+		return false;
+	}
+
+	const int bin_len = rz_hex_str2bin(s, bin_buf);
+	if (bin_len <= 0) {
+		free(bin_buf);
+		return false;
+	}
+
+	ut8 *buf = calloc(str_len + 1, 4);
+	if (!buf) {
+		free(bin_buf);
+		return false;
+	}
+
+	int len = rz_base64_encode((char *)buf, bin_buf, bin_len);
+	free(bin_buf);
+	if (len == 0) {
+		goto err;
+	}
+
+	if (!rz_core_write_at(core, addr, buf, len)) {
+		RZ_LOG_ERROR("Could not write base64 encoded string '%s' at %" PFMT64x "\n", s, addr);
+		goto err;
+	}
+	if (rz_config_get_i(core->config, "cfg.wseek")) {
+		rz_core_seek_delta(core, len, true);
+	}
+	res = true;
+
+err:
+	free(buf);
+	return res;
+}
+
+/**
+ * \brief Write a given base64 string \p s at the specified \p addr, decoded
+ *
+ * \param core RzCore reference
+ * \param addr Address where to write the string
+ * \param s String to decode from base64 and then written
+ */
+RZ_API bool rz_core_write_base64d_at(RzCore *core, ut64 addr, const char *s) {
+	rz_return_val_if_fail(core && s, false);
+
+	bool res = false;
+	size_t str_len = strlen(s) + 1;
+	ut8 *buf = malloc(str_len);
+	int len = rz_base64_decode(buf, s, -1);
+	if (len < 0) {
+		goto err;
+	}
+
+	if (!rz_core_write_at(core, addr, buf, len)) {
+		RZ_LOG_ERROR("Could not write base64 decoded string '%s' at %" PFMT64x "\n", s, addr);
+		goto err;
+	}
+	if (rz_config_get_i(core->config, "cfg.wseek")) {
+		rz_core_seek_delta(core, len, true);
+	}
+	res = true;
+
+err:
+	free(buf);
+	return res;
 }

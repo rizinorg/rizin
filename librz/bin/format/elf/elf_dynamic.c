@@ -125,7 +125,7 @@ bool Elf_(rz_bin_elf_get_dt_info)(RZ_NONNULL ELFOBJ *bin, ut64 key, RZ_OUT ut64 
 	rz_return_val_if_fail(bin, false);
 
 	if (!Elf_(rz_bin_elf_has_dt_dynamic)(bin)) {
-		return NULL;
+		return false;
 	}
 
 	return get_dt_info(bin->dt_dynamic, key, info);

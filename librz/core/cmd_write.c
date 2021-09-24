@@ -420,6 +420,7 @@ RZ_IPI int rz_wo_handler_old(void *data, const char *input) {
 #define WSEEK(x, y) \
 	if (wseek) \
 	rz_core_seek_delta(x, y, true)
+
 static void rz_cmd_write_value(RzCore *core, const char *input) {
 	int type = 0;
 	ut64 off = 0LL;
@@ -485,128 +486,42 @@ static void rz_cmd_write_value(RzCore *core, const char *input) {
 	}
 }
 
-static RzCmdStatus common_wv_handler(RzCore *core, int argc, const char **argv, int type) {
-	ut64 off = 0LL;
-	ut8 buf[sizeof(ut64)];
-	int wseek = rz_config_get_i(core->config, "cfg.wseek");
-	bool be = rz_config_get_i(core->config, "cfg.bigendian");
-
-	core->num->value = 0;
-	off = rz_num_math(core->num, argv[1]);
-	if (core->file) {
-		rz_io_use_fd(core->io, core->file->fd);
-	}
-
-	ut64 res = rz_io_seek(core->io, core->offset, RZ_IO_SEEK_SET);
-	if (res == UT64_MAX) {
+static RzCmdStatus common_write_value_handler(RzCore *core, const char *valstr, size_t sz) {
+	ut64 value = rz_num_math(core->num, valstr);
+	if (core->num->nc.errors) {
+		RZ_LOG_ERROR("Could not convert argument to number");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	if (type == 0) {
-		type = off & UT64_32U ? 8 : 4;
-	}
 
-	switch (type) {
-	case 1:
-		rz_write_ble8(buf, (ut8)(off & UT8_MAX));
-		break;
-	case 2:
-		rz_write_ble16(buf, (ut16)(off & UT16_MAX), be);
-		break;
-	case 4:
-		rz_write_ble32(buf, (ut32)(off & UT32_MAX), be);
-		break;
-	case 8:
-		rz_write_ble64(buf, off, be);
-		break;
-	}
-
-	if (!rz_io_write(core->io, buf, type)) {
-		cmd_write_fail(core);
-	} else if (wseek) {
-		rz_core_seek_delta(core, type, true);
-	}
-
-	rz_core_block_read(core);
-	return RZ_CMD_STATUS_OK;
+	return rz_core_write_value_at(core, core->offset, value, sz) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
 RZ_IPI RzCmdStatus rz_write_value_handler(RzCore *core, int argc, const char **argv) {
-	return common_wv_handler(core, argc, argv, 0);
+	return common_write_value_handler(core, argv[1], 0);
 }
 
 RZ_IPI RzCmdStatus rz_write_value1_handler(RzCore *core, int argc, const char **argv) {
-	return common_wv_handler(core, argc, argv, 1);
+	return common_write_value_handler(core, argv[1], 1);
 }
 
 RZ_IPI RzCmdStatus rz_write_value2_handler(RzCore *core, int argc, const char **argv) {
-	return common_wv_handler(core, argc, argv, 2);
+	return common_write_value_handler(core, argv[1], 2);
 }
 
 RZ_IPI RzCmdStatus rz_write_value4_handler(RzCore *core, int argc, const char **argv) {
-	return common_wv_handler(core, argc, argv, 4);
+	return common_write_value_handler(core, argv[1], 4);
 }
 
 RZ_IPI RzCmdStatus rz_write_value8_handler(RzCore *core, int argc, const char **argv) {
-	return common_wv_handler(core, argc, argv, 8);
+	return common_write_value_handler(core, argv[1], 8);
 }
 
 RZ_IPI RzCmdStatus rz_write_base64_encode_handler(RzCore *core, int argc, const char **argv) {
-	int wseek = rz_config_get_i(core->config, "cfg.wseek");
-	const char *str = argv[1];
-	size_t str_len = strlen(str) + 1;
-	ut8 *bin_buf = malloc(str_len);
-	if (!bin_buf) {
-		eprintf("Error: failed to malloc memory");
-		return RZ_CMD_STATUS_ERROR;
-	}
-
-	const int bin_len = rz_hex_str2bin(str, bin_buf);
-	if (bin_len <= 0) {
-		free(bin_buf);
-		return RZ_CMD_STATUS_ERROR;
-	}
-
-	ut8 *buf = calloc(str_len + 1, 4);
-	int len = rz_base64_encode((char *)buf, bin_buf, bin_len);
-	free(bin_buf);
-	if (len == 0) {
-		free(buf);
-		return RZ_CMD_STATUS_ERROR;
-	}
-
-	if (!rz_core_write_at(core, core->offset, buf, len)) {
-		cmd_write_fail(core);
-		free(buf);
-		return RZ_CMD_STATUS_ERROR;
-	}
-	WSEEK(core, len);
-	rz_core_block_read(core);
-
-	free(buf);
-	return RZ_CMD_STATUS_OK;
+	return rz_core_write_base64_at(core, core->offset, argv[1]) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
 RZ_IPI RzCmdStatus rz_write_base64_decode_handler(RzCore *core, int argc, const char **argv) {
-	int wseek = rz_config_get_i(core->config, "cfg.wseek");
-	const char *str = argv[1];
-	size_t str_len = strlen(str) + 1;
-	ut8 *buf = malloc(str_len);
-	int len = rz_base64_decode(buf, str, -1);
-	if (len < 0) {
-		free(buf);
-		return RZ_CMD_STATUS_ERROR;
-	}
-
-	if (!rz_core_write_at(core, core->offset, buf, len)) {
-		cmd_write_fail(core);
-		free(buf);
-		return RZ_CMD_STATUS_ERROR;
-	}
-	WSEEK(core, len);
-	rz_core_block_read(core);
-
-	free(buf);
-	return RZ_CMD_STATUS_OK;
+	return rz_core_write_base64d_at(core, core->offset, argv[1]) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
 static bool cmd_wff(RzCore *core, const char *input) {
@@ -1067,7 +982,16 @@ RZ_IPI int rz_w0_handler_old(void *data, const char *input) {
 
 RZ_IPI RzCmdStatus rz_write_zero_handler(RzCore *core, int argc, const char **argv) {
 	ut64 len = rz_num_math(core->num, argv[1]);
-	return rz_cmd_int2status(w0_handler_common(core, len));
+	ut8 *buf = RZ_NEWS0(ut8, len);
+	if (!buf) {
+		RZ_LOG_ERROR("Cannot allocate %" PFMT64d " bytes", len);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	bool res = rz_core_write_at(core, core->offset, buf, len);
+	free(buf);
+
+	return res ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
 static int rz_w_incdec_handler_old(void *data, const char *input, int inc) {
@@ -1095,8 +1019,7 @@ static RzCmdStatus w_incdec_handler(RzCore *core, int argc, const char **argv, i
 	if (command[strlen(command) - 1] == '-') {
 		num *= -1;
 	}
-	cmd_write_inc(core, inc_size, num);
-	return RZ_CMD_STATUS_OK;
+	return rz_core_write_value_inc_at(core, core->offset, num, inc_size) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
 RZ_IPI RzCmdStatus rz_write_1_inc_handler(RzCore *core, int argc, const char **argv) {
@@ -1569,10 +1492,7 @@ RZ_IPI int rz_w_handler_old(void *data, const char *input) {
 }
 
 RZ_IPI RzCmdStatus rz_write_handler(RzCore *core, int argc, const char **argv) {
-	char *s = rz_str_array_join(argv + 1, argc - 1, " ");
-	w_handler_common(core, s);
-	free(s);
-	return RZ_CMD_STATUS_OK;
+	return rz_core_write_string_at(core, core->offset, argv[1]) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
 RZ_IPI int rz_wz_handler_old(void *data, const char *input) {

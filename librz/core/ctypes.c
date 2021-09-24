@@ -966,7 +966,16 @@ RZ_IPI void rz_core_types_link_print_all(RzCore *core, RzOutputMode mode) {
 	}
 }
 
-RZ_IPI void rz_core_types_link(RzCore *core, const char *typestr, ut64 addr) {
+/**
+ * \brief Link an address \p addr to the type referenced by \p typestr
+ *
+ * NOTE: This is likely going to be deprecated with the use of global variables.
+ *
+ * \param core RzCore reference
+ * \param typestr Name of the type that should be defined at \p addr
+ * \param addr Address where the type should be used
+ */
+RZ_API void rz_core_types_link(RzCore *core, const char *typestr, ut64 addr) {
 	char *error_msg = NULL;
 	RzType *type = rz_type_parse_string_single(core->analysis->typedb->parser, typestr, &error_msg);
 	if (!type || error_msg) {

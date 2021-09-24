@@ -44,9 +44,9 @@ FILE=bins/elf/hello_world
 ARGS=-d
 CMDS=<<EOF
 aa
-?v `axt main~entry0[1]`-`e bin.baddr`
+?v `axt @ main~entry0[1]`-`e bin.baddr`
 doc
-?v `axt main~entry0[1]`-`e bin.baddr`
+?v `axt @ main~entry0[1]`-`e bin.baddr`
 EOF
 EXPECT=<<EOF
 0x6bd

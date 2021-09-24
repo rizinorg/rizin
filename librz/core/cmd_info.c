@@ -525,22 +525,8 @@ RZ_IPI RzCmdStatus rz_cmd_info_pdb_load_handler(RzCore *core, int argc, const ch
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	rz_cons_push();
-	rz_core_pdb_info(core, filename, NULL, RZ_MODE_RIZINCMD);
+	RzCmdStatus status = bool2status(rz_core_bin_pdb_load(core, filename));
 	free(filename);
-	const char *buf = rz_cons_get_buffer();
-	if (!buf) {
-		rz_cons_pop();
-		return RZ_CMD_STATUS_ERROR;
-	}
-	char *s = strdup(buf);
-	rz_cons_pop();
-	if (!s) {
-		return RZ_CMD_STATUS_ERROR;
-	}
-
-	RzCmdStatus status = rz_core_cmd_rzshell(core, s, 0);
-	free(s);
 	return status;
 }
 

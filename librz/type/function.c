@@ -145,7 +145,7 @@ RZ_API RZ_OWN RzCallable *rz_type_func_new(RzTypeDB *typedb, RZ_NONNULL const ch
  * \param callable RzCallable type to save
  */
 RZ_API bool rz_type_func_save(RzTypeDB *typedb, RZ_NONNULL RzCallable *callable) {
-	rz_return_val_if_fail(typedb && callable && callable->name, NULL);
+	rz_return_val_if_fail(typedb && callable && callable->name, false);
 	if (rz_type_func_exist(typedb, callable->name)) {
 		return false;
 	}
@@ -177,7 +177,7 @@ RZ_API RZ_BORROW RzCallable *rz_type_func_get(RzTypeDB *typedb, RZ_NONNULL const
  * \param name Name of the callable to search
  */
 RZ_API bool rz_type_func_delete(RzTypeDB *typedb, RZ_NONNULL const char *name) {
-	rz_return_val_if_fail(typedb && name, NULL);
+	rz_return_val_if_fail(typedb && name, false);
 	ht_pp_delete(typedb->callables, name);
 	return true;
 }
@@ -244,7 +244,7 @@ RZ_API RZ_BORROW const char *rz_type_func_cc(RzTypeDB *typedb, const char *name)
  * \param name Name of the calling convention to set
  */
 RZ_API bool rz_type_func_cc_set(RzTypeDB *typedb, const char *name, const char *cc) {
-	rz_return_val_if_fail(typedb && name, NULL);
+	rz_return_val_if_fail(typedb && name, false);
 	RzCallable *callable = rz_type_func_get(typedb, name);
 	if (!callable) {
 		return false;
@@ -325,7 +325,7 @@ RZ_API RZ_BORROW const char *rz_type_func_args_name(RzTypeDB *typedb, RZ_NONNULL
  * \param arg_type RzType type of the new argument
  */
 RZ_API bool rz_type_func_arg_add(RzTypeDB *typedb, RZ_NONNULL const char *func_name, RZ_NONNULL const char *arg_name, RZ_OWN RZ_NONNULL RzType *arg_type) {
-	rz_return_val_if_fail(typedb && func_name, NULL);
+	rz_return_val_if_fail(typedb && func_name, false);
 	RzCallable *callable = rz_type_func_get(typedb, func_name);
 	if (!callable) {
 		return false;
@@ -346,7 +346,7 @@ RZ_API bool rz_type_func_arg_add(RzTypeDB *typedb, RZ_NONNULL const char *func_n
  * \param type RzType return type
  */
 RZ_API bool rz_type_func_ret_set(RzTypeDB *typedb, const char *name, RZ_OWN RZ_NONNULL RzType *type) {
-	rz_return_val_if_fail(typedb && name && type, NULL);
+	rz_return_val_if_fail(typedb && name && type, false);
 	RzCallable *callable = rz_type_func_get(typedb, name);
 	if (!callable) {
 		return false;
@@ -504,7 +504,7 @@ RZ_API bool rz_type_func_is_noreturn(RzTypeDB *typedb, RZ_NONNULL const char *na
 	rz_return_val_if_fail(typedb && name, false);
 	RzCallable *callable = rz_type_func_get(typedb, name);
 	if (!callable) {
-		return NULL;
+		return false;
 	}
 	return callable->noret;
 }
