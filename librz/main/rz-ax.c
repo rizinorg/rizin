@@ -410,8 +410,8 @@ dotherax:
 		RzList *split = rz_str_split_list(str, "GMT", 0);
 		char *ts = rz_list_head(split)->data;
 		const char *gmt = NULL;
-		if (rz_list_length(split) >= 2 && strlen(rz_list_head(split)->n->data) > 2) {
-			gmt = (const char *)rz_list_head(split)->n->data + 2;
+		if (rz_list_length(split) >= 2 && strlen(rz_list_head(split)->n->data) >= 2) {
+			gmt = (const char *)rz_list_head(split)->n->data;
 		}
 		ut32 n = rz_num_math(num, ts);
 		RzPrint *p = rz_print_new();
