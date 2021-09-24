@@ -671,26 +671,6 @@ static bool test_type_as_pretty_string(void) {
 	mu_end;
 }
 
-static bool test_temp(void) {
-	RzTypeDB *typedb = rz_type_db_new();
-	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
-	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
-	const char *dir_prefix = rz_sys_prefix(NULL);
-	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
-
-	char *error_msg = NULL;
-	RzType *ttype = rz_type_parse_string_single(typedb->parser, pretty_complex_const_pointer, &error_msg);
-	mu_assert_notnull(ttype, "struct array ptr func ptr type parse unsuccessfull");
-	mu_assert_null(error_msg, "parsing errors");
-
-	error_msg = NULL;
-	ttype = rz_type_parse_string_single(typedb->parser, pretty_complex_const_pointer, &error_msg);
-	mu_assert_notnull(ttype, "struct array ptr func ptr type parse unsuccessfull");
-	mu_assert_null(error_msg, "parsing errors");
-
-	mu_end;
-}
-
 static bool test_array_types(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
@@ -1026,7 +1006,6 @@ int all_tests() {
 	mu_run_test(test_union_identifier_without_specifier);
 	mu_run_test(test_edit_types);
 	mu_run_test(test_references);
-	mu_run_test(test_temp);
 	return tests_passed != tests_run;
 }
 
