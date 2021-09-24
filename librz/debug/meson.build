@@ -9,6 +9,7 @@ rz_debug_sources = [
   'plugin.c',
   'dsession.c',
   'dsignal.c',
+  'serialize_debug.c',
   'snap.c',
   'trace.c',
   'p/bfvm.c',
