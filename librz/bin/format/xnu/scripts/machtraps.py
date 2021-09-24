@@ -60,12 +60,12 @@ def beautify_name(name):
 
 
 def carve_traps():
-    msgs = r.cmdj("axtj sym._mach_msg")
+    msgs = r.cmdj("axtj @ sym._mach_msg")
     if len(msgs) == 0:
         r.cmd("s sym._mach_msg")
         r.cmd("aae $SS @ $S")
         r.cmd("shu")
-        msgs = r.cmdj("axtj sym._mach_msg")
+        msgs = r.cmdj("axtj @ sym._mach_msg")
         if len(msgs) == 0:
             print("Cannot find refs to mach_msg!")
             return
