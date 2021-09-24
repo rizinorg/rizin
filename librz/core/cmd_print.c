@@ -3230,6 +3230,19 @@ RZ_IPI RzCmdStatus rz_cmd_print_msg_digest_algo_list_handler(RzCore *core, int a
 	return rz_core_hash_plugins_print(state);
 }
 
+RZ_IPI RzCmdStatus rz_cmd_print_magic_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
+		PJ *pj = pj_new();
+		rz_core_magic(core, argv[1], true, pj);
+		rz_cons_println(pj_string(pj));
+		pj_free(pj);
+	} else {
+		// XXX: need cmd_magic header for rz_core_magic
+		rz_core_magic(core, argv[1], true, NULL);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
 // XXX blocksize is missing
 static void cmd_print_pv(RzCore *core, const char *input, bool useBytes) {
 	const char *stack[] = {
@@ -4196,7 +4209,7 @@ static void _pointer_table(RzCore *core, ut64 origin, ut64 offset, const ut8 *bu
 		case '*':
 			rz_cons_printf("CC-@ 0x%08" PFMT64x "\n", origin);
 			rz_cons_printf("CC switch table @ 0x%08" PFMT64x "\n", origin);
-			rz_cons_printf("axd 0x%" PFMT64x " 0x%08" PFMT64x "\n", origin, offset);
+			rz_cons_printf("axd 0x%" PFMT64x " @ 0x%08" PFMT64x "\n", origin, offset);
 			break;
 		case '.':
 			rz_meta_del(core->analysis, RZ_META_TYPE_COMMENT, origin, 1);
@@ -4225,8 +4238,8 @@ static void _pointer_table(RzCore *core, ut64 origin, ut64 offset, const ut8 *bu
 		}
 		if (mode == '*') {
 			rz_cons_printf("af case.%d.0x%" PFMT64x " 0x%08" PFMT64x "\n", n, offset, addr);
-			rz_cons_printf("ax 0x%" PFMT64x " 0x%08" PFMT64x "\n", offset, addr);
-			rz_cons_printf("ax 0x%" PFMT64x " 0x%08" PFMT64x "\n", addr, offset); // wrong, but useful because forward xrefs dont work :?
+			rz_cons_printf("ax 0x%" PFMT64x " @ 0x%08" PFMT64x "\n", offset, addr);
+			rz_cons_printf("ax 0x%" PFMT64x " @ 0x%08" PFMT64x "\n", addr, offset); // wrong, but useful because forward xrefs dont work :?
 			// FIXME: "aho" doesn't accept anything here after the "case" word
 			rz_cons_printf("aho case 0x%" PFMT64x " 0x%08" PFMT64x " @ 0x%08" PFMT64x "\n", (ut64)i, addr, offset + i); // wrong, but useful because forward xrefs dont work :?
 			rz_cons_printf("ahs %d @ 0x%08" PFMT64x "\n", step, offset + i);

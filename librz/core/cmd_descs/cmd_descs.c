@@ -96,6 +96,13 @@ static const RzCmdDescArg analysis_global_variable_delete_byname_args[2];
 static const RzCmdDescArg analysis_global_variable_rename_args[3];
 static const RzCmdDescArg analysis_global_variable_retype_args[3];
 static const RzCmdDescArg analysis_rtti_demangle_class_name_args[2];
+static const RzCmdDescArg analysis_xrefs_set_0_args[2];
+static const RzCmdDescArg analysis_xrefs_set_c_args[2];
+static const RzCmdDescArg analysis_xrefs_set_C_args[2];
+static const RzCmdDescArg analysis_xrefs_set_d_args[2];
+static const RzCmdDescArg analysis_xrefs_set_s_args[2];
+static const RzCmdDescArg analysis_xrefs_del_args[3];
+static const RzCmdDescArg analysis_xrefs_copy_args[2];
 static const RzCmdDescArg cmd_debug_continue_execution_args[2];
 static const RzCmdDescArg cmd_debug_continue_send_signal_args[3];
 static const RzCmdDescArg cmd_debug_continue_traptrace_args[2];
@@ -148,6 +155,7 @@ static const RzCmdDescArg plugins_io_print_args[2];
 static const RzCmdDescArg cmd_print_gadget_add_args[6];
 static const RzCmdDescArg cmd_print_gadget_move_args[6];
 static const RzCmdDescArg cmd_print_msg_digest_args[2];
+static const RzCmdDescArg cmd_print_magic_args[2];
 static const RzCmdDescArg project_save_args[2];
 static const RzCmdDescArg project_open_args[2];
 static const RzCmdDescArg project_open_no_bin_io_args[2];
@@ -1650,6 +1658,161 @@ static const RzCmdDescArg analysis_rtti_demangle_class_name_args[] = {
 static const RzCmdDescHelp analysis_rtti_demangle_class_name_help = {
 	.summary = "demangle a class name from RTTI",
 	.args = analysis_rtti_demangle_class_name_args,
+};
+
+static const RzCmdDescHelp ax_help = {
+	.summary = "Cross references (xrefs)",
+};
+static const RzCmdDescArg analysis_xrefs_set_0_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_xrefs_set_0_help = {
+	.summary = "Add custom xref to addr from current seek",
+	.args = analysis_xrefs_set_0_args,
+};
+
+static const RzCmdDescArg analysis_xrefs_set_c_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_xrefs_set_c_help = {
+	.summary = "Add generic code xref to addr from current seek",
+	.args = analysis_xrefs_set_c_args,
+};
+
+static const RzCmdDescArg analysis_xrefs_set_C_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_xrefs_set_C_help = {
+	.summary = "Add call code xref to addr from current seek",
+	.args = analysis_xrefs_set_C_args,
+};
+
+static const RzCmdDescArg analysis_xrefs_set_d_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_xrefs_set_d_help = {
+	.summary = "Add data xref to addr from current seek",
+	.args = analysis_xrefs_set_d_args,
+};
+
+static const RzCmdDescArg analysis_xrefs_set_s_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_xrefs_set_s_help = {
+	.summary = "Add string xref to addr from current seek",
+	.args = analysis_xrefs_set_s_args,
+};
+
+static const RzCmdDescArg analysis_xrefs_list_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_xrefs_list_help = {
+	.summary = "List all xrefs",
+	.args = analysis_xrefs_list_args,
+};
+
+static const RzCmdDescArg analysis_xrefs_to_list_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_xrefs_to_list_help = {
+	.summary = "List xrefs to current seek",
+	.args = analysis_xrefs_to_list_args,
+};
+
+static const RzCmdDescArg analysis_xrefs_from_list_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_xrefs_from_list_help = {
+	.summary = "List xrefs from current seek",
+	.args = analysis_xrefs_from_list_args,
+};
+
+static const RzCmdDescArg analysis_xrefs_to_graph_cmd_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_xrefs_to_graph_cmd_help = {
+	.summary = "Display commands to generate graphs according to xrefs",
+	.args = analysis_xrefs_to_graph_cmd_args,
+};
+
+static const RzCmdDescArg analysis_xrefs_del_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "from",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_xrefs_del_help = {
+	.summary = "Delete xrefs to addr",
+	.args = analysis_xrefs_del_args,
+};
+
+static const RzCmdDescArg analysis_xrefs_del_all_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_xrefs_del_all_help = {
+	.summary = "Delete all xrefs",
+	.args = analysis_xrefs_del_all_args,
+};
+
+static const RzCmdDescArg analysis_xrefs_copy_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_xrefs_copy_help = {
+	.summary = "Copy xrefs pointing to addr to also point to curseek",
+	.args = analysis_xrefs_copy_args,
+};
+
+static const RzCmdDescArg analysis_xrefs_graph_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_xrefs_graph_help = {
+	.summary = "Show xrefs graph to reach function at current seek",
+	.args = analysis_xrefs_graph_args,
 };
 
 static const RzCmdDescHelp cmd_bsize_help = {
@@ -3255,6 +3418,21 @@ static const RzCmdDescArg cmd_print_timestamp_ntfs_args[] = {
 static const RzCmdDescHelp cmd_print_timestamp_ntfs_help = {
 	.summary = "Print NTFS time (64 bit `cfg.bigendian`, since January 1, 1601)",
 	.args = cmd_print_timestamp_ntfs_args,
+};
+
+static const RzCmdDescArg cmd_print_magic_args[] = {
+	{
+		.name = "file/directory",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_magic_help = {
+	.summary = "Print libmagic data",
+	.args = cmd_print_magic_args,
 };
 
 static const RzCmdDescHelp P_help = {
@@ -5637,7 +5815,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_function_until_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_analysis_fcn_cd, "afu", rz_analysis_function_until_handler, &analysis_function_until_help);
 	rz_warn_if_fail(analysis_function_until_cd);
 
-	RzCmdDesc *analysis_function_xrefs_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cmd_analysis_fcn_cd, "afx", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_xrefs_handler, &analysis_function_xrefs_help);
+	RzCmdDesc *analysis_function_xrefs_cd = rz_cmd_desc_argv_state_new(core->rcmd, cmd_analysis_fcn_cd, "afx", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_xrefs_handler, &analysis_function_xrefs_help);
 	rz_warn_if_fail(analysis_function_xrefs_cd);
 
 	RzCmdDesc *analysis_function_stacksz_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_analysis_fcn_cd, "afS", rz_analysis_function_stacksz_handler, &analysis_function_stacksz_help);
@@ -5743,6 +5921,44 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *analysis_rtti_demangle_class_name_cd = rz_cmd_desc_argv_new(core->rcmd, av_cd, "avrD", rz_analysis_rtti_demangle_class_name_handler, &analysis_rtti_demangle_class_name_help);
 	rz_warn_if_fail(analysis_rtti_demangle_class_name_cd);
+
+	RzCmdDesc *ax_cd = rz_cmd_desc_group_new(core->rcmd, cmd_analysis_cd, "ax", rz_analysis_xrefs_set_0_handler, &analysis_xrefs_set_0_help, &ax_help);
+	rz_warn_if_fail(ax_cd);
+	RzCmdDesc *analysis_xrefs_set_c_cd = rz_cmd_desc_argv_new(core->rcmd, ax_cd, "axc", rz_analysis_xrefs_set_c_handler, &analysis_xrefs_set_c_help);
+	rz_warn_if_fail(analysis_xrefs_set_c_cd);
+
+	RzCmdDesc *analysis_xrefs_set_C_cd = rz_cmd_desc_argv_new(core->rcmd, ax_cd, "axC", rz_analysis_xrefs_set_C_handler, &analysis_xrefs_set_C_help);
+	rz_warn_if_fail(analysis_xrefs_set_C_cd);
+
+	RzCmdDesc *analysis_xrefs_set_d_cd = rz_cmd_desc_argv_new(core->rcmd, ax_cd, "axd", rz_analysis_xrefs_set_d_handler, &analysis_xrefs_set_d_help);
+	rz_warn_if_fail(analysis_xrefs_set_d_cd);
+
+	RzCmdDesc *analysis_xrefs_set_s_cd = rz_cmd_desc_argv_new(core->rcmd, ax_cd, "axs", rz_analysis_xrefs_set_s_handler, &analysis_xrefs_set_s_help);
+	rz_warn_if_fail(analysis_xrefs_set_s_cd);
+
+	RzCmdDesc *analysis_xrefs_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, ax_cd, "axl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_RIZIN, rz_analysis_xrefs_list_handler, &analysis_xrefs_list_help);
+	rz_warn_if_fail(analysis_xrefs_list_cd);
+
+	RzCmdDesc *analysis_xrefs_to_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, ax_cd, "axt", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_RIZIN, rz_analysis_xrefs_to_list_handler, &analysis_xrefs_to_list_help);
+	rz_warn_if_fail(analysis_xrefs_to_list_cd);
+
+	RzCmdDesc *analysis_xrefs_from_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, ax_cd, "axf", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_RIZIN, rz_analysis_xrefs_from_list_handler, &analysis_xrefs_from_list_help);
+	rz_warn_if_fail(analysis_xrefs_from_list_cd);
+
+	RzCmdDesc *analysis_xrefs_to_graph_cmd_cd = rz_cmd_desc_argv_new(core->rcmd, ax_cd, "axtg", rz_analysis_xrefs_to_graph_cmd_handler, &analysis_xrefs_to_graph_cmd_help);
+	rz_warn_if_fail(analysis_xrefs_to_graph_cmd_cd);
+
+	RzCmdDesc *analysis_xrefs_del_cd = rz_cmd_desc_argv_new(core->rcmd, ax_cd, "ax-", rz_analysis_xrefs_del_handler, &analysis_xrefs_del_help);
+	rz_warn_if_fail(analysis_xrefs_del_cd);
+
+	RzCmdDesc *analysis_xrefs_del_all_cd = rz_cmd_desc_argv_new(core->rcmd, ax_cd, "ax-*", rz_analysis_xrefs_del_all_handler, &analysis_xrefs_del_all_help);
+	rz_warn_if_fail(analysis_xrefs_del_all_cd);
+
+	RzCmdDesc *analysis_xrefs_copy_cd = rz_cmd_desc_argv_new(core->rcmd, ax_cd, "axm", rz_analysis_xrefs_copy_handler, &analysis_xrefs_copy_help);
+	rz_warn_if_fail(analysis_xrefs_copy_cd);
+
+	RzCmdDesc *analysis_xrefs_graph_cd = rz_cmd_desc_argv_state_new(core->rcmd, ax_cd, "axg", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_analysis_xrefs_graph_handler, &analysis_xrefs_graph_help);
+	rz_warn_if_fail(analysis_xrefs_graph_cd);
 
 	RzCmdDesc *cmd_bsize_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "b", rz_cmd_bsize, &cmd_bsize_help);
 	rz_warn_if_fail(cmd_bsize_cd);
@@ -6181,6 +6397,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_print_timestamp_ntfs_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_timestamp_cd, "ptn", rz_cmd_print_timestamp_ntfs_handler, &cmd_print_timestamp_ntfs_help);
 	rz_warn_if_fail(cmd_print_timestamp_ntfs_cd);
+
+	RzCmdDesc *cmd_print_magic_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cmd_print_cd, "pm", RZ_OUTPUT_MODE_JSON, rz_cmd_print_magic_handler, &cmd_print_magic_help);
+	rz_warn_if_fail(cmd_print_magic_cd);
 
 	RzCmdDesc *P_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "P", NULL, NULL, &P_help);
 	rz_warn_if_fail(P_cd);

@@ -149,6 +149,7 @@ commands:
       - name: afx
         cname: analysis_function_xrefs
         summary: List function references
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
@@ -479,3 +480,98 @@ commands:
         args:
           - name: classname
             type: RZ_CMD_ARG_TYPE_STRING
+  - name: ax
+    summary: Cross references (xrefs)
+    subcommands:
+      - name: ax
+        summary: Add custom xref to addr from current seek
+        cname: analysis_xrefs_set_0
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: axc
+        summary: Add generic code xref to addr from current seek
+        cname: analysis_xrefs_set_c
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: axC
+        summary: Add call code xref to addr from current seek
+        cname: analysis_xrefs_set_C
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: axd
+        summary: Add data xref to addr from current seek
+        cname: analysis_xrefs_set_d
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: axs
+        summary: Add string xref to addr from current seek
+        cname: analysis_xrefs_set_s
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: axl
+        summary: List all xrefs
+        cname: analysis_xrefs_list
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+          - RZ_OUTPUT_MODE_RIZIN
+        args: []
+      - name: axt
+        summary: List xrefs to current seek
+        cname: analysis_xrefs_to_list
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+          - RZ_OUTPUT_MODE_RIZIN
+        args: []
+      - name: axf
+        summary: List xrefs from current seek
+        cname: analysis_xrefs_from_list
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+          - RZ_OUTPUT_MODE_RIZIN
+        args: []
+      - name: axtg
+        summary: Display commands to generate graphs according to xrefs
+        cname: analysis_xrefs_to_graph_cmd
+        args: []
+      - name: ax-
+        summary: Delete xrefs to addr
+        cname: analysis_xrefs_del
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: from
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: ax-*
+        summary: Delete all xrefs
+        cname: analysis_xrefs_del_all
+        args: []
+      - name: axm
+        summary: Copy xrefs pointing to addr to also point to curseek
+        cname: analysis_xrefs_copy
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: axg
+        summary: Show xrefs graph to reach function at current seek
+        cname: analysis_xrefs_graph
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_RIZIN
+        args: []      
