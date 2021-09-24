@@ -1,0 +1,42 @@
+# SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+---
+name: cmd_block
+commands:
+  - name: b
+    cname: block
+    summary: Set/Get current block size
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_RIZIN
+    args:
+      - name: num
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
+  - name: b-
+    cname: block_decrease
+    summary: Decrease current block size
+    args:
+      - name: num
+        type: RZ_CMD_ARG_TYPE_RZNUM
+  - name: b+
+    cname: block_increase
+    summary: Increase current block size
+    args:
+      - name: num
+        type: RZ_CMD_ARG_TYPE_RZNUM
+  - name: bf
+    summary: Set block size to flag size
+    cname: block_flag
+    args:
+      - name: flag
+        type: RZ_CMD_ARG_TYPE_FLAG
+  - name: bm
+    summary: Set/Get max block size
+    cname: block_max
+    args:
+      - name: num
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true

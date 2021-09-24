@@ -119,7 +119,11 @@ RZ_IPI RzCmdStatus rz_analysis_xrefs_del_all_handler(RzCore *core, int argc, con
 RZ_IPI RzCmdStatus rz_analysis_xrefs_copy_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_analysis_xrefs_graph_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI int rz_cmd_analysis(void *data, const char *input);
-RZ_IPI int rz_cmd_bsize(void *data, const char *input);
+RZ_IPI RzCmdStatus rz_block_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_block_decrease_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_block_increase_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_block_flag_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_block_max_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_cmd_cmp(void *data, const char *input);
 RZ_IPI int rz_cmd_meta(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_cmd_debug_continue_execution_handler(RzCore *core, int argc, const char **argv);
