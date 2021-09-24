@@ -121,13 +121,11 @@ RZ_API void rz_egg_reset(RzEgg *egg) {
 	rz_list_purge(egg->patches);
 }
 
-RZ_API int rz_egg_setup(RzEgg *egg, const char *arch, int bits, int endian, const char *os) {
+RZ_API bool rz_egg_setup(RzEgg *egg, const char *arch, int bits, int endian, const char *os) {
 	const char *asmcpu = NULL; // TODO
 	egg->remit = NULL;
 
 	egg->os = os ? rz_str_hash(os) : RZ_EGG_OS_DEFAULT;
-	//eprintf ("%s -> %x (linux=%x) (darwin=%x)\n", os, egg->os, RZ_EGG_OS_LINUX, RZ_EGG_OS_DARWIN);
-	// TODO: setup egg->arch for all archs
 	if (!strcmp(arch, "x86")) {
 		egg->arch = RZ_SYS_ARCH_X86;
 		switch (bits) {
@@ -159,8 +157,10 @@ RZ_API int rz_egg_setup(RzEgg *egg, const char *arch, int bits, int endian, cons
 		egg->remit = &emit_trace;
 		egg->bits = bits;
 		egg->endian = endian;
+	} else {
+		return false;
 	}
-	return 0;
+	return true;
 }
 
 RZ_API int rz_egg_include(RzEgg *egg, const char *file, int format) {
