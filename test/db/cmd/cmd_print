@@ -568,6 +568,15 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=pmj elf/main
+FILE=bins/elf/analysis/main
+ARGS=-n
+CMDS=pmj
+EXPECT=<<EOF
+{"offset":0,"depth":1,"info":"ELF 64-bit LSB executable, x86-64, version 1"}
+EOF
+RUN
+
 NAME=pm mach0/fatmach0-3true
 FILE=bins/mach0/fatmach0-3true
 ARGS=-n
