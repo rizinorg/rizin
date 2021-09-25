@@ -15,6 +15,7 @@ static void rz_bp_item_free(RzBreakpointItem *b) {
 	free(b->module_name);
 	free(b->data);
 	free(b->cond);
+	free(b->expr);
 	free(b);
 }
 
@@ -414,4 +415,57 @@ RZ_API bool rz_bp_is_valid(RzBreakpoint *bp, RzBreakpointItem *b) {
 	}
 
 	return bp->corebind.isMapped(bp->corebind.core, b->addr, b->perm);
+}
+
+/**
+ * @brief Set values of members of a RzBreakpointItem
+ * 
+ * @param item breakpoint item to set values for
+ * @param cond value of cond to be set
+ * @param data value of data to be set
+ * @param expr value of expr to be set
+ * @param name value of name to be set
+ * @return bool true if succesful; false otherwise; in case false is returned, none of the values will have been modified
+ */
+RZ_API bool rz_bp_item_set(RZ_NONNULL RzBreakpointItem *item, RZ_NULLABLE const char *cond, RZ_NULLABLE const char *data, RZ_NULLABLE const char *expr, RZ_NULLABLE const char *name) {
+	rz_return_val_if_fail(item, false);
+
+	char *tmp_cond = NULL, *tmp_data = NULL, *tmp_expr = NULL, *tmp_name = NULL;
+	if (cond) {
+		tmp_cond = strdup(cond);
+		if (!tmp_cond) {
+			goto err_goto;
+		}
+	}
+	if (data) {
+		tmp_data = strdup(data);
+		if (!tmp_data) {
+			goto err_goto;
+		}
+	}
+	if (expr) {
+		tmp_expr = strdup(expr);
+		if (!tmp_expr) {
+			goto err_goto;
+		}
+	}
+	if (name) {
+		tmp_name = strdup(name);
+		if (!tmp_name) {
+			goto err_goto;
+		}
+	}
+	item->cond = tmp_cond;
+	item->data = tmp_data;
+	item->expr = tmp_expr;
+	item->name = tmp_name;
+	return true;
+
+err_goto:
+	free(tmp_cond);
+	free(tmp_data);
+	free(tmp_expr);
+	free(tmp_name);
+
+	return false;
 }
