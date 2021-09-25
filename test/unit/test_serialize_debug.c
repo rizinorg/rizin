@@ -39,16 +39,16 @@ bool test_debug_serialize_save() {
 	RzDebug *debug = core->dbg;
 	mu_assert_notnull(debug, "debug null");
 
-	RzBreakpointItem *bp_item = rz_debug_bp_add(debug, 0x1337, 0, false, 1, "hax", 42);
+	RzBreakpointItem *bp_item = rz_debug_bp_add(debug, 0x1337, 0, false, 1, strdup("hax"), 42);
 	mu_assert_notnull(bp_item, "bp_item null");
-	bp_item->cond = "bp_cond";
-	bp_item->data = "bp_data";
+	bp_item->cond = strdup("bp_cond");
+	bp_item->data = strdup("bp_data");
 	bp_item->delta = 2;
 	bp_item->enabled = 3;
 	bp_item->expr = "bp_expr";
 	bp_item->hits = 4;
 	bp_item->internal = 5;
-	bp_item->name = "spectre";
+	bp_item->name = strdup("spectre");
 	bp_item->perm = 03;
 	for (int i = 0; i < RZ_BP_MAXPIDS; i++) {
 		bp_item->pids[i] = i;
@@ -66,7 +66,7 @@ bool test_debug_serialize_save() {
 	assert_sdb_eq(save_sdb, ref, "saved sdb not same");
 
 	rz_core_file_close(core->file);
-	free(core);
+	rz_core_free(core);
 	sdb_free(save_sdb);
 	sdb_free(ref);
 
@@ -104,7 +104,7 @@ bool test_debug_serialize_load() {
 	mu_assert_eq(bp_item->trace, 2, "trace not equal");
 
 	rz_core_file_close(core->file);
-	free(core);
+	rz_core_free(core);
 	sdb_free(load_sdb);
 	sdb_free(ref);
 
