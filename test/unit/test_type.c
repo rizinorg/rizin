@@ -458,11 +458,11 @@ static bool test_const_types(void) {
 static char *array = "int a[65][5][0]";
 static char *array_exp1 = "int [65][5][0]";
 static char *array_ptr = "int * const *a[][][][9]";
-static char *array_ptr_exp1 = "int * const *[0][0][0][9]";
-static char *array_ptr_exp2 = "int * const *a[0][0][0][9]";
+static char *array_ptr_exp1 = "int *const *[0][0][0][9]";
+static char *array_ptr_exp2 = "int *const *a[0][0][0][9]";
 static char *struct_array_ptr = "struct alb { const char *b; int * const *a[][][][9]; }";
 static char *struct_array_ptr_exp1 = "struct alb";
-static char *struct_array_ptr_exp2 = "struct alb { const char *b; int * const *a[0][0][0][9]; }";
+static char *struct_array_ptr_exp2 = "struct alb { const char *b; int *const *a[0][0][0][9]; }";
 static char *struct_array_ptr_exp3 = "struct alb a";
 
 static bool test_type_as_string(void) {
@@ -630,10 +630,10 @@ static bool test_type_as_pretty_string(void) {
 	pretty_str = rz_type_as_pretty_string(typedb, ttype, "multunfold", RZ_TYPE_PRINT_MULTILINE, -1);
 	mu_assert_streq(pretty_str, pretty_struct_in_struct_multiline_unfold, "struct in struct type multiline max unfold is ugly");
 	free(pretty_str);
-	pretty_str = rz_type_as_pretty_string(typedb, ttype, "mult", RZ_TYPE_PRINT_MULTILINE | RZ_TYPE_PRINT_UNFOLD_ANONYMOUS_ONLY, 5);
+	pretty_str = rz_type_as_pretty_string(typedb, ttype, "mult", RZ_TYPE_PRINT_MULTILINE | RZ_TYPE_PRINT_UNFOLD_ANON_ONLY, 5);
 	mu_assert_streq(pretty_str, pretty_struct_in_struct_multiline, "struct in struct type multiline anon unfold is ugly");
 	free(pretty_str);
-	pretty_str = rz_type_as_pretty_string(typedb, ttype, NULL, RZ_TYPE_PRINT_UNFOLD_ANONYMOUS_ONLY, -1);
+	pretty_str = rz_type_as_pretty_string(typedb, ttype, NULL, RZ_TYPE_PRINT_UNFOLD_ANON_ONLY, -1);
 	mu_assert_streq(pretty_str, pretty_struct_in_struct, "struct in struct type anon unfold is ugly");
 	free(pretty_str);
 	free(ttype);
@@ -642,13 +642,13 @@ static bool test_type_as_pretty_string(void) {
 	ttype = rz_type_parse_string_single(typedb->parser, pretty_union_of_struct, &error_msg);
 	mu_assert_notnull(ttype, "union of struct type parse unsuccessfull");
 	mu_assert_null(error_msg, "parsing errors");
-	pretty_str = rz_type_as_pretty_string(typedb, ttype, NULL, RZ_TYPE_PRINT_UNFOLD_ANONYMOUS_ONLY, 2);
+	pretty_str = rz_type_as_pretty_string(typedb, ttype, NULL, RZ_TYPE_PRINT_UNFOLD_ANON_ONLY, 2);
 	mu_assert_streq(pretty_str, pretty_union_of_struct, "union of struct type is ugly");
 	free(pretty_str);
 	pretty_str = rz_type_as_pretty_string(typedb, ttype, "mult1", RZ_TYPE_PRINT_MULTILINE, 2);
 	mu_assert_streq(pretty_str, pretty_union_of_struct_multiline1, "union of struct type multiline 1 is ugly");
 	free(pretty_str);
-	pretty_str = rz_type_as_pretty_string(typedb, ttype, "anonmult", RZ_TYPE_PRINT_MULTILINE | RZ_TYPE_PRINT_UNFOLD_ANONYMOUS_ONLY, 10);
+	pretty_str = rz_type_as_pretty_string(typedb, ttype, "anonmult", RZ_TYPE_PRINT_MULTILINE | RZ_TYPE_PRINT_UNFOLD_ANON_ONLY, 10);
 	mu_assert_streq(pretty_str, pretty_union_of_struct_anon_multiline, "union of struct type anon multiline is ugly");
 	free(pretty_str);
 	pretty_str = rz_type_as_pretty_string(typedb, ttype, "maxmult", RZ_TYPE_PRINT_MULTILINE, -3);
@@ -812,7 +812,7 @@ static bool test_struct_func_types(void) {
 static char *array_struct = "struct albalb { int a[65][5][]; }";
 static char *array_struct_test = "struct albalb { int a[65][5][0]; }";
 static char *array_ptr_struct = "struct alb { const char *b; int * const *a[][][][9]; }";
-static char *array_ptr_struct_test = "struct alb { const char *b; int * const *a[0][0][0][9]; }";
+static char *array_ptr_struct_test = "struct alb { const char *b; int *const *a[0][0][0][9]; }";
 
 static bool test_struct_array_types(void) {
 	RzTypeDB *typedb = rz_type_db_new();
@@ -919,8 +919,8 @@ static bool test_union_identifier_without_specifier(void) {
 }
 
 static char *edit_array_old = "int a[65][5][0]";
-static char *edit_struct_array_ptr_old = "struct alb { const char *b; int * const *a[0][0][0][9]; }";
-static char *edit_struct_array_ptr_new = "struct alb { wchar_t * const b; int ***a[8][8][8]; float c; }";
+static char *edit_struct_array_ptr_old = "struct alb { const char *b; int *const *a[0][0][0][9]; }";
+static char *edit_struct_array_ptr_new = "struct alb { wchar_t *const b; int ***a[8][8][8]; float c; }";
 
 static bool test_edit_types(void) {
 	RzTypeDB *typedb = rz_type_db_new();
