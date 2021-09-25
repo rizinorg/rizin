@@ -1295,7 +1295,7 @@ static void w32_info_user(RzDebug *dbg, RzDebugInfo *rdi) {
 	SID_NAME_USE snu = { 0 };
 	W32DbgWInst *wrap = dbg->plugin_data;
 
-	if (!wrap->pi.hProcess) {
+	if (!wrap || !wrap->pi.hProcess) {
 		return;
 	}
 	if (!OpenProcessToken(wrap->pi.hProcess, TOKEN_QUERY, &h_tok)) {
@@ -1344,6 +1344,9 @@ err_w32_info_user:
 
 static void w32_info_exe(RzDebug *dbg, RzDebugInfo *rdi) {
 	W32DbgWInst *wrap = dbg->plugin_data;
+	if (!wrap) {
+		return;
+	}
 	rdi->exe = resolve_path(wrap->pi.hProcess, NULL);
 }
 
