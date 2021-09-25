@@ -1061,7 +1061,7 @@ struct PrettyHelperBufs {
 	RzStrBuf *arraybuf;
 };
 
-static bool type_decl_as_pretty_string(const RzTypeDB *typedb, const RzType *type, HtPP *used_types, struct PrettyHelperBufs phbuf, bool *self_ref, char **self_ref_typename) {
+static bool type_decl_as_pretty_string(const RzTypeDB *typedb, const RzType *type, HtPP *used_types, struct PrettyHelperBufs phbuf, bool *self_ref, char **self_ref_typename, bool zero_vla) {
 	rz_return_val_if_fail(typedb && type && used_types && self_ref, false);
 
 	bool is_anon = false;
@@ -1119,7 +1119,7 @@ static bool type_decl_as_pretty_string(const RzTypeDB *typedb, const RzType *typ
 			rz_strbuf_append(phbuf.typename, typestr);
 			free(typestr);
 		} else {
-			type_decl_as_pretty_string(typedb, type->pointer.type, used_types, phbuf, self_ref, self_ref_typename);
+			type_decl_as_pretty_string(typedb, type->pointer.type, used_types, phbuf, self_ref, self_ref_typename, zero_vla);
 			rz_strbuf_append(phbuf.pointerbuf, "*");
 			rz_strbuf_appendf(phbuf.pointerbuf, "%s", type->pointer.is_const ? "const " : "");
 		}
@@ -1128,9 +1128,9 @@ static bool type_decl_as_pretty_string(const RzTypeDB *typedb, const RzType *typ
 		if (type->array.count) {
 			rz_strbuf_appendf(phbuf.arraybuf, "[%" PFMT64d "]", type->array.count);
 		} else { // variable length arrays
-			rz_strbuf_append(phbuf.arraybuf, "[]");
+			rz_strbuf_appendf(phbuf.arraybuf, "[%s]", zero_vla ? "0" : "");
 		}
-		type_decl_as_pretty_string(typedb, type->array.type, used_types, phbuf, self_ref, self_ref_typename);
+		type_decl_as_pretty_string(typedb, type->array.type, used_types, phbuf, self_ref, self_ref_typename, zero_vla);
 		break;
 	case RZ_TYPE_KIND_CALLABLE: {
 		char *callstr = rz_type_callable_as_string(typedb, type->callable);
@@ -1153,10 +1153,15 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 		return NULL;
 	}
 	bool multiline = opts & RZ_TYPE_PRINT_MULTILINE;
-	bool anon_only = opts & RZ_TYPE_PRINT_UNFOLD_ANONYMOUS_ONLY;
+	bool anon_only = opts & RZ_TYPE_PRINT_UNFOLD_ANON_ONLY;
+	bool anon_only_strict = opts & RZ_TYPE_PRINT_UNFOLD_ANON_ONLY_STRICT;
+	bool zero_vla = opts & RZ_TYPE_PRINT_ZERO_VLA;
+	bool no_end_semicolon = opts & RZ_TYPE_PRINT_NO_END_SEMICOLON;
+	no_end_semicolon = no_end_semicolon && (indent_level == 0); // indent_level needs to be zero for the last semicolon
 	if (indent_level == 0) { // for the root type, disregard anon_only
 		anon_only = false;
 	}
+	anon_only = anon_only || anon_only_strict;
 	bool unfold_all = !anon_only && unfold_level;
 	bool unfold_anon = unfold_level;
 	int indent = 0;
@@ -1176,7 +1181,7 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 	struct PrettyHelperBufs phbuf = { typename, pointer_buf, array_buf };
 	bool self_ref = false;
 	char *self_ref_typename = NULL;
-	bool decl = type_decl_as_pretty_string(typedb, type, used_types, phbuf, &self_ref, &self_ref_typename);
+	bool decl = type_decl_as_pretty_string(typedb, type, used_types, phbuf, &self_ref, &self_ref_typename, zero_vla);
 	if (!decl) {
 		rz_strbuf_free(buf);
 		rz_strbuf_free(typename);
@@ -1273,7 +1278,9 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 		rz_strbuf_append(buf, " "); // add space only if the type is pointer or an array or has an identifier
 	}
 	rz_strbuf_appendf(buf, "%s%s%s", pointer_str ? pointer_str : "", identifier ? identifier : "", array_str ? array_str : "");
-	rz_strbuf_append(buf, ";");
+	if (!no_end_semicolon) {
+		rz_strbuf_append(buf, ";");
+	}
 	if (self_ref_typename) {
 		ht_pp_delete(used_types, self_ref_typename);
 		free(self_ref_typename);

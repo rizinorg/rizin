@@ -208,7 +208,10 @@ typedef struct rz_type_constraint_t {
 typedef enum {
 	RZ_TYPE_PRINT_NO_OPTS = 0, // no options
 	RZ_TYPE_PRINT_MULTILINE = 1 << 0, // print multiline string (every single type on a single line)
-	RZ_TYPE_PRINT_UNFOLD_ANONYMOUS_ONLY = 1 << 1 // only unfold anonymous structs/unions/enums
+	RZ_TYPE_PRINT_UNFOLD_ANON_ONLY = 1 << 1, // only unfold anonymous structs/unions/enums (applies only to inner members, not the root member)
+	RZ_TYPE_PRINT_UNFOLD_ANON_ONLY_STRICT = 1 << 2, // only unfold anonymous structs/unions/enums
+	RZ_TYPE_PRINT_ZERO_VLA = 1 << 3, // use [0] to denote VLA instead of (default) []
+	RZ_TYPE_PRINT_NO_END_SEMICOLON = 1 << 4 // return a string without a semicolon at end
 } RzTypePrintOpts;
 
 #ifdef RZ_API
