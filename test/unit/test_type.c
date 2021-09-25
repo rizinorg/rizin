@@ -603,7 +603,7 @@ static bool test_type_as_pretty_string(void) {
 	ttype = rz_type_parse_string_single(typedb->parser, pretty_struct_array_ptr_func_ptr, &error_msg);
 	mu_assert_notnull(ttype, "struct array ptr func ptr type parse unsuccessfull");
 	mu_assert_null(error_msg, "parsing errors");
-	pretty_str = rz_type_as_pretty_string(typedb, ttype, NULL, RZ_TYPE_PRINT_NO_OPTS, 2);
+	pretty_str = rz_type_as_pretty_string(typedb, ttype, NULL, RZ_TYPE_PRINT_NO_OPTS, 2); // use unfold level 2 to check whether "over-unfolding" is handled without any problems
 	mu_assert_streq(pretty_str, pretty_struct_array_ptr_func_ptr, "struct array ptr func ptr type is ugly");
 	free(pretty_str);
 	pretty_str = rz_type_as_pretty_string(typedb, ttype, "leet", RZ_TYPE_PRINT_MULTILINE, 1);
