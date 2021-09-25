@@ -67,8 +67,8 @@ bool test_debug_serialize_save() {
 
 	rz_core_file_close(core->file);
 	free(core);
-	free(save_sdb);
-	free(ref);
+	sdb_free(save_sdb);
+	sdb_free(ref);
 
 	mu_end;
 }
@@ -83,7 +83,7 @@ bool test_debug_serialize_load() {
 	Sdb *ref = get_ref_sdb();
 	Sdb *load_sdb = sdb_new0();
 	rz_serialize_debug_load(ref, debug, NULL);
-	mu_assert_eq(rz_bp_size(debug->bp), 1, "number of breakpoints don't match");
+	mu_assert_eq(rz_list_length(debug->bp->bps), 1, "number of breakpoints don't match");
 	RzBreakpointItem *bp_item = rz_bp_get_index(debug->bp, 0);
 
 	mu_assert_streq(bp_item->cond, "bp_cond", "cond not equal");
@@ -105,8 +105,8 @@ bool test_debug_serialize_load() {
 
 	rz_core_file_close(core->file);
 	free(core);
-	free(load_sdb);
-	free(ref);
+	sdb_free(load_sdb);
+	sdb_free(ref);
 
 	mu_end;
 }
