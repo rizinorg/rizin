@@ -537,7 +537,7 @@ RZ_API ut64 rz_debug_arg_get(RzDebug *dbg, const char *cc, int num);
 RZ_API bool rz_debug_arg_set(RzDebug *dbg, const char *cc, int num, ut64 value);
 
 /* breakpoints (most in rz_bp, this calls those) */
-RZ_API RzBreakpointItem *rz_debug_bp_add(RzDebug *dbg, ut64 addr, int hw, bool watch, int rw, char *module, st64 m_delta);
+RZ_API RzBreakpointItem *rz_debug_bp_add(RzDebug *dbg, ut64 addr, int hw, bool watch, int rw, const char *module, st64 m_delta);
 RZ_API void rz_debug_bp_rebase(RzDebug *dbg, ut64 old_base, ut64 new_base);
 RZ_API void rz_debug_bp_update(RzDebug *dbg);
 
@@ -601,6 +601,10 @@ RZ_API int rz_debug_step_back(RzDebug *dbg, int steps);
 RZ_API bool rz_debug_goto_cnum(RzDebug *dbg, ut32 cnum);
 RZ_API int rz_debug_step_cnum(RzDebug *dbg, int steps);
 RZ_API bool rz_debug_continue_back(RzDebug *dbg);
+
+/* serialize */
+RZ_API void rz_serialize_debug_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzDebug *dbg);
+RZ_API bool rz_serialize_debug_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzDebug *dbg, RZ_NULLABLE RzSerializeResultInfo *res);
 
 /* ptrace */
 #if HAVE_PTRACE

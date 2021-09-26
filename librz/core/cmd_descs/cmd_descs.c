@@ -155,6 +155,7 @@ static const RzCmdDescArg plugins_io_print_args[2];
 static const RzCmdDescArg cmd_print_gadget_add_args[6];
 static const RzCmdDescArg cmd_print_gadget_move_args[6];
 static const RzCmdDescArg cmd_print_msg_digest_args[2];
+static const RzCmdDescArg cmd_print_magic_args[2];
 static const RzCmdDescArg project_save_args[2];
 static const RzCmdDescArg project_open_args[2];
 static const RzCmdDescArg project_open_no_bin_io_args[2];
@@ -3424,6 +3425,21 @@ static const RzCmdDescHelp cmd_print_timestamp_ntfs_help = {
 	.args = cmd_print_timestamp_ntfs_args,
 };
 
+static const RzCmdDescArg cmd_print_magic_args[] = {
+	{
+		.name = "file/directory",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_magic_help = {
+	.summary = "Print libmagic data",
+	.args = cmd_print_magic_args,
+};
+
 static const RzCmdDescHelp P_help = {
 	.summary = "Project management",
 };
@@ -6463,6 +6479,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_print_timestamp_ntfs_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_timestamp_cd, "ptn", rz_cmd_print_timestamp_ntfs_handler, &cmd_print_timestamp_ntfs_help);
 	rz_warn_if_fail(cmd_print_timestamp_ntfs_cd);
+
+	RzCmdDesc *cmd_print_magic_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cmd_print_cd, "pm", RZ_OUTPUT_MODE_JSON, rz_cmd_print_magic_handler, &cmd_print_magic_help);
+	rz_warn_if_fail(cmd_print_magic_cd);
 
 	RzCmdDesc *P_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "P", NULL, NULL, &P_help);
 	rz_warn_if_fail(P_cd);

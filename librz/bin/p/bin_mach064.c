@@ -308,7 +308,6 @@ RzBinPlugin rz_bin_plugin_mach064 = {
 	.libs = &libs,
 	.header = &MACH0_(mach_headerfields),
 	.relocs = &relocs,
-	.patch_relocs = &patch_relocs,
 	.fields = &MACH0_(mach_fields),
 	.create = &create,
 	.classes = &MACH0_(parse_classes),

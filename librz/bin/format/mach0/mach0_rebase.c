@@ -12,6 +12,8 @@
  * arm64 with pointer authentication.
  * In particular, we strip away additional info stored inside of pointers in the binary so we get
  * the raw pointers out for convenient analysis.
+ *
+ * see also mach0_relocs.c for additional modification of the data that might happen.
  */
 
 #include "mach0.h"

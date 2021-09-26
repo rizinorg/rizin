@@ -239,12 +239,30 @@ RZ_API bool rz_project_migrate_v4_v5(RzProject *prj, RzSerializeResultInfo *res)
 }
 
 // --
+// Migration 5 -> 6
+//
+// Changes from <commit-hash>
+//	Added serialization functionality for debug (only for breakpoints as of now)
+//	Used to save and load current RzDebug instance (only breakpoints) using serialization
+//	New namespaces: /core/debug, /core/debug/breakpoints
+
+RZ_API bool rz_project_migrate_v5_v6(RzProject *prj, RzSerializeResultInfo *res) {
+	Sdb *core_db;
+	RZ_SERIALIZE_SUB(prj, core_db, res, "core", return false;);
+	Sdb *debug_db = sdb_ns(core_db, "debug", true);
+	sdb_ns(debug_db, "breakpoints", true);
+
+	return true;
+}
+
+// --
 
 static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = {
 	rz_project_migrate_v1_v2,
 	rz_project_migrate_v2_v3,
 	rz_project_migrate_v3_v4,
-	rz_project_migrate_v4_v5
+	rz_project_migrate_v4_v5,
+	rz_project_migrate_v5_v6
 };
 
 /// Migrate the given project to the current version in-place
