@@ -800,7 +800,7 @@ RZ_API ut64 rz_type_db_get_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzType *ty
 RZ_API RZ_OWN char *rz_type_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *type) {
 	rz_return_val_if_fail(typedb && type, NULL);
 
-	return rz_type_as_pretty_string(typedb, type, NULL, RZ_TYPE_PRINT_ZERO_VLA | RZ_TYPE_PRINT_NO_END_SEMICOLON, 0);
+	return rz_type_as_pretty_string(typedb, type, NULL, RZ_TYPE_PRINT_ZERO_VLA | RZ_TYPE_PRINT_NO_END_SEMICOLON | RZ_TYPE_PRINT_ANONYMOUS, 0);
 }
 
 /**
@@ -833,7 +833,7 @@ struct PrettyHelperBufs {
 	RzStrBuf *arraybuf;
 };
 
-static bool type_decl_as_pretty_string(const RzTypeDB *typedb, const RzType *type, HtPP *used_types, struct PrettyHelperBufs phbuf, bool *self_ref, char **self_ref_typename, bool zero_vla) {
+static bool type_decl_as_pretty_string(const RzTypeDB *typedb, const RzType *type, HtPP *used_types, struct PrettyHelperBufs phbuf, bool *self_ref, char **self_ref_typename, bool zero_vla, bool print_anon) {
 	rz_return_val_if_fail(typedb && type && used_types && self_ref, false);
 
 	bool is_anon = false;
@@ -855,19 +855,19 @@ static bool type_decl_as_pretty_string(const RzTypeDB *typedb, const RzType *typ
 			switch (btype->kind) {
 			case RZ_BASE_TYPE_KIND_STRUCT:
 				rz_strbuf_appendf(phbuf.typename, "%sstruct", type->identifier.is_const ? "const " : "");
-				if (!is_anon) {
+				if (!is_anon || print_anon) {
 					rz_strbuf_appendf(phbuf.typename, " %s", btype->name);
 				}
 				break;
 			case RZ_BASE_TYPE_KIND_UNION:
 				rz_strbuf_appendf(phbuf.typename, "%sunion", type->identifier.is_const ? "const " : "");
-				if (!is_anon) {
+				if (!is_anon || print_anon) {
 					rz_strbuf_appendf(phbuf.typename, " %s", btype->name);
 				}
 				break;
 			case RZ_BASE_TYPE_KIND_ENUM:
 				rz_strbuf_appendf(phbuf.typename, "%senum", type->identifier.is_const ? "const " : "");
-				if (!is_anon) {
+				if (!is_anon || print_anon) {
 					rz_strbuf_appendf(phbuf.typename, " %s", btype->name);
 				}
 				break;
@@ -891,7 +891,7 @@ static bool type_decl_as_pretty_string(const RzTypeDB *typedb, const RzType *typ
 			rz_strbuf_append(phbuf.typename, typestr);
 			free(typestr);
 		} else {
-			type_decl_as_pretty_string(typedb, type->pointer.type, used_types, phbuf, self_ref, self_ref_typename, zero_vla);
+			type_decl_as_pretty_string(typedb, type->pointer.type, used_types, phbuf, self_ref, self_ref_typename, zero_vla, print_anon);
 			rz_strbuf_append(phbuf.pointerbuf, "*");
 			rz_strbuf_appendf(phbuf.pointerbuf, "%s", type->pointer.is_const ? "const " : "");
 		}
@@ -902,7 +902,7 @@ static bool type_decl_as_pretty_string(const RzTypeDB *typedb, const RzType *typ
 		} else { // variable length arrays
 			rz_strbuf_appendf(phbuf.arraybuf, "[%s]", zero_vla ? "0" : "");
 		}
-		type_decl_as_pretty_string(typedb, type->array.type, used_types, phbuf, self_ref, self_ref_typename, zero_vla);
+		type_decl_as_pretty_string(typedb, type->array.type, used_types, phbuf, self_ref, self_ref_typename, zero_vla, print_anon);
 		break;
 	case RZ_TYPE_KIND_CALLABLE: {
 		char *callstr = rz_type_callable_as_string(typedb, type->callable);
@@ -928,6 +928,7 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 	bool anon_only = opts & RZ_TYPE_PRINT_UNFOLD_ANON_ONLY;
 	bool anon_only_strict = opts & RZ_TYPE_PRINT_UNFOLD_ANON_ONLY_STRICT;
 	bool zero_vla = opts & RZ_TYPE_PRINT_ZERO_VLA;
+	bool print_anon = opts & RZ_TYPE_PRINT_ANONYMOUS;
 	bool no_end_semicolon = opts & RZ_TYPE_PRINT_NO_END_SEMICOLON;
 	no_end_semicolon = no_end_semicolon && (indent_level == 0); // indent_level needs to be zero for the last semicolon
 	if (indent_level == 0) { // for the root type, disregard anon_only
@@ -953,7 +954,7 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 	struct PrettyHelperBufs phbuf = { typename, pointer_buf, array_buf };
 	bool self_ref = false;
 	char *self_ref_typename = NULL;
-	bool decl = type_decl_as_pretty_string(typedb, type, used_types, phbuf, &self_ref, &self_ref_typename, zero_vla);
+	bool decl = type_decl_as_pretty_string(typedb, type, used_types, phbuf, &self_ref, &self_ref_typename, zero_vla, print_anon);
 	if (!decl) {
 		rz_strbuf_free(buf);
 		rz_strbuf_free(typename);
