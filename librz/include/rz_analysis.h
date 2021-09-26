@@ -290,16 +290,16 @@ struct rz_analysis_type_t {
 
 typedef enum {
 	RZ_META_TYPE_ANY = -1,
-	RZ_META_TYPE_DATA = 'd',
-	RZ_META_TYPE_CODE = 'c',
-	RZ_META_TYPE_STRING = 's',
-	RZ_META_TYPE_FORMAT = 'f',
-	RZ_META_TYPE_MAGIC = 'm',
-	RZ_META_TYPE_HIDE = 'h',
-	RZ_META_TYPE_COMMENT = 'C',
-	RZ_META_TYPE_RUN = 'r',
-	RZ_META_TYPE_HIGHLIGHT = 'H',
-	RZ_META_TYPE_VARTYPE = 't',
+	RZ_META_TYPE_DATA = 'd', //< marks the data as data (not a code)
+	RZ_META_TYPE_CODE = 'c', //< marks the data as code
+	RZ_META_TYPE_STRING = 's', //< marks the data as string
+	RZ_META_TYPE_FORMAT = 'f', //< sets the specified format (pf) to the data
+	RZ_META_TYPE_MAGIC = 'm', //< sets the magic string to the data
+	RZ_META_TYPE_HIDE = 'h', //< set the data as hidden
+	RZ_META_TYPE_COMMENT = 'C', //< attaches the comment to the data
+	RZ_META_TYPE_RUN = 'r', //< runs specified command on accessing the data
+	RZ_META_TYPE_HIGHLIGHT = 'H', //< sets the specified highlight to the data
+	RZ_META_TYPE_VARTYPE = 't', //< sets the specified type to the variable/address
 } RzAnalysisMetaType;
 
 /* meta */
@@ -307,6 +307,7 @@ typedef struct rz_analysis_meta_item_t {
 	RzAnalysisMetaType type;
 	int subtype;
 	char *str;
+	size_t size;
 	const RzSpace *space;
 } RzAnalysisMetaItem;
 
@@ -1908,10 +1909,6 @@ RZ_API void rz_meta_rebase(RzAnalysis *analysis, ut64 diff);
 RZ_API ut64 rz_meta_get_size(RzAnalysis *a, RzAnalysisMetaType type);
 
 RZ_API const char *rz_meta_type_to_string(int type);
-RZ_API void rz_meta_print(RzAnalysis *a, RzAnalysisMetaItem *d, ut64 start, ut64 size, int rad, PJ *pj, bool show_full);
-RZ_API void rz_meta_print_list_all(RzAnalysis *a, int type, int rad);
-RZ_API void rz_meta_print_list_at(RzAnalysis *a, ut64 addr, int rad);
-RZ_API void rz_meta_print_list_in_function(RzAnalysis *a, int type, int rad, ut64 addr);
 
 /* hints */
 

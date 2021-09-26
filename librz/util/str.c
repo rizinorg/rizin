@@ -33,6 +33,28 @@ static const char *rwxstr[] = {
 	[15] = "rwx",
 };
 
+RZ_API const char *rz_str_enc_as_string(RzStrEnc enc) {
+	switch (enc) {
+	case RZ_STRING_ENC_LATIN1:
+		return "latin1";
+	case RZ_STRING_ENC_UTF8:
+		return "utf8";
+	case RZ_STRING_ENC_UTF16LE:
+		return "utf16le";
+	case RZ_STRING_ENC_UTF32LE:
+		return "utf32le";
+	case RZ_STRING_ENC_UTF16BE:
+		return "utf16be";
+	case RZ_STRING_ENC_UTF32BE:
+		return "utf32be";
+	case RZ_STRING_ENC_GUESS:
+		return "guessed";
+	default:
+		rz_warn_if_reached();
+		return "unknown";
+	}
+}
+
 RZ_API int rz_str_casecmp(const char *s1, const char *s2) {
 	int res;
 #ifdef _MSC_VER

@@ -44,6 +44,7 @@ typedef int (*RzStrRangeCallback)(void *, int);
 #define RZ_STR_ISNOTEMPTY(x) ((x) && *(x))
 #define RZ_STR_DUP(x)        ((x) ? strdup((x)) : NULL)
 #define rz_str_array(x, y)   ((y >= 0 && y < (sizeof(x) / sizeof(*x))) ? x[y] : "")
+RZ_API const char *rz_str_enc_as_string(RzStrEnc enc);
 RZ_API char *rz_str_repeat(const char *ch, int sz);
 RZ_API const char *rz_str_pad(const char ch, int len);
 RZ_API const char *rz_str_rstr(const char *base, const char *p);

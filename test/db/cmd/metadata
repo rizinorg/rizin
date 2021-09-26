@@ -2,9 +2,9 @@ NAME=CC-*
 FILE=bins/mach0/FileDP
 CMDS=<<EOF
 C*~?
-CC~?
+CCl~?
 CC-*
-CC~?
+CCl~?
 C*~?
 EOF
 EXPECT=<<EOF
@@ -57,18 +57,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=Cz
-FILE=malloc://1024
-CMDS=<<EOF
-w hello world
-Cz
-C*~[1]
-EOF
-EXPECT=<<EOF
-12
-EOF
-RUN
-
 NAME=Cd : data
 FILE=malloc://1024
 CMDS=<<EOF
@@ -115,20 +103,6 @@ pd 1
 EOF
 EXPECT=<<EOF
             0x00000000     .string "hello" ; len=6
-EOF
-RUN
-
-NAME=Cs : concatenated strings bug
-FILE=malloc://1024
-CMDS=<<EOF
-w hello\x00world
-Cs 6
-Cs 6@6
-pd 2
-EOF
-EXPECT=<<EOF
-            0x00000000     .string "hello" ; len=6
-            0x00000006     .string "world" ; len=6
 EOF
 RUN
 
@@ -216,7 +190,7 @@ NAME=arm1.bin dword pointers with Cd
 FILE=bins/elf/arm1.bin
 CMDS=<<EOF
 s 0xdb98
-Cd 4[3]
+Cd 4 3
 pd 3
 EOF
 EXPECT=<<EOF
@@ -230,7 +204,7 @@ NAME=arm1.bin dword pointers with Cd and ahi 1
 FILE=bins/elf/arm1.bin
 CMDS=<<EOF
 s 0xdb98
-Cd 4[3]
+Cd 4 3
 ahi 1
 pd 3
 EOF
@@ -245,7 +219,7 @@ NAME=arm1.bin dword pointers with Cd and ahi 8
 FILE=bins/elf/arm1.bin
 CMDS=<<EOF
 s 0xdb98
-Cd 4[3]
+Cd 4 3
 ahi 8
 pd 3
 EOF
@@ -260,7 +234,7 @@ NAME=arm1.bin dword pointers with Cd and ahi 10
 FILE=bins/elf/arm1.bin
 CMDS=<<EOF
 s 0xdb98
-Cd 4[3]
+Cd 4 3
 ahi 10
 pd 3
 EOF
@@ -275,7 +249,7 @@ NAME=arm1.bin dword pointers with Cd and ahi 16
 FILE=bins/elf/arm1.bin
 CMDS=<<EOF
 s 0xdb98
-Cd 4[3]
+Cd 4 4
 ahi 16
 pd 3
 EOF
@@ -320,45 +294,45 @@ CCu Hello!
 s 0x380
 wx cafebabe00000032
 Cm 8 wwww
-Cs
+Csl
 ?e ----
-Cd
+Cdl
 ?e ----
-Ch
+Chl
 ?e ----
-Cf
+Cfl
 ?e ----
-CC
+CCl
 ?e ----
-Cm
+Cml
 ?e ----
 C
 ?e ----
-Cs*
+Csl*
 ?e ----
-Cd*
+Cdl*
 ?e ----
-Ch*
+Chl*
 ?e ----
-Cf*
+Cfl*
 ?e ----
-CC*
+CCl*
 ?e ----
-Cm*
+Cml*
 ?e ----
 C*
 ?e ----
-Csj
+Cslj
 ?e ----
-Cdj
+Cdlj
 ?e ----
-Chj
+Chlj
 ?e ----
-Cfj
+Cflj
 ?e ----
-CCj
+CClj
 ?e ----
-Cmj
+Cmlj
 ?e ----
 Cj
 EOF
@@ -382,7 +356,7 @@ EXPECT=<<EOF
 0x00000300 format 4 x
 0x00000380 magic 8 wwww
 ----
-Cs 12 @ 0x00000000 # hello world
+Csa 12 @ 0x00000000 # hello world
 ----
 Cd 3 @ 0x00000100
 ----
@@ -394,7 +368,7 @@ CCu base64:SGVsbG8h @ 0x00000000
 ----
 Cm 8 wwww @ 0x00000380
 ----
-Cs 12 @ 0x00000000 # hello world
+Csa 12 @ 0x00000000 # hello world
 CCu base64:SGVsbG8h @ 0x00000000
 Cd 3 @ 0x00000100
 Ch 2 @ 0x00000200
@@ -421,8 +395,8 @@ NAME=Cs ascii/latin1
 FILE=bins/pe/testapp-msvc64.exe
 CMDS=<<EOF
 Csa @ 0x1400160a0
-Cs~gate
-Cs~ANSI
+Csl~gate
+Csl~ANSI
 EOF
 EXPECT=<<EOF
 0x1400160a0 latin1[18] "latin1 gate: \xce\xbb\xab\xce"
@@ -431,40 +405,40 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=Csj ascii/latin1
+NAME=Cslj ascii/latin1
 FILE=bins/pe/testapp-msvc64.exe
 ARGS=-z
 CMDS=<<EOF
 Csa @ 0x1400160a0
-Csg @ 0x1400160b8
-Csj
+Csa @ 0x1400160b8
+Cslj
 EOF
 EXPECT=<<EOF
 [{"offset":5368799392,"type":"Cs","name":"bGF0aW4xIGdhdGU6IM67q84=","enc":"latin1","ascii":false},{"offset":5368799416,"type":"Cs","name":"ICAtLSBpbiBDb25FbXUsIHJ1biBgY2hjcCAyODU5MWAgdG8gc2VlIHRoZSBnYXRlLg==","enc":"latin1","ascii":true}]
 EOF
 RUN
 
-NAME=Csg, Csa, Cs. and Cs..
+NAME=Csa, Cs. and Cs.l
 FILE=bins/pe/testapp-msvc64.exe
 CMDS=<<EOF
 e str.escbslash=true
 s 0x140016018
 Csa
-Cs*~`spad`
+Csl*~`spad`
 Cs.
-Cs..
+Cs.l
 pd 1
-Csg
-Cs*~`spad`
+Csa
+Csl*~`spad`
 Cs.
-Cs..
+Cs.l
 pd 1
 Csa 4
-Cs..
-Cs.. @ 0x14001601c  # should print nothing
-Csg 4
-Cs..
-Cs.. @ 0x14001601c  # should print nothing
+Cs.l
+Cs.l @ 0x14001601c  # should print nothing
+Csa 4
+Cs.l
+Cs.l @ 0x14001601c  # should print nothing
 EOF
 EXPECT=<<EOF
 Csa 2 @ 0x140016018 # \t
@@ -482,21 +456,25 @@ ascii[4] "\twid"
 EOF
 RUN
 
-NAME=Csg, Csa and Csj
+NAME=Csa, Csw, Cs and Cslj
 FILE=bins/pe/testapp-msvc64.exe
 ARGS=-e bin.str.purge=all,!0x140016018
 CMDS=<<EOF
 s 0x140016018
-Csj
+Cslj
 Csa
-Csj
-Csg
-Csj
+Cslj
+Cs-
+Csw
+Cslj
+Cs-
+Cs
+Cslj
 EOF
 EXPECT=<<EOF
-[{"offset":5368799256,"type":"Cs","name":"XHR3aWRlXFxlc2M6IFxlWzBt","enc":"iz","ascii":true}]
 [{"offset":5368799256,"type":"Cs","name":"CQ==","enc":"latin1","ascii":true}]
-[{"offset":5368799256,"type":"Cs","name":"CXdpZGVcZXNjOiAbWzBtoQ0K","enc":"latin1","ascii":false}]
+[{"offset":5368799256,"type":"Cs","name":"CXdpZGVcZXNjOiAbWzBtoQ0K","enc":"utf16le","ascii":false}]
+[{"offset":5368799256,"type":"Cs","name":"XHR3aWRlXFxlc2M6IFxlWzBt","enc":"guessed","ascii":true}]
 EOF
 RUN
 
@@ -505,14 +483,14 @@ FILE=bins/elf/strenc
 CMDS=<<EOF
 e str.escbslash=true
 s 0x004021ff
-Cs*~`spad`
+Csl*~`spad`
 Cs.
-Cs..
+Cs.l
 pd 1
 Cs8
-Cs*~`spad`
+Csl*~`spad`
 Cs.
-Cs..
+Cs.l
 pd 1
 EOF
 EXPECT=<<EOF
@@ -529,17 +507,17 @@ utf8[61] "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\x1b[33m \u00a2\u20ac\U00010
 EOF
 RUN
 
-NAME=Cs8 and Csj
+NAME=Cs8 and Cslj
 FILE=bins/elf/strenc
 ARGS=-e bin.str.purge=all,!0x004021ff
 CMDS=<<EOF
 s 0x004021ff
-Csj
+Cslj
 Cs8
-Csj
+Cslj
 EOF
 EXPECT=<<EOF
-[{"offset":4203007,"type":"Cs","name":"dXRmOD4gXFx1MDBhMlxcdTIwYWNcXFUwMDAxMDM0OCBpbiB5ZWxsb3c6XGVbMzNtIMKi4oKs8JCNiCBcZVswbVxu","enc":"iz","ascii":false}]
+[{"offset":4203007,"type":"Cs","name":"dXRmOD4gXFx1MDBhMlxcdTIwYWNcXFUwMDAxMDM0OCBpbiB5ZWxsb3c6XGVbMzNtIMKi4oKs8JCNiCBcZVswbVxu","enc":"utf16le","ascii":false}]
 [{"offset":4203007,"type":"Cs","name":"dXRmOD4gXHUwMGEyXHUyMGFjXFUwMDAxMDM0OCBpbiB5ZWxsb3c6G1szM20gwqLigqzwkI2IIBtbMG0K","enc":"utf8","ascii":false}]
 EOF
 RUN
@@ -551,11 +529,11 @@ s 0x140016000
 Csa
 e str.escbslash=true
 Cs.
-Cs..
+Cs.l
 pd 1
 e str.escbslash=false
 Cs.
-Cs..
+Cs.l
 pd 1
 EOF
 EXPECT=<<EOF
@@ -577,14 +555,14 @@ FILE==
 CMDS=<<EOF
 s 0x100
 Cd 4 5
-Cd
+Cdl
 ?e ----
 Cd- 4 3
-Cd
+Cdl
 ?e ----
 s 0x10c
 Cd- 0 2
-Cd
+Cdl
 EOF
 EXPECT=<<EOF
 0x00000100 data Cd 4
@@ -653,27 +631,18 @@ s 0x100
 Cd 4 1
 C*~Cd
 ?e --1--
-Cd- 4 1
-C*~Cd
-?e --2--
 Cd 4 1
 Cd-
 C*~Cd
-?e --3--
+?e --2--
 Cd 4 1
 C-
-C*~Cd
-?e --4--
-Cd 4 1
-C- 4
 C*~Cd
 EOF
 EXPECT=<<EOF
 Cd 4 @ 0x00000100
 --1--
 --2--
---3--
---4--
 EOF
 RUN
 

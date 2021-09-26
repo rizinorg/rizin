@@ -1390,10 +1390,11 @@ EOF
 RUN
 
 NAME=pdJ string - oldshell
-ARGS=-ecfg.oldshell=true
 FILE=malloc://128
 CMDS=<<EOF
+e cfg.oldshell=true
 w Snoo"ping as" usual,
+e cfg.oldshell=false
 Cs 30
 pdJ 1
 EOF

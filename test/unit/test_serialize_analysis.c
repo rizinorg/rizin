@@ -1540,7 +1540,7 @@ Sdb *analysis_ref_db() {
 	sdb_ns(meta_spaces, "spaces", true);
 	sdb_set(meta_spaces, "spacestack", "[\"*\"]", 0);
 	sdb_set(meta_spaces, "name", "CS", 0);
-	sdb_set(meta, "0x1337", "[{\"type\":\"C\",\"str\":\"some comment\"}]", 0);
+	sdb_set(meta, "0x1337", "[{\"type\":\"C\",\"subtype\":56,\"str\":\"some comment\"}]", 0);
 
 	Sdb *hints = sdb_ns(db, "hints", true);
 	sdb_set(hints, "0x10e1", "{\"arch\":\"arm\"}", 0);
