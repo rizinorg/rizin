@@ -140,7 +140,10 @@ RZ_API RzBreakpointItem *rz_bp_get_at(RzBreakpoint *bp, ut64 addr);
 RZ_API RzBreakpointItem *rz_bp_get_in(RzBreakpoint *bp, ut64 addr, int perm);
 
 RZ_API bool rz_bp_is_valid(RzBreakpoint *bp, RzBreakpointItem *b);
-RZ_API bool rz_bp_item_set(RZ_NONNULL RzBreakpointItem *item, RZ_NULLABLE const char *cond, RZ_NULLABLE const char *data, RZ_NULLABLE const char *expr, RZ_NULLABLE const char *name);
+RZ_API bool rz_bp_item_set_cond(RZ_NONNULL RzBreakpointItem *item, RZ_NULLABLE const char *cond);
+RZ_API bool rz_bp_item_set_data(RZ_NONNULL RzBreakpointItem *item, RZ_NULLABLE const char *data);
+RZ_API bool rz_bp_item_set_expr(RZ_NONNULL RzBreakpointItem *item, RZ_NULLABLE const char *expr);
+RZ_API bool rz_bp_item_set_name(RZ_NONNULL RzBreakpointItem *item, RZ_NULLABLE const char *name);
 
 RZ_API int rz_bp_add_cond(RzBreakpoint *bp, const char *cond);
 RZ_API int rz_bp_del_cond(RzBreakpoint *bp, int idx);

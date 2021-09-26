@@ -41,8 +41,14 @@ bool test_debug_serialize_save() {
 
 	RzBreakpointItem *bp_item = rz_debug_bp_add(debug, 0x1337, 0, false, 1, "hax", 42);
 	mu_assert_notnull(bp_item, "bp_item null");
-	bool set = rz_bp_item_set(bp_item, "bp_cond", "bp_data", "bp_expr", "spectre");
-	mu_assert_true(set, "failed to set values");
+	bool set = rz_bp_item_set_cond(bp_item, "bp_cond");
+	mu_assert_true(set, "failed to set cond");
+	set = rz_bp_item_set_data(bp_item, "bp_data");
+	mu_assert_true(set, "failed to set data");
+	set = rz_bp_item_set_expr(bp_item, "bp_expr");
+	mu_assert_true(set, "failed to set expr");
+	set = rz_bp_item_set_name(bp_item, "spectre");
+	mu_assert_true(set, "failed to set name");
 	bp_item->delta = 2;
 	bp_item->enabled = 3;
 	bp_item->hits = 4;
