@@ -75,6 +75,7 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 static void cmd_debug_reg(RzCore *core, const char *str);
 static bool lastcmd_repeat(RzCore *core, int next);
 
+#include "cmd_block.c"
 #include "cmd_quit.c"
 #include "cmd_hash.c"
 #include "cmd_debug.c"
@@ -152,20 +153,6 @@ static const char *help_msg_dot[] = {
 	".!", "rabin -ri $FILE", "interpret output of command",
 	".", "(foo 1 2 3)", "run macro 'foo' with args 1, 2, 3",
 	"./", " ELF", "interpret output of command /m ELF as r. commands",
-	NULL
-};
-
-static const char *help_msg_b[] = {
-	"Usage:", "b[f] [arg]\n", "Get/Set block size",
-	"b", " 33", "set block size to 33",
-	"b", " eip+4", "numeric argument can be an expression",
-	"b", "", "display current block size",
-	"b", "+3", "increase blocksize by 3",
-	"b", "-16", "decrease blocksize by 16",
-	"b*", "", "display current block size in rizin command",
-	"bf", " foo", "set block size to flag size",
-	"bj", "", "display block size information in JSON",
-	"bm", " 1M", "set max block size",
 	NULL
 };
 
@@ -1285,69 +1272,6 @@ RZ_IPI int rz_cmd_kuery(void *data, const char *input) {
 		}
 		free(inp);
 		return 0;
-	}
-	return 0;
-}
-
-RZ_IPI int rz_cmd_bsize(void *data, const char *input) {
-	ut64 n;
-	RzFlagItem *flag;
-	RzCore *core = (RzCore *)data;
-	switch (input[0]) {
-	case 'm': // "bm"
-		n = rz_num_math(core->num, input + 1);
-		if (n > 1) {
-			core->blocksize_max = n;
-		} else {
-			rz_cons_printf("0x%x\n", (ut32)core->blocksize_max);
-		}
-		break;
-	case '+': // "b+"
-		n = rz_num_math(core->num, input + 1);
-		rz_core_block_size(core, core->blocksize + n);
-		break;
-	case '-': // "b-"
-		n = rz_num_math(core->num, input + 1);
-		rz_core_block_size(core, core->blocksize - n);
-		break;
-	case 'f': // "bf"
-		if (input[1] == ' ') {
-			flag = rz_flag_get(core->flags, input + 2);
-			if (flag) {
-				rz_core_block_size(core, flag->size);
-			} else {
-				eprintf("bf: cannot find flag named '%s'\n", input + 2);
-			}
-		} else {
-			eprintf("Usage: bf [flagname]\n");
-		}
-		break;
-	case 'j': { // "bj"
-		PJ *pj = pj_new();
-		if (!pj) {
-			break;
-		}
-		pj_o(pj);
-		pj_ki(pj, "blocksize", core->blocksize);
-		pj_ki(pj, "blocksize_limit", core->blocksize_max);
-		pj_end(pj);
-		rz_cons_println(pj_string(pj));
-		pj_free(pj);
-		break;
-	}
-	case '*': // "b*"
-		rz_cons_printf("b 0x%x\n", core->blocksize);
-		break;
-	case '\0': // "b"
-		rz_cons_printf("0x%x\n", core->blocksize);
-		break;
-	case ' ':
-		rz_core_block_size(core, rz_num_math(core->num, input));
-		break;
-	default:
-	case '?': // "b?"
-		rz_core_cmd_help(core, help_msg_b);
-		break;
 	}
 	return 0;
 }
@@ -6329,7 +6253,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "<", "pipe into RzCons.readChar", rz_cmd_pipein },
 		{ "0", "alias for s 0x", rz_cmd_ox },
 		{ "a", "analysis", rz_cmd_analysis },
-		{ "b", "change block size", rz_cmd_bsize },
 		{ "c", "compare memory", rz_cmd_cmp },
 		{ "C", "code metadata", rz_cmd_meta },
 		{ "d", "debugger operations", rz_cmd_debug },
@@ -6371,7 +6294,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 	DEPRECATED_DEFINE_CMD_DESCRIPTOR_SPECIAL(core, ., dot);
 	DEPRECATED_DEFINE_CMD_DESCRIPTOR_SPECIAL(core, =, equal);
 
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR(core, b);
 	DEPRECATED_DEFINE_CMD_DESCRIPTOR(core, k);
 	DEPRECATED_DEFINE_CMD_DESCRIPTOR(core, u);
 	DEPRECATED_DEFINE_CMD_DESCRIPTOR(core, y);

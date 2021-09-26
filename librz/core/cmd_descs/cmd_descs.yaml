@@ -182,9 +182,8 @@ commands:
     type: RZ_CMD_DESC_TYPE_OLDINPUT
     subcommands: cmd_analysis
   - name: b
-    cname: cmd_bsize
     summary: Display or change the block size
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    subcommands: cmd_block
   - name: c
     cname: cmd_cmp
     summary: Compare block with given data

@@ -103,6 +103,11 @@ static const RzCmdDescArg analysis_xrefs_set_d_args[2];
 static const RzCmdDescArg analysis_xrefs_set_s_args[2];
 static const RzCmdDescArg analysis_xrefs_del_args[3];
 static const RzCmdDescArg analysis_xrefs_copy_args[2];
+static const RzCmdDescArg block_args[2];
+static const RzCmdDescArg block_decrease_args[2];
+static const RzCmdDescArg block_increase_args[2];
+static const RzCmdDescArg block_flag_args[2];
+static const RzCmdDescArg block_max_args[2];
 static const RzCmdDescArg cmd_debug_continue_execution_args[2];
 static const RzCmdDescArg cmd_debug_continue_send_signal_args[3];
 static const RzCmdDescArg cmd_debug_continue_traptrace_args[2];
@@ -1820,8 +1825,78 @@ static const RzCmdDescHelp analysis_xrefs_graph_help = {
 	.args = analysis_xrefs_graph_args,
 };
 
-static const RzCmdDescHelp cmd_bsize_help = {
+static const RzCmdDescHelp b_help = {
 	.summary = "Display or change the block size",
+};
+static const RzCmdDescArg block_args[] = {
+	{
+		.name = "num",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp block_help = {
+	.summary = "Set/Get current block size",
+	.args = block_args,
+};
+
+static const RzCmdDescArg block_decrease_args[] = {
+	{
+		.name = "num",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp block_decrease_help = {
+	.summary = "Decrease current block size",
+	.args = block_decrease_args,
+};
+
+static const RzCmdDescArg block_increase_args[] = {
+	{
+		.name = "num",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp block_increase_help = {
+	.summary = "Increase current block size",
+	.args = block_increase_args,
+};
+
+static const RzCmdDescArg block_flag_args[] = {
+	{
+		.name = "flag",
+		.type = RZ_CMD_ARG_TYPE_FLAG,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp block_flag_help = {
+	.summary = "Set block size to flag size",
+	.args = block_flag_args,
+};
+
+static const RzCmdDescArg block_max_args[] = {
+	{
+		.name = "num",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp block_max_help = {
+	.summary = "Set/Get max block size",
+	.args = block_max_args,
 };
 
 static const RzCmdDescHelp cmd_cmp_help = {
@@ -6042,8 +6117,19 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_xrefs_graph_cd = rz_cmd_desc_argv_state_new(core->rcmd, ax_cd, "axg", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_analysis_xrefs_graph_handler, &analysis_xrefs_graph_help);
 	rz_warn_if_fail(analysis_xrefs_graph_cd);
 
-	RzCmdDesc *cmd_bsize_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "b", rz_cmd_bsize, &cmd_bsize_help);
-	rz_warn_if_fail(cmd_bsize_cd);
+	RzCmdDesc *b_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "b", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_block_handler, &block_help, &b_help);
+	rz_warn_if_fail(b_cd);
+	RzCmdDesc *block_decrease_cd = rz_cmd_desc_argv_new(core->rcmd, b_cd, "b-", rz_block_decrease_handler, &block_decrease_help);
+	rz_warn_if_fail(block_decrease_cd);
+
+	RzCmdDesc *block_increase_cd = rz_cmd_desc_argv_new(core->rcmd, b_cd, "b+", rz_block_increase_handler, &block_increase_help);
+	rz_warn_if_fail(block_increase_cd);
+
+	RzCmdDesc *block_flag_cd = rz_cmd_desc_argv_new(core->rcmd, b_cd, "bf", rz_block_flag_handler, &block_flag_help);
+	rz_warn_if_fail(block_flag_cd);
+
+	RzCmdDesc *block_max_cd = rz_cmd_desc_argv_new(core->rcmd, b_cd, "bm", rz_block_max_handler, &block_max_help);
+	rz_warn_if_fail(block_max_cd);
 
 	RzCmdDesc *cmd_cmp_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "c", rz_cmd_cmp, &cmd_cmp_help);
 	rz_warn_if_fail(cmd_cmp_cd);
