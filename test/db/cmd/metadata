@@ -8,10 +8,10 @@ CC~?
 C*~?
 EOF
 EXPECT=<<EOF
-39
+43
 13
 0
-26
+30
 EOF
 RUN
 

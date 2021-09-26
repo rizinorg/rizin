@@ -1,0 +1,1477 @@
+NAME=mach0 kext reloc patching x86
+FILE=bins/mach0/IOKitTest-x86_64.kext/Contents/MacOS/IOKitTest
+CMDS=<<EOF
+i~arch
+i~type
+ir
+?e --
+o
+om
+pd 4 @ 0x0000d008
+?e -- x86 UNSIGNED reloc
+s 0x00001338
+p8 8
+pxr 8
+?e -- x86 BRANCH reloc
+s 0x00000d9d
+pi 1
+p8 5
+EOF
+EXPECT=<<EOF
+arch     x86
+type     Kernel extension bundle file
+bintype  mach0
+vaddr      paddr      target     type    name                                                                                                                              
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+0x00000aac 0x00000aac 0x0000d008 UNKNOWN OSMetaClass::~OSMetaClass()
+0x00000ae3 0x00000ae3 0x0000d010 UNKNOWN IOService::IOService(OSMetaClass const*)
+0x00000b54 0x00000b54 0x0000d018 UNKNOWN IOService::~IOService()
+0x00000b7c 0x00000b7c 0x0000d018 UNKNOWN IOService::~IOService()
+0x00000be9 0x00000be9 0x0000d020 UNKNOWN OSObject::operator delete(void*, unsigned long)
+0x00000c4e 0x00000c4e 0x0000d028 UNKNOWN OSMetaClass::OSMetaClass(char const*, OSMetaClass const*, unsigned int)
+0x00000cb1 0x00000cb1 0x0000d030 UNKNOWN OSObject::operator new(unsigned long)
+0x00000d02 0x00000d02 0x0000d010 UNKNOWN IOService::IOService(OSMetaClass const*)
+0x00000d22 0x00000d22 0x0000d038 UNKNOWN OSMetaClass::instanceConstructed() const
+0x00000d6e 0x00000d6e 0x0000d040 UNKNOWN IOLog
+0x00000d9e 0x00000d9e 0x0000d040 UNKNOWN IOLog
+0x00000e09 0x00000e09 0x0000d040 UNKNOWN IOLog
+0x00000e5e 0x00000e5e 0x0000d040 UNKNOWN IOLog
+0x00000e92 0x00000e92 0x0000d040 UNKNOWN IOLog
+0x00001000 0x00001000 0x0000d048 UNKNOWN IOService::gMetaClass
+0x00001008 0x00001008 0x0000d050 UNKNOWN vtable for IOService
+0x00001028 0x00001028 0x0000d048 UNKNOWN IOService::gMetaClass
+0x00001050 0x00001050 0x0000d058 UNKNOWN OSObject::release(int) const
+0x00001058 0x00001058 0x0000d060 UNKNOWN OSObject::getRetainCount() const
+0x00001060 0x00001060 0x0000d068 UNKNOWN OSObject::retain() const
+0x00001068 0x00001068 0x0000d070 UNKNOWN OSObject::release() const
+0x00001070 0x00001070 0x0000d078 UNKNOWN OSObject::serialize(OSSerialize*) const
+0x00001080 0x00001080 0x0000d080 UNKNOWN OSMetaClassBase::isEqualTo(OSMetaClassBase const*) const
+0x00001088 0x00001088 0x0000d088 UNKNOWN OSObject::taggedRetain(void const*) const
+0x00001090 0x00001090 0x0000d090 UNKNOWN OSObject::taggedRelease(void const*) const
+0x00001098 0x00001098 0x0000d098 UNKNOWN OSObject::taggedRelease(void const*, int) const
+0x000010a0 0x000010a0 0x0000d0a0 UNKNOWN IOService::Dispatch(IORPC)
+0x000010a8 0x000010a8 0x0000d0a8 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase4()
+0x000010b0 0x000010b0 0x0000d0b0 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase5()
+0x000010b8 0x000010b8 0x0000d0b8 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase6()
+0x000010c0 0x000010c0 0x0000d0c0 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase7()
+0x000010c8 0x000010c8 0x0000d0c8 UNKNOWN OSObject::init()
+0x000010d8 0x000010d8 0x0000d0d0 UNKNOWN OSObject::_RESERVEDOSObject0()
+0x000010e0 0x000010e0 0x0000d0d8 UNKNOWN OSObject::_RESERVEDOSObject1()
+0x000010e8 0x000010e8 0x0000d0e0 UNKNOWN OSObject::_RESERVEDOSObject2()
+0x000010f0 0x000010f0 0x0000d0e8 UNKNOWN OSObject::_RESERVEDOSObject3()
+0x000010f8 0x000010f8 0x0000d0f0 UNKNOWN OSObject::_RESERVEDOSObject4()
+0x00001100 0x00001100 0x0000d0f8 UNKNOWN OSObject::_RESERVEDOSObject5()
+0x00001108 0x00001108 0x0000d100 UNKNOWN OSObject::_RESERVEDOSObject6()
+0x00001110 0x00001110 0x0000d108 UNKNOWN OSObject::_RESERVEDOSObject7()
+0x00001118 0x00001118 0x0000d110 UNKNOWN OSObject::_RESERVEDOSObject8()
+0x00001120 0x00001120 0x0000d118 UNKNOWN OSObject::_RESERVEDOSObject9()
+0x00001128 0x00001128 0x0000d120 UNKNOWN OSObject::_RESERVEDOSObject10()
+0x00001130 0x00001130 0x0000d128 UNKNOWN OSObject::_RESERVEDOSObject11()
+0x00001138 0x00001138 0x0000d130 UNKNOWN OSObject::_RESERVEDOSObject12()
+0x00001140 0x00001140 0x0000d138 UNKNOWN OSObject::_RESERVEDOSObject13()
+0x00001148 0x00001148 0x0000d140 UNKNOWN OSObject::_RESERVEDOSObject14()
+0x00001150 0x00001150 0x0000d148 UNKNOWN OSObject::_RESERVEDOSObject15()
+0x00001158 0x00001158 0x0000d150 UNKNOWN IORegistryEntry::copyProperty(char const*, IORegistryPlane const*, unsigned int) const
+0x00001160 0x00001160 0x0000d158 UNKNOWN IORegistryEntry::copyProperty(OSString const*, IORegistryPlane const*, unsigned int) const
+0x00001168 0x00001168 0x0000d160 UNKNOWN IORegistryEntry::copyProperty(OSSymbol const*, IORegistryPlane const*, unsigned int) const
+0x00001170 0x00001170 0x0000d168 UNKNOWN IORegistryEntry::copyParentEntry(IORegistryPlane const*) const
+0x00001178 0x00001178 0x0000d170 UNKNOWN IORegistryEntry::copyChildEntry(IORegistryPlane const*) const
+0x00001180 0x00001180 0x0000d178 UNKNOWN IORegistryEntry::runPropertyAction(int (*)(OSObject*, void*, void*, void*, void*), OSObject*, void*, void*, void*, void*)
+0x00001188 0x00001188 0x0000d180 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry0()
+0x00001190 0x00001190 0x0000d188 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry1()
+0x00001198 0x00001198 0x0000d190 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry2()
+0x000011a0 0x000011a0 0x0000d198 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry3()
+0x000011a8 0x000011a8 0x0000d1a0 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry4()
+0x000011b0 0x000011b0 0x0000d1a8 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry5()
+0x000011b8 0x000011b8 0x0000d1b0 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry6()
+0x000011c0 0x000011c0 0x0000d1b8 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry7()
+0x000011c8 0x000011c8 0x0000d1c0 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry8()
+0x000011d0 0x000011d0 0x0000d1c8 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry9()
+0x000011d8 0x000011d8 0x0000d1d0 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry10()
+0x000011e0 0x000011e0 0x0000d1d8 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry11()
+0x000011e8 0x000011e8 0x0000d1e0 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry12()
+0x000011f0 0x000011f0 0x0000d1e8 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry13()
+0x000011f8 0x000011f8 0x0000d1f0 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry14()
+0x00001200 0x00001200 0x0000d1f8 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry15()
+0x00001208 0x00001208 0x0000d200 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry16()
+0x00001210 0x00001210 0x0000d208 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry17()
+0x00001218 0x00001218 0x0000d210 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry18()
+0x00001220 0x00001220 0x0000d218 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry19()
+0x00001228 0x00001228 0x0000d220 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry20()
+0x00001230 0x00001230 0x0000d228 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry21()
+0x00001238 0x00001238 0x0000d230 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry22()
+0x00001240 0x00001240 0x0000d238 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry23()
+0x00001248 0x00001248 0x0000d240 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry24()
+0x00001250 0x00001250 0x0000d248 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry25()
+0x00001258 0x00001258 0x0000d250 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry26()
+0x00001260 0x00001260 0x0000d258 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry27()
+0x00001268 0x00001268 0x0000d260 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry28()
+0x00001270 0x00001270 0x0000d268 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry29()
+0x00001278 0x00001278 0x0000d270 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry30()
+0x00001280 0x00001280 0x0000d278 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry31()
+0x00001290 0x00001290 0x0000d280 UNKNOWN IORegistryEntry::setPropertyTable(OSDictionary*)
+0x00001298 0x00001298 0x0000d288 UNKNOWN IORegistryEntry::setProperty(OSSymbol const*, OSObject*)
+0x000012a0 0x000012a0 0x0000d290 UNKNOWN IORegistryEntry::setProperty(OSString const*, OSObject*)
+0x000012a8 0x000012a8 0x0000d298 UNKNOWN IORegistryEntry::setProperty(char const*, OSObject*)
+0x000012b0 0x000012b0 0x0000d2a0 UNKNOWN IORegistryEntry::setProperty(char const*, char const*)
+0x000012b8 0x000012b8 0x0000d2a8 UNKNOWN IORegistryEntry::setProperty(char const*, bool)
+0x000012c0 0x000012c0 0x0000d2b0 UNKNOWN IORegistryEntry::setProperty(char const*, unsigned long long, unsigned int)
+0x000012c8 0x000012c8 0x0000d2b8 UNKNOWN IORegistryEntry::setProperty(char const*, void*, unsigned int)
+0x000012d0 0x000012d0 0x0000d2c0 UNKNOWN IORegistryEntry::removeProperty(OSSymbol const*)
+0x000012d8 0x000012d8 0x0000d2c8 UNKNOWN IORegistryEntry::removeProperty(OSString const*)
+0x000012e0 0x000012e0 0x0000d2d0 UNKNOWN IORegistryEntry::removeProperty(char const*)
+0x000012e8 0x000012e8 0x0000d2d8 UNKNOWN IORegistryEntry::getProperty(OSSymbol const*) const
+0x000012f0 0x000012f0 0x0000d2e0 UNKNOWN IORegistryEntry::getProperty(OSString const*) const
+0x000012f8 0x000012f8 0x0000d2e8 UNKNOWN IORegistryEntry::getProperty(char const*) const
+0x00001300 0x00001300 0x0000d2f0 UNKNOWN IORegistryEntry::getProperty(OSSymbol const*, IORegistryPlane const*, unsigned int) const
+0x00001308 0x00001308 0x0000d2f8 UNKNOWN IORegistryEntry::getProperty(OSString const*, IORegistryPlane const*, unsigned int) const
+0x00001310 0x00001310 0x0000d300 UNKNOWN IORegistryEntry::getProperty(char const*, IORegistryPlane const*, unsigned int) const
+0x00001318 0x00001318 0x0000d308 UNKNOWN IORegistryEntry::copyProperty(OSSymbol const*) const
+0x00001320 0x00001320 0x0000d310 UNKNOWN IORegistryEntry::copyProperty(OSString const*) const
+0x00001328 0x00001328 0x0000d318 UNKNOWN IORegistryEntry::copyProperty(char const*) const
+0x00001330 0x00001330 0x0000d320 UNKNOWN IORegistryEntry::dictionaryWithProperties() const
+0x00001338 0x00001338 0x0000d328 UNKNOWN IOService::serializeProperties(OSSerialize*) const
+0x00001340 0x00001340 0x0000d330 UNKNOWN IORegistryEntry::setProperties(OSObject*)
+0x00001348 0x00001348 0x0000d338 UNKNOWN IORegistryEntry::getParentIterator(IORegistryPlane const*) const
+0x00001350 0x00001350 0x0000d340 UNKNOWN IORegistryEntry::applyToParents(void (*)(IORegistryEntry*, void*), void*, IORegistryPlane const*) const
+0x00001358 0x00001358 0x0000d348 UNKNOWN IORegistryEntry::getParentEntry(IORegistryPlane const*) const
+0x00001360 0x00001360 0x0000d350 UNKNOWN IORegistryEntry::getChildIterator(IORegistryPlane const*) const
+0x00001368 0x00001368 0x0000d358 UNKNOWN IORegistryEntry::applyToChildren(void (*)(IORegistryEntry*, void*), void*, IORegistryPlane const*) const
+0x00001370 0x00001370 0x0000d360 UNKNOWN IORegistryEntry::getChildEntry(IORegistryPlane const*) const
+0x00001378 0x00001378 0x0000d368 UNKNOWN IORegistryEntry::isChild(IORegistryEntry*, IORegistryPlane const*, bool) const
+0x00001380 0x00001380 0x0000d370 UNKNOWN IORegistryEntry::isParent(IORegistryEntry*, IORegistryPlane const*, bool) const
+0x00001388 0x00001388 0x0000d378 UNKNOWN IORegistryEntry::inPlane(IORegistryPlane const*) const
+0x00001390 0x00001390 0x0000d380 UNKNOWN IORegistryEntry::getDepth(IORegistryPlane const*) const
+0x00001398 0x00001398 0x0000d388 UNKNOWN IORegistryEntry::attachToParent(IORegistryEntry*, IORegistryPlane const*)
+0x000013a0 0x000013a0 0x0000d390 UNKNOWN IORegistryEntry::detachFromParent(IORegistryEntry*, IORegistryPlane const*)
+0x000013a8 0x000013a8 0x0000d398 UNKNOWN IORegistryEntry::attachToChild(IORegistryEntry*, IORegistryPlane const*)
+0x000013b0 0x000013b0 0x0000d3a0 UNKNOWN IORegistryEntry::detachFromChild(IORegistryEntry*, IORegistryPlane const*)
+0x000013b8 0x000013b8 0x0000d3a8 UNKNOWN IORegistryEntry::detachAbove(IORegistryPlane const*)
+0x000013c0 0x000013c0 0x0000d3b0 UNKNOWN IORegistryEntry::detachAll(IORegistryPlane const*)
+0x000013c8 0x000013c8 0x0000d3b8 UNKNOWN IORegistryEntry::getName(IORegistryPlane const*) const
+0x000013d0 0x000013d0 0x0000d3c0 UNKNOWN IORegistryEntry::copyName(IORegistryPlane const*) const
+0x000013d8 0x000013d8 0x0000d3c8 UNKNOWN IORegistryEntry::compareNames(OSObject*, OSString**) const
+0x000013e0 0x000013e0 0x0000d3d0 UNKNOWN IORegistryEntry::compareName(OSString*, OSString**) const
+0x000013e8 0x000013e8 0x0000d3d8 UNKNOWN IORegistryEntry::setName(OSSymbol const*, IORegistryPlane const*)
+0x000013f0 0x000013f0 0x0000d3e0 UNKNOWN IORegistryEntry::setName(char const*, IORegistryPlane const*)
+0x000013f8 0x000013f8 0x0000d3e8 UNKNOWN IORegistryEntry::getLocation(IORegistryPlane const*) const
+0x00001400 0x00001400 0x0000d3f0 UNKNOWN IORegistryEntry::copyLocation(IORegistryPlane const*) const
+0x00001408 0x00001408 0x0000d3f8 UNKNOWN IORegistryEntry::setLocation(OSSymbol const*, IORegistryPlane const*)
+0x00001410 0x00001410 0x0000d400 UNKNOWN IORegistryEntry::setLocation(char const*, IORegistryPlane const*)
+0x00001418 0x00001418 0x0000d408 UNKNOWN IORegistryEntry::getPath(char*, int*, IORegistryPlane const*) const
+0x00001420 0x00001420 0x0000d410 UNKNOWN IORegistryEntry::getPathComponent(char*, int*, IORegistryPlane const*) const
+0x00001428 0x00001428 0x0000d418 UNKNOWN IORegistryEntry::childFromPath(char const*, IORegistryPlane const*, char*, int*)
+0x00001430 0x00001430 0x0000d420 UNKNOWN IOService::init(IORegistryEntry*, IORegistryPlane const*)
+0x00001438 0x00001438 0x0000d428 UNKNOWN IOService::requestTerminate(IOService*, unsigned int)
+0x00001440 0x00001440 0x0000d430 UNKNOWN IOService::willTerminate(IOService*, unsigned int)
+0x00001448 0x00001448 0x0000d438 UNKNOWN IOService::didTerminate(IOService*, unsigned int, bool*)
+0x00001450 0x00001450 0x0000d440 UNKNOWN IOService::nextIdleTimeout(unsigned long long, unsigned long long, unsigned int)
+0x00001458 0x00001458 0x0000d448 UNKNOWN IOService::systemWillShutdown(unsigned int)
+0x00001460 0x00001460 0x0000d450 UNKNOWN IOService::copyClientWithCategory(OSSymbol const*)
+0x00001468 0x00001468 0x0000d458 UNKNOWN IOService::configureReport(IOReportChannelList*, unsigned int, void*, void*)
+0x00001470 0x00001470 0x0000d460 UNKNOWN IOService::updateReport(IOReportChannelList*, unsigned int, void*, void*)
+0x00001478 0x00001478 0x0000d468 UNKNOWN IOService::_RESERVEDIOService2()
+0x00001480 0x00001480 0x0000d470 UNKNOWN IOService::_RESERVEDIOService3()
+0x00001488 0x00001488 0x0000d478 UNKNOWN IOService::_RESERVEDIOService4()
+0x00001490 0x00001490 0x0000d480 UNKNOWN IOService::_RESERVEDIOService5()
+0x00001498 0x00001498 0x0000d488 UNKNOWN IOService::_RESERVEDIOService6()
+0x000014a0 0x000014a0 0x0000d490 UNKNOWN IOService::_RESERVEDIOService7()
+0x000014a8 0x000014a8 0x0000d498 UNKNOWN IOService::_RESERVEDIOService8()
+0x000014b0 0x000014b0 0x0000d4a0 UNKNOWN IOService::_RESERVEDIOService9()
+0x000014b8 0x000014b8 0x0000d4a8 UNKNOWN IOService::_RESERVEDIOService10()
+0x000014c0 0x000014c0 0x0000d4b0 UNKNOWN IOService::_RESERVEDIOService11()
+0x000014c8 0x000014c8 0x0000d4b8 UNKNOWN IOService::_RESERVEDIOService12()
+0x000014d0 0x000014d0 0x0000d4c0 UNKNOWN IOService::_RESERVEDIOService13()
+0x000014d8 0x000014d8 0x0000d4c8 UNKNOWN IOService::_RESERVEDIOService14()
+0x000014e0 0x000014e0 0x0000d4d0 UNKNOWN IOService::_RESERVEDIOService15()
+0x000014e8 0x000014e8 0x0000d4d8 UNKNOWN IOService::_RESERVEDIOService16()
+0x000014f0 0x000014f0 0x0000d4e0 UNKNOWN IOService::_RESERVEDIOService17()
+0x000014f8 0x000014f8 0x0000d4e8 UNKNOWN IOService::_RESERVEDIOService18()
+0x00001500 0x00001500 0x0000d4f0 UNKNOWN IOService::_RESERVEDIOService19()
+0x00001508 0x00001508 0x0000d4f8 UNKNOWN IOService::_RESERVEDIOService20()
+0x00001510 0x00001510 0x0000d500 UNKNOWN IOService::_RESERVEDIOService21()
+0x00001518 0x00001518 0x0000d508 UNKNOWN IOService::_RESERVEDIOService22()
+0x00001520 0x00001520 0x0000d510 UNKNOWN IOService::_RESERVEDIOService23()
+0x00001528 0x00001528 0x0000d518 UNKNOWN IOService::_RESERVEDIOService24()
+0x00001530 0x00001530 0x0000d520 UNKNOWN IOService::_RESERVEDIOService25()
+0x00001538 0x00001538 0x0000d528 UNKNOWN IOService::_RESERVEDIOService26()
+0x00001540 0x00001540 0x0000d530 UNKNOWN IOService::_RESERVEDIOService27()
+0x00001548 0x00001548 0x0000d538 UNKNOWN IOService::_RESERVEDIOService28()
+0x00001550 0x00001550 0x0000d540 UNKNOWN IOService::_RESERVEDIOService29()
+0x00001558 0x00001558 0x0000d548 UNKNOWN IOService::_RESERVEDIOService30()
+0x00001560 0x00001560 0x0000d550 UNKNOWN IOService::_RESERVEDIOService31()
+0x00001568 0x00001568 0x0000d558 UNKNOWN IOService::_RESERVEDIOService32()
+0x00001570 0x00001570 0x0000d560 UNKNOWN IOService::_RESERVEDIOService33()
+0x00001578 0x00001578 0x0000d568 UNKNOWN IOService::_RESERVEDIOService34()
+0x00001580 0x00001580 0x0000d570 UNKNOWN IOService::_RESERVEDIOService35()
+0x00001588 0x00001588 0x0000d578 UNKNOWN IOService::_RESERVEDIOService36()
+0x00001590 0x00001590 0x0000d580 UNKNOWN IOService::_RESERVEDIOService37()
+0x00001598 0x00001598 0x0000d588 UNKNOWN IOService::_RESERVEDIOService38()
+0x000015a0 0x000015a0 0x0000d590 UNKNOWN IOService::_RESERVEDIOService39()
+0x000015a8 0x000015a8 0x0000d598 UNKNOWN IOService::_RESERVEDIOService40()
+0x000015b0 0x000015b0 0x0000d5a0 UNKNOWN IOService::_RESERVEDIOService41()
+0x000015b8 0x000015b8 0x0000d5a8 UNKNOWN IOService::_RESERVEDIOService42()
+0x000015c0 0x000015c0 0x0000d5b0 UNKNOWN IOService::_RESERVEDIOService43()
+0x000015c8 0x000015c8 0x0000d5b8 UNKNOWN IOService::_RESERVEDIOService44()
+0x000015d0 0x000015d0 0x0000d5c0 UNKNOWN IOService::_RESERVEDIOService45()
+0x000015d8 0x000015d8 0x0000d5c8 UNKNOWN IOService::_RESERVEDIOService46()
+0x000015e0 0x000015e0 0x0000d5d0 UNKNOWN IOService::_RESERVEDIOService47()
+0x000015e8 0x000015e8 0x0000d5d8 UNKNOWN IOService::getState() const
+0x000015f0 0x000015f0 0x0000d5e0 UNKNOWN IOService::registerService(unsigned int)
+0x00001610 0x00001610 0x0000d5e8 UNKNOWN IOService::open(IOService*, unsigned int, void*)
+0x00001618 0x00001618 0x0000d5f0 UNKNOWN IOService::close(IOService*, unsigned int)
+0x00001620 0x00001620 0x0000d5f8 UNKNOWN IOService::isOpen(IOService const*) const
+0x00001628 0x00001628 0x0000d600 UNKNOWN IOService::handleOpen(IOService*, unsigned int, void*)
+0x00001630 0x00001630 0x0000d608 UNKNOWN IOService::handleClose(IOService*, unsigned int)
+0x00001638 0x00001638 0x0000d610 UNKNOWN IOService::handleIsOpen(IOService const*) const
+0x00001640 0x00001640 0x0000d618 UNKNOWN IOService::terminate(unsigned int)
+0x00001648 0x00001648 0x0000d620 UNKNOWN IOService::finalize(unsigned int)
+0x00001650 0x00001650 0x0000d628 UNKNOWN IOService::lockForArbitration(bool)
+0x00001658 0x00001658 0x0000d630 UNKNOWN IOService::unlockForArbitration()
+0x00001660 0x00001660 0x0000d638 UNKNOWN IOService::terminateClient(IOService*, unsigned int)
+0x00001668 0x00001668 0x0000d640 UNKNOWN IOService::getBusyState()
+0x00001670 0x00001670 0x0000d648 UNKNOWN IOService::adjustBusy(int)
+0x00001678 0x00001678 0x0000d650 UNKNOWN IOService::matchPropertyTable(OSDictionary*, int*)
+0x00001680 0x00001680 0x0000d658 UNKNOWN IOService::matchPropertyTable(OSDictionary*)
+0x00001688 0x00001688 0x0000d660 UNKNOWN IOService::matchLocation(IOService*)
+0x00001690 0x00001690 0x0000d668 UNKNOWN IOService::addNeededResource(char const*)
+0x00001698 0x00001698 0x0000d670 UNKNOWN IOService::compareProperty(OSDictionary*, char const*)
+0x000016a0 0x000016a0 0x0000d678 UNKNOWN IOService::compareProperty(OSDictionary*, OSString const*)
+0x000016a8 0x000016a8 0x0000d680 UNKNOWN IOService::compareProperties(OSDictionary*, OSCollection*)
+0x000016b0 0x000016b0 0x0000d688 UNKNOWN IOService::attach(IOService*)
+0x000016b8 0x000016b8 0x0000d690 UNKNOWN IOService::detach(IOService*)
+0x000016c0 0x000016c0 0x0000d698 UNKNOWN IOService::getProvider() const
+0x000016c8 0x000016c8 0x0000d6a0 UNKNOWN IOService::getWorkLoop() const
+0x000016d0 0x000016d0 0x0000d6a8 UNKNOWN IOService::getProviderIterator() const
+0x000016d8 0x000016d8 0x0000d6b0 UNKNOWN IOService::getOpenProviderIterator() const
+0x000016e0 0x000016e0 0x0000d6b8 UNKNOWN IOService::getClient() const
+0x000016e8 0x000016e8 0x0000d6c0 UNKNOWN IOService::getClientIterator() const
+0x000016f0 0x000016f0 0x0000d6c8 UNKNOWN IOService::getOpenClientIterator() const
+0x000016f8 0x000016f8 0x0000d6d0 UNKNOWN IOService::callPlatformFunction(OSSymbol const*, bool, void*, void*, void*, void*)
+0x00001700 0x00001700 0x0000d6d8 UNKNOWN IOService::callPlatformFunction(char const*, bool, void*, void*, void*, void*)
+0x00001708 0x00001708 0x0000d6e0 UNKNOWN IOService::getResources()
+0x00001710 0x00001710 0x0000d6e8 UNKNOWN IOService::getDeviceMemoryCount()
+0x00001718 0x00001718 0x0000d6f0 UNKNOWN IOService::getDeviceMemoryWithIndex(unsigned int)
+0x00001720 0x00001720 0x0000d6f8 UNKNOWN IOService::mapDeviceMemoryWithIndex(unsigned int, unsigned int)
+0x00001728 0x00001728 0x0000d700 UNKNOWN IOService::getDeviceMemory()
+0x00001730 0x00001730 0x0000d708 UNKNOWN IOService::setDeviceMemory(OSArray*)
+0x00001738 0x00001738 0x0000d710 UNKNOWN IOService::registerInterrupt(int, OSObject*, void (*)(OSObject*, void*, IOService*, int), void*)
+0x00001740 0x00001740 0x0000d718 UNKNOWN IOService::unregisterInterrupt(int)
+0x00001748 0x00001748 0x0000d720 UNKNOWN IOService::getInterruptType(int, int*)
+0x00001750 0x00001750 0x0000d728 UNKNOWN IOService::enableInterrupt(int)
+0x00001758 0x00001758 0x0000d730 UNKNOWN IOService::disableInterrupt(int)
+0x00001760 0x00001760 0x0000d738 UNKNOWN IOService::causeInterrupt(int)
+0x00001768 0x00001768 0x0000d740 UNKNOWN IOService::requestProbe(unsigned int)
+0x00001770 0x00001770 0x0000d748 UNKNOWN IOService::message(unsigned int, IOService*, void*)
+0x00001778 0x00001778 0x0000d750 UNKNOWN IOService::messageClient(unsigned int, OSObject*, void*, unsigned long)
+0x00001780 0x00001780 0x0000d758 UNKNOWN IOService::messageClients(unsigned int, void*, unsigned long)
+0x00001788 0x00001788 0x0000d760 UNKNOWN IOService::registerInterest(OSSymbol const*, int (*)(void*, void*, unsigned int, IOService*, void*, unsigned long), void*, void*)
+0x00001790 0x00001790 0x0000d768 UNKNOWN IOService::applyToProviders(void (*)(IOService*, void*), void*)
+0x00001798 0x00001798 0x0000d770 UNKNOWN IOService::applyToClients(void (*)(IOService*, void*), void*)
+0x000017a0 0x000017a0 0x0000d778 UNKNOWN IOService::applyToInterested(OSSymbol const*, void (*)(OSObject*, void*), void*)
+0x000017a8 0x000017a8 0x0000d780 UNKNOWN IOService::acknowledgeNotification(void*, unsigned int)
+0x000017b0 0x000017b0 0x0000d788 UNKNOWN IOService::newUserClient(task*, void*, unsigned int, OSDictionary*, IOUserClient**)
+0x000017b8 0x000017b8 0x0000d790 UNKNOWN IOService::newUserClient(task*, void*, unsigned int, IOUserClient**)
+0x000017c0 0x000017c0 0x0000d798 UNKNOWN IOService::stringFromReturn(int)
+0x000017c8 0x000017c8 0x0000d7a0 UNKNOWN IOService::errnoFromReturn(int)
+0x000017d0 0x000017d0 0x0000d7a8 UNKNOWN IOService::PMinit()
+0x000017d8 0x000017d8 0x0000d7b0 UNKNOWN IOService::PMstop()
+0x000017e0 0x000017e0 0x0000d7b8 UNKNOWN IOService::joinPMtree(IOService*)
+0x000017e8 0x000017e8 0x0000d7c0 UNKNOWN IOService::registerPowerDriver(IOService*, IOPMPowerState*, unsigned long)
+0x000017f0 0x000017f0 0x0000d7c8 UNKNOWN IOService::requestPowerDomainState(unsigned long, IOPowerConnection*, unsigned long)
+0x000017f8 0x000017f8 0x0000d7d0 UNKNOWN IOService::activityTickle(unsigned long, unsigned long)
+0x00001800 0x00001800 0x0000d7d8 UNKNOWN IOService::setAggressiveness(unsigned long, unsigned long)
+0x00001808 0x00001808 0x0000d7e0 UNKNOWN IOService::getAggressiveness(unsigned long, unsigned long*)
+0x00001810 0x00001810 0x0000d7e8 UNKNOWN IOService::addPowerChild(IOService*)
+0x00001818 0x00001818 0x0000d7f0 UNKNOWN IOService::removePowerChild(IOPowerConnection*)
+0x00001820 0x00001820 0x0000d7f8 UNKNOWN IOService::setIdleTimerPeriod(unsigned long)
+0x00001828 0x00001828 0x0000d800 UNKNOWN IOService::setPowerState(unsigned long, IOService*)
+0x00001830 0x00001830 0x0000d808 UNKNOWN IOService::maxCapabilityForDomainState(unsigned long)
+0x00001838 0x00001838 0x0000d810 UNKNOWN IOService::initialPowerStateForDomainState(unsigned long)
+0x00001840 0x00001840 0x0000d818 UNKNOWN IOService::powerStateForDomainState(unsigned long)
+0x00001848 0x00001848 0x0000d820 UNKNOWN IOService::powerStateWillChangeTo(unsigned long, unsigned long, IOService*)
+0x00001850 0x00001850 0x0000d828 UNKNOWN IOService::powerStateDidChangeTo(unsigned long, unsigned long, IOService*)
+0x00001858 0x00001858 0x0000d830 UNKNOWN IOService::askChangeDown(unsigned long)
+0x00001860 0x00001860 0x0000d838 UNKNOWN IOService::tellChangeDown(unsigned long)
+0x00001868 0x00001868 0x0000d840 UNKNOWN IOService::tellNoChangeDown(unsigned long)
+0x00001870 0x00001870 0x0000d848 UNKNOWN IOService::tellChangeUp(unsigned long)
+0x00001878 0x00001878 0x0000d850 UNKNOWN IOService::allowPowerChange(unsigned long)
+0x00001880 0x00001880 0x0000d858 UNKNOWN IOService::cancelPowerChange(unsigned long)
+0x00001888 0x00001888 0x0000d860 UNKNOWN IOService::powerChangeDone(unsigned long)
+0x000018b8 0x000018b8 0x0000d868 UNKNOWN OSMetaClass::release(int) const
+0x000018c0 0x000018c0 0x0000d870 UNKNOWN OSMetaClass::getRetainCount() const
+0x000018c8 0x000018c8 0x0000d878 UNKNOWN OSMetaClass::retain() const
+0x000018d0 0x000018d0 0x0000d880 UNKNOWN OSMetaClass::release() const
+0x000018d8 0x000018d8 0x0000d888 UNKNOWN OSMetaClass::serialize(OSSerialize*) const
+0x000018e0 0x000018e0 0x0000d890 UNKNOWN OSMetaClass::getMetaClass() const
+0x000018e8 0x000018e8 0x0000d080 UNKNOWN OSMetaClassBase::isEqualTo(OSMetaClassBase const*) const
+0x000018f0 0x000018f0 0x0000d898 UNKNOWN OSMetaClass::taggedRetain(void const*) const
+0x000018f8 0x000018f8 0x0000d8a0 UNKNOWN OSMetaClass::taggedRelease(void const*) const
+0x00001900 0x00001900 0x0000d8a8 UNKNOWN OSMetaClass::taggedRelease(void const*, int) const
+0x00001908 0x00001908 0x0000d8b0 UNKNOWN OSMetaClassBase::Dispatch(IORPC)
+0x00001910 0x00001910 0x0000d0a8 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase4()
+0x00001918 0x00001918 0x0000d0b0 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase5()
+0x00001920 0x00001920 0x0000d0b8 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase6()
+0x00001928 0x00001928 0x0000d0c0 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase7()
+0x00001938 0x00001938 0x0000d8b8 UNKNOWN OSMetaClass::_RESERVEDOSMetaClass0()
+0x00001940 0x00001940 0x0000d8c0 UNKNOWN OSMetaClass::_RESERVEDOSMetaClass1()
+0x00001948 0x00001948 0x0000d8c8 UNKNOWN OSMetaClass::_RESERVEDOSMetaClass2()
+0x00001950 0x00001950 0x0000d8d0 UNKNOWN OSMetaClass::_RESERVEDOSMetaClass3()
+0x00001958 0x00001958 0x0000d8d8 UNKNOWN OSMetaClass::_RESERVEDOSMetaClass4()
+0x00001960 0x00001960 0x0000d8e0 UNKNOWN OSMetaClass::_RESERVEDOSMetaClass5()
+0x00001968 0x00001968 0x0000d8e8 UNKNOWN OSMetaClass::_RESERVEDOSMetaClass6()
+0x00001970 0x00001970 0x0000d8f0 UNKNOWN OSMetaClass::_RESERVEDOSMetaClass7()
+--
+ 3 * r-x 0x0000cef0 bins/mach0/IOKitTest-x86_64.kext/Contents/MacOS/IOKitTest
+ 4 - r-x 0x00000950 vfile://0/reloc-targets
+ 5 - r-x 0x0000cef0 vfile://0/patched
+ 1 fd: 4 +0x00000000 0x0000d008 - 0x0000d957 r-- vmap.reloc-targets
+ 2 fd: 5 +0x00000000 0x00000000 - 0x00000fff r-x vmap.__TEXT
+ 3 fd: 5 +0x00001000 0x00001000 - 0x00001fff r-- vmap.__DATA
+ 4 fd: 3 +0x00002000 0x00002000 - 0x0000cfff r-- fmap.__LINKEDIT
+            ;-- OSMetaClass::~OSMetaClass():
+            0x0000d008      .qword 0x0000000000000000                  ; RELOC TARGET 2 OSMetaClass::~OSMetaClass()
+            ;-- IOService::IOService(OSMetaClass const*):
+            0x0000d010      .qword 0x0000000000000000                  ; RELOC TARGET 2 IOService::IOService(OSMetaClass const*)
+            ;-- IOService::~IOService():
+            0x0000d018      .qword 0x0000000000000000                  ; RELOC TARGET 2 IOService::~IOService()
+            ;-- OSObject::operator delete(void*, unsigned long):
+            0x0000d020      .qword 0x0000000000000000                  ; RELOC TARGET 2 OSObject::operator delete(void*, unsigned long)
+-- x86 UNSIGNED reloc
+28d3000000000000
+0x00001338 0x000000000000d328   (....... @ method.IOService.serializeProperties_OSSerialize___const 54056 _ZNK9IOService19serializePropertiesEP11OSSerialize R 0x0
+-- x86 BRANCH reloc
+call reloc.target.IOLog
+e89ec20000
+EOF
+RUN
+
+NAME=mach0 fat kext reloc patching x86
+FILE=bins/mach0/IOKitTest-fat-arm64-x86_64.kext/Contents/MacOS/IOKitTest
+ARGS=-a x86
+CMDS=<<EOF
+i~arch
+i~type
+ir
+?e --
+o
+om
+pd 4 @ 0x0000d008
+?e -- x86 UNSIGNED reloc
+s 0x00001338
+p8 8
+pxr 8
+?e -- x86 BRANCH reloc
+s 0x00000d9d
+pi 1
+p8 5
+EOF
+EXPECT=<<EOF
+arch     x86
+type     Kernel extension bundle file
+bintype  mach0
+vaddr      paddr      target     type    name                                                                                                                              
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+0x00000aac 0x00000aac 0x0000d008 UNKNOWN OSMetaClass::~OSMetaClass()
+0x00000ae3 0x00000ae3 0x0000d010 UNKNOWN IOService::IOService(OSMetaClass const*)
+0x00000b54 0x00000b54 0x0000d018 UNKNOWN IOService::~IOService()
+0x00000b7c 0x00000b7c 0x0000d018 UNKNOWN IOService::~IOService()
+0x00000be9 0x00000be9 0x0000d020 UNKNOWN OSObject::operator delete(void*, unsigned long)
+0x00000c4e 0x00000c4e 0x0000d028 UNKNOWN OSMetaClass::OSMetaClass(char const*, OSMetaClass const*, unsigned int)
+0x00000cb1 0x00000cb1 0x0000d030 UNKNOWN OSObject::operator new(unsigned long)
+0x00000d02 0x00000d02 0x0000d010 UNKNOWN IOService::IOService(OSMetaClass const*)
+0x00000d22 0x00000d22 0x0000d038 UNKNOWN OSMetaClass::instanceConstructed() const
+0x00000d6e 0x00000d6e 0x0000d040 UNKNOWN IOLog
+0x00000d9e 0x00000d9e 0x0000d040 UNKNOWN IOLog
+0x00000e09 0x00000e09 0x0000d040 UNKNOWN IOLog
+0x00000e5e 0x00000e5e 0x0000d040 UNKNOWN IOLog
+0x00000e92 0x00000e92 0x0000d040 UNKNOWN IOLog
+0x00001000 0x00001000 0x0000d048 UNKNOWN IOService::gMetaClass
+0x00001008 0x00001008 0x0000d050 UNKNOWN vtable for IOService
+0x00001028 0x00001028 0x0000d048 UNKNOWN IOService::gMetaClass
+0x00001050 0x00001050 0x0000d058 UNKNOWN OSObject::release(int) const
+0x00001058 0x00001058 0x0000d060 UNKNOWN OSObject::getRetainCount() const
+0x00001060 0x00001060 0x0000d068 UNKNOWN OSObject::retain() const
+0x00001068 0x00001068 0x0000d070 UNKNOWN OSObject::release() const
+0x00001070 0x00001070 0x0000d078 UNKNOWN OSObject::serialize(OSSerialize*) const
+0x00001080 0x00001080 0x0000d080 UNKNOWN OSMetaClassBase::isEqualTo(OSMetaClassBase const*) const
+0x00001088 0x00001088 0x0000d088 UNKNOWN OSObject::taggedRetain(void const*) const
+0x00001090 0x00001090 0x0000d090 UNKNOWN OSObject::taggedRelease(void const*) const
+0x00001098 0x00001098 0x0000d098 UNKNOWN OSObject::taggedRelease(void const*, int) const
+0x000010a0 0x000010a0 0x0000d0a0 UNKNOWN IOService::Dispatch(IORPC)
+0x000010a8 0x000010a8 0x0000d0a8 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase4()
+0x000010b0 0x000010b0 0x0000d0b0 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase5()
+0x000010b8 0x000010b8 0x0000d0b8 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase6()
+0x000010c0 0x000010c0 0x0000d0c0 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase7()
+0x000010c8 0x000010c8 0x0000d0c8 UNKNOWN OSObject::init()
+0x000010d8 0x000010d8 0x0000d0d0 UNKNOWN OSObject::_RESERVEDOSObject0()
+0x000010e0 0x000010e0 0x0000d0d8 UNKNOWN OSObject::_RESERVEDOSObject1()
+0x000010e8 0x000010e8 0x0000d0e0 UNKNOWN OSObject::_RESERVEDOSObject2()
+0x000010f0 0x000010f0 0x0000d0e8 UNKNOWN OSObject::_RESERVEDOSObject3()
+0x000010f8 0x000010f8 0x0000d0f0 UNKNOWN OSObject::_RESERVEDOSObject4()
+0x00001100 0x00001100 0x0000d0f8 UNKNOWN OSObject::_RESERVEDOSObject5()
+0x00001108 0x00001108 0x0000d100 UNKNOWN OSObject::_RESERVEDOSObject6()
+0x00001110 0x00001110 0x0000d108 UNKNOWN OSObject::_RESERVEDOSObject7()
+0x00001118 0x00001118 0x0000d110 UNKNOWN OSObject::_RESERVEDOSObject8()
+0x00001120 0x00001120 0x0000d118 UNKNOWN OSObject::_RESERVEDOSObject9()
+0x00001128 0x00001128 0x0000d120 UNKNOWN OSObject::_RESERVEDOSObject10()
+0x00001130 0x00001130 0x0000d128 UNKNOWN OSObject::_RESERVEDOSObject11()
+0x00001138 0x00001138 0x0000d130 UNKNOWN OSObject::_RESERVEDOSObject12()
+0x00001140 0x00001140 0x0000d138 UNKNOWN OSObject::_RESERVEDOSObject13()
+0x00001148 0x00001148 0x0000d140 UNKNOWN OSObject::_RESERVEDOSObject14()
+0x00001150 0x00001150 0x0000d148 UNKNOWN OSObject::_RESERVEDOSObject15()
+0x00001158 0x00001158 0x0000d150 UNKNOWN IORegistryEntry::copyProperty(char const*, IORegistryPlane const*, unsigned int) const
+0x00001160 0x00001160 0x0000d158 UNKNOWN IORegistryEntry::copyProperty(OSString const*, IORegistryPlane const*, unsigned int) const
+0x00001168 0x00001168 0x0000d160 UNKNOWN IORegistryEntry::copyProperty(OSSymbol const*, IORegistryPlane const*, unsigned int) const
+0x00001170 0x00001170 0x0000d168 UNKNOWN IORegistryEntry::copyParentEntry(IORegistryPlane const*) const
+0x00001178 0x00001178 0x0000d170 UNKNOWN IORegistryEntry::copyChildEntry(IORegistryPlane const*) const
+0x00001180 0x00001180 0x0000d178 UNKNOWN IORegistryEntry::runPropertyAction(int (*)(OSObject*, void*, void*, void*, void*), OSObject*, void*, void*, void*, void*)
+0x00001188 0x00001188 0x0000d180 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry0()
+0x00001190 0x00001190 0x0000d188 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry1()
+0x00001198 0x00001198 0x0000d190 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry2()
+0x000011a0 0x000011a0 0x0000d198 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry3()
+0x000011a8 0x000011a8 0x0000d1a0 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry4()
+0x000011b0 0x000011b0 0x0000d1a8 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry5()
+0x000011b8 0x000011b8 0x0000d1b0 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry6()
+0x000011c0 0x000011c0 0x0000d1b8 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry7()
+0x000011c8 0x000011c8 0x0000d1c0 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry8()
+0x000011d0 0x000011d0 0x0000d1c8 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry9()
+0x000011d8 0x000011d8 0x0000d1d0 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry10()
+0x000011e0 0x000011e0 0x0000d1d8 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry11()
+0x000011e8 0x000011e8 0x0000d1e0 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry12()
+0x000011f0 0x000011f0 0x0000d1e8 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry13()
+0x000011f8 0x000011f8 0x0000d1f0 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry14()
+0x00001200 0x00001200 0x0000d1f8 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry15()
+0x00001208 0x00001208 0x0000d200 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry16()
+0x00001210 0x00001210 0x0000d208 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry17()
+0x00001218 0x00001218 0x0000d210 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry18()
+0x00001220 0x00001220 0x0000d218 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry19()
+0x00001228 0x00001228 0x0000d220 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry20()
+0x00001230 0x00001230 0x0000d228 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry21()
+0x00001238 0x00001238 0x0000d230 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry22()
+0x00001240 0x00001240 0x0000d238 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry23()
+0x00001248 0x00001248 0x0000d240 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry24()
+0x00001250 0x00001250 0x0000d248 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry25()
+0x00001258 0x00001258 0x0000d250 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry26()
+0x00001260 0x00001260 0x0000d258 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry27()
+0x00001268 0x00001268 0x0000d260 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry28()
+0x00001270 0x00001270 0x0000d268 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry29()
+0x00001278 0x00001278 0x0000d270 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry30()
+0x00001280 0x00001280 0x0000d278 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry31()
+0x00001290 0x00001290 0x0000d280 UNKNOWN IORegistryEntry::setPropertyTable(OSDictionary*)
+0x00001298 0x00001298 0x0000d288 UNKNOWN IORegistryEntry::setProperty(OSSymbol const*, OSObject*)
+0x000012a0 0x000012a0 0x0000d290 UNKNOWN IORegistryEntry::setProperty(OSString const*, OSObject*)
+0x000012a8 0x000012a8 0x0000d298 UNKNOWN IORegistryEntry::setProperty(char const*, OSObject*)
+0x000012b0 0x000012b0 0x0000d2a0 UNKNOWN IORegistryEntry::setProperty(char const*, char const*)
+0x000012b8 0x000012b8 0x0000d2a8 UNKNOWN IORegistryEntry::setProperty(char const*, bool)
+0x000012c0 0x000012c0 0x0000d2b0 UNKNOWN IORegistryEntry::setProperty(char const*, unsigned long long, unsigned int)
+0x000012c8 0x000012c8 0x0000d2b8 UNKNOWN IORegistryEntry::setProperty(char const*, void*, unsigned int)
+0x000012d0 0x000012d0 0x0000d2c0 UNKNOWN IORegistryEntry::removeProperty(OSSymbol const*)
+0x000012d8 0x000012d8 0x0000d2c8 UNKNOWN IORegistryEntry::removeProperty(OSString const*)
+0x000012e0 0x000012e0 0x0000d2d0 UNKNOWN IORegistryEntry::removeProperty(char const*)
+0x000012e8 0x000012e8 0x0000d2d8 UNKNOWN IORegistryEntry::getProperty(OSSymbol const*) const
+0x000012f0 0x000012f0 0x0000d2e0 UNKNOWN IORegistryEntry::getProperty(OSString const*) const
+0x000012f8 0x000012f8 0x0000d2e8 UNKNOWN IORegistryEntry::getProperty(char const*) const
+0x00001300 0x00001300 0x0000d2f0 UNKNOWN IORegistryEntry::getProperty(OSSymbol const*, IORegistryPlane const*, unsigned int) const
+0x00001308 0x00001308 0x0000d2f8 UNKNOWN IORegistryEntry::getProperty(OSString const*, IORegistryPlane const*, unsigned int) const
+0x00001310 0x00001310 0x0000d300 UNKNOWN IORegistryEntry::getProperty(char const*, IORegistryPlane const*, unsigned int) const
+0x00001318 0x00001318 0x0000d308 UNKNOWN IORegistryEntry::copyProperty(OSSymbol const*) const
+0x00001320 0x00001320 0x0000d310 UNKNOWN IORegistryEntry::copyProperty(OSString const*) const
+0x00001328 0x00001328 0x0000d318 UNKNOWN IORegistryEntry::copyProperty(char const*) const
+0x00001330 0x00001330 0x0000d320 UNKNOWN IORegistryEntry::dictionaryWithProperties() const
+0x00001338 0x00001338 0x0000d328 UNKNOWN IOService::serializeProperties(OSSerialize*) const
+0x00001340 0x00001340 0x0000d330 UNKNOWN IORegistryEntry::setProperties(OSObject*)
+0x00001348 0x00001348 0x0000d338 UNKNOWN IORegistryEntry::getParentIterator(IORegistryPlane const*) const
+0x00001350 0x00001350 0x0000d340 UNKNOWN IORegistryEntry::applyToParents(void (*)(IORegistryEntry*, void*), void*, IORegistryPlane const*) const
+0x00001358 0x00001358 0x0000d348 UNKNOWN IORegistryEntry::getParentEntry(IORegistryPlane const*) const
+0x00001360 0x00001360 0x0000d350 UNKNOWN IORegistryEntry::getChildIterator(IORegistryPlane const*) const
+0x00001368 0x00001368 0x0000d358 UNKNOWN IORegistryEntry::applyToChildren(void (*)(IORegistryEntry*, void*), void*, IORegistryPlane const*) const
+0x00001370 0x00001370 0x0000d360 UNKNOWN IORegistryEntry::getChildEntry(IORegistryPlane const*) const
+0x00001378 0x00001378 0x0000d368 UNKNOWN IORegistryEntry::isChild(IORegistryEntry*, IORegistryPlane const*, bool) const
+0x00001380 0x00001380 0x0000d370 UNKNOWN IORegistryEntry::isParent(IORegistryEntry*, IORegistryPlane const*, bool) const
+0x00001388 0x00001388 0x0000d378 UNKNOWN IORegistryEntry::inPlane(IORegistryPlane const*) const
+0x00001390 0x00001390 0x0000d380 UNKNOWN IORegistryEntry::getDepth(IORegistryPlane const*) const
+0x00001398 0x00001398 0x0000d388 UNKNOWN IORegistryEntry::attachToParent(IORegistryEntry*, IORegistryPlane const*)
+0x000013a0 0x000013a0 0x0000d390 UNKNOWN IORegistryEntry::detachFromParent(IORegistryEntry*, IORegistryPlane const*)
+0x000013a8 0x000013a8 0x0000d398 UNKNOWN IORegistryEntry::attachToChild(IORegistryEntry*, IORegistryPlane const*)
+0x000013b0 0x000013b0 0x0000d3a0 UNKNOWN IORegistryEntry::detachFromChild(IORegistryEntry*, IORegistryPlane const*)
+0x000013b8 0x000013b8 0x0000d3a8 UNKNOWN IORegistryEntry::detachAbove(IORegistryPlane const*)
+0x000013c0 0x000013c0 0x0000d3b0 UNKNOWN IORegistryEntry::detachAll(IORegistryPlane const*)
+0x000013c8 0x000013c8 0x0000d3b8 UNKNOWN IORegistryEntry::getName(IORegistryPlane const*) const
+0x000013d0 0x000013d0 0x0000d3c0 UNKNOWN IORegistryEntry::copyName(IORegistryPlane const*) const
+0x000013d8 0x000013d8 0x0000d3c8 UNKNOWN IORegistryEntry::compareNames(OSObject*, OSString**) const
+0x000013e0 0x000013e0 0x0000d3d0 UNKNOWN IORegistryEntry::compareName(OSString*, OSString**) const
+0x000013e8 0x000013e8 0x0000d3d8 UNKNOWN IORegistryEntry::setName(OSSymbol const*, IORegistryPlane const*)
+0x000013f0 0x000013f0 0x0000d3e0 UNKNOWN IORegistryEntry::setName(char const*, IORegistryPlane const*)
+0x000013f8 0x000013f8 0x0000d3e8 UNKNOWN IORegistryEntry::getLocation(IORegistryPlane const*) const
+0x00001400 0x00001400 0x0000d3f0 UNKNOWN IORegistryEntry::copyLocation(IORegistryPlane const*) const
+0x00001408 0x00001408 0x0000d3f8 UNKNOWN IORegistryEntry::setLocation(OSSymbol const*, IORegistryPlane const*)
+0x00001410 0x00001410 0x0000d400 UNKNOWN IORegistryEntry::setLocation(char const*, IORegistryPlane const*)
+0x00001418 0x00001418 0x0000d408 UNKNOWN IORegistryEntry::getPath(char*, int*, IORegistryPlane const*) const
+0x00001420 0x00001420 0x0000d410 UNKNOWN IORegistryEntry::getPathComponent(char*, int*, IORegistryPlane const*) const
+0x00001428 0x00001428 0x0000d418 UNKNOWN IORegistryEntry::childFromPath(char const*, IORegistryPlane const*, char*, int*)
+0x00001430 0x00001430 0x0000d420 UNKNOWN IOService::init(IORegistryEntry*, IORegistryPlane const*)
+0x00001438 0x00001438 0x0000d428 UNKNOWN IOService::requestTerminate(IOService*, unsigned int)
+0x00001440 0x00001440 0x0000d430 UNKNOWN IOService::willTerminate(IOService*, unsigned int)
+0x00001448 0x00001448 0x0000d438 UNKNOWN IOService::didTerminate(IOService*, unsigned int, bool*)
+0x00001450 0x00001450 0x0000d440 UNKNOWN IOService::nextIdleTimeout(unsigned long long, unsigned long long, unsigned int)
+0x00001458 0x00001458 0x0000d448 UNKNOWN IOService::systemWillShutdown(unsigned int)
+0x00001460 0x00001460 0x0000d450 UNKNOWN IOService::copyClientWithCategory(OSSymbol const*)
+0x00001468 0x00001468 0x0000d458 UNKNOWN IOService::configureReport(IOReportChannelList*, unsigned int, void*, void*)
+0x00001470 0x00001470 0x0000d460 UNKNOWN IOService::updateReport(IOReportChannelList*, unsigned int, void*, void*)
+0x00001478 0x00001478 0x0000d468 UNKNOWN IOService::_RESERVEDIOService2()
+0x00001480 0x00001480 0x0000d470 UNKNOWN IOService::_RESERVEDIOService3()
+0x00001488 0x00001488 0x0000d478 UNKNOWN IOService::_RESERVEDIOService4()
+0x00001490 0x00001490 0x0000d480 UNKNOWN IOService::_RESERVEDIOService5()
+0x00001498 0x00001498 0x0000d488 UNKNOWN IOService::_RESERVEDIOService6()
+0x000014a0 0x000014a0 0x0000d490 UNKNOWN IOService::_RESERVEDIOService7()
+0x000014a8 0x000014a8 0x0000d498 UNKNOWN IOService::_RESERVEDIOService8()
+0x000014b0 0x000014b0 0x0000d4a0 UNKNOWN IOService::_RESERVEDIOService9()
+0x000014b8 0x000014b8 0x0000d4a8 UNKNOWN IOService::_RESERVEDIOService10()
+0x000014c0 0x000014c0 0x0000d4b0 UNKNOWN IOService::_RESERVEDIOService11()
+0x000014c8 0x000014c8 0x0000d4b8 UNKNOWN IOService::_RESERVEDIOService12()
+0x000014d0 0x000014d0 0x0000d4c0 UNKNOWN IOService::_RESERVEDIOService13()
+0x000014d8 0x000014d8 0x0000d4c8 UNKNOWN IOService::_RESERVEDIOService14()
+0x000014e0 0x000014e0 0x0000d4d0 UNKNOWN IOService::_RESERVEDIOService15()
+0x000014e8 0x000014e8 0x0000d4d8 UNKNOWN IOService::_RESERVEDIOService16()
+0x000014f0 0x000014f0 0x0000d4e0 UNKNOWN IOService::_RESERVEDIOService17()
+0x000014f8 0x000014f8 0x0000d4e8 UNKNOWN IOService::_RESERVEDIOService18()
+0x00001500 0x00001500 0x0000d4f0 UNKNOWN IOService::_RESERVEDIOService19()
+0x00001508 0x00001508 0x0000d4f8 UNKNOWN IOService::_RESERVEDIOService20()
+0x00001510 0x00001510 0x0000d500 UNKNOWN IOService::_RESERVEDIOService21()
+0x00001518 0x00001518 0x0000d508 UNKNOWN IOService::_RESERVEDIOService22()
+0x00001520 0x00001520 0x0000d510 UNKNOWN IOService::_RESERVEDIOService23()
+0x00001528 0x00001528 0x0000d518 UNKNOWN IOService::_RESERVEDIOService24()
+0x00001530 0x00001530 0x0000d520 UNKNOWN IOService::_RESERVEDIOService25()
+0x00001538 0x00001538 0x0000d528 UNKNOWN IOService::_RESERVEDIOService26()
+0x00001540 0x00001540 0x0000d530 UNKNOWN IOService::_RESERVEDIOService27()
+0x00001548 0x00001548 0x0000d538 UNKNOWN IOService::_RESERVEDIOService28()
+0x00001550 0x00001550 0x0000d540 UNKNOWN IOService::_RESERVEDIOService29()
+0x00001558 0x00001558 0x0000d548 UNKNOWN IOService::_RESERVEDIOService30()
+0x00001560 0x00001560 0x0000d550 UNKNOWN IOService::_RESERVEDIOService31()
+0x00001568 0x00001568 0x0000d558 UNKNOWN IOService::_RESERVEDIOService32()
+0x00001570 0x00001570 0x0000d560 UNKNOWN IOService::_RESERVEDIOService33()
+0x00001578 0x00001578 0x0000d568 UNKNOWN IOService::_RESERVEDIOService34()
+0x00001580 0x00001580 0x0000d570 UNKNOWN IOService::_RESERVEDIOService35()
+0x00001588 0x00001588 0x0000d578 UNKNOWN IOService::_RESERVEDIOService36()
+0x00001590 0x00001590 0x0000d580 UNKNOWN IOService::_RESERVEDIOService37()
+0x00001598 0x00001598 0x0000d588 UNKNOWN IOService::_RESERVEDIOService38()
+0x000015a0 0x000015a0 0x0000d590 UNKNOWN IOService::_RESERVEDIOService39()
+0x000015a8 0x000015a8 0x0000d598 UNKNOWN IOService::_RESERVEDIOService40()
+0x000015b0 0x000015b0 0x0000d5a0 UNKNOWN IOService::_RESERVEDIOService41()
+0x000015b8 0x000015b8 0x0000d5a8 UNKNOWN IOService::_RESERVEDIOService42()
+0x000015c0 0x000015c0 0x0000d5b0 UNKNOWN IOService::_RESERVEDIOService43()
+0x000015c8 0x000015c8 0x0000d5b8 UNKNOWN IOService::_RESERVEDIOService44()
+0x000015d0 0x000015d0 0x0000d5c0 UNKNOWN IOService::_RESERVEDIOService45()
+0x000015d8 0x000015d8 0x0000d5c8 UNKNOWN IOService::_RESERVEDIOService46()
+0x000015e0 0x000015e0 0x0000d5d0 UNKNOWN IOService::_RESERVEDIOService47()
+0x000015e8 0x000015e8 0x0000d5d8 UNKNOWN IOService::getState() const
+0x000015f0 0x000015f0 0x0000d5e0 UNKNOWN IOService::registerService(unsigned int)
+0x00001610 0x00001610 0x0000d5e8 UNKNOWN IOService::open(IOService*, unsigned int, void*)
+0x00001618 0x00001618 0x0000d5f0 UNKNOWN IOService::close(IOService*, unsigned int)
+0x00001620 0x00001620 0x0000d5f8 UNKNOWN IOService::isOpen(IOService const*) const
+0x00001628 0x00001628 0x0000d600 UNKNOWN IOService::handleOpen(IOService*, unsigned int, void*)
+0x00001630 0x00001630 0x0000d608 UNKNOWN IOService::handleClose(IOService*, unsigned int)
+0x00001638 0x00001638 0x0000d610 UNKNOWN IOService::handleIsOpen(IOService const*) const
+0x00001640 0x00001640 0x0000d618 UNKNOWN IOService::terminate(unsigned int)
+0x00001648 0x00001648 0x0000d620 UNKNOWN IOService::finalize(unsigned int)
+0x00001650 0x00001650 0x0000d628 UNKNOWN IOService::lockForArbitration(bool)
+0x00001658 0x00001658 0x0000d630 UNKNOWN IOService::unlockForArbitration()
+0x00001660 0x00001660 0x0000d638 UNKNOWN IOService::terminateClient(IOService*, unsigned int)
+0x00001668 0x00001668 0x0000d640 UNKNOWN IOService::getBusyState()
+0x00001670 0x00001670 0x0000d648 UNKNOWN IOService::adjustBusy(int)
+0x00001678 0x00001678 0x0000d650 UNKNOWN IOService::matchPropertyTable(OSDictionary*, int*)
+0x00001680 0x00001680 0x0000d658 UNKNOWN IOService::matchPropertyTable(OSDictionary*)
+0x00001688 0x00001688 0x0000d660 UNKNOWN IOService::matchLocation(IOService*)
+0x00001690 0x00001690 0x0000d668 UNKNOWN IOService::addNeededResource(char const*)
+0x00001698 0x00001698 0x0000d670 UNKNOWN IOService::compareProperty(OSDictionary*, char const*)
+0x000016a0 0x000016a0 0x0000d678 UNKNOWN IOService::compareProperty(OSDictionary*, OSString const*)
+0x000016a8 0x000016a8 0x0000d680 UNKNOWN IOService::compareProperties(OSDictionary*, OSCollection*)
+0x000016b0 0x000016b0 0x0000d688 UNKNOWN IOService::attach(IOService*)
+0x000016b8 0x000016b8 0x0000d690 UNKNOWN IOService::detach(IOService*)
+0x000016c0 0x000016c0 0x0000d698 UNKNOWN IOService::getProvider() const
+0x000016c8 0x000016c8 0x0000d6a0 UNKNOWN IOService::getWorkLoop() const
+0x000016d0 0x000016d0 0x0000d6a8 UNKNOWN IOService::getProviderIterator() const
+0x000016d8 0x000016d8 0x0000d6b0 UNKNOWN IOService::getOpenProviderIterator() const
+0x000016e0 0x000016e0 0x0000d6b8 UNKNOWN IOService::getClient() const
+0x000016e8 0x000016e8 0x0000d6c0 UNKNOWN IOService::getClientIterator() const
+0x000016f0 0x000016f0 0x0000d6c8 UNKNOWN IOService::getOpenClientIterator() const
+0x000016f8 0x000016f8 0x0000d6d0 UNKNOWN IOService::callPlatformFunction(OSSymbol const*, bool, void*, void*, void*, void*)
+0x00001700 0x00001700 0x0000d6d8 UNKNOWN IOService::callPlatformFunction(char const*, bool, void*, void*, void*, void*)
+0x00001708 0x00001708 0x0000d6e0 UNKNOWN IOService::getResources()
+0x00001710 0x00001710 0x0000d6e8 UNKNOWN IOService::getDeviceMemoryCount()
+0x00001718 0x00001718 0x0000d6f0 UNKNOWN IOService::getDeviceMemoryWithIndex(unsigned int)
+0x00001720 0x00001720 0x0000d6f8 UNKNOWN IOService::mapDeviceMemoryWithIndex(unsigned int, unsigned int)
+0x00001728 0x00001728 0x0000d700 UNKNOWN IOService::getDeviceMemory()
+0x00001730 0x00001730 0x0000d708 UNKNOWN IOService::setDeviceMemory(OSArray*)
+0x00001738 0x00001738 0x0000d710 UNKNOWN IOService::registerInterrupt(int, OSObject*, void (*)(OSObject*, void*, IOService*, int), void*)
+0x00001740 0x00001740 0x0000d718 UNKNOWN IOService::unregisterInterrupt(int)
+0x00001748 0x00001748 0x0000d720 UNKNOWN IOService::getInterruptType(int, int*)
+0x00001750 0x00001750 0x0000d728 UNKNOWN IOService::enableInterrupt(int)
+0x00001758 0x00001758 0x0000d730 UNKNOWN IOService::disableInterrupt(int)
+0x00001760 0x00001760 0x0000d738 UNKNOWN IOService::causeInterrupt(int)
+0x00001768 0x00001768 0x0000d740 UNKNOWN IOService::requestProbe(unsigned int)
+0x00001770 0x00001770 0x0000d748 UNKNOWN IOService::message(unsigned int, IOService*, void*)
+0x00001778 0x00001778 0x0000d750 UNKNOWN IOService::messageClient(unsigned int, OSObject*, void*, unsigned long)
+0x00001780 0x00001780 0x0000d758 UNKNOWN IOService::messageClients(unsigned int, void*, unsigned long)
+0x00001788 0x00001788 0x0000d760 UNKNOWN IOService::registerInterest(OSSymbol const*, int (*)(void*, void*, unsigned int, IOService*, void*, unsigned long), void*, void*)
+0x00001790 0x00001790 0x0000d768 UNKNOWN IOService::applyToProviders(void (*)(IOService*, void*), void*)
+0x00001798 0x00001798 0x0000d770 UNKNOWN IOService::applyToClients(void (*)(IOService*, void*), void*)
+0x000017a0 0x000017a0 0x0000d778 UNKNOWN IOService::applyToInterested(OSSymbol const*, void (*)(OSObject*, void*), void*)
+0x000017a8 0x000017a8 0x0000d780 UNKNOWN IOService::acknowledgeNotification(void*, unsigned int)
+0x000017b0 0x000017b0 0x0000d788 UNKNOWN IOService::newUserClient(task*, void*, unsigned int, OSDictionary*, IOUserClient**)
+0x000017b8 0x000017b8 0x0000d790 UNKNOWN IOService::newUserClient(task*, void*, unsigned int, IOUserClient**)
+0x000017c0 0x000017c0 0x0000d798 UNKNOWN IOService::stringFromReturn(int)
+0x000017c8 0x000017c8 0x0000d7a0 UNKNOWN IOService::errnoFromReturn(int)
+0x000017d0 0x000017d0 0x0000d7a8 UNKNOWN IOService::PMinit()
+0x000017d8 0x000017d8 0x0000d7b0 UNKNOWN IOService::PMstop()
+0x000017e0 0x000017e0 0x0000d7b8 UNKNOWN IOService::joinPMtree(IOService*)
+0x000017e8 0x000017e8 0x0000d7c0 UNKNOWN IOService::registerPowerDriver(IOService*, IOPMPowerState*, unsigned long)
+0x000017f0 0x000017f0 0x0000d7c8 UNKNOWN IOService::requestPowerDomainState(unsigned long, IOPowerConnection*, unsigned long)
+0x000017f8 0x000017f8 0x0000d7d0 UNKNOWN IOService::activityTickle(unsigned long, unsigned long)
+0x00001800 0x00001800 0x0000d7d8 UNKNOWN IOService::setAggressiveness(unsigned long, unsigned long)
+0x00001808 0x00001808 0x0000d7e0 UNKNOWN IOService::getAggressiveness(unsigned long, unsigned long*)
+0x00001810 0x00001810 0x0000d7e8 UNKNOWN IOService::addPowerChild(IOService*)
+0x00001818 0x00001818 0x0000d7f0 UNKNOWN IOService::removePowerChild(IOPowerConnection*)
+0x00001820 0x00001820 0x0000d7f8 UNKNOWN IOService::setIdleTimerPeriod(unsigned long)
+0x00001828 0x00001828 0x0000d800 UNKNOWN IOService::setPowerState(unsigned long, IOService*)
+0x00001830 0x00001830 0x0000d808 UNKNOWN IOService::maxCapabilityForDomainState(unsigned long)
+0x00001838 0x00001838 0x0000d810 UNKNOWN IOService::initialPowerStateForDomainState(unsigned long)
+0x00001840 0x00001840 0x0000d818 UNKNOWN IOService::powerStateForDomainState(unsigned long)
+0x00001848 0x00001848 0x0000d820 UNKNOWN IOService::powerStateWillChangeTo(unsigned long, unsigned long, IOService*)
+0x00001850 0x00001850 0x0000d828 UNKNOWN IOService::powerStateDidChangeTo(unsigned long, unsigned long, IOService*)
+0x00001858 0x00001858 0x0000d830 UNKNOWN IOService::askChangeDown(unsigned long)
+0x00001860 0x00001860 0x0000d838 UNKNOWN IOService::tellChangeDown(unsigned long)
+0x00001868 0x00001868 0x0000d840 UNKNOWN IOService::tellNoChangeDown(unsigned long)
+0x00001870 0x00001870 0x0000d848 UNKNOWN IOService::tellChangeUp(unsigned long)
+0x00001878 0x00001878 0x0000d850 UNKNOWN IOService::allowPowerChange(unsigned long)
+0x00001880 0x00001880 0x0000d858 UNKNOWN IOService::cancelPowerChange(unsigned long)
+0x00001888 0x00001888 0x0000d860 UNKNOWN IOService::powerChangeDone(unsigned long)
+0x000018b8 0x000018b8 0x0000d868 UNKNOWN OSMetaClass::release(int) const
+0x000018c0 0x000018c0 0x0000d870 UNKNOWN OSMetaClass::getRetainCount() const
+0x000018c8 0x000018c8 0x0000d878 UNKNOWN OSMetaClass::retain() const
+0x000018d0 0x000018d0 0x0000d880 UNKNOWN OSMetaClass::release() const
+0x000018d8 0x000018d8 0x0000d888 UNKNOWN OSMetaClass::serialize(OSSerialize*) const
+0x000018e0 0x000018e0 0x0000d890 UNKNOWN OSMetaClass::getMetaClass() const
+0x000018e8 0x000018e8 0x0000d080 UNKNOWN OSMetaClassBase::isEqualTo(OSMetaClassBase const*) const
+0x000018f0 0x000018f0 0x0000d898 UNKNOWN OSMetaClass::taggedRetain(void const*) const
+0x000018f8 0x000018f8 0x0000d8a0 UNKNOWN OSMetaClass::taggedRelease(void const*) const
+0x00001900 0x00001900 0x0000d8a8 UNKNOWN OSMetaClass::taggedRelease(void const*, int) const
+0x00001908 0x00001908 0x0000d8b0 UNKNOWN OSMetaClassBase::Dispatch(IORPC)
+0x00001910 0x00001910 0x0000d0a8 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase4()
+0x00001918 0x00001918 0x0000d0b0 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase5()
+0x00001920 0x00001920 0x0000d0b8 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase6()
+0x00001928 0x00001928 0x0000d0c0 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase7()
+0x00001938 0x00001938 0x0000d8b8 UNKNOWN OSMetaClass::_RESERVEDOSMetaClass0()
+0x00001940 0x00001940 0x0000d8c0 UNKNOWN OSMetaClass::_RESERVEDOSMetaClass1()
+0x00001948 0x00001948 0x0000d8c8 UNKNOWN OSMetaClass::_RESERVEDOSMetaClass2()
+0x00001950 0x00001950 0x0000d8d0 UNKNOWN OSMetaClass::_RESERVEDOSMetaClass3()
+0x00001958 0x00001958 0x0000d8d8 UNKNOWN OSMetaClass::_RESERVEDOSMetaClass4()
+0x00001960 0x00001960 0x0000d8e0 UNKNOWN OSMetaClass::_RESERVEDOSMetaClass5()
+0x00001968 0x00001968 0x0000d8e8 UNKNOWN OSMetaClass::_RESERVEDOSMetaClass6()
+0x00001970 0x00001970 0x0000d8f0 UNKNOWN OSMetaClass::_RESERVEDOSMetaClass7()
+--
+ 3 - r-x 0x0002b4a0 bins/mach0/IOKitTest-fat-arm64-x86_64.kext/Contents/MacOS/IOKitTest
+ 4 - r-x 0x00000950 vfile://0/reloc-targets
+ 5 * r-x 0x0000cef0 vfile://0/patched
+ 1 fd: 3 +0x00000000 0x00000000 - 0x0002b49f r-x 
+ 2 fd: 4 +0x00000000 0x0000d008 - 0x0000d957 r-- vmap.reloc-targets
+ 3 fd: 5 +0x00000000 0x00000000 - 0x00000fff r-x vmap.__TEXT
+ 4 fd: 5 +0x00001000 0x00001000 - 0x00001fff r-- vmap.__DATA
+ 5 fd: 3 +0x00003000 0x00002000 - 0x0000cfff r-- fmap.__LINKEDIT
+            ;-- OSMetaClass::~OSMetaClass():
+            0x0000d008      .qword 0x0000000000000000                  ; RELOC TARGET 2 OSMetaClass::~OSMetaClass()
+            ;-- IOService::IOService(OSMetaClass const*):
+            0x0000d010      .qword 0x0000000000000000                  ; RELOC TARGET 2 IOService::IOService(OSMetaClass const*)
+            ;-- IOService::~IOService():
+            0x0000d018      .qword 0x0000000000000000                  ; RELOC TARGET 2 IOService::~IOService()
+            ;-- OSObject::operator delete(void*, unsigned long):
+            0x0000d020      .qword 0x0000000000000000                  ; RELOC TARGET 2 OSObject::operator delete(void*, unsigned long)
+-- x86 UNSIGNED reloc
+28d3000000000000
+0x00001338 0x000000000000d328   (....... @ method.IOService.serializeProperties_OSSerialize___const 54056 _ZNK9IOService19serializePropertiesEP11OSSerialize R 0x0
+-- x86 BRANCH reloc
+call reloc.target.IOLog
+e89ec20000
+EOF
+RUN
+
+NAME=mach0 kext reloc patching arm64
+FILE=bins/mach0/IOKitTest-arm64.kext/Contents/MacOS/IOKitTest
+CMDS=<<EOF
+i~arch
+i~type
+ir
+?e --
+o
+om
+?e -- arm64 reloc
+s 0x0000c000
+p8 8
+pxr 8
+pd 1 @ 0x1c018
+EOF
+EXPECT=<<EOF
+arch     arm
+type     Kernel extension bundle file
+bintype  mach0
+vaddr      paddr      target     type    name                                                                                                                              
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+0x000080b4 0x000080b4 0x0001c008 UNKNOWN _start
+0x000080bc 0x000080bc 0x0001c010 UNKNOWN _stop
+0x0000c000 0x0000c000 0x0001c018 UNKNOWN IOLog
+0x0000c008 0x0000c008 0x0001c020 UNKNOWN OSMetaClass::OSMetaClass(char const*, OSMetaClass const*, unsigned int)
+0x0000c010 0x0000c010 0x0001c028 UNKNOWN OSMetaClass::~OSMetaClass()
+0x0000c018 0x0000c018 0x0001c030 UNKNOWN OSObject::operator delete(void*, unsigned long)
+0x0000c020 0x0000c020 0x0001c038 UNKNOWN OSObject::operator new(unsigned long)
+0x0000c028 0x0000c028 0x0001c040 UNKNOWN IOService::gMetaClass
+0x0000c030 0x0000c030 0x0001c048 UNKNOWN IOService::IOService(OSMetaClass const*)
+0x0000c038 0x0000c038 0x0001c050 UNKNOWN IOService::~IOService()
+0x0000c040 0x0000c040 0x0001c058 UNKNOWN OSMetaClass::instanceConstructed() const
+0x0000c048 0x0000c048 0x0001c060 UNKNOWN vtable for IOService
+0x0000c068 0x0000c068 0x0001c040 UNKNOWN IOService::gMetaClass
+0x0000c090 0x0000c090 0x0001c068 UNKNOWN OSObject::release(int) const
+0x0000c098 0x0000c098 0x0001c070 UNKNOWN OSObject::getRetainCount() const
+0x0000c0a0 0x0000c0a0 0x0001c078 UNKNOWN OSObject::retain() const
+0x0000c0a8 0x0000c0a8 0x0001c080 UNKNOWN OSObject::release() const
+0x0000c0b0 0x0000c0b0 0x0001c088 UNKNOWN OSObject::serialize(OSSerialize*) const
+0x0000c0c0 0x0000c0c0 0x0001c090 UNKNOWN OSMetaClassBase::isEqualTo(OSMetaClassBase const*) const
+0x0000c0c8 0x0000c0c8 0x0001c098 UNKNOWN OSObject::taggedRetain(void const*) const
+0x0000c0d0 0x0000c0d0 0x0001c0a0 UNKNOWN OSObject::taggedRelease(void const*) const
+0x0000c0d8 0x0000c0d8 0x0001c0a8 UNKNOWN OSObject::taggedRelease(void const*, int) const
+0x0000c0e0 0x0000c0e0 0x0001c0b0 UNKNOWN IOService::Dispatch(IORPC)
+0x0000c0e8 0x0000c0e8 0x0001c0b8 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase0()
+0x0000c0f0 0x0000c0f0 0x0001c0c0 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase1()
+0x0000c0f8 0x0000c0f8 0x0001c0c8 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase2()
+0x0000c100 0x0000c100 0x0001c0d0 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase3()
+0x0000c108 0x0000c108 0x0001c0d8 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase4()
+0x0000c110 0x0000c110 0x0001c0e0 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase5()
+0x0000c118 0x0000c118 0x0001c0e8 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase6()
+0x0000c120 0x0000c120 0x0001c0f0 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase7()
+0x0000c128 0x0000c128 0x0001c0f8 UNKNOWN OSObject::init()
+0x0000c138 0x0000c138 0x0001c100 UNKNOWN OSObject::_RESERVEDOSObject0()
+0x0000c140 0x0000c140 0x0001c108 UNKNOWN OSObject::_RESERVEDOSObject1()
+0x0000c148 0x0000c148 0x0001c110 UNKNOWN OSObject::_RESERVEDOSObject2()
+0x0000c150 0x0000c150 0x0001c118 UNKNOWN OSObject::_RESERVEDOSObject3()
+0x0000c158 0x0000c158 0x0001c120 UNKNOWN OSObject::_RESERVEDOSObject4()
+0x0000c160 0x0000c160 0x0001c128 UNKNOWN OSObject::_RESERVEDOSObject5()
+0x0000c168 0x0000c168 0x0001c130 UNKNOWN OSObject::_RESERVEDOSObject6()
+0x0000c170 0x0000c170 0x0001c138 UNKNOWN OSObject::_RESERVEDOSObject7()
+0x0000c178 0x0000c178 0x0001c140 UNKNOWN OSObject::_RESERVEDOSObject8()
+0x0000c180 0x0000c180 0x0001c148 UNKNOWN OSObject::_RESERVEDOSObject9()
+0x0000c188 0x0000c188 0x0001c150 UNKNOWN OSObject::_RESERVEDOSObject10()
+0x0000c190 0x0000c190 0x0001c158 UNKNOWN OSObject::_RESERVEDOSObject11()
+0x0000c198 0x0000c198 0x0001c160 UNKNOWN OSObject::_RESERVEDOSObject12()
+0x0000c1a0 0x0000c1a0 0x0001c168 UNKNOWN OSObject::_RESERVEDOSObject13()
+0x0000c1a8 0x0000c1a8 0x0001c170 UNKNOWN OSObject::_RESERVEDOSObject14()
+0x0000c1b0 0x0000c1b0 0x0001c178 UNKNOWN OSObject::_RESERVEDOSObject15()
+0x0000c1b8 0x0000c1b8 0x0001c180 UNKNOWN IORegistryEntry::copyProperty(char const*, IORegistryPlane const*, unsigned int) const
+0x0000c1c0 0x0000c1c0 0x0001c188 UNKNOWN IORegistryEntry::copyProperty(OSString const*, IORegistryPlane const*, unsigned int) const
+0x0000c1c8 0x0000c1c8 0x0001c190 UNKNOWN IORegistryEntry::copyProperty(OSSymbol const*, IORegistryPlane const*, unsigned int) const
+0x0000c1d0 0x0000c1d0 0x0001c198 UNKNOWN IORegistryEntry::copyParentEntry(IORegistryPlane const*) const
+0x0000c1d8 0x0000c1d8 0x0001c1a0 UNKNOWN IORegistryEntry::copyChildEntry(IORegistryPlane const*) const
+0x0000c1e0 0x0000c1e0 0x0001c1a8 UNKNOWN IORegistryEntry::runPropertyAction(int (*)(OSObject*, void*, void*, void*, void*), OSObject*, void*, void*, void*, void*)
+0x0000c1e8 0x0000c1e8 0x0001c1b0 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry0()
+0x0000c1f0 0x0000c1f0 0x0001c1b8 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry1()
+0x0000c1f8 0x0000c1f8 0x0001c1c0 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry2()
+0x0000c200 0x0000c200 0x0001c1c8 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry3()
+0x0000c208 0x0000c208 0x0001c1d0 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry4()
+0x0000c210 0x0000c210 0x0001c1d8 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry5()
+0x0000c218 0x0000c218 0x0001c1e0 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry6()
+0x0000c220 0x0000c220 0x0001c1e8 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry7()
+0x0000c228 0x0000c228 0x0001c1f0 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry8()
+0x0000c230 0x0000c230 0x0001c1f8 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry9()
+0x0000c238 0x0000c238 0x0001c200 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry10()
+0x0000c240 0x0000c240 0x0001c208 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry11()
+0x0000c248 0x0000c248 0x0001c210 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry12()
+0x0000c250 0x0000c250 0x0001c218 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry13()
+0x0000c258 0x0000c258 0x0001c220 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry14()
+0x0000c260 0x0000c260 0x0001c228 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry15()
+0x0000c268 0x0000c268 0x0001c230 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry16()
+0x0000c270 0x0000c270 0x0001c238 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry17()
+0x0000c278 0x0000c278 0x0001c240 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry18()
+0x0000c280 0x0000c280 0x0001c248 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry19()
+0x0000c288 0x0000c288 0x0001c250 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry20()
+0x0000c290 0x0000c290 0x0001c258 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry21()
+0x0000c298 0x0000c298 0x0001c260 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry22()
+0x0000c2a0 0x0000c2a0 0x0001c268 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry23()
+0x0000c2a8 0x0000c2a8 0x0001c270 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry24()
+0x0000c2b0 0x0000c2b0 0x0001c278 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry25()
+0x0000c2b8 0x0000c2b8 0x0001c280 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry26()
+0x0000c2c0 0x0000c2c0 0x0001c288 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry27()
+0x0000c2c8 0x0000c2c8 0x0001c290 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry28()
+0x0000c2d0 0x0000c2d0 0x0001c298 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry29()
+0x0000c2d8 0x0000c2d8 0x0001c2a0 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry30()
+0x0000c2e0 0x0000c2e0 0x0001c2a8 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry31()
+0x0000c2f0 0x0000c2f0 0x0001c2b0 UNKNOWN IORegistryEntry::setPropertyTable(OSDictionary*)
+0x0000c2f8 0x0000c2f8 0x0001c2b8 UNKNOWN IORegistryEntry::setProperty(OSSymbol const*, OSObject*)
+0x0000c300 0x0000c300 0x0001c2c0 UNKNOWN IORegistryEntry::setProperty(OSString const*, OSObject*)
+0x0000c308 0x0000c308 0x0001c2c8 UNKNOWN IORegistryEntry::setProperty(char const*, OSObject*)
+0x0000c310 0x0000c310 0x0001c2d0 UNKNOWN IORegistryEntry::setProperty(char const*, char const*)
+0x0000c318 0x0000c318 0x0001c2d8 UNKNOWN IORegistryEntry::setProperty(char const*, bool)
+0x0000c320 0x0000c320 0x0001c2e0 UNKNOWN IORegistryEntry::setProperty(char const*, unsigned long long, unsigned int)
+0x0000c328 0x0000c328 0x0001c2e8 UNKNOWN IORegistryEntry::setProperty(char const*, void*, unsigned int)
+0x0000c330 0x0000c330 0x0001c2f0 UNKNOWN IORegistryEntry::removeProperty(OSSymbol const*)
+0x0000c338 0x0000c338 0x0001c2f8 UNKNOWN IORegistryEntry::removeProperty(OSString const*)
+0x0000c340 0x0000c340 0x0001c300 UNKNOWN IORegistryEntry::removeProperty(char const*)
+0x0000c348 0x0000c348 0x0001c308 UNKNOWN IORegistryEntry::getProperty(OSSymbol const*) const
+0x0000c350 0x0000c350 0x0001c310 UNKNOWN IORegistryEntry::getProperty(OSString const*) const
+0x0000c358 0x0000c358 0x0001c318 UNKNOWN IORegistryEntry::getProperty(char const*) const
+0x0000c360 0x0000c360 0x0001c320 UNKNOWN IORegistryEntry::getProperty(OSSymbol const*, IORegistryPlane const*, unsigned int) const
+0x0000c368 0x0000c368 0x0001c328 UNKNOWN IORegistryEntry::getProperty(OSString const*, IORegistryPlane const*, unsigned int) const
+0x0000c370 0x0000c370 0x0001c330 UNKNOWN IORegistryEntry::getProperty(char const*, IORegistryPlane const*, unsigned int) const
+0x0000c378 0x0000c378 0x0001c338 UNKNOWN IORegistryEntry::copyProperty(OSSymbol const*) const
+0x0000c380 0x0000c380 0x0001c340 UNKNOWN IORegistryEntry::copyProperty(OSString const*) const
+0x0000c388 0x0000c388 0x0001c348 UNKNOWN IORegistryEntry::copyProperty(char const*) const
+0x0000c390 0x0000c390 0x0001c350 UNKNOWN IORegistryEntry::dictionaryWithProperties() const
+0x0000c398 0x0000c398 0x0001c358 UNKNOWN IOService::serializeProperties(OSSerialize*) const
+0x0000c3a0 0x0000c3a0 0x0001c360 UNKNOWN IORegistryEntry::setProperties(OSObject*)
+0x0000c3a8 0x0000c3a8 0x0001c368 UNKNOWN IORegistryEntry::getParentIterator(IORegistryPlane const*) const
+0x0000c3b0 0x0000c3b0 0x0001c370 UNKNOWN IORegistryEntry::applyToParents(void (*)(IORegistryEntry*, void*), void*, IORegistryPlane const*) const
+0x0000c3b8 0x0000c3b8 0x0001c378 UNKNOWN IORegistryEntry::getParentEntry(IORegistryPlane const*) const
+0x0000c3c0 0x0000c3c0 0x0001c380 UNKNOWN IORegistryEntry::getChildIterator(IORegistryPlane const*) const
+0x0000c3c8 0x0000c3c8 0x0001c388 UNKNOWN IORegistryEntry::applyToChildren(void (*)(IORegistryEntry*, void*), void*, IORegistryPlane const*) const
+0x0000c3d0 0x0000c3d0 0x0001c390 UNKNOWN IORegistryEntry::getChildEntry(IORegistryPlane const*) const
+0x0000c3d8 0x0000c3d8 0x0001c398 UNKNOWN IORegistryEntry::isChild(IORegistryEntry*, IORegistryPlane const*, bool) const
+0x0000c3e0 0x0000c3e0 0x0001c3a0 UNKNOWN IORegistryEntry::isParent(IORegistryEntry*, IORegistryPlane const*, bool) const
+0x0000c3e8 0x0000c3e8 0x0001c3a8 UNKNOWN IORegistryEntry::inPlane(IORegistryPlane const*) const
+0x0000c3f0 0x0000c3f0 0x0001c3b0 UNKNOWN IORegistryEntry::getDepth(IORegistryPlane const*) const
+0x0000c3f8 0x0000c3f8 0x0001c3b8 UNKNOWN IORegistryEntry::attachToParent(IORegistryEntry*, IORegistryPlane const*)
+0x0000c400 0x0000c400 0x0001c3c0 UNKNOWN IORegistryEntry::detachFromParent(IORegistryEntry*, IORegistryPlane const*)
+0x0000c408 0x0000c408 0x0001c3c8 UNKNOWN IORegistryEntry::attachToChild(IORegistryEntry*, IORegistryPlane const*)
+0x0000c410 0x0000c410 0x0001c3d0 UNKNOWN IORegistryEntry::detachFromChild(IORegistryEntry*, IORegistryPlane const*)
+0x0000c418 0x0000c418 0x0001c3d8 UNKNOWN IORegistryEntry::detachAbove(IORegistryPlane const*)
+0x0000c420 0x0000c420 0x0001c3e0 UNKNOWN IORegistryEntry::detachAll(IORegistryPlane const*)
+0x0000c428 0x0000c428 0x0001c3e8 UNKNOWN IORegistryEntry::getName(IORegistryPlane const*) const
+0x0000c430 0x0000c430 0x0001c3f0 UNKNOWN IORegistryEntry::copyName(IORegistryPlane const*) const
+0x0000c438 0x0000c438 0x0001c3f8 UNKNOWN IORegistryEntry::compareNames(OSObject*, OSString**) const
+0x0000c440 0x0000c440 0x0001c400 UNKNOWN IORegistryEntry::compareName(OSString*, OSString**) const
+0x0000c448 0x0000c448 0x0001c408 UNKNOWN IORegistryEntry::setName(OSSymbol const*, IORegistryPlane const*)
+0x0000c450 0x0000c450 0x0001c410 UNKNOWN IORegistryEntry::setName(char const*, IORegistryPlane const*)
+0x0000c458 0x0000c458 0x0001c418 UNKNOWN IORegistryEntry::getLocation(IORegistryPlane const*) const
+0x0000c460 0x0000c460 0x0001c420 UNKNOWN IORegistryEntry::copyLocation(IORegistryPlane const*) const
+0x0000c468 0x0000c468 0x0001c428 UNKNOWN IORegistryEntry::setLocation(OSSymbol const*, IORegistryPlane const*)
+0x0000c470 0x0000c470 0x0001c430 UNKNOWN IORegistryEntry::setLocation(char const*, IORegistryPlane const*)
+0x0000c478 0x0000c478 0x0001c438 UNKNOWN IORegistryEntry::getPath(char*, int*, IORegistryPlane const*) const
+0x0000c480 0x0000c480 0x0001c440 UNKNOWN IORegistryEntry::getPathComponent(char*, int*, IORegistryPlane const*) const
+0x0000c488 0x0000c488 0x0001c448 UNKNOWN IORegistryEntry::childFromPath(char const*, IORegistryPlane const*, char*, int*)
+0x0000c490 0x0000c490 0x0001c450 UNKNOWN IOService::init(IORegistryEntry*, IORegistryPlane const*)
+0x0000c498 0x0000c498 0x0001c458 UNKNOWN IOService::requestTerminate(IOService*, unsigned int)
+0x0000c4a0 0x0000c4a0 0x0001c460 UNKNOWN IOService::willTerminate(IOService*, unsigned int)
+0x0000c4a8 0x0000c4a8 0x0001c468 UNKNOWN IOService::didTerminate(IOService*, unsigned int, bool*)
+0x0000c4b0 0x0000c4b0 0x0001c470 UNKNOWN IOService::nextIdleTimeout(unsigned long long, unsigned long long, unsigned int)
+0x0000c4b8 0x0000c4b8 0x0001c478 UNKNOWN IOService::systemWillShutdown(unsigned int)
+0x0000c4c0 0x0000c4c0 0x0001c480 UNKNOWN IOService::copyClientWithCategory(OSSymbol const*)
+0x0000c4c8 0x0000c4c8 0x0001c488 UNKNOWN IOService::configureReport(IOReportChannelList*, unsigned int, void*, void*)
+0x0000c4d0 0x0000c4d0 0x0001c490 UNKNOWN IOService::updateReport(IOReportChannelList*, unsigned int, void*, void*)
+0x0000c4d8 0x0000c4d8 0x0001c498 UNKNOWN IOService::_RESERVEDIOService0()
+0x0000c4e0 0x0000c4e0 0x0001c4a0 UNKNOWN IOService::_RESERVEDIOService1()
+0x0000c4e8 0x0000c4e8 0x0001c4a8 UNKNOWN IOService::_RESERVEDIOService2()
+0x0000c4f0 0x0000c4f0 0x0001c4b0 UNKNOWN IOService::_RESERVEDIOService3()
+0x0000c4f8 0x0000c4f8 0x0001c4b8 UNKNOWN IOService::_RESERVEDIOService4()
+0x0000c500 0x0000c500 0x0001c4c0 UNKNOWN IOService::_RESERVEDIOService5()
+0x0000c508 0x0000c508 0x0001c4c8 UNKNOWN IOService::_RESERVEDIOService6()
+0x0000c510 0x0000c510 0x0001c4d0 UNKNOWN IOService::_RESERVEDIOService7()
+0x0000c518 0x0000c518 0x0001c4d8 UNKNOWN IOService::_RESERVEDIOService8()
+0x0000c520 0x0000c520 0x0001c4e0 UNKNOWN IOService::_RESERVEDIOService9()
+0x0000c528 0x0000c528 0x0001c4e8 UNKNOWN IOService::_RESERVEDIOService10()
+0x0000c530 0x0000c530 0x0001c4f0 UNKNOWN IOService::_RESERVEDIOService11()
+0x0000c538 0x0000c538 0x0001c4f8 UNKNOWN IOService::_RESERVEDIOService12()
+0x0000c540 0x0000c540 0x0001c500 UNKNOWN IOService::_RESERVEDIOService13()
+0x0000c548 0x0000c548 0x0001c508 UNKNOWN IOService::_RESERVEDIOService14()
+0x0000c550 0x0000c550 0x0001c510 UNKNOWN IOService::_RESERVEDIOService15()
+0x0000c558 0x0000c558 0x0001c518 UNKNOWN IOService::_RESERVEDIOService16()
+0x0000c560 0x0000c560 0x0001c520 UNKNOWN IOService::_RESERVEDIOService17()
+0x0000c568 0x0000c568 0x0001c528 UNKNOWN IOService::_RESERVEDIOService18()
+0x0000c570 0x0000c570 0x0001c530 UNKNOWN IOService::_RESERVEDIOService19()
+0x0000c578 0x0000c578 0x0001c538 UNKNOWN IOService::_RESERVEDIOService20()
+0x0000c580 0x0000c580 0x0001c540 UNKNOWN IOService::_RESERVEDIOService21()
+0x0000c588 0x0000c588 0x0001c548 UNKNOWN IOService::_RESERVEDIOService22()
+0x0000c590 0x0000c590 0x0001c550 UNKNOWN IOService::_RESERVEDIOService23()
+0x0000c598 0x0000c598 0x0001c558 UNKNOWN IOService::_RESERVEDIOService24()
+0x0000c5a0 0x0000c5a0 0x0001c560 UNKNOWN IOService::_RESERVEDIOService25()
+0x0000c5a8 0x0000c5a8 0x0001c568 UNKNOWN IOService::_RESERVEDIOService26()
+0x0000c5b0 0x0000c5b0 0x0001c570 UNKNOWN IOService::_RESERVEDIOService27()
+0x0000c5b8 0x0000c5b8 0x0001c578 UNKNOWN IOService::_RESERVEDIOService28()
+0x0000c5c0 0x0000c5c0 0x0001c580 UNKNOWN IOService::_RESERVEDIOService29()
+0x0000c5c8 0x0000c5c8 0x0001c588 UNKNOWN IOService::_RESERVEDIOService30()
+0x0000c5d0 0x0000c5d0 0x0001c590 UNKNOWN IOService::_RESERVEDIOService31()
+0x0000c5d8 0x0000c5d8 0x0001c598 UNKNOWN IOService::_RESERVEDIOService32()
+0x0000c5e0 0x0000c5e0 0x0001c5a0 UNKNOWN IOService::_RESERVEDIOService33()
+0x0000c5e8 0x0000c5e8 0x0001c5a8 UNKNOWN IOService::_RESERVEDIOService34()
+0x0000c5f0 0x0000c5f0 0x0001c5b0 UNKNOWN IOService::_RESERVEDIOService35()
+0x0000c5f8 0x0000c5f8 0x0001c5b8 UNKNOWN IOService::_RESERVEDIOService36()
+0x0000c600 0x0000c600 0x0001c5c0 UNKNOWN IOService::_RESERVEDIOService37()
+0x0000c608 0x0000c608 0x0001c5c8 UNKNOWN IOService::_RESERVEDIOService38()
+0x0000c610 0x0000c610 0x0001c5d0 UNKNOWN IOService::_RESERVEDIOService39()
+0x0000c618 0x0000c618 0x0001c5d8 UNKNOWN IOService::_RESERVEDIOService40()
+0x0000c620 0x0000c620 0x0001c5e0 UNKNOWN IOService::_RESERVEDIOService41()
+0x0000c628 0x0000c628 0x0001c5e8 UNKNOWN IOService::_RESERVEDIOService42()
+0x0000c630 0x0000c630 0x0001c5f0 UNKNOWN IOService::_RESERVEDIOService43()
+0x0000c638 0x0000c638 0x0001c5f8 UNKNOWN IOService::_RESERVEDIOService44()
+0x0000c640 0x0000c640 0x0001c600 UNKNOWN IOService::_RESERVEDIOService45()
+0x0000c648 0x0000c648 0x0001c608 UNKNOWN IOService::_RESERVEDIOService46()
+0x0000c650 0x0000c650 0x0001c610 UNKNOWN IOService::_RESERVEDIOService47()
+0x0000c658 0x0000c658 0x0001c618 UNKNOWN IOService::getState() const
+0x0000c660 0x0000c660 0x0001c620 UNKNOWN IOService::registerService(unsigned int)
+0x0000c680 0x0000c680 0x0001c628 UNKNOWN IOService::open(IOService*, unsigned int, void*)
+0x0000c688 0x0000c688 0x0001c630 UNKNOWN IOService::close(IOService*, unsigned int)
+0x0000c690 0x0000c690 0x0001c638 UNKNOWN IOService::isOpen(IOService const*) const
+0x0000c698 0x0000c698 0x0001c640 UNKNOWN IOService::handleOpen(IOService*, unsigned int, void*)
+0x0000c6a0 0x0000c6a0 0x0001c648 UNKNOWN IOService::handleClose(IOService*, unsigned int)
+0x0000c6a8 0x0000c6a8 0x0001c650 UNKNOWN IOService::handleIsOpen(IOService const*) const
+0x0000c6b0 0x0000c6b0 0x0001c658 UNKNOWN IOService::terminate(unsigned int)
+0x0000c6b8 0x0000c6b8 0x0001c660 UNKNOWN IOService::finalize(unsigned int)
+0x0000c6c0 0x0000c6c0 0x0001c668 UNKNOWN IOService::lockForArbitration(bool)
+0x0000c6c8 0x0000c6c8 0x0001c670 UNKNOWN IOService::unlockForArbitration()
+0x0000c6d0 0x0000c6d0 0x0001c678 UNKNOWN IOService::terminateClient(IOService*, unsigned int)
+0x0000c6d8 0x0000c6d8 0x0001c680 UNKNOWN IOService::getBusyState()
+0x0000c6e0 0x0000c6e0 0x0001c688 UNKNOWN IOService::adjustBusy(int)
+0x0000c6e8 0x0000c6e8 0x0001c690 UNKNOWN IOService::matchPropertyTable(OSDictionary*, int*)
+0x0000c6f0 0x0000c6f0 0x0001c698 UNKNOWN IOService::matchPropertyTable(OSDictionary*)
+0x0000c6f8 0x0000c6f8 0x0001c6a0 UNKNOWN IOService::matchLocation(IOService*)
+0x0000c700 0x0000c700 0x0001c6a8 UNKNOWN IOService::addNeededResource(char const*)
+0x0000c708 0x0000c708 0x0001c6b0 UNKNOWN IOService::compareProperty(OSDictionary*, char const*)
+0x0000c710 0x0000c710 0x0001c6b8 UNKNOWN IOService::compareProperty(OSDictionary*, OSString const*)
+0x0000c718 0x0000c718 0x0001c6c0 UNKNOWN IOService::compareProperties(OSDictionary*, OSCollection*)
+0x0000c720 0x0000c720 0x0001c6c8 UNKNOWN IOService::attach(IOService*)
+0x0000c728 0x0000c728 0x0001c6d0 UNKNOWN IOService::detach(IOService*)
+0x0000c730 0x0000c730 0x0001c6d8 UNKNOWN IOService::getProvider() const
+0x0000c738 0x0000c738 0x0001c6e0 UNKNOWN IOService::getWorkLoop() const
+0x0000c740 0x0000c740 0x0001c6e8 UNKNOWN IOService::getProviderIterator() const
+0x0000c748 0x0000c748 0x0001c6f0 UNKNOWN IOService::getOpenProviderIterator() const
+0x0000c750 0x0000c750 0x0001c6f8 UNKNOWN IOService::getClient() const
+0x0000c758 0x0000c758 0x0001c700 UNKNOWN IOService::getClientIterator() const
+0x0000c760 0x0000c760 0x0001c708 UNKNOWN IOService::getOpenClientIterator() const
+0x0000c768 0x0000c768 0x0001c710 UNKNOWN IOService::callPlatformFunction(OSSymbol const*, bool, void*, void*, void*, void*)
+0x0000c770 0x0000c770 0x0001c718 UNKNOWN IOService::callPlatformFunction(char const*, bool, void*, void*, void*, void*)
+0x0000c778 0x0000c778 0x0001c720 UNKNOWN IOService::getResources()
+0x0000c780 0x0000c780 0x0001c728 UNKNOWN IOService::getDeviceMemoryCount()
+0x0000c788 0x0000c788 0x0001c730 UNKNOWN IOService::getDeviceMemoryWithIndex(unsigned int)
+0x0000c790 0x0000c790 0x0001c738 UNKNOWN IOService::mapDeviceMemoryWithIndex(unsigned int, unsigned int)
+0x0000c798 0x0000c798 0x0001c740 UNKNOWN IOService::getDeviceMemory()
+0x0000c7a0 0x0000c7a0 0x0001c748 UNKNOWN IOService::setDeviceMemory(OSArray*)
+0x0000c7a8 0x0000c7a8 0x0001c750 UNKNOWN IOService::registerInterrupt(int, OSObject*, void (*)(OSObject*, void*, IOService*, int), void*)
+0x0000c7b0 0x0000c7b0 0x0001c758 UNKNOWN IOService::unregisterInterrupt(int)
+0x0000c7b8 0x0000c7b8 0x0001c760 UNKNOWN IOService::getInterruptType(int, int*)
+0x0000c7c0 0x0000c7c0 0x0001c768 UNKNOWN IOService::enableInterrupt(int)
+0x0000c7c8 0x0000c7c8 0x0001c770 UNKNOWN IOService::disableInterrupt(int)
+0x0000c7d0 0x0000c7d0 0x0001c778 UNKNOWN IOService::causeInterrupt(int)
+0x0000c7d8 0x0000c7d8 0x0001c780 UNKNOWN IOService::requestProbe(unsigned int)
+0x0000c7e0 0x0000c7e0 0x0001c788 UNKNOWN IOService::message(unsigned int, IOService*, void*)
+0x0000c7e8 0x0000c7e8 0x0001c790 UNKNOWN IOService::messageClient(unsigned int, OSObject*, void*, unsigned long)
+0x0000c7f0 0x0000c7f0 0x0001c798 UNKNOWN IOService::messageClients(unsigned int, void*, unsigned long)
+0x0000c7f8 0x0000c7f8 0x0001c7a0 UNKNOWN IOService::registerInterest(OSSymbol const*, int (*)(void*, void*, unsigned int, IOService*, void*, unsigned long), void*, void*)
+0x0000c800 0x0000c800 0x0001c7a8 UNKNOWN IOService::applyToProviders(void (*)(IOService*, void*), void*)
+0x0000c808 0x0000c808 0x0001c7b0 UNKNOWN IOService::applyToClients(void (*)(IOService*, void*), void*)
+0x0000c810 0x0000c810 0x0001c7b8 UNKNOWN IOService::applyToInterested(OSSymbol const*, void (*)(OSObject*, void*), void*)
+0x0000c818 0x0000c818 0x0001c7c0 UNKNOWN IOService::acknowledgeNotification(void*, unsigned int)
+0x0000c820 0x0000c820 0x0001c7c8 UNKNOWN IOService::newUserClient(task*, void*, unsigned int, OSDictionary*, IOUserClient**)
+0x0000c828 0x0000c828 0x0001c7d0 UNKNOWN IOService::newUserClient(task*, void*, unsigned int, IOUserClient**)
+0x0000c830 0x0000c830 0x0001c7d8 UNKNOWN IOService::stringFromReturn(int)
+0x0000c838 0x0000c838 0x0001c7e0 UNKNOWN IOService::errnoFromReturn(int)
+0x0000c840 0x0000c840 0x0001c7e8 UNKNOWN IOService::PMinit()
+0x0000c848 0x0000c848 0x0001c7f0 UNKNOWN IOService::PMstop()
+0x0000c850 0x0000c850 0x0001c7f8 UNKNOWN IOService::joinPMtree(IOService*)
+0x0000c858 0x0000c858 0x0001c800 UNKNOWN IOService::registerPowerDriver(IOService*, IOPMPowerState*, unsigned long)
+0x0000c860 0x0000c860 0x0001c808 UNKNOWN IOService::requestPowerDomainState(unsigned long, IOPowerConnection*, unsigned long)
+0x0000c868 0x0000c868 0x0001c810 UNKNOWN IOService::activityTickle(unsigned long, unsigned long)
+0x0000c870 0x0000c870 0x0001c818 UNKNOWN IOService::setAggressiveness(unsigned long, unsigned long)
+0x0000c878 0x0000c878 0x0001c820 UNKNOWN IOService::getAggressiveness(unsigned long, unsigned long*)
+0x0000c880 0x0000c880 0x0001c828 UNKNOWN IOService::addPowerChild(IOService*)
+0x0000c888 0x0000c888 0x0001c830 UNKNOWN IOService::removePowerChild(IOPowerConnection*)
+0x0000c890 0x0000c890 0x0001c838 UNKNOWN IOService::setIdleTimerPeriod(unsigned long)
+0x0000c898 0x0000c898 0x0001c840 UNKNOWN IOService::setPowerState(unsigned long, IOService*)
+0x0000c8a0 0x0000c8a0 0x0001c848 UNKNOWN IOService::maxCapabilityForDomainState(unsigned long)
+0x0000c8a8 0x0000c8a8 0x0001c850 UNKNOWN IOService::initialPowerStateForDomainState(unsigned long)
+0x0000c8b0 0x0000c8b0 0x0001c858 UNKNOWN IOService::powerStateForDomainState(unsigned long)
+0x0000c8b8 0x0000c8b8 0x0001c860 UNKNOWN IOService::powerStateWillChangeTo(unsigned long, unsigned long, IOService*)
+0x0000c8c0 0x0000c8c0 0x0001c868 UNKNOWN IOService::powerStateDidChangeTo(unsigned long, unsigned long, IOService*)
+0x0000c8c8 0x0000c8c8 0x0001c870 UNKNOWN IOService::askChangeDown(unsigned long)
+0x0000c8d0 0x0000c8d0 0x0001c878 UNKNOWN IOService::tellChangeDown(unsigned long)
+0x0000c8d8 0x0000c8d8 0x0001c880 UNKNOWN IOService::tellNoChangeDown(unsigned long)
+0x0000c8e0 0x0000c8e0 0x0001c888 UNKNOWN IOService::tellChangeUp(unsigned long)
+0x0000c8e8 0x0000c8e8 0x0001c890 UNKNOWN IOService::allowPowerChange(unsigned long)
+0x0000c8f0 0x0000c8f0 0x0001c898 UNKNOWN IOService::cancelPowerChange(unsigned long)
+0x0000c8f8 0x0000c8f8 0x0001c8a0 UNKNOWN IOService::powerChangeDone(unsigned long)
+0x0000c928 0x0000c928 0x0001c8a8 UNKNOWN OSMetaClass::release(int) const
+0x0000c930 0x0000c930 0x0001c8b0 UNKNOWN OSMetaClass::getRetainCount() const
+0x0000c938 0x0000c938 0x0001c8b8 UNKNOWN OSMetaClass::retain() const
+0x0000c940 0x0000c940 0x0001c8c0 UNKNOWN OSMetaClass::release() const
+0x0000c948 0x0000c948 0x0001c8c8 UNKNOWN OSMetaClass::serialize(OSSerialize*) const
+0x0000c950 0x0000c950 0x0001c8d0 UNKNOWN OSMetaClass::getMetaClass() const
+0x0000c958 0x0000c958 0x0001c090 UNKNOWN OSMetaClassBase::isEqualTo(OSMetaClassBase const*) const
+0x0000c960 0x0000c960 0x0001c8d8 UNKNOWN OSMetaClass::taggedRetain(void const*) const
+0x0000c968 0x0000c968 0x0001c8e0 UNKNOWN OSMetaClass::taggedRelease(void const*) const
+0x0000c970 0x0000c970 0x0001c8e8 UNKNOWN OSMetaClass::taggedRelease(void const*, int) const
+0x0000c978 0x0000c978 0x0001c8f0 UNKNOWN OSMetaClassBase::Dispatch(IORPC)
+0x0000c980 0x0000c980 0x0001c0b8 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase0()
+0x0000c988 0x0000c988 0x0001c0c0 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase1()
+0x0000c990 0x0000c990 0x0001c0c8 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase2()
+0x0000c998 0x0000c998 0x0001c0d0 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase3()
+0x0000c9a0 0x0000c9a0 0x0001c0d8 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase4()
+0x0000c9a8 0x0000c9a8 0x0001c0e0 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase5()
+0x0000c9b0 0x0000c9b0 0x0001c0e8 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase6()
+0x0000c9b8 0x0000c9b8 0x0001c0f0 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase7()
+0x0000c9c8 0x0000c9c8 0x0001c8f8 UNKNOWN OSMetaClass::_RESERVEDOSMetaClass0()
+0x0000c9d0 0x0000c9d0 0x0001c900 UNKNOWN OSMetaClass::_RESERVEDOSMetaClass1()
+0x0000c9d8 0x0000c9d8 0x0001c908 UNKNOWN OSMetaClass::_RESERVEDOSMetaClass2()
+0x0000c9e0 0x0000c9e0 0x0001c910 UNKNOWN OSMetaClass::_RESERVEDOSMetaClass3()
+0x0000c9e8 0x0000c9e8 0x0001c918 UNKNOWN OSMetaClass::_RESERVEDOSMetaClass4()
+0x0000c9f0 0x0000c9f0 0x0001c920 UNKNOWN OSMetaClass::_RESERVEDOSMetaClass5()
+0x0000c9f8 0x0000c9f8 0x0001c928 UNKNOWN OSMetaClass::_RESERVEDOSMetaClass6()
+0x0000ca00 0x0000ca00 0x0001c930 UNKNOWN OSMetaClass::_RESERVEDOSMetaClass7()
+--
+ 3 * r-x 0x0001b4a0 bins/mach0/IOKitTest-arm64.kext/Contents/MacOS/IOKitTest
+ 4 - r-x 0x00000980 vfile://0/reloc-targets
+ 5 - r-x 0x0001b4a0 vfile://0/patched
+ 1 fd: 4 +0x00000000 0x0001c008 - 0x0001c987 r-- vmap.reloc-targets
+ 2 fd: 3 +0x00000000 0x00000000 - 0x00003fff r-- fmap.__TEXT
+ 3 fd: 3 +0x00004000 0x00004000 - 0x00007fff r-x fmap.__TEXT_EXEC
+ 4 fd: 5 +0x00008000 0x00008000 - 0x0000bfff r-- vmap.__DATA
+ 5 fd: 5 +0x0000c000 0x0000c000 - 0x0000ffff r-- vmap.__DATA_CONST
+ 6 fd: 3 +0x00010000 0x00010000 - 0x0001bfff r-- fmap.__LINKEDIT
+-- arm64 reloc
+18c0010000000000
+0x0000c000 0x000000000001c018   ........ @ reloc.IOLog 114712 IOLog R 0x0
+            ;-- IOLog:
+            0x0001c018      .qword 0x0000000000000000                  ; RELOC TARGET 0 IOLog
+EOF
+RUN
+
+NAME=mach0 fat kext reloc patching arm64
+FILE=bins/mach0/IOKitTest-fat-arm64-x86_64.kext/Contents/MacOS/IOKitTest
+ARGS=-a arm
+CMDS=<<EOF
+i~arch
+i~type
+ir
+?e --
+o
+om
+?e -- arm64 reloc
+s 0x0000c000
+p8 8
+pxr 8
+pd 1 @ 0x1c018
+EOF
+EXPECT=<<EOF
+arch     arm
+type     Kernel extension bundle file
+bintype  mach0
+vaddr      paddr      target     type    name                                                                                                                              
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+0x000080b4 0x000080b4 0x0001c008 UNKNOWN _start
+0x000080bc 0x000080bc 0x0001c010 UNKNOWN _stop
+0x0000c000 0x0000c000 0x0001c018 UNKNOWN IOLog
+0x0000c008 0x0000c008 0x0001c020 UNKNOWN OSMetaClass::OSMetaClass(char const*, OSMetaClass const*, unsigned int)
+0x0000c010 0x0000c010 0x0001c028 UNKNOWN OSMetaClass::~OSMetaClass()
+0x0000c018 0x0000c018 0x0001c030 UNKNOWN OSObject::operator delete(void*, unsigned long)
+0x0000c020 0x0000c020 0x0001c038 UNKNOWN OSObject::operator new(unsigned long)
+0x0000c028 0x0000c028 0x0001c040 UNKNOWN IOService::gMetaClass
+0x0000c030 0x0000c030 0x0001c048 UNKNOWN IOService::IOService(OSMetaClass const*)
+0x0000c038 0x0000c038 0x0001c050 UNKNOWN IOService::~IOService()
+0x0000c040 0x0000c040 0x0001c058 UNKNOWN OSMetaClass::instanceConstructed() const
+0x0000c048 0x0000c048 0x0001c060 UNKNOWN vtable for IOService
+0x0000c068 0x0000c068 0x0001c040 UNKNOWN IOService::gMetaClass
+0x0000c090 0x0000c090 0x0001c068 UNKNOWN OSObject::release(int) const
+0x0000c098 0x0000c098 0x0001c070 UNKNOWN OSObject::getRetainCount() const
+0x0000c0a0 0x0000c0a0 0x0001c078 UNKNOWN OSObject::retain() const
+0x0000c0a8 0x0000c0a8 0x0001c080 UNKNOWN OSObject::release() const
+0x0000c0b0 0x0000c0b0 0x0001c088 UNKNOWN OSObject::serialize(OSSerialize*) const
+0x0000c0c0 0x0000c0c0 0x0001c090 UNKNOWN OSMetaClassBase::isEqualTo(OSMetaClassBase const*) const
+0x0000c0c8 0x0000c0c8 0x0001c098 UNKNOWN OSObject::taggedRetain(void const*) const
+0x0000c0d0 0x0000c0d0 0x0001c0a0 UNKNOWN OSObject::taggedRelease(void const*) const
+0x0000c0d8 0x0000c0d8 0x0001c0a8 UNKNOWN OSObject::taggedRelease(void const*, int) const
+0x0000c0e0 0x0000c0e0 0x0001c0b0 UNKNOWN IOService::Dispatch(IORPC)
+0x0000c0e8 0x0000c0e8 0x0001c0b8 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase0()
+0x0000c0f0 0x0000c0f0 0x0001c0c0 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase1()
+0x0000c0f8 0x0000c0f8 0x0001c0c8 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase2()
+0x0000c100 0x0000c100 0x0001c0d0 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase3()
+0x0000c108 0x0000c108 0x0001c0d8 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase4()
+0x0000c110 0x0000c110 0x0001c0e0 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase5()
+0x0000c118 0x0000c118 0x0001c0e8 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase6()
+0x0000c120 0x0000c120 0x0001c0f0 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase7()
+0x0000c128 0x0000c128 0x0001c0f8 UNKNOWN OSObject::init()
+0x0000c138 0x0000c138 0x0001c100 UNKNOWN OSObject::_RESERVEDOSObject0()
+0x0000c140 0x0000c140 0x0001c108 UNKNOWN OSObject::_RESERVEDOSObject1()
+0x0000c148 0x0000c148 0x0001c110 UNKNOWN OSObject::_RESERVEDOSObject2()
+0x0000c150 0x0000c150 0x0001c118 UNKNOWN OSObject::_RESERVEDOSObject3()
+0x0000c158 0x0000c158 0x0001c120 UNKNOWN OSObject::_RESERVEDOSObject4()
+0x0000c160 0x0000c160 0x0001c128 UNKNOWN OSObject::_RESERVEDOSObject5()
+0x0000c168 0x0000c168 0x0001c130 UNKNOWN OSObject::_RESERVEDOSObject6()
+0x0000c170 0x0000c170 0x0001c138 UNKNOWN OSObject::_RESERVEDOSObject7()
+0x0000c178 0x0000c178 0x0001c140 UNKNOWN OSObject::_RESERVEDOSObject8()
+0x0000c180 0x0000c180 0x0001c148 UNKNOWN OSObject::_RESERVEDOSObject9()
+0x0000c188 0x0000c188 0x0001c150 UNKNOWN OSObject::_RESERVEDOSObject10()
+0x0000c190 0x0000c190 0x0001c158 UNKNOWN OSObject::_RESERVEDOSObject11()
+0x0000c198 0x0000c198 0x0001c160 UNKNOWN OSObject::_RESERVEDOSObject12()
+0x0000c1a0 0x0000c1a0 0x0001c168 UNKNOWN OSObject::_RESERVEDOSObject13()
+0x0000c1a8 0x0000c1a8 0x0001c170 UNKNOWN OSObject::_RESERVEDOSObject14()
+0x0000c1b0 0x0000c1b0 0x0001c178 UNKNOWN OSObject::_RESERVEDOSObject15()
+0x0000c1b8 0x0000c1b8 0x0001c180 UNKNOWN IORegistryEntry::copyProperty(char const*, IORegistryPlane const*, unsigned int) const
+0x0000c1c0 0x0000c1c0 0x0001c188 UNKNOWN IORegistryEntry::copyProperty(OSString const*, IORegistryPlane const*, unsigned int) const
+0x0000c1c8 0x0000c1c8 0x0001c190 UNKNOWN IORegistryEntry::copyProperty(OSSymbol const*, IORegistryPlane const*, unsigned int) const
+0x0000c1d0 0x0000c1d0 0x0001c198 UNKNOWN IORegistryEntry::copyParentEntry(IORegistryPlane const*) const
+0x0000c1d8 0x0000c1d8 0x0001c1a0 UNKNOWN IORegistryEntry::copyChildEntry(IORegistryPlane const*) const
+0x0000c1e0 0x0000c1e0 0x0001c1a8 UNKNOWN IORegistryEntry::runPropertyAction(int (*)(OSObject*, void*, void*, void*, void*), OSObject*, void*, void*, void*, void*)
+0x0000c1e8 0x0000c1e8 0x0001c1b0 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry0()
+0x0000c1f0 0x0000c1f0 0x0001c1b8 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry1()
+0x0000c1f8 0x0000c1f8 0x0001c1c0 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry2()
+0x0000c200 0x0000c200 0x0001c1c8 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry3()
+0x0000c208 0x0000c208 0x0001c1d0 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry4()
+0x0000c210 0x0000c210 0x0001c1d8 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry5()
+0x0000c218 0x0000c218 0x0001c1e0 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry6()
+0x0000c220 0x0000c220 0x0001c1e8 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry7()
+0x0000c228 0x0000c228 0x0001c1f0 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry8()
+0x0000c230 0x0000c230 0x0001c1f8 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry9()
+0x0000c238 0x0000c238 0x0001c200 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry10()
+0x0000c240 0x0000c240 0x0001c208 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry11()
+0x0000c248 0x0000c248 0x0001c210 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry12()
+0x0000c250 0x0000c250 0x0001c218 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry13()
+0x0000c258 0x0000c258 0x0001c220 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry14()
+0x0000c260 0x0000c260 0x0001c228 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry15()
+0x0000c268 0x0000c268 0x0001c230 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry16()
+0x0000c270 0x0000c270 0x0001c238 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry17()
+0x0000c278 0x0000c278 0x0001c240 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry18()
+0x0000c280 0x0000c280 0x0001c248 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry19()
+0x0000c288 0x0000c288 0x0001c250 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry20()
+0x0000c290 0x0000c290 0x0001c258 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry21()
+0x0000c298 0x0000c298 0x0001c260 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry22()
+0x0000c2a0 0x0000c2a0 0x0001c268 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry23()
+0x0000c2a8 0x0000c2a8 0x0001c270 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry24()
+0x0000c2b0 0x0000c2b0 0x0001c278 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry25()
+0x0000c2b8 0x0000c2b8 0x0001c280 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry26()
+0x0000c2c0 0x0000c2c0 0x0001c288 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry27()
+0x0000c2c8 0x0000c2c8 0x0001c290 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry28()
+0x0000c2d0 0x0000c2d0 0x0001c298 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry29()
+0x0000c2d8 0x0000c2d8 0x0001c2a0 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry30()
+0x0000c2e0 0x0000c2e0 0x0001c2a8 UNKNOWN IORegistryEntry::_RESERVEDIORegistryEntry31()
+0x0000c2f0 0x0000c2f0 0x0001c2b0 UNKNOWN IORegistryEntry::setPropertyTable(OSDictionary*)
+0x0000c2f8 0x0000c2f8 0x0001c2b8 UNKNOWN IORegistryEntry::setProperty(OSSymbol const*, OSObject*)
+0x0000c300 0x0000c300 0x0001c2c0 UNKNOWN IORegistryEntry::setProperty(OSString const*, OSObject*)
+0x0000c308 0x0000c308 0x0001c2c8 UNKNOWN IORegistryEntry::setProperty(char const*, OSObject*)
+0x0000c310 0x0000c310 0x0001c2d0 UNKNOWN IORegistryEntry::setProperty(char const*, char const*)
+0x0000c318 0x0000c318 0x0001c2d8 UNKNOWN IORegistryEntry::setProperty(char const*, bool)
+0x0000c320 0x0000c320 0x0001c2e0 UNKNOWN IORegistryEntry::setProperty(char const*, unsigned long long, unsigned int)
+0x0000c328 0x0000c328 0x0001c2e8 UNKNOWN IORegistryEntry::setProperty(char const*, void*, unsigned int)
+0x0000c330 0x0000c330 0x0001c2f0 UNKNOWN IORegistryEntry::removeProperty(OSSymbol const*)
+0x0000c338 0x0000c338 0x0001c2f8 UNKNOWN IORegistryEntry::removeProperty(OSString const*)
+0x0000c340 0x0000c340 0x0001c300 UNKNOWN IORegistryEntry::removeProperty(char const*)
+0x0000c348 0x0000c348 0x0001c308 UNKNOWN IORegistryEntry::getProperty(OSSymbol const*) const
+0x0000c350 0x0000c350 0x0001c310 UNKNOWN IORegistryEntry::getProperty(OSString const*) const
+0x0000c358 0x0000c358 0x0001c318 UNKNOWN IORegistryEntry::getProperty(char const*) const
+0x0000c360 0x0000c360 0x0001c320 UNKNOWN IORegistryEntry::getProperty(OSSymbol const*, IORegistryPlane const*, unsigned int) const
+0x0000c368 0x0000c368 0x0001c328 UNKNOWN IORegistryEntry::getProperty(OSString const*, IORegistryPlane const*, unsigned int) const
+0x0000c370 0x0000c370 0x0001c330 UNKNOWN IORegistryEntry::getProperty(char const*, IORegistryPlane const*, unsigned int) const
+0x0000c378 0x0000c378 0x0001c338 UNKNOWN IORegistryEntry::copyProperty(OSSymbol const*) const
+0x0000c380 0x0000c380 0x0001c340 UNKNOWN IORegistryEntry::copyProperty(OSString const*) const
+0x0000c388 0x0000c388 0x0001c348 UNKNOWN IORegistryEntry::copyProperty(char const*) const
+0x0000c390 0x0000c390 0x0001c350 UNKNOWN IORegistryEntry::dictionaryWithProperties() const
+0x0000c398 0x0000c398 0x0001c358 UNKNOWN IOService::serializeProperties(OSSerialize*) const
+0x0000c3a0 0x0000c3a0 0x0001c360 UNKNOWN IORegistryEntry::setProperties(OSObject*)
+0x0000c3a8 0x0000c3a8 0x0001c368 UNKNOWN IORegistryEntry::getParentIterator(IORegistryPlane const*) const
+0x0000c3b0 0x0000c3b0 0x0001c370 UNKNOWN IORegistryEntry::applyToParents(void (*)(IORegistryEntry*, void*), void*, IORegistryPlane const*) const
+0x0000c3b8 0x0000c3b8 0x0001c378 UNKNOWN IORegistryEntry::getParentEntry(IORegistryPlane const*) const
+0x0000c3c0 0x0000c3c0 0x0001c380 UNKNOWN IORegistryEntry::getChildIterator(IORegistryPlane const*) const
+0x0000c3c8 0x0000c3c8 0x0001c388 UNKNOWN IORegistryEntry::applyToChildren(void (*)(IORegistryEntry*, void*), void*, IORegistryPlane const*) const
+0x0000c3d0 0x0000c3d0 0x0001c390 UNKNOWN IORegistryEntry::getChildEntry(IORegistryPlane const*) const
+0x0000c3d8 0x0000c3d8 0x0001c398 UNKNOWN IORegistryEntry::isChild(IORegistryEntry*, IORegistryPlane const*, bool) const
+0x0000c3e0 0x0000c3e0 0x0001c3a0 UNKNOWN IORegistryEntry::isParent(IORegistryEntry*, IORegistryPlane const*, bool) const
+0x0000c3e8 0x0000c3e8 0x0001c3a8 UNKNOWN IORegistryEntry::inPlane(IORegistryPlane const*) const
+0x0000c3f0 0x0000c3f0 0x0001c3b0 UNKNOWN IORegistryEntry::getDepth(IORegistryPlane const*) const
+0x0000c3f8 0x0000c3f8 0x0001c3b8 UNKNOWN IORegistryEntry::attachToParent(IORegistryEntry*, IORegistryPlane const*)
+0x0000c400 0x0000c400 0x0001c3c0 UNKNOWN IORegistryEntry::detachFromParent(IORegistryEntry*, IORegistryPlane const*)
+0x0000c408 0x0000c408 0x0001c3c8 UNKNOWN IORegistryEntry::attachToChild(IORegistryEntry*, IORegistryPlane const*)
+0x0000c410 0x0000c410 0x0001c3d0 UNKNOWN IORegistryEntry::detachFromChild(IORegistryEntry*, IORegistryPlane const*)
+0x0000c418 0x0000c418 0x0001c3d8 UNKNOWN IORegistryEntry::detachAbove(IORegistryPlane const*)
+0x0000c420 0x0000c420 0x0001c3e0 UNKNOWN IORegistryEntry::detachAll(IORegistryPlane const*)
+0x0000c428 0x0000c428 0x0001c3e8 UNKNOWN IORegistryEntry::getName(IORegistryPlane const*) const
+0x0000c430 0x0000c430 0x0001c3f0 UNKNOWN IORegistryEntry::copyName(IORegistryPlane const*) const
+0x0000c438 0x0000c438 0x0001c3f8 UNKNOWN IORegistryEntry::compareNames(OSObject*, OSString**) const
+0x0000c440 0x0000c440 0x0001c400 UNKNOWN IORegistryEntry::compareName(OSString*, OSString**) const
+0x0000c448 0x0000c448 0x0001c408 UNKNOWN IORegistryEntry::setName(OSSymbol const*, IORegistryPlane const*)
+0x0000c450 0x0000c450 0x0001c410 UNKNOWN IORegistryEntry::setName(char const*, IORegistryPlane const*)
+0x0000c458 0x0000c458 0x0001c418 UNKNOWN IORegistryEntry::getLocation(IORegistryPlane const*) const
+0x0000c460 0x0000c460 0x0001c420 UNKNOWN IORegistryEntry::copyLocation(IORegistryPlane const*) const
+0x0000c468 0x0000c468 0x0001c428 UNKNOWN IORegistryEntry::setLocation(OSSymbol const*, IORegistryPlane const*)
+0x0000c470 0x0000c470 0x0001c430 UNKNOWN IORegistryEntry::setLocation(char const*, IORegistryPlane const*)
+0x0000c478 0x0000c478 0x0001c438 UNKNOWN IORegistryEntry::getPath(char*, int*, IORegistryPlane const*) const
+0x0000c480 0x0000c480 0x0001c440 UNKNOWN IORegistryEntry::getPathComponent(char*, int*, IORegistryPlane const*) const
+0x0000c488 0x0000c488 0x0001c448 UNKNOWN IORegistryEntry::childFromPath(char const*, IORegistryPlane const*, char*, int*)
+0x0000c490 0x0000c490 0x0001c450 UNKNOWN IOService::init(IORegistryEntry*, IORegistryPlane const*)
+0x0000c498 0x0000c498 0x0001c458 UNKNOWN IOService::requestTerminate(IOService*, unsigned int)
+0x0000c4a0 0x0000c4a0 0x0001c460 UNKNOWN IOService::willTerminate(IOService*, unsigned int)
+0x0000c4a8 0x0000c4a8 0x0001c468 UNKNOWN IOService::didTerminate(IOService*, unsigned int, bool*)
+0x0000c4b0 0x0000c4b0 0x0001c470 UNKNOWN IOService::nextIdleTimeout(unsigned long long, unsigned long long, unsigned int)
+0x0000c4b8 0x0000c4b8 0x0001c478 UNKNOWN IOService::systemWillShutdown(unsigned int)
+0x0000c4c0 0x0000c4c0 0x0001c480 UNKNOWN IOService::copyClientWithCategory(OSSymbol const*)
+0x0000c4c8 0x0000c4c8 0x0001c488 UNKNOWN IOService::configureReport(IOReportChannelList*, unsigned int, void*, void*)
+0x0000c4d0 0x0000c4d0 0x0001c490 UNKNOWN IOService::updateReport(IOReportChannelList*, unsigned int, void*, void*)
+0x0000c4d8 0x0000c4d8 0x0001c498 UNKNOWN IOService::_RESERVEDIOService0()
+0x0000c4e0 0x0000c4e0 0x0001c4a0 UNKNOWN IOService::_RESERVEDIOService1()
+0x0000c4e8 0x0000c4e8 0x0001c4a8 UNKNOWN IOService::_RESERVEDIOService2()
+0x0000c4f0 0x0000c4f0 0x0001c4b0 UNKNOWN IOService::_RESERVEDIOService3()
+0x0000c4f8 0x0000c4f8 0x0001c4b8 UNKNOWN IOService::_RESERVEDIOService4()
+0x0000c500 0x0000c500 0x0001c4c0 UNKNOWN IOService::_RESERVEDIOService5()
+0x0000c508 0x0000c508 0x0001c4c8 UNKNOWN IOService::_RESERVEDIOService6()
+0x0000c510 0x0000c510 0x0001c4d0 UNKNOWN IOService::_RESERVEDIOService7()
+0x0000c518 0x0000c518 0x0001c4d8 UNKNOWN IOService::_RESERVEDIOService8()
+0x0000c520 0x0000c520 0x0001c4e0 UNKNOWN IOService::_RESERVEDIOService9()
+0x0000c528 0x0000c528 0x0001c4e8 UNKNOWN IOService::_RESERVEDIOService10()
+0x0000c530 0x0000c530 0x0001c4f0 UNKNOWN IOService::_RESERVEDIOService11()
+0x0000c538 0x0000c538 0x0001c4f8 UNKNOWN IOService::_RESERVEDIOService12()
+0x0000c540 0x0000c540 0x0001c500 UNKNOWN IOService::_RESERVEDIOService13()
+0x0000c548 0x0000c548 0x0001c508 UNKNOWN IOService::_RESERVEDIOService14()
+0x0000c550 0x0000c550 0x0001c510 UNKNOWN IOService::_RESERVEDIOService15()
+0x0000c558 0x0000c558 0x0001c518 UNKNOWN IOService::_RESERVEDIOService16()
+0x0000c560 0x0000c560 0x0001c520 UNKNOWN IOService::_RESERVEDIOService17()
+0x0000c568 0x0000c568 0x0001c528 UNKNOWN IOService::_RESERVEDIOService18()
+0x0000c570 0x0000c570 0x0001c530 UNKNOWN IOService::_RESERVEDIOService19()
+0x0000c578 0x0000c578 0x0001c538 UNKNOWN IOService::_RESERVEDIOService20()
+0x0000c580 0x0000c580 0x0001c540 UNKNOWN IOService::_RESERVEDIOService21()
+0x0000c588 0x0000c588 0x0001c548 UNKNOWN IOService::_RESERVEDIOService22()
+0x0000c590 0x0000c590 0x0001c550 UNKNOWN IOService::_RESERVEDIOService23()
+0x0000c598 0x0000c598 0x0001c558 UNKNOWN IOService::_RESERVEDIOService24()
+0x0000c5a0 0x0000c5a0 0x0001c560 UNKNOWN IOService::_RESERVEDIOService25()
+0x0000c5a8 0x0000c5a8 0x0001c568 UNKNOWN IOService::_RESERVEDIOService26()
+0x0000c5b0 0x0000c5b0 0x0001c570 UNKNOWN IOService::_RESERVEDIOService27()
+0x0000c5b8 0x0000c5b8 0x0001c578 UNKNOWN IOService::_RESERVEDIOService28()
+0x0000c5c0 0x0000c5c0 0x0001c580 UNKNOWN IOService::_RESERVEDIOService29()
+0x0000c5c8 0x0000c5c8 0x0001c588 UNKNOWN IOService::_RESERVEDIOService30()
+0x0000c5d0 0x0000c5d0 0x0001c590 UNKNOWN IOService::_RESERVEDIOService31()
+0x0000c5d8 0x0000c5d8 0x0001c598 UNKNOWN IOService::_RESERVEDIOService32()
+0x0000c5e0 0x0000c5e0 0x0001c5a0 UNKNOWN IOService::_RESERVEDIOService33()
+0x0000c5e8 0x0000c5e8 0x0001c5a8 UNKNOWN IOService::_RESERVEDIOService34()
+0x0000c5f0 0x0000c5f0 0x0001c5b0 UNKNOWN IOService::_RESERVEDIOService35()
+0x0000c5f8 0x0000c5f8 0x0001c5b8 UNKNOWN IOService::_RESERVEDIOService36()
+0x0000c600 0x0000c600 0x0001c5c0 UNKNOWN IOService::_RESERVEDIOService37()
+0x0000c608 0x0000c608 0x0001c5c8 UNKNOWN IOService::_RESERVEDIOService38()
+0x0000c610 0x0000c610 0x0001c5d0 UNKNOWN IOService::_RESERVEDIOService39()
+0x0000c618 0x0000c618 0x0001c5d8 UNKNOWN IOService::_RESERVEDIOService40()
+0x0000c620 0x0000c620 0x0001c5e0 UNKNOWN IOService::_RESERVEDIOService41()
+0x0000c628 0x0000c628 0x0001c5e8 UNKNOWN IOService::_RESERVEDIOService42()
+0x0000c630 0x0000c630 0x0001c5f0 UNKNOWN IOService::_RESERVEDIOService43()
+0x0000c638 0x0000c638 0x0001c5f8 UNKNOWN IOService::_RESERVEDIOService44()
+0x0000c640 0x0000c640 0x0001c600 UNKNOWN IOService::_RESERVEDIOService45()
+0x0000c648 0x0000c648 0x0001c608 UNKNOWN IOService::_RESERVEDIOService46()
+0x0000c650 0x0000c650 0x0001c610 UNKNOWN IOService::_RESERVEDIOService47()
+0x0000c658 0x0000c658 0x0001c618 UNKNOWN IOService::getState() const
+0x0000c660 0x0000c660 0x0001c620 UNKNOWN IOService::registerService(unsigned int)
+0x0000c680 0x0000c680 0x0001c628 UNKNOWN IOService::open(IOService*, unsigned int, void*)
+0x0000c688 0x0000c688 0x0001c630 UNKNOWN IOService::close(IOService*, unsigned int)
+0x0000c690 0x0000c690 0x0001c638 UNKNOWN IOService::isOpen(IOService const*) const
+0x0000c698 0x0000c698 0x0001c640 UNKNOWN IOService::handleOpen(IOService*, unsigned int, void*)
+0x0000c6a0 0x0000c6a0 0x0001c648 UNKNOWN IOService::handleClose(IOService*, unsigned int)
+0x0000c6a8 0x0000c6a8 0x0001c650 UNKNOWN IOService::handleIsOpen(IOService const*) const
+0x0000c6b0 0x0000c6b0 0x0001c658 UNKNOWN IOService::terminate(unsigned int)
+0x0000c6b8 0x0000c6b8 0x0001c660 UNKNOWN IOService::finalize(unsigned int)
+0x0000c6c0 0x0000c6c0 0x0001c668 UNKNOWN IOService::lockForArbitration(bool)
+0x0000c6c8 0x0000c6c8 0x0001c670 UNKNOWN IOService::unlockForArbitration()
+0x0000c6d0 0x0000c6d0 0x0001c678 UNKNOWN IOService::terminateClient(IOService*, unsigned int)
+0x0000c6d8 0x0000c6d8 0x0001c680 UNKNOWN IOService::getBusyState()
+0x0000c6e0 0x0000c6e0 0x0001c688 UNKNOWN IOService::adjustBusy(int)
+0x0000c6e8 0x0000c6e8 0x0001c690 UNKNOWN IOService::matchPropertyTable(OSDictionary*, int*)
+0x0000c6f0 0x0000c6f0 0x0001c698 UNKNOWN IOService::matchPropertyTable(OSDictionary*)
+0x0000c6f8 0x0000c6f8 0x0001c6a0 UNKNOWN IOService::matchLocation(IOService*)
+0x0000c700 0x0000c700 0x0001c6a8 UNKNOWN IOService::addNeededResource(char const*)
+0x0000c708 0x0000c708 0x0001c6b0 UNKNOWN IOService::compareProperty(OSDictionary*, char const*)
+0x0000c710 0x0000c710 0x0001c6b8 UNKNOWN IOService::compareProperty(OSDictionary*, OSString const*)
+0x0000c718 0x0000c718 0x0001c6c0 UNKNOWN IOService::compareProperties(OSDictionary*, OSCollection*)
+0x0000c720 0x0000c720 0x0001c6c8 UNKNOWN IOService::attach(IOService*)
+0x0000c728 0x0000c728 0x0001c6d0 UNKNOWN IOService::detach(IOService*)
+0x0000c730 0x0000c730 0x0001c6d8 UNKNOWN IOService::getProvider() const
+0x0000c738 0x0000c738 0x0001c6e0 UNKNOWN IOService::getWorkLoop() const
+0x0000c740 0x0000c740 0x0001c6e8 UNKNOWN IOService::getProviderIterator() const
+0x0000c748 0x0000c748 0x0001c6f0 UNKNOWN IOService::getOpenProviderIterator() const
+0x0000c750 0x0000c750 0x0001c6f8 UNKNOWN IOService::getClient() const
+0x0000c758 0x0000c758 0x0001c700 UNKNOWN IOService::getClientIterator() const
+0x0000c760 0x0000c760 0x0001c708 UNKNOWN IOService::getOpenClientIterator() const
+0x0000c768 0x0000c768 0x0001c710 UNKNOWN IOService::callPlatformFunction(OSSymbol const*, bool, void*, void*, void*, void*)
+0x0000c770 0x0000c770 0x0001c718 UNKNOWN IOService::callPlatformFunction(char const*, bool, void*, void*, void*, void*)
+0x0000c778 0x0000c778 0x0001c720 UNKNOWN IOService::getResources()
+0x0000c780 0x0000c780 0x0001c728 UNKNOWN IOService::getDeviceMemoryCount()
+0x0000c788 0x0000c788 0x0001c730 UNKNOWN IOService::getDeviceMemoryWithIndex(unsigned int)
+0x0000c790 0x0000c790 0x0001c738 UNKNOWN IOService::mapDeviceMemoryWithIndex(unsigned int, unsigned int)
+0x0000c798 0x0000c798 0x0001c740 UNKNOWN IOService::getDeviceMemory()
+0x0000c7a0 0x0000c7a0 0x0001c748 UNKNOWN IOService::setDeviceMemory(OSArray*)
+0x0000c7a8 0x0000c7a8 0x0001c750 UNKNOWN IOService::registerInterrupt(int, OSObject*, void (*)(OSObject*, void*, IOService*, int), void*)
+0x0000c7b0 0x0000c7b0 0x0001c758 UNKNOWN IOService::unregisterInterrupt(int)
+0x0000c7b8 0x0000c7b8 0x0001c760 UNKNOWN IOService::getInterruptType(int, int*)
+0x0000c7c0 0x0000c7c0 0x0001c768 UNKNOWN IOService::enableInterrupt(int)
+0x0000c7c8 0x0000c7c8 0x0001c770 UNKNOWN IOService::disableInterrupt(int)
+0x0000c7d0 0x0000c7d0 0x0001c778 UNKNOWN IOService::causeInterrupt(int)
+0x0000c7d8 0x0000c7d8 0x0001c780 UNKNOWN IOService::requestProbe(unsigned int)
+0x0000c7e0 0x0000c7e0 0x0001c788 UNKNOWN IOService::message(unsigned int, IOService*, void*)
+0x0000c7e8 0x0000c7e8 0x0001c790 UNKNOWN IOService::messageClient(unsigned int, OSObject*, void*, unsigned long)
+0x0000c7f0 0x0000c7f0 0x0001c798 UNKNOWN IOService::messageClients(unsigned int, void*, unsigned long)
+0x0000c7f8 0x0000c7f8 0x0001c7a0 UNKNOWN IOService::registerInterest(OSSymbol const*, int (*)(void*, void*, unsigned int, IOService*, void*, unsigned long), void*, void*)
+0x0000c800 0x0000c800 0x0001c7a8 UNKNOWN IOService::applyToProviders(void (*)(IOService*, void*), void*)
+0x0000c808 0x0000c808 0x0001c7b0 UNKNOWN IOService::applyToClients(void (*)(IOService*, void*), void*)
+0x0000c810 0x0000c810 0x0001c7b8 UNKNOWN IOService::applyToInterested(OSSymbol const*, void (*)(OSObject*, void*), void*)
+0x0000c818 0x0000c818 0x0001c7c0 UNKNOWN IOService::acknowledgeNotification(void*, unsigned int)
+0x0000c820 0x0000c820 0x0001c7c8 UNKNOWN IOService::newUserClient(task*, void*, unsigned int, OSDictionary*, IOUserClient**)
+0x0000c828 0x0000c828 0x0001c7d0 UNKNOWN IOService::newUserClient(task*, void*, unsigned int, IOUserClient**)
+0x0000c830 0x0000c830 0x0001c7d8 UNKNOWN IOService::stringFromReturn(int)
+0x0000c838 0x0000c838 0x0001c7e0 UNKNOWN IOService::errnoFromReturn(int)
+0x0000c840 0x0000c840 0x0001c7e8 UNKNOWN IOService::PMinit()
+0x0000c848 0x0000c848 0x0001c7f0 UNKNOWN IOService::PMstop()
+0x0000c850 0x0000c850 0x0001c7f8 UNKNOWN IOService::joinPMtree(IOService*)
+0x0000c858 0x0000c858 0x0001c800 UNKNOWN IOService::registerPowerDriver(IOService*, IOPMPowerState*, unsigned long)
+0x0000c860 0x0000c860 0x0001c808 UNKNOWN IOService::requestPowerDomainState(unsigned long, IOPowerConnection*, unsigned long)
+0x0000c868 0x0000c868 0x0001c810 UNKNOWN IOService::activityTickle(unsigned long, unsigned long)
+0x0000c870 0x0000c870 0x0001c818 UNKNOWN IOService::setAggressiveness(unsigned long, unsigned long)
+0x0000c878 0x0000c878 0x0001c820 UNKNOWN IOService::getAggressiveness(unsigned long, unsigned long*)
+0x0000c880 0x0000c880 0x0001c828 UNKNOWN IOService::addPowerChild(IOService*)
+0x0000c888 0x0000c888 0x0001c830 UNKNOWN IOService::removePowerChild(IOPowerConnection*)
+0x0000c890 0x0000c890 0x0001c838 UNKNOWN IOService::setIdleTimerPeriod(unsigned long)
+0x0000c898 0x0000c898 0x0001c840 UNKNOWN IOService::setPowerState(unsigned long, IOService*)
+0x0000c8a0 0x0000c8a0 0x0001c848 UNKNOWN IOService::maxCapabilityForDomainState(unsigned long)
+0x0000c8a8 0x0000c8a8 0x0001c850 UNKNOWN IOService::initialPowerStateForDomainState(unsigned long)
+0x0000c8b0 0x0000c8b0 0x0001c858 UNKNOWN IOService::powerStateForDomainState(unsigned long)
+0x0000c8b8 0x0000c8b8 0x0001c860 UNKNOWN IOService::powerStateWillChangeTo(unsigned long, unsigned long, IOService*)
+0x0000c8c0 0x0000c8c0 0x0001c868 UNKNOWN IOService::powerStateDidChangeTo(unsigned long, unsigned long, IOService*)
+0x0000c8c8 0x0000c8c8 0x0001c870 UNKNOWN IOService::askChangeDown(unsigned long)
+0x0000c8d0 0x0000c8d0 0x0001c878 UNKNOWN IOService::tellChangeDown(unsigned long)
+0x0000c8d8 0x0000c8d8 0x0001c880 UNKNOWN IOService::tellNoChangeDown(unsigned long)
+0x0000c8e0 0x0000c8e0 0x0001c888 UNKNOWN IOService::tellChangeUp(unsigned long)
+0x0000c8e8 0x0000c8e8 0x0001c890 UNKNOWN IOService::allowPowerChange(unsigned long)
+0x0000c8f0 0x0000c8f0 0x0001c898 UNKNOWN IOService::cancelPowerChange(unsigned long)
+0x0000c8f8 0x0000c8f8 0x0001c8a0 UNKNOWN IOService::powerChangeDone(unsigned long)
+0x0000c928 0x0000c928 0x0001c8a8 UNKNOWN OSMetaClass::release(int) const
+0x0000c930 0x0000c930 0x0001c8b0 UNKNOWN OSMetaClass::getRetainCount() const
+0x0000c938 0x0000c938 0x0001c8b8 UNKNOWN OSMetaClass::retain() const
+0x0000c940 0x0000c940 0x0001c8c0 UNKNOWN OSMetaClass::release() const
+0x0000c948 0x0000c948 0x0001c8c8 UNKNOWN OSMetaClass::serialize(OSSerialize*) const
+0x0000c950 0x0000c950 0x0001c8d0 UNKNOWN OSMetaClass::getMetaClass() const
+0x0000c958 0x0000c958 0x0001c090 UNKNOWN OSMetaClassBase::isEqualTo(OSMetaClassBase const*) const
+0x0000c960 0x0000c960 0x0001c8d8 UNKNOWN OSMetaClass::taggedRetain(void const*) const
+0x0000c968 0x0000c968 0x0001c8e0 UNKNOWN OSMetaClass::taggedRelease(void const*) const
+0x0000c970 0x0000c970 0x0001c8e8 UNKNOWN OSMetaClass::taggedRelease(void const*, int) const
+0x0000c978 0x0000c978 0x0001c8f0 UNKNOWN OSMetaClassBase::Dispatch(IORPC)
+0x0000c980 0x0000c980 0x0001c0b8 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase0()
+0x0000c988 0x0000c988 0x0001c0c0 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase1()
+0x0000c990 0x0000c990 0x0001c0c8 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase2()
+0x0000c998 0x0000c998 0x0001c0d0 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase3()
+0x0000c9a0 0x0000c9a0 0x0001c0d8 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase4()
+0x0000c9a8 0x0000c9a8 0x0001c0e0 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase5()
+0x0000c9b0 0x0000c9b0 0x0001c0e8 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase6()
+0x0000c9b8 0x0000c9b8 0x0001c0f0 UNKNOWN OSMetaClassBase::_RESERVEDOSMetaClassBase7()
+0x0000c9c8 0x0000c9c8 0x0001c8f8 UNKNOWN OSMetaClass::_RESERVEDOSMetaClass0()
+0x0000c9d0 0x0000c9d0 0x0001c900 UNKNOWN OSMetaClass::_RESERVEDOSMetaClass1()
+0x0000c9d8 0x0000c9d8 0x0001c908 UNKNOWN OSMetaClass::_RESERVEDOSMetaClass2()
+0x0000c9e0 0x0000c9e0 0x0001c910 UNKNOWN OSMetaClass::_RESERVEDOSMetaClass3()
+0x0000c9e8 0x0000c9e8 0x0001c918 UNKNOWN OSMetaClass::_RESERVEDOSMetaClass4()
+0x0000c9f0 0x0000c9f0 0x0001c920 UNKNOWN OSMetaClass::_RESERVEDOSMetaClass5()
+0x0000c9f8 0x0000c9f8 0x0001c928 UNKNOWN OSMetaClass::_RESERVEDOSMetaClass6()
+0x0000ca00 0x0000ca00 0x0001c930 UNKNOWN OSMetaClass::_RESERVEDOSMetaClass7()
+--
+ 3 - r-x 0x0002b4a0 bins/mach0/IOKitTest-fat-arm64-x86_64.kext/Contents/MacOS/IOKitTest
+ 4 - r-x 0x00000980 vfile://0/reloc-targets
+ 5 * r-x 0x0001b4a0 vfile://0/patched
+ 1 fd: 3 +0x00000000 0x00000000 - 0x0002b49f r-x 
+ 2 fd: 4 +0x00000000 0x0001c008 - 0x0001c987 r-- vmap.reloc-targets
+ 3 fd: 3 +0x00010000 0x00000000 - 0x00003fff r-- fmap.__TEXT
+ 4 fd: 3 +0x00014000 0x00004000 - 0x00007fff r-x fmap.__TEXT_EXEC
+ 5 fd: 5 +0x00008000 0x00008000 - 0x0000bfff r-- vmap.__DATA
+ 6 fd: 5 +0x0000c000 0x0000c000 - 0x0000ffff r-- vmap.__DATA_CONST
+ 7 fd: 3 +0x00020000 0x00010000 - 0x0001bfff r-- fmap.__LINKEDIT
+-- arm64 reloc
+18c0010000000000
+0x0000c000 0x000000000001c018   ........ @ reloc.IOLog 114712 IOLog R 0x0
+            ;-- IOLog:
+            0x0001c018      .qword 0x0000000000000000                  ; RELOC TARGET 0 IOLog
+EOF
+RUN
+
+NAME=mach0 kext no relocs arm64e
+FILE=bins/mach0/IOKitTest-arm64e.kext/Contents/MacOS/IOKitTest
+CMDS=<<EOF
+i~arch
+i~type
+ir
+?e --
+o
+om
+EOF
+EXPECT=<<EOF
+arch     arm
+type     Kernel extension bundle file
+bintype  mach0
+vaddr paddr type name 
+----------------------
+--
+ 3 * r-x 0x0001e290 bins/mach0/IOKitTest-arm64e.kext/Contents/MacOS/IOKitTest
+ 4 - r-x 0x0001e290 vfile://0/rebased_stripped
+ 1 fd: 3 +0x00000000 0x00000000 - 0x00003fff r-- fmap.__TEXT
+ 2 fd: 3 +0x00004000 0x00004000 - 0x00007fff r-x fmap.__TEXT_EXEC
+ 3 fd: 4 +0x00008000 0x00008000 - 0x0000bfff r-- vmap.__DATA
+ 4 fd: 4 +0x0000c000 0x0000c000 - 0x0000ffff r-- vmap.__DATA_CONST
+ 5 fd: 3 +0x00010000 0x00010000 - 0x0001ffff r-- fmap.__LINKEDIT
+EOF
+RUN
+
+NAME=FileDP relocs (arm32, patched)
+FILE=bins/mach0/FileDP
+CMDS=<<EOF
+i~arch
+i~type
+ir
+?e --
+o
+om
+?e --
+s 0x00004074
+p8 8
+pxr 8
+EOF
+EXPECT=<<EOF
+arch     arm
+type     Executable file
+bintype  mach0
+vaddr      paddr      target     type    name                             
+--------------------------------------------------------------------------
+0x00000000 0x00000000 0x00000000 SET_32  NSAutoreleasePool
+0x00003020 0x00002020 0x00000000 SET_32  exit
+0x00003024 0x00002024 0x00000000 SET_32  NSFileProtectionKey
+0x00003028 0x00002028 0x00000000 SET_32  NSLog
+0x0000302c 0x0000202c 0x00000000 SET_32  objc_enumerationMutation
+0x00003030 0x00002030 0x00000000 SET_32  objc_msgSend
+0x00003034 0x00002034 0x00000000 SET_32  puts
+0x00003038 0x00002038 0x00000000 SET_32  strcmp
+0x00004074 0x00003074 0x00006008 UNKNOWN NSAutoreleasePool
+0x00004078 0x00003078 0x00006010 UNKNOWN NSFileManager
+0x0000407c 0x0000307c 0x00006018 UNKNOWN NSString
+0x00004084 0x00003084 0x00006020 UNKNOWN __CFConstantStringClassReference
+0x00004094 0x00003094 0x00006020 UNKNOWN __CFConstantStringClassReference
+0x000040a4 0x000030a4 0x00006020 UNKNOWN __CFConstantStringClassReference
+--
+ 3 * r-x 0x00004850 bins/mach0/FileDP
+ 4 - r-x 0x00000030 vfile://0/reloc-targets
+ 5 - r-x 0x00004850 vfile://0/patched
+ 1 fd: 4 +0x00000000 0x00006008 - 0x00006037 r-- vmap.reloc-targets
+ 2 fd: 3 +0x00000000 0x00001000 - 0x00002fff r-x fmap.__TEXT
+ 3 fd: 3 +0x00002000 0x00003000 - 0x00003fff r-- fmap.__DATA
+ 4 fd: 5 +0x00003000 0x00004000 - 0x00005fff r-- vmap.__LINKEDIT
+--
+0860000010600000
+0x00004074 0x00006008  .`.. @ reloc.NSAutoreleasePool.0 24584 NSAutoreleasePool R 0x0
+0x00004078 0x00006010  .`.. @ reloc.NSFileManager 24592 NSFileManager R 0x0
+EOF
+RUN
+
+NAME=mach0 kext reloc patching x86 (larger patch)
+FILE=bins/mach0/IOAudioFamily-300.6.1
+CMDS=<<EOF
+s 0x00005ad6
+p8 5
+pi 1
+pd 1 @ 0x000720c8
+EOF
+EXPECT=<<EOF
+e8edc50600
+call reloc.target.bzero
+            ;-- bzero:
+            0x000720c8      .qword 0x0000000000000000                  ; RELOC TARGET 2 bzero
+EOF
+RUN

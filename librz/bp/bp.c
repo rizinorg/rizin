@@ -15,6 +15,7 @@ static void rz_bp_item_free(RzBreakpointItem *b) {
 	free(b->module_name);
 	free(b->data);
 	free(b->cond);
+	free(b->expr);
 	free(b);
 }
 
@@ -414,4 +415,92 @@ RZ_API bool rz_bp_is_valid(RzBreakpoint *bp, RzBreakpointItem *b) {
 	}
 
 	return bp->corebind.isMapped(bp->corebind.core, b->addr, b->perm);
+}
+
+/**
+ * \brief set the condition for a RzBreakpointItem
+ * 
+ * \param item brekapoint item to set value for
+ * \param cond value of cond to be set; if NULL is passed, then the cond value of \p item will be set to NULL
+ * \return bool true if succesful; false otherwise; if false returned, then \p item will not have been modified
+ */
+RZ_API bool rz_bp_item_set_cond(RZ_NONNULL RzBreakpointItem *item, RZ_NULLABLE const char *cond) {
+	rz_return_val_if_fail(item, false);
+
+	char *tmp_cond = NULL;
+	if (cond) {
+		tmp_cond = strdup(cond);
+		if (!tmp_cond) {
+			return false;
+		}
+	}
+	free(item->cond);
+	item->cond = tmp_cond;
+	return true;
+}
+
+/**
+ * \brief set the data for a RzBreakpointItem
+ * 
+ * \param item brekapoint item to set value for
+ * \param data value of data to be set; if NULL is passed, then the data value of \p item will be set to NULL
+ * \return bool true if succesful; false otherwise; if false returned, then \p item will not have been modified
+ */
+RZ_API bool rz_bp_item_set_data(RZ_NONNULL RzBreakpointItem *item, RZ_NULLABLE const char *data) {
+	rz_return_val_if_fail(item, false);
+
+	char *tmp_data = NULL;
+	if (data) {
+		tmp_data = strdup(data);
+		if (!tmp_data) {
+			return false;
+		}
+	}
+	free(item->data);
+	item->data = tmp_data;
+	return true;
+}
+
+/**
+ * \brief set the expr for a RzBreakpointItem
+ * 
+ * \param item brekapoint item to set value for
+ * \param expr value of expr to be set; if NULL is passed, then the expr value of \p item will be set to NULL
+ * \return bool true if succesful; false otherwise; if false returned, then \p item will not have been modified
+ */
+RZ_API bool rz_bp_item_set_expr(RZ_NONNULL RzBreakpointItem *item, RZ_NULLABLE const char *expr) {
+	rz_return_val_if_fail(item, false);
+
+	char *tmp_expr = NULL;
+	if (expr) {
+		tmp_expr = strdup(expr);
+		if (!tmp_expr) {
+			return false;
+		}
+	}
+	free(item->expr);
+	item->expr = tmp_expr;
+	return true;
+}
+
+/**
+ * \brief set the name for a RzBreakpointItem
+ * 
+ * \param item brekapoint item to set value for
+ * \param name value of name to be set; if NULL is passed, then the name value of \p item will be set to NULL
+ * \return bool true if succesful; false otherwise; if false returned, then \p item will not have been modified
+ */
+RZ_API bool rz_bp_item_set_name(RZ_NONNULL RzBreakpointItem *item, RZ_NULLABLE const char *name) {
+	rz_return_val_if_fail(item, false);
+
+	char *tmp_name = NULL;
+	if (name) {
+		tmp_name = strdup(name);
+		if (!tmp_name) {
+			return false;
+		}
+	}
+	free(item->name);
+	item->name = tmp_name;
+	return true;
 }

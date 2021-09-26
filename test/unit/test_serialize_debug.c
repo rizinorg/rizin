@@ -41,14 +41,18 @@ bool test_debug_serialize_save() {
 
 	RzBreakpointItem *bp_item = rz_debug_bp_add(debug, 0x1337, 0, false, 1, "hax", 42);
 	mu_assert_notnull(bp_item, "bp_item null");
-	bp_item->cond = "bp_cond";
-	bp_item->data = "bp_data";
+	bool set = rz_bp_item_set_cond(bp_item, "bp_cond");
+	mu_assert_true(set, "failed to set cond");
+	set = rz_bp_item_set_data(bp_item, "bp_data");
+	mu_assert_true(set, "failed to set data");
+	set = rz_bp_item_set_expr(bp_item, "bp_expr");
+	mu_assert_true(set, "failed to set expr");
+	set = rz_bp_item_set_name(bp_item, "spectre");
+	mu_assert_true(set, "failed to set name");
 	bp_item->delta = 2;
 	bp_item->enabled = 3;
-	bp_item->expr = "bp_expr";
 	bp_item->hits = 4;
 	bp_item->internal = 5;
-	bp_item->name = "spectre";
 	bp_item->perm = 03;
 	for (int i = 0; i < RZ_BP_MAXPIDS; i++) {
 		bp_item->pids[i] = i;
@@ -66,9 +70,9 @@ bool test_debug_serialize_save() {
 	assert_sdb_eq(save_sdb, ref, "saved sdb not same");
 
 	rz_core_file_close(core->file);
-	free(core);
-	free(save_sdb);
-	free(ref);
+	rz_core_free(core);
+	sdb_free(save_sdb);
+	sdb_free(ref);
 
 	mu_end;
 }
@@ -83,7 +87,7 @@ bool test_debug_serialize_load() {
 	Sdb *ref = get_ref_sdb();
 	Sdb *load_sdb = sdb_new0();
 	rz_serialize_debug_load(ref, debug, NULL);
-	mu_assert_eq(rz_bp_size(debug->bp), 1, "number of breakpoints don't match");
+	mu_assert_eq(rz_list_length(debug->bp->bps), 1, "number of breakpoints don't match");
 	RzBreakpointItem *bp_item = rz_bp_get_index(debug->bp, 0);
 
 	mu_assert_streq(bp_item->cond, "bp_cond", "cond not equal");
@@ -104,9 +108,9 @@ bool test_debug_serialize_load() {
 	mu_assert_eq(bp_item->trace, 2, "trace not equal");
 
 	rz_core_file_close(core->file);
-	free(core);
-	free(load_sdb);
-	free(ref);
+	rz_core_free(core);
+	sdb_free(load_sdb);
+	sdb_free(ref);
 
 	mu_end;
 }

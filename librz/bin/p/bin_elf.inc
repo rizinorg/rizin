@@ -358,23 +358,10 @@ static ut64 reloc_targets_map_base(RzBinFile *bf, struct Elf_(rz_bin_elf_obj_t) 
 	if (obj->reloc_targets_map_base_calculated) {
 		return obj->reloc_targets_map_base;
 	}
-	// find the lowest unmapped address
-	ut64 max = 0;
 	RzList *maps = maps_unpatched(bf);
-	if (maps) {
-		RzListIter *it;
-		RzBinMap *map;
-		rz_list_foreach (maps, it, map) {
-			ut64 addr = map->vaddr + map->vsize;
-			if (addr > max) {
-				max = addr;
-			}
-		}
-		rz_list_free(maps);
-	}
+	obj->reloc_targets_map_base = rz_bin_relocs_patch_find_targets_map_base(maps, reloc_target_size(obj));
+	rz_list_free(maps);
 	obj->reloc_targets_map_base_calculated = true;
-	max += 0x8; // small additional shift to not overlap with symbols like _end
-	obj->reloc_targets_map_base = max + rz_num_align_delta(max, reloc_target_size(obj));
 	return obj->reloc_targets_map_base;
 }
 
@@ -683,30 +670,22 @@ static void patch_relocs(RzBinFile *bf, ELFOBJ *bin) {
 	if (!size) {
 		return;
 	}
-	ut64 n_vaddr = reloc_targets_map_base(bf, bin);
-	HtUUOptions opt = { 0 };
-	HtUU *relocs_by_sym = ht_uu_new_opt(&opt);
-	if (!relocs_by_sym) {
+	RzBinRelocTargetBuilder *targets = rz_bin_reloc_target_builder_new(cdsz, reloc_targets_map_base(bf, bin));
+	if (!targets) {
 		return;
 	}
 	bin->buf_patched = rz_buf_new_sparse_overlay(bf->buf, RZ_BUF_SPARSE_WRITE_MODE_SPARSE);
 	if (!bin->buf_patched) {
-		ht_uu_free(relocs_by_sym);
+		rz_bin_reloc_target_builder_free(targets);
 		return;
 	}
-	ut64 vaddr = n_vaddr;
 	RzBinElfReloc *reloc;
 	rz_bin_elf_foreach_relocs(bin, reloc) {
 		ut64 sym_addr = 0;
-		ut64 plt_entry_addr = vaddr;
 		if (reloc->sym) {
 			RzBinElfSymbol *import = Elf_(rz_bin_elf_get_import)(bin, reloc->sym);
 			if (import) {
-				bool found;
-				sym_addr = ht_uu_find(relocs_by_sym, reloc->sym, &found);
-				if (found) {
-					plt_entry_addr = sym_addr;
-				}
+				sym_addr = rz_bin_reloc_target_builder_get_target(targets, reloc->sym);
 			} else {
 				RzBinElfSymbol *symbol = Elf_(rz_bin_elf_get_symbol)(bin, reloc->sym);
 				if (symbol) {
@@ -714,30 +693,16 @@ static void patch_relocs(RzBinFile *bf, ELFOBJ *bin) {
 					if (Elf_(rz_bin_elf_is_arm_binary_supporting_thumb)(bin) && Elf_(rz_bin_elf_is_thumb_addr)(sym_addr)) {
 						Elf_(rz_bin_elf_fix_arm_thumb_addr)(&sym_addr);
 					}
-					plt_entry_addr = sym_addr;
+				} else {
+					sym_addr = rz_bin_reloc_target_builder_get_target(targets, reloc->sym);
 				}
 			}
 		}
 		// TODO relocation types B, L
-		patch_reloc(bin, reloc, sym_addr ? sym_addr : vaddr, 0, plt_entry_addr);
-
-		// TODO: do this in regular relocs cb
-#if 0
-		RzBinReloc *ptr = NULL;
-		if (!(ptr = reloc_convert(bin, &relcs[i], n_vaddr))) {
-			continue;
-		}
-#endif
-
-		if (sym_addr) {
-			reloc->target_vaddr = sym_addr;
-		} else {
-			reloc->target_vaddr = vaddr;
-			ht_uu_insert(relocs_by_sym, reloc->sym, vaddr);
-			vaddr += cdsz;
-		}
+		patch_reloc(bin, reloc, sym_addr, 0, sym_addr);
+		reloc->target_vaddr = sym_addr;
 	}
-	ht_uu_free(relocs_by_sym);
+	rz_bin_reloc_target_builder_free(targets);
 	// from now on, all writes should propagate through to the actual file
 	rz_buf_sparse_set_write_mode(bin->buf_patched, RZ_BUF_SPARSE_WRITE_MODE_THROUGH);
 }
@@ -762,6 +727,7 @@ static RzList *virtual_files(RzBinFile *bf) {
 		}
 		RzBinVirtualFile *vf = RZ_NEW0(RzBinVirtualFile);
 		if (!vf) {
+			rz_buf_free(buf);
 			return r;
 		}
 		vf->buf = buf;
@@ -794,41 +760,9 @@ static RzList *maps(RzBinFile *bf) {
 
 	// if relocs should be patched, use the patched vfile for everything from the file
 	patch_relocs(bf, obj);
-	if (obj->buf_patched) {
-		RzListIter *it;
-		RzBinMap *map;
-		rz_list_foreach (ret, it, map) {
-			if (map->vfile_name) {
-				continue;
-			}
-			if (!map->psize || !rz_buf_sparse_populated_in(obj->buf_patched, map->paddr, map->paddr + map->psize - 1)) {
-				// avoid using the patched file if there is nothing different in this range
-				continue;
-			}
-			map->vfile_name = strdup(VFILE_NAME_PATCHED);
-		}
-	}
-
-	ut64 rtmsz = reloc_targets_vfile_size(bf, obj);
-	if (rtmsz) {
-		// virtual file for reloc targets (where the relocs will point into)
-		RzBinMap *map = RZ_NEW0(RzBinMap);
-		if (!map) {
-			return ret;
-		}
-		ut64 ehdr_size = sizeof(obj->ehdr);
-		if (bf->size < ehdr_size) {
-			ehdr_size = bf->size;
-		}
-		map->name = strdup("reloc-targets");
-		map->paddr = 0;
-		map->psize = rtmsz;
-		map->vaddr = reloc_targets_map_base(bf, obj);
-		map->vsize = rtmsz;
-		map->perm = RZ_PERM_R;
-		map->vfile_name = strdup(VFILE_NAME_RELOC_TARGETS);
-		rz_list_prepend(ret, map);
-	}
+	rz_bin_relocs_patch_maps(ret, obj->buf_patched, 0,
+		reloc_targets_map_base(bf, obj), reloc_targets_vfile_size(bf, obj),
+		VFILE_NAME_PATCHED, VFILE_NAME_RELOC_TARGETS);
 	return ret;
 }
 

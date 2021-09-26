@@ -428,9 +428,6 @@ static RzList *relocs(RzBinFile *bf) {
 	RzSkipListNode *it;
 	struct reloc_t *reloc;
 	rz_skiplist_foreach (relocs, it, reloc) {
-		if (reloc->external) {
-			continue;
-		}
 		RzBinReloc *ptr = NULL;
 		if (!(ptr = RZ_NEW0(RzBinReloc))) {
 			break;
@@ -451,10 +448,9 @@ static RzList *relocs(RzBinFile *bf) {
 		ptr->addend = reloc->addend;
 		ptr->vaddr = reloc->addr;
 		ptr->paddr = reloc->offset;
+		ptr->target_vaddr = reloc->target;
 		rz_list_append(ret, ptr);
 	}
-
-	rz_skiplist_free(relocs);
 
 	return ret;
 }
@@ -523,170 +519,6 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->has_pi = MACH0_(is_pie)(bf->o->bin_obj);
 	ret->has_nx = MACH0_(has_nx)(bf->o->bin_obj);
 	return ret;
-}
-
-static bool _patch_reloc(struct MACH0_(obj_t) * bin, RzIOBind *iob, struct reloc_t *reloc, ut64 symbol_at) {
-	ut64 pc = reloc->addr;
-	ut64 ins_len = 0;
-
-	switch (bin->hdr.cputype) {
-	case CPU_TYPE_X86_64: {
-		switch (reloc->type) {
-		case X86_64_RELOC_UNSIGNED:
-			break;
-		case X86_64_RELOC_BRANCH:
-			pc -= 1;
-			ins_len = 5;
-			break;
-		default:
-			eprintf("Warning: unsupported reloc type for X86_64 (%d), please file a bug.\n", reloc->type);
-			return false;
-		}
-		break;
-	}
-	case CPU_TYPE_ARM64:
-	case CPU_TYPE_ARM64_32:
-		pc = reloc->addr & ~3;
-		ins_len = 4;
-		break;
-	case CPU_TYPE_ARM:
-		break;
-	default:
-		eprintf("Warning: unsupported architecture for patching relocs, please file a bug. %s\n", MACH0_(get_cputype_from_hdr)(&bin->hdr));
-		return false;
-	}
-
-	ut64 val = symbol_at;
-	if (reloc->pc_relative) {
-		val = symbol_at - pc - ins_len;
-	}
-
-	ut8 buf[8];
-	rz_write_ble(buf, val, false, reloc->size * 8);
-	iob->write_at(iob->io, reloc->addr, buf, reloc->size);
-
-	return true;
-}
-
-static RzList *patch_relocs(RzBinFile *bf) {
-	rz_return_val_if_fail(bf, NULL);
-	RzBin *b = bf->rbin;
-	RzList *ret = NULL;
-	RzIOMap *g = NULL;
-	HtUU *relocs_by_sym = NULL;
-	RzIODesc *gotrzdesc = NULL;
-
-	RzIO *io = b->iob.io;
-	if (!io) {
-		return NULL;
-	}
-	RzBinObject *obj = bf->o;
-	if (!obj) {
-		return NULL;
-	}
-	struct MACH0_(obj_t) *bin = obj->bin_obj;
-
-	RzSkipList *all_relocs = MACH0_(get_relocs)(bin);
-	if (!all_relocs) {
-		return NULL;
-	}
-	RzList *ext_relocs = rz_list_new();
-	if (!ext_relocs) {
-		goto beach;
-	}
-	RzSkipListNode *it;
-	struct reloc_t *reloc;
-	rz_skiplist_foreach (all_relocs, it, reloc) {
-		if (!reloc->external) {
-			continue;
-		}
-		rz_list_append(ext_relocs, reloc);
-	}
-	ut64 num_ext_relocs = rz_list_length(ext_relocs);
-	if (!num_ext_relocs) {
-		goto beach;
-	}
-
-	if (!io->cached) {
-		eprintf("Warning: run rizin with -e io.cache=true to fix relocations in disassembly\n");
-		goto beach;
-	}
-
-	int cdsz = obj->info ? obj->info->bits / 8 : 8;
-
-	ut64 offset = 0;
-	void **vit;
-	RzPVector *maps = rz_io_maps(io);
-	rz_pvector_foreach (maps, vit) {
-		RzIOMap *map = *vit;
-		if (map->itv.addr > offset) {
-			offset = map->itv.addr;
-			g = map;
-		}
-	}
-	if (!g) {
-		goto beach;
-	}
-	ut64 n_vaddr = g->itv.addr + g->itv.size;
-	ut64 size = num_ext_relocs * cdsz;
-	char *muri = rz_str_newf("malloc://%" PFMT64u, size);
-	RzIOMap *gotrzmap;
-	gotrzdesc = b->iob.open_at(io, muri, RZ_PERM_R, 0664, n_vaddr, &gotrzmap);
-	free(muri);
-	if (!gotrzdesc) {
-		goto beach;
-	}
-	gotrzmap->name = strdup(".got.rz");
-
-	if (!(ret = rz_list_newf((RzListFree)free))) {
-		goto beach;
-	}
-	if (!(relocs_by_sym = ht_uu_new0())) {
-		goto beach;
-	}
-	ut64 vaddr = n_vaddr;
-	RzListIter *liter;
-	rz_list_foreach (ext_relocs, liter, reloc) {
-		ut64 sym_addr = 0;
-		sym_addr = ht_uu_find(relocs_by_sym, reloc->ord, NULL);
-		if (!sym_addr) {
-			sym_addr = vaddr;
-			ht_uu_insert(relocs_by_sym, reloc->ord, vaddr);
-			vaddr += cdsz;
-		}
-		if (!_patch_reloc(bin, &b->iob, reloc, sym_addr)) {
-			continue;
-		}
-		RzBinReloc *ptr = NULL;
-		if (!(ptr = RZ_NEW0(RzBinReloc))) {
-			goto beach;
-		}
-		ptr->type = reloc->type;
-		ptr->additive = 0;
-		RzBinImport *imp;
-		if (!(imp = import_from_name(b, (char *)reloc->name, bin->imports_by_name))) {
-			RZ_FREE(ptr);
-			goto beach;
-		}
-		ptr->target_vaddr = sym_addr;
-		ptr->import = imp;
-		rz_list_append(ret, ptr);
-	}
-	if (rz_list_empty(ret)) {
-		goto beach;
-	}
-	ht_uu_free(relocs_by_sym);
-	rz_list_free(ext_relocs);
-	rz_skiplist_free(all_relocs);
-	return ret;
-
-beach:
-	rz_list_free(ext_relocs);
-	rz_skiplist_free(all_relocs);
-	rz_io_desc_free(gotrzdesc);
-	rz_list_free(ret);
-	ht_uu_free(relocs_by_sym);
-	return NULL;
 }
 
 #if !RZ_BIN_MACH064
@@ -1033,7 +865,6 @@ RzBinPlugin rz_bin_plugin_mach0 = {
 	.fields = MACH0_(mach_fields),
 	.libs = &libs,
 	.relocs = &relocs,
-	.patch_relocs = &patch_relocs,
 	.create = &create,
 	.classes = &MACH0_(parse_classes),
 	.section_type_to_string = &MACH0_(section_type_to_string),

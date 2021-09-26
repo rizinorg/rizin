@@ -186,6 +186,12 @@ static ut64 buf_sparse_size(RzBuffer *b) {
 	SparsePriv *priv = get_priv_sparse(b);
 	ut64 max;
 	ut64 r = sparse_limits(priv, &max) ? max : 0;
+	if (priv->base) {
+		ut64 base_sz = rz_buf_size(priv->base);
+		if (base_sz > r) {
+			r = base_sz;
+		}
+	}
 	return r;
 }
 

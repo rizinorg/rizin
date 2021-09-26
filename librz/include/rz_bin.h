@@ -852,6 +852,19 @@ RZ_API RzBinImport *rz_bin_import_clone(RzBinImport *o);
 RZ_API const char *rz_bin_symbol_name(RzBinSymbol *s);
 typedef void (*RzBinSymbolCallback)(RzBinObject *obj, RzBinSymbol *symbol);
 
+// common functionality for patching relocs
+RZ_API ut64 rz_bin_relocs_patch_find_targets_map_base(RzList /*<RzBinMap>*/ *maps, ut64 target_sz);
+
+typedef struct rz_bin_reloc_target_builder RzBinRelocTargetBuilder;
+RZ_API RzBinRelocTargetBuilder *rz_bin_reloc_target_builder_new(ut64 target_size, ut64 target_base);
+RZ_API void rz_bin_reloc_target_builder_free(RzBinRelocTargetBuilder *builder);
+RZ_API ut64 rz_bin_reloc_target_builder_get_target(RzBinRelocTargetBuilder *builder, ut64 sym);
+
+RZ_API void rz_bin_relocs_patch_maps(RZ_NONNULL RzList /* <RzBinMap> */ *maps,
+	RZ_NULLABLE RzBuffer *buf_patched, ut64 buf_patched_offset,
+	ut64 target_vfile_base, ut64 target_vfile_size,
+	RZ_NONNULL const char *vfile_name_patched, RZ_NONNULL const char *vfile_name_reloc_targets);
+
 // options functions
 RZ_API void rz_bin_options_init(RzBinOptions *opt, int fd, ut64 baseaddr, ut64 loadaddr, bool patch_relocs, int rawstr);
 RZ_API void rz_bin_arch_options_init(RzBinArchOptions *opt, const char *arch, int bits);

@@ -4791,17 +4791,17 @@ nth paddr      vaddr      bind   type   size lib name
 7   0x00000000 0x00000000 WEAK   NOTYPE 16       imp._ITM_registerTMCloneTable
 vaddr      paddr      target     type   name                        
 --------------------------------------------------------------------
-0x00001eec 0x00000eec 0x00002030 SET_32 
-0x00001ef0 0x00000ef0 0x00002034 SET_32 
-0x00001fe8 0x00000fe8 0x00002040 SET_32 _ITM_deregisterTMCloneTable
-0x00001fec 0x00000fec 0x00002044 SET_32 __cxa_finalize
-0x00001ff0 0x00000ff0 0x00002048 SET_32 __gmon_start__
-0x00001ff4 0x00000ff4 0x00002038 SET_32 
-0x00001ff8 0x00000ff8 0x0000204c SET_32 _Jv_RegisterClasses
-0x00001ffc 0x00000ffc 0x00002050 SET_32 _ITM_registerTMCloneTable
+0x00001eec 0x00000eec 0x00000000 SET_32 
+0x00001ef0 0x00000ef0 0x00000000 SET_32 
+0x00001fe8 0x00000fe8 0x00002030 SET_32 _ITM_deregisterTMCloneTable
+0x00001fec 0x00000fec 0x00002034 SET_32 __cxa_finalize
+0x00001ff0 0x00000ff0 0x00002038 SET_32 __gmon_start__
+0x00001ff4 0x00000ff4 0x00000000 SET_32 
+0x00001ff8 0x00000ff8 0x0000203c SET_32 _Jv_RegisterClasses
+0x00001ffc 0x00000ffc 0x00002040 SET_32 _ITM_registerTMCloneTable
 0x0000200c 0x0000100c 0x00002028 SET_32 puts
 0x00002010 0x00001010 0x0000202c SET_32 __libc_start_main
-0x00002018 0x00001018 0x0000203c SET_32 
+0x00002018 0x00001018 0x00000000 SET_32 
 0x00000000 1936 segment.LOAD0
 0x00000000 0 segment.GNU_STACK
 0x00000000 52 segment.ehdr
@@ -4835,11 +4835,11 @@ vaddr      paddr      target     type   name
 0x00002010 4 reloc.__libc_start_main
 0x00002028 4 reloc.target.puts
 0x0000202c 4 reloc.target.__libc_start_main
-0x00002040 4 reloc.target._ITM_deregisterTMCloneTable
-0x00002044 4 reloc.target.__cxa_finalize
-0x00002048 4 reloc.target.__gmon_start
-0x0000204c 4 reloc.target._Jv_RegisterClasses
-0x00002050 4 reloc.target._ITM_registerTMCloneTable
+0x00002030 4 reloc.target._ITM_deregisterTMCloneTable
+0x00002034 4 reloc.target.__cxa_finalize
+0x00002038 4 reloc.target.__gmon_start
+0x0000203c 4 reloc.target._Jv_RegisterClasses
+0x00002040 4 reloc.target._ITM_registerTMCloneTable
 EOF
 RUN
 
