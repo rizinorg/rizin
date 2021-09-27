@@ -104,6 +104,7 @@ static bool lastcmd_repeat(RzCore *core, int next);
 #include "cmd_tasks.c"
 #include "cmd_system.c"
 #include "cmd_history.c"
+#include "cmd_yank.c"
 #include "cmd_linux_heap_glibc.c"
 #include "cmd_windows_heap.c"
 
@@ -203,31 +204,6 @@ static const char *help_msg_u[] = {
 	"uc", "", "undo core commands (uc?, ucl, uc*, ..)",
 	"uniq", "", "filter rows to avoid duplicates",
 	"uname", "", "uname - show system information",
-	NULL
-};
-
-static const char *help_msg_y[] = {
-	"Usage:", "y[ptxy] [len] [[@]addr]", " # See wd? for memcpy, same as 'yf'.",
-	"y!", "", "open cfg.editor to edit the clipboard",
-	"y", " 16 0x200", "copy 16 bytes into clipboard from 0x200",
-	"y", " 16 @ 0x200", "copy 16 bytes into clipboard from 0x200",
-	"y", " 16", "copy 16 bytes into clipboard",
-	"y", "", "show yank buffer information (srcoff len bytes)",
-	"y*", "", "print in rizin commands what's been yanked",
-	"yf", " 64 0x200", "copy file 64 bytes from 0x200 from file",
-	"yfa", " file copy", "copy all bytes from file (opens w/ io)",
-	"yfx", " 10203040", "yank from hexpairs (same as ywx)",
-	"yj", "", "print in JSON commands what's been yanked",
-	"yp", "", "print contents of clipboard",
-	"yq", "", "print contents of clipboard in hexpairs",
-	"ys", "", "print contents of clipboard as string",
-	"yt", " 64 0x200", "copy 64 bytes from current seek to 0x200",
-	"ytf", " file", "dump the clipboard to given file",
-	"yw", " hello world", "yank from string",
-	"ywx", " 10203040", "yank from hexpairs (same as yfx)",
-	"yx", "", "print contents of clipboard in hexadecimal",
-	"yy", " 0x3344", "paste clipboard",
-	"yz", " [len]", "copy nul-terminated string (up to blocksize) into clipboard",
 	NULL
 };
 
@@ -530,119 +506,6 @@ RZ_IPI int rz_cmd_alias(void *data, const char *input) {
 	}
 	free(buf);
 	return 0;
-}
-
-RZ_IPI int rz_cmd_yank(void *data, const char *input) {
-	ut64 n;
-	RzCore *core = (RzCore *)data;
-	switch (input[0]) {
-	case ' ': // "y "
-		rz_core_yank(core, core->offset, rz_num_math(core->num, input + 1));
-		break;
-	case 'l': // "yl"
-		core->num->value = rz_buf_size(core->yank_buf);
-		break;
-	case 'y': // "yy"
-		while (input[1] == ' ') {
-			input++;
-		}
-		n = input[1] ? rz_num_math(core->num, input + 1) : core->offset;
-		rz_core_yank_paste(core, n, 0);
-		break;
-	case 'x': // "yx"
-		rz_core_yank_hexdump(core, rz_num_math(core->num, input + 1));
-		break;
-	case 'z': // "yz"
-		rz_core_yank_string(core, core->offset, rz_num_math(core->num, input + 1));
-		break;
-	case 'w': // "yw" ... we have yf which makes more sense than 'w'
-		switch (input[1]) {
-		case ' ':
-			rz_core_yank_set(core, 0, (const ut8 *)input + 2, strlen(input + 2));
-			break;
-		case 'x':
-			if (input[2] == ' ') {
-				char *out = strdup(input + 3);
-				int len = rz_hex_str2bin(input + 3, (ut8 *)out);
-				if (len > 0) {
-					rz_core_yank_set(core, core->offset, (const ut8 *)out, len);
-				} else {
-					eprintf("Invalid length\n");
-				}
-				free(out);
-			} else {
-				eprintf("Usage: ywx [hexpairs]\n");
-			}
-			// rz_core_yank_write_hex (core, input + 2);
-			break;
-		default:
-			eprintf("Usage: ywx [hexpairs]\n");
-			break;
-		}
-		break;
-	case 'p': // "yp"
-		rz_core_yank_cat(core, rz_num_math(core->num, input + 1));
-		break;
-	case 's': // "ys"
-		rz_core_yank_cat_string(core, rz_num_math(core->num, input + 1));
-		break;
-	case 't': // "wt"
-		if (input[1] == 'f') { // "wtf"
-			ut64 tmpsz;
-			const char *file = rz_str_trim_head_ro(input + 2);
-			const ut8 *tmp = rz_buf_data(core->yank_buf, &tmpsz);
-			if (!rz_file_dump(file, tmp, tmpsz, false)) {
-				eprintf("Cannot dump to '%s'\n", file);
-			}
-		} else if (input[1] == ' ') {
-			rz_core_yank_to(core, input + 1);
-		} else {
-			eprintf("Usage: wt[f] [arg] ..\n");
-		}
-		break;
-	case 'f': // "yf"
-		switch (input[1]) {
-		case ' ': // "yf"
-			rz_core_yank_file_ex(core, input + 1);
-			break;
-		case 'x': // "yfx"
-			rz_core_yank_hexpair(core, input + 2);
-			break;
-		case 'a': // "yfa"
-			rz_core_yank_file_all(core, input + 2);
-			break;
-		default:
-			eprintf("Usage: yf[xa] [arg]\n");
-			eprintf("yf [file]     - copy blocksize from file into the clipboard\n");
-			eprintf("yfa [path]    - yank the whole file\n");
-			eprintf("yfx [hexpair] - yank from hexpair string\n");
-			break;
-		}
-		break;
-	case '!': // "y!"
-	{
-		char *sig = rz_core_cmd_str(core, "y*");
-		if (!sig || !*sig) {
-			free(sig);
-			sig = strdup("wx 10203040");
-		}
-		char *data = rz_core_editor(core, NULL, sig);
-		(void)strtok(data, ";\n");
-		rz_core_cmdf(core, "y%s", data);
-		free(sig);
-		free(data);
-	} break;
-	case '*': // "y*"
-	case 'j': // "yj"
-	case 'q': // "yq"
-	case '\0': // "y"
-		rz_core_yank_dump(core, 0, input[0]);
-		break;
-	default:
-		rz_core_cmd_help(core, help_msg_y);
-		break;
-	}
-	return true;
 }
 
 static int lang_run_file(RzCore *core, RzLang *lang, const char *file) {
@@ -6269,7 +6132,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "v", "enter visual mode", rz_cmd_panels },
 		{ "w", "write bytes", rz_cmd_write },
 		{ "x", "alias for px", rz_cmd_hexdump },
-		{ "y", "yank bytes", rz_cmd_yank },
 		{ "z", "zignatures", rz_cmd_zign },
 	};
 
@@ -6296,7 +6158,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 
 	DEPRECATED_DEFINE_CMD_DESCRIPTOR(core, k);
 	DEPRECATED_DEFINE_CMD_DESCRIPTOR(core, u);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR(core, y);
 	cmd_descriptor_init(core);
 	rzshell_cmddescs_init(core);
 }

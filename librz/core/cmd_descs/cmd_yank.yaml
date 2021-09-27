@@ -1,0 +1,85 @@
+# SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+---
+name: cmd_yank
+commands:
+  - name: y
+    cname: yank
+    summary: Yank bytes / Show yank contents
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_RIZIN
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_QUIET
+    args:
+      - name: len
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
+  - name: ye
+    cname: yank_editor
+    summary: Open cfg.editor to edit the clipboard
+    args: []
+  - name: yf
+    cname: yank_file
+    summary: Yank [len] bytes from file
+    args:
+      - name: len
+        type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: file
+        type: RZ_CMD_ARG_TYPE_FILE
+  - name: yfa
+    cname: yank_whole_file
+    summary: Yank whole file into clipboard
+    args:
+      - name: file
+        type: RZ_CMD_ARG_TYPE_FILE
+  - name: yp
+    cname: yank_print
+    summary: Print contents of clipboards as raw data
+    args:
+      - name: len
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
+  - name: ys
+    cname: yank_string_print
+    summary: Print contents of clipboards as string
+    args:
+      - name: len
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
+  - name: yt
+    cname: yank_to
+    summary: Copy [len] bytes from current seek to [offset]
+    args:
+      - name: len
+        type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: offset
+        type: RZ_CMD_ARG_TYPE_RZNUM
+  - name: ywx
+    cname: yank_hexpairs
+    summary: Yank from hexpairs string
+    args:
+      - name: string
+        type: RZ_CMD_ARG_TYPE_STRING
+  - name: yx
+    cname: yank_hex_print
+    summary: Print contents of clipboard in hexadecimal
+    args:
+      - name: len
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
+  - name: yy
+    cname: yank_paste
+    summary: Paste [len] bytes from yank clipboard
+    args:
+      - name: len
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
+  - name: yz
+    cname: yank_string
+    summary: Copy NULL-terminated string into clipboard
+    args:
+      - name: len
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
