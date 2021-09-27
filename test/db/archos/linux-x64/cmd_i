@@ -1,7 +1,6 @@
 # Should not be run on Windows
 NAME=utf8 (possibly malformed) filenames with non-printable chars
 FILE==
-BROKEN=1  # Third JSON output is wrong
 CMDS=<<EOF
 cd `e dir.tmp`
 e io.cache=true
@@ -16,6 +15,6 @@ file    A\x1b¢€𝄞󠁁\.bin
 file    B\x1b¢€𝄞󠁁\.bin
 {"core":{"file":"B\u001b¢\u0080€𝄞\udb40\udc41\\.bin","fd":5,"size":256,"humansz":"256","iorw":true,"mode":"r-x","block":256,"format":"any"}}
 file    B\x1b¢\x81€𝄞󠁁\.bin
-{"core":{"file":"B\u001b¢\u0080€𝄞\udb40\udc41\\.bin","fd":6,"size":256,"humansz":"256","iorw":true,"mode":"r-x","block":256,"format":"any"}}
+{"core":{"file":[66,27,194,162,194,128,129,226,130,172,240,157,132,158,243,160,129,129,92,46,98,105,110],"fd":6,"size":256,"humansz":"256","iorw":true,"mode":"r-x","block":256,"format":"any"}}
 EOF
 RUN

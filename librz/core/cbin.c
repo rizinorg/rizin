@@ -2843,7 +2843,12 @@ RZ_API bool rz_core_file_info_print(RzCore *core, RzBinFile *binfile, RzCmdState
 		break;
 	case RZ_OUTPUT_MODE_JSON:
 		pj_o(state->d.pj);
-		pj_ks(state->d.pj, "file", filename);
+		const char *file_tag = "file";
+		if (rz_str_is_utf8(filename)) {
+			pj_ks(state->d.pj, file_tag, filename);
+		} else {
+			pj_kr(state->d.pj, file_tag, (unsigned char *)filename, strlen(filename));
+		}
 		if (desc) {
 			ut64 fsz = rz_io_desc_size(desc);
 			pj_ki(state->d.pj, "fd", desc->fd);
