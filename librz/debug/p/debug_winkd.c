@@ -26,7 +26,7 @@ static int rz_debug_winkd_reg_write(RzDebug *dbg, int type, const ut8 *buf, int 
 		return false;
 	}
 	int arena_size;
-	ut8 *arena = rz_reg_get_bytes(dbg->reg, RZ_REG_TYPE_ALL, &arena_size);
+	ut8 *arena = rz_reg_get_bytes(dbg->reg, RZ_REG_TYPE_ANY, &arena_size);
 	if (!arena) {
 		eprintf("Could not retrieve the register arena!\n");
 		return false;

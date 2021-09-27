@@ -770,7 +770,7 @@ RZ_API void rz_core_link_stroff(RzCore *core, RzAnalysisFunction *fcn) {
 		return;
 	}
 	rz_reg_arena_push(core->analysis->reg);
-	rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ALL, true);
+	rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ANY, true);
 	ut64 spval = rz_reg_getv(esil->analysis->reg, sp_name);
 	if (spval) {
 		// reset stack pointer to initial value

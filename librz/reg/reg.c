@@ -82,7 +82,7 @@ RZ_API int rz_reg_type_by_name(const char *str) {
 		}
 	}
 	if (!strcmp(str, "all")) {
-		return RZ_REG_TYPE_ALL;
+		return RZ_REG_TYPE_ANY;
 	}
 	return -1;
 }
@@ -339,7 +339,7 @@ RZ_API RzRegItem *rz_reg_get(RzReg *reg, const char *name, int type) {
 }
 
 RZ_API const RzList *rz_reg_get_list(RzReg *reg, int type) {
-	if (type == RZ_REG_TYPE_ALL) {
+	if (type == RZ_REG_TYPE_ANY) {
 		return reg->allregs;
 	}
 

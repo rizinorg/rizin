@@ -1392,7 +1392,7 @@ static void rz_print_format_register(RzStrBuf *outbuf, const RzPrint *p, int mod
 	if (!p || !p->get_register || !p->reg) {
 		return;
 	}
-	RzRegItem *ri = p->get_register(p->reg, name, RZ_REG_TYPE_ALL);
+	RzRegItem *ri = p->get_register(p->reg, name, RZ_REG_TYPE_ANY);
 	if (ri) {
 		if (MUSTSET) {
 			rz_strbuf_appendf(outbuf, "dr %s=%s\n", name, setval);

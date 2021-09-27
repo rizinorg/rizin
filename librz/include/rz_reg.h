@@ -25,8 +25,10 @@ typedef enum {
 	RZ_REG_TYPE_YMM,
 	RZ_REG_TYPE_FLG,
 	RZ_REG_TYPE_SEG,
+	RZ_REG_TYPE_SYS,
+	RZ_REG_TYPE_PAUTH,
 	RZ_REG_TYPE_LAST,
-	RZ_REG_TYPE_ALL = -1, // TODO; rename to ANY
+	RZ_REG_TYPE_ANY = -1
 } RzRegisterType;
 
 /*

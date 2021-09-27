@@ -250,7 +250,7 @@ RZ_IPI bool rz_core_debug_reg_set(RzCore *core, const char *regname, ut64 val, c
 	} else {
 		rz_reg_set_value(core->dbg->reg, r, val);
 	}
-	rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ALL, true);
+	rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ANY, true);
 	rz_core_debug_regs2flags(core, bits);
 	return true;
 }

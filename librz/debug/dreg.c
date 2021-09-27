@@ -23,7 +23,7 @@ RZ_API int rz_debug_reg_sync(RzDebug *dbg, int type, int write) {
 		return false;
 	}
 	// Sync all the types sequentially if asked
-	i = (type == RZ_REG_TYPE_ALL) ? RZ_REG_TYPE_GPR : type;
+	i = (type == RZ_REG_TYPE_ANY) ? RZ_REG_TYPE_GPR : type;
 	// Check to get the correct arena when using @ into reg profile (arena!=type)
 	// if request type is positive and the request regset don't have regs
 	if (i >= RZ_REG_TYPE_GPR && dbg->reg->regset[i].regs && !dbg->reg->regset[i].regs->length) {
@@ -52,7 +52,7 @@ RZ_API int rz_debug_reg_sync(RzDebug *dbg, int type, int write) {
 						"registers %d to %d\n",
 						i, dbg->tid);
 				}
-				if (type != RZ_REG_TYPE_ALL || i == RZ_REG_TYPE_GPR) {
+				if (type != RZ_REG_TYPE_ANY || i == RZ_REG_TYPE_GPR) {
 					free(buf);
 					return false;
 				}
@@ -82,7 +82,7 @@ RZ_API int rz_debug_reg_sync(RzDebug *dbg, int type, int write) {
 		//   break;
 		// Continue the synchronization or just stop if it was asked only for a single type of regs
 		i++;
-	} while ((type == RZ_REG_TYPE_ALL) && (i < RZ_REG_TYPE_LAST));
+	} while ((type == RZ_REG_TYPE_ANY) && (i < RZ_REG_TYPE_LAST));
 	return true;
 }
 
@@ -95,10 +95,10 @@ RZ_API int rz_debug_reg_set(struct rz_debug_t *dbg, const char *name, ut64 num) 
 	if (role != -1) {
 		name = rz_reg_get_name(dbg->reg, role);
 	}
-	ri = rz_reg_get(dbg->reg, name, RZ_REG_TYPE_ALL);
+	ri = rz_reg_get(dbg->reg, name, RZ_REG_TYPE_ANY);
 	if (ri) {
 		rz_reg_set_value(dbg->reg, ri, num);
-		rz_debug_reg_sync(dbg, RZ_REG_TYPE_ALL, true);
+		rz_debug_reg_sync(dbg, RZ_REG_TYPE_ANY, true);
 	}
 	return (ri != NULL);
 }
@@ -132,9 +132,9 @@ RZ_API ut64 rz_debug_reg_get_err(RzDebug *dbg, const char *name, int *err, utX *
 			return UT64_MAX;
 		}
 	}
-	ri = rz_reg_get(dbg->reg, name, RZ_REG_TYPE_ALL);
+	ri = rz_reg_get(dbg->reg, name, RZ_REG_TYPE_ANY);
 	if (ri) {
-		rz_debug_reg_sync(dbg, RZ_REG_TYPE_ALL, false);
+		rz_debug_reg_sync(dbg, RZ_REG_TYPE_ANY, false);
 		if (value && ri->size > 64) {
 			if (err) {
 				*err = ri->size;
@@ -163,7 +163,7 @@ RZ_API bool rz_debug_reg_profile_sync(RzDebug *dbg) {
 		char *p = dbg->cur->reg_profile(dbg);
 		if (p) {
 			rz_reg_set_profile_string(dbg->reg, p);
-			rz_debug_reg_sync(dbg, RZ_REG_TYPE_ALL, false);
+			rz_debug_reg_sync(dbg, RZ_REG_TYPE_ANY, false);
 			if (dbg->analysis && dbg->reg != dbg->analysis->reg) {
 				rz_reg_free(dbg->analysis->reg);
 				dbg->analysis->reg = dbg->reg;
