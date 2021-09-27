@@ -103,6 +103,11 @@ static const RzCmdDescArg analysis_xrefs_set_d_args[2];
 static const RzCmdDescArg analysis_xrefs_set_s_args[2];
 static const RzCmdDescArg analysis_xrefs_del_args[3];
 static const RzCmdDescArg analysis_xrefs_copy_args[2];
+static const RzCmdDescArg block_args[2];
+static const RzCmdDescArg block_decrease_args[2];
+static const RzCmdDescArg block_increase_args[2];
+static const RzCmdDescArg block_flag_args[2];
+static const RzCmdDescArg block_max_args[2];
 static const RzCmdDescArg cmd_debug_continue_execution_args[2];
 static const RzCmdDescArg cmd_debug_continue_send_signal_args[3];
 static const RzCmdDescArg cmd_debug_continue_traptrace_args[2];
@@ -159,6 +164,11 @@ static const RzCmdDescArg cmd_print_magic_args[2];
 static const RzCmdDescArg project_save_args[2];
 static const RzCmdDescArg project_open_args[2];
 static const RzCmdDescArg project_open_no_bin_io_args[2];
+static const RzCmdDescArg resize_args[2];
+static const RzCmdDescArg resize_remove_args[2];
+static const RzCmdDescArg resize_insert_args[2];
+static const RzCmdDescArg rebase_args[2];
+static const RzCmdDescArg remove_file_args[2];
 static const RzCmdDescArg seek_args[2];
 static const RzCmdDescArg seek_padded_args[2];
 static const RzCmdDescArg seek_base_args[2];
@@ -1815,8 +1825,78 @@ static const RzCmdDescHelp analysis_xrefs_graph_help = {
 	.args = analysis_xrefs_graph_args,
 };
 
-static const RzCmdDescHelp cmd_bsize_help = {
+static const RzCmdDescHelp b_help = {
 	.summary = "Display or change the block size",
+};
+static const RzCmdDescArg block_args[] = {
+	{
+		.name = "num",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp block_help = {
+	.summary = "Set/Get current block size",
+	.args = block_args,
+};
+
+static const RzCmdDescArg block_decrease_args[] = {
+	{
+		.name = "num",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp block_decrease_help = {
+	.summary = "Decrease current block size",
+	.args = block_decrease_args,
+};
+
+static const RzCmdDescArg block_increase_args[] = {
+	{
+		.name = "num",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp block_increase_help = {
+	.summary = "Increase current block size",
+	.args = block_increase_args,
+};
+
+static const RzCmdDescArg block_flag_args[] = {
+	{
+		.name = "flag",
+		.type = RZ_CMD_ARG_TYPE_FLAG,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp block_flag_help = {
+	.summary = "Set block size to flag size",
+	.args = block_flag_args,
+};
+
+static const RzCmdDescArg block_max_args[] = {
+	{
+		.name = "num",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp block_max_help = {
+	.summary = "Set/Get max block size",
+	.args = block_max_args,
 };
 
 static const RzCmdDescHelp cmd_cmp_help = {
@@ -3547,8 +3627,85 @@ static const RzCmdDescHelp quit_nokill_save_help = {
 	.args = quit_nokill_save_args,
 };
 
-static const RzCmdDescHelp cmd_resize_help = {
+static const RzCmdDescHelp r_help = {
 	.summary = "Resize file",
+};
+static const RzCmdDescArg resize_args[] = {
+	{
+		.name = "size",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp resize_help = {
+	.summary = "Resize file / Display file size",
+	.args = resize_args,
+};
+
+static const RzCmdDescArg resize_remove_args[] = {
+	{
+		.name = "num",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp resize_remove_help = {
+	.summary = "Remove num bytes, move following data down",
+	.args = resize_remove_args,
+};
+
+static const RzCmdDescArg resize_insert_args[] = {
+	{
+		.name = "num",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp resize_insert_help = {
+	.summary = "Insert num bytes, move following data up",
+	.args = resize_insert_args,
+};
+
+static const RzCmdDescArg rebase_args[] = {
+	{
+		.name = "oldbase",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp rebase_help = {
+	.summary = "Rebase all flags, binary information, breakpoints, and analysis",
+	.args = rebase_args,
+};
+
+static const RzCmdDescArg remove_file_args[] = {
+	{
+		.name = "file",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp remove_file_help = {
+	.summary = "Remove file",
+	.args = remove_file_args,
+};
+
+static const RzCmdDescArg resize_human_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp resize_human_help = {
+	.summary = "Display size in human-friendly format",
+	.args = resize_human_args,
 };
 
 static const RzCmdDescHelp s_help = {
@@ -5960,8 +6117,19 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_xrefs_graph_cd = rz_cmd_desc_argv_state_new(core->rcmd, ax_cd, "axg", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_analysis_xrefs_graph_handler, &analysis_xrefs_graph_help);
 	rz_warn_if_fail(analysis_xrefs_graph_cd);
 
-	RzCmdDesc *cmd_bsize_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "b", rz_cmd_bsize, &cmd_bsize_help);
-	rz_warn_if_fail(cmd_bsize_cd);
+	RzCmdDesc *b_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "b", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_block_handler, &block_help, &b_help);
+	rz_warn_if_fail(b_cd);
+	RzCmdDesc *block_decrease_cd = rz_cmd_desc_argv_new(core->rcmd, b_cd, "b-", rz_block_decrease_handler, &block_decrease_help);
+	rz_warn_if_fail(block_decrease_cd);
+
+	RzCmdDesc *block_increase_cd = rz_cmd_desc_argv_new(core->rcmd, b_cd, "b+", rz_block_increase_handler, &block_increase_help);
+	rz_warn_if_fail(block_increase_cd);
+
+	RzCmdDesc *block_flag_cd = rz_cmd_desc_argv_new(core->rcmd, b_cd, "bf", rz_block_flag_handler, &block_flag_help);
+	rz_warn_if_fail(block_flag_cd);
+
+	RzCmdDesc *block_max_cd = rz_cmd_desc_argv_new(core->rcmd, b_cd, "bm", rz_block_max_handler, &block_max_help);
+	rz_warn_if_fail(block_max_cd);
 
 	RzCmdDesc *cmd_cmp_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "c", rz_cmd_cmp, &cmd_cmp_help);
 	rz_warn_if_fail(cmd_cmp_cd);
@@ -6438,8 +6606,22 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *quit_nokill_save_cd = rz_cmd_desc_argv_new(core->rcmd, qn_cd, "qny", rz_quit_nokill_save_handler, &quit_nokill_save_help);
 	rz_warn_if_fail(quit_nokill_save_cd);
 
-	RzCmdDesc *cmd_resize_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "r", rz_cmd_resize, &cmd_resize_help);
-	rz_warn_if_fail(cmd_resize_cd);
+	RzCmdDesc *r_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "r", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_resize_handler, &resize_help, &r_help);
+	rz_warn_if_fail(r_cd);
+	RzCmdDesc *resize_remove_cd = rz_cmd_desc_argv_new(core->rcmd, r_cd, "r-", rz_resize_remove_handler, &resize_remove_help);
+	rz_warn_if_fail(resize_remove_cd);
+
+	RzCmdDesc *resize_insert_cd = rz_cmd_desc_argv_new(core->rcmd, r_cd, "r+", rz_resize_insert_handler, &resize_insert_help);
+	rz_warn_if_fail(resize_insert_cd);
+
+	RzCmdDesc *rebase_cd = rz_cmd_desc_argv_new(core->rcmd, r_cd, "rb", rz_rebase_handler, &rebase_help);
+	rz_warn_if_fail(rebase_cd);
+
+	RzCmdDesc *remove_file_cd = rz_cmd_desc_argv_new(core->rcmd, r_cd, "rm", rz_remove_file_handler, &remove_file_help);
+	rz_warn_if_fail(remove_file_cd);
+
+	RzCmdDesc *resize_human_cd = rz_cmd_desc_argv_new(core->rcmd, r_cd, "rh", rz_resize_human_handler, &resize_human_help);
+	rz_warn_if_fail(resize_human_cd);
 
 	RzCmdDesc *s_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "s", rz_seek_handler, &seek_help, &s_help);
 	rz_warn_if_fail(s_cd);

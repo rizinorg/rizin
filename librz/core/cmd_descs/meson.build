@@ -1,6 +1,7 @@
 cmd_descs_generate_py = files('cmd_descs_generate.py')
 cmd_descs_yaml = files(
   'cmd_analysis.yaml',
+  'cmd_block.yaml',
   'cmd_debug.yaml',
   'cmd_descs.yaml',
   'cmd_eval.yaml',
@@ -13,6 +14,7 @@ cmd_descs_yaml = files(
   'cmd_project.yaml',
   'cmd_quit.yaml',
   'cmd_remote.yaml',
+  'cmd_resize.yaml',
   'cmd_seek.yaml',
   'cmd_system.yaml',
   'cmd_tasks.yaml',

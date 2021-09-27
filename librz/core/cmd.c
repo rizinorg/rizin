@@ -75,6 +75,7 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 static void cmd_debug_reg(RzCore *core, const char *str);
 static bool lastcmd_repeat(RzCore *core, int next);
 
+#include "cmd_block.c"
 #include "cmd_quit.c"
 #include "cmd_hash.c"
 #include "cmd_debug.c"
@@ -99,6 +100,7 @@ static bool lastcmd_repeat(RzCore *core, int next);
 #include "cmd_print.c"
 #include "cmd_help.c"
 #include "cmd_remote.c"
+#include "cmd_resize.c"
 #include "cmd_tasks.c"
 #include "cmd_system.c"
 #include "cmd_history.c"
@@ -154,20 +156,6 @@ static const char *help_msg_dot[] = {
 	NULL
 };
 
-static const char *help_msg_b[] = {
-	"Usage:", "b[f] [arg]\n", "Get/Set block size",
-	"b", " 33", "set block size to 33",
-	"b", " eip+4", "numeric argument can be an expression",
-	"b", "", "display current block size",
-	"b", "+3", "increase blocksize by 3",
-	"b", "-16", "decrease blocksize by 16",
-	"b*", "", "display current block size in rizin command",
-	"bf", " foo", "set block size to flag size",
-	"bj", "", "display block size information in JSON",
-	"bm", " 1M", "set max block size",
-	NULL
-};
-
 static const char *help_msg_k[] = {
 	"Usage:",
 	"k[s] [key[=value]]",
@@ -205,21 +193,6 @@ static const char *help_msg_k[] = {
 	//"kl", " ha.sdb", "load keyvalue from ha.sdb",
 	//"ks", " ha.sdb", "save keyvalue to ha.sdb",
 	NULL,
-};
-
-static const char *help_msg_r[] = {
-	"Usage:", "r[+-][ size]", "Resize file",
-	"r", "", "display file size",
-	"rj", "", "display the file size in JSON format",
-	"r", " size", "expand or truncate file to given size",
-	"r-", "num", "remove num bytes, move following data down",
-	"r+", "num", "insert num bytes, move following data up",
-	"rb", "oldbase @ newbase", "rebase all flags, bin.info, breakpoints and analysis",
-	"rm", " [file]", "remove file",
-	"rh", "", "show size in human format",
-	"rz", " [file]", "launch rizin (same for rz-ax, rz-asm, ...)",
-	"reset", "", "reset console settings (clear --hard)",
-	NULL
 };
 
 static const char *help_msg_u[] = {
@@ -1301,225 +1274,6 @@ RZ_IPI int rz_cmd_kuery(void *data, const char *input) {
 		return 0;
 	}
 	return 0;
-}
-
-RZ_IPI int rz_cmd_bsize(void *data, const char *input) {
-	ut64 n;
-	RzFlagItem *flag;
-	RzCore *core = (RzCore *)data;
-	switch (input[0]) {
-	case 'm': // "bm"
-		n = rz_num_math(core->num, input + 1);
-		if (n > 1) {
-			core->blocksize_max = n;
-		} else {
-			rz_cons_printf("0x%x\n", (ut32)core->blocksize_max);
-		}
-		break;
-	case '+': // "b+"
-		n = rz_num_math(core->num, input + 1);
-		rz_core_block_size(core, core->blocksize + n);
-		break;
-	case '-': // "b-"
-		n = rz_num_math(core->num, input + 1);
-		rz_core_block_size(core, core->blocksize - n);
-		break;
-	case 'f': // "bf"
-		if (input[1] == ' ') {
-			flag = rz_flag_get(core->flags, input + 2);
-			if (flag) {
-				rz_core_block_size(core, flag->size);
-			} else {
-				eprintf("bf: cannot find flag named '%s'\n", input + 2);
-			}
-		} else {
-			eprintf("Usage: bf [flagname]\n");
-		}
-		break;
-	case 'j': { // "bj"
-		PJ *pj = pj_new();
-		if (!pj) {
-			break;
-		}
-		pj_o(pj);
-		pj_ki(pj, "blocksize", core->blocksize);
-		pj_ki(pj, "blocksize_limit", core->blocksize_max);
-		pj_end(pj);
-		rz_cons_println(pj_string(pj));
-		pj_free(pj);
-		break;
-	}
-	case '*': // "b*"
-		rz_cons_printf("b 0x%x\n", core->blocksize);
-		break;
-	case '\0': // "b"
-		rz_cons_printf("0x%x\n", core->blocksize);
-		break;
-	case ' ':
-		rz_core_block_size(core, rz_num_math(core->num, input));
-		break;
-	default:
-	case '?': // "b?"
-		rz_core_cmd_help(core, help_msg_b);
-		break;
-	}
-	return 0;
-}
-
-static int __runMain(RzMainCallback cb, const char *arg) {
-	char *a = rz_str_trim_dup(arg);
-	int argc = 0;
-	char **args = rz_str_argv(a, &argc);
-	int res = cb(argc, (const char **)args);
-	free(args);
-	free(a);
-	return res;
-}
-
-static bool cmd_rzcmd(RzCore *core, const char *_input) {
-	char *input = rz_str_newf("r%s", _input);
-	int rc = 0;
-	if (rz_str_startswith(input, "rizin")) {
-		rz_sys_cmdf("%s", input);
-		// rc = __runMain (core->rz_main_rizin, input);
-	} else if (rz_str_startswith(input, "rz-agent")) {
-		rz_sys_cmdf("%s", input);
-	} else if (rz_str_startswith(input, "rz-asm")) {
-		rz_sys_cmdf("%s", input);
-		// rc = __runMain (core->rz_main_rz_asm, input);
-	} else if (rz_str_startswith(input, "rz-ax")) {
-		rc = __runMain(core->rz_main_rz_ax, input);
-	} else if (rz_str_startswith(input, "rz-bin")) {
-		rz_sys_cmdf("%s", input);
-		// rc = __runMain (core->rz_main_rz_bin, input);
-	} else if (rz_str_startswith(input, "rz-diff")) {
-		rc = __runMain(core->rz_main_rz_diff, input);
-	} else if (rz_str_startswith(input, "rz-find")) {
-		rz_sys_cmdf("%s", input);
-	} else if (rz_str_startswith(input, "rz-gg")) {
-		rz_sys_cmdf("%s", input);
-		// rc = __runMain (core->rz_main_rz_gg, input);
-	} else if (rz_str_startswith(input, "rz-hash")) {
-		rz_sys_cmdf("%s", input);
-	} else if (rz_str_startswith(input, "rz-pm")) {
-		rz_sys_cmdf("%s", input);
-		// rc = __runMain (core->rz_main_rz_pm, input);
-	} else if (rz_str_startswith(input, "rz-run")) {
-		rz_sys_cmdf("%s", input);
-	} else if (rz_str_startswith(input, "rz-sign")) {
-		rz_sys_cmdf("%s", input);
-	} else {
-		free(input);
-		return false;
-	}
-	free(input);
-	core->num->value = rc;
-	return true;
-}
-
-static int cmd_rebase(RzCore *core, const char *input) {
-	ut64 addr = rz_num_math(core->num, input);
-	if (!addr) {
-		rz_cons_printf("Usage: rb oldbase @ newbase\n");
-		return 0;
-	}
-	// old base = addr
-	// new base = core->offset
-	rz_debug_bp_rebase(core->dbg, addr, core->offset);
-	rz_bin_set_baddr(core->bin, core->offset);
-	rz_flag_move(core->flags, addr, core->offset);
-	rz_core_bin_apply_all_info(core, rz_bin_cur(core->bin));
-	// TODO: rz_analysis_move :??
-	// TODO: differentiate analysis by map ranges (associated with files or memory maps)
-	return 0;
-}
-
-RZ_IPI int rz_cmd_resize(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	ut64 newsize = 0;
-	st64 delta = 0;
-
-	if (cmd_rzcmd(core, input)) {
-		return true;
-	}
-
-	ut64 oldsize = (core->file) ? rz_io_fd_size(core->io, core->file->fd) : 0;
-	switch (*input) {
-	case 'b': // "rb" rebase
-		return cmd_rebase(core, input + 1);
-	case 'z': // "rz" // XXX should be handled already in cmd_rzcmd()
-		// TODO: use argv[0] instead of 'rizin'
-		// TODO: { char **argv = { "rz", NULL }; rz_main_rizin (1, argv); }
-		rz_sys_cmdf("rizin%s", input);
-		return true;
-	case 'm': // "rm"
-		if (input[1] == ' ') {
-			const char *file = rz_str_trim_head_ro(input + 2);
-			if (*file == '$') {
-				rz_cmd_alias_del(core->rcmd, file);
-			} else {
-				rz_file_rm(file);
-			}
-		} else {
-			eprintf("Usage: rm [file]   # removes a file\n");
-		}
-		return true;
-	case '\0':
-		if (core->file) {
-			if (oldsize != -1) {
-				rz_cons_printf("%" PFMT64d "\n", oldsize);
-			}
-		}
-		return true;
-	case 'j': { // "rj"
-		PJ *pj = pj_new();
-		pj_o(pj);
-		if (oldsize != -1) {
-			pj_kn(pj, "size", oldsize);
-		}
-		pj_end(pj);
-		char *s = pj_drain(pj);
-		rz_cons_println(s);
-		free(s);
-		return true;
-	}
-	case 'h':
-		if (core->file) {
-			if (oldsize != -1) {
-				char humansz[8];
-				rz_num_units(humansz, sizeof(humansz), oldsize);
-				rz_cons_printf("%s\n", humansz);
-			}
-		}
-		return true;
-	case '+': // "r+"
-	case '-': // "r-"
-		delta = (st64)rz_num_math(core->num, input);
-		newsize = oldsize + delta;
-		break;
-	case ' ': // "r "
-		newsize = rz_num_math(core->num, input + 1);
-		if (newsize == 0) {
-			if (input[1] == '0') {
-				eprintf("Invalid size\n");
-			}
-			return false;
-		}
-		break;
-	case 'e':
-		rz_xwrite(1, Color_RESET_TERMINAL, strlen(Color_RESET_TERMINAL));
-		return true;
-	case '?': // "r?"
-	default:
-		rz_core_cmd_help(core, help_msg_r);
-		return true;
-	}
-	if (delta) {
-		rz_core_file_resize_delta(core, delta);
-	} else {
-		rz_core_file_resize(core, newsize);
-	}
-	return true;
 }
 
 RZ_IPI int rz_cmd_panels(void *data, const char *input) {
@@ -6499,7 +6253,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "<", "pipe into RzCons.readChar", rz_cmd_pipein },
 		{ "0", "alias for s 0x", rz_cmd_ox },
 		{ "a", "analysis", rz_cmd_analysis },
-		{ "b", "change block size", rz_cmd_bsize },
 		{ "c", "compare memory", rz_cmd_cmp },
 		{ "C", "code metadata", rz_cmd_meta },
 		{ "d", "debugger operations", rz_cmd_debug },
@@ -6511,7 +6264,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "o", "open or map file", rz_cmd_open },
 		{ "p", "print current block", rz_cmd_print },
 		{ "q", "exit program session", rz_cmd_quit },
-		{ "r", "change file size", rz_cmd_resize },
 		{ "s", "seek to an offset", rz_cmd_seek },
 		{ "V", "enter visual mode", rz_cmd_visual },
 		{ "v", "enter visual mode", rz_cmd_panels },
@@ -6542,9 +6294,7 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 	DEPRECATED_DEFINE_CMD_DESCRIPTOR_SPECIAL(core, ., dot);
 	DEPRECATED_DEFINE_CMD_DESCRIPTOR_SPECIAL(core, =, equal);
 
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR(core, b);
 	DEPRECATED_DEFINE_CMD_DESCRIPTOR(core, k);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR(core, r);
 	DEPRECATED_DEFINE_CMD_DESCRIPTOR(core, u);
 	DEPRECATED_DEFINE_CMD_DESCRIPTOR(core, y);
 	cmd_descriptor_init(core);

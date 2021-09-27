@@ -119,7 +119,11 @@ RZ_IPI RzCmdStatus rz_analysis_xrefs_del_all_handler(RzCore *core, int argc, con
 RZ_IPI RzCmdStatus rz_analysis_xrefs_copy_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_analysis_xrefs_graph_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI int rz_cmd_analysis(void *data, const char *input);
-RZ_IPI int rz_cmd_bsize(void *data, const char *input);
+RZ_IPI RzCmdStatus rz_block_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_block_decrease_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_block_increase_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_block_flag_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_block_max_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_cmd_cmp(void *data, const char *input);
 RZ_IPI int rz_cmd_meta(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_cmd_debug_continue_execution_handler(RzCore *core, int argc, const char **argv);
@@ -274,7 +278,12 @@ RZ_IPI RzCmdStatus rz_quit_kill_save_handler(RzCore *core, int argc, const char 
 RZ_IPI RzCmdStatus rz_quit_kill_nosave_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_quit_nokill_nosave_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_quit_nokill_save_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI int rz_cmd_resize(void *data, const char *input);
+RZ_IPI RzCmdStatus rz_resize_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_resize_remove_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_resize_insert_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_rebase_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_remove_file_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_resize_human_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_seek_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_seek_padded_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_seek_base_handler(RzCore *core, int argc, const char **argv);
