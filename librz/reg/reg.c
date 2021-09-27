@@ -7,7 +7,7 @@
 RZ_LIB_VERSION(rz_reg);
 
 static const char *types[RZ_REG_TYPE_LAST + 1] = {
-	"gpr", "drx", "fpu", "mmx", "xmm", "ymm", "flg", "seg", NULL
+	"gpr", "drx", "fpu", "mmx", "xmm", "ymm", "flg", "seg", "sys", "pauth", NULL
 };
 
 // Take the 32bits name of a register, and return the 64 bit name of it.
