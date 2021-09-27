@@ -842,7 +842,7 @@ static bool type_decl_as_pretty_string(const RzTypeDB *typedb, const RzType *typ
 		if (!type->identifier.name) {
 			return false;
 		}
-		is_anon = !strncmp(type->identifier.name, "anonymous ", 10);
+		is_anon = !strncmp(type->identifier.name, "anonymous ", strlen("anonymous "));
 		*self_ref = false;
 		ht_pp_find(used_types, type->identifier.name, self_ref);
 		*self_ref = *self_ref && !is_anon; // no self_ref for anon types
