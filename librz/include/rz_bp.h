@@ -140,6 +140,10 @@ RZ_API RzBreakpointItem *rz_bp_get_at(RzBreakpoint *bp, ut64 addr);
 RZ_API RzBreakpointItem *rz_bp_get_in(RzBreakpoint *bp, ut64 addr, int perm);
 
 RZ_API bool rz_bp_is_valid(RzBreakpoint *bp, RzBreakpointItem *b);
+RZ_API bool rz_bp_item_set_cond(RZ_NONNULL RzBreakpointItem *item, RZ_NULLABLE const char *cond);
+RZ_API bool rz_bp_item_set_data(RZ_NONNULL RzBreakpointItem *item, RZ_NULLABLE const char *data);
+RZ_API bool rz_bp_item_set_expr(RZ_NONNULL RzBreakpointItem *item, RZ_NULLABLE const char *expr);
+RZ_API bool rz_bp_item_set_name(RZ_NONNULL RzBreakpointItem *item, RZ_NULLABLE const char *name);
 
 RZ_API int rz_bp_add_cond(RzBreakpoint *bp, const char *cond);
 RZ_API int rz_bp_del_cond(RzBreakpoint *bp, int idx);
@@ -165,6 +169,12 @@ RZ_API void rz_bp_traptrace_enable(RzBreakpoint *bp, int enable);
 
 /* watchpoint */
 RZ_API RzBreakpointItem *rz_bp_watch_add(RzBreakpoint *bp, ut64 addr, int size, int hw, int rw);
+
+/* serialize */
+typedef void *RzSerializeBpParser;
+RZ_API void rz_serialize_bp_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzBreakpoint *bp);
+RZ_API RzSerializeBpParser rz_serialize_bp_parser_new(void);
+RZ_API bool rz_serialize_bp_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzBreakpoint *bp, RZ_NULLABLE RzSerializeResultInfo *res);
 
 /* plugin pointers */
 extern RzBreakpointPlugin rz_bp_plugin_x86;

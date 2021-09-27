@@ -1359,13 +1359,11 @@ RzList *MACH0_(parse_classes)(RzBinFile *bf) {
 		}
 		rz_list_append(ret, klass);
 	}
-	rz_skiplist_free(relocs);
 	return ret;
 
 get_classes_error:
 	rz_list_free(sctns);
 	rz_list_free(ret);
-	rz_skiplist_free(relocs);
 	rz_buf_free(owned_buf);
 	// XXX DOUBLE FREE rz_bin_class_free (klass);
 	return NULL;

@@ -4,6 +4,7 @@ rz_bp_sources = [
   'bp_plugin.c',
   'bp_traptrace.c',
   'bp_watch.c',
+  'serialize_bp.c',
   'p/bp_arm.c',
   'p/bp_bf.c',
   'p/bp_mips.c',

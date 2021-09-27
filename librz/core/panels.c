@@ -26,8 +26,7 @@
 #define PANEL_TITLE_COMMENTS      "Comments"
 
 #define PANEL_CMD_SYMBOLS       "isq"
-#define PANEL_CMD_XREFS_HERE    "ax."
-#define PANEL_CMD_XREFS         "ax"
+#define PANEL_CMD_XREFS         "axl"
 #define PANEL_CMD_STACK         "px"
 #define PANEL_CMD_REGISTERS     "dr"
 #define PANEL_CMD_DISASSEMBLY   "pd"
@@ -4868,8 +4867,7 @@ void __init_sdb(RzCore *core) {
 	sdb_set(db, "Database", "k ***", 0);
 	sdb_set(db, "Console", "$console", 0);
 	sdb_set(db, "Hexdump", "xc $r*16", 0);
-	sdb_set(db, "Xrefs", "ax", 0);
-	sdb_set(db, "Xrefs Here", "ax.", 0);
+	sdb_set(db, "Xrefs", "axl", 0);
 	sdb_set(db, "Functions", "afl", 0);
 	sdb_set(db, "Function Calls", "aflm", 0);
 	sdb_set(db, "Comments", "CC", 0);

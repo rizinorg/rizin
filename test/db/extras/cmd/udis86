@@ -117,7 +117,7 @@ e analysis.arch=x86.udis
 e scr.color=false
 e scr.wheel=false
 aa
-axt str.Sdvvzrug_RN
+axt @ str.Sdvvzrug_RN
 axf 0x804848a
 EOF
 EXPECT=<<EOF

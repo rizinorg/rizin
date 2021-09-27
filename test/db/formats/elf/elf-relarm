@@ -23,6 +23,9 @@ vaddr      paddr      type   name
 EOF
 RUN
 
+# IMPORTANT: patched relocs at 0x000b58d0 and 0x000b58d4 are WRONG! They should point to some init0 and init1, like in the 64bit variant.
+# This test exists to check the others around, and whether these two are patched at all
+# If the patching is fixed, the expected result can be updated.
 NAME=ELF: arm sh relocs
 FILE=bins/elf/r2pay-arm32.so
 CMDS=<<EOF
@@ -39,8 +42,8 @@ EXPECT=<<EOF
             0x000b58c8      .dword 0x00004570 ; reloc.target..datadiv_decode12875440098136793118 ; sym..datadiv_decode12875440098136793118; RELOC 32 .datadiv_decode12875440098136793118 @ 0x00004570
             ;-- .datadiv_decode11893604691534341392:
             0x000b58cc      .dword 0x00098028 ; reloc.target..datadiv_decode11893604691534341392 ; sym..datadiv_decode11893604691534341392; RELOC 32 .datadiv_decode11893604691534341392 @ 0x00098028
-            0x000b58d0      .dword 0x001437fc                          ; RELOC 32 
-            0x000b58d4      .dword 0x001437fe                          ; RELOC 32 
+            0x000b58d0      .dword 0x00000000                          ; RELOC 32 
+            0x000b58d4      .dword 0x00000000                          ; RELOC 32 
             ;-- .datadiv_decode668687990735969933:
             0x000b58d8      .dword 0x00098b44 ; reloc.target..datadiv_decode668687990735969933 ; sym..datadiv_decode668687990735969933; RELOC 32 .datadiv_decode668687990735969933 @ 0x00098b44
             ;-- .datadiv_decode16868916699024037624:
@@ -68,8 +71,8 @@ EXPECT=<<EOF
             0x00126510      .qword 0x0000000000005a6c ; sym..datadiv_decode9958896245423089702 ; [13] -rw- section size 728 named .init_array
             0x00126518      .qword 0x0000000000005a80 ; sym..datadiv_decode10476194973746341988
             0x00126520      .qword 0x00000000000efddc ; sym..datadiv_decode16323044921667855934
-            0x00126528      .qword 0x00000000001bd9a0                  ; RELOC 64 
-            0x00126530      .qword 0x000000000022c63c                  ; RELOC 64 
+            0x00126528      .qword 0x0000000000009080 ; entry.init0    ; RELOC 64 
+            0x00126530      .qword 0x0000000000077d14 ; entry.init1    ; RELOC 64 
             0x00126538      .qword 0x00000000000f22e0 ; sym..datadiv_decode667225052219618748
             0x00126540      .qword 0x00000000000f22e4 ; sym..datadiv_decode8132880250332170398
             0x00126548      .qword 0x00000000000f22e8 ; sym..datadiv_decode3655886617018729963

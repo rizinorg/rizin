@@ -39,9 +39,9 @@ CMDS=<<EOF
 !scripts/gdbserver.py --port 12343 --binary bins/elf/hello_world
 oodf gdb://127.0.0.1:12343
 aa
-?v `axt main~entry0[1]`-`e bin.baddr`
+?v `axt @ main~entry0[1]`-`e bin.baddr`
 doc
-?v `axt main~entry0[1]`-`e bin.baddr`
+?v `axt @ main~entry0[1]`-`e bin.baddr`
 EOF
 EXPECT=<<EOF
 0x6bd

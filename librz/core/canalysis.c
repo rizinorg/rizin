@@ -3268,20 +3268,20 @@ static bool fcn_print_detail(RzCore *core, RzAnalysisFunction *fcn) {
 	rz_list_foreach (xrefs, refiter, xrefi) {
 		switch (xrefi->type) {
 		case RZ_ANALYSIS_REF_TYPE_CALL:
-			rz_cons_printf("axC 0x%" PFMT64x " 0x%" PFMT64x "\n", xrefi->to, xrefi->from);
+			rz_cons_printf("axC 0x%" PFMT64x " @ 0x%" PFMT64x "\n", xrefi->to, xrefi->from);
 			break;
 		case RZ_ANALYSIS_REF_TYPE_DATA:
-			rz_cons_printf("axd 0x%" PFMT64x " 0x%" PFMT64x "\n", xrefi->to, xrefi->from);
+			rz_cons_printf("axd 0x%" PFMT64x " @ 0x%" PFMT64x "\n", xrefi->to, xrefi->from);
 			break;
 		case RZ_ANALYSIS_REF_TYPE_CODE:
-			rz_cons_printf("axc 0x%" PFMT64x " 0x%" PFMT64x "\n", xrefi->to, xrefi->from);
+			rz_cons_printf("axc 0x%" PFMT64x " @ 0x%" PFMT64x "\n", xrefi->to, xrefi->from);
 			break;
 		case RZ_ANALYSIS_REF_TYPE_STRING:
-			rz_cons_printf("axs 0x%" PFMT64x " 0x%" PFMT64x "\n", xrefi->to, xrefi->from);
+			rz_cons_printf("axs 0x%" PFMT64x " @ 0x%" PFMT64x "\n", xrefi->to, xrefi->from);
 			break;
 		case RZ_ANALYSIS_REF_TYPE_NULL:
 		default:
-			rz_cons_printf("ax 0x%" PFMT64x " 0x%" PFMT64x "\n", xrefi->to, xrefi->from);
+			rz_cons_printf("ax 0x%" PFMT64x " @ 0x%" PFMT64x "\n", xrefi->to, xrefi->from);
 			break;
 		}
 	}
@@ -4206,7 +4206,7 @@ static bool found_xref(RzCore *core, ut64 at, ut64 xref_to, RzAnalysisXRefType t
 		case RZ_ANALYSIS_REF_TYPE_DATA: cmd = "axd"; break;
 		default: cmd = "ax"; break;
 		}
-		rz_cons_printf("%s 0x%08" PFMT64x " 0x%08" PFMT64x "\n", cmd, xref_to, at);
+		rz_cons_printf("%s 0x%08" PFMT64x " @ 0x%08" PFMT64x "\n", cmd, xref_to, at);
 		if (cfg_analysis_strings && type == RZ_ANALYSIS_REF_TYPE_DATA) {
 			char *str_flagname = is_string_at(core, xref_to, &len);
 			if (str_flagname) {
@@ -7136,7 +7136,7 @@ static void _CbInRangeAav(RzCore *core, ut64 from, ut64 to, int vsize, void *use
 		}
 	}
 	if (pretend) {
-		rz_cons_printf("ax 0x%" PFMT64x " 0x%" PFMT64x "\n", to, from);
+		rz_cons_printf("ax 0x%" PFMT64x " @ 0x%" PFMT64x "\n", to, from);
 		rz_cons_printf("Cd %d @ 0x%" PFMT64x "\n", vsize, from);
 		rz_cons_printf("f+ aav.0x%08" PFMT64x "= 0x%08" PFMT64x, to, to);
 	} else {
