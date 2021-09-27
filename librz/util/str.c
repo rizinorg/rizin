@@ -1783,13 +1783,13 @@ RZ_API bool rz_str_is_ascii(const char *str) {
 }
 
 /**
- * @brief Returns true if the input string is correctly UTF-8-encoded.
+ * \brief Returns true if the input string is correctly UTF-8-encoded.
  *
  * Goes through a null-terminated string and returns false if there is a byte
  * sequence that does not encode a valid UTF-8 code point (as determined by
  * rz_utf8_decode()). If there are no such sequences, it returns true.
  *
- * @param str Input string to check for UTF-8 validity.
+ * \param str Input string to check for UTF-8 validity.
  */
 RZ_API bool rz_str_is_utf8(RZ_NONNULL const char *str) {
 	rz_return_val_if_fail(str, false);
