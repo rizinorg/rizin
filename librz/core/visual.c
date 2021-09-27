@@ -3777,12 +3777,13 @@ static void visual_refresh(RzCore *core) {
 			if (split_w > w) {
 				// do not show column contents
 			} else {
+				rz_cons_clear();
 				rz_cons_printf("[cmd.cprompt=%s]\n", vi);
 				if (oseek != UT64_MAX) {
 					rz_core_seek(core, oseek, true);
 				}
 				rz_core_cmd0(core, vi);
-				rz_cons_column(split_w);
+				rz_cons_column(split_w + 1);
 				if (!strncmp(vi, "p=", 2) && core->print->cur_enabled) {
 					oseek = core->offset;
 					core->print->cur_enabled = false;
