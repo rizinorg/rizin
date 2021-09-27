@@ -1782,6 +1782,20 @@ RZ_API bool rz_str_is_ascii(const char *str) {
 	return true;
 }
 
+RZ_API bool rz_str_is_utf8(const char *str) {
+	const ut8 *ptr = (const ut8 *)str;
+	size_t len = strlen(str);
+	while (len) {
+		int bytes = rz_utf8_decode(ptr, len, NULL);
+		if (!bytes) {
+			return false;
+		}
+		len -= bytes;
+		ptr += bytes;
+	}
+	return true;
+}
+
 RZ_API bool rz_str_is_printable(const char *str) {
 	while (*str) {
 		int ulen = rz_utf8_decode((const ut8 *)str, strlen(str), NULL);
