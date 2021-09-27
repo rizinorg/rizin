@@ -774,7 +774,7 @@ static RzList *_extract_regs(char *regstr, RzList *flags, char *pc_alias) {
 			} else if ((tmp1 = strstr(regstr, "sve")) != NULL && tmp1 < feature_end) {
 				typegroup = "ymm";
 			} else if ((tmp1 = strstr(regstr, "pauth")) != NULL && tmp1 < feature_end) {
-				typegroup = "pauth";
+				typegroup = "sec";
 			} else if ((tmp1 = strstr(regstr, "qemu")) != NULL && tmp1 < feature_end) {
 				// - QEMU server registers
 				typegroup = "sys";
