@@ -893,7 +893,7 @@ static bool type_decl_as_pretty_string(const RzTypeDB *typedb, const RzType *typ
 		} else {
 			type_decl_as_pretty_string(typedb, type->pointer.type, used_types, phbuf, self_ref, self_ref_typename, zero_vla, print_anon);
 			rz_strbuf_append(phbuf.pointerbuf, "*");
-			rz_strbuf_appendf(phbuf.pointerbuf, "%s", type->pointer.is_const ? "const " : "");
+			rz_strbuf_appendf(phbuf.pointerbuf, "%s", type->pointer.is_const ? " const " : "");
 		}
 		break;
 	case RZ_TYPE_KIND_ARRAY:

@@ -458,11 +458,11 @@ static bool test_const_types(void) {
 static char *array = "int a[65][5][0]";
 static char *array_exp1 = "int [65][5][0]";
 static char *array_ptr = "int * const *a[][][][9]";
-static char *array_ptr_exp1 = "int *const *[0][0][0][9]";
-static char *array_ptr_exp2 = "int *const *a[0][0][0][9]";
+static char *array_ptr_exp1 = "int * const *[0][0][0][9]";
+static char *array_ptr_exp2 = "int * const *a[0][0][0][9]";
 static char *struct_array_ptr = "struct alb { const char *b; int * const *a[][][][9]; }";
 static char *struct_array_ptr_exp1 = "struct alb";
-static char *struct_array_ptr_exp2 = "struct alb { const char *b; int *const *a[0][0][0][9]; }";
+static char *struct_array_ptr_exp2 = "struct alb { const char *b; int * const *a[0][0][0][9]; }";
 static char *struct_array_ptr_exp3 = "struct alb a";
 
 static bool test_type_as_string(void) {
@@ -512,11 +512,11 @@ static bool test_type_as_string(void) {
 	mu_end;
 }
 
-static char *pretty_complex_const_pointer = "const char **const *const c[4];";
-static char *pretty_struct_array_ptr_func_ptr = "struct alb { const char *b; int *const *a[][][][9]; wchar_t (*funk)(int a, const char *b); time_t t; };";
+static char *pretty_complex_const_pointer = "const char ** const * const c[4];";
+static char *pretty_struct_array_ptr_func_ptr = "struct alb { const char *b; int * const *a[][][][9]; wchar_t (*funk)(int a, const char *b); time_t t; };";
 static char *pretty_struct_array_ptr_func_ptr_multiline = "struct alb {\n"
 							  "\tconst char *b;\n"
-							  "\tint *const *a[][][][9];\n"
+							  "\tint * const *a[][][][9];\n"
 							  "\twchar_t (*funk)(int a, const char *b);\n"
 							  "\ttime_t t;\n"
 							  "} leet;";
@@ -532,7 +532,7 @@ static char *pretty_struct_in_struct_multiline_unfold = "struct joy {\n"
 							"\tchar c;\n"
 							"\tstruct alb {\n"
 							"\t\tconst char *b;\n"
-							"\t\tint *const *a[][][][9];\n"
+							"\t\tint * const *a[][][][9];\n"
 							"\t\twchar_t (*funk)(int a, const char *b);\n"
 							"\t\ttime_t t;\n"
 							"\t} ania;\n"
@@ -564,7 +564,7 @@ static char *pretty_union_of_struct_max_multiline = "union alpha {\n"
 						    "\t\tchar c;\n"
 						    "\t\tstruct alb {\n"
 						    "\t\t\tconst char *b;\n"
-						    "\t\t\tint *const *a[][][][9];\n"
+						    "\t\t\tint * const *a[][][][9];\n"
 						    "\t\t\twchar_t (*funk)(int a, const char *b);\n"
 						    "\t\t\ttime_t t;\n"
 						    "\t\t} ania;\n"
@@ -812,7 +812,7 @@ static bool test_struct_func_types(void) {
 static char *array_struct = "struct albalb { int a[65][5][]; }";
 static char *array_struct_test = "struct albalb { int a[65][5][0]; }";
 static char *array_ptr_struct = "struct alb { const char *b; int * const *a[][][][9]; }";
-static char *array_ptr_struct_test = "struct alb { const char *b; int *const *a[0][0][0][9]; }";
+static char *array_ptr_struct_test = "struct alb { const char *b; int * const *a[0][0][0][9]; }";
 
 static bool test_struct_array_types(void) {
 	RzTypeDB *typedb = rz_type_db_new();
@@ -919,8 +919,8 @@ static bool test_union_identifier_without_specifier(void) {
 }
 
 static char *edit_array_old = "int a[65][5][0]";
-static char *edit_struct_array_ptr_old = "struct alb { const char *b; int *const *a[0][0][0][9]; }";
-static char *edit_struct_array_ptr_new = "struct alb { wchar_t *const b; int ***a[8][8][8]; float c; }";
+static char *edit_struct_array_ptr_old = "struct alb { const char *b; int * const *a[0][0][0][9]; }";
+static char *edit_struct_array_ptr_new = "struct alb { wchar_t * const b; int ***a[8][8][8]; float c; }";
 
 static bool test_edit_types(void) {
 	RzTypeDB *typedb = rz_type_db_new();
