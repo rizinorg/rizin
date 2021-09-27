@@ -427,7 +427,7 @@ tt boo_t
 EOF
 EXPECT=<<EOF
 foo_t = const char ***
-boo_t = const char *** const *** const * const * const 
+boo_t = const char ***const ***const *const *const 
 EOF
 RUN
 
