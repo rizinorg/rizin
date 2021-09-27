@@ -1066,7 +1066,7 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 				rz_line_set_prompt(foo);
 				rz_cons_fgets(foo, sizeof(foo), 0, NULL);
 				foo[sizeof(foo) - 1] = 0;
-				rz_core_yank_set_str(core, RZ_CORE_FOREIGN_ADDR, foo, strlen(foo) + 1);
+				rz_core_yank_set_str(core, RZ_CORE_FOREIGN_ADDR, foo);
 				core->num->value = rz_num_math(core->num, foo);
 			} break;
 			}

@@ -57,10 +57,11 @@ if get_option('enable_tests')
     'id_storage',
     'idpool',
     'idstorage',
+    'inflate_deflate',
     'intervaltree',
     'io',
-    'itv',
     'io_ihex',
+    'itv',
     'json',
     'list',
     'ovf',
@@ -97,7 +98,7 @@ if get_option('enable_tests')
     'unum',
     'util',
     'vector',
-    'inflate_deflate'
+    'yank',
   ]
 
   unit_test_env = environment()
