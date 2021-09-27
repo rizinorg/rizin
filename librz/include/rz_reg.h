@@ -231,8 +231,6 @@ RZ_API const char *rz_reg_cond_to_string(int n);
 RZ_API int rz_reg_cond_from_string(const char *str);
 RZ_API void rz_reg_arena_shrink(RzReg *reg);
 
-RZ_API bool rz_reg_is_system_reg(const RzRegItem *reg, const char *arch);
-
 #ifdef __cplusplus
 }
 #endif
