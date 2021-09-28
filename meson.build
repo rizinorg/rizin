@@ -348,6 +348,11 @@ if not cc.has_function('clock_gettime', prefix: '#include <time.h>') and cc.has_
   lrt = cc.find_library('rt', required: true, static: is_static_build)
 endif
 
+have_lrt = not ['windows', 'darwin', 'openbsd', 'android'].contains(host_machine.system())
+if have_lrt and lrt == []
+  lrt = cc.find_library('rt', required: true, static: is_static_build)
+endif
+
 code = '#include <unistd.h>\nextern char **environ;\nint main() { char **env = environ; }'
 have_environ = cc.links(code, name: 'have extern char **environ')
 userconf.set10('HAVE_ENVIRON', have_environ)
@@ -375,6 +380,7 @@ foreach item : [
     ['nice', '#include <unistd.h>', []],
     ['copyfile', '#include <copyfile.h>', []],
     ['strlcpy', '#include <string.h>', []],
+    ['shm_open', '#include <sys/mman.h>', [lrt]],
     ['openpty', '', [utl]],
     ['forkpty', '', [utl]],
     ['login_tty', '', [utl]],
