@@ -338,7 +338,7 @@ userconf.set10('HAVE_DECL_ADDR_NO_RANDOMIZE', ok)
 ok = cc.has_header_symbol('sys/procctl.h', 'PROC_ASLR_CTL')
 userconf.set10('HAVE_DECL_PROCCTL_ASLR_CTL', ok)
 
-if host_machine.system() == 'freebsd'
+if host_machine.system() == 'freebsd' or host_machine.system() == 'dragonfly'
   add_project_link_arguments('-Wl,--unresolved-symbols,ignore-in-object-files', language: 'c')
   add_project_link_arguments('-Wl,--allow-shlib-undefined', language: 'c')
 endif
@@ -348,7 +348,7 @@ if not cc.has_function('clock_gettime', prefix: '#include <time.h>') and cc.has_
   lrt = cc.find_library('rt', required: true, static: is_static_build)
 endif
 
-have_lrt = not ['windows', 'darwin', 'openbsd', 'android'].contains(host_machine.system())
+have_lrt = not ['windows', 'darwin', 'openbsd', 'android', 'haiku'].contains(host_machine.system())
 if have_lrt and lrt == []
   lrt = cc.find_library('rt', required: true, static: is_static_build)
 endif
