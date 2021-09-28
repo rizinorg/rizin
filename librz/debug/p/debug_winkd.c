@@ -40,7 +40,7 @@ static int rz_debug_winkd_continue(RzDebug *dbg, int pid, int tid, int sig) {
 	return winkd_continue(wctx);
 }
 
-static int rz_debug_winkd_wait(RzDebug *dbg, int pid) {
+static RzDebugReasonType rz_debug_winkd_wait(RzDebug *dbg, int pid) {
 	RzDebugReasonType reason = RZ_DEBUG_REASON_UNKNOWN;
 	kd_packet_t *pkt = NULL;
 	kd_stc_64 *stc;
