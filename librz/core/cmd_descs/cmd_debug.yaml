@@ -3,6 +3,265 @@
 ---
 name: cmd_debug
 commands:
+  - name: db
+    summary: Breakpoints commands
+    subcommands:
+      - name: db
+        summary: List breakpoints
+        cname: cmd_debug_db
+        args: []
+      - name: db*
+        summary: List breakpoints in r commands
+        cname: cmd_debug_list_bp_r
+        args: []
+      - name: db
+        summary: Add breakpoint
+        cname: cmd_debug_db
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: dbH
+        summary: Add hardware breakpoint
+        cname: cmd_debug_add_hw_bp
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: db-
+        summary: Remove breakpoint
+        cname: cmd_debug_remove_bp
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: db-*
+        summary: Remove all breakpoints
+        cname: cmd_debug_remove_all_bp
+        args: []
+      - name: db.
+        summary: Show breakpoint info in current offset
+        cname: cmd_debug_show_cur_bp
+        args: []
+      - name: dbj
+        summary: List breakpoints in JSON format
+        cname: cmd_debug_list_bp_json
+        args: []
+      - name: dbc
+        summary: Run a command when the breakpoint is hit
+        cname: cmd_debug_add_cond_bp
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: cmd
+            type: RZ_CMD_ARG_TYPE_CMD
+      - name: dbC
+        summary: Run command and continue until <cmd> returns zero
+        cname: cmd_debug_add_cond_bp_continue
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: cmd
+            type: RZ_CMD_ARG_TYPE_CMD
+      - name: dbd
+        summary: Disable breakpoint
+        cname: cmd_debug_disable_bp
+        args:
+          - name: addr
+            type: RZ_CMD_TYPE_RZNUM
+      - name: dbe
+        summary: Enable breakpoint
+        cname: cmd_debug_enable_bp
+        args:
+          - name: addr
+            type: RZ_CMD_TYPE_RZNUM
+      - name: dbs
+        summary: Toggle breakpoint
+        cname: cmd_debug_toggle_bp
+        args:
+          - name: addr
+            type: RZ_CMD_TYPE_RZNUM
+      - name: dbf
+        summary: Put a breakpoint into every no-return function
+        cname: cmd_debug_add_bp_noreturn_func
+        args: []
+      - name: dbm
+        summary: Add a breakpoint at an offset from a module's base
+        cname: cmd_debug_add_bp_module
+        args:
+          - name: module
+            type: RZ_CMD_ARG_TYPE_STRING
+          - name: offset
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: dbn
+        summary: Show or set name for current breakpoint
+        cname: cmd_debug_name_bp
+        args:
+          - name: name
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: dbi
+        summary: List breakpoint indexes
+        cname: cmd_debug_bp_indexes
+        args: []
+      - name: dbi
+        summary: Show breakpoint index at given offset
+        cname: cmd_debug_bp_indexes
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: dbi.
+        summary: Show breakpoint index at current offset
+        cname: cmd_debug_bp_index_current_offset
+      - name: dbi-
+        summary: Remove breakpoint by index
+        cname: cmd_debug_remove_bp_index
+        args:
+          - name: idx
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: dbix
+        summary: Set expression for breakpoint at given index
+        cname: cmd_debug_set_expr_bp_index
+        args:
+          - name: idx
+            type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: expr
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: dbic
+        summary: Run a command at breakpoint index
+        cname: cmd_debug_run_command_bp_index
+        args:
+          - name: idx
+            type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: cmd
+            type: RZ_CMD_ARG_TYPE_CMD
+      - name: dbie
+        summary: Enable breakpoint by index
+        cname: cmd_debug_enable_bp_index
+        args:
+          - name: idx
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: dbid
+        summary: Disable breakpoint by index
+        cname: cmd_debug_disable_bp_index
+        args:
+          - name: idx
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: dbis
+        summary: Swap breakpoint by index
+        cname: cmd_debug_swap_bp_index
+        args:
+          - name: idx
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: dbite
+        summary: Enable breakpoint trace by index
+        cname: cmd_debug_enable_bp_trace_index
+        args:
+          - name: idx
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: dbitd
+        summary: Disable breakpoint trace by index
+        cname: cmd_debug_disable_bp_trace_index
+        args:
+          - name: idx
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: dbits
+        summary: Swap breakpoint trace by index
+        cname: cmd_debug_swap_bp_trace_index
+        args:
+          - name: idx
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: dbh
+        summary: List breakpoint plugin handlers
+        cname: cmd_debug_bp_plugin
+        args: []
+      - name: dbh
+        summary: Set breakpoint plugin handler
+        cname: cmd_debug_bp_plugin
+        args:
+          - name: handler
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: dbh-
+        summary: Remove breakpoint plugin handler
+        cname: cmd_debug_remove_bp_plugin
+        args:
+          - name: handler
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: dbt
+        summary: Backtrace commands
+        subcommands:
+          - name: dbt
+            summary: Display backtrace based on dbg.btdepth and dbg.btalgo
+            cname: cmd_debug_display_bt
+            args: []
+          - name: dbt*
+            summary: Display backtrace in flags
+            cname: cmd_debug_display_bt_flags
+            args: []
+          - name: dbt=
+            summary: Display backtrace in one line (see dbt=s and dbt=b for sp or bp)
+            cname: cmd_debug_display_bt_oneline
+            args: []
+          - name: dbtv
+            summary: Display backtrace with local vars if any
+            cname: cmd_debug_display_bt_local_vars
+            args: []
+          - name: dbtj
+            summary: Display backtrace in JSON
+            cname: cmd_debug_display_bt_json
+            args: []
+          - name: dbta
+            summary: Display ascii-art representation of the stack backtrace
+            cname: cmd_debug_display_bt_ascii
+            args: []
+          - name: dbte
+            summary: Enable breakpoint trace
+            cname: cmd_debug_bt_enable_bp_trace
+            args:
+              - name: addr
+                type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: dbtd
+            summary: Disable breakpoint trace
+            cname: cmd_debug_bt_disable_bp_trace
+            args:
+              - name: addr
+                type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: dbts
+            summary: Swap breakpoint trace
+            cname: cmd_debug_bt_swap_bp_trace
+            args:
+              - name: addr
+                type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: dbx
+        summary: Set expression for breakpoint at current offset
+        cname: cmd_debug_bp_set_expr_cur_offset
+        args:
+          - name: expr
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: dbw
+        summary: Add watchpoint
+        cname: cmd_debug_add_watchpoint
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: r/w/rw
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: drx
+        summary: Modify hardware breakpoint
+        cname: cmd_debug_modify_hw_bp
+        args:
+          - name: idx
+            type: RZ_CMD_ARG_TYPE_NUM
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: len
+            type: RZ_CMD_ARG_TYPE_NUM
+          - name: perm
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: drx-
+        summary: Clear hardware breakpoint
+        cname: cmd_debug_clear_hw_bp
+        args:
+          - name: idx
+            type: RZ_CMD_ARG_TYPE_NUM
   - name: dc
     summary: Continue execution
     subcommands:
@@ -16,23 +275,23 @@ commands:
       - name: dcb
         summary: Continue back until breakpoint
         cname: cmd_debug_continue_back
-        args: [ ]
+        args: []
       - name: dcc
         summary: Continue until call (use step into)
         cname: cmd_debug_continue_call
-        args: [ ]
+        args: []
       - name: dccu
         summary: Continue until unknown call (call reg)
         cname: cmd_debug_continue_unknown_call
-        args: [ ]
+        args: []
       - name: dce
         summary: Continue execution (pass exception to program) (Windows only)
         cname: cmd_debug_continue_exception
-        args: [ ]
+        args: []
       - name: dcf
         summary: Continue until fork
         cname: cmd_debug_continue_fork
-        args: [ ]
+        args: []
       - name: dck
         summary: Continue sending signal to process
         cname: cmd_debug_continue_send_signal
@@ -45,11 +304,11 @@ commands:
       - name: dcp
         summary: Continue until program code (mapped io section)
         cname: cmd_debug_continue_mapped_io
-        args: [ ]
+        args: []
       - name: dcr
         summary: Continue until ret (uses step over)
         cname: cmd_debug_continue_ret
-        args: [ ]
+        args: []
       - name: dcs
         summary: Continue until syscall
         cname: cmd_debug_continue_syscall
