@@ -49,7 +49,6 @@ if host_machine.system() == 'windows'
   ]
 endif
 
-
 rz_io_deps = [
   bochs_dep,
   gdb_dep,
@@ -58,6 +57,7 @@ rz_io_deps = [
   libzip_dep,
   ar_dep,
   pth,
+  lrt,
   rz_util_dep,
   rz_socket_dep,
   rz_hash_dep,
