@@ -185,7 +185,10 @@ typedef struct rz_bin_elf_strtab RzBinElfStrtab;
 
 struct Elf_(rz_bin_elf_obj_t) {
 	RzBuffer *b;
+
 	RzBuffer *buf_patched; ///< overlay over the original file with relocs patched
+	bool relocs_patched;
+	ut64 reloc_targets_map_base;
 
 	Sdb *kv;
 
@@ -207,9 +210,6 @@ struct Elf_(rz_bin_elf_obj_t) {
 	RzBinElfStrtab *shstrtab; // should be use with elf_strtab.c
 
 	RzVector *relocs; // should be use with elf_relocs.c
-	bool reloc_targets_map_base_calculated;
-	bool relocs_patched;
-	ut64 reloc_targets_map_base;
 
 	// This is RzVector of note segment reprensented as RzVector<RzBinElfNote>
 	RzVector *notes; // RzVector<RzVector<RzBinElfNote>>
@@ -272,6 +272,9 @@ size_t Elf_(rz_bin_elf_get_number_of_symbols_from_hash_table)(RZ_NONNULL ELFOBJ 
 RZ_BORROW RzBinElfSymbol *Elf_(rz_bin_elf_get_import)(RZ_NONNULL ELFOBJ *bin, ut32 ordinal);
 RZ_OWN RzVector *Elf_(rz_bin_elf_analyse_imports)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_has_imports)(RZ_NONNULL ELFOBJ *bin);
+
+// elf_map.c
+ut64 Elf_(rz_bin_elf_get_targets_map_base)(ELFOBJ *bin);
 
 // elf_info.c
 RZ_OWN RzList *Elf_(rz_bin_elf_get_libs)(RZ_NONNULL ELFOBJ *bin);
