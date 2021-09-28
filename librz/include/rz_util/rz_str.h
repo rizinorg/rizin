@@ -97,6 +97,7 @@ RZ_API void rz_str_argv_free(char **argv);
 RZ_API char *rz_str_new(const char *str);
 RZ_API int rz_snprintf(char *string, int len, const char *fmt, ...) RZ_PRINTF_CHECK(3, 4);
 RZ_API bool rz_str_is_ascii(const char *str);
+RZ_API bool rz_str_is_utf8(RZ_NONNULL const char *str);
 RZ_API char *rz_str_nextword(char *s, char ch);
 RZ_API bool rz_str_is_printable(const char *str);
 RZ_API bool rz_str_is_printable_limited(const char *str, int size);
