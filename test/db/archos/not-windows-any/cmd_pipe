@@ -1,0 +1,99 @@
+NAME=rzpipe.py - shared memory (shm://)
+FILE=bins/elf/_Exit (42)
+CMDS=<<EOF
+?q `env~?^ASAN=1$`
+?+ env LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
+#!pipe python3 scripts/shared_memory.py
+EOF
+EXPECT=<<EOF
+Copying bins/elf/_Exit (42)...
+Copied bins/elf/_Exit (42) succesfully
+-------------
+Shared buffer size 0x360c
+-------------
+{'arch': 'x86', 'baddr': 134512640, 'binsz': 13073, 'bintype': 'elf', 'bits': 32, 'class': 'ELF32', 'compiler': 'GCC: (GNU) 9.2.1 20190827 (Red Hat 9.2.1-1)', 'endian': 'LE', 'intrp': '/lib/ld-linux.so.2', 'laddr': 0, 'lang': 'c++', 'machine': 'Intel 80386', 'maxopsz': 16, 'minopsz': 1, 'os': 'linux', 'pcalign': 0, 'relro': 'partial', 'rpath': 'NONE', 'subsys': 'linux', 'stripped': False, 'crypto': False, 'havecode': True, 'va': True, 'sanitiz': False, 'static': False, 'linenum': True, 'lsyms': True, 'canary': False, 'PIE': False, 'RELROCS': True, 'NX': True}
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x08049020  5589 e583 ec08 83ec 0c6a 2ae8 e0ff ffff  U........j*.....
+
+0x08049020    1 16           entry0
+0x08049010    1 6            sym.imp._Exit
+
+            ;-- section..text:
+            ;-- .text:
+            ;-- _start():
+/ entry0 ();
+|           0x08049020      push  ebp                                  ; [10] -r-x section size 16 named .text
+|           0x08049021      mov   ebp, esp
+|           0x08049023      sub   esp, 8
+|           0x08049026      sub   esp, 0xc
+|           0x08049029      push  0x2a                                 ; '*' ; 42 ; int status
+\           0x0804902b      call  sym.imp._Exit                        ; void _Exit(int status)
+
+Copying bins/pe/winver.exe...
+Copied bins/pe/winver.exe succesfully
+-------------
+Shared buffer size 0x400
+-------------
+{'arch': 'x86', 'baddr': 4194304, 'binsz': 4294967295, 'bintype': 'pe', 'bits': 32, 'retguard': False, 'class': 'PE32', 'cmp.csum': '0x00000000', 'compiled': 'Thu Jan  1 00:00:00 1970 UTC', 'endian': 'LE', 'hdr.csum': '0x00000000', 'laddr': 0, 'lang': 'c', 'machine': 'i386', 'maxopsz': 16, 'minopsz': 1, 'os': 'windows', 'overlay': True, 'cc': 'cdecl', 'pcalign': 0, 'signed': False, 'subsys': 'Windows CUI', 'stripped': False, 'crypto': False, 'havecode': True, 'va': True, 'sanitiz': False, 'static': False, 'linenum': False, 'lsyms': False, 'canary': False, 'PIE': False, 'RELROCS': False, 'NX': False}
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00401000  6880 1040 00ff 15b4 1140 00ff 3590 1040  h..@.....@..5..@
+
+0x00401000    1 59           entry0
+0x004011b4    1 8            fcn.004011b4
+0x004011bc    8 3653 -> 7171 fcn.004011bc
+0x004011b0    1 17           fcn.004011b0
+
+            ;-- section.sect_0:
+/ entry0 ();
+|           0x00401000      push  0x401080                             ; [00] -rwx section size 4096 named sect_0
+|           0x00401005      call  dword [fcn.004011b4]                 ; 0x4011b4
+|           0x0040100b      push  dword [0x401090]
+|           0x00401011      push  dword [0x40108c]
+|           0x00401017      push  dword [0x401088]
+|           0x0040101d      push  dword [0x401084]
+|           0x00401023      push  0x40103c                             ; " * a PE overriding OS values: OS Ver %i.%i.%i PlatformID %i\n\n" ; int32_t arg_73h
+|           0x00401028      call  dword [fcn.004011bc]                 ; 0x4011bc
+|           0x0040102e      add   esp, 0x10
+|           0x00401031      nop
+|           0x00401032      push  0
+|           0x00401034      call  dword [fcn.004011b0]                 ; 0x4011b0
+\           0x0040103a      int3
+
+Copying bins/mach0/mach0_2-x86_64...
+Copied bins/mach0/mach0_2-x86_64 succesfully
+-------------
+Shared buffer size 0x10e8
+-------------
+{'arch': 'x86', 'baddr': 4294967296, 'binsz': 4294967295, 'bintype': 'mach0', 'bits': 64, 'class': 'MACH064', 'compiler': '', 'endian': 'LE', 'intrp': '/usr/lib/dyld', 'laddr': 0, 'lang': 'c', 'machine': 'x86 64 all', 'maxopsz': 16, 'minopsz': 1, 'os': 'macos', 'pcalign': 0, 'subsys': 'darwin', 'stripped': False, 'crypto': False, 'havecode': True, 'va': True, 'sanitiz': False, 'static': False, 'linenum': False, 'lsyms': False, 'canary': False, 'PIE': True, 'RELROCS': False, 'NX': False}
+- offset -    0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x100000f70  5548 89e5 4883 ec10 c745 fc00 0000 0089  UH..H....E......
+
+0x100000f70    1 36           entry0
+0x100000f40    1 45           sym._foo
+0x100000ef0    4 65           sym._bar
+0x1000001d5    1 171          fcn.1000001d5
+0x1000002e0   13 3088 -> 3110 fcn.1000002e0
+
+            ;-- main:
+            ;-- _main:
+            ;-- func.100000f70:
+/ entry0 (int64_t arg1, int64_t arg2);
+|           ; var int64_t var_10h @ rbp-0x10
+|           ; var int64_t var_8h @ rbp-0x8
+|           ; var int64_t var_4h @ rbp-0x4
+|           ; arg int64_t arg1 @ rdi
+|           ; arg int64_t arg2 @ rsi
+|           0x100000f70      push  rbp
+|           0x100000f71      mov   rbp, rsp
+|           0x100000f74      sub   rsp, 0x10
+|           0x100000f78      mov   dword [var_4h], 0
+|           0x100000f7f      mov   dword [var_8h], edi                 ; arg1
+|           0x100000f82      mov   qword [var_10h], rsi                ; arg2
+|           0x100000f86      mov   edi, dword [var_8h]                 ; int64_t arg1
+|           0x100000f89      call  sym._foo
+|           0x100000f8e      add   rsp, 0x10
+|           0x100000f92      pop   rbp
+\           0x100000f93      ret
+
+EOF
+RUN
