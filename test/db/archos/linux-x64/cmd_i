@@ -21,7 +21,7 @@ file    B\x1b¢\x81€𝄞󠁁\.bin
 {"core":{"file":[66,27,194,162,194,128,129,226,130,172,240,157,132,158,243,160,129,129,92,46,98,105,110],"fd":6,"size":256,"humansz":"256","iorw":true,"mode":"r-x","block":256,"format":"any"}}
 file    €\.bin
 {"core":{"file":"€\\.bin","fd":7,"size":1,"humansz":"1","iorw":true,"mode":"r-x","block":256,"format":"any"}}
-file    €\.bin
-{"core":{"file":"����\\.bin","fd":8,"size":1,"humansz":"1","iorw":true,"mode":"r-x","block":256,"format":"any"}}
+file    \xf0\x82\x82\xac\.bin
+{"core":{"file":[240,130,130,172,92,46,98,105,110],"fd":8,"size":1,"humansz":"1","iorw":true,"mode":"r-x","block":256,"format":"any"}}
 EOF
 RUN
