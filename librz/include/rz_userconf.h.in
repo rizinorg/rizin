@@ -23,6 +23,7 @@
 #define HAVE_OPENPTY                @HAVE_OPENPTY@
 #define HAVE_FORKPTY                @HAVE_FORKPTY@
 #define HAVE_LOGIN_TTY              @HAVE_LOGIN_TTY@
+#define HAVE_SHM_OPEN               @HAVE_SHM_OPEN@
 #define HAVE_LIB_MAGIC              @HAVE_LIB_MAGIC@
 #define USE_LIB_MAGIC               @USE_LIB_MAGIC@
 #define HAVE_LIB_XXHASH             @HAVE_LIB_XXHASH@

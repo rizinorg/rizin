@@ -10,11 +10,6 @@
 #define __UNIX__ 0
 #endif
 
-// linux requires -lrt for this, but still it seems to not work as expected
-// better not to enable it by default until we get enough time to properly
-// make this work across all unixes without adding extra depenencies
-#define USE_SHM_OPEN 0
-
 #if __UNIX__ && !defined(__QNX__) && !defined(__HAIKU__)
 #include <sys/ipc.h>
 #include <sys/shm.h>
@@ -23,9 +18,11 @@
 typedef struct {
 	int fd;
 	int id;
+	char *name;
 	ut8 *buf;
 	ut32 size;
 } RzIOShm;
+
 #define RzIOSHM_FD(x) (((RzIOShm *)(x))->fd)
 
 #define SHMATSZ 0x9000; // 32*1024*1024; /* 32MB : XXX not used correctly? */
@@ -60,11 +57,14 @@ static int shm__close(RzIODesc *fd) {
 	rz_return_val_if_fail(fd && fd->data, -1);
 	int ret;
 	RzIOShm *shm = fd->data;
+#if HAVE_SHM_OPEN
+	ret = close(shm->fd);
+#else
 	if (shm->buf) {
 		ret = shmdt(((RzIOShm *)(fd->data))->buf);
-	} else {
-		ret = close(shm->fd);
 	}
+#endif
+	free(shm->name);
 	RZ_FREE(fd->data);
 	return ret;
 }
@@ -96,37 +96,57 @@ static inline int getshmfd(RzIOShm *shm) {
 }
 
 static RzIODesc *shm__open(RzIO *io, const char *pathname, int rw, int mode) {
-	if (!strncmp(pathname, "shm://", 6)) {
-		RzIOShm *shm = RZ_NEW0(RzIOShm);
-		if (!shm) {
-			return NULL;
-		}
-		const char *ptr = pathname + 6;
-		shm->id = atoi(ptr);
-		if (!shm->id) {
-			shm->id = rz_str_hash(ptr);
-		}
-		shm->buf = shmat(shm->id, 0, 0);
-		if (shm->buf == (void *)(size_t)-1) {
-#if USE_SHM_OPEN
-			shm->buf = NULL;
-			shm->fd = shm_open(ptr, O_CREAT | (rw ? O_RDWR : O_RDONLY), 0644);
-#else
-			shm->fd = -1;
-#endif
-
-		} else {
-			shm->fd = getshmfd(shm);
-		}
-		shm->size = SHMATSZ;
-		if (shm->fd != -1) {
-			eprintf("Connected to shared memory 0x%08x\n", shm->id);
-			return rz_io_desc_new(io, &rz_io_plugin_shm, pathname, rw, mode, shm);
-		}
-		eprintf("Cannot connect to shared memory (%d)\n", shm->id);
-		free(shm);
+	if (strncmp(pathname, "shm://", 6)) {
+		return NULL;
 	}
-	return NULL;
+	RzIOShm *shm = RZ_NEW0(RzIOShm);
+	if (!shm) {
+		return NULL;
+	}
+	const char *ptr = pathname + 6;
+	shm->name = strdup(ptr);
+#if HAVE_SHM_OPEN
+	shm->id = rz_str_hash(ptr);
+	shm->fd = shm_open(ptr, O_CREAT | (rw ? O_RDWR : O_RDONLY), 0644);
+	if (shm->fd == -1) {
+		RZ_LOG_ERROR("Cannot connect to shared memory \"%s\" (0x%08x)\n", shm->name, shm->id);
+		free(shm->name);
+		free(shm);
+		return NULL;
+	}
+	struct stat st;
+	fstat(shm->fd, &st);
+	shm->size = st.st_size;
+	shm->buf = mmap(NULL, shm->size, (rw ? (PROT_READ | PROT_WRITE) : PROT_READ), MAP_SHARED, shm->fd, 0);
+	if (shm->buf == MAP_FAILED) {
+		RZ_LOG_ERROR("Cannot mmap shared memory \"%s\" (0x%08x)\n", shm->name, shm->id);
+		close(shm->fd);
+		free(shm->name);
+		free(shm);
+		return NULL;
+	}
+#else
+	shm->id = atoi(ptr);
+	if (!shm->id) {
+		shm->id = rz_str_hash(ptr);
+	}
+
+	shm->buf = shmat(shm->id, 0, 0);
+	if (shm->buf == (void *)(size_t)-1) {
+		shm->fd = -1;
+	} else {
+		shm->fd = getshmfd(shm);
+	}
+	shm->size = SHMATSZ;
+	if (shm->fd == -1) {
+		eprintf("Cannot connect to shared memory (%d)\n", shm->id);
+		free(shm->name);
+		free(shm);
+		return NULL;
+	}
+#endif
+	eprintf("Connected to shared memory \"%s\" (0x%08x)\n", shm->name, shm->id);
+	return rz_io_desc_new(io, &rz_io_plugin_shm, pathname, rw, mode, shm);
 }
 
 RzIOPlugin rz_io_plugin_shm = {
