@@ -510,7 +510,7 @@ RZ_API ut64 rz_debug_execute(RzDebug *dbg, const ut8 *buf, int len, int restore)
 	risp = rz_reg_get(dbg->reg, dbg->reg->name[RZ_REG_NAME_SP], RZ_REG_TYPE_GPR);
 	if (ripc) {
 		rz_debug_reg_sync(dbg, RZ_REG_TYPE_GPR, false);
-		orig = rz_reg_get_bytes(dbg->reg, RZ_REG_TYPE_ALL, &orig_sz);
+		orig = rz_reg_get_bytes(dbg->reg, RZ_REG_TYPE_ANY, &orig_sz);
 		if (!orig) {
 			eprintf("Cannot get register arena bytes\n");
 			return 0LL;
@@ -617,7 +617,7 @@ RZ_API bool rz_debug_select(RzDebug *dbg, int pid, int tid) {
 		RzCore *core = (RzCore *)dbg->corebind.core;
 
 		rz_reg_arena_swap(core->dbg->reg, true);
-		rz_debug_reg_sync(dbg, RZ_REG_TYPE_ALL, false);
+		rz_debug_reg_sync(dbg, RZ_REG_TYPE_ANY, false);
 
 		pc = rz_debug_reg_get(dbg, "PC");
 		core->offset = pc;

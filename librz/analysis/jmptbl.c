@@ -350,7 +350,7 @@ RZ_API bool rz_analysis_get_delta_jmptbl_info(RZ_NONNULL RzAnalysis *analysis, R
 		if (tmp_aop.dst && tmp_aop.dst->reg) {
 			cmp_reg = tmp_aop.dst->reg;
 		} else if (tmp_aop.reg) {
-			cmp_reg = rz_reg_get(analysis->reg, tmp_aop.reg, RZ_REG_TYPE_ALL);
+			cmp_reg = rz_reg_get(analysis->reg, tmp_aop.reg, RZ_REG_TYPE_ANY);
 		} else if (tmp_aop.src[0] && tmp_aop.src[0]->reg) {
 			cmp_reg = tmp_aop.src[0]->reg;
 		}
@@ -542,7 +542,7 @@ RZ_API bool rz_analysis_get_jmptbl_info(RZ_NONNULL RzAnalysis *analysis, RZ_NONN
 			if (tmp_aop.dst && tmp_aop.dst->reg) {
 				cmp_reg = tmp_aop.dst->reg;
 			} else if (tmp_aop.reg) {
-				cmp_reg = rz_reg_get(analysis->reg, tmp_aop.reg, RZ_REG_TYPE_ALL);
+				cmp_reg = rz_reg_get(analysis->reg, tmp_aop.reg, RZ_REG_TYPE_ANY);
 			} else if (tmp_aop.src[0] && tmp_aop.src[0]->reg) {
 				cmp_reg = tmp_aop.src[0]->reg;
 			}

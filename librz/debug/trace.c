@@ -113,7 +113,7 @@ RZ_API bool rz_debug_trace_ins_after(RzDebug *dbg) {
 	RzAnalysisValue *val;
 
 	// Add reg/mem write change
-	rz_debug_reg_sync(dbg, RZ_REG_TYPE_ALL, false);
+	rz_debug_reg_sync(dbg, RZ_REG_TYPE_ANY, false);
 	rz_list_foreach (dbg->cur_op->access, it, val) {
 		if (!(val->access & RZ_ANALYSIS_ACC_W)) {
 			continue;
