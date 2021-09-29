@@ -132,6 +132,7 @@ rz_bin_sources = [
   'format/pe/pe.c',
   'format/pe/pe64.c',
   'format/pe/pemixed.c',
+  'format/pe/pe_misc.c',
   'format/pyc/marshal.c',
   'format/pyc/pyc.c',
   'format/pyc/pyc_magic.c',

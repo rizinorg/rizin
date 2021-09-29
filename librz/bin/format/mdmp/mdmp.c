@@ -1219,8 +1219,12 @@ static bool rz_bin_mdmp_patch_pe_headers(RzBuffer *pe_buf) {
 	Pe64_image_dos_header dos_hdr;
 	Pe64_image_nt_headers nt_hdr;
 
-	Pe64_read_dos_header(pe_buf, &dos_hdr);
-	Pe64_read_nt_headers(pe_buf, dos_hdr.e_lfanew, &nt_hdr);
+	if (!Pe64_read_dos_header(pe_buf, &dos_hdr)) {
+		return false;
+	}
+	if (!Pe64_read_nt_headers(pe_buf, dos_hdr.e_lfanew, &nt_hdr)) {
+		return false;
+	}
 
 	/* Patch RawData in headers */
 	ut64 sect_hdrs_off = dos_hdr.e_lfanew + 4 + sizeof(Pe64_image_file_header) + nt_hdr.file_header.SizeOfOptionalHeader;
