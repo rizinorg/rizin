@@ -7,7 +7,7 @@ e dbg.swstep=true
 s 0
 db entry0
 dc
-db-entry0
+db- entry0
 dr PC
 ds
 dr PC
@@ -51,7 +51,7 @@ e dbg.swstep=false
 s 0
 db entry0
 dc
-db-entry0
+db- entry0
 dr PC
 ds
 dr PC
