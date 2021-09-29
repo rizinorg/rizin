@@ -499,20 +499,23 @@ RZ_API int rz_utf8_decode(const ut8 *ptr, int ptrlen, RzRune *ch) {
 		}
 		return 1;
 	} else if (ptrlen > 1 && (ptr[0] & 0xe0) == 0xc0 && (ptr[1] & 0xc0) == 0x80) {
+		RzRune rune = (ptr[0] & 0x1f) << 6 | (ptr[1] & 0x3f);
 		if (ch) {
-			*ch = (ptr[0] & 0x1f) << 6 | (ptr[1] & 0x3f);
+			*ch = rune;
 		}
-		return 2;
+		return rune < 0x80 && /* Java special case */ rune ? 0 : 2;
 	} else if (ptrlen > 2 && (ptr[0] & 0xf0) == 0xe0 && (ptr[1] & 0xc0) == 0x80 && (ptr[2] & 0xc0) == 0x80) {
+		RzRune rune = (ptr[0] & 0xf) << 12 | (ptr[1] & 0x3f) << 6 | (ptr[2] & 0x3f);
 		if (ch) {
-			*ch = (ptr[0] & 0xf) << 12 | (ptr[1] & 0x3f) << 6 | (ptr[2] & 0x3f);
+			*ch = rune;
 		}
-		return 3;
+		return rune < 0x800 ? 0 : 3;
 	} else if (ptrlen > 3 && (ptr[0] & 0xf8) == 0xf0 && (ptr[1] & 0xc0) == 0x80 && (ptr[2] & 0xc0) == 0x80 && (ptr[3] & 0xc0) == 0x80) {
+		RzRune rune = (ptr[0] & 7) << 18 | (ptr[1] & 0x3f) << 12 | (ptr[2] & 0x3f) << 6 | (ptr[3] & 0x3f);
 		if (ch) {
-			*ch = (ptr[0] & 7) << 18 | (ptr[1] & 0x3f) << 12 | (ptr[2] & 0x3f) << 6 | (ptr[3] & 0x3f);
+			*ch = rune;
 		}
-		return 4;
+		return rune < 0x10000 ? 0 : 4;
 	}
 	return 0;
 }

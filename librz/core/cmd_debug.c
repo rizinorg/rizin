@@ -623,7 +623,7 @@ static int step_until_esil(RzCore *core, const char *esilstr) {
 			break;
 		}
 		rz_debug_step(core->dbg, 1);
-		rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ALL, false);
+		rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ANY, false);
 		if (rz_analysis_esil_condition(core->analysis->esil, esilstr)) {
 			eprintf("ESIL BREAK!\n");
 			break;
@@ -669,7 +669,7 @@ static bool step_until_inst(RzCore *core, const char *instr, bool regex) {
 			rz_debug_step(core->dbg, 1);
 		}
 		pc = rz_debug_reg_get(core->dbg, "PC");
-		rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ALL, false);
+		rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ANY, false);
 		/* TODO: disassemble instruction and strstr */
 		rz_asm_set_pc(core->rasm, pc);
 		// TODO: speedup if instructions are in the same block as the previous
@@ -802,7 +802,7 @@ static int step_until_flag(RzCore *core, const char *instr) {
 			break;
 		}
 		rz_debug_step(core->dbg, 1);
-		rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ALL, false);
+		rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ANY, false);
 		pc = rz_debug_reg_get(core->dbg, "PC");
 		list = rz_flag_get_list(core->flags, pc);
 		rz_list_foreach (list, iter, f) {
@@ -2096,7 +2096,7 @@ static void cmd_debug_reg(RzCore *core, const char *str) {
 			}
 			char *arg;
 			RzList *args = rz_str_split_list(all, " ", 0);
-			rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ALL, false); //RZ_REG_TYPE_GPR, false);
+			rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ANY, false); //RZ_REG_TYPE_GPR, false);
 			int count = rz_list_length(args);
 			rz_list_foreach (args, iter, arg) {
 				ut64 off = rz_debug_reg_get(core->dbg, arg);
@@ -2216,7 +2216,7 @@ static void cmd_debug_reg(RzCore *core, const char *str) {
 					if (rf) {
 						rz_reg_cond_bits_set(core->dbg->reg, type, rf, v);
 						rz_reg_cond_apply(core->dbg->reg, rf);
-						rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ALL, true);
+						rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ANY, true);
 						free(rf);
 					}
 				} else {

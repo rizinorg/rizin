@@ -13,6 +13,8 @@ xmm
 ymm
 flg
 seg
+sys
+sec
 EOF
 RUN
 

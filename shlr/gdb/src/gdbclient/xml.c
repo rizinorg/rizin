@@ -725,7 +725,7 @@ static RzDebugPid *_extract_pid_info(const char *info, const char *path, int tid
 }
 
 static RzList *_extract_regs(char *regstr, RzList *flags, char *pc_alias) {
-	char *regstr_end, *regname, *regtype, *tmp1, *tmpregstr, *feature_end, *typegroup;
+	char *regstr_end, *regname, *regtype, *tmp1, *tmpregstr, *feature_end, *typegroup, *feature_start;
 	ut32 flagnum, regname_len, regsize, regnum;
 	RzList *regs;
 	RzListIter *iter;
@@ -743,8 +743,9 @@ static RzList *_extract_regs(char *regstr, RzList *flags, char *pc_alias) {
 		// Most regs don't have group/type params, attempt to get the type from `feature`.
 		// Multiple registers can be wrapped with a certain feature so this typegroup
 		// applies on all of the following registers until </feature>
-		if (rz_str_startswith(regstr, "<feature")) {
+		if ((feature_start = strstr(regstr, "<feature")) && feature_start < tmpregstr) {
 			// Verify that we found the feature in the current node
+			regstr = feature_start;
 			feature_end = strchr(regstr, '>');
 			// To parse features of other architectures refer to:
 			// https://sourceware.org/gdb/onlinedocs/gdb/Standard-Target-Features.html#Standard-Target-Features
@@ -772,6 +773,11 @@ static RzList *_extract_regs(char *regstr, RzList *flags, char *pc_alias) {
 				// -- Aarch64
 			} else if ((tmp1 = strstr(regstr, "sve")) != NULL && tmp1 < feature_end) {
 				typegroup = "ymm";
+			} else if ((tmp1 = strstr(regstr, "pauth")) != NULL && tmp1 < feature_end) {
+				typegroup = "sec";
+			} else if ((tmp1 = strstr(regstr, "qemu")) != NULL && tmp1 < feature_end) {
+				// - QEMU server registers
+				typegroup = "sys";
 			} else {
 				typegroup = "gpr";
 			}

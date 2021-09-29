@@ -59,7 +59,7 @@ static const char *parse_def(RzReg *reg, char **tok, const int n) {
 		return "Invalid register type";
 	}
 #if 1
-	if (rz_reg_get(reg, tok[1], RZ_REG_TYPE_ALL)) {
+	if (rz_reg_get(reg, tok[1], RZ_REG_TYPE_ANY)) {
 		eprintf("Ignoring duplicated register definition '%s'\n", tok[1]);
 		return NULL;
 		//return "Duplicate register definition";

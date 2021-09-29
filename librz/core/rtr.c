@@ -354,7 +354,7 @@ static int rz_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 			}
 			break;
 		case 'r': // dr
-			rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ALL, false);
+			rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ANY, false);
 			be = rz_config_get_i(core->config, "cfg.bigendian");
 			if (isspace((ut8)cmd[2])) { // dr reg
 				const char *name, *val_ptr;
