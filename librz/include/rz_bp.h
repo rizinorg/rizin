@@ -110,8 +110,8 @@ typedef struct rz_bp_trace_t {
 RZ_API RzBreakpoint *rz_bp_new(void);
 RZ_API RzBreakpoint *rz_bp_free(RzBreakpoint *bp);
 
-RZ_API int rz_bp_del(RzBreakpoint *bp, ut64 addr);
-RZ_API int rz_bp_del_all(RzBreakpoint *bp);
+RZ_API bool rz_bp_del(RzBreakpoint *bp, ut64 addr);
+RZ_API bool rz_bp_del_all(RzBreakpoint *bp);
 
 RZ_API int rz_bp_plugin_add(RzBreakpoint *bp, RzBreakpointPlugin *foo);
 RZ_API int rz_bp_use(RzBreakpoint *bp, const char *name, int bits);
@@ -128,7 +128,7 @@ RZ_API int rz_bp_get_bytes(RzBreakpoint *bp, ut8 *buf, int len, int endian, int 
 RZ_API int rz_bp_set_trace(RzBreakpoint *bp, ut64 addr, int set);
 RZ_API int rz_bp_set_trace_all(RzBreakpoint *bp, int set);
 RZ_API RzBreakpointItem *rz_bp_enable(RzBreakpoint *bp, ut64 addr, int set, int count);
-RZ_API int rz_bp_enable_all(RzBreakpoint *bp, int set);
+RZ_API bool rz_bp_enable_all(RzBreakpoint *bp, int set);
 
 /* index api */
 RZ_API int rz_bp_del_index(RzBreakpoint *bp, int idx);

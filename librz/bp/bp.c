@@ -131,7 +131,7 @@ RZ_API RzBreakpointItem *rz_bp_enable(RzBreakpoint *bp, ut64 addr, int set, int 
 	return NULL;
 }
 
-RZ_API int rz_bp_enable_all(RzBreakpoint *bp, int set) {
+RZ_API bool rz_bp_enable_all(RzBreakpoint *bp, int set) {
 	RzListIter *iter;
 	RzBreakpointItem *b;
 	rz_list_foreach (bp->bps, iter, b) {
@@ -236,7 +236,7 @@ RZ_API RzBreakpointItem *rz_bp_add_hw(RzBreakpoint *bp, ut64 addr, int size, int
 	return rz_bp_add(bp, NULL, addr, size, RZ_BP_TYPE_HW, perm);
 }
 
-RZ_API int rz_bp_del_all(RzBreakpoint *bp) {
+RZ_API bool rz_bp_del_all(RzBreakpoint *bp) {
 	int i;
 	if (!rz_list_empty(bp->bps)) {
 		rz_list_purge(bp->bps);
@@ -248,7 +248,7 @@ RZ_API int rz_bp_del_all(RzBreakpoint *bp) {
 	return false;
 }
 
-RZ_API int rz_bp_del(RzBreakpoint *bp, ut64 addr) {
+RZ_API bool rz_bp_del(RzBreakpoint *bp, ut64 addr) {
 	RzListIter *iter;
 	RzBreakpointItem *b;
 	/* No _safe loop necessary because we return immediately after the delete. */
