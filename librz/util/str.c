@@ -1519,7 +1519,7 @@ RZ_API char *rz_str_escape_utf32be(const char *buf, int buf_size, bool show_asci
 	return rz_str_escape_utf(buf, buf_size, RZ_STRING_ENC_UTF32BE, show_asciidot, esc_bslash, false);
 }
 
-RZ_API char *rz_str_escape_utf8_for_json(const char *buf, int buf_size) {
+static char *escape_utf8_for_json(const char *buf, int buf_size, bool mutf8) {
 	char *new_buf, *q;
 	const char *p, *end;
 	RzRune ch;
@@ -1538,7 +1538,7 @@ RZ_API char *rz_str_escape_utf8_for_json(const char *buf, int buf_size) {
 	p = buf;
 	q = new_buf;
 	while (p < end) {
-		ch_bytes = rz_utf8_decode((ut8 *)p, end - p, &ch);
+		ch_bytes = mutf8 ? rz_mutf8_decode((ut8 *)p, end - p, &ch) : rz_utf8_decode((ut8 *)p, end - p, &ch);
 		if (ch_bytes == 1) {
 			switch (*p) {
 			case '\n':
@@ -1627,6 +1627,14 @@ RZ_API char *rz_str_escape_utf8_for_json(const char *buf, int buf_size) {
 	}
 	*q = '\0';
 	return new_buf;
+}
+
+RZ_API char *rz_str_escape_utf8_for_json(const char *buf, int buf_size) {
+	return escape_utf8_for_json(buf, buf_size, false);
+}
+
+RZ_API char *rz_str_escape_mutf8_for_json(const char *buf, int buf_size) {
+	return escape_utf8_for_json(buf, buf_size, true);
 }
 
 // http://daviddeley.com/autohotkey/parameters/parameters.htm#WINCRULES

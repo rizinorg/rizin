@@ -13,6 +13,7 @@ typedef struct {
 typedef ut32 RzRune;
 RZ_API int rz_utf8_encode(ut8 *ptr, const RzRune ch);
 RZ_API int rz_utf8_decode(const ut8 *ptr, int ptrlen, RzRune *ch);
+RZ_API int rz_mutf8_decode(const ut8 *ptr, int ptrlen, RzRune *ch);
 RZ_API int rz_utf8_encode_str(const RzRune *str, ut8 *dst, const int dst_length);
 RZ_API int rz_utf8_size(const ut8 *ptr);
 RZ_API int rz_utf8_strlen(const ut8 *str);

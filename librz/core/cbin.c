@@ -2651,6 +2651,7 @@ static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzList *l
 
 			switch (string->type) {
 			case RZ_STRING_TYPE_UTF8:
+			case RZ_STRING_TYPE_MUTF8:
 			case RZ_STRING_TYPE_WIDE_LE:
 			case RZ_STRING_TYPE_WIDE32_LE:
 				block_list = rz_utf_block_list((const ut8 *)string->string, -1, NULL);
@@ -2704,6 +2705,7 @@ static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzList *l
 			RzStrBuf *buf = rz_strbuf_new(str);
 			switch (string->type) {
 			case RZ_STRING_TYPE_UTF8:
+			case RZ_STRING_TYPE_MUTF8:
 			case RZ_STRING_TYPE_WIDE_LE:
 			case RZ_STRING_TYPE_WIDE32_LE:
 				block_list = rz_utf_block_list((const ut8 *)string->string, -1, NULL);

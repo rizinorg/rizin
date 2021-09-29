@@ -81,27 +81,27 @@ NAME=Check that strings are provided by Java class
 FILE=bins/java/HiKt.class
 CMDS=iz
 EXPECT=<<EOF
-nth paddr      vaddr      len size section             type string                                                                                                                                                                                                                                                                  
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-1   0x0000000a 0x0000000a 4   4    class.constant_pool utf8 HiKt
-3   0x00000014 0x00000014 16  16   class.constant_pool utf8 java/lang/Object
-5   0x0000002a 0x0000002a 4   4    class.constant_pool utf8 main
-6   0x00000031 0x00000031 22  22   class.constant_pool utf8 ([Ljava/lang/String;)V
-7   0x0000004a 0x0000004a 35  35   class.constant_pool utf8 Lorg/jetbrains/annotations/NotNull;
-8   0x00000070 0x00000070 4   4    class.constant_pool utf8 args
-10  0x0000007a 0x0000007a 30  30   class.constant_pool utf8 kotlin/jvm/internal/Intrinsics
-12  0x0000009e 0x0000009e 23  23   class.constant_pool utf8 checkParameterIsNotNull
-13  0x000000b8 0x000000b8 39  39   class.constant_pool utf8 (Ljava/lang/Object;Ljava/lang/String;)V
-16  0x000000ec 0x000000ec 19  19   class.constant_pool utf8 [Ljava/lang/String;
-17  0x00000102 0x00000102 17  17   class.constant_pool utf8 Lkotlin/Metadata;
-26  0x0000013d 0x0000013d 53  53   class.constant_pool utf8 \u0000\u0012\n\u0000\n\u0002\u0010\u0002\n\u0000\n\u0002\u0010\u0011\n\u0002\u0010\u000e\n\u0000\u001a\u0019\u0010\u0000\u001a\u00020\u00012\f\u0010\u0002\u001a\b\u0012\u0004\u0012\u00020\u00040\u0003¢\u0006\u0002\u0010\u0005 blocks=Basic Latin,Latin-1 Supplement
-29  0x0000017d 0x0000017d 5   5    class.constant_pool utf8 hi.kt
-30  0x00000185 0x00000185 4   4    class.constant_pool utf8 Code
-31  0x0000018c 0x0000018c 18  18   class.constant_pool utf8 LocalVariableTable
-32  0x000001a1 0x000001a1 15  15   class.constant_pool utf8 LineNumberTable
-33  0x000001b3 0x000001b3 36  36   class.constant_pool utf8 RuntimeInvisibleParameterAnnotations
-34  0x000001da 0x000001da 10  10   class.constant_pool utf8 SourceFile
-35  0x000001e7 0x000001e7 25  25   class.constant_pool utf8 RuntimeVisibleAnnotations
+nth paddr      vaddr      len size section             type  string                                                                                                                                                                                                                                                                  
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+1   0x0000000a 0x0000000a 4   4    class.constant_pool mutf8 HiKt
+3   0x00000014 0x00000014 16  16   class.constant_pool mutf8 java/lang/Object
+5   0x0000002a 0x0000002a 4   4    class.constant_pool mutf8 main
+6   0x00000031 0x00000031 22  22   class.constant_pool mutf8 ([Ljava/lang/String;)V
+7   0x0000004a 0x0000004a 35  35   class.constant_pool mutf8 Lorg/jetbrains/annotations/NotNull;
+8   0x00000070 0x00000070 4   4    class.constant_pool mutf8 args
+10  0x0000007a 0x0000007a 30  30   class.constant_pool mutf8 kotlin/jvm/internal/Intrinsics
+12  0x0000009e 0x0000009e 23  23   class.constant_pool mutf8 checkParameterIsNotNull
+13  0x000000b8 0x000000b8 39  39   class.constant_pool mutf8 (Ljava/lang/Object;Ljava/lang/String;)V
+16  0x000000ec 0x000000ec 19  19   class.constant_pool mutf8 [Ljava/lang/String;
+17  0x00000102 0x00000102 17  17   class.constant_pool mutf8 Lkotlin/Metadata;
+26  0x0000013d 0x0000013d 53  53   class.constant_pool mutf8 \u0000\u0012\n\u0000\n\u0002\u0010\u0002\n\u0000\n\u0002\u0010\u0011\n\u0002\u0010\u000e\n\u0000\u001a\u0019\u0010\u0000\u001a\u00020\u00012\f\u0010\u0002\u001a\b\u0012\u0004\u0012\u00020\u00040\u0003¢\u0006\u0002\u0010\u0005 blocks=Basic Latin,Latin-1 Supplement
+29  0x0000017d 0x0000017d 5   5    class.constant_pool mutf8 hi.kt
+30  0x00000185 0x00000185 4   4    class.constant_pool mutf8 Code
+31  0x0000018c 0x0000018c 18  18   class.constant_pool mutf8 LocalVariableTable
+32  0x000001a1 0x000001a1 15  15   class.constant_pool mutf8 LineNumberTable
+33  0x000001b3 0x000001b3 36  36   class.constant_pool mutf8 RuntimeInvisibleParameterAnnotations
+34  0x000001da 0x000001da 10  10   class.constant_pool mutf8 SourceFile
+35  0x000001e7 0x000001e7 25  25   class.constant_pool mutf8 RuntimeVisibleAnnotations
 EOF
 RUN
 
