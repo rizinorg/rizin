@@ -16,7 +16,8 @@
 	static int __lib_##x##_dt(RzLibPlugin *pl, void *p, void *u) { return true; }
 
 static int __lib_demangler_cb(RzLibPlugin *pl, void *user, void *data) {
-	rz_demangler_plugin_add((RzDemanglerPlugin *)data);
+	RzCore *core = (RzCore *)user;
+	rz_demangler_plugin_add(core->bin->demangler, (RzDemanglerPlugin *)data);
 	return true;
 }
 

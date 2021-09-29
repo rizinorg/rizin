@@ -585,9 +585,9 @@ static bool print_demangler_info(const RzDemanglerPlugin *plugin, void *user) {
 
 RZ_IPI RzCmdStatus rz_cmd_info_demangle_handler(RzCore *core, int argc, const char **argv) {
 	char *output = NULL;
-	if (!rz_demangler_resolve(argv[2], argv[1], &output)) {
+	if (!rz_demangler_resolve(core->bin->demangler, argv[2], argv[1], &output)) {
 		rz_cons_printf("Language '%s' is unsupported\nList of supported languages:\n", argv[1]);
-		rz_demangler_plugin_iterate((RzDemanglerIter)print_demangler_info, NULL);
+		rz_demangler_plugin_iterate(core->bin->demangler, (RzDemanglerIter)print_demangler_info, NULL);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_cons_println(output ? output : argv[2]);
@@ -598,7 +598,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_demangle_handler(RzCore *core, int argc, const ch
 RZ_IPI RzCmdStatus rz_cmd_info_demangle_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	rz_cmd_state_output_array_start(state);
 	rz_cmd_state_output_set_columnsf(state, "sss", "language", "license", "author");
-	rz_demangler_plugin_iterate((RzDemanglerIter)print_demangler_info, state);
+	rz_demangler_plugin_iterate(core->bin->demangler, (RzDemanglerIter)print_demangler_info, state);
 	rz_cmd_state_output_array_end(state);
 	return RZ_CMD_STATUS_OK;
 }

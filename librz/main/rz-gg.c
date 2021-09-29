@@ -142,7 +142,6 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 	RzBuffer *b;
 	int c, i, fd = -1;
 	RzEgg *egg = rz_egg_new();
-	rz_demangler_plugin_init();
 
 	RzGetopt opt;
 	rz_getopt_init(&opt, argc, argv, "n:N:he:a:b:f:o:sxXrk:FOI:Li:c:p:P:B:C:vd:D:w:zq:S:");
@@ -169,7 +168,6 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 				eprintf("Cannot open empty contents path\n");
 				free(sequence);
 				rz_egg_free(egg);
-				rz_demangler_plugin_fini();
 				return 1;
 			}
 			contents = opt.arg;
@@ -244,7 +242,6 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 				eprintf("Cannot open empty include path\n");
 				free(sequence);
 				rz_egg_free(egg);
-				rz_demangler_plugin_fini();
 				return 1;
 			}
 			rz_egg_lang_include_path(egg, opt.arg);
@@ -304,17 +301,14 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 			list(egg);
 			rz_egg_free(egg);
 			free(sequence);
-			rz_demangler_plugin_fini();
 			return 0;
 		case 'h':
 			rz_egg_free(egg);
 			free(sequence);
-			rz_demangler_plugin_fini();
 			return usage(1);
 		case 'v':
 			free(sequence);
 			rz_egg_free(egg);
-			rz_demangler_plugin_fini();
 			return rz_main_version_print("rz-gg");
 		case 'z':
 			show_str = 1;
@@ -326,7 +320,6 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 		default:
 			free(sequence);
 			rz_egg_free(egg);
-			rz_demangler_plugin_fini();
 			return 1;
 		}
 	}
@@ -334,7 +327,6 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 	if (opt.ind == argc && !shellcode && !bytes && !contents && !encoder && !padding && !pattern && !append && !get_offset && !str) {
 		free(sequence);
 		rz_egg_free(egg);
-		rz_demangler_plugin_fini();
 		return usage(0);
 	} else {
 		file = argv[opt.ind];
@@ -354,7 +346,6 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 			eprintf("Need hex value with `0x' prefix e.g. 0x41414142\n");
 			free(sequence);
 			rz_egg_free(egg);
-			rz_demangler_plugin_fini();
 			return 1;
 		}
 
@@ -363,7 +354,6 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 		printf("Big endian: %d\n", rz_debruijn_offset(get_offset, true));
 		free(sequence);
 		rz_egg_free(egg);
-		rz_demangler_plugin_fini();
 		return 0;
 	}
 
@@ -426,7 +416,6 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 			eprintf("rz_egg_compile: fail\n");
 			free(sequence);
 			rz_egg_free(egg);
-			rz_demangler_plugin_fini();
 			return 1;
 		}
 	}
@@ -553,7 +542,6 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 				r = rz_egg_run(egg);
 			}
 			rz_egg_free(egg);
-			rz_demangler_plugin_fini();
 			return r;
 		}
 		b = rz_egg_get_bin(egg);
@@ -615,7 +603,6 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 	}
 	free(sequence);
 	rz_egg_free(egg);
-	rz_demangler_plugin_fini();
 	return 0;
 fail:
 	if (fd != -1) {
@@ -623,6 +610,5 @@ fail:
 	}
 	free(sequence);
 	rz_egg_free(egg);
-	rz_demangler_plugin_fini();
 	return 1;
 }

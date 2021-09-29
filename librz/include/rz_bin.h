@@ -7,6 +7,7 @@
 #include <rz_cons.h>
 #include <rz_list.h>
 #include <ht_pu.h>
+#include <rz_demangler.h>
 
 typedef struct rz_bin_t RzBin;
 typedef struct rz_bin_file_t RzBinFile;
@@ -370,6 +371,7 @@ struct rz_bin_t {
 	bool use_ldr; // use loader plugins when loading a file?
 	RzStrConstPool constpool;
 	bool is_reloc_patched; // used to indicate whether relocations were patched or not
+	RzDemangler *demangler;
 };
 
 typedef struct rz_bin_xtr_metadata_t {

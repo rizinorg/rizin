@@ -316,6 +316,21 @@ parse_plugins = [
   'z80_pseudo'
 ]
 
+demangler_plugins = [
+  'java',
+  'msvc',
+  'objc',
+]
+
+if get_option('use_gpl')
+  demangler_plugins += 'cpp'
+  demangler_plugins += 'rust'
+endif
+
+if get_option('use_swift_demangler')
+  demangler_plugins += 'swift'
+endif
+
 include_files =[
   'include/rznaked.h',
   'include/rz_agraph.h',

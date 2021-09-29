@@ -222,6 +222,7 @@ conf_data.set('plugins_debug', '&rz_debug_plugin_' + ', &rz_debug_plugin_'.join(
 conf_data.set('plugins_egg', '&rz_egg_plugin_' + ', &rz_egg_plugin_'.join(egg_plugins) + ', 0')
 conf_data.set('plugins_lang', '&rz_lang_plugin_' + ', &rz_lang_plugin_'.join(lang_plugins) + ', 0')
 conf_data.set('plugins_parse', '&rz_parse_plugin_' + ', &rz_parse_plugin_'.join(parse_plugins) + ', 0')
+conf_data.set('plugins_demangler', '&rz_demangler_plugin_' + ', &rz_demangler_plugin_'.join(demangler_plugins))
 config_h = configure_file(
   input: 'librz/config.h.in',
   output: 'config.h',
@@ -265,6 +266,11 @@ if get_option('use_swift_demangler')
   libdemangle_options += 'use_swift_demangler=true'
 else
   libdemangle_options += 'use_swift_demangler=false'
+endif
+if get_option('enable_tests')
+  libdemangle_options += 'enable_tests=true'
+else
+  libdemangle_options += 'enable_tests=false'
 endif
 
 libdemangle_proj = subproject('libdemangle', default_options: libdemangle_options)
@@ -755,4 +761,5 @@ summary({
   'IO Plugins': io_plugins,
   'Lang Plugins': lang_plugins,
   'Parse Plugins': parse_plugins,
+  'Demangler Plugins': demangler_plugins,
 }, section: 'Plugins', list_sep: ', ')

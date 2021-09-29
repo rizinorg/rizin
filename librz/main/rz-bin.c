@@ -570,7 +570,7 @@ static int rabin_show_srcline(RzBin *bin, ut64 at) {
 
 /* bin callback */
 static int __lib_demangler_cb(RzLibPlugin *pl, void *user, void *data) {
-	rz_demangler_plugin_add((RzDemanglerPlugin *)data);
+	rz_demangler_plugin_add(user, (RzDemanglerPlugin *)data);
 	return true;
 }
 
@@ -673,7 +673,6 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 
 	rz_core_init(&core);
 	bin = core.bin;
-	rz_demangler_plugin_init();
 	if (!(tmp = rz_sys_getenv("RZ_BIN_NOPLUGINS"))) {
 		char *homeplugindir = rz_str_home(RZ_HOME_PLUGINS);
 		char *plugindir = rz_str_rz_prefix(RZ_PLUGINS);
@@ -681,7 +680,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		char *bindingsdir = rz_str_rz_prefix(RZ_BINDINGS);
 		RzLib *l = rz_lib_new(NULL, NULL);
 		rz_lib_add_handler(l, RZ_LIB_TYPE_DEMANGLER, "demangler plugins",
-			&__lib_demangler_cb, &__lib_demangler_dt, NULL);
+			&__lib_demangler_cb, &__lib_demangler_dt, bin->demangler);
 		rz_lib_add_handler(l, RZ_LIB_TYPE_BIN, "bin plugins",
 			&__lib_bin_cb, &__lib_bin_dt, bin);
 		rz_lib_add_handler(l, RZ_LIB_TYPE_BIN_XTR, "bin xtr plugins",
@@ -889,13 +888,11 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 				       " c                 show Codesign data\n"
 				       " C                 show LDID entitlements\n");
 				rz_core_fini(&core);
-				rz_demangler_plugin_fini();
 				return 0;
 			}
 			if (opt.ind == argc) {
 				eprintf("Missing filename\n");
 				rz_core_fini(&core);
-				rz_demangler_plugin_fini();
 				return 1;
 			}
 			break;
@@ -904,7 +901,6 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		case 'r': rad = true; break;
 		case 'v':
 			rz_core_fini(&core);
-			rz_demangler_plugin_fini();
 			return rz_main_version_print("rz-bin");
 		case 'L':
 			set_action(RZ_BIN_REQ_LISTPLUGINS);
@@ -936,7 +932,6 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			break;
 		case 'h':
 			rz_core_fini(&core);
-			rz_demangler_plugin_fini();
 			return rabin_show_help(1);
 		default:
 			action |= RZ_BIN_REQ_HELP;
@@ -952,7 +947,6 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		PJ *pj = pj_new();
 		if (!pj) {
 			rz_core_fini(&core);
-			rz_demangler_plugin_fini();
 			return 1;
 		}
 		__listPlugins(bin, plugin_name, pj, rad);
@@ -961,7 +955,6 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			rz_cons_flush();
 		}
 		rz_core_fini(&core);
-		rz_demangler_plugin_fini();
 		return 0;
 	}
 
@@ -971,16 +964,14 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		const RzDemanglerPlugin *plugin = NULL;
 		if ((argc - opt.ind) < 2) {
 			rz_core_fini(&core);
-			rz_demangler_plugin_fini();
 			return rabin_show_help(0);
 		}
 		file = argv[opt.ind + 1];
-		plugin = rz_demangler_plugin_get(do_demangle);
+		plugin = rz_demangler_plugin_get(bin->demangler, do_demangle);
 		if (!plugin) {
 			printf("Language '%s' is unsupported\nList of supported languages:\n", do_demangle);
-			rz_demangler_plugin_iterate((RzDemanglerIter)print_demangler_info, NULL);
+			rz_demangler_plugin_iterate(bin->demangler, (RzDemanglerIter)print_demangler_info, NULL);
 			rz_core_fini(&core);
-			rz_demangler_plugin_fini();
 			return 1;
 		}
 		if (!strcmp(file, "-")) {
@@ -1011,7 +1002,6 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		}
 		free(res);
 		rz_core_fini(&core);
-		rz_demangler_plugin_fini();
 		return ret_num;
 	}
 	file = argv[opt.ind];
@@ -1019,14 +1009,12 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	if (file && !*file) {
 		eprintf("Cannot open empty path\n");
 		rz_core_fini(&core);
-		rz_demangler_plugin_fini();
 		return 1;
 	}
 
 	if (!query) {
 		if (action & RZ_BIN_REQ_HELP || action == RZ_BIN_REQ_UNK || !file) {
 			rz_core_fini(&core);
-			rz_demangler_plugin_fini();
 			return rabin_show_help(0);
 		}
 	}
@@ -1046,7 +1034,6 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		if (!p) {
 			eprintf("Invalid format for -C flag. Use 'format:codehexpair:datahexpair'\n");
 			rz_core_fini(&core);
-			rz_demangler_plugin_fini();
 			return 1;
 		}
 		*p++ = 0;
@@ -1066,7 +1053,6 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		code = malloc(strlen(p) + 1);
 		if (!code) {
 			rz_core_fini(&core);
-			rz_demangler_plugin_fini();
 			return 1;
 		}
 		codelen = rz_hex_str2bin(p, code);
@@ -1088,7 +1074,6 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			eprintf("Cannot create binary for this format '%s'.\n", create);
 		}
 		rz_core_fini(&core);
-		rz_demangler_plugin_fini();
 		return 0;
 	}
 	if (rawstr == 2) {
@@ -1099,7 +1084,6 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	if (!file) {
 		eprintf("Missing file.\n");
 		rz_core_fini(&core);
-		rz_demangler_plugin_fini();
 		return 1;
 	}
 
@@ -1108,7 +1092,6 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		int child = rz_sys_fork();
 		if (child == -1) {
 			rz_core_fini(&core);
-			rz_demangler_plugin_fini();
 			return 1;
 		}
 		if (child == 0) {
@@ -1120,12 +1103,10 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			eprintf("%s is loaded at 0x%" PFMT64x "\n", file, (ut64)(size_t)(addr));
 			rz_lib_dl_close(addr);
 			rz_core_fini(&core);
-			rz_demangler_plugin_fini();
 			return 0;
 		}
 		eprintf("Cannot open the '%s' library\n", file);
 		rz_core_fini(&core);
-		rz_demangler_plugin_fini();
 		return 0;
 	}
 	if (action & RZ_BIN_REQ_PACKAGE) {
@@ -1137,7 +1118,6 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		if (opt.ind + 3 > argc) {
 			eprintf("Usage: rz-bin -X [fat|zip] foo.zip a b c\n");
 			rz_core_fini(&core);
-			rz_demangler_plugin_fini();
 			return 1;
 		}
 
@@ -1157,7 +1137,6 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			}
 		}
 		rz_core_fini(&core);
-		rz_demangler_plugin_fini();
 		rz_list_free(files);
 		return rc;
 	}
@@ -1173,7 +1152,6 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		} else {
 			eprintf("rz_core: Cannot open file '%s'\n", file);
 			rz_core_fini(&core);
-			rz_demangler_plugin_fini();
 			return 1;
 		}
 	}
@@ -1306,7 +1284,6 @@ chksum_err:
 err:
 	rz_core_file_close(fh);
 	rz_core_fini(&core);
-	rz_demangler_plugin_fini();
 
 	return result;
 }

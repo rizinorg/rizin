@@ -62,7 +62,6 @@ RZ_API int rz_main_rz_sign(int argc, const char **argv) {
 	bool json = false;
 	bool flirt = false;
 	RzGetopt opt;
-	rz_demangler_plugin_init();
 	rz_getopt_init(&opt, argc, argv, "afhjo:qrs:v");
 	while ((c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
@@ -88,14 +87,11 @@ RZ_API int rz_main_rz_sign(int argc, const char **argv) {
 			flirt = true;
 			break;
 		case 'v':
-			rz_demangler_plugin_fini();
 			return rz_main_version_print("rz-sign");
 		case 'h':
-			rz_demangler_plugin_fini();
 			rasign_show_help();
 			return 0;
 		default:
-			rz_demangler_plugin_fini();
 			rasign_show_help();
 			return -1;
 		}
@@ -104,7 +100,6 @@ RZ_API int rz_main_rz_sign(int argc, const char **argv) {
 	if (a_cnt > 2) {
 		eprintf("Invalid analysis (too many -a's?)\n");
 		rasign_show_help();
-		rz_demangler_plugin_fini();
 		return -1;
 	}
 
@@ -112,7 +107,6 @@ RZ_API int rz_main_rz_sign(int argc, const char **argv) {
 	if (opt.ind >= argc) {
 		eprintf("must provide a file\n");
 		rasign_show_help();
-		rz_demangler_plugin_fini();
 		return -1;
 	}
 	ifile = argv[opt.ind];
@@ -121,14 +115,12 @@ RZ_API int rz_main_rz_sign(int argc, const char **argv) {
 	if (flirt) {
 		if (rad || ofile || json) {
 			eprintf("Only FLIRT output is supported for FLIRT files\n");
-			rz_demangler_plugin_fini();
 			return -1;
 		}
 		core = opencore(NULL);
 		rz_sign_flirt_dump(core->analysis, ifile);
 		rz_cons_flush();
 		rz_core_free(core);
-		rz_demangler_plugin_fini();
 		return 0;
 	} else {
 		core = opencore(ifile);
@@ -136,7 +128,6 @@ RZ_API int rz_main_rz_sign(int argc, const char **argv) {
 
 	if (!core) {
 		eprintf("Could not get core\n");
-		rz_demangler_plugin_fini();
 		return -1;
 	}
 
@@ -171,6 +162,5 @@ RZ_API int rz_main_rz_sign(int argc, const char **argv) {
 	}
 
 	rz_core_free(core);
-	rz_demangler_plugin_fini();
 	return 0;
 }

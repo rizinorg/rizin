@@ -464,9 +464,9 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 	RzAsmState *as = __as_new();
 
 	// TODO set addrbytes
-	char *r2arch = rz_sys_getenv("RZ_ARCH");
-	if (r2arch) {
-		arch = r2arch;
+	char *rz_arch = rz_sys_getenv("RZ_ARCH");
+	if (rz_arch) {
+		arch = rz_arch;
 	}
 
 	char *r2bits = rz_sys_getenv("RZ_BITS");
@@ -474,8 +474,6 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 		bits = rz_num_math(NULL, r2bits);
 		free(r2bits);
 	}
-
-	rz_demangler_plugin_init();
 
 	RzGetopt opt;
 	rz_getopt_init(&opt, argc, argv, "a:Ab:Bc:CdDeEf:F:hi:jk:l:L@:o:O:pqrs:vwx");
@@ -566,13 +564,11 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 			if (*opt.arg == '?') {
 				printf("att\nintel\nmasm\njz\nregnum\n");
 				__as_free(as);
-				rz_demangler_plugin_fini();
 				return 0;
 			} else {
 				int syntax = rz_asm_syntax_from_string(opt.arg);
 				if (syntax == -1) {
 					__as_free(as);
-					rz_demangler_plugin_fini();
 					return 1;
 				}
 				rz_asm_set_syntax(as->a, syntax);
@@ -803,10 +799,9 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 beach:
 	__as_free(as);
 
-	free(r2arch);
+	free(rz_arch);
 	if (fd != -1) {
 		close(fd);
 	}
-	rz_demangler_plugin_fini();
 	return ret;
 }

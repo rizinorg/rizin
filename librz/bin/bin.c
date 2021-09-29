@@ -478,6 +478,7 @@ RZ_API void rz_bin_free(RzBin *bin) {
 	rz_id_storage_free(bin->ids);
 	rz_event_free(bin->event);
 	rz_str_constpool_fini(&bin->constpool);
+	rz_demangler_free(bin->demangler);
 	free(bin);
 }
 
@@ -706,8 +707,13 @@ RZ_API RzBin *rz_bin_new(void) {
 	if (!bin) {
 		return NULL;
 	}
-	if (!rz_str_constpool_init(&bin->constpool)) {
+	/* demanglers */
+	bin->demangler = rz_demangler_new();
+	if (!bin->demangler) {
 		goto trashbin;
+	}
+	if (!rz_str_constpool_init(&bin->constpool)) {
+		goto trashbin_demangler;
 	}
 	bin->event = rz_event_new(bin);
 	if (!bin->event) {
@@ -756,7 +762,9 @@ RZ_API RzBin *rz_bin_new(void) {
 			free(static_ldr_plugin);
 		}
 	}
+
 	return bin;
+
 trashbin_binldrs:
 	rz_list_free(bin->binldrs);
 trashbin_binxtrs:
@@ -766,6 +774,8 @@ trashbin_binxtrs:
 	rz_event_free(bin->event);
 trashbin_constpool:
 	rz_str_constpool_fini(&bin->constpool);
+trashbin_demangler:
+	rz_demangler_free(bin->demangler);
 trashbin:
 	free(bin);
 	return NULL;
@@ -1441,9 +1451,11 @@ RZ_API RZ_OWN char *rz_bin_demangle(RZ_NULLABLE RzBinFile *bf, RZ_NULLABLE const
 	case RZ_BIN_LANGUAGE_JAVA: demangled = rz_demangler_java(symbol); break;
 	case RZ_BIN_LANGUAGE_OBJC: demangled = rz_demangler_objc(symbol); break;
 	case RZ_BIN_LANGUAGE_MSVC: demangled = rz_demangler_msvc(symbol); break;
+#if WITH_GPL
 	case RZ_BIN_LANGUAGE_RUST: demangled = bin_demangle_rust(bf, symbol, vaddr); break;
 	case RZ_BIN_LANGUAGE_CXX: demangled = bin_demangle_cxx(bf, symbol, vaddr); break;
-	default: rz_demangler_resolve(symbol, language, &demangled);
+#endif
+	default: rz_demangler_resolve(bin->demangler, symbol, language, &demangled);
 	}
 	if (libs && demangled && lib) {
 		char *d = rz_str_newf("%s_%s", lib, demangled);
