@@ -459,7 +459,7 @@ int w32_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 
 static void transfer_drx(RzDebug *dbg, const ut8 *buf) {
 	CONTEXT cur_ctx;
-	if (w32_reg_read(dbg, RZ_REG_TYPE_ALL, (ut8 *)&cur_ctx, sizeof(CONTEXT))) {
+	if (w32_reg_read(dbg, RZ_REG_TYPE_ANY, (ut8 *)&cur_ctx, sizeof(CONTEXT))) {
 		CONTEXT *new_ctx = (CONTEXT *)buf;
 		size_t drx_size = offsetof(CONTEXT, Dr7) - offsetof(CONTEXT, Dr0) + sizeof(new_ctx->Dr7);
 		memcpy(&cur_ctx.Dr0, &new_ctx->Dr0, drx_size);

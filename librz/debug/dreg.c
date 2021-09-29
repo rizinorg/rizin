@@ -78,7 +78,7 @@ RZ_API int rz_debug_reg_sync(RzDebug *dbg, int type, int write) {
 				free(buf);
 			}
 		}
-		// DO NOT BREAK RZ_REG_TYPE_ALL PLEASE
+		// DO NOT BREAK RZ_REG_TYPE_ANY PLEASE
 		//   break;
 		// Continue the synchronization or just stop if it was asked only for a single type of regs
 		i++;
