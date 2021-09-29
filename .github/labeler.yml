@@ -90,6 +90,9 @@ RzMagic:
 RzParse:
   - librz/parse/**/*
 
+RzDiff:
+  - librz/diff/**/*
+
 RzReg:
   - librz/reg/**/*
 
