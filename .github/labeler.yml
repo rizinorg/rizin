@@ -4,35 +4,39 @@ rizin:
 
 rz-bin:
   - binrz/rz-bin/*
-  - librz/main/rz_bin.c
+  - librz/main/rz-bin.c
 
 rz-diff:
   - binrz/rz-diff/*
-  - librz/main/rz_diff.c
+  - librz/main/rz-diff.c
 
 rz-find:
   - binrz/rz-find/*
-  - librz/main/rz_find.c
+  - librz/main/rz-find.c
 
 rz-gg:
   - binrz/rz-gg/*
-  - librz/main/rz_gg.c
+  - librz/main/rz-gg.c
 
 rz-hash:
   - binrz/rz-hash/*
-  - librz/main/rz_hash.c
+  - librz/main/rz-hash.c
 
 rz-run:
   - binrz/rz-run/*
-  - librz/main/rz_run.c
+  - librz/main/rz-run.c
 
 rz-asm:
   - binrz/rz-asm/*
-  - librz/main/rz_asm.c
+  - librz/main/rz-asm.c
 
 rz-ax:
   - binrz/rz-ax/*
-  - librz/main/rz_ax.c
+  - librz/main/rz-ax.c
+
+rz-sign:
+  - binrz/rz-sign/*
+  - librz/main/rz-sign.c
 
 RzAnalysis:
   - librz/analysis/**/*
@@ -86,7 +90,7 @@ RzMagic:
 RzParse:
   - librz/parse/**/*
 
-RReg:
+RzReg:
   - librz/reg/**/*
 
 RzSearch:
@@ -116,13 +120,6 @@ command:
 documentation:
   - doc/**/*
 
-ESIL:
-  - librz/analysis/esil/*
-
-gdb:
-  - shlr/gdb/**/*
-  - librz/io/p/io_gdb.c
-
 infrastructure:
   - .appveyor.yml
   - .travis.yml
@@ -134,15 +131,57 @@ rz-test:
   - binrz/rz-test/*
   - test/**/*
 
+visual:
+  - librz/core/visual.c
+  - librz/core/visual_tabs.inc
+  - librz/core/vmenus.c
+  - librz/core/vmenus_graph.c
+  - librz/core/vmenus_zigns.c
+
+panel:
+  - librz/core/panels.c
+
+ELF:
+  - librz/bin/format/elf/**/*
+  - librz/bin/p/bin_elf*
+  - librz/bin/p/bin_cgc.*
+
+PE:
+  - librz/bin/format/pe/**/*
+  - librz/bin/format/mdmp/**/*
+  - librz/bin/p/bin_pe*
+  - librz/bin/p/bin_mdmp.*
+
+Mach-O:
+  - librz/bin/format/mach0/**/*
+  - librz/bin/p/bin_mach0*
+
+DEX:
+  - librz/bin/format/dex/**/*
+  - librz/bin/p/bin_dex.*
+
 java:
-  - shlr/java/**/*
+  - librz/bin/format/java/**/*
+  - librz/bin/p/bin_java.*
+  - librz/core/p/core_java.*
+
+ESIL:
+  - librz/analysis/esil/*
+  - librz/debug/p/debug_esil.c
+  - librz/debug/desil.c
+
+GDB:
+  - shlr/gdb/**/*
+  - librz/io/p/io_gdb.c
+  - librz/debug/p/debug_gdb.c
 
 WinDbg:
   - shlr/winkd/**/*
   - librz/io/p/io_winkd.c
+  - librz/io/p/io_windbg.c
+  - librz/debug/p/debug_winkd.c
+  - librz/debug/p/debug_windbg.c
 
-visual:
-  - librz/core/visual.c
-
-panel:
-  - librz/core/panels.c
+BSD:
+  - librz/debug/p/native/bsd/**/*
+  - librz/debug/p/native/reg/*bsd*
