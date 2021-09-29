@@ -1136,7 +1136,7 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 		}
 	case 'n': // "on"
 		if (input[1] == '*') {
-			rz_core_file_list(core, 'n');
+			rz_core_raw_file_print(core);
 			return 0;
 		}
 		if (input[1] == '+') { // "on+"
@@ -1291,7 +1291,7 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 			rz_core_cmd_help(core, help_msg_o_star);
 			break;
 		}
-		rz_core_file_list(core, (int)(*input));
+		rz_core_file_print(core, RZ_OUTPUT_MODE_RIZIN);
 		break;
 	case 'j': // "oj"
 		if ('?' == input[1]) {
@@ -1354,10 +1354,14 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 			}
 		} break;
 		case 'j': // "oij"
-		case '*': // "oi*"
-		case 0: // "oi"
-			rz_core_file_list(core, input[1]);
+			rz_core_file_print(core, RZ_OUTPUT_MODE_JSON);
 			break;
+		case '*': // "oi*"
+			rz_core_file_print(core, RZ_OUTPUT_MODE_RIZIN);
+			break;
+		case 0: // "oi"
+			break;
+			rz_core_file_print(core, RZ_OUTPUT_MODE_STANDARD);
 		}
 		break;
 	case 'u': { // "ou"
