@@ -878,22 +878,30 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rz-bin -D swift
-FILE=bins/elf/libc.so.0
-CMDS=!rz-bin -D swift  _TFSSCfT21_builtinStringLiteralBp8byteSizeBw7isASCIIBi1__SS
+
+NAME=rz-bin rust static type
+FILE==
+CMDS=!rz-bin -D rust '_ZN71_$LT$Test$u20$$u2b$$u20$$u27$static$u20$as$u20$foo..Bar$LT$Test$GT$$GT$3barE'
 EXPECT=<<EOF
-Swift.String.init(_builtinStringLiteral: Builtin.RawPointer, byteSize: Builtin.Word, isASCII: Builtin.Int1) -> Swift.String
+<Test + 'static as foo::Bar<Test>>::bar
 EOF
-BROKEN=1
 RUN
 
-NAME=rz-bin -D Unsupported
-FILE=--
-CMDS=!rz-bin -D XXX LOLILOL
+NAME=rz-bin -D java
+FILE==
+CMDS=!rz-bin -D java "Fake([BCDFIJSZ)Ltest/class/name;"
+EXPECT=<<EOF
+test.class.name Fake(byte[], char, double, float, int, long, short, boolean)
+EOF
+RUN
+
+NAME=rz-bin -D Invalid
+FILE==
+CMDS=!rz-bin -D Invalid XXXXX
 EXPECT_ERR=<<EOF
 EOF
 EXPECT=<<EOF
-Language 'XXX' is unsupported
+Language 'Invalid' is unsupported
 List of supported languages:
 c++    GPL-2    Free Software Foundation
 swift  MIT      pancake
@@ -1223,22 +1231,6 @@ FILE==
 CMDS=!rz-bin -S ""
 EXPECT_ERR=<<EOF
 Cannot open empty path
-EOF
-RUN
-
-NAME=rz-bin rust static type
-FILE==
-CMDS=!rz-bin -D rust '_ZN71_$LT$Test$u20$$u2b$$u20$$u27$static$u20$as$u20$foo..Bar$LT$Test$GT$$GT$3barE'
-EXPECT=<<EOF
-<Test + 'static as foo::Bar<Test>>::bar
-EOF
-RUN
-
-NAME=rz-bin rust static type with hash
-FILE==
-CMDS=!rz-bin -D rust '_ZN96_$LT$core..fmt..Write..write_fmt..Adapter$LT$$u27$a$C$$u20$T$GT$$u20$as$u20$core..fmt..Write$GT$9write_str17he4f4768a2f446facE'
-EXPECT=<<EOF
-<core::fmt::Write::write_fmt::Adapter<'a, T> as core::fmt::Write>::write_str::he4f4768a2f446fac
 EOF
 RUN
 
