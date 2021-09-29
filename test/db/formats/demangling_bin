@@ -243,3 +243,33 @@ EXPECT=<<EOF
 \           0x00000f10      jmp   dword [ebx + 0x70]
 EOF
 RUN
+
+NAME=rust function in file
+FILE=bins/elf/rust
+CMDS=<<EOF
+aa
+afl~example
+EOF
+EXPECT=<<EOF
+0x00002b30    2 15           sym._example::Foo_as_example::Bar_::bar::h26dc608664264fb6
+0x00002b40    1 31           sym.example::main::hf45903a20ef2ad21
+EOF
+RUN
+
+NAME=elf swift
+FILE=bins/elf/analysis/hello-swift
+CMDS=i~lang[1]
+EXPECT=<<EOF
+swift
+EOF
+RUN
+
+NAME=elf swift demangle (requires swift-demangle program)
+FILE=bins/elf/analysis/hello-swift
+BROKEN=1
+CMDS=isq~0x004009e0
+EXPECT=<<EOF
+0x004009e0 16 Swift.String.init (_builtinStringLiteral(Builtin.RawPointer byteSize__Builtin.Word isASCII__Builtin.Int1 _) -> String
+EOF
+RUN
+
