@@ -888,7 +888,6 @@ RZ_API void rz_cons_context_break_push(RzConsContext *context, RzConsBreak cb, v
 RZ_API void rz_cons_context_break_pop(RzConsContext *context, bool sig);
 
 /* control */
-RZ_API char *rz_cons_editor(const char *file, const char *str);
 RZ_API void rz_cons_reset(void);
 RZ_API void rz_cons_reset_colors(void);
 RZ_API void rz_cons_goto_origin_reset(void);
