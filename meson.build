@@ -256,7 +256,7 @@ if r.returncode() == 1 and get_option('subprojects_check')
   error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
 endif
 
-libdemangle_options = ['default_library=static']
+libdemangle_options = ['default_library=static', 'enable_tests=false']
 if get_option('use_gpl')
   libdemangle_options += 'use_gpl=true'
 else
@@ -266,11 +266,6 @@ if get_option('use_swift_demangler')
   libdemangle_options += 'use_swift_demangler=true'
 else
   libdemangle_options += 'use_swift_demangler=false'
-endif
-if get_option('enable_tests')
-  libdemangle_options += 'enable_tests=true'
-else
-  libdemangle_options += 'enable_tests=false'
 endif
 
 libdemangle_proj = subproject('libdemangle', default_options: libdemangle_options)
