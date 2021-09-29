@@ -1014,7 +1014,7 @@ RZ_API RZ_OWN RzList *rz_bin_java_class_strings(RZ_NONNULL RzBinJavaClass *bin) 
 			bstr->length = cpool->size;
 			bstr->size = cpool->size;
 			bstr->string = string;
-			bstr->type = RZ_STRING_TYPE_UTF8;
+			bstr->type = RZ_STRING_TYPE_MUTF8;
 			rz_list_append(list, bstr);
 		}
 	}

@@ -161,6 +161,7 @@ enum {
 	RZ_STRING_TYPE_DETECT = '?',
 	RZ_STRING_TYPE_ASCII = 'a',
 	RZ_STRING_TYPE_UTF8 = 'u',
+	RZ_STRING_TYPE_MUTF8 = 'm', // modified utf8
 	RZ_STRING_TYPE_WIDE_LE = 'w', // utf16 / widechar string
 	RZ_STRING_TYPE_WIDE32_LE = 'W', // utf32
 	RZ_STRING_TYPE_WIDE_BE = 'x', // utf16-be / widechar string
@@ -765,7 +766,7 @@ typedef struct rz_bin_string_t {
 	ut32 ordinal;
 	ut32 size; // size of buffer containing the string in bytes
 	ut32 length; // length of string in chars
-	char type; // Ascii Wide cp850 utf8 base64 ...
+	char type; // Ascii Wide cp850 utf8 mutf8 base64 ...
 } RzBinString;
 
 typedef struct rz_bin_field_t {

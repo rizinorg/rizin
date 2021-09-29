@@ -73,6 +73,7 @@ RZ_API RZ_BORROW const char *rz_bin_string_type(int type) {
 	switch (type) {
 	case RZ_STRING_TYPE_ASCII: return "ascii";
 	case RZ_STRING_TYPE_UTF8: return "utf8";
+	case RZ_STRING_TYPE_MUTF8: return "mutf8";
 	case RZ_STRING_TYPE_WIDE_LE: return "utf16le";
 	case RZ_STRING_TYPE_WIDE32_LE: return "utf32le";
 	case RZ_STRING_TYPE_WIDE_BE: return "utf16be";
