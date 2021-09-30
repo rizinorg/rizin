@@ -1521,7 +1521,7 @@ RZ_API char *rz_str_escape_utf32be(const char *buf, int buf_size, bool show_asci
 
 static char *escape_utf8_for_json(const char *buf, int buf_size, bool mutf8) {
 	char *new_buf, *q;
-	const char *p, *end;
+	const ut8 *p, *end;
 	RzRune ch;
 	int i, len, ch_bytes;
 
@@ -1529,16 +1529,17 @@ static char *escape_utf8_for_json(const char *buf, int buf_size, bool mutf8) {
 		return NULL;
 	}
 	len = buf_size < 0 ? strlen(buf) : buf_size;
-	end = buf + len;
+	end = (const ut8 *)buf + len;
 	/* Worst case scenario, we convert every byte to \u00hh */
 	new_buf = malloc(1 + (len * 6));
 	if (!new_buf) {
 		return NULL;
 	}
-	p = buf;
+	p = (const ut8 *)buf;
 	q = new_buf;
 	while (p < end) {
-		ch_bytes = mutf8 ? rz_mutf8_decode((ut8 *)p, end - p, &ch) : rz_utf8_decode((ut8 *)p, end - p, &ch);
+		ptrdiff_t bytes_left = end - p;
+		ch_bytes = mutf8 ? rz_mutf8_decode(p, bytes_left, &ch) : rz_utf8_decode(p, bytes_left, &ch);
 		if (ch_bytes == 1) {
 			switch (*p) {
 			case '\n':
