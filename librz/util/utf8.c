@@ -503,7 +503,7 @@ RZ_API int rz_utf8_decode(const ut8 *ptr, int ptrlen, RzRune *ch) {
 		if (ch) {
 			*ch = rune;
 		}
-		return rune < 0x80 && /* Java special case */ rune ? 0 : 2;
+		return rune < 0x80 ? 0 : 2;
 	} else if (ptrlen > 2 && (ptr[0] & 0xf0) == 0xe0 && (ptr[1] & 0xc0) == 0x80 && (ptr[2] & 0xc0) == 0x80) {
 		RzRune rune = (ptr[0] & 0xf) << 12 | (ptr[1] & 0x3f) << 6 | (ptr[2] & 0x3f);
 		if (ch) {
@@ -518,6 +518,17 @@ RZ_API int rz_utf8_decode(const ut8 *ptr, int ptrlen, RzRune *ch) {
 		return rune < 0x10000 ? 0 : 4;
 	}
 	return 0;
+}
+
+/* Convert an MUTF-8 buf into a unicode RzRune */
+RZ_API int rz_mutf8_decode(const ut8 *ptr, int ptrlen, RzRune *ch) {
+	if (ptrlen > 1 && ptr[0] == 0xc0 && ptr[1] == 0x80) {
+		if (ch) {
+			*ch = 0;
+		}
+		return 2;
+	}
+	return rz_utf8_decode(ptr, ptrlen, ch);
 }
 
 /* Convert a unicode RzRune into an UTF-8 buf */

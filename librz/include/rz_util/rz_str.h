@@ -194,6 +194,7 @@ RZ_API char *rz_str_utf16_decode(const ut8 *s, int len);
 RZ_API int rz_str_utf16_to_utf8(ut8 *dst, int len_dst, const ut8 *src, int len_src, int little_endian);
 RZ_API char *rz_str_utf16_encode(const char *s, int len);
 RZ_API char *rz_str_escape_utf8_for_json(const char *s, int len);
+RZ_API char *rz_str_escape_mutf8_for_json(const char *s, int len);
 RZ_API char *rz_str_home(const char *str);
 RZ_API char *rz_str_rz_prefix(const char *str);
 RZ_API size_t rz_str_nlen(const char *s, int n);
