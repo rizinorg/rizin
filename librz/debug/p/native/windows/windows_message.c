@@ -449,14 +449,13 @@ RZ_API void rz_w32_print_windows(RzDebug *dbg) {
 }
 
 RZ_API bool rz_w32_add_winmsg_breakpoint(RzDebug *dbg, const char *msg_name, const char *window_id) {
-	rz_return_val_if_fail(dbg && arg_name, false);
+	rz_return_val_if_fail(dbg && msg_name, false);
 	char *name = strdup(msg_name);
 	rz_str_trim(name);
 
 	DWORD type = __get_msg_type(name);
 	if (!type) {
 		free(name);
-		free(window_id);
 		return false;
 	}
 	ut64 offset = 0;
@@ -484,7 +483,6 @@ RZ_API bool rz_w32_add_winmsg_breakpoint(RzDebug *dbg, const char *msg_name, con
 	}
 	if (!offset) {
 		free(name);
-		free(window_id);
 		return false;
 	}
 	rz_debug_bp_add(dbg, offset, 0, 0, 0, NULL, 0);
@@ -502,6 +500,5 @@ RZ_API bool rz_w32_add_winmsg_breakpoint(RzDebug *dbg, const char *msg_name, con
 	}
 	dbg->corebind.cmdf(dbg->corebind.core, "\"dbC 0x%" PFMT64x " %s\"", offset, cond);
 	free(name);
-	free(window_id);
 	return true;
 }
