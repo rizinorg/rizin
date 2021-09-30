@@ -5041,7 +5041,13 @@ RZ_IPI RzCmdStatus rz_cmd_debug_set_cond_bp_win_handler(RzCore *core, int argc, 
 	if (argc < 2) {
 		return RZ_CMD_STATUS_WRONG_ARGS;
 	}
-	if (rz_w32_add_winmsg_breakpoint(core->dbg, input + 3)) {
+	bool res;
+	if (argc > 2) {
+		res = rz_w32_add_winmsg_breakpoint(core->dbg, argv[1], argv[2]);
+	} else {
+		res = rz_w32_add_winmsg_breakpoint(core->dbg, argv[1], NULL);
+	}
+	if (res) {
 		rz_cons_print("Breakpoint set.\n");
 	} else {
 		rz_cons_print("Breakpoint not set.\n");

@@ -448,18 +448,16 @@ RZ_API void rz_w32_print_windows(RzDebug *dbg) {
 	rz_list_free(windows);
 }
 
-RZ_API bool rz_w32_add_winmsg_breakpoint(RzDebug *dbg, const char *input) {
-	rz_return_val_if_fail(dbg && input, false);
-	char *name = strdup(input);
+RZ_API bool rz_w32_add_winmsg_breakpoint(RzDebug *dbg, const char *arg_name, const char *arg_window_id) {
+	rz_return_val_if_fail(dbg && arg_name, false);
+	char *name = strdup(arg_name);
 	rz_str_trim(name);
-	char *window_id = strchr(name, ' ');
-	if (window_id) {
-		*window_id = 0;
-		window_id++;
-	}
+	char *window_id = arg_window_id ? strdup(arg_window_id) : NULL;
+
 	DWORD type = __get_msg_type(name);
 	if (!type) {
 		free(name);
+		free(window_id);
 		return false;
 	}
 	ut64 offset = 0;
@@ -487,6 +485,7 @@ RZ_API bool rz_w32_add_winmsg_breakpoint(RzDebug *dbg, const char *input) {
 	}
 	if (!offset) {
 		free(name);
+		free(window_id);
 		return false;
 	}
 	rz_debug_bp_add(dbg, offset, 0, 0, 0, NULL, 0);
@@ -504,5 +503,6 @@ RZ_API bool rz_w32_add_winmsg_breakpoint(RzDebug *dbg, const char *input) {
 	}
 	dbg->corebind.cmdf(dbg->corebind.core, "\"dbC 0x%" PFMT64x " %s\"", offset, cond);
 	free(name);
+	free(window_id);
 	return true;
 }
