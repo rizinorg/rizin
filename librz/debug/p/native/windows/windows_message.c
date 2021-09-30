@@ -448,11 +448,10 @@ RZ_API void rz_w32_print_windows(RzDebug *dbg) {
 	rz_list_free(windows);
 }
 
-RZ_API bool rz_w32_add_winmsg_breakpoint(RzDebug *dbg, const char *arg_name, const char *arg_window_id) {
+RZ_API bool rz_w32_add_winmsg_breakpoint(RzDebug *dbg, const char *msg_name, const char *window_id) {
 	rz_return_val_if_fail(dbg && arg_name, false);
-	char *name = strdup(arg_name);
+	char *name = strdup(msg_name);
 	rz_str_trim(name);
-	char *window_id = arg_window_id ? strdup(arg_window_id) : NULL;
 
 	DWORD type = __get_msg_type(name);
 	if (!type) {
