@@ -7,7 +7,6 @@
 #include <rz_main.h>
 #include <rz_types.h>
 #include <rz_search.h>
-#include <rz_demangler.h>
 #include <rz_util.h>
 #include <rz_util/rz_print.h>
 #include <rz_cons.h>

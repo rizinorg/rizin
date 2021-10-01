@@ -12,7 +12,6 @@
 #include <string.h>
 #include <rz_main.h>
 #include <rz_core.h>
-#include <rz_demangler.h>
 
 typedef struct {
 	RzLib *l;

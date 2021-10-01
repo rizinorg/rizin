@@ -6,7 +6,6 @@
 #include <rz_main.h>
 #include <rz_util/rz_print.h>
 #include <rz_util.h>
-#include <rz_demangler.h>
 
 static int usage(int v) {
 	printf("Usage: rz-gg [-FOLsrxhvz] [-a arch] [-b bits] [-k os] [-o file] [-I path]\n"

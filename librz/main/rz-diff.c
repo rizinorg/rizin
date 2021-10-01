@@ -6,7 +6,6 @@
 #include <rz_bin.h>
 #include <rz_diff.h>
 #include <rz_util.h>
-#include <rz_demangler.h>
 #include <rz_main.h>
 
 #define MEGABYTE(x)        (x << 20)

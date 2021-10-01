@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 #include <rz_main.h>
 #include <rz_core.h>
-#include <rz_demangler.h>
 
 static void rasign_show_help(void) {
 	printf("Usage: rz-sign [options] [file]\n"

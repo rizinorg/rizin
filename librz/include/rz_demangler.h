@@ -34,7 +34,7 @@ RZ_API RZ_OWN char *rz_demangler_objc(RZ_NONNULL const char *symbol);
 RZ_API RZ_OWN char *rz_demangler_rust(RZ_NONNULL const char *symbol);
 RZ_API RZ_OWN char *rz_demangler_msvc(RZ_NONNULL const char *symbol);
 
-RZ_API RZ_OWN RzDemangler *rz_demangler_new();
+RZ_API RZ_OWN RzDemangler *rz_demangler_new(void);
 RZ_API void rz_demangler_free(RZ_NULLABLE RzDemangler *demangler);
 RZ_API void rz_demangler_plugin_iterate(RZ_NONNULL RzDemangler *demangler, RZ_NONNULL RzDemanglerIter iter, RZ_NULLABLE void *data);
 RZ_API bool rz_demangler_plugin_add(RZ_NONNULL RzDemangler *demangler, RZ_NONNULL RzDemanglerPlugin *plugin);
