@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_project.h>
-#include <rz_util/pj.h>
+#include <rz_util/rz_pj.h>
 
 /**
  * \file

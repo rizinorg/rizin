@@ -6,7 +6,7 @@
 #define RZ_JSON_H
 
 #include <rz_types.h>
-#include <rz_util/pj.h>
+#include <rz_util/rz_pj.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,7 +17,7 @@ extern "C" {
  * heavily based on nxjson by Yaroslav Stavnichiy <yarosla@gmail.com>,
  * which is available under LGPLv3 or later.
  *
- * rz_json does NOT format json, it only parses. To format json, see pj.h instead.
+ * rz_json does NOT format json, it only parses. To format json, see rz_pj.h instead.
  * It operates in-place, which means the parsed string will be MODIFIED.
  * This means all string values in RzJson point directly into the input string,
  * removing the need to copy them.

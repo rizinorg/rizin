@@ -6,12 +6,12 @@ extern "C" {
 #endif
 
 #include <rz_types.h>
-#include <rz_util/pj.h>
 #include <rz_util/rz_graph.h>
 #include <rz_util/rz_hex.h>
 #include <rz_util/rz_log.h>
 #include <rz_util/rz_num.h>
 #include <rz_util/rz_panels.h>
+#include <rz_util/rz_pj.h>
 #include <rz_util/rz_signal.h>
 #include <rz_util/rz_stack.h>
 #include <rz_util/rz_str.h>

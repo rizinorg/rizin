@@ -272,7 +272,7 @@ git grep -nWG "^[^[:blank:]].*func_name("
 
 Since many places in Rizin output JSON the special API was created, **PJ** which means "Print Json".
 It allows to create nested JSON structs with a simple and short API. Full API reference is
-available in `librz/include/rz_util/pj.h`.
+available in `librz/include/rz_util/rz_pj.h`.
 
 Here is the short example of how we usually use **PJ**:
 ```c
