@@ -582,6 +582,7 @@ static char *pretty_enum_multiline = "enum MCU {\n"
 				     "\tDOCS = 0x1337,\n"
 				     "\tCAPM = 0x2077\n"
 				     "} enumult;";
+static char *pretty_simple_typedef = "typedef long time_t;";
 
 static bool test_type_as_pretty_string(void) {
 	RzTypeDB *typedb = rz_type_db_new();
@@ -667,6 +668,22 @@ static bool test_type_as_pretty_string(void) {
 	mu_assert_streq(pretty_str, pretty_enum_multiline, "enum type multiline is ugly");
 	free(pretty_str);
 	free(ttype);
+
+	error_msg = NULL;
+	ttype = rz_type_parse_string_single(typedb->parser, "time_t;", &error_msg);
+	mu_assert_notnull(ttype, "simple typedef type parse unsuccessfull");
+	mu_assert_null(error_msg, "parsing errors");
+	pretty_str = rz_type_as_pretty_string(typedb, ttype, NULL, RZ_TYPE_PRINT_SHOW_TYPEDEF, 10);
+	mu_assert_streq(pretty_str, pretty_simple_typedef, "simple typedef type is ugly");
+	free(pretty_str);
+
+	error_msg = NULL;
+	ttype = rz_type_parse_string_single(typedb->parser, "non_t existent;", &error_msg);
+	mu_assert_notnull(ttype, "unknown type parse unsuccessfull");
+	mu_assert_null(error_msg, "parsing errors");
+	pretty_str = rz_type_as_pretty_string(typedb, ttype, NULL, RZ_TYPE_PRINT_SHOW_TYPEDEF, 10);
+	mu_assert_streq(pretty_str, "unknown_t;", "unknown type is ugly");
+	free(pretty_str);
 
 	mu_end;
 }
