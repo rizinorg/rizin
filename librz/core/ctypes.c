@@ -131,7 +131,7 @@ RZ_IPI RZ_OWN char *rz_core_types_enum_as_c(RzTypeDB *typedb, const RzBaseType *
 	if (multiline) {
 		multiline_opt = RZ_TYPE_PRINT_MULTILINE;
 	}
-	return rz_type_db_base_type_as_pretty_string(typedb, btype, multiline_opt | RZ_TYPE_PRINT_END_NEWLINE, 1);
+	return rz_type_db_base_type_as_pretty_string(typedb, btype, multiline_opt | RZ_TYPE_PRINT_END_NEWLINE | RZ_TYPE_PRINT_ANONYMOUS, 1);
 }
 
 RZ_IPI RZ_OWN char *rz_core_types_enum_as_c_all(RzTypeDB *typedb, bool multiline) {
@@ -225,7 +225,7 @@ RZ_IPI RZ_OWN char *rz_core_types_union_as_c(RzTypeDB *typedb, const RzBaseType 
 	if (multiline) {
 		multiline_opt = RZ_TYPE_PRINT_MULTILINE;
 	}
-	return rz_type_db_base_type_as_pretty_string(typedb, btype, multiline_opt | RZ_TYPE_PRINT_END_NEWLINE, 1);
+	return rz_type_db_base_type_as_pretty_string(typedb, btype, multiline_opt | RZ_TYPE_PRINT_END_NEWLINE | RZ_TYPE_PRINT_ANONYMOUS, 1);
 }
 
 RZ_IPI RZ_OWN char *rz_core_types_union_as_c_all(RzTypeDB *typedb, bool multiline) {
@@ -317,7 +317,7 @@ RZ_IPI RZ_OWN char *rz_core_types_struct_as_c(RzTypeDB *typedb, const RzBaseType
 	rz_return_val_if_fail(btype->kind == RZ_BASE_TYPE_KIND_STRUCT, NULL);
 
 	unsigned int multiline_opt = multiline ? RZ_TYPE_PRINT_MULTILINE : 0;
-	return rz_type_db_base_type_as_pretty_string(typedb, btype, multiline_opt | RZ_TYPE_PRINT_END_NEWLINE, 1);
+	return rz_type_db_base_type_as_pretty_string(typedb, btype, multiline_opt | RZ_TYPE_PRINT_END_NEWLINE | RZ_TYPE_PRINT_ANONYMOUS, 1);
 }
 
 RZ_IPI RZ_OWN char *rz_core_types_struct_as_c_all(RzTypeDB *typedb, bool multiline) {
@@ -415,7 +415,7 @@ RZ_IPI RZ_OWN char *rz_core_base_type_as_c(RzCore *core, RZ_NONNULL RzBaseType *
 	if (multiline) {
 		multiline_opt = RZ_TYPE_PRINT_MULTILINE;
 	}
-	return rz_type_db_base_type_as_pretty_string(core->analysis->typedb, type, multiline_opt | RZ_TYPE_PRINT_END_NEWLINE, 1);
+	return rz_type_db_base_type_as_pretty_string(core->analysis->typedb, type, multiline_opt | RZ_TYPE_PRINT_END_NEWLINE | RZ_TYPE_PRINT_ANONYMOUS, 1);
 }
 
 RZ_IPI RZ_OWN char *rz_core_types_as_c(RzCore *core, RZ_NONNULL const char *name, bool multiline) {
