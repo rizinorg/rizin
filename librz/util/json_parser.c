@@ -8,7 +8,7 @@
 #include <rz_util/rz_hex.h>
 #include <rz_util/rz_json.h>
 #include <rz_util/rz_assert.h>
-#include <rz_util/pj.h>
+#include <rz_util/rz_pj.h>
 
 #if 0
 // optional error printing

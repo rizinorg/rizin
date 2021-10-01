@@ -388,7 +388,6 @@ include_files =[
 install_headers(include_files, install_dir: rizin_incdir)
 
 rz_util_files = [
-  'include/rz_util/pj.h',
   'include/rz_util/rz_alloc.h',
   'include/rz_util/rz_annotated_code.h',
   'include/rz_util/rz_ascii_table.h',
@@ -416,6 +415,7 @@ rz_util_files = [
   'include/rz_util/rz_name.h',
   'include/rz_util/rz_num.h',
   'include/rz_util/rz_panels.h',
+  'include/rz_util/rz_pj.h',
   'include/rz_util/rz_pkcs7.h',
   'include/rz_util/rz_pool.h',
   'include/rz_util/rz_print.h',
