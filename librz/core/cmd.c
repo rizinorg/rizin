@@ -431,7 +431,7 @@ RZ_IPI int rz_cmd_alias(void *data, const char *input) {
 			if (*def) {
 				if (!strcmp(def, "-")) {
 					char *v = rz_cmd_alias_get(core->rcmd, buf, 0);
-					char *n = rz_cons_editor(NULL, v);
+					char *n = rz_core_editor(core, NULL, v);
 					if (n) {
 						rz_cmd_alias_set(core->rcmd, buf, n, 0);
 						free(n);

@@ -253,15 +253,6 @@ RZ_API int rz_lang_prompt(RzLang *lang) {
 		if (*buf == '!') {
 			if (buf[1]) {
 				rz_sys_xsystem(buf + 1);
-			} else {
-				char *foo, *code = NULL;
-				do {
-					foo = rz_cons_editor(NULL, code);
-					rz_lang_run(lang, foo, 0);
-					free(code);
-					code = foo;
-				} while (rz_cons_yesno('y', "Edit again? (Y/n)"));
-				free(foo);
 			}
 			continue;
 		}
@@ -281,7 +272,6 @@ RZ_API int rz_lang_prompt(RzLang *lang) {
 			RzLangDef *def;
 			RzListIter *iter;
 			eprintf("  ?        - show this help message\n"
-				"  !        - run $EDITOR\n"
 				"  !command - run system command\n"
 				"  . file   - interpret file\n"
 				"  q        - quit prompt\n");
