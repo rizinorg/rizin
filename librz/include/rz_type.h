@@ -213,7 +213,8 @@ typedef enum {
 	RZ_TYPE_PRINT_ZERO_VLA = 1 << 3, // use [0] to denote VLA instead of (default) []
 	RZ_TYPE_PRINT_NO_END_SEMICOLON = 1 << 4, // return a string without a semicolon at end
 	RZ_TYPE_PRINT_ANONYMOUS = 1 << 5, // use "[struct|union|enum] anonymous" as the typename for anonymous structs/unions/enums
-	RZ_TYPE_PRINT_END_NEWLINE = 1 << 6 // return a string with a newline at the end
+	RZ_TYPE_PRINT_END_NEWLINE = 1 << 6, // return a string with a newline at the end
+	RZ_TYPE_PRINT_SHOW_TYPEDEF = 1 << 7 // show typedefs wherever found
 } RzTypePrintOpts;
 
 #ifdef RZ_API

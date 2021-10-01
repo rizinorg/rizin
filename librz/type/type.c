@@ -833,7 +833,7 @@ struct PrettyHelperBufs {
 	RzStrBuf *arraybuf;
 };
 
-static bool type_decl_as_pretty_string(const RzTypeDB *typedb, const RzType *type, HtPP *used_types, struct PrettyHelperBufs phbuf, bool *self_ref, char **self_ref_typename, bool zero_vla, bool print_anon) {
+static bool type_decl_as_pretty_string(const RzTypeDB *typedb, const RzType *type, HtPP *used_types, struct PrettyHelperBufs phbuf, bool *self_ref, char **self_ref_typename, bool zero_vla, bool print_anon, bool show_typedefs) {
 	rz_return_val_if_fail(typedb && type && used_types && self_ref, false);
 
 	bool is_anon = false;
@@ -872,7 +872,17 @@ static bool type_decl_as_pretty_string(const RzTypeDB *typedb, const RzType *typ
 				}
 				break;
 			case RZ_BASE_TYPE_KIND_TYPEDEF: {
-				rz_strbuf_append(phbuf.typename, btype->name);
+				if (show_typedefs) {
+					char *typestr = rz_type_as_string(typedb, btype->type);
+					if (!typestr) {
+						RZ_LOG_ERROR("Failed to get type representation of typedef of base type: %s\n", btype->name);
+						return false;
+					}
+					rz_strbuf_appendf(phbuf.typename, "typedef %s", typestr);
+					free(typestr);
+				} else {
+					rz_strbuf_append(phbuf.typename, btype->name);
+				}
 				break;
 			}
 			case RZ_BASE_TYPE_KIND_ATOMIC:
@@ -891,7 +901,7 @@ static bool type_decl_as_pretty_string(const RzTypeDB *typedb, const RzType *typ
 			rz_strbuf_append(phbuf.typename, typestr);
 			free(typestr);
 		} else {
-			type_decl_as_pretty_string(typedb, type->pointer.type, used_types, phbuf, self_ref, self_ref_typename, zero_vla, print_anon);
+			type_decl_as_pretty_string(typedb, type->pointer.type, used_types, phbuf, self_ref, self_ref_typename, zero_vla, print_anon, show_typedefs);
 			rz_strbuf_append(phbuf.pointerbuf, "*");
 			rz_strbuf_appendf(phbuf.pointerbuf, "%s", type->pointer.is_const ? " const " : "");
 		}
@@ -902,7 +912,7 @@ static bool type_decl_as_pretty_string(const RzTypeDB *typedb, const RzType *typ
 		} else { // variable length arrays
 			rz_strbuf_appendf(phbuf.arraybuf, "[%s]", zero_vla ? "0" : "");
 		}
-		type_decl_as_pretty_string(typedb, type->array.type, used_types, phbuf, self_ref, self_ref_typename, zero_vla, print_anon);
+		type_decl_as_pretty_string(typedb, type->array.type, used_types, phbuf, self_ref, self_ref_typename, zero_vla, print_anon, show_typedefs);
 		break;
 	case RZ_TYPE_KIND_CALLABLE: {
 		char *callstr = rz_type_callable_as_string(typedb, type->callable);
@@ -933,6 +943,7 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 	no_end_semicolon = no_end_semicolon && (indent_level == 0); // indent_level needs to be zero for the last semicolon
 	bool end_newline = opts & RZ_TYPE_PRINT_END_NEWLINE;
 	end_newline = end_newline && (indent_level == 0); // only append newline for the outer type
+	bool show_typedefs = opts & RZ_TYPE_PRINT_SHOW_TYPEDEF;
 	if (indent_level == 0) { // for the root type, disregard anon_only
 		anon_only = false;
 	}
@@ -956,7 +967,7 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 	struct PrettyHelperBufs phbuf = { typename, pointer_buf, array_buf };
 	bool self_ref = false;
 	char *self_ref_typename = NULL;
-	bool decl = type_decl_as_pretty_string(typedb, type, used_types, phbuf, &self_ref, &self_ref_typename, zero_vla, print_anon);
+	bool decl = type_decl_as_pretty_string(typedb, type, used_types, phbuf, &self_ref, &self_ref_typename, zero_vla, print_anon, show_typedefs);
 	if (!decl) {
 		rz_strbuf_free(buf);
 		rz_strbuf_free(typename);
@@ -1058,6 +1069,9 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 			}
 			break;
 		case RZ_BASE_TYPE_KIND_TYPEDEF:
+			if (show_typedefs && !rz_type_is_callable_ptr_nested(btype->type)) { // if not a callable
+				rz_strbuf_appendf(buf, " %s", btype->name);
+			}
 			break;
 		case RZ_BASE_TYPE_KIND_ATOMIC:
 			break;
