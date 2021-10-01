@@ -555,7 +555,7 @@ RZ_IPI bool rz_bin_file_set_obj(RzBin *bin, RzBinFile *bf, RzBinObject *obj) {
 			return false;
 		}
 		if (!obj->info->lang) {
-			obj->info->lang = rz_bin_lang_tostring(obj->lang);
+			obj->info->lang = rz_bin_language_to_string(obj->lang);
 		}
 	}
 	return true;

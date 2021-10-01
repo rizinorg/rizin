@@ -339,7 +339,7 @@ vaddr      paddr      target     type    name
             0x0000d020      .qword 0x0000000000000000                  ; RELOC TARGET 2 OSObject::operator delete(void*, unsigned long)
 -- x86 UNSIGNED reloc
 28d3000000000000
-0x00001338 0x000000000000d328   (....... @ method.IOService.serializeProperties_OSSerialize___const 54056 _ZNK9IOService19serializePropertiesEP11OSSerialize R 0x0
+0x00001338 0x000000000000d328   (....... @ method.IOService.serializeProperties_OSSerialize___const 54056 IOService::serializeProperties(OSSerialize*) const R 0x0
 -- x86 BRANCH reloc
 call reloc.target.IOLog
 e89ec20000
@@ -689,7 +689,7 @@ vaddr      paddr      target     type    name
             0x0000d020      .qword 0x0000000000000000                  ; RELOC TARGET 2 OSObject::operator delete(void*, unsigned long)
 -- x86 UNSIGNED reloc
 28d3000000000000
-0x00001338 0x000000000000d328   (....... @ method.IOService.serializeProperties_OSSerialize___const 54056 _ZNK9IOService19serializePropertiesEP11OSSerialize R 0x0
+0x00001338 0x000000000000d328   (....... @ method.IOService.serializeProperties_OSSerialize___const 54056 IOService::serializeProperties(OSSerialize*) const R 0x0
 -- x86 BRANCH reloc
 call reloc.target.IOLog
 e89ec20000
