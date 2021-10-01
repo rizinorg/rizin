@@ -931,6 +931,8 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 	bool print_anon = opts & RZ_TYPE_PRINT_ANONYMOUS;
 	bool no_end_semicolon = opts & RZ_TYPE_PRINT_NO_END_SEMICOLON;
 	no_end_semicolon = no_end_semicolon && (indent_level == 0); // indent_level needs to be zero for the last semicolon
+	bool end_newline = opts & RZ_TYPE_PRINT_END_NEWLINE;
+	end_newline = end_newline && (indent_level == 0); // only append newline for the outer type
 	if (indent_level == 0) { // for the root type, disregard anon_only
 		anon_only = false;
 	}
@@ -1053,6 +1055,9 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 	rz_strbuf_appendf(buf, "%s%s%s", pointer_str ? pointer_str : "", identifier ? identifier : "", array_str ? array_str : "");
 	if (!no_end_semicolon) {
 		rz_strbuf_append(buf, ";");
+	}
+	if (end_newline) {
+		rz_strbuf_append(buf, "\n");
 	}
 	if (self_ref_typename) {
 		ht_pp_delete(used_types, self_ref_typename);
