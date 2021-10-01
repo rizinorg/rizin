@@ -70,9 +70,9 @@ bool test_rz_bin(void) {
 	}
 
 	const RzList *hashes = rz_bin_file_compute_hashes(bin, bf, UT64_MAX);
-	mu_assert_eq(rz_list_length(hashes), 3, "rz_bin_file_get_hashes");
-	const char *hash_names[] = { "md5", "sha1", "sha256" };
-	const char *hash_hexes[] = { "99327411dd72a11d7198b54298648adf", "f2bf1c7758c7b1e22bdea1d7681882783b658705", "3aed9a3821134a2ab1d69cb455e5e9d80bb651a1c97af04cdba4f3bb0adaa37b" };
+	mu_assert_eq(rz_list_length(hashes), 5, "rz_bin_file_get_hashes");
+	const char *hash_names[] = { "md5", "sha1", "sha256", "crc32", "entropy" };
+	const char *hash_hexes[] = { "99327411dd72a11d7198b54298648adf", "f2bf1c7758c7b1e22bdea1d7681882783b658705", "3aed9a3821134a2ab1d69cb455e5e9d80bb651a1c97af04cdba4f3bb0adaa37b", "cf8cb28a", "3.484857" };
 	RzBinFileHash *hash;
 	i = 0;
 	rz_list_foreach (hashes, it, hash) {
