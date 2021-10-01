@@ -171,6 +171,13 @@ RZ_API void rz_type_db_save_base_type(const RzTypeDB *typedb, const RzBaseType *
 	ht_pp_insert(typedb->types, type->name, (void *)type);
 }
 
+RZ_API RZ_OWN char *rz_type_db_base_type_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzBaseType *btype) {
+	rz_return_val_if_fail(typedb && btype, NULL);
+
+	RzType *type = rz_type_identifier_of_base_type(typedb, btype, false);
+	return rz_type_as_pretty_string(typedb, type, NULL,  RZ_TYPE_PRINT_NO_END_SEMICOLON | RZ_TYPE_PRINT_ZERO_VLA, 1);
+}
+
 /**
  * \brief Returns C representation as string of RzBaseType
  *

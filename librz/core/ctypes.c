@@ -316,10 +316,7 @@ RZ_IPI RZ_OWN char *rz_core_types_struct_as_c(RzTypeDB *typedb, const RzBaseType
 	rz_return_val_if_fail(btype, NULL);
 	rz_return_val_if_fail(btype->kind == RZ_BASE_TYPE_KIND_STRUCT, NULL);
 
-	unsigned int multiline_opt = 0;
-	if (multiline) {
-		multiline_opt = RZ_TYPE_PRINT_MULTILINE;
-	}
+	unsigned int multiline_opt = multiline ? RZ_TYPE_PRINT_MULTILINE : 0;
 	return rz_type_db_base_type_as_pretty_string(typedb, btype, multiline_opt | RZ_TYPE_PRINT_END_NEWLINE, 1);
 }
 
