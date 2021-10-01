@@ -6797,19 +6797,15 @@ RZ_IPI bool rz_core_analysis_function_delete_var(RzCore *core, RzAnalysisFunctio
 RZ_IPI char *rz_core_analysis_var_display(RzCore *core, RzAnalysisVar *var, bool add_name) {
 	RzAnalysis *analysis = core->analysis;
 	RzStrBuf *sb = rz_strbuf_new(NULL);
-	char *vartype = rz_type_as_string(core->analysis->typedb, var->type);
-	char *fmt = rz_type_format(analysis->typedb, vartype);
+	char *fmt = rz_type_as_format(analysis->typedb, var->type);
 	RzRegItem *i;
 	if (!fmt) {
-		RZ_LOG_DEBUG("type:%s doesn't exist\n", vartype);
-		free(vartype);
 		return rz_strbuf_drain(sb);
 	}
-	bool usePxr = !strcmp(vartype, "int"); // hacky but useful
+	bool usePxr = rz_type_is_strictly_atomic(core->analysis->typedb, var->type) && rz_type_atomic_str_eq(core->analysis->typedb, var->type, "int");
 	if (add_name) {
 		rz_strbuf_appendf(sb, "%s %s = ", var->isarg ? "arg" : "var", var->name);
 	}
-	free(vartype);
 	switch (var->kind) {
 	case RZ_ANALYSIS_VAR_KIND_REG:
 		i = rz_reg_index_get(analysis->reg, var->delta);

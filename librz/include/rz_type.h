@@ -347,6 +347,7 @@ RZ_API bool rz_type_is_void_ptr_nested(RZ_NONNULL const RzType *type);
 RZ_API bool rz_type_is_char_ptr(RZ_NONNULL const RzType *type);
 RZ_API bool rz_type_is_char_ptr_nested(RZ_NONNULL const RzType *type);
 RZ_API bool rz_type_is_identifier(RZ_NONNULL const RzType *type);
+RZ_API bool rz_type_is_strictly_atomic(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);
 RZ_API bool rz_type_is_atomic(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);
 RZ_API bool rz_type_is_default(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);
 RZ_API RZ_OWN RzType *rz_type_new_default(const RzTypeDB *typedb);
