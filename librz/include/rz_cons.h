@@ -459,6 +459,12 @@ typedef enum {
 	RZ_VIRT_TERM_MODE_COMPLETE, ///< All the sequences goes through VT (Windows Terminal, mintty, all OSs)
 } RzVirtTermMode;
 
+typedef struct rz_cons_input_context_t {
+	size_t readbuffer_length;
+	char *readbuffer;
+	bool bufactive;
+} RzConsInputContext;
+
 typedef struct rz_cons_context_t {
 	RzConsGrep grep;
 	RzStack *cons_stack;
@@ -492,6 +498,7 @@ typedef struct rz_cons_context_t {
 
 typedef struct rz_cons_t {
 	RzConsContext *context;
+	RzConsInputContext *input;
 	char *lastline;
 	bool is_html;
 	bool was_html;
@@ -565,17 +572,6 @@ typedef struct rz_cons_t {
 	bool show_vals; // show which section in Vv
 	// TODO: move into instance? + avoid unnecessary copies
 } RzCons;
-
-// XXX THIS MUST BE A SINGLETON AND WRAPPED INTO RzCons */
-/* XXX : global variables? or a struct with a singleton? */
-//extern FILE *stdin_fd;
-//extern FILE *rz_cons_stdin_fd;
-//extern int rz_cons_stdout_fd;
-//extern int rz_cons_stdout_file;
-//extern char *rz_cons_filterline;
-//extern char *rz_cons_teefile;
-// not needed anymoar
-//extern int (*rz_cons_user_fgets)(char *buf, int len);
 
 #define RZ_CONS_KEY_F1  0xf1
 #define RZ_CONS_KEY_F2  0xf2
@@ -793,19 +789,6 @@ typedef struct rz_cons_canvas_line_style_t {
 } RzCanvasLineStyle;
 
 // UTF-8 symbols indexes
-// XXX. merge with RUNE/RUNECODE/RUNECODESTR
-#if 0
-#define LINE_VERT   0
-#define LINE_CROSS  1
-#define LINE_HORIZ  2
-#define LINE_UP     3
-#define CORNER_BR   4
-#define CORNER_BL   5
-#define CORNER_TL   6
-#define CORNER_TR   7
-#define ARROW_RIGHT 8
-#define ARROW_LEFT  9
-#else
 #define LINE_VERT   0
 #define LINE_CROSS  1
 #define LINE_HORIZ  2
@@ -816,7 +799,6 @@ typedef struct rz_cons_canvas_line_style_t {
 #define CORNER_TR   6
 #define ARROW_RIGHT 8
 #define ARROW_LEFT  9
-#endif
 
 #ifdef RZ_API
 RZ_API RzConsCanvas *rz_cons_canvas_new(int w, int h);
