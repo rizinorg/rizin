@@ -171,6 +171,13 @@ RZ_API void rz_type_db_save_base_type(const RzTypeDB *typedb, const RzBaseType *
 	ht_pp_insert(typedb->types, type->name, (void *)type);
 }
 
+/**
+ * \brief Returns C representation as string of RzBaseType (see rz_type_db_base_type_as_pretty_string for cusom print options)
+ * 
+ * \param typedb type database instance
+ * \param btype RzBaseType to convert
+ * \return RZ_API* 
+ */
 RZ_API RZ_OWN char *rz_type_db_base_type_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzBaseType *btype) {
 	rz_return_val_if_fail(typedb && btype, NULL);
 
