@@ -3,6 +3,7 @@
 
 #include <rz_pdb.h>
 #include <rz_bin.h>
+#include <rz_demangler.h>
 #include <string.h>
 
 #include "types.h"
@@ -1333,7 +1334,7 @@ static void print_gvars(RzPdb *pdb, ut64 img_base, PJ *pj, int format) {
 		sctn_header = rz_list_get_n(pe_stream->sections_hdrs, (gdata->segment - 1));
 		if (sctn_header) {
 			char *filtered_name;
-			name = rz_bin_demangle_msvc(gdata->name.name);
+			name = rz_demangler_msvc(gdata->name.name);
 			name = (name) ? name : strdup(gdata->name.name);
 			switch (format) {
 			case 2:

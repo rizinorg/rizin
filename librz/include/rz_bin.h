@@ -7,6 +7,7 @@
 #include <rz_cons.h>
 #include <rz_list.h>
 #include <ht_pu.h>
+#include <rz_demangler.h>
 
 typedef struct rz_bin_t RzBin;
 typedef struct rz_bin_file_t RzBinFile;
@@ -139,23 +140,25 @@ typedef enum {
 } RzBinSpecialSymbol;
 
 // name mangling types
-// TODO: Rename to RZ_BIN_LANG_
-enum {
-	RZ_BIN_NM_NONE = 0,
-	RZ_BIN_NM_JAVA = 1,
-	RZ_BIN_NM_C = 1 << 1,
-	RZ_BIN_NM_GO = 1 << 2,
-	RZ_BIN_NM_CXX = 1 << 3,
-	RZ_BIN_NM_OBJC = 1 << 4,
-	RZ_BIN_NM_SWIFT = 1 << 5,
-	RZ_BIN_NM_DLANG = 1 << 6,
-	RZ_BIN_NM_MSVC = 1 << 7,
-	RZ_BIN_NM_RUST = 1 << 8,
-	RZ_BIN_NM_KOTLIN = 1 << 9,
-	RZ_BIN_NM_GROOVY = 1 << 10,
-	RZ_BIN_NM_BLOCKS = 1 << 31,
-	RZ_BIN_NM_ANY = -1,
-};
+typedef enum {
+	RZ_BIN_LANGUAGE_UNKNOWN = 0,
+	RZ_BIN_LANGUAGE_JAVA = 1,
+	RZ_BIN_LANGUAGE_C = 1 << 1,
+	RZ_BIN_LANGUAGE_GO = 1 << 2,
+	RZ_BIN_LANGUAGE_CXX = 1 << 3,
+	RZ_BIN_LANGUAGE_OBJC = 1 << 4,
+	RZ_BIN_LANGUAGE_SWIFT = 1 << 5,
+	RZ_BIN_LANGUAGE_DLANG = 1 << 6,
+	RZ_BIN_LANGUAGE_MSVC = 1 << 7,
+	RZ_BIN_LANGUAGE_RUST = 1 << 8,
+	RZ_BIN_LANGUAGE_KOTLIN = 1 << 9,
+	RZ_BIN_LANGUAGE_GROOVY = 1 << 10,
+	RZ_BIN_LANGUAGE_DART = 1 << 11,
+	RZ_BIN_LANGUAGE_BLOCKS = 1 << 31,
+} RzBinLanguage;
+
+#define RZ_BIN_LANGUAGE_MASK(x)       ((x) & ~RZ_BIN_LANGUAGE_BLOCKS)
+#define RZ_BIN_LANGUAGE_HAS_BLOCKS(x) ((x)&RZ_BIN_LANGUAGE_BLOCKS)
 
 enum {
 	RZ_STRING_TYPE_DETECT = '?',
@@ -290,7 +293,7 @@ typedef struct rz_bin_object_t {
 	RzBinInfo *info;
 	RzBinAddr *binsym[RZ_BIN_SPECIAL_SYMBOL_LAST];
 	struct rz_bin_plugin_t *plugin;
-	int lang;
+	RzBinLanguage lang;
 	RZ_DEPRECATE Sdb *kv; ///< deprecated, put info in C structures instead of this
 	HtUP *addrzklassmethod;
 	void *bin_obj; // internal pointer used by formats
@@ -363,12 +366,12 @@ struct rz_bin_t {
 	char *prefix; // bin.prefix
 	char *strenc;
 	ut64 filter_rules;
-	bool demanglercmd;
 	bool verbose;
 	bool use_xtr; // use extract plugins when loading a file?
 	bool use_ldr; // use loader plugins when loading a file?
 	RzStrConstPool constpool;
 	bool is_reloc_patched; // used to indicate whether relocations were patched or not
+	RzDemangler *demangler;
 };
 
 typedef struct rz_bin_xtr_metadata_t {
@@ -938,7 +941,10 @@ RZ_API bool rz_bin_object_is_big_endian(RZ_NONNULL RzBinObject *obj);
 RZ_API bool rz_bin_object_is_static(RZ_NONNULL RzBinObject *obj);
 RZ_API RZ_OWN RzVector *rz_bin_object_sections_mapping_list(RZ_NONNULL RzBinObject *obj);
 
-RZ_API int rz_bin_load_languages(RzBinFile *binfile);
+RZ_API RzBinLanguage rz_bin_language_detect(RzBinFile *binfile);
+RZ_API RzBinLanguage rz_bin_language_to_id(const char *language);
+RZ_API const char *rz_bin_language_to_string(RzBinLanguage language);
+
 RZ_API RzBinFile *rz_bin_cur(RzBin *bin);
 RZ_API RzBinObject *rz_bin_cur_object(RzBin *bin);
 
@@ -994,16 +1000,7 @@ RZ_API RzBinVirtualFile *rz_bin_object_get_virtual_file(RzBinObject *o, const ch
 RZ_API void rz_bin_mem_free(void *data);
 
 // demangle functions
-RZ_API RZ_OWN char *rz_bin_demangle(RZ_NONNULL RzBinFile *binfile, RZ_NONNULL const char *lang, RZ_NONNULL const char *str, ut64 vaddr, bool libs);
-RZ_API RZ_OWN char *rz_bin_demangle_java(RZ_NULLABLE const char *str);
-RZ_API RZ_OWN char *rz_bin_demangle_cxx(RZ_NONNULL RzBinFile *binfile, RZ_NONNULL const char *str, ut64 vaddr);
-RZ_API RZ_OWN char *rz_bin_demangle_msvc(RZ_NONNULL const char *str);
-RZ_API RZ_OWN char *rz_bin_demangle_swift(RZ_NONNULL const char *s, bool syscmd);
-RZ_API RZ_OWN char *rz_bin_demangle_objc(RZ_NONNULL RzBinFile *binfile, RZ_NONNULL const char *sym);
-RZ_API RZ_OWN char *rz_bin_demangle_rust(RZ_NONNULL RzBinFile *binfile, RZ_NONNULL const char *str, ut64 vaddr);
-RZ_API int rz_bin_demangle_type(const char *str);
-RZ_API void rz_bin_demangle_list(RzBin *bin);
-RZ_API char *rz_bin_demangle_plugin(RzBin *bin, const char *name, const char *str);
+RZ_API RZ_OWN char *rz_bin_demangle(RZ_NULLABLE RzBinFile *bf, RZ_NULLABLE const char *language, RZ_NULLABLE const char *symbol, ut64 vaddr, bool libs);
 RZ_API const char *rz_bin_get_meth_flag_string(ut64 flag, bool compact);
 
 RZ_API RzBinSection *rz_bin_get_section_at(RzBinObject *o, ut64 off, int va);

@@ -11,6 +11,7 @@
 #endif
 
 #include <rz_core.h>
+#include <rz_demangler.h>
 #include <rz_project.h>
 
 static bool is_valid_gdb_file(RzCoreFile *fh) {
@@ -58,6 +59,7 @@ static int rz_main_version_verify(int show) {
 		{ "rz_syscall", rz_syscall_version },
 		{ "rz_util", rz_util_version },
 		{ "rz_diff", rz_diff_version },
+		{ "rz_demangler", rz_demangler_version },
 		/* ... */
 		{ NULL, NULL }
 	};
@@ -497,7 +499,9 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 #if DEBUGGER
 		case 'd': debug = 1; break;
 #else
-		case 'd': eprintf("Sorry. No debugger backend available.\n"); return 1;
+		case 'd':
+			eprintf("Sorry. No debugger backend available.\n");
+			return 1;
 #endif
 		case 'D': {
 			debug = 2;

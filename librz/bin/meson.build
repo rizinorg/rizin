@@ -1,9 +1,8 @@
 rz_bin_sources = [
   'bin.c',
+  'bin_language.c',
   'dbginfo.c',
-  'demangle.c',
   'dwarf.c',
-  'blang.c',
   'filter.c',
   'bfile.c',
   'bobj.c',
@@ -145,17 +144,6 @@ rz_bin_sources = [
   'format/wasm/wasm.c',
   'format/zimg/zimg.c',
 
-  'mangling/cxx.c',
-  'mangling/cxx/cp-demangle.c',
-  'mangling/demangler.c',
-  'mangling/rust.c',
-  'mangling/java.c',
-  'mangling/microsoft_demangle.c',
-  'mangling/msvc.c',
-  'mangling/objc.c',
-  'mangling/swift-sd.c',
-  'mangling/swift.c',
-
   'pdb/dbi.c',
   'pdb/fpo.c',
   'pdb/gdata.c',
@@ -167,7 +155,7 @@ rz_bin_sources = [
   'pdb/tpi.c'
 ]
 
-rz_bin_inc = [platform_inc, include_directories('mangling', 'format')]
+rz_bin_inc = [platform_inc, include_directories('format')]
 
 rz_bin = library('rz_bin', rz_bin_sources,
   include_directories: rz_bin_inc,
@@ -176,6 +164,7 @@ rz_bin = library('rz_bin', rz_bin_sources,
     lz4_dep,
     yxml_dep,
     rz_util_dep,
+    rz_demangler_dep,
     rz_socket_dep,
     rz_magic_dep,
     rz_hash_dep,

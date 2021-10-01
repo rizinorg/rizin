@@ -2261,7 +2261,6 @@ rz_diff_hex_visual_fail:
 RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 	bool success = false;
 	DiffContext ctx;
-
 	rz_diff_parse_arguments(argc, argv, &ctx);
 
 	switch (ctx.option) {

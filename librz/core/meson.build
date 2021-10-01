@@ -87,6 +87,7 @@ rz_core_inc = [platform_inc, include_directories(rz_core_inc), 'cmd_descs']
 
 rz_core_deps = [
   rz_util_dep,
+  rz_demangler_dep,
   rz_diff_dep,
   rz_magic_dep,
   rz_socket_dep,
@@ -141,6 +142,7 @@ pkgconfig_mod.generate(
   libraries: pkgcfg_sanitize_libs,
   requires: pkgconfig_magic_requires + [
     'rz_util',
+    'rz_demangler',
     'rz_diff',
     'rz_reg',
     'rz_syscall',

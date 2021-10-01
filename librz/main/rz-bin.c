@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
+#include <rz_demangler.h>
 #include <rz_types.h>
 #include <rz_util.h>
 #include <stdio.h>
@@ -219,7 +220,6 @@ static int rabin_show_help(int v) {
 		       "?' -\n"
 		       " RZ_BIN_STRPURGE:  e bin.str.purge    # try to purge false positives\n"
 		       " RZ_BIN_DEBASE64:  e bin.debase64     # try to debase64 all strings\n"
-		       " RZ_BIN_DMNGLRCMD: e bin.demanglercmd # try to purge false positives\n"
 		       " RZ_BIN_PDBSERVER: e pdb.server       # use alternative PDB server\n"
 		       " RZ_BIN_SYMSTORE:  e pdb.symstore     # path to downstream symbol store\n"
 		       " RZ_BIN_PREFIX:    e bin.prefix       # prefix symbols/sections/relocs with a specific string\n"
@@ -569,6 +569,15 @@ static int rabin_show_srcline(RzBin *bin, ut64 at) {
 }
 
 /* bin callback */
+static int __lib_demangler_cb(RzLibPlugin *pl, void *user, void *data) {
+	rz_demangler_plugin_add(user, (RzDemanglerPlugin *)data);
+	return true;
+}
+
+static int __lib_demangler_dt(RzLibPlugin *pl, void *p, void *u) {
+	return true;
+}
+
 static int __lib_bin_cb(RzLibPlugin *pl, void *user, void *data) {
 	struct rz_bin_plugin_t *hand = (struct rz_bin_plugin_t *)data;
 	RzBin *bin = user;
@@ -606,23 +615,6 @@ static int __lib_bin_ldr_dt(RzLibPlugin *pl, void *p, void *u) {
 	return true;
 }
 
-static char *__demangleAs(RzBin *bin, int type, const char *file) {
-	bool syscmd = bin ? bin->demanglercmd : false;
-	char *res = NULL;
-	switch (type) {
-	case RZ_BIN_NM_CXX: res = rz_bin_demangle_cxx(NULL, file, 0); break;
-	case RZ_BIN_NM_JAVA: res = rz_bin_demangle_java(file); break;
-	case RZ_BIN_NM_OBJC: res = rz_bin_demangle_objc(NULL, file); break;
-	case RZ_BIN_NM_SWIFT: res = rz_bin_demangle_swift(file, syscmd); break;
-	case RZ_BIN_NM_MSVC: res = rz_bin_demangle_msvc(file); break;
-	case RZ_BIN_NM_RUST: res = rz_bin_demangle_rust(NULL, file, 0); break;
-	default:
-		eprintf("Unsupported demangler\n");
-		break;
-	}
-	return res;
-}
-
 static void __listPlugins(RzBin *bin, const char *plugin_name, PJ *pj, int rad) {
 	int format = 0;
 	RzCmdStateOutput state = { 0 };
@@ -644,6 +636,12 @@ static void __listPlugins(RzBin *bin, const char *plugin_name, PJ *pj, int rad) 
 		rz_cmd_state_output_fini(&state);
 		rz_cons_flush();
 	}
+}
+
+static bool print_demangler_info(const RzDemanglerPlugin *plugin, void *user) {
+	(void)user;
+	printf("%-6s %-8s %s\n", plugin->language, plugin->license, plugin->author);
+	return true;
 }
 
 RZ_API int rz_main_rz_bin(int argc, const char **argv) {
@@ -675,13 +673,14 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 
 	rz_core_init(&core);
 	bin = core.bin;
-
 	if (!(tmp = rz_sys_getenv("RZ_BIN_NOPLUGINS"))) {
 		char *homeplugindir = rz_str_home(RZ_HOME_PLUGINS);
 		char *plugindir = rz_str_rz_prefix(RZ_PLUGINS);
 		char *extrasdir = rz_str_rz_prefix(RZ_EXTRAS);
 		char *bindingsdir = rz_str_rz_prefix(RZ_BINDINGS);
 		RzLib *l = rz_lib_new(NULL, NULL);
+		rz_lib_add_handler(l, RZ_LIB_TYPE_DEMANGLER, "demangler plugins",
+			&__lib_demangler_cb, &__lib_demangler_dt, bin->demangler);
 		rz_lib_add_handler(l, RZ_LIB_TYPE_BIN, "bin plugins",
 			&__lib_bin_cb, &__lib_bin_dt, bin);
 		rz_lib_add_handler(l, RZ_LIB_TYPE_BIN_XTR, "bin xtr plugins",
@@ -714,10 +713,6 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		} else {
 			eprintf("Cannot open file specified in RZ_CONFIG\n");
 		}
-		free(tmp);
-	}
-	if ((tmp = rz_sys_getenv("RZ_BIN_DMNGLRCMD"))) {
-		rz_config_set(core.config, "cmd.demangle", tmp);
 		free(tmp);
 	}
 	if ((tmp = rz_sys_getenv("RZ_BIN_LANG"))) {
@@ -964,28 +959,31 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	}
 
 	if (do_demangle) {
+		int ret_num = 1;
 		char *res = NULL;
-		int type;
+		const RzDemanglerPlugin *plugin = NULL;
 		if ((argc - opt.ind) < 2) {
 			rz_core_fini(&core);
 			return rabin_show_help(0);
 		}
-		type = rz_bin_demangle_type(do_demangle);
 		file = argv[opt.ind + 1];
+		plugin = rz_demangler_plugin_get(bin->demangler, do_demangle);
+		if (!plugin) {
+			printf("Language '%s' is unsupported\nList of supported languages:\n", do_demangle);
+			rz_demangler_plugin_iterate(bin->demangler, (RzDemanglerIter)print_demangler_info, NULL);
+			rz_core_fini(&core);
+			return 1;
+		}
 		if (!strcmp(file, "-")) {
 			for (;;) {
 				file = stdin_gets(false);
 				if (!file || !*file) {
 					break;
 				}
-				res = __demangleAs(bin, type, file);
-				if (!res) {
-					eprintf("Unknown lang to demangle. Use: cxx, java, objc, swift\n");
-					rz_core_fini(&core);
-					return 1;
-				}
-				if (res && *res) {
+				res = rz_demangler_plugin_demangle(plugin, file);
+				if (RZ_STR_ISNOTEMPTY(res)) {
 					printf("%s\n", res);
+					ret_num = 0;
 				} else if (file && *file) {
 					printf("%s\n", file);
 				}
@@ -994,20 +992,17 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			}
 			stdin_gets(true);
 		} else {
-			res = __demangleAs(bin, type, file);
-			if (res && *res) {
+			res = rz_demangler_plugin_demangle(plugin, file);
+			if (RZ_STR_ISNOTEMPTY(res)) {
 				printf("%s\n", res);
-				free(res);
-				rz_core_fini(&core);
-				return 0;
+				ret_num = 0;
 			} else {
 				printf("%s\n", file);
 			}
 		}
 		free(res);
-		//eprintf ("%s\n", file);
 		rz_core_fini(&core);
-		return 1;
+		return ret_num;
 	}
 	file = argv[opt.ind];
 
