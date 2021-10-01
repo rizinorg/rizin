@@ -99,14 +99,14 @@ static bool test_types_get_base_type_struct(void) {
 	mu_assert_true(rz_type_atomic_str_eq(typedb, member->type, "int32_t"), "Incorrect type for struct member");
 	mu_assert_streq(member->name, "cow", "Incorrect name for struct member");
 
-	mu_assert_streq(rz_type_db_base_type_as_string(typedb, base), "struct kappa { int32_t bar; int32_t cow; }", "Incorrect conversion of struct to string");
+	mu_assert_streq(rz_type_db_base_type_as_pretty_string(typedb, base, RZ_TYPE_PRINT_NO_END_SEMICOLON, 1), "struct kappa { int32_t bar; int32_t cow; }", "Incorrect conversion of struct to string");
 
 	RzBaseType *base2 = rz_type_db_get_base_type(typedb, "lappa");
 	mu_assert_notnull(base2, "Couldn't create get base type of struct \"lappa\"");
 
 	mu_assert_eq(RZ_BASE_TYPE_KIND_STRUCT, base2->kind, "Wrong base type");
 	mu_assert_streq(base2->name, "lappa", "type name");
-	mu_assert_streq(rz_type_db_base_type_as_string(typedb, base2), "struct lappa { int32_t bar; struct kappa cow; }", "Incorrect conversion of struct to string");
+	mu_assert_streq(rz_type_db_base_type_as_pretty_string(typedb, base2, RZ_TYPE_PRINT_NO_END_SEMICOLON, 1), "struct lappa { int32_t bar; struct kappa cow; }", "Incorrect conversion of struct to string");
 
 	rz_type_db_free(typedb);
 	mu_end;
@@ -138,13 +138,13 @@ static bool test_types_get_base_type_union(void) {
 	mu_assert_true(rz_type_atomic_str_eq(typedb, member->type, "int32_t"), "Incorrect type for union member");
 	mu_assert_streq(member->name, "cow", "Incorrect name for union member");
 
-	mu_assert_streq(rz_type_db_base_type_as_string(typedb, base), "union kappa { int32_t bar; int32_t cow; }", "Incorrect conversion of union to string");
+	mu_assert_streq(rz_type_db_base_type_as_pretty_string(typedb, base, RZ_TYPE_PRINT_NO_END_SEMICOLON, 1), "union kappa { int32_t bar; int32_t cow; }", "Incorrect conversion of union to string");
 
 	RzBaseType *base2 = rz_type_db_get_base_type(typedb, "lappa");
 	mu_assert_notnull(base2, "Couldn't create get base type of union \"lappa\"");
 	mu_assert_eq(RZ_BASE_TYPE_KIND_UNION, base2->kind, "Wrong base type");
 	mu_assert_streq(base2->name, "lappa", "type name");
-	mu_assert_streq(rz_type_db_base_type_as_string(typedb, base2), "union lappa { int32_t bar; union kappa cow; }", "Incorrect conversion of union to string");
+	mu_assert_streq(rz_type_db_base_type_as_pretty_string(typedb, base2, RZ_TYPE_PRINT_NO_END_SEMICOLON, 1), "union lappa { int32_t bar; union kappa cow; }", "Incorrect conversion of union to string");
 
 	rz_type_db_free(typedb);
 	mu_end;
@@ -373,7 +373,7 @@ static bool test_types_get_base_types_of_kind(void) {
 }
 
 static char *test_enum = "enum BLA { FOO = 0x1, BOO, GOO = 0xFFFF }";
-static char *test_enum_output = "enum BLA { FOO = 0x1, BOO = 0x2, GOO = 0xffff, }";
+static char *test_enum_output = "enum BLA { FOO = 0x1, BOO = 0x2, GOO = 0xffff }";
 
 static bool test_enum_types(void) {
 	RzTypeDB *typedb = rz_type_db_new();
@@ -392,7 +392,7 @@ static bool test_enum_types(void) {
 	RzBaseType *base = rz_type_db_get_base_type(typedb, "BLA");
 	mu_assert_eq(RZ_BASE_TYPE_KIND_ENUM, base->kind, "not enum");
 	mu_assert_streq(base->name, "BLA", "type name");
-	mu_assert_streq_free(rz_type_db_base_type_as_string(typedb, base), test_enum_output, "enum type as string");
+	mu_assert_streq_free(rz_type_db_base_type_as_pretty_string(typedb, base, RZ_TYPE_PRINT_NO_END_SEMICOLON, 1), test_enum_output, "enum type as string");
 
 	RzTypeEnumCase *cas;
 
@@ -742,7 +742,7 @@ static bool test_struct_func_types(void) {
 	RzBaseType *base = rz_type_db_get_base_type(typedb, "bla");
 	mu_assert_eq(RZ_BASE_TYPE_KIND_STRUCT, base->kind, "not struct");
 	mu_assert_streq(base->name, "bla", "type name");
-	mu_assert_streq_free(rz_type_db_base_type_as_string(typedb, base), func_ptr_struct, "type as string with fcn ptr string");
+	mu_assert_streq_free(rz_type_db_base_type_as_pretty_string(typedb, base, RZ_TYPE_PRINT_NO_END_SEMICOLON, 1), func_ptr_struct, "type as string with fcn ptr string");
 
 	RzTypeStructMember *member;
 
@@ -780,7 +780,7 @@ static bool test_struct_func_types(void) {
 	base = rz_type_db_get_base_type(typedb, "blabla");
 	mu_assert_eq(RZ_BASE_TYPE_KIND_STRUCT, base->kind, "not struct");
 	mu_assert_streq(base->name, "blabla", "type name");
-	mu_assert_streq_free(rz_type_db_base_type_as_string(typedb, base), func_double_ptr_struct, "type as string with fcn ptr string");
+	mu_assert_streq_free(rz_type_db_base_type_as_pretty_string(typedb, base, RZ_TYPE_PRINT_NO_END_SEMICOLON, 1), func_double_ptr_struct, "type as string with fcn ptr string");
 
 	member = rz_vector_index_ptr(&base->struct_data.members, 0);
 	mu_assert_true(rz_type_atomic_str_eq(typedb, member->type, "int"), "Incorrect type for struct member");
@@ -832,7 +832,7 @@ static bool test_struct_array_types(void) {
 	RzBaseType *base = rz_type_db_get_base_type(typedb, "albalb");
 	mu_assert_eq(RZ_BASE_TYPE_KIND_STRUCT, base->kind, "not struct");
 	mu_assert_streq(base->name, "albalb", "type name");
-	mu_assert_streq_free(rz_type_db_base_type_as_string(typedb, base), array_struct_test, "type as string with an array");
+	mu_assert_streq_free(rz_type_db_base_type_as_pretty_string(typedb, base, RZ_TYPE_PRINT_NO_END_SEMICOLON | RZ_TYPE_PRINT_ZERO_VLA, 1), array_struct_test, "type as string with an array");
 
 	RzTypeStructMember *member = rz_vector_index_ptr(&base->struct_data.members, 0);
 	mu_assert_streq(member->name, "a", "Incorrect name for struct member");
@@ -855,7 +855,7 @@ static bool test_struct_array_types(void) {
 	base = rz_type_db_get_base_type(typedb, "alb");
 	mu_assert_eq(RZ_BASE_TYPE_KIND_STRUCT, base->kind, "not struct");
 	mu_assert_streq(base->name, "alb", "type name");
-	mu_assert_streq_free(rz_type_db_base_type_as_string(typedb, base), array_ptr_struct_test, "type as string with multidimensional array of pointers");
+	mu_assert_streq_free(rz_type_db_base_type_as_pretty_string(typedb, base, RZ_TYPE_PRINT_NO_END_SEMICOLON | RZ_TYPE_PRINT_ZERO_VLA, 1), array_ptr_struct_test, "type as string with multidimensional array of pointers");
 
 	rz_type_free(ttype);
 	rz_type_db_free(typedb);
