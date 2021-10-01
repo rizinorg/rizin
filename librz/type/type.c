@@ -984,12 +984,18 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 	rz_strbuf_append(buf, typename_str);
 
 	if (btype) {
+		bool no_memb = false; // to check if no members are present
 		switch (btype->kind) {
 		case RZ_BASE_TYPE_KIND_STRUCT:
 			if (unfold_all || (is_anon && unfold_anon)) {
-				rz_strbuf_appendf(buf, " {%s", multiline ? "\n" : " ");
+				rz_strbuf_append(buf, " {");
 				RzTypeStructMember *memb;
+				no_memb = true;
 				rz_vector_foreach(&btype->struct_data.members, memb) {
+					if (no_memb) {
+						rz_strbuf_appendf(buf, "%s", multiline ? "\n" : " ");
+						no_memb = false;
+					}
 					char *unfold = type_as_pretty_string(typedb, memb->type, memb->name, used_types, opts, unfold_level - 1, indent_level + 1);
 					rz_strbuf_appendf(buf, "%s%s", unfold, separator);
 					free(unfold);
@@ -1002,9 +1008,14 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 			break;
 		case RZ_BASE_TYPE_KIND_UNION:
 			if (unfold_all || (is_anon && unfold_anon)) {
-				rz_strbuf_appendf(buf, " {%s", multiline ? "\n" : " ");
+				rz_strbuf_append(buf, " {");
 				RzTypeUnionMember *memb;
+				no_memb = true;
 				rz_vector_foreach(&btype->struct_data.members, memb) {
+					if (no_memb) {
+						rz_strbuf_appendf(buf, "%s", multiline ? "\n" : " ");
+						no_memb = false;
+					}
 					char *unfold = type_as_pretty_string(typedb, memb->type, memb->name, used_types, opts, unfold_level - 1, indent_level + 1);
 					rz_strbuf_appendf(buf, "%s%s", unfold, separator);
 					free(unfold);
@@ -1018,18 +1029,25 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 		case RZ_BASE_TYPE_KIND_ENUM:
 			if (unfold_all || (is_anon && unfold_anon)) {
 				RzTypeEnumCase *cas;
-				rz_strbuf_appendf(buf, " {%s", multiline ? "\n" : " ");
+				rz_strbuf_append(buf, " {");
 				if (multiline) {
 					indent++; // no recursive call, so manually need to update indent
 				}
+				no_memb = true;
 				rz_vector_foreach(&btype->enum_data.cases, cas) {
+					if (no_memb) {
+						rz_strbuf_appendf(buf, "%s", multiline ? "\n" : " ");
+						no_memb = false;
+					}
 					for (int i = 0; i < indent; i++) {
 						rz_strbuf_append(buf, "\t");
 					}
 					rz_strbuf_appendf(buf, "%s = 0x%" PFMT64x ",%s", cas->name, cas->val, separator);
 				}
-				rz_strbuf_slice(buf, 0, rz_strbuf_length(buf) - 2);
-				rz_strbuf_append(buf, separator);
+				if (!no_memb) {
+					rz_strbuf_slice(buf, 0, rz_strbuf_length(buf) - 2);
+					rz_strbuf_append(buf, separator);
+				}
 				if (multiline) {
 					indent--; // restore the original value
 				}
