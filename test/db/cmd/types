@@ -1485,6 +1485,46 @@ struct anonymous struct 1 {
 EOF
 RUN
 
+NAME=Variable character array
+FILE=bins/elf/ls
+CMDS=<<EOF
+aaa
+s 0x4070
+afv
+afvt var_18h "char [20]"
+afv
+afvd var_18h
+EOF
+EXPECT=<<EOF
+var uint64_t var_8h @ rsp+0x18
+var uint64_t var_17h @ rsp+0x27
+var int64_t var_18h @ rsp+0x28
+var char * var_28h @ rsp+0x38
+var int64_t var_30h @ rsp+0x40
+var int64_t var_32h @ rsp+0x42
+var int64_t var_38h @ rsp+0x48
+var int64_t var_45h @ rsp+0x55
+var int64_t var_46h @ rsp+0x56
+var int64_t var_47h @ rsp+0x57
+var int64_t var_48h @ rsp+0x58
+arg char ** argv @ rsi
+arg int argc @ rdi
+var uint64_t var_8h @ rsp+0x18
+var uint64_t var_17h @ rsp+0x27
+var char [20] var_18h @ rsp+0x28
+var int64_t var_30h @ rsp+0x40
+var int64_t var_32h @ rsp+0x42
+var int64_t var_38h @ rsp+0x48
+var int64_t var_45h @ rsp+0x55
+var int64_t var_46h @ rsp+0x56
+var int64_t var_47h @ rsp+0x57
+var int64_t var_48h @ rsp+0x58
+arg char ** argv @ rsi
+arg int argc @ rdi
+var var_18h = 0x00000028 = [ 'h', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '@', '.', '8', '.', '.', '.', '@', '.' ]
+EOF
+RUN
+
 NAME=Backward param type propagation
 FILE=bins/elf/back1
 CMDS=<<EOF
@@ -1715,7 +1755,6 @@ afv
 EOF
 EXPECT=<<EOF
 var void * va_args @ rbp-0x34
-var uint64_t var_30h @ rbp-0x30
 var uint64_t var_2ch @ rbp-0x2c
 var FILE * stream @ rbp-0x28
 var const char * s @ rbp-0x20
@@ -1752,7 +1791,6 @@ EXPECT=<<EOF
 var char ** var_14e0h @ rbp-0x14e0
 var int var_14d4h @ rbp-0x14d4
 var int * wstatus @ rbp-0x14cc
-var int * options @ rbp-0x14c8
 var int64_t var_14c4h @ rbp-0x14c4
 var int64_t var_14c0h @ rbp-0x14c0
 var int64_t var_14bch @ rbp-0x14bc
