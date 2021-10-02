@@ -91,9 +91,11 @@ static bool shm__plugin_open(RzIO *io, const char *pathname, bool many) {
 	return (!strncmp(pathname, "shm://", 6));
 }
 
+#if !HAVE_SHM_OPEN
 static inline int getshmfd(RzIOShm *shm) {
 	return (((int)(size_t)shm->buf) >> 4) & 0xfff;
 }
+#endif
 
 static RzIODesc *shm__open(RzIO *io, const char *pathname, int rw, int mode) {
 	if (strncmp(pathname, "shm://", 6)) {
