@@ -142,6 +142,7 @@ Existing packages
 -----------------
 
 OSX: execute `dist/osx/build_osx_package.sh` on a MacOS system to create a .pkg installer in the base directory, named `rizin-${VERSION}.pkg`.
+Windows installer: execute `dist/windows/build_windows_installer.ps1` Powershell script on a Windows system to create a .exe installer in `dist/windows/Output`, named `rizin.exe`.
 
 
 [BUILDING.md]: https://github.com/rizinorg/rizin/blob/dev/BUILDING.md

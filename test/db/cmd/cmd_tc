@@ -409,8 +409,8 @@ tec foo
 EOF
 EXPECT=<<EOF
 enum foo {
-	bar = 1,
-	cow = 3
+	bar = 0x1,
+	cow = 0x3
 };
 EOF
 RUN
