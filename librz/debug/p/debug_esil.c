@@ -62,9 +62,9 @@ static int __esil_continue_syscall(RzDebug *dbg, int pid, int num) {
 	return true;
 }
 
-static int __esil_wait(RzDebug *dbg, int pid) {
+static RzDebugReasonType __esil_wait(RzDebug *dbg, int pid) {
 	/* do nothing */
-	return true;
+	return RZ_DEBUG_REASON_SIGNAL;
 }
 
 static int __esil_attach(RzDebug *dbg, int pid) {

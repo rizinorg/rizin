@@ -23,9 +23,9 @@ static int __rap_continue(RzDebug *dbg, int pid, int tid, int sig) {
 	return true;
 }
 
-static int __rap_wait(RzDebug *dbg, int pid) {
+static RzDebugReasonType __rap_wait(RzDebug *dbg, int pid) {
 	/* do nothing */
-	return true;
+	return RZ_DEBUG_REASON_SIGNAL;
 }
 
 static int __rap_attach(RzDebug *dbg, int pid) {
