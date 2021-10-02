@@ -78,7 +78,7 @@ EVP_sha512
 
 #define rz_openssl_plugin_small_block(pluginname, evpmd) \
 	static bool openssl_plugin_##pluginname##_small_block(const ut8 *data, ut64 size, ut8 **digest, RzMsgDigestSize *digest_size) { \
-		rz_return_val_if_fail(data &&digest, false); \
+		rz_return_val_if_fail((data) && (digest), false); \
 		const EVP_MD *evp_md = evpmd(); \
 		if (!evp_md) { \
 			return false; \
