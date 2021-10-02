@@ -199,7 +199,7 @@ static RzList *strings(RzBinFile *bf) {
 }
 
 static int demangle_type(const char *str) {
-	return RZ_BIN_NM_JAVA;
+	return RZ_BIN_LANGUAGE_JAVA;
 }
 
 static char *enrich_asm(RzBinFile *bf, const char *asm_str, int asm_len) {

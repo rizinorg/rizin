@@ -4,8 +4,9 @@
 
 #include <rz_core.h>
 #include <rz_config.h>
-#include "rz_util.h"
-#include "rz_util/rz_time.h"
+#include <rz_demangler.h>
+#include <rz_util.h>
+#include <rz_util/rz_time.h>
 
 #define is_in_range(at, from, sz) ((at) >= (from) && (at) < ((from) + (sz)))
 
@@ -775,6 +776,7 @@ RZ_API bool rz_core_bin_apply_entry(RzCore *core, RzBinFile *binfile, bool va) {
 
 static RzIODesc *find_reusable_file(RzIO *io, RzCoreFile *cf, const char *uri, int perm) {
 	rz_return_val_if_fail(io && uri, NULL);
+
 	if (!cf) {
 		// valid case, but then we can't reuse anything
 		return NULL;
@@ -865,9 +867,9 @@ static void add_map(RzCore *core, RZ_NULLABLE RzCoreFile *cf, RzBinFile *bf, RzB
 			if (!desc) {
 				free(uri);
 				return;
-			}
-			if (cf) {
-				rz_pvector_push(&cf->extra_files, desc);
+			} else if (cf && !rz_pvector_push(&cf->extra_files, desc)) {
+				free(uri);
+				return;
 			}
 		}
 		free(uri);
@@ -2285,7 +2287,7 @@ RZ_API bool rz_core_bin_relocs_print(RzCore *core, RzBinFile *bf, RzCmdStateOutp
 						: NULL;
 			if (bin_demangle) {
 				char *mn = rz_bin_demangle(core->bin->cur, NULL, name, addr, keep_lib);
-				if (mn && *mn) {
+				if (RZ_STR_ISNOTEMPTY(mn)) {
 					free(name);
 					name = mn;
 				}
@@ -2651,6 +2653,7 @@ static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzList *l
 
 			switch (string->type) {
 			case RZ_STRING_TYPE_UTF8:
+			case RZ_STRING_TYPE_MUTF8:
 			case RZ_STRING_TYPE_WIDE_LE:
 			case RZ_STRING_TYPE_WIDE32_LE:
 				block_list = rz_utf_block_list((const ut8 *)string->string, -1, NULL);
@@ -2704,6 +2707,7 @@ static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzList *l
 			RzStrBuf *buf = rz_strbuf_new(str);
 			switch (string->type) {
 			case RZ_STRING_TYPE_UTF8:
+			case RZ_STRING_TYPE_MUTF8:
 			case RZ_STRING_TYPE_WIDE_LE:
 			case RZ_STRING_TYPE_WIDE32_LE:
 				block_list = rz_utf_block_list((const ut8 *)string->string, -1, NULL);
@@ -2847,7 +2851,7 @@ RZ_API bool rz_core_file_info_print(RzCore *core, RzBinFile *binfile, RzCmdState
 		if (rz_str_is_utf8(filename)) {
 			pj_ks(state->d.pj, file_tag, filename);
 		} else {
-			pj_kr(state->d.pj, file_tag, (unsigned char *)filename, strlen(filename));
+			pj_kr(state->d.pj, file_tag, (const ut8 *)filename, strlen(filename));
 		}
 		if (desc) {
 			ut64 fsz = rz_io_desc_size(desc);
@@ -3524,7 +3528,7 @@ static inline char *demangle_type(const char *any) {
 		return strdup("unknown");
 	}
 	switch (any[0]) {
-	case 'L': return rz_bin_demangle_java(any);
+	case 'L': return rz_demangler_java(any);
 	case 'B': return strdup("byte");
 	case 'C': return strdup("char");
 	case 'D': return strdup("double");
@@ -3582,7 +3586,7 @@ static void classdump_java(RzCore *r, RzBinClass *c) {
 	rz_list_foreach (c->methods, iter3, sym) {
 		const char *mn = sym->dname ? sym->dname : sym->name;
 		visibility = resolve_java_visibility(sym->visibility_str);
-		char *dem = rz_bin_demangle_java(mn);
+		char *dem = rz_demangler_java(mn);
 		if (!dem) {
 			dem = strdup(mn);
 		} else if (simplify && dem && package && classname) {
@@ -3638,7 +3642,7 @@ static void bin_class_print_rizin(RzCore *r, RzBinClass *c, ut64 at_min) {
 	}
 
 	// C struct
-	if (!(bf->o->lang == RZ_BIN_NM_JAVA || (bf->o->info && bf->o->info->lang && strstr(bf->o->info->lang, "dalvik")))) {
+	if (bf->o->lang == RZ_BIN_LANGUAGE_C || bf->o->lang == RZ_BIN_LANGUAGE_CXX || bf->o->lang == RZ_BIN_LANGUAGE_OBJC) {
 		rz_cons_printf("td \"struct %s {", c->name);
 		rz_list_foreach (c->fields, iter2, f) {
 			char *n = objc_name_toc(f->name);
@@ -3668,20 +3672,21 @@ RZ_API bool rz_core_bin_class_as_source_print(RzCore *core, RzBinFile *bf, const
 			continue;
 		}
 		found = true;
-		switch (bf->o->lang & (~RZ_BIN_NM_BLOCKS)) {
-		case RZ_BIN_NM_KOTLIN:
-		case RZ_BIN_NM_GROOVY:
-		case RZ_BIN_NM_JAVA:
+		switch (bf->o->lang & (~RZ_BIN_LANGUAGE_BLOCKS)) {
+		case RZ_BIN_LANGUAGE_KOTLIN:
+		case RZ_BIN_LANGUAGE_GROOVY:
+		case RZ_BIN_LANGUAGE_DART:
+		case RZ_BIN_LANGUAGE_JAVA:
 			classdump_java(core, c);
 			break;
-		case RZ_BIN_NM_SWIFT:
-		case RZ_BIN_NM_OBJC:
+		case RZ_BIN_LANGUAGE_SWIFT:
+		case RZ_BIN_LANGUAGE_OBJC:
 			classdump_objc(core, c);
 			break;
-		case RZ_BIN_NM_CXX:
+		case RZ_BIN_LANGUAGE_CXX:
 			classdump_cpp(core, c);
 			break;
-		case RZ_BIN_NM_C:
+		case RZ_BIN_LANGUAGE_C:
 			classdump_c(core, c);
 			break;
 		default:

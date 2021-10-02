@@ -3,6 +3,7 @@
 
 #include <rz_types.h>
 #include <rz_lib.h>
+#include <rz_demangler.h>
 #include <rz_cmd.h>
 #include <rz_core.h>
 #include <rz_cons.h>
@@ -253,7 +254,7 @@ RZ_IPI RzCmdStatus rz_cmd_javar_handler(RzCore *core, int argc, const char **arg
 		return RZ_CMD_STATUS_INVALID;
 	}
 
-	char *demangled = rz_bin_demangle_java(resolved);
+	char *demangled = rz_demangler_java(resolved);
 	if (demangled) {
 		rz_cons_println(demangled);
 	} else {

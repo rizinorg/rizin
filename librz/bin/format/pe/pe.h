@@ -152,7 +152,7 @@ struct PE_(rz_bin_pe_obj_t) {
 	ut64 delay_import_directory_offset;
 
 	int import_directory_size;
-	int size;
+	ut64 size;
 	int num_sections;
 	int endian;
 	bool verbose;

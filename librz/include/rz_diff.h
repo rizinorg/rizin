@@ -7,7 +7,7 @@
 
 #include <rz_types.h>
 #include <rz_list.h>
-#include <rz_util/pj.h>
+#include <rz_util/rz_pj.h>
 #include <rz_util/rz_strbuf.h>
 
 #ifdef __cplusplus

@@ -24,5 +24,6 @@
 #define RZ_LANG_STATIC_PLUGINS @plugins_lang@
 #define RZ_PARSE_STATIC_PLUGINS @plugins_parse@
 #define RZ_CRYPTO_STATIC_PLUGINS @plugins_crypto@
+#define RZ_DEMANGLER_STATIC_PLUGINS @plugins_demangler@
 
 #endif

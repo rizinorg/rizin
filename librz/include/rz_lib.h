@@ -65,7 +65,7 @@ typedef struct rz_lib_struct_t {
 typedef RzLibStruct *(*RzLibStructFunc)(void);
 
 // order matters because of librz/util/lib.c
-enum {
+typedef enum {
 	RZ_LIB_TYPE_IO, /* io layer */
 	RZ_LIB_TYPE_DBG, /* debugger */
 	RZ_LIB_TYPE_LANG, /* language */
@@ -82,8 +82,9 @@ enum {
 	RZ_LIB_TYPE_MD, /* message digests */
 	RZ_LIB_TYPE_CORE, /* RzCore commands */
 	RZ_LIB_TYPE_EGG, /* rz_egg plugin */
-	RZ_LIB_TYPE_LAST
-};
+	RZ_LIB_TYPE_DEMANGLER, /* demanglers */
+	RZ_LIB_TYPE_UNKNOWN
+} RzLibType;
 
 typedef struct rz_lib_t {
 	/* linked list with all the plugin handler */

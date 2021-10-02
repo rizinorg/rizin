@@ -61,11 +61,11 @@ RZ_API PJ *pj_kb(PJ *j, const char *k, bool v);
 /* named "null" */
 RZ_API PJ *pj_null(PJ *j);
 
-/* append all uchars in v as signed ints (?) */
-RZ_API PJ *pj_r(PJ *j, const unsigned char *v, size_t v_len);
+/* array with first v_len bytes of v */
+RZ_API PJ *pj_r(PJ *j, const ut8 *v, size_t v_len);
 
 /* named entry with pj_r */
-RZ_API PJ *pj_kr(PJ *j, const char *k, const unsigned char *v, size_t v_len);
+RZ_API PJ *pj_kr(PJ *j, const char *k, const ut8 *v, size_t v_len);
 
 /* string, escaped for json */
 RZ_API PJ *pj_s(PJ *j, const char *k);
