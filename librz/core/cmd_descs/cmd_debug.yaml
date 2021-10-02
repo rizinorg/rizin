@@ -185,10 +185,11 @@ commands:
           - name: dbt
             summary: Display backtrace based on dbg.btdepth and dbg.btalgo
             cname: cmd_debug_display_bt
-            args: []
-          - name: dbt*
-            summary: Display backtrace in flags
-            cname: cmd_debug_display_bt_flags
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+              - RZ_OUTPUT_MODE_RIZIN
             args: []
           - name: dbt=
             summary: Display backtrace in one line (see dbt= s and dbt= b for sp or bp)
@@ -200,10 +201,6 @@ commands:
           - name: dbtv
             summary: Display backtrace with local vars if any
             cname: cmd_debug_display_bt_local_vars
-            args: []
-          - name: dbtj
-            summary: Display backtrace in JSON
-            cname: cmd_debug_display_bt_json
             args: []
           - name: dbta
             summary: Display ascii-art representation of the stack backtrace

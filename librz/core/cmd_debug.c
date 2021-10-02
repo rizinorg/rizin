@@ -4768,7 +4768,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_remove_bp_plugin_handler(RzCore *core, int argc,
 }
 
 // dbt
-RZ_IPI RzCmdStatus rz_cmd_debug_display_bt_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_cmd_debug_display_bt_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	RzList *list = rz_debug_frames(core->dbg, UT64_MAX);
 	if (!list) {
 		RZ_LOG_ERROR("Unable to find debug backtrace frames\n");
@@ -4777,38 +4777,60 @@ RZ_IPI RzCmdStatus rz_cmd_debug_display_bt_handler(RzCore *core, int argc, const
 	int i = 0;
 	RzListIter *iter;
 	RzDebugFrame *frame;
-	rz_list_foreach (list, iter, frame) {
-		char *flagdesc, *flagdesc2, *pcstr, *spstr;
-		get_backtrace_info(core, frame, UT64_MAX, &flagdesc, &flagdesc2, &pcstr, &spstr);
-		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, frame->addr, 0);
-		rz_cons_printf("%d  %s sp: %s  %-5d"
-			       "[%s]  %s %s\n",
-			i++, pcstr, spstr, (int)frame->size, fcn ? fcn->name : "??", flagdesc ? flagdesc : "", flagdesc2 ? flagdesc2 : "");
-		free(flagdesc);
-		free(flagdesc2);
-		free(pcstr);
-		free(spstr);
-	}
-	rz_list_free(list);
-	return RZ_CMD_STATUS_OK;
-}
+	RzOutputMode mode = state->mode;
+	PJ *pj = state->d.pj;
 
-// dbt*
-RZ_IPI RzCmdStatus rz_cmd_debug_display_bt_flags_handler(RzCore *core, int argc, const char **argv) {
-	RzList *list = rz_debug_frames(core->dbg, UT64_MAX);
-	if (!list) {
-		return RZ_CMD_STATUS_ERROR;
+	if (mode == RZ_OUTPUT_MODE_RIZIN) {
+		rz_list_reverse(list);
+		rz_cons_printf("f-bt.*\n");
 	}
-	int i = 0;
-	RzListIter *iter;
-	RzDebugFrame *frame;
-	rz_list_reverse(list);
-	rz_cons_printf("f-bt.*\n");
+	rz_cmd_state_output_array_start(state);
 	rz_list_foreach (list, iter, frame) {
-		rz_cons_printf("f bt.frame%d = 0x%08" PFMT64x "\n", i, frame->addr);
-		rz_cons_printf("f bt.frame%d.stack %d 0x%08" PFMT64x "\n", i, frame->size, frame->sp);
-		i++;
+		switch (mode) {
+		case RZ_OUTPUT_MODE_STANDARD: {
+			char *flagdesc, *flagdesc2, *pcstr, *spstr;
+			get_backtrace_info(core, frame, UT64_MAX, &flagdesc, &flagdesc2, &pcstr, &spstr);
+			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, frame->addr, 0);
+			rz_cons_printf("%d  %s sp: %s  %-5d"
+				       "[%s]  %s %s\n",
+				i++, pcstr, spstr, (int)frame->size, fcn ? fcn->name : "??", flagdesc ? flagdesc : "", flagdesc2 ? flagdesc2 : "");
+			free(flagdesc);
+			free(flagdesc2);
+			free(pcstr);
+			free(spstr);
+			break;
+		}
+		case RZ_OUTPUT_MODE_RIZIN: {
+			rz_cons_printf("f bt.frame%d = 0x%08" PFMT64x "\n", i, frame->addr);
+			rz_cons_printf("f bt.frame%d.stack %d 0x%08" PFMT64x "\n", i, frame->size, frame->sp);
+			i++;
+			break;
+		}
+		case RZ_OUTPUT_MODE_JSON: {
+			char *flagdesc, *flagdesc2, *desc;
+			get_backtrace_info(core, frame, UT64_MAX, &flagdesc, &flagdesc2, NULL, NULL);
+			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, frame->addr, 0);
+			desc = rz_str_newf("%s%s", rz_str_get_null(flagdesc), rz_str_get_null(flagdesc2));
+			pj_o(pj);
+			pj_ki(pj, "idx", i);
+			pj_kn(pj, "pc", frame->addr);
+			pj_kn(pj, "sp", frame->sp);
+			pj_ki(pj, "frame_size", frame->size);
+			pj_ks(pj, "fname", fcn ? fcn->name : "");
+			pj_ks(pj, "desc", desc);
+			pj_end(pj);
+			i++;
+			free(flagdesc);
+			free(flagdesc2);
+			free(desc);
+			break;
+		}
+		default:
+			rz_warn_if_reached();
+			break;
+		}
 	}
+	rz_cmd_state_output_array_end(state);
 	rz_list_free(list);
 	return RZ_CMD_STATUS_OK;
 }
@@ -4861,47 +4883,6 @@ RZ_IPI RzCmdStatus rz_cmd_debug_display_bt_local_vars_handler(RzCore *core, int 
 		return RZ_CMD_STATUS_ERROR;
 	}
 	backtrace_vars(core, list);
-	rz_list_free(list);
-	return RZ_CMD_STATUS_OK;
-}
-
-// dbtj
-RZ_IPI RzCmdStatus rz_cmd_debug_display_bt_json_handler(RzCore *core, int argc, const char **argv) {
-	PJ *pj = pj_new();
-	if (!pj) {
-		RZ_LOG_ERROR("Failed to create a JSON object\n");
-		return RZ_CMD_STATUS_ERROR;
-	}
-	int i = 0;
-	RzList *list = rz_debug_frames(core->dbg, UT64_MAX);
-	if (!list) {
-		RZ_LOG_ERROR("Unable to find debug backtrace frames\n");
-		return RZ_CMD_STATUS_ERROR;
-	}
-	RzListIter *iter;
-	RzDebugFrame *frame;
-	pj_a(pj);
-	rz_list_foreach (list, iter, frame) {
-		char *flagdesc, *flagdesc2, *desc;
-		get_backtrace_info(core, frame, UT64_MAX, &flagdesc, &flagdesc2, NULL, NULL);
-		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, frame->addr, 0);
-		desc = rz_str_newf("%s%s", rz_str_get_null(flagdesc), rz_str_get_null(flagdesc2));
-		pj_o(pj);
-		pj_ki(pj, "idx", i);
-		pj_kn(pj, "pc", frame->addr);
-		pj_kn(pj, "sp", frame->sp);
-		pj_ki(pj, "frame_size", frame->size);
-		pj_ks(pj, "fname", fcn ? fcn->name : "");
-		pj_ks(pj, "desc", desc);
-		pj_end(pj);
-		i++;
-		free(flagdesc);
-		free(flagdesc2);
-		free(desc);
-	}
-	pj_end(pj);
-	rz_cons_println(pj_string(pj));
-	pj_free(pj);
 	rz_list_free(list);
 	return RZ_CMD_STATUS_OK;
 }

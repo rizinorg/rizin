@@ -2351,14 +2351,6 @@ static const RzCmdDescHelp cmd_debug_display_bt_help = {
 	.args = cmd_debug_display_bt_args,
 };
 
-static const RzCmdDescArg cmd_debug_display_bt_flags_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_debug_display_bt_flags_help = {
-	.summary = "Display backtrace in flags",
-	.args = cmd_debug_display_bt_flags_args,
-};
-
 static const RzCmdDescArg cmd_debug_display_bt_oneline_args[] = {
 	{
 		.name = "s/b",
@@ -2380,14 +2372,6 @@ static const RzCmdDescArg cmd_debug_display_bt_local_vars_args[] = {
 static const RzCmdDescHelp cmd_debug_display_bt_local_vars_help = {
 	.summary = "Display backtrace with local vars if any",
 	.args = cmd_debug_display_bt_local_vars_args,
-};
-
-static const RzCmdDescArg cmd_debug_display_bt_json_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_debug_display_bt_json_help = {
-	.summary = "Display backtrace in JSON",
-	.args = cmd_debug_display_bt_json_args,
 };
 
 static const RzCmdDescArg cmd_debug_display_bt_ascii_args[] = {
@@ -6966,19 +6950,13 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_debug_remove_bp_plugin_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "dbh-", rz_cmd_debug_remove_bp_plugin_handler, &cmd_debug_remove_bp_plugin_help);
 	rz_warn_if_fail(cmd_debug_remove_bp_plugin_cd);
 
-	RzCmdDesc *dbt_cd = rz_cmd_desc_group_new(core->rcmd, db_cd, "dbt", rz_cmd_debug_display_bt_handler, &cmd_debug_display_bt_help, &dbt_help);
+	RzCmdDesc *dbt_cd = rz_cmd_desc_group_state_new(core->rcmd, db_cd, "dbt", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_cmd_debug_display_bt_handler, &cmd_debug_display_bt_help, &dbt_help);
 	rz_warn_if_fail(dbt_cd);
-	RzCmdDesc *cmd_debug_display_bt_flags_cd = rz_cmd_desc_argv_new(core->rcmd, dbt_cd, "dbt*", rz_cmd_debug_display_bt_flags_handler, &cmd_debug_display_bt_flags_help);
-	rz_warn_if_fail(cmd_debug_display_bt_flags_cd);
-
 	RzCmdDesc *cmd_debug_display_bt_oneline_cd = rz_cmd_desc_argv_new(core->rcmd, dbt_cd, "dbt=", rz_cmd_debug_display_bt_oneline_handler, &cmd_debug_display_bt_oneline_help);
 	rz_warn_if_fail(cmd_debug_display_bt_oneline_cd);
 
 	RzCmdDesc *cmd_debug_display_bt_local_vars_cd = rz_cmd_desc_argv_new(core->rcmd, dbt_cd, "dbtv", rz_cmd_debug_display_bt_local_vars_handler, &cmd_debug_display_bt_local_vars_help);
 	rz_warn_if_fail(cmd_debug_display_bt_local_vars_cd);
-
-	RzCmdDesc *cmd_debug_display_bt_json_cd = rz_cmd_desc_argv_new(core->rcmd, dbt_cd, "dbtj", rz_cmd_debug_display_bt_json_handler, &cmd_debug_display_bt_json_help);
-	rz_warn_if_fail(cmd_debug_display_bt_json_cd);
 
 	RzCmdDesc *cmd_debug_display_bt_ascii_cd = rz_cmd_desc_argv_new(core->rcmd, dbt_cd, "dbta", rz_cmd_debug_display_bt_ascii_handler, &cmd_debug_display_bt_ascii_help);
 	rz_warn_if_fail(cmd_debug_display_bt_ascii_cd);
