@@ -18,41 +18,7 @@ static char *pdb_type_as_string_regular(const RzTypeDB *db, const RzPdb *pdb, co
 	RzBaseType *type;
 	RzStrBuf *buf = rz_strbuf_new(NULL);
 	rz_list_foreach (types, it, type) {
-		switch (type->kind) {
-		case RZ_BASE_TYPE_KIND_STRUCT: {
-			rz_strbuf_appendf(buf, "struct %s { \n", type->name);
-			RzTypeStructMember *memb;
-			rz_vector_foreach(&type->struct_data.members, memb) {
-				char *declaration = rz_type_identifier_declaration_as_string(db, memb->type, memb->name);
-				rz_strbuf_appendf(buf, "\t%s; \n", declaration);
-				free(declaration);
-			}
-			rz_strbuf_append(buf, " }\n");
-			break;
-		}
-		case RZ_BASE_TYPE_KIND_ENUM: {
-			rz_strbuf_appendf(buf, "enum %s { \n", type->name);
-			RzTypeEnumCase *cas;
-			rz_vector_foreach(&type->enum_data.cases, cas) {
-				rz_strbuf_appendf(buf, "\t%s = 0x%" PFMT64x ", \n", cas->name, cas->val);
-			}
-			rz_strbuf_append(buf, " }\n");
-			break;
-		}
-		case RZ_BASE_TYPE_KIND_UNION: {
-			rz_strbuf_appendf(buf, "union %s { \n", type->name);
-			RzTypeUnionMember *memb;
-			rz_vector_foreach(&type->union_data.members, memb) {
-				char *declaration = rz_type_identifier_declaration_as_string(db, memb->type, memb->name);
-				rz_strbuf_appendf(buf, "\t%s; \n", declaration);
-				free(declaration);
-			}
-			rz_strbuf_append(buf, " }\n");
-			break;
-		}
-		default:
-			break;
-		}
+		rz_strbuf_append(buf, rz_type_db_base_type_as_pretty_string(db, type, RZ_TYPE_PRINT_MULTILINE | RZ_TYPE_PRINT_END_NEWLINE, 1));
 	}
 	char *str = strdup(rz_strbuf_get(buf));
 	rz_strbuf_free(buf);

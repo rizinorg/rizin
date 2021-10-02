@@ -206,17 +206,17 @@ __enc$textbss$end
 EOF
 RUN
 
-NAME=member1 type of struct _SECURITY_ATTRIBUTES of arm PDB
+NAME=member1 type of struct _CONSOLE_READCONSOLE_CONTROL of arm PDB
 FILE=bins/pe/hello_world_arm/hello_world_arm_ZiZoO2.pdb
-CMDS=!rz-bin -P ${RZ_FILE} | grep -C 2 _SECURITY_ATTRIBUTES | grep -ao uint32_t
+CMDS=!rz-bin -P ${RZ_FILE} | grep -C2 _CONSOLE_READCONSOLE_CONTROL | grep nLength | grep -ao uint32_t
 EXPECT=<<EOF
 uint32_t
 EOF
 RUN
 
-NAME=member1 name of struct _SECURITY_ATTRIBUTES of arm PDB
+NAME=member1 name of struct _CONSOLE_READCONSOLE_CONTROL of arm PDB
 FILE=bins/pe/hello_world_arm/hello_world_arm_ZiZoO2.pdb
-CMDS=!rz-bin -P ${RZ_FILE} | grep -C 2 _SECURITY_ATTRIBUTES | grep -ao nLength
+CMDS=!rz-bin -P ${RZ_FILE} | grep -C2 _CONSOLE_READCONSOLE_CONTROL | grep -ao nLength
 EXPECT=<<EOF
 nLength
 EOF
@@ -234,7 +234,7 @@ NAME=enum __acrt_fenv_abstract_status of arm PDB
 FILE=bins/pe/hello_world_arm/hello_world_arm_ZiZoO2.pdb
 CMDS=!rz-bin -P ${RZ_FILE} | grep "__acrt_fenv_abstract_status {"
 EXPECT=<<EOF
-enum __acrt_fenv_abstract_status { 
+enum __acrt_fenv_abstract_status {
 EOF
 RUN
 
