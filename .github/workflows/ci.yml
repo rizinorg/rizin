@@ -521,31 +521,17 @@ jobs:
       shell: pwsh
       run: echo "##[set-output name=branch;]$( python sys\\version.py )"
       id: extract_version
-    - name: Build with meson + ninja
+    - name: Build and create zip/installer
       shell: pwsh
-      run: |
-        .github\vsdevenv.ps1 ${{ matrix.bits }}
-        meson --buildtype=release --prefix=$PWD\rizin-install build ${{ matrix.meson_options }}
-        ninja -C build
-        ninja -C build install
-    - name: Create zip artifact
-      shell: pwsh
-      run: 7z a rizin-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}.zip $PWD\rizin-install
+      run: .\dist\windows\build_windows_installer.ps1 ${{ matrix.name }} ${{ matrix.bits }} ${{ matrix.meson_options }}
     - uses: actions/upload-artifact@v2
       with:
         name: rizin-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}.zip
-        path: .\rizin-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}.zip
-    - uses: actions/checkout@v2
-      with:
-        repository: rizinorg/rizin-win-installer
-        path: ./rizin-win-installer
-    - name: Create installer
-      shell: pwsh
-      run: iscc rizin-win-installer\rizin.iss /DRizinLocation=..\rizin-install\* /DIcoLocation=rizin.ico /DMyAppVersion=${{ steps.extract_version.outputs.branch }}
+        path: .\dist\windows\Output\rizin-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}.zip
     - uses: actions/upload-artifact@v2
       with:
         name: rizin_installer-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}
-        path: rizin-win-installer\Output\rizin.exe
+        path: .\dist\windows\Output\rizin.exe
 
   build-android:
     name: Build Android ${{ matrix.name }} package
@@ -710,7 +696,7 @@ jobs:
     - name: Check that libraries can be used
       shell: pwsh
       run: |
-        .github\vsdevenv.ps1 ${{ matrix.bits }}
+        .\dist\windows\vsdevenv.ps1 ${{ matrix.bits }}
         $env:PATH = "$env:PATH;C:$env:HOMEPATH\AppData\Local\Programs\rizin\bin"
         $env:PKG_CONFIG_PATH = "C:$env:HOMEPATH\AppData\Local\Programs\rizin\lib\pkgconfig"
         $env:PKG_CONFIG_PATH
