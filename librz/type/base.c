@@ -176,7 +176,7 @@ RZ_API void rz_type_db_save_base_type(const RzTypeDB *typedb, const RzBaseType *
  * 
  * \param typedb type database instance
  * \param btype RzBaseType to convert
- * \return RZ_API* 
+ * \return char* one line C representation of the string with no semicolon at the end and no unfolding of inner types
  */
 RZ_API RZ_OWN char *rz_type_db_base_type_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzBaseType *btype) {
 	rz_return_val_if_fail(typedb && btype, NULL);
@@ -192,6 +192,7 @@ RZ_API RZ_OWN char *rz_type_db_base_type_as_string(const RzTypeDB *typedb, RZ_NO
  * \param btype RzBaseType to convert
  * \param opts options for pretty printing (see RzTypePrintOpts)
  * \param unfold_level level of unfolding to do in case of nested structures/unions (any negative number means maximum unfolding, i.e. INT32_MAX. 0 means no unfolding, just the typename and identifier, if any)
+ * \return char* pretty printed form of the base string (similar to `rz_type_as_pretty_string`, but for RzBaseType)
  */
 RZ_API RZ_OWN char *rz_type_db_base_type_as_pretty_string(RZ_NONNULL const RzTypeDB *typedb, RZ_NONNULL const RzBaseType *btype, unsigned int opts, int unfold_level) {
 	rz_return_val_if_fail(typedb && btype, NULL);
