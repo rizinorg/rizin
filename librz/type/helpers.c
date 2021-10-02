@@ -341,6 +341,28 @@ RZ_API bool rz_type_is_identifier(RZ_NONNULL const RzType *type) {
 }
 
 /**
+ * \brief Checks if the RzType is strictly atomic
+ *
+ * \param typedb Type Database instance
+ * \param type RzType type pointer
+ */
+RZ_API bool rz_type_is_strictly_atomic(const RzTypeDB *typedb, RZ_NONNULL const RzType *type) {
+	rz_return_val_if_fail(type, false);
+	if (type->kind != RZ_TYPE_KIND_IDENTIFIER) {
+		return false;
+	}
+	if (type->identifier.kind != RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED) {
+		return false;
+	}
+	rz_return_val_if_fail(type->identifier.name, false);
+	RzBaseType *btyp = rz_type_db_get_base_type(typedb, type->identifier.name);
+	if (!btyp) {
+		return false;
+	}
+	return btyp->kind == RZ_BASE_TYPE_KIND_ATOMIC;
+}
+
+/**
  * \brief Checks if the RzType is atomic or derivative of it
  *
  * \param typedb Type Database instance

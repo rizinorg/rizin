@@ -776,6 +776,7 @@ RZ_API bool rz_core_bin_apply_entry(RzCore *core, RzBinFile *binfile, bool va) {
 
 static RzIODesc *find_reusable_file(RzIO *io, RzCoreFile *cf, const char *uri, int perm) {
 	rz_return_val_if_fail(io && uri, NULL);
+
 	if (!cf) {
 		// valid case, but then we can't reuse anything
 		return NULL;
@@ -866,9 +867,9 @@ static void add_map(RzCore *core, RZ_NULLABLE RzCoreFile *cf, RzBinFile *bf, RzB
 			if (!desc) {
 				free(uri);
 				return;
-			}
-			if (cf) {
-				rz_pvector_push(&cf->extra_files, desc);
+			} else if (cf && !rz_pvector_push(&cf->extra_files, desc)) {
+				free(uri);
+				return;
 			}
 		}
 		free(uri);

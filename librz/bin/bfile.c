@@ -499,10 +499,9 @@ RZ_API bool rz_bin_file_delete(RzBin *bin, RzBinFile *bf) {
 }
 
 RZ_API RzBinFile *rz_bin_file_find_by_fd(RzBin *bin, ut32 bin_fd) {
+	rz_return_val_if_fail(bin, NULL);
 	RzListIter *iter;
 	RzBinFile *bf;
-
-	rz_return_val_if_fail(bin, NULL);
 
 	rz_list_foreach (bin->binfiles, iter, bf) {
 		if (bf->fd == bin_fd) {

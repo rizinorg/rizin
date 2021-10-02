@@ -1458,6 +1458,7 @@ beach:
 	rz_cons_set_raw(0);
 	rz_cons_free();
 	LISTS_FREE();
+	free(debugbackend);
 	RZ_FREE(pfile);
 	return ret;
 }
