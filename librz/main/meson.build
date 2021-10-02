@@ -15,6 +15,7 @@ rz_main_sources = [
 
 rz_main_deps = [
   rz_util_dep,
+  rz_demangler_dep,
   rz_magic_dep,
   rz_socket_dep,
   rz_flag_dep,
@@ -59,6 +60,7 @@ pkgconfig_mod.generate(rz_main,
   filebase: 'rz_main',
   requires: [
     'rz_core',
+    'rz_demangler',
     'rz_asm',
     'rz_diff',
     'rz_syscall'

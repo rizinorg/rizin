@@ -2352,12 +2352,11 @@ vaddr      vsize  perm name
 EOF
 RUN
 
-NAME=iD
-FILE=bins/elf/libmagic.so
-BROKEN=1
-CMDS=iD swift _TFSSCfT21_builtinStringLiteralBp8byteSizeBw7isASCIIBi1__SS
+NAME=Test iD
+FILE==
+CMDS=iD java "Fake([BCDFIJSZ)Ltest/class/name;"
 EXPECT=<<EOF
-Swift.String.init (_builtinStringLiteral(Builtin.RawPointer byteSize__Builtin.Word isASCII__Builtin.Int1 _) -> String
+test.class.name Fake(byte[], char, double, float, int, long, short, boolean)
 EOF
 RUN
 
@@ -5216,6 +5215,8 @@ EXPECT=<<EOF
 md5 bf619eac0cdf3f68d496ea9344137e8b
 sha1 5c3eb80066420002bc3dcc7ca4ab6efad7ed4ae5
 sha256 076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560
+crc32 b2aa7578
+entropy 0.000000
 EOF
 EXPECT_ERR=<<EOF
 File has been modified.
@@ -5225,6 +5226,10 @@ File has been modified.
 + sha1 3bfd02bb4fac6499c89278254f04a081887c38ea
 - sha256 076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560
 + sha256 91543b8000dc6bade2bcae4d44c16f3a33e07e6f96a910dcd702c5179a937c20
+- crc32 b2aa7578
++ crc32 3aa678f4
+- entropy 0.000000
++ entropy 0.020393
 EOF
 RUN
 
@@ -5249,12 +5254,18 @@ File has been modified.
 + sha1 17c5b6331a420fc3b48defe782090295294fee2e
 - sha256 95debaecaaaf89c7f5151218def15ef18c8be375aeccf0564a3b16416c361012
 + sha256 53cb8b3aec20da6a313ac996ca8f518bca9fa4768ff771d35513be09a387f025
+- crc32 611b58cd
++ crc32 1ae319dc
+- entropy 2.959094
++ entropy 2.959088
 All core files, io, analysis and flags info purged.
 EOF
 EXPECT=<<EOF
 md5 84144530144b53a704c84d9c65ab5f92
 sha1 9016e215a321184c42c28ab03847554851932713
 sha256 95debaecaaaf89c7f5151218def15ef18c8be375aeccf0564a3b16416c361012
+crc32 611b58cd
+entropy 2.959094
 EOF
 RUN
 

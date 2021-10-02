@@ -6,6 +6,7 @@
 #include <rz_types.h>
 #include <rz_util.h>
 #include <rz_bin.h>
+#include <rz_demangler.h>
 
 #include "class_attribute.h"
 #include "class_const_pool.h"

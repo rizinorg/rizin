@@ -212,7 +212,9 @@ typedef enum {
 	RZ_TYPE_PRINT_UNFOLD_ANON_ONLY_STRICT = 1 << 2, // only unfold anonymous structs/unions/enums
 	RZ_TYPE_PRINT_ZERO_VLA = 1 << 3, // use [0] to denote VLA instead of (default) []
 	RZ_TYPE_PRINT_NO_END_SEMICOLON = 1 << 4, // return a string without a semicolon at end
-	RZ_TYPE_PRINT_ANONYMOUS = 1 << 5 // use "[struct|union|enum] anonymous" as the typename for anonymous structs/unions/enums
+	RZ_TYPE_PRINT_ANONYMOUS = 1 << 5, // use "[struct|union|enum] anonymous" as the typename for anonymous structs/unions/enums
+	RZ_TYPE_PRINT_END_NEWLINE = 1 << 6, // return a string with a newline at the end
+	RZ_TYPE_PRINT_SHOW_TYPEDEF = 1 << 7 // show typedefs wherever found
 } RzTypePrintOpts;
 
 #ifdef RZ_API
@@ -253,7 +255,8 @@ RZ_API bool rz_type_db_delete_base_type(RzTypeDB *typedb, RZ_NONNULL RzBaseType 
 RZ_API RZ_OWN RzList /* RzBaseType */ *rz_type_db_get_base_types_of_kind(const RzTypeDB *typedb, RzBaseTypeKind kind);
 RZ_API RZ_OWN RzList /* RzBaseType */ *rz_type_db_get_base_types(const RzTypeDB *typedb);
 
-RZ_API RZ_OWN char *rz_type_db_base_type_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzBaseType *type);
+RZ_API RZ_OWN char *rz_type_db_base_type_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzBaseType *btype);
+RZ_API RZ_OWN char *rz_type_db_base_type_as_pretty_string(const RzTypeDB *typedb, RZ_NONNULL const RzBaseType *btype, unsigned int opts, int unfold_level);
 RZ_API bool rz_type_db_edit_base_type(RzTypeDB *typedb, RZ_NONNULL const char *name, RZ_NONNULL const char *typestr);
 
 // Compound types
@@ -347,6 +350,7 @@ RZ_API bool rz_type_is_void_ptr_nested(RZ_NONNULL const RzType *type);
 RZ_API bool rz_type_is_char_ptr(RZ_NONNULL const RzType *type);
 RZ_API bool rz_type_is_char_ptr_nested(RZ_NONNULL const RzType *type);
 RZ_API bool rz_type_is_identifier(RZ_NONNULL const RzType *type);
+RZ_API bool rz_type_is_strictly_atomic(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);
 RZ_API bool rz_type_is_atomic(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);
 RZ_API bool rz_type_is_default(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);
 RZ_API RZ_OWN RzType *rz_type_new_default(const RzTypeDB *typedb);
