@@ -2851,7 +2851,7 @@ RZ_API bool rz_core_file_info_print(RzCore *core, RzBinFile *binfile, RzCmdState
 		if (rz_str_is_utf8(filename)) {
 			pj_ks(state->d.pj, file_tag, filename);
 		} else {
-			pj_kr(state->d.pj, file_tag, (unsigned char *)filename, strlen(filename));
+			pj_kr(state->d.pj, file_tag, (const ut8 *)filename, strlen(filename));
 		}
 		if (desc) {
 			ut64 fsz = rz_io_desc_size(desc);
