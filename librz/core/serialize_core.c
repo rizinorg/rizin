@@ -152,46 +152,76 @@ static char *prj_relative_restore(const char *prj_dir, const char *rel_file) {
 	return abs;
 }
 
+typedef struct {
+	Sdb *db;
+	const char *prj_file;
+} FileSaveHelper;
+
+static bool file_save_cb(void *user, void *data, ut32 id) {
+	FileSaveHelper *fsh = user;
+	Sdb *db = fsh->db;
+	const char *prj_file = fsh->prj_file;
+	RzIODesc *desc = data;
+	if (!desc) {
+		return true;
+	}
+	PJ *j = pj_new();
+	if (!j) {
+		return true;
+	}
+	if (!desc->plugin || strcmp(desc->plugin->name, "default")) {
+		eprintf("Warning: The current file is not loaded as a regular file. "
+			"This is not supported in projects yet and it will be necessary to manually re-load to use the project.\n");
+		goto desert;
+	}
+	pj_o(j);
+	const char *filename = desc->uri;
+	if (!filename) {
+		pj_end(j);
+		goto desert;
+	}
+	char *abs = rz_file_abspath(filename);
+	if (!abs) {
+		pj_end(j);
+		goto desert;
+	}
+	pj_ks(j, "absolute", abs);
+	if (prj_file) {
+		char *prj_dir = prj_dir_abs(prj_file);
+		if (!prj_dir) {
+			pj_end(j);
+			goto beach;
+		}
+		char *rel = prj_relative_make(prj_dir, abs);
+		if (rel) {
+			pj_ks(j, "relative", rel);
+			free(rel);
+		}
+		free(prj_dir);
+	}
+	pj_ki(j, "perm", desc->perm);
+	pj_kn(j, "addr", rz_io_desc_size(desc));
+	pj_end(j);
+	sdb_set(db, filename, pj_string(j), 0);
+
+beach:
+	free(abs);
+desert:
+	free(j);
+	return true;
+}
+
 static void file_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, RZ_NULLABLE const char *prj_file) {
 	rz_return_if_fail(db && core);
 
 	if (!core->file) {
 		return;
 	}
-	RzIODesc *desc = rz_io_desc_get(core->io, core->file->fd);
-	if (!desc) {
-		return;
-	}
-	if (!desc->plugin || strcmp(desc->plugin->name, "default")) {
-		eprintf("Warning: The current file is not loaded as a regular file. "
-			"This is not supported in projects yet and it will be necessary to manually re-load to use the project.\n");
-		return;
-	}
-	const char *filename = desc->uri;
-	if (!filename) {
-		return;
-	}
-	sdb_set(db, "raw", filename, 0);
-	char *abs = rz_file_abspath(filename);
-	if (!abs) {
-		return;
-	}
-	sdb_set(db, "absolute", abs, 0);
-	if (prj_file) {
-		char *prj_dir = prj_dir_abs(prj_file);
-		if (!prj_dir) {
-			goto beach;
-		}
-		char *rel = prj_relative_make(prj_dir, abs);
-		if (rel) {
-			sdb_set(db, "relative", rel, 0);
-			free(rel);
-		}
-		free(prj_dir);
-	}
-beach:
-	free(abs);
-	return;
+	FileSaveHelper fsh = {
+		.db = db,
+		.prj_file = prj_file
+	};
+	rz_id_storage_foreach(core->io->files, &file_save_cb, &fsh);
 }
 
 typedef enum {
@@ -200,19 +230,144 @@ typedef enum {
 	FILE_LOAD_FAIL
 } FileRet;
 
-static FileRet try_load_file(RZ_NONNULL RzCore *core, const char *file, RZ_NULLABLE RzSerializeResultInfo *res) {
+static FileRet try_load_file(RZ_NONNULL RzCore *core, const char *file, int perm, ut64 addr, RZ_NULLABLE RzSerializeResultInfo *res) {
 	if (!rz_file_is_regular(file)) {
 		return FILE_DOES_NOT_EXIST;
 	}
 
-	RzCoreFile *fh = rz_core_file_open(core, file, RZ_PERM_RX, 0);
+	RzCoreFile *fh;
+	if (addr == UT64_MAX) {
+		fh = rz_core_file_open(core, file, perm, 0);
+	} else {
+		fh = rz_core_file_open(core, file, perm, addr);
+	}
 	if (!fh) {
 		RZ_SERIALIZE_ERR(res, "failed re-open file \"%s\" referenced by project", file);
 		return FILE_LOAD_FAIL;
 	}
-	rz_core_bin_load(core, file, UT64_MAX);
+	rz_core_bin_load(core, file, addr);
 
 	return FILE_SUCCESS;
+}
+
+enum {
+	FILE_FIELD_ABSOLUTE,
+	FILE_FIELD_RELATIVE,
+	FILE_FIELD_PERM,
+	FILE_FIELD_ADDR
+};
+
+typedef void *SerializeFileParser;
+
+SerializeFileParser serialize_file_parser_new(void) {
+	SerializeFileParser parser = rz_key_parser_new();
+	if (!parser) {
+		return NULL;
+	}
+
+	rz_key_parser_add(parser, "absolute", FILE_FIELD_ABSOLUTE);
+	rz_key_parser_add(parser, "relative", FILE_FIELD_RELATIVE);
+	rz_key_parser_add(parser, "perm", FILE_FIELD_PERM);
+	rz_key_parser_add(parser, "addr", FILE_FIELD_ADDR);
+	return parser;
+}
+
+typedef struct {
+	SerializeFileParser parser;
+	const char *prj_file;
+	RzCore *core;
+	RzSerializeResultInfo *res;
+} FileLoadHelper;
+
+static bool file_load_cb(void *user, const char *k, const char *v) {
+	bool ret = false;
+	char *json_str = strdup(v);
+	if (!json_str) {
+		return true;
+	}
+	RzJson *json = rz_json_parse(json_str);
+	if (!json || json->type != RZ_JSON_OBJECT) {
+		goto heaven;
+	}
+	FileLoadHelper *flh = user;
+	char *abs = NULL, *rel = NULL;
+	int perm = RZ_PERM_RX;
+	ut64 addr = UT64_MAX;
+
+	RZ_KEY_PARSER_JSON(flh->parser, json, child, {
+		case FILE_FIELD_ABSOLUTE:
+			if (child->type != RZ_JSON_STRING) {
+				break;
+			}
+			abs = strdup(child->str_value);
+			break;
+		case FILE_FIELD_RELATIVE:
+			if (child->type != RZ_JSON_STRING) {
+				break;
+			}
+			rel = strdup(child->str_value);
+			break;
+		case FILE_FIELD_PERM:
+			if (child->type != RZ_JSON_INTEGER) {
+				break;
+			}
+			perm = child->num.s_value;
+			break;
+		case FILE_FIELD_ADDR:
+			if (child->type != RZ_JSON_INTEGER) {
+				break;
+			}
+			addr = child->num.u_value;
+			break;
+	})
+
+	FileRet r = FILE_DOES_NOT_EXIST;
+	const char *prj_file = flh->prj_file;
+	RzCore *core = flh->core;
+	RzSerializeResultInfo *res = flh->res;
+	if (rel && prj_file) {
+		char *prj_dir = prj_dir_abs(prj_file);
+		if (prj_dir) {
+			char *file = prj_relative_restore(prj_dir, rel);
+			if (file) {
+				r = try_load_file(core, file, perm, addr, res);
+				free(file);
+			}
+			free(prj_dir);
+		}
+	}
+	if (r != FILE_DOES_NOT_EXIST) {
+		ret = r == FILE_SUCCESS;
+		goto beach;
+	}
+
+	const char *file = abs;
+	if (file) {
+		r = try_load_file(core, file, perm, addr, res);
+	}
+	if (r != FILE_DOES_NOT_EXIST) {
+		ret = (r == FILE_SUCCESS);
+		goto beach;
+	}
+
+	file = k;
+	if (file) {
+		r = try_load_file(core, file, perm, addr, res);
+	}
+	if (r != FILE_DOES_NOT_EXIST) {
+		ret = (r == FILE_SUCCESS);
+		goto beach;
+	}
+
+	RZ_SERIALIZE_ERR(res, "failed to re-locate file referenced by project");
+
+beach:
+	free(abs);
+	free(rel);
+heaven:
+	rz_json_free(json);
+	free(json_str);
+	return ret;
 }
 
 static bool file_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, RZ_NULLABLE const char *prj_file,
@@ -221,39 +376,13 @@ static bool file_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, RZ_NULLABLE c
 	rz_io_close_all(core->io);
 	rz_bin_file_delete_all(core->bin);
 
-	FileRet r = FILE_DOES_NOT_EXIST;
-	const char *rel = sdb_const_get(db, "relative", 0);
-	if (rel && prj_file) {
-		char *prj_dir = prj_dir_abs(prj_file);
-		if (prj_dir) {
-			char *file = prj_relative_restore(prj_dir, rel);
-			if (file) {
-				r = try_load_file(core, file, res);
-				free(file);
-			}
-			free(prj_dir);
-		}
-	}
-	if (r != FILE_DOES_NOT_EXIST) {
-		return r == FILE_SUCCESS;
-	}
+	SerializeFileParser parser = serialize_file_parser_new();
 
-	const char *file = sdb_const_get(db, "absolute", 0);
-	if (file) {
-		r = try_load_file(core, file, res);
-	}
-	if (r != FILE_DOES_NOT_EXIST) {
-		return r == FILE_SUCCESS;
-	}
-
-	file = sdb_const_get(db, "raw", 0);
-	if (file) {
-		r = try_load_file(core, file, res);
-	}
-	if (r != FILE_DOES_NOT_EXIST) {
-		return r == FILE_SUCCESS;
-	}
-
-	RZ_SERIALIZE_ERR(res, "failed to re-locate file referenced by project");
-	return false;
+	FileLoadHelper flh = {
+		.prj_file = prj_file,
+		.core = core,
+		.parser = parser,
+		.res = res
+	};
+	return sdb_foreach(db, &file_load_cb, &flh);
 }
