@@ -128,7 +128,7 @@ static bool bp_load_cb(void *user, const char *k, const char *v) {
 	}
 	RzJson *json = rz_json_parse(json_str);
 	if (!json || json->type != RZ_JSON_OBJECT) {
-		goto heaven;
+		goto beach;
 	}
 	RzBreakpointItem bp_item_temp = { 0 };
 	bp_item_temp.addr = strtoull(k, NULL, 0);
@@ -286,7 +286,6 @@ static bool bp_load_cb(void *user, const char *k, const char *v) {
 
 beach:
 	rz_json_free(json);
-heaven:
 	free(json_str);
 	return ret;
 }
