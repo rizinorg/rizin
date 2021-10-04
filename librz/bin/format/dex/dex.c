@@ -521,7 +521,6 @@ static bool dex_parse(RzBinDex *dex, ut64 base, RzBuffer *buf) {
 	return true;
 
 dex_parse_bad:
-	eprintf("nope\n");
 	rz_bin_dex_free(dex);
 	return false;
 }
@@ -1470,10 +1469,24 @@ RZ_API RZ_OWN RzList /*<char*>*/ *rz_bin_dex_libraries(RZ_NONNULL RzBinDex *dex)
 		}
 
 		char *object = dex_resolve_type_id(dex, method_id->class_idx);
-		if (RZ_STR_ISEMPTY(object) || rz_list_find(libraries, object, compare_strings)) {
+		if (RZ_STR_ISEMPTY(object) || *object != 'L' || !strncmp(object, "Ljava/", strlen("Ljava/"))) {
 			free(object);
 			continue;
 		}
+
+		char *p = object;
+		if ((p = strchr(p, '/')) && (p = strchr(p + 1, '/'))) {
+			*p = 0;
+			p = rz_str_newf("%s/*;", object);
+			free(object);
+			object = p;
+		}
+
+		if (rz_list_find(libraries, object, compare_strings)) {
+			free(object);
+			continue;
+		}
+
 		if (!rz_list_append(libraries, object)) {
 			free(object);
 			break;
