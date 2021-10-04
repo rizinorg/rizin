@@ -1967,14 +1967,6 @@ static const RzCmdDescHelp cmd_debug_db_help = {
 	.args = cmd_debug_db_args,
 };
 
-static const RzCmdDescArg cmd_debug_list_bp_r_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_debug_list_bp_r_help = {
-	.summary = "List breakpoints in r commands",
-	.args = cmd_debug_list_bp_r_args,
-};
-
 static const RzCmdDescArg cmd_debug_add_hw_bp_args[] = {
 	{
 		.name = "addr",
@@ -2017,14 +2009,6 @@ static const RzCmdDescArg cmd_debug_show_cur_bp_args[] = {
 static const RzCmdDescHelp cmd_debug_show_cur_bp_help = {
 	.summary = "Show breakpoint info at current offset",
 	.args = cmd_debug_show_cur_bp_args,
-};
-
-static const RzCmdDescArg cmd_debug_list_bp_json_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_debug_list_bp_json_help = {
-	.summary = "List breakpoints in JSON format",
-	.args = cmd_debug_list_bp_json_args,
 };
 
 static const RzCmdDescArg cmd_debug_command_bp_args[] = {
@@ -6879,11 +6863,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_debug_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "d", rz_cmd_debug, &cmd_debug_help);
 	rz_warn_if_fail(cmd_debug_cd);
-	RzCmdDesc *db_cd = rz_cmd_desc_group_new(core->rcmd, cmd_debug_cd, "db", rz_cmd_debug_db_handler, &cmd_debug_db_help, &db_help);
+	RzCmdDesc *db_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_debug_cd, "db", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_db_handler, &cmd_debug_db_help, &db_help);
 	rz_warn_if_fail(db_cd);
-	RzCmdDesc *cmd_debug_list_bp_r_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "db*", rz_cmd_debug_list_bp_r_handler, &cmd_debug_list_bp_r_help);
-	rz_warn_if_fail(cmd_debug_list_bp_r_cd);
-
 	RzCmdDesc *cmd_debug_add_hw_bp_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "dbH", rz_cmd_debug_add_hw_bp_handler, &cmd_debug_add_hw_bp_help);
 	rz_warn_if_fail(cmd_debug_add_hw_bp_cd);
 
@@ -6895,9 +6876,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_debug_show_cur_bp_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "db.", rz_cmd_debug_show_cur_bp_handler, &cmd_debug_show_cur_bp_help);
 	rz_warn_if_fail(cmd_debug_show_cur_bp_cd);
-
-	RzCmdDesc *cmd_debug_list_bp_json_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "dbj", rz_cmd_debug_list_bp_json_handler, &cmd_debug_list_bp_json_help);
-	rz_warn_if_fail(cmd_debug_list_bp_json_cd);
 
 	RzCmdDesc *cmd_debug_command_bp_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "dbc", rz_cmd_debug_command_bp_handler, &cmd_debug_command_bp_help);
 	rz_warn_if_fail(cmd_debug_command_bp_cd);

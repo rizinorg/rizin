@@ -4408,21 +4408,30 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 }
 
 // db
-RZ_IPI RzCmdStatus rz_cmd_debug_db_handler(RzCore *core, int argc, const char **argv) {
-	if (argc == 1) {
-		rz_bp_list(core->dbg->bp, 0);
-	} else {
-		int hwbp = rz_config_get_i(core->config, "dbg.hwbp");
-		for (int i = 1; i < argc; i++) {
-			add_breakpoint(core, argv[i], NULL, hwbp, false);
+RZ_IPI RzCmdStatus rz_cmd_debug_db_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzOutputMode mode = state->mode;
+	switch (mode) {
+	case RZ_OUTPUT_MODE_STANDARD:
+		if (argc == 1) {
+			rz_bp_list(core->dbg->bp, 0);
+		} else {
+			int hwbp = rz_config_get_i(core->config, "dbg.hwbp");
+			for (int i = 1; i < argc; i++) {
+				add_breakpoint(core, argv[i], NULL, hwbp, false);
+			}
 		}
+		break;
+	case RZ_OUTPUT_MODE_RIZIN:
+		rz_bp_list(core->dbg->bp, 1);
+		break;
+	case RZ_OUTPUT_MODE_JSON:
+		rz_bp_list(core->dbg->bp, 'j');
+		break;
+	default:
+		rz_warn_if_reached();
+		break;
 	}
-	return RZ_CMD_STATUS_OK;
-}
 
-// db*
-RZ_IPI RzCmdStatus rz_cmd_debug_list_bp_r_handler(RzCore *core, int argc, const char **argv) {
-	rz_bp_list(core->dbg->bp, 1);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -4462,12 +4471,6 @@ RZ_IPI RzCmdStatus rz_cmd_debug_show_cur_bp_handler(RzCore *core, int argc, cons
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_cons_printf("breakpoint %s %s %s\n", rz_str_rwx_i(cur->perm), cur->enabled ? "enabled" : "disabled", cur->name ? cur->name : "");
-	return RZ_CMD_STATUS_OK;
-}
-
-// dbj
-RZ_IPI RzCmdStatus rz_cmd_debug_list_bp_json_handler(RzCore *core, int argc, const char **argv) {
-	rz_bp_list(core->dbg->bp, 'j');
 	return RZ_CMD_STATUS_OK;
 }
 

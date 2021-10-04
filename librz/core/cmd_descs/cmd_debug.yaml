@@ -9,14 +9,15 @@ commands:
       - name: db
         summary: List breakpoints / Add breakpoint
         cname: cmd_debug_db
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+           - RZ_OUTPUT_MODE_STANDARD
+           - RZ_OUTPUT_MODE_RIZIN
+           - RZ_OUTPUT_MODE_JSON
         args:
           - name: addr
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
-      - name: db*
-        summary: List breakpoints in r commands
-        cname: cmd_debug_list_bp_r
-        args: []
       - name: dbH
         summary: Add hardware breakpoint
         cname: cmd_debug_add_hw_bp
@@ -36,10 +37,6 @@ commands:
       - name: db.
         summary: Show breakpoint info at current offset
         cname: cmd_debug_show_cur_bp
-        args: []
-      - name: dbj
-        summary: List breakpoints in JSON format
-        cname: cmd_debug_list_bp_json
         args: []
       - name: dbc
         summary: Run a command when the breakpoint is hit
