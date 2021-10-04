@@ -2685,8 +2685,11 @@ static void cmd_debug_reg(RzCore *core, const char *str) {
 			char *ostr = rz_str_trim_dup(str + 1);
 			char *regname = rz_str_trim_nc(ostr);
 			ut64 regval = rz_num_math(core->num, arg + 1);
-			rz_core_debug_reg_set(core, regname, regval, ostr);
+			char *numstr = rz_str_trim_dup(arg + 1);
+			char *num_strval = rz_str_trim_nc(numstr);
+			rz_core_debug_reg_set(core, regname, regval, num_strval);
 			free(ostr);
+			free(numstr);
 			return;
 		}
 

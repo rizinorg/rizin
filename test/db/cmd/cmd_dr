@@ -10,3 +10,17 @@ EXPECT=<<EOF
 {"role":"A1","reg":"ebx","value":"10","refstr":"16 ebx"}
 EOF
 RUN
+
+NAME=dr rflags
+FILE==
+ARGS=-a x86 -b 64 -m 0x10000
+CMDS=<<EOF
+dr rflags
+dr rflags=0x137
+dr rflags
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00000137
+EOF
+RUN
