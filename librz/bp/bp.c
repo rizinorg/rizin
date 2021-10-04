@@ -334,7 +334,7 @@ RZ_API int rz_bp_list(RzBreakpoint *bp, int rad) {
 	}
 	if (pj) {
 		pj_end(pj);
-		bp->cb_printf("%s\n", pj_string(pj));
+		bp->cb_printf("%s", pj_string(pj));
 		pj_free(pj);
 	}
 	return n;
