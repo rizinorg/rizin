@@ -39,7 +39,7 @@ commands:
         cname: cmd_debug_show_cur_bp
         args: []
       - name: dbc
-        summary: Run a command when the breakpoint is hit
+        summary: Set a command <cmd> to be run when the breakpoint at address <addr> is hit
         cname: cmd_debug_command_bp
         args:
           - name: addr

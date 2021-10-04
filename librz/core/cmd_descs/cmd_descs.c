@@ -2026,7 +2026,7 @@ static const RzCmdDescArg cmd_debug_command_bp_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_command_bp_help = {
-	.summary = "Run a command when the breakpoint is hit",
+	.summary = "Set a command <cmd> to be run when the breakpoint at address <addr> is hit",
 	.args = cmd_debug_command_bp_args,
 };
 
