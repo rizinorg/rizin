@@ -7,7 +7,7 @@ commands:
     summary: Breakpoints commands
     subcommands:
       - name: db
-        summary: List breakpoints | Add breakpoint
+        summary: List breakpoints / Add breakpoint
         cname: cmd_debug_db
         args:
           - name: addr
@@ -88,7 +88,7 @@ commands:
           - name: offset
             type: RZ_CMD_ARG_TYPE_RZNUM
       - name: dbn
-        summary: Show name of cuurent breakpoint | Set name for current breakpoint
+        summary: Show name of cuurent breakpoint / Set name for current breakpoint
         cname: cmd_debug_name_bp
         args:
           - name: name
@@ -98,7 +98,7 @@ commands:
         summary: Breakpoint index commands
         subcommands:
           - name: dbi
-            summary: List breakpoints | Show breakpoint index at given offset
+            summary: List breakpoints / Show breakpoint index at given offset
             cname: cmd_debug_bp_indexes
             args:
               - name: addr
@@ -167,7 +167,7 @@ commands:
               - name: idx
                 type: RZ_CMD_ARG_TYPE_RZNUM
       - name: dbh
-        summary: List breakpoint plugin handlers | Set breakpoint plugin handler
+        summary: List breakpoint plugin handlers / Set breakpoint plugin handler
         cname: cmd_debug_bp_plugin
         args:
           - name: handler
@@ -225,7 +225,7 @@ commands:
               - name: addr
                 type: RZ_CMD_ARG_TYPE_RZNUM
       - name: dbx
-        summary: View expression for all the breakpoints | Set expression for breakpoint at current offset
+        summary: View expression for all the breakpoints / Set expression for breakpoint at current offset
         cname: cmd_debug_bp_set_expr_cur_offset
         args:
           - name: expr

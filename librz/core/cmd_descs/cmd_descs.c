@@ -1963,7 +1963,7 @@ static const RzCmdDescArg cmd_debug_db_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_db_help = {
-	.summary = "List breakpoints | Add breakpoint",
+	.summary = "List breakpoints / Add breakpoint",
 	.args = cmd_debug_db_args,
 };
 
@@ -2145,7 +2145,7 @@ static const RzCmdDescArg cmd_debug_name_bp_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_name_bp_help = {
-	.summary = "Show name of cuurent breakpoint | Set name for current breakpoint",
+	.summary = "Show name of cuurent breakpoint / Set name for current breakpoint",
 	.args = cmd_debug_name_bp_args,
 };
 
@@ -2163,7 +2163,7 @@ static const RzCmdDescArg cmd_debug_bp_indexes_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_bp_indexes_help = {
-	.summary = "List breakpoints | Show breakpoint index at given offset",
+	.summary = "List breakpoints / Show breakpoint index at given offset",
 	.args = cmd_debug_bp_indexes_args,
 };
 
@@ -2322,7 +2322,7 @@ static const RzCmdDescArg cmd_debug_bp_plugin_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_bp_plugin_help = {
-	.summary = "List breakpoint plugin handlers | Set breakpoint plugin handler",
+	.summary = "List breakpoint plugin handlers / Set breakpoint plugin handler",
 	.args = cmd_debug_bp_plugin_args,
 };
 
@@ -2435,7 +2435,7 @@ static const RzCmdDescArg cmd_debug_bp_set_expr_cur_offset_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_bp_set_expr_cur_offset_help = {
-	.summary = "View expression for all the breakpoints | Set expression for breakpoint at current offset",
+	.summary = "View expression for all the breakpoints / Set expression for breakpoint at current offset",
 	.args = cmd_debug_bp_set_expr_cur_offset_args,
 };
 
