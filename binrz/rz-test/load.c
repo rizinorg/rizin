@@ -597,9 +597,15 @@ static inline bool skip_archos(const char *subname) {
 		const char *neg_subname = subname + strlen("not-");
 		const char *second_dash = strchr(neg_subname, '-');
 		rz_return_val_if_fail(second_dash, true);
-		if (strncmp(RZ_TEST_ARCH_OS, neg_subname, second_dash - neg_subname) &&
+		if (strncmp(neg_subname, RZ_TEST_ARCH_OS, second_dash - neg_subname) &&
 			(rz_str_endswith(RZ_TEST_ARCH_OS, strrchr(subname, '-')) || rz_str_endswith(subname, "-any"))) {
 			return false;
+		}
+	} else {
+		if (rz_str_endswith(subname, "-any")) {
+			if (!strncmp(subname, RZ_TEST_ARCH_OS, strlen(subname) - strlen("-any"))) {
+				return false;
+			}
 		}
 	}
 	return true;
