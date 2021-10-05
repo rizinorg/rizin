@@ -226,8 +226,12 @@ commands:
         summary: Add watchpoint
         cname: cmd_debug_add_watchpoint
         args:
-          - name: r/w/rw
-            type: RZ_CMD_ARG_TYPE_STRING
+          - name: perm(r/w/rw)
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            choices:
+              - r
+              - w
+              - rw
       - name: dbW
         summary: Set conditional breakpoint on a window message handler (only for Windows)
         cname: cmd_debug_set_cond_bp_win

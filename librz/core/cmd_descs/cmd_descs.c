@@ -2399,11 +2399,12 @@ static const RzCmdDescHelp cmd_debug_bp_set_expr_cur_offset_help = {
 	.args = cmd_debug_bp_set_expr_cur_offset_args,
 };
 
+static const char *cmd_debug_add_watchpoint_perm_oparen_r_slash_w_slash_rw_cparen__choices[] = { "r", "w", "rw", NULL };
 static const RzCmdDescArg cmd_debug_add_watchpoint_args[] = {
 	{
-		.name = "r/w/rw",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.name = "perm(r/w/rw)",
+		.type = RZ_CMD_ARG_TYPE_CHOICES,
+		.choices = cmd_debug_add_watchpoint_perm_oparen_r_slash_w_slash_rw_cparen__choices,
 
 	},
 	{ 0 },
