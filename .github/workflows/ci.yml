@@ -363,6 +363,8 @@ jobs:
         image: ubuntu:impish
         options: --security-opt seccomp=unconfined
     steps:
+    - name: Set timezone to UTC
+      run: ln -snf /usr/share/zoneinfo/UTC /etc/localtime && echo 'UTC' > /etc/timezone
     - name: Install tools
       run: apt-get update && apt-get install --yes patch unzip git gcc make curl pkg-config libc6-i386 build-essential
     - name: Install Python source build dependencies
