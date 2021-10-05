@@ -7,29 +7,26 @@ commands:
     summary: Breakpoints commands
     subcommands:
       - name: db
-        summary: List breakpoints / Add breakpoint
-        cname: cmd_debug_db
+        summary: Add breakpoint
+        cname: cmd_debug_add_bp
+        args: []
+      - name: dbl
+        summary: List all breakpoints
+        cname: cmd_debug_list_bp
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
            - RZ_OUTPUT_MODE_STANDARD
            - RZ_OUTPUT_MODE_RIZIN
            - RZ_OUTPUT_MODE_JSON
-        args:
-          - name: addr
-            type: RZ_CMD_ARG_TYPE_RZNUM
-            optional: true
+        args: []
       - name: dbH
         summary: Add hardware breakpoint
         cname: cmd_debug_add_hw_bp
-        args:
-          - name: addr
-            type: RZ_CMD_ARG_TYPE_RZNUM
+        args: []
       - name: db-
         summary: Remove breakpoint
         cname: cmd_debug_remove_bp
-        args:
-          - name: addr
-            type: RZ_CMD_ARG_TYPE_RZNUM
+        args: []
       - name: db-*
         summary: Remove all breakpoints
         cname: cmd_debug_remove_all_bp
@@ -39,19 +36,15 @@ commands:
         cname: cmd_debug_show_cur_bp
         args: []
       - name: dbc
-        summary: Set a command <cmd> to be run when the breakpoint at address <addr> is hit
+        summary: Set a command <cmd> to be run when the breakpoint is hit
         cname: cmd_debug_command_bp
         args:
-          - name: addr
-            type: RZ_CMD_ARG_TYPE_RZNUM
           - name: cmd
             type: RZ_CMD_ARG_TYPE_CMD
       - name: dbC
-        summary: Run command and continue until <cmd> returns zero
-        cname: cmd_debug_command_bp_continue
+        summary: Add conditional breakpoint which breaks only when <cmd> evaluates to 0
+        cname: cmd_debug_add_cond_bp
         args:
-          - name: addr
-            type: RZ_CMD_ARG_TYPE_RZNUM
           - name: cmd
             type: RZ_CMD_ARG_TYPE_CMD
       - name: dbd
@@ -95,12 +88,13 @@ commands:
         summary: Breakpoint index commands
         subcommands:
           - name: dbi
-            summary: List breakpoints / Show breakpoint index at given offset
-            cname: cmd_debug_bp_indexes
-            args:
-              - name: addr
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
+            summary: Show breakpoint index
+            cname: cmd_debug_show_bp_index
+            args: []
+          - name: dbil
+            summary: List breakpoints indexes
+            cname: cmd_debug_list_bp_indexes
+            args: []
           - name: dbi.
             summary: Show breakpoint index at current offset
             cname: cmd_debug_bp_index_current_offset
@@ -232,8 +226,6 @@ commands:
         summary: Add watchpoint
         cname: cmd_debug_add_watchpoint
         args:
-          - name: addr
-            type: RZ_CMD_ARG_TYPE_RZNUM
           - name: r/w/rw
             type: RZ_CMD_ARG_TYPE_STRING
       - name: dbW
