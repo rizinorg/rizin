@@ -361,7 +361,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
         image: ubuntu:impish
-        options: --user=root
+        options: --security-opt seccomp=unconfined
     steps:
     - name: Install tools
       run: apt-get update && apt-get install --yes patch unzip git gcc make curl pkg-config libc6-i386 build-essential
