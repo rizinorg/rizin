@@ -359,12 +359,14 @@ jobs:
     name: Build on gcc 11
     if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'gcc11') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable' || github.event_name == 'schedule'
     runs-on: ubuntu-latest
-    container: ubuntu:impish
+    container:
+        image: ubuntu:impish
+        options: --user=root
     steps:
     - name: Install tools
-      run: sudo apt-get update && apt-get install --yes patch unzip git gcc make curl pkg-config libc6-i386 build-essential
+      run: apt-get update && apt-get install --yes patch unzip git gcc make curl pkg-config libc6-i386 build-essential
     - name: Install Python source build dependencies
-      run: sudo apt-get install --yes checkinstall libbz2-dev libc6-dev libgdbm-dev libncursesw5-dev libreadline-gplv2-dev libssl-dev libsqlite3-dev libffi-dev tk-dev
+      run: apt-get install --yes checkinstall libbz2-dev libc6-dev libgdbm-dev libncursesw5-dev libreadline-gplv2-dev libssl-dev libsqlite3-dev libffi-dev tk-dev
     - name: Install Python from source
       run: |
         curl -o Python-${PYVERSION}.tgz https://www.python.org/ftp/python/${PYVERSION}/Python-${PYVERSION}.tgz
