@@ -47,6 +47,11 @@ commands:
         args:
           - name: cmd
             type: RZ_CMD_ARG_TYPE_CMD
+        details:
+          - name: Usage example
+            entries:
+              - text: "Example of a condition"
+                comment: "?v rax-0x0"
       - name: dbd
         summary: Disable breakpoint
         cname: cmd_debug_disable_bp
@@ -226,12 +231,21 @@ commands:
         summary: Add watchpoint
         cname: cmd_debug_add_watchpoint
         args:
-          - name: perm(r/w/rw)
+          - name: perm
             type: RZ_CMD_ARG_TYPE_CHOICES
             choices:
               - r
               - w
               - rw
+        details:
+          - name: Valid permission arguments
+            entries:
+              - text: "r"
+                comment: "read only"
+              - text: "w"
+                comment: "write only"
+              - text: "rw"
+                comment: "read-write"
       - name: dbW
         summary: Set conditional breakpoint on a window message handler (only for Windows)
         cname: cmd_debug_set_cond_bp_win

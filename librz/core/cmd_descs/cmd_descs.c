@@ -11,6 +11,8 @@ static const RzCmdDescDetail system_details[2];
 static const RzCmdDescDetail system_to_cons_details[2];
 static const RzCmdDescDetail hash_bang_details[2];
 static const RzCmdDescDetail pointer_details[2];
+static const RzCmdDescDetail cmd_debug_add_cond_bp_details[2];
+static const RzCmdDescDetail cmd_debug_add_watchpoint_details[2];
 static const RzCmdDescDetail eval_getset_details[2];
 static const RzCmdDescDetail env_details[3];
 static const RzCmdDescDetail history_list_or_exec_details[2];
@@ -2010,6 +2012,14 @@ static const RzCmdDescHelp cmd_debug_command_bp_help = {
 	.args = cmd_debug_command_bp_args,
 };
 
+static const RzCmdDescDetailEntry cmd_debug_add_cond_bp_Usage_space_example_detail_entries[] = {
+	{ .text = "Example of a condition", .arg_str = NULL, .comment = "?v rax-0x0" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_debug_add_cond_bp_details[] = {
+	{ .name = "Usage example", .entries = cmd_debug_add_cond_bp_Usage_space_example_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg cmd_debug_add_cond_bp_args[] = {
 	{
 		.name = "cmd",
@@ -2021,6 +2031,7 @@ static const RzCmdDescArg cmd_debug_add_cond_bp_args[] = {
 };
 static const RzCmdDescHelp cmd_debug_add_cond_bp_help = {
 	.summary = "Add conditional breakpoint which breaks only when <cmd> evaluates to 0",
+	.details = cmd_debug_add_cond_bp_details,
 	.args = cmd_debug_add_cond_bp_args,
 };
 
@@ -2399,18 +2410,29 @@ static const RzCmdDescHelp cmd_debug_bp_set_expr_cur_offset_help = {
 	.args = cmd_debug_bp_set_expr_cur_offset_args,
 };
 
-static const char *cmd_debug_add_watchpoint_perm_oparen_r_slash_w_slash_rw_cparen__choices[] = { "r", "w", "rw", NULL };
+static const RzCmdDescDetailEntry cmd_debug_add_watchpoint_Valid_space_permission_space_arguments_detail_entries[] = {
+	{ .text = "r", .arg_str = NULL, .comment = "read only" },
+	{ .text = "w", .arg_str = NULL, .comment = "write only" },
+	{ .text = "rw", .arg_str = NULL, .comment = "read-write" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_debug_add_watchpoint_details[] = {
+	{ .name = "Valid permission arguments", .entries = cmd_debug_add_watchpoint_Valid_space_permission_space_arguments_detail_entries },
+	{ 0 },
+};
+static const char *cmd_debug_add_watchpoint_perm_choices[] = { "r", "w", "rw", NULL };
 static const RzCmdDescArg cmd_debug_add_watchpoint_args[] = {
 	{
-		.name = "perm(r/w/rw)",
+		.name = "perm",
 		.type = RZ_CMD_ARG_TYPE_CHOICES,
-		.choices = cmd_debug_add_watchpoint_perm_oparen_r_slash_w_slash_rw_cparen__choices,
+		.choices = cmd_debug_add_watchpoint_perm_choices,
 
 	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_add_watchpoint_help = {
 	.summary = "Add watchpoint",
+	.details = cmd_debug_add_watchpoint_details,
 	.args = cmd_debug_add_watchpoint_args,
 };
 
