@@ -173,12 +173,11 @@ typedef struct dex_t {
 	ut32 data_offset;
 
 	/* lists */
-	RzList /*<DexMapItem>*/ *map_items;
-	RzList /*<DexString>*/ *strings;
-	RzList /*<DexProtoId>*/ *proto_ids;
-	RzList /*<DexFieldId>*/ *field_ids;
-	RzList /*<DexMethodId>*/ *method_ids;
-	RzList /*<DexClassDef>*/ *class_defs;
+	RzPVector /*<DexString>*/ *strings;
+	RzPVector /*<DexProtoId>*/ *proto_ids;
+	RzPVector /*<DexFieldId>*/ *field_ids;
+	RzPVector /*<DexMethodId>*/ *method_ids;
+	RzPVector /*<DexClassDef>*/ *class_defs;
 
 	DexTypeId *types;
 } RzBinDex;
