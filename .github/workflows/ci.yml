@@ -370,7 +370,9 @@ jobs:
     - name: Install python and other dependencies
       run: apt-get install --yes python3-wheel python3-setuptools python3-pip cabextract
     - name: Install meson and ninja
-      run: pip3 install --user meson ninja PyYAML
+      run: |
+        export PATH=${HOME}/.local/bin:${PATH}
+        pip3 install --user meson ninja PyYAML
     - name: Checkout rizin
       run: |
         git clone https://github.com/${{ github.repository }}
