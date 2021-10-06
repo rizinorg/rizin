@@ -64,9 +64,9 @@ static RzList *__io_maps(RzDebug *dbg) {
 	return list;
 }
 
-static int __io_wait(RzDebug *dbg, int pid) {
+static RzDebugReasonType __io_wait(RzDebug *dbg, int pid) {
 	/* do nothing */
-	return true;
+	return RZ_DEBUG_REASON_NONE;
 }
 
 static int __io_attach(RzDebug *dbg, int pid) {
