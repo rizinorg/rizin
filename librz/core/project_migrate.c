@@ -256,13 +256,54 @@ RZ_API bool rz_project_migrate_v5_v6(RzProject *prj, RzSerializeResultInfo *res)
 }
 
 // --
+// Migration 6 -> 7
+//
+// Changes from <commit-hash>
+//	Added serialization functionality for multiple files opened in the same project
+//	Used to save and load opened files
+
+RZ_API bool rz_project_migrate_v6_v7(RzProject *prj, RzSerializeResultInfo *res) {
+	Sdb *core_db;
+	RZ_SERIALIZE_SUB(prj, core_db, res, "core", return false;);
+	Sdb *file_db = sdb_ns(core_db, "file", false);
+	if (!file_db) {
+		RZ_SERIALIZE_ERR(res, "missing 'file' namespace");
+		return false;
+	}
+	const char *raw = sdb_get(file_db, "raw", 0);
+	const char *absolute = sdb_get(file_db, "absolute", 0);
+	const char *relative = sdb_get(file_db, "relative", 0);
+	if (!raw && !absolute && !relative) {
+		return true;
+	}
+	PJ *j = pj_new();
+	if (!j) {
+		return false;
+	}
+	sdb_remove(file_db, "raw", 0);
+	sdb_remove(file_db, "absolute", 0);
+	sdb_remove(file_db, "relative", 0);
+	pj_o(j);
+	pj_ks(j, "raw", raw ? raw : "");
+	pj_ks(j, "absolute", absolute ? absolute : "");
+	pj_ks(j, "relative", relative ? relative : "");
+	pj_ki(j, "perm", RZ_PERM_RX);
+	pj_kn(j, "addr", 0);
+	pj_end(j);
+	sdb_set(file_db, "file0", pj_string(j), 0);
+
+	return true;
+}
+
+// --
 
 static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = {
 	rz_project_migrate_v1_v2,
 	rz_project_migrate_v2_v3,
 	rz_project_migrate_v3_v4,
 	rz_project_migrate_v4_v5,
-	rz_project_migrate_v5_v6
+	rz_project_migrate_v5_v6,
+	rz_project_migrate_v6_v7
 };
 
 /// Migrate the given project to the current version in-place
