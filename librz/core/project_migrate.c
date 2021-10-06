@@ -241,7 +241,7 @@ RZ_API bool rz_project_migrate_v4_v5(RzProject *prj, RzSerializeResultInfo *res)
 // --
 // Migration 5 -> 6
 //
-// Changes from <commit-hash>
+// Changes from 2c48a91d1332daede8d0640ce407c3abcf0abfb4
 //	Added serialization functionality for debug (only for breakpoints as of now)
 //	Used to save and load current RzDebug instance (only breakpoints) using serialization
 //	New namespaces: /core/debug, /core/debug/breakpoints
