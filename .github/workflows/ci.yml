@@ -367,25 +367,10 @@ jobs:
       run: ln -snf /usr/share/zoneinfo/UTC /etc/localtime && echo 'UTC' > /etc/timezone
     - name: Install tools
       run: apt-get update && apt-get install --yes patch unzip git gcc make curl pkg-config libc6-i386 build-essential
-    - name: Install Python source build dependencies
-      run: apt-get install --yes checkinstall libbz2-dev libc6-dev libgdbm-dev libncursesw5-dev libreadline-dev libssl-dev libsqlite3-dev libffi-dev tk-dev
-    - name: Install Python from source
-      run: |
-        curl -o Python-${PYVERSION}.tgz https://www.python.org/ftp/python/${PYVERSION}/Python-${PYVERSION}.tgz
-        tar -zxvf Python-${PYVERSION}.tgz
-        cd Python-${PYVERSION}/
-        ./configure
-        make install
-      env:
-          PYVERSION: 3.6.12
-    - name: Install Meson and Ninja
-      run: |
-        mkdir ${HOME}/.cache
-        chmod +w ${HOME}/.cache
-        python3 -m pip install ${TRUSTED} --upgrade pip setuptools
-        python3 -m pip install ${TRUSTED} meson ninja PyYAML
-      env:
-        TRUSTED: --trusted-host=pypi.org --trusted-host=files.pythonhosted.org
+    - name: Install python and other dependencies
+      run: apt-get install --yes python3-wheel python3-setuptools cabextract
+    - name: Install meson and ninja
+      run: pip3 install --user meson ninja PyYAML
     - name: Checkout rizin
       run: |
         git clone https://github.com/${{ github.repository }}
