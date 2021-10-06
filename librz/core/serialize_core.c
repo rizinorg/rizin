@@ -157,6 +157,8 @@ typedef struct {
 	const char *prj_file;
 } FileSaveHelper;
 
+unsigned int file_num = 0;
+
 static bool file_save_cb(void *user, void *data, ut32 id) {
 	FileSaveHelper *fsh = user;
 	Sdb *db = fsh->db;
@@ -180,6 +182,7 @@ static bool file_save_cb(void *user, void *data, ut32 id) {
 		pj_end(j);
 		goto desert;
 	}
+	pj_ks(j, "raw", filename);
 	char *abs = rz_file_abspath(filename);
 	if (!abs) {
 		pj_end(j);
@@ -202,7 +205,10 @@ static bool file_save_cb(void *user, void *data, ut32 id) {
 	pj_ki(j, "perm", desc->perm);
 	pj_kn(j, "addr", rz_io_desc_size(desc));
 	pj_end(j);
-	sdb_set(db, filename, pj_string(j), 0);
+	char *key = rz_str_newf("file%d", file_num);
+	sdb_set(db, key, pj_string(j), 0);
+	file_num++;
+	free(key);
 
 beach:
 	free(abs);
@@ -221,6 +227,7 @@ static void file_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, RZ_NULLABLE c
 		.db = db,
 		.prj_file = prj_file
 	};
+	file_num = 0;
 	rz_id_storage_foreach(core->io->files, &file_save_cb, &fsh);
 }
 
@@ -251,6 +258,7 @@ static FileRet try_load_file(RZ_NONNULL RzCore *core, const char *file, int perm
 }
 
 enum {
+	FILE_FIELD_RAW,
 	FILE_FIELD_ABSOLUTE,
 	FILE_FIELD_RELATIVE,
 	FILE_FIELD_PERM,
@@ -265,6 +273,7 @@ SerializeFileParser serialize_file_parser_new(void) {
 		return NULL;
 	}
 
+	rz_key_parser_add(parser, "raw", FILE_FIELD_RAW);
 	rz_key_parser_add(parser, "absolute", FILE_FIELD_ABSOLUTE);
 	rz_key_parser_add(parser, "relative", FILE_FIELD_RELATIVE);
 	rz_key_parser_add(parser, "perm", FILE_FIELD_PERM);
@@ -290,11 +299,17 @@ static bool file_load_cb(void *user, const char *k, const char *v) {
 		goto heaven;
 	}
 	FileLoadHelper *flh = user;
-	char *abs = NULL, *rel = NULL;
+	char *abs = NULL, *rel = NULL, *raw = NULL;
 	int perm = RZ_PERM_RX;
 	ut64 addr = UT64_MAX;
 
 	RZ_KEY_PARSER_JSON(flh->parser, json, child, {
+		case FILE_FIELD_RAW:
+			if (child->type != RZ_JSON_STRING) {
+				break;
+			}
+			raw = strdup(child->str_value);
+			break;
 		case FILE_FIELD_ABSOLUTE:
 			if (child->type != RZ_JSON_STRING) {
 				break;
@@ -350,7 +365,7 @@ static bool file_load_cb(void *user, const char *k, const char *v) {
 		goto beach;
 	}
 
-	file = k;
+	file = raw;
 	if (file) {
 		r = try_load_file(core, file, perm, addr, res);
 	}
@@ -358,10 +373,10 @@ static bool file_load_cb(void *user, const char *k, const char *v) {
 		ret = (r == FILE_SUCCESS);
 		goto beach;
 	}
-
 	RZ_SERIALIZE_ERR(res, "failed to re-locate file referenced by project");
 
 beach:
+	free(raw);
 	free(abs);
 	free(rel);
 heaven:
