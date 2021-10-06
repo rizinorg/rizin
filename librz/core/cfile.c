@@ -1299,7 +1299,40 @@ RZ_API RzCoreFile *rz_core_file_get_by_fd(RzCore *core, int fd) {
 	return NULL;
 }
 
-RZ_API int rz_core_file_list(RzCore *core, int mode) {
+RZ_API bool rz_core_raw_file_print(RzCore *core) {
+	RzCoreFile *f;
+	RzIODesc *desc;
+	RzBinFile *bf;
+	RzListIter *it1, *it2, *it3;
+	rz_list_foreach (core->files, it1, f) {
+		desc = rz_io_desc_get(core->io, f->fd);
+		if (!desc) {
+			continue;
+		}
+		bool header_loaded = false;
+		rz_list_foreach (core->bin->binfiles, it2, bf) {
+			if (bf->fd == f->fd) {
+				header_loaded = true;
+				break;
+			}
+		}
+		if (!header_loaded) {
+			RzList *maps = rz_io_map_get_for_fd(core->io, f->fd);
+			RzIOMap *current_map;
+			char *absfile = rz_file_abspath(desc->uri);
+			rz_list_foreach (maps, it3, current_map) {
+				if (current_map) {
+					rz_cons_printf("on %s 0x%" PFMT64x "\n", absfile, current_map->itv.addr);
+				}
+			}
+			rz_list_free(maps);
+			free(absfile);
+		}
+	}
+	return true;
+}
+
+RZ_API bool rz_core_file_print(RzCore *core, RzOutputMode mode) {
 	int count = 0;
 	RzCoreFile *f;
 	RzIODesc *desc;
@@ -1308,10 +1341,10 @@ RZ_API int rz_core_file_list(RzCore *core, int mode) {
 	RzBinFile *bf;
 	RzListIter *iter;
 	PJ *pj = NULL;
-	if (mode == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj = pj_new();
 		if (!pj) {
-			return 0;
+			return false;
 		}
 		pj_a(pj);
 	}
@@ -1323,7 +1356,7 @@ RZ_API int rz_core_file_list(RzCore *core, int mode) {
 		}
 		from = 0LL;
 		switch (mode) {
-		case 'j': { // "oij"
+		case RZ_OUTPUT_MODE_JSON: { // "oij"
 			pj_o(pj);
 			pj_kb(pj, "raised", core->io->desc->fd == f->fd);
 			pj_ki(pj, "fd", f->fd);
@@ -1334,8 +1367,7 @@ RZ_API int rz_core_file_list(RzCore *core, int mode) {
 			pj_end(pj);
 			break;
 		}
-		case '*':
-		case 'r':
+		case RZ_OUTPUT_MODE_RIZIN:
 			// TODO: use a getter
 			{
 				bool fileHaveBin = false;
@@ -1352,28 +1384,6 @@ RZ_API int rz_core_file_list(RzCore *core, int mode) {
 				free(absfile);
 			}
 			break;
-		case 'n': {
-			bool header_loaded = false;
-			rz_list_foreach (core->bin->binfiles, it, bf) {
-				if (bf->fd == f->fd) {
-					header_loaded = true;
-					break;
-				}
-			}
-			if (!header_loaded) {
-				RzList *maps = rz_io_map_get_for_fd(core->io, f->fd);
-				RzListIter *iter;
-				RzIOMap *current_map;
-				char *absfile = rz_file_abspath(desc->uri);
-				rz_list_foreach (maps, iter, current_map) {
-					if (current_map) {
-						rz_cons_printf("on %s 0x%" PFMT64x "\n", absfile, current_map->itv.addr);
-					}
-				}
-				rz_list_free(maps);
-				free(absfile);
-			}
-		} break;
 		default: {
 			ut64 sz = rz_io_desc_size(desc);
 			const char *fmt;
@@ -1392,12 +1402,12 @@ RZ_API int rz_core_file_list(RzCore *core, int mode) {
 		}
 		count++;
 	}
-	if (mode == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
 		rz_cons_println(pj_string(pj));
 		pj_free(pj);
 	}
-	return count;
+	return true;
 }
 
 // XXX - needs to account for binfile index and bin object index
