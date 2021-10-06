@@ -270,7 +270,7 @@ static void bochs_debug_break(void *u) {
 
 static RzDebugReasonType rz_debug_bochs_wait(RzDebug *dbg, int pid) {
 	if (!isBochs(dbg)) {
-		return RZ_DEBUG_REASON_NONE;
+		return RZ_DEBUG_REASON_ERROR;
 	}
 	char strIP[19];
 	int i = 0;
@@ -322,7 +322,7 @@ static RzDebugReasonType rz_debug_bochs_wait(RzDebug *dbg, int pid) {
 	}
 	desc->data[0] = 0;
 
-	return RZ_DEBUG_REASON_SIGNAL;
+	return RZ_DEBUG_REASON_NONE;
 }
 
 static int rz_debug_bochs_stop(RzDebug *dbg) {
