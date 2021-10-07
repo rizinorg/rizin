@@ -273,6 +273,7 @@ typedef struct rz_bin_object_t {
 	RzList /*<RzBinSection>*/ *sections;
 	RzList /*<RzBinImport>*/ *imports;
 	RzList /*<RzBinSymbol>*/ *symbols;
+	RzList /*<RzBinResource>*/ *resources;
 	/**
 	 * \brief Acceleration structure for fast access of the symbol for a given import.
 	 * This associates the name of every symbol where is_imported == true to the symbol itself.
@@ -555,6 +556,7 @@ typedef struct rz_bin_plugin_t {
 	RzList /*<RzBinMem>*/ *(*mem)(RzBinFile *bf);
 	RzList /*<RzBinReloc>*/ *(*patch_relocs)(RzBinFile *bf);
 	RzList /*<RzBinFileHash>*/ *(*hashes)(RzBinFile *bf);
+	RzList /*<RzBinResource>*/ *(*resources)(RzBinFile *bf);
 	void (*header)(RzBinFile *bf);
 	char *(*signature)(RzBinFile *bf, bool json);
 	int (*demangle_type)(const char *str);
@@ -798,6 +800,16 @@ typedef struct rz_bin_mem_t {
 	RzList /*<RzBinMem>*/ *mirrors; //for mirror access; stuff here should only create new maps not new fds
 } RzBinMem;
 
+typedef struct rz_bin_resource_t {
+	size_t index;
+	char *name;
+	char *time;
+	ut64 vaddr;
+	ut64 size;
+	char *type;
+	char *language;
+} RzBinResource;
+
 // TODO: deprecate rz_bin_is_big_endian
 // TODO: has_dbg_syms... maybe flags?
 
@@ -828,6 +840,7 @@ RZ_API RZ_OWN char *rz_bin_section_type_to_string(RzBin *bin, int type);
 RZ_API RZ_OWN RzList *rz_bin_section_flag_to_list(RzBin *bin, ut64 flag);
 RZ_API void rz_bin_info_free(RzBinInfo *rb);
 RZ_API void rz_bin_import_free(RzBinImport *imp);
+RZ_API void rz_bin_resource_free(RzBinResource *res);
 RZ_API void rz_bin_symbol_free(RzBinSymbol *sym);
 static inline bool rz_bin_reloc_has_target(RzBinReloc *reloc) {
 	return reloc->target_vaddr && reloc->target_vaddr != UT64_MAX;
