@@ -32,125 +32,130 @@ CMDS=idpij bins/pdb/minimal.pdb~{}
 EXPECT=<<EOF
 [
   {
-    "type": "structure",
-    "name": "struct_typedef",
-    "size": 7,
-    "members": [
+    "types": [
       {
-        "member_type": "char",
-        "member_name": "a",
-        "offset": 0
+        "type": "structure",
+        "name": "struct_typedef",
+        "size": 7,
+        "members": [
+          {
+            "member_type": "char",
+            "member_name": "a",
+            "offset": 0
+          },
+          {
+            "member_type": "int16_t",
+            "member_name": "b",
+            "offset": 1
+          },
+          {
+            "member_type": "int32_t",
+            "member_name": "c",
+            "offset": 3
+          }
+        ]
       },
       {
-        "member_type": "int16_t",
-        "member_name": "b",
-        "offset": 1
+        "type": "union",
+        "name": "<unnamed-tag>",
+        "size": 4,
+        "members": [
+          {
+            "member_type": "char [4]",
+            "member_name": "a",
+            "offset": 0
+          },
+          {
+            "member_type": "int32_t",
+            "member_name": "b",
+            "offset": 0
+          }
+        ]
       },
       {
-        "member_type": "int32_t",
-        "member_name": "c",
-        "offset": 3
+        "type": "structure",
+        "name": "unnamed_member_types_typedef",
+        "size": 8,
+        "members": [
+          {
+            "member_type": "union <unnamed-tag>",
+            "member_name": "a",
+            "offset": 0
+          },
+          {
+            "member_type": "int32_t",
+            "member_name": "b",
+            "offset": 4
+          }
+        ]
+      },
+      {
+        "type": "structure",
+        "name": "bitfield_typedef",
+        "size": 1,
+        "members": [
+          
+        ]
+      },
+      {
+        "type": "union",
+        "name": "union_typedef",
+        "size": 4,
+        "members": [
+          {
+            "member_type": "char",
+            "member_name": "a",
+            "offset": 0
+          },
+          {
+            "member_type": "int16_t",
+            "member_name": "b",
+            "offset": 0
+          },
+          {
+            "member_type": "int32_t",
+            "member_name": "c",
+            "offset": 0
+          }
+        ]
       }
     ]
   },
   {
-    "type": "union",
-    "name": "<unnamed-tag>",
-    "size": 4,
-    "members": [
+    "gvars": [
       {
-        "member_type": "char [4]",
-        "member_name": "a",
-        "offset": 0
+        "address": 12292,
+        "symtype": 0,
+        "section_name": ".data",
+        "gdata_name": "_uninitialized_global"
       },
       {
-        "member_type": "int32_t",
-        "member_name": "b",
-        "offset": 0
-      }
-    ]
-  },
-  {
-    "type": "structure",
-    "name": "unnamed_member_types_typedef",
-    "size": 8,
-    "members": [
-      {
-        "member_type": "union <unnamed-tag>",
-        "member_name": "a",
-        "offset": 0
+        "address": 12288,
+        "symtype": 0,
+        "section_name": ".data",
+        "gdata_name": "_initialized_global"
       },
       {
-        "member_type": "int32_t",
-        "member_name": "b",
-        "offset": 4
-      }
-    ]
-  },
-  {
-    "type": "structure",
-    "name": "bitfield_typedef",
-    "size": 1,
-    "members": [
-      
-    ]
-  },
-  {
-    "type": "union",
-    "name": "union_typedef",
-    "size": 4,
-    "members": [
-      {
-        "member_type": "char",
-        "member_name": "a",
-        "offset": 0
+        "address": 4096,
+        "symtype": 2,
+        "section_name": ".text",
+        "gdata_name": "_function"
       },
       {
-        "member_type": "int16_t",
-        "member_name": "b",
-        "offset": 0
+        "address": 4182,
+        "symtype": 2,
+        "section_name": ".text",
+        "gdata_name": "_mainCRTStartup"
       },
       {
-        "member_type": "int32_t",
-        "member_name": "c",
-        "offset": 0
+        "address": 4120,
+        "symtype": 2,
+        "section_name": ".text",
+        "gdata_name": "_main"
       }
     ]
   }
-]{
-  "gvars": [
-    {
-      "address": 12292,
-      "symtype": 0,
-      "section_name": ".data",
-      "gdata_name": "_uninitialized_global"
-    },
-    {
-      "address": 12288,
-      "symtype": 0,
-      "section_name": ".data",
-      "gdata_name": "_initialized_global"
-    },
-    {
-      "address": 4096,
-      "symtype": 2,
-      "section_name": ".text",
-      "gdata_name": "_function"
-    },
-    {
-      "address": 4182,
-      "symtype": 2,
-      "section_name": ".text",
-      "gdata_name": "_mainCRTStartup"
-    },
-    {
-      "address": 4120,
-      "symtype": 2,
-      "section_name": ".text",
-      "gdata_name": "_main"
-    }
-  ]
-}
+]
 EOF
 RUN
 

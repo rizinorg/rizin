@@ -514,19 +514,7 @@ RZ_API bool rz_core_bin_print(RzCore *core, RzBinFile *bf, ut32 mask, RzCoreBinF
 	if (mask & RZ_CORE_BIN_ACC_PDB) {
 		if (state->mode & (RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN)) {
 			RzCmdStateOutput *st = add_header(state, RZ_OUTPUT_MODE_STANDARD, "pdb");
-			switch (st->mode) {
-			case RZ_OUTPUT_MODE_STANDARD:
-				rz_core_pdb_info_print(core, core->bin->file, RZ_MODE_PRINT);
-				break;
-			case RZ_OUTPUT_MODE_JSON:
-				rz_core_pdb_info_print(core, core->bin->file, RZ_MODE_JSON);
-				break;
-			case RZ_OUTPUT_MODE_RIZIN:
-				rz_core_pdb_info_print(core, core->bin->file, RZ_MODE_RIZINCMD);
-				break;
-			default:
-				break;
-			}
+			rz_core_pdb_info_print(core, core->bin->file, st);
 			add_footer(state, st);
 		}
 	}
@@ -5145,7 +5133,7 @@ RZ_API bool rz_core_bin_archs_print(RzBin *bin, RzCmdStateOutput *state) {
 
 RZ_API bool rz_core_bin_pdb_load(RZ_NONNULL RzCore *core, RZ_NONNULL const char *filename) {
 	rz_cons_push();
-	rz_core_pdb_info_print(core, filename, RZ_MODE_RIZINCMD);
+	rz_core_pdb_info_print(core, filename, NULL);
 	const char *buf = rz_cons_get_buffer();
 	if (!buf) {
 		rz_cons_pop();

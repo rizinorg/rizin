@@ -25,16 +25,12 @@ static char *pdb_type_as_string_regular(const RzTypeDB *db, const RzPdb *pdb, co
 	return str;
 }
 
-static char *pdb_type_as_string_json(const RzTypeDB *db, const RzPdb *pdb, const RzList *types) {
-	rz_return_val_if_fail(db && pdb && types, NULL);
-
+static char *pdb_type_as_string_json(const RzTypeDB *db, const RzPdb *pdb, const RzList *types, PJ *pj) {
+	rz_return_val_if_fail(db && pdb && types && pj, NULL);
 	RzListIter *it;
 	RzBaseType *type;
-	PJ *pj = pj_new();
-	if (!pj) {
-		return NULL;
-	}
-	pj_a(pj);
+	pj_o(pj);
+	pj_ka(pj, "types");
 	rz_list_foreach (types, it, type) {
 		switch (type->kind) {
 		case RZ_BASE_TYPE_KIND_STRUCT: {
@@ -101,30 +97,29 @@ static char *pdb_type_as_string_json(const RzTypeDB *db, const RzPdb *pdb, const
 		}
 	}
 	pj_end(pj);
-	char *str = strdup(pj_string(pj));
-	pj_free(pj);
-	return str;
+	pj_end(pj);
+	return NULL;
 }
 
 /**
  * \brief return the output text for types in PDB
  * \param db RzTypeDB
  * \param pdb PDB instance
- * \param mode printing mode
+ * \param state output state
  * \return string of pdb types
  */
-RZ_API RZ_OWN char *rz_bin_pdb_types_as_string(RZ_NONNULL const RzTypeDB *db, RZ_NONNULL const RzPdb *pdb, const RzOutputMode mode) {
-	rz_return_val_if_fail(db && pdb, NULL);
+RZ_API RZ_OWN char *rz_bin_pdb_types_as_string(RZ_NONNULL const RzTypeDB *db, RZ_NONNULL const RzPdb *pdb, const RzCmdStateOutput *state) {
+	rz_return_val_if_fail(db && pdb && state, NULL);
 	TpiStream *stream = pdb->s_tpi;
 	if (!stream) {
 		eprintf("There is no tpi stream in current pdb\n");
 		return NULL;
 	}
-	switch (mode) {
+	switch (state->mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
 		return pdb_type_as_string_regular(db, pdb, stream->print_type);
 	case RZ_OUTPUT_MODE_JSON:
-		return pdb_type_as_string_json(db, pdb, stream->print_type);
+		return pdb_type_as_string_json(db, pdb, stream->print_type, state->d.pj);
 	default:
 		return NULL;
 	}
@@ -135,30 +130,29 @@ RZ_API RZ_OWN char *rz_bin_pdb_types_as_string(RZ_NONNULL const RzTypeDB *db, RZ
  * 
  * \param pdb PDB instance
  * \param img_base image base addr
- * \param mode print mode
+ * \param state output state
  * \return string of pdb symbols
  */
-RZ_API RZ_OWN char *rz_bin_pdb_gvars_as_string(RZ_NONNULL const RzPdb *pdb, const ut64 img_base, RzOutputMode mode) {
-	rz_return_val_if_fail(pdb, NULL);
+RZ_API RZ_OWN char *rz_bin_pdb_gvars_as_string(RZ_NONNULL const RzPdb *pdb, const ut64 img_base, const RzCmdStateOutput *state) {
+	rz_return_val_if_fail(pdb && state, NULL);
 	PeImageSectionHeader *sctn_header = 0;
 	GDataStream *gsym_data_stream = 0;
 	PeStream *pe_stream = 0;
 	OmapStream *omap_stream;
 	GDataGlobal *gdata = 0;
 	RzListIter *it = 0;
-	PJ *pj = NULL;
+	PJ *pj = state->d.pj;
 	char *name;
-	char *filtered_name;
 	RzStrBuf *buf = rz_strbuf_new(NULL);
 	if (!buf) {
 		return NULL;
 	}
-	if (mode == RZ_OUTPUT_MODE_JSON) {
-		pj = pj_new();
-		if (!pj) {
-			rz_strbuf_free(buf);
-			return NULL;
-		}
+	RzStrBuf *cmd = rz_strbuf_new(NULL);
+	if (!cmd) {
+		rz_strbuf_free(buf);
+		return NULL;
+	}
+	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_o(pj);
 		pj_ka(pj, "gvars");
 	}
@@ -174,7 +168,7 @@ RZ_API RZ_OWN char *rz_bin_pdb_gvars_as_string(RZ_NONNULL const RzPdb *pdb, cons
 		if (sctn_header) {
 			name = rz_demangler_msvc(gdata->name);
 			name = (name) ? name : strdup(gdata->name);
-			switch (mode) {
+			switch (state->mode) {
 			case RZ_OUTPUT_MODE_JSON: // JSON
 				pj_o(pj);
 				pj_kN(pj, "address", (img_base + omap_remap(omap_stream, gdata->offset + sctn_header->virtual_address)));
@@ -188,29 +182,66 @@ RZ_API RZ_OWN char *rz_bin_pdb_gvars_as_string(RZ_NONNULL const RzPdb *pdb, cons
 					(ut64)(img_base + omap_remap(omap_stream, gdata->offset + sctn_header->virtual_address)),
 					gdata->symtype, PDB_SIZEOF_SECTION_NAME, sctn_header->name, name);
 				break;
-			case RZ_OUTPUT_MODE_RIZIN:
-				filtered_name = rz_name_filter2(name, true);
-				rz_strbuf_appendf(buf, "f pdb.%s = 0x%" PFMT64x " # %d %.*s\n",
-					filtered_name,
-					(ut64)(img_base + omap_remap(omap_stream, gdata->offset + sctn_header->virtual_address)),
-					gdata->symtype, PDB_SIZEOF_SECTION_NAME, sctn_header->name);
-				rz_strbuf_appendf(buf, "\"fN pdb.%s %s\"\n", filtered_name, name);
-				free(filtered_name);
-				break;
 			default:
 				break;
 			}
 			free(name);
 		}
 	}
-	if (mode == RZ_OUTPUT_MODE_JSON) {
+	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
 		pj_end(pj);
-		rz_strbuf_append(buf, pj_string(pj));
-		pj_free(pj);
 	}
 	char *str = strdup(rz_strbuf_get(buf));
 	rz_strbuf_free(buf);
+	return str;
+}
+
+/**
+ * \brief return the command text for global symbols in PDB
+ * 
+ * \param pdb PDB instance
+ * \param img_base image base addr
+ * \return command of pdb symbols
+ */
+RZ_API RZ_OWN char *rz_bin_pdb_gvars_as_cmd_string(RZ_NONNULL const RzPdb *pdb, const ut64 img_base) {
+	rz_return_val_if_fail(pdb, NULL);
+	PeImageSectionHeader *sctn_header = 0;
+	GDataStream *gsym_data_stream = 0;
+	PeStream *pe_stream = 0;
+	OmapStream *omap_stream;
+	GDataGlobal *gdata = 0;
+	RzListIter *it = 0;
+	char *name;
+	char *filtered_name;
+	RzStrBuf *cmd_buf = rz_strbuf_new(NULL);
+	if (!cmd_buf) {
+		return NULL;
+	}
+	gsym_data_stream = pdb->s_gdata;
+	pe_stream = pdb->s_pe;
+	omap_stream = pdb->s_omap;
+	if (!pe_stream) {
+		rz_strbuf_free(cmd_buf);
+		return NULL;
+	}
+	rz_list_foreach (gsym_data_stream->global_list, it, gdata) {
+		sctn_header = rz_list_get_n(pe_stream->sections_hdrs, (gdata->segment - 1));
+		if (sctn_header) {
+			name = rz_demangler_msvc(gdata->name);
+			name = (name) ? name : strdup(gdata->name);
+			filtered_name = rz_name_filter2(name, true);
+			rz_strbuf_appendf(cmd_buf, "f pdb.%s = 0x%" PFMT64x " # %d %.*s\n",
+				filtered_name,
+				(ut64)(img_base + omap_remap(omap_stream, gdata->offset + sctn_header->virtual_address)),
+				gdata->symtype, PDB_SIZEOF_SECTION_NAME, sctn_header->name);
+			rz_strbuf_appendf(cmd_buf, "\"fN pdb.%s %s\"\n", filtered_name, name);
+			free(filtered_name);
+			free(name);
+		}
+	}
+	char *str = strdup(rz_strbuf_get(cmd_buf));
+	rz_strbuf_free(cmd_buf);
 	return str;
 }
 

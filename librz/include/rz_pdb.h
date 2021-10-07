@@ -6,6 +6,7 @@
 
 #include <rz_util.h>
 #include <rz_type.h>
+#include <rz_cmd.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -870,8 +871,9 @@ typedef struct rz_pdb_t {
 // PDB
 RZ_API RZ_OWN RzPdb *rz_bin_pdb_parse_from_file(RZ_NONNULL const char *filename);
 RZ_API RZ_OWN RzPdb *rz_bin_pdb_parse_from_buf(RZ_NONNULL const RzBuffer *buf);
-RZ_API RZ_OWN char *rz_bin_pdb_types_as_string(RZ_NONNULL const RzTypeDB *db, RZ_NONNULL const RzPdb *pdb, const RzOutputMode mode);
-RZ_API RZ_OWN char *rz_bin_pdb_gvars_as_string(RZ_NONNULL const RzPdb *pdb, const ut64 img_base, RzOutputMode mode);
+RZ_API RZ_OWN char *rz_bin_pdb_types_as_string(RZ_NONNULL const RzTypeDB *db, RZ_NONNULL const RzPdb *pdb, const RzCmdStateOutput *state);
+RZ_API RZ_OWN char *rz_bin_pdb_gvars_as_string(RZ_NONNULL const RzPdb *pdb, const ut64 img_base, const RzCmdStateOutput *state);
+RZ_API RZ_OWN char *rz_bin_pdb_gvars_as_cmd_string(RZ_NONNULL const RzPdb *pdb, const ut64 img_base);
 RZ_API void rz_bin_pdb_free(RzPdb *pdb);
 
 // TPI
