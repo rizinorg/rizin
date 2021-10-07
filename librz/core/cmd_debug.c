@@ -4573,7 +4573,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_list_bp_indexes_handler(RzCore *core, int argc, 
 	RzBreakpointItem *bpi;
 	RzListIter *iter;
 	unsigned int index = 0;
-	rz_list_foreach(core->dbg->bp->bps, iter, bpi) {
+	rz_list_foreach (core->dbg->bp->bps, iter, bpi) {
 		if (!bpi) {
 			RZ_LOG_ERROR("Unable to find breakpoint at index %d\n", index);
 		} else {
