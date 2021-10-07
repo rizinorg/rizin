@@ -387,7 +387,7 @@ typedef struct rz_debug_plugin_t {
 	int (*step)(RzDebug *dbg);
 	int (*step_over)(RzDebug *dbg);
 	int (*cont)(RzDebug *dbg, int pid, int tid, int sig);
-	int (*wait)(RzDebug *dbg, int pid);
+	RzDebugReasonType (*wait)(RzDebug *dbg, int pid);
 	bool (*gcore)(RzDebug *dbg, char *path, RzBuffer *dest);
 	bool (*kill)(RzDebug *dbg, int pid, int tid, int sig);
 	RzList *(*kill_list)(RzDebug *dbg);

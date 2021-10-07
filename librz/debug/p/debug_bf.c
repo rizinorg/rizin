@@ -120,9 +120,9 @@ static int rz_debug_bf_continue_syscall(RzDebug *dbg, int pid, int num) {
 	return true;
 }
 
-static int rz_debug_bf_wait(RzDebug *dbg, int pid) {
+static RzDebugReasonType rz_debug_bf_wait(RzDebug *dbg, int pid) {
 	/* do nothing */
-	return true;
+	return RZ_DEBUG_REASON_NONE;
 }
 
 static int rz_debug_bf_attach(RzDebug *dbg, int pid) {
