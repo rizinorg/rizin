@@ -112,9 +112,6 @@ static const RzCmdDescArg block_flag_args[2];
 static const RzCmdDescArg block_max_args[2];
 static const RzCmdDescArg cmd_debug_command_bp_args[2];
 static const RzCmdDescArg cmd_debug_add_cond_bp_args[2];
-static const RzCmdDescArg cmd_debug_disable_bp_args[2];
-static const RzCmdDescArg cmd_debug_enable_bp_args[2];
-static const RzCmdDescArg cmd_debug_toggle_bp_args[2];
 static const RzCmdDescArg cmd_debug_add_bp_module_args[3];
 static const RzCmdDescArg cmd_debug_name_bp_args[2];
 static const RzCmdDescArg cmd_debug_remove_bp_index_args[2];
@@ -129,9 +126,6 @@ static const RzCmdDescArg cmd_debug_toggle_bp_trace_index_args[2];
 static const RzCmdDescArg cmd_debug_bp_plugin_args[2];
 static const RzCmdDescArg cmd_debug_remove_bp_plugin_args[2];
 static const RzCmdDescArg cmd_debug_display_bt_oneline_args[2];
-static const RzCmdDescArg cmd_debug_bt_enable_bp_trace_args[2];
-static const RzCmdDescArg cmd_debug_bt_disable_bp_trace_args[2];
-static const RzCmdDescArg cmd_debug_bt_toggle_bp_trace_args[2];
 static const RzCmdDescArg cmd_debug_bp_set_expr_cur_offset_args[2];
 static const RzCmdDescArg cmd_debug_add_watchpoint_args[2];
 static const RzCmdDescArg cmd_debug_set_cond_bp_win_args[3];
@@ -2036,12 +2030,6 @@ static const RzCmdDescHelp cmd_debug_add_cond_bp_help = {
 };
 
 static const RzCmdDescArg cmd_debug_disable_bp_args[] = {
-	{
-		.name = "addr",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_disable_bp_help = {
@@ -2050,12 +2038,6 @@ static const RzCmdDescHelp cmd_debug_disable_bp_help = {
 };
 
 static const RzCmdDescArg cmd_debug_enable_bp_args[] = {
-	{
-		.name = "addr",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_enable_bp_help = {
@@ -2064,12 +2046,6 @@ static const RzCmdDescHelp cmd_debug_enable_bp_help = {
 };
 
 static const RzCmdDescArg cmd_debug_toggle_bp_args[] = {
-	{
-		.name = "addr",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_toggle_bp_help = {
@@ -2354,12 +2330,6 @@ static const RzCmdDescHelp cmd_debug_display_bt_ascii_help = {
 };
 
 static const RzCmdDescArg cmd_debug_bt_enable_bp_trace_args[] = {
-	{
-		.name = "addr",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_bt_enable_bp_trace_help = {
@@ -2368,12 +2338,6 @@ static const RzCmdDescHelp cmd_debug_bt_enable_bp_trace_help = {
 };
 
 static const RzCmdDescArg cmd_debug_bt_disable_bp_trace_args[] = {
-	{
-		.name = "addr",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_bt_disable_bp_trace_help = {
@@ -2382,12 +2346,6 @@ static const RzCmdDescHelp cmd_debug_bt_disable_bp_trace_help = {
 };
 
 static const RzCmdDescArg cmd_debug_bt_toggle_bp_trace_args[] = {
-	{
-		.name = "addr",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_bt_toggle_bp_trace_help = {
@@ -6859,7 +6817,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(cmd_debug_cd);
 	RzCmdDesc *db_cd = rz_cmd_desc_group_new(core->rcmd, cmd_debug_cd, "db", rz_cmd_debug_add_bp_handler, &cmd_debug_add_bp_help, &db_help);
 	rz_warn_if_fail(db_cd);
-	RzCmdDesc *cmd_debug_list_bp_cd = rz_cmd_desc_argv_state_new(core->rcmd, db_cd, "dbl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_list_bp_handler, &cmd_debug_list_bp_help);
+	RzCmdDesc *cmd_debug_list_bp_cd = rz_cmd_desc_argv_state_new(core->rcmd, db_cd, "dbl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_debug_list_bp_handler, &cmd_debug_list_bp_help);
 	rz_warn_if_fail(cmd_debug_list_bp_cd);
 
 	RzCmdDesc *cmd_debug_add_hw_bp_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "dbH", rz_cmd_debug_add_hw_bp_handler, &cmd_debug_add_hw_bp_help);
@@ -6939,7 +6897,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_debug_remove_bp_plugin_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "dbh-", rz_cmd_debug_remove_bp_plugin_handler, &cmd_debug_remove_bp_plugin_help);
 	rz_warn_if_fail(cmd_debug_remove_bp_plugin_cd);
 
-	RzCmdDesc *dbt_cd = rz_cmd_desc_group_state_new(core->rcmd, db_cd, "dbt", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_cmd_debug_display_bt_handler, &cmd_debug_display_bt_help, &dbt_help);
+	RzCmdDesc *dbt_cd = rz_cmd_desc_group_state_new(core->rcmd, db_cd, "dbt", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_QUIET, rz_cmd_debug_display_bt_handler, &cmd_debug_display_bt_help, &dbt_help);
 	rz_warn_if_fail(dbt_cd);
 	RzCmdDesc *cmd_debug_display_bt_oneline_cd = rz_cmd_desc_argv_new(core->rcmd, dbt_cd, "dbt=", rz_cmd_debug_display_bt_oneline_handler, &cmd_debug_display_bt_oneline_help);
 	rz_warn_if_fail(cmd_debug_display_bt_oneline_cd);

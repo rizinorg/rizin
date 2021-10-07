@@ -4428,6 +4428,9 @@ RZ_IPI RzCmdStatus rz_cmd_debug_list_bp_handler(RzCore *core, int argc, const ch
 	case RZ_OUTPUT_MODE_JSON:
 		rz_bp_list(core->dbg->bp, 'j');
 		break;
+	case RZ_OUTPUT_MODE_QUIET:
+		rz_bp_list(core->dbg->bp, -1);
+		break;
 	default:
 		rz_warn_if_reached();
 		break;
@@ -4500,44 +4503,23 @@ RZ_IPI RzCmdStatus rz_cmd_debug_add_cond_bp_handler(RzCore *core, int argc, cons
 
 // dbd
 RZ_IPI RzCmdStatus rz_cmd_debug_disable_bp_handler(RzCore *core, int argc, const char **argv) {
-	for (int i = 1; i < argc; i++) {
-		if (!strcmp(argv[i], "*")) {
-			rz_bp_enable_all(core->dbg->bp, false);
-			break;
-		}
-		const ut64 addr = rz_num_math(core->num, argv[i]);
-		if (!rz_bp_enable(core->dbg->bp, addr, false, 1)) { // correct value of count?
-			RZ_LOG_ERROR("Failed to disable breakpoint at 0x%" PFMT64x "\n", addr);
-		}
+	if (!rz_bp_enable(core->dbg->bp, core->offset, false, 1)) {
+		RZ_LOG_ERROR("Failed to disable breakpoint at 0x%" PFMT64x "\n", core->offset);
 	}
 	return RZ_CMD_STATUS_OK;
 }
 
 // dbe
 RZ_IPI RzCmdStatus rz_cmd_debug_enable_bp_handler(RzCore *core, int argc, const char **argv) {
-	for (int i = 1; i < argc; i++) {
-		if (!strcmp(argv[i], "*")) {
-			rz_bp_enable_all(core->dbg->bp, true);
-			break;
-		}
-		const ut64 addr = rz_num_math(core->num, argv[i]);
-		if (!rz_bp_enable(core->dbg->bp, addr, true, 1)) { // correct value of count?
-			RZ_LOG_ERROR("Failed to enable breakpoint at 0x%" PFMT64x "\n", addr);
-		}
+	if (!rz_bp_enable(core->dbg->bp, core->offset, true, 1)) { // correct value of count?
+		RZ_LOG_ERROR("Failed to enable breakpoint at 0x%" PFMT64x "\n", core->offset);
 	}
 	return RZ_CMD_STATUS_OK;
 }
 
 // dbs
 RZ_IPI RzCmdStatus rz_cmd_debug_toggle_bp_handler(RzCore *core, int argc, const char **argv) {
-	for (int i = 1; i < argc; i++) {
-		if (!strcmp(argv[i], "*")) {
-			rz_bp_enable_all(core->dbg->bp, true);
-			break;
-		}
-		const ut64 addr = rz_num_math(core->num, argv[i]);
-		rz_core_debug_breakpoint_toggle(core, addr);
-	}
+	rz_core_debug_breakpoint_toggle(core, core->offset);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -4821,6 +4803,16 @@ RZ_IPI RzCmdStatus rz_cmd_debug_display_bt_handler(RzCore *core, int argc, const
 			free(desc);
 			break;
 		}
+		case RZ_OUTPUT_MODE_QUIET: {
+			char *flagdesc, *flagdesc2, *pcstr, *spstr;
+			get_backtrace_info(core, frame, UT64_MAX, &flagdesc, &flagdesc2, &pcstr, &spstr);
+			rz_cons_printf("%s\n", pcstr);
+			free(flagdesc);
+			free(flagdesc2);
+			free(pcstr);
+			free(spstr);
+			break;
+		}
 		default:
 			rz_warn_if_reached();
 			break;
@@ -4897,58 +4889,27 @@ RZ_IPI RzCmdStatus rz_cmd_debug_display_bt_ascii_handler(RzCore *core, int argc,
 
 // dbte
 RZ_IPI RzCmdStatus rz_cmd_debug_bt_enable_bp_trace_handler(RzCore *core, int argc, const char **argv) {
-	for (int i = 1; i < argc; i++) {
-		if (!strcmp(argv[i], "*")) {
-			if (!rz_bp_set_trace_all(core->dbg->bp, true)) {
-				RZ_LOG_ERROR("Failed to enable all breakpoints' trace\n");
-			}
-			break;
-		} else {
-			ut64 addr = rz_num_math(core->num, argv[i]);
-			if (!rz_bp_set_trace(core->dbg->bp, addr, true)) {
-				RZ_LOG_ERROR("Failed to enable trace for breakpoint at 0x%" PFMT64x "\n", addr);
-			}
-		}
+	if (!rz_bp_set_trace(core->dbg->bp, core->offset, true)) {
+		RZ_LOG_ERROR("Failed to enable trace for breakpoint at 0x%" PFMT64x "\n", core->offset);
 	}
 	return RZ_CMD_STATUS_OK;
 }
 
 // dbtd
 RZ_IPI RzCmdStatus rz_cmd_debug_bt_disable_bp_trace_handler(RzCore *core, int argc, const char **argv) {
-	for (int i = 1; i < argc; i++) {
-		if (!strcmp(argv[i], "*")) {
-			if (!rz_bp_set_trace_all(core->dbg->bp, false)) {
-				RZ_LOG_ERROR("Failed to enable all breakpoints' trace\n");
-			}
-			break;
-		} else {
-			ut64 addr = rz_num_math(core->num, argv[i]);
-			if (!rz_bp_set_trace(core->dbg->bp, addr, false)) {
-				RZ_LOG_ERROR("Failed to enable trace for breakpoint at 0x%" PFMT64x "\n", addr);
-			}
-		}
+	if (!rz_bp_set_trace(core->dbg->bp, core->offset, false)) {
+		RZ_LOG_ERROR("Failed to enable trace for breakpoint at 0x%" PFMT64x "\n", core->offset);
 	}
 	return RZ_CMD_STATUS_OK;
 }
 
 // dbts
 RZ_IPI RzCmdStatus rz_cmd_debug_bt_toggle_bp_trace_handler(RzCore *core, int argc, const char **argv) {
-	for (int i = 1; i < argc; i++) {
-		if (!strcmp(argv[i], "*")) {
-			RzListIter *iter;
-			RzBreakpointItem *bpi;
-			rz_list_foreach (core->dbg->bp->bps, iter, bpi) {
-				bpi->trace = !bpi->trace;
-			}
-		} else {
-			ut64 addr = rz_num_math(core->num, argv[i]);
-			RzBreakpointItem *bpi = rz_bp_get_in(core->dbg->bp, addr, 0);
-			if (!bpi) {
-				RZ_LOG_ERROR("No breakpoint found at 0x%" PFMT64x "\n", addr);
-			} else {
-				bpi->trace = !bpi->trace;
-			}
-		}
+	RzBreakpointItem *bpi = rz_bp_get_in(core->dbg->bp, core->offset, 0);
+	if (!bpi) {
+		RZ_LOG_ERROR("No breakpoint found at 0x%" PFMT64x "\n", core->offset);
+	} else {
+		bpi->trace = !bpi->trace;
 	}
 	return RZ_CMD_STATUS_OK;
 }

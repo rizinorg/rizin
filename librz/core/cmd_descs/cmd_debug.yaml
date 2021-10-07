@@ -18,6 +18,7 @@ commands:
            - RZ_OUTPUT_MODE_STANDARD
            - RZ_OUTPUT_MODE_RIZIN
            - RZ_OUTPUT_MODE_JSON
+           - RZ_OUTPUT_MODE_QUIET
         args: []
       - name: dbH
         summary: Add hardware breakpoint
@@ -55,21 +56,15 @@ commands:
       - name: dbd
         summary: Disable breakpoint
         cname: cmd_debug_disable_bp
-        args:
-          - name: addr
-            type: RZ_CMD_ARG_TYPE_RZNUM
+        args: []
       - name: dbe
         summary: Enable breakpoint
         cname: cmd_debug_enable_bp
-        args:
-          - name: addr
-            type: RZ_CMD_ARG_TYPE_RZNUM
+        args: []
       - name: dbs
         summary: Toggle breakpoint
         cname: cmd_debug_toggle_bp
-        args:
-          - name: addr
-            type: RZ_CMD_ARG_TYPE_RZNUM
+        args: []
       - name: dbf
         summary: Put a breakpoint into every no-return function
         cname: cmd_debug_add_bp_noreturn_func
@@ -186,6 +181,7 @@ commands:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
               - RZ_OUTPUT_MODE_RIZIN
+              - RZ_OUTPUT_MODE_QUIET
             args: []
           - name: dbt=
             summary: Display backtrace in one line (see dbt= s and dbt= b for sp or bp)
@@ -205,21 +201,15 @@ commands:
           - name: dbte
             summary: Enable breakpoint trace
             cname: cmd_debug_bt_enable_bp_trace
-            args:
-              - name: addr
-                type: RZ_CMD_ARG_TYPE_RZNUM
+            args: []
           - name: dbtd
             summary: Disable breakpoint trace
             cname: cmd_debug_bt_disable_bp_trace
-            args:
-              - name: addr
-                type: RZ_CMD_ARG_TYPE_RZNUM
+            args: []
           - name: dbts
             summary: Toggle breakpoint trace
             cname: cmd_debug_bt_toggle_bp_trace
-            args:
-              - name: addr
-                type: RZ_CMD_ARG_TYPE_RZNUM
+            args: []
       - name: dbx
         summary: View expression for all the breakpoints / Set expression for breakpoint at current offset
         cname: cmd_debug_bp_set_expr_cur_offset
