@@ -538,7 +538,6 @@ RZ_API bool rz_debug_arg_set(RzDebug *dbg, const char *cc, int num, ut64 value);
 
 /* breakpoints (most in rz_bp, this calls those) */
 RZ_API RzBreakpointItem *rz_debug_bp_add(RzDebug *dbg, ut64 addr, int hw, bool watch, int rw, const char *module, st64 m_delta);
-RZ_API void rz_debug_bp_add_noreturn_func(RzCore *core);
 RZ_API void rz_debug_bp_rebase(RzDebug *dbg, ut64 old_base, ut64 new_base);
 RZ_API void rz_debug_bp_update(RzDebug *dbg);
 

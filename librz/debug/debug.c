@@ -7,8 +7,6 @@
 #include <rz_debug.h>
 #include <rz_drx.h>
 #include <rz_core.h>
-#include <rz_bin.h>
-#include <rz_config.h>
 #include <signal.h>
 
 RZ_LIB_VERSION(rz_debug);
@@ -404,40 +402,6 @@ RZ_API RzDebug *rz_debug_new(int hard) {
 		dbg->bp->baddr = 0;
 	}
 	return dbg;
-}
-
-/**
- * \brief Put a breakpoint into every no-return function
- * 
- * \param core Current RzCore instance
- * \return void
- */
-RZ_API void rz_debug_bp_add_noreturn_func(RzCore *core) {
-	RzList *symbols = rz_bin_get_symbols(core->bin);
-	if (!symbols) {
-		RZ_LOG_ERROR("Unable to find symbols in the binary\n");
-		return;
-	}
-	RzBinSymbol *symbol;
-	RzListIter *iter;
-	RzBreakpointItem *bp;
-	int hwbp = rz_config_get_i(core->config, "dbg.hwbp");
-	rz_list_foreach (symbols, iter, symbol) {
-		if (symbol->type && !strcmp(symbol->type, RZ_BIN_TYPE_FUNC_STR)) {
-			if (rz_analysis_noreturn_at(core->analysis, symbol->vaddr)) {
-				bp = rz_debug_bp_add(core->dbg, symbol->vaddr, hwbp, false, 0, NULL, 0);
-				if (!bp) {
-					RZ_LOG_ERROR("Unable to add a breakpoint into a noreturn function %s at addr 0x%" PFMT64x "\n", symbol->name, symbol->vaddr);
-					return;
-				}
-				char *name = rz_str_newf("%s.%s", "sym", symbol->name);
-				if (!rz_bp_item_set_name(bp, name)) {
-					RZ_LOG_ERROR("Failed to set name for breakpoint at 0x%" PFMT64x "\n", symbol->vaddr);
-				}
-				free(name);
-			}
-		}
-	}
 }
 
 RZ_API void rz_debug_tracenodes_reset(RzDebug *dbg) {

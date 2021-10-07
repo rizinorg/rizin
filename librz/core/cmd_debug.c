@@ -4526,7 +4526,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_toggle_bp_handler(RzCore *core, int argc, const 
 
 // dbf
 RZ_IPI RzCmdStatus rz_cmd_debug_add_bp_noreturn_func_handler(RzCore *core, int argc, const char **argv) {
-	rz_debug_bp_add_noreturn_func(core);
+	rz_core_debug_bp_add_noreturn_func(core);
 	return RZ_CMD_STATUS_OK;
 }
 
