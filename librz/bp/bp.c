@@ -307,12 +307,14 @@ RZ_API int rz_bp_list(RzBreakpoint *bp, int rad) {
 			pj_ks(pj, "data", rz_str_get(b->data));
 			pj_ks(pj, "cond", rz_str_get(b->cond));
 			pj_end(pj);
-		} else if (rad) {
+		} else if (rad == 1) {
 			if (b->module_name) {
 				bp->cb_printf("dbm %s %" PFMT64d "\n", b->module_name, b->module_delta);
 			} else {
 				bp->cb_printf("db 0x%08" PFMT64x "\n", b->addr);
 			}
+		} else if (rad == -1) {
+			bp->cb_printf("0x%08" PFMT64x "\n", b->addr);
 		} else {
 			bp->cb_printf("0x%08" PFMT64x " - 0x%08" PFMT64x
 				      " %d %c%c%c %s %s %s %s cmd=\"%s\" cond=\"%s\" "
