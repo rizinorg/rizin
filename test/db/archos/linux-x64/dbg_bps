@@ -241,7 +241,7 @@ db @ main+1
 dbi- 1
 ?e ----------
 dbil~[0,2]
-dbil- 0
+dbi- 0
 dbil~[0,2]
 EOF
 EXPECT=<<EOF

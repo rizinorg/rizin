@@ -4571,13 +4571,15 @@ RZ_IPI RzCmdStatus rz_cmd_debug_show_bp_index_handler(RzCore *core, int argc, co
 // dbil
 RZ_IPI RzCmdStatus rz_cmd_debug_list_bp_indexes_handler(RzCore *core, int argc, const char **argv) {
 	RzBreakpointItem *bpi;
-	for (int i = 0; i < core->dbg->bp->bps_idx_count; i++) {
-		bpi = core->dbg->bp->bps_idx[i];
+	RzListIter *iter;
+	unsigned int index = 0;
+	rz_list_foreach(core->dbg->bp->bps, iter, bpi) {
 		if (!bpi) {
-			RZ_LOG_ERROR("Unable to find breakpoint at index %d\n", i);
+			RZ_LOG_ERROR("Unable to find breakpoint at index %d\n", index);
 		} else {
-			rz_cons_printf("%d 0x%08" PFMT64x " E:%d T:%d\n", i, bpi->addr, bpi->enabled, bpi->trace);
+			rz_cons_printf("%d 0x%08" PFMT64x " E:%d T:%d\n", index, bpi->addr, bpi->enabled, bpi->trace);
 		}
+		index++;
 	}
 	return RZ_CMD_STATUS_OK;
 }
