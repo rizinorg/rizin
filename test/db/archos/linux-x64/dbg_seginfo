@@ -1,7 +1,7 @@
 NAME=Can set db on main
 FILE=bins/elf/analysis/hello-objc-linux
 ARGS=-d
-CMDS=db main;db~1[14];
+CMDS=db @ main;dbl~1[14];
 EXPECT=<<EOF
 "main"
 EOF

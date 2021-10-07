@@ -5,9 +5,9 @@ CMDS=<<EOF
 e scr.color=0
 e dbg.swstep=true
 s 0
-db entry0
+db @ entry0
 dc
-db- entry0
+db- @ entry0
 dr PC
 ds
 dr PC
@@ -27,7 +27,7 @@ ARGS=-d
 CMDS=<<EOF
 e scr.color=0
 e dbg.swstep=true
-db sym.main
+db @ sym.main
 dc
 dr PC
 ds
@@ -49,9 +49,9 @@ CMDS=<<EOF
 e scr.color=0
 e dbg.swstep=false
 s 0
-db entry0
+db @ entry0
 dc
-db- entry0
+db- @ entry0
 dr PC
 ds
 dr PC
@@ -71,7 +71,7 @@ ARGS=-d
 CMDS=<<EOF
 e scr.color=0
 e dbg.swstep=false
-db sym.main
+db @ sym.main
 dc
 dr PC
 ds
@@ -94,8 +94,8 @@ e scr.color=0
 e dbg.swstep=true
 f times=5
 (times_stop;?e Loop `?vi times`;f times=`?vi times-1`;?= times)
-db 0x4000ce
-dbC 0x4000ce .(times_stop)
+db @ 0x4000ce
+dbC .(times_stop) @ 0x4000ce
 dc
 dk 9
 EOF
@@ -116,8 +116,8 @@ e scr.color=0
 e dbg.swstep=true
 e cmd.hitinfo=0
 (break_rax;f reg_rax=`dr rax`;f test=`?vi reg_rax-0x31c0`;?= test)
-db 0x4000ce
-dbC 0x4000ce .(break_rax)
+db @ 0x4000ce
+dbC .(break_rax) @ 0x4000ce
 dc
 dr rax
 dr rip
@@ -137,8 +137,8 @@ e scr.color=0
 e dbg.swstep=true
 e cmd.hitinfo=0
 (trace_rax;dr rax;f reg_rax=`dr rax`;f test=`?vi reg_rax-0x0440`;?= test)
-db 0x4000ce
-dbC 0x4000ce .(trace_rax)
+db @ 0x4000ce
+dbC .(trace_rax) @ 0x4000ce
 dc
 dk 9
 EOF
@@ -157,17 +157,17 @@ FILE=bins/elf/analysis/x64-loop
 ARGS=-d
 CMDS=<<EOF
 e scr.color=0
-db 0x400523
-db 0x40051a
-dbj
+db @ 0x400523
+db @ 0x40051a
+dblj
 dc
 dr PC
 dc
 dr PC
-dbd 0x400523
+dbd @ 0x400523
 dc
 dr PC
-dbe 0x400523
+dbe @ 0x400523
 dc
 dr PC
 EOF
@@ -186,7 +186,7 @@ ARGS=-d
 CMDS=<<EOF
 e dbg.swstep=true
 e scr.null=true
-db entry0
+db @ entry0
 dc
 dc
 s entry0
@@ -204,8 +204,8 @@ FILE=bins/elf/analysis/x64-loop
 ARGS=-d
 CMDS=<<EOF
 e scr.color=0
-db main
-db~1[8]
+db @ main
+dbl~1[8]
 EOF
 EXPECT=<<EOF
 valid
@@ -217,8 +217,8 @@ FILE=bins/elf/analysis/x64-loop
 ARGS=-d
 CMDS=<<EOF
 e scr.color=0
-db 0x0
-db~1[8]
+db @ 0x0
+dbl~1[8]
 EOF
 EXPECT=<<EOF
 invalid
@@ -229,20 +229,20 @@ NAME=dbg.bp_remove_index
 FILE=bins/elf/analysis/x86-helloworld-gcc
 ARGS=-d
 CMDS=<<EOF
-db main
-db main+1
-db main+2
-db main+4
-dbi~[0,2]
-db-*
-dbi
-db main
-db main+1
+db @ main
+db @ main+1
+db @ main+2
+db @ main+4
+dbil~[0,2]
+db- @@c:dblq
+dbil
+db @ main
+db @ main+1
 dbi- 1
 ?e ----------
-dbi~[0,2]
-dbi- 0
-dbi~[0,2]
+dbil~[0,2]
+dbil- 0
+dbil~[0,2]
 EOF
 EXPECT=<<EOF
 0 E:1
@@ -260,8 +260,8 @@ FILE=bins/elf/analysis/x64-loop
 ARGS=-d
 CMDS=<<EOF
 e scr.color=0
-dbH main
-db~1[5]
+dbH @ main
+dbl~1[5]
 EOF
 EXPECT=<<EOF
 hw
