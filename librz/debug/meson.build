@@ -47,6 +47,8 @@ rz_debug_deps = [
   rz_syscall_dep,
   rz_egg_dep,
   rz_analysis_dep,
+  rz_bin_dep,
+  rz_config_dep
 ]
 
 if host_machine.system() == 'linux' or host_machine.system() == 'android'
@@ -125,6 +127,8 @@ pkgconfig_mod.generate(rz_debug,
     'rz_bp',
     'rz_cons',
     'rz_egg',
+	'rz_bin',
+	'rz_config'
   ],
   description: 'rizin foundation libraries'
 )

@@ -4526,31 +4526,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_toggle_bp_handler(RzCore *core, int argc, const 
 
 // dbf
 RZ_IPI RzCmdStatus rz_cmd_debug_add_bp_noreturn_func_handler(RzCore *core, int argc, const char **argv) {
-	RzList *symbols = rz_bin_get_symbols(core->bin);
-	if (!symbols) {
-		RZ_LOG_ERROR("Unable to find symbols in the binary\n");
-		return RZ_CMD_STATUS_ERROR;
-	}
-	RzBinSymbol *symbol;
-	RzListIter *iter;
-	RzBreakpointItem *bp;
-	int hwbp = rz_config_get_i(core->config, "dbg.hwbp");
-	rz_list_foreach (symbols, iter, symbol) {
-		if (symbol->type && !strcmp(symbol->type, RZ_BIN_TYPE_FUNC_STR)) {
-			if (rz_analysis_noreturn_at(core->analysis, symbol->vaddr)) {
-				bp = rz_debug_bp_add(core->dbg, symbol->vaddr, hwbp, false, 0, NULL, 0);
-				if (!bp) {
-					RZ_LOG_ERROR("Unable to add a breakpoint into a noreturn function %s at addr 0x%" PFMT64x "\n", symbol->name, symbol->vaddr);
-					return RZ_CMD_STATUS_ERROR;
-				}
-				char *name = rz_str_newf("%s.%s", "sym", symbol->name);
-				if (!rz_bp_item_set_name(bp, name)) {
-					RZ_LOG_ERROR("Failed to set name for breakpoint at 0x%" PFMT64x "\n", symbol->vaddr);
-				}
-				free(name);
-			}
-		}
-	}
+	rz_debug_bp_add_noreturn_func(core);
 	return RZ_CMD_STATUS_OK;
 }
 
