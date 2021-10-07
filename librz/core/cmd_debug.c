@@ -4606,17 +4606,6 @@ RZ_IPI RzCmdStatus rz_cmd_debug_list_bp_indexes_handler(RzCore *core, int argc, 
 	return RZ_CMD_STATUS_OK;
 }
 
-// dbi.
-RZ_IPI RzCmdStatus rz_cmd_debug_bp_index_current_offset_handler(RzCore *core, int argc, const char **argv) {
-	const int index = rz_bp_get_index_at(core->dbg->bp, core->offset);
-	if (index == -1) {
-		RZ_LOG_ERROR("No breakpoint found at %" PFMT64x "\n", core->offset);
-	} else {
-		rz_cons_printf("%d\n", index);
-	}
-	return RZ_CMD_STATUS_OK;
-}
-
 // dbi-
 RZ_IPI RzCmdStatus rz_cmd_debug_remove_bp_index_handler(RzCore *core, int argc, const char **argv) {
 	ut64 addr;

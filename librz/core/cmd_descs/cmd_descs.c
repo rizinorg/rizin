@@ -11,6 +11,7 @@ static const RzCmdDescDetail system_details[2];
 static const RzCmdDescDetail system_to_cons_details[2];
 static const RzCmdDescDetail hash_bang_details[2];
 static const RzCmdDescDetail pointer_details[2];
+static const RzCmdDescDetail cmd_debug_list_bp_details[2];
 static const RzCmdDescDetail cmd_debug_add_cond_bp_details[2];
 static const RzCmdDescDetail cmd_debug_add_watchpoint_details[2];
 static const RzCmdDescDetail eval_getset_details[2];
@@ -1948,15 +1949,26 @@ static const RzCmdDescArg cmd_debug_add_bp_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_add_bp_help = {
-	.summary = "Add breakpoint",
+	.summary = "Add breakpoint at current offset",
 	.args = cmd_debug_add_bp_args,
 };
 
+static const RzCmdDescDetailEntry cmd_debug_list_bp_Apply_space_a_space_command_space_to_space_all_space_breakpoints_detail_entries[] = {
+	{ .text = "Disable all the breakpoints", .arg_str = NULL, .comment = "dbd @@c:dblq" },
+	{ .text = "Enable all the breakpoints", .arg_str = NULL, .comment = "dbe @@c:dblq" },
+	{ .text = "Toggle all the breakpoints", .arg_str = NULL, .comment = "dbs @@c:dblq" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_debug_list_bp_details[] = {
+	{ .name = "Apply a command to all breakpoints", .entries = cmd_debug_list_bp_Apply_space_a_space_command_space_to_space_all_space_breakpoints_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg cmd_debug_list_bp_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_list_bp_help = {
 	.summary = "List all breakpoints",
+	.details = cmd_debug_list_bp_details,
 	.args = cmd_debug_list_bp_args,
 };
 
@@ -1964,7 +1976,7 @@ static const RzCmdDescArg cmd_debug_add_hw_bp_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_add_hw_bp_help = {
-	.summary = "Add hardware breakpoint",
+	.summary = "Add hardware breakpoint at current offset",
 	.args = cmd_debug_add_hw_bp_args,
 };
 
@@ -1972,7 +1984,7 @@ static const RzCmdDescArg cmd_debug_remove_bp_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_remove_bp_help = {
-	.summary = "Remove breakpoint",
+	.summary = "Remove breakpoint at current offset",
 	.args = cmd_debug_remove_bp_args,
 };
 
@@ -2002,7 +2014,7 @@ static const RzCmdDescArg cmd_debug_command_bp_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_command_bp_help = {
-	.summary = "Set a command <cmd> to be run when the breakpoint is hit",
+	.summary = "Set a command <cmd> to be run when the breakpoint at the current offset is hit",
 	.args = cmd_debug_command_bp_args,
 };
 
@@ -2024,7 +2036,7 @@ static const RzCmdDescArg cmd_debug_add_cond_bp_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_add_cond_bp_help = {
-	.summary = "Add conditional breakpoint which breaks only when <cmd> evaluates to 0",
+	.summary = "Make the breakpoint at the current offset conditional, and hit only when <cmd> evaluates to 0",
 	.details = cmd_debug_add_cond_bp_details,
 	.args = cmd_debug_add_cond_bp_args,
 };
@@ -2033,7 +2045,7 @@ static const RzCmdDescArg cmd_debug_disable_bp_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_disable_bp_help = {
-	.summary = "Disable breakpoint",
+	.summary = "Disable breakpoint at current offset",
 	.args = cmd_debug_disable_bp_args,
 };
 
@@ -2041,7 +2053,7 @@ static const RzCmdDescArg cmd_debug_enable_bp_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_enable_bp_help = {
-	.summary = "Enable breakpoint",
+	.summary = "Enable breakpoint at current offset",
 	.args = cmd_debug_enable_bp_args,
 };
 
@@ -2049,7 +2061,7 @@ static const RzCmdDescArg cmd_debug_toggle_bp_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_toggle_bp_help = {
-	.summary = "Toggle breakpoint",
+	.summary = "Toggle breakpoint at current offset",
 	.args = cmd_debug_toggle_bp_args,
 };
 
@@ -2091,7 +2103,7 @@ static const RzCmdDescArg cmd_debug_name_bp_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_name_bp_help = {
-	.summary = "Show name of cuurent breakpoint / Set name for current breakpoint",
+	.summary = "Show name of current breakpoint / Set name for current breakpoint",
 	.args = cmd_debug_name_bp_args,
 };
 
@@ -2102,7 +2114,7 @@ static const RzCmdDescArg cmd_debug_show_bp_index_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_show_bp_index_help = {
-	.summary = "Show breakpoint index",
+	.summary = "Show breakpoint index at current offset",
 	.args = cmd_debug_show_bp_index_args,
 };
 
@@ -2112,14 +2124,6 @@ static const RzCmdDescArg cmd_debug_list_bp_indexes_args[] = {
 static const RzCmdDescHelp cmd_debug_list_bp_indexes_help = {
 	.summary = "List breakpoints indexes",
 	.args = cmd_debug_list_bp_indexes_args,
-};
-
-static const RzCmdDescArg cmd_debug_bp_index_current_offset_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_debug_bp_index_current_offset_help = {
-	.summary = "Show breakpoint index at current offset",
-	.args = cmd_debug_bp_index_current_offset_args,
 };
 
 static const RzCmdDescArg cmd_debug_remove_bp_index_args[] = {
@@ -2333,7 +2337,7 @@ static const RzCmdDescArg cmd_debug_bt_enable_bp_trace_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_bt_enable_bp_trace_help = {
-	.summary = "Enable breakpoint trace",
+	.summary = "Enable breakpoint trace at current offset",
 	.args = cmd_debug_bt_enable_bp_trace_args,
 };
 
@@ -2341,7 +2345,7 @@ static const RzCmdDescArg cmd_debug_bt_disable_bp_trace_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_bt_disable_bp_trace_help = {
-	.summary = "Disable breakpoint trace",
+	.summary = "Disable breakpoint trace at current offset",
 	.args = cmd_debug_bt_disable_bp_trace_args,
 };
 
@@ -2349,7 +2353,7 @@ static const RzCmdDescArg cmd_debug_bt_toggle_bp_trace_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_bt_toggle_bp_trace_help = {
-	.summary = "Toggle breakpoint trace",
+	.summary = "Toggle breakpoint trace at current offset",
 	.args = cmd_debug_bt_toggle_bp_trace_args,
 };
 
@@ -2389,7 +2393,7 @@ static const RzCmdDescArg cmd_debug_add_watchpoint_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_add_watchpoint_help = {
-	.summary = "Add watchpoint",
+	.summary = "Add watchpoint at current offset",
 	.details = cmd_debug_add_watchpoint_details,
 	.args = cmd_debug_add_watchpoint_args,
 };
@@ -6860,9 +6864,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(dbi_cd);
 	RzCmdDesc *cmd_debug_list_bp_indexes_cd = rz_cmd_desc_argv_new(core->rcmd, dbi_cd, "dbil", rz_cmd_debug_list_bp_indexes_handler, &cmd_debug_list_bp_indexes_help);
 	rz_warn_if_fail(cmd_debug_list_bp_indexes_cd);
-
-	RzCmdDesc *cmd_debug_bp_index_current_offset_cd = rz_cmd_desc_argv_new(core->rcmd, dbi_cd, "dbi.", rz_cmd_debug_bp_index_current_offset_handler, &cmd_debug_bp_index_current_offset_help);
-	rz_warn_if_fail(cmd_debug_bp_index_current_offset_cd);
 
 	RzCmdDesc *cmd_debug_remove_bp_index_cd = rz_cmd_desc_argv_new(core->rcmd, dbi_cd, "dbi-", rz_cmd_debug_remove_bp_index_handler, &cmd_debug_remove_bp_index_help);
 	rz_warn_if_fail(cmd_debug_remove_bp_index_cd);

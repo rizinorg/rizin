@@ -7,7 +7,7 @@ commands:
     summary: Breakpoints commands
     subcommands:
       - name: db
-        summary: Add breakpoint
+        summary: Add breakpoint at current offset
         cname: cmd_debug_add_bp
         args: []
       - name: dbl
@@ -19,13 +19,22 @@ commands:
            - RZ_OUTPUT_MODE_RIZIN
            - RZ_OUTPUT_MODE_JSON
            - RZ_OUTPUT_MODE_QUIET
+        details:
+          - name: Apply a command to all breakpoints
+            entries:
+              - text: "Disable all the breakpoints"
+                comment: "dbd @@c:dblq"
+              - text: "Enable all the breakpoints"
+                comment: "dbe @@c:dblq"
+              - text: "Toggle all the breakpoints"
+                comment: "dbs @@c:dblq"
         args: []
       - name: dbH
-        summary: Add hardware breakpoint
+        summary: Add hardware breakpoint at current offset
         cname: cmd_debug_add_hw_bp
         args: []
       - name: db-
-        summary: Remove breakpoint
+        summary: Remove breakpoint at current offset
         cname: cmd_debug_remove_bp
         args: []
       - name: db-*
@@ -37,13 +46,13 @@ commands:
         cname: cmd_debug_show_cur_bp
         args: []
       - name: dbc
-        summary: Set a command <cmd> to be run when the breakpoint is hit
+        summary: Set a command <cmd> to be run when the breakpoint at the current offset is hit
         cname: cmd_debug_command_bp
         args:
           - name: cmd
             type: RZ_CMD_ARG_TYPE_CMD
       - name: dbC
-        summary: Add conditional breakpoint which breaks only when <cmd> evaluates to 0
+        summary: Make the breakpoint at the current offset conditional, and hit only when <cmd> evaluates to 0
         cname: cmd_debug_add_cond_bp
         args:
           - name: cmd
@@ -54,15 +63,15 @@ commands:
               - text: "Example of a condition"
                 comment: "?v rax-0x0"
       - name: dbd
-        summary: Disable breakpoint
+        summary: Disable breakpoint at current offset
         cname: cmd_debug_disable_bp
         args: []
       - name: dbe
-        summary: Enable breakpoint
+        summary: Enable breakpoint at current offset
         cname: cmd_debug_enable_bp
         args: []
       - name: dbs
-        summary: Toggle breakpoint
+        summary: Toggle breakpoint at current offset
         cname: cmd_debug_toggle_bp
         args: []
       - name: dbf
@@ -78,7 +87,7 @@ commands:
           - name: offset
             type: RZ_CMD_ARG_TYPE_RZNUM
       - name: dbn
-        summary: Show name of cuurent breakpoint / Set name for current breakpoint
+        summary: Show name of current breakpoint / Set name for current breakpoint
         cname: cmd_debug_name_bp
         args:
           - name: name
@@ -88,16 +97,12 @@ commands:
         summary: Breakpoint index commands
         subcommands:
           - name: dbi
-            summary: Show breakpoint index
+            summary: Show breakpoint index at current offset
             cname: cmd_debug_show_bp_index
             args: []
           - name: dbil
             summary: List breakpoints indexes
             cname: cmd_debug_list_bp_indexes
-            args: []
-          - name: dbi.
-            summary: Show breakpoint index at current offset
-            cname: cmd_debug_bp_index_current_offset
             args: []
           - name: dbi-
             summary: Remove breakpoint by index
@@ -199,15 +204,15 @@ commands:
             cname: cmd_debug_display_bt_ascii
             args: []
           - name: dbte
-            summary: Enable breakpoint trace
+            summary: Enable breakpoint trace at current offset
             cname: cmd_debug_bt_enable_bp_trace
             args: []
           - name: dbtd
-            summary: Disable breakpoint trace
+            summary: Disable breakpoint trace at current offset
             cname: cmd_debug_bt_disable_bp_trace
             args: []
           - name: dbts
-            summary: Toggle breakpoint trace
+            summary: Toggle breakpoint trace at current offset
             cname: cmd_debug_bt_toggle_bp_trace
             args: []
       - name: dbx
@@ -218,7 +223,7 @@ commands:
             type: RZ_CMD_ARG_TYPE_STRING
             optional: true
       - name: dbw
-        summary: Add watchpoint
+        summary: Add watchpoint at current offset
         cname: cmd_debug_add_watchpoint
         args:
           - name: perm
