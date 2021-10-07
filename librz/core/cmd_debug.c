@@ -2906,6 +2906,7 @@ static void add_breakpoint(RzCore *core, ut64 addr, const char *arg_perm, bool h
 	bpi = rz_debug_bp_add(core->dbg, addr, hwbp, watch, rw, NULL, 0);
 	if (!bpi) {
 		RZ_LOG_ERROR("Cannot set breakpoint at 0x%" PFMT64x "\n", addr);
+		return;
 	}
 	RzFlagItem *f = rz_core_flag_get_by_spaces(core->flags, addr);
 	if (f) {
