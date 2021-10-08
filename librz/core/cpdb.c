@@ -3,25 +3,180 @@
 
 #include <rz_core.h>
 #include <rz_pdb.h>
+#include "../bin/pdb/pdb.h"
+
+static void pdb_types_print_standard(const RzTypeDB *db, const RzPdb *pdb, const RzList *types) {
+	rz_return_if_fail(pdb && db && types);
+	if (!types) {
+		eprintf("there is nothing to print!\n");
+	}
+	RzListIter *it;
+	RzBaseType *type;
+	RzStrBuf *buf = rz_strbuf_new(NULL);
+	rz_list_foreach (types, it, type) {
+		rz_strbuf_append(buf, rz_type_db_base_type_as_pretty_string(db, type, RZ_TYPE_PRINT_MULTILINE | RZ_TYPE_PRINT_END_NEWLINE, 1));
+	}
+	rz_cons_print(rz_strbuf_get(buf));
+	rz_strbuf_free(buf);
+	return;
+}
+
+static void pdb_types_print_json(const RzTypeDB *db, const RzPdb *pdb, const RzList *types, PJ *pj) {
+	rz_return_if_fail(db && pdb && types && pj);
+	RzListIter *it;
+	RzBaseType *type;
+	pj_o(pj);
+	pj_ka(pj, "types");
+	rz_list_foreach (types, it, type) {
+		switch (type->kind) {
+		case RZ_BASE_TYPE_KIND_STRUCT: {
+			pj_o(pj);
+			pj_ks(pj, "type", "structure");
+			pj_ks(pj, "name", type->name);
+			pj_kn(pj, "size", type->size);
+			pj_ka(pj, "members");
+			RzTypeStructMember *memb;
+			rz_vector_foreach(&type->struct_data.members, memb) {
+				pj_o(pj);
+				char *typ = rz_type_as_string(db, memb->type);
+				pj_ks(pj, "member_type", typ);
+				RZ_FREE(typ);
+				pj_ks(pj, "member_name", memb->name);
+				pj_kN(pj, "offset", memb->offset);
+				pj_end(pj);
+			}
+			pj_end(pj);
+			pj_end(pj);
+			break;
+		}
+		case RZ_BASE_TYPE_KIND_UNION: {
+			pj_o(pj);
+			pj_ks(pj, "type", "union");
+			pj_ks(pj, "name", type->name);
+			pj_kn(pj, "size", type->size);
+			pj_ka(pj, "members");
+			RzTypeUnionMember *memb;
+			rz_vector_foreach(&type->union_data.members, memb) {
+				pj_o(pj);
+				char *typ = rz_type_as_string(db, memb->type);
+				pj_ks(pj, "member_type", typ);
+				RZ_FREE(typ);
+				pj_ks(pj, "member_name", memb->name);
+				pj_kN(pj, "offset", memb->offset);
+				pj_end(pj);
+			}
+			pj_end(pj);
+			pj_end(pj);
+			break;
+		}
+		case RZ_BASE_TYPE_KIND_ENUM: {
+			pj_o(pj);
+			pj_ks(pj, "type", "enum");
+			pj_ks(pj, "name", type->name);
+			char *typ = rz_type_as_string(db, type->type);
+			pj_ks(pj, "base_type", typ);
+			RZ_FREE(typ);
+			pj_ka(pj, "cases");
+			RzTypeEnumCase *cas;
+			rz_vector_foreach(&type->enum_data.cases, cas) {
+				pj_o(pj);
+				pj_ks(pj, "enum_name", cas->name);
+				pj_kn(pj, "enum_val", cas->val);
+				pj_end(pj);
+			}
+			pj_end(pj);
+			pj_end(pj);
+			break;
+		}
+		default:
+			break;
+		}
+	}
+	pj_end(pj);
+	pj_end(pj);
+	return;
+}
 
 static void rz_core_bin_pdb_types_print(const RzTypeDB *db, const RzPdb *pdb, const RzCmdStateOutput *state) {
-	rz_return_if_fail(db && pdb);
-	char *str = rz_bin_pdb_types_as_string(db, pdb, state);
-	if (!str) {
+	rz_return_if_fail(db && pdb && state);
+	RzPdbTpiStream *stream = pdb->s_tpi;
+	if (!stream) {
+		eprintf("There is no tpi stream in current pdb\n");
 		return;
 	}
-	rz_cons_print(str);
-	RZ_FREE(str);
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_STANDARD:
+		pdb_types_print_standard(db, pdb, stream->print_type);
+		break;
+	case RZ_OUTPUT_MODE_JSON:
+		pdb_types_print_json(db, pdb, stream->print_type, state->d.pj);
+		break;
+	default:
+		return;
+	}
 }
 
 static void rz_core_bin_pdb_gvars_print(const RzPdb *pdb, const ut64 img_base, const RzCmdStateOutput *state) {
-	rz_return_if_fail(pdb);
-	char *str = rz_bin_pdb_gvars_as_string(pdb, img_base, state);
-	if (!str) {
+	rz_return_if_fail(pdb && state);
+	PeImageSectionHeader *sctn_header = 0;
+	RzPdbGDataStream *gsym_data_stream = 0;
+	RzPdbPeStream *pe_stream = 0;
+	RzPdbOmapStream *omap_stream;
+	GDataGlobal *gdata = 0;
+	RzListIter *it = 0;
+	PJ *pj = state->d.pj;
+	char *name;
+	RzStrBuf *buf = rz_strbuf_new(NULL);
+	if (!buf) {
 		return;
 	}
-	rz_cons_print(str);
-	RZ_FREE(str);
+	RzStrBuf *cmd = rz_strbuf_new(NULL);
+	if (!cmd) {
+		rz_strbuf_free(buf);
+		return;
+	}
+	if (state->mode == RZ_OUTPUT_MODE_JSON) {
+		pj_o(pj);
+		pj_ka(pj, "gvars");
+	}
+	gsym_data_stream = pdb->s_gdata;
+	pe_stream = pdb->s_pe;
+	omap_stream = pdb->s_omap;
+	if (!pe_stream) {
+		rz_strbuf_free(buf);
+		return;
+	}
+	rz_list_foreach (gsym_data_stream->global_list, it, gdata) {
+		sctn_header = rz_list_get_n(pe_stream->sections_hdrs, (gdata->segment - 1));
+		if (sctn_header) {
+			name = rz_demangler_msvc(gdata->name);
+			name = (name) ? name : strdup(gdata->name);
+			switch (state->mode) {
+			case RZ_OUTPUT_MODE_JSON: // JSON
+				pj_o(pj);
+				pj_kN(pj, "address", (img_base + rz_bin_pdb_omap_remap(omap_stream, gdata->offset + sctn_header->virtual_address)));
+				pj_kN(pj, "symtype", gdata->symtype);
+				pj_ks(pj, "section_name", sctn_header->name);
+				pj_ks(pj, "gdata_name", name);
+				pj_end(pj);
+				break;
+			case RZ_OUTPUT_MODE_STANDARD:
+				rz_strbuf_appendf(buf, "0x%08" PFMT64x "  %d  %.*s  %s\n",
+					(ut64)(img_base + rz_bin_pdb_omap_remap(omap_stream, gdata->offset + sctn_header->virtual_address)),
+					gdata->symtype, PDB_SIZEOF_SECTION_NAME, sctn_header->name, name);
+				break;
+			default:
+				break;
+			}
+			free(name);
+		}
+	}
+	if (state->mode == RZ_OUTPUT_MODE_JSON) {
+		pj_end(pj);
+		pj_end(pj);
+	}
+	rz_cons_print(rz_strbuf_get(buf));
+	rz_strbuf_free(buf);
 }
 
 /**

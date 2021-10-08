@@ -76,8 +76,14 @@ static int binary_search(unsigned int *A, int key, int imin, int imax) {
 	return -1;
 }
 
-RZ_IPI int omap_remap(void *stream, int address) {
-	RzPdbOmapStream *omap_stream = (RzPdbOmapStream *)stream;
+/**
+ * \brief return remapped symbol address
+ * 
+ * \param omap_stream RzPdbOmapStream
+ * \param address Where to remap
+ * \return int
+ */
+RZ_API int rz_bin_pdb_omap_remap(RzPdbOmapStream *omap_stream, int address) {
 	OmapEntry *omap_entry = 0;
 	RzListIter *it = 0;
 	int i = 0;
