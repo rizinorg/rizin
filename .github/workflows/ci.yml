@@ -359,14 +359,12 @@ jobs:
     name: Build on gcc 11
     if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'gcc11') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable' || github.event_name == 'schedule'
     runs-on: ubuntu-latest
-    container:
-        image: ubuntu:impish
-        options: --security-opt seccomp=unconfined
+    container: ubuntu:hirsute
     steps:
     - name: Set timezone to UTC
       run: ln -snf /usr/share/zoneinfo/UTC /etc/localtime && echo 'UTC' > /etc/timezone
     - name: Install tools
-      run: apt-get update && apt-get install --yes patch unzip git gcc make curl pkg-config libc6-i386 build-essential
+      run: apt-get update && apt-get install --yes patch unzip git gcc-11 make curl pkg-config libc6-i386 build-essential
     - name: Install python and other dependencies
       run: apt-get install --yes python3-wheel python3-setuptools python3-pip cabextract
     - name: Install meson and ninja
@@ -381,7 +379,7 @@ jobs:
       run: git clone https://github.com/rizinorg/rizin-testbins test/bins
       working-directory: rizin
     - name: Build with Meson + Ninja
-      run: meson --prefix=/usr -Dbuildtype=release build && ninja -C build
+      run: CC=gcc-11 meson --prefix=/usr -Dbuildtype=release build && ninja -C build
       working-directory: rizin
     - name: Install with Ninja
       run: ninja -C build install
