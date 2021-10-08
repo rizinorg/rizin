@@ -6005,17 +6005,22 @@ struct ts_data_symbol_map map_ts_symbols[] = {
 	{ NULL, NULL },
 };
 
-static void ts_symbols_init(RzCmd *cmd) {
-	if (cmd->language) {
-		return;
+/**
+ * \brief Create an instance of RzCmd for the Rizin language
+ */
+RZ_API RzCmd *rz_core_cmd_new(bool has_cons) {
+	RzCmd *res = rz_cmd_new(has_cons);
+	if (!res) {
+		return NULL;
 	}
+
 	TSLanguage *lang = tree_sitter_rzcmd();
-	cmd->language = lang;
-	cmd->ts_symbols_ht = ht_up_new0();
+	res->language = lang;
+	res->ts_symbols_ht = ht_up_new0();
 	struct ts_data_symbol_map *entry = map_ts_stmt_handlers;
 	while (entry->name) {
 		TSSymbol symbol = ts_language_symbol_for_name(lang, entry->name, strlen(entry->name), true);
-		ht_up_insert(cmd->ts_symbols_ht, symbol, entry->data);
+		ht_up_insert(res->ts_symbols_ht, symbol, entry->data);
 		entry++;
 	}
 
@@ -6025,11 +6030,10 @@ static void ts_symbols_init(RzCmd *cmd) {
 		*sym_ptr = ts_language_symbol_for_name(lang, entry->name, strlen(entry->name), true);
 		entry++;
 	}
+	return res;
 }
 
 static RzCmdStatus core_cmd_tsrzcmd(RzCore *core, const char *cstr, bool split_lines, bool log) {
-	ts_symbols_init(core->rcmd);
-
 	TSParser *parser = ts_parser_new();
 	bool language_ok = ts_parser_set_language(parser, (TSLanguage *)core->rcmd->language);
 	rz_return_val_if_fail(language_ok, RZ_CMD_STATUS_INVALID);
@@ -6521,7 +6525,7 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "z", "zignatures", rz_cmd_zign },
 	};
 
-	core->rcmd = rz_cmd_new(!!core->cons);
+	core->rcmd = rz_core_cmd_new(!!core->cons);
 	core->rcmd->macro.user = core;
 	core->rcmd->macro.num = core->num;
 	core->rcmd->macro.cmd = core_cmd0_wrapper;
