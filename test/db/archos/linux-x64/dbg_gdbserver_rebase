@@ -21,7 +21,7 @@ CMDS=<<EOF
 !scripts/gdbserver.py --port 12342 --binary bins/elf/analysis/pie
 oodf gdb://127.0.0.1:12342
 aa
-db main
+db @ main
 ?v main-`db~main[0]`
 doc
 ?v main-`db~main[0]`
