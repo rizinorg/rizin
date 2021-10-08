@@ -213,19 +213,18 @@ static void pdb_set_symbols(const RzCore *core, const RzPdb *pdb, const ut64 img
 			free(name);
 		}
 	}
-	return ;
+	return;
 }
 
 /**
- * \brief Print parsed PDB file info and integrate with typedb
+ * \brief Parse PDB file info and integrate with typedb
  * 
  * \param core RzCore instance
  * \param file Path of PDB file
- * \param state Output State
  * \return bool
  */
-RZ_API bool rz_core_pdb_info_print(RzCore *core, const char *file, RzCmdStateOutput *state) {
-	rz_return_val_if_fail(core && file, false);
+RZ_API RzPdb *rz_core_pdb_load_info(RZ_NONNULL RzCore *core, RZ_NONNULL const char *file) {
+	rz_return_val_if_fail(core && file, NULL);
 
 	ut64 baddr = rz_config_get_i(core->config, "bin.baddr");
 	if (core->bin->cur && core->bin->cur->o && core->bin->cur->o->opts.baseaddr) {
@@ -236,18 +235,36 @@ RZ_API bool rz_core_pdb_info_print(RzCore *core, const char *file, RzCmdStateOut
 
 	RzPdb *pdb = rz_bin_pdb_parse_from_file(file);
 	if (!pdb) {
-		return false;
+		return NULL;
 	}
 
 	// Save compound types into types database
 	rz_parse_pdb_types(core->analysis->typedb, pdb);
-	if (state) {
-		rz_cmd_state_output_array_start(state);
-		rz_core_bin_pdb_types_print(core->analysis->typedb, pdb, state);
-		rz_core_bin_pdb_gvars_print(pdb, baddr, state);
-		rz_cmd_state_output_array_end(state);
-	}
 	pdb_set_symbols(core, pdb, baddr);
-	rz_bin_pdb_free(pdb);
-	return true;
+	return pdb;
+}
+
+/**
+ * \brief Print parsed PDB file info
+ * 
+ * \param db RzTypeDB
+ * \param pdb instance of PDB
+ * \param state Output State
+ * \return void
+ */
+RZ_API void rz_core_pdb_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzTypeDB *db, RZ_NONNULL RzPdb *pdb, RZ_NONNULL RzCmdStateOutput *state) {
+	rz_return_if_fail(db && pdb && state);
+
+	ut64 baddr = rz_config_get_i(core->config, "bin.baddr");
+	if (core->bin->cur && core->bin->cur->o && core->bin->cur->o->opts.baseaddr) {
+		baddr = core->bin->cur->o->opts.baseaddr;
+	} else {
+		eprintf("Warning: Cannot find base address, flags will probably be misplaced\n");
+	}
+
+	rz_cmd_state_output_array_start(state);
+	rz_core_bin_pdb_types_print(core->analysis->typedb, pdb, state);
+	rz_core_bin_pdb_gvars_print(pdb, baddr, state);
+	rz_cmd_state_output_array_end(state);
+	return;
 }

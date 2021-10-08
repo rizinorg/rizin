@@ -258,7 +258,6 @@ RZ_API RZ_BORROW RzList *rz_bin_pdb_get_type_members(RZ_NONNULL RzPdbTpiStream *
 RZ_API RZ_BORROW char *rz_bin_pdb_get_type_name(RZ_NONNULL RzPdbTpiType *type);
 RZ_API ut64 rz_bin_pdb_get_type_val(RZ_NONNULL RzPdbTpiType *type);
 
-
 // OMAP
 RZ_API int rz_bin_pdb_omap_remap(RZ_NONNULL RzPdbOmapStream *omap_stream, int address);
 

@@ -514,7 +514,12 @@ RZ_API bool rz_core_bin_print(RzCore *core, RzBinFile *bf, ut32 mask, RzCoreBinF
 	if (mask & RZ_CORE_BIN_ACC_PDB) {
 		if (state->mode & (RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN)) {
 			RzCmdStateOutput *st = add_header(state, RZ_OUTPUT_MODE_STANDARD, "pdb");
-			rz_core_pdb_info_print(core, core->bin->file, st);
+			RzPdb *pdb = rz_core_pdb_load_info(core, core->bin->file);
+			if (!pdb) {
+				return false;
+			}
+			rz_core_pdb_info_print(core, core->analysis->typedb, pdb, st);
+			rz_bin_pdb_free(pdb);
 			add_footer(state, st);
 		}
 	}
@@ -5133,7 +5138,11 @@ RZ_API bool rz_core_bin_archs_print(RzBin *bin, RzCmdStateOutput *state) {
 
 RZ_API bool rz_core_bin_pdb_load(RZ_NONNULL RzCore *core, RZ_NONNULL const char *filename) {
 	rz_cons_push();
-	rz_core_pdb_info_print(core, filename, NULL);
+	RzPdb *pdb = rz_core_pdb_load_info(core, filename);
+	if (!pdb) {
+		return false;
+	}
+	rz_bin_pdb_free(pdb);
 	const char *buf = rz_cons_get_buffer();
 	if (!buf) {
 		rz_cons_pop();
