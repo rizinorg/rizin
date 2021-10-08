@@ -3554,7 +3554,7 @@ struct tsr2cmd_state {
 	TSParser *parser;
 	RzCore *core;
 	char *input;
-	RzPVector/*<char *>*/ saved_input;
+	RzPVector /*<char *>*/ saved_input;
 	TSTree *tree;
 	RzPVector/*<TSTree *>*/ saved_tree;
 	bool log;
