@@ -3554,9 +3554,9 @@ struct tsr2cmd_state {
 	TSParser *parser;
 	RzCore *core;
 	char *input;
-	char *saved_input;
+	RzPVector /*<char *>*/ saved_input;
 	TSTree *tree;
-	TSTree *saved_tree;
+	RzPVector /*<TSTree *>*/ saved_tree;
 	bool log;
 	bool split_lines;
 	TSNode substitute_cmd;
@@ -3946,21 +3946,23 @@ static TSTree *apply_edits(struct tsr2cmd_state *state, RzList *edits) {
 }
 
 static void substitute_args_fini(struct tsr2cmd_state *state) {
-	if (state->tree != state->saved_tree) {
+	TSTree *saved_tree = rz_pvector_pop(&state->saved_tree);
+	if (state->tree != saved_tree) {
 		ts_tree_delete(state->tree);
 	}
-	state->tree = state->saved_tree;
-	state->saved_tree = NULL;
-	if (state->input != state->saved_input) {
+	state->tree = saved_tree;
+
+	char *saved_input = rz_pvector_pop(&state->saved_input);
+	if (state->input != saved_input) {
 		free(state->input);
 	}
-	state->input = state->saved_input;
-	state->saved_input = NULL;
+	state->input = saved_input;
 }
 
 static void substitute_args_init(struct tsr2cmd_state *state, TSNode command) {
-	state->saved_input = state->input;
-	state->saved_tree = state->tree;
+	rz_pvector_push(&state->saved_input, state->input);
+	rz_pvector_push(&state->saved_tree, state->tree);
+
 	state->substitute_cmd = command;
 	state->input = ts_node_sub_string(state->substitute_cmd, state->input);
 	RZ_LOG_DEBUG("Shrinking input to '%s'\n", state->input);
@@ -4109,6 +4111,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(arged_stmt) {
 	}
 
 err:
+	RZ_LOG_DEBUG("arged_stmt finished command: '%s'\n", command_str);
 	rz_cmd_parsed_args_free(pr_args);
 	free(command_str);
 	return res;
@@ -5670,6 +5673,8 @@ static RzCmdStatus core_cmd_tsrzcmd(RzCore *core, const char *cstr, bool split_l
 	state.tree = tree;
 	state.log = log;
 	state.split_lines = split_lines;
+	rz_pvector_init(&state.saved_input, NULL);
+	rz_pvector_init(&state.saved_tree, NULL);
 
 	if (state.log) {
 		rz_line_hist_add(state.input);
@@ -5690,6 +5695,8 @@ static RzCmdStatus core_cmd_tsrzcmd(RzCore *core, const char *cstr, bool split_l
 	ts_tree_delete(tree);
 	ts_parser_delete(parser);
 	free(input);
+	rz_pvector_fini(&state.saved_input);
+	rz_pvector_fini(&state.saved_tree);
 	return res;
 }
 

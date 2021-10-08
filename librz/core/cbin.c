@@ -4327,93 +4327,6 @@ static void bin_mach0_versioninfo(RzCore *r) {
 	/* TODO */
 }
 
-static void bin_pe_resources(RzCore *r, PJ *pj, int mode) {
-	Sdb *sdb = NULL;
-	int index = 0;
-	const char *pe_path = "bin/cur/info/pe_resource";
-	if (!(sdb = sdb_ns_path(r->sdb, pe_path, 0))) {
-		return;
-	}
-	if (IS_MODE_RZCMD(mode)) {
-		rz_cons_printf("fs resources\n");
-	} else if (IS_MODE_JSON(mode)) {
-		pj_a(pj);
-	}
-	while (true) {
-		const char *timestrKey = sdb_fmt("resource.%d.timestr", index);
-		const char *vaddrKey = sdb_fmt("resource.%d.vaddr", index);
-		const char *sizeKey = sdb_fmt("resource.%d.size", index);
-		const char *typeKey = sdb_fmt("resource.%d.type", index);
-		const char *languageKey = sdb_fmt("resource.%d.language", index);
-		const char *nameKey = sdb_fmt("resource.%d.name", index);
-		char *timestr = sdb_get(sdb, timestrKey, 0);
-		if (!timestr) {
-			break;
-		}
-		ut64 vaddr = sdb_num_get(sdb, vaddrKey, 0);
-		int size = (int)sdb_num_get(sdb, sizeKey, 0);
-		char *name = sdb_get(sdb, nameKey, 0);
-		char *type = sdb_get(sdb, typeKey, 0);
-		char *lang = sdb_get(sdb, languageKey, 0);
-
-		if (IS_MODE_RZCMD(mode)) {
-			rz_cons_printf("f resource.%d %d 0x%08" PFMT64x "\n", index, size, vaddr);
-		} else if (IS_MODE_JSON(mode)) {
-			pj_o(pj);
-			pj_ks(pj, "name", name);
-			pj_ki(pj, "index", index);
-			pj_ks(pj, "type", type);
-			pj_kn(pj, "vaddr", vaddr);
-			pj_ki(pj, "size", size);
-			pj_ks(pj, "lang", lang);
-			pj_ks(pj, "timestamp", timestr);
-			pj_end(pj);
-		} else {
-			char humansz[8];
-			rz_num_units(humansz, sizeof(humansz), size);
-			rz_cons_printf("Resource %d\n", index);
-			rz_cons_printf("  name: %s\n", name);
-			rz_cons_printf("  timestamp: %s\n", timestr);
-			rz_cons_printf("  vaddr: 0x%08" PFMT64x "\n", vaddr);
-			rz_cons_printf("  size: %s\n", humansz);
-			rz_cons_printf("  type: %s\n", type);
-			rz_cons_printf("  language: %s\n", lang);
-		}
-
-		RZ_FREE(timestr);
-		RZ_FREE(name);
-		RZ_FREE(type);
-		RZ_FREE(lang)
-
-		index++;
-	}
-	if (IS_MODE_JSON(mode)) {
-		pj_end(pj);
-	} else if (IS_MODE_RZCMD(mode)) {
-		rz_cons_println("fs *");
-	}
-}
-
-static void bin_no_resources(RzCore *r, PJ *pj, int mode) {
-	if (IS_MODE_JSON(mode)) {
-		pj_a(pj);
-		pj_end(pj);
-	}
-}
-
-static int bin_resources(RzCore *r, PJ *pj, int mode) {
-	const RzBinInfo *info = rz_bin_get_info(r->bin);
-	if (!info || !info->rclass) {
-		return false;
-	}
-	if (!strncmp("pe", info->rclass, 2)) {
-		bin_pe_resources(r, pj, mode);
-	} else {
-		bin_no_resources(r, pj, mode);
-	}
-	return true;
-}
-
 static int bin_versioninfo(RzCore *r, PJ *pj, int mode) {
 	const RzBinInfo *info = rz_bin_get_info(r->bin);
 	if (!info || !info->rclass) {
@@ -5059,18 +4972,47 @@ RZ_API bool rz_core_bin_memory_print(RzCore *core, RzBinFile *bf, RzCmdStateOutp
 RZ_API bool rz_core_bin_resources_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state) {
 	rz_return_val_if_fail(core && state, false);
 
-	// TODO: add rz_bin_object_get_resources and switch to table + json output
-	switch (state->mode) {
-	case RZ_OUTPUT_MODE_STANDARD:
-		bin_resources(core, NULL, RZ_MODE_PRINT);
-		break;
-	case RZ_OUTPUT_MODE_JSON:
-		bin_resources(core, state->d.pj, RZ_MODE_JSON);
-		break;
-	default:
-		rz_warn_if_reached();
-		break;
+	rz_cmd_state_output_array_start(state);
+	rz_cmd_state_output_set_columnsf(state, "dssXxss", "index", "name", "type", "vaddr", "size", "lang", "timestamp");
+	const RzList *resources = rz_bin_object_get_resources(bf->o);
+	RzBinResource *resource;
+	RzListIter *it;
+	char humansz[8];
+
+	rz_list_foreach (resources, it, resource) {
+		switch (state->mode) {
+		case RZ_OUTPUT_MODE_STANDARD:
+			rz_num_units(humansz, sizeof(humansz), resource->size);
+			rz_cons_printf("Resource %zd\n", resource->index);
+			rz_cons_printf("  name: %s\n", resource->name);
+			rz_cons_printf("  timestamp: %s\n", resource->time);
+			rz_cons_printf("  vaddr: 0x%08" PFMT64x "\n", resource->vaddr);
+			rz_cons_printf("  size: %s\n", humansz);
+			rz_cons_printf("  type: %s\n", resource->type);
+			rz_cons_printf("  language: %s\n", resource->language);
+			break;
+		case RZ_OUTPUT_MODE_TABLE:
+			rz_table_add_rowf(state->d.t, "dssXxss", resource->index, resource->name,
+				resource->type, resource->vaddr, resource->size, resource->language, resource->time);
+			break;
+		case RZ_OUTPUT_MODE_JSON:
+			pj_o(state->d.pj);
+			pj_ks(state->d.pj, "name", resource->name);
+			pj_ki(state->d.pj, "index", resource->index);
+			pj_ks(state->d.pj, "type", resource->type);
+			pj_kn(state->d.pj, "vaddr", resource->vaddr);
+			pj_ki(state->d.pj, "size", resource->size);
+			pj_ks(state->d.pj, "lang", resource->language);
+			pj_ks(state->d.pj, "timestamp", resource->time);
+			pj_end(state->d.pj);
+			break;
+		default:
+			rz_warn_if_reached();
+			break;
+		}
 	}
+
+	rz_cmd_state_output_array_end(state);
 	return true;
 }
 

@@ -544,6 +544,9 @@ RZ_API int rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
 	if (p->mem) {
 		o->mem = p->mem(bf);
 	}
+	if (p->resources) {
+		o->resources = p->resources(bf);
+	}
 	return true;
 }
 
@@ -807,6 +810,14 @@ RZ_API const RzList *rz_bin_object_get_mem(RzBinObject *obj) {
 RZ_API const RzList *rz_bin_object_get_symbols(RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 	return obj->symbols;
+}
+
+/**
+ * \brief Get a list of \p RzBinResource representing the resources in the binary object.
+ */
+RZ_API const RzList *rz_bin_object_get_resources(RzBinObject *obj) {
+	rz_return_val_if_fail(obj, NULL);
+	return obj->resources;
 }
 
 /**
