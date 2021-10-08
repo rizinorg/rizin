@@ -179,6 +179,43 @@ static void rz_core_bin_pdb_gvars_print(const RzPdb *pdb, const ut64 img_base, c
 	rz_strbuf_free(buf);
 }
 
+static void pdb_set_symbols(const RzCore *core, const RzPdb *pdb, const ut64 img_base) {
+	rz_return_if_fail(core && pdb);
+	PeImageSectionHeader *sctn_header = 0;
+	RzPdbGDataStream *gsym_data_stream = 0;
+	RzPdbPeStream *pe_stream = 0;
+	RzPdbOmapStream *omap_stream;
+	GDataGlobal *gdata = 0;
+	RzListIter *it = 0;
+	char *name;
+	char *filtered_name;
+	gsym_data_stream = pdb->s_gdata;
+	pe_stream = pdb->s_pe;
+	omap_stream = pdb->s_omap;
+	if (!pe_stream) {
+		return;
+	}
+	rz_list_foreach (gsym_data_stream->global_list, it, gdata) {
+		sctn_header = rz_list_get_n(pe_stream->sections_hdrs, (gdata->segment - 1));
+		if (sctn_header) {
+			name = rz_demangler_msvc(gdata->name);
+			name = (name) ? name : strdup(gdata->name);
+			filtered_name = rz_name_filter2(name, true);
+			char *fname = rz_str_newf("pdb.%s", filtered_name);
+			ut64 addr = (ut64)(img_base + rz_bin_pdb_omap_remap(omap_stream, gdata->offset + sctn_header->virtual_address));
+			RzFlagItem *item = rz_flag_set(core->flags, fname, addr, 0);
+			if (!item) {
+				free(filtered_name);
+				free(name);
+			}
+			rz_flag_item_set_realname(item, name);
+			free(filtered_name);
+			free(name);
+		}
+	}
+	return ;
+}
+
 /**
  * \brief Print parsed PDB file info and integrate with typedb
  * 
@@ -210,9 +247,7 @@ RZ_API bool rz_core_pdb_info_print(RzCore *core, const char *file, RzCmdStateOut
 		rz_core_bin_pdb_gvars_print(pdb, baddr, state);
 		rz_cmd_state_output_array_end(state);
 	}
-	char *cmd = rz_bin_pdb_gvars_as_cmd_string(pdb, baddr);
-	rz_core_cmd0(core, cmd);
-	free(cmd);
+	pdb_set_symbols(core, pdb, baddr);
 	rz_bin_pdb_free(pdb);
 	return true;
 }

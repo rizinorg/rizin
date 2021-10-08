@@ -9,54 +9,6 @@
 
 #include "pdb.h"
 
-/**
- * \brief return the command text for global symbols in PDB
- * 
- * \param pdb PDB instance
- * \param img_base image base addr
- * \return command of pdb symbols
- */
-RZ_API RZ_OWN char *rz_bin_pdb_gvars_as_cmd_string(RZ_NONNULL const RzPdb *pdb, const ut64 img_base) {
-	rz_return_val_if_fail(pdb, NULL);
-	PeImageSectionHeader *sctn_header = 0;
-	RzPdbGDataStream *gsym_data_stream = 0;
-	RzPdbPeStream *pe_stream = 0;
-	RzPdbOmapStream *omap_stream;
-	GDataGlobal *gdata = 0;
-	RzListIter *it = 0;
-	char *name;
-	char *filtered_name;
-	RzStrBuf *cmd_buf = rz_strbuf_new(NULL);
-	if (!cmd_buf) {
-		return NULL;
-	}
-	gsym_data_stream = pdb->s_gdata;
-	pe_stream = pdb->s_pe;
-	omap_stream = pdb->s_omap;
-	if (!pe_stream) {
-		rz_strbuf_free(cmd_buf);
-		return NULL;
-	}
-	rz_list_foreach (gsym_data_stream->global_list, it, gdata) {
-		sctn_header = rz_list_get_n(pe_stream->sections_hdrs, (gdata->segment - 1));
-		if (sctn_header) {
-			name = rz_demangler_msvc(gdata->name);
-			name = (name) ? name : strdup(gdata->name);
-			filtered_name = rz_name_filter2(name, true);
-			rz_strbuf_appendf(cmd_buf, "f pdb.%s = 0x%" PFMT64x " # %d %.*s\n",
-				filtered_name,
-				(ut64)(img_base + rz_bin_pdb_omap_remap(omap_stream, gdata->offset + sctn_header->virtual_address)),
-				gdata->symtype, PDB_SIZEOF_SECTION_NAME, sctn_header->name);
-			rz_strbuf_appendf(cmd_buf, "\"fN pdb.%s %s\"\n", filtered_name, name);
-			free(filtered_name);
-			free(name);
-		}
-	}
-	char *str = strdup(rz_strbuf_get(cmd_buf));
-	rz_strbuf_free(cmd_buf);
-	return str;
-}
-
 static bool parse_pdb_stream(RzPdb *pdb, RzPdbMsfStream *stream) {
 	if (!pdb || !stream) {
 		return false;
