@@ -481,6 +481,7 @@ RzBinPlugin rz_bin_plugin_pe = {
 	.create = &create,
 	.get_vaddr = &get_vaddr,
 	.hashes = &compute_hashes,
+	.resources = &resources,
 	.section_flag_to_rzlist = &PE_(section_flag_to_rzlist),
 };
 

@@ -179,6 +179,17 @@ RZ_API void rz_bin_import_free(RzBinImport *imp) {
 	}
 }
 
+RZ_API void rz_bin_resource_free(RzBinResource *res) {
+	if (!res) {
+		return;
+	}
+	RZ_FREE(res->name);
+	RZ_FREE(res->time);
+	RZ_FREE(res->type);
+	RZ_FREE(res->language);
+	free(res);
+}
+
 RZ_API const char *rz_bin_symbol_name(RzBinSymbol *s) {
 	if (s->dup_count) {
 		return sdb_fmt("%s_%d", s->name, s->dup_count);
