@@ -4,8 +4,8 @@
 
 #include "pdb.h"
 
-RZ_IPI void free_dbi_stream(DbiStream *stream) {
-	DbiStreamExHdr *ex_hdr;
+RZ_IPI void free_dbi_stream(RzPdbDbiStream *stream) {
+	RzPdbDbiStreamExHdr *ex_hdr;
 	RzListIter *it;
 	rz_list_foreach (stream->ex_hdrs, it, ex_hdr) {
 		RZ_FREE(ex_hdr->ModuleName);
@@ -15,7 +15,7 @@ RZ_IPI void free_dbi_stream(DbiStream *stream) {
 	rz_list_free(stream->ex_hdrs);
 }
 
-static bool parse_dbi_stream_header(DbiStream *s, RzBuffer *buf) {
+static bool parse_dbi_stream_header(RzPdbDbiStream *s, RzBuffer *buf) {
 	return rz_buf_read_le32(buf, (ut32 *)&s->hdr.version_signature) &&
 		rz_buf_read_le32(buf, &s->hdr.version_header) &&
 		rz_buf_read_le32(buf, &s->hdr.age) &&
@@ -38,7 +38,7 @@ static bool parse_dbi_stream_header(DbiStream *s, RzBuffer *buf) {
 		rz_buf_read_le32(buf, &s->hdr.padding);
 }
 
-static bool parse_dbi_stream_section_entry(DbiStreamExHdr *hdr, RzBuffer *buf) {
+static bool parse_dbi_stream_section_entry(RzPdbDbiStreamExHdr *hdr, RzBuffer *buf) {
 	return rz_buf_read_le16(buf, &hdr->sec_con.Section) &&
 		rz_buf_read_le16(buf, (ut16 *)&hdr->sec_con.Padding1) &&
 		rz_buf_read_le32(buf, (ut32 *)&hdr->sec_con.Offset) &&
@@ -50,7 +50,7 @@ static bool parse_dbi_stream_section_entry(DbiStreamExHdr *hdr, RzBuffer *buf) {
 		rz_buf_read_le32(buf, &hdr->sec_con.RelocCrc);
 }
 
-static bool parse_dbi_stream_ex_header(DbiStream *s, RzBuffer *buf) {
+static bool parse_dbi_stream_ex_header(RzPdbDbiStream *s, RzBuffer *buf) {
 	s->ex_hdrs = rz_list_new();
 	if (!s->ex_hdrs) {
 		// free s-dbi
@@ -60,7 +60,7 @@ static bool parse_dbi_stream_ex_header(DbiStream *s, RzBuffer *buf) {
 	ut32 read_len = 0;
 	while (read_len < ex_size) {
 		ut32 initial_seek = rz_buf_tell(buf);
-		DbiStreamExHdr *hdr = RZ_NEW0(DbiStreamExHdr);
+		RzPdbDbiStreamExHdr *hdr = RZ_NEW0(RzPdbDbiStreamExHdr);
 		if (!hdr) {
 			return false;
 		}
@@ -114,7 +114,7 @@ static bool parse_dbi_stream_ex_header(DbiStream *s, RzBuffer *buf) {
 	return true;
 }
 
-static bool parse_dbi_dbg_header(DbiStream *s, RzBuffer *buf) {
+static bool parse_dbi_dbg_header(RzPdbDbiStream *s, RzBuffer *buf) {
 	if (!rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_fpo) ||
 		!rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_exception) ||
 		!rz_buf_read_le16(buf, (ut16 *)&s->dbg_hdr.sn_fixup) ||
@@ -131,12 +131,12 @@ static bool parse_dbi_dbg_header(DbiStream *s, RzBuffer *buf) {
 	return true;
 }
 
-RZ_IPI bool parse_dbi_stream(RzPdb *pdb, MsfStream *stream) {
+RZ_IPI bool parse_dbi_stream(RzPdb *pdb, RzPdbMsfStream *stream) {
 	if (!pdb || !stream) {
 		return false;
 	}
-	pdb->s_dbi = RZ_NEW0(DbiStream);
-	DbiStream *s = pdb->s_dbi;
+	pdb->s_dbi = RZ_NEW0(RzPdbDbiStream);
+	RzPdbDbiStream *s = pdb->s_dbi;
 	if (!s) {
 		RZ_LOG_ERROR("Error allocating memory.\n");
 		return false;

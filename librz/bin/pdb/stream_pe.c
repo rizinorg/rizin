@@ -21,13 +21,13 @@ static bool parse_image_header(PeImageSectionHeader *hdr, RzBuffer *buf) {
 		rz_buf_read_le32(buf, &hdr->charactestics);
 }
 
-RZ_IPI bool parse_pe_stream(RzPdb *pdb, MsfStream *stream) {
+RZ_IPI bool parse_pe_stream(RzPdb *pdb, RzPdbMsfStream *stream) {
 	rz_return_val_if_fail(pdb && stream, false);
 	if (!pdb->s_pe) {
-		pdb->s_pe = RZ_NEW0(PeStream);
+		pdb->s_pe = RZ_NEW0(RzPdbPeStream);
 	}
 	RzBuffer *buf = stream->stream_data;
-	PeStream *s = pdb->s_pe;
+	RzPdbPeStream *s = pdb->s_pe;
 	if (!s) {
 		RZ_LOG_ERROR("Error allocating memory.\n");
 		return false;
@@ -53,6 +53,6 @@ RZ_IPI bool parse_pe_stream(RzPdb *pdb, MsfStream *stream) {
 	}
 	return true;
 }
-RZ_IPI void free_pe_stream(PeStream *stream) {
+RZ_IPI void free_pe_stream(RzPdbPeStream *stream) {
 	rz_list_free(stream->sections_hdrs);
 };

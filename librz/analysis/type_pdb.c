@@ -7,24 +7,25 @@
 #include <rz_type.h>
 #include <rz_pdb.h>
 #include <rz_analysis.h>
+#include "../bin/pdb/pdb.h"
 
-static RzType *parse_type(const RzTypeDB *typedb, TpiStream *stream, TpiType *type, char *name);
-static RzType *parse_regular_type(const RzTypeDB *typedb, TpiStream *stream, TpiType *type, char *name);
-static RzType *parse_type_modifier(const RzTypeDB *typedb, TpiStream *stream, TpiType *type);
-static RzType *parse_type_pointer(const RzTypeDB *typedb, TpiStream *stream, TpiType *type, char *name);
-static RzType *parse_type_procedure(const RzTypeDB *typedb, TpiStream *stream, TpiType *type, char *name);
-static RzType *parse_type_array(const RzTypeDB *typedb, TpiStream *stream, TpiType *type);
-static void parse_type_arglist(const RzTypeDB *typedb, TpiStream *stream, TpiType *arglist, RzPVector *vec);
-static RzType *parse_type_mfunction(const RzTypeDB *typedb, TpiStream *stream, TpiType *type_info, char *name);
-static RzType *parse_type_onemethod(const RzTypeDB *typedb, TpiStream *stream, TpiType *type_info);
-static RzType *parse_type_member(const RzTypeDB *typedb, TpiStream *stream, TpiType *type_info, char *name);
-static RzType *parse_type_nest(const RzTypeDB *typedb, TpiStream *stream, TpiType *type_info);
-static RzType *parse_union(const RzTypeDB *typedb, TpiStream *stream, TpiType *type);
-static RzTypeUnionMember *parse_union_member(const RzTypeDB *typedb, TpiStream *stream, TpiType *type_info);
-static RzType *parse_structure(const RzTypeDB *typedb, TpiStream *stream, TpiType *type);
-static RzTypeStructMember *parse_struct_member(const RzTypeDB *typedb, TpiStream *stream, TpiType *type_info);
-static RzType *parse_enum(const RzTypeDB *typedb, TpiStream *stream, TpiType *type);
-static RzTypeEnumCase *parse_enumerate(TpiType *type);
+static RzType *parse_type(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type, char *name);
+static RzType *parse_regular_type(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type, char *name);
+static RzType *parse_type_modifier(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type);
+static RzType *parse_type_pointer(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type, char *name);
+static RzType *parse_type_procedure(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type, char *name);
+static RzType *parse_type_array(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type);
+static void parse_type_arglist(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *arglist, RzPVector *vec);
+static RzType *parse_type_mfunction(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type_info, char *name);
+static RzType *parse_type_onemethod(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type_info);
+static RzType *parse_type_member(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type_info, char *name);
+static RzType *parse_type_nest(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type_info);
+static RzType *parse_union(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type);
+static RzTypeUnionMember *parse_union_member(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type_info);
+static RzType *parse_structure(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type);
+static RzTypeStructMember *parse_struct_member(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type_info);
+static RzType *parse_enum(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type);
+static RzTypeEnumCase *parse_enumerate(RzPdbTpiType *type);
 
 static bool is_parsable_type(const TpiLeafType type) {
 	rz_return_val_if_fail(type, false);
@@ -49,10 +50,10 @@ static char *create_type_name_from_offset(ut64 offset) {
 	return str;
 }
 
-static RzType *parse_type_array(const RzTypeDB *typedb, TpiStream *stream, TpiType *type) {
+static RzType *parse_type_array(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type) {
 	rz_return_val_if_fail(type && stream && typedb, NULL);
 	Tpi_LF_Array *lf_array = type->type_data;
-	TpiType *element = rz_bin_pdb_get_type_by_index(stream, lf_array->element_type);
+	RzPdbTpiType *element = rz_bin_pdb_get_type_by_index(stream, lf_array->element_type);
 	if (!element) {
 		return NULL;
 	}
@@ -70,7 +71,7 @@ static RzType *parse_type_array(const RzTypeDB *typedb, TpiStream *stream, TpiTy
 	return typ;
 }
 
-static RzType *parse_regular_type(const RzTypeDB *typedb, TpiStream *stream, TpiType *type, char *name) {
+static RzType *parse_regular_type(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type, char *name) {
 	rz_return_val_if_fail(type && stream && typedb, NULL);
 	switch (type->leaf_type) {
 	case LF_CLASS:
@@ -104,10 +105,10 @@ static RzType *parse_regular_type(const RzTypeDB *typedb, TpiStream *stream, Tpi
 	return NULL;
 }
 
-static RzType *parse_type_modifier(const RzTypeDB *typedb, TpiStream *stream, TpiType *type) {
+static RzType *parse_type_modifier(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type) {
 	rz_return_val_if_fail(type && stream && typedb, NULL);
 	Tpi_LF_Modifier *lf_modifier = type->type_data;
-	TpiType *m_utype = rz_bin_pdb_get_type_by_index(stream, lf_modifier->modified_type);
+	RzPdbTpiType *m_utype = rz_bin_pdb_get_type_by_index(stream, lf_modifier->modified_type);
 	if (m_utype) {
 		RzType *typ = parse_type(typedb, stream, m_utype, NULL);
 		if (typ && lf_modifier->umodifier.bits.const_) {
@@ -127,7 +128,7 @@ static RzType *parse_type_modifier(const RzTypeDB *typedb, TpiStream *stream, Tp
 	return NULL;
 }
 
-static RzType *parse_type_pointer(const RzTypeDB *typedb, TpiStream *stream, TpiType *type, char *name) {
+static RzType *parse_type_pointer(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type, char *name) {
 	rz_return_val_if_fail(type && typedb, NULL);
 	Tpi_LF_Pointer *lf_pointer = type->type_data;
 	RzType *typ = RZ_NEW0(RzType);
@@ -135,7 +136,7 @@ static RzType *parse_type_pointer(const RzTypeDB *typedb, TpiStream *stream, Tpi
 		return NULL;
 	}
 	typ->kind = RZ_TYPE_KIND_POINTER;
-	TpiType *p_utype = rz_bin_pdb_get_type_by_index(stream, lf_pointer->utype);
+	RzPdbTpiType *p_utype = rz_bin_pdb_get_type_by_index(stream, lf_pointer->utype);
 	if (p_utype) {
 		RzType *tmp = parse_type(typedb, stream, p_utype, name);
 		if (!tmp) {
@@ -148,7 +149,7 @@ static RzType *parse_type_pointer(const RzTypeDB *typedb, TpiStream *stream, Tpi
 	return NULL;
 }
 
-static RzType *parse_type(const RzTypeDB *typedb, TpiStream *stream, TpiType *type, char *name) {
+static RzType *parse_type(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type, char *name) {
 	rz_return_val_if_fail(type && typedb, NULL);
 	RzType *typ;
 	if (type->leaf_type == LF_SIMPLE_TYPE) {
@@ -169,7 +170,7 @@ static RzType *parse_type(const RzTypeDB *typedb, TpiStream *stream, TpiType *ty
 	}
 }
 
-static void parse_type_arglist(const RzTypeDB *typedb, TpiStream *stream, TpiType *arglist, RzPVector *vec) {
+static void parse_type_arglist(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *arglist, RzPVector *vec) {
 	rz_return_if_fail(arglist && typedb && vec);
 	Tpi_LF_Arglist *lf_arglist = arglist->type_data;
 	if (!vec) {
@@ -177,7 +178,7 @@ static void parse_type_arglist(const RzTypeDB *typedb, TpiStream *stream, TpiTyp
 	}
 	ut32 *ptr_types = lf_arglist->arg_type;
 	for (int i = 0; i < lf_arglist->count; i++) {
-		TpiType *stype = rz_bin_pdb_get_type_by_index(stream, *ptr_types++);
+		RzPdbTpiType *stype = rz_bin_pdb_get_type_by_index(stream, *ptr_types++);
 		if (!stype) {
 			continue;
 		}
@@ -192,7 +193,7 @@ static void parse_type_arglist(const RzTypeDB *typedb, TpiStream *stream, TpiTyp
 	}
 }
 
-static RzType *parse_type_procedure(const RzTypeDB *typedb, TpiStream *stream, TpiType *type, char *name) {
+static RzType *parse_type_procedure(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type, char *name) {
 	rz_return_val_if_fail(type && stream && typedb, NULL);
 	Tpi_LF_Procedure *lf_procedure = type->type_data;
 	RzType *typ = RZ_NEW0(RzType);
@@ -210,7 +211,7 @@ static RzType *parse_type_procedure(const RzTypeDB *typedb, TpiStream *stream, T
 
 	typ->callable->cc = rz_bin_pdb_calling_convention_as_string(lf_procedure->call_conv);
 	// parse return type
-	TpiType *ret_type = rz_bin_pdb_get_type_by_index(stream, lf_procedure->return_type);
+	RzPdbTpiType *ret_type = rz_bin_pdb_get_type_by_index(stream, lf_procedure->return_type);
 	if (ret_type) {
 		typ->callable->ret = parse_type(typedb, stream, ret_type, name);
 		if (!typ->callable->ret) {
@@ -222,7 +223,7 @@ static RzType *parse_type_procedure(const RzTypeDB *typedb, TpiStream *stream, T
 	if (!typ->callable->args) {
 		rz_type_free(typ);
 	}
-	TpiType *arglist = rz_bin_pdb_get_type_by_index(stream, lf_procedure->arg_list);
+	RzPdbTpiType *arglist = rz_bin_pdb_get_type_by_index(stream, lf_procedure->arg_list);
 	if (arglist) {
 		parse_type_arglist(typedb, stream, arglist, typ->callable->args);
 	}
@@ -230,7 +231,7 @@ static RzType *parse_type_procedure(const RzTypeDB *typedb, TpiStream *stream, T
 	return typ;
 }
 
-static RzType *parse_type_mfunction(const RzTypeDB *typedb, TpiStream *stream, TpiType *type_info, char *name) {
+static RzType *parse_type_mfunction(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type_info, char *name) {
 	rz_return_val_if_fail(type_info && stream && typedb, NULL);
 	Tpi_LF_MFcuntion *lf_mfunction = type_info->type_data;
 	RzType *type = RZ_NEW0(RzType);
@@ -243,7 +244,7 @@ static RzType *parse_type_mfunction(const RzTypeDB *typedb, TpiStream *stream, T
 	type->callable->name = strdup(name);
 	type->callable->cc = rz_bin_pdb_calling_convention_as_string(lf_mfunction->call_conv);
 	// parse return type
-	TpiType *ret_type = rz_bin_pdb_get_type_by_index(stream, lf_mfunction->return_type);
+	RzPdbTpiType *ret_type = rz_bin_pdb_get_type_by_index(stream, lf_mfunction->return_type);
 	if (ret_type) {
 		type->callable->ret = parse_type(typedb, stream, ret_type, name);
 		if (!type->callable->ret) {
@@ -255,7 +256,7 @@ static RzType *parse_type_mfunction(const RzTypeDB *typedb, TpiStream *stream, T
 	if (!type->callable->args) {
 		rz_type_free(type);
 	}
-	TpiType *arglist = rz_bin_pdb_get_type_by_index(stream, lf_mfunction->arglist);
+	RzPdbTpiType *arglist = rz_bin_pdb_get_type_by_index(stream, lf_mfunction->arglist);
 	if (arglist) {
 		parse_type_arglist(typedb, stream, arglist, type->callable->args);
 	}
@@ -263,11 +264,11 @@ static RzType *parse_type_mfunction(const RzTypeDB *typedb, TpiStream *stream, T
 	return type;
 }
 
-static RzType *parse_type_onemethod(const RzTypeDB *typedb, TpiStream *stream, TpiType *type_info) {
+static RzType *parse_type_onemethod(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type_info) {
 	rz_return_val_if_fail(type_info && typedb, NULL);
 	Tpi_LF_OneMethod *lf_onemethod = type_info->type_data;
 	char *name = rz_bin_pdb_get_type_name(type_info);
-	TpiType *utype = rz_bin_pdb_get_type_by_index(stream, lf_onemethod->index);
+	RzPdbTpiType *utype = rz_bin_pdb_get_type_by_index(stream, lf_onemethod->index);
 	if (!utype) {
 		return NULL;
 	}
@@ -277,31 +278,31 @@ static RzType *parse_type_onemethod(const RzTypeDB *typedb, TpiStream *stream, T
 	return NULL;
 }
 
-static RzType *parse_type_member(const RzTypeDB *typedb, TpiStream *stream, TpiType *type_info, char *name) {
+static RzType *parse_type_member(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type_info, char *name) {
 	rz_return_val_if_fail(type_info && typedb, NULL);
 	Tpi_LF_Member *lf_member = type_info->type_data;
 
-	TpiType *utype = rz_bin_pdb_get_type_by_index(stream, lf_member->index);
+	RzPdbTpiType *utype = rz_bin_pdb_get_type_by_index(stream, lf_member->index);
 	if (!utype) {
 		return NULL;
 	}
 	return parse_type(typedb, stream, utype, name);
 }
 
-static RzType *parse_type_static_member(const RzTypeDB *typedb, TpiStream *stream, TpiType *type_info, char *name) {
+static RzType *parse_type_static_member(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type_info, char *name) {
 	rz_return_val_if_fail(type_info && typedb, NULL);
 	Tpi_LF_StaticMember *lf_stmember = type_info->type_data;
-	TpiType *utype = rz_bin_pdb_get_type_by_index(stream, lf_stmember->index);
+	RzPdbTpiType *utype = rz_bin_pdb_get_type_by_index(stream, lf_stmember->index);
 	if (!utype) {
 		return NULL;
 	}
 	return parse_type(typedb, stream, utype, name);
 }
 
-static RzType *parse_type_nest(const RzTypeDB *typedb, TpiStream *stream, TpiType *type_info) {
+static RzType *parse_type_nest(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type_info) {
 	rz_return_val_if_fail(type_info && stream && typedb, NULL);
 	Tpi_LF_NestType *lf_nest = type_info->type_data;
-	TpiType *utype = rz_bin_pdb_get_type_by_index(stream, lf_nest->index);
+	RzPdbTpiType *utype = rz_bin_pdb_get_type_by_index(stream, lf_nest->index);
 	if (!utype) {
 		return NULL;
 	}
@@ -338,10 +339,10 @@ static RzType *parse_type_nest(const RzTypeDB *typedb, TpiStream *stream, TpiTyp
  *
  * \param typedb Types DB instance
  * \param stream TPI Stream
- * \param type_info Current TpiType (member)
+ * \param type_info Current RzPdbTpiType (member)
  * \return RzTypeStructMember* parsed member, NULL if fail
  */
-static RzTypeStructMember *parse_struct_member(const RzTypeDB *typedb, TpiStream *stream, TpiType *type_info) {
+static RzTypeStructMember *parse_struct_member(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type_info) {
 	rz_return_val_if_fail(type_info, NULL);
 	char *name = NULL;
 	ut64 offset = 0;
@@ -405,7 +406,7 @@ cleanup:
  * \param stream TPI Stream
  * \param type Current type
  */
-static RzType *parse_structure(const RzTypeDB *typedb, TpiStream *stream, TpiType *type) {
+static RzType *parse_structure(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type) {
 	rz_return_val_if_fail(typedb && stream && type, NULL);
 
 	if (rz_bin_pdb_type_is_fwdref(type)) {
@@ -447,7 +448,7 @@ static RzType *parse_structure(const RzTypeDB *typedb, TpiStream *stream, TpiTyp
 		goto cleanup;
 	}
 	RzListIter *it;
-	TpiType *member_info;
+	RzPdbTpiType *member_info;
 	rz_list_foreach (members, it, member_info) {
 		RzTypeStructMember *struct_member = parse_struct_member(typedb, stream, member_info);
 		if (!struct_member) {
@@ -477,10 +478,10 @@ cleanup:
  *
  * \param typedb Types DB instance
  * \param stream TPI Stream
- * \param type_info Current TpiType (member)
+ * \param type_info Current RzPdbTpiType (member)
  * \return RzTypeUnionMember* parsed member, NULL if fail
  */
-static RzTypeUnionMember *parse_union_member(const RzTypeDB *typedb, TpiStream *stream, TpiType *type_info) {
+static RzTypeUnionMember *parse_union_member(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type_info) {
 	rz_return_val_if_fail(type_info && stream && typedb, NULL);
 	char *name = NULL;
 	ut64 offset = 0;
@@ -527,9 +528,9 @@ cleanup:
  * \brief Parses union into BaseType and saves it into hashtable
  * \param typedb Types DB instance
  * \param stream TPI Stream
- * \param type_info Current TpiType (enum case)
+ * \param type_info Current RzPdbTpiType (enum case)
  */
-static RzType *parse_union(const RzTypeDB *typedb, TpiStream *stream, TpiType *type) {
+static RzType *parse_union(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type) {
 	rz_return_val_if_fail(typedb && stream && type, NULL);
 	if (rz_bin_pdb_type_is_fwdref(type)) {
 		return NULL;
@@ -570,7 +571,7 @@ static RzType *parse_union(const RzTypeDB *typedb, TpiStream *stream, TpiType *t
 		goto cleanup;
 	}
 	RzListIter *it;
-	TpiType *member_info;
+	RzPdbTpiType *member_info;
 	rz_list_foreach (members, it, member_info) {
 		RzTypeUnionMember *union_member = parse_union_member(typedb, stream, member_info);
 		if (!union_member) {
@@ -601,7 +602,7 @@ cleanup:
  * \param type_info Current type info (enum case)
  * \return RzTypeEnumCase* parsed enum case, NULL if fail
  */
-static RzTypeEnumCase *parse_enumerate(TpiType *type) {
+static RzTypeEnumCase *parse_enumerate(RzPdbTpiType *type) {
 	rz_return_val_if_fail(type && type->leaf_type == LF_ENUMERATE, NULL);
 
 	char *name = NULL;
@@ -627,7 +628,7 @@ cleanup:
  * \param stream TPI Stream
  * \param type Current type
  */
-static RzType *parse_enum(const RzTypeDB *typedb, TpiStream *stream, TpiType *type) {
+static RzType *parse_enum(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type) {
 	rz_return_val_if_fail(typedb && type, NULL);
 	Tpi_LF_Enum *lf_enum = type->type_data;
 	// assert all member functions we need info from
@@ -650,7 +651,7 @@ static RzType *parse_enum(const RzTypeDB *typedb, TpiStream *stream, TpiType *ty
 		name = create_type_name_from_offset(type->type_index);
 		to_free_name = true;
 	}
-	TpiType *utype = rz_bin_pdb_get_type_by_index(stream, lf_enum->utype);
+	RzPdbTpiType *utype = rz_bin_pdb_get_type_by_index(stream, lf_enum->utype);
 	if (!utype) {
 		goto cleanup;
 	}
@@ -667,7 +668,7 @@ static RzType *parse_enum(const RzTypeDB *typedb, TpiStream *stream, TpiType *ty
 	}
 
 	RzListIter *it;
-	TpiType *member_info;
+	RzPdbTpiType *member_info;
 	rz_list_foreach (members, it, member_info) {
 		RzTypeEnumCase *enum_case = parse_enumerate(member_info);
 		if (!enum_case) {
@@ -700,7 +701,7 @@ cleanup:
  * \param stream TPI Stream
  * \param type Current type
  */
-static void parse_types(const RzTypeDB *typedb, TpiStream *stream, TpiType *type) {
+static void parse_types(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type) {
 	rz_return_if_fail(typedb && type);
 
 	if (rz_bin_pdb_type_is_fwdref(type)) {
@@ -736,7 +737,7 @@ static void parse_types(const RzTypeDB *typedb, TpiStream *stream, TpiType *type
  */
 RZ_API void rz_parse_pdb_types(const RzTypeDB *typedb, const RzPdb *pdb) {
 	rz_return_if_fail(typedb && pdb);
-	TpiStream *stream = pdb->s_tpi;
+	RzPdbTpiStream *stream = pdb->s_tpi;
 	if (!stream) { // no TPI stream found
 		return;
 	}
@@ -747,8 +748,8 @@ RZ_API void rz_parse_pdb_types(const RzTypeDB *typedb, const RzPdb *pdb) {
 	}
 
 	RBIter it;
-	TpiType *type;
-	rz_rbtree_foreach (stream->types, it, type, TpiType, rb) {
+	RzPdbTpiType *type;
+	rz_rbtree_foreach (stream->types, it, type, RzPdbTpiType, rb) {
 		if (type && is_parsable_type(type->leaf_type)) {
 			parse_types(typedb, stream, type);
 		}

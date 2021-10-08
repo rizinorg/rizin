@@ -110,7 +110,7 @@ static char *pdb_type_as_string_json(const RzTypeDB *db, const RzPdb *pdb, const
  */
 RZ_API RZ_OWN char *rz_bin_pdb_types_as_string(RZ_NONNULL const RzTypeDB *db, RZ_NONNULL const RzPdb *pdb, const RzCmdStateOutput *state) {
 	rz_return_val_if_fail(db && pdb && state, NULL);
-	TpiStream *stream = pdb->s_tpi;
+	RzPdbTpiStream *stream = pdb->s_tpi;
 	if (!stream) {
 		eprintf("There is no tpi stream in current pdb\n");
 		return NULL;
@@ -136,9 +136,9 @@ RZ_API RZ_OWN char *rz_bin_pdb_types_as_string(RZ_NONNULL const RzTypeDB *db, RZ
 RZ_API RZ_OWN char *rz_bin_pdb_gvars_as_string(RZ_NONNULL const RzPdb *pdb, const ut64 img_base, const RzCmdStateOutput *state) {
 	rz_return_val_if_fail(pdb && state, NULL);
 	PeImageSectionHeader *sctn_header = 0;
-	GDataStream *gsym_data_stream = 0;
-	PeStream *pe_stream = 0;
-	OmapStream *omap_stream;
+	RzPdbGDataStream *gsym_data_stream = 0;
+	RzPdbPeStream *pe_stream = 0;
+	RzPdbOmapStream *omap_stream;
 	GDataGlobal *gdata = 0;
 	RzListIter *it = 0;
 	PJ *pj = state->d.pj;
@@ -207,9 +207,9 @@ RZ_API RZ_OWN char *rz_bin_pdb_gvars_as_string(RZ_NONNULL const RzPdb *pdb, cons
 RZ_API RZ_OWN char *rz_bin_pdb_gvars_as_cmd_string(RZ_NONNULL const RzPdb *pdb, const ut64 img_base) {
 	rz_return_val_if_fail(pdb, NULL);
 	PeImageSectionHeader *sctn_header = 0;
-	GDataStream *gsym_data_stream = 0;
-	PeStream *pe_stream = 0;
-	OmapStream *omap_stream;
+	RzPdbGDataStream *gsym_data_stream = 0;
+	RzPdbPeStream *pe_stream = 0;
+	RzPdbOmapStream *omap_stream;
 	GDataGlobal *gdata = 0;
 	RzListIter *it = 0;
 	char *name;
@@ -245,13 +245,13 @@ RZ_API RZ_OWN char *rz_bin_pdb_gvars_as_cmd_string(RZ_NONNULL const RzPdb *pdb, 
 	return str;
 }
 
-static bool parse_pdb_stream(RzPdb *pdb, MsfStream *stream) {
+static bool parse_pdb_stream(RzPdb *pdb, RzPdbMsfStream *stream) {
 	if (!pdb || !stream) {
 		return false;
 	}
 
-	pdb->s_pdb = RZ_NEW0(PdbStream);
-	PdbStream *s = pdb->s_pdb;
+	pdb->s_pdb = RZ_NEW0(RzPdbStream);
+	RzPdbStream *s = pdb->s_pdb;
 	RzBuffer *buf = stream->stream_data;
 	if (!rz_buf_read_le32(buf, &s->hdr.version) ||
 		!rz_buf_read_le32(buf, &s->hdr.signature) ||
@@ -272,7 +272,7 @@ static bool parse_pdb_stream(RzPdb *pdb, MsfStream *stream) {
 
 static bool parse_streams(RzPdb *pdb) {
 	RzListIter *it;
-	MsfStream *ms;
+	RzPdbMsfStream *ms;
 	rz_list_foreach (pdb->streams, it, ms) {
 		switch (ms->stream_idx) {
 		case PDB_STREAM_ROOT:
@@ -325,13 +325,13 @@ static bool parse_streams(RzPdb *pdb) {
 }
 
 static void msf_stream_free(void *data) {
-	MsfStream *msfstream = data;
+	RzPdbMsfStream *msfstream = data;
 	rz_buf_free(msfstream->stream_data);
 	RZ_FREE(msfstream);
 }
 
 static void msf_stream_directory_free(void *data) {
-	MsfStreamDirectory *msd = data;
+	RzPdbMsfStreamDirectory *msd = data;
 	RZ_FREE(msd->StreamSizes);
 	rz_buf_free(msd->sd);
 	RZ_FREE(msd);
@@ -348,13 +348,13 @@ static ut64 count_blocks(ut64 length, ut64 block_size) {
 	return num_blocks;
 }
 
-static RzList *pdb7_extract_streams(RzPdb *pdb, MsfStreamDirectory *msd) {
+static RzList *pdb7_extract_streams(RzPdb *pdb, RzPdbMsfStreamDirectory *msd) {
 	RzList *streams = rz_list_newf(msf_stream_free);
 	if (!streams) {
 		goto error_memory;
 	}
 	for (size_t i = 0; i < msd->NumStreams; i++) {
-		MsfStream *stream = RZ_NEW0(MsfStream);
+		RzPdbMsfStream *stream = RZ_NEW0(RzPdbMsfStream);
 		if (!stream) {
 			rz_list_free(streams);
 			goto error_memory;
@@ -399,7 +399,7 @@ error_memory:
 	return NULL;
 }
 
-static MsfStreamDirectory *pdb7_extract_msf_stream_directory(RzPdb *pdb) {
+static RzPdbMsfStreamDirectory *pdb7_extract_msf_stream_directory(RzPdb *pdb) {
 	// Get block map
 	ut32 block_num = count_blocks(pdb->super_block->num_directory_bytes, pdb->super_block->block_size);
 	if (!block_num) {
@@ -441,7 +441,7 @@ static MsfStreamDirectory *pdb7_extract_msf_stream_directory(RzPdb *pdb) {
 	}
 	RZ_FREE(block_map);
 
-	MsfStreamDirectory *msd = RZ_NEW0(MsfStreamDirectory);
+	RzPdbMsfStreamDirectory *msd = RZ_NEW0(RzPdbMsfStreamDirectory);
 	if (!msd) {
 		goto error_memory;
 	}
@@ -482,7 +482,7 @@ error:
 }
 
 static bool pdb7_parse(RzPdb *pdb) {
-	MsfStreamDirectory *msd = pdb7_extract_msf_stream_directory(pdb);
+	RzPdbMsfStreamDirectory *msd = pdb7_extract_msf_stream_directory(pdb);
 	if (!msd) {
 		RZ_LOG_ERROR("Error extracting stream directory.\n");
 		goto error;
@@ -527,7 +527,7 @@ RZ_API RZ_OWN RzPdb *rz_bin_pdb_parse_from_buf(RZ_NONNULL const RzBuffer *buf) {
 		goto error;
 	}
 	pdb->buf = (RzBuffer *)buf;
-	pdb->super_block = RZ_NEW0(MsfSuperBlock);
+	pdb->super_block = RZ_NEW0(RzPdbMsfSuperBlock);
 	st64 len = rz_buf_read(pdb->buf, (ut8 *)pdb->super_block->file_magic, PDB_SIGNATURE_LEN);
 	if (len != PDB_SIGNATURE_LEN) {
 		RZ_LOG_ERROR("Wrong magic length!\n");

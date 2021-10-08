@@ -5,13 +5,13 @@
 
 #include "pdb.h"
 
-RZ_IPI bool parse_omap_stream(RzPdb *pdb, MsfStream *stream) {
+RZ_IPI bool parse_omap_stream(RzPdb *pdb, RzPdbMsfStream *stream) {
 	rz_return_val_if_fail(pdb && stream, false);
 	if (!pdb->s_omap) {
-		pdb->s_omap = RZ_NEW0(OmapStream);
+		pdb->s_omap = RZ_NEW0(RzPdbOmapStream);
 	}
 	RzBuffer *buf = stream->stream_data;
-	OmapStream *s = pdb->s_omap;
+	RzPdbOmapStream *s = pdb->s_omap;
 	if (!s) {
 		RZ_LOG_ERROR("Error allocating memory.\n");
 		return false;
@@ -37,7 +37,7 @@ RZ_IPI bool parse_omap_stream(RzPdb *pdb, MsfStream *stream) {
 	return true;
 }
 
-RZ_IPI void free_omap_stream(OmapStream *stream) {
+RZ_IPI void free_omap_stream(RzPdbOmapStream *stream) {
 	if (!stream) {
 		return;
 	}
@@ -77,7 +77,7 @@ static int binary_search(unsigned int *A, int key, int imin, int imax) {
 }
 
 RZ_IPI int omap_remap(void *stream, int address) {
-	OmapStream *omap_stream = (OmapStream *)stream;
+	RzPdbOmapStream *omap_stream = (RzPdbOmapStream *)stream;
 	OmapEntry *omap_entry = 0;
 	RzListIter *it = 0;
 	int i = 0;

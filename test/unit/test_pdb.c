@@ -7,6 +7,7 @@
 #include <rz_core.h>
 #include <rz_pdb.h>
 #include "test_types.h"
+#include "../../librz/bin/pdb/pdb.h"
 
 bool pdb_info_save_types(RzAnalysis *analysis, const char *file) {
 	RzPdb *pdb = rz_bin_pdb_parse_from_file(file);
@@ -29,21 +30,21 @@ bool test_pdb_tpi_cpp(void) {
 
 	mu_assert_eq(pdb->streams->length, 50, "Incorrect number of streams");
 
-	TpiStream *stream = pdb->s_tpi;
+	RzPdbTpiStream *stream = pdb->s_tpi;
 	mu_assert_notnull(stream, "TPIs stream not found in current PDB");
 	mu_assert_eq(stream->header.HeaderSize + stream->header.TypeRecordBytes, 117156, "Wrong TPI size");
 	mu_assert_eq(stream->header.TypeIndexBegin, 0x1000, "Wrong beginning index");
 	RBIter it;
-	TpiType *type;
+	RzPdbTpiType *type;
 
-	rz_rbtree_foreach (stream->types, it, type, TpiType, rb) {
-		mu_assert_notnull(type, "TpiType is null in RBTree.");
+	rz_rbtree_foreach (stream->types, it, type, RzPdbTpiType, rb) {
+		mu_assert_notnull(type, "RzPdbTpiType is null in RBTree.");
 		if (type->type_index == 0x1028) {
 			mu_assert_eq(type->leaf_type, LF_PROCEDURE, "Incorrect data type");
-			TpiType *arglist;
+			RzPdbTpiType *arglist;
 			arglist = rz_bin_pdb_get_type_by_index(stream, ((Tpi_LF_Procedure *)(type->type_data))->arg_list);
 			mu_assert_eq(arglist->type_index, 0x1027, "Wrong type index");
-			TpiType *return_type;
+			RzPdbTpiType *return_type;
 			return_type = rz_bin_pdb_get_type_by_index(stream, ((Tpi_LF_Procedure *)(type->type_data))->return_type);
 			mu_assert_eq(return_type->leaf_type, LF_SIMPLE_TYPE, "Incorrect return type");
 			Tpi_LF_SimpleType *simple_type = return_type->type_data;
@@ -57,7 +58,7 @@ bool test_pdb_tpi_cpp(void) {
 			mu_assert_true(forward_ref, "Wrong fwdref");
 		} else if (type->type_index == 0x113F) {
 			mu_assert_eq(type->leaf_type, LF_ARRAY, "Incorrect data type");
-			TpiType *dump;
+			RzPdbTpiType *dump;
 			dump = rz_bin_pdb_get_type_by_index(stream, ((Tpi_LF_Array *)(type->type_data))->index_type);
 			mu_assert_eq(dump->leaf_type, LF_SIMPLE_TYPE, "Incorrect return type");
 			Tpi_LF_SimpleType *simple_type = dump->type_data;
@@ -69,7 +70,7 @@ bool test_pdb_tpi_cpp(void) {
 			mu_assert_eq(size, 20, "Wrong array size");
 		} else if (type->type_index == 0x145A) {
 			mu_assert_eq(type->leaf_type, LF_ENUM, "Incorrect data type");
-			TpiType *dump;
+			RzPdbTpiType *dump;
 			RzList *members;
 			char *name;
 			name = rz_bin_pdb_get_type_name(type);
@@ -85,7 +86,7 @@ bool test_pdb_tpi_cpp(void) {
 			mu_assert_eq(type->leaf_type, LF_VTSHAPE, "Incorrect data type");
 		} else if (type->type_index == 0x1421) {
 			mu_assert_eq(type->leaf_type, LF_MODIFIER, "Incorrect data type");
-			TpiType *stype = NULL;
+			RzPdbTpiType *stype = NULL;
 			stype = rz_bin_pdb_get_type_by_index(stream, ((Tpi_LF_Modifier *)(type->type_data))->modified_type);
 			mu_assert_eq(stype->type_index, 0x120F, "Incorrect modified type");
 		} else if (type->type_index == 0x1003) {
@@ -104,7 +105,7 @@ bool test_pdb_tpi_cpp(void) {
 			RzList *members;
 			members = rz_bin_pdb_get_type_members(stream, type);
 			mu_assert_eq(members->length, 2, "wrong class member count");
-			TpiType *stype = NULL;
+			RzPdbTpiType *stype = NULL;
 			stype = rz_bin_pdb_get_type_by_index(stream, ((Tpi_LF_Class *)(type->type_data))->vshape);
 			mu_assert_null(stype, "wrong class vshape");
 			stype = rz_bin_pdb_get_type_by_index(stream, ((Tpi_LF_Class *)(type->type_data))->derived);
@@ -114,7 +115,7 @@ bool test_pdb_tpi_cpp(void) {
 			// Nothing from methodlist is currently being parsed
 		} else if (type->type_index == 0x107A) {
 			mu_assert_eq(type->leaf_type, LF_MFUNCTION, "Incorrect data type");
-			TpiType *typ;
+			RzPdbTpiType *typ;
 			typ = rz_bin_pdb_get_type_by_index(stream, ((Tpi_LF_MFcuntion *)(type->type_data))->return_type);
 			mu_assert_eq(typ->leaf_type, LF_SIMPLE_TYPE, "Incorrect return type");
 			Tpi_LF_SimpleType *simple_type = typ->type_data;
@@ -131,7 +132,7 @@ bool test_pdb_tpi_cpp(void) {
 			members = rz_bin_pdb_get_type_members(stream, type);
 			mu_assert_eq(members->length, 2725, "Incorrect members length");
 			RzListIter *it;
-			TpiType *t;
+			RzPdbTpiType *t;
 			int i = 0;
 			rz_list_foreach (members, it, t) {
 				mu_assert_eq(t->leaf_type, LF_ENUMERATE, "Incorrect data type");
@@ -168,7 +169,7 @@ bool test_pdb_tpi_cpp(void) {
 			mu_assert_notnull(members, "Coudn't get type members.");
 			mu_assert_eq(members->length, 18, "Incorrect members count");
 			RzListIter *it;
-			TpiType *t;
+			RzPdbTpiType *t;
 			int i = 0;
 			rz_list_foreach (members, it, t) {
 				if (i == 0) {
@@ -207,20 +208,20 @@ bool test_pdb_tpi_rust(void) {
 
 	mu_assert_eq(pdb->streams->length, 88, "Incorrect number of streams");
 
-	TpiStream *stream = pdb->s_tpi;
+	RzPdbTpiStream *stream = pdb->s_tpi;
 	mu_assert_notnull(stream, "TPIs stream not found in current PDB");
 	mu_assert_eq(stream->header.HeaderSize + stream->header.TypeRecordBytes, 305632, "Wrong TPI size");
 	mu_assert_eq(stream->header.TypeIndexBegin, 0x1000, "Wrong beginning index");
 	RBIter it;
-	TpiType *type;
+	RzPdbTpiType *type;
 
-	rz_rbtree_foreach (stream->types, it, type, TpiType, rb) {
+	rz_rbtree_foreach (stream->types, it, type, RzPdbTpiType, rb) {
 		if (type->type_index == 0x101B) {
 			mu_assert_eq(type->leaf_type, LF_PROCEDURE, "Incorrect data type");
-			TpiType *arglist;
+			RzPdbTpiType *arglist;
 			arglist = rz_bin_pdb_get_type_by_index(stream, ((Tpi_LF_Procedure *)(type->type_data))->arg_list);
 			mu_assert_eq(arglist->type_index, 0x101A, "Wrong type index");
-			TpiType *return_type;
+			RzPdbTpiType *return_type;
 			return_type = rz_bin_pdb_get_type_by_index(stream, ((Tpi_LF_Procedure *)(type->type_data))->return_type);
 			mu_assert_eq(return_type->leaf_type, LF_SIMPLE_TYPE, "Incorrect return type");
 			Tpi_LF_SimpleType *simple_type = return_type->type_data;
@@ -236,7 +237,7 @@ bool test_pdb_tpi_rust(void) {
 			mu_assert_true(forward_ref, "Wrong fwdref");
 		} else if (type->type_index == 0x114A) {
 			mu_assert_eq(type->leaf_type, LF_ARRAY, "Incorrect data type");
-			TpiType *dump;
+			RzPdbTpiType *dump;
 			dump = rz_bin_pdb_get_type_by_index(stream, ((Tpi_LF_Array *)(type->type_data))->index_type);
 			mu_assert_eq(dump->leaf_type, LF_SIMPLE_TYPE, "Incorrect return type");
 			Tpi_LF_SimpleType *simple_type = dump->type_data;
@@ -252,7 +253,7 @@ bool test_pdb_tpi_rust(void) {
 			mu_assert_eq(size, 16, "Wrong array size");
 		} else if (type->type_index == 0x1FB4) {
 			mu_assert_eq(type->leaf_type, LF_ENUM, "Incorrect data type");
-			TpiType *dump;
+			RzPdbTpiType *dump;
 			RzList *members;
 			char *name;
 			name = rz_bin_pdb_get_type_name(type);
@@ -268,7 +269,7 @@ bool test_pdb_tpi_rust(void) {
 			mu_assert_eq(type->leaf_type, LF_VTSHAPE, "Incorrect data type");
 		} else if (type->type_index == 0x1FB7) {
 			mu_assert_eq(type->leaf_type, LF_MODIFIER, "Incorrect data type");
-			TpiType *stype = NULL;
+			RzPdbTpiType *stype = NULL;
 			stype = rz_bin_pdb_get_type_by_index(stream, ((Tpi_LF_Modifier *)(type->type_data))->modified_type);
 			mu_assert_eq(stype->leaf_type, LF_SIMPLE_TYPE, "Incorrect modified type");
 		} else if (type->type_index == 0x1EA9) {
@@ -276,7 +277,7 @@ bool test_pdb_tpi_rust(void) {
 			char *name;
 			name = rz_bin_pdb_get_type_name(type);
 			mu_assert_streq(name, "std::bad_typeid", "wrong class name");
-			TpiType *stype = NULL;
+			RzPdbTpiType *stype = NULL;
 			stype = rz_bin_pdb_get_type_by_index(stream, ((Tpi_LF_Class *)(type->type_data))->vshape);
 			mu_assert_notnull(stype, "wrong class vshape");
 			stype = rz_bin_pdb_get_type_by_index(stream, ((Tpi_LF_Class *)(type->type_data))->derived);
@@ -286,7 +287,7 @@ bool test_pdb_tpi_rust(void) {
 			// Nothing from methodlist is currently being parsed
 		} else if (type->type_index == 0x181C) {
 			mu_assert_eq(type->leaf_type, LF_MFUNCTION, "Incorrect data type");
-			TpiType *typ;
+			RzPdbTpiType *typ;
 			typ = rz_bin_pdb_get_type_by_index(stream, ((Tpi_LF_MFcuntion *)(type->type_data))->return_type);
 			mu_assert_eq(typ->leaf_type, LF_SIMPLE_TYPE, "Incorrect return type");
 			Tpi_LF_SimpleType *simple_type = typ->type_data;
@@ -303,7 +304,7 @@ bool test_pdb_tpi_rust(void) {
 			members = rz_bin_pdb_get_type_members(stream, type);
 			mu_assert_eq(members->length, 3, "Incorrect members length");
 			RzListIter *it = rz_list_iterator(members);
-			TpiType *t;
+			RzPdbTpiType *t;
 			int i = 0;
 			rz_list_foreach (members, it, t) {
 				mu_assert_eq(t->leaf_type, LF_MEMBER, "Incorrect data type");
@@ -340,7 +341,7 @@ bool test_pdb_tpi_rust(void) {
 			mu_assert_eq(members->length, 2, "Incorrect members count");
 
 			RzListIter *it = rz_list_iterator(members);
-			TpiType *t;
+			RzPdbTpiType *t;
 			int i = 0;
 			rz_list_foreach (members, it, t) {
 				if (i == 0) {
@@ -450,20 +451,20 @@ bool test_pdb_tpi_cpp_vs2019(void) {
 
 	mu_assert_eq(pdb->streams->length, 75, "Incorrect number of streams");
 
-	TpiStream *stream = pdb->s_tpi;
+	RzPdbTpiStream *stream = pdb->s_tpi;
 	mu_assert_notnull(stream, "TPIs stream not found in current PDB");
 	mu_assert_eq(stream->header.HeaderSize + stream->header.TypeRecordBytes, 233588, "Wrong TPI size");
 	mu_assert_eq(stream->header.TypeIndexBegin, 0x1000, "Wrong beginning index");
 	RBIter it;
-	TpiType *type;
+	RzPdbTpiType *type;
 
-	rz_rbtree_foreach (stream->types, it, type, TpiType, rb) {
+	rz_rbtree_foreach (stream->types, it, type, RzPdbTpiType, rb) {
 		if (type->type_index == 0x1A5F) {
 			mu_assert_eq(type->leaf_type, LF_PROCEDURE, "Incorrect data type");
-			TpiType *arglist;
+			RzPdbTpiType *arglist;
 			arglist = rz_bin_pdb_get_type_by_index(stream, ((Tpi_LF_Procedure *)(type->type_data))->arg_list);
 			mu_assert_eq(arglist->type_index, 0x1A5E, "Wrong type index");
-			TpiType *return_type;
+			RzPdbTpiType *return_type;
 			return_type = rz_bin_pdb_get_type_by_index(stream, ((Tpi_LF_Procedure *)(type->type_data))->return_type);
 			mu_assert_eq(return_type->leaf_type, LF_SIMPLE_TYPE, "Incorrect return type");
 			Tpi_LF_SimpleType *simple_type = return_type->type_data;
@@ -479,7 +480,7 @@ bool test_pdb_tpi_cpp_vs2019(void) {
 			mu_assert_false(forward_ref, "Wrong fwdref");
 		} else if (type->type_index == 0x1B3C) {
 			mu_assert_eq(type->leaf_type, LF_ARRAY, "Incorrect data type");
-			TpiType *dump;
+			RzPdbTpiType *dump;
 			dump = rz_bin_pdb_get_type_by_index(stream, ((Tpi_LF_Array *)(type->type_data))->index_type);
 			mu_assert_eq(dump->leaf_type, LF_SIMPLE_TYPE, "Incorrect return type");
 			Tpi_LF_SimpleType *simple_type = dump->type_data;
@@ -491,7 +492,7 @@ bool test_pdb_tpi_cpp_vs2019(void) {
 			mu_assert_eq(size, 16, "Wrong array size");
 		} else if (type->type_index == 0x20D6) {
 			mu_assert_eq(type->leaf_type, LF_ENUM, "Incorrect data type");
-			TpiType *dump;
+			RzPdbTpiType *dump;
 			RzList *members;
 			char *name;
 			name = rz_bin_pdb_get_type_name(type);
@@ -507,7 +508,7 @@ bool test_pdb_tpi_cpp_vs2019(void) {
 			mu_assert_eq(type->leaf_type, LF_VTSHAPE, "Incorrect data type");
 		} else if (type->type_index == 0x2163) {
 			mu_assert_eq(type->leaf_type, LF_MODIFIER, "Incorrect data type");
-			TpiType *stype = NULL;
+			RzPdbTpiType *stype = NULL;
 			stype = rz_bin_pdb_get_type_by_index(stream, ((Tpi_LF_Modifier *)(type->type_data))->modified_type);
 			mu_assert_eq(stype->type_index, 0x22, "Incorrect modified type");
 		} else if (type->leaf_type == 0x2151) {
@@ -526,7 +527,7 @@ bool test_pdb_tpi_cpp_vs2019(void) {
 			RzList *members;
 			members = rz_bin_pdb_get_type_members(stream, type);
 			mu_assert_eq(members->length, 5, "wrong class member count");
-			TpiType *stype = NULL;
+			RzPdbTpiType *stype = NULL;
 			stype = rz_bin_pdb_get_type_by_index(stream, ((Tpi_LF_Class *)(type->type_data))->vshape);
 			mu_assert_notnull(stype, "wrong class vshape");
 			stype = rz_bin_pdb_get_type_by_index(stream, ((Tpi_LF_Class *)(type->type_data))->derived);
@@ -540,7 +541,7 @@ bool test_pdb_tpi_cpp_vs2019(void) {
 			members = rz_bin_pdb_get_type_members(stream, type);
 			mu_assert_eq(members->length, 4, "wrong class member count");
 			RzListIter *it_ctest2;
-			TpiType *stype;
+			RzPdbTpiType *stype;
 			int i = 0;
 			rz_list_foreach (members, it_ctest2, stype) {
 				if (i == 0) {
@@ -568,14 +569,14 @@ bool test_pdb_tpi_cpp_vs2019(void) {
 			RzList *members;
 			members = rz_bin_pdb_get_type_members(stream, type);
 			mu_assert_eq(members->length, 12, "wrong class member count");
-			TpiType *stype = NULL;
+			RzPdbTpiType *stype = NULL;
 			stype = rz_bin_pdb_get_type_by_index(stream, ((Tpi_LF_Class *)(type->type_data))->vshape);
 			mu_assert_notnull(stype, "wrong class vshape");
 			stype = rz_bin_pdb_get_type_by_index(stream, ((Tpi_LF_Class *)(type->type_data))->derived);
 			mu_assert_null(stype, "wrong class derived");
 		} else if (type->type_index == 0x2147) {
 			mu_assert_eq(type->leaf_type, LF_BITFIELD, "Incorrect data type");
-			TpiType *base_type = NULL;
+			RzPdbTpiType *base_type = NULL;
 			base_type = rz_bin_pdb_get_type_by_index(stream, ((Tpi_LF_Bitfield *)(type->type_data))->base_type);
 			mu_assert_notnull(base_type, "Bitfield base type is NULL");
 		} else if (type->type_index == 0x2209) {
@@ -583,7 +584,7 @@ bool test_pdb_tpi_cpp_vs2019(void) {
 			// Nothing from methodlist is currently being parsed
 		} else if (type->type_index == 0x224F) {
 			mu_assert_eq(type->leaf_type, LF_MFUNCTION, "Incorrect data type");
-			TpiType *typ;
+			RzPdbTpiType *typ;
 			typ = rz_bin_pdb_get_type_by_index(stream, ((Tpi_LF_MFcuntion *)(type->type_data))->return_type);
 			mu_assert_eq(typ->leaf_type, LF_SIMPLE_TYPE, "Incorrect return type");
 			Tpi_LF_SimpleType *simple_type = typ->type_data;
@@ -601,7 +602,7 @@ bool test_pdb_tpi_cpp_vs2019(void) {
 			members = rz_bin_pdb_get_type_members(stream, type);
 			mu_assert_eq(members->length, 5, "Incorrect members length");
 			RzListIter *it_fieldlist;
-			TpiType *type_info;
+			RzPdbTpiType *type_info;
 			int i = 0;
 			rz_list_foreach (members, it_fieldlist, type_info) {
 				if (i == 1) {
@@ -631,7 +632,7 @@ bool test_pdb_tpi_cpp_vs2019(void) {
 			members = rz_bin_pdb_get_type_members(stream, type);
 			mu_assert_eq(members->length, 5, "Incorrect members count");
 			RzListIter *it_structure;
-			TpiType *type_structure;
+			RzPdbTpiType *type_structure;
 			int i = 0;
 			rz_list_foreach (members, it_structure, type_structure) {
 				if (i == 0) {
@@ -666,7 +667,7 @@ bool test_pdb_tpi_cpp_vs2019(void) {
 			members = rz_bin_pdb_get_type_members(stream, type);
 			mu_assert_eq(members->length, 48, "Incorrect members count");
 			RzListIter *it_structure_19;
-			TpiType *type_structure_19;
+			RzPdbTpiType *type_structure_19;
 			int i = 0;
 			rz_list_foreach (members, it_structure_19, type_structure_19) {
 				if (i == 0) {
@@ -704,20 +705,20 @@ bool test_pdb_tpi_arm(void) {
 
 	mu_assert_eq(pdb->streams->length, 399, "Incorrect number of streams");
 
-	TpiStream *stream = pdb->s_tpi;
+	RzPdbTpiStream *stream = pdb->s_tpi;
 	mu_assert_notnull(stream, "TPIs stream not found in current PDB");
 	mu_assert_eq(stream->header.HeaderSize + stream->header.TypeRecordBytes, 454428, "Wrong TPI size");
 	mu_assert_eq(stream->header.TypeIndexBegin, 0x1000, "Wrong beginning index");
 	RBIter it;
-	TpiType *type;
+	RzPdbTpiType *type;
 
-	rz_rbtree_foreach (stream->types, it, type, TpiType, rb) {
+	rz_rbtree_foreach (stream->types, it, type, RzPdbTpiType, rb) {
 		if (type->type_index == 0x1A56) {
 			mu_assert_eq(type->leaf_type, LF_PROCEDURE, "Incorrect data type");
-			TpiType *arglist;
+			RzPdbTpiType *arglist;
 			arglist = rz_bin_pdb_get_type_by_index(stream, ((Tpi_LF_Procedure *)(type->type_data))->arg_list);
 			mu_assert_eq(arglist->type_index, 0x1A54, "Wrong type index");
-			TpiType *return_type;
+			RzPdbTpiType *return_type;
 			return_type = rz_bin_pdb_get_type_by_index(stream, ((Tpi_LF_Procedure *)(type->type_data))->return_type);
 			mu_assert_eq(return_type->leaf_type, LF_SIMPLE_TYPE, "Incorrect return type");
 			Tpi_LF_SimpleType *simple_type = return_type->type_data;
@@ -733,7 +734,7 @@ bool test_pdb_tpi_arm(void) {
 			mu_assert_false(forward_ref, "Wrong fwdref");
 		} else if (type->type_index == 0x1B2B) {
 			mu_assert_eq(type->leaf_type, LF_ARRAY, "Incorrect data type");
-			TpiType *dump;
+			RzPdbTpiType *dump;
 			dump = rz_bin_pdb_get_type_by_index(stream, ((Tpi_LF_Array *)(type->type_data))->index_type);
 			mu_assert_eq(dump->leaf_type, LF_SIMPLE_TYPE, "Incorrect return type");
 			Tpi_LF_SimpleType *simple_type = dump->type_data;
@@ -745,7 +746,7 @@ bool test_pdb_tpi_arm(void) {
 			mu_assert_eq(size, 16, "Wrong array size");
 		} else if (type->type_index == 0x1B9C) {
 			mu_assert_eq(type->leaf_type, LF_ENUM, "Incorrect data type");
-			TpiType *dump;
+			RzPdbTpiType *dump;
 			RzList *members;
 			char *name;
 			name = rz_bin_pdb_get_type_name(type);
@@ -761,7 +762,7 @@ bool test_pdb_tpi_arm(void) {
 			mu_assert_eq(type->leaf_type, LF_VTSHAPE, "Incorrect data type");
 		} else if (type->type_index == 0x113C) {
 			mu_assert_eq(type->leaf_type, LF_MODIFIER, "Incorrect data type");
-			TpiType *stype = NULL;
+			RzPdbTpiType *stype = NULL;
 			stype = rz_bin_pdb_get_type_by_index(stream, ((Tpi_LF_Modifier *)(type->type_data))->modified_type);
 			mu_assert_eq(stype->type_index, 0x112D, "Incorrect modified type");
 		} else if (type->leaf_type == 0x2151) {
@@ -780,7 +781,7 @@ bool test_pdb_tpi_arm(void) {
 			RzList *members;
 			members = rz_bin_pdb_get_type_members(stream, type);
 			mu_assert_eq(members->length, 6, "wrong class member count");
-			TpiType *stype = NULL;
+			RzPdbTpiType *stype = NULL;
 			stype = rz_bin_pdb_get_type_by_index(stream, ((Tpi_LF_Class *)(type->type_data))->vshape);
 			mu_assert_notnull(stype, "wrong class vshape");
 			stype = rz_bin_pdb_get_type_by_index(stream, ((Tpi_LF_Class *)(type->type_data))->derived);
@@ -794,7 +795,7 @@ bool test_pdb_tpi_arm(void) {
 			members = rz_bin_pdb_get_type_members(stream, type);
 			mu_assert_eq(members->length, 9, "wrong class member count");
 			RzListIter *it_ctest2;
-			TpiType *stype;
+			RzPdbTpiType *stype;
 			int i = 0;
 			rz_list_foreach (members, it_ctest2, stype) {
 				if (i == 0) {
@@ -821,14 +822,14 @@ bool test_pdb_tpi_arm(void) {
 			mu_assert_null(stype, "wrong class derived");
 		} else if (type->type_index == 0x1638) {
 			mu_assert_eq(type->leaf_type, LF_BITFIELD, "Incorrect data type");
-			TpiType *base_type = NULL;
+			RzPdbTpiType *base_type = NULL;
 			base_type = rz_bin_pdb_get_type_by_index(stream, ((Tpi_LF_Bitfield *)(type->type_data))->base_type);
 			mu_assert_notnull(base_type, "Bitfield base type is NULL");
 		} else if (type->type_index == 0x167F) {
 			mu_assert_eq(type->leaf_type, LF_METHODLIST, "Incorrect data type");
 		} else if (type->type_index == 0x168C) {
 			mu_assert_eq(type->leaf_type, LF_MFUNCTION, "Incorrect data type");
-			TpiType *typ;
+			RzPdbTpiType *typ;
 			typ = rz_bin_pdb_get_type_by_index(stream, ((Tpi_LF_MFcuntion *)(type->type_data))->return_type);
 			mu_assert_eq(typ->leaf_type, LF_SIMPLE_TYPE, "Incorrect return type");
 			Tpi_LF_SimpleType *simple_type = typ->type_data;
@@ -846,7 +847,7 @@ bool test_pdb_tpi_arm(void) {
 			members = rz_bin_pdb_get_type_members(stream, type);
 			mu_assert_eq(members->length, 100, "Incorrect members length");
 			RzListIter *it_fieldlist;
-			TpiType *type_info;
+			RzPdbTpiType *type_info;
 			int i = 0;
 			rz_list_foreach (members, it_fieldlist, type_info) {
 				if (i == 3) {
@@ -876,7 +877,7 @@ bool test_pdb_tpi_arm(void) {
 			members = rz_bin_pdb_get_type_members(stream, type);
 			mu_assert_eq(members->length, 23, "Incorrect members count");
 			RzListIter *it_structure;
-			TpiType *type_structure;
+			RzPdbTpiType *type_structure;
 			int i = 0;
 			rz_list_foreach (members, it_structure, type_structure) {
 				if (i == 0) {
@@ -907,7 +908,7 @@ bool test_pdb_tpi_arm(void) {
 
 int test_tpi_type_node_cmp(const void *incoming, const RBNode *in_tree, void *user) {
 	ut64 ia = *(ut64 *)incoming;
-	ut64 ta = container_of(in_tree, const TpiType, rb)->type_index;
+	ut64 ta = container_of(in_tree, const RzPdbTpiType, rb)->type_index;
 	if (ia < ta) {
 		return -1;
 	} else if (ia > ta) {

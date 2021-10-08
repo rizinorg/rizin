@@ -4,8 +4,8 @@
 
 #include "pdb.h"
 
-static bool is_simple_type(TpiStream *stream, ut32 idx) {
-	/*   https://llvm.org/docs/PDB/TpiStream.html#type-indices
+static bool is_simple_type(RzPdbTpiStream *stream, ut32 idx) {
+	/*   https://llvm.org/docs/PDB/RzPdbTpiStream.html#type-indices
   .---------------------------.------.----------.
   |           Unused          | Mode |   Kind   |
   '---------------------------'------'----------'
@@ -18,7 +18,7 @@ static bool is_simple_type(TpiStream *stream, ut32 idx) {
 
 int tpi_type_node_cmp(const void *incoming, const RBNode *in_tree, void *user) {
 	ut32 ia = *(ut32 *)incoming;
-	ut32 ta = container_of(in_tree, const TpiType, rb)->type_index;
+	ut32 ta = container_of(in_tree, const RzPdbTpiType, rb)->type_index;
 	if (ia < ta) {
 		return -1;
 	} else if (ia > ta) {
@@ -32,7 +32,7 @@ int tpi_type_node_cmp(const void *incoming, const RBNode *in_tree, void *user) {
  *
  * \param idx
  */
-RZ_API RZ_OWN char *rz_bin_pdb_calling_convention_as_string(RZ_NONNULL TpiCallingConvention idx) {
+RZ_API RZ_OWN char *rz_bin_pdb_calling_convention_as_string(RZ_NONNULL RzPdbTpiCallingConvention idx) {
 	switch (idx) {
 	case NEAR_C:
 	case FAR_C:
@@ -59,7 +59,7 @@ RZ_API RZ_OWN char *rz_bin_pdb_calling_convention_as_string(RZ_NONNULL TpiCallin
 }
 
 static TpiSimpleTypeMode get_simple_type_mode(ut32 type) {
-	/*   https://llvm.org/docs/PDB/TpiStream.html#type-indices
+	/*   https://llvm.org/docs/PDB/RzPdbTpiStream.html#type-indices
   .---------------------------.------.----------.
   |           Unused          | Mode |   Kind   |
   '---------------------------'------'----------'
@@ -70,7 +70,7 @@ static TpiSimpleTypeMode get_simple_type_mode(ut32 type) {
 }
 
 static TpiSimpleTypeKind get_simple_type_kind(ut32 type) {
-	/*   https://llvm.org/docs/PDB/TpiStream.html#type-indices
+	/*   https://llvm.org/docs/PDB/RzPdbTpiStream.html#type-indices
   .---------------------------.------.----------.
   |           Unused          | Mode |   Kind   |
   '---------------------------'------'----------'
@@ -135,12 +135,12 @@ static void parse_codeview_modifier(TpiCVModifier *m, ut16 value) {
 
 /**
  * \brief Parses simple type if the idx represents one
- * \param TpiStream TPI stream context
+ * \param RzPdbTpiStream TPI stream context
  * \param idx leaf index
- * \return TpiType, leaf_type = 0 -> error
+ * \return RzPdbTpiType, leaf_type = 0 -> error
  */
-RZ_IPI TpiType *parse_simple_type(TpiStream *stream, ut32 idx) {
-	TpiType *type = RZ_NEW0(TpiType);
+RZ_IPI RzPdbTpiType *parse_simple_type(RzPdbTpiStream *stream, ut32 idx) {
+	RzPdbTpiType *type = RZ_NEW0(RzPdbTpiType);
 	if (!type) {
 		RZ_LOG_ERROR("Error allocating memory.\n");
 		return NULL;
@@ -365,10 +365,10 @@ static ut64 get_numeric_val(Tpi_Type_Numeric *numeric) {
 /**
  * \brief Return true if type is forward definition
  *
- * \param t TpiType
+ * \param t RzPdbTpiType
  * \return bool
  */
-RZ_API bool rz_bin_pdb_type_is_fwdref(RZ_NONNULL TpiType *t) {
+RZ_API bool rz_bin_pdb_type_is_fwdref(RZ_NONNULL RzPdbTpiType *t) {
 	rz_return_val_if_fail(t, false); // return val stands for we do nothing for it
 	switch (t->leaf_type) {
 	case LF_UNION: {
@@ -396,15 +396,15 @@ RZ_API bool rz_bin_pdb_type_is_fwdref(RZ_NONNULL TpiType *t) {
 }
 
 /**
- * \brief Get the TpiType member list 
+ * \brief Get the RzPdbTpiType member list 
  * 
  * \param stream TPI stream
- * \param t TpiType
+ * \param t RzPdbTpiType
  * \return RzList *
  */
-RZ_API RZ_BORROW RzList *rz_bin_pdb_get_type_members(RZ_NONNULL TpiStream *stream, TpiType *t) {
+RZ_API RZ_BORROW RzList *rz_bin_pdb_get_type_members(RZ_NONNULL RzPdbTpiStream *stream, RzPdbTpiType *t) {
 	rz_return_val_if_fail(t, NULL);
-	TpiType *tmp;
+	RzPdbTpiType *tmp;
 	switch (t->leaf_type) {
 	case LF_FIELDLIST: {
 		Tpi_LF_FieldList *lf = t->type_data;
@@ -440,10 +440,10 @@ RZ_API RZ_BORROW RzList *rz_bin_pdb_get_type_members(RZ_NONNULL TpiStream *strea
 /**
  * \brief Get the name of the type
  * 
- * \param type TpiType *
+ * \param type RzPdbTpiType *
  * \return char *
  */
-RZ_API RZ_BORROW char *rz_bin_pdb_get_type_name(RZ_NONNULL TpiType *type) {
+RZ_API RZ_BORROW char *rz_bin_pdb_get_type_name(RZ_NONNULL RzPdbTpiType *type) {
 	rz_return_val_if_fail(type, NULL);
 	switch (type->leaf_type) {
 	case LF_MEMBER: {
@@ -500,10 +500,10 @@ RZ_API RZ_BORROW char *rz_bin_pdb_get_type_name(RZ_NONNULL TpiType *type) {
 /**
  * \brief Get the numeric value inside the type
  * 
- * \param type TpiType *
+ * \param type RzPdbTpiType *
  * \return ut64
  */
-RZ_API ut64 rz_bin_pdb_get_type_val(RZ_NONNULL TpiType *type) {
+RZ_API ut64 rz_bin_pdb_get_type_val(RZ_NONNULL RzPdbTpiType *type) {
 	rz_return_val_if_fail(type, -1);
 	switch (type->leaf_type) {
 	case LF_ONEMETHOD: {
@@ -563,7 +563,7 @@ static void free_snumeric(Tpi_Type_Numeric *numeric) {
 
 static void free_tpi_type(void *type_info) {
 	rz_return_if_fail(type_info);
-	TpiType *type = (TpiType *)type_info;
+	RzPdbTpiType *type = (RzPdbTpiType *)type_info;
 	switch (type->leaf_type) {
 	case LF_ENUMERATE: {
 		Tpi_LF_Enumerate *lf_en = (Tpi_LF_Enumerate *)type->type_data;
@@ -595,7 +595,7 @@ static void free_tpi_type(void *type_info) {
 	case LF_FIELDLIST: {
 		Tpi_LF_FieldList *lf_fieldlist = (Tpi_LF_FieldList *)type->type_data;
 		RzListIter *it;
-		TpiType *ftype = 0;
+		RzPdbTpiType *ftype = 0;
 		rz_list_foreach (lf_fieldlist->substructs, it, ftype) {
 			free_tpi_type(ftype);
 		}
@@ -694,12 +694,12 @@ static void free_tpi_type(void *type_info) {
 
 static void free_tpi_rbtree(RBNode *node, void *user) {
 	rz_return_if_fail(node);
-	TpiType *type = container_of(node, TpiType, rb);
+	RzPdbTpiType *type = container_of(node, RzPdbTpiType, rb);
 	free_tpi_type(type);
 	RZ_FREE(type);
 }
 
-RZ_IPI void free_tpi_stream(TpiStream *stream) {
+RZ_IPI void free_tpi_stream(RzPdbTpiStream *stream) {
 	rz_rbtree_free(stream->types, free_tpi_rbtree, NULL);
 	rz_list_free(stream->print_type);
 }
@@ -1100,7 +1100,7 @@ static Tpi_LF_FieldList *parse_type_fieldlist(RzBuffer *buf, ut16 len) {
 
 	ut16 read_len = sizeof(ut16);
 	while (read_len < len) {
-		TpiType *type = RZ_NEW0(TpiType);
+		RzPdbTpiType *type = RZ_NEW0(RzPdbTpiType);
 		if (!type) {
 			rz_list_free(fieldlist->substructs);
 			goto error;
@@ -1661,7 +1661,7 @@ static Tpi_LF_Vtshape *parse_type_vtshape(RzBuffer *buf, ut16 len) {
 	return vt;
 }
 
-static bool parse_tpi_types(RzBuffer *buf, TpiType *type) {
+static bool parse_tpi_types(RzBuffer *buf, RzPdbTpiType *type) {
 	if (!buf || !type) {
 		return false;
 	}
@@ -1723,7 +1723,7 @@ static bool parse_tpi_types(RzBuffer *buf, TpiType *type) {
 	return true;
 }
 
-static bool parse_tpi_stream_header(TpiStream *s, RzBuffer *buf) {
+static bool parse_tpi_stream_header(RzPdbTpiStream *s, RzBuffer *buf) {
 	return rz_buf_read_le32(buf, &s->header.Version) &&
 		rz_buf_read_le32(buf, &s->header.HeaderSize) &&
 		rz_buf_read_le32(buf, &s->header.TypeIndexBegin) &&
@@ -1745,7 +1745,7 @@ static bool parse_tpi_stream_header(TpiStream *s, RzBuffer *buf) {
 		rz_buf_read_le32(buf, &s->header.HashAdjBufferLength);
 }
 
-RZ_IPI bool parse_tpi_stream(RzPdb *pdb, MsfStream *stream) {
+RZ_IPI bool parse_tpi_stream(RzPdb *pdb, RzPdbMsfStream *stream) {
 	if (!pdb || !stream) {
 		return false;
 	}
@@ -1753,8 +1753,8 @@ RZ_IPI bool parse_tpi_stream(RzPdb *pdb, MsfStream *stream) {
 		RZ_LOG_ERROR("Error TPI stream index.\n");
 		return false;
 	}
-	pdb->s_tpi = RZ_NEW0(TpiStream);
-	TpiStream *s = pdb->s_tpi;
+	pdb->s_tpi = RZ_NEW0(RzPdbTpiStream);
+	RzPdbTpiStream *s = pdb->s_tpi;
 	if (!s) {
 		RZ_LOG_ERROR("Error allocating memory.\n");
 		return false;
@@ -1764,13 +1764,13 @@ RZ_IPI bool parse_tpi_stream(RzPdb *pdb, MsfStream *stream) {
 	if (!parse_tpi_stream_header(s, buf)) {
 		return false;
 	}
-	if (s->header.HeaderSize != sizeof(TpiStreamHeader)) {
+	if (s->header.HeaderSize != sizeof(RzPdbTpiStreamHeader)) {
 		RZ_LOG_ERROR("Corrupted TPI stream.\n");
 		return false;
 	}
-	TpiType *type;
+	RzPdbTpiType *type;
 	for (ut32 i = s->header.TypeIndexBegin; i < s->header.TypeIndexEnd; i++) {
-		type = RZ_NEW0(TpiType);
+		type = RZ_NEW0(RzPdbTpiType);
 		if (!type) {
 			continue;
 		}
@@ -1786,11 +1786,11 @@ RZ_IPI bool parse_tpi_stream(RzPdb *pdb, MsfStream *stream) {
 }
 
 /**
- * \brief Get TpiType that matches tpi stream index
+ * \brief Get RzPdbTpiType that matches tpi stream index
  * \param stream TPI Stream
  * \param index TPI Stream Index
  */
-RZ_API RZ_BORROW TpiType *rz_bin_pdb_get_type_by_index(RZ_NONNULL TpiStream *stream, ut32 index) {
+RZ_API RZ_BORROW RzPdbTpiType *rz_bin_pdb_get_type_by_index(RZ_NONNULL RzPdbTpiStream *stream, ut32 index) {
 	rz_return_val_if_fail(stream, NULL);
 	if (index == 0) {
 		return NULL;
@@ -1804,6 +1804,6 @@ RZ_API RZ_BORROW TpiType *rz_bin_pdb_get_type_by_index(RZ_NONNULL TpiStream *str
 			return parse_simple_type(stream, index);
 		}
 	}
-	TpiType *type = container_of(node, TpiType, rb);
+	RzPdbTpiType *type = container_of(node, RzPdbTpiType, rb);
 	return type;
 }

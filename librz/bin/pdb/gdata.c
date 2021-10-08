@@ -30,12 +30,12 @@ static bool parse_gdata_global(GDataGlobal *global, RzBuffer *buf, ut32 initial_
 	return true;
 }
 
-RZ_IPI bool parse_gdata_stream(RzPdb *pdb, MsfStream *stream) {
+RZ_IPI bool parse_gdata_stream(RzPdb *pdb, RzPdbMsfStream *stream) {
 	rz_return_val_if_fail(pdb && stream, false);
 	if (!pdb->s_gdata) {
-		pdb->s_gdata = RZ_NEW0(GDataStream);
+		pdb->s_gdata = RZ_NEW0(RzPdbGDataStream);
 	}
-	GDataStream *s = pdb->s_gdata;
+	RzPdbGDataStream *s = pdb->s_gdata;
 	if (!s) {
 		RZ_LOG_ERROR("Error allocating memory.\n");
 		return false;
@@ -77,7 +77,7 @@ RZ_IPI bool parse_gdata_stream(RzPdb *pdb, MsfStream *stream) {
 	return true;
 }
 
-RZ_IPI void free_gdata_stream(GDataStream *stream) {
+RZ_IPI void free_gdata_stream(RzPdbGDataStream *stream) {
 	GDataGlobal *global;
 	RzListIter *it;
 	rz_list_foreach (stream->global_list, it, global) {
