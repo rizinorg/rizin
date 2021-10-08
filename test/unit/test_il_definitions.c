@@ -6,7 +6,7 @@
 #include "minunit.h"
 
 static bool is_equal_bv(RzILBitVector *x, RzILBitVector *y) {
-	return (rz_il_bv_cmp(x, y) == 0 ? true : false);
+	return rz_il_bv_cmp(x, y) == 0;
 }
 
 static bool is_equal_bool(RzILBool *x, RzILBool *y) {
@@ -119,7 +119,6 @@ bool test_rzil_bv_logic(void) {
 	rz_il_bv_free(result);
 
 	result = rz_il_bv_or(x, y);
-	printf("\n");
 	mu_assert("or x y", is_equal_bv(result, or));
 	rz_il_bv_free(result);
 

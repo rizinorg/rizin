@@ -13,7 +13,7 @@ RZ_API RzAnalysisRzil *rz_analysis_rzil_new() {
 	if (!rzil) {
 		return NULL;
 	}
-	rzil->vm = RZ_NEW0(struct rz_il_vm_t);
+	rzil->vm = RZ_NEW0(RzILVM);
 	if (!rzil->vm) {
 		free(rzil);
 		return NULL;
@@ -33,6 +33,7 @@ RZ_API void rz_analysis_rzil_cleanup(RzAnalysis *analysis, RzAnalysisRzil *rzil)
 	if (analysis && analysis->cur && analysis->cur->rzil_fini) {
 		analysis->cur->rzil_fini(analysis);
 	}
+	free(rzil->vm);
 	free(rzil);
 	analysis->rzil = NULL;
 }
@@ -62,6 +63,7 @@ RZ_API bool rz_analysis_rzil_set_pc(RzAnalysisRzil *rzil, ut64 addr) {
  */
 RZ_API bool rz_analysis_rzil_setup(RzAnalysis *analysis) {
 	rz_return_val_if_fail(analysis, false);
+	rz_return_val_if_fail(!analysis->rzil, false);
 
 	RzAnalysisRzil *rzil = rz_analysis_rzil_new();
 	if (!rzil) {
@@ -75,19 +77,6 @@ RZ_API bool rz_analysis_rzil_setup(RzAnalysis *analysis) {
 	}
 
 	return true;
-}
-
-/**
- * Set operand list starting at the specified address for the RZIL VM
- * \param rzil RzAnalysisRzil* pointer to RzAnalysisRzil
- * \param addr ut64 address of current pc
- * \param oplist RzPvector* vector of core theory opcodes
- */
-RZ_API void rz_analysis_set_rzil_op(RzAnalysisRzil *rzil, ut64 addr, RzPVector *oplist) {
-	rz_return_if_fail(rzil);
-	RzILBitVector *bv_addr = rz_il_ut64_addr_to_bv(addr);
-	rz_il_vm_store_opcodes_to_addr(rzil->vm, bv_addr, oplist);
-	rz_il_free_bv_addr(bv_addr);
 }
 
 static void rz_analysis_rzil_parse_root(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzAnalysisRzilOp *ops) {

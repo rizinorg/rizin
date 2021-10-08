@@ -38,14 +38,14 @@ RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, int addr_size, int data_s
 	vm->vm_global_variable_list = RZ_NEWS0(RzILVar *, RZ_IL_VM_MAX_VAR);
 	if (!vm->vm_global_variable_list) {
 		RZ_LOG_ERROR("[VM INIT FAILED] : variable\n");
-		rz_il_vm_close(vm);
+		rz_il_vm_fini(vm);
 		return false;
 	}
 
 	vm->vm_global_value_set = rz_il_new_bag(RZ_IL_VM_MAX_VAL, (RzILBagFreeFunc)rz_il_free_value);
 	if (!vm->vm_global_value_set) {
 		RZ_LOG_ERROR("[VM INIT FAILED] : value bag\n");
-		rz_il_vm_close(vm);
+		rz_il_vm_fini(vm);
 		return false;
 	}
 
@@ -80,7 +80,7 @@ RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, int addr_size, int data_s
 	vm->mems = (RzILMem **)calloc(RZ_IL_VM_MAX_TEMP, sizeof(RzILMem *));
 	if (!vm->mems) {
 		RZ_LOG_ERROR("[VM INIT FAILED] : mem\n");
-		rz_il_vm_close(vm);
+		rz_il_vm_fini(vm);
 		return false;
 	}
 	vm->pc = rz_il_bv_new_from_ut64(addr_size, start_addr);
@@ -143,19 +143,23 @@ RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, int addr_size, int data_s
  * Close and clean vm
  * \param vm RzILVM* pointer to VM
  */
-RZ_API void rz_il_vm_close(RzILVM *vm) {
+RZ_API void rz_il_vm_fini(RzILVM *vm) {
 	RzILVar *var;
 
-	rz_il_free_bag(vm->vm_global_value_set);
-
-	for (int i = 0; i < RZ_IL_VM_MAX_VAR; ++i) {
-		if (vm->vm_global_variable_list[i] != NULL) {
-			var = vm->vm_global_variable_list[i];
-			rz_il_free_variable(var);
-			vm->vm_global_variable_list[i] = NULL;
-		}
+	if (vm->vm_global_value_set) {
+		rz_il_free_bag(vm->vm_global_value_set);
 	}
-	free(vm->vm_global_variable_list);
+
+	if (vm->vm_global_variable_list) {
+		for (int i = 0; i < RZ_IL_VM_MAX_VAR; ++i) {
+			if (vm->vm_global_variable_list[i] != NULL) {
+				var = vm->vm_global_variable_list[i];
+				rz_il_free_variable(var);
+				vm->vm_global_variable_list[i] = NULL;
+			}
+		}
+		free(vm->vm_global_variable_list);
+	}
 
 	if (vm->ct_opcodes) {
 		ht_pp_free(vm->ct_opcodes);
@@ -180,7 +184,6 @@ RZ_API void rz_il_vm_close(RzILVM *vm) {
 		free(vm->op_handler_table);
 	}
 	rz_il_bv_free(vm->pc);
-	free(vm);
 }
 
 /**
@@ -313,8 +316,13 @@ RZ_API RzILMem *rz_il_vm_mem_store(RzILVM *vm, int mem_index, RzILBitVector *key
 	return NULL;
 }
 
-void rz_il_vm_step(RzILVM *vm, RzILOp *root) {
-	RZIL_OP_ARG_TYPE type = RZIL_OP_ARG_INIT;
+/**
+ * Step execute a single RZIL root
+ * @param vm, RzILVM, pointer to the VM
+ * @param root, RzILOp*, the root of an opcode tree
+ */
+RZ_API void rz_il_vm_step(RzILVM *vm, RzILOp *root) {
+	RzILOpArgType type = RZIL_OP_ARG_INIT;
 	rz_il_parse_op_root(vm, root, &type);
 }
 

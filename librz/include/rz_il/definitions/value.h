@@ -6,16 +6,6 @@
 
 #include "variable.h"
 
-/// The following RzIL_* is only a mark
-/// to remind developer the argument type in opcode struct
-#define RzIL_PURE_VAL
-#define RzIL_BITV
-#define RzIL_BOOL
-#define RzIL_VAR
-#define RzIL_EFF
-#define RzIL_LABLE
-#define RzIL_MEM
-
 typedef union {
 	RzILBitVector *bv;
 	RzILBool *b;

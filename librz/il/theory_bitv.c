@@ -4,7 +4,7 @@
 #include <rz_il/rzil_opcodes.h>
 #include <rz_il/rzil_vm.h>
 
-void *rz_il_handler_msb(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
+void *rz_il_handler_msb(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	RzILOpMsb *op_msb = op->op.msb;
 	RzILBitVector *bv = rz_il_evaluate_bitv(vm, op_msb->bv, type);
 	RzILBool *result = rz_il_new_bool(rz_il_bv_msb(bv));
@@ -14,7 +14,7 @@ void *rz_il_handler_msb(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
 	return result;
 }
 
-void *rz_il_handler_lsb(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
+void *rz_il_handler_lsb(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	RzILOpLsb *op_lsb = op->op.lsb;
 	RzILBitVector *bv = rz_il_evaluate_bitv(vm, op_lsb->bv, type);
 	RzILBool *result = rz_il_new_bool(rz_il_bv_lsb(bv));
@@ -24,7 +24,7 @@ void *rz_il_handler_lsb(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
 	return result;
 }
 
-void *rz_il_handler_neg(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
+void *rz_il_handler_neg(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	RzILOpNeg *neg = op->op.neg;
 
 	RzILBitVector *bv_arg = rz_il_evaluate_bitv(vm, neg->bv, type);
@@ -35,7 +35,7 @@ void *rz_il_handler_neg(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
 	return bv_result;
 }
 
-void *rz_il_handler_not(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
+void *rz_il_handler_not(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	RzILOpNot *op_not = op->op.not ;
 
 	RzILBitVector *bv = rz_il_evaluate_bitv(vm, op_not->bv, type);
@@ -46,7 +46,7 @@ void *rz_il_handler_not(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
 	return result;
 }
 
-void *rz_il_handler_sle(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
+void *rz_il_handler_sle(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	RzILOpSle *op_sle = op->op.sle;
 
 	RzILBitVector *x = rz_il_evaluate_bitv(vm, op_sle->x, type);
@@ -60,7 +60,7 @@ void *rz_il_handler_sle(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
 	return result;
 }
 
-void *rz_il_handler_ule(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
+void *rz_il_handler_ule(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	RzILOpUle *op_ule = op->op.ule;
 
 	RzILBitVector *x = rz_il_evaluate_bitv(vm, op_ule->x, type);
@@ -74,7 +74,7 @@ void *rz_il_handler_ule(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
 	return result;
 }
 
-void *rz_il_handler_add(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
+void *rz_il_handler_add(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	RzILOpAdd *op_add = op->op.add;
 
 	RzILBitVector *x = rz_il_evaluate_bitv(vm, op_add->x, type);
@@ -88,7 +88,7 @@ void *rz_il_handler_add(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
 	return result;
 }
 
-void *rz_il_handler_sub(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
+void *rz_il_handler_sub(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	RzILOpSub *op_sub = op->op.sub;
 
 	RzILBitVector *x = rz_il_evaluate_bitv(vm, op_sub->x, type);
@@ -102,7 +102,7 @@ void *rz_il_handler_sub(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
 	return result;
 }
 
-void *rz_il_handler_mul(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
+void *rz_il_handler_mul(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	RzILOpMul *op_mul = op->op.mul;
 
 	RzILBitVector *x = rz_il_evaluate_bitv(vm, op_mul->x, type);
@@ -116,7 +116,7 @@ void *rz_il_handler_mul(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
 	return result;
 }
 
-void *rz_il_handler_div(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
+void *rz_il_handler_div(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	RzILOpDiv *op_div = op->op.div;
 
 	RzILBitVector *x = rz_il_evaluate_bitv(vm, op_div->x, type);
@@ -130,7 +130,7 @@ void *rz_il_handler_div(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
 	return result;
 }
 
-void *rz_il_handler_sdiv(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
+void *rz_il_handler_sdiv(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	RzILOpSdiv *op_sdiv = op->op.sdiv;
 
 	RzILBitVector *x = rz_il_evaluate_bitv(vm, op_sdiv->x, type);
@@ -144,7 +144,7 @@ void *rz_il_handler_sdiv(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
 	return result;
 }
 
-void *rz_il_handler_mod(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
+void *rz_il_handler_mod(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	RzILOpMod *op_mod = op->op.mod;
 
 	RzILBitVector *x = rz_il_evaluate_bitv(vm, op_mod->x, type);
@@ -158,7 +158,7 @@ void *rz_il_handler_mod(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
 	return result;
 }
 
-void *rz_il_handler_smod(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
+void *rz_il_handler_smod(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	RzILOpSmod *op_smod = op->op.smod;
 
 	RzILBitVector *x = rz_il_evaluate_bitv(vm, op_smod->x, type);
@@ -172,7 +172,7 @@ void *rz_il_handler_smod(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
 	return result;
 }
 
-void *rz_il_handler_shiftl(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
+void *rz_il_handler_shiftl(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	RzILOpShiftl *op_shiftl = op->op.shiftl;
 
 	RzILBitVector *bv = rz_il_evaluate_bitv(vm, op_shiftl->x, type);
@@ -191,7 +191,7 @@ void *rz_il_handler_shiftl(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
 	return result;
 }
 
-void *rz_il_handler_shiftr(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
+void *rz_il_handler_shiftr(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	RzILOpShiftr *op_shr = op->op.shiftr;
 
 	RzILBitVector *bv = rz_il_evaluate_bitv(vm, op_shr->x, type);
@@ -210,7 +210,7 @@ void *rz_il_handler_shiftr(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
 	return result;
 }
 
-void *rz_il_handler_int(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
+void *rz_il_handler_int(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	RzILOpInt *op_int = op->op.int_;
 
 	ut32 length = op_int->length;

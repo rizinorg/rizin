@@ -29,7 +29,6 @@ RZ_IPI void rz_core_analysis_esil_emulate(RzCore *core, ut64 addr, ut64 until_ad
 RZ_IPI void rz_core_analysis_esil_emulate_bb(RzCore *core);
 RZ_IPI void rz_core_analysis_esil_default(RzCore *core);
 
-RZ_IPI void core_rzil_init(RzCore *core);
 RZ_IPI void rz_core_analysis_rzil_reinit(RzCore *core);
 RZ_IPI void rz_core_rzil_step(RzCore *core);
 

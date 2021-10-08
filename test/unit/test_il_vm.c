@@ -6,16 +6,16 @@
 #include "minunit.h"
 
 static bool test_rzil_vm_init() {
-	RzILVM *vm = RZ_NEW0(struct rz_il_vm_t);
+	RzILVM *vm = RZ_NEW0(RzILVM);
 	mu_assert_notnull(vm, "Create VM");
 	rz_il_vm_init(vm, 0, 8, 8);
 	mu_assert_eq(vm->addr_size, 8, "VM Init");
-	rz_il_vm_close(vm);
+	rz_il_vm_fini(vm);
 	mu_end;
 }
 
 static bool test_rzil_vm_basic_operation() {
-	RzILVM *vm = RZ_NEW0(struct rz_il_vm_t);
+	RzILVM *vm = RZ_NEW0(RzILVM);
 	mu_assert_notnull(vm, "Create vm");
 	rz_il_vm_init(vm, 0, 8, 16);
 
@@ -99,15 +99,15 @@ static bool test_rzil_vm_basic_operation() {
 	rz_il_vm_update_label(vm, "lazy", addr);
 	lazy_addr = rz_il_hash_find_addr_by_lblname(vm, "lazy");
 	is_equal_bv = rz_il_bv_cmp(lazy_addr, addr) == 0 ? true : false;
-	mu_assert("Update lazy label successfully", is_equal_bv);
+	mu_assert_true(is_equal_bv, "Update lazy label successfully");
 
 	rz_il_bv_free(addr);
-	rz_il_vm_close(vm);
+	rz_il_vm_fini(vm);
 	mu_end;
 }
 
 static bool test_rzil_vm_operation() {
-	RzILVM *vm = RZ_NEW0(struct rz_il_vm_t);
+	RzILVM *vm = RZ_NEW0(RzILVM);
 	rz_il_vm_init(vm, 0, 8, 16);
 
 	// 1. create register r0 and r1
@@ -133,7 +133,73 @@ static bool test_rzil_vm_operation() {
 	is_zero = rz_il_bv_is_zero_vector(r1->data.bv);
 	mu_assert("Init r1 as all zero bitvector", is_zero);
 
-	rz_il_vm_close(vm);
+	rz_il_vm_fini(vm);
+	mu_end;
+}
+
+static bool test_rzil_vm_root_evaluation() {
+	RzILVM *vm = RZ_NEW0(RzILVM);
+	rz_il_vm_init(vm, 0, 8, 16);
+
+	RzILOp *ite_root = rz_il_new_op(RZIL_OP_ITE);
+	RzILOp *add = rz_il_new_op(RZIL_OP_ADD);
+	RzILOp *arg1 = rz_il_new_op(RZIL_OP_INT);
+	RzILOp *arg2 = rz_il_new_op(RZIL_OP_INT);
+	RzILOp *true_val = rz_il_new_op(RZIL_OP_B1);
+	RzILOp *false_val = rz_il_new_op(RZIL_OP_B0);
+
+	// (ite (add 23 19)
+	//	true
+	//	false)
+	// evaluate (add 23 19) will get a bitvector, but condition require a bool
+	ite_root->op.ite->condition = add;
+	ite_root->op.ite->x = true_val;
+	ite_root->op.ite->y = false_val;
+	add->op.add->x = arg1;
+	add->op.add->y = arg2;
+	arg1->op.int_->value = 23;
+	arg1->op.int_->length = 16;
+	arg2->op.int_->value = 19;
+	arg2->op.int_->length = 16;
+
+	// Partially evaluate `condition` only
+	RzILOpArgType type_checker = RZIL_OP_ARG_INIT;
+	RzILBool *condition = rz_il_evaluate_bool(vm, ite_root->op.ite->condition, &type_checker);
+	mu_assert_eq(type_checker, RZIL_OP_ARG_BOOL, "Evaluate a bool expression");
+	mu_assert_eq(condition->b, true, "Correctly convert bitv to bool");
+	rz_il_free_bool(condition);
+
+	// Evaluate the whole ite expression
+	RzILVal *ite_val = rz_il_evaluate_val(vm, ite_root, &type_checker);
+	mu_assert_eq(type_checker, RZIL_OP_ARG_VAL, "Correctly get a RzILVal");
+	mu_assert_eq(ite_val->type, RZIL_VAR_TYPE_BOOL, "Return a Bool Val");
+	mu_assert_eq(ite_val->data.b->b, true, "Return a True");
+	rz_il_free_value(ite_val);
+
+	// Catch error
+	RzILOp *branch_root = rz_il_new_op(RZIL_OP_BRANCH);
+	RzILOp *branch_cond = rz_il_new_op(RZIL_OP_B1);
+	RzILOp *branch_true = rz_il_new_op(RZIL_OP_B1);
+	RzILOp *branch_false = NULL; // empty effect
+
+	branch_root->op.branch->condition = branch_cond;
+	branch_root->op.branch->true_eff = branch_true;
+	branch_root->op.branch->false_eff = branch_false;
+
+	type_checker = RZIL_OP_ARG_INIT;
+	RzILEffect *eff = rz_il_evaluate_effect(vm, branch_root, &type_checker);
+	mu_assert_null(eff, "Error happens");
+	mu_assert_eq(type_checker, RZIL_OP_ARG_BOOL, "you cannot convert bool type to effect, such an error will be detected");
+
+	rz_il_free_op(ite_root);
+	rz_il_free_op(add);
+	rz_il_free_op(arg1);
+	rz_il_free_op(arg2);
+	rz_il_free_op(branch_root);
+	rz_il_free_op(branch_true);
+	rz_il_free_op(branch_false);
+	rz_il_free_op(branch_cond);
+	rz_il_vm_fini(vm);
 	mu_end;
 }
 
@@ -141,6 +207,7 @@ bool all_tests() {
 	mu_run_test(test_rzil_vm_init);
 	mu_run_test(test_rzil_vm_basic_operation);
 	mu_run_test(test_rzil_vm_operation);
+	mu_run_test(test_rzil_vm_root_evaluation);
 	return tests_passed != tests_run;
 }
 

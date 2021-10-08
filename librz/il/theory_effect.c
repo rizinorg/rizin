@@ -35,7 +35,7 @@ void rz_il_perform_ctrl(RzILVM *vm, RzILEffect *eff) {
 	vm->pc = new_addr;
 }
 
-void *rz_il_handler_perform(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
+void *rz_il_handler_perform(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	RzILOpPerform *perform_op = op->op.perform;
 
 	RzILEffect *eff = rz_il_evaluate_effect(vm, perform_op->eff, type);
@@ -54,7 +54,7 @@ void *rz_il_handler_perform(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
 	return NULL;
 }
 
-void *rz_il_handler_set(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
+void *rz_il_handler_set(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	RzILOpSet *set_op = op->op.set;
 
 	RzILEffect *eff = rz_il_effect_new(EFFECT_TYPE_DATA);
@@ -66,7 +66,7 @@ void *rz_il_handler_set(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
 	return eff;
 }
 
-void *rz_il_handler_jmp(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
+void *rz_il_handler_jmp(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	RzILOpJmp *op_jmp = op->op.jmp;
 	RzILBitVector *addr = rz_il_evaluate_bitv(vm, op_jmp->dst, type);
 	RzILEffect *eff = rz_il_effect_new(EFFECT_TYPE_CTRL);
@@ -78,7 +78,7 @@ void *rz_il_handler_jmp(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
 	return eff;
 }
 
-void *rz_il_handler_goto(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
+void *rz_il_handler_goto(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	RzILOpGoto *op_goto = op->op.goto_;
 	const char *lname = op_goto->lbl;
 	RzILEffect *eff = rz_il_effect_new(EFFECT_TYPE_CTRL);
@@ -103,7 +103,7 @@ void *rz_il_handler_goto(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
 	return eff;
 }
 
-void *rz_il_handler_seq(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
+void *rz_il_handler_seq(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	RzILOpSeq *op_seq = op->op.seq;
 
 	RzILEffect *eff_x = rz_il_evaluate_effect(vm, op_seq->x, type);
@@ -116,18 +116,18 @@ void *rz_il_handler_seq(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
 	return eff_uni;
 }
 
-void *rz_il_handler_blk(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
+void *rz_il_handler_blk(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	// TODO : a named label ?
 	return NULL;
 }
 
-void *rz_il_handler_repeat(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
+void *rz_il_handler_repeat(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	// TODO : find a proper to handle repeat
 	// while (evaluate_bool(op->condition) {repeat do}
 	return NULL;
 }
 
-void *rz_il_handler_branch(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
+void *rz_il_handler_branch(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	RzILOpBranch *op_branch = op->op.branch;
 
 	RzILBool *condition = rz_il_evaluate_bool(vm, op_branch->condition, type);
@@ -142,6 +142,8 @@ void *rz_il_handler_branch(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
 
 	rz_il_free_bool(condition);
 
-	*type = RZIL_OP_ARG_EFF;
+	if (ret) {
+		*type = RZIL_OP_ARG_EFF;
+	}
 	return ret;
 }

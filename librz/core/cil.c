@@ -429,17 +429,13 @@ RZ_IPI void rz_core_analysis_esil_default(RzCore *core) {
 	rz_core_seek(core, at, true);
 }
 
-RZ_IPI void core_rzil_init(RzCore *core) {
-	rz_analysis_rzil_setup(core->analysis);
-}
-
 RZ_IPI void rz_core_analysis_rzil_reinit(RzCore *core) {
 	if (core->analysis->rzil) {
 		rz_analysis_rzil_cleanup(core->analysis, core->analysis->rzil);
 		core->analysis->rzil = NULL;
 	}
 
-	core_rzil_init(core);
+	rz_analysis_rzil_setup(core->analysis);
 }
 
 // step a list of ct_opcode at a given address

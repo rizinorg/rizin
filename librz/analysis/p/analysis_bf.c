@@ -360,7 +360,7 @@ static bool bf_fini_rzil(RzAnalysis *analysis) {
 	}
 
 	if (rzil->vm) {
-		rz_il_vm_close(rzil->vm);
+		rz_il_vm_fini(rzil->vm);
 		rzil->vm = NULL;
 	}
 
@@ -518,7 +518,6 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 	if (oplist) {
 		op->rzil_op->ops = oplist;
 		op->rzil_op->root_node = NULL;
-		rz_analysis_set_rzil_op(analysis->rzil, addr, oplist);
 	}
 	ctx->op_count++;
 	return op->size;

@@ -350,11 +350,19 @@ static RzILBool *val_to_bool(RzILVal *val) {
 	return ret;
 }
 
-// VM auto convertion
-RzILBitVector *rz_il_evaluate_bitv(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
+/**
+ * Evaluate the an expression (Opcode) and return a bitvector value
+ * This function will automatically convert valid value(Bool/BitVector/RzILVal) into bitv
+ * to ensure caller to get a bitvector type value.
+ * \param vm, RzILVM*, pointer to RzILVM
+ * \param op, RzILOp* Pointer to opcode
+ * \param type, RzILOpArgType*, a pointer to store type info for error-checking
+ * \return bitv, value in bitvector
+ */
+RZ_API RzILBitVector *rz_il_evaluate_bitv(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	// check type and auto convertion between bitv/bool/val
 	void *input = rz_il_parse_op_root(vm, op, type);
-	RZIL_OP_ARG_TYPE t = *type;
+	RzILOpArgType t = *type;
 
 	// check if type is bitv
 	// else, convert to bitv if possible
@@ -372,16 +380,25 @@ RzILBitVector *rz_il_evaluate_bitv(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *typ
 	case RZIL_OP_ARG_EFF:
 	case RZIL_OP_ARG_MEM:
 	default:
-		RZ_LOG_ERROR("RzIL : Expected bitvector, but bad argument type detected\n");
+		RZ_LOG_ERROR("RzIL : Expected Bool/BitVector/RzILVal\n");
 		break;
 	}
 
 	return NULL;
 }
 
-RzILBool *rz_il_evaluate_bool(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
+/**
+ * Evaluate the an expression (Opcode) and return a bool value
+ * This function will automatically convert valid value(Bool/BitVector/RzILVal) into bool
+ * to ensure caller to get a bool type value.
+ * \param vm, RzILVM*, pointer to RzILVM
+ * \param op, RzILOp* Pointer to opcode
+ * \param type, RzILOpArgType*, a pointer to store type info for error-checking
+ * \return bool, Bool*, the value of this expression
+ */
+RZ_API RzILBool *rz_il_evaluate_bool(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	void *result = rz_il_parse_op_root(vm, op, type);
-	RZIL_OP_ARG_TYPE t = *type;
+	RzILOpArgType t = *type;
 
 	// check if type is bitv
 	// else, convert to bitv if possible
@@ -398,16 +415,25 @@ RzILBool *rz_il_evaluate_bool(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
 	case RZIL_OP_ARG_EFF:
 	case RZIL_OP_ARG_MEM:
 	default:
-		RZ_LOG_ERROR("RzIL : Expected bitvector, but bad argument type detected\n");
+		RZ_LOG_ERROR("RzIL : Expected BitVector/Bool/RzILVal\n");
 		break;
 	}
 
 	return NULL;
 }
 
-RzILVal *rz_il_evaluate_val(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
+/**
+ * Evaluate the an expression (Opcode) and return a RzILVal
+ * This function will automatically convert valid value (Bitv/Bool/RzILVal) into RzILVal
+ * to ensure caller to get a RzILVal type value.
+ * \param vm, RzILVM*, pointer to RzILVM
+ * \param op, RzILOp* Pointer to opcode
+ * \param type, RzILOpArgType*, a pointer to store type info for error-checking
+ * \return val, RzILVal*, RzILVal type value
+ */
+RZ_API RzILVal *rz_il_evaluate_val(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	void *result = rz_il_parse_op_root(vm, op, type);
-	RZIL_OP_ARG_TYPE t = *type;
+	RzILOpArgType t = *type;
 
 	// check if type is bitv
 	// else, convert to bitv if possible
@@ -424,16 +450,25 @@ RzILVal *rz_il_evaluate_val(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
 	case RZIL_OP_ARG_EFF:
 	case RZIL_OP_ARG_MEM:
 	default:
-		RZ_LOG_ERROR("BRzIL : Expected bitvector, but bad argument type detected\n");
+		RZ_LOG_ERROR("BRzIL : Expected RzILVal/BitVector/Bool\n");
 		break;
 	}
 
 	return NULL;
 }
 
-RzILEffect *rz_il_evaluate_effect(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type) {
+/**
+ * Evaluate the an expression (Opcode) and return a effect
+ * This function will automatically convert valid value into effect
+ * to ensure caller to get an effect type value.
+ * \param vm, RzILVM*, pointer to RzILVM
+ * \param op, RzILOp* Pointer to opcode
+ * \param type, RzILOpArgType*, a pointer to store type info for error-checking
+ * \return effect, RzILEffect*, expression value
+ */
+RZ_API RzILEffect *rz_il_evaluate_effect(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	void *result = rz_il_parse_op_root(vm, op, type);
-	RZIL_OP_ARG_TYPE t = *type;
+	RzILOpArgType t = *type;
 
 	// check if type is bitv
 	// else, convert to bitv if possible
@@ -446,15 +481,25 @@ RzILEffect *rz_il_evaluate_effect(RzILVM *vm, RzILOp *op, RZIL_OP_ARG_TYPE *type
 	case RZIL_OP_ARG_VAL:
 	case RZIL_OP_ARG_MEM:
 	default:
-		RZ_LOG_ERROR("RzIL : Expected bitvector, but bad argument type detected\n");
+		RZ_LOG_ERROR("RzIL : Expected Effect\n");
 		break;
 	}
 
 	return NULL;
 }
 
+/**
+ * It invoke handler to execute an opcode (the root one)
+ * during the execution, subroutines (handler) might use `evaluate_*` families
+ * to evaluate sub expressions. And `evaluate_*` families will also invoke this
+ * function to handle different opcodes. And thus this is a recursive function
+ * \param vm, RzILVM*, pointer to RzILVM
+ * \param root, RzILOp*, pointer to opcode
+ * \param type, RzILOpArgType*, pointer to store the type info of root value
+ * \return the value of root expression, the type info stored in RzILOpArgType type
+ */
 // recursively parse and evaluate
-void *rz_il_parse_op_root(RzILVM *vm, RzILOp *root, RZIL_OP_ARG_TYPE *type) {
+RZ_API void *rz_il_parse_op_root(RzILVM *vm, RzILOp *root, RzILOpArgType *type) {
 	RzILOpHandler handler = vm->op_handler_table[root->code];
 	return handler(vm, root, type);
 }

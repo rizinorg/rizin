@@ -151,6 +151,7 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	}
 	analysis->ht_global_var = ht_pp_new(NULL, global_kv_free, NULL);
 	analysis->global_var_tree = NULL;
+	analysis->rzil = NULL;
 	return analysis;
 }
 
@@ -231,10 +232,16 @@ RZ_API bool rz_analysis_use(RzAnalysis *analysis, const char *name) {
 
 			// default : init and enable RZIL if defined rzil_init
 			if (h->rzil_init) {
+				if (analysis->rzil) {
+					rz_analysis_rzil_cleanup(analysis, analysis->rzil);
+					analysis->rzil = NULL;
+				}
 				rz_analysis_rzil_setup(analysis);
 			} else {
 				// create it to make analysis_tp go right
-				analysis->rzil = rz_analysis_rzil_new();
+				if (!analysis->rzil) {
+					analysis->rzil = rz_analysis_rzil_new();
+				}
 			}
 			return true;
 		}

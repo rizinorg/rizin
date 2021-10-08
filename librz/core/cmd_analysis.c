@@ -4836,8 +4836,8 @@ static void cmd_analysis_rzil(RzCore *core, const char *input) {
 		break;
 	case 's': // "aezs"
 		switch (input[1]) {
-		case '?': // "aez?"
-			rz_core_cmd0(core, "ae?~aes");
+		case '?': // "aez?" see issue 1533
+			RZ_LOG_ERROR("RZIL WIP\n");
 			break;
 		case ' ': //"aezs [repeat num]"
 			n = strchr(input, ' ');
@@ -4866,9 +4866,9 @@ static void cmd_analysis_rzil(RzCore *core, const char *input) {
 			break;
 		}
 		break;
-	case '?': // "aez?"
+	case '?': // "aez?" see issue 1533
 		if (input[1] == '?') {
-			rz_core_cmd_help(core, help_detail_ae);
+			RZ_LOG_ERROR("RZIL WIP\n");
 			break;
 		}
 	/* fallthrough */
