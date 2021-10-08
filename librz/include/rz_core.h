@@ -582,6 +582,7 @@ RZ_API ut32 rz_core_file_cur_fd(RzCore *core);
 /* cdebug.c */
 RZ_API bool rz_core_debug_step_one(RzCore *core, int times);
 RZ_API bool rz_core_debug_continue_until(RzCore *core, ut64 addr, ut64 to);
+RZ_API void rz_core_debug_bp_add_noreturn_func(RzCore *core);
 
 RZ_API void rz_core_debug_ri(RzCore *core, RzReg *reg, int mode);
 RZ_API void rz_core_debug_rr(RzCore *core, RzReg *reg, int mode);

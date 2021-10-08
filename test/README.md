@@ -125,10 +125,10 @@ FILE=bins/elf/analysis/pie
 ARGS=-d
 CMDS=<<EOF
 aa
-db main
-db~main
+db @ main
+dbl~main
 doc
-db~main
+dbl~main
 EOF
 REGEXP_FILTER_OUT=([a-zA-Z="]+\s+)
 EXPECT=<<EOF

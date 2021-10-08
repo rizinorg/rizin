@@ -28,10 +28,10 @@ FILE=bins/elf/analysis/pie
 ARGS=-d
 CMDS=<<EOF
 aa
-db main
-?v main-`db~main[0]`
+db @ main
+?v main-`dbl~main[0]`
 doc
-?v main-`db~main[0]`
+?v main-`dbl~main[0]`
 EOF
 EXPECT=<<EOF
 0x0

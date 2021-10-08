@@ -2,8 +2,8 @@ NAME=dbg.stepback
 FILE=bins/elf/analysis/ls-linux-x86_64-zlul
 ARGS=-d -e dbg.bpsysign=true
 CMDS=<<EOF
-db main
-db 0x004028fe
+db @ main
+db @ 0x004028fe
 dc
 dts+
 dc
@@ -24,8 +24,8 @@ NAME=debug stepback from callee
 FILE=bins/elf/analysis/calls_x64
 ARGS=-d
 CMDS=<<EOF
-db main
-db 0x0040052f
+db @ main
+db @ 0x0040052f
 dc
 dts+
 dc
@@ -55,8 +55,8 @@ NAME=debug stepback from caller
 FILE=bins/elf/analysis/calls_x64
 ARGS=-d -e dbg.bpsysign=true
 CMDS=<<EOF
-db main
-db 0x0040057c
+db @ main
+db @ 0x0040057c
 dc
 dts+
 dc

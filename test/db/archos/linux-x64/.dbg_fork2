@@ -5,7 +5,7 @@ CMDS=<<EOF
 e scr.color=0
 e dbg.swstep=true
 e dbg.forks=true
-db sym.break_on_me
+db @ sym.break_on_me
 dc
 dpc
 dc
@@ -32,7 +32,7 @@ CMDS=<<EOF
 e scr.color=0
 e dbg.swstep=false
 e dbg.forks=true
-db sym.break_on_me
+db @ sym.break_on_me
 dc
 dpc
 dc

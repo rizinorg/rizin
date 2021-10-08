@@ -11,6 +11,9 @@ static const RzCmdDescDetail system_details[2];
 static const RzCmdDescDetail system_to_cons_details[2];
 static const RzCmdDescDetail hash_bang_details[2];
 static const RzCmdDescDetail pointer_details[2];
+static const RzCmdDescDetail cmd_debug_list_bp_details[2];
+static const RzCmdDescDetail cmd_debug_add_cond_bp_details[2];
+static const RzCmdDescDetail cmd_debug_add_watchpoint_details[2];
 static const RzCmdDescDetail eval_getset_details[2];
 static const RzCmdDescDetail env_details[3];
 static const RzCmdDescDetail history_list_or_exec_details[2];
@@ -108,6 +111,25 @@ static const RzCmdDescArg block_decrease_args[2];
 static const RzCmdDescArg block_increase_args[2];
 static const RzCmdDescArg block_flag_args[2];
 static const RzCmdDescArg block_max_args[2];
+static const RzCmdDescArg cmd_debug_command_bp_args[2];
+static const RzCmdDescArg cmd_debug_add_cond_bp_args[2];
+static const RzCmdDescArg cmd_debug_add_bp_module_args[3];
+static const RzCmdDescArg cmd_debug_name_bp_args[2];
+static const RzCmdDescArg cmd_debug_remove_bp_index_args[2];
+static const RzCmdDescArg cmd_debug_set_expr_bp_index_args[3];
+static const RzCmdDescArg cmd_debug_run_command_bp_index_args[3];
+static const RzCmdDescArg cmd_debug_enable_bp_index_args[2];
+static const RzCmdDescArg cmd_debug_disable_bp_index_args[2];
+static const RzCmdDescArg cmd_debug_toggle_bp_index_args[2];
+static const RzCmdDescArg cmd_debug_enable_bp_trace_index_args[2];
+static const RzCmdDescArg cmd_debug_disable_bp_trace_index_args[2];
+static const RzCmdDescArg cmd_debug_toggle_bp_trace_index_args[2];
+static const RzCmdDescArg cmd_debug_bp_plugin_args[2];
+static const RzCmdDescArg cmd_debug_remove_bp_plugin_args[2];
+static const RzCmdDescArg cmd_debug_display_bt_oneline_args[2];
+static const RzCmdDescArg cmd_debug_bp_set_expr_cur_offset_args[2];
+static const RzCmdDescArg cmd_debug_add_watchpoint_args[2];
+static const RzCmdDescArg cmd_debug_set_cond_bp_win_args[3];
 static const RzCmdDescArg cmd_debug_continue_execution_args[2];
 static const RzCmdDescArg cmd_debug_continue_send_signal_args[3];
 static const RzCmdDescArg cmd_debug_continue_traptrace_args[2];
@@ -1920,6 +1942,482 @@ static const RzCmdDescHelp cmd_meta_help = {
 static const RzCmdDescHelp cmd_debug_help = {
 	.summary = "Debugger commands",
 };
+static const RzCmdDescHelp db_help = {
+	.summary = "Breakpoints commands",
+};
+static const RzCmdDescArg cmd_debug_add_bp_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_add_bp_help = {
+	.summary = "Add breakpoint at current offset",
+	.args = cmd_debug_add_bp_args,
+};
+
+static const RzCmdDescDetailEntry cmd_debug_list_bp_Apply_space_a_space_command_space_to_space_all_space_breakpoints_detail_entries[] = {
+	{ .text = "Disable all the breakpoints", .arg_str = NULL, .comment = "dbd @@c:dblq" },
+	{ .text = "Enable all the breakpoints", .arg_str = NULL, .comment = "dbe @@c:dblq" },
+	{ .text = "Toggle all the breakpoints", .arg_str = NULL, .comment = "dbs @@c:dblq" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_debug_list_bp_details[] = {
+	{ .name = "Apply a command to all breakpoints", .entries = cmd_debug_list_bp_Apply_space_a_space_command_space_to_space_all_space_breakpoints_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg cmd_debug_list_bp_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_list_bp_help = {
+	.summary = "List all breakpoints",
+	.details = cmd_debug_list_bp_details,
+	.args = cmd_debug_list_bp_args,
+};
+
+static const RzCmdDescArg cmd_debug_add_hw_bp_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_add_hw_bp_help = {
+	.summary = "Add hardware breakpoint at current offset",
+	.args = cmd_debug_add_hw_bp_args,
+};
+
+static const RzCmdDescArg cmd_debug_remove_bp_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_remove_bp_help = {
+	.summary = "Remove breakpoint at current offset",
+	.args = cmd_debug_remove_bp_args,
+};
+
+static const RzCmdDescArg cmd_debug_remove_all_bp_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_remove_all_bp_help = {
+	.summary = "Remove all breakpoints",
+	.args = cmd_debug_remove_all_bp_args,
+};
+
+static const RzCmdDescArg cmd_debug_show_cur_bp_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_show_cur_bp_help = {
+	.summary = "Show breakpoint info at current offset",
+	.args = cmd_debug_show_cur_bp_args,
+};
+
+static const RzCmdDescArg cmd_debug_command_bp_args[] = {
+	{
+		.name = "cmd",
+		.type = RZ_CMD_ARG_TYPE_CMD,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_command_bp_help = {
+	.summary = "Set a command <cmd> to be run when the breakpoint at the current offset is hit",
+	.args = cmd_debug_command_bp_args,
+};
+
+static const RzCmdDescDetailEntry cmd_debug_add_cond_bp_Usage_space_example_detail_entries[] = {
+	{ .text = "Example of a condition", .arg_str = NULL, .comment = "?v rax-0x0" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_debug_add_cond_bp_details[] = {
+	{ .name = "Usage example", .entries = cmd_debug_add_cond_bp_Usage_space_example_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg cmd_debug_add_cond_bp_args[] = {
+	{
+		.name = "cmd",
+		.type = RZ_CMD_ARG_TYPE_CMD,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_add_cond_bp_help = {
+	.summary = "Make the breakpoint at the current offset conditional, and hit only when <cmd> evaluates to 0",
+	.details = cmd_debug_add_cond_bp_details,
+	.args = cmd_debug_add_cond_bp_args,
+};
+
+static const RzCmdDescArg cmd_debug_disable_bp_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_disable_bp_help = {
+	.summary = "Disable breakpoint at current offset",
+	.args = cmd_debug_disable_bp_args,
+};
+
+static const RzCmdDescArg cmd_debug_enable_bp_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_enable_bp_help = {
+	.summary = "Enable breakpoint at current offset",
+	.args = cmd_debug_enable_bp_args,
+};
+
+static const RzCmdDescArg cmd_debug_toggle_bp_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_toggle_bp_help = {
+	.summary = "Toggle breakpoint at current offset",
+	.args = cmd_debug_toggle_bp_args,
+};
+
+static const RzCmdDescArg cmd_debug_add_bp_noreturn_func_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_add_bp_noreturn_func_help = {
+	.summary = "Put a breakpoint into every no-return function",
+	.args = cmd_debug_add_bp_noreturn_func_args,
+};
+
+static const RzCmdDescArg cmd_debug_add_bp_module_args[] = {
+	{
+		.name = "module",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "offset",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_add_bp_module_help = {
+	.summary = "Add a breakpoint at an offset from a module's base",
+	.args = cmd_debug_add_bp_module_args,
+};
+
+static const RzCmdDescArg cmd_debug_name_bp_args[] = {
+	{
+		.name = "name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_name_bp_help = {
+	.summary = "Show name of current breakpoint / Set name for current breakpoint",
+	.args = cmd_debug_name_bp_args,
+};
+
+static const RzCmdDescHelp dbi_help = {
+	.summary = "Breakpoint index commands",
+};
+static const RzCmdDescArg cmd_debug_show_bp_index_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_show_bp_index_help = {
+	.summary = "Show breakpoint index at current offset",
+	.args = cmd_debug_show_bp_index_args,
+};
+
+static const RzCmdDescArg cmd_debug_list_bp_indexes_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_list_bp_indexes_help = {
+	.summary = "List breakpoints indexes",
+	.args = cmd_debug_list_bp_indexes_args,
+};
+
+static const RzCmdDescArg cmd_debug_remove_bp_index_args[] = {
+	{
+		.name = "idx",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_remove_bp_index_help = {
+	.summary = "Remove breakpoint by index",
+	.args = cmd_debug_remove_bp_index_args,
+};
+
+static const RzCmdDescArg cmd_debug_set_expr_bp_index_args[] = {
+	{
+		.name = "idx",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "expr",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_set_expr_bp_index_help = {
+	.summary = "Set expression for breakpoint at given index",
+	.args = cmd_debug_set_expr_bp_index_args,
+};
+
+static const RzCmdDescArg cmd_debug_run_command_bp_index_args[] = {
+	{
+		.name = "idx",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "cmd",
+		.type = RZ_CMD_ARG_TYPE_CMD,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_run_command_bp_index_help = {
+	.summary = "Run a command at breakpoint index",
+	.args = cmd_debug_run_command_bp_index_args,
+};
+
+static const RzCmdDescArg cmd_debug_enable_bp_index_args[] = {
+	{
+		.name = "idx",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_enable_bp_index_help = {
+	.summary = "Enable breakpoint by index",
+	.args = cmd_debug_enable_bp_index_args,
+};
+
+static const RzCmdDescArg cmd_debug_disable_bp_index_args[] = {
+	{
+		.name = "idx",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_disable_bp_index_help = {
+	.summary = "Disable breakpoint by index",
+	.args = cmd_debug_disable_bp_index_args,
+};
+
+static const RzCmdDescArg cmd_debug_toggle_bp_index_args[] = {
+	{
+		.name = "idx",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_toggle_bp_index_help = {
+	.summary = "Toggle breakpoint by index",
+	.args = cmd_debug_toggle_bp_index_args,
+};
+
+static const RzCmdDescArg cmd_debug_enable_bp_trace_index_args[] = {
+	{
+		.name = "idx",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_enable_bp_trace_index_help = {
+	.summary = "Enable breakpoint trace by index",
+	.args = cmd_debug_enable_bp_trace_index_args,
+};
+
+static const RzCmdDescArg cmd_debug_disable_bp_trace_index_args[] = {
+	{
+		.name = "idx",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_disable_bp_trace_index_help = {
+	.summary = "Disable breakpoint trace by index",
+	.args = cmd_debug_disable_bp_trace_index_args,
+};
+
+static const RzCmdDescArg cmd_debug_toggle_bp_trace_index_args[] = {
+	{
+		.name = "idx",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_toggle_bp_trace_index_help = {
+	.summary = "Toggle breakpoint trace by index",
+	.args = cmd_debug_toggle_bp_trace_index_args,
+};
+
+static const RzCmdDescArg cmd_debug_bp_plugin_args[] = {
+	{
+		.name = "handler",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_bp_plugin_help = {
+	.summary = "List breakpoint plugin handlers / Set breakpoint plugin handler",
+	.args = cmd_debug_bp_plugin_args,
+};
+
+static const RzCmdDescArg cmd_debug_remove_bp_plugin_args[] = {
+	{
+		.name = "handler",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_remove_bp_plugin_help = {
+	.summary = "Remove breakpoint plugin handler",
+	.args = cmd_debug_remove_bp_plugin_args,
+};
+
+static const RzCmdDescHelp dbt_help = {
+	.summary = "Backtrace commands",
+};
+static const RzCmdDescArg cmd_debug_display_bt_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_display_bt_help = {
+	.summary = "Display backtrace based on dbg.btdepth and dbg.btalgo",
+	.args = cmd_debug_display_bt_args,
+};
+
+static const RzCmdDescArg cmd_debug_display_bt_oneline_args[] = {
+	{
+		.name = "s/b",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_display_bt_oneline_help = {
+	.summary = "Display backtrace in one line (see dbt= s and dbt= b for sp or bp)",
+	.args = cmd_debug_display_bt_oneline_args,
+};
+
+static const RzCmdDescArg cmd_debug_display_bt_local_vars_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_display_bt_local_vars_help = {
+	.summary = "Display backtrace with local vars if any",
+	.args = cmd_debug_display_bt_local_vars_args,
+};
+
+static const RzCmdDescArg cmd_debug_display_bt_ascii_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_display_bt_ascii_help = {
+	.summary = "Display ascii-art representation of the stack backtrace",
+	.args = cmd_debug_display_bt_ascii_args,
+};
+
+static const RzCmdDescArg cmd_debug_bt_enable_bp_trace_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_bt_enable_bp_trace_help = {
+	.summary = "Enable breakpoint trace at current offset",
+	.args = cmd_debug_bt_enable_bp_trace_args,
+};
+
+static const RzCmdDescArg cmd_debug_bt_disable_bp_trace_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_bt_disable_bp_trace_help = {
+	.summary = "Disable breakpoint trace at current offset",
+	.args = cmd_debug_bt_disable_bp_trace_args,
+};
+
+static const RzCmdDescArg cmd_debug_bt_toggle_bp_trace_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_bt_toggle_bp_trace_help = {
+	.summary = "Toggle breakpoint trace at current offset",
+	.args = cmd_debug_bt_toggle_bp_trace_args,
+};
+
+static const RzCmdDescArg cmd_debug_bp_set_expr_cur_offset_args[] = {
+	{
+		.name = "expr",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_bp_set_expr_cur_offset_help = {
+	.summary = "View expression for all the breakpoints / Set expression for breakpoint at current offset",
+	.args = cmd_debug_bp_set_expr_cur_offset_args,
+};
+
+static const RzCmdDescDetailEntry cmd_debug_add_watchpoint_Valid_space_permission_space_arguments_detail_entries[] = {
+	{ .text = "r", .arg_str = NULL, .comment = "read only" },
+	{ .text = "w", .arg_str = NULL, .comment = "write only" },
+	{ .text = "rw", .arg_str = NULL, .comment = "read-write" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_debug_add_watchpoint_details[] = {
+	{ .name = "Valid permission arguments", .entries = cmd_debug_add_watchpoint_Valid_space_permission_space_arguments_detail_entries },
+	{ 0 },
+};
+static const char *cmd_debug_add_watchpoint_perm_choices[] = { "r", "w", "rw", NULL };
+static const RzCmdDescArg cmd_debug_add_watchpoint_args[] = {
+	{
+		.name = "perm",
+		.type = RZ_CMD_ARG_TYPE_CHOICES,
+		.choices = cmd_debug_add_watchpoint_perm_choices,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_add_watchpoint_help = {
+	.summary = "Add watchpoint at current offset",
+	.details = cmd_debug_add_watchpoint_details,
+	.args = cmd_debug_add_watchpoint_args,
+};
+
+static const RzCmdDescArg cmd_debug_set_cond_bp_win_args[] = {
+	{
+		.name = "WM_DEFINE",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "handle/name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_set_cond_bp_win_help = {
+	.summary = "Set conditional breakpoint on a window message handler (only for Windows)",
+	.args = cmd_debug_set_cond_bp_win_args,
+};
+
 static const RzCmdDescHelp dc_help = {
 	.summary = "Continue execution",
 };
@@ -6321,6 +6819,114 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_debug_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "d", rz_cmd_debug, &cmd_debug_help);
 	rz_warn_if_fail(cmd_debug_cd);
+	RzCmdDesc *db_cd = rz_cmd_desc_group_new(core->rcmd, cmd_debug_cd, "db", rz_cmd_debug_add_bp_handler, &cmd_debug_add_bp_help, &db_help);
+	rz_warn_if_fail(db_cd);
+	RzCmdDesc *cmd_debug_list_bp_cd = rz_cmd_desc_argv_state_new(core->rcmd, db_cd, "dbl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_debug_list_bp_handler, &cmd_debug_list_bp_help);
+	rz_warn_if_fail(cmd_debug_list_bp_cd);
+
+	RzCmdDesc *cmd_debug_add_hw_bp_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "dbH", rz_cmd_debug_add_hw_bp_handler, &cmd_debug_add_hw_bp_help);
+	rz_warn_if_fail(cmd_debug_add_hw_bp_cd);
+
+	RzCmdDesc *cmd_debug_remove_bp_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "db-", rz_cmd_debug_remove_bp_handler, &cmd_debug_remove_bp_help);
+	rz_warn_if_fail(cmd_debug_remove_bp_cd);
+
+	RzCmdDesc *cmd_debug_remove_all_bp_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "db-*", rz_cmd_debug_remove_all_bp_handler, &cmd_debug_remove_all_bp_help);
+	rz_warn_if_fail(cmd_debug_remove_all_bp_cd);
+
+	RzCmdDesc *cmd_debug_show_cur_bp_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "db.", rz_cmd_debug_show_cur_bp_handler, &cmd_debug_show_cur_bp_help);
+	rz_warn_if_fail(cmd_debug_show_cur_bp_cd);
+
+	RzCmdDesc *cmd_debug_command_bp_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "dbc", rz_cmd_debug_command_bp_handler, &cmd_debug_command_bp_help);
+	rz_warn_if_fail(cmd_debug_command_bp_cd);
+
+	RzCmdDesc *cmd_debug_add_cond_bp_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "dbC", rz_cmd_debug_add_cond_bp_handler, &cmd_debug_add_cond_bp_help);
+	rz_warn_if_fail(cmd_debug_add_cond_bp_cd);
+
+	RzCmdDesc *cmd_debug_disable_bp_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "dbd", rz_cmd_debug_disable_bp_handler, &cmd_debug_disable_bp_help);
+	rz_warn_if_fail(cmd_debug_disable_bp_cd);
+
+	RzCmdDesc *cmd_debug_enable_bp_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "dbe", rz_cmd_debug_enable_bp_handler, &cmd_debug_enable_bp_help);
+	rz_warn_if_fail(cmd_debug_enable_bp_cd);
+
+	RzCmdDesc *cmd_debug_toggle_bp_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "dbs", rz_cmd_debug_toggle_bp_handler, &cmd_debug_toggle_bp_help);
+	rz_warn_if_fail(cmd_debug_toggle_bp_cd);
+
+	RzCmdDesc *cmd_debug_add_bp_noreturn_func_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "dbf", rz_cmd_debug_add_bp_noreturn_func_handler, &cmd_debug_add_bp_noreturn_func_help);
+	rz_warn_if_fail(cmd_debug_add_bp_noreturn_func_cd);
+
+	RzCmdDesc *cmd_debug_add_bp_module_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "dbm", rz_cmd_debug_add_bp_module_handler, &cmd_debug_add_bp_module_help);
+	rz_warn_if_fail(cmd_debug_add_bp_module_cd);
+
+	RzCmdDesc *cmd_debug_name_bp_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "dbn", rz_cmd_debug_name_bp_handler, &cmd_debug_name_bp_help);
+	rz_warn_if_fail(cmd_debug_name_bp_cd);
+
+	RzCmdDesc *dbi_cd = rz_cmd_desc_group_new(core->rcmd, db_cd, "dbi", rz_cmd_debug_show_bp_index_handler, &cmd_debug_show_bp_index_help, &dbi_help);
+	rz_warn_if_fail(dbi_cd);
+	RzCmdDesc *cmd_debug_list_bp_indexes_cd = rz_cmd_desc_argv_new(core->rcmd, dbi_cd, "dbil", rz_cmd_debug_list_bp_indexes_handler, &cmd_debug_list_bp_indexes_help);
+	rz_warn_if_fail(cmd_debug_list_bp_indexes_cd);
+
+	RzCmdDesc *cmd_debug_remove_bp_index_cd = rz_cmd_desc_argv_new(core->rcmd, dbi_cd, "dbi-", rz_cmd_debug_remove_bp_index_handler, &cmd_debug_remove_bp_index_help);
+	rz_warn_if_fail(cmd_debug_remove_bp_index_cd);
+
+	RzCmdDesc *cmd_debug_set_expr_bp_index_cd = rz_cmd_desc_argv_new(core->rcmd, dbi_cd, "dbix", rz_cmd_debug_set_expr_bp_index_handler, &cmd_debug_set_expr_bp_index_help);
+	rz_warn_if_fail(cmd_debug_set_expr_bp_index_cd);
+
+	RzCmdDesc *cmd_debug_run_command_bp_index_cd = rz_cmd_desc_argv_new(core->rcmd, dbi_cd, "dbic", rz_cmd_debug_run_command_bp_index_handler, &cmd_debug_run_command_bp_index_help);
+	rz_warn_if_fail(cmd_debug_run_command_bp_index_cd);
+
+	RzCmdDesc *cmd_debug_enable_bp_index_cd = rz_cmd_desc_argv_new(core->rcmd, dbi_cd, "dbie", rz_cmd_debug_enable_bp_index_handler, &cmd_debug_enable_bp_index_help);
+	rz_warn_if_fail(cmd_debug_enable_bp_index_cd);
+
+	RzCmdDesc *cmd_debug_disable_bp_index_cd = rz_cmd_desc_argv_new(core->rcmd, dbi_cd, "dbid", rz_cmd_debug_disable_bp_index_handler, &cmd_debug_disable_bp_index_help);
+	rz_warn_if_fail(cmd_debug_disable_bp_index_cd);
+
+	RzCmdDesc *cmd_debug_toggle_bp_index_cd = rz_cmd_desc_argv_new(core->rcmd, dbi_cd, "dbis", rz_cmd_debug_toggle_bp_index_handler, &cmd_debug_toggle_bp_index_help);
+	rz_warn_if_fail(cmd_debug_toggle_bp_index_cd);
+
+	RzCmdDesc *cmd_debug_enable_bp_trace_index_cd = rz_cmd_desc_argv_new(core->rcmd, dbi_cd, "dbite", rz_cmd_debug_enable_bp_trace_index_handler, &cmd_debug_enable_bp_trace_index_help);
+	rz_warn_if_fail(cmd_debug_enable_bp_trace_index_cd);
+
+	RzCmdDesc *cmd_debug_disable_bp_trace_index_cd = rz_cmd_desc_argv_new(core->rcmd, dbi_cd, "dbitd", rz_cmd_debug_disable_bp_trace_index_handler, &cmd_debug_disable_bp_trace_index_help);
+	rz_warn_if_fail(cmd_debug_disable_bp_trace_index_cd);
+
+	RzCmdDesc *cmd_debug_toggle_bp_trace_index_cd = rz_cmd_desc_argv_new(core->rcmd, dbi_cd, "dbits", rz_cmd_debug_toggle_bp_trace_index_handler, &cmd_debug_toggle_bp_trace_index_help);
+	rz_warn_if_fail(cmd_debug_toggle_bp_trace_index_cd);
+
+	RzCmdDesc *cmd_debug_bp_plugin_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "dbh", rz_cmd_debug_bp_plugin_handler, &cmd_debug_bp_plugin_help);
+	rz_warn_if_fail(cmd_debug_bp_plugin_cd);
+
+	RzCmdDesc *cmd_debug_remove_bp_plugin_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "dbh-", rz_cmd_debug_remove_bp_plugin_handler, &cmd_debug_remove_bp_plugin_help);
+	rz_warn_if_fail(cmd_debug_remove_bp_plugin_cd);
+
+	RzCmdDesc *dbt_cd = rz_cmd_desc_group_state_new(core->rcmd, db_cd, "dbt", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_QUIET, rz_cmd_debug_display_bt_handler, &cmd_debug_display_bt_help, &dbt_help);
+	rz_warn_if_fail(dbt_cd);
+	RzCmdDesc *cmd_debug_display_bt_oneline_cd = rz_cmd_desc_argv_new(core->rcmd, dbt_cd, "dbt=", rz_cmd_debug_display_bt_oneline_handler, &cmd_debug_display_bt_oneline_help);
+	rz_warn_if_fail(cmd_debug_display_bt_oneline_cd);
+
+	RzCmdDesc *cmd_debug_display_bt_local_vars_cd = rz_cmd_desc_argv_new(core->rcmd, dbt_cd, "dbtv", rz_cmd_debug_display_bt_local_vars_handler, &cmd_debug_display_bt_local_vars_help);
+	rz_warn_if_fail(cmd_debug_display_bt_local_vars_cd);
+
+	RzCmdDesc *cmd_debug_display_bt_ascii_cd = rz_cmd_desc_argv_new(core->rcmd, dbt_cd, "dbta", rz_cmd_debug_display_bt_ascii_handler, &cmd_debug_display_bt_ascii_help);
+	rz_warn_if_fail(cmd_debug_display_bt_ascii_cd);
+
+	RzCmdDesc *cmd_debug_bt_enable_bp_trace_cd = rz_cmd_desc_argv_new(core->rcmd, dbt_cd, "dbte", rz_cmd_debug_bt_enable_bp_trace_handler, &cmd_debug_bt_enable_bp_trace_help);
+	rz_warn_if_fail(cmd_debug_bt_enable_bp_trace_cd);
+
+	RzCmdDesc *cmd_debug_bt_disable_bp_trace_cd = rz_cmd_desc_argv_new(core->rcmd, dbt_cd, "dbtd", rz_cmd_debug_bt_disable_bp_trace_handler, &cmd_debug_bt_disable_bp_trace_help);
+	rz_warn_if_fail(cmd_debug_bt_disable_bp_trace_cd);
+
+	RzCmdDesc *cmd_debug_bt_toggle_bp_trace_cd = rz_cmd_desc_argv_new(core->rcmd, dbt_cd, "dbts", rz_cmd_debug_bt_toggle_bp_trace_handler, &cmd_debug_bt_toggle_bp_trace_help);
+	rz_warn_if_fail(cmd_debug_bt_toggle_bp_trace_cd);
+
+	RzCmdDesc *cmd_debug_bp_set_expr_cur_offset_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "dbx", rz_cmd_debug_bp_set_expr_cur_offset_handler, &cmd_debug_bp_set_expr_cur_offset_help);
+	rz_warn_if_fail(cmd_debug_bp_set_expr_cur_offset_cd);
+
+	RzCmdDesc *cmd_debug_add_watchpoint_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "dbw", rz_cmd_debug_add_watchpoint_handler, &cmd_debug_add_watchpoint_help);
+	rz_warn_if_fail(cmd_debug_add_watchpoint_cd);
+
+	RzCmdDesc *cmd_debug_set_cond_bp_win_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "dbW", rz_cmd_debug_set_cond_bp_win_handler, &cmd_debug_set_cond_bp_win_help);
+	rz_warn_if_fail(cmd_debug_set_cond_bp_win_cd);
+
 	RzCmdDesc *dc_cd = rz_cmd_desc_group_new(core->rcmd, cmd_debug_cd, "dc", rz_cmd_debug_continue_execution_handler, &cmd_debug_continue_execution_help, &dc_help);
 	rz_warn_if_fail(dc_cd);
 	RzCmdDesc *cmd_debug_continue_back_cd = rz_cmd_desc_argv_new(core->rcmd, dc_cd, "dcb", rz_cmd_debug_continue_back_handler, &cmd_debug_continue_back_help);

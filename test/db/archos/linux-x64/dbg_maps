@@ -27,7 +27,7 @@ FILE=bins/elf/analysis/x86-helloworld-gcc
 ARGS=-d
 CMDS=<<EOF
 dm~?
-db sym.imp.puts
+db @ sym.imp.puts
 dc~?
 dm~?
 dc
@@ -65,7 +65,7 @@ ARGS=-d
 BROKEN=1
 CMDS=<<EOF
 dm~?
-db sym.imp.puts
+db @ sym.imp.puts
 dc~?
 dmi libc~?
 dmi libc~libc|wc -l
@@ -85,7 +85,7 @@ ARGS=-d
 BROKEN=1
 CMDS=<<EOF
 dm~?
-db sym.imp.puts
+db @ sym.imp.puts
 dc~?
 dmS libc~?
 dmS libc~libc|wc -l
@@ -110,7 +110,7 @@ ARGS=-d
 BROKEN=1
 CMDS=<<EOF
 dm~?
-db sym.imp.puts
+db @ sym.imp.puts
 dc~?
 dmS libc~?
 dmS libc~libc|wc -l
@@ -142,7 +142,7 @@ ARGS=-d
 BROKEN=1
 CMDS=<<EOF
 dmm~?
-db sym.imp.puts
+db @ sym.imp.puts
 dc~?
 dmm~?
 S~.text|wc -l
@@ -170,7 +170,7 @@ ARGS=-d
 BROKEN=1
 CMDS=<<EOF
 dmm~?
-db sym.imp.puts
+db @ sym.imp.puts
 dc~?
 dmm~?
 s map._lib_i386_linux_gnu_ld_2.19.so._r_x
