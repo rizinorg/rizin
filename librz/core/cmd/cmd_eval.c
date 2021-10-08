@@ -288,6 +288,168 @@ RZ_API void rz_core_echo(RzCore *core, const char *input) {
 	}
 }
 
+RZ_IPI RzCmdStatus rz_cmd_eval_color_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+
+	if (argc == 3) {
+		if (rz_cons_pal_set(argv[1], argv[2])) {
+			rz_cons_pal_update_event();
+		}
+		return RZ_CMD_STATUS_OK;
+	} else if (argc == 2) {
+		char color[32];
+		RzColor rcolor = rz_cons_pal_get(argv[1]);
+		rz_cons_rgb_str(color, sizeof(color), &rcolor);
+		eprintf("(%s)(%sCOLOR" Color_RESET ")\n", argv[1], color);
+		return RZ_CMD_STATUS_OK;
+	}
+	switch (mode) {
+	case RZ_OUTPUT_MODE_RIZIN:
+		rz_cons_pal_list(1, NULL);
+		break;
+	case RZ_OUTPUT_MODE_JSON:
+		rz_cons_pal_list('j', NULL);
+		break;
+	case RZ_OUTPUT_MODE_STANDARD:
+		rz_cons_pal_list(0, NULL);
+		break;
+	default:
+		return RZ_CMD_STATUS_ERROR;
+	};
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_eval_color_display_palette_css_handler(RzCore *core, int argc, const char **argv) {
+	rz_cons_pal_list('c', argv[1]);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_eval_color_set_default_palette_handler(RzCore *core, int argc, const char **argv) {
+	rz_cons_pal_init(core->cons->context);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_eval_color_set_random_palette_handler(RzCore *core, int argc, const char **argv) {
+	rz_cons_pal_random();
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_eval_color_set_colorful_palette_handler(RzCore *core, int argc, const char **argv) {
+	rz_cons_pal_show();
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_eval_color_load_previous_theme_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_theme_nextpal(core, 'p');
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_eval_color_load_next_theme_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_theme_nextpal(core, 'n');
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_eval_color_highlight_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
+		rz_meta_print_list_all(core->analysis, RZ_META_TYPE_HIGHLIGHT, 'j');
+	} else {
+		rz_meta_print_list_all(core->analysis, RZ_META_TYPE_HIGHLIGHT, 0);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_eval_color_load_theme_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+
+	RzList *themes_list = NULL;
+	RzListIter *th_iter;
+	const char *th;
+	if (argc == 2) {
+		rz_core_load_theme(core, argv[1]);
+		return RZ_CMD_STATUS_OK;
+	}
+	switch (mode) {
+	case RZ_OUTPUT_MODE_JSON:
+		rz_core_theme_nextpal(core, 'j');
+		break;
+	case RZ_OUTPUT_MODE_QUIET:
+		themes_list = rz_core_list_themes(core);
+		rz_list_foreach (themes_list, th_iter, th) {
+			rz_cons_printf("%s\n", th);
+		}
+		break;
+	default:
+		themes_list = rz_core_list_themes(core);
+		rz_list_foreach (themes_list, th_iter, th) {
+			if (curtheme && !strcmp(curtheme, th)) {
+				rz_cons_printf("> %s\n", th);
+			} else {
+				rz_cons_printf("  %s\n", th);
+			}
+		}
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_eval_color_list_current_theme_handler(RzCore *core, int argc, const char **argv) {
+	rz_cons_printf("%s\n", rz_core_get_theme());
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_eval_color_list_reload_current_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_load_theme(core, rz_core_get_theme());
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_eval_color_highlight_current_instruction_handler(RzCore *core, int argc, const char **argv) {
+	char *dup = rz_str_newf("bgonly %s", argv[1]);
+	char *color_code = NULL;
+	color_code = rz_cons_pal_parse(dup, NULL);
+	RZ_FREE(dup);
+	if (!color_code) {
+		eprintf("Unknown color %s\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_meta_set_string(core->analysis, RZ_META_TYPE_HIGHLIGHT, core->offset, "");
+	const char *str = rz_meta_get_string(core->analysis, RZ_META_TYPE_HIGHLIGHT, core->offset);
+	dup = rz_str_newf("%s \"%s\"", str ? str : "", color_code ? color_code : rz_cons_singleton()->context->pal.wordhl);
+	rz_meta_set_string(core->analysis, RZ_META_TYPE_HIGHLIGHT, core->offset, dup);
+	RZ_FREE(color_code);
+	RZ_FREE(dup);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_eval_color_highlight_instruction_word_handler(RzCore *core, int argc, const char **argv) {
+	char *dup = rz_str_newf("bgonly %s", argv[2]);
+	char *color_code = NULL;
+	color_code = rz_cons_pal_parse(dup, NULL);
+	RZ_FREE(dup);
+	if (!color_code) {
+		eprintf("Unknown color %s\n", argv[2]);
+		return true;
+	}
+	rz_meta_set_string(core->analysis, RZ_META_TYPE_HIGHLIGHT, core->offset, "");
+	const char *str = rz_meta_get_string(core->analysis, RZ_META_TYPE_HIGHLIGHT, core->offset);
+	dup = rz_str_newf("%s \"%s%s\"", str, argv[1], color_code ? color_code : rz_cons_singleton()->context->pal.wordhl);
+	rz_meta_set_string(core->analysis, RZ_META_TYPE_HIGHLIGHT, core->offset, dup);
+	RZ_FREE(dup);
+	RZ_FREE(color_code);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_eval_color_highlight_list_current_handler(RzCore *core, int argc, const char **argv) {
+	rz_meta_print_list_in_function(core->analysis, RZ_META_TYPE_HIGHLIGHT, 0, core->offset);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_eval_color_highlight_remove_all_handler(RzCore *core, int argc, const char **argv) {
+	rz_meta_del(core->analysis, RZ_META_TYPE_HIGHLIGHT, 0, UT64_MAX);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_eval_color_highlight_remove_current_handler(RzCore *core, int argc, const char **argv) {
+	rz_meta_del(core->analysis, RZ_META_TYPE_HIGHLIGHT, core->offset, 1);
+	return RZ_CMD_STATUS_OK;
+}
+
 RZ_IPI int rz_eval_color(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	switch (input[0]) {

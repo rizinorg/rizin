@@ -179,6 +179,11 @@ static const RzCmdDescArg cmd_debug_process_heap_block_args[2];
 static const RzCmdDescArg eval_getset_args[2];
 static const RzCmdDescArg eval_list_args[2];
 static const RzCmdDescArg eval_bool_invert_args[2];
+static const RzCmdDescArg cmd_eval_color_list_args[3];
+static const RzCmdDescArg cmd_eval_color_display_palette_css_args[2];
+static const RzCmdDescArg cmd_eval_color_highlight_current_instruction_args[2];
+static const RzCmdDescArg cmd_eval_color_highlight_instruction_word_args[3];
+static const RzCmdDescArg cmd_eval_color_load_theme_args[2];
 static const RzCmdDescArg eval_editor_args[2];
 static const RzCmdDescArg eval_readonly_args[2];
 static const RzCmdDescArg eval_spaces_args[2];
@@ -3787,12 +3792,185 @@ static const RzCmdDescHelp eval_bool_invert_help = {
 	.args = eval_bool_invert_args,
 };
 
-static const RzCmdDescArg eval_color_args[] = {
+static const RzCmdDescHelp ec_help = {
+	.summary = "Set color for given key (prompt, offset, ...)",
+};
+static const RzCmdDescArg cmd_eval_color_list_args[] = {
+	{
+		.name = "key",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.optional = true,
+
+	},
+	{
+		.name = "color",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
 	{ 0 },
 };
-static const RzCmdDescHelp eval_color_help = {
-	.summary = "Set color for given key (prompt, offset, ...)",
-	.args = eval_color_args,
+static const RzCmdDescHelp cmd_eval_color_list_help = {
+	.summary = "List eval colors and keys",
+	.args = cmd_eval_color_list_args,
+};
+
+static const RzCmdDescArg cmd_eval_color_display_palette_css_args[] = {
+	{
+		.name = "prefix",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_eval_color_display_palette_css_help = {
+	.summary = "Show palette in CSS",
+	.args = cmd_eval_color_display_palette_css_args,
+};
+
+static const RzCmdDescArg cmd_eval_color_set_default_palette_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_eval_color_set_default_palette_help = {
+	.summary = "Set default palette",
+	.args = cmd_eval_color_set_default_palette_args,
+};
+
+static const RzCmdDescHelp ecH_help = {
+	.summary = "Highlight word or an instruction",
+};
+static const RzCmdDescArg cmd_eval_color_highlight_list_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_eval_color_highlight_list_help = {
+	.summary = "List all the highlight rules",
+	.args = cmd_eval_color_highlight_list_args,
+};
+
+static const RzCmdDescArg cmd_eval_color_highlight_current_instruction_args[] = {
+	{
+		.name = "color",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_eval_color_highlight_current_instruction_help = {
+	.summary = "Highlight current instruction with the given color as background",
+	.args = cmd_eval_color_highlight_current_instruction_args,
+};
+
+static const RzCmdDescArg cmd_eval_color_highlight_instruction_word_args[] = {
+	{
+		.name = "word",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "color",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_eval_color_highlight_instruction_word_help = {
+	.summary = "Highlight the word with the given color as background",
+	.args = cmd_eval_color_highlight_instruction_word_args,
+};
+
+static const RzCmdDescArg cmd_eval_color_highlight_list_current_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_eval_color_highlight_list_current_help = {
+	.summary = "Show highlight rule in current offset",
+	.args = cmd_eval_color_highlight_list_current_args,
+};
+
+static const RzCmdDescArg cmd_eval_color_highlight_remove_all_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_eval_color_highlight_remove_all_help = {
+	.summary = "Remove all highlights and hints",
+	.args = cmd_eval_color_highlight_remove_all_args,
+};
+
+static const RzCmdDescArg cmd_eval_color_highlight_remove_current_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_eval_color_highlight_remove_current_help = {
+	.summary = "Remove all highlights on current instruction",
+	.args = cmd_eval_color_highlight_remove_current_args,
+};
+
+static const RzCmdDescArg cmd_eval_color_set_random_palette_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_eval_color_set_random_palette_help = {
+	.summary = "Set random palette",
+	.args = cmd_eval_color_set_random_palette_args,
+};
+
+static const RzCmdDescArg cmd_eval_color_set_colorful_palette_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_eval_color_set_colorful_palette_help = {
+	.summary = "Set a colorful palette",
+	.args = cmd_eval_color_set_colorful_palette_args,
+};
+
+static const RzCmdDescHelp eco_help = {
+	.summary = "Load the provided theme or list the available themes",
+};
+static const RzCmdDescArg cmd_eval_color_load_theme_args[] = {
+	{
+		.name = "theme",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_eval_color_load_theme_help = {
+	.summary = "List the available themes",
+	.args = cmd_eval_color_load_theme_args,
+};
+
+static const RzCmdDescArg cmd_eval_color_list_current_theme_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_eval_color_list_current_theme_help = {
+	.summary = "Display current theme name",
+	.args = cmd_eval_color_list_current_theme_args,
+};
+
+static const RzCmdDescArg cmd_eval_color_list_reload_current_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_eval_color_list_reload_current_help = {
+	.summary = "Reload current theme",
+	.args = cmd_eval_color_list_reload_current_args,
+};
+
+static const RzCmdDescArg cmd_eval_color_load_previous_theme_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_eval_color_load_previous_theme_help = {
+	.summary = "Load previuos color theme",
+	.args = cmd_eval_color_load_previous_theme_args,
+};
+
+static const RzCmdDescArg cmd_eval_color_load_next_theme_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_eval_color_load_next_theme_help = {
+	.summary = "Load next color theme",
+	.args = cmd_eval_color_load_next_theme_args,
 };
 
 static const RzCmdDescArg eval_editor_args[] = {
@@ -7954,8 +8132,50 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *eval_bool_invert_cd = rz_cmd_desc_argv_new(core->rcmd, e_cd, "e!", rz_eval_bool_invert_handler, &eval_bool_invert_help);
 	rz_warn_if_fail(eval_bool_invert_cd);
 
-	RzCmdDesc *eval_color_cd = rz_cmd_desc_oldinput_new(core->rcmd, e_cd, "ec", rz_eval_color, &eval_color_help);
-	rz_warn_if_fail(eval_color_cd);
+	RzCmdDesc *ec_cd = rz_cmd_desc_group_modes_new(core->rcmd, e_cd, "ec", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_cmd_eval_color_list_handler, &cmd_eval_color_list_help, &ec_help);
+	rz_warn_if_fail(ec_cd);
+	RzCmdDesc *cmd_eval_color_display_palette_css_cd = rz_cmd_desc_argv_new(core->rcmd, ec_cd, "ecc", rz_cmd_eval_color_display_palette_css_handler, &cmd_eval_color_display_palette_css_help);
+	rz_warn_if_fail(cmd_eval_color_display_palette_css_cd);
+
+	RzCmdDesc *cmd_eval_color_set_default_palette_cd = rz_cmd_desc_argv_new(core->rcmd, ec_cd, "ecd", rz_cmd_eval_color_set_default_palette_handler, &cmd_eval_color_set_default_palette_help);
+	rz_warn_if_fail(cmd_eval_color_set_default_palette_cd);
+
+	RzCmdDesc *ecH_cd = rz_cmd_desc_group_modes_new(core->rcmd, ec_cd, "ecH", RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_cmd_eval_color_highlight_list_handler, &cmd_eval_color_highlight_list_help, &ecH_help);
+	rz_warn_if_fail(ecH_cd);
+	RzCmdDesc *cmd_eval_color_highlight_current_instruction_cd = rz_cmd_desc_argv_new(core->rcmd, ecH_cd, "ecHi", rz_cmd_eval_color_highlight_current_instruction_handler, &cmd_eval_color_highlight_current_instruction_help);
+	rz_warn_if_fail(cmd_eval_color_highlight_current_instruction_cd);
+
+	RzCmdDesc *cmd_eval_color_highlight_instruction_word_cd = rz_cmd_desc_argv_new(core->rcmd, ecH_cd, "ecHw", rz_cmd_eval_color_highlight_instruction_word_handler, &cmd_eval_color_highlight_instruction_word_help);
+	rz_warn_if_fail(cmd_eval_color_highlight_instruction_word_cd);
+
+	RzCmdDesc *cmd_eval_color_highlight_list_current_cd = rz_cmd_desc_argv_new(core->rcmd, ecH_cd, "ecH.", rz_cmd_eval_color_highlight_list_current_handler, &cmd_eval_color_highlight_list_current_help);
+	rz_warn_if_fail(cmd_eval_color_highlight_list_current_cd);
+
+	RzCmdDesc *cmd_eval_color_highlight_remove_all_cd = rz_cmd_desc_argv_new(core->rcmd, ecH_cd, "ecH-*", rz_cmd_eval_color_highlight_remove_all_handler, &cmd_eval_color_highlight_remove_all_help);
+	rz_warn_if_fail(cmd_eval_color_highlight_remove_all_cd);
+
+	RzCmdDesc *cmd_eval_color_highlight_remove_current_cd = rz_cmd_desc_argv_new(core->rcmd, ecH_cd, "ecH-", rz_cmd_eval_color_highlight_remove_current_handler, &cmd_eval_color_highlight_remove_current_help);
+	rz_warn_if_fail(cmd_eval_color_highlight_remove_current_cd);
+
+	RzCmdDesc *cmd_eval_color_set_random_palette_cd = rz_cmd_desc_argv_new(core->rcmd, ec_cd, "ecr", rz_cmd_eval_color_set_random_palette_handler, &cmd_eval_color_set_random_palette_help);
+	rz_warn_if_fail(cmd_eval_color_set_random_palette_cd);
+
+	RzCmdDesc *cmd_eval_color_set_colorful_palette_cd = rz_cmd_desc_argv_new(core->rcmd, ec_cd, "ecs", rz_cmd_eval_color_set_colorful_palette_handler, &cmd_eval_color_set_colorful_palette_help);
+	rz_warn_if_fail(cmd_eval_color_set_colorful_palette_cd);
+
+	RzCmdDesc *eco_cd = rz_cmd_desc_group_modes_new(core->rcmd, ec_cd, "eco", RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_eval_color_load_theme_handler, &cmd_eval_color_load_theme_help, &eco_help);
+	rz_warn_if_fail(eco_cd);
+	RzCmdDesc *cmd_eval_color_list_current_theme_cd = rz_cmd_desc_argv_new(core->rcmd, eco_cd, "eco.", rz_cmd_eval_color_list_current_theme_handler, &cmd_eval_color_list_current_theme_help);
+	rz_warn_if_fail(cmd_eval_color_list_current_theme_cd);
+
+	RzCmdDesc *cmd_eval_color_list_reload_current_cd = rz_cmd_desc_argv_new(core->rcmd, eco_cd, "ecoo", rz_cmd_eval_color_list_reload_current_handler, &cmd_eval_color_list_reload_current_help);
+	rz_warn_if_fail(cmd_eval_color_list_reload_current_cd);
+
+	RzCmdDesc *cmd_eval_color_load_previous_theme_cd = rz_cmd_desc_argv_new(core->rcmd, ec_cd, "ecp", rz_cmd_eval_color_load_previous_theme_handler, &cmd_eval_color_load_previous_theme_help);
+	rz_warn_if_fail(cmd_eval_color_load_previous_theme_cd);
+
+	RzCmdDesc *cmd_eval_color_load_next_theme_cd = rz_cmd_desc_argv_new(core->rcmd, ec_cd, "ecn", rz_cmd_eval_color_load_next_theme_handler, &cmd_eval_color_load_next_theme_help);
+	rz_warn_if_fail(cmd_eval_color_load_next_theme_cd);
 
 	RzCmdDesc *eval_editor_cd = rz_cmd_desc_argv_new(core->rcmd, e_cd, "ee", rz_eval_editor_handler, &eval_editor_help);
 	rz_warn_if_fail(eval_editor_cd);

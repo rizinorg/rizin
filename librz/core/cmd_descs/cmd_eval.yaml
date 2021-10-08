@@ -55,10 +55,106 @@ commands:
       - name: key
         type: RZ_CMD_ARG_TYPE_EVAL_KEY
   - name: ec
-    cname: eval_color
     summary: Set color for given key (prompt, offset, ...)
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
-    args: []
+    subcommands:
+      - name: ec
+        summary: List eval colors and keys
+        cname: cmd_eval_color_list
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: key
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+          - name: color
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: ecc
+        summary: Show palette in CSS
+        cname: cmd_eval_color_display_palette_css
+        args:
+          - name: prefix
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: ecd
+        summary: Set default palette
+        cname: cmd_eval_color_set_default_palette
+        args: [ ]
+      - name: ecH
+        summary: Highlight word or an instruction
+        subcommands:
+          - name: ecH
+            summary: List all the highlight rules
+            cname: cmd_eval_color_highlight_list
+            args: [ ]
+            modes:
+              - RZ_OUTPUT_MODE_JSON
+              - RZ_OUTPUT_MODE_RIZIN
+          - name: ecHi
+            summary: Highlight current instruction with the given color as background
+            cname: cmd_eval_color_highlight_current_instruction
+            args:
+              - name: color
+                type: RZ_CMD_ARG_TYPE_STRING
+          - name: ecHw
+            summary: Highlight the word with the given color as background
+            cname: cmd_eval_color_highlight_instruction_word
+            args:
+              - name: word
+                type: RZ_CMD_ARG_TYPE_STRING
+              - name: color
+                type: RZ_CMD_ARG_TYPE_STRING
+          - name: ecH.
+            summary: Show highlight rule in current offset
+            cname: cmd_eval_color_highlight_list_current
+            args: [ ]
+          - name: ecH-*
+            summary: Remove all highlights and hints
+            cname: cmd_eval_color_highlight_remove_all
+            args: [ ]
+          - name: ecH-
+            summary: Remove all highlights on current instruction
+            cname: cmd_eval_color_highlight_remove_current
+            args: [ ]
+      - name: ecr
+        summary: Set random palette
+        cname: cmd_eval_color_set_random_palette
+        args: [ ]
+      - name: ecs
+        summary: Set a colorful palette
+        cname: cmd_eval_color_set_colorful_palette
+        args: [ ]
+      - name: eco
+        summary: Load the provided theme or list the available themes
+        subcommands:
+          - name: eco
+            summary: List the available themes
+            cname: cmd_eval_color_load_theme
+            args:
+              - name: theme
+                type: RZ_CMD_ARG_TYPE_STRING
+                optional: true
+            modes:
+              - RZ_OUTPUT_MODE_JSON
+              - RZ_OUTPUT_MODE_QUIET
+          - name: eco.
+            summary: Display current theme name
+            cname: cmd_eval_color_list_current_theme
+            args: [ ]
+          - name: ecoo
+            summary: Reload current theme
+            cname: cmd_eval_color_list_reload_current
+            args: [ ]
+      - name: ecp
+        summary: Load previuos color theme
+        cname: cmd_eval_color_load_previous_theme
+        args: []
+      - name: ecn
+        summary: Load next color theme
+        cname: cmd_eval_color_load_next_theme
+        args: []
   - name: ee
     cname: eval_editor
     summary: Open editor to change the value of config variable <key>
