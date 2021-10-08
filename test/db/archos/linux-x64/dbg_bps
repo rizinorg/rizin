@@ -234,7 +234,7 @@ db @ main+1
 db @ main+2
 db @ main+4
 dbil~[0,2]
-db-*
+db- @@c:dblq
 dbil
 db @ main
 db @ main+1
