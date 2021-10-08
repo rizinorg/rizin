@@ -2443,7 +2443,7 @@ static const RzCmdDescArg meta_string_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp meta_string_help = {
-	.summary = "Add string",
+	.summary = "Add string (autodetects the encoding)",
 	.args = meta_string_args,
 };
 
@@ -7665,10 +7665,10 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *Cs_cd = rz_cmd_desc_group_new(core->rcmd, C_cd, "Cs", rz_meta_string_handler, &meta_string_help, &Cs_help);
 	rz_warn_if_fail(Cs_cd);
-	RzCmdDesc *meta_string_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, Cs_cd, "Csl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_LONG, rz_meta_string_list_handler, &meta_string_list_help);
+	RzCmdDesc *meta_string_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, Cs_cd, "Csl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_meta_string_list_handler, &meta_string_list_help);
 	rz_warn_if_fail(meta_string_list_cd);
 
-	RzCmdDesc *meta_string_at_cd = rz_cmd_desc_argv_state_new(core->rcmd, Cs_cd, "Cs.", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_LONG, rz_meta_string_at_handler, &meta_string_at_help);
+	RzCmdDesc *meta_string_at_cd = rz_cmd_desc_argv_state_new(core->rcmd, Cs_cd, "Cs.", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_LONG | RZ_OUTPUT_MODE_QUIET, rz_meta_string_at_handler, &meta_string_at_help);
 	rz_warn_if_fail(meta_string_at_cd);
 
 	RzCmdDesc *meta_string_remove_cd = rz_cmd_desc_argv_new(core->rcmd, Cs_cd, "Cs-", rz_meta_string_remove_handler, &meta_string_remove_help);

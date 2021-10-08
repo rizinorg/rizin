@@ -187,12 +187,13 @@ RZ_API char *rz_str_escape_utf16le(const char *buf, int buf_size, bool show_asci
 RZ_API char *rz_str_escape_utf32le(const char *buf, int buf_size, bool show_asciidot, bool esc_bslash);
 RZ_API char *rz_str_escape_utf16be(const char *buf, int buf_size, bool show_asciidot, bool esc_bslash);
 RZ_API char *rz_str_escape_utf32be(const char *buf, int buf_size, bool show_asciidot, bool esc_bslash);
-RZ_API void rz_str_byte_escape(const char *p, char **dst, int dot_nl, bool default_dot, bool esc_bslash);
+RZ_API void rz_str_byte_escape(const char *p, char **dst, bool dot_nl, bool default_dot, bool esc_bslash);
 RZ_API char *rz_str_format_msvc_argv(size_t argc, const char **argv);
 RZ_API void rz_str_uri_decode(char *buf);
 RZ_API char *rz_str_uri_encode(const char *buf);
 RZ_API char *rz_str_utf16_decode(const ut8 *s, int len);
-RZ_API int rz_str_utf16_to_utf8(ut8 *dst, int len_dst, const ut8 *src, int len_src, int little_endian);
+RZ_API int rz_str_utf16_to_utf8(ut8 *dst, int len_dst, const ut8 *src, int len_src, bool little_endian);
+RZ_API int rz_str_to_utf8(ut8 *dst, int len_dst, const ut8 *src, int len_src, RzStrEnc encoding);
 RZ_API char *rz_str_utf16_encode(const char *s, int len);
 RZ_API char *rz_str_escape_utf8_for_json(const char *s, int len);
 RZ_API char *rz_str_escape_mutf8_for_json(const char *s, int len);

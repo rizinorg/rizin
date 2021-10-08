@@ -299,7 +299,7 @@ commands:
     subcommands:
       - name: Cs
         cname: meta_string
-        summary: Add string
+        summary: Add string (autodetects the encoding)
         args:
           - name: size
             type: RZ_CMD_ARG_TYPE_RZNUM
@@ -312,7 +312,7 @@ commands:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_RIZIN
           - RZ_OUTPUT_MODE_JSON
-          - RZ_OUTPUT_MODE_LONG
+          - RZ_OUTPUT_MODE_QUIET
         args: []
       - name: Cs.
         cname: meta_string_at
@@ -322,6 +322,7 @@ commands:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
           - RZ_OUTPUT_MODE_LONG
+          - RZ_OUTPUT_MODE_QUIET
         args: []
       - name: Cs-
         cname: meta_string_remove

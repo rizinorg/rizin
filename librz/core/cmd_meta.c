@@ -503,33 +503,42 @@ static bool meta_string_ascii_add(RzCore *core, ut64 addr, size_t limit, ut8 **n
 	return true;
 }
 
-static bool meta_string_wide_add(RzCore *core, ut64 addr, size_t limit, ut8 **name, size_t *name_len) {
-	rz_return_val_if_fail(limit && name && name_len, false);
-	ut8 *tmp = malloc(limit + 1);
+static bool meta_string_guess_add(RzCore *core, ut64 addr, size_t limit, ut8 **name, size_t *name_len, RzDetectedString **ds) {
+	rz_return_val_if_fail(limit && name && name_len && ds, false);
 	*name = malloc(limit + 1);
-	if (!tmp || !*name) {
+	if (!*name) {
 		return false;
 	}
-	if (!rz_io_read_at(core->io, addr, tmp, limit - 3)) {
+	RzBinFile *bf = rz_bin_cur(core->bin);
+	RzBinObject *obj = rz_bin_cur_object(core->bin);
+	if (!bf || !obj) {
 		free(*name);
-		free(tmp);
 		return false;
 	}
-	*name_len = rz_str_nlen_w((char *)tmp, limit - 3);
-	int i, j;
-	for (i = 0, j = 0; i < limit; i++, j++) {
-		(*name)[i] = tmp[j];
-		if (!tmp[j]) {
-			break;
-		}
-		if (!tmp[j + 1]) {
-			if (j + 3 < sizeof(tmp)) {
-				if (tmp[j + 3]) {
-					break;
-				}
-			}
-			j++;
-		}
+	bool big_endian = obj ? rz_bin_object_is_big_endian(obj) : RZ_SYS_ENDIAN;
+	RzUtilStrScanOptions scan_opt = {
+		.buf_size = 2048,
+		.max_uni_blocks = 4,
+		.min_str_length = 4,
+		.prefer_big_endian = big_endian
+	};
+	RzList *str_list = rz_list_new();
+	if (!str_list) {
+		free(*name);
+		return false;
+	}
+	int count = rz_scan_strings(bf->buf, str_list, &scan_opt, addr, addr + limit, RZ_STRING_ENC_GUESS);
+	if (count <= 0) {
+		rz_list_free(str_list);
+		free(*name);
+		return false;
+	}
+	*ds = rz_list_first(str_list);
+	rz_list_free(str_list);
+	if (!rz_str_to_utf8(*name, limit, (ut8 *)(*ds)->string, (*ds)->size, (*ds)->type)) {
+		free(*name);
+		RZ_LOG_ERROR("Fail to convert the string to UTF-8 name");
+		return false;
 	}
 	(*name)[limit] = '\0';
 	return true;
@@ -539,16 +548,23 @@ static bool meta_string_add(RzCore *core, ut64 addr, ut64 size, RzStrEnc encodin
 	char *guessname = NULL;
 	size_t name_len = 0;
 	ut64 limit = size ? size : core->blocksize;
+	size_t n = 0;
 	if (encoding == RZ_STRING_ENC_LATIN1 || encoding == RZ_STRING_ENC_UTF8) {
 		if (!meta_string_ascii_add(core, addr, limit, (ut8 **)&guessname, &name_len)) {
 			return false;
 		}
+		n = size == 0 ? name_len + 1 : size;
 	} else {
-		if (!meta_string_wide_add(core, addr, limit, (ut8 **)&guessname, &name_len)) {
+		RzDetectedString *ds = NULL;
+		if (!meta_string_guess_add(core, addr, limit, (ut8 **)&guessname, &name_len, &ds)) {
 			return false;
 		}
+		if (!ds) {
+			return false;
+		}
+		encoding = ds->type;
+		n = ds->size;
 	}
-	size_t n = size == 0 ? name_len + 1 : size;
 	if (!name) {
 		return rz_meta_set_with_subtype(core->analysis, RZ_META_TYPE_STRING, encoding, addr, n, guessname);
 	}

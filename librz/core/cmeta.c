@@ -175,9 +175,11 @@ RZ_IPI void rz_core_meta_print(RzCore *core, RzAnalysisMetaItem *d, ut64 start, 
 					if (show_full || mode == RZ_OUTPUT_MODE_LONG) {
 						rz_cons_printf("0x%08" PFMT64x " %s[%" PFMT64u "] \"%s\"\n",
 							start, enc, size, pstr);
-					} else {
+					} else if (mode == RZ_OUTPUT_MODE_STANDARD) {
 						rz_cons_printf("%s[%" PFMT64u "] \"%s\"\n",
 							enc, size, pstr);
+					} else {
+						rz_cons_printf("\"%s\"\n", pstr);
 					}
 				}
 				break;

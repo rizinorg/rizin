@@ -115,7 +115,11 @@ static bool meta_set(RzAnalysis *a, RzAnalysisMetaType type, int subtype, ut64 f
 	item->space = space;
 	item->size = to - from + 1;
 	free(item->str);
-	item->str = str ? strdup(str) : NULL;
+	if (type == RZ_META_TYPE_STRING) {
+		item->str = str ? rz_str_ndup(str, item->size) : NULL;
+	} else {
+		item->str = str ? strdup(str) : NULL;
+	}
 	if (str && !item->str) {
 		if (!node) { // If we just created this
 			free(item);

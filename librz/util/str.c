@@ -1275,7 +1275,16 @@ RZ_API char *rz_str_sanitize_sdb_key(const char *s) {
 	return ret;
 }
 
-RZ_API void rz_str_byte_escape(const char *p, char **dst, int dot_nl, bool default_dot, bool esc_bslash) {
+/* \brief Converts unprintable characters to C-like backslash representation
+ *
+ * \param p pointer to the original string
+ * \param dst pointer where pointer to the resulting characters sequence is put
+ * \param dot_nl specifies whether to convert \n into the graphiz-compatible newline \l
+ * \param default_dot specifies whether to replace unprintable with characters with the dot '.' or
+ * hexadecimal number
+ * \param esc_bslash specifies whether to replace the backslash '\' character with two of them
+ */
+RZ_API void rz_str_byte_escape(const char *p, char **dst, bool dot_nl, bool default_dot, bool esc_bslash) {
 	char *q = *dst;
 	switch (*p) {
 	case '\n':
@@ -1336,7 +1345,7 @@ RZ_API void rz_str_byte_escape(const char *p, char **dst, int dot_nl, bool defau
 
 /* Internal function. dot_nl specifies whether to convert \n into the
  * graphiz-compatible newline \l */
-static char *rz_str_escape_(const char *buf, int dot_nl, bool parse_esc_seq, bool ign_esc_seq, bool show_asciidot, bool esc_bslash) {
+static char *rz_str_escape_(const char *buf, bool dot_nl, bool parse_esc_seq, bool ign_esc_seq, bool show_asciidot, bool esc_bslash) {
 	rz_return_val_if_fail(buf, NULL);
 
 	/* Worst case scenario, we convert every byte to a single-char escape
@@ -2681,7 +2690,7 @@ RZ_API char *rz_str_uri_encode(const char *s) {
 	return trimDown ? trimDown : od;
 }
 
-RZ_API int rz_str_utf16_to_utf8(ut8 *dst, int len_dst, const ut8 *src, int len_src, int little_endian) {
+RZ_API int rz_str_utf16_to_utf8(ut8 *dst, int len_dst, const ut8 *src, int len_src, bool little_endian) {
 	ut8 *outstart = dst;
 	ut8 *outend = dst + len_dst;
 	ut16 *in = (ut16 *)src;
@@ -2756,6 +2765,30 @@ RZ_API int rz_str_utf16_to_utf8(ut8 *dst, int len_dst, const ut8 *src, int len_s
 	}
 	len_dst = dst - outstart;
 	return len_dst;
+}
+
+/**
+ * \brief Converts the string to UTF-8 according to the selected encoding
+ */
+RZ_API int rz_str_to_utf8(ut8 *dst, int len_dst, const ut8 *src, int len_src, RzStrEnc encoding) {
+	switch (encoding) {
+	case RZ_STRING_ENC_LATIN1:
+	case RZ_STRING_ENC_UTF8:
+		return rz_str_ncpy((char *)dst, (const char *)src, RZ_MIN(len_dst, len_src));
+	case RZ_STRING_ENC_UTF16BE:
+		return rz_str_utf16_to_utf8(dst, len_dst, src, len_src, false);
+	case RZ_STRING_ENC_UTF16LE:
+		return rz_str_utf16_to_utf8(dst, len_dst, src, len_src, true);
+	case RZ_STRING_ENC_UTF32BE:
+	case RZ_STRING_ENC_UTF32LE:
+		RZ_LOG_ERROR("UTF-32 to UTF-8 conversion is unimplemented");
+		break;
+	case RZ_STRING_ENC_GUESS:
+	default:
+		RZ_LOG_ERROR("Unknown encoding to convert to UTF-8");
+		break;
+	}
+	return -1;
 }
 
 RZ_API char *rz_str_utf16_decode(const ut8 *s, int len) {

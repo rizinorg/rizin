@@ -1389,21 +1389,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pdJ string - oldshell
-FILE=malloc://128
-CMDS=<<EOF
-e cfg.oldshell=true
-w Snoo"ping as" usual,
-e cfg.oldshell=false
-Cs 30
-pdJ 1
-EOF
-EXPECT=<<EOF
-[{"offset":0,"text":"            0x00000000     .string \"Snoo\\\"ping as\\\" usual,\" ; len=30"}]
-EOF
-RUN
-
-NAME=pdJ string - rzshell
+NAME=pdJ string
 ARGS=-ecfg.oldshell=false
 FILE=malloc://128
 CMDS=<<EOF
@@ -1412,7 +1398,7 @@ Cs 30
 pdJ 1
 EOF
 EXPECT=<<EOF
-[{"offset":0,"text":"            0x00000000     .string \"Snoo\\\"ping as\\\" usual,\" ; len=30"}]
+[{"offset":0,"text":"            0x00000000     .string \"Snoo\\\"ping as\\\" usual,\" ; len=21"}]
 EOF
 RUN
 
