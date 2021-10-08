@@ -3556,7 +3556,7 @@ struct tsr2cmd_state {
 	char *input;
 	RzPVector /*<char *>*/ saved_input;
 	TSTree *tree;
-	RzPVector/*<TSTree *>*/ saved_tree;
+	RzPVector /*<TSTree *>*/ saved_tree;
 	bool log;
 	bool split_lines;
 	TSNode substitute_cmd;
