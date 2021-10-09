@@ -591,6 +591,7 @@ subdir('librz/config')
 subdir('librz/parse')
 subdir('librz/lang')
 subdir('librz/asm')
+subdir('librz/il')
 subdir('librz/analysis')
 subdir('librz/egg')
 subdir('librz/debug')
@@ -658,6 +659,7 @@ if meson.is_subproject()
       rz_search_dep,
       rz_socket_dep,
       rz_syscall_dep,
+      rz_il_dep,
       rz_type_dep,
       rz_diff_dep,
       rz_demangler_dep,

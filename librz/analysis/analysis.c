@@ -64,6 +64,7 @@ static void zign_rename_for(RzEvent *ev, int type, void *user, void *data) {
 }
 
 void rz_analysis_hint_storage_init(RzAnalysis *a);
+
 void rz_analysis_hint_storage_fini(RzAnalysis *a);
 
 static void rz_meta_item_fini(RzAnalysisMetaItem *item) {
@@ -150,6 +151,7 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	}
 	analysis->ht_global_var = ht_pp_new(NULL, global_kv_free, NULL);
 	analysis->global_var_tree = NULL;
+	analysis->rzil = NULL;
 	return analysis;
 }
 
@@ -227,6 +229,20 @@ RZ_API bool rz_analysis_use(RzAnalysis *analysis, const char *name) {
 				return false;
 			}
 			rz_analysis_set_reg_profile(analysis);
+
+			// default : init and enable RZIL if defined rzil_init
+			if (h->rzil_init) {
+				if (analysis->rzil) {
+					rz_analysis_rzil_cleanup(analysis, analysis->rzil);
+					analysis->rzil = NULL;
+				}
+				rz_analysis_rzil_setup(analysis);
+			} else {
+				// create it to make analysis_tp go right
+				if (!analysis->rzil) {
+					analysis->rzil = rz_analysis_rzil_new();
+				}
+			}
 			return true;
 		}
 	}
@@ -509,7 +525,7 @@ RZ_API bool rz_analysis_noreturn_add(RzAnalysis *analysis, const char *name, ut6
 		} else {
 			eprintf("Can't find prototype for: %s\n", tmp_name);
 		}
-		//return false;
+		// return false;
 	}
 	if (fnl_name) {
 		sdb_bool_set(NDB, K_NORET_FUNC(fnl_name), true, 0);
