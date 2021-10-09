@@ -145,12 +145,10 @@ rz_bin_sources = [
   'format/zimg/zimg.c',
 
   'pdb/dbi.c',
-  'pdb/fpo.c',
   'pdb/gdata.c',
   'pdb/omap.c',
   'pdb/pdb.c',
   'pdb/pdb_downloader.c',
-  'pdb/stream_file.c',
   'pdb/stream_pe.c',
   'pdb/tpi.c'
 ]
@@ -171,6 +169,7 @@ rz_bin = library('rz_bin', rz_bin_sources,
     rz_syscall_dep,
     rz_cons_dep,
     rz_io_dep,
+    rz_type_dep,
   ],
   install: true,
   implicit_include_directories: false,
@@ -191,7 +190,8 @@ pkgconfig_mod.generate(rz_bin,
     'rz_util',
     'rz_io',
     'rz_socket',
-    'rz_syscall'
+    'rz_syscall',
+    'rz_type'
   ],
   description: 'rizin foundation libraries'
 )
