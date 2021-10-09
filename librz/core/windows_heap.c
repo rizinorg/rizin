@@ -347,11 +347,18 @@ static bool GetHeapGlobalsOffset(RzDebug *dbg, HANDLE h_proc) {
 	} else {
 		eprintf("Warning: Cannot find base address, flags will probably be misplaced\n");
 	}
-	char *j = rz_bin_pdb_gvars_as_string(pdb, baddr, RZ_OUTPUT_MODE_JSON);
-	if (!j) {
+	PJ *pj = pj_new();
+	if (!pj) {
 		rz_bin_pdb_free(pdb);
 		goto fail;
 	}
+	char *j = rz_core_bin_pdb_gvars_as_string(pdb, baddr, pj, RZ_OUTPUT_MODE_JSON);
+	if (!j) {
+		rz_bin_pdb_free(pdb);
+		pj_free(pj);
+		goto fail;
+	}
+	pj_free(pj);
 	rz_bin_pdb_free(pdb);
 	RzJson *json = rz_json_parse(j);
 	if (!json) {
@@ -359,6 +366,7 @@ static bool GetHeapGlobalsOffset(RzDebug *dbg, HANDLE h_proc) {
 		free(j);
 		goto fail;
 	}
+	free(j);
 
 	// Go through gvars array and search for the heap globals symbols
 	const RzJson *gvars = rz_json_get(json, "gvars");

@@ -116,26 +116,34 @@ static void rz_core_bin_pdb_types_print(const RzTypeDB *db, const RzPdb *pdb, co
 	}
 }
 
-static void rz_core_bin_pdb_gvars_print(const RzPdb *pdb, const ut64 img_base, const RzCmdStateOutput *state) {
-	rz_return_if_fail(pdb && state);
+/**
+ * \brief Return the PDB global vars string
+ * 
+ * \param pdb PDB instance
+ * \param img_base image base addr
+ * \param pj JSON instance
+ * \param mode RzOutputMode
+ * \return char *
+ */
+RZ_API char *rz_core_bin_pdb_gvars_as_string(RZ_NONNULL const RzPdb *pdb, const ut64 img_base, PJ *pj, const RzOutputMode mode) {
+	rz_return_val_if_fail(pdb, NULL);
 	PeImageSectionHeader *sctn_header = 0;
 	RzPdbGDataStream *gsym_data_stream = 0;
 	RzPdbPeStream *pe_stream = 0;
 	RzPdbOmapStream *omap_stream;
 	GDataGlobal *gdata = 0;
 	RzListIter *it = 0;
-	PJ *pj = state->d.pj;
 	char *name;
 	RzStrBuf *buf = rz_strbuf_new(NULL);
 	if (!buf) {
-		return;
+		return NULL;
 	}
 	RzStrBuf *cmd = rz_strbuf_new(NULL);
 	if (!cmd) {
 		rz_strbuf_free(buf);
-		return;
+		return NULL;
 	}
-	if (state->mode == RZ_OUTPUT_MODE_JSON) {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_o(pj);
 		pj_ka(pj, "gvars");
 	}
@@ -144,14 +152,14 @@ static void rz_core_bin_pdb_gvars_print(const RzPdb *pdb, const ut64 img_base, c
 	omap_stream = pdb->s_omap;
 	if (!pe_stream) {
 		rz_strbuf_free(buf);
-		return;
+		return NULL;
 	}
 	rz_list_foreach (gsym_data_stream->global_list, it, gdata) {
 		sctn_header = rz_list_get_n(pe_stream->sections_hdrs, (gdata->segment - 1));
 		if (sctn_header) {
 			name = rz_demangler_msvc(gdata->name);
 			name = (name) ? name : strdup(gdata->name);
-			switch (state->mode) {
+			switch (mode) {
 			case RZ_OUTPUT_MODE_JSON: // JSON
 				pj_o(pj);
 				pj_kN(pj, "address", (img_base + rz_bin_pdb_omap_remap(omap_stream, gdata->offset + sctn_header->virtual_address)));
@@ -171,12 +179,26 @@ static void rz_core_bin_pdb_gvars_print(const RzPdb *pdb, const ut64 img_base, c
 			free(name);
 		}
 	}
-	if (state->mode == RZ_OUTPUT_MODE_JSON) {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
 		pj_end(pj);
+		// We will need this for Windows Heap.
+		rz_strbuf_append(buf, pj_string(pj));
 	}
-	rz_cons_print(rz_strbuf_get(buf));
+	char *str = strdup(rz_strbuf_get(buf));
 	rz_strbuf_free(buf);
+	return str;
+}
+
+static void rz_core_bin_pdb_gvars_print(const RzPdb *pdb, const ut64 img_base, const RzCmdStateOutput *state) {
+	rz_return_if_fail(pdb && state);
+	char *str = rz_core_bin_pdb_gvars_as_string(pdb, img_base, state->d.pj, state->mode);
+	// We don't need to print the output of JSON because the RzCmdStateOutput will handle it.
+	if (state->mode == RZ_OUTPUT_MODE_STANDARD) {
+		rz_cons_print(str);
+	}
+	free(str);
+	return;
 }
 
 static void pdb_set_symbols(const RzCore *core, const RzPdb *pdb, const ut64 img_base) {
