@@ -1,84 +1,88 @@
 // SPDX-FileCopyrightText: 2014-2020 inisider <inisider@gmail.com>
+// SPDX-FileCopyrightText: 2021 Basstorm <basstorm@nyist.edu.cn>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "types.h"
-#include "gdata.h"
-#include "stream_file.h"
-#include "tpi.h"
+#include "pdb.h"
 
-static int parse_global(char *data, int data_size, SGlobal *global) {
-	unsigned int read_bytes = 2;
-
-	READ4(read_bytes, data_size, global->symtype, data, ut32);
-	READ4(read_bytes, data_size, global->offset, data, ut32);
-	READ2(read_bytes, data_size, global->segment, data, ut8);
-	if (global->leaf_type == 0x110E) {
-		parse_scstring(&global->name, (unsigned char *)data, &read_bytes, data_size);
-	} else {
-		READ1(read_bytes, data_size, global->name.size, data, ut8);
-		init_scstring(&global->name, global->name.size, data);
+static bool parse_gdata_global(GDataGlobal *global, RzBuffer *buf, ut32 initial_seek) {
+	if (!rz_buf_read_le32(buf, &global->symtype) ||
+		!rz_buf_read_le32(buf, &global->offset)) {
+		return false;
 	}
-
-	return read_bytes;
+	if (!rz_buf_read_le16(buf, &global->segment)) {
+		return false;
+	}
+	if (global->leaf_type == 0x110E) {
+		global->name = rz_buf_get_string(buf, rz_buf_tell(buf));
+		ut16 len = strlen(global->name) + 1;
+		global->name_len = len;
+		rz_buf_seek(buf, len, RZ_BUF_CUR);
+	} else {
+		if (!rz_buf_read8(buf, &global->name_len)) {
+			return false;
+		}
+	}
+	ut32 read_len = rz_buf_tell(buf) - initial_seek;
+	if (read_len % 4) {
+		ut16 remain = 4 - (read_len % 4);
+		rz_buf_seek(buf, remain, RZ_BUF_CUR);
+	}
+	return true;
 }
 
-void parse_gdata_stream(void *stream, RZ_STREAM_FILE *stream_file) {
-	unsigned short len = 0;
-	unsigned short leaf_type = 0;
-	char *data = 0;
-	SGDATAStream *data_stream = (SGDATAStream *)stream;
-	SGlobal *global = 0;
-
-	data_stream->globals_list = rz_list_new();
-	while (1) {
-		stream_file_read(stream_file, 2, (char *)&len);
-		if (len == 0) {
+RZ_IPI bool parse_gdata_stream(RzPdb *pdb, RzPdbMsfStream *stream) {
+	rz_return_val_if_fail(pdb && stream, false);
+	if (!pdb->s_gdata) {
+		pdb->s_gdata = RZ_NEW0(RzPdbGDataStream);
+	}
+	RzPdbGDataStream *s = pdb->s_gdata;
+	if (!s) {
+		RZ_LOG_ERROR("Error allocating memory.\n");
+		return false;
+	}
+	RzBuffer *buf = stream->stream_data;
+	s->global_list = rz_list_new();
+	if (!s->global_list) {
+		return false;
+	}
+	ut16 len;
+	while (true) {
+		ut32 initial_seek = rz_buf_tell(buf);
+		if (!rz_buf_read_le16(buf, &len)) {
 			break;
 		}
-		data = (char *)malloc(len);
-		if (!data) {
-			return;
+		if (len == 0 || len == UT16_MAX) {
+			break;
 		}
-		stream_file_read(stream_file, len, data);
-
-		leaf_type = *(unsigned short *)(data);
-		if ((leaf_type == 0x110E) || (leaf_type == 0x1009)) {
-			global = (SGlobal *)malloc(sizeof(SGlobal));
+		ut16 leaf_type;
+		if (!rz_buf_read_le16(buf, &leaf_type)) {
+			return false;
+		}
+		if (leaf_type == 0x110E || leaf_type == 0x1009) {
+			GDataGlobal *global = RZ_NEW0(GDataGlobal);
 			if (!global) {
-				free(data);
-				return;
+				goto skip;
 			}
 			global->leaf_type = leaf_type;
-			parse_global(data + 2, len, global);
-			rz_list_append(data_stream->globals_list, global);
+			if (!parse_gdata_global(global, buf, initial_seek)) {
+				RZ_FREE(global);
+				return false;
+			}
+			rz_list_append(s->global_list, global);
+			continue;
 		}
-		free(data);
+	skip:
+		rz_buf_seek(buf, len - sizeof(ut16), RZ_BUF_CUR);
 	}
-
-	// TODO: for more fast access
-	//	for g in self.globals:
-	//        if not hasattr(g, 'symtype'): continue
-	//        if g.symtype == 0:
-	//            if g.name.startswith("_"):
-	//                self.vars[g.name[1:]] = g
-	//            else:
-	//                self.vars[g.name] = g
-	//        elif g.symtype == 2:
-	//            self.funcs[g.name] = g
+	return true;
 }
 
-void free_gdata_stream(void *stream) {
-	SGDATAStream *data_stream = (SGDATAStream *)stream;
-	SGlobal *global = 0;
-	RzListIter *it = 0;
-
-	it = rz_list_iterator(data_stream->globals_list);
-	while (rz_list_iter_next(it)) {
-		global = (SGlobal *)rz_list_iter_get(it);
-		if (global->name.name) {
-			free(global->name.name);
-		}
-		free(global);
+RZ_IPI void free_gdata_stream(RzPdbGDataStream *stream) {
+	GDataGlobal *global;
+	RzListIter *it;
+	rz_list_foreach (stream->global_list, it, global) {
+		RZ_FREE(global->name);
+		RZ_FREE(global);
 	}
-	rz_list_free(data_stream->globals_list);
+	rz_list_free(stream->global_list);
 }

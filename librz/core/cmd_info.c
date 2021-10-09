@@ -517,21 +517,12 @@ RZ_IPI RzCmdStatus rz_cmd_info_pdb_show_handler(RzCore *core, int argc, const ch
 		free(filename);
 		return RZ_CMD_STATUS_ERROR;
 	}
-
-	switch (state->mode) {
-	case RZ_OUTPUT_MODE_STANDARD:
-		rz_core_pdb_info(core, filename, NULL, RZ_MODE_PRINT);
-		break;
-	case RZ_OUTPUT_MODE_JSON:
-		rz_core_pdb_info(core, filename, state->d.pj, RZ_MODE_JSON);
-		break;
-	case RZ_OUTPUT_MODE_RIZIN:
-		rz_core_pdb_info(core, filename, NULL, RZ_MODE_RIZINCMD);
-		break;
-	default:
-		rz_warn_if_reached();
-		break;
+	RzPdb *pdb = rz_core_pdb_load_info(core, filename);
+	if (!pdb) {
+		return false;
 	}
+	rz_core_pdb_info_print(core, core->analysis->typedb, pdb, state);
+	rz_bin_pdb_free(pdb);
 	free(filename);
 	return RZ_CMD_STATUS_OK;
 }
