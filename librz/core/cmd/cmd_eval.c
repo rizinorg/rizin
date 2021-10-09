@@ -280,9 +280,8 @@ RZ_API void rz_core_echo(RzCore *core, const char *input) {
 		}
 		free(buf);
 	} else {
-		char *p = strchr(input, ' ');
-		if (p) {
-			rz_cons_strcat(p + 1);
+		if (input) {
+			rz_cons_strcat(input);
 			rz_cons_newline();
 		}
 	}
@@ -448,6 +447,14 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_highlight_remove_all_handler(RzCore *core, 
 RZ_IPI RzCmdStatus rz_cmd_eval_color_highlight_remove_current_handler(RzCore *core, int argc, const char **argv) {
 	rz_meta_del(core->analysis, RZ_META_TYPE_HIGHLIGHT, core->offset, 1);
 	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_echo_handler(RzCore *core, int argc, const char **argv) {
+	if (argc >= 2) {
+		rz_core_echo(core, argv[1]);
+		return RZ_CMD_STATUS_OK;
+	}
+	return RZ_CMD_STATUS_ERROR;
 }
 
 RZ_IPI int rz_eval_color(void *data, const char *input) {

@@ -181,6 +181,7 @@ static const RzCmdDescArg eval_list_args[2];
 static const RzCmdDescArg eval_bool_invert_args[2];
 static const RzCmdDescArg cmd_eval_color_list_args[3];
 static const RzCmdDescArg cmd_eval_color_display_palette_css_args[2];
+static const RzCmdDescArg cmd_echo_args[2];
 static const RzCmdDescArg cmd_eval_color_highlight_current_instruction_args[2];
 static const RzCmdDescArg cmd_eval_color_highlight_instruction_word_args[3];
 static const RzCmdDescArg cmd_eval_color_load_theme_args[2];
@@ -3837,6 +3838,21 @@ static const RzCmdDescArg cmd_eval_color_set_default_palette_args[] = {
 static const RzCmdDescHelp cmd_eval_color_set_default_palette_help = {
 	.summary = "Set default palette",
 	.args = cmd_eval_color_set_default_palette_args,
+};
+
+static const RzCmdDescArg cmd_echo_args[] = {
+	{
+		.name = "argument",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_echo_help = {
+	.summary = "Display a line of text",
+	.args = cmd_echo_args,
 };
 
 static const RzCmdDescHelp ecH_help = {
@@ -8139,6 +8155,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_eval_color_set_default_palette_cd = rz_cmd_desc_argv_new(core->rcmd, ec_cd, "ecd", rz_cmd_eval_color_set_default_palette_handler, &cmd_eval_color_set_default_palette_help);
 	rz_warn_if_fail(cmd_eval_color_set_default_palette_cd);
+
+	RzCmdDesc *cmd_echo_cd = rz_cmd_desc_argv_new(core->rcmd, ec_cd, "echo", rz_cmd_echo_handler, &cmd_echo_help);
+	rz_warn_if_fail(cmd_echo_cd);
 
 	RzCmdDesc *ecH_cd = rz_cmd_desc_group_modes_new(core->rcmd, ec_cd, "ecH", RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_cmd_eval_color_highlight_list_handler, &cmd_eval_color_highlight_list_help, &ecH_help);
 	rz_warn_if_fail(ecH_cd);

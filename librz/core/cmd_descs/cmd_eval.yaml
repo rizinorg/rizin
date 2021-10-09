@@ -82,6 +82,13 @@ commands:
         summary: Set default palette
         cname: cmd_eval_color_set_default_palette
         args: [ ]
+      - name: echo
+        summary: Display a line of text
+        cname: cmd_echo
+        args:
+          - name: argument
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
       - name: ecH
         summary: Highlight word or an instruction
         subcommands:
