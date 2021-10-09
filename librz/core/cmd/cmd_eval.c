@@ -389,7 +389,7 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_load_theme_handler(RzCore *core, int argc, 
 }
 
 RZ_IPI RzCmdStatus rz_cmd_eval_color_list_current_theme_handler(RzCore *core, int argc, const char **argv) {
-	rz_cons_printf("%s\n", rz_core_get_theme());
+	rz_cons_println(rz_core_get_theme());
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -417,13 +417,15 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_highlight_current_instruction_handler(RzCor
 }
 
 RZ_IPI RzCmdStatus rz_cmd_eval_color_highlight_instruction_word_handler(RzCore *core, int argc, const char **argv) {
-	char *dup = rz_str_newf("bgonly %s", argv[2]);
-	char *color_code = NULL;
-	color_code = rz_cons_pal_parse(dup, NULL);
-	RZ_FREE(dup);
-	if (!color_code) {
-		eprintf("Unknown color %s\n", argv[2]);
-		return true;
+	char *color_code = NULL, *dup = NULL;
+	if (argc == 3) {
+		dup = rz_str_newf("bgonly %s", argv[2]);
+		color_code = rz_cons_pal_parse(dup, NULL);
+		RZ_FREE(dup);
+		if (!color_code) {
+			eprintf("Unknown color %s\n", argv[2]);
+			return RZ_CMD_STATUS_ERROR;
+		}
 	}
 	rz_meta_set_string(core->analysis, RZ_META_TYPE_HIGHLIGHT, core->offset, "");
 	const char *str = rz_meta_get_string(core->analysis, RZ_META_TYPE_HIGHLIGHT, core->offset);

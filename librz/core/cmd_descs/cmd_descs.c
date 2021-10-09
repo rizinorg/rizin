@@ -3890,6 +3890,7 @@ static const RzCmdDescArg cmd_eval_color_highlight_instruction_word_args[] = {
 		.name = "color",
 		.type = RZ_CMD_ARG_TYPE_STRING,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
 
 	},
 	{ 0 },

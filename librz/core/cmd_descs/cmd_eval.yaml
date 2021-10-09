@@ -113,6 +113,7 @@ commands:
                 type: RZ_CMD_ARG_TYPE_STRING
               - name: color
                 type: RZ_CMD_ARG_TYPE_STRING
+                optional: true
           - name: ecH.
             summary: Show highlight rule in current offset
             cname: cmd_eval_color_highlight_list_current
