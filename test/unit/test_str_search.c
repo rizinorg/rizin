@@ -75,6 +75,32 @@ bool test_rz_scan_strings_detect_utf16_le(void) {
 	mu_end;
 }
 
+bool test_rz_scan_strings_detect_utf16_le_special_chars(void) {
+	static const unsigned char str[] =
+		"\x09\x00\x77\x00\x69\x00\x64\x00\x65\x00\x5c\x00"
+		"\x65\x00\x73\x00\x63\x00\x3a\x00\x20\x00\x1b\x00"
+		"\x5b\x00\x30\x00\x6d\x00\xa1\x00\x0d\x00\x0a\x00"
+		"\x00\x00\x00\x00";
+
+	RzBuffer *buf = rz_buf_new_with_bytes(str, sizeof(str));
+
+	RzList *str_list = rz_list_new();
+
+	g_opt.prefer_big_endian = false;
+	int n = rz_scan_strings(buf, str_list, &g_opt, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_GUESS);
+	mu_assert_eq(n, 1, "rz_scan_strings utf16le, number of strings");
+
+	RzDetectedString *s = rz_list_get_n(str_list, 0);
+	mu_assert_streq(s->string, "\twide\\esc: \e[0m", "rz_scan_strings utf16le, different string");
+	mu_assert_eq(s->addr, 0, "rz_scan_strings utf16le, address");
+	mu_assert_eq(s->type, RZ_STRING_ENC_UTF16LE, "rz_scan_strings utf16le, string type");
+
+	rz_detected_string_free(s);
+	rz_list_free(str_list);
+
+	mu_end;
+}
+
 bool test_rz_scan_strings_detect_utf16_be(void) {
 	static const unsigned char str[] =
 		"\xff\xff\xff\x00\x49\x00\x20\x00\x61\x00\x6d\x00\x20\x00\x61"
@@ -188,6 +214,7 @@ bool all_tests() {
 	mu_run_test(test_rz_scan_strings_detect_ascii);
 	mu_run_test(test_rz_scan_strings_detect_utf8);
 	mu_run_test(test_rz_scan_strings_detect_utf16_le);
+	mu_run_test(test_rz_scan_strings_detect_utf16_le_special_chars);
 	mu_run_test(test_rz_scan_strings_detect_utf16_be);
 	mu_run_test(test_rz_scan_strings_detect_utf32_le);
 	mu_run_test(test_rz_scan_strings_detect_utf32_be);

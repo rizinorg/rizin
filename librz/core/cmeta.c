@@ -10,20 +10,13 @@ static char *meta_string_escape(RzCore *core, RzAnalysisMetaItem *mi) {
 	char *esc_str = NULL;
 	bool esc_bslash = core->print->esc_bslash;
 	switch (mi->subtype) {
-	case RZ_STRING_ENC_UTF8:
-		esc_str = rz_str_escape_utf8(mi->str, false, esc_bslash);
-		break;
 	case RZ_STRING_ENC_UTF16LE:
-		esc_str = rz_str_escape_utf16le(mi->str, mi->size, false, esc_bslash);
-		break;
 	case RZ_STRING_ENC_UTF16BE:
-		esc_str = rz_str_escape_utf16be(mi->str, mi->size, false, esc_bslash);
-		break;
 	case RZ_STRING_ENC_UTF32LE:
-		esc_str = rz_str_escape_utf32le(mi->str, mi->size, false, esc_bslash);
-		break;
 	case RZ_STRING_ENC_UTF32BE:
-		esc_str = rz_str_escape_utf32le(mi->str, mi->size, false, esc_bslash);
+	case RZ_STRING_ENC_UTF8:
+		// All strings that are put into the metadata are already converted
+		esc_str = rz_str_escape_utf8(mi->str, false, esc_bslash);
 		break;
 	case RZ_STRING_ENC_LATIN1:
 		esc_str = rz_str_escape_latin1(mi->str, false, esc_bslash, false);

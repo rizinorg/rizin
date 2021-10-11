@@ -429,12 +429,14 @@ Cs.q
 Cs.
 Cs.l
 pd 1
-Csa
+Cs-
+Csw
 Csl*~`spad`
 Cs.q
 Cs.
 Cs.l
 pd 1
+Cs-
 Csa 4
 Cs.l
 Cs.l @ 0x14001601c  # should print nothing
@@ -449,13 +451,13 @@ ascii[2] "\t"
 0x140016018 ascii[2] "\t"
             ;-- str.wide__esc:__e_0m:
             0x140016018     .string "\t" ; len=2
-Cs 19 @ 0x140016018 # \twide\\esc: \x1b[0m\xa1\r\n
+Csw 19 @ 0x140016018 # \twide\\esc: \x1b[0m\xa1\r\n
 "\twide\\esc: \x1b[0m\xa1\r\n"
-latin1[19] "\twide\\esc: \x1b[0m\xa1\r\n"
+ut16le[15] "\twide\\esc: \x1b[0m\xa1\r\n"
             ;-- str.wide__esc:__e_0m:
             0x140016018     .string "\twide\\esc: \x1b[0m\xa1\r\n" ; len=19
 0x140016018 ascii[4] "\t"
-0x140016018 ascii[4] "\twid"
+0x140016018 ascii[4] "\t"
 EOF
 RUN
 
@@ -478,7 +480,8 @@ EOF
 EXPECT=<<EOF
 [{"offset":5368799256,"type":"Cs","name":"XHR3aWRlXFxlc2M6IFxlWzBt","enc":"utf16le","ascii":true}]
 [{"offset":5368799256,"type":"Cs","name":"CQ==","enc":"latin1","ascii":true}]
-[{"offset":5368799256,"type":"Cs","name":"CXdpZGVcZXNjOiAbWzBtoQ0K","enc":"utf16le","ascii":false}]
+[{"offset":5368799256,"type":"Cs","name":"XHR3aWRlXFxlc2M6IFxlWzBt","enc":"utf16le","ascii":true}]
+[{"offset":5368799256,"type":"Cs","name":"XHR3aWRlXFxlc2M6IFxlWzBt","enc":"utf16le","ascii":true}]
 EOF
 RUN
 
@@ -521,11 +524,12 @@ ARGS=-e bin.str.purge=all,!0x004021ff
 CMDS=<<EOF
 s 0x004021ff
 Cslj
+Cs-
 Cs8
 Cslj
 EOF
 EXPECT=<<EOF
-[{"offset":4203007,"type":"Cs","name":"dXRmOD4gXFx1MDBhMlxcdTIwYWNcXFUwMDAxMDM0OCBpbiB5ZWxsb3c6XGVbMzNtIMKi4oKs8JCNiCBcZVswbVxu","enc":"utf16le","ascii":false}]
+[{"offset":4203007,"type":"Cs","name":"dXRmOD4gXFx1MDBhMlxcdTIwYWNcXFUwMDAxMDM0OCBpbiB5ZWxsb3c6XGVbMzNtIMKi4oKs8JCNiCBcZVswbVxu","enc":"utf8","ascii":false}]
 [{"offset":4203007,"type":"Cs","name":"dXRmOD4gXHUwMGEyXHUyMGFjXFUwMDAxMDM0OCBpbiB5ZWxsb3c6G1szM20gwqLigqzwkI2IIBtbMG0K","enc":"utf8","ascii":false}]
 EOF
 RUN

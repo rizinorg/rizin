@@ -503,7 +503,7 @@ static bool meta_string_ascii_add(RzCore *core, ut64 addr, size_t limit, ut8 **n
 	return true;
 }
 
-static bool meta_string_guess_add(RzCore *core, ut64 addr, size_t limit, ut8 **name, size_t *name_len, RzDetectedString **ds) {
+static bool meta_string_guess_add(RzCore *core, ut64 addr, size_t limit, ut8 **name, size_t *name_len, RzDetectedString **ds, RzStrEnc encoding) {
 	rz_return_val_if_fail(limit && name && name_len && ds, false);
 	*name = malloc(limit + 1);
 	if (!*name) {
@@ -527,7 +527,8 @@ static bool meta_string_guess_add(RzCore *core, ut64 addr, size_t limit, ut8 **n
 		free(*name);
 		return false;
 	}
-	int count = rz_scan_strings(bf->buf, str_list, &scan_opt, addr, addr + limit, RZ_STRING_ENC_GUESS);
+	ut64 paddr = rz_io_v2p(core->io, addr);
+	int count = rz_scan_strings(bf->buf, str_list, &scan_opt, paddr, paddr + limit, encoding);
 	if (count <= 0) {
 		rz_list_free(str_list);
 		free(*name);
@@ -535,11 +536,7 @@ static bool meta_string_guess_add(RzCore *core, ut64 addr, size_t limit, ut8 **n
 	}
 	*ds = rz_list_first(str_list);
 	rz_list_free(str_list);
-	if (!rz_str_to_utf8(*name, limit, (ut8 *)(*ds)->string, (*ds)->size, (*ds)->type)) {
-		free(*name);
-		RZ_LOG_ERROR("Fail to convert the string to UTF-8 name");
-		return false;
-	}
+	rz_str_ncpy(*((char **)name), (*ds)->string, limit);
 	(*name)[limit] = '\0';
 	return true;
 }
@@ -556,7 +553,7 @@ static bool meta_string_add(RzCore *core, ut64 addr, ut64 size, RzStrEnc encodin
 		n = size == 0 ? name_len + 1 : size;
 	} else {
 		RzDetectedString *ds = NULL;
-		if (!meta_string_guess_add(core, addr, limit, (ut8 **)&guessname, &name_len, &ds)) {
+		if (!meta_string_guess_add(core, addr, limit, (ut8 **)&guessname, &name_len, &ds, encoding)) {
 			return false;
 		}
 		if (!ds) {

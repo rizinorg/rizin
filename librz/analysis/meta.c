@@ -100,6 +100,10 @@ static RzPVector *collect_nodes_intersect(RzAnalysis *analysis, RzAnalysisMetaTy
 	return ctx.result;
 }
 
+static inline bool is_string_with_zeroes(RzAnalysisMetaType type, int subtype) {
+	return type == RZ_META_TYPE_STRING && subtype != RZ_STRING_ENC_LATIN1 && subtype != RZ_STRING_ENC_UTF8;
+}
+
 static bool meta_set(RzAnalysis *a, RzAnalysisMetaType type, int subtype, ut64 from, ut64 to, const char *str) {
 	if (to < from) {
 		return false;
@@ -115,7 +119,7 @@ static bool meta_set(RzAnalysis *a, RzAnalysisMetaType type, int subtype, ut64 f
 	item->space = space;
 	item->size = to - from + 1;
 	free(item->str);
-	if (type == RZ_META_TYPE_STRING) {
+	if (is_string_with_zeroes(type, subtype)) {
 		item->str = str ? rz_str_ndup(str, item->size) : NULL;
 	} else {
 		item->str = str ? strdup(str) : NULL;
