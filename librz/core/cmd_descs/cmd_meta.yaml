@@ -123,6 +123,7 @@ commands:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_RIZIN
           - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
         args: []
       - name: CS-
         cname: meta_space_remove

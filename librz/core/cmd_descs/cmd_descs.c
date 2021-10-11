@@ -7549,7 +7549,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *CS_cd = rz_cmd_desc_group_new(core->rcmd, C_cd, "CS", rz_meta_space_handler, &meta_space_help, &CS_help);
 	rz_warn_if_fail(CS_cd);
-	RzCmdDesc *meta_space_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, CS_cd, "CSl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_meta_space_list_handler, &meta_space_list_help);
+	RzCmdDesc *meta_space_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, CS_cd, "CSl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_meta_space_list_handler, &meta_space_list_help);
 	rz_warn_if_fail(meta_space_list_cd);
 
 	RzCmdDesc *meta_space_remove_cd = rz_cmd_desc_argv_new(core->rcmd, CS_cd, "CS-", rz_meta_space_remove_handler, &meta_space_remove_help);
