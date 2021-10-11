@@ -856,7 +856,7 @@ RUN
 
 NAME=rz-diff functions comparison
 FILE==
-CMDS=!rz-diff -e 'analysis.fcnprefix=test' -e 'analysis.limits=true' -e 'analysis.from=0x401460' -e 'analysis.to=0x4033d0' -C -t functions test/bins/other/rz-diff/true test/bins/other/rz-diff/false
+CMDS=!rz-diff -e 'analysis.fcnprefix=test' -e 'analysis.limits=true' -e 'analysis.from=0x401460' -e 'analysis.to=0x4033d0' -C -t functions bins/other/rz-diff/true bins/other/rz-diff/false
 EXPECT=<<EOF
 test.00401460   41 0x0000000000401460 | MATCH   (1.000000) | 0x0000000000401470    41 test.00401470
 test.00401990  137 0x0000000000401990 | SIMILAR (0.985401) | 0x00000000004019a0   137 test.004019a0
