@@ -247,10 +247,8 @@ commands:
         args:
           - name: size
             type: RZ_CMD_ARG_TYPE_RZNUM
-            optional: true
           - name: format
             type: RZ_CMD_ARG_TYPE_STRING
-            optional: true
       - name: Cml
         cname: meta_magic_list
         summary: List all magic marks
