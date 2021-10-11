@@ -95,7 +95,7 @@ RZ_IPI void rz_core_meta_print(RzCore *core, RzAnalysisMetaItem *d, ut64 start, 
 				if (d->type == RZ_META_TYPE_STRING && (base64_str = rz_base64_encode_dyn((const ut8 *)d->str, strlen(d->str)))) {
 					pj_s(pj, base64_str);
 				} else {
-					pj_s(pj, str);
+					pj_s(pj, rz_str_get(str));
 				}
 			}
 			if (d->type == RZ_META_TYPE_DATA) {
