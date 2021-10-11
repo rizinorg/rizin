@@ -86,7 +86,7 @@ static RzCmdStatus meta_variable_comment_list_all(RzCore *core, RzCmdStateOutput
 static RzCmdStatus meta_variable_comment_append(RzCore *core, const char *name, const char *comment) {
 	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
 	if (!fcn) {
-		RZ_LOG_ERROR("Cannot find the function at the 0x%08" PFMT64x " offset", core->offset);
+		RZ_LOG_ERROR("Cannot find the function at the 0x%08" PFMT64x " offset\n", core->offset);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	char *heap_comment = NULL;
@@ -119,7 +119,7 @@ static RzCmdStatus meta_variable_comment_append(RzCore *core, const char *name, 
 static RzCmdStatus meta_variable_comment_remove(RzCore *core, const char *name) {
 	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
 	if (!fcn) {
-		RZ_LOG_ERROR("Cannot find the function at the 0x%08" PFMT64x " offset", core->offset);
+		RZ_LOG_ERROR("Cannot find the function at the 0x%08" PFMT64x " offset\n", core->offset);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	RzAnalysisVar *var = rz_analysis_function_get_var_byname(fcn, name);
@@ -135,7 +135,7 @@ static RzCmdStatus meta_variable_comment_remove(RzCore *core, const char *name) 
 static RzCmdStatus meta_variable_comment_editor(RzCore *core, const char *name) {
 	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
 	if (!fcn) {
-		RZ_LOG_ERROR("Cannot find the function at the 0x%08" PFMT64x " offset", core->offset);
+		RZ_LOG_ERROR("Cannot find the function at the 0x%08" PFMT64x " offset\n", core->offset);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	RzAnalysisVar *var = rz_analysis_function_get_var_byname(fcn, name);
