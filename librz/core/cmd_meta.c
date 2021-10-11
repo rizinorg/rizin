@@ -20,42 +20,10 @@ RZ_IPI void rz_core_meta_comment_add(RzCore *core, const char *comment, ut64 add
 	}
 }
 
-inline const char *meta_get_flag(RzCore *core, ut64 addr) {
+static const char *meta_get_flag(RzCore *core, ut64 addr) {
 	RzFlagItem *fi;
 	fi = rz_flag_get_i(core->flags, addr);
 	return fi ? fi->name : NULL;
-}
-
-static void meta_format_print(RzCore *core, ut64 addr, ut64 size, const char *format) {
-	const char *fmt = format;
-	if (*fmt == '.') {
-		const char *realformat = rz_type_db_format_get(core->analysis->typedb, fmt + 1);
-		if (realformat) {
-			fmt = (char *)realformat;
-		} else {
-			RZ_LOG_ERROR("Cannot resolve format '%s'\n", fmt + 1);
-			return;
-		}
-	}
-	if (size < 1) {
-		size = rz_type_format_struct_size(core->analysis->typedb, fmt, 0, 0);
-		if (size < 1) {
-			eprintf("Warning: Cannot resolve struct size for '%s'\n", fmt);
-			size = 32; //
-		}
-	}
-	//make sure we do not overflow on rz_type_format
-	if (size > core->blocksize) {
-		size = core->blocksize;
-	}
-	char *fmtstring = rz_type_format_data(core->analysis->typedb, core->print, addr, core->block,
-		size, fmt, 0, NULL, NULL);
-	if (!fmtstring) {
-		size = -1;
-	} else {
-		rz_cons_print(fmtstring);
-		free(fmtstring);
-	}
 }
 
 static void meta_variable_comment_print(RzCore *Core, RzAnalysisVar *var, RzCmdStateOutput *state) {
