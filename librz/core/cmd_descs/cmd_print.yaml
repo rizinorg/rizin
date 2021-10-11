@@ -92,3 +92,12 @@ commands:
         summary: Print NTFS time (64 bit `cfg.bigendian`, since January 1, 1601)
         cname: cmd_print_timestamp_ntfs
         args: []
+  - name: pm
+    summary: Print libmagic data
+    cname: cmd_print_magic
+    args:
+      - name: file/directory
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+    modes:
+      - RZ_OUTPUT_MODE_JSON

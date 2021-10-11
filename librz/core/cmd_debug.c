@@ -51,73 +51,6 @@ static const char *help_msg_d[] = {
 	NULL
 };
 
-static const char *help_msg_db[] = {
-	"Usage: db", "", " # Breakpoints commands",
-	"db", "", "List breakpoints",
-	"db*", "", "List breakpoints in r commands",
-	"db", " sym.main", "Add breakpoint into sym.main",
-	"db", " <addr>", "Add breakpoint",
-	"dbH", " <addr>", "Add hardware breakpoint",
-	"db-", " <addr>", "Remove breakpoint",
-	"db-*", "", "Remove all the breakpoints",
-	"db.", "", "Show breakpoint info in current offset",
-	"dbj", "", "List breakpoints in JSON format",
-	// "dbi", " 0x848 ecx=3", "stop execution when condition matches",
-	"dbc", " <addr> <cmd>", "Run command when breakpoint is hit",
-	"dbC", " <addr> <cmd>", "Run command but continue until <cmd> returns zero",
-	"dbd", " <addr>", "Disable breakpoint",
-	"dbe", " <addr>", "Enable breakpoint",
-	"dbs", " <addr>", "Toggle breakpoint",
-	"dbf", "", "Put a breakpoint into every no-return function",
-	//
-	"dbm", " <module> <offset>", "Add a breakpoint at an offset from a module's base",
-	"dbn", " [<name>]", "Show or set name for current breakpoint",
-	//
-	"dbi", "", "List breakpoint indexes",
-	"dbi", " <addr>", "Show breakpoint index in givengiven  offset",
-	"dbi.", "", "Show breakpoint index in current offset",
-	"dbi-", " <idx>", "Remove breakpoint by index",
-	"dbix", " <idx> [expr]", "Set expression for bp at given index",
-	"dbic", " <idx> <cmd>", "Run command at breakpoint index",
-	"dbie", " <idx>", "Enable breakpoint by index",
-	"dbid", " <idx>", "Disable breakpoint by index",
-	"dbis", " <idx>", "Swap Nth breakpoint",
-	"dbite", " <idx>", "Enable breakpoint Trace by index",
-	"dbitd", " <idx>", "Disable breakpoint Trace by index",
-	"dbits", " <idx>", "Swap Nth breakpoint trace",
-	//
-	"dbh", " x86", "Set/list breakpoint plugin handlers",
-	"dbh-", " <name>", "Remove breakpoint plugin handler",
-	"dbt", "[?]", "Show backtrace. See dbt? for more details",
-	"dbx", " [expr]", "Set expression for bp in current offset",
-	"dbw", " <addr> <r/w/rw>", "Add watchpoint",
-#if __WINDOWS__
-	"dbW", " <WM_DEFINE> [?|handle|name]", "Set cond. breakpoint on a window message handler",
-#endif
-	"drx", " number addr len perm", "Modify hardware breakpoint",
-	"drx-", "number", "Clear hardware breakpoint",
-	NULL
-};
-
-static const char *help_msg_dbt[] = {
-	"Usage: dbt", "", " # Backtrace commands",
-	"dbt", "", "Display backtrace based on dbg.btdepth and dbg.btalgo",
-	"dbt*", "", "Display backtrace in flags",
-	"dbt=", "", "Display backtrace in one line (see dbt=s and dbt=b for sp or bp)",
-	"dbtv", "", "Display backtrace with local vars if any",
-	"dbtj", "", "Display backtrace in JSON",
-	"dbta", "", "Display ascii-art representation of the stack backtrace",
-	"dbte", " <addr>", "Enable Breakpoint Trace",
-	"dbtd", " <addr>", "Disable Breakpoint Trace",
-	"dbts", " <addr>", "Swap Breakpoint Trace",
-	NULL
-};
-
-static const char *help_msg_dbw[] = {
-	"Usage: dbw", "<addr> <r/w/rw>", " # Add watchpoint",
-	NULL
-};
-
 static const char *help_msg_dcs[] = {
 	"Usage:", "dcs", " Continue until syscall",
 	"dcs", "", "Continue until next syscall",
@@ -690,7 +623,7 @@ static int step_until_esil(RzCore *core, const char *esilstr) {
 			break;
 		}
 		rz_debug_step(core->dbg, 1);
-		rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ALL, false);
+		rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ANY, false);
 		if (rz_analysis_esil_condition(core->analysis->esil, esilstr)) {
 			eprintf("ESIL BREAK!\n");
 			break;
@@ -736,7 +669,7 @@ static bool step_until_inst(RzCore *core, const char *instr, bool regex) {
 			rz_debug_step(core->dbg, 1);
 		}
 		pc = rz_debug_reg_get(core->dbg, "PC");
-		rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ALL, false);
+		rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ANY, false);
 		/* TODO: disassemble instruction and strstr */
 		rz_asm_set_pc(core->rasm, pc);
 		// TODO: speedup if instructions are in the same block as the previous
@@ -869,7 +802,7 @@ static int step_until_flag(RzCore *core, const char *instr) {
 			break;
 		}
 		rz_debug_step(core->dbg, 1);
-		rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ALL, false);
+		rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ANY, false);
 		pc = rz_debug_reg_get(core->dbg, "PC");
 		list = rz_flag_get_list(core->flags, pc);
 		rz_list_foreach (list, iter, f) {
@@ -1644,8 +1577,6 @@ RZ_IPI RzCmdStatus rz_debug_memory_permission_handler(RzCore *core, int argc, co
 		} else {
 			return RZ_CMD_STATUS_ERROR;
 		}
-	} else {
-		return RZ_CMD_STATUS_WRONG_ARGS;
 	}
 	return RZ_CMD_STATUS_OK;
 }
@@ -2163,7 +2094,7 @@ static void cmd_debug_reg(RzCore *core, const char *str) {
 			}
 			char *arg;
 			RzList *args = rz_str_split_list(all, " ", 0);
-			rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ALL, false); //RZ_REG_TYPE_GPR, false);
+			rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ANY, false); //RZ_REG_TYPE_GPR, false);
 			int count = rz_list_length(args);
 			rz_list_foreach (args, iter, arg) {
 				ut64 off = rz_debug_reg_get(core->dbg, arg);
@@ -2283,7 +2214,7 @@ static void cmd_debug_reg(RzCore *core, const char *str) {
 					if (rf) {
 						rz_reg_cond_bits_set(core->dbg->reg, type, rf, v);
 						rz_reg_cond_apply(core->dbg->reg, rf);
-						rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ALL, true);
+						rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ANY, true);
 						free(rf);
 					}
 				} else {
@@ -2754,8 +2685,11 @@ static void cmd_debug_reg(RzCore *core, const char *str) {
 			char *ostr = rz_str_trim_dup(str + 1);
 			char *regname = rz_str_trim_nc(ostr);
 			ut64 regval = rz_num_math(core->num, arg + 1);
-			rz_core_debug_reg_set(core, regname, regval, ostr);
+			char *numstr = rz_str_trim_dup(arg + 1);
+			char *num_strval = rz_str_trim_nc(numstr);
+			rz_core_debug_reg_set(core, regname, regval, num_strval);
 			free(ostr);
+			free(numstr);
 			return;
 		}
 
@@ -2949,603 +2883,45 @@ RZ_IPI void rz_core_static_debug_stop(void *u) {
 	rz_debug_stop(dbg);
 }
 
-static void core_cmd_dbi(RzCore *core, const char *input, const ut64 idx) {
-	int i;
-	char *p;
-	RzBreakpointItem *bpi;
-	switch (input[2]) {
-	case ' ': // "dbi."
-	{
-		const int index = rz_bp_get_index_at(core->dbg->bp, idx);
-		if (index != -1) {
-			rz_cons_printf("%d\n", index);
-		}
-	} break;
-	case '-': // "dbi-"
-	{
-		if (!rz_bp_del_index(core->dbg->bp, idx)) {
-			eprintf("Breakpoint with index %d not found\n", (int)idx);
-		}
-	} break;
-	case '.': // "dbi."
-	{
-		const int index = rz_bp_get_index_at(core->dbg->bp, core->offset);
-		if (index != -1) {
-			rz_cons_printf("%d\n", index);
-		}
-	} break;
-	case 0: // "dbi"
-		for (i = 0; i < core->dbg->bp->bps_idx_count; i++) {
-			if ((bpi = core->dbg->bp->bps_idx[i])) {
-				rz_cons_printf("%d 0x%08" PFMT64x " E:%d T:%d\n",
-					i, bpi->addr, bpi->enabled, bpi->trace);
-			}
-		}
-		break;
-	case 'x': // "dbix"
-		if (input[3] == ' ') {
-			if ((bpi = rz_bp_get_index(core->dbg->bp, idx))) {
-				char *expr = strchr(input + 4, ' ');
-				if (expr) {
-					free(bpi->expr);
-					bpi->expr = strdup(expr);
-				}
-			}
-			rz_cons_printf("%d\n", (int)idx);
-		} else {
-			for (i = 0; i < core->dbg->bp->bps_idx_count; i++) {
-				RzBreakpointItem *bp = core->dbg->bp->bps_idx[i];
-				if (bp) {
-					rz_cons_printf("%d 0x%08" PFMT64x " %s\n", i, bp->addr, bp->expr);
-				}
-			}
-		}
-		break;
-	case 'c': // "dbic"
-		p = strchr(input + 3, ' ');
-		if (p) {
-			char *q = strchr(p + 1, ' ');
-			if (q) {
-				*q++ = 0;
-				ut64 addr = rz_num_math(core->num, p);
-				bpi = rz_bp_get_index(core->dbg->bp, addr);
-				if (bpi) {
-					bpi->data = strdup(q);
-				} else {
-					eprintf("Cannot set command\n");
-				}
-			} else {
-				eprintf("|Usage: dbic # cmd\n");
-			}
-		} else {
-			eprintf("|Usage: dbic # cmd\n");
-		}
-		break;
-	case 'e': // "dbie"
-		if ((bpi = rz_bp_get_index(core->dbg->bp, idx))) {
-			bpi->enabled = true;
-		} else {
-			eprintf("Cannot unset tracepoint\n");
-		}
-		break;
-	case 'd': // "dbid"
-		if ((bpi = rz_bp_get_index(core->dbg->bp, idx))) {
-			bpi->enabled = false;
-		} else {
-			eprintf("Cannot unset tracepoint\n");
-		}
-		break;
-	case 's': // "dbis"
-		if ((bpi = rz_bp_get_index(core->dbg->bp, idx))) {
-			bpi->enabled = !!!bpi->enabled;
-		} else {
-			eprintf("Cannot unset tracepoint\n");
-		}
-		break;
-	case 't': // "dbite" "dbitd" ...
-		switch (input[3]) {
-		case 'e':
-			if ((bpi = rz_bp_get_index(core->dbg->bp, idx))) {
-				bpi->trace = true;
-			} else {
-				eprintf("Cannot unset tracepoint\n");
-			}
-			break;
-		case 'd':
-			if ((bpi = rz_bp_get_index(core->dbg->bp, idx))) {
-				bpi->trace = false;
-			} else
-				eprintf("Cannot unset tracepoint\n");
-			break;
-		case 's':
-			if ((bpi = rz_bp_get_index(core->dbg->bp, idx))) {
-				bpi->trace = !!!bpi->trace;
-			} else {
-				eprintf("Cannot unset tracepoint\n");
-			}
-			break;
-		}
-		break;
-	}
-}
-
 #if __WINDOWS__
 #include "..\debug\p\native\windows\windows_message.h"
 #endif
 
-#define DB_ARG(x) rz_str_word_get0(str, x)
-static void add_breakpoint(RzCore *core, const char *input, bool hwbp, bool watch) {
+static void add_breakpoint(RzCore *core, ut64 addr, const char *arg_perm, bool hwbp, bool watch) {
 	RzBreakpointItem *bpi;
-	ut64 addr;
-	int i = 0;
+	int rw = 0;
 
-	char *str = strdup(rz_str_trim_head_ro(input + 1));
-	int sl = rz_str_word_set0(str);
-	// For dbw every second argument is 'rw', so we need to skip it.
-	for (; i < sl; i += 1 + (watch ? 1 : 0)) {
-		if (*DB_ARG(i) == '-') {
-			rz_bp_del(core->dbg->bp, rz_num_math(core->num, DB_ARG(i) + 1));
+	if (watch) {
+		if (!strcmp(arg_perm, "r")) {
+			rw = RZ_BP_PROT_READ;
+		} else if (!strcmp(arg_perm, "w")) {
+			rw = RZ_BP_PROT_WRITE;
+		} else if (!strcmp(arg_perm, "rw")) {
+			rw = RZ_BP_PROT_ACCESS;
 		} else {
-			int rw = 0;
-			if (watch) {
-				if (sl % 2 == 0) {
-					if (!strcmp(DB_ARG(i + 1), "r")) {
-						rw = RZ_BP_PROT_READ;
-					} else if (!strcmp(DB_ARG(i + 1), "w")) {
-						rw = RZ_BP_PROT_WRITE;
-					} else if (!strcmp(DB_ARG(i + 1), "rw")) {
-						rw = RZ_BP_PROT_ACCESS;
-					} else {
-						rz_core_cmd_help(core, help_msg_dbw);
-						break;
-					}
-				} else {
-					rz_core_cmd_help(core, help_msg_dbw);
-					break;
-				}
-			}
-			addr = rz_num_math(core->num, DB_ARG(i));
-			bpi = rz_debug_bp_add(core->dbg, addr, hwbp, watch, rw, NULL, 0);
-			if (bpi) {
-				free(bpi->name);
-				if (!strcmp(DB_ARG(i), "$$")) {
-					RzFlagItem *f = rz_core_flag_get_by_spaces(core->flags, addr);
-					if (f) {
-						if (addr > f->offset) {
-							bpi->name = rz_str_newf("%s+0x%" PFMT64x, f->name, addr - f->offset);
-						} else {
-							bpi->name = strdup(f->name);
-						}
-					} else {
-						bpi->name = rz_str_newf("0x%08" PFMT64x, addr);
-					}
-				} else {
-					bpi->name = strdup(DB_ARG(i));
-				}
-			} else {
-				eprintf("Cannot set breakpoint at '%s'\n", DB_ARG(i));
-			}
+			RZ_LOG_WARN("Invalid permissions provided for setting watchpoint. Defaulting to \"rw\".\n");
+			rw = RZ_BP_PROT_ACCESS;
 		}
 	}
-
-	free(str);
-}
-
-static void rz_core_cmd_bp(RzCore *core, const char *input) {
-	RzBreakpointItem *bpi;
-	int i, hwbp = rz_config_get_i(core->config, "dbg.hwbp");
-	RzDebugFrame *frame;
-	RzListIter *iter;
-	const char *p;
-	bool watch = false;
-	RzList *list;
-	ut64 addr, idx;
-	p = strchr(input, ' ');
-	addr = p ? rz_num_math(core->num, p + 1) : UT64_MAX;
-	idx = addr; // 0 is valid index
-	if (!addr) {
-		addr = UT64_MAX;
+	bpi = rz_debug_bp_add(core->dbg, addr, hwbp, watch, rw, NULL, 0);
+	if (!bpi) {
+		RZ_LOG_ERROR("Cannot set breakpoint at 0x%" PFMT64x "\n", addr);
+		return;
 	}
-	char *str = NULL;
-
-	switch (input[1]) {
-	case '.':
-		if (input[2]) {
-			ut64 addr = rz_num_tail(core->num, core->offset, input + 2);
-			bpi = rz_debug_bp_add(core->dbg, addr, hwbp, false, 0, NULL, 0);
-			if (!bpi) {
-				eprintf("Unable to add breakpoint (%s)\n", input + 2);
-			}
+	RzFlagItem *f = rz_core_flag_get_by_spaces(core->flags, addr);
+	if (f) {
+		if (addr > f->offset) {
+			char *name = rz_str_newf("%s+0x%" PFMT64x, f->name, addr - f->offset);
+			rz_bp_item_set_name(bpi, name);
+			free(name);
 		} else {
-			bpi = rz_bp_get_at(core->dbg->bp, core->offset);
-			if (bpi) {
-				rz_cons_printf("breakpoint %s %s %s\n",
-					rz_str_rwx_i(bpi->perm),
-					bpi->enabled ? "enabled" : "disabled",
-					bpi->name ? bpi->name : "");
-			}
+			bpi->name = strdup(f->name);
 		}
-		break;
-	case 'f': {
-		RzList *symbols = rz_bin_get_symbols(core->bin);
-		RzBinSymbol *symbol;
-		rz_list_foreach (symbols, iter, symbol) {
-			if (symbol->type && !strcmp(symbol->type, RZ_BIN_TYPE_FUNC_STR)) {
-				if (rz_analysis_noreturn_at(core->analysis, symbol->vaddr)) {
-					bpi = rz_debug_bp_add(core->dbg, symbol->vaddr, hwbp, false, 0, NULL, 0);
-					if (bpi) {
-						bpi->name = rz_str_newf("%s.%s", "sym", symbol->name);
-					} else {
-						eprintf("Unable to add a breakpoint"
-							"into a noreturn function %s at addr 0x%" PFMT64x "\n",
-							symbol->name, symbol->vaddr);
-					}
-				}
-			}
-		}
-	} break;
-	case 'x': // "dbx"
-		if (input[2] == ' ') {
-			if (addr == UT64_MAX) {
-				addr = core->offset;
-			}
-			bpi = rz_bp_get_at(core->dbg->bp, addr);
-			if (bpi) {
-				free(bpi->expr);
-				bpi->expr = strdup(input + 3);
-			}
-		} else {
-			RzBreakpointItem *bp;
-			rz_list_foreach (core->dbg->bp->bps, iter, bp) {
-				rz_cons_printf("0x%08" PFMT64x " %s\n", bp->addr, rz_str_get(bp->expr));
-			}
-		}
-		break;
-	case 't': // "dbt"
-		switch (input[2]) {
-		case 'v': // "dbtv"
-			list = rz_debug_frames(core->dbg, addr);
-			backtrace_vars(core, list);
-			rz_list_free(list);
-			break;
-		case 'a': // "dbta"
-			list = rz_debug_frames(core->dbg, addr);
-			asciiart_backtrace(core, list);
-			rz_list_free(list);
-			break;
-		case 'e': // "dbte"
-			for (p = input + 3; *p == ' '; p++) {
-				/* nothing to do here */
-			}
-			if (*p == '*') {
-				rz_bp_set_trace_all(core->dbg->bp, true);
-			} else if (!rz_bp_set_trace(core->dbg->bp, addr, true)) {
-				eprintf("Cannot set tracepoint\n");
-			}
-			break;
-		case 'd': // "dbtd"
-			for (p = input + 3; *p == ' '; p++) {
-				//nothing to see here
-			}
-			if (*p == '*') {
-				rz_bp_set_trace_all(core->dbg->bp, false);
-			} else if (!rz_bp_set_trace(core->dbg->bp, addr, false)) {
-				eprintf("Cannot unset tracepoint\n");
-			}
-			break;
-		case 's': // "dbts"
-			bpi = rz_bp_get_at(core->dbg->bp, addr);
-			if (bpi) {
-				bpi->trace = !!!bpi->trace;
-			} else {
-				eprintf("Cannot unset tracepoint\n");
-			}
-			break;
-		case 'j': { // "dbtj"
-			PJ *pj = pj_new();
-			if (!pj) {
-				return;
-			}
-			addr = UT64_MAX;
-			if (input[2] == ' ' && input[3]) {
-				addr = rz_num_math(core->num, input + 2);
-			}
-			i = 0;
-			list = rz_debug_frames(core->dbg, addr);
-			pj_a(pj);
-			rz_list_foreach (list, iter, frame) {
-				char *flagdesc, *flagdesc2, *desc;
-				get_backtrace_info(core, frame, addr, &flagdesc, &flagdesc2, NULL, NULL);
-				RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, frame->addr, 0);
-				desc = rz_str_newf("%s%s", rz_str_get_null(flagdesc), rz_str_get_null(flagdesc2));
-				pj_o(pj);
-				pj_ki(pj, "idx", i);
-				pj_kn(pj, "pc", frame->addr);
-				pj_kn(pj, "sp", frame->sp);
-				pj_ki(pj, "frame_size", frame->size);
-				pj_ks(pj, "fname", fcn ? fcn->name : "");
-				pj_ks(pj, "desc", desc);
-				pj_end(pj);
-				i++;
-				free(flagdesc);
-				free(flagdesc2);
-				free(desc);
-			}
-			pj_end(pj);
-			rz_cons_println(pj_string(pj));
-			pj_free(pj);
-			rz_list_free(list);
-			break;
-		}
-		case '=': // dbt=
-			addr = UT64_MAX;
-			if (input[2] == ' ' && input[3]) {
-				addr = rz_num_math(core->num, input + 2);
-			}
-			i = 0;
-			list = rz_debug_frames(core->dbg, addr);
-			rz_list_reverse(list);
-			rz_list_foreach (list, iter, frame) {
-				switch (input[3]) {
-				case 0:
-					rz_cons_printf("%s0x%08" PFMT64x,
-						(i ? " " : ""), frame->addr);
-					break;
-				case 's':
-					rz_cons_printf("%s0x%08" PFMT64x,
-						(i ? " " : ""), frame->sp);
-					break;
-				case 'b':
-					rz_cons_printf("%s0x%08" PFMT64x,
-						(i ? " " : ""), frame->bp);
-					break;
-				case '?':
-				default:
-					rz_core_cmd0(core, "db?~dbt");
-					break;
-				}
-				i++;
-			}
-			rz_cons_newline();
-			rz_list_free(list);
-			break;
-		case '*': // dbt*
-			addr = UT64_MAX;
-			if (input[2] == ' ' && input[3]) {
-				addr = rz_num_math(core->num, input + 2);
-			}
-			i = 0;
-			list = rz_debug_frames(core->dbg, addr);
-			rz_list_reverse(list);
-			rz_cons_printf("f-bt.*\n");
-			rz_list_foreach (list, iter, frame) {
-				rz_cons_printf("f bt.frame%d = 0x%08" PFMT64x "\n", i, frame->addr);
-				rz_cons_printf("f bt.frame%d.stack %d 0x%08" PFMT64x "\n", i, frame->size, frame->sp);
-				i++;
-			}
-			rz_list_free(list);
-			break;
-		case 0: // "dbt" -- backtrace
-			addr = UT64_MAX;
-			if (input[2] == ' ' && input[3]) {
-				addr = rz_num_math(core->num, input + 2);
-			}
-			i = 0;
-			list = rz_debug_frames(core->dbg, addr);
-			rz_list_foreach (list, iter, frame) {
-				char *flagdesc, *flagdesc2, *pcstr, *spstr;
-				get_backtrace_info(core, frame, addr, &flagdesc, &flagdesc2, &pcstr, &spstr);
-				RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, frame->addr, 0);
-				rz_cons_printf("%d  %s sp: %s  %-5d"
-					       "[%s]  %s %s\n",
-					i++,
-					pcstr, spstr,
-					(int)frame->size,
-					fcn ? fcn->name : "??",
-					flagdesc ? flagdesc : "",
-					flagdesc2 ? flagdesc2 : "");
-				free(flagdesc);
-				free(flagdesc2);
-				free(pcstr);
-				free(spstr);
-			}
-			rz_list_free(list);
-			break;
-		case '?':
-		default:
-			rz_core_cmd_help(core, help_msg_dbt);
-			break;
-		}
-		break;
-	case 'b': // "dbb"
-		if (input[2]) {
-			core->dbg->bp->delta = (st64)rz_num_math(core->num, input + 2);
-		} else {
-			rz_cons_printf("%" PFMT64d "\n", core->dbg->bp->delta);
-		}
-		break;
-	case 'm': // "dbm"
-		if (input[2] && input[3]) {
-			char *string = strdup(input + 3);
-			char *module = NULL;
-			st64 delta = 0;
-
-			module = strtok(string, " ");
-			delta = (ut64)rz_num_math(core->num, strtok(NULL, ""));
-			bpi = rz_debug_bp_add(core->dbg, 0, hwbp, false, 0, module, delta);
-			if (!bpi) {
-				eprintf("Cannot set breakpoint.\n");
-			}
-			free(string);
-		}
-		break;
-	case 'j': rz_bp_list(core->dbg->bp, 'j'); break;
-	case '*': rz_bp_list(core->dbg->bp, 1); break;
-	case '\0': rz_bp_list(core->dbg->bp, 0); break;
-	case '-': // "db-"
-		if (input[2] == '*') {
-			rz_bp_del_all(core->dbg->bp);
-		} else {
-#define DB_ARG(x) rz_str_word_get0(str, x)
-			char *str = strdup(rz_str_trim_head_ro(input + 2));
-			int i = 0;
-			int sl = rz_str_word_set0(str);
-			for (; i < sl; i++) {
-				const ut64 addr = rz_num_math(core->num, DB_ARG(i));
-				rz_bp_del(core->dbg->bp, addr);
-			}
-			free(str);
-		}
-		break;
-	case 'c': // "dbc"
-		if (input[2] == ' ') {
-			char *inp = strdup(input + 3);
-			if (inp) {
-				char *arg = strchr(inp, ' ');
-				if (arg) {
-					*arg++ = 0;
-					addr = rz_num_math(core->num, inp);
-					bpi = rz_bp_get_at(core->dbg->bp, addr);
-					if (bpi) {
-						free(bpi->data);
-						bpi->data = strdup(arg);
-					} else {
-						eprintf("No breakpoint defined at 0x%08" PFMT64x "\n", addr);
-					}
-				} else {
-					eprintf("- Missing argument\n");
-				}
-				free(inp);
-			} else {
-				eprintf("Cannot strdup. Your heap is a mess\n");
-			}
-		} else {
-			eprintf("Use: dbc [addr] [command]\n");
-		}
-		break;
-	case 'C': // "dbC"
-		if (input[2] == ' ') {
-			char *inp = strdup(input + 3);
-			if (inp) {
-				char *arg = strchr(inp, ' ');
-				if (arg) {
-					*arg++ = 0;
-					addr = rz_num_math(core->num, inp);
-					bpi = rz_bp_get_at(core->dbg->bp, addr);
-					if (bpi) {
-						free(bpi->cond);
-						bpi->cond = strdup(arg);
-					} else {
-						eprintf("No breakpoint defined at 0x%08" PFMT64x "\n", addr);
-					}
-				} else {
-					eprintf("1 Missing argument\n");
-				}
-				free(inp);
-			} else {
-				eprintf("Cannot strdup. Your heap is a mess\n");
-			}
-		} else {
-			eprintf("Use: dbC [addr] [command]\n");
-		}
-		break;
-	case 's': // "dbs"
-		addr = rz_num_math(core->num, input + 2);
-		rz_core_debug_breakpoint_toggle(core, addr);
-		break;
-	case 'n': // "dbn"
-		bpi = rz_bp_get_at(core->dbg->bp, core->offset);
-		if (input[2] == ' ') {
-			if (bpi) {
-				free(bpi->name);
-				bpi->name = strdup(input + 3);
-			} else {
-				eprintf("Cannot find breakpoint at "
-					"0x%08" PFMT64x "\n",
-					core->offset);
-			}
-		} else {
-			if (bpi && bpi->name) {
-				rz_cons_println(bpi->name);
-			}
-		}
-		break;
-	case 'e': // "dbe"
-		for (p = input + 2; *p == ' '; p++)
-			;
-		if (*p == '*')
-			rz_bp_enable_all(core->dbg->bp, true);
-		else {
-			for (; *p && *p != ' '; p++)
-				;
-			rz_bp_enable(core->dbg->bp, rz_num_math(core->num, input + 2), true, rz_num_math(core->num, p));
-		}
-		break;
-	case 'd': // "dbd"
-		for (p = input + 2; *p == ' '; p++)
-			;
-		if (*p == '*')
-			rz_bp_enable_all(core->dbg->bp, false);
-		else {
-			for (; *p && *p != ' '; p++)
-				;
-			rz_bp_enable(core->dbg->bp, rz_num_math(core->num, input + 2), false, rz_num_math(core->num, p));
-		}
-		break;
-	case 'h': // "dbh"
-		switch (input[2]) {
-		case 0:
-			rz_bp_plugin_list(core->dbg->bp);
-			break;
-		case ' ':
-			if (input[3]) {
-				if (!rz_bp_use(core->dbg->bp, input + 3, core->analysis->bits)) {
-					eprintf("Invalid name: '%s'.\n", input + 3);
-				}
-			}
-			break;
-		case '-':
-			if (input[3]) {
-				if (!rz_bp_plugin_del(core->dbg->bp, input + 3)) {
-					eprintf("Invalid name: '%s'.\n", input + 3);
-				}
-			}
-			break;
-		case '?':
-		default:
-			eprintf("Usage: dh [plugin-name]  # select a debug handler plugin\n");
-			break;
-		}
-		break;
-#if __WINDOWS__
-	case 'W': // "dbW"
-		if (input[2] == ' ') {
-			if (rz_w32_add_winmsg_breakpoint(core->dbg, input + 3)) {
-				rz_cons_print("Breakpoint set.\n");
-			} else {
-				rz_cons_print("Breakpoint not set.\n");
-			}
-		}
-		break;
-#endif
-	case 'w': // "dbw"
-		add_breakpoint(core, input + 1, hwbp, true);
-		break;
-	case 'H': // "dbH"
-		add_breakpoint(core, input + 1, true, watch);
-		break;
-	case ' ': // "db"
-		add_breakpoint(core, input + 1, hwbp, watch);
-		break;
-	case 'i':
-		core_cmd_dbi(core, input, idx);
-		break;
-	case '?':
-	default:
-		rz_core_cmd_help(core, help_msg_db);
-		break;
+	} else {
+		char *name = rz_str_newf("0x%08" PFMT64x, addr);
+		rz_bp_item_set_name(bpi, name);
+		free(name);
 	}
-	free(str);
 }
 
 static RTreeNode *add_trace_tree_child(HtUP *ht, RTree *t, RTreeNode *cur, ut64 addr) {
@@ -4630,9 +4006,6 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 			follow = rz_config_get_i(core->config, "dbg.follow");
 		}
 		break;
-	case 'b': // "db"
-		rz_core_cmd_bp(core, input);
-		break;
 	case 'H': // "dH"
 		eprintf("TODO: transplant process\n");
 		break;
@@ -5034,6 +4407,529 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 		rz_core_dbg_follow_seek_register(core);
 	}
 	return 0;
+}
+
+// db
+RZ_IPI RzCmdStatus rz_cmd_debug_add_bp_handler(RzCore *core, int argc, const char **argv) {
+	int hwbp = rz_config_get_i(core->config, "dbg.hwbp");
+	add_breakpoint(core, core->offset, NULL, hwbp, false);
+	return RZ_CMD_STATUS_OK;
+}
+
+// dbl
+RZ_IPI RzCmdStatus rz_cmd_debug_list_bp_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzOutputMode mode = state->mode;
+	switch (mode) {
+	case RZ_OUTPUT_MODE_STANDARD:
+		rz_bp_list(core->dbg->bp, 0);
+		break;
+	case RZ_OUTPUT_MODE_RIZIN:
+		rz_bp_list(core->dbg->bp, 1);
+		break;
+	case RZ_OUTPUT_MODE_JSON:
+		rz_bp_list(core->dbg->bp, 'j');
+		break;
+	case RZ_OUTPUT_MODE_QUIET:
+		rz_bp_list(core->dbg->bp, -1);
+		break;
+	default:
+		rz_warn_if_reached();
+		break;
+	}
+
+	return RZ_CMD_STATUS_OK;
+}
+
+// dbH
+RZ_IPI RzCmdStatus rz_cmd_debug_add_hw_bp_handler(RzCore *core, int argc, const char **argv) {
+	add_breakpoint(core, core->offset, NULL, true, false);
+	return RZ_CMD_STATUS_OK;
+}
+
+// db-
+RZ_IPI RzCmdStatus rz_cmd_debug_remove_bp_handler(RzCore *core, int argc, const char **argv) {
+	if (!rz_bp_del(core->dbg->bp, core->offset)) {
+		RZ_LOG_ERROR("Failed to delete breakpoint at 0x%" PFMT64x "\n", core->offset);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+// db-*
+RZ_IPI RzCmdStatus rz_cmd_debug_remove_all_bp_handler(RzCore *core, int argc, const char **argv) {
+	if (!rz_bp_del_all(core->dbg->bp)) {
+		RZ_LOG_ERROR("Failed to delete all breakpoints\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+// db.
+RZ_IPI RzCmdStatus rz_cmd_debug_show_cur_bp_handler(RzCore *core, int argc, const char **argv) {
+	RzBreakpointItem *cur = rz_bp_get_at(core->dbg->bp, core->offset);
+	if (!cur) {
+		rz_cons_printf("No breakpoint found at current offset (0x%" PFMT64x ")\n", core->offset);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cons_printf("breakpoint %s %s %s\n", rz_str_rwx_i(cur->perm), cur->enabled ? "enabled" : "disabled", cur->name ? cur->name : "");
+	return RZ_CMD_STATUS_OK;
+}
+
+// dbc
+RZ_IPI RzCmdStatus rz_cmd_debug_command_bp_handler(RzCore *core, int argc, const char **argv) {
+	RzBreakpointItem *bp = rz_bp_get_at(core->dbg->bp, core->offset);
+	if (!bp) {
+		RZ_LOG_ERROR("No breakpoint defined at 0x%08" PFMT64x "\n", core->offset);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!rz_bp_item_set_data(bp, argv[1])) {
+		RZ_LOG_ERROR("Failed to set data for breakpoint at 0x%08" PFMT64x "\n", core->offset);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+// dbC
+RZ_IPI RzCmdStatus rz_cmd_debug_add_cond_bp_handler(RzCore *core, int argc, const char **argv) {
+	RzBreakpointItem *bp = rz_bp_get_at(core->dbg->bp, core->offset);
+	if (!bp) {
+		RZ_LOG_ERROR("No breakpoint defined at 0x%08" PFMT64x "\n", core->offset);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!rz_bp_item_set_cond(bp, argv[1])) {
+		RZ_LOG_ERROR("Failed to set condition for breakpoint at 0x%08" PFMT64x "\n", core->offset);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+// dbd
+RZ_IPI RzCmdStatus rz_cmd_debug_disable_bp_handler(RzCore *core, int argc, const char **argv) {
+	if (!rz_bp_enable(core->dbg->bp, core->offset, false, 1)) {
+		RZ_LOG_ERROR("Failed to disable breakpoint at 0x%" PFMT64x "\n", core->offset);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+// dbe
+RZ_IPI RzCmdStatus rz_cmd_debug_enable_bp_handler(RzCore *core, int argc, const char **argv) {
+	if (!rz_bp_enable(core->dbg->bp, core->offset, true, 1)) { // correct value of count?
+		RZ_LOG_ERROR("Failed to enable breakpoint at 0x%" PFMT64x "\n", core->offset);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+// dbs
+RZ_IPI RzCmdStatus rz_cmd_debug_toggle_bp_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_debug_breakpoint_toggle(core, core->offset);
+	return RZ_CMD_STATUS_OK;
+}
+
+// dbf
+RZ_IPI RzCmdStatus rz_cmd_debug_add_bp_noreturn_func_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_debug_bp_add_noreturn_func(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+// dbm
+RZ_IPI RzCmdStatus rz_cmd_debug_add_bp_module_handler(RzCore *core, int argc, const char **argv) {
+	int hwbp = rz_config_get_i(core->config, "dbg.hwbp");
+	ut64 delta = rz_num_math(core->num, argv[2]);
+	RzBreakpointItem *bp = rz_debug_bp_add(core->dbg, 0, hwbp, false, 0, argv[1], delta);
+	if (!bp) {
+		RZ_LOG_ERROR("Cannot set breakpoint.\n");
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+// dbn
+RZ_IPI RzCmdStatus rz_cmd_debug_name_bp_handler(RzCore *core, int argc, const char **argv) {
+	RzBreakpointItem *bp = rz_bp_get_at(core->dbg->bp, core->offset);
+	if (!bp) {
+		RZ_LOG_ERROR("No breakpoint found at 0x%08" PFMT64x "\n", core->offset);
+		return RZ_CMD_STATUS_ERROR;
+	} else if (argc == 1) {
+		if (bp->name) {
+			rz_cons_println(bp->name);
+		}
+	} else if (argc == 2) {
+		rz_bp_item_set_name(bp, argv[1]);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+// dbi
+RZ_IPI RzCmdStatus rz_cmd_debug_show_bp_index_handler(RzCore *core, int argc, const char **argv) {
+	const int index = rz_bp_get_index_at(core->dbg->bp, core->offset);
+	if (index == -1) {
+		RZ_LOG_ERROR("No breakpoint found at %" PFMT64x "\n", core->offset);
+	} else {
+		rz_cons_printf("%d\n", index);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+// dbil
+RZ_IPI RzCmdStatus rz_cmd_debug_list_bp_indexes_handler(RzCore *core, int argc, const char **argv) {
+	RzBreakpointItem *bpi;
+	RzListIter *iter;
+	unsigned int index = 0;
+	rz_list_foreach (core->dbg->bp->bps, iter, bpi) {
+		if (!bpi) {
+			RZ_LOG_ERROR("Unable to find breakpoint at index %d\n", index);
+		} else {
+			rz_cons_printf("%d 0x%08" PFMT64x " E:%d T:%d\n", index, bpi->addr, bpi->enabled, bpi->trace);
+		}
+		index++;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+// dbi-
+RZ_IPI RzCmdStatus rz_cmd_debug_remove_bp_index_handler(RzCore *core, int argc, const char **argv) {
+	ut64 addr;
+	for (int i = 1; i < argc; i++) {
+		addr = rz_num_math(core->num, argv[i]);
+		if (!rz_bp_del_index(core->dbg->bp, addr)) {
+			RZ_LOG_ERROR("No breakpoint found at %" PFMT64x "\n", addr);
+		}
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+// dbix
+RZ_IPI RzCmdStatus rz_cmd_debug_set_expr_bp_index_handler(RzCore *core, int argc, const char **argv) {
+	int index = rz_num_math(core->num, argv[1]);
+	RzBreakpointItem *bpi = rz_bp_get_index(core->dbg->bp, index);
+	rz_bp_item_set_expr(bpi, argv[2]);
+	return RZ_CMD_STATUS_OK;
+}
+
+// dbic
+RZ_IPI RzCmdStatus rz_cmd_debug_run_command_bp_index_handler(RzCore *core, int argc, const char **argv) {
+	int index = rz_num_math(core->num, argv[1]);
+	RzBreakpointItem *bpi = rz_bp_get_index(core->dbg->bp, index);
+	rz_bp_item_set_data(bpi, argv[2]);
+	return RZ_CMD_STATUS_OK;
+}
+
+// dbie
+RZ_IPI RzCmdStatus rz_cmd_debug_enable_bp_index_handler(RzCore *core, int argc, const char **argv) {
+	RzBreakpointItem *bpi;
+	int index = rz_num_math(core->num, argv[1]);
+	bpi = rz_bp_get_index(core->dbg->bp, index);
+	if (!bpi) {
+		RZ_LOG_ERROR("Unable to find breakpoint with index %d\n", index);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	bpi->enabled = true;
+	return RZ_CMD_STATUS_OK;
+}
+
+// dbid
+RZ_IPI RzCmdStatus rz_cmd_debug_disable_bp_index_handler(RzCore *core, int argc, const char **argv) {
+	RzBreakpointItem *bpi;
+	int index = rz_num_math(core->num, argv[1]);
+	bpi = rz_bp_get_index(core->dbg->bp, index);
+	if (!bpi) {
+		RZ_LOG_ERROR("Unable to find breakpoint with index %d\n", index);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	bpi->enabled = false;
+	return RZ_CMD_STATUS_OK;
+}
+
+// dbis
+RZ_IPI RzCmdStatus rz_cmd_debug_toggle_bp_index_handler(RzCore *core, int argc, const char **argv) {
+	RzBreakpointItem *bpi;
+	int index = rz_num_math(core->num, argv[1]);
+	bpi = rz_bp_get_index(core->dbg->bp, index);
+	if (!bpi) {
+		RZ_LOG_ERROR("Unable to find breakpoint with index %d\n", index);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	bpi->enabled = !bpi->enabled;
+	return RZ_CMD_STATUS_OK;
+}
+
+// dbite
+RZ_IPI RzCmdStatus rz_cmd_debug_enable_bp_trace_index_handler(RzCore *core, int argc, const char **argv) {
+	RzBreakpointItem *bpi;
+	int index = rz_num_math(core->num, argv[1]);
+	bpi = rz_bp_get_index(core->dbg->bp, index);
+	if (!bpi) {
+		RZ_LOG_ERROR("Unable to find breakpoint with index %d\n", index);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	bpi->trace = true;
+	return RZ_CMD_STATUS_OK;
+}
+
+// dbitd
+RZ_IPI RzCmdStatus rz_cmd_debug_disable_bp_trace_index_handler(RzCore *core, int argc, const char **argv) {
+	RzBreakpointItem *bpi;
+	int index = rz_num_math(core->num, argv[1]);
+	bpi = rz_bp_get_index(core->dbg->bp, index);
+	if (!bpi) {
+		RZ_LOG_ERROR("Unable to find breakpoint with index %d\n", index);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	bpi->trace = false;
+	return RZ_CMD_STATUS_OK;
+}
+
+// dbits
+RZ_IPI RzCmdStatus rz_cmd_debug_toggle_bp_trace_index_handler(RzCore *core, int argc, const char **argv) {
+	RzBreakpointItem *bpi;
+	int index = rz_num_math(core->num, argv[1]);
+	bpi = rz_bp_get_index(core->dbg->bp, index);
+	if (!bpi) {
+		RZ_LOG_ERROR("Unable to find breakpoint with index %d\n", index);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	bpi->trace = !bpi->enabled;
+	return RZ_CMD_STATUS_OK;
+}
+
+// dbh
+RZ_IPI RzCmdStatus rz_cmd_debug_bp_plugin_handler(RzCore *core, int argc, const char **argv) {
+	if (argc == 1) {
+		rz_bp_plugin_list(core->dbg->bp);
+	} else if (argc == 2) {
+		if (!rz_bp_use(core->dbg->bp, argv[1], core->analysis->bits)) {
+			RZ_LOG_ERROR("Failed to set breakpoint plugin handler to %s\n", argv[1]);
+			return RZ_CMD_STATUS_ERROR;
+		}
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+// dbh-
+RZ_IPI RzCmdStatus rz_cmd_debug_remove_bp_plugin_handler(RzCore *core, int argc, const char **argv) {
+	for (int i = 1; i < argc; i++) {
+		if (!rz_bp_plugin_del(core->dbg->bp, argv[i])) {
+			RZ_LOG_ERROR("Failed to delete breakpoint plugin handler: %s\n", argv[i]);
+		}
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+// dbt
+RZ_IPI RzCmdStatus rz_cmd_debug_display_bt_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzList *list = rz_debug_frames(core->dbg, UT64_MAX);
+	if (!list) {
+		RZ_LOG_ERROR("Unable to find debug backtrace frames\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	int i = 0;
+	RzListIter *iter;
+	RzDebugFrame *frame;
+	RzOutputMode mode = state->mode;
+	PJ *pj = state->d.pj;
+
+	if (mode == RZ_OUTPUT_MODE_RIZIN) {
+		rz_list_reverse(list);
+		rz_cons_printf("f-bt.*\n");
+	}
+	rz_cmd_state_output_array_start(state);
+	rz_list_foreach (list, iter, frame) {
+		switch (mode) {
+		case RZ_OUTPUT_MODE_STANDARD: {
+			char *flagdesc, *flagdesc2, *pcstr, *spstr;
+			get_backtrace_info(core, frame, UT64_MAX, &flagdesc, &flagdesc2, &pcstr, &spstr);
+			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, frame->addr, 0);
+			rz_cons_printf("%d  %s sp: %s  %-5d"
+				       "[%s]  %s %s\n",
+				i++, pcstr, spstr, (int)frame->size, fcn ? fcn->name : "??", flagdesc ? flagdesc : "", flagdesc2 ? flagdesc2 : "");
+			free(flagdesc);
+			free(flagdesc2);
+			free(pcstr);
+			free(spstr);
+			break;
+		}
+		case RZ_OUTPUT_MODE_RIZIN: {
+			rz_cons_printf("f bt.frame%d = 0x%08" PFMT64x "\n", i, frame->addr);
+			rz_cons_printf("f bt.frame%d.stack %d 0x%08" PFMT64x "\n", i, frame->size, frame->sp);
+			i++;
+			break;
+		}
+		case RZ_OUTPUT_MODE_JSON: {
+			char *flagdesc, *flagdesc2, *desc;
+			get_backtrace_info(core, frame, UT64_MAX, &flagdesc, &flagdesc2, NULL, NULL);
+			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, frame->addr, 0);
+			desc = rz_str_newf("%s%s", rz_str_get_null(flagdesc), rz_str_get_null(flagdesc2));
+			pj_o(pj);
+			pj_ki(pj, "idx", i);
+			pj_kn(pj, "pc", frame->addr);
+			pj_kn(pj, "sp", frame->sp);
+			pj_ki(pj, "frame_size", frame->size);
+			pj_ks(pj, "fname", fcn ? fcn->name : "");
+			pj_ks(pj, "desc", desc);
+			pj_end(pj);
+			i++;
+			free(flagdesc);
+			free(flagdesc2);
+			free(desc);
+			break;
+		}
+		case RZ_OUTPUT_MODE_QUIET: {
+			char *flagdesc, *flagdesc2, *pcstr, *spstr;
+			get_backtrace_info(core, frame, UT64_MAX, &flagdesc, &flagdesc2, &pcstr, &spstr);
+			rz_cons_printf("%s\n", pcstr);
+			free(flagdesc);
+			free(flagdesc2);
+			free(pcstr);
+			free(spstr);
+			break;
+		}
+		default:
+			rz_warn_if_reached();
+			break;
+		}
+	}
+	rz_cmd_state_output_array_end(state);
+	rz_list_free(list);
+	return RZ_CMD_STATUS_OK;
+}
+
+// dbt=
+RZ_IPI RzCmdStatus rz_cmd_debug_display_bt_oneline_handler(RzCore *core, int argc, const char **argv) {
+	int mode = 0;
+	if (argc > 1) {
+		if (!strcmp(argv[1], "b")) {
+			mode = 1;
+		} else if (!strcmp(argv[1], "s")) {
+			mode = 2;
+		}
+	}
+	RzList *list = rz_debug_frames(core->dbg, UT64_MAX);
+	if (!list) {
+		RZ_LOG_ERROR("Unable to find debug backtrace frames\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	int i = 0;
+	RzListIter *iter;
+	RzDebugFrame *frame;
+	rz_list_reverse(list);
+	rz_list_foreach (list, iter, frame) {
+		if (i != 0) {
+			rz_cons_printf(" ");
+		}
+		switch (mode) {
+		case 0:
+			rz_cons_printf("0x08%" PFMT64x, frame->addr);
+			break;
+		case 1:
+			rz_cons_printf("0x08%" PFMT64x, frame->bp);
+			break;
+		case 2:
+			rz_cons_printf("0x08%" PFMT64x, frame->sp);
+			break;
+		}
+	}
+	rz_cons_newline();
+	rz_list_free(list);
+	return RZ_CMD_STATUS_OK;
+}
+
+// dbtv
+RZ_IPI RzCmdStatus rz_cmd_debug_display_bt_local_vars_handler(RzCore *core, int argc, const char **argv) {
+	RzList *list = rz_debug_frames(core->dbg, UT64_MAX);
+	if (!list) {
+		RZ_LOG_ERROR("Unable to find debug backtrace frames\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	backtrace_vars(core, list);
+	rz_list_free(list);
+	return RZ_CMD_STATUS_OK;
+}
+
+// dbta
+RZ_IPI RzCmdStatus rz_cmd_debug_display_bt_ascii_handler(RzCore *core, int argc, const char **argv) {
+	RzList *list = rz_debug_frames(core->dbg, UT64_MAX);
+	if (!list) {
+		RZ_LOG_ERROR("Unable to find debug backtrace frames\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	asciiart_backtrace(core, list);
+	rz_list_free(list);
+	return RZ_CMD_STATUS_OK;
+}
+
+// dbte
+RZ_IPI RzCmdStatus rz_cmd_debug_bt_enable_bp_trace_handler(RzCore *core, int argc, const char **argv) {
+	if (!rz_bp_set_trace(core->dbg->bp, core->offset, true)) {
+		RZ_LOG_ERROR("Failed to enable trace for breakpoint at 0x%" PFMT64x "\n", core->offset);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+// dbtd
+RZ_IPI RzCmdStatus rz_cmd_debug_bt_disable_bp_trace_handler(RzCore *core, int argc, const char **argv) {
+	if (!rz_bp_set_trace(core->dbg->bp, core->offset, false)) {
+		RZ_LOG_ERROR("Failed to enable trace for breakpoint at 0x%" PFMT64x "\n", core->offset);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+// dbts
+RZ_IPI RzCmdStatus rz_cmd_debug_bt_toggle_bp_trace_handler(RzCore *core, int argc, const char **argv) {
+	RzBreakpointItem *bpi = rz_bp_get_in(core->dbg->bp, core->offset, 0);
+	if (!bpi) {
+		RZ_LOG_ERROR("No breakpoint found at 0x%" PFMT64x "\n", core->offset);
+	} else {
+		bpi->trace = !bpi->trace;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+// dbx
+RZ_IPI RzCmdStatus rz_cmd_debug_bp_set_expr_cur_offset_handler(RzCore *core, int argc, const char **argv) {
+	if (argc == 1) {
+		RzBreakpointItem *bpi;
+		RzListIter *iter;
+		rz_list_foreach (core->dbg->bp->bps, iter, bpi) {
+			rz_cons_printf("0x%08" PFMT64x " %s\n", bpi->addr, rz_str_get(bpi->expr));
+		}
+	} else if (argc == 2) {
+		RzBreakpointItem *bpi = rz_bp_get_at(core->dbg->bp, core->offset);
+		if (!bpi) {
+			RZ_LOG_ERROR("No breakpoint found at current offset: 0x%" PFMT64x "\n", core->offset);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		if (!rz_bp_item_set_expr(bpi, argv[1])) {
+			RZ_LOG_ERROR("Failed to set expression\n");
+			return RZ_CMD_STATUS_ERROR;
+		}
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+// dbw
+RZ_IPI RzCmdStatus rz_cmd_debug_add_watchpoint_handler(RzCore *core, int argc, const char **argv) {
+	int hwbp = rz_config_get_i(core->config, "dbg.hwbp");
+	add_breakpoint(core, core->offset, argv[1], hwbp, true);
+	return RZ_CMD_STATUS_OK;
+}
+
+// dbW
+RZ_IPI RzCmdStatus rz_cmd_debug_set_cond_bp_win_handler(RzCore *core, int argc, const char **argv) {
+#if __WINDOWS__
+	bool res;
+	if (argc > 2) {
+		res = rz_w32_add_winmsg_breakpoint(core->dbg, argv[1], argv[2]);
+	} else {
+		res = rz_w32_add_winmsg_breakpoint(core->dbg, argv[1], NULL);
+	}
+	if (res) {
+		rz_cons_print("Breakpoint set.\n");
+	} else {
+		rz_cons_print("Breakpoint not set.\n");
+	}
+#else
+	RZ_LOG_ERROR("This command is only meant for Windows systems and cannot be used by your system\n");
+#endif
+
+	return RZ_CMD_STATUS_OK;
 }
 
 // dc

@@ -194,9 +194,6 @@ static void rz_core_magic(RzCore *core, const char *file, int v, PJ *pj) {
 	int hits = 0;
 	magicdepth = rz_config_get_i(core->config, "magic.depth"); // TODO: do not use global var here
 	rz_core_magic_at(core, file, addr, magicdepth, v, pj, &hits);
-	if (pj) {
-		rz_cons_newline();
-	}
 	if (addr != core->offset) {
 		rz_core_seek(core, addr, true);
 	}

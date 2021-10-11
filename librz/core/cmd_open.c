@@ -4,6 +4,7 @@
 #include <rz_bin.h>
 #include <rz_debug.h>
 #include <rz_core.h>
+#include <rz_io.h>
 
 static const char *help_msg_o[] = {
 	"Usage: o", "[com- ] [file] ([offset])", "",
@@ -29,6 +30,7 @@ static const char *help_msg_o[] = {
 	"oo", "[?+bcdnm]", "reopen current file (see oo?) (reload in rw or debugger)",
 	"op", "[r|n|p|fd]", "select priorized file by fd (see ob), opn/opp/opr = next/previous/rotate",
 	"oq", "", "list all open files",
+	"ou", "[fd]", "select fd to use",
 	"ox", " fd fdx", "exchange the descs of fd and fdx and keep the mapping",
 	NULL
 };
@@ -1134,7 +1136,7 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 		}
 	case 'n': // "on"
 		if (input[1] == '*') {
-			rz_core_file_list(core, 'n');
+			rz_core_raw_file_print(core);
 			return 0;
 		}
 		if (input[1] == '+') { // "on+"
@@ -1289,7 +1291,7 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 			rz_core_cmd_help(core, help_msg_o_star);
 			break;
 		}
-		rz_core_file_list(core, (int)(*input));
+		rz_core_file_print(core, RZ_OUTPUT_MODE_RIZIN);
 		break;
 	case 'j': // "oj"
 		if ('?' == input[1]) {
@@ -1352,28 +1354,34 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 			}
 		} break;
 		case 'j': // "oij"
-		case '*': // "oi*"
-		case 0: // "oi"
-			rz_core_file_list(core, input[1]);
+			rz_core_file_print(core, RZ_OUTPUT_MODE_JSON);
 			break;
+		case '*': // "oi*"
+			rz_core_file_print(core, RZ_OUTPUT_MODE_RIZIN);
+			break;
+		case 0: // "oi"
+			break;
+			rz_core_file_print(core, RZ_OUTPUT_MODE_STANDARD);
 		}
 		break;
 	case 'u': { // "ou"
 		RzListIter *iter = NULL;
 		RzCoreFile *f;
 		core->switch_file_view = 0;
-		int num = atoi(input + 2);
-
+		const char *snum = rz_str_trim_head_ro(input + 2);
+		int num = rz_num_math(NULL, snum);
 		rz_list_foreach (core->files, iter, f) {
 			if (f->fd == num) {
 				core->file = f;
+				rz_io_use_fd(core->io, num);
+				RzBinFile *bf = rz_bin_file_find_by_fd(core->bin, num);
+				if (bf) {
+					rz_core_bin_raise(core, bf->id);
+					rz_core_block_read(core);
+					rz_cons_printf("switched to fd %d %s\n", num, bf->file);
+				}
+				break;
 			}
-		}
-		rz_io_use_fd(core->io, num);
-		RzBinFile *bf = rz_bin_file_find_by_fd(core->bin, num);
-		if (bf) {
-			rz_core_bin_raise(core, bf->id);
-			rz_core_block_read(core);
 		}
 		break;
 	}

@@ -229,7 +229,7 @@ RZ_IPI void rz_core_analysis_esil_init_mem_del(RzCore *core, const char *name, u
 	rz_core_analysis_esil_init(core);
 	RzAnalysisEsil *esil = core->analysis->esil;
 	char *stack_name = get_esil_stack_name(core, name, &addr, &size);
-	if (esil->stack_fd > 2) { //0, 1, 2 are reserved for stdio/stderr
+	if (esil->stack_fd > 2) { // 0, 1, 2 are reserved for stdio/stderr
 		rz_io_fd_close(core->io, esil->stack_fd);
 		// no need to kill the maps, rz_io_map_cleanup does that for us in the close
 		esil->stack_fd = 0;
@@ -391,7 +391,7 @@ RZ_IPI int rz_core_analysis_set_reg(RzCore *core, const char *regname, ut64 val)
 		return -1;
 	}
 	rz_reg_set_value(core->dbg->reg, r, val);
-	rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ALL, true);
+	rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ANY, true);
 	rz_core_debug_regs2flags(core, bits);
 	return 0;
 }
@@ -427,4 +427,50 @@ RZ_IPI void rz_core_analysis_esil_default(RzCore *core) {
 		rz_list_free(list);
 	}
 	rz_core_seek(core, at, true);
+}
+
+RZ_IPI void rz_core_analysis_rzil_reinit(RzCore *core) {
+	if (core->analysis->rzil) {
+		rz_analysis_rzil_cleanup(core->analysis, core->analysis->rzil);
+		core->analysis->rzil = NULL;
+	}
+
+	rz_analysis_rzil_setup(core->analysis);
+}
+
+// step a list of ct_opcode at a given address
+RZ_IPI void rz_core_rzil_step(RzCore *core) {
+	RzPVector *oplist;
+
+	if (!core->analysis || !core->analysis->rzil) {
+		RZ_LOG_ERROR("Run 'aezi' to init RZIL VM first\n");
+		return;
+	}
+
+	RzAnalysis *analysis = core->analysis;
+	RzAnalysisRzil *rzil = analysis->rzil;
+	RzILVM *vm = rzil->vm;
+	RzAnalysisPlugin *cur = analysis->cur;
+	RzAnalysisOp op = { 0 };
+
+	if (!cur) {
+		// No analysis plugin
+		return;
+	}
+
+	ut64 addr = rz_il_bv_to_ut64(vm->pc);
+
+	// try load from vm
+	// fetch and parse if no opcode
+	ut8 code[32];
+	// analysis current data to trigger rzil_set_op_code
+	(void)rz_io_read_at_mapped(core->io, addr, code, sizeof(code));
+	rz_analysis_op(analysis, &op, addr, code, sizeof(code), RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_HINT);
+	oplist = op.rzil_op->ops;
+
+	if (oplist) {
+		rz_il_vm_list_step(vm, oplist);
+	} else {
+		eprintf("Invalid instruction detected or reach the end of code\n");
+	}
 }

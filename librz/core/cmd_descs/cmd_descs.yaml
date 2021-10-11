@@ -182,9 +182,8 @@ commands:
     type: RZ_CMD_DESC_TYPE_OLDINPUT
     subcommands: cmd_analysis
   - name: b
-    cname: cmd_bsize
     summary: Display or change the block size
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    subcommands: cmd_block
   - name: c
     cname: cmd_cmp
     summary: Compare block with given data
@@ -254,9 +253,8 @@ commands:
     summary: Quit rizin
     subcommands: cmd_quit
   - name: r
-    cname: cmd_resize
+    subcommands: cmd_resize
     summary: Resize file
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: s
     summary: Seek commands
     subcommands: cmd_seek
@@ -293,9 +291,8 @@ commands:
     summary: Alias for 'px' (print hexadecimal)
     type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: y
-    cname: cmd_yank
     summary: Yank/paste bytes from/to memory
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    subcommands: cmd_yank
   - name: z
     summary: Zignatures management
     subcommands: cmd_zign

@@ -6611,7 +6611,7 @@ RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, int mode) {
 		return 0;
 	}
 	RzReg *reg = core->analysis->reg;
-	RzRegItem *pc = rz_reg_get(reg, "PC", RZ_REG_TYPE_ALL);
+	RzRegItem *pc = rz_reg_get(reg, "PC", RZ_REG_TYPE_ANY);
 	if (!pc) {
 		return -1;
 	}

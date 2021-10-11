@@ -562,12 +562,12 @@ var_bp_30h  0x40f79b,0x40f843
    var_3ch  0x40f866
 var_bp_20h
     var_fh
-var var_bp_38h =  int64_t : 0x00177fc0 = (qword)0x1111111111111111
-var var_28h =  int64_t : 0x00177fd0 = (qword)0x0000000000000000
-var var_bp_30h =  int64_t : 0x00177fc8 = (qword)0x0000000000000000
-var var_3ch =  int64_t : 0x00177fbc = (qword)0x1111111100000000
-var var_bp_20h =  int64_t : 0x00177fd8 = (qword)0x0000000000000000
-var var_fh =  int64_t : 0x00177fc7 = (qword)0x0000000000000011
+var var_bp_38h = 0x00177fc0 = (qword)0x1111111111111111
+var var_28h = 0x00177fd0 = (qword)0x0000000000000000
+var var_bp_30h = 0x00177fc8 = (qword)0x0000000000000000
+var var_3ch = 0x00177fbc = (qword)0x1111111100000000
+var var_bp_20h = 0x00177fd8 = (qword)0x0000000000000000
+var var_fh = 0x00177fc7 = (qword)0x0000000000000011
 EOF
 RUN
 
@@ -1072,7 +1072,7 @@ EXPECT=<<EOF
 |   ,=====< 0x00011414      jne   0x11424
 |   |||||   0x00011416      lea   rbx, [rax + 4]
 |   |||||   0x0001141a      mov   rax, qword [rip + 0xdeaf]            ; reloc.program_invocation_short_name
-|   |||||                                                              ; [0x1f2d0:8]=0x221f8 reloc.target.program_invocation_short_name
+|   |||||                                                              ; [0x1f2d0:8]=0x21ba0 reloc.target.program_invocation_short_name
 |   |||||   0x00011421      mov   qword [rax], rbx
 |   |||||   ; CODE XREFS from fcn.00011390 @ 0x113d0, 0x113e0, 0x113f4, 0x11414
 |   ````--> 0x00011424      mov   rax, qword [rip + 0xde3d]            ; [0x1f268:8]=0x21680
@@ -1938,8 +1938,8 @@ afvd arg_ch
 afvd var_10h
 EOF
 EXPECT=<<EOF
-arg arg_ch =  int32_t : 0x0000000c = -1
-var var_10h =  int32_t : 0xfffffffffffffff0 = -1
+arg arg_ch = 0x0000000c = -1
+var var_10h = 0xfffffffffffffff0 = -1
 EOF
 RUN
 

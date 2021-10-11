@@ -3671,16 +3671,16 @@ static int parse_reg_name(RzReg *reg, RzRegItem **reg_base, RzRegItem **reg_delt
 	cs_arm_op armop = INSOP(reg_num);
 	switch (armop.type) {
 	case ARM_OP_REG:
-		*reg_base = rz_reg_get(reg, cs_reg_name(handle, armop.reg), RZ_REG_TYPE_ALL);
+		*reg_base = rz_reg_get(reg, cs_reg_name(handle, armop.reg), RZ_REG_TYPE_ANY);
 		break;
 	case ARM_OP_MEM:
 		if (is_valid(armop.mem.base) && is_valid(armop.mem.index)) {
-			*reg_base = rz_reg_get(reg, cs_reg_name(handle, armop.mem.base), RZ_REG_TYPE_ALL);
-			*reg_delta = rz_reg_get(reg, cs_reg_name(handle, armop.mem.index), RZ_REG_TYPE_ALL);
+			*reg_base = rz_reg_get(reg, cs_reg_name(handle, armop.mem.base), RZ_REG_TYPE_ANY);
+			*reg_delta = rz_reg_get(reg, cs_reg_name(handle, armop.mem.index), RZ_REG_TYPE_ANY);
 		} else if (is_valid(armop.mem.base)) {
-			*reg_base = rz_reg_get(reg, cs_reg_name(handle, armop.mem.base), RZ_REG_TYPE_ALL);
+			*reg_base = rz_reg_get(reg, cs_reg_name(handle, armop.mem.base), RZ_REG_TYPE_ANY);
 		} else if (is_valid(armop.mem.index)) {
-			*reg_base = rz_reg_get(reg, cs_reg_name(handle, armop.mem.index), RZ_REG_TYPE_ALL);
+			*reg_base = rz_reg_get(reg, cs_reg_name(handle, armop.mem.index), RZ_REG_TYPE_ANY);
 		}
 		break;
 	default:
@@ -3707,23 +3707,23 @@ static int parse_reg64_name(RzReg *reg, RzRegItem **reg_base, RzRegItem **reg_de
 	cs_arm64_op armop = INSOP64(reg_num);
 	switch (armop.type) {
 	case ARM64_OP_REG:
-		*reg_base = rz_reg_get(reg, cs_reg_name(handle, armop.reg), RZ_REG_TYPE_ALL);
+		*reg_base = rz_reg_get(reg, cs_reg_name(handle, armop.reg), RZ_REG_TYPE_ANY);
 		break;
 	case ARM64_OP_MEM:
 		if (is_valid64(armop.mem.base) && is_valid64(armop.mem.index)) {
-			*reg_base = rz_reg_get(reg, cs_reg_name(handle, armop.mem.base), RZ_REG_TYPE_ALL);
-			*reg_delta = rz_reg_get(reg, cs_reg_name(handle, armop.mem.index), RZ_REG_TYPE_ALL);
+			*reg_base = rz_reg_get(reg, cs_reg_name(handle, armop.mem.base), RZ_REG_TYPE_ANY);
+			*reg_delta = rz_reg_get(reg, cs_reg_name(handle, armop.mem.index), RZ_REG_TYPE_ANY);
 		} else if (is_valid64(armop.mem.base)) {
-			*reg_base = rz_reg_get(reg, cs_reg_name(handle, armop.mem.base), RZ_REG_TYPE_ALL);
+			*reg_base = rz_reg_get(reg, cs_reg_name(handle, armop.mem.base), RZ_REG_TYPE_ANY);
 		} else if (is_valid64(armop.mem.index)) {
-			*reg_base = rz_reg_get(reg, cs_reg_name(handle, armop.mem.index), RZ_REG_TYPE_ALL);
+			*reg_base = rz_reg_get(reg, cs_reg_name(handle, armop.mem.index), RZ_REG_TYPE_ANY);
 		}
 		break;
 	default:
 		break;
 	}
 	if (*reg_base && *(*reg_base)->name == 'w') {
-		*reg_base = rz_reg_get(reg, reg_list[atoi((*reg_base)->name + 1)], RZ_REG_TYPE_ALL);
+		*reg_base = rz_reg_get(reg, reg_list[atoi((*reg_base)->name + 1)], RZ_REG_TYPE_ANY);
 	}
 	return 0;
 }

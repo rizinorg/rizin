@@ -2,36 +2,12 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <string.h>
-#include "rz_bin.h"
-#include "rz_config.h"
-#include "rz_cons.h"
-#include "rz_core.h"
+#include <rz_bin.h>
+#include <rz_config.h>
+#include <rz_cons.h>
+#include <rz_core.h>
+#include <rz_demangler.h>
 #include "../bin/pdb/pdb_downloader.h"
-
-static bool demangle_internal(RzCore *core, const char *lang, const char *s) {
-	char *res = NULL;
-	int type = rz_bin_demangle_type(lang);
-	switch (type) {
-	case RZ_BIN_NM_CXX: res = rz_bin_demangle_cxx(core->bin->cur, s, 0); break;
-	case RZ_BIN_NM_JAVA: res = rz_bin_demangle_java(s); break;
-	case RZ_BIN_NM_OBJC: res = rz_bin_demangle_objc(NULL, s); break;
-	case RZ_BIN_NM_SWIFT: res = rz_bin_demangle_swift(s, core->bin->demanglercmd); break;
-	case RZ_BIN_NM_DLANG: res = rz_bin_demangle_plugin(core->bin, "dlang", s); break;
-	case RZ_BIN_NM_MSVC: res = rz_bin_demangle_msvc(s); break;
-	case RZ_BIN_NM_RUST: res = rz_bin_demangle_rust(core->bin->cur, s, 0); break;
-	default:
-		rz_bin_demangle_list(core->bin);
-		return true;
-	}
-	if (res) {
-		if (*res) {
-			rz_cons_printf("%s\n", res);
-		}
-		free(res);
-		return false;
-	}
-	return true;
-}
 
 static int bin_is_executable(RzBinObject *obj) {
 	RzListIter *it;
@@ -541,21 +517,12 @@ RZ_IPI RzCmdStatus rz_cmd_info_pdb_show_handler(RzCore *core, int argc, const ch
 		free(filename);
 		return RZ_CMD_STATUS_ERROR;
 	}
-
-	switch (state->mode) {
-	case RZ_OUTPUT_MODE_STANDARD:
-		rz_core_pdb_info(core, filename, NULL, RZ_MODE_PRINT);
-		break;
-	case RZ_OUTPUT_MODE_JSON:
-		rz_core_pdb_info(core, filename, state->d.pj, RZ_MODE_JSON);
-		break;
-	case RZ_OUTPUT_MODE_RIZIN:
-		rz_core_pdb_info(core, filename, NULL, RZ_MODE_RIZINCMD);
-		break;
-	default:
-		rz_warn_if_reached();
-		break;
+	RzPdb *pdb = rz_core_pdb_load_info(core, filename);
+	if (!pdb) {
+		return false;
 	}
+	rz_core_pdb_info_print(core, core->analysis->typedb, pdb, state);
+	rz_bin_pdb_free(pdb);
 	free(filename);
 	return RZ_CMD_STATUS_OK;
 }
@@ -580,8 +547,51 @@ RZ_IPI RzCmdStatus rz_cmd_info_pdb_download_handler(RzCore *core, int argc, cons
 	return RZ_CMD_STATUS_OK;
 }
 
+static bool print_demangler_info(const RzDemanglerPlugin *plugin, void *user) {
+	if (!user) {
+		rz_cons_printf("%-6s %-8s %s\n", plugin->language, plugin->license, plugin->author);
+		return true;
+	}
+	RzCmdStateOutput *state = (RzCmdStateOutput *)user;
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_QUIET:
+		rz_cons_println(plugin->language);
+		break;
+	case RZ_OUTPUT_MODE_JSON:
+		pj_o(state->d.pj);
+		pj_ks(state->d.pj, "language", plugin->language);
+		pj_ks(state->d.pj, "license", plugin->license);
+		pj_ks(state->d.pj, "author", plugin->author);
+		pj_end(state->d.pj);
+		break;
+	case RZ_OUTPUT_MODE_TABLE:
+		rz_table_add_rowf(state->d.t, "sss", plugin->language, plugin->license, plugin->author);
+		break;
+	default:
+		rz_warn_if_reached();
+		break;
+	}
+	return true;
+}
+
 RZ_IPI RzCmdStatus rz_cmd_info_demangle_handler(RzCore *core, int argc, const char **argv) {
-	return bool2status(demangle_internal(core, argv[1], argv[2]));
+	char *output = NULL;
+	if (!rz_demangler_resolve(core->bin->demangler, argv[2], argv[1], &output)) {
+		rz_cons_printf("Language '%s' is unsupported\nList of supported languages:\n", argv[1]);
+		rz_demangler_plugin_iterate(core->bin->demangler, (RzDemanglerIter)print_demangler_info, NULL);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cons_println(output ? output : argv[2]);
+	free(output);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_info_demangle_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	rz_cmd_state_output_array_start(state);
+	rz_cmd_state_output_set_columnsf(state, "sss", "language", "license", "author");
+	rz_demangler_plugin_iterate(core->bin->demangler, (RzDemanglerIter)print_demangler_info, state);
+	rz_cmd_state_output_array_end(state);
+	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_memory_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {

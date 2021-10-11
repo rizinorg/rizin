@@ -57,10 +57,13 @@ if get_option('enable_tests')
     'id_storage',
     'idpool',
     'idstorage',
+    'inflate_deflate',
+    'il_definitions',
+    'il_vm',
     'intervaltree',
     'io',
-    'itv',
     'io_ihex',
+    'itv',
     'json',
     'list',
     'ovf',
@@ -75,6 +78,7 @@ if get_option('enable_tests')
     'rzpipe',
     'serialize_analysis',
     'serialize_config',
+    'serialize_debug',
     'serialize_flag',
     'serialize_spaces',
     'serialize_types',
@@ -96,7 +100,7 @@ if get_option('enable_tests')
     'unum',
     'util',
     'vector',
-    'inflate_deflate'
+    'yank',
   ]
 
   unit_test_env = environment()
@@ -131,6 +135,7 @@ if get_option('enable_tests')
         rz_hash_dep,
         rz_crypto_dep,
         rz_magic_dep,
+        rz_il_dep,
         lrt,
       ],
       install: false,

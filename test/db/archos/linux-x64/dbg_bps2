@@ -4,7 +4,7 @@ ARGS=-d
 CMDS=<<EOF
 e scr.color=0
 e dbg.swstep=true
-db sym.called_in_loop
+db @ sym.called_in_loop
 dc ; dr PC
 dc ; dr PC
 dc ; dr PC
@@ -29,7 +29,7 @@ ARGS=-d
 CMDS=<<EOF
 e scr.color=0
 e dbg.swstep=false
-db sym.called_in_loop
+db @ sym.called_in_loop
 dc ; dr PC
 dc ; dr PC
 dc ; dr PC

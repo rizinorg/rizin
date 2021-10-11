@@ -615,11 +615,10 @@ static void cmd_task_runner(RzCoreTaskScheduler *sched, void *user) {
 	}
 }
 
-static void cmd_task_free(void *user) {
-	if (!user) {
+static void cmd_task_free(CmdTaskCtx *ctx) {
+	if (!ctx) {
 		return;
 	}
-	CmdTaskCtx *ctx = user;
 	free(ctx->cmd);
 	free(ctx->res);
 	core_task_ctx_fini(&ctx->core_ctx);
@@ -635,7 +634,7 @@ RZ_API RzCoreTask *rz_core_cmd_task_new(RzCore *core, const char *cmd, RzCoreCmd
 	if (!ctx) {
 		return NULL;
 	}
-	RzCoreTask *task = rz_core_task_new(&core->tasks, cmd_task_runner, cmd_task_free, ctx);
+	RzCoreTask *task = rz_core_task_new(&core->tasks, cmd_task_runner, (RzCoreTaskRunnerFree)cmd_task_free, ctx);
 	if (!task) {
 		cmd_task_free(ctx);
 		return NULL;
@@ -689,11 +688,10 @@ static void function_task_runner(RzCoreTaskScheduler *sched, void *user) {
 	rz_cons_pop();
 }
 
-static void function_task_free(void *user) {
-	if (!user) {
+static void function_task_free(FunctionTaskCtx *ctx) {
+	if (!ctx) {
 		return;
 	}
-	FunctionTaskCtx *ctx = user;
 	core_task_ctx_fini(&ctx->core_ctx);
 	free(ctx);
 }
@@ -707,9 +705,10 @@ RZ_API RzCoreTask *rz_core_function_task_new(RzCore *core, RzCoreTaskFunction fc
 	if (!ctx) {
 		return NULL;
 	}
-	RzCoreTask *task = rz_core_task_new(&core->tasks, function_task_runner, function_task_free, ctx);
+	RzCoreTask *task = rz_core_task_new(&core->tasks, function_task_runner,
+		(RzCoreTaskRunnerFree)function_task_free, ctx);
 	if (!task) {
-		cmd_task_free(ctx);
+		function_task_free(ctx);
 		return NULL;
 	}
 	return task;

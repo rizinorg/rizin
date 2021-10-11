@@ -1,0 +1,14 @@
+NAME=ar rflags
+FILE==
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+ar rflags
+ar rflags=0x137
+ar rflags
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00000137
+EOF
+RUN

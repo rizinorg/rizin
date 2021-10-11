@@ -61,7 +61,6 @@ RZ_API int rz_main_rz_sign(int argc, const char **argv) {
 	bool json = false;
 	bool flirt = false;
 	RzGetopt opt;
-
 	rz_getopt_init(&opt, argc, argv, "afhjo:qrs:v");
 	while ((c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {

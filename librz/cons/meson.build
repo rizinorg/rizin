@@ -4,7 +4,6 @@ rz_cons_sources = [
   'cons.c',
   'html.c',
   # 'dietline.c',
-  'editor.c',
   'grep.c',
   'hud.c',
   'input.c',

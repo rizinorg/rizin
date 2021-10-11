@@ -72,7 +72,7 @@ int gettimeofday(struct timeval *p, void *tz);
 #include "rz_util/rz_utf32.h"
 #include "rz_util/rz_idpool.h"
 #include "rz_util/rz_asn1.h"
-#include "rz_util/pj.h"
+#include "rz_util/rz_pj.h"
 #include "rz_util/rz_x509.h"
 #include "rz_util/rz_pkcs7.h"
 #include "rz_util/rz_protobuf.h"

@@ -383,9 +383,9 @@ A = 0x0
 B = 0x1
 G = 0x2
 enum bar {
-	A = 0,
-	B = 1,
-	G = 2
+	A = 0x0,
+	B = 0x1,
+	G = 0x2
 };
 EOF
 RUN
@@ -533,7 +533,7 @@ tsd test_struct
 EOF
 EXPECT=<<EOF
 pf dd x y
-struct test_struct {int x; int y;};
+struct test_struct { int x; int y; };
 EOF
 RUN
 
@@ -549,14 +549,14 @@ te v 0x123
 te v 0x321
 EOF
 EXPECT=<<EOF
-enum v {t = 291, p = 801};
+enum v { t = 0x123, p = 0x321 };
 enum v {
-	t = 291,
-	p = 801
+	t = 0x123,
+	p = 0x321
 };
 enum v {
-	t = 291,
-	p = 801
+	t = 0x123,
+	p = 0x321
 };
 t = 0x123
 p = 0x321
@@ -577,14 +577,14 @@ te v 0x8000000000000001
 te v 0x8000000000000008
 EOF
 EXPECT=<<EOF
-enum v {t = 9223372036854775809, p = 9223372036854775816};
+enum v { t = 0x8000000000000001, p = 0x8000000000000008 };
 enum v {
-	t = 9223372036854775809,
-	p = 9223372036854775816
+	t = 0x8000000000000001,
+	p = 0x8000000000000008
 };
 enum v {
-	t = 9223372036854775809,
-	p = 9223372036854775816
+	t = 0x8000000000000001,
+	p = 0x8000000000000008
 };
 t = 0x8000000000000001
 p = 0x8000000000000008
@@ -667,27 +667,27 @@ ttc dox_t
 EOF
 EXPECT=<<EOF
 pf [40]c[40]c[40]c first middle last
-struct name {char first[40]; char middle[40]; char last[40];};
+struct name { char first[40]; char middle[40]; char last[40]; };
 struct name {
 	char first[40];
 	char middle[40];
 	char last[40];
 };
 pf bbw day month year
-struct date {uint8_t day; uint8_t month; uint16_t year;};
+struct date { uint8_t day; uint8_t month; uint16_t year; };
 struct date {
 	uint8_t day;
 	uint8_t month;
 	uint16_t year;
 };
 pf [127]c[40]cd street city zip
-struct addr {char street[127]; char city[40]; uint32_t zip;};
+struct addr { char street[127]; char city[40]; uint32_t zip; };
 struct addr {
 	char street[127];
 	char city[40];
 	uint32_t zip;
 };
-struct dox {addr_t address; name_t name; date_t bday;};
+struct dox { addr_t address; name_t name; date_t bday; };
 struct dox {
 	addr_t address;
 	name_t name;
@@ -1251,7 +1251,7 @@ tsc boo
 EOF
 EXPECT=<<EOF
 pf dpz x (fp)fp b
-struct foo {int x; int (*fp)(int a, int b); char *b;};
+struct foo { int x; int (*fp)(int a, int b); char *b; };
 struct foo {
 	int x;
 	int (*fp)(int a, int b);
@@ -1261,7 +1261,7 @@ struct foo {
 (fp)fp : 0x00000004 = (qword)0x0000000000000000
   b : 0x0000000c = "\x05hello"
 pf dpz x (ffp)ffp b
-struct boo {int x; int (***ffp)(int a, int b); char *b;};
+struct boo { int x; int (***ffp)(int a, int b); char *b; };
 struct boo {
 	int x;
 	int (***ffp)(int a, int b);
@@ -1352,8 +1352,8 @@ tec Foo
 EOF
 EXPECT=<<EOF
 enum Foo {
-	COW = 1,
-	BAR = 2
+	COW = 0x1,
+	BAR = 0x2
 };
 EOF
 RUN
@@ -1365,7 +1365,7 @@ td "enum Foo {COW=1,BAR=2};"
 ted Foo
 EOF
 EXPECT=<<EOF
-enum Foo {COW = 1, BAR = 2};
+enum Foo { COW = 0x1, BAR = 0x2 };
 EOF
 RUN
 
@@ -1409,9 +1409,9 @@ tcd~Foo
 EOF
 EXPECT=<<EOF
 typedef char FILE_NAME;
-union xxx {int x; int y; int z;};
-struct three_elements {int x; char y; float z;};
-enum Foo {COW = 1, BAR = 2};
+union xxx { int x; int y; int z; };
+struct three_elements { int x; char y; float z; };
+enum Foo { COW = 0x1, BAR = 0x2 };
 EOF
 RUN
 
@@ -1482,6 +1482,46 @@ struct anonymous struct 0 {
 struct anonymous struct 1 {
 	char ch;
 };
+EOF
+RUN
+
+NAME=Variable character array
+FILE=bins/elf/ls
+CMDS=<<EOF
+aaa
+s 0x4070
+afv
+afvt var_18h "char [20]"
+afv
+afvd var_18h
+EOF
+EXPECT=<<EOF
+var uint64_t var_8h @ rsp+0x18
+var uint64_t var_17h @ rsp+0x27
+var int64_t var_18h @ rsp+0x28
+var char * var_28h @ rsp+0x38
+var int64_t var_30h @ rsp+0x40
+var int64_t var_32h @ rsp+0x42
+var int64_t var_38h @ rsp+0x48
+var int64_t var_45h @ rsp+0x55
+var int64_t var_46h @ rsp+0x56
+var int64_t var_47h @ rsp+0x57
+var int64_t var_48h @ rsp+0x58
+arg char ** argv @ rsi
+arg int argc @ rdi
+var uint64_t var_8h @ rsp+0x18
+var uint64_t var_17h @ rsp+0x27
+var char [20] var_18h @ rsp+0x28
+var int64_t var_30h @ rsp+0x40
+var int64_t var_32h @ rsp+0x42
+var int64_t var_38h @ rsp+0x48
+var int64_t var_45h @ rsp+0x55
+var int64_t var_46h @ rsp+0x56
+var int64_t var_47h @ rsp+0x57
+var int64_t var_48h @ rsp+0x58
+arg char ** argv @ rsi
+arg int argc @ rdi
+var var_18h = 0x00000028 = [ 'h', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '@', '.', '8', '.', '.', '.', '@', '.' ]
 EOF
 RUN
 
@@ -1715,7 +1755,6 @@ afv
 EOF
 EXPECT=<<EOF
 var void * va_args @ rbp-0x34
-var uint64_t var_30h @ rbp-0x30
 var uint64_t var_2ch @ rbp-0x2c
 var FILE * stream @ rbp-0x28
 var const char * s @ rbp-0x20
@@ -1752,7 +1791,6 @@ EXPECT=<<EOF
 var char ** var_14e0h @ rbp-0x14e0
 var int var_14d4h @ rbp-0x14d4
 var int * wstatus @ rbp-0x14cc
-var int * options @ rbp-0x14c8
 var int64_t var_14c4h @ rbp-0x14c4
 var int64_t var_14c0h @ rbp-0x14c0
 var int64_t var_14bch @ rbp-0x14bc

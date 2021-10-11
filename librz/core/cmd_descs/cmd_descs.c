@@ -11,6 +11,9 @@ static const RzCmdDescDetail system_details[2];
 static const RzCmdDescDetail system_to_cons_details[2];
 static const RzCmdDescDetail hash_bang_details[2];
 static const RzCmdDescDetail pointer_details[2];
+static const RzCmdDescDetail cmd_debug_list_bp_details[2];
+static const RzCmdDescDetail cmd_debug_add_cond_bp_details[2];
+static const RzCmdDescDetail cmd_debug_add_watchpoint_details[2];
 static const RzCmdDescDetail eval_getset_details[2];
 static const RzCmdDescDetail env_details[3];
 static const RzCmdDescDetail history_list_or_exec_details[2];
@@ -103,6 +106,30 @@ static const RzCmdDescArg analysis_xrefs_set_d_args[2];
 static const RzCmdDescArg analysis_xrefs_set_s_args[2];
 static const RzCmdDescArg analysis_xrefs_del_args[3];
 static const RzCmdDescArg analysis_xrefs_copy_args[2];
+static const RzCmdDescArg block_args[2];
+static const RzCmdDescArg block_decrease_args[2];
+static const RzCmdDescArg block_increase_args[2];
+static const RzCmdDescArg block_flag_args[2];
+static const RzCmdDescArg block_max_args[2];
+static const RzCmdDescArg cmd_debug_command_bp_args[2];
+static const RzCmdDescArg cmd_debug_add_cond_bp_args[2];
+static const RzCmdDescArg cmd_debug_add_bp_module_args[3];
+static const RzCmdDescArg cmd_debug_name_bp_args[2];
+static const RzCmdDescArg cmd_debug_remove_bp_index_args[2];
+static const RzCmdDescArg cmd_debug_set_expr_bp_index_args[3];
+static const RzCmdDescArg cmd_debug_run_command_bp_index_args[3];
+static const RzCmdDescArg cmd_debug_enable_bp_index_args[2];
+static const RzCmdDescArg cmd_debug_disable_bp_index_args[2];
+static const RzCmdDescArg cmd_debug_toggle_bp_index_args[2];
+static const RzCmdDescArg cmd_debug_enable_bp_trace_index_args[2];
+static const RzCmdDescArg cmd_debug_disable_bp_trace_index_args[2];
+static const RzCmdDescArg cmd_debug_toggle_bp_trace_index_args[2];
+static const RzCmdDescArg cmd_debug_bp_plugin_args[2];
+static const RzCmdDescArg cmd_debug_remove_bp_plugin_args[2];
+static const RzCmdDescArg cmd_debug_display_bt_oneline_args[2];
+static const RzCmdDescArg cmd_debug_bp_set_expr_cur_offset_args[2];
+static const RzCmdDescArg cmd_debug_add_watchpoint_args[2];
+static const RzCmdDescArg cmd_debug_set_cond_bp_win_args[3];
 static const RzCmdDescArg cmd_debug_continue_execution_args[2];
 static const RzCmdDescArg cmd_debug_continue_send_signal_args[3];
 static const RzCmdDescArg cmd_debug_continue_traptrace_args[2];
@@ -155,9 +182,15 @@ static const RzCmdDescArg plugins_io_print_args[2];
 static const RzCmdDescArg cmd_print_gadget_add_args[6];
 static const RzCmdDescArg cmd_print_gadget_move_args[6];
 static const RzCmdDescArg cmd_print_msg_digest_args[2];
+static const RzCmdDescArg cmd_print_magic_args[2];
 static const RzCmdDescArg project_save_args[2];
 static const RzCmdDescArg project_open_args[2];
 static const RzCmdDescArg project_open_no_bin_io_args[2];
+static const RzCmdDescArg resize_args[2];
+static const RzCmdDescArg resize_remove_args[2];
+static const RzCmdDescArg resize_insert_args[2];
+static const RzCmdDescArg rebase_args[2];
+static const RzCmdDescArg remove_file_args[2];
 static const RzCmdDescArg seek_args[2];
 static const RzCmdDescArg seek_padded_args[2];
 static const RzCmdDescArg seek_base_args[2];
@@ -232,6 +265,16 @@ static const RzCmdDescArg write_from_io_args[3];
 static const RzCmdDescArg write_from_io_xchg_args[3];
 static const RzCmdDescArg write_from_file_args[4];
 static const RzCmdDescArg write_from_socket_args[3];
+static const RzCmdDescArg yank_args[2];
+static const RzCmdDescArg yank_file_args[3];
+static const RzCmdDescArg yank_whole_file_args[2];
+static const RzCmdDescArg yank_print_args[2];
+static const RzCmdDescArg yank_string_print_args[2];
+static const RzCmdDescArg yank_to_args[3];
+static const RzCmdDescArg yank_hexpairs_args[2];
+static const RzCmdDescArg yank_hex_print_args[2];
+static const RzCmdDescArg yank_paste_args[2];
+static const RzCmdDescArg yank_string_args[2];
 static const RzCmdDescArg zign_best_args[2];
 static const RzCmdDescArg zign_best_name_args[3];
 static const RzCmdDescArg zign_delete_args[2];
@@ -1814,8 +1857,78 @@ static const RzCmdDescHelp analysis_xrefs_graph_help = {
 	.args = analysis_xrefs_graph_args,
 };
 
-static const RzCmdDescHelp cmd_bsize_help = {
+static const RzCmdDescHelp b_help = {
 	.summary = "Display or change the block size",
+};
+static const RzCmdDescArg block_args[] = {
+	{
+		.name = "num",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp block_help = {
+	.summary = "Set/Get current block size",
+	.args = block_args,
+};
+
+static const RzCmdDescArg block_decrease_args[] = {
+	{
+		.name = "num",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp block_decrease_help = {
+	.summary = "Decrease current block size",
+	.args = block_decrease_args,
+};
+
+static const RzCmdDescArg block_increase_args[] = {
+	{
+		.name = "num",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp block_increase_help = {
+	.summary = "Increase current block size",
+	.args = block_increase_args,
+};
+
+static const RzCmdDescArg block_flag_args[] = {
+	{
+		.name = "flag",
+		.type = RZ_CMD_ARG_TYPE_FLAG,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp block_flag_help = {
+	.summary = "Set block size to flag size",
+	.args = block_flag_args,
+};
+
+static const RzCmdDescArg block_max_args[] = {
+	{
+		.name = "num",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp block_max_help = {
+	.summary = "Set/Get max block size",
+	.args = block_max_args,
 };
 
 static const RzCmdDescHelp cmd_cmp_help = {
@@ -1829,6 +1942,482 @@ static const RzCmdDescHelp cmd_meta_help = {
 static const RzCmdDescHelp cmd_debug_help = {
 	.summary = "Debugger commands",
 };
+static const RzCmdDescHelp db_help = {
+	.summary = "Breakpoints commands",
+};
+static const RzCmdDescArg cmd_debug_add_bp_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_add_bp_help = {
+	.summary = "Add breakpoint at current offset",
+	.args = cmd_debug_add_bp_args,
+};
+
+static const RzCmdDescDetailEntry cmd_debug_list_bp_Apply_space_a_space_command_space_to_space_all_space_breakpoints_detail_entries[] = {
+	{ .text = "Disable all the breakpoints", .arg_str = NULL, .comment = "dbd @@c:dblq" },
+	{ .text = "Enable all the breakpoints", .arg_str = NULL, .comment = "dbe @@c:dblq" },
+	{ .text = "Toggle all the breakpoints", .arg_str = NULL, .comment = "dbs @@c:dblq" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_debug_list_bp_details[] = {
+	{ .name = "Apply a command to all breakpoints", .entries = cmd_debug_list_bp_Apply_space_a_space_command_space_to_space_all_space_breakpoints_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg cmd_debug_list_bp_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_list_bp_help = {
+	.summary = "List all breakpoints",
+	.details = cmd_debug_list_bp_details,
+	.args = cmd_debug_list_bp_args,
+};
+
+static const RzCmdDescArg cmd_debug_add_hw_bp_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_add_hw_bp_help = {
+	.summary = "Add hardware breakpoint at current offset",
+	.args = cmd_debug_add_hw_bp_args,
+};
+
+static const RzCmdDescArg cmd_debug_remove_bp_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_remove_bp_help = {
+	.summary = "Remove breakpoint at current offset",
+	.args = cmd_debug_remove_bp_args,
+};
+
+static const RzCmdDescArg cmd_debug_remove_all_bp_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_remove_all_bp_help = {
+	.summary = "Remove all breakpoints",
+	.args = cmd_debug_remove_all_bp_args,
+};
+
+static const RzCmdDescArg cmd_debug_show_cur_bp_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_show_cur_bp_help = {
+	.summary = "Show breakpoint info at current offset",
+	.args = cmd_debug_show_cur_bp_args,
+};
+
+static const RzCmdDescArg cmd_debug_command_bp_args[] = {
+	{
+		.name = "cmd",
+		.type = RZ_CMD_ARG_TYPE_CMD,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_command_bp_help = {
+	.summary = "Set a command <cmd> to be run when the breakpoint at the current offset is hit",
+	.args = cmd_debug_command_bp_args,
+};
+
+static const RzCmdDescDetailEntry cmd_debug_add_cond_bp_Usage_space_example_detail_entries[] = {
+	{ .text = "Example of a condition", .arg_str = NULL, .comment = "?v rax-0x0" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_debug_add_cond_bp_details[] = {
+	{ .name = "Usage example", .entries = cmd_debug_add_cond_bp_Usage_space_example_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg cmd_debug_add_cond_bp_args[] = {
+	{
+		.name = "cmd",
+		.type = RZ_CMD_ARG_TYPE_CMD,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_add_cond_bp_help = {
+	.summary = "Make the breakpoint at the current offset conditional, and hit only when <cmd> evaluates to 0",
+	.details = cmd_debug_add_cond_bp_details,
+	.args = cmd_debug_add_cond_bp_args,
+};
+
+static const RzCmdDescArg cmd_debug_disable_bp_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_disable_bp_help = {
+	.summary = "Disable breakpoint at current offset",
+	.args = cmd_debug_disable_bp_args,
+};
+
+static const RzCmdDescArg cmd_debug_enable_bp_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_enable_bp_help = {
+	.summary = "Enable breakpoint at current offset",
+	.args = cmd_debug_enable_bp_args,
+};
+
+static const RzCmdDescArg cmd_debug_toggle_bp_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_toggle_bp_help = {
+	.summary = "Toggle breakpoint at current offset",
+	.args = cmd_debug_toggle_bp_args,
+};
+
+static const RzCmdDescArg cmd_debug_add_bp_noreturn_func_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_add_bp_noreturn_func_help = {
+	.summary = "Put a breakpoint into every no-return function",
+	.args = cmd_debug_add_bp_noreturn_func_args,
+};
+
+static const RzCmdDescArg cmd_debug_add_bp_module_args[] = {
+	{
+		.name = "module",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "offset",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_add_bp_module_help = {
+	.summary = "Add a breakpoint at an offset from a module's base",
+	.args = cmd_debug_add_bp_module_args,
+};
+
+static const RzCmdDescArg cmd_debug_name_bp_args[] = {
+	{
+		.name = "name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_name_bp_help = {
+	.summary = "Show name of current breakpoint / Set name for current breakpoint",
+	.args = cmd_debug_name_bp_args,
+};
+
+static const RzCmdDescHelp dbi_help = {
+	.summary = "Breakpoint index commands",
+};
+static const RzCmdDescArg cmd_debug_show_bp_index_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_show_bp_index_help = {
+	.summary = "Show breakpoint index at current offset",
+	.args = cmd_debug_show_bp_index_args,
+};
+
+static const RzCmdDescArg cmd_debug_list_bp_indexes_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_list_bp_indexes_help = {
+	.summary = "List breakpoints indexes",
+	.args = cmd_debug_list_bp_indexes_args,
+};
+
+static const RzCmdDescArg cmd_debug_remove_bp_index_args[] = {
+	{
+		.name = "idx",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_remove_bp_index_help = {
+	.summary = "Remove breakpoint by index",
+	.args = cmd_debug_remove_bp_index_args,
+};
+
+static const RzCmdDescArg cmd_debug_set_expr_bp_index_args[] = {
+	{
+		.name = "idx",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "expr",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_set_expr_bp_index_help = {
+	.summary = "Set expression for breakpoint at given index",
+	.args = cmd_debug_set_expr_bp_index_args,
+};
+
+static const RzCmdDescArg cmd_debug_run_command_bp_index_args[] = {
+	{
+		.name = "idx",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "cmd",
+		.type = RZ_CMD_ARG_TYPE_CMD,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_run_command_bp_index_help = {
+	.summary = "Run a command at breakpoint index",
+	.args = cmd_debug_run_command_bp_index_args,
+};
+
+static const RzCmdDescArg cmd_debug_enable_bp_index_args[] = {
+	{
+		.name = "idx",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_enable_bp_index_help = {
+	.summary = "Enable breakpoint by index",
+	.args = cmd_debug_enable_bp_index_args,
+};
+
+static const RzCmdDescArg cmd_debug_disable_bp_index_args[] = {
+	{
+		.name = "idx",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_disable_bp_index_help = {
+	.summary = "Disable breakpoint by index",
+	.args = cmd_debug_disable_bp_index_args,
+};
+
+static const RzCmdDescArg cmd_debug_toggle_bp_index_args[] = {
+	{
+		.name = "idx",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_toggle_bp_index_help = {
+	.summary = "Toggle breakpoint by index",
+	.args = cmd_debug_toggle_bp_index_args,
+};
+
+static const RzCmdDescArg cmd_debug_enable_bp_trace_index_args[] = {
+	{
+		.name = "idx",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_enable_bp_trace_index_help = {
+	.summary = "Enable breakpoint trace by index",
+	.args = cmd_debug_enable_bp_trace_index_args,
+};
+
+static const RzCmdDescArg cmd_debug_disable_bp_trace_index_args[] = {
+	{
+		.name = "idx",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_disable_bp_trace_index_help = {
+	.summary = "Disable breakpoint trace by index",
+	.args = cmd_debug_disable_bp_trace_index_args,
+};
+
+static const RzCmdDescArg cmd_debug_toggle_bp_trace_index_args[] = {
+	{
+		.name = "idx",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_toggle_bp_trace_index_help = {
+	.summary = "Toggle breakpoint trace by index",
+	.args = cmd_debug_toggle_bp_trace_index_args,
+};
+
+static const RzCmdDescArg cmd_debug_bp_plugin_args[] = {
+	{
+		.name = "handler",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_bp_plugin_help = {
+	.summary = "List breakpoint plugin handlers / Set breakpoint plugin handler",
+	.args = cmd_debug_bp_plugin_args,
+};
+
+static const RzCmdDescArg cmd_debug_remove_bp_plugin_args[] = {
+	{
+		.name = "handler",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_remove_bp_plugin_help = {
+	.summary = "Remove breakpoint plugin handler",
+	.args = cmd_debug_remove_bp_plugin_args,
+};
+
+static const RzCmdDescHelp dbt_help = {
+	.summary = "Backtrace commands",
+};
+static const RzCmdDescArg cmd_debug_display_bt_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_display_bt_help = {
+	.summary = "Display backtrace based on dbg.btdepth and dbg.btalgo",
+	.args = cmd_debug_display_bt_args,
+};
+
+static const RzCmdDescArg cmd_debug_display_bt_oneline_args[] = {
+	{
+		.name = "s/b",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_display_bt_oneline_help = {
+	.summary = "Display backtrace in one line (see dbt= s and dbt= b for sp or bp)",
+	.args = cmd_debug_display_bt_oneline_args,
+};
+
+static const RzCmdDescArg cmd_debug_display_bt_local_vars_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_display_bt_local_vars_help = {
+	.summary = "Display backtrace with local vars if any",
+	.args = cmd_debug_display_bt_local_vars_args,
+};
+
+static const RzCmdDescArg cmd_debug_display_bt_ascii_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_display_bt_ascii_help = {
+	.summary = "Display ascii-art representation of the stack backtrace",
+	.args = cmd_debug_display_bt_ascii_args,
+};
+
+static const RzCmdDescArg cmd_debug_bt_enable_bp_trace_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_bt_enable_bp_trace_help = {
+	.summary = "Enable breakpoint trace at current offset",
+	.args = cmd_debug_bt_enable_bp_trace_args,
+};
+
+static const RzCmdDescArg cmd_debug_bt_disable_bp_trace_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_bt_disable_bp_trace_help = {
+	.summary = "Disable breakpoint trace at current offset",
+	.args = cmd_debug_bt_disable_bp_trace_args,
+};
+
+static const RzCmdDescArg cmd_debug_bt_toggle_bp_trace_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_bt_toggle_bp_trace_help = {
+	.summary = "Toggle breakpoint trace at current offset",
+	.args = cmd_debug_bt_toggle_bp_trace_args,
+};
+
+static const RzCmdDescArg cmd_debug_bp_set_expr_cur_offset_args[] = {
+	{
+		.name = "expr",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_bp_set_expr_cur_offset_help = {
+	.summary = "View expression for all the breakpoints / Set expression for breakpoint at current offset",
+	.args = cmd_debug_bp_set_expr_cur_offset_args,
+};
+
+static const RzCmdDescDetailEntry cmd_debug_add_watchpoint_Valid_space_permission_space_arguments_detail_entries[] = {
+	{ .text = "r", .arg_str = NULL, .comment = "read only" },
+	{ .text = "w", .arg_str = NULL, .comment = "write only" },
+	{ .text = "rw", .arg_str = NULL, .comment = "read-write" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_debug_add_watchpoint_details[] = {
+	{ .name = "Valid permission arguments", .entries = cmd_debug_add_watchpoint_Valid_space_permission_space_arguments_detail_entries },
+	{ 0 },
+};
+static const char *cmd_debug_add_watchpoint_perm_choices[] = { "r", "w", "rw", NULL };
+static const RzCmdDescArg cmd_debug_add_watchpoint_args[] = {
+	{
+		.name = "perm",
+		.type = RZ_CMD_ARG_TYPE_CHOICES,
+		.choices = cmd_debug_add_watchpoint_perm_choices,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_add_watchpoint_help = {
+	.summary = "Add watchpoint at current offset",
+	.details = cmd_debug_add_watchpoint_details,
+	.args = cmd_debug_add_watchpoint_args,
+};
+
+static const RzCmdDescArg cmd_debug_set_cond_bp_win_args[] = {
+	{
+		.name = "WM_DEFINE",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "handle/name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_set_cond_bp_win_help = {
+	.summary = "Set conditional breakpoint on a window message handler (only for Windows)",
+	.args = cmd_debug_set_cond_bp_win_args,
+};
+
 static const RzCmdDescHelp dc_help = {
 	.summary = "Continue execution",
 };
@@ -2814,6 +3403,9 @@ static const RzCmdDescHelp cmd_info_pdb_download_help = {
 	.args = cmd_info_pdb_download_args,
 };
 
+static const RzCmdDescHelp iD_help = {
+	.summary = "Demangle symbol for given language",
+};
 static const char *cmd_info_demangle_lang_choices[] = { "c++", "java", "objc", "swift", "dlang", "msvc", "rust", NULL };
 static const RzCmdDescArg cmd_info_demangle_args[] = {
 	{
@@ -2833,6 +3425,14 @@ static const RzCmdDescArg cmd_info_demangle_args[] = {
 static const RzCmdDescHelp cmd_info_demangle_help = {
 	.summary = "Demangle symbol for given language",
 	.args = cmd_info_demangle_args,
+};
+
+static const RzCmdDescArg cmd_info_demangle_list_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_demangle_list_help = {
+	.summary = "Lists the available demanglers",
+	.args = cmd_info_demangle_list_args,
 };
 
 static const RzCmdDescArg cmd_info_entry_args[] = {
@@ -3419,6 +4019,21 @@ static const RzCmdDescHelp cmd_print_timestamp_ntfs_help = {
 	.args = cmd_print_timestamp_ntfs_args,
 };
 
+static const RzCmdDescArg cmd_print_magic_args[] = {
+	{
+		.name = "file/directory",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_magic_help = {
+	.summary = "Print libmagic data",
+	.args = cmd_print_magic_args,
+};
+
 static const RzCmdDescHelp P_help = {
 	.summary = "Project management",
 };
@@ -3531,8 +4146,85 @@ static const RzCmdDescHelp quit_nokill_save_help = {
 	.args = quit_nokill_save_args,
 };
 
-static const RzCmdDescHelp cmd_resize_help = {
+static const RzCmdDescHelp r_help = {
 	.summary = "Resize file",
+};
+static const RzCmdDescArg resize_args[] = {
+	{
+		.name = "size",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp resize_help = {
+	.summary = "Resize file / Display file size",
+	.args = resize_args,
+};
+
+static const RzCmdDescArg resize_remove_args[] = {
+	{
+		.name = "num",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp resize_remove_help = {
+	.summary = "Remove num bytes, move following data down",
+	.args = resize_remove_args,
+};
+
+static const RzCmdDescArg resize_insert_args[] = {
+	{
+		.name = "num",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp resize_insert_help = {
+	.summary = "Insert num bytes, move following data up",
+	.args = resize_insert_args,
+};
+
+static const RzCmdDescArg rebase_args[] = {
+	{
+		.name = "oldbase",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp rebase_help = {
+	.summary = "Rebase all flags, binary information, breakpoints, and analysis",
+	.args = rebase_args,
+};
+
+static const RzCmdDescArg remove_file_args[] = {
+	{
+		.name = "file",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp remove_file_help = {
+	.summary = "Remove file",
+	.args = remove_file_args,
+};
+
+static const RzCmdDescArg resize_human_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp resize_human_help = {
+	.summary = "Display size in human-friendly format",
+	.args = resize_human_args,
 };
 
 static const RzCmdDescHelp s_help = {
@@ -5012,8 +5704,169 @@ static const RzCmdDescHelp cmd_hexdump_help = {
 	.summary = "Alias for 'px' (print hexadecimal)",
 };
 
-static const RzCmdDescHelp cmd_yank_help = {
+static const RzCmdDescHelp y_help = {
 	.summary = "Yank/paste bytes from/to memory",
+};
+static const RzCmdDescArg yank_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp yank_help = {
+	.summary = "Yank bytes / Show yank contents",
+	.args = yank_args,
+};
+
+static const RzCmdDescArg yank_editor_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp yank_editor_help = {
+	.summary = "Open cfg.editor to edit the clipboard",
+	.args = yank_editor_args,
+};
+
+static const RzCmdDescArg yank_file_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "file",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp yank_file_help = {
+	.summary = "Yank [len] bytes from file",
+	.args = yank_file_args,
+};
+
+static const RzCmdDescArg yank_whole_file_args[] = {
+	{
+		.name = "file",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp yank_whole_file_help = {
+	.summary = "Yank whole file into clipboard",
+	.args = yank_whole_file_args,
+};
+
+static const RzCmdDescArg yank_print_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp yank_print_help = {
+	.summary = "Print contents of clipboards as raw data",
+	.args = yank_print_args,
+};
+
+static const RzCmdDescArg yank_string_print_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp yank_string_print_help = {
+	.summary = "Print contents of clipboards as string",
+	.args = yank_string_print_args,
+};
+
+static const RzCmdDescArg yank_to_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "offset",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp yank_to_help = {
+	.summary = "Copy [len] bytes from current seek to [offset]",
+	.args = yank_to_args,
+};
+
+static const RzCmdDescArg yank_hexpairs_args[] = {
+	{
+		.name = "string",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp yank_hexpairs_help = {
+	.summary = "Yank from hexpairs string",
+	.args = yank_hexpairs_args,
+};
+
+static const RzCmdDescArg yank_hex_print_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp yank_hex_print_help = {
+	.summary = "Print contents of clipboard in hexadecimal",
+	.args = yank_hex_print_args,
+};
+
+static const RzCmdDescArg yank_paste_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp yank_paste_help = {
+	.summary = "Paste [len] bytes from yank clipboard",
+	.args = yank_paste_args,
+};
+
+static const RzCmdDescArg yank_string_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp yank_string_help = {
+	.summary = "Copy NULL-terminated string into clipboard",
+	.args = yank_string_args,
 };
 
 static const RzCmdDescHelp z_help = {
@@ -5944,8 +6797,19 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_xrefs_graph_cd = rz_cmd_desc_argv_state_new(core->rcmd, ax_cd, "axg", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_analysis_xrefs_graph_handler, &analysis_xrefs_graph_help);
 	rz_warn_if_fail(analysis_xrefs_graph_cd);
 
-	RzCmdDesc *cmd_bsize_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "b", rz_cmd_bsize, &cmd_bsize_help);
-	rz_warn_if_fail(cmd_bsize_cd);
+	RzCmdDesc *b_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "b", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_block_handler, &block_help, &b_help);
+	rz_warn_if_fail(b_cd);
+	RzCmdDesc *block_decrease_cd = rz_cmd_desc_argv_new(core->rcmd, b_cd, "b-", rz_block_decrease_handler, &block_decrease_help);
+	rz_warn_if_fail(block_decrease_cd);
+
+	RzCmdDesc *block_increase_cd = rz_cmd_desc_argv_new(core->rcmd, b_cd, "b+", rz_block_increase_handler, &block_increase_help);
+	rz_warn_if_fail(block_increase_cd);
+
+	RzCmdDesc *block_flag_cd = rz_cmd_desc_argv_new(core->rcmd, b_cd, "bf", rz_block_flag_handler, &block_flag_help);
+	rz_warn_if_fail(block_flag_cd);
+
+	RzCmdDesc *block_max_cd = rz_cmd_desc_argv_new(core->rcmd, b_cd, "bm", rz_block_max_handler, &block_max_help);
+	rz_warn_if_fail(block_max_cd);
 
 	RzCmdDesc *cmd_cmp_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "c", rz_cmd_cmp, &cmd_cmp_help);
 	rz_warn_if_fail(cmd_cmp_cd);
@@ -5955,6 +6819,114 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_debug_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "d", rz_cmd_debug, &cmd_debug_help);
 	rz_warn_if_fail(cmd_debug_cd);
+	RzCmdDesc *db_cd = rz_cmd_desc_group_new(core->rcmd, cmd_debug_cd, "db", rz_cmd_debug_add_bp_handler, &cmd_debug_add_bp_help, &db_help);
+	rz_warn_if_fail(db_cd);
+	RzCmdDesc *cmd_debug_list_bp_cd = rz_cmd_desc_argv_state_new(core->rcmd, db_cd, "dbl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_debug_list_bp_handler, &cmd_debug_list_bp_help);
+	rz_warn_if_fail(cmd_debug_list_bp_cd);
+
+	RzCmdDesc *cmd_debug_add_hw_bp_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "dbH", rz_cmd_debug_add_hw_bp_handler, &cmd_debug_add_hw_bp_help);
+	rz_warn_if_fail(cmd_debug_add_hw_bp_cd);
+
+	RzCmdDesc *cmd_debug_remove_bp_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "db-", rz_cmd_debug_remove_bp_handler, &cmd_debug_remove_bp_help);
+	rz_warn_if_fail(cmd_debug_remove_bp_cd);
+
+	RzCmdDesc *cmd_debug_remove_all_bp_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "db-*", rz_cmd_debug_remove_all_bp_handler, &cmd_debug_remove_all_bp_help);
+	rz_warn_if_fail(cmd_debug_remove_all_bp_cd);
+
+	RzCmdDesc *cmd_debug_show_cur_bp_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "db.", rz_cmd_debug_show_cur_bp_handler, &cmd_debug_show_cur_bp_help);
+	rz_warn_if_fail(cmd_debug_show_cur_bp_cd);
+
+	RzCmdDesc *cmd_debug_command_bp_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "dbc", rz_cmd_debug_command_bp_handler, &cmd_debug_command_bp_help);
+	rz_warn_if_fail(cmd_debug_command_bp_cd);
+
+	RzCmdDesc *cmd_debug_add_cond_bp_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "dbC", rz_cmd_debug_add_cond_bp_handler, &cmd_debug_add_cond_bp_help);
+	rz_warn_if_fail(cmd_debug_add_cond_bp_cd);
+
+	RzCmdDesc *cmd_debug_disable_bp_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "dbd", rz_cmd_debug_disable_bp_handler, &cmd_debug_disable_bp_help);
+	rz_warn_if_fail(cmd_debug_disable_bp_cd);
+
+	RzCmdDesc *cmd_debug_enable_bp_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "dbe", rz_cmd_debug_enable_bp_handler, &cmd_debug_enable_bp_help);
+	rz_warn_if_fail(cmd_debug_enable_bp_cd);
+
+	RzCmdDesc *cmd_debug_toggle_bp_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "dbs", rz_cmd_debug_toggle_bp_handler, &cmd_debug_toggle_bp_help);
+	rz_warn_if_fail(cmd_debug_toggle_bp_cd);
+
+	RzCmdDesc *cmd_debug_add_bp_noreturn_func_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "dbf", rz_cmd_debug_add_bp_noreturn_func_handler, &cmd_debug_add_bp_noreturn_func_help);
+	rz_warn_if_fail(cmd_debug_add_bp_noreturn_func_cd);
+
+	RzCmdDesc *cmd_debug_add_bp_module_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "dbm", rz_cmd_debug_add_bp_module_handler, &cmd_debug_add_bp_module_help);
+	rz_warn_if_fail(cmd_debug_add_bp_module_cd);
+
+	RzCmdDesc *cmd_debug_name_bp_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "dbn", rz_cmd_debug_name_bp_handler, &cmd_debug_name_bp_help);
+	rz_warn_if_fail(cmd_debug_name_bp_cd);
+
+	RzCmdDesc *dbi_cd = rz_cmd_desc_group_new(core->rcmd, db_cd, "dbi", rz_cmd_debug_show_bp_index_handler, &cmd_debug_show_bp_index_help, &dbi_help);
+	rz_warn_if_fail(dbi_cd);
+	RzCmdDesc *cmd_debug_list_bp_indexes_cd = rz_cmd_desc_argv_new(core->rcmd, dbi_cd, "dbil", rz_cmd_debug_list_bp_indexes_handler, &cmd_debug_list_bp_indexes_help);
+	rz_warn_if_fail(cmd_debug_list_bp_indexes_cd);
+
+	RzCmdDesc *cmd_debug_remove_bp_index_cd = rz_cmd_desc_argv_new(core->rcmd, dbi_cd, "dbi-", rz_cmd_debug_remove_bp_index_handler, &cmd_debug_remove_bp_index_help);
+	rz_warn_if_fail(cmd_debug_remove_bp_index_cd);
+
+	RzCmdDesc *cmd_debug_set_expr_bp_index_cd = rz_cmd_desc_argv_new(core->rcmd, dbi_cd, "dbix", rz_cmd_debug_set_expr_bp_index_handler, &cmd_debug_set_expr_bp_index_help);
+	rz_warn_if_fail(cmd_debug_set_expr_bp_index_cd);
+
+	RzCmdDesc *cmd_debug_run_command_bp_index_cd = rz_cmd_desc_argv_new(core->rcmd, dbi_cd, "dbic", rz_cmd_debug_run_command_bp_index_handler, &cmd_debug_run_command_bp_index_help);
+	rz_warn_if_fail(cmd_debug_run_command_bp_index_cd);
+
+	RzCmdDesc *cmd_debug_enable_bp_index_cd = rz_cmd_desc_argv_new(core->rcmd, dbi_cd, "dbie", rz_cmd_debug_enable_bp_index_handler, &cmd_debug_enable_bp_index_help);
+	rz_warn_if_fail(cmd_debug_enable_bp_index_cd);
+
+	RzCmdDesc *cmd_debug_disable_bp_index_cd = rz_cmd_desc_argv_new(core->rcmd, dbi_cd, "dbid", rz_cmd_debug_disable_bp_index_handler, &cmd_debug_disable_bp_index_help);
+	rz_warn_if_fail(cmd_debug_disable_bp_index_cd);
+
+	RzCmdDesc *cmd_debug_toggle_bp_index_cd = rz_cmd_desc_argv_new(core->rcmd, dbi_cd, "dbis", rz_cmd_debug_toggle_bp_index_handler, &cmd_debug_toggle_bp_index_help);
+	rz_warn_if_fail(cmd_debug_toggle_bp_index_cd);
+
+	RzCmdDesc *cmd_debug_enable_bp_trace_index_cd = rz_cmd_desc_argv_new(core->rcmd, dbi_cd, "dbite", rz_cmd_debug_enable_bp_trace_index_handler, &cmd_debug_enable_bp_trace_index_help);
+	rz_warn_if_fail(cmd_debug_enable_bp_trace_index_cd);
+
+	RzCmdDesc *cmd_debug_disable_bp_trace_index_cd = rz_cmd_desc_argv_new(core->rcmd, dbi_cd, "dbitd", rz_cmd_debug_disable_bp_trace_index_handler, &cmd_debug_disable_bp_trace_index_help);
+	rz_warn_if_fail(cmd_debug_disable_bp_trace_index_cd);
+
+	RzCmdDesc *cmd_debug_toggle_bp_trace_index_cd = rz_cmd_desc_argv_new(core->rcmd, dbi_cd, "dbits", rz_cmd_debug_toggle_bp_trace_index_handler, &cmd_debug_toggle_bp_trace_index_help);
+	rz_warn_if_fail(cmd_debug_toggle_bp_trace_index_cd);
+
+	RzCmdDesc *cmd_debug_bp_plugin_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "dbh", rz_cmd_debug_bp_plugin_handler, &cmd_debug_bp_plugin_help);
+	rz_warn_if_fail(cmd_debug_bp_plugin_cd);
+
+	RzCmdDesc *cmd_debug_remove_bp_plugin_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "dbh-", rz_cmd_debug_remove_bp_plugin_handler, &cmd_debug_remove_bp_plugin_help);
+	rz_warn_if_fail(cmd_debug_remove_bp_plugin_cd);
+
+	RzCmdDesc *dbt_cd = rz_cmd_desc_group_state_new(core->rcmd, db_cd, "dbt", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_QUIET, rz_cmd_debug_display_bt_handler, &cmd_debug_display_bt_help, &dbt_help);
+	rz_warn_if_fail(dbt_cd);
+	RzCmdDesc *cmd_debug_display_bt_oneline_cd = rz_cmd_desc_argv_new(core->rcmd, dbt_cd, "dbt=", rz_cmd_debug_display_bt_oneline_handler, &cmd_debug_display_bt_oneline_help);
+	rz_warn_if_fail(cmd_debug_display_bt_oneline_cd);
+
+	RzCmdDesc *cmd_debug_display_bt_local_vars_cd = rz_cmd_desc_argv_new(core->rcmd, dbt_cd, "dbtv", rz_cmd_debug_display_bt_local_vars_handler, &cmd_debug_display_bt_local_vars_help);
+	rz_warn_if_fail(cmd_debug_display_bt_local_vars_cd);
+
+	RzCmdDesc *cmd_debug_display_bt_ascii_cd = rz_cmd_desc_argv_new(core->rcmd, dbt_cd, "dbta", rz_cmd_debug_display_bt_ascii_handler, &cmd_debug_display_bt_ascii_help);
+	rz_warn_if_fail(cmd_debug_display_bt_ascii_cd);
+
+	RzCmdDesc *cmd_debug_bt_enable_bp_trace_cd = rz_cmd_desc_argv_new(core->rcmd, dbt_cd, "dbte", rz_cmd_debug_bt_enable_bp_trace_handler, &cmd_debug_bt_enable_bp_trace_help);
+	rz_warn_if_fail(cmd_debug_bt_enable_bp_trace_cd);
+
+	RzCmdDesc *cmd_debug_bt_disable_bp_trace_cd = rz_cmd_desc_argv_new(core->rcmd, dbt_cd, "dbtd", rz_cmd_debug_bt_disable_bp_trace_handler, &cmd_debug_bt_disable_bp_trace_help);
+	rz_warn_if_fail(cmd_debug_bt_disable_bp_trace_cd);
+
+	RzCmdDesc *cmd_debug_bt_toggle_bp_trace_cd = rz_cmd_desc_argv_new(core->rcmd, dbt_cd, "dbts", rz_cmd_debug_bt_toggle_bp_trace_handler, &cmd_debug_bt_toggle_bp_trace_help);
+	rz_warn_if_fail(cmd_debug_bt_toggle_bp_trace_cd);
+
+	RzCmdDesc *cmd_debug_bp_set_expr_cur_offset_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "dbx", rz_cmd_debug_bp_set_expr_cur_offset_handler, &cmd_debug_bp_set_expr_cur_offset_help);
+	rz_warn_if_fail(cmd_debug_bp_set_expr_cur_offset_cd);
+
+	RzCmdDesc *cmd_debug_add_watchpoint_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "dbw", rz_cmd_debug_add_watchpoint_handler, &cmd_debug_add_watchpoint_help);
+	rz_warn_if_fail(cmd_debug_add_watchpoint_cd);
+
+	RzCmdDesc *cmd_debug_set_cond_bp_win_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "dbW", rz_cmd_debug_set_cond_bp_win_handler, &cmd_debug_set_cond_bp_win_help);
+	rz_warn_if_fail(cmd_debug_set_cond_bp_win_cd);
+
 	RzCmdDesc *dc_cd = rz_cmd_desc_group_new(core->rcmd, cmd_debug_cd, "dc", rz_cmd_debug_continue_execution_handler, &cmd_debug_continue_execution_help, &dc_help);
 	rz_warn_if_fail(dc_cd);
 	RzCmdDesc *cmd_debug_continue_back_cd = rz_cmd_desc_argv_new(core->rcmd, dc_cd, "dcb", rz_cmd_debug_continue_back_handler, &cmd_debug_continue_back_help);
@@ -6191,8 +7163,11 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_info_pdb_download_cd = rz_cmd_desc_argv_state_new(core->rcmd, idp_cd, "idpd", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_info_pdb_download_handler, &cmd_info_pdb_download_help);
 	rz_warn_if_fail(cmd_info_pdb_download_cd);
 
-	RzCmdDesc *cmd_info_demangle_cd = rz_cmd_desc_argv_new(core->rcmd, i_cd, "iD", rz_cmd_info_demangle_handler, &cmd_info_demangle_help);
-	rz_warn_if_fail(cmd_info_demangle_cd);
+	RzCmdDesc *iD_cd = rz_cmd_desc_group_new(core->rcmd, i_cd, "iD", rz_cmd_info_demangle_handler, &cmd_info_demangle_help, &iD_help);
+	rz_warn_if_fail(iD_cd);
+	RzCmdDesc *cmd_info_demangle_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, iD_cd, "iDl", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_demangle_list_handler, &cmd_info_demangle_list_help);
+	rz_warn_if_fail(cmd_info_demangle_list_cd);
+	rz_cmd_desc_set_default_mode(cmd_info_demangle_list_cd, RZ_OUTPUT_MODE_TABLE);
 
 	RzCmdDesc *cmd_info_entry_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "ie", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_entry_handler, &cmd_info_entry_help);
 	rz_warn_if_fail(cmd_info_entry_cd);
@@ -6246,7 +7221,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(cmd_info_relocs_cd);
 	rz_cmd_desc_set_default_mode(cmd_info_relocs_cd, RZ_OUTPUT_MODE_TABLE);
 
-	RzCmdDesc *cmd_info_resources_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "iR", RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_STANDARD, rz_cmd_info_resources_handler, &cmd_info_resources_help);
+	RzCmdDesc *cmd_info_resources_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "iR", RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_STANDARD, rz_cmd_info_resources_handler, &cmd_info_resources_help);
 	rz_warn_if_fail(cmd_info_resources_cd);
 
 	RzCmdDesc *cmd_info_symbols_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "is", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_QUIETEST, rz_cmd_info_symbols_handler, &cmd_info_symbols_help);
@@ -6382,6 +7357,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_print_timestamp_ntfs_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_timestamp_cd, "ptn", rz_cmd_print_timestamp_ntfs_handler, &cmd_print_timestamp_ntfs_help);
 	rz_warn_if_fail(cmd_print_timestamp_ntfs_cd);
 
+	RzCmdDesc *cmd_print_magic_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cmd_print_cd, "pm", RZ_OUTPUT_MODE_JSON, rz_cmd_print_magic_handler, &cmd_print_magic_help);
+	rz_warn_if_fail(cmd_print_magic_cd);
+
 	RzCmdDesc *P_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "P", NULL, NULL, &P_help);
 	rz_warn_if_fail(P_cd);
 	RzCmdDesc *project_save_cd = rz_cmd_desc_argv_new(core->rcmd, P_cd, "Ps", rz_project_save_handler, &project_save_help);
@@ -6419,8 +7397,22 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *quit_nokill_save_cd = rz_cmd_desc_argv_new(core->rcmd, qn_cd, "qny", rz_quit_nokill_save_handler, &quit_nokill_save_help);
 	rz_warn_if_fail(quit_nokill_save_cd);
 
-	RzCmdDesc *cmd_resize_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "r", rz_cmd_resize, &cmd_resize_help);
-	rz_warn_if_fail(cmd_resize_cd);
+	RzCmdDesc *r_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "r", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_resize_handler, &resize_help, &r_help);
+	rz_warn_if_fail(r_cd);
+	RzCmdDesc *resize_remove_cd = rz_cmd_desc_argv_new(core->rcmd, r_cd, "r-", rz_resize_remove_handler, &resize_remove_help);
+	rz_warn_if_fail(resize_remove_cd);
+
+	RzCmdDesc *resize_insert_cd = rz_cmd_desc_argv_new(core->rcmd, r_cd, "r+", rz_resize_insert_handler, &resize_insert_help);
+	rz_warn_if_fail(resize_insert_cd);
+
+	RzCmdDesc *rebase_cd = rz_cmd_desc_argv_new(core->rcmd, r_cd, "rb", rz_rebase_handler, &rebase_help);
+	rz_warn_if_fail(rebase_cd);
+
+	RzCmdDesc *remove_file_cd = rz_cmd_desc_argv_new(core->rcmd, r_cd, "rm", rz_remove_file_handler, &remove_file_help);
+	rz_warn_if_fail(remove_file_cd);
+
+	RzCmdDesc *resize_human_cd = rz_cmd_desc_argv_new(core->rcmd, r_cd, "rh", rz_resize_human_handler, &resize_human_help);
+	rz_warn_if_fail(resize_human_cd);
 
 	RzCmdDesc *s_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "s", rz_seek_handler, &seek_help, &s_help);
 	rz_warn_if_fail(s_cd);
@@ -6742,8 +7734,37 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_hexdump_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "x", rz_cmd_hexdump, &cmd_hexdump_help);
 	rz_warn_if_fail(cmd_hexdump_cd);
 
-	RzCmdDesc *cmd_yank_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "y", rz_cmd_yank, &cmd_yank_help);
-	rz_warn_if_fail(cmd_yank_cd);
+	RzCmdDesc *y_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "y", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_yank_handler, &yank_help, &y_help);
+	rz_warn_if_fail(y_cd);
+	RzCmdDesc *yank_editor_cd = rz_cmd_desc_argv_new(core->rcmd, y_cd, "ye", rz_yank_editor_handler, &yank_editor_help);
+	rz_warn_if_fail(yank_editor_cd);
+
+	RzCmdDesc *yank_file_cd = rz_cmd_desc_argv_new(core->rcmd, y_cd, "yf", rz_yank_file_handler, &yank_file_help);
+	rz_warn_if_fail(yank_file_cd);
+
+	RzCmdDesc *yank_whole_file_cd = rz_cmd_desc_argv_new(core->rcmd, y_cd, "yfa", rz_yank_whole_file_handler, &yank_whole_file_help);
+	rz_warn_if_fail(yank_whole_file_cd);
+
+	RzCmdDesc *yank_print_cd = rz_cmd_desc_argv_new(core->rcmd, y_cd, "yp", rz_yank_print_handler, &yank_print_help);
+	rz_warn_if_fail(yank_print_cd);
+
+	RzCmdDesc *yank_string_print_cd = rz_cmd_desc_argv_new(core->rcmd, y_cd, "ys", rz_yank_string_print_handler, &yank_string_print_help);
+	rz_warn_if_fail(yank_string_print_cd);
+
+	RzCmdDesc *yank_to_cd = rz_cmd_desc_argv_new(core->rcmd, y_cd, "yt", rz_yank_to_handler, &yank_to_help);
+	rz_warn_if_fail(yank_to_cd);
+
+	RzCmdDesc *yank_hexpairs_cd = rz_cmd_desc_argv_new(core->rcmd, y_cd, "ywx", rz_yank_hexpairs_handler, &yank_hexpairs_help);
+	rz_warn_if_fail(yank_hexpairs_cd);
+
+	RzCmdDesc *yank_hex_print_cd = rz_cmd_desc_argv_new(core->rcmd, y_cd, "yx", rz_yank_hex_print_handler, &yank_hex_print_help);
+	rz_warn_if_fail(yank_hex_print_cd);
+
+	RzCmdDesc *yank_paste_cd = rz_cmd_desc_argv_new(core->rcmd, y_cd, "yy", rz_yank_paste_handler, &yank_paste_help);
+	rz_warn_if_fail(yank_paste_cd);
+
+	RzCmdDesc *yank_string_cd = rz_cmd_desc_argv_new(core->rcmd, y_cd, "yz", rz_yank_string_handler, &yank_string_help);
+	rz_warn_if_fail(yank_string_cd);
 
 	RzCmdDesc *z_cd = rz_cmd_desc_group_modes_new(core->rcmd, root_cd, "z", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_SDB, rz_zign_show_handler, &zign_show_help, &z_help);
 	rz_warn_if_fail(z_cd);

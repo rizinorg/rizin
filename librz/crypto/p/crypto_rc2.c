@@ -188,8 +188,8 @@ static void rc2_crypt(struct rc2_state *state, const ut8 *inbuf, ut8 *outbuf, in
 		}
 	}
 
-	if (idx % 8) {
-		while (idx % 8) {
+	if (idx % 8 && idx < BLOCK_SIZE) {
+		while (idx % 8 && idx < BLOCK_SIZE) {
 			data_block[idx++] = 0;
 		}
 		rc2_crypt8(state, (const ut8 *)data_block, (ut8 *)crypted_block);

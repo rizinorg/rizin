@@ -1,7 +1,8 @@
 // SPDX-FileCopyrightText: 2009-2021 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_core.h"
+#include <rz_core.h>
+#include <rz_demangler.h>
 #include "config.h"
 
 #define CB(x, y) \
@@ -14,7 +15,16 @@
 	} \
 	static int __lib_##x##_dt(RzLibPlugin *pl, void *p, void *u) { return true; }
 
-// XXX api consistency issues
+static int __lib_demangler_cb(RzLibPlugin *pl, void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	rz_demangler_plugin_add(core->bin->demangler, (RzDemanglerPlugin *)data);
+	return true;
+}
+
+static int __lib_demangler_dt(RzLibPlugin *pl, void *p, void *u) {
+	return true;
+}
+
 static int __lib_core_cb(RzLibPlugin *pl, void *user, void *data) {
 	struct rz_core_plugin_t *hand = (struct rz_core_plugin_t *)data;
 	RzCore *core = (RzCore *)user;
@@ -94,6 +104,7 @@ RZ_API void rz_core_loadlibs_init(RzCore *core) {
 	ut64 prev = rz_time_now_mono();
 #define DF(x, y, z) rz_lib_add_handler(core->lib, RZ_LIB_TYPE_##x, y, &__lib_##z##_cb, &__lib_##z##_dt, core);
 	core->lib = rz_lib_new(NULL, NULL);
+	DF(DEMANGLER, "demangler plugins", demangler);
 	DF(IO, "io plugins", io);
 	DF(CORE, "core plugins", core);
 	DF(DBG, "debugger plugins", debug);

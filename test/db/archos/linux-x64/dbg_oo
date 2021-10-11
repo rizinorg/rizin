@@ -73,8 +73,8 @@ NAME=breakpoints after double doo
 FILE=bins/elf/analysis/x86-helloworld-gcc
 ARGS=
 CMDS=<<EOF
-db main
-db main+3
+db @ main
+db @ main+3
 doo > $_
 dc # should hit the first breakpoint
 .dr*
