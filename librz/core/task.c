@@ -709,7 +709,7 @@ RZ_API RzCoreTask *rz_core_function_task_new(RzCore *core, RzCoreTaskFunction fc
 	}
 	RzCoreTask *task = rz_core_task_new(&core->tasks, function_task_runner, function_task_free, ctx);
 	if (!task) {
-		cmd_task_free(ctx);
+		function_task_free(ctx);
 		return NULL;
 	}
 	return task;
