@@ -548,7 +548,7 @@ RZ_API RzILBitVector *rz_il_bv_complement_2(RZ_NONNULL RzILBitVector *bv) {
 
 	// assert bv[i] == true now
 	i += 1;
-	for (i = i; i < bv->len; ++i) {
+	for (; i < bv->len; ++i) {
 		rz_il_bv_toggle(ret, i);
 	}
 
