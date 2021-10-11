@@ -81,6 +81,7 @@ typedef struct diff_context_t {
 	const char *file_a;
 	const char *file_b;
 	DiffScreen screen;
+	RzList *evars;
 } DiffContext;
 
 typedef struct diff_io_t {
@@ -176,6 +177,15 @@ typedef struct diff_hex_view_t {
 		} \
 	} while (0)
 
+#define rz_diff_ctx_add_evar(x, o) \
+	do { \
+		char *copy = rz_str_new(o); \
+		if (!copy || !rz_list_append((x)->evars, copy)) { \
+			free(copy); \
+			rz_diff_error_opt(x, DIFF_OPT_ERROR, "cannot add evar '%s' to list\n", o); \
+		} \
+	} while (0)
+
 #define rz_diff_ctx_set_dist(x, t) rz_diff_ctx_set_def(x, distance, DIFF_DISTANCE_UNKNOWN, t)
 #define rz_diff_ctx_set_type(x, t) rz_diff_ctx_set_def(x, type, DIFF_TYPE_UNKNOWN, t)
 #define rz_diff_ctx_set_mode(x, m) rz_diff_ctx_set_def(x, mode, DIFF_MODE_STANDARD, m)
@@ -197,6 +207,7 @@ static void rz_diff_show_help(bool usage_only) {
 		"  -j        json output\n"
 		"  -q        quite output\n"
 		"  -v        show version information\n"
+		"  -e [k=v]  set an evaluable config variable\n"
 		"  -A        compare virtual and physical addresses\n"
 		"  -C        disable colors\n"
 		"  -T        show timestamp information\n"
@@ -244,10 +255,16 @@ static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ct
 	const char *screen = NULL;
 	memset((void *)ctx, 0, sizeof(DiffContext));
 	ctx->colors = true;
+	ctx->evars = rz_list_newf(free);
+
+	if (!ctx->evars) {
+		rz_diff_error_opt(ctx, DIFF_OPT_ERROR, "cannot allocate list for evars");
+		return;
+	}
 
 	RzGetopt opt;
 	int c;
-	rz_getopt_init(&opt, argc, argv, "hHjqvACTa:b:d:t:0:1:S:");
+	rz_getopt_init(&opt, argc, argv, "hHjqvACTa:b:e:d:t:0:1:S:");
 	while ((c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case '0': rz_diff_ctx_set_def(ctx, input_a, NULL, opt.arg); break;
@@ -265,7 +282,7 @@ static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ct
 		case 'v': rz_diff_ctx_set_opt(ctx, DIFF_OPT_VERSION); break;
 		case 'S': rz_diff_set_def(screen, NULL, opt.arg); break;
 		case 'H': rz_diff_ctx_set_opt(ctx, DIFF_OPT_HEX_VISUAL); break;
-
+		case 'e': rz_diff_ctx_add_evar(ctx, opt.arg); break;
 		default:
 			rz_diff_error_opt(ctx, DIFF_OPT_ERROR, "unknown flag '%c'\n", c);
 		}
@@ -531,10 +548,12 @@ static inline RzBinFile *core_get_file(RzCoreFile *cfile) {
 	return rz_pvector_at(&cfile->binfiles, 0);
 }
 
-static RzCoreFile *rz_diff_load_file_with_core(const char *filename, const char *architecture, ut32 arch_bits, bool colors) {
+static RzCoreFile *rz_diff_load_file_with_core(const char *filename, const char *architecture, ut32 arch_bits, RzList *evars, bool colors) {
 	RzCore *core = NULL;
 	RzCoreFile *cfile = NULL;
 	RzBinFile *bfile = NULL;
+	RzListIter *it;
+	char *config;
 
 	core = rz_core_new();
 	if (!core) {
@@ -579,6 +598,10 @@ static RzCoreFile *rz_diff_load_file_with_core(const char *filename, const char 
 
 	if (arch_bits) {
 		rz_config_set_i(core->config, "asm.bits", arch_bits);
+	}
+
+	rz_list_foreach (evars, it, config) {
+		rz_config_eval(core->config, config);
 	}
 
 	if (!rz_core_analysis_everything(core, false, NULL)) {
@@ -1236,7 +1259,7 @@ static RzDiff *rz_diff_fields_new(DiffFile *dfile_a, DiffFile *dfile_b, bool com
 /**************************************** commands ***************************************/
 
 static char *execute_command(const char *command, const char *filename, DiffContext *ctx) {
-	RzCoreFile *cfile = rz_diff_load_file_with_core(filename, ctx->architecture, ctx->arch_bits, ctx->colors);
+	RzCoreFile *cfile = rz_diff_load_file_with_core(filename, ctx->architecture, ctx->arch_bits, ctx->evars, ctx->colors);
 	if (!cfile) {
 		return NULL;
 	}
@@ -1390,12 +1413,12 @@ static bool rz_diff_graphs_files(DiffContext *ctx) {
 	RzCoreFile *a = NULL;
 	RzCoreFile *b = NULL;
 
-	a = rz_diff_load_file_with_core(ctx->file_a, ctx->architecture, ctx->arch_bits, ctx->colors);
+	a = rz_diff_load_file_with_core(ctx->file_a, ctx->architecture, ctx->arch_bits, ctx->evars, ctx->colors);
 	if (!a) {
 		goto rz_diff_graphs_files_bad;
 	}
 
-	b = rz_diff_load_file_with_core(ctx->file_b, ctx->architecture, ctx->arch_bits, ctx->colors);
+	b = rz_diff_load_file_with_core(ctx->file_b, ctx->architecture, ctx->arch_bits, ctx->evars, ctx->colors);
 	if (!b) {
 		goto rz_diff_graphs_files_bad;
 	}
@@ -2292,5 +2315,6 @@ RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 		break;
 	}
 
+	rz_list_free(ctx.evars);
 	return success ? 0 : 1;
 }
