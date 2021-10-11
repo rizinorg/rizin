@@ -3,8 +3,13 @@
 
 #ifndef RZ_IL_BOOL_H
 #define RZ_IL_BOOL_H
+
 #include <rz_types.h>
 #include <rz_util.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct bool_t {
 	bool b;
@@ -17,5 +22,9 @@ RZ_API RzILBool *rz_il_bool_or(RzILBool *a, RzILBool *b);
 RZ_API RzILBool *rz_il_bool_xor(RzILBool *a, RzILBool *b);
 RZ_API RzILBool *rz_il_bool_not(RzILBool *a);
 RZ_API void rz_il_free_bool(RzILBool *bool_var);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // RZ_IL_BOOL_H

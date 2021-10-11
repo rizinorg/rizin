@@ -6,6 +6,10 @@
 
 #include <rz_il/definitions/definitions.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct RzILOp_t RzILOp;
 /**
  * \file rzil_opcodes.h
@@ -443,5 +447,9 @@ struct RzILOp_t {
 // Opcode
 RZ_API RzILOp *rz_il_new_op(RzILOPCode code);
 RZ_API void rz_il_free_op(RzILOp *op);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // RZIL_OPCODES_H

@@ -7,6 +7,10 @@
 #include <rz_il/definitions/definitions.h>
 #include <rz_il/rzil_opcodes.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define RZ_IL_VM_MAX_VAR  2048
 #define RZ_IL_VM_MAX_VAL  1024
 #define RZ_IL_VM_MAX_LAB  1024
@@ -125,5 +129,9 @@ void *rz_il_handler_branch(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 
 void *rz_il_handler_load(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_store(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // RZIL_VM_H

@@ -6,6 +6,10 @@
 
 #include <rz_il/definitions/variable.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef union {
 	RzILBitVector *bv;
 	RzILBool *b;
@@ -33,5 +37,9 @@ typedef enum {
 RZ_API RzILVal *rz_il_new_value(void);
 RZ_API RzILVal *rz_il_dup_value(RzILVal *val);
 RZ_API void rz_il_free_value(RzILVal *val);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // RZ_IL_VALUE_H

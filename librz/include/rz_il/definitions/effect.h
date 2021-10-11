@@ -10,6 +10,10 @@
 #include <rz_type.h>
 #include <rz_il/definitions/value.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
 	EFFECT_TYPE_NON, // perform none effect will not affect data / control, used for passing info
 	EFFECT_TYPE_DATA,
@@ -84,5 +88,9 @@ RZ_API void rz_il_effect_free(RzILEffect *effect);
 RZ_API void rz_il_effect_free_ctrl(RzILCtrlEffect *eff);
 RZ_API void rz_il_effect_free_data(RzILDataEffect *eff);
 RZ_API char *rz_il_effect_as_string(RzILEffect *effect);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // RZ_IL_EFFECT_H

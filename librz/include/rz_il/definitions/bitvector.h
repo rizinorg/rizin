@@ -9,6 +9,10 @@
 #include <rz_util.h>
 #include <rz_types.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define NELEM(N, ELEMPER) ((N + (ELEMPER)-1) / (ELEMPER))
 #define BV_ELEM_SIZE      8U
 
@@ -91,5 +95,9 @@ RZ_API char *rz_il_bv_as_string(RzILBitVector *bv);
 RZ_API ut32 rz_il_bv_len(RzILBitVector *bv);
 RZ_API int rz_il_bv_cmp(RzILBitVector *x, RzILBitVector *y);
 ut32 rz_il_bv_hash(RzILBitVector *x);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // RZ_IL_BITVECTOR_H
