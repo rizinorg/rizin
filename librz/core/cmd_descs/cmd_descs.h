@@ -163,10 +163,6 @@ RZ_IPI RzCmdStatus rz_meta_magic_handler(RzCore *core, int argc, const char **ar
 RZ_IPI RzCmdStatus rz_meta_magic_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_meta_magic_remove_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_meta_magic_remove_all_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI RzCmdStatus rz_meta_run_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI RzCmdStatus rz_meta_run_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
-RZ_IPI RzCmdStatus rz_meta_run_remove_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI RzCmdStatus rz_meta_run_remove_all_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_meta_string_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_meta_string_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_meta_string_at_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);

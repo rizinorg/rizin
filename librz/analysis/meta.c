@@ -242,7 +242,6 @@ RZ_API const char *rz_meta_type_to_string(int type) {
 	case RZ_META_TYPE_MAGIC: return "Cm";
 	case RZ_META_TYPE_HIDE: return "Ch";
 	case RZ_META_TYPE_COMMENT: return "CCu";
-	case RZ_META_TYPE_RUN: return "Cr";
 	case RZ_META_TYPE_HIGHLIGHT: return "ecHi"; // not in C?
 	case RZ_META_TYPE_VARTYPE: return "Ct";
 	}

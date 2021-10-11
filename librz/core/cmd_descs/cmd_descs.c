@@ -123,7 +123,6 @@ static const RzCmdDescArg meta_data_args[3];
 static const RzCmdDescArg meta_data_remove_args[3];
 static const RzCmdDescArg meta_hidden_args[2];
 static const RzCmdDescArg meta_magic_args[3];
-static const RzCmdDescArg meta_run_args[2];
 static const RzCmdDescArg meta_string_args[2];
 static const RzCmdDescArg meta_string_utf8_args[2];
 static const RzCmdDescArg meta_string_ascii_args[2];
@@ -2384,47 +2383,6 @@ static const RzCmdDescArg meta_magic_remove_all_args[] = {
 static const RzCmdDescHelp meta_magic_remove_all_help = {
 	.summary = "Remove all magic marks",
 	.args = meta_magic_remove_all_args,
-};
-
-static const RzCmdDescHelp Cr_help = {
-	.summary = "Manage the \"run\" mark metainformation",
-};
-static const RzCmdDescArg meta_run_args[] = {
-	{
-		.name = "command",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp meta_run_help = {
-	.summary = "Set the \"run command\" to the current address",
-	.args = meta_run_args,
-};
-
-static const RzCmdDescArg meta_run_list_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp meta_run_list_help = {
-	.summary = "List all magic marks",
-	.args = meta_run_list_args,
-};
-
-static const RzCmdDescArg meta_run_remove_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp meta_run_remove_help = {
-	.summary = "Remove the \"run\" mark from the current address",
-	.args = meta_run_remove_args,
-};
-
-static const RzCmdDescArg meta_run_remove_all_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp meta_run_remove_all_help = {
-	.summary = "Remove all \"run\" marks",
-	.args = meta_run_remove_all_args,
 };
 
 static const RzCmdDescHelp Cs_help = {
@@ -7649,17 +7607,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *meta_magic_remove_all_cd = rz_cmd_desc_argv_new(core->rcmd, Cm_cd, "Cm-*", rz_meta_magic_remove_all_handler, &meta_magic_remove_all_help);
 	rz_warn_if_fail(meta_magic_remove_all_cd);
-
-	RzCmdDesc *Cr_cd = rz_cmd_desc_group_new(core->rcmd, C_cd, "Cr", rz_meta_run_handler, &meta_run_help, &Cr_help);
-	rz_warn_if_fail(Cr_cd);
-	RzCmdDesc *meta_run_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, Cr_cd, "Crl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_meta_run_list_handler, &meta_run_list_help);
-	rz_warn_if_fail(meta_run_list_cd);
-
-	RzCmdDesc *meta_run_remove_cd = rz_cmd_desc_argv_new(core->rcmd, Cr_cd, "Cr-", rz_meta_run_remove_handler, &meta_run_remove_help);
-	rz_warn_if_fail(meta_run_remove_cd);
-
-	RzCmdDesc *meta_run_remove_all_cd = rz_cmd_desc_argv_new(core->rcmd, Cr_cd, "Cr-*", rz_meta_run_remove_all_handler, &meta_run_remove_all_help);
-	rz_warn_if_fail(meta_run_remove_all_cd);
 
 	RzCmdDesc *Cs_cd = rz_cmd_desc_group_new(core->rcmd, C_cd, "Cs", rz_meta_string_handler, &meta_string_help, &Cs_help);
 	rz_warn_if_fail(Cs_cd);

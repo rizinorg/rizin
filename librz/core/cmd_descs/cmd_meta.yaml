@@ -266,32 +266,6 @@ commands:
         cname: meta_magic_remove_all
         summary: Remove all magic marks
         args: []
-  - name: Cr
-    summary: Manage the "run" mark metainformation
-    subcommands:
-      - name: Cr
-        cname: meta_run
-        summary: Set the "run command" to the current address
-        args:
-          - name: command
-            type: RZ_CMD_ARG_TYPE_STRING
-      - name: Crl
-        cname: meta_run_list
-        summary: List all magic marks
-        type: RZ_CMD_DESC_TYPE_ARGV_STATE
-        modes:
-          - RZ_OUTPUT_MODE_STANDARD
-          - RZ_OUTPUT_MODE_RIZIN
-          - RZ_OUTPUT_MODE_JSON
-        args: []
-      - name: Cr-
-        cname: meta_run_remove
-        summary: Remove the "run" mark from the current address
-        args: []
-      - name: Cr-*
-        cname: meta_run_remove_all
-        summary: Remove all "run" marks
-        args: []
   - name: Cs
     summary: Manipulate string metainformation
     subcommands:

@@ -297,7 +297,6 @@ typedef enum {
 	RZ_META_TYPE_MAGIC = 'm', //< sets the magic string to the data
 	RZ_META_TYPE_HIDE = 'h', //< set the data as hidden
 	RZ_META_TYPE_COMMENT = 'C', //< attaches the comment to the data
-	RZ_META_TYPE_RUN = 'r', //< runs specified command on accessing the data
 	RZ_META_TYPE_HIGHLIGHT = 'H', //< sets the specified highlight to the data
 	RZ_META_TYPE_VARTYPE = 't', //< sets the specified type to the variable/address
 } RzAnalysisMetaType;

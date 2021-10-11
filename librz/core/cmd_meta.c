@@ -667,28 +667,27 @@ RZ_IPI RzCmdStatus rz_meta_hidden_remove_all_handler(RzCore *core, int argc, con
 	return RZ_CMD_STATUS_OK;
 }
 
-// These commands follow the same pattern
-#define RZ_META_COMMAND_DESCRIPTOR(name, type) \
-	RZ_IPI RzCmdStatus rz_meta_##name##_handler(RzCore *core, int argc, const char **argv) { \
-		meta_set_flag(core, type, core->offset, 1, argv[1]); \
-		return RZ_CMD_STATUS_OK; \
-	} \
-	RZ_IPI RzCmdStatus rz_meta_##name##_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) { \
-		rz_core_meta_print_list_all(core, type, state); \
-		return RZ_CMD_STATUS_OK; \
-	} \
-	RZ_IPI RzCmdStatus rz_meta_##name##_remove_handler(RzCore *core, int argc, const char **argv) { \
-		meta_remove(core, type, core->offset); \
-		return RZ_CMD_STATUS_OK; \
-	} \
-	RZ_IPI RzCmdStatus rz_meta_##name##_remove_all_handler(RzCore *core, int argc, const char **argv) { \
-		meta_remove_all(core, type); \
-		return RZ_CMD_STATUS_OK; \
-	} \
-	RZ_IPI RzCmdStatus rz_meta_##name##_editor_handler(RzCore *core, int argc, const char **argv) { \
-		meta_editor(core, type, core->offset); \
-		return RZ_CMD_STATUS_OK; \
-	}
+RZ_IPI RzCmdStatus rz_meta_type_handler(RzCore *core, int argc, const char **argv) {
+	meta_set_flag(core, RZ_META_TYPE_VARTYPE, core->offset, 1, argv[1]);
+	return RZ_CMD_STATUS_OK;
+}
 
-RZ_META_COMMAND_DESCRIPTOR(type, RZ_META_TYPE_VARTYPE);
-RZ_META_COMMAND_DESCRIPTOR(run, RZ_META_TYPE_RUN);
+RZ_IPI RzCmdStatus rz_meta_type_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	rz_core_meta_print_list_all(core, RZ_META_TYPE_VARTYPE, state);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_meta_type_remove_handler(RzCore *core, int argc, const char **argv) {
+	meta_remove(core, RZ_META_TYPE_VARTYPE, core->offset);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_meta_type_remove_all_handler(RzCore *core, int argc, const char **argv) {
+	meta_remove_all(core, RZ_META_TYPE_VARTYPE);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_meta_type_editor_handler(RzCore *core, int argc, const char **argv) {
+	meta_editor(core, RZ_META_TYPE_VARTYPE, core->offset);
+	return RZ_CMD_STATUS_OK;
+}

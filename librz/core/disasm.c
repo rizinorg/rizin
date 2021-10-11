@@ -2495,7 +2495,6 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 			case RZ_META_TYPE_FORMAT:
 			case RZ_META_TYPE_MAGIC:
 			case RZ_META_TYPE_HIDE:
-			case RZ_META_TYPE_RUN:
 				meta = mi;
 				meta_size = rz_meta_item_size(node->start, node->end);
 				break;
@@ -2544,9 +2543,6 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 			case RZ_META_TYPE_MAGIC:
 				rz_cons_printf(".magic : %s\n", meta->str);
 				i += meta_size;
-				break;
-			case RZ_META_TYPE_RUN:
-				rz_core_cmd0(core, meta->str);
 				break;
 			default:
 				break;
@@ -2905,7 +2901,6 @@ static bool requires_op_size(RDisasmState *ds) {
 		case RZ_META_TYPE_FORMAT:
 		case RZ_META_TYPE_MAGIC:
 		case RZ_META_TYPE_HIDE:
-		case RZ_META_TYPE_RUN:
 			res = false;
 			break;
 		default:
@@ -3129,12 +3124,6 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8 *buf, int len, int idx, in
 			}
 		case RZ_META_TYPE_HIDE:
 			rz_cons_printf("(%" PFMT64d " bytes hidden)", mi_size);
-			ds->asmop.size = mi_size;
-			ds->oplen = mi_size;
-			ret = true;
-			break;
-		case RZ_META_TYPE_RUN:
-			rz_core_cmdf(core, "%s @ 0x%" PFMT64x, mi->str, ds->at);
 			ds->asmop.size = mi_size;
 			ds->oplen = mi_size;
 			ret = true;
@@ -6455,9 +6444,6 @@ toro:
 				//rz_cons_printf (".magic : %s\n", meta->str);
 				i += meta_size;
 				continue;
-			case RZ_META_TYPE_RUN:
-				/* TODO */
-				break;
 			default:
 				break;
 			}
