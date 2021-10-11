@@ -3,7 +3,7 @@
 
 #ifndef RZ_IL_MEM_H
 #define RZ_IL_MEM_H
-#include "bitvector.h"
+#include <rz_il/definitions/bitvector.h>
 
 struct rzil_mem_t {
 	HtPP *kv_map;

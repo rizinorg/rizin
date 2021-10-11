@@ -448,19 +448,22 @@ rz_util_files = [
 ]
 install_headers(rz_util_files, install_dir: join_paths(rizin_incdir, 'rz_util'))
 
-rz_il_files = [
+rz_il_definitions_files = [
+  'include/rz_il/definitions/bag.h',
   'include/rz_il/definitions/bitvector.h',
   'include/rz_il/definitions/bool.h',
+  'include/rz_il/definitions/definitions.h',
   'include/rz_il/definitions/effect.h',
   'include/rz_il/definitions/mem.h',
-  'include/rz_il/definitions/variable.h',
   'include/rz_il/definitions/value.h',
-  'include/rz_il/definitions/bag.h',
-  'include/rz_il/definitions/definitions.h',
+  'include/rz_il/definitions/variable.h',
+]
+install_headers(rz_il_definitions_files, install_dir: join_paths(rizin_incdir, 'rz_il', 'definitions'))
 
-  'include/rz_il/rzil_vm.h',
+rz_il_files = [
   'include/rz_il/rzil_opcodes.h',
-  'include/rz_il/vm_layer.h'
+  'include/rz_il/rzil_vm.h',
+  'include/rz_il/vm_layer.h',
 ]
 install_headers(rz_il_files, install_dir: join_paths(rizin_incdir, 'rz_il'))
 

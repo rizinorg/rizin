@@ -4,7 +4,7 @@
 #ifndef RZ_IL_VALUE_H
 #define RZ_IL_VALUE_H
 
-#include "variable.h"
+#include <rz_il/definitions/variable.h>
 
 typedef union {
 	RzILBitVector *bv;

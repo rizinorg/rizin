@@ -4,7 +4,7 @@
 #ifndef RZIL_OPCODES_H
 #define RZIL_OPCODES_H
 
-#include "definitions/definitions.h"
+#include <rz_il/definitions/definitions.h>
 
 typedef struct RzILOp_t RzILOp;
 /**

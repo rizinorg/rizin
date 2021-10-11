@@ -4,8 +4,8 @@
 #ifndef RZ_IL_VARIABLE_H
 #define RZ_IL_VARIABLE_H
 
-#include "bitvector.h"
-#include "bool.h"
+#include <rz_il/definitions/bitvector.h>
+#include <rz_il/definitions/bool.h>
 
 typedef enum {
 	RZIL_VAR_TYPE_BV,

@@ -3,7 +3,7 @@
 
 #ifndef RZ_IL_VM_LAYER_H
 #define RZ_IL_VM_LAYER_H
-#include "rzil_vm.h"
+#include <rz_il/rzil_vm.h>
 
 // VM high level operations
 RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, int addr_size, int data_size);

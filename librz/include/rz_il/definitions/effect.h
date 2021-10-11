@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <rz_util.h>
 #include <rz_type.h>
-#include "value.h"
+#include <rz_il/definitions/value.h>
 
 typedef enum {
 	EFFECT_TYPE_NON, // perform none effect will not affect data / control, used for passing info

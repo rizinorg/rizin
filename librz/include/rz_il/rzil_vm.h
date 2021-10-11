@@ -4,8 +4,8 @@
 #ifndef RZIL_VM_H
 #define RZIL_VM_H
 
-#include "definitions/definitions.h"
-#include "rzil_opcodes.h"
+#include <rz_il/definitions/definitions.h>
+#include <rz_il/rzil_opcodes.h>
 
 #define RZ_IL_VM_MAX_VAR  2048
 #define RZ_IL_VM_MAX_VAL  1024
