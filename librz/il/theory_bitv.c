@@ -36,7 +36,7 @@ void *rz_il_handler_neg(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 }
 
 void *rz_il_handler_not(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
-	RzILOpNot *op_not = op->op.not ;
+	RzILOpNot *op_not = op->op.not_;
 
 	RzILBitVector *bv = rz_il_evaluate_bitv(vm, op_not->bv, type);
 	RzILBitVector *result = rz_il_bv_not(bv);
