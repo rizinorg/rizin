@@ -379,7 +379,7 @@ jobs:
       run: git clone https://github.com/rizinorg/rizin-testbins test/bins
       working-directory: rizin
     - name: Build with Meson + Ninja
-      run: CC=gcc-11 meson --prefix=/usr -Dbuildtype=release build && ninja -C build
+      run: CC=gcc-11 meson --prefix=/usr -Dbuildtype=release --werror build && ninja -C build
       working-directory: rizin
     - name: Install with Ninja
       run: ninja -C build install
