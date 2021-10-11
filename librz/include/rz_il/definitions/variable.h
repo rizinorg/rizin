@@ -4,8 +4,12 @@
 #ifndef RZ_IL_VARIABLE_H
 #define RZ_IL_VARIABLE_H
 
-#include "bitvector.h"
-#include "bool.h"
+#include <rz_il/definitions/bitvector.h>
+#include <rz_il/definitions/bool.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef enum {
 	RZIL_VAR_TYPE_BV,
@@ -25,5 +29,9 @@ typedef struct rz_il_var_t RzILVar;
 
 RZ_API RzILVar *rz_il_new_variable(const char *name);
 RZ_API void rz_il_free_variable(RzILVar *var);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // RZ_IL_VARIABLE_H

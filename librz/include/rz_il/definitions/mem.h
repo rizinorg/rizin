@@ -3,7 +3,11 @@
 
 #ifndef RZ_IL_MEM_H
 #define RZ_IL_MEM_H
-#include "bitvector.h"
+#include <rz_il/definitions/bitvector.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct rzil_mem_t {
 	HtPP *kv_map;
@@ -15,5 +19,9 @@ RZ_API RzILMem *rz_il_new_mem(ut32 min_unit_size);
 RZ_API void rz_il_free_mem(RzILMem *mem);
 RZ_API RzILMem *rz_il_mem_store(RzILMem *mem, RzILBitVector *key, RzILBitVector *value);
 RZ_API RzILBitVector *rz_il_mem_load(RzILMem *mem, RzILBitVector *key);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // RZ_IL_MEM_H

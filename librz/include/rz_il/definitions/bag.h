@@ -6,6 +6,10 @@
 
 #include <rz_util.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef void (*RzILBagFreeFunc)(void *);
 /**
  *  \struct rz_il_bag_t
@@ -29,5 +33,9 @@ RZ_API RzILBag *rz_il_new_bag(int capcity, RzILBagFreeFunc func);
 RZ_API bool rz_il_rm_from_bag(RzILBag *bag, void *item);
 RZ_API bool rz_il_add_to_bag(RzILBag *bag, void *item);
 RZ_API void rz_il_free_bag(RzILBag *bag);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // RZ_IL_BAG_H

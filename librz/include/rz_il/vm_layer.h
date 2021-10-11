@@ -3,7 +3,11 @@
 
 #ifndef RZ_IL_VM_LAYER_H
 #define RZ_IL_VM_LAYER_H
-#include "rzil_vm.h"
+#include <rz_il/rzil_vm.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 // VM high level operations
 RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, int addr_size, int data_size);
@@ -21,5 +25,9 @@ RZ_API RzILBitVector *rz_il_ut64_addr_to_bv(ut64 addr);
 RZ_API ut64 rz_il_bv_addr_to_ut64(RzILBitVector *addr);
 RZ_API void rz_il_free_bv_addr(RzILBitVector *addr);
 RZ_API char *rz_il_op2str(RzILOPCode opcode);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // RZ_IL_VM_LAYER_H
