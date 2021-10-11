@@ -1,0 +1,512 @@
+#!/usr/bin/perl -w
+
+################################################################
+#
+# Copyright (c) 1995-2014 SUSE Linux Products GmbH
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 2 or 3 as
+# published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program (see the file COPYING); if not, write to the
+# Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
+#
+################################################################
+
+use strict;
+use Digest::MD5;
+use Digest::SHA;
+use POSIX qw(strftime);
+
+sub usage
+{
+  die("usage: debtransform [--debug] [--changelog <changelog>] [--release <release number>] <srcdir> <dscfile> <outdir>\n");
+}
+
+sub parsedsc {
+  my ($fn) = @_;
+  my @control;
+  local *F;
+  open(F, '<', $fn) || die("Error in reading $fn: $!\n");
+  @control = <F>;
+  close F;
+  chomp @control;
+  splice(@control, 0, 3) if @control > 3 && $control[0] =~ /^-----BEGIN/;
+  my @seq = ();
+  my %tag;
+  while (@control) {
+    my $c = shift @control;
+    last if $c eq '';   # new paragraph
+    my ($tag, $data) = split(':', $c, 2);
+    next unless defined $data;
+    push @seq, $tag;
+    $tag = uc($tag);
+    while (@control && $control[0] =~ /^\s/) {
+      $data .= "\n".substr(shift @control, 1);
+    }
+    $data =~ s/^\s+//s;
+    $data =~ s/\s+$//s;
+    $tag{$tag} = $data;
+  }
+  $tag{'__seq'} = \@seq;
+  return \%tag;
+}
+
+sub writedsc {
+  my ($fn, $tags) = @_;
+  print "Writing $fn\n";
+  open(F, '>', $fn) || die("open $fn: $!\n");
+  my @seq = @{$tags->{'__seq'} || []};
+  my %seq = map {uc($_) => 1} @seq;
+  for (sort keys %$tags) {
+    if (! $seq{$_}) {
+      # ucfirst will change checksums-sha1 to Checksums-sha1 but the canonical
+      # form is Checksums-Sha1, hence the need for the second transformation
+      my $camel_tag = ucfirst(lc($_));
+      $camel_tag =~ s/-\K(\w)/\U$1/g;
+      push @seq, $camel_tag;
+    }
+  }
+  for my $seq (@seq) {
+    my $ucseq = uc($seq);
+    my $d = $tags->{$ucseq};
+    next unless defined $d;
+    $d =~ s/\n/\n /sg;
+    if ($d =~ /^\n/) {
+      print F "$seq:$d\n";
+    } else {
+      print F "$seq: $d\n";
+    }
+  }
+  print F "\n";
+  close F;
+}
+
+sub listtar {
+  my ($tar, $skipdebiandir) = @_;
+  print "Scanning $tar...\n";
+  local *F;
+  my @c;
+  unless(defined($skipdebiandir)) {
+    $skipdebiandir = 1;
+  }
+  open(F, '-|', 'tar', '--numeric-owner', '-tvf', $tar) ||
+    die("Execution of tar subprocess failed: $!\n");
+  while(<F>) {
+    next unless /^([-dlbcp])(.........)\s+\d+\/\d+\s+(\S+) \d\d\d\d-\d\d-\d\d \d\d:\d\d(?::\d\d)? (.*)$/;
+    my ($type, $mode, $size, $name) = ($1, $2, $3, $4);
+    next if $type eq 'd';
+    if ($type eq 'l') {
+      next if $skipdebiandir eq 0;
+      die("Archive contains a link: $name\n");
+    }
+    if ($type ne '-') {
+      next if $skipdebiandir eq 0;
+      die("Archive contains an unexpected type for file \"$name\"\n");
+    }
+    $name =~ s/^\.\///;
+    $name =~ s/^debian\/// if $skipdebiandir eq 1;
+    push @c, {'name' => $name, 'size' => $size};
+  }
+  close(F) || die("tar exited with non-zero status: $!\n");
+  return @c;
+}
+
+sub extracttar {
+  my ($tar, $filename, $s) = @_;
+  local *F;
+  print "Extracting $tar...\n";
+  open(F, '-|', 'tar', '-xOf', $tar, $filename) ||
+    die("Execution of tar subprocess failed: $!\n");
+  my $file = '';
+  while ($s > 0) {
+    my $l = sysread(F, $file, $s, length($file));
+    die("Error while reading from tar subprocess: $!\n") unless $l;
+    $s -= $l;
+  }
+  my @file = split("\n", $file);
+  close(F) || warn("tar exited with non-zero status: $!\n");
+  return @file;
+}
+
+sub dodiff {
+  my ($oldname, $newname, $origtarfile, @content) = @_;
+  my @oldcontent;
+  for my $c (@{$origtarfile->{'content'}}) {
+      if ($c->{'name'} eq $newname) {
+          @oldcontent = extracttar($origtarfile->{'name'}, $c->{'name'}, $c->{'size'});
+      }
+  }
+  if ($newname eq $origtarfile->{'tardir'}."/debian/changelog") {
+    my $firstline = $content[0];
+    my $version = $firstline;
+    $version =~ s/.*\((.*)\).*/$1/g;
+    if ($version ne $origtarfile->{'version'}) {
+      $firstline =~ s/\(.*\)/($origtarfile->{'version'})/g;
+      my $date = `date -R`;
+      if (defined($ENV{SOURCE_DATE_EPOCH})) {
+        $date = strftime("%a, %d %b %Y %T +0000", gmtime($ENV{SOURCE_DATE_EPOCH}));
+      }
+      chomp($date);
+      my @newcontent = ($firstline, "", "  * version number update by debtransform", "", " -- debtransform <build\@opensuse.org>  ".$date, "");
+      push(@newcontent, @content);
+      @content = @newcontent;
+    }
+  }
+  return unless @content;
+  print DIFF "--- $oldname\n";
+  print DIFF "+++ $newname\n";
+  if (@oldcontent) {
+    print DIFF "\@\@ -1,".scalar(@oldcontent)." +1,".scalar(@content)." \@\@\n";
+    print DIFF "-$_\n" for @oldcontent;
+  } else {
+    print DIFF "\@\@ -0,0 +1,".scalar(@content)." \@\@\n";
+  }
+  print DIFF "+$_\n" for @content;
+}
+
+sub dotar {
+  my ($tar, $tardir, $origin, $origtarfile, @c) = @_;
+  local *F;
+  open(F, '-|', 'tar', '-xOf', $tar) || die("tar: $!\n");
+  for my $c (@c) {
+    my $s = $c->{'size'};
+    my $file = '';
+    while ($s > 0) {
+      my $l = sysread(F, $file, $s, length($file));
+      die("tar read error\n") unless $l;
+      $s -= $l;
+    }
+    next if $origin && $origin->{$c->{'name'}} ne $tar;
+    my @file = split("\n", $file);
+    dodiff("$tardir.orig/debian/$c->{'name'}", "$tardir/debian/$c->{'name'}", $origtarfile, @file);
+  }
+  close(F);
+}
+
+sub dofile {
+  my ($file, $tardir, $dfile, $origtarfile) = @_;
+  local *F;
+  print "Processing file \"$file\"...\n";
+  open(F, '<', $file) || die("Error in reading $file: $!\n");
+  my @file = <F>;
+  close F;
+  chomp(@file);
+  dodiff("$tardir.orig/$dfile", "$tardir/$dfile", $origtarfile, @file);
+}
+
+sub doseries {
+  my ($series, $tardir) = @_;
+  my $dir = $series;
+  $dir =~ s/[^\/]+$//;
+  $dir =~ s/\/+$//;
+  $dir = '.' if $dir eq '';
+  local *F;
+  open(F, '<', $series) || die("$series: $!\n");
+  my @series = <F>;
+  close F;
+  chomp(@series);
+  print "Processing series file \"$series\"...\n";
+  for my $patch (@series) {
+    $patch =~ s/(^|\s+)#.*//;
+    next if $patch =~ /^\s*$/;
+    my $level = 1;
+    $level = $1 if $patch =~ /\s.*-p\s*(\d+)/;
+    $patch =~ s/\s.*//;
+    print "Processing patch $dir/$patch...\n";
+    open(F, '<', "$dir/$patch") || die("Error in reading $dir/$patch: $!\n");
+    while(<F>) {
+      chomp;
+      if ((/^--- ./ || /^\+\+\+ ./) && !/^... \/dev\/null/) {
+	my $start = substr($_, 0, 4);
+	$_ = substr($_, 4);
+	my $l = $level;
+	while ($l > 0) {
+	  last unless s/.*?\///;
+	  $l--;
+	}
+	if ($start eq '--- ') {
+	  print DIFF "$start$tardir.orig/$_\n";
+	} else {
+	  print DIFF "$start$tardir/$_\n";
+	}
+	next;
+      }
+      print DIFF "$_\n";
+    }
+    close F;
+  }
+}
+
+sub addfile {
+  my ($file, $algorithm) = @_;
+  my $base = $file;
+  $base =~ s/.*\///;
+  local *F;
+  open(F, '<', $file) || die("Error in reading $file: $!\n");
+  my $size = -s F;
+  my $ctx;
+  if ($algorithm =~ /^MD5/) {
+    $ctx = Digest::MD5->new;
+  } elsif ($algorithm =~ /^SHA/) {
+    $ctx = Digest::SHA->new($algorithm);
+  } else {
+    die("Unknown digest $algorithm\n");
+  }
+  $ctx->addfile(*F);
+  close F;
+  my $md5 = $ctx->hexdigest();
+  return "$md5 $size $base";
+}
+
+print "** Started: debtransform @ARGV\n";
+
+my $debug = 0;
+my $changelog;
+my $release;
+
+while (@ARGV > 3) {
+  if ($ARGV[0] eq '--debug') {
+    shift @ARGV;
+    $debug = 1;
+  } elsif ($ARGV[0] eq '--changelog') {
+    shift @ARGV;
+    $changelog = shift @ARGV;
+  } elsif ($ARGV[0] eq '--release') {
+    shift @ARGV;
+    $release = shift @ARGV;
+  } else {
+    usage();
+  }
+}
+
+if( @ARGV != 3 ) {
+  usage();
+}
+
+my $dir = $ARGV[0];
+my $dsc = $ARGV[1];
+my $out = $ARGV[2];
+
+die("$out is not a directory\n") unless -d $out;
+
+my $tags = parsedsc($dsc);
+
+opendir(D, $dir) || die("Could not open $dir: $!\n");
+my @dir = grep {$_ ne '.' && $_ ne '..'} readdir(D);
+closedir(D);
+my %dir = map {$_ => 1} @dir;
+
+my $tarfile = $tags->{'DEBTRANSFORM-TAR'};
+my @debtarfiles;
+if ($tags->{'DEBTRANSFORM-FILES-TAR'}) {
+  @debtarfiles = split(' ', $tags->{'DEBTRANSFORM-FILES-TAR'});
+}
+
+if (!$tarfile || !@debtarfiles) {
+  my @tars = grep {/\.tgz$|\.tar(?:\.gz|\.bz2|\.xz)?$/} @dir;
+  my @debtars = grep {/^debian\.tar(?:\.gz|\.bz2|\.xz)?$/} @tars;
+  if (!$tarfile) {
+    print "No DEBTRANSFORM-TAR line in the .dsc file.\n";
+    print "Attempting automatic discovery of a suitable source archive.\n";
+    @tars = grep {!/^debian\.tar(?:\.gz|\.bz2|\.xz)?$/} @tars;
+    if (@debtarfiles) {
+      my %debtarfiles = map {$_ => 1} @debtarfiles;
+      @tars = grep {!$debtarfiles{$_}} @tars;
+    }
+    die("None of the files looks like a usable source tarball.\n") unless @tars;
+    die("Too many files looking like a usable source tarball (would not know which to pick): @tars\n") if @tars > 1;
+    $tarfile = $tars[0];
+    print "Source archive chosen for transformation: $tarfile\n";
+  }
+  if (!exists($tags->{'DEBTRANSFORM-FILES-TAR'})) {
+    print "No DEBTRANSFORM-FILES-TAR line in the .dsc file.\n";
+    print "Attempting automatic discovery of a debian archive.\n";
+  }
+  if (@debtars && !exists($tags->{'DEBTRANSFORM-FILES-TAR'})) {
+    die("package contains more than one debian archive\n") if @debtars > 1;
+    @debtarfiles = ($debtars[0]);
+    print "Debian archive chosen for transformation: $debtars[0]\n";
+  }
+}
+
+my $name = $tags->{'SOURCE'};
+die("dsc file contains no Source: line\n") unless defined($name);
+my $version = $tags->{'VERSION'};
+die("dsc file contains no Version: line\n") unless defined($version);
+
+
+# debtransform generates source package in 1.0 (non-native) format
+print "Transforming into source package 1.0 (non-native) format\n";
+
+# non-native sources should always contain Debian revision
+if ($version !~ /-/) {
+	$version = $version . "-1";
+	print "Added Debian revision to Version field, which is now \"$version\".\n";
+}
+
+# for 1.0 all source archives should be transformed into weak gzip files
+# (https://wiki.debian.org/Projects/DebSrc3.0)
+my $tmptar;
+if ($tarfile =~ /\.tar\.bz2/) {
+    my $old = $tarfile;
+    $tarfile =~ s/\.tar\.bz2/\.tar\.gz/;
+    $tmptar = "$out/$tarfile";
+    print "converting $dir/$old to $tarfile\n";
+    system( ( "debtransformbz2", "$dir/$old", "$tmptar" )) == 0 || die("cannot transform .tar.bz2 to .tar.gz");
+}
+if ($tarfile =~ /\.tar\.xz/) {
+    my $old = $tarfile;
+    $tarfile =~ s/\.tar\.xz/\.tar\.gz/;
+    $tmptar = "$out/$tarfile";
+    print "converting $dir/$old to $tarfile\n";
+    system( ( "debtransformxz", "$dir/$old", "$tmptar" )) == 0 || die("cannot transform .tar.xz to .tar.gz");
+}
+if ($tarfile =~ /\.zip/) {
+    my $old = $tarfile;
+    $tarfile =~ s/\.zip/\.tar\.gz/;
+    $tmptar = "$out/$tarfile";
+    print "converting $dir/$old to $tarfile\n";
+    system( ( "debtransformzip", "$dir/$old", "$tmptar" )) == 0 || die("cannot transform .zip to .tar.gz");
+}
+if ($tarfile =~ /\.tgz$/) {
+    my $old = $tarfile;
+    $tarfile =~ s/\.tgz/\.tar.gz/;
+    $tmptar = "$out/$tarfile";
+    print "renaming $dir/$old to $tarfile\n";
+    system ( ("mv",  "$dir/$old",  "$tmptar" ) ) == 0 || die("cannot rename .tgz to .tar.gz");
+}
+
+if ($tags->{'DEBTRANSFORM-RELEASE'} && $release) {
+    # the tag DEBTRANSFORM-RELEASE in .dsc file instructs
+    # to append OBS build number to package version. The
+    # number is passed in "release" command line parameter.
+    # On OBS, release is incremented automatically
+    # (same as for RPMs)
+    $version = $version . "+" . $release;
+}
+if ($version ne $tags->{VERSION}) {
+    $tags->{VERSION} = $version;
+    print "Modifying dsc Version field to \"$tags->{VERSION}\"\n";
+}
+
+# no epoch in filename
+if ($version =~ s/^\d+://) {
+  print "Stripped epoch from $version for filenames.\n";
+}
+
+my @files;
+my @checksums_sha1;
+my @checksums_sha256;
+my $v = $version;
+# version without Debian revision
+$v =~ s/-[^-]*$//;
+$tarfile =~ /.*(\.tar.*?)$/;
+my $ntarfile = "${name}_$v.orig$1";
+if( $tmptar ) {
+  print "Moving $dir/$tarfile to $out/$ntarfile\n";
+  link("$tmptar", "$out/$ntarfile") || die("link: $!\n");
+  unlink("$tmptar");
+} else {
+  print "Hardlinking $dir/$tarfile to $out/$ntarfile\n";
+  link("$dir/$tarfile", "$out/$ntarfile") || die("link: $!\n");
+}
+push @files, addfile("$out/$ntarfile", "MD5");
+push @checksums_sha1, addfile("$out/$ntarfile", "SHA1");
+push @checksums_sha256, addfile("$out/$ntarfile", "SHA256");
+print "files @files\n";
+
+my $tarpath = "$out/$ntarfile";
+my $tardir = $tarfile;
+$tardir =~ s/\.orig\.tar/\.tar/;
+$tardir =~ s/\.tar.*?$//;
+my @tarfilecontent = listtar($tarpath, 0);
+my $origtarfile = {'name' => $tarpath, 'content' => \@tarfilecontent, 'version' => $tags->{'VERSION'}, 'tardir' => $tardir};
+
+print "Generating $out/${name}_$version.diff\n";
+# Since we are generating a unitary diff, we must re-set Format:.
+$tags->{"FORMAT"} = "1.0";
+open(DIFF, '>', "$out/${name}_$version.diff") || die("Cannot open $out/${name}_$version.diff for write: $!\n");
+
+undef $changelog if $dir{'debian.changelog'};
+
+my %debtarorigin;
+my %debtarcontent;
+for my $debtarfile (@debtarfiles) {
+  my @c = listtar("$dir/$debtarfile");
+  $debtarcontent{$debtarfile} = \@c;
+  for (@c) {
+    die("\"$_->{'name'}\" exists in both the debian archive as well as the package source directory.\n") if $dir{"debian.$_->{'name'}"};
+    undef $changelog if $_->{'name'} eq 'changelog';
+    $debtarorigin{$_->{'name'}} = "$dir/$debtarfile";
+  }
+}
+
+dofile($changelog, $tardir, 'debian/changelog', $origtarfile) if defined $changelog;
+
+if ($tags->{'DEBTRANSFORM-FILES'}) {
+  for my $file (split(' ', $tags->{'DEBTRANSFORM-FILES'})) {
+    dofile("$dir/$file", $tardir, $file, $origtarfile);
+  }
+}
+
+for my $debtarfile (@debtarfiles) {
+  dotar("$dir/$debtarfile", $tardir, \%debtarorigin, $origtarfile, @{$debtarcontent{$debtarfile} });
+}
+
+for my $file (grep {/^debian\./} @dir) {
+  next if $file eq 'debian.series';
+  next if $file =~ /\.tar$/;
+  next if $file =~ /\.tar\./;
+  dofile("$dir/$file", $tardir, 'debian/'.substr($file, 7), $origtarfile);
+}
+
+if ($tags->{'DEBTRANSFORM-SERIES'}) {
+  doseries("$dir/$tags->{'DEBTRANSFORM-SERIES'}", $tardir);
+} elsif ($dir{"debian.series"}) {
+  doseries("$dir/debian.series", $tardir);
+} elsif ($dir{"patches.series"}) {
+  doseries("$dir/patches.series", $tardir);
+}
+
+close(DIFF);
+
+if (! -s "$out/${name}_$version.diff") {
+  unlink("$out/${name}_$version.diff");
+} else {
+  system('gzip', '-n9', "$out/${name}_$version.diff");
+  if (-f "$out/${name}_$version.diff.gz") {
+    push @files, addfile("$out/${name}_$version.diff.gz", "MD5");
+    push @checksums_sha1, addfile("$out/${name}_$version.diff.gz", "SHA1");
+    push @checksums_sha256, addfile("$out/${name}_$version.diff.gz", "SHA256");
+  } else {
+    push @files, addfile("$out/${name}_$version.diff", "MD5");
+    push @checksums_sha1, addfile("$out/${name}_$version.diff", "SHA1");
+    push @checksums_sha256, addfile("$out/${name}_$version.diff", "SHA256");
+  }
+}
+
+$tags->{'CHECKSUMS-SHA1'} = "\n".join("\n", @checksums_sha1);
+$tags->{'CHECKSUMS-SHA256'} = "\n".join("\n", @checksums_sha256);
+$tags->{'FILES'} = "\n".join("\n", @files);
+delete $tags->{'DEBTRANSFORM-SERIES'};
+delete $tags->{'DEBTRANSFORM-TAR'};
+delete $tags->{'DEBTRANSFORM-FILES-TAR'};
+delete $tags->{'DEBTRANSFORM-FILES'};
+delete $tags->{'DEBTRANSFORM-RELEASE'};
+writedsc("$out/${name}_$version.dsc", $tags);
+
+if( $debug ) {
+  print `ls -la $out`;
+  print `cat $out/${name}_$version.dsc`;
+  print `zcat $out/${name}_$version.diff.gz`;
+}
+
+exit(0);

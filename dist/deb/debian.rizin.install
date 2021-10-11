@@ -1,0 +1,4 @@
+usr/bin
+usr/lib/*/*.so.*
+usr/share/man/man1
+usr/share/man/man7

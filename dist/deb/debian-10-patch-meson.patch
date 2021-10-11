@@ -1,0 +1,400 @@
+diff --color -ur rizin-v0.3.0/librz/analysis/d/meson.build rizin-v0.3.0.new/librz/analysis/d/meson.build
+--- rizin-v0.3.0/librz/analysis/d/meson.build	2021-09-24 14:48:58.000000000 +0200
++++ rizin-v0.3.0.new/librz/analysis/d/meson.build	2021-10-08 16:57:14.563122846 +0200
+@@ -75,7 +75,7 @@
+   'ws2spi',
+ ]
+ 
+-fs = import('fs')
++ls_exe = find_program('ls', required: true)
+ 
+ foreach file : sdb_files
+   outfile = '@0@.sdb'.format(file)
+@@ -83,7 +83,8 @@
+   if file == 'types-windows'
+     foreach f : win_types_extra
+       win_file = 'types-windows_@0@.sdb.txt'.format(f)
+-      if fs.exists(win_file)
++      c = run_command(ls_exe, win_file)
++      if c.returncode() == 0
+           infiles += win_file
+       endif
+     endforeach
+diff --color -ur rizin-v0.3.0/librz/core/meson.build rizin-v0.3.0.new/librz/core/meson.build
+--- rizin-v0.3.0/librz/core/meson.build	2021-09-24 14:48:58.000000000 +0200
++++ rizin-v0.3.0.new/librz/core/meson.build	2021-10-08 16:48:26.330888231 +0200
+@@ -83,7 +83,7 @@
+   rz_core_sources += 'windows_heap.c'
+   rz_core_inc += ['../../shlr/heap/include/rz_windows']
+ endif
+-rz_core_inc = [platform_inc, include_directories(rz_core_inc), 'cmd_descs']
++rz_core_inc = [platform_inc, include_directories(rz_core_inc), include_directories('cmd_descs')]
+ 
+ rz_core_deps = [
+   rz_util_dep,
+diff --color -ur rizin-v0.3.0/librz/type/meson.build rizin-v0.3.0.new/librz/type/meson.build
+--- rizin-v0.3.0/librz/type/meson.build	2021-09-24 14:48:58.000000000 +0200
++++ rizin-v0.3.0.new/librz/type/meson.build	2021-10-08 17:38:03.143128288 +0200
+@@ -21,10 +21,7 @@
+ tree_sitter_c_proj = subproject('tree-sitter-c', default_options: ['default_library=static'])
+ tree_sitter_c_dep = tree_sitter_c_proj.get_variable('tree_sitter_c_dep')
+ 
+-rz_type_inc = [
+-  platform_inc,
+-  'parser',
+-]
++rz_type_inc = [platform_inc, include_directories('parser')]
+ 
+ rz_type = library('rz_type', rz_type_sources,
+   include_directories: rz_type_inc,
+@@ -41,8 +38,7 @@
+   soversion: rizin_libversion
+ )
+ 
+-rz_type_dep = declare_dependency(link_with: rz_type,
+-                                include_directories: rz_type_inc)
++rz_type_dep = declare_dependency(link_with: rz_type, include_directories: rz_type_inc)
+ 
+ pkgconfig_mod.generate(rz_type,
+   subdirs: 'librz',
+diff --color -ur rizin-v0.3.0/meson.build rizin-v0.3.0.new/meson.build
+--- rizin-v0.3.0/meson.build	2021-09-24 14:48:58.000000000 +0200
++++ rizin-v0.3.0.new/meson.build	2021-10-08 16:43:36.783047995 +0200
+@@ -1,7 +1,7 @@
+ project('rizin', 'c',
+   version: 'v0.3.0',
+   license: 'LGPL3',
+-  meson_version: '>=0.55.0',
++  meson_version: '>=0.49.0',
+   default_options: [
+     'buildtype=debugoptimized',
+     'b_vscrt=from_buildtype',
+@@ -55,15 +55,6 @@
+ 
+ gittip = ''
+ 
+-fs = import('fs')
+-if git_exe.found() and fs.exists('.git')
+-  # Get gittip
+-  git_rev_parse = run_command(py3_exe, git_exe_repo_py, git_exe, repo, 'rev-parse', 'HEAD')
+-  if git_rev_parse.returncode() == 0
+-    gittip = git_rev_parse.stdout().strip()
+-  endif
+-endif
+-
+ if get_option('rizin_version_commit') != ''
+   version_commit = get_option('rizin_version_commit')
+ endif
+@@ -90,14 +81,14 @@
+ # system dependencies
+ cc = meson.get_compiler('c')
+ # required for linux
+-ldl = cc.find_library('dl', required: false, static: is_static_build)
+-pth = dependency('threads', required: false, static: is_static_build)
+-utl = cc.find_library('util', required: false, static: is_static_build)
++ldl = cc.find_library('dl', required: false)
++pth = dependency('threads', required: false)
++utl = cc.find_library('util', required: false)
+ if host_machine.system() == 'sunos'
+   # workaround for Solaris until https://github.com/mesonbuild/meson/issues/4328 is fixed
+   mth = declare_dependency(link_args: '-lm')
+ else
+-  mth = cc.find_library('m', required: false, static: is_static_build)
++  mth = cc.find_library('m', required: false)
+ endif
+ 
+ platform_deps = []
+@@ -229,7 +220,7 @@
+ )
+ 
+ # handle magic library
+-sys_magic = cc.find_library('magic', required: get_option('use_sys_magic'), static: is_static_build)
++sys_magic = cc.find_library('magic', required: get_option('use_sys_magic'))
+ 
+ # handle xxhash library
+ r = run_command(py3_exe, check_meson_subproject_py, 'xxhash')
+@@ -241,7 +232,7 @@
+ if sys_xxhash_opt.enabled() or sys_xxhash_opt.auto()
+   xxhash_dep = dependency('xxhash', required: false, static: is_static_build)
+   if not xxhash_dep.found()
+-    xxhash_dep = cc.find_library('xxhash', required: sys_xxhash_opt, static: is_static_build)
++    xxhash_dep = cc.find_library('xxhash', required: sys_xxhash_opt)
+   endif
+ endif
+ if sys_xxhash_opt.auto() or sys_xxhash_opt.disabled()
+@@ -345,7 +336,7 @@
+ 
+ lrt = []
+ if not cc.has_function('clock_gettime', prefix: '#include <time.h>') and cc.has_header_symbol('features.h', '__GLIBC__')
+-  lrt = cc.find_library('rt', required: true, static: is_static_build)
++  lrt = cc.find_library('rt', required: true)
+ endif
+ 
+ code = '#include <unistd.h>\nextern char **environ;\nint main() { char **env = environ; }'
+@@ -674,52 +665,3 @@
+     rename: 'main'
+   )
+ endif
+-
+-summary({
+-  'prefix': rizin_prefix,
+-  'bindir': rizin_bindir,
+-  'libdir': rizin_libdir,
+-  'includedir': rizin_incdir,
+-  'datadir': rizin_datdir,
+-  'wwwroot': rizin_wwwroot,
+-  'sdb': rizin_sdb,
+-  'zigns': rizin_zigns,
+-  'themes': rizin_themes,
+-  'fortunes': rizin_fortunes,
+-  'flags': rizin_flags,
+-  'hud': rizin_hud,
+-  'plugins': rizin_plugins,
+-  'extras': rizin_extras,
+-  'bindings': rizin_bindings,
+-}, section: 'Directories')
+-
+-summary({
+-  'Debugger enabled': has_debugger,
+-  'System magic library': sys_magic.found() and sys_magic.type_name() != 'internal',
+-  'System xxhash library': xxhash_dep.found() and xxhash_dep.type_name() != 'internal',
+-  'System openssl library': sys_openssl.found() and sys_openssl.type_name() != 'internal',
+-  'System libuv library': libuv_dep.found() and libuv_dep.type_name() != 'internal',
+-  'System capstone library': capstone_dep.found() and capstone_dep.type_name() != 'internal',
+-  'System tree-sitter library': tree_sitter_dep.found() and tree_sitter_dep.type_name() != 'internal',
+-  'System lz4 library': lz4_dep.found() and lz4_dep.type_name() != 'internal',
+-  'System zlib library': zlib_dep.found() and zlib_dep.type_name() != 'internal',
+-  'System zip library': libzip_dep.found() and libzip_dep.type_name() != 'internal',
+-  'Use ptrace-wrap': use_ptrace_wrap,
+-  'Use RPATH': use_rpath,
+-}, section: 'Configuration', bool_yn: true)
+-
+-summary({
+-  'Analysis Plugins': analysis_plugins,
+-  'Assembler Plugins': asm_plugins,
+-  'Binary Plugins': bin_plugins,
+-  'BinLdr Plugins': bin_ldr_plugins,
+-  'BinXtr Plugins': bin_xtr_plugins,
+-  'Breakpoint Plugins': bp_plugins,
+-  'Core Plugins': core_plugins,
+-  'Crypto Plugins': crypto_plugins,
+-  'Debug Plugins': debug_plugins,
+-  'Egg Plugins': egg_plugins,
+-  'IO Plugins': io_plugins,
+-  'Lang Plugins': lang_plugins,
+-  'Parse Plugins': parse_plugins,
+-}, section: 'Plugins', list_sep: ', ')
+Only in rizin-v0.3.0.new/: meson.build.orig
+Only in rizin-v0.3.0.new/shlr/spp: config.h
+diff --color -ur rizin-v0.3.0/subprojects/capstone-bundled/meson.build rizin-v0.3.0.new/subprojects/capstone-bundled/meson.build
+--- rizin-v0.3.0/subprojects/capstone-bundled/meson.build	2021-09-24 15:00:11.878054900 +0200
++++ rizin-v0.3.0.new/subprojects/capstone-bundled/meson.build	2021-10-08 17:31:12.612618887 +0200
+@@ -1,4 +1,4 @@
+-project('capstone', 'c', meson_version: '>=0.55.0')
++project('capstone', 'c', meson_version: '>=0.49.0')
+ 
+ cs_files = [
+   'arch/AArch64/AArch64BaseInfo.c',
+@@ -75,7 +75,7 @@
+   '-DCAPSTONE_HAS_TMS320C64X',
+ ]  
+ 
+-libcapstone = library('capstone', cs_files,
++libcapstone = static_library('capstone', cs_files,
+   c_args: libcapstone_c_args,
+   include_directories: capstone_includes,
+   implicit_include_directories: false
+diff --color -ur rizin-v0.3.0/subprojects/libuv-v1.40.0/meson.build rizin-v0.3.0.new/subprojects/libuv-v1.40.0/meson.build
+--- rizin-v0.3.0/subprojects/libuv-v1.40.0/meson.build	2021-09-24 15:00:11.878054900 +0200
++++ rizin-v0.3.0.new/subprojects/libuv-v1.40.0/meson.build	2021-10-08 17:31:02.329631175 +0200
+@@ -227,7 +227,7 @@
+ )
+ uvincdir = include_directories('include', 'src', 'src/unix')
+ 
+-libuv = library('uv',
++libuv = static_library('uv',
+   uvsrc,
+   c_args: uvdefines,
+   dependencies: libuv_deps,
+diff --color -ur rizin-v0.3.0/subprojects/libzip-1.7.3/cmake-config.h.in rizin-v0.3.0.new/subprojects/libzip-1.7.3/cmake-config.h.in
+--- rizin-v0.3.0/subprojects/libzip-1.7.3/cmake-config.h.in	2021-09-24 15:00:11.878054900 +0200
++++ rizin-v0.3.0.new/subprojects/libzip-1.7.3/cmake-config.h.in	2021-10-08 17:12:21.702909919 +0200
+@@ -46,8 +46,8 @@
+ #cmakedefine HAVE_STRINGS_H
+ #cmakedefine HAVE_UNISTD_H
+ #cmakedefine HAVE_WINDOWS_CRYPTO
+-#cmakedefine SIZEOF_OFF_T @SIZEOF_OFF_T@
+-#cmakedefine SIZEOF_SIZE_T @SIZEOF_SIZE_T@
++#cmakedefine SIZEOF_OFF_T
++#cmakedefine SIZEOF_SIZE_T
+ #cmakedefine HAVE_DIRENT_H
+ #cmakedefine HAVE_FTS_H
+ #cmakedefine HAVE_NDIR_H
+diff --color -ur rizin-v0.3.0/subprojects/libzip-1.7.3/meson.build rizin-v0.3.0.new/subprojects/libzip-1.7.3/meson.build
+--- rizin-v0.3.0/subprojects/libzip-1.7.3/meson.build	2021-09-24 15:00:11.878054900 +0200
++++ rizin-v0.3.0.new/subprojects/libzip-1.7.3/meson.build	2021-10-08 17:30:39.987657874 +0200
+@@ -108,10 +108,10 @@
+ conf_data.set('CMAKE_PROJECT_VERSION', meson.project_version())
+ 
+ config_h = configure_file(
++  format: 'cmake@',
+   input: 'cmake-config.h.in',
+   output: 'config.h',
+   configuration: conf_data,
+-  format: 'cmake@',
+ )
+ 
+ # Create zipconf.h file
+@@ -391,7 +391,7 @@
+ 
+ zip_inc = [include_directories('lib', '.')]
+ 
+-libzip = library('libzip', zip_files,
++libzip = static_library('libzip', zip_files,
+   dependencies: libzip_deps,
+   include_directories: zip_inc,
+   implicit_include_directories: true,
+@@ -402,4 +402,4 @@
+   link_with: libzip,
+   include_directories: zip_inc,
+   dependencies: libzip_deps,
+-)
+\ No newline at end of file
++)
+diff --color -ur rizin-v0.3.0/subprojects/lz4-1.9.3/meson.build rizin-v0.3.0.new/subprojects/lz4-1.9.3/meson.build
+--- rizin-v0.3.0/subprojects/lz4-1.9.3/meson.build	2021-09-24 15:00:11.878054900 +0200
++++ rizin-v0.3.0.new/subprojects/lz4-1.9.3/meson.build	2021-10-08 17:30:24.888675917 +0200
+@@ -10,7 +10,7 @@
+ 
+ lz4_inc = [include_directories('lib')]
+ 
+-librzlz4 = library('lz4', lz4_files,
++librzlz4 = static_library('lz4', lz4_files,
+   include_directories: lz4_inc,
+   implicit_include_directories: false,
+   install: false,
+diff --color -ur rizin-v0.3.0/subprojects/mpc/meson.build rizin-v0.3.0.new/subprojects/mpc/meson.build
+--- rizin-v0.3.0/subprojects/mpc/meson.build	2021-09-24 14:48:58.000000000 +0200
++++ rizin-v0.3.0.new/subprojects/mpc/meson.build	2021-10-08 17:32:14.642544760 +0200
+@@ -6,7 +6,7 @@
+ 
+ mpc_inc = [include_directories(['.'])]
+ 
+-libmpc = library('mpc', mpc_files,
++libmpc = static_library('mpc', mpc_files,
+   include_directories: mpc_inc,
+   implicit_include_directories: false
+ )
+@@ -14,4 +14,4 @@
+ mpc_dep = declare_dependency(
+   link_with: libmpc,
+   include_directories: mpc_inc
+-)
+\ No newline at end of file
++)
+diff --color -ur rizin-v0.3.0/subprojects/sdb/meson.build rizin-v0.3.0.new/subprojects/sdb/meson.build
+--- rizin-v0.3.0/subprojects/sdb/meson.build	2021-09-18 14:47:30.000000000 +0200
++++ rizin-v0.3.0.new/subprojects/sdb/meson.build	2021-10-08 16:26:05.826029539 +0200
+@@ -1,4 +1,4 @@
+-project('sdb', 'c', meson_version: '>=0.50.0', default_options: [
++project('sdb', 'c', meson_version: '>=0.49.0', default_options: [
+   'buildtype=debugoptimized', 'b_vscrt=from_buildtype'
+ ])
+ py3_exe = import('python').find_installation()
+diff --color -ur rizin-v0.3.0/subprojects/sdb/src/meson.build rizin-v0.3.0.new/subprojects/sdb/src/meson.build
+--- rizin-v0.3.0/subprojects/sdb/src/meson.build	2021-09-18 14:47:30.000000000 +0200
++++ rizin-v0.3.0.new/subprojects/sdb/src/meson.build	2021-10-08 16:27:34.024873797 +0200
+@@ -33,7 +33,7 @@
+ 
+ libsdb_inc = include_directories(['..', '.'])
+ 
+-libsdb = library('sdb', libsdb_sources,
++libsdb = static_library('sdb', libsdb_sources,
+   include_directories: libsdb_inc,
+   implicit_include_directories: false,
+   soversion: sdb_libversion,
+diff --color -ur rizin-v0.3.0/subprojects/tree-sitter-c/meson.build rizin-v0.3.0.new/subprojects/tree-sitter-c/meson.build
+--- rizin-v0.3.0/subprojects/tree-sitter-c/meson.build	2021-09-24 15:00:11.878054900 +0200
++++ rizin-v0.3.0.new/subprojects/tree-sitter-c/meson.build	2021-10-08 16:47:39.752913928 +0200
+@@ -8,13 +8,13 @@
+ tree_sitter_dep = tree_sitter_proj.get_variable('tree_sitter_dep')
+ 
+ libtsc = static_library('tree-sitter-c', ts_c_files,
+-  include_directories: ['src'],
++  include_directories: [include_directories('src')],
+   implicit_include_directories: false,
+   dependencies: tree_sitter_dep.partial_dependency(includes: true)
+ )
+ 
+ tree_sitter_c_dep = declare_dependency(
+   link_with: libtsc,
+-  include_directories: ['src/tree_sitter'],
++  include_directories: include_directories('src/tree_sitter'),
+   dependencies: tree_sitter_dep
+ )
+diff --color -ur rizin-v0.3.0/subprojects/xxhash/meson.build rizin-v0.3.0.new/subprojects/xxhash/meson.build
+--- rizin-v0.3.0/subprojects/xxhash/meson.build	2021-09-24 14:48:58.000000000 +0200
++++ rizin-v0.3.0.new/subprojects/xxhash/meson.build	2021-10-08 17:32:01.122560916 +0200
+@@ -5,7 +5,7 @@
+ 
+ inc = include_directories('.')
+ 
+-libxxhash = library('xxhash',
++libxxhash = static_library('xxhash',
+     ['xxhash.c'],
+     include_directories : inc,
+     version : meson.project_version(),
+@@ -13,4 +13,4 @@
+ 
+ xxhash_dep = declare_dependency(
+     include_directories : inc,
+-    link_with : libxxhash)
+\ No newline at end of file
++    link_with : libxxhash)
+diff --color -ur rizin-v0.3.0/subprojects/yxml/meson.build rizin-v0.3.0.new/subprojects/yxml/meson.build
+--- rizin-v0.3.0/subprojects/yxml/meson.build	2021-09-24 14:48:58.000000000 +0200
++++ rizin-v0.3.0.new/subprojects/yxml/meson.build	2021-10-08 17:32:29.153527419 +0200
+@@ -1,9 +1,9 @@
+ project('yxml', 'c', version: '66507906673bc6159d5d620414479954c9c21c24')
+ 
+-libyxml = library('yxml', 'yxml.c',
++libyxml = static_library('yxml', 'yxml.c',
+   implicit_include_directories: true)
+ 
+ yxml_dep = declare_dependency(
+   link_with: libyxml,
+   include_directories: include_directories('.'),
+-)
+\ No newline at end of file
++)
+diff --color -ur rizin-v0.3.0/subprojects/zlib-1.2.11/meson.build rizin-v0.3.0.new/subprojects/zlib-1.2.11/meson.build
+--- rizin-v0.3.0/subprojects/zlib-1.2.11/meson.build	2021-09-24 15:00:11.878054900 +0200
++++ rizin-v0.3.0.new/subprojects/zlib-1.2.11/meson.build	2021-10-08 17:29:52.755714315 +0200
+@@ -45,7 +45,7 @@
+   src += win.compile_resources('win32/zlib1.rc', args : win_args)
+ endif
+ 
+-zlib = library('z', src,
++zlib = static_library('z', src,
+   c_args : compile_args,
+   link_args : link_args,
+   vs_module_defs : 'win32/zlib.def',
+@@ -55,4 +55,4 @@
+ 
+ zlib_dep = declare_dependency(
+   link_with : zlib,
+-  include_directories : incdir)
+\ No newline at end of file
++  include_directories : incdir)
+diff --color -ur rizin-v0.3.0/test/unit/meson.build rizin-v0.3.0.new/test/unit/meson.build
+--- rizin-v0.3.0/test/unit/meson.build	2021-09-24 14:48:58.000000000 +0200
++++ rizin-v0.3.0.new/test/unit/meson.build	2021-10-08 16:53:51.098428973 +0200
+@@ -107,7 +107,7 @@
+   foreach test : tests
+     exe = executable('test_@0@'.format(test), 'test_@0@.c'.format(test),
+       # '.' to find autogenerated "test_config.h"
+-      include_directories: [platform_inc, '.'],
++      include_directories: [platform_inc, include_directories('.')],
+       dependencies: [
+         rz_util_dep,
+         rz_main_dep,

@@ -1,0 +1,138 @@
+Name:           rizin
+Summary:        UNIX-like reverse engineering framework and command-line tool-set
+Version:        0.3.0
+URL:            https://rizin.re/
+VCS:            https://github.com/rizinorg/rizin
+
+%global         gituser         rizinorg
+%global         gitname         rizin
+%global         rel             1
+
+Release:        0%{rel}%{?dist}
+Source0:        https://github.com/%{gituser}/%{gitname}/releases/download/v%{version}/%{name}-src-v%{version}.tar.xz
+
+License:        LGPLv3+ and GPLv2+ and BSD and MIT and ASL 2.0 and MPLv2.0 and zlib
+# Rizin as a package is targeting to be licensed/compiled as LGPLv3+
+# however during build for Fedora the GPL code is not omitted so effectively it
+# is GPLv2+.
+#
+# Some code has originally different license:
+# librz/asm/arch/ - GPLv2+, MIT, GPLv3
+# librz/bin/format/pe/dotnet - Apache License Version 2.0
+# librz/util/qrcode.c - MIT
+# shlr/java - Apache 2.0
+# shlr/sdb/src - MIT
+# shlr/lz4 - 3 clause BSD (system installed shared lz4 is used instead)
+# shlr/spp - MIT
+# shlr/spp - MIT
+
+BuildRequires:  gcc
+BuildRequires:  meson >= 0.55.0
+%if 0%{?suse_version}
+BuildRequires:  ninja
+%else
+BuildRequires:  ninja-build
+%endif
+BuildRequires:  pkgconfig
+
+Requires:       %{name}-common = %{version}-%{release}
+
+
+%description
+Rizin is a free and open-source Reverse Engineering framework, providing a
+complete binary analysis experience with features like Disassembler,
+Hexadecimal editor, Emulation, Binary inspection, Debugger, and more.
+
+Rizin is a fork of radare2 with a focus on usability, working features and code
+cleanliness.
+
+
+%package devel
+Summary:        Development files for the rizin package
+Requires:       %{name}%{?_isa} = %{version}-%{release}
+Requires:       file-devel
+Requires:       openssl-devel
+
+%description devel
+Development files for the rizin package. See rizin package for more
+information.
+
+
+%package common
+Summary:        Arch-independent SDB files for the rizin package
+BuildArch:      noarch
+Requires:       %{name} = %{version}-%{release}
+
+%description common
+Arch-independent SDB files used by rizin package. See rizin package for more
+information
+
+
+%prep
+# Build from git release version
+%setup -n %{name}-v%{version}
+
+%build
+# Whereever possible use the system-wide libraries instead of bundles
+%meson \
+%ifarch s390x
+    -Ddebugger=false \
+%endif
+    -Duse_sys_libuv=disabled \
+    -Duse_libuv=true \
+    -Denable_tests=false \
+    -Denable_rz_test=false \
+    -Dlocal=disabled \
+    -Dpackager="RizinOrg" \
+    -Dpackager_version="%{version}-%{release}"
+%meson_build
+
+%install
+%meson_install
+%if 0%{?suse_version} || (0%{?centos} && 0%{?centos} < 8)
+%post -p /sbin/ldconfig
+%postun -p /sbin/ldconfig
+%else
+%ldconfig_scriptlets
+%endif
+
+%check
+# Do not run the unit testsuite yet - it pulls another big repository
+# https://github.com/rizinorg/rizin-testbins from github
+
+
+
+%files
+%doc CONTRIBUTING.md DEVELOPERS.md README.md SECURITY.md BUILDING.md
+%license COPYING COPYING.LESSER
+%{_bindir}/r*
+%{_libdir}/librz_*.so.%{version}*
+%{_mandir}/man1/rizin.1.*
+%{_mandir}/man1/rz*.1.*
+%{_mandir}/man7/rz-esil.7.*
+
+%files devel
+%{_includedir}/librz
+%{_libdir}/librz*.so
+%{_libdir}/pkgconfig/*.pc
+
+
+%files common
+%{_datadir}/%{name}/%{version}/asm
+%{_datadir}/%{name}/%{version}/cons
+%{_datadir}/%{name}/%{version}/flag
+%{_datadir}/%{name}/%{version}/format
+%{_datadir}/%{name}/%{version}/fortunes
+%{_datadir}/%{name}/%{version}/hud
+%{_datadir}/%{name}/%{version}/magic
+%{_datadir}/%{name}/%{version}/opcodes
+%{_datadir}/%{name}/%{version}/reg
+%{_datadir}/%{name}/%{version}/syscall
+%{_datadir}/%{name}/%{version}/types
+%dir %{_datadir}/%{name}
+%dir %{_datadir}/%{name}/%{version}
+
+
+%changelog
+* Mon Sep 27 2021 Riccardo Schirone <rschirone91@gmail.com> - 0.0.5-1
+- Initial spec file from upstream
