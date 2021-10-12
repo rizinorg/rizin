@@ -318,7 +318,8 @@ RZ_API char *rz_cons_hud_path(const char *path, int dir) {
 	return tmp;
 }
 
-RZ_API char *rz_cons_message(const char *msg) {
+RZ_API void rz_cons_message(RZ_NONNULL const char *msg) {
+	rz_return_if_fail(msg);
 	int len = strlen(msg);
 	int rows, cols = rz_cons_get_size(&rows);
 	rz_cons_clear();
@@ -327,5 +328,4 @@ RZ_API char *rz_cons_message(const char *msg) {
 	rz_cons_flush();
 	rz_cons_gotoxy(0, rows - 2);
 	rz_cons_any_key(NULL);
-	return NULL;
 }

@@ -1,8 +1,11 @@
 // SPDX-FileCopyrightText: 2013-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <math.h>
 #include <rz_cons.h>
 #include <rz_util/rz_assert.h>
+
+#define PI 3.141592653589793
 
 #define useUtf8      (rz_cons_singleton()->use_utf8)
 #define useUtf8Curvy (rz_cons_singleton()->use_utf8_curvy)
@@ -347,7 +350,7 @@ RZ_API void rz_cons_canvas_write(RzConsCanvas *c, const char *s) {
 	c->x = orig_x;
 }
 
-RZ_API char *rz_cons_canvas_to_string(RzConsCanvas *c) {
+RZ_API RZ_OWN char *rz_cons_canvas_to_string(RzConsCanvas *c) {
 	rz_return_val_if_fail(c, NULL);
 
 	int x, y, olen = 0, attr_x = 0;
@@ -408,21 +411,24 @@ RZ_API char *rz_cons_canvas_to_string(RzConsCanvas *c) {
 
 RZ_API void rz_cons_canvas_print_region(RzConsCanvas *c) {
 	char *o = rz_cons_canvas_to_string(c);
-	if (o) {
-		rz_str_trim_tail(o);
-		if (*o) {
-			rz_cons_strcat(o);
-		}
+	if (RZ_STR_ISEMPTY(o)) {
 		free(o);
+		return;
 	}
+	rz_str_trim_tail(o);
+	if (RZ_STR_ISNOTEMPTY(o)) {
+		rz_cons_strcat(o);
+	}
+	free(o);
 }
 
 RZ_API void rz_cons_canvas_print(RzConsCanvas *c) {
 	char *o = rz_cons_canvas_to_string(c);
-	if (o) {
-		rz_cons_strcat(o);
-		free(o);
+	if (!o) {
+		return;
 	}
+	rz_cons_strcat(o);
+	free(o);
 }
 
 RZ_API int rz_cons_canvas_resize(RzConsCanvas *c, int w, int h) {
@@ -479,8 +485,6 @@ RZ_API int rz_cons_canvas_resize(RzConsCanvas *c, int w, int h) {
 	return true;
 }
 
-#include <math.h>
-#define PI 3.1415
 RZ_API void rz_cons_canvas_circle(RzConsCanvas *c, int x, int y, int w, int h, const char *color) {
 	if (color) {
 		c->attr = color;

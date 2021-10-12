@@ -192,6 +192,7 @@ static int cursor_position(const int tty, int *const rowptr, int *const colptr) 
 }
 #endif
 
+// \brief Checks if the console supports and is set to UTF-8-compatible locale
 RZ_API bool rz_cons_is_utf8(void) {
 	bool ret = false;
 #if UTF8_DETECT_ENV
