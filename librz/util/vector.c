@@ -79,7 +79,7 @@ RZ_API void rz_vector_free(RzVector *vec) {
 	}
 }
 
-static bool vector_clone(RzVector *dst, RzVector *src) {
+RZ_API bool rz_vector_copy(RzVector *dst, RzVector *src) {
 	rz_return_val_if_fail(dst && src, false);
 	dst->capacity = src->capacity;
 	dst->len = src->len;
@@ -104,7 +104,7 @@ RZ_API RzVector *rz_vector_clone(RzVector *vec) {
 	if (!ret) {
 		return NULL;
 	}
-	if (!vector_clone(ret, vec)) {
+	if (!rz_vector_copy(ret, vec)) {
 		free(ret);
 		return NULL;
 	}

@@ -67,6 +67,9 @@ RZ_API void rz_vector_fini(RzVector *vec);
 // frees the vector and calls vec->free on every element if set.
 RZ_API void rz_vector_free(RzVector *vec);
 
+// the dst vector will have the same capacity as src.
+RZ_API bool rz_vector_copy(RzVector *dst, RzVector *src);
+
 // the returned vector will have the same capacity as vec.
 RZ_API RzVector *rz_vector_clone(RzVector *vec);
 
