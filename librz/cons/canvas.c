@@ -5,8 +5,6 @@
 #include <rz_cons.h>
 #include <rz_util/rz_assert.h>
 
-#define PI 3.141592653589793
-
 #define useUtf8      (rz_cons_singleton()->use_utf8)
 #define useUtf8Curvy (rz_cons_singleton()->use_utf8_curvy)
 
@@ -483,32 +481,6 @@ RZ_API int rz_cons_canvas_resize(RzConsCanvas *c, int w, int h) {
 	c->y = 0;
 	rz_cons_canvas_clear(c);
 	return true;
-}
-
-RZ_API void rz_cons_canvas_circle(RzConsCanvas *c, int x, int y, int w, int h, const char *color) {
-	if (color) {
-		c->attr = color;
-	}
-	double xfactor = 1; //(double)w / (double)h;
-	double yfactor = (double)h / 24; // 0.8; // 24  10
-	double size = w;
-	float a = 0.0;
-	double s = size / 2;
-	while (a < (2 * PI)) {
-		double sa = rz_num_sin(a);
-		double ca = rz_num_cos(a);
-		double cx = s * ca + (size / 2);
-		double cy = s * sa + (size / 4);
-		int X = x + (xfactor * cx) - 2;
-		int Y = y + ((yfactor / 2) * cy);
-		if (G(X, Y)) {
-			W("=");
-		}
-		a += 0.1;
-	}
-	if (color) {
-		c->attr = Color_RESET;
-	}
 }
 
 RZ_API void rz_cons_canvas_box(RzConsCanvas *c, int x, int y, int w, int h, const char *color) {
