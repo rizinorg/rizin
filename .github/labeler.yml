@@ -128,10 +128,6 @@ RZIL:
   - librz/il/**/*
   - librz/core/cil.c
 
-gdb:
-  - shlr/gdb/**/*
-  - librz/io/p/io_gdb.c
-
 infrastructure:
   - .appveyor.yml
   - .travis.yml
@@ -152,6 +148,10 @@ visual:
 
 panel:
   - librz/core/panels.c
+
+dietline:
+  - librz/cons/dietline.c
+  - librz/cons/line.c
 
 ELF:
   - librz/bin/format/elf/**/*
@@ -177,11 +177,46 @@ java:
   - librz/bin/p/bin_java.*
   - librz/core/p/core_java.*
 
+X86:
+  - librz/asm/p/*_x86_*
+  - librz/analysis/p/*_x86_*
+  - librz/bp/p/bp_x86.c
+
+ARM:
+  - librz/asm/arch/arm/**/*
+  - librz/asm/p/*_arm_*
+  - librz/analysis/p/*_arm_*
+  - librz/debug/p/native/arm.c
+  - librz/bp/p/bp_arm.c
+
+MIPS:
+  - librz/asm/arch/mips/**/*
+  - librz/asm/p/*_mips_*
+  - librz/analysis/p/*_mips_*
+  - librz/bp/p/bp_mips.c
+
+PPC:
+  - librz/asm/arch/ppc/**/*
+  - librz/asm/p/*_ppc_*
+  - librz/analysis/p/*_ppc_*
+  - librz/bp/p/bp_ppc.c
+
 ESIL:
   - librz/analysis/esil/*
   - librz/debug/p/debug_esil.c
   - librz/debug/desil.c
   - librz/core/cil.c
+
+DWARF:
+  - librz/bin/dwarf.c
+  - librz/analysis/dwarf_process.c
+  - librz/core/cdwarf.c
+
+PDB:
+  - librz/bin/pdb/**/*
+  - librz/include/rz_pdb.h
+  - librz/analysis/type_pdb.c
+  - librz/core/cpdb.c
 
 GDB:
   - shlr/gdb/**/*
@@ -198,3 +233,20 @@ WinDbg:
 BSD:
   - librz/debug/p/native/bsd/**/*
   - librz/debug/p/native/reg/*bsd*
+  - librz/syscall/d/*bsd*
+
+Windows:
+  - librz/analysis/d/*windows*
+  - librz/io/p/io_rzk_windows.*
+  - librz/debug/p/native/windows/**/*
+  - librz/debug/p/native/maps/windows*
+  - librz/debug/p/native/reg/windows*
+  - librz/core/windows_heap.c
+  - librz/syscall/d/windows*
+
+MacOS:
+  - librz/analysis/d/*macos*
+  - librz/debug/p/native/xnu/**/*
+  - librz/debug/p/native/maps/darwin.c
+  - librz/debug/p/native/darwin.c
+  - librz/syscall/d/darwin*
