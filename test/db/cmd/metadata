@@ -449,13 +449,13 @@ Csa 2 @ 0x140016018 # \t
 "\t"
 ascii[2] "\t"
 0x140016018 ascii[2] "\t"
-            ;-- str.wide__esc:__e_0m:
+            ;-- str.wide_esc:___0m:
             0x140016018     .string "\t" ; len=2
-Csw 19 @ 0x140016018 # \twide\\esc: \x1b[0m\xa1\r\n
-"\twide\\esc: \x1b[0m\xa1\r\n"
-ut16le[15] "\twide\\esc: \x1b[0m\xa1\r\n"
-            ;-- str.wide__esc:__e_0m:
-            0x140016018     .string "\twide\\esc: \x1b[0m\xa1\r\n" ; len=19
+Csw 19 @ 0x140016018 # \twide\\esc: \e[0m\xa1\r\n
+"\twide\\esc: \e[0m\xa1\r\n"
+ut16le[15] "\twide\\esc: \e[0m\xa1\r\n"
+            ;-- str.wide_esc:___0m:
+            0x140016018     .string "\twide\\esc: \e[0m\xa1\r\n" ; len=19
 0x140016018 ascii[4] "\t"
 0x140016018 ascii[4] "\t"
 EOF
@@ -509,12 +509,12 @@ utf8[61] "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \xc2\xa2\xe2\x82\xac\
 0x004021ff utf8[61] "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \xc2\xa2\xe2\x82\xac\xf0\x90\x8d\x88 \e[0m\n"
             ;-- str.utf8____u00a2__u20ac__U00010348_in_yellow:_e_33m____________e_0m:
             0x004021ff     .string "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \xc2\xa2\xe2\x82\xac\xf0\x90\x8d\x88 \e[0m\n" ; len=61
-Cs8 61 @ 0x004021ff # utf8> \\u00a2\\u20ac\\U00010348 in yellow:\x1b[33m \u00a2\u20ac\U00010348 \x1b[0m\n
-"utf8> \\u00a2\\u20ac\\U00010348 in yellow:\x1b[33m \u00a2\u20ac\U00010348 \x1b[0m\n"
-utf8[61] "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\x1b[33m \u00a2\u20ac\U00010348 \x1b[0m\n"
-0x004021ff utf8[61] "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\x1b[33m \u00a2\u20ac\U00010348 \x1b[0m\n"
+Cs8 61 @ 0x004021ff # utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \u00a2\u20ac\U00010348 \e[0m\n
+"utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \u00a2\u20ac\U00010348 \e[0m\n"
+utf8[61] "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \u00a2\u20ac\U00010348 \e[0m\n"
+0x004021ff utf8[61] "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \u00a2\u20ac\U00010348 \e[0m\n"
             ;-- str.utf8____u00a2__u20ac__U00010348_in_yellow:_e_33m____________e_0m:
-            0x004021ff     .string "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\x1b[33m \u00a2\u20ac\U00010348 \x1b[0m\n" ; len=61
+            0x004021ff     .string "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \u00a2\u20ac\U00010348 \e[0m\n" ; len=61
 EOF
 RUN
 
@@ -523,13 +523,17 @@ FILE=bins/elf/strenc
 ARGS=-e bin.str.purge=all,!0x004021ff
 CMDS=<<EOF
 s 0x004021ff
+Csl
 Cslj
 Cs-
 Cs8
+Csl
 Cslj
 EOF
 EXPECT=<<EOF
-[{"offset":4203007,"type":"Cs","name":"dXRmOD4gXFx1MDBhMlxcdTIwYWNcXFUwMDAxMDM0OCBpbiB5ZWxsb3c6XGVbMzNtIMKi4oKs8JCNiCBcZVswbVxu","enc":"utf8","ascii":false}]
+0x004021ff utf8[61] "utf8> \u00a2\u20ac\U00010348 in yellow:\e[33m \u00a2\u20ac\U00010348 \e[0m\n"
+[{"offset":4203007,"type":"Cs","name":"dXRmOD4gXHUwMGEyXHUyMGFjXFUwMDAxMDM0OCBpbiB5ZWxsb3c6G1szM20gwqLigqzwkI2IIBtbMG0K","enc":"utf8","ascii":false}]
+0x004021ff utf8[61] "utf8> \u00a2\u20ac\U00010348 in yellow:\e[33m \u00a2\u20ac\U00010348 \e[0m\n"
 [{"offset":4203007,"type":"Cs","name":"dXRmOD4gXHUwMGEyXHUyMGFjXFUwMDAxMDM0OCBpbiB5ZWxsb3c6G1szM20gwqLigqzwkI2IIBtbMG0K","enc":"utf8","ascii":false}]
 EOF
 RUN
@@ -551,18 +555,18 @@ Cs.l
 pd 1
 EOF
 EXPECT=<<EOF
-"\tANSI\\esc: \x1b[33m\r\n"
-ascii[19] "\tANSI\\esc: \x1b[33m\r\n"
-0x140016000 ascii[19] "\tANSI\\esc: \x1b[33m\r\n"
-            ;-- str.ANSI__esc:__e_33m:
+"\tANSI\\esc: \e[33m\r\n"
+ascii[19] "\tANSI\\esc: \e[33m\r\n"
+0x140016000 ascii[19] "\tANSI\\esc: \e[33m\r\n"
+            ;-- str.ANSI_esc:___33m:
             ;-- section..data:
-            0x140016000     .string "\tANSI\\esc: \x1b[33m\r\n" ; len=19 ; [02] -rw- section size 8192 named .data
-"\tANSI\esc: \x1b[33m\r\n"
-ascii[19] "\tANSI\esc: \x1b[33m\r\n"
-0x140016000 ascii[19] "\tANSI\esc: \x1b[33m\r\n"
-            ;-- str.ANSI__esc:__e_33m:
+            0x140016000     .string "\tANSI\\esc: \e[33m\r\n" ; len=19 ; [02] -rw- section size 8192 named .data
+"\tANSI\esc: \e[33m\r\n"
+ascii[19] "\tANSI\esc: \e[33m\r\n"
+0x140016000 ascii[19] "\tANSI\esc: \e[33m\r\n"
+            ;-- str.ANSI_esc:___33m:
             ;-- section..data:
-            0x140016000     .string "\tANSI\esc: \x1b[33m\r\n" ; len=19 ; [02] -rw- section size 8192 named .data
+            0x140016000     .string "\tANSI\esc: \e[33m\r\n" ; len=19 ; [02] -rw- section size 8192 named .data
 EOF
 RUN
 

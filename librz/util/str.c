@@ -350,7 +350,7 @@ RZ_API int rz_str_delta(char *p, char a, char b) {
 
 /**
  * \brief Split string \p str in place by using \p ch as a delimiter.
- * 
+ *
  * Replaces all instances of \p ch in \p str with a NULL byte and it returns
  * the number of split strings.
  */
@@ -1324,6 +1324,10 @@ RZ_API void rz_str_byte_escape(const char *p, char **dst, bool dot_nl, bool defa
 	case '\a':
 		*q++ = '\\';
 		*q++ = 'a';
+		break;
+	case '\x1b':
+		*q++ = '\\';
+		*q++ = 'e';
 		break;
 	default:
 		/* Outside the ASCII printable range */
@@ -3134,11 +3138,11 @@ static RzList *str_split_list_common(char *str, const char *c, int n, bool trim,
 
 /**
  * \brief Split the string \p str according to the substring \p c and returns a \p RzList with the result.
- * 
+ *
  * Split a string \p str according to the delimiter specified in \p c and it
  * considers at most \p n delimiters. The result is a \p RzList with pointers
  * to the input string \p str. Each token is trimmed as well.
- * 
+ *
  * \param str Input string to split. It will be modified by this function.
  * \param c Delimiter string used to split \p str
  * \param n If > 0 at most this number of delimiters are considered.
@@ -3150,11 +3154,11 @@ RZ_API RzList *rz_str_split_list(char *str, const char *c, int n) {
 
 /**
  * \brief Split the string \p str according to the substring \p c and returns a \p RzList with the result.
- * 
+ *
  * Split a string \p str according to the delimiter specified in \p c. It can
  * optionally trim (aka remove spaces) the tokens. The result is a \p RzList
  * with newly allocated strings for each token.
- * 
+ *
  * \param str Input string to split
  * \param c Delimiter string used to split \p str
  * \param trim If true each token is considered without trailing/leading whitespaces.
@@ -3169,12 +3173,12 @@ RZ_API RzList *rz_str_split_duplist(const char *_str, const char *c, bool trim) 
 
 /**
  * \brief Split the string \p str according to the substring \p c and returns a \p RzList with the result.
- * 
+ *
  * Split a string \p str according to the delimiter specified in \p c. It can
  * optionally trim (aka remove spaces) the tokens and/or consider at most \p n
  * delimiters. The result is a \p RzList with newly allocated strings for each
  * token.
- * 
+ *
  * \param str Input string to split
  * \param c Delimiter string used to split \p str
  * \param n If > 0 at most this number of delimiters are considered.
@@ -3190,11 +3194,11 @@ RZ_API RzList *rz_str_split_duplist_n(const char *_str, const char *c, int n, bo
 
 /**
  * \brief Split the string \p str in lines and returns the result in an array.
- * 
+ *
  * Split a string \p str in lines. The number of lines is optionally stored in
  * \p count, if not NULL. The result is an array of \p count entries, with the
  * i-th entry containing the index of the first character of the i-th line.
- * 
+ *
  * \param str Input string to split
  * \param count Pointer to a size_t variable that can hold the number of lines.
  */
