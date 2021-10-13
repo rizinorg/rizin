@@ -112,6 +112,7 @@ RUN
 NAME=aao hello-objc selrefs
 FILE=bins/mach0/hello-objc
 CMDS=<<EOF
+e analysis.jmp.cref=true
 aao
 ax~?
 ax~selref

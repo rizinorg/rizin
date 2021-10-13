@@ -1032,6 +1032,7 @@ RUN
 NAME=reflines offset 2 (ascii)
 FILE=bins/elf/analysis/ls-alxchk
 CMDS=<<EOF
+e analysis.jmp.cref=true
 e asm.sub.rel=false
 e asm.bytes=false
 e asm.hint.lea=false
@@ -1081,6 +1082,7 @@ RUN
 NAME=reflines offset 3 (ascii)
 FILE=bins/elf/analysis/ls-alxchk
 CMDS=<<EOF
+e analysis.jmp.cref=true
 e asm.sub.rel=false
 e asm.bytes=false
 e asm.hint.lea=false
@@ -1123,6 +1125,7 @@ RUN
 NAME=reflines offset 3 (ascii + wide)
 FILE=bins/elf/analysis/ls-alxchk
 CMDS=<<EOF
+e analysis.jmp.cref=true
 e asm.sub.rel=false
 e asm.bytes=false
 e asm.hint.lea=false
@@ -1166,6 +1169,7 @@ RUN
 NAME=reflines offset 4 (ascii + wide)
 FILE=bins/elf/analysis/ls-alxchk
 CMDS=<<EOF
+e analysis.jmp.cref=true
 e asm.sub.rel=false
 e asm.bytes=false
 e asm.hint.lea=false
@@ -2333,6 +2337,7 @@ RUN
 NAME=refs with aar
 FILE=bins/elf/crackme
 CMDS=<<EOF
+e analysis.jmp.cref=true
 e asm.bytes=true
 e asm.lines.bb=false
 e asm.lines.fcn=false
