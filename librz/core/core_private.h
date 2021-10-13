@@ -6,6 +6,7 @@
 
 #include <rz_types.h>
 #include <rz_core.h>
+#include <rz_il.h>
 
 RZ_IPI void rz_core_kuery_print(RzCore *core, const char *k);
 RZ_IPI int rz_output_mode_to_char(RzOutputMode mode);
@@ -27,6 +28,9 @@ RZ_IPI void rz_core_analysis_esil_references_all_functions(RzCore *core);
 RZ_IPI void rz_core_analysis_esil_emulate(RzCore *core, ut64 addr, ut64 until_addr, int off);
 RZ_IPI void rz_core_analysis_esil_emulate_bb(RzCore *core);
 RZ_IPI void rz_core_analysis_esil_default(RzCore *core);
+
+RZ_IPI void rz_core_analysis_rzil_reinit(RzCore *core);
+RZ_IPI void rz_core_rzil_step(RzCore *core);
 
 RZ_IPI bool rz_core_analysis_var_rename(RzCore *core, const char *name, const char *newname);
 RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode, char *fcn_name);
@@ -78,7 +82,6 @@ RZ_IPI void rz_core_types_struct_print_format_all(RzCore *core);
 RZ_IPI void rz_core_types_union_print_format_all(RzCore *core);
 RZ_IPI void rz_core_types_link_print(RzCore *core, RzType *type, ut64 addr, RzOutputMode mode, PJ *pj);
 RZ_IPI void rz_core_types_link_print_all(RzCore *core, RzOutputMode mode);
-RZ_IPI void rz_core_types_link(RzCore *core, const char *typestr, ut64 addr);
 RZ_IPI void rz_core_types_link_show(RzCore *core, ut64 addr);
 RZ_IPI void rz_core_types_print_all(RzCore *core, RzOutputMode mode);
 RZ_IPI void rz_types_define(RzCore *core, const char *type);

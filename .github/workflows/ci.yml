@@ -306,7 +306,7 @@ jobs:
 
     - name: Install tools
       run: apt-get update && apt-get install --yes patch unzip git gcc make curl pkg-config libc6-i386 build-essential
-    - name: Install Python source build dependcies
+    - name: Install Python source build dependencies
       run: apt-get install --yes checkinstall libbz2-dev libc6-dev libgdbm-dev libncursesw5-dev libreadline-gplv2-dev libssl-dev libsqlite3-dev libffi-dev tk-dev
     - name: Install Python from source
       run: |
@@ -349,6 +349,50 @@ jobs:
       run: python3 -m pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
     - name: Run tests
       # FIXME: debug tests fail on Debian for now, let's ignore all tests for the moment
+      run: |
+        rz-test -L -o results.json || true
+      working-directory: rizin/test
+      env:
+        PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
+
+  build-gcc11:
+    name: Build on gcc 11
+    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'gcc11') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable' || github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    container: ubuntu:hirsute
+    steps:
+    - name: Set timezone to UTC
+      run: ln -snf /usr/share/zoneinfo/UTC /etc/localtime && echo 'UTC' > /etc/timezone
+    - name: Install tools
+      run: apt-get update && apt-get install --yes patch unzip git gcc-11 make curl pkg-config libc6-i386 build-essential
+    - name: Install python and other dependencies
+      run: apt-get install --yes python3-wheel python3-setuptools python3-pip cabextract
+    - name: Install meson and ninja
+      run: pip3 install meson ninja PyYAML
+    - name: Checkout rizin
+      run: |
+        git clone https://github.com/${{ github.repository }}
+        cd rizin
+        git fetch origin ${{ github.ref }}
+        git checkout -b local_branch FETCH_HEAD
+    - name: Checkout our Testsuite Binaries
+      run: git clone https://github.com/rizinorg/rizin-testbins test/bins
+      working-directory: rizin
+    - name: Build with Meson + Ninja
+      run: CC=gcc-11 meson --prefix=/usr -Dbuildtype=release --werror build && ninja -C build
+      working-directory: rizin
+    - name: Install with Ninja
+      run: ninja -C build install
+      working-directory: rizin
+    - name: Run unit tests
+      run: ninja -C build test
+      working-directory: rizin
+      env:
+        PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
+    - name: Install test dependencies
+      run: pip3 install 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
+    - name: Run tests
+      # FIXME: let's ignore all tests for the moment
       run: |
         rz-test -L -o results.json || true
       working-directory: rizin/test
@@ -521,31 +565,17 @@ jobs:
       shell: pwsh
       run: echo "##[set-output name=branch;]$( python sys\\version.py )"
       id: extract_version
-    - name: Build with meson + ninja
+    - name: Build and create zip/installer
       shell: pwsh
-      run: |
-        .github\vsdevenv.ps1 ${{ matrix.bits }}
-        meson --buildtype=release --prefix=$PWD\rizin-install build ${{ matrix.meson_options }}
-        ninja -C build
-        ninja -C build install
-    - name: Create zip artifact
-      shell: pwsh
-      run: 7z a rizin-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}.zip $PWD\rizin-install
+      run: .\dist\windows\build_windows_installer.ps1 ${{ matrix.name }} ${{ matrix.bits }} ${{ matrix.meson_options }}
     - uses: actions/upload-artifact@v2
       with:
         name: rizin-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}.zip
-        path: .\rizin-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}.zip
-    - uses: actions/checkout@v2
-      with:
-        repository: rizinorg/rizin-win-installer
-        path: ./rizin-win-installer
-    - name: Create installer
-      shell: pwsh
-      run: iscc rizin-win-installer\rizin.iss /DRizinLocation=..\rizin-install\* /DIcoLocation=rizin.ico /DMyAppVersion=${{ steps.extract_version.outputs.branch }}
+        path: .\dist\windows\Output\rizin-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}.zip
     - uses: actions/upload-artifact@v2
       with:
         name: rizin_installer-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}
-        path: rizin-win-installer\Output\rizin.exe
+        path: .\dist\windows\Output\rizin.exe
 
   build-android:
     name: Build Android ${{ matrix.name }} package
@@ -574,6 +604,32 @@ jobs:
       with:
         name: rizin-android-${{ matrix.name }}
         path: /tmp/rizin-android-${{ matrix.name }}.tar.gz
+
+  build-cpp:
+    name: Include Rizin headers from C++ program
+    runs-on: ubuntu-latest
+    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'cpp') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
+    needs: [build-and-test]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: sudo apt-get --assume-yes install pax wget unzip python3-wheel python3-setuptools python3-pip
+    - name: Install meson and ninja
+      run: sudo pip3 install meson ninja PyYAML
+    - name: Compile & Install Rizin
+      run: |
+        export PATH=${HOME}/bin:${HOME}/Library/Python/3.8/bin:${HOME}/Library/Python/3.9/bin:${HOME}/.local/bin:${PATH}
+        meson --buildtype release --prefix=/usr build
+        ninja -C build && sudo ninja -C build install
+    - name: Compile C++ test
+      run: |
+        export PATH=${HOME}/bin:${HOME}/Library/Python/3.8/bin:${HOME}/Library/Python/3.9/bin:${HOME}/.local/bin:${PATH}
+        meson --prefix=/usr build-cpp-test ./test/unit/cpp
+        meson compile -C build-cpp-test
+    - name: Run C++ test
+      run: |
+        export PATH=${HOME}/bin:${HOME}/Library/Python/3.8/bin:${HOME}/Library/Python/3.9/bin:${HOME}/.local/bin:${PATH}
+        meson test -C build-cpp-test
 
 #  build-extras:
 #    name: Build rizin extras and rzpipe
@@ -710,7 +766,7 @@ jobs:
     - name: Check that libraries can be used
       shell: pwsh
       run: |
-        .github\vsdevenv.ps1 ${{ matrix.bits }}
+        .\dist\windows\vsdevenv.ps1 ${{ matrix.bits }}
         $env:PATH = "$env:PATH;C:$env:HOMEPATH\AppData\Local\Programs\rizin\bin"
         $env:PKG_CONFIG_PATH = "C:$env:HOMEPATH\AppData\Local\Programs\rizin\lib\pkgconfig"
         $env:PKG_CONFIG_PATH
@@ -729,6 +785,7 @@ jobs:
       build-debian,
       build-static,
       build-android,
+      build-cpp,
       test-osx-pkg,
       test-windows-clang_cl,
       build-rzpipe

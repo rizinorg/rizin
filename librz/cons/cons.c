@@ -580,6 +580,8 @@ RZ_API RzCons *rz_cons_new(void) {
 	I.break_lines = false;
 	I.lines = 0;
 
+	I.input = RZ_NEW0(RzConsInputContext);
+	I.input->bufactive = true;
 	I.context = &rz_cons_context_default;
 	cons_context_init(I.context, NULL);
 
@@ -638,6 +640,8 @@ RZ_API RzCons *rz_cons_free(void) {
 		rz_line_free();
 		I.line = NULL;
 	}
+	RZ_FREE(I.input->readbuffer);
+	RZ_FREE(I.input);
 	RZ_FREE(I.context->buffer);
 	RZ_FREE(I.break_word);
 	cons_context_deinit(I.context);

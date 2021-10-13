@@ -76,20 +76,20 @@ NAME=ih (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=ihq
 EXPECT=<<EOF
-0x00000000 0x00000000 ELF; 0x464c457f
-0x00000010 0x00000010 Type; 0x00000002
-0x00000012 0x00000012 Machine; 0x00000003
+0x00000000 0x00000000 MAGIC; 7f 45 4c 46 01 01 01 00 00 00 00 00 00 00 00 00
+0x00000010 0x00000010 Type; 0x0002
+0x00000012 0x00000012 Machine; 0x0003
 0x00000014 0x00000014 Version; 0x00000001
-0x00000018 0x00000018 Entry point; 0x08048300
+0x00000018 0x00000018 Entrypoint; 0x08048300
 0x0000001c 0x0000001c PhOff; 0x00000034
 0x00000020 0x00000020 ShOff; 0x000007cc
-0x00000024 0x00000024 Flags; 0x00000000
-0x00000028 0x00000028 EhSize; 0x00000034
-0x0000002a 0x0000002a PhentSize; 0x00000020
-0x0000002c 0x0000002c PhNum; 0x00000008
-0x0000002e 0x0000002e ShentSize; 0x00000028
-0x00000030 0x00000030 ShNum; 0x0000001e
-0x00000032 0x00000032 ShrStrndx; 0x0000001b
+0x00000024 0x00000024 Flags; 0x0000
+0x00000028 0x00000028 EhSize; 52
+0x0000002a 0x0000002a PhentSize; 32
+0x0000002c 0x0000002c PhNum; 8
+0x0000002e 0x0000002e ShentSize; 40
+0x00000030 0x00000030 ShNum; 30
+0x00000032 0x00000032 ShStrndx; 27
 EOF
 RUN
 
@@ -2352,12 +2352,11 @@ vaddr      vsize  perm name
 EOF
 RUN
 
-NAME=iD
-FILE=bins/elf/libmagic.so
-BROKEN=1
-CMDS=iD swift _TFSSCfT21_builtinStringLiteralBp8byteSizeBw7isASCIIBi1__SS
+NAME=Test iD
+FILE==
+CMDS=iD java "Fake([BCDFIJSZ)Ltest/class/name;"
 EXPECT=<<EOF
-Swift.String.init (_builtinStringLiteral(Builtin.RawPointer byteSize__Builtin.Word isASCII__Builtin.Int1 _) -> String
+test.class.name Fake(byte[], char, double, float, int, long, short, boolean)
 EOF
 RUN
 
@@ -3992,20 +3991,20 @@ NAME=iH (file x86_64)
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=iH
 EXPECT=<<EOF
-0x00000000  ELF64       0x464c457f
+0x00000000  MAGIC       7f 45 4c 46 02 01 01 00 00 00 00 00 00 00 00 00
 0x00000010  Type        0x0002
 0x00000012  Machine     0x003e
 0x00000014  Version     0x00000001
 0x00000018  Entrypoint  0x00400410
 0x00000020  PhOff       0x00000040
 0x00000028  ShOff       0x00000a30
-0x00000030  Flags       0x00000000
+0x00000030  Flags       0x0000
 0x00000034  EhSize      64
 0x00000036  PhentSize   56
 0x00000038  PhNum       8
 0x0000003a  ShentSize   64
 0x0000003c  ShNum       30
-0x0000003e  ShrStrndx   27
+0x0000003e  ShStrndx    27
 EOF
 RUN
 
@@ -4644,7 +4643,7 @@ e bin.str.purge=all,!0x413220-0x413235
 EOF
 EXPECT=<<EOF
 --1--
-1055 0x00012420 0x00412420 5   6    .text              ascii   AWAVA
+1049 0x00012420 0x00412420 5   6    .text              ascii   AWAVA
 --2--
 --3--
 0   0x000131d8 0x004131d8 11  12   .rodata ascii dev_ino_pop
@@ -4791,17 +4790,17 @@ nth paddr      vaddr      bind   type   size lib name
 7   0x00000000 0x00000000 WEAK   NOTYPE 16       imp._ITM_registerTMCloneTable
 vaddr      paddr      target     type   name                        
 --------------------------------------------------------------------
-0x00001eec 0x00000eec 0x00002030 SET_32 
-0x00001ef0 0x00000ef0 0x00002034 SET_32 
-0x00001fe8 0x00000fe8 0x00002040 SET_32 _ITM_deregisterTMCloneTable
-0x00001fec 0x00000fec 0x00002044 SET_32 __cxa_finalize
-0x00001ff0 0x00000ff0 0x00002048 SET_32 __gmon_start__
-0x00001ff4 0x00000ff4 0x00002038 SET_32 
-0x00001ff8 0x00000ff8 0x0000204c SET_32 _Jv_RegisterClasses
-0x00001ffc 0x00000ffc 0x00002050 SET_32 _ITM_registerTMCloneTable
+0x00001eec 0x00000eec 0x00000000 SET_32 
+0x00001ef0 0x00000ef0 0x00000000 SET_32 
+0x00001fe8 0x00000fe8 0x00002030 SET_32 _ITM_deregisterTMCloneTable
+0x00001fec 0x00000fec 0x00002034 SET_32 __cxa_finalize
+0x00001ff0 0x00000ff0 0x00002038 SET_32 __gmon_start__
+0x00001ff4 0x00000ff4 0x00000000 SET_32 
+0x00001ff8 0x00000ff8 0x0000203c SET_32 _Jv_RegisterClasses
+0x00001ffc 0x00000ffc 0x00002040 SET_32 _ITM_registerTMCloneTable
 0x0000200c 0x0000100c 0x00002028 SET_32 puts
 0x00002010 0x00001010 0x0000202c SET_32 __libc_start_main
-0x00002018 0x00001018 0x0000203c SET_32 
+0x00002018 0x00001018 0x00000000 SET_32 
 0x00000000 1936 segment.LOAD0
 0x00000000 0 segment.GNU_STACK
 0x00000000 52 segment.ehdr
@@ -4818,6 +4817,8 @@ vaddr      paddr      target     type   name
 0x000003f0 16 sym.imp.puts
 0x00000400 16 sym.imp.__libc_start_main
 0x00000420 1 entry0
+0x00000500 1 entry.fini0
+0x00000550 1 entry.init0
 0x00000590 256 main
 0x00000590 60 sym.main
 0x0000064c 4 obj._IO_stdin_used
@@ -4835,11 +4836,11 @@ vaddr      paddr      target     type   name
 0x00002010 4 reloc.__libc_start_main
 0x00002028 4 reloc.target.puts
 0x0000202c 4 reloc.target.__libc_start_main
-0x00002040 4 reloc.target._ITM_deregisterTMCloneTable
-0x00002044 4 reloc.target.__cxa_finalize
-0x00002048 4 reloc.target.__gmon_start
-0x0000204c 4 reloc.target._Jv_RegisterClasses
-0x00002050 4 reloc.target._ITM_registerTMCloneTable
+0x00002030 4 reloc.target._ITM_deregisterTMCloneTable
+0x00002034 4 reloc.target.__cxa_finalize
+0x00002038 4 reloc.target.__gmon_start
+0x0000203c 4 reloc.target._Jv_RegisterClasses
+0x00002040 4 reloc.target._ITM_registerTMCloneTable
 EOF
 RUN
 
@@ -5197,6 +5198,18 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=iRt
+FILE=bins/pe/standard.exe
+CMDS=iRt:quiet
+EXPECT=<<EOF
+0     1576 ICON       0x00401180 0x1628 LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC
+1     10   STRING     0x00402a10 0x4c   LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC
+2     788  GROUP_ICON 0x004027b0 0x14   LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC
+3     1    VERSION    0x004027d0 0x1c4  LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC
+4     1    MANIFEST   0x004029a0 0x4a   LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC
+EOF
+RUN
+
 NAME=izzz
 FILE=bins/mach0/fatmach0-3true
 BROKEN=1
@@ -5214,6 +5227,8 @@ EXPECT=<<EOF
 md5 bf619eac0cdf3f68d496ea9344137e8b
 sha1 5c3eb80066420002bc3dcc7ca4ab6efad7ed4ae5
 sha256 076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560
+crc32 b2aa7578
+entropy 0.000000
 EOF
 EXPECT_ERR=<<EOF
 File has been modified.
@@ -5223,6 +5238,10 @@ File has been modified.
 + sha1 3bfd02bb4fac6499c89278254f04a081887c38ea
 - sha256 076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560
 + sha256 91543b8000dc6bade2bcae4d44c16f3a33e07e6f96a910dcd702c5179a937c20
+- crc32 b2aa7578
++ crc32 3aa678f4
+- entropy 0.000000
++ entropy 0.020393
 EOF
 RUN
 
@@ -5247,12 +5266,18 @@ File has been modified.
 + sha1 17c5b6331a420fc3b48defe782090295294fee2e
 - sha256 95debaecaaaf89c7f5151218def15ef18c8be375aeccf0564a3b16416c361012
 + sha256 53cb8b3aec20da6a313ac996ca8f518bca9fa4768ff771d35513be09a387f025
+- crc32 611b58cd
++ crc32 1ae319dc
+- entropy 2.959094
++ entropy 2.959088
 All core files, io, analysis and flags info purged.
 EOF
 EXPECT=<<EOF
 md5 84144530144b53a704c84d9c65ab5f92
 sha1 9016e215a321184c42c28ab03847554851932713
 sha256 95debaecaaaf89c7f5151218def15ef18c8be375aeccf0564a3b16416c361012
+crc32 611b58cd
+entropy 2.959094
 EOF
 RUN
 

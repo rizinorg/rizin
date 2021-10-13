@@ -978,14 +978,6 @@ static bool cb_binfilter(void *user, void *data) {
 	return true;
 }
 
-/* BinDemangleCmd */
-static bool cb_bdc(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	core->bin->demanglercmd = node->i_value;
-	return true;
-}
-
 static bool cb_useldr(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -3424,7 +3416,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETICB("dbg.trace.tag", 0, &cb_tracetag, "Trace tag");
 
 	/* cmd */
-	SETCB("cmd.demangle", "false", &cb_bdc, "run xcrun swift-demangle and similar if available (SLOW)");
 	SETICB("cmd.depth", 10, &cb_cmddepth, "Maximum command depth");
 	SETPREF("cmd.bp", "", "Run when a breakpoint is hit");
 	SETPREF("cmd.onsyscall", "", "Run when a syscall is hit");
@@ -3546,7 +3537,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("graph.invscroll", "false", "Invert scroll direction in ascii-art graph");
 	SETPREF("graph.title", "", "Title of the graph");
 	SETBPREF("graph.body", "true", "Show body of the nodes in the graph");
-	SETBPREF("graph.bubble", "false", "Show nodes as bubbles");
 	SETBPREF("graph.ntitles", "true", "Display title of node");
 	SETPREF("graph.gv.node", "", "Graphviz node style. (color=gray, style=filled shape=box)");
 	SETPREF("graph.gv.edge", "", "Graphviz edge style. (arrowhead=\"vee\")");

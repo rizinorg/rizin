@@ -463,9 +463,9 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 	RzAsmState *as = __as_new();
 
 	// TODO set addrbytes
-	char *r2arch = rz_sys_getenv("RZ_ARCH");
-	if (r2arch) {
-		arch = r2arch;
+	char *rz_arch = rz_sys_getenv("RZ_ARCH");
+	if (rz_arch) {
+		arch = rz_arch;
 	}
 
 	char *r2bits = rz_sys_getenv("RZ_BITS");
@@ -798,7 +798,7 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 beach:
 	__as_free(as);
 
-	free(r2arch);
+	free(rz_arch);
 	if (fd != -1) {
 		close(fd);
 	}

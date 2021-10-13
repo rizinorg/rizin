@@ -14,8 +14,8 @@ CMDS=iee
 EXPECT=<<EOF
 vaddr      paddr      hvaddr     haddr      type 
 -------------------------------------------------
-0x000002e4 0x000002e4 0x00001ed0 0x00000ed0 fini
 0x00000344 0x00000344 0x00001ed8 0x00000ed8 init
+0x000002e4 0x000002e4 0x00001ed0 0x00000ed0 fini
 EOF
 RUN
 

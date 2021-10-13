@@ -4,8 +4,9 @@
 
 #include <rz_core.h>
 #include <rz_config.h>
-#include "rz_util.h"
-#include "rz_util/rz_time.h"
+#include <rz_demangler.h>
+#include <rz_util.h>
+#include <rz_util/rz_time.h>
 
 #define is_in_range(at, from, sz) ((at) >= (from) && (at) < ((from) + (sz)))
 
@@ -513,19 +514,12 @@ RZ_API bool rz_core_bin_print(RzCore *core, RzBinFile *bf, ut32 mask, RzCoreBinF
 	if (mask & RZ_CORE_BIN_ACC_PDB) {
 		if (state->mode & (RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN)) {
 			RzCmdStateOutput *st = add_header(state, RZ_OUTPUT_MODE_STANDARD, "pdb");
-			switch (st->mode) {
-			case RZ_OUTPUT_MODE_STANDARD:
-				rz_core_pdb_info(core, core->bin->file, NULL, RZ_MODE_PRINT);
-				break;
-			case RZ_OUTPUT_MODE_JSON:
-				rz_core_pdb_info(core, core->bin->file, st->d.pj, RZ_MODE_JSON);
-				break;
-			case RZ_OUTPUT_MODE_RIZIN:
-				rz_core_pdb_info(core, core->bin->file, NULL, RZ_MODE_RIZINCMD);
-				break;
-			default:
-				break;
+			RzPdb *pdb = rz_core_pdb_load_info(core, core->bin->file);
+			if (!pdb) {
+				return false;
 			}
+			rz_core_pdb_info_print(core, core->analysis->typedb, pdb, st);
+			rz_bin_pdb_free(pdb);
 			add_footer(state, st);
 		}
 	}
@@ -775,6 +769,7 @@ RZ_API bool rz_core_bin_apply_entry(RzCore *core, RzBinFile *binfile, bool va) {
 
 static RzIODesc *find_reusable_file(RzIO *io, RzCoreFile *cf, const char *uri, int perm) {
 	rz_return_val_if_fail(io && uri, NULL);
+
 	if (!cf) {
 		// valid case, but then we can't reuse anything
 		return NULL;
@@ -865,9 +860,9 @@ static void add_map(RzCore *core, RZ_NULLABLE RzCoreFile *cf, RzBinFile *bf, RzB
 			if (!desc) {
 				free(uri);
 				return;
-			}
-			if (cf) {
-				rz_pvector_push(&cf->extra_files, desc);
+			} else if (cf && !rz_pvector_push(&cf->extra_files, desc)) {
+				free(uri);
+				return;
 			}
 		}
 		free(uri);
@@ -1771,59 +1766,6 @@ RZ_API void rz_core_bin_print_source_line_info(RzCore *core, const RzBinSourceLi
 	rz_cmd_state_output_array_end(state);
 }
 
-RZ_API bool rz_core_pdb_info(RzCore *core, const char *file, PJ *pj, int mode) {
-	rz_return_val_if_fail(core && file, false);
-
-	ut64 baddr = rz_config_get_i(core->config, "bin.baddr");
-	if (core->bin->cur && core->bin->cur->o && core->bin->cur->o->opts.baseaddr) {
-		baddr = core->bin->cur->o->opts.baseaddr;
-	} else {
-		eprintf("Warning: Cannot find base address, flags will probably be misplaced\n");
-	}
-
-	RzPdb pdb = RZ_EMPTY;
-
-	pdb.cb_printf = rz_cons_printf;
-	if (!init_pdb_parser(&pdb, file)) {
-		return false;
-	}
-	if (!pdb.pdb_parse(&pdb)) {
-		eprintf("pdb was not parsed\n");
-		pdb.finish_pdb_parse(&pdb);
-		return false;
-	}
-
-	switch (mode) {
-	case RZ_MODE_SET:
-		rz_core_cmd0(core, ".iP*");
-		return true;
-	case RZ_MODE_JSON:
-		mode = 'j';
-		break;
-	case '*':
-	case 1:
-		mode = 'r';
-		break;
-	default:
-		mode = 'd'; // default
-		break;
-	}
-	if (mode == 'j') {
-		pj_o(pj);
-	}
-
-	pdb.print_types(&pdb, pj, mode);
-	pdb.print_gvars(&pdb, baddr, pj, mode);
-	// Save compound types into types database
-	rz_parse_pdb_types(core->analysis->typedb, &pdb);
-	pdb.finish_pdb_parse(&pdb);
-
-	if (mode == 'j') {
-		pj_end(pj);
-	}
-	return true;
-}
-
 static const char *bin_reloc_type_name(RzBinReloc *reloc) {
 #define CASE(T) \
 	case RZ_BIN_RELOC_##T: return reloc->additive ? "ADD_" #T : "SET_" #T
@@ -2285,7 +2227,7 @@ RZ_API bool rz_core_bin_relocs_print(RzCore *core, RzBinFile *bf, RzCmdStateOutp
 						: NULL;
 			if (bin_demangle) {
 				char *mn = rz_bin_demangle(core->bin->cur, NULL, name, addr, keep_lib);
-				if (mn && *mn) {
+				if (RZ_STR_ISNOTEMPTY(mn)) {
 					free(name);
 					name = mn;
 				}
@@ -2651,6 +2593,7 @@ static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzList *l
 
 			switch (string->type) {
 			case RZ_STRING_TYPE_UTF8:
+			case RZ_STRING_TYPE_MUTF8:
 			case RZ_STRING_TYPE_WIDE_LE:
 			case RZ_STRING_TYPE_WIDE32_LE:
 				block_list = rz_utf_block_list((const ut8 *)string->string, -1, NULL);
@@ -2704,6 +2647,7 @@ static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzList *l
 			RzStrBuf *buf = rz_strbuf_new(str);
 			switch (string->type) {
 			case RZ_STRING_TYPE_UTF8:
+			case RZ_STRING_TYPE_MUTF8:
 			case RZ_STRING_TYPE_WIDE_LE:
 			case RZ_STRING_TYPE_WIDE32_LE:
 				block_list = rz_utf_block_list((const ut8 *)string->string, -1, NULL);
@@ -2843,7 +2787,12 @@ RZ_API bool rz_core_file_info_print(RzCore *core, RzBinFile *binfile, RzCmdState
 		break;
 	case RZ_OUTPUT_MODE_JSON:
 		pj_o(state->d.pj);
-		pj_ks(state->d.pj, "file", filename);
+		const char *file_tag = "file";
+		if (rz_str_is_utf8(filename)) {
+			pj_ks(state->d.pj, file_tag, filename);
+		} else {
+			pj_kr(state->d.pj, file_tag, (const ut8 *)filename, strlen(filename));
+		}
 		if (desc) {
 			ut64 fsz = rz_io_desc_size(desc);
 			pj_ki(state->d.pj, "fd", desc->fd);
@@ -3519,7 +3468,7 @@ static inline char *demangle_type(const char *any) {
 		return strdup("unknown");
 	}
 	switch (any[0]) {
-	case 'L': return rz_bin_demangle_java(any);
+	case 'L': return rz_demangler_java(any);
 	case 'B': return strdup("byte");
 	case 'C': return strdup("char");
 	case 'D': return strdup("double");
@@ -3577,7 +3526,7 @@ static void classdump_java(RzCore *r, RzBinClass *c) {
 	rz_list_foreach (c->methods, iter3, sym) {
 		const char *mn = sym->dname ? sym->dname : sym->name;
 		visibility = resolve_java_visibility(sym->visibility_str);
-		char *dem = rz_bin_demangle_java(mn);
+		char *dem = rz_demangler_java(mn);
 		if (!dem) {
 			dem = strdup(mn);
 		} else if (simplify && dem && package && classname) {
@@ -3633,7 +3582,7 @@ static void bin_class_print_rizin(RzCore *r, RzBinClass *c, ut64 at_min) {
 	}
 
 	// C struct
-	if (!(bf->o->lang == RZ_BIN_NM_JAVA || (bf->o->info && bf->o->info->lang && strstr(bf->o->info->lang, "dalvik")))) {
+	if (bf->o->lang == RZ_BIN_LANGUAGE_C || bf->o->lang == RZ_BIN_LANGUAGE_CXX || bf->o->lang == RZ_BIN_LANGUAGE_OBJC) {
 		rz_cons_printf("td \"struct %s {", c->name);
 		rz_list_foreach (c->fields, iter2, f) {
 			char *n = objc_name_toc(f->name);
@@ -3663,20 +3612,21 @@ RZ_API bool rz_core_bin_class_as_source_print(RzCore *core, RzBinFile *bf, const
 			continue;
 		}
 		found = true;
-		switch (bf->o->lang & (~RZ_BIN_NM_BLOCKS)) {
-		case RZ_BIN_NM_KOTLIN:
-		case RZ_BIN_NM_GROOVY:
-		case RZ_BIN_NM_JAVA:
+		switch (bf->o->lang & (~RZ_BIN_LANGUAGE_BLOCKS)) {
+		case RZ_BIN_LANGUAGE_KOTLIN:
+		case RZ_BIN_LANGUAGE_GROOVY:
+		case RZ_BIN_LANGUAGE_DART:
+		case RZ_BIN_LANGUAGE_JAVA:
 			classdump_java(core, c);
 			break;
-		case RZ_BIN_NM_SWIFT:
-		case RZ_BIN_NM_OBJC:
+		case RZ_BIN_LANGUAGE_SWIFT:
+		case RZ_BIN_LANGUAGE_OBJC:
 			classdump_objc(core, c);
 			break;
-		case RZ_BIN_NM_CXX:
+		case RZ_BIN_LANGUAGE_CXX:
 			classdump_cpp(core, c);
 			break;
-		case RZ_BIN_NM_C:
+		case RZ_BIN_LANGUAGE_C:
 			classdump_c(core, c);
 			break;
 		default:
@@ -4315,93 +4265,6 @@ static void bin_elf_versioninfo(RzCore *r, PJ *pj, int mode) {
 
 static void bin_mach0_versioninfo(RzCore *r) {
 	/* TODO */
-}
-
-static void bin_pe_resources(RzCore *r, PJ *pj, int mode) {
-	Sdb *sdb = NULL;
-	int index = 0;
-	const char *pe_path = "bin/cur/info/pe_resource";
-	if (!(sdb = sdb_ns_path(r->sdb, pe_path, 0))) {
-		return;
-	}
-	if (IS_MODE_RZCMD(mode)) {
-		rz_cons_printf("fs resources\n");
-	} else if (IS_MODE_JSON(mode)) {
-		pj_a(pj);
-	}
-	while (true) {
-		const char *timestrKey = sdb_fmt("resource.%d.timestr", index);
-		const char *vaddrKey = sdb_fmt("resource.%d.vaddr", index);
-		const char *sizeKey = sdb_fmt("resource.%d.size", index);
-		const char *typeKey = sdb_fmt("resource.%d.type", index);
-		const char *languageKey = sdb_fmt("resource.%d.language", index);
-		const char *nameKey = sdb_fmt("resource.%d.name", index);
-		char *timestr = sdb_get(sdb, timestrKey, 0);
-		if (!timestr) {
-			break;
-		}
-		ut64 vaddr = sdb_num_get(sdb, vaddrKey, 0);
-		int size = (int)sdb_num_get(sdb, sizeKey, 0);
-		char *name = sdb_get(sdb, nameKey, 0);
-		char *type = sdb_get(sdb, typeKey, 0);
-		char *lang = sdb_get(sdb, languageKey, 0);
-
-		if (IS_MODE_RZCMD(mode)) {
-			rz_cons_printf("f resource.%d %d 0x%08" PFMT64x "\n", index, size, vaddr);
-		} else if (IS_MODE_JSON(mode)) {
-			pj_o(pj);
-			pj_ks(pj, "name", name);
-			pj_ki(pj, "index", index);
-			pj_ks(pj, "type", type);
-			pj_kn(pj, "vaddr", vaddr);
-			pj_ki(pj, "size", size);
-			pj_ks(pj, "lang", lang);
-			pj_ks(pj, "timestamp", timestr);
-			pj_end(pj);
-		} else {
-			char humansz[8];
-			rz_num_units(humansz, sizeof(humansz), size);
-			rz_cons_printf("Resource %d\n", index);
-			rz_cons_printf("  name: %s\n", name);
-			rz_cons_printf("  timestamp: %s\n", timestr);
-			rz_cons_printf("  vaddr: 0x%08" PFMT64x "\n", vaddr);
-			rz_cons_printf("  size: %s\n", humansz);
-			rz_cons_printf("  type: %s\n", type);
-			rz_cons_printf("  language: %s\n", lang);
-		}
-
-		RZ_FREE(timestr);
-		RZ_FREE(name);
-		RZ_FREE(type);
-		RZ_FREE(lang)
-
-		index++;
-	}
-	if (IS_MODE_JSON(mode)) {
-		pj_end(pj);
-	} else if (IS_MODE_RZCMD(mode)) {
-		rz_cons_println("fs *");
-	}
-}
-
-static void bin_no_resources(RzCore *r, PJ *pj, int mode) {
-	if (IS_MODE_JSON(mode)) {
-		pj_a(pj);
-		pj_end(pj);
-	}
-}
-
-static int bin_resources(RzCore *r, PJ *pj, int mode) {
-	const RzBinInfo *info = rz_bin_get_info(r->bin);
-	if (!info || !info->rclass) {
-		return false;
-	}
-	if (!strncmp("pe", info->rclass, 2)) {
-		bin_pe_resources(r, pj, mode);
-	} else {
-		bin_no_resources(r, pj, mode);
-	}
-	return true;
 }
 
 static int bin_versioninfo(RzCore *r, PJ *pj, int mode) {
@@ -5049,18 +4912,47 @@ RZ_API bool rz_core_bin_memory_print(RzCore *core, RzBinFile *bf, RzCmdStateOutp
 RZ_API bool rz_core_bin_resources_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state) {
 	rz_return_val_if_fail(core && state, false);
 
-	// TODO: add rz_bin_object_get_resources and switch to table + json output
-	switch (state->mode) {
-	case RZ_OUTPUT_MODE_STANDARD:
-		bin_resources(core, NULL, RZ_MODE_PRINT);
-		break;
-	case RZ_OUTPUT_MODE_JSON:
-		bin_resources(core, state->d.pj, RZ_MODE_JSON);
-		break;
-	default:
-		rz_warn_if_reached();
-		break;
+	rz_cmd_state_output_array_start(state);
+	rz_cmd_state_output_set_columnsf(state, "dssXxss", "index", "name", "type", "vaddr", "size", "lang", "timestamp");
+	const RzList *resources = rz_bin_object_get_resources(bf->o);
+	RzBinResource *resource;
+	RzListIter *it;
+	char humansz[8];
+
+	rz_list_foreach (resources, it, resource) {
+		switch (state->mode) {
+		case RZ_OUTPUT_MODE_STANDARD:
+			rz_num_units(humansz, sizeof(humansz), resource->size);
+			rz_cons_printf("Resource %zd\n", resource->index);
+			rz_cons_printf("  name: %s\n", resource->name);
+			rz_cons_printf("  timestamp: %s\n", resource->time);
+			rz_cons_printf("  vaddr: 0x%08" PFMT64x "\n", resource->vaddr);
+			rz_cons_printf("  size: %s\n", humansz);
+			rz_cons_printf("  type: %s\n", resource->type);
+			rz_cons_printf("  language: %s\n", resource->language);
+			break;
+		case RZ_OUTPUT_MODE_TABLE:
+			rz_table_add_rowf(state->d.t, "dssXxss", resource->index, resource->name,
+				resource->type, resource->vaddr, resource->size, resource->language, resource->time);
+			break;
+		case RZ_OUTPUT_MODE_JSON:
+			pj_o(state->d.pj);
+			pj_ks(state->d.pj, "name", resource->name);
+			pj_ki(state->d.pj, "index", resource->index);
+			pj_ks(state->d.pj, "type", resource->type);
+			pj_kn(state->d.pj, "vaddr", resource->vaddr);
+			pj_ki(state->d.pj, "size", resource->size);
+			pj_ks(state->d.pj, "lang", resource->language);
+			pj_ks(state->d.pj, "timestamp", resource->time);
+			pj_end(state->d.pj);
+			break;
+		default:
+			rz_warn_if_reached();
+			break;
+		}
 	}
+
+	rz_cmd_state_output_array_end(state);
 	return true;
 }
 
@@ -5242,4 +5134,27 @@ RZ_API bool rz_core_bin_archs_print(RzBin *bin, RzCmdStateOutput *state) {
 
 	rz_cmd_state_output_array_end(state);
 	return true;
+}
+
+RZ_API bool rz_core_bin_pdb_load(RZ_NONNULL RzCore *core, RZ_NONNULL const char *filename) {
+	rz_cons_push();
+	RzPdb *pdb = rz_core_pdb_load_info(core, filename);
+	if (!pdb) {
+		return false;
+	}
+	rz_bin_pdb_free(pdb);
+	const char *buf = rz_cons_get_buffer();
+	if (!buf) {
+		rz_cons_pop();
+		return false;
+	}
+	char *s = strdup(buf);
+	rz_cons_pop();
+	if (!s) {
+		return false;
+	}
+
+	RzCmdStatus status = rz_core_cmd_rzshell(core, s, 0);
+	free(s);
+	return status == RZ_CMD_STATUS_OK;
 }

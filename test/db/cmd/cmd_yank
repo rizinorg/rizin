@@ -1,10 +1,10 @@
 NAME=y cat
 FILE=malloc://1024
 CMDS=<<EOF
-w catty @0
-pf z @0x0
+w catty
+pf z
 yt 4 0x10
-pf z @0x10
+pf z @ 0x10
 yp
 EOF
 EXPECT=<<EOF
@@ -17,10 +17,10 @@ RUN
 NAME=y, yx cat
 FILE=malloc://1024
 CMDS=<<EOF
-w catty @0
-pf z @0x0
+w catty
+pf z
 yt 4 0x10
-pf z @0x10
+pf z @ 0x10
 yx
 EOF
 EXPECT=<<EOF

@@ -3,7 +3,7 @@ FILE=bins/pe/ioli/w32/crackme0x00.exe
 CMDS=<<EOF
 e dbg.create_new_console=false
 ood
-db main
+db @ main
 3dc
 dr rflags=0x200 > /dev/null
 dr rflags,rax

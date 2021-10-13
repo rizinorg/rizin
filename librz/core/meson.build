@@ -13,6 +13,7 @@ rz_core_sources = [
   'cconfig.c',
   'cdebug.c',
   'cdwarf.c',
+  'cpdb.c',
   'chash.c',
   'cheap.c',
   'cio.c',
@@ -87,6 +88,7 @@ rz_core_inc = [platform_inc, include_directories(rz_core_inc), 'cmd_descs']
 
 rz_core_deps = [
   rz_util_dep,
+  rz_demangler_dep,
   rz_diff_dep,
   rz_magic_dep,
   rz_socket_dep,
@@ -103,6 +105,7 @@ rz_core_deps = [
   rz_asm_dep,
   rz_egg_dep,
   rz_search_dep,
+  rz_il_dep,
   rz_analysis_dep,
   rz_type_dep,
   rz_debug_dep,
@@ -141,6 +144,7 @@ pkgconfig_mod.generate(
   libraries: pkgcfg_sanitize_libs,
   requires: pkgconfig_magic_requires + [
     'rz_util',
+    'rz_demangler',
     'rz_diff',
     'rz_reg',
     'rz_syscall',
@@ -160,7 +164,8 @@ pkgconfig_mod.generate(
     'rz_config',
     'rz_bin',
     'rz_asm',
-    'rz_bp'
+    'rz_bp',
+    'rz_il'
   ],
   description: 'rizin foundation libraries'
 )

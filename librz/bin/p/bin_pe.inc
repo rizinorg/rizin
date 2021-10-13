@@ -407,6 +407,58 @@ static RzList *libs(RzBinFile *bf) {
 	return ret;
 }
 
+static RzList *resources(RzBinFile *bf) {
+	struct PE_(rz_bin_pe_obj_t) *obj = bf->o->bin_obj;
+	if (!obj) {
+		return NULL;
+	}
+
+	RzList *res = rz_list_newf((RzListFree)rz_bin_resource_free);
+	if (!res) {
+		return NULL;
+	}
+	rz_pe_resource *rs;
+	RzListIter *it;
+	size_t index = 0;
+	rz_list_foreach (obj->resources, it, rs) {
+		RzBinResource *br = RZ_NEW0(RzBinResource);
+		if (!br) {
+			goto err;
+		}
+
+		br->index = index++;
+		br->name = strdup(rs->name);
+		if (!br->name) {
+			rz_bin_resource_free(br);
+			goto err;
+		}
+		br->time = strdup(rs->timestr);
+		if (!br->time) {
+			rz_bin_resource_free(br);
+			goto err;
+		}
+		br->vaddr = PE_(rz_bin_pe_get_image_base)(obj) + rs->data->OffsetToData;
+		br->size = rs->data->Size;
+		br->type = strdup(rs->type);
+		if (!br->type) {
+			rz_bin_resource_free(br);
+			goto err;
+		}
+		br->language = strdup(rs->language);
+		if (!br->language) {
+			rz_bin_resource_free(br);
+			goto err;
+		}
+
+		rz_list_append(res, br);
+	}
+	return res;
+
+err:
+	rz_list_free(res);
+	return NULL;
+}
+
 static int is_dot_net(RzBinFile *bf) {
 	struct rz_bin_pe_lib_t *libs = NULL;
 	int i;

@@ -11,11 +11,14 @@ CMDS=<<EOF
 b 64
 w hello world
 y 5
-yy@6
+yy @ 6
+psz
+yy 4 @ 0xB
 psz
 EOF
 EXPECT=<<EOF
 hello hello
+hello hellohell
 EOF
 RUN
 

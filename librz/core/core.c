@@ -877,8 +877,6 @@ static const char *rizin_argv[] = {
 	"as?", "as", "asc", "asca", "asf", "asj", "asl", "ask",
 	"av?", "av", "avj", "av*", "avr", "avra", "avraj", "avrr", "avrD",
 	"at",
-	"ax?", "ax", "ax*", "ax-", "ax-*", "axc", "axC", "axg", "axg*", "axgj", "axd", "axw", "axj",
-	"axt", "axf", "ax.", "axff", "axffj", "axs",
 	"b?", "b", "b+", "b-", "bf", "bm",
 	"c?", "c", "c1", "c2", "c4", "c8", "cc", "ccd", "cf", "cg?", "cg", "cgf", "cgff", "cgfc", "cgfn", "cgo",
 	"cu?", "cu", "cu1", "cu2", "cu4", "cu8", "cud",
@@ -3207,15 +3205,20 @@ RZ_API int rz_core_search_cb(RzCore *core, ut64 from, ut64 to, RzCoreSearchCallb
 	return true;
 }
 
-RZ_API char *rz_core_editor(const RzCore *core, const char *file, const char *str) {
+RZ_API RZ_OWN char *rz_core_editor(const RzCore *core, RZ_NULLABLE const char *file, RZ_NULLABLE const char *str) {
 	const bool interactive = rz_cons_is_interactive();
+	if (!interactive) {
+		return NULL;
+	}
+
 	const char *editor = rz_config_get(core->config, "cfg.editor");
+	if (RZ_STR_ISEMPTY(editor)) {
+		RZ_LOG_ERROR("Please set \"cfg.editor\" to run the editor");
+		return NULL;
+	}
 	char *name = NULL, *ret = NULL;
 	int fd;
 
-	if (!interactive || !editor || !*editor) {
-		return NULL;
-	}
 	bool readonly = false;
 	if (file && *file != '*') {
 		name = strdup(file);
@@ -3248,18 +3251,10 @@ RZ_API char *rz_core_editor(const RzCore *core, const char *file, const char *st
 	}
 	close(fd);
 
-	if (name && (!editor || !*editor || !strcmp(editor, "-"))) {
-		RzCons *cons = rz_cons_singleton();
-		void *tmp = cons->cb_editor;
-		cons->cb_editor = NULL;
-		rz_cons_editor(name, NULL);
-		cons->cb_editor = tmp;
-	} else {
-		if (editor && name) {
-			char *escaped_name = rz_str_escape_sh(name);
-			rz_sys_cmdf("%s \"%s\"", editor, escaped_name);
-			free(escaped_name);
-		}
+	if (name) {
+		char *escaped_name = rz_str_escape_sh(name);
+		rz_sys_cmdf("%s \"%s\"", editor, escaped_name);
+		free(escaped_name);
 	}
 	size_t len = 0;
 	ret = name ? rz_file_slurp(name, &len) : 0;

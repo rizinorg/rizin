@@ -427,11 +427,7 @@ static void normal_RzANode_print(const RzAGraph *g, const RzANode *n, int cur) {
 
 	// TODO: check if node is traced or not and show proper color
 	// This info must be stored inside RzANode* from RzCore*
-	if (g->show_node_bubble) {
-		rz_cons_canvas_circle(g->can, n->x, n->y, n->w, n->h, get_node_color(color, cur));
-	} else {
-		rz_cons_canvas_box(g->can, n->x, n->y, n->w, n->h, get_node_color(color, cur));
-	}
+	rz_cons_canvas_box(g->can, n->x, n->y, n->w, n->h, get_node_color(color, cur));
 }
 
 static int **get_crossing_matrix(const RzGraph *g,
@@ -4182,7 +4178,6 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 	g->movspeed = rz_config_get_i(core->config, "graph.scroll");
 	g->show_node_titles = rz_config_get_i(core->config, "graph.ntitles");
 	g->show_node_body = rz_config_get_i(core->config, "graph.body");
-	g->show_node_bubble = rz_config_get_i(core->config, "graph.bubble");
 	g->on_curnode_change = (RzANodeCallback)seek_to_node;
 	g->on_curnode_change_data = core;
 	g->edgemode = rz_config_get_i(core->config, "graph.edges");

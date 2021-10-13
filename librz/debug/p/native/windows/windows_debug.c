@@ -459,7 +459,7 @@ int w32_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 
 static void transfer_drx(RzDebug *dbg, const ut8 *buf) {
 	CONTEXT cur_ctx;
-	if (w32_reg_read(dbg, RZ_REG_TYPE_ALL, (ut8 *)&cur_ctx, sizeof(CONTEXT))) {
+	if (w32_reg_read(dbg, RZ_REG_TYPE_ANY, (ut8 *)&cur_ctx, sizeof(CONTEXT))) {
 		CONTEXT *new_ctx = (CONTEXT *)buf;
 		size_t drx_size = offsetof(CONTEXT, Dr7) - offsetof(CONTEXT, Dr0) + sizeof(new_ctx->Dr7);
 		memcpy(&cur_ctx.Dr0, &new_ctx->Dr0, drx_size);
@@ -1295,7 +1295,7 @@ static void w32_info_user(RzDebug *dbg, RzDebugInfo *rdi) {
 	SID_NAME_USE snu = { 0 };
 	W32DbgWInst *wrap = dbg->plugin_data;
 
-	if (!wrap->pi.hProcess) {
+	if (!wrap || !wrap->pi.hProcess) {
 		return;
 	}
 	if (!OpenProcessToken(wrap->pi.hProcess, TOKEN_QUERY, &h_tok)) {
@@ -1344,6 +1344,9 @@ err_w32_info_user:
 
 static void w32_info_exe(RzDebug *dbg, RzDebugInfo *rdi) {
 	W32DbgWInst *wrap = dbg->plugin_data;
+	if (!wrap) {
+		return;
+	}
 	rdi->exe = resolve_path(wrap->pi.hProcess, NULL);
 }
 

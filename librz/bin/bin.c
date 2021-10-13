@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bin.h>
-#include <rz_types.h>
+#include <rz_demangler.h>
 #include <rz_util.h>
 #include <rz_lib.h>
 #include <rz_io.h>
@@ -73,6 +73,7 @@ RZ_API RZ_BORROW const char *rz_bin_string_type(int type) {
 	switch (type) {
 	case RZ_STRING_TYPE_ASCII: return "ascii";
 	case RZ_STRING_TYPE_UTF8: return "utf8";
+	case RZ_STRING_TYPE_MUTF8: return "mutf8";
 	case RZ_STRING_TYPE_WIDE_LE: return "utf16le";
 	case RZ_STRING_TYPE_WIDE32_LE: return "utf32le";
 	case RZ_STRING_TYPE_WIDE_BE: return "utf16be";
@@ -176,6 +177,17 @@ RZ_API void rz_bin_import_free(RzBinImport *imp) {
 		RZ_FREE(imp->descriptor);
 		free(imp);
 	}
+}
+
+RZ_API void rz_bin_resource_free(RzBinResource *res) {
+	if (!res) {
+		return;
+	}
+	RZ_FREE(res->name);
+	RZ_FREE(res->time);
+	RZ_FREE(res->type);
+	RZ_FREE(res->language);
+	free(res);
 }
 
 RZ_API const char *rz_bin_symbol_name(RzBinSymbol *s) {
@@ -477,6 +489,7 @@ RZ_API void rz_bin_free(RzBin *bin) {
 	rz_id_storage_free(bin->ids);
 	rz_event_free(bin->event);
 	rz_str_constpool_fini(&bin->constpool);
+	rz_demangler_free(bin->demangler);
 	free(bin);
 }
 
@@ -705,8 +718,13 @@ RZ_API RzBin *rz_bin_new(void) {
 	if (!bin) {
 		return NULL;
 	}
-	if (!rz_str_constpool_init(&bin->constpool)) {
+	/* demanglers */
+	bin->demangler = rz_demangler_new();
+	if (!bin->demangler) {
 		goto trashbin;
+	}
+	if (!rz_str_constpool_init(&bin->constpool)) {
+		goto trashbin_demangler;
 	}
 	bin->event = rz_event_new(bin);
 	if (!bin->event) {
@@ -755,7 +773,9 @@ RZ_API RzBin *rz_bin_new(void) {
 			free(static_ldr_plugin);
 		}
 	}
+
 	return bin;
+
 trashbin_binldrs:
 	rz_list_free(bin->binldrs);
 trashbin_binxtrs:
@@ -765,6 +785,8 @@ trashbin_binxtrs:
 	rz_event_free(bin->event);
 trashbin_constpool:
 	rz_str_constpool_fini(&bin->constpool);
+trashbin_demangler:
+	rz_demangler_free(bin->demangler);
 trashbin:
 	free(bin);
 	return NULL;
@@ -1294,4 +1316,162 @@ RZ_API const RzBinLdrPlugin *rz_bin_ldrplugin_get(RzBin *bin, const char *name) 
 		}
 	}
 	return NULL;
+}
+
+static char *bin_demangle_cxx(RzBinFile *bf, const char *symbol, ut64 vaddr) {
+	char *out = rz_demangler_cxx(symbol);
+	if (!out || !bf) {
+		return out;
+	}
+	char *sign = (char *)strchr(out, '(');
+	if (!sign) {
+		return out;
+	}
+
+	char *str = out;
+	char *ptr = NULL;
+	char *method_name = NULL;
+	for (;;) {
+		ptr = strstr(str, "::");
+		if (!ptr || ptr > sign) {
+			break;
+		}
+		method_name = ptr;
+		str = ptr + 1;
+	}
+
+	if (RZ_STR_ISEMPTY(method_name)) {
+		return out;
+	}
+
+	*method_name = 0;
+	RzBinSymbol *sym = rz_bin_file_add_method(bf, out, method_name + 2, 0);
+	if (sym) {
+		if (sym->vaddr != 0 && sym->vaddr != vaddr) {
+			RZ_LOG_INFO("Duplicated method found: %s\n", sym->name);
+		}
+		if (sym->vaddr == 0) {
+			sym->vaddr = vaddr;
+		}
+	}
+	*method_name = ':';
+	return out;
+}
+
+static char *bin_demangle_rust(RzBinFile *binfile, const char *symbol, ut64 vaddr) {
+	char *str = NULL;
+	if (!(str = bin_demangle_cxx(binfile, symbol, vaddr))) {
+		return str;
+	}
+	free(str);
+	return rz_demangler_rust(symbol);
+}
+
+/**
+ * \brief Demangles a symbol based on the language or the RzBinFile data
+ * 
+ * This function demangles a symbol based on the language or the RzBinFile data
+ * When a c++ or rust is selected as language, it will add methods into the
+ * RzBinFile structure based on the demangled symbol.
+ * When libs is set to true, the demangled symbol will be appended to the
+ * library name <libname>_<demangled symbol>.
+ */
+RZ_API RZ_OWN char *rz_bin_demangle(RZ_NULLABLE RzBinFile *bf, RZ_NULLABLE const char *language, RZ_NULLABLE const char *symbol, ut64 vaddr, bool libs) {
+	if (RZ_STR_ISEMPTY(symbol)) {
+		return NULL;
+	}
+
+	RzBinLanguage type = RZ_BIN_LANGUAGE_UNKNOWN;
+	RzBin *bin = bf ? bf->rbin : NULL;
+	RzBinObject *o = bf ? bf->o : NULL;
+
+	if (!language && o && o->info && o->info->lang) {
+		language = o->info->lang;
+	}
+
+	RzListIter *iter;
+	const char *lib = NULL;
+	if (!strncmp(symbol, "reloc.", 6)) {
+		symbol += 6;
+	}
+	if (!strncmp(symbol, "sym.", 4)) {
+		symbol += 4;
+	}
+	if (!strncmp(symbol, "imp.", 4)) {
+		symbol += 4;
+	}
+	if (!strncmp(symbol, "target.", 7)) {
+		symbol += 7;
+	}
+	if (o) {
+		bool found = false;
+		rz_list_foreach (o->libs, iter, lib) {
+			size_t len = strlen(lib);
+			if (!rz_str_ncasecmp(symbol, lib, len)) {
+				symbol += len;
+				if (*symbol == '_') {
+					symbol++;
+				}
+				found = true;
+				break;
+			}
+		}
+		if (!found) {
+			lib = NULL;
+		}
+		size_t len = strlen(bin->file);
+		if (!rz_str_ncasecmp(symbol, bin->file, len)) {
+			lib = bin->file;
+			symbol += len;
+			if (*symbol == '_') {
+				symbol++;
+			}
+		}
+	}
+
+	if (RZ_STR_ISEMPTY(symbol)) {
+		return NULL;
+	}
+
+	if (!strncmp(symbol, "__", 2)) {
+		if (symbol[2] == 'T') {
+			type = RZ_BIN_LANGUAGE_SWIFT;
+		} else {
+			type = RZ_BIN_LANGUAGE_CXX;
+		}
+	}
+
+	if (type == RZ_BIN_LANGUAGE_UNKNOWN) {
+		type = rz_bin_language_to_id(language);
+		// ignore "with blocks"
+		type = RZ_BIN_LANGUAGE_MASK(type);
+		language = rz_bin_language_to_string(type);
+	}
+	if (!language) {
+		return NULL;
+	}
+	char *demangled = NULL;
+	switch (type) {
+	case RZ_BIN_LANGUAGE_UNKNOWN: return NULL;
+	case RZ_BIN_LANGUAGE_KOTLIN:
+		/* fall-thru */
+	case RZ_BIN_LANGUAGE_GROOVY:
+		/* fall-thru */
+	case RZ_BIN_LANGUAGE_DART:
+		/* fall-thru */
+	case RZ_BIN_LANGUAGE_JAVA: demangled = rz_demangler_java(symbol); break;
+	case RZ_BIN_LANGUAGE_OBJC: demangled = rz_demangler_objc(symbol); break;
+	case RZ_BIN_LANGUAGE_MSVC: demangled = rz_demangler_msvc(symbol); break;
+#if WITH_GPL
+	case RZ_BIN_LANGUAGE_RUST: demangled = bin_demangle_rust(bf, symbol, vaddr); break;
+	case RZ_BIN_LANGUAGE_CXX: demangled = bin_demangle_cxx(bf, symbol, vaddr); break;
+#endif
+	default: rz_demangler_resolve(bin->demangler, symbol, language, &demangled);
+	}
+	if (libs && demangled && lib) {
+		char *d = rz_str_newf("%s_%s", lib, demangled);
+		free(demangled);
+		demangled = d;
+	}
+	return demangled;
 }

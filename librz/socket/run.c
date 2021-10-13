@@ -505,7 +505,7 @@ RZ_API bool rz_run_parseline(RzRunProfile *p, const char *b) {
 	} else if (!strcmp(b, "aslr")) {
 		p->_aslr = parseBool(e);
 	} else if (!strcmp(b, "pid")) {
-		p->_pid = atoi(e);
+		p->_pid = parseBool(e);
 	} else if (!strcmp(b, "pidfile")) {
 		p->_pidfile = strdup(e);
 	} else if (!strcmp(b, "connect")) {

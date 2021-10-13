@@ -79,6 +79,7 @@ struct reloc_t {
 	bool external;
 	bool pc_relative;
 	ut8 size;
+	ut64 target;
 };
 
 struct addr_t {
@@ -112,9 +113,11 @@ struct super_blob_t {
 struct MACH0_(opts_t) {
 	bool verbose;
 	ut64 header_at;
+	bool patch_relocs;
 };
 
 struct MACH0_(obj_t) {
+	struct MACH0_(opts_t) options;
 	struct MACH0_(mach_header) hdr;
 	struct MACH0_(segment_command) * segs;
 	char *intrp;
@@ -171,15 +174,23 @@ struct MACH0_(obj_t) {
 	const char *lang;
 	int uuidn;
 	int func_size;
-	bool verbose;
-	ut64 header_at;
 	void *user;
 	ut64 (*va2pa)(ut64 p, ut32 *offset, ut32 *left, RzBinFile *bf);
 	struct symbol_t *symbols;
 	ut64 main_addr;
+
+	RzSkipList *relocs; ///< lazily loaded, use only MACH0_(get_relocs)() to access this
+	bool relocs_parsed; ///< whether relocs have already been parsed and relocs is filled (or NULL on error)
+	bool reloc_targets_map_base_calculated;
+	bool relocs_patched;
+	RzBuffer *buf_patched;
+	ut64 reloc_targets_map_base;
+	RzPVector /* <struct reloc_t> */ *patchable_relocs; ///< weak pointers to relocs in `relocs` which should be patched
 };
 
 #define MACH0_VFILE_NAME_REBASED_STRIPPED "rebased_stripped"
+#define MACH0_VFILE_NAME_RELOC_TARGETS    "reloc-targets"
+#define MACH0_VFILE_NAME_PATCHED          "patched"
 
 void MACH0_(opts_set_default)(struct MACH0_(opts_t) * options, RzBinFile *bf);
 struct MACH0_(obj_t) * MACH0_(mach0_new)(const char *file, struct MACH0_(opts_t) * options);
@@ -189,13 +200,14 @@ struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) * bin);
 char *MACH0_(section_type_to_string)(ut64 type);
 RzList *MACH0_(section_flag_to_rzlist)(ut64 flag);
 RzList *MACH0_(get_virtual_files)(RzBinFile *bf);
+RzList *MACH0_(get_maps_unpatched)(RzBinFile *bf);
 RzList *MACH0_(get_maps)(RzBinFile *bf);
 RzList *MACH0_(get_segments)(RzBinFile *bf);
 const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) * bin);
 const RzList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) * bin);
 void MACH0_(pull_symbols)(struct MACH0_(obj_t) * mo, RzBinSymbolCallback cb, void *user);
 struct import_t *MACH0_(get_imports)(struct MACH0_(obj_t) * bin);
-RzSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) * bin);
+RZ_BORROW RzSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) * bin);
 struct addr_t *MACH0_(get_entrypoint)(struct MACH0_(obj_t) * bin);
 struct lib_t *MACH0_(get_libs)(struct MACH0_(obj_t) * bin);
 ut64 MACH0_(get_baddr)(struct MACH0_(obj_t) * bin);
@@ -217,9 +229,17 @@ int MACH0_(get_bits_from_hdr)(struct MACH0_(mach_header) * hdr);
 struct MACH0_(mach_header) * MACH0_(get_hdr)(RzBuffer *buf);
 void MACH0_(mach_headerfields)(RzBinFile *bf);
 RzList *MACH0_(mach_fields)(RzBinFile *bf);
+RZ_API RZ_OWN char *MACH0_(get_name)(struct MACH0_(obj_t) * mo, ut32 stridx, bool filter);
+RZ_API ut64 MACH0_(paddr_to_vaddr)(struct MACH0_(obj_t) * bin, ut64 offset);
+RZ_API ut64 MACH0_(vaddr_to_paddr)(struct MACH0_(obj_t) * bin, ut64 addr);
 
 RZ_API RzBuffer *MACH0_(new_rebasing_and_stripping_buf)(struct MACH0_(obj_t) * obj);
 RZ_API bool MACH0_(needs_rebasing_and_stripping)(struct MACH0_(obj_t) * obj);
 RZ_API bool MACH0_(segment_needs_rebasing_and_stripping)(struct MACH0_(obj_t) * obj, size_t seg_index);
+
+RZ_API bool MACH0_(needs_reloc_patching)(struct MACH0_(obj_t) * obj);
+RZ_API ut64 MACH0_(reloc_targets_vfile_size)(struct MACH0_(obj_t) * obj);
+RZ_API ut64 MACH0_(reloc_targets_map_base)(RzBinFile *bf, struct MACH0_(obj_t) * obj);
+RZ_API void MACH0_(patch_relocs)(RzBinFile *bf, struct MACH0_(obj_t) * obj);
 
 #endif

@@ -1519,9 +1519,9 @@ RZ_API char *rz_str_escape_utf32be(const char *buf, int buf_size, bool show_asci
 	return rz_str_escape_utf(buf, buf_size, RZ_STRING_ENC_UTF32BE, show_asciidot, esc_bslash, false);
 }
 
-RZ_API char *rz_str_escape_utf8_for_json(const char *buf, int buf_size) {
+static char *escape_utf8_for_json(const char *buf, int buf_size, bool mutf8) {
 	char *new_buf, *q;
-	const char *p, *end;
+	const ut8 *p, *end;
 	RzRune ch;
 	int i, len, ch_bytes;
 
@@ -1529,16 +1529,17 @@ RZ_API char *rz_str_escape_utf8_for_json(const char *buf, int buf_size) {
 		return NULL;
 	}
 	len = buf_size < 0 ? strlen(buf) : buf_size;
-	end = buf + len;
+	end = (const ut8 *)buf + len;
 	/* Worst case scenario, we convert every byte to \u00hh */
 	new_buf = malloc(1 + (len * 6));
 	if (!new_buf) {
 		return NULL;
 	}
-	p = buf;
+	p = (const ut8 *)buf;
 	q = new_buf;
 	while (p < end) {
-		ch_bytes = rz_utf8_decode((ut8 *)p, end - p, &ch);
+		ptrdiff_t bytes_left = end - p;
+		ch_bytes = mutf8 ? rz_mutf8_decode(p, bytes_left, &ch) : rz_utf8_decode(p, bytes_left, &ch);
 		if (ch_bytes == 1) {
 			switch (*p) {
 			case '\n':
@@ -1627,6 +1628,14 @@ RZ_API char *rz_str_escape_utf8_for_json(const char *buf, int buf_size) {
 	}
 	*q = '\0';
 	return new_buf;
+}
+
+RZ_API char *rz_str_escape_utf8_for_json(const char *buf, int buf_size) {
+	return escape_utf8_for_json(buf, buf_size, false);
+}
+
+RZ_API char *rz_str_escape_mutf8_for_json(const char *buf, int buf_size) {
+	return escape_utf8_for_json(buf, buf_size, true);
 }
 
 // http://daviddeley.com/autohotkey/parameters/parameters.htm#WINCRULES
@@ -1778,6 +1787,30 @@ RZ_API bool rz_str_is_ascii(const char *str) {
 		if (*ptr > 0x7f) {
 			return false;
 		}
+	}
+	return true;
+}
+
+/**
+ * \brief Returns true if the input string is correctly UTF-8-encoded.
+ *
+ * Goes through a null-terminated string and returns false if there is a byte
+ * sequence that does not encode a valid UTF-8 code point (as determined by
+ * rz_utf8_decode()). If there are no such sequences, it returns true.
+ *
+ * \param str Input string to check for UTF-8 validity.
+ */
+RZ_API bool rz_str_is_utf8(RZ_NONNULL const char *str) {
+	rz_return_val_if_fail(str, false);
+	const ut8 *ptr = (const ut8 *)str;
+	size_t len = strlen(str);
+	while (len) {
+		int bytes = rz_utf8_decode(ptr, len, NULL);
+		if (!bytes) {
+			return false;
+		}
+		len -= bytes;
+		ptr += bytes;
 	}
 	return true;
 }

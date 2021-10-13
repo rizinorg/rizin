@@ -509,6 +509,7 @@ RzBinPlugin rz_bin_plugin_pe64 = {
 	.get_vaddr = &get_vaddr,
 	.trycatch = &trycatch,
 	.hashes = &compute_hashes,
+	.resources = &resources,
 	.section_flag_to_rzlist = &PE_(section_flag_to_rzlist),
 };
 

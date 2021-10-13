@@ -28,10 +28,10 @@ FILE=bins/elf/analysis/pie
 ARGS=-d
 CMDS=<<EOF
 aa
-db main
-?v main-`db~main[0]`
+db @ main
+?v main-`dbl~main[0]`
 doc
-?v main-`db~main[0]`
+?v main-`dbl~main[0]`
 EOF
 EXPECT=<<EOF
 0x0
@@ -44,9 +44,9 @@ FILE=bins/elf/hello_world
 ARGS=-d
 CMDS=<<EOF
 aa
-?v `axt main~entry0[1]`-`e bin.baddr`
+?v `axt @ main~entry0[1]`-`e bin.baddr`
 doc
-?v `axt main~entry0[1]`-`e bin.baddr`
+?v `axt @ main~entry0[1]`-`e bin.baddr`
 EOF
 EXPECT=<<EOF
 0x6bd

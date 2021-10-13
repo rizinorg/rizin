@@ -6,12 +6,12 @@ extern "C" {
 #endif
 
 #include <rz_types.h>
-#include <rz_util/pj.h>
 #include <rz_util/rz_graph.h>
 #include <rz_util/rz_hex.h>
 #include <rz_util/rz_log.h>
 #include <rz_util/rz_num.h>
 #include <rz_util/rz_panels.h>
+#include <rz_util/rz_pj.h>
 #include <rz_util/rz_signal.h>
 #include <rz_util/rz_stack.h>
 #include <rz_util/rz_str.h>
@@ -459,6 +459,12 @@ typedef enum {
 	RZ_VIRT_TERM_MODE_COMPLETE, ///< All the sequences goes through VT (Windows Terminal, mintty, all OSs)
 } RzVirtTermMode;
 
+typedef struct rz_cons_input_context_t {
+	size_t readbuffer_length;
+	char *readbuffer;
+	bool bufactive;
+} RzConsInputContext;
+
 typedef struct rz_cons_context_t {
 	RzConsGrep grep;
 	RzStack *cons_stack;
@@ -492,6 +498,7 @@ typedef struct rz_cons_context_t {
 
 typedef struct rz_cons_t {
 	RzConsContext *context;
+	RzConsInputContext *input;
 	char *lastline;
 	bool is_html;
 	bool was_html;
@@ -565,17 +572,6 @@ typedef struct rz_cons_t {
 	bool show_vals; // show which section in Vv
 	// TODO: move into instance? + avoid unnecessary copies
 } RzCons;
-
-// XXX THIS MUST BE A SINGLETON AND WRAPPED INTO RzCons */
-/* XXX : global variables? or a struct with a singleton? */
-//extern FILE *stdin_fd;
-//extern FILE *rz_cons_stdin_fd;
-//extern int rz_cons_stdout_fd;
-//extern int rz_cons_stdout_file;
-//extern char *rz_cons_filterline;
-//extern char *rz_cons_teefile;
-// not needed anymoar
-//extern int (*rz_cons_user_fgets)(char *buf, int len);
 
 #define RZ_CONS_KEY_F1  0xf1
 #define RZ_CONS_KEY_F2  0xf2
@@ -793,19 +789,6 @@ typedef struct rz_cons_canvas_line_style_t {
 } RzCanvasLineStyle;
 
 // UTF-8 symbols indexes
-// XXX. merge with RUNE/RUNECODE/RUNECODESTR
-#if 0
-#define LINE_VERT   0
-#define LINE_CROSS  1
-#define LINE_HORIZ  2
-#define LINE_UP     3
-#define CORNER_BR   4
-#define CORNER_BL   5
-#define CORNER_TL   6
-#define CORNER_TR   7
-#define ARROW_RIGHT 8
-#define ARROW_LEFT  9
-#else
 #define LINE_VERT   0
 #define LINE_CROSS  1
 #define LINE_HORIZ  2
@@ -816,7 +799,6 @@ typedef struct rz_cons_canvas_line_style_t {
 #define CORNER_TR   6
 #define ARROW_RIGHT 8
 #define ARROW_LEFT  9
-#endif
 
 #ifdef RZ_API
 RZ_API RzConsCanvas *rz_cons_canvas_new(int w, int h);
@@ -824,13 +806,12 @@ RZ_API void rz_cons_canvas_free(RzConsCanvas *c);
 RZ_API void rz_cons_canvas_clear(RzConsCanvas *c);
 RZ_API void rz_cons_canvas_print(RzConsCanvas *c);
 RZ_API void rz_cons_canvas_print_region(RzConsCanvas *c);
-RZ_API char *rz_cons_canvas_to_string(RzConsCanvas *c);
+RZ_API RZ_OWN char *rz_cons_canvas_to_string(RzConsCanvas *c);
 RZ_API void rz_cons_canvas_attr(RzConsCanvas *c, const char *attr);
 RZ_API void rz_cons_canvas_write(RzConsCanvas *c, const char *_s);
 RZ_API bool rz_cons_canvas_gotoxy(RzConsCanvas *c, int x, int y);
 RZ_API void rz_cons_canvas_goto_write(RzConsCanvas *c, int x, int y, const char *s);
 RZ_API void rz_cons_canvas_box(RzConsCanvas *c, int x, int y, int w, int h, const char *color);
-RZ_API void rz_cons_canvas_circle(RzConsCanvas *c, int x, int y, int w, int h, const char *color);
 RZ_API void rz_cons_canvas_line(RzConsCanvas *c, int x, int y, int x2, int y2, RzCanvasLineStyle *style);
 RZ_API void rz_cons_canvas_line_diagonal(RzConsCanvas *c, int x, int y, int x2, int y2, RzCanvasLineStyle *style);
 RZ_API void rz_cons_canvas_line_square(RzConsCanvas *c, int x, int y, int x2, int y2, RzCanvasLineStyle *style);
@@ -888,7 +869,6 @@ RZ_API void rz_cons_context_break_push(RzConsContext *context, RzConsBreak cb, v
 RZ_API void rz_cons_context_break_pop(RzConsContext *context, bool sig);
 
 /* control */
-RZ_API char *rz_cons_editor(const char *file, const char *str);
 RZ_API void rz_cons_reset(void);
 RZ_API void rz_cons_reset_colors(void);
 RZ_API void rz_cons_goto_origin_reset(void);
@@ -1006,7 +986,7 @@ RZ_API char *rz_cons_input(const char *msg);
 RZ_API bool rz_cons_set_cup(bool enable);
 RZ_API void rz_cons_column(int c);
 RZ_API int rz_cons_get_column(void);
-RZ_API char *rz_cons_message(const char *msg);
+RZ_API void rz_cons_message(RZ_NONNULL const char *msg);
 RZ_API void rz_cons_set_title(const char *str);
 RZ_API bool rz_cons_enable_mouse(const bool enable);
 RZ_API void rz_cons_enable_highlight(const bool enable);
@@ -1154,7 +1134,7 @@ struct rz_line_t {
 RZ_API RzLine *rz_line_new(void);
 RZ_API RzLine *rz_line_singleton(void);
 RZ_API void rz_line_free(void);
-RZ_API char *rz_line_get_prompt(void);
+RZ_API RZ_OWN char *rz_line_get_prompt(void);
 RZ_API void rz_line_set_prompt(const char *prompt);
 RZ_API int rz_line_dietline_init(void);
 RZ_API void rz_line_clipboard_push(const char *str);

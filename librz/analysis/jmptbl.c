@@ -7,6 +7,7 @@
 #include <rz_parse.h>
 #include <rz_util.h>
 #include <rz_list.h>
+#include <rz_types_overflow.h>
 
 #define aprintf(format, ...) \
 	if (analysis->verbose) \
@@ -57,6 +58,11 @@ RZ_API bool rz_analysis_jmptbl(RzAnalysis *analysis, RzAnalysisFunction *fcn, Rz
 	return rz_analysis_walkthrough_jmptbl(analysis, fcn, block, &params);
 }
 
+static inline bool jmptable_size_is_invalid(RzAnalysisJmpTableParams *params) {
+	return UT64_MUL_OVFCHK(params->table_count, params->entry_size) ||
+		params->table_count * params->entry_size > ST32_MAX;
+}
+
 /**
 * \brief Marks for analysis jump table cases with a space optimization for multiple cases corresponding to the same address
 * 
@@ -82,7 +88,7 @@ RZ_API bool rz_analysis_walkthrough_casetbl(RZ_NONNULL RzAnalysis *analysis, RZ_
 		aprintf("Warning: Invalid CaseTable location 0x%08" PFMT64x "\n", params->jmptbl_loc);
 		return false;
 	}
-	if (params->table_count < 1 || params->table_count > ST32_MAX) {
+	if (jmptable_size_is_invalid(params)) {
 		aprintf("Warning: Invalid JumpTable size at 0x%08" PFMT64x "\n", params->jmp_address);
 		return false;
 	}
@@ -178,7 +184,7 @@ RZ_API bool rz_analysis_walkthrough_jmptbl(RZ_NONNULL RzAnalysis *analysis, RZ_N
 		aprintf("Warning: Invalid JumpTable location 0x%08" PFMT64x "\n", params->jmptbl_loc);
 		return false;
 	}
-	if (params->table_count < 1 || params->table_count > ST32_MAX) {
+	if (jmptable_size_is_invalid(params)) {
 		aprintf("Warning: Invalid JumpTable size at 0x%08" PFMT64x "\n", params->jmp_address);
 		return false;
 	}
@@ -344,7 +350,7 @@ RZ_API bool rz_analysis_get_delta_jmptbl_info(RZ_NONNULL RzAnalysis *analysis, R
 		if (tmp_aop.dst && tmp_aop.dst->reg) {
 			cmp_reg = tmp_aop.dst->reg;
 		} else if (tmp_aop.reg) {
-			cmp_reg = rz_reg_get(analysis->reg, tmp_aop.reg, RZ_REG_TYPE_ALL);
+			cmp_reg = rz_reg_get(analysis->reg, tmp_aop.reg, RZ_REG_TYPE_ANY);
 		} else if (tmp_aop.src[0] && tmp_aop.src[0]->reg) {
 			cmp_reg = tmp_aop.src[0]->reg;
 		}
@@ -536,7 +542,7 @@ RZ_API bool rz_analysis_get_jmptbl_info(RZ_NONNULL RzAnalysis *analysis, RZ_NONN
 			if (tmp_aop.dst && tmp_aop.dst->reg) {
 				cmp_reg = tmp_aop.dst->reg;
 			} else if (tmp_aop.reg) {
-				cmp_reg = rz_reg_get(analysis->reg, tmp_aop.reg, RZ_REG_TYPE_ALL);
+				cmp_reg = rz_reg_get(analysis->reg, tmp_aop.reg, RZ_REG_TYPE_ANY);
 			} else if (tmp_aop.src[0] && tmp_aop.src[0]->reg) {
 				cmp_reg = tmp_aop.src[0]->reg;
 			}

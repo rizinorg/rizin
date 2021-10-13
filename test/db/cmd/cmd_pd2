@@ -343,7 +343,7 @@ EXPECT=<<EOF
         ,=< 0x00005b02      7d0a           jge   0x5b0e                ; rip=0x5b0e -> 0x8d4890f4 ; likely
        ,==< 0x00005b04      7f08           jg    0x5b0e                ; rip=0x5b0e -> 0x8d4890f4 ; likely
       ,===< 0x00005b06      eb00           jmp   0x5b08                ; rip=0x5b08 -> 0xc30a15ff
-      `---> 0x00005b08      ff150ac30100   call  qword [reloc.__libc_start_main] ; [reloc.__libc_start_main:8]=0x23d10 reloc.target.__libc_start_main ; rsp=0xfffffffffffffff8 ; rip=0x23d10 -> 0x464c457f reloc.target.__libc_start_main
+      `---> 0x00005b08      ff150ac30100   call  qword [reloc.__libc_start_main] ; [reloc.__libc_start_main:8]=0x23708 reloc.target.__libc_start_main ; rsp=0xfffffffffffffff8 ; rip=0x23708 -> 0x464c457f reloc.target.__libc_start_main
 EOF
 RUN
 
@@ -785,7 +785,7 @@ e asm.offset=false
 e asm.cmt.off=false
 aar
 (pdenc enc; e bin.str.enc=$0; pd 1)
-(pdstr bits; s `axt obj.utf$0be~[1]`; .(pdenc guess); .(pdenc utf$0le); .(pdenc utf$0be))
+(pdstr bits; s `axt @ obj.utf$0be~[1]`; .(pdenc guess); .(pdenc utf$0le); .(pdenc utf$0be))
 .(pdstr 16)
 ?e
 .(pdstr 32)
@@ -809,7 +809,7 @@ e asm.offset=0
 e asm.cmt.off=0
 e bin.str.enc=guess
 aar
-(pdstr flag; s `axt obj.$0~[1]`; pd 1)
+(pdstr flag; s `axt @ obj.$0~[1]`; pd 1)
 .(pdstr utf8_bom)
 .(pdstr utf16le_bom)
 .(pdstr utf16be_bom)

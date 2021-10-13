@@ -1,0 +1,27 @@
+# Should not be run on Windows
+NAME=utf8 (possibly malformed) filenames with non-printable chars
+FILE==
+CMDS=<<EOF
+cd `e dir.tmp`
+e io.cache=true
+"(show_fname fname; wz $0; wtf `prz` `$size`; o `prz`; i~file; ij; rm `prz`)"
+.(show_fname A\x1b¢\302\200€𝄞\363\240\201\201\\.bin)
+.(show_fname B\x1b¢\302\200€𝄞\363\240\201\201\\.bin)
+.(show_fname B\x1b¢\302\200\201€𝄞\363\240\201\201\\.bin)
+$size=?v 1
+.(show_fname €\\.bin)
+.(show_fname \xf0\x82\x82\xac\\.bin)
+EOF
+EXPECT=<<EOF
+file    A\x1b¢€𝄞󠁁\.bin
+{"core":{"file":"A\u001b¢\u0080€𝄞\udb40\udc41\\.bin","fd":4,"size":256,"humansz":"256","iorw":true,"mode":"r-x","block":256,"format":"any"}}
+file    B\x1b¢€𝄞󠁁\.bin
+{"core":{"file":"B\u001b¢\u0080€𝄞\udb40\udc41\\.bin","fd":5,"size":256,"humansz":"256","iorw":true,"mode":"r-x","block":256,"format":"any"}}
+file    B\x1b¢\x81€𝄞󠁁\.bin
+{"core":{"file":[66,27,194,162,194,128,129,226,130,172,240,157,132,158,243,160,129,129,92,46,98,105,110],"fd":6,"size":256,"humansz":"256","iorw":true,"mode":"r-x","block":256,"format":"any"}}
+file    €\.bin
+{"core":{"file":"€\\.bin","fd":7,"size":1,"humansz":"1","iorw":true,"mode":"r-x","block":256,"format":"any"}}
+file    \xf0\x82\x82\xac\.bin
+{"core":{"file":[240,130,130,172,92,46,98,105,110],"fd":8,"size":1,"humansz":"1","iorw":true,"mode":"r-x","block":256,"format":"any"}}
+EOF
+RUN

@@ -76,7 +76,6 @@ typedef struct rz_ascii_graph_t {
 	bool dummy; // enable the dummy nodes for better layouting
 	bool show_node_titles;
 	bool show_node_body;
-	bool show_node_bubble;
 
 	int x, y;
 	int w, h;
