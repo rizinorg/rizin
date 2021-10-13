@@ -1,6 +1,7 @@
 NAME=axtj nofunc noflag (#11667)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
+e analysis.jmp.cref=true
 aaa
 s 0x804969c
 axl~0x804969c

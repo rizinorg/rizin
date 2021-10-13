@@ -1763,6 +1763,7 @@ RUN
 NAME="function info integration freepascal"
 FILE=bins/efi/freepascal_test_dwarf 
 CMDS=<<EOF
+e analysis.jmp.cref=true
 e asm.bytes=true
 e asm.dwarf=false
 aaa
