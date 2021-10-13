@@ -2577,6 +2577,8 @@ static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzList *l
 			}
 		}
 
+		char *escaped_string = rz_str_escape_utf8_keep_printable(string->string, false, true);
+
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_JSON: {
 			int *block_list;
@@ -2589,7 +2591,7 @@ static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzList *l
 			pj_ks(state->d.pj, "section", section_name);
 			pj_ks(state->d.pj, "type", type_string);
 			// data itself may be encoded so use pj_ks
-			pj_ks(state->d.pj, "string", string->string);
+			pj_ks(state->d.pj, "string", escaped_string);
 
 			switch (string->type) {
 			case RZ_STRING_TYPE_UTF8:
@@ -2620,7 +2622,7 @@ static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzList *l
 		}
 		case RZ_OUTPUT_MODE_TABLE: {
 			int *block_list;
-			char *str = string->string;
+			char *str = escaped_string;
 			char *no_dbl_bslash_str = NULL;
 			if (!core->print->esc_bslash) {
 				char *ptr;
@@ -2680,15 +2682,16 @@ static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzList *l
 		}
 		case RZ_OUTPUT_MODE_QUIET:
 			rz_cons_printf("0x%" PFMT64x " %d %d %s\n", vaddr,
-				string->size, string->length, string->string);
+				string->size, string->length, escaped_string);
 			break;
 		case RZ_OUTPUT_MODE_QUIETEST:
-			rz_cons_printf("%s\n", string->string);
+			rz_cons_printf("%s\n", escaped_string);
 			break;
 		default:
 			rz_warn_if_reached();
 			break;
 		}
+		free(escaped_string);
 	}
 	RZ_FREE(b64.string);
 	rz_cmd_state_output_array_end(state);

@@ -181,16 +181,11 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 			runes++;
 		} else if (r && r < 0x100 && strchr("\b\v\f\n\r\t\a\033\\", (char)r)) {
 			if ((i + 32) < opt->buf_size && r < 93) {
-				tmp[i + 0] = '\\';
-				tmp[i + 1] = "       abtnvfr             e  "
-					     "                              "
-					     "                              "
-					     "  \\"[r];
+				rc = rz_utf8_encode(tmp + i, r);
 			} else {
 				// string too long
 				break;
 			}
-			rc = 2;
 			runes++;
 		} else {
 			/* \0 marks the end of C-strings */
