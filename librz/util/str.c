@@ -2767,30 +2767,6 @@ RZ_API int rz_str_utf16_to_utf8(ut8 *dst, int len_dst, const ut8 *src, int len_s
 	return len_dst;
 }
 
-/**
- * \brief Converts the string to UTF-8 according to the selected encoding
- */
-RZ_API int rz_str_to_utf8(ut8 *dst, int len_dst, const ut8 *src, int len_src, RzStrEnc encoding) {
-	switch (encoding) {
-	case RZ_STRING_ENC_LATIN1:
-	case RZ_STRING_ENC_UTF8:
-		return rz_str_ncpy((char *)dst, (const char *)src, RZ_MIN(len_dst, len_src));
-	case RZ_STRING_ENC_UTF16BE:
-		return rz_str_utf16_to_utf8(dst, len_dst, src, len_src, false);
-	case RZ_STRING_ENC_UTF16LE:
-		return rz_str_utf16_to_utf8(dst, len_dst, src, len_src, true);
-	case RZ_STRING_ENC_UTF32BE:
-	case RZ_STRING_ENC_UTF32LE:
-		RZ_LOG_ERROR("UTF-32 to UTF-8 conversion is unimplemented");
-		break;
-	case RZ_STRING_ENC_GUESS:
-	default:
-		RZ_LOG_ERROR("Unknown encoding to convert to UTF-8");
-		break;
-	}
-	return -1;
-}
-
 RZ_API char *rz_str_utf16_decode(const ut8 *s, int len) {
 	int i = 0;
 	int j = 0;
