@@ -288,11 +288,11 @@ RZ_API void rz_core_echo(RzCore *core, const char *input) {
 }
 
 RZ_IPI RzCmdStatus rz_cmd_eval_color_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-
 	if (argc == 3) {
-		if (rz_cons_pal_set(argv[1], argv[2])) {
-			rz_cons_pal_update_event();
+		if (!rz_cons_pal_set(argv[1], argv[2])) {
+			return RZ_CMD_STATUS_ERROR;
 		}
+		rz_cons_pal_update_event();
 		return RZ_CMD_STATUS_OK;
 	} else if (argc == 2) {
 		char color[32];
@@ -400,8 +400,7 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_list_reload_current_handler(RzCore *core, i
 
 RZ_IPI RzCmdStatus rz_cmd_eval_color_highlight_current_instruction_handler(RzCore *core, int argc, const char **argv) {
 	char *dup = rz_str_newf("bgonly %s", argv[1]);
-	char *color_code = NULL;
-	color_code = rz_cons_pal_parse(dup, NULL);
+	char *color_code = rz_cons_pal_parse(dup, NULL);
 	RZ_FREE(dup);
 	if (!color_code) {
 		eprintf("Unknown color %s\n", argv[1]);
