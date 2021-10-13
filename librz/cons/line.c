@@ -61,7 +61,7 @@ RZ_API void rz_line_set_prompt(const char *prompt) {
 }
 
 // handle const or dynamic prompts?
-RZ_API char *rz_line_get_prompt(void) {
+RZ_API RZ_OWN char *rz_line_get_prompt(void) {
 	return strdup(I.prompt);
 }
 
@@ -142,22 +142,24 @@ RZ_API RzLineNSCompletionResult *rz_line_ns_completion_result_new(size_t start, 
  * Free a previously allocated RzLineNSCompletionResult
  */
 RZ_API void rz_line_ns_completion_result_free(RzLineNSCompletionResult *res) {
-	if (res) {
-		ht_pp_free(res->options_ht);
-		rz_pvector_fini(&res->options);
-		free(res);
+	if (!res) {
+		return;
 	}
+	ht_pp_free(res->options_ht);
+	rz_pvector_fini(&res->options);
+	free(res);
 }
 
 /**
  * Add a new option to the list of possible autocomplete-able values.
  */
 RZ_API void rz_line_ns_completion_result_add(RzLineNSCompletionResult *res, const char *option) {
-	if (!ht_pp_find(res->options_ht, option, NULL)) {
-		char *dup = strdup(option);
-		rz_pvector_push(&res->options, dup);
-		ht_pp_insert(res->options_ht, dup, dup);
+	if (ht_pp_find(res->options_ht, option, NULL)) {
+		return;
 	}
+	char *dup = strdup(option);
+	rz_pvector_push(&res->options, dup);
+	ht_pp_insert(res->options_ht, dup, dup);
 }
 
 #include "dietline.c"
