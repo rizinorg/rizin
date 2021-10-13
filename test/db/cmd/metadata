@@ -401,7 +401,7 @@ EOF
 EXPECT=<<EOF
 0x1400160a0 latin1[18] "latin1 gate: \xce\xbb\xab\xce"
 0x1400160b8 ascii[50] "  -- in ConEmu, run `chcp 28591` to see the gate."
-0x140016000 ascii[19] "\tANSI\\esc: \e[33m\r\n"
+0x140016000 ascii[19] "\tANSI\esc: \e[33m\r\n"
 EOF
 RUN
 
@@ -478,10 +478,10 @@ Cs
 Cslj
 EOF
 EXPECT=<<EOF
-[{"offset":5368799256,"type":"Cs","name":"XHR3aWRlXFxlc2M6IFxlWzBt","enc":"utf16le","ascii":true}]
+[{"offset":5368799256,"type":"Cs","name":"CXdpZGVcZXNjOiAbWzBt","enc":"utf16le","ascii":true}]
 [{"offset":5368799256,"type":"Cs","name":"CQ==","enc":"latin1","ascii":true}]
-[{"offset":5368799256,"type":"Cs","name":"XHR3aWRlXFxlc2M6IFxlWzBt","enc":"utf16le","ascii":true}]
-[{"offset":5368799256,"type":"Cs","name":"XHR3aWRlXFxlc2M6IFxlWzBt","enc":"utf16le","ascii":true}]
+[{"offset":5368799256,"type":"Cs","name":"CXdpZGVcZXNjOiAbWzBt","enc":"utf16le","ascii":true}]
+[{"offset":5368799256,"type":"Cs","name":"CXdpZGVcZXNjOiAbWzBt","enc":"utf16le","ascii":true}]
 EOF
 RUN
 
@@ -503,17 +503,17 @@ Cs.l
 pd 1
 EOF
 EXPECT=<<EOF
-Cs8 61 @ 0x004021ff # utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \xc2\xa2\xe2\x82\xac\xf0\x90\x8d\x88 \e[0m\n
-"utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \xc2\xa2\xe2\x82\xac\xf0\x90\x8d\x88 \e[0m\n"
-utf8[61] "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \xc2\xa2\xe2\x82\xac\xf0\x90\x8d\x88 \e[0m\n"
-0x004021ff utf8[61] "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \xc2\xa2\xe2\x82\xac\xf0\x90\x8d\x88 \e[0m\n"
-            ;-- str.utf8____u00a2__u20ac__U00010348_in_yellow:_e_33m____________e_0m:
-            0x004021ff     .string "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \xc2\xa2\xe2\x82\xac\xf0\x90\x8d\x88 \e[0m\n" ; len=61
 Cs8 61 @ 0x004021ff # utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \u00a2\u20ac\U00010348 \e[0m\n
 "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \u00a2\u20ac\U00010348 \e[0m\n"
 utf8[61] "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \u00a2\u20ac\U00010348 \e[0m\n"
 0x004021ff utf8[61] "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \u00a2\u20ac\U00010348 \e[0m\n"
-            ;-- str.utf8____u00a2__u20ac__U00010348_in_yellow:_e_33m____________e_0m:
+            ;-- str.utf8___u00a2_u20ac_U00010348_in_yellow:__33m_____________0m:
+            0x004021ff     .string "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \u00a2\u20ac\U00010348 \e[0m\n" ; len=61
+Cs8 61 @ 0x004021ff # utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \u00a2\u20ac\U00010348 \e[0m\n
+"utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \u00a2\u20ac\U00010348 \e[0m\n"
+utf8[61] "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \u00a2\u20ac\U00010348 \e[0m\n"
+0x004021ff utf8[61] "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \u00a2\u20ac\U00010348 \e[0m\n"
+            ;-- str.utf8___u00a2_u20ac_U00010348_in_yellow:__33m_____________0m:
             0x004021ff     .string "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \u00a2\u20ac\U00010348 \e[0m\n" ; len=61
 EOF
 RUN
@@ -566,7 +566,7 @@ ascii[19] "\tANSI\esc: \e[33m\r\n"
 0x140016000 ascii[19] "\tANSI\esc: \e[33m\r\n"
             ;-- str.ANSI_esc:___33m:
             ;-- section..data:
-            0x140016000     .string "\tANSI\esc: \e[33m\r\n" ; len=19 ; [02] -rw- section size 8192 named .data
+            0x140016000     .string "\tANSI\esc: \e[33m\r\n" ; len=19  ; [02] -rw- section size 8192 named .data
 EOF
 RUN
 

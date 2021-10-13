@@ -1153,7 +1153,7 @@ pd 1 @ 0x140001028
 e asm.cmt.right=false
 pd 1 @ 0x140001010
 pd 1 @ 0x140001028
-fr str.wide__esc:__e_0m str.wide
+fr str.wide_esc:___0m str.wide
 e asm.cmt.right=true
 pd 1 @ 0x140001010
 e asm.cmt.right=false
