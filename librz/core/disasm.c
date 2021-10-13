@@ -3091,17 +3091,20 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8 *buf, int len, int idx, in
 		switch (mi->type) {
 		case RZ_META_TYPE_STRING:
 			if (mi->str) {
-				bool esc_bslash = core->print->esc_bslash;
+				RzStrEncOptions opt = { 0 };
+				opt.esc_bslash = core->print->esc_bslash;
+				opt.show_asciidot = false;
 
 				switch (mi->subtype) {
 				case RZ_STRING_ENC_UTF8:
-					out = rz_str_escape_utf8(mi->str, false, esc_bslash);
+					out = rz_str_escape_utf8(mi->str, &opt);
 					break;
 				case 0: /* temporary legacy workaround */
-					esc_bslash = false;
+					opt.esc_bslash = false;
 					/* fallthrough */
 				default:
-					out = rz_str_escape_latin1(mi->str, false, esc_bslash, false);
+					out = rz_str_escape_latin1(mi->str, false, &opt);
+					break;
 				}
 				if (!out) {
 					break;
@@ -3800,38 +3803,40 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 	int str_len;
 	char *escstr = NULL;
 	const char *prefix = "";
-	bool esc_bslash = ds->core->print->esc_bslash;
 	RzStrEnc strenc = ds->strenc;
 	if (strenc == RZ_STRING_ENC_GUESS) {
 		strenc = rz_utf_bom_encoding((ut8 *)str, len);
 	}
+	RzStrEncOptions opt = { 0 };
+	opt.show_asciidot = ds->show_asciidot;
+	opt.esc_bslash = ds->core->print->esc_bslash;
 	switch (strenc) {
 	case RZ_STRING_ENC_LATIN1:
-		escstr = rz_str_escape_latin1(str, ds->show_asciidot, esc_bslash, is_comment);
+		escstr = rz_str_escape_latin1(str, is_comment, &opt);
 		break;
 	case RZ_STRING_ENC_UTF8:
-		escstr = rz_str_escape_utf8(str, ds->show_asciidot, esc_bslash);
+		escstr = rz_str_escape_utf8(str, &opt);
 		break;
 	case RZ_STRING_ENC_UTF16LE:
-		escstr = rz_str_escape_utf16le(str, len, ds->show_asciidot, esc_bslash);
+		escstr = rz_str_escape_utf16le(str, len, &opt);
 		prefix = "u";
 		break;
 	case RZ_STRING_ENC_UTF32LE:
-		escstr = rz_str_escape_utf32le(str, len, ds->show_asciidot, esc_bslash);
+		escstr = rz_str_escape_utf32le(str, len, &opt);
 		prefix = "U";
 		break;
 	case RZ_STRING_ENC_UTF16BE:
-		escstr = rz_str_escape_utf16be(str, len, ds->show_asciidot, esc_bslash);
+		escstr = rz_str_escape_utf16be(str, len, &opt);
 		prefix = "ub";
 		break;
 	case RZ_STRING_ENC_UTF32BE:
-		escstr = rz_str_escape_utf32be(str, len, ds->show_asciidot, esc_bslash);
+		escstr = rz_str_escape_utf32be(str, len, &opt);
 		prefix = "Ub";
 		break;
 	default:
 		str_len = strlen(str);
 		if ((str_len == 1 && len > 3 && str[2] && !str[3]) || (str_len == 3 && len > 5 && !memcmp(str, "\xff\xfe", 2) && str[4] && !str[5])) {
-			escstr = rz_str_escape_utf16le(str, len, ds->show_asciidot, esc_bslash);
+			escstr = rz_str_escape_utf16le(str, len, &opt);
 			prefix = "u";
 		} else if (str_len == 1 && len > 7 && !str[2] && !str[3] && str[4] && !str[5]) {
 			RzStrEnc enc = RZ_STRING_ENC_UTF32LE;
@@ -3848,10 +3853,10 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 				}
 			}
 			if (enc == RZ_STRING_ENC_UTF32LE) {
-				escstr = rz_str_escape_utf32le(str, len, ds->show_asciidot, esc_bslash);
+				escstr = rz_str_escape_utf32le(str, len, &opt);
 				prefix = "U";
 			} else {
-				escstr = rz_str_escape_latin1(str, ds->show_asciidot, esc_bslash, is_comment);
+				escstr = rz_str_escape_latin1(str, is_comment, &opt);
 			}
 		} else {
 			RzStrEnc enc = RZ_STRING_ENC_LATIN1;
@@ -3862,7 +3867,7 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 					break;
 				}
 			}
-			escstr = (enc == RZ_STRING_ENC_UTF8 ? rz_str_escape_utf8(str, ds->show_asciidot, esc_bslash) : rz_str_escape_latin1(str, ds->show_asciidot, esc_bslash, is_comment));
+			escstr = (enc == RZ_STRING_ENC_UTF8 ? rz_str_escape_utf8(str, &opt) : rz_str_escape_latin1(str, is_comment, &opt));
 		}
 	}
 	if (prefix_out) {

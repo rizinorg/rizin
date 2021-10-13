@@ -1463,7 +1463,10 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 		SymName sn = { 0 };
 		count++;
 		sym_name_init(core, &sn, symbol, lang);
-		char *rz_symbol_name = rz_str_escape_utf8(sn.name, false, true);
+		RzStrEncOptions opt = { 0 };
+		opt.show_asciidot = false;
+		opt.esc_bslash = true;
+		char *rz_symbol_name = rz_str_escape_utf8(sn.name, &opt);
 
 		if (is_section_symbol(symbol) || is_file_symbol(symbol)) {
 			/*
@@ -1904,7 +1907,10 @@ static bool symbols_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, 
 
 		SymName sn = { 0 };
 		sym_name_init(core, &sn, symbol, lang);
-		char *rz_symbol_name = rz_str_escape_utf8(sn.demname ? sn.demname : sn.name, false, true);
+		RzStrEncOptions opt = { 0 };
+		opt.show_asciidot = false;
+		opt.esc_bslash = true;
+		char *rz_symbol_name = rz_str_escape_utf8(sn.demname ? sn.demname : sn.name, &opt);
 		if (core->bin->prefix) {
 			char *tmp = rz_str_newf("%s.%s", core->bin->prefix, rz_symbol_name);
 			free(rz_symbol_name);
@@ -2577,7 +2583,10 @@ static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzList *l
 			}
 		}
 
-		char *escaped_string = rz_str_escape_utf8_keep_printable(string->string, false, true);
+		RzStrEncOptions opt = { 0 };
+		opt.show_asciidot = false;
+		opt.esc_bslash = true;
+		char *escaped_string = rz_str_escape_utf8_keep_printable(string->string, &opt);
 
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_JSON: {
@@ -2822,12 +2831,15 @@ RZ_API bool rz_core_file_info_print(RzCore *core, RzBinFile *binfile, RzCmdState
 		}
 		pj_end(state->d.pj);
 		break;
-	case RZ_OUTPUT_MODE_TABLE:
+	case RZ_OUTPUT_MODE_TABLE: {
 		rz_table_hide_header(state->d.t);
 		if (desc) {
 			rz_table_add_rowf(state->d.t, "sd", "fd", desc->fd);
 		}
-		escaped = rz_str_escape_utf8_keep_printable(filename, false, false);
+		RzStrEncOptions opt = { 0 };
+		opt.show_asciidot = false;
+		opt.esc_bslash = false;
+		escaped = rz_str_escape_utf8_keep_printable(filename, &opt);
 		rz_table_add_rowf(state->d.t, "ss", "file", escaped);
 		free(escaped);
 		if (desc) {
@@ -2857,6 +2869,7 @@ RZ_API bool rz_core_file_info_print(RzCore *core, RzBinFile *binfile, RzCmdState
 			rz_table_add_rowf(state->d.t, "ss", "type", info->type);
 		}
 		break;
+	}
 	default:
 		rz_warn_if_reached();
 		break;

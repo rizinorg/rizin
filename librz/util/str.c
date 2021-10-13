@@ -1275,21 +1275,19 @@ RZ_API char *rz_str_sanitize_sdb_key(const char *s) {
 	return ret;
 }
 
-/* \brief Converts unprintable characters to C-like backslash representation
+/**
+ * \brief Converts unprintable characters to C-like backslash representation
  *
  * \param p pointer to the original string
  * \param dst pointer where pointer to the resulting characters sequence is put
- * \param dot_nl specifies whether to convert \n into the graphiz-compatible newline \l
- * \param default_dot specifies whether to replace unprintable with characters with the dot '.' or
- * hexadecimal number
- * \param esc_bslash specifies whether to replace the backslash '\' character with two of them
- */
-RZ_API void rz_str_byte_escape(const char *p, char **dst, bool dot_nl, bool default_dot, bool esc_bslash) {
+ * \param opt pointer to encoding options structure
+ **/
+RZ_API void rz_str_byte_escape(const char *p, char **dst, RzStrEncOptions *opt) {
 	char *q = *dst;
 	switch (*p) {
 	case '\n':
 		*q++ = '\\';
-		*q++ = dot_nl ? 'l' : 'n';
+		*q++ = opt->dot_nl ? 'l' : 'n';
 		break;
 	case '\r':
 		*q++ = '\\';
@@ -1297,7 +1295,7 @@ RZ_API void rz_str_byte_escape(const char *p, char **dst, bool dot_nl, bool defa
 		break;
 	case '\\':
 		*q++ = '\\';
-		if (esc_bslash) {
+		if (opt->esc_bslash) {
 			*q++ = '\\';
 		}
 		break;
@@ -1332,7 +1330,7 @@ RZ_API void rz_str_byte_escape(const char *p, char **dst, bool dot_nl, bool defa
 	default:
 		/* Outside the ASCII printable range */
 		if (!IS_PRINTABLE(*p)) {
-			if (default_dot) {
+			if (opt->show_asciidot) {
 				*q++ = '.';
 			} else {
 				*q++ = '\\';
@@ -1385,8 +1383,13 @@ static char *rz_str_escape_(const char *buf, bool dot_nl, bool parse_esc_seq, bo
 				break;
 			}
 			/* fallthrough */
-		default:
-			rz_str_byte_escape(p, &q, dot_nl, show_asciidot, esc_bslash);
+		default: {
+			RzStrEncOptions opt = { 0 };
+			opt.dot_nl = dot_nl;
+			opt.show_asciidot = show_asciidot;
+			opt.esc_bslash = esc_bslash;
+			rz_str_byte_escape(p, &q, &opt);
+		}
 		}
 		p++;
 	}
@@ -1431,8 +1434,8 @@ RZ_API char *rz_str_escape_dot(const char *buf) {
 	return rz_str_escape_(buf, true, true, true, false, true);
 }
 
-RZ_API char *rz_str_escape_latin1(const char *buf, bool show_asciidot, bool esc_bslash, bool colors) {
-	return rz_str_escape_(buf, false, colors, !colors, show_asciidot, esc_bslash);
+RZ_API char *rz_str_escape_latin1(const char *buf, bool colors, RzStrEncOptions *opt) {
+	return rz_str_escape_(buf, false, colors, !colors, opt->show_asciidot, opt->esc_bslash);
 }
 
 static char *rz_str_escape_utf(const char *buf, int buf_size, RzStrEnc enc, bool show_asciidot, bool esc_bslash, bool keep_printable) {
@@ -1511,7 +1514,11 @@ static char *rz_str_escape_utf(const char *buf, int buf_size, RzStrEnc enc, bool
 		} else {
 			int offset = enc == RZ_STRING_ENC_UTF16BE ? 1 : enc == RZ_STRING_ENC_UTF32BE ? 3
 												     : 0;
-			rz_str_byte_escape(p + offset, &q, false, false, esc_bslash);
+			RzStrEncOptions opt = { 0 };
+			opt.dot_nl = false;
+			opt.show_asciidot = false;
+			opt.esc_bslash = esc_bslash;
+			rz_str_byte_escape(p + offset, &q, &opt);
 		}
 		switch (enc) {
 		case RZ_STRING_ENC_UTF16LE:
@@ -1530,28 +1537,28 @@ static char *rz_str_escape_utf(const char *buf, int buf_size, RzStrEnc enc, bool
 	return new_buf;
 }
 
-RZ_API char *rz_str_escape_utf8(const char *buf, bool show_asciidot, bool esc_bslash) {
-	return rz_str_escape_utf(buf, -1, RZ_STRING_ENC_UTF8, show_asciidot, esc_bslash, false);
+RZ_API char *rz_str_escape_utf8(const char *buf, RzStrEncOptions *opt) {
+	return rz_str_escape_utf(buf, -1, RZ_STRING_ENC_UTF8, opt->show_asciidot, opt->esc_bslash, false);
 }
 
-RZ_API char *rz_str_escape_utf8_keep_printable(const char *buf, bool show_asciidot, bool esc_bslash) {
-	return rz_str_escape_utf(buf, -1, RZ_STRING_ENC_UTF8, show_asciidot, esc_bslash, true);
+RZ_API char *rz_str_escape_utf8_keep_printable(const char *buf, RzStrEncOptions *opt) {
+	return rz_str_escape_utf(buf, -1, RZ_STRING_ENC_UTF8, opt->show_asciidot, opt->esc_bslash, true);
 }
 
-RZ_API char *rz_str_escape_utf16le(const char *buf, int buf_size, bool show_asciidot, bool esc_bslash) {
-	return rz_str_escape_utf(buf, buf_size, RZ_STRING_ENC_UTF16LE, show_asciidot, esc_bslash, false);
+RZ_API char *rz_str_escape_utf16le(const char *buf, int buf_size, RzStrEncOptions *opt) {
+	return rz_str_escape_utf(buf, buf_size, RZ_STRING_ENC_UTF16LE, opt->show_asciidot, opt->esc_bslash, false);
 }
 
-RZ_API char *rz_str_escape_utf32le(const char *buf, int buf_size, bool show_asciidot, bool esc_bslash) {
-	return rz_str_escape_utf(buf, buf_size, RZ_STRING_ENC_UTF32LE, show_asciidot, esc_bslash, false);
+RZ_API char *rz_str_escape_utf32le(const char *buf, int buf_size, RzStrEncOptions *opt) {
+	return rz_str_escape_utf(buf, buf_size, RZ_STRING_ENC_UTF32LE, opt->show_asciidot, opt->esc_bslash, false);
 }
 
-RZ_API char *rz_str_escape_utf16be(const char *buf, int buf_size, bool show_asciidot, bool esc_bslash) {
-	return rz_str_escape_utf(buf, buf_size, RZ_STRING_ENC_UTF16BE, show_asciidot, esc_bslash, false);
+RZ_API char *rz_str_escape_utf16be(const char *buf, int buf_size, RzStrEncOptions *opt) {
+	return rz_str_escape_utf(buf, buf_size, RZ_STRING_ENC_UTF16BE, opt->show_asciidot, opt->esc_bslash, false);
 }
 
-RZ_API char *rz_str_escape_utf32be(const char *buf, int buf_size, bool show_asciidot, bool esc_bslash) {
-	return rz_str_escape_utf(buf, buf_size, RZ_STRING_ENC_UTF32BE, show_asciidot, esc_bslash, false);
+RZ_API char *rz_str_escape_utf32be(const char *buf, int buf_size, RzStrEncOptions *opt) {
+	return rz_str_escape_utf(buf, buf_size, RZ_STRING_ENC_UTF32BE, opt->show_asciidot, opt->esc_bslash, false);
 }
 
 static char *escape_utf8_for_json(const char *buf, int buf_size, bool mutf8) {

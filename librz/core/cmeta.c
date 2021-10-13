@@ -8,7 +8,9 @@
 
 static char *meta_string_escape(RzCore *core, RzAnalysisMetaItem *mi) {
 	char *esc_str = NULL;
-	bool esc_bslash = core->print->esc_bslash;
+	RzStrEncOptions opt = { 0 };
+	opt.show_asciidot = false;
+	opt.esc_bslash = core->print->esc_bslash;
 	switch (mi->subtype) {
 	case RZ_STRING_ENC_UTF16LE:
 	case RZ_STRING_ENC_UTF16BE:
@@ -16,10 +18,10 @@ static char *meta_string_escape(RzCore *core, RzAnalysisMetaItem *mi) {
 	case RZ_STRING_ENC_UTF32BE:
 	case RZ_STRING_ENC_UTF8:
 		// All strings that are put into the metadata are already converted
-		esc_str = rz_str_escape_utf8(mi->str, false, esc_bslash);
+		esc_str = rz_str_escape_utf8(mi->str, &opt);
 		break;
 	case RZ_STRING_ENC_LATIN1:
-		esc_str = rz_str_escape_latin1(mi->str, false, esc_bslash, false);
+		esc_str = rz_str_escape_latin1(mi->str, false, &opt);
 		break;
 	default:
 		rz_warn_if_reached();
