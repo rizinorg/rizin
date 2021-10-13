@@ -22,6 +22,10 @@ RZ_API void rz_detected_string_free(RzDetectedString *str) {
 	}
 }
 
+static inline bool is_c_escape_sequence(char ch) {
+	return strchr("\b\v\f\n\r\t\a\033\\", ch);
+}
+
 static FalsePositiveResult reduce_false_positives(const RzUtilStrScanOptions *opt, ut8 *str, int size, RzStrEnc str_type) {
 	int i, num_blocks, *block_list;
 	int *freq_list = NULL, expected_ascii, actual_ascii, num_chars;
@@ -30,7 +34,7 @@ static FalsePositiveResult reduce_false_positives(const RzUtilStrScanOptions *op
 	case RZ_STRING_ENC_LATIN1: {
 		for (i = 0; i < size; i++) {
 			char ch = str[i];
-			if (ch != '\n' && ch != '\r' && ch != '\t') {
+			if (!is_c_escape_sequence(ch)) {
 				if (!IS_PRINTABLE(str[i])) {
 					return SKIP_STRING;
 				}
@@ -179,7 +183,7 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 			}
 			rc = rz_utf8_encode(tmp + i, r);
 			runes++;
-		} else if (r && r < 0x100 && strchr("\b\v\f\n\r\t\a\033\\", (char)r)) {
+		} else if (r && r < 0x100 && is_c_escape_sequence((char)r)) {
 			if ((i + 32) < opt->buf_size && r < 93) {
 				rc = rz_utf8_encode(tmp + i, r);
 			} else {
