@@ -157,6 +157,7 @@ RUN
 NAME=aflj
 FILE=bins/elf/ls
 CMDS=<<EOF
+e analysis.jmp.cref=true
 aaa
 aflj~{main}
 EOF
