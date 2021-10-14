@@ -278,7 +278,7 @@ static bool bin_strfilter(RzBin *bin, const char *str) {
 				(in_esc_seq && (ch == 't' || ch == 'n' || ch == 'r'))) {
 				goto loop_end;
 			}
-			if (ch < 0 || !IS_PRINTABLE(ch) || IS_LOWER(ch)) {
+			if (ch < 0 || IS_LOWER(ch)) {
 				return false;
 			}
 			if (IS_UPPER(ch)) {
