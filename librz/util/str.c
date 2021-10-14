@@ -1349,12 +1349,12 @@ RZ_API void rz_str_byte_escape(const char *p, char **dst, RzStrEncOptions *opt) 
 
 /* Internal function. dot_nl specifies whether to convert \n into the
  * graphiz-compatible newline \l */
-static char *rz_str_escape_(const char *buf, bool dot_nl, bool parse_esc_seq, bool ign_esc_seq, bool show_asciidot, bool esc_bslash) {
+static char *rz_str_escape_(const char *buf, bool parse_esc_seq, bool ign_esc_seq, RzStrEncOptions *opt) {
 	rz_return_val_if_fail(buf, NULL);
 
 	/* Worst case scenario, we convert every byte to a single-char escape
 	 * (e.g. \n) if show_asciidot, or \xhh if !show_asciidot */
-	char *new_buf = malloc(1 + strlen(buf) * (show_asciidot ? 2 : 4));
+	char *new_buf = malloc(1 + strlen(buf) * (opt->show_asciidot ? 2 : 4));
 	if (!new_buf) {
 		return NULL;
 	}
@@ -1385,13 +1385,9 @@ static char *rz_str_escape_(const char *buf, bool dot_nl, bool parse_esc_seq, bo
 				break;
 			}
 			/* fallthrough */
-		default: {
-			RzStrEncOptions opt = { 0 };
-			opt.dot_nl = dot_nl;
-			opt.show_asciidot = show_asciidot;
-			opt.esc_bslash = esc_bslash;
-			rz_str_byte_escape(p, &q, &opt);
-		}
+		default:
+			rz_str_byte_escape(p, &q, opt);
+			break;
 		}
 		p++;
 	}
@@ -1401,7 +1397,11 @@ out:
 }
 
 RZ_API char *rz_str_escape(const char *buf) {
-	return rz_str_escape_(buf, false, true, true, false, true);
+	RzStrEncOptions opt = { 0 };
+	opt.dot_nl = false;
+	opt.show_asciidot = false;
+	opt.esc_bslash = true;
+	return rz_str_escape_(buf, true, true, &opt);
 }
 
 // Return MUST BE surrounded by double-quotes
@@ -1433,11 +1433,15 @@ RZ_API char *rz_str_escape_sh(const char *buf) {
 }
 
 RZ_API char *rz_str_escape_dot(const char *buf) {
-	return rz_str_escape_(buf, true, true, true, false, true);
+	RzStrEncOptions opt = { 0 };
+	opt.dot_nl = true;
+	opt.show_asciidot = false;
+	opt.esc_bslash = true;
+	return rz_str_escape_(buf, true, true, &opt);
 }
 
 RZ_API char *rz_str_escape_latin1(const char *buf, bool colors, RzStrEncOptions *opt) {
-	return rz_str_escape_(buf, false, colors, !colors, opt->show_asciidot, opt->esc_bslash);
+	return rz_str_escape_(buf, colors, !colors, opt);
 }
 
 static char *rz_str_escape_utf(const char *buf, int buf_size, RzStrEnc enc, bool show_asciidot, bool esc_bslash, bool esc_double_quotes, bool keep_printable) {
