@@ -62,7 +62,7 @@ RZ_API RzILOp *rz_il_new_op(RzILOPCode code) {
 		ret->op.neg = (RzILOpNeg *)RZ_NEW0(RzILOpNeg);
 		break;
 	case RZIL_OP_NOT:
-		ret->op.not = (RzILOpNot *)RZ_NEW0(RzILOpNot);
+		ret->op.not_ = (RzILOpNot *)RZ_NEW0(RzILOpNot);
 		break;
 	case RZIL_OP_ADD:
 	case RZIL_OP_SUB:

@@ -4302,8 +4302,13 @@ RZ_API int rz_core_analysis_search_xrefs(RzCore *core, ut64 from, ut64 to, PJ *p
 			}
 			switch (op.type) {
 			case RZ_ANALYSIS_OP_TYPE_JMP:
-			case RZ_ANALYSIS_OP_TYPE_CJMP:
 				if (found_xref(core, op.addr, op.jump, RZ_ANALYSIS_REF_TYPE_CODE, pj, rad, cfg_debug, cfg_analysis_strings)) {
+					count++;
+				}
+				break;
+			case RZ_ANALYSIS_OP_TYPE_CJMP:
+				if (rz_config_get_b(core->config, "analysis.jmp.cref") &&
+					found_xref(core, op.addr, op.jump, RZ_ANALYSIS_REF_TYPE_CODE, pj, rad, cfg_debug, cfg_analysis_strings)) {
 					count++;
 				}
 				break;

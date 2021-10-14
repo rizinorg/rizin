@@ -409,7 +409,7 @@ typedef union {
 	RzILOpUle *ule;
 	RzILOpSle *sle;
 	RzILOpNeg *neg;
-	RzILOpNot * not ;
+	RzILOpNot *not_;
 	RzILOpAdd *add;
 	RzILOpSub *sub;
 	RzILOpMul *mul;

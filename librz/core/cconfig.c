@@ -3537,7 +3537,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("graph.invscroll", "false", "Invert scroll direction in ascii-art graph");
 	SETPREF("graph.title", "", "Title of the graph");
 	SETBPREF("graph.body", "true", "Show body of the nodes in the graph");
-	SETBPREF("graph.bubble", "false", "Show nodes as bubbles");
 	SETBPREF("graph.ntitles", "true", "Display title of node");
 	SETPREF("graph.gv.node", "", "Graphviz node style. (color=gray, style=filled shape=box)");
 	SETPREF("graph.gv.edge", "", "Graphviz edge style. (arrowhead=\"vee\")");

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_cons.h>
+
 #define W(y)    rz_cons_canvas_write(c, y)
 #define G(x, y) rz_cons_canvas_gotoxy(c, x, y)
 

@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2013-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <math.h>
 #include <rz_cons.h>
 #include <rz_util/rz_assert.h>
 
@@ -347,7 +348,7 @@ RZ_API void rz_cons_canvas_write(RzConsCanvas *c, const char *s) {
 	c->x = orig_x;
 }
 
-RZ_API char *rz_cons_canvas_to_string(RzConsCanvas *c) {
+RZ_API RZ_OWN char *rz_cons_canvas_to_string(RzConsCanvas *c) {
 	rz_return_val_if_fail(c, NULL);
 
 	int x, y, olen = 0, attr_x = 0;
@@ -408,21 +409,24 @@ RZ_API char *rz_cons_canvas_to_string(RzConsCanvas *c) {
 
 RZ_API void rz_cons_canvas_print_region(RzConsCanvas *c) {
 	char *o = rz_cons_canvas_to_string(c);
-	if (o) {
-		rz_str_trim_tail(o);
-		if (*o) {
-			rz_cons_strcat(o);
-		}
+	if (RZ_STR_ISEMPTY(o)) {
 		free(o);
+		return;
 	}
+	rz_str_trim_tail(o);
+	if (RZ_STR_ISNOTEMPTY(o)) {
+		rz_cons_strcat(o);
+	}
+	free(o);
 }
 
 RZ_API void rz_cons_canvas_print(RzConsCanvas *c) {
 	char *o = rz_cons_canvas_to_string(c);
-	if (o) {
-		rz_cons_strcat(o);
-		free(o);
+	if (!o) {
+		return;
 	}
+	rz_cons_strcat(o);
+	free(o);
 }
 
 RZ_API int rz_cons_canvas_resize(RzConsCanvas *c, int w, int h) {
@@ -477,34 +481,6 @@ RZ_API int rz_cons_canvas_resize(RzConsCanvas *c, int w, int h) {
 	c->y = 0;
 	rz_cons_canvas_clear(c);
 	return true;
-}
-
-#include <math.h>
-#define PI 3.1415
-RZ_API void rz_cons_canvas_circle(RzConsCanvas *c, int x, int y, int w, int h, const char *color) {
-	if (color) {
-		c->attr = color;
-	}
-	double xfactor = 1; //(double)w / (double)h;
-	double yfactor = (double)h / 24; // 0.8; // 24  10
-	double size = w;
-	float a = 0.0;
-	double s = size / 2;
-	while (a < (2 * PI)) {
-		double sa = rz_num_sin(a);
-		double ca = rz_num_cos(a);
-		double cx = s * ca + (size / 2);
-		double cy = s * sa + (size / 4);
-		int X = x + (xfactor * cx) - 2;
-		int Y = y + ((yfactor / 2) * cy);
-		if (G(X, Y)) {
-			W("=");
-		}
-		a += 0.1;
-	}
-	if (color) {
-		c->attr = Color_RESET;
-	}
 }
 
 RZ_API void rz_cons_canvas_box(RzConsCanvas *c, int x, int y, int w, int h, const char *color) {
