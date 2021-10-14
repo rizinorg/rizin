@@ -420,6 +420,7 @@ RUN
 
 NAME=Csa, Cs. and Cs.l
 FILE=bins/pe/testapp-msvc64.exe
+BROKEN=1
 CMDS=<<EOF
 e str.escbslash=true
 s 0x140016018
