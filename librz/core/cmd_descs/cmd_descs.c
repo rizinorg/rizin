@@ -6009,7 +6009,7 @@ static const RzCmdDescArg write_zero_args[] = {
 };
 static const RzCmdDescHelp write_zero_help = {
 	.summary = "Write <len> bytes with value 0x00",
-	.description = "Fill len bytes starting from the current offset with the value 0.",
+	.description = "Fill <len> bytes starting from the current offset with the value 0.",
 	.args = write_zero_args,
 };
 
@@ -6043,7 +6043,7 @@ static const RzCmdDescArg write_1_inc_args[] = {
 };
 static const RzCmdDescHelp write_1_inc_help = {
 	.summary = "Increment a byte",
-	.description = "Increment a byte at the current offset by 1 or n, if specified",
+	.description = "Increment a byte at the current offset by 1 or <n>, if specified",
 	.args = write_1_inc_args,
 };
 
@@ -6058,7 +6058,7 @@ static const RzCmdDescArg write_1_dec_args[] = {
 };
 static const RzCmdDescHelp write_1_dec_help = {
 	.summary = "Decrement a byte",
-	.description = "Decrement a byte at the current offset by 1 or n, if specified",
+	.description = "Decrement a byte at the current offset by 1 or <n>, if specified",
 	.args = write_1_dec_args,
 };
 
@@ -6087,7 +6087,7 @@ static const RzCmdDescArg write_2_inc_args[] = {
 };
 static const RzCmdDescHelp write_2_inc_help = {
 	.summary = "Increment a word",
-	.description = "Increment a word at the current offset by 1 or n, if specified",
+	.description = "Increment a word at the current offset by 1 or <n>, if specified",
 	.args = write_2_inc_args,
 };
 
@@ -6102,7 +6102,7 @@ static const RzCmdDescArg write_2_dec_args[] = {
 };
 static const RzCmdDescHelp write_2_dec_help = {
 	.summary = "Decrement a word",
-	.description = "Decrement a word at the current offset by 1 or n, if specified",
+	.description = "Decrement a word at the current offset by 1 or <n>, if specified",
 	.args = write_2_dec_args,
 };
 
@@ -6131,7 +6131,7 @@ static const RzCmdDescArg write_4_inc_args[] = {
 };
 static const RzCmdDescHelp write_4_inc_help = {
 	.summary = "Increment a dword",
-	.description = "Increment a dword at the current offset by 1 or n, if specified",
+	.description = "Increment a dword at the current offset by 1 or <n>, if specified",
 	.args = write_4_inc_args,
 };
 
@@ -6146,7 +6146,7 @@ static const RzCmdDescArg write_4_dec_args[] = {
 };
 static const RzCmdDescHelp write_4_dec_help = {
 	.summary = "Decrement a dword",
-	.description = "Decrement a dword at the current offset by 1 or n, if specified",
+	.description = "Decrement a dword at the current offset by 1 or <n>, if specified",
 	.args = write_4_dec_args,
 };
 
@@ -6175,7 +6175,7 @@ static const RzCmdDescArg write_8_inc_args[] = {
 };
 static const RzCmdDescHelp write_8_inc_help = {
 	.summary = "Increment a qword",
-	.description = "Increment a qword at the current offset by 1 or n, if specified",
+	.description = "Increment a qword at the current offset by 1 or <n>, if specified",
 	.args = write_8_inc_args,
 };
 
@@ -6190,7 +6190,7 @@ static const RzCmdDescArg write_8_dec_args[] = {
 };
 static const RzCmdDescHelp write_8_dec_help = {
 	.summary = "Decrement a qword",
-	.description = "Decrement a qword at the current offset by 1 or n, if specified",
+	.description = "Decrement a qword at the current offset by 1 or <n>, if specified",
 	.args = write_8_dec_args,
 };
 
@@ -6432,7 +6432,7 @@ static const RzCmdDescArg yank_file_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp yank_file_help = {
-	.summary = "Yank [len] bytes from file",
+	.summary = "Yank <len> bytes from file",
 	.args = yank_file_args,
 };
 
@@ -6494,7 +6494,7 @@ static const RzCmdDescArg yank_to_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp yank_to_help = {
-	.summary = "Copy [len] bytes from current seek to [offset]",
+	.summary = "Copy <len> bytes from current seek to <offset>",
 	.args = yank_to_args,
 };
 
@@ -6538,7 +6538,7 @@ static const RzCmdDescArg yank_paste_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp yank_paste_help = {
-	.summary = "Paste [len] bytes from yank clipboard",
+	.summary = "Paste <len> bytes from yank clipboard",
 	.args = yank_paste_args,
 };
 
