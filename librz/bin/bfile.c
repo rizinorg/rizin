@@ -111,25 +111,25 @@ static inline void detected_string_to_bin_string(RzBinString *dst, RzDetectedStr
 	int type = -1;
 	switch (src->type) {
 	case RZ_STRING_ENC_LATIN1:
-		type = RZ_STRING_TYPE_ASCII;
+		type = RZ_BIN_STRING_ENC_ASCII;
 		break;
 	case RZ_STRING_ENC_UTF8:
-		type = RZ_STRING_TYPE_UTF8;
+		type = RZ_BIN_STRING_ENC_UTF8;
 		break;
 	case RZ_STRING_ENC_UTF16LE:
-		type = RZ_STRING_TYPE_WIDE_LE;
+		type = RZ_BIN_STRING_ENC_WIDE_LE;
 		break;
 	case RZ_STRING_ENC_UTF32LE:
-		type = RZ_STRING_TYPE_WIDE32_LE;
+		type = RZ_BIN_STRING_ENC_WIDE32_LE;
 		break;
 	case RZ_STRING_ENC_UTF16BE:
-		type = RZ_STRING_TYPE_WIDE_BE;
+		type = RZ_BIN_STRING_ENC_WIDE_BE;
 		break;
 	case RZ_STRING_ENC_UTF32BE:
-		type = RZ_STRING_TYPE_WIDE32_BE;
+		type = RZ_BIN_STRING_ENC_WIDE32_BE;
 		break;
 	case RZ_STRING_ENC_GUESS:
-		type = RZ_STRING_TYPE_DETECT;
+		type = RZ_BIN_STRING_ENC_DETECT;
 		break;
 	default:
 		break;

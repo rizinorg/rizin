@@ -634,7 +634,7 @@ RZ_API RZ_OWN RzList /*<RzBinString*>*/ *rz_bin_dex_strings(RZ_NONNULL RzBinDex 
 		bstr->length = string->size;
 		bstr->size = string->size;
 		bstr->string = rz_str_ndup(string->data, string->size);
-		bstr->type = RZ_STRING_TYPE_UTF8;
+		bstr->type = RZ_BIN_STRING_ENC_UTF8;
 		if (!rz_list_append(strings, bstr)) {
 			free(bstr);
 		}
