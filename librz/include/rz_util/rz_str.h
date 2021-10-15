@@ -20,14 +20,14 @@ typedef enum {
 } RzStrEnc;
 
 /**
- * \brief Group together some common options used by string escapgin functions
+ * \brief Group together some common options used by string escaping functions
  */
 typedef struct {
 	bool show_asciidot; ///< When true, dots `.` are placed instead of unprintable characters
 	bool esc_bslash; ///< When true, backslashes `\` are quoted with `\\`
 	bool esc_double_quotes; ///< When true, double quotes `"` are quoted with `\"`
 	bool dot_nl; ///< When true, \n is converted into the graphiz-compatible newline \l
-} RzStrEncOptions;
+} RzStrEscOptions;
 
 /**
  * \brief Convenience macro for local temporary strings
@@ -190,14 +190,14 @@ RZ_API int rz_str_unescape(char *buf);
 RZ_API char *rz_str_escape(const char *buf);
 RZ_API char *rz_str_escape_sh(const char *buf);
 RZ_API char *rz_str_escape_dot(const char *buf);
-RZ_API char *rz_str_escape_latin1(const char *buf, bool colors, RzStrEncOptions *opt);
-RZ_API char *rz_str_escape_utf8(const char *buf, RzStrEncOptions *opt);
-RZ_API char *rz_str_escape_utf8_keep_printable(const char *buf, RzStrEncOptions *opt); // like escape_utf8 but leaves valid \uXXXX chars directly in utf-8
-RZ_API char *rz_str_escape_utf16le(const char *buf, int buf_size, RzStrEncOptions *opt);
-RZ_API char *rz_str_escape_utf32le(const char *buf, int buf_size, RzStrEncOptions *opt);
-RZ_API char *rz_str_escape_utf16be(const char *buf, int buf_size, RzStrEncOptions *opt);
-RZ_API char *rz_str_escape_utf32be(const char *buf, int buf_size, RzStrEncOptions *opt);
-RZ_API void rz_str_byte_escape(const char *p, char **dst, RzStrEncOptions *opt);
+RZ_API char *rz_str_escape_latin1(const char *buf, bool colors, RzStrEscOptions *opt);
+RZ_API char *rz_str_escape_utf8(const char *buf, RzStrEscOptions *opt);
+RZ_API char *rz_str_escape_utf8_keep_printable(const char *buf, RzStrEscOptions *opt); // like escape_utf8 but leaves valid \uXXXX chars directly in utf-8
+RZ_API char *rz_str_escape_utf16le(const char *buf, int buf_size, RzStrEscOptions *opt);
+RZ_API char *rz_str_escape_utf32le(const char *buf, int buf_size, RzStrEscOptions *opt);
+RZ_API char *rz_str_escape_utf16be(const char *buf, int buf_size, RzStrEscOptions *opt);
+RZ_API char *rz_str_escape_utf32be(const char *buf, int buf_size, RzStrEscOptions *opt);
+RZ_API void rz_str_byte_escape(const char *p, char **dst, RzStrEscOptions *opt);
 RZ_API char *rz_str_format_msvc_argv(size_t argc, const char **argv);
 RZ_API void rz_str_uri_decode(char *buf);
 RZ_API char *rz_str_uri_encode(const char *buf);

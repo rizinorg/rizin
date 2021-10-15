@@ -1340,7 +1340,7 @@ RZ_API char *rz_run_get_environ_profile(char **env) {
 		char *v = strchr(k, '=');
 		if (v) {
 			*v++ = 0;
-			RzStrEncOptions opt = { 0 };
+			RzStrEscOptions opt = { 0 };
 			opt.show_asciidot = false;
 			opt.esc_bslash = true;
 			v = rz_str_escape_latin1(v, true, &opt);
