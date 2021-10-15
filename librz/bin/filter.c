@@ -273,7 +273,7 @@ static bool bin_strfilter(RzBin *bin, const char *str) {
 		got_uppercase = false;
 		in_esc_seq = false;
 		for (i = 0; str[i]; i++) {
-			char ch = str[i];
+			signed char ch = str[i];
 			if (ch == ' ' ||
 				(in_esc_seq && (ch == 't' || ch == 'n' || ch == 'r'))) {
 				goto loop_end;
