@@ -643,7 +643,7 @@ RZ_IPI void rz_bin_object_filter_strings(RzBinObject *bo) {
 			if (rz_str_is_printable(dec) && strlen(dec) > 3) {
 				free(ptr->string);
 				ptr->string = dec;
-				ptr->type = RZ_STRING_TYPE_BASE64;
+				ptr->type = RZ_BIN_STRING_ENC_BASE64;
 			} else {
 				free(dec);
 			}

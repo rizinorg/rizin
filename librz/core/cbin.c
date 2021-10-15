@@ -2604,10 +2604,10 @@ static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzList *l
 			pj_ks(state->d.pj, "string", escaped_string);
 
 			switch (string->type) {
-			case RZ_STRING_TYPE_UTF8:
-			case RZ_STRING_TYPE_MUTF8:
-			case RZ_STRING_TYPE_WIDE_LE:
-			case RZ_STRING_TYPE_WIDE32_LE:
+			case RZ_BIN_STRING_ENC_UTF8:
+			case RZ_BIN_STRING_ENC_MUTF8:
+			case RZ_BIN_STRING_ENC_WIDE_LE:
+			case RZ_BIN_STRING_ENC_WIDE32_LE:
 				block_list = rz_utf_block_list((const ut8 *)string->string, -1, NULL);
 				if (block_list) {
 					if (block_list[0] == 0 && block_list[1] == -1) {
@@ -2658,10 +2658,10 @@ static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzList *l
 
 			RzStrBuf *buf = rz_strbuf_new(str);
 			switch (string->type) {
-			case RZ_STRING_TYPE_UTF8:
-			case RZ_STRING_TYPE_MUTF8:
-			case RZ_STRING_TYPE_WIDE_LE:
-			case RZ_STRING_TYPE_WIDE32_LE:
+			case RZ_BIN_STRING_ENC_UTF8:
+			case RZ_BIN_STRING_ENC_MUTF8:
+			case RZ_BIN_STRING_ENC_WIDE_LE:
+			case RZ_BIN_STRING_ENC_WIDE32_LE:
 				block_list = rz_utf_block_list((const ut8 *)string->string, -1, NULL);
 				if (block_list) {
 					if (block_list[0] == 0 && block_list[1] == -1) {
