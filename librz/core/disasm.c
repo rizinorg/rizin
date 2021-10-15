@@ -3091,7 +3091,7 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8 *buf, int len, int idx, in
 		switch (mi->type) {
 		case RZ_META_TYPE_STRING:
 			if (mi->str) {
-				RzStrEncOptions opt = { 0 };
+				RzStrEscOptions opt = { 0 };
 				opt.esc_bslash = core->print->esc_bslash;
 				opt.esc_double_quotes = true;
 				opt.show_asciidot = false;
@@ -3808,7 +3808,7 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 	if (strenc == RZ_STRING_ENC_GUESS) {
 		strenc = rz_utf_bom_encoding((ut8 *)str, len);
 	}
-	RzStrEncOptions opt = { 0 };
+	RzStrEscOptions opt = { 0 };
 	opt.show_asciidot = ds->show_asciidot;
 	opt.esc_double_quotes = true;
 	opt.esc_bslash = ds->core->print->esc_bslash;

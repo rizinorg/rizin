@@ -1282,7 +1282,7 @@ RZ_API char *rz_str_sanitize_sdb_key(const char *s) {
  * \param dst pointer where pointer to the resulting characters sequence is put
  * \param opt pointer to encoding options structure
  **/
-RZ_API void rz_str_byte_escape(const char *p, char **dst, RzStrEncOptions *opt) {
+RZ_API void rz_str_byte_escape(const char *p, char **dst, RzStrEscOptions *opt) {
 	char *q = *dst;
 	switch (*p) {
 	case '\n':
@@ -1349,7 +1349,7 @@ RZ_API void rz_str_byte_escape(const char *p, char **dst, RzStrEncOptions *opt) 
 
 /* Internal function. dot_nl specifies whether to convert \n into the
  * graphiz-compatible newline \l */
-static char *rz_str_escape_(const char *buf, bool parse_esc_seq, bool ign_esc_seq, RzStrEncOptions *opt) {
+static char *rz_str_escape_(const char *buf, bool parse_esc_seq, bool ign_esc_seq, RzStrEscOptions *opt) {
 	rz_return_val_if_fail(buf, NULL);
 
 	/* Worst case scenario, we convert every byte to a single-char escape
@@ -1397,7 +1397,7 @@ out:
 }
 
 RZ_API char *rz_str_escape(const char *buf) {
-	RzStrEncOptions opt = { 0 };
+	RzStrEscOptions opt = { 0 };
 	opt.dot_nl = false;
 	opt.show_asciidot = false;
 	opt.esc_bslash = true;
@@ -1433,14 +1433,14 @@ RZ_API char *rz_str_escape_sh(const char *buf) {
 }
 
 RZ_API char *rz_str_escape_dot(const char *buf) {
-	RzStrEncOptions opt = { 0 };
+	RzStrEscOptions opt = { 0 };
 	opt.dot_nl = true;
 	opt.show_asciidot = false;
 	opt.esc_bslash = true;
 	return rz_str_escape_(buf, true, true, &opt);
 }
 
-RZ_API char *rz_str_escape_latin1(const char *buf, bool colors, RzStrEncOptions *opt) {
+RZ_API char *rz_str_escape_latin1(const char *buf, bool colors, RzStrEscOptions *opt) {
 	return rz_str_escape_(buf, colors, !colors, opt);
 }
 
@@ -1520,7 +1520,7 @@ static char *rz_str_escape_utf(const char *buf, int buf_size, RzStrEnc enc, bool
 		} else {
 			int offset = enc == RZ_STRING_ENC_UTF16BE ? 1 : enc == RZ_STRING_ENC_UTF32BE ? 3
 												     : 0;
-			RzStrEncOptions opt = { 0 };
+			RzStrEscOptions opt = { 0 };
 			opt.dot_nl = false;
 			opt.show_asciidot = false;
 			opt.esc_bslash = esc_bslash;
@@ -1544,27 +1544,27 @@ static char *rz_str_escape_utf(const char *buf, int buf_size, RzStrEnc enc, bool
 	return new_buf;
 }
 
-RZ_API char *rz_str_escape_utf8(const char *buf, RzStrEncOptions *opt) {
+RZ_API char *rz_str_escape_utf8(const char *buf, RzStrEscOptions *opt) {
 	return rz_str_escape_utf(buf, -1, RZ_STRING_ENC_UTF8, opt->show_asciidot, opt->esc_bslash, opt->esc_double_quotes, false);
 }
 
-RZ_API char *rz_str_escape_utf8_keep_printable(const char *buf, RzStrEncOptions *opt) {
+RZ_API char *rz_str_escape_utf8_keep_printable(const char *buf, RzStrEscOptions *opt) {
 	return rz_str_escape_utf(buf, -1, RZ_STRING_ENC_UTF8, opt->show_asciidot, opt->esc_bslash, opt->esc_double_quotes, true);
 }
 
-RZ_API char *rz_str_escape_utf16le(const char *buf, int buf_size, RzStrEncOptions *opt) {
+RZ_API char *rz_str_escape_utf16le(const char *buf, int buf_size, RzStrEscOptions *opt) {
 	return rz_str_escape_utf(buf, buf_size, RZ_STRING_ENC_UTF16LE, opt->show_asciidot, opt->esc_bslash, opt->esc_double_quotes, false);
 }
 
-RZ_API char *rz_str_escape_utf32le(const char *buf, int buf_size, RzStrEncOptions *opt) {
+RZ_API char *rz_str_escape_utf32le(const char *buf, int buf_size, RzStrEscOptions *opt) {
 	return rz_str_escape_utf(buf, buf_size, RZ_STRING_ENC_UTF32LE, opt->show_asciidot, opt->esc_bslash, opt->esc_double_quotes, false);
 }
 
-RZ_API char *rz_str_escape_utf16be(const char *buf, int buf_size, RzStrEncOptions *opt) {
+RZ_API char *rz_str_escape_utf16be(const char *buf, int buf_size, RzStrEscOptions *opt) {
 	return rz_str_escape_utf(buf, buf_size, RZ_STRING_ENC_UTF16BE, opt->show_asciidot, opt->esc_bslash, opt->esc_double_quotes, false);
 }
 
-RZ_API char *rz_str_escape_utf32be(const char *buf, int buf_size, RzStrEncOptions *opt) {
+RZ_API char *rz_str_escape_utf32be(const char *buf, int buf_size, RzStrEscOptions *opt) {
 	return rz_str_escape_utf(buf, buf_size, RZ_STRING_ENC_UTF32BE, opt->show_asciidot, opt->esc_bslash, opt->esc_double_quotes, false);
 }
 

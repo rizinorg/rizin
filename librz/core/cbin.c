@@ -1463,7 +1463,7 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 		SymName sn = { 0 };
 		count++;
 		sym_name_init(core, &sn, symbol, lang);
-		RzStrEncOptions opt = { 0 };
+		RzStrEscOptions opt = { 0 };
 		opt.show_asciidot = false;
 		opt.esc_bslash = true;
 		char *rz_symbol_name = rz_str_escape_utf8(sn.name, &opt);
@@ -1907,7 +1907,7 @@ static bool symbols_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, 
 
 		SymName sn = { 0 };
 		sym_name_init(core, &sn, symbol, lang);
-		RzStrEncOptions opt = { 0 };
+		RzStrEscOptions opt = { 0 };
 		opt.show_asciidot = false;
 		opt.esc_bslash = true;
 		char *rz_symbol_name = rz_str_escape_utf8(sn.demname ? sn.demname : sn.name, &opt);
@@ -2583,7 +2583,7 @@ static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzList *l
 			}
 		}
 
-		RzStrEncOptions opt = { 0 };
+		RzStrEscOptions opt = { 0 };
 		opt.show_asciidot = false;
 		opt.esc_bslash = true;
 		opt.esc_double_quotes = state->mode == RZ_OUTPUT_MODE_JSON || state->mode == RZ_OUTPUT_MODE_LONG_JSON;
@@ -2837,7 +2837,7 @@ RZ_API bool rz_core_file_info_print(RzCore *core, RzBinFile *binfile, RzCmdState
 		if (desc) {
 			rz_table_add_rowf(state->d.t, "sd", "fd", desc->fd);
 		}
-		RzStrEncOptions opt = { 0 };
+		RzStrEscOptions opt = { 0 };
 		opt.show_asciidot = false;
 		opt.esc_bslash = false;
 		escaped = rz_str_escape_utf8_keep_printable(filename, &opt);
