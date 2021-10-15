@@ -1,0 +1,425 @@
+# SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+---
+name: cmd_meta
+commands:
+  - name: C
+    cname: meta_list
+    summary: List all meta information
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_RIZIN
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_LONG
+    args: []
+  - name: C.
+    cname: meta_list_at
+    summary: Show all meta information at current address
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_RIZIN
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_LONG
+    args: []
+  - name: C-
+    cname: meta_remove
+    summary: Remove meta information at current address
+    args: []
+  - name: C-*
+    cname: meta_remove_all
+    summary: Remove all meta information
+    args: []
+  - name: CC
+    summary: Manipulate the comments
+    subcommands:
+      - name: CC
+        cname: comment
+        summary: Append comment
+        args:
+          - name: text
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: CCl
+        cname: comment_list
+        summary: List all comments
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_LONG
+        args: []
+      - name: CC.
+        cname: comment_at
+        summary: Show comment at the current offset
+        args: []
+      - name: CC+
+        cname: comment_append
+        summary: Append comment at current address
+        args:
+          - name: text
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: CC-
+        cname: comment_remove
+        summary: Remove comment at current address
+        args: []
+      - name: CC-*
+        cname: comment_remove_all
+        summary: Remove all comments
+        args: []
+      - name: CCF
+        cname: comment_filelink
+        summary: Show / Set comment file
+        args:
+          - name: file
+            type: RZ_CMD_ARG_TYPE_FILE
+            optional: true
+      - name: CCe
+        cname: comment_editor
+        summary: Edit comment using `cfg.editor`
+        args: []
+      - name: CCf
+        summary: List comments in function at current address
+        subcommands:
+          - name: CCf
+            cname: comment_function_list
+            summary: List all comments
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_RIZIN
+              - RZ_OUTPUT_MODE_JSON
+              - RZ_OUTPUT_MODE_LONG
+            args: []
+          - name: CCf-
+            cname: comment_function_remove
+            summary: Remove all comments from the current function
+            args: []
+          - name: CCf-*
+            cname: comment_function_remove_all
+            summary: Remove all comments from all functions
+            args: []
+      - name: CCu
+        cname: comment_unique
+        summary: Add unique comment
+        args:
+          - name: text
+            type: RZ_CMD_ARG_TYPE_STRING
+  - name: CS
+    summary: Manage metainformation spaces
+    subcommands:
+      - name: CS
+        cname: meta_space
+        summary: Create new metaspace
+        args:
+          - name: name
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: CSl
+        cname: meta_space_list
+        summary: List all metaspaces
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+        args: []
+      - name: CS-
+        cname: meta_space_remove
+        summary: Remove metaspace
+        args:
+          - name: name
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: CS-*
+        cname: meta_space_remove_all
+        summary: Remove all metaspaces
+        args: []
+      - name: CSr
+        cname: meta_space_rename
+        summary: Rename the metaspace
+        args:
+          - name: oldname
+            type: RZ_CMD_ARG_TYPE_STRING
+          - name: newname
+            type: RZ_CMD_ARG_TYPE_STRING
+  - name: Cf
+    summary: Manage the format string metainformation
+    subcommands:
+      - name: Cf
+        cname: meta_format
+        summary: Set the format string to the current address
+        args:
+          - name: size
+            type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: format
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: Cfl
+        cname: meta_format_list
+        summary: List all format marks
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: Cf-
+        cname: meta_format_remove
+        summary: Remove format string from the current address
+        args: []
+      - name: Cf-*
+        cname: meta_format_remove_all
+        summary: Remove all format string marks
+        args: []
+  - name: Cd
+    summary: Manage the raw data metainformation
+    subcommands:
+      - name: Cd
+        cname: meta_data
+        summary: Set the "data" mark to the current address
+        args:
+          - name: size
+            type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: repeat
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: Cdl
+        cname: meta_data_list
+        summary: List all "data" marks
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: Cd.
+        cname: meta_data_at
+        summary: Show the data mark at the current offset
+        args: []
+      - name: Cd-
+        cname: meta_data_remove
+        summary: Remove the data mark from the current address
+        args:
+          - name: size
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: repeat
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: Cd-*
+        cname: meta_data_remove_all
+        summary: Remove all data marks
+        args: []
+  - name: Ch
+    summary: Manage the "hidden" mark metainformation
+    subcommands:
+      - name: Ch
+        cname: meta_hidden
+        summary: Set the "hidden" mark to the current address
+        description: >
+          When "hidden" mark is set for some memory region,
+          it's not shown in the disassembly output
+        args:
+          - name: size
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: Chl
+        cname: meta_hidden_list
+        summary: List all "hidden" marks
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: Ch-
+        cname: meta_hidden_remove
+        summary: Remove the "hidden" mark from the current address
+        args: []
+      - name: Ch-*
+        cname: meta_hidden_remove_all
+        summary: Remove all "hidden" marks
+        args: []
+  - name: Cm
+    summary: Manage the "magic" mark metainformation
+    subcommands:
+      - name: Cm
+        cname: meta_magic
+        summary: Set the magic to the current address
+        args:
+          - name: size
+            type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: format
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: Cml
+        cname: meta_magic_list
+        summary: List all magic marks
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: Cm-
+        cname: meta_magic_remove
+        summary: Remove the magic mark from the current address
+        args: []
+      - name: Cm-*
+        cname: meta_magic_remove_all
+        summary: Remove all magic marks
+        args: []
+  - name: Cs
+    summary: Manipulate string metainformation
+    subcommands:
+      - name: Cs
+        cname: meta_string
+        summary: Add string (autodetects the encoding)
+        args:
+          - name: size
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: Csl
+        cname: meta_string_list
+        summary: List all strings
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+        args: []
+      - name: Cs.
+        cname: meta_string_at
+        summary: Show string at the current address
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_LONG
+          - RZ_OUTPUT_MODE_QUIET
+        args: []
+      - name: Cs-
+        cname: meta_string_remove
+        summary: Remove string
+        args: []
+      - name: Cs-*
+        cname: meta_string_remove_all
+        summary: Remove all strings
+        args: []
+      - name: Cs8
+        cname: meta_string_utf8
+        summary: Add UTF-8 string
+        args:
+          - name: size
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: Csa
+        cname: meta_string_ascii
+        summary: Add ASCII/Latin1 string
+        args:
+          - name: size
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: Csw
+        cname: meta_string_wide16
+        summary: Add wide 2-byte (UTF-16) string
+        args:
+          - name: size
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: CsW
+        cname: meta_string_wide32
+        summary: Add wide 4-byte (UTF-32) string
+        args:
+          - name: size
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+  - name: Ct
+    summary: Manage the type metainformation
+    subcommands:
+      - name: Ct
+        cname: meta_type
+        summary: Set the type comment to the current address
+        args:
+          - name: text
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: Ctl
+        cname: meta_type_list
+        summary: List all type comments
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: Ct-
+        cname: meta_type_remove
+        summary: Remove the type mark from the current address
+        args: []
+      - name: Ct-*
+        cname: meta_type_remove_all
+        summary: Remove all type marks
+        args: []
+      - name: Ct.
+        cname: meta_type_current
+        summary: Show the type mark at the current address
+        args: []
+  - name: Cv
+    summary: Add comments to the vars or arguments
+    subcommands:
+      - name: Cv
+        cname: meta_var_comment_append
+        summary: Add comment for the variable
+        args:
+          - name: name
+            type: RZ_CMD_ARG_TYPE_STRING
+          - name: text
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: Cv-
+        cname: meta_var_comment_remove
+        summary: Remove comment from the variable
+        args:
+          - name: name
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: Cve
+        cname: meta_var_comment_editor
+        summary: Edit comment using `cfg.editor`
+        args:
+          - name: name
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: Cvl
+        summary: List all comments for all barguments and variables
+        cname: meta_var_comment_list
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: Cvb
+        summary: List all comments for all bp-based arguments and variables
+        cname: meta_var_bp_comment_list
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: Cvr
+        summary: List all comments for all register-based arguments and variables
+        cname: meta_var_reg_comment_list
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: Cvs
+        summary: List all comments for all stack-based arguments and variables
+        cname: meta_var_stack_comment_list
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
+          - RZ_OUTPUT_MODE_JSON
+        args: []
