@@ -5203,6 +5203,7 @@ static const RzCmdDescArg type_args[] = {
 };
 static const RzCmdDescHelp type_help = {
 	.summary = "List all types / Show type information",
+	.description = "When <type> is provided, the pf-format for the given type is provided, otherwise all types are listed.",
 	.args = type_args,
 };
 
