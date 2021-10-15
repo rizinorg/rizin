@@ -49,7 +49,7 @@ static const RzCmdDescHelp not_defined_help = {
 };
 
 static const RzCmdDescHelp root_help = {
-	.usage = "[.][times][cmd][~grep][@[@iter]addr!size][|>pipe] ; ...",
+	.usage = "[.][times][cmd][~grep][@[@iter]addr][|>pipe] ; ...",
 	.description = "",
 	.sort_subcommands = true,
 };
@@ -1101,10 +1101,7 @@ static char *group_get_help(RzCmd *cmd, RzCmdDesc *cd, bool use_color) {
 	return rz_strbuf_drain(sb);
 }
 
-static char *argv_modes_get_help(RzCmd *cmd, RzCmdDesc *cd, bool use_color) {
-	RzStrBuf *sb = rz_strbuf_new(NULL);
-	fill_usage_strbuf(cmd, sb, cd, use_color);
-
+static void fill_argv_modes_help_strbuf(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd, bool use_color) {
 	size_t max_len = 0, min_len = SIZE_MAX;
 	update_minmax_len(cd, &max_len, &min_len, true);
 	max_len++; // consider the suffix letter
@@ -1122,8 +1119,6 @@ static char *argv_modes_get_help(RzCmd *cmd, RzCmdDesc *cd, bool use_color) {
 			free(summary);
 		}
 	}
-
-	return rz_strbuf_drain(sb);
 }
 
 const RzCmdDescDetail *get_cd_details(RzCmdDesc *cd) {
@@ -1206,9 +1201,12 @@ static char *argv_get_help(RzCmd *cmd, RzCmdDesc *cd, size_t detail, bool use_co
 
 	fill_usage_strbuf(cmd, sb, cd, use_color);
 
+	if (cd->type == RZ_CMD_DESC_TYPE_ARGV_MODES || cd->type == RZ_CMD_DESC_TYPE_ARGV_STATE) {
+		fill_argv_modes_help_strbuf(cmd, sb, cd, use_color);
+	}
+
 	switch (detail) {
 	case 1:
-		break;
 	case 2:
 		if (cd->help->description) {
 			rz_strbuf_append(sb, "\n");
@@ -1248,11 +1246,11 @@ static char *oldinput_get_help(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *a) {
 	return res;
 }
 
-static char *get_help(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args, bool use_color, size_t detail) {
+static char *get_help(RzCmd *cmd, RzCmdDesc *cd, const char *cmdid, RzCmdParsedArgs *args, bool use_color, size_t detail) {
 	switch (cd->type) {
 	case RZ_CMD_DESC_TYPE_GROUP:
-		if (detail > 1 && cd->d.group_data.exec_cd) {
-			return get_help(cmd, cd->d.group_data.exec_cd, args, use_color, detail);
+		if (cd->d.group_data.exec_cd && (detail > 1 || (detail == 1 && strcmp(cmdid, cd->name)))) {
+			return get_help(cmd, cd->d.group_data.exec_cd, cmdid, args, use_color, detail);
 		}
 		if (detail == 1) {
 			// show the group help only when doing <cmd>?
@@ -1260,12 +1258,8 @@ static char *get_help(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args, bool use
 		}
 		return argv_get_help(cmd, cd, detail, use_color);
 	case RZ_CMD_DESC_TYPE_ARGV:
-		return argv_get_help(cmd, cd, detail, use_color);
 	case RZ_CMD_DESC_TYPE_ARGV_MODES:
 	case RZ_CMD_DESC_TYPE_ARGV_STATE:
-		if (detail == 1) {
-			return argv_modes_get_help(cmd, cd, use_color);
-		}
 		return argv_get_help(cmd, cd, detail, use_color);
 	case RZ_CMD_DESC_TYPE_FAKE:
 		if (detail != 1) {
@@ -1420,6 +1414,9 @@ RZ_API bool rz_cmd_get_help_strbuf(RzCmd *cmd, const RzCmdDesc *cd, bool use_col
 
 RZ_API char *rz_cmd_get_help(RzCmd *cmd, RzCmdParsedArgs *args, bool use_color) {
 	char *cmdid = strdup(rz_cmd_parsed_args_cmd(args));
+	if (!cmdid) {
+		return NULL;
+	}
 	char *cmdid_p = cmdid + strlen(cmdid) - 1;
 	size_t detail = 0;
 	while (cmdid_p >= cmdid && *cmdid_p == '?' && detail < 2) {
@@ -1428,19 +1425,21 @@ RZ_API char *rz_cmd_get_help(RzCmd *cmd, RzCmdParsedArgs *args, bool use_color) 
 		detail++;
 	}
 
+	char *res = NULL;
 	if (detail == 0) {
 		// there should be at least one `?`
-		free(cmdid);
-		return NULL;
+		goto err;
 	}
 
 	RzCmdDesc *cd = cmdid_p >= cmdid ? rz_cmd_get_desc(cmd, cmdid) : rz_cmd_get_root(cmd);
-	free(cmdid);
 	if (!cd || !cd->help) {
-		return NULL;
+		goto err;
 	}
 
-	return get_help(cmd, cd, args, use_color, detail);
+	res = get_help(cmd, cd, cmdid, args, use_color, detail);
+err:
+	free(cmdid);
+	return res;
 }
 
 /** macro.c **/
