@@ -536,6 +536,25 @@ static bool meta_string_add(RzCore *core, ut64 addr, ut64 size, RzStrEnc encodin
 	return rz_meta_set_with_subtype(core->analysis, RZ_META_TYPE_STRING, encoding, addr, n, name);
 }
 
+static bool meta_pascal_string_add(RzCore *core, ut64 addr, RzStrEnc encoding, RZ_NULLABLE const char *name) {
+	rz_return_val_if_fail(encoding == RZ_STRING_ENC_LATIN1 || encoding == RZ_STRING_ENC_UTF8, false);
+	// We shall read the first byte and it will be the size of the 8-bit or UTF-8 string
+	RzBinFile *bf = rz_bin_cur(core->bin);
+	if (!bf) {
+		return false;
+	}
+	ut8 size;
+	ut64 paddr = rz_io_v2p(core->io, addr);
+	if (!rz_buf_read8_at(bf->buf, paddr, &size)) {
+		return false;
+	}
+	// Note the offset is off by one since the first byte was the size of the string
+	if (!meta_string_add(core, core->offset + 1, size, encoding, NULL)) {
+		return false;
+	}
+	return true;
+}
+
 RZ_IPI RzCmdStatus rz_meta_string_handler(RzCore *core, int argc, const char **argv) {
 	ut64 size = argc > 1 ? rz_num_math(core->num, argv[1]) : 0;
 	if (!meta_string_add(core, core->offset, size, RZ_STRING_ENC_GUESS, NULL)) {
@@ -556,6 +575,13 @@ RZ_IPI RzCmdStatus rz_meta_string_at_handler(RzCore *core, int argc, const char 
 		return RZ_CMD_STATUS_OK;
 	}
 	rz_core_meta_print(core, mi, core->offset, size, false, state);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_meta_string_pascal_handler(RzCore *core, int argc, const char **argv) {
+	if (!meta_pascal_string_add(core, core->offset, RZ_STRING_ENC_UTF8, NULL)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
 	return RZ_CMD_STATUS_OK;
 }
 

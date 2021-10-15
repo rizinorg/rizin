@@ -305,6 +305,10 @@ commands:
         cname: meta_string_remove_all
         summary: Remove all strings
         args: []
+      - name: Csp
+        cname: meta_string_pascal
+        summary: Add Pascal-style string with the size
+        args: []
       - name: Cs8
         cname: meta_string_utf8
         summary: Add UTF-8 string

@@ -2435,6 +2435,14 @@ static const RzCmdDescHelp meta_string_remove_all_help = {
 	.args = meta_string_remove_all_args,
 };
 
+static const RzCmdDescArg meta_string_pascal_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp meta_string_pascal_help = {
+	.summary = "Add Pascal-style string with the size",
+	.args = meta_string_pascal_args,
+};
+
 static const RzCmdDescArg meta_string_utf8_args[] = {
 	{
 		.name = "size",
@@ -7621,6 +7629,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *meta_string_remove_all_cd = rz_cmd_desc_argv_new(core->rcmd, Cs_cd, "Cs-*", rz_meta_string_remove_all_handler, &meta_string_remove_all_help);
 	rz_warn_if_fail(meta_string_remove_all_cd);
+
+	RzCmdDesc *meta_string_pascal_cd = rz_cmd_desc_argv_new(core->rcmd, Cs_cd, "Csp", rz_meta_string_pascal_handler, &meta_string_pascal_help);
+	rz_warn_if_fail(meta_string_pascal_cd);
 
 	RzCmdDesc *meta_string_utf8_cd = rz_cmd_desc_argv_new(core->rcmd, Cs_cd, "Cs8", rz_meta_string_utf8_handler, &meta_string_utf8_help);
 	rz_warn_if_fail(meta_string_utf8_cd);

@@ -10,6 +10,12 @@ extern "C" {
 #endif
 
 typedef enum {
+	RZ_STRING_TYPE_RAW, ///< The raw sequence of bytes without any marker of beginning or end
+	RZ_STRING_TYPE_ZERO, ///< C-style strings (ASCII or UTF-8) with zero as the end marker
+	RZ_STRING_TYPE_SIZED, ///< Pascal-style strings with the first byte marking the size of the string
+} RzStrType;
+
+typedef enum {
 	RZ_STRING_ENC_LATIN1 = 'a',
 	RZ_STRING_ENC_UTF8 = '8',
 	RZ_STRING_ENC_UTF16LE = 'u',
