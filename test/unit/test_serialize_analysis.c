@@ -803,7 +803,6 @@ Sdb *meta_ref_db() {
 		"{\"size\":20,\"type\":\"m\"},"
 		"{\"size\":21,\"type\":\"h\"},"
 		"{\"type\":\"C\",\"str\":\"some comment here\"},"
-		"{\"size\":22,\"type\":\"r\"},"
 		"{\"size\":23,\"type\":\"H\"},"
 		"{\"size\":24,\"type\":\"t\"},"
 		"{\"type\":\"C\",\"str\":\"comment in space\",\"space\":\"myspace\"}]",
@@ -826,7 +825,6 @@ bool test_analysis_meta_save() {
 	rz_meta_set(analysis, RZ_META_TYPE_MAGIC, 0x1337, 0x14, NULL);
 	rz_meta_set(analysis, RZ_META_TYPE_HIDE, 0x1337, 0x15, NULL);
 	rz_meta_set(analysis, RZ_META_TYPE_COMMENT, 0x1337, 1, "some comment here");
-	rz_meta_set(analysis, RZ_META_TYPE_RUN, 0x1337, 0x16, NULL);
 	rz_meta_set(analysis, RZ_META_TYPE_HIGHLIGHT, 0x1337, 0x17, NULL);
 	rz_meta_set(analysis, RZ_META_TYPE_VARTYPE, 0x1337, 0x18, NULL);
 
@@ -868,7 +866,7 @@ bool test_analysis_meta_load() {
 		(void)meta;
 		count++;
 	}
-	mu_assert_eq(count, 18, "meta count");
+	mu_assert_eq(count, 17, "meta count");
 
 	ut64 size;
 	meta = rz_meta_get_at(analysis, 0x1337, RZ_META_TYPE_DATA, &size);
@@ -906,11 +904,6 @@ bool test_analysis_meta_load() {
 	mu_assert_eq(size, 1, "meta item size");
 	mu_assert_eq(meta->subtype, 0, "meta item subtype");
 	mu_assert_streq(meta->str, "some comment here", "meta item string");
-	meta = rz_meta_get_at(analysis, 0x1337, RZ_META_TYPE_RUN, &size);
-	mu_assert_notnull(meta, "meta item");
-	mu_assert_eq(size, 0x16, "meta item size");
-	mu_assert_eq(meta->subtype, 0, "meta item subtype");
-	mu_assert_null(meta->str, "meta item string");
 	meta = rz_meta_get_at(analysis, 0x1337, RZ_META_TYPE_HIGHLIGHT, &size);
 	mu_assert_notnull(meta, "meta item");
 	mu_assert_eq(size, 0x17, "meta item size");
@@ -1540,7 +1533,7 @@ Sdb *analysis_ref_db() {
 	sdb_ns(meta_spaces, "spaces", true);
 	sdb_set(meta_spaces, "spacestack", "[\"*\"]", 0);
 	sdb_set(meta_spaces, "name", "CS", 0);
-	sdb_set(meta, "0x1337", "[{\"type\":\"C\",\"str\":\"some comment\"}]", 0);
+	sdb_set(meta, "0x1337", "[{\"type\":\"C\",\"subtype\":56,\"str\":\"some comment\"}]", 0);
 
 	Sdb *hints = sdb_ns(db, "hints", true);
 	sdb_set(hints, "0x10e1", "{\"arch\":\"arm\"}", 0);

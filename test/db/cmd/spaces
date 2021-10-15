@@ -7,8 +7,8 @@ CC foo
 CS two
 CC bar @ 1
 CC cow @ 2
-CC
-CS
+CCl
+CSl
 EOF
 EXPECT=<<EOF
 0x00000001 CCu "bar"
@@ -27,7 +27,7 @@ CS two
 CC bar @ 1
 CC cow @ 2
 CS *
-CC
+CCl
 EOF
 EXPECT=<<EOF
 0x00000000 CCu "foo"

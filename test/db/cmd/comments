@@ -1,7 +1,7 @@
 NAME=add comment
 FILE=malloc://1024
 CMDS=<<EOF
-CCa 0x123 hello
+CC hello @ 0x123
 C*~?
 C*~[3]
 EOF
@@ -38,9 +38,9 @@ RUN
 NAME=add comment at
 FILE=malloc://1024
 CMDS=<<EOF
-CCa 8 hello
+CC hello @ 8
 C*~?
-CC*
+CCl*
 EOF
 EXPECT=<<EOF
 1
@@ -52,10 +52,12 @@ NAME=del comment
 FILE=malloc://1024
 CMDS=<<EOF
 CC hello
-CC-hello
+C*~?
+CC-
 C*~?
 EOF
 EXPECT=<<EOF
+1
 0
 EOF
 RUN
@@ -94,8 +96,7 @@ e asm.bits=32
 CC hello @ 0x200
 CC world @ 0x200
 CC.@0x200~?
-CC~?
-e asm.profile=simple
+CCl~?
 e asm.cmt.right=0
 e scr.color=false
 pd 2 @ 0x200

@@ -1614,9 +1614,6 @@ RZ_API void rz_serialize_analysis_meta_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAna
 		case RZ_META_TYPE_COMMENT:
 			type_str[0] = 'C';
 			break;
-		case RZ_META_TYPE_RUN:
-			type_str[0] = 'r';
-			break;
 		case RZ_META_TYPE_HIGHLIGHT:
 			type_str[0] = 'H';
 			break;
@@ -1708,9 +1705,6 @@ static bool meta_load_cb(void *user, const char *k, const char *v) {
 						break;
 					case 'C':
 						type = RZ_META_TYPE_COMMENT;
-						break;
-					case 'r':
-						type = RZ_META_TYPE_RUN;
 						break;
 					case 'H':
 						type = RZ_META_TYPE_HIGHLIGHT;

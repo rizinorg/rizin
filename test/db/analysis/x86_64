@@ -1026,9 +1026,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-
-
-
 NAME=reflines offset 2 (ascii)
 FILE=bins/elf/analysis/ls-alxchk
 CMDS=<<EOF
