@@ -91,7 +91,7 @@ bool test_rz_scan_strings_detect_utf16_le_special_chars(void) {
 	mu_assert_eq(n, 1, "rz_scan_strings utf16le, number of strings");
 
 	RzDetectedString *s = rz_list_get_n(str_list, 0);
-	mu_assert_streq(s->string, "\twide\\esc: \e[0m", "rz_scan_strings utf16le, different string");
+	mu_assert_streq(s->string, "\twide\\esc: \x1b[0m", "rz_scan_strings utf16le, different string");
 	mu_assert_eq(s->addr, 0, "rz_scan_strings utf16le, address");
 	mu_assert_eq(s->type, RZ_STRING_ENC_UTF16LE, "rz_scan_strings utf16le, string type");
 
