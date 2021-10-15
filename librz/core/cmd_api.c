@@ -845,12 +845,39 @@ static bool show_children_shortcut(const RzCmdDesc *cd) {
 		has_cd_submodes(cd);
 }
 
-static void fill_wrapped_comment(RzCmd *cmd, RzStrBuf *sb, const char *comment, size_t columns) {
+static void fill_colored_args(RzCmd *cmd, RzStrBuf *sb, const char *line, bool use_color, const char *reset_color) {
+	const char *pal_args_color = "";
+	if (cmd->has_cons && use_color) {
+		RzCons *cons = rz_cons_singleton();
+		pal_args_color = cons->context->pal.args;
+	}
+
+	while (line) {
+		const char *close_arg = NULL;
+		const char *open_arg = strchr(line, '<');
+		if (!open_arg) {
+			break;
+		}
+		close_arg = strchr(open_arg, '>');
+		if (!close_arg) {
+			break;
+		}
+		rz_strbuf_appendf(sb, "%.*s%s", (int)(open_arg - line), line, pal_args_color);
+		rz_strbuf_appendf(sb, "%.*s%s", (int)(close_arg - open_arg + 1), open_arg, reset_color);
+		line = close_arg + 1;
+	}
+	rz_strbuf_append(sb, line);
+}
+
+static void fill_wrapped_comment(RzCmd *cmd, RzStrBuf *sb, const char *comment, size_t columns, bool use_color) {
 	int rows, cols;
 	bool is_interactive = false;
+	const char *help_color = "";
 	if (cmd->has_cons) {
+		RzCons *cons = rz_cons_singleton();
 		cols = rz_cons_get_size(&rows);
 		is_interactive = rz_cons_is_interactive();
+		help_color = use_color ? cons->context->pal.help : "";
 	}
 	if (is_interactive && cols > 0 && cols - columns > MIN_SUMMARY_WIDTH && !RZ_STR_ISEMPTY(comment)) {
 		char *text = strdup(comment);
@@ -865,7 +892,8 @@ static void fill_wrapped_comment(RzCmd *cmd, RzStrBuf *sb, const char *comment, 
 				rz_strbuf_append(sb, "# ");
 				first = false;
 			}
-			rz_strbuf_append(sb, line);
+
+			fill_colored_args(cmd, sb, line, use_color, help_color);
 		}
 		rz_list_free(wrapped_text);
 		free(text);
@@ -970,7 +998,7 @@ static void fill_usage_strbuf(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd, bool use_
 			if (has_cd_default_mode(cd)) {
 				rz_strbuf_appendf(summary_sb, "%s", rz_output_mode_to_summary(get_cd_default_mode(cd)));
 			}
-			fill_wrapped_comment(cmd, sb, rz_strbuf_get(summary_sb), columns);
+			fill_wrapped_comment(cmd, sb, rz_strbuf_get(summary_sb), columns, use_color);
 			rz_strbuf_append(sb, pal_reset);
 			rz_strbuf_free(summary_sb);
 		}
@@ -1043,7 +1071,7 @@ static void do_print_child_help(RzCmd *cmd, RzStrBuf *sb, const RzCmdDesc *cd, c
 	columns += padding + 1;
 	rz_strbuf_append(sb, pal_help_color);
 
-	fill_wrapped_comment(cmd, sb, summary, columns);
+	fill_wrapped_comment(cmd, sb, summary, columns, use_color);
 	rz_strbuf_appendf(sb, "%s\n", pal_reset);
 }
 
@@ -1160,7 +1188,7 @@ static void fill_details(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color
 				pal_help_color);
 			size_t columns = strlen("| ") + strlen(entry_it->text) +
 				strlen(" ") + strlen(arg_str) + padding;
-			fill_wrapped_comment(cmd, sb, entry_it->comment, columns);
+			fill_wrapped_comment(cmd, sb, entry_it->comment, columns, use_color);
 			rz_strbuf_appendf(sb, "%s\n", pal_reset);
 			entry_it++;
 		}
@@ -1170,6 +1198,11 @@ static void fill_details(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color
 
 static char *argv_get_help(RzCmd *cmd, RzCmdDesc *cd, size_t detail, bool use_color) {
 	RzStrBuf *sb = rz_strbuf_new(NULL);
+	const char *pal_reset = "";
+	if (cmd->has_cons && use_color) {
+		RzCons *cons = rz_cons_singleton();
+		pal_reset = cons->context->pal.reset;
+	}
 
 	fill_usage_strbuf(cmd, sb, cd, use_color);
 
@@ -1178,7 +1211,9 @@ static char *argv_get_help(RzCmd *cmd, RzCmdDesc *cd, size_t detail, bool use_co
 		break;
 	case 2:
 		if (cd->help->description) {
-			rz_strbuf_appendf(sb, "\n%s\n", cd->help->description);
+			rz_strbuf_append(sb, "\n");
+			fill_colored_args(cmd, sb, cd->help->description, use_color, pal_reset);
+			rz_strbuf_append(sb, "\n");
 		}
 		fill_details(cmd, cd, sb, use_color);
 		break;
