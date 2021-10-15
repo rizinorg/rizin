@@ -168,6 +168,7 @@ RZ_IPI RzCmdStatus rz_meta_string_list_handler(RzCore *core, int argc, const cha
 RZ_IPI RzCmdStatus rz_meta_string_at_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_meta_string_remove_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_meta_string_remove_all_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_meta_string_pascal_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_meta_string_utf8_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_meta_string_ascii_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_meta_string_wide16_handler(RzCore *core, int argc, const char **argv);
