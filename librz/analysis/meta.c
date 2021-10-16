@@ -100,6 +100,10 @@ static RzPVector *collect_nodes_intersect(RzAnalysis *analysis, RzAnalysisMetaTy
 	return ctx.result;
 }
 
+static inline bool is_string_with_zeroes(RzAnalysisMetaType type, int subtype) {
+	return type == RZ_META_TYPE_STRING && subtype != RZ_STRING_ENC_8BIT && subtype != RZ_STRING_ENC_UTF8;
+}
+
 static bool meta_set(RzAnalysis *a, RzAnalysisMetaType type, int subtype, ut64 from, ut64 to, const char *str) {
 	if (to < from) {
 		return false;
@@ -113,8 +117,13 @@ static bool meta_set(RzAnalysis *a, RzAnalysisMetaType type, int subtype, ut64 f
 	item->type = type;
 	item->subtype = subtype;
 	item->space = space;
+	item->size = to - from + 1;
 	free(item->str);
-	item->str = str ? strdup(str) : NULL;
+	if (is_string_with_zeroes(type, subtype)) {
+		item->str = str ? rz_str_ndup(str, item->size) : NULL;
+	} else {
+		item->str = str ? strdup(str) : NULL;
+	}
 	if (str && !item->str) {
 		if (!node) { // If we just created this
 			free(item);
@@ -130,7 +139,8 @@ static bool meta_set(RzAnalysis *a, RzAnalysisMetaType type, int subtype, ut64 f
 }
 
 RZ_API bool rz_meta_set_string(RzAnalysis *a, RzAnalysisMetaType type, ut64 addr, const char *s) {
-	return meta_set(a, type, 0, addr, addr, s);
+	// By default all strings are UTF-8
+	return meta_set(a, type, RZ_STRING_ENC_UTF8, addr, addr, s);
 }
 
 RZ_API const char *rz_meta_get_string(RzAnalysis *a, RzAnalysisMetaType type, ut64 addr) {
@@ -224,7 +234,6 @@ RZ_API RzPVector *rz_meta_get_all_intersect(RzAnalysis *a, ut64 start, ut64 size
 }
 
 RZ_API const char *rz_meta_type_to_string(int type) {
-	// XXX: use type as '%c'
 	switch (type) {
 	case RZ_META_TYPE_DATA: return "Cd";
 	case RZ_META_TYPE_CODE: return "Cc";
@@ -233,304 +242,10 @@ RZ_API const char *rz_meta_type_to_string(int type) {
 	case RZ_META_TYPE_MAGIC: return "Cm";
 	case RZ_META_TYPE_HIDE: return "Ch";
 	case RZ_META_TYPE_COMMENT: return "CCu";
-	case RZ_META_TYPE_RUN: return "Cr"; // not in C? help
 	case RZ_META_TYPE_HIGHLIGHT: return "ecHi"; // not in C?
 	case RZ_META_TYPE_VARTYPE: return "Ct";
 	}
 	return "# unknown meta # ";
-}
-
-RZ_API void rz_meta_print(RzAnalysis *a, RzAnalysisMetaItem *d, ut64 start, ut64 size, int rad, PJ *pj, bool show_full) {
-	rz_return_if_fail(!(rad == 'j' && !pj)); // rad == 'j' => pj != NULL
-	char *pstr, *base64_str;
-	RzCore *core = a->coreb.core;
-	bool esc_bslash = core ? core->print->esc_bslash : false;
-	if (rz_spaces_current(&a->meta_spaces) &&
-		rz_spaces_current(&a->meta_spaces) != d->space) {
-		return;
-	}
-	char *str = NULL;
-	if (d->str) {
-		if (d->type == RZ_META_TYPE_STRING) {
-			if (d->subtype == RZ_STRING_ENC_UTF8) {
-				str = rz_str_escape_utf8(d->str, false, esc_bslash);
-			} else {
-				if (!d->subtype) { /* temporary legacy workaround */
-					esc_bslash = false;
-				}
-				str = rz_str_escape_latin1(d->str, false, esc_bslash, false);
-			}
-		} else {
-			str = rz_str_escape(d->str);
-		}
-	}
-	if (str || d->type == RZ_META_TYPE_DATA) {
-		if (d->type == RZ_META_TYPE_STRING && !*str) {
-			free(str);
-			return;
-		}
-		if (!str) {
-			pstr = "";
-		} else if (d->type == 'f') {
-			pstr = str;
-		} else if (d->type == 's') {
-			pstr = str;
-		} else if (d->type == 't') {
-			// Sanitize (don't escape) Ct comments so we can see "char *", etc.
-			free(str);
-			str = strdup(d->str);
-			rz_str_sanitize(str);
-			pstr = str;
-		} else if (d->type != 'C') {
-			rz_name_filter(str, 0, true);
-			pstr = str;
-		} else {
-			pstr = d->str;
-		}
-		//		rz_str_sanitize (str);
-		switch (rad) {
-		case 'j':
-			pj_o(pj);
-			pj_kn(pj, "offset", start);
-			pj_ks(pj, "type", rz_meta_type_to_string(d->type));
-
-			if (d->type == RZ_META_TYPE_HIGHLIGHT) {
-				pj_k(pj, "color");
-				ut8 r = 0, g = 0, b = 0, A = 0;
-				const char *esc = strchr(d->str, '\x1b');
-				if (esc) {
-					rz_cons_rgb_parse(esc, &r, &g, &b, &A);
-					char *rgb_str = rz_cons_rgb_tostring(r, g, b);
-					base64_str = rz_base64_encode_dyn((const ut8 *)rgb_str, strlen(rgb_str));
-					if (d->type == 's' && base64_str) {
-						pj_s(pj, base64_str);
-						free(base64_str);
-					} else {
-						pj_s(pj, rgb_str);
-					}
-					free(rgb_str);
-				} else {
-					pj_s(pj, str);
-				}
-			} else {
-				pj_k(pj, "name");
-				if (d->type == 's' && (base64_str = rz_base64_encode_dyn((const ut8 *)d->str, strlen(d->str)))) {
-					pj_s(pj, base64_str);
-				} else {
-					pj_s(pj, str);
-				}
-			}
-			if (d->type == 'd') {
-				pj_kn(pj, "size", size);
-			} else if (d->type == 's') {
-				const char *enc;
-				switch (d->subtype) {
-				case RZ_STRING_ENC_UTF8:
-					enc = "utf8";
-					break;
-				case 0: /* temporary legacy encoding */
-					enc = "iz";
-					break;
-				default:
-					enc = "latin1";
-				}
-				pj_ks(pj, "enc", enc);
-				pj_kb(pj, "ascii", rz_str_is_ascii(d->str));
-			}
-
-			pj_end(pj);
-			break;
-		case 0:
-		case 1:
-		case '*':
-		default:
-			switch (d->type) {
-			case RZ_META_TYPE_COMMENT: {
-				const char *type = rz_meta_type_to_string(d->type);
-				char *s = sdb_encode((const ut8 *)pstr, -1);
-				if (!s) {
-					s = strdup(pstr);
-				}
-				if (rad) {
-					if (!strcmp(type, "CCu")) {
-						a->cb_printf("%s base64:%s @ 0x%08" PFMT64x "\n",
-							type, s, start);
-					} else {
-						a->cb_printf("%s %s @ 0x%08" PFMT64x "\n",
-							type, pstr, start);
-					}
-				} else {
-					if (!strcmp(type, "CCu")) {
-						char *mys = rz_str_escape(pstr);
-						a->cb_printf("0x%08" PFMT64x " %s \"%s\"\n",
-							start, type, mys);
-						free(mys);
-					} else {
-						a->cb_printf("0x%08" PFMT64x " %s \"%s\"\n",
-							start, type, pstr);
-					}
-				}
-				free(s);
-			} break;
-			case RZ_META_TYPE_STRING:
-				if (rad) {
-					char cmd[] = "Cs#";
-					switch (d->subtype) {
-					case 'a':
-					case '8':
-						cmd[2] = d->subtype;
-						break;
-					default:
-						cmd[2] = 0;
-					}
-					a->cb_printf("%s %" PFMT64u " @ 0x%08" PFMT64x " # %s\n",
-						cmd, size, start, pstr);
-				} else {
-					const char *enc;
-					switch (d->subtype) {
-					case '8':
-						enc = "utf8";
-						break;
-					default:
-						enc = rz_str_is_ascii(d->str) ? "ascii" : "latin1";
-					}
-					if (show_full) {
-						a->cb_printf("0x%08" PFMT64x " %s[%" PFMT64u "] \"%s\"\n",
-							start, enc, size, pstr);
-					} else {
-						a->cb_printf("%s[%" PFMT64u "] \"%s\"\n",
-							enc, size, pstr);
-					}
-				}
-				break;
-			case RZ_META_TYPE_HIDE:
-			case RZ_META_TYPE_DATA:
-				if (rad) {
-					a->cb_printf("%s %" PFMT64u " @ 0x%08" PFMT64x "\n",
-						rz_meta_type_to_string(d->type),
-						size, start);
-				} else {
-					if (show_full) {
-						const char *dtype = d->type == 'h' ? "hidden" : "data";
-						a->cb_printf("0x%08" PFMT64x " %s %s %" PFMT64u "\n",
-							start, dtype,
-							rz_meta_type_to_string(d->type), size);
-					} else {
-						a->cb_printf("%" PFMT64u "\n", size);
-					}
-				}
-				break;
-			case RZ_META_TYPE_MAGIC:
-			case RZ_META_TYPE_FORMAT:
-				if (rad) {
-					a->cb_printf("%s %" PFMT64u " %s @ 0x%08" PFMT64x "\n",
-						rz_meta_type_to_string(d->type),
-						size, pstr, start);
-				} else {
-					if (show_full) {
-						const char *dtype = d->type == 'm' ? "magic" : "format";
-						a->cb_printf("0x%08" PFMT64x " %s %" PFMT64u " %s\n",
-							start, dtype, size, pstr);
-					} else {
-						a->cb_printf("%" PFMT64u " %s\n", size, pstr);
-					}
-				}
-				break;
-			case RZ_META_TYPE_VARTYPE:
-				if (rad) {
-					a->cb_printf("%s %s @ 0x%08" PFMT64x "\n",
-						rz_meta_type_to_string(d->type), pstr, start);
-				} else {
-					a->cb_printf("0x%08" PFMT64x " %s\n", start, pstr);
-				}
-				break;
-			case RZ_META_TYPE_HIGHLIGHT: {
-				ut8 r = 0, g = 0, b = 0, A = 0;
-				const char *esc = strchr(d->str, '\x1b');
-				rz_cons_rgb_parse(esc, &r, &g, &b, &A);
-				a->cb_printf("%s rgb:%02x%02x%02x @ 0x%08" PFMT64x "\n",
-					rz_meta_type_to_string(d->type), r, g, b, start);
-				// TODO: d->size
-			} break;
-			default:
-				if (rad) {
-					a->cb_printf("%s %" PFMT64u " 0x%08" PFMT64x " # %s\n",
-						rz_meta_type_to_string(d->type),
-						size, start, pstr);
-				} else {
-					// TODO: use b64 here
-					a->cb_printf("0x%08" PFMT64x " array[%" PFMT64u "] %s %s\n",
-						start, size,
-						rz_meta_type_to_string(d->type), pstr);
-				}
-				break;
-			}
-			break;
-		}
-		if (str) {
-			free(str);
-		}
-	}
-}
-
-RZ_API void rz_meta_print_list_at(RzAnalysis *a, ut64 addr, int rad) {
-	RzPVector *nodes = collect_nodes_at(a, RZ_META_TYPE_ANY, rz_spaces_current(&a->meta_spaces), addr);
-	if (!nodes) {
-		return;
-	}
-	void **it;
-	rz_pvector_foreach (nodes, it) {
-		RzIntervalNode *node = *it;
-		rz_meta_print(a, node->data, node->start, rz_meta_node_size(node), rad, NULL, true);
-	}
-	rz_pvector_free(nodes);
-}
-
-static void print_meta_list(RzAnalysis *a, int type, int rad, ut64 addr) {
-	PJ *pj = NULL;
-	if (rad == 'j') {
-		pj = pj_new();
-		if (!pj) {
-			return;
-		}
-		pj_a(pj);
-	}
-
-	RzAnalysisFunction *fcn = NULL;
-	if (addr != UT64_MAX) {
-		fcn = rz_analysis_get_fcn_in(a, addr, 0);
-		if (!fcn) {
-			goto beach;
-		}
-	}
-
-	RzIntervalTreeIter it;
-	RzAnalysisMetaItem *item;
-	rz_interval_tree_foreach (&a->meta, it, item) {
-		RzIntervalNode *node = rz_interval_tree_iter_get(&it);
-		if (type != RZ_META_TYPE_ANY && item->type != type) {
-			continue;
-		}
-		if (fcn && !rz_analysis_function_contains(fcn, node->start)) {
-			continue;
-		}
-		rz_meta_print(a, item, node->start, rz_meta_node_size(node), rad, pj, true);
-	}
-
-beach:
-	if (pj) {
-		pj_end(pj);
-		rz_cons_printf("%s\n", pj_string(pj));
-		pj_free(pj);
-	}
-}
-
-RZ_API void rz_meta_print_list_all(RzAnalysis *a, int type, int rad) {
-	print_meta_list(a, type, rad, UT64_MAX);
-}
-
-RZ_API void rz_meta_print_list_in_function(RzAnalysis *a, int type, int rad, ut64 addr) {
-	print_meta_list(a, type, rad, addr);
 }
 
 RZ_API void rz_meta_rebase(RzAnalysis *analysis, ut64 diff) {

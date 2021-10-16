@@ -6,6 +6,7 @@
 
 #include <rz_types.h>
 #include <rz_core.h>
+#include <rz_il.h>
 
 RZ_IPI void rz_core_kuery_print(RzCore *core, const char *k);
 RZ_IPI int rz_output_mode_to_char(RzOutputMode mode);
@@ -28,6 +29,9 @@ RZ_IPI void rz_core_analysis_esil_emulate(RzCore *core, ut64 addr, ut64 until_ad
 RZ_IPI void rz_core_analysis_esil_emulate_bb(RzCore *core);
 RZ_IPI void rz_core_analysis_esil_default(RzCore *core);
 
+RZ_IPI void rz_core_analysis_rzil_reinit(RzCore *core);
+RZ_IPI void rz_core_rzil_step(RzCore *core);
+
 RZ_IPI bool rz_core_analysis_var_rename(RzCore *core, const char *name, const char *newname);
 RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode, char *fcn_name);
 RZ_IPI bool rz_core_analysis_function_delete_var(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisVarKind kind, const char *id);
@@ -43,6 +47,12 @@ RZ_IPI void rz_core_analysis_bbs_info_print(RzCore *core, RzAnalysisFunction *fc
 RZ_IPI void rz_core_analysis_bb_info_print(RzCore *core, RzAnalysisBlock *bb, ut64 addr, RzCmdStateOutput *state);
 RZ_IPI void rz_core_analysis_function_until(RzCore *core, ut64 addr_end);
 RZ_IPI void rz_core_analysis_value_pointers(RzCore *core, RzOutputMode mode);
+
+/* cmeta.c */
+RZ_IPI void rz_core_meta_print(RzCore *core, RzAnalysisMetaItem *d, ut64 start, ut64 size, bool show_full, RzCmdStateOutput *state);
+RZ_IPI void rz_core_meta_print_list_at(RzCore *core, ut64 addr, RzCmdStateOutput *state);
+RZ_IPI void rz_core_meta_print_list_all(RzCore *core, int type, RzCmdStateOutput *state);
+RZ_IPI void rz_core_meta_print_list_in_function(RzCore *core, int type, ut64 addr, RzCmdStateOutput *state);
 
 /* ctypes.c */
 // Enums

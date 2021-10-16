@@ -292,9 +292,9 @@ static void spaces_list(RzSpaces *sp, RzOutputMode mode) {
 			pj_ki(pj, "count", count);
 			pj_kb(pj, "selected", cur == s);
 			pj_end(pj);
-		} else if (mode == 'q') {
+		} else if (mode == RZ_OUTPUT_MODE_QUIET) {
 			rz_cons_printf("%s\n", s->name);
-		} else if (mode == '*') {
+		} else if (mode == RZ_OUTPUT_MODE_RIZIN) {
 			rz_cons_printf("%s %s\n", sp->name, s->name);
 		} else {
 			rz_cons_printf("%5d %c %s\n", count, (!cur || cur == s) ? '*' : '.',

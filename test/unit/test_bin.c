@@ -54,12 +54,12 @@ bool test_rz_bin(void) {
 	const RzList *strings = rz_bin_object_get_strings(obj);
 	mu_assert_eq(rz_list_length(strings), 5, "rz_bin_object_get_strings");
 	const char *exp_strings[] = {
-		"IOLI Crackme Level 0x00\\n",
+		"IOLI Crackme Level 0x00\n",
 		"Password: ",
 		// "%s", // This is not automatically recognized because too short
 		"250382",
-		"Invalid Password!\\n",
-		"Password OK :)\\n",
+		"Invalid Password!\n",
+		"Password OK :)\n",
 	};
 	RzBinString *s;
 	int i = 0;

@@ -912,6 +912,7 @@ RUN
 NAME=avr resolve mmio and ext_reg (TCCR0B & OCR1BH)
 FILE=bins/firmware/arduino_avr.bin
 CMDS=<<EOF
+e analysis.jmp.cref=true
 e asm.arch=avr
 e asm.cpu=ATmega168
 aaa

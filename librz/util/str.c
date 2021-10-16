@@ -33,6 +33,28 @@ static const char *rwxstr[] = {
 	[15] = "rwx",
 };
 
+RZ_API const char *rz_str_enc_as_string(RzStrEnc enc) {
+	switch (enc) {
+	case RZ_STRING_ENC_8BIT:
+		return "latin1";
+	case RZ_STRING_ENC_UTF8:
+		return "utf8";
+	case RZ_STRING_ENC_UTF16LE:
+		return "utf16le";
+	case RZ_STRING_ENC_UTF32LE:
+		return "utf32le";
+	case RZ_STRING_ENC_UTF16BE:
+		return "utf16be";
+	case RZ_STRING_ENC_UTF32BE:
+		return "utf32be";
+	case RZ_STRING_ENC_GUESS:
+		return "guessed";
+	default:
+		rz_warn_if_reached();
+		return "unknown";
+	}
+}
+
 RZ_API int rz_str_casecmp(const char *s1, const char *s2) {
 	int res;
 #ifdef _MSC_VER
@@ -328,7 +350,7 @@ RZ_API int rz_str_delta(char *p, char a, char b) {
 
 /**
  * \brief Split string \p str in place by using \p ch as a delimiter.
- * 
+ *
  * Replaces all instances of \p ch in \p str with a NULL byte and it returns
  * the number of split strings.
  */
@@ -1253,29 +1275,38 @@ RZ_API char *rz_str_sanitize_sdb_key(const char *s) {
 	return ret;
 }
 
-RZ_API void rz_str_byte_escape(const char *p, char **dst, int dot_nl, bool default_dot, bool esc_bslash) {
+/**
+ * \brief Converts unprintable characters to C-like backslash representation
+ *
+ * \param p pointer to the original string
+ * \param dst pointer where pointer to the resulting characters sequence is put
+ * \param opt pointer to encoding options structure
+ **/
+RZ_API void rz_str_byte_escape(const char *p, char **dst, RzStrEscOptions *opt) {
 	char *q = *dst;
 	switch (*p) {
 	case '\n':
 		*q++ = '\\';
-		*q++ = dot_nl ? 'l' : 'n';
+		*q++ = opt->dot_nl ? 'l' : 'n';
 		break;
 	case '\r':
 		*q++ = '\\';
 		*q++ = 'r';
 		break;
 	case '\\':
-		*q++ = '\\';
-		if (esc_bslash) {
+		if (opt->esc_bslash) {
 			*q++ = '\\';
 		}
+		*q++ = '\\';
 		break;
 	case '\t':
 		*q++ = '\\';
 		*q++ = 't';
 		break;
 	case '"':
-		*q++ = '\\';
+		if (opt->esc_double_quotes) {
+			*q++ = '\\';
+		}
 		*q++ = '"';
 		break;
 	case '\f':
@@ -1294,10 +1325,14 @@ RZ_API void rz_str_byte_escape(const char *p, char **dst, int dot_nl, bool defau
 		*q++ = '\\';
 		*q++ = 'a';
 		break;
+	case '\x1b':
+		*q++ = '\\';
+		*q++ = 'e';
+		break;
 	default:
 		/* Outside the ASCII printable range */
 		if (!IS_PRINTABLE(*p)) {
-			if (default_dot) {
+			if (opt->show_asciidot) {
 				*q++ = '.';
 			} else {
 				*q++ = '\\';
@@ -1314,12 +1349,12 @@ RZ_API void rz_str_byte_escape(const char *p, char **dst, int dot_nl, bool defau
 
 /* Internal function. dot_nl specifies whether to convert \n into the
  * graphiz-compatible newline \l */
-static char *rz_str_escape_(const char *buf, int dot_nl, bool parse_esc_seq, bool ign_esc_seq, bool show_asciidot, bool esc_bslash) {
+static char *rz_str_escape_(const char *buf, bool parse_esc_seq, bool ign_esc_seq, RzStrEscOptions *opt) {
 	rz_return_val_if_fail(buf, NULL);
 
 	/* Worst case scenario, we convert every byte to a single-char escape
 	 * (e.g. \n) if show_asciidot, or \xhh if !show_asciidot */
-	char *new_buf = malloc(1 + strlen(buf) * (show_asciidot ? 2 : 4));
+	char *new_buf = malloc(1 + strlen(buf) * (opt->show_asciidot ? 2 : 4));
 	if (!new_buf) {
 		return NULL;
 	}
@@ -1351,7 +1386,8 @@ static char *rz_str_escape_(const char *buf, int dot_nl, bool parse_esc_seq, boo
 			}
 			/* fallthrough */
 		default:
-			rz_str_byte_escape(p, &q, dot_nl, show_asciidot, esc_bslash);
+			rz_str_byte_escape(p, &q, opt);
+			break;
 		}
 		p++;
 	}
@@ -1361,7 +1397,11 @@ out:
 }
 
 RZ_API char *rz_str_escape(const char *buf) {
-	return rz_str_escape_(buf, false, true, true, false, true);
+	RzStrEscOptions opt = { 0 };
+	opt.dot_nl = false;
+	opt.show_asciidot = false;
+	opt.esc_bslash = true;
+	return rz_str_escape_(buf, true, true, &opt);
 }
 
 // Return MUST BE surrounded by double-quotes
@@ -1393,14 +1433,18 @@ RZ_API char *rz_str_escape_sh(const char *buf) {
 }
 
 RZ_API char *rz_str_escape_dot(const char *buf) {
-	return rz_str_escape_(buf, true, true, true, false, true);
+	RzStrEscOptions opt = { 0 };
+	opt.dot_nl = true;
+	opt.show_asciidot = false;
+	opt.esc_bslash = true;
+	return rz_str_escape_(buf, true, true, &opt);
 }
 
-RZ_API char *rz_str_escape_latin1(const char *buf, bool show_asciidot, bool esc_bslash, bool colors) {
-	return rz_str_escape_(buf, false, colors, !colors, show_asciidot, esc_bslash);
+RZ_API char *rz_str_escape_latin1(const char *buf, bool colors, RzStrEscOptions *opt) {
+	return rz_str_escape_(buf, colors, !colors, opt);
 }
 
-static char *rz_str_escape_utf(const char *buf, int buf_size, RzStrEnc enc, bool show_asciidot, bool esc_bslash, bool keep_printable) {
+static char *rz_str_escape_utf(const char *buf, int buf_size, RzStrEnc enc, bool show_asciidot, bool esc_bslash, bool esc_double_quotes, bool keep_printable) {
 	char *new_buf, *q;
 	const char *p, *end;
 	RzRune ch;
@@ -1476,7 +1520,12 @@ static char *rz_str_escape_utf(const char *buf, int buf_size, RzStrEnc enc, bool
 		} else {
 			int offset = enc == RZ_STRING_ENC_UTF16BE ? 1 : enc == RZ_STRING_ENC_UTF32BE ? 3
 												     : 0;
-			rz_str_byte_escape(p + offset, &q, false, false, esc_bslash);
+			RzStrEscOptions opt = { 0 };
+			opt.dot_nl = false;
+			opt.show_asciidot = false;
+			opt.esc_bslash = esc_bslash;
+			opt.esc_double_quotes = esc_double_quotes;
+			rz_str_byte_escape(p + offset, &q, &opt);
 		}
 		switch (enc) {
 		case RZ_STRING_ENC_UTF16LE:
@@ -1495,28 +1544,28 @@ static char *rz_str_escape_utf(const char *buf, int buf_size, RzStrEnc enc, bool
 	return new_buf;
 }
 
-RZ_API char *rz_str_escape_utf8(const char *buf, bool show_asciidot, bool esc_bslash) {
-	return rz_str_escape_utf(buf, -1, RZ_STRING_ENC_UTF8, show_asciidot, esc_bslash, false);
+RZ_API char *rz_str_escape_utf8(const char *buf, RzStrEscOptions *opt) {
+	return rz_str_escape_utf(buf, -1, RZ_STRING_ENC_UTF8, opt->show_asciidot, opt->esc_bslash, opt->esc_double_quotes, false);
 }
 
-RZ_API char *rz_str_escape_utf8_keep_printable(const char *buf, bool show_asciidot, bool esc_bslash) {
-	return rz_str_escape_utf(buf, -1, RZ_STRING_ENC_UTF8, show_asciidot, esc_bslash, true);
+RZ_API char *rz_str_escape_utf8_keep_printable(const char *buf, RzStrEscOptions *opt) {
+	return rz_str_escape_utf(buf, -1, RZ_STRING_ENC_UTF8, opt->show_asciidot, opt->esc_bslash, opt->esc_double_quotes, true);
 }
 
-RZ_API char *rz_str_escape_utf16le(const char *buf, int buf_size, bool show_asciidot, bool esc_bslash) {
-	return rz_str_escape_utf(buf, buf_size, RZ_STRING_ENC_UTF16LE, show_asciidot, esc_bslash, false);
+RZ_API char *rz_str_escape_utf16le(const char *buf, int buf_size, RzStrEscOptions *opt) {
+	return rz_str_escape_utf(buf, buf_size, RZ_STRING_ENC_UTF16LE, opt->show_asciidot, opt->esc_bslash, opt->esc_double_quotes, false);
 }
 
-RZ_API char *rz_str_escape_utf32le(const char *buf, int buf_size, bool show_asciidot, bool esc_bslash) {
-	return rz_str_escape_utf(buf, buf_size, RZ_STRING_ENC_UTF32LE, show_asciidot, esc_bslash, false);
+RZ_API char *rz_str_escape_utf32le(const char *buf, int buf_size, RzStrEscOptions *opt) {
+	return rz_str_escape_utf(buf, buf_size, RZ_STRING_ENC_UTF32LE, opt->show_asciidot, opt->esc_bslash, opt->esc_double_quotes, false);
 }
 
-RZ_API char *rz_str_escape_utf16be(const char *buf, int buf_size, bool show_asciidot, bool esc_bslash) {
-	return rz_str_escape_utf(buf, buf_size, RZ_STRING_ENC_UTF16BE, show_asciidot, esc_bslash, false);
+RZ_API char *rz_str_escape_utf16be(const char *buf, int buf_size, RzStrEscOptions *opt) {
+	return rz_str_escape_utf(buf, buf_size, RZ_STRING_ENC_UTF16BE, opt->show_asciidot, opt->esc_bslash, opt->esc_double_quotes, false);
 }
 
-RZ_API char *rz_str_escape_utf32be(const char *buf, int buf_size, bool show_asciidot, bool esc_bslash) {
-	return rz_str_escape_utf(buf, buf_size, RZ_STRING_ENC_UTF32BE, show_asciidot, esc_bslash, false);
+RZ_API char *rz_str_escape_utf32be(const char *buf, int buf_size, RzStrEscOptions *opt) {
+	return rz_str_escape_utf(buf, buf_size, RZ_STRING_ENC_UTF32BE, opt->show_asciidot, opt->esc_bslash, opt->esc_double_quotes, false);
 }
 
 static char *escape_utf8_for_json(const char *buf, int buf_size, bool mutf8) {
@@ -2659,7 +2708,7 @@ RZ_API char *rz_str_uri_encode(const char *s) {
 	return trimDown ? trimDown : od;
 }
 
-RZ_API int rz_str_utf16_to_utf8(ut8 *dst, int len_dst, const ut8 *src, int len_src, int little_endian) {
+RZ_API int rz_str_utf16_to_utf8(ut8 *dst, int len_dst, const ut8 *src, int len_src, bool little_endian) {
 	ut8 *outstart = dst;
 	ut8 *outend = dst + len_dst;
 	ut16 *in = (ut16 *)src;
@@ -3103,11 +3152,11 @@ static RzList *str_split_list_common(char *str, const char *c, int n, bool trim,
 
 /**
  * \brief Split the string \p str according to the substring \p c and returns a \p RzList with the result.
- * 
+ *
  * Split a string \p str according to the delimiter specified in \p c and it
  * considers at most \p n delimiters. The result is a \p RzList with pointers
  * to the input string \p str. Each token is trimmed as well.
- * 
+ *
  * \param str Input string to split. It will be modified by this function.
  * \param c Delimiter string used to split \p str
  * \param n If > 0 at most this number of delimiters are considered.
@@ -3119,11 +3168,11 @@ RZ_API RzList *rz_str_split_list(char *str, const char *c, int n) {
 
 /**
  * \brief Split the string \p str according to the substring \p c and returns a \p RzList with the result.
- * 
+ *
  * Split a string \p str according to the delimiter specified in \p c. It can
  * optionally trim (aka remove spaces) the tokens. The result is a \p RzList
  * with newly allocated strings for each token.
- * 
+ *
  * \param str Input string to split
  * \param c Delimiter string used to split \p str
  * \param trim If true each token is considered without trailing/leading whitespaces.
@@ -3138,12 +3187,12 @@ RZ_API RzList *rz_str_split_duplist(const char *_str, const char *c, bool trim) 
 
 /**
  * \brief Split the string \p str according to the substring \p c and returns a \p RzList with the result.
- * 
+ *
  * Split a string \p str according to the delimiter specified in \p c. It can
  * optionally trim (aka remove spaces) the tokens and/or consider at most \p n
  * delimiters. The result is a \p RzList with newly allocated strings for each
  * token.
- * 
+ *
  * \param str Input string to split
  * \param c Delimiter string used to split \p str
  * \param n If > 0 at most this number of delimiters are considered.
@@ -3159,11 +3208,11 @@ RZ_API RzList *rz_str_split_duplist_n(const char *_str, const char *c, int n, bo
 
 /**
  * \brief Split the string \p str in lines and returns the result in an array.
- * 
+ *
  * Split a string \p str in lines. The number of lines is optionally stored in
  * \p count, if not NULL. The result is an array of \p count entries, with the
  * i-th entry containing the index of the first character of the i-th line.
- * 
+ *
  * \param str Input string to split
  * \param count Pointer to a size_t variable that can hold the number of lines.
  */

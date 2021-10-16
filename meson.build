@@ -1,5 +1,5 @@
 project('rizin', 'c',
-  version: 'v0.3.0-git',
+  version: 'v0.4.0-git',
   license: 'LGPL3',
   meson_version: '>=0.55.0',
   default_options: [
@@ -585,12 +585,13 @@ subdir('librz/search')
 subdir('librz/magic')
 subdir('librz/flag')
 subdir('librz/reg')
+subdir('librz/type')
 subdir('librz/bin')
 subdir('librz/config')
 subdir('librz/parse')
 subdir('librz/lang')
 subdir('librz/asm')
-subdir('librz/type')
+subdir('librz/il')
 subdir('librz/analysis')
 subdir('librz/egg')
 subdir('librz/debug')
@@ -658,6 +659,7 @@ if meson.is_subproject()
       rz_search_dep,
       rz_socket_dep,
       rz_syscall_dep,
+      rz_il_dep,
       rz_type_dep,
       rz_diff_dep,
       rz_demangler_dep,
