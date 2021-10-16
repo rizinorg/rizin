@@ -125,7 +125,7 @@ static const RzCmdDescArg meta_hidden_args[2];
 static const RzCmdDescArg meta_magic_args[3];
 static const RzCmdDescArg meta_string_args[2];
 static const RzCmdDescArg meta_string_utf8_args[2];
-static const RzCmdDescArg meta_string_ascii_args[2];
+static const RzCmdDescArg meta_string_8bit_args[2];
 static const RzCmdDescArg meta_string_wide16_args[2];
 static const RzCmdDescArg meta_string_wide32_args[2];
 static const RzCmdDescArg meta_type_args[2];
@@ -2458,7 +2458,7 @@ static const RzCmdDescHelp meta_string_utf8_help = {
 	.args = meta_string_utf8_args,
 };
 
-static const RzCmdDescArg meta_string_ascii_args[] = {
+static const RzCmdDescArg meta_string_8bit_args[] = {
 	{
 		.name = "size",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
@@ -2468,9 +2468,9 @@ static const RzCmdDescArg meta_string_ascii_args[] = {
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp meta_string_ascii_help = {
-	.summary = "Add ASCII/Latin1 string",
-	.args = meta_string_ascii_args,
+static const RzCmdDescHelp meta_string_8bit_help = {
+	.summary = "Add ASCII/8-bit string",
+	.args = meta_string_8bit_args,
 };
 
 static const RzCmdDescArg meta_string_wide16_args[] = {
@@ -7636,8 +7636,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *meta_string_utf8_cd = rz_cmd_desc_argv_new(core->rcmd, Cs_cd, "Cs8", rz_meta_string_utf8_handler, &meta_string_utf8_help);
 	rz_warn_if_fail(meta_string_utf8_cd);
 
-	RzCmdDesc *meta_string_ascii_cd = rz_cmd_desc_argv_new(core->rcmd, Cs_cd, "Csa", rz_meta_string_ascii_handler, &meta_string_ascii_help);
-	rz_warn_if_fail(meta_string_ascii_cd);
+	RzCmdDesc *meta_string_8bit_cd = rz_cmd_desc_argv_new(core->rcmd, Cs_cd, "Csb", rz_meta_string_8bit_handler, &meta_string_8bit_help);
+	rz_warn_if_fail(meta_string_8bit_cd);
 
 	RzCmdDesc *meta_string_wide16_cd = rz_cmd_desc_argv_new(core->rcmd, Cs_cd, "Csw", rz_meta_string_wide16_handler, &meta_string_wide16_help);
 	rz_warn_if_fail(meta_string_wide16_cd);

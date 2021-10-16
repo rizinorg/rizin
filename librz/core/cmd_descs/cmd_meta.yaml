@@ -316,9 +316,9 @@ commands:
           - name: size
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
-      - name: Csa
-        cname: meta_string_ascii
-        summary: Add ASCII/Latin1 string
+      - name: Csb
+        cname: meta_string_8bit
+        summary: Add ASCII/8-bit string
         args:
           - name: size
             type: RZ_CMD_ARG_TYPE_RZNUM

@@ -1964,7 +1964,7 @@ FILE=bins/firmware/main.avr
 CMDS=<<EOF
 e asm.bytes=true
 f str.hello 12 @ 0x276
-Csa 12 @ str.hello
+Csb 12 @ str.hello
 axd 0x260 @ str.hello
 pd 1 @ 0x260
 EOF
