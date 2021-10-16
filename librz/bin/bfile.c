@@ -110,7 +110,7 @@ static void print_string(RzBinFile *bf, RzBinString *string, int raw, PJ *pj) {
 static inline void detected_string_to_bin_string(RzBinString *dst, RzDetectedString *src) {
 	int type = -1;
 	switch (src->type) {
-	case RZ_STRING_ENC_LATIN1:
+	case RZ_STRING_ENC_8BIT:
 		type = RZ_BIN_STRING_ENC_8BIT;
 		break;
 	case RZ_STRING_ENC_UTF8:
@@ -283,7 +283,7 @@ static void get_strings_range(RzBinFile *bf, RzList *list, int min, int raw, ut6
 	if (!enc) {
 		type = RZ_STRING_ENC_GUESS;
 	} else if (!strcmp(enc, "latin1")) {
-		type = RZ_STRING_ENC_LATIN1;
+		type = RZ_STRING_ENC_8BIT;
 	} else if (!strcmp(enc, "utf8")) {
 		type = RZ_STRING_ENC_UTF8;
 	} else if (!strcmp(enc, "utf16le")) {

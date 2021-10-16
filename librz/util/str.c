@@ -35,7 +35,7 @@ static const char *rwxstr[] = {
 
 RZ_API const char *rz_str_enc_as_string(RzStrEnc enc) {
 	switch (enc) {
-	case RZ_STRING_ENC_LATIN1:
+	case RZ_STRING_ENC_8BIT:
 		return "latin1";
 	case RZ_STRING_ENC_UTF8:
 		return "utf8";

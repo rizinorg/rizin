@@ -22,7 +22,7 @@ bool test_rz_scan_strings_detect_ascii(void) {
 	RzDetectedString *s = rz_list_get_n(str_list, 0);
 	mu_assert_streq(s->string, "I am an ASCII string", "rz_scan_strings ascii, different string");
 	mu_assert_eq(s->addr, 3, "rz_scan_strings ascii, address");
-	mu_assert_eq(s->type, RZ_STRING_ENC_LATIN1, "rz_scan_strings ascii, string type");
+	mu_assert_eq(s->type, RZ_STRING_ENC_8BIT, "rz_scan_strings ascii, string type");
 
 	rz_detected_string_free(s);
 	rz_list_free(str_list);

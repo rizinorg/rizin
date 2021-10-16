@@ -101,7 +101,7 @@ static RzPVector *collect_nodes_intersect(RzAnalysis *analysis, RzAnalysisMetaTy
 }
 
 static inline bool is_string_with_zeroes(RzAnalysisMetaType type, int subtype) {
-	return type == RZ_META_TYPE_STRING && subtype != RZ_STRING_ENC_LATIN1 && subtype != RZ_STRING_ENC_UTF8;
+	return type == RZ_META_TYPE_STRING && subtype != RZ_STRING_ENC_8BIT && subtype != RZ_STRING_ENC_UTF8;
 }
 
 static bool meta_set(RzAnalysis *a, RzAnalysisMetaType type, int subtype, ut64 from, ut64 to, const char *str) {

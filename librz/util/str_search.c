@@ -31,7 +31,7 @@ static FalsePositiveResult reduce_false_positives(const RzUtilStrScanOptions *op
 	int *freq_list = NULL, expected_ascii, actual_ascii, num_chars;
 
 	switch (str_type) {
-	case RZ_STRING_ENC_LATIN1: {
+	case RZ_STRING_ENC_8BIT: {
 		for (i = 0; i < size; i++) {
 			char ch = str[i];
 			if (!is_c_escape_sequence(ch)) {
@@ -396,10 +396,10 @@ RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrS
 					needle++;
 					continue;
 				}
-				str_type = RZ_STRING_ENC_LATIN1;
+				str_type = RZ_STRING_ENC_8BIT;
 			}
 		} else if (type == RZ_STRING_ENC_UTF8) {
-			str_type = RZ_STRING_ENC_LATIN1; // initial assumption
+			str_type = RZ_STRING_ENC_8BIT; // initial assumption
 		}
 
 		RzDetectedString *ds = process_one_string(buf, from, needle, to, str_type, false, opt);
