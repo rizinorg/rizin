@@ -162,13 +162,13 @@ typedef enum {
 
 enum {
 	RZ_BIN_STRING_ENC_DETECT = 'g',
-	RZ_BIN_STRING_ENC_ASCII = 'a',
+	RZ_BIN_STRING_ENC_8BIT = 'b',
 	RZ_BIN_STRING_ENC_UTF8 = '8',
 	RZ_BIN_STRING_ENC_MUTF8 = 'm', // modified utf8
 	RZ_BIN_STRING_ENC_WIDE_LE = 'u', // utf16 / widechar string
 	RZ_BIN_STRING_ENC_WIDE32_LE = 'U', // utf32
-	RZ_BIN_STRING_ENC_WIDE_BE = 'b', // utf16-be / widechar string
-	RZ_BIN_STRING_ENC_WIDE32_BE = 'B', // utf32-be
+	RZ_BIN_STRING_ENC_WIDE_BE = 'n', // utf16-be / widechar string
+	RZ_BIN_STRING_ENC_WIDE32_BE = 'N', // utf32-be
 	RZ_BIN_STRING_ENC_BASE64 = '6',
 };
 

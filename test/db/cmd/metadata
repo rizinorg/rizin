@@ -356,7 +356,7 @@ EXPECT=<<EOF
 0x00000300 format 4 x
 0x00000380 magic 8 wwww
 ----
-Csa 12 @ 0x00000000 # hello world
+Csb 12 @ 0x00000000 # hello world
 ----
 Cd 3 @ 0x00000100
 ----
@@ -368,7 +368,7 @@ CCu base64:SGVsbG8h @ 0x00000000
 ----
 Cm 8 wwww @ 0x00000380
 ----
-Csa 12 @ 0x00000000 # hello world
+Csb 12 @ 0x00000000 # hello world
 CCu base64:SGVsbG8h @ 0x00000000
 Cd 3 @ 0x00000100
 Ch 2 @ 0x00000200
@@ -394,7 +394,7 @@ RUN
 NAME=Cs ascii/latin1
 FILE=bins/pe/testapp-msvc64.exe
 CMDS=<<EOF
-Csa @ 0x1400160a0
+Csb @ 0x1400160a0
 Csl~gate
 Csl~ANSI
 EOF
@@ -409,8 +409,8 @@ NAME=Cslj ascii/latin1
 FILE=bins/pe/testapp-msvc64.exe
 ARGS=-z
 CMDS=<<EOF
-Csa @ 0x1400160a0
-Csa @ 0x1400160b8
+Csb @ 0x1400160a0
+Csb @ 0x1400160b8
 Cslj
 EOF
 EXPECT=<<EOF
@@ -418,13 +418,13 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=Csa, Cs. and Cs.l
+NAME=Csb, Cs. and Cs.l
 FILE=bins/pe/testapp-msvc64.exe
 BROKEN=1
 CMDS=<<EOF
 e str.escbslash=true
 s 0x140016018
-Csa
+Csb
 Csl*~`spad`
 Cs.q
 Cs.
@@ -438,15 +438,15 @@ Cs.
 Cs.l
 pd 1
 Cs-
-Csa 4
+Csb 4
 Cs.l
 Cs.l @ 0x14001601c  # should print nothing
-Csa 4
+Csb 4
 Cs.l
 Cs.l @ 0x14001601c  # should print nothing
 EOF
 EXPECT=<<EOF
-Csa 2 @ 0x140016018 # \t
+Csb 2 @ 0x140016018 # \t
 "\t"
 ascii[2] "\t"
 0x140016018 ascii[2] "\t"
@@ -462,14 +462,14 @@ ut16le[15] "\twide\\esc: \e[0m\xa1\r\n"
 EOF
 RUN
 
-NAME=Csa, Csw, Cs and Cslj
+NAME=Csb, Csw, Cs and Cslj
 FILE=bins/pe/testapp-msvc64.exe
 ARGS=-e bin.str.purge=all,!0x140016018
 CMDS=<<EOF
 s 0x140016018
 Cslj
 Cs-
-Csa
+Csb
 Cslj
 Cs-
 Csw
@@ -543,7 +543,7 @@ NAME=str.escbslash and Cs
 FILE=bins/pe/testapp-msvc64.exe
 CMDS=<<EOF
 s 0x140016000
-Csa
+Csb
 e str.escbslash=true
 Cs.q
 Cs.
@@ -605,7 +605,7 @@ FILE==
 CMDS=<<EOF
 s 0x100
 w abcd
-Csa 4
+Csb 4
 Cf 8 xx
 C
 ?e ----
@@ -629,7 +629,7 @@ FILE==
 CMDS=<<EOF
 s 0x100
 w abcd
-Csa 4
+Csb 4
 Cf 8 xx
 CCu a string
 C

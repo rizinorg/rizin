@@ -16,12 +16,12 @@ typedef enum {
 } RzStrType;
 
 typedef enum {
-	RZ_STRING_ENC_LATIN1 = 'a',
+	RZ_STRING_ENC_8BIT = 'b',
 	RZ_STRING_ENC_UTF8 = '8',
 	RZ_STRING_ENC_UTF16LE = 'u',
 	RZ_STRING_ENC_UTF32LE = 'U',
-	RZ_STRING_ENC_UTF16BE = 'b',
-	RZ_STRING_ENC_UTF32BE = 'B',
+	RZ_STRING_ENC_UTF16BE = 'n',
+	RZ_STRING_ENC_UTF32BE = 'N',
 	RZ_STRING_ENC_GUESS = 'g',
 } RzStrEnc;
 

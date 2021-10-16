@@ -795,7 +795,7 @@ static RDisasmState *ds_init(RzCore *core) {
 	if (!strenc_str) {
 		ds->strenc = RZ_STRING_ENC_GUESS;
 	} else if (!strcmp(strenc_str, "latin1")) {
-		ds->strenc = RZ_STRING_ENC_LATIN1;
+		ds->strenc = RZ_STRING_ENC_8BIT;
 	} else if (!strcmp(strenc_str, "utf8")) {
 		ds->strenc = RZ_STRING_ENC_UTF8;
 	} else if (!strcmp(strenc_str, "utf16le")) {
@@ -3813,7 +3813,7 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 	opt.esc_double_quotes = true;
 	opt.esc_bslash = ds->core->print->esc_bslash;
 	switch (strenc) {
-	case RZ_STRING_ENC_LATIN1:
+	case RZ_STRING_ENC_8BIT:
 		escstr = rz_str_escape_latin1(str, is_comment, &opt);
 		break;
 	case RZ_STRING_ENC_UTF8:
@@ -3850,7 +3850,7 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 			}
 			for (ptr = str; ptr < end; ptr += 4) {
 				if (rz_utf32le_decode((ut8 *)ptr, end - ptr, &ch) > 0 && ch > 0x10ffff) {
-					enc = RZ_STRING_ENC_LATIN1;
+					enc = RZ_STRING_ENC_8BIT;
 					break;
 				}
 			}
@@ -3861,7 +3861,7 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 				escstr = rz_str_escape_latin1(str, is_comment, &opt);
 			}
 		} else {
-			RzStrEnc enc = RZ_STRING_ENC_LATIN1;
+			RzStrEnc enc = RZ_STRING_ENC_8BIT;
 			const char *ptr = str, *end = str + str_len;
 			for (; ptr < end; ptr++) {
 				if (rz_utf8_decode((ut8 *)ptr, end - ptr, NULL) > 1) {

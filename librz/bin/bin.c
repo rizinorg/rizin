@@ -71,7 +71,7 @@ RZ_API RzBinXtrData *rz_bin_xtrdata_new(RzBuffer *buf, ut64 offset, ut64 size, u
 
 RZ_API RZ_BORROW const char *rz_bin_string_type(int type) {
 	switch (type) {
-	case RZ_BIN_STRING_ENC_ASCII: return "ascii";
+	case RZ_BIN_STRING_ENC_8BIT: return "ascii";
 	case RZ_BIN_STRING_ENC_UTF8: return "utf8";
 	case RZ_BIN_STRING_ENC_MUTF8: return "mutf8";
 	case RZ_BIN_STRING_ENC_WIDE_LE: return "utf16le";

@@ -793,7 +793,7 @@ Sdb *meta_ref_db() {
 	sdb_set(spaces_db, "name", "CS", 0);
 	sdb_set(spaces_db, "spacestack", "[\"*\"]", 0);
 	sdb_set(sdb_ns(spaces_db, "spaces", true), "myspace", "s", 0);
-	sdb_set(db, "0x20a0", "[{\"size\":32,\"type\":\"s\",\"subtype\":66,\"str\":\"utf32be\"}]", 0);
+	sdb_set(db, "0x20a0", "[{\"size\":32,\"type\":\"s\",\"subtype\":78,\"str\":\"utf32be\"}]", 0);
 	sdb_set(db, "0x20c0", "[{\"size\":32,\"type\":\"s\",\"subtype\":103,\"str\":\"guess\"}]", 0);
 	sdb_set(db, "0x1337",
 		"[{\"size\":16,\"type\":\"d\"},"
@@ -807,9 +807,9 @@ Sdb *meta_ref_db() {
 		"{\"size\":24,\"type\":\"t\"},"
 		"{\"type\":\"C\",\"str\":\"comment in space\",\"space\":\"myspace\"}]",
 		0);
-	sdb_set(db, "0x2000", "[{\"size\":32,\"type\":\"s\",\"subtype\":97,\"str\":\"latin1\"}]", 0);
+	sdb_set(db, "0x2000", "[{\"size\":32,\"type\":\"s\",\"subtype\":98,\"str\":\"latin1\"}]", 0);
 	sdb_set(db, "0x2040", "[{\"size\":32,\"type\":\"s\",\"subtype\":117,\"str\":\"utf16le\"}]", 0);
-	sdb_set(db, "0x2080", "[{\"size\":32,\"type\":\"s\",\"subtype\":98,\"str\":\"utf16be\"}]", 0);
+	sdb_set(db, "0x2080", "[{\"size\":32,\"type\":\"s\",\"subtype\":110,\"str\":\"utf16be\"}]", 0);
 	sdb_set(db, "0x2020", "[{\"size\":32,\"type\":\"s\",\"subtype\":56,\"str\":\"utf8\"}]", 0);
 	sdb_set(db, "0x2060", "[{\"size\":32,\"type\":\"s\",\"subtype\":85,\"str\":\"utf32le\"}]", 0);
 	return db;
@@ -828,7 +828,7 @@ bool test_analysis_meta_save() {
 	rz_meta_set(analysis, RZ_META_TYPE_HIGHLIGHT, 0x1337, 0x17, NULL);
 	rz_meta_set(analysis, RZ_META_TYPE_VARTYPE, 0x1337, 0x18, NULL);
 
-	rz_meta_set_with_subtype(analysis, RZ_META_TYPE_STRING, RZ_STRING_ENC_LATIN1, 0x2000, 0x20, "latin1");
+	rz_meta_set_with_subtype(analysis, RZ_META_TYPE_STRING, RZ_STRING_ENC_8BIT, 0x2000, 0x20, "latin1");
 	rz_meta_set_with_subtype(analysis, RZ_META_TYPE_STRING, RZ_STRING_ENC_UTF8, 0x2020, 0x20, "utf8");
 	rz_meta_set_with_subtype(analysis, RZ_META_TYPE_STRING, RZ_STRING_ENC_UTF16LE, 0x2040, 0x20, "utf16le");
 	rz_meta_set_with_subtype(analysis, RZ_META_TYPE_STRING, RZ_STRING_ENC_UTF32LE, 0x2060, 0x20, "utf32le");
@@ -926,7 +926,7 @@ bool test_analysis_meta_load() {
 	meta = rz_meta_get_at(analysis, 0x2000, RZ_META_TYPE_STRING, &size);
 	mu_assert_notnull(meta, "meta item");
 	mu_assert_eq(size, 0x20, "meta item size");
-	mu_assert_eq(meta->subtype, RZ_STRING_ENC_LATIN1, "meta item subtype");
+	mu_assert_eq(meta->subtype, RZ_STRING_ENC_8BIT, "meta item subtype");
 	mu_assert_streq(meta->str, "latin1", "meta item string");
 	meta = rz_meta_get_at(analysis, 0x2020, RZ_META_TYPE_STRING, &size);
 	mu_assert_notnull(meta, "meta item");
