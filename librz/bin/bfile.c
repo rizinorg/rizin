@@ -282,7 +282,7 @@ static void get_strings_range(RzBinFile *bf, RzList *list, int min, int raw, ut6
 	const char *enc = bf->rbin->strenc;
 	if (!enc) {
 		type = RZ_STRING_ENC_GUESS;
-	} else if (!strcmp(enc, "latin1")) {
+	} else if (!strcmp(enc, "8bit")) {
 		type = RZ_STRING_ENC_8BIT;
 	} else if (!strcmp(enc, "utf8")) {
 		type = RZ_STRING_ENC_UTF8;

@@ -794,7 +794,7 @@ static RDisasmState *ds_init(RzCore *core) {
 	const char *strenc_str = rz_config_get(core->config, "bin.str.enc");
 	if (!strenc_str) {
 		ds->strenc = RZ_STRING_ENC_GUESS;
-	} else if (!strcmp(strenc_str, "latin1")) {
+	} else if (!strcmp(strenc_str, "8bit")) {
 		ds->strenc = RZ_STRING_ENC_8BIT;
 	} else if (!strcmp(strenc_str, "utf8")) {
 		ds->strenc = RZ_STRING_ENC_UTF8;

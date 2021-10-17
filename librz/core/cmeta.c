@@ -163,7 +163,7 @@ RZ_IPI void rz_core_meta_print(RzCore *core, RzAnalysisMetaItem *d, ut64 start, 
 				} else {
 					const char *enc;
 					if (d->subtype == RZ_STRING_ENC_8BIT) {
-						enc = rz_str_is_ascii(d->str) ? "ascii" : "latin1";
+						enc = rz_str_is_ascii(d->str) ? "ascii" : "8bit";
 					} else {
 						enc = rz_str_enc_as_string(d->subtype);
 					}
