@@ -21,7 +21,7 @@ static char *meta_string_escape(RzCore *core, RzAnalysisMetaItem *mi) {
 		esc_str = rz_str_escape_utf8(mi->str, &opt);
 		break;
 	case RZ_STRING_ENC_8BIT:
-		esc_str = rz_str_escape_latin1(mi->str, false, &opt);
+		esc_str = rz_str_escape_8bit(mi->str, false, &opt);
 		break;
 	default:
 		rz_warn_if_reached();

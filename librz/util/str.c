@@ -1440,7 +1440,7 @@ RZ_API char *rz_str_escape_dot(const char *buf) {
 	return rz_str_escape_(buf, true, true, &opt);
 }
 
-RZ_API char *rz_str_escape_latin1(const char *buf, bool colors, RzStrEscOptions *opt) {
+RZ_API char *rz_str_escape_8bit(const char *buf, bool colors, RzStrEscOptions *opt) {
 	return rz_str_escape_(buf, colors, !colors, opt);
 }
 

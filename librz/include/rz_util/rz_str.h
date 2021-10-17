@@ -196,7 +196,7 @@ RZ_API int rz_str_unescape(char *buf);
 RZ_API char *rz_str_escape(const char *buf);
 RZ_API char *rz_str_escape_sh(const char *buf);
 RZ_API char *rz_str_escape_dot(const char *buf);
-RZ_API char *rz_str_escape_latin1(const char *buf, bool colors, RzStrEscOptions *opt);
+RZ_API char *rz_str_escape_8bit(const char *buf, bool colors, RzStrEscOptions *opt);
 RZ_API char *rz_str_escape_utf8(const char *buf, RzStrEscOptions *opt);
 RZ_API char *rz_str_escape_utf8_keep_printable(const char *buf, RzStrEscOptions *opt); // like escape_utf8 but leaves valid \uXXXX chars directly in utf-8
 RZ_API char *rz_str_escape_utf16le(const char *buf, int buf_size, RzStrEscOptions *opt);
