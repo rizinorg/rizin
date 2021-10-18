@@ -60,9 +60,11 @@ typedef struct rz_ascii_graph_t {
 	int mode;
 	bool is_callgraph;
 	bool is_interactive;
+	bool cursor;
 	int zoom;
 	int movspeed;
 	bool hints;
+	int y_scroll;
 
 	RzANode *update_seek_on;
 	bool need_reload_nodes;

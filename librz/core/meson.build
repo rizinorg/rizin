@@ -74,6 +74,7 @@ rz_core_sources = [
   'tui/vmenus.c',
   'tui/vmenus_graph.c',
   'tui/vmenus_zigns.c',
+  'tui/vgraph.c',
   'tui/vasm.c',
   'tui/panels.c'
 ]
