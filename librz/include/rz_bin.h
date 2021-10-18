@@ -162,7 +162,7 @@ typedef enum {
 
 enum {
 	RZ_BIN_STRING_ENC_DETECT = 'g',
-	RZ_BIN_STRING_ENC_8BIT = 'b',
+	RZ_BIN_STRING_ENC_8BIT = 'b', // unknown 8bit encoding but with ASCII from 0 to 0x7f
 	RZ_BIN_STRING_ENC_UTF8 = '8',
 	RZ_BIN_STRING_ENC_MUTF8 = 'm', // modified utf8
 	RZ_BIN_STRING_ENC_WIDE_LE = 'u', // utf16 / widechar string
