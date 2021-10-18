@@ -1,15 +1,15 @@
 // SPDX-FileCopyrightText: 2009-2021 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_asm.h"
-#include "rz_core.h"
-#include "rz_config.h"
-#include "rz_util.h"
-#include "rz_type.h"
-#include "rz_types.h"
+#include <rz_asm.h>
+#include <rz_core.h>
+#include <rz_config.h>
+#include <rz_util.h>
+#include <rz_type.h>
+#include <rz_types.h>
 #include <limits.h>
 
-#include "core_private.h"
+#include "../core_private.h"
 
 #define RZ_CORE_MAX_DISASM (1024 * 1024 * 8)
 #define PF_USAGE_STR       "pf[.k[.f[=v]]|[v]]|[n]|[0|cnt][fmt] [a0 a1 ...]"
