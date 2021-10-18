@@ -36,7 +36,7 @@ static const char *rwxstr[] = {
 RZ_API const char *rz_str_enc_as_string(RzStrEnc enc) {
 	switch (enc) {
 	case RZ_STRING_ENC_8BIT:
-		return "latin1";
+		return "8bit";
 	case RZ_STRING_ENC_UTF8:
 		return "utf8";
 	case RZ_STRING_ENC_UTF16LE:
@@ -1440,7 +1440,7 @@ RZ_API char *rz_str_escape_dot(const char *buf) {
 	return rz_str_escape_(buf, true, true, &opt);
 }
 
-RZ_API char *rz_str_escape_latin1(const char *buf, bool colors, RzStrEscOptions *opt) {
+RZ_API char *rz_str_escape_8bit(const char *buf, bool colors, RzStrEscOptions *opt) {
 	return rz_str_escape_(buf, colors, !colors, opt);
 }
 

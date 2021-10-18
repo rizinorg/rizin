@@ -794,7 +794,7 @@ static RDisasmState *ds_init(RzCore *core) {
 	const char *strenc_str = rz_config_get(core->config, "bin.str.enc");
 	if (!strenc_str) {
 		ds->strenc = RZ_STRING_ENC_GUESS;
-	} else if (!strcmp(strenc_str, "latin1")) {
+	} else if (!strcmp(strenc_str, "8bit")) {
 		ds->strenc = RZ_STRING_ENC_8BIT;
 	} else if (!strcmp(strenc_str, "utf8")) {
 		ds->strenc = RZ_STRING_ENC_UTF8;
@@ -3104,7 +3104,7 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8 *buf, int len, int idx, in
 					opt.esc_bslash = false;
 					/* fallthrough */
 				default:
-					out = rz_str_escape_latin1(mi->str, false, &opt);
+					out = rz_str_escape_8bit(mi->str, false, &opt);
 					break;
 				}
 				if (!out) {
@@ -3814,7 +3814,7 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 	opt.esc_bslash = ds->core->print->esc_bslash;
 	switch (strenc) {
 	case RZ_STRING_ENC_8BIT:
-		escstr = rz_str_escape_latin1(str, is_comment, &opt);
+		escstr = rz_str_escape_8bit(str, is_comment, &opt);
 		break;
 	case RZ_STRING_ENC_UTF8:
 		escstr = rz_str_escape_utf8(str, &opt);
@@ -3858,7 +3858,7 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 				escstr = rz_str_escape_utf32le(str, len, &opt);
 				prefix = "U";
 			} else {
-				escstr = rz_str_escape_latin1(str, is_comment, &opt);
+				escstr = rz_str_escape_8bit(str, is_comment, &opt);
 			}
 		} else {
 			RzStrEnc enc = RZ_STRING_ENC_8BIT;
@@ -3869,7 +3869,7 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 					break;
 				}
 			}
-			escstr = (enc == RZ_STRING_ENC_UTF8 ? rz_str_escape_utf8(str, &opt) : rz_str_escape_latin1(str, is_comment, &opt));
+			escstr = (enc == RZ_STRING_ENC_UTF8 ? rz_str_escape_utf8(str, &opt) : rz_str_escape_8bit(str, is_comment, &opt));
 		}
 	}
 	if (prefix_out) {
