@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
-#include "core_private.h"
+#include "../core_private.h"
 
 #define PANEL_NUM_LIMIT 9
 

@@ -6,7 +6,7 @@
 #include <rz_core.h>
 #include <rz_util.h>
 
-#include "core_private.h"
+#include "../core_private.h"
 
 #define MAX_FORMAT 3
 
