@@ -9,7 +9,7 @@
 #include <rz_cons.h>
 #include <rz_util.h>
 
-#include "core_private.h"
+#include "../core_private.h"
 
 #define ZB_DEFAULT_N 5
 
