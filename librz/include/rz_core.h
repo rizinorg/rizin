@@ -985,11 +985,11 @@ RZ_API void rz_core_clippy(RzCore *core, const char *msg);
 /* watchers */
 RZ_API void rz_core_cmpwatch_free(RzCoreCmpWatcher *w);
 RZ_API RzCoreCmpWatcher *rz_core_cmpwatch_get(RzCore *core, ut64 addr);
-RZ_API int rz_core_cmpwatch_add(RzCore *core, ut64 addr, int size, const char *cmd);
+RZ_API bool rz_core_cmpwatch_add(RzCore *core, ut64 addr, int size, const char *cmd);
 RZ_API int rz_core_cmpwatch_del(RzCore *core, ut64 addr);
-RZ_API int rz_core_cmpwatch_update(RzCore *core, ut64 addr);
-RZ_API int rz_core_cmpwatch_show(RzCore *core, ut64 addr, int mode);
-RZ_API int rz_core_cmpwatch_revert(RzCore *core, ut64 addr);
+RZ_API bool rz_core_cmpwatch_update(RzCore *core, ut64 addr);
+RZ_API void rz_core_cmpwatch_show(RzCore *core, ut64 addr, int mode);
+RZ_API bool rz_core_cmpwatch_revert(RzCore *core, ut64 addr);
 
 // TODO MOVE SOMEWHERE ELSE
 typedef char *(*PrintItemCallback)(void *user, void *p, bool selected);

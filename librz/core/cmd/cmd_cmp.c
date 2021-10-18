@@ -47,7 +47,7 @@ RZ_API RzCoreCmpWatcher *rz_core_cmpwatch_get(RzCore *core, ut64 addr) {
 	return NULL;
 }
 
-RZ_API int rz_core_cmpwatch_add(RzCore *core, ut64 addr, int size, const char *cmd) {
+RZ_API bool rz_core_cmpwatch_add(RzCore *core, ut64 addr, int size, const char *cmd) {
 	RzCoreCmpWatcher *cmpw;
 	if (size < 1) {
 		return false;
@@ -86,7 +86,7 @@ RZ_API int rz_core_cmpwatch_del(RzCore *core, ut64 addr) {
 	return ret;
 }
 
-RZ_API int rz_core_cmpwatch_show(RzCore *core, ut64 addr, int mode) {
+RZ_API void rz_core_cmpwatch_show(RzCore *core, ut64 addr, int mode) {
 	char cmd[128];
 	RzListIter *iter;
 	RzCoreCmpWatcher *w;
@@ -111,10 +111,9 @@ RZ_API int rz_core_cmpwatch_show(RzCore *core, ut64 addr, int mode) {
 			break;
 		}
 	}
-	return false;
 }
 
-RZ_API int rz_core_cmpwatch_update(RzCore *core, ut64 addr) {
+RZ_API bool rz_core_cmpwatch_update(RzCore *core, ut64 addr) {
 	RzCoreCmpWatcher *w;
 	RzListIter *iter;
 	rz_list_foreach (core->watchers, iter, w) {
@@ -129,7 +128,7 @@ RZ_API int rz_core_cmpwatch_update(RzCore *core, ut64 addr) {
 	return !rz_list_empty(core->watchers);
 }
 
-RZ_API int rz_core_cmpwatch_revert(RzCore *core, ut64 addr) {
+RZ_API bool rz_core_cmpwatch_revert(RzCore *core, ut64 addr) {
 	RzCoreCmpWatcher *w;
 	int ret = false;
 	RzListIter *iter;
@@ -343,7 +342,7 @@ static void cmd_cmp_watcher(RzCore *core, const char *input) {
 	}
 }
 
-static int cmd_cmp_disasm(RzCore *core, const char *input, int mode) {
+static bool cmd_cmp_disasm(RzCore *core, const char *input, int mode) {
 	RzAsmOp op, op2;
 	int i, j;
 	char colpad[80];
@@ -440,7 +439,7 @@ static int cmd_cmp_disasm(RzCore *core, const char *input, int mode) {
 		}
 		break;
 	}
-	return 0;
+	return true;
 }
 
 static void __core_cmp_bits(RzCore *core, ut64 addr) {
@@ -853,4 +852,375 @@ RZ_IPI int rz_cmd_cmp(void *data, const char *input) {
 		core->num->value = val;
 	}
 	return 0;
+}
+
+// c
+RZ_IPI RzCmdStatus rz_cmd_cmp_string_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	ut64 val = UT64_MAX;
+	RzOutputMode mode = state->mode;
+	switch (mode) {
+	case RZ_OUTPUT_MODE_STANDARD: {
+		char *unescaped = strdup(argv[1]);
+		int len = rz_str_unescape(unescaped);
+		val = rizin_compare(core, core->block, (ut8 *)unescaped, len, 0);
+		free(unescaped);
+		break;
+	}
+	case RZ_OUTPUT_MODE_RIZIN:
+		val = rizin_compare(core, core->block, (ut8 *)argv[1], strlen(argv[1]) + 1, '*');
+		break;
+	default:
+		rz_warn_if_reached();
+	}
+
+	if (val != UT64_MAX) {
+		core->num->value = val;
+		return RZ_CMD_STATUS_OK;
+	}
+	return RZ_CMD_STATUS_ERROR;
+}
+
+// c1
+RZ_IPI RzCmdStatus rz_cmd_cmp_num1_handler(RzCore *core, int argc, const char **argv) {
+	__core_cmp_bits(core, rz_num_math(core->num, argv[1]));
+	return RZ_CMD_STATUS_OK;
+}
+
+// c2
+RZ_IPI RzCmdStatus rz_cmd_cmp_num2_handler(RzCore *core, int argc, const char **argv) {
+	ut16 v16 = (ut16)rz_num_math(core->num, argv[1]);
+	ut64 val = rizin_compare(core, core->block, (ut8 *)&v16, sizeof(v16), 0);
+	if (val != UT64_MAX) {
+		core->num->value = val;
+		return RZ_CMD_STATUS_OK;
+	}
+	return RZ_CMD_STATUS_ERROR;
+}
+
+// c4
+RZ_IPI RzCmdStatus rz_cmd_cmp_num4_handler(RzCore *core, int argc, const char **argv) {
+	ut32 v32 = (ut32)rz_num_math(core->num, argv[1]);
+	ut64 val = rizin_compare(core, core->block, (ut8 *)&v32, sizeof(v32), 0);
+	if (val != UT64_MAX) {
+		core->num->value = val;
+		return RZ_CMD_STATUS_OK;
+	}
+	return RZ_CMD_STATUS_ERROR;
+}
+
+// c8
+RZ_IPI RzCmdStatus rz_cmd_cmp_num8_handler(RzCore *core, int argc, const char **argv) {
+	ut64 v64 = rz_num_math(core->num, argv[1]);
+	ut64 val = rizin_compare(core, core->block, (ut8 *)&v64, sizeof(v64), 0);
+	if (val != UT64_MAX) {
+		core->num->value = val;
+		return RZ_CMD_STATUS_OK;
+	}
+	return RZ_CMD_STATUS_ERROR;
+}
+
+// cat
+RZ_IPI RzCmdStatus rz_cmd_cat_handler(RzCore *core, int argc, const char **argv) {
+	if (argv[1][0] == '$') { // an alias
+		const char *old_text = rz_cmd_alias_get(core->rcmd, argv[1], 1);
+		if (old_text) {
+			rz_cons_printf("%s\n", old_text + 1);
+		}
+	} else {
+		char *res = rz_syscmd_cat(argv[1]);
+		if (res) {
+			rz_cons_print(res);
+			free(res);
+		}
+	}
+
+	return RZ_CMD_STATUS_OK;
+}
+
+// cc
+RZ_IPI RzCmdStatus rz_cmd_cmp_hex_block_handler(RzCore *core, int argc, const char **argv) {
+	ut64 addr = rz_num_math(core->num, argv[1]);
+	bool col = core->cons->columns > 123;
+	ut8 *b = malloc(core->blocksize);
+	if (b) {
+		memset(b, 0xff, core->blocksize);
+		rz_io_read_at(core->io, addr, b, core->blocksize);
+		rz_print_hexdiff(core->print, core->offset, core->block, addr, b, core->blocksize, col);
+	}
+	free(b);
+	return RZ_CMD_STATUS_OK;
+}
+
+// ccc
+RZ_IPI RzCmdStatus rz_cmd_cmp_hex_diff_lines_handler(RzCore *core, int argc, const char **argv) {
+	ut32 oflags = core->print->flags;
+	core->print->flags |= RZ_PRINT_FLAGS_DIFFOUT;
+	ut64 addr = rz_num_math(core->num, argv[1]);
+	bool col = core->cons->columns > 123;
+	ut8 *b = malloc(core->blocksize);
+	if (b) {
+		memset(b, 0xff, core->blocksize);
+		rz_io_read_at(core->io, addr, b, core->blocksize);
+		rz_print_hexdiff(core->print, core->offset, core->block, addr, b, core->blocksize, col);
+	}
+	free(b);
+	core->print->flags = oflags;
+	return RZ_CMD_STATUS_OK;
+}
+
+// ccd
+RZ_IPI RzCmdStatus rz_cmd_cmp_disasm_handler(RzCore *core, int argc, const char **argv) {
+	return cmd_cmp_disasm(core, argv[1], 'c') ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+}
+
+// cd
+RZ_IPI RzCmdStatus rz_cmd_chdir_handler(RzCore *core, int argc, const char **argv) {
+	static char *olddir = NULL;
+	if (argc == 2) {
+		if (!strcmp(argv[1], "-")) {
+			if (olddir) {
+				char *newdir = olddir;
+				olddir = rz_sys_getdir();
+				if (chdir(newdir) == -1) {
+					RZ_LOG_ERROR("Cannot chdir to %s\n", newdir);
+					free(olddir);
+					olddir = newdir;
+				} else {
+					free(newdir);
+				}
+			}
+		} else if (argv[1][0] == '~') {
+			if (argv[1][1] == '/') {
+				char *homepath = rz_str_home(argv[1] + 2);
+				if (homepath) {
+					char *cwd = rz_sys_getdir();
+					if (chdir(homepath) != -1) {
+						RZ_LOG_ERROR("Cannot chdir to %s\n", homepath);
+						free(cwd);
+					} else {
+						free(olddir);
+						olddir = cwd;
+					}
+					free(homepath);
+				} else {
+					RZ_LOG_ERROR("Cannot find home\n");
+				}
+			} else {
+				char *cwd = rz_sys_getdir();
+				char *home = rz_sys_getenv(RZ_SYS_HOME);
+				if (!home || chdir(home) == -1) {
+					eprintf("Cannot find home.\n");
+					free(cwd);
+				} else {
+					free(olddir);
+					olddir = cwd;
+				}
+				free(home);
+			}
+		} else {
+			char *cwd = rz_sys_getdir();
+			if (chdir(argv[1]) == -1) {
+				RZ_LOG_ERROR("Cannot chdir to %s\n", argv[1]);
+				free(cwd);
+			} else {
+				free(olddir);
+				olddir = cwd;
+			}
+		}
+	} else {
+		char *cwd = rz_sys_getdir();
+		char *home = rz_sys_getenv(RZ_SYS_HOME);
+		if (!home || chdir(home) == -1) {
+			eprintf("Cannot find home.\n");
+			free(cwd);
+		} else {
+			free(olddir);
+			olddir = cwd;
+		}
+		free(home);
+	}
+
+	return RZ_CMD_STATUS_OK;
+}
+
+// cf
+RZ_IPI RzCmdStatus rz_cmd_cmp_file_handler(RzCore *core, int argc, const char **argv) {
+	FILE *fd = rz_sys_fopen(argv[1], "rb");
+	ut64 val = UT64_MAX;
+	if (!fd) {
+		RZ_LOG_ERROR("Cannot open file: %s\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzCmdStatus stat = RZ_CMD_STATUS_ERROR;
+	ut8 *buf = (ut8 *)malloc(core->blocksize);
+	if (!buf) {
+		goto return_goto;
+	}
+	if (fread(buf, 1, core->blocksize, fd) < 1) {
+		RZ_LOG_ERROR("Cannot read file: %s\n", argv[1]);
+		goto return_goto;
+	}
+	val = rizin_compare(core, core->block, buf, core->blocksize, 0);
+	if (val == UT64_MAX) {
+		goto return_goto;
+	}
+	core->num->value = val;
+	stat = RZ_CMD_STATUS_OK;
+
+return_goto:
+	free(buf);
+	fclose(fd);
+	return stat;
+}
+
+// clear | cls
+RZ_IPI RzCmdStatus rz_cmd_cmp_clear_screen_handler(RzCore *core, int argc, const char **argv) {
+	rz_cons_clear00();
+	return RZ_CMD_STATUS_OK;
+}
+
+// cu
+RZ_IPI RzCmdStatus rz_cmd_cmp_unified_handler(RzCore *core, int argc, const char **argv) {
+	rizin_compare_unified(core, core->offset, rz_num_math(core->num, argv[1]), core->blocksize);
+	return RZ_CMD_STATUS_OK;
+}
+
+// cu1
+RZ_IPI RzCmdStatus rz_cmd_cmp_unified1_handler(RzCore *core, int argc, const char **argv) {
+	rizin_compare_words(core, core->offset, rz_num_math(core->num, argv[1]), core->blocksize, 1);
+	return RZ_CMD_STATUS_OK;
+}
+
+// cu2
+RZ_IPI RzCmdStatus rz_cmd_cmp_unified2_handler(RzCore *core, int argc, const char **argv) {
+	rizin_compare_words(core, core->offset, rz_num_math(core->num, argv[1]), core->blocksize, 2);
+	return RZ_CMD_STATUS_OK;
+}
+
+// cu4
+RZ_IPI RzCmdStatus rz_cmd_cmp_unified4_handler(RzCore *core, int argc, const char **argv) {
+	rizin_compare_words(core, core->offset, rz_num_math(core->num, argv[1]), core->blocksize, 4);
+	return RZ_CMD_STATUS_OK;
+}
+
+// cu8
+RZ_IPI RzCmdStatus rz_cmd_cmp_unified8_handler(RzCore *core, int argc, const char **argv) {
+	rizin_compare_words(core, core->offset, rz_num_math(core->num, argv[1]), core->blocksize, 8);
+	return RZ_CMD_STATUS_OK;
+}
+
+// cud
+RZ_IPI RzCmdStatus rz_cmd_cmp_unified_disasm_handler(RzCore *core, int argc, const char **argv) {
+	return cmd_cmp_disasm(core, argv[1], 'u') ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+}
+
+// cw
+RZ_IPI RzCmdStatus rz_cmd_cmp_add_memory_watcher_handler(RzCore *core, int argc, const char **argv) {
+	return rz_core_cmpwatch_add(core, core->offset, atoi(argv[0]), argv[1]) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+}
+
+// cwl
+RZ_IPI RzCmdStatus rz_cmd_cmp_list_compare_watchers_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *output) {
+	RzOutputMode mode = output->mode;
+	switch (mode) {
+	case RZ_OUTPUT_MODE_STANDARD:
+		rz_core_cmpwatch_show(core, UT64_MAX, 0);
+		break;
+	case RZ_OUTPUT_MODE_RIZIN:
+		rz_core_cmpwatch_show(core, UT64_MAX, '*');
+		break;
+	default:
+		rz_warn_if_reached();
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+// cwr
+RZ_IPI RzCmdStatus rz_cmd_cmp_reset_watcher_handler(RzCore *core, int argc, const char **argv) {
+	return rz_core_cmpwatch_revert(core, core->offset) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+}
+
+// cwu
+RZ_IPI RzCmdStatus rz_cmd_cmp_update_watcher_handler(RzCore *core, int argc, const char **argv) {
+	return rz_core_cmpwatch_update(core, core->offset) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+}
+
+// cx
+RZ_IPI RzCmdStatus rz_cmd_cmp_hexpair_string_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *output) {
+	int mode;
+	RzOutputMode omode = output->mode;
+	switch (omode) {
+	case RZ_OUTPUT_MODE_STANDARD:
+		mode = 0;
+		break;
+	case RZ_OUTPUT_MODE_RIZIN:
+		mode = '*';
+		break;
+	default:
+		rz_warn_if_reached();
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzStrBuf *concat_argv = rz_strbuf_new(NULL);
+	for (int i = 0; i < argc; i++) {
+		rz_strbuf_append(concat_argv, argv[i]);
+	}
+	char *input = rz_strbuf_drain(concat_argv);
+	rz_strbuf_free(concat_argv);
+
+	unsigned char *buf;
+	ut64 val;
+	int ret = false;
+	if (!(buf = (ut8 *)malloc(strlen(input) + 1))) {
+		goto return_goto;
+	}
+	ret = rz_hex_bin2str(core->block, strlen(input) / 2, (char *)buf);
+	for (int i = 0; i < ret * 2; i++) {
+		if (input[i] == '.') {
+			input[i] = buf[i];
+		}
+	}
+	ret = rz_hex_str2bin(input, buf);
+	if (ret < 1) {
+		RZ_LOG_ERROR("Cannot parse hexpair\n");
+		ret = false;
+		goto return_goto;
+	}
+
+	val = rizin_compare(core, core->block, buf, ret, mode);
+	if (val == UT64_MAX) {
+		ret = false;
+		goto return_goto;
+	}
+	core->num->value = val;
+	ret = true;
+
+return_goto:
+	free(input);
+	free(buf);
+	return ret ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+}
+
+// cX
+RZ_IPI RzCmdStatus rz_cmd_cmp_hex_block_hexdiff_handler(RzCore *core, int argc, const char **argv) {
+	unsigned char *buf = malloc(core->blocksize);
+	bool ret = false;
+	if (!buf) {
+		goto return_goto;
+	}
+	if (!rz_io_read_at(core->io, rz_num_math(core->num, argv[1]), buf, core->blocksize)) {
+		RZ_LOG_ERROR("Cannot read hexdump\n");
+		goto return_goto;
+	}
+
+	ut64 val = rizin_compare(core, core->block, buf, core->blocksize, 0);
+	if (val == UT64_MAX) {
+		goto return_goto;
+	}
+	core->num->value = val;
+	ret = true;
+
+return_goto:
+	free(buf);
+	return ret ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
