@@ -31,7 +31,6 @@ rz_core_sources = [
   'hack.c',
   'libs.c',
   #'linux_heap_glibc.c',
-  'panels.c',
   'cplugin.c',
   'project.c',
   'project_migrate.c',
@@ -40,12 +39,7 @@ rz_core_sources = [
   #'rtr_shell.c',
   'seek.c',
   'task.c',
-  'vasm.c',
-  'visual.c',
   'vmarks.c',
-  'vmenus.c',
-  'vmenus_graph.c',
-  'vmenus_zigns.c',
   'yank.c',
   'p/core_java.c',
   'cannotated_code.c',
@@ -53,7 +47,7 @@ rz_core_sources = [
   cmd_descs_ch,
   'cmd/cmd.c',
   #'cmd/cmd_analysis.c',
-  'cmd/cmd_api.c'
+  'cmd/cmd_api.c',
   #'cmd/cmd_cmp.c',
   #'cmd/cmd_debug.c',
   #'cmd/cmd_egg.c',
@@ -75,7 +69,13 @@ rz_core_sources = [
   #'cmd/cmd_seek.c',
   #'cmd/cmd_type.c',
   #'cmd/cmd_write.c',
-  #'cmd/cmd_zign.c'
+  #'cmd/cmd_zign.c',
+  'tui/visual.c',
+  'tui/vmenus.c',
+  'tui/vmenus_graph.c',
+  'tui/vmenus_zigns.c',
+  'tui/vasm.c',
+  'tui/panels.c'
 ]
 
 rz_core_inc = []
