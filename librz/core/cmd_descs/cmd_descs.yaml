@@ -273,11 +273,11 @@ commands:
     details:
       - name: ""
         entries:
-          - text: "<cmd> @"
-            arg_str: " <addr>"
-            comment: "Temporary seek to <addr>"
-          - text: "<cmd> @.."
+          - text: "<cmd> @ "
             arg_str: "<addr>"
+            comment: "Temporary seek to <addr>"
+          - text: "<cmd> @ "
+            arg_str: "..<addr>"
             comment: "Temporary partial address seek (see s..)"
           - text: "<cmd> @!"
             arg_str: "<blocksize>"
