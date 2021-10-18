@@ -191,7 +191,7 @@ module.exports = grammar({
     iter_step_stmt: ($) => prec.right(1, seq($._simple_stmt, "@@s:", $.args)),
 
     // tmp changes statements
-    tmp_seek_stmt: ($) => prec.right(1, seq($._simple_stmt, "@", $.args)),
+    tmp_seek_stmt: ($) => prec.right(1, seq($._simple_stmt, "@ ", $.args)),
     tmp_blksz_stmt: ($) => prec.right(1, seq($._simple_stmt, "@!", $.args)),
     tmp_fromto_stmt: ($) => prec.right(1, seq($._simple_stmt, "@(", $.args, ")")),
     tmp_arch_stmt: ($) => prec.right(1, seq($._simple_stmt, "@a:", $.arg)),

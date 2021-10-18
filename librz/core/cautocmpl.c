@@ -15,6 +15,7 @@ enum autocmplt_type_t {
 	AUTOCMPLT_UNKNOWN = 0, ///< Unknown, nothing will be autocompleted
 	AUTOCMPLT_CMD_ID, ///< A command identifier (aka command name) needs to be autocompleted
 	AUTOCMPLT_CMD_ARG, ///< The argument of an arged_stmt (see grammar.js) needs to be autocompleted
+	AUTOCMPLT_TMP_STMT, ///< A temporary modifier operator like `@ `, `@a:`, `@v:`, etc.
 };
 
 /**
@@ -61,19 +62,20 @@ static void guess_data_free(struct guess_data_t *g) {
  * detect that a CMD_ID is expected at * `?e $(<TAB>`, you could try inserting
  * a letter and see what would be the new syntax tree.
  */
-static struct guess_data_t *guess_next_autocmplt_token(RzCore *core, RzLineBuffer *buf, const char *fake_text) {
+static struct guess_data_t *guess_next_autocmplt_token(RzCore *core, RzLineBuffer *buf, const char *fake_text, size_t offset) {
 	size_t fake_len = strlen(fake_text);
 	char *tmp = malloc(strlen(buf->data) + 1 + fake_len);
 	memcpy(tmp, buf->data, buf->index);
 	memcpy(tmp + buf->index, fake_text, fake_len);
 	memcpy(tmp + buf->index + fake_len, buf->data + buf->index, buf->length - buf->index);
 	tmp[buf->length + fake_len] = '\0';
+	RZ_LOG_DEBUG("guess_next_autocmplt_token = '%s'\n", tmp);
 
 	TSParser *parser = ts_parser_new();
 	ts_parser_set_language(parser, (TSLanguage *)core->rcmd->language);
 	TSTree *tree = ts_parser_parse_string(parser, NULL, tmp, buf->length + fake_len);
 	TSNode root = ts_tree_root_node(tree);
-	TSNode node = ts_node_named_descendant_for_byte_range(root, buf->index, buf->index + 1);
+	TSNode node = ts_node_named_descendant_for_byte_range(root, buf->index + offset, buf->index + offset + 1);
 	if (ts_node_is_null(node)) {
 		goto err;
 	}
@@ -107,6 +109,35 @@ static void autocmplt_cmdidentifier(RzCore *core, RzLineNSCompletionResult *res,
 		.len = len,
 	};
 	rz_cmd_foreach_cmdname(core->rcmd, NULL, do_autocmplt_cmdidentifier, &u);
+}
+
+static void autocmplt_tmp_stmt(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
+	const char *stmts[] = {
+		"@ ",
+		"@!",
+		"@(",
+		"@a:",
+		"@b:",
+		"@B:",
+		"@e:",
+		"@f:",
+		"@F:",
+		"@i:",
+		"@k:",
+		"@o:",
+		"@r:",
+		"@s:",
+		"@v:",
+		"@x:",
+		NULL,
+	};
+	const char **stmt;
+	for (stmt = stmts; *stmt; stmt++) {
+		if (!strncmp(*stmt, s, len)) {
+			rz_line_ns_completion_result_add(res, *stmt);
+		}
+	}
+	res->end_string = "";
 }
 
 static void autocmplt_cmd_arg_file(RzLineNSCompletionResult *res, const char *s, size_t len) {
@@ -576,9 +607,18 @@ static bool fill_autocmplt_data_cmdarg(struct autocmplt_data_t *ad, ut32 start, 
 	return true;
 }
 
+/**
+ * Fill the \p ad structure with all the data required to autocomplete a tmp stmt (@, @(, @a:, etc.)
+ */
+static bool fill_autocmplt_data_tmp_stmt(struct autocmplt_data_t *ad, ut32 start, ut32 end) {
+	ad->type = AUTOCMPLT_TMP_STMT;
+	ad->res = rz_line_ns_completion_result_new(start, end, NULL);
+	return true;
+}
+
 static bool find_autocmplt_type_newcmd_or_arg(struct autocmplt_data_t *ad, RzCore *core, RzLineBuffer *buf) {
 	bool res = false;
-	struct guess_data_t *g = guess_next_autocmplt_token(core, buf, "a");
+	struct guess_data_t *g = guess_next_autocmplt_token(core, buf, "a", 0);
 	if (g) {
 		const char *node_type = ts_node_type(g->node);
 		ut32 node_start = ts_node_start_byte(g->node);
@@ -592,9 +632,56 @@ static bool find_autocmplt_type_newcmd_or_arg(struct autocmplt_data_t *ad, RzCor
 	return res;
 }
 
+static bool is_arg_identifier_in_tmp_stmt(TSNode node) {
+	if (!rz_str_startswith(ts_node_type(node), "arg")) {
+		return false;
+	}
+	while (!ts_node_is_null(node) && rz_str_startswith(ts_node_type(node), "arg")) {
+		node = ts_node_parent(node);
+	}
+	if (ts_node_is_null(node)) {
+		return false;
+	}
+	const char *node_type = ts_node_type(node);
+	return rz_str_startswith(node_type, "tmp_") && rz_str_endswith(node_type, "_stmt");
+}
+
+static bool find_autocmplt_type_tmp_stmt(struct autocmplt_data_t *ad, RzCore *core, RzLineBuffer *buf) {
+	bool res = false;
+	if (buf->index > 0 && buf->data[buf->index - 1] == '@') {
+		struct guess_data_t *g = guess_next_autocmplt_token(core, buf, " a", 1);
+		if (g) {
+			ut32 node_start = ts_node_start_byte(g->node);
+			ut32 node_end = ts_node_end_byte(g->node);
+			if (is_arg_identifier_in_tmp_stmt(g->node)) {
+				res = fill_autocmplt_data_tmp_stmt(ad, node_start, node_end - 1);
+			}
+			guess_data_free(g);
+		}
+		if (res) {
+			return res;
+		}
+	}
+	if (buf->index > 1 && buf->data[buf->index - 2] == '@') {
+		struct guess_data_t *g = guess_next_autocmplt_token(core, buf, ":a", 1);
+		if (g) {
+			ut32 node_start = ts_node_start_byte(g->node);
+			ut32 node_end = ts_node_end_byte(g->node);
+			if (is_arg_identifier_in_tmp_stmt(g->node) && node_start > 3 && node_end > 2) {
+				res = fill_autocmplt_data_tmp_stmt(ad, node_start - 3, node_end - 2);
+			}
+			guess_data_free(g);
+		}
+		if (res) {
+			return res;
+		}
+	}
+	return res;
+}
+
 static bool find_autocmplt_type_quoted_arg(struct autocmplt_data_t *ad, RzCore *core, RzLineBuffer *buf, const char *quote, const char *quote_node_type) {
 	bool res = false;
-	struct guess_data_t *g = guess_next_autocmplt_token(core, buf, quote);
+	struct guess_data_t *g = guess_next_autocmplt_token(core, buf, quote, 0);
 	if (g) {
 		const char *node_type = ts_node_type(g->node);
 		ut32 node_start = ts_node_start_byte(g->node);
@@ -659,6 +746,8 @@ static bool find_autocmplt_type(struct autocmplt_data_t *ad, RzCore *core, TSNod
 	} else if (find_autocmplt_type_quoted_arg(ad, core, buf, "'", "single_quoted_arg")) {
 		ad->res->end_string = "' ";
 		return true;
+	} else if (find_autocmplt_type_tmp_stmt(ad, core, buf)) {
+		return true;
 	}
 	return false;
 }
@@ -691,6 +780,8 @@ RZ_API RzLineNSCompletionResult *rz_core_autocomplete_rzshell(RzCore *core, RzLi
 	if (ts_node_is_null(node)) {
 		goto err;
 	}
+	RZ_LOG_DEBUG("autocomplete_rzshell root = '%s'\n", ts_node_string(root));
+	RZ_LOG_DEBUG("autocomplete_rzshell node = '%s'\n", ts_node_string(node));
 
 	// the autocompletion works in 2 steps:
 	// 1) it finds the proper type to autocomplete (sometimes it guesses)
@@ -704,6 +795,9 @@ RZ_API RzLineNSCompletionResult *rz_core_autocomplete_rzshell(RzCore *core, RzLi
 			break;
 		case AUTOCMPLT_CMD_ARG:
 			autocmplt_cmd_arg(core, ad.res, ad.cd, ad.i_arg, buf->data + ad.res->start, ad.res->end - ad.res->start);
+			break;
+		case AUTOCMPLT_TMP_STMT:
+			autocmplt_tmp_stmt(core, ad.res, buf->data + ad.res->start, ad.res->end - ad.res->start);
 			break;
 		default:
 			break;

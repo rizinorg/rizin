@@ -255,7 +255,7 @@ p8 4 @ 0xdead @a:x86 > /tmp/out.txt
 =====================
 Spaces after tmp_seek
 =====================
-wx  0x68a0a@entry0 
+wx  0x68a0a@ entry0 
 ---
 (statements
   (tmp_seek_stmt
