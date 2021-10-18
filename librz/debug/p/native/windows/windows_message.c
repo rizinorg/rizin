@@ -498,7 +498,7 @@ RZ_API bool rz_w32_add_winmsg_breakpoint(RzDebug *dbg, const char *msg_name, con
 		}
 		cond = rz_str_newf("?= `ae %lu,%s,%d,+,[4],-`", type, reg, dbg->bits);
 	}
-	dbg->corebind.cmdf(dbg->corebind.core, "\"dbC 0x%" PFMT64x " %s\"", offset, cond);
+	dbg->corebind.cmdf(dbg->corebind.core, "\"dbC %s @ 0x%" PFMT64x "\"", cond, offset);
 	free(name);
 	return true;
 }
