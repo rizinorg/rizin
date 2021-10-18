@@ -1343,7 +1343,7 @@ RZ_API char *rz_run_get_environ_profile(char **env) {
 			RzStrEscOptions opt = { 0 };
 			opt.show_asciidot = false;
 			opt.esc_bslash = true;
-			v = rz_str_escape_latin1(v, true, &opt);
+			v = rz_str_escape_8bit(v, true, &opt);
 			if (v) {
 				rz_strbuf_appendf(sb, "setenv=%s=\"%s\"\n", k, v);
 				free(v);
