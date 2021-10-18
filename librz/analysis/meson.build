@@ -194,6 +194,7 @@ rz_analysis = library('rz_analysis', rz_analysis_sources,
     rz_bin_dep,
     rz_type_dep,
     rz_il_dep,
+    rz_io_dep,
     capstone_dep
   ],
   install: true,
@@ -223,7 +224,8 @@ pkgconfig_mod.generate(rz_analysis,
     'rz_diff',
     'rz_bin',
     'rz_flag',
-    'rz_type'
+    'rz_type',
+    'rz_io'
   ],
   description: 'rizin foundation libraries'
 )
