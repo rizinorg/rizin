@@ -7,6 +7,8 @@ import subprocess
 import sys
 
 current_path = os.path.dirname(os.path.realpath(__file__))
-shell_finder_py = os.path.join(current_path, '..', 'librz', 'core', 'cmd_descs', 'rzshell_which.py')
+shell_finder_py = os.path.join(
+    current_path, "..", "librz", "core", "cmd_descs", "rzshell_which.py"
+)
 
 subprocess.run([shell_finder_py] + sys.argv[1:])
