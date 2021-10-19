@@ -27,18 +27,6 @@ CD_ARG_LAST_TYPES = [
 ]
 
 
-def escape(s):
-    return s.replace("\\", "\\\\").replace('"', '\\"')
-
-
-def strornull(s):
-    return '"' + escape(s) + '"' if s is not None else "NULL"
-
-
-def strip(s):
-    return s.strip("\n") if s is not None else None
-
-
 def compute_cname(name):
     if name == "":
         return "empty"
@@ -72,20 +60,8 @@ def compute_cname(name):
     return name
 
 
-def get_handler_cname(type, handler, cname):
-    if type == CD_TYPE_OLDINPUT:
+def get_handler_cname(ty, handler, cname):
+    if ty == CD_TYPE_OLDINPUT:
         return "rz_" + (handler or cname)
-    else:
-        return "rz_" + (handler or cname) + "_handler"
 
-
-def flat(l):
-    if l is None:
-        return []
-    if not isinstance(l, list):
-        return [l]
-
-    out = []
-    for i in l:
-        out += flat(i)
-    return out
+    return "rz_" + (handler or cname) + "_handler"

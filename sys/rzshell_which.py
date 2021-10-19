@@ -11,4 +11,4 @@ shell_finder_py = os.path.join(
     current_path, "..", "librz", "core", "cmd_descs", "rzshell_which.py"
 )
 
-subprocess.run([shell_finder_py] + sys.argv[1:])
+subprocess.run([shell_finder_py] + sys.argv[1:], check=False)

@@ -7,7 +7,11 @@ import os
 import sys
 
 import yaml
-from cmd_descs_util import *
+from cmd_descs_util import (CD_ARG_LAST_TYPES, CD_TYPE_ARGV,
+                            CD_TYPE_ARGV_MODES, CD_TYPE_ARGV_STATE,
+                            CD_TYPE_FAKE, CD_TYPE_GROUP, CD_TYPE_INNER,
+                            CD_TYPE_OLDINPUT, CD_VALID_TYPES, compute_cname,
+                            get_handler_cname)
 
 CMDDESCS_C_TEMPLATE = """// SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
 // SPDX-License-Identifier: LGPL-3.0-only
@@ -120,6 +124,18 @@ DEFINE_FAKE_TEMPLATE = """
 
 SET_DEFAULT_MODE_TEMPLATE = """
 \trz_cmd_desc_set_default_mode({cname}_cd, {default_mode});"""
+
+
+def _escape(s):
+    return s.replace("\\", "\\\\").replace('"', '\\"')
+
+
+def strornull(s):
+    return '"' + _escape(s) + '"' if s is not None else "NULL"
+
+
+def strip(s):
+    return s.strip("\n") if s is not None else None
 
 
 class Arg:

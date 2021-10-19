@@ -8,7 +8,7 @@ import os
 import sys
 
 import yaml
-from cmd_descs_util import *
+from cmd_descs_util import CD_TYPE_OLDINPUT, compute_cname, get_handler_cname
 
 
 def get_yaml_files(basedir):
@@ -18,7 +18,7 @@ def get_yaml_files(basedir):
 
 def find_entry(commands, rzcommand):
     for c in commands:
-        if "subcommands" in c and type(c["subcommands"]) == list:
+        if "subcommands" in c and isinstance(c["subcommands"], list):
             e = find_entry(c["subcommands"], rzcommand)
             if e is not None:
                 return e
@@ -36,13 +36,13 @@ def get_c_handler_name_from_entry(e):
 
     if "type" in e and e["type"] == CD_TYPE_OLDINPUT:
         return f"rz_{name}"
-    else:
-        return f"rz_{name}_handler"
+
+    return f"rz_{name}_handler"
 
 
 def find_c_name_handler(basedir, rzcommand):
     for f in get_yaml_files(basedir):
-        with open(f, "r") as of:
+        with open(f, "r", encoding="utf8") as of:
             y = yaml.safe_load(of)
             e = find_entry(y["commands"], rzcommand)
             if e is not None:
