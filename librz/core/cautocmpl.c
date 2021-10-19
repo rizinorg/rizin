@@ -726,6 +726,8 @@ static bool find_autocmplt_type_arg_identifier(struct autocmplt_data_t *ad, RzCo
 	TSNode parent = get_arg_parent(root);
 	if (!ts_node_is_null(parent) && !strcmp(ts_node_type(parent), "tmp_seek_stmt")) {
 		return fill_autocmplt_data(ad, AUTOCMPLT_RZNUM, lstart, lend);
+	} else if (!ts_node_is_null(parent) && !strcmp(ts_node_type(parent), "tmp_fromto_stmt")) {
+		return fill_autocmplt_data(ad, AUTOCMPLT_RZNUM, lstart, lend);
 	} else {
 		return fill_autocmplt_data_cmdarg(ad, lstart, lend, buf->data, root, core);
 	}
@@ -784,6 +786,8 @@ static bool find_autocmplt_type(struct autocmplt_data_t *ad, RzCore *core, TSNod
 		ad->res->end_string = "' ";
 		return true;
 	} else if (find_autocmplt_type_tmp_stmt_op(ad, core, buf, "tmp_seek_stmt", "a", AUTOCMPLT_RZNUM)) {
+		return true;
+	} else if (find_autocmplt_type_tmp_stmt_op(ad, core, buf, "tmp_fromto_stmt", "a b)", AUTOCMPLT_RZNUM)) {
 		return true;
 	} else if (find_autocmplt_type_tmp_stmt(ad, core, buf)) {
 		return true;
