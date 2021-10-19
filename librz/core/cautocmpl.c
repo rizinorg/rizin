@@ -17,6 +17,7 @@ enum autocmplt_type_t {
 	AUTOCMPLT_CMD_ARG, ///< The argument of an arged_stmt (see grammar.js) needs to be autocompleted
 	AUTOCMPLT_TMP_STMT, ///< A temporary modifier operator like `@ `, `@a:`, `@v:`, etc.
 	AUTOCMPLT_RZNUM, ///< A expression that can be parsed by RzNum (e.g. "flag+3")
+	AUTOCMPLT_ARCH, ///< An architecture supported by Rizin (e.g. x86, arm, etc.)
 };
 
 /**
@@ -139,6 +140,45 @@ static void autocmplt_tmp_stmt(RzCore *core, RzLineNSCompletionResult *res, cons
 		}
 	}
 	res->end_string = "";
+}
+
+static void autocmplt_bits_plugin(RzAsmPlugin *plugin, RzLineNSCompletionResult *res, const char *s, size_t len) {
+	int bits = plugin->bits;
+	int i;
+	char sbits[5];
+	for (i = 1; i <= bits; i <<= 1) {
+		if (i & bits && !strncmp(rz_strf(sbits, "%d", i), s, len)) {
+			rz_line_ns_completion_result_add(res, sbits);
+		}
+	}
+}
+
+static void autocmplt_arch(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
+	RzList *asm_plugins = rz_asm_get_plugins(core->rasm);
+	RzListIter *it;
+	RzAsmPlugin *plugin;
+
+	// @a: can either be used with @a:arch or @a:arch:bits
+	// Check for `:` to determine where we are
+	const char *delim = rz_sub_str_rchr(s, 0, len, ':');
+	if (!delim) {
+		// We autocomplete just the architecture part
+		rz_list_foreach (asm_plugins, it, plugin) {
+			if (!strncmp(plugin->name, s, len)) {
+				rz_line_ns_completion_result_add(res, plugin->name);
+			}
+		}
+		res->end_string = "";
+	} else {
+		// We autocomplete the bits part
+		res->start += delim + 1 - s;
+		rz_list_foreach (asm_plugins, it, plugin) {
+			if (!strncmp(plugin->name, s, delim - s)) {
+				autocmplt_bits_plugin(plugin, res, delim + 1, len - (delim + 1 - s));
+				break;
+			}
+		}
+	}
 }
 
 static void autocmplt_cmd_arg_file(RzLineNSCompletionResult *res, const char *s, size_t len) {
@@ -728,6 +768,8 @@ static bool find_autocmplt_type_arg_identifier(struct autocmplt_data_t *ad, RzCo
 		return fill_autocmplt_data(ad, AUTOCMPLT_RZNUM, lstart, lend);
 	} else if (!ts_node_is_null(parent) && !strcmp(ts_node_type(parent), "tmp_fromto_stmt")) {
 		return fill_autocmplt_data(ad, AUTOCMPLT_RZNUM, lstart, lend);
+	} else if (!ts_node_is_null(parent) && !strcmp(ts_node_type(parent), "tmp_arch_stmt")) {
+		return fill_autocmplt_data(ad, AUTOCMPLT_ARCH, lstart, lend);
 	} else {
 		return fill_autocmplt_data_cmdarg(ad, lstart, lend, buf->data, root, core);
 	}
@@ -789,6 +831,8 @@ static bool find_autocmplt_type(struct autocmplt_data_t *ad, RzCore *core, TSNod
 		return true;
 	} else if (find_autocmplt_type_tmp_stmt_op(ad, core, buf, "tmp_fromto_stmt", "a b)", AUTOCMPLT_RZNUM)) {
 		return true;
+	} else if (find_autocmplt_type_tmp_stmt_op(ad, core, buf, "tmp_arch_stmt", "a", AUTOCMPLT_ARCH)) {
+		return true;
 	} else if (find_autocmplt_type_tmp_stmt(ad, core, buf)) {
 		return true;
 	}
@@ -844,6 +888,9 @@ RZ_API RzLineNSCompletionResult *rz_core_autocomplete_rzshell(RzCore *core, RzLi
 			break;
 		case AUTOCMPLT_RZNUM:
 			autocmplt_cmd_arg_rznum(core, ad.res, buf->data + ad.res->start, ad.res->end - ad.res->start);
+			break;
+		case AUTOCMPLT_ARCH:
+			autocmplt_arch(core, ad.res, buf->data + ad.res->start, ad.res->end - ad.res->start);
 			break;
 		default:
 			break;
