@@ -18,6 +18,7 @@ enum autocmplt_type_t {
 	AUTOCMPLT_TMP_STMT, ///< A temporary modifier operator like `@ `, `@a:`, `@v:`, etc.
 	AUTOCMPLT_RZNUM, ///< A expression that can be parsed by RzNum (e.g. "flag+3")
 	AUTOCMPLT_ARCH, ///< An architecture supported by Rizin (e.g. x86, arm, etc.)
+	AUTOCMPLT_BITS, ///< A bits value supported by the currently selected architecture (e asm.bits=?)
 };
 
 /**
@@ -154,6 +155,8 @@ static void autocmplt_bits_plugin(RzAsmPlugin *plugin, RzLineNSCompletionResult 
 }
 
 static void autocmplt_arch(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
+	rz_return_if_fail(core->rasm);
+
 	RzList *asm_plugins = rz_asm_get_plugins(core->rasm);
 	RzListIter *it;
 	RzAsmPlugin *plugin;
@@ -179,6 +182,12 @@ static void autocmplt_arch(RzCore *core, RzLineNSCompletionResult *res, const ch
 			}
 		}
 	}
+}
+
+static void autocmplt_bits(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
+	rz_return_if_fail(core->rasm && core->rasm->cur);
+
+	autocmplt_bits_plugin(core->rasm->cur, res, s, len);
 }
 
 static void autocmplt_cmd_arg_file(RzLineNSCompletionResult *res, const char *s, size_t len) {
@@ -770,6 +779,8 @@ static bool find_autocmplt_type_arg_identifier(struct autocmplt_data_t *ad, RzCo
 		return fill_autocmplt_data(ad, AUTOCMPLT_RZNUM, lstart, lend);
 	} else if (!ts_node_is_null(parent) && !strcmp(ts_node_type(parent), "tmp_arch_stmt")) {
 		return fill_autocmplt_data(ad, AUTOCMPLT_ARCH, lstart, lend);
+	} else if (!ts_node_is_null(parent) && !strcmp(ts_node_type(parent), "tmp_bits_stmt")) {
+		return fill_autocmplt_data(ad, AUTOCMPLT_BITS, lstart, lend);
 	} else {
 		return fill_autocmplt_data_cmdarg(ad, lstart, lend, buf->data, root, core);
 	}
@@ -833,6 +844,8 @@ static bool find_autocmplt_type(struct autocmplt_data_t *ad, RzCore *core, TSNod
 		return true;
 	} else if (find_autocmplt_type_tmp_stmt_op(ad, core, buf, "tmp_arch_stmt", "a", AUTOCMPLT_ARCH)) {
 		return true;
+	} else if (find_autocmplt_type_tmp_stmt_op(ad, core, buf, "tmp_bits_stmt", "1", AUTOCMPLT_BITS)) {
+		return true;
 	} else if (find_autocmplt_type_tmp_stmt(ad, core, buf)) {
 		return true;
 	}
@@ -891,6 +904,9 @@ RZ_API RzLineNSCompletionResult *rz_core_autocomplete_rzshell(RzCore *core, RzLi
 			break;
 		case AUTOCMPLT_ARCH:
 			autocmplt_arch(core, ad.res, buf->data + ad.res->start, ad.res->end - ad.res->start);
+			break;
+		case AUTOCMPLT_BITS:
+			autocmplt_bits(core, ad.res, buf->data + ad.res->start, ad.res->end - ad.res->start);
 			break;
 		default:
 			break;
