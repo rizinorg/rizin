@@ -54,10 +54,3 @@ override_dh_auto_test:
 
 override_dh_auto_install:
 	dh_auto_install --builddirectory=build-deb # --destdir=debian/tmp
-
-#override_dh_install:
-#	dh_install --sourcedir debian/tmp
-
-#override_dh_missing:
-#	dh_missing --list-missing--sourcedir debian/tmp --list-missing
-

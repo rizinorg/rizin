@@ -1,4 +1,4 @@
-This files are mainly created to support the [Open Build
+These files are mainly created to support the [Open Build
 Service](https://build.opensuse.org/package/show/home:RizinOrg/rizin), with the
 [debtransform](https://raw.githubusercontent.com/openSUSE/obs-build/master/debtransform)
 tool.

@@ -20,10 +20,7 @@ License:        LGPLv3+ and GPLv2+ and BSD and MIT and ASL 2.0 and MPLv2.0 and z
 # librz/asm/arch/ - GPLv2+, MIT, GPLv3
 # librz/bin/format/pe/dotnet - Apache License Version 2.0
 # librz/util/qrcode.c - MIT
-# shlr/java - Apache 2.0
 # shlr/sdb/src - MIT
-# shlr/lz4 - 3 clause BSD (system installed shared lz4 is used instead)
-# shlr/spp - MIT
 # shlr/spp - MIT
 
 BuildRequires:  gcc
