@@ -1473,7 +1473,8 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 		case 4: // ^D
 			if (!I.buffer.data[0]) { /* eof */
 				if (I.echo) {
-					printf("^D\n");
+					__print_prompt();
+					printf("\n");
 				}
 				rz_cons_set_raw(false);
 				rz_cons_break_pop();

@@ -89,10 +89,10 @@ static bool lastcmd_repeat(RzCore *core, int next);
 #include "cmd_interpret.c"
 #include "cmd_analysis.c"
 #include "cmd_open.c"
-#include "cmd_meta.c"
 #include "cmd_type.c"
 #include "cmd_egg.c"
 #include "cmd_info.c"
+#include "cmd_meta.c"
 #include "cmd_macro.c"
 #include "cmd_magic.c"
 #include "cmd_seek.c"
@@ -1144,28 +1144,23 @@ RZ_IPI int rz_cmd_panels(void *data, const char *input) {
 	if (core->vmode) {
 		return false;
 	}
-	if (*input == '?') {
-		rz_core_cmd_help(core, help_msg_v);
-		return false;
-	}
 	if (!rz_cons_is_interactive()) {
 		eprintf("Panel mode requires scr.interactive=true.\n");
 		return false;
 	}
-	if (*input == ' ') {
+	char *sp = strchr(input, ' ');
+	switch (input[0]) {
+	case ' ': // "v [name]"
 		if (core->panels) {
 			rz_load_panels_layout(core, input + 1);
 		}
 		rz_config_set(core->config, "scr.layout", input + 1);
 		return true;
-	}
-	if (*input == '=') {
+	case '=': // "v= [name]"
 		rz_save_panels_layout(core, input + 1);
 		rz_config_set(core->config, "scr.layout", input + 1);
 		return true;
-	}
-	if (*input == 'i') {
-		char *sp = strchr(input, ' ');
+	case 'i': // "vi [file]"
 		if (sp) {
 			char *r = rz_core_editor(core, sp + 1, NULL);
 			if (r) {
@@ -1176,9 +1171,13 @@ RZ_IPI int rz_cmd_panels(void *data, const char *input) {
 		}
 		////rz_sys_cmdf ("v%s", input);
 		return false;
+	case 0:
+		rz_core_visual_panels_root(core, core->panels_root);
+		return true;
+	default:
+		rz_core_cmd_help(core, help_msg_v);
+		return false;
 	}
-	rz_core_visual_panels_root(core, core->panels_root);
-	return true;
 }
 
 RZ_IPI int rz_cmd_visual(void *data, const char *input) {
@@ -6128,7 +6127,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "0", "alias for s 0x", rz_cmd_ox },
 		{ "a", "analysis", rz_cmd_analysis },
 		{ "c", "compare memory", rz_cmd_cmp },
-		{ "C", "code metadata", rz_cmd_meta },
 		{ "d", "debugger operations", rz_cmd_debug },
 		{ "f", "get/set flags", rz_cmd_flag },
 		{ "g", "egg manipulation", rz_cmd_egg },

@@ -1192,7 +1192,11 @@ static void rz_type_format_word(RzStrBuf *outbuf, int endian, int mode,
 
 static void rz_type_byte_escape(const RzPrint *p, const char *src, char **dst, int dot_nl) {
 	rz_return_if_fail(p->strconv_mode);
-	rz_str_byte_escape(src, dst, dot_nl, !strcmp(p->strconv_mode, "asciidot"), p->esc_bslash);
+	RzStrEscOptions opt = { 0 };
+	opt.dot_nl = dot_nl;
+	opt.show_asciidot = !strcmp(p->strconv_mode, "asciidot");
+	opt.esc_bslash = p->esc_bslash;
+	rz_str_byte_escape(src, dst, &opt);
 }
 
 static void rz_type_format_nulltermstring(const RzTypeDB *typedb, RzPrint *p, RzStrBuf *outbuf, int len, int endian, int mode,

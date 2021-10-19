@@ -48,6 +48,12 @@ RZ_IPI void rz_core_analysis_bb_info_print(RzCore *core, RzAnalysisBlock *bb, ut
 RZ_IPI void rz_core_analysis_function_until(RzCore *core, ut64 addr_end);
 RZ_IPI void rz_core_analysis_value_pointers(RzCore *core, RzOutputMode mode);
 
+/* cmeta.c */
+RZ_IPI void rz_core_meta_print(RzCore *core, RzAnalysisMetaItem *d, ut64 start, ut64 size, bool show_full, RzCmdStateOutput *state);
+RZ_IPI void rz_core_meta_print_list_at(RzCore *core, ut64 addr, RzCmdStateOutput *state);
+RZ_IPI void rz_core_meta_print_list_all(RzCore *core, int type, RzCmdStateOutput *state);
+RZ_IPI void rz_core_meta_print_list_in_function(RzCore *core, int type, ut64 addr, RzCmdStateOutput *state);
+
 /* ctypes.c */
 // Enums
 RZ_IPI void rz_core_types_enum_print(RzCore *core, const RzBaseType *btype, RzOutputMode mode, PJ *pj);

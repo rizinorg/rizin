@@ -49,7 +49,7 @@ static const RzCmdDescHelp not_defined_help = {
 };
 
 static const RzCmdDescHelp root_help = {
-	.usage = "[.][times][cmd][~grep][@[@iter]addr!size][|>pipe] ; ...",
+	.usage = "[.][times][cmd][~grep][@[@iter]addr][|>pipe] ; ...",
 	.description = "",
 	.sort_subcommands = true,
 };
@@ -845,12 +845,39 @@ static bool show_children_shortcut(const RzCmdDesc *cd) {
 		has_cd_submodes(cd);
 }
 
-static void fill_wrapped_comment(RzCmd *cmd, RzStrBuf *sb, const char *comment, size_t columns) {
+static void fill_colored_args(RzCmd *cmd, RzStrBuf *sb, const char *line, bool use_color, const char *reset_color) {
+	const char *pal_args_color = "";
+	if (cmd->has_cons && use_color) {
+		RzCons *cons = rz_cons_singleton();
+		pal_args_color = cons->context->pal.args;
+	}
+
+	while (line) {
+		const char *close_arg = NULL;
+		const char *open_arg = strchr(line, '<');
+		if (!open_arg) {
+			break;
+		}
+		close_arg = strchr(open_arg, '>');
+		if (!close_arg) {
+			break;
+		}
+		rz_strbuf_appendf(sb, "%.*s%s", (int)(open_arg - line), line, pal_args_color);
+		rz_strbuf_appendf(sb, "%.*s%s", (int)(close_arg - open_arg + 1), open_arg, reset_color);
+		line = close_arg + 1;
+	}
+	rz_strbuf_append(sb, line);
+}
+
+static void fill_wrapped_comment(RzCmd *cmd, RzStrBuf *sb, const char *comment, size_t columns, bool use_color) {
 	int rows, cols;
 	bool is_interactive = false;
+	const char *help_color = "";
 	if (cmd->has_cons) {
+		RzCons *cons = rz_cons_singleton();
 		cols = rz_cons_get_size(&rows);
 		is_interactive = rz_cons_is_interactive();
+		help_color = use_color ? cons->context->pal.help : "";
 	}
 	if (is_interactive && cols > 0 && cols - columns > MIN_SUMMARY_WIDTH && !RZ_STR_ISEMPTY(comment)) {
 		char *text = strdup(comment);
@@ -865,7 +892,8 @@ static void fill_wrapped_comment(RzCmd *cmd, RzStrBuf *sb, const char *comment, 
 				rz_strbuf_append(sb, "# ");
 				first = false;
 			}
-			rz_strbuf_append(sb, line);
+
+			fill_colored_args(cmd, sb, line, use_color, help_color);
 		}
 		rz_list_free(wrapped_text);
 		free(text);
@@ -970,7 +998,7 @@ static void fill_usage_strbuf(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd, bool use_
 			if (has_cd_default_mode(cd)) {
 				rz_strbuf_appendf(summary_sb, "%s", rz_output_mode_to_summary(get_cd_default_mode(cd)));
 			}
-			fill_wrapped_comment(cmd, sb, rz_strbuf_get(summary_sb), columns);
+			fill_wrapped_comment(cmd, sb, rz_strbuf_get(summary_sb), columns, use_color);
 			rz_strbuf_append(sb, pal_reset);
 			rz_strbuf_free(summary_sb);
 		}
@@ -1043,7 +1071,7 @@ static void do_print_child_help(RzCmd *cmd, RzStrBuf *sb, const RzCmdDesc *cd, c
 	columns += padding + 1;
 	rz_strbuf_append(sb, pal_help_color);
 
-	fill_wrapped_comment(cmd, sb, summary, columns);
+	fill_wrapped_comment(cmd, sb, summary, columns, use_color);
 	rz_strbuf_appendf(sb, "%s\n", pal_reset);
 }
 
@@ -1073,10 +1101,7 @@ static char *group_get_help(RzCmd *cmd, RzCmdDesc *cd, bool use_color) {
 	return rz_strbuf_drain(sb);
 }
 
-static char *argv_modes_get_help(RzCmd *cmd, RzCmdDesc *cd, bool use_color) {
-	RzStrBuf *sb = rz_strbuf_new(NULL);
-	fill_usage_strbuf(cmd, sb, cd, use_color);
-
+static void fill_argv_modes_help_strbuf(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd, bool use_color) {
 	size_t max_len = 0, min_len = SIZE_MAX;
 	update_minmax_len(cd, &max_len, &min_len, true);
 	max_len++; // consider the suffix letter
@@ -1094,8 +1119,6 @@ static char *argv_modes_get_help(RzCmd *cmd, RzCmdDesc *cd, bool use_color) {
 			free(summary);
 		}
 	}
-
-	return rz_strbuf_drain(sb);
 }
 
 const RzCmdDescDetail *get_cd_details(RzCmdDesc *cd) {
@@ -1160,7 +1183,7 @@ static void fill_details(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color
 				pal_help_color);
 			size_t columns = strlen("| ") + strlen(entry_it->text) +
 				strlen(" ") + strlen(arg_str) + padding;
-			fill_wrapped_comment(cmd, sb, entry_it->comment, columns);
+			fill_wrapped_comment(cmd, sb, entry_it->comment, columns, use_color);
 			rz_strbuf_appendf(sb, "%s\n", pal_reset);
 			entry_it++;
 		}
@@ -1170,15 +1193,25 @@ static void fill_details(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color
 
 static char *argv_get_help(RzCmd *cmd, RzCmdDesc *cd, size_t detail, bool use_color) {
 	RzStrBuf *sb = rz_strbuf_new(NULL);
+	const char *pal_reset = "";
+	if (cmd->has_cons && use_color) {
+		RzCons *cons = rz_cons_singleton();
+		pal_reset = cons->context->pal.reset;
+	}
 
 	fill_usage_strbuf(cmd, sb, cd, use_color);
 
+	if (cd->type == RZ_CMD_DESC_TYPE_ARGV_MODES || cd->type == RZ_CMD_DESC_TYPE_ARGV_STATE) {
+		fill_argv_modes_help_strbuf(cmd, sb, cd, use_color);
+	}
+
 	switch (detail) {
 	case 1:
-		break;
 	case 2:
 		if (cd->help->description) {
-			rz_strbuf_appendf(sb, "\n%s\n", cd->help->description);
+			rz_strbuf_append(sb, "\n");
+			fill_colored_args(cmd, sb, cd->help->description, use_color, pal_reset);
+			rz_strbuf_append(sb, "\n");
 		}
 		fill_details(cmd, cd, sb, use_color);
 		break;
@@ -1213,11 +1246,11 @@ static char *oldinput_get_help(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *a) {
 	return res;
 }
 
-static char *get_help(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args, bool use_color, size_t detail) {
+static char *get_help(RzCmd *cmd, RzCmdDesc *cd, const char *cmdid, RzCmdParsedArgs *args, bool use_color, size_t detail) {
 	switch (cd->type) {
 	case RZ_CMD_DESC_TYPE_GROUP:
-		if (detail > 1 && cd->d.group_data.exec_cd) {
-			return get_help(cmd, cd->d.group_data.exec_cd, args, use_color, detail);
+		if (cd->d.group_data.exec_cd && (detail > 1 || (detail == 1 && strcmp(cmdid, cd->name)))) {
+			return get_help(cmd, cd->d.group_data.exec_cd, cmdid, args, use_color, detail);
 		}
 		if (detail == 1) {
 			// show the group help only when doing <cmd>?
@@ -1225,12 +1258,8 @@ static char *get_help(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args, bool use
 		}
 		return argv_get_help(cmd, cd, detail, use_color);
 	case RZ_CMD_DESC_TYPE_ARGV:
-		return argv_get_help(cmd, cd, detail, use_color);
 	case RZ_CMD_DESC_TYPE_ARGV_MODES:
 	case RZ_CMD_DESC_TYPE_ARGV_STATE:
-		if (detail == 1) {
-			return argv_modes_get_help(cmd, cd, use_color);
-		}
 		return argv_get_help(cmd, cd, detail, use_color);
 	case RZ_CMD_DESC_TYPE_FAKE:
 		if (detail != 1) {
@@ -1385,6 +1414,9 @@ RZ_API bool rz_cmd_get_help_strbuf(RzCmd *cmd, const RzCmdDesc *cd, bool use_col
 
 RZ_API char *rz_cmd_get_help(RzCmd *cmd, RzCmdParsedArgs *args, bool use_color) {
 	char *cmdid = strdup(rz_cmd_parsed_args_cmd(args));
+	if (!cmdid) {
+		return NULL;
+	}
 	char *cmdid_p = cmdid + strlen(cmdid) - 1;
 	size_t detail = 0;
 	while (cmdid_p >= cmdid && *cmdid_p == '?' && detail < 2) {
@@ -1393,19 +1425,21 @@ RZ_API char *rz_cmd_get_help(RzCmd *cmd, RzCmdParsedArgs *args, bool use_color) 
 		detail++;
 	}
 
+	char *res = NULL;
 	if (detail == 0) {
 		// there should be at least one `?`
-		free(cmdid);
-		return NULL;
+		goto err;
 	}
 
 	RzCmdDesc *cd = cmdid_p >= cmdid ? rz_cmd_get_desc(cmd, cmdid) : rz_cmd_get_root(cmd);
-	free(cmdid);
 	if (!cd || !cd->help) {
-		return NULL;
+		goto err;
 	}
 
-	return get_help(cmd, cd, args, use_color, detail);
+	res = get_help(cmd, cd, cmdid, args, use_color, detail);
+err:
+	free(cmdid);
+	return res;
 }
 
 /** macro.c **/

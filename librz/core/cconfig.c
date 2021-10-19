@@ -934,12 +934,12 @@ static bool cb_binstrenc(void *user, void *data) {
 		print_node_options(node);
 		rz_cons_printf("  -- if string's 2nd & 4th bytes are 0 then utf16le else "
 			       "if 2nd - 4th & 6th bytes are 0 & no char > 0x10ffff then utf32le else "
-			       "if utf8 char detected then utf8 else latin1\n");
+			       "if utf8 char detected then utf8 else 8bit\n");
 		return false;
 	}
 	const namealiases_pair names[] = {
 		{ "guess", NULL },
-		{ "latin1", "ascii" },
+		{ "8bit", "ascii" },
 		{ "utf8", "utf-8" },
 		{ "utf16le", "utf-16le,utf16-le" },
 		{ "utf32le", "utf-32le,utf32-le" },
@@ -3233,7 +3233,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETICB("bin.maxstrbuf", 1024 * 1024 * 10, &cb_binmaxstrbuf, "Maximum size of range to load strings from");
 	n = NODECB("bin.str.enc", "guess", &cb_binstrenc);
 	SETDESC(n, "Default string encoding of binary");
-	SETOPTIONS(n, "ascii", "latin1", "utf8", "utf16le", "utf32le", "utf16be", "utf32be", "guess", NULL);
+	SETOPTIONS(n, "ascii", "8bit", "utf8", "utf16le", "utf32le", "utf16be", "utf32be", "guess", NULL);
 	SETCB("bin.prefix", "", &cb_binprefix, "Prefix all symbols/sections/relocs with a specific string");
 	SETCB("bin.rawstr", "false", &cb_rawstr, "Load strings from raw binaries");
 	SETCB("bin.strings", "true", &cb_binstrings, "Load strings from rbin on startup");

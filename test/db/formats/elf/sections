@@ -169,6 +169,7 @@ RUN
 NAME=more than 65535 segments
 FILE=gzip://bins/elf/core/more-than-65535-segments.gz
 CMDS=iSS~?
+TIMEOUT=2040
 EXPECT=<<EOF
 131073
 EOF

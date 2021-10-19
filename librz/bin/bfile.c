@@ -110,26 +110,26 @@ static void print_string(RzBinFile *bf, RzBinString *string, int raw, PJ *pj) {
 static inline void detected_string_to_bin_string(RzBinString *dst, RzDetectedString *src) {
 	int type = -1;
 	switch (src->type) {
-	case RZ_STRING_ENC_LATIN1:
-		type = RZ_STRING_TYPE_ASCII;
+	case RZ_STRING_ENC_8BIT:
+		type = RZ_BIN_STRING_ENC_8BIT;
 		break;
 	case RZ_STRING_ENC_UTF8:
-		type = RZ_STRING_TYPE_UTF8;
+		type = RZ_BIN_STRING_ENC_UTF8;
 		break;
 	case RZ_STRING_ENC_UTF16LE:
-		type = RZ_STRING_TYPE_WIDE_LE;
+		type = RZ_BIN_STRING_ENC_WIDE_LE;
 		break;
 	case RZ_STRING_ENC_UTF32LE:
-		type = RZ_STRING_TYPE_WIDE32_LE;
+		type = RZ_BIN_STRING_ENC_WIDE32_LE;
 		break;
 	case RZ_STRING_ENC_UTF16BE:
-		type = RZ_STRING_TYPE_WIDE_BE;
+		type = RZ_BIN_STRING_ENC_WIDE_BE;
 		break;
 	case RZ_STRING_ENC_UTF32BE:
-		type = RZ_STRING_TYPE_WIDE32_BE;
+		type = RZ_BIN_STRING_ENC_WIDE32_BE;
 		break;
 	case RZ_STRING_ENC_GUESS:
-		type = RZ_STRING_TYPE_DETECT;
+		type = RZ_BIN_STRING_ENC_DETECT;
 		break;
 	default:
 		break;
@@ -282,8 +282,8 @@ static void get_strings_range(RzBinFile *bf, RzList *list, int min, int raw, ut6
 	const char *enc = bf->rbin->strenc;
 	if (!enc) {
 		type = RZ_STRING_ENC_GUESS;
-	} else if (!strcmp(enc, "latin1")) {
-		type = RZ_STRING_ENC_LATIN1;
+	} else if (!strcmp(enc, "8bit")) {
+		type = RZ_STRING_ENC_8BIT;
 	} else if (!strcmp(enc, "utf8")) {
 		type = RZ_STRING_ENC_UTF8;
 	} else if (!strcmp(enc, "utf16le")) {

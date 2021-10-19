@@ -161,15 +161,15 @@ typedef enum {
 #define RZ_BIN_LANGUAGE_HAS_BLOCKS(x) ((x)&RZ_BIN_LANGUAGE_BLOCKS)
 
 enum {
-	RZ_STRING_TYPE_DETECT = '?',
-	RZ_STRING_TYPE_ASCII = 'a',
-	RZ_STRING_TYPE_UTF8 = 'u',
-	RZ_STRING_TYPE_MUTF8 = 'm', // modified utf8
-	RZ_STRING_TYPE_WIDE_LE = 'w', // utf16 / widechar string
-	RZ_STRING_TYPE_WIDE32_LE = 'W', // utf32
-	RZ_STRING_TYPE_WIDE_BE = 'x', // utf16-be / widechar string
-	RZ_STRING_TYPE_WIDE32_BE = 'X', // utf32-be
-	RZ_STRING_TYPE_BASE64 = 'b',
+	RZ_BIN_STRING_ENC_DETECT = 'g',
+	RZ_BIN_STRING_ENC_8BIT = 'b', // unknown 8bit encoding but with ASCII from 0 to 0x7f
+	RZ_BIN_STRING_ENC_UTF8 = '8',
+	RZ_BIN_STRING_ENC_MUTF8 = 'm', // modified utf8
+	RZ_BIN_STRING_ENC_WIDE_LE = 'u', // utf16 / widechar string
+	RZ_BIN_STRING_ENC_WIDE32_LE = 'U', // utf32
+	RZ_BIN_STRING_ENC_WIDE_BE = 'n', // utf16-be / widechar string
+	RZ_BIN_STRING_ENC_WIDE32_BE = 'N', // utf32-be
+	RZ_BIN_STRING_ENC_BASE64 = '6',
 };
 
 enum {

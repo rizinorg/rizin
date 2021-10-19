@@ -22,15 +22,19 @@ RZ_API void rz_detected_string_free(RzDetectedString *str) {
 	}
 }
 
+static inline bool is_c_escape_sequence(char ch) {
+	return strchr("\b\v\f\n\r\t\a\033\\", ch);
+}
+
 static FalsePositiveResult reduce_false_positives(const RzUtilStrScanOptions *opt, ut8 *str, int size, RzStrEnc str_type) {
 	int i, num_blocks, *block_list;
 	int *freq_list = NULL, expected_ascii, actual_ascii, num_chars;
 
 	switch (str_type) {
-	case RZ_STRING_ENC_LATIN1: {
+	case RZ_STRING_ENC_8BIT: {
 		for (i = 0; i < size; i++) {
 			char ch = str[i];
-			if (ch != '\n' && ch != '\r' && ch != '\t') {
+			if (!is_c_escape_sequence(ch)) {
 				if (!IS_PRINTABLE(str[i])) {
 					return SKIP_STRING;
 				}
@@ -179,18 +183,13 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 			}
 			rc = rz_utf8_encode(tmp + i, r);
 			runes++;
-		} else if (r && r < 0x100 && strchr("\b\v\f\n\r\t\a\033\\", (char)r)) {
+		} else if (r && r < 0x100 && is_c_escape_sequence((char)r)) {
 			if ((i + 32) < opt->buf_size && r < 93) {
-				tmp[i + 0] = '\\';
-				tmp[i + 1] = "       abtnvfr             e  "
-					     "                              "
-					     "                              "
-					     "  \\"[r];
+				rc = rz_utf8_encode(tmp + i, r);
 			} else {
 				// string too long
 				break;
 			}
-			rc = 2;
 			runes++;
 		} else {
 			/* \0 marks the end of C-strings */
@@ -397,10 +396,10 @@ RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrS
 					needle++;
 					continue;
 				}
-				str_type = RZ_STRING_ENC_LATIN1;
+				str_type = RZ_STRING_ENC_8BIT;
 			}
 		} else if (type == RZ_STRING_ENC_UTF8) {
-			str_type = RZ_STRING_ENC_LATIN1; // initial assumption
+			str_type = RZ_STRING_ENC_8BIT; // initial assumption
 		}
 
 		RzDetectedString *ds = process_one_string(buf, from, needle, to, str_type, false, opt);

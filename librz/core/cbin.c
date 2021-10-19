@@ -577,7 +577,7 @@ RZ_API bool rz_core_bin_apply_strings(RzCore *r, RzBinFile *binfile) {
 		if (rz_cons_is_breaked()) {
 			break;
 		}
-		rz_meta_set(r->analysis, RZ_META_TYPE_STRING, vaddr, string->size, string->string);
+		rz_meta_set_with_subtype(r->analysis, RZ_META_TYPE_STRING, string->type, vaddr, string->size, string->string);
 		char *f_name = strdup(string->string);
 		rz_name_filter(f_name, -1, true);
 		char *str;
@@ -1463,7 +1463,10 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 		SymName sn = { 0 };
 		count++;
 		sym_name_init(core, &sn, symbol, lang);
-		char *rz_symbol_name = rz_str_escape_utf8(sn.name, false, true);
+		RzStrEscOptions opt = { 0 };
+		opt.show_asciidot = false;
+		opt.esc_bslash = true;
+		char *rz_symbol_name = rz_str_escape_utf8(sn.name, &opt);
 
 		if (is_section_symbol(symbol) || is_file_symbol(symbol)) {
 			/*
@@ -1904,7 +1907,10 @@ static bool symbols_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, 
 
 		SymName sn = { 0 };
 		sym_name_init(core, &sn, symbol, lang);
-		char *rz_symbol_name = rz_str_escape_utf8(sn.demname ? sn.demname : sn.name, false, true);
+		RzStrEscOptions opt = { 0 };
+		opt.show_asciidot = false;
+		opt.esc_bslash = true;
+		char *rz_symbol_name = rz_str_escape_utf8(sn.demname ? sn.demname : sn.name, &opt);
 		if (core->bin->prefix) {
 			char *tmp = rz_str_newf("%s.%s", core->bin->prefix, rz_symbol_name);
 			free(rz_symbol_name);
@@ -2577,6 +2583,12 @@ static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzList *l
 			}
 		}
 
+		RzStrEscOptions opt = { 0 };
+		opt.show_asciidot = false;
+		opt.esc_bslash = true;
+		opt.esc_double_quotes = state->mode == RZ_OUTPUT_MODE_JSON || state->mode == RZ_OUTPUT_MODE_LONG_JSON;
+		char *escaped_string = rz_str_escape_utf8_keep_printable(string->string, &opt);
+
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_JSON: {
 			int *block_list;
@@ -2589,13 +2601,13 @@ static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzList *l
 			pj_ks(state->d.pj, "section", section_name);
 			pj_ks(state->d.pj, "type", type_string);
 			// data itself may be encoded so use pj_ks
-			pj_ks(state->d.pj, "string", string->string);
+			pj_ks(state->d.pj, "string", escaped_string);
 
 			switch (string->type) {
-			case RZ_STRING_TYPE_UTF8:
-			case RZ_STRING_TYPE_MUTF8:
-			case RZ_STRING_TYPE_WIDE_LE:
-			case RZ_STRING_TYPE_WIDE32_LE:
+			case RZ_BIN_STRING_ENC_UTF8:
+			case RZ_BIN_STRING_ENC_MUTF8:
+			case RZ_BIN_STRING_ENC_WIDE_LE:
+			case RZ_BIN_STRING_ENC_WIDE32_LE:
 				block_list = rz_utf_block_list((const ut8 *)string->string, -1, NULL);
 				if (block_list) {
 					if (block_list[0] == 0 && block_list[1] == -1) {
@@ -2620,7 +2632,7 @@ static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzList *l
 		}
 		case RZ_OUTPUT_MODE_TABLE: {
 			int *block_list;
-			char *str = string->string;
+			char *str = escaped_string;
 			char *no_dbl_bslash_str = NULL;
 			if (!core->print->esc_bslash) {
 				char *ptr;
@@ -2646,10 +2658,10 @@ static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzList *l
 
 			RzStrBuf *buf = rz_strbuf_new(str);
 			switch (string->type) {
-			case RZ_STRING_TYPE_UTF8:
-			case RZ_STRING_TYPE_MUTF8:
-			case RZ_STRING_TYPE_WIDE_LE:
-			case RZ_STRING_TYPE_WIDE32_LE:
+			case RZ_BIN_STRING_ENC_UTF8:
+			case RZ_BIN_STRING_ENC_MUTF8:
+			case RZ_BIN_STRING_ENC_WIDE_LE:
+			case RZ_BIN_STRING_ENC_WIDE32_LE:
 				block_list = rz_utf_block_list((const ut8 *)string->string, -1, NULL);
 				if (block_list) {
 					if (block_list[0] == 0 && block_list[1] == -1) {
@@ -2680,15 +2692,16 @@ static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzList *l
 		}
 		case RZ_OUTPUT_MODE_QUIET:
 			rz_cons_printf("0x%" PFMT64x " %d %d %s\n", vaddr,
-				string->size, string->length, string->string);
+				string->size, string->length, escaped_string);
 			break;
 		case RZ_OUTPUT_MODE_QUIETEST:
-			rz_cons_printf("%s\n", string->string);
+			rz_cons_printf("%s\n", escaped_string);
 			break;
 		default:
 			rz_warn_if_reached();
 			break;
 		}
+		free(escaped_string);
 	}
 	RZ_FREE(b64.string);
 	rz_cmd_state_output_array_end(state);
@@ -2819,12 +2832,15 @@ RZ_API bool rz_core_file_info_print(RzCore *core, RzBinFile *binfile, RzCmdState
 		}
 		pj_end(state->d.pj);
 		break;
-	case RZ_OUTPUT_MODE_TABLE:
+	case RZ_OUTPUT_MODE_TABLE: {
 		rz_table_hide_header(state->d.t);
 		if (desc) {
 			rz_table_add_rowf(state->d.t, "sd", "fd", desc->fd);
 		}
-		escaped = rz_str_escape_utf8_keep_printable(filename, false, false);
+		RzStrEscOptions opt = { 0 };
+		opt.show_asciidot = false;
+		opt.esc_bslash = false;
+		escaped = rz_str_escape_utf8_keep_printable(filename, &opt);
 		rz_table_add_rowf(state->d.t, "ss", "file", escaped);
 		free(escaped);
 		if (desc) {
@@ -2854,6 +2870,7 @@ RZ_API bool rz_core_file_info_print(RzCore *core, RzBinFile *binfile, RzCmdState
 			rz_table_add_rowf(state->d.t, "ss", "type", info->type);
 		}
 		break;
+	}
 	default:
 		rz_warn_if_reached();
 		break;

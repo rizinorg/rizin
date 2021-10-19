@@ -509,6 +509,7 @@ RUN
 
 NAME=mdmp 64bit - strings
 FILE=bins/mdmp/hello64.dmp
+TIMEOUT=2040
 CMDS=<<EOF
 iz~0x002e2fe1[1,2,3,4,5,6,7,8]
 iz~0x002e2feb[1,2,3,4,5,6,7,8]
