@@ -1,0 +1,49 @@
+#!/usr/bin/make -f
+# See debhelper(7) (uncomment to enable)
+# output every command that modifies files on the build system.
+DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
+DEB_UPSTREAM_VERSION ?= $(shell dpkg-parsechangelog | sed -rne 's/^Version: ([0-9.]+)[-+].*$$/\1/p')
+
+EXTRA_FLAGS=
+EXTRA_FLAGS+= --buildtype=release
+EXTRA_FLAGS+= -Dpackager=RizinOrg
+EXTRA_FLAGS+= -Dpackager_version=$(DEB_UPSTREAM_VERSION)
+EXTRA_FLAGS+= -Dsubprojects_check=false
+EXTRA_FLAGS+= -Dlocal=disabled
+EXTRA_FLAGS+= -Duse_sys_capstone=disabled
+EXTRA_FLAGS+= -Duse_sys_magic=disabled
+EXTRA_FLAGS+= -Duse_sys_libzip=disabled
+EXTRA_FLAGS+= -Duse_sys_zlib=disabled
+EXTRA_FLAGS+= -Duse_sys_lz4=disabled
+EXTRA_FLAGS+= -Duse_sys_xxhash=disabled
+EXTRA_FLAGS+= -Duse_sys_libuv=disabled
+EXTRA_FLAGS+= -Duse_sys_openssl=disabled
+EXTRA_FLAGS+= -Duse_webui=false
+
+# architectures with debugging support
+DEBUG_SUPPORT=0
+debug_architectures := i386 amd64 arm arm64 mips mips64 powerpc ppc64
+ifeq ($(DEB_HOST_ARCH_CPU),$(findstring $(DEB_HOST_ARCH_CPU),$(debug_architectures)))
+DEBUG_SUPPORT=1
+endif
+
+ifeq (0,$(DEBUG_SUPPORT))
+EXTRA_FLAGS+= -Ddebugger=false
+else
+EXTRA_FLAGS+= -Ddebugger=true
+endif
+
+%:
+	dh $@ --buildsystem=meson
+
+override_dh_auto_configure:
+	dh_auto_configure --builddirectory=build-deb -- ${EXTRA_FLAGS}
+
+override_dh_auto_build:
+	dh_auto_build --builddirectory=build-deb
+
+override_dh_auto_test:
+	# skip tests
+
+override_dh_auto_install:
+	dh_auto_install --builddirectory=build-deb # --destdir=debian/tmp
