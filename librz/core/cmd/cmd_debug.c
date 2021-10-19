@@ -14,10 +14,10 @@
 
 #if HAVE_JEMALLOC
 #include "rz_heap_jemalloc.h"
-#include "linux_heap_jemalloc.c"
+#include "../linux_heap_jemalloc.c"
 #endif
 
-#include "core_private.h"
+#include "../core_private.h"
 
 void cmd_analysis_reg(RzCore *core, const char *str);
 
@@ -1691,7 +1691,7 @@ RZ_IPI int rz_cmd_debug_heap_jemalloc(void *data, const char *input) {
 	return RZ_CMD_STATUS_ERROR;
 }
 
-#include "linux_heap_glibc.c"
+#include "../linux_heap_glibc.c"
 
 static void foreach_reg_set_or_clear(RzCore *core, bool set) {
 	RzReg *reg = rz_config_get_b(core->config, "cfg.debug")
