@@ -7,11 +7,19 @@ import os
 import sys
 
 import yaml
-from cmd_descs_util import (CD_ARG_LAST_TYPES, CD_TYPE_ARGV,
-                            CD_TYPE_ARGV_MODES, CD_TYPE_ARGV_STATE,
-                            CD_TYPE_FAKE, CD_TYPE_GROUP, CD_TYPE_INNER,
-                            CD_TYPE_OLDINPUT, CD_VALID_TYPES, compute_cname,
-                            get_handler_cname)
+from cmd_descs_util import (
+    CD_ARG_LAST_TYPES,
+    CD_TYPE_ARGV,
+    CD_TYPE_ARGV_MODES,
+    CD_TYPE_ARGV_STATE,
+    CD_TYPE_FAKE,
+    CD_TYPE_GROUP,
+    CD_TYPE_INNER,
+    CD_TYPE_OLDINPUT,
+    CD_VALID_TYPES,
+    compute_cname,
+    get_handler_cname,
+)
 
 CMDDESCS_C_TEMPLATE = """// SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
 // SPDX-License-Identifier: LGPL-3.0-only
