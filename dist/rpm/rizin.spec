@@ -12,16 +12,6 @@ Release:        0%{rel}%{?dist}
 Source0:        https://github.com/%{gituser}/%{gitname}/releases/download/v%{version}/%{name}-src-v%{version}.tar.xz
 
 License:        LGPLv3+ and GPLv2+ and BSD and MIT and ASL 2.0 and MPLv2.0 and zlib
-# Rizin as a package is targeting to be licensed/compiled as LGPLv3+
-# however during build for Fedora the GPL code is not omitted so effectively it
-# is GPLv2+.
-#
-# Some code has originally different license:
-# librz/asm/arch/ - GPLv2+, MIT, GPLv3
-# librz/bin/format/pe/dotnet - Apache License Version 2.0
-# librz/util/qrcode.c - MIT
-# shlr/sdb/src - MIT
-# shlr/spp - MIT
 
 BuildRequires:  gcc
 BuildRequires:  meson >= 0.55.0
@@ -96,8 +86,6 @@ information
 %check
 # Do not run the unit testsuite yet - it pulls another big repository
 # https://github.com/rizinorg/rizin-testbins from github
-
-
 
 %files
 %doc CONTRIBUTING.md DEVELOPERS.md README.md SECURITY.md BUILDING.md
