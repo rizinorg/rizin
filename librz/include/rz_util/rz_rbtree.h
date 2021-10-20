@@ -63,8 +63,8 @@ RZ_API bool rz_rbtree_aug_update_sum(RBNode *root, void *data, RBNode *node, RBC
 
 RZ_API bool rz_rbtree_delete(RBNode **root, void *data, RBComparator cmp, void *cmp_user, RBNodeFree freefn, void *free_user);
 RZ_API RBNode *rz_rbtree_find(RBNode *root, void *data, RBComparator cmp, void *user);
-RZ_API void rz_rbtree_free(RBNode *root, RBNodeFree freefn, void *user);
-RZ_API void rz_rbtree_insert(RBNode **root, void *data, RBNode *node, RBComparator cmp, void *user);
+RZ_API void rz_rbtree_free(RZ_NULLABLE RBNode *root, RBNodeFree freefn, void *user);
+RZ_API bool rz_rbtree_insert(RBNode **root, void *data, RBNode *node, RBComparator cmp, void *user);
 // Return the smallest node that is greater than or equal to `data`
 RZ_API RBNode *rz_rbtree_lower_bound(RBNode *root, void *data, RBComparator cmp, void *user);
 // Return the greatest node that is less than or equal to `data`
@@ -104,8 +104,8 @@ RZ_API void rz_rbtree_iter_prev(RBIter *it);
 #define rz_rbtree_foreach_prev(root, it, data, struc, rb) \
 	for ((it) = rz_rbtree_last(root); rz_rbtree_iter_has(&it) && (data = rz_rbtree_iter_get(&it, struc, rb)); rz_rbtree_iter_prev(&(it)))
 
-RZ_API RContRBTree *rz_rbtree_cont_new(void);
-RZ_API RContRBTree *rz_rbtree_cont_newf(RContRBFree f);
+RZ_API RZ_OWN RContRBTree *rz_rbtree_cont_new(void);
+RZ_API RZ_OWN RContRBTree *rz_rbtree_cont_newf(RContRBFree f);
 RZ_API bool rz_rbtree_cont_insert(RContRBTree *tree, void *data, RContRBCmp cmp, void *user);
 RZ_API bool rz_rbtree_cont_delete(RContRBTree *tree, void *data, RContRBCmp cmp, void *user);
 RZ_API void *rz_rbtree_cont_find(RContRBTree *tree, void *data, RContRBCmp cmp, void *user);
