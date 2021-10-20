@@ -442,12 +442,13 @@ static bool cmd_cmp_disasm(RzCore *core, const char *input, int mode) {
 	return true;
 }
 
-static void __core_cmp_bits(RzCore *core, ut64 addr) {
+static bool __core_cmp_bits(RzCore *core, ut64 addr) {
 	const bool scr_color = rz_config_get_i(core->config, "scr.color");
 	int i;
 	ut8 a, b;
-	rz_io_read_at(core->io, core->offset, &a, 1);
-	rz_io_read_at(core->io, addr, &b, 1);
+	if (!rz_io_read_at(core->io, core->offset, &a, 1) || !rz_io_read_at(core->io, addr, &b, 1)) {
+		return false;
+	}
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	const char *color = scr_color ? pal->offset : "";
 	const char *color_end = scr_color ? Color_RESET : "";
@@ -483,6 +484,8 @@ static void __core_cmp_bits(RzCore *core, ut64 addr) {
 		rz_cons_printf("%s%d%s ", color, b1, color_end);
 	}
 	rz_cons_newline();
+
+	return true;
 }
 
 RZ_IPI int rz_cmd_cmp(void *data, const char *input) {
@@ -882,8 +885,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_string_handler(RzCore *core, int argc, const char 
 
 // c1
 RZ_IPI RzCmdStatus rz_cmd_cmp_num1_handler(RzCore *core, int argc, const char **argv) {
-	__core_cmp_bits(core, rz_num_math(core->num, argv[1]));
-	return RZ_CMD_STATUS_OK;
+	return __core_cmp_bits(core, rz_num_math(core->num, argv[1])) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
 // c2
