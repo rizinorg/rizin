@@ -1,9 +1,9 @@
 import rzpipe
 
-r2 = rzpipe.open()
-r2.cmd("aa")
+rzp = rzpipe.open()
+rzp.cmd("aa")
 print("\nFunction names:")
-for func in r2.cmdj("aflj"):
+for func in rzp.cmdj("aflj"):
     print(func["name"])
 print("\nDisassembly of entry0:")
-print(r2.cmd("pdf"))
+print(rzp.cmd("pdf"))
