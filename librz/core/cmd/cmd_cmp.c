@@ -233,13 +233,13 @@ static int rizin_compare_unified(RzCore *core, ut64 of, ut64 od, int len) {
 	return true;
 }
 
-static int rizin_compare(RzCore *core, const ut8 *f, const ut8 *d, int len, int mode) {
+RZ_API int rz_core_compare(RzCore *core, const ut8 *addr, int len, RzCompareOutputMode mode) {
 	int i, eq = 0;
 	PJ *pj = NULL;
 	if (len < 1) {
 		return 0;
 	}
-	if (mode == 'j') {
+	if (mode == RZ_COMPARE_MODE_JSON) {
 		pj = pj_new();
 		if (!pj) {
 			return -1;
@@ -249,35 +249,37 @@ static int rizin_compare(RzCore *core, const ut8 *f, const ut8 *d, int len, int 
 		pj_a(pj);
 	}
 	for (i = 0; i < len; i++) {
-		if (f[i] == d[i]) {
+		if (core->block[i] == addr[i]) {
 			eq++;
 			continue;
 		}
 		switch (mode) {
-		case 0:
+		case RZ_COMPARE_MODE_DEFAULT:
 			rz_cons_printf("0x%08" PFMT64x " (byte=%.2d)   %02x '%c'  ->  %02x '%c'\n",
 				core->offset + i, i + 1,
-				f[i], (IS_PRINTABLE(f[i])) ? f[i] : ' ',
-				d[i], (IS_PRINTABLE(d[i])) ? d[i] : ' ');
+				core->block[i], (IS_PRINTABLE(core->block[i])) ? core->block[i] : ' ',
+				addr[i], (IS_PRINTABLE(addr[i])) ? addr[i] : ' ');
 			break;
-		case '*':
+		case RZ_COMPARE_MODE_RIZIN:
 			rz_cons_printf("wx %02x @ 0x%08" PFMT64x "\n",
-				d[i],
+				addr[i],
 				core->offset + i);
 			break;
-		case 'j':
+		case RZ_COMPARE_MODE_JSON:
 			pj_o(pj);
 			pj_kn(pj, "offset", core->offset + i);
 			pj_ki(pj, "rel_offset", i);
-			pj_ki(pj, "value", (int)f[i]);
-			pj_ki(pj, "cmp_value", (int)d[i]);
+			pj_ki(pj, "value", (int)core->block[i]);
+			pj_ki(pj, "cmp_value", (int)addr[i]);
 			pj_end(pj);
 			break;
+		default:
+			rz_warn_if_reached();
 		}
 	}
-	if (mode == 0) {
+	if (mode == RZ_COMPARE_MODE_DEFAULT) {
 		eprintf("Compare %d/%d equal bytes (%d%%)\n", eq, len, (eq / len) * 100);
-	} else if (mode == 'j') {
+	} else if (mode == RZ_COMPARE_MODE_JSON) {
 		pj_end(pj);
 		pj_ki(pj, "equal_bytes", eq);
 		pj_ki(pj, "total_bytes", len);
@@ -510,13 +512,13 @@ RZ_IPI int rz_cmd_cmp(void *data, const char *input) {
 			return 0;
 		}
 
-		val = rizin_compare(core, block, (ut8 *)input + 2,
+		val = rz_core_compare(core, block, (ut8 *)input + 2,
 			strlen(input + 2) + 1, '*');
 		break;
 	case ' ': {
 		char *str = strdup(input + 1);
 		int len = rz_str_unescape(str);
-		val = rizin_compare(core, block, (ut8 *)str, len, 0);
+		val = rz_core_compare(core, block, (ut8 *)str, len, 0);
 		free(str);
 	} break;
 	case 'j': {
@@ -525,7 +527,7 @@ RZ_IPI int rz_cmd_cmp(void *data, const char *input) {
 		} else {
 			char *str = strdup(input + 2);
 			int len = rz_str_unescape(str);
-			val = rizin_compare(core, block, (ut8 *)str, len, 'j');
+			val = rz_core_compare(core, block, (ut8 *)str, len, 'j');
 			free(str);
 		}
 	} break;
@@ -566,7 +568,7 @@ RZ_IPI int rz_cmd_cmp(void *data, const char *input) {
 		if (ret < 1) {
 			eprintf("Cannot parse hexpair\n");
 		} else {
-			val = rizin_compare(core, block, buf, ret, mode);
+			val = rz_core_compare(core, block, buf, ret, mode);
 		}
 		free(buf);
 		free(filled);
@@ -577,7 +579,7 @@ RZ_IPI int rz_cmd_cmp(void *data, const char *input) {
 			if (!rz_io_read_at(core->io, rz_num_math(core->num, input + 1), buf, core->blocksize)) {
 				eprintf("Cannot read hexdump\n");
 			} else {
-				rizin_compare(core, block, buf, ret, mode);
+				rz_core_compare(core, block, buf, ret, mode);
 			}
 			free(buf);
 		}
@@ -597,7 +599,7 @@ RZ_IPI int rz_cmd_cmp(void *data, const char *input) {
 			if (fread(buf, 1, core->blocksize, fd) < 1) {
 				eprintf("Cannot read file %s\n", input + 2);
 			} else {
-				val = rizin_compare(core, block, buf, core->blocksize, 0);
+				val = rz_core_compare(core, block, buf, core->blocksize, 0);
 			}
 			fclose(fd);
 			free(buf);
@@ -607,19 +609,19 @@ RZ_IPI int rz_cmd_cmp(void *data, const char *input) {
 		}
 		break;
 	case '1': // "c1"
-		__core_cmp_bits(core, rz_num_math(core->num, input + 1));
+		core_cmp_bits(core, rz_num_math(core->num, input + 1));
 		break;
 	case '2': // "c2"
 		v16 = (ut16)rz_num_math(core->num, input + 1);
-		val = rizin_compare(core, block, (ut8 *)&v16, sizeof(v16), 0);
+		val = rz_core_compare(core, block, (ut8 *)&v16, sizeof(v16), 0);
 		break;
 	case '4': // "c4"
 		v32 = (ut32)rz_num_math(core->num, input + 1);
-		val = rizin_compare(core, block, (ut8 *)&v32, sizeof(v32), 0);
+		val = rz_core_compare(core, block, (ut8 *)&v32, sizeof(v32), 0);
 		break;
 	case '8': // "c8"
 		v64 = (ut64)rz_num_math(core->num, input + 1);
-		val = rizin_compare(core, block, (ut8 *)&v64, sizeof(v64), 0);
+		val = rz_core_compare(core, block, (ut8 *)&v64, sizeof(v64), 0);
 		break;
 	case 'c': // "cc"
 		if (input[1] == '?') { // "cc?"
@@ -865,12 +867,12 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_string_handler(RzCore *core, int argc, const char 
 	case RZ_OUTPUT_MODE_STANDARD: {
 		char *unescaped = strdup(argv[1]);
 		int len = rz_str_unescape(unescaped);
-		val = rizin_compare(core, core->block, (ut8 *)unescaped, len, 0);
+		val = rz_core_compare(core, (ut8 *)unescaped, len, RZ_COMPARE_MODE_DEFAULT);
 		free(unescaped);
 		break;
 	}
 	case RZ_OUTPUT_MODE_RIZIN:
-		val = rizin_compare(core, core->block, (ut8 *)argv[1], strlen(argv[1]) + 1, '*');
+		val = rz_core_compare(core, (ut8 *)argv[1], strlen(argv[1]) + 1, RZ_COMPARE_MODE_RIZIN);
 		break;
 	default:
 		rz_warn_if_reached();
@@ -885,13 +887,13 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_string_handler(RzCore *core, int argc, const char 
 
 // c1
 RZ_IPI RzCmdStatus rz_cmd_cmp_num1_handler(RzCore *core, int argc, const char **argv) {
-	return __core_cmp_bits(core, rz_num_math(core->num, argv[1])) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+	return core_cmp_bits(core, rz_num_math(core->num, argv[1])) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
 // c2
 RZ_IPI RzCmdStatus rz_cmd_cmp_num2_handler(RzCore *core, int argc, const char **argv) {
 	ut16 v16 = (ut16)rz_num_math(core->num, argv[1]);
-	ut64 val = rizin_compare(core, core->block, (ut8 *)&v16, sizeof(v16), 0);
+	ut64 val = rz_core_compare(core, (ut8 *)&v16, sizeof(v16), RZ_COMPARE_MODE_DEFAULT);
 	if (val != UT64_MAX) {
 		core->num->value = val;
 		return RZ_CMD_STATUS_OK;
@@ -902,7 +904,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_num2_handler(RzCore *core, int argc, const char **
 // c4
 RZ_IPI RzCmdStatus rz_cmd_cmp_num4_handler(RzCore *core, int argc, const char **argv) {
 	ut32 v32 = (ut32)rz_num_math(core->num, argv[1]);
-	ut64 val = rizin_compare(core, core->block, (ut8 *)&v32, sizeof(v32), 0);
+	ut64 val = rz_core_compare(core, (ut8 *)&v32, sizeof(v32), RZ_COMPARE_MODE_DEFAULT);
 	if (val != UT64_MAX) {
 		core->num->value = val;
 		return RZ_CMD_STATUS_OK;
@@ -913,7 +915,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_num4_handler(RzCore *core, int argc, const char **
 // c8
 RZ_IPI RzCmdStatus rz_cmd_cmp_num8_handler(RzCore *core, int argc, const char **argv) {
 	ut64 v64 = rz_num_math(core->num, argv[1]);
-	ut64 val = rizin_compare(core, core->block, (ut8 *)&v64, sizeof(v64), 0);
+	ut64 val = rz_core_compare(core, (ut8 *)&v64, sizeof(v64), RZ_COMPARE_MODE_DEFAULT);
 	if (val != UT64_MAX) {
 		core->num->value = val;
 		return RZ_CMD_STATUS_OK;
@@ -1062,7 +1064,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_file_handler(RzCore *core, int argc, const char **
 		RZ_LOG_ERROR("Cannot read file: %s\n", argv[1]);
 		goto return_goto;
 	}
-	val = rizin_compare(core, core->block, buf, core->blocksize, 0);
+	val = rz_core_compare(core, buf, core->blocksize, RZ_COMPARE_MODE_DEFAULT);
 	if (val == UT64_MAX) {
 		goto return_goto;
 	}
@@ -1150,14 +1152,14 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_update_watcher_handler(RzCore *core, int argc, con
 
 // cx
 RZ_IPI RzCmdStatus rz_cmd_cmp_hexpair_string_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *output) {
-	int mode;
+	RzCompareOutputMode mode;
 	RzOutputMode omode = output->mode;
 	switch (omode) {
 	case RZ_OUTPUT_MODE_STANDARD:
-		mode = 0;
+		mode = RZ_COMPARE_MODE_DEFAULT;
 		break;
 	case RZ_OUTPUT_MODE_RIZIN:
-		mode = '*';
+		mode = RZ_COMPARE_MODE_RIZIN;
 		break;
 	default:
 		rz_warn_if_reached();
@@ -1189,7 +1191,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_hexpair_string_handler(RzCore *core, int argc, con
 		goto return_goto;
 	}
 
-	val = rizin_compare(core, core->block, buf, ret, mode);
+	val = rz_core_compare(core, buf, ret, mode);
 	if (val == UT64_MAX) {
 		ret = false;
 		goto return_goto;
@@ -1215,7 +1217,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_hex_block_hexdiff_handler(RzCore *core, int argc, 
 		goto return_goto;
 	}
 
-	ut64 val = rizin_compare(core, core->block, buf, core->blocksize, 0);
+	ut64 val = rz_core_compare(core, buf, core->blocksize, RZ_COMPARE_MODE_DEFAULT);
 	if (val == UT64_MAX) {
 		goto return_goto;
 	}

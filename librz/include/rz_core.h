@@ -985,10 +985,13 @@ RZ_API void rz_core_clippy(RzCore *core, const char *msg);
 
 /* compare API */
 typedef enum {
+	RZ_COMPARE_MODE_DEFAULT,
 	RZ_COMPARE_MODE_RIZIN,
 	RZ_COMPARE_MODE_DIFF,
-	RZ_COMPARE_MODE_DEFAULT
+	RZ_COMPARE_MODE_JSON
 } RzCompareOutputMode;
+
+RZ_API int rz_core_compare(RzCore *core, const ut8 *addr, int len, RzCompareOutputMode mode);
 
 /* watchers */
 RZ_API void rz_core_cmpwatch_free(RzCoreCmpWatcher *w);
