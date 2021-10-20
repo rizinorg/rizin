@@ -8,6 +8,10 @@
 static char *curtheme = "default";
 static bool getNext = false;
 
+static RzCmdStatus bool2status(bool val) {
+	return val ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+}
+
 RZ_IPI RzCmdStatus rz_env_handler(RzCore *core, int argc, const char **argv) {
 	char *p, **e;
 	switch (argc) {
@@ -307,13 +311,11 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_highlight_list_handler(RzCore *core, int ar
 }
 
 RZ_IPI RzCmdStatus rz_cmd_eval_color_load_theme_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-
 	RzList *themes_list = NULL;
 	RzListIter *th_iter;
 	const char *th;
 	if (argc == 2) {
-		rz_core_load_theme(core, argv[1]);
-		return RZ_CMD_STATUS_OK;
+		return bool2status(rz_core_load_theme(core, argv[1]));
 	}
 	switch (mode) {
 	case RZ_OUTPUT_MODE_JSON:
