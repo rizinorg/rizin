@@ -390,7 +390,7 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_highlight_list_current_handler(RzCore *core
 	rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
 	rz_core_meta_print_list_in_function(core, RZ_META_TYPE_COMMENT, core->offset, &state);
 	rz_cmd_state_output_print(&state);
-	rz_cmd_state_output_fini(&state);	
+	rz_cmd_state_output_fini(&state);
 	return RZ_CMD_STATUS_OK;
 }
 

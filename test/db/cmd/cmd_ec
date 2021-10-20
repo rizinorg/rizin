@@ -286,3 +286,27 @@ EXPECT_ERR=<<EOF
 Unknown color xxxx
 EOF
 RUN
+
+NAME=Test eco and eco. - list current theme
+FILE==
+CMDS=<<EOF
+eco xvilka
+eco.
+EOF
+EXPECT=<<EOF
+xvilka
+EOF
+RUN
+
+NAME=Test ecHw and ecH- add and list highlight rules
+FILE==
+CMDS=<<EOF
+ecHw eax blue
+ecH
+ecH-*
+ecH
+EOF
+EXPECT=<<EOF
+ecHi rgb:00007f @ 0x00000000
+EOF
+RUN
