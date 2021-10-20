@@ -20,6 +20,7 @@ enum autocmplt_type_t {
 	AUTOCMPLT_ARCH, ///< An architecture supported by Rizin (e.g. x86, arm, etc.)
 	AUTOCMPLT_BITS, ///< A bits value supported by the currently selected architecture (e asm.bits=?)
 	AUTOCMPLT_FILE, ///< A file needs to be autocompleted
+	AUTOCMPLT_FLAG_SPACE, ///< A flag space needs to be autocompleted
 };
 
 /**
@@ -189,6 +190,20 @@ static void autocmplt_bits(RzCore *core, RzLineNSCompletionResult *res, const ch
 	rz_return_if_fail(core->rasm && core->rasm->cur);
 
 	autocmplt_bits_plugin(core->rasm->cur, res, s, len);
+}
+
+static void autocmplt_flag_space(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
+	RzSpace *space;
+	RBIter it;
+
+	rz_flag_space_foreach(core->flags, it, space) {
+		if (!strncmp(space->name, s, len)) {
+			rz_line_ns_completion_result_add(res, space->name);
+		}
+	}
+	if (len == 0) {
+		rz_line_ns_completion_result_add(res, "*");
+	}
 }
 
 static void autocmplt_cmd_arg_file(RzLineNSCompletionResult *res, const char *s, size_t len) {
@@ -784,6 +799,8 @@ static bool find_autocmplt_type_arg_identifier(struct autocmplt_data_t *ad, RzCo
 		return fill_autocmplt_data(ad, AUTOCMPLT_BITS, lstart, lend);
 	} else if (!ts_node_is_null(parent) && !strcmp(ts_node_type(parent), "tmp_file_stmt")) {
 		return fill_autocmplt_data(ad, AUTOCMPLT_FILE, lstart, lend);
+	} else if (!ts_node_is_null(parent) && !strcmp(ts_node_type(parent), "tmp_fs_stmt")) {
+		return fill_autocmplt_data(ad, AUTOCMPLT_FLAG_SPACE, lstart, lend);
 	} else {
 		return fill_autocmplt_data_cmdarg(ad, lstart, lend, buf->data, root, core);
 	}
@@ -851,6 +868,8 @@ static bool find_autocmplt_type(struct autocmplt_data_t *ad, RzCore *core, TSNod
 		return true;
 	} else if (find_autocmplt_type_tmp_stmt_op(ad, core, buf, "tmp_file_stmt", "a", AUTOCMPLT_FILE)) {
 		return true;
+	} else if (find_autocmplt_type_tmp_stmt_op(ad, core, buf, "tmp_fs_stmt", "a", AUTOCMPLT_FLAG_SPACE)) {
+		return true;
 	} else if (find_autocmplt_type_tmp_stmt(ad, core, buf)) {
 		return true;
 	}
@@ -915,6 +934,9 @@ RZ_API RzLineNSCompletionResult *rz_core_autocomplete_rzshell(RzCore *core, RzLi
 			break;
 		case AUTOCMPLT_FILE:
 			autocmplt_cmd_arg_file(ad.res, buf->data + ad.res->start, ad.res->end - ad.res->start);
+			break;
+		case AUTOCMPLT_FLAG_SPACE:
+			autocmplt_flag_space(core, ad.res, buf->data + ad.res->start, ad.res->end - ad.res->start);
 			break;
 		default:
 			break;
