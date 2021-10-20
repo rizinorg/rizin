@@ -86,29 +86,29 @@ RZ_API int rz_core_cmpwatch_del(RzCore *core, ut64 addr) {
 	return ret;
 }
 
-RZ_API void rz_core_cmpwatch_show(RzCore *core, ut64 addr, int mode) {
+RZ_API void rz_core_cmpwatch_show(RzCore *core, ut64 addr, RzCompareOutputMode mode) {
 	char cmd[128];
 	RzListIter *iter;
 	RzCoreCmpWatcher *w;
 	rz_list_foreach (core->watchers, iter, w) {
 		int is_diff = w->odata ? memcmp(w->odata, w->ndata, w->size) : 0;
 		switch (mode) {
-		case '*':
+		case RZ_COMPARE_MODE_RIZIN:
 			rz_cons_printf("cw 0x%08" PFMT64x " %d %s%s\n",
 				w->addr, w->size, w->cmd, is_diff ? " # differs" : "");
 			break;
-		case 'd': // diff
+		case RZ_COMPARE_MODE_DIFF: // diff
 			if (is_diff) {
 				rz_cons_printf("0x%08" PFMT64x " has changed\n", w->addr);
 			}
-		case 'o': // old contents
-		// use tmpblocksize
-		default:
+		case RZ_COMPARE_MODE_DEFAULT:
 			rz_cons_printf("0x%08" PFMT64x "%s\n", w->addr, is_diff ? " modified" : "");
 			snprintf(cmd, sizeof(cmd), "%s@%" PFMT64d "!%d",
 				w->cmd, w->addr, w->size);
 			rz_core_cmd0(core, cmd);
 			break;
+		default:
+			rz_warn_if_reached();
 		}
 	}
 }
@@ -1124,10 +1124,10 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_list_compare_watchers_handler(RzCore *core, int ar
 	RzOutputMode mode = output->mode;
 	switch (mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
-		rz_core_cmpwatch_show(core, UT64_MAX, 0);
+		rz_core_cmpwatch_show(core, UT64_MAX, RZ_COMPARE_MODE_DEFAULT);
 		break;
 	case RZ_OUTPUT_MODE_RIZIN:
-		rz_core_cmpwatch_show(core, UT64_MAX, '*');
+		rz_core_cmpwatch_show(core, UT64_MAX, RZ_COMPARE_MODE_RIZIN);
 		break;
 	default:
 		rz_warn_if_reached();
