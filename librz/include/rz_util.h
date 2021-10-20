@@ -10,7 +10,6 @@
 #include <rz_getopt.h>
 #include <rz_list.h> // rizin linked list
 #include <rz_skiplist.h> // skiplist
-#include <rz_flist.h> // rizin fixed pointer array iterators
 #include <rz_binheap.h>
 #include <rz_th.h>
 #if !__WINDOWS__
