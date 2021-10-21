@@ -297,7 +297,7 @@ commands:
               Temporary seek to nth instruction in current basic block
               (negative numbers too)
           - text: "<cmd> @e:"
-            arg_str: "<k>=<v>[<k>=<v>]"
+            arg_str: "<k>=<v>[,<k>=<v>]"
             comment: >
               Temporary change eval vars (multiple vars separated by comma)
           - text: "<cmd> @f:"

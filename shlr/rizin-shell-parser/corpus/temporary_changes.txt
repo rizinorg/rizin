@@ -116,13 +116,13 @@ pd 2 @e:asm.arch=x86,scr.utf8=true
   (tmp_eval_stmt
     (arged_stmt command: (cmd_identifier)
       args: (args (arg (arg_identifier))))
-    (tmp_eval_args (tmp_eval_arg)))
+    (args (arg (arg_identifier))))
   (tmp_eval_stmt
     (arged_stmt command: (cmd_identifier)
       args: (args (arg (arg_identifier))))
-    (tmp_eval_args
-      (tmp_eval_arg)
-      (tmp_eval_arg))))
+    (args
+      (arg (arg_identifier))
+      (arg (arg_identifier)))))
 
 =================
 Temporary flagspace
