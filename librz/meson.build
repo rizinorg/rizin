@@ -341,7 +341,6 @@ include_files =[
   'include/rz_getopt.h',
   'include/rz_bin_dwarf.h',
   'include/rz_bin.h',
-  'include/rz_binheap.h',
   'include/rz_bp.h',
   'include/rz_cmd.h',
   'include/rz_config.h',
