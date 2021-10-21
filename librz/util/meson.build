@@ -8,7 +8,6 @@ rz_util_sources = [
   'print_code.c',
   'base85.c',
   'base91.c',
-  'binheap.c',
   'bitmap.c',
   'buf.c',
   'cache.c',

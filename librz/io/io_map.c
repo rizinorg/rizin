@@ -5,7 +5,6 @@
 #include <rz_io.h>
 #include <stdlib.h>
 #include <sdb.h>
-#include "rz_binheap.h"
 #include "rz_util.h"
 #include "rz_vector.h"
 
