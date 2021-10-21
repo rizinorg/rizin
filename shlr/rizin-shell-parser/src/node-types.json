@@ -8220,26 +8220,6 @@
     }
   },
   {
-    "type": "tmp_eval_arg",
-    "named": true,
-    "fields": {}
-  },
-  {
-    "type": "tmp_eval_args",
-    "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": true,
-      "types": [
-        {
-          "type": "tmp_eval_arg",
-          "named": true
-        }
-      ]
-    }
-  },
-  {
     "type": "tmp_eval_stmt",
     "named": true,
     "fields": {},
@@ -8249,6 +8229,10 @@
       "types": [
         {
           "type": "arged_stmt",
+          "named": true
+        },
+        {
+          "type": "args",
           "named": true
         },
         {
@@ -8389,10 +8373,6 @@
         },
         {
           "type": "tmp_blksz_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_eval_args",
           "named": true
         },
         {

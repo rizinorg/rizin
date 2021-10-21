@@ -22,6 +22,7 @@ enum autocmplt_type_t {
 	AUTOCMPLT_FILE, ///< A file needs to be autocompleted
 	AUTOCMPLT_FLAG_SPACE, ///< A flag space needs to be autocompleted
 	AUTOCMPLT_REG, ///< A cpu register needs to be autocompleted
+	AUTOCMPLT_EVAL_FULL, ///< A name=value of a evaluable variable (e.g. `e` command)
 };
 
 /**
@@ -817,6 +818,8 @@ static bool find_autocmplt_type_arg_identifier(struct autocmplt_data_t *ad, RzCo
 		return fill_autocmplt_data(ad, AUTOCMPLT_FLAG_SPACE, lstart, lend);
 	} else if (!ts_node_is_null(parent) && !strcmp(ts_node_type(parent), "tmp_reg_stmt")) {
 		return fill_autocmplt_data(ad, AUTOCMPLT_REG, lstart, lend);
+	} else if (!ts_node_is_null(parent) && !strcmp(ts_node_type(parent), "tmp_eval_stmt")) {
+		return fill_autocmplt_data(ad, AUTOCMPLT_EVAL_FULL, lstart, lend);
 	} else {
 		return fill_autocmplt_data_cmdarg(ad, lstart, lend, buf->data, root, core);
 	}
@@ -888,6 +891,8 @@ static bool find_autocmplt_type(struct autocmplt_data_t *ad, RzCore *core, TSNod
 		return true;
 	} else if (find_autocmplt_type_tmp_stmt_op(ad, core, buf, "tmp_reg_stmt", "a", AUTOCMPLT_REG)) {
 		return true;
+	} else if (find_autocmplt_type_tmp_stmt_op(ad, core, buf, "tmp_eval_stmt", "a", AUTOCMPLT_EVAL_FULL)) {
+		return true;
 	} else if (find_autocmplt_type_tmp_stmt(ad, core, buf)) {
 		return true;
 	}
@@ -958,6 +963,9 @@ RZ_API RzLineNSCompletionResult *rz_core_autocomplete_rzshell(RzCore *core, RzLi
 			break;
 		case AUTOCMPLT_REG:
 			autocmplt_reg(core, ad.res, buf->data + ad.res->start, ad.res->end - ad.res->start);
+			break;
+		case AUTOCMPLT_EVAL_FULL:
+			autocmplt_cmd_arg_eval_full(core, ad.res, buf->data + ad.res->start, ad.res->end - ad.res->start);
 			break;
 		default:
 			break;
