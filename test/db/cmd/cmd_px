@@ -201,12 +201,12 @@ RUN
 NAME=pxr1248
 FILE=bins/elf/crackme
 CMDS=<<EOF
-pxr4 32@0x00600ae0
-pxr8 32@0x00600ae0
-pxr2 32@0x00600ae0
+pxr4 32@ 0x00600ae0
+pxr8 32@ 0x00600ae0
+pxr2 32@ 0x00600ae0
 e asm.bits=32
-pxr 32@0x00600ae0
-pxr2j 16@0x00600ae0~{}
+pxr 32@ 0x00600ae0
+pxr2j 16@ 0x00600ae0~{}
 EOF
 EXPECT=<<EOF
 0x00600ae0 0x0040055e  ^.@. @ reloc.printf 4195678 .plt R X 'push 0'

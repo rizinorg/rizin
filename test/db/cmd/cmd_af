@@ -48,7 +48,7 @@ NAME=af switch test
 FILE=bins/mach0/mac-ls2
 CMDS=<<EOF
 af
-axf@0x100001308
+axf @ 0x100001308
 EOF
 EXPECT=<<EOF
 c 0x1000012dc case.0x100001308.50
@@ -272,7 +272,7 @@ RUN
 NAME=afcf
 FILE=bins/elf/crackme0x05
 CMDS=<<EOF
-af@main
+af @ main
 afcf main @ 0
 afcf @ main
 afcfj @ main

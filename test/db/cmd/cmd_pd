@@ -26,7 +26,7 @@ RUN
 
 NAME=pd multiplemain
 FILE=bins/elf/mipsloop
-CMDS=pd 1@main~main?
+CMDS=pd 1 @ main~main?
 EXPECT=<<EOF
 1
 EOF
@@ -1433,8 +1433,8 @@ NAME=pdJ asm.cmt.right=0 fcn name
 FILE=bins/elf/crackme0x05
 CMDS=<<EOF
 e asm.bytes=true
-af@sym.imp.__libc_start_main
-af@0x080485a0
+af @ sym.imp.__libc_start_main
+af @ 0x080485a0
 e asm.pseudo=1
 e asm.cmt.right=0
 pdJ 1 @ 0x080485f9
@@ -1853,7 +1853,7 @@ FILE=bins/firmware/armthumb.bin
 ARGS=-aarm -b32
 CMDS=<<EOF
 e asm.bytes=true
-pd 1 @b:32 @0xc
+pd 1 @b:32 @ 0xc
 EOF
 EXPECT=<<EOF
             0x0000000c      01207047       ldrbmi r2, [r0, -r1]!
@@ -1865,9 +1865,9 @@ FILE=bins/firmware/armthumb.bin
 ARGS=-aarm -b32
 CMDS=<<EOF
 e asm.bytes=true
-ahb 16 @0xc
+ahb 16 @ 0xc
 ah*
-pd 1 @b:32 @0xc
+pd 1 @b:32 @ 0xc
 ah*
 EOF
 EXPECT=<<EOF
@@ -1882,7 +1882,7 @@ FILE=bins/firmware/armthumb.bin
 ARGS=-aarm -b32
 CMDS=<<EOF
 e asm.bytes=true
-ahb 16 @0xc
+ahb 16 @ 0xc
 pd 5 @b:32
 EOF
 EXPECT=<<EOF

@@ -191,11 +191,11 @@ NAME=Pointers
 FILE=malloc://1024
 CMDS=<<EOF
 wx 30
-wx 20@0x04
-wx 40@0x08
-wx 2a@0x20
-w TROLL@0x30
-wx a00f@0x40
+wx 20 @ 0x04
+wx 40 @ 0x08
+wx 2a @ 0x20
+w TROLL @ 0x30
+wx a00f @ 0x40
 e asm.bits=32 # pointer size
 pf.plop *z*i*w nb name blob
 pf.plop
@@ -238,9 +238,9 @@ RUN
 NAME=String pointer
 FILE=malloc://1024
 CMDS=<<EOF
-w TROLL @0x30
+w TROLL @ 0x30
 wx 30
-wx a00f @0x04
+wx a00f @ 0x04
 e asm.bits=32
 pf *zi Pouet Plop
 EOF
@@ -350,10 +350,10 @@ NAME=fixed size str, widechar, and var
 FILE=malloc://1024
 CMDS=<<EOF
 w TROLL
-wx 12@0x02
-wx a00f@0x0a
-ww PLOP@0x16
-wx 2a@0x2a
+wx 12 @ 0x02
+wx a00f @ 0x0a
+ww PLOP @ 0x16
+wx 2a @ 0x2a
 pf [10]z[3]i[10]Zb
 EOF
 EXPECT=<<EOF
@@ -416,11 +416,11 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.bits=32
 wx 2a
-wx a00f@0x04
-wx 2a@0x08
-wx 10@0x0a
-wx efbe@0x0e
-wx 20@0x10
+wx a00f @ 0x04
+wx 2a @ 0x08
+wx 10 @ 0x0a
+wx efbe @ 0x0e
+wx 20 @ 0x10
 pf.troll iw integer word
 pf.plop i??i firstInt (troll)One (troll)Two secondInt
 pf.plop
@@ -444,7 +444,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.bits=32
 wx 2a000000a00f00001234100000006416
-wx 2a0000002a@0x10
+wx 2a0000002a @ 0x10
 pf.troll iw*? integer word (troll)Bah
 pf.plop i?w firstInt (troll)Boh plop
 pf.plop
@@ -493,8 +493,8 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.bits=32
 wx 341289679a020000a00f00002a003000000014426416
-wx 800600000040@0x20
-wx 14000000641620000000@0x30
+wx 800600000040 @ 0x20
+wx 14000000641620000000 @ 0x30
 pf.troll iw*? integer word (troll)Bah
 pf.plop i?w first (troll)Boh bwa
 pf.gobelin ww?x blah meh (plop)Buh foo
@@ -529,8 +529,8 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.bits=32
 wx 341289679a020000a00f00002a00300000001442
-wx 800600000040@0x20
-wx 14000000641620000000@0x30
+wx 800600000040 @ 0x20
+wx 14000000641620000000 @ 0x30
 pf.troll iw*? integer word (troll)Bah
 pf.plop i?w first (troll)Boh bwa
 pf.gobelin ww? blah meh (plop)Buh

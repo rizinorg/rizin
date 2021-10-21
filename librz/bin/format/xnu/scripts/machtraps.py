@@ -49,9 +49,9 @@ def carve_trap_num(addr, flag):
     r.cmd("s " + str(emu_start))
     obj = r.cmd("aefa 0x%08x~[0]:0" % addr)
     r.cmd("s " + saved_seek)
-    val = r.cmdj("pv4j@%s+0x14" % obj.strip())[0]["value"]
+    val = r.cmdj("pv4j @ %s+0x14" % obj.strip())[0]["value"]
     if val == 0:
-        val = r.cmdj("pv4j@%s+0x18" % obj.strip())[0]["value"]
+        val = r.cmdj("pv4j @ %s+0x18" % obj.strip())[0]["value"]
     return val
 
 

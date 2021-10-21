@@ -4412,8 +4412,8 @@ static void pr_bb(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock *b, boo
 	}
 	rz_config_set_i(core->config, "asm.bb.middle", false);
 	p_type == 'D'
-		? rz_core_cmdf(core, "pD %" PFMT64u " @0x%" PFMT64x, b->size, b->addr)
-		: rz_core_cmdf(core, "pI %" PFMT64u " @0x%" PFMT64x, b->size, b->addr);
+		? rz_core_cmdf(core, "pD %" PFMT64u " @ 0x%" PFMT64x, b->size, b->addr)
+		: rz_core_cmdf(core, "pI %" PFMT64u " @ 0x%" PFMT64x, b->size, b->addr);
 	rz_config_set(core->config, "asm.bb.middle", orig_bb_middle);
 
 	if (b->jump != UT64_MAX) {
@@ -6071,8 +6071,8 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			rz_cons_printf("|Usage: pm [file|directory]\n"
 				       "| rz_magic will use given file/dir as reference\n"
 				       "| output of those magic can contain expressions like:\n"
-				       "|   foo@0x40   # use 'foo' magic file on address 0x40\n"
-				       "|   @0x40      # use current magic file on address 0x40\n"
+				       "|   foo@ 0x40   # use 'foo' magic file on address 0x40\n"
+				       "|   @ 0x40      # use current magic file on address 0x40\n"
 				       "|   \\n         # append newline\n"
 				       "| e dir.magic  # defaults to " RZ_JOIN_2_PATHS("{RZ_PREFIX}", RZ_SDB_MAGIC) "\n"
 														    "| /m           # search for magic signatures\n");

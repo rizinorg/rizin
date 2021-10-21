@@ -503,7 +503,7 @@ FILE==
 CMDS=<<EOF
 f cat
 f rimmer 12
-f lister 32@666
+f lister 32 @ 666
 f kryten 32 666
 f+skutter 1 @ 12
 f
@@ -523,7 +523,7 @@ CMDS=<<EOF
 # Add flags.
 f cat
 f rimmer 12
-f lister 32@666
+f lister 32 @ 666
 f kryten 32 666
 f+skutter 1 @ 12
 fj
