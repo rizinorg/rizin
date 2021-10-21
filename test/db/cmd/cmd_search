@@ -11,7 +11,7 @@ NAME=search esil
 FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF
 /E $$,[1],0xe1,-,!
-s@hit0_0
+s@ hit0_0
 EOF
 EXPECT=<<EOF
 hit0_0
@@ -23,7 +23,7 @@ NAME=search esil json
 FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF
 /Ej $$,[1],0xe1,-,!
-s@hit0_0
+s@ hit0_0
 EOF
 EXPECT=<<EOF
 [{"addr":134513508,"value":1}]

@@ -1187,9 +1187,9 @@ RZ_IPI int rz_cmd_pointer(void *data, const char *input) {
 	if (eq) {
 		*eq++ = 0;
 		if (!strncmp(eq, "0x", 2)) {
-			ret = rz_core_cmdf(core, "wv %s@%s", eq, str);
+			ret = rz_core_cmdf(core, "wv %s @ %s", eq, str);
 		} else {
-			ret = rz_core_cmdf(core, "wx %s@%s", eq, str);
+			ret = rz_core_cmdf(core, "wx %s @ %s", eq, str);
 		}
 	} else {
 		ret = rz_core_cmdf(core, "?v [%s]", input);

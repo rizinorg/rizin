@@ -4,7 +4,7 @@ CMDS=<<EOF
 e io.va=0
 ph sha1 @!$s-32 @ 32
 !rz-hash -a sha1 -f 32 -t 4899 bins/elf/analysis/x86-helloworld-gcc
-ph sha1 @!$s @0
+ph sha1 @!$s @ 0
 !rz-hash -a sha1 bins/elf/analysis/x86-helloworld-gcc
 ph sha1 @s:fofofofo
 EOF

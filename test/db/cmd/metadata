@@ -111,7 +111,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 w hello\x00world
 Cs 6
-Cs 6@6
+Cs 6@ 6
 pd 2
 EOF
 EXPECT=<<EOF
@@ -155,9 +155,9 @@ FILE=malloc://1024
 CMDS=<<EOF
 e scr.color=false
 wx 554889e54883c768
-Ch 2@0x100
+Ch 2@ 0x100
 C*~?
-Ch-@0x100
+Ch-@ 0x100
 C*~?
 EOF
 EXPECT=<<EOF

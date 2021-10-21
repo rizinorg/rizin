@@ -34,7 +34,7 @@ RUN
 NAME=yz
 FILE=malloc://128
 CMDS=<<EOF
-w HelloWorld @0
+w HelloWorld @ 0
 yz
 yp
 yz 5
