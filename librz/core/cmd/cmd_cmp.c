@@ -505,19 +505,12 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_num8_handler(RzCore *core, int argc, const char **
 
 // cat
 RZ_IPI RzCmdStatus rz_cmd_cat_handler(RzCore *core, int argc, const char **argv) {
-	if (argv[1][0] == '$') { // an alias
-		const char *old_text = rz_cmd_alias_get(core->rcmd, argv[1], 1);
-		if (old_text) {
-			rz_cons_printf("%s\n", old_text + 1);
-		}
-	} else {
-		char *res = rz_syscmd_cat(argv[1]);
-		if (res) {
-			rz_cons_print(res);
-			free(res);
-		}
+	char *res = rz_syscmd_cat(argv[1]);
+	if (!res) {
+		return RZ_CMD_STATUS_ERROR;
 	}
-
+	rz_cons_print(res);
+	free(res);
 	return RZ_CMD_STATUS_OK;
 }
 
