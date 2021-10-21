@@ -541,71 +541,34 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_disasm_handler(RzCore *core, int argc, const char 
 // cd
 RZ_IPI RzCmdStatus rz_cmd_chdir_handler(RzCore *core, int argc, const char **argv) {
 	static char *olddir = NULL;
-	if (argc == 2) {
-		if (!strcmp(argv[1], "-")) {
-			if (olddir) {
-				char *newdir = olddir;
-				olddir = rz_sys_getdir();
-				if (chdir(newdir) == -1) {
-					RZ_LOG_ERROR("Cannot chdir to %s\n", newdir);
-					free(olddir);
-					olddir = newdir;
-				} else {
-					free(newdir);
-				}
-			}
-		} else if (argv[1][0] == '~') {
-			if (argv[1][1] == '/') {
-				char *homepath = rz_str_home(argv[1] + 2);
-				if (homepath) {
-					char *cwd = rz_sys_getdir();
-					if (chdir(homepath) != -1) {
-						RZ_LOG_ERROR("Cannot chdir to %s\n", homepath);
-						free(cwd);
-					} else {
-						free(olddir);
-						olddir = cwd;
-					}
-					free(homepath);
-				} else {
-					RZ_LOG_ERROR("Cannot find home\n");
-				}
+	bool ret = true;
+	if (!strcmp(argv[1], "-")) {
+		if (olddir) {
+			char *newdir = olddir;
+			olddir = rz_sys_getdir();
+			if (!rz_sys_chdir(newdir)) {
+				RZ_LOG_ERROR("Cannot chdir to %s\n", newdir);
+				free(olddir);
+				olddir = newdir;
 			} else {
-				char *cwd = rz_sys_getdir();
-				char *home = rz_sys_getenv(RZ_SYS_HOME);
-				if (!home || chdir(home) == -1) {
-					eprintf("Cannot find home.\n");
-					free(cwd);
-				} else {
-					free(olddir);
-					olddir = cwd;
-				}
-				free(home);
+				free(newdir);
+				ret = true;
 			}
 		} else {
-			char *cwd = rz_sys_getdir();
-			if (chdir(argv[1]) == -1) {
-				RZ_LOG_ERROR("Cannot chdir to %s\n", argv[1]);
-				free(cwd);
-			} else {
-				free(olddir);
-				olddir = cwd;
-			}
+			RZ_LOG_ERROR("No old directory found\n");
 		}
 	} else {
 		char *cwd = rz_sys_getdir();
-		char *home = rz_sys_getenv(RZ_SYS_HOME);
-		if (!home || chdir(home) == -1) {
-			eprintf("Cannot find home.\n");
+		if (!rz_sys_chdir(argv[1])) {
+			RZ_LOG_ERROR("Cannot chdir to %s\n", argv[1]);
 			free(cwd);
 		} else {
 			free(olddir);
 			olddir = cwd;
+			ret = true;
 		}
-		free(home);
 	}
-
-	return RZ_CMD_STATUS_OK;
+	return ret ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
 // cf

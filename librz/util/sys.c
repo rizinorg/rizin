@@ -508,7 +508,11 @@ RZ_API char *rz_sys_getdir(void) {
 #endif
 }
 
+<<<<<<< HEAD
 RZ_API bool rz_sys_chdir(RZ_NONNULL const char *s) {
+=======
+RZ_API bool rz_sys_chdir(const char *s) {
+>>>>>>> 1aac430af (Add handling for paths relative to home (`~`) in `rz_sys_chdir`)
 	rz_return_val_if_fail(s, false);
 	char *homepath = NULL;
 	if (s[0] == '~') {
@@ -519,7 +523,11 @@ RZ_API bool rz_sys_chdir(RZ_NONNULL const char *s) {
 		}
 	}
 	if (homepath) {
+<<<<<<< HEAD
 		int ret = chdir(homepath);
+=======
+		int ret = chdir(homepath) == 0;
+>>>>>>> 1aac430af (Add handling for paths relative to home (`~`) in `rz_sys_chdir`)
 		free(homepath);
 		return ret == 0;
 	}
