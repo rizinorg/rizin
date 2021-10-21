@@ -16,12 +16,12 @@ struct bool_t {
 };
 typedef struct bool_t RzILBool;
 
-RZ_API RzILBool *rz_il_new_bool(bool true_or_false);
+RZ_API RzILBool *rz_il_bool_new(bool true_or_false);
 RZ_API RzILBool *rz_il_bool_and(RzILBool *a, RzILBool *b);
 RZ_API RzILBool *rz_il_bool_or(RzILBool *a, RzILBool *b);
 RZ_API RzILBool *rz_il_bool_xor(RzILBool *a, RzILBool *b);
 RZ_API RzILBool *rz_il_bool_not(RzILBool *a);
-RZ_API void rz_il_free_bool(RzILBool *bool_var);
+RZ_API void rz_il_bool_free(RzILBool *bool_var);
 
 #ifdef __cplusplus
 }
