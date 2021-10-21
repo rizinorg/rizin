@@ -11,7 +11,6 @@ static const RzCmdDescDetail system_details[2];
 static const RzCmdDescDetail system_to_cons_details[2];
 static const RzCmdDescDetail hash_bang_details[2];
 static const RzCmdDescDetail pointer_details[2];
-static const RzCmdDescDetail cmd_cmp_string_details[2];
 static const RzCmdDescDetail cmd_cmp_unified_details[2];
 static const RzCmdDescDetail cmd_debug_list_bp_details[2];
 static const RzCmdDescDetail cmd_debug_add_cond_bp_details[2];
@@ -1996,14 +1995,6 @@ static const RzCmdDescHelp block_max_help = {
 static const RzCmdDescHelp c_help = {
 	.summary = "Compare block with given data",
 };
-static const RzCmdDescDetailEntry cmd_cmp_string_Rizin_space_output_space_mode_detail_entries[] = {
-	{ .text = "Print commands to write the <string> at current offset", .arg_str = NULL, .comment = "c* <string>" },
-	{ 0 },
-};
-static const RzCmdDescDetail cmd_cmp_string_details[] = {
-	{ .name = "Rizin output mode", .entries = cmd_cmp_string_Rizin_space_output_space_mode_detail_entries },
-	{ 0 },
-};
 static const RzCmdDescArg cmd_cmp_string_args[] = {
 	{
 		.name = "string",
@@ -2015,7 +2006,6 @@ static const RzCmdDescArg cmd_cmp_string_args[] = {
 };
 static const RzCmdDescHelp cmd_cmp_string_help = {
 	.summary = "Compare an escaped <string> with data at current offset",
-	.details = cmd_cmp_string_details,
 	.args = cmd_cmp_string_args,
 };
 
@@ -8336,7 +8326,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *block_max_cd = rz_cmd_desc_argv_new(core->rcmd, b_cd, "bm", rz_block_max_handler, &block_max_help);
 	rz_warn_if_fail(block_max_cd);
 
-	RzCmdDesc *c_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "c", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN, rz_cmd_cmp_string_handler, &cmd_cmp_string_help, &c_help);
+	RzCmdDesc *c_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "c", rz_cmd_cmp_string_handler, &cmd_cmp_string_help, &c_help);
 	rz_warn_if_fail(c_cd);
 	RzCmdDesc *cmd_cmp_num1_cd = rz_cmd_desc_argv_new(core->rcmd, c_cd, "c1", rz_cmd_cmp_num1_handler, &cmd_cmp_num1_help);
 	rz_warn_if_fail(cmd_cmp_num1_cd);

@@ -6,18 +6,9 @@ commands:
   - name: c
     summary: Compare an escaped <string> with data at current offset
     cname: cmd_cmp_string
-    type: RZ_CMD_DESC_TYPE_ARGV_STATE
-    modes:
-      - RZ_OUTPUT_MODE_STANDARD
-      - RZ_OUTPUT_MODE_RIZIN
     args:
       - name: string
         type: RZ_CMD_ARG_TYPE_STRING
-    details:
-      - name: Rizin output mode
-        entries:
-          - text: "Print commands to write the <string> at current offset"
-            comment: "c* <string>"
   - name: c1
     summary: Compare 8-bit data at current offset with a number
     cname: cmd_cmp_num1

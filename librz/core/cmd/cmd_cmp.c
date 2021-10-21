@@ -440,24 +440,12 @@ static bool core_cmp_bits(RzCore *core, ut64 addr) {
 }
 
 // c
-RZ_IPI RzCmdStatus rz_cmd_cmp_string_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+RZ_IPI RzCmdStatus rz_cmd_cmp_string_handler(RzCore *core, int argc, const char **argv) {
 	ut64 val = UT64_MAX;
-	RzOutputMode mode = state->mode;
-	switch (mode) {
-	case RZ_OUTPUT_MODE_STANDARD: {
-		char *unescaped = strdup(argv[1]);
-		int len = rz_str_unescape(unescaped);
-		val = rz_core_compare(core, (ut8 *)unescaped, len, RZ_COMPARE_MODE_DEFAULT);
-		free(unescaped);
-		break;
-	}
-	case RZ_OUTPUT_MODE_RIZIN:
-		val = rz_core_compare(core, (ut8 *)argv[1], strlen(argv[1]) + 1, RZ_COMPARE_MODE_RIZIN);
-		break;
-	default:
-		rz_warn_if_reached();
-	}
-
+	char *unescaped = strdup(argv[1]);
+	int len = rz_str_unescape(unescaped);
+	val = rz_core_compare(core, (ut8 *)unescaped, len, RZ_COMPARE_MODE_DEFAULT);
+	free(unescaped);
 	if (val != UT64_MAX) {
 		core->num->value = val;
 		return RZ_CMD_STATUS_OK;
