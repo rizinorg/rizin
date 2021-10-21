@@ -79,7 +79,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 CC hello @ 0x200
 CC world @ 0x400
-CC-@0x400
+CC-@ 0x400
 C*~?
 EOF
 EXPECT=<<EOF
@@ -95,7 +95,7 @@ e asm.bytes=true
 e asm.bits=32
 CC hello @ 0x200
 CC world @ 0x200
-CC.@0x200~?
+CC.@ 0x200~?
 CCl~?
 e asm.cmt.right=0
 e scr.color=false

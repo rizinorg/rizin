@@ -34,7 +34,7 @@ CMDS=<<EOF
 b 2
 wx 0xff
 e zoom.in=raw
-p=b 2 2@0
+p=b 2 2@ 0
 EOF
 EXPECT=<<EOF
 0x00000000 000 00ff |###################################################
@@ -68,7 +68,7 @@ RUN
 
 NAME=p=e 5
 FILE=bins/elf/arm1.bin
-CMDS=p=e 5@0
+CMDS=p=e 5@ 0
 EXPECT=<<EOF
 0x00000000 000 009f |########
 0x0001bec1 001 00c3 |#
@@ -113,7 +113,7 @@ RUN
 NAME=p=p 5
 FILE=bins/elf/arm1.bin
 ARGS=-n
-CMDS=p=p 5@0
+CMDS=p=p 5@ 0
 EXPECT=<<EOF
 0x00000000 000 0032 |##########
 0x0001bec1 001 0031 |#

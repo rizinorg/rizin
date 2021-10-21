@@ -2,7 +2,7 @@ NAME=/e /test/i
 FILE=malloc://1024
 CMDS=<<EOF
 w test
-w Test@444
+w Test@ 444
 ?e
 e search.in=block
 b 777
@@ -34,7 +34,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 cfg.oldshell=true
 w "test123 ab"
-w "Test123 ab" @444
+w "Test123 ab" @ 444
 ?e
 e search.in=block
 b 777
@@ -52,7 +52,7 @@ ARGS=-ecfg.oldshell=false
 FILE=malloc://1024
 CMDS=<<EOF
 w '"test123 ab"'
-w '"Test123 ab"' @444
+w '"Test123 ab"' @ 444
 ?e
 e search.in=block
 b 777
