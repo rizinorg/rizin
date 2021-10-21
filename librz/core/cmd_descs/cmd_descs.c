@@ -7310,7 +7310,7 @@ static const RzCmdDescDetailEntry tmp_modifiers_empty_detail_entries[] = {
 	{ .text = "<cmd> @a:", .arg_str = "<arch>[:<bits>]", .comment = "Temporary set arch and bits, if specified" },
 	{ .text = "<cmd> @b:", .arg_str = "<bits>", .comment = "Temporary set asm.bits" },
 	{ .text = "<cmd> @B:", .arg_str = "<nth>", .comment = "Temporary seek to nth instruction in current basic block (negative numbers too)" },
-	{ .text = "<cmd> @e:", .arg_str = "<k>=<v>[<k>=<v>]", .comment = "Temporary change eval vars (multiple vars separated by comma)" },
+	{ .text = "<cmd> @e:", .arg_str = "<k>=<v>[,<k>=<v>]", .comment = "Temporary change eval vars (multiple vars separated by comma)" },
 	{ .text = "<cmd> @f:", .arg_str = "<file>", .comment = "Temporary replace block with file contents" },
 	{ .text = "<cmd> @F:", .arg_str = "<flagspace>", .comment = "Temporary change flag space" },
 	{ .text = "<cmd> @i:", .arg_str = "<nth.op>", .comment = "Temporary seek to the Nth relative instruction" },
