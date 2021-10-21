@@ -10,31 +10,31 @@ commands:
       - name: string
         type: RZ_CMD_ARG_TYPE_STRING
   - name: c1
-    summary: Compare 8-bit data at current offset with a number
+    summary: Compare 8-bit data at current offset with a number <num>
     cname: cmd_cmp_num1
     args:
       - name: num
         type: RZ_CMD_ARG_TYPE_RZNUM
   - name: c2
-    summary: Compare a word (16-bit data) at current offset with a number
+    summary: Compare a word (16-bit data) at current offset with a number <num>
     cname: cmd_cmp_num2
     args:
       - name: num
         type: RZ_CMD_ARG_TYPE_RZNUM
   - name: c4
-    summary: Compare a doubleword (32-bit data) at current offset with a number
+    summary: Compare a doubleword (32-bit data) at current offset with a number <num>
     cname: cmd_cmp_num4
     args:
       - name: num
         type: RZ_CMD_ARG_TYPE_RZNUM
   - name: c8
-    summary: Compare a quadword (64-bit data) at current offset with a number
+    summary: Compare a quadword (64-bit data) at current offset with a number <num>
     cname: cmd_cmp_num8
     args:
       - name: num
         type: RZ_CMD_ARG_TYPE_RZNUM
   - name: cat
-    summary: Show contents of a file (see pwd, ls)
+    summary: Show contents of <file> (see pwd, ls)
     cname: cmd_cat
     args:
       - name: file
@@ -151,7 +151,7 @@ commands:
         cname: cmd_cmp_update_watcher
         args: []
   - name: cx
-    summary: Compare hexpair string
+    summary: Compare data at current offset with a hexpair string <hexpair>
     cname: cmd_cmp_hexpair_string
     type: RZ_CMD_DESC_TYPE_ARGV_STATE
     modes:

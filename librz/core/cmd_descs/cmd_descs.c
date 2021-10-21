@@ -2019,7 +2019,7 @@ static const RzCmdDescArg cmd_cmp_num1_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_cmp_num1_help = {
-	.summary = "Compare 8-bit data at current offset with a number",
+	.summary = "Compare 8-bit data at current offset with a number <num>",
 	.args = cmd_cmp_num1_args,
 };
 
@@ -2033,7 +2033,7 @@ static const RzCmdDescArg cmd_cmp_num2_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_cmp_num2_help = {
-	.summary = "Compare a word (16-bit data) at current offset with a number",
+	.summary = "Compare a word (16-bit data) at current offset with a number <num>",
 	.args = cmd_cmp_num2_args,
 };
 
@@ -2047,7 +2047,7 @@ static const RzCmdDescArg cmd_cmp_num4_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_cmp_num4_help = {
-	.summary = "Compare a doubleword (32-bit data) at current offset with a number",
+	.summary = "Compare a doubleword (32-bit data) at current offset with a number <num>",
 	.args = cmd_cmp_num4_args,
 };
 
@@ -2061,7 +2061,7 @@ static const RzCmdDescArg cmd_cmp_num8_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_cmp_num8_help = {
-	.summary = "Compare a quadword (64-bit data) at current offset with a number",
+	.summary = "Compare a quadword (64-bit data) at current offset with a number <num>",
 	.args = cmd_cmp_num8_args,
 };
 
@@ -2074,7 +2074,7 @@ static const RzCmdDescArg cmd_cat_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_cat_help = {
-	.summary = "Show contents of a file (see pwd, ls)",
+	.summary = "Show contents of <file> (see pwd, ls)",
 	.args = cmd_cat_args,
 };
 
@@ -2315,7 +2315,7 @@ static const RzCmdDescArg cmd_cmp_hexpair_string_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_cmp_hexpair_string_help = {
-	.summary = "Compare hexpair string",
+	.summary = "Compare data at current offset with a hexpair string <hexpair>",
 	.args = cmd_cmp_hexpair_string_args,
 };
 
