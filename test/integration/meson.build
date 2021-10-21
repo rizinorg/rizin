@@ -1,8 +1,8 @@
 if get_option('enable_tests')
   tests = [
-    'open_analyse_save_load_project',
     'bin_vfiles',
     'cpu_platform_profiles',
+    'open_analyse_save_load_project',
   ]
 
   unit_test_env = environment()
