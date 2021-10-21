@@ -726,3 +726,34 @@ EXPECT=<<EOF
 0x00000049 utf8[26] " and a codepoint position "
 EOF
 RUN
+
+NAME=Csz == no-size Csb
+FILE==
+CMDS=<<EOF
+wz abc\xa1def
+(do cmd; ?e *** $0; $0)
+.(do Csl)
+(do-l cmd; .(do $0); .(do Csl))
+.(do-l Csb)
+$Csb_str=?e `.(do Csl)~:1[2]`
+.(do-l Cs-)
+.(do-l Csz)
+$Csz_str=?e `.(do Csl)~:1[2]`
+?e
+?== `$Csb_str` `$Csz_str`
+??
+EOF
+EXPECT=<<EOF
+*** Csl
+*** Csb
+*** Csl
+0x00000000 8bit[8] "abc\xa1def"
+*** Cs-
+*** Csl
+*** Csz
+*** Csl
+0x00000000 8bit[8] "abc\xa1def"
+
+0
+EOF
+RUN

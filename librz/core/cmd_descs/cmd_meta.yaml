@@ -337,6 +337,10 @@ commands:
           - name: size
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
+      - name: Csz
+        cname: meta_string_c
+        summary: Add zero-terminated string (synonym for no-arg `Csb`)
+        args: []
   - name: Ct
     summary: Manage the type metainformation
     subcommands:

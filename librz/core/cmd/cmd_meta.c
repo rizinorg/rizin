@@ -601,6 +601,10 @@ RZ_IPI RzCmdStatus rz_meta_string_8bit_handler(RzCore *core, int argc, const cha
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI RzCmdStatus rz_meta_string_c_handler(RzCore *core, int argc, const char **argv) {
+	return rz_meta_string_8bit_handler(core, argc, argv);
+}
+
 RZ_IPI RzCmdStatus rz_meta_string_wide16_handler(RzCore *core, int argc, const char **argv) {
 	ut64 size = argc > 1 ? rz_num_math(core->num, argv[1]) : 0;
 	RzBinObject *obj = rz_bin_cur_object(core->bin);

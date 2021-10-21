@@ -2503,6 +2503,14 @@ static const RzCmdDescHelp meta_string_wide32_help = {
 	.args = meta_string_wide32_args,
 };
 
+static const RzCmdDescArg meta_string_c_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp meta_string_c_help = {
+	.summary = "Add zero-terminated string (synonym for no-arg `Csb`)",
+	.args = meta_string_c_args,
+};
+
 static const RzCmdDescHelp Ct_help = {
 	.summary = "Manage the type metainformation",
 };
@@ -7645,6 +7653,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *meta_string_wide32_cd = rz_cmd_desc_argv_new(core->rcmd, Cs_cd, "CsW", rz_meta_string_wide32_handler, &meta_string_wide32_help);
 	rz_warn_if_fail(meta_string_wide32_cd);
+
+	RzCmdDesc *meta_string_c_cd = rz_cmd_desc_argv_new(core->rcmd, Cs_cd, "Csz", rz_meta_string_c_handler, &meta_string_c_help);
+	rz_warn_if_fail(meta_string_c_cd);
 
 	RzCmdDesc *Ct_cd = rz_cmd_desc_group_new(core->rcmd, C_cd, "Ct", rz_meta_type_handler, &meta_type_help, &Ct_help);
 	rz_warn_if_fail(Ct_cd);
