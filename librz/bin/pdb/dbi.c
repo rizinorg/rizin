@@ -58,7 +58,7 @@ static bool parse_dbi_stream_ex_header(RzPdbDbiStream *s, RzBuffer *buf) {
 	}
 	ut32 ex_size = s->hdr.mod_info_size;
 	ut32 read_len = 0;
-	bool result = false;
+	bool result = true;
 	while (read_len < ex_size) {
 		ut32 initial_seek = rz_buf_tell(buf);
 		RzPdbDbiStreamExHdr *hdr = RZ_NEW0(RzPdbDbiStreamExHdr);
