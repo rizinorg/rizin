@@ -5,6 +5,7 @@
 #include <rz_util/rz_utf8.h>
 #include <rz_util/rz_utf16.h>
 #include <rz_util/rz_utf32.h>
+#include <rz_util/rz_ebcdic.h>
 
 typedef enum {
 	SKIP_STRING,
@@ -272,6 +273,16 @@ static inline bool can_be_utf32_be(ut8 *buf, ut64 size) {
 	return !buf[0] && !buf[1] && !buf[2] && buf[3] && !buf[4] && !buf[5] && !buf[6];
 }
 
+static inline bool can_be_ebcdic(ut8 *buf, ut64 size) {
+	bool flag = true;
+	for (size_t i = 0; i < size; i++) {
+		if (buf[i] >= 0x20 && buf[i] <= 0x3f) {
+			flag = false;
+		}
+	}
+	return flag;
+}
+
 /**
  * \brief Look for strings in an RzBuffer.
  * \param buf_to_scan Pointer to a RzBuffer to scan
@@ -286,10 +297,7 @@ static inline bool can_be_utf32_be(ut8 *buf, ut64 size) {
  */
 RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrScanOptions *opt,
 	const ut64 from, const ut64 to, RzStrEnc type) {
-
-	rz_return_val_if_fail(opt, -1);
-	rz_return_val_if_fail(list, -1);
-	rz_return_val_if_fail(buf_to_scan, -1);
+	rz_return_val_if_fail(opt || list || buf_to_scan, -1);
 
 	if (from == to) {
 		return 0;
@@ -312,14 +320,18 @@ RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrS
 	rz_buf_read_at(buf_to_scan, from, buf, len);
 
 	needle = from;
+	ut8 *ptr;
+	ut64 size;
 	while (needle < to) {
+		ptr = buf + needle - from;
+		size = to - needle;
 		if (type == RZ_STRING_ENC_GUESS) {
-			if (can_be_utf32_le(buf + needle - from, to - needle)) {
+			if (can_be_utf32_le(ptr, size)) {
 				str_type = RZ_STRING_ENC_UTF32LE;
-			} else if (can_be_utf16_le(buf + needle - from, to - needle)) {
+			} else if (can_be_utf16_le(ptr, size)) {
 				str_type = RZ_STRING_ENC_UTF16LE;
-			} else if (can_be_utf32_be(buf + needle - from, to - needle)) {
-				if (to - needle > 3 && can_be_utf32_le(buf + needle - from + 3, to - needle - 3)) {
+			} else if (can_be_utf32_be(ptr, size)) {
+				if (to - needle > 3 && can_be_utf32_le(ptr + 3, size - 3)) {
 					// The string can be either utf32-le or utf32-be
 					RzDetectedString *ds_le = process_one_string(buf, from, needle + 3, to, RZ_STRING_ENC_UTF32LE, false, opt);
 					RzDetectedString *ds_be = process_one_string(buf, from, needle, to, RZ_STRING_ENC_UTF32BE, false, opt);
@@ -354,8 +366,8 @@ RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrS
 					continue;
 				}
 				str_type = RZ_STRING_ENC_UTF32BE;
-			} else if (can_be_utf16_be(buf + needle - from, to - needle)) {
-				if (to - needle > 1 && can_be_utf16_le(buf + needle - from + 1, to - needle - 1)) {
+			} else if (can_be_utf16_be(ptr, size)) {
+				if (to - needle > 1 && can_be_utf16_le(ptr + 1, size - 1)) {
 					// The string can be either utf16-le or utf16-be
 					RzDetectedString *ds_le = process_one_string(buf, from, needle + 1, to, RZ_STRING_ENC_UTF16LE, false, opt);
 					RzDetectedString *ds_be = process_one_string(buf, from, needle, to, RZ_STRING_ENC_UTF16BE, false, opt);
@@ -391,10 +403,18 @@ RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrS
 				}
 				str_type = RZ_STRING_ENC_UTF16BE;
 			} else {
-				int rc = rz_utf8_decode(buf + needle - from, to - needle, NULL);
+				int rc = rz_utf8_decode(ptr, size, NULL);
 				if (!rc) {
+					// if (can_be_ebcdic(ptr, size)) {
+					// 	if ()
+					// 	{
+					// 		/* code */
+					// 	}
+					// 	printf("ebcdic:%s!\n", buf);
+					// } else {
 					needle++;
 					continue;
+					// }
 				}
 				str_type = RZ_STRING_ENC_8BIT;
 			}
