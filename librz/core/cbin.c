@@ -2667,6 +2667,7 @@ static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzList *l
 					if (block_list[0] == 0 && block_list[1] == -1) {
 						/* Don't show block list if
 						   just Basic Latin (0x00 - 0x7F) */
+						free(block_list);
 						break;
 					}
 					int *block_ptr = block_list;
