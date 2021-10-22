@@ -3,6 +3,7 @@
 
 #include <rz_core.h>
 
+// env
 RZ_IPI RzCmdStatus rz_cmd_shell_env_handler(RzCore *core, int argc, const char **argv) {
 	char *p, **e;
 	switch (argc) {
@@ -29,11 +30,13 @@ RZ_IPI RzCmdStatus rz_cmd_shell_env_handler(RzCore *core, int argc, const char *
 	}
 }
 
+// exit
 RZ_IPI RzCmdStatus rz_cmd_shell_exit_handler(RzCore *core, int argc, const char **argv) {
 	core->num->value = 0LL;
 	return RZ_CMD_STATUS_EXIT;
 }
 
+// ls
 RZ_IPI RzCmdStatus rz_cmd_shell_ls_handler(RzCore *core, int argc, const char **argv) {
 	char *arg = rz_str_array_join(argv + 1, argc - 1, " ");
 	char *res = rz_syscmd_ls(arg);
@@ -46,10 +49,12 @@ RZ_IPI RzCmdStatus rz_cmd_shell_ls_handler(RzCore *core, int argc, const char **
 	return RZ_CMD_STATUS_OK;
 }
 
+// rm
 RZ_IPI RzCmdStatus rz_cmd_shell_rm_handler(RzCore *core, int argc, const char **argv) {
 	return rz_file_rm(argv[1]) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
+// sleep
 RZ_IPI RzCmdStatus rz_cmd_shell_sleep_handler(RzCore *core, int argc, const char **argv) {
 	void *bed = rz_cons_sleep_begin();
 	rz_sys_sleep(atoi(argv[1] + 1));
@@ -57,6 +62,7 @@ RZ_IPI RzCmdStatus rz_cmd_shell_sleep_handler(RzCore *core, int argc, const char
 	return RZ_CMD_STATUS_OK;
 }
 
+// uniq
 RZ_IPI RzCmdStatus rz_cmd_shell_uniq_handler(RzCore *core, int argc, const char **argv) {
 	char *res = rz_syscmd_uniq(argv[1]);
 	if (!res) {
@@ -67,6 +73,7 @@ RZ_IPI RzCmdStatus rz_cmd_shell_uniq_handler(RzCore *core, int argc, const char 
 	return RZ_CMD_STATUS_OK;
 }
 
+// uname
 RZ_IPI RzCmdStatus rz_cmd_shell_uname_handler(RzCore *core, int argc, const char **argv) {
 	RSysInfo *si = rz_sys_info();
 	if (!si) {
@@ -81,6 +88,7 @@ RZ_IPI RzCmdStatus rz_cmd_shell_uname_handler(RzCore *core, int argc, const char
 	return RZ_CMD_STATUS_OK;
 }
 
+// echo
 RZ_IPI RzCmdStatus rz_cmd_shell_echo_handler(RzCore *core, int argc, const char **argv) {
 	if (argc >= 2) {
 		char *output = rz_str_array_join(argv + 1, argc - 1, " ");
@@ -91,27 +99,8 @@ RZ_IPI RzCmdStatus rz_cmd_shell_echo_handler(RzCore *core, int argc, const char 
 	return RZ_CMD_STATUS_ERROR;
 }
 
+// cp
 RZ_IPI RzCmdStatus rz_cmd_shell_cp_handler(RzCore *core, int argc, const char **argv) {
-	// if (input[1] == '.') {
-	// 	char *file = rz_core_cmd_strf(core, "ij~{core.file}");
-	// 	rz_str_trim(file);
-	// 	char *newfile = rz_str_newf("%s.%s", file, input + 2);
-	// 	rz_file_copy(file, newfile);
-	// 	free(file);
-	// 	free(newfile);
-	// 	return true;
-	// }
-	// char *cmd = strdup(input + 2);
-	// if (cmd) {
-	// 	char **files = rz_str_argv(cmd, NULL);
-	// 	if (files[0] && files[1]) {
-	// 		bool rc = rz_file_copy(files[0], files[1]);
-	// 		free(cmd);
-	// 		rz_str_argv_free(files);
-	// 		return rc;
-	// 	}
-	// 	rz_str_argv_free(files);
-	// }
 	bool rc = true;
 	for (int i = 1; i < argc - 1; i++) {
 		rc &= rz_file_copy(argv[i], argv[argc - 1]);
@@ -123,6 +112,7 @@ RZ_IPI RzCmdStatus rz_cmd_shell_cp_handler(RzCore *core, int argc, const char **
 	return RZ_CMD_STATUS_OK;
 }
 
+// cp.
 RZ_IPI RzCmdStatus rz_cmd_shell_cp_ext_handler(RzCore *core, int argc, const char **argv) {
 	const char *file = rz_config_get(core->config, "file.path");
 	char *new_file = rz_str_newf("%s.%s", file, argv[1]);
@@ -132,4 +122,37 @@ RZ_IPI RzCmdStatus rz_cmd_shell_cp_ext_handler(RzCore *core, int argc, const cha
 	}
 	free(new_file);
 	return rc ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+}
+
+// cd
+RZ_IPI RzCmdStatus rz_cmd_shell_cd_handler(RzCore *core, int argc, const char **argv) {
+	static char *olddir = NULL;
+	bool ret = true;
+	if (!strcmp(argv[1], "-")) {
+		if (olddir) {
+			char *newdir = olddir;
+			olddir = rz_sys_getdir();
+			if (!rz_sys_chdir(newdir)) {
+				RZ_LOG_ERROR("Cannot chdir to %s\n", newdir);
+				free(olddir);
+				olddir = newdir;
+			} else {
+				free(newdir);
+				ret = true;
+			}
+		} else {
+			RZ_LOG_ERROR("No old directory found\n");
+		}
+	} else {
+		char *cwd = rz_sys_getdir();
+		if (!rz_sys_chdir(argv[1])) {
+			RZ_LOG_ERROR("Cannot chdir to %s\n", argv[1]);
+			free(cwd);
+		} else {
+			free(olddir);
+			olddir = cwd;
+			ret = true;
+		}
+	}
+	return ret ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }

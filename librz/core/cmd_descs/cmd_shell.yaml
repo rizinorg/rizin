@@ -113,3 +113,9 @@ commands:
     args:
       - name: ext
         type: RZ_CMD_ARG_TYPE_STRING
+  - name: cd
+    summary: Change directory to <dir>
+    cname: cmd_shell_cd
+    args:
+      - name: dir
+        type: RZ_CMD_ARG_TYPE_FILE

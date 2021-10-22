@@ -15,7 +15,6 @@ static const char *help_msg_c[] = {
 	"cc", " [at]", "Compares in two hexdump columns of block size",
 	"ccc", " [at]", "Same as above, but only showing different lines",
 	"ccd", " [at]", "Compares in two disasm columns of block size",
-	"cd", " [dir]", "chdir",
 	// "cc", " [offset]", "code bindiff current block against offset"
 	// "cD", " [file]", "like above, but using radiff -b",
 	"cf", " [file]", "Compare contents of file at current seek",
@@ -489,7 +488,6 @@ static void __core_cmp_bits(RzCore *core, ut64 addr) {
 }
 
 RZ_IPI int rz_cmd_cmp(void *data, const char *input) {
-	static char *oldcwd = NULL;
 	int ret = 0, i, mode = 0;
 	RzCore *core = (RzCore *)data;
 	ut64 val = UT64_MAX;
@@ -622,53 +620,6 @@ RZ_IPI int rz_cmd_cmp(void *data, const char *input) {
 		} else {
 			fclose(fd);
 			return false;
-		}
-		break;
-	case 'd': // "cd"
-		while (input[1] == ' ')
-			input++;
-		if (input[1]) {
-			if (!strcmp(input + 1, "-")) {
-				if (oldcwd) {
-					char *newdir = oldcwd;
-					oldcwd = rz_sys_getdir();
-					if (chdir(newdir) == -1) {
-						eprintf("Cannot chdir to %s\n", newdir);
-						free(oldcwd);
-						oldcwd = newdir;
-					} else {
-						free(newdir);
-					}
-				} else {
-					// nothing to do here
-				}
-			} else if (input[1] == '~' && input[2] == '/') {
-				char *homepath = rz_str_home(input + 3);
-				if (homepath) {
-					if (*homepath) {
-						free(oldcwd);
-						oldcwd = rz_sys_getdir();
-						if (chdir(homepath) == -1) {
-							eprintf("Cannot chdir to %s\n", homepath);
-						}
-					}
-					free(homepath);
-				} else {
-					eprintf("Cannot find home\n");
-				}
-			} else {
-				free(oldcwd);
-				oldcwd = rz_sys_getdir();
-				if (chdir(input + 1) == -1) {
-					eprintf("Cannot chdir to %s\n", input + 1);
-				}
-			}
-		} else {
-			char *home = rz_sys_getenv(RZ_SYS_HOME);
-			if (!home || chdir(home) == -1) {
-				eprintf("Cannot find home.\n");
-			}
-			free(home);
 		}
 		break;
 	case '1': // "c1"
