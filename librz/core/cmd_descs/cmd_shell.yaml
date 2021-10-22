@@ -107,12 +107,6 @@ commands:
         type: RZ_CMD_ARG_TYPE_FILE
       - name: dst
         type: RZ_CMD_ARG_TYPE_STRING
-  - name: cp.
-    summary: Copy current file to filename.<ext>
-    cname: cmd_shell_cp_ext
-    args:
-      - name: ext
-        type: RZ_CMD_ARG_TYPE_STRING
   - name: cd
     summary: Change directory to <dir>
     cname: cmd_shell_cd

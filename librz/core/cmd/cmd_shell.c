@@ -108,18 +108,6 @@ RZ_IPI RzCmdStatus rz_cmd_shell_cp_handler(RzCore *core, int argc, const char **
 	return rc ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
-// cp.
-RZ_IPI RzCmdStatus rz_cmd_shell_cp_ext_handler(RzCore *core, int argc, const char **argv) {
-	const char *file = rz_config_get(core->config, "file.path");
-	char *new_file = rz_str_newf("%s.%s", file, argv[1]);
-	bool rc = rz_file_copy(file, new_file);
-	if (!rc) {
-		RZ_LOG_ERROR("Failed to copy %s to %s\n", file, new_file);
-	}
-	free(new_file);
-	return rc ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
-}
-
 // cd
 RZ_IPI RzCmdStatus rz_cmd_shell_cd_handler(RzCore *core, int argc, const char **argv) {
 	static char *olddir = NULL;
