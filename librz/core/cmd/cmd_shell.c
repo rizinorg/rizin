@@ -101,15 +101,11 @@ RZ_IPI RzCmdStatus rz_cmd_shell_echo_handler(RzCore *core, int argc, const char 
 
 // cp
 RZ_IPI RzCmdStatus rz_cmd_shell_cp_handler(RzCore *core, int argc, const char **argv) {
-	bool rc = true;
-	for (int i = 1; i < argc - 1; i++) {
-		rc &= rz_file_copy(argv[i], argv[argc - 1]);
-		if (!rc) {
-			RZ_LOG_ERROR("Failed to copy %s to %s\n", argv[i], argv[argc - 1]);
-		}
-		rc = true;
+	bool rc = rz_file_copy(argv[1], argv[2]);
+	if (!rc) {
+		RZ_LOG_ERROR("Failed to copy %s to %s\n", argv[1], argv[2]);
 	}
-	return RZ_CMD_STATUS_OK;
+	return rc ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
 // cp.
@@ -155,4 +151,15 @@ RZ_IPI RzCmdStatus rz_cmd_shell_cd_handler(RzCore *core, int argc, const char **
 		}
 	}
 	return ret ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+}
+
+// cat
+RZ_IPI RzCmdStatus rz_cmd_shell_cat_handler(RzCore *core, int argc, const char **argv) {
+	const char *path = rz_str_trim_head_ro(argv[1]);
+	char *res = rz_syscmd_cat(path);
+	if (res) {
+		rz_cons_print(res);
+		free(res);
+	}
+	return res ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }

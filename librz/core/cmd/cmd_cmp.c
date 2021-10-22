@@ -11,7 +11,6 @@ static const char *help_msg_c[] = {
 	"c2", " [value]", "Compare a word from a math expression",
 	"c4", " [value]", "Compare a doubleword from a math expression",
 	"c8", " [value]", "Compare a quadword from a math expression",
-	"cat", " [file]", "Show contents of file (see pwd, ls)",
 	"cc", " [at]", "Compares in two hexdump columns of block size",
 	"ccc", " [at]", "Same as above, but only showing different lines",
 	"ccd", " [at]", "Compares in two disasm columns of block size",
@@ -500,23 +499,6 @@ RZ_IPI int rz_cmd_cmp(void *data, const char *input) {
 	const ut8 *block = core->block;
 
 	switch (*input) {
-	case 'a': // "cat"
-		if (input[1] == 't') {
-			const char *path = rz_str_trim_head_ro(input + 2);
-			if (*path == '$') {
-				const char *oldText = rz_cmd_alias_get(core->rcmd, path, 1);
-				if (oldText) {
-					rz_cons_printf("%s\n", oldText + 1);
-				}
-			} else {
-				char *res = rz_syscmd_cat(path);
-				if (res) {
-					rz_cons_print(res);
-					free(res);
-				}
-			}
-		}
-		break;
 	case 'w':
 		cmd_cmp_watcher(core, input + 1);
 		break;

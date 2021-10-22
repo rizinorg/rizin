@@ -119,3 +119,9 @@ commands:
     args:
       - name: dir
         type: RZ_CMD_ARG_TYPE_FILE
+  - name: cat
+    summary: Show contents of <file> (see pwd, ls)
+    cname: cmd_shell_cat
+    args:
+      - name: file
+        type: RZ_CMD_ARG_TYPE_FILE

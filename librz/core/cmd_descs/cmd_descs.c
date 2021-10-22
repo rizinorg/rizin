@@ -330,6 +330,7 @@ static const RzCmdDescArg cmd_shell_echo_args[2];
 static const RzCmdDescArg cmd_shell_cp_args[3];
 static const RzCmdDescArg cmd_shell_cp_ext_args[2];
 static const RzCmdDescArg cmd_shell_cd_args[2];
+static const RzCmdDescArg cmd_shell_cat_args[2];
 
 static const RzCmdDescHelp escl__help = {
 	.summary = "Run given commands as in system(3) or shows command history",
@@ -7562,6 +7563,19 @@ static const RzCmdDescHelp cmd_shell_cd_help = {
 	.args = cmd_shell_cd_args,
 };
 
+static const RzCmdDescArg cmd_shell_cat_args[] = {
+	{
+		.name = "file",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_shell_cat_help = {
+	.summary = "Show contents of <file> (see pwd, ls)",
+	.args = cmd_shell_cat_args,
+};
+
 RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *root_cd = rz_cmd_get_root(core->rcmd);
 	rz_cmd_batch_start(core->rcmd);
@@ -9176,5 +9190,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_shell_cd_cd = rz_cmd_desc_argv_new(core->rcmd, shell_cd, "cd", rz_cmd_shell_cd_handler, &cmd_shell_cd_help);
 	rz_warn_if_fail(cmd_shell_cd_cd);
+
+	RzCmdDesc *cmd_shell_cat_cd = rz_cmd_desc_argv_new(core->rcmd, shell_cd, "cat", rz_cmd_shell_cat_handler, &cmd_shell_cat_help);
+	rz_warn_if_fail(cmd_shell_cat_cd);
 	rz_cmd_batch_end(core->rcmd);
 }
