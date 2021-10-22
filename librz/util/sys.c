@@ -509,7 +509,20 @@ RZ_API char *rz_sys_getdir(void) {
 }
 
 RZ_API bool rz_sys_chdir(const char *s) {
-	rz_return_val_if_fail(s, 0);
+	rz_return_val_if_fail(s, false);
+	char *homepath = NULL;
+	if (s[0] == '~') {
+		if (strlen(s) == 1) {
+			homepath = rz_sys_getenv(RZ_SYS_HOME);
+		} else if (s[1] == '/') {
+			homepath = rz_str_home(s + 2);
+		}
+	}
+	if (homepath) {
+		int ret = chdir(homepath) == 0;
+		free(homepath);
+		return ret == 0;
+	}
 	return chdir(s) == 0;
 }
 
