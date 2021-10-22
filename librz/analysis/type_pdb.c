@@ -238,6 +238,8 @@ static RzType *parse_type_mfunction(const RzTypeDB *typedb, RzPdbTpiStream *stre
 	RzType *type = RZ_NEW0(RzType);
 	RzCallable *callable = RZ_NEW0(RzCallable);
 	if (!type || !callable) {
+		free(type);
+		free(callable);
 		return NULL;
 	}
 	type->kind = RZ_TYPE_KIND_CALLABLE;
