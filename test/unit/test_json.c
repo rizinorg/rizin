@@ -1005,7 +1005,7 @@ static int check_expected_58(RzJson *j) {
 		"\"str5\":\"\\\\?text\\\\?\",\"str\\t6\\\\\":\"text\\ntext\\ttext\","
 		"\"obj\":{\"KEY\":\"VAL\",\"obj\":{\"KEY\":\"VAL\"}}}";
 	char *jsonstr = rz_json_as_string(j);
-	mu_assert_streq(jsonstr, json_str, "RzJson as string");
+	mu_assert_streq_free(jsonstr, json_str, "RzJson as string");
 	return MU_PASSED;
 }
 
