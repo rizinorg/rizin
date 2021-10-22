@@ -161,6 +161,16 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 			if (rc == 1) {
 				rc = 2;
 			}
+		} else if (str_type == RZ_STRING_ENC_IBM037) {
+			rc = rz_str_ibm037_to_unicode(*(buf + needle - from), &r);
+		} else if (str_type == RZ_STRING_ENC_IBM290) {
+			rc = rz_str_ibm290_to_unicode(*(buf + needle - from), &r);
+		} else if (str_type == RZ_STRING_ENC_EBCDIC_ES) {
+			rc = rz_str_ebcdic_es_to_unicode(*(buf + needle - from), &r);
+		} else if (str_type == RZ_STRING_ENC_EBCDIC_UK) {
+			rc = rz_str_ebcdic_uk_to_unicode(*(buf + needle - from), &r);
+		} else if (str_type == RZ_STRING_ENC_EBCDIC_US) {
+			rc = rz_str_ebcdic_us_to_unicode(*(buf + needle - from), &r);
 		} else {
 			rc = rz_utf8_decode(buf + needle - from, to - needle, &r);
 			if (rc > 1) {
@@ -405,16 +415,12 @@ RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrS
 			} else {
 				int rc = rz_utf8_decode(ptr, size, NULL);
 				if (!rc) {
-					// if (can_be_ebcdic(ptr, size)) {
-					// 	if ()
-					// 	{
-					// 		/* code */
-					// 	}
-					// 	printf("ebcdic:%s!\n", buf);
-					// } else {
-					needle++;
-					continue;
-					// }
+					if (can_be_ebcdic(ptr, size)) {
+						str_type = RZ_STRING_ENC_IBM037;
+					} else {
+						needle++;
+						continue;
+					}
 				}
 				str_type = RZ_STRING_ENC_8BIT;
 			}
