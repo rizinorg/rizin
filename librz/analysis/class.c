@@ -1172,6 +1172,7 @@ RZ_API RzAnalysisClassErr rz_analysis_class_vtable_set(RzAnalysis *analysis, con
 
 	vtable->id = malloc(16);
 	if (!vtable->id) {
+		free(content);
 		return RZ_ANALYSIS_CLASS_ERR_OTHER;
 	}
 	RzAnalysisClassErr err = rz_analysis_class_add_attr_unique(analysis, class_name, RZ_ANALYSIS_CLASS_ATTR_TYPE_VTABLE, content, vtable->id, 16);
