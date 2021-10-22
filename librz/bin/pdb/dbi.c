@@ -58,35 +58,43 @@ static bool parse_dbi_stream_ex_header(RzPdbDbiStream *s, RzBuffer *buf) {
 	}
 	ut32 ex_size = s->hdr.mod_info_size;
 	ut32 read_len = 0;
+	bool result = false;
 	while (read_len < ex_size) {
 		ut32 initial_seek = rz_buf_tell(buf);
 		RzPdbDbiStreamExHdr *hdr = RZ_NEW0(RzPdbDbiStreamExHdr);
 		if (!hdr) {
-			return false;
+			result = false;
+			goto err;
 		}
 		if (!rz_buf_read_le32(buf, &hdr->unknown)) {
-			return false;
+			result = false;
+			goto err;
 		}
 		if (!parse_dbi_stream_section_entry(hdr, buf)) {
-			return false;
+			result = false;
+			goto err;
 		}
 		if (!rz_buf_read_le16(buf, &hdr->Flags) ||
 			!rz_buf_read_le16(buf, &hdr->ModuleSymStream)) {
-			return false;
+			result = false;
+			goto err;
 		}
 		if (!rz_buf_read_le32(buf, &hdr->SymByteSize) ||
 			!rz_buf_read_le32(buf, &hdr->C11ByteSize) ||
 			!rz_buf_read_le32(buf, &hdr->C13ByteSize)) {
-			return false;
+			result = false;
+			goto err;
 		}
 		if (!rz_buf_read_le16(buf, &hdr->SourceFileCount) ||
 			!rz_buf_read_le16(buf, (ut16 *)&hdr->Padding)) {
-			return false;
+			result = false;
+			goto err;
 		}
 		if (!rz_buf_read_le32(buf, &hdr->Unused2) ||
 			!rz_buf_read_le32(buf, &hdr->SourceFileNameIndex) ||
 			!rz_buf_read_le32(buf, &hdr->PdbFilePathNameIndex)) {
-			return false;
+			result = false;
+			goto err;
 		}
 
 		hdr->ModuleName = rz_buf_get_string(buf, rz_buf_tell(buf));
@@ -107,6 +115,11 @@ static bool parse_dbi_stream_ex_header(RzPdbDbiStream *s, RzBuffer *buf) {
 			read_len += remain;
 		}
 		rz_list_append(s->ex_hdrs, hdr);
+	err:
+		if (!result) {
+			free(hdr);
+			return false;
+		}
 	}
 	if (read_len != ex_size) {
 		return false;
