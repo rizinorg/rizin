@@ -155,8 +155,24 @@ RZ_IPI RzCmdStatus rz_cmd_shell_cd_handler(RzCore *core, int argc, const char **
 
 // cat
 RZ_IPI RzCmdStatus rz_cmd_shell_cat_handler(RzCore *core, int argc, const char **argv) {
-	const char *path = rz_str_trim_head_ro(argv[1]);
+	const char *path = argv[1];
 	char *res = rz_syscmd_cat(path);
+	if (res) {
+		rz_cons_print(res);
+		free(res);
+	}
+	return res ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_shell_mv_handler(RzCore *core, int argc, const char **argv) {
+	char *input = rz_str_newf("mv %s %s", argv[0], argv[1]);
+	int ec = rz_sys_system(input);
+	free(input);
+	return ec == 0 ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_shell_mkdir_handler(RzCore *core, int argc, const char **argv) {
+	char *res = rz_syscmd_mkdir(argv[1]);
 	if (res) {
 		rz_cons_print(res);
 		free(res);

@@ -125,3 +125,17 @@ commands:
     args:
       - name: file
         type: RZ_CMD_ARG_TYPE_FILE
+  - name: mv
+    summary: Move <src> file to <dst>
+    cname: cmd_shell_mv
+    args:
+      - name: src
+        type: RZ_CMD_ARG_TYPE_FILE
+      - name: dst
+        type: RZ_CMD_ARG_TYPE_STRING
+  - name: mkdir
+    summary: Create a directory <dir>
+    cname: cmd_shell_mkdir
+    args:
+      - name: dir
+        type: RZ_CMD_ARG_TYPE_STRING

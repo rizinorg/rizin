@@ -180,15 +180,14 @@ RZ_API void rz_sys_backtrace(void);
 #endif
 
 /* syscmd */
-RZ_API char *rz_syscmd_ls(const char *input);
-RZ_API char *rz_syscmd_cat(const char *file);
-RZ_API char *rz_syscmd_mkdir(const char *dir);
-RZ_API bool rz_syscmd_mv(const char *input);
-RZ_API char *rz_syscmd_uniq(const char *file);
-RZ_API char *rz_syscmd_head(const char *file, int count);
-RZ_API char *rz_syscmd_tail(const char *file, int count);
-RZ_API char *rz_syscmd_join(const char *file1, const char *file2);
-RZ_API char *rz_syscmd_sort(const char *file);
+RZ_API RZ_OWN char *rz_syscmd_ls(const char *input);
+RZ_API RZ_OWN char *rz_syscmd_cat(const char *file);
+RZ_API RZ_OWN char *rz_syscmd_mkdir(const char *dir);
+RZ_API RZ_OWN char *rz_syscmd_uniq(const char *file);
+RZ_API RZ_OWN char *rz_syscmd_head(const char *file, int count);
+RZ_API RZ_OWN char *rz_syscmd_tail(const char *file, int count);
+RZ_API RZ_OWN char *rz_syscmd_join(const char *file1, const char *file2);
+RZ_API RZ_OWN char *rz_syscmd_sort(const char *file);
 
 #ifdef __cplusplus
 }

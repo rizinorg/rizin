@@ -360,7 +360,6 @@ RZ_IPI RzCmdStatus rz_cmd_info_dump_strings_handler(RzCore *core, int argc, cons
 RZ_IPI RzCmdStatus rz_cmd_info_purge_string_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_info_guess_size_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI int rz_cmd_kuery(void *data, const char *input);
-RZ_IPI int rz_cmd_m(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_plugins_load_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_plugins_unload_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_plugins_lang_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
@@ -554,6 +553,8 @@ RZ_IPI RzCmdStatus rz_cmd_shell_cp_handler(RzCore *core, int argc, const char **
 RZ_IPI RzCmdStatus rz_cmd_shell_cp_ext_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_shell_cd_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_shell_cat_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_cmd_shell_mv_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_cmd_shell_mkdir_handler(RzCore *core, int argc, const char **argv);
 
 // Main function that initialize the entire commands tree
 RZ_IPI void rzshell_cmddescs_init(RzCore *core);

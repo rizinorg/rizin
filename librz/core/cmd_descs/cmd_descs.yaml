@@ -216,10 +216,6 @@ commands:
     cname: cmd_kuery
     summary: Run sdb-query
     type: RZ_CMD_DESC_TYPE_OLDINPUT
-  - name: m
-    cname: cmd_m
-    summary: Make directories and move files
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: L
     summary: List, unload, load rizin plugins
     subcommands: cmd_plugins

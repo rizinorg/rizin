@@ -331,6 +331,8 @@ static const RzCmdDescArg cmd_shell_cp_args[3];
 static const RzCmdDescArg cmd_shell_cp_ext_args[2];
 static const RzCmdDescArg cmd_shell_cd_args[2];
 static const RzCmdDescArg cmd_shell_cat_args[2];
+static const RzCmdDescArg cmd_shell_mv_args[3];
+static const RzCmdDescArg cmd_shell_mkdir_args[2];
 
 static const RzCmdDescHelp escl__help = {
 	.summary = "Run given commands as in system(3) or shows command history",
@@ -4684,10 +4686,6 @@ static const RzCmdDescHelp cmd_kuery_help = {
 	.summary = "Run sdb-query",
 };
 
-static const RzCmdDescHelp cmd_m_help = {
-	.summary = "Make directories and move files",
-};
-
 static const RzCmdDescHelp L_help = {
 	.summary = "List, unload, load rizin plugins",
 };
@@ -7576,6 +7574,39 @@ static const RzCmdDescHelp cmd_shell_cat_help = {
 	.args = cmd_shell_cat_args,
 };
 
+static const RzCmdDescArg cmd_shell_mv_args[] = {
+	{
+		.name = "src",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{
+		.name = "dst",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_shell_mv_help = {
+	.summary = "Move <src> file to <dst>",
+	.args = cmd_shell_mv_args,
+};
+
+static const RzCmdDescArg cmd_shell_mkdir_args[] = {
+	{
+		.name = "dir",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_shell_mkdir_help = {
+	.summary = "Create a directory <dir>",
+	.args = cmd_shell_mkdir_args,
+};
+
 RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *root_cd = rz_cmd_get_root(core->rcmd);
 	rz_cmd_batch_start(core->rcmd);
@@ -8606,9 +8637,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_kuery_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "k", rz_cmd_kuery, &cmd_kuery_help);
 	rz_warn_if_fail(cmd_kuery_cd);
 
-	RzCmdDesc *cmd_m_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "m", rz_cmd_m, &cmd_m_help);
-	rz_warn_if_fail(cmd_m_cd);
-
 	RzCmdDesc *L_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "L", rz_plugins_load_handler, &plugins_load_help, &L_help);
 	rz_warn_if_fail(L_cd);
 	RzCmdDesc *plugins_unload_cd = rz_cmd_desc_argv_new(core->rcmd, L_cd, "L-", rz_plugins_unload_handler, &plugins_unload_help);
@@ -9193,5 +9221,11 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_shell_cat_cd = rz_cmd_desc_argv_new(core->rcmd, shell_cd, "cat", rz_cmd_shell_cat_handler, &cmd_shell_cat_help);
 	rz_warn_if_fail(cmd_shell_cat_cd);
+
+	RzCmdDesc *cmd_shell_mv_cd = rz_cmd_desc_argv_new(core->rcmd, shell_cd, "mv", rz_cmd_shell_mv_handler, &cmd_shell_mv_help);
+	rz_warn_if_fail(cmd_shell_mv_cd);
+
+	RzCmdDesc *cmd_shell_mkdir_cd = rz_cmd_desc_argv_new(core->rcmd, shell_cd, "mkdir", rz_cmd_shell_mkdir_handler, &cmd_shell_mkdir_help);
+	rz_warn_if_fail(cmd_shell_mkdir_cd);
 	rz_cmd_batch_end(core->rcmd);
 }

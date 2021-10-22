@@ -203,8 +203,6 @@ static const char *help_msg_u[] = {
 	"uw", "", "alias for wc (requires: e io.cache=true)",
 	"us", "", "alias for s- (seek history)",
 	"uc", "", "undo core commands (uc?, ucl, uc*, ..)",
-	"uniq", "", "filter rows to avoid duplicates",
-	"uname", "", "uname - show system information",
 	NULL
 };
 
@@ -680,49 +678,6 @@ RZ_API bool rz_core_run_script(RzCore *core, const char *file) {
 	}
 	free(rz_list_pop(core->scriptstack));
 	return ret;
-}
-
-RZ_IPI int rz_cmd_m(void *data, const char *input) {
-	switch (*input) {
-	case '?': // "m?"
-		eprintf("Usage: m[kv] # mkdir to create directory, mv to move a file\n");
-		break;
-	case 'k': { // "mkdir"
-		char *res = rz_syscmd_mkdir(input);
-		if (res) {
-			rz_cons_print(res);
-			free(res);
-		}
-		break;
-	}
-	case 'v': // "mv"
-		return rz_syscmd_mv(input) ? 1 : 0;
-		break;
-	}
-	return 0;
-}
-
-RZ_IPI int rz_cmd_ls(void *data, const char *input) { // "ls"
-	const char *arg = strchr(input, ' ');
-	if (arg) {
-		arg = rz_str_trim_head_ro(arg + 1);
-	}
-	switch (*input) {
-	case '?': // "l?"
-		eprintf("Usage: ls [path] # ls to list files\n");
-		break;
-	default: // "ls"
-		if (!arg) {
-			arg = "";
-		}
-		char *res = rz_syscmd_ls(arg);
-		if (res) {
-			rz_cons_print(res);
-			free(res);
-		}
-		break;
-	}
-	return 0;
 }
 
 RZ_IPI int rz_cmd_interpret(void *data, const char *input) {
@@ -6083,8 +6038,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "d", "debugger operations", rz_cmd_debug },
 		{ "f", "get/set flags", rz_cmd_flag },
 		{ "k", "perform sdb query", rz_cmd_kuery },
-		{ "ls", "list files and directories", rz_cmd_ls },
-		{ "m", "make directory and move files", rz_cmd_m },
 		{ "o", "open or map file", rz_cmd_open },
 		{ "p", "print current block", rz_cmd_print },
 		{ "q", "exit program session", rz_cmd_quit },
