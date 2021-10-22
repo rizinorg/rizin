@@ -152,6 +152,7 @@ RZ_IPI RzPdbTpiType *parse_simple_type(RzPdbTpiStream *stream, ut32 idx) {
 	Tpi_LF_SimpleType *simple_type = RZ_NEW0(Tpi_LF_SimpleType);
 	if (!simple_type) {
 		RZ_LOG_ERROR("Error allocating memory.\n");
+		free(type);
 		return NULL;
 	}
 	type->type_data = simple_type;
