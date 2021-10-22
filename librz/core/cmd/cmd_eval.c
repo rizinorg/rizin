@@ -303,7 +303,7 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_load_next_theme_handler(RzCore *core, int a
 
 RZ_IPI RzCmdStatus rz_cmd_eval_color_highlight_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	RzCmdStateOutput state = { 0 };
-	rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
+	rz_cmd_state_output_init(&state, mode);
 	rz_core_meta_print_list_all(core, RZ_META_TYPE_HIGHLIGHT, &state);
 	rz_cmd_state_output_print(&state);
 	rz_cmd_state_output_fini(&state);
