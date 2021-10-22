@@ -145,6 +145,7 @@ RZ_API void rz_bin_info_free(RzBinInfo *rb) {
 	free(rb->cpu);
 	free(rb->machine);
 	free(rb->os);
+	free(rb->features);
 	free(rb->subsystem);
 	free(rb->default_cc);
 	free(rb->rpath);

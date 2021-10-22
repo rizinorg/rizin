@@ -2,7 +2,6 @@
 #define RZ_LIST_H
 
 #include <rz_types.h>
-#include <rz_flist.h>
 #include <sdb.h>
 
 #ifdef __cplusplus
@@ -32,12 +31,6 @@ typedef struct rz_list_range_t {
 
 // RzListComparator should return -1, 0, 1 to indicate "value < list_data", "value == list_data", "value > list_data".
 typedef int (*RzListComparator)(const void *value, const void *list_data);
-
-#define ROFList_Parent RzList
-typedef struct rz_oflist_t {
-	ROFList_Parent super; // super class
-	RFList *array; // statical readonly cache of linked list as a pointer array
-} ROFList;
 
 #ifdef RZ_API
 

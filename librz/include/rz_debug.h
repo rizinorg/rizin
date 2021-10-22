@@ -381,7 +381,7 @@ typedef struct rz_debug_plugin_t {
 	RzList *(*threads)(RzDebug *dbg, int pid);
 	RzList *(*pids)(RzDebug *dbg, int pid);
 	RzList *(*tids)(RzDebug *dbg, int pid);
-	RFList (*backtrace)(RzDebug *dbg, int count);
+	RzList (*backtrace)(RzDebug *dbg, int count);
 	/* flow */
 	int (*stop)(RzDebug *dbg);
 	int (*step)(RzDebug *dbg);

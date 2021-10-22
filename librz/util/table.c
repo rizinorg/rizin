@@ -869,11 +869,6 @@ static int __resolveOperation(const char *op) {
 	return -1;
 }
 
-static void __table_column_free(void *_col) {
-	RzTableColumn *col = (RzTableColumn *)_col;
-	free(col);
-}
-
 RZ_API void rz_table_columns(RzTable *t, RzList *col_names) {
 	// 1 bool per OLD column to indicate whether it should be freed (masked out)
 	bool *free_cols = malloc(sizeof(bool) * rz_list_length(t->cols));
@@ -974,7 +969,7 @@ RZ_API void rz_table_filter_columns(RzTable *t, RzList *list) {
 	const char *col;
 	RzListIter *iter;
 	RzList *cols = t->cols;
-	t->cols = rz_list_newf(__table_column_free);
+	t->cols = rz_list_newf(rz_table_column_free);
 	rz_list_foreach (list, iter, col) {
 		int ncol = rz_table_column_nth(t, col);
 		if (ncol != -1) {
