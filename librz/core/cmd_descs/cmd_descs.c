@@ -207,7 +207,6 @@ static const RzCmdDescArg cmd_info_kuery_args[2];
 static const RzCmdDescArg cmd_info_plugins_args[2];
 static const RzCmdDescArg cmd_info_sections_args[2];
 static const RzCmdDescArg cmd_info_segments_args[2];
-static const RzCmdDescArg ls_args[2];
 static const RzCmdDescArg plugins_load_args[2];
 static const RzCmdDescArg plugins_unload_args[2];
 static const RzCmdDescArg plugins_debug_print_args[2];
@@ -223,7 +222,6 @@ static const RzCmdDescArg resize_args[2];
 static const RzCmdDescArg resize_remove_args[2];
 static const RzCmdDescArg resize_insert_args[2];
 static const RzCmdDescArg rebase_args[2];
-static const RzCmdDescArg remove_file_args[2];
 static const RzCmdDescArg seek_args[2];
 static const RzCmdDescArg seek_padded_args[2];
 static const RzCmdDescArg seek_base_args[2];
@@ -236,7 +234,6 @@ static const RzCmdDescArg seek_next_args[2];
 static const RzCmdDescArg seek_prev_args[2];
 static const RzCmdDescArg seek_opcode_args[2];
 static const RzCmdDescArg seek_register_args[2];
-static const RzCmdDescArg sleep_args[2];
 static const RzCmdDescArg type_args[2];
 static const RzCmdDescArg type_del_args[2];
 static const RzCmdDescArg type_list_c_args[2];
@@ -273,8 +270,6 @@ static const RzCmdDescArg type_union_c_args[2];
 static const RzCmdDescArg type_union_c_nl_args[2];
 static const RzCmdDescArg type_xrefs_list_args[2];
 static const RzCmdDescArg type_xrefs_function_args[2];
-static const RzCmdDescArg uniq_args[2];
-static const RzCmdDescArg uname_args[2];
 static const RzCmdDescArg write_args[2];
 static const RzCmdDescArg write_bits_args[2];
 static const RzCmdDescArg write_unset_bits_args[2];
@@ -327,6 +322,11 @@ static const RzCmdDescArg zign_space_add_args[2];
 static const RzCmdDescArg zign_space_rename_args[2];
 static const RzCmdDescArg zign_info_range_args[3];
 static const RzCmdDescArg env_args[3];
+static const RzCmdDescArg ls_args[2];
+static const RzCmdDescArg remove_file_args[2];
+static const RzCmdDescArg sleep_args[2];
+static const RzCmdDescArg uniq_args[2];
+static const RzCmdDescArg uname_args[2];
 
 static const RzCmdDescHelp escl__help = {
 	.summary = "Run given commands as in system(3) or shows command history",
@@ -4694,21 +4694,6 @@ static const RzCmdDescHelp cmd_kuery_help = {
 	.summary = "Run sdb-query",
 };
 
-static const RzCmdDescArg ls_args[] = {
-	{
-		.name = "arg",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_ARRAY,
-		.optional = true,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp ls_help = {
-	.summary = "List files and directories",
-	.args = ls_args,
-};
-
 static const RzCmdDescHelp cmd_m_help = {
 	.summary = "Make directories and move files",
 };
@@ -5174,19 +5159,6 @@ static const RzCmdDescHelp rebase_help = {
 	.args = rebase_args,
 };
 
-static const RzCmdDescArg remove_file_args[] = {
-	{
-		.name = "file",
-		.type = RZ_CMD_ARG_TYPE_FILE,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp remove_file_help = {
-	.summary = "Remove file",
-	.args = remove_file_args,
-};
-
 static const RzCmdDescArg resize_human_args[] = {
 	{ 0 },
 };
@@ -5446,19 +5418,6 @@ static const RzCmdDescArg seek_register_args[] = {
 static const RzCmdDescHelp seek_register_help = {
 	.summary = "Seek to register",
 	.args = seek_register_args,
-};
-
-static const RzCmdDescArg sleep_args[] = {
-	{
-		.name = "seconds",
-		.type = RZ_CMD_ARG_TYPE_NUM,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp sleep_help = {
-	.summary = "Sleep for the specified amount of seconds",
-	.args = sleep_args,
 };
 
 static const RzCmdDescHelp t_help = {
@@ -6101,34 +6060,6 @@ static const RzCmdDescArg type_xrefs_list_all_args[] = {
 static const RzCmdDescHelp type_xrefs_list_all_help = {
 	.summary = "List all types used by any function",
 	.args = type_xrefs_list_all_args,
-};
-
-static const RzCmdDescArg uniq_args[] = {
-	{
-		.name = "filename",
-		.type = RZ_CMD_ARG_TYPE_FILE,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp uniq_help = {
-	.summary = "List uniq strings in file",
-	.args = uniq_args,
-};
-
-static const RzCmdDescArg uname_args[] = {
-	{
-		.name = "r",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_OPTION,
-		.optional = true,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp uname_help = {
-	.summary = "Provide system info",
-	.args = uname_args,
 };
 
 static const RzCmdDescHelp cmd_visual_help = {
@@ -7513,6 +7444,75 @@ static const RzCmdDescHelp cmd_exit_help = {
 	.args = cmd_exit_args,
 };
 
+static const RzCmdDescArg ls_args[] = {
+	{
+		.name = "arg",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_ARRAY,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp ls_help = {
+	.summary = "List files and directories",
+	.args = ls_args,
+};
+
+static const RzCmdDescArg remove_file_args[] = {
+	{
+		.name = "file",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp remove_file_help = {
+	.summary = "Remove file",
+	.args = remove_file_args,
+};
+
+static const RzCmdDescArg sleep_args[] = {
+	{
+		.name = "seconds",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp sleep_help = {
+	.summary = "Sleep for the specified amount of seconds",
+	.args = sleep_args,
+};
+
+static const RzCmdDescArg uniq_args[] = {
+	{
+		.name = "filename",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp uniq_help = {
+	.summary = "List uniq strings in file",
+	.args = uniq_args,
+};
+
+static const RzCmdDescArg uname_args[] = {
+	{
+		.name = "r",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_OPTION,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp uname_help = {
+	.summary = "Provide system info",
+	.args = uname_args,
+};
+
 RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *root_cd = rz_cmd_get_root(core->rcmd);
 	rz_cmd_batch_start(core->rcmd);
@@ -8546,9 +8546,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_kuery_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "k", rz_cmd_kuery, &cmd_kuery_help);
 	rz_warn_if_fail(cmd_kuery_cd);
 
-	RzCmdDesc *ls_cd = rz_cmd_desc_argv_new(core->rcmd, root_cd, "ls", rz_ls_handler, &ls_help);
-	rz_warn_if_fail(ls_cd);
-
 	RzCmdDesc *cmd_m_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "m", rz_cmd_m, &cmd_m_help);
 	rz_warn_if_fail(cmd_m_cd);
 
@@ -8667,9 +8664,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *rebase_cd = rz_cmd_desc_argv_new(core->rcmd, r_cd, "rb", rz_rebase_handler, &rebase_help);
 	rz_warn_if_fail(rebase_cd);
 
-	RzCmdDesc *remove_file_cd = rz_cmd_desc_argv_new(core->rcmd, r_cd, "rm", rz_remove_file_handler, &remove_file_help);
-	rz_warn_if_fail(remove_file_cd);
-
 	RzCmdDesc *resize_human_cd = rz_cmd_desc_argv_new(core->rcmd, r_cd, "rh", rz_resize_human_handler, &resize_human_help);
 	rz_warn_if_fail(resize_human_cd);
 
@@ -8733,9 +8727,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *seek_register_cd = rz_cmd_desc_argv_new(core->rcmd, s_cd, "sr", rz_seek_register_handler, &seek_register_help);
 	rz_warn_if_fail(seek_register_cd);
-
-	RzCmdDesc *sleep_cd = rz_cmd_desc_argv_new(core->rcmd, s_cd, "sleep", rz_sleep_handler, &sleep_help);
-	rz_warn_if_fail(sleep_cd);
 
 	RzCmdDesc *t_cd = rz_cmd_desc_group_modes_new(core->rcmd, root_cd, "t", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_type_handler, &type_help, &t_help);
 	rz_warn_if_fail(t_cd);
@@ -8852,12 +8843,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *type_xrefs_list_all_cd = rz_cmd_desc_argv_new(core->rcmd, tx_cd, "txl", rz_type_xrefs_list_all_handler, &type_xrefs_list_all_help);
 	rz_warn_if_fail(type_xrefs_list_all_cd);
-
-	RzCmdDesc *uniq_cd = rz_cmd_desc_argv_new(core->rcmd, root_cd, "uniq", rz_uniq_handler, &uniq_help);
-	rz_warn_if_fail(uniq_cd);
-
-	RzCmdDesc *uname_cd = rz_cmd_desc_argv_new(core->rcmd, root_cd, "uname", rz_uname_handler, &uname_help);
-	rz_warn_if_fail(uname_cd);
 
 	RzCmdDesc *cmd_visual_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "V", rz_cmd_visual, &cmd_visual_help);
 	rz_warn_if_fail(cmd_visual_cd);
@@ -9118,5 +9103,20 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_exit_cd = rz_cmd_desc_argv_new(core->rcmd, shell_cd, "exit", rz_cmd_exit_handler, &cmd_exit_help);
 	rz_warn_if_fail(cmd_exit_cd);
+
+	RzCmdDesc *ls_cd = rz_cmd_desc_argv_new(core->rcmd, shell_cd, "ls", rz_ls_handler, &ls_help);
+	rz_warn_if_fail(ls_cd);
+
+	RzCmdDesc *remove_file_cd = rz_cmd_desc_argv_new(core->rcmd, shell_cd, "rm", rz_remove_file_handler, &remove_file_help);
+	rz_warn_if_fail(remove_file_cd);
+
+	RzCmdDesc *sleep_cd = rz_cmd_desc_argv_new(core->rcmd, shell_cd, "sleep", rz_sleep_handler, &sleep_help);
+	rz_warn_if_fail(sleep_cd);
+
+	RzCmdDesc *uniq_cd = rz_cmd_desc_argv_new(core->rcmd, shell_cd, "uniq", rz_uniq_handler, &uniq_help);
+	rz_warn_if_fail(uniq_cd);
+
+	RzCmdDesc *uname_cd = rz_cmd_desc_argv_new(core->rcmd, shell_cd, "uname", rz_uname_handler, &uname_help);
+	rz_warn_if_fail(uname_cd);
 	rz_cmd_batch_end(core->rcmd);
 }

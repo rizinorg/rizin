@@ -58,3 +58,37 @@ commands:
     cname: cmd_exit
     summary: Exit Rizin
     args: []
+  - name: ls
+    cname: ls
+    summary: List files and directories
+    args:
+      - name: arg
+        type: RZ_CMD_ARG_TYPE_STRING
+        flags: RZ_CMD_ARG_FLAG_ARRAY
+        optional: true
+  - name: rm
+    cname: remove_file
+    summary: Remove file
+    args:
+      - name: file
+        type: RZ_CMD_ARG_TYPE_FILE
+  - name: sleep
+    cname: sleep
+    summary: Sleep for the specified amount of seconds
+    args:
+      - name: seconds
+        type: RZ_CMD_ARG_TYPE_NUM
+  - name: uniq
+    cname: uniq
+    summary: List uniq strings in file
+    args:
+      - name: filename
+        type: RZ_CMD_ARG_TYPE_FILE
+  - name: uname
+    cname: uname
+    summary: Provide system info
+    args:
+      - name: r
+        type: RZ_CMD_ARG_TYPE_STRING
+        flags: RZ_CMD_ARG_FLAG_OPTION
+        optional: true

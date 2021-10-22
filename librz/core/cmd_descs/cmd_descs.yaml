@@ -216,14 +216,6 @@ commands:
     cname: cmd_kuery
     summary: Run sdb-query
     type: RZ_CMD_DESC_TYPE_OLDINPUT
-  - name: ls
-    cname: ls
-    summary: List files and directories
-    args:
-      - name: arg
-        type: RZ_CMD_ARG_TYPE_STRING
-        flags: RZ_CMD_ARG_FLAG_ARRAY
-        optional: true
   - name: m
     cname: cmd_m
     summary: Make directories and move files
@@ -255,20 +247,6 @@ commands:
   - name: t
     summary: Types, noreturn, signatures, C parser and more
     subcommands: cmd_type
-  - name: uniq
-    cname: uniq
-    summary: List uniq strings in file
-    args:
-      - name: filename
-        type: RZ_CMD_ARG_TYPE_FILE
-  - name: uname
-    cname: uname
-    summary: Provide system info
-    args:
-      - name: r
-        type: RZ_CMD_ARG_TYPE_STRING
-        flags: RZ_CMD_ARG_FLAG_OPTION
-        optional: true
   - name: V
     cname: cmd_visual
     summary: Enter visual mode

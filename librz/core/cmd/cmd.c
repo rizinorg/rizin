@@ -342,30 +342,6 @@ static int rz_core_cmd_nullcallback(void *data) {
 	return 1;
 }
 
-RZ_IPI RzCmdStatus rz_uniq_handler(RzCore *core, int argc, const char **argv) {
-	char *res = rz_syscmd_uniq(argv[1]);
-	if (!res) {
-		return RZ_CMD_STATUS_ERROR;
-	}
-	rz_cons_print(res);
-	free(res);
-	return RZ_CMD_STATUS_OK;
-}
-
-RZ_IPI RzCmdStatus rz_uname_handler(RzCore *core, int argc, const char **argv) {
-	RSysInfo *si = rz_sys_info();
-	if (!si) {
-		return RZ_CMD_STATUS_ERROR;
-	}
-	rz_cons_printf("%s", si->sysname);
-	if (argc > 1 && strcmp(argv[1], "-r") == 0) {
-		rz_cons_printf(" %s", si->release);
-	}
-	rz_cons_newline();
-	rz_sys_info_free(si);
-	return RZ_CMD_STATUS_OK;
-}
-
 RZ_IPI int rz_cmd_alias(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	if (*input == '?') {
@@ -747,18 +723,6 @@ RZ_IPI int rz_cmd_ls(void *data, const char *input) { // "ls"
 		break;
 	}
 	return 0;
-}
-
-RZ_IPI RzCmdStatus rz_ls_handler(RzCore *core, int argc, const char **argv) {
-	char *arg = rz_str_array_join(argv + 1, argc - 1, " ");
-	char *res = rz_syscmd_ls(arg);
-	if (!res) {
-		return RZ_CMD_STATUS_ERROR;
-	}
-	rz_cons_print(res);
-	free(res);
-	free(arg);
-	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI int rz_cmd_interpret(void *data, const char *input) {
@@ -6089,13 +6053,6 @@ static void cmd_descriptor_init(RzCore *core) {
 			x = x->sub[*p];
 		}
 	}
-}
-
-RZ_IPI RzCmdStatus rz_sleep_handler(RzCore *core, int argc, const char **argv) {
-	void *bed = rz_cons_sleep_begin();
-	rz_sys_sleep(atoi(argv[1] + 1));
-	rz_cons_sleep_end(bed);
-	return RZ_CMD_STATUS_OK;
 }
 
 static int core_cmd0_wrapper(void *core, const char *cmd) {
