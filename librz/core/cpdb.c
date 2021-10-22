@@ -221,11 +221,9 @@ static void pdb_set_symbols(const RzCore *core, const RzPdb *pdb, const ut64 img
 			char *fname = rz_str_newf("pdb.%s", filtered_name);
 			ut64 addr = (ut64)(img_base + rz_bin_pdb_omap_remap(omap_stream, gdata->offset + sctn_header->virtual_address));
 			RzFlagItem *item = rz_flag_set(core->flags, fname, addr, 0);
-			if (!item) {
-				free(filtered_name);
-				free(name);
+			if (item) {
+				rz_flag_item_set_realname(item, name);
 			}
-			rz_flag_item_set_realname(item, name);
 			free(filtered_name);
 			free(name);
 		}
