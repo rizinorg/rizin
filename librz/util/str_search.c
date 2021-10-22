@@ -284,13 +284,12 @@ static inline bool can_be_utf32_be(ut8 *buf, ut64 size) {
 }
 
 static inline bool can_be_ebcdic(ut8 *buf, ut64 size) {
-	bool flag = true;
 	for (size_t i = 0; i < size; i++) {
 		if (buf[i] >= 0x20 && buf[i] <= 0x3f) {
-			flag = false;
+			return false;
 		}
 	}
-	return flag;
+	return true;
 }
 
 /**
