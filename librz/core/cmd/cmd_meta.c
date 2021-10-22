@@ -44,6 +44,7 @@ static void meta_variable_comment_print(RzCore *Core, RzAnalysisVar *var, RzCmdS
 			return;
 		}
 		rz_cons_printf("\"Cv%c %s base64:%s @ 0x%08" PFMT64x "\"\n", var->kind, var->name, b64, var->fcn->addr);
+		free(b64);
 		break;
 	}
 	default:
