@@ -1111,7 +1111,7 @@ static Tpi_LF_FieldList *parse_type_fieldlist(RzBuffer *buf, ut16 len) {
 		if (!rz_buf_read_le16(buf, &type->leaf_type)) {
 			RZ_FREE(type);
 			rz_list_free(fieldlist->substructs);
-			return NULL;
+			goto error;
 		}
 		read_len += sizeof(ut16);
 		switch (type->leaf_type) {
