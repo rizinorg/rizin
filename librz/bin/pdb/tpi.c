@@ -334,7 +334,7 @@ RZ_IPI RzPdbTpiType *parse_simple_type(RzPdbTpiStream *stream, ut32 idx) {
 	default:
 		break;
 	}
-	simple_type->type = rz_strbuf_get(buf);
+	simple_type->type = rz_strbuf_drain(buf);
 	// We just insert once
 	rz_rbtree_insert(&stream->types, &type->type_index, &type->rb, tpi_type_node_cmp, NULL);
 	return type;
