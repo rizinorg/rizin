@@ -301,8 +301,6 @@ RZ_IPI RzCmdStatus rz_eval_editor_handler(RzCore *core, int argc, const char **a
 RZ_IPI RzCmdStatus rz_eval_readonly_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_eval_spaces_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_eval_type_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI RzCmdStatus rz_env_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI RzCmdStatus rz_cmd_exit_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_cmd_flag(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_egg_compile_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_egg_config_handler(RzCore *core, int argc, const char **argv);
@@ -550,6 +548,8 @@ RZ_IPI RzCmdStatus rz_zign_space_add_handler(RzCore *core, int argc, const char 
 RZ_IPI RzCmdStatus rz_zign_space_rename_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_zign_info_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 RZ_IPI RzCmdStatus rz_zign_info_range_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_env_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_cmd_exit_handler(RzCore *core, int argc, const char **argv);
 
 // Main function that initialize the entire commands tree
 RZ_IPI void rzshell_cmddescs_init(RzCore *core);

@@ -97,6 +97,7 @@ static bool lastcmd_repeat(RzCore *core, int next);
 #include "cmd_magic.c"
 #include "cmd_seek.c"
 #include "cmd_search.c" // defines incDigitBuffer... used by cmd_print
+#include "cmd_shell.c"
 #include "cmd_print.c"
 #include "cmd_help.c"
 #include "cmd_remote.c"
@@ -1307,11 +1308,6 @@ RZ_IPI int rz_cmd_env(void *data, const char *input) {
 		ret = rz_core_cmdf(core, "env %s", input);
 	}
 	return ret;
-}
-
-RZ_IPI RzCmdStatus rz_cmd_exit_handler(RzCore *core, int argc, const char **argv) {
-	core->num->value = 0LL;
-	return RZ_CMD_STATUS_EXIT;
 }
 
 RZ_IPI int rz_cmd_last(void *data, const char *input) {

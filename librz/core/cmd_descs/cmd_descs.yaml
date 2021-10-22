@@ -199,10 +199,6 @@ commands:
   - name: e
     summary: List/get/set config evaluable vars
     subcommands: cmd_eval
-  - name: exit
-    cname: cmd_exit
-    summary: Exit Rizin
-    args: []
   - name: f
     cname: cmd_flag
     summary: Manage flags
@@ -630,3 +626,6 @@ commands:
             arg_str: ":addr/cols/name/nbbs:nbbs/sort/dec:nbbs/gt/1:nbbs/lt/10:fancy"
             comment: Show only the address, name and number of basic blocks of the identified functions
               with more than 1 block but less than 10, sorted decrementally by number of blocks.
+  - name: shell
+    summary: Common shell commands
+    subcommands: cmd_shell

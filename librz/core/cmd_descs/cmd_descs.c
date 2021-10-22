@@ -15,7 +15,6 @@ static const RzCmdDescDetail cmd_debug_list_bp_details[2];
 static const RzCmdDescDetail cmd_debug_add_cond_bp_details[2];
 static const RzCmdDescDetail cmd_debug_add_watchpoint_details[2];
 static const RzCmdDescDetail eval_getset_details[2];
-static const RzCmdDescDetail env_details[3];
 static const RzCmdDescDetail egg_config_details[2];
 static const RzCmdDescDetail history_list_or_exec_details[2];
 static const RzCmdDescDetail wB_details[2];
@@ -32,6 +31,7 @@ static const RzCmdDescDetail redirection_details[2];
 static const RzCmdDescDetail pipe_details[2];
 static const RzCmdDescDetail grep_details[5];
 static const RzCmdDescDetail specifiers_details[4];
+static const RzCmdDescDetail env_details[3];
 static const RzCmdDescArg system_args[3];
 static const RzCmdDescArg system_to_cons_args[3];
 static const RzCmdDescArg hash_bang_args[3];
@@ -190,7 +190,6 @@ static const RzCmdDescArg eval_editor_args[2];
 static const RzCmdDescArg eval_readonly_args[2];
 static const RzCmdDescArg eval_spaces_args[2];
 static const RzCmdDescArg eval_type_args[2];
-static const RzCmdDescArg env_args[3];
 static const RzCmdDescArg egg_compile_args[2];
 static const RzCmdDescArg egg_config_args[2];
 static const RzCmdDescArg egg_syscall_args[3];
@@ -327,6 +326,7 @@ static const RzCmdDescArg zign_space_delete_args[2];
 static const RzCmdDescArg zign_space_add_args[2];
 static const RzCmdDescArg zign_space_rename_args[2];
 static const RzCmdDescArg zign_info_range_args[3];
+static const RzCmdDescArg env_args[3];
 
 static const RzCmdDescHelp escl__help = {
 	.summary = "Run given commands as in system(3) or shows command history",
@@ -4049,65 +4049,6 @@ static const RzCmdDescHelp eval_type_help = {
 	.args = eval_type_args,
 };
 
-static const RzCmdDescDetailEntry env_Examples_detail_entries[] = {
-	{ .text = "%", .arg_str = NULL, .comment = "List all environment variables" },
-	{ .text = "%", .arg_str = "SHELL", .comment = "Print value of SHELL variable" },
-	{ .text = "%", .arg_str = "TMPDIR=/tmp", .comment = "Set TMPDIR to \"/tmp\"" },
-	{ .text = "env", .arg_str = " SHELL", .comment = "Same as `%SHELL`" },
-	{ 0 },
-};
-
-static const RzCmdDescDetailEntry env_Environment_detail_entries[] = {
-	{ .text = "RZ_FILE", .arg_str = NULL, .comment = "currently opened file name" },
-	{ .text = "RZ_OFFSET", .arg_str = NULL, .comment = "current offset (64bit value)" },
-	{ .text = "RZ_BSIZE", .arg_str = NULL, .comment = "block size" },
-	{ .text = "RZ_ENDIAN", .arg_str = NULL, .comment = "'big' or 'little'" },
-	{ .text = "RZ_IOVA", .arg_str = NULL, .comment = "is io.va true? virtual addressing (1,0)" },
-	{ .text = "RZ_DEBUG", .arg_str = NULL, .comment = "debug mode enabled? (1,0)" },
-	{ .text = "RZ_SIZE", .arg_str = NULL, .comment = "file size" },
-	{ .text = "RZ_ARCH", .arg_str = NULL, .comment = "value of asm.arch" },
-	{ .text = "RZ_BITS", .arg_str = NULL, .comment = "arch reg size (8, 16, 32, 64)" },
-	{ .text = "RZ_BIN_LANG", .arg_str = NULL, .comment = "assume this lang to demangle" },
-	{ .text = "RZ_BIN_DEMANGLE", .arg_str = NULL, .comment = "demangle or not" },
-	{ .text = "RZ_BIN_PDBSERVER", .arg_str = NULL, .comment = "e pdb.server" },
-	{ 0 },
-};
-static const RzCmdDescDetail env_details[] = {
-	{ .name = "Examples", .entries = env_Examples_detail_entries },
-	{ .name = "Environment", .entries = env_Environment_detail_entries },
-	{ 0 },
-};
-static const RzCmdDescArg env_args[] = {
-	{
-		.name = "varname",
-		.type = RZ_CMD_ARG_TYPE_ENV,
-		.optional = true,
-
-	},
-	{
-		.name = "varvalue",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp env_help = {
-	.summary = "Get/set environment variables",
-	.args_str = " [<varname>[=<varvalue>]]",
-	.details = env_details,
-	.args = env_args,
-};
-
-static const RzCmdDescArg cmd_exit_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_exit_help = {
-	.summary = "Exit Rizin",
-	.args = cmd_exit_args,
-};
-
 static const RzCmdDescHelp cmd_flag_help = {
 	.summary = "Manage flags",
 };
@@ -7510,6 +7451,68 @@ static const RzCmdDescHelp specifiers_help = {
 	.details = specifiers_details,
 };
 
+static const RzCmdDescHelp shell_help = {
+	.summary = "Common shell commands",
+};
+static const RzCmdDescDetailEntry env_Examples_detail_entries[] = {
+	{ .text = "%", .arg_str = NULL, .comment = "List all environment variables" },
+	{ .text = "%", .arg_str = "SHELL", .comment = "Print value of SHELL variable" },
+	{ .text = "%", .arg_str = "TMPDIR=/tmp", .comment = "Set TMPDIR to \"/tmp\"" },
+	{ .text = "env", .arg_str = " SHELL", .comment = "Same as `%SHELL`" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry env_Environment_detail_entries[] = {
+	{ .text = "RZ_FILE", .arg_str = NULL, .comment = "currently opened file name" },
+	{ .text = "RZ_OFFSET", .arg_str = NULL, .comment = "current offset (64bit value)" },
+	{ .text = "RZ_BSIZE", .arg_str = NULL, .comment = "block size" },
+	{ .text = "RZ_ENDIAN", .arg_str = NULL, .comment = "'big' or 'little'" },
+	{ .text = "RZ_IOVA", .arg_str = NULL, .comment = "is io.va true? virtual addressing (1,0)" },
+	{ .text = "RZ_DEBUG", .arg_str = NULL, .comment = "debug mode enabled? (1,0)" },
+	{ .text = "RZ_SIZE", .arg_str = NULL, .comment = "file size" },
+	{ .text = "RZ_ARCH", .arg_str = NULL, .comment = "value of asm.arch" },
+	{ .text = "RZ_BITS", .arg_str = NULL, .comment = "arch reg size (8, 16, 32, 64)" },
+	{ .text = "RZ_BIN_LANG", .arg_str = NULL, .comment = "assume this lang to demangle" },
+	{ .text = "RZ_BIN_DEMANGLE", .arg_str = NULL, .comment = "demangle or not" },
+	{ .text = "RZ_BIN_PDBSERVER", .arg_str = NULL, .comment = "e pdb.server" },
+	{ 0 },
+};
+static const RzCmdDescDetail env_details[] = {
+	{ .name = "Examples", .entries = env_Examples_detail_entries },
+	{ .name = "Environment", .entries = env_Environment_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg env_args[] = {
+	{
+		.name = "varname",
+		.type = RZ_CMD_ARG_TYPE_ENV,
+		.optional = true,
+
+	},
+	{
+		.name = "varvalue",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp env_help = {
+	.summary = "Get/set environment variables",
+	.args_str = " [<varname>[=<varvalue>]]",
+	.details = env_details,
+	.args = env_args,
+};
+
+static const RzCmdDescArg cmd_exit_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_exit_help = {
+	.summary = "Exit Rizin",
+	.args = cmd_exit_args,
+};
+
 RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *root_cd = rz_cmd_get_root(core->rcmd);
 	rz_cmd_batch_start(core->rcmd);
@@ -8345,12 +8348,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *eval_type_cd = rz_cmd_desc_argv_new(core->rcmd, e_cd, "et", rz_eval_type_handler, &eval_type_help);
 	rz_warn_if_fail(eval_type_cd);
 
-	RzCmdDesc *env_cd = rz_cmd_desc_argv_new(core->rcmd, e_cd, "env", rz_env_handler, &env_help);
-	rz_warn_if_fail(env_cd);
-
-	RzCmdDesc *cmd_exit_cd = rz_cmd_desc_argv_new(core->rcmd, root_cd, "exit", rz_cmd_exit_handler, &cmd_exit_help);
-	rz_warn_if_fail(cmd_exit_cd);
-
 	RzCmdDesc *cmd_flag_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "f", rz_cmd_flag, &cmd_flag_help);
 	rz_warn_if_fail(cmd_flag_cd);
 
@@ -9113,5 +9110,13 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *specifiers_cd = rz_cmd_desc_fake_new(core->rcmd, root_cd, ":", &specifiers_help);
 	rz_warn_if_fail(specifiers_cd);
+
+	RzCmdDesc *shell_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "shell", NULL, NULL, &shell_help);
+	rz_warn_if_fail(shell_cd);
+	RzCmdDesc *env_cd = rz_cmd_desc_argv_new(core->rcmd, shell_cd, "env", rz_env_handler, &env_help);
+	rz_warn_if_fail(env_cd);
+
+	RzCmdDesc *cmd_exit_cd = rz_cmd_desc_argv_new(core->rcmd, shell_cd, "exit", rz_cmd_exit_handler, &cmd_exit_help);
+	rz_warn_if_fail(cmd_exit_cd);
 	rz_cmd_batch_end(core->rcmd);
 }
