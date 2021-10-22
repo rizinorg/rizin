@@ -199,6 +199,8 @@ static RzType *parse_type_procedure(const RzTypeDB *typedb, RzPdbTpiStream *stre
 	RzType *typ = RZ_NEW0(RzType);
 	RzCallable *callable = RZ_NEW0(RzCallable);
 	if (!typ || !callable) {
+		free(typ);
+		free(callable);
 		return NULL;
 	}
 	typ->kind = RZ_TYPE_KIND_CALLABLE;
