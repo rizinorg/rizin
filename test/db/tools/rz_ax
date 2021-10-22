@@ -346,7 +346,7 @@ RUN
 
 NAME=Python string "\x33\x44\x88"
 FILE==
-CMDS=echo foo = "\x33\x44\x88" | rz-ax -F
+CMDS=echo foo = '"\x33\x44\x88"' | rz-ax -F
 EXPECT=<<EOF
 334488
 EOF
