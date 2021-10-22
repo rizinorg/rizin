@@ -161,7 +161,7 @@ RZ_IPI RzCmdStatus rz_cmd_shell_cat_handler(RzCore *core, int argc, const char *
 		rz_cons_print(res);
 		free(res);
 	}
-	return res ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_shell_mv_handler(RzCore *core, int argc, const char **argv) {
@@ -177,7 +177,7 @@ RZ_IPI RzCmdStatus rz_cmd_shell_mkdir_handler(RzCore *core, int argc, const char
 		rz_cons_print(res);
 		free(res);
 	}
-	return res ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_shell_pwd_handler(RzCore *core, int argc, const char **argv) {
@@ -186,5 +186,14 @@ RZ_IPI RzCmdStatus rz_cmd_shell_pwd_handler(RzCore *core, int argc, const char *
 		rz_cons_println(cwd);
 		free(cwd);
 	}
-	return cwd ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_shell_sort_handler(RzCore *core, int argc, const char **argv) {
+	char *res = rz_syscmd_sort(argv[1]);
+	if (res) {
+		rz_cons_print(res);
+		free(res);
+	}
+	return RZ_CMD_STATUS_OK;
 }

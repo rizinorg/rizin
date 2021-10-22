@@ -467,12 +467,10 @@ RZ_API RZ_OWN char *rz_syscmd_mkdir(const char *dir) {
 		: strdup(suffix);
 	rz_str_trim(dirname);
 	ret = rz_sys_mkdirp(dirname);
-	if (!ret) {
-		if (rz_sys_mkdir_failed()) {
-			char *res = rz_str_newf("Cannot create \"%s\"\n", dirname);
-			free(dirname);
-			return res;
-		}
+	if (!ret && rz_sys_mkdir_failed()) {
+		char *res = rz_str_newf("Cannot create \"%s\"\n", dirname);
+		free(dirname);
+		return res;
 	}
 	free(dirname);
 	return NULL;

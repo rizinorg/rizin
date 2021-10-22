@@ -120,7 +120,7 @@ commands:
       - name: dir
         type: RZ_CMD_ARG_TYPE_FILE
   - name: cat
-    summary: Show contents of <file> (see pwd, ls)
+    summary: Print contents of <file>
     cname: cmd_shell_cat
     args:
       - name: file
@@ -143,3 +143,9 @@ commands:
     summary: Show the present working directory
     cname: cmd_shell_pwd
     args: []
+  - name: sort
+    summary: Sort the contents of <file>
+    cname: cmd_shell_sort
+    args:
+      - name: file
+        type: RZ_CMD_ARG_TYPE_FILE

@@ -333,6 +333,7 @@ static const RzCmdDescArg cmd_shell_cd_args[2];
 static const RzCmdDescArg cmd_shell_cat_args[2];
 static const RzCmdDescArg cmd_shell_mv_args[3];
 static const RzCmdDescArg cmd_shell_mkdir_args[2];
+static const RzCmdDescArg cmd_shell_sort_args[2];
 
 static const RzCmdDescHelp escl__help = {
 	.summary = "Run given commands as in system(3) or shows command history",
@@ -7570,7 +7571,7 @@ static const RzCmdDescArg cmd_shell_cat_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_shell_cat_help = {
-	.summary = "Show contents of <file> (see pwd, ls)",
+	.summary = "Print contents of <file>",
 	.args = cmd_shell_cat_args,
 };
 
@@ -7613,6 +7614,19 @@ static const RzCmdDescArg cmd_shell_pwd_args[] = {
 static const RzCmdDescHelp cmd_shell_pwd_help = {
 	.summary = "Show the present working directory",
 	.args = cmd_shell_pwd_args,
+};
+
+static const RzCmdDescArg cmd_shell_sort_args[] = {
+	{
+		.name = "file",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_shell_sort_help = {
+	.summary = "Sort the contents of <file>",
+	.args = cmd_shell_sort_args,
 };
 
 RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
@@ -9238,5 +9252,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_shell_pwd_cd = rz_cmd_desc_argv_new(core->rcmd, shell_cd, "pwd", rz_cmd_shell_pwd_handler, &cmd_shell_pwd_help);
 	rz_warn_if_fail(cmd_shell_pwd_cd);
+
+	RzCmdDesc *cmd_shell_sort_cd = rz_cmd_desc_argv_new(core->rcmd, shell_cd, "sort", rz_cmd_shell_sort_handler, &cmd_shell_sort_help);
+	rz_warn_if_fail(cmd_shell_sort_cd);
 	rz_cmd_batch_end(core->rcmd);
 }
