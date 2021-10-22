@@ -433,7 +433,8 @@ static RzType *parse_structure(const RzTypeDB *typedb, RzPdbTpiStream *stream, R
 	RzType *typ = RZ_NEW0(RzType);
 	if (!typ) {
 		rz_type_base_type_free(base_type);
-		return NULL;
+		base_type = NULL;
+		goto cleanup;
 	}
 	typ->kind = RZ_TYPE_KIND_IDENTIFIER;
 	typ->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_STRUCT;
