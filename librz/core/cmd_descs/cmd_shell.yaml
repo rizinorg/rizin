@@ -139,3 +139,7 @@ commands:
     args:
       - name: dir
         type: RZ_CMD_ARG_TYPE_STRING
+  - name: pwd
+    summary: Show the present working directory
+    cname: cmd_shell_pwd
+    args: []

@@ -7607,6 +7607,14 @@ static const RzCmdDescHelp cmd_shell_mkdir_help = {
 	.args = cmd_shell_mkdir_args,
 };
 
+static const RzCmdDescArg cmd_shell_pwd_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_shell_pwd_help = {
+	.summary = "Show the present working directory",
+	.args = cmd_shell_pwd_args,
+};
+
 RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *root_cd = rz_cmd_get_root(core->rcmd);
 	rz_cmd_batch_start(core->rcmd);
@@ -9227,5 +9235,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_shell_mkdir_cd = rz_cmd_desc_argv_new(core->rcmd, shell_cd, "mkdir", rz_cmd_shell_mkdir_handler, &cmd_shell_mkdir_help);
 	rz_warn_if_fail(cmd_shell_mkdir_cd);
+
+	RzCmdDesc *cmd_shell_pwd_cd = rz_cmd_desc_argv_new(core->rcmd, shell_cd, "pwd", rz_cmd_shell_pwd_handler, &cmd_shell_pwd_help);
+	rz_warn_if_fail(cmd_shell_pwd_cd);
 	rz_cmd_batch_end(core->rcmd);
 }

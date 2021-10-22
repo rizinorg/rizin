@@ -252,7 +252,6 @@ static const char *help_msg_p[] = {
 	"pt", "[?][dn] [len]", "print different timestamps",
 	"pu", "[?][w] [len]", "print N url encoded bytes (w=wide)",
 	"pv", "[?][jh] [mode]", "show variable/pointer/value in memory",
-	"pwd", "", "display current working directory",
 	"px", "[?][owq] [len]", "hexdump of N bytes (o=octal, w=32bit, q=64bit)",
 	"pz", "[?] [len]", "print zoom view (see pz? for help)",
 	NULL
@@ -4987,17 +4986,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 	// TODO After core->block is removed, this should be changed to a block read.
 	block = core->block;
 	switch (*input) {
-	case 'w': // "pw"
-		if (input[1] == 'd') { // "pwd"
-			char *cwd = rz_sys_getdir();
-			if (cwd) {
-				rz_cons_println(cwd);
-				free(cwd);
-			}
-		} else {
-			rz_cons_printf("| pwd               display current working directory\n");
-		}
-		break;
 	case 'j': // "pj"
 		if (input[1] == '?') {
 			rz_core_cmd_help(core, help_msg_pj);

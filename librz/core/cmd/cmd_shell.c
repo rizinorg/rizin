@@ -179,3 +179,12 @@ RZ_IPI RzCmdStatus rz_cmd_shell_mkdir_handler(RzCore *core, int argc, const char
 	}
 	return res ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
+
+RZ_IPI RzCmdStatus rz_cmd_shell_pwd_handler(RzCore *core, int argc, const char **argv) {
+	char *cwd = rz_sys_getdir();
+	if (cwd) {
+		rz_cons_println(cwd);
+		free(cwd);
+	}
+	return cwd ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+}
