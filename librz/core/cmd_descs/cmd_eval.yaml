@@ -156,13 +156,6 @@ commands:
         summary: Load next color theme
         cname: cmd_eval_color_load_next_theme
         args: []
-  - name: echo
-    summary: Display a line of text
-    cname: cmd_echo
-    args:
-      - name: argument
-        type: RZ_CMD_ARG_TYPE_STRING
-        flags: RZ_CMD_ARG_FLAG_ARRAY
   - name: ee
     cname: eval_editor
     summary: Open editor to change the value of config variable <key>

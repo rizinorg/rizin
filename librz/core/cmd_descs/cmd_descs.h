@@ -15,7 +15,7 @@ RZ_IPI RzCmdStatus rz_system_to_cons_handler(RzCore *core, int argc, const char 
 RZ_IPI RzCmdStatus rz_last_output_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_hash_bang_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_cmd_alias(void *data, const char *input);
-RZ_IPI RzCmdStatus rz_env_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_cmd_shell_env_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_tasks_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 RZ_IPI RzCmdStatus rz_tasks_transient_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_tasks_output_handler(RzCore *core, int argc, const char **argv);
@@ -296,7 +296,6 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_list_current_theme_handler(RzCore *core, in
 RZ_IPI RzCmdStatus rz_cmd_eval_color_list_reload_current_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_eval_color_load_previous_theme_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_eval_color_load_next_theme_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI RzCmdStatus rz_cmd_echo_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_eval_editor_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_eval_readonly_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_eval_spaces_handler(RzCore *core, int argc, const char **argv);
@@ -543,13 +542,16 @@ RZ_IPI RzCmdStatus rz_zign_space_add_handler(RzCore *core, int argc, const char 
 RZ_IPI RzCmdStatus rz_zign_space_rename_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_zign_info_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 RZ_IPI RzCmdStatus rz_zign_info_range_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI RzCmdStatus rz_env_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI RzCmdStatus rz_cmd_exit_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI RzCmdStatus rz_ls_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI RzCmdStatus rz_remove_file_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI RzCmdStatus rz_sleep_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI RzCmdStatus rz_uniq_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI RzCmdStatus rz_uname_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_cmd_shell_env_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_cmd_shell_exit_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_cmd_shell_ls_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_cmd_shell_rm_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_cmd_shell_sleep_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_cmd_shell_uniq_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_cmd_shell_uname_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_cmd_shell_echo_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_cmd_shell_cp_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_cmd_shell_cp_ext_handler(RzCore *core, int argc, const char **argv);
 
 // Main function that initialize the entire commands tree
 RZ_IPI void rzshell_cmddescs_init(RzCore *core);

@@ -4,7 +4,7 @@
 name: cmd_shell
 commands:
   - name: env
-    cname: env
+    cname: cmd_shell_env
     summary: Get/set environment variables
     args_str: " [<varname>[=<varvalue>]]"
     args:
@@ -55,11 +55,11 @@ commands:
           - text: "RZ_BIN_PDBSERVER"
             comment: "e pdb.server"
   - name: exit
-    cname: cmd_exit
+    cname: cmd_shell_exit
     summary: Exit Rizin
     args: []
   - name: ls
-    cname: ls
+    cname: cmd_shell_ls
     summary: List files and directories
     args:
       - name: arg
@@ -67,28 +67,49 @@ commands:
         flags: RZ_CMD_ARG_FLAG_ARRAY
         optional: true
   - name: rm
-    cname: remove_file
-    summary: Remove file
+    cname: cmd_shell_rm
+    summary: Remove <file>
     args:
       - name: file
         type: RZ_CMD_ARG_TYPE_FILE
   - name: sleep
-    cname: sleep
-    summary: Sleep for the specified amount of seconds
+    cname: cmd_shell_sleep
+    summary: Sleep for <seconds> seconds
     args:
       - name: seconds
         type: RZ_CMD_ARG_TYPE_NUM
   - name: uniq
-    cname: uniq
-    summary: List uniq strings in file
+    cname: cmd_shell_uniq
+    summary: List uniq strings in <filename>
     args:
       - name: filename
         type: RZ_CMD_ARG_TYPE_FILE
   - name: uname
-    cname: uname
+    cname: cmd_shell_uname
     summary: Provide system info
     args:
       - name: r
         type: RZ_CMD_ARG_TYPE_STRING
         flags: RZ_CMD_ARG_FLAG_OPTION
         optional: true
+  - name: echo
+    summary: Display a line of text
+    cname: cmd_shell_echo
+    args:
+      - name: argument
+        type: RZ_CMD_ARG_TYPE_STRING
+        flags: RZ_CMD_ARG_FLAG_ARRAY
+  - name: cp
+    summary: Copy <src> file to <dst>
+    cname: cmd_shell_cp
+    args:
+      - name: src
+        type: RZ_CMD_ARG_TYPE_FILE
+      - name: dst
+        type: RZ_CMD_ARG_TYPE_STRING
+  - name: cp.
+    summary: Copy current file to filename.<ext>
+    cname: cmd_shell_cp_ext
+    args:
+      - name: ext
+        type: RZ_CMD_ARG_TYPE_STRING

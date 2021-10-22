@@ -380,16 +380,6 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_highlight_remove_current_handler(RzCore *co
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_cmd_echo_handler(RzCore *core, int argc, const char **argv) {
-	if (argc >= 2) {
-		char *output = rz_str_array_join(argv + 1, argc - 1, " ");
-		rz_cons_println(output);
-		free(output);
-		return RZ_CMD_STATUS_OK;
-	}
-	return RZ_CMD_STATUS_ERROR;
-}
-
 RZ_IPI RzCmdStatus rz_eval_getset_handler(RzCore *core, int argc, const char **argv) {
 	int i;
 	for (i = 1; i < argc; i++) {

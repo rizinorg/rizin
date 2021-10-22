@@ -102,9 +102,9 @@ commands:
     cname: env_percentage
     summary: Get/set environment variables
     args_str: "[<varname>[=<varvalue>]]"
-    args: env
-    details: env
-    handler: env
+    args: cmd_shell_env
+    details: cmd_shell_env
+    handler: cmd_shell_env
   - name: "&"
     summary: Manage tasks
     subcommands: cmd_tasks

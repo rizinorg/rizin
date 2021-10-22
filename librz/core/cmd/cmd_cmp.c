@@ -445,37 +445,6 @@ static int cmd_cmp_disasm(RzCore *core, const char *input, int mode) {
 	return 0;
 }
 
-static int cmd_cp(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	if (input[1] == '.') {
-		char *file = rz_core_cmd_strf(core, "ij~{core.file}");
-		rz_str_trim(file);
-		char *newfile = rz_str_newf("%s.%s", file, input + 2);
-		rz_file_copy(file, newfile);
-		free(file);
-		free(newfile);
-		return true;
-	}
-	if (strlen(input) < 3) {
-		eprintf("Usage: cp src dst\n");
-		eprintf("Usage: cp.orig  # cp $file $file.orig\n");
-		return false;
-	}
-	char *cmd = strdup(input + 2);
-	if (cmd) {
-		char **files = rz_str_argv(cmd, NULL);
-		if (files[0] && files[1]) {
-			bool rc = rz_file_copy(files[0], files[1]);
-			free(cmd);
-			rz_str_argv_free(files);
-			return rc;
-		}
-		rz_str_argv_free(files);
-	}
-	eprintf("Usage: cp src dst\n");
-	return false;
-}
-
 static void __core_cmp_bits(RzCore *core, ut64 addr) {
 	const bool scr_color = rz_config_get_i(core->config, "scr.color");
 	int i;
@@ -533,9 +502,6 @@ RZ_IPI int rz_cmd_cmp(void *data, const char *input) {
 	const ut8 *block = core->block;
 
 	switch (*input) {
-	case 'p':
-		return cmd_cp(data, input);
-		break;
 	case 'a': // "cat"
 		if (input[1] == 't') {
 			const char *path = rz_str_trim_head_ro(input + 2);
