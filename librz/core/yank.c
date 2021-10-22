@@ -179,10 +179,9 @@ RZ_API bool rz_core_yank_paste(RzCore *core, ut64 addr, ut64 len) {
 		return false;
 	}
 	rz_buf_read_at(core->yank_buf, 0, buf, len);
-	if (!rz_core_write_at(core, addr, buf, len)) {
-		return false;
-	}
-	return true;
+	bool res = rz_core_write_at(core, addr, buf, len);
+	free(buf);
+	return res;
 }
 
 /* \brief Yanks data from the current offset to the specified offset

@@ -117,43 +117,54 @@ bool test_rzil_bv_logic(void) {
 	result = rz_il_bv_and(x, y);
 	mu_assert("and x y", is_equal_bv(result, and));
 	rz_il_bv_free(result);
+	rz_il_bv_free(and);
 
 	result = rz_il_bv_or(x, y);
 	mu_assert("or x y", is_equal_bv(result, or));
 	rz_il_bv_free(result);
+	rz_il_bv_free(or);
 
 	result = rz_il_bv_xor(x, y);
 	mu_assert("xor x y", is_equal_bv(result, xor));
 	rz_il_bv_free(result);
+	rz_il_bv_free(xor);
 
 	result = rz_il_bv_not(x);
 	mu_assert("not x", is_equal_bv(result, not ));
 	rz_il_bv_free(result);
+	rz_il_bv_free(not );
 
 	result = rz_il_bv_neg(x);
 	mu_assert("neg x", is_equal_bv(result, neg));
 	rz_il_bv_free(result);
+	rz_il_bv_free(neg);
 
 	result = rz_il_bv_dup(y);
 	rz_il_bv_lshift(result, 3);
 	mu_assert("left shift y", is_equal_bv(result, ls));
 	rz_il_bv_free(result);
+	rz_il_bv_free(ls);
 
 	result = rz_il_bv_dup(y);
 	rz_il_bv_lshift_fill(result, 3, true);
 	mu_assert("left shift y filling 1", is_equal_bv(result, ls_fill));
 	rz_il_bv_free(result);
+	rz_il_bv_free(ls_fill);
 
 	result = rz_il_bv_dup(y);
 	rz_il_bv_rshift(result, 3);
 	mu_assert("right shift y", is_equal_bv(result, rs));
 	rz_il_bv_free(result);
+	rz_il_bv_free(rs);
 
 	result = rz_il_bv_dup(y);
 	rz_il_bv_rshift_fill(result, 3, true);
 	mu_assert("right shift y", is_equal_bv(result, rs_fill));
 	rz_il_bv_free(result);
+	rz_il_bv_free(rs_fill);
 
+	rz_il_bv_free(x);
+	rz_il_bv_free(y);
 	mu_end;
 }
 
@@ -300,23 +311,25 @@ bool test_rzil_bv_operation(void) {
 bool test_rzil_bv_cast(void) {
 	ut32 normal, shadow;
 	normal = 2021;
-	shadow = rz_il_bv_to_ut32(rz_il_bv_new_from_ut32(32, normal));
+	RzILBitVector *bv = rz_il_bv_new_from_ut32(32, normal);
+	shadow = rz_il_bv_to_ut32(bv);
+	rz_il_bv_free(bv);
 
 	mu_assert("cast bv<->ut32", normal == shadow);
 	mu_end;
 }
 
 bool test_rzil_bool_init(void) {
-	RzILBool *b = rz_il_new_bool(true);
+	RzILBool *b = rz_il_bool_new(true);
 	mu_assert_notnull(b, "New RzILBool");
 	mu_assert_eq(b->b, true, "bool is true");
-	rz_il_free_bool(b);
+	rz_il_bool_free(b);
 	mu_end;
 }
 
 bool test_rzil_bool_logic(void) {
-	RzILBool *t = rz_il_new_bool(true);
-	RzILBool *f = rz_il_new_bool(false);
+	RzILBool *t = rz_il_bool_new(true);
+	RzILBool *f = rz_il_bool_new(false);
 	RzILBool *result;
 
 	// and
@@ -325,15 +338,15 @@ bool test_rzil_bool_logic(void) {
 	// t and f => false
 	result = rz_il_bool_and(t, t);
 	mu_assert("true and true", is_equal_bool(result, t));
-	rz_il_free_bool(result);
+	rz_il_bool_free(result);
 
 	result = rz_il_bool_and(t, f);
 	mu_assert("true and false", is_equal_bool(result, f));
-	rz_il_free_bool(result);
+	rz_il_bool_free(result);
 
 	result = rz_il_bool_and(f, f);
 	mu_assert("false and false", is_equal_bool(result, f));
-	rz_il_free_bool(result);
+	rz_il_bool_free(result);
 
 	// or
 	// t or t => true
@@ -341,26 +354,26 @@ bool test_rzil_bool_logic(void) {
 	// f or f => false
 	result = rz_il_bool_or(t, t);
 	mu_assert("true or true", is_equal_bool(result, t));
-	rz_il_free_bool(result);
+	rz_il_bool_free(result);
 
 	result = rz_il_bool_or(t, f);
 	mu_assert("true or false", is_equal_bool(result, t));
-	rz_il_free_bool(result);
+	rz_il_bool_free(result);
 
 	result = rz_il_bool_or(f, f);
 	mu_assert("false or false", is_equal_bool(result, f));
-	rz_il_free_bool(result);
+	rz_il_bool_free(result);
 
 	// not
 	// not t => false
 	// not f => true
 	result = rz_il_bool_not(t);
 	mu_assert("not true", is_equal_bool(result, f));
-	rz_il_free_bool(result);
+	rz_il_bool_free(result);
 
 	result = rz_il_bool_not(f);
 	mu_assert("not false", is_equal_bool(result, t));
-	rz_il_free_bool(result);
+	rz_il_bool_free(result);
 
 	// xor
 	// t xor t => false
@@ -368,23 +381,23 @@ bool test_rzil_bool_logic(void) {
 	// t xor f => true
 	result = rz_il_bool_xor(t, t);
 	mu_assert("t xor t", is_equal_bool(result, f));
-	rz_il_free_bool(result);
+	rz_il_bool_free(result);
 
 	result = rz_il_bool_xor(f, f);
 	mu_assert("f xor f", is_equal_bool(result, f));
-	rz_il_free_bool(result);
+	rz_il_bool_free(result);
 
 	result = rz_il_bool_xor(t, f);
 	mu_assert("t xor f", is_equal_bool(result, t));
-	rz_il_free_bool(result);
+	rz_il_bool_free(result);
 
-	rz_il_free_bool(t);
-	rz_il_free_bool(f);
+	rz_il_bool_free(t);
+	rz_il_bool_free(f);
 	mu_end;
 }
 
 static bool test_rzil_mem() {
-	RzILMem *mem = rz_il_new_mem(8);
+	RzILMem *mem = rz_il_mem_new(8);
 	mu_assert_notnull(mem, "Create mem");
 
 	RzILBitVector *addr = rz_il_bv_new_from_ut32(16, 121);
@@ -399,6 +412,12 @@ static bool test_rzil_mem() {
 
 	RzILBitVector *data = rz_il_mem_load(mem, addr);
 	mu_assert("Load correct data", is_equal_bv(data, valid_data));
+	rz_il_bv_free(data);
+
+	rz_il_bv_free(valid_data);
+	rz_il_bv_free(invalid_data);
+	rz_il_bv_free(addr);
+	rz_il_mem_free(mem);
 
 	mu_end;
 }
@@ -411,12 +430,13 @@ static bool test_rzil_effect() {
 	mu_assert_null(general_effect->next_eff, "Empty doesn't have next effect");
 	mu_assert_null(general_effect->ctrl_eff, "Empty doesn't include control effect");
 	mu_assert_null(general_effect->data_eff, "Empty doesn't include data effect");
+	rz_il_effect_free(general_effect);
 
-	RzILCtrlEffect *c_eff = rz_il_effect_new_ctrl();
+	RzILCtrlEffect *c_eff = rz_il_effect_ctrl_new();
 	mu_assert_notnull(c_eff, "Create empty control effect");
 	mu_assert_null(c_eff->pc, "Empty control effect have no next pc info");
 
-	RzILDataEffect *d_eff = rz_il_effect_new_data();
+	RzILDataEffect *d_eff = rz_il_effect_data_new();
 	mu_assert_notnull(d_eff, "Create empty data effect");
 	mu_assert_null(d_eff->var_name, "Empty data effect doesn't have variable name");
 
@@ -425,10 +445,12 @@ static bool test_rzil_effect() {
 	data_effect = rz_il_wrap_data_effect(d_eff);
 	mu_assert_eq(data_effect->effect_type, EFFECT_TYPE_DATA, "Wrap data effect");
 	mu_assert_eq(data_effect->data_eff, d_eff, "Get data effect from general one");
+	rz_il_effect_free(data_effect);
 
 	contrl_effect = rz_il_wrap_ctrl_effect(c_eff);
 	mu_assert_eq(contrl_effect->effect_type, EFFECT_TYPE_CTRL, "Wrap control effect");
 	mu_assert_eq(contrl_effect->ctrl_eff, c_eff, "Get control effect from general one");
+	rz_il_effect_free(contrl_effect);
 
 	mu_end;
 }

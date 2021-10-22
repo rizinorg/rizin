@@ -23,7 +23,7 @@ RZ_API RzLine *rz_line_new(void) {
 	I.contents = NULL;
 	I.enable_vi_mode = false;
 	I.clipboard = NULL;
-	I.kill_ring = rz_list_newf(NULL);
+	I.kill_ring = rz_list_newf(free);
 	I.kill_ring_ptr = -1;
 #if __WINDOWS__
 	I.vtmode = rz_cons_detect_vt_mode();

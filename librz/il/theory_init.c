@@ -16,21 +16,21 @@ void *rz_il_handler_ite(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	} else {
 		ret = rz_il_evaluate_val(vm, op_ite->y, type); // false branch
 	}
-
+	rz_il_bool_free(condition);
 	return ret;
 }
 
 void *rz_il_handler_var(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	RzILOpVar *var_op = op->op.var;
 	RzILVal *val = rz_il_hash_find_val_by_name(vm, var_op->v);
-	val = rz_il_dup_value(val);
+	val = rz_il_value_dup(val);
 
 	*type = RZIL_OP_ARG_VAL;
 	return val;
 }
 
 void *rz_il_handler_unk(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
-	RzILVal *val = rz_il_new_value(); // has UNK
+	RzILVal *val = rz_il_value_new(); // has UNK
 	*type = RZIL_OP_ARG_VAL;
 	return val;
 }
