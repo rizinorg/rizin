@@ -742,6 +742,7 @@ RZ_API RzVector /*<RzAnalysisMethod>*/ *rz_analysis_class_method_get_all(RzAnaly
 	}
 	char *key = key_attr_type_attrs(class_name_sanitized, attr_type_id(RZ_ANALYSIS_CLASS_ATTR_TYPE_METHOD));
 	if (!key) {
+		rz_vector_free(vec);
 		return NULL;
 	}
 	char *array = sdb_get(analysis->sdb_classes_attrs, key, 0);
