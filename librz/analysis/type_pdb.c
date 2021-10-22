@@ -222,6 +222,7 @@ static RzType *parse_type_procedure(const RzTypeDB *typedb, RzPdbTpiStream *stre
 	typ->callable->args = rz_pvector_new((RzPVectorFree)rz_type_callable_arg_free);
 	if (!typ->callable->args) {
 		rz_type_free(typ);
+		return NULL;
 	}
 	RzPdbTpiType *arglist = rz_bin_pdb_get_type_by_index(stream, lf_procedure->arg_list);
 	if (arglist) {
@@ -255,6 +256,7 @@ static RzType *parse_type_mfunction(const RzTypeDB *typedb, RzPdbTpiStream *stre
 	type->callable->args = rz_pvector_new((RzPVectorFree)rz_type_callable_arg_free);
 	if (!type->callable->args) {
 		rz_type_free(type);
+		return NULL;
 	}
 	RzPdbTpiType *arglist = rz_bin_pdb_get_type_by_index(stream, lf_mfunction->arglist);
 	if (arglist) {
