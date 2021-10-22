@@ -550,6 +550,7 @@ static RzType *parse_union(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdb
 
 	base_type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_UNION);
 	if (!base_type) {
+		free(name);
 		return NULL;
 	}
 	bool to_free_name = false;
