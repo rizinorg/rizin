@@ -141,6 +141,7 @@ static RzList *pdb7_extract_streams(RzPdb *pdb, RzPdbMsfStreamDirectory *msd) {
 		for (size_t j = 0; j < stream->blocks_num; j++) {
 			ut32 block_idx;
 			if (!rz_buf_read_le32(msd->sd, &block_idx)) {
+				RZ_FREE(stream);
 				RZ_FREE(stream_data);
 				rz_list_free(streams);
 				return NULL;
