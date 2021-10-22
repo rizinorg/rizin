@@ -508,7 +508,7 @@ RZ_API char *rz_sys_getdir(void) {
 #endif
 }
 
-RZ_API bool rz_sys_chdir(const char *s) {
+RZ_API bool rz_sys_chdir(RZ_NONNULL const char *s) {
 	rz_return_val_if_fail(s, false);
 	char *homepath = NULL;
 	if (s[0] == '~') {
