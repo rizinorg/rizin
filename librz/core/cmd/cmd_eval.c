@@ -241,7 +241,7 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_load_theme_handler(RzCore *core, int argc, 
 		return bool2status(rz_core_load_theme(core, argv[1]));
 	}
 	switch (mode) {
-	case RZ_OUTPUT_MODE_JSON:
+	case RZ_OUTPUT_MODE_JSON: {
 		PJ *pj = pj_new();
 		if (!pj) {
 			break;
@@ -255,6 +255,7 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_load_theme_handler(RzCore *core, int argc, 
 		rz_cons_println(pj_string(pj));
 		pj_free(pj);
 		break;
+	}
 	case RZ_OUTPUT_MODE_QUIET:
 		themes_list = rz_core_list_themes(core);
 		rz_list_foreach (themes_list, th_iter, th) {
