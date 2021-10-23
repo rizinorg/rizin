@@ -308,6 +308,10 @@ static ut64 get_main_offset_linux_64_pie(ELFOBJ *bin, ut64 entry, ut8 *buf) {
 	if (buf[0] == 0xf3 && buf[1] == 0x0f && buf[2] == 0x1e && buf[3] == 0xfa) {
 		// Change begin offset if binary starts with 'endbr64'
 		bo = 33;
+		// double xor for init and fini
+		if (!memcmp(buf + 19, "\x45\x31\xc0\x31\xc9", 5)) {
+			bo = 24;
+		}
 	}
 	if (buf[bo] == 0x48) {
 		ut8 ch = buf[bo + 1];
