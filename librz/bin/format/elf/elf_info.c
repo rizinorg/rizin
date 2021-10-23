@@ -1877,7 +1877,7 @@ ut64 Elf_(rz_bin_elf_get_init_offset)(RZ_NONNULL ELFOBJ *bin) {
 ut64 Elf_(rz_bin_elf_get_main_offset)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, UT64_MAX);
 
-	ut8 buf[256];
+	ut8 buf[256] = { 0 };
 	ut64 entry = Elf_(rz_bin_elf_get_entry_offset)(bin);
 	ut64 main_addr;
 
