@@ -312,3 +312,29 @@ ecHi rgb:00007f @ 0x00000000
 [{"offset":0,"type":"ecHi","color":"#00007f"}]
 EOF
 RUN
+
+NAME=Test ecp and ecn- load previous and next theme
+FILE==
+CMDS=<<EOF
+eco xvilka
+eco.
+ecp
+eco.
+ecn
+EOF
+EXPECT=<<EOF
+xvilka
+tango
+xvilka
+EOF
+RUN
+
+NAME=Test ecoj- list themes in JSON
+FILE==
+CMDS=<<EOF
+ecoj
+EOF
+EXPECT=<<EOF
+["default","cutter","pink","zenburn","defragger","xvilka","tango","monokai","rasta","cga","smyck","matrix","consonance","twilight","white","bold","ogray","basic","lima","behelit","dark","darkda","sepia","white2","onedark","ayu","bright","focus","gb","gentoo","solarized"]
+EOF
+RUN

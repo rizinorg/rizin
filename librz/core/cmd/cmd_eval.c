@@ -131,88 +131,37 @@ RZ_API RZ_OWN RzList *rz_core_list_themes(RzCore *core) {
 }
 
 RZ_IPI void rz_core_theme_nextpal(RzCore *core, int mode) {
-	// TODO: use rz_core_list_themes() here instead of rewalking all the time
 	RzList *files = NULL;
 	RzListIter *iter;
 	const char *fn;
-	char *path = NULL;
 	int ctr = 0;
-	char *home = rz_str_home(RZ_HOME_THEMES RZ_SYS_DIR);
+	files = rz_core_list_themes(core);
 
-	if (mode == 'j') {
-		rz_cons_printf("[");
-	}
-	if (home) {
-		files = rz_sys_dir(home);
-		rz_list_foreach (files, iter, fn) {
-			if (*fn && *fn != '.') {
-				if (mode == 'p') {
-					const char *nfn = iter->n ? iter->n->data : NULL;
-					if (!curtheme) {
-						free(home);
-						rz_list_free(files);
-						return;
-					}
-					eprintf("%s %s %s\n", rz_str_get_null(nfn), curtheme, fn);
-					if (nfn && !strcmp(nfn, curtheme)) {
-						free(curtheme);
-						curtheme = strdup(fn);
-						RZ_FREE(home);
-						goto done;
-					}
-				} else {
-					if (!nextpal_item(core, mode, fn, ctr++)) {
-						RZ_FREE(home);
-						goto done;
-					}
+	rz_list_foreach (files, iter, fn) {
+		if (*fn && *fn != '.') {
+			if (mode == 'p') {
+				const char *nfn = iter->n ? iter->n->data : NULL;
+				if (!curtheme) {
+					rz_list_free(files);
+					return;
+				}
+				if (nfn && !strcmp(nfn, curtheme)) {
+					free(curtheme);
+					curtheme = strdup(fn);
+					goto done;
+				}
+			} else {
+				if (!nextpal_item(core, mode, fn, ctr++)) {
+					goto done;
 				}
 			}
-		}
-		RZ_FREE(home);
-		rz_list_free(files);
-		files = NULL;
-	}
-
-	path = rz_str_rz_prefix(RZ_THEMES RZ_SYS_DIR);
-	if (path) {
-		files = rz_sys_dir(path);
-		rz_list_foreach (files, iter, fn) {
-			if (*fn && *fn != '.') {
-				if (mode == 'p') {
-					const char *nfn = iter->n ? iter->n->data : NULL;
-					if (!curtheme) {
-						free(home);
-						rz_list_free(files);
-						return;
-					}
-					eprintf("%s %s %s\n", rz_str_get_null(nfn), curtheme, fn);
-					if (nfn && !strcmp(nfn, curtheme)) {
-						free(curtheme);
-						curtheme = strdup(fn);
-						goto done;
-					}
-				} else {
-					if (!nextpal_item(core, mode, fn, ctr++)) {
-						goto done;
-					}
-				}
-			}
-		}
-	}
-
-done:
-	free(path);
-	if (mode == 'l' && !curtheme && !rz_list_empty(files)) {
-		//rz_core_theme_nextpal (core, mode);
-	} else if (mode == 'n' || mode == 'p') {
-		if (curtheme) {
-			rz_core_load_theme(core, curtheme);
 		}
 	}
 	rz_list_free(files);
-	if (mode == 'j') {
-		rz_cons_printf("]\n");
-	}
+	files = NULL;
+done:
+	rz_core_load_theme(core, curtheme);
+	rz_list_free(files);
 }
 
 RZ_IPI RzCmdStatus rz_cmd_eval_color_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
@@ -293,7 +242,18 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_load_theme_handler(RzCore *core, int argc, 
 	}
 	switch (mode) {
 	case RZ_OUTPUT_MODE_JSON:
-		rz_core_theme_nextpal(core, 'j');
+		PJ *pj = pj_new();
+		if (!pj) {
+			break;
+		}
+		pj_a(pj);
+		themes_list = rz_core_list_themes(core);
+		rz_list_foreach (themes_list, th_iter, th) {
+			pj_s(pj, th);
+		}
+		pj_end(pj);
+		rz_cons_println(pj_string(pj));
+		pj_free(pj);
 		break;
 	case RZ_OUTPUT_MODE_QUIET:
 		themes_list = rz_core_list_themes(core);
