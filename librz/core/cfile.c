@@ -639,6 +639,7 @@ static int rz_core_file_do_load_for_debug(RzCore *r, ut64 baseaddr, const char *
 	opt.obj_opts.elf_load_sections = rz_config_get_b(r->config, "elf.load.sections");
 	opt.obj_opts.elf_checks_sections = rz_config_get_b(r->config, "elf.checks.sections");
 	opt.obj_opts.elf_checks_segments = rz_config_get_b(r->config, "elf.checks.segments");
+	opt.obj_opts.big_endian = rz_config_get_b(r->config, "cfg.bigendian");
 	opt.xtr_idx = xtr_idx;
 	RzBinFile *binfile = rz_bin_open(r->bin, filenameuri, &opt);
 	if (!binfile) {
@@ -648,6 +649,7 @@ static int rz_core_file_do_load_for_debug(RzCore *r, ut64 baseaddr, const char *
 			opt.obj_opts.elf_load_sections = rz_config_get_b(r->config, "elf.load.sections");
 			opt.obj_opts.elf_checks_sections = rz_config_get_b(r->config, "elf.checks.sections");
 			opt.obj_opts.elf_checks_segments = rz_config_get_b(r->config, "elf.checks.segments");
+			opt.obj_opts.big_endian = rz_config_get_b(r->config, "cfg.bigendian");
 			opt.xtr_idx = xtr_idx;
 
 			binfile = rz_bin_open(r->bin, filenameuri, &opt);
