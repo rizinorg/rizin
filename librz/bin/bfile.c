@@ -309,6 +309,16 @@ static void get_strings_range(RzBinFile *bf, RzList *list, int min, int raw, ut6
 		type = RZ_STRING_ENC_UTF16BE;
 	} else if (!strcmp(enc, "utf32be")) {
 		type = RZ_STRING_ENC_UTF32BE;
+	} else if (!strcmp(enc, "ibm037")) {
+		type = RZ_STRING_ENC_IBM037;
+	} else if (!strcmp(enc, "ibm290")) {
+		type = RZ_STRING_ENC_IBM290;
+	} else if (!strcmp(enc, "ebcdices")) {
+		type = RZ_STRING_ENC_EBCDIC_ES;
+	} else if (!strcmp(enc, "ebcdicuk")) {
+		type = RZ_STRING_ENC_EBCDIC_UK;
+	} else if (!strcmp(enc, "ebcdicus")) {
+		type = RZ_STRING_ENC_EBCDIC_US;
 	} else {
 		eprintf("ERROR: encoding %s not supported\n", enc);
 		return;
