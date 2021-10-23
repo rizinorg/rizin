@@ -519,7 +519,7 @@ RZ_API bool rz_sys_chdir(RZ_NONNULL const char *s) {
 		}
 	}
 	if (homepath) {
-		int ret = chdir(homepath) == 0;
+		int ret = chdir(homepath);
 		free(homepath);
 		return ret == 0;
 	}

@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: LGPL-3.0-only
 ---
 name: cmd_shell
+type: RZ_CMD_DESC_TYPE_GROUP
 commands:
   - name: env
     cname: cmd_shell_env
@@ -89,7 +90,7 @@ commands:
     summary: Provide system info
     args:
       - name: r
-        type: RZ_CMD_ARG_TYPE_STRING
+        type: RZ_CMD_ARG_TYPE_OPTION
         flags: RZ_CMD_ARG_FLAG_OPTION
         optional: true
   - name: echo
@@ -113,6 +114,7 @@ commands:
     args:
       - name: dir
         type: RZ_CMD_ARG_TYPE_FILE
+        optional: true
   - name: cat
     summary: Print contents of <file>
     cname: cmd_shell_cat
@@ -130,7 +132,12 @@ commands:
   - name: mkdir
     summary: Create a directory <dir>
     cname: cmd_shell_mkdir
+    args_str: " [-p] <dir>"
     args:
+      - name: p
+        type: RZ_CMD_ARG_TYPE_OPTION
+        flags: RZ_CMD_ARG_FLAG_OPTION
+        optional: true
       - name: dir
         type: RZ_CMD_ARG_TYPE_STRING
   - name: pwd
@@ -143,3 +150,12 @@ commands:
     args:
       - name: file
         type: RZ_CMD_ARG_TYPE_FILE
+  - name: clear
+    summary: Clear screen/console
+    cname: cmd_shell_clear
+    args: []
+  - name: cls
+    summary: clear
+    cname: cmd_shell_cls
+    handler: cmd_shell_clear
+    args: []

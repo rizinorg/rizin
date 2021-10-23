@@ -331,7 +331,7 @@ static const RzCmdDescArg cmd_shell_cp_args[3];
 static const RzCmdDescArg cmd_shell_cd_args[2];
 static const RzCmdDescArg cmd_shell_cat_args[2];
 static const RzCmdDescArg cmd_shell_mv_args[3];
-static const RzCmdDescArg cmd_shell_mkdir_args[2];
+static const RzCmdDescArg cmd_shell_mkdir_args[3];
 static const RzCmdDescArg cmd_shell_sort_args[2];
 
 static const RzCmdDescHelp escl__help = {
@@ -7489,7 +7489,7 @@ static const RzCmdDescHelp cmd_shell_uniq_help = {
 static const RzCmdDescArg cmd_shell_uname_args[] = {
 	{
 		.name = "r",
-		.type = RZ_CMD_ARG_TYPE_STRING,
+		.type = RZ_CMD_ARG_TYPE_OPTION,
 		.flags = RZ_CMD_ARG_FLAG_OPTION,
 		.optional = true,
 
@@ -7538,6 +7538,7 @@ static const RzCmdDescArg cmd_shell_cd_args[] = {
 	{
 		.name = "dir",
 		.type = RZ_CMD_ARG_TYPE_FILE,
+		.optional = true,
 
 	},
 	{ 0 },
@@ -7581,6 +7582,13 @@ static const RzCmdDescHelp cmd_shell_mv_help = {
 
 static const RzCmdDescArg cmd_shell_mkdir_args[] = {
 	{
+		.name = "p",
+		.type = RZ_CMD_ARG_TYPE_OPTION,
+		.flags = RZ_CMD_ARG_FLAG_OPTION,
+		.optional = true,
+
+	},
+	{
 		.name = "dir",
 		.type = RZ_CMD_ARG_TYPE_STRING,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
@@ -7590,6 +7598,7 @@ static const RzCmdDescArg cmd_shell_mkdir_args[] = {
 };
 static const RzCmdDescHelp cmd_shell_mkdir_help = {
 	.summary = "Create a directory <dir>",
+	.args_str = " [-p] <dir>",
 	.args = cmd_shell_mkdir_args,
 };
 
@@ -7612,6 +7621,22 @@ static const RzCmdDescArg cmd_shell_sort_args[] = {
 static const RzCmdDescHelp cmd_shell_sort_help = {
 	.summary = "Sort the contents of <file>",
 	.args = cmd_shell_sort_args,
+};
+
+static const RzCmdDescArg cmd_shell_clear_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_shell_clear_help = {
+	.summary = "Clear screen/console",
+	.args = cmd_shell_clear_args,
+};
+
+static const RzCmdDescArg cmd_shell_cls_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_shell_cls_help = {
+	.summary = "clear",
+	.args = cmd_shell_cls_args,
 };
 
 RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
@@ -9237,5 +9262,11 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_shell_sort_cd = rz_cmd_desc_argv_new(core->rcmd, shell_cd, "sort", rz_cmd_shell_sort_handler, &cmd_shell_sort_help);
 	rz_warn_if_fail(cmd_shell_sort_cd);
+
+	RzCmdDesc *cmd_shell_clear_cd = rz_cmd_desc_argv_new(core->rcmd, shell_cd, "clear", rz_cmd_shell_clear_handler, &cmd_shell_clear_help);
+	rz_warn_if_fail(cmd_shell_clear_cd);
+
+	RzCmdDesc *cmd_shell_cls_cd = rz_cmd_desc_argv_new(core->rcmd, shell_cd, "cls", rz_cmd_shell_clear_handler, &cmd_shell_cls_help);
+	rz_warn_if_fail(cmd_shell_cls_cd);
 	rz_cmd_batch_end(core->rcmd);
 }

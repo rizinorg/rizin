@@ -112,7 +112,11 @@ RZ_IPI RzCmdStatus rz_cmd_shell_cp_handler(RzCore *core, int argc, const char **
 RZ_IPI RzCmdStatus rz_cmd_shell_cd_handler(RzCore *core, int argc, const char **argv) {
 	static char *olddir = NULL;
 	bool ret = true;
-	if (!strcmp(argv[1], "-")) {
+	const char *dir = "~";
+	if (argc > 1) {
+		dir = argv[1];
+	}
+	if (!strcmp(dir, "-")) {
 		if (olddir) {
 			char *newdir = olddir;
 			olddir = rz_sys_getdir();
@@ -129,8 +133,8 @@ RZ_IPI RzCmdStatus rz_cmd_shell_cd_handler(RzCore *core, int argc, const char **
 		}
 	} else {
 		char *cwd = rz_sys_getdir();
-		if (!rz_sys_chdir(argv[1])) {
-			RZ_LOG_ERROR("Cannot chdir to %s\n", argv[1]);
+		if (!rz_sys_chdir(dir)) {
+			RZ_LOG_ERROR("Cannot chdir to %s\n", dir);
 			free(cwd);
 		} else {
 			free(olddir);
@@ -162,7 +166,13 @@ RZ_IPI RzCmdStatus rz_cmd_shell_mv_handler(RzCore *core, int argc, const char **
 
 // mkdir
 RZ_IPI RzCmdStatus rz_cmd_shell_mkdir_handler(RzCore *core, int argc, const char **argv) {
-	char *res = rz_syscmd_mkdir(argv[1]);
+	RzStrBuf *buf = rz_strbuf_new(NULL);
+	for (int i = 1; i < argc; i++) {
+		rz_strbuf_appendf(buf, " %s", argv[i]);
+	}
+	char *input = rz_strbuf_drain(buf);
+	char *res = rz_syscmd_mkdir(input);
+	free(input);
 	if (res) {
 		rz_cons_print(res);
 		free(res);
@@ -187,5 +197,12 @@ RZ_IPI RzCmdStatus rz_cmd_shell_sort_handler(RzCore *core, int argc, const char 
 		rz_cons_print(res);
 		free(res);
 	}
+	return RZ_CMD_STATUS_OK;
+}
+
+// clear
+// cls
+RZ_IPI RzCmdStatus rz_cmd_shell_clear_handler(RzCore *core, int argc, const char **argv) {
+	rz_cons_clear00();
 	return RZ_CMD_STATUS_OK;
 }
