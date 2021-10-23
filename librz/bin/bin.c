@@ -79,6 +79,11 @@ RZ_API RZ_BORROW const char *rz_bin_string_type(int type) {
 	case RZ_BIN_STRING_ENC_WIDE_BE: return "utf16be";
 	case RZ_BIN_STRING_ENC_WIDE32_BE: return "utf32be";
 	case RZ_BIN_STRING_ENC_BASE64: return "base64";
+	case RZ_STRING_ENC_IBM037: return "ibm037";
+	case RZ_STRING_ENC_IBM290: return "ibm290";
+	case RZ_STRING_ENC_EBCDIC_ES: return "ebcdices";
+	case RZ_STRING_ENC_EBCDIC_UK: return "ebcdicuk";
+	case RZ_STRING_ENC_EBCDIC_US: return "ebcdicus";
 	}
 	return "ascii"; // XXX
 }

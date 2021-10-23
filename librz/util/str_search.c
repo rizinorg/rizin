@@ -290,7 +290,8 @@ static inline bool can_be_utf32_be(ut8 *buf, ut64 size) {
 }
 
 static inline bool can_be_ebcdic(ut8 *buf, ut64 size) {
-	return buf[0] < 0x20 && buf[0] > 0x3f;
+	printf("%x\n", buf[0]);
+	return buf[0] < 0x20 || buf[0] > 0x3f;
 }
 
 /**

@@ -128,6 +128,21 @@ static inline void detected_string_to_bin_string(RzBinString *dst, RzDetectedStr
 	case RZ_STRING_ENC_UTF32BE:
 		type = RZ_BIN_STRING_ENC_WIDE32_BE;
 		break;
+	case RZ_STRING_ENC_IBM037:
+		type = RZ_BIN_STRING_ENC_IBM037;
+		break;
+	case RZ_STRING_ENC_IBM290:
+		type = RZ_BIN_STRING_ENC_IBM290;
+		break;
+	case RZ_STRING_ENC_EBCDIC_ES:
+		type = RZ_BIN_STRING_ENC_EBCDIC_ES;
+		break;
+	case RZ_STRING_ENC_EBCDIC_UK:
+		type = RZ_BIN_STRING_ENC_EBCDIC_UK;
+		break;
+	case RZ_STRING_ENC_EBCDIC_US:
+		type = RZ_BIN_STRING_ENC_EBCDIC_US;
+		break;
 	case RZ_STRING_ENC_GUESS:
 		type = RZ_BIN_STRING_ENC_DETECT;
 		break;
