@@ -316,16 +316,17 @@ RUN
 NAME=Test ecp and ecn- load previous and next theme
 FILE==
 CMDS=<<EOF
-eco xvilka
+eco zenburn
 eco.
 ecp
 eco.
 ecn
+eco.
 EOF
 EXPECT=<<EOF
-xvilka
-tango
-xvilka
+zenburn
+gentoo
+zenburn
 EOF
 RUN
 
@@ -335,6 +336,6 @@ CMDS=<<EOF
 ecoj
 EOF
 EXPECT=<<EOF
-["default","cutter","pink","zenburn","defragger","xvilka","tango","monokai","rasta","cga","smyck","matrix","consonance","twilight","white","bold","ogray","basic","lima","behelit","dark","darkda","sepia","white2","onedark","ayu","bright","focus","gb","gentoo","solarized"]
+["default","gentoo","zenburn","gb","behelit","lima","dark","ogray","basic","matrix","darkda","rasta","bright","onedark","cga","ayu","bold","cutter","smyck","twilight","tango","monokai","sepia","pink","consonance","defragger","white2","solarized","white","focus","xvilka"]
 EOF
 RUN
