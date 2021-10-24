@@ -148,6 +148,15 @@ RZ_IPI RzCmdStatus rz_cmd_shell_cd_handler(RzCore *core, int argc, const char **
 // cat
 RZ_IPI RzCmdStatus rz_cmd_shell_cat_handler(RzCore *core, int argc, const char **argv) {
 	const char *path = argv[1];
+	if (*path == '$') {
+		const char *oldText = rz_cmd_alias_get(core->rcmd, path, 1);
+		if (oldText) {
+			rz_cons_printf("%s\n", oldText + 1);
+		} else {
+			RZ_LOG_ERROR("Invalid alias\n");
+		}
+		return oldText ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+	}
 	char *res = rz_syscmd_cat(path);
 	if (res) {
 		rz_cons_print(res);
