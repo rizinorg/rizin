@@ -515,6 +515,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_pdb_show_handler(RzCore *core, int argc, const ch
 	}
 	RzPdb *pdb = rz_core_pdb_load_info(core, filename);
 	if (!pdb) {
+		free(filename);
 		return false;
 	}
 	rz_core_pdb_info_print(core, core->analysis->typedb, pdb, state);

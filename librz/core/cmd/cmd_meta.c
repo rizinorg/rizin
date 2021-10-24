@@ -44,6 +44,7 @@ static void meta_variable_comment_print(RzCore *Core, RzAnalysisVar *var, RzCmdS
 			return;
 		}
 		rz_cons_printf("\"Cv%c %s base64:%s @ 0x%08" PFMT64x "\"\n", var->kind, var->name, b64, var->fcn->addr);
+		free(b64);
 		break;
 	}
 	default:
@@ -514,26 +515,31 @@ static bool meta_string_add(RzCore *core, ut64 addr, ut64 size, RzStrEnc encodin
 	size_t name_len = 0;
 	ut64 limit = size ? size : core->blocksize;
 	size_t n = 0;
+	bool result = false;
 	if (encoding == RZ_STRING_ENC_8BIT || encoding == RZ_STRING_ENC_UTF8) {
 		if (!meta_string_8bit_add(core, addr, limit, (ut8 **)&guessname, &name_len)) {
-			return false;
+			goto out;
 		}
 		n = size == 0 ? name_len + 1 : size;
 	} else {
 		RzDetectedString *ds = NULL;
 		if (!meta_string_guess_add(core, addr, limit, (ut8 **)&guessname, &name_len, &ds, encoding)) {
-			return false;
+			goto out;
 		}
 		if (!ds) {
-			return false;
+			goto out;
 		}
 		encoding = ds->type;
 		n = ds->size;
 	}
 	if (!name) {
-		return rz_meta_set_with_subtype(core->analysis, RZ_META_TYPE_STRING, encoding, addr, n, guessname);
+		result = rz_meta_set_with_subtype(core->analysis, RZ_META_TYPE_STRING, encoding, addr, n, guessname);
+	} else {
+		result = rz_meta_set_with_subtype(core->analysis, RZ_META_TYPE_STRING, encoding, addr, n, name);
 	}
-	return rz_meta_set_with_subtype(core->analysis, RZ_META_TYPE_STRING, encoding, addr, n, name);
+out:
+	free(guessname);
+	return result;
 }
 
 static bool meta_pascal_string_add(RzCore *core, ut64 addr, RzStrEnc encoding, RZ_NULLABLE const char *name) {
