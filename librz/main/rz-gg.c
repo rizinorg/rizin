@@ -374,37 +374,9 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 				}
 				rz_egg_load(egg, buf, 0);
 			}
-		} else if (strstr(file, ".c")) {
-			char *fileSanitized = strdup(file);
-			rz_str_sanitize(fileSanitized);
-			char *textFile = rz_egg_Cfile_parser(fileSanitized, arch, os, bits);
-
-			if (!textFile) {
-				eprintf("Failure while parsing '%s'\n", fileSanitized);
-				goto fail;
-			}
-
-			size_t l;
-			char *buf = rz_file_slurp(textFile, &l);
-			if (buf && l > 0) {
-				rz_egg_raw(egg, (const ut8 *)buf, (int)l);
-			} else {
-				eprintf("Error loading '%s'\n", textFile);
-			}
-
-			rz_file_rm(textFile);
-			free(fileSanitized);
-			free(textFile);
-			free(buf);
 		} else {
-			if (strstr(file, ".s") || strstr(file, ".asm")) {
-				fmt = 'a';
-			} else {
-				fmt = 0;
-			}
-			if (!rz_egg_include(egg, file, fmt)) {
-				eprintf("Cannot open '%s'\n", file);
-				goto fail;
+			if (!rz_egg_load_file(egg, file)) {
+				eprintf("Cannot load file \"%s\"\n", file);
 			}
 		}
 	}
