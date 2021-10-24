@@ -131,11 +131,10 @@ RZ_API RZ_OWN RzList *rz_core_list_themes(RzCore *core) {
 }
 
 RZ_IPI void rz_core_theme_nextpal(RzCore *core, int mode) {
-	RzList *files = NULL;
 	RzListIter *iter;
 	const char *fn;
 	int ctr = 0;
-	files = rz_core_list_themes(core);
+	RzList *files = rz_core_list_themes(core);
 
 	rz_list_foreach (files, iter, fn) {
 		if (*fn && *fn != '.') {
@@ -233,31 +232,32 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_highlight_list_handler(RzCore *core, int ar
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_cmd_eval_color_load_theme_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+RZ_IPI RzCmdStatus rz_cmd_eval_color_load_theme_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	RzList *themes_list = NULL;
 	RzListIter *th_iter;
 	const char *th;
 	if (argc == 2) {
 		return bool2status(rz_core_load_theme(core, argv[1]));
 	}
-	switch (mode) {
+	switch (state->mode) {
 	case RZ_OUTPUT_MODE_JSON: {
-		PJ *pj = pj_new();
-		if (!pj) {
-			break;
-		}
+		PJ *pj = state->d.pj;
 		pj_a(pj);
 		themes_list = rz_core_list_themes(core);
+		if (!themes_list) {
+			return RZ_CMD_STATUS_ERROR;
+		}
 		rz_list_foreach (themes_list, th_iter, th) {
 			pj_s(pj, th);
 		}
 		pj_end(pj);
-		rz_cons_println(pj_string(pj));
-		pj_free(pj);
 		break;
 	}
 	case RZ_OUTPUT_MODE_QUIET:
 		themes_list = rz_core_list_themes(core);
+		if (!themes_list) {
+			return RZ_CMD_STATUS_ERROR;
+		}
 		rz_list_foreach (themes_list, th_iter, th) {
 			rz_cons_printf("%s\n", th);
 		}
@@ -265,6 +265,9 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_load_theme_handler(RzCore *core, int argc, 
 		break;
 	default:
 		themes_list = rz_core_list_themes(core);
+		if (!themes_list) {
+			return RZ_CMD_STATUS_ERROR;
+		}
 		rz_list_foreach (themes_list, th_iter, th) {
 			if (curtheme && !strcmp(curtheme, th)) {
 				rz_cons_printf("> %s\n", th);
