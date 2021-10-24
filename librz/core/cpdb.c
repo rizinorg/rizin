@@ -118,7 +118,7 @@ static void rz_core_bin_pdb_types_print(const RzTypeDB *db, const RzPdb *pdb, co
 
 /**
  * \brief Return the PDB global vars string
- * 
+ *
  * \param pdb PDB instance
  * \param img_base image base addr
  * \param pj JSON instance
@@ -136,11 +136,6 @@ RZ_API char *rz_core_bin_pdb_gvars_as_string(RZ_NONNULL const RzPdb *pdb, const 
 	char *name;
 	RzStrBuf *buf = rz_strbuf_new(NULL);
 	if (!buf) {
-		return NULL;
-	}
-	RzStrBuf *cmd = rz_strbuf_new(NULL);
-	if (!cmd) {
-		rz_strbuf_free(buf);
 		return NULL;
 	}
 	if (mode == RZ_OUTPUT_MODE_JSON) {
@@ -226,11 +221,9 @@ static void pdb_set_symbols(const RzCore *core, const RzPdb *pdb, const ut64 img
 			char *fname = rz_str_newf("pdb.%s", filtered_name);
 			ut64 addr = (ut64)(img_base + rz_bin_pdb_omap_remap(omap_stream, gdata->offset + sctn_header->virtual_address));
 			RzFlagItem *item = rz_flag_set(core->flags, fname, addr, 0);
-			if (!item) {
-				free(filtered_name);
-				free(name);
+			if (item) {
+				rz_flag_item_set_realname(item, name);
 			}
-			rz_flag_item_set_realname(item, name);
 			free(filtered_name);
 			free(name);
 		}
@@ -240,7 +233,7 @@ static void pdb_set_symbols(const RzCore *core, const RzPdb *pdb, const ut64 img
 
 /**
  * \brief Parse PDB file info and integrate with typedb
- * 
+ *
  * \param core RzCore instance
  * \param file Path of PDB file
  * \return bool
@@ -268,7 +261,7 @@ RZ_API RzPdb *rz_core_pdb_load_info(RZ_NONNULL RzCore *core, RZ_NONNULL const ch
 
 /**
  * \brief Print parsed PDB file info
- * 
+ *
  * \param db RzTypeDB
  * \param pdb instance of PDB
  * \param state Output State

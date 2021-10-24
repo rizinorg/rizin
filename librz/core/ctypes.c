@@ -625,8 +625,8 @@ static void set_offset_hint(RzCore *core, RzAnalysisOp *op, RZ_BORROW RzTypePath
 		}
 	} else if (cmt && rz_analysis_op_ismemref(op->type)) {
 		rz_meta_set_string(core->analysis, RZ_META_TYPE_VARTYPE, at, cmt);
-		free(cmt);
 	}
+	free(cmt);
 }
 
 struct TLAnalysisContext {

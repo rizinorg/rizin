@@ -349,6 +349,7 @@ RZ_API bool rz_core_yank_hud_path(RzCore *core, const char *input, int dir) {
 	}
 	char *buf = rz_cons_hud_path(input, dir);
 	if (RZ_STR_ISEMPTY(buf)) {
+		free(buf);
 		return false;
 	}
 	bool res = rz_core_yank_set_str(core, RZ_CORE_FOREIGN_ADDR, buf);

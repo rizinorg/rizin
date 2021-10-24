@@ -152,6 +152,7 @@ RZ_IPI RzPdbTpiType *parse_simple_type(RzPdbTpiStream *stream, ut32 idx) {
 	Tpi_LF_SimpleType *simple_type = RZ_NEW0(Tpi_LF_SimpleType);
 	if (!simple_type) {
 		RZ_LOG_ERROR("Error allocating memory.\n");
+		free(type);
 		return NULL;
 	}
 	type->type_data = simple_type;
@@ -333,7 +334,7 @@ RZ_IPI RzPdbTpiType *parse_simple_type(RzPdbTpiStream *stream, ut32 idx) {
 	default:
 		break;
 	}
-	simple_type->type = rz_strbuf_get(buf);
+	simple_type->type = rz_strbuf_drain(buf);
 	// We just insert once
 	rz_rbtree_insert(&stream->types, &type->type_index, &type->rb, tpi_type_node_cmp, NULL);
 	return type;
@@ -1110,7 +1111,7 @@ static Tpi_LF_FieldList *parse_type_fieldlist(RzBuffer *buf, ut16 len) {
 		if (!rz_buf_read_le16(buf, &type->leaf_type)) {
 			RZ_FREE(type);
 			rz_list_free(fieldlist->substructs);
-			return NULL;
+			goto error;
 		}
 		read_len += sizeof(ut16);
 		switch (type->leaf_type) {
