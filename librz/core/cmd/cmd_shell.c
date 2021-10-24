@@ -167,7 +167,7 @@ RZ_IPI RzCmdStatus rz_cmd_shell_cat_handler(RzCore *core, int argc, const char *
 
 // mv
 RZ_IPI RzCmdStatus rz_cmd_shell_mv_handler(RzCore *core, int argc, const char **argv) {
-	char *input = rz_str_newf("mv %s %s", argv[0], argv[1]);
+	char *input = rz_str_newf("mv %s %s", argv[1], argv[2]);
 	int ec = rz_sys_system(input);
 	free(input);
 	return ec == 0 ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
