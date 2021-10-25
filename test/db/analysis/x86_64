@@ -80,7 +80,7 @@ e asm.bytes=true
 aa
 aae
 s main
-pd 1 @0x00001140
+pd 1 @ 0x00001140
 aei
 aeim
 aecu 0x00001140
@@ -942,8 +942,8 @@ NAME=analysis hasnext on main
 FILE=bins/elf/true32
 CMDS=<<EOF
 e analysis.hasnext=true
-af@main
-afi@main~size
+af @ main
+afi @ main~size
 EOF
 EXPECT=<<EOF
 size: 261
@@ -954,8 +954,8 @@ NAME=analysis without hasnext on main
 FILE=bins/elf/true32
 CMDS=<<EOF
 e analysis.hasnext=false
-af@main
-afi@main~size
+af @ main
+afi @ main~size
 EOF
 EXPECT=<<EOF
 size: 261
@@ -2210,7 +2210,7 @@ NAME=reference to like mov [0x400000], 0x1234
 FILE=bins/elf/analysis/reference.out
 CMDS=<<EOF
 aaa
-axt@0x0804a01c
+axt@ 0x0804a01c
 EOF
 EXPECT=<<EOF
 main 0x80483ee [DATA] mov dword [obj.a], 0x1337
@@ -2243,7 +2243,7 @@ CMDS=<<EOF
 e analysis.strings=true
 aa
 aae
-axt@0x80484e0
+axt @ 0x80484e0
 EOF
 EXPECT=<<EOF
 main 0x8048432 [STRING] lea eax, str.Hello_PIC
@@ -2283,7 +2283,7 @@ e analysis.strings=true
 e asm.sub.rel=false
 aa
 aae
-axt@0x80484e0
+axt @ 0x80484e0
 EOF
 EXPECT=<<EOF
 main 0x8048432 [STRING] lea eax, [ebx - 0x1b20]
@@ -2339,9 +2339,9 @@ e asm.bytes=true
 e asm.lines.bb=false
 e asm.lines.fcn=false
 aar
-pd 1 @0x400730
-pd 1 @0x4007f0
-pd 1 @0x400610
+pd 1 @ 0x400730
+pd 1 @ 0x4007f0
+pd 1 @ 0x400610
 EOF
 EXPECT=<<EOF
 ; DATA XREF from entry0 @ +0xf
@@ -2364,9 +2364,9 @@ e asm.lines.fcn=false
 e analysis.jmp.cref=true
 aa
 afr
-pd 1 @0x400730
-pd 1 @0x4007f0
-pd 1 @0x400610
+pd 1 @ 0x400730
+pd 1 @ 0x4007f0
+pd 1 @ 0x400610
 EOF
 EXPECT=<<EOF
   ; DATA XREF from entry0 @ 0x4005cf
@@ -2389,7 +2389,7 @@ e asm.lines.bb=false
 e asm.lines.fcn=false
 wx 307401000022
 aar
-pd 1 @_idata+0x2e
+pd 1 @ _idata+0x2e
 EOF
 EXPECT=<<EOF
 ; DATA XREF from unk @ 
@@ -2407,7 +2407,7 @@ e asm.lines.fcn=false
 wx 307401000022
 aa
 afr
-pd 1 @_idata+0x2e
+pd 1 @ _idata+0x2e
 EOF
 EXPECT=<<EOF
 ; DATA XREF from fcn.00000000 @ 
