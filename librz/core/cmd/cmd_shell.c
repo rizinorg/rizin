@@ -40,12 +40,12 @@ RZ_IPI RzCmdStatus rz_cmd_shell_exit_handler(RzCore *core, int argc, const char 
 RZ_IPI RzCmdStatus rz_cmd_shell_ls_handler(RzCore *core, int argc, const char **argv) {
 	char *arg = rz_str_array_join(argv + 1, argc - 1, " ");
 	char *res = rz_syscmd_ls(arg);
+	free(arg);
 	if (!res) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_cons_print(res);
 	free(res);
-	free(arg);
 	return RZ_CMD_STATUS_OK;
 }
 
