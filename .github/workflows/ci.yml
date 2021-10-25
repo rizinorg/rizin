@@ -195,61 +195,61 @@ jobs:
         export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
         ninja -C build install
-    - name: Disable user authentication for debugging (MacOS)
-      if: matrix.os == 'macos-latest' && matrix.enabled
-      run: |
-        security authorizationdb read system.privilege.taskport > taskport.plist
-        /usr/libexec/PlistBuddy -c 'Set :authenticate-user false' ./taskport.plist
-        sudo security authorizationdb write system.privilege.taskport < taskport.plist
-    - name: Run unit tests (meson)
-      continue-on-error: ${{ matrix.allow_failure }}
-      if: matrix.build_system == 'meson' && matrix.enabled
-      run: |
-        export PATH=${HOME}/bin:${HOME}/Library/Python/3.8/bin:${HOME}/Library/Python/3.9/bin:${HOME}/.local/bin:${PATH}
-        export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
-        export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
-        if [ "$ASAN" == "true" ]; then
-          export ASAN=1
-        fi
-        ninja -C build test
-      env:
-        ASAN: ${{ matrix.asan }}
-        ASAN_OPTIONS: ${{ matrix.asan_options }}
-    - name: Run tests
-      if: matrix.run_tests && matrix.enabled
-      run: |
-        # Running the test suite
-        export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
-        export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
-        export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
-        if [ "$ASAN" == "true" ]; then
-          export ASAN=1
-        fi
-        cd test
-        rz-test -L -o results.json
-      env:
-        ASAN: ${{ matrix.asan }}
-        ASAN_OPTIONS: ${{ matrix.asan_options }}
-    - name: Upload coverage info
-      if: matrix.coverage == '1' && matrix.enabled
-      working-directory: build
-      run: bash <(curl -s https://codecov.io/bash) -Q github-action -n -F
-    - name: Run fuzz tests
-      if: matrix.run_tests && matrix.enabled && (github.event_name != 'pull_request' || contains(github.event.pull_request.head.ref, 'fuzz'))
-      run: |
-        export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
-        export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
-        export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
-        cd test
-        rz-test -LF bins/fuzzed @fuzz
-      env:
-        ASAN_OPTIONS: ${{ matrix.asan_options }}
-    - name: Upload test results
-      if: always() && matrix.run_tests && matrix.enabled
-      uses: actions/upload-artifact@v2
-      with:
-        name: test-results-${{ matrix.name }}
-        path: test/results.json
+    # - name: Disable user authentication for debugging (MacOS)
+    #   if: matrix.os == 'macos-latest' && matrix.enabled
+    #   run: |
+    #     security authorizationdb read system.privilege.taskport > taskport.plist
+    #     /usr/libexec/PlistBuddy -c 'Set :authenticate-user false' ./taskport.plist
+    #     sudo security authorizationdb write system.privilege.taskport < taskport.plist
+    # - name: Run unit tests (meson)
+    #   continue-on-error: ${{ matrix.allow_failure }}
+    #   if: matrix.build_system == 'meson' && matrix.enabled
+    #   run: |
+    #     export PATH=${HOME}/bin:${HOME}/Library/Python/3.8/bin:${HOME}/Library/Python/3.9/bin:${HOME}/.local/bin:${PATH}
+    #     export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
+    #     export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
+    #     if [ "$ASAN" == "true" ]; then
+    #       export ASAN=1
+    #     fi
+    #     ninja -C build test
+    #   env:
+    #     ASAN: ${{ matrix.asan }}
+    #     ASAN_OPTIONS: ${{ matrix.asan_options }}
+    # - name: Run tests
+    #   if: matrix.run_tests && matrix.enabled
+    #   run: |
+    #     # Running the test suite
+    #     export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
+    #     export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
+    #     export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
+    #     if [ "$ASAN" == "true" ]; then
+    #       export ASAN=1
+    #     fi
+    #     cd test
+    #     rz-test -L -o results.json
+    #   env:
+    #     ASAN: ${{ matrix.asan }}
+    #     ASAN_OPTIONS: ${{ matrix.asan_options }}
+    # - name: Upload coverage info
+    #   if: matrix.coverage == '1' && matrix.enabled
+    #   working-directory: build
+    #   run: bash <(curl -s https://codecov.io/bash) -Q github-action -n -F
+    # - name: Run fuzz tests
+    #   if: matrix.run_tests && matrix.enabled && (github.event_name != 'pull_request' || contains(github.event.pull_request.head.ref, 'fuzz'))
+    #   run: |
+    #     export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
+    #     export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
+    #     export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
+    #     cd test
+    #     rz-test -LF bins/fuzzed @fuzz
+    #   env:
+    #     ASAN_OPTIONS: ${{ matrix.asan_options }}
+    # - name: Upload test results
+    #   if: always() && matrix.run_tests && matrix.enabled
+    #   uses: actions/upload-artifact@v2
+    #   with:
+    #     name: test-results-${{ matrix.name }}
+    #     path: test/results.json
 
   build-centos7:
     name: Build on CentOS 7
