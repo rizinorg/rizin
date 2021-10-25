@@ -368,13 +368,13 @@ if host_machine.system() == 'freebsd' or host_machine.system() == 'dragonfly'
   add_project_link_arguments('-Wl,--allow-shlib-undefined', language: 'c')
 endif
 
-lrt = []
+lrt = dependency('', required: false)
 if not cc.has_function('clock_gettime', prefix: '#include <time.h>') and cc.has_header_symbol('features.h', '__GLIBC__')
   lrt = cc.find_library('rt', required: true, static: is_static_build)
 endif
 
 have_lrt = not ['windows', 'darwin', 'openbsd', 'android', 'haiku'].contains(host_machine.system())
-if have_lrt and lrt == []
+if have_lrt and not lrt.found()
   lrt = cc.find_library('rt', required: true, static: is_static_build)
 endif
 
