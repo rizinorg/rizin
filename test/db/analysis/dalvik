@@ -21,7 +21,7 @@ RUN
 
 NAME=Dalvik HelloWorld func xref
 FILE=bins/dex/HelloWorld.dex
-CMDS=aa; axt @sym.LHello_._init___V
+CMDS=aa; axt @ sym.LHello_._init___V
 EXPECT=<<EOF
 sym.Ljava_lang_System_.out 0x24 [CALL] invoke-direct {}, LHello;-><init>()V
 sym.Ljava_lang_System_.out 0x3c [CALL] invoke-direct {}, LHello;-><init>()V
