@@ -349,7 +349,6 @@ bool test_rz_io_default(void) {
 	close(fd);
 	mu_assert_memeq(buf, (ut8 *)"FEDCBA0987654321", 0x10, "data has been correctly written at 0x50");
 	rz_file_rm(filename);
-	free(filename);
 	mu_end;
 }
 

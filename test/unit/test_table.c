@@ -325,8 +325,7 @@ bool test_rz_table_columns() {
 bool test_rz_table_transpose() {
 	RzTable *t = __table_test_data1();
 	rz_table_add_row(t, "d", "100", NULL);
-	RzTable *transpose = rz_table_transpose(t);
-	char *table = rz_table_tostring(transpose);
+	char *table = rz_table_tostring(rz_table_transpose(t));
 	mu_assert_streq(table,
 		"Name  Value1 Value2 Value3 Value4 \n"
 		"----------------------------------\n"
@@ -334,8 +333,6 @@ bool test_rz_table_transpose() {
 		"code  97     98     99     100\n",
 		"rz_table_transpose");
 	free(table);
-	rz_table_free(transpose);
-	rz_table_free(t);
 	mu_end;
 }
 
@@ -354,7 +351,6 @@ bool test_rz_table_add_row_columnsf() {
 		"e     10\n",
 		"rz_table_transpose");
 	free(table);
-	rz_table_free(t);
 	mu_end;
 }
 

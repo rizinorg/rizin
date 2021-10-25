@@ -360,21 +360,19 @@ ok = cc.has_header_symbol('sys/personality.h', 'ADDR_NO_RANDOMIZE')
 userconf.set10('HAVE_DECL_ADDR_NO_RANDOMIZE', ok)
 ok = cc.has_header_symbol('sys/procctl.h', 'PROC_ASLR_CTL')
 userconf.set10('HAVE_DECL_PROCCTL_ASLR_CTL', ok)
-ok = cc.has_header_symbol('linux/ashmem.h', 'ASHMEM_NAME_LEN')
-userconf.set10('HAVE_DECL_ASHMEM_NAME_LEN', ok)
 
 if host_machine.system() == 'freebsd' or host_machine.system() == 'dragonfly'
   add_project_link_arguments('-Wl,--unresolved-symbols,ignore-in-object-files', language: 'c')
   add_project_link_arguments('-Wl,--allow-shlib-undefined', language: 'c')
 endif
 
-lrt = dependency('', required: false)
+lrt = []
 if not cc.has_function('clock_gettime', prefix: '#include <time.h>') and cc.has_header_symbol('features.h', '__GLIBC__')
   lrt = cc.find_library('rt', required: true, static: is_static_build)
 endif
 
 have_lrt = not ['windows', 'darwin', 'openbsd', 'android', 'haiku'].contains(host_machine.system())
-if have_lrt and not lrt.found()
+if have_lrt and lrt == []
   lrt = cc.find_library('rt', required: true, static: is_static_build)
 endif
 

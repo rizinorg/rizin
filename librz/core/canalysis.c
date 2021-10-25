@@ -1636,8 +1636,8 @@ static char *core_analysis_graph_label(RzCore *core, RzAnalysisBlock *bb, int op
 		snprintf(cmd, sizeof(cmd), "pdb %" PFMT64u " @ 0x%08" PFMT64x, bb->size, bb->addr);
 		str = rz_core_cmd_str(core, cmd);
 	} else if (opts & RZ_CORE_ANALYSIS_GRAPHBODY) {
-		const int scrColor = rz_config_get_i(core->config, "scr.color");
-		const bool scrUtf8 = rz_config_get_b(core->config, "scr.utf8");
+		const bool scrColor = rz_config_get(core->config, "scr.color");
+		const bool scrUtf8 = rz_config_get(core->config, "scr.utf8");
 		rz_config_set_i(core->config, "scr.color", COLOR_MODE_DISABLED);
 		rz_config_set(core->config, "scr.utf8", "false");
 		snprintf(cmd, sizeof(cmd), "pD %" PFMT64u " @ 0x%08" PFMT64x, bb->size, bb->addr);

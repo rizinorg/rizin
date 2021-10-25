@@ -252,7 +252,6 @@ RZ_API void rz_asm_free(RzAsm *a) {
 	}
 	rz_syscall_free(a->syscall);
 	free(a->cpu);
-	free(a->features);
 	sdb_free(a->pair);
 	ht_pp_free(a->flags);
 	a->pair = NULL;

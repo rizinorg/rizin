@@ -7,7 +7,7 @@
  * Create a data effect
  * \return Data effect instance
  */
-RZ_API RzILDataEffect *rz_il_effect_data_new(void) {
+RZ_API RzILDataEffect *rz_il_effect_new_data(void) {
 	RzILDataEffect *ret;
 	ret = RZ_NEW0(RzILDataEffect);
 	if (!ret) {
@@ -23,7 +23,7 @@ RZ_API RzILDataEffect *rz_il_effect_data_new(void) {
  * Create a control effect
  * \return Control effect
  */
-RZ_API RzILCtrlEffect *rz_il_effect_ctrl_new(void) {
+RZ_API RzILCtrlEffect *rz_il_effect_new_ctrl(void) {
 	RzILCtrlEffect *ret;
 	ret = RZ_NEW0(RzILCtrlEffect);
 	if (!ret) {
@@ -73,7 +73,7 @@ RZ_API RzILEffect *rz_il_wrap_data_effect(RzILDataEffect *eff) {
  * Free a control effect
  * \param eff control effect to be free
  */
-RZ_API void rz_il_effect_ctrl_free(RzILCtrlEffect *eff) {
+RZ_API void rz_il_effect_free_ctrl(RzILCtrlEffect *eff) {
 	if (!eff) {
 		return;
 	}
@@ -84,7 +84,7 @@ RZ_API void rz_il_effect_ctrl_free(RzILCtrlEffect *eff) {
  * Free a data effect
  * \param eff data effect to be free
  */
-RZ_API void rz_il_effect_data_free(RzILDataEffect *eff) {
+RZ_API void rz_il_effect_free_data(RzILDataEffect *eff) {
 	if (!eff) {
 		return;
 	}
@@ -102,10 +102,10 @@ RZ_API RzILEffect *rz_il_effect_new(EFFECT_TYPE type) {
 	// can only be data or ctrl
 	switch (type) {
 	case EFFECT_TYPE_CTRL:
-		ret = rz_il_wrap_ctrl_effect(rz_il_effect_ctrl_new());
+		ret = rz_il_wrap_ctrl_effect(rz_il_effect_new_ctrl());
 		break;
 	case EFFECT_TYPE_DATA:
-		ret = rz_il_wrap_data_effect(rz_il_effect_data_new());
+		ret = rz_il_wrap_data_effect(rz_il_effect_new_data());
 		break;
 	case EFFECT_TYPE_NON:
 		ret = RZ_NEW0(RzILEffect);
@@ -136,11 +136,11 @@ RZ_API void rz_il_effect_free(RzILEffect *effect) {
 	EFFECT_TYPE type = effect->effect_type;
 	switch (type) {
 	case EFFECT_TYPE_CTRL:
-		rz_il_effect_ctrl_free(effect->ctrl_eff);
+		rz_il_effect_free_ctrl(effect->ctrl_eff);
 		effect->ctrl_eff = NULL;
 		break;
 	case EFFECT_TYPE_DATA:
-		rz_il_effect_data_free(effect->data_eff);
+		rz_il_effect_free_data(effect->data_eff);
 		effect->data_eff = NULL;
 		break;
 	case EFFECT_TYPE_NON:
@@ -202,7 +202,7 @@ RZ_API RZ_OWN char *rz_il_effect_as_string(RzILEffect *effect) {
  * \param type Label type
  * \return Pointer to label
  */
-RZ_API RzILEffectLabel *rz_il_effect_label_new(RZ_NONNULL const char *name, EFFECT_LABEL_TYPE type) {
+RZ_API RzILEffectLabel *rz_il_effect_new_label(RZ_NONNULL const char *name, EFFECT_LABEL_TYPE type) {
 	RzILEffectLabel *lbl = RZ_NEW0(RzILEffectLabel);
 	if (!lbl) {
 		return NULL;

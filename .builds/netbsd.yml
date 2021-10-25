@@ -23,7 +23,6 @@ tasks:
         sed -i "/'file',/d" test/unit/meson.build
         # Workaround to avoid running rz-pipe test since there is no python3 symlink but a python3.8 binary available.
         rm -f test/db/cmd/cmd_pipe
-        rm -f test/db/archos/not-windows-any/cmd_pipe
         meson --prefix=${HOME} build
         ninja -C build
     - install: |

@@ -3822,7 +3822,7 @@ HRESULT VarBstrFromI8(LONG64 i64In, LCID lcid, ULONG dwFlags, BSTR *pbstrOut);
 HRESULT VarUI1FromDisp(unknown_t *pdispIn, LCID lcid, BYTE *pbOut);
 SECURITY_STATUS NCryptStreamOpenToUnprotect(unknown_t *pStreamInfo, DWORD dwFlags, HWND hWnd, NCRYPT_STREAM_HANDLE *phStream);
 BOOL CoFileTimeToDosDateTime(FILETIME *lpFileTime, LPWORD lpDosDate, LPWORD lpDosTime);
-BOOL GetVersionExA(LPOSVERSIONINFOA lpVersionInformation);
+BOOL GetVersionExA(unknown_t lpVersionInformation);
 HRESULT VarUI1FromDec(DECIMAL *pdecIn, BYTE *pbOut);
 DWORD GetMappedFileNameW(HANDLE hProcess, LPVOID lpv, LPWSTR lpFilename, DWORD nSize);
 INT SysReAllocStringLen(BSTR *pbstr, unknown_t *psz, unsigned int len);

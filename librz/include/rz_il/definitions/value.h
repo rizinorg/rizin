@@ -34,9 +34,9 @@ typedef enum {
 	RZIL_TEMP_EMPTY
 } RZIL_TEMP_TYPE;
 
-RZ_API RzILVal *rz_il_value_new(void);
-RZ_API RzILVal *rz_il_value_dup(RzILVal *val);
-RZ_API void rz_il_value_free(RzILVal *val);
+RZ_API RzILVal *rz_il_new_value(void);
+RZ_API RzILVal *rz_il_dup_value(RzILVal *val);
+RZ_API void rz_il_free_value(RzILVal *val);
 
 #ifdef __cplusplus
 }

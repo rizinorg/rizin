@@ -19,8 +19,6 @@ tasks:
         /usr/local/bin/python3 -m pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
     - build: |
         cd rizin
-        # Workaround to avoid running rz-pipe shm:// test due to memory constraints.
-        rm -f test/db/archos/not-windows-any/cmd_pipe
         meson --buildtype=debug --prefix=${HOME} build # buildtype temporarily set to debug to examine rare rz-test crash core dumps
         ninja -C build
     - install: |

@@ -42,7 +42,7 @@ RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, int addr_size, int data_s
 		return false;
 	}
 
-	vm->vm_global_value_set = rz_il_new_bag(RZ_IL_VM_MAX_VAL, (RzILBagFreeFunc)rz_il_value_free);
+	vm->vm_global_value_set = rz_il_new_bag(RZ_IL_VM_MAX_VAL, (RzILBagFreeFunc)rz_il_free_value);
 	if (!vm->vm_global_value_set) {
 		RZ_LOG_ERROR("[VM INIT FAILED] : value bag\n");
 		rz_il_vm_fini(vm);
@@ -167,7 +167,7 @@ RZ_API void rz_il_vm_fini(RzILVM *vm) {
 
 	if (vm->mems) {
 		for (int i = 0; i < vm->mem_count; ++i) {
-			rz_il_mem_free(vm->mems[i]);
+			rz_il_free_mem(vm->mems[i]);
 		}
 		free(vm->mems);
 	}
@@ -184,31 +184,6 @@ RZ_API void rz_il_vm_fini(RzILVM *vm) {
 		free(vm->op_handler_table);
 	}
 	rz_il_bv_free(vm->pc);
-}
-
-/**
- * Create a new empty VM
- * \param vm RzILVM, pointer to an empty VM
- * \param start_addr ut64, initiation pc address
- * \param addr_size int, size of the address in VM
- * \param data_size int, size of the minimal data unit in VM
- */
-RZ_API RzILVM *rz_il_vm_new(ut64 start_addr, int addr_size, int data_size) {
-	RzILVM *vm = RZ_NEW0(RzILVM);
-	if (!vm) {
-		return NULL;
-	}
-	rz_il_vm_init(vm, start_addr, addr_size, data_size);
-	return vm;
-}
-
-/**
- * Close, clean and free vm
- * \param vm RzILVM* pointer to VM
- */
-RZ_API void rz_il_vm_free(RzILVM *vm) {
-	rz_il_vm_fini(vm);
-	free(vm);
 }
 
 /**
@@ -246,7 +221,7 @@ RZ_API void rz_il_free_bv_addr(RzILBitVector *addr) {
  * \return Mem memory, return a pointer to the newly created memory
  */
 RZ_API RzILMem *rz_il_vm_add_mem(RzILVM *vm, ut32 min_unit_size) {
-	RzILMem *mem = rz_il_mem_new(min_unit_size);
+	RzILMem *mem = rz_il_new_mem(min_unit_size);
 	vm->mems[vm->mem_count] = mem;
 	vm->mem_count += 1;
 	return mem;

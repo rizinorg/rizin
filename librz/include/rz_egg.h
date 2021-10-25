@@ -184,15 +184,13 @@ typedef struct rz_egg_emit_t {
 RZ_API RzEgg *rz_egg_new(void);
 RZ_API void rz_egg_lang_init(RzEgg *egg);
 RZ_API void rz_egg_lang_free(RzEgg *egg);
-RZ_API const char *rz_egg_os_as_string(int os);
 RZ_API char *rz_egg_to_string(RzEgg *egg);
 RZ_API void rz_egg_free(RzEgg *egg);
 RZ_API int rz_egg_add(RzEgg *a, RzEggPlugin *foo);
 RZ_API void rz_egg_reset(RzEgg *egg);
-RZ_API bool rz_egg_setup(RzEgg *egg, const char *arch, int bits, int endian, const char *os);
+RZ_API int rz_egg_setup(RzEgg *egg, const char *arch, int bits, int endian, const char *os);
 RZ_API int rz_egg_include(RzEgg *egg, const char *file, int format);
 RZ_API void rz_egg_load(RzEgg *egg, const char *code, int format);
-RZ_API bool rz_egg_load_file(RzEgg *egg, const char *file);
 RZ_API void rz_egg_syscall(RzEgg *egg, const char *arg, ...) RZ_PRINTF_CHECK(2, 3);
 RZ_API void rz_egg_alloc(RzEgg *egg, int n);
 RZ_API void rz_egg_label(RzEgg *egg, const char *name);

@@ -128,9 +128,6 @@ static bool buf_sparse_init(RzBuffer *b, const void *user) {
 	if (user) {
 		SparseInitConfig *cfg = (void *)user;
 		priv->base = cfg->base;
-		if (priv->base) {
-			rz_buf_ref(priv->base);
-		}
 		priv->write_mode = cfg->write_mode;
 	} else {
 		priv->write_mode = RZ_BUF_SPARSE_WRITE_MODE_SPARSE;
@@ -144,7 +141,6 @@ static bool buf_sparse_init(RzBuffer *b, const void *user) {
 static bool buf_sparse_fini(RzBuffer *b) {
 	struct buf_sparse_priv *priv = get_priv_sparse(b);
 	rz_vector_fini(&priv->chunks);
-	rz_buf_free(priv->base);
 	RZ_FREE(b->priv);
 	return true;
 }

@@ -520,8 +520,6 @@ bool test_cmd_group_exec_help(void) {
 	rz_cmd_parsed_args_free(a);
 	mu_assert_streq(h1, h2, "pd? should be the same as pd?? because it is a terminal command");
 	mu_assert_streq(h1, pd_help_exp, "pd?/pd?? should print full help");
-	free(h1);
-	free(h2);
 
 	rz_cmd_free(cmd);
 	mu_end;

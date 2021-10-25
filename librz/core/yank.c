@@ -179,9 +179,10 @@ RZ_API bool rz_core_yank_paste(RzCore *core, ut64 addr, ut64 len) {
 		return false;
 	}
 	rz_buf_read_at(core->yank_buf, 0, buf, len);
-	bool res = rz_core_write_at(core, addr, buf, len);
-	free(buf);
-	return res;
+	if (!rz_core_write_at(core, addr, buf, len)) {
+		return false;
+	}
+	return true;
 }
 
 /* \brief Yanks data from the current offset to the specified offset
@@ -349,7 +350,6 @@ RZ_API bool rz_core_yank_hud_path(RzCore *core, const char *input, int dir) {
 	}
 	char *buf = rz_cons_hud_path(input, dir);
 	if (RZ_STR_ISEMPTY(buf)) {
-		free(buf);
 		return false;
 	}
 	bool res = rz_core_yank_set_str(core, RZ_CORE_FOREIGN_ADDR, buf);

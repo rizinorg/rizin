@@ -85,12 +85,12 @@ void *rz_il_handler_goto(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 
 	RzILEffectLabel *label = rz_il_vm_find_label_by_name(vm, lname);
 	if (label->type == EFFECT_LABEL_SYSCALL) {
-		rz_il_effect_ctrl_free(eff->ctrl_eff);
+		rz_il_effect_free_ctrl(eff->ctrl_eff);
 		eff->notation = EFFECT_NOTATION_GOTO_SYS;
 		// WARN : HACK to call hook
 		eff->ctrl_eff = (void *)op;
 	} else if (label->type == EFFECT_LABEL_HOOK) {
-		rz_il_effect_ctrl_free(eff->ctrl_eff);
+		rz_il_effect_free_ctrl(eff->ctrl_eff);
 		eff->notation = EFFECT_NOTATION_GOTO_HOOK;
 		// WARN : HACK to call
 		eff->ctrl_eff = (void *)op;
@@ -139,7 +139,8 @@ void *rz_il_handler_branch(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 		// false branch
 		ret = (op_branch->false_eff == NULL) ? rz_il_effect_new(EFFECT_TYPE_NON) : rz_il_evaluate_effect(vm, op_branch->false_eff, type);
 	}
-	rz_il_bool_free(condition);
+
+	rz_il_free_bool(condition);
 
 	if (ret) {
 		*type = RZIL_OP_ARG_EFF;

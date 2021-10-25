@@ -199,8 +199,6 @@ static RzType *parse_type_procedure(const RzTypeDB *typedb, RzPdbTpiStream *stre
 	RzType *typ = RZ_NEW0(RzType);
 	RzCallable *callable = RZ_NEW0(RzCallable);
 	if (!typ || !callable) {
-		free(typ);
-		free(callable);
 		return NULL;
 	}
 	typ->kind = RZ_TYPE_KIND_CALLABLE;
@@ -224,7 +222,6 @@ static RzType *parse_type_procedure(const RzTypeDB *typedb, RzPdbTpiStream *stre
 	typ->callable->args = rz_pvector_new((RzPVectorFree)rz_type_callable_arg_free);
 	if (!typ->callable->args) {
 		rz_type_free(typ);
-		return NULL;
 	}
 	RzPdbTpiType *arglist = rz_bin_pdb_get_type_by_index(stream, lf_procedure->arg_list);
 	if (arglist) {
@@ -240,8 +237,6 @@ static RzType *parse_type_mfunction(const RzTypeDB *typedb, RzPdbTpiStream *stre
 	RzType *type = RZ_NEW0(RzType);
 	RzCallable *callable = RZ_NEW0(RzCallable);
 	if (!type || !callable) {
-		free(type);
-		free(callable);
 		return NULL;
 	}
 	type->kind = RZ_TYPE_KIND_CALLABLE;
@@ -260,7 +255,6 @@ static RzType *parse_type_mfunction(const RzTypeDB *typedb, RzPdbTpiStream *stre
 	type->callable->args = rz_pvector_new((RzPVectorFree)rz_type_callable_arg_free);
 	if (!type->callable->args) {
 		rz_type_free(type);
-		return NULL;
 	}
 	RzPdbTpiType *arglist = rz_bin_pdb_get_type_by_index(stream, lf_mfunction->arglist);
 	if (arglist) {
@@ -439,8 +433,7 @@ static RzType *parse_structure(const RzTypeDB *typedb, RzPdbTpiStream *stream, R
 	RzType *typ = RZ_NEW0(RzType);
 	if (!typ) {
 		rz_type_base_type_free(base_type);
-		base_type = NULL;
-		goto cleanup;
+		return NULL;
 	}
 	typ->kind = RZ_TYPE_KIND_IDENTIFIER;
 	typ->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_STRUCT;
@@ -554,7 +547,6 @@ static RzType *parse_union(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdb
 
 	base_type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_UNION);
 	if (!base_type) {
-		free(name);
 		return NULL;
 	}
 	bool to_free_name = false;

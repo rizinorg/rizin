@@ -631,6 +631,18 @@ static ut64 reloc_target_size(ELFOBJ *obj) {
 	return obj->bits / 8;
 }
 
+/// base vaddr where to map the artificial reloc target vfile
+static ut64 reloc_targets_map_base(RzBinFile *bf, struct Elf_(rz_bin_elf_obj_t) * obj) {
+	if (obj->reloc_targets_map_base_calculated) {
+		return obj->reloc_targets_map_base;
+	}
+	RzList *maps = maps_unpatched(bf);
+	obj->reloc_targets_map_base = rz_bin_relocs_patch_find_targets_map_base(maps, reloc_target_size(obj));
+	rz_list_free(maps);
+	obj->reloc_targets_map_base_calculated = true;
+	return obj->reloc_targets_map_base;
+}
+
 /// size of the artificial reloc target vfile
 static ut64 reloc_targets_vfile_size(RzBinFile *bf, ELFOBJ *obj) {
 	if (!bf->o || !bf->o->opts.patch_relocs || !Elf_(rz_bin_elf_has_relocs)(obj)) {
@@ -936,7 +948,7 @@ static void patch_relocs(RzBinFile *bf, ELFOBJ *bin) {
 	if (!size) {
 		return;
 	}
-	RzBinRelocTargetBuilder *targets = rz_bin_reloc_target_builder_new(cdsz, bin->reloc_targets_map_base);
+	RzBinRelocTargetBuilder *targets = rz_bin_reloc_target_builder_new(cdsz, reloc_targets_map_base(bf, bin));
 	if (!targets) {
 		return;
 	}
@@ -1026,10 +1038,9 @@ static RzList *maps(RzBinFile *bf) {
 
 	// if relocs should be patched, use the patched vfile for everything from the file
 	patch_relocs(bf, obj);
-	rz_bin_relocs_patch_maps(ret, obj->buf_patched, 0, obj->reloc_targets_map_base,
-		reloc_targets_vfile_size(bf, obj),
-		VFILE_NAME_PATCHED,
-		VFILE_NAME_RELOC_TARGETS);
+	rz_bin_relocs_patch_maps(ret, obj->buf_patched, 0,
+		reloc_targets_map_base(bf, obj), reloc_targets_vfile_size(bf, obj),
+		VFILE_NAME_PATCHED, VFILE_NAME_RELOC_TARGETS);
 	return ret;
 }
 
@@ -1270,7 +1281,7 @@ static RzList *relocs(RzBinFile *bf) {
 	ut64 got_addr = get_got_addr(bin);
 
 	if (!got_addr) {
-		got_addr = bin->reloc_targets_map_base;
+		got_addr = reloc_targets_map_base(bf, bin);
 	}
 
 	RzBinElfReloc *reloc;

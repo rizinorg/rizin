@@ -5,13 +5,13 @@
 #include <rz_il/rzil_vm.h>
 
 void *rz_il_handler_b0(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
-	RzILBool *ret = rz_il_bool_new(false);
+	RzILBool *ret = rz_il_new_bool(false);
 	*type = RZIL_OP_ARG_BOOL;
 	return ret;
 }
 
 void *rz_il_handler_b1(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
-	RzILBool *ret = rz_il_bool_new(true);
+	RzILBool *ret = rz_il_new_bool(true);
 	*type = RZIL_OP_ARG_BOOL;
 	return ret;
 }
@@ -22,8 +22,8 @@ void *rz_il_handler_and_(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	RzILBool *y = rz_il_evaluate_bool(vm, op_and_->y, type);
 
 	RzILBool *result = rz_il_bool_and(x, y);
-	rz_il_bool_free(x);
-	rz_il_bool_free(y);
+	rz_il_free_bool(x);
+	rz_il_free_bool(y);
 
 	*type = RZIL_OP_ARG_BOOL;
 	return result;
@@ -35,8 +35,8 @@ void *rz_il_handler_or_(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	RzILBool *y = rz_il_evaluate_bool(vm, op_or_->y, type);
 
 	RzILBool *result = rz_il_bool_or(x, y);
-	rz_il_bool_free(x);
-	rz_il_bool_free(y);
+	rz_il_free_bool(x);
+	rz_il_free_bool(y);
 
 	*type = RZIL_OP_ARG_BOOL;
 	return result;
@@ -46,7 +46,7 @@ void *rz_il_handler_inv(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	RzILOpInv *op_inv = op->op.inv;
 	RzILBool *x = rz_il_evaluate_bool(vm, op_inv->x, type);
 	RzILBool *result = rz_il_bool_not(x);
-	rz_il_bool_free(x);
+	rz_il_free_bool(x);
 
 	return result;
 }

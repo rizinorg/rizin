@@ -777,13 +777,11 @@ RZ_API bool rz_core_write_string_at(RzCore *core, ut64 addr, const char *s) {
 	int len = rz_str_unescape(str);
 	if (!rz_core_write_at(core, addr, (const ut8 *)str, len)) {
 		RZ_LOG_ERROR("Could not write '%s' at %" PFMT64x "\n", s, addr);
-		free(str);
 		return false;
 	}
 	if (rz_config_get_i(core->config, "cfg.wseek")) {
 		rz_core_seek_delta(core, len, true);
 	}
-	free(str);
 	return true;
 }
 

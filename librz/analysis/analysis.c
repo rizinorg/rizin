@@ -172,7 +172,6 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 
 	plugin_fini(a);
 
-	rz_analysis_rzil_cleanup(a, a->rzil);
 	rz_list_free(a->fcns);
 	ht_up_free(a->ht_addr_fun);
 	ht_pp_free(a->ht_name_fun);

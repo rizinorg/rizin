@@ -69,7 +69,7 @@ bool test_rz_bin(void) {
 		i++;
 	}
 
-	RzList *hashes = rz_bin_file_compute_hashes(bin, bf, UT64_MAX);
+	const RzList *hashes = rz_bin_file_compute_hashes(bin, bf, UT64_MAX);
 	mu_assert_eq(rz_list_length(hashes), 5, "rz_bin_file_get_hashes");
 	const char *hash_names[] = { "md5", "sha1", "sha256", "crc32", "entropy" };
 	const char *hash_hexes[] = { "99327411dd72a11d7198b54298648adf", "f2bf1c7758c7b1e22bdea1d7681882783b658705", "3aed9a3821134a2ab1d69cb455e5e9d80bb651a1c97af04cdba4f3bb0adaa37b", "cf8cb28a", "3.484857" };
@@ -80,7 +80,6 @@ bool test_rz_bin(void) {
 		mu_assert_streq(hash->hex, hash_hexes[i], "hash digest is wrong");
 		i++;
 	}
-	rz_list_free(hashes);
 
 	rz_bin_free(bin);
 	rz_io_free(io);

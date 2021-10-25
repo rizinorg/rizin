@@ -14,7 +14,6 @@ static bool test_rz_id_storage_toomany(void) {
 	mu_assert_true(r, "id1");
 	r = rz_id_storage_add(ids, "ccc", &id2);
 	mu_assert_false(r, "id2");
-	rz_id_storage_free(ids);
 	mu_end;
 }
 
@@ -24,7 +23,6 @@ static bool test_rz_id_storage_wrong(void) {
 	RzIDStorage *ids = rz_id_storage_new(20, 10);
 	r = rz_id_storage_add(ids, "aaa", &id0);
 	mu_assert_false(r, "id0");
-	rz_id_storage_free(ids);
 	mu_end;
 }
 

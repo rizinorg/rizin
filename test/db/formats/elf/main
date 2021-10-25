@@ -158,11 +158,3 @@ vaddr      paddr
 
 EOF
 RUN
-
-NAME=main fedora 35 x86_64 ls (#1864)
-FILE=bins/elf/analysis/fedora_35_x86_64bit_ls
-CMDS=?v main
-EXPECT=<<EOF
-0x4d80
-EOF
-RUN

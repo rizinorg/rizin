@@ -6,14 +6,18 @@
 #include "minunit.h"
 
 static bool test_rzil_vm_init() {
-	RzILVM *vm = rz_il_vm_new(0, 8, 8);
+	RzILVM *vm = RZ_NEW0(RzILVM);
+	mu_assert_notnull(vm, "Create VM");
+	rz_il_vm_init(vm, 0, 8, 8);
 	mu_assert_eq(vm->addr_size, 8, "VM Init");
-	rz_il_vm_free(vm);
+	rz_il_vm_fini(vm);
 	mu_end;
 }
 
 static bool test_rzil_vm_basic_operation() {
-	RzILVM *vm = rz_il_vm_new(0, 8, 16);
+	RzILVM *vm = RZ_NEW0(RzILVM);
+	mu_assert_notnull(vm, "Create vm");
+	rz_il_vm_init(vm, 0, 8, 16);
 
 	// 1. create variables
 	RzILVar *var_r1 = rz_il_vm_create_variable(vm, "r1");
@@ -98,12 +102,13 @@ static bool test_rzil_vm_basic_operation() {
 	mu_assert_true(is_equal_bv, "Update lazy label successfully");
 
 	rz_il_bv_free(addr);
-	rz_il_vm_free(vm);
+	rz_il_vm_fini(vm);
 	mu_end;
 }
 
 static bool test_rzil_vm_operation() {
-	RzILVM *vm = rz_il_vm_new(0, 8, 16);
+	RzILVM *vm = RZ_NEW0(RzILVM);
+	rz_il_vm_init(vm, 0, 8, 16);
 
 	// 1. create register r0 and r1
 	rz_il_vm_add_reg(vm, "r0", 8);
@@ -128,12 +133,13 @@ static bool test_rzil_vm_operation() {
 	is_zero = rz_il_bv_is_zero_vector(r1->data.bv);
 	mu_assert("Init r1 as all zero bitvector", is_zero);
 
-	rz_il_vm_free(vm);
+	rz_il_vm_fini(vm);
 	mu_end;
 }
 
 static bool test_rzil_vm_root_evaluation() {
-	RzILVM *vm = rz_il_vm_new(0, 8, 16);
+	RzILVM *vm = RZ_NEW0(RzILVM);
+	rz_il_vm_init(vm, 0, 8, 16);
 
 	RzILOp *ite_root = rz_il_new_op(RZIL_OP_ITE);
 	RzILOp *add = rz_il_new_op(RZIL_OP_ADD);
@@ -161,14 +167,14 @@ static bool test_rzil_vm_root_evaluation() {
 	RzILBool *condition = rz_il_evaluate_bool(vm, ite_root->op.ite->condition, &type_checker);
 	mu_assert_eq(type_checker, RZIL_OP_ARG_BOOL, "Evaluate a bool expression");
 	mu_assert_eq(condition->b, true, "Correctly convert bitv to bool");
-	rz_il_bool_free(condition);
+	rz_il_free_bool(condition);
 
 	// Evaluate the whole ite expression
 	RzILVal *ite_val = rz_il_evaluate_val(vm, ite_root, &type_checker);
 	mu_assert_eq(type_checker, RZIL_OP_ARG_VAL, "Correctly get a RzILVal");
 	mu_assert_eq(ite_val->type, RZIL_VAR_TYPE_BOOL, "Return a Bool Val");
 	mu_assert_eq(ite_val->data.b->b, true, "Return a True");
-	rz_il_value_free(ite_val);
+	rz_il_free_value(ite_val);
 
 	// Catch error
 	RzILOp *branch_root = rz_il_new_op(RZIL_OP_BRANCH);
@@ -184,11 +190,8 @@ static bool test_rzil_vm_root_evaluation() {
 	RzILEffect *eff = rz_il_evaluate_effect(vm, branch_root, &type_checker);
 	mu_assert_null(eff, "Error happens");
 	mu_assert_eq(type_checker, RZIL_OP_ARG_BOOL, "you cannot convert bool type to effect, such an error will be detected");
-	rz_il_effect_free(eff);
 
 	rz_il_free_op(ite_root);
-	rz_il_free_op(true_val);
-	rz_il_free_op(false_val);
 	rz_il_free_op(add);
 	rz_il_free_op(arg1);
 	rz_il_free_op(arg2);
@@ -196,7 +199,7 @@ static bool test_rzil_vm_root_evaluation() {
 	rz_il_free_op(branch_true);
 	rz_il_free_op(branch_false);
 	rz_il_free_op(branch_cond);
-	rz_il_vm_free(vm);
+	rz_il_vm_fini(vm);
 	mu_end;
 }
 

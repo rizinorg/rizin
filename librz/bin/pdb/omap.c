@@ -29,8 +29,6 @@ RZ_IPI bool parse_omap_stream(RzPdb *pdb, RzPdbMsfStream *stream) {
 		}
 		if (!rz_buf_read_le32(buf, &entry->from) ||
 			!rz_buf_read_le32(buf, &entry->to)) {
-			free(entry);
-			rz_list_free(s->entries);
 			return false;
 		}
 		read_len += sizeof(ut32) * 2;

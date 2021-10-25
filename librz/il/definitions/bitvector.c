@@ -53,8 +53,8 @@ RZ_API RZ_OWN char *rz_il_bv_as_string(RZ_NONNULL RzILBitVector *bv) {
 		return rz_str_new("Empty Bitvector");
 	}
 
-	char *str = (char *)malloc(bv->len + 1);
-	for (int i = bv->len; i >= 0; --i) {
+	char *str = (char *)malloc(bv->len);
+	for (int i = bv->len - 1; i >= 0; --i) {
 		str[i] = (char)(rz_il_bv_get(bv, i) ? '1' : '0');
 	}
 	str[bv->len] = '\0';

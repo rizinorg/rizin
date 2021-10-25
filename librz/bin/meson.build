@@ -85,8 +85,6 @@ rz_bin_sources = [
   'format/elf/elf64_hash.c',
   'format/elf/elf_imports.c',
   'format/elf/elf64_imports.c',
-  'format/elf/elf_map.c',
-  'format/elf/elf64_map.c',
   'format/elf/elf_info.c',
   'format/elf/elf64_info.c',
   'format/elf/elf_misc.c',

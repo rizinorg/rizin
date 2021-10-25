@@ -1,4 +1,3 @@
-// SPDX-FileCopyrightText: 2021 Florian Märkl <info@florianmaerkl.de>
 // SPDX-FileCopyrightText: 2016 Oscar Salvador <osalvador.vilardaga@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
@@ -18,7 +17,7 @@
 #define FLAT_FLAG_GZDATA 0x8 /* only data/relocs are compressed (for XIP) */
 #define FLAT_FLAG_KTRACE 0x10 /* output useful kernel trace for debugging */
 
-typedef struct rz_bflt_hdr_t {
+struct bflt_hdr {
 	char magic[4];
 	ut32 rev;
 	ut32 entry;
@@ -31,33 +30,30 @@ typedef struct rz_bflt_hdr_t {
 	ut32 flags;
 	ut32 build_date;
 	ut32 filler[5];
-} RzBfltHdr;
+};
 
-typedef struct rz_bflt_reloc_t {
-	ut32 reloc_paddr; ///< where to patch, offset from the beginning of the file
-	ut32 value_orig; ///< original value at that address
-} RzBfltReloc;
+//typedef reloc_struct_t
 
-typedef struct rz_bflt_obj_t {
-	RzBfltHdr hdr;
-	RzVector /*<RzBfltReloc>*/ relocs;
-	RzVector /*<RzBfltReloc>*/ got_relocs;
+struct reloc_struct_t {
+	ut32 addr_to_patch;
+	ut32 data_offset;
+};
+
+struct rz_bin_bflt_obj {
+	struct bflt_hdr *hdr;
+	struct reloc_struct_t *reloc_table;
+	struct reloc_struct_t *got_table;
 	RzBuffer *b;
-	RzBuffer *buf_patched; ///< overlay over the original file with relocs patched
-	ut64 baddr;
-	bool big_endian;
+	ut8 endian;
 	size_t size;
 	uint32_t n_got;
-} RzBfltObj;
+};
 
-#define BFLT_HDR_SIZE sizeof(RzBfltHdr)
+#define BFLT_HDR_SIZE      sizeof(struct bflt_hdr)
+#define VALID_GOT_ENTRY(x) (x != 0xFFFFFFFF)
 
-RzBfltObj *rz_bflt_new_buf(RzBuffer *buf, ut64 baddr, bool big_endian, bool patch_relocs);
-void rz_bflt_free(RzBfltObj *obj);
-RzBinAddr *rz_bflt_get_entry(RzBfltObj *bin);
-ut64 rz_bflt_get_text_base(RzBfltObj *bin);
-ut64 rz_bflt_get_data_base(RzBfltObj *bin);
-ut64 rz_bflt_get_data_vsize(RzBfltObj *bin);
-ut64 rz_bflt_paddr_to_vaddr(RzBfltObj *bin, ut32 paddr);
+RzBinAddr *rz_bflt_get_entry(struct rz_bin_bflt_obj *bin);
+struct rz_bin_bflt_obj *rz_bin_bflt_new_buf(RzBuffer *buf);
+void rz_bin_bflt_free(struct rz_bin_bflt_obj *obj);
 
 #endif

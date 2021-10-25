@@ -2498,7 +2498,7 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			}
 			break;
 		case 'C':
-			if (++color > 3) {
+			if (++color > 2) {
 				color = 0;
 			}
 			rz_config_set_i(core->config, "scr.color", color);

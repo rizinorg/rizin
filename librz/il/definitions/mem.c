@@ -13,7 +13,7 @@ static void free_bv_key_value(HtPPKv *kv) {
  * \param min_unit_size, minimal size of a data unit of current arch
  * \return RzILMem*
  */
-RZ_API RzILMem *rz_il_mem_new(ut32 min_unit_size) {
+RZ_API RzILMem *rz_il_new_mem(ut32 min_unit_size) {
 	RzILMem *ret = RZ_NEW0(RzILMem);
 	if (!ret) {
 		return NULL;
@@ -38,7 +38,7 @@ RZ_API RzILMem *rz_il_mem_new(ut32 min_unit_size) {
  * Free a Mem
  * \param mem memory to be free
  */
-RZ_API void rz_il_mem_free(RzILMem *mem) {
+RZ_API void rz_il_free_mem(RzILMem *mem) {
 	if (!mem) {
 		return;
 	}

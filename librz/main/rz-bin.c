@@ -1166,7 +1166,6 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	bo.obj_opts.elf_load_sections = rz_config_get_b(core.config, "elf.load.sections");
 	bo.obj_opts.elf_checks_sections = rz_config_get_b(core.config, "elf.checks.sections");
 	bo.obj_opts.elf_checks_segments = rz_config_get_b(core.config, "elf.checks.segments");
-	bo.obj_opts.big_endian = rz_config_get_b(core.config, "cfg.bigendian");
 	bo.xtr_idx = xtr_idx;
 
 	RzBinFile *bf = rz_bin_open(bin, file, &bo);

@@ -64,7 +64,29 @@ static inline RBIter bound_iter(RBNode *x, void *data, RBComparator cmp, bool up
 	return it;
 }
 
-/// Returns true if a node with an equal key is deleted
+/*
+static void _check1(RBNode *x, int dep, int black, bool leftmost) {
+	static int black_;
+	if (x) {
+		black += !x->red;
+		if (x->red && ((x->child[0] && x->child[0]->red) || (x->child[1] && x->child[1]->red))) {
+			printf ("error: red violation\n");
+		}
+		_check1 (x->child[0], dep + 1, black, leftmost);
+		_check1 (x->child[1], dep + 1, black, false);
+	} else if (leftmost) {
+		black_ = black;
+	} else if (black_ != black) {
+		printf ("error: different black height\n");
+	}
+}
+
+static void _check(RBNode *x) {
+	_check1 (x, 0, 0, true);
+}
+*/
+
+// Returns true if a node with an equal key is deleted
 RZ_API bool rz_rbtree_aug_delete(RBNode **root, void *data, RBComparator cmp, void *cmp_user, RBNodeFree freefn, void *free_user, RBNodeSum sum) {
 	RBNode head, *del = NULL, **del_link = NULL, *g = NULL, *p = NULL, *q = &head, *path[RZ_RBTREE_MAX_HEIGHT];
 	int d = 1, d2, dep = 0;
@@ -88,7 +110,7 @@ RZ_API bool rz_rbtree_aug_delete(RBNode **root, void *data, RBComparator cmp, vo
 		}
 		if (q != &head) {
 			if (dep >= RZ_RBTREE_MAX_HEIGHT) {
-				RZ_LOG_ERROR("Red-black tree depth is too big\n");
+				eprintf("Too deep tree\n");
 				break;
 			}
 			path[dep++] = q;
@@ -104,7 +126,7 @@ RZ_API bool rz_rbtree_aug_delete(RBNode **root, void *data, RBComparator cmp, vo
 			p->child[d2] = zag(q, !d, sum);
 			p = p->child[d2];
 			if (dep >= RZ_RBTREE_MAX_HEIGHT) {
-				RZ_LOG_ERROR("Red-black tree depth is too big\n");
+				eprintf("Too deep tree\n");
 				break;
 			}
 			path[dep++] = p;
@@ -160,7 +182,7 @@ RZ_API bool rz_rbtree_aug_delete(RBNode **root, void *data, RBComparator cmp, vo
 	return del;
 }
 
-/// Returns true if the node was inserted successfully
+// Returns true if stuff got inserted, else false
 RZ_API bool rz_rbtree_aug_insert(RBNode **root, void *data, RBNode *node, RBComparator cmp, void *cmp_user, RBNodeSum sum) {
 	node->child[0] = node->child[1] = NULL;
 	if (!*root) {
@@ -211,7 +233,7 @@ RZ_API bool rz_rbtree_aug_insert(RBNode **root, void *data, RBNode *node, RBComp
 		g = p;
 		p = q;
 		if (dep >= RZ_RBTREE_MAX_HEIGHT) {
-			RZ_LOG_ERROR("Red-black tree depth is too big\n");
+			eprintf("Too deep tree\n");
 			break;
 		}
 		path[dep++] = q;
@@ -232,7 +254,7 @@ RZ_API bool rz_rbtree_aug_insert(RBNode **root, void *data, RBNode *node, RBComp
 	return done;
 }
 
-/// Returns true if the sum has been updated, false if node has not been found
+// returns true if the sum has been updated, false if node has not been found
 RZ_API bool rz_rbtree_aug_update_sum(RBNode *root, void *data, RBNode *node, RBComparator cmp, void *cmp_user, RBNodeSum sum) {
 	size_t dep = 0;
 	RBNode *path[RZ_RBTREE_MAX_HEIGHT];
@@ -242,7 +264,7 @@ RZ_API bool rz_rbtree_aug_update_sum(RBNode *root, void *data, RBNode *node, RBC
 			return false;
 		}
 		if (dep >= RZ_RBTREE_MAX_HEIGHT) {
-			RZ_LOG_ERROR("Red-black tree depth is too big\n");
+			eprintf("Too deep tree\n");
 			return false;
 		}
 		path[dep] = cur;
@@ -260,7 +282,6 @@ RZ_API bool rz_rbtree_aug_update_sum(RBNode *root, void *data, RBNode *node, RBC
 	return true;
 }
 
-/// Returns true if a node with an equal key is deleted
 RZ_API bool rz_rbtree_delete(RBNode **root, void *data, RBComparator cmp, void *cmp_user, RBNodeFree freefn, void *free_user) {
 	return rz_rbtree_aug_delete(root, data, cmp, cmp_user, freefn, free_user, NULL);
 }
@@ -279,18 +300,16 @@ RZ_API RBNode *rz_rbtree_find(RBNode *x, void *data, RBComparator cmp, void *use
 	return NULL;
 }
 
-RZ_API void rz_rbtree_free(RZ_NULLABLE RBNode *x, RBNodeFree freefn, void *user) {
-	if (!x) {
-		return;
+RZ_API void rz_rbtree_free(RBNode *x, RBNodeFree freefn, void *user) {
+	if (x) {
+		rz_rbtree_free(x->child[0], freefn, user);
+		rz_rbtree_free(x->child[1], freefn, user);
+		freefn(x, user);
 	}
-	rz_rbtree_free(x->child[0], freefn, user);
-	rz_rbtree_free(x->child[1], freefn, user);
-	freefn(x, user);
 }
 
-/// Returns true if the node was inserted successfully
-RZ_API bool rz_rbtree_insert(RBNode **root, void *data, RBNode *node, RBComparator cmp, void *user) {
-	return rz_rbtree_aug_insert(root, data, node, cmp, user, NULL);
+RZ_API void rz_rbtree_insert(RBNode **root, void *data, RBNode *node, RBComparator cmp, void *user) {
+	rz_rbtree_aug_insert(root, data, node, cmp, user, NULL);
 }
 
 RZ_API RBNode *rz_rbtree_lower_bound(RBNode *x, void *data, RBComparator cmp, void *user) {
@@ -361,11 +380,11 @@ RZ_API void rz_rbtree_iter_prev(RBIter *it) {
 	_next(it, 1);
 }
 
-RZ_API RZ_OWN RContRBTree *rz_rbtree_cont_new(void) {
+RZ_API RContRBTree *rz_rbtree_cont_new(void) {
 	return RZ_NEW0(RContRBTree);
 }
 
-RZ_API RZ_OWN RContRBTree *rz_rbtree_cont_newf(RContRBFree f) {
+RZ_API RContRBTree *rz_rbtree_cont_newf(RContRBFree f) {
 	RContRBTree *tree = rz_rbtree_cont_new();
 	if (tree) {
 		tree->free = f;
@@ -406,16 +425,17 @@ RZ_API bool rz_rbtree_cont_insert(RContRBTree *tree, void *data, RContRBCmp cmp,
 	rz_return_val_if_fail(tree && cmp, false);
 	if (!tree->root) {
 		tree->root = RZ_NEW0(RContRBNode);
-		if (!tree->root) {
-			RZ_LOG_ERROR("Failed to allocate new red-black tree root\n");
-			return false;
+		if (tree->root) {
+			tree->root->data = data;
+			//			tree->root->node.red = false;	// not needed since RZ_NEW0 initializes with false anyway
+			return true;
 		}
-		tree->root->data = data;
-		return true;
+		eprintf("Allocation failed\n");
+		return false;
 	}
 	RContRBNode *incoming_node = RZ_NEW0(RContRBNode);
 	if (!incoming_node) {
-		RZ_LOG_ERROR("Failed to allocate new red-black tree node\n");
+		eprintf("Allocation failed\n");
 		return false;
 	}
 	incoming_node->data = data;
@@ -424,10 +444,10 @@ RZ_API bool rz_rbtree_cont_insert(RContRBTree *tree, void *data, RContRBCmp cmp,
 	const bool ret = rz_rbtree_aug_insert(&root_node, incoming_node,
 		&incoming_node->node, cont_rbtree_cmp_wrapper, &cmp_wrap, NULL);
 	if (root_node != (&tree->root->node)) {
-		tree->root = container_of(root_node, RContRBNode, node);
+		tree->root = container_of(root_node, RContRBNode, node); //cursed augmentation garbage
 	}
 	if (!ret) {
-		RZ_LOG_ERROR("Failed to insert new red-black tree node\n");
+		eprintf("Insertion failed\n");
 		free(incoming_node);
 	}
 	return ret;
@@ -449,8 +469,8 @@ RZ_API bool rz_rbtree_cont_delete(RContRBTree *tree, void *data, RContRBCmp cmp,
 	RContRBNode data_wrap = { { { NULL, NULL }, false }, data };
 	RBNode *root_node = &tree->root->node;
 	const bool ret = rz_rbtree_aug_delete(&root_node, &data_wrap, cont_rbtree_free_cmp_wrapper, &cmp_wrap, cont_node_free, NULL, NULL);
-	if (root_node != (&tree->root->node)) {
-		tree->root = container_of(root_node, RContRBNode, node);
+	if (root_node != (&tree->root->node)) { //can this crash?
+		tree->root = container_of(root_node, RContRBNode, node); //cursed augmentation garbage
 	}
 	return ret;
 }
