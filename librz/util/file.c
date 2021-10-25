@@ -224,10 +224,14 @@ RZ_API char *rz_file_abspath_rel(const char *cwd, const char *file) {
 		ret = strdup(file);
 	}
 #if __UNIX__
-	char *abspath = realpath(ret, NULL);
+	char rp[PATH_MAX] = { 0 };
+	char *abspath = realpath(ret, rp); // second arg == NULL is only an extension
 	if (abspath) {
-		free(ret);
-		ret = abspath;
+		abspath = strdup(abspath);
+		if (abspath) {
+			free(ret);
+			ret = abspath;
+		}
 	}
 #endif
 	return ret;
