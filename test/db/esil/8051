@@ -76,10 +76,10 @@ CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx b101
 ar sp=0x20
-wx ffffff @_idata+0x20
+wx ffffff @ _idata+0x20
 aes
 ar pc; ar psw; ar sp
-p8 3 @_idata+0x20
+p8 3 @ _idata+0x20
 EOF
 EXPECT=<<EOF
 0x00000501
@@ -95,10 +95,10 @@ CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 121234
 ar sp=0x20
-wx ffffff @_idata+0x20
+wx ffffff @ _idata+0x20
 aes
 ar pc; ar psw; ar sp
-p8 3 @_idata+0x20
+p8 3 @ _idata+0x20
 EOF
 EXPECT=<<EOF
 0x00001234
@@ -113,7 +113,7 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 22
-wx 002301 @_idata+0x20
+wx 002301 @ _idata+0x20
 ar sp=0x22
 aes
 ar pc; ar psw; ar sp
@@ -130,7 +130,7 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 32
-wx 002301 @_idata+0x20
+wx 002301 @ _idata+0x20
 ar sp=0x22
 aes
 ar pc; ar psw; ar sp
@@ -147,12 +147,12 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx c030
-wx 40 @_idata+0x30
+wx 40 @ _idata+0x30
 ar sp=0x21
-wx ffffff @_idata+0x20
+wx ffffff @ _idata+0x20
 aes
 ar pc; ar psw; ar sp
-p8 3 @_idata+0x20
+p8 3 @ _idata+0x20
 EOF
 EXPECT=<<EOF
 0x00000002
@@ -168,10 +168,10 @@ CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx d030
 ar sp=0x21
-wx ff40ff @_idata+0x20
+wx ff40ff @ _idata+0x20
 aes
 ar pc; ar psw; ar sp
-p8 1 @_idata+0x30
+p8 1 @ _idata+0x30
 EOF
 EXPECT=<<EOF
 0x00000002
@@ -186,12 +186,12 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 100330100430
-wx 10 @_idata+0x20
+wx 10 @ _idata+0x20
 aes
 ar pc
 aes
 ar pc; ar psw
-pB 1 @_idata+0x20
+pB 1 @ _idata+0x20
 EOF
 EXPECT=<<EOF
 0x00000003
@@ -206,12 +206,12 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 200330200430
-wx 10 @_idata+0x20
+wx 10 @ _idata+0x20
 aes
 ar pc
 aes
 ar pc; ar psw
-pB 1 @_idata+0x20
+pB 1 @ _idata+0x20
 EOF
 EXPECT=<<EOF
 0x00000003
@@ -226,12 +226,12 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 300430300330
-wx 10 @_idata+0x20
+wx 10 @ _idata+0x20
 aes
 ar pc
 aes
 ar pc; ar psw
-pB 1 @_idata+0x20
+pB 1 @ _idata+0x20
 EOF
 EXPECT=<<EOF
 0x00000003
@@ -341,7 +341,7 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx b52030b52130
-wx 1112 @_idata+0x20
+wx 1112 @ _idata+0x20
 ar a=0x11
 aes
 ar pc; ar psw
@@ -361,7 +361,7 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx b71130b71030
-wx 1110 @_idata+0x20
+wx 1110 @ _idata+0x20
 ar r1=0x20
 aes
 ar pc; ar psw
@@ -400,13 +400,13 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx d52030d52030
-wx 01 @_idata+0x20
+wx 01 @ _idata+0x20
 aes
 ar pc
-p8 1 @_idata+0x20
+p8 1 @ _idata+0x20
 aes
 ar pc
-p8 1 @_idata+0x20
+p8 1 @ _idata+0x20
 EOF
 EXPECT=<<EOF
 0x00000003
@@ -506,7 +506,7 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx c204c206
-wx ff @_idata+0x20
+wx ff @ _idata+0x20
 aes
 aes
 ar pc; ar psw
@@ -557,7 +557,7 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx b203b206
-wx f0 @_idata+0x20
+wx f0 @ _idata+0x20
 aes
 aes
 ar pc; ar psw
@@ -592,7 +592,7 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 1520
-wx 80 @_idata+0x20
+wx 80 @ _idata+0x20
 aes
 ar pc; ar psw
 s _idata+0x20
@@ -611,7 +611,7 @@ CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 16
 ar r0=0x20
-wx 80 @_idata+0x20
+wx 80 @ _idata+0x20
 aes
 ar pc; ar psw
 s _idata+0x20
@@ -661,7 +661,7 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 0520
-wx 80 @_idata+0x20
+wx 80 @ _idata+0x20
 aes
 ar pc; ar psw
 s _idata+0x20
@@ -680,7 +680,7 @@ CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 06
 ar r0=0x20
-wx 80 @_idata+0x20
+wx 80 @ _idata+0x20
 aes
 ar pc; ar psw
 s _idata+0x20
@@ -779,7 +779,7 @@ CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 2520
 ar a=0x81
-wx 2030 @_idata+0x20
+wx 2030 @ _idata+0x20
 aes
 ar pc; ar psw; ar a
 EOF
@@ -797,7 +797,7 @@ e asm.arch=8051;e asm.bits=8; aei
 wx 27
 ar a=0x81
 ar r1=0x20
-wx 2030 @_idata+0x20
+wx 2030 @ _idata+0x20
 aes
 ar pc; ar psw; ar a
 EOF
@@ -883,7 +883,7 @@ e asm.arch=8051;e asm.bits=8; aei
 wx 3520
 ar a=0x81
 ar c=1
-wx 2030 @_idata+0x20
+wx 2030 @ _idata+0x20
 aes
 ar pc; ar psw; ar a
 EOF
@@ -902,7 +902,7 @@ wx 37
 ar a=0x81
 ar r1=0x20
 ar c=1
-wx 2030 @_idata+0x20
+wx 2030 @ _idata+0x20
 aes
 ar pc; ar psw; ar a
 EOF
@@ -959,7 +959,7 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx c37462952074279521
-wx 9612 @_idata+0x20
+wx 9612 @ _idata+0x20
 aes
 aes
 aes
@@ -983,7 +983,7 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 7920c374629709742797
-wx 9612 @_idata+0x20
+wx 9612 @ _idata+0x20
 aes
 aes
 aes
@@ -1138,11 +1138,11 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 4220
-wx 3040 @_idata+0x20
+wx 3040 @ _idata+0x20
 ar a=0x81
 aes
 ar pc; ar psw;
-p8 2 @_idata+0x20
+p8 2 @ _idata+0x20
 EOF
 EXPECT=<<EOF
 0x00000002
@@ -1156,10 +1156,10 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 432081
-wx 3040 @_idata+0x20
+wx 3040 @ _idata+0x20
 aes
 ar pc; ar psw;
-p8 2 @_idata+0x20
+p8 2 @ _idata+0x20
 EOF
 EXPECT=<<EOF
 0x00000003
@@ -1189,7 +1189,7 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 4520
-wx 3040 @_idata+0x20
+wx 3040 @ _idata+0x20
 ar a=0x83
 aes
 ar pc; ar psw; ar a
@@ -1206,7 +1206,7 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 47
-wx 3040 @_idata+0x20
+wx 3040 @ _idata+0x20
 ar r1=0x20
 ar a=0x83
 aes
@@ -1241,7 +1241,7 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 7203
-wx 08 @_idata+0x20
+wx 08 @ _idata+0x20
 aes
 ar pc; ar psw;
 EOF
@@ -1256,7 +1256,7 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx a003
-wx 80 @_idata+0x20
+wx 80 @ _idata+0x20
 aes
 ar pc; ar psw;
 EOF
@@ -1271,11 +1271,11 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 5220
-wx 3040 @_idata+0x20
+wx 3040 @ _idata+0x20
 ar a=0x10
 aes
 ar pc; ar psw;
-p8 2 @_idata+0x20
+p8 2 @ _idata+0x20
 EOF
 EXPECT=<<EOF
 0x00000002
@@ -1289,10 +1289,10 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 532010
-wx 3040 @_idata+0x20
+wx 3040 @ _idata+0x20
 aes
 ar pc; ar psw;
-p8 2 @_idata+0x20
+p8 2 @ _idata+0x20
 EOF
 EXPECT=<<EOF
 0x00000003
@@ -1322,7 +1322,7 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 5520
-wx 3040 @_idata+0x20
+wx 3040 @ _idata+0x20
 ar a=0x10
 aes
 ar pc; ar psw; ar a
@@ -1339,7 +1339,7 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 57
-wx 3040 @_idata+0x20
+wx 3040 @ _idata+0x20
 ar r1=0x20
 ar a=0x10
 aes
@@ -1374,7 +1374,7 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx d38203
-wx 08 @_idata+0x20
+wx 08 @ _idata+0x20
 aes
 aes
 ar pc; ar psw;
@@ -1390,7 +1390,7 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx d3b003
-wx 08 @_idata+0x20
+wx 08 @ _idata+0x20
 aes
 aes
 ar pc; ar psw;
@@ -1406,11 +1406,11 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 6220
-wx 3040 @_idata+0x20
+wx 3040 @ _idata+0x20
 ar a=0x31
 aes
 ar pc; ar psw;
-p8 2 @_idata+0x20
+p8 2 @ _idata+0x20
 EOF
 EXPECT=<<EOF
 0x00000002
@@ -1424,10 +1424,10 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 632031
-wx 3040 @_idata+0x20
+wx 3040 @ _idata+0x20
 aes
 ar pc; ar psw;
-p8 2 @_idata+0x20
+p8 2 @ _idata+0x20
 EOF
 EXPECT=<<EOF
 0x00000003
@@ -1457,7 +1457,7 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 6520
-wx 3040 @_idata+0x20
+wx 3040 @ _idata+0x20
 ar a=0x31
 aes
 ar pc; ar psw; ar a
@@ -1474,7 +1474,7 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 67
-wx 3040 @_idata+0x20
+wx 3040 @ _idata+0x20
 ar r1=0x20
 ar a=0x31
 aes
@@ -1622,10 +1622,10 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 752021
-wx 3040 @_idata+0x20
+wx 3040 @ _idata+0x20
 aes
 ar pc; ar psw;
-p8 2 @_idata+0x20
+p8 2 @ _idata+0x20
 EOF
 EXPECT=<<EOF
 0x00000003
@@ -1639,11 +1639,11 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 7720
-wx 3040 @_idata+0x20
+wx 3040 @ _idata+0x20
 ar r1=0x21
 aes
 ar pc; ar psw;
-p8 2 @_idata+0x20
+p8 2 @ _idata+0x20
 EOF
 EXPECT=<<EOF
 0x00000002
@@ -1672,10 +1672,10 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 852021
-wx 3040 @_idata+0x20
+wx 3040 @ _idata+0x20
 aes
 ar pc; ar psw;
-p8 2 @_idata+0x20
+p8 2 @ _idata+0x20
 EOF
 EXPECT=<<EOF
 0x00000003
@@ -1689,11 +1689,11 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 8720
-wx 3040 @_idata+0x20
+wx 3040 @ _idata+0x20
 ar r1=0x21
 aes
 ar pc; ar psw;
-p8 2 @_idata+0x20
+p8 2 @ _idata+0x20
 EOF
 EXPECT=<<EOF
 0x00000002
@@ -1707,11 +1707,11 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 8f20
-wx 3040 @_idata+0x20
+wx 3040 @ _idata+0x20
 ar r7=0x21
 aes
 ar pc; ar psw;
-p8 2 @_idata+0x20
+p8 2 @ _idata+0x20
 EOF
 EXPECT=<<EOF
 0x00000002
@@ -1740,11 +1740,11 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx d39203c39204
-wx f0 @_idata+0x20
+wx f0 @ _idata+0x20
 ar c=1
 aes 4
 ar pc; ar psw
-pB 1 @_idata+0x20
+pB 1 @ _idata+0x20
 EOF
 EXPECT=<<EOF
 0x00000006
@@ -1758,7 +1758,7 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx a203
-wx 08 @_idata+0x20
+wx 08 @ _idata+0x20
 aes
 ar pc; ar psw
 EOF
@@ -1773,11 +1773,11 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx a720
-wx 3040 @_idata+0x20
+wx 3040 @ _idata+0x20
 ar r1=0x21
 aes
 ar pc; ar psw;
-p8 2 @_idata+0x20
+p8 2 @ _idata+0x20
 EOF
 EXPECT=<<EOF
 0x00000002
@@ -1791,7 +1791,7 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx af20
-wx 3040 @_idata+0x20
+wx 3040 @ _idata+0x20
 ar r7=0x21
 aes
 ar pc; ar psw; ar r7
@@ -1808,7 +1808,7 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx e521
-wx 3040 @_idata+0x20
+wx 3040 @ _idata+0x20
 aes
 ar pc; ar psw; ar a
 EOF
@@ -1824,7 +1824,7 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx e7
-wx 3040 @_idata+0x20
+wx 3040 @ _idata+0x20
 ar r1=0x21
 aes
 ar pc; ar psw; ar a
@@ -1857,11 +1857,11 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx f520
-wx 3040 @_idata+0x20
+wx 3040 @ _idata+0x20
 ar a=0x21
 aes
 ar pc; ar psw;
-p8 2 @_idata+0x20
+p8 2 @ _idata+0x20
 EOF
 EXPECT=<<EOF
 0x00000002
@@ -1875,12 +1875,12 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx f7
-wx 3040 @_idata+0x20
+wx 3040 @ _idata+0x20
 ar a=0x20
 ar r1=0x21
 aes
 ar pc; ar psw;
-p8 2 @_idata+0x20
+p8 2 @ _idata+0x20
 EOF
 EXPECT=<<EOF
 0x00000001
@@ -1910,7 +1910,7 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx e0
-wx 10 @_xdata+0x100
+wx 10 @ _xdata+0x100
 ar dptr=0x100
 aes
 ar pc; ar psw; ar a
@@ -1927,7 +1927,7 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx e3
-wx 3040 @_xdata+0x020
+wx 3040 @ _xdata+0x020
 ar r1=0x21
 aes
 ar pc; ar psw; ar a
@@ -1944,12 +1944,12 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx f0
-wx 10 @_xdata+0x100
+wx 10 @ _xdata+0x100
 ar dptr=0x100
 ar a=0x20
 aes
 ar pc; ar psw;
-p8 1 @_xdata+0x100
+p8 1 @ _xdata+0x100
 EOF
 EXPECT=<<EOF
 0x00000001
@@ -1963,12 +1963,12 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx f3
-wx 10 @_xdata+0x010
+wx 10 @ _xdata+0x010
 ar r1=0x10
 ar a=0x20
 aes
 ar pc; ar psw;
-p8 1 @_xdata+0x010
+p8 1 @ _xdata+0x010
 EOF
 EXPECT=<<EOF
 0x00000001
@@ -1982,7 +1982,7 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 83
-wx 10 @0xf0
+wx 10 @ 0xf0
 ar a=0xf0
 aes
 ar pc; ar psw; ar a
@@ -1999,7 +1999,7 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx 93
-wx 10 @0x100
+wx 10 @ 0x100
 ar a=1
 ar dptr=0xff
 aes
@@ -2033,11 +2033,11 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx c521
-wx 3040 @_idata+0x20
+wx 3040 @ _idata+0x20
 ar a=0x20
 aes
 ar pc; ar psw; ar a
-p8 2 @_idata+0x20
+p8 2 @ _idata+0x20
 EOF
 EXPECT=<<EOF
 0x00000002
@@ -2052,12 +2052,12 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx c7
-wx 3040 @_idata+0x20
+wx 3040 @ _idata+0x20
 ar r1=0x21
 ar a=0x20
 aes
 ar pc; ar psw; ar a
-p8 2 @_idata+0x20
+p8 2 @ _idata+0x20
 EOF
 EXPECT=<<EOF
 0x00000001
@@ -2090,12 +2090,12 @@ FILE=malloc://0x10000
 CMDS=<<EOF
 e asm.arch=8051;e asm.bits=8; aei
 wx d7
-wx 34 @_idata+0x20
+wx 34 @ _idata+0x20
 ar r1=0x20
 ar a=0x56
 aes
 ar pc; ar psw; ar a
-p8 1 @_idata+0x20
+p8 1 @ _idata+0x20
 EOF
 EXPECT=<<EOF
 0x00000001
