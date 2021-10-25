@@ -208,9 +208,8 @@ commands:
     summary: Manage flags
     type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: g
-    cname: cmd_egg
     summary: Generate shellcodes with rz_egg
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    subcommands: cmd_egg
   - name: H
     summary: Rizin history commands.
     subcommands: cmd_history

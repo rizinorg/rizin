@@ -1,0 +1,71 @@
+# SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+---
+name: cmd_egg
+commands:
+  - name: g
+    cname: egg_compile
+    summary: Compile the shellcode
+    args:
+      - name: file
+        type: RZ_CMD_ARG_TYPE_FILE
+        optional: true
+  - name: gc
+    cname: egg_config
+    summary: Get/Set config option for shellcode / List all config options
+    args_str: " <key>[=<val>] [<key>[=<val>] ...]]"
+    args:
+      - name: key=value
+        type: RZ_CMD_ARG_TYPE_STRING
+        flags: RZ_CMD_ARG_FLAG_ARRAY
+        optional: true
+    details:
+      - name: Examples
+        entries:
+          - text: gc
+            arg_str: " egg.encoder"
+            comment: "Show current value of config variable `egg.encoder`"
+          - text: gc
+            arg_str: " egg.encoder=xor"
+            comment: "Set config variable `egg.encoder` to `xor`"
+  - name: gl
+    cname: egg_list_plugins
+    summary: List shellcode and encoder plugins
+    args: []
+  - name: gs
+    cname: egg_syscall
+    summary: Compile syscall "name(args)"
+    args:
+      - name: name
+        type: RZ_CMD_ARG_TYPE_STRING
+      - name: args
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+  - name: gi
+    cname: egg_type
+    summary: Define the shellcode type
+    args:
+      - name: type
+        type: RZ_CMD_ARG_TYPE_STRING
+  - name: gp
+    cname: egg_padding
+    summary: Define padding for command
+    args:
+      - name: padding
+        type: RZ_CMD_ARG_TYPE_RZNUM
+  - name: ge
+    cname: egg_encoder
+    summary: Specify an encoder and a key
+    args:
+      - name: encoder
+        type: RZ_CMD_ARG_TYPE_STRING
+      - name: key
+        type: RZ_CMD_ARG_TYPE_STRING
+  - name: gr
+    cname: egg_reset
+    summary: Reset the shellcode configuration
+    args: []
+  - name: gS
+    cname: egg_show_config
+    args: []
+    summary: Show the current configuration

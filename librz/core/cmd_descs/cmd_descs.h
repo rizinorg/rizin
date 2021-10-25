@@ -304,7 +304,15 @@ RZ_IPI RzCmdStatus rz_eval_type_handler(RzCore *core, int argc, const char **arg
 RZ_IPI RzCmdStatus rz_env_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_exit_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_cmd_flag(void *data, const char *input);
-RZ_IPI int rz_cmd_egg(void *data, const char *input);
+RZ_IPI RzCmdStatus rz_egg_compile_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_egg_config_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_egg_list_plugins_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_egg_syscall_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_egg_type_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_egg_padding_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_egg_encoder_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_egg_reset_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_egg_show_config_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_history_list_or_exec_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_history_clear_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_history_save_handler(RzCore *core, int argc, const char **argv);
