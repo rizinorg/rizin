@@ -28,7 +28,6 @@ if get_option('enable_tests')
     'big',
     'bin',
     'bin_lines',
-    'binheap',
     'bitmap',
     'buf',
     'cmd',

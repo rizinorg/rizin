@@ -172,10 +172,6 @@ RZ_IPI int rz_cmd_info_kuery(void *data, const char *input) {
 	return 0;
 }
 
-static RzCmdStatus bool2status(bool val) {
-	return val ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
-}
-
 #define GET_CHECK_CUR_BINFILE(core) \
 	RzBinFile *bf = rz_bin_cur(core->bin); \
 	if (!bf) { \
@@ -519,6 +515,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_pdb_show_handler(RzCore *core, int argc, const ch
 	}
 	RzPdb *pdb = rz_core_pdb_load_info(core, filename);
 	if (!pdb) {
+		free(filename);
 		return false;
 	}
 	rz_core_pdb_info_print(core, core->analysis->typedb, pdb, state);

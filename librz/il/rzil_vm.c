@@ -37,7 +37,7 @@ RZ_API RzILVal *rz_il_vm_create_value(RZ_NONNULL RzILVM *vm, RZ_NONNULL RZIL_VAR
 		return NULL;
 	}
 
-	RzILVal *val = rz_il_new_value();
+	RzILVal *val = rz_il_value_new();
 	val->type = type;
 
 	rz_il_add_to_bag(vm->vm_global_value_set, val);
@@ -78,7 +78,7 @@ RZ_API RzILVal *rz_il_vm_fortify_val(RzILVM *vm, RzILVal *val) {
  * \return val RzILVal, pointer to the fortified value
  */
 RZ_API RzILVal *rz_il_vm_fortify_bitv(RzILVM *vm, RzILBitVector *bitv) {
-	RzILVal *val = rz_il_new_value();
+	RzILVal *val = rz_il_value_new();
 	if (!val) {
 		return NULL;
 	}
@@ -96,7 +96,7 @@ RZ_API RzILVal *rz_il_vm_fortify_bitv(RzILVM *vm, RzILBitVector *bitv) {
  * \return val RzILVal, pointer to the fortified value
  */
 RZ_API RzILVal *rz_il_vm_fortify_bool(RzILVM *vm, RzILBool *b) {
-	RzILVal *val = rz_il_new_value();
+	RzILVal *val = rz_il_value_new();
 	if (!val) {
 		return NULL;
 	}
@@ -228,7 +228,7 @@ RZ_API RzILEffectLabel *rz_il_vm_create_label(RzILVM *vm, RZ_NONNULL const char 
 	rz_return_val_if_fail(name, NULL);
 	HtPP *lbl_table = vm->vm_global_label_table;
 
-	RzILEffectLabel *lbl = rz_il_effect_new_label(name, EFFECT_LABEL_ADDR);
+	RzILEffectLabel *lbl = rz_il_effect_label_new(name, EFFECT_LABEL_ADDR);
 	lbl->addr = rz_il_bv_dup(addr);
 	ht_pp_insert(lbl_table, name, lbl);
 
@@ -245,7 +245,7 @@ RZ_API RzILEffectLabel *rz_il_vm_create_label_lazy(RzILVM *vm, RZ_NONNULL const 
 	rz_return_val_if_fail(name, NULL);
 	HtPP *lbl_table = vm->vm_global_label_table;
 
-	RzILEffectLabel *lbl = rz_il_effect_new_label(name, EFFECT_LABEL_ADDR);
+	RzILEffectLabel *lbl = rz_il_effect_label_new(name, EFFECT_LABEL_ADDR);
 	lbl->addr = NULL;
 	ht_pp_insert(lbl_table, name, lbl);
 
@@ -303,21 +303,20 @@ RZ_API RzPVector *rz_il_make_oplist(int num, ...) {
 
 // WARN : convertion breaks the original data
 static RzILBool *bitv_to_bool(RzILBitVector *bitv) {
-	RzILBool *result;
-	result = rz_il_new_bool(!rz_il_bv_is_zero_vector(bitv));
+	RzILBool *result = rz_il_bool_new(!rz_il_bv_is_zero_vector(bitv));
 	rz_il_bv_free(bitv);
 	return result;
 }
 
 static RzILVal *bitv_to_val(RzILBitVector *bitv) {
-	RzILVal *ret = rz_il_new_value();
+	RzILVal *ret = rz_il_value_new();
 	ret->type = RZIL_VAR_TYPE_BV;
 	ret->data.bv = bitv;
 	return ret;
 }
 
 static RzILVal *bool_to_val(RzILBool *b) {
-	RzILVal *ret = rz_il_new_value();
+	RzILVal *ret = rz_il_value_new();
 	ret->type = RZIL_VAR_TYPE_BOOL;
 	ret->data.b = b;
 	return ret;
@@ -477,9 +476,17 @@ RZ_API RzILEffect *rz_il_evaluate_effect(RzILVM *vm, RzILOp *op, RzILOpArgType *
 	case RZIL_OP_ARG_EFF:
 		return result;
 	case RZIL_OP_ARG_BITV:
+		rz_il_bv_free(result);
+		break;
 	case RZIL_OP_ARG_BOOL:
+		rz_il_bool_free(result);
+		break;
 	case RZIL_OP_ARG_VAL:
+		rz_il_value_free(result);
+		break;
 	case RZIL_OP_ARG_MEM:
+		rz_il_mem_free(result);
+		break;
 	default:
 		RZ_LOG_ERROR("RzIL : Expected Effect\n");
 		break;

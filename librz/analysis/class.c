@@ -742,6 +742,8 @@ RZ_API RzVector /*<RzAnalysisMethod>*/ *rz_analysis_class_method_get_all(RzAnaly
 	}
 	char *key = key_attr_type_attrs(class_name_sanitized, attr_type_id(RZ_ANALYSIS_CLASS_ATTR_TYPE_METHOD));
 	if (!key) {
+		rz_vector_free(vec);
+		free(class_name_sanitized);
 		return NULL;
 	}
 	char *array = sdb_get(analysis->sdb_classes_attrs, key, 0);
@@ -1171,6 +1173,7 @@ RZ_API RzAnalysisClassErr rz_analysis_class_vtable_set(RzAnalysis *analysis, con
 
 	vtable->id = malloc(16);
 	if (!vtable->id) {
+		free(content);
 		return RZ_ANALYSIS_CLASS_ERR_OTHER;
 	}
 	RzAnalysisClassErr err = rz_analysis_class_add_attr_unique(analysis, class_name, RZ_ANALYSIS_CLASS_ATTR_TYPE_VTABLE, content, vtable->id, 16);

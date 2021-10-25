@@ -26,6 +26,7 @@ bool test_rz_scan_strings_detect_ascii(void) {
 
 	rz_detected_string_free(s);
 	rz_list_free(str_list);
+	rz_buf_free(buf);
 
 	mu_end;
 }
@@ -45,6 +46,7 @@ bool test_rz_scan_strings_detect_utf8(void) {
 
 	rz_detected_string_free(s);
 	rz_list_free(str_list);
+	rz_buf_free(buf);
 
 	mu_end;
 }
@@ -71,6 +73,7 @@ bool test_rz_scan_strings_detect_utf16_le(void) {
 
 	rz_detected_string_free(s);
 	rz_list_free(str_list);
+	rz_buf_free(buf);
 
 	mu_end;
 }
@@ -97,6 +100,7 @@ bool test_rz_scan_strings_detect_utf16_le_special_chars(void) {
 
 	rz_detected_string_free(s);
 	rz_list_free(str_list);
+	rz_buf_free(buf);
 
 	mu_end;
 }
@@ -123,6 +127,7 @@ bool test_rz_scan_strings_detect_utf16_be(void) {
 
 	rz_detected_string_free(s);
 	rz_list_free(str_list);
+	rz_buf_free(buf);
 
 	mu_end;
 }
@@ -152,6 +157,7 @@ bool test_rz_scan_strings_detect_utf32_le(void) {
 
 	rz_detected_string_free(s);
 	rz_list_free(str_list);
+	rz_buf_free(buf);
 
 	mu_end;
 }
@@ -181,6 +187,7 @@ bool test_rz_scan_strings_detect_utf32_be(void) {
 
 	rz_detected_string_free(s);
 	rz_list_free(str_list);
+	rz_buf_free(buf);
 
 	mu_end;
 }
@@ -206,6 +213,7 @@ bool test_rz_scan_strings_utf16_be(void) {
 
 	rz_detected_string_free(s);
 	rz_list_free(str_list);
+	rz_buf_free(buf);
 
 	mu_end;
 }

@@ -10,6 +10,8 @@ extern "C" {
 #endif
 
 // VM high level operations
+RZ_API RzILVM *rz_il_vm_new(ut64 start_addr, int addr_size, int data_size);
+RZ_API void rz_il_vm_free(RzILVM *vm);
 RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, int addr_size, int data_size);
 RZ_API void rz_il_vm_fini(RzILVM *vm);
 RZ_API void rz_il_vm_step(RzILVM *vm, RzILOp *root);

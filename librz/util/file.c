@@ -1188,6 +1188,7 @@ static void recursive_search_glob(const char *path, const char *glob, RzList *li
 		}
 		char *filename = malloc(strlen(path) + strlen(file) + 2);
 		if (!filename) {
+			rz_list_free(dir);
 			return;
 		}
 		strcpy(filename, path);

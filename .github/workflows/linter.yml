@@ -112,11 +112,6 @@ jobs:
         export PATH=${HOME}/Library/Python/3.8/bin:${HOME}/Library/Python/3.9/bin:${HOME}/.local/bin:${PATH}
         find . -name "*.py" | grep -v "subprojects" | xargs black --check
 
-    - name: Run isort
-      run: |
-        export PATH=${HOME}/Library/Python/3.8/bin:${HOME}/Library/Python/3.9/bin:${HOME}/.local/bin:${PATH}
-        find . -name "*.py" | grep -v "subprojects" | xargs isort --check
-
     - name: Run pylint
       run: |
         export PATH=${HOME}/Library/Python/3.8/bin:${HOME}/Library/Python/3.9/bin:${HOME}/.local/bin:${PATH}

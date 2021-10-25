@@ -45,6 +45,7 @@ RZ_IPI bool parse_pe_stream(RzPdb *pdb, RzPdbMsfStream *stream) {
 		}
 		if (!parse_image_header(hdr, buf)) {
 			rz_list_free(s->sections_hdrs);
+			free(hdr);
 			return false;
 		}
 

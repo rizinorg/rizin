@@ -7,6 +7,19 @@ import os
 import sys
 
 import yaml
+from cmd_descs_util import (
+    CD_ARG_LAST_TYPES,
+    CD_TYPE_ARGV,
+    CD_TYPE_ARGV_MODES,
+    CD_TYPE_ARGV_STATE,
+    CD_TYPE_FAKE,
+    CD_TYPE_GROUP,
+    CD_TYPE_INNER,
+    CD_TYPE_OLDINPUT,
+    CD_VALID_TYPES,
+    compute_cname,
+    get_handler_cname,
+)
 
 CMDDESCS_C_TEMPLATE = """// SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
 // SPDX-License-Identifier: LGPL-3.0-only
@@ -120,86 +133,17 @@ DEFINE_FAKE_TEMPLATE = """
 SET_DEFAULT_MODE_TEMPLATE = """
 \trz_cmd_desc_set_default_mode({cname}_cd, {default_mode});"""
 
-CD_TYPE_OLDINPUT = "RZ_CMD_DESC_TYPE_OLDINPUT"
-CD_TYPE_GROUP = "RZ_CMD_DESC_TYPE_GROUP"
-CD_TYPE_ARGV = "RZ_CMD_DESC_TYPE_ARGV"
-CD_TYPE_ARGV_MODES = "RZ_CMD_DESC_TYPE_ARGV_MODES"
-CD_TYPE_ARGV_STATE = "RZ_CMD_DESC_TYPE_ARGV_STATE"
-CD_TYPE_FAKE = "RZ_CMD_DESC_TYPE_FAKE"
-CD_TYPE_INNER = "RZ_CMD_DESC_TYPE_INNER"
 
-CD_VALID_TYPES = [
-    CD_TYPE_OLDINPUT,
-    CD_TYPE_GROUP,
-    CD_TYPE_ARGV,
-    CD_TYPE_ARGV_MODES,
-    CD_TYPE_ARGV_STATE,
-    CD_TYPE_FAKE,
-    CD_TYPE_INNER,
-]
-
-CD_ARG_LAST_TYPES = [
-    "RZ_CMD_ARG_TYPE_RZNUM",
-    "RZ_CMD_ARG_TYPE_STRING",
-    "RZ_CMD_ARG_TYPE_CMD",
-]
-
-
-def escape(s):
+def _escape(s):
     return s.replace("\\", "\\\\").replace('"', '\\"')
 
 
 def strornull(s):
-    return '"' + escape(s) + '"' if s is not None else "NULL"
+    return '"' + _escape(s) + '"' if s is not None else "NULL"
 
 
 def strip(s):
     return s.strip("\n") if s is not None else None
-
-
-def compute_cname(name):
-    if name == "":
-        return "empty"
-
-    name = name.translate(
-        str.maketrans(
-            {
-                ".": "_dot_",
-                "*": "_star_",
-                ">": "_greater_",
-                "<": "_minor_",
-                "-": "_minus_",
-                "+": "_plus_",
-                "=": "_equal_",
-                "$": "_dollar_",
-                "?": "_question_",
-                "/": "_slash_",
-                "\\": "_backslash_",
-                "&": "_and_",
-                "!": "_escl_",
-                "#": "_hash_",
-                " ": "_space_",
-                "(": "_oparen_",
-                ")": "_cparen_",
-            }
-        )
-    )
-    if name.startswith("_"):
-        name = name[1:]
-
-    return name
-
-
-def flat(l):
-    if l is None:
-        return []
-    if not isinstance(l, list):
-        return [l]
-
-    out = []
-    for i in l:
-        out += flat(i)
-    return out
 
 
 class Arg:
@@ -512,13 +456,14 @@ class CmdDesc:
             sys.exit(1)
 
     def get_handler_cname(self):
-        if self.type in [CD_TYPE_ARGV, CD_TYPE_ARGV_MODES, CD_TYPE_ARGV_STATE]:
-            return "rz_" + (self.handler or self.cname) + "_handler"
-
-        if self.type == CD_TYPE_OLDINPUT:
-            return "rz_" + (self.handler or self.cname)
-
-        return None
+        if self.type not in [
+            CD_TYPE_OLDINPUT,
+            CD_TYPE_ARGV,
+            CD_TYPE_ARGV_MODES,
+            CD_TYPE_ARGV_STATE,
+        ]:
+            return None
+        return get_handler_cname(self.type, self.handler, self.cname)
 
     @classmethod
     def get_arg_cname(cls, cd):

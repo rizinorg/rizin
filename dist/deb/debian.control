@@ -1,0 +1,37 @@
+Source: rizin
+Section: devel
+Priority: optional
+Maintainer: RizinOrg <info@rizin.re>
+Build-Depends: debhelper (>= 12),
+               meson,
+               pkg-config,
+               python3,
+               python3-setuptools,
+Standards-Version: 4.5.1
+Homepage: https://rizin.re/
+Vcs-Browser: https://github.com/rizinorg/rizin
+Vcs-Git: https://github.com/rizinorg/rizin
+Rules-Requires-Root: no
+
+Package: rizin
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Free and Open Source Reverse Engineering Framework
+ Rizin is a free and open-source Reverse Engineering framework, providing a
+ complete binary analysis experience with features like Disassembler,
+ Hexadecimal editor, Emulation, Binary inspection, Debugger, and more.
+
+Package: librizin-dev
+Section: libdevel
+Architecture: any
+Depends: ${misc:Depends}, librizin-common (>= ${source:Version}), rizin (>= ${source:Version})
+Description: devel files from the rizin suite
+ This package provides the devel files from rizin.
+
+Package: librizin-common
+Multi-Arch: foreign
+Architecture: all
+Depends: ${misc:Depends}
+Description: arch independent files from the rizin suite
+ This package provides the arch independent files from rizin.
+

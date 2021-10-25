@@ -189,23 +189,24 @@ static bool buf_move_back(RZ_NONNULL RzBuffer *b, ut64 addr, ut64 length) {
 		return false;
 	}
 
+	bool res = false;
 	st64 tmp_length = rz_buf_read_at(b, addr, tmp, size - addr);
 	if (tmp_length < 0) {
-		free(tmp);
-		return false;
+		goto err;
 	}
 
 	if (!rz_buf_resize(b, size + length)) {
-		free(tmp);
-		return false;
+		goto err;
 	}
 
 	if (rz_buf_write_at(b, addr + length, tmp, tmp_length) < 0) {
-		free(tmp);
-		return false;
+		goto err;
 	}
 
-	return true;
+	res = true;
+err:
+	free(tmp);
+	return res;
 }
 
 static ut8 *get_whole_buf(RzBuffer *b, ut64 *size) {

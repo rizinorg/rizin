@@ -975,6 +975,7 @@ bool test_rz_buf_sparse_overlay_size(void) {
 	mu_assert_eq(rz_buf_size(b), 0x204, "buf sz");
 
 	rz_buf_free(b);
+	rz_buf_free(base);
 	mu_end;
 }
 
