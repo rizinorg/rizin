@@ -16,6 +16,7 @@ static const RzCmdDescDetail cmd_debug_add_cond_bp_details[2];
 static const RzCmdDescDetail cmd_debug_add_watchpoint_details[2];
 static const RzCmdDescDetail eval_getset_details[2];
 static const RzCmdDescDetail env_details[3];
+static const RzCmdDescDetail egg_config_details[2];
 static const RzCmdDescDetail history_list_or_exec_details[2];
 static const RzCmdDescDetail wB_details[2];
 static const RzCmdDescDetail wv_details[2];
@@ -190,6 +191,12 @@ static const RzCmdDescArg eval_readonly_args[2];
 static const RzCmdDescArg eval_spaces_args[2];
 static const RzCmdDescArg eval_type_args[2];
 static const RzCmdDescArg env_args[3];
+static const RzCmdDescArg egg_compile_args[2];
+static const RzCmdDescArg egg_config_args[2];
+static const RzCmdDescArg egg_syscall_args[3];
+static const RzCmdDescArg egg_type_args[2];
+static const RzCmdDescArg egg_padding_args[2];
+static const RzCmdDescArg egg_encoder_args[3];
 static const RzCmdDescArg history_list_or_exec_args[2];
 static const RzCmdDescArg cmd_info_class_as_source_args[2];
 static const RzCmdDescArg cmd_info_class_fields_args[2];
@@ -4105,8 +4112,138 @@ static const RzCmdDescHelp cmd_flag_help = {
 	.summary = "Manage flags",
 };
 
-static const RzCmdDescHelp cmd_egg_help = {
+static const RzCmdDescHelp g_help = {
 	.summary = "Generate shellcodes with rz_egg",
+};
+static const RzCmdDescArg egg_compile_args[] = {
+	{
+		.name = "file",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp egg_compile_help = {
+	.summary = "Compile the shellcode",
+	.args = egg_compile_args,
+};
+
+static const RzCmdDescDetailEntry egg_config_Examples_detail_entries[] = {
+	{ .text = "gc", .arg_str = " egg.encoder", .comment = "Show current value of config variable `egg.encoder`" },
+	{ .text = "gc", .arg_str = " egg.encoder=xor", .comment = "Set config variable `egg.encoder` to `xor`" },
+	{ 0 },
+};
+static const RzCmdDescDetail egg_config_details[] = {
+	{ .name = "Examples", .entries = egg_config_Examples_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg egg_config_args[] = {
+	{
+		.name = "key=value",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_ARRAY,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp egg_config_help = {
+	.summary = "Get/Set config option for shellcode / List all config options",
+	.args_str = " <key>[=<val>] [<key>[=<val>] ...]]",
+	.details = egg_config_details,
+	.args = egg_config_args,
+};
+
+static const RzCmdDescArg egg_list_plugins_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp egg_list_plugins_help = {
+	.summary = "List shellcode and encoder plugins",
+	.args = egg_list_plugins_args,
+};
+
+static const RzCmdDescArg egg_syscall_args[] = {
+	{
+		.name = "name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "args",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp egg_syscall_help = {
+	.summary = "Compile syscall \"name(args)\"",
+	.args = egg_syscall_args,
+};
+
+static const RzCmdDescArg egg_type_args[] = {
+	{
+		.name = "type",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp egg_type_help = {
+	.summary = "Define the shellcode type",
+	.args = egg_type_args,
+};
+
+static const RzCmdDescArg egg_padding_args[] = {
+	{
+		.name = "padding",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp egg_padding_help = {
+	.summary = "Define padding for command",
+	.args = egg_padding_args,
+};
+
+static const RzCmdDescArg egg_encoder_args[] = {
+	{
+		.name = "encoder",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "key",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp egg_encoder_help = {
+	.summary = "Specify an encoder and a key",
+	.args = egg_encoder_args,
+};
+
+static const RzCmdDescArg egg_reset_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp egg_reset_help = {
+	.summary = "Reset the shellcode configuration",
+	.args = egg_reset_args,
+};
+
+static const RzCmdDescArg egg_show_config_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp egg_show_config_help = {
+	.summary = "Show the current configuration",
+	.args = egg_show_config_args,
 };
 
 static const RzCmdDescHelp H_help = {
@@ -8217,8 +8354,31 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_flag_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "f", rz_cmd_flag, &cmd_flag_help);
 	rz_warn_if_fail(cmd_flag_cd);
 
-	RzCmdDesc *cmd_egg_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "g", rz_cmd_egg, &cmd_egg_help);
-	rz_warn_if_fail(cmd_egg_cd);
+	RzCmdDesc *g_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "g", rz_egg_compile_handler, &egg_compile_help, &g_help);
+	rz_warn_if_fail(g_cd);
+	RzCmdDesc *egg_config_cd = rz_cmd_desc_argv_new(core->rcmd, g_cd, "gc", rz_egg_config_handler, &egg_config_help);
+	rz_warn_if_fail(egg_config_cd);
+
+	RzCmdDesc *egg_list_plugins_cd = rz_cmd_desc_argv_new(core->rcmd, g_cd, "gl", rz_egg_list_plugins_handler, &egg_list_plugins_help);
+	rz_warn_if_fail(egg_list_plugins_cd);
+
+	RzCmdDesc *egg_syscall_cd = rz_cmd_desc_argv_new(core->rcmd, g_cd, "gs", rz_egg_syscall_handler, &egg_syscall_help);
+	rz_warn_if_fail(egg_syscall_cd);
+
+	RzCmdDesc *egg_type_cd = rz_cmd_desc_argv_new(core->rcmd, g_cd, "gi", rz_egg_type_handler, &egg_type_help);
+	rz_warn_if_fail(egg_type_cd);
+
+	RzCmdDesc *egg_padding_cd = rz_cmd_desc_argv_new(core->rcmd, g_cd, "gp", rz_egg_padding_handler, &egg_padding_help);
+	rz_warn_if_fail(egg_padding_cd);
+
+	RzCmdDesc *egg_encoder_cd = rz_cmd_desc_argv_new(core->rcmd, g_cd, "ge", rz_egg_encoder_handler, &egg_encoder_help);
+	rz_warn_if_fail(egg_encoder_cd);
+
+	RzCmdDesc *egg_reset_cd = rz_cmd_desc_argv_new(core->rcmd, g_cd, "gr", rz_egg_reset_handler, &egg_reset_help);
+	rz_warn_if_fail(egg_reset_cd);
+
+	RzCmdDesc *egg_show_config_cd = rz_cmd_desc_argv_new(core->rcmd, g_cd, "gS", rz_egg_show_config_handler, &egg_show_config_help);
+	rz_warn_if_fail(egg_show_config_cd);
 
 	RzCmdDesc *H_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "H", rz_history_list_or_exec_handler, &history_list_or_exec_help, &H_help);
 	rz_warn_if_fail(H_cd);

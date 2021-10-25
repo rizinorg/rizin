@@ -85,12 +85,12 @@ static bool lastcmd_repeat(RzCore *core, int next);
 #include "cmd_project.c"
 #include "cmd_write.c"
 #include "cmd_cmp.c"
+#include "cmd_egg.c"
 #include "cmd_eval.c"
 #include "cmd_interpret.c"
 #include "cmd_analysis.c"
 #include "cmd_open.c"
 #include "cmd_type.c"
-#include "cmd_egg.c"
 #include "cmd_info.c"
 #include "cmd_meta.c"
 #include "cmd_macro.c"
@@ -6129,7 +6129,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "c", "compare memory", rz_cmd_cmp },
 		{ "d", "debugger operations", rz_cmd_debug },
 		{ "f", "get/set flags", rz_cmd_flag },
-		{ "g", "egg manipulation", rz_cmd_egg },
 		{ "k", "perform sdb query", rz_cmd_kuery },
 		{ "ls", "list files and directories", rz_cmd_ls },
 		{ "m", "make directory and move files", rz_cmd_m },
