@@ -25,6 +25,7 @@ bool test_config() {
 	what = rz_config_get_b(cfg, "true.or.false");
 	mu_assert_eq(what, false, "Boolean variable (toggle)");
 
+	rz_config_free(cfg);
 	mu_end;
 }
 
@@ -47,6 +48,7 @@ bool test_config_lock() {
 	bool what = rz_config_get_b(cfg, "true.or.false");
 	mu_assert_false(what, "Boolean variable (locked)");
 
+	rz_config_free(cfg);
 	mu_end;
 }
 

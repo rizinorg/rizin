@@ -4144,7 +4144,7 @@ err:
 }
 
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(redirect_stmt) {
-	int pipecolor = rz_config_get_i(state->core->config, "scr.color.pipe");
+	bool pipecolor = rz_config_get_b(state->core->config, "scr.color.pipe");
 	int ocolor = rz_config_get_i(state->core->config, "scr.color");
 	int scr_html = -1;
 	RzCmdStatus res = RZ_CMD_STATUS_INVALID, is_append = false, is_html = false;

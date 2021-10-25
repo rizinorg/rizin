@@ -1,0 +1,5 @@
+rizin (0.3.0-1) rolling; urgency=medium
+
+  * First import from Parrot of the debian package
+
+ -- Riccardo Schirone <sirmy15@gmail.com>  Thu, 7 Oct 2021 16:42:00 +0700

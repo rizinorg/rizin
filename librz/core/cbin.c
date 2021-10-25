@@ -122,6 +122,7 @@ RZ_API void rz_core_bin_options_init(RzCore *core, RZ_OUT RzBinOptions *opts, in
 	opts->obj_opts.elf_load_sections = rz_config_get_b(core->config, "elf.load.sections");
 	opts->obj_opts.elf_checks_sections = rz_config_get_b(core->config, "elf.checks.sections");
 	opts->obj_opts.elf_checks_segments = rz_config_get_b(core->config, "elf.checks.segments");
+	opts->obj_opts.big_endian = rz_config_get_b(core->config, "cfg.bigendian");
 }
 
 RZ_API int rz_core_bin_set_by_fd(RzCore *core, ut64 bin_fd) {
@@ -2667,6 +2668,7 @@ static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzList *l
 					if (block_list[0] == 0 && block_list[1] == -1) {
 						/* Don't show block list if
 						   just Basic Latin (0x00 - 0x7F) */
+						free(block_list);
 						break;
 					}
 					int *block_ptr = block_list;

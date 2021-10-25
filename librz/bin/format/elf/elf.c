@@ -323,6 +323,7 @@ static bool init(ELFOBJ *bin, RzBinObjectLoadOptions *options) {
 	bin->boffset = Elf_(rz_bin_elf_get_boffset)(bin);
 
 	bin->relocs = Elf_(rz_bin_elf_relocs_new)(bin);
+	bin->reloc_targets_map_base = Elf_(rz_bin_elf_get_targets_map_base)(bin);
 
 	bin->notes = Elf_(rz_bin_elf_notes_new)(bin);
 

@@ -14,10 +14,7 @@ To learn more on Rizin you may want to read the
 
 # How to install
 
-You can find the latest release binaries for Android, Debian, Ubuntu, MacOS,
-Windows [here](https://github.com/rizinorg/rizin/releases/latest). If we
-don't provide a released binary for your system, you can still build Rizin
-yourself.
+Look at [INSTALL.md](./INSTALL.md).
 
 # How to build
 
