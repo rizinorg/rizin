@@ -54,7 +54,7 @@ RUN
 
 NAME=DEX dex38.dex invoke-polymorphic
 FILE=bins/dex/dex38.dex
-CMDS=pi 2 @0x00125e; pi 3 @0x0012da
+CMDS=pi 2 @ 0x00125e; pi 3 @ 0x0012da
 EXPECT=<<EOF
 invoke-polymorphic {v1, v2, v3}, Ljava/lang/invoke/MethodHandle;->invoke([Ljava/lang/Object;)Ljava/lang/Object;, (II)Ljava/lang/Object;
 move-result-object v1
@@ -66,7 +66,7 @@ RUN
 
 NAME=DEX dex38.dex invoke-custom
 FILE=bins/dex/dex38.dex
-CMDS=pi 3 @0x00112c
+CMDS=pi 3 @ 0x00112c
 EXPECT=<<EOF
 invoke-custom {v0, v1}, call_site+0
 move-result-object v0
@@ -265,7 +265,7 @@ RUN
 
 NAME=DEX HelloWorld.dex pi command
 FILE=bins/dex/HelloWorld.dex
-CMDS=pi 1 @0x240; pi 1 @0x246; pi 1 @0x25c; pi 1 @0x264; pi 1 @0x276; pi 1 @0x026a; pi 1 @0x0294; pi 1 @0x0298
+CMDS=pi 1 @ 0x240; pi 1 @ 0x246; pi 1 @ 0x25c; pi 1 @ 0x264; pi 1 @ 0x276; pi 1 @ 0x026a; pi 1 @ 0x0294; pi 1 @ 0x0298
 EXPECT=<<EOF
 iput v0, v1, LHello;->localVar I
 sput v0, LHello;->localVar2 I

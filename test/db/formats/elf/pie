@@ -103,7 +103,7 @@ RUN
 
 NAME=ELF: pd around a reloc with asm.flags.middle
 FILE=bins/elf/analysis/hello-linux-i386-pie
-CMDS=e asm.flags.middle=2;pd 3 @0x000004a6 ~?invalid
+CMDS=e asm.flags.middle=2;pd 3 @ 0x000004a6 ~?invalid
 EXPECT=<<EOF
 0
 EOF
