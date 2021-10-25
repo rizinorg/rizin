@@ -559,7 +559,7 @@ ar > /dev/null
 ar r0=0
 ar r1=1
 wx 070091e5
-wx aaaaaaaabbbbbbbb44332211@4
+wx aaaaaaaabbbbbbbb44332211@ 4
 aes
 ar r0
 EOF
@@ -576,7 +576,7 @@ e asm.bits=32
 ar > /dev/null
 ar r0=0
 wx 070090e5
-wx aaaaaaaabbbbbbbb44332211@4
+wx aaaaaaaabbbbbbbb44332211@ 4
 aes
 ar r0
 EOF
@@ -594,7 +594,7 @@ ar > /dev/null
 ar r0=4
 ar r1=2
 wx 010090e7
-wx aaaaaaaabbbbbbbb44332211@4
+wx aaaaaaaabbbbbbbb44332211 @ 4
 aes
 ar r0
 EOF
@@ -902,7 +902,7 @@ ar r2=0xdeadbeef
 ar r3=0
 wx 042083e5aabbccddeeff
 aes
-p8 4 @4
+p8 4 @ 4
 ar r2
 ar r3
 EOF
@@ -922,7 +922,7 @@ ar r2=0xdeadbeef
 ar r3=0
 wx 052083e5aabbccddeeff
 aes
-p8 4 @5
+p8 4 @ 5
 ar r2
 ar r3
 EOF
@@ -943,7 +943,7 @@ ar r3=4
 ar r1=2
 wx 012083e7aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r2
 ar r3
 ar r1
@@ -988,7 +988,7 @@ ar r2=4
 ar r3=2
 wx 831082e7aabbccddeeff
 aes
-p8 4 @8
+p8 4 @ 8
 ar r1
 ar r2
 ar r3
@@ -1011,7 +1011,7 @@ ar r2=4
 ar r3=2
 wx a31082e7aabbccddeeff
 aes
-p8 4 @5
+p8 4 @ 5
 ar r1
 ar r2
 ar r3
@@ -1034,7 +1034,7 @@ ar r2=4
 ar r3=2
 wx c31082e7aabbccddeeff
 aes
-p8 4 @5
+p8 4 @ 5
 ar r1
 ar r2
 ar r3
@@ -1057,7 +1057,7 @@ ar r2=4
 ar r3=1
 wx e31c82e7aabbccddeeff
 aes
-p8 4 @0x84
+p8 4 @ 0x84
 ar r1
 ar r2
 ar r3
@@ -1079,7 +1079,7 @@ ar r2=0xdeadbeef
 ar r3=0
 wx 052083e4aabbccddeeff
 aes
-p8 4 @0
+p8 4 @ 0
 ar r2
 ar r3
 EOF
@@ -1100,7 +1100,7 @@ ar r3=4
 ar r1=2
 wx 012083e6aabbccddeeff
 aes
-p8 4 @4
+p8 4 @ 4
 ar r2
 ar r3
 ar r1
@@ -1123,7 +1123,7 @@ ar r2=4
 ar r3=2
 wx 831082e6aabbccddeeff
 aes
-p8 4 @4
+p8 4 @ 4
 ar r1
 ar r2
 ar r3
@@ -1146,7 +1146,7 @@ ar r2=4
 ar r3=2
 wx a31082e6aabbccddeeff
 aes
-p8 4 @4
+p8 4 @ 4
 ar r1
 ar r2
 ar r3
@@ -1169,7 +1169,7 @@ ar r2=4
 ar r3=2
 wx c31082e6aabbccddeeff
 aes
-p8 4 @4
+p8 4 @ 4
 ar r1
 ar r2
 ar r3
@@ -1192,7 +1192,7 @@ ar r2=4
 ar r3=1
 wx e31c82e6aabbccddeeff
 aes
-p8 4 @4
+p8 4 @ 4
 ar r1
 ar r2
 ar r3
@@ -1214,7 +1214,7 @@ ar r2=0xdeadbeef
 ar r3=0
 wx 0520a3e5aabbccddeeff
 aes
-p8 4 @5
+p8 4 @ 5
 ar r2
 ar r3
 EOF
@@ -1234,7 +1234,7 @@ ar r2=0xdeadbeef
 ar r3=10
 wx 052023e5aabbccddeeff
 aes
-p8 4 @5
+p8 4 @ 5
 ar r2
 ar r3
 EOF
@@ -1255,7 +1255,7 @@ ar r3=4
 ar r1=2
 wx 0120a3e7aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r2
 ar r3
 ar r1
@@ -1278,7 +1278,7 @@ ar r3=8
 ar r1=-2
 wx 0120a3e7aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r2
 ar r3
 ar r1
@@ -1301,7 +1301,7 @@ ar r2=4
 ar r3=2
 wx 8310a2e7aabbccddeeff
 aes
-p8 4 @8
+p8 4 @ 8
 ar r1
 ar r2
 ar r3
@@ -1324,7 +1324,7 @@ ar r2=4
 ar r3=2
 wx a310a2e7aabbccddeeff
 aes
-p8 4 @5
+p8 4 @ 5
 ar r1
 ar r2
 ar r3
@@ -1347,7 +1347,7 @@ ar r2=4
 ar r3=2
 wx c310a2e7aabbccddeeff
 aes
-p8 4 @5
+p8 4 @ 5
 ar r1
 ar r2
 ar r3
@@ -1370,7 +1370,7 @@ ar r2=4
 ar r3=1
 wx e31ca2e7aabbccddeeff
 aes
-p8 4 @0x84
+p8 4 @ 0x84
 ar r1
 ar r2
 ar r3
@@ -1393,7 +1393,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 05508605aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -1414,7 +1414,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 05508605aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -1435,7 +1435,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 05508615aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -1456,7 +1456,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 05508615aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -1477,7 +1477,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 05508625aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -1498,7 +1498,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 05508625aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -1519,7 +1519,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 05508635aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -1540,7 +1540,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 05508635aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -1561,7 +1561,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 05508645aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -1582,7 +1582,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 05508645aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -1603,7 +1603,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 05508655aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -1624,7 +1624,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 05508655aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -1645,7 +1645,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 05508665aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -1666,7 +1666,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 05508665aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -1687,7 +1687,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 05508675aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -1708,7 +1708,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 05508675aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -1730,7 +1730,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 05508685aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -1752,7 +1752,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 05508685aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -1774,7 +1774,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 05508685aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -1796,7 +1796,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 05508685aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -1818,7 +1818,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 05508695aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -1840,7 +1840,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 05508695aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -1862,7 +1862,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 05508695aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -1884,7 +1884,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 05508695aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -1906,7 +1906,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 055086a5aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -1928,7 +1928,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 055086a5aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -1950,7 +1950,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 055086a5aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -1972,7 +1972,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 055086a5aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -1994,7 +1994,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 055086b5aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -2016,7 +2016,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 055086b5aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -2038,7 +2038,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 055086b5aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -2060,7 +2060,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 055086b5aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -2083,7 +2083,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 055086c5aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -2106,7 +2106,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 055086c5aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -2129,7 +2129,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 055086c5aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -2152,7 +2152,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 055086c5aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -2175,7 +2175,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 055086c5aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -2198,7 +2198,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 055086c5aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -2221,7 +2221,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 055086c5aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -2244,7 +2244,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 055086d5aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -2267,7 +2267,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 055086d5aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -2290,7 +2290,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 055086d5aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -2313,7 +2313,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 055086d5aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -2336,7 +2336,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 055086d5aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -2359,7 +2359,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 055086d5aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -2382,7 +2382,7 @@ ar r5=0xdeadbeef
 ar r6=1
 wx 055086d5aabbccddeeff
 aes
-p8 4 @6
+p8 4 @ 6
 ar r5
 ar r6
 EOF
@@ -2714,7 +2714,7 @@ aer r1=9
 aer r3=10
 aes
 aer r0
-p8 12 @8
+p8 12 @ 8
 EOF
 EXPECT=<<EOF
 0x00000008
@@ -2733,7 +2733,7 @@ aer r1=9
 aer r3=10
 aes
 aer r0
-p8 12 @8
+p8 12 @ 8
 EOF
 EXPECT=<<EOF
 0x00000008
@@ -2752,7 +2752,7 @@ aer r1=9
 aer r3=10
 aes
 aer r0
-p8 12 @8
+p8 12 @ 8
 EOF
 EXPECT=<<EOF
 0x00000010
@@ -2773,7 +2773,7 @@ ar d2=0xaaaaaaaaaaaaaaaa
 aes
 aer r0
 aer pc
-p8 16 @0x100
+p8 16 @ 0x100
 EOF
 EXPECT=<<EOF
 0x00000100
@@ -2795,7 +2795,7 @@ ar d2=0xaaaaaaaaaaaaaaaa
 aes
 aer r0
 aer pc
-p8 16 @0x100
+p8 16 @ 0x100
 EOF
 EXPECT=<<EOF
 0x00000110
@@ -2818,7 +2818,7 @@ ar d2=0xaaaaaaaaaaaaaaaa
 aes
 aer r0
 aer pc
-p8 16 @0x100
+p8 16 @ 0x100
 EOF
 EXPECT=<<EOF
 0x00000100
@@ -2833,8 +2833,8 @@ CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
 wx 0a0010e8 # ldmda r0, {r1, r3}
-wx 01234567 @8
-wx 890abcde @12
+wx 01234567 @ 8
+wx 890abcde @ 12
 aer r0=12
 aes
 aer r0
@@ -2854,8 +2854,8 @@ CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
 wx 0a0030e9 # ldmdb r0!, {r1, r3}
-wx 01234567 @8
-wx 890abcde @12
+wx 01234567 @ 8
+wx 890abcde @ 12
 aer r0=16
 aes
 aer r0
@@ -2875,8 +2875,8 @@ CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
 wx 0a0090e8 # ldm r0, {r1, r3}
-wx 01234567 @8
-wx 890abcde @12
+wx 01234567 @ 8
+wx 890abcde @ 12
 aer r0=8
 aes
 aer r0
@@ -2896,8 +2896,8 @@ CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
 wx 0a00b0e9 # ldmib r0!, {r1, r3}
-wx 01234567 @8
-wx 890abcde @12
+wx 01234567 @ 8
+wx 890abcde @ 12
 aer r0=4
 aes
 aer r0
@@ -2918,7 +2918,7 @@ e esil.verbose=2
 e asm.arch=arm
 e asm.bits=32
 wx 080b93ec # vldmia r3, {d0-d3}
-wx c0decafef00dc001aaaaaaaaaaaaaaaa @0x100
+wx c0decafef00dc001aaaaaaaaaaaaaaaa @ 0x100
 ar r3=0x100
 aes
 aer r3
@@ -2941,7 +2941,7 @@ e esil.verbose=2
 e asm.arch=arm
 e asm.bits=32
 wx 080bb4ec # vldmia r4!, {d0-d3}
-wx c0decafef00dc001aaaaaaaaaaaaaaaa @0x100
+wx c0decafef00dc001aaaaaaaaaaaaaaaa @ 0x100
 ar r4=0x100
 aes
 aer r4
@@ -2964,7 +2964,7 @@ e esil.verbose=2
 e asm.arch=arm
 e asm.bits=32
 wx 080b35ed # vldmdb r5!, {d0-d3}
-wx c0decafef00dc001aaaaaaaaaaaaaaaa @0x100
+wx c0decafef00dc001aaaaaaaaaaaaaaaa @ 0x100
 ar r5=0x120
 aes
 aer r5

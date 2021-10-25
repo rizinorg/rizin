@@ -42,7 +42,7 @@ aer esi=0x10000000
 .aer*
 aer?edi
 aer?esi
-pv @0x20000000
+pv @ 0x20000000
 EOF
 EXPECT=<<EOF
 0x20000001
@@ -93,7 +93,7 @@ aes
 .aer*
 aer?edi
 aer?esi
-pv @0x20000000
+pv @ 0x20000000
 aer?ecx
 EOF
 EXPECT=<<EOF
@@ -120,7 +120,7 @@ aeim 0x20000000 10 destination
 "wx c6050000002064"
 aes
 .aer*
-pv @0x20000000
+pv @ 0x20000000
 EOF
 EXPECT=<<EOF
 0x00000064
@@ -381,7 +381,7 @@ aer edi=0x10000000
 2aes
 .aer*
 aer?edi
-pv @0x10000000
+pv @ 0x10000000
 EOF
 EXPECT=<<EOF
 0x10000001
@@ -407,7 +407,7 @@ aer edi=0x10000000
 2aes
 .aer*
 aer?edi
-pv @0x10000000
+pv @ 0x10000000
 EOF
 EXPECT=<<EOF
 0x0fffffff
@@ -433,7 +433,7 @@ aer edi=0x10000000
 2aes
 .aer*
 aer?edi
-pv @0x10000000
+pv @ 0x10000000
 EOF
 EXPECT=<<EOF
 0x10000002
@@ -459,7 +459,7 @@ aer edi=0x10000000
 2aes
 .aer*
 aer?edi
-pv @0x10000000
+pv @ 0x10000000
 EOF
 EXPECT=<<EOF
 0x0ffffffe
@@ -485,7 +485,7 @@ aer edi=0x10000000
 2aes
 .aer*
 aer?edi
-pv @0x10000000
+pv @ 0x10000000
 EOF
 EXPECT=<<EOF
 0x10000004
@@ -511,7 +511,7 @@ aer edi=0x10000000
 2aes
 .aer*
 aer?edi
-pv @0x10000000
+pv @ 0x10000000
 EOF
 EXPECT=<<EOF
 0x0ffffffc
