@@ -25,21 +25,25 @@ static bool load_theme(RzCore *core, const char *path) {
 	return res;
 }
 
-static bool nextpal_item(RzCore *core, int mode, const char *file, int ctr) {
+static bool pal_seek(RzCore *core, RzConsPalSeekMode mode, const char *file, RzListIter *iter) {
 	const char *fn = rz_str_lchr(file, '/');
-	if (!fn)
+	if (!fn) {
 		fn = file;
+	}
 	switch (mode) {
-	case 'j': // json
-		rz_cons_printf("%s\"%s\"", ctr ? "," : "", fn);
+	case RZ_CONS_PAL_SEEK_PREVIOUS: {
+		const char *next_fn = iter->n ? iter->n->data : NULL;
+		if (!curtheme) {
+			return true;
+		}
+		if (next_fn && !strcmp(next_fn, curtheme)) {
+			free(curtheme);
+			curtheme = strdup(fn);
+			return false;
+		}
 		break;
-	case 'l': // list
-		rz_cons_println(fn);
-		break;
-	case 'p': // previous
-		// TODO: move logic here
-		break;
-	case 'n': // next
+	}
+	case RZ_CONS_PAL_SEEK_NEXT:
 		if (getNext) {
 			curtheme = rz_str_dup(curtheme, fn);
 			getNext = false;
@@ -130,29 +134,15 @@ RZ_API RZ_OWN RzList *rz_core_list_themes(RzCore *core) {
 	return list;
 }
 
-RZ_IPI void rz_core_theme_nextpal(RzCore *core, int mode) {
+RZ_IPI void rz_core_theme_nextpal(RzCore *core, RzConsPalSeekMode mode) {
 	RzListIter *iter;
 	const char *fn;
-	int ctr = 0;
 	RzList *files = rz_core_list_themes(core);
 
 	rz_list_foreach (files, iter, fn) {
 		if (*fn && *fn != '.') {
-			if (mode == 'p') {
-				const char *nfn = iter->n ? iter->n->data : NULL;
-				if (!curtheme) {
-					rz_list_free(files);
-					return;
-				}
-				if (nfn && !strcmp(nfn, curtheme)) {
-					free(curtheme);
-					curtheme = strdup(fn);
-					goto done;
-				}
-			} else {
-				if (!nextpal_item(core, mode, fn, ctr++)) {
-					goto done;
-				}
+			if (!pal_seek(core, mode, fn, iter)) {
+				goto done;
 			}
 		}
 	}
@@ -214,12 +204,12 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_set_colorful_palette_handler(RzCore *core, 
 }
 
 RZ_IPI RzCmdStatus rz_cmd_eval_color_load_previous_theme_handler(RzCore *core, int argc, const char **argv) {
-	rz_core_theme_nextpal(core, 'p');
+	rz_core_theme_nextpal(core, RZ_CONS_PAL_SEEK_PREVIOUS);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_eval_color_load_next_theme_handler(RzCore *core, int argc, const char **argv) {
-	rz_core_theme_nextpal(core, 'n');
+	rz_core_theme_nextpal(core, RZ_CONS_PAL_SEEK_NEXT);
 	return RZ_CMD_STATUS_OK;
 }
 
