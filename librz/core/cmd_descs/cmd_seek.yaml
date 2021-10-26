@@ -134,9 +134,3 @@ commands:
     args:
       - name: reg
         type: RZ_CMD_ARG_TYPE_STRING
-  - name: sleep
-    cname: sleep
-    summary: Sleep for the specified amount of seconds
-    args:
-      - name: seconds
-        type: RZ_CMD_ARG_TYPE_NUM

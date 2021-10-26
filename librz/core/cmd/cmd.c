@@ -97,6 +97,7 @@ static bool lastcmd_repeat(RzCore *core, int next);
 #include "cmd_magic.c"
 #include "cmd_seek.c"
 #include "cmd_search.c" // defines incDigitBuffer... used by cmd_print
+#include "cmd_shell.c"
 #include "cmd_print.c"
 #include "cmd_help.c"
 #include "cmd_remote.c"
@@ -202,8 +203,6 @@ static const char *help_msg_u[] = {
 	"uw", "", "alias for wc (requires: e io.cache=true)",
 	"us", "", "alias for s- (seek history)",
 	"uc", "", "undo core commands (uc?, ucl, uc*, ..)",
-	"uniq", "", "filter rows to avoid duplicates",
-	"uname", "", "uname - show system information",
 	NULL
 };
 
@@ -339,30 +338,6 @@ static int rz_core_cmd_nullcallback(void *data) {
 	}
 	lastcmd_repeat(core, true);
 	return 1;
-}
-
-RZ_IPI RzCmdStatus rz_uniq_handler(RzCore *core, int argc, const char **argv) {
-	char *res = rz_syscmd_uniq(argv[1]);
-	if (!res) {
-		return RZ_CMD_STATUS_ERROR;
-	}
-	rz_cons_print(res);
-	free(res);
-	return RZ_CMD_STATUS_OK;
-}
-
-RZ_IPI RzCmdStatus rz_uname_handler(RzCore *core, int argc, const char **argv) {
-	RSysInfo *si = rz_sys_info();
-	if (!si) {
-		return RZ_CMD_STATUS_ERROR;
-	}
-	rz_cons_printf("%s", si->sysname);
-	if (argc > 1 && strcmp(argv[1], "-r") == 0) {
-		rz_cons_printf(" %s", si->release);
-	}
-	rz_cons_newline();
-	rz_sys_info_free(si);
-	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI int rz_cmd_alias(void *data, const char *input) {
@@ -703,61 +678,6 @@ RZ_API bool rz_core_run_script(RzCore *core, const char *file) {
 	}
 	free(rz_list_pop(core->scriptstack));
 	return ret;
-}
-
-RZ_IPI int rz_cmd_m(void *data, const char *input) {
-	switch (*input) {
-	case '?': // "m?"
-		eprintf("Usage: m[kv] # mkdir to create directory, mv to move a file\n");
-		break;
-	case 'k': { // "mkdir"
-		char *res = rz_syscmd_mkdir(input);
-		if (res) {
-			rz_cons_print(res);
-			free(res);
-		}
-		break;
-	}
-	case 'v': // "mv"
-		return rz_syscmd_mv(input) ? 1 : 0;
-		break;
-	}
-	return 0;
-}
-
-RZ_IPI int rz_cmd_ls(void *data, const char *input) { // "ls"
-	const char *arg = strchr(input, ' ');
-	if (arg) {
-		arg = rz_str_trim_head_ro(arg + 1);
-	}
-	switch (*input) {
-	case '?': // "l?"
-		eprintf("Usage: ls [path] # ls to list files\n");
-		break;
-	default: // "ls"
-		if (!arg) {
-			arg = "";
-		}
-		char *res = rz_syscmd_ls(arg);
-		if (res) {
-			rz_cons_print(res);
-			free(res);
-		}
-		break;
-	}
-	return 0;
-}
-
-RZ_IPI RzCmdStatus rz_ls_handler(RzCore *core, int argc, const char **argv) {
-	char *arg = rz_str_array_join(argv + 1, argc - 1, " ");
-	char *res = rz_syscmd_ls(arg);
-	if (!res) {
-		return RZ_CMD_STATUS_ERROR;
-	}
-	rz_cons_print(res);
-	free(res);
-	free(arg);
-	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI int rz_cmd_interpret(void *data, const char *input) {
@@ -1307,11 +1227,6 @@ RZ_IPI int rz_cmd_env(void *data, const char *input) {
 		ret = rz_core_cmdf(core, "env %s", input);
 	}
 	return ret;
-}
-
-RZ_IPI RzCmdStatus rz_cmd_exit_handler(RzCore *core, int argc, const char **argv) {
-	core->num->value = 0LL;
-	return RZ_CMD_STATUS_EXIT;
 }
 
 RZ_IPI int rz_cmd_last(void *data, const char *input) {
@@ -6095,13 +6010,6 @@ static void cmd_descriptor_init(RzCore *core) {
 	}
 }
 
-RZ_IPI RzCmdStatus rz_sleep_handler(RzCore *core, int argc, const char **argv) {
-	void *bed = rz_cons_sleep_begin();
-	rz_sys_sleep(atoi(argv[1] + 1));
-	rz_cons_sleep_end(bed);
-	return RZ_CMD_STATUS_OK;
-}
-
 static int core_cmd0_wrapper(void *core, const char *cmd) {
 	return rz_core_cmd0((RzCore *)core, cmd);
 }
@@ -6130,8 +6038,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "d", "debugger operations", rz_cmd_debug },
 		{ "f", "get/set flags", rz_cmd_flag },
 		{ "k", "perform sdb query", rz_cmd_kuery },
-		{ "ls", "list files and directories", rz_cmd_ls },
-		{ "m", "make directory and move files", rz_cmd_m },
 		{ "o", "open or map file", rz_cmd_open },
 		{ "p", "print current block", rz_cmd_print },
 		{ "q", "exit program session", rz_cmd_quit },

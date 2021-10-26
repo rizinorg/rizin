@@ -78,10 +78,6 @@ RZ_IPI RzCmdStatus rz_resize_insert_handler(RzCore *core, int argc, const char *
 	return resize_helper(core, delta);
 }
 
-RZ_IPI RzCmdStatus rz_remove_file_handler(RzCore *core, int argc, const char **argv) {
-	return bool2status(rz_file_rm(argv[1]));
-}
-
 RZ_IPI RzCmdStatus rz_resize_human_handler(RzCore *core, int argc, const char **argv) {
 	if (!core->file) {
 		return RZ_CMD_STATUS_ERROR;

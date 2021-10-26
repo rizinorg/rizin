@@ -77,29 +77,6 @@ RZ_IPI bool rz_core_seek_to_register(RzCore *core, const char *regname, bool is_
 	}
 }
 
-static int cmd_sort(void *data, const char *input) { // "sort"
-	const char *arg = strchr(input, ' ');
-	if (arg) {
-		arg = rz_str_trim_head_ro(arg + 1);
-	}
-	switch (*input) {
-	case '?': // "sort?"
-		eprintf("Usage: sort # sort the contents of the file\n");
-		break;
-	default: // "ls"
-		if (!arg) {
-			arg = "";
-		}
-		char *res = rz_syscmd_sort(arg);
-		if (res) {
-			rz_cons_print(res);
-			free(res);
-		}
-		break;
-	}
-	return 0;
-}
-
 RZ_IPI int rz_core_seek_opcode_backward(RzCore *core, int numinstr, bool silent) {
 	int i, val = 0;
 	// N previous instructions
@@ -498,13 +475,6 @@ RZ_IPI int rz_cmd_seek(void *data, const char *input) {
 	}
 	case 'o': // "so"
 		switch (input[1]) {
-		case 'r':
-			if (input[2] == 't') {
-				cmd_sort(core, input);
-			} else {
-				return -1;
-			}
-			break;
 		case ' ':
 		case '\0':
 		case '+':
