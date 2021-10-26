@@ -55,7 +55,6 @@ static const char *help_msg_env[] = {
 static const char *help_msg_exclamation[] = {
 	"Usage:", "!<cmd>", "  Run given command as in system(3)",
 	"!", "", "list all historic commands",
-	"!", "ls", "execute 'ls' in shell",
 	"!*", "rzp x", "run rizin command via rzpipe in current session",
 	"!!", "", "save command history to hist file",
 	"!!", "ls~txt", "print output of 'ls' and grep for 'txt'",

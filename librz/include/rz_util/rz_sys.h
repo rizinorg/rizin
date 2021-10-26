@@ -103,7 +103,7 @@ RZ_API int rz_sys_setenv(const char *key, const char *value);
 RZ_API int rz_sys_clearenv(void);
 RZ_API char *rz_sys_whoami(char *buf);
 RZ_API char *rz_sys_getdir(void);
-RZ_API bool rz_sys_chdir(const char *s);
+RZ_API bool rz_sys_chdir(RZ_NONNULL const char *s);
 RZ_API bool rz_sys_aslr(int val);
 RZ_API int rz_sys_thp_mode(void);
 RZ_API int rz_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr);
@@ -180,15 +180,14 @@ RZ_API void rz_sys_backtrace(void);
 #endif
 
 /* syscmd */
-RZ_API char *rz_syscmd_ls(const char *input);
-RZ_API char *rz_syscmd_cat(const char *file);
-RZ_API char *rz_syscmd_mkdir(const char *dir);
-RZ_API bool rz_syscmd_mv(const char *input);
-RZ_API char *rz_syscmd_uniq(const char *file);
-RZ_API char *rz_syscmd_head(const char *file, int count);
-RZ_API char *rz_syscmd_tail(const char *file, int count);
-RZ_API char *rz_syscmd_join(const char *file1, const char *file2);
-RZ_API char *rz_syscmd_sort(const char *file);
+RZ_API RZ_OWN char *rz_syscmd_ls(RZ_NONNULL const char *input);
+RZ_API RZ_OWN char *rz_syscmd_cat(RZ_NONNULL const char *file);
+RZ_API RZ_OWN char *rz_syscmd_mkdir(RZ_NONNULL const char *dir);
+RZ_API RZ_OWN char *rz_syscmd_uniq(RZ_NONNULL const char *file);
+RZ_API RZ_OWN char *rz_syscmd_head(RZ_NONNULL const char *file, int count);
+RZ_API RZ_OWN char *rz_syscmd_tail(RZ_NONNULL const char *file, int count);
+RZ_API RZ_OWN char *rz_syscmd_join(RZ_NONNULL const char *file1, RZ_NONNULL const char *file2);
+RZ_API RZ_OWN char *rz_syscmd_sort(RZ_NONNULL const char *file);
 
 #ifdef __cplusplus
 }

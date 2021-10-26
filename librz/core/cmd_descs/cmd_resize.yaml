@@ -32,12 +32,6 @@ commands:
     args:
       - name: oldbase
         type: RZ_CMD_ARG_TYPE_RZNUM
-  - name: rm
-    cname: remove_file
-    summary: Remove file
-    args:
-      - name: file
-        type: RZ_CMD_ARG_TYPE_FILE
   - name: rh
     cname: resize_human
     summary: Display size in human-friendly format
