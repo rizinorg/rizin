@@ -3,36 +3,6 @@
 
 #include "rz_core.h"
 
-<<<<<<< HEAD
-static const char *help_msg_c[] = {
-	"Usage:", "c[?dfx] [argument]", " # Compare",
-	"c", " [string]", "Compare a plain with escaped chars string",
-	"c*", " [string]", "Same as above, but printing rizin commands instead",
-	"c1", " [addr]", "Compare 8 bits from current offset",
-	"c2", " [value]", "Compare a word from a math expression",
-	"c4", " [value]", "Compare a doubleword from a math expression",
-	"c8", " [value]", "Compare a quadword from a math expression",
-	"cc", " [at]", "Compares in two hexdump columns of block size",
-	"ccc", " [at]", "Same as above, but only showing different lines",
-	"ccd", " [at]", "Compares in two disasm columns of block size",
-	// "cc", " [offset]", "code bindiff current block against offset"
-	// "cD", " [file]", "like above, but using radiff -b",
-	"cf", " [file]", "Compare contents of file at current seek",
-	"cg", "[?] [o] [file]", "Graphdiff current file and [file]",
-	"cl|cls|clear", "", "Clear screen, (clear0 to goto 0, 0 only)",
-	"cu", "[?] [addr] @at", "Compare memory hexdumps of $$ and dst in unified diff",
-	"cud", " [addr] @at", "Unified diff disasm from $$ and given address",
-	"cv", "[1248] [hexpairs] @at", "Compare 1,2,4,8-byte (silent return in $?)",
-	"cV", "[1248] [addr] @at", "Compare 1,2,4,8-byte address contents (silent, return in $?)",
-	"cw", "[?] [us?] [...]", "Compare memory watchers",
-	"cx", " [hexpair]", "Compare hexpair string (use '.' as nibble wildcard)",
-	"cx*", " [hexpair]", "Compare hexpair string (output rizin commands)",
-	"cX", " [addr]", "Like 'cc' but using hexdiff output",
-	NULL
-};
-
-=======
->>>>>>> 35b801b0c (Remove old shell command handlers for `c` (cmp) commands)
 RZ_API void rz_core_cmpwatch_free(RzCoreCmpWatcher *w) {
 	free(w->ndata);
 	free(w->odata);
