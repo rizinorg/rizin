@@ -33,12 +33,6 @@ commands:
     args:
       - name: num
         type: RZ_CMD_ARG_TYPE_RZNUM
-  - name: cat
-    summary: Show contents of <file> (see pwd, ls)
-    cname: cmd_cat
-    args:
-      - name: file
-        type: RZ_CMD_ARG_TYPE_FILE
   - name: cc
     summary: Compare hexdump of data of block size at <addr> with the data at current offset
     cname: cmd_cmp_hex_block
@@ -58,27 +52,12 @@ commands:
       - name: addr
         type: RZ_CMD_ARG_TYPE_RZNUM
         optional: true
-  - name: cd
-    summary: Change directory
-    cname: cmd_chdir
-    args:
-      - name: dir
-        type: RZ_CMD_ARG_TYPE_FILE
   - name: cf
     summary: Compare the contents of <file> with the data at current offset
     cname: cmd_cmp_file
     args:
       - name: file
         type: RZ_CMD_ARG_TYPE_FILE
-  - name: clear
-    summary: Clear screen
-    cname: cmd_cmp_clear_screen
-    args: []
-  - name: cls
-    summary: clear
-    cname: cmd_cmp_cls
-    handler: cmd_cmp_clear_screen
-    args: []
   - name: cu
     summary: Unified diff commands
     subcommands:

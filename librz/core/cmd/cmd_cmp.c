@@ -461,17 +461,6 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_num8_handler(RzCore *core, int argc, const char **
 	return RZ_CMD_STATUS_ERROR;
 }
 
-// cat
-RZ_IPI RzCmdStatus rz_cmd_cat_handler(RzCore *core, int argc, const char **argv) {
-	char *res = rz_syscmd_cat(argv[1]);
-	if (!res) {
-		return RZ_CMD_STATUS_ERROR;
-	}
-	rz_cons_print(res);
-	free(res);
-	return RZ_CMD_STATUS_OK;
-}
-
 // cc
 RZ_IPI RzCmdStatus rz_cmd_cmp_hex_block_handler(RzCore *core, int argc, const char **argv) {
 	ut64 addr = rz_num_math(core->num, argv[1]);
@@ -508,39 +497,6 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_disasm_handler(RzCore *core, int argc, const char 
 	return cmd_cmp_disasm(core, argv[1], 'c') ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
-// cd
-RZ_IPI RzCmdStatus rz_cmd_chdir_handler(RzCore *core, int argc, const char **argv) {
-	static char *olddir = NULL;
-	bool ret = true;
-	if (!strcmp(argv[1], "-")) {
-		if (olddir) {
-			char *newdir = olddir;
-			olddir = rz_sys_getdir();
-			if (!rz_sys_chdir(newdir)) {
-				RZ_LOG_ERROR("Cannot chdir to %s\n", newdir);
-				free(olddir);
-				olddir = newdir;
-			} else {
-				free(newdir);
-				ret = true;
-			}
-		} else {
-			RZ_LOG_ERROR("No old directory found\n");
-		}
-	} else {
-		char *cwd = rz_sys_getdir();
-		if (!rz_sys_chdir(argv[1])) {
-			RZ_LOG_ERROR("Cannot chdir to %s\n", argv[1]);
-			free(cwd);
-		} else {
-			free(olddir);
-			olddir = cwd;
-			ret = true;
-		}
-	}
-	return ret ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
-}
-
 // cf
 RZ_IPI RzCmdStatus rz_cmd_cmp_file_handler(RzCore *core, int argc, const char **argv) {
 	FILE *fd = rz_sys_fopen(argv[1], "rb");
@@ -569,12 +525,6 @@ return_goto:
 	free(buf);
 	fclose(fd);
 	return stat;
-}
-
-// clear | cls
-RZ_IPI RzCmdStatus rz_cmd_cmp_clear_screen_handler(RzCore *core, int argc, const char **argv) {
-	rz_cons_clear00();
-	return RZ_CMD_STATUS_OK;
 }
 
 // cu

@@ -982,7 +982,6 @@ RZ_API void rz_core_diff_show(RzCore *core, RzCore *core2, bool json);
 RZ_API bool rz_core_diff_show_function(RzCore *core, RzCore *core2, ut64 addr, bool json);
 RZ_API void rz_core_clippy(RzCore *core, const char *msg);
 
-
 /* compare API */
 typedef enum {
 	RZ_COMPARE_MODE_DEFAULT,

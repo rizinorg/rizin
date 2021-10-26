@@ -118,11 +118,9 @@ static const RzCmdDescArg cmd_cmp_num1_args[2];
 static const RzCmdDescArg cmd_cmp_num2_args[2];
 static const RzCmdDescArg cmd_cmp_num4_args[2];
 static const RzCmdDescArg cmd_cmp_num8_args[2];
-static const RzCmdDescArg cmd_cat_args[2];
 static const RzCmdDescArg cmd_cmp_hex_block_args[2];
 static const RzCmdDescArg cmd_cmp_hex_diff_lines_args[2];
 static const RzCmdDescArg cmd_cmp_disasm_args[2];
-static const RzCmdDescArg cmd_chdir_args[2];
 static const RzCmdDescArg cmd_cmp_file_args[2];
 static const RzCmdDescArg cmd_cmp_unified_args[2];
 static const RzCmdDescArg cmd_cmp_unified1_args[2];
@@ -2065,19 +2063,6 @@ static const RzCmdDescHelp cmd_cmp_num8_help = {
 	.args = cmd_cmp_num8_args,
 };
 
-static const RzCmdDescArg cmd_cat_args[] = {
-	{
-		.name = "file",
-		.type = RZ_CMD_ARG_TYPE_FILE,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_cat_help = {
-	.summary = "Show contents of <file> (see pwd, ls)",
-	.args = cmd_cat_args,
-};
-
 static const RzCmdDescArg cmd_cmp_hex_block_args[] = {
 	{
 		.name = "addr",
@@ -2121,19 +2106,6 @@ static const RzCmdDescHelp cmd_cmp_disasm_help = {
 	.args = cmd_cmp_disasm_args,
 };
 
-static const RzCmdDescArg cmd_chdir_args[] = {
-	{
-		.name = "dir",
-		.type = RZ_CMD_ARG_TYPE_FILE,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_chdir_help = {
-	.summary = "Change directory",
-	.args = cmd_chdir_args,
-};
-
 static const RzCmdDescArg cmd_cmp_file_args[] = {
 	{
 		.name = "file",
@@ -2145,22 +2117,6 @@ static const RzCmdDescArg cmd_cmp_file_args[] = {
 static const RzCmdDescHelp cmd_cmp_file_help = {
 	.summary = "Compare the contents of <file> with the data at current offset",
 	.args = cmd_cmp_file_args,
-};
-
-static const RzCmdDescArg cmd_cmp_clear_screen_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_cmp_clear_screen_help = {
-	.summary = "Clear screen",
-	.args = cmd_cmp_clear_screen_args,
-};
-
-static const RzCmdDescArg cmd_cmp_cls_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_cmp_cls_help = {
-	.summary = "clear",
-	.args = cmd_cmp_cls_args,
 };
 
 static const RzCmdDescHelp cu_help = {
@@ -8340,9 +8296,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_cmp_num8_cd = rz_cmd_desc_argv_new(core->rcmd, c_cd, "c8", rz_cmd_cmp_num8_handler, &cmd_cmp_num8_help);
 	rz_warn_if_fail(cmd_cmp_num8_cd);
 
-	RzCmdDesc *cmd_cat_cd = rz_cmd_desc_argv_new(core->rcmd, c_cd, "cat", rz_cmd_cat_handler, &cmd_cat_help);
-	rz_warn_if_fail(cmd_cat_cd);
-
 	RzCmdDesc *cmd_cmp_hex_block_cd = rz_cmd_desc_argv_new(core->rcmd, c_cd, "cc", rz_cmd_cmp_hex_block_handler, &cmd_cmp_hex_block_help);
 	rz_warn_if_fail(cmd_cmp_hex_block_cd);
 
@@ -8352,17 +8305,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_cmp_disasm_cd = rz_cmd_desc_argv_new(core->rcmd, c_cd, "ccd", rz_cmd_cmp_disasm_handler, &cmd_cmp_disasm_help);
 	rz_warn_if_fail(cmd_cmp_disasm_cd);
 
-	RzCmdDesc *cmd_chdir_cd = rz_cmd_desc_argv_new(core->rcmd, c_cd, "cd", rz_cmd_chdir_handler, &cmd_chdir_help);
-	rz_warn_if_fail(cmd_chdir_cd);
-
 	RzCmdDesc *cmd_cmp_file_cd = rz_cmd_desc_argv_new(core->rcmd, c_cd, "cf", rz_cmd_cmp_file_handler, &cmd_cmp_file_help);
 	rz_warn_if_fail(cmd_cmp_file_cd);
-
-	RzCmdDesc *cmd_cmp_clear_screen_cd = rz_cmd_desc_argv_new(core->rcmd, c_cd, "clear", rz_cmd_cmp_clear_screen_handler, &cmd_cmp_clear_screen_help);
-	rz_warn_if_fail(cmd_cmp_clear_screen_cd);
-
-	RzCmdDesc *cmd_cmp_cls_cd = rz_cmd_desc_argv_new(core->rcmd, c_cd, "cls", rz_cmd_cmp_clear_screen_handler, &cmd_cmp_cls_help);
-	rz_warn_if_fail(cmd_cmp_cls_cd);
 
 	RzCmdDesc *cu_cd = rz_cmd_desc_group_new(core->rcmd, c_cd, "cu", rz_cmd_cmp_unified_handler, &cmd_cmp_unified_help, &cu_help);
 	rz_warn_if_fail(cu_cd);
