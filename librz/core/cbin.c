@@ -517,6 +517,7 @@ RZ_API bool rz_core_bin_print(RzCore *core, RzBinFile *bf, ut32 mask, RzCoreBinF
 			RzCmdStateOutput *st = add_header(state, RZ_OUTPUT_MODE_STANDARD, "pdb");
 			RzPdb *pdb = rz_core_pdb_load_info(core, core->bin->file);
 			if (!pdb) {
+				rz_cmd_state_output_free(st);
 				return false;
 			}
 			rz_core_pdb_info_print(core, core->analysis->typedb, pdb, st);

@@ -437,6 +437,7 @@ static RzList *relocs(RzBinFile *bf) {
 		if (reloc->name[0]) {
 			RzBinImport *imp;
 			if (!(imp = import_from_name(bf->rbin, (char *)reloc->name, bin->imports_by_name))) {
+				free(ptr);
 				break;
 			}
 			ptr->import = imp;
