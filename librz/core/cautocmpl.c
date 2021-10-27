@@ -15,7 +15,7 @@ enum autocmplt_type_t {
 	AUTOCMPLT_UNKNOWN = 0, ///< Unknown, nothing will be autocompleted
 	AUTOCMPLT_CMD_ID, ///< A command identifier (aka command name) needs to be autocompleted
 	AUTOCMPLT_CMD_ARG, ///< The argument of an arged_stmt (see grammar.js) needs to be autocompleted
-	AUTOCMPLT_TMP_STMT, ///< A temporary modifier operator like `@ `, `@a:`, `@v:`, etc.
+	AUTOCMPLT_AT_STMT, ///< A temporary modifier operator like `@ `, `@a:`, `@v:` or a iter operator like `@@.`, `@@`, `@@i`, etc.
 	AUTOCMPLT_RZNUM, ///< A expression that can be parsed by RzNum (e.g. "flag+3")
 	AUTOCMPLT_ARCH, ///< An architecture supported by Rizin (e.g. x86, arm, etc.)
 	AUTOCMPLT_BITS, ///< A bits value supported by the currently selected architecture (e asm.bits=?)
@@ -23,6 +23,8 @@ enum autocmplt_type_t {
 	AUTOCMPLT_FLAG_SPACE, ///< A flag space needs to be autocompleted
 	AUTOCMPLT_REG, ///< A cpu register needs to be autocompleted
 	AUTOCMPLT_EVAL_FULL, ///< A name=value of a evaluable variable (e.g. `e` command)
+	AUTOCMPLT_FLAG, ///< A flag item needs to be autocompleted
+	AUTOCMPLT_FUNCTION, ///< A function name needs to be autocompleted
 };
 
 /**
@@ -118,7 +120,7 @@ static void autocmplt_cmdidentifier(RzCore *core, RzLineNSCompletionResult *res,
 	rz_cmd_foreach_cmdname(core->rcmd, NULL, do_autocmplt_cmdidentifier, &u);
 }
 
-static void autocmplt_tmp_stmt(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
+static void autocmplt_at_stmt(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
 	const char *stmts[] = {
 		"@ ",
 		"@!",
@@ -136,6 +138,33 @@ static void autocmplt_tmp_stmt(RzCore *core, RzLineNSCompletionResult *res, cons
 		"@s:",
 		"@v:",
 		"@x:",
+		"@@.",
+		"@@=",
+		"@@@=",
+		"@@",
+		"@@c:",
+		"@@@c:",
+		"@@C",
+		"@@C:",
+		"@@dbt",
+		"@@dbtb",
+		"@@dbts",
+		"@@t",
+		"@@b",
+		"@@i",
+		"@@ii",
+		"@@iS",
+		"@@iSS",
+		"@@is",
+		"@@iz",
+		"@@f",
+		"@@f:",
+		"@@F",
+		"@@F:",
+		"@@om",
+		"@@dm",
+		"@@r",
+		"@@s:",
 		NULL,
 	};
 	const char **stmt;
@@ -308,6 +337,7 @@ static void autocmplt_cmd_arg_flag(RzCore *core, RzLineNSCompletionResult *res, 
 			rz_line_ns_completion_result_add(res, flag);
 		}
 	}
+	rz_list_free(list);
 }
 
 static bool offset_prompt_add_flag(RzFlagItem *fi, void *user) {
@@ -693,10 +723,11 @@ static bool fill_autocmplt_data_cmdarg(struct autocmplt_data_t *ad, ut32 start, 
 }
 
 /**
- * Fill the \p ad structure with all the data required to autocomplete a tmp stmt (@, @(, @a:, etc.)
+ * Fill the \p ad structure with all the data required to autocomplete a tmp
+ * stmt (@, @(, @a:, etc.) or a iter stmt (@@, @@., @@i, etc.)
  */
-static bool fill_autocmplt_data_tmp_stmt(struct autocmplt_data_t *ad, ut32 start, ut32 end) {
-	return fill_autocmplt_data(ad, AUTOCMPLT_TMP_STMT, start, end);
+static bool fill_autocmplt_data_at_stmt(struct autocmplt_data_t *ad, ut32 start, ut32 end) {
+	return fill_autocmplt_data(ad, AUTOCMPLT_AT_STMT, start, end);
 }
 
 static bool find_autocmplt_type_newcmd_or_arg(struct autocmplt_data_t *ad, RzCore *core, RzLineBuffer *buf) {
@@ -731,43 +762,98 @@ static bool is_arg_identifier_in_tmp_stmt(TSNode node) {
 		return false;
 	}
 	const char *node_type = ts_node_type(node);
-	return rz_str_startswith(node_type, "tmp_") && rz_str_endswith(node_type, "_stmt");
+	bool is_iter_or_tmp = rz_str_startswith(node_type, "tmp_") || rz_str_startswith(node_type, "iter_");
+	return is_iter_or_tmp && rz_str_endswith(node_type, "_stmt");
 }
 
-static bool find_autocmplt_type_tmp_stmt(struct autocmplt_data_t *ad, RzCore *core, RzLineBuffer *buf) {
+static bool find_autocmplt_type_at_stmt(struct autocmplt_data_t *ad, RzCore *core, RzLineBuffer *buf) {
 	bool res = false;
-	if (buf->index > 0 && buf->data[buf->index - 1] == '@') {
+	if (buf->index > 1 && buf->data[buf->index - 1] == '@' && buf->data[buf->index - 2] == '@') {
+		struct guess_data_t *g = guess_next_autocmplt_token(core, buf, "=a", 1);
+		if (g) {
+			ut32 node_start = ts_node_start_byte(g->node);
+			ut32 node_end = ts_node_end_byte(g->node);
+			ut32 start = node_start - 3;
+			if (buf->index > 2 && buf->data[buf->index - 3] == '@') {
+				start--;
+				node_start--;
+			}
+			if (is_arg_identifier_in_tmp_stmt(g->node) && node_start > 3) {
+				res = fill_autocmplt_data_at_stmt(ad, start, node_end - 2);
+			}
+			guess_data_free(g);
+		}
+	} else if (buf->index > 0 && buf->data[buf->index - 1] == '@') {
 		struct guess_data_t *g = guess_next_autocmplt_token(core, buf, " a", 1);
 		if (g) {
 			ut32 node_start = ts_node_start_byte(g->node);
 			ut32 node_end = ts_node_end_byte(g->node);
-			if (is_arg_identifier_in_tmp_stmt(g->node)) {
-				res = fill_autocmplt_data_tmp_stmt(ad, node_start, node_end - 1);
+			if (is_arg_identifier_in_tmp_stmt(g->node) && node_start > 2) {
+				res = fill_autocmplt_data_at_stmt(ad, node_start - 2, node_end - 2);
 			}
 			guess_data_free(g);
 		}
-		if (res) {
-			return res;
-		}
 	}
-	if (buf->index > 1 && buf->data[buf->index - 2] == '@') {
+	if (res) {
+		return res;
+	}
+
+	char *start_iter = buf->data + buf->index;
+	char *p = start_iter;
+	// 4 is the longest @@ iter command (see @@dbta)
+	// We don't care to look for the @@ pattern before that point, because it
+	// wouldn't be a valid command anyway
+	char *maximum_search = buf->index > 4 ? start_iter - 4 : start_iter;
+	while (p > buf->data + 2 && p > maximum_search && !(*(p - 1) == '@' && *(p - 2) == '@') && *p != ' ') {
+		p--;
+	}
+	if (p > buf->data + 2 && p > maximum_search && p + 4 - buf->data < RZ_LINE_BUFSIZE && *(p - 3) == '@' && *p != ' ') {
+		// This handles the case <cmd> @@@c<TAB>
+		int idx = buf->index;
+		buf->index = p - buf->data + 1;
+		char last_char = buf->data[buf->index - 1];
+		buf->data[buf->index - 1] = '=';
+		struct guess_data_t *g = guess_next_autocmplt_token(core, buf, "a", 0);
+		buf->data[buf->index - 1] = last_char;
+		buf->index = idx;
+		if (g) {
+			if (is_arg_identifier_in_tmp_stmt(g->node)) {
+				res = fill_autocmplt_data_at_stmt(ad, p - buf->data - 3, buf->index);
+			}
+			guess_data_free(g);
+		}
+	} else if (p > buf->data + 2 && p > maximum_search && p + 4 - buf->data < RZ_LINE_BUFSIZE && *p != ' ') {
+		// This handles the cases <cmd> @@d<TAB> and similar
+		int idx = buf->index;
+		buf->index = p - buf->data + 1;
+		char last_char = buf->data[buf->index - 1];
+		buf->data[buf->index - 1] = 'd';
+		struct guess_data_t *g = guess_next_autocmplt_token(core, buf, "bta", 2);
+		buf->data[buf->index - 1] = last_char;
+		buf->index = idx;
+		if (g) {
+			const char *node_type = ts_node_type(g->node);
+			if (!strcmp(node_type, "iter_dbta_stmt")) {
+				res = fill_autocmplt_data_at_stmt(ad, p - buf->data - 2, buf->index);
+			}
+			guess_data_free(g);
+		}
+	} else if (buf->index > 1 && buf->data[buf->index - 2] == '@') {
+		// This handles the cases <cmd> @v<TAB> and similar
 		struct guess_data_t *g = guess_next_autocmplt_token(core, buf, ":a", 1);
 		if (g) {
 			ut32 node_start = ts_node_start_byte(g->node);
 			ut32 node_end = ts_node_end_byte(g->node);
 			if (is_arg_identifier_in_tmp_stmt(g->node) && node_start > 3 && node_end > 2) {
-				res = fill_autocmplt_data_tmp_stmt(ad, node_start - 3, node_end - 2);
+				res = fill_autocmplt_data_at_stmt(ad, node_start - 3, node_end - 2);
 			}
 			guess_data_free(g);
-		}
-		if (res) {
-			return res;
 		}
 	}
 	return res;
 }
 
-static bool find_autocmplt_type_tmp_stmt_op(struct autocmplt_data_t *ad, RzCore *core, RzLineBuffer *buf,
+static bool find_autocmplt_type_at_stmt_op(struct autocmplt_data_t *ad, RzCore *core, RzLineBuffer *buf,
 	const char *tmp_op, const char *newtext, enum autocmplt_type_t ad_type) {
 	bool res = false;
 	struct guess_data_t *g = guess_next_autocmplt_token(core, buf, newtext, 0);
@@ -877,23 +963,33 @@ static bool find_autocmplt_type(struct autocmplt_data_t *ad, RzCore *core, TSNod
 	} else if (find_autocmplt_type_quoted_arg(ad, core, buf, "'", "single_quoted_arg")) {
 		ad->res->end_string = "' ";
 		return true;
-	} else if (find_autocmplt_type_tmp_stmt_op(ad, core, buf, "tmp_seek_stmt", "a", AUTOCMPLT_RZNUM)) {
+	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "tmp_seek_stmt", "a", AUTOCMPLT_RZNUM)) {
 		return true;
-	} else if (find_autocmplt_type_tmp_stmt_op(ad, core, buf, "tmp_fromto_stmt", "a b)", AUTOCMPLT_RZNUM)) {
+	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "tmp_fromto_stmt", "a b)", AUTOCMPLT_RZNUM)) {
 		return true;
-	} else if (find_autocmplt_type_tmp_stmt_op(ad, core, buf, "tmp_arch_stmt", "a", AUTOCMPLT_ARCH)) {
+	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "tmp_arch_stmt", "a", AUTOCMPLT_ARCH)) {
 		return true;
-	} else if (find_autocmplt_type_tmp_stmt_op(ad, core, buf, "tmp_bits_stmt", "1", AUTOCMPLT_BITS)) {
+	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "tmp_bits_stmt", "1", AUTOCMPLT_BITS)) {
 		return true;
-	} else if (find_autocmplt_type_tmp_stmt_op(ad, core, buf, "tmp_file_stmt", "a", AUTOCMPLT_FILE)) {
+	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "tmp_file_stmt", "a", AUTOCMPLT_FILE)) {
 		return true;
-	} else if (find_autocmplt_type_tmp_stmt_op(ad, core, buf, "tmp_fs_stmt", "a", AUTOCMPLT_FLAG_SPACE)) {
+	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "tmp_fs_stmt", "a", AUTOCMPLT_FLAG_SPACE)) {
 		return true;
-	} else if (find_autocmplt_type_tmp_stmt_op(ad, core, buf, "tmp_reg_stmt", "a", AUTOCMPLT_REG)) {
+	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "tmp_reg_stmt", "a", AUTOCMPLT_REG)) {
 		return true;
-	} else if (find_autocmplt_type_tmp_stmt_op(ad, core, buf, "tmp_eval_stmt", "a", AUTOCMPLT_EVAL_FULL)) {
+	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "tmp_eval_stmt", "a", AUTOCMPLT_EVAL_FULL)) {
 		return true;
-	} else if (find_autocmplt_type_tmp_stmt(ad, core, buf)) {
+	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "iter_offsets_stmt", "a", AUTOCMPLT_RZNUM)) {
+		return true;
+	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "iter_offsetssizes_stmt", "a", AUTOCMPLT_RZNUM)) {
+		return true;
+	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "iter_file_lines_stmt", "a", AUTOCMPLT_FILE)) {
+		return true;
+	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "iter_flags_stmt", "a", AUTOCMPLT_FLAG)) {
+		return true;
+	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "iter_function_stmt", "a", AUTOCMPLT_FUNCTION)) {
+		return true;
+	} else if (find_autocmplt_type_at_stmt(ad, core, buf)) {
 		return true;
 	}
 	return false;
@@ -927,8 +1023,12 @@ RZ_API RzLineNSCompletionResult *rz_core_autocomplete_rzshell(RzCore *core, RzLi
 	if (ts_node_is_null(node)) {
 		goto err;
 	}
-	RZ_LOG_DEBUG("autocomplete_rzshell root = '%s'\n", ts_node_string(root));
-	RZ_LOG_DEBUG("autocomplete_rzshell node = '%s'\n", ts_node_string(node));
+	char *root_string = ts_node_string(root);
+	char *node_string = ts_node_string(node);
+	RZ_LOG_DEBUG("autocomplete_rzshell root = '%s'\n", root_string);
+	RZ_LOG_DEBUG("autocomplete_rzshell node = '%s'\n", node_string);
+	free(node_string);
+	free(root_string);
 
 	// the autocompletion works in 2 steps:
 	// 1) it finds the proper type to autocomplete (sometimes it guesses)
@@ -943,8 +1043,8 @@ RZ_API RzLineNSCompletionResult *rz_core_autocomplete_rzshell(RzCore *core, RzLi
 		case AUTOCMPLT_CMD_ARG:
 			autocmplt_cmd_arg(core, ad.res, ad.cd, ad.i_arg, buf->data + ad.res->start, ad.res->end - ad.res->start);
 			break;
-		case AUTOCMPLT_TMP_STMT:
-			autocmplt_tmp_stmt(core, ad.res, buf->data + ad.res->start, ad.res->end - ad.res->start);
+		case AUTOCMPLT_AT_STMT:
+			autocmplt_at_stmt(core, ad.res, buf->data + ad.res->start, ad.res->end - ad.res->start);
 			break;
 		case AUTOCMPLT_RZNUM:
 			autocmplt_cmd_arg_rznum(core, ad.res, buf->data + ad.res->start, ad.res->end - ad.res->start);
@@ -966,6 +1066,12 @@ RZ_API RzLineNSCompletionResult *rz_core_autocomplete_rzshell(RzCore *core, RzLi
 			break;
 		case AUTOCMPLT_EVAL_FULL:
 			autocmplt_cmd_arg_eval_full(core, ad.res, buf->data + ad.res->start, ad.res->end - ad.res->start);
+			break;
+		case AUTOCMPLT_FLAG:
+			autocmplt_cmd_arg_flag(core, ad.res, buf->data + ad.res->start, ad.res->end - ad.res->start);
+			break;
+		case AUTOCMPLT_FUNCTION:
+			autocmplt_cmd_arg_fcn(core, ad.res, buf->data + ad.res->start, ad.res->end - ad.res->start);
 			break;
 		default:
 			break;
