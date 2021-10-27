@@ -155,7 +155,6 @@ RZ_API bool rz_core_yank_string(RzCore *core, ut64 addr, ut64 maxlen) {
 	buf[core->blocksize] = 0;
 	rz_io_read_at(core->io, addr, buf, core->blocksize);
 	if (maxlen == 0) {
-		// Don't use strnlen, see: http://sourceforge.net/p/mingw/bugs/1912/
 		maxlen = rz_str_nlen((const char *)buf, core->blocksize);
 	} else if (maxlen > core->blocksize) {
 		maxlen = core->blocksize;
