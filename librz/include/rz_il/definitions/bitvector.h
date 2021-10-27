@@ -27,13 +27,11 @@ typedef enum {
  *
  *  Ref : https://web.cs.dal.ca/~jamie/UWO/BitVectors/README.html
  */
-struct bitvector_t {
+typedef struct bitvector_t {
 	ut8 *bits; ///< bits data
 	ut32 _elem_len; ///< length of ut8 array -- real / physical
 	ut32 len; ///< length of bits -- virtual / logical
-};
-
-typedef struct bitvector_t RzILBitVector;
+} RzILBitVector;
 
 // init
 RZ_API RzILBitVector *rz_il_bv_new(ut32 length);
@@ -91,6 +89,7 @@ RZ_API bool rz_il_bv_is_zero_vector(RzILBitVector *x);
 RZ_API RzILBitVector *rz_il_bv_new_from_ut32(ut32 length, ut32 value);
 RZ_API RzILBitVector *rz_il_bv_new_from_ut64(ut32 length, ut64 value);
 RZ_API char *rz_il_bv_as_string(RzILBitVector *bv);
+RZ_API char *rz_il_bv_as_hex_string(RzILBitVector *bv);
 
 RZ_API ut32 rz_il_bv_len(RzILBitVector *bv);
 RZ_API int rz_il_bv_cmp(RzILBitVector *x, RzILBitVector *y);

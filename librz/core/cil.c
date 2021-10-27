@@ -438,6 +438,47 @@ RZ_IPI void rz_core_analysis_rzil_reinit(RzCore *core) {
 	rz_analysis_rzil_setup(core->analysis);
 }
 
+RZ_IPI void rz_core_analysis_rzil_vm_status(RzCore *core) {
+	RzAnalysisRzil *rzil = core->analysis->rzil;
+	if (!rzil || !rzil->vm) {
+		RZ_LOG_ERROR("RzIL: VM is not initialized.")
+		return;
+	}
+
+	char *pc = rz_il_bv_as_hex_string(rzil->vm->pc);
+	if (!pc) {
+		RZ_LOG_ERROR("RzIL: PC bitvector returned a null string.\n");
+		return;
+	}
+
+	rz_cons_printf("RzIL VM info\n");
+	rz_cons_printf(" - program counter: %s\n", pc);
+	rz_cons_printf(" - var count:       %d\n", rzil->vm->var_count);
+	rz_cons_printf(" - val count:       %d\n", rzil->vm->val_count);
+	rz_cons_printf(" - mem count:       %d\n", rzil->vm->mem_count);
+	rz_cons_printf(" - lab count:       %d\n", rzil->vm->lab_count);
+	rz_cons_printf(" - addr space size: %d\n", rzil->vm->addr_size);
+	rz_cons_printf(" - data space size: %d\n", rzil->vm->data_size);
+	free(pc);
+
+	// RzILBag *vm_global_value_set; ///< Store all RzILVal instance
+	// RzILVar **vm_global_variable_list; ///< Store all RzILVar instance
+
+	// RzILMem **mems; ///< Array of Memory, memory are actually hashmap in VM
+	// int var_count, val_count, mem_count, lab_count; ///< count for VM predefined things
+	// int addr_size; ///< size of address
+	// int data_size; ///< size of minimal data unit
+
+	// HtPP *vm_global_bind_table; ///< Hashtable to record relationships between var and val
+	// HtPP *vm_global_label_table; ///< Hashtable to maintain the label and address
+
+	// HtPP *ct_opcodes; ///< Hashtable to maintain address and opcodes
+
+	// RzILBitVector *pc; ///< Program Counter of VM
+
+	// RzILOpHandler *op_handler_table; ///< Array of Handler, handler can be indexed by opcode
+}
+
 // step a list of ct_opcode at a given address
 RZ_IPI void rz_core_rzil_step(RzCore *core) {
 	RzPVector *oplist;

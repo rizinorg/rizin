@@ -28,10 +28,10 @@ static void free_bind_var_val(HtPPKv *kv) {
  * initiate an empty VM
  * \param vm RzILVM, pointer to an empty VM
  * \param start_addr ut64, initiation pc address
- * \param addr_size int, size of the address in VM
- * \param data_size int, size of the minimal data unit in VM
+ * \param addr_size ut32, size of the address in VM
+ * \param data_size ut32, size of the minimal data unit in VM
  */
-RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, int addr_size, int data_size) {
+RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, ut32 data_size) {
 	vm->addr_size = addr_size;
 	vm->data_size = data_size;
 
@@ -134,7 +134,6 @@ RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, int addr_size, int data_s
 	vm->var_count = 0;
 	vm->val_count = 0;
 	vm->mem_count = 0;
-	vm->easy_debug = 0;
 
 	return true;
 }
@@ -151,7 +150,7 @@ RZ_API void rz_il_vm_fini(RzILVM *vm) {
 	}
 
 	if (vm->vm_global_variable_list) {
-		for (int i = 0; i < RZ_IL_VM_MAX_VAR; ++i) {
+		for (ut32 i = 0; i < RZ_IL_VM_MAX_VAR; ++i) {
 			if (vm->vm_global_variable_list[i] != NULL) {
 				var = vm->vm_global_variable_list[i];
 				rz_il_free_variable(var);
@@ -166,7 +165,7 @@ RZ_API void rz_il_vm_fini(RzILVM *vm) {
 	}
 
 	if (vm->mems) {
-		for (int i = 0; i < vm->mem_count; ++i) {
+		for (ut32 i = 0; i < vm->mem_count; ++i) {
 			rz_il_mem_free(vm->mems[i]);
 		}
 		free(vm->mems);
@@ -190,10 +189,10 @@ RZ_API void rz_il_vm_fini(RzILVM *vm) {
  * Create a new empty VM
  * \param vm RzILVM, pointer to an empty VM
  * \param start_addr ut64, initiation pc address
- * \param addr_size int, size of the address in VM
- * \param data_size int, size of the minimal data unit in VM
+ * \param addr_size ut32, size of the address in VM
+ * \param data_size ut32, size of the minimal data unit in VM
  */
-RZ_API RzILVM *rz_il_vm_new(ut64 start_addr, int addr_size, int data_size) {
+RZ_API RzILVM *rz_il_vm_new(ut64 start_addr, ut32 addr_size, ut32 data_size) {
 	RzILVM *vm = RZ_NEW0(RzILVM);
 	if (!vm) {
 		return NULL;
@@ -242,7 +241,7 @@ RZ_API void rz_il_free_bv_addr(RzILBitVector *addr) {
 /**
  * Add a memory in VM. We design this to support multiple memory in the future
  * \param vm RzILVM, pointer to VM
- * \param min_unit_size int, size of minimal unit of the vm
+ * \param min_unit_size ut32, size of minimal unit of the vm
  * \return Mem memory, return a pointer to the newly created memory
  */
 RZ_API RzILMem *rz_il_vm_add_mem(RzILVM *vm, ut32 min_unit_size) {
@@ -302,11 +301,11 @@ RZ_API char *rz_il_op2str(RzILOPCode opcode) {
 /**
  * Load data from memory by given key
  * \param vm RzILVM, pointer to VM
- * \param mem_index int, index to choose a memory
+ * \param mem_index ut32, index to choose a memory
  * \param key RzILBitVector, aka address, a key to load data from memory
  * \return val Bitvector, data at the address, has `vm->min_unit_size` length
  */
-RZ_API RzILBitVector *rz_il_vm_mem_load(RzILVM *vm, int mem_index, RzILBitVector *key) {
+RZ_API RzILBitVector *rz_il_vm_mem_load(RzILVM *vm, ut32 mem_index, RzILBitVector *key) {
 	RzILMem *m;
 
 	if (vm && vm->mems) {
@@ -323,12 +322,12 @@ RZ_API RzILBitVector *rz_il_vm_mem_load(RzILVM *vm, int mem_index, RzILBitVector
  * Store data to memory by key, will create a key-value pair
  * or update the key-value pair if key existed.
  * \param vm RzILVM* pointer to VM
- * \param mem_index int, index to choose a memory
+ * \param mem_index ut32, index to choose a memory
  * \param key RzILBitVector, aka address, a key to load data from memory
  * \return val Bitvector, data at the address, must have `vm->min_unit_size` length
  * \return mem Mem, the memory you store data to
  */
-RZ_API RzILMem *rz_il_vm_mem_store(RzILVM *vm, int mem_index, RzILBitVector *key, RzILBitVector *value) {
+RZ_API RzILMem *rz_il_vm_mem_store(RzILVM *vm, ut32 mem_index, RzILBitVector *key, RzILBitVector *value) {
 	RzILMem *m;
 
 	if (vm && vm->mems) {

@@ -50,14 +50,51 @@ RZ_API void rz_il_bv_free(RzILBitVector *bv) {
  */
 RZ_API RZ_OWN char *rz_il_bv_as_string(RZ_NONNULL RzILBitVector *bv) {
 	if (!bv) {
-		return rz_str_new("Empty Bitvector");
+		return NULL;
 	}
 
 	char *str = (char *)malloc(bv->len + 1);
-	for (int i = bv->len; i >= 0; --i) {
-		str[i] = (char)(rz_il_bv_get(bv, i) ? '1' : '0');
+	if (!str) {
+		return NULL;
 	}
+
+	for (ut32 i = bv->len - 1, j = 0; i > 0; --i, j++) {
+		str[j] = rz_il_bv_get(bv, i) ? '1' : '0';
+	}
+	str[bv->len - 1] = rz_il_bv_get(bv, 0) ? '1' : '0';
 	str[bv->len] = '\0';
+
+	return str;
+}
+
+/**
+ * Return bitvector string in hexadecimal format
+ * \param bv RzILBitVector, pointer to bitvector
+ * \return str char*, bitvector string in hexadecimal format
+ */
+RZ_API RZ_OWN char *rz_il_bv_as_hex_string(RZ_NONNULL RzILBitVector *bv) {
+	if (!bv) {
+		return NULL;
+	}
+
+	const char *hex = "0123456789abcdef";
+	size_t str_len = (bv->_elem_len << 1) + 3; // 0x + \0
+	char *str = (char *)malloc(str_len);
+	if (!str) {
+		return NULL;
+	}
+
+	str[0] = '0';
+	str[1] = 'x';
+	for (ut32 i = 0, j = 2; i <= bv->_elem_len; i++, j += 2) {
+		ut8 b8 = bv->bits[i];
+		// optimization for reversing 8 bits which uses 32 bits
+		// https://graphics.stanford.edu/~seander/bithacks.html#BitReverseObvious
+		b8 = ((b8 * 0x0802LU & 0x22110LU) | (b8 * 0x8020LU & 0x88440LU)) * 0x10101LU >> 16;
+		str[j + 0] = hex[b8 >> 4];
+		str[j + 1] = hex[b8 & 15];
+	}
+	str[str_len - 1] = '\0';
 
 	return str;
 }
@@ -339,7 +376,7 @@ RZ_API bool rz_il_bv_get(RzILBitVector *bv, ut32 pos) {
 		return false;
 	}
 	pos = bv->len - pos - 1;
-	return ((bv->bits)[pos / BV_ELEM_SIZE] & (1u << (pos % BV_ELEM_SIZE))) ? true : false;
+	return ((bv->bits)[pos / BV_ELEM_SIZE] & (1u << (pos % BV_ELEM_SIZE)));
 }
 
 /**
@@ -1013,35 +1050,16 @@ RZ_API ut32 rz_il_bv_len(RzILBitVector *bv) {
  * \return bv RzILBitVector, pointer to new bitvector
  */
 RZ_API RzILBitVector *rz_il_bv_new_from_ut32(ut32 length, ut32 value) {
-	int type_size = 32;
-	RzILBitVector *bv = rz_il_bv_new(type_size);
+	RzILBitVector *bv = rz_il_bv_new(length);
 	if (!bv) {
 		RZ_LOG_ERROR("New bitvector from ut32 failed\n");
 		return NULL;
 	}
-	RzILBitVector *ret;
-
-	ut32 mask = 0x1;
-	for (int i = 0; i < type_size; ++i) {
-		rz_il_bv_set(bv, i, (value & mask) ? true : false);
+	for (ut32 i = 0; i < length; ++i) {
+		rz_il_bv_set(bv, i, value & 1);
 		value >>= 1;
 	}
-
-	if (length == type_size) {
-		return bv;
-	}
-
-	if (length < type_size) {
-		// cut
-		ret = rz_il_bv_cut_head(bv, type_size - length);
-		rz_il_bv_free(bv);
-	} else {
-		// prepend
-		ret = rz_il_bv_prepend_zero(bv, length - type_size);
-		rz_il_bv_free(bv);
-	}
-
-	return ret;
+	return bv;
 }
 
 /**
@@ -1051,47 +1069,31 @@ RZ_API RzILBitVector *rz_il_bv_new_from_ut32(ut32 length, ut32 value) {
  * \return bv RzILBitVector, pointer to new bitvector
  */
 RZ_API RzILBitVector *rz_il_bv_new_from_ut64(ut32 length, ut64 value) {
-	int type_size = 64;
-	RzILBitVector *bv = rz_il_bv_new(type_size);
+	RzILBitVector *bv = rz_il_bv_new(length);
 	if (!bv) {
 		RZ_LOG_ERROR("New bitvector from ut64 failed\n");
 		return NULL;
 	}
-	RzILBitVector *ret;
-
-	ut64 mask = 0x1;
-	for (int i = 0; i < type_size; ++i) {
-		rz_il_bv_set(bv, i, (value & mask) ? true : false);
+	for (ut32 i = 0; i < length; ++i) {
+		rz_il_bv_set(bv, i, value & 1);
 		value >>= 1;
 	}
-
-	if (length == type_size) {
-		return bv;
-	}
-
-	if (length < type_size) {
-		// cut
-		ret = rz_il_bv_cut_head(bv, type_size - length);
-		rz_il_bv_free(bv);
-	} else {
-		// prepend
-		ret = rz_il_bv_prepend_zero(bv, length - type_size);
-		rz_il_bv_free(bv);
-	}
-
-	return ret;
+	return bv;
 }
 
 ut32 rz_il_bv_hash(RzILBitVector *x) {
 	ut32 h = 5381;
-	ut32 x_len = x->len;
+	ut32 len = x->_elem_len;
 
-	if (!x->bits || !x->len) {
+	if (!x->bits || !x->_elem_len) {
 		return h;
 	}
-	for (ut32 i = 0; i < x_len; ++i) {
-		h = (h + (h << 5)) ^ rz_il_bv_get(x, i);
+
+	for (ut32 i = 0; i < len; ++i) {
+		h = (h + (h << 5)) ^ x->bits[i];
 	}
+
+	h ^= x->len;
 	return h;
 }
 
@@ -1102,12 +1104,9 @@ ut32 rz_il_bv_hash(RzILBitVector *x) {
  */
 RZ_API ut8 rz_il_bv_to_ut8(RzILBitVector *x) {
 	ut8 ret = 0;
-	if (x->len > 8) {
-		//		printf("[Warning] Convert to ut32 may loss some bits\n");
-	}
-	for (int i = 0; i < x->len; ++i) {
+	for (int i = 0; i < x->len && i < 8; ++i) {
 		if (rz_il_bv_get(x, i)) {
-			ret += 0x1U << i;
+			ret |= 1 << i;
 		}
 	}
 
@@ -1121,12 +1120,9 @@ RZ_API ut8 rz_il_bv_to_ut8(RzILBitVector *x) {
  */
 RZ_API ut16 rz_il_bv_to_ut16(RzILBitVector *x) {
 	ut16 ret = 0;
-	if (x->len > 16) {
-		//		printf("[Warning] Convert to ut32 may loss some bits\n");
-	}
-	for (int i = 0; i < x->len; ++i) {
+	for (int i = 0; i < x->len && i < 16; ++i) {
 		if (rz_il_bv_get(x, i)) {
-			ret += 0x1U << i;
+			ret |= 1 << i;
 		}
 	}
 
@@ -1140,12 +1136,9 @@ RZ_API ut16 rz_il_bv_to_ut16(RzILBitVector *x) {
  */
 RZ_API ut32 rz_il_bv_to_ut32(RzILBitVector *x) {
 	ut32 ret = 0;
-	if (x->len > 32) {
-		//		printf("[Warning] Convert to ut32 may loss some bits\n");
-	}
-	for (int i = 0; i < x->len; ++i) {
+	for (int i = 0; i < x->len && i < 32; ++i) {
 		if (rz_il_bv_get(x, i)) {
-			ret += 0x1U << i;
+			ret |= 1 << i;
 		}
 	}
 
@@ -1159,12 +1152,9 @@ RZ_API ut32 rz_il_bv_to_ut32(RzILBitVector *x) {
  */
 RZ_API ut64 rz_il_bv_to_ut64(RzILBitVector *x) {
 	ut64 ret = 0;
-	if (x->len > 64) {
-		//		printf("[Warning] Convert to ut32 may loss some bits\n");
-	}
-	for (int i = 0; i < x->len; ++i) {
+	for (int i = 0; i < x->len && i < 64; ++i) {
 		if (rz_il_bv_get(x, i)) {
-			ret += 0x1U << i;
+			ret |= 1 << i;
 		}
 	}
 

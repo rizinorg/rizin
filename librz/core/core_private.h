@@ -30,6 +30,7 @@ RZ_IPI void rz_core_analysis_esil_emulate_bb(RzCore *core);
 RZ_IPI void rz_core_analysis_esil_default(RzCore *core);
 
 RZ_IPI void rz_core_analysis_rzil_reinit(RzCore *core);
+RZ_IPI void rz_core_analysis_rzil_vm_status(RzCore *core);
 RZ_IPI void rz_core_rzil_step(RzCore *core);
 
 RZ_IPI bool rz_core_analysis_var_rename(RzCore *core, const char *name, const char *newname);

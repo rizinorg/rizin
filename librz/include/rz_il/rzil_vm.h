@@ -41,8 +41,8 @@ struct rz_il_vm_t {
 
 	RzILMem **mems; ///< Array of Memory, memory are actually hashmap in VM
 	int var_count, val_count, mem_count, lab_count; ///< count for VM predefined things
-	int addr_size; ///< size of address
-	int data_size; ///< size of minimal data unit
+	ut32 addr_size; ///< size of address space
+	ut32 data_size; ///< size of minimal data unit
 
 	HtPP *vm_global_bind_table; ///< Hashtable to record relationships between var and val
 	HtPP *vm_global_label_table; ///< Hashtable to maintain the label and address
@@ -52,8 +52,6 @@ struct rz_il_vm_t {
 	RzILBitVector *pc; ///< Program Counter of VM
 
 	RzILOpHandler *op_handler_table; ///< Array of Handler, handler can be indexed by opcode
-
-	int easy_debug; ///< Debug only, used to locate the bug
 };
 
 // VM operations about Variable and Value
