@@ -1796,6 +1796,9 @@ RZ_API size_t rz_str_ansi_len(const char *str) {
 
 RZ_API size_t rz_str_nlen(const char *str, size_t n) {
 	rz_return_val_if_fail(str, 0);
+#if HAVE_STRNLEN
+	return strnlen(str, n);
+#else
 	size_t len = 0;
 	while (*str && n) {
 		len++;
@@ -1803,6 +1806,7 @@ RZ_API size_t rz_str_nlen(const char *str, size_t n) {
 		n--;
 	}
 	return len;
+#endif
 }
 
 //to handle wide string as well

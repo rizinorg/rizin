@@ -414,6 +414,7 @@ foreach item : [
     ['nice', '#include <unistd.h>', []],
     ['copyfile', '#include <copyfile.h>', []],
     ['strlcpy', '#include <string.h>', []],
+    ['strnlen', '#include <string.h>', []],
     ['shm_open', '#include <sys/mman.h>', [lrt]],
     ['openpty', '', [utl]],
     ['forkpty', '', [utl]],
