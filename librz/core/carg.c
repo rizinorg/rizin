@@ -248,6 +248,7 @@ RZ_API RZ_OWN RzList *rz_core_get_func_args(RzCore *core, const char *fcn_name) 
 		for (i = 0; i < nargs; i++) {
 			RzAnalysisFuncArg *arg = RZ_NEW0(RzAnalysisFuncArg);
 			if (!arg) {
+				free(cc);
 				return NULL;
 			}
 			set_fcn_args_info(arg, core->analysis, key, cc, i);
