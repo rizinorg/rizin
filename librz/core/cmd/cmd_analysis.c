@@ -1319,6 +1319,7 @@ static int var_cmd(RzCore *core, const char *str) {
 		RzType *ttype = rz_type_parse_string_single(core->analysis->typedb->parser, vartype, &error_msg);
 		if (!ttype || error_msg) {
 			eprintf("Can't parse type: \"%s\"\n%s\n", vartype, error_msg);
+			free(error_msg);
 			free(ostr);
 			return false;
 		}
