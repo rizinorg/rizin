@@ -454,10 +454,10 @@ RZ_IPI void rz_core_analysis_rzil_vm_status(RzCore *core) {
 		return;
 	}
 
-	rz_cons_printf("RzIL VM info\n");
-	rz_cons_printf(" addr space size: %d\n", rzil->vm->addr_size);
-	rz_cons_printf(" data space size: %d\n", rzil->vm->data_size);
-	rz_cons_printf("\nRegisters:\n");
+	rz_cons_printf("RzIL VM status\n");
+	//rz_cons_printf(" addr space size: %d\n", rzil->vm->addr_size);
+	//rz_cons_printf(" data space size: %d\n", rzil->vm->data_size);
+	//rz_cons_printf("\nRegisters:\n");
 
 	RzStrBuf *sb = rz_strbuf_new("");
 	rz_strbuf_appendf(sb, " PC: %s", pc);
@@ -512,6 +512,6 @@ RZ_IPI void rz_core_rzil_step(RzCore *core) {
 	if (oplist) {
 		rz_il_vm_list_step(vm, oplist, size > 0 ? size : 1);
 	} else {
-		eprintf("Invalid instruction detected or reach the end of code\n");
+		eprintf("Invalid instruction detected or reach the end of code at address 0x%08" PFMT64x "\n", addr);
 	}
 }
