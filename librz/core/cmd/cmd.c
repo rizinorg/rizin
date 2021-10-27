@@ -6041,7 +6041,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "o", "open or map file", rz_cmd_open },
 		{ "p", "print current block", rz_cmd_print },
 		{ "q", "exit program session", rz_cmd_quit },
-		{ "s", "seek to an offset", rz_cmd_seek },
 		{ "V", "enter visual mode", rz_cmd_visual },
 		{ "v", "enter visual mode", rz_cmd_panels },
 		{ "w", "write bytes", rz_cmd_write },
