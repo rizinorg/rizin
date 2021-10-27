@@ -1235,6 +1235,9 @@ RZ_API ut64 rz_buf_tell(RZ_NONNULL RzBuffer *b) {
  * ...
  */
 RZ_API void rz_buf_free(RzBuffer *b) {
+	if (!b) {
+		return;
+	}
 	if (rz_buf_fini(b)) {
 		free(b);
 	}
