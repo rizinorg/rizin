@@ -12,9 +12,6 @@ bool test_ascii_to_ebcdic() {
 }
 
 int all_tests() {
-	time_t seed = time(0);
-	printf("Jamie Seed: %llu\n", (unsigned long long)seed);
-	srand(seed);
 	mu_run_test(test_ascii_to_ebcdic);
 	return tests_passed != tests_run;
 }

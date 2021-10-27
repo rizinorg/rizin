@@ -31,6 +31,25 @@ bool test_rz_scan_strings_detect_ascii(void) {
 	mu_end;
 }
 
+bool test_rz_scan_strings_detect_ibm037(void) {
+	static const unsigned char str[] = "\xc9\x40\x81\x94\x40\x81\x95\x40\xc9\xc2\xd4\xf0\xf3\xf7\x40\xa2\xa3\x99\x89\x95\x87\x25";
+	RzBuffer *buf = rz_buf_new_with_bytes(str, sizeof(str));
+
+	RzList *str_list = rz_list_new();
+	int n = rz_scan_strings(buf, str_list, &g_opt, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_GUESS);
+	mu_assert_eq(n, 1, "rz_scan_strings ibm037, number of strings");
+
+	RzDetectedString *s = rz_list_get_n(str_list, 0);
+	mu_assert_streq(s->string, "I am an IBM037 string", "rz_scan_strings ibm037, different string");
+	mu_assert_eq(s->type, RZ_STRING_ENC_IBM037, "rz_scan_strings ibm037, string type");
+
+	rz_detected_string_free(s);
+	rz_list_free(str_list);
+	rz_buf_free(buf);
+
+	mu_end;
+}
+
 bool test_rz_scan_strings_detect_utf8(void) {
 	static const unsigned char str[] = "\xff\xff\xff\xffI am a \xc3\x99TF-8 string\xff\xff\xff\xff";
 	RzBuffer *buf = rz_buf_new_with_bytes(str, sizeof(str));
@@ -220,6 +239,7 @@ bool test_rz_scan_strings_utf16_be(void) {
 
 bool all_tests() {
 	mu_run_test(test_rz_scan_strings_detect_ascii);
+	mu_run_test(test_rz_scan_strings_detect_ibm037);
 	mu_run_test(test_rz_scan_strings_detect_utf8);
 	mu_run_test(test_rz_scan_strings_detect_utf16_le);
 	mu_run_test(test_rz_scan_strings_detect_utf16_le_special_chars);
