@@ -103,8 +103,7 @@ RzPVector *bf_right_arrow(RzILVM *vm, ut64 id) {
 	RzILOp *perform = rz_il_new_op(RZIL_OP_PERFORM);
 	perform->op.perform->eff = set;
 
-	RzPVector *oplist = rz_il_make_oplist(1, perform);
-	return oplist;
+	return rz_il_make_oplist(1, perform);
 }
 
 RzPVector *bf_left_arrow(RzILVM *vm, ut64 id) {
@@ -127,8 +126,7 @@ RzPVector *bf_left_arrow(RzILVM *vm, ut64 id) {
 	RzILOp *perform = rz_il_new_op(RZIL_OP_PERFORM);
 	perform->op.perform->eff = set;
 
-	RzPVector *oplist = rz_il_make_oplist(1, perform);
-	return oplist;
+	return rz_il_make_oplist(1, perform);
 }
 
 RzPVector *bf_inc(RzILVM *vm, ut64 id) {
@@ -156,8 +154,7 @@ RzPVector *bf_inc(RzILVM *vm, ut64 id) {
 	store->op.store->key = var_2;
 	store->op.store->value = add;
 
-	RzPVector *oplist = rz_il_make_oplist(1, store);
-	return oplist;
+	return rz_il_make_oplist(1, store);
 }
 
 RzPVector *bf_dec(RzILVM *vm, ut64 id) {
@@ -185,8 +182,7 @@ RzPVector *bf_dec(RzILVM *vm, ut64 id) {
 	store->op.store->key = var_2;
 	store->op.store->value = sub;
 
-	RzPVector *oplist = rz_il_make_oplist(1, store);
-	return oplist;
+	return rz_il_make_oplist(1, store);
 }
 
 RzPVector *bf_out(RzILVM *vm, ut64 id) {
@@ -196,8 +192,7 @@ RzPVector *bf_out(RzILVM *vm, ut64 id) {
 	goto_->op.goto_->lbl = "write";
 	perform->op.perform->eff = goto_;
 
-	RzPVector *oplist = rz_il_make_oplist(1, perform);
-	return oplist;
+	return rz_il_make_oplist(1, perform);
 }
 
 RzPVector *bf_in(RzILVM *vm, ut64 id) {
@@ -208,8 +203,7 @@ RzPVector *bf_in(RzILVM *vm, ut64 id) {
 	RzILOp *perform = rz_il_new_op(RZIL_OP_PERFORM);
 	perform->op.perform->eff = goto_;
 
-	RzPVector *oplist = rz_il_make_oplist(1, perform);
-	return oplist;
+	return rz_il_make_oplist(1, perform);
 }
 
 RzPVector *bf_llimit(RzILVM *vm, BfContext *ctx, ut64 id, ut64 addr) {
@@ -266,8 +260,7 @@ RzPVector *bf_llimit(RzILVM *vm, BfContext *ctx, ut64 id, ut64 addr) {
 	// perform
 	perform->op.perform->eff = branch;
 
-	RzPVector *oplist = rz_il_make_oplist(1, perform);
-	return oplist;
+	return rz_il_make_oplist(1, perform);
 }
 
 RzPVector *bf_rlimit(RzILVM *vm, BfContext *ctx, ut64 id, ut64 addr) {
@@ -322,8 +315,7 @@ RzPVector *bf_rlimit(RzILVM *vm, BfContext *ctx, ut64 id, ut64 addr) {
 	// perform
 	perform->op.perform->eff = branch;
 
-	RzPVector *oplist = rz_il_make_oplist(1, perform);
-	return oplist;
+	return rz_il_make_oplist(1, perform);
 }
 
 static bool bf_specific_init(RzAnalysisRzil *rzil) {
