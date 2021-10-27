@@ -206,6 +206,7 @@ RZ_API void rz_core_diff_show(RzCore *c, RzCore *c2, bool json) {
 	fcns = rz_analysis_get_fcns(c->analysis);
 	if (rz_list_empty(fcns)) {
 		eprintf("functions list is empty. analyze the binary first\n");
+		pj_free(pj);
 		return;
 	}
 	rz_list_sort(fcns, c->analysis->columnSort);
