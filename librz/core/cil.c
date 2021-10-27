@@ -448,32 +448,42 @@ RZ_IPI void rz_core_analysis_rzil_vm_status(RzCore *core) {
 		return;
 	}
 
-	char *pc = rz_il_bv_as_hex_string(rzil->vm->pc);
-	if (!pc) {
-		RZ_LOG_ERROR("RzIL: PC bitvector returned a null string.\n");
-		return;
+	bool compact = rz_config_get_i(core->config, "rzil.status.compact");
+
+	int namelen = 2;
+	for (ut32 i = 0; i < rzil->vm->var_count; ++i) {
+		RzILVar *var = rzil->vm->vm_global_variable_list[i];
+		int len = strlen(var->var_name);
+		namelen = RZ_MAX(namelen, len);
 	}
-
 	rz_cons_printf("RzIL VM status\n");
-	//rz_cons_printf(" addr space size: %d\n", rzil->vm->addr_size);
-	//rz_cons_printf(" data space size: %d\n", rzil->vm->data_size);
-	//rz_cons_printf("\nRegisters:\n");
-
-	RzStrBuf *sb = rz_strbuf_new("");
-	rz_strbuf_appendf(sb, " PC: %s", pc);
-	free(pc);
+	char *num = rz_il_bv_as_hex_string(rzil->vm->pc);
+	RzStrBuf *sb = NULL;
+	if (compact) {
+		sb = rz_strbuf_new("");
+		rz_strbuf_appendf(sb, " PC: %s", num);
+	} else {
+		rz_cons_printf("%*s: %s%s\n", namelen, "PC", num, !rz_il_bv_is_zero_vector(rzil->vm->pc) ? " <--" : "");
+		//rz_cons_printf("%*s: %s\n", namelen, "PC", num);
+	}
+	free(num);
 	for (ut32 i = 0; i < rzil->vm->var_count; ++i) {
 		RzILVar *var = rzil->vm->vm_global_variable_list[i];
 		RzILVal *val = rz_il_hash_find_val_by_var(rzil->vm, var);
-		char *num = rz_il_bv_as_hex_string(val->data.bv);
-		rz_strbuf_appendf(sb, " %s: %s ", var->var_name, num);
+		num = rz_il_bv_as_hex_string(val->data.bv);
+		if (compact) {
+			rz_strbuf_appendf(sb, " %s: %s ", var->var_name, num);
+		} else {
+			rz_cons_printf("%*s: %s%s\n", namelen, var->var_name, num, !rz_il_bv_is_zero_vector(val->data.bv) ? " <--" : "");
+			//rz_cons_printf("%*s: %s\n", namelen, var->var_name, num);
+		}
 		free(num);
-		if (rz_strbuf_length(sb) > 95) {
+		if (compact && rz_strbuf_length(sb) > 95) {
 			rz_cons_printf("%s\n", rz_strbuf_get(sb));
 			rz_strbuf_fini(sb);
 		}
 	}
-	if (rz_strbuf_length(sb) > 0) {
+	if (compact && rz_strbuf_length(sb) > 0) {
 		rz_cons_printf("%s\n", rz_strbuf_get(sb));
 	}
 	rz_strbuf_free(sb);
