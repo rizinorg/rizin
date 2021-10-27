@@ -268,7 +268,7 @@ error:
 
 /**
  * \brief Parse PDB file given the path
- * 
+ *
  * \param filename path of the PDB file
  * \return RzPdb *
  */
@@ -284,7 +284,7 @@ RZ_API RZ_OWN RzPdb *rz_bin_pdb_parse_from_file(RZ_NONNULL const char *filename)
 
 /**
  * \brief Parse PDB from the buffer
- * 
+ *
  * \param buf mmap of the PDB file
  * \return RzPdb *
  */
@@ -329,16 +329,20 @@ RZ_API RZ_OWN RzPdb *rz_bin_pdb_parse_from_buf(RZ_NONNULL const RzBuffer *buf) {
 	return pdb;
 error:
 
+	rz_bin_pdb_free(pdb);
 	return NULL;
 }
 
 /**
  * \brief Free PDB instance
- * 
+ *
  * \param pdb PDB instance
- * \return void 
+ * \return void
  */
 RZ_API void rz_bin_pdb_free(RzPdb *pdb) {
+	if (!pdb) {
+		return;
+	}
 	rz_buf_free(pdb->buf);
 	RZ_FREE(pdb->super_block);
 	rz_list_free(pdb->streams);
