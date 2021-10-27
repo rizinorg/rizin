@@ -567,10 +567,8 @@ static RzType *parse_union(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdb
 	RzType *typ = RZ_NEW0(RzType);
 	if (!typ) {
 		rz_type_base_type_free(base_type);
-		if (to_free_name) {
-			free(name);
-		}
-		return NULL;
+		base_type = NULL;
+		goto cleanup;
 	}
 	typ->kind = RZ_TYPE_KIND_IDENTIFIER;
 	typ->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNION;
