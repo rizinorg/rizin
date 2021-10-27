@@ -12,32 +12,6 @@ static RzCmdStatus bool2status(bool val) {
 	return val ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
-RZ_IPI RzCmdStatus rz_env_handler(RzCore *core, int argc, const char **argv) {
-	char *p, **e;
-	switch (argc) {
-	case 1:
-		e = rz_sys_get_environ();
-		while (!RZ_STR_ISEMPTY(e)) {
-			rz_cons_println(*e);
-			e++;
-		}
-		return RZ_CMD_STATUS_OK;
-	case 2:
-		p = rz_sys_getenv(argv[1]);
-		if (!p) {
-			return RZ_CMD_STATUS_ERROR;
-		}
-		rz_cons_println(p);
-		free(p);
-		return RZ_CMD_STATUS_OK;
-	case 3:
-		rz_sys_setenv(argv[1], argv[2]);
-		return RZ_CMD_STATUS_OK;
-	default:
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
-}
-
 static bool load_theme(RzCore *core, const char *path) {
 	if (!rz_file_exists(path)) {
 		return false;
@@ -404,16 +378,6 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_highlight_remove_all_handler(RzCore *core, 
 RZ_IPI RzCmdStatus rz_cmd_eval_color_highlight_remove_current_handler(RzCore *core, int argc, const char **argv) {
 	rz_meta_del(core->analysis, RZ_META_TYPE_HIGHLIGHT, core->offset, 1);
 	return RZ_CMD_STATUS_OK;
-}
-
-RZ_IPI RzCmdStatus rz_cmd_echo_handler(RzCore *core, int argc, const char **argv) {
-	if (argc >= 2) {
-		char *output = rz_str_array_join(argv + 1, argc - 1, " ");
-		rz_cons_println(output);
-		free(output);
-		return RZ_CMD_STATUS_OK;
-	}
-	return RZ_CMD_STATUS_ERROR;
 }
 
 RZ_IPI RzCmdStatus rz_eval_getset_handler(RzCore *core, int argc, const char **argv) {

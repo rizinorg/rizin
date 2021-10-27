@@ -44,7 +44,7 @@ static char **env = NULL;
 #if __APPLE__
 #include <errno.h>
 
-#if HAVE_ENVIRON
+#if HAVE_ENVIRON || __APPLE__
 #include <execinfo.h>
 #endif
 // iOS don't have this we can't hardcode
@@ -508,8 +508,21 @@ RZ_API char *rz_sys_getdir(void) {
 #endif
 }
 
-RZ_API bool rz_sys_chdir(const char *s) {
-	rz_return_val_if_fail(s, 0);
+RZ_API bool rz_sys_chdir(RZ_NONNULL const char *s) {
+	rz_return_val_if_fail(s, false);
+	char *homepath = NULL;
+	if (s[0] == '~') {
+		if (strlen(s) == 1) {
+			homepath = rz_sys_getenv(RZ_SYS_HOME);
+		} else if (s[1] == '/') {
+			homepath = rz_str_home(s + 2);
+		}
+	}
+	if (homepath) {
+		int ret = chdir(homepath);
+		free(homepath);
+		return ret == 0;
+	}
 	return chdir(s) == 0;
 }
 
@@ -1246,7 +1259,9 @@ RZ_API char **rz_sys_get_environ(void) {
 
 RZ_API void rz_sys_set_environ(char **e) {
 	env = e;
-#if HAVE_ENVIRON
+#if __APPLE__ && !HAVE_ENVIRON
+	*_NSGetEnviron() = e;
+#elif HAVE_ENVIRON
 	environ = e;
 #endif
 }

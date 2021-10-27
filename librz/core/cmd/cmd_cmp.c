@@ -11,11 +11,9 @@ static const char *help_msg_c[] = {
 	"c2", " [value]", "Compare a word from a math expression",
 	"c4", " [value]", "Compare a doubleword from a math expression",
 	"c8", " [value]", "Compare a quadword from a math expression",
-	"cat", " [file]", "Show contents of file (see pwd, ls)",
 	"cc", " [at]", "Compares in two hexdump columns of block size",
 	"ccc", " [at]", "Same as above, but only showing different lines",
 	"ccd", " [at]", "Compares in two disasm columns of block size",
-	"cd", " [dir]", "chdir",
 	// "cc", " [offset]", "code bindiff current block against offset"
 	// "cD", " [file]", "like above, but using radiff -b",
 	"cf", " [file]", "Compare contents of file at current seek",
@@ -445,37 +443,6 @@ static int cmd_cmp_disasm(RzCore *core, const char *input, int mode) {
 	return 0;
 }
 
-static int cmd_cp(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	if (input[1] == '.') {
-		char *file = rz_core_cmd_strf(core, "ij~{core.file}");
-		rz_str_trim(file);
-		char *newfile = rz_str_newf("%s.%s", file, input + 2);
-		rz_file_copy(file, newfile);
-		free(file);
-		free(newfile);
-		return true;
-	}
-	if (strlen(input) < 3) {
-		eprintf("Usage: cp src dst\n");
-		eprintf("Usage: cp.orig  # cp $file $file.orig\n");
-		return false;
-	}
-	char *cmd = strdup(input + 2);
-	if (cmd) {
-		char **files = rz_str_argv(cmd, NULL);
-		if (files[0] && files[1]) {
-			bool rc = rz_file_copy(files[0], files[1]);
-			free(cmd);
-			rz_str_argv_free(files);
-			return rc;
-		}
-		rz_str_argv_free(files);
-	}
-	eprintf("Usage: cp src dst\n");
-	return false;
-}
-
 static void __core_cmp_bits(RzCore *core, ut64 addr) {
 	const bool scr_color = rz_config_get_i(core->config, "scr.color");
 	int i;
@@ -520,7 +487,6 @@ static void __core_cmp_bits(RzCore *core, ut64 addr) {
 }
 
 RZ_IPI int rz_cmd_cmp(void *data, const char *input) {
-	static char *oldcwd = NULL;
 	int ret = 0, i, mode = 0;
 	RzCore *core = (RzCore *)data;
 	ut64 val = UT64_MAX;
@@ -533,26 +499,6 @@ RZ_IPI int rz_cmd_cmp(void *data, const char *input) {
 	const ut8 *block = core->block;
 
 	switch (*input) {
-	case 'p':
-		return cmd_cp(data, input);
-		break;
-	case 'a': // "cat"
-		if (input[1] == 't') {
-			const char *path = rz_str_trim_head_ro(input + 2);
-			if (*path == '$') {
-				const char *oldText = rz_cmd_alias_get(core->rcmd, path, 1);
-				if (oldText) {
-					rz_cons_printf("%s\n", oldText + 1);
-				}
-			} else {
-				char *res = rz_syscmd_cat(path);
-				if (res) {
-					rz_cons_print(res);
-					free(res);
-				}
-			}
-		}
-		break;
 	case 'w':
 		cmd_cmp_watcher(core, input + 1);
 		break;
@@ -656,53 +602,6 @@ RZ_IPI int rz_cmd_cmp(void *data, const char *input) {
 		} else {
 			fclose(fd);
 			return false;
-		}
-		break;
-	case 'd': // "cd"
-		while (input[1] == ' ')
-			input++;
-		if (input[1]) {
-			if (!strcmp(input + 1, "-")) {
-				if (oldcwd) {
-					char *newdir = oldcwd;
-					oldcwd = rz_sys_getdir();
-					if (chdir(newdir) == -1) {
-						eprintf("Cannot chdir to %s\n", newdir);
-						free(oldcwd);
-						oldcwd = newdir;
-					} else {
-						free(newdir);
-					}
-				} else {
-					// nothing to do here
-				}
-			} else if (input[1] == '~' && input[2] == '/') {
-				char *homepath = rz_str_home(input + 3);
-				if (homepath) {
-					if (*homepath) {
-						free(oldcwd);
-						oldcwd = rz_sys_getdir();
-						if (chdir(homepath) == -1) {
-							eprintf("Cannot chdir to %s\n", homepath);
-						}
-					}
-					free(homepath);
-				} else {
-					eprintf("Cannot find home\n");
-				}
-			} else {
-				free(oldcwd);
-				oldcwd = rz_sys_getdir();
-				if (chdir(input + 1) == -1) {
-					eprintf("Cannot chdir to %s\n", input + 1);
-				}
-			}
-		} else {
-			char *home = rz_sys_getenv(RZ_SYS_HOME);
-			if (!home || chdir(home) == -1) {
-				eprintf("Cannot find home.\n");
-			}
-			free(home);
 		}
 		break;
 	case '1': // "c1"

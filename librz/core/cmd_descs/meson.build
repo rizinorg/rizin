@@ -18,6 +18,7 @@ cmd_descs_yaml = files(
   'cmd_remote.yaml',
   'cmd_resize.yaml',
   'cmd_seek.yaml',
+  'cmd_shell.yaml',
   'cmd_system.yaml',
   'cmd_tasks.yaml',
   'cmd_type.yaml',
