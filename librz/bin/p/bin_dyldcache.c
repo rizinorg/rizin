@@ -365,7 +365,7 @@ static RzList *classes(RzBinFile *bf) {
 	if (rz_dyldcache_needs_rebasing(cache)) {
 		owned_buf = rz_dyldcache_new_rebasing_buf(cache);
 		if (!owned_buf) {
-			return NULL;
+			goto beach;
 		}
 		buf = owned_buf;
 	}

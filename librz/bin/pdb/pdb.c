@@ -180,10 +180,12 @@ static RzPdbMsfStreamDirectory *pdb7_extract_msf_stream_directory(RzPdb *pdb) {
 	for (size_t i = 0; i < block_num; i++) {
 		ut32 block_idx;
 		if (!rz_buf_read_le32(pdb->buf, &block_idx)) {
+			RZ_FREE(block_map);
 			goto error;
 		}
 		if (block_idx > pdb->super_block->num_blocks) {
 			RZ_LOG_ERROR("Error block index.\n");
+			RZ_FREE(block_map);
 			goto error;
 		}
 		block_map[i] = block_idx;
@@ -266,7 +268,7 @@ error:
 
 /**
  * \brief Parse PDB file given the path
- * 
+ *
  * \param filename path of the PDB file
  * \return RzPdb *
  */
@@ -282,7 +284,7 @@ RZ_API RZ_OWN RzPdb *rz_bin_pdb_parse_from_file(RZ_NONNULL const char *filename)
 
 /**
  * \brief Parse PDB from the buffer
- * 
+ *
  * \param buf mmap of the PDB file
  * \return RzPdb *
  */
@@ -327,16 +329,20 @@ RZ_API RZ_OWN RzPdb *rz_bin_pdb_parse_from_buf(RZ_NONNULL const RzBuffer *buf) {
 	return pdb;
 error:
 
+	rz_bin_pdb_free(pdb);
 	return NULL;
 }
 
 /**
  * \brief Free PDB instance
- * 
+ *
  * \param pdb PDB instance
- * \return void 
+ * \return void
  */
 RZ_API void rz_bin_pdb_free(RzPdb *pdb) {
+	if (!pdb) {
+		return;
+	}
 	rz_buf_free(pdb->buf);
 	RZ_FREE(pdb->super_block);
 	rz_list_free(pdb->streams);
