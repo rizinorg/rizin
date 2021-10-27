@@ -118,14 +118,13 @@ void *rz_il_handler_b1(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_and_(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_or_(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_inv(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_cast(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 
 void *rz_il_handler_perform(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_set(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_jmp(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_goto(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_seq(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
-void *rz_il_handler_blk(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
-void *rz_il_handler_repeat(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_branch(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 
 void *rz_il_handler_load(RzILVM *vm, RzILOp *op, RzILOpArgType *type);

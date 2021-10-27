@@ -15,7 +15,7 @@ RZ_API void rz_il_vm_free(RzILVM *vm);
 RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, ut32 data_size);
 RZ_API void rz_il_vm_fini(RzILVM *vm);
 RZ_API void rz_il_vm_step(RzILVM *vm, RzILOp *root);
-RZ_API void rz_il_vm_list_step(RzILVM *vm, RzPVector *op_list);
+RZ_API void rz_il_vm_list_step(RzILVM *vm, RzPVector *op_list, ut32 op_size);
 
 // Memory operations
 RZ_API RzILMem *rz_il_vm_add_mem(RzILVM *vm, ut32 min_unit_size);

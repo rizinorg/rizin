@@ -116,17 +116,6 @@ void *rz_il_handler_seq(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	return eff_uni;
 }
 
-void *rz_il_handler_blk(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
-	// TODO : a named label ?
-	return NULL;
-}
-
-void *rz_il_handler_repeat(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
-	// TODO : find a proper to handle repeat
-	// while (evaluate_bool(op->condition) {repeat do}
-	return NULL;
-}
-
 void *rz_il_handler_branch(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	RzILOpBranch *op_branch = op->op.branch;
 

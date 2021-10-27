@@ -128,7 +128,7 @@ RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, ut32 data
 
 	vm->op_handler_table[RZIL_OP_SLE] = &rz_il_handler_unimplemented; // &rz_il_handler_sle;
 	vm->op_handler_table[RZIL_OP_ULE] = &rz_il_handler_unimplemented; // &rz_il_handler_ule;
-	vm->op_handler_table[RZIL_OP_CAST] = &rz_il_handler_unimplemented; // &rz_il_handler_cast;
+	vm->op_handler_table[RZIL_OP_CAST] = &rz_il_handler_cast;
 	vm->op_handler_table[RZIL_OP_CONCAT] = &rz_il_handler_unimplemented; // &rz_il_handler_concat;
 	vm->op_handler_table[RZIL_OP_APPEND] = &rz_il_handler_unimplemented; // &rz_il_handler_append;
 
@@ -367,18 +367,18 @@ RZ_API void rz_il_vm_step(RzILVM *vm, RzILOp *root) {
  * Execute the opcodes uplifted from raw instructions.A list may contain multiple opcode trees
  * \param vm pointer to VM
  * \param op_list, a list of op roots.
+ * \param op_size, how much the pc value has to increate of.
  */
-RZ_API void rz_il_vm_list_step(RzILVM *vm, RzPVector *op_list) {
+RZ_API void rz_il_vm_list_step(RzILVM *vm, RzPVector *op_list, ut32 op_size) {
 	void **iter;
 	rz_pvector_foreach (op_list, iter) {
 		RzILOp *root = *iter;
 		rz_il_vm_step(vm, root);
 	}
 
-	RzILBitVector *one = rz_il_bv_new(vm->pc->len);
-	rz_il_bv_set(one, 0, true); // set one = 1
-	RzILBitVector *next_pc = rz_il_bv_add(vm->pc, one);
+	RzILBitVector *step = rz_il_bv_new_from_ut32(vm->pc->len, op_size);
+	RzILBitVector *next_pc = rz_il_bv_add(vm->pc, step);
 	rz_il_bv_free(vm->pc);
-	rz_il_bv_free(one);
+	rz_il_bv_free(step);
 	vm->pc = next_pc;
 }

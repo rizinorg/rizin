@@ -262,3 +262,25 @@ void *rz_il_handler_int(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	*type = RZIL_OP_ARG_BITV;
 	return bv;
 }
+
+void *rz_il_handler_cast(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
+	RzILOpCast *op_cast = op->op.cast;
+	int shift = op_cast->shift;
+
+	RzILBitVector *ret = rz_il_bv_new(op_cast->length);
+	RzILBitVector *bv = rz_il_evaluate_bitv(vm, op_cast->val, type);
+
+	if (shift == 0) {
+		rz_il_bv_copy_nbits(bv, 0, ret, 0, -1);
+	} else if (shift > 0) {
+		// left shift
+		rz_il_bv_copy_nbits(bv, 0, ret, shift, -1);
+	} else {
+		// right shift
+		rz_il_bv_copy_nbits(bv, -shift, ret, 0, -1);
+	}
+	rz_il_bv_free(bv);
+
+	*type = RZIL_OP_ARG_BITV;
+	return ret;
+}

@@ -110,6 +110,16 @@ struct rzil_op_sle_ule_t {
 };
 
 /**
+ *  \struct rzil_op_cast_t
+ *  \brief op structure for casting bitv
+ */
+struct rzil_op_cast_t {
+	ut32 length; ///< new bits lenght
+	int shift; ///< shift old bits (positive is << and >> negative)
+	RzILOp *val; ///< value to cast
+};
+
+/**
  *  \struct rzil_op_shift_t
  *  \brief op structure for lshift and rshift (bool -> 's bitv -> 'b bitv -> 's bitv)
  *
@@ -359,6 +369,7 @@ typedef struct rzil_op_msb_lsb_t RzILOpMsb;
 typedef struct rzil_op_msb_lsb_t RzILOpLsb;
 typedef struct rzil_op_sle_ule_t RzILOpSle;
 typedef struct rzil_op_sle_ule_t RzILOpUle;
+typedef struct rzil_op_cast_t RzILOpCast;
 typedef struct rzil_op_not_t RzILOpNot;
 typedef struct rzil_op_neg_t RzILOpNeg;
 typedef struct rzil_op_alg_log_operations_t RzILOpAdd;
@@ -408,6 +419,7 @@ typedef union {
 	RzILOpLsb *lsb;
 	RzILOpUle *ule;
 	RzILOpSle *sle;
+	RzILOpCast *cast;
 	RzILOpNeg *neg;
 	RzILOpNot *not_;
 	RzILOpAdd *add;
