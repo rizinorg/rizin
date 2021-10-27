@@ -180,10 +180,12 @@ static RzPdbMsfStreamDirectory *pdb7_extract_msf_stream_directory(RzPdb *pdb) {
 	for (size_t i = 0; i < block_num; i++) {
 		ut32 block_idx;
 		if (!rz_buf_read_le32(pdb->buf, &block_idx)) {
+			RZ_FREE(block_map);
 			goto error;
 		}
 		if (block_idx > pdb->super_block->num_blocks) {
 			RZ_LOG_ERROR("Error block index.\n");
+			RZ_FREE(block_map);
 			goto error;
 		}
 		block_map[i] = block_idx;
