@@ -133,18 +133,19 @@ static RzType *parse_type_pointer(const RzTypeDB *typedb, RzPdbTpiStream *stream
 	Tpi_LF_Pointer *lf_pointer = type->type_data;
 	RzType *typ = RZ_NEW0(RzType);
 	if (!typ) {
-		return NULL;
+		goto error;
 	}
 	typ->kind = RZ_TYPE_KIND_POINTER;
 	RzPdbTpiType *p_utype = rz_bin_pdb_get_type_by_index(stream, lf_pointer->utype);
 	if (p_utype) {
 		RzType *tmp = parse_type(typedb, stream, p_utype, name);
 		if (!tmp) {
-			return NULL;
+			goto error;
 		}
 		typ->pointer.type = tmp;
 		return typ;
 	}
+error:
 	rz_type_free(typ);
 	return NULL;
 }
