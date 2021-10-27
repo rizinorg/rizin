@@ -436,6 +436,9 @@ RZ_IPI void rz_core_analysis_rzil_reinit(RzCore *core) {
 	}
 
 	rz_analysis_rzil_setup(core->analysis);
+	if (core->analysis->rzil) {
+		rz_il_bv_set_from_ut32(core->analysis->rzil->vm->pc, core->offset);
+	}
 }
 
 RZ_IPI void rz_core_analysis_rzil_vm_status(RzCore *core) {
@@ -452,21 +455,18 @@ RZ_IPI void rz_core_analysis_rzil_vm_status(RzCore *core) {
 	}
 
 	rz_cons_printf("RzIL VM info\n");
-	rz_cons_printf(" - var count:       %d\n", rzil->vm->var_count);
-	rz_cons_printf(" - val count:       %d\n", rzil->vm->val_count);
-	rz_cons_printf(" - mem count:       %d\n", rzil->vm->mem_count);
-	rz_cons_printf(" - lab count:       %d\n", rzil->vm->lab_count);
-	rz_cons_printf(" - addr space size: %d\n", rzil->vm->addr_size);
-	rz_cons_printf(" - data space size: %d\n", rzil->vm->data_size);
+	rz_cons_printf(" addr space size: %d\n", rzil->vm->addr_size);
+	rz_cons_printf(" data space size: %d\n", rzil->vm->data_size);
+	rz_cons_printf("\nRegisters:\n");
 
 	RzStrBuf *sb = rz_strbuf_new("");
-	rz_strbuf_appendf(sb, "PC: %s ", pc);
+	rz_strbuf_appendf(sb, " PC: %s", pc);
 	free(pc);
 	for (ut32 i = 0; i < rzil->vm->var_count; ++i) {
 		RzILVar *var = rzil->vm->vm_global_variable_list[i];
 		RzILVal *val = rz_il_hash_find_val_by_var(rzil->vm, var);
 		char *num = rz_il_bv_as_hex_string(val->data.bv);
-		rz_strbuf_appendf(sb, "%s: %s ", var->var_name, num);
+		rz_strbuf_appendf(sb, " %s: %s ", var->var_name, num);
 		free(num);
 		if (rz_strbuf_length(sb) > 95) {
 			rz_cons_printf("%s\n", rz_strbuf_get(sb));
@@ -477,23 +477,6 @@ RZ_IPI void rz_core_analysis_rzil_vm_status(RzCore *core) {
 		rz_cons_printf("%s\n", rz_strbuf_get(sb));
 	}
 	rz_strbuf_free(sb);
-
-	// RzILBag *vm_global_value_set; ///< Store all RzILVal instance
-	// RzILVar **vm_global_variable_list; ///< Store all RzILVar instance
-
-	// RzILMem **mems; ///< Array of Memory, memory are actually hashmap in VM
-	// int var_count, val_count, mem_count, lab_count; ///< count for VM predefined things
-	// int addr_size; ///< size of address
-	// int data_size; ///< size of minimal data unit
-
-	// HtPP *vm_global_bind_table; ///< Hashtable to record relationships between var and val
-	// HtPP *vm_global_label_table; ///< Hashtable to maintain the label and address
-
-	// HtPP *ct_opcodes; ///< Hashtable to maintain address and opcodes
-
-	// RzILBitVector *pc; ///< Program Counter of VM
-
-	// RzILOpHandler *op_handler_table; ///< Array of Handler, handler can be indexed by opcode
 }
 
 // step a list of ct_opcode at a given address

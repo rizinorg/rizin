@@ -508,5 +508,5 @@ RZ_API RzILEffect *rz_il_evaluate_effect(RzILVM *vm, RzILOp *op, RzILOpArgType *
 // recursively parse and evaluate
 RZ_API void *rz_il_parse_op_root(RzILVM *vm, RzILOp *root, RzILOpArgType *type) {
 	RzILOpHandler handler = vm->op_handler_table[root->code];
-	return handler(vm, root, type);
+	return handler ? handler(vm, root, type) : NULL;
 }

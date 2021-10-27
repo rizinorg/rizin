@@ -88,6 +88,8 @@ RZ_API ut64 rz_il_bv_to_ut64(RzILBitVector *x);
 RZ_API bool rz_il_bv_is_zero_vector(RzILBitVector *x);
 RZ_API RzILBitVector *rz_il_bv_new_from_ut32(ut32 length, ut32 value);
 RZ_API RzILBitVector *rz_il_bv_new_from_ut64(ut32 length, ut64 value);
+RZ_API bool rz_il_bv_set_from_ut32(RZ_NONNULL RzILBitVector *bv, ut32 value);
+RZ_API bool rz_il_bv_set_from_ut64(RZ_NONNULL RzILBitVector *bv, ut64 value);
 RZ_API char *rz_il_bv_as_string(RzILBitVector *bv);
 RZ_API char *rz_il_bv_as_hex_string(RzILBitVector *bv);
 

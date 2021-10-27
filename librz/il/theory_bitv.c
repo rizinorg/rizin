@@ -88,6 +88,48 @@ void *rz_il_handler_add(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	return result;
 }
 
+void *rz_il_handler_logical_and(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
+	RzILOpAdd *op_add = op->op.add;
+
+	RzILBitVector *x = rz_il_evaluate_bitv(vm, op_add->x, type);
+	RzILBitVector *y = rz_il_evaluate_bitv(vm, op_add->y, type);
+	RzILBitVector *result = rz_il_bv_and(x, y);
+
+	rz_il_bv_free(x);
+	rz_il_bv_free(y);
+
+	*type = RZIL_OP_ARG_BITV;
+	return result;
+}
+
+void *rz_il_handler_logical_or(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
+	RzILOpAdd *op_add = op->op.add;
+
+	RzILBitVector *x = rz_il_evaluate_bitv(vm, op_add->x, type);
+	RzILBitVector *y = rz_il_evaluate_bitv(vm, op_add->y, type);
+	RzILBitVector *result = rz_il_bv_or(x, y);
+
+	rz_il_bv_free(x);
+	rz_il_bv_free(y);
+
+	*type = RZIL_OP_ARG_BITV;
+	return result;
+}
+
+void *rz_il_handler_logical_xor(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
+	RzILOpAdd *op_add = op->op.add;
+
+	RzILBitVector *x = rz_il_evaluate_bitv(vm, op_add->x, type);
+	RzILBitVector *y = rz_il_evaluate_bitv(vm, op_add->y, type);
+	RzILBitVector *result = rz_il_bv_xor(x, y);
+
+	rz_il_bv_free(x);
+	rz_il_bv_free(y);
+
+	*type = RZIL_OP_ARG_BITV;
+	return result;
+}
+
 void *rz_il_handler_sub(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	RzILOpSub *op_sub = op->op.sub;
 

@@ -109,6 +109,9 @@ void *rz_il_handler_mod(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_smod(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_shiftl(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_shiftr(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_logical_and(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_logical_or(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_logical_xor(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 
 void *rz_il_handler_b0(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_b1(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
@@ -127,6 +130,9 @@ void *rz_il_handler_branch(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 
 void *rz_il_handler_load(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_store(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+
+//TODO: remove me when all the handlers are implemented
+void *rz_il_handler_unimplemented(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 
 #ifdef __cplusplus
 }

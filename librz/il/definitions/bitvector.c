@@ -1081,6 +1081,34 @@ RZ_API RzILBitVector *rz_il_bv_new_from_ut64(ut32 length, ut64 value) {
 	return bv;
 }
 
+/**
+ * Convert ut32 to N-bits bitvector
+ * \param bv RzILBitVector, pointer to bitvector
+ * \param value ut32, the value to convert
+ */
+RZ_API bool rz_il_bv_set_from_ut32(RZ_NONNULL RzILBitVector *bv, ut32 value) {
+	rz_return_val_if_fail(bv, false);
+	for (ut32 i = 0; i < bv->len; ++i) {
+		rz_il_bv_set(bv, i, value & 1);
+		value >>= 1;
+	}
+	return true;
+}
+
+/**
+ * Convert ut64 to N-bits bitvector
+ * \param bv RzILBitVector, pointer to bitvector
+ * \param value ut64, the value to convert
+ */
+RZ_API bool rz_il_bv_set_from_ut64(RZ_NONNULL RzILBitVector *bv, ut64 value) {
+	rz_return_val_if_fail(bv, false);
+	for (ut32 i = 0; i < bv->len; ++i) {
+		rz_il_bv_set(bv, i, value & 1);
+		value >>= 1;
+	}
+	return true;
+}
+
 ut32 rz_il_bv_hash(RzILBitVector *x) {
 	ut32 h = 5381;
 	ut32 len = x->_elem_len;

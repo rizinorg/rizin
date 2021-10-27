@@ -98,25 +98,21 @@ RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, ut32 data
 	// init jump table of labels
 	vm->op_handler_table = RZ_NEWS0(RzILOpHandler, RZIL_OP_MAX);
 	vm->op_handler_table[RZIL_OP_VAR] = &rz_il_handler_var;
-	vm->op_handler_table[RZIL_OP_ITE] = &rz_il_handler_ite;
 	vm->op_handler_table[RZIL_OP_UNK] = &rz_il_handler_unk;
+	vm->op_handler_table[RZIL_OP_ITE] = &rz_il_handler_ite;
 
 	vm->op_handler_table[RZIL_OP_B0] = &rz_il_handler_b0;
 	vm->op_handler_table[RZIL_OP_B1] = &rz_il_handler_b1;
+	vm->op_handler_table[RZIL_OP_INV] = &rz_il_handler_inv;
 	vm->op_handler_table[RZIL_OP_AND_] = &rz_il_handler_and_;
 	vm->op_handler_table[RZIL_OP_OR_] = &rz_il_handler_or_;
-	vm->op_handler_table[RZIL_OP_INV] = &rz_il_handler_inv;
-
-	vm->op_handler_table[RZIL_OP_LOAD] = &rz_il_handler_load;
-	vm->op_handler_table[RZIL_OP_STORE] = &rz_il_handler_store;
 
 	vm->op_handler_table[RZIL_OP_INT] = &rz_il_handler_int;
+	vm->op_handler_table[RZIL_OP_MSB] = &rz_il_handler_msb;
+	vm->op_handler_table[RZIL_OP_LSB] = &rz_il_handler_lsb;
+
 	vm->op_handler_table[RZIL_OP_NEG] = &rz_il_handler_neg;
 	vm->op_handler_table[RZIL_OP_NOT] = &rz_il_handler_not;
-	vm->op_handler_table[RZIL_OP_LSB] = &rz_il_handler_lsb;
-	vm->op_handler_table[RZIL_OP_MSB] = &rz_il_handler_msb;
-	vm->op_handler_table[RZIL_OP_SHIFTL] = &rz_il_handler_shiftl;
-	vm->op_handler_table[RZIL_OP_SHIFTR] = &rz_il_handler_shiftr;
 	vm->op_handler_table[RZIL_OP_ADD] = &rz_il_handler_add;
 	vm->op_handler_table[RZIL_OP_SUB] = &rz_il_handler_sub;
 	vm->op_handler_table[RZIL_OP_MUL] = &rz_il_handler_mul;
@@ -124,17 +120,34 @@ RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, ut32 data
 	vm->op_handler_table[RZIL_OP_MOD] = &rz_il_handler_mod;
 	vm->op_handler_table[RZIL_OP_SDIV] = &rz_il_handler_sdiv;
 	vm->op_handler_table[RZIL_OP_SMOD] = &rz_il_handler_smod;
+	vm->op_handler_table[RZIL_OP_LOGAND] = &rz_il_handler_logical_and;
+	vm->op_handler_table[RZIL_OP_LOGOR] = &rz_il_handler_logical_or;
+	vm->op_handler_table[RZIL_OP_LOGXOR] = &rz_il_handler_logical_xor;
+	vm->op_handler_table[RZIL_OP_SHIFTR] = &rz_il_handler_shiftr;
+	vm->op_handler_table[RZIL_OP_SHIFTL] = &rz_il_handler_shiftl;
+
+	vm->op_handler_table[RZIL_OP_SLE] = &rz_il_handler_unimplemented; // &rz_il_handler_sle;
+	vm->op_handler_table[RZIL_OP_ULE] = &rz_il_handler_unimplemented; // &rz_il_handler_ule;
+	vm->op_handler_table[RZIL_OP_CAST] = &rz_il_handler_unimplemented; // &rz_il_handler_cast;
+	vm->op_handler_table[RZIL_OP_CONCAT] = &rz_il_handler_unimplemented; // &rz_il_handler_concat;
+	vm->op_handler_table[RZIL_OP_APPEND] = &rz_il_handler_unimplemented; // &rz_il_handler_append;
+
+	vm->op_handler_table[RZIL_OP_LOAD] = &rz_il_handler_load;
+	vm->op_handler_table[RZIL_OP_STORE] = &rz_il_handler_store;
 
 	vm->op_handler_table[RZIL_OP_PERFORM] = &rz_il_handler_perform;
 	vm->op_handler_table[RZIL_OP_SET] = &rz_il_handler_set;
+	vm->op_handler_table[RZIL_OP_JMP] = &rz_il_handler_unimplemented; // &rz_il_handler_jmp;
 	vm->op_handler_table[RZIL_OP_GOTO] = &rz_il_handler_goto;
-	vm->op_handler_table[RZIL_OP_BRANCH] = &rz_il_handler_branch;
 	vm->op_handler_table[RZIL_OP_SEQ] = &rz_il_handler_seq;
+	vm->op_handler_table[RZIL_OP_BLK] = &rz_il_handler_unimplemented; // &rz_il_handler_blk;
+	vm->op_handler_table[RZIL_OP_REPEAT] = &rz_il_handler_unimplemented; // &rz_il_handler_repeat;
+	vm->op_handler_table[RZIL_OP_BRANCH] = &rz_il_handler_branch;
+	vm->op_handler_table[RZIL_OP_INVALID] = &rz_il_handler_unimplemented; // &rz_il_handler_invalid;
 
 	vm->var_count = 0;
 	vm->val_count = 0;
 	vm->mem_count = 0;
-
 	return true;
 }
 
