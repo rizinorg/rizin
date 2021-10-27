@@ -73,7 +73,7 @@ RZ_API RzILVal *rz_il_vm_fortify_val(RzILVM *vm, RzILVal *val);
 RZ_API RzILVal *rz_il_vm_fortify_bitv(RzILVM *vm, RzILBitVector *val);
 RZ_API RzILVal *rz_il_vm_fortify_bool(RzILVM *vm, RzILBool *val);
 
-RZ_API void rz_il_vm_add_reg(RzILVM *vm, char *name, int length);
+RZ_API void rz_il_vm_add_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name, ut32 length);
 
 // VM store and load core theory opcodes
 RZ_API void rz_il_vm_store_opcodes_to_addr(RzILVM *vm, RzILBitVector *addr, RzPVector *oplist);

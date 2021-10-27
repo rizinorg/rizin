@@ -19,7 +19,7 @@ RZ_API RzILVar *rz_il_vm_create_variable(RZ_NONNULL RzILVM *vm, RZ_NONNULL const
 	// create , store, update count
 	RzILVar *var = rz_il_new_variable(name);
 	vm->vm_global_variable_list[vm->var_count] = var;
-	vm->var_count += 1;
+	vm->var_count++;
 
 	return var;
 }
@@ -48,9 +48,9 @@ RZ_API RzILVal *rz_il_vm_create_value(RZ_NONNULL RzILVM *vm, RZ_NONNULL RZIL_VAR
  * Add a register in VM (create a variable and value, and then bind value to variable)
  * \param vm RzILVM, pointer to this vm
  * \param name string, the name of register
- * \param length int, width of register
+ * \param length ut32, width of register
  */
-RZ_API void rz_il_vm_add_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL char *name, int length) {
+RZ_API void rz_il_vm_add_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name, ut32 length) {
 	rz_return_if_fail(vm && name);
 	rz_return_if_fail(length > 0);
 	RzILVar *var = rz_il_vm_create_variable(vm, name);

@@ -441,7 +441,7 @@ RZ_IPI void rz_core_analysis_rzil_reinit(RzCore *core) {
 RZ_IPI void rz_core_analysis_rzil_vm_status(RzCore *core) {
 	RzAnalysisRzil *rzil = core->analysis->rzil;
 	if (!rzil || !rzil->vm) {
-		RZ_LOG_ERROR("RzIL: VM is not initialized.")
+		RZ_LOG_ERROR("RzIL: the VM is not initialized.")
 		return;
 	}
 
@@ -452,14 +452,31 @@ RZ_IPI void rz_core_analysis_rzil_vm_status(RzCore *core) {
 	}
 
 	rz_cons_printf("RzIL VM info\n");
-	rz_cons_printf(" - program counter: %s\n", pc);
 	rz_cons_printf(" - var count:       %d\n", rzil->vm->var_count);
 	rz_cons_printf(" - val count:       %d\n", rzil->vm->val_count);
 	rz_cons_printf(" - mem count:       %d\n", rzil->vm->mem_count);
 	rz_cons_printf(" - lab count:       %d\n", rzil->vm->lab_count);
 	rz_cons_printf(" - addr space size: %d\n", rzil->vm->addr_size);
 	rz_cons_printf(" - data space size: %d\n", rzil->vm->data_size);
+
+	RzStrBuf *sb = rz_strbuf_new("");
+	rz_strbuf_appendf(sb, "PC: %s ", pc);
 	free(pc);
+	for (ut32 i = 0; i < rzil->vm->var_count; ++i) {
+		RzILVar *var = rzil->vm->vm_global_variable_list[i];
+		RzILVal *val = rz_il_hash_find_val_by_var(rzil->vm, var);
+		char *num = rz_il_bv_as_hex_string(val->data.bv);
+		rz_strbuf_appendf(sb, "%s: %s ", var->var_name, num);
+		free(num);
+		if (rz_strbuf_length(sb) > 95) {
+			rz_cons_printf("%s\n", rz_strbuf_get(sb));
+			rz_strbuf_fini(sb);
+		}
+	}
+	if (rz_strbuf_length(sb) > 0) {
+		rz_cons_printf("%s\n", rz_strbuf_get(sb));
+	}
+	rz_strbuf_free(sb);
 
 	// RzILBag *vm_global_value_set; ///< Store all RzILVal instance
 	// RzILVar **vm_global_variable_list; ///< Store all RzILVar instance
@@ -484,7 +501,7 @@ RZ_IPI void rz_core_rzil_step(RzCore *core) {
 	RzPVector *oplist;
 
 	if (!core->analysis || !core->analysis->rzil) {
-		RZ_LOG_ERROR("Run 'aezi' to init RZIL VM first\n");
+		RZ_LOG_ERROR("RzIL: Run 'aezi' first to initialize the VM\n");
 		return;
 	}
 
@@ -507,7 +524,7 @@ RZ_IPI void rz_core_rzil_step(RzCore *core) {
 	// analysis current data to trigger rzil_set_op_code
 	(void)rz_io_read_at_mapped(core->io, addr, code, sizeof(code));
 	rz_analysis_op(analysis, &op, addr, code, sizeof(code), RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_HINT);
-	oplist = op.rzil_op->ops;
+	oplist = op.rzil_op ? op.rzil_op->ops : NULL;
 
 	if (oplist) {
 		rz_il_vm_list_step(vm, oplist);
