@@ -31,7 +31,7 @@ bool test_meta_set() {
 			mu_assert_eq(node->start, 0x100, "node start");
 			mu_assert_eq(node->end, 0x100, "node end (inclusive)");
 			mu_assert_streq(item->str, "summer of love", "comment string");
-			mu_assert_eq(item->subtype, RZ_STRING_ENC_UTF8, "UTF-8 subtype for comment");
+			mu_assert_eq(item->subtype, 0, "no subtype");
 			found[1] = true;
 			break;
 		case RZ_META_TYPE_STRING:
@@ -70,7 +70,7 @@ bool test_meta_set() {
 			mu_assert_eq(node->start, 0x100, "node start");
 			mu_assert_eq(node->end, 0x100, "node end (inclusive)");
 			mu_assert_streq(item->str, "summer of love", "comment string");
-			mu_assert_eq(item->subtype, RZ_STRING_ENC_UTF8, "UTF-8 subtype for comment");
+			mu_assert_eq(item->subtype, 0, "no subtype");
 			found[1] = true;
 			break;
 		case RZ_META_TYPE_STRING:
@@ -110,7 +110,7 @@ bool test_meta_set() {
 			mu_assert_eq(node->start, 0x100, "node start");
 			mu_assert_eq(node->end, 0x100, "node end (inclusive)");
 			mu_assert_streq(item->str, "this ain't the summer of love", "comment string");
-			mu_assert_eq(item->subtype, RZ_STRING_ENC_UTF8, "UTF-8 subtype for comment");
+			mu_assert_eq(item->subtype, 0, "no subtype");
 			found[1] = true;
 			break;
 		case RZ_META_TYPE_STRING:
@@ -470,7 +470,7 @@ bool test_meta_rebase() {
 			mu_assert_eq(node->start, 0x100, "node start");
 			mu_assert_eq(node->end, 0x100, "node end (inclusive)");
 			mu_assert_streq(item->str, "summer of love", "comment string");
-			mu_assert_eq(item->subtype, RZ_STRING_ENC_UTF8, "UTF-8 subtype for comment");
+			mu_assert_eq(item->subtype, 0, "no subtype");
 			found[1] = true;
 			break;
 		case RZ_META_TYPE_STRING:

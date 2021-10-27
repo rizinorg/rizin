@@ -894,7 +894,7 @@ e asm.cpu=arm1176
 e asm.platform=bcm2835
 aa
 f~AUX
-CCl~Broadcom
+CC~Broadcom
 EOF
 EXPECT=<<EOF
 0x07e21500 1 AUX_ENABLES
@@ -1021,7 +1021,7 @@ FILE=bins/elf/arm1.bin
 CMDS=<<EOF
 af@sym.__gcc_personality_v0
 f~switch.,case.
-CCl~switch
+CC~switch
 EOF
 EXPECT=<<EOF
 0x00064c7c 1 switch.0x00064c7c

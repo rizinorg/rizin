@@ -21,10 +21,10 @@ afvb -8 var_8h uint32_t
 afvs 8 var_sp_8h uint32_t
 afvr rax var_rax uint64_t
 
-Cv arg_8h comment for arg_8h
-Cv var_8h comment for var_8h
-Cv var_rax comment for var_rax
-Cv var_sp_8h comment for var_sp_8h
+Cvb 0x8 comment for arg_8h
+Cvb -8 comment for var_8h
+Cvr var_rax comment for var_rax
+Cvs var_sp_8h comment for var_sp_8h
 
 pd1~comment
 ?e --
@@ -38,16 +38,16 @@ Cvs
 Cvs*
 ?e --
 
-Cv- arg_8h
+Cvb- arg_8h
 pd1~comment
 ?e --
-Cv- var_8h
+Cvb- -8
 pd1~comment
 ?e --
-Cv- var_sp_8h
+Cvs- 8
 pd1~comment
 ?e --
-Cv- var_rax
+Cvr- var_rax
 pd1~comment
 ?e --
 
@@ -98,10 +98,12 @@ FILE==
 CMDS=<<EOF
 CC hello @ 10
 CC.
-CC. @ 10
-CCl @ 10
+CC.10
+CC.@10
+CC@10
 EOF
 EXPECT=<<EOF
+hello
 hello
 0x0000000a CCu "hello"
 EOF

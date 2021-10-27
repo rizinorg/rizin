@@ -138,16 +138,13 @@ files: `cmd_descs.c` and `cmd_descs.h`.
 
 ## Where is the handler of command `x`?
 
-You can use the script `librz/core/cmd_descs/rzshell_find_handler.py` to get the
-name of the function handling the specified command.
-
-If that doesn't work, please report the problem to us! However, you can still
-find the handler yourself by looking at the file
+If you are looking for the handler of command `x`, you just have to look at
+the file
 [`librz/core/cmd_descs.yaml`](https://github.com/rizinorg/rizin/blob/9ce5003ca647cdfc181ac3c0f6206762ebb9e3e9/librz/core/cmd_descs.yaml).
-By looking at the `cname` field of the command descriptor, you can see what is
-the name of the handler of the `x` command. If the `cname` is `hex` and the type
-is `RZ_CMD_DESC_TYPE_OLDINPUT`, then the handler will be named `rz_hex`. In all
-other cases, the handler will be named `rz_hex_handler`.
+By looking at the `cname` field of the command descriptor, you can see what
+is the name of the handler of the `x` command. If the `cname` is `hex` and
+the type is `RZ_CMD_DESC_TYPE_OLDINPUT`, then the handler will be named
+`rz_hex`. In all other cases, the handler will be named `rz_hex_handler`.
 
 Some examples:
 - command: `wv`, type: unspecified (default to `RZ_CMD_DESC_TYPE_ARGV`), handler: `rz_write_value_handler`

@@ -14,9 +14,6 @@ commands:
       - name: type
         type: RZ_CMD_ARG_TYPE_ANY_TYPE
         optional: true
-    description: >
-      When <type> is provided, the pf-format for the given type is provided,
-      otherwise all types are listed.
   - name: t-
     cname: type_del
     summary: Remove the type

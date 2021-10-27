@@ -15,7 +15,7 @@ CMDS=<<EOF
 C*~^?Cd
 aav
 C*~^?Cd
-Cdl~?
+Cd~?
 EOF
 EXPECT=<<EOF
 114

@@ -227,7 +227,7 @@ e asm.cpu=generic
 e asm.platform=generic
 aa
 f,~platform
-CCl~reg
+CC~reg
 EOF
 EXPECT=<<EOF
 0x00000018 1     platform.ports PS_2_register

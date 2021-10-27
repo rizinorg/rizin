@@ -1071,7 +1071,7 @@ static RzList *sections(RzBinFile *bf) {
 			ptr->is_data = true;
 		}
 		if (is_wordable_section(ptr->name)) {
-			ptr->format = rz_str_newf("Cd %zu %" PFMT64d, sizeof(Elf_(Addr)), section->size / sizeof(Elf_(Addr)));
+			ptr->format = rz_str_newf("Cd %zu[%" PFMT64d "]", sizeof(Elf_(Addr)), section->size / sizeof(Elf_(Addr)));
 		}
 		ptr->size = section->type != SHT_NOBITS ? section->size : 0;
 		ptr->vsize = section->size;

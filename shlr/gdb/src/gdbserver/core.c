@@ -218,11 +218,11 @@ static int _server_handle_z(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 	switch (set) {
 	case 'Z':
 		// Set
-		snprintf(cmd, sizeof(cmd) - 1, "db @ 0x%" PFMT64x, addr);
+		snprintf(cmd, sizeof(cmd) - 1, "db 0x%" PFMT64x, addr);
 		break;
 	case 'z':
 		// Remove
-		snprintf(cmd, sizeof(cmd) - 1, "db- @ 0x%" PFMT64x, addr);
+		snprintf(cmd, sizeof(cmd) - 1, "db- 0x%" PFMT64x, addr);
 		break;
 	default:
 		return send_msg(g, "E01");

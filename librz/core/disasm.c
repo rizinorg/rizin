@@ -794,8 +794,8 @@ static RDisasmState *ds_init(RzCore *core) {
 	const char *strenc_str = rz_config_get(core->config, "bin.str.enc");
 	if (!strenc_str) {
 		ds->strenc = RZ_STRING_ENC_GUESS;
-	} else if (!strcmp(strenc_str, "8bit")) {
-		ds->strenc = RZ_STRING_ENC_8BIT;
+	} else if (!strcmp(strenc_str, "latin1")) {
+		ds->strenc = RZ_STRING_ENC_LATIN1;
 	} else if (!strcmp(strenc_str, "utf8")) {
 		ds->strenc = RZ_STRING_ENC_UTF8;
 	} else if (!strcmp(strenc_str, "utf16le")) {
@@ -2495,6 +2495,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 			case RZ_META_TYPE_FORMAT:
 			case RZ_META_TYPE_MAGIC:
 			case RZ_META_TYPE_HIDE:
+			case RZ_META_TYPE_RUN:
 				meta = mi;
 				meta_size = rz_meta_item_size(node->start, node->end);
 				break;
@@ -2543,6 +2544,9 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 			case RZ_META_TYPE_MAGIC:
 				rz_cons_printf(".magic : %s\n", meta->str);
 				i += meta_size;
+				break;
+			case RZ_META_TYPE_RUN:
+				rz_core_cmd0(core, meta->str);
 				break;
 			default:
 				break;
@@ -2901,6 +2905,7 @@ static bool requires_op_size(RDisasmState *ds) {
 		case RZ_META_TYPE_FORMAT:
 		case RZ_META_TYPE_MAGIC:
 		case RZ_META_TYPE_HIDE:
+		case RZ_META_TYPE_RUN:
 			res = false;
 			break;
 		default:
@@ -3091,21 +3096,17 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8 *buf, int len, int idx, in
 		switch (mi->type) {
 		case RZ_META_TYPE_STRING:
 			if (mi->str) {
-				RzStrEscOptions opt = { 0 };
-				opt.esc_bslash = core->print->esc_bslash;
-				opt.esc_double_quotes = true;
-				opt.show_asciidot = false;
+				bool esc_bslash = core->print->esc_bslash;
 
 				switch (mi->subtype) {
 				case RZ_STRING_ENC_UTF8:
-					out = rz_str_escape_utf8(mi->str, &opt);
+					out = rz_str_escape_utf8(mi->str, false, esc_bslash);
 					break;
 				case 0: /* temporary legacy workaround */
-					opt.esc_bslash = false;
+					esc_bslash = false;
 					/* fallthrough */
 				default:
-					out = rz_str_escape_8bit(mi->str, false, &opt);
-					break;
+					out = rz_str_escape_latin1(mi->str, false, esc_bslash, false);
 				}
 				if (!out) {
 					break;
@@ -3128,6 +3129,12 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8 *buf, int len, int idx, in
 			}
 		case RZ_META_TYPE_HIDE:
 			rz_cons_printf("(%" PFMT64d " bytes hidden)", mi_size);
+			ds->asmop.size = mi_size;
+			ds->oplen = mi_size;
+			ret = true;
+			break;
+		case RZ_META_TYPE_RUN:
+			rz_core_cmdf(core, "%s @ 0x%" PFMT64x, mi->str, ds->at);
 			ds->asmop.size = mi_size;
 			ds->oplen = mi_size;
 			ret = true;
@@ -3804,41 +3811,38 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 	int str_len;
 	char *escstr = NULL;
 	const char *prefix = "";
+	bool esc_bslash = ds->core->print->esc_bslash;
 	RzStrEnc strenc = ds->strenc;
 	if (strenc == RZ_STRING_ENC_GUESS) {
 		strenc = rz_utf_bom_encoding((ut8 *)str, len);
 	}
-	RzStrEscOptions opt = { 0 };
-	opt.show_asciidot = ds->show_asciidot;
-	opt.esc_double_quotes = true;
-	opt.esc_bslash = ds->core->print->esc_bslash;
 	switch (strenc) {
-	case RZ_STRING_ENC_8BIT:
-		escstr = rz_str_escape_8bit(str, is_comment, &opt);
+	case RZ_STRING_ENC_LATIN1:
+		escstr = rz_str_escape_latin1(str, ds->show_asciidot, esc_bslash, is_comment);
 		break;
 	case RZ_STRING_ENC_UTF8:
-		escstr = rz_str_escape_utf8(str, &opt);
+		escstr = rz_str_escape_utf8(str, ds->show_asciidot, esc_bslash);
 		break;
 	case RZ_STRING_ENC_UTF16LE:
-		escstr = rz_str_escape_utf16le(str, len, &opt);
+		escstr = rz_str_escape_utf16le(str, len, ds->show_asciidot, esc_bslash);
 		prefix = "u";
 		break;
 	case RZ_STRING_ENC_UTF32LE:
-		escstr = rz_str_escape_utf32le(str, len, &opt);
+		escstr = rz_str_escape_utf32le(str, len, ds->show_asciidot, esc_bslash);
 		prefix = "U";
 		break;
 	case RZ_STRING_ENC_UTF16BE:
-		escstr = rz_str_escape_utf16be(str, len, &opt);
+		escstr = rz_str_escape_utf16be(str, len, ds->show_asciidot, esc_bslash);
 		prefix = "ub";
 		break;
 	case RZ_STRING_ENC_UTF32BE:
-		escstr = rz_str_escape_utf32be(str, len, &opt);
+		escstr = rz_str_escape_utf32be(str, len, ds->show_asciidot, esc_bslash);
 		prefix = "Ub";
 		break;
 	default:
 		str_len = strlen(str);
 		if ((str_len == 1 && len > 3 && str[2] && !str[3]) || (str_len == 3 && len > 5 && !memcmp(str, "\xff\xfe", 2) && str[4] && !str[5])) {
-			escstr = rz_str_escape_utf16le(str, len, &opt);
+			escstr = rz_str_escape_utf16le(str, len, ds->show_asciidot, esc_bslash);
 			prefix = "u";
 		} else if (str_len == 1 && len > 7 && !str[2] && !str[3] && str[4] && !str[5]) {
 			RzStrEnc enc = RZ_STRING_ENC_UTF32LE;
@@ -3850,18 +3854,18 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 			}
 			for (ptr = str; ptr < end; ptr += 4) {
 				if (rz_utf32le_decode((ut8 *)ptr, end - ptr, &ch) > 0 && ch > 0x10ffff) {
-					enc = RZ_STRING_ENC_8BIT;
+					enc = RZ_STRING_ENC_LATIN1;
 					break;
 				}
 			}
 			if (enc == RZ_STRING_ENC_UTF32LE) {
-				escstr = rz_str_escape_utf32le(str, len, &opt);
+				escstr = rz_str_escape_utf32le(str, len, ds->show_asciidot, esc_bslash);
 				prefix = "U";
 			} else {
-				escstr = rz_str_escape_8bit(str, is_comment, &opt);
+				escstr = rz_str_escape_latin1(str, ds->show_asciidot, esc_bslash, is_comment);
 			}
 		} else {
-			RzStrEnc enc = RZ_STRING_ENC_8BIT;
+			RzStrEnc enc = RZ_STRING_ENC_LATIN1;
 			const char *ptr = str, *end = str + str_len;
 			for (; ptr < end; ptr++) {
 				if (rz_utf8_decode((ut8 *)ptr, end - ptr, NULL) > 1) {
@@ -3869,7 +3873,7 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 					break;
 				}
 			}
-			escstr = (enc == RZ_STRING_ENC_UTF8 ? rz_str_escape_utf8(str, &opt) : rz_str_escape_8bit(str, is_comment, &opt));
+			escstr = (enc == RZ_STRING_ENC_UTF8 ? rz_str_escape_utf8(str, ds->show_asciidot, esc_bslash) : rz_str_escape_latin1(str, ds->show_asciidot, esc_bslash, is_comment));
 		}
 	}
 	if (prefix_out) {
@@ -6451,6 +6455,9 @@ toro:
 				//rz_cons_printf (".magic : %s\n", meta->str);
 				i += meta_size;
 				continue;
+			case RZ_META_TYPE_RUN:
+				/* TODO */
+				break;
 			default:
 				break;
 			}

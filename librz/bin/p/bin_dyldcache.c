@@ -201,7 +201,7 @@ static void sections_from_bin(RzList *ret, RzBinFile *bf, RzDyldBinImage *bin) {
 		}
 		if (strstr(ptr->name, "la_symbol_ptr")) {
 			int len = sections[i].size / 8;
-			ptr->format = rz_str_newf("Cd %d %d", 8, len);
+			ptr->format = rz_str_newf("Cd %d[%d]", 8, len);
 		}
 		ptr->is_data = __is_data_section(ptr->name);
 		ptr->size = sections[i].size;

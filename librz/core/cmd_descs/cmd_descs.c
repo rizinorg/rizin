@@ -111,27 +111,6 @@ static const RzCmdDescArg block_decrease_args[2];
 static const RzCmdDescArg block_increase_args[2];
 static const RzCmdDescArg block_flag_args[2];
 static const RzCmdDescArg block_max_args[2];
-static const RzCmdDescArg comment_args[2];
-static const RzCmdDescArg comment_append_args[2];
-static const RzCmdDescArg comment_filelink_args[2];
-static const RzCmdDescArg comment_unique_args[2];
-static const RzCmdDescArg meta_space_args[2];
-static const RzCmdDescArg meta_space_remove_args[2];
-static const RzCmdDescArg meta_space_rename_args[3];
-static const RzCmdDescArg meta_format_args[3];
-static const RzCmdDescArg meta_data_args[3];
-static const RzCmdDescArg meta_data_remove_args[3];
-static const RzCmdDescArg meta_hidden_args[2];
-static const RzCmdDescArg meta_magic_args[3];
-static const RzCmdDescArg meta_string_args[2];
-static const RzCmdDescArg meta_string_utf8_args[2];
-static const RzCmdDescArg meta_string_8bit_args[2];
-static const RzCmdDescArg meta_string_wide16_args[2];
-static const RzCmdDescArg meta_string_wide32_args[2];
-static const RzCmdDescArg meta_type_args[2];
-static const RzCmdDescArg meta_var_comment_append_args[3];
-static const RzCmdDescArg meta_var_comment_remove_args[2];
-static const RzCmdDescArg meta_var_comment_editor_args[2];
 static const RzCmdDescArg cmd_debug_command_bp_args[2];
 static const RzCmdDescArg cmd_debug_add_cond_bp_args[2];
 static const RzCmdDescArg cmd_debug_add_bp_module_args[3];
@@ -1956,683 +1935,8 @@ static const RzCmdDescHelp cmd_cmp_help = {
 	.summary = "Compare block with given data",
 };
 
-static const RzCmdDescHelp C_help = {
+static const RzCmdDescHelp cmd_meta_help = {
 	.summary = "Code metadata (comments, format, hints, ..)",
-};
-static const RzCmdDescArg meta_list_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp meta_list_help = {
-	.summary = "List all meta information",
-	.args = meta_list_args,
-};
-
-static const RzCmdDescArg meta_list_at_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp meta_list_at_help = {
-	.summary = "Show all meta information at current address",
-	.args = meta_list_at_args,
-};
-
-static const RzCmdDescArg meta_remove_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp meta_remove_help = {
-	.summary = "Remove meta information at current address",
-	.args = meta_remove_args,
-};
-
-static const RzCmdDescArg meta_remove_all_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp meta_remove_all_help = {
-	.summary = "Remove all meta information",
-	.args = meta_remove_all_args,
-};
-
-static const RzCmdDescHelp CC_help = {
-	.summary = "Manipulate the comments",
-};
-static const RzCmdDescArg comment_args[] = {
-	{
-		.name = "text",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp comment_help = {
-	.summary = "Append comment",
-	.args = comment_args,
-};
-
-static const RzCmdDescArg comment_list_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp comment_list_help = {
-	.summary = "List all comments",
-	.args = comment_list_args,
-};
-
-static const RzCmdDescArg comment_at_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp comment_at_help = {
-	.summary = "Show comment at the current offset",
-	.args = comment_at_args,
-};
-
-static const RzCmdDescArg comment_append_args[] = {
-	{
-		.name = "text",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp comment_append_help = {
-	.summary = "Append comment at current address",
-	.args = comment_append_args,
-};
-
-static const RzCmdDescArg comment_remove_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp comment_remove_help = {
-	.summary = "Remove comment at current address",
-	.args = comment_remove_args,
-};
-
-static const RzCmdDescArg comment_remove_all_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp comment_remove_all_help = {
-	.summary = "Remove all comments",
-	.args = comment_remove_all_args,
-};
-
-static const RzCmdDescArg comment_filelink_args[] = {
-	{
-		.name = "file",
-		.type = RZ_CMD_ARG_TYPE_FILE,
-		.optional = true,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp comment_filelink_help = {
-	.summary = "Show / Set comment file",
-	.args = comment_filelink_args,
-};
-
-static const RzCmdDescArg comment_editor_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp comment_editor_help = {
-	.summary = "Edit comment using `cfg.editor`",
-	.args = comment_editor_args,
-};
-
-static const RzCmdDescHelp CCf_help = {
-	.summary = "List comments in function at current address",
-};
-static const RzCmdDescArg comment_function_list_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp comment_function_list_help = {
-	.summary = "List all comments",
-	.args = comment_function_list_args,
-};
-
-static const RzCmdDescArg comment_function_remove_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp comment_function_remove_help = {
-	.summary = "Remove all comments from the current function",
-	.args = comment_function_remove_args,
-};
-
-static const RzCmdDescArg comment_function_remove_all_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp comment_function_remove_all_help = {
-	.summary = "Remove all comments from all functions",
-	.args = comment_function_remove_all_args,
-};
-
-static const RzCmdDescArg comment_unique_args[] = {
-	{
-		.name = "text",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp comment_unique_help = {
-	.summary = "Add unique comment",
-	.args = comment_unique_args,
-};
-
-static const RzCmdDescHelp CS_help = {
-	.summary = "Manage metainformation spaces",
-};
-static const RzCmdDescArg meta_space_args[] = {
-	{
-		.name = "name",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp meta_space_help = {
-	.summary = "Create new metaspace",
-	.args = meta_space_args,
-};
-
-static const RzCmdDescArg meta_space_list_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp meta_space_list_help = {
-	.summary = "List all metaspaces",
-	.args = meta_space_list_args,
-};
-
-static const RzCmdDescArg meta_space_remove_args[] = {
-	{
-		.name = "name",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp meta_space_remove_help = {
-	.summary = "Remove metaspace",
-	.args = meta_space_remove_args,
-};
-
-static const RzCmdDescArg meta_space_remove_all_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp meta_space_remove_all_help = {
-	.summary = "Remove all metaspaces",
-	.args = meta_space_remove_all_args,
-};
-
-static const RzCmdDescArg meta_space_rename_args[] = {
-	{
-		.name = "oldname",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-
-	},
-	{
-		.name = "newname",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp meta_space_rename_help = {
-	.summary = "Rename the metaspace",
-	.args = meta_space_rename_args,
-};
-
-static const RzCmdDescHelp Cf_help = {
-	.summary = "Manage the format string metainformation",
-};
-static const RzCmdDescArg meta_format_args[] = {
-	{
-		.name = "size",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-
-	},
-	{
-		.name = "format",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp meta_format_help = {
-	.summary = "Set the format string to the current address",
-	.args = meta_format_args,
-};
-
-static const RzCmdDescArg meta_format_list_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp meta_format_list_help = {
-	.summary = "List all format marks",
-	.args = meta_format_list_args,
-};
-
-static const RzCmdDescArg meta_format_remove_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp meta_format_remove_help = {
-	.summary = "Remove format string from the current address",
-	.args = meta_format_remove_args,
-};
-
-static const RzCmdDescArg meta_format_remove_all_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp meta_format_remove_all_help = {
-	.summary = "Remove all format string marks",
-	.args = meta_format_remove_all_args,
-};
-
-static const RzCmdDescHelp Cd_help = {
-	.summary = "Manage the raw data metainformation",
-};
-static const RzCmdDescArg meta_data_args[] = {
-	{
-		.name = "size",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-
-	},
-	{
-		.name = "repeat",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp meta_data_help = {
-	.summary = "Set the \"data\" mark to the current address",
-	.args = meta_data_args,
-};
-
-static const RzCmdDescArg meta_data_list_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp meta_data_list_help = {
-	.summary = "List all \"data\" marks",
-	.args = meta_data_list_args,
-};
-
-static const RzCmdDescArg meta_data_at_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp meta_data_at_help = {
-	.summary = "Show the data mark at the current offset",
-	.args = meta_data_at_args,
-};
-
-static const RzCmdDescArg meta_data_remove_args[] = {
-	{
-		.name = "size",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.optional = true,
-
-	},
-	{
-		.name = "repeat",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp meta_data_remove_help = {
-	.summary = "Remove the data mark from the current address",
-	.args = meta_data_remove_args,
-};
-
-static const RzCmdDescArg meta_data_remove_all_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp meta_data_remove_all_help = {
-	.summary = "Remove all data marks",
-	.args = meta_data_remove_all_args,
-};
-
-static const RzCmdDescHelp Ch_help = {
-	.summary = "Manage the \"hidden\" mark metainformation",
-};
-static const RzCmdDescArg meta_hidden_args[] = {
-	{
-		.name = "size",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp meta_hidden_help = {
-	.summary = "Set the \"hidden\" mark to the current address",
-	.description = "When \"hidden\" mark is set for some memory region, it's not shown in the disassembly output",
-	.args = meta_hidden_args,
-};
-
-static const RzCmdDescArg meta_hidden_list_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp meta_hidden_list_help = {
-	.summary = "List all \"hidden\" marks",
-	.args = meta_hidden_list_args,
-};
-
-static const RzCmdDescArg meta_hidden_remove_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp meta_hidden_remove_help = {
-	.summary = "Remove the \"hidden\" mark from the current address",
-	.args = meta_hidden_remove_args,
-};
-
-static const RzCmdDescArg meta_hidden_remove_all_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp meta_hidden_remove_all_help = {
-	.summary = "Remove all \"hidden\" marks",
-	.args = meta_hidden_remove_all_args,
-};
-
-static const RzCmdDescHelp Cm_help = {
-	.summary = "Manage the \"magic\" mark metainformation",
-};
-static const RzCmdDescArg meta_magic_args[] = {
-	{
-		.name = "size",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-
-	},
-	{
-		.name = "format",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp meta_magic_help = {
-	.summary = "Set the magic to the current address",
-	.args = meta_magic_args,
-};
-
-static const RzCmdDescArg meta_magic_list_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp meta_magic_list_help = {
-	.summary = "List all magic marks",
-	.args = meta_magic_list_args,
-};
-
-static const RzCmdDescArg meta_magic_remove_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp meta_magic_remove_help = {
-	.summary = "Remove the magic mark from the current address",
-	.args = meta_magic_remove_args,
-};
-
-static const RzCmdDescArg meta_magic_remove_all_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp meta_magic_remove_all_help = {
-	.summary = "Remove all magic marks",
-	.args = meta_magic_remove_all_args,
-};
-
-static const RzCmdDescHelp Cs_help = {
-	.summary = "Manipulate string metainformation",
-};
-static const RzCmdDescArg meta_string_args[] = {
-	{
-		.name = "size",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp meta_string_help = {
-	.summary = "Add string (autodetects the encoding)",
-	.args = meta_string_args,
-};
-
-static const RzCmdDescArg meta_string_list_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp meta_string_list_help = {
-	.summary = "List all strings",
-	.args = meta_string_list_args,
-};
-
-static const RzCmdDescArg meta_string_at_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp meta_string_at_help = {
-	.summary = "Show string at the current address",
-	.args = meta_string_at_args,
-};
-
-static const RzCmdDescArg meta_string_remove_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp meta_string_remove_help = {
-	.summary = "Remove string",
-	.args = meta_string_remove_args,
-};
-
-static const RzCmdDescArg meta_string_remove_all_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp meta_string_remove_all_help = {
-	.summary = "Remove all strings",
-	.args = meta_string_remove_all_args,
-};
-
-static const RzCmdDescArg meta_string_pascal_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp meta_string_pascal_help = {
-	.summary = "Add Pascal-style string with the size",
-	.args = meta_string_pascal_args,
-};
-
-static const RzCmdDescArg meta_string_utf8_args[] = {
-	{
-		.name = "size",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp meta_string_utf8_help = {
-	.summary = "Add UTF-8 string",
-	.args = meta_string_utf8_args,
-};
-
-static const RzCmdDescArg meta_string_8bit_args[] = {
-	{
-		.name = "size",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp meta_string_8bit_help = {
-	.summary = "Add ASCII/8-bit string",
-	.args = meta_string_8bit_args,
-};
-
-static const RzCmdDescArg meta_string_wide16_args[] = {
-	{
-		.name = "size",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp meta_string_wide16_help = {
-	.summary = "Add wide 2-byte (UTF-16) string",
-	.args = meta_string_wide16_args,
-};
-
-static const RzCmdDescArg meta_string_wide32_args[] = {
-	{
-		.name = "size",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp meta_string_wide32_help = {
-	.summary = "Add wide 4-byte (UTF-32) string",
-	.args = meta_string_wide32_args,
-};
-
-static const RzCmdDescHelp Ct_help = {
-	.summary = "Manage the type metainformation",
-};
-static const RzCmdDescArg meta_type_args[] = {
-	{
-		.name = "text",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp meta_type_help = {
-	.summary = "Set the type comment to the current address",
-	.args = meta_type_args,
-};
-
-static const RzCmdDescArg meta_type_list_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp meta_type_list_help = {
-	.summary = "List all type comments",
-	.args = meta_type_list_args,
-};
-
-static const RzCmdDescArg meta_type_remove_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp meta_type_remove_help = {
-	.summary = "Remove the type mark from the current address",
-	.args = meta_type_remove_args,
-};
-
-static const RzCmdDescArg meta_type_remove_all_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp meta_type_remove_all_help = {
-	.summary = "Remove all type marks",
-	.args = meta_type_remove_all_args,
-};
-
-static const RzCmdDescArg meta_type_current_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp meta_type_current_help = {
-	.summary = "Show the type mark at the current address",
-	.args = meta_type_current_args,
-};
-
-static const RzCmdDescHelp Cv_help = {
-	.summary = "Add comments to the vars or arguments",
-};
-static const RzCmdDescArg meta_var_comment_append_args[] = {
-	{
-		.name = "name",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-
-	},
-	{
-		.name = "text",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp meta_var_comment_append_help = {
-	.summary = "Add comment for the variable",
-	.args = meta_var_comment_append_args,
-};
-
-static const RzCmdDescArg meta_var_comment_remove_args[] = {
-	{
-		.name = "name",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp meta_var_comment_remove_help = {
-	.summary = "Remove comment from the variable",
-	.args = meta_var_comment_remove_args,
-};
-
-static const RzCmdDescArg meta_var_comment_editor_args[] = {
-	{
-		.name = "name",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp meta_var_comment_editor_help = {
-	.summary = "Edit comment using `cfg.editor`",
-	.args = meta_var_comment_editor_args,
-};
-
-static const RzCmdDescArg meta_var_comment_list_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp meta_var_comment_list_help = {
-	.summary = "List all comments for all barguments and variables",
-	.args = meta_var_comment_list_args,
-};
-
-static const RzCmdDescArg meta_var_bp_comment_list_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp meta_var_bp_comment_list_help = {
-	.summary = "List all comments for all bp-based arguments and variables",
-	.args = meta_var_bp_comment_list_args,
-};
-
-static const RzCmdDescArg meta_var_reg_comment_list_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp meta_var_reg_comment_list_help = {
-	.summary = "List all comments for all register-based arguments and variables",
-	.args = meta_var_reg_comment_list_args,
-};
-
-static const RzCmdDescArg meta_var_stack_comment_list_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp meta_var_stack_comment_list_help = {
-	.summary = "List all comments for all stack-based arguments and variables",
-	.args = meta_var_stack_comment_list_args,
 };
 
 static const RzCmdDescHelp cmd_debug_help = {
@@ -5203,7 +4507,6 @@ static const RzCmdDescArg type_args[] = {
 };
 static const RzCmdDescHelp type_help = {
 	.summary = "List all types / Show type information",
-	.description = "When <type> is provided, the pf-format for the given type is provided, otherwise all types are listed.",
 	.args = type_args,
 };
 
@@ -6018,7 +5321,7 @@ static const RzCmdDescArg write_zero_args[] = {
 };
 static const RzCmdDescHelp write_zero_help = {
 	.summary = "Write <len> bytes with value 0x00",
-	.description = "Fill <len> bytes starting from the current offset with the value 0.",
+	.description = "Fill len bytes starting from the current offset with the value 0.",
 	.args = write_zero_args,
 };
 
@@ -6052,7 +5355,7 @@ static const RzCmdDescArg write_1_inc_args[] = {
 };
 static const RzCmdDescHelp write_1_inc_help = {
 	.summary = "Increment a byte",
-	.description = "Increment a byte at the current offset by 1 or <n>, if specified",
+	.description = "Increment a byte at the current offset by 1 or n, if specified",
 	.args = write_1_inc_args,
 };
 
@@ -6067,7 +5370,7 @@ static const RzCmdDescArg write_1_dec_args[] = {
 };
 static const RzCmdDescHelp write_1_dec_help = {
 	.summary = "Decrement a byte",
-	.description = "Decrement a byte at the current offset by 1 or <n>, if specified",
+	.description = "Decrement a byte at the current offset by 1 or n, if specified",
 	.args = write_1_dec_args,
 };
 
@@ -6096,7 +5399,7 @@ static const RzCmdDescArg write_2_inc_args[] = {
 };
 static const RzCmdDescHelp write_2_inc_help = {
 	.summary = "Increment a word",
-	.description = "Increment a word at the current offset by 1 or <n>, if specified",
+	.description = "Increment a word at the current offset by 1 or n, if specified",
 	.args = write_2_inc_args,
 };
 
@@ -6111,7 +5414,7 @@ static const RzCmdDescArg write_2_dec_args[] = {
 };
 static const RzCmdDescHelp write_2_dec_help = {
 	.summary = "Decrement a word",
-	.description = "Decrement a word at the current offset by 1 or <n>, if specified",
+	.description = "Decrement a word at the current offset by 1 or n, if specified",
 	.args = write_2_dec_args,
 };
 
@@ -6140,7 +5443,7 @@ static const RzCmdDescArg write_4_inc_args[] = {
 };
 static const RzCmdDescHelp write_4_inc_help = {
 	.summary = "Increment a dword",
-	.description = "Increment a dword at the current offset by 1 or <n>, if specified",
+	.description = "Increment a dword at the current offset by 1 or n, if specified",
 	.args = write_4_inc_args,
 };
 
@@ -6155,7 +5458,7 @@ static const RzCmdDescArg write_4_dec_args[] = {
 };
 static const RzCmdDescHelp write_4_dec_help = {
 	.summary = "Decrement a dword",
-	.description = "Decrement a dword at the current offset by 1 or <n>, if specified",
+	.description = "Decrement a dword at the current offset by 1 or n, if specified",
 	.args = write_4_dec_args,
 };
 
@@ -6184,7 +5487,7 @@ static const RzCmdDescArg write_8_inc_args[] = {
 };
 static const RzCmdDescHelp write_8_inc_help = {
 	.summary = "Increment a qword",
-	.description = "Increment a qword at the current offset by 1 or <n>, if specified",
+	.description = "Increment a qword at the current offset by 1 or n, if specified",
 	.args = write_8_inc_args,
 };
 
@@ -6199,7 +5502,7 @@ static const RzCmdDescArg write_8_dec_args[] = {
 };
 static const RzCmdDescHelp write_8_dec_help = {
 	.summary = "Decrement a qword",
-	.description = "Decrement a qword at the current offset by 1 or <n>, if specified",
+	.description = "Decrement a qword at the current offset by 1 or n, if specified",
 	.args = write_8_dec_args,
 };
 
@@ -6441,7 +5744,7 @@ static const RzCmdDescArg yank_file_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp yank_file_help = {
-	.summary = "Yank <len> bytes from file",
+	.summary = "Yank [len] bytes from file",
 	.args = yank_file_args,
 };
 
@@ -6503,7 +5806,7 @@ static const RzCmdDescArg yank_to_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp yank_to_help = {
-	.summary = "Copy <len> bytes from current seek to <offset>",
+	.summary = "Copy [len] bytes from current seek to [offset]",
 	.args = yank_to_args,
 };
 
@@ -6547,7 +5850,7 @@ static const RzCmdDescArg yank_paste_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp yank_paste_help = {
-	.summary = "Paste <len> bytes from yank clipboard",
+	.summary = "Paste [len] bytes from yank clipboard",
 	.args = yank_paste_args,
 };
 
@@ -7511,174 +6814,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_cmp_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "c", rz_cmd_cmp, &cmd_cmp_help);
 	rz_warn_if_fail(cmd_cmp_cd);
 
-	RzCmdDesc *C_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "C", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_LONG, rz_meta_list_handler, &meta_list_help, &C_help);
-	rz_warn_if_fail(C_cd);
-	RzCmdDesc *meta_list_at_cd = rz_cmd_desc_argv_state_new(core->rcmd, C_cd, "C.", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_LONG, rz_meta_list_at_handler, &meta_list_at_help);
-	rz_warn_if_fail(meta_list_at_cd);
-
-	RzCmdDesc *meta_remove_cd = rz_cmd_desc_argv_new(core->rcmd, C_cd, "C-", rz_meta_remove_handler, &meta_remove_help);
-	rz_warn_if_fail(meta_remove_cd);
-
-	RzCmdDesc *meta_remove_all_cd = rz_cmd_desc_argv_new(core->rcmd, C_cd, "C-*", rz_meta_remove_all_handler, &meta_remove_all_help);
-	rz_warn_if_fail(meta_remove_all_cd);
-
-	RzCmdDesc *CC_cd = rz_cmd_desc_group_new(core->rcmd, C_cd, "CC", rz_comment_handler, &comment_help, &CC_help);
-	rz_warn_if_fail(CC_cd);
-	RzCmdDesc *comment_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, CC_cd, "CCl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_LONG, rz_comment_list_handler, &comment_list_help);
-	rz_warn_if_fail(comment_list_cd);
-
-	RzCmdDesc *comment_at_cd = rz_cmd_desc_argv_new(core->rcmd, CC_cd, "CC.", rz_comment_at_handler, &comment_at_help);
-	rz_warn_if_fail(comment_at_cd);
-
-	RzCmdDesc *comment_append_cd = rz_cmd_desc_argv_new(core->rcmd, CC_cd, "CC+", rz_comment_append_handler, &comment_append_help);
-	rz_warn_if_fail(comment_append_cd);
-
-	RzCmdDesc *comment_remove_cd = rz_cmd_desc_argv_new(core->rcmd, CC_cd, "CC-", rz_comment_remove_handler, &comment_remove_help);
-	rz_warn_if_fail(comment_remove_cd);
-
-	RzCmdDesc *comment_remove_all_cd = rz_cmd_desc_argv_new(core->rcmd, CC_cd, "CC-*", rz_comment_remove_all_handler, &comment_remove_all_help);
-	rz_warn_if_fail(comment_remove_all_cd);
-
-	RzCmdDesc *comment_filelink_cd = rz_cmd_desc_argv_new(core->rcmd, CC_cd, "CCF", rz_comment_filelink_handler, &comment_filelink_help);
-	rz_warn_if_fail(comment_filelink_cd);
-
-	RzCmdDesc *comment_editor_cd = rz_cmd_desc_argv_new(core->rcmd, CC_cd, "CCe", rz_comment_editor_handler, &comment_editor_help);
-	rz_warn_if_fail(comment_editor_cd);
-
-	RzCmdDesc *CCf_cd = rz_cmd_desc_group_state_new(core->rcmd, CC_cd, "CCf", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_LONG, rz_comment_function_list_handler, &comment_function_list_help, &CCf_help);
-	rz_warn_if_fail(CCf_cd);
-	RzCmdDesc *comment_function_remove_cd = rz_cmd_desc_argv_new(core->rcmd, CCf_cd, "CCf-", rz_comment_function_remove_handler, &comment_function_remove_help);
-	rz_warn_if_fail(comment_function_remove_cd);
-
-	RzCmdDesc *comment_function_remove_all_cd = rz_cmd_desc_argv_new(core->rcmd, CCf_cd, "CCf-*", rz_comment_function_remove_all_handler, &comment_function_remove_all_help);
-	rz_warn_if_fail(comment_function_remove_all_cd);
-
-	RzCmdDesc *comment_unique_cd = rz_cmd_desc_argv_new(core->rcmd, CC_cd, "CCu", rz_comment_unique_handler, &comment_unique_help);
-	rz_warn_if_fail(comment_unique_cd);
-
-	RzCmdDesc *CS_cd = rz_cmd_desc_group_new(core->rcmd, C_cd, "CS", rz_meta_space_handler, &meta_space_help, &CS_help);
-	rz_warn_if_fail(CS_cd);
-	RzCmdDesc *meta_space_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, CS_cd, "CSl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_meta_space_list_handler, &meta_space_list_help);
-	rz_warn_if_fail(meta_space_list_cd);
-
-	RzCmdDesc *meta_space_remove_cd = rz_cmd_desc_argv_new(core->rcmd, CS_cd, "CS-", rz_meta_space_remove_handler, &meta_space_remove_help);
-	rz_warn_if_fail(meta_space_remove_cd);
-
-	RzCmdDesc *meta_space_remove_all_cd = rz_cmd_desc_argv_new(core->rcmd, CS_cd, "CS-*", rz_meta_space_remove_all_handler, &meta_space_remove_all_help);
-	rz_warn_if_fail(meta_space_remove_all_cd);
-
-	RzCmdDesc *meta_space_rename_cd = rz_cmd_desc_argv_new(core->rcmd, CS_cd, "CSr", rz_meta_space_rename_handler, &meta_space_rename_help);
-	rz_warn_if_fail(meta_space_rename_cd);
-
-	RzCmdDesc *Cf_cd = rz_cmd_desc_group_new(core->rcmd, C_cd, "Cf", rz_meta_format_handler, &meta_format_help, &Cf_help);
-	rz_warn_if_fail(Cf_cd);
-	RzCmdDesc *meta_format_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, Cf_cd, "Cfl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_meta_format_list_handler, &meta_format_list_help);
-	rz_warn_if_fail(meta_format_list_cd);
-
-	RzCmdDesc *meta_format_remove_cd = rz_cmd_desc_argv_new(core->rcmd, Cf_cd, "Cf-", rz_meta_format_remove_handler, &meta_format_remove_help);
-	rz_warn_if_fail(meta_format_remove_cd);
-
-	RzCmdDesc *meta_format_remove_all_cd = rz_cmd_desc_argv_new(core->rcmd, Cf_cd, "Cf-*", rz_meta_format_remove_all_handler, &meta_format_remove_all_help);
-	rz_warn_if_fail(meta_format_remove_all_cd);
-
-	RzCmdDesc *Cd_cd = rz_cmd_desc_group_new(core->rcmd, C_cd, "Cd", rz_meta_data_handler, &meta_data_help, &Cd_help);
-	rz_warn_if_fail(Cd_cd);
-	RzCmdDesc *meta_data_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, Cd_cd, "Cdl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_meta_data_list_handler, &meta_data_list_help);
-	rz_warn_if_fail(meta_data_list_cd);
-
-	RzCmdDesc *meta_data_at_cd = rz_cmd_desc_argv_new(core->rcmd, Cd_cd, "Cd.", rz_meta_data_at_handler, &meta_data_at_help);
-	rz_warn_if_fail(meta_data_at_cd);
-
-	RzCmdDesc *meta_data_remove_cd = rz_cmd_desc_argv_new(core->rcmd, Cd_cd, "Cd-", rz_meta_data_remove_handler, &meta_data_remove_help);
-	rz_warn_if_fail(meta_data_remove_cd);
-
-	RzCmdDesc *meta_data_remove_all_cd = rz_cmd_desc_argv_new(core->rcmd, Cd_cd, "Cd-*", rz_meta_data_remove_all_handler, &meta_data_remove_all_help);
-	rz_warn_if_fail(meta_data_remove_all_cd);
-
-	RzCmdDesc *Ch_cd = rz_cmd_desc_group_new(core->rcmd, C_cd, "Ch", rz_meta_hidden_handler, &meta_hidden_help, &Ch_help);
-	rz_warn_if_fail(Ch_cd);
-	RzCmdDesc *meta_hidden_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, Ch_cd, "Chl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_meta_hidden_list_handler, &meta_hidden_list_help);
-	rz_warn_if_fail(meta_hidden_list_cd);
-
-	RzCmdDesc *meta_hidden_remove_cd = rz_cmd_desc_argv_new(core->rcmd, Ch_cd, "Ch-", rz_meta_hidden_remove_handler, &meta_hidden_remove_help);
-	rz_warn_if_fail(meta_hidden_remove_cd);
-
-	RzCmdDesc *meta_hidden_remove_all_cd = rz_cmd_desc_argv_new(core->rcmd, Ch_cd, "Ch-*", rz_meta_hidden_remove_all_handler, &meta_hidden_remove_all_help);
-	rz_warn_if_fail(meta_hidden_remove_all_cd);
-
-	RzCmdDesc *Cm_cd = rz_cmd_desc_group_new(core->rcmd, C_cd, "Cm", rz_meta_magic_handler, &meta_magic_help, &Cm_help);
-	rz_warn_if_fail(Cm_cd);
-	RzCmdDesc *meta_magic_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, Cm_cd, "Cml", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_meta_magic_list_handler, &meta_magic_list_help);
-	rz_warn_if_fail(meta_magic_list_cd);
-
-	RzCmdDesc *meta_magic_remove_cd = rz_cmd_desc_argv_new(core->rcmd, Cm_cd, "Cm-", rz_meta_magic_remove_handler, &meta_magic_remove_help);
-	rz_warn_if_fail(meta_magic_remove_cd);
-
-	RzCmdDesc *meta_magic_remove_all_cd = rz_cmd_desc_argv_new(core->rcmd, Cm_cd, "Cm-*", rz_meta_magic_remove_all_handler, &meta_magic_remove_all_help);
-	rz_warn_if_fail(meta_magic_remove_all_cd);
-
-	RzCmdDesc *Cs_cd = rz_cmd_desc_group_new(core->rcmd, C_cd, "Cs", rz_meta_string_handler, &meta_string_help, &Cs_help);
-	rz_warn_if_fail(Cs_cd);
-	RzCmdDesc *meta_string_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, Cs_cd, "Csl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_meta_string_list_handler, &meta_string_list_help);
-	rz_warn_if_fail(meta_string_list_cd);
-
-	RzCmdDesc *meta_string_at_cd = rz_cmd_desc_argv_state_new(core->rcmd, Cs_cd, "Cs.", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_LONG | RZ_OUTPUT_MODE_QUIET, rz_meta_string_at_handler, &meta_string_at_help);
-	rz_warn_if_fail(meta_string_at_cd);
-
-	RzCmdDesc *meta_string_remove_cd = rz_cmd_desc_argv_new(core->rcmd, Cs_cd, "Cs-", rz_meta_string_remove_handler, &meta_string_remove_help);
-	rz_warn_if_fail(meta_string_remove_cd);
-
-	RzCmdDesc *meta_string_remove_all_cd = rz_cmd_desc_argv_new(core->rcmd, Cs_cd, "Cs-*", rz_meta_string_remove_all_handler, &meta_string_remove_all_help);
-	rz_warn_if_fail(meta_string_remove_all_cd);
-
-	RzCmdDesc *meta_string_pascal_cd = rz_cmd_desc_argv_new(core->rcmd, Cs_cd, "Csp", rz_meta_string_pascal_handler, &meta_string_pascal_help);
-	rz_warn_if_fail(meta_string_pascal_cd);
-
-	RzCmdDesc *meta_string_utf8_cd = rz_cmd_desc_argv_new(core->rcmd, Cs_cd, "Cs8", rz_meta_string_utf8_handler, &meta_string_utf8_help);
-	rz_warn_if_fail(meta_string_utf8_cd);
-
-	RzCmdDesc *meta_string_8bit_cd = rz_cmd_desc_argv_new(core->rcmd, Cs_cd, "Csb", rz_meta_string_8bit_handler, &meta_string_8bit_help);
-	rz_warn_if_fail(meta_string_8bit_cd);
-
-	RzCmdDesc *meta_string_wide16_cd = rz_cmd_desc_argv_new(core->rcmd, Cs_cd, "Csw", rz_meta_string_wide16_handler, &meta_string_wide16_help);
-	rz_warn_if_fail(meta_string_wide16_cd);
-
-	RzCmdDesc *meta_string_wide32_cd = rz_cmd_desc_argv_new(core->rcmd, Cs_cd, "CsW", rz_meta_string_wide32_handler, &meta_string_wide32_help);
-	rz_warn_if_fail(meta_string_wide32_cd);
-
-	RzCmdDesc *Ct_cd = rz_cmd_desc_group_new(core->rcmd, C_cd, "Ct", rz_meta_type_handler, &meta_type_help, &Ct_help);
-	rz_warn_if_fail(Ct_cd);
-	RzCmdDesc *meta_type_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, Ct_cd, "Ctl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_meta_type_list_handler, &meta_type_list_help);
-	rz_warn_if_fail(meta_type_list_cd);
-
-	RzCmdDesc *meta_type_remove_cd = rz_cmd_desc_argv_new(core->rcmd, Ct_cd, "Ct-", rz_meta_type_remove_handler, &meta_type_remove_help);
-	rz_warn_if_fail(meta_type_remove_cd);
-
-	RzCmdDesc *meta_type_remove_all_cd = rz_cmd_desc_argv_new(core->rcmd, Ct_cd, "Ct-*", rz_meta_type_remove_all_handler, &meta_type_remove_all_help);
-	rz_warn_if_fail(meta_type_remove_all_cd);
-
-	RzCmdDesc *meta_type_current_cd = rz_cmd_desc_argv_new(core->rcmd, Ct_cd, "Ct.", rz_meta_type_current_handler, &meta_type_current_help);
-	rz_warn_if_fail(meta_type_current_cd);
-
-	RzCmdDesc *Cv_cd = rz_cmd_desc_group_new(core->rcmd, C_cd, "Cv", rz_meta_var_comment_append_handler, &meta_var_comment_append_help, &Cv_help);
-	rz_warn_if_fail(Cv_cd);
-	RzCmdDesc *meta_var_comment_remove_cd = rz_cmd_desc_argv_new(core->rcmd, Cv_cd, "Cv-", rz_meta_var_comment_remove_handler, &meta_var_comment_remove_help);
-	rz_warn_if_fail(meta_var_comment_remove_cd);
-
-	RzCmdDesc *meta_var_comment_editor_cd = rz_cmd_desc_argv_new(core->rcmd, Cv_cd, "Cve", rz_meta_var_comment_editor_handler, &meta_var_comment_editor_help);
-	rz_warn_if_fail(meta_var_comment_editor_cd);
-
-	RzCmdDesc *meta_var_comment_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, Cv_cd, "Cvl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_meta_var_comment_list_handler, &meta_var_comment_list_help);
-	rz_warn_if_fail(meta_var_comment_list_cd);
-
-	RzCmdDesc *meta_var_bp_comment_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, Cv_cd, "Cvb", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_meta_var_bp_comment_list_handler, &meta_var_bp_comment_list_help);
-	rz_warn_if_fail(meta_var_bp_comment_list_cd);
-
-	RzCmdDesc *meta_var_reg_comment_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, Cv_cd, "Cvr", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_meta_var_reg_comment_list_handler, &meta_var_reg_comment_list_help);
-	rz_warn_if_fail(meta_var_reg_comment_list_cd);
-
-	RzCmdDesc *meta_var_stack_comment_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, Cv_cd, "Cvs", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_meta_var_stack_comment_list_handler, &meta_var_stack_comment_list_help);
-	rz_warn_if_fail(meta_var_stack_comment_list_cd);
+	RzCmdDesc *cmd_meta_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "C", rz_cmd_meta, &cmd_meta_help);
+	rz_warn_if_fail(cmd_meta_cd);
 
 	RzCmdDesc *cmd_debug_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "d", rz_cmd_debug, &cmd_debug_help);
 	rz_warn_if_fail(cmd_debug_cd);

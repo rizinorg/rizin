@@ -189,8 +189,9 @@ commands:
     summary: Compare block with given data
     type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: C
+    cname: cmd_meta
     summary: Code metadata (comments, format, hints, ..)
-    subcommands: cmd_meta
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: d
     cname: cmd_debug
     summary: Debugger commands

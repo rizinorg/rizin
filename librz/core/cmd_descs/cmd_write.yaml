@@ -102,7 +102,7 @@ commands:
   - name: w0
     cname: write_zero
     summary: Write <len> bytes with value 0x00
-    description: Fill <len> bytes starting from the current offset with the value 0.
+    description: Fill len bytes starting from the current offset with the value 0.
     args:
       - name: len
         type: RZ_CMD_ARG_TYPE_NUM
@@ -119,7 +119,7 @@ commands:
           - name: w1+
             cname: write_1_inc
             summary: Increment a byte
-            description: Increment a byte at the current offset by 1 or <n>, if specified
+            description: Increment a byte at the current offset by 1 or n, if specified
             args:
               - name: n
                 type: RZ_CMD_ARG_TYPE_NUM
@@ -127,7 +127,7 @@ commands:
           - name: w1-
             cname: write_1_dec
             summary: Decrement a byte
-            description: Decrement a byte at the current offset by 1 or <n>, if specified
+            description: Decrement a byte at the current offset by 1 or n, if specified
             args:
               - name: n
                 type: RZ_CMD_ARG_TYPE_NUM
@@ -148,7 +148,7 @@ commands:
           - name: w2+
             cname: write_2_inc
             summary: Increment a word
-            description: Increment a word at the current offset by 1 or <n>, if specified
+            description: Increment a word at the current offset by 1 or n, if specified
             args:
               - name: n
                 type: RZ_CMD_ARG_TYPE_NUM
@@ -156,7 +156,7 @@ commands:
           - name: w2-
             cname: write_2_dec
             summary: Decrement a word
-            description: Decrement a word at the current offset by 1 or <n>, if specified
+            description: Decrement a word at the current offset by 1 or n, if specified
             args:
               - name: n
                 type: RZ_CMD_ARG_TYPE_NUM
@@ -177,7 +177,7 @@ commands:
           - name: w4+
             cname: write_4_inc
             summary: Increment a dword
-            description: Increment a dword at the current offset by 1 or <n>, if specified
+            description: Increment a dword at the current offset by 1 or n, if specified
             args:
               - name: n
                 type: RZ_CMD_ARG_TYPE_NUM
@@ -185,7 +185,7 @@ commands:
           - name: w4-
             cname: write_4_dec
             summary: Decrement a dword
-            description: Decrement a dword at the current offset by 1 or <n>, if specified
+            description: Decrement a dword at the current offset by 1 or n, if specified
             args:
               - name: n
                 type: RZ_CMD_ARG_TYPE_NUM
@@ -206,7 +206,7 @@ commands:
           - name: w8+
             cname: write_8_inc
             summary: Increment a qword
-            description: Increment a qword at the current offset by 1 or <n>, if specified
+            description: Increment a qword at the current offset by 1 or n, if specified
             args:
               - name: n
                 type: RZ_CMD_ARG_TYPE_NUM
@@ -214,7 +214,7 @@ commands:
           - name: w8-
             cname: write_8_dec
             summary: Decrement a qword
-            description: Decrement a qword at the current offset by 1 or <n>, if specified
+            description: Decrement a qword at the current offset by 1 or n, if specified
             args:
               - name: n
                 type: RZ_CMD_ARG_TYPE_NUM

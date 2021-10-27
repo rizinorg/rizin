@@ -1026,6 +1026,9 @@ EXPECT=<<EOF
 EOF
 RUN
 
+
+
+
 NAME=reflines offset 2 (ascii)
 FILE=bins/elf/analysis/ls-alxchk
 CMDS=<<EOF
@@ -1964,7 +1967,7 @@ FILE=bins/firmware/main.avr
 CMDS=<<EOF
 e asm.bytes=true
 f str.hello 12 @ 0x276
-Csb 12 @ str.hello
+Csa 12 @ str.hello
 axd 0x260 @ str.hello
 pd 1 @ 0x260
 EOF

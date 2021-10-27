@@ -22,7 +22,7 @@ commands:
     args: []
   - name: yf
     cname: yank_file
-    summary: Yank <len> bytes from file
+    summary: Yank [len] bytes from file
     args:
       - name: len
         type: RZ_CMD_ARG_TYPE_RZNUM
@@ -50,7 +50,7 @@ commands:
         optional: true
   - name: yt
     cname: yank_to
-    summary: Copy <len> bytes from current seek to <offset>
+    summary: Copy [len] bytes from current seek to [offset]
     args:
       - name: len
         type: RZ_CMD_ARG_TYPE_RZNUM
@@ -71,7 +71,7 @@ commands:
         optional: true
   - name: yy
     cname: yank_paste
-    summary: Paste <len> bytes from yank clipboard
+    summary: Paste [len] bytes from yank clipboard
     args:
       - name: len
         type: RZ_CMD_ARG_TYPE_RZNUM

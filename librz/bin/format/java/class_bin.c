@@ -1014,7 +1014,7 @@ RZ_API RZ_OWN RzList *rz_bin_java_class_strings(RZ_NONNULL RzBinJavaClass *bin) 
 			bstr->length = cpool->size;
 			bstr->size = cpool->size;
 			bstr->string = string;
-			bstr->type = RZ_BIN_STRING_ENC_MUTF8;
+			bstr->type = RZ_STRING_TYPE_MUTF8;
 			rz_list_append(list, bstr);
 		}
 	}
@@ -1032,7 +1032,7 @@ RZ_API RZ_OWN RzList *rz_bin_java_class_strings(RZ_NONNULL RzBinJavaClass *bin) 
 			bstr->length = attr->attribute_length;
 			bstr->size = attr->attribute_length;
 			bstr->string = strdup(attr->info);
-			bstr->type = RZ_BIN_STRING_ENC_UTF8;
+			bstr->type = RZ_STRING_TYPE_UTF8;
 			rz_list_append(list, bstr);
 		}
 	}

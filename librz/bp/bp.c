@@ -311,7 +311,7 @@ RZ_API int rz_bp_list(RzBreakpoint *bp, int rad) {
 			if (b->module_name) {
 				bp->cb_printf("dbm %s %" PFMT64d "\n", b->module_name, b->module_delta);
 			} else {
-				bp->cb_printf("db @ 0x%08" PFMT64x "\n", b->addr);
+				bp->cb_printf("db 0x%08" PFMT64x "\n", b->addr);
 			}
 		} else if (rad == -1) {
 			bp->cb_printf("0x%08" PFMT64x "\n", b->addr);
