@@ -110,7 +110,7 @@ RZ_API char *rz_core_get_theme(void) {
 	return curtheme;
 }
 
-RZ_API RzList *rz_core_list_themes(RzCore *core) {
+RZ_API RZ_OWN RzList *rz_core_list_themes(RzCore *core) {
 	RzList *list = rz_list_newf(free);
 	getNext = false;
 	char *tmp = strdup("default");
@@ -300,6 +300,7 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_load_theme_handler(RzCore *core, int argc, 
 		rz_list_foreach (themes_list, th_iter, th) {
 			rz_cons_printf("%s\n", th);
 		}
+		rz_list_free(themes_list);
 		break;
 	default:
 		themes_list = rz_core_list_themes(core);
@@ -310,6 +311,7 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_load_theme_handler(RzCore *core, int argc, 
 				rz_cons_printf("  %s\n", th);
 			}
 		}
+		rz_list_free(themes_list);
 	}
 	return RZ_CMD_STATUS_OK;
 }
