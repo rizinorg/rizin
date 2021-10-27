@@ -8192,6 +8192,7 @@ static void cmd_analysis_aC(RzCore *core, const char *input) {
 			}
 		}
 		rz_reg_setv(core->analysis->reg, sp, spv); // reset stack ptr
+		rz_list_free(list);
 	}
 	char *s = rz_strbuf_drain(sb);
 	if (is_aCer) {
