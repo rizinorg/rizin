@@ -378,13 +378,13 @@ static RzTypeStructMember *parse_struct_member(const RzTypeDB *typedb, RzPdbTpiS
 	}
 	case LF_BCLASS:
 		// For structure, we don't need base class for now
-		return NULL;
+		goto cleanup;
 	case LF_METHOD:
 		// TODO: need to handle overloaded methods here
-		return NULL;
+		goto cleanup;
 	case LF_VFUNCTAB:
 		// For structure, we don't need vtable for now
-		return NULL;
+		goto cleanup;
 	default:
 		eprintf("%s : unsupported leaf type 0x%x\n", __FUNCTION__, type_info->leaf_type);
 		goto cleanup;
@@ -403,6 +403,7 @@ static RzTypeStructMember *parse_struct_member(const RzTypeDB *typedb, RzPdbTpiS
 	member->offset = offset;
 	return member;
 cleanup:
+	rz_type_free(type);
 	return NULL;
 }
 
