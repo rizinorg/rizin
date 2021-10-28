@@ -30,10 +30,10 @@ RZ_API RzILOp *rz_il_new_op(RzILOPCode code) {
 
 	switch (code) {
 	case RZIL_OP_VAR:
-		ret->op.var = (RzILOpVar *)RZ_NEW0(RzILOpVar);
+		ret->op.var = RZ_NEW0(RzILOpVar);
 		break;
 	case RZIL_OP_ITE:
-		ret->op.ite = (RzILOpIte *)RZ_NEW0(RzILOpIte);
+		ret->op.ite = RZ_NEW0(RzILOpIte);
 		break;
 	case RZIL_OP_UNK:
 		ret->op.unk = NULL;
@@ -43,26 +43,26 @@ RZ_API RzILOp *rz_il_new_op(RzILOPCode code) {
 		ret->op.b0 = NULL;
 		break;
 	case RZIL_OP_AND_:
-		ret->op.and_ = (RzILOpAnd_ *)RZ_NEW0(RzILOpAnd_);
+		ret->op.and_ = RZ_NEW0(RzILOpAnd_);
 		break;
 	case RZIL_OP_OR_:
-		ret->op.or_ = (RzILOpOr_ *)RZ_NEW0(RzILOpOr_);
+		ret->op.or_ = RZ_NEW0(RzILOpOr_);
 		break;
 	case RZIL_OP_INV:
-		ret->op.inv = (RzILOpInv *)RZ_NEW0(RzILOpInv);
+		ret->op.inv = RZ_NEW0(RzILOpInv);
 		break;
 	case RZIL_OP_INT:
-		ret->op.int_ = (RzILOpInt *)RZ_NEW0(RzILOpInt);
+		ret->op.int_ = RZ_NEW0(RzILOpInt);
 		break;
 	case RZIL_OP_MSB:
 	case RZIL_OP_LSB:
-		ret->op.lsb = (RzILOpMsb *)RZ_NEW0(RzILOpLsb);
+		ret->op.lsb = RZ_NEW0(RzILOpLsb);
 		break;
 	case RZIL_OP_NEG:
-		ret->op.neg = (RzILOpNeg *)RZ_NEW0(RzILOpNeg);
+		ret->op.neg = RZ_NEW0(RzILOpNeg);
 		break;
 	case RZIL_OP_NOT:
-		ret->op.not_ = (RzILOpNot *)RZ_NEW0(RzILOpNot);
+		ret->op.not_ = RZ_NEW0(RzILOpNot);
 		break;
 	case RZIL_OP_ADD:
 	case RZIL_OP_SUB:
@@ -75,25 +75,28 @@ RZ_API RzILOp *rz_il_new_op(RzILOPCode code) {
 	case RZIL_OP_LOGOR:
 	case RZIL_OP_LOGXOR:
 		// trick to set union members
-		ret->op.add = (RzILOpAdd *)RZ_NEW0(RzILOpAdd);
+		ret->op.add = RZ_NEW0(RzILOpAdd);
 		break;
 	case RZIL_OP_LOAD:
-		ret->op.load = (RzILOpLoad *)RZ_NEW0(RzILOpLoad);
+		ret->op.load = RZ_NEW0(RzILOpLoad);
 		break;
 	case RZIL_OP_STORE:
-		ret->op.store = (RzILOpStore *)RZ_NEW0(RzILOpStore);
+		ret->op.store = RZ_NEW0(RzILOpStore);
 		break;
 	case RZIL_OP_SET:
-		ret->op.set = (RzILOpSet *)RZ_NEW0(RzILOpSet);
+		ret->op.set = RZ_NEW0(RzILOpSet);
+		break;
+	case RZIL_OP_CAST:
+		ret->op.cast = RZ_NEW0(RzILOpCast);
 		break;
 	case RZIL_OP_PERFORM:
-		ret->op.perform = (RzILOpPerform *)RZ_NEW0(RzILOpPerform);
+		ret->op.perform = RZ_NEW0(RzILOpPerform);
 		break;
 	case RZIL_OP_BRANCH:
-		ret->op.branch = (RzILOpBranch *)RZ_NEW0(RzILOpBranch);
+		ret->op.branch = RZ_NEW0(RzILOpBranch);
 		break;
 	case RZIL_OP_GOTO:
-		ret->op.goto_ = (RzILOpGoto *)RZ_NEW0(RzILOpGoto);
+		ret->op.goto_ = RZ_NEW0(RzILOpGoto);
 		break;
 	default:
 		free(ret);
