@@ -5,10 +5,71 @@
 #include <rz_asm.h>
 #include <rz_list.h>
 
-RZ_API int rz_cmp_compare(RzCore *core, const ut8 *addr, int len, RzCompareOutputMode mode) {
+RZ_API RZ_OWN RzCompareData *rz_cmp_data_data(RZ_NONNULL RzCore *core, ut64 addr1, ut64 addr2, ut64 len) {
+	rz_return_val_if_fail(core, NULL);
+
+	ut8 *buf1 = malloc(len * sizeof(ut8));
+	ut8 *buf2 = malloc(len * sizeof(ut8));
+	if (!buf1 || !buf2) {
+		goto error_goto;
+	}
+	if (!rz_io_read_at(core->io, addr1, buf1, len) || !rz_io_read_at(core->io, addr2, buf2, len)) {
+		RZ_LOG_ERROR("Cannot read at provided addresses: 0x%" PFMT64x " 0x%" PFMT64x "\n", addr1, addr2);
+		goto error_goto;
+	}
+	RzCompareData *cmp = RZ_NEW0(RzCompareData);
+	if (!cmp) {
+		goto error_goto;
+	}
+	cmp->len = len;
+	cmp->data1 = buf1;
+	cmp->addr1 = addr1;
+	cmp->data2 = buf2;
+	cmp->addr2 = addr2;
+	cmp->same = rz_mem_eq(cmp->data1, cmp->data2, len);
+	return cmp;
+
+error_goto:
+	free(buf1);
+	free(buf2);
+	return NULL;
+}
+
+RZ_API RZ_OWN RzCompareData *rz_cmp_data_str(RZ_NONNULL RzCore *core, ut64 addr1, RZ_NONNULL const ut8 *str, ut64 len) {
+	rz_return_val_if_fail(core && str, NULL);
+
+	ut8 *buf1 = malloc(len * sizeof(ut8));
+	if (!buf1) {
+		RZ_LOG_ERROR("Cannot read at address: 0x%" PFMT64x "\n", addr1);
+		goto error_goto;
+	}
+	if (!rz_io_read_at(core->io, addr1, buf1, len)) {
+		goto error_goto;
+	}
+	RzCompareData *cmp = RZ_NEW0(RzCompareData);
+	if (!cmp) {
+		goto error_goto;
+	}
+	cmp->len = len;
+	cmp->data1 = buf1;
+	cmp->addr1 = addr1;
+	cmp->data2 = rz_mem_dup(str, len);
+	cmp->addr2 = UT64_MAX;
+	cmp->same = rz_mem_eq(cmp->data1, cmp->data2, len);
+	return cmp;
+
+error_goto:
+	free(buf1);
+	return NULL;
+}
+
+RZ_API int rz_cmp_print(RZ_NONNULL RzCore *core, RZ_NONNULL const RzCompareData *cmp, RzCompareOutputMode mode) {
+	rz_return_val_if_fail(core && cmp, 0);
+
 	int i, eq = 0;
+	bool data_str = cmp->addr2 == UT64_MAX;
 	PJ *pj = NULL;
-	if (len < 1) {
+	if (cmp->len == UT8_MAX) {
 		return 0;
 	}
 	if (mode == RZ_COMPARE_MODE_JSON) {
@@ -20,29 +81,33 @@ RZ_API int rz_cmp_compare(RzCore *core, const ut8 *addr, int len, RzCompareOutpu
 		pj_k(pj, "diff_bytes");
 		pj_a(pj);
 	}
-	for (i = 0; i < len; i++) {
-		if (core->block[i] == addr[i]) {
+	for (i = 0; i < cmp->len; i++) {
+		if (cmp->data1[i] == cmp->data2[i]) {
 			eq++;
 			continue;
 		}
 		switch (mode) {
 		case RZ_COMPARE_MODE_DEFAULT:
-			rz_cons_printf("0x%08" PFMT64x " (byte=%.2d)   %02x '%c'  ->  %02x '%c'\n",
-				core->offset + i, i + 1,
-				core->block[i], (IS_PRINTABLE(core->block[i])) ? core->block[i] : ' ',
-				addr[i], (IS_PRINTABLE(addr[i])) ? addr[i] : ' ');
+			rz_cons_printf("0x%08" PFMT64x, cmp->addr1 + i);
+			if (!data_str) {
+				rz_cons_printf("  ->  0x%08" PFMT64x, cmp->addr2 + i);
+			}
+			rz_cons_printf(" (byte=%.2d)   %02x '%c'  ->  %02x '%c'\n", i + 1,
+				cmp->data1[i], (IS_PRINTABLE(cmp->data1[i])) ? cmp->data1[i] : ' ',
+				cmp->data2[i], (IS_PRINTABLE(cmp->data2[i])) ? cmp->data2[i] : ' ');
 			break;
 		case RZ_COMPARE_MODE_RIZIN:
 			rz_cons_printf("wx %02x @ 0x%08" PFMT64x "\n",
-				addr[i],
-				core->offset + i);
+				cmp->data2[i],
+				cmp->addr1 + i);
 			break;
 		case RZ_COMPARE_MODE_JSON:
 			pj_o(pj);
-			pj_kn(pj, "offset", core->offset + i);
+			pj_kn(pj, "offset1", cmp->addr1 + i);
+			pj_kn(pj, "offset2", data_str ? i : cmp->addr2 + i);
 			pj_ki(pj, "rel_offset", i);
-			pj_ki(pj, "value", (int)core->block[i]);
-			pj_ki(pj, "cmp_value", (int)addr[i]);
+			pj_ki(pj, "value1", (int)cmp->data1[i]);
+			pj_ki(pj, "value2", (int)cmp->data2[i]);
 			pj_end(pj);
 			break;
 		default:
@@ -50,20 +115,20 @@ RZ_API int rz_cmp_compare(RzCore *core, const ut8 *addr, int len, RzCompareOutpu
 		}
 	}
 	if (mode == RZ_COMPARE_MODE_DEFAULT) {
-		eprintf("Compare %d/%d equal bytes (%d%%)\n", eq, len, (eq / len) * 100);
+		rz_cons_printf("Compare %d/%d equal bytes (%d%%)\n", eq, cmp->len, (int)(100.0 * eq / cmp->len));
 	} else if (mode == RZ_COMPARE_MODE_JSON) {
 		pj_end(pj);
 		pj_ki(pj, "equal_bytes", eq);
-		pj_ki(pj, "total_bytes", len);
+		pj_ki(pj, "total_bytes", cmp->len);
 		pj_end(pj); // End array
 		pj_end(pj); // End object
 		rz_cons_println(pj_string(pj));
 	}
-	return len - eq;
+	return cmp->len - eq;
 }
 
 RZ_API RZ_OWN RzList /*<RzCompareData>*/ *rz_cmp_disasm(RZ_NONNULL RzCore *core, RZ_NONNULL const char *input) {
-	rz_return_val_if_fail(core && input, false);
+	rz_return_val_if_fail(core && input, NULL);
 
 	RzList *cmp_list = rz_list_new();
 	if (!cmp_list) {
@@ -95,11 +160,12 @@ RZ_API RZ_OWN RzList /*<RzCompareData>*/ *rz_cmp_disasm(RZ_NONNULL RzCore *core,
 		(void)rz_asm_disassemble(core->rasm, &op2,
 			buf + j, core->blocksize - j);
 
-		comp->same = rz_strbuf_equals(&op.buf_asm, &op2.buf_asm);
+		comp->len = UT8_MAX;
 		comp->data1 = (ut8 *)strdup(rz_strbuf_get(&op.buf_asm));
 		comp->addr1 = core->offset + i;
 		comp->data2 = (ut8 *)strdup(rz_strbuf_get(&op2.buf_asm));
 		comp->addr2 = off + j;
+		comp->same = rz_mem_eq(comp->data1, comp->data2, comp->len);
 		rz_list_append(cmp_list, comp);
 
 		if (op.size < 1) {
@@ -172,13 +238,15 @@ RZ_API bool rz_cmp_disasm_print(RzCore *core, const RzList /*<RzCompareData>*/ *
 }
 
 /* cmpwatch API */
-RZ_API void rz_core_cmpwatch_free(RzCoreCmpWatcher *w) {
+RZ_API void rz_core_cmpwatch_free(RZ_NONNULL RzCoreCmpWatcher *w) {
+	rz_return_if_fail(w);
 	free(w->ndata);
 	free(w->odata);
 	free(w);
 }
 
-RZ_API RzCoreCmpWatcher *rz_core_cmpwatch_get(RzCore *core, ut64 addr) {
+RZ_API RzCoreCmpWatcher *rz_core_cmpwatch_get(RZ_NONNULL RzCore *core, ut64 addr) {
+	rz_return_val_if_fail(core, NULL);
 	RzListIter *iter;
 	RzCoreCmpWatcher *w;
 	rz_list_foreach (core->watchers, iter, w) {
@@ -189,7 +257,8 @@ RZ_API RzCoreCmpWatcher *rz_core_cmpwatch_get(RzCore *core, ut64 addr) {
 	return NULL;
 }
 
-RZ_API bool rz_core_cmpwatch_add(RzCore *core, ut64 addr, int size, const char *cmd) {
+RZ_API bool rz_core_cmpwatch_add(RZ_NONNULL RzCore *core, ut64 addr, int size, const char *cmd) {
+	rz_return_val_if_fail(core, false);
 	RzCoreCmpWatcher *cmpw;
 	if (size < 1) {
 		return false;
@@ -215,7 +284,8 @@ RZ_API bool rz_core_cmpwatch_add(RzCore *core, ut64 addr, int size, const char *
 	return true;
 }
 
-RZ_API int rz_core_cmpwatch_del(RzCore *core, ut64 addr) {
+RZ_API bool rz_core_cmpwatch_del(RZ_NONNULL RzCore *core, ut64 addr) {
+	rz_return_val_if_fail(core, false);
 	int ret = false;
 	RzCoreCmpWatcher *w;
 	RzListIter *iter, *iter2;
@@ -228,7 +298,8 @@ RZ_API int rz_core_cmpwatch_del(RzCore *core, ut64 addr) {
 	return ret;
 }
 
-RZ_API void rz_core_cmpwatch_show(RzCore *core, ut64 addr, RzCompareOutputMode mode) {
+RZ_API void rz_core_cmpwatch_show(RZ_NONNULL RzCore *core, ut64 addr, RzCompareOutputMode mode) {
+	rz_return_if_fail(core);
 	char cmd[128];
 	RzListIter *iter;
 	RzCoreCmpWatcher *w;
@@ -255,7 +326,8 @@ RZ_API void rz_core_cmpwatch_show(RzCore *core, ut64 addr, RzCompareOutputMode m
 	}
 }
 
-RZ_API bool rz_core_cmpwatch_update(RzCore *core, ut64 addr) {
+RZ_API bool rz_core_cmpwatch_update(RZ_NONNULL RzCore *core, ut64 addr) {
+	rz_return_val_if_fail(core, false);
 	RzCoreCmpWatcher *w;
 	RzListIter *iter;
 	rz_list_foreach (core->watchers, iter, w) {
@@ -270,7 +342,8 @@ RZ_API bool rz_core_cmpwatch_update(RzCore *core, ut64 addr) {
 	return !rz_list_empty(core->watchers);
 }
 
-RZ_API bool rz_core_cmpwatch_revert(RzCore *core, ut64 addr) {
+RZ_API bool rz_core_cmpwatch_revert(RZ_NONNULL RzCore *core, ut64 addr) {
+	rz_return_val_if_fail(core, false);
 	RzCoreCmpWatcher *w;
 	int ret = false;
 	RzListIter *iter;

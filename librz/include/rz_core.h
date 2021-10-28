@@ -991,13 +991,13 @@ typedef enum {
 } RzCompareOutputMode;
 
 /* watchers */
-RZ_API void rz_core_cmpwatch_free(RzCoreCmpWatcher *w);
-RZ_API RzCoreCmpWatcher *rz_core_cmpwatch_get(RzCore *core, ut64 addr);
-RZ_API bool rz_core_cmpwatch_add(RzCore *core, ut64 addr, int size, const char *cmd);
-RZ_API int rz_core_cmpwatch_del(RzCore *core, ut64 addr);
-RZ_API bool rz_core_cmpwatch_update(RzCore *core, ut64 addr);
-RZ_API void rz_core_cmpwatch_show(RzCore *core, ut64 addr, RzCompareOutputMode mode);
-RZ_API bool rz_core_cmpwatch_revert(RzCore *core, ut64 addr);
+RZ_API void rz_core_cmpwatch_free(RZ_NONNULL RzCoreCmpWatcher *w);
+RZ_API RzCoreCmpWatcher *rz_core_cmpwatch_get(RZ_NONNULL RzCore *core, ut64 addr);
+RZ_API bool rz_core_cmpwatch_add(RZ_NONNULL RzCore *core, ut64 addr, int size, const char *cmd);
+RZ_API bool rz_core_cmpwatch_del(RZ_NONNULL RzCore *core, ut64 addr);
+RZ_API bool rz_core_cmpwatch_update(RZ_NONNULL RzCore *core, ut64 addr);
+RZ_API void rz_core_cmpwatch_show(RZ_NONNULL RzCore *core, ut64 addr, RzCompareOutputMode mode);
+RZ_API bool rz_core_cmpwatch_revert(RZ_NONNULL RzCore *core, ut64 addr);
 
 // TODO MOVE SOMEWHERE ELSE
 typedef char *(*PrintItemCallback)(void *user, void *p, bool selected);

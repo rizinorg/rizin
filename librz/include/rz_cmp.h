@@ -12,14 +12,18 @@ extern "C" {
 #endif
 
 typedef struct {
+	ut8 len; // max 255 bytes diff in one struct
+	bool same;
 	ut8 *data1;
 	ut8 *data2;
 	ut64 addr1;
 	ut64 addr2;
-	bool same;
 } RzCompareData;
 
-RZ_API int rz_cmp_compare(RzCore *core, const ut8 *addr, int len, RzCompareOutputMode mode);
+RZ_API RZ_OWN RzCompareData *rz_cmp_data_data(RZ_NONNULL RzCore *core, ut64 addr1, ut64 addr2, ut64 len);
+RZ_API RZ_OWN RzCompareData *rz_cmp_data_str(RZ_NONNULL RzCore *core, ut64 addr1, RZ_NONNULL const ut8 *str, ut64 len);
+RZ_API int rz_cmp_print(RZ_NONNULL RzCore *core, RZ_NONNULL const RzCompareData *cmp, RzCompareOutputMode mode);
+RZ_API RZ_OWN RzList /*<RzCompareData>*/ *rz_cmp_disasm(RZ_NONNULL RzCore *core, RZ_NONNULL const char *input);
 RZ_API RZ_OWN RzList /*<RzCompareData>*/ *rz_cmp_disasm(RZ_NONNULL RzCore *core, RZ_NONNULL const char *input);
 RZ_API bool rz_cmp_disasm_print(RzCore *core, const RzList /*<RzCompareData>*/ *compare, bool unified);
 
