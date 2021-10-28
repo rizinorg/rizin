@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+---
+name: cmd_open
+commands:
+  - name: o
+    cname: open
+    summary: Open <file> and map it at <addr> with the specified permissions <perm>
+    args:
+      - name: file
+        type: RZ_CMD_ARG_TYPE_FILE
+      - name: addr
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
+      - name: perm
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+  - name: ol
+    cname: open_list
+    summary: List opened files
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    default_mode: RZ_OUTPUT_MODE_TABLE
+    modes:
+      - RZ_OUTPUT_MODE_TABLE
+      - RZ_OUTPUT_MODE_JSON
+    args: []
+  - name: o-
+    cname: open_close
+    summary: Close file descriptor
+    args:
+      - name: file_descriptor
+        type: RZ_CMD_ARG_TYPE_NUM

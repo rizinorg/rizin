@@ -452,10 +452,9 @@ static bool test_autocmplt_tmp_operators(void) {
 	RzLineNSCompletionResult *r = rz_core_autocomplete_rzshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
 
 	mu_assert_notnull(r, "r should not be null");
-	// TODO: WHY the +1????
-	mu_assert_eq(r->start, strlen("pd @ "), "should autocomplete the @ operator");
-	mu_assert_eq(r->end, buf->length + 1, "should autocomplete ending at end of buffer");
-	mu_assert_eq(rz_pvector_len(&r->options), 16, "there are 16 @ operators (see @?)");
+	mu_assert_eq(r->start, strlen("pd "), "should autocomplete the @ operator");
+	mu_assert_eq(r->end, buf->length, "should autocomplete ending at end of buffer");
+
 	const char *tmp_ops[] = {
 		"@ ",
 		"@!",
@@ -473,7 +472,35 @@ static bool test_autocmplt_tmp_operators(void) {
 		"@s:",
 		"@v:",
 		"@x:",
+		"@@.",
+		"@@=",
+		"@@@=",
+		"@@",
+		"@@c:",
+		"@@@c:",
+		"@@C",
+		"@@C:",
+		"@@dbt",
+		"@@dbtb",
+		"@@dbts",
+		"@@t",
+		"@@b",
+		"@@i",
+		"@@ii",
+		"@@iS",
+		"@@iSS",
+		"@@is",
+		"@@iz",
+		"@@f",
+		"@@f:",
+		"@@F",
+		"@@F:",
+		"@@om",
+		"@@dm",
+		"@@r",
+		"@@s:",
 	};
+	mu_assert_eq(rz_pvector_len(&r->options), RZ_ARRAY_SIZE(tmp_ops), "there are all @/@@/@@ operators (see @?, @@?)");
 	int i;
 	for (i = 0; i < RZ_ARRAY_SIZE(tmp_ops); i++) {
 		char msg[100];
