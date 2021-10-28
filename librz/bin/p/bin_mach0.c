@@ -84,7 +84,7 @@ static RzBinAddr *newEntry(ut64 hpaddr, ut64 paddr, int type, int bits) {
 		ptr->hpaddr = hpaddr;
 		ptr->bits = bits;
 		ptr->type = type;
-		//realign due to thumb
+		// realign due to thumb
 		if (bits == 16 && ptr->vaddr & 1) {
 			ptr->paddr--;
 			ptr->vaddr--;
@@ -158,7 +158,7 @@ static RzList *entries(RzBinFile *bf) {
 		ptr->vaddr = entry->addr;
 		ptr->hpaddr = entry->haddr;
 		ptr->bits = bits;
-		//realign due to thumb
+		// realign due to thumb
 		if (bits == 16) {
 			if (ptr->vaddr & 1) {
 				ptr->paddr--;
@@ -271,7 +271,7 @@ static RzList *symbols(RzBinFile *bf) {
 #endif
 		rz_list_append(ret, ptr);
 	}
-	//functions from LC_FUNCTION_STARTS
+	// functions from LC_FUNCTION_STARTS
 	if (bin->func_start) {
 		ut64 value = 0, address = 0;
 		const ut8 *temp = bin->func_start;
@@ -522,6 +522,10 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
+static RzList *classes(RzBinFile *bf) {
+	return MACH0_(parse_classes)(bf, NULL);
+}
+
 #if !RZ_BIN_MACH064
 
 static bool check_buffer(RzBuffer *b) {
@@ -536,6 +540,7 @@ static bool check_buffer(RzBuffer *b) {
 	}
 	return false;
 }
+
 static RzBuffer *create(RzBin *bin, const ut8 *code, int clen, const ut8 *data, int dlen, RzBinArchOptions *opt) {
 	const bool use_pagezero = true;
 	const bool use_main = true;
@@ -814,8 +819,8 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol sym) {
 		if (addr == UT64_MAX || !(ret = RZ_NEW0(RzBinAddr))) {
 			return NULL;
 		}
-		//if (bf->o->info && bf->o->info->bits == 16) {
-		// align for thumb
+		// if (bf->o->info && bf->o->info->bits == 16) {
+		//  align for thumb
 		ret->vaddr = ((addr >> 1) << 1);
 		//}
 		ret->paddr = ret->vaddr;
@@ -867,9 +872,9 @@ RzBinPlugin rz_bin_plugin_mach0 = {
 	.libs = &libs,
 	.relocs = &relocs,
 	.create = &create,
-	.classes = &MACH0_(parse_classes),
+	.classes = &classes,
 	.section_type_to_string = &MACH0_(section_type_to_string),
-	.section_flag_to_rzlist = &MACH0_(section_flag_to_rzlist),
+	.section_flag_to_rzlist = &MACH0_(section_flag_to_rzlist)
 };
 
 #ifndef RZ_PLUGIN_INCORE
