@@ -5,7 +5,8 @@
 #include <rz_il/rzil_opcodes.h>
 
 void *rz_il_handler_load(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
-	rz_return_val_if_fail(op, NULL);
+	rz_return_val_if_fail(vm && op && type, NULL);
+
 	RzILOpLoad *op_load = op->op.load;
 	RzILMem *m = vm->mems[op_load->mem];
 
@@ -25,7 +26,7 @@ void *rz_il_handler_load(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 }
 
 void *rz_il_handler_store(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
-	rz_return_val_if_fail(op, NULL);
+	rz_return_val_if_fail(vm && op && type, NULL);
 
 	RzILOpStore *op_store = op->op.store;
 	RzILMem *m = vm->mems[op_store->mem];

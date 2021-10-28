@@ -436,6 +436,56 @@ RZ_IPI void rz_core_analysis_rzil_reinit(RzCore *core) {
 	}
 
 	rz_analysis_rzil_setup(core->analysis);
+	if (core->analysis->rzil) {
+		// initialize the program counter with the current offset
+		rz_il_bv_set_from_ut64(core->analysis->rzil->vm->pc, core->offset);
+	}
+}
+
+static void rzil_print_register(int padding, const char *reg_name, RzILBitVector *number, RzStrBuf *sb) {
+	char *hex = rz_il_bv_as_hex_string(number);
+	if (sb) {
+		rz_strbuf_appendf(sb, " %s: %s ", reg_name, hex);
+		if (rz_strbuf_length(sb) > 95) {
+			rz_cons_printf("%s\n", rz_strbuf_get(sb));
+			rz_strbuf_fini(sb);
+		}
+	} else {
+		const char *arrow = !rz_il_bv_is_zero_vector(number) ? " <--" : "";
+		rz_cons_printf("%*s: %s%s\n", padding, reg_name, hex, arrow);
+	}
+	free(hex);
+}
+
+RZ_IPI void rz_core_analysis_rzil_vm_status(RzCore *core) {
+	RzAnalysisRzil *rzil = core->analysis->rzil;
+	if (!rzil || !rzil->vm) {
+		RZ_LOG_ERROR("RzIL: the VM is not initialized.")
+		return;
+	}
+
+	bool compact = rz_config_get_i(core->config, "rzil.status.compact");
+
+	int namelen = 2;
+	for (ut32 i = 0; i < rzil->vm->var_count; ++i) {
+		RzILVar *var = rzil->vm->vm_global_variable_list[i];
+		int len = strlen(var->var_name);
+		namelen = RZ_MAX(namelen, len);
+	}
+	rz_cons_printf("RzIL VM status\n");
+	RzStrBuf *sb = compact ? rz_strbuf_new("") : NULL;
+
+	rzil_print_register(namelen, "PC", rzil->vm->pc, sb);
+	for (ut32 i = 0; i < rzil->vm->var_count; ++i) {
+		RzILVar *var = rzil->vm->vm_global_variable_list[i];
+		RzILVal *val = rz_il_hash_find_val_by_var(rzil->vm, var);
+		rzil_print_register(namelen, var->var_name, val->data.bv, sb);
+	}
+
+	if (sb && rz_strbuf_length(sb) > 0) {
+		rz_cons_printf("%s\n", rz_strbuf_get(sb));
+	}
+	rz_strbuf_free(sb);
 }
 
 // step a list of ct_opcode at a given address
@@ -443,7 +493,7 @@ RZ_IPI void rz_core_rzil_step(RzCore *core) {
 	RzPVector *oplist;
 
 	if (!core->analysis || !core->analysis->rzil) {
-		RZ_LOG_ERROR("Run 'aezi' to init RZIL VM first\n");
+		RZ_LOG_ERROR("RzIL: Run 'aezi' first to initialize the VM\n");
 		return;
 	}
 
@@ -465,12 +515,12 @@ RZ_IPI void rz_core_rzil_step(RzCore *core) {
 	ut8 code[32];
 	// analysis current data to trigger rzil_set_op_code
 	(void)rz_io_read_at_mapped(core->io, addr, code, sizeof(code));
-	rz_analysis_op(analysis, &op, addr, code, sizeof(code), RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_HINT);
-	oplist = op.rzil_op->ops;
+	int size = rz_analysis_op(analysis, &op, addr, code, sizeof(code), RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_HINT);
+	oplist = op.rzil_op ? op.rzil_op->ops : NULL;
 
 	if (oplist) {
-		rz_il_vm_list_step(vm, oplist);
+		rz_il_vm_list_step(vm, oplist, size > 0 ? size : 1);
 	} else {
-		eprintf("Invalid instruction detected or reach the end of code\n");
+		eprintf("Invalid instruction detected or reach the end of code at address 0x%08" PFMT64x "\n", addr);
 	}
 }

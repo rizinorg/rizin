@@ -18,7 +18,7 @@ typedef void (*RzILBagFreeFunc)(void *);
  *  The main purpose of introducing RzILBag is to prevent excessive growth in the number of RzILVal
  *  It's mainly used to clean up unused values during VM execution, and clean up values at the end
  */
-struct rz_il_bag_t {
+typedef struct rz_il_bag_t {
 	void **data_list; ///< Space to carry pointers
 	int item_count; ///< count current items
 	int capcity; ///< maximum size
@@ -26,8 +26,7 @@ struct rz_il_bag_t {
 	int next_pos; ///< internal variable, used for managing space
 	int sp; ///< internal variable, used for managing space
 	RzILBagFreeFunc free_func; ///< Function pointer to free RzILVal
-};
-typedef struct rz_il_bag_t RzILBag;
+} RzILBag;
 
 RZ_API RzILBag *rz_il_new_bag(int capcity, RzILBagFreeFunc func);
 RZ_API bool rz_il_rm_from_bag(RzILBag *bag, void *item);
