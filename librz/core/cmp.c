@@ -5,7 +5,7 @@
 #include <rz_asm.h>
 #include <rz_list.h>
 
-RZ_API RZ_OWN RzCompareData *rz_cmp_data_data(RZ_NONNULL RzCore *core, ut64 addr1, ut64 addr2, ut64 len) {
+RZ_API RZ_OWN RzCompareData *rz_cmp_data_data(RZ_NONNULL RzCore *core, ut64 addr1, ut64 addr2, ut32 len) {
 	rz_return_val_if_fail(core, NULL);
 
 	ut8 *buf1 = malloc(len * sizeof(ut8));
@@ -35,7 +35,7 @@ error_goto:
 	return NULL;
 }
 
-RZ_API RZ_OWN RzCompareData *rz_cmp_data_str(RZ_NONNULL RzCore *core, ut64 addr1, RZ_NONNULL const ut8 *str, ut64 len) {
+RZ_API RZ_OWN RzCompareData *rz_cmp_data_str(RZ_NONNULL RzCore *core, ut64 addr1, RZ_NONNULL const ut8 *str, ut32 len) {
 	rz_return_val_if_fail(core && str, NULL);
 
 	ut8 *buf1 = malloc(len * sizeof(ut8));
@@ -54,7 +54,7 @@ RZ_API RZ_OWN RzCompareData *rz_cmp_data_str(RZ_NONNULL RzCore *core, ut64 addr1
 	cmp->data1 = buf1;
 	cmp->addr1 = addr1;
 	cmp->data2 = rz_mem_dup(str, len);
-	cmp->addr2 = UT64_MAX;
+	cmp->addr2 = UT32_MAX;
 	cmp->same = rz_mem_eq(cmp->data1, cmp->data2, len);
 	return cmp;
 

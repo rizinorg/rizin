@@ -52,37 +52,22 @@ static int rizin_compare_words(RzCore *core, ut64 of, ut64 od, int len, int ws) 
 	return 0;
 }
 
-static int rizin_compare_unified(RzCore *core, ut64 of, ut64 od, int len) {
-	int i, min, inc = 16;
-	ut8 *f, *d;
-	if (len < 1) {
-		return false;
-	}
-	f = malloc(len);
-	if (!f) {
-		return false;
-	}
-	d = malloc(len);
-	if (!d) {
-		free(f);
-		return false;
-	}
-	rz_io_read_at(core->io, of, f, len);
-	rz_io_read_at(core->io, od, d, len);
+static bool rizin_compare_unified(RzCore *core, RzCompareData *cmp) {
+	int i, min = 1, inc = 16;
 	int headers = B_IS_SET(core->print->flags, RZ_PRINT_FLAGS_HEADER);
 	if (headers) {
 		B_UNSET(core->print->flags, RZ_PRINT_FLAGS_HEADER);
 	}
-	for (i = 0; i < len; i += inc) {
-		min = RZ_MIN(16, (len - i));
-		if (!memcmp(f + i, d + i, min)) {
+	for (i = 0; i < cmp->len; i += inc) {
+		min = RZ_MIN(16, (cmp->len - i));
+		if (!memcmp(cmp->data1 + i, cmp->data2 + i, min)) {
 			rz_cons_printf("  ");
-			rz_print_hexdiff(core->print, of + i, f + i, of + i, f + i, min, 0);
+			rz_print_hexdiff(core->print, cmp->addr1 + i, cmp->data1 + i, cmp->addr1 + i, cmp->data1 + i, min, 0);
 		} else {
 			rz_cons_printf("- ");
-			rz_print_hexdiff(core->print, of + i, f + i, od + i, d + i, min, 0);
+			rz_print_hexdiff(core->print, cmp->addr1 + i, cmp->data1 + i, cmp->addr2 + i, cmp->data2 + i, min, 0);
 			rz_cons_printf("+ ");
-			rz_print_hexdiff(core->print, od + i, d + i, of + i, f + i, min, 0);
+			rz_print_hexdiff(core->print, cmp->addr2 + i, cmp->data2 + i, cmp->addr1 + i, cmp->data1 + i, min, 0);
 		}
 	}
 	if (headers) {
@@ -297,8 +282,10 @@ return_goto:
 
 // cu
 RZ_IPI RzCmdStatus rz_cmd_cmp_unified_handler(RzCore *core, int argc, const char **argv) {
-	rizin_compare_unified(core, core->offset, rz_num_math(core->num, argv[1]), core->blocksize);
-	return RZ_CMD_STATUS_OK;
+	RzCompareData *cmp = rz_cmp_data_data(core, core->offset, rz_num_math(core->num, argv[1]), core->blocksize);
+	bool ret = rizin_compare_unified(core, cmp);
+	free(cmp);
+	return ret ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
 // cu1
