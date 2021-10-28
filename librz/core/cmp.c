@@ -170,3 +170,119 @@ RZ_API bool rz_cmp_disasm_print(RzCore *core, const RzList /*<RzCompareData>*/ *
 
 	return true;
 }
+
+/* cmpwatch API */
+RZ_API void rz_core_cmpwatch_free(RzCoreCmpWatcher *w) {
+	free(w->ndata);
+	free(w->odata);
+	free(w);
+}
+
+RZ_API RzCoreCmpWatcher *rz_core_cmpwatch_get(RzCore *core, ut64 addr) {
+	RzListIter *iter;
+	RzCoreCmpWatcher *w;
+	rz_list_foreach (core->watchers, iter, w) {
+		if (addr == w->addr) {
+			return w;
+		}
+	}
+	return NULL;
+}
+
+RZ_API bool rz_core_cmpwatch_add(RzCore *core, ut64 addr, int size, const char *cmd) {
+	RzCoreCmpWatcher *cmpw;
+	if (size < 1) {
+		return false;
+	}
+	cmpw = rz_core_cmpwatch_get(core, addr);
+	if (!cmpw) {
+		cmpw = RZ_NEW(RzCoreCmpWatcher);
+		if (!cmpw) {
+			return false;
+		}
+		cmpw->addr = addr;
+	}
+	cmpw->size = size;
+	snprintf(cmpw->cmd, sizeof(cmpw->cmd), "%s", cmd);
+	cmpw->odata = NULL;
+	cmpw->ndata = malloc(size);
+	if (!cmpw->ndata) {
+		free(cmpw);
+		return false;
+	}
+	rz_io_read_at(core->io, addr, cmpw->ndata, size);
+	rz_list_append(core->watchers, cmpw);
+	return true;
+}
+
+RZ_API int rz_core_cmpwatch_del(RzCore *core, ut64 addr) {
+	int ret = false;
+	RzCoreCmpWatcher *w;
+	RzListIter *iter, *iter2;
+	rz_list_foreach_safe (core->watchers, iter, iter2, w) {
+		if (w->addr == addr || addr == UT64_MAX) {
+			rz_list_delete(core->watchers, iter);
+			ret = true;
+		}
+	}
+	return ret;
+}
+
+RZ_API void rz_core_cmpwatch_show(RzCore *core, ut64 addr, RzCompareOutputMode mode) {
+	char cmd[128];
+	RzListIter *iter;
+	RzCoreCmpWatcher *w;
+	rz_list_foreach (core->watchers, iter, w) {
+		int is_diff = w->odata ? memcmp(w->odata, w->ndata, w->size) : 0;
+		switch (mode) {
+		case RZ_COMPARE_MODE_RIZIN:
+			rz_cons_printf("cw 0x%08" PFMT64x " %d %s%s\n",
+				w->addr, w->size, w->cmd, is_diff ? " # differs" : "");
+			break;
+		case RZ_COMPARE_MODE_DIFF: // diff
+			if (is_diff) {
+				rz_cons_printf("0x%08" PFMT64x " has changed\n", w->addr);
+			}
+		case RZ_COMPARE_MODE_DEFAULT:
+			rz_cons_printf("0x%08" PFMT64x "%s\n", w->addr, is_diff ? " modified" : "");
+			snprintf(cmd, sizeof(cmd), "%s@%" PFMT64d "!%d",
+				w->cmd, w->addr, w->size);
+			rz_core_cmd0(core, cmd);
+			break;
+		default:
+			rz_warn_if_reached();
+		}
+	}
+}
+
+RZ_API bool rz_core_cmpwatch_update(RzCore *core, ut64 addr) {
+	RzCoreCmpWatcher *w;
+	RzListIter *iter;
+	rz_list_foreach (core->watchers, iter, w) {
+		free(w->odata);
+		w->odata = w->ndata;
+		w->ndata = malloc(w->size);
+		if (!w->ndata) {
+			return false;
+		}
+		rz_io_read_at(core->io, w->addr, w->ndata, w->size);
+	}
+	return !rz_list_empty(core->watchers);
+}
+
+RZ_API bool rz_core_cmpwatch_revert(RzCore *core, ut64 addr) {
+	RzCoreCmpWatcher *w;
+	int ret = false;
+	RzListIter *iter;
+	rz_list_foreach (core->watchers, iter, w) {
+		if (w->addr == addr || addr == UT64_MAX) {
+			if (w->odata) {
+				free(w->ndata);
+				w->ndata = w->odata;
+				w->odata = NULL;
+				ret = true;
+			}
+		}
+	}
+	return ret;
+}
