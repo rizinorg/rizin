@@ -438,7 +438,7 @@ RZ_IPI void rz_core_analysis_rzil_reinit(RzCore *core) {
 	rz_analysis_rzil_setup(core->analysis);
 	if (core->analysis->rzil) {
 		// initialize the program counter with the current offset
-		rz_il_bv_set_from_ut32(core->analysis->rzil->vm->pc, core->offset);
+		rz_il_bv_set_from_ut64(core->analysis->rzil->vm->pc, core->offset);
 	}
 }
 
