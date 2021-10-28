@@ -3537,7 +3537,7 @@ RZ_API void rz_core_visual_colors(RzCore *core) {
 		}
 		rz_cons_rgb_str(cstr, sizeof(cstr), &rcolor);
 		char *esc = strchr(cstr + 1, '\x1b');
-		char *curtheme = rz_core_get_theme();
+		char *curtheme = rz_core_theme_get();
 
 		rz_cons_printf("# Use '.' to randomize current color and ':' to randomize palette\n");
 		rz_cons_printf("# Press '" Color_RED "rR" Color_GREEN "gG" Color_BLUE "bB" Color_RESET
