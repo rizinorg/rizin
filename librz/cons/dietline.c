@@ -1879,11 +1879,6 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 			__delete_prev_char();
 			break;
 		case 9: // TAB tab
-			if (I.buffer.length > 0 && I.buffer.data[I.buffer.length - 1] == '@') {
-				strcpy(I.buffer.data + I.buffer.length, " ");
-				I.buffer.length++;
-				I.buffer.index++;
-			}
 			if (I.sel_widget) {
 				selection_widget_down(1);
 				I.sel_widget->complete_common = true;

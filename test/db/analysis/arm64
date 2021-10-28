@@ -7,7 +7,7 @@ wx e18f1394 # BL XXX
 sd +4
 wx 00013fd6 # BLR x8
 ao~type[1]
-ao@0~type[1]
+ao@ 0~type[1]
 /at call
 ?e --
 /at ucall
@@ -80,9 +80,9 @@ RUN
 NAME=ao mte irg addg
 FILE=bins/mach0/hello-mte
 CMDS=<<EOF
-ao@0x100007f10
+ao@ 0x100007f10
 ?e --
-ao@0x100007f14
+ao@ 0x100007f14
 EOF
 EXPECT=<<EOF
 address: 0x100007f10
@@ -126,11 +126,11 @@ FILE==
 ARGS=-a arm -b 64 -e cfg.bigendian=true
 CMDS=<<EOF
 wx 91a0090c918201099ac813e8
-ao@0
+ao@ 0
 ?e ---
-ao@4
+ao@ 4
 ?e ---
-ao@8
+ao@ 8
 EOF
 EXPECT=<<EOF
 address: 0x0

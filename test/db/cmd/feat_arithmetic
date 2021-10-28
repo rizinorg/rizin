@@ -24,7 +24,7 @@ NAME=div $$
 FILE=malloc://1024
 CMDS=<<EOF
 ?v 10/2
-?v $$/2@10
+?v $$/2@ 10
 EOF
 EXPECT=<<EOF
 0x5
@@ -37,7 +37,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 wv 10
 ?v [0]/2
-?v $$/2@[0]
+?v $$/2@ [0]
 EOF
 EXPECT=<<EOF
 0x5
@@ -62,7 +62,7 @@ RUN
 NAME=sum
 FILE==
 CMDS=<<EOF
-f a@3
+f a@ 3
 ?v a+3
 ?v a +3
 ?v a+ 3

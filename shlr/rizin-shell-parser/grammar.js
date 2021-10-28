@@ -191,13 +191,13 @@ module.exports = grammar({
     iter_step_stmt: ($) => prec.right(1, seq($._simple_stmt, "@@s:", $.args)),
 
     // tmp changes statements
-    tmp_seek_stmt: ($) => prec.right(1, seq($._simple_stmt, "@", $.args)),
+    tmp_seek_stmt: ($) => prec.right(1, seq($._simple_stmt, "@ ", $.args)),
     tmp_blksz_stmt: ($) => prec.right(1, seq($._simple_stmt, "@!", $.args)),
     tmp_fromto_stmt: ($) => prec.right(1, seq($._simple_stmt, "@(", $.args, ")")),
     tmp_arch_stmt: ($) => prec.right(1, seq($._simple_stmt, "@a:", $.arg)),
     tmp_bits_stmt: ($) => prec.right(1, seq($._simple_stmt, "@b:", $.args)),
     tmp_nthi_stmt: ($) => prec.right(1, seq($._simple_stmt, "@B:", $.arg)),
-    tmp_eval_stmt: ($) => prec.right(1, seq($._simple_stmt, "@e:", $.tmp_eval_args)),
+    tmp_eval_stmt: ($) => prec.right(1, seq($._simple_stmt, "@e:", alias($.tmp_eval_args, $.args))),
     tmp_fs_stmt: ($) => prec.right(1, seq($._simple_stmt, "@F:", $.arg)),
     tmp_reli_stmt: ($) => prec.right(1, seq($._simple_stmt, "@i:", $.args)),
     tmp_kuery_stmt: ($) => prec.right(1, seq($._simple_stmt, "@k:", $.arg)),
@@ -397,8 +397,8 @@ module.exports = grammar({
     arg: ($) => choice($._arg, $.concatenation),
     args: ($) => prec.left(repeat1($.arg)),
     // TODO: this should accept a quoted_arg and a cmd_substitution_arg as well
-    tmp_eval_args: ($) => prec.left(seq($.tmp_eval_arg, repeat(seq(",", $.tmp_eval_arg)))),
-    tmp_eval_arg: ($) => repeat1(noneOf(...SPECIAL_CHARACTERS_COMMA)),
+    tmp_eval_args: ($) => prec.left(seq(alias($.tmp_eval_arg, $.arg), repeat(seq(",", alias($.tmp_eval_arg, $.arg))))),
+    tmp_eval_arg: ($) => alias(repeat1(noneOf(...SPECIAL_CHARACTERS_COMMA)), $.arg_identifier),
 
     _eq_sep_key_single: ($) =>
       choice(

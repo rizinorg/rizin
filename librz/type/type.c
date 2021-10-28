@@ -1078,7 +1078,7 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 		}
 	}
 
-	if (strnlen(pointer_str, 1) != 0 || identifier || strnlen(array_str, 1) != 0) {
+	if (rz_str_nlen(pointer_str, 1) != 0 || identifier || rz_str_nlen(array_str, 1) != 0) {
 		rz_strbuf_append(buf, " "); // add space only if the type is pointer or an array or has an identifier
 	}
 	rz_strbuf_appendf(buf, "%s%s%s", pointer_str ? pointer_str : "", identifier ? identifier : "", array_str ? array_str : "");

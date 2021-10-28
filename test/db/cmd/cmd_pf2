@@ -17,8 +17,8 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.bits=32
 wx 341289679a020000a00f00002a003000000014426416
-wx 800600000040@0x20
-wx 14000000641620000000@0x30
+wx 800600000040 @ 0x20
+wx 14000000641620000000 @ 0x30
 pf.troll iw*? integer word (troll)Bah
 pf.plop i?w first (troll)Boh bwa
 pf.gobelin 2ww?x blah meh (plop)Buh foo
@@ -34,8 +34,8 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.bits=32
 wx 341289679a020000a00f00002a003000000014426416
-wx 800600000040@0x20
-wx 14000000641620000000@0x30
+wx 800600000040 @ 0x20
+wx 14000000641620000000 @ 0x30
 pf.troll iw*? integer word (troll)Bah
 pf.plop i?w first (troll)Boh bwa
 pf.gobelin ww?x blah meh (plop)Buh foo
@@ -101,8 +101,8 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.bits=32
 wx 341289679a020000a00f00002a003000000014426416
-wx 800600000040@0x20
-wx 14000000641620000000@0x30
+wx 800600000040 @ 0x20
+wx 14000000641620000000 @ 0x30
 pf.troll iw*? integer word (troll)Bah
 pf.plop i?w first (troll)Boh bwa
 pf.gobelin ww?x blah meh (plop)Buh foo

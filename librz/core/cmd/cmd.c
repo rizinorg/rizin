@@ -1187,9 +1187,9 @@ RZ_IPI int rz_cmd_pointer(void *data, const char *input) {
 	if (eq) {
 		*eq++ = 0;
 		if (!strncmp(eq, "0x", 2)) {
-			ret = rz_core_cmdf(core, "wv %s@%s", eq, str);
+			ret = rz_core_cmdf(core, "wv %s @ %s", eq, str);
 		} else {
-			ret = rz_core_cmdf(core, "wx %s@%s", eq, str);
+			ret = rz_core_cmdf(core, "wx %s @ %s", eq, str);
 		}
 	} else {
 		ret = rz_core_cmdf(core, "?v [%s]", input);
@@ -6040,7 +6040,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "o", "open or map file", rz_cmd_open },
 		{ "p", "print current block", rz_cmd_print },
 		{ "q", "exit program session", rz_cmd_quit },
-		{ "s", "seek to an offset", rz_cmd_seek },
 		{ "V", "enter visual mode", rz_cmd_visual },
 		{ "v", "enter visual mode", rz_cmd_panels },
 		{ "w", "write bytes", rz_cmd_write },

@@ -153,8 +153,8 @@ static bool sdb_load_sysregs(RzSysregsDB *sysregdb, Sdb *sdb) {
 			name = sdbkv_key(kv);
 			sysregitem = rz_sysreg_item_new(name);
 			argument_key = rz_str_newf("%s.address", name);
-
 			if (!argument_key) {
+				rz_sysreg_item_free(sysregitem);
 				return false;
 			}
 			ut64 address = sdb_num_get(sdb, argument_key, NULL);

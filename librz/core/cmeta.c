@@ -84,10 +84,10 @@ RZ_IPI void rz_core_meta_print(RzCore *core, RzAnalysisMetaItem *d, ut64 start, 
 					base64_str = rz_base64_encode_dyn((const ut8 *)rgb_str, strlen(rgb_str));
 					if (d->type == RZ_META_TYPE_STRING && base64_str) {
 						pj_s(pj, base64_str);
-						free(base64_str);
 					} else {
 						pj_s(pj, rgb_str);
 					}
+					free(base64_str);
 					free(rgb_str);
 				} else {
 					pj_s(pj, str);

@@ -120,7 +120,7 @@ CMDS=<<EOF
 e cfg.bigendian=false
 aeim
 "ae 0x69686766,0x00100000,=[4]"
-psz @0x00100000
+psz @ 0x00100000
 EOF
 EXPECT=<<EOF
 fghi
@@ -134,7 +134,7 @@ CMDS=<<EOF
 e cfg.bigendian=true
 aeim
 "ae 0x69686766,0x00100000,=[4]"
-psz @0x00100000
+psz @ 0x00100000
 EOF
 EXPECT=<<EOF
 ihgf
@@ -164,7 +164,7 @@ aeim
 ar r0=0x00100000
 ar r1=0x69686766
 "ae r1,1,r0,=[*]"
-p8 4@0x00100000
+p8 4@ 0x00100000
 EOF
 EXPECT=<<EOF
 69686766
@@ -180,7 +180,7 @@ aeim
 ar x0=0x00100000
 ar x1=0x69686766
 "ae x1,1,x0,=[*]"
-p8 8@0x00100000
+p8 8 @ 0x00100000
 EOF
 EXPECT=<<EOF
 0000000069686766
@@ -196,7 +196,7 @@ aeim
 ar r0=0x00100000
 ar r1=0x69686766
 "ae r1,1,r0,=[*]"
-p8 4@0x00100000
+p8 4 @ 0x00100000
 EOF
 EXPECT=<<EOF
 66676869
@@ -212,7 +212,7 @@ aeim
 ar x0=0x00100000
 ar x1=0x69686766
 "ae x1,1,x0,=[*]"
-p8 8@0x00100000
+p8 8@ 0x00100000
 EOF
 EXPECT=<<EOF
 6667686900000000
@@ -228,7 +228,7 @@ aeim
 ar x0=0x00100000
 ar x1=0x69686766
 "ae x1,0xffffffff,x0,=[*]"
-p8 8@0x00100000
+p8 8 @ 0x00100000
 EOF
 EXPECT=<<EOF
 6667686900000000

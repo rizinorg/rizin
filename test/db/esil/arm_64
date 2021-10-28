@@ -6,8 +6,8 @@ e asm.bits=64
 ar > /dev/null
 ar sp=4
 wx f91740f9
-w0 0x28@4
-wx 8877665544332211cacacacacaca@0x2c
+w0 0x28@ 4
+wx 8877665544332211cacacacacaca@ 0x2c
 aes
 ar x25
 EOF
@@ -24,8 +24,8 @@ e asm.bits=64
 ar > /dev/null
 ar sp=0x2c
 wx f9835df8
-w0 0x28@4
-wx 8877665544332211cacacacacaca@4
+w0 0x28@ 4
+wx 8877665544332211cacacacacaca@ 4
 aes
 ar x25
 EOF
@@ -42,8 +42,8 @@ e asm.bits=64
 ar > /dev/null
 ar sp=4
 wx f91740f9
-w0 0x28@4
-wx 8877665544332211cacacacacaca@0x2c
+w0 0x28@ 4
+wx 8877665544332211cacacacacaca@ 0x2c
 aes
 ar x25
 EOF
@@ -60,8 +60,8 @@ e asm.bits=64
 ar > /dev/null
 ar sp=4
 wx ec1f40b9
-w0 0x1c@4
-wx 8877665544332211cacacacacaca@0x20
+w0 0x1c@ 4
+wx 8877665544332211cacacacacaca@ 0x20
 aes
 ar w12
 EOF
@@ -74,8 +74,8 @@ NAME=ldrsw x9, [x8, 0x468]
 FILE=malloc://0x200
 ARGS=-a arm -b 64 -m 0x464
 CMDS=<<EOF
-wx 096984b9@0x464
-wx 8877665544332211cacacacacaca@0x468
+wx 096984b9@ 0x464
+wx 8877665544332211cacacacacaca@ 0x468
 aei
 aeim
 aeip
@@ -95,7 +95,7 @@ e asm.bits=64
 ar > /dev/null
 ar x16=4
 wx 0a024039
-wx 8877665544332211cacacacacaca@4
+wx 8877665544332211cacacacacaca@ 4
 aes
 ar w10
 EOF
@@ -112,7 +112,7 @@ e asm.bits=64
 ar > /dev/null
 ar x16=4
 wx 0c064039
-wx 8877665544332211cacacacacaca@4
+wx 8877665544332211cacacacacaca@ 4
 aes
 ar w12
 EOF
@@ -130,7 +130,7 @@ ar > /dev/null
 ar x19=4
 ar x23=2
 wx 626a7738
-wx 8877665544332211cacacacacaca@4
+wx 8877665544332211cacacacacaca@ 4
 aes
 ar w2
 EOF
@@ -147,7 +147,7 @@ e asm.bits=64
 ar > /dev/null
 ar x8=4
 wx 170140f9
-wx 8877665544332211cacacacacaca@4
+wx 8877665544332211cacacacacaca@ 4
 aes
 ar x23
 EOF
@@ -164,7 +164,7 @@ e asm.bits=64
 ar > /dev/null
 ar x15=4
 wx e80140b9
-wx 8877665544332211cacacacacaca@4
+wx 8877665544332211cacacacacaca@ 4
 aes
 ar w8
 EOF
@@ -182,7 +182,7 @@ ar > /dev/null
 ar x10=4
 ar x9=2
 wx 4a7969b8
-wx 8877665544332211ffddeecccacacacacaca@4
+wx 8877665544332211ffddeecccacacacacaca@ 4
 aes
 ar w10
 EOF
@@ -200,7 +200,7 @@ ar > /dev/null
 ar x11=4
 ar w10=2
 wx 6a596ab8
-wx 8877665544332211ffddeecccacacacacaca@4
+wx 8877665544332211ffddeecccacacacacaca@ 4
 aes
 ar w10
 EOF
@@ -218,7 +218,7 @@ ar > /dev/null
 ar x13=4
 ar x9=4
 wx b06969f8
-wx 8877665544332211ffddeecccacacacacaca@4
+wx 8877665544332211ffddeecccacacacacaca@ 4
 aes
 ar x16
 EOF
@@ -236,7 +236,7 @@ ar > /dev/null
 ar x13=4
 ar x9=4
 wx b06969f8
-wx 8877665544332211ffddeecccacacacacaca@4
+wx 8877665544332211ffddeecccacacacacaca@ 4
 aes
 ar w16
 EOF
@@ -521,7 +521,7 @@ aer x5=5
 aer x8=0x100
 wx 000500a9000501a9020d82a908410091041581a8
 5aes
-px 64 @0x100; ar x8
+px 64 @ 0x100; ar x8
 EOF
 EXPECT=<<EOF
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF

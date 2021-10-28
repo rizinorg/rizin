@@ -6,7 +6,7 @@ db @ sym.main
 dc
 dmh > /dev/null
 aa > /dev/null
-pdf @sym.main~:1
+pdf @ sym.main~:1
 EOF
 EXPECT=<<EOF
 / int main (int argc, char **argv, char **envp);

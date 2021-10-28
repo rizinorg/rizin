@@ -378,8 +378,17 @@ if have_lrt and not lrt.found()
   lrt = cc.find_library('rt', required: true, static: is_static_build)
 endif
 
-code = '#include <unistd.h>\nextern char **environ;\nint main() { char **env = environ; }'
-have_environ = cc.links(code, name: 'have extern char **environ')
+if host_machine.system() == 'darwin'
+  # On older Mac OS X versions (at least Lion and older), environ is only available when compiling an executable,
+  # but we will use is primarily in shared libs. Unfortunately, cc.links() only checks for executable compiling,
+  # so this does not help us.
+  # But in fact, even the environ(7) man page on macOS 11.6 still claims that environ is not avaliable for
+  # shared libs (even though it seems to work) and suggests using _NSGetEnviron(), so let's just do this always.
+  have_environ = false
+else
+  code = '#include <unistd.h>\nextern char **environ;\nint main() { char **env = environ; }'
+  have_environ = cc.links(code, name: 'have extern char **environ')
+endif
 userconf.set10('HAVE_ENVIRON', have_environ)
 message('HAVE_ENVIRON: @0@'.format(have_environ))
 
@@ -405,6 +414,7 @@ foreach item : [
     ['nice', '#include <unistd.h>', []],
     ['copyfile', '#include <copyfile.h>', []],
     ['strlcpy', '#include <string.h>', []],
+    ['strnlen', '#include <string.h>', []],
     ['shm_open', '#include <sys/mman.h>', [lrt]],
     ['openpty', '', [utl]],
     ['forkpty', '', [utl]],
