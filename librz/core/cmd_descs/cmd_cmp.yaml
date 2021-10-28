@@ -6,6 +6,10 @@ commands:
   - name: c
     summary: Compare an escaped <string> with data at current offset
     cname: cmd_cmp_string
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
     args:
       - name: string
         type: RZ_CMD_ARG_TYPE_STRING

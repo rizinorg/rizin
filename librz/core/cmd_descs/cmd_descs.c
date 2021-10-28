@@ -8282,7 +8282,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *block_max_cd = rz_cmd_desc_argv_new(core->rcmd, b_cd, "bm", rz_block_max_handler, &block_max_help);
 	rz_warn_if_fail(block_max_cd);
 
-	RzCmdDesc *c_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "c", rz_cmd_cmp_string_handler, &cmd_cmp_string_help, &c_help);
+	RzCmdDesc *c_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "c", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_cmp_string_handler, &cmd_cmp_string_help, &c_help);
 	rz_warn_if_fail(c_cd);
 	RzCmdDesc *cmd_cmp_num1_cd = rz_cmd_desc_argv_new(core->rcmd, c_cd, "c1", rz_cmd_cmp_num1_handler, &cmd_cmp_num1_help);
 	rz_warn_if_fail(cmd_cmp_num1_cd);

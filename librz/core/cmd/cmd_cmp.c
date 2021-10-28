@@ -138,7 +138,8 @@ static bool core_cmp_bits(RzCore *core, ut64 addr) {
 }
 
 // c
-RZ_IPI RzCmdStatus rz_cmd_cmp_string_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_cmd_cmp_string_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *output) {
+	RzCompareOutputMode outmode = output->mode == RZ_OUTPUT_MODE_JSON ? RZ_COMPARE_MODE_JSON : RZ_COMPARE_MODE_DEFAULT;
 	RzCmdStatus ret = RZ_CMD_STATUS_ERROR;
 	char *unescaped = strdup(argv[1]);
 	int len = rz_str_unescape(unescaped);
@@ -146,7 +147,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_string_handler(RzCore *core, int argc, const char 
 	if (!cmp) {
 		goto end;
 	}
-	int val = rz_cmp_print(core, cmp, RZ_COMPARE_MODE_DEFAULT);
+	int val = rz_cmp_print(core, cmp, outmode);
 	if (val != 0) {
 		core->num->value = val;
 		ret = RZ_CMD_STATUS_OK;
