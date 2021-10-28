@@ -1,0 +1,89 @@
+NAME=hello world
+FILE=bins/bf/hello-ok.bf
+ARGS=-b32
+CMDS=<<EOF
+e asm.arch=bf
+e asm.bytes=true
+e analysis.arch=bf
+s 0
+aezi
+aezs 390
+EOF
+EXPECT=<<EOF
+Hello World!
+EOF
+RUN
+
+NAME=hello world - unbalanced loop
+FILE=bins/bf/hello-unbalanced-loop.bf
+ARGS=-b32
+CMDS=<<EOF
+e asm.arch=bf
+e asm.bytes=true
+e analysis.arch=bf
+e scr.utf8=false
+s 0
+pd 3 @ 0xa
+EOF
+EXPECT=<<EOF
+            0x0000000a      5b             while [ptr]
+            0x0000000b      3e             inc   ptr
+            0x0000000c      2b             inc   [ptr]
+EOF
+RUN
+
+NAME=loopy hello world
+FILE=bins/bf/hello-loops.bf
+ARGS=-b32
+CMDS=<<EOF
+s 0
+aezi
+aezs 906
+EOF
+EXPECT=<<EOF
+Hello World!
+EOF
+RUN
+
+NAME=instructions
+FILE=bins/bf/hello-loops.bf
+ARGS=-b32
+CMDS=<<EOF
+e asm.arch=bf
+e analysis.arch=bf
+ao @ 0x00 ~opcode
+ao @ 0x00 ~rzil
+ao @ 0x08 ~opcode
+ao @ 0x08 ~rzil
+ao @ 0x09 ~opcode
+ao @ 0x09 ~rzil
+ao @ 0x1c ~opcode
+ao @ 0x1c ~rzil
+ao @ 0x20 ~opcode
+ao @ 0x20 ~rzil
+ao @ 0x21 ~opcode
+ao @ 0x21 ~rzil
+ao @ 0x33 ~opcode
+ao @ 0x33 ~rzil
+ao @ 0x6a ~opcode
+ao @ 0x6a ~rzil
+EOF
+EXPECT=<<EOF
+opcode: inc [ptr]
+rzil: [store(k:var(ptr), v:add(load(k:var(ptr), m:0), int(n:1, l:8)), m:0)]
+opcode: while [ptr]
+rzil: [perform(branch(load(k:var(ptr), m:0), null, goto(]8)))]
+opcode: inc ptr
+rzil: [perform(set(d:ptr, s:add(var(ptr), int(n:1, l:64))))]
+opcode: dec ptr
+rzil: [perform(set(d:ptr, s:sub(var(ptr), int(n:1, l:64))))]
+opcode: dec [ptr]
+rzil: [store(k:var(ptr), v:sub(load(k:var(ptr), m:0), int(n:1, l:8)), m:0)]
+opcode: loop
+rzil: [perform(branch(inv(load(k:var(ptr), m:0), null), null, goto([14)))]
+opcode: out [ptr]
+rzil: [perform(goto(write))]
+opcode: nop
+rzil: []
+EOF
+RUN

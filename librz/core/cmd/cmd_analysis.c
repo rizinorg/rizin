@@ -1647,6 +1647,10 @@ static void core_analysis_bytes(RzCore *core, const ut8 *buf, int len, int nops,
 			if (jesil && *jesil) {
 				pj_ks(pj, "esil", jesil);
 			}
+			if (op.rzil_op) {
+				pj_k(pj, "rzil");
+				rz_il_json_list(op.rzil_op->ops, pj);
+			}
 			pj_kb(pj, "sign", op.sign);
 			pj_kn(pj, "prefix", op.prefix);
 			pj_ki(pj, "id", op.id);
@@ -1841,6 +1845,14 @@ static void core_analysis_bytes(RzCore *core, const ut8 *buf, int len, int nops,
 				printline("esil", "%s\n", hint->esil);
 			} else if (RZ_STR_ISNOTEMPTY(esilstr)) {
 				printline("esil", "%s\n", esilstr);
+			}
+			if (op.rzil_op) {
+				RzStrBuf *sbil = rz_strbuf_new("");
+				if (sbil) {
+					rz_il_dump_list(op.rzil_op->ops, sbil);
+					printline("rzil", "%s\n", rz_strbuf_get(sbil));
+					rz_strbuf_free(sbil);
+				}
 			}
 			if (hint && hint->jump != UT64_MAX) {
 				op.jump = hint->jump;

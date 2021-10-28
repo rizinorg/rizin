@@ -79,6 +79,9 @@ RZ_API void rz_il_vm_add_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name,
 RZ_API void rz_il_vm_store_opcodes_to_addr(RzILVM *vm, RzILBitVector *addr, RzPVector *oplist);
 RZ_API RzPVector *rz_il_make_oplist(int num, ...);
 
+RZ_API void rz_il_dump_list(RZ_NONNULL RzPVector *oplist, RZ_NONNULL RzStrBuf *sb);
+RZ_API void rz_il_json_list(RZ_NONNULL RzPVector *oplist, RZ_NONNULL PJ *pj);
+
 // VM auto convert functions
 RZ_API RzILBitVector *rz_il_evaluate_bitv(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 RZ_API RzILBool *rz_il_evaluate_bool(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
