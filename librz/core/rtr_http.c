@@ -4,7 +4,7 @@
 
 // return 1 on error
 
-static int rz_core_rtr_http_cmd(RzCore *core, RzSocketHTTPRequest* rs, char *cmd, char * out, char* headers){
+static int rz_core_rtr_http_cmd(RzCore *core, RzSocketHTTPRequest *rs, char *cmd, char *out, char *headers) {
 	if ((!strcmp(cmd, "Rh*") ||
 		    !strcmp(cmd, "Rh--"))) {
 		out = NULL;
@@ -342,7 +342,6 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 
 							rz_core_rtr_http_cmd(core, rs, cmd, out, headers);
 
-
 							if (!strcmp(cmd, "Rh*")) {
 								/* do stuff */
 								rz_socket_http_close(rs);
@@ -439,7 +438,7 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 				free(path);
 			}
 		} else if (!strcmp(rs->method, "POST")) {
-			if (!strncmp(rs->path, "/upload/", 8)){
+			if (!strncmp(rs->path, "/upload/", 8)) {
 				ut8 *ret;
 				int retlen;
 				char buf[128];
@@ -466,23 +465,22 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 				} else {
 					rz_socket_http_response(rs, 403, "403 Forbidden\n", 0, headers);
 				}
-			} else if (!strncmp(rs->path, "/cmd/", 5)){
-					char *out;
-					rz_config_set(core->config, "scr.interactive", "false");
-					rz_core_rtr_http_cmd(core, rs, (char*) rs->data, out, headers);
-					if (!strcmp((char*) rs->data, "Rh*")) {
-						/* do stuff */
-						rz_socket_http_close(rs);
-						free(dir);
-						ret = -2;
-						goto the_end;
-					} else if (!strcmp((char*)rs->data, "Rh--")) {
-						rz_socket_http_close(rs);
-						free(dir);
-						ret = 0;
-						goto the_end;
-					}
-			
+			} else if (!strncmp(rs->path, "/cmd/", 5)) {
+				char *out;
+				rz_config_set(core->config, "scr.interactive", "false");
+				rz_core_rtr_http_cmd(core, rs, (char *)rs->data, out, headers);
+				if (!strcmp((char *)rs->data, "Rh*")) {
+					/* do stuff */
+					rz_socket_http_close(rs);
+					free(dir);
+					ret = -2;
+					goto the_end;
+				} else if (!strcmp((char *)rs->data, "Rh--")) {
+					rz_socket_http_close(rs);
+					free(dir);
+					ret = 0;
+					goto the_end;
+				}
 			}
 
 		} else {
@@ -515,7 +513,6 @@ the_end : {
 	rz_config_set(origcfg, "scr.interactive", rz_config_get(origcfg, "scr.interactive"));
 	return ret;
 }
-
 
 #if 0
 static RzThreadFunctionRet rz_core_rtr_http_thread (RzThread *th) {
