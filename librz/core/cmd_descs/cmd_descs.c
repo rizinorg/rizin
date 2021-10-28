@@ -7205,6 +7205,7 @@ static const RzCmdDescDetailEntry iterators_empty_detail_entries[] = {
 	{ .text = "<cmd> @@t", .arg_str = "", .comment = "Run <cmd> over all threads" },
 	{ .text = "<cmd> @@b", .arg_str = "", .comment = "Run <cmd> over all basic blocks of the current function" },
 	{ .text = "<cmd> @@i", .arg_str = "", .comment = "Run <cmd> over all instructions of the current basic block" },
+	{ .text = "<cmd> @@ii", .arg_str = "", .comment = "Run <cmd> over all imports" },
 	{ .text = "<cmd> @@iS", .arg_str = "", .comment = "Run <cmd> over all sections" },
 	{ .text = "<cmd> @@iSS", .arg_str = "", .comment = "Run <cmd> over all segments" },
 	{ .text = "<cmd> @@is", .arg_str = "", .comment = "Run <cmd> over all symbols" },
