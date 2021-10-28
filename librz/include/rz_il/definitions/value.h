@@ -19,11 +19,10 @@ typedef union {
  *  \struct rz_il_val_t
  *  \brief structure of RzILVal
  */
-struct rz_il_val_t {
+typedef struct rz_il_val_t {
 	RZIL_VAR_TYPE type; ///< type of value
 	RzValUnion data; ///< data pointer
-};
-typedef struct rz_il_val_t RzILVal;
+} RzILVal;
 
 typedef enum {
 	RZIL_TEMP_BV,

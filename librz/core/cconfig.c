@@ -11,6 +11,7 @@
 #define SETDESC(x, y)      rz_config_node_desc(x, y)
 #define SETOPTIONS(x, ...) set_options(x, __VA_ARGS__)
 #define SETI(x, y, z)      SETDESC(rz_config_set_i(cfg, x, y), z)
+#define SETB(x, y, z)      SETDESC(rz_config_set_b(cfg, x, y), z)
 #define SETICB(w, x, y, z) SETDESC(NODEICB(w, x, y), z)
 #define SETPREF(x, y, z)   SETDESC(rz_config_set(cfg, x, y), z)
 #define SETCB(w, x, y, z)  SETDESC(NODECB(w, x, y), z)
@@ -3728,6 +3729,9 @@ RZ_API int rz_core_config_init(RzCore *core) {
 		"dbg.map", "dbg.maps", "dbg.maps.rwx", "dbg.maps.r", "dbg.maps.rw", "dbg.maps.rx", "dbg.maps.wx", "dbg.maps.x",
 		"analysis.fcn", "analysis.bb",
 		NULL);
+
+	/* RzIL config */
+	SETB("rzil.status.compact", true, "aezv RzIL VM status output is compact");
 
 	rz_config_lock(cfg, true);
 	return true;

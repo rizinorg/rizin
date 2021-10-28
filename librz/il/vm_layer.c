@@ -28,10 +28,10 @@ static void free_bind_var_val(HtPPKv *kv) {
  * initiate an empty VM
  * \param vm RzILVM, pointer to an empty VM
  * \param start_addr ut64, initiation pc address
- * \param addr_size int, size of the address in VM
- * \param data_size int, size of the minimal data unit in VM
+ * \param addr_size ut32, size of the address in VM
+ * \param data_size ut32, size of the minimal data unit in VM
  */
-RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, int addr_size, int data_size) {
+RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, ut32 data_size) {
 	vm->addr_size = addr_size;
 	vm->data_size = data_size;
 
@@ -98,25 +98,21 @@ RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, int addr_size, int data_s
 	// init jump table of labels
 	vm->op_handler_table = RZ_NEWS0(RzILOpHandler, RZIL_OP_MAX);
 	vm->op_handler_table[RZIL_OP_VAR] = &rz_il_handler_var;
-	vm->op_handler_table[RZIL_OP_ITE] = &rz_il_handler_ite;
 	vm->op_handler_table[RZIL_OP_UNK] = &rz_il_handler_unk;
+	vm->op_handler_table[RZIL_OP_ITE] = &rz_il_handler_ite;
 
 	vm->op_handler_table[RZIL_OP_B0] = &rz_il_handler_b0;
 	vm->op_handler_table[RZIL_OP_B1] = &rz_il_handler_b1;
+	vm->op_handler_table[RZIL_OP_INV] = &rz_il_handler_inv;
 	vm->op_handler_table[RZIL_OP_AND_] = &rz_il_handler_and_;
 	vm->op_handler_table[RZIL_OP_OR_] = &rz_il_handler_or_;
-	vm->op_handler_table[RZIL_OP_INV] = &rz_il_handler_inv;
-
-	vm->op_handler_table[RZIL_OP_LOAD] = &rz_il_handler_load;
-	vm->op_handler_table[RZIL_OP_STORE] = &rz_il_handler_store;
 
 	vm->op_handler_table[RZIL_OP_INT] = &rz_il_handler_int;
+	vm->op_handler_table[RZIL_OP_MSB] = &rz_il_handler_msb;
+	vm->op_handler_table[RZIL_OP_LSB] = &rz_il_handler_lsb;
+
 	vm->op_handler_table[RZIL_OP_NEG] = &rz_il_handler_neg;
 	vm->op_handler_table[RZIL_OP_NOT] = &rz_il_handler_not;
-	vm->op_handler_table[RZIL_OP_LSB] = &rz_il_handler_lsb;
-	vm->op_handler_table[RZIL_OP_MSB] = &rz_il_handler_msb;
-	vm->op_handler_table[RZIL_OP_SHIFTL] = &rz_il_handler_shiftl;
-	vm->op_handler_table[RZIL_OP_SHIFTR] = &rz_il_handler_shiftr;
 	vm->op_handler_table[RZIL_OP_ADD] = &rz_il_handler_add;
 	vm->op_handler_table[RZIL_OP_SUB] = &rz_il_handler_sub;
 	vm->op_handler_table[RZIL_OP_MUL] = &rz_il_handler_mul;
@@ -124,18 +120,34 @@ RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, int addr_size, int data_s
 	vm->op_handler_table[RZIL_OP_MOD] = &rz_il_handler_mod;
 	vm->op_handler_table[RZIL_OP_SDIV] = &rz_il_handler_sdiv;
 	vm->op_handler_table[RZIL_OP_SMOD] = &rz_il_handler_smod;
+	vm->op_handler_table[RZIL_OP_LOGAND] = &rz_il_handler_logical_and;
+	vm->op_handler_table[RZIL_OP_LOGOR] = &rz_il_handler_logical_or;
+	vm->op_handler_table[RZIL_OP_LOGXOR] = &rz_il_handler_logical_xor;
+	vm->op_handler_table[RZIL_OP_SHIFTR] = &rz_il_handler_shiftr;
+	vm->op_handler_table[RZIL_OP_SHIFTL] = &rz_il_handler_shiftl;
+
+	vm->op_handler_table[RZIL_OP_SLE] = &rz_il_handler_unimplemented; // &rz_il_handler_sle;
+	vm->op_handler_table[RZIL_OP_ULE] = &rz_il_handler_unimplemented; // &rz_il_handler_ule;
+	vm->op_handler_table[RZIL_OP_CAST] = &rz_il_handler_cast;
+	vm->op_handler_table[RZIL_OP_CONCAT] = &rz_il_handler_unimplemented; // &rz_il_handler_concat;
+	vm->op_handler_table[RZIL_OP_APPEND] = &rz_il_handler_unimplemented; // &rz_il_handler_append;
+
+	vm->op_handler_table[RZIL_OP_LOAD] = &rz_il_handler_load;
+	vm->op_handler_table[RZIL_OP_STORE] = &rz_il_handler_store;
 
 	vm->op_handler_table[RZIL_OP_PERFORM] = &rz_il_handler_perform;
 	vm->op_handler_table[RZIL_OP_SET] = &rz_il_handler_set;
+	vm->op_handler_table[RZIL_OP_JMP] = &rz_il_handler_unimplemented; // &rz_il_handler_jmp;
 	vm->op_handler_table[RZIL_OP_GOTO] = &rz_il_handler_goto;
-	vm->op_handler_table[RZIL_OP_BRANCH] = &rz_il_handler_branch;
 	vm->op_handler_table[RZIL_OP_SEQ] = &rz_il_handler_seq;
+	vm->op_handler_table[RZIL_OP_BLK] = &rz_il_handler_unimplemented; // &rz_il_handler_blk;
+	vm->op_handler_table[RZIL_OP_REPEAT] = &rz_il_handler_unimplemented; // &rz_il_handler_repeat;
+	vm->op_handler_table[RZIL_OP_BRANCH] = &rz_il_handler_branch;
+	vm->op_handler_table[RZIL_OP_INVALID] = &rz_il_handler_unimplemented; // &rz_il_handler_invalid;
 
 	vm->var_count = 0;
 	vm->val_count = 0;
 	vm->mem_count = 0;
-	vm->easy_debug = 0;
-
 	return true;
 }
 
@@ -151,7 +163,7 @@ RZ_API void rz_il_vm_fini(RzILVM *vm) {
 	}
 
 	if (vm->vm_global_variable_list) {
-		for (int i = 0; i < RZ_IL_VM_MAX_VAR; ++i) {
+		for (ut32 i = 0; i < RZ_IL_VM_MAX_VAR; ++i) {
 			if (vm->vm_global_variable_list[i] != NULL) {
 				var = vm->vm_global_variable_list[i];
 				rz_il_free_variable(var);
@@ -166,7 +178,7 @@ RZ_API void rz_il_vm_fini(RzILVM *vm) {
 	}
 
 	if (vm->mems) {
-		for (int i = 0; i < vm->mem_count; ++i) {
+		for (ut32 i = 0; i < vm->mem_count; ++i) {
 			rz_il_mem_free(vm->mems[i]);
 		}
 		free(vm->mems);
@@ -190,10 +202,10 @@ RZ_API void rz_il_vm_fini(RzILVM *vm) {
  * Create a new empty VM
  * \param vm RzILVM, pointer to an empty VM
  * \param start_addr ut64, initiation pc address
- * \param addr_size int, size of the address in VM
- * \param data_size int, size of the minimal data unit in VM
+ * \param addr_size ut32, size of the address in VM
+ * \param data_size ut32, size of the minimal data unit in VM
  */
-RZ_API RzILVM *rz_il_vm_new(ut64 start_addr, int addr_size, int data_size) {
+RZ_API RzILVM *rz_il_vm_new(ut64 start_addr, ut32 addr_size, ut32 data_size) {
 	RzILVM *vm = RZ_NEW0(RzILVM);
 	if (!vm) {
 		return NULL;
@@ -242,7 +254,7 @@ RZ_API void rz_il_free_bv_addr(RzILBitVector *addr) {
 /**
  * Add a memory in VM. We design this to support multiple memory in the future
  * \param vm RzILVM, pointer to VM
- * \param min_unit_size int, size of minimal unit of the vm
+ * \param min_unit_size ut32, size of minimal unit of the vm
  * \return Mem memory, return a pointer to the newly created memory
  */
 RZ_API RzILMem *rz_il_vm_add_mem(RzILVM *vm, ut32 min_unit_size) {
@@ -302,11 +314,11 @@ RZ_API char *rz_il_op2str(RzILOPCode opcode) {
 /**
  * Load data from memory by given key
  * \param vm RzILVM, pointer to VM
- * \param mem_index int, index to choose a memory
+ * \param mem_index ut32, index to choose a memory
  * \param key RzILBitVector, aka address, a key to load data from memory
  * \return val Bitvector, data at the address, has `vm->min_unit_size` length
  */
-RZ_API RzILBitVector *rz_il_vm_mem_load(RzILVM *vm, int mem_index, RzILBitVector *key) {
+RZ_API RzILBitVector *rz_il_vm_mem_load(RzILVM *vm, ut32 mem_index, RzILBitVector *key) {
 	RzILMem *m;
 
 	if (vm && vm->mems) {
@@ -323,12 +335,12 @@ RZ_API RzILBitVector *rz_il_vm_mem_load(RzILVM *vm, int mem_index, RzILBitVector
  * Store data to memory by key, will create a key-value pair
  * or update the key-value pair if key existed.
  * \param vm RzILVM* pointer to VM
- * \param mem_index int, index to choose a memory
+ * \param mem_index ut32, index to choose a memory
  * \param key RzILBitVector, aka address, a key to load data from memory
  * \return val Bitvector, data at the address, must have `vm->min_unit_size` length
  * \return mem Mem, the memory you store data to
  */
-RZ_API RzILMem *rz_il_vm_mem_store(RzILVM *vm, int mem_index, RzILBitVector *key, RzILBitVector *value) {
+RZ_API RzILMem *rz_il_vm_mem_store(RzILVM *vm, ut32 mem_index, RzILBitVector *key, RzILBitVector *value) {
 	RzILMem *m;
 
 	if (vm && vm->mems) {
@@ -355,18 +367,18 @@ RZ_API void rz_il_vm_step(RzILVM *vm, RzILOp *root) {
  * Execute the opcodes uplifted from raw instructions.A list may contain multiple opcode trees
  * \param vm pointer to VM
  * \param op_list, a list of op roots.
+ * \param op_size, how much the pc value has to increate of.
  */
-RZ_API void rz_il_vm_list_step(RzILVM *vm, RzPVector *op_list) {
+RZ_API void rz_il_vm_list_step(RzILVM *vm, RzPVector *op_list, ut32 op_size) {
 	void **iter;
 	rz_pvector_foreach (op_list, iter) {
 		RzILOp *root = *iter;
 		rz_il_vm_step(vm, root);
 	}
 
-	RzILBitVector *one = rz_il_bv_new(vm->pc->len);
-	rz_il_bv_set(one, 0, true); // set one = 1
-	RzILBitVector *next_pc = rz_il_bv_add(vm->pc, one);
+	RzILBitVector *step = rz_il_bv_new_from_ut32(vm->pc->len, op_size);
+	RzILBitVector *next_pc = rz_il_bv_add(vm->pc, step);
 	rz_il_bv_free(vm->pc);
-	rz_il_bv_free(one);
+	rz_il_bv_free(step);
 	vm->pc = next_pc;
 }
