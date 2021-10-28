@@ -53,37 +53,53 @@ e asm.arch=bf
 e analysis.arch=bf
 ao @ 0x00 ~opcode
 ao @ 0x00 ~rzil
+aoj @ 0x00 ~{.rzil}
 ao @ 0x08 ~opcode
 ao @ 0x08 ~rzil
+aoj @ 0x08 ~{.rzil}
 ao @ 0x09 ~opcode
 ao @ 0x09 ~rzil
+aoj @ 0x09 ~{.rzil}
 ao @ 0x1c ~opcode
 ao @ 0x1c ~rzil
+aoj @ 0x1c ~{.rzil}
 ao @ 0x20 ~opcode
 ao @ 0x20 ~rzil
+aoj @ 0x20 ~{.rzil}
 ao @ 0x21 ~opcode
 ao @ 0x21 ~rzil
+aoj @ 0x21 ~{.rzil}
 ao @ 0x33 ~opcode
 ao @ 0x33 ~rzil
+aoj @ 0x33 ~{.rzil}
 ao @ 0x6a ~opcode
 ao @ 0x6a ~rzil
+aoj @ 0x6a ~{.rzil}
 EOF
 EXPECT=<<EOF
 opcode: inc [ptr]
 rzil: [store(k:var(ptr), v:add(load(k:var(ptr), m:0), int(n:1, l:8)), m:0)]
+[{"opcode":"store","key":{"opcode":"var","value":"ptr"},"value":{"opcode":"add","params":[{"opcode":"load","key":{"opcode":"var","value":"ptr"},"mem":0},{"opcode":"int","length":8,"value":1}]},"mem":0}]
 opcode: while [ptr]
 rzil: [perform(branch(load(k:var(ptr), m:0), null, goto(]8)))]
+[{"opcode":"perform","params":[{"opcode":"branch","params":[{"opcode":"load","key":{"opcode":"var","value":"ptr"},"mem":0}null,{"opcode":"goto","label":"]8"}]}]}]
 opcode: inc ptr
 rzil: [perform(set(d:ptr, s:add(var(ptr), int(n:1, l:64))))]
+[{"opcode":"perform","params":[{"opcode":"set","dst":"ptr","src":{"opcode":"add","params":[{"opcode":"var","value":"ptr"},{"opcode":"int","length":64,"value":1}]}}]}]
 opcode: dec ptr
 rzil: [perform(set(d:ptr, s:sub(var(ptr), int(n:1, l:64))))]
+[{"opcode":"perform","params":[{"opcode":"set","dst":"ptr","src":{"opcode":"sub","params":[{"opcode":"var","value":"ptr"},{"opcode":"int","length":64,"value":1}]}}]}]
 opcode: dec [ptr]
 rzil: [store(k:var(ptr), v:sub(load(k:var(ptr), m:0), int(n:1, l:8)), m:0)]
+[{"opcode":"store","key":{"opcode":"var","value":"ptr"},"value":{"opcode":"sub","params":[{"opcode":"load","key":{"opcode":"var","value":"ptr"},"mem":0},{"opcode":"int","length":8,"value":1}]},"mem":0}]
 opcode: loop
 rzil: [perform(branch(inv(load(k:var(ptr), m:0), null), null, goto([14)))]
+[{"opcode":"perform","params":[{"opcode":"branch","params":[{"opcode":"inv","params":[{"opcode":"load","key":{"opcode":"var","value":"ptr"},"mem":0}null]}null,{"opcode":"goto","label":"[14"}]}]}]
 opcode: out [ptr]
 rzil: [perform(goto(write))]
+[{"opcode":"perform","params":[{"opcode":"goto","label":"write"}]}]
 opcode: nop
 rzil: []
+null
 EOF
 RUN
