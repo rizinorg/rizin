@@ -113,6 +113,7 @@ struct super_blob_t {
 struct MACH0_(opts_t) {
 	bool verbose;
 	ut64 header_at;
+	ut64 symbols_off;
 	bool patch_relocs;
 };
 
@@ -128,7 +129,7 @@ struct MACH0_(obj_t) {
 	int nsects;
 	struct MACH0_(nlist) * symtab;
 	ut8 *symstr;
-	ut8 *func_start; //buffer that hold the data from LC_FUNCTION_STARTS
+	ut8 *func_start; // buffer that hold the data from LC_FUNCTION_STARTS
 	int symstrlen;
 	int nsymtab;
 	ut32 *indirectsyms;
