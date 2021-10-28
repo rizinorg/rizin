@@ -343,6 +343,7 @@ include_files =[
   'include/rz_bin.h',
   'include/rz_bp.h',
   'include/rz_cmd.h',
+  'include/rz_cmp.h',
   'include/rz_config.h',
   'include/rz_cons.h',
   'include/rz_core.h',

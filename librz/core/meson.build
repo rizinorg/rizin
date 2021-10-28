@@ -19,6 +19,7 @@ rz_core_sources = [
   'cio.c',
   'cil.c',
   'cmeta.c',
+  'cmp.c',
   'clang.c',
   'cparser.c',
   'core.c',

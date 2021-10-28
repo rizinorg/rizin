@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2009-2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_core.h"
+#include "rz_cmp.h"
 
 RZ_API void rz_core_cmpwatch_free(RzCoreCmpWatcher *w) {
 	free(w->ndata);
@@ -206,163 +206,6 @@ static int rizin_compare_unified(RzCore *core, ut64 of, ut64 od, int len) {
 	return true;
 }
 
-RZ_API int rz_core_compare(RzCore *core, const ut8 *addr, int len, RzCompareOutputMode mode) {
-	int i, eq = 0;
-	PJ *pj = NULL;
-	if (len < 1) {
-		return 0;
-	}
-	if (mode == RZ_COMPARE_MODE_JSON) {
-		pj = pj_new();
-		if (!pj) {
-			return -1;
-		}
-		pj_o(pj);
-		pj_k(pj, "diff_bytes");
-		pj_a(pj);
-	}
-	for (i = 0; i < len; i++) {
-		if (core->block[i] == addr[i]) {
-			eq++;
-			continue;
-		}
-		switch (mode) {
-		case RZ_COMPARE_MODE_DEFAULT:
-			rz_cons_printf("0x%08" PFMT64x " (byte=%.2d)   %02x '%c'  ->  %02x '%c'\n",
-				core->offset + i, i + 1,
-				core->block[i], (IS_PRINTABLE(core->block[i])) ? core->block[i] : ' ',
-				addr[i], (IS_PRINTABLE(addr[i])) ? addr[i] : ' ');
-			break;
-		case RZ_COMPARE_MODE_RIZIN:
-			rz_cons_printf("wx %02x @ 0x%08" PFMT64x "\n",
-				addr[i],
-				core->offset + i);
-			break;
-		case RZ_COMPARE_MODE_JSON:
-			pj_o(pj);
-			pj_kn(pj, "offset", core->offset + i);
-			pj_ki(pj, "rel_offset", i);
-			pj_ki(pj, "value", (int)core->block[i]);
-			pj_ki(pj, "cmp_value", (int)addr[i]);
-			pj_end(pj);
-			break;
-		default:
-			rz_warn_if_reached();
-		}
-	}
-	if (mode == RZ_COMPARE_MODE_DEFAULT) {
-		eprintf("Compare %d/%d equal bytes (%d%%)\n", eq, len, (eq / len) * 100);
-	} else if (mode == RZ_COMPARE_MODE_JSON) {
-		pj_end(pj);
-		pj_ki(pj, "equal_bytes", eq);
-		pj_ki(pj, "total_bytes", len);
-		pj_end(pj); // End array
-		pj_end(pj); // End object
-		rz_cons_println(pj_string(pj));
-	}
-	return len - eq;
-}
-
-static bool cmd_cmp_disasm(RzCore *core, const char *input, int mode) {
-	RzAsmOp op, op2;
-	int i, j;
-	char colpad[80];
-	int hascolor = rz_config_get_i(core->config, "scr.color");
-	int cols = rz_config_get_i(core->config, "hex.cols") * 2;
-	ut64 off = rz_num_math(core->num, input);
-	ut8 *buf = calloc(core->blocksize + 32, 1);
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
-	if (!buf) {
-		return false;
-	}
-	rz_io_read_at(core->io, off, buf, core->blocksize + 32);
-	switch (mode) {
-	case 'c': // columns
-		for (i = j = 0; i < core->blocksize && j < core->blocksize;) {
-			// dis A
-			rz_asm_set_pc(core->rasm, core->offset + i);
-			(void)rz_asm_disassemble(core->rasm, &op,
-				core->block + i, core->blocksize - i);
-
-			// dis B
-			rz_asm_set_pc(core->rasm, off + i);
-			(void)rz_asm_disassemble(core->rasm, &op2,
-				buf + j, core->blocksize - j);
-
-			// show output
-			bool iseq = rz_strbuf_equals(&op.buf_asm, &op2.buf_asm);
-			memset(colpad, ' ', sizeof(colpad));
-			{
-				int pos = strlen(rz_strbuf_get(&op.buf_asm));
-				pos = (pos > cols) ? 0 : cols - pos;
-				colpad[pos] = 0;
-			}
-			if (hascolor) {
-				rz_cons_print(iseq ? pal->graph_true : pal->graph_false);
-			}
-			rz_cons_printf(" 0x%08" PFMT64x "  %s %s",
-				core->offset + i, rz_strbuf_get(&op.buf_asm), colpad);
-			rz_cons_printf("%c 0x%08" PFMT64x "  %s\n",
-				iseq ? '=' : '!', off + j, rz_strbuf_get(&op2.buf_asm));
-			if (hascolor) {
-				rz_cons_print(Color_RESET);
-			}
-			if (op.size < 1) {
-				op.size = 1;
-			}
-			i += op.size;
-			if (op2.size < 1) {
-				op2.size = 1;
-			}
-			j += op2.size;
-		}
-		break;
-	case 'u': // unified
-		for (i = j = 0; i < core->blocksize && j < core->blocksize;) {
-			// dis A
-			rz_asm_set_pc(core->rasm, core->offset + i);
-			(void)rz_asm_disassemble(core->rasm, &op,
-				core->block + i, core->blocksize - i);
-
-			// dis B
-			rz_asm_set_pc(core->rasm, off + i);
-			(void)rz_asm_disassemble(core->rasm, &op2,
-				buf + j, core->blocksize - j);
-
-			// show output
-			bool iseq = rz_strbuf_equals(&op.buf_asm, &op2.buf_asm); // (!strcmp (op.buf_asm, op2.buf_asm));
-			if (iseq) {
-				rz_cons_printf(" 0x%08" PFMT64x "  %s\n",
-					core->offset + i, rz_strbuf_get(&op.buf_asm));
-			} else {
-				if (hascolor) {
-					rz_cons_print(pal->graph_false);
-				}
-				rz_cons_printf("-0x%08" PFMT64x "  %s\n",
-					core->offset + i, rz_strbuf_get(&op.buf_asm));
-				if (hascolor) {
-					rz_cons_print(pal->graph_true);
-				}
-				rz_cons_printf("+0x%08" PFMT64x "  %s\n",
-					off + j, rz_strbuf_get(&op2.buf_asm));
-				if (hascolor) {
-					rz_cons_print(Color_RESET);
-				}
-			}
-			if (op.size < 1) {
-				op.size = 1;
-			}
-			i += op.size;
-			if (op2.size < 1) {
-				op2.size = 1;
-			}
-			j += op2.size;
-		}
-		break;
-	}
-	return true;
-}
-
 static bool core_cmp_bits(RzCore *core, ut64 addr) {
 	const bool scr_color = rz_config_get_i(core->config, "scr.color");
 	int i;
@@ -414,7 +257,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_string_handler(RzCore *core, int argc, const char 
 	ut64 val = UT64_MAX;
 	char *unescaped = strdup(argv[1]);
 	int len = rz_str_unescape(unescaped);
-	val = rz_core_compare(core, (ut8 *)unescaped, len, RZ_COMPARE_MODE_DEFAULT);
+	val = rz_cmp_compare(core, (ut8 *)unescaped, len, RZ_COMPARE_MODE_DEFAULT);
 	free(unescaped);
 	if (val != UT64_MAX) {
 		core->num->value = val;
@@ -431,7 +274,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_num1_handler(RzCore *core, int argc, const char **
 // c2
 RZ_IPI RzCmdStatus rz_cmd_cmp_num2_handler(RzCore *core, int argc, const char **argv) {
 	ut16 v16 = (ut16)rz_num_math(core->num, argv[1]);
-	ut64 val = rz_core_compare(core, (ut8 *)&v16, sizeof(v16), RZ_COMPARE_MODE_DEFAULT);
+	ut64 val = rz_cmp_compare(core, (ut8 *)&v16, sizeof(v16), RZ_COMPARE_MODE_DEFAULT);
 	if (val != UT64_MAX) {
 		core->num->value = val;
 		return RZ_CMD_STATUS_OK;
@@ -442,7 +285,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_num2_handler(RzCore *core, int argc, const char **
 // c4
 RZ_IPI RzCmdStatus rz_cmd_cmp_num4_handler(RzCore *core, int argc, const char **argv) {
 	ut32 v32 = (ut32)rz_num_math(core->num, argv[1]);
-	ut64 val = rz_core_compare(core, (ut8 *)&v32, sizeof(v32), RZ_COMPARE_MODE_DEFAULT);
+	ut64 val = rz_cmp_compare(core, (ut8 *)&v32, sizeof(v32), RZ_COMPARE_MODE_DEFAULT);
 	if (val != UT64_MAX) {
 		core->num->value = val;
 		return RZ_CMD_STATUS_OK;
@@ -453,7 +296,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_num4_handler(RzCore *core, int argc, const char **
 // c8
 RZ_IPI RzCmdStatus rz_cmd_cmp_num8_handler(RzCore *core, int argc, const char **argv) {
 	ut64 v64 = rz_num_math(core->num, argv[1]);
-	ut64 val = rz_core_compare(core, (ut8 *)&v64, sizeof(v64), RZ_COMPARE_MODE_DEFAULT);
+	ut64 val = rz_cmp_compare(core, (ut8 *)&v64, sizeof(v64), RZ_COMPARE_MODE_DEFAULT);
 	if (val != UT64_MAX) {
 		core->num->value = val;
 		return RZ_CMD_STATUS_OK;
@@ -494,7 +337,10 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_hex_diff_lines_handler(RzCore *core, int argc, con
 
 // ccd
 RZ_IPI RzCmdStatus rz_cmd_cmp_disasm_handler(RzCore *core, int argc, const char **argv) {
-	return cmd_cmp_disasm(core, argv[1], 'c') ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+	RzList *cmp = rz_cmp_disasm(core, argv[1]);
+	bool ret = rz_cmp_disasm_print(core, cmp, false);
+	rz_list_free(cmp);
+	return ret ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
 // cf
@@ -514,7 +360,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_file_handler(RzCore *core, int argc, const char **
 		RZ_LOG_ERROR("Cannot read file: %s\n", argv[1]);
 		goto return_goto;
 	}
-	val = rz_core_compare(core, buf, core->blocksize, RZ_COMPARE_MODE_DEFAULT);
+	val = rz_cmp_compare(core, buf, core->blocksize, RZ_COMPARE_MODE_DEFAULT);
 	if (val == UT64_MAX) {
 		goto return_goto;
 	}
@@ -559,7 +405,10 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_unified8_handler(RzCore *core, int argc, const cha
 
 // cud
 RZ_IPI RzCmdStatus rz_cmd_cmp_unified_disasm_handler(RzCore *core, int argc, const char **argv) {
-	return cmd_cmp_disasm(core, argv[1], 'u') ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+	RzList *cmp = rz_cmp_disasm(core, argv[1]);
+	bool ret = rz_cmp_disasm_print(core, cmp, true);
+	rz_list_free(cmp);
+	return ret ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
 // cw
@@ -635,7 +484,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_hexpair_string_handler(RzCore *core, int argc, con
 		goto return_goto;
 	}
 
-	val = rz_core_compare(core, buf, ret, mode);
+	val = rz_cmp_compare(core, buf, ret, mode);
 	if (val == UT64_MAX) {
 		ret = false;
 		goto return_goto;
@@ -661,7 +510,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_hex_block_hexdiff_handler(RzCore *core, int argc, 
 		goto return_goto;
 	}
 
-	ut64 val = rz_core_compare(core, buf, core->blocksize, RZ_COMPARE_MODE_DEFAULT);
+	ut64 val = rz_cmp_compare(core, buf, core->blocksize, RZ_COMPARE_MODE_DEFAULT);
 	if (val == UT64_MAX) {
 		goto return_goto;
 	}

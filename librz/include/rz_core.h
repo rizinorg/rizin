@@ -35,6 +35,8 @@
 #include <rz_heap_glibc.h>
 #include <rz_windows_heap.h>
 
+/* rz_main.h, rz_socket.h, rz_types.h, rz_magic.h, rz_agraph.h, rz_io.h, rz_lib.h, rz_diff.h, rz_egg.h, rz_lang.h, rz_asm.h, rz_parse.h, rz_analysis.h, rz_cmd.h, rz_cmp.h, rz_cons.h, rz_search.h, rz_sign.h, rz_debug.h, rz_flag.h, rz_config.h, rz_bin.h, rz_msg_digest.h, rz_util.h, ht_uu.h, rz_print.h, rz_crypto.h, rz_bind.h, rz_annotated_code.h, rz_heap_glibc.h, rz_windows_heap.h */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -982,15 +984,13 @@ RZ_API void rz_core_diff_show(RzCore *core, RzCore *core2, bool json);
 RZ_API bool rz_core_diff_show_function(RzCore *core, RzCore *core2, ut64 addr, bool json);
 RZ_API void rz_core_clippy(RzCore *core, const char *msg);
 
-/* compare API */
+// compare mode enum (used by cmp.c)
 typedef enum {
 	RZ_COMPARE_MODE_DEFAULT,
 	RZ_COMPARE_MODE_RIZIN,
 	RZ_COMPARE_MODE_DIFF,
 	RZ_COMPARE_MODE_JSON
 } RzCompareOutputMode;
-
-RZ_API int rz_core_compare(RzCore *core, const ut8 *addr, int len, RzCompareOutputMode mode);
 
 /* watchers */
 RZ_API void rz_core_cmpwatch_free(RzCoreCmpWatcher *w);
