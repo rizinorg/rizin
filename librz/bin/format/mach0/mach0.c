@@ -458,9 +458,9 @@ static bool parse_symtab(struct MACH0_(obj_t) * mo, ut64 off) {
 	}
 	st.cmd = rz_read_ble32(symt, be);
 	st.cmdsize = rz_read_ble32(symt + 4, be);
-	st.symoff = rz_read_ble32(symt + 8, be);
+	st.symoff = rz_read_ble32(symt + 8, be) + mo->options.symbols_off;
 	st.nsyms = rz_read_ble32(symt + 12, be);
-	st.stroff = rz_read_ble32(symt + 16, be);
+	st.stroff = rz_read_ble32(symt + 16, be) + mo->options.symbols_off;
 	st.strsize = rz_read_ble32(symt + 20, be);
 
 	mo->symtab = NULL;
@@ -496,7 +496,7 @@ static bool parse_symtab(struct MACH0_(obj_t) * mo, ut64 off) {
 			if (len != sizeof(struct MACH0_(nlist))) {
 				Error("read (nlist)");
 			}
-			//XXX not very safe what if is n_un.n_name instead?
+			// XXX not very safe what if is n_un.n_name instead?
 			mo->symtab[i].n_strx = rz_read_ble32(nlst, be);
 			mo->symtab[i].n_type = rz_read_ble8(nlst + 4);
 			mo->symtab[i].n_sect = rz_read_ble8(nlst + 5);
@@ -1042,7 +1042,7 @@ static int parse_thread(struct MACH0_(obj_t) * bin, struct load_command *lc, ut6
 			arw_ptr = (ut8 *)&bin->thread_state.x86_64;
 			arw_sz = sizeof(struct x86_thread_state64);
 			break;
-			//default: bprintf ("Unknown type\n");
+			// default: bprintf ("Unknown type\n");
 		}
 		break;
 	case CPU_TYPE_POWERPC:
@@ -1688,9 +1688,9 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 	if (bin->hdr.sizeofcmds > bin->size) {
 		bprintf("Warning: chopping hdr.sizeofcmds\n");
 		bin->hdr.sizeofcmds = bin->size - 128;
-		//return false;
+		// return false;
 	}
-	//bprintf ("Commands: %d\n", bin->hdr.ncmds);
+	// bprintf ("Commands: %d\n", bin->hdr.ncmds);
 	for (i = 0, off = sizeof(struct MACH0_(mach_header)) + bin->options.header_at;
 		i < bin->hdr.ncmds; i++, off += lc.cmdsize) {
 		if (off > bin->size || off + sizeof(struct load_command) > bin->size) {
@@ -1725,7 +1725,7 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 			break;
 		case LC_RPATH:
 			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%d.cmd", i), "rpath", 0);
-			//bprintf ("--->\n");
+			// bprintf ("--->\n");
 			break;
 		case LC_SEGMENT_64:
 		case LC_SEGMENT:
@@ -1753,19 +1753,19 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 			break;
 		case LC_DYLIB_CODE_SIGN_DRS:
 			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%d.cmd", i), "dylib_code_sign_drs", 0);
-			//bprintf ("[mach0] code is signed\n");
+			// bprintf ("[mach0] code is signed\n");
 			break;
 		case LC_VERSION_MIN_MACOSX:
 			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%d.cmd", i), "version_min_macosx", 0);
 			bin->os = 1;
 			// set OS = osx
-			//bprintf ("[mach0] Requires OSX >= x\n");
+			// bprintf ("[mach0] Requires OSX >= x\n");
 			break;
 		case LC_VERSION_MIN_IPHONEOS:
 			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%d.cmd", i), "version_min_iphoneos", 0);
 			bin->os = 2;
 			// set OS = ios
-			//bprintf ("[mach0] Requires iOS >= x\n");
+			// bprintf ("[mach0] Requires iOS >= x\n");
 			break;
 		case LC_VERSION_MIN_TVOS:
 			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%d.cmd", i), "version_min_tvos", 0);
@@ -1789,7 +1789,7 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 					snprintf(key, sizeof(key) - 1, "uuid.%d", bin->uuidn++);
 					rz_hex_bin2str((ut8 *)&uc.uuid, 16, val);
 					sdb_set(bin->kv, key, val, 0);
-					//for (i=0;i<16; i++) bprintf ("%02x%c", uc.uuid[i], (i==15)?'\n':'-');
+					// for (i=0;i<16; i++) bprintf ("%02x%c", uc.uuid[i], (i==15)?'\n':'-');
 				}
 			}
 			break;
@@ -1823,7 +1823,7 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 		case LC_LOAD_DYLINKER: {
 			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%d.cmd", i), "dylinker", 0);
 			RZ_FREE(bin->intrp);
-			//bprintf ("[mach0] load dynamic linker\n");
+			// bprintf ("[mach0] load dynamic linker\n");
 			struct dylinker_command dy = { 0 };
 			ut8 sdy[sizeof(struct dylinker_command)] = { 0 };
 			if (off + sizeof(struct dylinker_command) > bin->size) {
@@ -1925,7 +1925,7 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 					bin->dyld_info->weak_bind_size = rz_read_ble32(&dyldi[28], bin->big_endian);
 					bin->dyld_info->lazy_bind_off = rz_read_ble32(&dyldi[32], bin->big_endian);
 					bin->dyld_info->lazy_bind_size = rz_read_ble32(&dyldi[36], bin->big_endian);
-					bin->dyld_info->export_off = rz_read_ble32(&dyldi[40], bin->big_endian);
+					bin->dyld_info->export_off = rz_read_ble32(&dyldi[40], bin->big_endian) + bin->options.symbols_off;
 					bin->dyld_info->export_size = rz_read_ble32(&dyldi[44], bin->big_endian);
 				}
 			}
@@ -1940,7 +1940,7 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%d.cmd", i), "version", 0);
 			/* uint64_t  version;  */
 			/* A.B.C.D.E packed as a24.b10.c10.d10.e10 */
-			//bprintf ("mach0: TODO: Show source version\n");
+			// bprintf ("mach0: TODO: Show source version\n");
 			break;
 		case LC_SEGMENT_SPLIT_INFO:
 			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%d.cmd", i), "split_info", 0);
@@ -1957,7 +1957,7 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 			/* TODO */
 			break;
 		default:
-			//bprintf ("mach0: Unknown header command %x\n", lc.cmd);
+			// bprintf ("mach0: Unknown header command %x\n", lc.cmd);
 			break;
 		}
 	}
@@ -2104,6 +2104,7 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) * mo) {
 void MACH0_(opts_set_default)(struct MACH0_(opts_t) * options, RzBinFile *bf) {
 	rz_return_if_fail(options && bf && bf->rbin);
 	options->header_at = 0;
+	options->symbols_off = 0;
 	options->verbose = bf->rbin->verbose;
 	options->patch_relocs = true;
 }
@@ -2329,7 +2330,7 @@ RzList *MACH0_(get_segments)(RzBinFile *bf) {
 			s->size = seg->vmsize;
 			s->paddr = seg->fileoff;
 			s->paddr += bf->o->boffset;
-			//TODO s->flags = seg->flags;
+			// TODO s->flags = seg->flags;
 			s->name = rz_str_ndup(seg->segname, 16);
 			s->is_segment = true;
 			rz_str_filter(s->name, -1);
@@ -2355,7 +2356,7 @@ RzList *MACH0_(get_segments)(RzBinFile *bf) {
 			// XXX flags
 			s->paddr = (ut64)bin->sects[i].offset;
 			int segment_index = 0;
-			//s->perm =prot2perm (bin->segs[j].initprot);
+			// s->perm =prot2perm (bin->segs[j].initprot);
 			for (j = 0; j < bin->nsegs; j++) {
 				if (s->vaddr >= bin->segs[j].vmaddr &&
 					s->vaddr < (bin->segs[j].vmaddr + bin->segs[j].vmsize)) {
@@ -2703,8 +2704,8 @@ static int walk_exports(struct MACH0_(obj_t) * bin, RExportsIterator iterator, v
 					}
 					name = rz_str_append(name, s->label);
 				}
-				if (name == NULL) {
-					eprintf("malformed export trie\n");
+				if (!name) {
+					RZ_LOG_ERROR("malformed export trie\n");
 					goto beach;
 				}
 				if (hasResolver) {
@@ -2744,7 +2745,7 @@ static int walk_exports(struct MACH0_(obj_t) * bin, RExportsIterator iterator, v
 		next->label = (char *)p;
 		p += strlen(next->label) + 1;
 		if (p >= end) {
-			eprintf("malformed export trie\n");
+			RZ_LOG_ERROR("malformed export trie\n");
 			RZ_FREE(next);
 			goto beach;
 		}
@@ -2754,7 +2755,7 @@ static int walk_exports(struct MACH0_(obj_t) * bin, RExportsIterator iterator, v
 			goto beach;
 		}
 		if (UT64_ADD_OVFCHK(tr, (ut64)trie) || tr + (ut64)trie >= (ut64)end) {
-			eprintf("malformed export trie\n");
+			RZ_LOG_ERROR("malformed export trie\n");
 			RZ_FREE(next);
 			goto beach;
 		}
@@ -2765,7 +2766,7 @@ static int walk_exports(struct MACH0_(obj_t) * bin, RExportsIterator iterator, v
 			RTrieState *s;
 			rz_list_foreach (states, it, s) {
 				if (s->node == next->node) {
-					eprintf("malformed export trie\n");
+					RZ_LOG_ERROR("malformed export trie\n");
 					RZ_FREE(next);
 					goto beach;
 				}
@@ -3212,7 +3213,7 @@ struct import_t *MACH0_(get_imports)(struct MACH0_(obj_t) * bin) {
 			rz_str_ncpy(imports[j].name, imp_name, RZ_BIN_MACH0_STRING_LENGTH);
 			free(imp_name);
 		} else {
-			//imports[j].name[0] = 0;
+			// imports[j].name[0] = 0;
 			continue;
 		}
 		imports[j].ord = i;
@@ -3322,9 +3323,9 @@ char *MACH0_(get_class)(struct MACH0_(obj_t) * bin) {
 #endif
 }
 
-//XXX we are mixing up bits from cpu and opcodes
-//since thumb use 16 bits opcode but run in 32 bits
-//cpus  so here we should only return 32 or 64
+// XXX we are mixing up bits from cpu and opcodes
+// since thumb use 16 bits opcode but run in 32 bits
+// cpus  so here we should only return 32 or 64
 int MACH0_(get_bits)(struct MACH0_(obj_t) * bin) {
 	if (bin) {
 		int bits = MACH0_(get_bits_from_hdr)(&bin->hdr);
