@@ -3,6 +3,33 @@
 // included from rtr.c
 
 // return 1 on error
+
+static int rz_core_rtr_http_cmd(RzCore *core, RzSocketHTTPRequest* rs, char *cmd, char * out, char* headers){
+	if ((!strcmp(cmd, "Rh*") ||
+		    !strcmp(cmd, "Rh--"))) {
+		out = NULL;
+	} else if (*cmd == ':') {
+		/* commands in /cmd/: starting with : do not show any output */
+		rz_core_cmd0(core, cmd + 1);
+		out = NULL;
+	} else {
+		out = rz_core_cmd_str_pipe(core, cmd);
+	}
+
+	if (out) {
+		char *res = rz_str_uri_encode(out);
+		char *newheaders = rz_str_newf(
+			"Content-Type: text/plain\n%s", headers);
+		rz_socket_http_response(rs, 200, out, 0, newheaders);
+		free(out);
+		free(newheaders);
+		free(res);
+	} else {
+		rz_socket_http_response(rs, 200, "", 0, headers);
+	}
+	return 0;
+}
+
 static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char *path) {
 	RzConfig *newcfg = NULL, *origcfg = NULL;
 	char headers[128] = RZ_EMPTY;
@@ -313,28 +340,8 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 							rz_str_uri_decode(cmd);
 							rz_config_set(core->config, "scr.interactive", "false");
 
-							if ((!strcmp(cmd, "Rh*") ||
-								    !strcmp(cmd, "Rh--"))) {
-								out = NULL;
-							} else if (*cmd == ':') {
-								/* commands in /cmd/: starting with : do not show any output */
-								rz_core_cmd0(core, cmd + 1);
-								out = NULL;
-							} else {
-								out = rz_core_cmd_str_pipe(core, cmd);
-							}
+							rz_core_rtr_http_cmd(core, rs, cmd, out, headers);
 
-							if (out) {
-								char *res = rz_str_uri_encode(out);
-								char *newheaders = rz_str_newf(
-									"Content-Type: text/plain\n%s", headers);
-								rz_socket_http_response(rs, 200, out, 0, newheaders);
-								free(out);
-								free(newheaders);
-								free(res);
-							} else {
-								rz_socket_http_response(rs, 200, "", 0, headers);
-							}
 
 							if (!strcmp(cmd, "Rh*")) {
 								/* do stuff */
@@ -432,31 +439,52 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 				free(path);
 			}
 		} else if (!strcmp(rs->method, "POST")) {
-			ut8 *ret;
-			int retlen;
-			char buf[128];
-			if (rz_config_get_i(core->config, "http.upload")) {
-				ret = rz_socket_http_handle_upload(rs->data, rs->data_length, &retlen);
-				if (ret) {
-					ut64 size = rz_config_get_i(core->config, "http.maxsize");
-					if (size && retlen > size) {
-						rz_socket_http_response(rs, 403, "403 File too big\n", 0, headers);
-					} else {
-						char *filename = rz_file_root(
-							rz_config_get(core->config, "http.uproot"),
-							rs->path + 4);
-						http_logf(core, "UPLOADED '%s'\n", filename);
-						rz_file_dump(filename, ret, retlen, 0);
-						free(filename);
-						snprintf(buf, sizeof(buf),
-							"<html><body><h2>uploaded %d byte(s). Thanks</h2>\n", retlen);
-						rz_socket_http_response(rs, 200, buf, 0, headers);
+			if (!strncmp(rs->path, "/upload/", 8)){
+				ut8 *ret;
+				int retlen;
+				char buf[128];
+				if (rz_config_get_i(core->config, "http.upload")) {
+					ret = rz_socket_http_handle_upload(rs->data, rs->data_length, &retlen);
+					if (ret) {
+						ut64 size = rz_config_get_i(core->config, "http.maxsize");
+						if (size && retlen > size) {
+							rz_socket_http_response(rs, 403, "403 File too big\n", 0, headers);
+						} else {
+							char *filename = rz_file_root(
+								rz_config_get(core->config, "http.uproot"),
+								rs->path + 8);
+							http_logf(core, "UPLOADED '%s'\n", filename);
+							rz_file_dump(filename, ret, retlen, 0);
+							free(filename);
+							snprintf(buf, sizeof(buf),
+								"<html><body><h2>uploaded %d byte(s). Thanks</h2>\n", retlen);
+							rz_socket_http_response(rs, 200, buf, 0, headers);
+						}
+						free(ret);
 					}
-					free(ret);
+
+				} else {
+					rz_socket_http_response(rs, 403, "403 Forbidden\n", 0, headers);
 				}
-			} else {
-				rz_socket_http_response(rs, 403, "403 Forbidden\n", 0, headers);
+			} else if (!strncmp(rs->path, "/cmd/", 5)){
+					char *out;
+					rz_config_set(core->config, "scr.interactive", "false");
+					rz_core_rtr_http_cmd(core, rs, (char*) rs->data, out, headers);
+					if (!strcmp((char*) rs->data, "Rh*")) {
+						/* do stuff */
+						rz_socket_http_close(rs);
+						free(dir);
+						ret = -2;
+						goto the_end;
+					} else if (!strcmp((char*)rs->data, "Rh--")) {
+						rz_socket_http_close(rs);
+						free(dir);
+						ret = 0;
+						goto the_end;
+					}
+			
 			}
+
 		} else {
 			rz_socket_http_response(rs, 404, "Invalid protocol", 0, headers);
 		}
@@ -487,6 +515,7 @@ the_end : {
 	rz_config_set(origcfg, "scr.interactive", rz_config_get(origcfg, "scr.interactive"));
 	return ret;
 }
+
 
 #if 0
 static RzThreadFunctionRet rz_core_rtr_http_thread (RzThread *th) {
