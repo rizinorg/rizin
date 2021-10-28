@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_il/rzil_vm.h>
 
 typedef void (*dump_op_t)(RzILOp *op, RzStrBuf *sb, PJ *pj);
