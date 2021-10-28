@@ -409,7 +409,7 @@ static bool test_rzil_mem() {
 
 	RzILBitVector *addr = rz_il_bv_new_from_ut32(16, 121);
 	RzILBitVector *valid_data = rz_il_bv_new_from_ut32(8, 177);
-	RzILBitVector *invalid_data = rz_il_bv_new_from_ut32(24, 177);
+	RzILBitVector *invalid_data = rz_il_bv_new_from_ut32(4, 6);
 
 	RzILMem *result = rz_il_mem_store(mem, addr, valid_data);
 	mu_assert_eq(result, mem, "Store successfully");
