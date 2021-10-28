@@ -988,10 +988,7 @@ RZ_API RZ_OWN RzILBitVector *rz_il_bv_new_from_ut32(ut32 length, ut32 value) {
 		RZ_LOG_ERROR("RzIL: failed to allocate RzILBitVector\n");
 		return NULL;
 	}
-	for (ut32 i = 0; i < length; ++i) {
-		rz_il_bv_set(bv, i, value & 1);
-		value >>= 1;
-	}
+	rz_il_bv_set_from_ut32(bv, value);
 	return bv;
 }
 
@@ -1007,10 +1004,7 @@ RZ_API RZ_OWN RzILBitVector *rz_il_bv_new_from_ut64(ut32 length, ut64 value) {
 		RZ_LOG_ERROR("RzIL: failed to allocate RzILBitVector\n");
 		return NULL;
 	}
-	for (ut32 i = 0; i < length; ++i) {
-		rz_il_bv_set(bv, i, value & 1);
-		value >>= 1;
-	}
+	rz_il_bv_set_from_ut64(bv, value);
 	return bv;
 }
 

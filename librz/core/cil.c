@@ -437,8 +437,24 @@ RZ_IPI void rz_core_analysis_rzil_reinit(RzCore *core) {
 
 	rz_analysis_rzil_setup(core->analysis);
 	if (core->analysis->rzil) {
+		// initialize the program counter with the current offset
 		rz_il_bv_set_from_ut32(core->analysis->rzil->vm->pc, core->offset);
 	}
+}
+
+static void rzil_print_register(int padding, const char *reg_name, RzILBitVector *number, RzStrBuf *sb) {
+	char *hex = rz_il_bv_as_hex_string(number);
+	if (sb) {
+		rz_strbuf_appendf(sb, " %s: %s ", reg_name, hex);
+		if (rz_strbuf_length(sb) > 95) {
+			rz_cons_printf("%s\n", rz_strbuf_get(sb));
+			rz_strbuf_fini(sb);
+		}
+	} else {
+		const char *arrow = !rz_il_bv_is_zero_vector(number) ? " <--" : "";
+		rz_cons_printf("%*s: %s%s\n", padding, reg_name, hex, arrow);
+	}
+	free(hex);
 }
 
 RZ_IPI void rz_core_analysis_rzil_vm_status(RzCore *core) {
@@ -457,33 +473,16 @@ RZ_IPI void rz_core_analysis_rzil_vm_status(RzCore *core) {
 		namelen = RZ_MAX(namelen, len);
 	}
 	rz_cons_printf("RzIL VM status\n");
-	char *num = rz_il_bv_as_hex_string(rzil->vm->pc);
-	RzStrBuf *sb = NULL;
-	if (compact) {
-		sb = rz_strbuf_new("");
-		rz_strbuf_appendf(sb, " PC: %s", num);
-	} else {
-		rz_cons_printf("%*s: %s%s\n", namelen, "PC", num, !rz_il_bv_is_zero_vector(rzil->vm->pc) ? " <--" : "");
-		//rz_cons_printf("%*s: %s\n", namelen, "PC", num);
-	}
-	free(num);
+	RzStrBuf *sb = compact ? rz_strbuf_new("") : NULL;
+
+	rzil_print_register(namelen, "PC", rzil->vm->pc, sb);
 	for (ut32 i = 0; i < rzil->vm->var_count; ++i) {
 		RzILVar *var = rzil->vm->vm_global_variable_list[i];
 		RzILVal *val = rz_il_hash_find_val_by_var(rzil->vm, var);
-		num = rz_il_bv_as_hex_string(val->data.bv);
-		if (compact) {
-			rz_strbuf_appendf(sb, " %s: %s ", var->var_name, num);
-		} else {
-			rz_cons_printf("%*s: %s%s\n", namelen, var->var_name, num, !rz_il_bv_is_zero_vector(val->data.bv) ? " <--" : "");
-			//rz_cons_printf("%*s: %s\n", namelen, var->var_name, num);
-		}
-		free(num);
-		if (compact && rz_strbuf_length(sb) > 95) {
-			rz_cons_printf("%s\n", rz_strbuf_get(sb));
-			rz_strbuf_fini(sb);
-		}
+		rzil_print_register(namelen, var->var_name, val->data.bv, sb);
 	}
-	if (compact && rz_strbuf_length(sb) > 0) {
+
+	if (sb && rz_strbuf_length(sb) > 0) {
 		rz_cons_printf("%s\n", rz_strbuf_get(sb));
 	}
 	rz_strbuf_free(sb);
