@@ -76,18 +76,14 @@ static bool rizin_compare_unified(RzCore *core, RzCompareData *cmp) {
 	return true;
 }
 
-static bool core_cmp_bits(RzCore *core, ut64 addr) {
+static bool core_cmp_bits(RzCore *core, RzCompareData *cmp) {
 	const bool scr_color = rz_config_get_i(core->config, "scr.color");
 	int i;
-	ut8 a, b;
-	if (!rz_io_read_at(core->io, core->offset, &a, 1) || !rz_io_read_at(core->io, addr, &b, 1)) {
-		return false;
-	}
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	const char *color = scr_color ? pal->offset : "";
 	const char *color_end = scr_color ? Color_RESET : "";
 	if (rz_config_get_i(core->config, "hex.header")) {
-		char *n = rz_str_newf("0x%08" PFMT64x, core->offset);
+		char *n = rz_str_newf("0x%08" PFMT64x, cmp->addr1);
 		const char *extra = rz_str_pad(' ', strlen(n) - 10);
 		free(n);
 		rz_cons_printf("%s- offset -%s  7 6 5 4 3 2 1 0%s\n", color, extra, color_end);
@@ -95,10 +91,10 @@ static bool core_cmp_bits(RzCore *core, ut64 addr) {
 	color = scr_color ? pal->graph_false : "";
 	color_end = scr_color ? Color_RESET : "";
 
-	rz_cons_printf("%s0x%08" PFMT64x "%s  ", color, core->offset, color_end);
+	rz_cons_printf("%s0x%08" PFMT64x "%s  ", color, cmp->addr1, color_end);
 	for (i = 7; i >= 0; i--) {
-		bool b0 = (a & 1 << i) ? 1 : 0;
-		bool b1 = (b & 1 << i) ? 1 : 0;
+		bool b0 = (cmp->data1[0] & 1 << i) ? 1 : 0;
+		bool b1 = (cmp->data2[0] & 1 << i) ? 1 : 0;
 		color = scr_color ? (b0 == b1) ? "" : b0 ? pal->graph_true
 							 : pal->graph_false
 				  : "";
@@ -107,10 +103,10 @@ static bool core_cmp_bits(RzCore *core, ut64 addr) {
 	}
 	color = scr_color ? pal->graph_true : "";
 	color_end = scr_color ? Color_RESET : "";
-	rz_cons_printf("\n%s0x%08" PFMT64x "%s  ", color, addr, color_end);
+	rz_cons_printf("\n%s0x%08" PFMT64x "%s  ", color, cmp->addr2, color_end);
 	for (i = 7; i >= 0; i--) {
-		bool b0 = (a & 1 << i) ? 1 : 0;
-		bool b1 = (b & 1 << i) ? 1 : 0;
+		bool b0 = (cmp->data1[0] & 1 << i) ? 1 : 0;
+		bool b1 = (cmp->data2[0] & 1 << i) ? 1 : 0;
 		color = scr_color ? (b0 == b1) ? "" : b1 ? pal->graph_true
 							 : pal->graph_false
 				  : "";
@@ -146,7 +142,14 @@ end:
 
 // c1
 RZ_IPI RzCmdStatus rz_cmd_cmp_num1_handler(RzCore *core, int argc, const char **argv) {
-	return core_cmp_bits(core, rz_num_math(core->num, argv[1])) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+	RzCmdStatus ret = RZ_CMD_STATUS_ERROR;
+	RzCompareData *cmp = rz_cmp_data_data(core, core->offset, rz_num_math(core->num, argv[1]), 1);
+	if (!cmp) {
+		return ret;
+	}
+	ret = core_cmp_bits(core, cmp) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+	free(cmp);
+	return ret;
 }
 
 // c2
