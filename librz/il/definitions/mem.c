@@ -55,8 +55,8 @@ RZ_API void rz_il_mem_free(RzILMem *mem) {
  * \return a pointer to memory
  */
 RZ_API RzILMem *rz_il_mem_store(RzILMem *mem, RzILBitVector *key, RzILBitVector *value) {
-	if (value->len != mem->min_unit_size) {
-		RZ_LOG_ERROR("[Type Not Matched]\n");
+	if (value->len < mem->min_unit_size) {
+		RZ_LOG_ERROR("RzIL: Memory write size mismatch (expected size > %u, but got %u)\n", mem->min_unit_size, value->len);
 		return NULL;
 	}
 	ht_pp_update(mem->kv_map, key, value);

@@ -14,6 +14,7 @@ static bool is_equal_bool(RzILBool *x, RzILBool *y) {
 }
 
 bool test_rzil_bv_init(void) {
+	char *s = NULL;
 	// create a zero vector
 	RzILBitVector *bits_42 = rz_il_bv_new(42);
 	mu_assert("init 42-bits vector", bits_42 && (bits_42->len == 42));
@@ -31,6 +32,12 @@ bool test_rzil_bv_init(void) {
 	// dup
 	RzILBitVector *bits_32_dump = rz_il_bv_dup(bits_32);
 	mu_assert("dump from bits32", is_equal_bv(bits_32_dump, bits_32));
+
+	s = rz_il_bv_as_string(bits_32);
+	mu_assert_streq_free(s, "00000000000000000000000001100100", "string bit value of bv");
+
+	s = rz_il_bv_as_hex_string(bits_32);
+	mu_assert_streq_free(s, "0x00000064", "string hex value of bv");
 
 	rz_il_bv_free(bits_42);
 	rz_il_bv_free(bits_32);
@@ -402,7 +409,7 @@ static bool test_rzil_mem() {
 
 	RzILBitVector *addr = rz_il_bv_new_from_ut32(16, 121);
 	RzILBitVector *valid_data = rz_il_bv_new_from_ut32(8, 177);
-	RzILBitVector *invalid_data = rz_il_bv_new_from_ut32(24, 177);
+	RzILBitVector *invalid_data = rz_il_bv_new_from_ut32(4, 6);
 
 	RzILMem *result = rz_il_mem_store(mem, addr, valid_data);
 	mu_assert_eq(result, mem, "Store successfully");

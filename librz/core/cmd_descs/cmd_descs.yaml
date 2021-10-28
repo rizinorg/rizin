@@ -156,7 +156,7 @@ commands:
     args:
       - name: search_cmd
         type: RZ_CMD_ARG_TYPE_STRING
-        flags: ''
+        flags: ""
         optional: true
     modes:
       - RZ_OUTPUT_MODE_STANDARD
@@ -375,6 +375,9 @@ commands:
           - text: "<cmd> @@i"
             arg_str: ""
             comment: "Run <cmd> over all instructions of the current basic block"
+          - text: "<cmd> @@ii"
+            arg_str: ""
+            comment: "Run <cmd> over all imports"
           - text: "<cmd> @@iS"
             arg_str: ""
             comment: "Run <cmd> over all sections"
@@ -597,7 +600,8 @@ commands:
         entries:
           - text: aflt
             arg_str: ":addr/cols/name/nbbs:nbbs/sort/dec:nbbs/gt/1:nbbs/lt/10:fancy"
-            comment: Show only the address, name and number of basic blocks of the identified functions
+            comment:
+              Show only the address, name and number of basic blocks of the identified functions
               with more than 1 block but less than 10, sorted decrementally by number of blocks.
   - name: shell
     summary: Common shell commands
