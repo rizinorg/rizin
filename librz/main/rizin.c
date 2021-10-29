@@ -414,6 +414,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	if (!r) {
 		eprintf("Cannot initialize RzCore\n");
 		LISTS_FREE();
+		free(envprofile);
 		return 1;
 	}
 	r->rz_main_rizin = rz_main_rizin;

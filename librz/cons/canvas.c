@@ -5,8 +5,8 @@
 #include <rz_cons.h>
 #include <rz_util/rz_assert.h>
 
-#define useUtf8      (rz_cons_singleton()->use_utf8)
-#define useUtf8Curvy (rz_cons_singleton()->use_utf8_curvy)
+#define USE_UTF8       (rz_cons_singleton()->use_utf8)
+#define USE_UTF8_CURVY (rz_cons_singleton()->use_utf8_curvy)
 
 #define W(y)    rz_cons_canvas_write(c, y)
 #define G(x, y) rz_cons_canvas_gotoxy(c, x, y)
@@ -201,7 +201,7 @@ RZ_API bool rz_cons_canvas_gotoxy(RzConsCanvas *c, int x, int y) {
 		ret = false;
 	}
 	if (x < 0) {
-		//c->x = 0;
+		// c->x = 0;
 		ret = false;
 	}
 	if (x > c->blen[y] * 2) {
@@ -484,31 +484,32 @@ RZ_API int rz_cons_canvas_resize(RzConsCanvas *c, int w, int h) {
 }
 
 RZ_API void rz_cons_canvas_box(RzConsCanvas *c, int x, int y, int w, int h, const char *color) {
-	const char *hline = useUtf8 ? RUNECODESTR_LINE_HORIZ : "-";
-	const char *vtmp = useUtf8 ? RUNECODESTR_LINE_VERT : "|";
-	RzStrBuf *vline = rz_strbuf_new(NULL);
-	rz_strbuf_appendf(vline, Color_RESET "%s%s", color, vtmp);
-	const char *tl_corner = useUtf8 ? (useUtf8Curvy ? RUNECODESTR_CURVE_CORNER_TL : RUNECODESTR_CORNER_TL) : ".";
-	const char *tr_corner = useUtf8 ? (useUtf8Curvy ? RUNECODESTR_CURVE_CORNER_TR : RUNECODESTR_CORNER_TR) : ".";
-	const char *bl_corner = useUtf8 ? (useUtf8Curvy ? RUNECODESTR_CURVE_CORNER_BL : RUNECODESTR_CORNER_BL) : "`";
-	const char *br_corner = useUtf8 ? (useUtf8Curvy ? RUNECODESTR_CURVE_CORNER_BR : RUNECODESTR_CORNER_BR) : "'";
-	int i, x_mod;
-	int roundcorners = 0;
-	char *row = NULL, *row_ptr;
+	rz_return_if_fail(c && w && h);
 
-	if (w < 1 || h < 1) {
-		return;
-	}
 	if (color) {
 		c->attr = color;
 	}
 	if (!c->color) {
 		c->attr = Color_RESET;
 	}
-	row = malloc(w + 1);
+	char *row = malloc(w + 1);
 	if (!row) {
 		return;
 	}
+
+	const char *hline = USE_UTF8 ? RUNECODESTR_LINE_HORIZ : "-";
+	const char *vtmp = USE_UTF8 ? RUNECODESTR_LINE_VERT : "|";
+	const char *tl_corner = USE_UTF8 ? (USE_UTF8_CURVY ? RUNECODESTR_CURVE_CORNER_TL : RUNECODESTR_CORNER_TL) : ".";
+	const char *tr_corner = USE_UTF8 ? (USE_UTF8_CURVY ? RUNECODESTR_CURVE_CORNER_TR : RUNECODESTR_CORNER_TR) : ".";
+	const char *bl_corner = USE_UTF8 ? (USE_UTF8_CURVY ? RUNECODESTR_CURVE_CORNER_BL : RUNECODESTR_CORNER_BL) : "`";
+	const char *br_corner = USE_UTF8 ? (USE_UTF8_CURVY ? RUNECODESTR_CURVE_CORNER_BR : RUNECODESTR_CORNER_BR) : "'";
+	int i, x_mod;
+	int roundcorners = 0;
+	char *row_ptr;
+
+	RzStrBuf *vline = rz_strbuf_new(NULL);
+	rz_strbuf_appendf(vline, Color_RESET "%s%s", color, vtmp);
+
 	row[0] = roundcorners ? '.' : tl_corner[0];
 	if (w > 2) {
 		memset(row + 1, hline[0], w - 2);

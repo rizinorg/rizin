@@ -89,6 +89,7 @@ static int rz_bin_dmp64_init_bmp_pages(struct rz_bin_dmp64_obj_t *obj) {
 		}
 		dmp_page_desc *page = RZ_NEW0(dmp_page_desc);
 		if (!page) {
+			rz_bitmap_free(bitmap);
 			return false;
 		}
 		page->start = i * DMP_PAGE_SIZE;
@@ -98,6 +99,7 @@ static int rz_bin_dmp64_init_bmp_pages(struct rz_bin_dmp64_obj_t *obj) {
 	}
 	if (obj->bmp_header->TotalPresentPages != num_bitset) {
 		eprintf("Warning: TotalPresentPages not matched\n");
+		rz_bitmap_free(bitmap);
 		return false;
 	}
 
