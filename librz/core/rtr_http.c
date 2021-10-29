@@ -34,19 +34,18 @@ static int rz_core_rtr_http_cmd(RzCore *core, RzSocketHTTPRequest *rs, char *cmd
 	return 0;
 }
 
-
-static int rz_core_rtr_http_handler_ok(RzCore *core, RzSocketHTTPRequest *rs, char* headers) {
+static int rz_core_rtr_http_handler_ok(RzCore *core, RzSocketHTTPRequest *rs, char *headers) {
 	rz_socket_http_response(rs, 200, "", 0, headers);
 	return 1;
 }
 
-static int rz_core_rtr_http_handler_invalid(RzCore *core, RzSocketHTTPRequest *rs, char* headers) {
+static int rz_core_rtr_http_handler_invalid(RzCore *core, RzSocketHTTPRequest *rs, char *headers) {
 	rz_socket_http_response(rs, 404, "Invalid protocol", 0, headers);
 	return 1;
 }
 
-static int rz_core_rtr_http_handler_get_file(RzCore *core, RzSocketHTTPRequest *rs, char* headers) {
-	char * dir = NULL;
+static int rz_core_rtr_http_handler_get_file(RzCore *core, RzSocketHTTPRequest *rs, char *headers) {
+	char *dir = NULL;
 	if (rz_config_get_i(core->config, "http.dirlist")) {
 		if (rz_file_is_directory(rs->path)) {
 			dir = strdup(rs->path);
@@ -88,8 +87,8 @@ static int rz_core_rtr_http_handler_get_file(RzCore *core, RzSocketHTTPRequest *
 	}
 	return 1;
 }
-static int rz_core_rtr_http_handler_get_cmd(RzCore *core, RzSocketHTTPRequest *rs, char* headers) {
-	const bool colon = rz_config_get_i(core->config, "http.colon");	
+static int rz_core_rtr_http_handler_get_cmd(RzCore *core, RzSocketHTTPRequest *rs, char *headers) {
+	const bool colon = rz_config_get_i(core->config, "http.colon");
 	const char *port = rz_config_get(core->config, "http.port");
 	if (colon && rs->path[5] != ':') {
 		rz_socket_http_response(rs, 403, "Permission denied", 0, headers);
@@ -116,7 +115,7 @@ static int rz_core_rtr_http_handler_get_cmd(RzCore *core, RzSocketHTTPRequest *r
 			if (httpcmd && *httpcmd) {
 				int len; // do remote http query and proxy response
 				char *res, *bar = rz_str_newf("%s/%s", httpcmd, cmd);
-				void * bed = rz_cons_sleep_begin();
+				void *bed = rz_cons_sleep_begin();
 				res = rz_socket_http_get(bar, NULL, &len);
 				rz_cons_sleep_end(bed);
 				if (res) {
@@ -136,25 +135,24 @@ static int rz_core_rtr_http_handler_get_cmd(RzCore *core, RzSocketHTTPRequest *r
 					rz_socket_http_close(rs);
 					//free(dir);
 					free(refstr);
-					return -2;//ret = -2;
+					return -2; //ret = -2;
 					//goto the_end;
 				} else if (!strcmp(cmd, "Rh--")) {
 					rz_socket_http_close(rs);
 					//free(dir);
 					free(refstr);
-					return 0;//ret = 0;
+					return 0; //ret = 0;
 					//goto the_end;
 				}
 			}
 		}
 		free(refstr);
-	
 	}
-	return 1;//return 0;
+	return 1; //return 0;
 }
 
-static  int rz_core_rtr_http_handler_get_index(RzCore *core, RzSocketHTTPRequest *rs, char* headers) {
-	char * dir = NULL;
+static int rz_core_rtr_http_handler_get_index(RzCore *core, RzSocketHTTPRequest *rs, char *headers) {
+	char *dir = NULL;
 	const char *index = rz_config_get(core->config, "http.index");
 	if (rz_config_get_i(core->config, "http.dirlist")) {
 		if (rz_file_is_directory(rs->path)) {
@@ -199,7 +197,7 @@ static  int rz_core_rtr_http_handler_get_index(RzCore *core, RzSocketHTTPRequest
 			free(path);
 			free(res);
 			RZ_FREE(dir);
-			return LOOP_CONTINUE_VALUE;  //continue; //do continue in main loop on 66 number
+			return LOOP_CONTINUE_VALUE; //continue; //do continue in main loop on 66 number
 		}
 	}
 	if (rz_file_exists(path)) {
@@ -239,7 +237,7 @@ static  int rz_core_rtr_http_handler_get_index(RzCore *core, RzSocketHTTPRequest
 	return 1;
 }
 
-static  int rz_core_rtr_http_handler_post_upload(RzCore *core, RzSocketHTTPRequest *rs, char* headers) {
+static int rz_core_rtr_http_handler_post_upload(RzCore *core, RzSocketHTTPRequest *rs, char *headers) {
 	ut8 *ret;
 	int retlen;
 	char buf[128];
@@ -269,7 +267,7 @@ static  int rz_core_rtr_http_handler_post_upload(RzCore *core, RzSocketHTTPReque
 	return 1;
 }
 
-static  int rz_core_rtr_http_handler_post_cmd(RzCore *core, RzSocketHTTPRequest *rs, char* headers) {
+static int rz_core_rtr_http_handler_post_cmd(RzCore *core, RzSocketHTTPRequest *rs, char *headers) {
 	char *out = NULL;
 	rz_config_set(core->config, "scr.interactive", "false");
 	rz_core_rtr_http_cmd(core, rs, (char *)rs->data, out, headers);
@@ -277,12 +275,12 @@ static  int rz_core_rtr_http_handler_post_cmd(RzCore *core, RzSocketHTTPRequest 
 		/* do stuff */
 		rz_socket_http_close(rs);
 		//free(dir);
-		return -2;//ret = -2;
+		return -2; //ret = -2;
 		//goto the_end;
 	} else if (!strcmp((char *)rs->data, "Rh--")) {
 		rz_socket_http_close(rs);
 		//free(dir);
-		return 0;//ret = 0;
+		return 0; //ret = 0;
 		//goto the_end;
 	}
 	return 1;
@@ -290,31 +288,25 @@ static  int rz_core_rtr_http_handler_post_cmd(RzCore *core, RzSocketHTTPRequest 
 
 static rz_core_rtr_http_handler_ptr rz_core_rtr_http_router(RzSocketHTTPRequest *rs) {
 	if (!strcmp(rs->method, "OPTIONS")) {
-			return &rz_core_rtr_http_handler_ok;
-		} else if (!strcmp(rs->method, "GET")) {
-			if (!strncmp(rs->path, "/up/", 4)) {
-				return rz_core_rtr_http_handler_get_file;
-			}
-			else if (!strncmp(rs->path, "/cmd/", 5)) {
-				return rz_core_rtr_http_handler_get_cmd;
-			}
-			else {
-				return rz_core_rtr_http_handler_get_index;
-			}
+		return &rz_core_rtr_http_handler_ok;
+	} else if (!strcmp(rs->method, "GET")) {
+		if (!strncmp(rs->path, "/up/", 4)) {
+			return rz_core_rtr_http_handler_get_file;
+		} else if (!strncmp(rs->path, "/cmd/", 5)) {
+			return rz_core_rtr_http_handler_get_cmd;
+		} else {
+			return rz_core_rtr_http_handler_get_index;
 		}
-		else if (!strcmp(rs->method, "POST")) {
-			if (!strncmp(rs->path, "/upload/", 8)) {
-				return rz_core_rtr_http_handler_post_upload;
-			}
-			else if (!strncmp(rs->path, "/cmd/", 5)) {
-				return rz_core_rtr_http_handler_post_cmd;
-			}
+	} else if (!strcmp(rs->method, "POST")) {
+		if (!strncmp(rs->path, "/upload/", 8)) {
+			return rz_core_rtr_http_handler_post_upload;
+		} else if (!strncmp(rs->path, "/cmd/", 5)) {
+			return rz_core_rtr_http_handler_post_cmd;
 		}
-		
-	return rz_core_rtr_http_handler_invalid;
-	
-}
+	}
 
+	return rz_core_rtr_http_handler_invalid;
+}
 
 static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char *path) {
 	RzConfig *newcfg = NULL, *origcfg = NULL;
@@ -551,11 +543,10 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 		}
 
 		int response_result = (*rz_core_rtr_http_router(rs))(core, rs, headers);
-		if (response_result == 0 || response_result == -2){
+		if (response_result == 0 || response_result == -2) {
 			ret = response_result;
 			goto the_end;
-		}
-		else if (response_result==LOOP_CONTINUE_VALUE){
+		} else if (response_result == LOOP_CONTINUE_VALUE) {
 			continue;
 		}
 
