@@ -424,8 +424,8 @@ RZ_IPI void rz_core_analysis_esil_default(RzCore *core) {
 				free(ss);
 			}
 		}
-		rz_list_free(list);
 	}
+	rz_list_free(list);
 	rz_core_seek(core, at, true);
 }
 
