@@ -508,6 +508,26 @@ static void il_op_resolve(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 }
 
 /**
+ * Generates the string representation of the IL statement
+ * \param op RzILOp*, IL statement
+ * \param sb RzStrBuf*, a pointer to the string buffer
+ */
+RZ_API void rz_il_op_stringify(RZ_NULLABLE RzILOp *op, RZ_NONNULL RzStrBuf *sb) {
+	rz_return_if_fail(op && sb);
+	il_op_resolve(op, sb, NULL);
+}
+
+/**
+ * Generates the JSON representation of the IL statement
+ * \param op RzILOp*, IL statement
+ * \param pj PJ*, a pointer to the JSON buffer
+ */
+RZ_API void rz_il_op_json(RZ_NULLABLE RzILOp *op, RZ_NONNULL PJ *pj) {
+	rz_return_if_fail(op && pj);
+	il_op_resolve(op, NULL, pj);
+}
+
+/**
  * Generates the string representation of the IL statements
  * \param op_list RzPVector*, array of IL statements
  * \param sb RzStrBuf*, a pointer to the string buffer
@@ -523,16 +543,16 @@ RZ_API void rz_il_oplist_stringify(RZ_NULLABLE RzPVector *op_list, RZ_NONNULL Rz
 		if (i > 0) {
 			rz_strbuf_append(sb, ", ");
 		}
-		il_op_resolve(ilop, sb, NULL);
+		rz_il_op_stringify(ilop, sb);
 		i++;
 	}
 	rz_strbuf_append(sb, "]");
 }
 
 /**
- * Generates the json representation of the IL statements
+ * Generates the JSON representation of the IL statements
  * \param code RzPVector*, array of IL statements
- * \param pj RzStrBuf*, a pointer to the json buffer
+ * \param pj PJ*, a pointer to the JSON buffer
  */
 RZ_API void rz_il_oplist_json(RZ_NULLABLE RzPVector *op_list, RZ_NONNULL PJ *pj) {
 	rz_return_if_fail(op_list && pj);
@@ -541,7 +561,7 @@ RZ_API void rz_il_oplist_json(RZ_NULLABLE RzPVector *op_list, RZ_NONNULL PJ *pj)
 	void **iter;
 	rz_pvector_foreach (op_list, iter) {
 		RzILOp *ilop = *iter;
-		il_op_resolve(ilop, NULL, pj);
+		rz_il_op_json(ilop, pj);
 	}
 	pj_end(pj);
 }
