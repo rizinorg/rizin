@@ -22,11 +22,9 @@ RZ_API RZ_OWN RzAnalysisRzil *rz_analysis_rzil_new() {
 }
 
 /**
- * Create an empty RzAnalysisRzil instance
- * inner VM should be init in adaptive plugin
- * \return RzAnalysisRzil* a pointer to RzAnalysisRzil instance
+ * Frees an RzAnalysisRzil instance
  */
-RZ_API void rz_analysis_rzil_free(RzAnalysisRzil *rzil) {
+RZ_API void rz_analysis_rzil_free(RZ_NULLABLE RzAnalysisRzil *rzil) {
 	if (!rzil) {
 		return;
 	}

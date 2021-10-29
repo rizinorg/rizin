@@ -1565,7 +1565,7 @@ RZ_API void rz_analysis_esil_trace_restore(RzAnalysisEsil *esil, int idx);
 
 /* rzil : stats and trace */
 RZ_API RZ_OWN RzAnalysisRzil *rz_analysis_rzil_new();
-RZ_API void rz_analysis_rzil_free(RzAnalysisRzil *rzil);
+RZ_API void rz_analysis_rzil_free(RZ_NULLABLE RzAnalysisRzil *rzil);
 RZ_API bool rz_analysis_rzil_set_pc(RzAnalysisRzil *rzil, ut64 addr);
 RZ_API bool rz_analysis_rzil_setup(RzAnalysis *analysis);
 RZ_API void rz_analysis_rzil_cleanup(RzAnalysis *analysis);
