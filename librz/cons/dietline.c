@@ -27,8 +27,6 @@ typedef enum {
 	MAJOR_BREAK
 } BreakMode;
 
-bool enable_yank_pop = false;
-
 static inline bool is_word_break_char(char ch, bool mode) {
 	int i;
 	if (mode == MAJOR_BREAK) {
@@ -88,7 +86,7 @@ static void kill_word(BreakMode mode) {
 	I.buffer.length -= len;
 }
 
-static void paste(void) {
+static void paste(bool *enable_yank_pop) {
 	if (I.clipboard) {
 		char *cursor = I.buffer.data + I.buffer.index;
 		int dist = (I.buffer.data + I.buffer.length) - cursor;
@@ -97,7 +95,7 @@ static void paste(void) {
 		memmove(cursor + len, cursor, dist);
 		memcpy(cursor, I.clipboard, len);
 		I.buffer.index += len;
-		enable_yank_pop = true;
+		*enable_yank_pop = true;
 	}
 }
 
@@ -911,17 +909,18 @@ RZ_API const char *rz_line_readline(void) {
 	return rz_line_readline_cb(NULL, NULL);
 }
 
-static inline void rotate_kill_ring(void) {
-	if (enable_yank_pop) {
-		I.buffer.index -= strlen(rz_list_get_n(I.kill_ring, I.kill_ring_ptr));
-		I.buffer.data[I.buffer.index] = 0;
-		I.kill_ring_ptr -= 1;
-		if (I.kill_ring_ptr < 0) {
-			I.kill_ring_ptr = I.kill_ring->length - 1;
-		}
-		I.clipboard = rz_list_get_n(I.kill_ring, I.kill_ring_ptr);
-		paste();
+static inline void rotate_kill_ring(bool *enable_yank_pop) {
+	if (!*enable_yank_pop) {
+		return;
 	}
+	I.buffer.index -= strlen(rz_list_get_n(I.kill_ring, I.kill_ring_ptr));
+	I.buffer.data[I.buffer.index] = 0;
+	I.kill_ring_ptr -= 1;
+	if (I.kill_ring_ptr < 0) {
+		I.kill_ring_ptr = I.kill_ring->length - 1;
+	}
+	I.clipboard = rz_list_get_n(I.kill_ring, I.kill_ring_ptr);
+	paste(enable_yank_pop);
 }
 
 static inline void __delete_next_char(void) {
@@ -1110,7 +1109,7 @@ static void __update_prompt_color(void) {
 	I.prompt = rz_str_newf("%s%s%s", BEGIN, prompt, END);
 }
 
-static void __vi_mode(void) {
+static void __vi_mode(bool *enable_yank_pop) {
 	char ch;
 	I.vi_mode = CONTROL_MODE;
 	__update_prompt_color();
@@ -1245,7 +1244,7 @@ static void __vi_mode(void) {
 			break;
 		case 'p':
 			while (rep--) {
-				paste();
+				paste(enable_yank_pop);
 			}
 			break;
 		case 'a':
@@ -1337,6 +1336,8 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 	int ch = 0, key, i = 0; /* grep completion */
 	char *tmp_ed_cmd, prev = 0;
 	int prev_buflen = -1;
+	bool enable_yank_pop = false;
+
 	RzCons *cons = rz_cons_singleton();
 
 	if (!I.hud || (I.hud && !I.hud->activate)) {
@@ -1348,7 +1349,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 	}
 	int mouse_status = cons->mouse;
 	if (I.hud && I.hud->vi) {
-		__vi_mode();
+		__vi_mode(&enable_yank_pop);
 		goto _end;
 	}
 	if (I.contents) {
@@ -1565,11 +1566,11 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 			}
 			break;
 		case 25: // ^Y - paste
-			paste();
+			paste(&enable_yank_pop);
 			yank_flag = 1;
 			break;
 		case 29: // ^^ - rotate kill ring
-			rotate_kill_ring();
+			rotate_kill_ring(&enable_yank_pop);
 			yank_flag = enable_yank_pop ? 1 : 0;
 			break;
 		case 20: // ^t Kill from point to the end of the current word,
@@ -1632,7 +1633,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 					if (I.hud) {
 						I.hud->vi = true;
 					}
-					__vi_mode();
+					__vi_mode(&enable_yank_pop);
 				};
 				if (I.sel_widget) {
 					selection_widget_erase();
