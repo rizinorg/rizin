@@ -8,7 +8,7 @@
  * inner VM should be init in adaptive plugin
  * \return RzAnalysisRzil* a pointer to RzAnalysisRzil instance
  */
-RZ_API RzAnalysisRzil *rz_analysis_rzil_new() {
+RZ_API RZ_OWN RzAnalysisRzil *rz_analysis_rzil_new() {
 	RzAnalysisRzil *rzil = RZ_NEW0(RzAnalysisRzil);
 	if (!rzil) {
 		return NULL;
@@ -22,19 +22,30 @@ RZ_API RzAnalysisRzil *rz_analysis_rzil_new() {
 }
 
 /**
+ * Create an empty RzAnalysisRzil instance
+ * inner VM should be init in adaptive plugin
+ * \return RzAnalysisRzil* a pointer to RzAnalysisRzil instance
+ */
+RZ_API void rz_analysis_rzil_free(RzAnalysisRzil *rzil) {
+	if (!rzil) {
+		return;
+	}
+	rz_il_vm_free(rzil->vm);
+	free(rzil);
+}
+
+/**
  * Cleanup RZIL instance : clean VM, clean arch-specific user_data, and RZIL itself
  * \param analysis pointer to rizin's RzAnalysis
  * \param rzil pointer to RzAnalysisRzil
  */
-RZ_API void rz_analysis_rzil_cleanup(RzAnalysis *analysis, RzAnalysisRzil *rzil) {
-	if (!rzil) {
+RZ_API void rz_analysis_rzil_cleanup(RzAnalysis *analysis) {
+	rz_return_if_fail(analysis);
+	if (!analysis->rzil || !analysis->cur || !analysis->cur->rzil_fini) {
 		return;
 	}
-	if (analysis && analysis->cur && analysis->cur->rzil_fini) {
-		analysis->cur->rzil_fini(analysis);
-	}
-	free(rzil->vm);
-	free(rzil);
+	analysis->cur->rzil_fini(analysis);
+	rz_analysis_rzil_free(analysis->rzil);
 	analysis->rzil = NULL;
 }
 
@@ -62,20 +73,17 @@ RZ_API bool rz_analysis_rzil_set_pc(RzAnalysisRzil *rzil, ut64 addr) {
  * \return true if setup, else return false
  */
 RZ_API bool rz_analysis_rzil_setup(RzAnalysis *analysis) {
-	rz_return_val_if_fail(analysis, false);
-	rz_return_val_if_fail(!analysis->rzil, false);
+	rz_return_val_if_fail(analysis && !analysis->rzil, false);
+	if (!analysis->cur || !analysis->cur->rzil_init) {
+		return false;
+	}
 
 	RzAnalysisRzil *rzil = rz_analysis_rzil_new();
 	if (!rzil) {
 		return false;
 	}
 	analysis->rzil = rzil;
-
-	// init RZIL according to different archs
-	if (analysis->cur && analysis->cur->rzil_init) {
-		analysis->cur->rzil_init(analysis);
-	}
-
+	analysis->cur->rzil_init(analysis);
 	return true;
 }
 

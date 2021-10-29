@@ -172,7 +172,7 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 
 	plugin_fini(a);
 
-	rz_analysis_rzil_cleanup(a, a->rzil);
+	rz_analysis_rzil_cleanup(a);
 	rz_list_free(a->fcns);
 	ht_up_free(a->ht_addr_fun);
 	ht_pp_free(a->ht_name_fun);
@@ -215,38 +215,31 @@ RZ_API int rz_analysis_add(RzAnalysis *analysis, RzAnalysisPlugin *p) {
 }
 
 RZ_API bool rz_analysis_use(RzAnalysis *analysis, const char *name) {
+	if (!analysis || !name) {
+		return false;
+	}
+
 	RzListIter *it;
 	RzAnalysisPlugin *h;
-
-	if (analysis) {
-		rz_list_foreach (analysis->plugins, it, h) {
-			if (!h || !h->name || strcmp(h->name, name)) {
-				continue;
-			}
-			plugin_fini(analysis);
-			analysis->cur = h;
-			if (h->init && !h->init(&analysis->plugin_data)) {
-				RZ_LOG_ERROR("analysis plugin '%s' failed to initialize.\n", h->name);
-				return false;
-			}
-			rz_analysis_set_reg_profile(analysis);
-
-			// default : init and enable RZIL if defined rzil_init
-			if (h->rzil_init) {
-				if (analysis->rzil) {
-					rz_analysis_rzil_cleanup(analysis, analysis->rzil);
-					analysis->rzil = NULL;
-				}
-				rz_analysis_rzil_setup(analysis);
-			} else {
-				// create it to make analysis_tp go right
-				if (!analysis->rzil) {
-					analysis->rzil = rz_analysis_rzil_new();
-				}
-			}
-			return true;
+	rz_list_foreach (analysis->plugins, it, h) {
+		if (!h || !h->name || strcmp(h->name, name)) {
+			continue;
 		}
+		rz_analysis_rzil_cleanup(analysis);
+		plugin_fini(analysis);
+
+		analysis->cur = h;
+		if (h->init && !h->init(&analysis->plugin_data)) {
+			RZ_LOG_ERROR("analysis plugin '%s' has failed to initialize.\n", h->name);
+			return false;
+		}
+		rz_analysis_set_reg_profile(analysis);
+
+		// default : init and enable RZIL if defined rzil_init
+		rz_analysis_rzil_setup(analysis);
+		return true;
 	}
+
 	return false;
 }
 
@@ -388,6 +381,8 @@ RZ_API ut8 *rz_analysis_mask(RzAnalysis *analysis, int size, const ut8 *data, ut
 		}
 		idx += oplen;
 		at += oplen;
+		rz_analysis_op_fini(op);
+		rz_analysis_op_init(op);
 	}
 
 	rz_analysis_op_free(op);

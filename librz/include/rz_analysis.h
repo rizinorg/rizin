@@ -1564,10 +1564,11 @@ RZ_API void rz_analysis_esil_trace_show(RzAnalysisEsil *esil, int idx);
 RZ_API void rz_analysis_esil_trace_restore(RzAnalysisEsil *esil, int idx);
 
 /* rzil : stats and trace */
-RZ_API RzAnalysisRzil *rz_analysis_rzil_new();
+RZ_API RZ_OWN RzAnalysisRzil *rz_analysis_rzil_new();
+RZ_API void rz_analysis_rzil_free(RzAnalysisRzil *rzil);
 RZ_API bool rz_analysis_rzil_set_pc(RzAnalysisRzil *rzil, ut64 addr);
 RZ_API bool rz_analysis_rzil_setup(RzAnalysis *analysis);
-RZ_API void rz_analysis_rzil_cleanup(RzAnalysis *analysis, RzAnalysisRzil *rzil);
+RZ_API void rz_analysis_rzil_cleanup(RzAnalysis *analysis);
 RZ_API void rz_analysis_set_rzil_op(RzAnalysisRzil *rzil, ut64 addr, RzPVector *oplist);
 RZ_API void rz_analysis_rzil_record_stats(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzAnalysisRzilOp *op);
 
