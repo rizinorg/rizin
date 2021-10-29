@@ -364,7 +364,7 @@ static bool cb_scrrainbow(void *user, void *data) {
 		rz_cons_pal_random();
 	} else {
 		core->print->flags &= (~RZ_PRINT_FLAGS_RAINBOW);
-		rz_core_theme_load(core, rz_core_theme_get());
+		rz_core_theme_load(core, rz_core_theme_get(core));
 	}
 	rz_print_set_flags(core->print, core->print->flags);
 	return true;
