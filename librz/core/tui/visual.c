@@ -600,6 +600,7 @@ repeat:
 	case 'c':
 		setcursor(core, !core->print->cur_enabled);
 		rz_strbuf_free(p);
+		rz_strbuf_free(q);
 		return ret;
 	case 'i':
 		rz_strbuf_appendf(p, "Visual Insertion Help:\n\n");
