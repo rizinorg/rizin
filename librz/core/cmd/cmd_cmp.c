@@ -120,7 +120,7 @@ static bool core_cmp_bits(RzCore *core, RzCompareData *cmp) {
 
 // c
 RZ_IPI RzCmdStatus rz_cmd_cmp_string_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *output) {
-	RzCompareOutputMode outmode = output->mode == RZ_OUTPUT_MODE_JSON ? RZ_COMPARE_MODE_JSON : RZ_COMPARE_MODE_DEFAULT;
+	RzComparePrintMode outmode = output->mode == RZ_OUTPUT_MODE_JSON ? RZ_COMPARE_MODE_JSON : RZ_COMPARE_MODE_DEFAULT;
 	RzCmdStatus ret = RZ_CMD_STATUS_ERROR;
 	char *unescaped = strdup(argv[1]);
 	int len = rz_str_unescape(unescaped);
@@ -242,7 +242,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_hex_diff_lines_handler(RzCore *core, int argc, con
 
 // ccd
 RZ_IPI RzCmdStatus rz_cmd_cmp_disasm_handler(RzCore *core, int argc, const char **argv) {
-	RzList *cmp = rz_cmp_disasm(core, argv[1]);
+	RzList *cmp = rz_cmp_disasm(core, core->offset, rz_num_math(core->num, argv[1]), core->blocksize);
 	bool ret = rz_cmp_disasm_print(core, cmp, false);
 	rz_list_free(cmp);
 	return ret ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
@@ -317,7 +317,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_unified8_handler(RzCore *core, int argc, const cha
 
 // cud
 RZ_IPI RzCmdStatus rz_cmd_cmp_unified_disasm_handler(RzCore *core, int argc, const char **argv) {
-	RzList *cmp = rz_cmp_disasm(core, argv[1]);
+	RzList *cmp = rz_cmp_disasm(core, core->offset, rz_num_math(core->num, argv[1]), core->blocksize);
 	bool ret = rz_cmp_disasm_print(core, cmp, true);
 	rz_list_free(cmp);
 	return ret ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
@@ -357,7 +357,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_update_watcher_handler(RzCore *core, int argc, con
 
 // cx
 RZ_IPI RzCmdStatus rz_cmd_cmp_hexpair_string_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *output) {
-	RzCompareOutputMode mode;
+	RzComparePrintMode mode;
 	RzOutputMode omode = output->mode;
 	switch (omode) {
 	case RZ_OUTPUT_MODE_STANDARD:

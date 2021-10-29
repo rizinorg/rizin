@@ -988,7 +988,7 @@ typedef enum {
 	RZ_COMPARE_MODE_RIZIN,
 	RZ_COMPARE_MODE_DIFF,
 	RZ_COMPARE_MODE_JSON
-} RzCompareOutputMode;
+} RzComparePrintMode;
 
 /* watchers */
 RZ_API void rz_core_cmpwatch_free(RZ_NONNULL RzCoreCmpWatcher *w);
@@ -996,7 +996,7 @@ RZ_API RzCoreCmpWatcher *rz_core_cmpwatch_get(RZ_NONNULL RzCore *core, ut64 addr
 RZ_API bool rz_core_cmpwatch_add(RZ_NONNULL RzCore *core, ut64 addr, int size, const char *cmd);
 RZ_API bool rz_core_cmpwatch_del(RZ_NONNULL RzCore *core, ut64 addr);
 RZ_API bool rz_core_cmpwatch_update(RZ_NONNULL RzCore *core, ut64 addr);
-RZ_API void rz_core_cmpwatch_show(RZ_NONNULL RzCore *core, ut64 addr, RzCompareOutputMode mode);
+RZ_API void rz_core_cmpwatch_show(RZ_NONNULL RzCore *core, ut64 addr, RzComparePrintMode mode);
 RZ_API bool rz_core_cmpwatch_revert(RZ_NONNULL RzCore *core, ut64 addr);
 
 // TODO MOVE SOMEWHERE ELSE
