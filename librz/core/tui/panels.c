@@ -3217,7 +3217,7 @@ int __settings_colors_cb(void *user) {
 	RzPanelsMenuItem *parent = menu->history[menu->depth - 1];
 	RzPanelsMenuItem *child = parent->sub[parent->selectedIndex];
 	rz_str_ansi_filter(child->name, NULL, NULL, -1);
-	rz_core_load_theme(core, child->name);
+	rz_core_theme_load(core, child->name);
 	int i;
 	for (i = 1; i < menu->depth; i++) {
 		RzPanel *p = menu->history[i]->p;
@@ -5333,7 +5333,7 @@ RZ_API void rz_save_panels_layout(RzCore *core, const char *oname) {
 }
 
 void __load_config_menu(RzCore *core) {
-	RzList *themes_list = rz_core_list_themes(core);
+	RzList *themes_list = rz_core_theme_list(core);
 	RzListIter *th_iter;
 	char *th;
 	int i = 0;

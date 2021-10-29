@@ -133,6 +133,7 @@ commands:
           - name: eco
             summary: List the available themes
             cname: cmd_eval_color_load_theme
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
             args:
               - name: theme
                 type: RZ_CMD_ARG_TYPE_STRING

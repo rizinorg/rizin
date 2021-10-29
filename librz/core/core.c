@@ -1377,7 +1377,7 @@ static void autocomplete_theme(RzCore *core, RzLineCompletion *completion, const
 	int len = strlen(str);
 	char *theme;
 	RzListIter *iter;
-	RzList *themes = rz_core_list_themes(core);
+	RzList *themes = rz_core_theme_list(core);
 	rz_list_foreach (themes, iter, theme) {
 		if (!len || !strncmp(str, theme, len)) {
 			rz_line_completion_push(completion, theme);
@@ -2374,6 +2374,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	rz_core_seek_reset(core);
 	core->lastsearch = NULL;
 	core->cmdfilter = NULL;
+	core->curtheme = "default";
 	core->switch_file_view = 0;
 	core->cmdremote = 0;
 	core->incomment = false;
