@@ -93,6 +93,10 @@ RZ_API bool rz_core_theme_load(RzCore *core, const char *name) {
 	return !failed;
 }
 
+static int cmpthemes(const void *a, const void *b) {
+	return (int)strcmp(a, b);
+}
+
 static void list_themes_in_path(RzList *list, const char *path) {
 	RzListIter *iter;
 	const char *fn;
@@ -124,7 +128,7 @@ RZ_API RZ_OWN RzList *rz_core_theme_list(RzCore *core) {
 		list_themes_in_path(list, path);
 		RZ_FREE(path);
 	}
-
+	rz_list_sort(list, cmpthemes);
 	return list;
 }
 
