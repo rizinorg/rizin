@@ -94,7 +94,7 @@ error_goto:
  * 
  * \param core Current RzCore instance
  * \param cmp RzCompareData instance to be printed
- * \param mode Mode to be used (options: default, rizin, diff, json)
+ * \param mode Mode to be used (options: default, diff, json)
  * \return int Number of lines/diffs printed (-1 if failed)
  */
 RZ_API int rz_cmp_print(RZ_NONNULL RzCore *core, RZ_NONNULL const RzCompareData *cmp, RzComparePrintMode mode) {
@@ -129,11 +129,6 @@ RZ_API int rz_cmp_print(RZ_NONNULL RzCore *core, RZ_NONNULL const RzCompareData 
 			rz_cons_printf(" (byte=%.2d)   %02x '%c'  ->  %02x '%c'\n", i + 1,
 				cmp->data1[i], (IS_PRINTABLE(cmp->data1[i])) ? cmp->data1[i] : ' ',
 				cmp->data2[i], (IS_PRINTABLE(cmp->data2[i])) ? cmp->data2[i] : ' ');
-			break;
-		case RZ_COMPARE_MODE_RIZIN:
-			rz_cons_printf("wx %02x @ 0x%08" PFMT64x "\n",
-				cmp->data2[i],
-				cmp->addr1 + i);
 			break;
 		case RZ_COMPARE_MODE_JSON:
 			pj_o(pj);

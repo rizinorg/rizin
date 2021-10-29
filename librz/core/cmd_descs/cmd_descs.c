@@ -8337,7 +8337,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_cmp_update_watcher_cd = rz_cmd_desc_argv_new(core->rcmd, cw_cd, "cwu", rz_cmd_cmp_update_watcher_handler, &cmd_cmp_update_watcher_help);
 	rz_warn_if_fail(cmd_cmp_update_watcher_cd);
 
-	RzCmdDesc *cmd_cmp_hexpair_string_cd = rz_cmd_desc_argv_state_new(core->rcmd, c_cd, "cx", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN, rz_cmd_cmp_hexpair_string_handler, &cmd_cmp_hexpair_string_help);
+	RzCmdDesc *cmd_cmp_hexpair_string_cd = rz_cmd_desc_argv_new(core->rcmd, c_cd, "cx", rz_cmd_cmp_hexpair_string_handler, &cmd_cmp_hexpair_string_help);
 	rz_warn_if_fail(cmd_cmp_hexpair_string_cd);
 
 	RzCmdDesc *cmd_cmp_hex_block_hexdiff_cd = rz_cmd_desc_argv_new(core->rcmd, c_cd, "cX", rz_cmd_cmp_hex_block_hexdiff_handler, &cmd_cmp_hex_block_hexdiff_help);

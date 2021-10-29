@@ -356,20 +356,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_update_watcher_handler(RzCore *core, int argc, con
 }
 
 // cx
-RZ_IPI RzCmdStatus rz_cmd_cmp_hexpair_string_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *output) {
-	RzComparePrintMode mode;
-	RzOutputMode omode = output->mode;
-	switch (omode) {
-	case RZ_OUTPUT_MODE_STANDARD:
-		mode = RZ_COMPARE_MODE_DEFAULT;
-		break;
-	case RZ_OUTPUT_MODE_RIZIN:
-		mode = RZ_COMPARE_MODE_RIZIN;
-		break;
-	default:
-		rz_warn_if_reached();
-		return RZ_CMD_STATUS_ERROR;
-	}
+RZ_IPI RzCmdStatus rz_cmd_cmp_hexpair_string_handler(RzCore *core, int argc, const char **argv) {
 	RzStrBuf *concat_argv = rz_strbuf_new(NULL);
 	for (int i = 0; i < argc; i++) {
 		rz_strbuf_append(concat_argv, argv[i]);
@@ -399,7 +386,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_hexpair_string_handler(RzCore *core, int argc, con
 		free(cmp);
 		goto return_goto;
 	}
-	int val = rz_cmp_print(core, cmp, mode);
+	int val = rz_cmp_print(core, cmp, RZ_COMPARE_MODE_DEFAULT);
 	free(cmp);
 	if (val == 0) {
 		ret = false;
