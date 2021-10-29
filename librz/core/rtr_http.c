@@ -4,6 +4,10 @@
 
 // return 1 on error
 
+typedef int (*rz_core_rtr_http_handler_ptr)(RzCore *, RzSocketHTTPRequest *, char *);
+typedef rz_core_rtr_http_handler_ptr (*rz_core_rtr_http_handler)();
+static int LOOP_CONTINUE_VALUE = 66;
+
 static int rz_core_rtr_http_cmd(RzCore *core, RzSocketHTTPRequest *rs, char *cmd, char *out, char *headers) {
 	if ((!strcmp(cmd, "Rh*") ||
 		    !strcmp(cmd, "Rh--"))) {
@@ -30,6 +34,288 @@ static int rz_core_rtr_http_cmd(RzCore *core, RzSocketHTTPRequest *rs, char *cmd
 	return 0;
 }
 
+
+static int rz_core_rtr_http_handler_ok(RzCore *core, RzSocketHTTPRequest *rs, char* headers) {
+	rz_socket_http_response(rs, 200, "", 0, headers);
+	return 1;
+}
+
+static int rz_core_rtr_http_handler_invalid(RzCore *core, RzSocketHTTPRequest *rs, char* headers) {
+	rz_socket_http_response(rs, 404, "Invalid protocol", 0, headers);
+	return 1;
+}
+
+static int rz_core_rtr_http_handler_get_file(RzCore *core, RzSocketHTTPRequest *rs, char* headers) {
+	char * dir = NULL;
+	if (rz_config_get_i(core->config, "http.dirlist")) {
+		if (rz_file_is_directory(rs->path)) {
+			dir = strdup(rs->path);
+		}
+	}
+	if (rz_config_get_i(core->config, "http.upget")) {
+		const char *uproot = rz_config_get(core->config, "http.uproot");
+		if (!rs->path[3] || (rs->path[3] == '/' && !rs->path[4])) {
+			char *ptr = rtr_dir_files(uproot);
+			rz_socket_http_response(rs, 200, ptr, 0, headers);
+			free(ptr);
+		} else {
+			char *path = rz_file_root(uproot, rs->path + 4);
+			if (rz_file_exists(path)) {
+				size_t sz = 0;
+				char *f = rz_file_slurp(path, &sz);
+				if (f) {
+					rz_socket_http_response(rs, 200, f, (int)sz, headers);
+					free(f);
+				} else {
+					rz_socket_http_response(rs, 403, "Permission denied", 0, headers);
+					http_logf(core, "http: Cannot open '%s'\n", path);
+				}
+			} else {
+				if (dir) {
+					char *resp = rtr_dir_files(dir);
+					rz_socket_http_response(rs, 404, resp, 0, headers);
+					free(resp);
+				} else {
+					http_logf(core, "File '%s' not found\n", path);
+					rz_socket_http_response(rs, 404, "File not found\n", 0, headers);
+				}
+			}
+			free(path);
+			free(dir);
+		}
+	} else {
+		rz_socket_http_response(rs, 403, "", 0, NULL);
+	}
+	return 1;
+}
+static int rz_core_rtr_http_handler_get_cmd(RzCore *core, RzSocketHTTPRequest *rs, char* headers) {
+	const bool colon = rz_config_get_i(core->config, "http.colon");	
+	const char *port = rz_config_get(core->config, "http.port");
+	if (colon && rs->path[5] != ':') {
+		rz_socket_http_response(rs, 403, "Permission denied", 0, headers);
+	} else {
+		char *cmd = rs->path + 5;
+		const char *httpcmd = rz_config_get(core->config, "http.uri");
+		const char *httpref = rz_config_get(core->config, "http.referer");
+		const bool httpref_enabled = (httpref && *httpref);
+		char *refstr = NULL;
+		if (httpref_enabled) {
+			if (strstr(httpref, "http")) {
+				refstr = strdup(httpref);
+			} else {
+				refstr = rz_str_newf("http://localhost:%d/", atoi(port));
+			}
+		}
+
+		while (*cmd == '/') {
+			cmd++;
+		}
+		if (httpref_enabled && (!rs->referer || (refstr && !strstr(rs->referer, refstr)))) {
+			rz_socket_http_response(rs, 503, "", 0, headers);
+		} else {
+			if (httpcmd && *httpcmd) {
+				int len; // do remote http query and proxy response
+				char *res, *bar = rz_str_newf("%s/%s", httpcmd, cmd);
+				void * bed = rz_cons_sleep_begin();
+				res = rz_socket_http_get(bar, NULL, &len);
+				rz_cons_sleep_end(bed);
+				if (res) {
+					res[len] = 0;
+					rz_cons_println(res);
+				}
+				free(bar);
+			} else {
+				char *out, *cmd = rs->path + 5;
+				rz_str_uri_decode(cmd);
+				rz_config_set(core->config, "scr.interactive", "false");
+
+				rz_core_rtr_http_cmd(core, rs, cmd, out, headers);
+
+				if (!strcmp(cmd, "Rh*")) {
+					/* do stuff */
+					rz_socket_http_close(rs);
+					//free(dir);
+					free(refstr);
+					return -2;//ret = -2;
+					//goto the_end;
+				} else if (!strcmp(cmd, "Rh--")) {
+					rz_socket_http_close(rs);
+					//free(dir);
+					free(refstr);
+					return 0;//ret = 0;
+					//goto the_end;
+				}
+			}
+		}
+		free(refstr);
+	
+	}
+	return 1;//return 0;
+}
+
+static  int rz_core_rtr_http_handler_get_index(RzCore *core, RzSocketHTTPRequest *rs, char* headers) {
+	char * dir = NULL;
+	const char *index = rz_config_get(core->config, "http.index");
+	if (rz_config_get_i(core->config, "http.dirlist")) {
+		if (rz_file_is_directory(rs->path)) {
+			dir = strdup(rs->path);
+		}
+	}
+	const char *root = rz_config_get(core->config, "http.root");
+	const char *homeroot = rz_config_get(core->config, "http.homeroot");
+	char *path = NULL;
+	if (!strcmp(rs->path, "/")) {
+		free(rs->path);
+		if (*index == '/') {
+			rs->path = strdup(index);
+			path = strdup(index);
+		} else {
+			rs->path = rz_str_newf("/%s", index);
+			path = rz_file_root(root, rs->path);
+		}
+	} else if (homeroot && *homeroot) {
+		char *homepath = rz_file_abspath(homeroot);
+		path = rz_file_root(homepath, rs->path);
+		free(homepath);
+		if (!rz_file_exists(path) && !rz_file_is_directory(path)) {
+			free(path);
+			path = rz_file_root(root, rs->path);
+		}
+	} else {
+		if (*index == '/') {
+			path = strdup(index);
+		} else {
+		}
+	}
+	// FD IS OK HERE
+	if (rs->path[strlen(rs->path) - 1] == '/') {
+		path = (*index == '/') ? strdup(index) : rz_str_append(path, index);
+	} else {
+		//snprintf (path, sizeof (path), "%s/%s", root, rs->path);
+		if (rz_file_is_directory(path)) {
+			char *res = rz_str_newf("Location: %s/\n%s", rs->path, headers);
+			rz_socket_http_response(rs, 302, NULL, 0, res);
+			rz_socket_http_close(rs);
+			free(path);
+			free(res);
+			RZ_FREE(dir);
+			return LOOP_CONTINUE_VALUE;  //continue; //do continue in main loop on 66 number
+		}
+	}
+	if (rz_file_exists(path)) {
+		size_t sz = 0;
+		char *f = rz_file_slurp(path, &sz);
+		if (f) {
+			const char *ct = NULL;
+			if (strstr(path, ".js")) {
+				ct = "Content-Type: application/javascript\n";
+			}
+			if (strstr(path, ".css")) {
+				ct = "Content-Type: text/css\n";
+			}
+			if (strstr(path, ".html")) {
+				ct = "Content-Type: text/html\n";
+			}
+			char *hdr = rz_str_newf("%s%s", ct, headers);
+			rz_socket_http_response(rs, 200, f, (int)sz, hdr);
+			free(hdr);
+			free(f);
+		} else {
+			rz_socket_http_response(rs, 403, "Permission denied", 0, headers);
+			http_logf(core, "http: Cannot open '%s'\n", path);
+		}
+	} else {
+		if (dir) {
+			char *resp = rtr_dir_files(dir);
+			http_logf(core, "Dirlisting %s\n", dir);
+			rz_socket_http_response(rs, 404, resp, 0, headers);
+			free(resp);
+		} else {
+			http_logf(core, "File '%s' not found\n", path);
+			rz_socket_http_response(rs, 404, "File not found\n", 0, headers);
+		}
+	}
+	free(path);
+	return 1;
+}
+
+static  int rz_core_rtr_http_handler_post_upload(RzCore *core, RzSocketHTTPRequest *rs, char* headers) {
+	ut8 *ret;
+	int retlen;
+	char buf[128];
+	if (rz_config_get_i(core->config, "http.upload")) {
+		ret = rz_socket_http_handle_upload(rs->data, rs->data_length, &retlen);
+		if (ret) {
+			ut64 size = rz_config_get_i(core->config, "http.maxsize");
+			if (size && retlen > size) {
+				rz_socket_http_response(rs, 403, "403 File too big\n", 0, headers);
+			} else {
+				char *filename = rz_file_root(
+					rz_config_get(core->config, "http.uproot"),
+					rs->path + 8);
+				http_logf(core, "UPLOADED '%s'\n", filename);
+				rz_file_dump(filename, ret, retlen, 0);
+				free(filename);
+				snprintf(buf, sizeof(buf),
+					"<html><body><h2>uploaded %d byte(s). Thanks</h2>\n", retlen);
+				rz_socket_http_response(rs, 200, buf, 0, headers);
+			}
+			free(ret);
+		}
+
+	} else {
+		rz_socket_http_response(rs, 403, "403 Forbidden\n", 0, headers);
+	}
+	return 1;
+}
+
+static  int rz_core_rtr_http_handler_post_cmd(RzCore *core, RzSocketHTTPRequest *rs, char* headers) {
+	char *out = NULL;
+	rz_config_set(core->config, "scr.interactive", "false");
+	rz_core_rtr_http_cmd(core, rs, (char *)rs->data, out, headers);
+	if (!strcmp((char *)rs->data, "Rh*")) {
+		/* do stuff */
+		rz_socket_http_close(rs);
+		//free(dir);
+		return -2;//ret = -2;
+		//goto the_end;
+	} else if (!strcmp((char *)rs->data, "Rh--")) {
+		rz_socket_http_close(rs);
+		//free(dir);
+		return 0;//ret = 0;
+		//goto the_end;
+	}
+	return 1;
+}
+
+static rz_core_rtr_http_handler_ptr rz_core_rtr_http_router(RzSocketHTTPRequest *rs) {
+	if (!strcmp(rs->method, "OPTIONS")) {
+			return &rz_core_rtr_http_handler_ok;
+		} else if (!strcmp(rs->method, "GET")) {
+			if (!strncmp(rs->path, "/up/", 4)) {
+				return rz_core_rtr_http_handler_get_file;
+			}
+			else if (!strncmp(rs->path, "/cmd/", 5)) {
+				return rz_core_rtr_http_handler_get_cmd;
+			}
+			else {
+				return rz_core_rtr_http_handler_get_index;
+			}
+		}
+		else if (!strcmp(rs->method, "POST")) {
+			if (!strncmp(rs->path, "/upload/", 8)) {
+				return rz_core_rtr_http_handler_post_upload;
+			}
+			else if (!strncmp(rs->path, "/cmd/", 5)) {
+				return rz_core_rtr_http_handler_post_cmd;
+			}
+		}
+		
+	return rz_core_rtr_http_handler_invalid;
+	
+}
+
+
 static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char *path) {
 	RzConfig *newcfg = NULL, *origcfg = NULL;
 	char headers[128] = RZ_EMPTY;
@@ -41,7 +327,7 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 	char *dir;
 	int iport;
 	const char *host = rz_config_get(core->config, "http.bind");
-	const char *index = rz_config_get(core->config, "http.index");
+	//const char *index = rz_config_get(core->config, "http.index");
 	const char *root = rz_config_get(core->config, "http.root");
 	const char *homeroot = rz_config_get(core->config, "http.homeroot");
 	const char *port = rz_config_get(core->config, "http.port");
@@ -263,229 +549,16 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 					"Access-Control-Allow-Headers: Origin, "
 					"X-Requested-With, Content-Type, Accept\n");
 		}
-		if (!strcmp(rs->method, "OPTIONS")) {
-			rz_socket_http_response(rs, 200, "", 0, headers);
-		} else if (!strcmp(rs->method, "GET")) {
-			if (!strncmp(rs->path, "/up/", 4)) {
-				if (rz_config_get_i(core->config, "http.upget")) {
-					const char *uproot = rz_config_get(core->config, "http.uproot");
-					if (!rs->path[3] || (rs->path[3] == '/' && !rs->path[4])) {
-						char *ptr = rtr_dir_files(uproot);
-						rz_socket_http_response(rs, 200, ptr, 0, headers);
-						free(ptr);
-					} else {
-						char *path = rz_file_root(uproot, rs->path + 4);
-						if (rz_file_exists(path)) {
-							size_t sz = 0;
-							char *f = rz_file_slurp(path, &sz);
-							if (f) {
-								rz_socket_http_response(rs, 200, f, (int)sz, headers);
-								free(f);
-							} else {
-								rz_socket_http_response(rs, 403, "Permission denied", 0, headers);
-								http_logf(core, "http: Cannot open '%s'\n", path);
-							}
-						} else {
-							if (dir) {
-								char *resp = rtr_dir_files(dir);
-								rz_socket_http_response(rs, 404, resp, 0, headers);
-								free(resp);
-							} else {
-								http_logf(core, "File '%s' not found\n", path);
-								rz_socket_http_response(rs, 404, "File not found\n", 0, headers);
-							}
-						}
-						free(path);
-					}
-				} else {
-					rz_socket_http_response(rs, 403, "", 0, NULL);
-				}
-			} else if (!strncmp(rs->path, "/cmd/", 5)) {
-				const bool colon = rz_config_get_i(core->config, "http.colon");
-				if (colon && rs->path[5] != ':') {
-					rz_socket_http_response(rs, 403, "Permission denied", 0, headers);
-				} else {
-					char *cmd = rs->path + 5;
-					const char *httpcmd = rz_config_get(core->config, "http.uri");
-					const char *httpref = rz_config_get(core->config, "http.referer");
-					const bool httpref_enabled = (httpref && *httpref);
-					char *refstr = NULL;
-					if (httpref_enabled) {
-						if (strstr(httpref, "http")) {
-							refstr = strdup(httpref);
-						} else {
-							refstr = rz_str_newf("http://localhost:%d/", atoi(port));
-						}
-					}
 
-					while (*cmd == '/') {
-						cmd++;
-					}
-					if (httpref_enabled && (!rs->referer || (refstr && !strstr(rs->referer, refstr)))) {
-						rz_socket_http_response(rs, 503, "", 0, headers);
-					} else {
-						if (httpcmd && *httpcmd) {
-							int len; // do remote http query and proxy response
-							char *res, *bar = rz_str_newf("%s/%s", httpcmd, cmd);
-							bed = rz_cons_sleep_begin();
-							res = rz_socket_http_get(bar, NULL, &len);
-							rz_cons_sleep_end(bed);
-							if (res) {
-								res[len] = 0;
-								rz_cons_println(res);
-							}
-							free(bar);
-						} else {
-							char *out, *cmd = rs->path + 5;
-							rz_str_uri_decode(cmd);
-							rz_config_set(core->config, "scr.interactive", "false");
-
-							rz_core_rtr_http_cmd(core, rs, cmd, out, headers);
-
-							if (!strcmp(cmd, "Rh*")) {
-								/* do stuff */
-								rz_socket_http_close(rs);
-								free(dir);
-								free(refstr);
-								ret = -2;
-								goto the_end;
-							} else if (!strcmp(cmd, "Rh--")) {
-								rz_socket_http_close(rs);
-								free(dir);
-								free(refstr);
-								ret = 0;
-								goto the_end;
-							}
-						}
-					}
-					free(refstr);
-				}
-			} else {
-				const char *root = rz_config_get(core->config, "http.root");
-				const char *homeroot = rz_config_get(core->config, "http.homeroot");
-				char *path = NULL;
-				if (!strcmp(rs->path, "/")) {
-					free(rs->path);
-					if (*index == '/') {
-						rs->path = strdup(index);
-						path = strdup(index);
-					} else {
-						rs->path = rz_str_newf("/%s", index);
-						path = rz_file_root(root, rs->path);
-					}
-				} else if (homeroot && *homeroot) {
-					char *homepath = rz_file_abspath(homeroot);
-					path = rz_file_root(homepath, rs->path);
-					free(homepath);
-					if (!rz_file_exists(path) && !rz_file_is_directory(path)) {
-						free(path);
-						path = rz_file_root(root, rs->path);
-					}
-				} else {
-					if (*index == '/') {
-						path = strdup(index);
-					} else {
-					}
-				}
-				// FD IS OK HERE
-				if (rs->path[strlen(rs->path) - 1] == '/') {
-					path = (*index == '/') ? strdup(index) : rz_str_append(path, index);
-				} else {
-					//snprintf (path, sizeof (path), "%s/%s", root, rs->path);
-					if (rz_file_is_directory(path)) {
-						char *res = rz_str_newf("Location: %s/\n%s", rs->path, headers);
-						rz_socket_http_response(rs, 302, NULL, 0, res);
-						rz_socket_http_close(rs);
-						free(path);
-						free(res);
-						RZ_FREE(dir);
-						continue;
-					}
-				}
-				if (rz_file_exists(path)) {
-					size_t sz = 0;
-					char *f = rz_file_slurp(path, &sz);
-					if (f) {
-						const char *ct = NULL;
-						if (strstr(path, ".js")) {
-							ct = "Content-Type: application/javascript\n";
-						}
-						if (strstr(path, ".css")) {
-							ct = "Content-Type: text/css\n";
-						}
-						if (strstr(path, ".html")) {
-							ct = "Content-Type: text/html\n";
-						}
-						char *hdr = rz_str_newf("%s%s", ct, headers);
-						rz_socket_http_response(rs, 200, f, (int)sz, hdr);
-						free(hdr);
-						free(f);
-					} else {
-						rz_socket_http_response(rs, 403, "Permission denied", 0, headers);
-						http_logf(core, "http: Cannot open '%s'\n", path);
-					}
-				} else {
-					if (dir) {
-						char *resp = rtr_dir_files(dir);
-						http_logf(core, "Dirlisting %s\n", dir);
-						rz_socket_http_response(rs, 404, resp, 0, headers);
-						free(resp);
-					} else {
-						http_logf(core, "File '%s' not found\n", path);
-						rz_socket_http_response(rs, 404, "File not found\n", 0, headers);
-					}
-				}
-				free(path);
-			}
-		} else if (!strcmp(rs->method, "POST")) {
-			if (!strncmp(rs->path, "/upload/", 8)) {
-				ut8 *ret;
-				int retlen;
-				char buf[128];
-				if (rz_config_get_i(core->config, "http.upload")) {
-					ret = rz_socket_http_handle_upload(rs->data, rs->data_length, &retlen);
-					if (ret) {
-						ut64 size = rz_config_get_i(core->config, "http.maxsize");
-						if (size && retlen > size) {
-							rz_socket_http_response(rs, 403, "403 File too big\n", 0, headers);
-						} else {
-							char *filename = rz_file_root(
-								rz_config_get(core->config, "http.uproot"),
-								rs->path + 8);
-							http_logf(core, "UPLOADED '%s'\n", filename);
-							rz_file_dump(filename, ret, retlen, 0);
-							free(filename);
-							snprintf(buf, sizeof(buf),
-								"<html><body><h2>uploaded %d byte(s). Thanks</h2>\n", retlen);
-							rz_socket_http_response(rs, 200, buf, 0, headers);
-						}
-						free(ret);
-					}
-
-				} else {
-					rz_socket_http_response(rs, 403, "403 Forbidden\n", 0, headers);
-				}
-			} else if (!strncmp(rs->path, "/cmd/", 5)) {
-				char *out;
-				rz_config_set(core->config, "scr.interactive", "false");
-				rz_core_rtr_http_cmd(core, rs, (char *)rs->data, out, headers);
-				if (!strcmp((char *)rs->data, "Rh*")) {
-					/* do stuff */
-					rz_socket_http_close(rs);
-					free(dir);
-					ret = -2;
-					goto the_end;
-				} else if (!strcmp((char *)rs->data, "Rh--")) {
-					rz_socket_http_close(rs);
-					free(dir);
-					ret = 0;
-					goto the_end;
-				}
-			}
-
-		} else {
-			rz_socket_http_response(rs, 404, "Invalid protocol", 0, headers);
+		int response_result = (*rz_core_rtr_http_router(rs))(core, rs, headers);
+		if (response_result == 0 || response_result == -2){
+			ret = response_result;
+			goto the_end;
 		}
+		else if (response_result==LOOP_CONTINUE_VALUE){
+			continue;
+		}
+
 		rz_socket_http_close(rs);
 		free(dir);
 	}
