@@ -4968,15 +4968,19 @@ void __create_panel(RzCore *core, RzPanel *panel, const RzPanelLayout dir, RZ_NU
 
 void __search_strings_data_create(void *user, RzPanel *panel, const RzPanelLayout dir, RZ_NULLABLE const char *title) {
 	RzCore *core = (RzCore *)user;
-	__create_panel(core, panel, dir, title, __search_strings(core, false));
+	char *strings = __search_strings(core, false);
+	__create_panel(core, panel, dir, title, strings);
+	free(strings);
 }
 
 void __search_strings_bin_create(void *user, RzPanel *panel, const RzPanelLayout dir, RZ_NULLABLE const char *title) {
 	RzCore *core = (RzCore *)user;
-	__create_panel(core, panel, dir, title, __search_strings(core, true));
+	char *strings = __search_strings(core, true);
+	__create_panel(core, panel, dir, title, strings);
+	free(strings);
 }
 
-char *__search_strings(RzCore *core, bool whole) {
+RZ_OWN char *__search_strings(RzCore *core, bool whole) {
 	const char *title = whole ? PANEL_TITLE_STRINGS_BIN : PANEL_TITLE_STRINGS_DATA;
 	const char *str = __show_status_input(core, "Search Strings: ");
 	char *db_val = __search_db(core, title);
