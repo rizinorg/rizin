@@ -78,26 +78,26 @@ aoj @ 0x6a ~{.rzil}
 EOF
 EXPECT=<<EOF
 opcode: inc [ptr]
-rzil: [store(k:var(ptr), v:add(load(k:var(ptr), m:0), int(n:1, l:8)), m:0)]
-[{"opcode":"store","key":{"opcode":"var","value":"ptr"},"value":{"opcode":"add","params":[{"opcode":"load","key":{"opcode":"var","value":"ptr"},"mem":0},{"opcode":"int","length":8,"value":1}]},"mem":0}]
+rzil: [store(key:var(v:ptr), value:add(x:load(key:var(v:ptr), mem:0), y:int(value:1, length:8)), mem:0)]
+[{"opcode":"store","key":{"opcode":"var","value":"ptr"},"value":{"opcode":"add","x":{"opcode":"load","key":{"opcode":"var","value":"ptr"},"mem":0},"y":{"opcode":"int","length":8,"value":1}},"mem":0}]
 opcode: while [ptr]
-rzil: [perform(branch(load(k:var(ptr), m:0), null, goto(]8)))]
-[{"opcode":"perform","params":[{"opcode":"branch","params":[{"opcode":"load","key":{"opcode":"var","value":"ptr"},"mem":0}null,{"opcode":"goto","label":"]8"}]}]}]
+rzil: [perform(eff:branch(condition:load(key:var(v:ptr), mem:0), true_eff:null, false_eff:goto(lbl:]8)))]
+[{"opcode":"perform","eff":{"opcode":"branch","condition":{"opcode":"load","key":{"opcode":"var","value":"ptr"},"mem":0},"true_eff":null,"false_eff":{"opcode":"goto","label":"]8"}}}]
 opcode: inc ptr
-rzil: [perform(set(d:ptr, s:add(var(ptr), int(n:1, l:64))))]
-[{"opcode":"perform","params":[{"opcode":"set","dst":"ptr","src":{"opcode":"add","params":[{"opcode":"var","value":"ptr"},{"opcode":"int","length":64,"value":1}]}}]}]
+rzil: [perform(eff:set(v:ptr, x:add(x:var(v:ptr), y:int(value:1, length:64))))]
+[{"opcode":"perform","eff":{"opcode":"set","dst":"ptr","src":{"opcode":"add","x":{"opcode":"var","value":"ptr"},"y":{"opcode":"int","length":64,"value":1}}}}]
 opcode: dec ptr
-rzil: [perform(set(d:ptr, s:sub(var(ptr), int(n:1, l:64))))]
-[{"opcode":"perform","params":[{"opcode":"set","dst":"ptr","src":{"opcode":"sub","params":[{"opcode":"var","value":"ptr"},{"opcode":"int","length":64,"value":1}]}}]}]
+rzil: [perform(eff:set(v:ptr, x:sub(x:var(v:ptr), y:int(value:1, length:64))))]
+[{"opcode":"perform","eff":{"opcode":"set","dst":"ptr","src":{"opcode":"sub","x":{"opcode":"var","value":"ptr"},"y":{"opcode":"int","length":64,"value":1}}}}]
 opcode: dec [ptr]
-rzil: [store(k:var(ptr), v:sub(load(k:var(ptr), m:0), int(n:1, l:8)), m:0)]
-[{"opcode":"store","key":{"opcode":"var","value":"ptr"},"value":{"opcode":"sub","params":[{"opcode":"load","key":{"opcode":"var","value":"ptr"},"mem":0},{"opcode":"int","length":8,"value":1}]},"mem":0}]
+rzil: [store(key:var(v:ptr), value:sub(x:load(key:var(v:ptr), mem:0), y:int(value:1, length:8)), mem:0)]
+[{"opcode":"store","key":{"opcode":"var","value":"ptr"},"value":{"opcode":"sub","x":{"opcode":"load","key":{"opcode":"var","value":"ptr"},"mem":0},"y":{"opcode":"int","length":8,"value":1}},"mem":0}]
 opcode: loop
-rzil: [perform(branch(inv(load(k:var(ptr), m:0), null), null, goto([14)))]
-[{"opcode":"perform","params":[{"opcode":"branch","params":[{"opcode":"inv","params":[{"opcode":"load","key":{"opcode":"var","value":"ptr"},"mem":0}null]}null,{"opcode":"goto","label":"[14"}]}]}]
+rzil: [perform(eff:branch(condition:inv(x:load(key:var(v:ptr), mem:0), ret:null), true_eff:null, false_eff:goto(lbl:[14)))]
+[{"opcode":"perform","eff":{"opcode":"branch","condition":{"opcode":"inv","x":{"opcode":"load","key":{"opcode":"var","value":"ptr"},"mem":0},"ret":null},"true_eff":null,"false_eff":{"opcode":"goto","label":"[14"}}}]
 opcode: out [ptr]
-rzil: [perform(goto(write))]
-[{"opcode":"perform","params":[{"opcode":"goto","label":"write"}]}]
+rzil: [perform(eff:goto(lbl:write))]
+[{"opcode":"perform","eff":{"opcode":"goto","label":"write"}}]
 opcode: nop
 rzil: []
 null

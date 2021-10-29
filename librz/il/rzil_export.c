@@ -2,60 +2,64 @@
 // SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+/** \file rzil_export.c
+ * Outputs the IL statements in JSON or string format.
+ * The string format looks like below:
+ *    [store(key:var(v:ptr), value:add(x:load(key:var(v:ptr), mem:0), y:int(value:1, length:8)), mem:0)]
+ * which can be deconstructed like below
+ * [
+ *     store(
+ *         key:var(
+ *             v:ptr
+ *         ),
+ *         value:add(
+ *             x:load(
+ *                 key:var(
+ *                     v:ptr
+ *                 ),
+ *                 mem:0
+ *             ),
+ *             y:int(
+ *                 value:1,
+ *                 length:8
+ *             )
+ *         ),
+ *         mem:0
+ *     )
+ * ]
+ *
+ * The json format looks like below:
+ * [
+ *     {
+ *         "opcode": "store",
+ *         "key": {
+ *             "opcode": "var",
+ *             "value": "ptr"
+ *         },
+ *         "value": {
+ *             "opcode": "add",
+ *             "x": {
+ *                 "opcode": "load",
+ *                 "key": {
+ *                     "opcode": "var",
+ *                     "value": "ptr"
+ *                 },
+ *                 "mem": 0
+ *             },
+ *             "y": {
+ *                 "opcode": "int",
+ *                 "length": 8,
+ *                 "value": 1
+ *             }
+ *         },
+ *         "mem": 0
+ *     }
+ * ]
+ */
+
 #include <rz_il/rzil_vm.h>
 
-typedef void (*dump_op_t)(RzILOp *op, RzStrBuf *sb, PJ *pj);
-
-static void il_opdmp_var(RzILOp *op, RzStrBuf *sb, PJ *pj);
-static void il_opdmp_unk(RzILOp *op, RzStrBuf *sb, PJ *pj);
-static void il_opdmp_ite(RzILOp *op, RzStrBuf *sb, PJ *pj);
-static void il_opdmp_b0(RzILOp *op, RzStrBuf *sb, PJ *pj);
-static void il_opdmp_b1(RzILOp *op, RzStrBuf *sb, PJ *pj);
-static void il_opdmp_inv(RzILOp *op, RzStrBuf *sb, PJ *pj);
-static void il_opdmp_and(RzILOp *op, RzStrBuf *sb, PJ *pj);
-static void il_opdmp_or(RzILOp *op, RzStrBuf *sb, PJ *pj);
-static void il_opdmp_int(RzILOp *op, RzStrBuf *sb, PJ *pj);
-static void il_opdmp_msb(RzILOp *op, RzStrBuf *sb, PJ *pj);
-static void il_opdmp_lsb(RzILOp *op, RzStrBuf *sb, PJ *pj);
-static void il_opdmp_neg(RzILOp *op, RzStrBuf *sb, PJ *pj);
-static void il_opdmp_not(RzILOp *op, RzStrBuf *sb, PJ *pj);
-static void il_opdmp_add(RzILOp *op, RzStrBuf *sb, PJ *pj);
-static void il_opdmp_sub(RzILOp *op, RzStrBuf *sb, PJ *pj);
-static void il_opdmp_mul(RzILOp *op, RzStrBuf *sb, PJ *pj);
-static void il_opdmp_div(RzILOp *op, RzStrBuf *sb, PJ *pj);
-static void il_opdmp_sdiv(RzILOp *op, RzStrBuf *sb, PJ *pj);
-static void il_opdmp_mod(RzILOp *op, RzStrBuf *sb, PJ *pj);
-static void il_opdmp_smod(RzILOp *op, RzStrBuf *sb, PJ *pj);
-static void il_opdmp_logand(RzILOp *op, RzStrBuf *sb, PJ *pj);
-static void il_opdmp_logor(RzILOp *op, RzStrBuf *sb, PJ *pj);
-static void il_opdmp_logxor(RzILOp *op, RzStrBuf *sb, PJ *pj);
-static void il_opdmp_shiftr(RzILOp *op, RzStrBuf *sb, PJ *pj);
-static void il_opdmp_shiftl(RzILOp *op, RzStrBuf *sb, PJ *pj);
-static void il_opdmp_sle(RzILOp *op, RzStrBuf *sb, PJ *pj);
-static void il_opdmp_ule(RzILOp *op, RzStrBuf *sb, PJ *pj);
-static void il_opdmp_cast(RzILOp *op, RzStrBuf *sb, PJ *pj);
-static void il_opdmp_concat(RzILOp *op, RzStrBuf *sb, PJ *pj);
-static void il_opdmp_append(RzILOp *op, RzStrBuf *sb, PJ *pj);
-static void il_opdmp_load(RzILOp *op, RzStrBuf *sb, PJ *pj);
-static void il_opdmp_store(RzILOp *op, RzStrBuf *sb, PJ *pj);
-static void il_opdmp_perform(RzILOp *op, RzStrBuf *sb, PJ *pj);
-static void il_opdmp_set(RzILOp *op, RzStrBuf *sb, PJ *pj);
-static void il_opdmp_jmp(RzILOp *op, RzStrBuf *sb, PJ *pj);
-static void il_opdmp_goto(RzILOp *op, RzStrBuf *sb, PJ *pj);
-static void il_opdmp_seq(RzILOp *op, RzStrBuf *sb, PJ *pj);
-static void il_opdmp_blk(RzILOp *op, RzStrBuf *sb, PJ *pj);
-static void il_opdmp_repeat(RzILOp *op, RzStrBuf *sb, PJ *pj);
-static void il_opdmp_branch(RzILOp *op, RzStrBuf *sb, PJ *pj);
-static void il_opdmp_invalid(RzILOp *op, RzStrBuf *sb, PJ *pj);
-
-static dump_op_t il_opdmp[RZIL_OP_MAX] = {
-	&il_opdmp_var, &il_opdmp_unk, &il_opdmp_ite, &il_opdmp_b0, &il_opdmp_b1, &il_opdmp_inv, &il_opdmp_and, &il_opdmp_or,
-	&il_opdmp_int, &il_opdmp_msb, &il_opdmp_lsb, &il_opdmp_neg, &il_opdmp_not, &il_opdmp_add, &il_opdmp_sub, &il_opdmp_mul,
-	&il_opdmp_div, &il_opdmp_sdiv, &il_opdmp_mod, &il_opdmp_smod, &il_opdmp_logand, &il_opdmp_logor, &il_opdmp_logxor,
-	&il_opdmp_shiftr, &il_opdmp_shiftl, &il_opdmp_sle, &il_opdmp_ule, &il_opdmp_cast, &il_opdmp_concat,
-	&il_opdmp_append, &il_opdmp_load, &il_opdmp_store, &il_opdmp_perform, &il_opdmp_set, &il_opdmp_jmp, &il_opdmp_goto,
-	&il_opdmp_seq, &il_opdmp_blk, &il_opdmp_repeat, &il_opdmp_branch, &il_opdmp_invalid
-};
+static void il_op_resolve(RzILOp *op, RzStrBuf *sb, PJ *pj);
 
 #define il_op_unimplemented(name) \
 	do { \
@@ -64,7 +68,7 @@ static dump_op_t il_opdmp[RZIL_OP_MAX] = {
 		} else { \
 			pj_o(pj); \
 			pj_ks(pj, "opcode", name); \
-			pj_kb(pj, "missing", true); \
+			pj_kb(pj, "unimplemented", true); \
 			pj_end(pj); \
 		} \
 	} while (0)
@@ -72,15 +76,14 @@ static dump_op_t il_opdmp[RZIL_OP_MAX] = {
 #define il_op_param_1(name, opx, v0) \
 	do { \
 		if (sb) { \
-			rz_strbuf_append(sb, name "("); \
+			rz_strbuf_append(sb, name "(" #v0 ":"); \
 			il_op_resolve(opx->v0, sb, pj); \
 			rz_strbuf_append(sb, ")"); \
 		} else { \
 			pj_o(pj); \
 			pj_ks(pj, "opcode", name); \
-			pj_ka(pj, "params"); \
+			pj_k(pj, #v0); \
 			il_op_resolve(opx->v0, sb, pj); \
-			pj_end(pj); \
 			pj_end(pj); \
 		} \
 	} while (0)
@@ -88,18 +91,18 @@ static dump_op_t il_opdmp[RZIL_OP_MAX] = {
 #define il_op_param_2(name, opx, v0, v1) \
 	do { \
 		if (sb) { \
-			rz_strbuf_append(sb, name "("); \
+			rz_strbuf_append(sb, name "(" #v0 ":"); \
 			il_op_resolve(opx->v0, sb, pj); \
-			rz_strbuf_append(sb, ", "); \
+			rz_strbuf_append(sb, ", " #v1 ":"); \
 			il_op_resolve(opx->v1, sb, pj); \
 			rz_strbuf_append(sb, ")"); \
 		} else { \
 			pj_o(pj); \
 			pj_ks(pj, "opcode", name); \
-			pj_ka(pj, "params"); \
+			pj_k(pj, #v0); \
 			il_op_resolve(opx->v0, sb, pj); \
+			pj_k(pj, #v1); \
 			il_op_resolve(opx->v1, sb, pj); \
-			pj_end(pj); \
 			pj_end(pj); \
 		} \
 	} while (0)
@@ -107,47 +110,30 @@ static dump_op_t il_opdmp[RZIL_OP_MAX] = {
 #define il_op_param_3(name, opx, v0, v1, v2) \
 	do { \
 		if (sb) { \
-			rz_strbuf_append(sb, name "("); \
+			rz_strbuf_append(sb, name "(" #v0 ":"); \
 			il_op_resolve(opx->v0, sb, pj); \
-			rz_strbuf_append(sb, ", "); \
+			rz_strbuf_append(sb, ", " #v1 ":"); \
 			il_op_resolve(opx->v1, sb, pj); \
-			rz_strbuf_append(sb, ", "); \
+			rz_strbuf_append(sb, ", " #v2 ":"); \
 			il_op_resolve(opx->v2, sb, pj); \
 			rz_strbuf_append(sb, ")"); \
 		} else { \
 			pj_o(pj); \
 			pj_ks(pj, "opcode", name); \
-			pj_ka(pj, "params"); \
+			pj_k(pj, #v0); \
 			il_op_resolve(opx->v0, sb, pj); \
+			pj_k(pj, #v1); \
 			il_op_resolve(opx->v1, sb, pj); \
+			pj_k(pj, #v2); \
 			il_op_resolve(opx->v2, sb, pj); \
-			pj_end(pj); \
 			pj_end(pj); \
 		} \
 	} while (0)
 
-static inline void il_op_resolve(RzILOp *op, RzStrBuf *sb, PJ *pj) {
-	if (op && op->code < RZIL_OP_MAX) {
-		il_opdmp[op->code](op, sb, pj);
-	} else if (sb && op) {
-		rz_strbuf_appendf(sb, "unk_%u", op->code);
-	} else if (pj && op) {
-		char tmp[64];
-		rz_strf(tmp, "unk_%u", op->code);
-		pj_o(pj);
-		pj_ks(pj, "opcode", tmp);
-		pj_end(pj);
-	} else if (sb) {
-		rz_strbuf_append(sb, "null");
-	} else {
-		pj_null(pj);
-	}
-}
-
 static void il_opdmp_var(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 	RzILOpVar *opx = op->op.var;
 	if (sb) {
-		rz_strbuf_appendf(sb, "var(%s)", opx->v);
+		rz_strbuf_appendf(sb, "var(v:%s)", opx->v);
 	} else {
 		pj_o(pj);
 		pj_ks(pj, "opcode", "var");
@@ -207,7 +193,7 @@ static void il_opdmp_or(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 static void il_opdmp_int(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 	RzILOpInt *opx = op->op.int_;
 	if (sb) {
-		rz_strbuf_appendf(sb, "int(n:%d, l:%u)", opx->value, opx->length);
+		rz_strbuf_appendf(sb, "int(value:%d, length:%u)", opx->value, opx->length);
 	} else {
 		pj_o(pj);
 		pj_ks(pj, "opcode", "int");
@@ -292,9 +278,9 @@ static void il_opdmp_ule(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 static void il_opdmp_cast(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 	RzILOpCast *opx = op->op.cast;
 	if (sb) {
-		rz_strbuf_append(sb, "cast(");
+		rz_strbuf_append(sb, "cast(val:");
 		il_op_resolve(opx->val, sb, pj);
-		rz_strbuf_appendf(sb, ", l:%u, s:%d)", opx->length, opx->shift);
+		rz_strbuf_appendf(sb, ", length:%u, shift:%d)", opx->length, opx->shift);
 	} else {
 		pj_o(pj);
 		pj_ks(pj, "opcode", "cast");
@@ -317,9 +303,9 @@ static void il_opdmp_append(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 static void il_opdmp_load(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 	RzILOpLoad *opx = op->op.load;
 	if (sb) {
-		rz_strbuf_append(sb, "load(k:");
+		rz_strbuf_append(sb, "load(key:");
 		il_op_resolve(opx->key, sb, pj);
-		rz_strbuf_appendf(sb, ", m:%d)", opx->mem);
+		rz_strbuf_appendf(sb, ", mem:%d)", opx->mem);
 	} else {
 		pj_o(pj);
 		pj_ks(pj, "opcode", "load");
@@ -334,11 +320,11 @@ static void il_opdmp_store(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 	RzILOpStore *opx = op->op.store;
 
 	if (sb) {
-		rz_strbuf_append(sb, "store(k:");
+		rz_strbuf_append(sb, "store(key:");
 		il_op_resolve(opx->key, sb, pj);
-		rz_strbuf_append(sb, ", v:");
+		rz_strbuf_append(sb, ", value:");
 		il_op_resolve(opx->value, sb, pj);
-		rz_strbuf_appendf(sb, ", m:%d)", opx->mem);
+		rz_strbuf_appendf(sb, ", mem:%d)", opx->mem);
 	} else {
 		pj_o(pj);
 		pj_ks(pj, "opcode", "store");
@@ -358,7 +344,7 @@ static void il_opdmp_perform(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 static void il_opdmp_set(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 	RzILOpSet *opx = op->op.set;
 	if (sb) {
-		rz_strbuf_appendf(sb, "set(d:%s, s:", opx->v);
+		rz_strbuf_appendf(sb, "set(v:%s, x:", opx->v);
 		il_op_resolve(opx->x, sb, pj);
 		rz_strbuf_append(sb, ")");
 	} else {
@@ -378,7 +364,7 @@ static void il_opdmp_jmp(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 static void il_opdmp_goto(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 	RzILOpGoto *opx = op->op.goto_;
 	if (sb) {
-		rz_strbuf_appendf(sb, "goto(%s)", opx->lbl);
+		rz_strbuf_appendf(sb, "goto(lbl:%s)", opx->lbl);
 	} else {
 		pj_o(pj);
 		pj_ks(pj, "opcode", "goto");
@@ -413,12 +399,119 @@ static void il_opdmp_invalid(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 	}
 }
 
-RZ_API void rz_il_dump_list(RZ_NONNULL RzPVector *op_list, RZ_NONNULL RzStrBuf *sb) {
-	rz_return_if_fail(sb);
-	if (!op_list) {
-		rz_strbuf_append(sb, "[]");
+static void il_op_resolve(RzILOp *op, RzStrBuf *sb, PJ *pj) {
+	if (!op && sb) {
+		rz_strbuf_append(sb, "null");
+		return;
+	} else if (!op && pj) {
+		pj_null(pj);
 		return;
 	}
+	switch (op->code) {
+	case RZIL_OP_VAR:
+		return il_opdmp_var(op, sb, pj);
+	case RZIL_OP_UNK:
+		return il_opdmp_unk(op, sb, pj);
+	case RZIL_OP_ITE:
+		return il_opdmp_ite(op, sb, pj);
+	case RZIL_OP_B0:
+		return il_opdmp_b0(op, sb, pj);
+	case RZIL_OP_B1:
+		return il_opdmp_b1(op, sb, pj);
+	case RZIL_OP_INV:
+		return il_opdmp_inv(op, sb, pj);
+	case RZIL_OP_AND_:
+		return il_opdmp_and(op, sb, pj);
+	case RZIL_OP_OR_:
+		return il_opdmp_or(op, sb, pj);
+	case RZIL_OP_INT:
+		return il_opdmp_int(op, sb, pj);
+	case RZIL_OP_MSB:
+		return il_opdmp_msb(op, sb, pj);
+	case RZIL_OP_LSB:
+		return il_opdmp_lsb(op, sb, pj);
+	case RZIL_OP_NEG:
+		return il_opdmp_neg(op, sb, pj);
+	case RZIL_OP_NOT:
+		return il_opdmp_not(op, sb, pj);
+	case RZIL_OP_ADD:
+		return il_opdmp_add(op, sb, pj);
+	case RZIL_OP_SUB:
+		return il_opdmp_sub(op, sb, pj);
+	case RZIL_OP_MUL:
+		return il_opdmp_mul(op, sb, pj);
+	case RZIL_OP_DIV:
+		return il_opdmp_div(op, sb, pj);
+	case RZIL_OP_SDIV:
+		return il_opdmp_sdiv(op, sb, pj);
+	case RZIL_OP_MOD:
+		return il_opdmp_mod(op, sb, pj);
+	case RZIL_OP_SMOD:
+		return il_opdmp_smod(op, sb, pj);
+	case RZIL_OP_LOGAND:
+		return il_opdmp_logand(op, sb, pj);
+	case RZIL_OP_LOGOR:
+		return il_opdmp_logor(op, sb, pj);
+	case RZIL_OP_LOGXOR:
+		return il_opdmp_logxor(op, sb, pj);
+	case RZIL_OP_SHIFTR:
+		return il_opdmp_shiftr(op, sb, pj);
+	case RZIL_OP_SHIFTL:
+		return il_opdmp_shiftl(op, sb, pj);
+	case RZIL_OP_SLE:
+		return il_opdmp_sle(op, sb, pj);
+	case RZIL_OP_ULE:
+		return il_opdmp_ule(op, sb, pj);
+	case RZIL_OP_CAST:
+		return il_opdmp_cast(op, sb, pj);
+	case RZIL_OP_CONCAT:
+		return il_opdmp_concat(op, sb, pj);
+	case RZIL_OP_APPEND:
+		return il_opdmp_append(op, sb, pj);
+	case RZIL_OP_LOAD:
+		return il_opdmp_load(op, sb, pj);
+	case RZIL_OP_STORE:
+		return il_opdmp_store(op, sb, pj);
+	case RZIL_OP_PERFORM:
+		return il_opdmp_perform(op, sb, pj);
+	case RZIL_OP_SET:
+		return il_opdmp_set(op, sb, pj);
+	case RZIL_OP_JMP:
+		return il_opdmp_jmp(op, sb, pj);
+	case RZIL_OP_GOTO:
+		return il_opdmp_goto(op, sb, pj);
+	case RZIL_OP_SEQ:
+		return il_opdmp_seq(op, sb, pj);
+	case RZIL_OP_BLK:
+		return il_opdmp_blk(op, sb, pj);
+	case RZIL_OP_REPEAT:
+		return il_opdmp_repeat(op, sb, pj);
+	case RZIL_OP_BRANCH:
+		return il_opdmp_branch(op, sb, pj);
+	case RZIL_OP_INVALID:
+		return il_opdmp_invalid(op, sb, pj);
+	default:
+		rz_warn_if_reached();
+		if (sb) {
+			rz_strbuf_appendf(sb, "unk_%u", op->code);
+		} else {
+			char tmp[64];
+			rz_strf(tmp, "unk_%u", op->code);
+			pj_o(pj);
+			pj_ks(pj, "opcode", tmp);
+			pj_end(pj);
+		}
+		return;
+	}
+}
+
+/**
+ * Generates the string representation of the IL statements
+ * \param op_list RzPVector*, array of IL statements
+ * \param sb RzStrBuf*, a pointer to the string buffer
+ */
+RZ_API void rz_il_oplist_stringify(RZ_NULLABLE RzPVector *op_list, RZ_NONNULL RzStrBuf *sb) {
+	rz_return_if_fail(op_list && sb);
 
 	ut32 i = 0;
 	void **iter;
@@ -434,12 +527,13 @@ RZ_API void rz_il_dump_list(RZ_NONNULL RzPVector *op_list, RZ_NONNULL RzStrBuf *
 	rz_strbuf_append(sb, "]");
 }
 
-RZ_API void rz_il_json_list(RZ_NONNULL RzPVector *op_list, RZ_NONNULL PJ *pj) {
-	rz_return_if_fail(pj);
-	if (!op_list) {
-		pj_null(pj);
-		return;
-	}
+/**
+ * Generates the json representation of the IL statements
+ * \param code RzPVector*, array of IL statements
+ * \param pj RzStrBuf*, a pointer to the json buffer
+ */
+RZ_API void rz_il_oplist_json(RZ_NULLABLE RzPVector *op_list, RZ_NONNULL PJ *pj) {
+	rz_return_if_fail(op_list && pj);
 
 	pj_a(pj);
 	void **iter;
