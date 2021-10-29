@@ -36,11 +36,9 @@ RZ_API RzILOp *rz_il_new_op(RzILOPCode code) {
 		ret->op.ite = RZ_NEW0(RzILOpIte);
 		break;
 	case RZIL_OP_UNK:
-		ret->op.unk = NULL;
-		break;
 	case RZIL_OP_B0:
 	case RZIL_OP_B1:
-		ret->op.b0 = NULL;
+		// do nothing
 		break;
 	case RZIL_OP_AND_:
 		ret->op.and_ = RZ_NEW0(RzILOpAnd_);
@@ -99,15 +97,31 @@ RZ_API RzILOp *rz_il_new_op(RzILOPCode code) {
 		ret->op.goto_ = RZ_NEW0(RzILOpGoto);
 		break;
 	default:
-		free(ret);
-		ret = NULL;
-		RZ_LOG_ERROR("Unknown opcode\n");
 		rz_warn_if_reached();
+		RZ_LOG_ERROR("RzIl: unknown opcode %u\n", code);
+		RZ_FREE(ret);
 		break;
 	}
 
 	return ret;
 }
+
+#define rz_il_free_op_0(s) free(op->op.s)
+
+#define rz_il_free_op_1(s, v0) \
+	rz_il_free_op(op->op.s->v0); \
+	free(op->op.s)
+
+#define rz_il_free_op_2(s, v0, v1) \
+	rz_il_free_op(op->op.s->v0); \
+	rz_il_free_op(op->op.s->v1); \
+	free(op->op.s)
+
+#define rz_il_free_op_3(s, v0, v1, v2) \
+	rz_il_free_op(op->op.s->v0); \
+	rz_il_free_op(op->op.s->v1); \
+	rz_il_free_op(op->op.s->v2); \
+	free(op->op.s)
 
 /**
  * Free core theory opcode instance
@@ -119,61 +133,135 @@ RZ_API void rz_il_free_op(RzILOp *op) {
 	}
 	switch (op->code) {
 	case RZIL_OP_VAR:
-		free(op->op.var);
-		break;
-	case RZIL_OP_SET:
-		free(op->op.set);
-		break;
-	case RZIL_OP_GOTO:
-		free(op->op.goto_);
-		break;
-	// 4 Int memebers
-	case RZIL_OP_STORE:
-	case RZIL_OP_ITE:
-	case RZIL_OP_BRANCH:
-	case RZIL_OP_SHIFTR:
-	case RZIL_OP_SHIFTL:
-		free(op->op.ite);
-		break;
-	// 3 Int members
-	case RZIL_OP_INT:
-	case RZIL_OP_ADD:
-	case RZIL_OP_SUB:
-	case RZIL_OP_MUL:
-	case RZIL_OP_DIV:
-	case RZIL_OP_MOD:
-	case RZIL_OP_SDIV:
-	case RZIL_OP_SMOD:
-	case RZIL_OP_LOGXOR:
-	case RZIL_OP_LOGAND:
-	case RZIL_OP_LOGOR:
-	case RZIL_OP_ULE:
-	case RZIL_OP_SLE:
-	case RZIL_OP_SEQ:
-	case RZIL_OP_BLK:
-	case RZIL_OP_AND_:
-	case RZIL_OP_OR_:
-	case RZIL_OP_LOAD:
-		free(op->op.int_);
-		break;
-	case RZIL_OP_PERFORM:
-	case RZIL_OP_MSB:
-	case RZIL_OP_LSB:
-	case RZIL_OP_NEG:
-	case RZIL_OP_NOT:
-	case RZIL_OP_JMP:
-	case RZIL_OP_INV:
-		free(op->op.inv);
+		rz_il_free_op_0(var);
 		break;
 	case RZIL_OP_UNK:
+		rz_il_free_op_0(unk);
+		break;
+	case RZIL_OP_ITE:
+		rz_il_free_op_3(ite, condition, x, y);
+		break;
 	case RZIL_OP_B0:
+		rz_il_free_op_0(b0);
+		break;
 	case RZIL_OP_B1:
-		free(op->op.b0);
+		rz_il_free_op_0(b1);
+		break;
+	case RZIL_OP_INV:
+		rz_il_free_op_2(inv, ret, x);
+		break;
+	case RZIL_OP_AND_:
+		rz_il_free_op_2(and_, x, y);
+		break;
+	case RZIL_OP_OR_:
+		rz_il_free_op_2(or_, x, y);
+		break;
+	case RZIL_OP_INT:
+		rz_il_free_op_0(int_);
+		break;
+	case RZIL_OP_MSB:
+		rz_il_free_op_1(msb, bv);
+		break;
+	case RZIL_OP_LSB:
+		rz_il_free_op_1(lsb, bv);
+		break;
+	case RZIL_OP_NEG:
+		rz_il_free_op_1(neg, bv);
+		break;
+	case RZIL_OP_NOT:
+		rz_il_free_op_1(not_, bv);
+		break;
+	case RZIL_OP_ADD:
+		rz_il_free_op_2(add, x, y);
+		break;
+	case RZIL_OP_SUB:
+		rz_il_free_op_2(sub, x, y);
+		break;
+	case RZIL_OP_MUL:
+		rz_il_free_op_2(mul, x, y);
+		break;
+	case RZIL_OP_DIV:
+		rz_il_free_op_2(div, x, y);
+		break;
+	case RZIL_OP_SDIV:
+		rz_il_free_op_2(sdiv, x, y);
+		break;
+	case RZIL_OP_MOD:
+		rz_il_free_op_2(mod, x, y);
+		break;
+	case RZIL_OP_SMOD:
+		rz_il_free_op_2(smod, x, y);
+		break;
+	case RZIL_OP_LOGAND:
+		rz_il_free_op_2(logand, x, y);
+		break;
+	case RZIL_OP_LOGOR:
+		rz_il_free_op_2(logor, x, y);
+		break;
+	case RZIL_OP_LOGXOR:
+		rz_il_free_op_2(logxor, x, y);
+		break;
+	case RZIL_OP_SHIFTR:
+		rz_il_free_op_3(shiftr, fill_bit, x, y);
+		break;
+	case RZIL_OP_SHIFTL:
+		rz_il_free_op_3(shiftl, fill_bit, x, y);
+		break;
+	case RZIL_OP_SLE:
+		rz_il_free_op_2(sle, x, y);
+		break;
+	case RZIL_OP_ULE:
+		rz_il_free_op_2(ule, x, y);
+		break;
+	case RZIL_OP_CAST:
+		rz_il_free_op_1(cast, val);
+		break;
+	case RZIL_OP_CONCAT:
+		rz_warn_if_reached();
+		break;
+	case RZIL_OP_APPEND:
+		rz_warn_if_reached();
+		break;
+	case RZIL_OP_LOAD:
+		rz_il_free_op_1(load, key);
+		break;
+	case RZIL_OP_STORE:
+		rz_il_free_op_2(store, key, value);
+		break;
+	case RZIL_OP_PERFORM:
+		rz_il_free_op_1(perform, eff);
+		break;
+	case RZIL_OP_SET:
+		rz_il_free_op_1(set, x);
+		break;
+	case RZIL_OP_JMP:
+		rz_il_free_op_1(jmp, dst);
+		break;
+	case RZIL_OP_GOTO:
+		rz_il_free_op_0(goto_);
+		break;
+	case RZIL_OP_SEQ:
+		rz_il_free_op_2(seq, x, y);
+		break;
+	case RZIL_OP_BLK:
+		rz_il_free_op_2(blk, data_eff, ctrl_eff);
+		break;
+	case RZIL_OP_REPEAT:
+		rz_il_free_op_2(repeat, condition, data_eff);
+		break;
+	case RZIL_OP_BRANCH:
+		rz_il_free_op_3(branch, condition, true_eff, false_eff);
+		break;
+	case RZIL_OP_INVALID:
 		break;
 	default:
-		RZ_LOG_ERROR("[WIP]\n");
 		rz_warn_if_reached();
+		RZ_LOG_ERROR("RzIl: unknown opcode %u\n", op->code);
 		break;
 	}
 	free(op);
 }
+#undef rz_il_free_op_0
+#undef rz_il_free_op_1
+#undef rz_il_free_op_2
+#undef rz_il_free_op_3

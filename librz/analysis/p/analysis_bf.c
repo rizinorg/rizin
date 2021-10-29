@@ -413,7 +413,7 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 
 	BfContext *ctx = analysis->rzil->user;
 	RzILVM *vm = analysis->rzil->vm;
-	RzPVector *oplist;
+	RzPVector *oplist = NULL;
 	op->rzil_op = RZ_NEW0(RzAnalysisRzilOp);
 	if (!op->rzil_op) {
 		RZ_LOG_ERROR("Fail to init rzil op\n");
@@ -499,11 +499,9 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 		break;
 	case 0x00:
 	case 0xff:
-		oplist = NULL;
 		op->type = RZ_ANALYSIS_OP_TYPE_TRAP;
 		break;
 	default:
-		oplist = NULL;
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		break;
 	}

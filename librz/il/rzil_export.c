@@ -401,10 +401,12 @@ static void il_opdmp_invalid(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 
 static void il_op_resolve(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 	if (!op && sb) {
-		rz_strbuf_append(sb, "null");
+		rz_strbuf_append(sb, "nop");
 		return;
 	} else if (!op && pj) {
-		pj_null(pj);
+		pj_o(pj);
+		pj_ks(pj, "opcode", "nop");
+		pj_end(pj);
 		return;
 	}
 	switch (op->code) {
