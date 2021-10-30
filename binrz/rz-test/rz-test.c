@@ -24,6 +24,14 @@
 #define WORKERS_DEFAULT_STR STR(WORKERS_DEFAULT)
 #define TIMEOUT_DEFAULT_STR STR(TIMEOUT_DEFAULT)
 
+typedef struct rz_testfile_counts_t {
+	ut64 tests_left; // count of remaining tests
+	ut64 ok;
+	ut64 xx;
+	ut64 br;
+	ut64 fx;
+} RzTestFileCounts;
+
 typedef struct rz_test_state_t {
 	RzTestRunConfig run_config;
 	bool verbose;
@@ -32,7 +40,7 @@ typedef struct rz_test_state_t {
 
 	RzThreadCond *cond; // signaled from workers to main thread to update status
 	RzThreadLock *lock; // protects everything below
-	HtPP *path_left; // char * (path to test file) => ut64 * (count of remaining tests)
+	HtPP *path_left; // char * (path to test file) => RzTestFileCounts *
 	RzPVector completed_paths;
 	ut64 ok_count;
 	ut64 xx_count;
@@ -170,12 +178,13 @@ static bool rz_test_chdir_fromtest(const char *test_path) {
 	return found;
 }
 
+static bool log_mode = false;
+
 int rz_test_main(int argc, const char **argv) {
 	int workers_count = WORKERS_DEFAULT;
 	bool verbose = false;
 	bool nothing = false;
 	bool quiet = false;
-	bool log_mode = false;
 	bool interactive = false;
 	char *rizin_cmd = NULL;
 	char *rz_asm_cmd = NULL;
@@ -431,13 +440,12 @@ int rz_test_main(int argc, const char **argv) {
 			void **it;
 			rz_pvector_foreach (&state.queue, it) {
 				RzTest *test = *it;
-				ut64 *count = ht_pp_find(state.path_left, test->path, NULL);
-				if (!count) {
-					count = malloc(sizeof(ut64));
-					*count = 0;
-					ht_pp_insert(state.path_left, test->path, count);
+				RzTestFileCounts *counts = ht_pp_find(state.path_left, test->path, NULL);
+				if (!counts) {
+					counts = calloc(1, sizeof(RzTestFileCounts));
+					ht_pp_insert(state.path_left, test->path, counts);
 				}
-				(*count)++;
+				counts->tests_left++;
 			}
 		}
 	}
@@ -594,25 +602,41 @@ static RzThreadFunctionRet worker_th(RzThread *th) {
 
 		rz_th_lock_enter(state->lock);
 		rz_pvector_push(&state->results, result);
-		switch (result->result) {
-		case RZ_TEST_RESULT_OK:
-			state->ok_count++;
-			break;
-		case RZ_TEST_RESULT_FAILED:
-			state->xx_count++;
-			break;
-		case RZ_TEST_RESULT_BROKEN:
-			state->br_count++;
-			break;
-		case RZ_TEST_RESULT_FIXED:
-			state->fx_count++;
-			break;
+		if (!log_mode) {
+			switch (result->result) {
+			case RZ_TEST_RESULT_OK:
+				state->ok_count++;
+				break;
+			case RZ_TEST_RESULT_FAILED:
+				state->xx_count++;
+				break;
+			case RZ_TEST_RESULT_BROKEN:
+				state->br_count++;
+				break;
+			case RZ_TEST_RESULT_FIXED:
+				state->fx_count++;
+				break;
+			}
 		}
 		if (state->path_left) {
-			ut64 *count = ht_pp_find(state->path_left, test->path, NULL);
-			if (count) {
-				(*count)--;
-				if (!*count) {
+			RzTestFileCounts *counts = ht_pp_find(state->path_left, test->path, NULL);
+			if (counts) {
+				switch (result->result) {
+				case RZ_TEST_RESULT_OK:
+					counts->ok++;
+					break;
+				case RZ_TEST_RESULT_FAILED:
+					counts->xx++;
+					break;
+				case RZ_TEST_RESULT_BROKEN:
+					counts->br++;
+					break;
+				case RZ_TEST_RESULT_FIXED:
+					counts->fx++;
+					break;
+				}
+				counts->tests_left--;
+				if (!counts->tests_left) {
 					rz_pvector_push(&state->completed_paths, (void *)test->path);
 				}
 			}
@@ -800,6 +824,15 @@ static void print_log(RzTestState *state, ut64 prev_completed, ut64 prev_paths_c
 			name = "unknown path. something is very wrong.";
 		}
 		printf("[**] %50s ", name);
+		if (state->path_left) {
+			RzTestFileCounts *counts = ht_pp_find(state->path_left, name, NULL);
+			if (counts) {
+				state->ok_count += counts->ok;
+				state->xx_count += counts->xx;
+				state->br_count += counts->br;
+				state->fx_count += counts->fx;
+			}
+		}
 		print_state_counts(state);
 		printf("\n");
 		fflush(stdout);
