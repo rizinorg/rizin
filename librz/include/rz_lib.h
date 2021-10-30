@@ -109,14 +109,14 @@ RZ_API RzLib *rz_lib_new(const char *symname, const char *symnamefunc);
 RZ_API void rz_lib_free(RzLib *lib);
 RZ_API int rz_lib_run_handler(RzLib *lib, RzLibPlugin *plugin, RzLibStruct *symbol);
 RZ_API RzLibHandler *rz_lib_get_handler(RzLib *lib, int type);
-RZ_API int rz_lib_open(RzLib *lib, const char *file);
-RZ_API bool rz_lib_opendir(RzLib *lib, const char *path);
-RZ_API int rz_lib_open_ptr(RzLib *lib, const char *file, void *handler, RzLibStruct *stru);
+RZ_API bool rz_lib_already_loaded(RzLib *lib, const char *file);
+RZ_API void rz_lib_openfile(RzLib *lib, const char *file);
+RZ_API int rz_lib_closefile(RzLib *lib, const char *file);
+RZ_API void rz_lib_opendir(RzLib *lib, const char *path);
 RZ_API char *rz_lib_path(const char *libname);
 RZ_API void rz_lib_list(RzLib *lib);
 RZ_API bool rz_lib_add_handler(RzLib *lib, int type, const char *desc, RzLibCallback ct, RzLibCallback dt, void *user);
 RZ_API bool rz_lib_del_handler(RzLib *lib, int type);
-RZ_API int rz_lib_close(RzLib *lib, const char *file);
 
 RZ_API const char *rz_lib_types_get(int idx);
 RZ_API int rz_lib_types_get_i(const char *str);

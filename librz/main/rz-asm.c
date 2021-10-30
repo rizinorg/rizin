@@ -36,7 +36,7 @@ static void __as_set_archbits(RzAsmState *as) {
 static RzAsmState *__as_new(void) {
 	RzAsmState *as = RZ_NEW0(RzAsmState);
 	if (as) {
-		as->l = rz_lib_new(NULL, NULL);
+		as->l = rz_lib_new(RZ_LIB_SYMNAME, RZ_LIB_SYMFUNC);
 		as->a = rz_asm_new();
 		if (as->a) {
 			as->a->num = rz_num_new(NULL, NULL, NULL);

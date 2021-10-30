@@ -426,6 +426,7 @@ static int checkcmd(const char *c) {
 #endif
 
 RZ_API int rz_sys_crash_handler(const char *cmd) {
+	char *s;
 #ifndef __WINDOWS__
 	int sig[] = { SIGINT, SIGSEGV, SIGBUS, SIGQUIT, SIGHUP, 0 };
 
@@ -438,9 +439,12 @@ RZ_API int rz_sys_crash_handler(const char *cmd) {
 	backtrace(array, 1);
 #endif
 
-	free(crash_handler_cmd);
-	crash_handler_cmd = strdup(cmd);
-
+	s = strdup(cmd);
+	if (s == NULL)
+		return false;
+	if (crash_handler_cmd)
+		free(crash_handler_cmd);
+	crash_handler_cmd = s;
 	rz_sys_sigaction(sig, signal_handler);
 #else
 #pragma message("rz_sys_crash_handler : unimplemented for this platform")
@@ -494,8 +498,13 @@ err_r_sys_get_env:
 }
 
 RZ_API bool rz_sys_getenv_asbool(const char *key) {
-	char *env = rz_sys_getenv(key);
-	const bool res = (env && *env == '1');
+	bool res;
+	char *env;
+
+	env = rz_sys_getenv(key);
+	if (env == NULL)
+		return false;
+	res = (!strcasecmp(env, "true") || !strcmp(env, "1"));
 	free(env);
 	return res;
 }
@@ -1288,9 +1297,12 @@ RZ_API int rz_sys_getpid(void) {
 #endif
 }
 
-RZ_API const char *rz_sys_prefix(const char *pfx) {
+RZ_API char *rz_sys_prefix(const char *pfx) {
 	static char *prefix = NULL;
-	if (!prefix) {
+
+	if (RZ_STR_ISNOTEMPTY(pfx)) {
+		prefix = strdup(pfx);
+	} else {
 #if RZ_IS_PORTABLE
 		char *pid_to_path = rz_sys_pid_to_path(rz_sys_getpid());
 		if (pid_to_path) {
@@ -1310,10 +1322,6 @@ RZ_API const char *rz_sys_prefix(const char *pfx) {
 #else
 		prefix = strdup(RZ_PREFIX);
 #endif
-	}
-	if (RZ_STR_ISNOTEMPTY(pfx)) {
-		free(prefix);
-		prefix = strdup(pfx);
 	}
 	return prefix;
 }

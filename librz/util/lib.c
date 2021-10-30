@@ -178,25 +178,44 @@ err:
 
 RZ_API RzLib *rz_lib_new(const char *symname, const char *symnamefunc) {
 	RzLib *lib = RZ_NEW(RzLib);
-	if (lib) {
-		__has_debug = rz_sys_getenv_asbool("RZ_DEBUG");
-		lib->handlers = rz_list_newf(free);
-		lib->plugins = rz_list_newf(free);
-		lib->symname = strdup(symname ? symname : RZ_LIB_SYMNAME);
-		lib->symnamefunc = strdup(symnamefunc ? symnamefunc : RZ_LIB_SYMFUNC);
-	}
+	if (lib == NULL)
+		return NULL;
+	__has_debug = rz_sys_getenv_asbool("RZ_DEBUG");
+	lib->handlers = rz_list_newf(free);
+	lib->plugins = rz_list_newf(free);
+	lib->symname = strdup(symname);
+	if (lib->symname == NULL)
+		goto err;
+	lib->symnamefunc = strdup(symnamefunc);
+	if (lib->symnamefunc == NULL)
+		goto err_symname;
 	return lib;
+err_symname:
+	free (lib->symname);
+err:
+	free (lib);
+	return NULL;
 }
 
 RZ_API void rz_lib_free(RzLib *lib) {
-	if (lib) {
-		rz_lib_close(lib, NULL);
-		rz_list_free(lib->handlers);
-		rz_list_free(lib->plugins);
-		free(lib->symname);
-		free(lib->symnamefunc);
-		free(lib);
+	RzLibPlugin *p;
+	RzListIter *iter, *iter2;
+	/* removing all plugins, good cleanup */
+	rz_list_foreach_safe (lib->plugins, iter, iter2, p) {
+		if (p->handler && p->handler->destructor) {
+			p->handler->destructor(p, p->handler->user, p->data);
+		}
+		p->free(p->data);
+		rz_lib_dl_close(p->dl_handler);
+		free(p->file);
+		rz_list_delete(lib->plugins, iter);
 	}
+	rz_list_free(lib->plugins);
+	rz_list_free(lib->handlers);
+	free(lib->symname);
+	free(lib->symnamefunc);
+	free(lib);
+	return;
 }
 
 static bool __lib_dl_check_filename(const char *file) {
@@ -224,103 +243,48 @@ RZ_API RzLibHandler *rz_lib_get_handler(RzLib *lib, int type) {
 	return NULL;
 }
 
-RZ_API int rz_lib_close(RzLib *lib, const char *file) {
+RZ_API int rz_lib_closefile(RzLib *lib, const char *file) {
 	RzLibPlugin *p;
-	RzListIter *iter, *iter2;
-	rz_list_foreach_safe (lib->plugins, iter, iter2, p) {
-		if ((!file || !strcmp(file, p->file))) {
-			int ret = 0;
-			if (p->handler && p->handler->destructor) {
-				ret = p->handler->destructor(p, p->handler->user, p->data);
-			}
-			if (p->free) {
-				p->free(p->data);
-			}
-			free(p->file);
-			rz_list_delete(lib->plugins, iter);
-			if (file != NULL) {
-				return ret;
-			}
-		}
-	}
-	if (!file) {
-		return 0;
-	}
-	// delete similar plugin name
+	RzListIter *iter;
 	rz_list_foreach (lib->plugins, iter, p) {
-		if (strstr(p->file, file)) {
-			int ret = 0;
-			if (p->handler && p->handler->destructor) {
-				ret = p->handler->destructor(p,
-					p->handler->user, p->data);
-			}
-			eprintf("Unloaded %s\n", p->file);
-			free(p->file);
-			rz_list_delete(lib->plugins, iter);
-			return ret;
+		if (!strstr(p->file, file))
+			continue;
+		if (p->handler && p->handler->destructor) {
+			p->handler->destructor(p, p->handler->user, p->data);
 		}
+		p->free(p->data);
+		rz_lib_dl_close(p->dl_handler);
+		free(p->file);
+		rz_list_delete(lib->plugins, iter);
+		return 0;
 	}
 	return -1;
 }
 
-static bool __already_loaded(RzLib *lib, const char *file) {
-	const char *fileName = rz_str_rstr(file, RZ_SYS_DIR);
+RZ_API bool rz_lib_already_loaded(RzLib *lib, const char *file) {
+	const char *fileName;
 	RzLibPlugin *p;
 	RzListIter *iter;
-	if (fileName) {
-		rz_list_foreach (lib->plugins, iter, p) {
-			const char *pFileName = rz_str_rstr(p->file, RZ_SYS_DIR);
-			if (pFileName && !strcmp(fileName, pFileName)) {
-				return true;
-			}
+
+	fileName = rz_str_rstr(file, RZ_SYS_DIR);
+	if (fileName == NULL)
+		return false;
+	rz_list_foreach (lib->plugins, iter, p) {
+		const char *pFileName = rz_str_rstr(p->file, RZ_SYS_DIR);
+		if (pFileName && !strcmp(fileName, pFileName)) {
+			return true;
 		}
 	}
 	return false;
 }
 
-RZ_API int rz_lib_open(RzLib *lib, const char *file) {
-	/* ignored by filename */
-	if (!__lib_dl_check_filename(file)) {
-		eprintf("Invalid library extension: %s\n", file);
-		return -1;
-	}
-
-	if (__already_loaded(lib, file)) {
-		eprintf("Not loading library because it has already been loaded from somewhere else: '%s'\n", file);
-		return -1;
-	}
-
-	void *handler = rz_lib_dl_open(file);
-	if (!handler) {
-		IFDBG eprintf("Cannot open library: '%s'\n", file);
-		return -1;
-	}
-
-	RzLibStructFunc strf = (RzLibStructFunc)rz_lib_dl_sym(handler, lib->symnamefunc);
-	RzLibStruct *stru = NULL;
-	if (strf) {
-		stru = strf();
-	}
-	if (!stru) {
-		stru = (RzLibStruct *)rz_lib_dl_sym(handler, lib->symname);
-	}
-	if (!stru) {
-		IFDBG eprintf("Cannot find symbol '%s' in library '%s'\n",
-			lib->symname, file);
-		rz_lib_dl_close(handler);
-		return -1;
-	}
-
-	int res = rz_lib_open_ptr(lib, file, handler, stru);
-	if (strf) {
-		free(stru);
-	}
-	return res;
-}
-
 static char *major_minor(const char *s) {
-	char *a = strdup(s);
-	char *p = strchr(a, '.');
+	char *a, *p;
+
+	if ((a = strdup(s)) == NULL) {
+		return NULL;
+	}
+	p = strchr(a, '.');
 	if (p) {
 		p = strchr(p + 1, '.');
 		if (p) {
@@ -330,12 +294,29 @@ static char *major_minor(const char *s) {
 	return a;
 }
 
-RZ_API int rz_lib_open_ptr(RzLib *lib, const char *file, void *handler, RzLibStruct *stru) {
+static int rz_lib_open_ptr(RzLib *lib, const char *file, void *handler, RzLibStruct *stru) {
+	RzLibPlugin *p;
+
 	rz_return_val_if_fail(lib && file && stru, -1);
 	if (stru->version) {
-		char *mm0 = major_minor(stru->version);
-		char *mm1 = major_minor(RZ_VERSION);
-		bool mismatch = strcmp(mm0, mm1);
+		char *mm0, *mm1;
+		bool mismatch;
+
+		mm0 = major_minor(stru->version);
+		if (mm0 == NULL) {
+			eprintf("Failed to get version for file %s (%s), alloc error\n",
+                                file, stru->version);
+				return -1;
+		}
+		mm1 = major_minor(RZ_VERSION);
+		if (mm1 == NULL) {
+			eprintf("Failed to get version for file %s (%s), alloc error\n",
+                                file, RZ_VERSION);
+				free (mm0);
+				return -1;
+		}
+
+		mismatch = strcmp(mm0, mm1);
 		free(mm0);
 		free(mm1);
 		if (mismatch) {
@@ -347,38 +328,84 @@ RZ_API int rz_lib_open_ptr(RzLib *lib, const char *file, void *handler, RzLibStr
 				int minor = dot ? atoi(dot + 1) : 0;
 				// The pkgname member was introduced in 4.2.0
 				if (major > 4 || (major == 4 && minor >= 2)) {
-					printf("rz-pm -ci %s\n", stru->pkgname);
+					eprintf("rz-pm -ci %s\n", stru->pkgname);
 				}
 			}
 			return -1;
 		}
 	}
-	RzLibPlugin *p = RZ_NEW0(RzLibPlugin);
-	p->type = stru->type;
-	p->data = stru->data;
-	p->file = strdup(file);
+	p = RZ_NEW0(RzLibPlugin);
+	if (p == NULL) {
+		eprintf("Library plugin allocation error for file %s\n", file);
+		return -1;
+	}
+	memset (p, 0, sizeof(*p));
+	if ((p->file = strdup(file)) == NULL) {
+		goto err;
+	}
 	p->dl_handler = handler;
 	p->handler = rz_lib_get_handler(lib, p->type);
+	p->type = stru->type;
+	p->data = stru->data;
 	p->free = stru->free;
-
-	int ret = rz_lib_run_handler(lib, p, stru);
-	if (ret == -1) {
+	if (rz_lib_run_handler(lib, p, stru)) {
 		IFDBG eprintf("Library handler has failed for '%s'\n", file);
-		free(p->file);
-		free(p);
-		rz_lib_dl_close(handler);
-	} else {
-		rz_list_append(lib->plugins, p);
+		goto err_file;
 	}
-
-	return ret;
+	rz_list_append(lib->plugins, p);
+	return 0;
+err_file:
+	free (p->file);
+err:
+	RZ_FREE(p);
+	return -1;
 }
 
-RZ_API bool rz_lib_opendir(RzLib *lib, const char *path) {
+RZ_API void rz_lib_openfile(RzLib *lib, const char *file) {
+	void *handler;
+	RzLibStructFunc strf;
+	RzLibStruct *stru;
+
+	if (!__lib_dl_check_filename(file)) {
+		eprintf("Invalid library extension: %s, ignored\n", file);
+		return;
+	}
+
+	if (rz_lib_already_loaded(lib, file)) {
+		eprintf("Not loading library because it has already been loaded from somewhere else: '%s'\n", file);
+		return;
+	}
+
+	handler = rz_lib_dl_open(file);
+	if (!handler) {
+		eprintf("Cannot open library: '%s'\n", file);
+		return;
+	}
+
+	strf = (RzLibStructFunc)rz_lib_dl_sym(handler, lib->symnamefunc);
+	if (strf == NULL) {
+		IFDBG eprintf("Cannot find symbol '%s' in library '%s'\n", lib->symnamefunc, file);
+		stru = (RzLibStruct *)rz_lib_dl_sym(handler, lib->symname);
+		if (stru == NULL) {
+			IFDBG eprintf("Cannot find symbol '%s' in library '%s'\n", lib->symname, file);
+			rz_lib_dl_close(handler);
+			return;
+		}
+	} else {
+		stru = strf();
+		free (strf);
+	}
+	if (rz_lib_open_ptr(lib, file, handler, stru)) {
+		free (stru);
+		rz_lib_dl_close(handler);
+	}
+	return;
+}
+
+RZ_API void rz_lib_opendir(RzLib *lib, const char *path) {
 #if WANT_DYLINK
-	rz_return_val_if_fail(lib && path, false);
 #if __WINDOWS__
-	wchar_t file[1024];
+	wchar_t file[MAX_FILE_NAME_SIZE];
 	WIN32_FIND_DATAW dir;
 	HANDLE fh;
 	wchar_t directory[MAX_PATH];
@@ -389,62 +416,60 @@ RZ_API bool rz_lib_opendir(RzLib *lib, const char *path) {
 	struct dirent *de;
 	DIR *dh;
 #endif
+
 #ifdef RZ_LIBR_PLUGINS
 	if (!path) {
 		path = RZ_LIBR_PLUGINS;
 	}
-#endif
+#else
 	if (!path) {
-		return false;
+		eprintf("No path specified for plugins\n");
+		return;
 	}
+#endif
+
 #if __WINDOWS__
 	wcpath = rz_utf8_to_utf16(path);
 	if (!wcpath) {
-		return false;
+		eprintf("Failed to convert path from UTF-8 to UTF-16 %s\n", path);
+		return;
 	}
 	swprintf(directory, _countof(directory), L"%ls\\*.*", wcpath);
 	fh = FindFirstFileW(directory, &dir);
 	if (fh == INVALID_HANDLE_VALUE) {
-		IFDBG eprintf("Cannot open directory %ls\n", wcpath);
+		eprintf("Cannot open directory %ls\n", wcpath);
 		free(wcpath);
-		return false;
+		return;
 	}
 	do {
 		swprintf(file, _countof(file), L"%ls/%ls", wcpath, dir.cFileName);
 		wctocbuff = rz_utf16_to_utf8(file);
-		if (wctocbuff) {
-			if (__lib_dl_check_filename(wctocbuff)) {
-				rz_lib_open(lib, wctocbuff);
-			} else {
-				IFDBG eprintf("Cannot open %ls\n", dir.cFileName);
-			}
-			free(wctocbuff);
+		if (wctocbuff == NULL) {
+			eprintf("Failed to convert file name from UTF-8 to UTF-16 %s\n", path);
+			continue;
 		}
+		rz_lib_openfile(lib, wctocbuff);
+		free(wctocbuff);
 	} while (FindNextFileW(fh, &dir));
 	FindClose(fh);
 	free(wcpath);
 #else
 	dh = opendir(path);
 	if (!dh) {
-		IFDBG eprintf("Cannot open directory '%s'\n", path);
-		return false;
+		eprintf("Cannot open directory '%s'\n", path);
+		return;
 	}
 	while ((de = (struct dirent *)readdir(dh))) {
 		if (de->d_name[0] == '.' || strstr(de->d_name, ".dSYM")) {
 			continue;
 		}
 		snprintf(file, sizeof(file), "%s/%s", path, de->d_name);
-		if (__lib_dl_check_filename(file)) {
-			IFDBG eprintf("Loading %s\n", file);
-			rz_lib_open(lib, file);
-		} else {
-			IFDBG eprintf("Cannot open %s\n", file);
-		}
+		rz_lib_openfile(lib, file);
 	}
 	closedir(dh);
 #endif
-#endif
-	return true;
+#endif	// WANT_DYLINK
+	return;
 }
 
 RZ_API bool rz_lib_add_handler(RzLib *lib,
@@ -498,6 +523,6 @@ RZ_API void rz_lib_list(RzLib *lib) {
 	RzListIter *iter;
 	RzLibPlugin *p;
 	rz_list_foreach (lib->plugins, iter, p) {
-		printf(" %5s %p %s \n", __lib_types_get(p->type), p->dl_handler, p->file);
+		printf(" %5s %s \n", __lib_types_get(p->type), p->file);
 	}
 }

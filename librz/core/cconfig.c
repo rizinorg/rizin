@@ -18,10 +18,16 @@
 #define SETBPREF(x, y, z)  SETDESC(NODECB(x, y, boolify_var_cb), z)
 
 static bool boolify_var_cb(void *user, void *data) {
+	char *s;
 	RzConfigNode *node = (RzConfigNode *)data;
+
 	if (node->i_value || rz_str_is_false(node->value)) {
+		s = strdup(rz_str_bool(node->i_value));
+		if (s == NULL) {
+			return false;
+		}
 		free(node->value);
-		node->value = strdup(rz_str_bool(node->i_value));
+		node->value = s;
 	}
 	return true;
 }
@@ -39,12 +45,13 @@ static void set_options(RzConfigNode *node, ...) {
 }
 
 static bool isGdbPlugin(RzCore *core) {
-	if (core->io && core->io->desc && core->io->desc->plugin) {
-		if (core->io->desc->plugin->name && !strcmp(core->io->desc->plugin->name, "gdb")) {
-			return true;
-		}
+	if (!core->io || !core->io->desc || !core->io->desc->plugin)
+		return false;
+	if (core->io->desc->plugin->name && !strcmp(core->io->desc->plugin->name, "gdb")) {
+		return true;
+	} else {
+		return false;
 	}
-	return false;
 }
 
 static void print_node_options(RzConfigNode *node) {
@@ -554,7 +561,9 @@ static bool cb_asmarch(void *user, void *data) {
 	//rz_debug_set_arch (core->dbg, rz_sys_arch_id (node->value), bits);
 	rz_debug_set_arch(core->dbg, node->value, bits);
 	if (!rz_config_set(core->config, "analysis.arch", node->value)) {
-		char *p, *s = strdup(node->value);
+		char *p, *s;
+
+		s = strdup(node->value);
 		if (s) {
 			p = strchr(s, '.');
 			if (p) {
@@ -565,6 +574,9 @@ static bool cb_asmarch(void *user, void *data) {
 				rz_config_set(core->config, "analysis.arch", "null");
 			}
 			free(s);
+		} else {
+			/* error, fall back to the analysis.null plugin */
+			rz_config_set(core->config, "analysis.arch", "null");
 		}
 	}
 	// set pcalign
@@ -2619,7 +2631,9 @@ static int __dbg_swstep_getter(void *user, RzConfigNode *node) {
 }
 
 static bool cb_dirpfx(RzCore *core, RzConfigNode *node) {
-	rz_sys_prefix(node->value);
+	char *s;
+	s = rz_sys_prefix(node->value);
+	free (s);
 	return true;
 }
 
@@ -2874,24 +2888,34 @@ static bool cb_dbg_verbose(void *user, void *data) {
 	return true;
 }
 
-RZ_API int rz_core_config_init(RzCore *core) {
+RZ_API bool rz_core_config_init(RzCore *core) {
 	int i;
 	char buf[128], *p, *tmpdir;
+	RzConfig *cfg;
 	RzConfigNode *n;
-	RzConfig *cfg = core->config = rz_config_new(core);
+
+	cfg = rz_config_new(core);
+	core->config = cfg;		// Very bad behaviour
 	if (!cfg) {
-		return 0;
+		return false;
 	}
 	cfg->num = core->num;
+
 	/* dir.prefix is used in other modules, set it first */
 	{
-		char *pfx = rz_sys_getenv("RZ_PREFIX");
-		if (!pfx) {
-			pfx = strdup(rz_sys_prefix(NULL));
+		char *pfx;
+		pfx = rz_sys_getenv("RZ_PREFIX");
+		if (pfx == NULL) {
+			pfx = rz_sys_prefix(NULL);
+			if (pfx == NULL) {
+				eprintf ("Malloc error for RZ_PREFIX default\n");
+				goto err;
+			}
 		}
 		SETCB("dir.prefix", pfx, (RzConfigCallback)&cb_dirpfx, "Default prefix rizin was compiled for");
 		free(pfx);
 	}
+
 #if __ANDROID__
 	{ // use dir.home and also adjust check for permissions in directory before choosing a home
 		char *h = rz_sys_getenv(RZ_SYS_HOME);
@@ -3493,9 +3517,15 @@ RZ_API int rz_core_config_init(RzCore *core) {
 #if __ANDROID__
 	SETPREF("http.root", "/data/data/org.rizin.rizininstaller/www", "http root directory");
 #else
-	char *wwwroot = rz_str_rz_prefix(RZ_WWWROOT);
-	SETPREF("http.root", wwwroot, "http root directory");
-	free(wwwroot);
+	{
+		char *wwwroot = rz_str_rz_prefix(RZ_WWWROOT);
+		if (wwwroot == NULL) {
+			goto err;
+		}
+	
+		SETPREF("http.root", wwwroot, "http root directory");
+		free(wwwroot);
+	}
 #endif
 	SETPREF("http.port", "9090", "HTTP server port");
 	SETPREF("http.maxport", "9999", "Last HTTP server port");
@@ -3735,6 +3765,10 @@ RZ_API int rz_core_config_init(RzCore *core) {
 
 	rz_config_lock(cfg, true);
 	return true;
+err:
+	core->config = NULL;
+	rz_config_free (cfg);
+	return false;
 }
 
 RZ_API void rz_core_parse_rizinrc(RzCore *r) {

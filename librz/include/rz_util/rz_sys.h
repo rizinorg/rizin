@@ -92,7 +92,7 @@ RZ_API void rz_sys_perror_str(const char *fun);
 #else
 #define rz_sys_mkdir_failed() (errno != EEXIST)
 #endif
-RZ_API const char *rz_sys_prefix(const char *pfx);
+RZ_API char *rz_sys_prefix(const char *pfx);
 RZ_API bool rz_sys_mkdir(const char *dir);
 RZ_API bool rz_sys_mkdirp(const char *dir);
 RZ_API int rz_sys_sleep(int secs);

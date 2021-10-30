@@ -5,6 +5,8 @@
 #include <rz_demangler.h>
 #include "config.h"
 
+#define MAX_FILE_NAME_SIZE		8096		/* Temporary macros */
+
 #define CB(x, y) \
 	static int __lib_##x##_cb(RzLibPlugin *pl, void *user, void *data) { \
 		struct rz_##x##_plugin_t *hand = (struct rz_##x##_plugin_t *)data; \
@@ -51,59 +53,60 @@ CB(parse, parser)
 CB(bin, bin)
 CB(egg, egg)
 
-static void __openPluginsAt(RzCore *core, const char *arg, const char *user_path) {
-	if (arg && *arg) {
-		if (user_path) {
-			if (rz_str_endswith(user_path, arg)) {
-				return;
-			}
-		}
-		char *pdir = rz_str_rz_prefix(arg);
-		if (pdir) {
-			rz_lib_opendir(core->lib, pdir);
-			free(pdir);
-		}
-	}
-}
-
-static void __loadSystemPlugins(RzCore *core, int where, const char *path) {
 #if RZ_LOADLIBS
-	if (!where) {
+static void rz_core_load_plugins(RzCore *core, int where, const char *path) {
+	const char *dir_plugins;
+	char *p;
+
+	if (!where)
 		where = -1;
-	}
-	if (path) {
+	if (path)
 		rz_lib_opendir(core->lib, path);
-	}
-	const char *dir_plugins = rz_config_get(core->config, "dir.plugins");
-	if (where & RZ_CORE_LOADLIBS_CONFIG) {
+	dir_plugins = rz_config_get(core->config, "dir.plugins");
+	if (where & RZ_CORE_LOADLIBS_CONFIG)
 		rz_lib_opendir(core->lib, dir_plugins);
-	}
 	if (where & RZ_CORE_LOADLIBS_ENV) {
-		char *p = rz_sys_getenv(RZ_LIB_ENV);
-		if (p && *p) {
-			rz_lib_opendir(core->lib, p);
+		p = rz_sys_getenv(RZ_LIB_ENV);
+		if (p != NULL) {
+			if (*p) {
+				rz_lib_opendir(core->lib, p);
+			}
+			free(p);
 		}
-		free(p);
 	}
 	if (where & RZ_CORE_LOADLIBS_HOME) {
-		char *hpd = rz_str_home(RZ_HOME_PLUGINS);
-		if (hpd) {
-			rz_lib_opendir(core->lib, hpd);
-			free(hpd);
+		p = rz_str_home(RZ_HOME_PLUGINS);
+		if (p != NULL) {
+			if (*p) {
+				rz_lib_opendir(core->lib, p);
+			}
+			free(p);
 		}
 	}
 	if (where & RZ_CORE_LOADLIBS_SYSTEM) {
-		__openPluginsAt(core, RZ_PLUGINS, dir_plugins);
-		__openPluginsAt(core, RZ_EXTRAS, dir_plugins);
-		__openPluginsAt(core, RZ_BINDINGS, dir_plugins);
+#define RZ_CORE_PROC_DIR(x) \
+		if (dir_plugins == NULL || !rz_str_endswith(dir_plugins, x)) { \
+			snprintf (user_path, MAX_FILE_NAME_SIZE, "%s%s", RZ_SYS_DIR, x); \
+			rz_lib_opendir(core->lib, user_path); \
+		}
+		char user_path[MAX_FILE_NAME_SIZE];
+		RZ_CORE_PROC_DIR(RZ_PLUGINS);
+		RZ_CORE_PROC_DIR(RZ_EXTRAS);
+		RZ_CORE_PROC_DIR(RZ_BINDINGS);
 	}
-#endif
+	return;
 }
+
+#endif
 
 RZ_API void rz_core_loadlibs_init(RzCore *core) {
 	ut64 prev = rz_time_now_mono();
 #define DF(x, y, z) rz_lib_add_handler(core->lib, RZ_LIB_TYPE_##x, y, &__lib_##z##_cb, &__lib_##z##_dt, core);
-	core->lib = rz_lib_new(NULL, NULL);
+	core->lib = rz_lib_new(RZ_LIB_SYMNAME, RZ_LIB_SYMFUNC);
+	if (core->lib == NULL) {
+		eprintf ("Failed to allocate new libs data\n");
+		return;
+	}
 	DF(DEMANGLER, "demangler plugins", demangler);
 	DF(IO, "io plugins", io);
 	DF(CORE, "core plugins", core);
@@ -116,44 +119,57 @@ RZ_API void rz_core_loadlibs_init(RzCore *core) {
 	DF(BIN, "bin plugins", bin);
 	DF(EGG, "egg plugins", egg);
 	core->times->loadlibs_init_time = rz_time_now_mono() - prev;
+	return;
 }
 
 static bool __isScriptFilename(const char *name) {
 	const char *ext = rz_str_lchr(name, '.');
-	if (ext) {
-		ext++;
-		if (!strcmp(ext, "py") || !strcmp(ext, "js") || !strcmp(ext, "lua")) {
-			return true;
-		}
+
+	if (ext == NULL) {
+		return false;
 	}
-	return false;
+	ext++;
+	if (!strcmp(ext, "py") || !strcmp(ext, "js") || !strcmp(ext, "lua")) {
+		return true;
+	} else {
+		return false;
+	}
 }
 
-RZ_API int rz_core_loadlibs(RzCore *core, int where, const char *path) {
-	ut64 prev = rz_time_now_mono();
-	__loadSystemPlugins(core, where, path);
+RZ_API bool rz_core_loadlibs(RzCore *core, int where, const char *path) {
+	char *homeplugindir, *file;
+	char script_file[MAX_FILE_NAME_SIZE];
+	RzList *files;
+	RzListIter *iter;
+	ut64 prev;
+
+	prev = rz_time_now_mono();
+#if RZ_LOADLIBS
+	rz_core_load_plugins(core, where, path);
+#endif
 	/* TODO: all those default plugin paths should be defined in rz_lib */
 	if (!rz_config_get_i(core->config, "cfg.plugins")) {
 		core->times->loadlibs_time = 0;
 		return false;
 	}
-	// load script plugins
-	char *homeplugindir = rz_str_home(RZ_HOME_PLUGINS);
-	RzList *files = rz_sys_dir(homeplugindir);
-	RzListIter *iter;
-	char *file;
-	rz_list_foreach (files, iter, file) {
-		if (__isScriptFilename(file)) {
-			char *script_file = rz_str_newf("%s/%s", homeplugindir, file);
-			if (!rz_core_run_script(core, script_file)) {
-				eprintf("Cannot find script '%s'\n", script_file);
-			}
-			free(script_file);
-		}
+	homeplugindir = rz_str_home(RZ_HOME_PLUGINS);
+	if (homeplugindir == NULL) {
+		eprintf("Failed to alloc string %s\n", RZ_HOME_PLUGINS);
+		return false;
 	}
 
+	files = rz_sys_dir(homeplugindir);
+	rz_list_foreach (files, iter, file) {
+		if (!__isScriptFilename(file)) {
+			continue;
+		}
+		snprintf(script_file, MAX_FILE_NAME_SIZE, "%s/%s", homeplugindir, file);
+		if (!rz_core_run_script(core, script_file)) {
+			eprintf("Cannot find script '%s'\n", script_file);
+		}
+	}
 	free(homeplugindir);
-	core->times->loadlibs_time = rz_time_now_mono() - prev;
 	rz_list_free(files);
+	core->times->loadlibs_time = rz_time_now_mono() - prev;
 	return true;
 }

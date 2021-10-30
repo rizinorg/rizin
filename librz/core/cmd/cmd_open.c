@@ -1308,9 +1308,7 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 	case 'L': { // "oL"
 		RzCmdStateOutput state = { 0 };
 		if (input[1] == ' ') {
-			if (rz_lib_open(core->lib, input + 2) == -1) {
-				eprintf("Oops\n");
-			}
+			rz_lib_openfile(core->lib, input + 2);
 			break;
 		}
 		if (input[1] == 'j') {

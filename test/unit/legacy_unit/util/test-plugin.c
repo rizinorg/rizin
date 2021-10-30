@@ -30,25 +30,24 @@ int ptr() {
 }
 
 int main(int argc, char **argv) {
-	int ret;
-	RzLib *lib = rz_lib_new("rizin_plugin");
+	RzLib *lib = rz_lib_new("rizin_plugin", "rizin_plugin_function");
 	rz_lib_add_handler(lib, 1, "example plugin handler", &cb_1, &cb_1_end, &ptr);
 	rz_lib_add_handler(lib, 2, "disassembler plugin handler", &cb_2, &cb_2_end, &ptr);
 	rz_lib_add_handler(lib, 3, "file headers parser plugin handler", &cb_2, &cb_2_end, &ptr);
 
-	ret = rz_lib_open(lib, "./plugin." RZ_LIB_EXT);
-	if (ret == -1)
-		eprintf("Cannot open plugin\n");
-	else
+	rz_lib_openfile(lib, "./plugin." RZ_LIB_EXT);
+	if (rz_lib_already_loaded(lib, "./plugin." RZ_LIB_EXT))
 		eprintf("Plugin opened correctly\n");
+	else
+		eprintf("Cannot open plugin\n");
 	rz_lib_list(lib);
 
 	printf("  --- closing './plugin." RZ_LIB_EXT "' ---\n");
-	rz_lib_close(lib, "./plugin." RZ_LIB_EXT);
+	rz_lib_closefile(lib, "./plugin." RZ_LIB_EXT);
 	rz_lib_list(lib);
 	printf("  ---\n");
 
-	rz_lib_close(lib, "./plugin." RZ_LIB_EXT);
+	rz_lib_closefile(lib, "./plugin." RZ_LIB_EXT);
 	rz_lib_free(lib);
 
 	return 0;

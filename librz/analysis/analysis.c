@@ -91,8 +91,7 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 		return NULL;
 	}
 	if (!rz_str_constpool_init(&analysis->constpool)) {
-		free(analysis);
-		return NULL;
+		goto err;
 	}
 	analysis->bb_tree = NULL;
 	analysis->ht_addr_fun = ht_up_new0();
@@ -153,6 +152,9 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	analysis->global_var_tree = NULL;
 	analysis->rzil = NULL;
 	return analysis;
+err:
+	free(analysis);
+	return NULL;
 }
 
 RZ_API void plugin_fini(RzAnalysis *analysis) {
@@ -273,16 +275,32 @@ RZ_API bool rz_analysis_set_reg_profile(RzAnalysis *analysis) {
 }
 
 static bool analysis_set_os(RzAnalysis *analysis, const char *os) {
+	char *p, *dir_prefix;
+
 	rz_return_val_if_fail(analysis, false);
 	if (!os || !*os) {
 		os = RZ_SYS_OS;
 	}
+
+	p = strdup (os);
+	if (p == NULL) {
+		return false;
+	}
+
+	dir_prefix = rz_sys_prefix(NULL);
+	if (dir_prefix == NULL) {
+		goto err;
+	}
+
 	free(analysis->os);
-	analysis->os = strdup(os);
-	const char *dir_prefix = rz_sys_prefix(NULL);
+	analysis->os = p;
 	rz_type_db_set_os(analysis->typedb, os);
 	rz_type_db_reload(analysis->typedb, dir_prefix);
+	free (dir_prefix);
 	return true;
+err:
+	free (p);
+	return false;
 }
 
 RZ_API bool rz_analysis_set_triplet(RzAnalysis *analysis, const char *os, const char *arch, int bits) {
@@ -320,30 +338,52 @@ RZ_API bool rz_analysis_set_bits(RzAnalysis *analysis, int bits) {
 	case 32:
 	case 64:
 		if (analysis->bits != bits) {
-			bool is_hack = is_arm_thumb_hack(analysis, bits);
-			const char *dir_prefix = rz_sys_prefix(NULL);
+			char *dir_prefix;
+			bool is_hack;
+
+			dir_prefix = rz_sys_prefix(NULL);
+			if (dir_prefix == NULL)
+				return false;
+			is_hack = is_arm_thumb_hack(analysis, bits);
 			analysis->bits = bits;
 			rz_type_db_set_bits(analysis->typedb, bits);
 			if (!is_hack) {
 				rz_type_db_reload(analysis->typedb, dir_prefix);
 			}
 			rz_analysis_set_reg_profile(analysis);
+			free (dir_prefix);
 		}
 		return true;
 	}
 	return false;
 }
 
-RZ_API void rz_analysis_set_cpu(RzAnalysis *analysis, const char *cpu) {
+RZ_API int rz_analysis_set_cpu(RzAnalysis *analysis, const char *cpu) {
+	char *p, *dir_prefix;
+	int v;
+
+	p = strdup(cpu);
+	if (p == NULL) {
+		return -1;
+	}
+
+	dir_prefix = rz_sys_prefix(NULL);
+	if (dir_prefix == NULL) {
+		goto err;
+	}
 	free(analysis->cpu);
-	analysis->cpu = cpu ? strdup(cpu) : NULL;
-	int v = rz_analysis_archinfo(analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
+	analysis->cpu = p;
+	v = rz_analysis_archinfo(analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
 	if (v != -1) {
 		analysis->pcalign = v;
 	}
 	rz_type_db_set_cpu(analysis->typedb, cpu);
-	const char *dir_prefix = rz_sys_prefix(NULL);
 	rz_type_db_reload(analysis->typedb, dir_prefix);
+	free (dir_prefix);
+	return 0;
+err:
+	free (p);
+	return -1;
 }
 
 RZ_API int rz_analysis_set_big_endian(RzAnalysis *analysis, int bigend) {

@@ -678,7 +678,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		char *plugindir = rz_str_rz_prefix(RZ_PLUGINS);
 		char *extrasdir = rz_str_rz_prefix(RZ_EXTRAS);
 		char *bindingsdir = rz_str_rz_prefix(RZ_BINDINGS);
-		RzLib *l = rz_lib_new(NULL, NULL);
+		RzLib *l = rz_lib_new(RZ_LIB_SYMNAME, RZ_LIB_SYMFUNC);
 		rz_lib_add_handler(l, RZ_LIB_TYPE_DEMANGLER, "demangler plugins",
 			&__lib_demangler_cb, &__lib_demangler_dt, bin->demangler);
 		rz_lib_add_handler(l, RZ_LIB_TYPE_BIN, "bin plugins",

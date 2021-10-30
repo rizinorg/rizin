@@ -10,11 +10,28 @@ RZ_API RzConfigNode *rz_config_node_new(const char *name, const char *value) {
 		return NULL;
 	}
 	node->name = strdup(name);
+	if (node->name == NULL) {
+		goto err;
+	}
 	node->value = strdup(value ? value : "");
+	if (node->value == NULL) {
+		goto err_name;
+	}
+	node->desc = NULL;
 	node->flags = CN_RW | CN_STR;
 	node->i_value = rz_num_get(NULL, value);
 	node->options = rz_list_new();
+	if (node->options == NULL) {
+		goto err_value;
+	}
 	return node;
+err_value:
+	free (node->value);
+err_name:
+	free (node->name);
+err:
+	RZ_FREE(node);
+	return NULL;
 }
 
 RZ_API RzConfigNode *rz_config_node_clone(RzConfigNode *n) {
@@ -24,25 +41,50 @@ RZ_API RzConfigNode *rz_config_node_clone(RzConfigNode *n) {
 		return NULL;
 	}
 	cn->name = strdup(n->name);
-	cn->desc = n->desc ? strdup(n->desc) : NULL;
-	cn->value = strdup(n->value ? n->value : "");
+	if (cn->name == NULL) {
+		goto err;
+	}
+	cn->value = strdup(n->value);
+	if (cn->value == NULL) {
+		goto err_name;
+	}
+	if (n->desc) {
+		cn->desc = strdup(n->desc);
+		if (cn->desc == NULL) {
+			goto err_value;
+		}
+	} else {
+		cn->desc = NULL;
+	}
 	cn->i_value = n->i_value;
 	cn->flags = n->flags;
 	cn->setter = n->setter;
 	cn->options = rz_list_clone(n->options);
+	if (cn->options) {
+		goto err_desc;
+	}
 	return cn;
+err_desc:
+	if (cn->desc)
+		free (cn->desc);
+err_value:
+	free (cn->value);
+err_name:
+	free (cn->name);
+err:
+	RZ_FREE(cn);
+	return NULL;
 }
 
 RZ_API void rz_config_node_free(void *n) {
 	RzConfigNode *node = (RzConfigNode *)n;
-	if (!node) {
-		return;
-	}
 	free(node->name);
-	free(node->desc);
 	free(node->value);
+	if (node->desc)
+		free(node->desc);
 	rz_list_free(node->options);
 	free(node);
+	return;
 }
 
 RZ_API RzConfigNode *rz_config_node_get(RzConfig *cfg, const char *name) {
@@ -73,20 +115,23 @@ RZ_API bool rz_config_set_setter(RzConfig *cfg, const char *key, RzConfigCallbac
  * Returns the value of the config variable of \p name as a string
  */
 RZ_API const char *rz_config_get(RzConfig *cfg, const char *name) {
+	RzConfigNode *node;
+
 	rz_return_val_if_fail(cfg && name, NULL);
-	RzConfigNode *node = rz_config_node_get(cfg, name);
-	if (node) {
-		if (node->getter) {
-			node->getter(cfg->user, node);
-		}
-		if (rz_config_node_is_bool(node)) {
-			return rz_str_bool(rz_str_is_true(node->value));
-		}
-		return node->value;
-	} else {
+
+	node = rz_config_node_get(cfg, name);
+	if (node == NULL) {
 		RZ_LOG_DEBUG("rz_config_get: variable '%s' not found\n", name);
+		return NULL;
 	}
-	return NULL;
+	if (node->getter) {
+		node->getter(cfg->user, node);
+	}
+	if (rz_config_node_is_bool(node)) {
+		return rz_str_bool(rz_str_is_true(node->value));
+	} else {
+		return node->value;
+	}
 }
 
 /**
@@ -398,12 +443,14 @@ RZ_API void rz_config_node_value_format_i(char *buf, size_t buf_size, const ut64
  */
 RZ_API RzConfigNode *rz_config_set_i(RzConfig *cfg, const char *name, const ut64 i) {
 	char buf[128], *ov = NULL;
+	RzConfigNode *node;
+
 	rz_return_val_if_fail(cfg && name, NULL);
-	RzConfigNode *node = rz_config_node_get(cfg, name);
+
+	node = rz_config_node_get(cfg, name);
 	if (node) {
 		if (rz_config_node_is_ro(node)) {
-			node = NULL;
-			goto beach;
+			return NULL;
 		}
 		if (node->value) {
 			ov = strdup(node->value);
@@ -501,12 +548,11 @@ RZ_API RzConfig *rz_config_clone(RzConfig *cfg) {
 }
 
 RZ_API void rz_config_free(RzConfig *cfg) {
-	if (cfg) {
-		cfg->nodes->free = rz_config_node_free;
-		rz_list_free(cfg->nodes);
-		ht_pp_free(cfg->ht);
-		free(cfg);
-	}
+	cfg->nodes->free = rz_config_node_free;
+	rz_list_free(cfg->nodes);
+	ht_pp_free(cfg->ht);
+	free(cfg);
+	return;
 }
 
 RZ_API void rz_config_visual_hit_i(RzConfig *cfg, const char *name, int delta) {

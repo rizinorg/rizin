@@ -322,7 +322,14 @@ fail:
 }
 
 RZ_API char *rz_str_rz_prefix(const char *str) {
-	return rz_str_newf("%s%s%s", rz_sys_prefix(NULL), RZ_SYS_DIR, str);
+	char *sys, *s;
+	
+	sys = rz_sys_prefix(NULL);
+	if (sys == NULL)
+		return NULL;
+	s = rz_str_newf("%s%s%s", sys, RZ_SYS_DIR, str);
+	free (sys);
+	return s;
 }
 
 // Compute a 64 bit DJB hash of a string.

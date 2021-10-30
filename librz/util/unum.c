@@ -135,17 +135,19 @@ RZ_API char *rz_num_units(char *buf, size_t len, ut64 num) {
 }
 
 RZ_API const char *rz_num_get_name(RzNum *num, ut64 n) {
-	if (num->cb_from_value) {
-		int ok = 0;
-		const char *msg = num->cb_from_value(num, n, &ok);
-		if (msg && *msg) {
-			return msg;
-		}
-		if (ok) {
-			return msg;
-		}
+	int ok = 0;
+	const char *msg;
+
+	if (num->cb_from_value == NULL)
+		return NULL;
+	msg = num->cb_from_value(num, n, &ok);
+	if (msg && *msg) {
+		return msg;
+	} else if (ok) {
+		return msg;
+	} else {
+		return NULL;
 	}
-	return NULL;
 }
 
 static void error(RzNum *num, const char *err_str) {
@@ -165,9 +167,6 @@ RZ_API ut64 rz_num_get(RzNum *num, const char *str) {
 	ut64 ret = 0LL;
 	ut32 s, a;
 
-	if (num && !num->nc.under_calc) {
-		num->nc.errors = 0;
-	}
 	if (!str) {
 		return 0;
 	}
@@ -176,6 +175,9 @@ RZ_API ut64 rz_num_get(RzNum *num, const char *str) {
 	}
 	if (!*str) {
 		return 0;
+	}
+	if (num && !num->nc.under_calc) {
+		num->nc.errors = 0;
 	}
 	if (!strncmp(str, "1u", 2)) { // '1' is captured by op :(
 		if (num && num->value == UT64_MAX) {

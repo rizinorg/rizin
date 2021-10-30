@@ -5,11 +5,19 @@
 #include <rz_core.h>
 
 RZ_IPI RzCmdStatus rz_plugins_load_handler(RzCore *core, int argc, const char **argv) {
-	return rz_lib_open(core->lib, rz_str_trim_head_ro(argv[1])) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+	if (rz_lib_already_loaded(core->lib, rz_str_trim_head_ro(argv[1]))) {
+		return RZ_CMD_STATUS_OK;
+	}
+	rz_lib_openfile(core->lib, rz_str_trim_head_ro(argv[1]));
+	if (rz_lib_already_loaded(core->lib, rz_str_trim_head_ro(argv[1]))) {
+		return RZ_CMD_STATUS_OK;
+	} else {
+		return RZ_CMD_STATUS_ERROR;
+	}
 }
 
 RZ_IPI RzCmdStatus rz_plugins_unload_handler(RzCore *core, int argc, const char **argv) {
-	return rz_lib_close(core->lib, rz_str_trim_head_ro(argv[1])) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+	return rz_lib_closefile(core->lib, rz_str_trim_head_ro(argv[1])) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
 RZ_IPI RzCmdStatus rz_plugins_lang_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
@@ -40,10 +48,17 @@ RZ_IPI RzCmdStatus rz_plugins_bin_print_handler(RzCore *core, int argc, const ch
 }
 
 RZ_IPI RzCmdStatus rz_plugins_io_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	if (argc > 1) {
-		return rz_lib_open(core->lib, argv[1]) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+	if (argc <= 1)
+		return rz_core_io_plugins_print(core->io, state);
+	if (rz_lib_already_loaded(core->lib, argv[1])) {
+		return RZ_CMD_STATUS_OK;
 	}
-	return rz_core_io_plugins_print(core->io, state);
+	rz_lib_openfile(core->lib, argv[1]);
+	if (rz_lib_already_loaded(core->lib, argv[1])) {
+		return RZ_CMD_STATUS_OK;
+	} else {
+		return RZ_CMD_STATUS_ERROR;
+	}
 }
 
 RZ_IPI RzCmdStatus rz_plugins_parser_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {

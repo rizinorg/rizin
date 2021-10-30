@@ -8,11 +8,16 @@ static const char *fortunes[] = {
 };
 
 static char *rizin_fortune_file(const char *type) {
-	if (!strncmp(type, "tips", 4) || !strncmp(type, "fun", 3)) {
-		return rz_str_newf(RZ_JOIN_3_PATHS("%s", RZ_FORTUNES, "fortunes.%s"),
-			rz_sys_prefix(NULL), type);
-	}
-	return RZ_STR_DUP(type);
+	char *sys, *s;
+
+	if (strncmp(type, "tips", 4) && strncmp(type, "fun", 3))
+		return RZ_STR_DUP(type);
+	sys = rz_sys_prefix(NULL);
+	if (sys == NULL)
+		return NULL;
+	s = rz_str_newf(RZ_JOIN_3_PATHS("%s", RZ_FORTUNES, "fortunes.%s"), sys, type);
+	free (sys);
+	return s;
 }
 
 RZ_API void rz_core_fortune_list_types(void) {

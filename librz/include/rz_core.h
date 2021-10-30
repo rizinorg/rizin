@@ -433,7 +433,7 @@ RZ_API void rz_core_wait(RzCore *core);
 RZ_API RzCore *rz_core_ncast(ut64 p);
 RZ_API RzCore *rz_core_cast(void *p);
 RZ_API bool rz_core_bin_load_structs(RZ_NONNULL RzCore *core, RZ_NONNULL const char *file);
-RZ_API int rz_core_config_init(RzCore *core);
+RZ_API bool rz_core_config_init(RzCore *core);
 RZ_API bool rz_core_config_eval_and_print(RzCore *core, const char *str, bool many);
 RZ_API void rz_core_config_print_all(RzConfig *cfg, const char *str, RzCmdStateOutput *state);
 RZ_API void rz_core_parse_rizinrc(RzCore *r);
@@ -631,7 +631,7 @@ RZ_API bool rz_core_yank_file_all(RzCore *core, const char *filename);
 #define RZ_CORE_LOADLIBS_ALL    UT32_MAX
 
 RZ_API void rz_core_loadlibs_init(RzCore *core);
-RZ_API int rz_core_loadlibs(RzCore *core, int where, const char *path);
+RZ_API bool rz_core_loadlibs(RzCore *core, int where, const char *path);
 RZ_API RzCmd *rz_core_cmd_new(bool has_cons);
 RZ_API int rz_core_cmd_buffer(RzCore *core, const char *buf);
 RZ_API int rz_core_cmdf(RzCore *core, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);

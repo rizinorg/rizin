@@ -561,7 +561,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			asmos = opt.arg;
 			break;
 		case 'l':
-			rz_lib_open(r->lib, opt.arg);
+			rz_lib_openfile(r->lib, opt.arg);
 			break;
 		case 'L':
 			do_list_io_plugins = true;
