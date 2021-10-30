@@ -36,6 +36,7 @@ void *rz_il_handler_store(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 
 	rz_il_mem_store(m, addr, value);
 	rz_il_bv_free(addr);
+	rz_il_bv_free(value);
 
 	*type = RZIL_OP_ARG_MEM;
 	return m;
