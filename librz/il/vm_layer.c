@@ -160,6 +160,7 @@ RZ_API void rz_il_vm_fini(RzILVM *vm) {
 
 	if (vm->vm_global_value_set) {
 		rz_il_free_bag(vm->vm_global_value_set);
+		vm->vm_global_value_set = NULL;
 	}
 
 	if (vm->vm_global_variable_list) {
@@ -171,10 +172,12 @@ RZ_API void rz_il_vm_fini(RzILVM *vm) {
 			}
 		}
 		free(vm->vm_global_variable_list);
+		vm->vm_global_variable_list = NULL;
 	}
 
 	if (vm->ct_opcodes) {
 		ht_pp_free(vm->ct_opcodes);
+		vm->ct_opcodes = NULL;
 	}
 
 	if (vm->mems) {
@@ -182,20 +185,25 @@ RZ_API void rz_il_vm_fini(RzILVM *vm) {
 			rz_il_mem_free(vm->mems[i]);
 		}
 		free(vm->mems);
+		vm->mems = NULL;
 	}
 
-	if (vm->vm_global_bind_table != NULL) {
+	if (vm->vm_global_bind_table) {
 		ht_pp_free(vm->vm_global_bind_table);
+		vm->vm_global_bind_table = NULL;
 	}
 
-	if (vm->vm_global_label_table != NULL) {
+	if (vm->vm_global_label_table) {
 		ht_pp_free(vm->vm_global_label_table);
+		vm->vm_global_label_table = NULL;
 	}
 
-	if (vm->op_handler_table != NULL) {
+	if (vm->op_handler_table) {
 		free(vm->op_handler_table);
+		vm->op_handler_table = NULL;
 	}
 	rz_il_bv_free(vm->pc);
+	vm->pc = NULL;
 }
 
 /**
@@ -219,6 +227,9 @@ RZ_API RzILVM *rz_il_vm_new(ut64 start_addr, ut32 addr_size, ut32 data_size) {
  * \param vm RzILVM* pointer to VM
  */
 RZ_API void rz_il_vm_free(RzILVM *vm) {
+	if (!vm) {
+		return;
+	}
 	rz_il_vm_fini(vm);
 	free(vm);
 }

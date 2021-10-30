@@ -21,14 +21,14 @@ typedef void (*RzILBagFreeFunc)(void *);
 typedef struct rz_il_bag_t {
 	void **data_list; ///< Space to carry pointers
 	int item_count; ///< count current items
-	int capcity; ///< maximum size
+	int capacity; ///< maximum size
 	int *next_pos_stack; ///< internal variable, used for managing space
 	int next_pos; ///< internal variable, used for managing space
 	int sp; ///< internal variable, used for managing space
 	RzILBagFreeFunc free_func; ///< Function pointer to free RzILVal
 } RzILBag;
 
-RZ_API RzILBag *rz_il_new_bag(int capcity, RzILBagFreeFunc func);
+RZ_API RzILBag *rz_il_new_bag(int capacity, RzILBagFreeFunc func);
 RZ_API bool rz_il_rm_from_bag(RzILBag *bag, void *item);
 RZ_API bool rz_il_add_to_bag(RzILBag *bag, void *item);
 RZ_API void rz_il_free_bag(RzILBag *bag);

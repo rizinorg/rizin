@@ -187,15 +187,7 @@ static bool test_rzil_vm_root_evaluation() {
 	rz_il_effect_free(eff);
 
 	rz_il_free_op(ite_root);
-	rz_il_free_op(true_val);
-	rz_il_free_op(false_val);
-	rz_il_free_op(add);
-	rz_il_free_op(arg1);
-	rz_il_free_op(arg2);
 	rz_il_free_op(branch_root);
-	rz_il_free_op(branch_true);
-	rz_il_free_op(branch_false);
-	rz_il_free_op(branch_cond);
 	rz_il_vm_free(vm);
 	mu_end;
 }

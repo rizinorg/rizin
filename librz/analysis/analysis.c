@@ -172,7 +172,7 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 
 	plugin_fini(a);
 
-	rz_analysis_rzil_cleanup(a, a->rzil);
+	rz_analysis_rzil_cleanup(a);
 	rz_list_free(a->fcns);
 	ht_up_free(a->ht_addr_fun);
 	ht_pp_free(a->ht_name_fun);
@@ -234,7 +234,7 @@ RZ_API bool rz_analysis_use(RzAnalysis *analysis, const char *name) {
 			// default : init and enable RZIL if defined rzil_init
 			if (h->rzil_init) {
 				if (analysis->rzil) {
-					rz_analysis_rzil_cleanup(analysis, analysis->rzil);
+					rz_analysis_rzil_cleanup(analysis);
 					analysis->rzil = NULL;
 				}
 				rz_analysis_rzil_setup(analysis);
@@ -388,6 +388,8 @@ RZ_API ut8 *rz_analysis_mask(RzAnalysis *analysis, int size, const ut8 *data, ut
 		}
 		idx += oplen;
 		at += oplen;
+		rz_analysis_op_fini(op);
+		rz_analysis_op_init(op);
 	}
 
 	rz_analysis_op_free(op);

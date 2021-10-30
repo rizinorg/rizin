@@ -44,13 +44,12 @@ void *rz_il_handler_perform(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	do {
 		if (eff->effect_type == EFFECT_TYPE_DATA) {
 			rz_il_perform_data(vm, eff);
-		}
-
-		if (eff->effect_type == EFFECT_TYPE_CTRL) {
+		} else if (eff->effect_type == EFFECT_TYPE_CTRL) {
 			rz_il_perform_ctrl(vm, eff);
 		}
-
-		eff = eff->next_eff;
+		RzILEffect *tmp = eff->next_eff;
+		rz_il_effect_free(eff);
+		eff = tmp;
 	} while (eff != NULL);
 
 	return NULL;

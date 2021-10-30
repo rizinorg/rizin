@@ -354,16 +354,10 @@ RZ_API RzILBitVector *rz_il_evaluate_bitv(RzILVM *vm, RzILOp *op, RzILOpArgType 
 	void *input = rz_il_parse_op_root(vm, op, type);
 	RzILOpArgType t = *type;
 
-	// check if type is bitv
-	// else, convert to bitv if possible
-	// else report error
 	switch (t) {
 	case RZIL_OP_ARG_BITV:
-		return (RzILBitVector *)input;
 	case RZIL_OP_ARG_BOOL:
-		*type = RZIL_OP_ARG_BOOL;
-		RZ_LOG_ERROR("TODO : BOOL TO BITV\n");
-		return NULL;
+		return (RzILBitVector *)input;
 	case RZIL_OP_ARG_VAL:
 		*type = RZIL_OP_ARG_BITV;
 		return val_to_bitv(input);
