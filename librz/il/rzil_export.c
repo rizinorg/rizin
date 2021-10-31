@@ -645,8 +645,7 @@ RZ_API void rz_il_event_json(RZ_NONNULL RzILEvent *evt, RZ_NONNULL PJ *pj) {
 		pj_o(pj);
 		pj_ks(pj, "type", "mem_read");
 		pj_ks(pj, "address", tmp0);
-		pj_ks(pj, "old", tmp1 ? tmp1 : "garbage");
-		pj_ks(pj, "new", tmp2);
+		pj_ks(pj, "value", tmp1 ? tmp1 : "garbage");
 		pj_end(pj);
 		break;
 	case RZIL_EVENT_VAR_READ:
@@ -654,8 +653,7 @@ RZ_API void rz_il_event_json(RZ_NONNULL RzILEvent *evt, RZ_NONNULL PJ *pj) {
 		pj_o(pj);
 		pj_ks(pj, "type", "var_read");
 		pj_ks(pj, "name", evt->data.var_read.variable);
-		pj_ks(pj, "old", tmp1 ? tmp1 : "garbage");
-		pj_ks(pj, "new", tmp2);
+		pj_ks(pj, "value", tmp1 ? tmp1 : "garbage");
 		pj_end(pj);
 		break;
 	case RZIL_EVENT_MEM_WRITE:

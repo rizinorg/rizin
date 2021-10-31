@@ -523,7 +523,7 @@ RZ_IPI void rz_core_rzil_step(RzCore *core) {
 	rz_analysis_op_fini(&op);
 }
 
-RZ_IPI void rz_core_analysis_rzil_step_with_events(RzCore *core) {
+RZ_IPI void rz_core_analysis_rzil_step_with_events(RzCore *core, PJ *pj) {
 	rz_core_rzil_step(core);
 
 	if (!core->analysis || !core->analysis->rzil || !core->analysis->rzil->vm) {
@@ -532,22 +532,36 @@ RZ_IPI void rz_core_analysis_rzil_step_with_events(RzCore *core) {
 
 	RzILVM *vm = core->analysis->rzil->vm;
 
+	RzStrBuf *sb = NULL;
 	RzListIter *it;
 	RzILEvent *evt;
 
 	bool evt_read = rz_config_get_b(core->config, "rzil.step.events.read");
 	bool evt_write = rz_config_get_b(core->config, "rzil.step.events.write");
 
-	RzStrBuf *sb = rz_strbuf_new("");
+	if (!evt_read && !evt_write) {
+		RZ_LOG_ERROR("cannot print events if all the events are disabled.");
+		return;
+	}
+
+	if (!pj) {
+		sb = rz_strbuf_new("");
+	}
 	rz_list_foreach (vm->events, it, evt) {
 		if (!evt_read && (evt->type == RZIL_EVENT_MEM_READ || evt->type == RZIL_EVENT_VAR_READ)) {
 			continue;
 		} else if (!evt_write && (evt->type != RZIL_EVENT_MEM_READ && evt->type != RZIL_EVENT_VAR_READ)) {
 			continue;
 		}
-		rz_il_event_stringify(evt, sb);
-		rz_strbuf_append(sb, "\n");
+		if (pj) {
+			rz_il_event_json(evt, pj);
+		} else {
+			rz_il_event_stringify(evt, sb);
+			rz_strbuf_append(sb, "\n");
+		}
 	}
-	rz_cons_print(rz_strbuf_get(sb));
-	rz_strbuf_free(sb);
+	if (!pj) {
+		rz_cons_print(rz_strbuf_get(sb));
+		rz_strbuf_free(sb);
+	}
 }

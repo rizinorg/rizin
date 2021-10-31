@@ -103,3 +103,33 @@ rzil: []
 null
 EOF
 RUN
+
+
+NAME=loopy hello world
+FILE=bins/bf/hello-loops.bf
+ARGS=-b32
+CMDS=<<EOF
+s 0
+aezi
+aezs 906
+EOF
+EXPECT=<<EOF
+Hello World!
+EOF
+RUN
+
+NAME=instructions
+FILE=bins/bf/hello-loops.bf
+ARGS=-b32
+CMDS=<<EOF
+e asm.arch=bf
+e analysis.arch=bf
+e rzil.step.events.read=true
+s 0
+aezi
+aezse 390
+EOF
+EXPECT=<<EOF
+
+EOF
+RUN

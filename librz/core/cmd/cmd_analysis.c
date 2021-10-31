@@ -4828,16 +4828,22 @@ static void cmd_analysis_rzil(RzCore *core, const char *input) {
 	char *n;
 	int repeat_times = 0;
 	bool step_event = false;
+	PJ *pj = NULL;
 
 	switch (input[0]) {
 	case 's': // "aezs"
 		if (input[1] == 'e') { // "aezse"
 			step_event = true;
 			input++;
+			if (input[1] == 'j') { // "aezsej"
+				pj = pj_new();
+				pj_a(pj);
+				input++;
+			}
 		}
 		switch (input[1]) {
 		case '?': // "aezs?"
-			rz_cons_printf("Usage: aezs [n times] - steps n instructions in the VM\n");
+			rz_cons_printf("Usage: aezs[ej] [n times] - steps n instructions in the VM (can output events)\n");
 			break;
 		case ' ': //"aezs [repeat num]"
 			n = strchr(input, ' ');
@@ -4848,7 +4854,7 @@ static void cmd_analysis_rzil(RzCore *core, const char *input) {
 			}
 			for (int i = 0; i < repeat_times; ++i) {
 				if (step_event) {
-					rz_core_analysis_rzil_step_with_events(core);
+					rz_core_analysis_rzil_step_with_events(core, pj);
 				} else {
 					rz_core_rzil_step(core);
 				}
@@ -4857,11 +4863,18 @@ static void cmd_analysis_rzil(RzCore *core, const char *input) {
 		// default addr
 		default:
 			if (step_event) {
-				rz_core_analysis_rzil_step_with_events(core);
+				rz_core_analysis_rzil_step_with_events(core, pj);
 			} else {
 				rz_core_rzil_step(core);
 			}
 			break;
+		}
+		if (pj) {
+			pj_end(pj);
+			char *output = pj_drain(pj);
+			rz_cons_println(output);
+			free(output);
+			pj = NULL;
 		}
 		break;
 	case 'i': // "aezi"
