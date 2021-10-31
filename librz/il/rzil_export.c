@@ -591,22 +591,22 @@ RZ_API void rz_il_event_stringify(RZ_NONNULL RzILEvent *evt, RZ_NONNULL RzStrBuf
 	case RZIL_EVENT_MEM_READ:
 		tmp0 = rz_il_bv_as_hex_string(evt->data.mem_read.address);
 		tmp1 = evt->data.mem_read.value ? rz_il_bv_as_hex_string(evt->data.mem_read.value) : NULL;
-		rz_strbuf_appendf(sb, "mem_read(addr: %s, value: %s)", tmp0, tmp1 ? tmp1 : "garbage");
+		rz_strbuf_appendf(sb, "mem_read(addr: %s, value: %s)", tmp0, tmp1 ? tmp1 : "uninitialized memory");
 		break;
 	case RZIL_EVENT_VAR_READ:
 		tmp1 = evt->data.var_read.value ? rz_il_bv_as_hex_string(evt->data.var_read.value) : NULL;
-		rz_strbuf_appendf(sb, "var_read(name: %s, value: %s)", evt->data.var_write.variable, tmp1 ? tmp1 : "garbage");
+		rz_strbuf_appendf(sb, "var_read(name: %s, value: %s)", evt->data.var_write.variable, tmp1 ? tmp1 : "uninitialized variable");
 		break;
 	case RZIL_EVENT_MEM_WRITE:
 		tmp0 = rz_il_bv_as_hex_string(evt->data.mem_write.address);
 		tmp1 = evt->data.mem_write.old_value ? rz_il_bv_as_hex_string(evt->data.mem_write.old_value) : NULL;
 		tmp2 = rz_il_bv_as_hex_string(evt->data.mem_write.new_value);
-		rz_strbuf_appendf(sb, "mem_write(addr: %s, old: %s, new: %s)", tmp0, tmp1 ? tmp1 : "garbage", tmp2);
+		rz_strbuf_appendf(sb, "mem_write(addr: %s, old: %s, new: %s)", tmp0, tmp1 ? tmp1 : "uninitialized memory", tmp2);
 		break;
 	case RZIL_EVENT_VAR_WRITE:
 		tmp1 = evt->data.var_write.old_value ? rz_il_bv_as_hex_string(evt->data.var_write.old_value) : NULL;
 		tmp2 = rz_il_bv_as_hex_string(evt->data.var_write.new_value);
-		rz_strbuf_appendf(sb, "var_write(name: %s, old: %s, new: %s)", evt->data.var_write.variable, tmp1 ? tmp1 : "garbage", tmp2);
+		rz_strbuf_appendf(sb, "var_write(name: %s, old: %s, new: %s)", evt->data.var_write.variable, tmp1 ? tmp1 : "uninitialized variable", tmp2);
 		break;
 	default:
 		rz_warn_if_reached();
@@ -645,7 +645,7 @@ RZ_API void rz_il_event_json(RZ_NONNULL RzILEvent *evt, RZ_NONNULL PJ *pj) {
 		pj_o(pj);
 		pj_ks(pj, "type", "mem_read");
 		pj_ks(pj, "address", tmp0);
-		pj_ks(pj, "value", tmp1 ? tmp1 : "garbage");
+		pj_ks(pj, "value", tmp1 ? tmp1 : "uninitialized memory");
 		pj_end(pj);
 		break;
 	case RZIL_EVENT_VAR_READ:
@@ -653,7 +653,7 @@ RZ_API void rz_il_event_json(RZ_NONNULL RzILEvent *evt, RZ_NONNULL PJ *pj) {
 		pj_o(pj);
 		pj_ks(pj, "type", "var_read");
 		pj_ks(pj, "name", evt->data.var_read.variable);
-		pj_ks(pj, "value", tmp1 ? tmp1 : "garbage");
+		pj_ks(pj, "value", tmp1 ? tmp1 : "uninitialized variable");
 		pj_end(pj);
 		break;
 	case RZIL_EVENT_MEM_WRITE:
@@ -663,7 +663,7 @@ RZ_API void rz_il_event_json(RZ_NONNULL RzILEvent *evt, RZ_NONNULL PJ *pj) {
 		pj_o(pj);
 		pj_ks(pj, "type", "mem_write");
 		pj_ks(pj, "address", tmp0);
-		pj_ks(pj, "old", tmp1 ? tmp1 : "garbage");
+		pj_ks(pj, "old", tmp1 ? tmp1 : "uninitialized memory");
 		pj_ks(pj, "new", tmp2);
 		pj_end(pj);
 		break;
@@ -673,7 +673,7 @@ RZ_API void rz_il_event_json(RZ_NONNULL RzILEvent *evt, RZ_NONNULL PJ *pj) {
 		pj_o(pj);
 		pj_ks(pj, "type", "var_write");
 		pj_ks(pj, "name", evt->data.var_write.variable);
-		pj_ks(pj, "old", tmp1 ? tmp1 : "garbage");
+		pj_ks(pj, "old", tmp1 ? tmp1 : "uninitialized variable");
 		pj_ks(pj, "new", tmp2);
 		pj_end(pj);
 		break;

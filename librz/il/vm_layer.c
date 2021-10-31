@@ -328,7 +328,7 @@ RZ_API char *rz_il_op2str(RzILOPCode opcode) {
 }
 
 /**
- * Load data from memory by given key
+ * Load data from memory by given key and generates an RZIL_EVENT_MEM_READ event
  * \param vm RzILVM, pointer to VM
  * \param mem_index ut32, index to choose a memory
  * \param key RzILBitVector, aka address, a key to load data from memory
@@ -351,7 +351,8 @@ RZ_API RzILBitVector *rz_il_vm_mem_load(RzILVM *vm, ut32 mem_index, RzILBitVecto
 
 /**
  * Store data to memory by key, will create a key-value pair
- * or update the key-value pair if key existed.
+ * or update the key-value pair if key existed; also generates
+ * an RZIL_EVENT_MEM_WRITE event
  * \param vm RzILVM* pointer to VM
  * \param mem_index ut32, index to choose a memory
  * \param key RzILBitVector, aka address, a key to store data from memory
@@ -369,6 +370,7 @@ RZ_API RzILMem *rz_il_vm_mem_store(RzILVM *vm, ut32 mem_index, RzILBitVector *ke
 
 		RzILBitVector *old_value = rz_il_mem_load(m, key);
 		rz_il_vm_event_add(vm, rz_il_event_mem_write_new(key, old_value, value));
+		rz_il_bv_free(old_value);
 		return rz_il_mem_store(m, key, value);
 	}
 	return NULL;
