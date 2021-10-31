@@ -234,6 +234,7 @@ RZ_API RZ_OWN char *MACH0_(get_name)(struct MACH0_(obj_t) * mo, ut32 stridx, boo
 RZ_API ut64 MACH0_(paddr_to_vaddr)(struct MACH0_(obj_t) * bin, ut64 offset);
 RZ_API ut64 MACH0_(vaddr_to_paddr)(struct MACH0_(obj_t) * bin, ut64 addr);
 
+RZ_API void MACH0_(rebase_buffer)(struct MACH0_(obj_t) * obj, ut64 off, ut8 *buf, ut64 count);
 RZ_API RzBuffer *MACH0_(new_rebasing_and_stripping_buf)(struct MACH0_(obj_t) * obj);
 RZ_API bool MACH0_(needs_rebasing_and_stripping)(struct MACH0_(obj_t) * obj);
 RZ_API bool MACH0_(segment_needs_rebasing_and_stripping)(struct MACH0_(obj_t) * obj, size_t seg_index);
