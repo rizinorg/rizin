@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_il/rzil_opcodes.h>
+#include <rz_il/vm_layer.h>
 #include <rz_il/rzil_vm.h>
 
 void *rz_il_handler_msb(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
