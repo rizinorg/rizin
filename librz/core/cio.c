@@ -6,7 +6,6 @@
 
 RZ_API int rz_core_setup_debugger(RzCore *r, const char *debugbackend, bool attach) {
 	int pid, *p = NULL;
-	bool is_gdb = !strcmp(debugbackend, "gdb");
 	RzIODesc *fd = r->file ? rz_io_desc_get(r->io, r->file->fd) : NULL;
 
 	p = fd ? fd->data : NULL;
@@ -18,13 +17,11 @@ RZ_API int rz_core_setup_debugger(RzCore *r, const char *debugbackend, bool atta
 
 	rz_config_set(r->config, "io.ff", "true");
 	rz_config_set(r->config, "dbg.backend", debugbackend);
-	if (!is_gdb) {
-		pid = rz_io_desc_get_pid(fd);
-		rz_debug_select(r->dbg, pid, r->dbg->tid);
-		r->dbg->main_pid = pid;
-		if (attach) {
-			rz_core_debug_attach(r, pid);
-		}
+	pid = rz_io_desc_get_pid(fd);
+	rz_debug_select(r->dbg, pid, r->dbg->tid);
+	r->dbg->main_pid = pid;
+	if (attach) {
+		rz_core_debug_attach(r, pid);
 	}
 	//this makes to attach twice showing warnings in the output
 	//we get "resource busy" so it seems isn't an issue

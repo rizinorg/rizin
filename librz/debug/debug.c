@@ -443,6 +443,7 @@ RZ_API int rz_debug_attach(RzDebug *dbg, int pid) {
 	if (dbg && dbg->cur && dbg->cur->attach) {
 		ret = dbg->cur->attach(dbg, pid);
 		if (ret != -1) {
+			dbg->reason.type = RZ_DEBUG_REASON_NONE; // after a successful attach, the process is not dead
 			rz_debug_select(dbg, pid, ret); //dbg->pid, dbg->tid);
 		}
 	}
