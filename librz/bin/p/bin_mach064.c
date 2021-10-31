@@ -7,7 +7,7 @@
 #include "bin_mach0.c"
 
 #include "objc/mach064_classes.h"
-#include "../format/mach0/mach064_is_kernelcache.c"
+#include "../format/mach0/kernelcache.h"
 
 static bool check_buffer(RzBuffer *b) {
 	ut8 buf[4] = { 0 };
@@ -17,7 +17,7 @@ static bool check_buffer(RzBuffer *b) {
 			return true;
 		}
 		if (!memcmp(buf, "\xcf\xfa\xed\xfe", 4)) {
-			return !is_kernelcache_buffer(b);
+			return !rz_xnu_kernelcache_buf_is_kernelcache(b);
 		}
 	}
 	return false;
