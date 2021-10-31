@@ -53,16 +53,21 @@ RZ_API bool rz_analysis_op_fini(RzAnalysisOp *op) {
 	rz_analysis_switch_op_free(op->switch_op);
 	op->switch_op = NULL;
 	RZ_FREE(op->mnemonic);
+	if (op->rzil_op) {
+		// TODO free root_node once it is implemented
+		rz_pvector_free(op->rzil_op->ops);
+		RZ_FREE(op->rzil_op);
+	}
 	return true;
 }
 
-RZ_API void rz_analysis_op_free(void *_op) {
-	if (!_op) {
+RZ_API void rz_analysis_op_free(void *op) {
+	if (!op) {
 		return;
 	}
-	rz_analysis_op_fini(_op);
-	memset(_op, 0, sizeof(RzAnalysisOp));
-	free(_op);
+	rz_analysis_op_fini(op);
+	memset(op, 0, sizeof(RzAnalysisOp));
+	free(op);
 }
 
 static int defaultCycles(RzAnalysisOp *op) {

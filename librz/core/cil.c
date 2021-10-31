@@ -424,17 +424,13 @@ RZ_IPI void rz_core_analysis_esil_default(RzCore *core) {
 				free(ss);
 			}
 		}
-		rz_list_free(list);
 	}
+	rz_list_free(list);
 	rz_core_seek(core, at, true);
 }
 
 RZ_IPI void rz_core_analysis_rzil_reinit(RzCore *core) {
-	if (core->analysis->rzil) {
-		rz_analysis_rzil_cleanup(core->analysis, core->analysis->rzil);
-		core->analysis->rzil = NULL;
-	}
-
+	rz_analysis_rzil_cleanup(core->analysis);
 	rz_analysis_rzil_setup(core->analysis);
 	if (core->analysis->rzil) {
 		// initialize the program counter with the current offset
@@ -523,4 +519,6 @@ RZ_IPI void rz_core_rzil_step(RzCore *core) {
 	} else {
 		eprintf("Invalid instruction detected or reach the end of code at address 0x%08" PFMT64x "\n", addr);
 	}
+
+	rz_analysis_op_fini(&op);
 }

@@ -7,7 +7,7 @@
 #include "bin_mach0.c"
 
 #include "objc/mach064_classes.h"
-#include "../format/mach0/mach064_is_kernelcache.c"
+#include "../format/mach0/kernelcache.h"
 
 static bool check_buffer(RzBuffer *b) {
 	ut8 buf[4] = { 0 };
@@ -17,7 +17,7 @@ static bool check_buffer(RzBuffer *b) {
 			return true;
 		}
 		if (!memcmp(buf, "\xcf\xfa\xed\xfe", 4)) {
-			return !is_kernelcache_buffer(b);
+			return !rz_xnu_kernelcache_buf_is_kernelcache(b);
 		}
 	}
 	return false;
@@ -52,7 +52,7 @@ static RzBuffer *create(RzBin *bin, const ut8 *code, int codelen, const ut8 *dat
 	// 32bit B ("\xce\xfa\xed\xfe", 4); // header
 	B("\xcf\xfa\xed\xfe", 4); // header
 	D(7 | 0x01000000); // cpu type (x86) | ABI64
-	//D (3); // subtype (i386-all)
+	// D (3); // subtype (i386-all)
 	D(0x80000003); // x86-64 subtype
 	D(2); // filetype (executable)
 
@@ -74,7 +74,7 @@ static RzBuffer *create(RzBin *bin, const ut8 *code, int codelen, const ut8 *dat
 	D(ncmds); // ncmds
 	p_cmdsize = rz_buf_size(buf);
 	D(-1); // headsize // cmdsize?
-	D(0); //0x85); // flags
+	D(0); // 0x85); // flags
 	D(0); // reserved -- only found in x86-64
 
 	magiclen = rz_buf_size(buf);
@@ -96,7 +96,7 @@ static RzBuffer *create(RzBin *bin, const ut8 *code, int codelen, const ut8 *dat
 
 	/* TEXT SEGMENT */
 	D(0x19); // cmd.LC_SEGMENT_64
-	//D (124+16+8); // sizeof (cmd)
+	// D (124+16+8); // sizeof (cmd)
 	D(124 + 28); // sizeof (cmd)
 	WZ(16, "__TEXT");
 	Q(baddr); // vmaddr
@@ -133,9 +133,9 @@ static RzBuffer *create(RzBin *bin, const ut8 *code, int codelen, const ut8 *dat
 		p_tmp = rz_buf_size(buf);
 		Z(16);
 		W(p_tmp, "__TEXT", 6); // segment name
-		//XXX must be vmaddr+baddr
+		// XXX must be vmaddr+baddr
 		Q(0x2000); // vmaddr
-		//XXX must be vmaddr+baddr
+		// XXX must be vmaddr+baddr
 		Q(0x1000); // vmsize
 		Q(0); // fileoff
 		p_datafsz = rz_buf_size(buf);
@@ -310,10 +310,9 @@ RzBinPlugin rz_bin_plugin_mach064 = {
 	.relocs = &relocs,
 	.fields = &MACH0_(mach_fields),
 	.create = &create,
-	.classes = &MACH0_(parse_classes),
+	.classes = &classes,
 	.section_type_to_string = &MACH0_(section_type_to_string),
 	.section_flag_to_rzlist = &MACH0_(section_flag_to_rzlist),
-
 };
 
 #ifndef RZ_PLUGIN_INCORE

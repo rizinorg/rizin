@@ -4694,6 +4694,8 @@ static void print_json_string(RzCore *core, const char *block, ut32 len, RzCoreS
 	}
 	PJ *pj = pj_new();
 	if (!pj) {
+		free(section_name);
+		free(cstring);
 		return;
 	}
 	pj_o(pj);

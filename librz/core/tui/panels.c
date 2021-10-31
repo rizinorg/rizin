@@ -3217,7 +3217,7 @@ int __settings_colors_cb(void *user) {
 	RzPanelsMenuItem *parent = menu->history[menu->depth - 1];
 	RzPanelsMenuItem *child = parent->sub[parent->selectedIndex];
 	rz_str_ansi_filter(child->name, NULL, NULL, -1);
-	rz_core_load_theme(core, child->name);
+	rz_core_theme_load(core, child->name);
 	int i;
 	for (i = 1; i < menu->depth; i++) {
 		RzPanel *p = menu->history[i]->p;
@@ -4968,15 +4968,19 @@ void __create_panel(RzCore *core, RzPanel *panel, const RzPanelLayout dir, RZ_NU
 
 void __search_strings_data_create(void *user, RzPanel *panel, const RzPanelLayout dir, RZ_NULLABLE const char *title) {
 	RzCore *core = (RzCore *)user;
-	__create_panel(core, panel, dir, title, __search_strings(core, false));
+	char *strings = __search_strings(core, false);
+	__create_panel(core, panel, dir, title, strings);
+	free(strings);
 }
 
 void __search_strings_bin_create(void *user, RzPanel *panel, const RzPanelLayout dir, RZ_NULLABLE const char *title) {
 	RzCore *core = (RzCore *)user;
-	__create_panel(core, panel, dir, title, __search_strings(core, true));
+	char *strings = __search_strings(core, true);
+	__create_panel(core, panel, dir, title, strings);
+	free(strings);
 }
 
-char *__search_strings(RzCore *core, bool whole) {
+RZ_OWN char *__search_strings(RzCore *core, bool whole) {
 	const char *title = whole ? PANEL_TITLE_STRINGS_BIN : PANEL_TITLE_STRINGS_DATA;
 	const char *str = __show_status_input(core, "Search Strings: ");
 	char *db_val = __search_db(core, title);
@@ -5329,7 +5333,7 @@ RZ_API void rz_save_panels_layout(RzCore *core, const char *oname) {
 }
 
 void __load_config_menu(RzCore *core) {
-	RzList *themes_list = rz_core_list_themes(core);
+	RzList *themes_list = rz_core_theme_list(core);
 	RzListIter *th_iter;
 	char *th;
 	int i = 0;

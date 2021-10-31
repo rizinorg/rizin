@@ -3063,6 +3063,7 @@ static int fcn_print_makestyle(RzCore *core, RzList *fcns, char mode) {
 				} else {
 					rz_cons_printf("    %s\n", dst);
 				}
+				free(dst);
 			}
 			if (pj) {
 				pj_end(pj); // close list of calls

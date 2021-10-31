@@ -233,6 +233,7 @@ RZ_API void rz_debug_trace_list(RzDebug *dbg, int mode, ut64 offset) {
 			case '=': {
 				RzListInfo *info = RZ_NEW0(RzListInfo);
 				if (!info) {
+					rz_list_free(info_list);
 					return;
 				}
 				info->pitv = (RzInterval){ trace->addr, trace->size };

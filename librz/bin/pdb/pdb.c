@@ -151,6 +151,7 @@ static RzList *pdb7_extract_streams(RzPdb *pdb, RzPdbMsfStreamDirectory *msd) {
 		}
 		stream->stream_data = rz_buf_new_with_bytes(stream_data, stream->stream_size);
 		if (!stream->stream_data) {
+			RZ_FREE(stream);
 			RZ_FREE(stream_data);
 			rz_list_free(streams);
 			goto error_memory;
