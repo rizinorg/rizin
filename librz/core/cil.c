@@ -535,8 +535,16 @@ RZ_IPI void rz_core_analysis_rzil_step_with_events(RzCore *core) {
 	RzListIter *it;
 	RzILEvent *evt;
 
+	bool evt_read = rz_config_get_b(core->config, "rzil.step.events.read");
+	bool evt_write = rz_config_get_b(core->config, "rzil.step.events.write");
+
 	RzStrBuf *sb = rz_strbuf_new("");
 	rz_list_foreach (vm->events, it, evt) {
+		if (!evt_read && (evt->type == RZIL_EVENT_MEM_READ || evt->type == RZIL_EVENT_VAR_READ)) {
+			continue;
+		} else if (!evt_write && (evt->type != RZIL_EVENT_MEM_READ && evt->type != RZIL_EVENT_VAR_READ)) {
+			continue;
+		}
 		rz_il_event_stringify(evt, sb);
 		rz_strbuf_append(sb, "\n");
 	}
