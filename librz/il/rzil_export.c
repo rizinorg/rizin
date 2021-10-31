@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /** \file rzil_export.c
- * Outputs the IL statements in JSON or string format.
- * The string format looks like below:
+ * Outputs the IL statements & events in JSON or string format.
+ * The string format of a statement looks like below:
  *    [store(key:var(v:ptr), value:add(x:load(key:var(v:ptr), mem:0), y:int(value:1, length:8)), mem:0)]
  * which can be deconstructed like below
  * [
@@ -28,7 +28,7 @@
  *     )
  * ]
  *
- * The json format looks like below:
+ * The json format of a statement looks like below:
  * [
  *     {
  *         "opcode": "store",
@@ -55,6 +55,15 @@
  *         "mem": 0
  *     }
  * ]
+ * The string format of an event looks like below:
+ *    mem_write(addr: 0x0000000000000000, old: 0x00, new: 0x01)
+ *
+ * The json format of an event looks like below:
+ * {
+ *     "event": "mem_write",
+ *     "old": "0x00",
+ *     "new": "0x01"
+ * }
  */
 
 #include <rz_il/rzil_vm.h>
@@ -512,7 +521,7 @@ static void il_op_resolve(RzILOp *op, RzStrBuf *sb, PJ *pj) {
  * \param op RzILOp*, IL statement
  * \param sb RzStrBuf*, a pointer to the string buffer
  */
-RZ_API void rz_il_op_stringify(RZ_NULLABLE RzILOp *op, RZ_NONNULL RzStrBuf *sb) {
+RZ_API void rz_il_op_stringify(RZ_NONNULL RzILOp *op, RZ_NONNULL RzStrBuf *sb) {
 	rz_return_if_fail(op && sb);
 	il_op_resolve(op, sb, NULL);
 }
@@ -522,7 +531,7 @@ RZ_API void rz_il_op_stringify(RZ_NULLABLE RzILOp *op, RZ_NONNULL RzStrBuf *sb) 
  * \param op RzILOp*, IL statement
  * \param pj PJ*, a pointer to the JSON buffer
  */
-RZ_API void rz_il_op_json(RZ_NULLABLE RzILOp *op, RZ_NONNULL PJ *pj) {
+RZ_API void rz_il_op_json(RZ_NONNULL RzILOp *op, RZ_NONNULL PJ *pj) {
 	rz_return_if_fail(op && pj);
 	il_op_resolve(op, NULL, pj);
 }
@@ -532,7 +541,7 @@ RZ_API void rz_il_op_json(RZ_NULLABLE RzILOp *op, RZ_NONNULL PJ *pj) {
  * \param op_list RzPVector*, array of IL statements
  * \param sb RzStrBuf*, a pointer to the string buffer
  */
-RZ_API void rz_il_oplist_stringify(RZ_NULLABLE RzPVector *op_list, RZ_NONNULL RzStrBuf *sb) {
+RZ_API void rz_il_oplist_stringify(RZ_NONNULL RzPVector *op_list, RZ_NONNULL RzStrBuf *sb) {
 	rz_return_if_fail(op_list && sb);
 
 	ut32 i = 0;
@@ -554,7 +563,7 @@ RZ_API void rz_il_oplist_stringify(RZ_NULLABLE RzPVector *op_list, RZ_NONNULL Rz
  * \param code RzPVector*, array of IL statements
  * \param pj PJ*, a pointer to the JSON buffer
  */
-RZ_API void rz_il_oplist_json(RZ_NULLABLE RzPVector *op_list, RZ_NONNULL PJ *pj) {
+RZ_API void rz_il_oplist_json(RZ_NONNULL RzPVector *op_list, RZ_NONNULL PJ *pj) {
 	rz_return_if_fail(op_list && pj);
 
 	pj_a(pj);
@@ -564,4 +573,121 @@ RZ_API void rz_il_oplist_json(RZ_NULLABLE RzPVector *op_list, RZ_NONNULL PJ *pj)
 		rz_il_op_json(ilop, pj);
 	}
 	pj_end(pj);
+}
+
+RZ_API void rz_il_event_stringify(RZ_NONNULL RzILEvent *evt, RZ_NONNULL RzStrBuf *sb) {
+	rz_return_if_fail(evt && sb);
+	char *tmp0 = NULL, *tmp1 = NULL, *tmp2 = NULL;
+
+	switch (evt->type) {
+	case RZIL_EVENT_EXCEPTION:
+		rz_strbuf_appendf(sb, "exception(%s)", evt->data.exception);
+		break;
+	case RZIL_EVENT_PC_WRITE:
+		tmp0 = rz_il_bv_as_hex_string(evt->data.pc_write.old_pc);
+		tmp1 = rz_il_bv_as_hex_string(evt->data.pc_write.new_pc);
+		rz_strbuf_appendf(sb, "pc_write(old: %s, new: %s)", tmp0, tmp1);
+		break;
+	case RZIL_EVENT_MEM_READ:
+		tmp0 = rz_il_bv_as_hex_string(evt->data.mem_read.address);
+		tmp1 = evt->data.mem_read.value ? rz_il_bv_as_hex_string(evt->data.mem_read.value) : NULL;
+		rz_strbuf_appendf(sb, "mem_read(addr: %s, value: %s)", tmp0, tmp1 ? tmp1 : "garbage");
+		break;
+	case RZIL_EVENT_VAR_READ:
+		tmp1 = evt->data.var_read.value ? rz_il_bv_as_hex_string(evt->data.var_read.value) : NULL;
+		rz_strbuf_appendf(sb, "var_read(name: %s, value: %s)", evt->data.var_write.variable, tmp1 ? tmp1 : "garbage");
+		break;
+	case RZIL_EVENT_MEM_WRITE:
+		tmp0 = rz_il_bv_as_hex_string(evt->data.mem_write.address);
+		tmp1 = evt->data.mem_write.old_value ? rz_il_bv_as_hex_string(evt->data.mem_write.old_value) : NULL;
+		tmp2 = rz_il_bv_as_hex_string(evt->data.mem_write.new_value);
+		rz_strbuf_appendf(sb, "mem_write(addr: %s, old: %s, new: %s)", tmp0, tmp1 ? tmp1 : "garbage", tmp2);
+		break;
+	case RZIL_EVENT_VAR_WRITE:
+		tmp1 = evt->data.var_write.old_value ? rz_il_bv_as_hex_string(evt->data.var_write.old_value) : NULL;
+		tmp2 = rz_il_bv_as_hex_string(evt->data.var_write.new_value);
+		rz_strbuf_appendf(sb, "var_write(name: %s, old: %s, new: %s)", evt->data.var_write.variable, tmp1 ? tmp1 : "garbage", tmp2);
+		break;
+	default:
+		rz_warn_if_reached();
+		rz_strbuf_append(sb, "unknown(?)");
+		break;
+	}
+
+	free(tmp0);
+	free(tmp1);
+	free(tmp2);
+}
+
+RZ_API void rz_il_event_json(RZ_NONNULL RzILEvent *evt, RZ_NONNULL PJ *pj) {
+	rz_return_if_fail(evt && pj);
+	char *tmp0 = NULL, *tmp1 = NULL, *tmp2 = NULL;
+
+	switch (evt->type) {
+	case RZIL_EVENT_EXCEPTION:
+		pj_o(pj);
+		pj_ks(pj, "type", "exception");
+		pj_ks(pj, "exception", evt->data.exception);
+		pj_end(pj);
+		break;
+	case RZIL_EVENT_PC_WRITE:
+		tmp0 = rz_il_bv_as_hex_string(evt->data.pc_write.old_pc);
+		tmp1 = rz_il_bv_as_hex_string(evt->data.pc_write.new_pc);
+		pj_o(pj);
+		pj_ks(pj, "type", "pc_write");
+		pj_ks(pj, "old", tmp0);
+		pj_ks(pj, "new", tmp1);
+		pj_end(pj);
+		break;
+	case RZIL_EVENT_MEM_READ:
+		tmp0 = rz_il_bv_as_hex_string(evt->data.mem_read.address);
+		tmp1 = evt->data.mem_read.value ? rz_il_bv_as_hex_string(evt->data.mem_read.value) : NULL;
+		pj_o(pj);
+		pj_ks(pj, "type", "mem_read");
+		pj_ks(pj, "address", tmp0);
+		pj_ks(pj, "old", tmp1 ? tmp1 : "garbage");
+		pj_ks(pj, "new", tmp2);
+		pj_end(pj);
+		break;
+	case RZIL_EVENT_VAR_READ:
+		tmp1 = evt->data.var_read.value ? rz_il_bv_as_hex_string(evt->data.var_read.value) : NULL;
+		pj_o(pj);
+		pj_ks(pj, "type", "var_read");
+		pj_ks(pj, "name", evt->data.var_read.variable);
+		pj_ks(pj, "old", tmp1 ? tmp1 : "garbage");
+		pj_ks(pj, "new", tmp2);
+		pj_end(pj);
+		break;
+	case RZIL_EVENT_MEM_WRITE:
+		tmp0 = rz_il_bv_as_hex_string(evt->data.mem_write.address);
+		tmp1 = evt->data.mem_write.old_value ? rz_il_bv_as_hex_string(evt->data.mem_write.old_value) : NULL;
+		tmp2 = rz_il_bv_as_hex_string(evt->data.mem_write.new_value);
+		pj_o(pj);
+		pj_ks(pj, "type", "mem_write");
+		pj_ks(pj, "address", tmp0);
+		pj_ks(pj, "old", tmp1 ? tmp1 : "garbage");
+		pj_ks(pj, "new", tmp2);
+		pj_end(pj);
+		break;
+	case RZIL_EVENT_VAR_WRITE:
+		tmp1 = evt->data.var_write.old_value ? rz_il_bv_as_hex_string(evt->data.var_write.old_value) : NULL;
+		tmp2 = rz_il_bv_as_hex_string(evt->data.var_write.new_value);
+		pj_o(pj);
+		pj_ks(pj, "type", "var_write");
+		pj_ks(pj, "name", evt->data.var_write.variable);
+		pj_ks(pj, "old", tmp1 ? tmp1 : "garbage");
+		pj_ks(pj, "new", tmp2);
+		pj_end(pj);
+		break;
+	default:
+		rz_warn_if_reached();
+		pj_o(pj);
+		pj_ks(pj, "type", "unknown");
+		pj_end(pj);
+		break;
+	}
+
+	free(tmp0);
+	free(tmp1);
+	free(tmp2);
 }

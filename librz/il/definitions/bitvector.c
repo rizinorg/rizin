@@ -99,7 +99,7 @@ RZ_API RZ_OWN char *rz_il_bv_as_hex_string(RZ_NONNULL RzILBitVector *bv) {
  * \param bv RzILBitVector, pointer to the source bitvector
  * \return dup RzILBitVector, pointer to a new bitvector, which is a copy of source
  */
-RZ_API RZ_OWN RzILBitVector *rz_il_bv_dup(RZ_NONNULL RzILBitVector *bv) {
+RZ_API RZ_OWN RzILBitVector *rz_il_bv_dup(const RZ_NONNULL RzILBitVector *bv) {
 	rz_return_val_if_fail(bv && bv->bits, NULL);
 
 	RzILBitVector *new_bv = rz_il_bv_new(bv->len);

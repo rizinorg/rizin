@@ -148,6 +148,8 @@ RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, ut32 data
 	vm->var_count = 0;
 	vm->val_count = 0;
 	vm->mem_count = 0;
+
+	vm->events = rz_list_newf((RzListFree)rz_il_event_free);
 	return true;
 }
 
@@ -204,6 +206,9 @@ RZ_API void rz_il_vm_fini(RzILVM *vm) {
 	}
 	rz_il_bv_free(vm->pc);
 	vm->pc = NULL;
+
+	rz_list_free(vm->events);
+	vm->events = NULL;
 }
 
 /**
@@ -330,16 +335,18 @@ RZ_API char *rz_il_op2str(RzILOPCode opcode) {
  * \return val Bitvector, data at the address, has `vm->min_unit_size` length
  */
 RZ_API RzILBitVector *rz_il_vm_mem_load(RzILVM *vm, ut32 mem_index, RzILBitVector *key) {
-	RzILMem *m;
+	RzILMem *m = NULL;
+	RzILBitVector *value = NULL;
 
 	if (vm && vm->mems) {
 		if (mem_index >= vm->mem_count || mem_index < 0) {
 			return NULL;
 		}
 		m = vm->mems[mem_index];
-		return rz_il_mem_load(m, key);
+		value = rz_il_mem_load(m, key);
+		rz_il_vm_event_add(vm, rz_il_event_mem_read_new(key, value));
 	}
-	return NULL;
+	return value;
 }
 
 /**
@@ -347,8 +354,8 @@ RZ_API RzILBitVector *rz_il_vm_mem_load(RzILVM *vm, ut32 mem_index, RzILBitVecto
  * or update the key-value pair if key existed.
  * \param vm RzILVM* pointer to VM
  * \param mem_index ut32, index to choose a memory
- * \param key RzILBitVector, aka address, a key to load data from memory
- * \return val Bitvector, data at the address, must have `vm->min_unit_size` length
+ * \param key RzILBitVector, aka address, a key to store data from memory
+ * \param value RzILBitVector, aka value to store in memory
  * \return mem Mem, the memory you store data to
  */
 RZ_API RzILMem *rz_il_vm_mem_store(RzILVM *vm, ut32 mem_index, RzILBitVector *key, RzILBitVector *value) {
@@ -359,19 +366,62 @@ RZ_API RzILMem *rz_il_vm_mem_store(RzILVM *vm, ut32 mem_index, RzILBitVector *ke
 			return NULL;
 		}
 		m = vm->mems[mem_index];
+
+		RzILBitVector *old_value = rz_il_mem_load(m, key);
+		rz_il_vm_event_add(vm, rz_il_event_mem_write_new(key, old_value, value));
 		return rz_il_mem_store(m, key, value);
 	}
 	return NULL;
 }
 
 /**
+ * Store a Bitvector with value ZERO to memory by key, will create a key-value pair
+ * or update the key-value pair if key existed.
+ * \param vm RzILVM* pointer to VM
+ * \param mem_index ut32, index to choose a memory
+ * \param key RzILBitVector, aka address, a key to store data from memory
+ * \param value RzILBitVector**, aka the ZERO just stored in memory
+ * \return mem Mem, the memory you store data to
+ */
+RZ_API RzILMem *rz_il_vm_mem_store_zero(RzILVM *vm, ut32 mem_index, RzILBitVector *key, RzILBitVector **value) {
+	RzILMem *m = NULL;
+
+	if (vm && vm->mems) {
+		if (mem_index >= vm->mem_count || mem_index < 0) {
+			return NULL;
+		}
+		m = vm->mems[mem_index];
+
+		RzILBitVector *zero = rz_il_bv_new(m->min_unit_size);
+		m = rz_il_mem_store(m, key, zero);
+		if (m && value) {
+			*value = zero;
+		}
+	}
+	return m;
+}
+
+/**
  * Step execute a single RZIL root
- * @param vm, RzILVM, pointer to the VM
- * @param root, RzILOp*, the root of an opcode tree
+ * \param vm, RzILVM, pointer to the VM
+ * \param root, RzILOp*, the root of an opcode tree
  */
 RZ_API void rz_il_vm_step(RzILVM *vm, RzILOp *root) {
 	RzILOpArgType type = RZIL_OP_ARG_INIT;
 	rz_il_parse_op_root(vm, root, &type);
+}
+
+/**
+ * Adds to the VM a new event into the VM event list
+ * \param vm, RzILVM, pointer to the VM
+ * \param evt, RzILEvent, pointer to the event
+ */
+RZ_API void rz_il_vm_event_add(RzILVM *vm, RzILEvent *evt) {
+	rz_return_if_fail(vm && vm->events && evt);
+	if (!rz_list_append(vm->events, evt)) {
+		rz_warn_if_reached();
+		rz_il_event_free(evt);
+	}
 }
 
 /**
@@ -381,6 +431,10 @@ RZ_API void rz_il_vm_step(RzILVM *vm, RzILOp *root) {
  * \param op_size, how much the pc value has to increate of.
  */
 RZ_API void rz_il_vm_list_step(RzILVM *vm, RzPVector *op_list, ut32 op_size) {
+	rz_return_if_fail(vm && op_list);
+
+	rz_list_purge(vm->events);
+
 	void **iter;
 	rz_pvector_foreach (op_list, iter) {
 		RzILOp *root = *iter;
@@ -389,6 +443,7 @@ RZ_API void rz_il_vm_list_step(RzILVM *vm, RzPVector *op_list, ut32 op_size) {
 
 	RzILBitVector *step = rz_il_bv_new_from_ut32(vm->pc->len, op_size);
 	RzILBitVector *next_pc = rz_il_bv_add(vm->pc, step);
+	rz_il_vm_event_add(vm, rz_il_event_pc_write_new(vm->pc, next_pc));
 	rz_il_bv_free(vm->pc);
 	rz_il_bv_free(step);
 	vm->pc = next_pc;

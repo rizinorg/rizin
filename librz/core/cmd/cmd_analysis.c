@@ -4826,10 +4826,15 @@ static void __analysis_esil_function(RzCore *core, ut64 addr) {
 
 static void cmd_analysis_rzil(RzCore *core, const char *input) {
 	char *n;
-	int repeat_times;
+	int repeat_times = 0;
+	bool step_event = false;
 
 	switch (input[0]) {
 	case 's': // "aezs"
+		if (input[1] == 'e') { // "aezse"
+			step_event = true;
+			input++;
+		}
 		switch (input[1]) {
 		case '?': // "aezs?"
 			rz_cons_printf("Usage: aezs [n times] - steps n instructions in the VM\n");
@@ -4842,12 +4847,20 @@ static void cmd_analysis_rzil(RzCore *core, const char *input) {
 				repeat_times = rz_num_math(core->num, n + 1);
 			}
 			for (int i = 0; i < repeat_times; ++i) {
-				rz_core_rzil_step(core);
+				if (step_event) {
+					rz_core_analysis_rzil_step_with_events(core);
+				} else {
+					rz_core_rzil_step(core);
+				}
 			}
 			break;
 		// default addr
 		default:
-			rz_core_rzil_step(core);
+			if (step_event) {
+				rz_core_analysis_rzil_step_with_events(core);
+			} else {
+				rz_core_rzil_step(core);
+			}
 			break;
 		}
 		break;

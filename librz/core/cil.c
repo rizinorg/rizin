@@ -460,7 +460,7 @@ RZ_IPI void rz_core_analysis_rzil_vm_status(RzCore *core) {
 		return;
 	}
 
-	bool compact = rz_config_get_i(core->config, "rzil.status.compact");
+	bool compact = rz_config_get_b(core->config, "rzil.status.compact");
 
 	int namelen = 2;
 	for (ut32 i = 0; i < rzil->vm->var_count; ++i) {
@@ -517,8 +517,29 @@ RZ_IPI void rz_core_rzil_step(RzCore *core) {
 	if (oplist) {
 		rz_il_vm_list_step(vm, oplist, size > 0 ? size : 1);
 	} else {
-		eprintf("Invalid instruction detected or reach the end of code at address 0x%08" PFMT64x "\n", addr);
+		RZ_LOG_ERROR("RzIL: invalid instruction detected or reach the end of code at address 0x%08" PFMT64x "\n", addr);
 	}
 
 	rz_analysis_op_fini(&op);
+}
+
+RZ_IPI void rz_core_analysis_rzil_step_with_events(RzCore *core) {
+	rz_core_rzil_step(core);
+
+	if (!core->analysis || !core->analysis->rzil || !core->analysis->rzil->vm) {
+		return;
+	}
+
+	RzILVM *vm = core->analysis->rzil->vm;
+
+	RzListIter *it;
+	RzILEvent *evt;
+
+	RzStrBuf *sb = rz_strbuf_new("");
+	rz_list_foreach (vm->events, it, evt) {
+		rz_il_event_stringify(evt, sb);
+		rz_strbuf_append(sb, "\n");
+	}
+	rz_cons_print(rz_strbuf_get(sb));
+	rz_strbuf_free(sb);
 }
