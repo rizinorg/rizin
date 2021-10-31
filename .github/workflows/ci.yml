@@ -108,6 +108,7 @@ jobs:
             build_system: meson
             compiler: clang
             cflags: '-DRZ_ASSERT_STDOUT=1 -Wno-cpp'
+            ldflags: '-lasan -lubsan'
             meson_options: -Dbuildtype=debugoptimized -Db_sanitize=address,undefined -Duse_webui=true --werror
             asan: true
             asan_options: 'detect_leaks=0,detect_odr_violation=0,allocator_may_return_null=1'
@@ -200,6 +201,7 @@ jobs:
         ASAN: ${{ matrix.asan }}
         CC: ${{ matrix.compiler }}
         CFLAGS: ${{ matrix.cflags }}
+        LDFLAGS: ${{ matrix.ldflags }}
     - name: Install with meson
       if: matrix.build_system == 'meson' && matrix.enabled
       run: |
