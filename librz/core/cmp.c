@@ -6,7 +6,7 @@
 #include <rz_list.h>
 
 /**
- * \brief Compare data at \p addr1 with the data at \p addr2
+ * \brief Compare memory at \p addr1 with the memory at \p addr2
  * 
  * \param core Current RzCore instance
  * \param addr1 address to read data from
@@ -14,7 +14,7 @@
  * \param len Number of bytes to compare
  * \return RzCompareData* A pointer to RzCompareData comparison
  */
-RZ_API RZ_OWN RzCompareData *rz_cmp_data_data(RZ_NONNULL RzCore *core, ut64 addr1, ut64 addr2, ut32 len) {
+RZ_API RZ_OWN RzCompareData *rz_cmp_mem_mem(RZ_NONNULL RzCore *core, ut64 addr1, ut64 addr2, ut32 len) {
 	rz_return_val_if_fail(core, NULL);
 
 	if (!rz_io_addr_is_mapped(core->io, addr1) || !rz_io_addr_is_mapped(core->io, addr1 + len)) {
@@ -53,16 +53,16 @@ error_goto:
 }
 
 /**
- * \brief Compare data at \p addr with the string \p str
+ * \brief Compare mem at \p addr with data \p data
  * 
  * \param core Current RzCore instance
  * \param addr address to read data from
- * \param str String (ut8 *) data to be compared
+ * \param data Data to be compared
  * \param len Number of bytes to compare
  * \return RzCompareData* A pointer to RzCompareData comparison (the data1 corresponds to the data at addr (and addr1 = addr) and data2 is the str data (and addr2 = UT32_MAX))
  */
-RZ_API RZ_OWN RzCompareData *rz_cmp_data_str(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL const ut8 *str, ut32 len) {
-	rz_return_val_if_fail(core && str, NULL);
+RZ_API RZ_OWN RzCompareData *rz_cmp_mem_data(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL const ut8 *data, ut32 len) {
+	rz_return_val_if_fail(core && data, NULL);
 
 	ut8 *buf1 = malloc(len * sizeof(ut8));
 	if (!buf1) {
@@ -79,7 +79,7 @@ RZ_API RZ_OWN RzCompareData *rz_cmp_data_str(RZ_NONNULL RzCore *core, ut64 addr,
 	cmp->len = len;
 	cmp->data1 = buf1;
 	cmp->addr1 = addr;
-	cmp->data2 = rz_mem_dup(str, len);
+	cmp->data2 = rz_mem_dup(data, len);
 	cmp->addr2 = UT32_MAX;
 	cmp->same = rz_mem_eq(cmp->data1, cmp->data2, len);
 	return cmp;
