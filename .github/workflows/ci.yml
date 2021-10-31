@@ -176,9 +176,6 @@ jobs:
     - name: Install clang
       if: matrix.compiler == 'clang' && matrix.os == 'ubuntu-latest' && matrix.enabled
       run: sudo apt-get --assume-yes install clang
-    - name: Install libasan6
-      if: matrix.asan && matrix.compiler == 'clang' && matrix.enabled
-      run: sudo apt-get --assume-yes install libasan6
     - name: Checkout our Testsuite Binaries
       if: matrix.enabled
       uses: actions/checkout@v2
