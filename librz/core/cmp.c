@@ -97,7 +97,7 @@ error_goto:
  * \param mode Mode to be used (options: default, diff, json)
  * \return int Number of lines/diffs printed (-1 if failed)
  */
-RZ_API int rz_cmp_print(RZ_NONNULL RzCore *core, RZ_NONNULL const RzCompareData *cmp, RzComparePrintMode mode) {
+RZ_API int rz_cmp_print(RZ_NONNULL RzCore *core, RZ_NONNULL const RzCompareData *cmp, RzOutputMode mode) {
 	rz_return_val_if_fail(core && cmp, -1);
 
 	int i, eq = 0;
@@ -106,7 +106,7 @@ RZ_API int rz_cmp_print(RZ_NONNULL RzCore *core, RZ_NONNULL const RzCompareData 
 	if (cmp->len == UT8_MAX) {
 		return -1;
 	}
-	if (mode == RZ_COMPARE_MODE_JSON) {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj = pj_new();
 		if (!pj) {
 			return -1;
@@ -121,7 +121,7 @@ RZ_API int rz_cmp_print(RZ_NONNULL RzCore *core, RZ_NONNULL const RzCompareData 
 			continue;
 		}
 		switch (mode) {
-		case RZ_COMPARE_MODE_DEFAULT:
+		case RZ_OUTPUT_MODE_STANDARD:
 			rz_cons_printf("0x%08" PFMT64x, cmp->addr1 + i);
 			if (!data_str) {
 				rz_cons_printf("  ->  0x%08" PFMT64x, cmp->addr2 + i);
@@ -130,7 +130,7 @@ RZ_API int rz_cmp_print(RZ_NONNULL RzCore *core, RZ_NONNULL const RzCompareData 
 				cmp->data1[i], (IS_PRINTABLE(cmp->data1[i])) ? cmp->data1[i] : ' ',
 				cmp->data2[i], (IS_PRINTABLE(cmp->data2[i])) ? cmp->data2[i] : ' ');
 			break;
-		case RZ_COMPARE_MODE_JSON:
+		case RZ_OUTPUT_MODE_JSON:
 			pj_o(pj);
 			pj_kn(pj, "offset1", cmp->addr1 + i);
 			pj_kn(pj, "offset2", data_str ? i : cmp->addr2 + i);
@@ -143,9 +143,9 @@ RZ_API int rz_cmp_print(RZ_NONNULL RzCore *core, RZ_NONNULL const RzCompareData 
 			rz_warn_if_reached();
 		}
 	}
-	if (mode == RZ_COMPARE_MODE_DEFAULT) {
+	if (mode == RZ_OUTPUT_MODE_STANDARD) {
 		rz_cons_printf("Compare %d/%d equal bytes (%d%%)\n", eq, cmp->len, (int)(100.0 * eq / cmp->len));
-	} else if (mode == RZ_COMPARE_MODE_JSON) {
+	} else if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
 		pj_ki(pj, "equal_bytes", eq);
 		pj_ki(pj, "total_bytes", cmp->len);
@@ -347,7 +347,7 @@ RZ_API bool rz_core_cmpwatch_del(RZ_NONNULL RzCore *core, ut64 addr) {
 	return ret;
 }
 
-RZ_API void rz_core_cmpwatch_show(RZ_NONNULL RzCore *core, ut64 addr, RzComparePrintMode mode) {
+RZ_API void rz_core_cmpwatch_show(RZ_NONNULL RzCore *core, ut64 addr, RzOutputMode mode) {
 	rz_return_if_fail(core);
 	char cmd[128];
 	RzListIter *iter;
@@ -355,15 +355,11 @@ RZ_API void rz_core_cmpwatch_show(RZ_NONNULL RzCore *core, ut64 addr, RzCompareP
 	rz_list_foreach (core->watchers, iter, w) {
 		int is_diff = w->odata ? memcmp(w->odata, w->ndata, w->size) : 0;
 		switch (mode) {
-		case RZ_COMPARE_MODE_RIZIN:
+		case RZ_OUTPUT_MODE_RIZIN:
 			rz_cons_printf("cw 0x%08" PFMT64x " %d %s%s\n",
 				w->addr, w->size, w->cmd, is_diff ? " # differs" : "");
 			break;
-		case RZ_COMPARE_MODE_DIFF: // diff
-			if (is_diff) {
-				rz_cons_printf("0x%08" PFMT64x " has changed\n", w->addr);
-			}
-		case RZ_COMPARE_MODE_DEFAULT:
+		case RZ_OUTPUT_MODE_STANDARD:
 			rz_cons_printf("0x%08" PFMT64x "%s\n", w->addr, is_diff ? " modified" : "");
 			snprintf(cmd, sizeof(cmd), "%s@%" PFMT64d "!%d",
 				w->cmd, w->addr, w->size);

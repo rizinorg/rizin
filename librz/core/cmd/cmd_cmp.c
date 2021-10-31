@@ -120,7 +120,6 @@ static bool core_cmp_bits(RzCore *core, RzCompareData *cmp) {
 
 // c
 RZ_IPI RzCmdStatus rz_cmd_cmp_string_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *output) {
-	RzComparePrintMode outmode = output->mode == RZ_OUTPUT_MODE_JSON ? RZ_COMPARE_MODE_JSON : RZ_COMPARE_MODE_DEFAULT;
 	RzCmdStatus ret = RZ_CMD_STATUS_ERROR;
 	char *unescaped = strdup(argv[1]);
 	int len = rz_str_unescape(unescaped);
@@ -128,7 +127,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_string_handler(RzCore *core, int argc, const char 
 	if (!cmp) {
 		goto end;
 	}
-	int val = rz_cmp_print(core, cmp, outmode);
+	int val = rz_cmp_print(core, cmp, output->mode);
 	if (val != 0) {
 		core->num->value = val;
 		ret = RZ_CMD_STATUS_OK;
@@ -160,7 +159,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_num2_handler(RzCore *core, int argc, const char **
 	if (!cmp) {
 		goto end;
 	}
-	int val = rz_cmp_print(core, cmp, RZ_COMPARE_MODE_DEFAULT);
+	int val = rz_cmp_print(core, cmp, RZ_OUTPUT_MODE_STANDARD);
 	if (val != 0) {
 		core->num->value = val;
 		ret = RZ_CMD_STATUS_OK;
@@ -179,7 +178,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_num4_handler(RzCore *core, int argc, const char **
 	if (!cmp) {
 		goto end;
 	}
-	int val = rz_cmp_print(core, cmp, RZ_COMPARE_MODE_DEFAULT);
+	int val = rz_cmp_print(core, cmp, RZ_OUTPUT_MODE_STANDARD);
 	if (val != 0) {
 		core->num->value = val;
 		ret = RZ_CMD_STATUS_OK;
@@ -198,7 +197,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_num8_handler(RzCore *core, int argc, const char **
 	if (!cmp) {
 		goto end;
 	}
-	int val = rz_cmp_print(core, cmp, RZ_COMPARE_MODE_DEFAULT);
+	int val = rz_cmp_print(core, cmp, RZ_OUTPUT_MODE_STANDARD);
 	if (val != 0) {
 		core->num->value = val;
 		ret = RZ_CMD_STATUS_OK;
@@ -269,7 +268,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_file_handler(RzCore *core, int argc, const char **
 		free(cmp);
 		goto return_goto;
 	}
-	int val = rz_cmp_print(core, cmp, RZ_COMPARE_MODE_DEFAULT);
+	int val = rz_cmp_print(core, cmp, RZ_OUTPUT_MODE_STANDARD);
 	free(cmp);
 	if (val == 0) {
 		goto return_goto;
@@ -330,18 +329,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_add_memory_watcher_handler(RzCore *core, int argc,
 
 // cwl
 RZ_IPI RzCmdStatus rz_cmd_cmp_list_compare_watchers_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *output) {
-	RzOutputMode mode = output->mode;
-	switch (mode) {
-	case RZ_OUTPUT_MODE_STANDARD:
-		rz_core_cmpwatch_show(core, UT64_MAX, RZ_COMPARE_MODE_DEFAULT);
-		break;
-	case RZ_OUTPUT_MODE_RIZIN:
-		rz_core_cmpwatch_show(core, UT64_MAX, RZ_COMPARE_MODE_RIZIN);
-		break;
-	default:
-		rz_warn_if_reached();
-		return RZ_CMD_STATUS_ERROR;
-	}
+	rz_core_cmpwatch_show(core, UT64_MAX, output->mode);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -386,7 +374,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_hexpair_string_handler(RzCore *core, int argc, con
 		free(cmp);
 		goto return_goto;
 	}
-	int val = rz_cmp_print(core, cmp, RZ_COMPARE_MODE_DEFAULT);
+	int val = rz_cmp_print(core, cmp, RZ_OUTPUT_MODE_STANDARD);
 	free(cmp);
 	if (val == 0) {
 		ret = false;
@@ -418,7 +406,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_hex_block_hexdiff_handler(RzCore *core, int argc, 
 		free(cmp);
 		goto return_goto;
 	}
-	int val = rz_cmp_print(core, cmp, RZ_COMPARE_MODE_DEFAULT);
+	int val = rz_cmp_print(core, cmp, RZ_OUTPUT_MODE_STANDARD);
 	free(cmp);
 	if (val == 0) {
 		goto return_goto;
