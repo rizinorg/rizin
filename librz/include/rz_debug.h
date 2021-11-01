@@ -482,6 +482,7 @@ RZ_API const char *rz_debug_signal_resolve_i(RzDebug *dbg, int signum);
 RZ_API void rz_debug_signal_setup(RzDebug *dbg, int num, int opt);
 RZ_API int rz_debug_signal_set(RzDebug *dbg, int num, ut64 addr);
 RZ_API void rz_debug_signal_list(RzDebug *dbg, RzOutputMode mode);
+RZ_API bool rz_debug_can_kill(RzDebug *dbg);
 RZ_API int rz_debug_kill(RzDebug *dbg, int pid, int tid, int sig);
 RZ_API RzList *rz_debug_kill_list(RzDebug *dbg);
 // XXX: must be uint64 action

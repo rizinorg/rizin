@@ -2,6 +2,11 @@ name: "Mixed linter and checks"
 
 on:
   push:
+    branches:
+    - 'master'
+    - 'dev'
+    - 'stable'
+    - 'container-*'
   pull_request:
 
 jobs:

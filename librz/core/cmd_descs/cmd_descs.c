@@ -8446,7 +8446,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_eval_color_set_colorful_palette_cd = rz_cmd_desc_argv_new(core->rcmd, ec_cd, "ecs", rz_cmd_eval_color_set_colorful_palette_handler, &cmd_eval_color_set_colorful_palette_help);
 	rz_warn_if_fail(cmd_eval_color_set_colorful_palette_cd);
 
-	RzCmdDesc *eco_cd = rz_cmd_desc_group_modes_new(core->rcmd, ec_cd, "eco", RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_eval_color_load_theme_handler, &cmd_eval_color_load_theme_help, &eco_help);
+	RzCmdDesc *eco_cd = rz_cmd_desc_group_state_new(core->rcmd, ec_cd, "eco", RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_eval_color_load_theme_handler, &cmd_eval_color_load_theme_help, &eco_help);
 	rz_warn_if_fail(eco_cd);
 	RzCmdDesc *cmd_eval_color_list_current_theme_cd = rz_cmd_desc_argv_new(core->rcmd, eco_cd, "eco.", rz_cmd_eval_color_list_current_theme_handler, &cmd_eval_color_list_current_theme_help);
 	rz_warn_if_fail(cmd_eval_color_list_current_theme_cd);

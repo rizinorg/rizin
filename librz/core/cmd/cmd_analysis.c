@@ -1484,6 +1484,25 @@ static void cmd_syscall_do(RzCore *core, st64 n, ut64 addr) {
 	}
 }
 
+#define printline(k, fmt, arg) \
+	{ \
+		if (use_color) \
+			rz_cons_printf("%s%s: " Color_RESET, color, k); \
+		else \
+			rz_cons_printf("%s: ", k); \
+		if (fmt) \
+			rz_cons_printf(fmt, arg); \
+	}
+#define printline_noarg(k, msg) \
+	{ \
+		if (use_color) \
+			rz_cons_printf("%s%s: " Color_RESET, color, k); \
+		else \
+			rz_cons_printf("%s: ", k); \
+		if (msg) \
+			rz_cons_println(msg); \
+	}
+
 static void core_analysis_bytes(RzCore *core, const ut8 *buf, int len, int nops, int fmt) {
 	bool be = core->print->big_endian;
 	bool use_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
@@ -1566,8 +1585,6 @@ static void core_analysis_bytes(RzCore *core, const ut8 *buf, int len, int nops,
 			}
 		} else if (fmt == 's') {
 			totalsize += op.size;
-		} else if (fmt == '*') {
-			// TODO: ao* useful for wat? wx [bytes] ?
 		} else if (fmt == 'j') {
 			char strsub[128] = { 0 };
 			// pc+33
@@ -1647,6 +1664,14 @@ static void core_analysis_bytes(RzCore *core, const ut8 *buf, int len, int nops,
 			if (jesil && *jesil) {
 				pj_ks(pj, "esil", jesil);
 			}
+			if (op.rzil_op) {
+				if (op.rzil_op->ops) {
+					pj_k(pj, "rzil");
+					rz_il_oplist_json(op.rzil_op->ops, pj);
+				} else {
+					pj_knull(pj, "rzil");
+				}
+			}
 			pj_kb(pj, "sign", op.sign);
 			pj_kn(pj, "prefix", op.prefix);
 			pj_ki(pj, "id", op.id);
@@ -1707,17 +1732,6 @@ static void core_analysis_bytes(RzCore *core, const ut8 *buf, int len, int nops,
 			}
 			pj_ks(pj, "family", rz_analysis_op_family_to_string(op.family));
 			pj_end(pj);
-		} else if (fmt == 'r') {
-			if (RZ_STR_ISNOTEMPTY(esilstr)) {
-				if (use_color) {
-					rz_cons_printf("%s0x%" PFMT64x Color_RESET "\n", color, core->offset + idx);
-				} else {
-					rz_cons_printf("0x%" PFMT64x "\n", core->offset + idx);
-				}
-				rz_analysis_esil_parse(esil, esilstr);
-				rz_analysis_esil_dumpstack(esil);
-				rz_analysis_esil_stack_free(esil);
-			}
 		} else {
 			char disasm[128] = { 0 };
 			rz_parse_subvar(core->parser, NULL,
@@ -1734,15 +1748,7 @@ static void core_analysis_bytes(RzCore *core, const ut8 *buf, int len, int nops,
 					disasm, sizeof(disasm), be);
 				free(p);
 			}
-#define printline(k, fmt, arg) \
-	{ \
-		if (use_color) \
-			rz_cons_printf("%s%s: " Color_RESET, color, k); \
-		else \
-			rz_cons_printf("%s: ", k); \
-		if (fmt) \
-			rz_cons_printf(fmt, arg); \
-	}
+
 			printline("address", "0x%" PFMT64x "\n", core->offset + idx);
 			printline("opcode", "%s\n", rz_asm_op_get_asm(&asmop));
 			if (!*disasm) {
@@ -1842,6 +1848,16 @@ static void core_analysis_bytes(RzCore *core, const ut8 *buf, int len, int nops,
 			} else if (RZ_STR_ISNOTEMPTY(esilstr)) {
 				printline("esil", "%s\n", esilstr);
 			}
+			if (op.rzil_op) {
+				if (op.rzil_op->ops) {
+					RzStrBuf *sbil = rz_strbuf_new("");
+					rz_il_oplist_stringify(op.rzil_op->ops, sbil);
+					printline("rzil", "%s\n", rz_strbuf_get(sbil));
+					rz_strbuf_free(sbil);
+				} else {
+					printline_noarg("rzil", "[]");
+				}
+			}
 			if (hint && hint->jump != UT64_MAX) {
 				op.jump = hint->jump;
 			}
@@ -1895,6 +1911,8 @@ static void core_analysis_bytes(RzCore *core, const ut8 *buf, int len, int nops,
 	}
 	rz_analysis_esil_free(esil);
 }
+#undef printline
+#undef printline_noarg
 
 static RzList *get_xrefs(RzAnalysisBlock *block) {
 	RzListIter *iter;
