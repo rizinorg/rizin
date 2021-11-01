@@ -2,19 +2,56 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_il/rzil_opcodes.h>
+#include <rz_il/vm_layer.h>
 #include <rz_il/rzil_vm.h>
 
+static RzILEvent *il_event_new_write_from_var(RzILVM *vm, RzILVar *var, RzILVal *new_val) {
+	rz_return_val_if_fail(vm && var && new_val, NULL);
+	RzILVal *old_val = NULL;
+	RzILEvent *evt = NULL;
+	RzILBitVector *oldnum = NULL;
+	RzILBitVector *newnum = NULL;
+
+	if (new_val->type == RZIL_VAR_TYPE_BOOL) {
+		newnum = rz_il_bv_new_from_ut32(1, new_val->data.b->b);
+	} else {
+		newnum = new_val->data.bv;
+	}
+
+	old_val = rz_il_hash_find_val_by_var(vm, var);
+	if (old_val) {
+		if (old_val->type == RZIL_VAR_TYPE_BOOL) {
+			oldnum = rz_il_bv_new_from_ut32(1, old_val->data.b->b);
+		} else {
+			oldnum = old_val->data.bv;
+		}
+	}
+
+	evt = rz_il_event_var_write_new(var->var_name, oldnum, newnum);
+	if (old_val->type == RZIL_VAR_TYPE_BOOL) {
+		rz_il_bv_free(oldnum);
+	}
+	if (new_val->type == RZIL_VAR_TYPE_BOOL) {
+		rz_il_bv_free(newnum);
+	}
+	return evt;
+}
+
 static void rz_il_perform_data(RzILVM *vm, RzILEffect *eff) {
-	RzILVar *var;
-	RzILVal *val;
+	RzILVar *var = NULL;
+	RzILVal *val = NULL;
+	RzILEvent *evt = NULL;
 
 	val = eff->data_eff->val;
 	eff->data_eff->val = NULL;
 	var = rz_il_find_var_by_name(vm, eff->data_eff->var_name);
+	evt = il_event_new_write_from_var(vm, var, val);
+
 	rz_il_hash_cancel_binding(vm, var);
 	rz_il_hash_bind(vm, var, val);
 
 	rz_il_vm_fortify_val(vm, val);
+	rz_il_vm_event_add(vm, evt);
 }
 
 static void rz_il_perform_ctrl(RzILVM *vm, RzILEffect *eff) {

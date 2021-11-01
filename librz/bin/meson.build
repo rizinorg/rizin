@@ -113,6 +113,7 @@ rz_bin_sources = [
   'format/mach0/dyldcache_rebase.c',
   'format/mach0/coresymbolication.c',
   'format/mach0/fatmach0.c',
+  'format/mach0/kernelcache.c',
   'format/mach0/mach0.c',
   'format/mach0/mach0_relocs.c',
   'format/mach0/mach0_rebase.c',

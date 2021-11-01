@@ -6,6 +6,7 @@
 
 #include <rz_il/definitions/definitions.h>
 #include <rz_il/rzil_opcodes.h>
+#include <rz_il/rzil_vm_events.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,6 +53,8 @@ struct rz_il_vm_t {
 	RzILBitVector *pc; ///< Program Counter of VM
 
 	RzILOpHandler *op_handler_table; ///< Array of Handler, handler can be indexed by opcode
+
+	RzList *events; ///< List of events that has happened in the last step
 };
 
 // VM operations about Variable and Value
@@ -79,11 +82,14 @@ RZ_API void rz_il_vm_add_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name,
 RZ_API void rz_il_vm_store_opcodes_to_addr(RzILVM *vm, RzILBitVector *addr, RzPVector *oplist);
 RZ_API RzPVector *rz_il_make_oplist(int num, ...);
 
-RZ_API void rz_il_op_stringify(RZ_NULLABLE RzILOp *op, RZ_NONNULL RzStrBuf *sb);
+RZ_API void rz_il_op_stringify(RZ_NONNULL RzILOp *op, RZ_NONNULL RzStrBuf *sb);
 RZ_API void rz_il_oplist_stringify(RZ_NONNULL RzPVector *oplist, RZ_NONNULL RzStrBuf *sb);
 
-RZ_API void rz_il_op_json(RZ_NULLABLE RzILOp *op, RZ_NONNULL PJ *pj);
+RZ_API void rz_il_op_json(RZ_NONNULL RzILOp *op, RZ_NONNULL PJ *pj);
 RZ_API void rz_il_oplist_json(RZ_NONNULL RzPVector *oplist, RZ_NONNULL PJ *pj);
+
+RZ_API void rz_il_event_stringify(RZ_NONNULL RzILEvent *evt, RZ_NONNULL RzStrBuf *sb);
+RZ_API void rz_il_event_json(RZ_NONNULL RzILEvent *evt, RZ_NONNULL PJ *pj);
 
 // VM auto convert functions
 RZ_API RzILBitVector *rz_il_evaluate_bitv(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
