@@ -1,0 +1,49 @@
+image: alpine/latest
+packages:
+    - meson
+    - pkgconf
+    - make
+    - gcc
+    - cabextract
+    - wget
+    - python3
+    - linux-headers
+sources:
+    - https://github.com/rizinorg/rizin
+    - https://github.com/rizinorg/rizin-testbins
+tasks:
+    - skip: echo "${GITHUB_REF}" | grep -E '^refs/(heads/(dev|stable|alpine-.+|dist-.+)|tags/.+)$' || complete-build
+    - rzpipe: |
+        sudo python3 -m ensurepip
+        sudo python3 -m pip install 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
+    - build: |
+        cd rizin
+        meson --prefix=${HOME} build
+        ninja -C build
+    - install: |
+        cd rizin
+        export PATH=${HOME}/bin:${PATH}
+        export LD_LIBRARY_PATH=${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
+        export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${PKG_CONFIG_PATH}
+        ninja -C build install
+    - unittest: |
+        cd rizin
+        export PATH=${HOME}/bin:${PATH}
+        export LD_LIBRARY_PATH=${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
+        export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${PKG_CONFIG_PATH}
+        # Workaround until the feature request is solved
+        # https://todo.sr.ht/~sircmpwn/builds.sr.ht/274
+        ln -s ${HOME}/rizin-testbins test/bins
+        # Running the unit tests
+        ninja -C build test
+    - test: |
+        cd rizin
+        export PATH=${HOME}/bin:${PATH}
+        export LD_LIBRARY_PATH=${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
+        export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${PKG_CONFIG_PATH}
+        # Workaround until the feature request is solved
+        # https://todo.sr.ht/~sircmpwn/builds.sr.ht/274
+        ln -s ${HOME}/rizin-testbins test/bins
+        # Running the test suite
+        cd test
+        rz-test -L -o results.json
