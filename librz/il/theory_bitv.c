@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_il/rzil_opcodes.h>
+#include <rz_il/vm_layer.h>
 #include <rz_il/rzil_vm.h>
 
 void *rz_il_handler_msb(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
@@ -189,7 +190,14 @@ void *rz_il_handler_div(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 
 	RzILBitVector *x = rz_il_evaluate_bitv(vm, op_div->x, type);
 	RzILBitVector *y = rz_il_evaluate_bitv(vm, op_div->y, type);
-	RzILBitVector *result = rz_il_bv_div(x, y);
+	RzILBitVector *result = NULL;
+	if (rz_il_bv_is_zero_vector(y)) {
+		result = rz_il_bv_new(y->len);
+		rz_il_bv_set_all(result, true);
+		rz_il_vm_event_add(vm, rz_il_event_exception_new("division by zero"));
+	} else {
+		result = rz_il_bv_div(x, y);
+	}
 
 	rz_il_bv_free(x);
 	rz_il_bv_free(y);
