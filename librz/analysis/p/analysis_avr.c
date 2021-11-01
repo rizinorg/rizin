@@ -2090,6 +2090,10 @@ static ut8 *analysis_mask_avr(RzAnalysis *analysis, int size, const ut8 *data, u
 	return ret;
 }
 
+static int address_bits(RzAnalysis *analysis, int bits) {
+	return bits == 8 ? 16 : -1;
+}
+
 RzAnalysisPlugin rz_analysis_plugin_avr = {
 	.name = "avr",
 	.desc = "AVR code analysis plugin",
@@ -2098,6 +2102,7 @@ RzAnalysisPlugin rz_analysis_plugin_avr = {
 	.esil = true,
 	.archinfo = archinfo,
 	.bits = 8 | 16, // 24 big regs conflicts
+	.address_bits = address_bits,
 	.op = &avr_op,
 	.set_reg_profile = &set_reg_profile,
 	.esil_init = esil_avr_init,
