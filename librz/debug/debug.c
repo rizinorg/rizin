@@ -1569,6 +1569,11 @@ RZ_API int rz_debug_syscall(RzDebug *dbg, int num) {
 	return (int)ret;
 }
 
+/// check whether rz_debug_kill() will not definitely fail (for example because kill is unimplemented by the plugin)
+RZ_API bool rz_debug_can_kill(RzDebug *dbg) {
+	return !rz_debug_is_dead(dbg) && dbg->cur && dbg->cur->kill;
+}
+
 RZ_API int rz_debug_kill(RzDebug *dbg, int pid, int tid, int sig) {
 	if (rz_debug_is_dead(dbg)) {
 		return false;
