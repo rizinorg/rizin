@@ -59,7 +59,7 @@ static void bf_syscall_write(RzILVM *vm, RzILOp *op) {
 
 ut64 pop_astack(BfStack *stack) {
 	if (stack->sp <= 0) {
-		printf("Empty Stack\n");
+		RZ_LOG_ERROR("RzIL: brainfuck: Empty Stack\n");
 		return -1;
 	}
 
@@ -70,7 +70,7 @@ ut64 pop_astack(BfStack *stack) {
 
 void push_astack(BfStack *stack, ut64 id) {
 	if (stack->sp >= BF_ID_STACK - 1) {
-		eprintf("Stack Full\n");
+		RZ_LOG_ERROR("RzIL: brainfuck: Stack Full\n");
 		return;
 	}
 	stack->stack[stack->sp] = id;
@@ -386,7 +386,7 @@ static bool bf_init_rzil(RzAnalysis *analysis) {
 	RzAnalysisRzil *rzil = analysis->rzil;
 
 	if (rzil->inited) {
-		eprintf("Already init\n");
+		RZ_LOG_ERROR("RzIL: brainfuck: already initialized\n");
 		return true;
 	}
 
@@ -397,7 +397,7 @@ static bool bf_init_rzil(RzAnalysis *analysis) {
 
 	// create core theory VM
 	if (!rz_il_vm_init(rzil->vm, start_addr, addrsize, datasize)) {
-		RZ_LOG_ERROR("RZIL : Init VM failed\n");
+		RZ_LOG_ERROR("RzIL: brainfuck: failed to initialize VM\n");
 		return false;
 	}
 
@@ -413,7 +413,7 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 	if (!op) {
 		return -1;
 	} else if (!analysis->rzil) {
-		RZ_LOG_ERROR("RZIL VM hasn't been initialized\n");
+		RZ_LOG_ERROR("RzIL: brainfuck: the VM hasn't been initialized\n");
 		return -1;
 	}
 

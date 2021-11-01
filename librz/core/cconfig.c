@@ -3731,7 +3731,9 @@ RZ_API int rz_core_config_init(RzCore *core) {
 		NULL);
 
 	/* RzIL config */
-	SETB("rzil.status.compact", true, "aezv RzIL VM status output is compact");
+	SETB("rzil.status.compact", true, "enables/disables compact printing when aezv is called");
+	SETB("rzil.step.events.read", false, "enables/disables printing aezse read event");
+	SETB("rzil.step.events.write", true, "enables/disables printing aezse write event");
 
 	rz_config_lock(cfg, true);
 	return true;
