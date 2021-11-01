@@ -105,6 +105,7 @@ void *rz_il_handler_ite(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_var(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_unk(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 
+void *rz_il_handler_bv(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_int(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_msb(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_lsb(RzILVM *vm, RzILOp *op, RzILOpArgType *type);

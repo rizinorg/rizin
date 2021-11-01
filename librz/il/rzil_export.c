@@ -199,6 +199,21 @@ static void il_opdmp_or(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 	il_op_param_2("or", op->op.or_, x, y);
 }
 
+static void il_opdmp_bv(RzILOp *op, RzStrBuf *sb, PJ *pj) {
+	RzILOpBv *opx = op->op.bitv;
+	char *num = rz_il_bv_as_hex_string(opx->value);
+	if (sb) {
+		rz_strbuf_appendf(sb, "bitv(bits:%s, len:%u)", num, opx->value->len);
+	} else {
+		pj_o(pj);
+		pj_ks(pj, "opcode", "bitv");
+		pj_ks(pj, "bits", num);
+		pj_kn(pj, "len", opx->value->len);
+		pj_end(pj);
+	}
+	free(num);
+}
+
 static void il_opdmp_int(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 	RzILOpInt *opx = op->op.int_;
 	if (sb) {
@@ -435,6 +450,8 @@ static void il_op_resolve(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 		return il_opdmp_and(op, sb, pj);
 	case RZIL_OP_OR_:
 		return il_opdmp_or(op, sb, pj);
+	case RZIL_OP_BV:
+		return il_opdmp_bv(op, sb, pj);
 	case RZIL_OP_INT:
 		return il_opdmp_int(op, sb, pj);
 	case RZIL_OP_MSB:

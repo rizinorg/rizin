@@ -48,6 +48,16 @@ struct rzil_op_int_t {
 };
 
 /**
+ *  \struct rzil_op_bv_t
+ *  \brief op structure for bitvector
+ *
+ *  value is a bitvector constant x.
+ */
+struct rzil_op_bv_t {
+	RzILBitVector *value; ///< value of bitvector
+};
+
+/**
  *  \struct rzil_op_msb_lsb_t
  *  \brief op structure for `msb` and `lsb` ('s bitv -> bool)
  *  [MSB] msb x is the most significant bit of x.
@@ -314,6 +324,7 @@ typedef enum {
 	RZIL_OP_OR_,
 
 	// RzILBitVector
+	RZIL_OP_BV,
 	RZIL_OP_INT,
 	RZIL_OP_MSB,
 	RZIL_OP_LSB,
@@ -385,6 +396,7 @@ typedef struct rzil_op_alg_log_operations_t RzILOpLogxor;
 typedef struct rzil_op_shift_t RzILOpShiftl;
 typedef struct rzil_op_shift_t RzILOpShiftr;
 typedef struct rzil_op_int_t RzILOpInt;
+typedef struct rzil_op_bv_t RzILOpBv;
 
 typedef struct rzil_op_and__t RzILOpAnd_;
 typedef struct rzil_op_or__t RzILOpOr_;
@@ -415,6 +427,7 @@ typedef union {
 	RzILOpInv *inv;
 
 	RzILOpInt *int_;
+	RzILOpBv *bitv;
 	RzILOpMsb *msb;
 	RzILOpLsb *lsb;
 	RzILOpUle *ule;

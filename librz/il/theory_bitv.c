@@ -296,6 +296,16 @@ void *rz_il_handler_shiftr(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	return result;
 }
 
+void *rz_il_handler_bv(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
+	rz_return_val_if_fail(vm && op && type, NULL);
+	RzILOpBv *op_bitv = op->op.bitv;
+
+	RzILBitVector *bv = rz_il_bv_dup(op_bitv->value);
+
+	*type = RZIL_OP_ARG_BITV;
+	return bv;
+}
+
 void *rz_il_handler_int(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 
