@@ -11,6 +11,7 @@ usage:
 
 import subprocess
 import os
+import requests
 
 PORT = 28080
 URL = f"http://localhost:{PORT}"
@@ -20,34 +21,12 @@ SAVED_NAME = "rz_http_test"
 
 
 def start_rizin(cmd):
-    # print(' '.join(cmd))
+    """Starts rizin"""
     return subprocess.Popen(cmd, stderr=subprocess.PIPE, universal_newlines=True)
 
 
-def curl_run(cmd):
-    cmd = ["curl", "-s"] + cmd
-    # print(cmd)
-    result = subprocess.run(cmd, stdout=subprocess.PIPE, check=True)
-    return result
-
-
-def curl_upload(url, file):
-    cmd = [url, f"-F upload=@{file}"]
-    return curl_run(cmd)
-
-
-def curl_get(url, path):
-    cmd = [url + path]
-    return curl_run(cmd)
-
-
-def curl_post(url, path, data):
-    cmd = [url + path, f"-d {data}"]
-    return curl_run(cmd)
-
-
 def main():
-    # start rizin
+    """Main function"""
     popen = start_rizin(
         [
             "rizin",
@@ -66,24 +45,35 @@ def main():
             break
 
     # upload the binary via new /upload path
-    curl_upload(URL + "/upload/" + SAVED_NAME, TARGET)
+    boundary = b"------------------------f8a8a5c708553bc9"
 
+    head = b'\r\nContent-Disposition: form-data; name="upload"; filename="upload"\r\n\
+            Content-Type: application/octet-stream\r\n\r\n'
+    with open(TARGET, "rb") as file:
+        data = boundary + head + file.read() + b"\r\n" + boundary
+
+        requests.post(
+            URL + "/upload/" + SAVED_NAME,
+            data=data,
+            headers={"Content-Type": f"multipart/form-data; boundary={str(boundary)}"},
+        )
+    # pretty_print_POST(r.prepare())
     # open the file via new POST-cmd
-    curl_post(URL, "/cmd/", f"o {TMP_DIR}/{SAVED_NAME}")
+    requests.post(URL + "/cmd/", data=f"o {TMP_DIR}/{SAVED_NAME}")
 
     # analyze the file via new POST-cmd
-    post_cmd = curl_post(URL, "/cmd/", f"ii")
-    # print(post_cmd.stdout)
+    post_cmd = requests.post(URL + "/cmd/", data="ii")
+    # print(post_cmd.text)
 
     # analyze the file by old GET-cmd
-    get_cmd = curl_get(URL, "/cmd/ii")
-    # print(get_cmd.stdout)
+    get_cmd = requests.get(URL + "/cmd/ii")
+    # print(get_cmd.text)
 
     # compare results
-    if post_cmd.stdout == get_cmd.stdout:
+    if post_cmd.text == get_cmd.text:
         print("New and old cmd results equal")
 
-    if post_cmd.stdout.find(b"strncmp") > 0:
+    if post_cmd.text.find("strncmp") > 0:
         print("Test succeeded")
     else:
         print("Something goes wrong")
