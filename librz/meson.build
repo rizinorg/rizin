@@ -461,6 +461,7 @@ rz_il_definitions_files = [
   'include/rz_il/definitions/mem.h',
   'include/rz_il/definitions/value.h',
   'include/rz_il/definitions/variable.h',
+  'include/rz_il/definitions/float.h'
 ]
 install_headers(rz_il_definitions_files, install_dir: join_paths(rizin_incdir, 'rz_il', 'definitions'))
 
