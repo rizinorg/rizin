@@ -126,8 +126,8 @@ RZ_API bool rz_th_getname(RzThread *th, char *name, size_t len) {
 }
 
 RZ_API bool rz_th_setaffinity(RzThread *th, int cpuid) {
-#if __linux__
-#if defined(__GLIBC__) && defined(__GLIBC_MINOR__) && (__GLIBC__ <= 2) && (__GLIBC_MINOR__ <= 2)
+#if __linux__ && defined(__GLIBC__) // Linux GLIBC-only environment
+#if defined(__GLIBC_MINOR__) && (__GLIBC__ <= 2) && (__GLIBC_MINOR__ <= 2)
 	// Old versions of GNU libc don't have this feature
 #pragma message("warning rz_th_setaffinity not implemented")
 #else
@@ -140,6 +140,15 @@ RZ_API bool rz_th_setaffinity(RzThread *th, int cpuid) {
 		return false;
 	}
 #endif
+#elif __linux__ // Non-GLIBC environment, e.g. Musl libc
+	cpu_set_t c;
+	CPU_ZERO(&c);
+	CPU_SET(cpuid, &c);
+
+	if (pthread_setaffinity_np(th->tid, sizeof(c), &c) != 0) {
+		eprintf("Failed to set cpu affinity\n");
+		return false;
+	}
 #elif __FreeBSD__ || __DragonFly__
 	cpuset_t c;
 	CPU_ZERO(&c);
