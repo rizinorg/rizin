@@ -79,7 +79,7 @@ static int ppc_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 	return op->size;
 }
 
-static bool set_reg_profile(RzAnalysis *analysis) {
+static char *get_reg_profile(RzAnalysis *analysis) {
 	const char *p =
 		"=PC	srr0\n"
 		"=SR	srr1\n" // status register
@@ -134,7 +134,7 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 		"gpr	ctr	.32	148	0\n"
 		"gpr	mq	.32	152	0\n"
 		"gpr	vrsave	.32	156	0\n";
-	return rz_reg_set_profile_string(analysis->reg, p);
+	return strdup(p);
 }
 
 static int archinfo(RzAnalysis *analysis, int q) {
@@ -149,7 +149,7 @@ RzAnalysisPlugin rz_analysis_plugin_ppc_gnu = {
 	.archinfo = archinfo,
 	.bits = 32 | 64,
 	.op = &ppc_op,
-	.set_reg_profile = &set_reg_profile,
+	.get_reg_profile = &get_reg_profile,
 };
 
 #ifndef RZ_PLUGIN_INCORE
