@@ -133,22 +133,19 @@ static int rz_core_rtr_http_handler_get_cmd(RzCore *core, RzSocketHTTPRequest *r
 				if (!strcmp(cmd, "Rh*")) {
 					/* do stuff */
 					rz_socket_http_close(rs);
-					//free(dir);
 					free(refstr);
-					return -2; //ret = -2;
-					//goto the_end;
+					return -2;
 				} else if (!strcmp(cmd, "Rh--")) {
 					rz_socket_http_close(rs);
 					//free(dir);
 					free(refstr);
-					return 0; //ret = 0;
-					//goto the_end;
+					return 0;
 				}
 			}
 		}
 		free(refstr);
 	}
-	return 1; //return 0;
+	return 1;
 }
 
 static int rz_core_rtr_http_handler_get_index(RzCore *core, RzSocketHTTPRequest *rs, char *headers) {
@@ -189,7 +186,6 @@ static int rz_core_rtr_http_handler_get_index(RzCore *core, RzSocketHTTPRequest 
 	if (rs->path[strlen(rs->path) - 1] == '/') {
 		path = (*index == '/') ? strdup(index) : rz_str_append(path, index);
 	} else {
-		//snprintf (path, sizeof (path), "%s/%s", root, rs->path);
 		if (rz_file_is_directory(path)) {
 			char *res = rz_str_newf("Location: %s/\n%s", rs->path, headers);
 			rz_socket_http_response(rs, 302, NULL, 0, res);
@@ -197,7 +193,7 @@ static int rz_core_rtr_http_handler_get_index(RzCore *core, RzSocketHTTPRequest 
 			free(path);
 			free(res);
 			RZ_FREE(dir);
-			return LOOP_CONTINUE_VALUE; //continue; //do continue in main loop on 66 number
+			return LOOP_CONTINUE_VALUE;
 		}
 	}
 	if (rz_file_exists(path)) {
@@ -274,14 +270,10 @@ static int rz_core_rtr_http_handler_post_cmd(RzCore *core, RzSocketHTTPRequest *
 	if (!strcmp((char *)rs->data, "Rh*")) {
 		/* do stuff */
 		rz_socket_http_close(rs);
-		//free(dir);
-		return -2; //ret = -2;
-		//goto the_end;
+		return -2;
 	} else if (!strcmp((char *)rs->data, "Rh--")) {
 		rz_socket_http_close(rs);
-		//free(dir);
-		return 0; //ret = 0;
-		//goto the_end;
+		return 0;
 	}
 	return 1;
 }

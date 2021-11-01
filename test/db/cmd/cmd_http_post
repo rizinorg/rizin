@@ -1,10 +1,11 @@
 NAME=http-post-cmd
 FILE==
 CMDS=<<EOF
+!python3 -m pip install requests
 !python3 scripts/http_post_cmd_upload.py
 EOF
+REGEXP_FILTER_OUT=(Test succ.+)
 EXPECT=<<EOF
-New and old cmd results equal
 Test succeeded
 EOF
 RUN
