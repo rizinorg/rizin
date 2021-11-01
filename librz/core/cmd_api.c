@@ -1201,6 +1201,9 @@ static char *oldinput_get_help(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *a) {
 
 	char *res = NULL;
 	rz_cons_push();
+	// rz_cons_push disables flushing, which is going to be a problem if a help menu is
+	// displayed.
+	rz_cons_set_flush(true);
 	RzCmdStatus status = rz_cmd_call_parsed_args(cmd, a);
 	if (status == RZ_CMD_STATUS_OK) {
 		rz_cons_filter();
