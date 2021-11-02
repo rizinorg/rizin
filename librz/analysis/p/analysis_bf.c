@@ -31,9 +31,29 @@ typedef struct bf_context_t {
 	ut64 op_count;
 } BfContext;
 
+static inline RzILOp *bf_il_ptr() {
+	RzILOp *ptr = rz_il_new_op(RZIL_OP_VAR);
+	ptr->op.var->v = "ptr";
+	return ptr;
+}
+
+static inline RzILOp *bf_il_set_ptr(RzILOp *x) {
+	rz_return_val_if_fail(x, NULL);
+	RzILOp *set = rz_il_new_op(RZIL_OP_SET);
+	set->op.set->x = x;
+	set->op.set->v = "ptr";
+	return set;
+}
+
+static inline RzILOp *bf_il_one(ut32 length) {
+	RzILOp *bitv = rz_il_new_op(RZIL_OP_BITV);
+	bitv->op.bitv->value = rz_il_bv_new_from_ut64(length, 1);
+	return bitv;
+}
+
 static void bf_syscall_read(RzILVM *vm, RzILOp *op) {
 	ut8 c = getc(stdin);
-	RzILBitVector *bv = rz_il_bv_new_from_ut32(BF_ALIGN_SIZE, c);
+	RzILBitVector *bv = rz_il_bv_new_from_ut64(BF_ALIGN_SIZE, c);
 
 	RzILVal *ptr_val = rz_il_value_dup(rz_il_hash_find_val_by_name(vm, "ptr"));
 
@@ -59,18 +79,17 @@ static void bf_syscall_write(RzILVM *vm, RzILOp *op) {
 
 ut64 pop_astack(BfStack *stack) {
 	if (stack->sp <= 0) {
-		RZ_LOG_ERROR("RzIL: brainfuck: Empty Stack\n");
+		RZ_LOG_ERROR("RzIL: brainfuck: the stack is empty\n");
 		return -1;
 	}
 
 	stack->sp -= 1;
-	ut64 ret = stack->stack[stack->sp];
-	return ret;
+	return stack->stack[stack->sp];
 }
 
 void push_astack(BfStack *stack, ut64 id) {
 	if (stack->sp >= BF_ID_STACK - 1) {
-		RZ_LOG_ERROR("RzIL: brainfuck: Stack Full\n");
+		RZ_LOG_ERROR("RzIL: brainfuck: the stack is full\n");
 		return;
 	}
 	stack->stack[stack->sp] = id;
@@ -85,73 +104,41 @@ ut64 parse_label_id(char *lbl_name) {
 
 RzPVector *bf_right_arrow(RzILVM *vm, ut64 id) {
 	// (set ptr (+ (val ptr) (int 1)))
-	RzILOp *var = rz_il_new_op(RZIL_OP_VAR);
-	var->op.var->v = "ptr";
-
-	RzILOp *int_ = rz_il_new_op(RZIL_OP_INT);
-	int_->op.int_->length = BF_ADDR_SIZE;
-	int_->op.int_->value = 1;
-
 	RzILOp *add = rz_il_new_op(RZIL_OP_ADD);
-	add->op.add->x = var;
-	add->op.add->y = int_;
-
-	RzILOp *set = rz_il_new_op(RZIL_OP_SET);
-	set->op.set->x = add;
-	set->op.set->v = "ptr";
+	add->op.add->x = bf_il_ptr();
+	add->op.add->y = bf_il_one(BF_ADDR_SIZE);
 
 	RzILOp *perform = rz_il_new_op(RZIL_OP_PERFORM);
-	perform->op.perform->eff = set;
+	perform->op.perform->eff = bf_il_set_ptr(add);
 
 	return rz_il_make_oplist(1, perform);
 }
 
 RzPVector *bf_left_arrow(RzILVM *vm, ut64 id) {
 	// (set ptr (- (val ptr) (int 1)))
-	RzILOp *var = rz_il_new_op(RZIL_OP_VAR);
-	var->op.var->v = "ptr";
-
-	RzILOp *int_ = rz_il_new_op(RZIL_OP_INT);
-	int_->op.int_->value = 1;
-	int_->op.int_->length = BF_ADDR_SIZE;
-
 	RzILOp *sub = rz_il_new_op(RZIL_OP_SUB);
-	sub->op.add->x = var;
-	sub->op.add->y = int_;
-
-	RzILOp *set = rz_il_new_op(RZIL_OP_SET);
-	set->op.set->x = sub;
-	set->op.set->v = "ptr";
+	sub->op.add->x = bf_il_ptr();
+	sub->op.add->y = bf_il_one(BF_ADDR_SIZE);
 
 	RzILOp *perform = rz_il_new_op(RZIL_OP_PERFORM);
-	perform->op.perform->eff = set;
+	perform->op.perform->eff = bf_il_set_ptr(sub);
 
 	return rz_il_make_oplist(1, perform);
 }
 
 RzPVector *bf_inc(RzILVM *vm, ut64 id) {
 	// (store mem (var ptr) (+ (load (var ptr)) (int 1)))
-	RzILOp *var = rz_il_new_op(RZIL_OP_VAR);
-	var->op.var->v = "ptr";
-
 	RzILOp *load = rz_il_new_op(RZIL_OP_LOAD);
 	load->op.load->mem = 0; // the only mem in bf
-	load->op.load->key = var;
-
-	RzILOp *int_ = rz_il_new_op(RZIL_OP_INT);
-	int_->op.int_->value = 1;
-	int_->op.int_->length = BF_ALIGN_SIZE;
+	load->op.load->key = bf_il_ptr();
 
 	RzILOp *add = rz_il_new_op(RZIL_OP_ADD);
 	add->op.add->x = load;
-	add->op.add->y = int_;
-
-	RzILOp *var_2 = rz_il_new_op(RZIL_OP_VAR);
-	var_2->op.var->v = "ptr";
+	add->op.add->y = bf_il_one(BF_ALIGN_SIZE);
 
 	RzILOp *store = rz_il_new_op(RZIL_OP_STORE);
 	store->op.store->mem = 0;
-	store->op.store->key = var_2;
+	store->op.store->key = bf_il_ptr();
 	store->op.store->value = add;
 
 	return rz_il_make_oplist(1, store);
@@ -159,27 +146,18 @@ RzPVector *bf_inc(RzILVM *vm, ut64 id) {
 
 RzPVector *bf_dec(RzILVM *vm, ut64 id) {
 	// (store mem (var ptr) (- (load (var ptr)) (int 1)))
-	RzILOp *var = rz_il_new_op(RZIL_OP_VAR);
-	var->op.var->v = "ptr";
 
 	RzILOp *load = rz_il_new_op(RZIL_OP_LOAD);
 	load->op.load->mem = 0; // the only mem in bf
-	load->op.load->key = var;
-
-	RzILOp *int_ = rz_il_new_op(RZIL_OP_INT);
-	int_->op.int_->value = 1;
-	int_->op.int_->length = BF_ALIGN_SIZE;
+	load->op.load->key = bf_il_ptr();
 
 	RzILOp *sub = rz_il_new_op(RZIL_OP_SUB);
 	sub->op.sub->x = load;
-	sub->op.sub->y = int_;
-
-	RzILOp *var_2 = rz_il_new_op(RZIL_OP_VAR);
-	var_2->op.var->v = "ptr";
+	sub->op.sub->y = bf_il_one(BF_ALIGN_SIZE);
 
 	RzILOp *store = rz_il_new_op(RZIL_OP_STORE);
 	store->op.store->mem = 0;
-	store->op.store->key = var_2;
+	store->op.store->key = bf_il_ptr();
 	store->op.store->value = sub;
 
 	return rz_il_make_oplist(1, store);

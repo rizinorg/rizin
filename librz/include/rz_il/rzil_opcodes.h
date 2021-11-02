@@ -37,21 +37,10 @@ typedef struct RzILOp_t RzILOp;
  */
 
 /**
- *  \struct rzil_op_int_t
- *  \brief op structure for `int` (val int : 's Bitv.t Value.sort -> word -> 's bitv)
- *
- *  int s x is a bitvector constant x of sort s.
- */
-struct rzil_op_int_t {
-	ut32 length; ///< s -- sort(type), length of bitvector
-	int value; ///< x -- value of bitvector
-};
-
-/**
  *  \struct rzil_op_bv_t
  *  \brief op structure for bitvector
  *
- *  value is a bitvector constant x.
+ *  value is a bitvector constant.
  */
 struct rzil_op_bv_t {
 	RzILBitVector *value; ///< value of bitvector
@@ -324,8 +313,7 @@ typedef enum {
 	RZIL_OP_OR_,
 
 	// RzILBitVector
-	RZIL_OP_BV,
-	RZIL_OP_INT,
+	RZIL_OP_BITV,
 	RZIL_OP_MSB,
 	RZIL_OP_LSB,
 	RZIL_OP_NEG,
@@ -395,7 +383,6 @@ typedef struct rzil_op_alg_log_operations_t RzILOpLogor;
 typedef struct rzil_op_alg_log_operations_t RzILOpLogxor;
 typedef struct rzil_op_shift_t RzILOpShiftl;
 typedef struct rzil_op_shift_t RzILOpShiftr;
-typedef struct rzil_op_int_t RzILOpInt;
 typedef struct rzil_op_bv_t RzILOpBv;
 
 typedef struct rzil_op_and__t RzILOpAnd_;
@@ -426,7 +413,6 @@ typedef union {
 	RzILOpOr_ *or_;
 	RzILOpInv *inv;
 
-	RzILOpInt *int_;
 	RzILOpBv *bitv;
 	RzILOpMsb *msb;
 	RzILOpLsb *lsb;

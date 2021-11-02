@@ -107,8 +107,7 @@ RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, ut32 data
 	vm->op_handler_table[RZIL_OP_AND_] = &rz_il_handler_and_;
 	vm->op_handler_table[RZIL_OP_OR_] = &rz_il_handler_or_;
 
-	vm->op_handler_table[RZIL_OP_BV] = &rz_il_handler_bv;
-	vm->op_handler_table[RZIL_OP_INT] = &rz_il_handler_int;
+	vm->op_handler_table[RZIL_OP_BITV] = &rz_il_handler_bitv;
 	vm->op_handler_table[RZIL_OP_MSB] = &rz_il_handler_msb;
 	vm->op_handler_table[RZIL_OP_LSB] = &rz_il_handler_lsb;
 
@@ -444,7 +443,7 @@ RZ_API void rz_il_vm_list_step(RzILVM *vm, RzPVector *op_list, ut32 op_size) {
 		rz_il_vm_step(vm, root);
 	}
 
-	RzILBitVector *step = rz_il_bv_new_from_ut32(vm->pc->len, op_size);
+	RzILBitVector *step = rz_il_bv_new_from_ut64(vm->pc->len, op_size);
 	RzILBitVector *next_pc = rz_il_bv_add(vm->pc, step);
 	rz_il_vm_event_add(vm, rz_il_event_pc_write_new(vm->pc, next_pc));
 	rz_il_bv_free(vm->pc);
