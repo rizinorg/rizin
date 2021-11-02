@@ -86,7 +86,7 @@ jobs:
 
     - name: Install test dependencies
       run: |
-          python3 -m pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
+          python3 -m pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python' requests
 
     - name: Run tests
       env:

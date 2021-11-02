@@ -156,7 +156,7 @@ jobs:
           path: test/rz-pipe
     - name: Install test dependencies
       if: matrix.run_tests && matrix.enabled
-      run: pip3 install --user "file://$GITHUB_WORKSPACE/test/rz-pipe#egg=rzpipe&subdirectory=python"
+      run: pip3 install --user "file://$GITHUB_WORKSPACE/test/rz-pipe#egg=rzpipe&subdirectory=python" requests
     - name: Install gdbserver dependency
       if: matrix.run_tests && matrix.enabled && (matrix.os == 'ubuntu-latest' || matrix.os == 'ubuntu-20.04')
       run: sudo apt-get --assume-yes install gdbserver
@@ -346,7 +346,7 @@ jobs:
       env:
         PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
     - name: Install test dependencies
-      run: python3 -m pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
+      run: python3 -m pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python' requests
     - name: Run tests
       # FIXME: debug tests fail on Debian for now, let's ignore all tests for the moment
       run: |
@@ -390,7 +390,7 @@ jobs:
       env:
         PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
     - name: Install test dependencies
-      run: pip3 install 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
+      run: pip3 install 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python' requests
     - name: Run tests
       # FIXME: let's ignore all tests for the moment
       run: |

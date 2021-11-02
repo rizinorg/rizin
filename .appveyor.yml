@@ -97,6 +97,7 @@ for:
       - rizin -v
       - copy C:\Python38-x64\python.exe C:\Python38-x64\python3.exe
       - python3 -m pip install "git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python"
+      - python3 -m pip install requests
       - cd test
       - git clone -q --depth 1 https://github.com/rizinorg/rizin-testbins bins
       - cd ..

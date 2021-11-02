@@ -43,6 +43,8 @@ tasks:
         # Running the unit tests
         MALLOC_OPTIONS=S ninja -C build test
     - test: |
+        sudo python3 -m ensurepip
+        sudo python3 -m pip install requests
         cd rizin
         export PATH=${HOME}/bin:/usr/local/bin:${PATH}
         export LD_LIBRARY_PATH=${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
