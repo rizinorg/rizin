@@ -636,13 +636,7 @@ static inline void rz_run_call10(void *fcn, void *arg1, void *arg2, void *arg3, 
 #define rz_xread(fd, buf, count)            RZ_V_NOT(read(fd, buf, count), -1)
 #define rz_xfreopen(pathname, mode, stream) RZ_V_NOT(freopen(pathname, mode, stream), NULL)
 
-#ifndef container_of
-#ifdef _MSC_VER
 #define container_of(ptr, type, member) ((type *)((char *)(ptr)-offsetof(type, member)))
-#else
-#define container_of(ptr, type, member) ((type *)((char *)(__typeof__(((type *)0)->member) *){ ptr } - offsetof(type, member)))
-#endif
-#endif
 
 // reference counter
 typedef int RzRef;
