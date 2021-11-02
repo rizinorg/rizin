@@ -10,7 +10,7 @@
 extern "C" {
 #endif
 
-typedef struct RzILOp_t RzILOp;
+typedef struct rz_il_op_t RzILOp;
 /**
  * \file rzil_opcodes.h
  * \brief signatures of core theory opcodes
@@ -72,7 +72,7 @@ struct rzil_op_neg_t {
  *
  *  neg x is one-complement unary minus
  */
-struct rzil_op_not_t {
+struct rzil_op_logical_not_t {
 	RzILOp *bv; ///< index of bitvector operand
 };
 
@@ -241,34 +241,23 @@ struct rzil_op_var_t {
 };
 
 /**
- *  \struct rzil_op_and__t
- *  \brief op structure for `and_` (bool -> bool -> bool)
+ *  \struct rzil_op_bool_operation_t
+ *  \brief op structure for `and` (bool (op) bool -> bool)
  *
- *  and_ x y is a conjunction of x and y.
+ *  and x y is a conjunction of x and y.
  */
-struct rzil_op_and__t {
+struct rzil_op_bool_operation_t {
 	RzILOp *x; ///< index of the BOOL operand
 	RzILOp *y; ///< index of the BOOL operand
 };
 
 /**
- *  \struct rzil_op_or__t
- *  \brief op structure for `or_` (bool -> bool -> bool)
- *
- *  or_ x y is a disjunction of x and y.
- */
-struct rzil_op_or__t {
-	RzILOp *x; ///< index of the BOOL operand
-	RzILOp *y; ///< index of the BOOL operand
-};
-
-/**
- *  \struct rzil_op_inv_t
- *  \brief op structure for `inv` (bool -> bool)
+ *  \struct rzil_op_bool_not_t
+ *  \brief op structure for `inv` (!bool -> bool)
  *
  *  inv x inverts x.
  */
-struct rzil_op_inv_t {
+struct rzil_op_bool_not_t {
 	RzILOp *x; ///< index of the BOOL operand
 	RzILOp *ret; ///< index of store the BOOL result
 };
@@ -308,16 +297,17 @@ typedef enum {
 	// RzILBool
 	RZIL_OP_B0,
 	RZIL_OP_B1,
-	RZIL_OP_INV,
-	RZIL_OP_AND_,
-	RZIL_OP_OR_,
+	RZIL_OP_BOOLNOT,
+	RZIL_OP_BOOLAND,
+	RZIL_OP_BOOLOR,
+	RZIL_OP_BOOLXOR,
 
 	// RzILBitVector
 	RZIL_OP_BITV,
 	RZIL_OP_MSB,
 	RZIL_OP_LSB,
 	RZIL_OP_NEG,
-	RZIL_OP_NOT,
+	RZIL_OP_LOGNOT,
 	RZIL_OP_ADD,
 	RZIL_OP_SUB,
 	RZIL_OP_MUL,
@@ -353,7 +343,7 @@ typedef enum {
 
 	RZIL_OP_INVALID,
 	RZIL_OP_MAX,
-} RzILOPCode;
+} RzILOpCode;
 
 /// support core theory opcode
 /// define every CoreTheory opcode struct */
@@ -369,7 +359,7 @@ typedef struct rzil_op_msb_lsb_t RzILOpLsb;
 typedef struct rzil_op_sle_ule_t RzILOpSle;
 typedef struct rzil_op_sle_ule_t RzILOpUle;
 typedef struct rzil_op_cast_t RzILOpCast;
-typedef struct rzil_op_not_t RzILOpNot;
+typedef struct rzil_op_logical_not_t RzILOpLogNot;
 typedef struct rzil_op_neg_t RzILOpNeg;
 typedef struct rzil_op_alg_log_operations_t RzILOpAdd;
 typedef struct rzil_op_alg_log_operations_t RzILOpSub;
@@ -385,9 +375,10 @@ typedef struct rzil_op_shift_t RzILOpShiftl;
 typedef struct rzil_op_shift_t RzILOpShiftr;
 typedef struct rzil_op_bv_t RzILOpBv;
 
-typedef struct rzil_op_and__t RzILOpAnd_;
-typedef struct rzil_op_or__t RzILOpOr_;
-typedef struct rzil_op_inv_t RzILOpInv;
+typedef struct rzil_op_bool_operation_t RzILOpBoolAnd;
+typedef struct rzil_op_bool_operation_t RzILOpBoolOr;
+typedef struct rzil_op_bool_operation_t RzILOpBoolXor;
+typedef struct rzil_op_bool_not_t RzILOpBoolNot;
 
 typedef struct rzil_op_perform_t RzILOpPerform;
 typedef struct rzil_op_set_t RzILOpSet;
@@ -405,13 +396,11 @@ typedef struct rzil_op_store_t RzILOpStore;
 typedef union {
 	RzILOpIte *ite;
 	RzILOpVar *var;
-	void *unk;
 
-	void *b0;
-	void *b1;
-	RzILOpAnd_ *and_;
-	RzILOpOr_ *or_;
-	RzILOpInv *inv;
+	RzILOpBoolAnd *booland;
+	RzILOpBoolOr *boolor;
+	RzILOpBoolXor *boolxor;
+	RzILOpBoolNot *boolnot;
 
 	RzILOpBv *bitv;
 	RzILOpMsb *msb;
@@ -420,7 +409,7 @@ typedef union {
 	RzILOpSle *sle;
 	RzILOpCast *cast;
 	RzILOpNeg *neg;
-	RzILOpNot *not_;
+	RzILOpLogNot *lognot;
 	RzILOpAdd *add;
 	RzILOpSub *sub;
 	RzILOpMul *mul;
@@ -445,18 +434,15 @@ typedef union {
 
 	RzILOpLoad *load;
 	RzILOpStore *store;
+} RzILOpUnion;
 
-	void *nil;
-	// ... More
-} _RzILOp;
-
-struct RzILOp_t {
-	ut64 id;
-	RzILOPCode code;
-	_RzILOp op;
+struct rz_il_op_t {
+	RzILOpCode code;
+	RzILOpUnion op;
 };
+
 // Opcode
-RZ_API RzILOp *rz_il_new_op(RzILOPCode code);
+RZ_API RzILOp *rz_il_new_op(RzILOpCode code);
 RZ_API void rz_il_free_op(RzILOp *op);
 
 #ifdef __cplusplus

@@ -8,24 +8,20 @@ RzILOp *rz_il_new_empty_op(void) {
 	if (!ret) {
 		return NULL;
 	}
-	ret->id = 0;
 	ret->code = RZIL_OP_INVALID;
-	ret->op.nil = NULL;
-
 	return ret;
 }
 
 /**
  * Create an empty core theory op, argument of the op should be set in analysis_[arch]
- * \param code RzILOPCode, enum to specify the op type
+ * \param code RzILOpCode, enum to specify the op type
  * \return RzILOp, a pointer to an empty opcode instance
  */
-RZ_API RzILOp *rz_il_new_op(RzILOPCode code) {
+RZ_API RzILOp *rz_il_new_op(RzILOpCode code) {
 	RzILOp *ret = RZ_NEW0(RzILOp);
 	if (!ret) {
 		return NULL;
 	}
-	ret->id = 0;
 	ret->code = code;
 
 	switch (code) {
@@ -40,14 +36,14 @@ RZ_API RzILOp *rz_il_new_op(RzILOPCode code) {
 	case RZIL_OP_B1:
 		// do nothing
 		break;
-	case RZIL_OP_AND_:
-		ret->op.and_ = RZ_NEW0(RzILOpAnd_);
+	case RZIL_OP_BOOLAND:
+	case RZIL_OP_BOOLOR:
+	case RZIL_OP_BOOLXOR:
+		// BoolXor, BoolOr and BoolAnd shares the same struct
+		ret->op.boolxor = RZ_NEW0(RzILOpBoolXor);
 		break;
-	case RZIL_OP_OR_:
-		ret->op.or_ = RZ_NEW0(RzILOpOr_);
-		break;
-	case RZIL_OP_INV:
-		ret->op.inv = RZ_NEW0(RzILOpInv);
+	case RZIL_OP_BOOLNOT:
+		ret->op.boolnot = RZ_NEW0(RzILOpBoolNot);
 		break;
 	case RZIL_OP_BITV:
 		ret->op.bitv = RZ_NEW0(RzILOpBv);
@@ -59,8 +55,8 @@ RZ_API RzILOp *rz_il_new_op(RzILOPCode code) {
 	case RZIL_OP_NEG:
 		ret->op.neg = RZ_NEW0(RzILOpNeg);
 		break;
-	case RZIL_OP_NOT:
-		ret->op.not_ = RZ_NEW0(RzILOpNot);
+	case RZIL_OP_LOGNOT:
+		ret->op.lognot = RZ_NEW0(RzILOpLogNot);
 		break;
 	case RZIL_OP_ADD:
 	case RZIL_OP_SUB:
@@ -139,25 +135,26 @@ RZ_API void rz_il_free_op(RzILOp *op) {
 		rz_il_free_op_0(var);
 		break;
 	case RZIL_OP_UNK:
-		rz_il_free_op_0(unk);
+		// nothing to free
 		break;
 	case RZIL_OP_ITE:
 		rz_il_free_op_3(ite, condition, x, y);
 		break;
 	case RZIL_OP_B0:
-		rz_il_free_op_0(b0);
-		break;
 	case RZIL_OP_B1:
-		rz_il_free_op_0(b1);
+		// nothing to free
 		break;
-	case RZIL_OP_INV:
-		rz_il_free_op_2(inv, ret, x);
+	case RZIL_OP_BOOLNOT:
+		rz_il_free_op_2(boolnot, ret, x);
 		break;
-	case RZIL_OP_AND_:
-		rz_il_free_op_2(and_, x, y);
+	case RZIL_OP_BOOLAND:
+		rz_il_free_op_2(booland, x, y);
 		break;
-	case RZIL_OP_OR_:
-		rz_il_free_op_2(or_, x, y);
+	case RZIL_OP_BOOLOR:
+		rz_il_free_op_2(boolor, x, y);
+		break;
+	case RZIL_OP_BOOLXOR:
+		rz_il_free_op_2(boolxor, x, y);
 		break;
 	case RZIL_OP_BITV:
 		rz_il_bv_free(op->op.bitv->value);
@@ -172,8 +169,8 @@ RZ_API void rz_il_free_op(RzILOp *op) {
 	case RZIL_OP_NEG:
 		rz_il_free_op_1(neg, bv);
 		break;
-	case RZIL_OP_NOT:
-		rz_il_free_op_1(not_, bv);
+	case RZIL_OP_LOGNOT:
+		rz_il_free_op_1(lognot, bv);
 		break;
 	case RZIL_OP_ADD:
 		rz_il_free_op_2(add, x, y);

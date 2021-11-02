@@ -554,9 +554,10 @@ RZ_API RZ_OWN RzILBitVector *rz_il_bv_complement_2(RZ_NONNULL RzILBitVector *bv)
  * Result of (x + y) mod 2^length
  * \param x RzILBitVector, Operand
  * \param y RzILBitVector, Operand
+ * \param carry bool*, bool pointer to where to save the carry value.
  * \return ret RzILBitVector, point to the new bitvector
  */
-RZ_API RZ_OWN RzILBitVector *rz_il_bv_add(RZ_NONNULL RzILBitVector *x, RZ_NONNULL RzILBitVector *y) {
+RZ_API RZ_OWN RzILBitVector *rz_il_bv_add(RZ_NONNULL RzILBitVector *x, RZ_NONNULL RzILBitVector *y, RZ_NULLABLE bool *carry) {
 	rz_return_val_if_fail(x && y && x->bits && y->bits, NULL);
 
 	if (x->len != y->len) {
@@ -564,17 +565,17 @@ RZ_API RZ_OWN RzILBitVector *rz_il_bv_add(RZ_NONNULL RzILBitVector *x, RZ_NONNUL
 		return NULL;
 	}
 
-	bool a, b, carry;
-	ut32 len = x->len;
-	ut32 pos;
-	RzILBitVector *ret = rz_il_bv_new(len);
-	carry = false;
+	bool a = false, b = false, _carry = false;
+	RzILBitVector *ret = rz_il_bv_new(x->len);
 
-	for (pos = 0; pos < len; ++pos) {
+	for (ut32 pos = 0; pos < x->len; ++pos) {
 		a = rz_il_bv_get(x, pos);
 		b = rz_il_bv_get(y, pos);
-		rz_il_bv_set(ret, pos, a ^ b ^ carry);
-		carry = ((a & b) | (a & carry)) | (b & carry);
+		rz_il_bv_set(ret, pos, a ^ b ^ _carry);
+		_carry = ((a & b) | (a & _carry)) | (b & _carry);
+	}
+	if (carry) {
+		*carry = _carry;
 	}
 
 	return ret;
@@ -584,16 +585,17 @@ RZ_API RZ_OWN RzILBitVector *rz_il_bv_add(RZ_NONNULL RzILBitVector *x, RZ_NONNUL
  * Result of (x - y) mod 2^length
  * \param x RzILBitVector, Operand
  * \param y RzILBitVector, Operand
+ * \param borrow bool*, bool pointer to where to save the borrow value.
  * \return ret RzILBitVector, point to the new bitvector
  */
-RZ_API RZ_OWN RzILBitVector *rz_il_bv_sub(RZ_NONNULL RzILBitVector *x, RZ_NONNULL RzILBitVector *y) {
+RZ_API RZ_OWN RzILBitVector *rz_il_bv_sub(RZ_NONNULL RzILBitVector *x, RZ_NONNULL RzILBitVector *y, RZ_NULLABLE bool *borrow) {
 	rz_return_val_if_fail(x && y && x->bits && y->bits, NULL);
 
 	RzILBitVector *ret;
 	RzILBitVector *neg_y;
 
 	neg_y = rz_il_bv_neg(y);
-	ret = rz_il_bv_add(x, neg_y);
+	ret = rz_il_bv_add(x, neg_y, borrow);
 	rz_il_bv_free(neg_y);
 	return ret;
 }
@@ -621,7 +623,7 @@ RZ_API RZ_OWN RzILBitVector *rz_il_bv_mul(RZ_NONNULL RzILBitVector *x, RZ_NONNUL
 	for (int i = 0; i < y->len; ++i) {
 		cur_bit = rz_il_bv_get(y, i);
 		if (cur_bit) {
-			tmp = rz_il_bv_add(result, dump);
+			tmp = rz_il_bv_add(result, dump, NULL);
 			rz_il_bv_free(result);
 			result = tmp;
 		}
@@ -701,7 +703,7 @@ RZ_API RZ_OWN RzILBitVector *rz_il_bv_div(RZ_NONNULL RzILBitVector *x, RZ_NONNUL
 
 	while (bv_unsigned_cmp(dividend, y) >= 0) {
 		count += 1;
-		tmp = rz_il_bv_sub(dividend, y);
+		tmp = rz_il_bv_sub(dividend, y, NULL);
 		rz_il_bv_free(dividend);
 		dividend = tmp;
 	}
@@ -748,7 +750,7 @@ RZ_API RZ_OWN RzILBitVector *rz_il_bv_mod(RZ_NONNULL RzILBitVector *x, RZ_NONNUL
 	RzILBitVector *tmp;
 
 	while (bv_unsigned_cmp(dividend, y) >= 0) {
-		tmp = rz_il_bv_sub(dividend, y);
+		tmp = rz_il_bv_sub(dividend, y, NULL);
 		rz_il_bv_free(dividend);
 		dividend = tmp;
 	}
@@ -901,7 +903,7 @@ RZ_API bool rz_il_bv_lsb(RZ_NONNULL RzILBitVector *bv) {
  * \return ret bool, return true if bv is a zero bitvector, false if not
  */
 RZ_API bool rz_il_bv_is_zero_vector(RZ_NONNULL RzILBitVector *x) {
-	rz_return_val_if_fail(x, NULL);
+	rz_return_val_if_fail(x && x->bits, NULL);
 
 	for (int i = 0; i < x->_elem_len; ++i) {
 		if (x->bits[i] != 0) {
