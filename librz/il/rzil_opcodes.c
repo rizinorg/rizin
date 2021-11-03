@@ -93,6 +93,9 @@ RZ_API RzILOp *rz_il_new_op(RzILOPCode code) {
 	case RZIL_OP_BRANCH:
 		ret->op.branch = RZ_NEW0(RzILOpBranch);
 		break;
+	case RZIL_OP_CONCAT:
+		ret->op.concat = RZ_NEW0(RzILOpConcat);
+		break;
 	case RZIL_OP_JMP:
 		ret->op.jmp = RZ_NEW0(RzILOpJmp);
 		break;
@@ -221,7 +224,7 @@ RZ_API void rz_il_free_op(RzILOp *op) {
 		rz_il_free_op_1(cast, val);
 		break;
 	case RZIL_OP_CONCAT:
-		rz_warn_if_reached();
+		rz_il_free_op_2(concat, x, y);
 		break;
 	case RZIL_OP_APPEND:
 		rz_warn_if_reached();

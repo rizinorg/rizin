@@ -118,6 +118,16 @@ struct rzil_op_cast_t {
 	RzILOp *val; ///< value to cast
 };
 
+
+/**
+ *  \struct rzil_op_concat_t
+ *  \brief op structure for concating bitv
+ */
+struct rzil_op_concat_t {
+	RzILOp *x; ///< index of the bv 1
+	RzILOp *y; ///< index of the bv 2
+};
+
 /**
  *  \struct rzil_op_shift_t
  *  \brief op structure for lshift and rshift (bool -> 's bitv -> 'b bitv -> 's bitv)
@@ -384,6 +394,7 @@ typedef struct rzil_op_alg_log_operations_t RzILOpLogxor;
 typedef struct rzil_op_shift_t RzILOpShiftl;
 typedef struct rzil_op_shift_t RzILOpShiftr;
 typedef struct rzil_op_bv_t RzILOpBv;
+typedef struct rzil_op_concat_t RzILOpConcat;
 
 typedef struct rzil_op_and__t RzILOpAnd_;
 typedef struct rzil_op_or__t RzILOpOr_;
@@ -433,6 +444,7 @@ typedef union {
 	RzILOpLogxor *logxor;
 	RzILOpShiftl *shiftl;
 	RzILOpShiftr *shiftr;
+	RzILOpConcat *concat;
 
 	RzILOpPerform *perform;
 	RzILOpSet *set;
