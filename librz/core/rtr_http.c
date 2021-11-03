@@ -137,7 +137,6 @@ static int rz_core_rtr_http_handler_get_cmd(RzCore *core, RzSocketHTTPRequest *r
 					return -2;
 				} else if (!strcmp(cmd, "Rh--")) {
 					rz_socket_http_close(rs);
-					//free(dir);
 					free(refstr);
 					return 0;
 				}
@@ -311,7 +310,6 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 	char *dir;
 	int iport;
 	const char *host = rz_config_get(core->config, "http.bind");
-	//const char *index = rz_config_get(core->config, "http.index");
 	const char *root = rz_config_get(core->config, "http.root");
 	const char *homeroot = rz_config_get(core->config, "http.homeroot");
 	const char *port = rz_config_get(core->config, "http.port");
