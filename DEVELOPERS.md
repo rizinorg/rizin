@@ -36,6 +36,9 @@ You should add or update the documentation of:
 - code written by you.
 - existing Rizin code you changed.
 
+Exceptions:
+- Trivial changes.
+
 If you have not updated the documentation, explain why.
 E.g.: `Bug fix did not change the general behavior of the function. No documentation update needed.`
 
