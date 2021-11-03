@@ -4154,11 +4154,22 @@ RZ_API int rz_core_analysis_search(RzCore *core, ut64 from, ut64 to, ut64 ref, i
 	return count;
 }
 
+/**
+ * \brief Validate the reference. If virtual addressing is enabled, we allow only references to virtual addresses in order to reduce
+ * the number of false positives. In debugger mode (\p cfg_debug = true), the reference must point to a mapped memory region.
+ *
+ * \param core The Rizin core.
+ * \param at Address of the reference.
+ * \param xref_to Address at which the reference points to.
+ * \param type The suspected reference type.
+ * \param pj The print json struct which stores the reference if \p rad = 'j'.
+ * \param rad Usually the last character in a command. Set to 'j' if \p pj should be filled with the reference (if valid). 
+ * \param cfg_debug True if debugger mode is enabled. False otherwise.
+ * \param cfg_analysis_strings True if a string search should be started at \p xref_to. False otherwise.
+ * \return true If the reference, as given to the function, is valid.
+ * \return false If the reference, as given to the function, is not valid.
+ */
 static bool found_xref(RzCore *core, ut64 at, ut64 xref_to, RzAnalysisXRefType type, PJ *pj, int rad, int cfg_debug, bool cfg_analysis_strings) {
-	// Validate the reference. If virtual addressing is enabled, we
-	// allow only references to virtual addresses in order to reduce
-	// the number of false positives. In debugger mode, the reference
-	// must point to a mapped memory region.
 	if (type == RZ_ANALYSIS_REF_TYPE_NULL) {
 		return false;
 	}
