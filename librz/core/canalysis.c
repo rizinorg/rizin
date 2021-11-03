@@ -4294,7 +4294,7 @@ RZ_API int rz_core_analysis_search_xrefs(RzCore *core, ut64 from, ut64 to, PJ *p
 			if (ret <= 0 || i > bsz) {
 				break;
 			}
-			if (op.type == RZ_ANALYSIS_OP_TYPE_CJMP && rz_config_get_b(core->config, "analysis.jmp.cref")) {
+			if (op.type == RZ_ANALYSIS_OP_TYPE_CJMP && !rz_config_get_b(core->config, "analysis.jmp.cref")) {
 				break;
 			}
 			// find references
