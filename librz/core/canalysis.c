@@ -4283,6 +4283,9 @@ RZ_API int rz_core_analysis_search_xrefs(RzCore *core, ut64 from, ut64 to, PJ *p
 			if (ret <= 0 || i > bsz) {
 				break;
 			}
+			if (op.type == RZ_ANALYSIS_OP_TYPE_CJMP && rz_config_get_b(core->config, "analysis.jmp.cref")) {
+				break;
+			}
 			// find references
 			if ((st64)op.val > asm_sub_varmin && op.val != UT64_MAX && op.val != UT32_MAX) {
 				if (found_xref(core, op.addr, op.val, RZ_ANALYSIS_REF_TYPE_DATA, pj, rad, cfg_debug, cfg_analysis_strings)) {
@@ -4308,8 +4311,7 @@ RZ_API int rz_core_analysis_search_xrefs(RzCore *core, ut64 from, ut64 to, PJ *p
 				}
 				break;
 			case RZ_ANALYSIS_OP_TYPE_CJMP:
-				if (rz_config_get_b(core->config, "analysis.jmp.cref") &&
-					found_xref(core, op.addr, op.jump, RZ_ANALYSIS_REF_TYPE_CODE, pj, rad, cfg_debug, cfg_analysis_strings)) {
+				if (found_xref(core, op.addr, op.jump, RZ_ANALYSIS_REF_TYPE_CODE, pj, rad, cfg_debug, cfg_analysis_strings)) {
 					count++;
 				}
 				break;
