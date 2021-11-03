@@ -263,8 +263,8 @@ RZ_API RZ_OWN RzILBitVector *rz_il_bv_concat(RZ_NONNULL RzILBitVector *bv1, RZ_N
 	RzILBitVector *ret = rz_il_bv_new(new_len);
 
 	// copy n bits from bv1
-	rz_il_bv_copy_nbits(bv2, 0, ret, 0, bv2->len);
-	rz_il_bv_copy_nbits(bv1, 0, ret, bv2->len, bv1->len);
+	rz_il_bv_copy_nbits(bv1, 0, ret, 0, bv1->len);
+	rz_il_bv_copy_nbits(bv2, 0, ret, bv1->len, bv2->len);
 
 	return ret;
 }
