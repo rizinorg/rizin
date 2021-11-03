@@ -560,6 +560,7 @@ RZ_API RZ_OWN RzILBitVector *rz_il_bv_add(RZ_NONNULL RzILBitVector *x, RZ_NONNUL
 	rz_return_val_if_fail(x && y && x->bits && y->bits, NULL);
 
 	if (x->len != y->len) {
+		rz_warn_if_reached();
 		return NULL;
 	}
 
@@ -610,6 +611,7 @@ RZ_API RZ_OWN RzILBitVector *rz_il_bv_mul(RZ_NONNULL RzILBitVector *x, RZ_NONNUL
 	bool cur_bit = false;
 
 	if (x->len != y->len) {
+		rz_warn_if_reached();
 		return NULL;
 	}
 
@@ -638,7 +640,7 @@ int bv_unsigned_cmp(RZ_NONNULL RzILBitVector *x, RZ_NONNULL RzILBitVector *y) {
 	rz_return_val_if_fail(x && y && x->bits && y->bits, 0);
 
 	if (x->len != y->len) {
-		RZ_LOG_ERROR("RzIL: can't compare bitvectors with different length\n");
+		rz_warn_if_reached();
 		return 0;
 	}
 
@@ -667,6 +669,7 @@ int bv_unsigned_cmp(RZ_NONNULL RzILBitVector *x, RZ_NONNULL RzILBitVector *y) {
 RZ_API RZ_OWN RzILBitVector *rz_il_bv_div(RZ_NONNULL RzILBitVector *x, RZ_NONNULL RzILBitVector *y) {
 	rz_return_val_if_fail(x && y && x->bits && y->bits, NULL);
 	if (x->len != y->len) {
+		rz_warn_if_reached();
 		return NULL;
 	}
 
@@ -718,6 +721,7 @@ RZ_API RZ_OWN RzILBitVector *rz_il_bv_div(RZ_NONNULL RzILBitVector *x, RZ_NONNUL
 RZ_API RZ_OWN RzILBitVector *rz_il_bv_mod(RZ_NONNULL RzILBitVector *x, RZ_NONNULL RzILBitVector *y) {
 	rz_return_val_if_fail(x && y && x->bits && y->bits, NULL);
 	if (x->len != y->len) {
+		rz_warn_if_reached();
 		return NULL;
 	}
 
@@ -954,6 +958,7 @@ RZ_API int rz_il_bv_cmp(RZ_NONNULL RzILBitVector *x, RZ_NONNULL RzILBitVector *y
 	rz_return_val_if_fail(x && y && x->bits && y->bits, 0);
 
 	if (x->len != y->len) {
+		rz_warn_if_reached();
 		return 1;
 	}
 
@@ -983,6 +988,8 @@ RZ_API ut32 rz_il_bv_len(RZ_NONNULL RzILBitVector *bv) {
  * \return bv RzILBitVector, pointer to new bitvector
  */
 RZ_API RZ_OWN RzILBitVector *rz_il_bv_new_from_ut32(ut32 length, ut32 value) {
+	rz_return_val_if_fail(length > 0 && length <= 32, NULL);
+
 	RzILBitVector *bv = rz_il_bv_new(length);
 	if (!bv) {
 		RZ_LOG_ERROR("RzIL: failed to allocate RzILBitVector\n");
@@ -999,12 +1006,50 @@ RZ_API RZ_OWN RzILBitVector *rz_il_bv_new_from_ut32(ut32 length, ut32 value) {
  * \return bv RzILBitVector, pointer to new bitvector
  */
 RZ_API RZ_OWN RzILBitVector *rz_il_bv_new_from_ut64(ut32 length, ut64 value) {
+	rz_return_val_if_fail(length > 0 && length <= 64, NULL);
+
 	RzILBitVector *bv = rz_il_bv_new(length);
 	if (!bv) {
 		RZ_LOG_ERROR("RzIL: failed to allocate RzILBitVector\n");
 		return NULL;
 	}
 	rz_il_bv_set_from_ut64(bv, value);
+	return bv;
+}
+
+/**
+ * Convert ut32 to `length`-bits bitvector
+ * \param length int, length of bitvector
+ * \param value ut32, the value to convert
+ * \return bv RzILBitVector, pointer to new bitvector
+ */
+RZ_API RZ_OWN RzILBitVector *rz_il_bv_new_from_st32(ut32 length, st32 value) {
+	rz_return_val_if_fail(length > 0 && length <= 32, NULL);
+
+	RzILBitVector *bv = rz_il_bv_new(length);
+	if (!bv) {
+		RZ_LOG_ERROR("RzIL: failed to allocate RzILBitVector\n");
+		return NULL;
+	}
+	rz_il_bv_set_from_st32(bv, value);
+	return bv;
+}
+
+/**
+ * Convert ut64 to `length`-bits bitvector
+ * \param length int, length of bitvector
+ * \param value ut64, the value to convert
+ * \return bv RzILBitVector, pointer to new bitvector
+ */
+RZ_API RZ_OWN RzILBitVector *rz_il_bv_new_from_st64(ut32 length, st64 value) {
+	rz_return_val_if_fail(length > 0 && length <= 64, NULL);
+
+	RzILBitVector *bv = rz_il_bv_new(length);
+	if (!bv) {
+		RZ_LOG_ERROR("RzIL: failed to allocate RzILBitVector\n");
+		return NULL;
+	}
+	rz_il_bv_set_from_st64(bv, value);
 	return bv;
 }
 
@@ -1028,6 +1073,34 @@ RZ_API bool rz_il_bv_set_from_ut32(RZ_NONNULL RzILBitVector *bv, ut32 value) {
  * \param value ut64, the value to convert
  */
 RZ_API bool rz_il_bv_set_from_ut64(RZ_NONNULL RzILBitVector *bv, ut64 value) {
+	rz_return_val_if_fail(bv && bv->bits, false);
+	for (ut32 i = 0; i < bv->len; ++i) {
+		rz_il_bv_set(bv, i, value & 1);
+		value >>= 1;
+	}
+	return true;
+}
+
+/**
+ * Convert st32 to N-bits bitvector
+ * \param bv RzILBitVector, pointer to bitvector
+ * \param value st32, the value to convert
+ */
+RZ_API bool rz_il_bv_set_from_st32(RZ_NONNULL RzILBitVector *bv, st32 value) {
+	rz_return_val_if_fail(bv && bv->bits, false);
+	for (ut32 i = 0; i < bv->len; ++i) {
+		rz_il_bv_set(bv, i, value & 1);
+		value >>= 1;
+	}
+	return true;
+}
+
+/**
+ * Convert st64 to N-bits bitvector
+ * \param bv RzILBitVector, pointer to bitvector
+ * \param value st64, the value to convert
+ */
+RZ_API bool rz_il_bv_set_from_st64(RZ_NONNULL RzILBitVector *bv, st64 value) {
 	rz_return_val_if_fail(bv && bv->bits, false);
 	for (ut32 i = 0; i < bv->len; ++i) {
 		rz_il_bv_set(bv, i, value & 1);

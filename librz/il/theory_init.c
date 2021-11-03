@@ -64,7 +64,7 @@ void *rz_il_handler_unimplemented(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 	const char *ops[] = {
 		"VAR", "UNK", "ITE", "B0", "B1", "INV", "AND_", "OR_",
-		"INT", "MSB", "LSB", "NEG", "NOT", "ADD", "SUB", "MUL",
+		"BITV", "MSB", "LSB", "NEG", "NOT", "ADD", "SUB", "MUL",
 		"DIV", "SDIV", "MOD", "SMOD", "LOGAND", "LOGOR", "LOGXOR",
 		"SHIFTR", "SHIFTL", "SLE", "ULE", "CAST", "CONCAT",
 		"APPEND", "LOAD", "STORE", "PERFORM", "SET", "JMP", "GOTO",
