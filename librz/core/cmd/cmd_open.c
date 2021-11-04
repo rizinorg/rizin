@@ -6,6 +6,11 @@
 #include <rz_core.h>
 #include <rz_io.h>
 
+struct open_list_ascii_data_t {
+	RzPrint *p;
+	int fdsz;
+};
+
 static const char *help_msg_o[] = {
 	"Usage: o", "[com- ] [file] ([offset])", "",
 	"o", " [file] 0x4000 rwx", "map file at 0x4000",
@@ -952,42 +957,28 @@ RZ_API void rz_core_file_reopen_in_malloc(RzCore *core) {
 	}
 }
 
-static int fdsz = 0;
-
 static bool init_desc_list_visual_cb(void *user, void *data, ut32 id) {
+	struct open_list_ascii_data_t *u = (struct open_list_ascii_data_t *)user;
 	RzIODesc *desc = (RzIODesc *)data;
 	ut64 sz = rz_io_desc_size(desc);
-	if (sz > fdsz) {
-		fdsz = sz;
+	if (sz > u->fdsz) {
+		u->fdsz = sz;
 	}
 	return true;
 }
 
 static bool desc_list_visual_cb(void *user, void *data, ut32 id) {
-	RzPrint *p = (RzPrint *)user;
+	struct open_list_ascii_data_t *u = (struct open_list_ascii_data_t *)user;
+	RzPrint *p = u->p;
 	RzIODesc *desc = (RzIODesc *)data;
 	ut64 sz = rz_io_desc_size(desc);
 	rz_cons_printf("%2d %c %s 0x%08" PFMT64x " ", desc->fd,
 		(desc->io && (desc->io->desc == desc)) ? '*' : '-', rz_str_rwx_i(desc->perm), sz);
 	int flags = p->flags;
 	p->flags &= ~RZ_PRINT_FLAGS_HEADER;
-	rz_print_progressbar(p, sz * 100 / fdsz, rz_cons_get_size(NULL) - 40);
+	rz_print_progressbar(p, sz * 100 / u->fdsz, rz_cons_get_size(NULL) - 40);
 	p->flags = flags;
 	rz_cons_printf(" %s\n", desc->uri);
-#if 0
-	RzIOMap *map;
-	SdbListIter *iter;
-	if (desc->io && desc->io->va && desc->io->maps) {
-		ls_foreach_prev (desc->io->maps, iter, map) {
-			if (map->fd == desc->fd) {
-				p->cb_printf("  +0x%"PFMT64x" 0x%"PFMT64x
-					" - 0x%"PFMT64x" : %s : %s : %s\n", map->delta,
-					map->from, map->to, rz_str_rwx_i(map->flags), "",
-					rz_str_get(map));
-			}
-		}
-	}
-#endif
 	return true;
 }
 
@@ -1262,11 +1253,6 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 	}
 
 	switch (*input) {
-	case '=': // "o="
-		fdsz = 0;
-		rz_id_storage_foreach(core->io->files, init_desc_list_visual_cb, core->print);
-		rz_id_storage_foreach(core->io->files, desc_list_visual_cb, core->print);
-		break;
 	case 'q': // "oq"
 		if (input[1] == '.') {
 			rz_id_storage_foreach(core->io->files, desc_list_quiet2_cb, core->print);
@@ -1586,5 +1572,13 @@ RZ_IPI RzCmdStatus rz_open_close_all_handler(RzCore *core, int argc, const char 
 	// TODO: Move to f-- ?
 	rz_flag_unset_all(core->flags);
 	RZ_LOG_INFO("Close all files\n");
+	return RZ_CMD_STATUS_OK;
+}
+RZ_IPI RzCmdStatus rz_open_list_ascii_handler(RzCore *core, int argc, const char **argv) {
+	struct open_list_ascii_data_t data = { 0 };
+	data.p = core->print;
+	data.fdsz = 0;
+	rz_id_storage_foreach(core->io->files, init_desc_list_visual_cb, &data);
+	rz_id_storage_foreach(core->io->files, desc_list_visual_cb, &data);
 	return RZ_CMD_STATUS_OK;
 }
