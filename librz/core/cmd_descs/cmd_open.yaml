@@ -13,3 +13,17 @@ commands:
     cname: open_close_all
     summary: Close all files
     args: []
+  - name: oL
+    cname: open_plugins
+    handler: plugins_io_print
+    summary: List all IO plugins / Register IO plugin from <path>
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    args:
+      - name: path
+        type: RZ_CMD_ARG_TYPE_FILE
+        optional: true
+    default_mode: RZ_OUTPUT_MODE_TABLE
+    modes:
+      - RZ_OUTPUT_MODE_TABLE
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_QUIET
