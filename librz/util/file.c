@@ -118,7 +118,9 @@ RZ_API char *rz_file_dirname(const char *path) {
 				ptr++;
 			}
 		}
-		*ptr = 0;
+		if (ptr) {
+			*ptr = 0;
+		}
 	}
 	return newpath;
 }
