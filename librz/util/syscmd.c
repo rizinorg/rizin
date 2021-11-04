@@ -425,10 +425,10 @@ RZ_API RZ_OWN char *rz_syscmd_join(RZ_NONNULL const char *file1, RZ_NONNULL cons
 				free(field);
 			}
 			data = rz_list_to_str(list, '\n');
-			rz_list_free(list);
 			rz_list_free(list1);
 			rz_list_free(list2);
 		}
+		rz_list_free(list);
 		free(filename1);
 		free(filename2);
 		return data;
