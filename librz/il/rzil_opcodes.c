@@ -36,14 +36,14 @@ RZ_API RzILOp *rz_il_new_op(RzILOpCode code) {
 	case RZIL_OP_B1:
 		// do nothing
 		break;
-	case RZIL_OP_BOOLAND:
-	case RZIL_OP_BOOLOR:
-	case RZIL_OP_BOOLXOR:
+	case RZIL_OP_AND:
+	case RZIL_OP_OR:
+	case RZIL_OP_XOR:
 		// BoolXor, BoolOr and BoolAnd shares the same struct
 		ret->op.boolxor = RZ_NEW0(RzILOpBoolXor);
 		break;
-	case RZIL_OP_BOOLNOT:
-		ret->op.boolnot = RZ_NEW0(RzILOpBoolNot);
+	case RZIL_OP_INV:
+		ret->op.boolinv = RZ_NEW0(RzILOpBoolInv);
 		break;
 	case RZIL_OP_BITV:
 		ret->op.bitv = RZ_NEW0(RzILOpBv);
@@ -144,16 +144,13 @@ RZ_API void rz_il_free_op(RzILOp *op) {
 	case RZIL_OP_B1:
 		// nothing to free
 		break;
-	case RZIL_OP_BOOLNOT:
-		rz_il_free_op_2(boolnot, ret, x);
+	case RZIL_OP_INV:
+		rz_il_free_op_2(boolinv, ret, x);
 		break;
-	case RZIL_OP_BOOLAND:
-		rz_il_free_op_2(booland, x, y);
-		break;
-	case RZIL_OP_BOOLOR:
-		rz_il_free_op_2(boolor, x, y);
-		break;
-	case RZIL_OP_BOOLXOR:
+	case RZIL_OP_AND:
+	case RZIL_OP_OR:
+	case RZIL_OP_XOR:
+		// BoolXor, BoolOr and BoolAnd shares the same struct
 		rz_il_free_op_2(boolxor, x, y);
 		break;
 	case RZIL_OP_BITV:

@@ -4,6 +4,9 @@
 #include <rz_il/rzil_opcodes.h>
 #include <rz_il/rzil_vm.h>
 
+/**
+ * \brief also known as b0
+ */
 void *rz_il_handler_bool_false(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 
@@ -12,6 +15,9 @@ void *rz_il_handler_bool_false(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	return ret;
 }
 
+/**
+ * \brief also known as b1
+ */
 void *rz_il_handler_bool_true(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 
@@ -65,11 +71,14 @@ void *rz_il_handler_bool_xor(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	return result;
 }
 
-void *rz_il_handler_bool_not(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
+/**
+ * \brief also known as boolean not
+ */
+void *rz_il_handler_bool_inv(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 
-	RzILOpBoolNot *op_not = op->op.boolnot;
-	RzILBool *x = rz_il_evaluate_bool(vm, op_not->x, type);
+	RzILOpBoolInv *op_inv = op->op.boolinv;
+	RzILBool *x = rz_il_evaluate_bool(vm, op_inv->x, type);
 	RzILBool *result = rz_il_bool_not(x);
 	rz_il_bool_free(x);
 

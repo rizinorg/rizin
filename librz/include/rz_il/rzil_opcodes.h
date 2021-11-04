@@ -242,9 +242,14 @@ struct rzil_op_var_t {
 
 /**
  *  \struct rzil_op_bool_operation_t
- *  \brief op structure for `and` (bool (op) bool -> bool)
+ *  \brief op structure for `and`, `or` and `xor` (bool -> bool -> bool)
  *
- *  and x y is a conjunction of x and y.
+ *  BAP equivalent:
+ *    val and_ : bool -> bool -> bool
+ *    val or_ : bool -> bool -> bool
+ *  and(x, y) is a conjunction of x and y.
+ *  or(x, y)  is a conjunction of x or y.
+ *  xor(x, y) is a conjunction of x xor y.
  */
 struct rzil_op_bool_operation_t {
 	RzILOp *x; ///< index of the BOOL operand
@@ -252,12 +257,14 @@ struct rzil_op_bool_operation_t {
 };
 
 /**
- *  \struct rzil_op_bool_not_t
+ *  \struct rzil_op_bool_inv_t
  *  \brief op structure for `inv` (!bool -> bool)
  *
- *  inv x inverts x.
+ *	BAP equivalent:
+ *	  val inv : bool -> bool
+ *  inv(x) inverts x (also known as not operation).
  */
-struct rzil_op_bool_not_t {
+struct rzil_op_bool_inv_t {
 	RzILOp *x; ///< index of the BOOL operand
 	RzILOp *ret; ///< index of store the BOOL result
 };
@@ -285,9 +292,6 @@ struct rzil_op_store_t {
 	RzILOp *value; ///< index of the RzILVal value (data) to store
 };
 
-// TODO : a better way to map enum to string
-// Remember to add new opcode in rz_il_op2str
-// if you add a new one.
 typedef enum {
 	// Init
 	RZIL_OP_VAR,
@@ -297,10 +301,10 @@ typedef enum {
 	// RzILBool
 	RZIL_OP_B0,
 	RZIL_OP_B1,
-	RZIL_OP_BOOLNOT,
-	RZIL_OP_BOOLAND,
-	RZIL_OP_BOOLOR,
-	RZIL_OP_BOOLXOR,
+	RZIL_OP_INV,
+	RZIL_OP_AND,
+	RZIL_OP_OR,
+	RZIL_OP_XOR,
 
 	// RzILBitVector
 	RZIL_OP_BITV,
@@ -378,7 +382,7 @@ typedef struct rzil_op_bv_t RzILOpBv;
 typedef struct rzil_op_bool_operation_t RzILOpBoolAnd;
 typedef struct rzil_op_bool_operation_t RzILOpBoolOr;
 typedef struct rzil_op_bool_operation_t RzILOpBoolXor;
-typedef struct rzil_op_bool_not_t RzILOpBoolNot;
+typedef struct rzil_op_bool_inv_t RzILOpBoolInv;
 
 typedef struct rzil_op_perform_t RzILOpPerform;
 typedef struct rzil_op_set_t RzILOpSet;
@@ -400,7 +404,7 @@ typedef union {
 	RzILOpBoolAnd *booland;
 	RzILOpBoolOr *boolor;
 	RzILOpBoolXor *boolxor;
-	RzILOpBoolNot *boolnot;
+	RzILOpBoolInv *boolinv;
 
 	RzILOpBv *bitv;
 	RzILOpMsb *msb;

@@ -188,7 +188,7 @@ static void il_opdmp_bool_true(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 }
 
 static void il_opdmp_bool_not(RzILOp *op, RzStrBuf *sb, PJ *pj) {
-	il_op_param_2("boolnot", op->op.boolnot, x, ret);
+	il_op_param_2("inv", op->op.boolinv, x, ret);
 }
 
 static void il_opdmp_bool_and(RzILOp *op, RzStrBuf *sb, PJ *pj) {
@@ -435,13 +435,13 @@ static void il_op_resolve(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 		return il_opdmp_bool_false(op, sb, pj);
 	case RZIL_OP_B1:
 		return il_opdmp_bool_true(op, sb, pj);
-	case RZIL_OP_BOOLNOT:
+	case RZIL_OP_INV:
 		return il_opdmp_bool_not(op, sb, pj);
-	case RZIL_OP_BOOLAND:
+	case RZIL_OP_AND:
 		return il_opdmp_bool_and(op, sb, pj);
-	case RZIL_OP_BOOLOR:
+	case RZIL_OP_OR:
 		return il_opdmp_bool_or(op, sb, pj);
-	case RZIL_OP_BOOLXOR:
+	case RZIL_OP_XOR:
 		return il_opdmp_bool_xor(op, sb, pj);
 	case RZIL_OP_BITV:
 		return il_opdmp_bitv(op, sb, pj);

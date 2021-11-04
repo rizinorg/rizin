@@ -274,14 +274,14 @@ RzPVector *bf_rlimit(RzILVM *vm, BfContext *ctx, ut64 id, ut64 addr) {
 	RzILOp *branch = rz_il_new_op(RZIL_OP_BRANCH);
 	RzILOp *goto_ = rz_il_new_op(RZIL_OP_GOTO);
 	RzILOp *perform = rz_il_new_op(RZIL_OP_PERFORM);
-	RzILOp *boolnot = rz_il_new_op(RZIL_OP_BOOLNOT);
+	RzILOp *inv = rz_il_new_op(RZIL_OP_INV);
 
 	var->op.var->v = "ptr";
 
 	load->op.load->mem = 0;
 	load->op.load->key = var;
 
-	boolnot->op.boolnot->x = load;
+	inv->op.boolinv->x = load;
 
 	// goto [
 	goto_->op.goto_->lbl = dst_label->label_id;
@@ -289,7 +289,7 @@ RzPVector *bf_rlimit(RzILVM *vm, BfContext *ctx, ut64 id, ut64 addr) {
 	// branch
 	branch->op.branch->true_eff = NULL; // do nothing
 	branch->op.branch->false_eff = goto_; // goto [
-	branch->op.branch->condition = boolnot; // (not (load mem (var ptr)))
+	branch->op.branch->condition = inv; // (not (load mem (var ptr)))
 
 	// perform
 	perform->op.perform->eff = branch;

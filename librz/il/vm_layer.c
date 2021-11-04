@@ -33,7 +33,7 @@ void *rz_il_handler_bool_true(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_bool_and(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_bool_or(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_bool_xor(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
-void *rz_il_handler_bool_not(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_bool_inv(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 
 void *rz_il_handler_cast(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 
@@ -150,10 +150,10 @@ RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, ut32 data
 
 	vm->op_handler_table[RZIL_OP_B0] = &rz_il_handler_bool_false;
 	vm->op_handler_table[RZIL_OP_B1] = &rz_il_handler_bool_true;
-	vm->op_handler_table[RZIL_OP_BOOLNOT] = &rz_il_handler_bool_not;
-	vm->op_handler_table[RZIL_OP_BOOLAND] = &rz_il_handler_bool_and;
-	vm->op_handler_table[RZIL_OP_BOOLOR] = &rz_il_handler_bool_or;
-	vm->op_handler_table[RZIL_OP_BOOLXOR] = &rz_il_handler_bool_xor;
+	vm->op_handler_table[RZIL_OP_INV] = &rz_il_handler_bool_inv;
+	vm->op_handler_table[RZIL_OP_AND] = &rz_il_handler_bool_and;
+	vm->op_handler_table[RZIL_OP_OR] = &rz_il_handler_bool_or;
+	vm->op_handler_table[RZIL_OP_XOR] = &rz_il_handler_bool_xor;
 
 	vm->op_handler_table[RZIL_OP_BITV] = &rz_il_handler_bitv;
 	vm->op_handler_table[RZIL_OP_MSB] = &rz_il_handler_msb;

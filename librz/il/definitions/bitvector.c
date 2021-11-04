@@ -448,7 +448,7 @@ RZ_API bool rz_il_bv_rshift_fill(RZ_NONNULL RzILBitVector *bv, ut32 size, bool f
 
 /**
  * Result of x AND y (`and` operation to every bits)
- * x and y should have the same length
+ * Both operands must have the same length.
  * \param x RzILBitVector, operand
  * \param y RzILBitVector, operand
  * \return ret RzILBitVector, a new bitvector, which is the result of AND
@@ -468,7 +468,7 @@ RZ_API RZ_OWN RzILBitVector *rz_il_bv_and(RZ_NONNULL RzILBitVector *x, RZ_NONNUL
 
 /**
  * Result of x OR y (`or` operation to every bits)
- * x and y should have the same length
+ * Both operands must have the same length.
  * \param x RzILBitVector, operand
  * \param y RzILBitVector, operand
  * \return ret RzILBitVector, a new bitvector, which is the result of OR
@@ -488,7 +488,7 @@ RZ_API RZ_OWN RzILBitVector *rz_il_bv_or(RZ_NONNULL RzILBitVector *x, RZ_NONNULL
 
 /**
  * Result of x XOR y (`xor` operation to every bits)
- * x and y should have the same length
+ * Both operands must have the same length.
  * \param x RzILBitVector, operand
  * \param y RzILBitVector, operand
  * \return ret RzILBitVector, a new bitvector, which is the result of XOR
@@ -552,6 +552,7 @@ RZ_API RZ_OWN RzILBitVector *rz_il_bv_complement_2(RZ_NONNULL RzILBitVector *bv)
 
 /**
  * Result of (x + y) mod 2^length
+ * Both operands must have the same length.
  * \param x RzILBitVector, Operand
  * \param y RzILBitVector, Operand
  * \param carry bool*, bool pointer to where to save the carry value.
@@ -583,6 +584,7 @@ RZ_API RZ_OWN RzILBitVector *rz_il_bv_add(RZ_NONNULL RzILBitVector *x, RZ_NONNUL
 
 /**
  * Result of (x - y) mod 2^length
+ * Both operands must have the same length.
  * \param x RzILBitVector, Operand
  * \param y RzILBitVector, Operand
  * \param borrow bool*, bool pointer to where to save the borrow value.
@@ -602,6 +604,7 @@ RZ_API RZ_OWN RzILBitVector *rz_il_bv_sub(RZ_NONNULL RzILBitVector *x, RZ_NONNUL
 
 /**
  * Result of (x * y) mod 2^length
+ * Both operands must have the same length.
  * \param x RzILBitVector, Operand
  * \param y RzILBitVector, Operand
  * \return ret RzILBitVector, point to the new bitvector
@@ -634,10 +637,12 @@ RZ_API RZ_OWN RzILBitVector *rz_il_bv_mul(RZ_NONNULL RzILBitVector *x, RZ_NONNUL
 	return result;
 }
 
-// Treat x, y as unsigned
-// if x < y return negtive (-1)
-// if x == y return 0
-// if x > y return positive (+1)
+/* Treat x, y as unsigned
+ * Both operands must have the same length.
+ * if x < y return negtive (-1)
+ * if x == y return 0
+ * if x > y return positive (+1)
+ */
 int bv_unsigned_cmp(RZ_NONNULL RzILBitVector *x, RZ_NONNULL RzILBitVector *y) {
 	rz_return_val_if_fail(x && y && x->bits && y->bits, 0);
 
@@ -664,6 +669,7 @@ int bv_unsigned_cmp(RZ_NONNULL RzILBitVector *x, RZ_NONNULL RzILBitVector *y) {
 
 /**
  * Result of (x / y) mod 2^length
+ * Both operands must have the same length.
  * \param x RzILBitVector, Operand
  * \param y RzILBitVector, Operand
  * \return ret RzILBitVector, point to the new bitvector
@@ -716,6 +722,7 @@ RZ_API RZ_OWN RzILBitVector *rz_il_bv_div(RZ_NONNULL RzILBitVector *x, RZ_NONNUL
 
 /**
  * Result of (x mod y) mod 2^length
+ * Both operands must have the same length.
  * \param x RzILBitVector, Operand
  * \param y RzILBitVector, Operand
  * \return ret RzILBitVector, point to the new bitvector
@@ -952,6 +959,7 @@ RZ_API bool rz_il_bv_sle(RZ_NONNULL RzILBitVector *x, RZ_NONNULL RzILBitVector *
 
 /**
  * Check if x equals to y
+ * Both operands must have the same length.
  * \param x RzILBitVector, operand
  * \param y RzILBitVector, operand
  * \return ret int, return 1 if x != y, return 0 if x == y
@@ -1020,9 +1028,9 @@ RZ_API RZ_OWN RzILBitVector *rz_il_bv_new_from_ut64(ut32 length, ut64 value) {
 }
 
 /**
- * Convert ut32 to `length`-bits bitvector
+ * Convert st32 to `length`-bits bitvector
  * \param length int, length of bitvector
- * \param value ut32, the value to convert
+ * \param value st32, the value to convert
  * \return bv RzILBitVector, pointer to new bitvector
  */
 RZ_API RZ_OWN RzILBitVector *rz_il_bv_new_from_st32(ut32 length, st32 value) {
@@ -1038,9 +1046,9 @@ RZ_API RZ_OWN RzILBitVector *rz_il_bv_new_from_st32(ut32 length, st32 value) {
 }
 
 /**
- * Convert ut64 to `length`-bits bitvector
+ * Convert st64 to `length`-bits bitvector
  * \param length int, length of bitvector
- * \param value ut64, the value to convert
+ * \param value st64, the value to convert
  * \return bv RzILBitVector, pointer to new bitvector
  */
 RZ_API RZ_OWN RzILBitVector *rz_il_bv_new_from_st64(ut32 length, st64 value) {
@@ -1111,6 +1119,11 @@ RZ_API bool rz_il_bv_set_from_st64(RZ_NONNULL RzILBitVector *bv, st64 value) {
 	return true;
 }
 
+/**
+ * Calculates the hash from the bitvector data
+ * \param x BitVector
+ * \return ut32 bitvector hash
+ */
 ut32 rz_il_bv_hash(RZ_NULLABLE RzILBitVector *x) {
 	ut32 h = 5381;
 	ut32 len = x->_elem_len;
