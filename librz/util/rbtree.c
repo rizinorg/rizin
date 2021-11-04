@@ -38,8 +38,7 @@ static inline RBNode *zig_zag(RBNode *x, int dir, RBNodeSum sum) {
 }
 
 static inline RBIter bound_iter(RBNode *x, void *data, RBComparator cmp, bool upper, void *user) {
-	RBIter it;
-	it.len = 0;
+	RBIter it = { 0 };
 	while (x) {
 		int d = cmp(data, x, user);
 
