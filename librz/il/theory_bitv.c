@@ -42,10 +42,10 @@ void *rz_il_handler_neg(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	return bv_result;
 }
 
-void *rz_il_handler_not(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
+void *rz_il_handler_logical_not(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 
-	RzILOpNot *op_not = op->op.not_;
+	RzILOpLogNot *op_not = op->op.lognot;
 
 	RzILBitVector *bv = rz_il_evaluate_bitv(vm, op_not->bv, type);
 	RzILBitVector *result = rz_il_bv_not(bv);
@@ -94,7 +94,7 @@ void *rz_il_handler_add(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 
 	RzILBitVector *x = rz_il_evaluate_bitv(vm, op_add->x, type);
 	RzILBitVector *y = rz_il_evaluate_bitv(vm, op_add->y, type);
-	RzILBitVector *result = rz_il_bv_add(x, y);
+	RzILBitVector *result = rz_il_bv_add(x, y, NULL);
 
 	rz_il_bv_free(x);
 	rz_il_bv_free(y);
@@ -158,7 +158,7 @@ void *rz_il_handler_sub(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 
 	RzILBitVector *x = rz_il_evaluate_bitv(vm, op_sub->x, type);
 	RzILBitVector *y = rz_il_evaluate_bitv(vm, op_sub->y, type);
-	RzILBitVector *result = rz_il_bv_sub(x, y);
+	RzILBitVector *result = rz_il_bv_sub(x, y, NULL);
 
 	rz_il_bv_free(x);
 	rz_il_bv_free(y);
