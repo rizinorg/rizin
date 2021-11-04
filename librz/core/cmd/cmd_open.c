@@ -1296,24 +1296,6 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 		core->print->cb_printf("%s\n", pj_string(pj));
 		pj_free(pj);
 		break;
-	case 'L': { // "oL"
-		RzCmdStateOutput state = { 0 };
-		if (input[1] == ' ') {
-			if (rz_lib_open(core->lib, input + 2) == -1) {
-				eprintf("Oops\n");
-			}
-			break;
-		}
-		if (input[1] == 'j') {
-			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_JSON);
-		} else {
-			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
-		}
-		rz_core_io_plugins_print(core->io, &state);
-		rz_cmd_state_output_print(&state);
-		rz_cmd_state_output_fini(&state);
-		break;
-	}
 	case 'i': // "oi"
 		switch (input[1]) {
 		case ' ': // "oi "

@@ -211,6 +211,7 @@ static const RzCmdDescArg plugins_unload_args[2];
 static const RzCmdDescArg plugins_debug_print_args[2];
 static const RzCmdDescArg plugins_io_print_args[2];
 static const RzCmdDescArg open_close_args[2];
+static const RzCmdDescArg open_plugins_args[2];
 static const RzCmdDescArg cmd_print_gadget_add_args[6];
 static const RzCmdDescArg cmd_print_gadget_move_args[6];
 static const RzCmdDescArg cmd_print_msg_digest_args[2];
@@ -4774,16 +4775,15 @@ static const RzCmdDescHelp plugins_bin_print_help = {
 
 static const RzCmdDescArg plugins_io_print_args[] = {
 	{
-		.name = "plugin",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.name = "path",
+		.type = RZ_CMD_ARG_TYPE_FILE,
 		.optional = true,
 
 	},
 	{ 0 },
 };
 static const RzCmdDescHelp plugins_io_print_help = {
-	.summary = "Print the io plugins",
+	.summary = "Print IO plugins / Register IO plugin from <path>",
 	.args = plugins_io_print_args,
 };
 
@@ -4817,6 +4817,20 @@ static const RzCmdDescArg open_close_all_args[] = {
 static const RzCmdDescHelp open_close_all_help = {
 	.summary = "Close all files",
 	.args = open_close_all_args,
+};
+
+static const RzCmdDescArg open_plugins_args[] = {
+	{
+		.name = "path",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_plugins_help = {
+	.summary = "List all IO plugins / Register IO plugin from <path>",
+	.args = open_plugins_args,
 };
 
 static const RzCmdDescHelp cmd_print_help = {
@@ -8714,8 +8728,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *plugins_bin_print_cd = rz_cmd_desc_argv_state_new(core->rcmd, L_cd, "Li", RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_plugins_bin_print_handler, &plugins_bin_print_help);
 	rz_warn_if_fail(plugins_bin_print_cd);
 
-	RzCmdDesc *plugins_io_print_cd = rz_cmd_desc_argv_state_new(core->rcmd, L_cd, "Lo", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_plugins_io_print_handler, &plugins_io_print_help);
+	RzCmdDesc *plugins_io_print_cd = rz_cmd_desc_argv_state_new(core->rcmd, L_cd, "Lo", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_JSON, rz_plugins_io_print_handler, &plugins_io_print_help);
 	rz_warn_if_fail(plugins_io_print_cd);
+	rz_cmd_desc_set_default_mode(plugins_io_print_cd, RZ_OUTPUT_MODE_TABLE);
 
 	RzCmdDesc *plugins_parser_print_cd = rz_cmd_desc_argv_state_new(core->rcmd, L_cd, "Lp", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_plugins_parser_print_handler, &plugins_parser_print_help);
 	rz_warn_if_fail(plugins_parser_print_cd);
@@ -8727,6 +8742,10 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *open_close_all_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_open_cd, "o--", rz_open_close_all_handler, &open_close_all_help);
 	rz_warn_if_fail(open_close_all_cd);
+
+	RzCmdDesc *open_plugins_cd = rz_cmd_desc_argv_state_new(core->rcmd, cmd_open_cd, "oL", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_plugins_io_print_handler, &open_plugins_help);
+	rz_warn_if_fail(open_plugins_cd);
+	rz_cmd_desc_set_default_mode(open_plugins_cd, RZ_OUTPUT_MODE_TABLE);
 
 	RzCmdDesc *cmd_print_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "p", rz_cmd_print, &cmd_print_help);
 	rz_warn_if_fail(cmd_print_cd);
