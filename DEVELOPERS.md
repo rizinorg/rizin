@@ -9,7 +9,7 @@ By running `doxygen` in the root of this repository, it will autodetect the
 Doxyfile and generate HTML documentation into
 [doc/doxygen/html/index.html](./doc/doxygen/html/index.html)
 
-If you're contributing code or willing to update existing code, you can use the
+If you're contributing code or willing to update existing code, you should use the
 doxygen C-style comments to improve documentation and comments in code.
 See the [Doxygen Manual](http://www.doxygen.nl/manual/index.html)
 for more info. Example usage can be found [here](http://www.doxygen.nl/manual/docblocks.html)
@@ -29,6 +29,18 @@ for more info. Example usage can be found [here](http://www.doxygen.nl/manual/do
  */
 static int findMinMax(RzList *maps, ut64 *min, ut64 *max, int skip, int width);
 ```
+
+In order to improve the documentation and help newcomers, documenting code is mandatory.
+
+You should add or update the documentation of:
+- code written by you.
+- existing Rizin code you changed.
+
+Exceptions:
+- Trivial changes.
+
+If you have not updated the documentation, explain why.
+E.g.: `Bug fix did not change the general behavior of the function. No documentation update needed.`
 
 ## Code style
 
