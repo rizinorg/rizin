@@ -932,7 +932,7 @@ RZ_API bool rz_il_bv_ule(RZ_NONNULL RzILBitVector *x, RZ_NONNULL RzILBitVector *
 RZ_API bool rz_il_bv_sle(RZ_NONNULL RzILBitVector *x, RZ_NONNULL RzILBitVector *y) {
 	rz_return_val_if_fail(x && y && x->bits && y->bits, NULL);
 	int x_msb = rz_il_bv_msb(x);
-	int y_msb = rz_il_bv_lsb(y);
+	int y_msb = rz_il_bv_msb(y);
 
 	if (x_msb && y_msb) {
 		return !rz_il_bv_ule(x, y);
