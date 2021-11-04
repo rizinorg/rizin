@@ -238,7 +238,7 @@ RZ_API void rz_skiplist_join(RzSkipList *l1, RzSkipList *l2) {
 	void *data;
 
 	rz_skiplist_foreach (l2, it, data) {
-		rz_skiplist_insert(l1, data);
+		(void)rz_skiplist_insert(l1, data);
 	}
 
 	rz_skiplist_purge(l2);
