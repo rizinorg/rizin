@@ -4833,6 +4833,14 @@ static const RzCmdDescHelp open_plugins_help = {
 	.args = open_plugins_args,
 };
 
+static const RzCmdDescArg open_list_ascii_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp open_list_ascii_help = {
+	.summary = "List opened files in ASCII-art bars",
+	.args = open_list_ascii_args,
+};
+
 static const RzCmdDescHelp cmd_print_help = {
 	.summary = "Print commands",
 };
@@ -8746,6 +8754,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *open_plugins_cd = rz_cmd_desc_argv_state_new(core->rcmd, cmd_open_cd, "oL", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_plugins_io_print_handler, &open_plugins_help);
 	rz_warn_if_fail(open_plugins_cd);
 	rz_cmd_desc_set_default_mode(open_plugins_cd, RZ_OUTPUT_MODE_TABLE);
+
+	RzCmdDesc *open_list_ascii_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_open_cd, "o=", rz_open_list_ascii_handler, &open_list_ascii_help);
+	rz_warn_if_fail(open_list_ascii_cd);
 
 	RzCmdDesc *cmd_print_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "p", rz_cmd_print, &cmd_print_help);
 	rz_warn_if_fail(cmd_print_cd);

@@ -27,3 +27,7 @@ commands:
       - RZ_OUTPUT_MODE_TABLE
       - RZ_OUTPUT_MODE_JSON
       - RZ_OUTPUT_MODE_QUIET
+  - name: o=
+    cname: open_list_ascii
+    summary: List opened files in ASCII-art bars
+    args: []
