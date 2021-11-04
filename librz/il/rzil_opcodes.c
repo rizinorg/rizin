@@ -49,8 +49,8 @@ RZ_API RzILOp *rz_il_new_op(RzILOPCode code) {
 	case RZIL_OP_INV:
 		ret->op.inv = RZ_NEW0(RzILOpInv);
 		break;
-	case RZIL_OP_INT:
-		ret->op.int_ = RZ_NEW0(RzILOpInt);
+	case RZIL_OP_BITV:
+		ret->op.bitv = RZ_NEW0(RzILOpBv);
 		break;
 	case RZIL_OP_MSB:
 	case RZIL_OP_LSB:
@@ -92,6 +92,9 @@ RZ_API RzILOp *rz_il_new_op(RzILOPCode code) {
 		break;
 	case RZIL_OP_BRANCH:
 		ret->op.branch = RZ_NEW0(RzILOpBranch);
+		break;
+	case RZIL_OP_JMP:
+		ret->op.jmp = RZ_NEW0(RzILOpJmp);
 		break;
 	case RZIL_OP_GOTO:
 		ret->op.goto_ = RZ_NEW0(RzILOpGoto);
@@ -156,8 +159,9 @@ RZ_API void rz_il_free_op(RzILOp *op) {
 	case RZIL_OP_OR_:
 		rz_il_free_op_2(or_, x, y);
 		break;
-	case RZIL_OP_INT:
-		rz_il_free_op_0(int_);
+	case RZIL_OP_BITV:
+		rz_il_bv_free(op->op.bitv->value);
+		rz_il_free_op_0(bitv);
 		break;
 	case RZIL_OP_MSB:
 		rz_il_free_op_1(msb, bv);
