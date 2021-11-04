@@ -328,11 +328,11 @@ static inline void **rz_pvector_flush(RzPVector *vec) {
  * }
  */
 #define rz_pvector_foreach(vec, it) \
-	for (it = (void **)(vec)->v.a; it != (void **)(vec)->v.a + (vec)->v.len; it++)
+	for (it = (void **)(vec)->v.a; it && it != (void **)(vec)->v.a + (vec)->v.len; it++)
 
 // like rz_pvector_foreach() but inverse
 #define rz_pvector_foreach_prev(vec, it) \
-	for (it = ((vec)->v.len == 0 ? NULL : (void **)(vec)->v.a + (vec)->v.len - 1); it != NULL && it != (void **)(vec)->v.a - 1; it--)
+	for (it = ((vec)->v.len == 0 ? NULL : (void **)(vec)->v.a + (vec)->v.len - 1); it && it != (void **)(vec)->v.a - 1; it--)
 
 /*
  * \brief Find the index of the least element greater than or equal to the lower bound x using binary search
