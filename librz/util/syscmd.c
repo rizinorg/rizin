@@ -369,10 +369,6 @@ RZ_API RZ_OWN char *rz_syscmd_join(RZ_NONNULL const char *file1, RZ_NONNULL cons
 	rz_return_val_if_fail(file1 && file2, NULL);
 
 	const char *p1 = NULL, *p2 = NULL;
-	RzList *list1, *list2, *list = rz_list_newf(NULL);
-	if (!list) {
-		return NULL;
-	}
 	if (file1) {
 		if ((p1 = strchr(file1, ' '))) {
 			p1 = p1 + 1;
@@ -395,14 +391,20 @@ RZ_API RZ_OWN char *rz_syscmd_join(RZ_NONNULL const char *file1, RZ_NONNULL cons
 		char *data1 = rz_file_slurp(filename1, NULL);
 		char *data2 = rz_file_slurp(filename2, NULL);
 		char *data = NULL;
-		RzListIter *iter1, *iter2;
 		if (!data1 && !data2) {
 			eprintf("No such files or directory\n");
 		} else {
-			list1 = rz_str_split_list(data1, "\n", 0);
-			list2 = rz_str_split_list(data2, "\n", 0);
-
+			RzList *list = rz_list_newf(NULL);
+			RzList *list1 = rz_str_split_list(data1, "\n", 0);
+			RzList *list2 = rz_str_split_list(data2, "\n", 0);
+			if (!list || !list1 || !list2) {
+				rz_list_free(list2);
+				rz_list_free(list1);
+				rz_list_free(list);
+				return NULL;
+			}
 			char *str1, *str2;
+			RzListIter *iter1, *iter2;
 			rz_list_foreach (list1, iter1, str1) {
 				char *field = strdup(str1); // extract comman field
 				char *end = strchr(field, ' ');
@@ -425,10 +427,10 @@ RZ_API RZ_OWN char *rz_syscmd_join(RZ_NONNULL const char *file1, RZ_NONNULL cons
 				free(field);
 			}
 			data = rz_list_to_str(list, '\n');
-			rz_list_free(list1);
 			rz_list_free(list2);
+			rz_list_free(list1);
+			rz_list_free(list);
 		}
-		rz_list_free(list);
 		free(filename1);
 		free(filename2);
 		return data;
