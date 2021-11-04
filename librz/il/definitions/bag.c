@@ -16,7 +16,7 @@ RZ_API RzILBag *rz_il_new_bag(int capacity, RzILBagFreeFunc func) {
 		return NULL;
 	}
 
-	bag->capcity = capacity;
+	bag->capacity = capacity;
 	bag->data_list = RZ_NEWS0(void *, capacity);
 	bag->item_count = 0;
 	bag->next_pos = 0;
@@ -34,7 +34,7 @@ RZ_API RzILBag *rz_il_new_bag(int capacity, RzILBagFreeFunc func) {
 
 int rz_il_find_in_bag(RzILBag *bag, void *item) {
 	void *cur_item;
-	for (int i = 0; i < bag->capcity; ++i) {
+	for (int i = 0; i < bag->capacity; ++i) {
 		cur_item = bag->data_list[i];
 		if (cur_item == item) {
 			return i;
@@ -84,7 +84,7 @@ RZ_API bool rz_il_rm_from_bag(RZ_NONNULL RzILBag *bag, RZ_NONNULL void *item) {
  */
 RZ_API bool rz_il_add_to_bag(RZ_NONNULL RzILBag *bag, RZ_NONNULL void *item) {
 	rz_return_val_if_fail(bag && item, false);
-	if (bag->item_count >= bag->capcity) {
+	if (bag->item_count >= bag->capacity) {
 		RZ_LOG_ERROR("[Cannot Carry More Values]\n");
 		return false;
 	}
@@ -115,11 +115,10 @@ RZ_API void rz_il_free_bag(RzILBag *bag) {
 	if (!bag) {
 		return;
 	}
-	void *cur_item;
 
 	// free data
-	for (int i = 0; i < bag->capcity; ++i) {
-		cur_item = bag->data_list[i];
+	for (int i = 0; i < bag->capacity; ++i) {
+		void *cur_item = bag->data_list[i];
 		if (cur_item) {
 			if (bag->free_func) {
 				bag->free_func(cur_item);

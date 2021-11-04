@@ -1096,7 +1096,7 @@
           },
           {
             "type": "STRING",
-            "value": "@"
+            "value": "@ "
           },
           {
             "type": "SYMBOL",
@@ -1229,8 +1229,13 @@
             "value": "@e:"
           },
           {
-            "type": "SYMBOL",
-            "name": "tmp_eval_args"
+            "type": "ALIAS",
+            "content": {
+              "type": "SYMBOL",
+              "name": "tmp_eval_args"
+            },
+            "named": true,
+            "value": "args"
           }
         ]
       }
@@ -3110,8 +3115,13 @@
         "type": "SEQ",
         "members": [
           {
-            "type": "SYMBOL",
-            "name": "tmp_eval_arg"
+            "type": "ALIAS",
+            "content": {
+              "type": "SYMBOL",
+              "name": "tmp_eval_arg"
+            },
+            "named": true,
+            "value": "arg"
           },
           {
             "type": "REPEAT",
@@ -3123,8 +3133,13 @@
                   "value": ","
                 },
                 {
-                  "type": "SYMBOL",
-                  "name": "tmp_eval_arg"
+                  "type": "ALIAS",
+                  "content": {
+                    "type": "SYMBOL",
+                    "name": "tmp_eval_arg"
+                  },
+                  "named": true,
+                  "value": "arg"
                 }
               ]
             }
@@ -3133,11 +3148,16 @@
       }
     },
     "tmp_eval_arg": {
-      "type": "REPEAT1",
+      "type": "ALIAS",
       "content": {
-        "type": "PATTERN",
-        "value": "[^\\s@|#\"'>;$`~\\\\,(),]"
-      }
+        "type": "REPEAT1",
+        "content": {
+          "type": "PATTERN",
+          "value": "[^\\s@|#\"'>;$`~\\\\,(),]"
+        }
+      },
+      "named": true,
+      "value": "arg_identifier"
     },
     "_eq_sep_key_single": {
       "type": "CHOICE",

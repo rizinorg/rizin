@@ -5472,13 +5472,13 @@ ix
 ?e -- Everything in json
 ixj
 ?e -- Single address (exact match)
-ix.@0x00001401
+ix. @ 0x00001401
 ?e -- Single address (still covered)
-ix.@0x00001402
+ix. @ 0x00001402
 ?e -- Single address (not covered anymore)
-ix.@0x00001403
+ix. @ 0x00001403
 ?e -- Single address in json
-ix.j@0x000013a2
+ix.j @ 0x000013a2
 ?e -- File Summary
 ixf
 ?e -- File Summary in json
@@ -5572,9 +5572,9 @@ RUN
 NAME=ix same-addr samples
 FILE=bins/elf/libstdc++.so.6
 CMDS=<<EOF
-ix.@0x00091004
+ix. @ 0x00091004
 ?e --
-ix.j@0x00091004
+ix.j @ 0x00091004
 EOF
 EXPECT=<<EOF
 0x00091004	/build/gcc/src/gcc/libstdc++-v3/libsupc++/new	57

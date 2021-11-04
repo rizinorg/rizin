@@ -41,10 +41,10 @@ FILE=bins/elf/analysis/busybox-mips
 ARGS=-e bin.strings=false -e analysis.strings=true
 CMDS=<<EOF
 e asm.bytes=true
-aae @entry0
-pd 1 @0x00406228
+aae @ entry0
+pd 1 @ 0x00406228
 fs strings
-axt @str.busybox
+axt @ str.busybox
 EOF
 EXPECT=<<EOF
             0x00406228      fcc38424       addiu a0, a0, -0x3c04       ; 0x44c3fc ; "busybox" ; str.busybox
@@ -83,7 +83,7 @@ RUN
 NAME=gp-based ref
 FILE=bins/elf/analysis/mips-hello
 CMDS=<<EOF
-aae @entry0
+aae @ entry0
 axt @ str.Hello_World
 EOF
 EXPECT=<<EOF
@@ -138,9 +138,9 @@ FILE=bins/elf/analysis/mips-hello
 ARGS=-e bin.strings=false -e analysis.strings=false
 CMDS=<<EOF
 e asm.bytes=true
-pd 1 @main+0x18
+pd 1 @ main+0x18
 e asm.pseudo=true
-pd 1 @main+0x18
+pd 1 @ main+0x18
 EOF
 EXPECT=<<EOF
             0x000805b8      21f0a003       move  fp, sp

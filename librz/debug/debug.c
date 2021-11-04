@@ -443,6 +443,7 @@ RZ_API int rz_debug_attach(RzDebug *dbg, int pid) {
 	if (dbg && dbg->cur && dbg->cur->attach) {
 		ret = dbg->cur->attach(dbg, pid);
 		if (ret != -1) {
+			dbg->reason.type = RZ_DEBUG_REASON_NONE; // after a successful attach, the process is not dead
 			rz_debug_select(dbg, pid, ret); //dbg->pid, dbg->tid);
 		}
 	}
@@ -1566,6 +1567,11 @@ RZ_API int rz_debug_syscall(RzDebug *dbg, int num) {
 	eprintf("TODO: show syscall information\n");
 	/* rz_testc task? ala inject? */
 	return (int)ret;
+}
+
+/// check whether rz_debug_kill() will not definitely fail (for example because kill is unimplemented by the plugin)
+RZ_API bool rz_debug_can_kill(RzDebug *dbg) {
+	return !rz_debug_is_dead(dbg) && dbg->cur && dbg->cur->kill;
 }
 
 RZ_API int rz_debug_kill(RzDebug *dbg, int pid, int tid, int sig) {

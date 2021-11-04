@@ -110,9 +110,9 @@ RUN
 NAME=thumb analysis expand
 FILE=bins/elf/analysis/thumb
 CMDS=<<EOF
-pi 2@sym.main
-af@sym.main
-pi 2 @sym.main
+pi 2@ sym.main
+af@ sym.main
+pi 2 @ sym.main
 EOF
 EXPECT=<<EOF
 push {r7, lr}
@@ -124,7 +124,7 @@ RUN
 
 NAME=arm at entry libsimplejni.so
 FILE=bins/elf/analysis/libsimplejni.so
-CMDS=pi 7@entry0
+CMDS=pi 7@ entry0
 EXPECT=<<EOF
 push {fp, lr}
 add fp, sp, 4
@@ -138,7 +138,7 @@ RUN
 
 NAME=thumb at sym.JNI_OnLoad
 FILE=bins/elf/analysis/libsimplejni.so
-CMDS=pi 6@sym.JNI_OnLoad
+CMDS=pi 6@ sym.JNI_OnLoad
 EXPECT=<<EOF
 push {r4, lr}
 sub sp, 8

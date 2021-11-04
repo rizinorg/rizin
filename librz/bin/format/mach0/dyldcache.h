@@ -73,35 +73,50 @@ typedef struct rz_dyld_rebase_info_1_t {
 } RzDyldRebaseInfo1;
 
 typedef struct rz_dyld_loc_sym_t {
-	char *strings;
-	ut64 strings_size;
-	struct MACH0_(nlist) * nlists;
+	ut64 local_symbols_offset;
+	ut64 nlists_offset;
 	ut64 nlists_count;
-	cache_locsym_entry_t *entries;
-	ut64 entries_count;
+	ut64 strings_offset;
+	ut64 strings_size;
 } RzDyldLocSym;
 
 typedef struct rz_bin_dyld_image_t {
 	char *file;
 	ut64 header_at;
+	ut64 hdr_offset;
+	ut64 symbols_off;
+	ut64 va;
+	ut32 nlist_start_index;
+	ut32 nlist_count;
 } RzDyldBinImage;
 
 typedef struct rz_dyldcache_t {
 	ut8 magic[8];
+
+	cache_hdr_t *hdr;
+	ut64 *hdr_offset;
+	ut64 symbols_off_base;
+	ut32 *maps_index;
+	ut32 n_hdr;
+	cache_map_t *maps;
+	ut32 n_maps;
+
 	RzList *bins;
 	RzBuffer *buf;
 	RzDyldRebaseInfos *rebase_infos;
-	cache_hdr_t *hdr;
-	cache_map_t *maps;
 	cache_accel_t *accel;
 	RzDyldLocSym *locsym;
+	objc_cache_opt_info *oi;
+	bool objc_opt_info_loaded;
 } RzDyldCache;
 
+RZ_API bool rz_dyldcache_check_magic(const char *magic);
 RZ_API RzDyldCache *rz_dyldcache_new_buf(RzBuffer *buf);
 RZ_API void rz_dyldcache_free(RzDyldCache *cache);
 RZ_API ut64 rz_dyldcache_va2pa(RzDyldCache *cache, uint64_t vaddr, ut32 *offset, ut32 *left);
-RZ_API void rz_dyldcache_locsym_entries_by_offset(RzDyldCache *cache, RzList *symbols, SetU *hash, ut64 bin_header_offset);
 RZ_API ut64 rz_dyldcache_get_slide(RzDyldCache *cache);
+RZ_API objc_cache_opt_info *rz_dyldcache_get_objc_opt_info(RzBinFile *bf, RzDyldCache *cache);
+RZ_API void rz_dyldcache_symbols_from_locsym(RzDyldCache *cache, RzDyldBinImage *bin, RzList *symbols, SetU *hash);
 
 RZ_API RzBuffer *rz_dyldcache_new_rebasing_buf(RzDyldCache *cache);
 RZ_API bool rz_dyldcache_needs_rebasing(RzDyldCache *cache);

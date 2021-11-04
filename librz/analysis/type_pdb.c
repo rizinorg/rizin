@@ -133,18 +133,19 @@ static RzType *parse_type_pointer(const RzTypeDB *typedb, RzPdbTpiStream *stream
 	Tpi_LF_Pointer *lf_pointer = type->type_data;
 	RzType *typ = RZ_NEW0(RzType);
 	if (!typ) {
-		return NULL;
+		goto error;
 	}
 	typ->kind = RZ_TYPE_KIND_POINTER;
 	RzPdbTpiType *p_utype = rz_bin_pdb_get_type_by_index(stream, lf_pointer->utype);
 	if (p_utype) {
 		RzType *tmp = parse_type(typedb, stream, p_utype, name);
 		if (!tmp) {
-			return NULL;
+			goto error;
 		}
 		typ->pointer.type = tmp;
 		return typ;
 	}
+error:
 	rz_type_free(typ);
 	return NULL;
 }
@@ -377,13 +378,13 @@ static RzTypeStructMember *parse_struct_member(const RzTypeDB *typedb, RzPdbTpiS
 	}
 	case LF_BCLASS:
 		// For structure, we don't need base class for now
-		return NULL;
+		goto cleanup;
 	case LF_METHOD:
 		// TODO: need to handle overloaded methods here
-		return NULL;
+		goto cleanup;
 	case LF_VFUNCTAB:
 		// For structure, we don't need vtable for now
-		return NULL;
+		goto cleanup;
 	default:
 		eprintf("%s : unsupported leaf type 0x%x\n", __FUNCTION__, type_info->leaf_type);
 		goto cleanup;
@@ -402,6 +403,7 @@ static RzTypeStructMember *parse_struct_member(const RzTypeDB *typedb, RzPdbTpiS
 	member->offset = offset;
 	return member;
 cleanup:
+	rz_type_free(type);
 	return NULL;
 }
 
@@ -565,7 +567,8 @@ static RzType *parse_union(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdb
 	RzType *typ = RZ_NEW0(RzType);
 	if (!typ) {
 		rz_type_base_type_free(base_type);
-		return NULL;
+		base_type = NULL;
+		goto cleanup;
 	}
 	typ->kind = RZ_TYPE_KIND_IDENTIFIER;
 	typ->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNION;

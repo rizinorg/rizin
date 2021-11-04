@@ -556,7 +556,7 @@ RZ_API RZ_OWN RzBuffer *rz_buf_new_with_string(RZ_NONNULL const char *msg) {
 }
 
 /**
- * \brief Get a string whith a max length from the buffer
+ * \brief Get a string with a max length from the buffer
  * \param b RzBuffer pointer
  * \param addr The address of the string
  * \param size The max length authorized
@@ -572,14 +572,14 @@ RZ_API RZ_OWN char *rz_buf_get_nstring(RzBuffer *b, ut64 addr, size_t size) {
 	RzStrBuf *buf = rz_strbuf_new(NULL);
 
 	while (true) {
-		char tmp[GET_STRING_BUFFER_SIZE];
-		st64 r = rz_buf_read_at(b, addr, (ut8 *)tmp, sizeof(tmp));
+		char tmp[GET_STRING_BUFFER_SIZE + 1];
+		st64 r = rz_buf_read_at(b, addr, (ut8 *)tmp, sizeof(tmp) - 1);
 		if (r < 1) {
 			rz_strbuf_free(buf);
 			return NULL;
 		}
 
-		size_t count = strnlen(tmp, r);
+		size_t count = rz_str_nlen(tmp, r);
 		rz_strbuf_append_n(buf, tmp, count);
 
 		if (count > size) {
@@ -1235,6 +1235,9 @@ RZ_API ut64 rz_buf_tell(RZ_NONNULL RzBuffer *b) {
  * ...
  */
 RZ_API void rz_buf_free(RzBuffer *b) {
+	if (!b) {
+		return;
+	}
 	if (rz_buf_fini(b)) {
 		free(b);
 	}

@@ -707,7 +707,7 @@ RUN
 
 NAME=bb generation for SBRx RJMP combo (rizin#12612)
 FILE=bins/elf/avr-sbrx-rjmp.elf
-CMDS=af@sym.main;afb@sym.main
+CMDS=af@ sym.main;afb@ sym.main
 EXPECT=<<EOF
 0x00000000 0x00000016 00:0000 22 j 0x00000018 f 0x00000016
 0x00000016 0x00000018 00:0000 2 j 0x0000002e

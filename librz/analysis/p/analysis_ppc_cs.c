@@ -207,7 +207,7 @@ static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
 #define ARG(n)     getarg2(&gop, n, "")
 #define ARG2(n, m) getarg2(&gop, n, m)
 
-static bool set_reg_profile(RzAnalysis *analysis) {
+static char *get_reg_profile(RzAnalysis *analysis) {
 	const char *p = NULL;
 	if (analysis->bits == 32) {
 		p =
@@ -411,7 +411,7 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 			"gpr	dbat3u .32 484 0\n"
 			"gpr	mask   .64 488 0\n"; //not a real register used on complex functions
 	}
-	return rz_reg_set_profile_string(analysis->reg, p);
+	return strdup(p);
 }
 
 static int analop_vle(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len) {
@@ -1312,7 +1312,7 @@ RzAnalysisPlugin rz_analysis_plugin_ppc_cs = {
 	.archinfo = archinfo,
 	.preludes = analysis_preludes,
 	.op = &analop,
-	.set_reg_profile = &set_reg_profile,
+	.get_reg_profile = &get_reg_profile,
 };
 
 #ifndef RZ_PLUGIN_INCORE

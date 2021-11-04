@@ -3,20 +3,18 @@
 
 #include <rz_il/rzil_vm.h>
 #include <rz_il/rzil_opcodes.h>
+#include <rz_il/vm_layer.h>
 
 void *rz_il_handler_load(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
-	rz_return_val_if_fail(op, NULL);
+	rz_return_val_if_fail(vm && op && type, NULL);
 	RzILOpLoad *op_load = op->op.load;
-	RzILMem *m = vm->mems[op_load->mem];
 
 	RzILBitVector *addr = rz_il_evaluate_bitv(vm, op_load->key, type);
-	RzILBitVector *ret = rz_il_mem_load(m, addr);
+	RzILBitVector *ret = rz_il_vm_mem_load(vm, op_load->mem, addr);
 	if (ret == NULL) {
 		// empty address --> first access
 		// assume it's empty
-		RzILBitVector *empty = rz_il_bv_new(m->min_unit_size);
-		rz_il_mem_store(m, addr, empty);
-		ret = empty;
+		rz_il_vm_mem_store_zero(vm, op_load->mem, addr, &ret);
 	}
 
 	rz_il_bv_free(addr);
@@ -25,16 +23,16 @@ void *rz_il_handler_load(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 }
 
 void *rz_il_handler_store(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
-	rz_return_val_if_fail(op, NULL);
+	rz_return_val_if_fail(vm && op && type, NULL);
 
 	RzILOpStore *op_store = op->op.store;
-	RzILMem *m = vm->mems[op_store->mem];
 
 	RzILBitVector *addr = rz_il_evaluate_bitv(vm, op_store->key, type);
 	RzILBitVector *value = rz_il_evaluate_bitv(vm, op_store->value, type);
 
-	rz_il_mem_store(m, addr, value);
+	RzILMem *m = rz_il_vm_mem_store(vm, op_store->mem, addr, value);
 	rz_il_bv_free(addr);
+	rz_il_bv_free(value);
 
 	*type = RZIL_OP_ARG_MEM;
 	return m;

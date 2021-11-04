@@ -1393,7 +1393,7 @@ e asm.bytes=true
 e asm.dwarf=true
 e analysis.nopskip=true # if set to true it breaks the test
 aa
-pd 1 @main
+pd 1 @ main
 EOF
 EXPECT=<<EOF
             ; DATA XREF from entry0 @ 0x40045d
@@ -1405,7 +1405,7 @@ RUN
 
 NAME="Mach-O dSYM lines (armv7)"
 FILE=bins/mach0/TestRTTI-armv7-dSYM
-CMDS=ix.@0x0000a24e
+CMDS=ix.@ 0x0000a24e
 EXPECT=<<EOF
 0x0000a24e	/Users/ftamagni/src/TestRTTI/TestRTTI//TestRTTI.cpp	18
 EOF

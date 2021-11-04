@@ -2,6 +2,11 @@ name: "Code scanning"
 
 on:
   push:
+    branches:
+    - 'master'
+    - 'dev'
+    - 'stable'
+    - 'container-*'
   pull_request:
 
 jobs:

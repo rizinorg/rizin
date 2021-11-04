@@ -131,11 +131,11 @@ FILE=bins/elf/noreturn
 CMDS=<<EOF
 aa
 ?e -- before --
-afb@sym.might_not_return
+afb@ sym.might_not_return
 tn 0x00001050 # TODO: this should be done automatically
 aanr
 ?e -- after --
-afb@sym.might_not_return
+afb@ sym.might_not_return
 EOF
 EXPECT=<<EOF
 -- before --

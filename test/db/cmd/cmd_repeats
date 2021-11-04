@@ -4,7 +4,7 @@ CMDS=<<EOF
 @@?~?
 EOF
 EXPECT=<<EOF
-22
+23
 EOF
 RUN
 
@@ -24,9 +24,9 @@ RUN
 NAME=repeat comments
 FILE==
 CMDS=<<EOF
-CC aero@0x42
-CC pause@0x43
-CC plus@0x1337
+CC aero @ 0x42
+CC pause @ 0x43
+CC plus @ 0x1337
 s@@C:p*
 EOF
 EXPECT=<<EOF

@@ -252,7 +252,6 @@ static const char *help_msg_p[] = {
 	"pt", "[?][dn] [len]", "print different timestamps",
 	"pu", "[?][w] [len]", "print N url encoded bytes (w=wide)",
 	"pv", "[?][jh] [mode]", "show variable/pointer/value in memory",
-	"pwd", "", "display current working directory",
 	"px", "[?][owq] [len]", "hexdump of N bytes (o=octal, w=32bit, q=64bit)",
 	"pz", "[?] [len]", "print zoom view (see pz? for help)",
 	NULL
@@ -4412,8 +4411,8 @@ static void pr_bb(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock *b, boo
 	}
 	rz_config_set_i(core->config, "asm.bb.middle", false);
 	p_type == 'D'
-		? rz_core_cmdf(core, "pD %" PFMT64u " @0x%" PFMT64x, b->size, b->addr)
-		: rz_core_cmdf(core, "pI %" PFMT64u " @0x%" PFMT64x, b->size, b->addr);
+		? rz_core_cmdf(core, "pD %" PFMT64u " @ 0x%" PFMT64x, b->size, b->addr)
+		: rz_core_cmdf(core, "pI %" PFMT64u " @ 0x%" PFMT64x, b->size, b->addr);
 	rz_config_set(core->config, "asm.bb.middle", orig_bb_middle);
 
 	if (b->jump != UT64_MAX) {
@@ -4695,6 +4694,8 @@ static void print_json_string(RzCore *core, const char *block, ut32 len, RzCoreS
 	}
 	PJ *pj = pj_new();
 	if (!pj) {
+		free(section_name);
+		free(cstring);
 		return;
 	}
 	pj_o(pj);
@@ -4987,17 +4988,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 	// TODO After core->block is removed, this should be changed to a block read.
 	block = core->block;
 	switch (*input) {
-	case 'w': // "pw"
-		if (input[1] == 'd') { // "pwd"
-			char *cwd = rz_sys_getdir();
-			if (cwd) {
-				rz_cons_println(cwd);
-				free(cwd);
-			}
-		} else {
-			rz_cons_printf("| pwd               display current working directory\n");
-		}
-		break;
 	case 'j': // "pj"
 		if (input[1] == '?') {
 			rz_core_cmd_help(core, help_msg_pj);
@@ -6071,8 +6061,8 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			rz_cons_printf("|Usage: pm [file|directory]\n"
 				       "| rz_magic will use given file/dir as reference\n"
 				       "| output of those magic can contain expressions like:\n"
-				       "|   foo@0x40   # use 'foo' magic file on address 0x40\n"
-				       "|   @0x40      # use current magic file on address 0x40\n"
+				       "|   foo@ 0x40   # use 'foo' magic file on address 0x40\n"
+				       "|   @ 0x40      # use current magic file on address 0x40\n"
 				       "|   \\n         # append newline\n"
 				       "| e dir.magic  # defaults to " RZ_JOIN_2_PATHS("{RZ_PREFIX}", RZ_SDB_MAGIC) "\n"
 														    "| /m           # search for magic signatures\n");

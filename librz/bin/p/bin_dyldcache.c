@@ -34,13 +34,24 @@ static struct MACH0_(obj_t) * bin_to_mach0(RzBinFile *bf, RzDyldBinImage *bin) {
 		return NULL;
 	}
 
+	RzBuffer *buf = rz_buf_new_slice(cache->buf, bin->hdr_offset, rz_buf_size(cache->buf) - bin->hdr_offset);
+	if (!buf) {
+		return NULL;
+	}
+
 	struct MACH0_(opts_t) opts;
 	MACH0_(opts_set_default)
 	(&opts, bf);
-	opts.header_at = bin->header_at;
-	struct MACH0_(obj_t) *mach0 = MACH0_(new_buf)(cache->buf, &opts);
+	opts.header_at = bin->header_at - bin->hdr_offset;
+	opts.symbols_off = bin->symbols_off;
+
+	struct MACH0_(obj_t) *mach0 = MACH0_(new_buf)(buf, &opts);
+
 	mach0->user = cache;
 	mach0->va2pa = &bin_obj_va2pa;
+
+	rz_buf_free(buf);
+
 	return mach0;
 }
 
@@ -55,7 +66,7 @@ static bool check_buffer(RzBuffer *buf) {
 		return false;
 	}
 
-	return !strcmp(hdr, "dyld_v1   arm64") || !strcmp(hdr, "dyld_v1  arm64e") || !strcmp(hdr, "dyld_v1  x86_64") || !strcmp(hdr, "dyld_v1 x86_64h");
+	return rz_dyldcache_check_magic(hdr);
 }
 
 static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
@@ -119,7 +130,7 @@ static ut64 baddr(RzBinFile *bf) {
 	return 0x180000000;
 }
 
-void symbols_from_bin(RzList *ret, RzBinFile *bf, RzDyldBinImage *bin, SetU *hash) {
+void symbols_from_bin(RzDyldCache *cache, RzList *ret, RzBinFile *bf, RzDyldBinImage *bin, SetU *hash) {
 	struct MACH0_(obj_t) *mach0 = bin_to_mach0(bf, bin);
 	if (!mach0) {
 		return;
@@ -132,7 +143,7 @@ void symbols_from_bin(RzList *ret, RzBinFile *bf, RzDyldBinImage *bin, SetU *has
 	}
 	int i;
 	for (i = 0; !symbols[i].last; i++) {
-		if (!symbols[i].name[0] || symbols[i].addr < 100) {
+		if (!symbols[i].name || !symbols[i].name[0] || symbols[i].addr < 100) {
 			continue;
 		}
 		if (strstr(symbols[i].name, "<redacted>")) {
@@ -178,6 +189,11 @@ static bool __is_data_section(const char *name) {
 }
 
 static void sections_from_bin(RzList *ret, RzBinFile *bf, RzDyldBinImage *bin) {
+	RzDyldCache *cache = (RzDyldCache *)bf->o->bin_obj;
+	if (!cache) {
+		return;
+	}
+
 	struct MACH0_(obj_t) *mach0 = bin_to_mach0(bf, bin);
 	if (!mach0) {
 		return;
@@ -206,8 +222,8 @@ static void sections_from_bin(RzList *ret, RzBinFile *bf, RzDyldBinImage *bin) {
 		ptr->is_data = __is_data_section(ptr->name);
 		ptr->size = sections[i].size;
 		ptr->vsize = sections[i].vsize;
-		ptr->paddr = sections[i].offset + bf->o->boffset;
 		ptr->vaddr = sections[i].addr;
+		ptr->paddr = rz_dyldcache_va2pa(cache, sections[i].addr, NULL, NULL);
 		if (!ptr->vaddr) {
 			ptr->vaddr = ptr->paddr;
 		}
@@ -262,7 +278,7 @@ static RzList *maps(RzBinFile *bf) {
 		return NULL;
 	}
 	ut64 slide = rz_dyldcache_get_slide(cache);
-	for (ut32 i = 0; i < cache->hdr->mappingCount; i++) {
+	for (ut32 i = 0; i < cache->n_maps; i++) {
 		RzBinMap *map = RZ_NEW0(RzBinMap);
 		if (!map) {
 			rz_list_free(ret);
@@ -325,8 +341,8 @@ static RzList *symbols(RzBinFile *bf) {
 			rz_list_free(ret);
 			return NULL;
 		}
-		symbols_from_bin(ret, bf, bin, hash);
-		rz_dyldcache_locsym_entries_by_offset(cache, ret, hash, bin->header_at);
+		symbols_from_bin(cache, ret, bf, bin, hash);
+		rz_dyldcache_symbols_from_locsym(cache, bin, ret, hash);
 		set_u_free(hash);
 	}
 
@@ -357,6 +373,11 @@ static RzList *classes(RzBinFile *bf) {
 		return NULL;
 	}
 
+	if (!cache->objc_opt_info_loaded) {
+		cache->oi = rz_dyldcache_get_objc_opt_info(bf, cache);
+		cache->objc_opt_info_loaded = true;
+	}
+
 	RzListIter *iter;
 	RzDyldBinImage *bin;
 
@@ -365,7 +386,7 @@ static RzList *classes(RzBinFile *bf) {
 	if (rz_dyldcache_needs_rebasing(cache)) {
 		owned_buf = rz_dyldcache_new_rebasing_buf(cache);
 		if (!owned_buf) {
-			return NULL;
+			goto beach;
 		}
 		buf = owned_buf;
 	}
@@ -398,7 +419,12 @@ static RzList *classes(RzBinFile *bf) {
 			}
 
 			ut8 *pointers = malloc(sections[i].size);
-			if (rz_buf_read_at(buf, sections[i].offset, pointers, sections[i].size) < sections[i].size) {
+			if (!pointers) {
+				continue;
+			}
+
+			ut64 offset = rz_dyldcache_va2pa(cache, sections[i].addr, NULL, NULL);
+			if (rz_buf_read_at(buf, offset, pointers, sections[i].size) < sections[i].size) {
 				RZ_FREE(pointers);
 				continue;
 			}
@@ -423,14 +449,15 @@ static RzList *classes(RzBinFile *bf) {
 				bf->o->bin_obj = mach0;
 				if (is_classlist) {
 					MACH0_(get_class_t)
-					((ut64)pointer_to_class, bf, buf, klass, false, NULL);
+					(pointer_to_class, bf, buf, klass, false, NULL, cache->oi);
 				} else {
 					MACH0_(get_category_t)
-					((ut64)pointer_to_class, bf, buf, klass, NULL);
+					(pointer_to_class, bf, buf, klass, NULL, cache->oi);
 				}
 				bf->o->bin_obj = cache;
 
 				if (!klass->name) {
+					RZ_LOG_ERROR("CLASS ERROR AT 0x%llx, is_classlist %d\n", pointer_to_class, is_classlist);
 					klass->name = rz_str_newf("UnnamedClass%u", num_of_unnamed_class);
 					if (!klass->name) {
 						RZ_FREE(klass);

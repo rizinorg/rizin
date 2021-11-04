@@ -12,14 +12,14 @@
 RZ_API RzILVar *rz_il_vm_create_variable(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(vm && name, NULL);
 	if (vm->var_count >= RZ_IL_VM_MAX_VAR) {
-		RZ_LOG_ERROR("No More Vars here\n");
+		RZ_LOG_ERROR("RzIL: reached max number of variables that the VM can handle.\n");
 		return NULL;
 	}
 
 	// create , store, update count
 	RzILVar *var = rz_il_new_variable(name);
 	vm->vm_global_variable_list[vm->var_count] = var;
-	vm->var_count += 1;
+	vm->var_count++;
 
 	return var;
 }
@@ -48,11 +48,10 @@ RZ_API RzILVal *rz_il_vm_create_value(RZ_NONNULL RzILVM *vm, RZ_NONNULL RZIL_VAR
  * Add a register in VM (create a variable and value, and then bind value to variable)
  * \param vm RzILVM, pointer to this vm
  * \param name string, the name of register
- * \param length int, width of register
+ * \param length ut32, width of register
  */
-RZ_API void rz_il_vm_add_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL char *name, int length) {
-	rz_return_if_fail(vm && name);
-	rz_return_if_fail(length > 0);
+RZ_API void rz_il_vm_add_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name, ut32 length) {
+	rz_return_if_fail(vm && name && length > 0);
 	RzILVar *var = rz_il_vm_create_variable(vm, name);
 	var->type = RZIL_VAR_TYPE_BV;
 	RzILVal *val = rz_il_vm_create_value(vm, RZIL_VAR_TYPE_BV);
@@ -67,6 +66,7 @@ RZ_API void rz_il_vm_add_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL char *name, int l
  * \return val RzILVal, pointer to the fortified value
  */
 RZ_API RzILVal *rz_il_vm_fortify_val(RzILVM *vm, RzILVal *val) {
+	rz_return_val_if_fail(vm, NULL);
 	rz_il_add_to_bag(vm->vm_global_value_set, val);
 	return val;
 }
@@ -78,6 +78,7 @@ RZ_API RzILVal *rz_il_vm_fortify_val(RzILVM *vm, RzILVal *val) {
  * \return val RzILVal, pointer to the fortified value
  */
 RZ_API RzILVal *rz_il_vm_fortify_bitv(RzILVM *vm, RzILBitVector *bitv) {
+	rz_return_val_if_fail(vm, NULL);
 	RzILVal *val = rz_il_value_new();
 	if (!val) {
 		return NULL;
@@ -96,6 +97,7 @@ RZ_API RzILVal *rz_il_vm_fortify_bitv(RzILVM *vm, RzILBitVector *bitv) {
  * \return val RzILVal, pointer to the fortified value
  */
 RZ_API RzILVal *rz_il_vm_fortify_bool(RzILVM *vm, RzILBool *b) {
+	rz_return_val_if_fail(vm, NULL);
 	RzILVal *val = rz_il_value_new();
 	if (!val) {
 		return NULL;
@@ -114,10 +116,7 @@ RZ_API RzILVal *rz_il_vm_fortify_bool(RzILVM *vm, RzILBool *b) {
  * \return val RzILVal, pointer to the value of variable
  */
 RZ_API RzILVal *rz_il_hash_find_val_by_var(RzILVM *vm, RzILVar *var) {
-	if (!var) {
-		RZ_LOG_ERROR("Empty var detected\n");
-		return NULL;
-	}
+	rz_return_val_if_fail(vm && var, NULL);
 	char *var_name = var->var_name;
 	RzILVal *ret = rz_il_hash_find_val_by_name(vm, var_name);
 	return ret;
@@ -172,15 +171,7 @@ RZ_API void rz_il_hash_cancel_binding(RzILVM *vm, RzILVar *var) {
  * \param val RzILVal, value
  */
 RZ_API void rz_il_hash_bind(RzILVM *vm, RzILVar *var, RzILVal *val) {
-	rz_return_if_fail(vm);
-	if (!var) {
-		RZ_LOG_ERROR("Cannot bind to an NULL\n");
-		return;
-	}
-	if (!val) {
-		RZ_LOG_ERROR("Val is NULL, fail to bind to a variable\n");
-		return;
-	}
+	rz_return_if_fail(vm && var && val);
 	char *var_id = var->var_name;
 	ht_pp_update(vm->vm_global_bind_table, var_id, val);
 }
@@ -325,7 +316,7 @@ static RzILVal *bool_to_val(RzILBool *b) {
 static RzILBitVector *val_to_bitv(RzILVal *val) {
 	RzILBitVector *ret;
 	if (val->type != RZIL_VAR_TYPE_BV) {
-		RZ_LOG_ERROR("RzIL : Expected bool, but UNK/BOOL detected\n");
+		RZ_LOG_ERROR("RzIL: Expected bitvector, but unknown or bool type detected\n");
 		return NULL;
 	}
 
@@ -340,7 +331,7 @@ static RzILBool *val_to_bool(RzILVal *val) {
 		if (val->type == RZIL_VAR_TYPE_BV) {
 			return bitv_to_bool(val_to_bitv(val));
 		}
-		RZ_LOG_ERROR("RzIL : Expected bool, but UNK detected\n");
+		RZ_LOG_ERROR("RzIL: Expected bool or bitvector, but unknown type detected\n");
 		return NULL;
 	}
 
@@ -363,23 +354,17 @@ RZ_API RzILBitVector *rz_il_evaluate_bitv(RzILVM *vm, RzILOp *op, RzILOpArgType 
 	void *input = rz_il_parse_op_root(vm, op, type);
 	RzILOpArgType t = *type;
 
-	// check if type is bitv
-	// else, convert to bitv if possible
-	// else report error
 	switch (t) {
 	case RZIL_OP_ARG_BITV:
-		return (RzILBitVector *)input;
 	case RZIL_OP_ARG_BOOL:
-		*type = RZIL_OP_ARG_BOOL;
-		RZ_LOG_ERROR("TODO : BOOL TO BITV\n");
-		return NULL;
+		return (RzILBitVector *)input;
 	case RZIL_OP_ARG_VAL:
 		*type = RZIL_OP_ARG_BITV;
 		return val_to_bitv(input);
 	case RZIL_OP_ARG_EFF:
 	case RZIL_OP_ARG_MEM:
 	default:
-		RZ_LOG_ERROR("RzIL : Expected Bool/BitVector/RzILVal\n");
+		RZ_LOG_ERROR("RzIL: unknown RzILOpArgType bitvector type\n");
 		break;
 	}
 
@@ -414,7 +399,7 @@ RZ_API RzILBool *rz_il_evaluate_bool(RzILVM *vm, RzILOp *op, RzILOpArgType *type
 	case RZIL_OP_ARG_EFF:
 	case RZIL_OP_ARG_MEM:
 	default:
-		RZ_LOG_ERROR("RzIL : Expected BitVector/Bool/RzILVal\n");
+		RZ_LOG_ERROR("RzIL: unknown RzILOpArgType bool type\n");
 		break;
 	}
 
@@ -449,7 +434,7 @@ RZ_API RzILVal *rz_il_evaluate_val(RzILVM *vm, RzILOp *op, RzILOpArgType *type) 
 	case RZIL_OP_ARG_EFF:
 	case RZIL_OP_ARG_MEM:
 	default:
-		RZ_LOG_ERROR("BRzIL : Expected RzILVal/BitVector/Bool\n");
+		RZ_LOG_ERROR("RzIL: unknown RzILOpArgType value type\n");
 		break;
 	}
 
@@ -488,7 +473,7 @@ RZ_API RzILEffect *rz_il_evaluate_effect(RzILVM *vm, RzILOp *op, RzILOpArgType *
 		rz_il_mem_free(result);
 		break;
 	default:
-		RZ_LOG_ERROR("RzIL : Expected Effect\n");
+		RZ_LOG_ERROR("RzIL: unknown RzILEffect type\n");
 		break;
 	}
 
@@ -508,5 +493,6 @@ RZ_API RzILEffect *rz_il_evaluate_effect(RzILVM *vm, RzILOp *op, RzILOpArgType *
 // recursively parse and evaluate
 RZ_API void *rz_il_parse_op_root(RzILVM *vm, RzILOp *root, RzILOpArgType *type) {
 	RzILOpHandler handler = vm->op_handler_table[root->code];
+	rz_return_val_if_fail(handler, NULL);
 	return handler(vm, root, type);
 }

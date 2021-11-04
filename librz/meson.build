@@ -460,6 +460,7 @@ install_headers(rz_il_definitions_files, install_dir: join_paths(rizin_incdir, '
 
 rz_il_files = [
   'include/rz_il/rzil_opcodes.h',
+  'include/rz_il/rzil_vm_events.h',
   'include/rz_il/rzil_vm.h',
   'include/rz_il/vm_layer.h',
 ]

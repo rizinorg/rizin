@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
+#include <rz_util/rz_str.h>
 #include "minunit.h"
 
 static RzCmdDescArg xd_args[] = {
@@ -425,14 +426,164 @@ static bool test_autocmplt_global(void) {
 	strcpy(buf->data, s);
 	buf->length = strlen(s);
 	buf->index = buf->length;
-	RzLineNSCompletionResult *r = rz_core_autocomplete_rzshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
 
+	RzLineNSCompletionResult *r = rz_core_autocomplete_rzshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
 	mu_assert_notnull(r, "r should not be null");
 	mu_assert_eq(r->start, strlen("avg "), "should autocomplete the last arg");
 	mu_assert_eq(r->end, buf->length, "should autocomplete ending at end of buffer");
 	mu_assert_eq(rz_pvector_len(&r->options), 2, "there are 2 global vars");
 	mu_assert_streq(rz_pvector_at(&r->options, 0), "GINT", "GINT found");
 	mu_assert_streq(rz_pvector_at(&r->options, 1), "GCHR", "GCHR found");
+	rz_line_ns_completion_result_free(r);
+
+	rz_core_free(core);
+	mu_end;
+}
+
+static bool test_autocmplt_tmp_operators(void) {
+	RzCore *core = fake_core_new();
+	mu_assert_notnull(core, "core should be created");
+	RzLineBuffer *buf = &core->cons->line->buffer;
+
+	const char *s = "pd @";
+	strcpy(buf->data, s);
+	buf->length = strlen(s);
+	buf->index = buf->length;
+	RzLineNSCompletionResult *r = rz_core_autocomplete_rzshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
+
+	mu_assert_notnull(r, "r should not be null");
+	mu_assert_eq(r->start, strlen("pd "), "should autocomplete the @ operator");
+	mu_assert_eq(r->end, buf->length, "should autocomplete ending at end of buffer");
+
+	const char *tmp_ops[] = {
+		"@ ",
+		"@!",
+		"@(",
+		"@a:",
+		"@b:",
+		"@B:",
+		"@e:",
+		"@f:",
+		"@F:",
+		"@i:",
+		"@k:",
+		"@o:",
+		"@r:",
+		"@s:",
+		"@v:",
+		"@x:",
+		"@@.",
+		"@@=",
+		"@@@=",
+		"@@",
+		"@@c:",
+		"@@@c:",
+		"@@C",
+		"@@C:",
+		"@@dbt",
+		"@@dbtb",
+		"@@dbts",
+		"@@t",
+		"@@b",
+		"@@i",
+		"@@ii",
+		"@@iS",
+		"@@iSS",
+		"@@is",
+		"@@iz",
+		"@@f",
+		"@@f:",
+		"@@F",
+		"@@F:",
+		"@@om",
+		"@@dm",
+		"@@r",
+		"@@s:",
+	};
+	mu_assert_eq(rz_pvector_len(&r->options), RZ_ARRAY_SIZE(tmp_ops), "there are all @/@@/@@ operators (see @?, @@?)");
+	int i;
+	for (i = 0; i < RZ_ARRAY_SIZE(tmp_ops); i++) {
+		char msg[100];
+		rz_strf(msg, "%d-th should be %s", i, tmp_ops[i]);
+		mu_assert_streq(rz_pvector_at(&r->options, i), tmp_ops[i], msg);
+	}
+	rz_line_ns_completion_result_free(r);
+
+	rz_core_free(core);
+	mu_end;
+}
+
+static bool test_autocmplt_tmp_seek(void) {
+	RzCore *core = fake_core_new();
+	mu_assert_notnull(core, "core should be created");
+	RzLineBuffer *buf = &core->cons->line->buffer;
+
+	const char *s = "pd @ ";
+	strcpy(buf->data, s);
+	buf->length = strlen(s);
+	buf->index = buf->length;
+	RzLineNSCompletionResult *r = rz_core_autocomplete_rzshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
+
+	mu_assert_notnull(r, "r should not be null");
+	mu_assert_eq(r->start, strlen("pd @ "), "should autocomplete the @ operator");
+	mu_assert_eq(r->end, buf->length, "should autocomplete ending at end of buffer");
+	mu_assert_true(rz_pvector_len(&r->options) > 100, "there are a lot of possible values to seek to");
+	rz_line_ns_completion_result_free(r);
+
+	s = "pd @ st";
+	strcpy(buf->data, s);
+	buf->length = strlen(s);
+	buf->index = buf->length;
+	r = rz_core_autocomplete_rzshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
+
+	mu_assert_notnull(r, "r should not be null");
+	mu_assert_eq(r->start, strlen("pd @ "), "should autocomplete the @ operator");
+	mu_assert_eq(r->end, buf->length, "should autocomplete ending at end of buffer");
+	mu_assert_eq(rz_pvector_len(&r->options), 2, "there are 2 possible values to seek to starting with st");
+	mu_assert_streq(rz_pvector_at(&r->options, 0), "str.Hello", "hello string is there");
+	mu_assert_streq(rz_pvector_at(&r->options, 1), "str.r2_folks", "r2_folks string is there");
+	rz_line_ns_completion_result_free(r);
+	rz_core_free(core);
+	mu_end;
+}
+
+static bool test_autocmplt_tmp_config(void) {
+	RzCore *core = fake_core_new();
+	mu_assert_notnull(core, "core should be created");
+	RzLineBuffer *buf = &core->cons->line->buffer;
+
+	const char *s = "pd @e:";
+	strcpy(buf->data, s);
+	buf->length = strlen(s);
+	buf->index = buf->length;
+	RzLineNSCompletionResult *r = rz_core_autocomplete_rzshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
+
+	mu_assert_notnull(r, "r should not be null");
+	mu_assert_eq(r->start, strlen("pd @e:"), "should autocomplete the @ operator");
+	mu_assert_eq(r->end, buf->length, "should autocomplete ending at end of buffer");
+	mu_assert_true(rz_pvector_len(&r->options) > 20, "there are many possible eval vars");
+	rz_line_ns_completion_result_free(r);
+
+	rz_core_free(core);
+	mu_end;
+}
+
+static bool test_autocmplt_tmp_arch(void) {
+	RzCore *core = fake_core_new();
+	mu_assert_notnull(core, "core should be created");
+	RzLineBuffer *buf = &core->cons->line->buffer;
+
+	const char *s = "pd @a:z";
+	strcpy(buf->data, s);
+	buf->length = strlen(s);
+	buf->index = buf->length;
+	RzLineNSCompletionResult *r = rz_core_autocomplete_rzshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
+
+	mu_assert_notnull(r, "r should not be null");
+	mu_assert_eq(r->start, strlen("pd @a:"), "should autocomplete the @ operator");
+	mu_assert_eq(r->end, buf->length, "should autocomplete ending at end of buffer");
+	mu_assert_eq(rz_pvector_len(&r->options), 1, "there is just 1 arch starting with z: z80");
+	mu_assert_streq(rz_pvector_at(&r->options, 0), "z80", "hello string is there");
 	rz_line_ns_completion_result_free(r);
 
 	rz_core_free(core);
@@ -449,6 +600,10 @@ bool all_tests() {
 	mu_run_test(test_autocmplt_eval);
 	mu_run_test(test_autocmplt_seek);
 	mu_run_test(test_autocmplt_global);
+	mu_run_test(test_autocmplt_tmp_operators);
+	mu_run_test(test_autocmplt_tmp_seek);
+	mu_run_test(test_autocmplt_tmp_config);
+	mu_run_test(test_autocmplt_tmp_arch);
 	return tests_passed != tests_run;
 }
 

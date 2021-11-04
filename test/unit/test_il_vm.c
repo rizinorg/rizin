@@ -137,8 +137,8 @@ static bool test_rzil_vm_root_evaluation() {
 
 	RzILOp *ite_root = rz_il_new_op(RZIL_OP_ITE);
 	RzILOp *add = rz_il_new_op(RZIL_OP_ADD);
-	RzILOp *arg1 = rz_il_new_op(RZIL_OP_INT);
-	RzILOp *arg2 = rz_il_new_op(RZIL_OP_INT);
+	RzILOp *arg1 = rz_il_new_op(RZIL_OP_BITV);
+	RzILOp *arg2 = rz_il_new_op(RZIL_OP_BITV);
 	RzILOp *true_val = rz_il_new_op(RZIL_OP_B1);
 	RzILOp *false_val = rz_il_new_op(RZIL_OP_B0);
 
@@ -151,10 +151,8 @@ static bool test_rzil_vm_root_evaluation() {
 	ite_root->op.ite->y = false_val;
 	add->op.add->x = arg1;
 	add->op.add->y = arg2;
-	arg1->op.int_->value = 23;
-	arg1->op.int_->length = 16;
-	arg2->op.int_->value = 19;
-	arg2->op.int_->length = 16;
+	arg1->op.bitv->value = rz_il_bv_new_from_st32(16, 23);
+	arg2->op.bitv->value = rz_il_bv_new_from_st64(16, 19);
 
 	// Partially evaluate `condition` only
 	RzILOpArgType type_checker = RZIL_OP_ARG_INIT;
@@ -187,15 +185,7 @@ static bool test_rzil_vm_root_evaluation() {
 	rz_il_effect_free(eff);
 
 	rz_il_free_op(ite_root);
-	rz_il_free_op(true_val);
-	rz_il_free_op(false_val);
-	rz_il_free_op(add);
-	rz_il_free_op(arg1);
-	rz_il_free_op(arg2);
 	rz_il_free_op(branch_root);
-	rz_il_free_op(branch_true);
-	rz_il_free_op(branch_false);
-	rz_il_free_op(branch_cond);
 	rz_il_vm_free(vm);
 	mu_end;
 }

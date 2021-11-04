@@ -11,6 +11,7 @@
 #define SETDESC(x, y)      rz_config_node_desc(x, y)
 #define SETOPTIONS(x, ...) set_options(x, __VA_ARGS__)
 #define SETI(x, y, z)      SETDESC(rz_config_set_i(cfg, x, y), z)
+#define SETB(x, y, z)      SETDESC(rz_config_set_b(cfg, x, y), z)
 #define SETICB(w, x, y, z) SETDESC(NODEICB(w, x, y), z)
 #define SETPREF(x, y, z)   SETDESC(rz_config_set(cfg, x, y), z)
 #define SETCB(w, x, y, z)  SETDESC(NODECB(w, x, y), z)
@@ -363,7 +364,7 @@ static bool cb_scrrainbow(void *user, void *data) {
 		rz_cons_pal_random();
 	} else {
 		core->print->flags &= (~RZ_PRINT_FLAGS_RAINBOW);
-		rz_core_load_theme(core, rz_core_get_theme());
+		rz_core_theme_load(core, rz_core_theme_get(core));
 	}
 	rz_print_set_flags(core->print, core->print->flags);
 	return true;
@@ -3734,6 +3735,11 @@ RZ_API int rz_core_config_init(RzCore *core) {
 		"dbg.map", "dbg.maps", "dbg.maps.rwx", "dbg.maps.r", "dbg.maps.rw", "dbg.maps.rx", "dbg.maps.wx", "dbg.maps.x",
 		"analysis.fcn", "analysis.bb",
 		NULL);
+
+	/* RzIL config */
+	SETB("rzil.status.compact", true, "enables/disables compact printing when aezv is called");
+	SETB("rzil.step.events.read", false, "enables/disables printing aezse read event");
+	SETB("rzil.step.events.write", true, "enables/disables printing aezse write event");
 
 	rz_config_lock(cfg, true);
 	return true;

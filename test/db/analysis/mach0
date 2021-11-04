@@ -12,7 +12,7 @@ aar
 aan
 aav
 # aa;afna;aac;aar;aan;aav
-pd 17 @0x8058
+pd 17 @ 0x8058
 EOF
 EXPECT=<<EOF
 |       `=< 0x00008058      03e4           b     0x7862

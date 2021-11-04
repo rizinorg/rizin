@@ -6,6 +6,7 @@
 
 #include <rz_il/definitions/definitions.h>
 #include <rz_il/rzil_opcodes.h>
+#include <rz_il/rzil_vm_events.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,8 +42,8 @@ struct rz_il_vm_t {
 
 	RzILMem **mems; ///< Array of Memory, memory are actually hashmap in VM
 	int var_count, val_count, mem_count, lab_count; ///< count for VM predefined things
-	int addr_size; ///< size of address
-	int data_size; ///< size of minimal data unit
+	ut32 addr_size; ///< size of address space
+	ut32 data_size; ///< size of minimal data unit
 
 	HtPP *vm_global_bind_table; ///< Hashtable to record relationships between var and val
 	HtPP *vm_global_label_table; ///< Hashtable to maintain the label and address
@@ -53,7 +54,7 @@ struct rz_il_vm_t {
 
 	RzILOpHandler *op_handler_table; ///< Array of Handler, handler can be indexed by opcode
 
-	int easy_debug; ///< Debug only, used to locate the bug
+	RzList *events; ///< List of events that has happened in the last step
 };
 
 // VM operations about Variable and Value
@@ -75,11 +76,20 @@ RZ_API RzILVal *rz_il_vm_fortify_val(RzILVM *vm, RzILVal *val);
 RZ_API RzILVal *rz_il_vm_fortify_bitv(RzILVM *vm, RzILBitVector *val);
 RZ_API RzILVal *rz_il_vm_fortify_bool(RzILVM *vm, RzILBool *val);
 
-RZ_API void rz_il_vm_add_reg(RzILVM *vm, char *name, int length);
+RZ_API void rz_il_vm_add_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name, ut32 length);
 
 // VM store and load core theory opcodes
 RZ_API void rz_il_vm_store_opcodes_to_addr(RzILVM *vm, RzILBitVector *addr, RzPVector *oplist);
 RZ_API RzPVector *rz_il_make_oplist(int num, ...);
+
+RZ_API void rz_il_op_stringify(RZ_NONNULL RzILOp *op, RZ_NONNULL RzStrBuf *sb);
+RZ_API void rz_il_oplist_stringify(RZ_NONNULL RzPVector *oplist, RZ_NONNULL RzStrBuf *sb);
+
+RZ_API void rz_il_op_json(RZ_NONNULL RzILOp *op, RZ_NONNULL PJ *pj);
+RZ_API void rz_il_oplist_json(RZ_NONNULL RzPVector *oplist, RZ_NONNULL PJ *pj);
+
+RZ_API void rz_il_event_stringify(RZ_NONNULL RzILEvent *evt, RZ_NONNULL RzStrBuf *sb);
+RZ_API void rz_il_event_json(RZ_NONNULL RzILEvent *evt, RZ_NONNULL PJ *pj);
 
 // VM auto convert functions
 RZ_API RzILBitVector *rz_il_evaluate_bitv(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
@@ -95,7 +105,7 @@ void *rz_il_handler_ite(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_var(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_unk(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 
-void *rz_il_handler_int(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_bitv(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_msb(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_lsb(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_ule(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
@@ -111,24 +121,29 @@ void *rz_il_handler_mod(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_smod(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_shiftl(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_shiftr(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_logical_and(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_logical_or(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_logical_xor(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 
 void *rz_il_handler_b0(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_b1(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_and_(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_or_(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_inv(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_cast(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 
 void *rz_il_handler_perform(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_set(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_jmp(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_goto(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_seq(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
-void *rz_il_handler_blk(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
-void *rz_il_handler_repeat(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_branch(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 
 void *rz_il_handler_load(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_store(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+
+//TODO: remove me when all the handlers are implemented
+void *rz_il_handler_unimplemented(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 
 #ifdef __cplusplus
 }

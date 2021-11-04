@@ -103,7 +103,7 @@ NAME=cyclomatic
 FILE=bins/pe/rz-bin.exe
 CMDS=<<EOF
 s 0x140002510;af;afi~complex[1]
-afbi@0x14000253e
+afbi@ 0x14000253e
 EOF
 EXPECT=<<EOF
 67
@@ -590,7 +590,7 @@ RUN
 NAME=calc switch table
 FILE=bins/elf/calc.file
 CMDS=<<EOF
-af@0x8049203
+af@ 0x8049203
 f~?switch
 EOF
 EXPECT=<<EOF
@@ -1372,7 +1372,7 @@ RUN
 NAME=xref aar on op.val
 FILE=bins/elf/analysis/ch2.bin
 CMDS=<<EOF
-af@main
+af@ main
 aar
 axt @ str.john
 EOF
@@ -2911,7 +2911,7 @@ wx 488d4768488d7e684889c6c9e9013a0000554889e54883c6684883c768c9e9ef390000554889e
 sd -0x40
 b 0x100
 af
-pIf @0
+pIf @ 0
 EOF
 EXPECT=<<EOF
 push 0

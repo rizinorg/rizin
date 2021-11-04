@@ -1319,6 +1319,7 @@ static int var_cmd(RzCore *core, const char *str) {
 		RzType *ttype = rz_type_parse_string_single(core->analysis->typedb->parser, vartype, &error_msg);
 		if (!ttype || error_msg) {
 			eprintf("Can't parse type: \"%s\"\n%s\n", vartype, error_msg);
+			free(error_msg);
 			free(ostr);
 			return false;
 		}
@@ -1483,6 +1484,25 @@ static void cmd_syscall_do(RzCore *core, st64 n, ut64 addr) {
 	}
 }
 
+#define printline(k, fmt, arg) \
+	{ \
+		if (use_color) \
+			rz_cons_printf("%s%s: " Color_RESET, color, k); \
+		else \
+			rz_cons_printf("%s: ", k); \
+		if (fmt) \
+			rz_cons_printf(fmt, arg); \
+	}
+#define printline_noarg(k, msg) \
+	{ \
+		if (use_color) \
+			rz_cons_printf("%s%s: " Color_RESET, color, k); \
+		else \
+			rz_cons_printf("%s: ", k); \
+		if (msg) \
+			rz_cons_println(msg); \
+	}
+
 static void core_analysis_bytes(RzCore *core, const ut8 *buf, int len, int nops, int fmt) {
 	bool be = core->print->big_endian;
 	bool use_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
@@ -1565,8 +1585,6 @@ static void core_analysis_bytes(RzCore *core, const ut8 *buf, int len, int nops,
 			}
 		} else if (fmt == 's') {
 			totalsize += op.size;
-		} else if (fmt == '*') {
-			// TODO: ao* useful for wat? wx [bytes] ?
 		} else if (fmt == 'j') {
 			char strsub[128] = { 0 };
 			// pc+33
@@ -1646,6 +1664,14 @@ static void core_analysis_bytes(RzCore *core, const ut8 *buf, int len, int nops,
 			if (jesil && *jesil) {
 				pj_ks(pj, "esil", jesil);
 			}
+			if (op.rzil_op) {
+				if (op.rzil_op->ops) {
+					pj_k(pj, "rzil");
+					rz_il_oplist_json(op.rzil_op->ops, pj);
+				} else {
+					pj_knull(pj, "rzil");
+				}
+			}
 			pj_kb(pj, "sign", op.sign);
 			pj_kn(pj, "prefix", op.prefix);
 			pj_ki(pj, "id", op.id);
@@ -1706,17 +1732,6 @@ static void core_analysis_bytes(RzCore *core, const ut8 *buf, int len, int nops,
 			}
 			pj_ks(pj, "family", rz_analysis_op_family_to_string(op.family));
 			pj_end(pj);
-		} else if (fmt == 'r') {
-			if (RZ_STR_ISNOTEMPTY(esilstr)) {
-				if (use_color) {
-					rz_cons_printf("%s0x%" PFMT64x Color_RESET "\n", color, core->offset + idx);
-				} else {
-					rz_cons_printf("0x%" PFMT64x "\n", core->offset + idx);
-				}
-				rz_analysis_esil_parse(esil, esilstr);
-				rz_analysis_esil_dumpstack(esil);
-				rz_analysis_esil_stack_free(esil);
-			}
 		} else {
 			char disasm[128] = { 0 };
 			rz_parse_subvar(core->parser, NULL,
@@ -1733,15 +1748,7 @@ static void core_analysis_bytes(RzCore *core, const ut8 *buf, int len, int nops,
 					disasm, sizeof(disasm), be);
 				free(p);
 			}
-#define printline(k, fmt, arg) \
-	{ \
-		if (use_color) \
-			rz_cons_printf("%s%s: " Color_RESET, color, k); \
-		else \
-			rz_cons_printf("%s: ", k); \
-		if (fmt) \
-			rz_cons_printf(fmt, arg); \
-	}
+
 			printline("address", "0x%" PFMT64x "\n", core->offset + idx);
 			printline("opcode", "%s\n", rz_asm_op_get_asm(&asmop));
 			if (!*disasm) {
@@ -1841,6 +1848,16 @@ static void core_analysis_bytes(RzCore *core, const ut8 *buf, int len, int nops,
 			} else if (RZ_STR_ISNOTEMPTY(esilstr)) {
 				printline("esil", "%s\n", esilstr);
 			}
+			if (op.rzil_op) {
+				if (op.rzil_op->ops) {
+					RzStrBuf *sbil = rz_strbuf_new("");
+					rz_il_oplist_stringify(op.rzil_op->ops, sbil);
+					printline("rzil", "%s\n", rz_strbuf_get(sbil));
+					rz_strbuf_free(sbil);
+				} else {
+					printline_noarg("rzil", "[]");
+				}
+			}
 			if (hint && hint->jump != UT64_MAX) {
 				op.jump = hint->jump;
 			}
@@ -1894,6 +1911,8 @@ static void core_analysis_bytes(RzCore *core, const ut8 *buf, int len, int nops,
 	}
 	rz_analysis_esil_free(esil);
 }
+#undef printline
+#undef printline_noarg
 
 static RzList *get_xrefs(RzAnalysisBlock *block) {
 	RzListIter *iter;
@@ -4805,39 +4824,26 @@ static void __analysis_esil_function(RzCore *core, ut64 addr) {
 	rz_analysis_esil_free(core->analysis->esil);
 }
 
-static void cmd_rzil_mem(RzCore *core, const char *input) {
-	switch (*input) {
-	case '+':
-	case '-':
-		eprintf("[WIP] Add Mem or Remove Mem\n");
-		break;
-	case '\0':
-		eprintf("[DEAD] MOVE TO RZIL_INIT\n");
-		// rz_core_analysis_rzil_init_mem(core);
-		// core->analysis->rzil->init_mem = true;
-		break;
-	default:
-		eprintf("Usage: aeim [addr] [size] [name] - initialize ESIL VM stack\n");
-		eprintf("Default: 0x100000 0xf0000\n");
-		eprintf("See ae? for more help\n");
-		return;
-	}
-}
-
 static void cmd_analysis_rzil(RzCore *core, const char *input) {
 	char *n;
-	int repeat_times;
+	int repeat_times = 0;
+	bool step_event = false;
+	PJ *pj = NULL;
 
 	switch (input[0]) {
-	case 'r': // "aezr"
-		// 'aer' is an alias for 'ar'
-		// cmd_analysis_reg(core, input + 1);
-		eprintf("[WIP] Remove it or replace it ?");
-		break;
 	case 's': // "aezs"
+		if (input[1] == 'e') { // "aezse"
+			step_event = true;
+			input++;
+			if (input[1] == 'j') { // "aezsej"
+				pj = pj_new();
+				pj_a(pj);
+				input++;
+			}
+		}
 		switch (input[1]) {
-		case '?': // "aez?" see issue 1533
-			RZ_LOG_ERROR("RZIL WIP\n");
+		case '?': // "aezs?"
+			rz_cons_printf("Usage: aezs[ej] [n times] - steps n instructions in the VM (can output events)\n");
 			break;
 		case ' ': //"aezs [repeat num]"
 			n = strchr(input, ' ');
@@ -4847,28 +4853,53 @@ static void cmd_analysis_rzil(RzCore *core, const char *input) {
 				repeat_times = rz_num_math(core->num, n + 1);
 			}
 			for (int i = 0; i < repeat_times; ++i) {
-				rz_core_rzil_step(core);
+				if (step_event) {
+					rz_core_analysis_rzil_step_with_events(core, pj);
+				} else {
+					rz_core_rzil_step(core);
+				}
 			}
 			break;
 		// default addr
 		default:
-			rz_core_rzil_step(core);
+			if (step_event) {
+				rz_core_analysis_rzil_step_with_events(core, pj);
+			} else {
+				rz_core_rzil_step(core);
+			}
 			break;
+		}
+		if (pj) {
+			pj_end(pj);
+			char *output = pj_drain(pj);
+			rz_cons_println(output);
+			free(output);
+			pj = NULL;
 		}
 		break;
 	case 'i': // "aezi"
 		switch (input[1]) {
 		case '?': // "aezi?"
-			cmd_rzil_mem(core, "?");
+			rz_cons_printf("Usage: aezi - (re)initialize Rizin IL VM\n");
 			break;
 		case 0: // "aezi"
 			rz_core_analysis_rzil_reinit(core);
 			break;
 		}
 		break;
+	case 'v': // "aezv"
+		switch (input[1]) {
+		case '?': // "aezv?"
+			rz_cons_printf("Usage: aezv - prints the current status of the Rizin IL VM\n");
+			break;
+		case 0: // "aezv"
+			rz_core_analysis_rzil_vm_status(core);
+			break;
+		}
+		break;
 	case '?': // "aez?" see issue 1533
 		if (input[1] == '?') {
-			RZ_LOG_ERROR("RZIL WIP\n");
+			RZ_LOG_ERROR("see ae?\n");
 			break;
 		}
 	/* fallthrough */
@@ -8192,6 +8223,7 @@ static void cmd_analysis_aC(RzCore *core, const char *input) {
 			}
 		}
 		rz_reg_setv(core->analysis->reg, sp, spv); // reset stack ptr
+		rz_list_free(list);
 	}
 	char *s = rz_strbuf_drain(sb);
 	if (is_aCer) {

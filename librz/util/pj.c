@@ -32,10 +32,11 @@ RZ_API PJ *pj_new(void) {
 }
 
 RZ_API void pj_free(PJ *pj) {
-	if (pj) {
-		rz_strbuf_fini(&pj->sb);
-		free(pj);
+	if (!pj) {
+		return;
 	}
+	rz_strbuf_fini(&pj->sb);
+	free(pj);
 }
 
 RZ_API void pj_reset(PJ *j) {

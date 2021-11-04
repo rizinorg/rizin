@@ -12,6 +12,8 @@ rz_il_sources = [
    'theory_bool.c',
    'theory_mem.c',
    'rzil_opcodes.c',
+   'rzil_export.c',
+   'rzil_vm_events.c',
    'rzil_vm.c',
    'vm_layer.c',
 ]

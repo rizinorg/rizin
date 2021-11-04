@@ -465,6 +465,11 @@ typedef struct rz_cons_input_context_t {
 	bool bufactive;
 } RzConsInputContext;
 
+typedef enum {
+	RZ_CONS_PAL_SEEK_PREVIOUS,
+	RZ_CONS_PAL_SEEK_NEXT,
+} RzConsPalSeekMode;
+
 typedef struct rz_cons_context_t {
 	RzConsGrep grep;
 	RzStack *cons_stack;

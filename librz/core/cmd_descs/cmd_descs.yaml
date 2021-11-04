@@ -102,9 +102,9 @@ commands:
     cname: env_percentage
     summary: Get/set environment variables
     args_str: "[<varname>[=<varvalue>]]"
-    args: env
-    details: env
-    handler: env
+    args: cmd_shell_env
+    details: cmd_shell_env
+    handler: cmd_shell_env
   - name: "&"
     summary: Manage tasks
     subcommands: cmd_tasks
@@ -156,7 +156,7 @@ commands:
     args:
       - name: search_cmd
         type: RZ_CMD_ARG_TYPE_STRING
-        flags: ''
+        flags: ""
         optional: true
     modes:
       - RZ_OUTPUT_MODE_STANDARD
@@ -199,10 +199,6 @@ commands:
   - name: e
     summary: List/get/set config evaluable vars
     subcommands: cmd_eval
-  - name: exit
-    cname: cmd_exit
-    summary: Exit Rizin
-    args: []
   - name: f
     cname: cmd_flag
     summary: Manage flags
@@ -219,18 +215,6 @@ commands:
   - name: k
     cname: cmd_kuery
     summary: Run sdb-query
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
-  - name: ls
-    cname: ls
-    summary: List files and directories
-    args:
-      - name: arg
-        type: RZ_CMD_ARG_TYPE_STRING
-        flags: RZ_CMD_ARG_FLAG_ARRAY
-        optional: true
-  - name: m
-    cname: cmd_m
-    summary: Make directories and move files
     type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: L
     summary: List, unload, load rizin plugins
@@ -259,20 +243,6 @@ commands:
   - name: t
     summary: Types, noreturn, signatures, C parser and more
     subcommands: cmd_type
-  - name: uniq
-    cname: uniq
-    summary: List uniq strings in file
-    args:
-      - name: filename
-        type: RZ_CMD_ARG_TYPE_FILE
-  - name: uname
-    cname: uname
-    summary: Provide system info
-    args:
-      - name: r
-        type: RZ_CMD_ARG_TYPE_STRING
-        flags: RZ_CMD_ARG_FLAG_OPTION
-        optional: true
   - name: V
     cname: cmd_visual
     summary: Enter visual mode
@@ -303,11 +273,11 @@ commands:
     details:
       - name: ""
         entries:
-          - text: "<cmd> @"
-            arg_str: " <addr>"
-            comment: "Temporary seek to <addr>"
-          - text: "<cmd> @.."
+          - text: "<cmd> @ "
             arg_str: "<addr>"
+            comment: "Temporary seek to <addr>"
+          - text: "<cmd> @ "
+            arg_str: "..<addr>"
             comment: "Temporary partial address seek (see s..)"
           - text: "<cmd> @!"
             arg_str: "<blocksize>"
@@ -327,7 +297,7 @@ commands:
               Temporary seek to nth instruction in current basic block
               (negative numbers too)
           - text: "<cmd> @e:"
-            arg_str: "<k>=<v>[<k>=<v>]"
+            arg_str: "<k>=<v>[,<k>=<v>]"
             comment: >
               Temporary change eval vars (multiple vars separated by comma)
           - text: "<cmd> @f:"
@@ -406,6 +376,9 @@ commands:
           - text: "<cmd> @@i"
             arg_str: ""
             comment: "Run <cmd> over all instructions of the current basic block"
+          - text: "<cmd> @@ii"
+            arg_str: ""
+            comment: "Run <cmd> over all imports"
           - text: "<cmd> @@iS"
             arg_str: ""
             comment: "Run <cmd> over all sections"
@@ -628,5 +601,9 @@ commands:
         entries:
           - text: aflt
             arg_str: ":addr/cols/name/nbbs:nbbs/sort/dec:nbbs/gt/1:nbbs/lt/10:fancy"
-            comment: Show only the address, name and number of basic blocks of the identified functions
+            comment:
+              Show only the address, name and number of basic blocks of the identified functions
               with more than 1 block but less than 10, sorted decrementally by number of blocks.
+  - name: shell
+    summary: Common shell commands
+    subcommands: cmd_shell

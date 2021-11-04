@@ -3063,6 +3063,7 @@ static int fcn_print_makestyle(RzCore *core, RzList *fcns, char mode) {
 				} else {
 					rz_cons_printf("    %s\n", dst);
 				}
+				free(dst);
 			}
 			if (pj) {
 				pj_end(pj); // close list of calls
@@ -6833,9 +6834,9 @@ RZ_IPI char *rz_core_analysis_var_display(RzCore *core, RzAnalysisVar *var, bool
 		const char sign = real_delta >= 0 ? '+' : '-';
 		char *r;
 		if (usePxr) {
-			r = rz_core_cmd_strf(core, "pxr $w @%s%c0x%x", analysis->reg->name[RZ_REG_NAME_BP], sign, udelta);
+			r = rz_core_cmd_strf(core, "pxr $w @ %s%c0x%x", analysis->reg->name[RZ_REG_NAME_BP], sign, udelta);
 		} else {
-			r = rz_core_cmd_strf(core, "pf %s @%s%c0x%x", fmt, analysis->reg->name[RZ_REG_NAME_BP], sign, udelta);
+			r = rz_core_cmd_strf(core, "pf %s @ %s%c0x%x", fmt, analysis->reg->name[RZ_REG_NAME_BP], sign, udelta);
 		}
 		rz_strbuf_append(sb, r);
 		free(r);
@@ -6844,7 +6845,7 @@ RZ_IPI char *rz_core_analysis_var_display(RzCore *core, RzAnalysisVar *var, bool
 		ut32 udelta = RZ_ABS(var->delta + var->fcn->maxstack);
 		char *r;
 		if (usePxr) {
-			r = rz_core_cmd_strf(core, "pxr $w @%s+0x%x", analysis->reg->name[RZ_REG_NAME_SP], udelta);
+			r = rz_core_cmd_strf(core, "pxr $w @ %s+0x%x", analysis->reg->name[RZ_REG_NAME_SP], udelta);
 		} else {
 			r = rz_core_cmd_strf(core, "pf %s @ %s+0x%x", fmt, analysis->reg->name[RZ_REG_NAME_SP], udelta);
 		}
