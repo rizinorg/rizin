@@ -223,6 +223,7 @@ commands:
     cname: cmd_open
     summary: Open file at optional address
     type: RZ_CMD_DESC_TYPE_OLDINPUT
+    subcommands: cmd_open
   - name: p
     cname: cmd_print
     summary: Print commands
