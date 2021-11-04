@@ -199,7 +199,7 @@ RZ_API char *rz_hex_from_c_array(char *out, const char *code) {
 		}
 		free(_word);
 		code = comma;
-		if (*code == '}') {
+		if (code && *code == '}') {
 			break;
 		}
 	}
