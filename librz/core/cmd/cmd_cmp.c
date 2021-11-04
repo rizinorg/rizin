@@ -11,8 +11,8 @@ static int rizin_compare_words(RzCore *core, ut64 of, ut64 od, int len, int ws) 
 	for (i = 0; i < len; i += ws) {
 		memset(&v0, 0, sizeof(v0));
 		memset(&v1, 0, sizeof(v1));
-		rz_io_read_at(core->io, of + i, (ut8 *)&v0, ws);
-		rz_io_read_at(core->io, od + i, (ut8 *)&v1, ws);
+		rz_io_nread_at(core->io, of + i, (ut8 *)&v0, ws);
+		rz_io_nread_at(core->io, od + i, (ut8 *)&v1, ws);
 		char ch = (v0.v64 == v1.v64) ? '=' : '!';
 		const char *color = useColor ? ch == '=' ? "" : pal->graph_false : "";
 		const char *colorEnd = useColor ? Color_RESET : "";
@@ -119,7 +119,7 @@ static bool core_cmp_bits(RzCore *core, RzCompareData *cmp) {
 }
 
 // c
-RZ_IPI RzCmdStatus rz_cmd_cmp_string_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *output) {
+RZ_IPI RzCmdStatus rz_cmd_cmp_string_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	RzCmdStatus ret = RZ_CMD_STATUS_ERROR;
 	char *unescaped = strdup(argv[1]);
 	int len = rz_str_unescape(unescaped);
@@ -127,7 +127,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_string_handler(RzCore *core, int argc, const char 
 	if (!cmp) {
 		goto end;
 	}
-	int val = rz_cmp_print(core, cmp, output->mode);
+	int val = rz_cmp_print(core, cmp, mode);
 	if (val != 0) {
 		core->num->value = val;
 		ret = RZ_CMD_STATUS_OK;
@@ -215,7 +215,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_hex_block_handler(RzCore *core, int argc, const ch
 	ut8 *b = malloc(core->blocksize);
 	if (b) {
 		memset(b, 0xff, core->blocksize);
-		rz_io_read_at(core->io, addr, b, core->blocksize);
+		rz_io_nread_at(core->io, addr, b, core->blocksize);
 		rz_print_hexdiff(core->print, core->offset, core->block, addr, b, core->blocksize, col);
 	}
 	free(b);
@@ -231,7 +231,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_hex_diff_lines_handler(RzCore *core, int argc, con
 	ut8 *b = malloc(core->blocksize);
 	if (b) {
 		memset(b, 0xff, core->blocksize);
-		rz_io_read_at(core->io, addr, b, core->blocksize);
+		rz_io_nread_at(core->io, addr, b, core->blocksize);
 		rz_print_hexdiff(core->print, core->offset, core->block, addr, b, core->blocksize, col);
 	}
 	free(b);
@@ -328,8 +328,8 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_add_memory_watcher_handler(RzCore *core, int argc,
 }
 
 // cwl
-RZ_IPI RzCmdStatus rz_cmd_cmp_list_compare_watchers_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *output) {
-	rz_core_cmpwatch_show(core, UT64_MAX, output->mode);
+RZ_IPI RzCmdStatus rz_cmd_cmp_list_compare_watchers_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	rz_core_cmpwatch_show(core, UT64_MAX, mode);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -396,7 +396,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_hex_block_hexdiff_handler(RzCore *core, int argc, 
 	if (!buf) {
 		goto return_goto;
 	}
-	if (!rz_io_read_at(core->io, rz_num_math(core->num, argv[1]), buf, core->blocksize)) {
+	if (rz_io_nread_at(core->io, rz_num_math(core->num, argv[1]), buf, core->blocksize) == -1) {
 		RZ_LOG_ERROR("Cannot read hexdump at %s\n", argv[1]);
 		goto return_goto;
 	}

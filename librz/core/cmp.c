@@ -30,7 +30,7 @@ RZ_API RZ_OWN RzCompareData *rz_cmp_mem_mem(RZ_NONNULL RzCore *core, ut64 addr1,
 	if (!buf1 || !buf2) {
 		goto error_goto;
 	}
-	if (!rz_io_read_at(core->io, addr1, buf1, len) || !rz_io_read_at(core->io, addr2, buf2, len)) {
+	if (rz_io_nread_at(core->io, addr1, buf1, len) == -1 || rz_io_nread_at(core->io, addr2, buf2, len) == -1) {
 		RZ_LOG_ERROR("Cannot read at provided addresses: 0x%" PFMT64x " 0x%" PFMT64x "\n", addr1, addr2);
 		goto error_goto;
 	}
@@ -69,7 +69,7 @@ RZ_API RZ_OWN RzCompareData *rz_cmp_mem_data(RZ_NONNULL RzCore *core, ut64 addr,
 		RZ_LOG_ERROR("Cannot read at address: 0x%" PFMT64x "\n", addr);
 		goto error_goto;
 	}
-	if (!rz_io_read_at(core->io, addr, buf1, len)) {
+	if (rz_io_nread_at(core->io, addr, buf1, len) == -1) {
 		goto error_goto;
 	}
 	RzCompareData *cmp = RZ_NEW0(RzCompareData);
@@ -178,7 +178,7 @@ RZ_API RZ_OWN RzList /*<RzCompareData>*/ *rz_cmp_disasm(RZ_NONNULL RzCore *core,
 	if (!buf) {
 		goto error_goto;
 	}
-	rz_io_read_at(core->io, addr2, buf, len + 32);
+	rz_io_nread_at(core->io, addr2, buf, len + 32);
 	RzCompareData *comp;
 
 	for (i = j = 0; i < len && j < len;) {
@@ -328,7 +328,7 @@ RZ_API bool rz_core_cmpwatch_add(RZ_NONNULL RzCore *core, ut64 addr, int size, c
 		free(cmpw);
 		return false;
 	}
-	rz_io_read_at(core->io, addr, cmpw->ndata, size);
+	rz_io_nread_at(core->io, addr, cmpw->ndata, size);
 	rz_list_append(core->watchers, cmpw);
 	return true;
 }
@@ -382,7 +382,7 @@ RZ_API bool rz_core_cmpwatch_update(RZ_NONNULL RzCore *core, ut64 addr) {
 		if (!w->ndata) {
 			return false;
 		}
-		rz_io_read_at(core->io, w->addr, w->ndata, w->size);
+		rz_io_nread_at(core->io, w->addr, w->ndata, w->size);
 	}
 	return !rz_list_empty(core->watchers);
 }

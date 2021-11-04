@@ -6,7 +6,7 @@ commands:
   - name: c
     summary: Compare an escaped <string> with data at current offset
     cname: cmd_cmp_string
-    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    type: RZ_CMD_DESC_TYPE_ARGV_MODES
     modes:
       - RZ_OUTPUT_MODE_STANDARD
       - RZ_OUTPUT_MODE_JSON
@@ -120,7 +120,7 @@ commands:
       - name: cwl
         summary: List all compare watchers
         cname: cmd_cmp_list_compare_watchers
-        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        type: RZ_CMD_DESC_TYPE_ARGV_MODES
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_RIZIN
