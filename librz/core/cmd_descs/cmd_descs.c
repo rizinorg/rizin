@@ -210,6 +210,7 @@ static const RzCmdDescArg plugins_load_args[2];
 static const RzCmdDescArg plugins_unload_args[2];
 static const RzCmdDescArg plugins_debug_print_args[2];
 static const RzCmdDescArg plugins_io_print_args[2];
+static const RzCmdDescArg open_close_args[2];
 static const RzCmdDescArg cmd_print_gadget_add_args[6];
 static const RzCmdDescArg cmd_print_gadget_move_args[6];
 static const RzCmdDescArg cmd_print_msg_digest_args[2];
@@ -4797,6 +4798,26 @@ static const RzCmdDescHelp plugins_parser_print_help = {
 static const RzCmdDescHelp cmd_open_help = {
 	.summary = "Open file at optional address",
 };
+static const RzCmdDescArg open_close_args[] = {
+	{
+		.name = "fd",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_close_help = {
+	.summary = "Close file descriptor",
+	.args = open_close_args,
+};
+
+static const RzCmdDescArg open_close_all_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp open_close_all_help = {
+	.summary = "Close all files",
+	.args = open_close_all_args,
+};
 
 static const RzCmdDescHelp cmd_print_help = {
 	.summary = "Print commands",
@@ -8701,6 +8722,11 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_open_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "o", rz_cmd_open, &cmd_open_help);
 	rz_warn_if_fail(cmd_open_cd);
+	RzCmdDesc *open_close_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_open_cd, "o-", rz_open_close_handler, &open_close_help);
+	rz_warn_if_fail(open_close_cd);
+
+	RzCmdDesc *open_close_all_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_open_cd, "o--", rz_open_close_all_handler, &open_close_all_help);
+	rz_warn_if_fail(open_close_all_cd);
 
 	RzCmdDesc *cmd_print_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "p", rz_cmd_print, &cmd_print_help);
 	rz_warn_if_fail(cmd_print_cd);
