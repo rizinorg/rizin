@@ -101,7 +101,7 @@ bool test_rz_scan_strings_detect_ibm037(void) {
 		rz_buf_free(buf);
 	}
 
-		{
+	{
 		// one of the ending chars of UTF-8 is actually one of the starting chars of the EBCDIC string
 		static const unsigned char str[] =
 			"\xff\xff\xff\xc9\x40\x81\x94\x40\x81\x95\x40\xc9\xc2\xd4\xf0\xf3\xf7\x40\xa2\xa3\x99\x89\x95\x87\x25"
