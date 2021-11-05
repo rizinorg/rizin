@@ -118,8 +118,7 @@ static char *showfile(char *res, const int nth, const char *fpath, const char *n
 	return res;
 }
 
-// TODO: Move into rz_util .. rz_print maybe? rz_cons dep is annoying
-RZ_API char *rz_syscmd_ls(const char *input) {
+RZ_API RZ_OWN char *rz_syscmd_ls(const char *input) {
 	char *res = NULL;
 	const char *path = ".";
 	char *d = NULL;
