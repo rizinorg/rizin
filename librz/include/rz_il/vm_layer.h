@@ -30,7 +30,6 @@ RZ_API RzILMem *rz_il_vm_mem_store_zero(RzILVM *vm, ut32 mem_index, RzILBitVecto
 RZ_API RzILBitVector *rz_il_ut64_addr_to_bv(ut64 addr);
 RZ_API ut64 rz_il_bv_addr_to_ut64(RzILBitVector *addr);
 RZ_API void rz_il_free_bv_addr(RzILBitVector *addr);
-RZ_API char *rz_il_op2str(RzILOPCode opcode);
 
 #ifdef __cplusplus
 }

@@ -1107,6 +1107,7 @@ static void __update_prompt_color(void) {
 	char *prompt = rz_str_escape(I.prompt); // remote the color
 	free(I.prompt);
 	I.prompt = rz_str_newf("%s%s%s", BEGIN, prompt, END);
+	free(prompt);
 }
 
 static void __vi_mode(bool *enable_yank_pop) {
@@ -1859,6 +1860,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 					case 0x34: // END
 					case 0x38: // END xrvt-unicode
 						rz_cons_readchar();
+						/* fall through */
 					case 0x46: // END
 						if (I.sel_widget) {
 							selection_widget_down(I.sel_widget->options_len - 1);
