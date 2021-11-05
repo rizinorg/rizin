@@ -616,7 +616,7 @@ RZ_API bool rz_core_bin_apply_config(RzCore *r, RzBinFile *binfile) {
 	if (!info) {
 		return false;
 	}
-	rz_config_set(r->config, "file.type", info->rclass);
+	rz_config_set(r->config, "file.type", rz_str_get(info->rclass));
 	rz_config_set(r->config, "cfg.bigendian",
 		info->big_endian ? "true" : "false");
 	if (info->lang) {
