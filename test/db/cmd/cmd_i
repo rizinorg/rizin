@@ -4285,11 +4285,11 @@ wx 6a0b58995266682d6389e7682f736800682f62696e89e352e8390000006563686f202222203e2
 izzQ
 EOF
 EXPECT=<<EOF
-rêÃÇ
-h/sh
+¦\vìrêÃÇ
+ÄiXÇ
 h/bin
 echo "" > /etc/shadow ; echo "" > /etc/passwd ; rm -Rf /
-i÷òØ
+ïëi÷òØ
 EOF
 RUN
 
@@ -4297,7 +4297,7 @@ NAME=izzz (file x86_64)
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=izzz~?
 EXPECT=<<EOF
-101
+114
 EOF
 RUN
 
@@ -4315,8 +4315,8 @@ FILE=bins/elf/analysis/hello-linux-x86_64
 ARGS=-n
 CMDS=izz~puts
 EXPECT=<<EOF
-5   0x000002fa 0x000002fa 4   5            ascii   puts
-84  0x00001953 0x00001953 17  18           ascii   puts@@GLIBC_2.2.5
+8   0x000002fa 0x000002fa 4   5            ascii   puts
+97  0x00001953 0x00001953 17  18           ascii   puts@@GLIBC_2.2.5
 EOF
 RUN
 
@@ -4328,7 +4328,7 @@ e bin.str.purge=all,!0x2fa,!0x1953
 izzj
 EOF
 EXPECT=<<EOF
-[{"vaddr":762,"paddr":762,"ordinal":5,"size":5,"length":4,"section":"","type":"ascii","string":"puts"},{"vaddr":6483,"paddr":6483,"ordinal":84,"size":18,"length":17,"section":"","type":"ascii","string":"puts@@GLIBC_2.2.5"}]
+[{"vaddr":762,"paddr":762,"ordinal":8,"size":5,"length":4,"section":"","type":"ascii","string":"puts"},{"vaddr":6483,"paddr":6483,"ordinal":97,"size":18,"length":17,"section":"","type":"ascii","string":"puts@@GLIBC_2.2.5"}]
 EOF
 RUN
 
@@ -4339,7 +4339,7 @@ e bin.str.purge=all,!0x4002fa,!0x15b
 izzj
 EOF
 EXPECT=<<EOF
-[{"vaddr":4195066,"paddr":762,"ordinal":5,"size":5,"length":4,"section":".dynstr","type":"ascii","string":"puts"},{"vaddr":347,"paddr":6483,"ordinal":84,"size":18,"length":17,"section":".strtab","type":"ascii","string":"puts@@GLIBC_2.2.5"}]
+[{"vaddr":4195066,"paddr":762,"ordinal":8,"size":5,"length":4,"section":".dynstr","type":"ascii","string":"puts"},{"vaddr":347,"paddr":6483,"ordinal":97,"size":18,"length":17,"section":".strtab","type":"ascii","string":"puts@@GLIBC_2.2.5"}]
 EOF
 RUN
 
@@ -4386,7 +4386,7 @@ iz~green
 iz~wall
 EOF
 EXPECT=<<EOF
-6   0x0000224c 0x0040224c 46  93   .rodata utf16le tf16le> \\u00a2\\u20ac\\U00010348 in green:\e[32m 
+6   0x0000224a 0x0040224a 47  95   .rodata utf16le utf16le> \\u00a2\\u20ac\\U00010348 in green:\e[32m 
 9   0x000022c8 0x004022c8 33  68   .rodata utf16le is a wall with no embedded zeros\n
 EOF
 RUN
@@ -4402,7 +4402,7 @@ EOF
 EXPECT=<<EOF
 18  0x0000258c 0x0040258c 55  224  .rodata utf32le utf32le> \\u00a2\\u20ac\\U00010348 in cyan:\e[36m ¢€𐍈 \e[0m\n blocks=Basic Latin,Latin-1 Supplement,Currency Symbols,Gothic
 19  0x0000266c 0x0040266c 48  196  .rodata utf32le Mountain range with embedded quad zeros: 𐌀A𐌀A𐌀A\n blocks=Basic Latin,Old Italic
-228 0x00002528 0x00402528 24  100  .rodata            utf32le \tLinux_wide\\esc: \e[0m¡\r\n blocks=Basic Latin,Latin-1 Supplement
+302 0x00002528 0x00402528 24  100  .rodata            utf32le \tLinux_wide\\esc: \e[0m¡\r\n blocks=Basic Latin,Latin-1 Supplement
 EOF
 RUN
 
@@ -4591,7 +4591,7 @@ e bin.str.purge=all,!4195920
 izzj
 EOF
 EXPECT=<<EOF
-[{"vaddr":4195920,"paddr":1616,"ordinal":32,"size":44,"length":10,"section":".rodata","type":"utf32le","string":"abcdef𐍈  g","blocks":["Basic Latin","Gothic"]}]
+[{"vaddr":4195920,"paddr":1616,"ordinal":42,"size":44,"length":10,"section":".rodata","type":"utf32le","string":"abcdef𐍈  g","blocks":["Basic Latin","Gothic"]}]
 EOF
 RUN
 
@@ -4644,7 +4644,7 @@ e bin.str.purge=all,!0x413220-0x413235
 EOF
 EXPECT=<<EOF
 --1--
-3160 0x00012420 0x00412420 5   6    .text              ascii   AWAVA
+3855 0x00012420 0x00412420 5   6    .text              ascii   AWAVA
 --2--
 --3--
 0   0x000131d8 0x004131d8 11  12   .rodata ascii dev_ino_pop
