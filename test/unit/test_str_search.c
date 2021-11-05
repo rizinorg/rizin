@@ -76,6 +76,56 @@ bool test_rz_scan_strings_detect_ibm037(void) {
 		rz_buf_free(buf);
 	}
 
+	{
+		// UTF and EBCDIC strings in one memory
+		static const unsigned char str[] =
+			"\xff\xff\xff\xc9\x40\x81\x94\x40\x81\x95\x40\xc9\xc2\xd4\xf0\xf3\xf7\x40\xa2\xa3\x99\x89\x95\x87\x25\xff\xff\xff"
+			"\xff\xff\xff\xffI am a \xc3\x99TF-8 string\xff\xff\xff\xff";
+		RzBuffer *buf = rz_buf_new_with_bytes(str, sizeof(str));
+
+		RzList *str_list = rz_list_new();
+		int n = rz_scan_strings(buf, str_list, &g_opt, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_GUESS);
+		mu_assert_eq(n, 2, "rz_scan_strings mix utf8 and ibm037, number of strings");
+
+		RzDetectedString *s = rz_list_get_n(str_list, 0);
+		mu_assert_streq(s->string, "I am an IBM037 string", "rz_scan_strings mix utf8 and ibm037, different string");
+		mu_assert_eq(s->type, RZ_STRING_ENC_IBM037, "rz_scan_strings mix utf8 and ibm037, string type");
+		rz_detected_string_free(s);
+
+		s = rz_list_get_n(str_list, 1);
+		mu_assert_streq(s->string, "I am a \xc3\x99TF-8 string", "rz_scan_strings mix utf8 and ibm037, different string");
+		mu_assert_eq(s->type, RZ_STRING_ENC_UTF8, "rz_scan_strings mix utf8 and ibm037, string type");
+		rz_detected_string_free(s);
+
+		rz_list_free(str_list);
+		rz_buf_free(buf);
+	}
+
+		{
+		// one of the ending chars of UTF-8 is actually one of the starting chars of the EBCDIC string
+		static const unsigned char str[] =
+			"\xff\xff\xff\xc9\x40\x81\x94\x40\x81\x95\x40\xc9\xc2\xd4\xf0\xf3\xf7\x40\xa2\xa3\x99\x89\x95\x87\x25"
+			"I am a \xc3\x99TF-8 string\xff\xff\xff";
+		RzBuffer *buf = rz_buf_new_with_bytes(str, sizeof(str));
+
+		RzList *str_list = rz_list_new();
+		int n = rz_scan_strings(buf, str_list, &g_opt, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_GUESS);
+		mu_assert_eq(n, 2, "rz_scan_strings mix utf8 and ibm037, number of strings");
+
+		RzDetectedString *s = rz_list_get_n(str_list, 0);
+		mu_assert_streq(s->string, "I am an IBM037 string", "rz_scan_strings mix utf8 and ibm037, different string");
+		mu_assert_eq(s->type, RZ_STRING_ENC_IBM037, "rz_scan_strings mix utf8 and ibm037, string type");
+		rz_detected_string_free(s);
+
+		s = rz_list_get_n(str_list, 1);
+		mu_assert_streq(s->string, "I am a \xc3\x99TF-8 string", "rz_scan_strings mix utf8 and ibm037, different string");
+		mu_assert_eq(s->type, RZ_STRING_ENC_UTF8, "rz_scan_strings mix utf8 and ibm037, string type");
+		rz_detected_string_free(s);
+
+		rz_list_free(str_list);
+		rz_buf_free(buf);
+	}
+
 	mu_end;
 }
 
