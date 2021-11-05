@@ -398,7 +398,6 @@ RZ_API char *rz_reg_parse_gdb_profile(const char *profile_file) {
 				str = rz_file_slurp(file, NULL);
 				free(file);
 			}
-			free(base);
 		}
 	}
 	if (str) {

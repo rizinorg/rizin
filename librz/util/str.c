@@ -908,6 +908,7 @@ RZ_API char *rz_str_append_owned(char *ptr, char *string) {
 	free(string);
 	return r;
 }
+
 /*
  * first argument must be allocated
  * return: the pointer ptr resized to string size.
