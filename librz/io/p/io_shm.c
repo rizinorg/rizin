@@ -144,7 +144,13 @@ static RzIODesc *shm__open(RzIO *io, const char *uri, int rw, int mode) {
 		shm->size = given_size;
 	} else {
 		struct stat st;
-		fstat(shm->fd, &st);
+		if (fstat(shm->fd, &st)) {
+			RZ_LOG_ERROR("Cannot determine the size of shared memory \"%s\" (0x%08x)\n", shm->name, shm->id);
+			close(shm->fd);
+			free(shm->name);
+			free(shm);
+			return NULL;
+		}
 		shm->size = st.st_size;
 	}
 

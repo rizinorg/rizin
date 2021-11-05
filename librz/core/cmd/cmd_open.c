@@ -11,11 +11,10 @@ static const char *help_msg_o[] = {
 	"o", " [file] 0x4000 rwx", "map file at 0x4000",
 	"o", " [file]", "open [file] file in read-only",
 	"o", "", "list opened files",
-	"o", "-1", "close file descriptor 1",
 	"o*", "", "list opened files in rizin commands",
 	"o+", " [file]", "open file in read-write mode",
-	"o-", "!*", "close all opened files",
-	"o--", "", "close all files, analysis, binfiles, flags, same as !rizin --",
+	"o-", " 1", "close file descriptor 1",
+	"o--", "", "close all opened files",
 	"o.", "", "show current filename (or o.q/oq to get the fd)",
 	"oC", " [len]", "open a malloc://[len] copying the bytes from current offset",
 	"o=", "", "list opened files (ascii-art bars)",
@@ -32,14 +31,6 @@ static const char *help_msg_o[] = {
 	"oq", "", "list all open files",
 	"ou", "[fd]", "select fd to use",
 	"ox", " fd fdx", "exchange the descs of fd and fdx and keep the mapping",
-	NULL
-};
-
-static const char *help_msg_o_[] = {
-	"Usage: o-", "[#!*]", "",
-	"o-*", "", "close all opened files",
-	"o-!", "", "close all files except the current one",
-	"o-3", "", "close fd=3",
 	NULL
 };
 
@@ -1305,24 +1296,6 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 		core->print->cb_printf("%s\n", pj_string(pj));
 		pj_free(pj);
 		break;
-	case 'L': { // "oL"
-		RzCmdStateOutput state = { 0 };
-		if (input[1] == ' ') {
-			if (rz_lib_open(core->lib, input + 2) == -1) {
-				eprintf("Oops\n");
-			}
-			break;
-		}
-		if (input[1] == 'j') {
-			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_JSON);
-		} else {
-			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
-		}
-		rz_core_io_plugins_print(core->io, &state);
-		rz_cmd_state_output_print(&state);
-		rz_cmd_state_output_fini(&state);
-		break;
-	}
 	case 'i': // "oi"
 		switch (input[1]) {
 		case ' ': // "oi "
@@ -1387,42 +1360,6 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 	}
 	case 'b': // "ob"
 		cmd_open_bin(core, input);
-		break;
-	case '-': // "o-"
-		switch (input[1]) {
-		case '!': // "o-!"
-			rz_core_file_close_all_but(core);
-			break;
-		case '*': // "o-*"
-			rz_core_file_close_fd(core, -1);
-			rz_io_close_all(core->io);
-			rz_bin_file_delete_all(core->bin);
-			if (core->files) {
-				rz_list_purge(core->files);
-			}
-			break;
-		case '-': // "o--"
-			eprintf("All core files, io, analysis and flags info purged.\n");
-			rz_core_file_close_fd(core, -1);
-			rz_io_close_all(core->io);
-			rz_bin_file_delete_all(core->bin);
-
-			// TODO: Move to a-- ?
-			rz_analysis_purge(core->analysis);
-			// TODO: Move to f-- ?
-			rz_flag_unset_all(core->flags);
-			// TODO: rbin?
-			break;
-		default: {
-			int fd = (int)rz_num_math(core->num, input + 1);
-			if (!rz_core_file_close_fd(core, fd)) {
-				eprintf("Unable to find file descriptor %d\n", fd);
-			}
-		} break;
-		case 0:
-		case '?':
-			rz_core_cmd_help(core, help_msg_o_);
-		}
 		break;
 	case '.': // "o."
 		if (input[1] == 'q') { // "o.q" // same as oq
@@ -1624,4 +1561,30 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 		break;
 	}
 	return 0;
+}
+
+RZ_IPI RzCmdStatus rz_open_close_handler(RzCore *core, int argc, const char **argv) {
+	if (!rz_num_is_valid_input(NULL, argv[1])) {
+		RZ_LOG_ERROR("Invalid fd: %s\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	int fd = (int)rz_num_math(NULL, argv[1]);
+	if (!rz_core_file_close_fd(core, fd)) {
+		RZ_LOG_ERROR("Unable to find file descriptor %d\n", fd);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_open_close_all_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_file_close_fd(core, -1);
+	rz_io_close_all(core->io);
+	rz_bin_file_delete_all(core->bin);
+
+	// TODO: Move to a-- ?
+	rz_analysis_purge(core->analysis);
+	// TODO: Move to f-- ?
+	rz_flag_unset_all(core->flags);
+	RZ_LOG_INFO("Close all files\n");
+	return RZ_CMD_STATUS_OK;
 }

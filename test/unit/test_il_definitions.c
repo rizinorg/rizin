@@ -188,11 +188,11 @@ bool test_rzil_bv_algorithm(void) {
 	mul = rz_il_bv_new_from_ut32(32, 121 * 33);
 	mod = rz_il_bv_new_from_ut32(32, 121 % 33);
 
-	result = rz_il_bv_add(x, y);
+	result = rz_il_bv_add(x, y, NULL);
 	mu_assert("Add x y", rz_il_bv_cmp(result, add) == 0);
 	rz_il_bv_free(result);
 
-	result = rz_il_bv_sub(x, y);
+	result = rz_il_bv_sub(x, y, NULL);
 	mu_assert("Sub x y", rz_il_bv_cmp(result, sub) == 0);
 	rz_il_bv_free(result);
 
