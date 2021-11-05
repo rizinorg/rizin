@@ -1107,6 +1107,7 @@ static void __update_prompt_color(void) {
 	char *prompt = rz_str_escape(I.prompt); // remote the color
 	free(I.prompt);
 	I.prompt = rz_str_newf("%s%s%s", BEGIN, prompt, END);
+	free(prompt);
 }
 
 static void __vi_mode(bool *enable_yank_pop) {
