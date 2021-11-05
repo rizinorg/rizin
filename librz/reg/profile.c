@@ -282,6 +282,7 @@ static char *gdb_to_rz_profile(const char *gdb) {
 	// It's possible someone includes the heading line too. Skip it
 	if (rz_str_startswith(ptr, "Name")) {
 		if (!(ptr = strchr(ptr, '\n'))) {
+			rz_strbuf_free(sb);
 			return NULL;
 		}
 		ptr++;
@@ -308,7 +309,7 @@ static char *gdb_to_rz_profile(const char *gdb) {
 			if (*ptr != '*') {
 				eprintf("Could not parse line: %s\n", ptr);
 				rz_strbuf_free(sb);
-				return false;
+				return NULL;
 			}
 			ptr = ptr1 + 1;
 			continue;
