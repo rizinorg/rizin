@@ -328,7 +328,7 @@ static inline void **rz_pvector_flush(RzPVector *vec) {
  * }
  */
 #define rz_pvector_foreach(vec, it) \
-	for (it = (void **)(vec)->v.a; it && it != (void **)(vec)->v.a + (vec)->v.len; it++)
+	for (it = (void **)(vec)->v.a; (vec)->v.len && it != (void **)(vec)->v.a + (vec)->v.len; it++)
 
 // like rz_pvector_foreach() but inverse
 #define rz_pvector_foreach_prev(vec, it) \
