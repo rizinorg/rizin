@@ -565,16 +565,21 @@ RZ_API int rz_core_write_assembly(RzCore *core, ut64 addr, const char *instructi
 	return -1;
 }
 
+/**
+ * \brief Print an IO plugin according to \p state
+ *
+ * \param plugin Reference to RzIOPlugin
+ * \param state Specify how the plugin shall be printed
+ */
 RZ_API RzCmdStatus rz_core_io_plugin_print(RzIOPlugin *plugin, RzCmdStateOutput *state) {
 	char str[4];
 	PJ *pj = state->d.pj;
+	str[0] = 'r';
+	str[1] = plugin->write ? 'w' : '_';
+	str[2] = plugin->isdbg ? 'd' : '_';
+	str[3] = 0;
 	switch (state->mode) {
-	case RZ_OUTPUT_MODE_JSON: {
-		str[0] = 'r';
-		str[1] = plugin->write ? 'w' : '_';
-		str[2] = plugin->isdbg ? 'd' : '_';
-		str[3] = 0;
-
+	case RZ_OUTPUT_MODE_JSON:
 		pj_o(pj);
 		pj_ks(pj, "permissions", str);
 		pj_ks(pj, "name", plugin->name);
@@ -603,12 +608,14 @@ RZ_API RzCmdStatus rz_core_io_plugin_print(RzIOPlugin *plugin, RzCmdStateOutput 
 		}
 		pj_end(pj);
 		break;
-	}
-	case RZ_OUTPUT_MODE_STANDARD: {
-		str[0] = 'r';
-		str[1] = plugin->write ? 'w' : '_';
-		str[2] = plugin->isdbg ? 'd' : '_';
-		str[3] = 0;
+	case RZ_OUTPUT_MODE_TABLE:
+		rz_table_set_columnsf(state->d.t, "sssss", "perm", "license", "name", "uri", "description");
+		rz_table_add_rowf(state->d.t, "sssss", str, plugin->license, plugin->name, plugin->uris, plugin->desc);
+		break;
+	case RZ_OUTPUT_MODE_QUIET:
+		rz_cons_printf("%s\n", plugin->name);
+		break;
+	case RZ_OUTPUT_MODE_STANDARD:
 		rz_cons_printf("%s  %-8s %s (%s)",
 			str, plugin->name,
 			plugin->desc, plugin->license);
@@ -623,7 +630,6 @@ RZ_API RzCmdStatus rz_core_io_plugin_print(RzIOPlugin *plugin, RzCmdStateOutput 
 		}
 		rz_cons_printf("\n");
 		break;
-	}
 	default: {
 		rz_warn_if_reached();
 		return RZ_CMD_STATUS_NONEXISTINGCMD;
@@ -632,6 +638,12 @@ RZ_API RzCmdStatus rz_core_io_plugin_print(RzIOPlugin *plugin, RzCmdStateOutput 
 	return RZ_CMD_STATUS_OK;
 }
 
+/**
+ * \brief Print the registered IO plugins according to \p state
+ *
+ * \param io Reference to RzIO instance
+ * \param state Specify how plugins shall be printed
+ */
 RZ_API RzCmdStatus rz_core_io_plugins_print(RzIO *io, RzCmdStateOutput *state) {
 	RzIOPlugin *plugin;
 	RzListIter *iter;
@@ -639,6 +651,7 @@ RZ_API RzCmdStatus rz_core_io_plugins_print(RzIO *io, RzCmdStateOutput *state) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_cmd_state_output_array_start(state);
+	rz_cmd_state_output_set_columnsf(state, "sssss", "perm", "license", "name", "uri", "description");
 	rz_list_foreach (io->plugins, iter, plugin) {
 		rz_core_io_plugin_print(plugin, state);
 	}
