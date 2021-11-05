@@ -17,14 +17,6 @@
 RZ_API RZ_OWN RzCompareData *rz_cmp_mem_mem(RZ_NONNULL RzCore *core, ut64 addr1, ut64 addr2, ut32 len) {
 	rz_return_val_if_fail(core, NULL);
 
-	if (!rz_io_addr_is_mapped(core->io, addr1) || !rz_io_addr_is_mapped(core->io, addr1 + len)) {
-		RZ_LOG_ERROR("Cannot reach addresses: 0x%" PFMT64x " 0x%" PFMT64x "\n", addr1, addr1 + len);
-		return NULL;
-	}
-	if (!rz_io_addr_is_mapped(core->io, addr2) || !rz_io_addr_is_mapped(core->io, addr2 + len)) {
-		RZ_LOG_ERROR("Cannot reach addresses: 0x%" PFMT64x " 0x%" PFMT64x "\n", addr2, addr2 + len);
-		return NULL;
-	}
 	ut8 *buf1 = malloc(len * sizeof(ut8));
 	ut8 *buf2 = malloc(len * sizeof(ut8));
 	if (!buf1 || !buf2) {
