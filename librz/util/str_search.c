@@ -116,12 +116,6 @@ static ut64 adjust_offset(RzStrEnc str_type, const ut8 *buf, const ut64 str_star
 			}
 		}
 		break;
-	case RZ_STRING_ENC_IBM037:
-	case RZ_STRING_ENC_IBM290:
-	case RZ_STRING_ENC_EBCDIC_ES:
-	case RZ_STRING_ENC_EBCDIC_UK:
-	case RZ_STRING_ENC_EBCDIC_US:
-		return 1;
 	default:
 		break;
 	}
@@ -413,8 +407,9 @@ RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrS
 				}
 				str_type = RZ_STRING_ENC_UTF16BE;
 			} else {
-				int rc = rz_utf8_decode(ptr, size, NULL);
-				if (!rc) {
+				RzRune r;
+				int rc = rz_utf8_decode(ptr, size, &r);
+				if (!rc || (rc == 2 && !rz_isprint(r))) {
 					if (can_be_ebcdic(ptr, size)) {
 						str_type = RZ_STRING_ENC_IBM037;
 					} else {
@@ -422,7 +417,12 @@ RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrS
 						continue;
 					}
 				} else {
-					str_type = RZ_STRING_ENC_8BIT;
+					RzDetectedString *ds = process_one_string(buf, from, needle, to, RZ_STRING_ENC_UTF8, false, opt);
+					if (!ds) {
+						str_type = RZ_STRING_ENC_IBM037;
+					} else {
+						str_type = RZ_STRING_ENC_8BIT;
+					}
 				}
 			}
 		} else if (type == RZ_STRING_ENC_UTF8) {

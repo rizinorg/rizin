@@ -32,20 +32,52 @@ bool test_rz_scan_strings_detect_ascii(void) {
 }
 
 bool test_rz_scan_strings_detect_ibm037(void) {
-	static const unsigned char str[] = "\xc9\x40\x81\x94\x40\x81\x95\x40\xc9\xc2\xd4\xf0\xf3\xf7\x40\xa2\xa3\x99\x89\x95\x87\x25";
-	RzBuffer *buf = rz_buf_new_with_bytes(str, sizeof(str));
+	{
+		static const unsigned char str[] = "\xc9\x40\x81\x94\x40\x81\x95\x40\xc9\xc2\xd4\xf0\xf3\xf7\x40\xa2\xa3\x99\x89\x95\x87\x25";
+		RzBuffer *buf = rz_buf_new_with_bytes(str, sizeof(str));
 
-	RzList *str_list = rz_list_new();
-	int n = rz_scan_strings(buf, str_list, &g_opt, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_GUESS);
-	mu_assert_eq(n, 1, "rz_scan_strings ibm037, number of strings");
+		RzList *str_list = rz_list_new();
+		int n = rz_scan_strings(buf, str_list, &g_opt, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_GUESS);
+		mu_assert_eq(n, 1, "rz_scan_strings ibm037, number of strings");
 
-	RzDetectedString *s = rz_list_get_n(str_list, 0);
-	mu_assert_streq(s->string, "I am an IBM037 string", "rz_scan_strings ibm037, different string");
-	mu_assert_eq(s->type, RZ_STRING_ENC_IBM037, "rz_scan_strings ibm037, string type");
+		RzDetectedString *s = rz_list_get_n(str_list, 0);
+		mu_assert_streq(s->string, "I am an IBM037 string", "rz_scan_strings ibm037, different string");
+		mu_assert_eq(s->type, RZ_STRING_ENC_IBM037, "rz_scan_strings ibm037, string type");
 
-	rz_detected_string_free(s);
-	rz_list_free(str_list);
-	rz_buf_free(buf);
+		rz_detected_string_free(s);
+		rz_list_free(str_list);
+		rz_buf_free(buf);
+	}
+
+	{
+		/**
+		 * two strings:
+		 * 1. "Ber. Who's there.?\x00"
+		 * 2. "Fran. Nay, answer me. Stand and unfold yourself"
+		 */
+		static const unsigned char str[] = "\xff\xff\xff\xC2\x85\x99\x4B\x40\xE6\x88\x96\x7D\xA2\x40\xA3\x88\x85\x99\x85\x4B\x6F\x00\xC6\x99\x81\x95\x4B\x40\xD5\x81\xA8\x6B\x40\x81\x95\xA2\xA6\x85\x99\x40\x94\x85\x4B\x40\xE2\xA3\x81\x95\x84\x40\x81\x95\x84\x40\xA4\x95\x86\x96\x93\x84\x40\xA8\x96\xA4\x99\xA2\x85\x93\x86";
+		RzBuffer *buf = rz_buf_new_with_bytes(str, sizeof(str));
+
+		RzList *str_list = rz_list_new();
+		int n = rz_scan_strings(buf, str_list, &g_opt, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_GUESS);
+		mu_assert_eq(n, 2, "rz_scan_strings ibm037, number of strings");
+
+		RzDetectedString *s = rz_list_get_n(str_list, 0);
+		mu_assert_streq(s->string, "Ber. Who's there.?", "rz_scan_strings ibm037, different string");
+		mu_assert_eq(s->type, RZ_STRING_ENC_IBM037, "rz_scan_strings ibm037, string type");
+		rz_detected_string_free(s);
+
+		s = rz_list_get_n(str_list, 1);
+		mu_assert_streq(s->string, "Fran. Nay, answer me. Stand and unfold yourself", "rz_scan_strings ibm037, different string");
+		mu_assert_eq(s->type, RZ_STRING_ENC_IBM037, "rz_scan_strings ibm037, string type");
+		rz_detected_string_free(s);
+
+		s = rz_list_get_n(str_list, 2);
+
+		rz_detected_string_free(s);
+		rz_list_free(str_list);
+		rz_buf_free(buf);
+	}
 
 	mu_end;
 }
