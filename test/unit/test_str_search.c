@@ -72,7 +72,6 @@ bool test_rz_scan_strings_detect_ibm037(void) {
 		mu_assert_eq(s->type, RZ_STRING_ENC_IBM037, "rz_scan_strings ibm037, string type");
 		rz_detected_string_free(s);
 
-		rz_detected_string_free(s);
 		rz_list_free(str_list);
 		rz_buf_free(buf);
 	}
