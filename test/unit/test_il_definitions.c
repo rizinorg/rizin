@@ -179,6 +179,8 @@ bool test_rzil_bv_algorithm(void) {
 	RzILBitVector *x, *y;
 	RzILBitVector *result;
 	RzILBitVector *add, *sub, *mul, *div, *mod;
+	RzILBitVector *t1, *t2, *t3, *t4, *concat;
+
 	x = rz_il_bv_new_from_ut32(32, 121);
 	y = rz_il_bv_new_from_ut32(32, 33);
 
@@ -187,6 +189,15 @@ bool test_rzil_bv_algorithm(void) {
 	div = rz_il_bv_new_from_ut32(32, 121 / 33);
 	mul = rz_il_bv_new_from_ut32(32, 121 * 33);
 	mod = rz_il_bv_new_from_ut32(32, 121 % 33);
+
+	t1 = rz_il_bv_new_from_ut32(4, 2);
+	t2 = rz_il_bv_new_from_ut32(4, 2);
+	t3 = rz_il_bv_new_from_ut32(4, 2);
+	t4 = rz_il_bv_new_from_ut32(4, 2);
+	concat = rz_il_bv_new_from_ut32(16, 2 + 32 + 512 + 8192);
+	
+	RzILBitVector *concat_array[] = {t1, t2, t3, t4};
+	RzList *list = rz_list_new_from_array((const void **)concat_array, 4);
 
 	result = rz_il_bv_add(x, y, NULL);
 	mu_assert("Add x y", rz_il_bv_cmp(result, add) == 0);
@@ -207,6 +218,10 @@ bool test_rzil_bv_algorithm(void) {
 
 	result = rz_il_bv_mod(x, y);
 	mu_assert("Mod x y", rz_il_bv_cmp(result, mod) == 0);
+	rz_il_bv_free(result);
+	
+	result = rz_il_bv_concat(list);
+	mu_assert("Concat list", rz_il_bv_cmp(result, concat) == 0);
 	rz_il_bv_free(result);
 
 	rz_il_bv_free(x);

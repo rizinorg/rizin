@@ -129,6 +129,16 @@ struct rzil_op_append_t {
 };
 
 /**
+ *  \struct rzil_op_concat_t
+ *  \brief op structure for concatting list of bitvectors into one bv
+ *	returns bv, such as list[0]:list[1].. and so on.
+ */
+struct rzil_op_concat_t {
+	RzILOp *list; ///< index of the list
+};
+
+
+/**
  *  \struct rzil_op_shift_t
  *  \brief op structure for lshift and rshift (bool -> 's bitv -> 'b bitv -> 's bitv)
  *
@@ -389,6 +399,7 @@ typedef struct rzil_op_shift_t RzILOpShiftl;
 typedef struct rzil_op_shift_t RzILOpShiftr;
 typedef struct rzil_op_bv_t RzILOpBv;
 typedef struct rzil_op_append_t RzILOpAppend;
+typedef struct rzil_op_concat_t RzILOpConcat;
 
 typedef struct rzil_op_bool_operation_t RzILOpBoolAnd;
 typedef struct rzil_op_bool_operation_t RzILOpBoolOr;
@@ -438,6 +449,7 @@ typedef union {
 	RzILOpShiftl *shiftl;
 	RzILOpShiftr *shiftr;
 	RzILOpAppend *append;
+	RzILOpConcat *concat;
 
 	RzILOpPerform *perform;
 	RzILOpSet *set;

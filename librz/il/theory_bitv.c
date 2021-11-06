@@ -119,6 +119,20 @@ void *rz_il_handler_append(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	return result;
 }
 
+void *rz_il_handler_concat(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
+	rz_return_val_if_fail(vm && op && type, NULL);
+
+	RzILOpConcat *op_concat = op->op.concat;
+
+	RzList *list = rz_il_evaluate_bitv(vm, op_concat->list, type);
+	RzILBitVector *result = rz_il_bv_concat(list);
+
+	rz_list_free(list);
+
+	*type = RZIL_OP_ARG_VAL;
+	return result;
+}
+
 void *rz_il_handler_logical_and(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 
