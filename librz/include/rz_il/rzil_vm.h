@@ -100,6 +100,55 @@ RZ_API RzILEffect *rz_il_evaluate_effect(RzILVM *vm, RzILOp *op, RzILOpArgType *
 // recursively parse and evaluate
 RZ_API void *rz_il_parse_op_root(RzILVM *vm, RzILOp *root, RzILOpArgType *type);
 
+<<<<<<< HEAD
+=======
+// Handler for core theory opcode
+void *rz_il_handler_ite(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_var(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_unk(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+
+void *rz_il_handler_bitv(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_msb(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_lsb(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_ule(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_sle(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_neg(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_not(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_add(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_sub(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_mul(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_div(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_sdiv(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_mod(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_smod(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_shiftl(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_shiftr(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_logical_and(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_logical_or(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_logical_xor(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+
+void *rz_il_handler_b0(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_b1(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_and_(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_or_(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_inv(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_cast(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_append(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+
+void *rz_il_handler_perform(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_set(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_jmp(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_goto(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_seq(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_branch(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+
+void *rz_il_handler_load(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_store(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+
+//TODO: remove me when all the handlers are implemented
+void *rz_il_handler_unimplemented(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+
+>>>>>>> 4c120be71a5718c446b0815d0544eeac10bdc156
 #ifdef __cplusplus
 }
 #endif

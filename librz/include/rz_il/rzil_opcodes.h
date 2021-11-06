@@ -118,6 +118,16 @@ struct rzil_op_cast_t {
 	RzILOp *val; ///< value to cast
 };
 
+
+/**
+ *  \struct rzil_op_append_t
+ *  \brief op structure for appending 2 bitv: MSB:LSB bv1:bv2
+ */
+struct rzil_op_append_t {
+	RzILOp *x; ///< index of the bv 1
+	RzILOp *y; ///< index of the bv 2
+};
+
 /**
  *  \struct rzil_op_shift_t
  *  \brief op structure for lshift and rshift (bool -> 's bitv -> 'b bitv -> 's bitv)
@@ -378,6 +388,7 @@ typedef struct rzil_op_alg_log_operations_t RzILOpLogxor;
 typedef struct rzil_op_shift_t RzILOpShiftl;
 typedef struct rzil_op_shift_t RzILOpShiftr;
 typedef struct rzil_op_bv_t RzILOpBv;
+typedef struct rzil_op_append_t RzILOpAppend;
 
 typedef struct rzil_op_bool_operation_t RzILOpBoolAnd;
 typedef struct rzil_op_bool_operation_t RzILOpBoolOr;
@@ -426,6 +437,7 @@ typedef union {
 	RzILOpLogxor *logxor;
 	RzILOpShiftl *shiftl;
 	RzILOpShiftr *shiftr;
+	RzILOpAppend *append;
 
 	RzILOpPerform *perform;
 	RzILOpSet *set;

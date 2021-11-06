@@ -177,8 +177,8 @@ RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, ut32 data
 	vm->op_handler_table[RZIL_OP_SLE] = &rz_il_handler_unimplemented; // &rz_il_handler_sle;
 	vm->op_handler_table[RZIL_OP_ULE] = &rz_il_handler_unimplemented; // &rz_il_handler_ule;
 	vm->op_handler_table[RZIL_OP_CAST] = &rz_il_handler_cast;
-	vm->op_handler_table[RZIL_OP_CONCAT] = &rz_il_handler_concat;
-	vm->op_handler_table[RZIL_OP_APPEND] = &rz_il_handler_unimplemented; // &rz_il_handler_append;
+	vm->op_handler_table[RZIL_OP_CONCAT] = &rz_il_handler_unimplemented; // &rz_il_handler_concat
+	vm->op_handler_table[RZIL_OP_APPEND] = &rz_il_handler_append; // &rz_il_handler_append;
 
 	vm->op_handler_table[RZIL_OP_LOAD] = &rz_il_handler_load;
 	vm->op_handler_table[RZIL_OP_STORE] = &rz_il_handler_store;
