@@ -300,8 +300,8 @@ bool test_rzil_bv_operation(void) {
 	mu_assert("cut tail 4 zero", is_equal_bv(res, cut_t));
 	rz_il_bv_free(res);
 
-	res = rz_il_bv_concat(x, y);
-	mu_assert("concat x and y", is_equal_bv(res, concat));
+	res = rz_il_bv_append(x, y);
+	mu_assert("append x and y", is_equal_bv(res, concat));
 	rz_il_bv_free(res);
 
 	rz_il_bv_free(prep);

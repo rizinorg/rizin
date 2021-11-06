@@ -106,9 +106,9 @@ void *rz_il_handler_add(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 void *rz_il_handler_append(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 
-	RzILOpConcat *op_append = op->op.append;
+	RzILOpAppend *op_append = op->op.append;
 
-	RzILBitVector *x = rz_il_evaluate_bitv(vm, op_appen->x, type);
+	RzILBitVector *x = rz_il_evaluate_bitv(vm, op_append->x, type);
 	RzILBitVector *y = rz_il_evaluate_bitv(vm, op_append->y, type);
 	RzILBitVector *result = rz_il_bv_append(x, y);
 

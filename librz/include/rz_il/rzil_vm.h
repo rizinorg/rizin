@@ -100,8 +100,6 @@ RZ_API RzILEffect *rz_il_evaluate_effect(RzILVM *vm, RzILOp *op, RzILOpArgType *
 // recursively parse and evaluate
 RZ_API void *rz_il_parse_op_root(RzILVM *vm, RzILOp *root, RzILOpArgType *type);
 
-<<<<<<< HEAD
-=======
 // Handler for core theory opcode
 void *rz_il_handler_ite(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_var(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
@@ -148,7 +146,6 @@ void *rz_il_handler_store(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 //TODO: remove me when all the handlers are implemented
 void *rz_il_handler_unimplemented(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 
->>>>>>> 4c120be71a5718c446b0815d0544eeac10bdc156
 #ifdef __cplusplus
 }
 #endif
