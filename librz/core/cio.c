@@ -478,26 +478,18 @@ RZ_API int rz_core_write_hexpair(RzCore *core, ut64 addr, const char *pairs) {
 		return 0;
 	}
 	int len = rz_hex_str2bin(pairs, buf);
-	if (len != 0) {
-		if (len < 0) {
-			len = -len;
-			if (len < core->blocksize) {
-				buf[len - 1] |= core->block[len - 1] & 0xf;
-			}
-		}
-		core->num->value = 0;
-		if (!rz_core_write_at(core, addr, buf, len)) {
-			eprintf("Failed to write\n");
-			core->num->value = 1;
-		}
-		if (rz_config_get_i(core->config, "cfg.wseek")) {
-			rz_core_seek_delta(core, len, true);
-		}
-		rz_core_block_read(core);
-	} else {
-		eprintf("Error: invalid hexpair string\n");
-		core->num->value = 1;
+	if (len < 0) {
+		RZ_LOG_ERROR("Could not convert hexpair '%s' to bin data\n", pairs);
+		goto err;
 	}
+	if (!rz_core_write_at(core, addr, buf, len)) {
+		RZ_LOG_ERROR("Could not write hexpair '%s' at %" PFMT64x "\n", pairs, addr);
+		goto err;
+	}
+	if (rz_config_get_i(core->config, "cfg.wseek")) {
+		rz_core_seek_delta(core, len, true);
+	}
+err:
 	free(buf);
 	return len;
 }
