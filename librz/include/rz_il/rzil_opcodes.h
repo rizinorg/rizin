@@ -118,7 +118,6 @@ struct rzil_op_cast_t {
 	RzILOp *val; ///< value to cast
 };
 
-
 /**
  *  \struct rzil_op_append_t
  *  \brief op structure for appending 2 bitv: MSB:LSB bv1:bv2
