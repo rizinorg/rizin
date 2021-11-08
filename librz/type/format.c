@@ -250,7 +250,7 @@ static int rz_type_format_uleb(RzStrBuf *outbuf, int endian, int mode,
 		} while (elem--);
 		tmp = (ut8 *)rz_uleb128_encode(rz_num_math(NULL, setval), &s);
 		nbr = rz_hex_bin2strdup(tmp, s);
-		rz_strbuf_appendf(outbuf, "\"wx %s\" @ 0x%08" PFMT64x "\n", nbr, seeki + offset - s);
+		rz_strbuf_appendf(outbuf, "wx %s @ 0x%08" PFMT64x "\n", nbr, seeki + offset - s);
 		free(tmp);
 		free(nbr);
 	} else if (MUSTSEE) {
