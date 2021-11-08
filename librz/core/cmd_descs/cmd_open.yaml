@@ -31,3 +31,14 @@ commands:
     cname: open_list_ascii
     summary: List opened files in ASCII-art bars
     args: []
+  - name: oa
+    cname: open_arch_bits
+    summary: Specify <arch> and <bits> for the file <filename> or the current one if none is specified
+    args:
+      - name: arch
+        type: RZ_CMD_ARG_TYPE_STRING
+      - name: bits
+        type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: filename
+        type: RZ_CMD_ARG_TYPE_FILE
+        optional: true

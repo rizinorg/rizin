@@ -1004,7 +1004,6 @@ RZ_API void rz_bin_file_hash_free(RzBinFileHash *fhash);
 
 // binobject functions
 RZ_API int rz_bin_object_set_items(RzBinFile *binfile, RzBinObject *o);
-RZ_API bool rz_bin_object_delete(RzBin *bin, ut32 binfile_id);
 RZ_API ut64 rz_bin_object_addr_with_base(RzBinObject *o, ut64 addr);
 RZ_API ut64 rz_bin_object_get_vaddr(RzBinObject *o, ut64 paddr, ut64 vaddr);
 RZ_API const RzBinAddr *rz_bin_object_get_special_symbol(RzBinObject *o, RzBinSpecialSymbol sym);
