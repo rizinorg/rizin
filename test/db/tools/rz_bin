@@ -176,7 +176,7 @@ NAME=rz-bin -zz pe
 FILE=bins/pe/ioli/w32/crackme0x00.exe
 CMDS=!rz-bin -zz ${RZ_FILE} | grep "Password:"
 EXPECT=<<EOF
-498 0x00002619 0x00404019 10  11   .rdata  ascii   Password: 
+102 0x00002619 0x00404019 10  11   .rdata  ascii   Password: 
 EOF
 RUN
 
@@ -184,7 +184,7 @@ NAME=rz-bin -zzz pe
 FILE=bins/pe/ioli/w32/crackme0x00.exe
 CMDS=!rz-bin -zzz ${RZ_FILE} | grep "Password:"
 EXPECT=<<EOF
-498 0x00002619 0x00404019  10  11 (.rdata) ascii Password: 
+102 0x00002619 0x00404019  10  11 (.rdata) ascii Password: 
 EOF
 RUN
 
@@ -351,7 +351,7 @@ CMDS=<<EOF
 EOF
 EXPECT=<<EOF
 __do_global_dtors_aux_fini_array_entry
-114
+82
 EOF
 RUN
 
@@ -363,7 +363,7 @@ CMDS=<<EOF
 EOF
 EXPECT=<<EOF
 __do_global_dtors_aux_fini_array_entry
-114
+82
 EOF
 RUN
 
