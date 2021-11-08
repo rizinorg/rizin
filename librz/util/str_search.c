@@ -117,7 +117,7 @@ static inline int compute_index(ut8 x, ut8 y, ut8 ascii_classes, ut8 non_ascii_c
 static const int IMPLAUSIBILITY_PENALTY = -220;
 static const int ASCII_DIGIT = 100;
 
-static ut64 score_step(const ut8 current_class, const ut8 previous_class, const ut8 *t, const ut8 ascii_classes, const ut8 non_ascii_classes) {
+static int score_step(const ut8 current_class, const ut8 previous_class, const ut8 *t, const ut8 ascii_classes, const ut8 non_ascii_classes) {
 	ut8 stored_boundary = ascii_classes + non_ascii_classes;
 	if (current_class < stored_boundary) {
 		if (previous_class < stored_boundary) {
@@ -221,6 +221,7 @@ static st64 score(const RzRune *buff, const size_t len, const ut8 *class_tbl, co
 			case Upper:
 			case AllCaps:
 				case_state = AllCaps;
+				break;
 			case Lower:
 				if (!ascii_pair) {
 					score += IMPLAUSIBLE_LATIN_CASE_TRANSITION_PENALTY;
@@ -231,9 +232,12 @@ static st64 score(const RzRune *buff, const size_t len, const ut8 *class_tbl, co
 			}
 		}
 
-		if (!(ascii_pair || (ascii && prev == 0) || (caseless_class == 0 && prev_non_ascii == 0))) {
-			score += score_step(caseless_class, prev, t, ascii_classes, non_ascii_classes);
-		}
+		// if (!(ascii_pair || (ascii && prev == 0) || (caseless_class == 0 && prev_non_ascii == 0))) {
+		// eprintf("current:%d,prev:%d score step:%lld\n", caseless_class, prev, score_step(caseless_class, prev, t, ascii_classes, non_ascii_classes));
+		score += score_step(caseless_class, prev, t, ascii_classes, non_ascii_classes);
+		// }
+
+		eprintf("score step:%d score: %d\n", score_step(caseless_class, prev, t, ascii_classes, non_ascii_classes), score);
 
 		if (ascii) {
 			prev_non_ascii = 0;
@@ -671,16 +675,17 @@ RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrS
 		}
 
 		if (type == RZ_STRING_ENC_GUESS && str_type == RZ_STRING_ENC_IBM037) {
-			RzRune *runes = RZ_NEWS(RzRune, ds->size);
-			for (size_t i = 0; i < ds->size; i++) {
+			RzRune *runes = RZ_NEWS(RzRune, ds->length);
+			for (size_t i = 0; i < ds->length; i++) {
 				rz_str_ibm037_to_unicode(ptr[i], &runes[i]);
 			}
-			int sco = score_unicode_western(runes, ds->size);
+			int sco = score_unicode_western(runes, ds->length);
+			RZ_FREE(runes);
+			eprintf("%s score: %d\n", ds->string, sco);
+
 			if (sco < 0) {
 				needle++;
 				continue;
-			} else {
-				eprintf("%s score: %d\n", ds->string, sco);
 			}
 		}
 
