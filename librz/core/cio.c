@@ -798,6 +798,37 @@ RZ_API bool rz_core_write_string_at(RzCore *core, ut64 addr, const char *s) {
 }
 
 /**
+ * \brief Write at the specified \p addr the length of the string in one byte,
+ * followed by the given string \p s
+ *
+ * \param core RzCore reference
+ * \param addr Address where to write the string
+ * \param s String to write. The string is unescaped, meaning that if there is `\n` it becomes 0x0a
+ */
+RZ_API bool rz_core_write_length_string_at(RzCore *core, ut64 addr, const char *s) {
+	rz_return_val_if_fail(core && s, false);
+
+	char *str = strdup(s);
+	if (!str) {
+		return false;
+	}
+
+	int len = rz_str_unescape(str);
+	ut8 ulen = (ut8)len;
+	if (!rz_core_write_at(core, addr, &ulen, sizeof(ulen)) ||
+		!rz_core_write_at(core, addr + 1, (const ut8 *)str, len)) {
+		RZ_LOG_ERROR("Could not write length+'%s' at %" PFMT64x "\n", s, addr);
+		free(str);
+		return false;
+	}
+	if (rz_config_get_i(core->config, "cfg.wseek")) {
+		rz_core_seek_delta(core, len, true);
+	}
+	free(str);
+	return true;
+}
+
+/**
  * \brief Write a given string \p s at the specified \p addr encoded as base64.
  *
  * \param core RzCore reference

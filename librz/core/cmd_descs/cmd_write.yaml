@@ -360,6 +360,8 @@ commands:
     summary: Duplicate N bytes from offset at current seek
     type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: ws
-    cname: ws_handler_old
+    cname: write_length_string
     summary: Write 1 byte for length and then the string
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    args:
+      - name: string
+        type: RZ_CMD_ARG_TYPE_STRING
