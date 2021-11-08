@@ -48,7 +48,6 @@ static st64 score(RzRune *buff, const int len) {
 		RzRune b1 = src[0], b2 = src[1];
 		ut8 c1 = LATIN1_CLASS[b1], c2 = LATIN1_CLASS[b2];
 		if (b1 > 0x7f) {
-			eprintf("class %d\n", c1);
 			score -= 6;
 		}
 
@@ -468,22 +467,18 @@ RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrS
 				str_type = RZ_STRING_ENC_UTF16BE;
 			} else if (can_be_ebcdic(ptr, size) && skip_ibm037 < 0) {
 				RzRune *runes = RZ_NEWS(RzRune, 15);
-				ut8 *str = RZ_NEWS(ut8, 15);
 				int i = 0;
 				for (; i < 15; i++) {
 					rz_str_ibm037_to_unicode(ptr[i], &runes[i]);
 					if (!rz_isprint(runes[i])) {
 						break;
 					}
-					str[i] = (ut8)runes[i];
 				}
 				int s = score(runes, i);
 				RZ_FREE(runes);
-				RZ_FREE(str);
 				if (s >= 36) {
 					str_type = RZ_STRING_ENC_IBM037;
 				} else {
-					// eprintf("[Rz]'%s' %d\n", str, s);
 					skip_ibm037 = i + 1;
 					continue;
 				}
