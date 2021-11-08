@@ -270,30 +270,6 @@ RZ_API RZ_OWN RzILBitVector *rz_il_bv_append(RZ_NONNULL RzILBitVector *bv1, RZ_N
 }
 
 /**
- * Concat bitvectors from list bvs to get new bitvector
- * \param bvs RzList of bitvectors
- * \return ret RzILBitVector, the new bitvector
- */
-RZ_API RZ_OWN RzILBitVector *rz_il_bv_concat(RZ_NONNULL RzList *bvs) {
-	rz_return_val_if_fail(bvs, NULL);
-	RzListIter *iter = bvs->head;
-	RzILBitVector *tmp = NULL, *ret = NULL, *bv = NULL;
-	rz_list_foreach(bvs, iter, bv){
-		if (iter == bvs->head){
-			ret = rz_il_bv_new(bv->len);
-			rz_il_bv_copy_nbits(bv, 0, ret, 0, bv->len);
-			tmp = ret;
-			continue;
-		}
-		ret = rz_il_bv_append(ret, bv);
-		rz_il_bv_free(tmp);
-		tmp = ret;
-	}
-	tmp = NULL;
-	return ret;
-}
-
-/**
  * Set a bit at position to true or false
  * \param bv RzILBitVector, pointer to bv
  * \param pos int, position
