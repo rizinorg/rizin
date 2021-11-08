@@ -616,7 +616,7 @@ RZ_API bool rz_core_bin_apply_config(RzCore *r, RzBinFile *binfile) {
 	if (!info) {
 		return false;
 	}
-	rz_config_set(r->config, "file.type", info->rclass);
+	rz_config_set(r->config, "file.type", rz_str_get(info->rclass));
 	rz_config_set(r->config, "cfg.bigendian",
 		info->big_endian ? "true" : "false");
 	if (info->lang) {
@@ -4331,6 +4331,11 @@ RZ_API int rz_core_bin_set_arch_bits(RzCore *r, const char *name, const char *ar
 	//set env if the binfile changed or we are dealing with xtr
 	if (curfile != binfile || binfile->curxtr) {
 		rz_core_bin_set_cur(r, binfile);
+		if (binfile->o && binfile->o->info) {
+			free(binfile->o->info->arch);
+			binfile->o->info->arch = strdup(arch);
+			binfile->o->info->bits = bits;
+		}
 		return rz_core_bin_apply_all_info(r, binfile);
 	}
 	return true;

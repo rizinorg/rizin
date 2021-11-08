@@ -96,7 +96,7 @@ RZ_API void rz_il_effect_data_free(RzILDataEffect *eff) {
  * \param type effect type, can be CONTROL or DATA, see EFFECT_TYPE_* enums
  * \return General effect
  */
-RZ_API RzILEffect *rz_il_effect_new(EFFECT_TYPE type) {
+RZ_API RzILEffect *rz_il_effect_new(RzEffectType type) {
 	RzILEffect *ret;
 
 	// can only be data or ctrl
@@ -133,8 +133,7 @@ RZ_API void rz_il_effect_free(RzILEffect *effect) {
 		return;
 	}
 
-	EFFECT_TYPE type = effect->effect_type;
-	switch (type) {
+	switch (effect->effect_type) {
 	case EFFECT_TYPE_CTRL:
 		rz_il_effect_ctrl_free(effect->ctrl_eff);
 		effect->ctrl_eff = NULL;
@@ -177,8 +176,7 @@ RZ_API RZ_OWN char *rz_il_effect_as_string(RzILEffect *effect) {
 		return NULL;
 	}
 
-	EFFECT_TYPE type = effect->effect_type;
-	switch (type) {
+	switch (effect->effect_type) {
 	case EFFECT_TYPE_CTRL:
 		return ctrl_effect_as_string(effect->ctrl_eff);
 		break;
@@ -190,9 +188,8 @@ RZ_API RZ_OWN char *rz_il_effect_as_string(RzILEffect *effect) {
 		break;
 	default:
 		// not handled
-		RZ_LOG_ERROR("error: Unknown type when print");
+		RZ_LOG_ERROR("RzIL: effect: Unknown type when print");
 		return NULL;
-		break;
 	}
 }
 
@@ -202,7 +199,7 @@ RZ_API RZ_OWN char *rz_il_effect_as_string(RzILEffect *effect) {
  * \param type Label type
  * \return Pointer to label
  */
-RZ_API RzILEffectLabel *rz_il_effect_label_new(RZ_NONNULL const char *name, EFFECT_LABEL_TYPE type) {
+RZ_API RzILEffectLabel *rz_il_effect_label_new(RZ_NONNULL const char *name, RzILEffectLabelType type) {
 	RzILEffectLabel *lbl = RZ_NEW0(RzILEffectLabel);
 	if (!lbl) {
 		return NULL;

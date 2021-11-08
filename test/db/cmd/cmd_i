@@ -4503,7 +4503,7 @@ wz k\0i\0abcdefgh
 (izenc enc; e bin.str.enc=$0; iz:quiet)
 .(izenc guess)
 .(izenc utf8)
-o-*
+o--
 rm .tmp/strenc-bin
 EOF
 EXPECT=<<EOF
@@ -5270,7 +5270,6 @@ File has been modified.
 + crc32 1ae319dc
 - entropy 2.959094
 + entropy 2.959088
-All core files, io, analysis and flags info purged.
 EOF
 EXPECT=<<EOF
 md5 84144530144b53a704c84d9c65ab5f92

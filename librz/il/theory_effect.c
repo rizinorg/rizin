@@ -60,7 +60,7 @@ static void rz_il_perform_ctrl(RzILVM *vm, RzILEffect *eff) {
 		eff->ctrl_eff = NULL;
 
 		RzILEffectLabel *label = rz_il_vm_find_label_by_name(vm, goto_op->op.goto_->lbl);
-		RzILVmHook internal_hook = (RzILVmHook)label->addr;
+		RzILVmHook internal_hook = (RzILVmHook)label->hook;
 
 		internal_hook(vm, goto_op);
 		return;
