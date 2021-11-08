@@ -39,15 +39,6 @@ static const char *help_msg_o[] = {
 	NULL
 };
 
-static const char *help_msg_op[] = {
-	"Usage:", "op[rnp] [fd]", "",
-	"opr", "", "open next file rotating",
-	"opn", "", "open next file",
-	"opp", "", "open previous file",
-	"op", " [fd]", "open priorizing fd",
-	NULL
-};
-
 static const char *help_msg_o_star[] = {
 	"Usage:", "o* [> files.rz]", "",
 	"o*", "", "list opened files in rizin commands", NULL
@@ -1021,37 +1012,6 @@ static bool desc_list_json_cb(void *user, void *data, ut32 id) {
 	return true;
 }
 
-static bool cmd_op(RzCore *core, char mode, int fd) {
-	int cur_fd = rz_io_fd_get_current(core->io);
-	int next_fd = cur_fd;
-	switch (mode) {
-	case 0:
-		next_fd = fd;
-		break;
-	case 'n':
-		next_fd = rz_io_fd_get_next(core->io, cur_fd);
-		break;
-	case 'p':
-		next_fd = rz_io_fd_get_prev(core->io, cur_fd);
-		break;
-	case 'r':
-		next_fd = rz_io_fd_get_next(core->io, cur_fd);
-		if (next_fd == -1) {
-			next_fd = rz_io_fd_get_lowest(core->io);
-		}
-		break;
-	}
-	if (next_fd >= 0 && next_fd != cur_fd && rz_io_use_fd(core->io, next_fd)) {
-		RzBinFile *bf = rz_bin_file_find_by_fd(core->bin, next_fd);
-		if (bf && rz_core_bin_raise(core, bf->id)) {
-			rz_core_block_read(core);
-			return true;
-		}
-		eprintf("Invalid RzBinFile.id number.\n");
-	}
-	return false;
-}
-
 RZ_IPI int rz_cmd_open(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	int perms = RZ_PERM_R;
@@ -1115,36 +1075,6 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 		core->num->value = fd;
 		rz_core_block_read(core);
 		return 0;
-	case 'p': // "op"
-		/* handle prioritize */
-		if (input[1]) {
-			switch (input[1]) {
-			case 'r': // "opr" - open next file + rotate if not found
-			case 'n': // "opn" - open next file
-			case 'p': // "opp" - open previous file
-				if (!cmd_op(core, input[1], -1)) {
-					eprintf("Cannot find file\n");
-				}
-				break;
-			case ' ': {
-				int fd = rz_num_math(core->num, input + 1);
-				if (fd >= 0 || input[1] == '0') {
-					cmd_op(core, 0, fd);
-				} else {
-					eprintf("Invalid fd number\n");
-				}
-			} break;
-			default:
-				rz_core_cmd_help(core, help_msg_op);
-				break;
-			}
-		} else {
-			if (core->io && core->io->desc) {
-				rz_cons_printf("%d\n", core->io->desc->fd);
-			}
-		}
-		return 0;
-		break;
 	case '+': // "o+"
 		perms |= RZ_PERM_W;
 		/* fallthrough */
@@ -1542,4 +1472,50 @@ RZ_IPI RzCmdStatus rz_open_use_handler(RzCore *core, int argc, const char **argv
 	}
 	RZ_LOG_ERROR("Could not find any opened file with fd %d\n", fdnum);
 	return RZ_CMD_STATUS_ERROR;
+}
+
+static RzCmdStatus prioritize_file(RzCore *core, int fd) {
+	if (fd <= 0) {
+		RZ_LOG_ERROR("Wrong file descriptor %d\n", fd);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	int curfd = rz_io_fd_get_current(core->io);
+	if (fd == curfd) {
+		return RZ_CMD_STATUS_OK;
+	}
+
+	if (!rz_io_use_fd(core->io, fd)) {
+		RZ_LOG_ERROR("Could not use IO fd %d\n", fd);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_core_block_read(core);
+	RzBinFile *bf = rz_bin_file_find_by_fd(core->bin, fd);
+	if (bf && !rz_core_bin_raise(core, bf->id)) {
+		RZ_LOG_ERROR("Could not use bin id %d\n", bf->id);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_open_prioritize_handler(RzCore *core, int argc, const char **argv) {
+	int fd = atoi(argv[1]);
+	return prioritize_file(core, fd);
+}
+
+RZ_IPI RzCmdStatus rz_open_prioritize_next_handler(RzCore *core, int argc, const char **argv) {
+	int fd = rz_io_fd_get_next(core->io, rz_io_fd_get_current(core->io));
+	return prioritize_file(core, fd);
+}
+
+RZ_IPI RzCmdStatus rz_open_prioritize_prev_handler(RzCore *core, int argc, const char **argv) {
+	int fd = rz_io_fd_get_prev(core->io, rz_io_fd_get_current(core->io));
+	return prioritize_file(core, fd);
+}
+
+RZ_IPI RzCmdStatus rz_open_prioritize_next_rotate_handler(RzCore *core, int argc, const char **argv) {
+	int fd = rz_io_fd_get_next(core->io, rz_io_fd_get_current(core->io));
+	if (fd == -1) {
+		fd = rz_io_fd_get_lowest(core->io);
+	}
+	return prioritize_file(core, fd) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
