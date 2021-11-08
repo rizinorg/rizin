@@ -1272,27 +1272,6 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 			rz_core_file_print(core, RZ_OUTPUT_MODE_STANDARD);
 		}
 		break;
-	case 'u': { // "ou"
-		RzListIter *iter = NULL;
-		RzCoreFile *f;
-		core->switch_file_view = 0;
-		const char *snum = rz_str_trim_head_ro(input + 2);
-		int num = rz_num_math(NULL, snum);
-		rz_list_foreach (core->files, iter, f) {
-			if (f->fd == num) {
-				core->file = f;
-				rz_io_use_fd(core->io, num);
-				RzBinFile *bf = rz_bin_file_find_by_fd(core->bin, num);
-				if (bf) {
-					rz_core_bin_raise(core, bf->id);
-					rz_core_block_read(core);
-					rz_cons_printf("switched to fd %d %s\n", num, bf->file);
-				}
-				break;
-			}
-		}
-		break;
-	}
 	case 'b': // "ob"
 		cmd_open_bin(core, input);
 		break;
@@ -1539,4 +1518,28 @@ RZ_IPI RzCmdStatus rz_open_arch_bits_handler(RzCore *core, int argc, const char 
 
 	int res = rz_core_bin_set_arch_bits(core, filename, arch, bits);
 	return res ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+}
+
+RZ_IPI RzCmdStatus rz_open_use_handler(RzCore *core, int argc, const char **argv) {
+	RzListIter *iter = NULL;
+	RzCoreFile *f;
+
+	int fdnum = rz_num_math(NULL, argv[1]);
+	rz_list_foreach (core->files, iter, f) {
+		if (f->fd == fdnum) {
+			core->file = f;
+			rz_io_use_fd(core->io, fdnum);
+			RzBinFile *bf = rz_bin_file_find_by_fd(core->bin, fdnum);
+			if (!bf) {
+				RZ_LOG_ERROR("Could not find binfile with fd %d\n", fdnum);
+				return RZ_CMD_STATUS_ERROR;
+			}
+			rz_core_bin_raise(core, bf->id);
+			rz_core_block_read(core);
+			RZ_LOG_INFO("Switched to fd %d (%s)\n", fdnum, bf->file);
+			return RZ_CMD_STATUS_OK;
+		}
+	}
+	RZ_LOG_ERROR("Could not find any opened file with fd %d\n", fdnum);
+	return RZ_CMD_STATUS_ERROR;
 }

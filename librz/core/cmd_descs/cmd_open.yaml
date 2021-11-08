@@ -42,3 +42,9 @@ commands:
       - name: filename
         type: RZ_CMD_ARG_TYPE_FILE
         optional: true
+  - name: ou
+    cname: open_use
+    summary: Use specified <fd>
+    args:
+      - name: fd
+        type: RZ_CMD_ARG_TYPE_NUM
