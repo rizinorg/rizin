@@ -4370,8 +4370,6 @@ RZ_API bool rz_core_bin_raise(RzCore *core, ut32 bfid) {
 	if (bf) {
 		rz_io_use_fd(core->io, bf->fd);
 	}
-	// it should be 0 to use rz_io_use_fd in rz_core_block_read
-	core->switch_file_view = 0;
 	return bf && rz_core_bin_apply_all_info(core, bf) && rz_core_block_read(core);
 }
 
@@ -4381,7 +4379,6 @@ RZ_API bool rz_core_bin_delete(RzCore *core, RzBinFile *bf) {
 	if (bf) {
 		rz_io_use_fd(core->io, bf->fd);
 	}
-	core->switch_file_view = 0;
 	return bf && rz_core_bin_apply_all_info(core, bf) && rz_core_block_read(core);
 }
 

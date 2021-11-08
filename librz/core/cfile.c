@@ -425,14 +425,7 @@ RZ_API int rz_core_file_reopen(RzCore *core, const char *args, int perm, int loa
 	}
 	if (core->file) {
 		rz_io_use_fd(core->io, core->file->fd);
-		core->switch_file_view = 1;
 		rz_core_block_read(core);
-#if 0
-		else {
-			const char *name = (cf && cf->desc)? cf->desc->name: "ERROR";
-			eprintf ("Error: Unable to switch the view to file: %s\n", name);
-		}
-#endif
 	}
 	rz_core_seek(core, origoff, true);
 	if (isdebug) {
@@ -1423,9 +1416,6 @@ RZ_API bool rz_core_file_bin_raise(RzCore *core, ut32 bfid) {
 			rz_io_use_fd(core->io, bf->fd);
 		}
 		res = res ? rz_core_file_set_by_fd(core, bf->fd) : res;
-		if (res) {
-			core->switch_file_view = 1;
-		}
 	}
 	return res;
 }
