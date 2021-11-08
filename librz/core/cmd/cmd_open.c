@@ -1065,57 +1065,6 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 	char **argv = NULL;
 
 	switch (*input) {
-	case 'a':
-		switch (input[1]) {
-		case '*': // "oa*"
-		{
-			RzListIter *iter;
-			RzBinFile *bf = NULL;
-			rz_list_foreach (core->bin->binfiles, iter, bf) {
-				if (bf && bf->o && bf->o->info) {
-					eprintf("oa %s %d %s\n", bf->o->info->arch, bf->o->info->bits, bf->file);
-				}
-			}
-			return 1;
-		}
-		case '?': // "oa?"
-		case ' ': // "oa "
-		{
-			int i;
-			char *ptr = strdup(input + 2);
-			const char *arch = NULL;
-			ut16 bits = 0;
-			const char *filename = NULL;
-			i = rz_str_word_set0(ptr);
-			if (i < 2) {
-				eprintf("Missing argument\n");
-				free(ptr);
-				return 0;
-			}
-			if (i == 3) {
-				filename = rz_str_word_get0(ptr, 2);
-			}
-			bits = rz_num_math(core->num, rz_str_word_get0(ptr, 1));
-			arch = rz_str_word_get0(ptr, 0);
-			rz_core_bin_set_arch_bits(core, filename, arch, bits);
-			RzBinFile *file = rz_bin_file_find_by_name(core->bin, filename);
-			if (!file) {
-				eprintf("Cannot find file %s\n", filename);
-				free(ptr);
-				return 0;
-			}
-			if (file->o && file->o->info) {
-				file->o->info->arch = strdup(arch);
-				file->o->info->bits = bits;
-				rz_core_bin_apply_all_info(core, file);
-			}
-			free(ptr);
-			return 1;
-		} break;
-		default:
-			eprintf("Usage: oa[-][arch] [bits] [filename]\n");
-			return 0;
-		}
 	case 'n': // "on"
 		if (input[1] == '*') {
 			rz_core_raw_file_print(core);
@@ -1581,4 +1530,13 @@ RZ_IPI RzCmdStatus rz_open_list_ascii_handler(RzCore *core, int argc, const char
 	rz_id_storage_foreach(core->io->files, init_desc_list_visual_cb, &data);
 	rz_id_storage_foreach(core->io->files, desc_list_visual_cb, &data);
 	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_open_arch_bits_handler(RzCore *core, int argc, const char **argv) {
+	const char *filename = argc > 3 ? argv[3] : NULL;
+	ut16 bits = rz_num_math(core->num, argv[2]);
+	const char *arch = argv[1];
+
+	int res = rz_core_bin_set_arch_bits(core, filename, arch, bits);
+	return res ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }

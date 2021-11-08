@@ -4331,6 +4331,11 @@ RZ_API int rz_core_bin_set_arch_bits(RzCore *r, const char *name, const char *ar
 	//set env if the binfile changed or we are dealing with xtr
 	if (curfile != binfile || binfile->curxtr) {
 		rz_core_bin_set_cur(r, binfile);
+		if (binfile->o && binfile->o->info) {
+			free(binfile->o->info->arch);
+			binfile->o->info->arch = strdup(arch);
+			binfile->o->info->bits = bits;
+		}
 		return rz_core_bin_apply_all_info(r, binfile);
 	}
 	return true;
