@@ -508,7 +508,7 @@ RZ_IPI int rz_wb_handler_old(void *data, const char *input);
 RZ_IPI int rz_wm_handler_old(void *data, const char *input);
 RZ_IPI int rz_wo_handler_old(void *data, const char *input);
 RZ_IPI int rz_wd_handler_old(void *data, const char *input);
-RZ_IPI int rz_ws_handler_old(void *data, const char *input);
+RZ_IPI RzCmdStatus rz_write_length_string_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_cmd_hexdump(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_yank_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_yank_editor_handler(RzCore *core, int argc, const char **argv);

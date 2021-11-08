@@ -1974,28 +1974,8 @@ RZ_IPI int rz_wd_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-RZ_IPI int rz_ws_handler_old(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	int wseek = rz_config_get_i(core->config, "cfg.wseek");
-	char *str = strdup(input);
-	if (str && *str && str[1]) {
-		int len = rz_str_unescape(str + 1);
-		if (len > 255) {
-			eprintf("Too large\n");
-		} else {
-			ut8 ulen = (ut8)len;
-			if (!rz_core_write_at(core, core->offset, &ulen, 1) ||
-				!rz_core_write_at(core, core->offset + 1, (const ut8 *)str + 1, len)) {
-				cmd_write_fail(core);
-			} else {
-				WSEEK(core, len);
-			}
-			rz_core_block_read(core);
-		}
-	} else {
-		eprintf("Too short.\n");
-	}
-	return 0;
+RZ_IPI RzCmdStatus rz_write_length_string_handler(RzCore *core, int argc, const char **argv) {
+	return rz_core_write_length_string_at(core, core->offset, argv[1]) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
 /* TODO: simplify using rz_write */
@@ -2075,9 +2055,6 @@ RZ_IPI int rz_cmd_write(void *data, const char *input) {
 		break;
 	case 'd': // "wd"
 		rz_wd_handler_old(core, input + 1);
-		break;
-	case 's': // "ws"
-		rz_ws_handler_old(core, input + 1);
 		break;
 	default:
 	case '?': // "w?"

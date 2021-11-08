@@ -295,6 +295,7 @@ static const RzCmdDescArg write_from_io_args[3];
 static const RzCmdDescArg write_from_io_xchg_args[3];
 static const RzCmdDescArg write_from_file_args[4];
 static const RzCmdDescArg write_from_socket_args[3];
+static const RzCmdDescArg write_length_string_args[2];
 static const RzCmdDescArg yank_args[2];
 static const RzCmdDescArg yank_file_args[3];
 static const RzCmdDescArg yank_whole_file_args[2];
@@ -6652,8 +6653,18 @@ static const RzCmdDescHelp wd_handler_old_help = {
 	.summary = "Duplicate N bytes from offset at current seek",
 };
 
-static const RzCmdDescHelp ws_handler_old_help = {
+static const RzCmdDescArg write_length_string_args[] = {
+	{
+		.name = "string",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_length_string_help = {
 	.summary = "Write 1 byte for length and then the string",
+	.args = write_length_string_args,
 };
 
 static const RzCmdDescHelp cmd_hexdump_help = {
@@ -9177,8 +9188,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *wd_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "wd", rz_wd_handler_old, &wd_handler_old_help);
 	rz_warn_if_fail(wd_handler_old_cd);
 
-	RzCmdDesc *ws_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "ws", rz_ws_handler_old, &ws_handler_old_help);
-	rz_warn_if_fail(ws_handler_old_cd);
+	RzCmdDesc *write_length_string_cd = rz_cmd_desc_argv_new(core->rcmd, w_cd, "ws", rz_write_length_string_handler, &write_length_string_help);
+	rz_warn_if_fail(write_length_string_cd);
 
 	RzCmdDesc *cmd_hexdump_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "x", rz_cmd_hexdump, &cmd_hexdump_help);
 	rz_warn_if_fail(cmd_hexdump_cd);
