@@ -295,6 +295,8 @@ static const RzCmdDescArg write_from_io_args[3];
 static const RzCmdDescArg write_from_io_xchg_args[3];
 static const RzCmdDescArg write_from_file_args[4];
 static const RzCmdDescArg write_from_socket_args[3];
+static const RzCmdDescArg write_hex_args[2];
+static const RzCmdDescArg write_hex_from_file_args[2];
 static const RzCmdDescArg write_length_string_args[2];
 static const RzCmdDescArg yank_args[2];
 static const RzCmdDescArg yank_file_args[3];
@@ -6629,8 +6631,34 @@ static const RzCmdDescHelp ww_handler_old_help = {
 	.summary = "Write wide string",
 };
 
-static const RzCmdDescHelp wx_handler_old_help = {
-	.summary = "Write hexadecimal",
+static const RzCmdDescHelp wx_help = {
+	.summary = "Write hexadecimal data",
+};
+static const RzCmdDescArg write_hex_args[] = {
+	{
+		.name = "hex",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_hex_help = {
+	.summary = "Write hexadecimal data <hex> into current offset",
+	.args = write_hex_args,
+};
+
+static const RzCmdDescArg write_hex_from_file_args[] = {
+	{
+		.name = "file|-",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_hex_from_file_help = {
+	.summary = "Write hexadecimal data from file <file> into current offset",
+	.args = write_hex_from_file_args,
 };
 
 static const RzCmdDescHelp wa_handler_old_help = {
@@ -9170,8 +9198,10 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *ww_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "ww", rz_ww_handler_old, &ww_handler_old_help);
 	rz_warn_if_fail(ww_handler_old_cd);
 
-	RzCmdDesc *wx_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "wx", rz_wx_handler_old, &wx_handler_old_help);
-	rz_warn_if_fail(wx_handler_old_cd);
+	RzCmdDesc *wx_cd = rz_cmd_desc_group_new(core->rcmd, w_cd, "wx", rz_write_hex_handler, &write_hex_help, &wx_help);
+	rz_warn_if_fail(wx_cd);
+	RzCmdDesc *write_hex_from_file_cd = rz_cmd_desc_argv_new(core->rcmd, wx_cd, "wxf", rz_write_hex_from_file_handler, &write_hex_from_file_help);
+	rz_warn_if_fail(write_hex_from_file_cd);
 
 	RzCmdDesc *wa_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "wa", rz_wa_handler_old, &wa_handler_old_help);
 	rz_warn_if_fail(wa_handler_old_cd);

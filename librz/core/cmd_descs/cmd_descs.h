@@ -502,7 +502,8 @@ RZ_IPI RzCmdStatus rz_write_from_io_xchg_handler(RzCore *core, int argc, const c
 RZ_IPI RzCmdStatus rz_write_from_file_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_write_from_socket_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_ww_handler_old(void *data, const char *input);
-RZ_IPI int rz_wx_handler_old(void *data, const char *input);
+RZ_IPI RzCmdStatus rz_write_hex_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_write_hex_from_file_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_wa_handler_old(void *data, const char *input);
 RZ_IPI int rz_wb_handler_old(void *data, const char *input);
 RZ_IPI int rz_wm_handler_old(void *data, const char *input);
