@@ -7,7 +7,7 @@
 #include <ht_uu.h>
 #include <assert.h>
 
-#define unwrap(rbnode) container_of(rbnode, RzAnalysisBlock, _rb)
+#define unwrap(rbnode) ((rbnode) ? container_of(rbnode, RzAnalysisBlock, _rb) : NULL)
 
 static void __max_end(RBNode *node) {
 	RzAnalysisBlock *block = unwrap(node);
@@ -89,7 +89,7 @@ void __block_free_rb(RBNode *node, void *user) {
 
 RZ_API RzAnalysisBlock *rz_analysis_get_block_at(RzAnalysis *analysis, ut64 addr) {
 	RBNode *node = rz_rbtree_find(analysis->bb_tree, &addr, __bb_addr_cmp, NULL);
-	return node ? unwrap(node) : NULL;
+	return unwrap(node);
 }
 
 // This is a special case of what rz_interval_node_all_in() does
@@ -120,7 +120,7 @@ static bool all_in(RzAnalysisBlock *node, ut64 addr, RzAnalysisBlockCb cb, void 
 }
 
 RZ_API bool rz_analysis_blocks_foreach_in(RzAnalysis *analysis, ut64 addr, RzAnalysisBlockCb cb, void *user) {
-	return all_in(analysis->bb_tree ? unwrap(analysis->bb_tree) : NULL, addr, cb, user);
+	return all_in(unwrap(analysis->bb_tree), addr, cb, user);
 }
 
 static bool block_list_cb(RzAnalysisBlock *block, void *user) {
@@ -159,7 +159,7 @@ static void all_intersect(RzAnalysisBlock *node, ut64 addr, ut64 size, RzAnalysi
 }
 
 RZ_API void rz_analysis_blocks_foreach_intersect(RzAnalysis *analysis, ut64 addr, ut64 size, RzAnalysisBlockCb cb, void *user) {
-	all_intersect(analysis->bb_tree ? unwrap(analysis->bb_tree) : NULL, addr, size, cb, user);
+	all_intersect(unwrap(analysis->bb_tree), addr, size, cb, user);
 }
 
 RZ_API RzList *rz_analysis_get_blocks_intersect(RzAnalysis *analysis, ut64 addr, ut64 size) {
