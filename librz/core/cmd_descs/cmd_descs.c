@@ -212,6 +212,7 @@ static const RzCmdDescArg plugins_debug_print_args[2];
 static const RzCmdDescArg plugins_io_print_args[2];
 static const RzCmdDescArg open_close_args[2];
 static const RzCmdDescArg open_plugins_args[2];
+static const RzCmdDescArg open_arch_bits_args[4];
 static const RzCmdDescArg cmd_print_gadget_add_args[6];
 static const RzCmdDescArg cmd_print_gadget_move_args[6];
 static const RzCmdDescArg cmd_print_msg_digest_args[2];
@@ -4841,6 +4842,30 @@ static const RzCmdDescHelp open_list_ascii_help = {
 	.args = open_list_ascii_args,
 };
 
+static const RzCmdDescArg open_arch_bits_args[] = {
+	{
+		.name = "arch",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "bits",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "filename",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_arch_bits_help = {
+	.summary = "Specify <arch> and <bits> for the file <filename> or the current one if none is specified",
+	.args = open_arch_bits_args,
+};
+
 static const RzCmdDescHelp cmd_print_help = {
 	.summary = "Print commands",
 };
@@ -8757,6 +8782,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *open_list_ascii_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_open_cd, "o=", rz_open_list_ascii_handler, &open_list_ascii_help);
 	rz_warn_if_fail(open_list_ascii_cd);
+
+	RzCmdDesc *open_arch_bits_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_open_cd, "oa", rz_open_arch_bits_handler, &open_arch_bits_help);
+	rz_warn_if_fail(open_arch_bits_cd);
 
 	RzCmdDesc *cmd_print_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "p", rz_cmd_print, &cmd_print_help);
 	rz_warn_if_fail(cmd_print_cd);
