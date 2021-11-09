@@ -376,6 +376,10 @@ RZ_IPI RzCmdStatus rz_plugins_io_print_handler(RzCore *core, int argc, const cha
 RZ_IPI RzCmdStatus rz_open_list_ascii_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_open_arch_bits_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_open_use_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_open_prioritize_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_open_prioritize_next_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_open_prioritize_prev_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_open_prioritize_next_rotate_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_cmd_open(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_cmd_print_gadget_add_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_print_gadget_print_as_rizin_handler(RzCore *core, int argc, const char **argv);
@@ -503,13 +507,14 @@ RZ_IPI RzCmdStatus rz_write_from_io_xchg_handler(RzCore *core, int argc, const c
 RZ_IPI RzCmdStatus rz_write_from_file_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_write_from_socket_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_ww_handler_old(void *data, const char *input);
-RZ_IPI int rz_wx_handler_old(void *data, const char *input);
+RZ_IPI RzCmdStatus rz_write_hex_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_write_hex_from_file_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_wa_handler_old(void *data, const char *input);
 RZ_IPI int rz_wb_handler_old(void *data, const char *input);
 RZ_IPI int rz_wm_handler_old(void *data, const char *input);
 RZ_IPI int rz_wo_handler_old(void *data, const char *input);
 RZ_IPI int rz_wd_handler_old(void *data, const char *input);
-RZ_IPI int rz_ws_handler_old(void *data, const char *input);
+RZ_IPI RzCmdStatus rz_write_length_string_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_cmd_hexdump(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_yank_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_yank_editor_handler(RzCore *core, int argc, const char **argv);

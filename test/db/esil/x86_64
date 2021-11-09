@@ -1,4 +1,4 @@
-NAME=imul 1 arg
+AME=imul 1 ar
 FILE==
 CMDS=<<EOF
 e asm.arch=x86
@@ -311,7 +311,7 @@ FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-"wx 48630482"
+wx 48630482
 ao~esil
 EOF
 EXPECT=<<EOF
@@ -325,7 +325,7 @@ FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-"wx 4a8d04ef"
+wx 4a8d04ef
 ao~esil,opcode
 EOF
 EXPECT=<<EOF
@@ -340,7 +340,7 @@ FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-"wx 488d1c10"
+wx 488d1c10
 ao~opcode,esil
 EOF
 EXPECT=<<EOF

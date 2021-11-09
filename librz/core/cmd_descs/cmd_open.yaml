@@ -48,3 +48,24 @@ commands:
     args:
       - name: fd
         type: RZ_CMD_ARG_TYPE_NUM
+  - name: op
+    summary: Select prioritized file
+    subcommands:
+      - name: op
+        cname: open_prioritize
+        summary: Prioritize file with file descriptor <fd>
+        args:
+          - name: fd
+            type: RZ_CMD_ARG_TYPE_NUM
+      - name: opn
+        cname: open_prioritize_next
+        summary: Prioritize next file in the list
+        args: []
+      - name: opp
+        cname: open_prioritize_prev
+        summary: Prioritize previous file in the list
+        args: []
+      - name: opr
+        cname: open_prioritize_next_rotate
+        summary: Prioritize next file in the list (go back to first if on the last)
+        args: []
