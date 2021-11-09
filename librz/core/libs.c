@@ -94,7 +94,6 @@ static void __loadSystemPlugins(RzCore *core, int where, const char *path) {
 	}
 	if (where & RZ_CORE_LOADLIBS_SYSTEM) {
 		__openPluginsAt(core, RZ_PLUGINS, dir_plugins);
-		__openPluginsAt(core, RZ_EXTRAS, dir_plugins);
 		__openPluginsAt(core, RZ_BINDINGS, dir_plugins);
 	}
 #endif
