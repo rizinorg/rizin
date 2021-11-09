@@ -213,6 +213,7 @@ static const RzCmdDescArg plugins_io_print_args[2];
 static const RzCmdDescArg open_close_args[2];
 static const RzCmdDescArg open_plugins_args[2];
 static const RzCmdDescArg open_arch_bits_args[4];
+static const RzCmdDescArg open_use_args[2];
 static const RzCmdDescArg cmd_print_gadget_add_args[6];
 static const RzCmdDescArg cmd_print_gadget_move_args[6];
 static const RzCmdDescArg cmd_print_msg_digest_args[2];
@@ -4869,6 +4870,19 @@ static const RzCmdDescHelp open_arch_bits_help = {
 	.args = open_arch_bits_args,
 };
 
+static const RzCmdDescArg open_use_args[] = {
+	{
+		.name = "fd",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_use_help = {
+	.summary = "Use specified <fd>",
+	.args = open_use_args,
+};
+
 static const RzCmdDescHelp cmd_print_help = {
 	.summary = "Print commands",
 };
@@ -8824,6 +8838,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *open_arch_bits_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_open_cd, "oa", rz_open_arch_bits_handler, &open_arch_bits_help);
 	rz_warn_if_fail(open_arch_bits_cd);
+
+	RzCmdDesc *open_use_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_open_cd, "ou", rz_open_use_handler, &open_use_help);
+	rz_warn_if_fail(open_use_cd);
 
 	RzCmdDesc *cmd_print_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "p", rz_cmd_print, &cmd_print_help);
 	rz_warn_if_fail(cmd_print_cd);
