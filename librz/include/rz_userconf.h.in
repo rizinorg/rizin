@@ -53,7 +53,6 @@
 #define RZ_WWWROOT "@WWWROOT@"
 
 #define RZ_PLUGINS   "@PLUGINS@"
-#define RZ_EXTRAS    "@EXTRAS@"
 #define RZ_BINDINGS  "@BINDINGS@"
 #define RZ_DATDIR_RZ "@DATADIR_RZ@"
 #define RZ_SDB       "@SDB@"
