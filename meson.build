@@ -183,15 +183,15 @@ if host_machine.system() == 'windows'
   rizin_bindings = rizin_libdir / 'bindings'
 else
   rizin_datdir_rz = rizin_datdir / 'rizin'
-  rizin_wwwroot = rizin_datdir_rz / rizin_version / 'www'
-  rizin_sdb = rizin_datdir_rz / rizin_version
-  rizin_zigns = rizin_datdir_rz / rizin_version / 'zigns'
-  rizin_themes = rizin_datdir_rz / rizin_version / 'cons'
-  rizin_fortunes = rizin_datdir_rz / rizin_version / 'fortunes'
-  rizin_flags = rizin_datdir_rz / rizin_version / 'flag'
-  rizin_hud = rizin_datdir_rz / rizin_version / 'hud'
+  rizin_wwwroot = rizin_datdir_rz / 'www'
+  rizin_sdb = rizin_datdir_rz
+  rizin_zigns = rizin_datdir_rz / 'zigns'
+  rizin_themes = rizin_datdir_rz / 'cons'
+  rizin_fortunes = rizin_datdir_rz / 'fortunes'
+  rizin_flags = rizin_datdir_rz / 'flag'
+  rizin_hud = rizin_datdir_rz / 'hud'
   rizin_plugins = rizin_libdir / 'rizin'
-  rizin_bindings = rizin_libdir / 'rizin-bindings' / rizin_version
+  rizin_bindings = rizin_libdir / 'rizin-bindings'
 endif
 
 opts_overwrite = [
