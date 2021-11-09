@@ -214,6 +214,7 @@ static const RzCmdDescArg open_close_args[2];
 static const RzCmdDescArg open_plugins_args[2];
 static const RzCmdDescArg open_arch_bits_args[4];
 static const RzCmdDescArg open_use_args[2];
+static const RzCmdDescArg open_prioritize_args[2];
 static const RzCmdDescArg cmd_print_gadget_add_args[6];
 static const RzCmdDescArg cmd_print_gadget_move_args[6];
 static const RzCmdDescArg cmd_print_msg_digest_args[2];
@@ -4883,6 +4884,46 @@ static const RzCmdDescHelp open_use_help = {
 	.args = open_use_args,
 };
 
+static const RzCmdDescHelp op_help = {
+	.summary = "Select prioritized file",
+};
+static const RzCmdDescArg open_prioritize_args[] = {
+	{
+		.name = "fd",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_prioritize_help = {
+	.summary = "Prioritize file with file descriptor <fd>",
+	.args = open_prioritize_args,
+};
+
+static const RzCmdDescArg open_prioritize_next_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp open_prioritize_next_help = {
+	.summary = "Prioritize next file in the list",
+	.args = open_prioritize_next_args,
+};
+
+static const RzCmdDescArg open_prioritize_prev_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp open_prioritize_prev_help = {
+	.summary = "Prioritize previous file in the list",
+	.args = open_prioritize_prev_args,
+};
+
+static const RzCmdDescArg open_prioritize_next_rotate_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp open_prioritize_next_rotate_help = {
+	.summary = "Prioritize next file in the list (go back to first if on the last)",
+	.args = open_prioritize_next_rotate_args,
+};
+
 static const RzCmdDescHelp cmd_print_help = {
 	.summary = "Print commands",
 };
@@ -8841,6 +8882,17 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *open_use_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_open_cd, "ou", rz_open_use_handler, &open_use_help);
 	rz_warn_if_fail(open_use_cd);
+
+	RzCmdDesc *op_cd = rz_cmd_desc_group_new(core->rcmd, cmd_open_cd, "op", rz_open_prioritize_handler, &open_prioritize_help, &op_help);
+	rz_warn_if_fail(op_cd);
+	RzCmdDesc *open_prioritize_next_cd = rz_cmd_desc_argv_new(core->rcmd, op_cd, "opn", rz_open_prioritize_next_handler, &open_prioritize_next_help);
+	rz_warn_if_fail(open_prioritize_next_cd);
+
+	RzCmdDesc *open_prioritize_prev_cd = rz_cmd_desc_argv_new(core->rcmd, op_cd, "opp", rz_open_prioritize_prev_handler, &open_prioritize_prev_help);
+	rz_warn_if_fail(open_prioritize_prev_cd);
+
+	RzCmdDesc *open_prioritize_next_rotate_cd = rz_cmd_desc_argv_new(core->rcmd, op_cd, "opr", rz_open_prioritize_next_rotate_handler, &open_prioritize_next_rotate_help);
+	rz_warn_if_fail(open_prioritize_next_rotate_cd);
 
 	RzCmdDesc *cmd_print_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "p", rz_cmd_print, &cmd_print_help);
 	rz_warn_if_fail(cmd_print_cd);
