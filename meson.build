@@ -190,7 +190,7 @@ else
   rizin_fortunes = rizin_datdir_rz / 'fortunes'
   rizin_flags = rizin_datdir_rz / 'flag'
   rizin_hud = rizin_datdir_rz / 'hud'
-  rizin_plugins = rizin_libdir / 'rizin'
+  rizin_plugins = rizin_libdir / 'rizin' / 'plugins'
   rizin_bindings = rizin_libdir / 'rizin-bindings'
 endif
 
