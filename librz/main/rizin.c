@@ -150,27 +150,27 @@ static int main_help(int line) {
 		printf(
 			"Scripts:\n"
 			" system       ${RZ_PREFIX}/share/rizin/rizinrc\n"
-			" user         ~/.rizinrc " RZ_JOIN_2_PATHS("~", RZ_HOME_RC) " (and " RZ_JOIN_3_PATHS("~", RZ_HOME_RC_DIR, "") ")\n"
-																       " file         ${filename}.rz\n"
-																       "Plugins:\n"
-																       " binrc        " RZ_JOIN_4_PATHS("~", RZ_HOME_BINRC, "bin-<format>", "") " (elf, elf64, mach0, ..)\n"
-																										" RZ_USER_PLUGINS " RZ_JOIN_2_PATHS("~", RZ_HOME_PLUGINS) "\n"
-																																	  " RZ_LIBR_PLUGINS " RZ_JOIN_2_PATHS("%s", RZ_PLUGINS) "\n"
-																																								" RZ_USER_ZIGNS " RZ_JOIN_2_PATHS("~", RZ_HOME_ZIGNS) "\n"
-																																														      "Environment:\n"
-																																														      " RZ_CFG_OLDSHELL sets cfg.oldshell=true\n"
-																																														      " RZ_DEBUG      if defined, show error messages and crash signal\n"
-																																														      " RZ_DEBUG_ASSERT=1 set a breakpoint when hitting an assert\n"
-																																														      " RZ_MAGICPATH " RZ_JOIN_2_PATHS("%s", RZ_SDB_MAGIC) "\n"
-																																																					   " RZ_NOPLUGINS do not load rizin shared plugins\n"
-																																																					   " RZ_RCFILE    ~/.rizinrc (user preferences, batch script)\n" // TOO GENERIC
-																																																					   " RZ_RDATAHOME %s\n" // TODO: rename to RHOME RZHOME?
-																																																					   " RZ_VERSION   contains the current version of rizin\n"
-																																																					   "Paths:\n"
-																																																					   " RZ_PREFIX    %s\n"
-																																																					   " RZ_INCDIR    %s\n"
-																																																					   " RZ_LIBDIR    %s\n"
-																																																					   " RZ_LIBEXT    " RZ_LIB_EXT "\n",
+			" user         ~/.rizinrc " RZ_JOIN_2_PATHS("~", RZ_HOME_CONFIG_RC) " (and " RZ_JOIN_3_PATHS("~", RZ_HOME_CONFIG_RC_DIR, "") ")\n"
+																		     " file         ${filename}.rz\n"
+																		     "Plugins:\n"
+																		     " binrc        " RZ_JOIN_4_PATHS("~", RZ_HOME_BINRC, "bin-<format>", "") " (elf, elf64, mach0, ..)\n"
+																											      " RZ_USER_PLUGINS " RZ_JOIN_2_PATHS("~", RZ_HOME_PLUGINS) "\n"
+																																			" RZ_LIBR_PLUGINS " RZ_JOIN_2_PATHS("%s", RZ_PLUGINS) "\n"
+																																									      " RZ_USER_ZIGNS " RZ_JOIN_2_PATHS("~", RZ_HOME_ZIGNS) "\n"
+																																																    "Environment:\n"
+																																																    " RZ_CFG_OLDSHELL sets cfg.oldshell=true\n"
+																																																    " RZ_DEBUG      if defined, show error messages and crash signal\n"
+																																																    " RZ_DEBUG_ASSERT=1 set a breakpoint when hitting an assert\n"
+																																																    " RZ_MAGICPATH " RZ_JOIN_2_PATHS("%s", RZ_SDB_MAGIC) "\n"
+																																																							 " RZ_NOPLUGINS do not load rizin shared plugins\n"
+																																																							 " RZ_RCFILE    ~/.rizinrc (user preferences, batch script)\n" // TOO GENERIC
+																																																							 " RZ_RDATAHOME %s\n" // TODO: rename to RHOME RZHOME?
+																																																							 " RZ_VERSION   contains the current version of rizin\n"
+																																																							 "Paths:\n"
+																																																							 " RZ_PREFIX    %s\n"
+																																																							 " RZ_INCDIR    %s\n"
+																																																							 " RZ_LIBDIR    %s\n"
+																																																							 " RZ_LIBEXT    " RZ_LIB_EXT "\n",
 			dirPrefix, datahome, dirPrefix, dirPrefix, incdir, libdir);
 		free(libdir);
 		free(incdir);

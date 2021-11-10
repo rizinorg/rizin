@@ -3791,7 +3791,7 @@ RZ_API void rz_core_parse_rizinrc(RzCore *r) {
 		rz_core_cmd_file(r, homerc);
 	}
 	free(homerc);
-	homerc = rz_str_home(RZ_HOME_RC);
+	homerc = rz_str_home(RZ_HOME_CONFIG_RC);
 	if (homerc && rz_file_is_regular(homerc)) {
 		if (has_debug) {
 			eprintf("USER CONFIG loaded from %s\n", homerc);
@@ -3799,7 +3799,7 @@ RZ_API void rz_core_parse_rizinrc(RzCore *r) {
 		rz_core_cmd_file(r, homerc);
 	}
 	free(homerc);
-	homerc = rz_str_home(RZ_HOME_RC_DIR);
+	homerc = rz_str_home(RZ_HOME_CONFIG_RC_DIR);
 	if (homerc) {
 		if (rz_file_is_directory(homerc)) {
 			char *file;
