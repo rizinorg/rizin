@@ -20,7 +20,6 @@ rz_analysis_sources = [
   'rzil/rzil_trace.c',
   'rzil/rzil.c',
   'fcn.c',
-  'flirt.c',
   'hint.c',
   'il_trace.c',
   'labels.c',

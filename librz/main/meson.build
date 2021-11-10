@@ -34,6 +34,7 @@ rz_main_deps = [
   rz_debug_dep,
   rz_config_dep,
   rz_bin_dep,
+  rz_flirt_dep,
   rz_core_dep,
   rz_diff_dep,
 ]

@@ -148,10 +148,6 @@ RZ_API RzList *rz_sign_fcn_xrefs_to(RzAnalysis *a, RzAnalysisFunction *fcn);
 RZ_API RzList *rz_sign_fcn_vars(RzAnalysis *a, RzAnalysisFunction *fcn);
 RZ_API RzList *rz_sign_fcn_types(RzAnalysis *a, RzAnalysisFunction *fcn);
 
-RZ_API int rz_sign_is_flirt(RzBuffer *buf);
-RZ_API void rz_sign_flirt_dump(const RzAnalysis *analysis, const char *flirt_file);
-RZ_API void rz_sign_flirt_scan(RzAnalysis *analysis, const char *flirt_file);
-
 RZ_API RzList *rz_sign_find_closest_sig(RzAnalysis *a, RzSignItem *it, int count, double score_threshold);
 RZ_API RzList *rz_sign_find_closest_fcn(RzAnalysis *a, RzSignItem *it, int count, double score_threshold);
 RZ_API void rz_sign_close_match_free(RzSignCloseMatch *match);
