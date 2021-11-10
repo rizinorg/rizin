@@ -336,9 +336,20 @@ commands:
     summary: Write wide string
     type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: wx
-    cname: wx_handler_old
-    summary: Write hexadecimal
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    summary: Write hexadecimal data
+    subcommands:
+      - name: wx
+        cname: write_hex
+        summary: Write hexadecimal data <hex> into current offset
+        args:
+          - name: hex
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: wxf
+        cname: write_hex_from_file
+        summary: Write hexadecimal data from file <file> into current offset
+        args:
+          - name: file|-
+            type: RZ_CMD_ARG_TYPE_FILE
   - name: wa
     cname: wa_handler_old
     summary: Write opcode, separated by ';'
@@ -360,6 +371,8 @@ commands:
     summary: Duplicate N bytes from offset at current seek
     type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: ws
-    cname: ws_handler_old
+    cname: write_length_string
     summary: Write 1 byte for length and then the string
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    args:
+      - name: string
+        type: RZ_CMD_ARG_TYPE_STRING

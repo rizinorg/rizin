@@ -6,6 +6,11 @@
 #include <rz_core.h>
 #include <rz_io.h>
 
+struct open_list_ascii_data_t {
+	RzPrint *p;
+	int fdsz;
+};
+
 static const char *help_msg_o[] = {
 	"Usage: o", "[com- ] [file] ([offset])", "",
 	"o", " [file] 0x4000 rwx", "map file at 0x4000",
@@ -31,15 +36,6 @@ static const char *help_msg_o[] = {
 	"oq", "", "list all open files",
 	"ou", "[fd]", "select fd to use",
 	"ox", " fd fdx", "exchange the descs of fd and fdx and keep the mapping",
-	NULL
-};
-
-static const char *help_msg_op[] = {
-	"Usage:", "op[rnp] [fd]", "",
-	"opr", "", "open next file rotating",
-	"opn", "", "open next file",
-	"opp", "", "open previous file",
-	"op", " [fd]", "open priorizing fd",
 	NULL
 };
 
@@ -952,42 +948,28 @@ RZ_API void rz_core_file_reopen_in_malloc(RzCore *core) {
 	}
 }
 
-static int fdsz = 0;
-
 static bool init_desc_list_visual_cb(void *user, void *data, ut32 id) {
+	struct open_list_ascii_data_t *u = (struct open_list_ascii_data_t *)user;
 	RzIODesc *desc = (RzIODesc *)data;
 	ut64 sz = rz_io_desc_size(desc);
-	if (sz > fdsz) {
-		fdsz = sz;
+	if (sz > u->fdsz) {
+		u->fdsz = sz;
 	}
 	return true;
 }
 
 static bool desc_list_visual_cb(void *user, void *data, ut32 id) {
-	RzPrint *p = (RzPrint *)user;
+	struct open_list_ascii_data_t *u = (struct open_list_ascii_data_t *)user;
+	RzPrint *p = u->p;
 	RzIODesc *desc = (RzIODesc *)data;
 	ut64 sz = rz_io_desc_size(desc);
 	rz_cons_printf("%2d %c %s 0x%08" PFMT64x " ", desc->fd,
 		(desc->io && (desc->io->desc == desc)) ? '*' : '-', rz_str_rwx_i(desc->perm), sz);
 	int flags = p->flags;
 	p->flags &= ~RZ_PRINT_FLAGS_HEADER;
-	rz_print_progressbar(p, sz * 100 / fdsz, rz_cons_get_size(NULL) - 40);
+	rz_print_progressbar(p, sz * 100 / u->fdsz, rz_cons_get_size(NULL) - 40);
 	p->flags = flags;
 	rz_cons_printf(" %s\n", desc->uri);
-#if 0
-	RzIOMap *map;
-	SdbListIter *iter;
-	if (desc->io && desc->io->va && desc->io->maps) {
-		ls_foreach_prev (desc->io->maps, iter, map) {
-			if (map->fd == desc->fd) {
-				p->cb_printf("  +0x%"PFMT64x" 0x%"PFMT64x
-					" - 0x%"PFMT64x" : %s : %s : %s\n", map->delta,
-					map->from, map->to, rz_str_rwx_i(map->flags), "",
-					rz_str_get(map));
-			}
-		}
-	}
-#endif
 	return true;
 }
 
@@ -1030,37 +1012,6 @@ static bool desc_list_json_cb(void *user, void *data, ut32 id) {
 	return true;
 }
 
-static bool cmd_op(RzCore *core, char mode, int fd) {
-	int cur_fd = rz_io_fd_get_current(core->io);
-	int next_fd = cur_fd;
-	switch (mode) {
-	case 0:
-		next_fd = fd;
-		break;
-	case 'n':
-		next_fd = rz_io_fd_get_next(core->io, cur_fd);
-		break;
-	case 'p':
-		next_fd = rz_io_fd_get_prev(core->io, cur_fd);
-		break;
-	case 'r':
-		next_fd = rz_io_fd_get_next(core->io, cur_fd);
-		if (next_fd == -1) {
-			next_fd = rz_io_fd_get_lowest(core->io);
-		}
-		break;
-	}
-	if (next_fd >= 0 && next_fd != cur_fd && rz_io_use_fd(core->io, next_fd)) {
-		RzBinFile *bf = rz_bin_file_find_by_fd(core->bin, next_fd);
-		if (bf && rz_core_bin_raise(core, bf->id)) {
-			rz_core_block_read(core);
-			return true;
-		}
-		eprintf("Invalid RzBinFile.id number.\n");
-	}
-	return false;
-}
-
 RZ_IPI int rz_cmd_open(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	int perms = RZ_PERM_R;
@@ -1074,57 +1025,6 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 	char **argv = NULL;
 
 	switch (*input) {
-	case 'a':
-		switch (input[1]) {
-		case '*': // "oa*"
-		{
-			RzListIter *iter;
-			RzBinFile *bf = NULL;
-			rz_list_foreach (core->bin->binfiles, iter, bf) {
-				if (bf && bf->o && bf->o->info) {
-					eprintf("oa %s %d %s\n", bf->o->info->arch, bf->o->info->bits, bf->file);
-				}
-			}
-			return 1;
-		}
-		case '?': // "oa?"
-		case ' ': // "oa "
-		{
-			int i;
-			char *ptr = strdup(input + 2);
-			const char *arch = NULL;
-			ut16 bits = 0;
-			const char *filename = NULL;
-			i = rz_str_word_set0(ptr);
-			if (i < 2) {
-				eprintf("Missing argument\n");
-				free(ptr);
-				return 0;
-			}
-			if (i == 3) {
-				filename = rz_str_word_get0(ptr, 2);
-			}
-			bits = rz_num_math(core->num, rz_str_word_get0(ptr, 1));
-			arch = rz_str_word_get0(ptr, 0);
-			rz_core_bin_set_arch_bits(core, filename, arch, bits);
-			RzBinFile *file = rz_bin_file_find_by_name(core->bin, filename);
-			if (!file) {
-				eprintf("Cannot find file %s\n", filename);
-				free(ptr);
-				return 0;
-			}
-			if (file->o && file->o->info) {
-				file->o->info->arch = strdup(arch);
-				file->o->info->bits = bits;
-				rz_core_bin_apply_all_info(core, file);
-			}
-			free(ptr);
-			return 1;
-		} break;
-		default:
-			eprintf("Usage: oa[-][arch] [bits] [filename]\n");
-			return 0;
-		}
 	case 'n': // "on"
 		if (input[1] == '*') {
 			rz_core_raw_file_print(core);
@@ -1175,36 +1075,6 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 		core->num->value = fd;
 		rz_core_block_read(core);
 		return 0;
-	case 'p': // "op"
-		/* handle prioritize */
-		if (input[1]) {
-			switch (input[1]) {
-			case 'r': // "opr" - open next file + rotate if not found
-			case 'n': // "opn" - open next file
-			case 'p': // "opp" - open previous file
-				if (!cmd_op(core, input[1], -1)) {
-					eprintf("Cannot find file\n");
-				}
-				break;
-			case ' ': {
-				int fd = rz_num_math(core->num, input + 1);
-				if (fd >= 0 || input[1] == '0') {
-					cmd_op(core, 0, fd);
-				} else {
-					eprintf("Invalid fd number\n");
-				}
-			} break;
-			default:
-				rz_core_cmd_help(core, help_msg_op);
-				break;
-			}
-		} else {
-			if (core->io && core->io->desc) {
-				rz_cons_printf("%d\n", core->io->desc->fd);
-			}
-		}
-		return 0;
-		break;
 	case '+': // "o+"
 		perms |= RZ_PERM_W;
 		/* fallthrough */
@@ -1262,11 +1132,6 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 	}
 
 	switch (*input) {
-	case '=': // "o="
-		fdsz = 0;
-		rz_id_storage_foreach(core->io->files, init_desc_list_visual_cb, core->print);
-		rz_id_storage_foreach(core->io->files, desc_list_visual_cb, core->print);
-		break;
 	case 'q': // "oq"
 		if (input[1] == '.') {
 			rz_id_storage_foreach(core->io->files, desc_list_quiet2_cb, core->print);
@@ -1337,27 +1202,6 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 			rz_core_file_print(core, RZ_OUTPUT_MODE_STANDARD);
 		}
 		break;
-	case 'u': { // "ou"
-		RzListIter *iter = NULL;
-		RzCoreFile *f;
-		core->switch_file_view = 0;
-		const char *snum = rz_str_trim_head_ro(input + 2);
-		int num = rz_num_math(NULL, snum);
-		rz_list_foreach (core->files, iter, f) {
-			if (f->fd == num) {
-				core->file = f;
-				rz_io_use_fd(core->io, num);
-				RzBinFile *bf = rz_bin_file_find_by_fd(core->bin, num);
-				if (bf) {
-					rz_core_bin_raise(core, bf->id);
-					rz_core_block_read(core);
-					rz_cons_printf("switched to fd %d %s\n", num, bf->file);
-				}
-				break;
-			}
-		}
-		break;
-	}
 	case 'b': // "ob"
 		cmd_open_bin(core, input);
 		break;
@@ -1587,4 +1431,91 @@ RZ_IPI RzCmdStatus rz_open_close_all_handler(RzCore *core, int argc, const char 
 	rz_flag_unset_all(core->flags);
 	RZ_LOG_INFO("Close all files\n");
 	return RZ_CMD_STATUS_OK;
+}
+RZ_IPI RzCmdStatus rz_open_list_ascii_handler(RzCore *core, int argc, const char **argv) {
+	struct open_list_ascii_data_t data = { 0 };
+	data.p = core->print;
+	data.fdsz = 0;
+	rz_id_storage_foreach(core->io->files, init_desc_list_visual_cb, &data);
+	rz_id_storage_foreach(core->io->files, desc_list_visual_cb, &data);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_open_arch_bits_handler(RzCore *core, int argc, const char **argv) {
+	const char *filename = argc > 3 ? argv[3] : NULL;
+	ut16 bits = rz_num_math(core->num, argv[2]);
+	const char *arch = argv[1];
+
+	int res = rz_core_bin_set_arch_bits(core, filename, arch, bits);
+	return res ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+}
+
+RZ_IPI RzCmdStatus rz_open_use_handler(RzCore *core, int argc, const char **argv) {
+	RzListIter *iter = NULL;
+	RzCoreFile *f;
+
+	int fdnum = rz_num_math(NULL, argv[1]);
+	rz_list_foreach (core->files, iter, f) {
+		if (f->fd == fdnum) {
+			core->file = f;
+			rz_io_use_fd(core->io, fdnum);
+			RzBinFile *bf = rz_bin_file_find_by_fd(core->bin, fdnum);
+			if (!bf) {
+				RZ_LOG_ERROR("Could not find binfile with fd %d\n", fdnum);
+				return RZ_CMD_STATUS_ERROR;
+			}
+			rz_core_bin_raise(core, bf->id);
+			rz_core_block_read(core);
+			RZ_LOG_INFO("Switched to fd %d (%s)\n", fdnum, bf->file);
+			return RZ_CMD_STATUS_OK;
+		}
+	}
+	RZ_LOG_ERROR("Could not find any opened file with fd %d\n", fdnum);
+	return RZ_CMD_STATUS_ERROR;
+}
+
+static RzCmdStatus prioritize_file(RzCore *core, int fd) {
+	if (fd <= 0) {
+		RZ_LOG_ERROR("Wrong file descriptor %d\n", fd);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	int curfd = rz_io_fd_get_current(core->io);
+	if (fd == curfd) {
+		return RZ_CMD_STATUS_OK;
+	}
+
+	if (!rz_io_use_fd(core->io, fd)) {
+		RZ_LOG_ERROR("Could not use IO fd %d\n", fd);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_core_block_read(core);
+	RzBinFile *bf = rz_bin_file_find_by_fd(core->bin, fd);
+	if (bf && !rz_core_bin_raise(core, bf->id)) {
+		RZ_LOG_ERROR("Could not use bin id %d\n", bf->id);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_open_prioritize_handler(RzCore *core, int argc, const char **argv) {
+	int fd = atoi(argv[1]);
+	return prioritize_file(core, fd);
+}
+
+RZ_IPI RzCmdStatus rz_open_prioritize_next_handler(RzCore *core, int argc, const char **argv) {
+	int fd = rz_io_fd_get_next(core->io, rz_io_fd_get_current(core->io));
+	return prioritize_file(core, fd);
+}
+
+RZ_IPI RzCmdStatus rz_open_prioritize_prev_handler(RzCore *core, int argc, const char **argv) {
+	int fd = rz_io_fd_get_prev(core->io, rz_io_fd_get_current(core->io));
+	return prioritize_file(core, fd);
+}
+
+RZ_IPI RzCmdStatus rz_open_prioritize_next_rotate_handler(RzCore *core, int argc, const char **argv) {
+	int fd = rz_io_fd_get_next(core->io, rz_io_fd_get_current(core->io));
+	if (fd == -1) {
+		fd = rz_io_fd_get_lowest(core->io);
+	}
+	return prioritize_file(core, fd) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }

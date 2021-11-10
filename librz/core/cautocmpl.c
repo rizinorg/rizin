@@ -880,7 +880,7 @@ static bool find_autocmplt_type_quoted_arg(struct autocmplt_data_t *ad, RzCore *
 		const char *node_type = ts_node_type(g->node);
 		ut32 node_start = ts_node_start_byte(g->node);
 		ut32 node_end = ts_node_end_byte(g->node);
-		if (!strcmp(node_type, quote_node_type)) {
+		if (!strcmp(node_type, quote_node_type) && !ts_node_has_error(g->node)) {
 			res = fill_autocmplt_data_cmdarg(ad, node_start + 1, node_end - 1, g->input, g->node, core);
 		}
 		guess_data_free(g);

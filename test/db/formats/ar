@@ -126,7 +126,6 @@ nth paddr      vaddr      bind   type   size lib name
 29  0x00000000 0x08000000 GLOBAL NOTYPE 16       imp.fprintf
 30  0x00000000 0x08000000 GLOBAL NOTYPE 16       imp.gdb_regs_arm32
 31  0x00000000 0x08000000 GLOBAL NOTYPE 16       imp.gdb_regs_aarch64
-switched to fd 5 arch.o
 nth paddr      vaddr      bind   type size lib name             
 ----------------------------------------------------------------
 1   ---------- 0x00000000 LOCAL  FILE 0        arch.c
@@ -147,7 +146,6 @@ nth paddr      vaddr      bind   type size lib name
 16  0x00001a60 0x00001a60 GLOBAL OBJ  1920     gdb_regs_lm32
 17  0x000021e0 0x000021e0 GLOBAL OBJ  3552     gdb_regs_mips
 18  0x00002fc0 0x00002fc0 GLOBAL OBJ  1776     gdb_regs_avr
-switched to fd 10 core.o
 nth paddr      vaddr      bind   type   size lib name                        
 -----------------------------------------------------------------------------
 1   ---------- 0x00000000 LOCAL  FILE   0        core.c

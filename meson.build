@@ -534,17 +534,35 @@ if get_option('b_sanitize').contains('undefined')
 endif
 
 use_rpath = false
+use_rpath_absolute = false
 if host_machine.system() != 'windows' and get_option('default_library') == 'shared'
-  if get_option('local').enabled() or (get_option('local').auto() and get_option('prefix') != '/usr')
+  if get_option('local') == 'enabled'
     use_rpath = true
+  elif get_option('local') == 'absolute'
+    use_rpath_absolute = true
+  elif get_option('local') == 'auto' and get_option('prefix') != '/usr'
+    if host_machine.system() == 'openbsd'
+      # OpenBSD's $ORIGIN only works in the way we would need it when running an
+      # executable by its actual path, but not when run through PATH.
+      # So let's use absolute rpaths there.
+      use_rpath_absolute = true
+    else
+      use_rpath = true
+    endif
   endif
 endif
 
 rpath_exe = ''
 rpath_lib = ''
+rpath_summary = 'disabled'
 if use_rpath
   rpath_exe = '$ORIGIN/../' + get_option('libdir')
   rpath_lib = '$ORIGIN'
+  rpath_summary = 'relative'
+elif use_rpath_absolute
+  rpath_exe = get_option('prefix') / get_option('libdir')
+  rpath_lib = get_option('prefix') / get_option('libdir')
+  rpath_summary = 'absolute'
 endif
 # NOTE: this is to workaround an issue on Windows where unit tests don't use
 # the right libraries, resulting in tests not being run properly
@@ -753,7 +771,7 @@ summary({
   'System zlib library': zlib_dep.found() and zlib_dep.type_name() != 'internal',
   'System zip library': libzip_dep.found() and libzip_dep.type_name() != 'internal',
   'Use ptrace-wrap': use_ptrace_wrap,
-  'Use RPATH': use_rpath,
+  'Use RPATH': rpath_summary,
 }, section: 'Configuration', bool_yn: true)
 
 summary({
