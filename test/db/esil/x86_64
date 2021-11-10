@@ -1,4 +1,4 @@
-AME=imul 1 ar
+NAME=imul 1 arg
 FILE==
 CMDS=<<EOF
 e asm.arch=x86
