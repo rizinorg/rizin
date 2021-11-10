@@ -4,6 +4,7 @@
 #include <rz_analysis.h>
 #include <rz_bin.h>
 #include <rz_type.h>
+#include <rz_util/rz_path.h>
 #include "minunit.h"
 #include "test_types.h"
 
@@ -26,8 +27,9 @@ static bool test_parse_dwarf_types(void) {
 	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
 	rz_analysis_set_cpu(analysis, "x86");
 	rz_analysis_set_bits(analysis, 32);
-	const char *dir_prefix = rz_sys_prefix(NULL);
-	rz_type_db_init(analysis->typedb, dir_prefix, "x86", 32, "linux");
+	char *types_dir = rz_path_system_sdb_types();
+	rz_type_db_init(analysis->typedb, types_dir, "x86", 32, "linux");
+	free(types_dir);
 
 	RzBinOptions opt = { 0 };
 	RzBinFile *bf = rz_bin_open(bin, "bins/pe/vista-glass.exe", &opt);
@@ -140,8 +142,9 @@ static bool test_dwarf_function_parsing_cpp(void) {
 	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
 	rz_analysis_set_cpu(analysis, "x86");
 	rz_analysis_set_bits(analysis, 64);
-	const char *dir_prefix = rz_sys_prefix(NULL);
-	rz_type_db_init(analysis->typedb, dir_prefix, "x86", 64, "linux");
+	char *types_dir = rz_path_system_sdb_types();
+	rz_type_db_init(analysis->typedb, types_dir, "x86", 64, "linux");
+	free(types_dir);
 
 	RzBinOptions opt = { 0 };
 	rz_bin_options_init(&opt, 0, 0, 0, false, false);
@@ -263,8 +266,9 @@ static bool test_dwarf_function_parsing_rust(void) {
 	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
 	rz_analysis_set_cpu(analysis, "x86");
 	rz_analysis_set_bits(analysis, 64);
-	const char *dir_prefix = rz_sys_prefix(NULL);
-	rz_type_db_init(analysis->typedb, dir_prefix, "x86", 64, "linux");
+	char *types_dir = rz_path_system_sdb_types();
+	rz_type_db_init(analysis->typedb, types_dir, "x86", 64, "linux");
+	free(types_dir);
 
 	RzBinOptions opt = { 0 };
 	rz_bin_options_init(&opt, 0, 0, 0, false, false);

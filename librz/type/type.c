@@ -232,12 +232,12 @@ RZ_API bool rz_type_db_del(RzTypeDB *typedb, RZ_NONNULL const char *name) {
  * a different layout, depending on the operating system or bitness.
  *
  * \param typedb Types Database instance
- * \param dir_prefix Directory where all type libraries are installed
+ * \param types_dir Directory where all type libraries are installed
  * \param arch Architecture of the analysis session
  * \param bits Bitness of the analysis session
  * \param os Operating system of the analysis session
  */
-RZ_API void rz_type_db_init(RzTypeDB *typedb, const char *dir_prefix, const char *arch, int bits, const char *os) {
+RZ_API void rz_type_db_init(RzTypeDB *typedb, const char *types_dir, const char *arch, int bits, const char *os) {
 	rz_return_if_fail(typedb && typedb->types && typedb->formats);
 
 	// A workaround to fix loading incorrectly detected MacOS binaries
@@ -247,12 +247,12 @@ RZ_API void rz_type_db_init(RzTypeDB *typedb, const char *dir_prefix, const char
 
 	// At first we load the basic types
 	// Atomic types
-	const char *dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_TYPES, "types-atomic.sdb"), dir_prefix);
+	const char *dbpath = sdb_fmt(RZ_JOIN_2_PATHS("%s", "types-atomic.sdb"), types_dir);
 	if (rz_type_db_load_sdb(typedb, dbpath)) {
 		RZ_LOG_DEBUG("types: loaded \"%s\"\n", dbpath);
 	}
 	// C runtime types
-	dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_TYPES, "types-libc.sdb"), dir_prefix);
+	dbpath = sdb_fmt(RZ_JOIN_2_PATHS("%s", "types-libc.sdb"), types_dir);
 	if (rz_type_db_load_sdb(typedb, dbpath)) {
 		RZ_LOG_DEBUG("types: loaded \"%s\"\n", dbpath);
 	}
@@ -263,8 +263,7 @@ RZ_API void rz_type_db_init(RzTypeDB *typedb, const char *dir_prefix, const char
 	}
 
 	// Bits-specific types that are independent from architecture or OS
-	dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_TYPES, "types-%d.sdb"),
-		dir_prefix, bits);
+	dbpath = sdb_fmt(RZ_JOIN_2_PATHS("%s", "types-%d.sdb"), types_dir, bits);
 	if (rz_type_db_load_sdb(typedb, dbpath)) {
 		RZ_LOG_DEBUG("types: loaded \"%s\"\n", dbpath);
 	}
@@ -275,38 +274,35 @@ RZ_API void rz_type_db_init(RzTypeDB *typedb, const char *dir_prefix, const char
 	}
 
 	// Architecture-specific types
-	dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_TYPES, "types-%s.sdb"),
-		dir_prefix, arch);
+	dbpath = sdb_fmt(RZ_JOIN_2_PATHS("%s", "types-%s.sdb"), types_dir, arch);
 	if (rz_type_db_load_sdb(typedb, dbpath)) {
 		RZ_LOG_DEBUG("types: loaded \"%s\"\n", dbpath);
 	}
 
 	// Architecture- and bits-specific types
-	dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_TYPES, "types-%s-%d.sdb"),
-		dir_prefix, arch, bits);
+	dbpath = sdb_fmt(RZ_JOIN_2_PATHS("%s", "types-%s-%d.sdb"), types_dir, arch, bits);
 	if (rz_type_db_load_sdb(typedb, dbpath)) {
 		RZ_LOG_DEBUG("types: loaded \"%s\"\n", dbpath);
 	}
 
 	if (os) {
 		// OS-specific types
-		dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_TYPES, "types-%s.sdb"),
-			dir_prefix, os);
+		dbpath = sdb_fmt(RZ_JOIN_2_PATHS("%s", "types-%s.sdb"), types_dir, os);
 		if (rz_type_db_load_sdb(typedb, dbpath)) {
 			RZ_LOG_DEBUG("types: loaded \"%s\"\n", dbpath);
 		}
-		dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_TYPES, "types-%s-%d.sdb"),
-			dir_prefix, os, bits);
+		dbpath = sdb_fmt(RZ_JOIN_2_PATHS("%s", "types-%s-%d.sdb"),
+			types_dir, os, bits);
 		if (rz_type_db_load_sdb(typedb, dbpath)) {
 			RZ_LOG_DEBUG("types: loaded \"%s\"\n", dbpath);
 		}
-		dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_TYPES, "types-%s-%s.sdb"),
-			dir_prefix, arch, os);
+		dbpath = sdb_fmt(RZ_JOIN_2_PATHS("%s", "types-%s-%s.sdb"),
+			types_dir, arch, os);
 		if (rz_type_db_load_sdb(typedb, dbpath)) {
 			RZ_LOG_DEBUG("types: loaded \"%s\"\n", dbpath);
 		}
-		dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_TYPES, "types-%s-%s-%d.sdb"),
-			dir_prefix, arch, os, bits);
+		dbpath = sdb_fmt(RZ_JOIN_2_PATHS("%s", "types-%s-%s-%d.sdb"),
+			types_dir, arch, os, bits);
 		if (rz_type_db_load_sdb(typedb, dbpath)) {
 			RZ_LOG_DEBUG("types: loaded \"%s\"\n", dbpath);
 		}
@@ -314,14 +310,14 @@ RZ_API void rz_type_db_init(RzTypeDB *typedb, const char *dir_prefix, const char
 
 	// Then, after all basic types are initialized, we load function types
 	// that use loaded previously base types for return and arguments
-	dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_TYPES, "functions-libc.sdb"), dir_prefix);
+	dbpath = sdb_fmt(RZ_JOIN_2_PATHS("%s", "functions-libc.sdb"), types_dir);
 	if (rz_type_db_load_callables_sdb(typedb, dbpath)) {
 		RZ_LOG_DEBUG("callable types: loaded \"%s\"\n", dbpath);
 	}
 	// OS-specific function types
 	if (os) {
-		dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_TYPES, "functions-%s.sdb"),
-			dir_prefix, os);
+		dbpath = sdb_fmt(RZ_JOIN_2_PATHS("%s", "functions-%s.sdb"),
+			types_dir, os);
 		if (rz_type_db_load_callables_sdb(typedb, dbpath)) {
 			RZ_LOG_DEBUG("callable types: loaded \"%s\"\n", dbpath);
 		}
@@ -335,11 +331,11 @@ RZ_API void rz_type_db_init(RzTypeDB *typedb, const char *dir_prefix, const char
  * for base types and function types.
  *
  * \param typedb Types Database instance
- * \param dir_prefix Directory where all type libraries are installed
+ * \param types_dir Directory where all type libraries are installed
  */
-RZ_API void rz_type_db_reload(RzTypeDB *typedb, const char *dir_prefix) {
+RZ_API void rz_type_db_reload(RzTypeDB *typedb, const char *types_dir) {
 	rz_type_db_purge(typedb);
-	rz_type_db_init(typedb, dir_prefix, typedb->target->cpu, typedb->target->bits, typedb->target->os);
+	rz_type_db_init(typedb, types_dir, typedb->target->cpu, typedb->target->bits, typedb->target->os);
 }
 
 // Listing all available types by category

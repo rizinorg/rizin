@@ -6,6 +6,7 @@
 #include <rz_bin.h>
 #include <rz_core.h>
 #include <rz_pdb.h>
+#include <rz_util/rz_path.h>
 #include "test_types.h"
 #include "../../librz/bin/pdb/pdb.h"
 
@@ -366,8 +367,9 @@ bool test_pdb_tpi_rust(void) {
 
 bool test_pdb_type_save(void) {
 	RzAnalysis *analysis = rz_analysis_new();
-	const char *dir_prefix = rz_sys_prefix(NULL);
-	rz_type_db_init(analysis->typedb, dir_prefix, "x86", 32, "windows");
+	char *types_dir = rz_path_system_sdb_types();
+	rz_type_db_init(analysis->typedb, types_dir, "x86", 32, "windows");
+	free(types_dir);
 
 	mu_assert_true(pdb_info_save_types(analysis, "bins/pdb/Project1.pdb"), "pdb parsing failed");
 

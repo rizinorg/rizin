@@ -6,6 +6,7 @@
 #include <rz_util/rz_serialize.h>
 #include <rz_type.h>
 #include <rz_sign.h>
+#include <rz_util/rz_path.h>
 #include "minunit.h"
 #include "test_sdb.h"
 
@@ -41,12 +42,13 @@ bool sdb_has_record(Sdb *db, const char *key, const char *value) {
 bool test_types_save() {
 	char *error_msg;
 	RzTypeDB *typedb = rz_type_db_new();
-	const char *dir_prefix = rz_sys_prefix(NULL);
 	rz_type_db_set_cpu(typedb, "x86");
 	rz_type_db_set_bits(typedb, 64);
 	rz_type_db_set_os(typedb, "linux");
 	// Load predefined types
-	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
+	char *types_dir = rz_path_system_sdb_types();
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+	free(types_dir);
 
 	// struct.junker
 	RzBaseType *type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_STRUCT);
@@ -149,12 +151,13 @@ bool test_types_save() {
 
 bool test_types_load() {
 	RzTypeDB *typedb = rz_type_db_new();
-	const char *dir_prefix = rz_sys_prefix(NULL);
 	rz_type_db_set_cpu(typedb, "x86");
 	rz_type_db_set_bits(typedb, 64);
 	rz_type_db_set_os(typedb, "linux");
 	// Load predefined types
-	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
+	char *types_dir = rz_path_system_sdb_types();
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+	free(types_dir);
 
 	Sdb *db = types_ref_db();
 	bool succ = rz_serialize_types_load(db, typedb, NULL);
