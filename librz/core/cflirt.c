@@ -85,9 +85,14 @@ static void flirt_print_node(const RzFlirtNode *node, int indent) {
 	}
 }
 
+/**
+ * \brief Dumps the contents of a FLIRT file
+ *
+ * \param flirt_file FLIRT file name to dump
+ */
 RZ_API void rz_core_flirt_dump(RZ_NONNULL const char *flirt_file) {
 	rz_return_if_fail(RZ_STR_ISNOTEMPTY(flirt_file));
-	/* dump a flirt signature content on screen */
+
 	RzBuffer *buffer = NULL;
 	RzFlirtNode *node = NULL;
 

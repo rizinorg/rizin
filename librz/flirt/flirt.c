@@ -262,6 +262,15 @@ typedef struct idasig_v10_t {
 	ut16 unknown;
 } idasig_v10_t;
 
+typedef struct parse_status_t {
+	RzBuffer *buffer;
+	bool eof;
+	bool error;
+	ut8 version;
+} ParseStatus;
+
+#define is_status_err_or_eof(p) (p->eof || p->error)
+
 /* newer header only add fields, that's why we'll always read a v5 header first */
 /*
    arch             : target architecture
@@ -277,9 +286,6 @@ typedef struct idasig_v10_t {
    n_functions      : number of functions
    pattern_size     : number of the leading pattern bytes
  */
-
-static ut8 version; // version of the sig file being parsed
-// used in some cases to parse the right way
 
 // This is from flair tools flair/crc16.cpp
 #define POLY 0x8408
@@ -309,49 +315,45 @@ ut16 crc16(const unsigned char *data_p, size_t length) {
 	return (ut16)(crc);
 }
 
-// this is ugly, but we can't afford to change the return size of read_byte
-static bool buf_eof;
-static bool buf_err;
-
-static ut8 read_byte(RzBuffer *b) {
+static ut8 read_byte(ParseStatus *b) {
 	ut8 r = 0;
 	int length;
 
-	if (buf_eof || buf_err) {
+	if (b->eof || b->error) {
 		return 0;
 	}
-	if ((length = rz_buf_read(b, &r, 1)) != 1) {
+	if ((length = rz_buf_read(b->buffer, &r, 1)) != 1) {
 		if (length == -1) {
-			buf_err = true;
+			b->error = true;
 		}
 		if (length == 0) {
-			buf_eof = true;
+			b->eof = true;
 		}
 		return 0;
 	}
 	return r;
 }
 
-static ut16 read_short(RzBuffer *b) {
+static ut16 read_short(ParseStatus *b) {
 	ut16 r = (read_byte(b) << 8);
 	r += read_byte(b);
 	return r;
 }
 
-static ut32 read_word(RzBuffer *b) {
+static ut32 read_word(ParseStatus *b) {
 	ut32 r = ((ut32)(read_short(b)) << 16);
 	r += read_short(b);
 	return r;
 }
 
-static ut16 read_max_2_bytes(RzBuffer *b) {
+static ut16 read_max_2_bytes(ParseStatus *b) {
 	ut16 r = read_byte(b);
 	return (r & 0x80)
 		? ((r & 0x7f) << 8) + read_byte(b)
 		: r;
 }
 
-static ut32 read_multiple_bytes(RzBuffer *b) {
+static ut32 read_multiple_bytes(ParseStatus *b) {
 	ut32 r = read_byte(b);
 	if ((r & 0x80) != 0x80) {
 		return r;
@@ -470,7 +472,7 @@ static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module
 			next_module_function->name = rz_str_newf("flirt.%s", name);
 			analysis->flb.set(analysis->flb.f, next_module_function->name,
 				next_module_function->addr, next_module_function_size);
-			RZ_LOG_INFO("Found %s\n", next_module_function->name);
+			RZ_LOG_INFO("flirt: Found %s\n", next_module_function->name);
 			free(name);
 		}
 	}
@@ -564,7 +566,7 @@ static bool node_match_functions(RzAnalysis *analysis, const RzFlirtNode *root_n
 	return ret;
 }
 
-static ut8 read_module_tail_bytes(RzFlirtModule *module, RzBuffer *b) {
+static ut8 read_module_tail_bytes(RzFlirtModule *module, ParseStatus *b) {
 	/*parses a module tail bytes*/
 	/*returns false on parsing error*/
 	int i;
@@ -574,9 +576,9 @@ static ut8 read_module_tail_bytes(RzFlirtModule *module, RzBuffer *b) {
 		goto err_exit;
 	}
 
-	if (version >= 8) { // this counter was introduced in version 8
+	if (b->version >= 8) { // this counter was introduced in version 8
 		number_of_tail_bytes = read_byte(b); // XXX are we sure it's not read_multiple_bytes?
-		if (buf_eof || buf_err) {
+		if (is_status_err_or_eof(b)) {
 			goto err_exit;
 		}
 	} else { // suppose there's only one
@@ -587,20 +589,20 @@ static ut8 read_module_tail_bytes(RzFlirtModule *module, RzBuffer *b) {
 		if (!tail_byte) {
 			return false;
 		}
-		if (version >= 9) {
+		if (b->version >= 9) {
 			/*/!\ XXX don't trust ./zipsig output because it will write a version 9 header, but keep the old version offsets*/
 			tail_byte->offset = read_multiple_bytes(b);
-			if (buf_eof || buf_err) {
+			if (is_status_err_or_eof(b)) {
 				goto err_exit;
 			}
 		} else {
 			tail_byte->offset = read_max_2_bytes(b);
-			if (buf_eof || buf_err) {
+			if (is_status_err_or_eof(b)) {
 				goto err_exit;
 			}
 		}
 		tail_byte->value = read_byte(b);
-		if (buf_eof || buf_err) {
+		if (is_status_err_or_eof(b)) {
 			goto err_exit;
 		}
 		rz_list_append(module->tail_bytes, tail_byte);
@@ -617,7 +619,7 @@ err_exit:
 	return false;
 }
 
-static ut8 read_module_referenced_functions(RzFlirtModule *module, RzBuffer *b) {
+static ut8 read_module_referenced_functions(RzFlirtModule *module, ParseStatus *b) {
 	/*parses a module referenced functions*/
 	/*returns false on parsing error*/
 	int i, j;
@@ -627,9 +629,9 @@ static ut8 read_module_referenced_functions(RzFlirtModule *module, RzBuffer *b) 
 
 	module->referenced_functions = rz_list_newf((RzListFree)free);
 
-	if (version >= 8) { // this counter was introduced in version 8
+	if (b->version >= 8) { // this counter was introduced in version 8
 		number_of_referenced_functions = read_byte(b); // XXX are we sure it's not read_multiple_bytes?
-		if (buf_eof || buf_err) {
+		if (is_status_err_or_eof(b)) {
 			goto err_exit;
 		}
 	} else { // suppose there's only one
@@ -641,25 +643,25 @@ static ut8 read_module_referenced_functions(RzFlirtModule *module, RzBuffer *b) 
 		if (!ref_function) {
 			goto err_exit;
 		}
-		if (version >= 9) {
+		if (b->version >= 9) {
 			ref_function->offset = read_multiple_bytes(b);
-			if (buf_eof || buf_err) {
+			if (is_status_err_or_eof(b)) {
 				goto err_exit;
 			}
 		} else {
 			ref_function->offset = read_max_2_bytes(b);
-			if (buf_eof || buf_err) {
+			if (is_status_err_or_eof(b)) {
 				goto err_exit;
 			}
 		}
 		ref_function_name_length = read_byte(b);
-		if (buf_eof || buf_err) {
+		if (is_status_err_or_eof(b)) {
 			goto err_exit;
 		}
 		if (!ref_function_name_length) {
 			// not sure why it's not read_multiple_bytes() in the first place
 			ref_function_name_length = read_multiple_bytes(b); // XXX might be read_max_2_bytes, need more data
-			if (buf_eof || buf_err) {
+			if (is_status_err_or_eof(b)) {
 				goto err_exit;
 			}
 		}
@@ -668,7 +670,7 @@ static ut8 read_module_referenced_functions(RzFlirtModule *module, RzBuffer *b) 
 		}
 		for (j = 0; j < ref_function_name_length; j++) {
 			ref_function->name[j] = read_byte(b);
-			if (buf_eof || buf_err) {
+			if (is_status_err_or_eof(b)) {
 				goto err_exit;
 			}
 		}
@@ -691,7 +693,7 @@ err_exit:
 	return false;
 }
 
-static ut8 read_module_public_functions(RzFlirtModule *module, RzBuffer *b, ut8 *flags) {
+static ut8 read_module_public_functions(RzFlirtModule *module, ParseStatus *b, ut8 *flags) {
 	/* Reads and set the public functions names and offsets associated within a module */
 	/*returns false on parsing error*/
 	int i;
@@ -703,21 +705,21 @@ static ut8 read_module_public_functions(RzFlirtModule *module, RzBuffer *b, ut8 
 
 	do {
 		function = RZ_NEW0(RzFlirtFunction);
-		if (version >= 9) { // seems like version 9 introduced some larger offsets
+		if (b->version >= 9) { // seems like version 9 introduced some larger offsets
 			offset += read_multiple_bytes(b); // offsets are dependent of the previous ones
-			if (buf_eof || buf_err) {
+			if (is_status_err_or_eof(b)) {
 				goto err_exit;
 			}
 		} else {
 			offset += read_max_2_bytes(b); // offsets are dependent of the previous ones
-			if (buf_eof || buf_err) {
+			if (is_status_err_or_eof(b)) {
 				goto err_exit;
 			}
 		}
 		function->offset = offset;
 
 		current_byte = read_byte(b);
-		if (buf_eof || buf_err) {
+		if (is_status_err_or_eof(b)) {
 			goto err_exit;
 		}
 		if (current_byte < 0x20) {
@@ -736,7 +738,7 @@ static ut8 read_module_public_functions(RzFlirtModule *module, RzBuffer *b, ut8 
 #endif
 			}
 			current_byte = read_byte(b);
-			if (buf_eof || buf_err) {
+			if (is_status_err_or_eof(b)) {
 				goto err_exit;
 			}
 		}
@@ -744,7 +746,7 @@ static ut8 read_module_public_functions(RzFlirtModule *module, RzBuffer *b, ut8 
 		for (i = 0; current_byte >= 0x20 && i < RZ_FLIRT_NAME_MAX; i++) {
 			function->name[i] = current_byte;
 			current_byte = read_byte(b);
-			if (buf_eof || buf_err) {
+			if (is_status_err_or_eof(b)) {
 				goto err_exit;
 			}
 		}
@@ -773,7 +775,7 @@ err_exit:
 	return false;
 }
 
-static ut8 parse_leaf(RzBuffer *b, RzFlirtNode *node) {
+static ut8 parse_leaf(ParseStatus *b, RzFlirtNode *node) {
 	/*parses a signature leaf: modules with same leading pattern*/
 	/*returns false on parsing error*/
 	ut8 flags, crc_length;
@@ -784,11 +786,11 @@ static ut8 parse_leaf(RzBuffer *b, RzFlirtNode *node) {
 	do { // loop for all modules having the same prefix
 
 		crc_length = read_byte(b);
-		if (buf_eof || buf_err) {
+		if (is_status_err_or_eof(b)) {
 			goto err_exit;
 		}
 		crc16 = read_short(b);
-		if (buf_eof || buf_err) {
+		if (is_status_err_or_eof(b)) {
 			goto err_exit;
 		}
 #if DEBUG
@@ -808,15 +810,15 @@ static ut8 parse_leaf(RzBuffer *b, RzFlirtNode *node) {
 			module->crc_length = crc_length;
 			module->crc16 = crc16;
 
-			if (version >= 9) { // seems like version 9 introduced some larger length
+			if (b->version >= 9) { // seems like version 9 introduced some larger length
 				/*/!\ XXX don't trust ./zipsig output because it will write a version 9 header, but keep the old version offsets*/
 				module->length = read_multiple_bytes(b); // should be < 0x8000
-				if (buf_eof || buf_err) {
+				if (is_status_err_or_eof(b)) {
 					goto err_exit;
 				}
 			} else {
 				module->length = read_max_2_bytes(b); // should be < 0x8000
-				if (buf_eof || buf_err) {
+				if (is_status_err_or_eof(b)) {
 					goto err_exit;
 				}
 			}
@@ -850,9 +852,9 @@ err_exit:
 	return false;
 }
 
-static ut8 read_node_length(RzFlirtNode *node, RzBuffer *b) {
+static ut8 read_node_length(RzFlirtNode *node, ParseStatus *b) {
 	node->length = read_byte(b);
-	if (buf_eof || buf_err) {
+	if (is_status_err_or_eof(b)) {
 		return false;
 	}
 #if DEBUG
@@ -861,23 +863,23 @@ static ut8 read_node_length(RzFlirtNode *node, RzBuffer *b) {
 	return true;
 }
 
-static ut8 read_node_variant_mask(RzFlirtNode *node, RzBuffer *b) {
+static ut8 read_node_variant_mask(RzFlirtNode *node, ParseStatus *b) {
 	/*Reads and sets a node's variant bytes mask. This mask is then used to*/
 	/*read the non-variant bytes following.*/
 	/*returns false on parsing error*/
 	if (node->length < 0x10) {
 		node->variant_mask = read_max_2_bytes(b);
-		if (buf_eof || buf_err) {
+		if (is_status_err_or_eof(b)) {
 			return false;
 		}
 	} else if (node->length <= 0x20) {
 		node->variant_mask = read_multiple_bytes(b);
-		if (buf_eof || buf_err) {
+		if (is_status_err_or_eof(b)) {
 			return false;
 		}
 	} else if (node->length <= 0x40) { // it shouldn't be more than 64 bytes
 		node->variant_mask = ((ut64)read_multiple_bytes(b) << 32) + read_multiple_bytes(b);
-		if (buf_eof || buf_err) {
+		if (is_status_err_or_eof(b)) {
 			return false;
 		}
 	}
@@ -885,7 +887,7 @@ static ut8 read_node_variant_mask(RzFlirtNode *node, RzBuffer *b) {
 	return true;
 }
 
-static bool read_node_bytes(RzFlirtNode *node, RzBuffer *b) {
+static bool read_node_bytes(RzFlirtNode *node, ParseStatus *b) {
 	/*Reads the node bytes, and also sets the variant bytes in variant_bool_array*/
 	/*returns false on parsing error*/
 	int i;
@@ -906,7 +908,7 @@ static bool read_node_bytes(RzFlirtNode *node, RzBuffer *b) {
 			node->pattern_bytes[i] = 0x00;
 		} else {
 			node->pattern_bytes[i] = read_byte(b);
-			if (buf_eof || buf_err) {
+			if (is_status_err_or_eof(b)) {
 				return false;
 			}
 		}
@@ -914,12 +916,12 @@ static bool read_node_bytes(RzFlirtNode *node, RzBuffer *b) {
 	return true;
 }
 
-static ut8 parse_tree(RzBuffer *b, RzFlirtNode *root_node) {
+static ut8 parse_tree(ParseStatus *b, RzFlirtNode *root_node) {
 	/*parse a signature pattern tree or sub-tree*/
 	/*returns false on parsing error*/
 	RzFlirtNode *node = NULL;
 	int i, tree_nodes = read_multiple_bytes(b); // confirmed it's not read_byte(), XXX could it be read_max_2_bytes() ???
-	if (buf_eof || buf_err) {
+	if (is_status_err_or_eof(b)) {
 		return false;
 	}
 	if (tree_nodes == 0) { // if there's no tree nodes remaining, that means we are on the leaf
@@ -1107,7 +1109,7 @@ static void print_header(idasig_v5_t *header) {
 }
 #endif
 
-static int parse_header(RzBuffer *buf, idasig_v5_t *header) {
+static int parse_v5_header(RzBuffer *buf, idasig_v5_t *header) {
 	rz_buf_seek(buf, 0, RZ_BUF_SET);
 	if (rz_buf_read(buf, header->magic, sizeof(header->magic)) != sizeof(header->magic)) {
 		return false;
@@ -1187,15 +1189,19 @@ RZ_API RZ_OWN RzFlirtNode *rz_flirt_parse_buffer(RZ_NONNULL RzBuffer *flirt_buf)
 	idasig_v8_v9_t *v8_v9 = NULL;
 	idasig_v10_t *v10 = NULL;
 
-	buf_eof = false;
-	buf_err = false;
+	ParseStatus ps = {
+		buffer : flirt_buf,
+		eof : false,
+		error : false,
+		version : 0,
+	};
 
-	if (!(version = rz_flirt_get_version(flirt_buf))) {
+	if (!(ps.version = rz_flirt_get_version(flirt_buf))) {
 		goto exit;
 	}
 
-	if (version < 5 || version > 10) {
-		eprintf("Unsupported flirt signature version\n");
+	if (ps.version < 5 || ps.version > 10) {
+		RZ_LOG_ERROR("flirt: Unsupported flirt signature version\n");
 		goto exit;
 	}
 
@@ -1203,29 +1209,29 @@ RZ_API RZ_OWN RzFlirtNode *rz_flirt_parse_buffer(RZ_NONNULL RzBuffer *flirt_buf)
 		goto exit;
 	}
 
-	parse_header(flirt_buf, header);
+	parse_v5_header(ps.buffer, header);
 
-	if (version >= 6) {
+	if (ps.version >= 6) {
 		if (!(v6_v7 = RZ_NEW0(idasig_v6_v7_t))) {
 			goto exit;
 		}
-		if (!parse_v6_v7_header(flirt_buf, v6_v7)) {
+		if (!parse_v6_v7_header(ps.buffer, v6_v7)) {
 			goto exit;
 		}
 
-		if (version >= 8) {
+		if (ps.version >= 8) {
 			if (!(v8_v9 = RZ_NEW0(idasig_v8_v9_t))) {
 				goto exit;
 			}
-			if (!parse_v8_v9_header(flirt_buf, v8_v9)) {
+			if (!parse_v8_v9_header(ps.buffer, v8_v9)) {
 				goto exit;
 			}
 
-			if (version >= 10) {
+			if (ps.version >= 10) {
 				if (!(v10 = RZ_NEW0(idasig_v10_t))) {
 					goto exit;
 				}
-				if (!parse_v10_header(flirt_buf, v10)) {
+				if (!parse_v10_header(ps.buffer, v10)) {
 					goto exit;
 				}
 			}
@@ -1237,33 +1243,31 @@ RZ_API RZ_OWN RzFlirtNode *rz_flirt_parse_buffer(RZ_NONNULL RzBuffer *flirt_buf)
 		goto exit;
 	}
 
-	if (rz_buf_read(flirt_buf, name, header->library_name_len) != header->library_name_len) {
+	if (rz_buf_read(ps.buffer, name, header->library_name_len) != header->library_name_len) {
 		goto exit;
 	}
 
 	name[header->library_name_len] = '\0';
 
-	size = rz_buf_size(flirt_buf) - rz_buf_tell(flirt_buf);
+	size = rz_buf_size(ps.buffer) - rz_buf_tell(ps.buffer);
 	buf = malloc(size);
-	if (rz_buf_read(flirt_buf, buf, size) != size) {
+	if (rz_buf_read(ps.buffer, buf, size) != size) {
 		goto exit;
 	}
 
 	if (header->features & IDASIG__FEATURE__COMPRESSED) {
-		if (version >= 5 && version < 7) {
+		if (ps.version >= 5 && ps.version < 7) {
 			if (!(decompressed_buf = rz_inflate_ignore_header(buf, size, NULL, &decompressed_size))) {
-				eprintf("Decompressing failed.\n");
+				RZ_LOG_ERROR("flirt: Failed to decompress buffer.\n");
 				goto exit;
 			}
-		} else if (version >= 7) {
+		} else if (ps.version >= 7) {
 			if (!(decompressed_buf = rz_inflate(buf, size, NULL, &decompressed_size))) {
-				eprintf("Decompressing failed.\n");
+				RZ_LOG_ERROR("flirt: Failed to decompress buffer.\n");
 				goto exit;
 			}
 		} else {
-			eprintf("Sorry we do not support the signatures"
-				" version %c compression.\n",
-				version);
+			RZ_LOG_ERROR("flirt: Sorry we do not support compressed signatures with version %d.\n", ps.version);
 			goto exit;
 		}
 
@@ -1275,12 +1279,14 @@ RZ_API RZ_OWN RzFlirtNode *rz_flirt_parse_buffer(RZ_NONNULL RzBuffer *flirt_buf)
 	if (!(node = RZ_NEW0(RzFlirtNode))) {
 		goto exit;
 	}
+
 	rz_buf = rz_buf_new_with_pointers(buf, size, false);
-	if (parse_tree(rz_buf, node)) {
+	if (parse_tree(&ps, node)) {
 		ret = node;
 	} else {
 		free(node);
 	}
+
 exit:
 	free(buf);
 	rz_buf_free(rz_buf);
@@ -1329,17 +1335,10 @@ exit:
 }
 
 /**
- * \brief Returns the FLIRT file version read from the RzBuffer
- * This function returns the FLIRT file version, when it fails returns 0
- *
- * \param  buffer The buffer to read
- * \return        Parsed FLIRT version
- */
-/**
  * \brief Parses the FLIRT file and applies the signatures
  *
- * \param      analysis    The RzAnalysis structure 
- * \param[in]  flirt_file  The FLIRT file to parse
+ * \param analysis    The RzAnalysis structure 
+ * \param flirt_file  The FLIRT file to parse
  */
 RZ_API void rz_flirt_apply_signatures(RzAnalysis *analysis, const char *flirt_file) {
 	rz_return_if_fail(analysis && RZ_STR_ISNOTEMPTY(flirt_file));
@@ -1347,7 +1346,7 @@ RZ_API void rz_flirt_apply_signatures(RzAnalysis *analysis, const char *flirt_fi
 	RzFlirtNode *node = NULL;
 
 	if (!(flirt_buf = rz_buf_new_slurp(flirt_file))) {
-		eprintf("Can't open %s\n", flirt_file);
+		RZ_LOG_ERROR("flirt: Can't open %s\n", flirt_file);
 		return;
 	}
 
@@ -1355,12 +1354,12 @@ RZ_API void rz_flirt_apply_signatures(RzAnalysis *analysis, const char *flirt_fi
 	rz_buf_free(flirt_buf);
 	if (node) {
 		if (!node_match_functions(analysis, node)) {
-			eprintf("Error while scanning the file %s\n", flirt_file);
+			RZ_LOG_ERROR("flirt: Error while scanning the file %s\n", flirt_file);
 		}
 		rz_flirt_node_free(node);
 		return;
 	} else {
-		eprintf("We encountered an error while parsing the file %s. Sorry.\n", flirt_file);
+		RZ_LOG_ERROR("flirt: We encountered an error while parsing the file %s. Sorry.\n", flirt_file);
 		return;
 	}
 }
