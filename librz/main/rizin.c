@@ -144,8 +144,8 @@ static int main_help(int line) {
 	}
 	if (line == 2) {
 		char *datahome = rz_str_home(RZ_HOME_DATADIR);
-		char *incdir = rz_str_rz_prefix(RZ_INCDIR);
-		char *libdir = rz_str_rz_prefix(RZ_LIBDIR);
+		char *incdir = rz_path_incdir();
+		char *libdir = rz_path_libdir();
 		const char *dirPrefix = rz_sys_prefix(NULL);
 		printf(
 			"Scripts:\n"
@@ -182,14 +182,14 @@ static int main_help(int line) {
 static int main_print_var(const char *var_name) {
 	int i = 0;
 	const char *prefix = rz_sys_prefix(NULL);
-	char *incdir = rz_str_rz_prefix(RZ_INCDIR);
-	char *libdir = rz_str_rz_prefix(RZ_LIBDIR);
+	char *incdir = rz_path_incdir();
+	char *libdir = rz_path_libdir();
 	char *confighome = rz_str_home(RZ_HOME_CONFIGDIR);
 	char *datahome = rz_str_home(RZ_HOME_DATADIR);
 	char *cachehome = rz_str_home(RZ_HOME_CACHEDIR);
 	char *homeplugins = rz_str_home(RZ_HOME_PLUGINS);
 	char *homezigns = rz_str_home(RZ_HOME_ZIGNS);
-	char *plugins = rz_str_rz_prefix(RZ_PLUGINS);
+	char *plugins = rz_path_system_plugins();
 	char *magicpath = rz_str_rz_prefix(RZ_SDB_MAGIC);
 	const char *is_portable = RZ_IS_PORTABLE ? "1" : "0";
 	struct rizin_var_t {

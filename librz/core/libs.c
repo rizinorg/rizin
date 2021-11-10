@@ -51,21 +51,6 @@ CB(parse, parser)
 CB(bin, bin)
 CB(egg, egg)
 
-static void __openPluginsAt(RzCore *core, const char *arg, const char *user_path) {
-	if (arg && *arg) {
-		if (user_path) {
-			if (rz_str_endswith(user_path, arg)) {
-				return;
-			}
-		}
-		char *pdir = rz_str_rz_prefix(arg);
-		if (pdir) {
-			rz_lib_opendir(core->lib, pdir);
-			free(pdir);
-		}
-	}
-}
-
 static void __loadSystemPlugins(RzCore *core, int where, const char *path) {
 #if RZ_LOADLIBS
 	if (!where) {
@@ -86,15 +71,19 @@ static void __loadSystemPlugins(RzCore *core, int where, const char *path) {
 		free(p);
 	}
 	if (where & RZ_CORE_LOADLIBS_HOME) {
-		char *hpd = rz_str_home(RZ_HOME_PLUGINS);
+		char *hpd = rz_path_home_plugins();
 		if (hpd) {
 			rz_lib_opendir(core->lib, hpd);
 			free(hpd);
 		}
 	}
 	if (where & RZ_CORE_LOADLIBS_SYSTEM) {
-		__openPluginsAt(core, RZ_PLUGINS, dir_plugins);
-		__openPluginsAt(core, RZ_BINDINGS, dir_plugins);
+		char *spd = rz_path_system_plugins();
+		char *bpd = rz_path_system_bindings();
+		rz_lib_opendir(core->lib, spd);
+		rz_lib_opendir(core->lib, bpd);
+		free(spd);
+		free(bpd);
 	}
 #endif
 }
