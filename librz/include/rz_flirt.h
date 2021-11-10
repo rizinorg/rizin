@@ -13,7 +13,7 @@
 extern "C" {
 #endif
 
-RZ_LIB_VERSION_HEADER(rz_sign);
+RZ_LIB_VERSION_HEADER(rz_flirt);
 
 #define RZ_FLIRT_NAME_MAX 1024
 

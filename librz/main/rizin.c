@@ -13,6 +13,7 @@
 #include <rz_core.h>
 #include <rz_demangler.h>
 #include <rz_project.h>
+#include <rz_flirt.h>
 
 static bool is_valid_gdb_file(RzCoreFile *fh) {
 	RzIODesc *d = fh && fh->core ? rz_io_desc_get(fh->core->io, fh->fd) : NULL;
@@ -59,7 +60,7 @@ static int rz_main_version_verify(int show) {
 		{ "rz_syscall", rz_syscall_version },
 		{ "rz_util", rz_util_version },
 		{ "rz_diff", rz_diff_version },
-		{ "rz_sign", rz_sign_version },
+		{ "rz_flirt", rz_flirt_version },
 		{ "rz_demangler", rz_demangler_version },
 		/* ... */
 		{ NULL, NULL }
