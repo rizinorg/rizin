@@ -64,10 +64,13 @@
 #define RZ_FLAGS     "@FLAGS@"
 #define RZ_HUD       "@HUD@"
 
-#define RZ_SDB_TYPES   RZ_JOIN_2_PATHS(RZ_SDB, "types")
-#define RZ_SDB_OPCODES RZ_JOIN_2_PATHS(RZ_SDB, "opcodes")
-#define RZ_SDB_MAGIC   RZ_JOIN_2_PATHS(RZ_SDB, "magic")
-#define RZ_SDB_FORMAT  RZ_JOIN_2_PATHS(RZ_SDB, "format")
+#define RZ_SDB_ARCH_PLATFORMS RZ_JOIN_3_PATHS(RZ_SDB, "asm", "platforms")
+#define RZ_SDB_ARCH_CPUS      RZ_JOIN_3_PATHS(RZ_SDB, "asm", "cpus")
+#define RZ_SDB_TYPES          RZ_JOIN_2_PATHS(RZ_SDB, "types")
+#define RZ_SDB_OPCODES        RZ_JOIN_2_PATHS(RZ_SDB, "opcodes")
+#define RZ_SDB_REG            RZ_JOIN_2_PATHS(RZ_SDB, "reg")
+#define RZ_SDB_MAGIC          RZ_JOIN_2_PATHS(RZ_SDB, "magic")
+#define RZ_SDB_FORMAT         RZ_JOIN_2_PATHS(RZ_SDB, "format")
 
 #define RZ_HOME_CONFIGDIR RZ_JOIN_2_PATHS(".config", "rizin")
 #define RZ_HOME_DATADIR   RZ_JOIN_3_PATHS(".local", "share", "rizin")

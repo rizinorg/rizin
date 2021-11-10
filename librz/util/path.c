@@ -96,6 +96,26 @@ RZ_API RZ_OWN char *rz_path_system_sdb_types(void) {
 }
 
 /**
+ * \brief Return the system directory of sdb arch/platforms files
+ */
+RZ_API RZ_OWN char *rz_path_system_sdb_arch_platforms(void) {
+	return rz_path_prefix(RZ_SDB_ARCH_PLATFORMS);
+}
+
+/**
+ * \brief Return the system directory of sdb arch/cpus files
+ */
+RZ_API RZ_OWN char *rz_path_system_sdb_arch_cpus(void) {
+	return rz_path_prefix(RZ_SDB_ARCH_CPUS);
+}
+
+/**
+ * \brief Return the system directory where sdb registers files are placed
+ */
+RZ_API RZ_OWN char *rz_path_system_sdb_reg(void) {
+	return rz_path_prefix(RZ_SDB_REG);
+}
+/**
  * \brief Return the system directory of sdb opcodes files
  */
 RZ_API RZ_OWN char *rz_path_system_sdb_opcodes(void) {

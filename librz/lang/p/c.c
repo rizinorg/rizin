@@ -54,7 +54,7 @@ static int lang_c_file(RzLang *lang, const char *file) {
 	if (RZ_STR_ISEMPTY(cc)) {
 		cc = strdup("gcc");
 	}
-	char *libdir = rz_str_rz_prefix(RZ_LIBDIR);
+	char *libdir = rz_path_libdir();
 	char *pkgconf_path = rz_file_path_join(libdir, "pkgconfig");
 	char *file_esc = rz_str_escape_sh(file);
 	char *libpath_esc = rz_str_escape_sh(libpath);

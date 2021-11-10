@@ -439,10 +439,13 @@ static bool cb_asmcpu(void *user, void *data) {
 	rz_asm_set_cpu(core->rasm, node->value);
 	rz_config_set(core->config, "analysis.cpu", node->value);
 
-	const char *dir_prefix = rz_config_get(core->config, "dir.prefix");
-	rz_arch_profiles_init(core->analysis->arch_target, node->value, rz_config_get(core->config, "asm.arch"), dir_prefix);
+	char *cpus_dir = rz_path_system_sdb_arch_cpus();
+	rz_arch_profiles_init(core->analysis->arch_target, node->value, rz_config_get(core->config, "asm.arch"), cpus_dir);
+	free(cpus_dir);
 	const char *platform = rz_config_get(core->config, "asm.platform");
-	rz_arch_platform_init(core->analysis->platform_target, rz_config_get(core->config, "asm.arch"), node->value, platform, dir_prefix);
+	char *platforms_dir = rz_path_system_sdb_arch_platforms();
+	rz_arch_platform_init(core->analysis->platform_target, rz_config_get(core->config, "asm.arch"), node->value, platform, platforms_dir);
+	free(platforms_dir);
 
 	return true;
 }
@@ -572,15 +575,18 @@ static bool cb_asmarch(void *user, void *data) {
 	// set pcalign
 	if (core->analysis) {
 		const char *asmcpu = rz_config_get(core->config, "asm.cpu");
-		const char *dir_prefix = rz_config_get(core->config, "dir.prefix");
 		const char *platform = rz_config_get(core->config, "asm.platform");
 		if (!rz_syscall_setup(core->analysis->syscall, node->value, core->analysis->bits, asmcpu, asmos)) {
 			//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
 			//	node->value, asmos, RZ_LIBDIR"/rizin/"RZ_VERSION"/syscall");
 		}
 		update_syscall_ns(core);
-		rz_arch_platform_init(core->analysis->platform_target, node->value, asmcpu, platform, dir_prefix);
-		rz_arch_profiles_init(core->analysis->arch_target, asmcpu, node->value, dir_prefix);
+		char *platforms_dir = rz_path_system_sdb_arch_platforms();
+		char *cpus_dir = rz_path_system_sdb_arch_cpus();
+		rz_arch_platform_init(core->analysis->platform_target, node->value, asmcpu, platform, platforms_dir);
+		rz_arch_profiles_init(core->analysis->arch_target, asmcpu, node->value, cpus_dir);
+		free(platforms_dir);
+		free(cpus_dir);
 	}
 	//if (!strcmp (node->value, "bf"))
 	//	rz_config_set (core->config, "dbg.backend", "bf");
@@ -623,12 +629,17 @@ static bool cb_asmarch(void *user, void *data) {
 	rz_analysis_set_big_endian(core->analysis, bigbin);
 	rz_core_analysis_cc_init(core);
 
-	const char *dir_prefix = rz_config_get(core->config, "dir.prefix");
 	const char *platform = rz_config_get(core->config, "asm.platform");
-	rz_sysreg_set_arch(core->analysis->syscall, node->value, dir_prefix);
+	char *regs_dir = rz_path_system_sdb_reg();
+	rz_sysreg_set_arch(core->analysis->syscall, node->value, regs_dir);
+	free(regs_dir);
 	if (asmcpu) {
-		rz_arch_platform_init(core->analysis->platform_target, node->value, asmcpu->value, platform, dir_prefix);
-		rz_arch_profiles_init(core->analysis->arch_target, asmcpu->value, node->value, dir_prefix);
+		char *platforms_dir = rz_path_system_sdb_arch_platforms();
+		char *cpus_dir = rz_path_system_sdb_arch_cpus();
+		rz_arch_platform_init(core->analysis->platform_target, node->value, asmcpu->value, platform, platforms_dir);
+		rz_arch_profiles_init(core->analysis->arch_target, asmcpu->value, node->value, cpus_dir);
+		free(cpus_dir);
+		free(platforms_dir);
 	}
 
 	return true;
@@ -812,10 +823,11 @@ static bool cb_asmplatform(void *user, void *data) {
 	if (node->value[0]) {
 		core->rasm->platforms = strdup(node->value);
 	}
-	const char *dir_prefix = rz_config_get(core->config, "dir.prefix");
 	const char *asmcpu = rz_config_get(core->config, "asm.cpu");
 	const char *asmarch = rz_config_get(core->config, "asm.arch");
-	rz_arch_platform_init(core->analysis->platform_target, asmarch, asmcpu, node->value, dir_prefix);
+	char *platforms_dir = rz_path_system_sdb_arch_platforms();
+	rz_arch_platform_init(core->analysis->platform_target, asmarch, asmcpu, node->value, platforms_dir);
+	free(platforms_dir);
 	return 1;
 }
 
@@ -3342,7 +3354,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 		char *path = rz_str_newf(RZ_JOIN_2_PATHS("%s", RZ_SDB_MAGIC), rz_config_get(core->config, "dir.prefix"));
 		SETPREF("dir.magic", path, "Path to rz_magic files");
 		free(path);
-		path = rz_str_newf(RZ_JOIN_2_PATHS("%s", RZ_PLUGINS), rz_config_get(core->config, "dir.prefix"));
+		path = rz_path_system_plugins();
 		SETPREF("dir.plugins", path, "Path to plugin files to be loaded at startup");
 		free(path);
 	}

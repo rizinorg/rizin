@@ -424,8 +424,8 @@ static void __load_plugins(RzAsmState *as) {
 	free(homeplugindir);
 
 	// load plugins from the system directory
-	char *plugindir = rz_str_rz_prefix(RZ_PLUGINS);
-	char *bindingsdir = rz_str_rz_prefix(RZ_BINDINGS);
+	char *plugindir = rz_path_system_plugins();
+	char *bindingsdir = rz_path_system_bindings();
 	rz_lib_opendir(as->l, plugindir);
 	rz_lib_opendir(as->l, bindingsdir);
 	free(plugindir);
