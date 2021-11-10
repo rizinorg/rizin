@@ -3,6 +3,7 @@
 
 #include "rz_version.h"
 
+// clang-format off
 #define RZ_CHECKS_LEVEL             @RZ_CHECKS_LEVEL@
 #define DEBUGGER                    @DEBUGGER@
 #define HAVE_DECL_ADDR_NO_RANDOMIZE @HAVE_DECL_ADDR_NO_RANDOMIZE@
@@ -44,6 +45,7 @@
 #define WITH_SWIFT_DEMANGLER        @WITH_SWIFT_DEMANGLER@
 
 #define RZ_IS_PORTABLE @IS_PORTABLE@
+// clang-format on
 
 #define RZ_PREFIX  "@PREFIX@"
 #define RZ_BINDIR  "@BINDIR@"
@@ -71,17 +73,16 @@
 #define RZ_HOME_DATADIR   RZ_JOIN_3_PATHS(".local", "share", "rizin")
 #define RZ_HOME_CACHEDIR  RZ_JOIN_2_PATHS(".cache", "rizin")
 
-#define RZ_HOME_THEMES      RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "cons")
-#define RZ_HOME_PLUGINS     RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "plugins")
-#define RZ_HOME_ZIGNS       RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "zigns")
-#define RZ_HOME_PDB         RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "pdb")
-#define RZ_HOME_PROJECTS    RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "projects")
-#define RZ_HOME_WWWROOT     RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "www")
-#define RZ_HOME_SDB_TYPES   RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "types")
-#define RZ_HOME_SDB_FORMAT  RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "format")
-#define RZ_HOME_HUD         RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "hud")
-#define RZ_HOME_BINRC       RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "rc.d")
-#define RZ_HOME_BIN         RZ_JOIN_3_PATHS(RZ_HOME_DATADIR, "prefix", "bin")
+#define RZ_HOME_THEMES     RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "cons")
+#define RZ_HOME_PLUGINS    RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "plugins")
+#define RZ_HOME_ZIGNS      RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "zigns")
+#define RZ_HOME_PDB        RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "pdb")
+#define RZ_HOME_PROJECTS   RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "projects")
+#define RZ_HOME_WWWROOT    RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "www")
+#define RZ_HOME_SDB_TYPES  RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "types")
+#define RZ_HOME_SDB_FORMAT RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "format")
+#define RZ_HOME_HUD        RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "hud")
+#define RZ_HOME_BINRC      RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "rc.d")
 
 #define RZ_HOME_HISTORY RZ_JOIN_2_PATHS(RZ_HOME_CACHEDIR, "history")
 
