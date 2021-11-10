@@ -35,7 +35,6 @@ pkgconfig_mod.generate(rz_cons,
   version: rizin_version,
   name: 'rz_cons',
   filebase: 'rz_cons',
-  libraries: pkgcfg_sanitize_libs,
   requires: [
     'rz_util'
   ],

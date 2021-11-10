@@ -525,14 +525,6 @@ spp_dep = declare_dependency(
   include_directories: spp_inc
 )
 
-pkgcfg_sanitize_libs = ''
-if get_option('b_sanitize').contains('address')
-  pkgcfg_sanitize_libs += ' -lasan'
-endif
-if get_option('b_sanitize').contains('undefined')
-  pkgcfg_sanitize_libs += ' -lubsan'
-endif
-
 use_rpath = false
 use_rpath_absolute = false
 if host_machine.system() != 'windows' and get_option('default_library') == 'shared'

@@ -142,7 +142,6 @@ pkgconfig_mod.generate(
   version: rizin_version,
   name: 'rz_core',
   filebase: 'rz_core',
-  libraries: pkgcfg_sanitize_libs,
   requires: pkgconfig_magic_requires + [
     'rz_util',
     'rz_demangler',

@@ -188,7 +188,6 @@ pkgconfig_mod.generate(rz_bin,
   version: rizin_version,
   name: 'rz_bin',
   filebase: 'rz_bin',
-  libraries: pkgcfg_sanitize_libs,
   requires: pkgconfig_magic_requires + [
     'rz_util',
     'rz_io',

@@ -115,7 +115,6 @@ rz_util_dep = declare_dependency(
 pkgconfig_mod.generate(rz_util,
   subdirs: ['librz', 'librz/sdb'],
   version: rizin_version,
-  libraries: pkgcfg_sanitize_libs,
   name: 'rz_util',
   filebase: 'rz_util',
   description: 'rizin foundation libraries'

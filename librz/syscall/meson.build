@@ -20,7 +20,6 @@ pkgconfig_mod.generate(rz_syscall,
   version: rizin_version,
   name: 'rz_syscall',
   filebase: 'rz_syscall',
-  libraries: pkgcfg_sanitize_libs,
   requires: [
     'rz_util'
   ],

@@ -99,7 +99,6 @@ pkgconfig_mod.generate(rz_io,
   version: rizin_version,
   name: 'rz_io',
   filebase: 'rz_io',
-  libraries: pkgcfg_sanitize_libs,
   requires: [
     'rz_util',
     'rz_socket'

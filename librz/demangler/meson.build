@@ -21,7 +21,6 @@ pkgconfig_mod.generate(rz_demangler,
   version: rizin_version,
   name: 'rz_demangler',
   filebase: 'rz_demangler',
-  libraries: pkgcfg_sanitize_libs,
   requires: [
     'rz_util'
   ],

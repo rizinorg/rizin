@@ -23,7 +23,6 @@ pkgconfig_mod.generate(rz_diff,
   version: rizin_version,
   name: 'rz_diff',
   filebase: 'rz_diff',
-  libraries: pkgcfg_sanitize_libs,
   requires: [
     'rz_util'
   ],

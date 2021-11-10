@@ -114,7 +114,6 @@ pkgconfig_mod.generate(rz_debug,
   version: rizin_version,
   name: 'rz_debug',
   filebase: 'rz_debug',
-  libraries: pkgcfg_sanitize_libs,
   requires: [
     'rz_util',
     'rz_hash',

@@ -249,7 +249,6 @@ pkgconfig_mod.generate(rz_asm,
   version: rizin_version,
   name: 'rz_asm',
   filebase: 'rz_asm',
-  libraries: pkgcfg_sanitize_libs,
   requires: [
     'rz_util',
     'rz_syscall',

@@ -212,7 +212,6 @@ pkgconfig_mod.generate(rz_analysis,
   version: rizin_version,
   name: 'rz_analysis',
   filebase: 'rz_analysis',
-  libraries: pkgcfg_sanitize_libs,
   requires: [
     'rz_util',
     'rz_crypto',

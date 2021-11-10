@@ -43,7 +43,6 @@ pkgconfig_mod.generate(rz_parse,
   version: rizin_version,
   name: 'rz_parse',
   filebase: 'rz_parse',
-  libraries: pkgcfg_sanitize_libs,
   requires: [
     'rz_util',
     'rz_flag',

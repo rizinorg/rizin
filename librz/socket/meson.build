@@ -42,7 +42,6 @@ pkgconfig_mod.generate(rz_socket,
   version: rizin_version,
   name: 'rz_socket',
   filebase: 'rz_socket',
-  libraries: pkgcfg_sanitize_libs,
   requires: [
     'rz_util'
   ],

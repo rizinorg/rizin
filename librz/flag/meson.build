@@ -25,7 +25,6 @@ pkgconfig_mod.generate(rz_flag,
   version: rizin_version,
   name: 'rz_flag',
   filebase: 'rz_flag',
-  libraries: pkgcfg_sanitize_libs,
   requires: [
     'rz_util'
   ],

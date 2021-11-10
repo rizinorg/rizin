@@ -37,7 +37,6 @@ pkgconfig_mod.generate(rz_egg,
   version: rizin_version,
   name: 'rz_egg',
   filebase: 'rz_egg',
-  libraries: pkgcfg_sanitize_libs,
   requires: [
     'rz_util',
     'rz_asm',

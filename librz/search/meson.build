@@ -26,7 +26,6 @@ pkgconfig_mod.generate(rz_search,
   version: rizin_version,
   name: 'rz_search',
   filebase: 'rz_search',
-  libraries: pkgcfg_sanitize_libs,
   requires: [
     'rz_util'
   ],

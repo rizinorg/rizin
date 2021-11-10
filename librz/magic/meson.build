@@ -37,7 +37,6 @@ pkgconfig_mod.generate(rz_magic,
   version: rizin_version,
   name: 'rz_magic',
   filebase: 'rz_magic',
-  libraries: pkgcfg_sanitize_libs,
   requires: [
     'rz_util'
   ],

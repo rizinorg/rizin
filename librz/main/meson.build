@@ -56,7 +56,6 @@ pkgconfig_mod.generate(rz_main,
   subdirs: 'librz',
   version: rizin_version,
   name: 'rz_main',
-  libraries: pkgcfg_sanitize_libs,
   filebase: 'rz_main',
   requires: [
     'rz_core',

@@ -39,7 +39,6 @@ pkgconfig_mod.generate(rz_crypto,
   version: rizin_version,
   name: 'rz_crypto',
   filebase: 'rz_crypto',
-  libraries: pkgcfg_sanitize_libs,
   requires: [
     'rz_util'
   ],

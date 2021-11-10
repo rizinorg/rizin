@@ -56,7 +56,6 @@ pkgconfig_mod.generate(rz_hash,
   version: rizin_version,
   name: 'rz_hash',
   filebase: 'rz_hash',
-  libraries: pkgcfg_sanitize_libs,
   requires: [
     'rz_util'
   ],
