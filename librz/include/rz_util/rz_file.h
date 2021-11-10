@@ -1,6 +1,8 @@
 #ifndef RZ_FILE_H
 #define RZ_FILE_H
 
+#include <rz_list.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

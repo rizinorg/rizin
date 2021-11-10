@@ -29,6 +29,7 @@ rz_util_sources = [
   'name.c',
   'pie.c',
   'seven.c',
+  'path.c',
   'print.c',
   'punycode.c',
   'qrcode.c',
