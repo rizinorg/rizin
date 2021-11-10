@@ -730,13 +730,13 @@ static ut8 read_module_public_functions(RzFlirtModule *module, ParseStatus *b, u
 				// unresolved collision (happens in *.exc while creating .sig from .pat)
 				function->is_collision = true;
 			}
-			if (current_byte & 0x01 || current_byte & 0x04) { // appears as 'd' or '?' in dumpsig
 #if DEBUG
+			if (current_byte & 0x01 || current_byte & 0x04) { // appears as 'd' or '?' in dumpsig
 				// XXX investigate
 				eprintf("INVESTIGATE PUBLIC NAME FLAG: %02X @ %04X\n", current_byte,
 					rz_buf_tell(b) + header_size);
-#endif
 			}
+#endif
 			current_byte = read_byte(b);
 			if (is_status_err_or_eof(b)) {
 				goto err_exit;
