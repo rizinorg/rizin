@@ -2144,16 +2144,6 @@ RZ_API const char *rz_core_analysis_optype_colorfor(RzCore *core, ut64 addr, boo
 	return NULL;
 }
 
-static void rz_core_setenv(RzCore *core) {
-	char *e = rz_sys_getenv("PATH");
-	char *h = rz_str_home(RZ_HOME_BIN);
-	char *n = rz_str_newf("%s%s%s", h, RZ_SYS_ENVSEP, e);
-	rz_sys_setenv("PATH", n);
-	free(n);
-	free(h);
-	free(e);
-}
-
 static int mywrite(const ut8 *buf, int len) {
 	return rz_cons_memcat((const char *)buf, len);
 }
@@ -2374,7 +2364,6 @@ RZ_API bool rz_core_init(RzCore *core) {
 		/* XXX memory leak */
 		return false;
 	}
-	rz_core_setenv(core);
 	core->ev = rz_event_new(core);
 	core->max_cmd_depth = RZ_CONS_CMD_DEPTH + 1;
 	core->sdb = sdb_new(NULL, "rzkv.sdb", 0); // XXX: path must be in home?
