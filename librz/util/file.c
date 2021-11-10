@@ -1255,7 +1255,17 @@ RZ_API RzList *rz_file_globsearch(const char *_globbed_path, int maxdepth) {
 	return files;
 }
 
-RZ_API char *rz_file_path_join(const char *s1, const char *s2) {
+/**
+ * \brief Concatenate two paths to create a new one with s1+s2 with the correct path separator
+ *
+ * \param s1 First path
+ * \param s2 Second path, can be NULL
+ * \return Full path
+ */
+RZ_API RZ_OWN char *rz_file_path_join(const char *s1, const char *s2) {
+	if (!s2) {
+		return strdup(s1);
+	}
 	bool ends_with_dir = s1[strlen(s1) - 1] == RZ_SYS_DIR[0];
 	const char *sep = ends_with_dir ? "" : RZ_SYS_DIR;
 	return rz_str_newf("%s%s%s", s1, sep, s2);

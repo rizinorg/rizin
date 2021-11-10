@@ -414,6 +414,7 @@ rz_util_files = [
   'include/rz_util/rz_mem.h',
   'include/rz_util/rz_name.h',
   'include/rz_util/rz_num.h',
+  'include/rz_util/rz_path.h',
   'include/rz_util/rz_panels.h',
   'include/rz_util/rz_pj.h',
   'include/rz_util/rz_pkcs7.h',
