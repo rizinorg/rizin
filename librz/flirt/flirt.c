@@ -547,7 +547,7 @@ static bool node_match_functions(RzAnalysis *analysis, const RzFlirtNode *root_n
 		}
 		if (!analysis->iob.read_at(analysis->iob.io, func->addr, func_buf, (int)func_size)) {
 			RZ_LOG_ERROR("flirt: Couldn't read function %s at 0x%" PFMT64x "\n", func->name, func->addr);
-			free(func_buf);
+			RZ_FREE(func_buf);
 			ret = false;
 			break;
 		}
@@ -555,11 +555,10 @@ static bool node_match_functions(RzAnalysis *analysis, const RzFlirtNode *root_n
 		RzFlirtNode *child;
 		rz_list_foreach (root_node->child_list, node_child_it, child) {
 			if (node_match_buffer(analysis, child, func_buf, func->addr, func_size, 0)) {
-				free(func_buf);
 				break;
 			}
 		}
-		free(func_buf);
+		RZ_FREE(func_buf);
 	}
 	analysis->flb.pop_fs(analysis->flb.f);
 
@@ -1190,7 +1189,7 @@ RZ_API RZ_OWN RzFlirtNode *rz_flirt_parse_buffer(RZ_NONNULL RzBuffer *flirt_buf)
 	idasig_v10_t *v10 = NULL;
 
 	ParseStatus ps = {
-		buffer : flirt_buf,
+		buffer : NULL,
 		eof : false,
 		error : false,
 		version : 0,
@@ -1209,13 +1208,13 @@ RZ_API RZ_OWN RzFlirtNode *rz_flirt_parse_buffer(RZ_NONNULL RzBuffer *flirt_buf)
 		goto exit;
 	}
 
-	parse_v5_header(ps.buffer, header);
+	parse_v5_header(flirt_buf, header);
 
 	if (ps.version >= 6) {
 		if (!(v6_v7 = RZ_NEW0(idasig_v6_v7_t))) {
 			goto exit;
 		}
-		if (!parse_v6_v7_header(ps.buffer, v6_v7)) {
+		if (!parse_v6_v7_header(flirt_buf, v6_v7)) {
 			goto exit;
 		}
 
@@ -1223,7 +1222,7 @@ RZ_API RZ_OWN RzFlirtNode *rz_flirt_parse_buffer(RZ_NONNULL RzBuffer *flirt_buf)
 			if (!(v8_v9 = RZ_NEW0(idasig_v8_v9_t))) {
 				goto exit;
 			}
-			if (!parse_v8_v9_header(ps.buffer, v8_v9)) {
+			if (!parse_v8_v9_header(flirt_buf, v8_v9)) {
 				goto exit;
 			}
 
@@ -1231,7 +1230,7 @@ RZ_API RZ_OWN RzFlirtNode *rz_flirt_parse_buffer(RZ_NONNULL RzBuffer *flirt_buf)
 				if (!(v10 = RZ_NEW0(idasig_v10_t))) {
 					goto exit;
 				}
-				if (!parse_v10_header(ps.buffer, v10)) {
+				if (!parse_v10_header(flirt_buf, v10)) {
 					goto exit;
 				}
 			}
@@ -1243,15 +1242,15 @@ RZ_API RZ_OWN RzFlirtNode *rz_flirt_parse_buffer(RZ_NONNULL RzBuffer *flirt_buf)
 		goto exit;
 	}
 
-	if (rz_buf_read(ps.buffer, name, header->library_name_len) != header->library_name_len) {
+	if (rz_buf_read(flirt_buf, name, header->library_name_len) != header->library_name_len) {
 		goto exit;
 	}
 
 	name[header->library_name_len] = '\0';
 
-	size = rz_buf_size(ps.buffer) - rz_buf_tell(ps.buffer);
+	size = rz_buf_size(flirt_buf) - rz_buf_tell(flirt_buf);
 	buf = malloc(size);
-	if (rz_buf_read(ps.buffer, buf, size) != size) {
+	if (rz_buf_read(flirt_buf, buf, size) != size) {
 		goto exit;
 	}
 
@@ -1275,12 +1274,16 @@ RZ_API RZ_OWN RzFlirtNode *rz_flirt_parse_buffer(RZ_NONNULL RzBuffer *flirt_buf)
 		buf = decompressed_buf;
 		size = decompressed_size;
 	}
+	rz_buf = rz_buf_new_with_pointers(buf, size, false);
+	if (!rz_buf) {
+		goto exit;
+	}
+	ps.buffer = rz_buf;
 
 	if (!(node = RZ_NEW0(RzFlirtNode))) {
 		goto exit;
 	}
 
-	rz_buf = rz_buf_new_with_pointers(buf, size, false);
 	if (parse_tree(&ps, node)) {
 		ret = node;
 	} else {
