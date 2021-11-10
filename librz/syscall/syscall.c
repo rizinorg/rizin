@@ -102,7 +102,7 @@ RZ_API void rz_sysreg_item_free(RzSysregItem *s) {
 
 static bool load_sdb(Sdb **db, const char *name) {
 	rz_return_val_if_fail(db, false);
-	char *sdb_path = rz_str_rz_prefix(RZ_SDB);
+	char *sdb_path = rz_path_system_sdb();
 	char *file_name = rz_str_newf("%s.sdb", name);
 	char *file = rz_file_path_join(sdb_path, file_name);
 	free(file_name);
@@ -202,12 +202,11 @@ RZ_API bool rz_sysreg_load_sdb(RzSysregsDB *sysregdb, const char *path) {
  *
  * \param s reference to RzSyscall
  * \param arch reference to value of asm.arch
- * \param dir_prefix reference to value of directory prefix or the value of dir.prefix
+ * \param regs_dir path where registers SDB files are located
  */
-RZ_API bool rz_sysreg_set_arch(RzSyscall *s, const char *arch, const char *dir_prefix) {
-	char *path = sdb_fmt(RZ_JOIN_4_PATHS("%s", RZ_SDB, "reg", "%s-%s-%d.sdb"), dir_prefix,
-		arch, s->cpu, s->bits);
-
+RZ_API bool rz_sysreg_set_arch(RzSyscall *s, const char *arch, const char *regs_dir) {
+	char buf[60];
+	char *path = rz_file_path_join(regs_dir, rz_strf(buf, "%s-%s-%d.sdb", arch, s->cpu, s->bits));
 	if (path) {
 		if (!rz_sysreg_load_sdb(s->srdb, path)) {
 			rz_sysregs_db_free(s->srdb);
