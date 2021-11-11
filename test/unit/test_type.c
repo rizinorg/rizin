@@ -379,7 +379,7 @@ static bool test_enum_types(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
 	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
-	char *types_dir = rz_path_system_sdb_types();
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
 	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
 	free(types_dir);
 
@@ -418,7 +418,7 @@ static bool test_const_types(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
 	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
-	char *types_dir = rz_path_system_sdb_types();
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
 	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
 	free(types_dir);
 
@@ -471,7 +471,7 @@ static bool test_type_as_string(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
 	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
-	char *types_dir = rz_path_system_sdb_types();
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
 	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
 	free(types_dir);
 
@@ -591,7 +591,7 @@ static bool test_type_as_pretty_string(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
 	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
-	char *types_dir = rz_path_system_sdb_types();
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
 	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
 	free(types_dir);
 
@@ -696,7 +696,7 @@ static bool test_array_types(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
 	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
-	char *types_dir = rz_path_system_sdb_types();
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
 	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
 	free(types_dir);
 
@@ -750,7 +750,7 @@ static bool test_struct_func_types(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
 	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
-	char *types_dir = rz_path_system_sdb_types();
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
 	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
 	free(types_dir);
 
@@ -841,7 +841,7 @@ static bool test_struct_array_types(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
 	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
-	char *types_dir = rz_path_system_sdb_types();
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
 	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
 	free(types_dir);
 
@@ -890,7 +890,7 @@ static bool test_struct_identifier_without_specifier(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
 	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
-	char *types_dir = rz_path_system_sdb_types();
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
 	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
 	free(types_dir);
 
@@ -919,7 +919,7 @@ static bool test_union_identifier_without_specifier(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
 	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
-	char *types_dir = rz_path_system_sdb_types();
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
 	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
 	free(types_dir);
 
@@ -952,7 +952,7 @@ static bool test_edit_types(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
 	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
-	char *types_dir = rz_path_system_sdb_types();
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
 	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
 	free(types_dir);
 

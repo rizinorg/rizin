@@ -17,7 +17,7 @@ static char *get_filetype(RzBuffer *b) {
 	}
 	const char *tmp = NULL;
 	// TODO: dir.magic not honored here
-	char *m = rz_path_system_sdb_magic();
+	char *m = rz_path_system(RZ_SDB_MAGIC);
 	rz_magic_load(ck, m);
 	free(m);
 	rz_buf_read_at(b, 0, buf, sizeof(buf));

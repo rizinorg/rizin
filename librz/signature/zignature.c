@@ -2584,7 +2584,7 @@ RZ_API char *rz_sign_path(RzAnalysis *a, const char *file) {
 		}
 		free(abs);
 	} else {
-		char *home = rz_path_home_zigns();
+		char *home = rz_path_home(RZ_ZIGNS);
 		abs = rz_str_newf("%s%s%s", home, RZ_SYS_DIR, file);
 		free(home);
 		if (rz_file_is_regular(abs)) {
@@ -2593,7 +2593,7 @@ RZ_API char *rz_sign_path(RzAnalysis *a, const char *file) {
 		free(abs);
 	}
 
-	char *zigns_dir = rz_path_system_zigns();
+	char *zigns_dir = rz_path_system(RZ_ZIGNS);
 	abs = rz_file_path_join(zigns_dir, file);
 	free(zigns_dir);
 	if (rz_file_is_regular(abs)) {
