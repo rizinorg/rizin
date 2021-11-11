@@ -1,6 +1,7 @@
 #include <rz_util/rz_path.h>
 #include <rz_util/rz_file.h>
 #include <rz_util/rz_sys.h>
+#include <rz_util/rz_str.h>
 
 /**
  * \brief Return \p path prefixed by the Rizin install prefix
@@ -81,7 +82,7 @@ RZ_API RZ_OWN char *rz_path_home(RZ_NULLABLE const char *path) {
 			return NULL;
 		}
 	}
-	char *res = rz_file_path_join(home, path);
+	char *res = rz_str_newf("%s" RZ_SYS_DIR "%s" RZ_SYS_DIR "%s", home, RZ_HOME_PREFIX, path);
 	free(home);
 	return res;
 }
