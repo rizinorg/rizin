@@ -9,6 +9,7 @@
  */
 
 #include <rz_basefind.h>
+#include <rz_th.h>
 
 typedef struct basefind_addresses_t {
 	ut64 *ptr;
@@ -21,6 +22,20 @@ typedef struct basefind_data_t {
 	ut64 end;
 	BaseFindArray *array;
 } BaseFindData;
+
+typedef struct basefind_thread_data_t {
+	ut32 id;
+	ut64 current;
+	ut64 base_start;
+	ut64 base_end;
+	ut64 base_inc;
+	ut64 io_size;
+	ut32 score_min;
+	RzThreadLock *lock;
+	RzList *scores;
+	HtUU *pointers;
+	BaseFindArray *array;
+} BaseFindThreadData;
 
 static RzBinFile *basefind_new_bin_file(RzCore *core) {
 	// Copied from cbin.c -> rz_core_bin_whole_strings_print
@@ -173,9 +188,69 @@ static bool basefind_pointer_map_iter(BaseFindData *bfd, const ut64 address, con
 
 static int basefind_score_compare(const RzBaseFindScore *a, const RzBaseFindScore *b) {
 	if (b->score == a->score) {
-		return ((st64)b->candidate) - ((st64)a->candidate);
+		if (b->candidate == a->candidate) {
+			return 0;
+		} else if (b->candidate < a->candidate) {
+			return -1;
+		}
+		return 1;
+	} else if (b->score < a->score) {
+		return -1;
 	}
-	return ((st64)b->score) - ((st64)a->score);
+	return 1;
+}
+
+static RzThreadFunctionRet basefind_thread_runner(RzThread *th) {
+	BaseFindThreadData *bftd = (BaseFindThreadData *)th->user;
+	RzBaseFindScore *pair = NULL;
+	BaseFindData bfd;
+	ut64 base;
+
+	bfd.array = bftd->array;
+	for (base = bftd->base_start; base < bftd->base_end; base += bftd->base_inc) {
+		if (rz_cons_is_breaked()) {
+			break;
+		}
+		bftd->current = base;
+		bfd.score = 0;
+		bfd.start = base;
+		bfd.end = base + bftd->io_size;
+		ht_uu_foreach(bftd->pointers, (HtUUForeachCallback)basefind_pointer_map_iter, &bfd);
+
+		if (bfd.score < bftd->score_min) {
+			// ignore any score below than score_min
+			continue;
+		}
+
+		pair = RZ_NEW0(RzBaseFindScore);
+		if (!pair) {
+			RZ_LOG_ERROR("basefind: cannot allocate RzBaseFindScore.\n");
+			break;
+		}
+		pair->score = bfd.score;
+		pair->candidate = base;
+
+		rz_th_lock_enter(bftd->lock);
+		if (!rz_list_append(bftd->scores, pair)) {
+			rz_th_lock_leave(bftd->lock);
+			free(pair);
+			RZ_LOG_ERROR("basefind: cannot append new score to the scores list.\n");
+			break;
+		}
+		RZ_LOG_DEBUG("basefind: possible candidate at 0x%016" PFMT64x " with score of %u\n", base, bfd.score);
+		rz_th_lock_leave(bftd->lock);
+	}
+
+	return RZ_TH_STOP;
+}
+
+static inline bool create_thread_interval(RzThreadPool *pool, BaseFindThreadData *bfd) {
+	RzThread *thread = rz_th_new(basefind_thread_runner, bfd, 0);
+	if (!thread) {
+		RZ_LOG_ERROR("basefind: cannot allocate BaseFindData\n");
+		return false;
+	}
+	return rz_th_pool_add_thread(pool, thread);
 }
 
 /**
@@ -200,6 +275,10 @@ RZ_API RZ_OWN RzList *rz_basefind(RZ_NONNULL RzCore *core, ut32 pointer_size) {
 	HtUU *pointers = NULL;
 	ut64 base_start = 0, base_end = 0, base_inc = 0;
 	ut32 score_min = 0;
+	size_t max_threads = 0;
+	RzThreadPool *pool = NULL;
+	RzThreadLock *lock = NULL;
+	bool progress = false;
 
 	if (pointer_size != 32 && pointer_size != 64) {
 		RZ_LOG_ERROR("basefind: supported pointer sizes are 32 and 64 bits.\n");
@@ -216,6 +295,8 @@ RZ_API RZ_OWN RzList *rz_basefind(RZ_NONNULL RzCore *core, ut32 pointer_size) {
 	base_end = rz_config_get_i(core->config, "basefind.base.end");
 	base_inc = rz_config_get_i(core->config, "basefind.base.increase");
 	score_min = rz_config_get_i(core->config, "basefind.score.min");
+	max_threads = rz_config_get_i(core->config, "basefind.threads.max");
+	progress = rz_config_get_b(core->config, "basefind.progress");
 
 	if (base_start >= base_end) {
 		RZ_LOG_ERROR("basefind: option 'basefind.base.start' is greater or equal to 'basefind.base.end'.\n");
@@ -247,38 +328,79 @@ RZ_API RZ_OWN RzList *rz_basefind(RZ_NONNULL RzCore *core, ut32 pointer_size) {
 		goto rz_basefind_end;
 	}
 
-	RzBaseFindScore *pair = NULL;
+	pool = rz_th_pool_new(max_threads);
+	if (!pool) {
+		RZ_LOG_ERROR("basefind: cannot thread pool.\n");
+		goto rz_basefind_end;
+	}
+
+	lock = rz_th_lock_new(false);
+	if (!lock) {
+		RZ_LOG_ERROR("basefind: cannot allocate thread lock.\n");
+		goto rz_basefind_end;
+	}
+
+	RZ_LOG_INFO("basefind: using %u threads\n", (ut32)pool->size);
+
 	ut64 io_size = rz_io_size(core->io);
-	BaseFindData bfd;
-	bfd.array = array;
-	for (ut64 base = base_start; base < base_end; base += base_inc) {
+	ut64 sector_size = (((base_end - base_start) + pool->size - 1) / pool->size);
+	for (size_t i = 0; i < pool->size; ++i) {
+		BaseFindThreadData *bftd = RZ_NEW(BaseFindThreadData);
+		if (!bftd) {
+			RZ_LOG_ERROR("basefind: cannot allocate BaseFindThreadData.\n");
+			goto rz_basefind_end;
+		}
+		bftd->base_inc = base_inc;
+		bftd->base_start = base_start + (sector_size * i);
+		bftd->current = bftd->base_start;
+		bftd->base_end = bftd->base_start + sector_size;
+		bftd->score_min = score_min;
+		bftd->io_size = io_size;
+		bftd->lock = lock;
+		bftd->scores = scores;
+		bftd->pointers = pointers;
+		bftd->array = array;
+		if (!create_thread_interval(pool, bftd)) {
+			free(bftd);
+			goto rz_basefind_end;
+		}
+	}
+	rz_sys_sleep(1);
+
+	int line = rz_cons_get_cur_line();
+	do {
+		if (progress) {
+			rz_cons_gotoxy(1, line);
+			for (ut32 i = 0; i < pool->size; ++i) {
+				BaseFindThreadData *bftd = pool->threads[i]->user;
+				ut32 perc = ((bftd->current - bftd->base_start) * 100) / (bftd->base_end - bftd->base_start);
+				if (perc > 100) {
+					perc = 100;
+				}
+				rz_cons_printf("basefind: thread %u: 0x%08" PFMT64x " / 0x%08" PFMT64x " %u%%\n", i, bftd->current, bftd->base_end, perc);
+			}
+			rz_cons_flush();
+		}
+		rz_sys_sleep(1);
 		if (rz_cons_is_breaked()) {
 			RZ_LOG_WARN("basefind: catched CTRL-C. returning scores\n");
+			rz_th_pool_kill(pool, true);
 			break;
 		}
-		bfd.score = 0;
-		bfd.start = base;
-		bfd.end = base + io_size;
-		ht_uu_foreach(pointers, (HtUUForeachCallback)basefind_pointer_map_iter, &bfd);
+	} while (!rz_th_pool_wait_async(pool));
 
-		if (bfd.score < score_min) {
-			// ignore any score below than score_min
-			continue;
-		}
-		RZ_LOG_DEBUG("basefind: possible candidate at 0x%016" PFMT64x " with score of %u\n", base, bfd.score);
-
-		pair = RZ_NEW0(RzBaseFindScore);
-		if (!pair || !rz_list_append(scores, pair)) {
-			free(pair);
-			RZ_LOG_ERROR("basefind: cannot allocate or append new score to the scores list.\n");
-			break;
-		}
-		pair->score = bfd.score;
-		pair->candidate = base;
-	}
 	rz_list_sort(scores, (RzListComparator)basefind_score_compare);
 
 rz_basefind_end:
+	if (pool) {
+		for (ut32 i = 0; i < pool->size; ++i) {
+			if (pool->threads[i]) {
+				free(pool->threads[i]->user);
+			}
+		}
+		rz_th_pool_free(pool);
+	}
+	rz_th_lock_free(lock);
 	basefind_array_free(array);
 	ht_uu_free(pointers);
 	return scores;
