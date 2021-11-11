@@ -1117,6 +1117,8 @@ RZ_API RzCoreAutocomplete *rz_core_autocomplete_find(RzCoreAutocomplete *parent,
 RZ_API bool rz_core_autocomplete_remove(RzCoreAutocomplete *parent, const char *cmd);
 RZ_API void rz_core_analysis_propagate_noreturn(RzCore *core, ut64 addr);
 
+RZ_API void rz_core_flirt_dump(RZ_NONNULL const char *flirt_file);
+
 /* PLUGINS */
 extern RzCorePlugin rz_core_plugin_java;
 
