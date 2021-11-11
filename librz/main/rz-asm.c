@@ -419,7 +419,7 @@ static void __load_plugins(RzAsmState *as) {
 	}
 
 	// load plugins from the home directory
-	char *homeplugindir = rz_str_home(RZ_HOME_PLUGINS);
+	char *homeplugindir = rz_path_home_plugins();
 	rz_lib_opendir(as->l, homeplugindir);
 	free(homeplugindir);
 

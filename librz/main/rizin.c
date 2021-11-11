@@ -143,10 +143,10 @@ static int main_help(int line) {
 			" -z, -zz      do not load strings or load them even in raw\n");
 	}
 	if (line == 2) {
-		char *datahome = rz_str_home(RZ_HOME_DATADIR);
+		char *datahome = rz_path_home_data();
 		char *incdir = rz_path_incdir();
 		char *libdir = rz_path_libdir();
-		const char *dirPrefix = rz_sys_prefix(NULL);
+		char *dirPrefix = rz_path_prefix(NULL);
 		printf(
 			"Scripts:\n"
 			" system       ${RZ_PREFIX}/share/rizin/rizinrc\n"
@@ -172,6 +172,7 @@ static int main_help(int line) {
 																																																							 " RZ_LIBDIR    %s\n"
 																																																							 " RZ_LIBEXT    " RZ_LIB_EXT "\n",
 			dirPrefix, datahome, dirPrefix, dirPrefix, incdir, libdir);
+		free(dirPrefix);
 		free(libdir);
 		free(incdir);
 		free(datahome);
@@ -181,16 +182,16 @@ static int main_help(int line) {
 
 static int main_print_var(const char *var_name) {
 	int i = 0;
-	const char *prefix = rz_sys_prefix(NULL);
+	const char *prefix = rz_path_prefix(NULL);
 	char *incdir = rz_path_incdir();
 	char *libdir = rz_path_libdir();
-	char *confighome = rz_str_home(RZ_HOME_CONFIGDIR);
-	char *datahome = rz_str_home(RZ_HOME_DATADIR);
-	char *cachehome = rz_str_home(RZ_HOME_CACHEDIR);
-	char *homeplugins = rz_str_home(RZ_HOME_PLUGINS);
-	char *homezigns = rz_str_home(RZ_HOME_ZIGNS);
+	char *confighome = rz_path_home_config();
+	char *datahome = rz_path_home_data();
+	char *cachehome = rz_path_home_cache();
+	char *homeplugins = rz_path_home_plugins();
+	char *homezigns = rz_path_home_zigns();
 	char *plugins = rz_path_system_plugins();
-	char *magicpath = rz_str_rz_prefix(RZ_SDB_MAGIC);
+	char *magicpath = rz_path_system_sdb_magic();
 	const char *is_portable = RZ_IS_PORTABLE ? "1" : "0";
 	struct rizin_var_t {
 		const char *name;
@@ -1304,7 +1305,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		}
 	}
 	{
-		char *global_rc = rz_str_rz_prefix(RZ_GLOBAL_RC);
+		char *global_rc = rz_path_system_rc();
 		if (rz_file_exists(global_rc)) {
 			(void)rz_core_run_script(r, global_rc);
 		}
@@ -1440,7 +1441,9 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	}
 
 	if (mustSaveHistory(r->config)) {
-		rz_line_hist_save(RZ_HOME_HISTORY);
+		char *history = rz_path_home_history();
+		rz_line_hist_save(history);
+		free(history);
 	}
 
 	/* capture return value */

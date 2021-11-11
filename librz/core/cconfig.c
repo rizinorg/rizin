@@ -2650,11 +2650,6 @@ static int __dbg_swstep_getter(void *user, RzConfigNode *node) {
 	return true;
 }
 
-static bool cb_dirpfx(RzCore *core, RzConfigNode *node) {
-	rz_sys_prefix(node->value);
-	return true;
-}
-
 static bool cb_analysis_roregs(RzCore *core, RzConfigNode *node) {
 	if (core && core->analysis && core->analysis->reg) {
 		rz_list_free(core->analysis->reg->roregs);
@@ -2919,9 +2914,9 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	{
 		char *pfx = rz_sys_getenv("RZ_PREFIX");
 		if (!pfx) {
-			pfx = strdup(rz_sys_prefix(NULL));
+			pfx = rz_path_prefix(NULL);
 		}
-		SETCB("dir.prefix", pfx, (RzConfigCallback)&cb_dirpfx, "Default prefix rizin was compiled for");
+		SETCB("dir.prefix", pfx, NULL, "Default prefix rizin was compiled for");
 		free(pfx);
 	}
 #if __ANDROID__
@@ -2940,7 +2935,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETPREF("pdb.useragent", "Microsoft-Symbol-Server/6.11.0001.402", "User agent for Microsoft symbol server");
 	SETPREF("pdb.server", "https://msdl.microsoft.com/download/symbols", "Semi-colon separated list of base URLs for Microsoft symbol servers");
 	{
-		char *pdb_path = rz_str_home(RZ_HOME_PDB);
+		char *pdb_path = rz_path_home_pdb();
 		SETPREF("pdb.symstore", pdb_path, "Path to downstream symbol store");
 		RZ_FREE(pdb_path);
 	}
@@ -3360,7 +3355,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	/* dir */
 	SETI("dir.depth", 10, "Maximum depth when searching recursively for files");
 	{
-		char *path = rz_str_newf(RZ_JOIN_2_PATHS("%s", RZ_SDB_MAGIC), rz_config_get(core->config, "dir.prefix"));
+		char *path = rz_path_system_sdb_magic();
 		SETPREF("dir.magic", path, "Path to rz_magic files");
 		free(path);
 		path = rz_path_system_plugins();
@@ -3530,7 +3525,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 #if __ANDROID__
 	SETPREF("http.root", "/data/data/org.rizin.rizininstaller/www", "http root directory");
 #else
-	char *wwwroot = rz_str_rz_prefix(RZ_WWWROOT);
+	char *wwwroot = rz_path_system_wwwroot();
 	SETPREF("http.root", wwwroot, "http root directory");
 	free(wwwroot);
 #endif
@@ -3794,7 +3789,7 @@ RZ_API void rz_core_parse_rizinrc(RzCore *r) {
 		homerc = rcfile;
 	} else {
 		free(rcfile);
-		homerc = rz_str_home(".rizinrc");
+		homerc = rz_path_home_rc();
 	}
 	if (homerc && rz_file_is_regular(homerc)) {
 		if (has_debug) {
@@ -3803,7 +3798,7 @@ RZ_API void rz_core_parse_rizinrc(RzCore *r) {
 		rz_core_cmd_file(r, homerc);
 	}
 	free(homerc);
-	homerc = rz_str_home(RZ_HOME_CONFIG_RC);
+	homerc = rz_path_home_config_rc();
 	if (homerc && rz_file_is_regular(homerc)) {
 		if (has_debug) {
 			eprintf("USER CONFIG loaded from %s\n", homerc);
@@ -3811,7 +3806,7 @@ RZ_API void rz_core_parse_rizinrc(RzCore *r) {
 		rz_core_cmd_file(r, homerc);
 	}
 	free(homerc);
-	homerc = rz_str_home(RZ_HOME_CONFIG_RC_DIR);
+	homerc = rz_path_home_config_rcdir();
 	if (homerc) {
 		if (rz_file_is_directory(homerc)) {
 			char *file;
