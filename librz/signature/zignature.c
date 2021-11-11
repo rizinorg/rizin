@@ -2724,7 +2724,6 @@ RZ_API void rz_sign_options_free(RzSignOptions *options) {
 	RZ_FREE(options);
 }
 
-
 static void zign_unset_for(RzEvent *ev, int type, void *user, void *data) {
 	RzSpaces *s = (RzSpaces *)ev->user;
 	RzAnalysis *analysis = container_of(s, RzAnalysis, zign_spaces);
@@ -2746,7 +2745,6 @@ static void zign_rename_for(RzEvent *ev, int type, void *user, void *data) {
 	rz_sign_space_rename_for(analysis, se->data.rename.space,
 		se->data.rename.oldname, se->data.rename.newname);
 }
-
 
 RZ_API void rz_sign_analysis_set_hooks(RZ_NONNULL RzAnalysis *analysis) {
 	rz_return_if_fail(analysis);
