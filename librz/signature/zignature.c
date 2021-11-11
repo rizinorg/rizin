@@ -189,7 +189,7 @@ static RzList *do_reflike_sig(const char *token) {
 
 #define DBL_VAL_FAIL(x, y) \
 	if (x) { \
-		eprintf("Warning: Skipping signature with multiple %c signatures (%s)\n", y, k); \
+		RZ_LOG_WARN("zignature: Skipping signature with multiple %c signatures (%s)\n", y, k); \
 		success = false; \
 		goto out; \
 	}
@@ -207,12 +207,12 @@ RZ_API bool rz_sign_deserialize(RzAnalysis *a, RzSignItem *it, const char *k, co
 	// Deserialize key: zign|space|name
 	size_t n = rz_str_split(k2, '|');
 	if (n != 3) {
-		eprintf("Warning: Skipping signature with invalid key (%s)\n", k);
+		RZ_LOG_WARN("zignature: Skipping signature with invalid key (%s)\n", k);
 		success = false;
 		goto out;
 	}
 	if (strcmp(rz_str_word_get0(k2, 0), "zign")) {
-		eprintf("Warning: Skipping signature with invalid value (%s)\n", k);
+		RZ_LOG_WARN("zignature: Skipping signature with invalid value (%s)\n", k);
 		success = false;
 		goto out;
 	}
@@ -239,14 +239,14 @@ RZ_API bool rz_sign_deserialize(RzAnalysis *a, RzSignItem *it, const char *k, co
 			continue;
 		}
 		if (strlen(word) < 3 || word[1] != ':') {
-			eprintf("Warning: Skipping signature with corrupted serialization (%s:%s)\n", k, word);
+			RZ_LOG_WARN("zignature: Skipping signature with corrupted serialization (%s:%s)\n", k, word);
 			success = false;
 			goto out;
 		}
 		RzSignType st = (RzSignType)*word;
 		switch (st) {
 		case RZ_SIGN_ANALYSIS:
-			eprintf("Unsupported\n");
+			RZ_LOG_ERROR("zignature: Unsupported type (RZ_SIGN_ANALYSIS)\n");
 			break;
 		case RZ_SIGN_NAME:
 			DBL_VAL_FAIL(it->realname, RZ_SIGN_NAME);
@@ -320,12 +320,12 @@ RZ_API bool rz_sign_deserialize(RzAnalysis *a, RzSignItem *it, const char *k, co
 		case RZ_SIGN_BYTES:
 			// following two errors are not due to double entries
 			if (!it->bytes) {
-				eprintf("Warning: Skipping signature with no bytes size (%s)\n", k);
+				RZ_LOG_WARN("zignature: Skipping signature with no bytes size (%s)\n", k);
 				success = false;
 				goto out;
 			}
 			if (strlen(token) != 2 * it->bytes->size) {
-				eprintf("Warning: Skipping signature with invalid size (%s)\n", k);
+				RZ_LOG_WARN("zignature: Skipping signature with invalid size (%s)\n", k);
 				success = false;
 				goto out;
 			}
@@ -338,12 +338,12 @@ RZ_API bool rz_sign_deserialize(RzAnalysis *a, RzSignItem *it, const char *k, co
 		case RZ_SIGN_BYTES_MASK:
 			// following two errors are not due to double entries
 			if (!it->bytes) {
-				eprintf("Warning: Skipping signature with no mask size (%s)\n", k);
+				RZ_LOG_WARN("zignature: Skipping signature with no mask size (%s)\n", k);
 				success = false;
 				goto out;
 			}
 			if (strlen(token) != 2 * it->bytes->size) {
-				eprintf("Warning: Skipping signature invalid mask size (%s)\n", k);
+				RZ_LOG_WARN("zignature: Skipping signature invalid mask size (%s)\n", k);
 				success = false;
 				goto out;
 			}
@@ -367,7 +367,7 @@ RZ_API bool rz_sign_deserialize(RzAnalysis *a, RzSignItem *it, const char *k, co
 			}
 			break;
 		default:
-			eprintf("Unsupported (%s)\n", word);
+			RZ_LOG_ERROR("zignature: Unsupported type (%s)\n", word);
 			break;
 		}
 	}
@@ -488,7 +488,7 @@ static void serialize(RzAnalysis *a, RzSignItem *it, char *k, char *v) {
 		rz_strbuf_appendf(sb, "|%c:%s", RZ_SIGN_BBHASH, hash->bbhash);
 	}
 	if (rz_strbuf_length(sb) >= RZ_SIGN_VAL_MAXSZ) {
-		eprintf("Signature limit reached for 0x%08" PFMT64x " (%s)\n", it->addr, it->name);
+		RZ_LOG_WARN("zignature: Signature limit reached for 0x%08" PFMT64x " (%s)\n", it->addr, it->name);
 	}
 	char *res = rz_strbuf_drain(sb);
 	if (res) {
@@ -657,7 +657,7 @@ RZ_API bool rz_sign_add_item(RzAnalysis *a, RzSignItem *it) {
 	curval = sdb_const_get(a->sdb_zigns, key, 0);
 	if (curval) {
 		if (!rz_sign_deserialize(a, curit, key, curval)) {
-			eprintf("error: cannot deserialize zign\n");
+			RZ_LOG_ERROR("zignature: cannot deserialize zign\n");
 			retval = false;
 			goto out;
 		}
@@ -726,7 +726,7 @@ static bool addBytes(RzAnalysis *a, const char *name, ut64 size, const ut8 *byte
 	bool retval = true;
 
 	if (rz_mem_is_zero(mask, size)) {
-		eprintf("error: zero mask\n");
+		RZ_LOG_ERROR("zignature: error: zero mask\n");
 		return false;
 	}
 
@@ -771,12 +771,12 @@ fail:
 RZ_API bool rz_sign_add_hash(RzAnalysis *a, const char *name, int type, const char *val, int len) {
 	rz_return_val_if_fail(a && name && type && val && len > 0, false);
 	if (type != RZ_SIGN_BBHASH) {
-		eprintf("error: hash type unknown");
+		RZ_LOG_ERROR("zignature: hash type unknown");
 		return false;
 	}
 	int digestsize = ZIGN_HASH_SIZE * 2;
 	if (len != digestsize) {
-		eprintf("error: invalid hash size: %d (%s digest size is %d)\n", len, ZIGN_HASH, digestsize);
+		RZ_LOG_ERROR("zignature: invalid hash size: %d (%s digest size is %d)\n", len, ZIGN_HASH, digestsize);
 		return false;
 	}
 	return addHash(a, name, type, val);
@@ -854,7 +854,7 @@ static RzSignBytes *rz_sign_fcn_bytes(RzAnalysis *a, RzAnalysisFunction *fcn) {
 
 	// fill in bytes
 	if (!a->iob.read_at(a->iob.io, ea, sig->bytes, size)) {
-		eprintf("error: failed to read at 0x%08" PFMT64x "\n", ea);
+		RZ_LOG_ERROR("zignature: failed to read at 0x%08" PFMT64x "\n", ea);
 		goto bytes_failed;
 	}
 
@@ -933,7 +933,7 @@ RZ_API bool rz_sign_addto_item(RzAnalysis *a, RzSignItem *it, RzAnalysisFunction
 		}
 		break;
 	default:
-		eprintf("Error: %s Can not handle type %c\n", __FUNCTION__, type);
+		RZ_LOG_ERROR("zignature: %s Can not handle type %c\n", __FUNCTION__, type);
 	}
 
 	return false;
@@ -1453,7 +1453,7 @@ RZ_API bool rz_sign_diff(RzAnalysis *a, RzSignOptions *options, const char *othe
 		return false;
 	}
 
-	eprintf("Diff %d %d\n", (int)ls_length(la), (int)ls_length(lb));
+	RZ_LOG_INFO("zignature: Diff %d %d\n", (int)ls_length(la), (int)ls_length(lb));
 
 	RzListIter *itr;
 	RzListIter *itr2;
@@ -1511,7 +1511,7 @@ RZ_API bool rz_sign_diff_by_name(RzAnalysis *a, RzSignOptions *options, const ch
 		return false;
 	}
 
-	eprintf("Diff by name %d %d (%s)\n", (int)ls_length(la), (int)ls_length(lb), not_matching ? "not matching" : "matching");
+	RZ_LOG_INFO("zignature: Diff by name %d %d (%s)\n", (int)ls_length(la), (int)ls_length(lb), not_matching ? "not matching" : "matching");
 
 	RzListIter *itr;
 	RzListIter *itr2;
@@ -1914,7 +1914,7 @@ static bool listCB(void *user, const char *k, const char *v) {
 	RzAnalysis *a = ctx->analysis;
 
 	if (!rz_sign_deserialize(a, it, k, v)) {
-		eprintf("error: cannot deserialize zign\n");
+		RZ_LOG_ERROR("zignature: cannot deserialize zign\n");
 		goto out;
 	}
 
@@ -2132,7 +2132,7 @@ static bool countForCB(void *user, const char *k, const char *v) {
 			ctx->count++;
 		}
 	} else {
-		eprintf("error: cannot deserialize zign\n");
+		RZ_LOG_ERROR("zignature: cannot deserialize zign\n");
 	}
 	rz_sign_item_free(it);
 
@@ -2164,7 +2164,7 @@ static bool unsetForCB(void *user, const char *k, const char *v) {
 			sdb_set(db, nk, nv, 0);
 		}
 	} else {
-		eprintf("error: cannot deserialize zign\n");
+		RZ_LOG_ERROR("zignature: cannot deserialize zign\n");
 	}
 	rz_sign_item_free(it);
 	return true;
@@ -2224,7 +2224,7 @@ static bool foreachCB(void *user, const char *k, const char *v) {
 			ctx->cb(it, ctx->user);
 		}
 	} else {
-		eprintf("error: cannot deserialize zign\n");
+		RZ_LOG_ERROR("zignature: cannot deserialize zign\n");
 	}
 	if (ctx->freeit) {
 		rz_sign_item_free(it);
@@ -2278,7 +2278,7 @@ static int addSearchKwCB(RzSignItem *it, void *user) {
 	RzSignBytes *bytes = it->bytes;
 
 	if (!bytes) {
-		eprintf("Cannot find bytes for this signature: %s\n", it->name);
+		RZ_LOG_ERROR("zignature: Cannot find bytes for this signature: %s\n", it->name);
 		return 1;
 	}
 
@@ -2489,7 +2489,7 @@ static int match_metrics(RzSignItem *it, void *user) {
 			found = vars_match(it, &ctx->vars, sm);
 			break;
 		default:
-			eprintf("Invalid type: %c\n", type);
+			RZ_LOG_ERROR("zignature: Invalid type: %c\n", type);
 		}
 		if (found) {
 			sm->cb(it, sm->fcn, type, (count > 1), sm->user);
@@ -2560,7 +2560,7 @@ static bool loadCB(void *user, const char *k, const char *v) {
 		serialize(a, it, nk, nv);
 		sdb_set(a->sdb_zigns, nk, nv, 0);
 	} else {
-		eprintf("error: cannot deserialize zign\n");
+		RZ_LOG_ERROR("zignature: cannot deserialize zign\n");
 	}
 	rz_sign_item_free(it);
 	return true;
@@ -2608,7 +2608,7 @@ RZ_API bool rz_sign_load(RzAnalysis *a, const char *file) {
 	}
 	char *path = rz_sign_path(a, file);
 	if (!rz_file_exists(path)) {
-		eprintf("error: file %s does not exist\n", file);
+		RZ_LOG_ERROR("zignature: file %s does not exist\n", file);
 		free(path);
 		return false;
 	}
@@ -2632,37 +2632,37 @@ RZ_API bool rz_sign_load_gz(RzAnalysis *a, const char *filename) {
 
 	char *path = rz_sign_path(a, filename);
 	if (!rz_file_exists(path)) {
-		eprintf("error: file %s does not exist\n", filename);
+		RZ_LOG_ERROR("zignature: file %s does not exist\n", filename);
 		retval = false;
 		goto out;
 	}
 
 	if (!(buf = rz_file_gzslurp(path, &size, 0))) {
-		eprintf("error: cannot decompress file\n");
+		RZ_LOG_ERROR("zignature: cannot decompress file\n");
 		retval = false;
 		goto out;
 	}
 
 	if (!(tmpfile = rz_file_temp("r2zign"))) {
-		eprintf("error: cannot create temp file\n");
+		RZ_LOG_ERROR("zignature: cannot create temp file\n");
 		retval = false;
 		goto out;
 	}
 
 	if (!rz_file_dump(tmpfile, buf, size, 0)) {
-		eprintf("error: cannot dump file\n");
+		RZ_LOG_ERROR("zignature: cannot dump file\n");
 		retval = false;
 		goto out;
 	}
 
 	if (!rz_sign_load(a, tmpfile)) {
-		eprintf("error: cannot load file\n");
+		RZ_LOG_ERROR("zignature: cannot load file\n");
 		retval = false;
 		goto out;
 	}
 
 	if (!rz_file_rm(tmpfile)) {
-		eprintf("error: cannot delete temp file\n");
+		RZ_LOG_ERROR("zignature: cannot delete temp file\n");
 		retval = false;
 		goto out;
 	}
@@ -2679,7 +2679,7 @@ RZ_API bool rz_sign_save(RzAnalysis *a, const char *file) {
 	rz_return_val_if_fail(a && file, false);
 
 	if (sdb_isempty(a->sdb_zigns)) {
-		eprintf("WARNING: no zignatures to save\n");
+		RZ_LOG_WARN("zignature: no zignatures to save\n");
 		return false;
 	}
 
@@ -2746,6 +2746,12 @@ static void zign_rename_for(RzEvent *ev, int type, void *user, void *data) {
 		se->data.rename.oldname, se->data.rename.newname);
 }
 
+/**
+ * \brief Initialize the event RzSpaces for zignatures
+ * Initialize the RzSpaces for zignatures events (the event space is already cleaned by rz_analysis_free)
+ * This adds the hooks for unset, count and rename
+ * \param RzAnalysis  The RzAnalysis structure to initialize
+ */
 RZ_API void rz_sign_analysis_set_hooks(RZ_NONNULL RzAnalysis *analysis) {
 	rz_return_if_fail(analysis);
 

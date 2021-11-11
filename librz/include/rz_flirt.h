@@ -48,10 +48,10 @@ typedef struct RzFlirtNode {
 	ut8 *variant_bool_array; // bool array, if true, byte in pattern_bytes is a variant byte
 } RzFlirtNode;
 
-RZ_API RZ_OWN RzFlirtNode *rz_flirt_parse_buffer(RZ_NONNULL RzBuffer *buffer);
-RZ_API void rz_flirt_node_free(RZ_NULLABLE RzFlirtNode *node);
-RZ_API ut8 rz_flirt_get_version(RZ_NONNULL RzBuffer *buffer);
-RZ_API void rz_flirt_apply_signatures(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL const char *flirt_file);
+RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_parse_buffer(RZ_NONNULL RzBuffer *buffer);
+RZ_API void rz_sign_flirt_node_free(RZ_NULLABLE RzFlirtNode *node);
+RZ_API ut8 rz_sign_flirt_get_version(RZ_NONNULL RzBuffer *buffer);
+RZ_API void rz_sign_flirt_apply(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL const char *flirt_file);
 
 #ifdef __cplusplus
 }

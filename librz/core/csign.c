@@ -99,18 +99,18 @@ RZ_API void rz_core_flirt_dump(RZ_NONNULL const char *flirt_file) {
 	RzFlirtNode *node = NULL;
 
 	if (!(buffer = rz_buf_new_slurp(flirt_file))) {
-		RZ_LOG_ERROR("flirt: Can't open %s\n", flirt_file);
+		RZ_LOG_ERROR("FLIRT: Can't open %s\n", flirt_file);
 		return;
 	}
 
-	node = rz_flirt_parse_buffer(buffer);
+	node = rz_sign_flirt_parse_buffer(buffer);
 	rz_buf_free(buffer);
 	if (node) {
 		flirt_print_node(node, -1);
-		rz_flirt_node_free(node);
+		rz_sign_flirt_node_free(node);
 		return;
 	} else {
-		RZ_LOG_ERROR("flirt: We encountered an error while parsing the file. Sorry.\n");
+		RZ_LOG_ERROR("FLIRT: We encountered an error while parsing the file. Sorry.\n");
 		return;
 	}
 }

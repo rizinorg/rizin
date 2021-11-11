@@ -379,7 +379,12 @@ static void module_free(RzFlirtModule *module) {
 	free(module);
 }
 
-RZ_API void rz_flirt_node_free(RZ_NULLABLE RzFlirtNode *node) {
+/**
+ * \brief Frees an RzFlirtNode struct
+ *
+ * \param RzFlirtNode  The RzFlirtNode to be freed
+ */
+RZ_API void rz_sign_flirt_node_free(RZ_NULLABLE RzFlirtNode *node) {
 	if (!node) {
 		return;
 	}
@@ -472,7 +477,7 @@ static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module
 			next_module_function->name = rz_str_newf("flirt.%s", name);
 			analysis->flb.set(analysis->flb.f, next_module_function->name,
 				next_module_function->addr, next_module_function_size);
-			RZ_LOG_INFO("flirt: Found %s\n", next_module_function->name);
+			RZ_LOG_INFO("FLIRT: Found %s\n", next_module_function->name);
 			free(name);
 		}
 	}
@@ -527,7 +532,7 @@ static bool node_match_functions(RzAnalysis *analysis, const RzFlirtNode *root_n
 	bool ret = true;
 
 	if (rz_list_length(analysis->fcns) == 0) {
-		RZ_LOG_ERROR("flirt: There are no analyzed functions. Have you run 'aa'?\n");
+		RZ_LOG_ERROR("FLIRT: There are no analyzed functions. Have you run 'aa'?\n");
 		return ret;
 	}
 
@@ -546,7 +551,7 @@ static bool node_match_functions(RzAnalysis *analysis, const RzFlirtNode *root_n
 			break;
 		}
 		if (!analysis->iob.read_at(analysis->iob.io, func->addr, func_buf, (int)func_size)) {
-			RZ_LOG_ERROR("flirt: Couldn't read function %s at 0x%" PFMT64x "\n", func->name, func->addr);
+			RZ_LOG_ERROR("FLIRT: Couldn't read function %s at 0x%" PFMT64x "\n", func->name, func->addr);
 			RZ_FREE(func_buf);
 			ret = false;
 			break;
@@ -926,7 +931,7 @@ static ut8 parse_tree(ParseStatus *b, RzFlirtNode *root_node) {
 	if (tree_nodes == 0) { // if there's no tree nodes remaining, that means we are on the leaf
 		return parse_leaf(b, root_node);
 	}
-	root_node->child_list = rz_list_newf((RzListFree)rz_flirt_node_free);
+	root_node->child_list = rz_list_newf((RzListFree)rz_sign_flirt_node_free);
 
 	for (i = 0; i < tree_nodes; i++) {
 		if (!(node = RZ_NEW0(RzFlirtNode))) {
@@ -948,7 +953,7 @@ static ut8 parse_tree(ParseStatus *b, RzFlirtNode *root_node) {
 	}
 	return true;
 err_exit:
-	rz_flirt_node_free(node);
+	rz_sign_flirt_node_free(node);
 	return false;
 }
 
@@ -1180,7 +1185,7 @@ static int parse_v10_header(RzBuffer *buf, idasig_v10_t *header) {
  * \param  flirt_buf The buffer to read
  * \return           Parsed FLIRT node
  */
-RZ_API RZ_OWN RzFlirtNode *rz_flirt_parse_buffer(RZ_NONNULL RzBuffer *flirt_buf) {
+RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_parse_buffer(RZ_NONNULL RzBuffer *flirt_buf) {
 	rz_return_val_if_fail(flirt_buf, NULL);
 
 	ut8 *name = NULL;
@@ -1196,12 +1201,12 @@ RZ_API RZ_OWN RzFlirtNode *rz_flirt_parse_buffer(RZ_NONNULL RzBuffer *flirt_buf)
 
 	ParseStatus ps = { 0 };
 
-	if (!(ps.version = rz_flirt_get_version(flirt_buf))) {
+	if (!(ps.version = rz_sign_flirt_get_version(flirt_buf))) {
 		goto exit;
 	}
 
 	if (ps.version < 5 || ps.version > 10) {
-		RZ_LOG_ERROR("flirt: Unsupported flirt signature version\n");
+		RZ_LOG_ERROR("FLIRT: Unsupported flirt signature version\n");
 		goto exit;
 	}
 
@@ -1258,16 +1263,16 @@ RZ_API RZ_OWN RzFlirtNode *rz_flirt_parse_buffer(RZ_NONNULL RzBuffer *flirt_buf)
 	if (header->features & IDASIG__FEATURE__COMPRESSED) {
 		if (ps.version >= 5 && ps.version < 7) {
 			if (!(decompressed_buf = rz_inflate_ignore_header(buf, size, NULL, &decompressed_size))) {
-				RZ_LOG_ERROR("flirt: Failed to decompress buffer.\n");
+				RZ_LOG_ERROR("FLIRT: Failed to decompress buffer.\n");
 				goto exit;
 			}
 		} else if (ps.version >= 7) {
 			if (!(decompressed_buf = rz_inflate(buf, size, NULL, &decompressed_size))) {
-				RZ_LOG_ERROR("flirt: Failed to decompress buffer.\n");
+				RZ_LOG_ERROR("FLIRT: Failed to decompress buffer.\n");
 				goto exit;
 			}
 		} else {
-			RZ_LOG_ERROR("flirt: Sorry we do not support compressed signatures with version %d.\n", ps.version);
+			RZ_LOG_ERROR("FLIRT: Sorry we do not support compressed signatures with version %d.\n", ps.version);
 			goto exit;
 		}
 
@@ -1309,7 +1314,7 @@ exit:
  * \param  buffer The buffer to read
  * \return        Parsed FLIRT version
  */
-RZ_API ut8 rz_flirt_get_version(RZ_NONNULL RzBuffer *buffer) {
+RZ_API ut8 rz_sign_flirt_get_version(RZ_NONNULL RzBuffer *buffer) {
 	rz_return_val_if_fail(buffer, false);
 	ut8 ret = 0;
 
@@ -1344,26 +1349,26 @@ exit:
  * \param analysis    The RzAnalysis structure 
  * \param flirt_file  The FLIRT file to parse
  */
-RZ_API void rz_flirt_apply_signatures(RzAnalysis *analysis, const char *flirt_file) {
+RZ_API void rz_sign_flirt_apply(RzAnalysis *analysis, const char *flirt_file) {
 	rz_return_if_fail(analysis && RZ_STR_ISNOTEMPTY(flirt_file));
 	RzBuffer *flirt_buf = NULL;
 	RzFlirtNode *node = NULL;
 
 	if (!(flirt_buf = rz_buf_new_slurp(flirt_file))) {
-		RZ_LOG_ERROR("flirt: Can't open %s\n", flirt_file);
+		RZ_LOG_ERROR("FLIRT: Can't open %s\n", flirt_file);
 		return;
 	}
 
-	node = rz_flirt_parse_buffer(flirt_buf);
+	node = rz_sign_flirt_parse_buffer(flirt_buf);
 	rz_buf_free(flirt_buf);
 	if (node) {
 		if (!node_match_functions(analysis, node)) {
-			RZ_LOG_ERROR("flirt: Error while scanning the file %s\n", flirt_file);
+			RZ_LOG_ERROR("FLIRT: Error while scanning the file %s\n", flirt_file);
 		}
-		rz_flirt_node_free(node);
+		rz_sign_flirt_node_free(node);
 		return;
 	} else {
-		RZ_LOG_ERROR("flirt: We encountered an error while parsing the file %s. Sorry.\n", flirt_file);
+		RZ_LOG_ERROR("FLIRT: We encountered an error while parsing the file %s. Sorry.\n", flirt_file);
 		return;
 	}
 }

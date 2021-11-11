@@ -558,7 +558,7 @@ static int cmdFlirt(void *data, const char *input) {
 		RzListIter *iter;
 		RzList *files = rz_file_globsearch(input + 2, depth);
 		rz_list_foreach (files, iter, file) {
-			rz_flirt_apply_signatures(core->analysis, file);
+			rz_sign_flirt_apply(core->analysis, file);
 		}
 		rz_list_free(files);
 		break;
@@ -1428,7 +1428,7 @@ RZ_IPI RzCmdStatus rz_zign_flirt_scan_handler(RzCore *core, int argc, const char
 	RzListIter *iter;
 	RzList *files = rz_file_globsearch(argv[1], depth);
 	rz_list_foreach (files, iter, file) {
-		rz_flirt_apply_signatures(core->analysis, file);
+		rz_sign_flirt_apply(core->analysis, file);
 	}
 	rz_list_free(files);
 	return RZ_CMD_STATUS_OK;

@@ -129,9 +129,9 @@ RZIL:
   - librz/core/cil.c
 
 FLIRT:
-  - librz/flirt/*
-  - librz/include/rz_flirt.h
-  - librz/core/cflirt.c
+  - librz/signature/*
+  - librz/include/rz_sign.h
+  - librz/core/csign.c
 
 infrastructure:
   - .appveyor.yml
