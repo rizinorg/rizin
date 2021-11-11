@@ -1174,6 +1174,12 @@ static int parse_v10_header(RzBuffer *buf, idasig_v10_t *header) {
 	return true;
 }
 
+/**
+ * \brief Parses the RzBuffer containing a FLIRT structure and returns an RzFlirtNode
+ *
+ * \param  flirt_buf The buffer to read
+ * \return           Parsed FLIRT node
+ */
 RZ_API RZ_OWN RzFlirtNode *rz_flirt_parse_buffer(RZ_NONNULL RzBuffer *flirt_buf) {
 	rz_return_val_if_fail(flirt_buf, NULL);
 
