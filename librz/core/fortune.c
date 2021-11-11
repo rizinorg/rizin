@@ -9,8 +9,11 @@ static const char *fortunes[] = {
 
 static char *rizin_fortune_file(const char *type) {
 	if (!strncmp(type, "tips", 4) || !strncmp(type, "fun", 3)) {
-		return rz_str_newf(RZ_JOIN_3_PATHS("%s", RZ_FORTUNES, "fortunes.%s"),
-			rz_sys_prefix(NULL), type);
+		char *fortunes_dir = rz_path_system_fortunes();
+		char buf[100];
+		char *res = rz_file_path_join(fortunes_dir, rz_strf(buf, "fortunes.%s", type));
+		free(fortunes_dir);
+		return res;
 	}
 	return RZ_STR_DUP(type);
 }

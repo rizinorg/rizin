@@ -2593,7 +2593,9 @@ RZ_API char *rz_sign_path(RzAnalysis *a, const char *file) {
 		free(abs);
 	}
 
-	abs = rz_str_newf(RZ_JOIN_3_PATHS("%s", RZ_ZIGNS, "%s"), rz_sys_prefix(NULL), file);
+	char *zigns_dir = rz_path_system_zigns();
+	abs = rz_file_path_join(zigns_dir, file);
+	free(zigns_dir);
 	if (rz_file_is_regular(abs)) {
 		return abs;
 	}
