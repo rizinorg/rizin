@@ -14,7 +14,7 @@ RZ_API RZ_OWN char *rz_path_prefix(RZ_NULLABLE const char *path) {
 	if (pid_to_path) {
 		char *t = rz_file_dirname(pid_to_path);
 		free(pid_to_path);
-		// When rz_sys_prefix is called from a unit test or from a
+		// When rz_path_prefix is called from a unit test or from a
 		// not-yet-instazled rizin binary this would return the wrong path.
 		// In those cases, just return RZ_PREFIX.
 		char *result = NULL;
@@ -169,6 +169,13 @@ RZ_API RZ_OWN char *rz_path_system_flags(void) {
  */
 RZ_API RZ_OWN char *rz_path_system_hud(void) {
 	return rz_path_prefix(RZ_HUD);
+}
+
+/**
+ * \brief Return the system directory of www files
+ */
+RZ_API RZ_OWN char *rz_path_system_wwwroot(void) {
+	return rz_path_prefix(RZ_WWWROOT);
 }
 
 /**

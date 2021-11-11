@@ -29,6 +29,7 @@ RZ_API RZ_OWN char *rz_path_system_themes(void);
 RZ_API RZ_OWN char *rz_path_system_fortunes(void);
 RZ_API RZ_OWN char *rz_path_system_flags(void);
 RZ_API RZ_OWN char *rz_path_system_hud(void);
+RZ_API RZ_OWN char *rz_path_system_wwwroot(void);
 
 RZ_API RZ_OWN char *rz_path_home(RZ_NULLABLE const char *path);
 RZ_API RZ_OWN char *rz_path_home_config(void);

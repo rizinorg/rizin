@@ -815,7 +815,10 @@ static void load_scripts_for(RzCore *core, const char *name) {
 	// TODO:
 	char *file;
 	RzListIter *iter;
-	char *hdir = rz_str_newf(RZ_JOIN_2_PATHS(RZ_HOME_BINRC, "bin-%s"), name);
+	char *binrc = rz_path_home_binrcdir();
+	char tmp[50];
+	char *hdir = rz_file_path_join(binrc, rz_strf(tmp, "bin-%s", name));
+	free(binrc);
 	char *path = rz_str_home(hdir);
 	RzList *files = rz_sys_dir(path);
 	if (!rz_list_empty(files)) {

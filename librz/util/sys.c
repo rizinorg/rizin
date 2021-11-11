@@ -1288,36 +1288,6 @@ RZ_API int rz_sys_getpid(void) {
 #endif
 }
 
-RZ_API const char *rz_sys_prefix(const char *pfx) {
-	static char *prefix = NULL;
-	if (!prefix) {
-#if RZ_IS_PORTABLE
-		char *pid_to_path = rz_sys_pid_to_path(rz_sys_getpid());
-		if (pid_to_path) {
-			char *t = rz_file_dirname(pid_to_path);
-			free(pid_to_path);
-			// When rz_sys_prefix is called from a unit test or from a
-			// not-yet-installed rizin binary this would return the wrong path.
-			// In those cases, just return RZ_PREFIX.
-			if (rz_str_endswith(t, RZ_SYS_DIR RZ_BINDIR)) {
-				prefix = rz_file_dirname(t);
-			}
-			free(t);
-		}
-		if (!prefix) {
-			prefix = strdup(RZ_PREFIX);
-		}
-#else
-		prefix = strdup(RZ_PREFIX);
-#endif
-	}
-	if (RZ_STR_ISNOTEMPTY(pfx)) {
-		free(prefix);
-		prefix = strdup(pfx);
-	}
-	return prefix;
-}
-
 RZ_API RSysInfo *rz_sys_info(void) {
 #if __UNIX__
 	struct utsname un = { { 0 } };
