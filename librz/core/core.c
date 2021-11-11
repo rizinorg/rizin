@@ -2438,8 +2438,9 @@ RZ_API bool rz_core_init(RzCore *core) {
 		core->cons->user_fgets = (void *)rz_core_fgets;
 		core->cons->user_fgets_user = core;
 #endif
-		// rz_line_singleton ()->user = (void *)core;
-		rz_line_hist_load(RZ_HOME_HISTORY);
+		char *history = rz_path_home_history();
+		rz_line_hist_load(history);
+		free(history);
 	}
 	core->print->cons = core->cons;
 	rz_cons_bind(&core->print->consbind);
@@ -2559,9 +2560,9 @@ RZ_API bool rz_core_init(RzCore *core) {
 	rz_bp_use(core->dbg->bp, RZ_SYS_ARCH, core->analysis->bits);
 	update_sdb(core);
 	{
-		char *a = rz_str_rz_prefix(RZ_FLAGS);
+		char *a = rz_path_system_flags();
 		if (a) {
-			char *file = rz_str_newf("%s/tags.rz", a);
+			char *file = rz_file_path_join(a, "tags.rz");
 			(void)rz_core_run_script(core, file);
 			free(file);
 			free(a);

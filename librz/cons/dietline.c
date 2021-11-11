@@ -465,14 +465,13 @@ RZ_API void rz_line_hist_free(void) {
 }
 
 /* load history from file. TODO: if file == NULL load from ~/.<prg>.history or so */
-RZ_API int rz_line_hist_load(const char *file) {
+RZ_API int rz_line_hist_load(const char *path) {
 	FILE *fd;
-	char buf[RZ_LINE_BUFSIZE], *path = rz_str_home(file);
+	char buf[RZ_LINE_BUFSIZE];
 	if (!path) {
 		return false;
 	}
 	if (!(fd = rz_sys_fopen(path, "r"))) {
-		free(path);
 		return false;
 	}
 	while (fgets(buf, sizeof(buf), fd) != NULL) {
@@ -480,7 +479,6 @@ RZ_API int rz_line_hist_load(const char *file) {
 		rz_line_hist_add(buf);
 	}
 	fclose(fd);
-	free(path);
 	return true;
 }
 

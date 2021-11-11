@@ -126,7 +126,7 @@ RZ_API int rz_core_loadlibs(RzCore *core, int where, const char *path) {
 		return false;
 	}
 	// load script plugins
-	char *homeplugindir = rz_str_home(RZ_HOME_PLUGINS);
+	char *homeplugindir = rz_path_home_plugins();
 	RzList *files = rz_sys_dir(homeplugindir);
 	RzListIter *iter;
 	char *file;

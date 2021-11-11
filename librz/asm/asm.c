@@ -320,15 +320,15 @@ RZ_API bool rz_asm_use(RzAsm *a, const char *name) {
 		if (h->arch && h->name && !strcmp(h->name, name)) {
 			if (!a->cur || (a->cur && strcmp(a->cur->arch, h->arch))) {
 				plugin_fini(a);
-				char *rzprefix = rz_str_rz_prefix(RZ_SDB_OPCODES);
-				char *file = rz_str_newf("%s/%s.sdb", rz_str_get_null(rzprefix), h->arch);
+				char *opcodes_dir = rz_path_system_sdb_opcodes();
+				char *file = rz_str_newf("%s/%s.sdb", opcodes_dir, h->arch);
 				if (file) {
 					rz_asm_set_cpu(a, NULL);
 					sdb_free(a->pair);
 					a->pair = sdb_new(NULL, file, 0);
 					free(file);
 				}
-				free(rzprefix);
+				free(opcodes_dir);
 			}
 			if (h->init && !h->init(&a->plugin_data)) {
 				RZ_LOG_ERROR("asm plugin '%s' failed to initialize.\n", h->name);
