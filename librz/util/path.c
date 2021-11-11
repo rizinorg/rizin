@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2021 Riccardo Schirone <sirmy15@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_util/rz_path.h>
 #include <rz_util/rz_file.h>
 #include <rz_util/rz_sys.h>
