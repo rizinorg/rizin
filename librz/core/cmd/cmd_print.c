@@ -1755,10 +1755,12 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block,
 	case 'o': // "pfo"
 		if (_input[2] == '?') {
 			char *prefix = rz_path_prefix(NULL);
+			char *sdb_format = rz_path_home_sdb_format();
 			eprintf("|Usage: pfo [format-file]\n"
-				" " RZ_JOIN_3_PATHS("~", RZ_HOME_SDB_FORMAT, "") "\n"
-										 " " RZ_JOIN_3_PATHS("%s", RZ_SDB_FORMAT, "") "\n",
-				prefix);
+				" %s\n"
+				" " RZ_JOIN_3_PATHS("%s", RZ_SDB_FORMAT, "") "\n",
+				sdb_format, prefix);
+			free(sdb_format);
 			free(prefix);
 		} else if (_input[2] == ' ') {
 			const char *fname = rz_str_trim_head_ro(_input + 3);
