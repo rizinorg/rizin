@@ -254,7 +254,7 @@ static bool analysis_set_os(RzAnalysis *analysis, const char *os) {
 	}
 	free(analysis->os);
 	analysis->os = strdup(os);
-	char *types_dir = rz_path_system_sdb_types();
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
 	rz_type_db_set_os(analysis->typedb, os);
 	rz_type_db_reload(analysis->typedb, types_dir);
 	free(types_dir);
@@ -300,7 +300,7 @@ RZ_API bool rz_analysis_set_bits(RzAnalysis *analysis, int bits) {
 			analysis->bits = bits;
 			rz_type_db_set_bits(analysis->typedb, bits);
 			if (!is_hack) {
-				char *types_dir = rz_path_system_sdb_types();
+				char *types_dir = rz_path_system(RZ_SDB_TYPES);
 				rz_type_db_reload(analysis->typedb, types_dir);
 				free(types_dir);
 			}
@@ -334,7 +334,7 @@ RZ_API void rz_analysis_set_cpu(RzAnalysis *analysis, const char *cpu) {
 		analysis->pcalign = v;
 	}
 	rz_type_db_set_cpu(analysis->typedb, cpu);
-	char *types_dir = rz_path_system_sdb_types();
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
 	rz_type_db_reload(analysis->typedb, types_dir);
 	free(types_dir);
 }

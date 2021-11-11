@@ -46,7 +46,7 @@ bool test_types_save() {
 	rz_type_db_set_bits(typedb, 64);
 	rz_type_db_set_os(typedb, "linux");
 	// Load predefined types
-	char *types_dir = rz_path_system_sdb_types();
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
 	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
 	free(types_dir);
 
@@ -155,7 +155,7 @@ bool test_types_load() {
 	rz_type_db_set_bits(typedb, 64);
 	rz_type_db_set_os(typedb, "linux");
 	// Load predefined types
-	char *types_dir = rz_path_system_sdb_types();
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
 	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
 	free(types_dir);
 

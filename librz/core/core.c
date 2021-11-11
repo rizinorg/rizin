@@ -2560,7 +2560,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	rz_bp_use(core->dbg->bp, RZ_SYS_ARCH, core->analysis->bits);
 	update_sdb(core);
 	{
-		char *a = rz_path_system_flags();
+		char *a = rz_path_system(RZ_FLAGS);
 		if (a) {
 			char *file = rz_file_path_join(a, "tags.rz");
 			(void)rz_core_run_script(core, file);

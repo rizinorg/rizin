@@ -367,7 +367,7 @@ bool test_pdb_tpi_rust(void) {
 
 bool test_pdb_type_save(void) {
 	RzAnalysis *analysis = rz_analysis_new();
-	char *types_dir = rz_path_system_sdb_types();
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
 	rz_type_db_init(analysis->typedb, types_dir, "x86", 32, "windows");
 	free(types_dir);
 
