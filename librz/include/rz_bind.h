@@ -4,8 +4,9 @@
 #ifndef RZ_BIND_H
 #define RZ_BIND_H
 
-// TODO: move riobind here too?
-// TODO: move rprint here too
+#include <rz_list.h>
+
+// TODO: These binds needs to be removed.
 
 typedef int (*RzCoreCmd)(void *core, const char *cmd);
 typedef int (*RzCoreCmdF)(void *user, const char *fmt, ...);
@@ -23,6 +24,8 @@ typedef void (*RzCoreSeekArchBits)(void *core, ut64 addr);
 typedef int (*RzCoreConfigGetI)(void *core, const char *key);
 typedef const char *(*RzCoreConfigGet)(void *core, const char *key);
 typedef ut64 (*RzCoreNumGet)(void *core, const char *str);
+typedef const char *(*RzCoreConfigGet)(void *core, const char *key);
+typedef const RzList *(*RzCoreFlagsGet)(void *core, ut64 offset);
 
 typedef struct rz_core_bind_t {
 	void *core;
@@ -42,6 +45,7 @@ typedef struct rz_core_bind_t {
 	RzCoreNumGet numGet;
 	RzCoreIsMapped isMapped;
 	RzCoreDebugMapsSync syncDebugMaps;
+	RzCoreFlagsGet flagsGet;
 } RzCoreBind;
 
 #endif

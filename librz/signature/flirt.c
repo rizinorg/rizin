@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
 // SPDX-FileCopyrightText: 2014-2016 jfrankowski <jody.frankowski@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 /* credits to IDA for the flirt tech */
