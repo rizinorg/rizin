@@ -63,7 +63,7 @@ static void flirt_print_indentation(int indent) {
 }
 
 static void flirt_print_node(const RzFlirtNode *node, int indent) {
-	/*Prints a signature node. The output is similar to dumpsig*/
+	/* Prints a signature node. The output is similar to dumpsig */
 	RzListIter *child_it, *module_it;
 	RzFlirtNode *child;
 	RzFlirtModule *module;
