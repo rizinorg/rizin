@@ -482,39 +482,34 @@ RZ_API int rz_line_hist_load(const char *path) {
 	return true;
 }
 
-RZ_API int rz_line_hist_save(const char *file) {
+RZ_API int rz_line_hist_save(const char *path) {
 	FILE *fd;
 	int i, ret = false;
-	if (!file || !*file) {
+	if (RZ_STR_ISEMPTY(path)) {
 		return false;
 	}
-	char *p, *path = rz_str_home(file);
-	if (path != NULL) {
-		p = (char *)rz_str_lastbut(path, RZ_SYS_DIR[0], NULL); // TODO: use fs
-		if (p) {
-			*p = 0;
-			if (!rz_sys_mkdirp(path)) {
-				eprintf("could not save history into %s\n", path);
-				goto end;
-			}
-			*p = RZ_SYS_DIR[0];
+	char *p = (char *)rz_str_lastbut(path, RZ_SYS_DIR[0], NULL); // TODO: use fs
+	if (p) {
+		*p = 0;
+		if (!rz_sys_mkdirp(path)) {
+			eprintf("could not save history into %s\n", path);
+			return false;
 		}
-		fd = rz_sys_fopen(path, "w");
-		if (fd != NULL) {
-			if (I.history.data) {
-				for (i = 0; i < I.history.index; i++) {
-					fputs(I.history.data[i], fd);
-					fputs("\n", fd);
-				}
-				fclose(fd);
-				ret = true;
-			} else {
-				fclose(fd);
+		*p = RZ_SYS_DIR[0];
+	}
+	fd = rz_sys_fopen(path, "w");
+	if (fd != NULL) {
+		if (I.history.data) {
+			for (i = 0; i < I.history.index; i++) {
+				fputs(I.history.data[i], fd);
+				fputs("\n", fd);
 			}
+			fclose(fd);
+			ret = true;
+		} else {
+			fclose(fd);
 		}
 	}
-end:
-	free(path);
 	return ret;
 }
 
