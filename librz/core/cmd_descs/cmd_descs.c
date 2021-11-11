@@ -112,6 +112,7 @@ static const RzCmdDescArg block_decrease_args[2];
 static const RzCmdDescArg block_increase_args[2];
 static const RzCmdDescArg block_flag_args[2];
 static const RzCmdDescArg block_max_args[2];
+static const RzCmdDescArg basefind_compute_args[2];
 static const RzCmdDescArg comment_args[2];
 static const RzCmdDescArg comment_append_args[2];
 static const RzCmdDescArg comment_filelink_args[2];
@@ -1979,6 +1980,22 @@ static const RzCmdDescArg block_max_args[] = {
 static const RzCmdDescHelp block_max_help = {
 	.summary = "Set/Get max block size",
 	.args = block_max_args,
+};
+
+static const char *basefind_compute_pointer_bits_choices[] = { "32", "64", NULL };
+static const RzCmdDescArg basefind_compute_args[] = {
+	{
+		.name = "pointer_bits",
+		.type = RZ_CMD_ARG_TYPE_CHOICES,
+		.optional = true,
+		.choices = basefind_compute_pointer_bits_choices,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp basefind_compute_help = {
+	.summary = "Computes the possibles firmware locations in memory (CPU intensive)",
+	.args = basefind_compute_args,
 };
 
 static const RzCmdDescHelp cmd_cmp_help = {
@@ -8153,6 +8170,10 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *block_max_cd = rz_cmd_desc_argv_new(core->rcmd, b_cd, "bm", rz_block_max_handler, &block_max_help);
 	rz_warn_if_fail(block_max_cd);
+
+	RzCmdDesc *basefind_compute_cd = rz_cmd_desc_argv_state_new(core->rcmd, root_cd, "B", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_basefind_compute_handler, &basefind_compute_help);
+	rz_warn_if_fail(basefind_compute_cd);
+	rz_cmd_desc_set_default_mode(basefind_compute_cd, RZ_OUTPUT_MODE_TABLE);
 
 	RzCmdDesc *cmd_cmp_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "c", rz_cmd_cmp, &cmd_cmp_help);
 	rz_warn_if_fail(cmd_cmp_cd);

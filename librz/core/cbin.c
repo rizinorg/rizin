@@ -9,6 +9,7 @@
 #include <rz_list.h>
 #include <rz_util/rz_time.h>
 #include <rz_basefind.h>
+
 #define is_in_range(at, from, sz) ((at) >= (from) && (at) < ((from) + (sz)))
 
 #define VA_FALSE    0
@@ -326,9 +327,6 @@ RZ_API bool rz_core_bin_apply_info(RzCore *r, RzBinFile *binfile, ut32 mask) {
 	if (mask & RZ_CORE_BIN_ACC_RELOCS && rz_config_get_b(r->config, "bin.relocs")) {
 		rz_core_bin_apply_relocs(r, binfile, va);
 	}
-	//	if (mask & RZ_CORE_BIN_ACC_BASEFIND) {
-	//		rz_core_bin_apply_basefind(r, binfile, va);
-	//	}
 	if (mask & RZ_CORE_BIN_ACC_IMPORTS) {
 		rz_core_bin_apply_imports(r, binfile, va);
 	}
@@ -552,6 +550,11 @@ RZ_API bool rz_core_bin_print(RzCore *core, RzBinFile *bf, ut32 mask, RzCoreBinF
 	if (mask & RZ_CORE_BIN_ACC_SECTIONS_MAPPING) {
 		if (state->mode & (RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_TABLE)) {
 			wrap_mode("sections mapping", RZ_OUTPUT_MODE_TABLE, rz_core_bin_sections_mapping_print(core, bf, st));
+		}
+	}
+	if (mask & RZ_CORE_BIN_ACC_BASEFIND) {
+		if (state->mode & (RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_TABLE)) {
+			wrap_mode("basefind", RZ_OUTPUT_MODE_TABLE, rz_core_bin_basefind_print(core, 32, st));
 		}
 	}
 
@@ -2440,7 +2443,7 @@ cleanup:
 	return result;
 }
 
-
+static void sections_headers_setup(RzCore *core, RzCmdStateOutput *state, RzList *hashes) {
 	RzListIter *iter;
 	char *hashname;
 
@@ -2523,90 +2526,50 @@ err:
 	return res;
 }
 
+RZ_API bool rz_core_bin_cur_section_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, RzList *hashes) {
+	rz_return_val_if_fail(core && state, false);
 
-static int bin_basefind(RzCore *r, PJ *pj, int mode, int va) {
-	//	const char *infile = r->bin->file;
-	//	char *rez = rz_bin_basefind(infile);
-	//	rz_cons_printf("%s\n", rez);
-
-	//	//как в вектро передовать структуры
-	//        RzVector *test_annotations = rz_vector_new(sizeof(RzCodeAnnotation), NULL, NULL);
-	//        RzCodeAnnotation annotation;
-	//        // rz_vector_init (&test_annotations, sizeof (RzCodeAnnotation), NULL, NULL);
-	//        //Code Annotations for a hello world program
-	//        annotation = make_code_annotation(1, 5, RZ_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT, 123, RZ_SYNTAX_HIGHLIGHT_TYPE_DATATYPE);
-	//        rz_vector_push(test_annotations, &annotation); //1
-	//	struct RzBasefinds {
-	//		uint32_t offset;
-	//		uint32_t score;
-	//	};
-	//	struct RzBasefinds basefinds;
-	//	basefinds.offset = 100;
-	//	basefinds.score = 100;
-	//	//rz_cons_printf("%u\n", basefinds.score);
-	//	RzVector *test_basefind = rz_vector_new(sizeof(struct RzBasefinds), NULL, NULL);
-	//	rz_vector_push(test_basefind, &basefinds);
-	//	rz_vector_push(test_basefind, &basefinds);
-	//	rz_vector_push(test_basefind, &basefinds);
-	//
-	//	struct RzBasefinds *it;
-	//	rz_vector_foreach(test_basefind, it) {
-	//		rz_cons_printf("%u %u \n", basefinds.score, basefinds.offset);
-	//	}
-	//
-	//	RzIO *io = rz_io_new();
-
-	// rz_io_write(r->io, (ut8 *)"ZZZZZZZZZZZZZZZ", 15);
-	int fileSize = 100;
-	RzVector *file = rz_vector_new(sizeof(ut8), NULL, NULL);
-	rz_vector_reserve(file, fileSize);
-	ut8 buf[fileSize];
-	//	rz_io_open(r->io, "file", RZ_PERM_R, 0);
-	rz_io_read(r->io, buf, fileSize);
-
-	for (int i = 0; i < sizeof(buf); ++i) {
-		printf("buf file %d\n", buf[i]);
-	}
-
-	//	rz_io_open(io, "malloc://15", RZ_PERM_RW, 0);
-	//	rz_io_write(io, (ut8 *)"ZZZZZZZZZZZZZZZ", 15);
-
-	//	char *in = "jfhjd";
-	//	rz_vector_push(file, &in);
-	//	rz_vector_push(file, &in);
-	//
-	//	ut64 sz = rz_io_size(r->io);
-	//	RzVector f;
-	//	rz_vector_init(&f, sizeof(ut8), NULL, NULL);
-	//
-	//	rz_io_read(r->io, file, rz_io_size(r->io));
-	//	rz_cons_printf("%lld\n", sz);
-	//	rz_cons_printf("%s\n", infile);
+	RzCoreBinFilter filter = { 0 };
+	filter.offset = core->offset;
+	return rz_core_bin_sections_print(core, bf, state, &filter, hashes);
 }
 
-static char *build_hash_string(PJ *pj, int mode, const char *chksum, ut8 *data, ut32 datalen) {
-	char *chkstr = NULL, *aux = NULL, *ret = NULL;
-	RzList *hashlist = rz_str_split_duplist(chksum, ",", true);
-	RzListIter *iter;
-	char *hashname;
-	rz_list_foreach (hashlist, iter, hashname) {
-		chkstr = rz_msg_digest_calculate_small_block_string(hashname, data, datalen, NULL, false);
-		if (!chkstr) {
-			continue;
-		}
-		if (IS_MODE_SIMPLE(mode) || IS_MODE_NORMAL(mode)) {
-			aux = rz_str_newf(iter->n ? "%s " : "%s", chkstr);
-		} else if (IS_MODE_JSON(mode)) {
-			pj_ks(pj, hashname, chkstr);
-		} else {
-			aux = rz_str_newf("%s=%s ", hashname, chkstr);
-		}
-		ret = rz_str_append(ret, aux);
-		free(chkstr);
-		free(aux);
+RZ_API bool rz_core_bin_basefind_print(RzCore *core, ut32 pointer_size, RzCmdStateOutput *state) {
+	rz_return_val_if_fail(core && state, false);
+	RzListIter *it = NULL;
+	RzBaseFindScore *pair = NULL;
+
+	RzList *scores = rz_basefind(core, pointer_size);
+	if (!scores) {
+		return false;
 	}
-	rz_list_free(hashlist);
-	return ret;
+
+	rz_cmd_state_output_array_start(state);
+	rz_cmd_state_output_set_columnsf(state, "nX", "score", "candidate");
+
+	rz_list_foreach (scores, it, pair) {
+		switch (state->mode) {
+		case RZ_OUTPUT_MODE_JSON:
+			pj_o(state->d.pj);
+			pj_kn(state->d.pj, "score", pair->score);
+			pj_kn(state->d.pj, "candidate", pair->candidate);
+			pj_end(state->d.pj);
+			break;
+		case RZ_OUTPUT_MODE_QUIET:
+			rz_cons_printf("%u 0x%" PFMT64x "\n", pair->score, pair->candidate);
+			break;
+		case RZ_OUTPUT_MODE_TABLE:
+			rz_table_add_rowf(state->d.t, "nX", pair->score, pair->candidate);
+			break;
+		default:
+			rz_warn_if_reached();
+			break;
+		}
+	}
+
+	rz_cmd_state_output_array_end(state);
+	rz_list_free(scores);
+	return true;
 }
 
 RZ_API bool rz_core_bin_segments_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, RzCoreBinFilter *filter, RzList *hashes) {
@@ -4403,7 +4366,6 @@ static int bin_versioninfo(RzCore *r, PJ *pj, int mode) {
 	const RzBinInfo *info = rz_bin_get_info(r->bin);
 	if (!info || !info->rclass) {
 		return false;
-
 	}
 	if (!strncmp("pe", info->rclass, 2)) {
 		bin_pe_versioninfo(r, pj, mode);

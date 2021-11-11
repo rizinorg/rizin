@@ -1,4 +1,3 @@
-add_project_arguments('-lstdc++', language: 'c')
 analysis_plugins = [
   '6502',
   '8051',

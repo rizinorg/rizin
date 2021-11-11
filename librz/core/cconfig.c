@@ -3,6 +3,7 @@
 
 #include <rz_core.h>
 #include <rz_cons.h>
+#include <rz_basefind.h>
 
 #include "core_private.h"
 
@@ -3711,6 +3712,13 @@ RZ_API int rz_core_config_init(RzCore *core) {
 
 	/* rap */
 	SETBPREF("rap.loop", "true", "Run rap as a forever-listening daemon (=:9090)");
+
+	/* basefind */
+	SETI("basefind.base.start", RZ_BASEFIND_BASE_MIN_ADDRESS, "Basefind start address value");
+	SETI("basefind.base.end", RZ_BASEFIND_BASE_MAX_ADDRESS, "Basefind end address value");
+	SETI("basefind.base.increase", RZ_BASEFIND_BASE_INCREASE, "Basefind increase address by");
+	SETI("basefind.score.min", RZ_BASEFIND_SCORE_MIN_VALUE, "Basefind min score value to consider it valid");
+	SETI("basefind.string.min", RZ_BASEFIND_STRING_MIN_LENGTH, "Basefind min string size to find to consider it valid");
 
 	/* nkeys */
 	SETPREF("key.s", "", "override step into action");

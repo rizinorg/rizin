@@ -144,6 +144,9 @@ static ut32 actions2mask(ut64 action) {
 	if (action & RZ_BIN_REQ_SECTIONS_MAPPING) {
 		res |= RZ_CORE_BIN_ACC_SECTIONS_MAPPING;
 	}
+	if (action & RZ_BIN_REQ_BASEFIND) {
+		res |= RZ_CORE_BIN_ACC_BASEFIND;
+	}
 	return res;
 }
 
@@ -205,7 +208,7 @@ static int rabin_show_help(int v) {
 			" -w              display try/catch blocks\n"
 			" -x              extract bins contained in file\n"
 			" -X [fmt] [f] .. package in fat or zip the given files and bins contained in file\n"
-			" -Y [path file]  basefind\n"
+			" -Y [fw file]    calculates all the possibles base address candidates of a firmware bin\n"
 			" -z              strings (from data section)\n"
 			" -zz             strings (from raw bins [e bin.rawstr=1])\n"
 			" -zzz            dump raw strings to stdout (for huge files)\n"

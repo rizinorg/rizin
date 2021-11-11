@@ -1,13 +1,13 @@
 project('rizin', 'c',
   version: 'v0.4.0-git',
   license: 'LGPL3',
-  meson_version: '>=0.59.0',
+  meson_version: '>=0.55.0',
   default_options: [
     'buildtype=debugoptimized',
     'b_vscrt=from_buildtype',
   ]
 )
-add_project_arguments('-lstdc++', language: 'c')
+
 py3_exe = import('python').find_installation()
 git_exe = find_program('git', required: false)
 pkgconfig_mod = import('pkgconfig')
