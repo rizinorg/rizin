@@ -54,6 +54,7 @@ RZ_API RZ_OWN char *rz_path_home_fortunes(void);
 RZ_API RZ_OWN char *rz_path_home_flags(void);
 RZ_API RZ_OWN char *rz_path_home_hud(void);
 RZ_API RZ_OWN char *rz_path_home_binrcdir(void);
+RZ_API RZ_OWN char *rz_path_home_wwwroot(void);
 
 #ifdef __cplusplus
 }

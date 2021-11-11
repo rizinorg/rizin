@@ -67,7 +67,6 @@ if get_option('enable_tests')
     'json',
     'list',
     'ovf',
-    'path',
     'pdb',
     'pj',
     'project_migrate',

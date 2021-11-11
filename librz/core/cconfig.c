@@ -3331,7 +3331,11 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("zign.match.refs", "true", "Use references for matching");
 	SETBPREF("zign.match.hash", "true", "Use Hash for matching");
 	SETBPREF("zign.match.types", "false", "Use types for matching");
-	SETBPREF("zign.autoload", "false", "Autoload all zignatures located in " RZ_JOIN_2_PATHS("~", RZ_HOME_ZIGNS));
+	char home_zigns_msg[1024];
+	char *home_zigns_dir = rz_path_home_zigns();
+	rz_strf(home_zigns_msg, "Autoload all zignatures located in %s", home_zigns_dir);
+	free(home_zigns_dir);
+	SETBPREF("zign.autoload", "false", home_zigns_msg);
 	SETPREF("zign.diff.bthresh", "1.0", "Threshold for diffing zign bytes [0, 1] (see zc?)");
 	SETPREF("zign.diff.gthresh", "1.0", "Threshold for diffing zign graphs [0, 1] (see zc?)");
 	SETPREF("zign.threshold", "0.0", "Minimum similarity required for inclusion in zb output");
@@ -3365,9 +3369,13 @@ RZ_API int rz_core_config_init(RzCore *core) {
 #if __ANDROID__
 	SETPREF("dir.projects", "/data/data/org.rizin.rizininstaller/rizin/projects", "Default path for projects");
 #else
-	SETPREF("dir.projects", RZ_JOIN_2_PATHS("~", RZ_HOME_PROJECTS), "Default path for projects");
+	char *projects_dir = rz_path_home_projects();
+	SETPREF("dir.projects", projects_dir, "Default path for projects");
+	free(projects_dir);
 #endif
-	SETCB("dir.zigns", RZ_JOIN_2_PATHS("~", RZ_HOME_ZIGNS), &cb_dirzigns, "Default path for zignatures (see zo command)");
+	home_zigns_dir = rz_path_home_zigns();
+	SETCB("dir.zigns", home_zigns_dir, &cb_dirzigns, "Default path for zignatures (see zo command)");
+	free(home_zigns_dir);
 	SETPREF("stack.reg", "SP", "Which register to use as stack pointer in the visual debug");
 	SETBPREF("stack.bytes", "true", "Show bytes instead of words in stack");
 	SETBPREF("stack.anotated", "false", "Show anotated hexdump in visual debug");
@@ -3508,7 +3516,9 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI("http.maxsize", 0, "Maximum file size for upload");
 	SETPREF("http.index", "index.html", "Main html file to check in directory");
 	SETPREF("http.bind", "localhost", "Server address");
-	SETPREF("http.homeroot", RZ_JOIN_2_PATHS("~", RZ_HOME_WWWROOT), "http home root directory");
+	char *wwwroot_dir = rz_path_home_wwwroot();
+	SETPREF("http.homeroot", wwwroot_dir, "http home root directory");
+	free(wwwroot_dir);
 #if __ANDROID__
 	SETPREF("http.root", "/data/data/org.rizin.rizininstaller/www", "http root directory");
 #else
