@@ -2,7 +2,7 @@ NAME=rzpipe.py - shared memory (shm://)
 FILE=bins/elf/_Exit (42)
 CMDS=<<EOF
 ?q `env~?^ASAN=1$`
-?+ env LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5:/usr/lib/x86_64-linux-gnu/libubsan.so.1
+?+ env LD_PRELOAD=/usr/lib/llvm-11/lib/clang/11.0.0/lib/linux/libclang_rt.asan-x86_64.so
 #!pipe python3 scripts/shared_memory.py
 EOF
 EXPECT=<<EOF
