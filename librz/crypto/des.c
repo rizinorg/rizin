@@ -7,6 +7,7 @@
 #include <rz_util.h>
 
 #define ROTL28(rs, sh) ((((rs) << (sh)) | ((rs) >> (28 - (sh)))) & 0x0FFFFFFF) // left 28
+#define ROTR28(rs, sh) ((((rs) >> (sh)) | ((rs) << (28 - (sh)))) & 0x0FFFFFFF) // right 28
 #define ROTL(rs, sh)   (((rs) << (sh)) | ((rs) >> (32 - (sh)))) // left 32
 #define ROTR(rs, sh)   (((rs) >> (sh)) | ((rs) << (32 - (sh)))) // right 32
 
@@ -99,10 +100,20 @@ static const ut32 sbox8[64] = {
 	0x10041040, 0x00041000, 0x00041000, 0x00001040, 0x00001040, 0x00040040, 0x10000000, 0x10041000
 };
 
+static const st8 pc1_inv[64] = {
+	-1, 0x3b, 0x33, 0x2b, 0x03, 0x0b, 0x13, 0x1b,
+	-1, 0x3a, 0x32, 0x2a, 0x02, 0x0a, 0x12, 0x1a,
+	-1, 0x39, 0x31, 0x29, 0x01, 0x09, 0x11, 0x19,
+	-1, 0x38, 0x30, 0x28, 0x00, 0x08, 0x10, 0x18,
+	-1, 0x37, 0x2f, 0x27, 0x23, 0x07, 0x0f, 0x17,
+	-1, 0x36, 0x2e, 0x26, 0x22, 0x06, 0x0e, 0x16,
+	-1, 0x35, 0x2d, 0x25, 0x21, 0x05, 0x0d, 0x15,
+	-1, 0x34, 0x2c, 0x24, 0x20, 0x04, 0x0c, 0x14
+};
+
+/// Apply PC-1
 RZ_API void rz_des_permute_key(ut32 *keylo, ut32 *keyhi) {
-	if (!keylo || !keyhi) {
-		return;
-	}
+	rz_return_if_fail(keylo && keyhi);
 	ut32 perm = ((*keylo >> 4) ^ *keyhi) & 0x0F0F0F0F;
 	*keyhi ^= perm;
 	*keylo ^= (perm << 4);
@@ -132,11 +143,33 @@ RZ_API void rz_des_permute_key(ut32 *keylo, ut32 *keyhi) {
 	*keyhi = perm >> 4;
 }
 
-// first permutation of the block
-RZ_API void rz_des_permute_block0(ut32 *blocklo, ut32 *blockhi) {
-	if (!blocklo || !blockhi) {
-		return;
+/**
+ * \brief Inverse of rz_des_permute_key (PC-1)
+ *
+ * This is usually not necessary when executing DES.
+ * Keep in mind that PC-1 is not injective on arbitrary values, as it drops the parity bits.
+ * This inverse function simply sets the positions of those to 0.
+ */
+RZ_API void rz_des_permute_key_inv(ut32 *keylo, ut32 *keyhi) {
+	rz_return_if_fail(keylo && keyhi);
+	ut64 in = *keylo | ((ut64)*keyhi << 32);
+	ut64 out = 0;
+	for (size_t i = 0; i < 64; i++) {
+		st8 p = pc1_inv[i];
+		if (p < 0) {
+			continue;
+		}
+		if (in & ((ut64)1 << p)) {
+			out |= ((ut64)1 << i);
+		}
 	}
+	*keylo = out & 0xffffffff;
+	*keyhi = out >> 32;
+}
+
+/// first permutation of the input block
+RZ_API void rz_des_permute_block0(ut32 *blocklo, ut32 *blockhi) {
+	rz_return_if_fail(blocklo && blockhi);
 	ut32 lo = *blocklo;
 	ut32 hi = *blockhi;
 	ut32 perm = ((lo >> 4) ^ hi) & 0x0F0F0F0F;
@@ -158,11 +191,9 @@ RZ_API void rz_des_permute_block0(ut32 *blocklo, ut32 *blockhi) {
 	*blockhi = ROTL(hi, 1);
 }
 
-// last permutation of the block
+/// last permutation of the block
 RZ_API void rz_des_permute_block1(ut32 *blocklo, ut32 *blockhi) {
-	if (!blocklo || !blockhi) {
-		return;
-	}
+	rz_return_if_fail(blocklo && blockhi);
 	ut32 lo = *blocklo;
 	ut32 hi = *blockhi;
 	lo = ROTR(lo, 1);
@@ -186,23 +217,35 @@ RZ_API void rz_des_permute_block1(ut32 *blocklo, ut32 *blockhi) {
 	*blockhi = hi;
 }
 
-// keylo & keyhi are the derivated round keys
-// deskeylo & deskeyhi are the des derivated keys
-RZ_API void rz_des_round_key(int i, ut32 *keylo, ut32 *keyhi, ut32 *deskeylo, ut32 *deskeyhi) {
-	if (!keylo || !keyhi || !deskeylo || !deskeyhi) {
-		return;
-	}
-	if (i == 0 || i == 1 || i == 8 || i == 15) {
-		*deskeylo = ROTL28(*deskeylo, 1);
-		*deskeyhi = ROTL28(*deskeyhi, 1);
+/**
+ * \brief Apply the respective shift to the key for a given round
+ * \param i number of the round
+ * \param decrypt If false, the specified left-shift is executed. If true, the inverse is applied.
+ */
+RZ_API void rz_des_shift_key(int i, bool decrypt, RZ_INOUT ut32 *deskeylo, RZ_INOUT ut32 *deskeyhi) {
+	rz_return_if_fail(deskeylo && deskeyhi);
+	if (!decrypt) {
+		if (i == 0 || i == 1 || i == 8 || i == 15) {
+			*deskeylo = ROTL28(*deskeylo, 1);
+			*deskeyhi = ROTL28(*deskeyhi, 1);
+		} else {
+			*deskeylo = ROTL28(*deskeylo, 2);
+			*deskeyhi = ROTL28(*deskeyhi, 2);
+		}
 	} else {
-		*deskeylo = ROTL28(*deskeylo, 2);
-		*deskeyhi = ROTL28(*deskeyhi, 2);
+		if (i == 0 || i == 1 || i == 8 || i == 15) {
+			*deskeylo = ROTR28(*deskeylo, 1);
+			*deskeyhi = ROTR28(*deskeyhi, 1);
+		} else {
+			*deskeylo = ROTR28(*deskeylo, 2);
+			*deskeyhi = ROTR28(*deskeyhi, 2);
+		}
 	}
+}
 
-	ut32 deslo = *deskeylo;
-	ut32 deshi = *deskeyhi;
-
+/// PC-2 permutation of a key
+RZ_API void rz_des_pc2(RZ_OUT ut32 *keylo, RZ_OUT ut32 *keyhi, RZ_IN ut32 deslo, RZ_IN ut32 deshi) {
+	rz_return_if_fail(keylo && keyhi && deslo && deshi);
 	*keylo = ((deslo << 4) & 0x24000000) | ((deslo << 28) & 0x10000000) |
 		((deslo << 14) & 0x08000000) | ((deslo << 18) & 0x02080000) |
 		((deslo << 6) & 0x01000000) | ((deslo << 9) & 0x00200000) |
@@ -228,10 +271,26 @@ RZ_API void rz_des_round_key(int i, ut32 *keylo, ut32 *keyhi, ut32 *deskeylo, ut
 		((deshi << 2) & 0x00000004) | ((deshi >> 21) & 0x00000002);
 }
 
-RZ_API void rz_des_round(ut32 *buflo, ut32 *bufhi, ut32 *roundkeylo, ut32 *roundkeyhi) {
-	if (!buflo || !bufhi || !roundkeylo || !roundkeyhi) {
-		return;
-	}
+/**
+ * \brief Calculate the final key to be used in a given round
+ * \param i number of the round
+ * \param keylo derivated round key (output)
+ * \param keyhi derivated round key (output)
+ * \param deskeylo des derivated key (input+modified)
+ * \param deskeyhi des derivated key (input+modified)
+ *
+ * This function should be applied successively with i from 0 to 15 as
+ * deskeylo/deskeyhi is left-shifted in each iteration.
+ */
+RZ_API void rz_des_round_key(int i, RZ_OUT ut32 *keylo, RZ_OUT ut32 *keyhi, RZ_INOUT ut32 *deskeylo, RZ_INOUT ut32 *deskeyhi) {
+	rz_return_if_fail(keylo && keyhi && deskeylo && deskeyhi);
+	rz_des_shift_key(i, false, deskeylo, deskeyhi);
+	rz_des_pc2(keylo, keyhi, *deskeylo, *deskeyhi);
+}
+
+/// Apply the cipher function (f)
+RZ_API void rz_des_round(RZ_OUT ut32 *buflo, RZ_OUT ut32 *bufhi, RZ_IN ut32 *roundkeylo, RZ_IN ut32 *roundkeyhi) {
+	rz_return_if_fail(buflo && bufhi && roundkeylo && roundkeyhi);
 	ut32 lo = *buflo;
 	ut32 hi = *bufhi;
 	ut32 perm = hi ^ (*roundkeylo);
