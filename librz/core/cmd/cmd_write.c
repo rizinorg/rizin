@@ -1321,27 +1321,13 @@ RZ_IPI int rz_wu_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-RZ_IPI int rz_wr_handler_old(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	int wseek = rz_config_get_i(core->config, "cfg.wseek");
-	ut64 off = rz_num_math(core->num, input);
-	int len = (int)off;
-	if (len > 0) {
-		ut8 *buf = malloc(len);
-		if (buf != NULL) {
-			int i;
-			rz_num_irand();
-			for (i = 0; i < len; i++)
-				buf[i] = rz_num_rand(256);
-			if (!rz_core_write_at(core, core->offset, buf, len)) {
-				cmd_write_fail(core);
-			}
-			WSEEK(core, len);
-			free(buf);
-		} else
-			eprintf("Cannot allocate %d byte(s)\n", len);
+RZ_IPI RzCmdStatus rz_write_random_handler(RzCore *core, int argc, const char **argv) {
+	if (!rz_num_is_valid_input(core->num, argv[1])) {
+		RZ_LOG_ERROR("Invalid length '%s'\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
 	}
-	return 0;
+	size_t length = rz_num_math(core->num, argv[1]);
+	return rz_core_write_random_at(core, core->offset, length) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
 RZ_IPI int rz_wA_handler_old(void *data, const char *input) {
@@ -1969,9 +1955,6 @@ RZ_IPI int rz_cmd_write(void *data, const char *input) {
 		break;
 	case 'u': // "wu"
 		rz_wu_handler_old(core, input + 1);
-		break;
-	case 'r': // "wr"
-		rz_wr_handler_old(core, input + 1);
 		break;
 	case 'A': // "wA"
 		rz_wA_handler_old(core, input + 1);

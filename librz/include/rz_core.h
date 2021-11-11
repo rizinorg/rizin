@@ -577,6 +577,7 @@ RZ_API bool rz_core_write_string_at(RzCore *core, ut64 addr, RZ_NONNULL const ch
 RZ_API bool rz_core_write_length_string_at(RzCore *core, ut64 addr, const char *s);
 RZ_API bool rz_core_write_base64d_at(RzCore *core, ut64 addr, RZ_NONNULL const char *s);
 RZ_API bool rz_core_write_base64_at(RzCore *core, ut64 addr, RZ_NONNULL const char *s);
+RZ_API bool rz_core_write_random_at(RzCore *core, ut64 addr, size_t len);
 RZ_API int rz_core_write_op(RzCore *core, const char *arg, char op);
 RZ_API ut8 *rz_core_transform_op(RzCore *core, const char *arg, char op);
 RZ_API ut32 rz_core_file_cur_fd(RzCore *core);

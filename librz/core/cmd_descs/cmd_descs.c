@@ -293,6 +293,7 @@ static const RzCmdDescArg write_8_inc_args[2];
 static const RzCmdDescArg write_8_dec_args[2];
 static const RzCmdDescArg write_base64_decode_args[2];
 static const RzCmdDescArg write_base64_encode_args[2];
+static const RzCmdDescArg write_random_args[2];
 static const RzCmdDescArg write_from_io_args[3];
 static const RzCmdDescArg write_from_io_xchg_args[3];
 static const RzCmdDescArg write_from_file_args[4];
@@ -6575,8 +6576,18 @@ static const RzCmdDescHelp wu_handler_old_help = {
 	.summary = "Apply unified hex patch (see output of cu)",
 };
 
-static const RzCmdDescHelp wr_handler_old_help = {
-	.summary = "Write <num> random bytes",
+static const RzCmdDescArg write_random_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_random_help = {
+	.summary = "Write <len> random bytes",
+	.args = write_random_args,
 };
 
 static const RzCmdDescHelp wA_handler_old_help = {
@@ -9238,8 +9249,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *wu_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "wu", rz_wu_handler_old, &wu_handler_old_help);
 	rz_warn_if_fail(wu_handler_old_cd);
 
-	RzCmdDesc *wr_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "wr", rz_wr_handler_old, &wr_handler_old_help);
-	rz_warn_if_fail(wr_handler_old_cd);
+	RzCmdDesc *write_random_cd = rz_cmd_desc_argv_new(core->rcmd, w_cd, "wr", rz_write_random_handler, &write_random_help);
+	rz_warn_if_fail(write_random_cd);
 
 	RzCmdDesc *wA_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "wA", rz_wA_handler_old, &wA_handler_old_help);
 	rz_warn_if_fail(wA_handler_old_cd);
