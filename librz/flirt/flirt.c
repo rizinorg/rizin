@@ -1188,12 +1188,7 @@ RZ_API RZ_OWN RzFlirtNode *rz_flirt_parse_buffer(RZ_NONNULL RzBuffer *flirt_buf)
 	idasig_v8_v9_t *v8_v9 = NULL;
 	idasig_v10_t *v10 = NULL;
 
-	ParseStatus ps = {
-		buffer : NULL,
-		eof : false,
-		error : false,
-		version : 0,
-	};
+	ParseStatus ps = { 0 };
 
 	if (!(ps.version = rz_flirt_get_version(flirt_buf))) {
 		goto exit;
