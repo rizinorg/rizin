@@ -71,24 +71,14 @@
 #define RZ_SDB_REG            RZ_JOIN_2_PATHS(RZ_SDB, "reg")
 #define RZ_SDB_MAGIC          RZ_JOIN_2_PATHS(RZ_SDB, "magic")
 #define RZ_SDB_FORMAT         RZ_JOIN_2_PATHS(RZ_SDB, "format")
+#define RZ_PDB                RZ_JOIN_2_PATHS(RZ_DATDIR_RZ, "pdb")
+#define RZ_PROJECTS           RZ_JOIN_2_PATHS(RZ_DATDIR_RZ, "projects")
+#define RZ_BINRC              RZ_JOIN_2_PATHS(RZ_DATDIR_RZ, "rc.d")
 
 #define RZ_HOME_CONFIGDIR RZ_JOIN_2_PATHS(".config", "rizin")
+#define RZ_HOME_PREFIX    ".local"
 #define RZ_HOME_DATADIR   RZ_JOIN_3_PATHS(".local", "share", "rizin")
 #define RZ_HOME_CACHEDIR  RZ_JOIN_2_PATHS(".cache", "rizin")
-
-#define RZ_HOME_THEMES      RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "cons")
-#define RZ_HOME_PLUGINS     RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "plugins")
-#define RZ_HOME_ZIGNS       RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "zigns")
-#define RZ_HOME_PDB         RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "pdb")
-#define RZ_HOME_PROJECTS    RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "projects")
-#define RZ_HOME_WWWROOT     RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "www")
-#define RZ_HOME_SDB         RZ_HOME_DATADIR
-#define RZ_HOME_SDB_TYPES   RZ_JOIN_2_PATHS(RZ_HOME_SDB, "types")
-#define RZ_HOME_SDB_OPCODES RZ_JOIN_2_PATHS(RZ_HOME_SDB, "opcodes")
-#define RZ_HOME_SDB_MAGIC   RZ_JOIN_2_PATHS(RZ_HOME_SDB, "magic")
-#define RZ_HOME_SDB_FORMAT  RZ_JOIN_2_PATHS(RZ_HOME_SDB, "format")
-#define RZ_HOME_HUD         RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "hud")
-#define RZ_HOME_BINRC       RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "rc.d")
 
 #define RZ_HOME_HISTORY RZ_JOIN_2_PATHS(RZ_HOME_CACHEDIR, "history")
 

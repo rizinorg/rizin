@@ -146,36 +146,69 @@ static int main_help(int line) {
 		char *datahome = rz_path_home_data();
 		char *incdir = rz_path_incdir();
 		char *libdir = rz_path_libdir();
+		char *home_rc = rz_path_home_rc();
+		char *home_config_rc = rz_path_home_config_rc();
+		char *home_config_rcdir = rz_path_home_config_rcdir();
+		char *system_rc = rz_path_system_rc();
+		char *binrc_dir = rz_path_home_binrcdir();
+		char *binrc = rz_file_path_join(binrc_dir, "bin-<format>");
+		char *system_magic = rz_path_system_sdb_magic();
+		char *home_plugins = rz_path_home_plugins();
+		char *system_plugins = rz_path_system_plugins();
+		char *home_zigns = rz_path_home_zigns();
 		char *dirPrefix = rz_path_prefix(NULL);
+		// clang-format off
 		printf(
 			"Scripts:\n"
-			" system       ${RZ_PREFIX}/share/rizin/rizinrc\n"
-			" user         ~/.rizinrc " RZ_JOIN_2_PATHS("~", RZ_HOME_CONFIG_RC) " (and " RZ_JOIN_3_PATHS("~", RZ_HOME_CONFIG_RC_DIR, "") ")\n"
-																		     " file         ${filename}.rz\n"
-																		     "Plugins:\n"
-																		     " binrc        " RZ_JOIN_4_PATHS("~", RZ_HOME_BINRC, "bin-<format>", "") " (elf, elf64, mach0, ..)\n"
-																											      " RZ_USER_PLUGINS " RZ_JOIN_2_PATHS("~", RZ_HOME_PLUGINS) "\n"
-																																			" RZ_LIBR_PLUGINS " RZ_JOIN_2_PATHS("%s", RZ_PLUGINS) "\n"
-																																									      " RZ_USER_ZIGNS " RZ_JOIN_2_PATHS("~", RZ_HOME_ZIGNS) "\n"
-																																																    "Environment:\n"
-																																																    " RZ_CFG_OLDSHELL sets cfg.oldshell=true\n"
-																																																    " RZ_DEBUG      if defined, show error messages and crash signal\n"
-																																																    " RZ_DEBUG_ASSERT=1 set a breakpoint when hitting an assert\n"
-																																																    " RZ_MAGICPATH " RZ_JOIN_2_PATHS("%s", RZ_SDB_MAGIC) "\n"
-																																																							 " RZ_NOPLUGINS do not load rizin shared plugins\n"
-																																																							 " RZ_RCFILE    ~/.rizinrc (user preferences, batch script)\n" // TOO GENERIC
-																																																							 " RZ_RDATAHOME %s\n" // TODO: rename to RHOME RZHOME?
-																																																							 " RZ_VERSION   contains the current version of rizin\n"
-																																																							 "Paths:\n"
-																																																							 " RZ_PREFIX    %s\n"
-																																																							 " RZ_INCDIR    %s\n"
-																																																							 " RZ_LIBDIR    %s\n"
-																																																							 " RZ_LIBEXT    " RZ_LIB_EXT "\n",
-			dirPrefix, datahome, dirPrefix, dirPrefix, incdir, libdir);
-		free(dirPrefix);
-		free(libdir);
-		free(incdir);
+			" system       %s\n"
+			" user         %s %s (and %s)\n"
+			" file         ${filename}.rz\n"
+			"Plugins:\n"
+			" binrc        %s (elf, elf64, mach0, ..)\n"
+			" RZ_USER_PLUGINS %s\n"
+			" RZ_LIBR_PLUGINS %s\n"
+			" RZ_USER_ZIGNS %s\n"
+			"Environment:\n"
+			" RZ_CFG_OLDSHELL sets cfg.oldshell=true\n"
+			" RZ_DEBUG      if defined, show error messages and crash signal\n"
+			" RZ_DEBUG_ASSERT=1 set a breakpoint when hitting an assert\n"
+			" RZ_MAGICPATH %s\n"
+			" RZ_NOPLUGINS do not load rizin shared plugins\n"
+			" RZ_RCFILE    %s (user preferences, batch script)\n"
+			" RZ_RDATAHOME %s\n"
+			" RZ_VERSION   contains the current version of rizin\n"
+			"Paths:\n"
+			" RZ_PREFIX    %s\n"
+			" RZ_INCDIR    %s\n"
+			" RZ_LIBDIR    %s\n"
+			" RZ_LIBEXT    " RZ_LIB_EXT "\n",
+			system_rc,
+			home_rc, home_config_rc, home_config_rcdir,
+			home_plugins,
+			system_plugins,
+			home_zigns,
+			binrc,
+			system_magic,
+			home_rc,
+			datahome,
+			dirPrefix,
+			incdir,
+			libdir);
+		// clang-format on
 		free(datahome);
+		free(incdir);
+		free(libdir);
+		free(home_rc);
+		free(home_config_rc);
+		free(home_config_rcdir);
+		free(system_rc);
+		free(binrc_dir);
+		free(binrc);
+		free(system_magic);
+		free(home_plugins);
+		free(system_plugins);
+		free(home_zigns);
+		free(dirPrefix);
 	}
 	return 0;
 }

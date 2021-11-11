@@ -250,82 +250,89 @@ RZ_API RZ_OWN char *rz_path_home_config_rcdir(void) {
  * \brief Return the home directory for Rizin plugins
  */
 RZ_API RZ_OWN char *rz_path_home_plugins(void) {
-	return rz_path_home(RZ_HOME_PLUGINS);
+	return rz_path_home(RZ_HOME_PREFIX RZ_SYS_DIR RZ_PLUGINS);
 }
 
 /**
  * \brief Return the home directory for PDB files
  */
 RZ_API RZ_OWN char *rz_path_home_pdb(void) {
-	return rz_path_home(RZ_HOME_PDB);
+	return rz_path_home(RZ_HOME_PREFIX RZ_SYS_DIR RZ_PDB);
 }
 
 /**
  * \brief Return the home directory for project files
  */
 RZ_API RZ_OWN char *rz_path_home_projects(void) {
-	return rz_path_home(RZ_HOME_PROJECTS);
+	return rz_path_home(RZ_HOME_PREFIX RZ_SYS_DIR RZ_PROJECTS);
 }
 
 /**
  * \brief Return the home directory for SDB files
  */
 RZ_API RZ_OWN char *rz_path_home_sdb(void) {
-	return rz_path_home(RZ_HOME_SDB);
+	return rz_path_home(RZ_HOME_PREFIX RZ_SYS_DIR RZ_SDB);
 }
 
 /**
  * \brief Return the home directory for types files
  */
 RZ_API RZ_OWN char *rz_path_home_sdb_types(void) {
-	return rz_path_home(RZ_HOME_SDB_TYPES);
+	return rz_path_home(RZ_HOME_PREFIX RZ_SYS_DIR RZ_SDB_TYPES);
 }
 
 /**
  * \brief Return the home directory for opcodes files
  */
 RZ_API RZ_OWN char *rz_path_home_sdb_opcodes(void) {
-	return rz_path_home(RZ_HOME_SDB_OPCODES);
+	return rz_path_home(RZ_HOME_PREFIX RZ_SYS_DIR RZ_SDB_OPCODES);
 }
 
 /**
  * \brief Return the home directory for SDB magic files
  */
 RZ_API RZ_OWN char *rz_path_home_sdb_magic(void) {
-	return rz_path_home(RZ_HOME_SDB_MAGIC);
+	return rz_path_home(RZ_HOME_PREFIX RZ_SYS_DIR RZ_SDB_MAGIC);
 }
 
 /**
  * \brief Return the home directory for SDB format files
  */
 RZ_API RZ_OWN char *rz_path_home_sdb_format(void) {
-	return rz_path_home(RZ_HOME_SDB_FORMAT);
+	return rz_path_home(RZ_HOME_PREFIX RZ_SYS_DIR RZ_SDB_FORMAT);
 }
 
 /**
  * \brief Return the home directory for zignatures files
  */
 RZ_API RZ_OWN char *rz_path_home_zigns(void) {
-	return rz_path_home(RZ_HOME_ZIGNS);
+	return rz_path_home(RZ_HOME_PREFIX RZ_SYS_DIR RZ_ZIGNS);
 }
 
 /**
  * \brief Return the home directory for themes files
  */
 RZ_API RZ_OWN char *rz_path_home_themes(void) {
-	return rz_path_home(RZ_HOME_THEMES);
+	return rz_path_home(RZ_HOME_PREFIX RZ_SYS_DIR RZ_THEMES);
 }
 
 /**
  * \brief Return the home directory for HUD files
  */
 RZ_API RZ_OWN char *rz_path_home_hud(void) {
-	return rz_path_home(RZ_HOME_HUD);
+	return rz_path_home(RZ_HOME_PREFIX RZ_SYS_DIR RZ_HUD);
 }
 
 /**
  * \brief Return the home directory for binrc files
  */
 RZ_API RZ_OWN char *rz_path_home_binrcdir(void) {
-	return rz_path_home(RZ_HOME_BINRC);
+	return rz_path_home(RZ_HOME_PREFIX RZ_SYS_DIR RZ_BINRC);
+}
+
+/**
+ * \brief Return the home directory for www files
+ */
+RZ_API RZ_OWN char *rz_path_home_wwwroot(void) {
+	return rz_path_home(RZ_HOME_PREFIX RZ_SYS_DIR RZ_WWWROOT);
 }
