@@ -900,3 +900,38 @@ err:
 	free(buf);
 	return res;
 }
+
+/**
+ * \brief Write \p len random bytes at address \p addr
+ *
+ * \param core RzCore reference
+ * \param addr Address where to write the data
+ * \param len Length of the random data to write
+ */
+RZ_API bool rz_core_write_random_at(RzCore *core, ut64 addr, size_t len) {
+	rz_return_val_if_fail(core, false);
+
+	bool res = false;
+	ut8 *buf = malloc(len);
+	if (!buf) {
+		return false;
+	}
+
+	rz_num_irand();
+	for (int i = 0; i < len; i++) {
+		buf[i] = rz_num_rand(256);
+	}
+
+	if (!rz_core_write_at(core, addr, buf, len)) {
+		RZ_LOG_ERROR("Could not write random data of length %zd at %" PFMT64x "\n", len, addr);
+		goto err;
+	}
+	if (rz_config_get_i(core->config, "cfg.wseek")) {
+		rz_core_seek_delta(core, len, true);
+	}
+	res = true;
+
+err:
+	free(buf);
+	return res;
+}

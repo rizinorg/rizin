@@ -272,9 +272,11 @@ commands:
     summary: Apply unified hex patch (see output of cu)
     type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: wr
-    cname: wr_handler_old
-    summary: Write <num> random bytes
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    cname: write_random
+    summary: Write <len> random bytes
+    args:
+      - name: len
+        type: RZ_CMD_ARG_TYPE_RZNUM
   - name: wA
     cname: wA_handler_old
     summary: Alter/modify opcode at current seek (see wA?)
