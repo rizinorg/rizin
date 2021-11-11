@@ -215,3 +215,14 @@ RZ_IPI RzCmdStatus rz_cmd_shell_clear_handler(RzCore *core, int argc, const char
 	rz_cons_clear00();
 	return RZ_CMD_STATUS_OK;
 }
+
+RZ_IPI RzCmdStatus rz_cmd_shell_which_handler(RzCore *core, int argc, const char **argv) {
+	char *solved = rz_file_path(argv[1]);
+	if (!solved) {
+		RZ_LOG_ERROR("Could not get the full path of '%s'\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cons_println(solved);
+	free(solved);
+	return RZ_CMD_STATUS_OK;
+}

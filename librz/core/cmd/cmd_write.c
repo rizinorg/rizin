@@ -1110,20 +1110,6 @@ RZ_IPI int rz_w6_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-RZ_IPI int rz_wh_handler_old(void *data, const char *input) {
-	char *p = strchr(input, ' ');
-	if (p) {
-		while (*p == ' ')
-			p++;
-		p = rz_file_path(p);
-		if (p) {
-			rz_cons_println(p);
-			free(p);
-		}
-	}
-	return 0;
-}
-
 RZ_IPI int rz_we_handler_old(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	ut64 addr = 0, len = 0, b_size = 0;
@@ -1946,9 +1932,6 @@ RZ_IPI int rz_cmd_write(void *data, const char *input) {
 		break;
 	case '6': // "w6"
 		rz_w6_handler_old(core, input + 1);
-		break;
-	case 'h': // "wh"
-		rz_wh_handler_old(core, input + 1);
 		break;
 	case 'e': // "we"
 		rz_we_handler_old(core, input + 1);
