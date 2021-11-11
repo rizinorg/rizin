@@ -15,7 +15,6 @@ rz_core_sources = [
   'cdebug.c',
   'cdwarf.c',
   'cfile.c',
-  'cflirt.c',
   'chash.c',
   'cheap.c',
   'cil.c',
@@ -26,6 +25,7 @@ rz_core_sources = [
   'cparser.c',
   'cpdb.c',
   'cplugin.c',
+  'csign.c',
   'ctypes.c',
   'cvfile.c',
   'disasm.c',
@@ -107,7 +107,7 @@ rz_core_deps = [
   rz_asm_dep,
   rz_egg_dep,
   rz_search_dep,
-  rz_flirt_dep,
+  rz_sign_dep,
   rz_il_dep,
   rz_analysis_dep,
   rz_type_dep,
@@ -168,7 +168,7 @@ pkgconfig_mod.generate(
     'rz_bin',
     'rz_asm',
     'rz_bp',
-    'rz_flirt',
+    'rz_sign',
     'rz_il'
   ],
   description: 'rizin foundation libraries'

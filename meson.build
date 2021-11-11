@@ -576,7 +576,7 @@ if host_machine.system() == 'windows'
     build_root / 'librz' / 'bp',
     build_root / 'librz' / 'config',
     build_root / 'librz' / 'cons',
-    build_root / 'librz' / 'flirt',
+    build_root / 'librz' / 'signature',
     build_root / 'librz' / 'core',
     build_root / 'librz' / 'demangler',
     build_root / 'librz' / 'diff',
@@ -624,7 +624,7 @@ subdir('librz/lang')
 subdir('librz/asm')
 subdir('librz/il')
 subdir('librz/analysis')
-subdir('librz/flirt')
+subdir('librz/signature')
 subdir('librz/egg')
 subdir('librz/debug')
 subdir('librz/core')
@@ -692,7 +692,7 @@ if meson.is_subproject()
       rz_socket_dep,
       rz_syscall_dep,
       rz_il_dep,
-      rz_flirt_dep,
+      rz_sign_dep,
       rz_type_dep,
       rz_diff_dep,
       rz_demangler_dep,

@@ -2,7 +2,9 @@
 // SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
 // SPDX-FileCopyrightText: 2014-2016 jfrankowski <jody.frankowski@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_core.h>
+#include <rz_sign.h>
 #include <rz_flirt.h>
 
 static void flirt_print_module(const RzFlirtModule *module) {

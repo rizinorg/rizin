@@ -104,6 +104,9 @@ typedef struct {
 } RzSignCloseMatch;
 
 #ifdef RZ_API
+
+RZ_API void rz_sign_analysis_set_hooks(RZ_NONNULL RzAnalysis *analysis);
+
 RZ_API bool rz_sign_add_bytes(RzAnalysis *a, const char *name, ut64 size, const ut8 *bytes, const ut8 *mask);
 RZ_API bool rz_sign_add_analysis(RzAnalysis *a, const char *name, ut64 size, const ut8 *bytes, ut64 at);
 RZ_API bool rz_sign_add_graph(RzAnalysis *a, const char *name, RzSignGraph graph);

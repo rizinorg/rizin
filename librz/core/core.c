@@ -2460,6 +2460,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->rasm->num = core->num;
 	core->rasm->core = core;
 	core->analysis = rz_analysis_new();
+	rz_sign_analysis_set_hooks(core->analysis);
 	core->gadgets = rz_list_newf((RzListFree)rz_core_gadget_free);
 	core->analysis->ev = core->ev;
 	core->analysis->read_at = rz_core_analysis_read_at;

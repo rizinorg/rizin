@@ -30,7 +30,6 @@ rz_analysis_sources = [
   'rtti.c',
   'rtti_msvc.c',
   'rtti_itanium.c',
-  'sign.c',
   'switch.c',
   'dwarf_process.c',
   'value.c',

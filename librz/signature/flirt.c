@@ -102,8 +102,6 @@
 #include <rz_flirt.h>
 #include <signal.h>
 
-RZ_LIB_VERSION(rz_flirt);
-
 #define DEBUG 0
 
 /*arch flags*/

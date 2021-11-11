@@ -1344,6 +1344,7 @@ Sdb *sign_ref_db() {
 
 bool test_analysis_sign_save() {
 	RzAnalysis *analysis = rz_analysis_new();
+	rz_sign_analysis_set_hooks(analysis);
 
 	RzSignItem *item = rz_sign_item_new();
 	item->name = strdup("sym.mahboi");
@@ -1405,6 +1406,8 @@ bool test_analysis_sign_save() {
 
 bool test_analysis_sign_load() {
 	RzAnalysis *analysis = rz_analysis_new();
+	rz_sign_analysis_set_hooks(analysis);
+
 	Sdb *db = sign_ref_db();
 	bool succ = rz_serialize_analysis_sign_load(db, analysis, NULL);
 	sdb_free(db);
