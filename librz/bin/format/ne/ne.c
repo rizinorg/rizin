@@ -53,7 +53,7 @@ static char *__read_nonnull_str_at(RzBuffer *buf, ut64 offset) {
 }
 
 static char *__func_name_from_ord(char *module, ut16 ordinal) {
-	char *formats_dir = rz_path_system_sdb_format();
+	char *formats_dir = rz_path_system(RZ_SDB_FORMAT);
 	char *path = rz_str_newf(RZ_JOIN_3_PATHS("%s", "dll", "%s.sdb"), formats_dir, module);
 	free(formats_dir);
 	char *ord = rz_str_newf("%d", ordinal);

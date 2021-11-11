@@ -9,7 +9,7 @@ static const char *fortunes[] = {
 
 static char *rizin_fortune_file(const char *type) {
 	if (!strncmp(type, "tips", 4) || !strncmp(type, "fun", 3)) {
-		char *fortunes_dir = rz_path_system_fortunes();
+		char *fortunes_dir = rz_path_system(RZ_FORTUNES);
 		char buf[100];
 		char *res = rz_file_path_join(fortunes_dir, rz_strf(buf, "fortunes.%s", type));
 		free(fortunes_dir);

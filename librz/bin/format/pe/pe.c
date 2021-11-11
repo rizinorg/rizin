@@ -500,7 +500,7 @@ static int bin_pe_parse_imports(struct PE_(rz_bin_pe_obj_t) * bin,
 					if (filename && rz_file_exists(filename)) {
 						db = sdb_new(NULL, filename, 0);
 					} else {
-						char *formats_dir = rz_path_system_sdb_format();
+						char *formats_dir = rz_path_system(RZ_SDB_FORMAT);
 						filename = sdb_fmt(RZ_JOIN_3_PATHS("%s", "dll", "%s.sdb"), formats_dir, symdllname);
 						free(formats_dir);
 						if (rz_file_exists(filename)) {

@@ -550,7 +550,7 @@ bool test_analysis_var_save() {
 	RzAnalysis *analysis = rz_analysis_new();
 	rz_analysis_use(analysis, "x86");
 	rz_analysis_set_bits(analysis, 64);
-	char *types_dir = rz_path_system_sdb_types();
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
 	rz_type_db_init(analysis->typedb, types_dir, "x86", 64, "linux");
 	free(types_dir);
 
@@ -611,7 +611,7 @@ bool test_analysis_var_load() {
 	RzAnalysis *analysis = rz_analysis_new();
 	rz_analysis_use(analysis, "x86");
 	rz_analysis_set_bits(analysis, 64);
-	char *types_dir = rz_path_system_sdb_types();
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
 	rz_type_db_init(analysis->typedb, types_dir, "x86", 64, "linux");
 	free(types_dir);
 
@@ -1652,7 +1652,7 @@ bool test_analysis_save() {
 bool test_analysis_load() {
 	RzAnalysis *analysis = rz_analysis_new();
 
-	char *types_dir = rz_path_system_sdb_types();
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
 	rz_type_db_init(analysis->typedb, types_dir, "x86", 64, "linux");
 	free(types_dir);
 

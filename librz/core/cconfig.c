@@ -439,11 +439,11 @@ static bool cb_asmcpu(void *user, void *data) {
 	rz_asm_set_cpu(core->rasm, node->value);
 	rz_config_set(core->config, "analysis.cpu", node->value);
 
-	char *cpus_dir = rz_path_system_sdb_arch_cpus();
+	char *cpus_dir = rz_path_system(RZ_SDB_ARCH_CPUS);
 	rz_arch_profiles_init(core->analysis->arch_target, node->value, rz_config_get(core->config, "asm.arch"), cpus_dir);
 	free(cpus_dir);
 	const char *platform = rz_config_get(core->config, "asm.platform");
-	char *platforms_dir = rz_path_system_sdb_arch_platforms();
+	char *platforms_dir = rz_path_system(RZ_SDB_ARCH_PLATFORMS);
 	rz_arch_platform_init(core->analysis->platform_target, rz_config_get(core->config, "asm.arch"), node->value, platform, platforms_dir);
 	free(platforms_dir);
 
@@ -581,8 +581,8 @@ static bool cb_asmarch(void *user, void *data) {
 			//	node->value, asmos, RZ_LIBDIR"/rizin/"RZ_VERSION"/syscall");
 		}
 		update_syscall_ns(core);
-		char *platforms_dir = rz_path_system_sdb_arch_platforms();
-		char *cpus_dir = rz_path_system_sdb_arch_cpus();
+		char *platforms_dir = rz_path_system(RZ_SDB_ARCH_PLATFORMS);
+		char *cpus_dir = rz_path_system(RZ_SDB_ARCH_CPUS);
 		rz_arch_platform_init(core->analysis->platform_target, node->value, asmcpu, platform, platforms_dir);
 		rz_arch_profiles_init(core->analysis->arch_target, asmcpu, node->value, cpus_dir);
 		free(platforms_dir);
@@ -630,12 +630,12 @@ static bool cb_asmarch(void *user, void *data) {
 	rz_core_analysis_cc_init(core);
 
 	const char *platform = rz_config_get(core->config, "asm.platform");
-	char *regs_dir = rz_path_system_sdb_reg();
+	char *regs_dir = rz_path_system(RZ_SDB_REG);
 	rz_sysreg_set_arch(core->analysis->syscall, node->value, regs_dir);
 	free(regs_dir);
 	if (asmcpu) {
-		char *platforms_dir = rz_path_system_sdb_arch_platforms();
-		char *cpus_dir = rz_path_system_sdb_arch_cpus();
+		char *platforms_dir = rz_path_system(RZ_SDB_ARCH_PLATFORMS);
+		char *cpus_dir = rz_path_system(RZ_SDB_ARCH_CPUS);
 		rz_arch_platform_init(core->analysis->platform_target, node->value, asmcpu->value, platform, platforms_dir);
 		rz_arch_profiles_init(core->analysis->arch_target, asmcpu->value, node->value, cpus_dir);
 		free(cpus_dir);
@@ -825,7 +825,7 @@ static bool cb_asmplatform(void *user, void *data) {
 	}
 	const char *asmcpu = rz_config_get(core->config, "asm.cpu");
 	const char *asmarch = rz_config_get(core->config, "asm.arch");
-	char *platforms_dir = rz_path_system_sdb_arch_platforms();
+	char *platforms_dir = rz_path_system(RZ_SDB_ARCH_PLATFORMS);
 	rz_arch_platform_init(core->analysis->platform_target, asmarch, asmcpu, node->value, platforms_dir);
 	free(platforms_dir);
 	return 1;
@@ -2927,7 +2927,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETPREF("pdb.useragent", "Microsoft-Symbol-Server/6.11.0001.402", "User agent for Microsoft symbol server");
 	SETPREF("pdb.server", "https://msdl.microsoft.com/download/symbols", "Semi-colon separated list of base URLs for Microsoft symbol servers");
 	{
-		char *pdb_path = rz_path_home_pdb();
+		char *pdb_path = rz_path_home(RZ_PDB);
 		SETPREF("pdb.symstore", pdb_path, "Path to downstream symbol store");
 		RZ_FREE(pdb_path);
 	}
@@ -3332,7 +3332,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("zign.match.hash", "true", "Use Hash for matching");
 	SETBPREF("zign.match.types", "false", "Use types for matching");
 	char home_zigns_msg[1024];
-	char *home_zigns_dir = rz_path_home_zigns();
+	char *home_zigns_dir = rz_path_home(RZ_ZIGNS);
 	rz_strf(home_zigns_msg, "Autoload all zignatures located in %s", home_zigns_dir);
 	free(home_zigns_dir);
 	SETBPREF("zign.autoload", "false", home_zigns_msg);
@@ -3350,10 +3350,10 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	/* dir */
 	SETI("dir.depth", 10, "Maximum depth when searching recursively for files");
 	{
-		char *path = rz_path_system_sdb_magic();
+		char *path = rz_path_system(RZ_SDB_MAGIC);
 		SETPREF("dir.magic", path, "Path to rz_magic files");
 		free(path);
-		path = rz_path_system_plugins();
+		path = rz_path_system(RZ_PLUGINS);
 		SETPREF("dir.plugins", path, "Path to plugin files to be loaded at startup");
 		free(path);
 	}
@@ -3369,11 +3369,11 @@ RZ_API int rz_core_config_init(RzCore *core) {
 #if __ANDROID__
 	SETPREF("dir.projects", "/data/data/org.rizin.rizininstaller/rizin/projects", "Default path for projects");
 #else
-	char *projects_dir = rz_path_home_projects();
+	char *projects_dir = rz_path_home(RZ_PROJECTS);
 	SETPREF("dir.projects", projects_dir, "Default path for projects");
 	free(projects_dir);
 #endif
-	home_zigns_dir = rz_path_home_zigns();
+	home_zigns_dir = rz_path_home(RZ_ZIGNS);
 	SETCB("dir.zigns", home_zigns_dir, &cb_dirzigns, "Default path for zignatures (see zo command)");
 	free(home_zigns_dir);
 	SETPREF("stack.reg", "SP", "Which register to use as stack pointer in the visual debug");
@@ -3516,13 +3516,13 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI("http.maxsize", 0, "Maximum file size for upload");
 	SETPREF("http.index", "index.html", "Main html file to check in directory");
 	SETPREF("http.bind", "localhost", "Server address");
-	char *wwwroot_dir = rz_path_home_wwwroot();
+	char *wwwroot_dir = rz_path_home(RZ_WWWROOT);
 	SETPREF("http.homeroot", wwwroot_dir, "http home root directory");
 	free(wwwroot_dir);
 #if __ANDROID__
 	SETPREF("http.root", "/data/data/org.rizin.rizininstaller/www", "http root directory");
 #else
-	char *wwwroot = rz_path_system_wwwroot();
+	char *wwwroot = rz_path_system(RZ_WWWROOT);
 	SETPREF("http.root", wwwroot, "http root directory");
 	free(wwwroot);
 #endif

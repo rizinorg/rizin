@@ -1755,7 +1755,7 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block,
 	case 'o': // "pfo"
 		if (_input[2] == '?') {
 			char *prefix = rz_path_prefix(NULL);
-			char *sdb_format = rz_path_home_sdb_format();
+			char *sdb_format = rz_path_home(RZ_SDB_FORMAT);
 			eprintf("|Usage: pfo [format-file]\n"
 				" %s\n"
 				" " RZ_JOIN_3_PATHS("%s", RZ_SDB_FORMAT, "") "\n",
@@ -1764,10 +1764,10 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block,
 			free(prefix);
 		} else if (_input[2] == ' ') {
 			const char *fname = rz_str_trim_head_ro(_input + 3);
-			char *home_formats = rz_path_home_sdb_format();
+			char *home_formats = rz_path_home(RZ_SDB_FORMAT);
 			char *home = rz_file_path_join(home_formats, fname);
 			free(home_formats);
-			char *system_formats = rz_path_system_sdb_format();
+			char *system_formats = rz_path_system(RZ_SDB_FORMAT);
 			char *path = rz_file_path_join(system_formats, fname);
 			free(system_formats);
 			if (rz_str_endswith(_input, ".h")) {
@@ -1793,7 +1793,7 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block,
 			RzList *files;
 			RzListIter *iter;
 			const char *fn;
-			char *home = rz_path_home_sdb_format();
+			char *home = rz_path_home(RZ_SDB_FORMAT);
 			if (home) {
 				files = rz_sys_dir(home);
 				rz_list_foreach (files, iter, fn) {
@@ -1804,7 +1804,7 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block,
 				rz_list_free(files);
 				free(home);
 			}
-			char *path = rz_path_system_sdb_format();
+			char *path = rz_path_system(RZ_SDB_FORMAT);
 			if (path) {
 				files = rz_sys_dir(path);
 				rz_list_foreach (files, iter, fn) {

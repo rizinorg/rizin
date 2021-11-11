@@ -102,7 +102,7 @@ RZ_API void rz_sysreg_item_free(RzSysregItem *s) {
 
 static bool load_sdb(Sdb **db, const char *name) {
 	rz_return_val_if_fail(db, false);
-	char *sdb_path = rz_path_system_sdb();
+	char *sdb_path = rz_path_system(RZ_SDB);
 	char *file_name = rz_str_newf("%s.sdb", name);
 	char *file = rz_file_path_join(sdb_path, file_name);
 	free(file_name);

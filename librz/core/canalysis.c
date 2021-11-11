@@ -7273,7 +7273,7 @@ RZ_API void rz_core_analysis_type_init(RzCore *core) {
 	const char *analysis_arch = rz_config_get(core->config, "analysis.arch");
 	const char *os = rz_config_get(core->config, "asm.os");
 
-	char *types_dir = rz_path_system_sdb_types();
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
 	rz_type_db_init(core->analysis->typedb, types_dir, analysis_arch, bits, os);
 	free(types_dir);
 }
@@ -7295,8 +7295,8 @@ RZ_API void rz_core_analysis_cc_init(RzCore *core) {
 	}
 
 	int bits = core->analysis->bits;
-	char *types_dir = rz_path_system_sdb_types();
-	char *home_types_dir = rz_path_home_sdb_types();
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
+	char *home_types_dir = rz_path_home(RZ_SDB_TYPES);
 	char buf[40];
 	char *dbpath = rz_file_path_join(types_dir, rz_strf(buf, "cc-%s-%d.sdb", analysis_arch, bits));
 	char *dbhomepath = rz_file_path_join(home_types_dir, rz_strf(buf, "cc-%s-%d.sdb", analysis_arch, bits));
