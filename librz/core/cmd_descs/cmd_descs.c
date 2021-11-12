@@ -8444,7 +8444,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *c_cd = rz_cmd_desc_group_modes_new(core->rcmd, root_cd, "c", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_cmp_string_handler, &cmd_cmp_string_help, &c_help);
 	rz_warn_if_fail(c_cd);
-	RzCmdDesc *cmd_cmp_bits_cd = rz_cmd_desc_argv_new(core->rcmd, c_cd, "ca", rz_cmd_cmp_bits_handler, &cmd_cmp_bits_help);
+	RzCmdDesc *cmd_cmp_bits_cd = rz_cmd_desc_argv_new(core->rcmd, c_cd, "c1", rz_cmd_cmp_bits_handler, &cmd_cmp_bits_help);
 	rz_warn_if_fail(cmd_cmp_bits_cd);
 
 	RzCmdDesc *cmd_cmp_bytes_cd = rz_cmd_desc_argv_new(core->rcmd, c_cd, "cb", rz_cmd_cmp_bytes_handler, &cmd_cmp_bytes_help);

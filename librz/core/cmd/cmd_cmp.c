@@ -139,7 +139,7 @@ end:
 	return ret;
 }
 
-// ca
+// c1
 RZ_IPI RzCmdStatus rz_cmd_cmp_bits_handler(RzCore *core, int argc, const char **argv) {
 	RzCmdStatus ret = RZ_CMD_STATUS_ERROR;
 	RzCompareData *cmp = rz_cmp_mem_mem(core, core->offset, rz_num_math(core->num, argv[1]), 1);

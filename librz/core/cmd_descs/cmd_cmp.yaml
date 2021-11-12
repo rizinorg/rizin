@@ -13,7 +13,7 @@ commands:
     args:
       - name: string
         type: RZ_CMD_ARG_TYPE_STRING
-  - name: ca
+  - name: c1
     summary: Compare 8-bit data at current offset with the data at <addr>
     cname: cmd_cmp_bits
     args:
