@@ -182,8 +182,7 @@ class Arg:
         if self.type == "RZ_CMD_ARG_TYPE_CHOICES":
             return self.cd.cname + "_" + compute_cname(self.name) + "_choices"
 
-        raise Exception(
-            "_get_choices_cname should be called on ARG_TYPE_CHOICES only")
+        raise Exception("_get_choices_cname should be called on ARG_TYPE_CHOICES only")
 
     def _get_union(self):
         if self.type == "RZ_CMD_ARG_TYPE_CHOICES":
@@ -411,8 +410,7 @@ class CmdDesc:
 
     def _validate(self, c):
         if c.keys():
-            print("Command %s has unrecognized properties: %s." %
-                  (self.name, c.keys()))
+            print("Command %s has unrecognized properties: %s." % (self.name, c.keys()))
             sys.exit(1)
 
         if self.type not in CD_VALID_TYPES:
@@ -448,8 +446,7 @@ class CmdDesc:
             sys.exit(1)
 
         if self.cname in CmdDesc.c_cds:
-            print("Another command already has the same cname as %s" %
-                  (self.cname,))
+            print("Another command already has the same cname as %s" % (self.cname,))
             sys.exit(1)
 
         if (
@@ -490,8 +487,7 @@ class CmdDesc:
             out += "\n".join([d.get_cstructure() for d in self.details])
             out += DESC_HELP_DETAILS_TEMPLATE.format(
                 cname=CmdDesc.get_detail_cname(self),
-                details=",\n".join([str(d)
-                                    for d in self.details] + ["\t{ 0 },"]),
+                details=",\n".join([str(d) for d in self.details] + ["\t{ 0 },"]),
             )
             details_cname = CmdDesc.get_detail_cname(self)
         elif self.details_alias is not None:
@@ -499,8 +495,7 @@ class CmdDesc:
 
         if self.args is not None:
             out += "\n".join(
-                [a.get_cstructure()
-                 for a in self.args if a.get_cstructure() != ""]
+                [a.get_cstructure() for a in self.args if a.get_cstructure() != ""]
             )
             out += DESC_HELP_ARGS_TEMPLATE.format(
                 cname=CmdDesc.get_arg_cname(self),
@@ -518,8 +513,7 @@ class CmdDesc:
             else ""
         )
         args_str = (
-            DESC_HELP_TEMPLATE_ARGS_STR.format(
-                args_str=strornull(self.args_str))
+            DESC_HELP_TEMPLATE_ARGS_STR.format(args_str=strornull(self.args_str))
             if self.args_str is not None
             else ""
         )
@@ -530,7 +524,8 @@ class CmdDesc:
         )
         sort_subcommands = (
             DESC_HELP_TEMPLATE_SORT_SUBCOMMANDS.format(
-                sort_subcommands="true" if self.sort_subcommands else "false")
+                sort_subcommands="true" if self.sort_subcommands else "false"
+            )
             if self.sort_subcommands is not None
             else ""
         )
@@ -627,17 +622,14 @@ def createcd_typegroup(cd):
             cname=cd.cname,
             parent_cname=cd.parent.cname,
             name=strornull(cd.name),
-            handler_cname=(
-                cd.exec_cd and cd.exec_cd.get_handler_cname()) or "NULL",
-            help_cname_ref=(cd.exec_cd and "&" +
-                            cd.exec_cd.get_help_cname()) or "NULL",
+            handler_cname=(cd.exec_cd and cd.exec_cd.get_handler_cname()) or "NULL",
+            help_cname_ref=(cd.exec_cd and "&" + cd.exec_cd.get_help_cname()) or "NULL",
             group_help_cname=cd.get_help_cname(),
         )
         subcommands = (
             cd.exec_cd and cd.subcommands and cd.subcommands[1:]
         ) or cd.subcommands
-        formatted_string += "\n".join([createcd(child)
-                                       for child in subcommands or []])
+        formatted_string += "\n".join([createcd(child) for child in subcommands or []])
 
     return formatted_string
 
@@ -756,8 +748,7 @@ parser = argparse.ArgumentParser(
 parser.add_argument(
     "--src-output-dir", type=str, required=False, help="Source output directory"
 )
-parser.add_argument("--output-dir", type=str,
-                    required=True, help="Output directory")
+parser.add_argument("--output-dir", type=str, required=True, help="Output directory")
 parser.add_argument(
     "yaml_files",
     type=argparse.FileType("r"),
@@ -797,8 +788,7 @@ handlers_decls = filter(
 )
 
 hf_text = CMDDESCS_H_TEMPLATE.format(
-    handlers_declarations="\n".join(
-        [handler2decl(t, h) for t, h in handlers_decls]),
+    handlers_declarations="\n".join([handler2decl(t, h) for t, h in handlers_decls]),
 )
 with open(os.path.join(args.output_dir, "cmd_descs.h"), "w", encoding="utf8") as f:
     f.write(hf_text)
