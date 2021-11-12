@@ -179,7 +179,6 @@ bool test_rzil_bv_algorithm(void) {
 	RzILBitVector *x, *y;
 	RzILBitVector *result;
 	RzILBitVector *add, *sub, *mul, *div, *mod;
-
 	x = rz_il_bv_new_from_ut32(32, 121);
 	y = rz_il_bv_new_from_ut32(32, 33);
 

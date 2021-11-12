@@ -251,7 +251,7 @@ RZ_API RZ_OWN RzILBitVector *rz_il_bv_cut_tail(RZ_NONNULL RzILBitVector *bv, ut3
 }
 
 /**
- * Concat bv2 to bv1 to get new bitvector
+ * Append bv2 to bv1 to get new bitvector
  * \param bv1 RzILBitVector
  * \param bv2 RzILBitVector
  * \return ret RzILBitVector, the new bitvector
