@@ -494,7 +494,6 @@ RZ_IPI RzCmdStatus rz_write_8_inc_handler(RzCore *core, int argc, const char **a
 RZ_IPI RzCmdStatus rz_write_8_dec_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_write_base64_decode_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_write_base64_encode_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI int rz_wh_handler_old(void *data, const char *input);
 RZ_IPI int rz_we_handler_old(void *data, const char *input);
 RZ_IPI int rz_wu_handler_old(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_write_random_handler(RzCore *core, int argc, const char **argv);
@@ -569,6 +568,7 @@ RZ_IPI RzCmdStatus rz_cmd_shell_pwd_handler(RzCore *core, int argc, const char *
 RZ_IPI RzCmdStatus rz_cmd_shell_sort_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_shell_clear_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_shell_clear_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_cmd_shell_which_handler(RzCore *core, int argc, const char **argv);
 
 // Main function that initialize the entire commands tree
 RZ_IPI void rzshell_cmddescs_init(RzCore *core);

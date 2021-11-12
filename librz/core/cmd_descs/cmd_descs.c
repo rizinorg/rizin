@@ -342,6 +342,7 @@ static const RzCmdDescArg cmd_shell_cat_args[2];
 static const RzCmdDescArg cmd_shell_mv_args[3];
 static const RzCmdDescArg cmd_shell_mkdir_args[3];
 static const RzCmdDescArg cmd_shell_sort_args[2];
+static const RzCmdDescArg cmd_shell_which_args[2];
 
 static const RzCmdDescHelp escl__help = {
 	.summary = "Run given commands as in system(3) or shows command history",
@@ -6564,10 +6565,6 @@ static const RzCmdDescHelp write_base64_encode_help = {
 	.args = write_base64_encode_args,
 };
 
-static const RzCmdDescHelp wh_handler_old_help = {
-	.summary = "whereis/which shell command",
-};
-
 static const RzCmdDescHelp we_handler_old_help = {
 	.summary = "Extend write operations (insert bytes instead of replacing)",
 };
@@ -7546,6 +7543,7 @@ static const RzCmdDescHelp specifiers_help = {
 
 static const RzCmdDescHelp shell_help = {
 	.summary = "Common shell commands",
+	.sort_subcommands = true,
 };
 static const RzCmdDescDetailEntry cmd_shell_env_Examples_detail_entries[] = {
 	{ .text = "%", .arg_str = NULL, .comment = "List all environment variables" },
@@ -7811,6 +7809,20 @@ static const RzCmdDescArg cmd_shell_cls_args[] = {
 static const RzCmdDescHelp cmd_shell_cls_help = {
 	.summary = "clear",
 	.args = cmd_shell_cls_args,
+};
+
+static const RzCmdDescArg cmd_shell_which_args[] = {
+	{
+		.name = "command",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_shell_which_help = {
+	.summary = "Which shell command",
+	.args = cmd_shell_which_args,
 };
 
 RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
@@ -9240,9 +9252,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *write_base64_encode_cd = rz_cmd_desc_argv_new(core->rcmd, w6_cd, "w6e", rz_write_base64_encode_handler, &write_base64_encode_help);
 	rz_warn_if_fail(write_base64_encode_cd);
 
-	RzCmdDesc *wh_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "wh", rz_wh_handler_old, &wh_handler_old_help);
-	rz_warn_if_fail(wh_handler_old_cd);
-
 	RzCmdDesc *we_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "we", rz_we_handler_old, &we_handler_old_help);
 	rz_warn_if_fail(we_handler_old_cd);
 
@@ -9474,5 +9483,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_shell_cls_cd = rz_cmd_desc_argv_new(core->rcmd, shell_cd, "cls", rz_cmd_shell_clear_handler, &cmd_shell_cls_help);
 	rz_warn_if_fail(cmd_shell_cls_cd);
+
+	RzCmdDesc *cmd_shell_which_cd = rz_cmd_desc_argv_new(core->rcmd, shell_cd, "which", rz_cmd_shell_which_handler, &cmd_shell_which_help);
+	rz_warn_if_fail(cmd_shell_which_cd);
 	rz_cmd_batch_end(core->rcmd);
 }

@@ -94,12 +94,13 @@ DECL_DESC_HELP_ARGS_TEMPLATE = "static const RzCmdDescArg {cname}[{size}];"
 DESC_HELP_TEMPLATE_DESCRIPTION = "\t.description = {description},\n"
 DESC_HELP_TEMPLATE_ARGS_STR = "\t.args_str = {args_str},\n"
 DESC_HELP_TEMPLATE_USAGE = "\t.usage = {usage},\n"
+DESC_HELP_TEMPLATE_SORT_SUBCOMMANDS = "\t.sort_subcommands = {sort_subcommands},\n"
 DESC_HELP_TEMPLATE_OPTIONS = "\t.options = {options},\n"
 DESC_HELP_TEMPLATE_DETAILS = "\t.details = {details},\n"
 DESC_HELP_TEMPLATE_ARGS = "\t.args = {args},\n"
 DESC_HELP_TEMPLATE = """static const RzCmdDescHelp {cname} = {{
 \t.summary = {summary},
-{description}{args_str}{usage}{options}{details}{args}}};
+{description}{args_str}{usage}{options}{details}{args}{sort_subcommands}}};
 """
 
 DEFINE_OLDINPUT_TEMPLATE = """
@@ -383,6 +384,7 @@ class CmdDesc:
         self.args_str = strip(c.pop("args_str", None))
         self.usage = strip(c.pop("usage", None))
         self.options = strip(c.pop("options", None))
+        self.sort_subcommands = c.pop("sort_subcommands", None)
 
         self.details = None
         self.details_alias = None
@@ -520,6 +522,13 @@ class CmdDesc:
             if self.usage is not None
             else ""
         )
+        sort_subcommands = (
+            DESC_HELP_TEMPLATE_SORT_SUBCOMMANDS.format(
+                sort_subcommands="true" if self.sort_subcommands else "false"
+            )
+            if self.sort_subcommands is not None
+            else ""
+        )
         options = (
             DESC_HELP_TEMPLATE_OPTIONS.format(options=strornull(self.options))
             if self.options is not None
@@ -544,6 +553,7 @@ class CmdDesc:
             options=options,
             details=details,
             args=arguments,
+            sort_subcommands=sort_subcommands,
         )
 
         if self.subcommands:
