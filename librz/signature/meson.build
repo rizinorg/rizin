@@ -34,7 +34,6 @@ pkgconfig_mod.generate(rz_sign,
   version: rizin_version,
   name: 'rz_sign',
   filebase: 'rz_sign',
-  libraries: pkgcfg_sanitize_libs,
   requires: [
     'rz_util',
     'rz_analysis',
