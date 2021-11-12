@@ -440,7 +440,6 @@ static const ut8 ebcdic_es_page20[256] = {
 	[0xa7] = 0x5b,
 };
 
-
 /**
  * \name IBM037
  * see https://www.compart.com/en/unicode/charsets/IBM037
