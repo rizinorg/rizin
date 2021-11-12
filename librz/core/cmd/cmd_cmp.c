@@ -128,7 +128,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_string_handler(RzCore *core, int argc, const char 
 		goto end;
 	}
 	int val = rz_cmp_print(core, cmp, mode);
-	if (val != 0) {
+	if (val != -1) {
 		core->num->value = val;
 		ret = RZ_CMD_STATUS_OK;
 	}
@@ -154,13 +154,13 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_bits_handler(RzCore *core, int argc, const char **
 // cb
 RZ_IPI RzCmdStatus rz_cmd_cmp_bytes_handler(RzCore *core, int argc, const char **argv) {
 	RzCmdStatus ret = RZ_CMD_STATUS_ERROR;
-	ut64 sz = rz_num_math(core->num, argv[1]);
+	ut64 sz = rz_num_math(core->num, argv[2]);
 	if (sz > 8) {
 		rz_cons_printf("Cannot compare more than 8 bytes. Use the c command instead.\n");
 		return ret;
 	}
 
-	ut64 num = rz_num_math(core->num, argv[2]);
+	ut64 num = rz_num_math(core->num, argv[1]);
 	ut64 mask = -1;
 	mask >>= 8 - sz;
 	ut64 valid_num = num & mask;
@@ -168,9 +168,14 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_bytes_handler(RzCore *core, int argc, const char *
 	if (!cmp) {
 		goto end;
 	}
+	if (cmp->same) {
+		core->num->value = 0;
+	} else {
+		core->num->value = 1;
+	}
+
 	int val = rz_cmp_print(core, cmp, RZ_OUTPUT_MODE_STANDARD);
-	if (val != 0) {
-		core->num->value = val;
+	if (val != -1) {
 		ret = RZ_CMD_STATUS_OK;
 	}
 
@@ -241,7 +246,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_file_handler(RzCore *core, int argc, const char **
 	}
 	int val = rz_cmp_print(core, cmp, RZ_OUTPUT_MODE_STANDARD);
 	free(cmp);
-	if (val == 0) {
+	if (val == -1) {
 		goto return_goto;
 	}
 	core->num->value = val;
@@ -347,7 +352,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_hexpair_string_handler(RzCore *core, int argc, con
 	}
 	int val = rz_cmp_print(core, cmp, RZ_OUTPUT_MODE_STANDARD);
 	free(cmp);
-	if (val == 0) {
+	if (val == -1) {
 		ret = false;
 		goto return_goto;
 	}
@@ -379,7 +384,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_hex_block_hexdiff_handler(RzCore *core, int argc, 
 	}
 	int val = rz_cmp_print(core, cmp, RZ_OUTPUT_MODE_STANDARD);
 	free(cmp);
-	if (val == 0) {
+	if (val == -1) {
 		goto return_goto;
 	}
 	core->num->value = val;

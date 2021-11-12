@@ -2031,20 +2031,19 @@ static const RzCmdDescHelp cmd_cmp_bits_help = {
 
 static const RzCmdDescArg cmd_cmp_bytes_args[] = {
 	{
-		.name = "n",
-		.type = RZ_CMD_ARG_TYPE_NUM,
+		.name = "num",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
 
 	},
 	{
-		.name = "num",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.name = "n",
+		.type = RZ_CMD_ARG_TYPE_NUM,
 
 	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_cmp_bytes_help = {
-	.summary = "Compare <n> (upto 8) bytes at current offset with a number <num>",
+	.summary = "Compare <n> (upto 8) bytes at current offset with a number <num> (also return in $?)",
 	.args = cmd_cmp_bytes_args,
 };
 

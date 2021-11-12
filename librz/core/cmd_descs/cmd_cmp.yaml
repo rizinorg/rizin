@@ -20,13 +20,13 @@ commands:
       - name: addr
         type: RZ_CMD_ARG_TYPE_RZNUM
   - name: cb
-    summary: Compare <n> (upto 8) bytes at current offset with a number <num>
+    summary: Compare <n> (upto 8) bytes at current offset with a number <num> (also return in $?)
     cname: cmd_cmp_bytes
     args:
-      - name: n
-        type: RZ_CMD_ARG_TYPE_NUM
       - name: num
         type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: n
+        type: RZ_CMD_ARG_TYPE_NUM
   - name: cc
     summary: Compare hexdump of data of block size at <addr> with the data at current offset
     cname: cmd_cmp_hex_block
