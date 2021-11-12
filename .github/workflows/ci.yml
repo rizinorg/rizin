@@ -224,7 +224,7 @@ jobs:
         if [ "$ASAN" == "true" ]; then
           export ASAN=1
         fi
-        if [ "$ASAN" == "true" ] && [ "$CC" == "clang" ]; then
+        if [ "$ASAN" == "1" ] && [ "$CC" == "clang" ]; then
           LD_PRELOAD=/usr/lib/llvm-11/lib/clang/11.0.0/lib/linux/libclang_rt.asan-x86_64.so ninja -C build test
         else
           ninja -C build test
