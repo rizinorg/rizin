@@ -51,15 +51,6 @@ static st64 score(RzRune *buff, const int len) {
 			score -= 6;
 		}
 
-		// int this_bigram = (b1 << 16) | b2;
-		// if (this_bigram == prior_bigram[0] ||
-		// 	this_bigram == prior_bigram[1]) {
-		// 	++src;
-		// 	continue;
-		// }
-		// prior_bigram[next_prior_bigram] = this_bigram;
-		// next_prior_bigram = (next_prior_bigram + 1) & 2;
-
 		ut8 i = compute_index(c1, c2);
 		assert(i < 49);
 		ut8 y = LATIN1[i];
@@ -467,6 +458,7 @@ RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrS
 				str_type = RZ_STRING_ENC_UTF16BE;
 			} else if (can_be_ebcdic(ptr, size) && skip_ibm037 < 0) {
 				RzRune *runes = RZ_NEWS(RzRune, 15);
+				rz_return_val_if_fail(runes, -1);
 				int i = 0;
 				for (; i < 15; i++) {
 					rz_str_ibm037_to_unicode(ptr[i], &runes[i]);
