@@ -45,6 +45,7 @@ rz_hash = library('rz_hash', rz_hash_sources,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
+  link_args: library_linkflags,
   soversion: rizin_libversion
 )
 

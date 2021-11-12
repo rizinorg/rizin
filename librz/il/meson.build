@@ -31,6 +31,7 @@ rz_il = library('rz_il', rz_il_sources,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
+  link_args: library_linkflags,
   soversion: rizin_libversion
 )
 
