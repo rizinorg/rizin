@@ -388,6 +388,16 @@ RZ_IPI RzCmdStatus rz_plugins_hash_print_handler(RzCore *core, int argc, const c
 RZ_IPI RzCmdStatus rz_plugins_bin_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_plugins_io_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_plugins_parser_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_open_close_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_open_close_all_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_plugins_io_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_open_list_ascii_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_open_arch_bits_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_open_use_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_open_prioritize_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_open_prioritize_next_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_open_prioritize_prev_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_open_prioritize_next_rotate_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_cmd_open(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_cmd_print_gadget_add_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_print_gadget_print_as_rizin_handler(RzCore *core, int argc, const char **argv);
@@ -502,10 +512,9 @@ RZ_IPI RzCmdStatus rz_write_8_inc_handler(RzCore *core, int argc, const char **a
 RZ_IPI RzCmdStatus rz_write_8_dec_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_write_base64_decode_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_write_base64_encode_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI int rz_wh_handler_old(void *data, const char *input);
 RZ_IPI int rz_we_handler_old(void *data, const char *input);
 RZ_IPI int rz_wu_handler_old(void *data, const char *input);
-RZ_IPI int rz_wr_handler_old(void *data, const char *input);
+RZ_IPI RzCmdStatus rz_write_random_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_wA_handler_old(void *data, const char *input);
 RZ_IPI int rz_wc_handler_old(void *data, const char *input);
 RZ_IPI int rz_wz_handler_old(void *data, const char *input);
@@ -515,13 +524,14 @@ RZ_IPI RzCmdStatus rz_write_from_io_xchg_handler(RzCore *core, int argc, const c
 RZ_IPI RzCmdStatus rz_write_from_file_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_write_from_socket_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_ww_handler_old(void *data, const char *input);
-RZ_IPI int rz_wx_handler_old(void *data, const char *input);
+RZ_IPI RzCmdStatus rz_write_hex_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_write_hex_from_file_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_wa_handler_old(void *data, const char *input);
 RZ_IPI int rz_wb_handler_old(void *data, const char *input);
 RZ_IPI int rz_wm_handler_old(void *data, const char *input);
 RZ_IPI int rz_wo_handler_old(void *data, const char *input);
 RZ_IPI int rz_wd_handler_old(void *data, const char *input);
-RZ_IPI int rz_ws_handler_old(void *data, const char *input);
+RZ_IPI RzCmdStatus rz_write_length_string_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_cmd_hexdump(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_yank_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_yank_editor_handler(RzCore *core, int argc, const char **argv);
@@ -576,6 +586,7 @@ RZ_IPI RzCmdStatus rz_cmd_shell_pwd_handler(RzCore *core, int argc, const char *
 RZ_IPI RzCmdStatus rz_cmd_shell_sort_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_shell_clear_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_shell_clear_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_cmd_shell_which_handler(RzCore *core, int argc, const char **argv);
 
 // Main function that initialize the entire commands tree
 RZ_IPI void rzshell_cmddescs_init(RzCore *core);

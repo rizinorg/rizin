@@ -4,7 +4,7 @@
 #include <rz_util/rz_intervaltree.h>
 #include <rz_util/rz_assert.h>
 
-#define unwrap(rbnode) container_of(rbnode, RzIntervalNode, node)
+#define unwrap(rbnode) ((rbnode) ? container_of(rbnode, RzIntervalNode, node) : NULL)
 
 static void node_max(RBNode *node) {
 	RzIntervalNode *intervalnode = unwrap(node);
@@ -140,7 +140,7 @@ RZ_API bool rz_interval_tree_delete(RzIntervalTree *tree, RzIntervalNode *node, 
 	RBNode *root = &tree->root->node;
 	RBIter path_cache = { 0 };
 	bool r = rz_rbtree_aug_delete(&root, node, cmp_exact_node, &path_cache, interval_node_free, free ? tree->free : NULL, node_max);
-	tree->root = root ? unwrap(root) : NULL;
+	tree->root = unwrap(root);
 	return r;
 }
 

@@ -411,6 +411,5 @@ nth name                                                                        
 
 EOF
 EXPECT_ERR=<<EOF
-All core files, io, analysis and flags info purged.
 EOF
 RUN

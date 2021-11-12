@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_il/rzil_opcodes.h>
+#include <rz_il/vm_layer.h>
 #include <rz_il/rzil_vm.h>
 
 void *rz_il_handler_msb(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
@@ -41,10 +42,10 @@ void *rz_il_handler_neg(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	return bv_result;
 }
 
-void *rz_il_handler_not(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
+void *rz_il_handler_logical_not(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 
-	RzILOpNot *op_not = op->op.not_;
+	RzILOpLogNot *op_not = op->op.lognot;
 
 	RzILBitVector *bv = rz_il_evaluate_bitv(vm, op_not->bv, type);
 	RzILBitVector *result = rz_il_bv_not(bv);
@@ -93,7 +94,7 @@ void *rz_il_handler_add(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 
 	RzILBitVector *x = rz_il_evaluate_bitv(vm, op_add->x, type);
 	RzILBitVector *y = rz_il_evaluate_bitv(vm, op_add->y, type);
-	RzILBitVector *result = rz_il_bv_add(x, y);
+	RzILBitVector *result = rz_il_bv_add(x, y, NULL);
 
 	rz_il_bv_free(x);
 	rz_il_bv_free(y);
@@ -157,7 +158,7 @@ void *rz_il_handler_sub(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 
 	RzILBitVector *x = rz_il_evaluate_bitv(vm, op_sub->x, type);
 	RzILBitVector *y = rz_il_evaluate_bitv(vm, op_sub->y, type);
-	RzILBitVector *result = rz_il_bv_sub(x, y);
+	RzILBitVector *result = rz_il_bv_sub(x, y, NULL);
 
 	rz_il_bv_free(x);
 	rz_il_bv_free(y);
@@ -189,7 +190,14 @@ void *rz_il_handler_div(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 
 	RzILBitVector *x = rz_il_evaluate_bitv(vm, op_div->x, type);
 	RzILBitVector *y = rz_il_evaluate_bitv(vm, op_div->y, type);
-	RzILBitVector *result = rz_il_bv_div(x, y);
+	RzILBitVector *result = NULL;
+	if (rz_il_bv_is_zero_vector(y)) {
+		result = rz_il_bv_new(y->len);
+		rz_il_bv_set_all(result, true);
+		rz_il_vm_event_add(vm, rz_il_event_exception_new("division by zero"));
+	} else {
+		result = rz_il_bv_div(x, y);
+	}
 
 	rz_il_bv_free(x);
 	rz_il_bv_free(y);
@@ -288,14 +296,11 @@ void *rz_il_handler_shiftr(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	return result;
 }
 
-void *rz_il_handler_int(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
+void *rz_il_handler_bitv(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
+	RzILOpBv *op_bitv = op->op.bitv;
 
-	RzILOpInt *op_int = op->op.int_;
-
-	ut32 length = op_int->length;
-	int value = op_int->value;
-	RzILBitVector *bv = rz_il_bv_new_from_ut32(length, value);
+	RzILBitVector *bv = rz_il_bv_dup(op_bitv->value);
 
 	*type = RZIL_OP_ARG_BITV;
 	return bv;

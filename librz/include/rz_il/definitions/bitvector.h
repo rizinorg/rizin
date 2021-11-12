@@ -35,7 +35,7 @@ typedef struct bitvector_t {
 
 // init
 RZ_API RZ_OWN RzILBitVector *rz_il_bv_new(ut32 length);
-RZ_API RZ_OWN RzILBitVector *rz_il_bv_dup(RZ_NONNULL RzILBitVector *bv);
+RZ_API RZ_OWN RzILBitVector *rz_il_bv_dup(const RZ_NONNULL RzILBitVector *bv);
 RZ_API RZ_OWN RzILBitVector *rz_il_bv_concat(RZ_NONNULL RzILBitVector *bv1, RZ_NONNULL RzILBitVector *bv2);
 RZ_API int rz_il_bv_copy(RZ_NONNULL RzILBitVector *src, RZ_NONNULL RzILBitVector *dst);
 RZ_API int rz_il_bv_copy_nbits(
@@ -67,8 +67,8 @@ RZ_API RZ_OWN RzILBitVector *rz_il_bv_complement_1(RZ_NONNULL RzILBitVector *bv)
 RZ_API RZ_OWN RzILBitVector *rz_il_bv_complement_2(RZ_NONNULL RzILBitVector *bv);
 
 // Module 2 arithmetic operations
-RZ_API RZ_OWN RzILBitVector *rz_il_bv_add(RZ_NONNULL RzILBitVector *x, RZ_NONNULL RzILBitVector *y);
-RZ_API RZ_OWN RzILBitVector *rz_il_bv_sub(RZ_NONNULL RzILBitVector *x, RZ_NONNULL RzILBitVector *y);
+RZ_API RZ_OWN RzILBitVector *rz_il_bv_add(RZ_NONNULL RzILBitVector *x, RZ_NONNULL RzILBitVector *y, RZ_NULLABLE bool *carry);
+RZ_API RZ_OWN RzILBitVector *rz_il_bv_sub(RZ_NONNULL RzILBitVector *x, RZ_NONNULL RzILBitVector *y, RZ_NULLABLE bool *borrow);
 RZ_API RZ_OWN RzILBitVector *rz_il_bv_mul(RZ_NONNULL RzILBitVector *x, RZ_NONNULL RzILBitVector *y);
 RZ_API RZ_OWN RzILBitVector *rz_il_bv_div(RZ_NONNULL RzILBitVector *x, RZ_NONNULL RzILBitVector *y);
 RZ_API RZ_OWN RzILBitVector *rz_il_bv_mod(RZ_NONNULL RzILBitVector *x, RZ_NONNULL RzILBitVector *y);
@@ -88,8 +88,12 @@ RZ_API ut64 rz_il_bv_to_ut64(RZ_NONNULL RzILBitVector *x);
 RZ_API bool rz_il_bv_is_zero_vector(RZ_NONNULL RzILBitVector *x);
 RZ_API RZ_OWN RzILBitVector *rz_il_bv_new_from_ut32(ut32 length, ut32 value);
 RZ_API RZ_OWN RzILBitVector *rz_il_bv_new_from_ut64(ut32 length, ut64 value);
+RZ_API RZ_OWN RzILBitVector *rz_il_bv_new_from_st32(ut32 length, st32 value);
+RZ_API RZ_OWN RzILBitVector *rz_il_bv_new_from_st64(ut32 length, st64 value);
 RZ_API bool rz_il_bv_set_from_ut32(RZ_NONNULL RzILBitVector *bv, ut32 value);
 RZ_API bool rz_il_bv_set_from_ut64(RZ_NONNULL RzILBitVector *bv, ut64 value);
+RZ_API bool rz_il_bv_set_from_st32(RZ_NONNULL RzILBitVector *bv, st32 value);
+RZ_API bool rz_il_bv_set_from_st64(RZ_NONNULL RzILBitVector *bv, st64 value);
 RZ_API char *rz_il_bv_as_string(RZ_NONNULL RzILBitVector *bv);
 RZ_API char *rz_il_bv_as_hex_string(RZ_NONNULL RzILBitVector *bv);
 

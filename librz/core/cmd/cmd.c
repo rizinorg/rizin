@@ -602,20 +602,8 @@ RZ_API bool rz_core_run_script(RzCore *core, const char *file) {
 					lang_run_file(core, core->lang, cmd);
 					free(cmd);
 					ret = 1;
-				} else if (!strcmp(ext, "lsp")) {
-					char *cmd = cmdstr("newlisp -n");
-					rz_lang_use(core->lang, "pipe");
-					lang_run_file(core, core->lang, cmd);
-					free(cmd);
-					ret = 1;
 				} else if (!strcmp(ext, "go")) {
 					char *cmd = cmdstr("go run");
-					rz_lang_use(core->lang, "pipe");
-					lang_run_file(core, core->lang, cmd);
-					free(cmd);
-					ret = 1;
-				} else if (!strcmp(ext, "es6")) {
-					char *cmd = cmdstr("babel-node");
 					rz_lang_use(core->lang, "pipe");
 					lang_run_file(core, core->lang, cmd);
 					free(cmd);

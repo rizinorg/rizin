@@ -222,6 +222,7 @@ commands:
     cname: cmd_open
     summary: Open file at optional address
     type: RZ_CMD_DESC_TYPE_OLDINPUT
+    subcommands: cmd_open
   - name: p
     cname: cmd_print
     summary: Print commands
@@ -605,4 +606,5 @@ commands:
               with more than 1 block but less than 10, sorted decrementally by number of blocks.
   - name: shell
     summary: Common shell commands
+    sort_subcommands: true
     subcommands: cmd_shell
