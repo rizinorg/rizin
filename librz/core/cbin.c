@@ -1622,6 +1622,46 @@ RZ_API bool rz_core_bin_apply_resources(RzCore *core, RzBinFile *binfile) {
 	return true;
 }
 
+static void digests_ht_free(HtPPKv *kv) {
+	free(kv->key);
+	free(kv->value);
+}
+
+/**
+ * \brief Create a hashtable of digests for the RzBinSection
+ *
+ * Digest names are supplied as a list of `char *` strings.
+ * Returns the hashtable with keys of digest names and values of
+ * strings containing requested digests.
+ * */
+RZ_API RZ_OWN HtPP *rz_core_bin_section_digests(RzCore *core, RzBinSection *section, RzList *digests) {
+	rz_return_val_if_fail(section && digests, NULL);
+	HtPP *r = ht_pp_new(NULL, digests_ht_free, NULL);
+	if (!r) {
+		goto err;
+	}
+	RzListIter *it;
+	char *digest;
+	rz_list_foreach (digests, it, digest) {
+		ut8 *data = malloc(section->size);
+		if (!data) {
+			ht_pp_free(r);
+			return NULL;
+			goto err;
+		}
+		ut32 datalen = section->size;
+		rz_io_pread_at(core->io, section->paddr, data, datalen);
+		char *chkstr = rz_msg_digest_calculate_small_block_string(digest, data, datalen, NULL, false);
+		if (!chkstr) {
+			continue;
+		}
+		ht_pp_insert(r, digest, chkstr);
+		free(data);
+	}
+err:
+	return r;
+}
+
 RZ_API int rz_core_bin_set_cur(RzCore *core, RzBinFile *binfile) {
 	if (!core->bin) {
 		return false;
@@ -2288,6 +2328,13 @@ static ut64 get_section_addr(RzCore *core, RzBinObject *o, RzBinSection *section
 	return rva(o, section->paddr, section->vaddr, va);
 }
 
+static bool digests_pj_cb(void *user, const void *k, const void *v) {
+	rz_return_val_if_fail(user && k && v, false);
+	PJ *pj = user;
+	pj_ks(pj, k, v);
+	return true;
+}
+
 static void sections_print_json(RzCore *core, PJ *pj, RzBinObject *o, RzBinSection *section, RzList *hashes) {
 	ut64 addr = get_section_addr(core, o, section);
 	char perms[5];
@@ -2324,24 +2371,13 @@ static void sections_print_json(RzCore *core, PJ *pj, RzBinObject *o, RzBinSecti
 		pj_kN(pj, "align", section->align);
 	}
 	if (hashes && section->size > 0) {
-		ut8 *data = malloc(section->size);
-		if (data) {
-			ut32 datalen = section->size;
-			RzListIter *iter;
-			char *hashname;
-
-			rz_io_pread_at(core->io, section->paddr, data, datalen);
-
-			rz_list_foreach (hashes, iter, hashname) {
-				char *chkstr = rz_msg_digest_calculate_small_block_string(hashname, data, datalen, NULL, false);
-				if (!chkstr) {
-					continue;
-				}
-				pj_ks(pj, hashname, chkstr);
-				free(chkstr);
-			}
-			free(data);
+		HtPP *digests = rz_core_bin_section_digests(core, section, hashes);
+		if (!digests) {
+			pj_end(pj);
+			return;
 		}
+		ht_pp_foreach(digests, digests_pj_cb, pj);
+		ht_pp_free(digests);
 	}
 	pj_end(pj);
 }
@@ -2373,37 +2409,31 @@ static bool sections_print_table(RzCore *core, RzTable *t, RzBinObject *o, RzBin
 	if (!section->is_segment) {
 		rz_table_add_row_columnsf(t, "ss", section_type, section_flags_str);
 	}
+	bool result = false;
 	if (hashes && section->size > 0) {
-		ut8 *data = malloc(section->size);
-		if (data) {
-			ut32 datalen = section->size;
-			RzListIter *iter;
-			char *hashname;
-
-			rz_io_pread_at(core->io, section->paddr, data, datalen);
-
-			rz_list_foreach (hashes, iter, hashname) {
-				const RzMsgDigestPlugin *msg_plugin = rz_msg_digest_plugin_by_name(hashname);
-				if (!msg_plugin) {
-					continue;
-				}
-				char *chkstr = rz_msg_digest_calculate_small_block_string(hashname, data, datalen, NULL, false);
-				if (!chkstr) {
-					rz_table_add_row_columnsf(t, "s", NULL);
-					continue;
-				}
-				rz_table_add_row_columnsf(t, "s", chkstr);
-				free(chkstr);
-			}
-			free(data);
+		HtPP *digests = rz_core_bin_section_digests(core, section, hashes);
+		if (!digests) {
+			goto cleanup;
 		}
+		RzListIter *it;
+		char *hash;
+		bool found = false;
+		rz_list_foreach (hashes, it, hash) {
+			char *digest = ht_pp_find(digests, hash, &found);
+			if (found && t) {
+				rz_table_add_row_columnsf(t, "s", digest);
+			}
+		}
+		ht_pp_free(digests);
 	}
+	result = true;
+cleanup:
 	if (section_name != section->name) {
 		free(section_name);
 	}
 	free(section_type);
 	free(section_flags_str);
-	return true;
+	return result;
 }
 
 static void sections_headers_setup(RzCore *core, RzCmdStateOutput *state, RzList *hashes) {
