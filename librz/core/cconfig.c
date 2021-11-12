@@ -946,11 +946,11 @@ static bool cb_binstrenc(void *user, void *data) {
 		{ "utf32le", "utf-32le,utf32-le" },
 		{ "utf16be", "utf-16be,utf16-be" },
 		{ "utf32be", "utf-32be,utf32-be" },
-		{ "ibm037", "ibm037,ebcdic" },
-		{ "ibm290", "ibm290" },
-		{ "ebcdices", "ebcdices" },
-		{ "ebcdicuk", "ebcdicuk" },
-		{ "ebcdicus", "ebcdicus" },
+		{ "ibm037", "ebcdic" },
+		{ "ibm290", NULL },
+		{ "ebcdices", NULL },
+		{ "ebcdicuk", NULL },
+		{ "ebcdicus", NULL },
 
 	};
 	int i;
