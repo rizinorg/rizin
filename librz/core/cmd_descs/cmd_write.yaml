@@ -259,10 +259,6 @@ commands:
           - text: w6e
             arg_str: " 48656c6c6f576f726c64"
             comment: Write the string "SGVsbG9Xb3JsZAo=" (without quotes) at current offset.
-  - name: wh
-    cname: wh_handler_old
-    summary: whereis/which shell command
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: we
     cname: we_handler_old
     summary: Extend write operations (insert bytes instead of replacing)
@@ -272,9 +268,11 @@ commands:
     summary: Apply unified hex patch (see output of cu)
     type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: wr
-    cname: wr_handler_old
-    summary: Write <num> random bytes
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    cname: write_random
+    summary: Write <len> random bytes
+    args:
+      - name: len
+        type: RZ_CMD_ARG_TYPE_RZNUM
   - name: wA
     cname: wA_handler_old
     summary: Alter/modify opcode at current seek (see wA?)
@@ -336,9 +334,20 @@ commands:
     summary: Write wide string
     type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: wx
-    cname: wx_handler_old
-    summary: Write hexadecimal
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    summary: Write hexadecimal data
+    subcommands:
+      - name: wx
+        cname: write_hex
+        summary: Write hexadecimal data <hex> into current offset
+        args:
+          - name: hex
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: wxf
+        cname: write_hex_from_file
+        summary: Write hexadecimal data from file <file> into current offset
+        args:
+          - name: file|-
+            type: RZ_CMD_ARG_TYPE_FILE
   - name: wa
     cname: wa_handler_old
     summary: Write opcode, separated by ';'
@@ -360,6 +369,8 @@ commands:
     summary: Duplicate N bytes from offset at current seek
     type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: ws
-    cname: ws_handler_old
+    cname: write_length_string
     summary: Write 1 byte for length and then the string
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    args:
+      - name: string
+        type: RZ_CMD_ARG_TYPE_STRING

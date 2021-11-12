@@ -4331,6 +4331,11 @@ RZ_API int rz_core_bin_set_arch_bits(RzCore *r, const char *name, const char *ar
 	//set env if the binfile changed or we are dealing with xtr
 	if (curfile != binfile || binfile->curxtr) {
 		rz_core_bin_set_cur(r, binfile);
+		if (binfile->o && binfile->o->info) {
+			free(binfile->o->info->arch);
+			binfile->o->info->arch = strdup(arch);
+			binfile->o->info->bits = bits;
+		}
 		return rz_core_bin_apply_all_info(r, binfile);
 	}
 	return true;
@@ -4365,8 +4370,6 @@ RZ_API bool rz_core_bin_raise(RzCore *core, ut32 bfid) {
 	if (bf) {
 		rz_io_use_fd(core->io, bf->fd);
 	}
-	// it should be 0 to use rz_io_use_fd in rz_core_block_read
-	core->switch_file_view = 0;
 	return bf && rz_core_bin_apply_all_info(core, bf) && rz_core_block_read(core);
 }
 
@@ -4376,7 +4379,6 @@ RZ_API bool rz_core_bin_delete(RzCore *core, RzBinFile *bf) {
 	if (bf) {
 		rz_io_use_fd(core->io, bf->fd);
 	}
-	core->switch_file_view = 0;
 	return bf && rz_core_bin_apply_all_info(core, bf) && rz_core_block_read(core);
 }
 

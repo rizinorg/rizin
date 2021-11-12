@@ -212,6 +212,9 @@ static const RzCmdDescArg plugins_debug_print_args[2];
 static const RzCmdDescArg plugins_io_print_args[2];
 static const RzCmdDescArg open_close_args[2];
 static const RzCmdDescArg open_plugins_args[2];
+static const RzCmdDescArg open_arch_bits_args[4];
+static const RzCmdDescArg open_use_args[2];
+static const RzCmdDescArg open_prioritize_args[2];
 static const RzCmdDescArg cmd_print_gadget_add_args[6];
 static const RzCmdDescArg cmd_print_gadget_move_args[6];
 static const RzCmdDescArg cmd_print_msg_digest_args[2];
@@ -290,10 +293,14 @@ static const RzCmdDescArg write_8_inc_args[2];
 static const RzCmdDescArg write_8_dec_args[2];
 static const RzCmdDescArg write_base64_decode_args[2];
 static const RzCmdDescArg write_base64_encode_args[2];
+static const RzCmdDescArg write_random_args[2];
 static const RzCmdDescArg write_from_io_args[3];
 static const RzCmdDescArg write_from_io_xchg_args[3];
 static const RzCmdDescArg write_from_file_args[4];
 static const RzCmdDescArg write_from_socket_args[3];
+static const RzCmdDescArg write_hex_args[2];
+static const RzCmdDescArg write_hex_from_file_args[2];
+static const RzCmdDescArg write_length_string_args[2];
 static const RzCmdDescArg yank_args[2];
 static const RzCmdDescArg yank_file_args[3];
 static const RzCmdDescArg yank_whole_file_args[2];
@@ -335,6 +342,7 @@ static const RzCmdDescArg cmd_shell_cat_args[2];
 static const RzCmdDescArg cmd_shell_mv_args[3];
 static const RzCmdDescArg cmd_shell_mkdir_args[3];
 static const RzCmdDescArg cmd_shell_sort_args[2];
+static const RzCmdDescArg cmd_shell_which_args[2];
 
 static const RzCmdDescHelp escl__help = {
 	.summary = "Run given commands as in system(3) or shows command history",
@@ -4833,6 +4841,91 @@ static const RzCmdDescHelp open_plugins_help = {
 	.args = open_plugins_args,
 };
 
+static const RzCmdDescArg open_list_ascii_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp open_list_ascii_help = {
+	.summary = "List opened files in ASCII-art bars",
+	.args = open_list_ascii_args,
+};
+
+static const RzCmdDescArg open_arch_bits_args[] = {
+	{
+		.name = "arch",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "bits",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "filename",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_arch_bits_help = {
+	.summary = "Specify <arch> and <bits> for the file <filename> or the current one if none is specified",
+	.args = open_arch_bits_args,
+};
+
+static const RzCmdDescArg open_use_args[] = {
+	{
+		.name = "fd",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_use_help = {
+	.summary = "Use specified <fd>",
+	.args = open_use_args,
+};
+
+static const RzCmdDescHelp op_help = {
+	.summary = "Select prioritized file",
+};
+static const RzCmdDescArg open_prioritize_args[] = {
+	{
+		.name = "fd",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_prioritize_help = {
+	.summary = "Prioritize file with file descriptor <fd>",
+	.args = open_prioritize_args,
+};
+
+static const RzCmdDescArg open_prioritize_next_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp open_prioritize_next_help = {
+	.summary = "Prioritize next file in the list",
+	.args = open_prioritize_next_args,
+};
+
+static const RzCmdDescArg open_prioritize_prev_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp open_prioritize_prev_help = {
+	.summary = "Prioritize previous file in the list",
+	.args = open_prioritize_prev_args,
+};
+
+static const RzCmdDescArg open_prioritize_next_rotate_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp open_prioritize_next_rotate_help = {
+	.summary = "Prioritize next file in the list (go back to first if on the last)",
+	.args = open_prioritize_next_rotate_args,
+};
+
 static const RzCmdDescHelp cmd_print_help = {
 	.summary = "Print commands",
 };
@@ -6472,10 +6565,6 @@ static const RzCmdDescHelp write_base64_encode_help = {
 	.args = write_base64_encode_args,
 };
 
-static const RzCmdDescHelp wh_handler_old_help = {
-	.summary = "whereis/which shell command",
-};
-
 static const RzCmdDescHelp we_handler_old_help = {
 	.summary = "Extend write operations (insert bytes instead of replacing)",
 };
@@ -6484,8 +6573,18 @@ static const RzCmdDescHelp wu_handler_old_help = {
 	.summary = "Apply unified hex patch (see output of cu)",
 };
 
-static const RzCmdDescHelp wr_handler_old_help = {
-	.summary = "Write <num> random bytes",
+static const RzCmdDescArg write_random_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_random_help = {
+	.summary = "Write <len> random bytes",
+	.args = write_random_args,
 };
 
 static const RzCmdDescHelp wA_handler_old_help = {
@@ -6595,8 +6694,34 @@ static const RzCmdDescHelp ww_handler_old_help = {
 	.summary = "Write wide string",
 };
 
-static const RzCmdDescHelp wx_handler_old_help = {
-	.summary = "Write hexadecimal",
+static const RzCmdDescHelp wx_help = {
+	.summary = "Write hexadecimal data",
+};
+static const RzCmdDescArg write_hex_args[] = {
+	{
+		.name = "hex",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_hex_help = {
+	.summary = "Write hexadecimal data <hex> into current offset",
+	.args = write_hex_args,
+};
+
+static const RzCmdDescArg write_hex_from_file_args[] = {
+	{
+		.name = "file|-",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_hex_from_file_help = {
+	.summary = "Write hexadecimal data from file <file> into current offset",
+	.args = write_hex_from_file_args,
 };
 
 static const RzCmdDescHelp wa_handler_old_help = {
@@ -6619,8 +6744,18 @@ static const RzCmdDescHelp wd_handler_old_help = {
 	.summary = "Duplicate N bytes from offset at current seek",
 };
 
-static const RzCmdDescHelp ws_handler_old_help = {
+static const RzCmdDescArg write_length_string_args[] = {
+	{
+		.name = "string",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_length_string_help = {
 	.summary = "Write 1 byte for length and then the string",
+	.args = write_length_string_args,
 };
 
 static const RzCmdDescHelp cmd_hexdump_help = {
@@ -7408,6 +7543,7 @@ static const RzCmdDescHelp specifiers_help = {
 
 static const RzCmdDescHelp shell_help = {
 	.summary = "Common shell commands",
+	.sort_subcommands = true,
 };
 static const RzCmdDescDetailEntry cmd_shell_env_Examples_detail_entries[] = {
 	{ .text = "%", .arg_str = NULL, .comment = "List all environment variables" },
@@ -7673,6 +7809,20 @@ static const RzCmdDescArg cmd_shell_cls_args[] = {
 static const RzCmdDescHelp cmd_shell_cls_help = {
 	.summary = "clear",
 	.args = cmd_shell_cls_args,
+};
+
+static const RzCmdDescArg cmd_shell_which_args[] = {
+	{
+		.name = "command",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_shell_which_help = {
+	.summary = "Which shell command",
+	.args = cmd_shell_which_args,
 };
 
 RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
@@ -8747,6 +8897,26 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(open_plugins_cd);
 	rz_cmd_desc_set_default_mode(open_plugins_cd, RZ_OUTPUT_MODE_TABLE);
 
+	RzCmdDesc *open_list_ascii_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_open_cd, "o=", rz_open_list_ascii_handler, &open_list_ascii_help);
+	rz_warn_if_fail(open_list_ascii_cd);
+
+	RzCmdDesc *open_arch_bits_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_open_cd, "oa", rz_open_arch_bits_handler, &open_arch_bits_help);
+	rz_warn_if_fail(open_arch_bits_cd);
+
+	RzCmdDesc *open_use_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_open_cd, "ou", rz_open_use_handler, &open_use_help);
+	rz_warn_if_fail(open_use_cd);
+
+	RzCmdDesc *op_cd = rz_cmd_desc_group_new(core->rcmd, cmd_open_cd, "op", rz_open_prioritize_handler, &open_prioritize_help, &op_help);
+	rz_warn_if_fail(op_cd);
+	RzCmdDesc *open_prioritize_next_cd = rz_cmd_desc_argv_new(core->rcmd, op_cd, "opn", rz_open_prioritize_next_handler, &open_prioritize_next_help);
+	rz_warn_if_fail(open_prioritize_next_cd);
+
+	RzCmdDesc *open_prioritize_prev_cd = rz_cmd_desc_argv_new(core->rcmd, op_cd, "opp", rz_open_prioritize_prev_handler, &open_prioritize_prev_help);
+	rz_warn_if_fail(open_prioritize_prev_cd);
+
+	RzCmdDesc *open_prioritize_next_rotate_cd = rz_cmd_desc_argv_new(core->rcmd, op_cd, "opr", rz_open_prioritize_next_rotate_handler, &open_prioritize_next_rotate_help);
+	rz_warn_if_fail(open_prioritize_next_rotate_cd);
+
 	RzCmdDesc *cmd_print_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "p", rz_cmd_print, &cmd_print_help);
 	rz_warn_if_fail(cmd_print_cd);
 	RzCmdDesc *cmd_print_gadget_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "pg", rz_cmd_print_gadget_add_handler, &cmd_print_gadget_add_help, &cmd_print_gadget_help);
@@ -9082,17 +9252,14 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *write_base64_encode_cd = rz_cmd_desc_argv_new(core->rcmd, w6_cd, "w6e", rz_write_base64_encode_handler, &write_base64_encode_help);
 	rz_warn_if_fail(write_base64_encode_cd);
 
-	RzCmdDesc *wh_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "wh", rz_wh_handler_old, &wh_handler_old_help);
-	rz_warn_if_fail(wh_handler_old_cd);
-
 	RzCmdDesc *we_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "we", rz_we_handler_old, &we_handler_old_help);
 	rz_warn_if_fail(we_handler_old_cd);
 
 	RzCmdDesc *wu_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "wu", rz_wu_handler_old, &wu_handler_old_help);
 	rz_warn_if_fail(wu_handler_old_cd);
 
-	RzCmdDesc *wr_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "wr", rz_wr_handler_old, &wr_handler_old_help);
-	rz_warn_if_fail(wr_handler_old_cd);
+	RzCmdDesc *write_random_cd = rz_cmd_desc_argv_new(core->rcmd, w_cd, "wr", rz_write_random_handler, &write_random_help);
+	rz_warn_if_fail(write_random_cd);
 
 	RzCmdDesc *wA_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "wA", rz_wA_handler_old, &wA_handler_old_help);
 	rz_warn_if_fail(wA_handler_old_cd);
@@ -9120,8 +9287,10 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *ww_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "ww", rz_ww_handler_old, &ww_handler_old_help);
 	rz_warn_if_fail(ww_handler_old_cd);
 
-	RzCmdDesc *wx_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "wx", rz_wx_handler_old, &wx_handler_old_help);
-	rz_warn_if_fail(wx_handler_old_cd);
+	RzCmdDesc *wx_cd = rz_cmd_desc_group_new(core->rcmd, w_cd, "wx", rz_write_hex_handler, &write_hex_help, &wx_help);
+	rz_warn_if_fail(wx_cd);
+	RzCmdDesc *write_hex_from_file_cd = rz_cmd_desc_argv_new(core->rcmd, wx_cd, "wxf", rz_write_hex_from_file_handler, &write_hex_from_file_help);
+	rz_warn_if_fail(write_hex_from_file_cd);
 
 	RzCmdDesc *wa_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "wa", rz_wa_handler_old, &wa_handler_old_help);
 	rz_warn_if_fail(wa_handler_old_cd);
@@ -9138,8 +9307,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *wd_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "wd", rz_wd_handler_old, &wd_handler_old_help);
 	rz_warn_if_fail(wd_handler_old_cd);
 
-	RzCmdDesc *ws_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "ws", rz_ws_handler_old, &ws_handler_old_help);
-	rz_warn_if_fail(ws_handler_old_cd);
+	RzCmdDesc *write_length_string_cd = rz_cmd_desc_argv_new(core->rcmd, w_cd, "ws", rz_write_length_string_handler, &write_length_string_help);
+	rz_warn_if_fail(write_length_string_cd);
 
 	RzCmdDesc *cmd_hexdump_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "x", rz_cmd_hexdump, &cmd_hexdump_help);
 	rz_warn_if_fail(cmd_hexdump_cd);
@@ -9314,5 +9483,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_shell_cls_cd = rz_cmd_desc_argv_new(core->rcmd, shell_cd, "cls", rz_cmd_shell_clear_handler, &cmd_shell_cls_help);
 	rz_warn_if_fail(cmd_shell_cls_cd);
+
+	RzCmdDesc *cmd_shell_which_cd = rz_cmd_desc_argv_new(core->rcmd, shell_cd, "which", rz_cmd_shell_which_handler, &cmd_shell_which_help);
+	rz_warn_if_fail(cmd_shell_which_cd);
 	rz_cmd_batch_end(core->rcmd);
 }

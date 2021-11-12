@@ -413,7 +413,7 @@ RUN
 FILE=malloc://1024
 NAME=data written after multiple wxs
 CMDS=<<EOF
-2 wxs 9090 @ 8
+2 wx 9090 @ 8 @e:cfg.wseek=true
 x 16 @ 0
 EOF
 EXPECT=<<EOF
@@ -425,7 +425,7 @@ RUN
 FILE=malloc://1024
 NAME=address after wxs at tmpseek
 CMDS=<<EOF
-2 wxs 9090 @ 8
+2 wx 9090 @ 8 @e:cfg.wseek=true
 ?vi $$
 EOF
 EXPECT=<<EOF

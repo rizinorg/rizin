@@ -574,8 +574,10 @@ RZ_API bool rz_core_write_at(RzCore *core, ut64 addr, const ut8 *buf, int size);
 RZ_API bool rz_core_write_value_at(RzCore *core, ut64 addr, ut64 value, int sz);
 RZ_API bool rz_core_write_value_inc_at(RzCore *core, ut64 addr, st64 value, int sz);
 RZ_API bool rz_core_write_string_at(RzCore *core, ut64 addr, RZ_NONNULL const char *s);
+RZ_API bool rz_core_write_length_string_at(RzCore *core, ut64 addr, const char *s);
 RZ_API bool rz_core_write_base64d_at(RzCore *core, ut64 addr, RZ_NONNULL const char *s);
 RZ_API bool rz_core_write_base64_at(RzCore *core, ut64 addr, RZ_NONNULL const char *s);
+RZ_API bool rz_core_write_random_at(RzCore *core, ut64 addr, size_t len);
 RZ_API int rz_core_write_op(RzCore *core, const char *arg, char op);
 RZ_API ut8 *rz_core_transform_op(RzCore *core, const char *arg, char op);
 RZ_API ut32 rz_core_file_cur_fd(RzCore *core);
@@ -1114,6 +1116,8 @@ RZ_API void rz_core_autocomplete_reload(RzCore *core);
 RZ_API RzCoreAutocomplete *rz_core_autocomplete_find(RzCoreAutocomplete *parent, const char *cmd, bool exact);
 RZ_API bool rz_core_autocomplete_remove(RzCoreAutocomplete *parent, const char *cmd);
 RZ_API void rz_core_analysis_propagate_noreturn(RzCore *core, ut64 addr);
+
+RZ_API void rz_core_flirt_dump(RZ_NONNULL const char *flirt_file);
 
 /* PLUGINS */
 extern RzCorePlugin rz_core_plugin_java;
