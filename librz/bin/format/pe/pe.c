@@ -518,7 +518,7 @@ static int bin_pe_parse_imports(struct PE_(rz_bin_pe_obj_t) * bin,
 				} else {
 					bprintf("Cannot find %s\n", filename);
 				}
-				free(filename);
+				RZ_FREE(filename);
 			} else {
 				import_ordinal++;
 				const ut64 off = bin_pe_rva_to_paddr(bin, import_table);
