@@ -259,10 +259,6 @@ commands:
           - text: w6e
             arg_str: " 48656c6c6f576f726c64"
             comment: Write the string "SGVsbG9Xb3JsZAo=" (without quotes) at current offset.
-  - name: wh
-    cname: wh_handler_old
-    summary: whereis/which shell command
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: we
     cname: we_handler_old
     summary: Extend write operations (insert bytes instead of replacing)

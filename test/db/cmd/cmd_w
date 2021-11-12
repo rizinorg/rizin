@@ -66,10 +66,10 @@ ESIz
 EOF
 RUN
 
-NAME=wh
+NAME=which
 FILE==
 CMDS=<<EOF
-wh rizin~?
+which rizin~?
 EOF
 EXPECT=<<EOF
 1

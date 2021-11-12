@@ -159,3 +159,9 @@ commands:
     cname: cmd_shell_cls
     handler: cmd_shell_clear
     args: []
+  - name: which
+    cname: cmd_shell_which
+    summary: Which shell command
+    args:
+      - name: command
+        type: RZ_CMD_ARG_TYPE_STRING
