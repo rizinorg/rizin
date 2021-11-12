@@ -224,10 +224,15 @@ jobs:
         if [ "$ASAN" == "true" ]; then
           export ASAN=1
         fi
-        ninja -C build test
+        if [ "$ASAN" == "true" ] && [ "$CC" == "clang" ]; then
+          LD_PRELOAD=/usr/lib/llvm-11/lib/clang/11.0.0/lib/linux/libclang_rt.asan-x86_64.so ninja -C build test
+        else
+          ninja -C build test
+        fi
       env:
         ASAN: ${{ matrix.asan }}
         ASAN_OPTIONS: ${{ matrix.asan_options }}
+        CC: ${{ matrix.compiler }}
     - name: Run tests
       if: matrix.run_tests && matrix.enabled
       run: |

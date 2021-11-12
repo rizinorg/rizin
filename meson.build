@@ -152,10 +152,14 @@ if get_option('default_library') == 'shared'
   endif
 endif
 
+executable_cflags = []
+executable_linkflags = []
 library_cflags = ['-DRZ_PLUGIN_INCORE=1']
 library_linkflags = []
 b_sanitize_opt = get_option('b_sanitize')
 if (b_sanitize_opt.contains('address') or b_sanitize_opt.contains('undefined')) and cc.get_id() == 'clang'
+  executable_cflags += '-shared-libasan'
+  executable_linkflags += '-shared-libasan'
   library_cflags += '-shared-libasan'
   library_linkflags += '-shared-libasan'
 endif
