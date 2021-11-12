@@ -563,7 +563,8 @@ static void rz_core_cmd_omt(RzCore *core, const char *arg) {
 	rz_table_free(t);
 }
 
-static void cmd_open_map(RzCore *core, const char *input) {
+RZ_IPI int rz_om_oldinput(void *data, const char *input) {
+	RzCore *core = (RzCore *)data;
 	ut64 fd = 0LL;
 	ut32 id = 0;
 	ut64 addr = 0;
@@ -573,14 +574,14 @@ static void cmd_open_map(RzCore *core, const char *input) {
 	const char *P;
 	PJ *pj;
 
-	switch (input[1]) {
+	switch (input[0]) {
 	case '.': // "om."
 		map = rz_io_map_get(core->io, core->offset);
 		if (map) {
-			if (input[2] == 'j') { // "om.j"
+			if (input[1] == 'j') { // "om.j"
 				pj = pj_new();
 				if (!pj) {
-					return;
+					return 1;
 				}
 				pj_o(pj);
 				pj_ki(pj, "map", map->id);
@@ -605,47 +606,28 @@ static void cmd_open_map(RzCore *core, const char *input) {
 		}
 		break;
 	case 'r': // "omr"
-		if (input[2] != ' ') {
+		if (input[1] != ' ') {
 			break;
 		}
-		P = strchr(input + 3, ' ');
+		P = strchr(input + 2, ' ');
 		if (P) {
-			id = (ut32)rz_num_math(core->num, input + 3); //mapid
+			id = (ut32)rz_num_math(core->num, input + 2); //mapid
 			new = rz_num_math(core->num, P + 1);
 			rz_io_map_resize(core->io, id, new);
 		}
 		break;
-	case 'b': // "omb"
-		if (input[2] == '.') {
-			RzIOMap *map = rz_io_map_get(core->io, core->offset);
-			if (map) {
-				ut64 dst = rz_num_math(core->num, input + 3);
-				rz_io_map_remap(core->io, map->id, dst);
-			}
-		} else {
-			if (input[2] != ' ') {
-				break;
-			}
-			P = strchr(input + 3, ' ');
-			if (P) {
-				id = (ut32)rz_num_math(core->num, input + 3); //mapid
-				new = rz_num_math(core->num, P + 1);
-				rz_io_map_remap(core->io, id, new);
-			}
-		}
-		break;
 	case 'o': // "omo"
-		if (input[2] == ' ') {
-			rz_core_cmdf(core, "om %s 0x%08" PFMT64x " $s r omo", input + 2, core->offset);
+		if (input[1] == ' ') {
+			rz_core_cmdf(core, "om %s 0x%08" PFMT64x " $s r omo", input + 1, core->offset);
 		} else {
 			rz_core_cmd0(core, "om `oq.` $B $s r");
 		}
 		rz_core_cmd0(core, "ompd `omq.`");
 		break;
 	case 'p':
-		switch (input[2]) {
+		switch (input[1]) {
 		case 'd': // "ompf"
-			id = rz_num_math(core->num, input + 3); //mapid
+			id = rz_num_math(core->num, input + 2); //mapid
 			if (rz_io_map_exists_for_id(core->io, id)) {
 				rz_io_map_depriorize(core->io, id);
 			} else {
@@ -653,19 +635,19 @@ static void cmd_open_map(RzCore *core, const char *input) {
 			}
 			break;
 		case 'f': // "ompf"
-			fd = rz_num_math(core->num, input + 3);
+			fd = rz_num_math(core->num, input + 2);
 			if (!rz_io_map_priorize_for_fd(core->io, (int)fd)) {
 				eprintf("Cannot prioritize any map for fd %d\n", (int)fd);
 			}
 			break;
 		case 'b': // "ompb"
-			id = (ut32)rz_num_math(core->num, input + 4);
+			id = (ut32)rz_num_math(core->num, input + 3);
 			if (!rz_bin_file_set_cur_by_id(core->bin, id)) {
 				eprintf("Cannot prioritize bin with fd %d\n", id);
 			}
 			break;
 		case ' ': // "omp"
-			id = rz_num_math(core->num, input + 3); //mapid
+			id = rz_num_math(core->num, input + 2); //mapid
 			if (rz_io_map_exists_for_id(core->io, id)) {
 				rz_io_map_priorize(core->io, id);
 				rz_core_block_read(core);
@@ -676,10 +658,10 @@ static void cmd_open_map(RzCore *core, const char *input) {
 		}
 		break;
 	case 't': // "omt"
-		switch (input[2]) {
+		switch (input[1]) {
 		case 'q': // "omtq"
 		{
-			const char *arg = rz_str_trim_head_ro(input + 3);
+			const char *arg = rz_str_trim_head_ro(input + 2);
 			char *query = rz_str_newf("%s%squiet", arg, *arg ? ":" : "");
 			if (query) {
 				rz_core_cmd_omt(core, query);
@@ -688,12 +670,12 @@ static void cmd_open_map(RzCore *core, const char *input) {
 			break;
 		}
 		default:
-			rz_core_cmd_omt(core, input + 2);
+			rz_core_cmd_omt(core, input + 1);
 			break;
 		}
 		break;
 	case ' ': // "om"
-		s = strdup(input + 2);
+		s = strdup(input + 1);
 		if (!s) {
 			break;
 		}
@@ -743,10 +725,10 @@ static void cmd_open_map(RzCore *core, const char *input) {
 		RZ_FREE(s);
 		break;
 	case 'n': // "omn"
-		if (input[2] == '.') { // "omn."
+		if (input[1] == '.') { // "omn."
 			RzIOMap *map = rz_io_map_get(core->io, core->offset);
 			if (map) {
-				switch (input[3]) {
+				switch (input[2]) {
 				case '-':
 					rz_io_map_del_name(map);
 					break;
@@ -754,13 +736,13 @@ static void cmd_open_map(RzCore *core, const char *input) {
 					rz_cons_printf("%s\n", map->name);
 					break;
 				default:
-					rz_io_map_set_name(map, rz_str_trim_head_ro(input + 3));
+					rz_io_map_set_name(map, rz_str_trim_head_ro(input + 2));
 					break;
 				}
 			}
 		} else {
-			bool use_id = (input[2] == 'i') ? true : false;
-			s = strdup(use_id ? &input[3] : &input[2]);
+			bool use_id = (input[1] == 'i') ? true : false;
+			s = strdup(use_id ? &input[2] : &input[1]);
 			if (!s) {
 				break;
 			}
@@ -802,20 +784,9 @@ static void cmd_open_map(RzCore *core, const char *input) {
 			s = p;
 		}
 		break;
-	case 'a': // "oma"
-	{
-		ut32 fd = input[2] ? rz_num_math(core->num, input + 2) : rz_io_fd_get_current(core->io);
-		RzIODesc *desc = rz_io_desc_get(core->io, fd);
-		if (desc) {
-			map = rz_io_map_add(core->io, fd, desc->perm, 0, 0, UT64_MAX);
-			rz_io_map_set_name(map, desc->name);
-		} else {
-			eprintf("Usage: omm [fd]\n");
-		}
-	} break;
 	case 'm': // "omm"
 	{
-		ut32 fd = input[2] ? rz_num_math(core->num, input + 2) : rz_io_fd_get_current(core->io);
+		ut32 fd = input[1] ? rz_num_math(core->num, input + 1) : rz_io_fd_get_current(core->io);
 		RzIODesc *desc = rz_io_desc_get(core->io, fd);
 		if (desc) {
 			ut64 size = rz_io_desc_size(desc);
@@ -825,22 +796,13 @@ static void cmd_open_map(RzCore *core, const char *input) {
 			eprintf("Usage: omm [fd]\n");
 		}
 	} break;
-	case '-': // "om-"
-		if (!strcmp(input + 2, "..")) {
-			rz_core_cmd0(core, "om-`om~...`~[0]");
-		} else if (input[2] == '*') {
-			rz_io_map_reset(core->io);
-		} else {
-			rz_io_map_del(core->io, rz_num_math(core->num, input + 2));
-		}
-		break;
 	case 'f': // "omf"
-		switch (input[2]) {
+		switch (input[1]) {
 		case 'g': // "omfg"
-			cmd_omfg(core, input + 3);
+			cmd_omfg(core, input + 2);
 			break;
 		case ' ': // "omf"
-			cmd_omf(core, input + 3);
+			cmd_omf(core, input + 2);
 			break;
 		default:
 			rz_core_cmd_help(core, help_msg_om);
@@ -851,46 +813,19 @@ static void cmd_open_map(RzCore *core, const char *input) {
 	case 'j': // "omj"
 	case '*': // "om*"
 	case 'q': // "omq"
-		if (input[1] && input[2] == '.') {
+		if (input[0] && input[1] == '.') {
 			map = rz_io_map_get(core->io, core->offset);
 			if (map) {
 				core->print->cb_printf("%i\n", map->id);
 			}
 		} else {
-			if (input[1] && input[2] == 'q') { // "omqq"
-				map_list(core->io, input[1], core->print, -2);
+			if (input[0] && input[1] == 'q') { // "omqq"
+				map_list(core->io, input[0], core->print, -2);
 			} else {
-				map_list(core->io, input[1], core->print, -1);
+				map_list(core->io, input[0], core->print, -1);
 			}
 		}
 		break;
-	case '=': // "om="
-	{
-		RzList *list = rz_list_newf((RzListFree)rz_listinfo_free);
-		if (!list) {
-			return;
-		}
-		void **it;
-		RzPVector *maps = rz_io_maps(core->io);
-		rz_pvector_foreach_prev(maps, it) {
-			RzIOMap *map = *it;
-			char temp[32];
-			snprintf(temp, sizeof(temp), "%d", map->fd);
-			RzListInfo *info = rz_listinfo_new(map->name, map->itv, map->itv, map->perm, temp);
-			if (!info) {
-				break;
-			}
-			rz_list_append(list, info);
-		}
-		RzTable *table = rz_core_table(core);
-		rz_table_visual_list(table, list, core->offset, core->blocksize,
-			rz_cons_get_size(NULL), rz_config_get_i(core->config, "scr.color"));
-		char *tablestr = rz_table_tostring(table);
-		rz_cons_printf("\n%s\n", tablestr);
-		rz_table_free(table);
-		rz_list_free(list);
-		free(tablestr);
-	} break;
 	default:
 	case '?':
 		rz_core_cmd_help(core, help_msg_om);
@@ -898,6 +833,7 @@ static void cmd_open_map(RzCore *core, const char *input) {
 	}
 	RZ_FREE(s);
 	rz_core_block_read(core);
+	return 0;
 }
 
 static bool reopen_in_malloc_cb(void *user, void *data, ut32 id) {
@@ -1246,7 +1182,7 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 		free(data);
 	} break;
 	case 'm': // "om"
-		cmd_open_map(core, input);
+		rz_om_oldinput(core, input + 1);
 		break;
 	case 'o': // "oo"
 		switch (input[1]) {
@@ -1518,4 +1454,120 @@ RZ_IPI RzCmdStatus rz_open_prioritize_next_rotate_handler(RzCore *core, int argc
 		fd = rz_io_fd_get_lowest(core->io);
 	}
 	return prioritize_file(core, fd) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+}
+
+RZ_IPI RzCmdStatus rz_open_maps_remove_handler(RzCore *core, int argc, const char **argv) {
+	if (!rz_num_is_valid_input(NULL, argv[1])) {
+		RZ_LOG_ERROR("Invalid map id '%s'\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	ut32 map_id = rz_num_math(NULL, argv[1]);
+	if (!rz_io_map_del(core->io, map_id)) {
+		RZ_LOG_ERROR("Could not delete IO map %d\n", map_id);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_open_maps_remove_all_handler(RzCore *core, int argc, const char **argv) {
+	rz_io_map_reset(core->io);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_open_maps_ascii_handler(RzCore *core, int argc, const char **argv) {
+	RzList *list = rz_list_newf((RzListFree)rz_listinfo_free);
+	if (!list) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	void **it;
+	RzPVector *maps = rz_io_maps(core->io);
+	rz_pvector_foreach_prev(maps, it) {
+		RzIOMap *map = *it;
+		char temp[32];
+		rz_strf(temp, "%d", map->fd);
+		RzListInfo *info = rz_listinfo_new(map->name, map->itv, map->itv, map->perm, temp);
+		if (!info) {
+			break;
+		}
+		rz_list_append(list, info);
+	}
+	RzTable *table = rz_core_table(core);
+	rz_table_visual_list(table, list, core->offset, core->blocksize,
+		rz_cons_get_size(NULL), rz_config_get_i(core->config, "scr.color"));
+	char *tablestr = rz_table_tostring(table);
+	rz_cons_printf("%s", tablestr);
+	rz_table_free(table);
+	rz_list_free(list);
+	free(tablestr);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_open_maps_all_fd_handler(RzCore *core, int argc, const char **argv) {
+	ut32 fd = argc > 1 ? rz_num_math(NULL, argv[1]) : rz_io_fd_get_current(core->io);
+	RzIODesc *desc = rz_io_desc_get(core->io, fd);
+	if (!desc) {
+		RZ_LOG_ERROR("Could not find any file descriptor with fd %d\n", fd);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzIOMap *map = rz_io_map_add(core->io, fd, desc->perm, 0, 0, UT64_MAX);
+	if (!map) {
+		RZ_LOG_ERROR("Could not create a IO map for file descriptor %d\n", fd);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_io_map_set_name(map, desc->name);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_open_maps_relocate_handler(RzCore *core, int argc, const char **argv) {
+	if (!rz_num_is_valid_input(NULL, argv[1])) {
+		RZ_LOG_ERROR("Invalid map id '%s'\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!rz_num_is_valid_input(core->num, argv[2])) {
+		RZ_LOG_ERROR("Invalid address '%s'\n", argv[2]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	ut32 map_id = (ut32)rz_num_math(NULL, argv[1]);
+	ut64 addr = rz_num_math(core->num, argv[2]);
+	if (!rz_io_map_remap(core->io, map_id, addr)) {
+		RZ_LOG_ERROR("Could not relocate map with id %d to %" PFMT64x "\n", map_id, addr);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_open_maps_relocate_current_handler(RzCore *core, int argc, const char **argv) {
+	if (!rz_num_is_valid_input(core->num, argv[2])) {
+		RZ_LOG_ERROR("Invalid address '%s'\n", argv[2]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzIOMap *map = rz_io_map_get(core->io, core->offset);
+	if (!map) {
+		RZ_LOG_ERROR("Could not find any IO map at current offset\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	ut64 addr = rz_num_math(core->num, argv[2]);
+	if (!rz_io_map_remap(core->io, map->id, addr)) {
+		RZ_LOG_ERROR("Could not relocate map with id %d to %" PFMT64x "\n", map->id, addr);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_open_maps_resize_handler(RzCore *core, int argc, const char **argv) {
+	if (!rz_num_is_valid_input(NULL, argv[1])) {
+		RZ_LOG_ERROR("Invalid map id '%s'\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!rz_num_is_valid_input(core->num, argv[2])) {
+		RZ_LOG_ERROR("Invalid size '%s'\n", argv[2]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	ut32 map_id = (ut32)rz_num_math(NULL, argv[1]);
+	ut64 size = rz_num_math(core->num, argv[2]);
+	if (!rz_io_map_resize(core->io, map_id, size)) {
+		RZ_LOG_ERROR("Could not resize map with id %d to %" PFMT64x "\n", map_id, size);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return RZ_CMD_STATUS_OK;
 }
