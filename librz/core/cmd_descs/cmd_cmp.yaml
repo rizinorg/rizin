@@ -19,6 +19,14 @@ commands:
     args:
       - name: addr
         type: RZ_CMD_ARG_TYPE_RZNUM
+  - name: ca
+    summary: Compare <n> bytes of data at <addr> with the data at current offset (also return in $?)
+    cname: cmd_cmp_addr
+    args:
+      - name: addr
+        type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: n
+        type: RZ_CMD_ARG_TYPE_NUM
   - name: cb
     summary: Compare <n> (upto 8) bytes at current offset with a number <num> (also return in $?)
     cname: cmd_cmp_bytes

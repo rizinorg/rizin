@@ -115,6 +115,7 @@ static const RzCmdDescArg block_flag_args[2];
 static const RzCmdDescArg block_max_args[2];
 static const RzCmdDescArg cmd_cmp_string_args[2];
 static const RzCmdDescArg cmd_cmp_bits_args[2];
+static const RzCmdDescArg cmd_cmp_addr_args[3];
 static const RzCmdDescArg cmd_cmp_bytes_args[3];
 static const RzCmdDescArg cmd_cmp_hex_block_args[2];
 static const RzCmdDescArg cmd_cmp_hex_diff_lines_args[2];
@@ -2027,6 +2028,24 @@ static const RzCmdDescArg cmd_cmp_bits_args[] = {
 static const RzCmdDescHelp cmd_cmp_bits_help = {
 	.summary = "Compare 8-bit data at current offset with the data at <addr>",
 	.args = cmd_cmp_bits_args,
+};
+
+static const RzCmdDescArg cmd_cmp_addr_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "n",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_cmp_addr_help = {
+	.summary = "Compare <n> bytes of data at <addr> with the data at current offset (also return in $?)",
+	.args = cmd_cmp_addr_args,
 };
 
 static const RzCmdDescArg cmd_cmp_bytes_args[] = {
@@ -8446,6 +8465,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(c_cd);
 	RzCmdDesc *cmd_cmp_bits_cd = rz_cmd_desc_argv_new(core->rcmd, c_cd, "c1", rz_cmd_cmp_bits_handler, &cmd_cmp_bits_help);
 	rz_warn_if_fail(cmd_cmp_bits_cd);
+
+	RzCmdDesc *cmd_cmp_addr_cd = rz_cmd_desc_argv_new(core->rcmd, c_cd, "ca", rz_cmd_cmp_addr_handler, &cmd_cmp_addr_help);
+	rz_warn_if_fail(cmd_cmp_addr_cd);
 
 	RzCmdDesc *cmd_cmp_bytes_cd = rz_cmd_desc_argv_new(core->rcmd, c_cd, "cb", rz_cmd_cmp_bytes_handler, &cmd_cmp_bytes_help);
 	rz_warn_if_fail(cmd_cmp_bytes_cd);

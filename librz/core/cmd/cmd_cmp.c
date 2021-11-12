@@ -146,8 +146,32 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_bits_handler(RzCore *core, int argc, const char **
 	if (!cmp) {
 		return ret;
 	}
-	ret = core_cmp_bits(core, cmp) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+	bool val = core_cmp_bits(core, cmp);
+	if (val) {
+		core->num->value = 1;
+		ret = RZ_CMD_STATUS_OK;
+	}
 	free(cmp);
+	return ret;
+}
+
+// ca
+RZ_IPI RzCmdStatus rz_cmd_cmp_addr_handler(RzCore *core, int argc, const char **argv) {
+	RzCmdStatus ret = RZ_CMD_STATUS_ERROR;
+	RzCompareData *cmp = rz_cmp_mem_mem(core, core->offset, rz_num_math(core->num, argv[1]), rz_num_math(core->num, argv[2]));
+	if (!cmp) {
+		return ret;
+	}
+	if (cmp->same) {
+		core->num->value = 0;
+	} else {
+		core->num->value = 1;
+	}
+	int val = rz_cmp_print(core, cmp, RZ_OUTPUT_MODE_STANDARD);
+	free(cmp);
+	if (val != -1) {
+		ret = RZ_CMD_STATUS_OK;
+	}
 	return ret;
 }
 
