@@ -5,7 +5,7 @@
 // modify it manually. Look at cmd_descs.yaml if you want to update commands.
 //
 
-# include <cmd_descs.h>
+#include <cmd_descs.h>
 
 static const RzCmdDescDetail system_details[2];
 static const RzCmdDescDetail system_to_cons_details[2];
