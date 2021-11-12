@@ -139,8 +139,8 @@ end:
 	return ret;
 }
 
-// c1
-RZ_IPI RzCmdStatus rz_cmd_cmp_num1_handler(RzCore *core, int argc, const char **argv) {
+// ca
+RZ_IPI RzCmdStatus rz_cmd_cmp_bits_handler(RzCore *core, int argc, const char **argv) {
 	RzCmdStatus ret = RZ_CMD_STATUS_ERROR;
 	RzCompareData *cmp = rz_cmp_mem_mem(core, core->offset, rz_num_math(core->num, argv[1]), 1);
 	if (!cmp) {
@@ -151,49 +151,20 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_num1_handler(RzCore *core, int argc, const char **
 	return ret;
 }
 
-// c2
-RZ_IPI RzCmdStatus rz_cmd_cmp_num2_handler(RzCore *core, int argc, const char **argv) {
+// cb
+RZ_IPI RzCmdStatus rz_cmd_cmp_bytes_handler(RzCore *core, int argc, const char **argv) {
 	RzCmdStatus ret = RZ_CMD_STATUS_ERROR;
-	ut16 v16 = (ut16)rz_num_math(core->num, argv[1]);
-	RzCompareData *cmp = rz_cmp_mem_data(core, core->offset, (ut8 *)&v16, sizeof(v16));
-	if (!cmp) {
-		goto end;
-	}
-	int val = rz_cmp_print(core, cmp, RZ_OUTPUT_MODE_STANDARD);
-	if (val != 0) {
-		core->num->value = val;
-		ret = RZ_CMD_STATUS_OK;
+	ut64 sz = rz_num_math(core->num, argv[1]);
+	if (sz > 8) {
+		rz_cons_printf("Cannot compare more than 8 bytes. Use the c command instead.\n");
+		return ret;
 	}
 
-end:
-	free(cmp);
-	return ret;
-}
-
-// c4
-RZ_IPI RzCmdStatus rz_cmd_cmp_num4_handler(RzCore *core, int argc, const char **argv) {
-	RzCmdStatus ret = RZ_CMD_STATUS_ERROR;
-	ut32 v32 = (ut32)rz_num_math(core->num, argv[1]);
-	RzCompareData *cmp = rz_cmp_mem_data(core, core->offset, (ut8 *)&v32, sizeof(v32));
-	if (!cmp) {
-		goto end;
-	}
-	int val = rz_cmp_print(core, cmp, RZ_OUTPUT_MODE_STANDARD);
-	if (val != 0) {
-		core->num->value = val;
-		ret = RZ_CMD_STATUS_OK;
-	}
-
-end:
-	free(cmp);
-	return ret;
-}
-
-// c8
-RZ_IPI RzCmdStatus rz_cmd_cmp_num8_handler(RzCore *core, int argc, const char **argv) {
-	RzCmdStatus ret = RZ_CMD_STATUS_ERROR;
-	ut32 v32 = (ut32)rz_num_math(core->num, argv[1]);
-	RzCompareData *cmp = rz_cmp_mem_data(core, core->offset, (ut8 *)&v32, sizeof(v32));
+	ut64 num = rz_num_math(core->num, argv[2]);
+	ut64 mask = -1;
+	mask >>= 8 - sz;
+	ut64 valid_num = num & mask;
+	RzCompareData *cmp = rz_cmp_mem_data(core, core->offset, (ut8 *)&valid_num, sz);
 	if (!cmp) {
 		goto end;
 	}

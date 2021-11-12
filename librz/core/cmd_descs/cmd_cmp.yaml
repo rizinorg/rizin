@@ -13,28 +13,18 @@ commands:
     args:
       - name: string
         type: RZ_CMD_ARG_TYPE_STRING
-  - name: c1
-    summary: Compare 8-bit data at current offset with a number <num>
-    cname: cmd_cmp_num1
+  - name: ca
+    summary: Compare 8-bit data at current offset with the data at <addr>
+    cname: cmd_cmp_bits
     args:
-      - name: num
+      - name: addr
         type: RZ_CMD_ARG_TYPE_RZNUM
-  - name: c2
-    summary: Compare a word (16-bit data) at current offset with a number <num>
-    cname: cmd_cmp_num2
+  - name: cb
+    summary: Compare <n> (upto 8) bytes at current offset with a number <num>
+    cname: cmd_cmp_bytes
     args:
-      - name: num
-        type: RZ_CMD_ARG_TYPE_RZNUM
-  - name: c4
-    summary: Compare a doubleword (32-bit data) at current offset with a number <num>
-    cname: cmd_cmp_num4
-    args:
-      - name: num
-        type: RZ_CMD_ARG_TYPE_RZNUM
-  - name: c8
-    summary: Compare a quadword (64-bit data) at current offset with a number <num>
-    cname: cmd_cmp_num8
-    args:
+      - name: n
+        type: RZ_CMD_ARG_TYPE_NUM
       - name: num
         type: RZ_CMD_ARG_TYPE_RZNUM
   - name: cc

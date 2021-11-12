@@ -114,10 +114,8 @@ static const RzCmdDescArg block_increase_args[2];
 static const RzCmdDescArg block_flag_args[2];
 static const RzCmdDescArg block_max_args[2];
 static const RzCmdDescArg cmd_cmp_string_args[2];
-static const RzCmdDescArg cmd_cmp_num1_args[2];
-static const RzCmdDescArg cmd_cmp_num2_args[2];
-static const RzCmdDescArg cmd_cmp_num4_args[2];
-static const RzCmdDescArg cmd_cmp_num8_args[2];
+static const RzCmdDescArg cmd_cmp_bits_args[2];
+static const RzCmdDescArg cmd_cmp_bytes_args[3];
 static const RzCmdDescArg cmd_cmp_hex_block_args[2];
 static const RzCmdDescArg cmd_cmp_hex_diff_lines_args[2];
 static const RzCmdDescArg cmd_cmp_disasm_args[2];
@@ -2007,7 +2005,26 @@ static const RzCmdDescHelp cmd_cmp_string_help = {
 	.args = cmd_cmp_string_args,
 };
 
-static const RzCmdDescArg cmd_cmp_num1_args[] = {
+static const RzCmdDescArg cmd_cmp_bits_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_cmp_bits_help = {
+	.summary = "Compare 8-bit data at current offset with the data at <addr>",
+	.args = cmd_cmp_bits_args,
+};
+
+static const RzCmdDescArg cmd_cmp_bytes_args[] = {
+	{
+		.name = "n",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
 	{
 		.name = "num",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
@@ -2016,51 +2033,9 @@ static const RzCmdDescArg cmd_cmp_num1_args[] = {
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp cmd_cmp_num1_help = {
-	.summary = "Compare 8-bit data at current offset with a number <num>",
-	.args = cmd_cmp_num1_args,
-};
-
-static const RzCmdDescArg cmd_cmp_num2_args[] = {
-	{
-		.name = "num",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_cmp_num2_help = {
-	.summary = "Compare a word (16-bit data) at current offset with a number <num>",
-	.args = cmd_cmp_num2_args,
-};
-
-static const RzCmdDescArg cmd_cmp_num4_args[] = {
-	{
-		.name = "num",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_cmp_num4_help = {
-	.summary = "Compare a doubleword (32-bit data) at current offset with a number <num>",
-	.args = cmd_cmp_num4_args,
-};
-
-static const RzCmdDescArg cmd_cmp_num8_args[] = {
-	{
-		.name = "num",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_cmp_num8_help = {
-	.summary = "Compare a quadword (64-bit data) at current offset with a number <num>",
-	.args = cmd_cmp_num8_args,
+static const RzCmdDescHelp cmd_cmp_bytes_help = {
+	.summary = "Compare <n> (upto 8) bytes at current offset with a number <num>",
+	.args = cmd_cmp_bytes_args,
 };
 
 static const RzCmdDescArg cmd_cmp_hex_block_args[] = {
@@ -8285,17 +8260,11 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *c_cd = rz_cmd_desc_group_modes_new(core->rcmd, root_cd, "c", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_cmp_string_handler, &cmd_cmp_string_help, &c_help);
 	rz_warn_if_fail(c_cd);
-	RzCmdDesc *cmd_cmp_num1_cd = rz_cmd_desc_argv_new(core->rcmd, c_cd, "c1", rz_cmd_cmp_num1_handler, &cmd_cmp_num1_help);
-	rz_warn_if_fail(cmd_cmp_num1_cd);
+	RzCmdDesc *cmd_cmp_bits_cd = rz_cmd_desc_argv_new(core->rcmd, c_cd, "ca", rz_cmd_cmp_bits_handler, &cmd_cmp_bits_help);
+	rz_warn_if_fail(cmd_cmp_bits_cd);
 
-	RzCmdDesc *cmd_cmp_num2_cd = rz_cmd_desc_argv_new(core->rcmd, c_cd, "c2", rz_cmd_cmp_num2_handler, &cmd_cmp_num2_help);
-	rz_warn_if_fail(cmd_cmp_num2_cd);
-
-	RzCmdDesc *cmd_cmp_num4_cd = rz_cmd_desc_argv_new(core->rcmd, c_cd, "c4", rz_cmd_cmp_num4_handler, &cmd_cmp_num4_help);
-	rz_warn_if_fail(cmd_cmp_num4_cd);
-
-	RzCmdDesc *cmd_cmp_num8_cd = rz_cmd_desc_argv_new(core->rcmd, c_cd, "c8", rz_cmd_cmp_num8_handler, &cmd_cmp_num8_help);
-	rz_warn_if_fail(cmd_cmp_num8_cd);
+	RzCmdDesc *cmd_cmp_bytes_cd = rz_cmd_desc_argv_new(core->rcmd, c_cd, "cb", rz_cmd_cmp_bytes_handler, &cmd_cmp_bytes_help);
+	rz_warn_if_fail(cmd_cmp_bytes_cd);
 
 	RzCmdDesc *cmd_cmp_hex_block_cd = rz_cmd_desc_argv_new(core->rcmd, c_cd, "cc", rz_cmd_cmp_hex_block_handler, &cmd_cmp_hex_block_help);
 	rz_warn_if_fail(cmd_cmp_hex_block_cd);

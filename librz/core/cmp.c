@@ -72,7 +72,7 @@ RZ_API RZ_OWN RzCompareData *rz_cmp_mem_data(RZ_NONNULL RzCore *core, ut64 addr,
 	cmp->data1 = buf1;
 	cmp->addr1 = addr;
 	cmp->data2 = rz_mem_dup(data, len);
-	cmp->addr2 = UT32_MAX;
+	cmp->addr2 = UT64_MAX;
 	cmp->same = rz_mem_eq(cmp->data1, cmp->data2, len);
 	return cmp;
 
