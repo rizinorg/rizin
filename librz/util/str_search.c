@@ -42,8 +42,6 @@ static inline int compute_index(ut8 x, ut8 y) {
 
 static st64 score(RzRune *buff, const int len) {
 	int score = 0;
-	// int prior_bigram[2] = { 0 };
-	// int next_prior_bigram = 0;
 	for (RzRune *src = buff, *end = buff + len - 1; src < end; ++src) {
 		RzRune b1 = src[0], b2 = src[1];
 		ut8 c1 = LATIN1_CLASS[b1], c2 = LATIN1_CLASS[b2];
