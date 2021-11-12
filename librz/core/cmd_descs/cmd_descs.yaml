@@ -607,4 +607,5 @@ commands:
               with more than 1 block but less than 10, sorted decrementally by number of blocks.
   - name: shell
     summary: Common shell commands
+    sort_subcommands: true
     subcommands: cmd_shell
