@@ -832,7 +832,7 @@ typedef struct rz_bin_bind_t {
 
 RZ_API void rz_bin_virtual_file_free(RzBinVirtualFile *vfile);
 RZ_API void rz_bin_map_free(RzBinMap *map);
-RZ_API RzList *rz_bin_maps_of_file_sections(RzBinFile *binfile);
+RZ_API RzList *rz_bin_maps_of_file_sections(RZ_NONNULL RzBinFile *binfile);
 RZ_API RzList *rz_bin_sections_of_maps(RzList /*<RzBinMap>*/ *maps);
 RZ_API ut64 rz_bin_find_free_base_addr(RzList /*<RzBinMap>*/ *maps, ut64 align);
 RZ_IPI RzBinSection *rz_bin_section_new(const char *name);
