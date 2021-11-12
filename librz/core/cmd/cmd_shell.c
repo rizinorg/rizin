@@ -215,7 +215,7 @@ RZ_IPI RzCmdStatus rz_cmd_shell_clear_handler(RzCore *core, int argc, const char
 	rz_cons_clear00();
 	return RZ_CMD_STATUS_OK;
 }
-
+// which
 RZ_IPI RzCmdStatus rz_cmd_shell_which_handler(RzCore *core, int argc, const char **argv) {
 	char *solved = rz_file_path(argv[1]);
 	if (!solved) {
