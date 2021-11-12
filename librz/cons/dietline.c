@@ -492,7 +492,7 @@ RZ_API int rz_line_hist_save(const char *path) {
 	if (p) {
 		*p = 0;
 		if (!rz_sys_mkdirp(path)) {
-			eprintf("could not save history into %s\n", path);
+			RZ_LOG_ERROR("Could not save history into %s\n", path);
 			return false;
 		}
 		*p = RZ_SYS_DIR[0];

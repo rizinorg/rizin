@@ -1185,13 +1185,14 @@ static void set_bin_relocs(RzCore *r, RzBinObject *o, RzBinReloc *reloc, bool va
 				free(*sdb_module);
 				*sdb_module = strdup(module);
 				/* always lowercase */
-				filename = sdb_fmt("%s.sdb", module);
+				filename = rz_str_newf("%s.sdb", module);
 				rz_str_case(filename, false);
 				if (rz_file_exists(filename)) {
 					*db = sdb_new(NULL, filename, 0);
 				} else {
 					char *formats_dir = rz_path_system(RZ_SDB_FORMAT);
-					filename = sdb_fmt(RZ_JOIN_3_PATHS("%s", "dll", "%s.sdb"), formats_dir, module);
+					free(filename);
+					filename = rz_str_newf(RZ_JOIN_3_PATHS("%s", "dll", "%s.sdb"), formats_dir, module);
 					free(formats_dir);
 					if (rz_file_exists(filename)) {
 						*db = sdb_new(NULL, filename, 0);
@@ -1210,6 +1211,7 @@ static void set_bin_relocs(RzCore *r, RzBinObject *o, RzBinReloc *reloc, bool va
 					}
 				}
 			}
+			free(filename);
 		}
 		rz_analysis_hint_set_size(r->analysis, reloc->vaddr, 4);
 		rz_meta_set(r->analysis, RZ_META_TYPE_DATA, reloc->vaddr, 4, NULL);
