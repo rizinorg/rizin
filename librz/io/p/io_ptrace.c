@@ -71,7 +71,8 @@ static int debug_os_read_at(RzIO *io, int pid, ut32 *buf, int sz, ut64 addr) {
 		return -1;
 	}
 	for (x = 0; x < words; x++) {
-		buf[x] = (ut32)debug_read_raw(io, pid, (void *)(at++));
+		buf[x] = (ut32)debug_read_raw(io, pid, (void *)at);
+		at = (ut32 *)((size_t)at + sizeof(ut32));
 	}
 	if (last) {
 		lr = (ut32)debug_read_raw(io, pid, at);
