@@ -128,8 +128,9 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_string_handler(RzCore *core, int argc, const char 
 		goto end;
 	}
 	int val = rz_cmp_print(core, cmp, mode);
+	core->num->value = 1;
 	if (val != -1) {
-		core->num->value = val;
+		core->num->value = 0;
 		ret = RZ_CMD_STATUS_OK;
 	}
 
@@ -147,8 +148,9 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_bits_handler(RzCore *core, int argc, const char **
 		return ret;
 	}
 	bool val = core_cmp_bits(core, cmp);
+	core->num->value = 1;
 	if (val) {
-		core->num->value = 1;
+		core->num->value = 0;
 		ret = RZ_CMD_STATUS_OK;
 	}
 	free(cmp);
@@ -250,6 +252,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_disasm_handler(RzCore *core, int argc, const char 
 // cf
 RZ_IPI RzCmdStatus rz_cmd_cmp_file_handler(RzCore *core, int argc, const char **argv) {
 	FILE *fd = rz_sys_fopen(argv[1], "rb");
+	ut64 exit = 1;
 	if (!fd) {
 		RZ_LOG_ERROR("Cannot open file: %s\n", argv[1]);
 		return RZ_CMD_STATUS_ERROR;
@@ -273,10 +276,11 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_file_handler(RzCore *core, int argc, const char **
 	if (val == -1) {
 		goto return_goto;
 	}
-	core->num->value = val;
+	exit = 0;
 	stat = RZ_CMD_STATUS_OK;
 
 return_goto:
+	core->num->value = exit;
 	free(buf);
 	fclose(fd);
 	return stat;
