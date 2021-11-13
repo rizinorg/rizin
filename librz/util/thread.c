@@ -323,7 +323,7 @@ RZ_API size_t rz_th_physical_core_number() {
 	if (os_status != 0) {
 		// HW_AVAILCPU does not exist.
 		mib[1] = HW_NCPU;
-		os_status = sysctl(mib, 2, &n_cpus, &len, NULL, 0);
+		os_status = sysctl(mib, 2, &n_cpus, &n_cpus_length, NULL, 0);
 		if (os_status = != 0) {
 			n_cpus = 1;
 		}
