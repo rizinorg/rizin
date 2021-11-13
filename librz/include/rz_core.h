@@ -95,11 +95,11 @@ RZ_LIB_VERSION_HEADER(rz_core);
 
 /* visual mode */
 typedef enum {
-	RZ_CORE_VISUAL_MODE_PX = 0,
-	RZ_CORE_VISUAL_MODE_PD = 1,
-	RZ_CORE_VISUAL_MODE_DB = 2,
-	RZ_CORE_VISUAL_MODE_OV = 3,
-	RZ_CORE_VISUAL_MODE_CD = 4
+	RZ_CORE_VISUAL_MODE_PX = 0, ///< Hexadecimal view
+	RZ_CORE_VISUAL_MODE_PD = 1, ///< Disassembly view
+	RZ_CORE_VISUAL_MODE_DB = 2, ///< Debug mode
+	RZ_CORE_VISUAL_MODE_OV = 3, ///< Color blocks (entropy)
+	RZ_CORE_VISUAL_MODE_CD = 4 ///< Print in string format
 } RzCoreVisualMode;
 
 typedef bool (*RzCorePluginInit)(RzCore *core);
