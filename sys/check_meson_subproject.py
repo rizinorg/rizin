@@ -62,7 +62,7 @@ try:
                 subproject_f = os.path.join(subproject_dir, f)
                 subproject_p_f = os.path.join(patch_subproject_dir, f)
                 if not os.path.isfile(subproject_f):
-                    sys.exit(1)
+                    continue
 
                 if not filecmp.cmp(subproject_p_f, subproject_f):
                     sys.exit(1)
