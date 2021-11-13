@@ -77,7 +77,6 @@ typedef struct rz_io_t {
 	RzPVector maps; //from tail backwards maps with higher priority are found
 	RzSkyline map_skyline; // map parts that are not covered by others
 	RzIDStorage *files;
-	RzCache *buffer;
 	RzPVector cache;
 	RzSkyline cache_skyline;
 	ut8 *write_mask;
