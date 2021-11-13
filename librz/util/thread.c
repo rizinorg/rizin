@@ -305,7 +305,7 @@ RZ_API size_t rz_th_physical_core_number() {
 #elif __APPLE__ || __FreeBSD__ || __OpenBSD__ || __DragonFly__ || __NetBSD__
 	int os_status = 0;
 	int mib[4];
-	unsigned long n_cpus;
+	unsigned long n_cpus = 1;
 	size_t n_cpus_length = sizeof(n_cpus);
 
 	/* set the mib for hw.ncpu */
@@ -328,6 +328,9 @@ RZ_API size_t rz_th_physical_core_number() {
 			n_cpus = 1;
 		}
 	}
+	// this is needed because the upper bits are set on bsd platforms
+	n_cpus &= 0xffffffff;
+
 	return n_cpus;
 #elif __HAIKU__
 	system_info info;
