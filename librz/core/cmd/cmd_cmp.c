@@ -34,7 +34,7 @@ static int rizin_compare_words(RzCore *core, ut64 of, ut64 od, int len, int ws) 
 		case 4:
 			rz_cons_printf("%s0x%08" PFMT32x " %c 0x%08" PFMT32x "%s\n", color,
 				v0.v32, ch, v1.v32, colorEnd);
-			//rz_core_cmdf (core, "fd@0x%"PFMT64x, v0.v32);
+			// rz_core_cmdf (core, "fd@0x%"PFMT64x, v0.v32);
 			if (v0.v32 != v1.v32) {
 				//	rz_core_cmdf (core, "fd@0x%"PFMT64x, v1.v32);
 			}
@@ -42,7 +42,7 @@ static int rizin_compare_words(RzCore *core, ut64 of, ut64 od, int len, int ws) 
 		case 8:
 			rz_cons_printf("%s0x%016" PFMT64x " %c 0x%016" PFMT64x "%s\n",
 				color, v0.v64, ch, v1.v64, colorEnd);
-			//rz_core_cmdf (core, "fd@0x%"PFMT64x, v0.v64);
+			// rz_core_cmdf (core, "fd@0x%"PFMT64x, v0.v64);
 			if (v0.v64 != v1.v64) {
 				//	rz_core_cmdf (core, "fd@0x%"PFMT64x, v1.v64);
 			}
@@ -350,11 +350,10 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_update_watcher_handler(RzCore *core, int argc, con
 // cx
 RZ_IPI RzCmdStatus rz_cmd_cmp_hexpair_string_handler(RzCore *core, int argc, const char **argv) {
 	RzStrBuf *concat_argv = rz_strbuf_new(NULL);
-	for (int i = 0; i < argc; i++) {
+	for (int i = 1; i < argc; i++) {
 		rz_strbuf_append(concat_argv, argv[i]);
 	}
 	char *input = rz_strbuf_drain(concat_argv);
-	rz_strbuf_free(concat_argv);
 
 	unsigned char *buf;
 	int ret = false;
@@ -373,9 +372,8 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_hexpair_string_handler(RzCore *core, int argc, con
 		ret = false;
 		goto return_goto;
 	}
-	RzCompareData *cmp = rz_cmp_mem_data(core, core->offset, buf, core->blocksize);
+	RzCompareData *cmp = rz_cmp_mem_data(core, core->offset, buf, strlen(input) / 2);
 	if (!cmp) {
-		free(cmp);
 		goto return_goto;
 	}
 	int val = rz_cmp_print(core, cmp, RZ_OUTPUT_MODE_STANDARD);
