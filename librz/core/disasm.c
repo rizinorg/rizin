@@ -6624,14 +6624,8 @@ RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, int mode) {
 	}
 	RzAnalysisEsil *esil = core->analysis->esil;
 	RzPVector ocache = core->io->cache;
-	RzCache *ocacheb = core->io->buffer;
 	const int ocached = core->io->cached;
 	if (ocache.v.a) {
-		if (ocacheb && ocacheb->len) {
-			RzCache *c = rz_cache_new();
-			rz_cache_set(c, ocacheb->base, ocacheb->buf, ocacheb->len);
-			core->io->buffer = c;
-		}
 		RzPVector *vec = (RzPVector *)rz_vector_clone((RzVector *)&ocache);
 		vec->v.free = NULL;
 		core->io->cache = *vec;
@@ -6754,7 +6748,6 @@ RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, int mode) {
 		RzIOCache *c = (RzIOCache *)*it;
 		rz_skyline_add(&core->io->cache_skyline, c->itv, c);
 	}
-	core->io->buffer = ocacheb;
 	core->io->cached = ocached;
 	rz_config_hold_restore(chold);
 	rz_config_hold_free(chold);

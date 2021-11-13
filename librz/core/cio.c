@@ -478,26 +478,18 @@ RZ_API int rz_core_write_hexpair(RzCore *core, ut64 addr, const char *pairs) {
 		return 0;
 	}
 	int len = rz_hex_str2bin(pairs, buf);
-	if (len != 0) {
-		if (len < 0) {
-			len = -len;
-			if (len < core->blocksize) {
-				buf[len - 1] |= core->block[len - 1] & 0xf;
-			}
-		}
-		core->num->value = 0;
-		if (!rz_core_write_at(core, addr, buf, len)) {
-			eprintf("Failed to write\n");
-			core->num->value = 1;
-		}
-		if (rz_config_get_i(core->config, "cfg.wseek")) {
-			rz_core_seek_delta(core, len, true);
-		}
-		rz_core_block_read(core);
-	} else {
-		eprintf("Error: invalid hexpair string\n");
-		core->num->value = 1;
+	if (len < 0) {
+		RZ_LOG_ERROR("Could not convert hexpair '%s' to bin data\n", pairs);
+		goto err;
 	}
+	if (!rz_core_write_at(core, addr, buf, len)) {
+		RZ_LOG_ERROR("Could not write hexpair '%s' at %" PFMT64x "\n", pairs, addr);
+		goto err;
+	}
+	if (rz_config_get_i(core->config, "cfg.wseek")) {
+		rz_core_seek_delta(core, len, true);
+	}
+err:
 	free(buf);
 	return len;
 }
@@ -565,16 +557,21 @@ RZ_API int rz_core_write_assembly(RzCore *core, ut64 addr, const char *instructi
 	return -1;
 }
 
+/**
+ * \brief Print an IO plugin according to \p state
+ *
+ * \param plugin Reference to RzIOPlugin
+ * \param state Specify how the plugin shall be printed
+ */
 RZ_API RzCmdStatus rz_core_io_plugin_print(RzIOPlugin *plugin, RzCmdStateOutput *state) {
 	char str[4];
 	PJ *pj = state->d.pj;
+	str[0] = 'r';
+	str[1] = plugin->write ? 'w' : '_';
+	str[2] = plugin->isdbg ? 'd' : '_';
+	str[3] = 0;
 	switch (state->mode) {
-	case RZ_OUTPUT_MODE_JSON: {
-		str[0] = 'r';
-		str[1] = plugin->write ? 'w' : '_';
-		str[2] = plugin->isdbg ? 'd' : '_';
-		str[3] = 0;
-
+	case RZ_OUTPUT_MODE_JSON:
 		pj_o(pj);
 		pj_ks(pj, "permissions", str);
 		pj_ks(pj, "name", plugin->name);
@@ -603,12 +600,14 @@ RZ_API RzCmdStatus rz_core_io_plugin_print(RzIOPlugin *plugin, RzCmdStateOutput 
 		}
 		pj_end(pj);
 		break;
-	}
-	case RZ_OUTPUT_MODE_STANDARD: {
-		str[0] = 'r';
-		str[1] = plugin->write ? 'w' : '_';
-		str[2] = plugin->isdbg ? 'd' : '_';
-		str[3] = 0;
+	case RZ_OUTPUT_MODE_TABLE:
+		rz_table_set_columnsf(state->d.t, "sssss", "perm", "license", "name", "uri", "description");
+		rz_table_add_rowf(state->d.t, "sssss", str, plugin->license, plugin->name, plugin->uris, plugin->desc);
+		break;
+	case RZ_OUTPUT_MODE_QUIET:
+		rz_cons_printf("%s\n", plugin->name);
+		break;
+	case RZ_OUTPUT_MODE_STANDARD:
 		rz_cons_printf("%s  %-8s %s (%s)",
 			str, plugin->name,
 			plugin->desc, plugin->license);
@@ -623,7 +622,6 @@ RZ_API RzCmdStatus rz_core_io_plugin_print(RzIOPlugin *plugin, RzCmdStateOutput 
 		}
 		rz_cons_printf("\n");
 		break;
-	}
 	default: {
 		rz_warn_if_reached();
 		return RZ_CMD_STATUS_NONEXISTINGCMD;
@@ -632,6 +630,12 @@ RZ_API RzCmdStatus rz_core_io_plugin_print(RzIOPlugin *plugin, RzCmdStateOutput 
 	return RZ_CMD_STATUS_OK;
 }
 
+/**
+ * \brief Print the registered IO plugins according to \p state
+ *
+ * \param io Reference to RzIO instance
+ * \param state Specify how plugins shall be printed
+ */
 RZ_API RzCmdStatus rz_core_io_plugins_print(RzIO *io, RzCmdStateOutput *state) {
 	RzIOPlugin *plugin;
 	RzListIter *iter;
@@ -639,6 +643,7 @@ RZ_API RzCmdStatus rz_core_io_plugins_print(RzIO *io, RzCmdStateOutput *state) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_cmd_state_output_array_start(state);
+	rz_cmd_state_output_set_columnsf(state, "sssss", "perm", "license", "name", "uri", "description");
 	rz_list_foreach (io->plugins, iter, plugin) {
 		rz_core_io_plugin_print(plugin, state);
 	}
@@ -785,6 +790,37 @@ RZ_API bool rz_core_write_string_at(RzCore *core, ut64 addr, const char *s) {
 }
 
 /**
+ * \brief Write at the specified \p addr the length of the string in one byte,
+ * followed by the given string \p s
+ *
+ * \param core RzCore reference
+ * \param addr Address where to write the string
+ * \param s String to write. The string is unescaped, meaning that if there is `\n` it becomes 0x0a
+ */
+RZ_API bool rz_core_write_length_string_at(RzCore *core, ut64 addr, const char *s) {
+	rz_return_val_if_fail(core && s, false);
+
+	char *str = strdup(s);
+	if (!str) {
+		return false;
+	}
+
+	int len = rz_str_unescape(str);
+	ut8 ulen = (ut8)len;
+	if (!rz_core_write_at(core, addr, &ulen, sizeof(ulen)) ||
+		!rz_core_write_at(core, addr + 1, (const ut8 *)str, len)) {
+		RZ_LOG_ERROR("Could not write length+'%s' at %" PFMT64x "\n", s, addr);
+		free(str);
+		return false;
+	}
+	if (rz_config_get_i(core->config, "cfg.wseek")) {
+		rz_core_seek_delta(core, len, true);
+	}
+	free(str);
+	return true;
+}
+
+/**
  * \brief Write a given string \p s at the specified \p addr encoded as base64.
  *
  * \param core RzCore reference
@@ -853,6 +889,41 @@ RZ_API bool rz_core_write_base64d_at(RzCore *core, ut64 addr, const char *s) {
 
 	if (!rz_core_write_at(core, addr, buf, len)) {
 		RZ_LOG_ERROR("Could not write base64 decoded string '%s' at %" PFMT64x "\n", s, addr);
+		goto err;
+	}
+	if (rz_config_get_i(core->config, "cfg.wseek")) {
+		rz_core_seek_delta(core, len, true);
+	}
+	res = true;
+
+err:
+	free(buf);
+	return res;
+}
+
+/**
+ * \brief Write \p len random bytes at address \p addr
+ *
+ * \param core RzCore reference
+ * \param addr Address where to write the data
+ * \param len Length of the random data to write
+ */
+RZ_API bool rz_core_write_random_at(RzCore *core, ut64 addr, size_t len) {
+	rz_return_val_if_fail(core, false);
+
+	bool res = false;
+	ut8 *buf = malloc(len);
+	if (!buf) {
+		return false;
+	}
+
+	rz_num_irand();
+	for (int i = 0; i < len; i++) {
+		buf[i] = rz_num_rand(256);
+	}
+
+	if (!rz_core_write_at(core, addr, buf, len)) {
+		RZ_LOG_ERROR("Could not write random data of length %zd at %" PFMT64x "\n", len, addr);
 		goto err;
 	}
 	if (rz_config_get_i(core->config, "cfg.wseek")) {

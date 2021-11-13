@@ -8,6 +8,7 @@
 #include <rz_list.h>
 #include <rz_cons.h>
 #include <rz_util.h>
+#include <rz_flirt.h>
 
 #include "../core_private.h"
 
@@ -544,7 +545,7 @@ static int cmdFlirt(void *data, const char *input) {
 			eprintf("Usage: zfd filename\n");
 			return false;
 		}
-		rz_sign_flirt_dump(core->analysis, input + 2);
+		rz_core_flirt_dump(input + 2);
 		break;
 	case 's':
 		// TODO
@@ -557,7 +558,7 @@ static int cmdFlirt(void *data, const char *input) {
 		RzListIter *iter;
 		RzList *files = rz_file_globsearch(input + 2, depth);
 		rz_list_foreach (files, iter, file) {
-			rz_sign_flirt_scan(core->analysis, file);
+			rz_sign_flirt_apply(core->analysis, file);
 		}
 		rz_list_free(files);
 		break;
@@ -1417,7 +1418,7 @@ RZ_IPI RzCmdStatus rz_zign_save_sdb_handler(RzCore *core, int argc, const char *
 }
 
 RZ_IPI RzCmdStatus rz_zign_flirt_dump_handler(RzCore *core, int argc, const char **argv) {
-	rz_sign_flirt_dump(core->analysis, argv[1]);
+	rz_core_flirt_dump(argv[1]);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -1427,7 +1428,7 @@ RZ_IPI RzCmdStatus rz_zign_flirt_scan_handler(RzCore *core, int argc, const char
 	RzListIter *iter;
 	RzList *files = rz_file_globsearch(argv[1], depth);
 	rz_list_foreach (files, iter, file) {
-		rz_sign_flirt_scan(core->analysis, file);
+		rz_sign_flirt_apply(core->analysis, file);
 	}
 	rz_list_free(files);
 	return RZ_CMD_STATUS_OK;

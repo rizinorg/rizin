@@ -248,6 +248,11 @@ Files: subprojects/mpc/*
 Copyright: 2013-present Daniel Holden <contact@theorangeduck.com>
 License: BSD-2-Clause
 
+Files: subprojects/packagefiles/tree-sitter-0.19.5/lib/src/*
+Copyright: 2018-2021 Max Brunsfeld
+Copyright: 2021 Florian Märkl <info@florianmaerkl.de>
+License: MIT
+
 Files: librz/include/**/*.h librz/include/*.h librz/include/*.h.in
 Copyright: 2021 RizinOrg <info@rizin.re>
 License: LGPL-3.0-only

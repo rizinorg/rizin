@@ -302,6 +302,10 @@ static bool __syncDebugMaps(RzCore *core) {
 	return false;
 }
 
+static const RzList *__flagsGet(RzCore *core, ut64 offset) {
+	return rz_flag_get_list(core->flags, offset);
+}
+
 RZ_API int rz_core_bind(RzCore *core, RzCoreBind *bnd) {
 	bnd->core = core;
 	bnd->bphit = (RzCoreDebugBpHit)rz_core_debug_breakpoint_hit;
@@ -320,6 +324,7 @@ RZ_API int rz_core_bind(RzCore *core, RzCoreBind *bnd) {
 	bnd->numGet = (RzCoreNumGet)numget;
 	bnd->isMapped = (RzCoreIsMapped)__isMapped;
 	bnd->syncDebugMaps = (RzCoreDebugMapsSync)__syncDebugMaps;
+	bnd->flagsGet = (RzCoreFlagsGet)__flagsGet;
 	return true;
 }
 
@@ -2460,6 +2465,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->rasm->num = core->num;
 	core->rasm->core = core;
 	core->analysis = rz_analysis_new();
+	rz_sign_analysis_set_hooks(core->analysis);
 	core->gadgets = rz_list_newf((RzListFree)rz_core_gadget_free);
 	core->analysis->ev = core->ev;
 	core->analysis->read_at = rz_core_analysis_read_at;

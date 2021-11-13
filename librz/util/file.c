@@ -118,7 +118,9 @@ RZ_API char *rz_file_dirname(const char *path) {
 				ptr++;
 			}
 		}
-		*ptr = 0;
+		if (ptr) {
+			*ptr = 0;
+		}
 	}
 	return newpath;
 }
@@ -394,6 +396,7 @@ RZ_API char *rz_stdin_slurp(int *sz) {
 		if (!new) {
 			eprintf("Cannot realloc to %d\n", i + BS);
 			free(buf);
+			close(newfd);
 			return NULL;
 		}
 		buf = new;

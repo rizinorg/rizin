@@ -198,7 +198,7 @@ RZ_API int rz_str_re_replace(const char *str, const char *reg, const char *sub);
 RZ_API int rz_str_path_unescape(char *path);
 RZ_API char *rz_str_path_escape(const char *path);
 RZ_API int rz_str_unescape(char *buf);
-RZ_API char *rz_str_escape(const char *buf);
+RZ_API RZ_OWN char *rz_str_escape(RZ_NONNULL const char *buf);
 RZ_API char *rz_str_escape_sh(const char *buf);
 RZ_API char *rz_str_escape_dot(const char *buf);
 RZ_API char *rz_str_escape_8bit(const char *buf, bool colors, RzStrEscOptions *opt);

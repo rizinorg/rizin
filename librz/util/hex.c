@@ -199,7 +199,7 @@ RZ_API char *rz_hex_from_c_array(char *out, const char *code) {
 		}
 		free(_word);
 		code = comma;
-		if (*code == '}') {
+		if (code && *code == '}') {
 			break;
 		}
 	}
@@ -412,6 +412,16 @@ RZ_API char *rz_hex_bin2strdup(const ut8 *in, int len) {
 	return out;
 }
 
+/**
+ * \brief Convert an input string \p in into the binary form in \p out
+ *
+ * Convert an input string in the hexadecimal form (e.g. "41424344") into the
+ * raw binary form (e.g. "ABCD")
+ *
+ * \param in Input string in hexadecimal form. An optional "0x" prefix may be present.
+ * \param out Output buffer having at least strlen(in) / 2 bytes available
+ * \return number of bytes written into \p out
+ */
 RZ_API int rz_hex_str2bin(const char *in, ut8 *out) {
 	long nibbles = 0;
 

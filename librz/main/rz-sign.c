@@ -117,7 +117,7 @@ RZ_API int rz_main_rz_sign(int argc, const char **argv) {
 			return -1;
 		}
 		core = opencore(NULL);
-		rz_sign_flirt_dump(core->analysis, ifile);
+		rz_core_flirt_dump(ifile);
 		rz_cons_flush();
 		rz_core_free(core);
 		return 0;

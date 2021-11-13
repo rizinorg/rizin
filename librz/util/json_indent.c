@@ -131,7 +131,6 @@ RZ_API char *rz_print_json_path(const char *s, int pos) {
 			}
 			eprintf("0x%08" PFMT64x "  %d  [%d]\n", cur, i, indexs[i]);
 		} else {
-			char *a = rz_str_ndup(words[i], lengths[i]);
 			ut64 cur = words[i] - os - 1;
 			if (cur < opos) {
 				continue;
@@ -140,6 +139,7 @@ RZ_API char *rz_print_json_path(const char *s, int pos) {
 			if (cur > pos) {
 				break;
 			}
+			char *a = rz_str_ndup(words[i], lengths[i]);
 			char *q = strchr(a, '"');
 			if (q) {
 				*q = 0;
