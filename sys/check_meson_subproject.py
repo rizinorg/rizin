@@ -13,9 +13,6 @@ import filecmp
 import os
 import sys
 
-def eprint(*args, **kwargs):
-    print(*args, file=sys.stderr, **kwargs)
-
 subproject = sys.argv[1]
 meson_root = os.environ["MESON_SOURCE_ROOT"]
 
