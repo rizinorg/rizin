@@ -1485,7 +1485,7 @@ e asm.arch=mips
 e asm.bits=32
 ar > /dev/null
 ar t9=16
-wx 09602003f673643
+wx 09602003f6736430
 aes
 ar pc
 ar t4

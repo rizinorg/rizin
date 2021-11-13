@@ -408,7 +408,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=o-*
+NAME=o--
 FILE==
 CMDS=<<EOF
 e asm.arch=x86
@@ -417,7 +417,7 @@ o =
 o~?
 ob
 ?e --
-o-*
+o--
 o~?
 ob
 EOF
@@ -430,13 +430,13 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=o-3
+NAME=o- 3
 FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 o =
-o-3
+o- 3
 o~?
 ob
 EOF

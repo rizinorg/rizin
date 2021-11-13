@@ -3,6 +3,53 @@
 
 #include <rz_il/vm_layer.h>
 
+// Handler for core theory opcode
+void *rz_il_handler_ite(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_var(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_unk(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+
+void *rz_il_handler_bitv(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_msb(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_lsb(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_ule(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_sle(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_neg(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_logical_not(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_add(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_sub(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_mul(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_div(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_sdiv(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_mod(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_smod(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_shiftl(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_shiftr(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_logical_and(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_logical_or(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_logical_xor(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+
+void *rz_il_handler_bool_false(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_bool_true(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_bool_and(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_bool_or(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_bool_xor(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_bool_inv(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+
+void *rz_il_handler_cast(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+
+void *rz_il_handler_perform(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_set(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_jmp(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_goto(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_seq(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_branch(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+
+void *rz_il_handler_load(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_store(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+
+//TODO: remove me when all the handlers are implemented
+void *rz_il_handler_unimplemented(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+
 static void free_label_kv(HtPPKv *kv) {
 	free(kv->key);
 	RzILEffectLabel *lbl = kv->value;
@@ -101,18 +148,19 @@ RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, ut32 data
 	vm->op_handler_table[RZIL_OP_UNK] = &rz_il_handler_unk;
 	vm->op_handler_table[RZIL_OP_ITE] = &rz_il_handler_ite;
 
-	vm->op_handler_table[RZIL_OP_B0] = &rz_il_handler_b0;
-	vm->op_handler_table[RZIL_OP_B1] = &rz_il_handler_b1;
-	vm->op_handler_table[RZIL_OP_INV] = &rz_il_handler_inv;
-	vm->op_handler_table[RZIL_OP_AND_] = &rz_il_handler_and_;
-	vm->op_handler_table[RZIL_OP_OR_] = &rz_il_handler_or_;
+	vm->op_handler_table[RZIL_OP_B0] = &rz_il_handler_bool_false;
+	vm->op_handler_table[RZIL_OP_B1] = &rz_il_handler_bool_true;
+	vm->op_handler_table[RZIL_OP_INV] = &rz_il_handler_bool_inv;
+	vm->op_handler_table[RZIL_OP_AND] = &rz_il_handler_bool_and;
+	vm->op_handler_table[RZIL_OP_OR] = &rz_il_handler_bool_or;
+	vm->op_handler_table[RZIL_OP_XOR] = &rz_il_handler_bool_xor;
 
 	vm->op_handler_table[RZIL_OP_BITV] = &rz_il_handler_bitv;
 	vm->op_handler_table[RZIL_OP_MSB] = &rz_il_handler_msb;
 	vm->op_handler_table[RZIL_OP_LSB] = &rz_il_handler_lsb;
 
 	vm->op_handler_table[RZIL_OP_NEG] = &rz_il_handler_neg;
-	vm->op_handler_table[RZIL_OP_NOT] = &rz_il_handler_not;
+	vm->op_handler_table[RZIL_OP_LOGNOT] = &rz_il_handler_logical_not;
 	vm->op_handler_table[RZIL_OP_ADD] = &rz_il_handler_add;
 	vm->op_handler_table[RZIL_OP_SUB] = &rz_il_handler_sub;
 	vm->op_handler_table[RZIL_OP_MUL] = &rz_il_handler_mul;
@@ -280,53 +328,6 @@ RZ_API RzILMem *rz_il_vm_add_mem(RzILVM *vm, ut32 min_unit_size) {
 	return mem;
 }
 
-RZ_API char *rz_il_op2str(RzILOPCode opcode) {
-	char *ctops[64] = {
-		"VAR",
-		"UNK",
-		"ITE",
-		"B0",
-		"B1",
-		"INV",
-		"AND_",
-		"OR_",
-		"INT",
-		"MSB",
-		"LSB",
-		"NEG",
-		"NOT",
-		"ADD",
-		"SUB",
-		"MUL",
-		"DIV",
-		"SDIV",
-		"MOD",
-		"SMOD",
-		"LOGAND",
-		"LOGOR",
-		"LOGXOR",
-		"SHIFTR",
-		"SHIFTL",
-		"SLE",
-		"ULE",
-		"CAST",
-		"CONCAT",
-		"APPEND",
-		"LOAD",
-		"STORE",
-		"PERFORM",
-		"SET",
-		"JMP",
-		"GOTO",
-		"SEQ",
-		"BLK",
-		"REPEAT",
-		"BRANCH",
-		"INVALID",
-	};
-	return ctops[opcode];
-}
-
 /**
  * Load data from memory by given key and generates an RZIL_EVENT_MEM_READ event
  * \param vm RzILVM, pointer to VM
@@ -444,7 +445,7 @@ RZ_API void rz_il_vm_list_step(RzILVM *vm, RzPVector *op_list, ut32 op_size) {
 	}
 
 	RzILBitVector *step = rz_il_bv_new_from_ut64(vm->pc->len, op_size);
-	RzILBitVector *next_pc = rz_il_bv_add(vm->pc, step);
+	RzILBitVector *next_pc = rz_il_bv_add(vm->pc, step, NULL);
 	rz_il_vm_event_add(vm, rz_il_event_pc_write_new(vm->pc, next_pc));
 	rz_il_bv_free(vm->pc);
 	rz_il_bv_free(step);

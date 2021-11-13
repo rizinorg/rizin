@@ -918,6 +918,7 @@ RZ_API char *rz_str_append_owned(char *ptr, char *string) {
 	free(string);
 	return r;
 }
+
 /*
  * first argument must be allocated
  * return: the pointer ptr resized to string size.
@@ -1359,7 +1360,7 @@ RZ_API void rz_str_byte_escape(const char *p, char **dst, RzStrEscOptions *opt) 
 
 /* Internal function. dot_nl specifies whether to convert \n into the
  * graphiz-compatible newline \l */
-static char *rz_str_escape_(const char *buf, bool parse_esc_seq, bool ign_esc_seq, RzStrEscOptions *opt) {
+static RZ_OWN char *rz_str_escape_(const char *buf, bool parse_esc_seq, bool ign_esc_seq, RzStrEscOptions *opt) {
 	rz_return_val_if_fail(buf, NULL);
 
 	/* Worst case scenario, we convert every byte to a single-char escape
@@ -1406,7 +1407,8 @@ out:
 	return new_buf;
 }
 
-RZ_API char *rz_str_escape(const char *buf) {
+RZ_API RZ_OWN char *rz_str_escape(RZ_NONNULL const char *buf) {
+	rz_return_val_if_fail(buf, NULL);
 	RzStrEscOptions opt = { 0 };
 	opt.dot_nl = false;
 	opt.show_asciidot = false;

@@ -718,7 +718,9 @@ static RzCmdStatus argv_call_cb(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args
 				return RZ_CMD_STATUS_INVALID;
 			}
 		}
-		rz_cmd_state_output_print(&state);
+		if (res == RZ_CMD_STATUS_OK) {
+			rz_cmd_state_output_print(&state);
+		}
 		rz_cmd_state_output_fini(&state);
 		return res;
 	default:

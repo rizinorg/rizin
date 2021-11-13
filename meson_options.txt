@@ -2,7 +2,7 @@ option('packager', type: 'string', value: '', description: 'Extra packager name'
 option('packager_version', type: 'string', value: '', description: 'Extra packager version')
 option('cli', type: 'feature', value: 'auto', description: 'Build CLI programs (“auto” means they will be built when not a subproject)')
 option('static_runtime', type: 'boolean', value: false, description: 'Set to true when you want static libraries/dependencies and runtime in Rizin')
-option('local', type: 'feature', value: 'auto', description: 'Adds support for local/side-by-side installation (sets rpath if needed)')
+option('local', type: 'combo', choices: ['enabled', 'disabled', 'absolute', 'auto'], value: 'auto', description: 'Adds support for local/side-by-side installation (sets rpath if needed). enabled uses rpaths relative to $ORIGIN, absolute uses absolute paths.')
 option('blob', type: 'boolean', value: false, description: 'Compile just one binary which dispatch to the right handlers based on the name used to call it')
 option('subprojects_check', type: 'boolean', value: true, description: 'Check if git subprojects are up-to-date. Might be useful to disable this when developing on a different subproject version')
 option('portable', type: 'boolean', value: false, description: 'Make rizin installation moveable, by using relative paths instead of absolute ones')

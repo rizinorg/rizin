@@ -66,10 +66,10 @@ ESIz
 EOF
 RUN
 
-NAME=wh
+NAME=which
 FILE==
 CMDS=<<EOF
-wh rizin~?
+which rizin~?
 EOF
 EXPECT=<<EOF
 1
@@ -211,7 +211,7 @@ CMDS=<<EOF
 wx 553344
 p8 3
 s
-wxs 1111
+wx 1111 @e:cfg.wseek=true
 s
 p8 2 @ -2
 EOF

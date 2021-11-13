@@ -104,6 +104,9 @@ typedef struct {
 } RzSignCloseMatch;
 
 #ifdef RZ_API
+
+RZ_API void rz_sign_analysis_set_hooks(RZ_NONNULL RzAnalysis *analysis);
+
 RZ_API bool rz_sign_add_bytes(RzAnalysis *a, const char *name, ut64 size, const ut8 *bytes, const ut8 *mask);
 RZ_API bool rz_sign_add_analysis(RzAnalysis *a, const char *name, ut64 size, const ut8 *bytes, ut64 at);
 RZ_API bool rz_sign_add_graph(RzAnalysis *a, const char *name, RzSignGraph graph);
@@ -147,10 +150,6 @@ RZ_API RzList *rz_sign_fcn_xrefs_from(RzAnalysis *a, RzAnalysisFunction *fcn);
 RZ_API RzList *rz_sign_fcn_xrefs_to(RzAnalysis *a, RzAnalysisFunction *fcn);
 RZ_API RzList *rz_sign_fcn_vars(RzAnalysis *a, RzAnalysisFunction *fcn);
 RZ_API RzList *rz_sign_fcn_types(RzAnalysis *a, RzAnalysisFunction *fcn);
-
-RZ_API int rz_sign_is_flirt(RzBuffer *buf);
-RZ_API void rz_sign_flirt_dump(const RzAnalysis *analysis, const char *flirt_file);
-RZ_API void rz_sign_flirt_scan(RzAnalysis *analysis, const char *flirt_file);
 
 RZ_API RzList *rz_sign_find_closest_sig(RzAnalysis *a, RzSignItem *it, int count, double score_threshold);
 RZ_API RzList *rz_sign_find_closest_fcn(RzAnalysis *a, RzSignItem *it, int count, double score_threshold);

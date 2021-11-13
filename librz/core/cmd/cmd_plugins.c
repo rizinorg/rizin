@@ -41,7 +41,11 @@ RZ_IPI RzCmdStatus rz_plugins_bin_print_handler(RzCore *core, int argc, const ch
 
 RZ_IPI RzCmdStatus rz_plugins_io_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	if (argc > 1) {
-		return rz_lib_open(core->lib, argv[1]) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+		if (rz_lib_open(core->lib, argv[1]) == -1) {
+			RZ_LOG_ERROR("Could not load an IO plugin from '%s'\n", argv[1]);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		return RZ_CMD_STATUS_OK;
 	}
 	return rz_core_io_plugins_print(core->io, state);
 }

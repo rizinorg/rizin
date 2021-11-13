@@ -34,6 +34,7 @@ rz_main_deps = [
   rz_debug_dep,
   rz_config_dep,
   rz_bin_dep,
+  rz_sign_dep,
   rz_core_dep,
   rz_diff_dep,
 ]
@@ -62,6 +63,7 @@ pkgconfig_mod.generate(rz_main,
     'rz_core',
     'rz_demangler',
     'rz_asm',
+    'rz_sign',
     'rz_diff',
     'rz_syscall'
   ],

@@ -67,8 +67,8 @@ RZ_API RZ_OWN RzILBitVector *rz_il_bv_complement_1(RZ_NONNULL RzILBitVector *bv)
 RZ_API RZ_OWN RzILBitVector *rz_il_bv_complement_2(RZ_NONNULL RzILBitVector *bv);
 
 // Module 2 arithmetic operations
-RZ_API RZ_OWN RzILBitVector *rz_il_bv_add(RZ_NONNULL RzILBitVector *x, RZ_NONNULL RzILBitVector *y);
-RZ_API RZ_OWN RzILBitVector *rz_il_bv_sub(RZ_NONNULL RzILBitVector *x, RZ_NONNULL RzILBitVector *y);
+RZ_API RZ_OWN RzILBitVector *rz_il_bv_add(RZ_NONNULL RzILBitVector *x, RZ_NONNULL RzILBitVector *y, RZ_NULLABLE bool *carry);
+RZ_API RZ_OWN RzILBitVector *rz_il_bv_sub(RZ_NONNULL RzILBitVector *x, RZ_NONNULL RzILBitVector *y, RZ_NULLABLE bool *borrow);
 RZ_API RZ_OWN RzILBitVector *rz_il_bv_mul(RZ_NONNULL RzILBitVector *x, RZ_NONNULL RzILBitVector *y);
 RZ_API RZ_OWN RzILBitVector *rz_il_bv_div(RZ_NONNULL RzILBitVector *x, RZ_NONNULL RzILBitVector *y);
 RZ_API RZ_OWN RzILBitVector *rz_il_bv_mod(RZ_NONNULL RzILBitVector *x, RZ_NONNULL RzILBitVector *y);

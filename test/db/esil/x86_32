@@ -37,7 +37,7 @@ aeim 0x20000000 10 destination
 aer edi=0x20000000
 aer esi=0x10000000
 .aer*
-"wx a4"
+wx a4
 2aes
 .aer*
 aer?edi
@@ -61,7 +61,7 @@ e asm.bits=32
 aei
 aeim
 .aer*
-"wx b801000000"
+wx b801000000
 1aes
 .aer*
 aer?eax
@@ -88,7 +88,7 @@ aer edi=0x20000000
 aer esi=0x10000000
 aer ecx=10
 .aer*
-"wx f3a4"
+wx f3a4
 aes
 .aer*
 aer?edi
@@ -117,7 +117,7 @@ aer esp=0x00108000
 wx 1234567890 @ 0x10000000
 aeim 0x20000000 10 destination
 .aer*
-"wx c6050000002064"
+wx c6050000002064
 aes
 .aer*
 pv @ 0x20000000
@@ -140,7 +140,7 @@ aeim 0x20000000 10 destination
 aer esp=0x20000000
 wx 3713 @ 0x20000004
 .aer*
-"wx 8b442404"
+wx 8b442404
 aes
 .aer*
 aer?eax
@@ -163,7 +163,7 @@ aeim 0x20000000 10 destination
 aer esp=0x20000000
 aer eax=0x1337
 .aer*
-"wx 89442404"
+wx 89442404
 aes
 .aer*
 pv @ 0x20000004
@@ -191,7 +191,7 @@ aer edi=0x20000000
 aer esi=0x10000000
 aer ecx=0x1000
 .aer*
-"wx f3a4"
+wx f3a4
 aes
 .aer*
 s 0x10000000
@@ -221,7 +221,7 @@ aeim 0x10000000 10 source
 wx 12 @ 0x10000000
 aer esi=0x10000000
 .aer*
-"wx fcac"
+wx fcac
 2aes
 .aer*
 aer?esi
@@ -247,7 +247,7 @@ aeim 0x10000000 10 source
 wx 12 @ 0x10000000
 aer esi=0x10000000
 .aer*
-"wx fdac"
+wx fdac
 2aes
 .aer*
 aer?esi
@@ -273,7 +273,7 @@ aeim 0x10000000 10 source
 wx 3412 @ 0x10000000
 aer esi=0x10000000
 .aer*
-"wx fc66ad"
+wx fc66ad
 2aes
 .aer*
 aer?esi
@@ -299,7 +299,7 @@ aeim 0x10000000 10 source
 wx 3412 @ 0x10000000
 aer esi=0x10000000
 .aer*
-"wx fd66ad"
+wx fd66ad
 2aes
 .aer*
 aer?esi
@@ -325,7 +325,7 @@ aeim 0x10000000 10 source
 wx 563412 @ 0x10000000
 aer esi=0x10000000
 .aer*
-"wx fcad"
+wx fcad
 2aes
 .aer*
 aer?esi
@@ -351,7 +351,7 @@ aeim 0x10000000 10 source
 wx 563412 @ 0x10000000
 aer esi=0x10000000
 .aer*
-"wx fdad"
+wx fdad
 2aes
 .aer*
 aer?esi
@@ -377,7 +377,7 @@ aeim 0x10000000 10 source
 aer al=0x12
 aer edi=0x10000000
 .aer*
-"wx fcaa"
+wx fcaa
 2aes
 .aer*
 aer?edi
@@ -403,7 +403,7 @@ aeim 0x10000000 10 source
 aer al=0x12
 aer edi=0x10000000
 .aer*
-"wx fdaa"
+wx fdaa
 2aes
 .aer*
 aer?edi
@@ -429,7 +429,7 @@ aeim 0x10000000 10 source
 aer ax = 0x1234
 aer edi=0x10000000
 .aer*
-"wx fc66ab"
+wx fc66ab
 2aes
 .aer*
 aer?edi
@@ -455,7 +455,7 @@ aeim 0x10000000 10 source
 aer ax = 0x1234
 aer edi=0x10000000
 .aer*
-"wx fd66ab"
+wx fd66ab
 2aes
 .aer*
 aer?edi
@@ -481,7 +481,7 @@ aeim 0x10000000 10 source
 aer eax = 0x123456
 aer edi=0x10000000
 .aer*
-"wx fcab"
+wx fcab
 2aes
 .aer*
 aer?edi
@@ -507,7 +507,7 @@ aeim 0x10000000 10 source
 aer eax = 0x123456
 aer edi=0x10000000
 .aer*
-"wx fdab"
+wx fdab
 2aes
 .aer*
 aer?edi
@@ -533,7 +533,7 @@ aeim 0x10000000 10 source
 aer eax = 9
 aer edi=0x10000000
 .aer*
-"wx d1e8"
+wx d1e8
 1aes
 .aer*
 aer?eax
@@ -559,7 +559,7 @@ aeim 0x10000000 10 source
 aer eax = 0x1b
 aer edi=0x10000000
 .aer*
-"wx d1e8"
+wx d1e8
 1aes
 .aer*
 aer?eax
@@ -585,7 +585,7 @@ aeim 0x10000000 10 source
 aer eax = 5
 aer edi=0x10000000
 .aer*
-"wx c1e802"
+wx c1e802
 1aes
 .aer*
 aer?eax
@@ -610,7 +610,7 @@ aeim 0x10000000 10 source
 aer esp=0x10000000
 wx 05 @ 0x10000004
 .aer*
-"wx c06c240402"
+wx c06c240402
 1aes
 .aer*
 pv @ 0x10000004
@@ -635,7 +635,7 @@ aeim 0x20000000 10 destination
 aer esp=0x20000000
 wx ff @ 0x20000004
 .aer*
-"wx 804424040a"
+wx 804424040a
 aes
 .aer*
 pv @ 0x20000004
@@ -660,7 +660,7 @@ aeim 0x20000000 10 destination
 aer esp=0x20000000
 wx 3713 @ 0x20000004
 .aer*
-"wx 03442404"
+wx 03442404
 aes
 .aer*
 aer?eax
@@ -683,7 +683,7 @@ aeim 0x20000000 10 destination
 aer esp=0x20000000
 aer eax=0x1337
 .aer*
-"wx 010500000020"
+wx 010500000020
 aes
 .aer*
 pv @ 0x20000000
@@ -705,7 +705,7 @@ aeim
 aer esp=0x00108000
 aer dl = 0x80
 .aer*
-"wx 00d2"
+wx 00d2
 1aes
 .aer*
 aer?dl
@@ -731,7 +731,7 @@ aeim
 aer esp=0x00108000
 aer dx = 0x8000
 .aer*
-"wx 6601d2"
+wx 6601d2
 1aes
 .aer*
 aer?dx
@@ -757,7 +757,7 @@ aeim
 aer esp=0x00108000
 aer edx = 0x80000000
 .aer*
-"wx 01d2"
+wx 01d2
 1aes
 .aer*
 aer?edx
@@ -784,7 +784,7 @@ aer cf=1
 aer esp=0x00108000
 aer dl = 0x80
 .aer*
-"wx 10d2"
+wx 10d2
 1aes
 .aer*
 aer?dl
@@ -811,7 +811,7 @@ aer cf=1
 aer esp=0x00108000
 aer dx = 0x8000
 .aer*
-"wx 6611d2"
+wx 6611d2
 1aes
 .aer*
 aer?dx
@@ -838,7 +838,7 @@ aer cf=1
 aer esp=0x00108000
 aer edx = 0x80000000
 .aer*
-"wx 11d2"
+wx 11d2
 1aes
 .aer*
 aer?edx
@@ -867,7 +867,7 @@ aeim 0x20000000 10 mem
 aer edi = 0x20000000
 wx 01 @ 0x20000000
 .aer*
-"wx fe0f"
+wx fe0f
 1aes
 .aer*
 aer?zf
@@ -894,7 +894,7 @@ aeim 0x20000000 10 mem
 aer edi = 0x20000000
 wx 00 @ 0x20000000
 .aer*
-"wx fe0f"
+wx fe0f
 1aes
 .aer*
 aer?sf
@@ -921,7 +921,7 @@ aeim 0x20000000 10 mem
 aer edi = 0x20000000
 wx ff @ 0x20000000
 .aer*
-"wx fe07"
+wx fe07
 1aes
 .aer*
 aer?zf
@@ -950,7 +950,7 @@ aeim 0x20000000 10 mem
 aer edi = 0x20000000
 wx 00 @ 0x20000000
 .aer*
-"wx fe07"
+wx fe07
 1aes
 .aer*
 aer?sf
@@ -977,7 +977,7 @@ aer ecx = 0x10
 aer esi=0x20000000
 wx 3713 @ 0x20000014
 .aer*
-"wx 114e14"
+wx 114e14
 aes
 .aer*
 pv @ 0x20000014
@@ -998,7 +998,7 @@ aei
 aeim
 aer esp=0x00108000
 .aer*
-"wx b80500fecab202f6f2"
+wx b80500fecab202f6f2
 3aes
 .aer*
 aer?eax
@@ -1026,7 +1026,7 @@ aer ebp=0x55555555
 aer esi=0x66666666
 aer edi=0x77777777
 .aer*
-"wx 60"
+wx 60
 aes
 .aer*
 pv @ 0x00107ffc
@@ -1068,7 +1068,7 @@ aer ebp=0x55555555
 aer esi=0x66666666
 aer edi=0x77777777
 .aer*
-"wx 6061"
+wx 6061
 aes
 .aer*
 aer eax=0x00000000
@@ -1115,7 +1115,7 @@ aeim
 aer esp=0x00108000
 aer eax=0x11111111
 .aer*
-"wx 5058"
+wx 5058
 aes
 .aer*
 aer eax=0x00000000
@@ -1142,7 +1142,7 @@ e asm.bits=32
 aei
 aeim 0 0x2000
 .aer*
-"wx 9c9d"
+wx 9c9d
 aer cf = 1
 aer pf = 1
 aer af = 1
@@ -2319,7 +2319,7 @@ aeim
 aer esp=0x00108000
 aer eax=0x111111111
 .aer*
-"wx 5450"
+wx 5450
 2aes
 .aer*
 pv @ 0x00107ffc
