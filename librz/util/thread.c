@@ -321,15 +321,19 @@ RZ_API size_t rz_th_physical_core_number() {
 	os_status = sysctl(mib, 2, &n_cpus, &n_cpus_length, NULL, 0);
 
 	if (os_status != 0) {
+#if __OpenBSD__ || __FreeBSD__
+		n_cpus = 1;
+#else
 		// HW_AVAILCPU does not exist.
 		mib[1] = HW_NCPU;
 		os_status = sysctl(mib, 2, &n_cpus, &n_cpus_length, NULL, 0);
 		if (os_status != 0) {
 			n_cpus = 1;
 		}
+#endif
 	}
 	// this is needed because the upper bits are set on bsd platforms
-	n_cpus &= 0xffffffff;
+	n_cpus &= UT32_MAX;
 
 	return n_cpus;
 #elif __HAIKU__
