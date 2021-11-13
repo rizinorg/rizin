@@ -13,6 +13,7 @@
 #if __APPLE__ || __NetBSD__ || __FreeBSD__ || __OpenBSD__ || __DragonFly__ || __sun
 #include <sys/param.h>
 #include <sys/sysctl.h>
+#include <unistd.h>
 #endif
 
 #if __sun
