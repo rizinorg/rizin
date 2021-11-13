@@ -22,7 +22,6 @@ RZ_API void rz_io_cache_init(RzIO *io) {
 	rz_return_if_fail(io);
 	rz_pvector_init(&io->cache, (RzPVectorFree)cache_item_free);
 	rz_skyline_init(&io->cache_skyline);
-	io->buffer = rz_cache_new();
 	io->cached = 0;
 }
 
@@ -30,8 +29,6 @@ RZ_API void rz_io_cache_fini(RzIO *io) {
 	rz_return_if_fail(io);
 	rz_pvector_fini(&io->cache);
 	rz_skyline_fini(&io->cache_skyline);
-	rz_cache_free(io->buffer);
-	io->buffer = NULL;
 	io->cached = 0;
 }
 

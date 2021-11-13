@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 #
 # SPDX-FileCopyrightText: 2021 ret2libc <sirmy15@gmail.com>
+# SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
 # SPDX-License-Identifier: LGPL-3.0-only
 #
 # This script is necessary to make sure people notice a subproject has been
@@ -58,14 +59,17 @@ try:
             meson_root, "subprojects", "packagefiles", patch_directory
         )
         if os.path.isdir(patch_subproject_dir) and os.path.isdir(subproject_dir):
-            for f in os.listdir(patch_subproject_dir):
-                subproject_f = os.path.join(subproject_dir, f)
-                subproject_p_f = os.path.join(patch_subproject_dir, f)
-                if not os.path.isfile(subproject_f):
-                    sys.exit(1)
+            for root, dirs, files in os.walk(patch_subproject_dir, topdown=False):
+                for name in files:
+                    subproject_f = os.path.join(root, name)
+                    subproject_p_f = subproject_f.replace(
+                        patch_subproject_dir, subproject_dir
+                    )
+                    if not os.path.isfile(subproject_f):
+                        sys.exit(1)
 
-                if not filecmp.cmp(subproject_p_f, subproject_f):
-                    sys.exit(1)
+                    if not filecmp.cmp(subproject_p_f, subproject_f):
+                        sys.exit(1)
 
         sys.exit(0)
 except FileNotFoundError:

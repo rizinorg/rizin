@@ -125,7 +125,6 @@ RZ_API RzIO *rz_io_init(RzIO *io) {
 RZ_API void rz_io_free(RzIO *io) {
 	if (io) {
 		rz_io_fini(io);
-		rz_cache_free(io->buffer);
 		free(io);
 	}
 }
