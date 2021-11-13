@@ -13,7 +13,6 @@
 #if __APPLE__ || __NetBSD__ || __FreeBSD__ || __OpenBSD__ || __DragonFly__ || __sun
 #include <sys/param.h>
 #include <sys/sysctl.h>
-#include <unistd.h>
 #endif
 
 #if __sun
@@ -313,7 +312,7 @@ RZ_API size_t rz_th_physical_core_number() {
 	mib[0] = CTL_HW;
 #if __NetBSD__
 	mib[1] = HW_NCPUONLINE;
-#elif __OpenBSD__
+#elif __OpenBSD__ || __FreeBSD__
 	mib[1] = HW_NCPU;
 #else
 	mib[1] = HW_AVAILCPU;
