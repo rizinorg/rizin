@@ -223,12 +223,11 @@ jobs:
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
         if [ "$ASAN" == "true" ]; then
           export ASAN=1
+          if [ "$CC" == "clang" ]; then
+            export LD_LIBRARY_PATH=/usr/lib/llvm-11/lib/clang/11.0.0/lib/linux:${LD_LIBRARY_PATH}
+          fi
         fi
-        if [ "$ASAN" == "1" ] && [ "$CC" == "clang" ]; then
-          LD_PRELOAD=/usr/lib/llvm-11/lib/clang/11.0.0/lib/linux/libclang_rt.asan-x86_64.so ninja -C build test
-        else
-          ninja -C build test
-        fi
+        ninja -C build test
       env:
         ASAN: ${{ matrix.asan }}
         ASAN_OPTIONS: ${{ matrix.asan_options }}
@@ -242,13 +241,12 @@ jobs:
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
         if [ "$ASAN" == "true" ]; then
           export ASAN=1
+          if [ "$CC" == "clang" ]; then
+            export LD_LIBRARY_PATH=/usr/lib/llvm-11/lib/clang/11.0.0/lib/linux:${LD_LIBRARY_PATH}
+          fi
         fi
         cd test
-        if [ "$ASAN" == "1" ] && [ "$CC" == "clang" ]; then
-          LD_PRELOAD=/usr/lib/llvm-11/lib/clang/11.0.0/lib/linux/libclang_rt.asan-x86_64.so rz-test -L -o results.json
-        else
-          rz-test -L -o results.json
-        fi
+        rz-test -L -o results.json
       env:
         ASAN: ${{ matrix.asan }}
         ASAN_OPTIONS: ${{ matrix.asan_options }}
