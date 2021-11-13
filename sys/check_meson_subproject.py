@@ -62,7 +62,9 @@ try:
             for root, dirs, files in os.walk(patch_subproject_dir, topdown=False):
                 for name in files:
                     subproject_f = os.path.join(root, name)
-                    subproject_p_f = subproject_f.replace(patch_subproject_dir, subproject_dir)
+                    subproject_p_f = subproject_f.replace(
+                        patch_subproject_dir, subproject_dir
+                    )
                     if not os.path.isfile(subproject_f):
                         sys.exit(1)
 
