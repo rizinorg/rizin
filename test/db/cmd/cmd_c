@@ -12,28 +12,11 @@ EXPECT=<<EOF
 0x00005ae7 (byte=08)   89 ' '  ->  38 '8'
 0x00005ae8 (byte=09)   d1 ' '  ->  39 '9'
 0x00005ae9 (byte=10)   5e '^'  ->  30 '0'
+Compare 0/10 equal bytes (0%)
 EOF
 RUN
 
-NAME=cmd_c*
-FILE=bins/elf/ls
-CMDS=c* 1234567890
-EXPECT=<<EOF
-wx 31 @ 0x00005ae0
-wx 32 @ 0x00005ae1
-wx 33 @ 0x00005ae2
-wx 34 @ 0x00005ae3
-wx 35 @ 0x00005ae4
-wx 36 @ 0x00005ae5
-wx 37 @ 0x00005ae6
-wx 38 @ 0x00005ae7
-wx 39 @ 0x00005ae8
-wx 30 @ 0x00005ae9
-wx 00 @ 0x00005aea
-EOF
-RUN
-
-NAME=cmd_c1
+NAME=cmd_cb_1
 FILE=bins/elf/ls
 CMDS=c1 0x00005ae1
 EXPECT=<<EOF
@@ -43,25 +26,27 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=cmd_c2
+NAME=cmd_cb_2
 FILE=bins/elf/ls
-CMDS=c2 0xf3f3
+CMDS=cb 0xf3f3 2
 EXPECT=<<EOF
 0x00005ae1 (byte=02)   0f ' '  ->  f3 ' '
+Compare 1/2 equal bytes (50%)
 EOF
 RUN
 
-NAME=cmd_c4
+NAME=cmd_cb_4
 FILE=bins/elf/ls
-CMDS=c4 0xfa1e0ff2
+CMDS=cb 0xfa1e0ff2 4
 EXPECT=<<EOF
 0x00005ae0 (byte=01)   f3 ' '  ->  f2 ' '
+Compare 3/4 equal bytes (75%)
 EOF
 RUN
 
-NAME=cmd_c8
+NAME=cmd_cb_8
 FILE=bins/elf/ls
-CMDS=c8 0x8989898989898989
+CMDS=cb 0x8989898989898989 8
 EXPECT=<<EOF
 0x00005ae0 (byte=01)   f3 ' '  ->  89 ' '
 0x00005ae1 (byte=02)   0f ' '  ->  89 ' '
@@ -70,5 +55,22 @@ EXPECT=<<EOF
 0x00005ae4 (byte=05)   31 '1'  ->  89 ' '
 0x00005ae5 (byte=06)   ed ' '  ->  89 ' '
 0x00005ae6 (byte=07)   49 'I'  ->  89 ' '
+Compare 1/8 equal bytes (12%)
+EOF
+RUN
+
+NAME=cmd_cb_9
+FILE=bins/elf/ls
+CMDS=cb 0x133713371337133713 9
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=cmd_cb_4_extra
+FILE=bins/elf/ls
+CMDS=cb 0xf1f2fa1e0ff2 4
+EXPECT=<<EOF
+0x00005ae0 (byte=01)   f3 ' '  ->  f2 ' '
+Compare 3/4 equal bytes (75%)
 EOF
 RUN

@@ -182,7 +182,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_bytes_handler(RzCore *core, int argc, const char *
 	RzCmdStatus ret = RZ_CMD_STATUS_ERROR;
 	ut64 sz = rz_num_math(core->num, argv[2]);
 	if (sz > 8) {
-		rz_cons_printf("Cannot compare more than 8 bytes. Use the c command instead.\n");
+		RZ_LOG_ERROR("Cannot compare more than 8 bytes. Use the c command instead.\n");
 		return ret;
 	}
 
