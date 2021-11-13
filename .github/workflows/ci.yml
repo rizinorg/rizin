@@ -244,10 +244,15 @@ jobs:
           export ASAN=1
         fi
         cd test
-        rz-test -L -o results.json
+        if [ "$ASAN" == "1" ] && [ "$CC" == "clang" ]; then
+          LD_PRELOAD=/usr/lib/llvm-11/lib/clang/11.0.0/lib/linux/libclang_rt.asan-x86_64.so rz-test -L -o results.json
+        else
+          rz-test -L -o results.json
+        fi
       env:
         ASAN: ${{ matrix.asan }}
         ASAN_OPTIONS: ${{ matrix.asan_options }}
+        CC: ${{ matrix.compiler }}
     - name: Upload coverage info
       if: matrix.coverage == '1' && matrix.enabled
       working-directory: build
