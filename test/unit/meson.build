@@ -94,6 +94,7 @@ if get_option('enable_tests')
     'subprocess',
     'table',
     'task',
+    'threads',
     'tree',
     'type',
     'uleb128',
