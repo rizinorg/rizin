@@ -222,9 +222,11 @@ jobs:
         export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
         if [ "$ASAN" == "true" ]; then
-          export ASAN=1
           if [ "$CC" == "clang" ]; then
+            export ASAN_LD_PRELOAD=/usr/lib/llvm-11/lib/clang/11.0.0/lib/linux/libclang_rt.asan-x86_64.so
             export LD_LIBRARY_PATH=/usr/lib/llvm-11/lib/clang/11.0.0/lib/linux:${LD_LIBRARY_PATH}
+          else
+            export ASAN_LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
           fi
         fi
         ninja -C build test
@@ -240,9 +242,11 @@ jobs:
         export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
         if [ "$ASAN" == "true" ]; then
-          export ASAN=1
           if [ "$CC" == "clang" ]; then
+            export ASAN_LD_PRELOAD=/usr/lib/llvm-11/lib/clang/11.0.0/lib/linux/libclang_rt.asan-x86_64.so
             export LD_LIBRARY_PATH=/usr/lib/llvm-11/lib/clang/11.0.0/lib/linux:${LD_LIBRARY_PATH}
+          else
+            export ASAN_LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
           fi
         fi
         cd test
