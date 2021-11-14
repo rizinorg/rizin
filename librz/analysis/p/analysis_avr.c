@@ -598,7 +598,7 @@ INST_HANDLER(dec) { // DEC Rd
 
 INST_HANDLER(des) { // DES k
 	op->type = RZ_ANALYSIS_OP_TYPE_CRYPTO;
-	op->cycles = 1; //redo this
+	op->cycles = 1;
 	int round = (buf[0] >> 4);
 	rz_strbuf_setf(&op->esil, "%d,des", round);
 }
