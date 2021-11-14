@@ -2424,6 +2424,16 @@ static bool cb_utf8_curvy(void *user, void *data) {
 	return true;
 }
 
+static bool cb_visual_mode(void *user, void *data) {
+	RzConfigNode *node = (RzConfigNode *)data;
+	if (node->i_value > RZ_CORE_VISUAL_MODE_CD) {
+		node->i_value = RZ_CORE_VISUAL_MODE_PX;
+	}
+	RzCore *core = (RzCore *)user;
+	core->printidx = node->i_value;
+	return true;
+}
+
 static bool cb_dotted(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -3633,6 +3643,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETDESC(n, "Convert string before display");
 	SETOPTIONS(n, "asciiesc", "asciidot", NULL);
 	SETBPREF("scr.confirmquit", "false", "Confirm on quit");
+	SETICB("scr.visual.mode", RZ_CORE_VISUAL_MODE_PX, &cb_visual_mode, "Visual mode (0: hexdump, 1: disassembly, 2: debug, 3: color blocks, 4: strings)");
 
 	/* str */
 	SETCB("str.escbslash", "false", &cb_str_escbslash, "Escape the backslash");
