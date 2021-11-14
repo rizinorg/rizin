@@ -245,7 +245,7 @@ RZ_API void rz_des_shift_key(int i, bool decrypt, RZ_INOUT ut32 *deskeylo, RZ_IN
 
 /// PC-2 permutation of a key
 RZ_API void rz_des_pc2(RZ_OUT ut32 *keylo, RZ_OUT ut32 *keyhi, RZ_IN ut32 deslo, RZ_IN ut32 deshi) {
-	rz_return_if_fail(keylo && keyhi && deslo && deshi);
+	rz_return_if_fail(keylo && keyhi);
 	*keylo = ((deslo << 4) & 0x24000000) | ((deslo << 28) & 0x10000000) |
 		((deslo << 14) & 0x08000000) | ((deslo << 18) & 0x02080000) |
 		((deslo << 6) & 0x01000000) | ((deslo << 9) & 0x00200000) |
