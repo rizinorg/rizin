@@ -340,7 +340,7 @@ RZ_API RZ_OWN RzList *rz_basefind(RZ_NONNULL RzCore *core, ut32 pointer_size) {
 		goto rz_basefind_end;
 	}
 
-	RZ_LOG_INFO("basefind: using %u threads\n", (ut32)pool->size);
+	RZ_LOG_VERBOSE("basefind: using %u threads\n", (ut32)pool->size);
 
 	ut64 io_size = rz_io_size(core->io);
 	ut64 sector_size = (((base_end - base_start) + pool->size - 1) / pool->size);
