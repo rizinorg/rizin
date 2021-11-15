@@ -39,7 +39,7 @@ typedef struct bitvector_t {
 // init
 RZ_API RZ_OWN RzILBitVector *rz_il_bv_new(ut32 length);
 RZ_API RZ_OWN RzILBitVector *rz_il_bv_dup(const RZ_NONNULL RzILBitVector *bv);
-RZ_API RZ_OWN RzILBitVector *rz_il_bv_concat(RZ_NONNULL RzILBitVector *bv1, RZ_NONNULL RzILBitVector *bv2);
+RZ_API RZ_OWN RzILBitVector *rz_il_bv_append(RZ_NONNULL RzILBitVector *bv1, RZ_NONNULL RzILBitVector *bv2);
 RZ_API ut32 rz_il_bv_copy(RZ_NONNULL const RzILBitVector *src, RZ_NONNULL RzILBitVector *dst);
 RZ_API ut32 rz_il_bv_copy_nbits(
 	RZ_NONNULL const RzILBitVector *src, ut32 src_start_pos,
