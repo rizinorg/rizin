@@ -1115,7 +1115,7 @@ RZ_API void rz_bin_map_free(RzBinMap *map) {
  * but if it is, plugins can use this function as their maps callback,
  * which will generate mappings for sections.
  * */
-RZ_API RzList *rz_bin_maps_of_file_sections(RzBinFile *binfile) {
+RZ_API RZ_OWN RzList *rz_bin_maps_of_file_sections(RZ_NONNULL RzBinFile *binfile) {
 	rz_return_val_if_fail(binfile, NULL);
 	if (!binfile->o || !binfile->o->plugin || !binfile->o->plugin->sections) {
 		return NULL;

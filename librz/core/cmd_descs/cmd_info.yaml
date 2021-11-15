@@ -311,7 +311,11 @@ commands:
       - RZ_OUTPUT_MODE_JSON
       - RZ_OUTPUT_MODE_TABLE
       - RZ_OUTPUT_MODE_STANDARD
-    args: []
+    args:
+      - name: digests
+        type: RZ_CMD_ARG_TYPE_STRING
+        flags: RZ_CMD_ARG_FLAG_ARRAY
+        optional: true
   - name: is
     cname: cmd_info_symbols
     summary: List symbols

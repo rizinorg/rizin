@@ -204,6 +204,7 @@ static const RzCmdDescArg cmd_info_pdb_show_args[2];
 static const RzCmdDescArg cmd_info_demangle_args[3];
 static const RzCmdDescArg cmd_info_kuery_args[2];
 static const RzCmdDescArg cmd_info_plugins_args[2];
+static const RzCmdDescArg cmd_info_resources_args[2];
 static const RzCmdDescArg cmd_info_sections_args[2];
 static const RzCmdDescArg cmd_info_segments_args[2];
 static const RzCmdDescArg plugins_load_args[2];
@@ -4535,6 +4536,13 @@ static const RzCmdDescHelp cmd_info_relocs_help = {
 };
 
 static const RzCmdDescArg cmd_info_resources_args[] = {
+	{
+		.name = "digests",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_ARRAY,
+		.optional = true,
+
+	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_info_resources_help = {

@@ -39,7 +39,6 @@ int gettimeofday(struct timeval *p, void *tz);
 #include "rz_util/rz_bitmap.h"
 #include "rz_util/rz_time.h"
 #include "rz_util/rz_debruijn.h"
-#include "rz_util/rz_cache.h"
 #include "rz_util/rz_file.h"
 #include "rz_util/rz_hex.h"
 #include "rz_util/rz_log.h"

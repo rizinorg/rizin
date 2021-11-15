@@ -494,7 +494,7 @@ RZ_API bool rz_core_bin_print(RzCore *core, RzBinFile *bf, ut32 mask, RzCoreBinF
 	}
 	if (mask & RZ_CORE_BIN_ACC_RESOURCES) {
 		if (state->mode & (RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON)) {
-			wrap_mode("resources", RZ_OUTPUT_MODE_STANDARD, rz_core_bin_resources_print(core, bf, st));
+			wrap_mode("resources", RZ_OUTPUT_MODE_STANDARD, rz_core_bin_resources_print(core, bf, st, hashes));
 		}
 	}
 	if (mask & RZ_CORE_BIN_ACC_FIELDS) {
@@ -1622,6 +1622,44 @@ RZ_API bool rz_core_bin_apply_resources(RzCore *core, RzBinFile *binfile) {
 	return true;
 }
 
+static void digests_ht_free(HtPPKv *kv) {
+	free(kv->key);
+	free(kv->value);
+}
+
+/**
+ * \brief Create a hashtable of digests
+ *
+ * Digest names are supplied as a list of `char *` strings.
+ * Returns the hashtable with keys of digest names and values of
+ * strings containing requested digests.
+ * */
+RZ_API RZ_OWN HtPP *rz_core_bin_create_digests(RzCore *core, ut64 paddr, ut64 size, RzList *digests) {
+	rz_return_val_if_fail(size && digests, NULL);
+	HtPP *r = ht_pp_new(NULL, digests_ht_free, NULL);
+	if (!r) {
+		return NULL;
+	}
+	RzListIter *it;
+	char *digest;
+	rz_list_foreach (digests, it, digest) {
+		ut8 *data = malloc(size);
+		if (!data) {
+			ht_pp_free(r);
+			return NULL;
+		}
+		rz_io_pread_at(core->io, paddr, data, size);
+		char *chkstr = rz_msg_digest_calculate_small_block_string(digest, data, size, NULL, false);
+		if (!chkstr) {
+			continue;
+		}
+		ht_pp_insert(r, digest, chkstr);
+		free(data);
+	}
+
+	return r;
+}
+
 RZ_API int rz_core_bin_set_cur(RzCore *core, RzBinFile *binfile) {
 	if (!core->bin) {
 		return false;
@@ -2288,6 +2326,13 @@ static ut64 get_section_addr(RzCore *core, RzBinObject *o, RzBinSection *section
 	return rva(o, section->paddr, section->vaddr, va);
 }
 
+static bool digests_pj_cb(void *user, const void *k, const void *v) {
+	rz_return_val_if_fail(user && k && v, false);
+	PJ *pj = user;
+	pj_ks(pj, k, v);
+	return true;
+}
+
 static void sections_print_json(RzCore *core, PJ *pj, RzBinObject *o, RzBinSection *section, RzList *hashes) {
 	ut64 addr = get_section_addr(core, o, section);
 	char perms[5];
@@ -2324,24 +2369,13 @@ static void sections_print_json(RzCore *core, PJ *pj, RzBinObject *o, RzBinSecti
 		pj_kN(pj, "align", section->align);
 	}
 	if (hashes && section->size > 0) {
-		ut8 *data = malloc(section->size);
-		if (data) {
-			ut32 datalen = section->size;
-			RzListIter *iter;
-			char *hashname;
-
-			rz_io_pread_at(core->io, section->paddr, data, datalen);
-
-			rz_list_foreach (hashes, iter, hashname) {
-				char *chkstr = rz_msg_digest_calculate_small_block_string(hashname, data, datalen, NULL, false);
-				if (!chkstr) {
-					continue;
-				}
-				pj_ks(pj, hashname, chkstr);
-				free(chkstr);
-			}
-			free(data);
+		HtPP *digests = rz_core_bin_create_digests(core, section->paddr, section->size, hashes);
+		if (!digests) {
+			pj_end(pj);
+			return;
 		}
+		ht_pp_foreach(digests, digests_pj_cb, pj);
+		ht_pp_free(digests);
 	}
 	pj_end(pj);
 }
@@ -2373,37 +2407,31 @@ static bool sections_print_table(RzCore *core, RzTable *t, RzBinObject *o, RzBin
 	if (!section->is_segment) {
 		rz_table_add_row_columnsf(t, "ss", section_type, section_flags_str);
 	}
+	bool result = false;
 	if (hashes && section->size > 0) {
-		ut8 *data = malloc(section->size);
-		if (data) {
-			ut32 datalen = section->size;
-			RzListIter *iter;
-			char *hashname;
-
-			rz_io_pread_at(core->io, section->paddr, data, datalen);
-
-			rz_list_foreach (hashes, iter, hashname) {
-				const RzMsgDigestPlugin *msg_plugin = rz_msg_digest_plugin_by_name(hashname);
-				if (!msg_plugin) {
-					continue;
-				}
-				char *chkstr = rz_msg_digest_calculate_small_block_string(hashname, data, datalen, NULL, false);
-				if (!chkstr) {
-					rz_table_add_row_columnsf(t, "s", NULL);
-					continue;
-				}
-				rz_table_add_row_columnsf(t, "s", chkstr);
-				free(chkstr);
-			}
-			free(data);
+		HtPP *digests = rz_core_bin_create_digests(core, section->paddr, section->size, hashes);
+		if (!digests) {
+			goto cleanup;
 		}
+		RzListIter *it;
+		char *hash;
+		bool found = false;
+		rz_list_foreach (hashes, it, hash) {
+			char *digest = ht_pp_find(digests, hash, &found);
+			if (found && t) {
+				rz_table_add_row_columnsf(t, "s", digest);
+			}
+		}
+		ht_pp_free(digests);
 	}
+	result = true;
+cleanup:
 	if (section_name != section->name) {
 		free(section_name);
 	}
 	free(section_type);
 	free(section_flags_str);
-	return true;
+	return result;
 }
 
 static void sections_headers_setup(RzCore *core, RzCmdStateOutput *state, RzList *hashes) {
@@ -4931,42 +4959,112 @@ RZ_API bool rz_core_bin_memory_print(RzCore *core, RzBinFile *bf, RzCmdStateOutp
 	return true;
 }
 
-RZ_API bool rz_core_bin_resources_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state) {
-	rz_return_val_if_fail(core && state, false);
+static void bin_resources_print_standard(RzCore *core, RzList *hashes, RzBinResource *resource) {
+	char humansz[8];
+	rz_num_units(humansz, sizeof(humansz), resource->size);
+	rz_cons_printf("Resource %zd\n", resource->index);
+	rz_cons_printf("  name: %s\n", resource->name);
+	rz_cons_printf("  timestamp: %s\n", resource->time);
+	rz_cons_printf("  vaddr: 0x%08" PFMT64x "\n", resource->vaddr);
+	rz_cons_printf("  size: %s\n", humansz);
+	rz_cons_printf("  type: %s\n", resource->type);
+	rz_cons_printf("  language: %s\n", resource->language);
+	if (hashes && resource->size > 0) {
+		HtPP *digests = rz_core_bin_create_digests(core, resource->vaddr, resource->size, hashes);
+		if (!digests) {
+			return;
+		}
+		RzListIter *it = NULL;
+		char *hash = NULL;
+		bool found = false;
+		rz_list_foreach (hashes, it, hash) {
+			char *digest = ht_pp_find(digests, hash, &found);
+			if (found) {
+				rz_cons_printf("  %s: %s\n", hash, digest);
+			}
+		}
+		ht_pp_free(digests);
+	}
+}
+
+static void bin_resources_print_table(RzCore *core, RzCmdStateOutput *state, RzList *hashes, RzBinResource *resource) {
+	rz_table_add_rowf(state->d.t, "dssXxss", resource->index, resource->name,
+		resource->type, resource->vaddr, resource->size, resource->language, resource->time);
+	if (hashes && resource->size > 0) {
+		HtPP *digests = rz_core_bin_create_digests(core, resource->vaddr, resource->size, hashes);
+		if (!digests) {
+			return;
+		}
+		RzListIter *it;
+		char *hash;
+		bool found = false;
+		rz_list_foreach (hashes, it, hash) {
+			char *digest = ht_pp_find(digests, hash, &found);
+			if (found && state->d.t) {
+				rz_table_add_row_columnsf(state->d.t, "s", digest);
+			}
+		}
+		ht_pp_free(digests);
+	}
+}
+
+static void bin_resources_print_json(RzCore *core, RzCmdStateOutput *state, RzList *hashes, RzBinResource *resource) {
+	pj_o(state->d.pj);
+	pj_ks(state->d.pj, "name", resource->name);
+	pj_ki(state->d.pj, "index", resource->index);
+	pj_ks(state->d.pj, "type", resource->type);
+	pj_kn(state->d.pj, "vaddr", resource->vaddr);
+	pj_ki(state->d.pj, "size", resource->size);
+	pj_ks(state->d.pj, "lang", resource->language);
+	pj_ks(state->d.pj, "timestamp", resource->time);
+	if (hashes && resource->size > 0) {
+		HtPP *digests = rz_core_bin_create_digests(core, resource->vaddr, resource->size, hashes);
+		if (!digests) {
+			goto end;
+		}
+		RzListIter *it;
+		char *hash;
+		bool found = false;
+		rz_list_foreach (hashes, it, hash) {
+			char *digest = ht_pp_find(digests, hash, &found);
+			if (found && state->d.pj) {
+				pj_ks(state->d.pj, hash, digest);
+			}
+		}
+		ht_pp_free(digests);
+	}
+end:
+	pj_end(state->d.pj);
+}
+
+RZ_API bool rz_core_bin_resources_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzCmdStateOutput *state, RZ_NULLABLE RzList *hashes) {
+	rz_return_val_if_fail(core && state && bf, false);
+	RzBinResource *resource = NULL;
+	RzListIter *it = NULL;
+	char *hashname = NULL;
 
 	rz_cmd_state_output_array_start(state);
 	rz_cmd_state_output_set_columnsf(state, "dssXxss", "index", "name", "type", "vaddr", "size", "lang", "timestamp");
+
+	rz_list_foreach (hashes, it, hashname) {
+		const RzMsgDigestPlugin *msg_plugin = rz_msg_digest_plugin_by_name(hashname);
+		if (msg_plugin) {
+			rz_cmd_state_output_set_columnsf(state, "s", msg_plugin->name);
+		}
+	}
+
 	const RzList *resources = rz_bin_object_get_resources(bf->o);
-	RzBinResource *resource;
-	RzListIter *it;
-	char humansz[8];
 
 	rz_list_foreach (resources, it, resource) {
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_STANDARD:
-			rz_num_units(humansz, sizeof(humansz), resource->size);
-			rz_cons_printf("Resource %zd\n", resource->index);
-			rz_cons_printf("  name: %s\n", resource->name);
-			rz_cons_printf("  timestamp: %s\n", resource->time);
-			rz_cons_printf("  vaddr: 0x%08" PFMT64x "\n", resource->vaddr);
-			rz_cons_printf("  size: %s\n", humansz);
-			rz_cons_printf("  type: %s\n", resource->type);
-			rz_cons_printf("  language: %s\n", resource->language);
+			bin_resources_print_standard(core, hashes, resource);
 			break;
 		case RZ_OUTPUT_MODE_TABLE:
-			rz_table_add_rowf(state->d.t, "dssXxss", resource->index, resource->name,
-				resource->type, resource->vaddr, resource->size, resource->language, resource->time);
+			bin_resources_print_table(core, state, hashes, resource);
 			break;
 		case RZ_OUTPUT_MODE_JSON:
-			pj_o(state->d.pj);
-			pj_ks(state->d.pj, "name", resource->name);
-			pj_ki(state->d.pj, "index", resource->index);
-			pj_ks(state->d.pj, "type", resource->type);
-			pj_kn(state->d.pj, "vaddr", resource->vaddr);
-			pj_ki(state->d.pj, "size", resource->size);
-			pj_ks(state->d.pj, "lang", resource->language);
-			pj_ks(state->d.pj, "timestamp", resource->time);
-			pj_end(state->d.pj);
+			bin_resources_print_json(core, state, hashes, resource);
 			break;
 		default:
 			rz_warn_if_reached();
