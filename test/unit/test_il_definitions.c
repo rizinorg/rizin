@@ -469,8 +469,8 @@ bool test_rzil_bv_operation(void) {
 	mu_assert_streq_free(s, "0x0", "string hex value of bv");
 	rz_il_bv_free(res);
 
-	res = rz_il_bv_concat(x, y);
-	mu_assert("concat x and y", is_equal_bv(res, concat));
+	res = rz_il_bv_append(x, y);
+	mu_assert("append x and y", is_equal_bv(res, concat));
 	s = rz_il_bv_as_string(res);
 	mu_assert_streq_free(s, "000010001011", "string bit value of bv");
 	s = rz_il_bv_as_hex_string(res);

@@ -261,12 +261,12 @@ RZ_API RZ_OWN RzILBitVector *rz_il_bv_cut_tail(RZ_NONNULL RzILBitVector *bv, ut3
 }
 
 /**
- * Concat bv1 and bv2 to get new bitvector
+ * Append bv2 to bv1 to get new bitvector
  * \param bv1 RzILBitVector
  * \param bv2 RzILBitVector
  * \return ret RzILBitVector, the new bitvector
  */
-RZ_API RZ_OWN RzILBitVector *rz_il_bv_concat(RZ_NONNULL RzILBitVector *bv1, RZ_NONNULL RzILBitVector *bv2) {
+RZ_API RZ_OWN RzILBitVector *rz_il_bv_append(RZ_NONNULL RzILBitVector *bv1, RZ_NONNULL RzILBitVector *bv2) {
 	rz_return_val_if_fail(bv1 && bv2, NULL);
 
 	ut32 new_len = bv1->len + bv2->len;
