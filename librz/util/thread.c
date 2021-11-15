@@ -25,9 +25,9 @@
 #endif
 
 #if __WINDOWS__
-static DWORD WINAPI _r_th_launcher(void *_th) {
+static DWORD WINAPI _rz_th_launcher(void *_th) {
 #else
-static void *_r_th_launcher(void *_th) {
+static void *_rz_th_launcher(void *_th) {
 #endif
 	int ret;
 	RzThread *th = _th;
@@ -208,9 +208,9 @@ RZ_API RzThread *rz_th_new(RZ_TH_FUNCTION(fun), void *user, int delay) {
 		th->breaked = false;
 		th->ready = false;
 #if HAVE_PTHREAD
-		pthread_create(&th->tid, NULL, _r_th_launcher, th);
+		pthread_create(&th->tid, NULL, _rz_th_launcher, th);
 #elif __WINDOWS__
-		th->tid = CreateThread(NULL, 0, _r_th_launcher, th, 0, 0);
+		th->tid = CreateThread(NULL, 0, _rz_th_launcher, th, 0, 0);
 #endif
 	}
 	return th;
@@ -221,10 +221,11 @@ RZ_API void rz_th_break(RzThread *th) {
 }
 
 RZ_API bool rz_th_kill(RzThread *th, bool force) {
-	if (!th || !th->tid) {
+	if (!th || !th->tid || !th->running) {
 		return false;
 	}
 	th->breaked = true;
+	th->running = false;
 	rz_th_break(th);
 	rz_th_wait(th);
 #if HAVE_PTHREAD
@@ -446,7 +447,7 @@ RZ_API bool rz_th_pool_wait(RZ_NONNULL RzThreadPool *pool) {
 	for (ut32 i = 0; i < pool->size; ++i) {
 		if (pool->threads[i]) {
 			RZ_LOG_DEBUG("thread: waiting for thread %u\n", i);
-			has_exited &= rz_th_wait(pool->threads[i]);
+			has_exited &= !rz_th_wait(pool->threads[i]);
 		}
 	}
 	return has_exited;
@@ -465,7 +466,7 @@ RZ_API bool rz_th_pool_wait_async(RZ_NONNULL RzThreadPool *pool) {
 	for (ut32 i = 0; i < pool->size; ++i) {
 		if (pool->threads[i]) {
 			RZ_LOG_DEBUG("thread: waiting for thread %u (async)\n", i);
-			has_exited &= rz_th_wait_async(pool->threads[i]);
+			has_exited &= !rz_th_wait_async(pool->threads[i]);
 		}
 	}
 	return has_exited;

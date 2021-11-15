@@ -124,6 +124,7 @@ RZ_IPI RzCmdStatus rz_block_decrease_handler(RzCore *core, int argc, const char 
 RZ_IPI RzCmdStatus rz_block_increase_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_block_flag_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_block_max_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_basefind_compute_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI int rz_cmd_cmp(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_meta_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_meta_list_at_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);

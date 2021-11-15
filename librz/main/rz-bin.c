@@ -144,6 +144,9 @@ static ut32 actions2mask(ut64 action) {
 	if (action & RZ_BIN_REQ_SECTIONS_MAPPING) {
 		res |= RZ_CORE_BIN_ACC_SECTIONS_MAPPING;
 	}
+	if (action & RZ_BIN_REQ_BASEFIND) {
+		res |= RZ_CORE_BIN_ACC_BASEFIND;
+	}
 	return res;
 }
 
@@ -205,6 +208,7 @@ static int rabin_show_help(int v) {
 			" -w              display try/catch blocks\n"
 			" -x              extract bins contained in file\n"
 			" -X [fmt] [f] .. package in fat or zip the given files and bins contained in file\n"
+			" -Y [fw file]    calculates all the possibles base address candidates of a firmware bin\n"
 			" -z              strings (from data section)\n"
 			" -zz             strings (from raw bins [e bin.rawstr=1])\n"
 			" -zzz            dump raw strings to stdout (for huge files)\n"
@@ -752,7 +756,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	}
 #define unset_action(x) action &= ~x
 	RzGetopt opt;
-	rz_getopt_init(&opt, argc, argv, "DjgAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSVIHeEUlRwO:o:pPqQrTvLhuxXzZ");
+	rz_getopt_init(&opt, argc, argv, "DjgAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSVIHeEUlRwO:o:pPqQrTvLhuxYXzZ");
 	while ((c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case 'g':
@@ -873,6 +877,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		case 'M': set_action(RZ_BIN_REQ_MAIN); break;
 		case 'l': set_action(RZ_BIN_REQ_LIBS); break;
 		case 'R': set_action(RZ_BIN_REQ_RELOCS); break;
+		case 'Y': set_action(RZ_BIN_REQ_BASEFIND); break;
 		case 'x': set_action(RZ_BIN_REQ_EXTRACT); break;
 		case 'X': set_action(RZ_BIN_REQ_PACKAGE); break;
 		case 'O':
