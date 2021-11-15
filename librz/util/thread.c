@@ -221,10 +221,11 @@ RZ_API void rz_th_break(RzThread *th) {
 }
 
 RZ_API bool rz_th_kill(RzThread *th, bool force) {
-	if (!th || !th->tid) {
+	if (!th || !th->tid || !th->running) {
 		return false;
 	}
 	th->breaked = true;
+	th->running = false;
 	rz_th_break(th);
 	rz_th_wait(th);
 #if HAVE_PTHREAD
