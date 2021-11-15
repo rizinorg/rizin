@@ -589,7 +589,7 @@ static ut32 avr_ddddrrrr_2x(ut16 cbins, cchar** tokens, ut32 ntokens, ut8 *data,
 	/* <opcode> Rd, Rr | 16 <= d <= 31 | 16 <= r <= 31 */
 	ut16 Rd, Rr;
 	parse_register_or_error_limit(Rd, tokens[1], 16, 31);
-	parse_register_or_error_limit(Rr, tokens[1], 16, 31);
+	parse_register_or_error_limit(Rr, tokens[2], 16, 31);
 
 	Rr -= 16;
 	Rd -= 16;
