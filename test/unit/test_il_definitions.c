@@ -149,12 +149,39 @@ static bool test_rzil_effect() {
 	mu_end;
 }
 
+static bool test_rzil_float_type() {
+	// 0[sign] 11111111[exp] 0000000...[frac]
+	RzILBitVector *s = rz_il_bv_new_from_ut32(32, 2139095040u);
+	RzILFloat *f = rzil_float_new(RZIL_FLOAT_IEEE754_32, s);
+	mu_assert_notnull(f, "Create Flaot");
+
+	ut32 exp_len = rzil_float_get_exp_len(f);
+	mu_assert_eq(exp_len, 8, "Check float32 exponent width");
+
+	ut32 frac_len = rzil_float_get_frac_len(f);
+	mu_assert_eq(frac_len, 23, "Check float32 fraction width");
+
+	RzILBitVector *exp = rzil_float_get_sigexp(f);
+	RzILBitVector *expect_exp = rz_il_bv_new(9);
+	rz_il_bv_toggle_all(expect_exp);
+	rz_il_bv_toggle(expect_exp, 8);
+	mu_assert_true(is_equal_bv(exp, expect_exp), "Check get exponent");
+
+	RzILBitVector *frac = rzil_float_get_frac(f);
+	RzILBitVector *expect_frac = rz_il_bv_new(23);
+	mu_assert_true(is_equal_bv(frac, expect_frac), "Check get fraction");
+
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rzil_bool_init);
 	mu_run_test(test_rzil_bool_logic);
 
 	mu_run_test(test_rzil_mem);
 	mu_run_test(test_rzil_effect);
+
+	mu_run_test(test_rzil_float_type);
 	return tests_passed != tests_run;
 }
 
