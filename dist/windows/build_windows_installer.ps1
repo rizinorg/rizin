@@ -20,8 +20,7 @@ $env:Path += ";$env:ProgramFiles (x86)\Inno Setup 6"
 dist\windows\vsdevenv.ps1 $bits
 
 meson --buildtype=release --prefix=$installdir $builddir $meson_options
-ninja -C $builddir
-Get-PSDrive
+ninja -C $builddir -j1
 ninja -C $builddir install
 7z a dist\windows\Output\rizin-$name-$version.zip $installdir
 iscc dist\windows\rizin.iss /DRizinLocation=$installdir\* /DLicenseLocation=$PWD\COPYING.LESSER /DMyAppVersion=$version
