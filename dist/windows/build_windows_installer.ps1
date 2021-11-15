@@ -21,7 +21,6 @@ dist\windows\vsdevenv.ps1 $bits
 
 meson --buildtype=release --prefix=$installdir $builddir $meson_options
 ninja -C $builddir
-$builddir\subprojects\sdb\sdb.exe
 Get-PSDrive
 ninja -C $builddir install
 7z a dist\windows\Output\rizin-$name-$version.zip $installdir
