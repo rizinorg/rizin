@@ -48,9 +48,11 @@
 #error Threading library only supported for pthread and w32
 #endif
 
-typedef enum { RZ_TH_FREED = -1,
+typedef enum {
+	RZ_TH_FREED = -1,
 	RZ_TH_STOP = 0,
-	RZ_TH_REPEAT = 1 } RzThreadFunctionRet;
+	RZ_TH_REPEAT = 1
+} RzThreadFunctionRet;
 #define RZ_TH_FUNCTION(x) RzThreadFunctionRet (*x)(struct rz_th_t *)
 
 #ifdef __cplusplus
