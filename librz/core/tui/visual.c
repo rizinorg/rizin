@@ -1086,17 +1086,9 @@ RZ_API void rz_core_visual_seek_animation_undo(RzCore *core) {
 }
 
 static void setprintmode(RzCore *core, int n) {
+	rz_config_set_i(core->config, "scr.visual.mode", core->printidx + n);
 	RzAsmOp op;
 
-	if (n > 0) {
-		core->printidx = RZ_ABS((core->printidx + 1) % NPF);
-	} else {
-		if (core->printidx) {
-			core->printidx--;
-		} else {
-			core->printidx = NPF - 1;
-		}
-	}
 	switch (core->printidx) {
 	case RZ_CORE_VISUAL_MODE_PD:
 	case RZ_CORE_VISUAL_MODE_DB:
@@ -3986,9 +3978,9 @@ RZ_API int rz_core_visual(RzCore *core, const char *input) {
 			const char *cmdvhex = rz_config_get(core->config, "cmd.stack");
 
 			if (cmdvhex && *cmdvhex) {
-				snprintf(debugstr, sizeof(debugstr),
-					"?0;f tmp;sr %s@e:cfg.seek.silent=true;%s;?1;%s;?1;"
-					"s tmp@e:cfg.seek.silent=true;f- tmp;pd $r",
+				rz_strf(debugstr,
+					"?0 ; f tmp ; sr %s @e: cfg.seek.silent=true ; %s ; ?1 ; %s ; ?1 ; "
+					"s tmp @e: cfg.seek.silent=true ; f- tmp ; pd $r",
 					reg, cmdvhex,
 					ref ? "drr" : "dr=");
 				debugstr[sizeof(debugstr) - 1] = 0;
@@ -3996,10 +3988,10 @@ RZ_API int rz_core_visual(RzCore *core, const char *input) {
 				const char *pxw = stackPrintCommand(core);
 				const char sign = (delta < 0) ? '+' : '-';
 				const int absdelta = RZ_ABS(delta);
-				snprintf(debugstr, sizeof(debugstr),
-					"diq;?0;f tmp;sr %s@e:cfg.seek.silent=true;%s %d@$$%c%d;"
-					"?1;%s;"
-					"?1;s tmp@e:cfg.seek.silent=true;f- tmp;afal;pd $r",
+				rz_strf(debugstr,
+					"diq ; ?0 ; f tmp ; sr %s @e: cfg.seek.silent=true ; %s %d @ $$%c%d;"
+					"?1 ; %s;"
+					"?1 ; s tmp @e: cfg.seek.silent=true ; f- tmp ; afal ; pd $r",
 					reg, pxa ? "pxa" : pxw, size, sign, absdelta,
 					ref ? "drr" : "dr=");
 			}

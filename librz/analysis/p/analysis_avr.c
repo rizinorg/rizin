@@ -19,8 +19,6 @@ https://en.wikipedia.org/wiki/Atmel_AVR_instruction_set
 
 #include "../../asm/arch/avr/disassembler.h"
 
-static RDESContext desctx;
-
 typedef struct _cpu_const_tag {
 	const char *const key;
 	ut8 type;
@@ -599,11 +597,10 @@ INST_HANDLER(dec) { // DEC Rd
 }
 
 INST_HANDLER(des) { // DES k
-	if (desctx.round < 16) { //DES
-		op->type = RZ_ANALYSIS_OP_TYPE_CRYPTO;
-		op->cycles = 1; //redo this
-		rz_strbuf_setf(&op->esil, "%d,des", desctx.round);
-	}
+	op->type = RZ_ANALYSIS_OP_TYPE_CRYPTO;
+	op->cycles = 1;
+	int round = (buf[0] >> 4);
+	rz_strbuf_setf(&op->esil, "%d,des", round);
 }
 
 INST_HANDLER(eijmp) { // EIJMP
@@ -1685,51 +1682,78 @@ static int avr_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 }
 
 static bool avr_custom_des(RzAnalysisEsil *esil) {
-	ut64 key, encrypt, text, des_round;
-	ut32 key_lo, key_hi, buf_lo, buf_hi;
 	if (!esil || !esil->analysis || !esil->analysis->reg) {
 		return false;
 	}
-	if (!__esil_pop_argument(esil, &des_round)) {
+	ut64 arg;
+	if (!__esil_pop_argument(esil, &arg)) {
 		return false;
 	}
-	rz_analysis_esil_reg_read(esil, "hf", &encrypt, NULL);
-	rz_analysis_esil_reg_read(esil, "deskey", &key, NULL);
-	rz_analysis_esil_reg_read(esil, "text", &text, NULL);
-
-	key_lo = key & UT32_MAX;
-	key_hi = key >> 32;
-	buf_lo = text & UT32_MAX;
-	buf_hi = text >> 32;
-
-	if (des_round != desctx.round) {
-		desctx.round = des_round;
+	int round = arg;
+	if (round < 0 || round > 15) {
+		return false;
+	}
+	ut64 decrypt;
+	rz_analysis_esil_reg_read(esil, "hf", &decrypt, NULL);
+	if (decrypt) {
+		round = 15 - round;
+	}
+	ut8 regs[0x10];
+	static const char *reg_names[] = {
+		"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",
+		"r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15"
+	};
+	for (size_t i = 0; i < sizeof(regs); i++) {
+		ut64 v = 0;
+		rz_analysis_esil_reg_read(esil, reg_names[i], &v, NULL);
+		regs[i] = v;
 	}
 
-	if (!desctx.round) {
-		int i;
-		//generating all round keys
-		rz_des_permute_key(&key_lo, &key_hi);
-		for (i = 0; i < 16; i++) {
-			rz_des_round_key(i, &desctx.round_key_lo[i], &desctx.round_key_hi[i], &key_lo, &key_hi);
-		}
-		rz_des_permute_block0(&buf_lo, &buf_hi);
+	// Atmel's "AVR Instruction Set Manual" unfortunately is very ambiguous
+	// regarding the details of this instruction and leaves the most interesting
+	// questions open, especially what intermediate results are stored and how.
+	// The below implementation has been developed based on observing the exact
+	// results in the Simulator in Atmel/Microchip Studio emulating ATxmega128A1.
+	// Things may seem very strange (especially hi/lo swapping), but it is all
+	// intended to get the right behavior!
+	ut32 buf_hi = rz_read_at_le32(regs, 0);
+	ut32 buf_lo = rz_read_at_le32(regs, 4);
+	ut32 key_orig_hi = rz_read_at_le32(regs, 8);
+	ut32 key_orig_lo = rz_read_at_le32(regs, 0xc);
+	ut32 key_lo = key_orig_lo;
+	ut32 key_hi = key_orig_hi;
+	rz_des_permute_key(&key_lo, &key_hi);
+	int i = round;
+	if (!decrypt) {
+		rz_des_shift_key(i, false, &key_lo, &key_hi);
 	}
-
-	if (encrypt) {
-		rz_des_round(&buf_lo, &buf_hi, &desctx.round_key_lo[desctx.round], &desctx.round_key_hi[desctx.round]);
+	ut32 round_key_lo, round_key_hi;
+	rz_des_pc2(&round_key_lo, &round_key_hi, key_lo, key_hi);
+	if (decrypt) {
+		rz_des_shift_key(i, true, &key_lo, &key_hi);
+	}
+	rz_des_permute_block0(&buf_lo, &buf_hi);
+	rz_des_round(&buf_lo, &buf_hi, &round_key_lo, &round_key_hi);
+	if (arg < 15) {
+		rz_des_permute_block1(&buf_lo, &buf_hi);
 	} else {
-		rz_des_round(&buf_lo, &buf_hi, &desctx.round_key_lo[15 - desctx.round], &desctx.round_key_hi[15 - desctx.round]);
-	}
-
-	if (desctx.round == 15) {
 		rz_des_permute_block1(&buf_hi, &buf_lo);
-		desctx.round = 0;
-	} else {
-		desctx.round++;
+		buf_lo ^= buf_hi;
+		buf_hi ^= buf_lo;
+		buf_lo ^= buf_hi;
 	}
+	rz_des_permute_key_inv(&key_lo, &key_hi); // un-permute so the rz_des_permute_key() in the next round will restore it
+	key_lo |= key_orig_hi & 0x01010101; // restore the parity bits that got lost in PC-1
+	key_hi |= key_orig_lo & 0x01010101;
 
-	rz_analysis_esil_reg_write(esil, "text", text);
+	rz_write_at_le32(regs, buf_hi, 0);
+	rz_write_at_le32(regs, buf_lo, 4);
+	rz_write_at_le32(regs, key_lo, 8);
+	rz_write_at_le32(regs, key_hi, 0xc);
+	for (size_t i = 0; i < sizeof(regs); i++) {
+		ut64 v = regs[i];
+		rz_analysis_esil_reg_write(esil, reg_names[i], v);
+	}
 	return true;
 }
 
@@ -1875,7 +1899,6 @@ static int esil_avr_init(RzAnalysisEsil *esil) {
 	if (!esil) {
 		return false;
 	}
-	desctx.round = 0;
 	rz_analysis_esil_set_op(esil, "des", avr_custom_des, 0, 0, RZ_ANALYSIS_ESIL_OP_TYPE_CUSTOM); //better meta info plz
 	rz_analysis_esil_set_op(esil, "SPM_PAGE_ERASE", avr_custom_spm_page_erase, 0, 0, RZ_ANALYSIS_ESIL_OP_TYPE_CUSTOM);
 	rz_analysis_esil_set_op(esil, "SPM_PAGE_FILL", avr_custom_spm_page_fill, 0, 0, RZ_ANALYSIS_ESIL_OP_TYPE_CUSTOM);
@@ -1917,7 +1940,6 @@ RAMPX, RAMPY, RAMPZ, RAMPD and EIND:
 		"gpr	r5	.8	5	0\n"
 		"gpr	r6	.8	6	0\n"
 		"gpr	r7	.8	7	0\n"
-		"gpr	text	.64	0	0\n"
 		"gpr	r8	.8	8	0\n"
 		"gpr	r9	.8	9	0\n"
 		"gpr	r10	.8	10	0\n"
@@ -1926,7 +1948,6 @@ RAMPX, RAMPY, RAMPZ, RAMPD and EIND:
 		"gpr	r13	.8	13	0\n"
 		"gpr	r14	.8	14	0\n"
 		"gpr	r15	.8	15	0\n"
-		"gpr	deskey	.64	8	0\n"
 		"gpr	r16	.8	16	0\n"
 		"gpr	r17	.8	17	0\n"
 		"gpr	r18	.8	18	0\n"
