@@ -3,8 +3,8 @@ $bits=$args[1]
 $end=$args.Length
 $meson_options=$args[2..$end]
 $scriptpath=$PSScriptRoot
-$builddir="build-win-installer-$name-$bits"
-$installdir="rizin-win-installer-$name-$bits"
+$builddir=$(Join-Path -Path $PSScriptRoot -ChildPath "..\..\build-win-installer-$name-$bits")
+$installdir=$(Join-Path -Path $PSScriptRoot -ChildPath "..\..\rizin-win-installer-$name-$bits")
 
 pushd $PSScriptRoot\..\..
 
