@@ -5037,8 +5037,8 @@ end:
 	pj_end(state->d.pj);
 }
 
-RZ_API bool rz_core_bin_resources_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, RzList *hashes) {
-	rz_return_val_if_fail(core && state, false);
+RZ_API bool rz_core_bin_resources_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzCmdStateOutput *state, RZ_NULLABLE RzList *hashes) {
+	rz_return_val_if_fail(core && state && bf, false);
 	RzBinResource *resource = NULL;
 	RzListIter *it = NULL;
 	char *hashname = NULL;
