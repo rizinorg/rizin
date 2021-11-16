@@ -4,6 +4,7 @@ rz_core_sources = [
   'agraph.c',
   'analysis_objc.c',
   'analysis_tp.c',
+  'basefind.c',
   'cagraph.c',
   'canalysis.c',
   'cannotated_code.c',

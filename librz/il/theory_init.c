@@ -9,7 +9,7 @@ static RzILEvent *il_event_new_read_from_name(RzILVM *vm, const char *name, RzIL
 	rz_return_val_if_fail(vm && name, NULL);
 	RzILBitVector *num = NULL;
 	if (value->type == RZIL_VAR_TYPE_BOOL) {
-		num = rz_il_bv_new_from_ut32(1, value->data.b->b);
+		num = rz_il_bv_new_from_ut64(1, value->data.b->b);
 	} else {
 		num = value->data.bv;
 	}

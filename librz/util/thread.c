@@ -10,18 +10,24 @@
 #include <mach/thread_policy.h>
 #endif
 
+#if __APPLE__ || __NetBSD__ || __FreeBSD__ || __OpenBSD__ || __DragonFly__ || __sun
+#include <sys/param.h>
+#include <sys/sysctl.h>
+#endif
+
 #if __sun
 #include <sys/pset.h>
 #endif
 
 #if __HAIKU__
 #include <kernel/scheduler.h>
+#include <OS.h>
 #endif
 
 #if __WINDOWS__
-static DWORD WINAPI _r_th_launcher(void *_th) {
+static DWORD WINAPI _rz_th_launcher(void *_th) {
 #else
-static void *_r_th_launcher(void *_th) {
+static void *_rz_th_launcher(void *_th) {
 #endif
 	int ret;
 	RzThread *th = _th;
@@ -202,9 +208,9 @@ RZ_API RzThread *rz_th_new(RZ_TH_FUNCTION(fun), void *user, int delay) {
 		th->breaked = false;
 		th->ready = false;
 #if HAVE_PTHREAD
-		pthread_create(&th->tid, NULL, _r_th_launcher, th);
+		pthread_create(&th->tid, NULL, _rz_th_launcher, th);
 #elif __WINDOWS__
-		th->tid = CreateThread(NULL, 0, _r_th_launcher, th, 0, 0);
+		th->tid = CreateThread(NULL, 0, _rz_th_launcher, th, 0, 0);
 #endif
 	}
 	return th;
@@ -215,10 +221,11 @@ RZ_API void rz_th_break(RzThread *th) {
 }
 
 RZ_API bool rz_th_kill(RzThread *th, bool force) {
-	if (!th || !th->tid) {
+	if (!th || !th->tid || !th->running) {
 		return false;
 	}
 	th->breaked = true;
+	th->running = false;
 	rz_th_break(th);
 	rz_th_wait(th);
 #if HAVE_PTHREAD
@@ -254,11 +261,11 @@ RZ_API bool rz_th_start(RzThread *th, int enable) {
 	return ret;
 }
 
-RZ_API int rz_th_wait(struct rz_th_t *th) {
-	int ret = false;
+RZ_API bool rz_th_wait(RzThread *th) {
+	bool ret = false;
 	if (th) {
 #if HAVE_PTHREAD
-		void *thret;
+		void *thret = NULL;
 		ret = pthread_join(th->tid, &thret);
 #elif __WINDOWS__
 		ret = WaitForSingleObject(th->tid, INFINITE);
@@ -268,40 +275,241 @@ RZ_API int rz_th_wait(struct rz_th_t *th) {
 	return ret;
 }
 
-RZ_API int rz_th_wait_async(struct rz_th_t *th) {
+RZ_API bool rz_th_wait_async(RzThread *th) {
 	return th->running;
 }
 
-RZ_API void *rz_th_free(struct rz_th_t *th) {
+RZ_API void rz_th_free(RzThread *th) {
 	if (!th) {
-		return NULL;
+		return;
 	}
 #if __WINDOWS__
 	CloseHandle(th->tid);
 #endif
 	rz_th_lock_free(th->lock);
 	free(th);
-	return NULL;
 }
 
-RZ_API void *rz_th_kill_free(struct rz_th_t *th) {
+RZ_API void rz_th_kill_free(RzThread *th) {
 	if (!th) {
-		return NULL;
+		return;
 	}
 	rz_th_kill(th, true);
 	rz_th_free(th);
-	return NULL;
 }
 
-#if 0
+RZ_API size_t rz_th_physical_core_number() {
+#ifdef __WINDOWS__
+	SYSTEM_INFO sysinfo;
+	GetSystemInfo(&sysinfo);
+	return sysinfo.dwNumberOfProcessors;
+#elif __APPLE__ || __FreeBSD__ || __OpenBSD__ || __DragonFly__ || __NetBSD__
+	int os_status = 0;
+	int mib[4];
+	unsigned long n_cpus = 1;
+	size_t n_cpus_length = sizeof(n_cpus);
 
-// Thread Pipes
-typedef struct rz_th_pipe_t {
-	RzList *msglist;
-	RzThread *th;
-	//RzThreadLock *lock;
-} RzThreadPipe;
-
-rz_th_pipe_new();
-
+	/* set the mib for hw.ncpu */
+	mib[0] = CTL_HW;
+#if __NetBSD__
+	mib[1] = HW_NCPUONLINE;
+#elif __OpenBSD__ || __FreeBSD__
+	mib[1] = HW_NCPU;
+#else
+	mib[1] = HW_AVAILCPU;
 #endif
+
+	os_status = sysctl(mib, 2, &n_cpus, &n_cpus_length, NULL, 0);
+
+	if (os_status != 0) {
+#if __OpenBSD__ || __FreeBSD__
+		n_cpus = 1;
+#else
+		// HW_AVAILCPU does not exist.
+		mib[1] = HW_NCPU;
+		os_status = sysctl(mib, 2, &n_cpus, &n_cpus_length, NULL, 0);
+		if (os_status != 0) {
+			n_cpus = 1;
+		}
+#endif
+	}
+	// this is needed because the upper bits are set on bsd platforms
+	n_cpus &= UT32_MAX;
+
+	return n_cpus;
+#elif __HAIKU__
+	system_info info;
+	get_system_info(&info);
+	return info.cpu_count;
+#else
+	return sysconf(_SC_NPROCESSORS_ONLN);
+#endif
+}
+
+/**
+ * \brief returns a new RzThreadPool structure with a pool of thread
+ * 
+ * Returns a new RzThreadPool structure with a pool of thread limited
+ * by either the physical core number count or by the value specified
+ * by the user (if set to 0, it will be the max physical cores number)
+ * 
+ * \param  max_threads  The maximum number of threads needed in the pool
+ * \return RzThreadPool The RzThreadPool structure
+ */
+RZ_API RZ_OWN RzThreadPool *rz_th_pool_new(size_t max_threads) {
+	RzThreadPool *pool = RZ_NEW0(RzThreadPool);
+	if (!pool) {
+		return NULL;
+	}
+
+	size_t cores = rz_th_physical_core_number();
+	if (max_threads) {
+		cores = RZ_MIN(cores, max_threads);
+	}
+
+	pool->size = cores;
+	pool->threads = RZ_NEWS0(RzThread *, cores);
+	if (!pool->threads) {
+		free(pool);
+		return NULL;
+	}
+
+	return pool;
+}
+
+/**
+ * \brief Kills (and frees) the threads and frees the RzThreadPool struct
+ *
+ * \param RzThreadPool *The thread pool to free
+ */
+RZ_API void rz_th_pool_free(RZ_NULLABLE RzThreadPool *pool) {
+	if (!pool) {
+		return;
+	}
+	rz_th_pool_kill_free(pool);
+	free(pool->threads);
+	free(pool);
+}
+
+/**
+ * \brief Adds a thread to the thread pool
+ *
+ * \param  RzThreadPool  The thread pool where to add the thread
+ * \param  RzThread      The thread to add to the pool
+ * \return true if a slot is found, false otherwise
+ */
+RZ_API bool rz_th_pool_add_thread(RZ_NONNULL RzThreadPool *pool, RZ_NONNULL RzThread *thread) {
+	rz_return_val_if_fail(pool && thread, false);
+	for (ut32 i = 0; i < pool->size; ++i) {
+		if (!pool->threads[i]) {
+			RZ_LOG_DEBUG("thread: thread %u added\n", i);
+			pool->threads[i] = thread;
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
+ * @brief Starts all the threads in the thread pool
+ *
+ * @param RzThreadPool  The thread pool to start
+ * @param enable        Enable the thread or disables them (see rz_th_start)
+ *
+ * @return returns true if starts any thread from the pool, otherwise false
+ */
+RZ_API bool rz_th_pool_start(RZ_NONNULL RzThreadPool *pool, bool enable) {
+	rz_return_val_if_fail(pool, false);
+	bool started = false;
+	for (ut32 i = 0; i < pool->size; ++i) {
+		if (pool->threads[i]) {
+			RZ_LOG_DEBUG("thread: started thread %u\n", i);
+			rz_th_start(pool->threads[i], enable);
+			started = true;
+		}
+	}
+	if (!started) {
+		RZ_LOG_ERROR("thread: cannot start thread pool when there are no threads in it\n");
+	}
+	return started;
+}
+
+/**
+ * \brief Waits the end of all the threads in the thread pool
+ *
+ * \param  RzThreadPool The thread pool to wait for
+ *
+ * \return true if managed to wait all threads, otherwise false
+ */
+RZ_API bool rz_th_pool_wait(RZ_NONNULL RzThreadPool *pool) {
+	rz_return_val_if_fail(pool, false);
+	bool has_exited = true;
+	for (ut32 i = 0; i < pool->size; ++i) {
+		if (pool->threads[i]) {
+			RZ_LOG_DEBUG("thread: waiting for thread %u\n", i);
+			has_exited &= !rz_th_wait(pool->threads[i]);
+		}
+	}
+	return has_exited;
+}
+
+/**
+ * \brief Waits asynchronously the end of all the threads in the thread pool
+ *
+ * \param  RzThreadPool The thread pool to wait for
+ *
+ * \return true if managed to wait all threads, otherwise false
+ */
+RZ_API bool rz_th_pool_wait_async(RZ_NONNULL RzThreadPool *pool) {
+	rz_return_val_if_fail(pool, false);
+	bool has_exited = true;
+	for (ut32 i = 0; i < pool->size; ++i) {
+		if (pool->threads[i]) {
+			RZ_LOG_DEBUG("thread: waiting for thread %u (async)\n", i);
+			has_exited &= !rz_th_wait_async(pool->threads[i]);
+		}
+	}
+	return has_exited;
+}
+
+/**
+ * \brief Kills all threads in the thread pool
+ *
+ * \param  pool  The thread pool to kill
+ * \param  force Set to true if force killing the threads
+ *
+ * \return true if managed to kill all threads, otherwise false
+ */
+RZ_API bool rz_th_pool_kill(RZ_NONNULL RzThreadPool *pool, bool force) {
+	rz_return_val_if_fail(pool, false);
+	bool has_exited = false;
+	for (ut32 i = 0; i < pool->size; ++i) {
+		if (pool->threads[i]) {
+			RZ_LOG_DEBUG("thread: killing thread %u\n", i);
+			rz_th_kill(pool->threads[i], force);
+			has_exited = true;
+		}
+	}
+	return has_exited;
+}
+
+/**
+ * \brief Force kills all threads in the thread pool and frees them
+ *
+ * \param  pool The thread pool to kill
+ *
+ * \return true if managed to kill all threads, otherwise false
+ */
+RZ_API bool rz_th_pool_kill_free(RZ_NONNULL RzThreadPool *pool) {
+	rz_return_val_if_fail(pool, false);
+	bool has_exited = false;
+	for (ut32 i = 0; i < pool->size; ++i) {
+		if (pool->threads[i]) {
+			RZ_LOG_DEBUG("thread: killing thread %u\n", i);
+			rz_th_kill_free(pool->threads[i]);
+			has_exited = true;
+			pool->threads[i] = NULL;
+		}
+	}
+	return has_exited;
+}

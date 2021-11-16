@@ -6061,3 +6061,15 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 	cmd_descriptor_init(core);
 	rzshell_cmddescs_init(core);
 }
+
+RZ_IPI RzCmdStatus rz_basefind_compute_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	ut32 pointer_size = 0;
+	if (argc != 2 || RZ_STR_ISEMPTY(argv[1])) {
+		pointer_size = 32;
+	} else if (!strcmp(argv[1], "32")) {
+		pointer_size = 32;
+	} else if (!strcmp(argv[1], "64")) {
+		pointer_size = 64;
+	}
+	return bool2status(rz_core_bin_basefind_print(core, pointer_size, state));
+}

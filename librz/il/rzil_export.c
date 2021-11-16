@@ -312,7 +312,7 @@ static void il_opdmp_concat(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 }
 
 static void il_opdmp_append(RzILOp *op, RzStrBuf *sb, PJ *pj) {
-	il_op_unimplemented("append");
+	il_op_param_2("append", op->op.append, x, y);
 }
 
 static void il_opdmp_load(RzILOp *op, RzStrBuf *sb, PJ *pj) {
@@ -426,89 +426,131 @@ static void il_op_resolve(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 	}
 	switch (op->code) {
 	case RZIL_OP_VAR:
-		return il_opdmp_var(op, sb, pj);
+		il_opdmp_var(op, sb, pj);
+		return;
 	case RZIL_OP_UNK:
-		return il_opdmp_unk(op, sb, pj);
+		il_opdmp_unk(op, sb, pj);
+		return;
 	case RZIL_OP_ITE:
-		return il_opdmp_ite(op, sb, pj);
+		il_opdmp_ite(op, sb, pj);
+		return;
 	case RZIL_OP_B0:
-		return il_opdmp_bool_false(op, sb, pj);
+		il_opdmp_bool_false(op, sb, pj);
+		return;
 	case RZIL_OP_B1:
-		return il_opdmp_bool_true(op, sb, pj);
+		il_opdmp_bool_true(op, sb, pj);
+		return;
 	case RZIL_OP_INV:
-		return il_opdmp_bool_inv(op, sb, pj);
+		il_opdmp_bool_inv(op, sb, pj);
+		return;
 	case RZIL_OP_AND:
-		return il_opdmp_bool_and(op, sb, pj);
+		il_opdmp_bool_and(op, sb, pj);
+		return;
 	case RZIL_OP_OR:
-		return il_opdmp_bool_or(op, sb, pj);
+		il_opdmp_bool_or(op, sb, pj);
+		return;
 	case RZIL_OP_XOR:
-		return il_opdmp_bool_xor(op, sb, pj);
+		il_opdmp_bool_xor(op, sb, pj);
+		return;
 	case RZIL_OP_BITV:
-		return il_opdmp_bitv(op, sb, pj);
+		il_opdmp_bitv(op, sb, pj);
+		return;
 	case RZIL_OP_MSB:
-		return il_opdmp_msb(op, sb, pj);
+		il_opdmp_msb(op, sb, pj);
+		return;
 	case RZIL_OP_LSB:
-		return il_opdmp_lsb(op, sb, pj);
+		il_opdmp_lsb(op, sb, pj);
+		return;
 	case RZIL_OP_NEG:
-		return il_opdmp_neg(op, sb, pj);
+		il_opdmp_neg(op, sb, pj);
+		return;
 	case RZIL_OP_LOGNOT:
-		return il_opdmp_lognot(op, sb, pj);
+		il_opdmp_lognot(op, sb, pj);
+		return;
 	case RZIL_OP_ADD:
-		return il_opdmp_add(op, sb, pj);
+		il_opdmp_add(op, sb, pj);
+		return;
 	case RZIL_OP_SUB:
-		return il_opdmp_sub(op, sb, pj);
+		il_opdmp_sub(op, sb, pj);
+		return;
 	case RZIL_OP_MUL:
-		return il_opdmp_mul(op, sb, pj);
+		il_opdmp_mul(op, sb, pj);
+		return;
 	case RZIL_OP_DIV:
-		return il_opdmp_div(op, sb, pj);
+		il_opdmp_div(op, sb, pj);
+		return;
 	case RZIL_OP_SDIV:
-		return il_opdmp_sdiv(op, sb, pj);
+		il_opdmp_sdiv(op, sb, pj);
+		return;
 	case RZIL_OP_MOD:
-		return il_opdmp_mod(op, sb, pj);
+		il_opdmp_mod(op, sb, pj);
+		return;
 	case RZIL_OP_SMOD:
-		return il_opdmp_smod(op, sb, pj);
+		il_opdmp_smod(op, sb, pj);
+		return;
 	case RZIL_OP_LOGAND:
-		return il_opdmp_logand(op, sb, pj);
+		il_opdmp_logand(op, sb, pj);
+		return;
 	case RZIL_OP_LOGOR:
-		return il_opdmp_logor(op, sb, pj);
+		il_opdmp_logor(op, sb, pj);
+		return;
 	case RZIL_OP_LOGXOR:
-		return il_opdmp_logxor(op, sb, pj);
+		il_opdmp_logxor(op, sb, pj);
+		return;
 	case RZIL_OP_SHIFTR:
-		return il_opdmp_shiftr(op, sb, pj);
+		il_opdmp_shiftr(op, sb, pj);
+		return;
 	case RZIL_OP_SHIFTL:
-		return il_opdmp_shiftl(op, sb, pj);
+		il_opdmp_shiftl(op, sb, pj);
+		return;
 	case RZIL_OP_SLE:
-		return il_opdmp_sle(op, sb, pj);
+		il_opdmp_sle(op, sb, pj);
+		return;
 	case RZIL_OP_ULE:
-		return il_opdmp_ule(op, sb, pj);
+		il_opdmp_ule(op, sb, pj);
+		return;
 	case RZIL_OP_CAST:
-		return il_opdmp_cast(op, sb, pj);
+		il_opdmp_cast(op, sb, pj);
+		return;
 	case RZIL_OP_CONCAT:
-		return il_opdmp_concat(op, sb, pj);
+		il_opdmp_concat(op, sb, pj);
+		return;
 	case RZIL_OP_APPEND:
-		return il_opdmp_append(op, sb, pj);
+		il_opdmp_append(op, sb, pj);
+		return;
 	case RZIL_OP_LOAD:
-		return il_opdmp_load(op, sb, pj);
+		il_opdmp_load(op, sb, pj);
+		return;
 	case RZIL_OP_STORE:
-		return il_opdmp_store(op, sb, pj);
+		il_opdmp_store(op, sb, pj);
+		return;
 	case RZIL_OP_PERFORM:
-		return il_opdmp_perform(op, sb, pj);
+		il_opdmp_perform(op, sb, pj);
+		return;
 	case RZIL_OP_SET:
-		return il_opdmp_set(op, sb, pj);
+		il_opdmp_set(op, sb, pj);
+		return;
 	case RZIL_OP_JMP:
-		return il_opdmp_jmp(op, sb, pj);
+		il_opdmp_jmp(op, sb, pj);
+		return;
 	case RZIL_OP_GOTO:
-		return il_opdmp_goto(op, sb, pj);
+		il_opdmp_goto(op, sb, pj);
+		return;
 	case RZIL_OP_SEQ:
-		return il_opdmp_seq(op, sb, pj);
+		il_opdmp_seq(op, sb, pj);
+		return;
 	case RZIL_OP_BLK:
-		return il_opdmp_blk(op, sb, pj);
+		il_opdmp_blk(op, sb, pj);
+		return;
 	case RZIL_OP_REPEAT:
-		return il_opdmp_repeat(op, sb, pj);
+		il_opdmp_repeat(op, sb, pj);
+		return;
 	case RZIL_OP_BRANCH:
-		return il_opdmp_branch(op, sb, pj);
+		il_opdmp_branch(op, sb, pj);
+		return;
 	case RZIL_OP_INVALID:
-		return il_opdmp_invalid(op, sb, pj);
+		il_opdmp_invalid(op, sb, pj);
+		return;
 	default:
 		rz_warn_if_reached();
 		if (sb) {
