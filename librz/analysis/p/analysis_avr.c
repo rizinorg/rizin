@@ -662,9 +662,10 @@ INST_HANDLER(fmul) { // FMUL Rd, Rr
 	const ut32 d = ((buf[0] >> 4) & 0x7) + 16;
 	const ut32 r = (buf[0] & 0x7) + 16;
 
-	ESIL_A("0xffff,1,r%d,r%d,*,<<,&,r1_r0,=,", r, d); // 0: r1_r0 = (rd * rr) << 1
-	ESIL_A("r1_r0,0x8000,&,!,!,cf,:=,"); // C = R/15
-	ESIL_A("$z,zf,:="); // Z = !R
+	ESIL_A("8,");
+	ESIL_A("0xffff,1,r%d,r%d,*,<<,&,DUP,r0,=,>>,r1,=,", r, d); // 0: r1_r0 = (rd * rr) << 1
+	ESIL_A("8,r1,<<,r0,|,DUP,0x8000,&,!,!,cf,:=,"); // C = R/15
+	ESIL_A("!,zf,:="); // Z = !R
 }
 
 INST_HANDLER(fmuls) { // FMULS Rd, Rr
@@ -674,13 +675,13 @@ INST_HANDLER(fmuls) { // FMULS Rd, Rr
 	const ut32 d = ((buf[0] >> 4) & 0x7) + 16;
 	const ut32 r = (buf[0] & 0x7) + 16;
 
-	ESIL_A("1,");
+	ESIL_A("8,1,");
 	ESIL_A("r%d,DUP,0x80,&,?{,0xff00,|,},", d); // sign extension Rd
 	ESIL_A("r%d,DUP,0x80,&,?{,0xff00,|,},", r); // sign extension Rr
-	ESIL_A("*,<<,r1_r0,=,"); // 0: (Rd*Rr)<<1
+	ESIL_A("*,<<,DUP,r0,=,>>,r1,=,"); // 0: (Rd*Rr)<<1
 
-	ESIL_A("r1_r0,0x8000,&,!,!,cf,:=,"); // C = R/16
-	ESIL_A("$z,zf,:="); // Z = !R
+	ESIL_A("8,r1,<<,r0,|,DUP,0x8000,&,!,!,cf,:=,"); // C = R/16
+	ESIL_A("!,zf,:="); // Z = !R
 }
 
 INST_HANDLER(fmulsu) { // FMULSU Rd, Rr
@@ -690,12 +691,12 @@ INST_HANDLER(fmulsu) { // FMULSU Rd, Rr
 	const ut32 d = ((buf[0] >> 4) & 0x7) + 16;
 	const ut32 r = (buf[0] & 0x7) + 16;
 
-	ESIL_A("1,");
+	ESIL_A("8,1,");
 	ESIL_A("r%d,DUP,0x80,&,?{,0xff00,|,},", d); // sign extension Rd
-	ESIL_A("r%d,*,<<,r1_r0,=,", r); // 0: (Rd*Rr)<<1
+	ESIL_A("r%d,*,<<,DUP,r0,=,>>,r1,=,", r); // 0: (Rd*Rr)<<1
 
-	ESIL_A("r1_r0,0x8000,&,!,!,cf,:=,"); // C = R/16
-	ESIL_A("$z,zf,:="); // Z = !R
+	ESIL_A("8,r1,<<,r0,|,DUP,0x8000,&,!,!,cf,:=,"); // C = R/16
+	ESIL_A("!,zf,:="); // Z = !R
 }
 
 INST_HANDLER(ijmp) { // IJMP k
@@ -985,9 +986,9 @@ INST_HANDLER(mul) { // MUL Rd, Rr
 	const ut32 d = ((buf[1] << 4) & 0x10) | ((buf[0] >> 4) & 0x0f);
 	const ut32 r = ((buf[1] << 3) & 0x10) | (buf[0] & 0x0f);
 
-	ESIL_A("r%d,r%d,*,r1_r0,=,", r, d); // 0: r1_r0 = rd * rr
-	ESIL_A("r1_r0,0x8000,&,!,!,cf,:=,"); // C = R/15
-	ESIL_A("$z,zf,:="); // Z = !R
+	ESIL_A("8,r%d,r%d,*,DUP,r0,=,>>,r1,=,", r, d); // 0: r1_r0 = rd * rr
+	ESIL_A("8,r1,<<,r0,|,DUP,0x8000,&,!,!,cf,:=,"); // C = R/15
+	ESIL_A("!,zf,:="); // Z = !R
 }
 
 INST_HANDLER(muls) { // MULS Rd, Rr
@@ -997,12 +998,13 @@ INST_HANDLER(muls) { // MULS Rd, Rr
 	const ut32 d = (buf[0] >> 4 & 0x0f) + 16;
 	const ut32 r = (buf[0] & 0x0f) + 16;
 
+	ESIL_A("8,");
 	ESIL_A("r%d,DUP,0x80,&,?{,0xff00,|,},", d); // sign extension Rd
 	ESIL_A("r%d,DUP,0x80,&,?{,0xff00,|,},", r); // sign extension Rr
-	ESIL_A("*,r1_r0,=,"); // 0: (Rd*Rr)
+	ESIL_A("*,DUP,r0,=,>>,r1,=,"); // 0: (Rd*Rr)
 
-	ESIL_A("r1_r0,0x8000,&,!,!,cf,:=,"); // C = R/16
-	ESIL_A("$z,zf,:="); // Z = !R
+	ESIL_A("8,r1,<<,r0,|,DUP,0x8000,&,!,!,cf,:=,"); // C = R/16
+	ESIL_A("!,zf,:="); // Z = !R
 }
 
 INST_HANDLER(mulsu) { // MULSU Rd, Rr
@@ -1012,11 +1014,12 @@ INST_HANDLER(mulsu) { // MULSU Rd, Rr
 	const ut32 d = (buf[0] >> 4 & 0x07) + 16;
 	const ut32 r = (buf[0] & 0x07) + 16;
 
+	ESIL_A("8,");
 	ESIL_A("r%d,DUP,0x80,&,?{,0xff00,|,},", d); // sign extension Rd
-	ESIL_A("r%d,*,r1_r0,=,", r); // 0: (Rd*Rr)
+	ESIL_A("r%d,*,DUP,r0,=,>>,r1,=,", r); // 0: (Rd*Rr)
 
-	ESIL_A("r1_r0,0x8000,&,!,!,cf,:=,"); // C = R/16
-	ESIL_A("$z,zf,:="); // Z = !R
+	ESIL_A("8,r1,<<,r0,|,DUP,0x8000,&,!,!,cf,:=,"); // C = R/16
+	ESIL_A("!,zf,:="); // Z = !R
 }
 
 INST_HANDLER(neg) { // NEG Rd
@@ -1966,7 +1969,6 @@ RAMPX, RAMPY, RAMPZ, RAMPD and EIND:
 		"gpr	r31	.8	31	0\n"
 
 		// 16 bit overlapped registers for 16 bit math
-		"gpr	r1_r0	.16	0	0\n" //this is a hack for mul
 		"gpr	r17_r16	.16	16	0\n"
 		"gpr	r19_r18	.16	18	0\n"
 		"gpr	r21_rz0	.16	20	0\n"
