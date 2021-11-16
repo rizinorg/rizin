@@ -331,12 +331,13 @@ INST_HANDLER(adiw) { // ADIW Rd+1:Rd, K
 	const ut32 d = ((buf[0] & 0x30) >> 3) + 24;
 	const ut32 k = (buf[0] & 0x0f) | ((buf[0] >> 2) & 0x30);
 	op->val = k;
-	ESIL_A("%d,r%d_r%d,+=,", k, d + 1, d); // Rd+1_Rd + k
+	ESIL_A("7,r%d,>>,", d + 1); // remember previous highest bit
+	ESIL_A("8,%d,8,r%d,<<,r%d,|,+,DUP,r%d,=,>>,r%d,=,", k, d + 1, d, d, d + 1); // Rd+1_Rd + k
 		// FLAGS:
-	ESIL_A("7,$o,vf,:=,"); // V
-	ESIL_A("r%d_r%d,0x8000,&,!,!,nf,:=,", d + 1, d); // N
-	ESIL_A("$z,zf,:=,"); // Z
-	ESIL_A("15,$c,cf,:=,"); // C
+	ESIL_A("DUP,!,7,r%d,>>,&,vf,:=,", d + 1); // V
+	ESIL_A("r%d,0x80,&,!,!,nf,:=,", d + 1); // N
+	ESIL_A("8,r%d,<<,r%d,|,!,zf,:=,", d + 1, d); // Z
+	ESIL_A("7,r%d,>>,!,&,cf,:=,", d + 1); // C
 	ESIL_A("vf,nf,^,sf,:="); // S
 }
 
@@ -1308,11 +1309,12 @@ INST_HANDLER(sbiw) { // SBIW Rd+1:Rd, K
 	int d = ((buf[0] & 0x30) >> 3) + 24;
 	int k = (buf[0] & 0xf) | ((buf[0] >> 2) & 0x30);
 	op->val = k;
-	ESIL_A("%d,r%d_r%d,-=,", k, d + 1, d); // 0(Rd+1:Rd - Rr)
+	ESIL_A("7,r%d,>>,", d + 1); // remember previous highest bit
+	ESIL_A("8,%d,8,r%d,<<,r%d,|,-,DUP,r%d,=,>>,r%d,=,", k, d + 1, d, d, d + 1); // 0(Rd+1_Rd - k)
 	ESIL_A("$z,zf,:=,");
-	ESIL_A("15,$c,cf,:=,"); // C
-	ESIL_A("r%d_r%d,0x8000,&,!,!,nf,:=,", d + 1, d); // N
-	ESIL_A("r%d_r%d,0x8080,&,0x8080,!,vf,:=,", d + 1, d); // V
+	ESIL_A("DUP,!,7,r%d,>>,&,cf,:=,", d + 1); // C
+	ESIL_A("r%d,0x80,&,!,!,nf,:=,", d + 1); // N
+	ESIL_A("7,r%d,>>,!,&,vf,:=,", d + 1); // V
 	ESIL_A("vf,nf,^,sf,:="); // S
 }
 
@@ -1967,16 +1969,6 @@ RAMPX, RAMPY, RAMPZ, RAMPD and EIND:
 		"gpr	r29	.8	29	0\n"
 		"gpr	r30	.8	30	0\n"
 		"gpr	r31	.8	31	0\n"
-
-		// 16 bit overlapped registers for 16 bit math
-		"gpr	r17_r16	.16	16	0\n"
-		"gpr	r19_r18	.16	18	0\n"
-		"gpr	r21_rz0	.16	20	0\n"
-		"gpr	r23_rz2	.16	22	0\n"
-		"gpr	r25_rz4	.16	24	0\n"
-		"gpr	r27_rz6	.16	26	0\n"
-		"gpr	r29_rz8	.16	28	0\n"
-		"gpr	r31_r30	.16	30	0\n"
 
 		// 16 bit overlapped registers for memory addressing
 		"gpr	x	.16	26	0\n"

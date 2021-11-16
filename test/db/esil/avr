@@ -22,7 +22,7 @@ RUN
 NAME=AVR: des encrypt
 FILE=malloc://1024
 CMDS=<<EOF
-(regs ;ar 8~:14..30) # show regs r0-r15
+(regs ;ar 8~:6..22) # show regs r0-r15
 e asm.arch=avr
 wx 0b941b942b943b944b945b946b947b948b949b94ab94bb94cb94db94eb94fb94
 ar r0 = 0x41
@@ -357,7 +357,7 @@ RUN
 NAME=AVR: des decrypt
 FILE=malloc://1024
 CMDS=<<EOF
-(regs ;ar 8~:14..30) # show regs r0-r15
+(regs ;ar 8~:6..22) # show regs r0-r15
 e asm.arch=avr
 wx 58940b941b942b943b944b945b946b947b948b949b94ab94bb94cb94db94eb94fb94
 ar r0 = 0xf5
@@ -1127,3 +1127,141 @@ sreg
 EOF
 RUN
 
+NAME=AVR: adiw
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=avr
+aei
+(adiw h l x; ?e ======== $0:$1 + $2 ========; wa adiw r27:r26, $2; pi 1; ar r27 = $0; ar r26 = $1; ar pc = 0; aes; ?e r26; ar r26; ?e r27; ar r27; ?e sreg; ar sreg)
+.(adiw 0xca 0xfe 0x3f)
+.(adiw 0x0a 0xfe 0x3f)
+.(adiw 0xff 0xff 0x01)
+.(adiw 0x77 0x7e 0x03)
+.(adiw 0x7f 0xfe 0x03)
+.(adiw 0x80 0x00 0x01)
+.(adiw 0x00 0x00 0x00)
+EOF
+EXPECT=<<EOF
+======== 0xca:0xfe + 0x3f ========
+adiw r27:r26, 0x3f
+r26
+0x0000003d
+r27
+0x000000cb
+sreg
+0x00000014
+======== 0x0a:0xfe + 0x3f ========
+adiw r27:r26, 0x3f
+r26
+0x0000003d
+r27
+0x0000000b
+sreg
+0x00000000
+======== 0xff:0xff + 0x01 ========
+adiw r27:r26, 0x01
+r26
+0x00000000
+r27
+0x00000000
+sreg
+0x00000003
+======== 0x77:0x7e + 0x03 ========
+adiw r27:r26, 0x03
+r26
+0x00000081
+r27
+0x00000077
+sreg
+0x00000000
+======== 0x7f:0xfe + 0x03 ========
+adiw r27:r26, 0x03
+r26
+0x00000001
+r27
+0x00000080
+sreg
+0x0000000c
+======== 0x80:0x00 + 0x01 ========
+adiw r27:r26, 0x01
+r26
+0x00000001
+r27
+0x00000080
+sreg
+0x00000014
+======== 0x00:0x00 + 0x00 ========
+adiw r27:r26, 0x00
+r26
+0x00000000
+r27
+0x00000000
+sreg
+0x00000002
+EOF
+RUN
+
+NAME=AVR: sbiw
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=avr
+aei
+(sbiw h l x; ?e ======== $0:$1 - $2 ========; wa sbiw r27:r26, $2; pi 1; ar r27 = $0; ar r26 = $1; ar pc = 0; aes; ?e r26; ar r26; ?e r27; ar r27; ?e sreg; ar sreg)
+.(sbiw 0xca 0x21 0x3f)
+.(sbiw 0x00 0x10 0x3f)
+.(sbiw 0x80 0x00 0x01)
+.(sbiw 0x80 0x05 0x01)
+.(sbiw 0x00 0x02 0x03)
+.(sbiw 0x00 0x12 0x12)
+EOF
+EXPECT=<<EOF
+======== 0xca:0x21 - 0x3f ========
+sbiw r27:r26, 0x3f
+r26
+0x000000e2
+r27
+0x000000c9
+sreg
+0x00000014
+======== 0x00:0x10 - 0x3f ========
+sbiw r27:r26, 0x3f
+r26
+0x000000d1
+r27
+0x000000ff
+sreg
+0x00000015
+======== 0x80:0x00 - 0x01 ========
+sbiw r27:r26, 0x01
+r26
+0x000000ff
+r27
+0x0000007f
+sreg
+0x00000018
+======== 0x80:0x05 - 0x01 ========
+sbiw r27:r26, 0x01
+r26
+0x00000004
+r27
+0x00000080
+sreg
+0x00000014
+======== 0x00:0x02 - 0x03 ========
+sbiw r27:r26, 0x03
+r26
+0x000000ff
+r27
+0x000000ff
+sreg
+0x00000015
+======== 0x00:0x12 - 0x12 ========
+sbiw r27:r26, 0x12
+r26
+0x00000000
+r27
+0x00000000
+sreg
+0x00000002
+EOF
+RUN
