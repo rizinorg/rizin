@@ -7,7 +7,7 @@
 
 /**
  * \brief Compare memory at \p addr1 with the memory at \p addr2
- * 
+ *
  * \param core Current RzCore instance
  * \param addr1 address to read data from
  * \param addr2 address to read data from
@@ -46,7 +46,7 @@ error_goto:
 
 /**
  * \brief Compare mem at \p addr with data \p data
- * 
+ *
  * \param core Current RzCore instance
  * \param addr address to read data from
  * \param data Data to be compared
@@ -83,7 +83,7 @@ error_goto:
 
 /**
  * \brief Print a comparison \p cmp according to the print mode \p mode
- * 
+ *
  * \param core Current RzCore instance
  * \param cmp RzCompareData instance to be printed
  * \param mode Mode to be used (options: default, diff, json)
@@ -150,7 +150,7 @@ RZ_API int rz_cmp_print(RZ_NONNULL RzCore *core, RZ_NONNULL const RzCompareData 
 
 /**
  * \brief Compare the instructions at \p addr1 and \p addr2
- * 
+ *
  * \param core Current RzCore instance
  * \param addr1 address to read instructions from
  * \param addr2 address to read instructions from
@@ -164,6 +164,7 @@ RZ_API RZ_OWN RzList /*<RzCompareData>*/ *rz_cmp_disasm(RZ_NONNULL RzCore *core,
 	if (!cmp_list) {
 		goto error_goto;
 	}
+	cmp_list->free = (RzListFree)&rz_cmp_free;
 	RzAsmOp op, op2;
 	int i, j;
 	ut8 *buf = calloc(len + 32, 1);
@@ -215,8 +216,20 @@ error_goto:
 }
 
 /**
+ * \brief Free RzCompareData object
+ *
+ * \param cmp RzCompareData object to be freed
+ * \return void
+ */
+RZ_API void rz_cmp_free(RzCompareData *cmp) {
+	RZ_FREE(cmp->data1);
+	RZ_FREE(cmp->data2);
+	free(cmp);
+}
+
+/**
  * \brief Print the instruction comparison data \p compare
- * 
+ *
  * \param core Current RzCore instance
  * \param compare list of RzCompareData of instructions
  * \param unified print in unified form

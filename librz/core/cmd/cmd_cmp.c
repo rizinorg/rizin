@@ -135,7 +135,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_string_handler(RzCore *core, int argc, const char 
 	}
 
 end:
-	free(cmp);
+	rz_cmp_free(cmp);
 	free(unescaped);
 	return ret;
 }
@@ -153,7 +153,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_bits_handler(RzCore *core, int argc, const char **
 		core->num->value = 0;
 		ret = RZ_CMD_STATUS_OK;
 	}
-	free(cmp);
+	rz_cmp_free(cmp);
 	return ret;
 }
 
@@ -170,7 +170,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_addr_handler(RzCore *core, int argc, const char **
 		core->num->value = 1;
 	}
 	int val = rz_cmp_print(core, cmp, RZ_OUTPUT_MODE_STANDARD);
-	free(cmp);
+	rz_cmp_free(cmp);
 	if (val != -1) {
 		ret = RZ_CMD_STATUS_OK;
 	}
@@ -206,7 +206,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_bytes_handler(RzCore *core, int argc, const char *
 	}
 
 end:
-	free(cmp);
+	rz_cmp_free(cmp);
 	return ret;
 }
 
@@ -268,11 +268,10 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_file_handler(RzCore *core, int argc, const char **
 	}
 	RzCompareData *cmp = rz_cmp_mem_data(core, core->offset, buf, core->blocksize);
 	if (!cmp) {
-		free(cmp);
 		goto return_goto;
 	}
 	int val = rz_cmp_print(core, cmp, RZ_OUTPUT_MODE_STANDARD);
-	free(cmp);
+	rz_cmp_free(cmp);
 	if (val == -1) {
 		goto return_goto;
 	}
@@ -290,7 +289,7 @@ return_goto:
 RZ_IPI RzCmdStatus rz_cmd_cmp_unified_handler(RzCore *core, int argc, const char **argv) {
 	RzCompareData *cmp = rz_cmp_mem_mem(core, core->offset, rz_num_math(core->num, argv[1]), core->blocksize);
 	bool ret = rizin_compare_unified(core, cmp);
-	free(cmp);
+	rz_cmp_free(cmp);
 	return ret ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
@@ -377,7 +376,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_hexpair_string_handler(RzCore *core, int argc, con
 		goto return_goto;
 	}
 	int val = rz_cmp_print(core, cmp, RZ_OUTPUT_MODE_STANDARD);
-	free(cmp);
+	rz_cmp_free(cmp);
 	if (val == -1) {
 		ret = false;
 		goto return_goto;
@@ -409,7 +408,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_hex_block_hexdiff_handler(RzCore *core, int argc, 
 		goto return_goto;
 	}
 	int val = rz_cmp_print(core, cmp, RZ_OUTPUT_MODE_STANDARD);
-	free(cmp);
+	rz_cmp_free(cmp);
 	if (val == -1) {
 		goto return_goto;
 	}
