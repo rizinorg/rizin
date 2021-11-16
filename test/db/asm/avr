@@ -155,6 +155,7 @@ ad "movw r22, r18" b901
 ad "mul r0, r0" 009C
 ad "muls r16, r16" 0002
 ad "mulsu r16, r16" 0003
+ad "muls r16, r17" 0102
 ad "neg r0" 0194
 ad "nop" 0000
 ad "or r0, r0" 0028
