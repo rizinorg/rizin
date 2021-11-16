@@ -598,7 +598,13 @@ RZ_IPI RzCmdStatus rz_cmd_info_memory_handler(RzCore *core, int argc, const char
 
 RZ_IPI RzCmdStatus rz_cmd_info_resources_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	GET_CHECK_CUR_BINFILE(core);
-	return bool2status(rz_core_bin_resources_print(core, bf, state));
+	RzList *hashes = rz_list_new_from_array((const void **)argv + 1, argc - 1);
+	if (!hashes) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	bool res = rz_core_bin_resources_print(core, bf, state, hashes);
+	rz_list_free(hashes);
+	return bool2status(res);
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_hashes_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {

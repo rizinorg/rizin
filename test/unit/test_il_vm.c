@@ -65,7 +65,7 @@ static bool test_rzil_vm_basic_operation() {
 	mu_assert_eq(cur_var_r1_value, cur_var_r2_value, "Bind to the same value");
 
 	// 7. create label
-	RzILBitVector *addr = rz_il_bv_new_from_ut32(16, 233);
+	RzILBitVector *addr = rz_il_bv_new_from_ut64(16, 233);
 	RzILEffectLabel *blackhole = rz_il_vm_create_label(vm, "blackhole", addr);
 
 	// default type is LABEL_ADDR
@@ -151,7 +151,7 @@ static bool test_rzil_vm_root_evaluation() {
 	ite_root->op.ite->y = false_val;
 	add->op.add->x = arg1;
 	add->op.add->y = arg2;
-	arg1->op.bitv->value = rz_il_bv_new_from_st32(16, 23);
+	arg1->op.bitv->value = rz_il_bv_new_from_st64(16, 23);
 	arg2->op.bitv->value = rz_il_bv_new_from_st64(16, 19);
 
 	// Partially evaluate `condition` only

@@ -1,0 +1,28 @@
+
+NAME=basefind via rizin
+FILE=bins/firmware/stm32f103-dapboot-v1.20-bluepill.bin
+CMDS=<<EOF
+e basefind.threads.max=1
+e basefind.base.end=0x10000000
+e basefind.base.start=0x6000000
+e log.level=3
+Bj
+Bq
+B
+EOF
+EXPECT=<<EOF
+[{"score":4,"candidate":134217728}]
+4 0x8000000
+score candidate  
+-----------------
+4     0x08000000
+EOF
+EXPECT_ERR=<<EOF
+INFO: basefind: located 6 strings
+INFO: basefind: located 1459 pointers
+INFO: basefind: located 6 strings
+INFO: basefind: located 1459 pointers
+INFO: basefind: located 6 strings
+INFO: basefind: located 1459 pointers
+EOF
+RUN
