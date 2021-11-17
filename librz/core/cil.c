@@ -375,7 +375,6 @@ RZ_IPI void rz_core_analysis_esil_emulate_bb(RzCore *core) {
 }
 
 RZ_IPI int rz_core_analysis_set_reg(RzCore *core, const char *regname, ut64 val) {
-	int bits = (core->analysis->bits & RZ_SYS_BITS_64) ? 64 : 32;
 	RzRegItem *r = rz_reg_get(core->dbg->reg, regname, -1);
 	if (!r) {
 		int role = rz_reg_get_name_idx(regname);
@@ -392,7 +391,7 @@ RZ_IPI int rz_core_analysis_set_reg(RzCore *core, const char *regname, ut64 val)
 	}
 	rz_reg_set_value(core->dbg->reg, r, val);
 	rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ANY, true);
-	rz_core_debug_regs2flags(core, bits);
+	rz_core_debug_regs2flags(core);
 	return 0;
 }
 

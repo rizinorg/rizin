@@ -308,6 +308,21 @@ RZ_API bool rz_analysis_set_bits(RzAnalysis *analysis, int bits) {
 	return false;
 }
 
+/**
+ * \brief The actual size of an address in bits.
+ *
+ * This may differ from analysis.bits in some cases such as arm thumb
+ * being identified as bits=16, but still using 32-bit addresses,
+ * or "8-bit" architectures like 6502 which still use 16-bit addresses.
+ */
+RZ_API int rz_analysis_get_address_bits(RzAnalysis *analysis) {
+	if (!analysis->cur || !analysis->cur->address_bits) {
+		return analysis->bits;
+	}
+	int r = analysis->cur->address_bits(analysis, analysis->bits);
+	return r > 0 ? r : analysis->bits;
+}
+
 RZ_API void rz_analysis_set_cpu(RzAnalysis *analysis, const char *cpu) {
 	free(analysis->cpu);
 	analysis->cpu = cpu ? strdup(cpu) : NULL;

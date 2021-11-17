@@ -950,12 +950,17 @@ static int esil_6502_fini(RzAnalysisEsil *esil) {
 	return true;
 }
 
+static int address_bits(RzAnalysis *analysis, int bits) {
+	return 16;
+}
+
 RzAnalysisPlugin rz_analysis_plugin_6502 = {
 	.name = "6502",
 	.desc = "6502/NES analysis plugin",
 	.license = "LGPL3",
 	.arch = "6502",
 	.bits = 8,
+	.address_bits = address_bits,
 	.op = &_6502_op,
 	.set_reg_profile = &set_reg_profile,
 	.esil = true,

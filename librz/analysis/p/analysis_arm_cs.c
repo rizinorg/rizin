@@ -4507,6 +4507,11 @@ static RzList *analysis_preludes(RzAnalysis *analysis) {
 	return l;
 }
 
+static int address_bits(RzAnalysis *analysis, int bits) {
+	// thumb still has 32bit addrs, all other cases use the default behavior (-1)
+	return bits == 16 ? 32 : -1;
+}
+
 static bool init(void **user) {
 	ArmCSContext *ctx = RZ_NEW0(ArmCSContext);
 	if (!ctx) {
@@ -4542,6 +4547,7 @@ RzAnalysisPlugin rz_analysis_plugin_arm_cs = {
 	.analysis_mask = analysis_mask,
 	.preludes = analysis_preludes,
 	.bits = 16 | 32 | 64,
+	.address_bits = address_bits,
 	.op = &analop,
 	.init = &init,
 	.fini = &fini,
