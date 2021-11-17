@@ -6,7 +6,9 @@
 #include <rz_config.h>
 #include <rz_demangler.h>
 #include <rz_util.h>
+#include <rz_list.h>
 #include <rz_util/rz_time.h>
+#include <rz_basefind.h>
 
 #define is_in_range(at, from, sz) ((at) >= (from) && (at) < ((from) + (sz)))
 
@@ -548,6 +550,11 @@ RZ_API bool rz_core_bin_print(RzCore *core, RzBinFile *bf, ut32 mask, RzCoreBinF
 	if (mask & RZ_CORE_BIN_ACC_SECTIONS_MAPPING) {
 		if (state->mode & (RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_TABLE)) {
 			wrap_mode("sections mapping", RZ_OUTPUT_MODE_TABLE, rz_core_bin_sections_mapping_print(core, bf, st));
+		}
+	}
+	if (mask & RZ_CORE_BIN_ACC_BASEFIND) {
+		if (state->mode & (RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_TABLE)) {
+			wrap_mode("basefind", RZ_OUTPUT_MODE_TABLE, rz_core_bin_basefind_print(core, 32, st));
 		}
 	}
 
@@ -2523,6 +2530,44 @@ RZ_API bool rz_core_bin_cur_section_print(RzCore *core, RzBinFile *bf, RzCmdStat
 	RzCoreBinFilter filter = { 0 };
 	filter.offset = core->offset;
 	return rz_core_bin_sections_print(core, bf, state, &filter, hashes);
+}
+
+RZ_API bool rz_core_bin_basefind_print(RzCore *core, ut32 pointer_size, RzCmdStateOutput *state) {
+	rz_return_val_if_fail(core && state, false);
+	RzListIter *it = NULL;
+	RzBaseFindScore *pair = NULL;
+
+	RzList *scores = rz_basefind(core, pointer_size);
+	if (!scores) {
+		return false;
+	}
+
+	rz_cmd_state_output_array_start(state);
+	rz_cmd_state_output_set_columnsf(state, "nX", "score", "candidate");
+
+	rz_list_foreach (scores, it, pair) {
+		switch (state->mode) {
+		case RZ_OUTPUT_MODE_JSON:
+			pj_o(state->d.pj);
+			pj_kn(state->d.pj, "score", pair->score);
+			pj_kn(state->d.pj, "candidate", pair->candidate);
+			pj_end(state->d.pj);
+			break;
+		case RZ_OUTPUT_MODE_QUIET:
+			rz_cons_printf("%u 0x%" PFMT64x "\n", pair->score, pair->candidate);
+			break;
+		case RZ_OUTPUT_MODE_TABLE:
+			rz_table_add_rowf(state->d.t, "nX", pair->score, pair->candidate);
+			break;
+		default:
+			rz_warn_if_reached();
+			break;
+		}
+	}
+
+	rz_cmd_state_output_array_end(state);
+	rz_list_free(scores);
+	return true;
 }
 
 RZ_API bool rz_core_bin_segments_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, RzCoreBinFilter *filter, RzList *hashes) {

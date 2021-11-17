@@ -975,13 +975,13 @@ RZ_API bool rz_il_bv_lsb(RZ_NONNULL RzILBitVector *bv) {
  * \return ret bool, return true if bv is a zero bitvector, false if not
  */
 RZ_API bool rz_il_bv_is_zero_vector(RZ_NONNULL RzILBitVector *x) {
-	rz_return_val_if_fail(x, NULL);
+	rz_return_val_if_fail(x, false);
 
 	if (x->len <= 64) {
 		return x->bits.small_u == 0;
 	}
 
-	rz_return_val_if_fail(x->bits.large_a, NULL);
+	rz_return_val_if_fail(x->bits.large_a, false);
 
 	for (ut32 i = 0; i < x->_elem_len; ++i) {
 		if (x->bits.large_a[i] != 0) {
@@ -998,9 +998,9 @@ RZ_API bool rz_il_bv_is_zero_vector(RZ_NONNULL RzILBitVector *x) {
  * \return ret bool, return true if x <= y, else return false
  */
 RZ_API bool rz_il_bv_ule(RZ_NONNULL RzILBitVector *x, RZ_NONNULL RzILBitVector *y) {
-	rz_return_val_if_fail(x && y, NULL);
+	rz_return_val_if_fail(x && y, false);
 	// x > y ? return false : return true
-	return bv_unsigned_cmp(x, y) > 0 ? false : true;
+	return bv_unsigned_cmp(x, y) <= 0;
 }
 
 /**
@@ -1010,9 +1010,9 @@ RZ_API bool rz_il_bv_ule(RZ_NONNULL RzILBitVector *x, RZ_NONNULL RzILBitVector *
  * \return ret bool, return true if x <= y, else return false
  */
 RZ_API bool rz_il_bv_sle(RZ_NONNULL RzILBitVector *x, RZ_NONNULL RzILBitVector *y) {
-	rz_return_val_if_fail(x && y, NULL);
-	int x_msb = rz_il_bv_msb(x);
-	int y_msb = rz_il_bv_msb(y);
+	rz_return_val_if_fail(x && y, false);
+	bool x_msb = rz_il_bv_msb(x);
+	bool y_msb = rz_il_bv_msb(y);
 
 	if (x_msb && y_msb) {
 		return !rz_il_bv_ule(x, y);
@@ -1025,7 +1025,7 @@ RZ_API bool rz_il_bv_sle(RZ_NONNULL RzILBitVector *x, RZ_NONNULL RzILBitVector *
 	// if x_msb set, y_msb unset => x < y
 	// if x_msb unset, y_msb set => x > y
 	// x != y when reaches here
-	return x_msb ? true : false;
+	return x_msb;
 }
 
 /**

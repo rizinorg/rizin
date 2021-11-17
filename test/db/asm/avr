@@ -2,8 +2,14 @@ ad "adc r0, r1" 011C
 ad "adc r21, r25" 591f
 ad "add r0, r1" 010C
 ad "add r20, r24" 480f
-ad "adiw r24, 0x00" 0096
-ad "adiw r24, 0x01" 0196
+ad "adiw r25:r24, 0x00" 0096
+ad "adiw r25:r24, 0x01" 0196
+ad "adiw r27:r26, 0x01" 1196
+ad "adiw r27:r26, 0x3f" df96
+a "adiw r24, 0x00" 0096
+a "adiw r24, 0x01" 0196
+a "adiw r26, 0x01" 1196
+a "adiw r26, 63" df96
 ad "and r0, r1" 0120
 ad "andi r16, 0x00" 0070
 ad "andi r24, 0xef" 8f7e
@@ -155,6 +161,7 @@ ad "movw r22, r18" b901
 ad "mul r0, r0" 009C
 ad "muls r16, r16" 0002
 ad "mulsu r16, r16" 0003
+ad "muls r16, r17" 0102
 ad "neg r0" 0194
 ad "nop" 0000
 ad "or r0, r0" 0028
@@ -189,8 +196,14 @@ ad "sbci r19, 0xff" 3f4f
 ad "sbi 0x00, 0" 009A
 ad "sbic 0x00, 0" 0099
 ad "sbis 0x00, 0" 009B
-ad "sbiw r24, 0x00" 0097
-ad "sbiw r24, 0x01" 0197
+ad "sbiw r25:r24, 0x00" 0097
+ad "sbiw r25:r24, 0x01" 0197
+ad "sbiw r27:r26, 0x01" 1197
+ad "sbiw r27:r26, 0x3f" df97
+a "sbiw r24, 0x00" 0097
+a "sbiw r24, 0x01" 0197
+a "sbiw r26, 0x01" 1197
+a "sbiw r26, 63" df97
 ad "sbrc r0, 0" 00FC
 ad "sbrs r0, 0" 00FE
 ad "sec" 0894

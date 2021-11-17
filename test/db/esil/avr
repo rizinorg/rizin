@@ -22,7 +22,7 @@ RUN
 NAME=AVR: des encrypt
 FILE=malloc://1024
 CMDS=<<EOF
-(regs ;ar 8~:15..31) # show regs r0-r15
+(regs ;ar 8~:6..22) # show regs r0-r15
 e asm.arch=avr
 wx 0b941b942b943b944b945b946b947b948b949b94ab94bb94cb94db94eb94fb94
 ar r0 = 0x41
@@ -357,7 +357,7 @@ RUN
 NAME=AVR: des decrypt
 FILE=malloc://1024
 CMDS=<<EOF
-(regs ;ar 8~:15..31) # show regs r0-r15
+(regs ;ar 8~:6..22) # show regs r0-r15
 e asm.arch=avr
 wx 58940b941b942b943b944b945b946b947b948b949b94ab94bb94cb94db94eb94fb94
 ar r0 = 0xf5
@@ -692,5 +692,576 @@ r14 = 0x00000073
 r15 = 0x00000021
 0x00000022
 A Rival Appears!
+EOF
+RUN
+
+NAME=AVR: mul
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=avr
+wx 019f
+aei
+(mul x y; ?e ======== $0 * $1 ========; ar r16 = $0; ar r17 = $1; ar pc = 0; aes; ?e r0; ar r0; ?e r1; ar r1; ?e r16; ar r16; ?e r17; ar r17; ?e sreg; ar sreg)
+.(mul 42 13)
+.(mul 0xff 0xff)
+.(mul 0 42)
+.(mul 0x10 0x80)
+EOF
+EXPECT=<<EOF
+======== 42 * 13 ========
+r0
+0x00000022
+r1
+0x00000002
+r16
+0x0000002a
+r17
+0x0000000d
+sreg
+0x00000000
+======== 0xff * 0xff ========
+r0
+0x00000001
+r1
+0x000000fe
+r16
+0x000000ff
+r17
+0x000000ff
+sreg
+0x00000001
+======== 0 * 42 ========
+r0
+0x00000000
+r1
+0x00000000
+r16
+0x00000000
+r17
+0x0000002a
+sreg
+0x00000002
+======== 0x10 * 0x80 ========
+r0
+0x00000000
+r1
+0x00000008
+r16
+0x00000010
+r17
+0x00000080
+sreg
+0x00000000
+EOF
+RUN
+
+NAME=AVR: muls
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=avr
+wx 0102
+aei
+(muls x y; ?e ======== $0 * $1 ========; ar r16 = $0; ar r17 = $1; ar pc = 0; aes; ?e r0; ar r0; ?e r1; ar r1; ?e r16; ar r16; ?e r17; ar r17; ?e sreg; ar sreg)
+.(muls 42 13)
+.(muls 0xff 0xff)
+.(muls 0 42)
+.(muls 0x10 0x80)
+EOF
+EXPECT=<<EOF
+======== 42 * 13 ========
+r0
+0x00000022
+r1
+0x00000002
+r16
+0x0000002a
+r17
+0x0000000d
+sreg
+0x00000000
+======== 0xff * 0xff ========
+r0
+0x00000001
+r1
+0x00000000
+r16
+0x000000ff
+r17
+0x000000ff
+sreg
+0x00000000
+======== 0 * 42 ========
+r0
+0x00000000
+r1
+0x00000000
+r16
+0x00000000
+r17
+0x0000002a
+sreg
+0x00000002
+======== 0x10 * 0x80 ========
+r0
+0x00000000
+r1
+0x000000f8
+r16
+0x00000010
+r17
+0x00000080
+sreg
+0x00000001
+EOF
+RUN
+
+NAME=AVR: mulsu
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=avr
+wx 0103
+aei
+(mulsu x y; ?e ======== $0 * $1 ========; ar r16 = $0; ar r17 = $1; ar pc = 0; aes; ?e r0; ar r0; ?e r1; ar r1; ?e r16; ar r16; ?e r17; ar r17; ?e sreg; ar sreg)
+.(mulsu 42 13)
+.(mulsu 0xff 0xff)
+.(mulsu 0 42)
+.(mulsu 0x10 0x80)
+.(mulsu 13 42)
+.(mulsu 42 0)
+.(mulsu 0x80 0x10)
+EOF
+EXPECT=<<EOF
+======== 42 * 13 ========
+r0
+0x00000022
+r1
+0x00000002
+r16
+0x0000002a
+r17
+0x0000000d
+sreg
+0x00000000
+======== 0xff * 0xff ========
+r0
+0x00000001
+r1
+0x000000ff
+r16
+0x000000ff
+r17
+0x000000ff
+sreg
+0x00000001
+======== 0 * 42 ========
+r0
+0x00000000
+r1
+0x00000000
+r16
+0x00000000
+r17
+0x0000002a
+sreg
+0x00000002
+======== 0x10 * 0x80 ========
+r0
+0x00000000
+r1
+0x00000008
+r16
+0x00000010
+r17
+0x00000080
+sreg
+0x00000000
+======== 13 * 42 ========
+r0
+0x00000022
+r1
+0x00000002
+r16
+0x0000000d
+r17
+0x0000002a
+sreg
+0x00000000
+======== 42 * 0 ========
+r0
+0x00000000
+r1
+0x00000000
+r16
+0x0000002a
+r17
+0x00000000
+sreg
+0x00000002
+======== 0x80 * 0x10 ========
+r0
+0x00000000
+r1
+0x000000f8
+r16
+0x00000080
+r17
+0x00000010
+sreg
+0x00000001
+EOF
+RUN
+
+NAME=AVR: fmul
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=avr
+wx 0903
+aei
+(fmul x y; ?e ======== $0 * $1 ========; ar r16 = $0; ar r17 = $1; ar pc = 0; aes; ?e r0; ar r0; ?e r1; ar r1; ?e r16; ar r16; ?e r17; ar r17; ?e sreg; ar sreg)
+.(fmul 42 13)
+.(fmul 0xff 0xff)
+.(fmul 0 42)
+.(fmul 0x10 0x80)
+EOF
+EXPECT=<<EOF
+======== 42 * 13 ========
+r0
+0x00000044
+r1
+0x00000004
+r16
+0x0000002a
+r17
+0x0000000d
+sreg
+0x00000000
+======== 0xff * 0xff ========
+r0
+0x00000002
+r1
+0x000000fc
+r16
+0x000000ff
+r17
+0x000000ff
+sreg
+0x00000001
+======== 0 * 42 ========
+r0
+0x00000000
+r1
+0x00000000
+r16
+0x00000000
+r17
+0x0000002a
+sreg
+0x00000002
+======== 0x10 * 0x80 ========
+r0
+0x00000000
+r1
+0x00000010
+r16
+0x00000010
+r17
+0x00000080
+sreg
+0x00000000
+EOF
+RUN
+
+NAME=AVR: fmuls
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=avr
+wx 8103
+aei
+(fmuls x y; ?e ======== $0 * $1 ========; ar r16 = $0; ar r17 = $1; ar pc = 0; aes; ?e r0; ar r0; ?e r1; ar r1; ?e r16; ar r16; ?e r17; ar r17; ?e sreg; ar sreg)
+.(fmuls 42 13)
+.(fmuls 0xff 0xff)
+.(fmuls 0 42)
+.(fmuls 0x10 0x80)
+EOF
+EXPECT=<<EOF
+======== 42 * 13 ========
+r0
+0x00000044
+r1
+0x00000004
+r16
+0x0000002a
+r17
+0x0000000d
+sreg
+0x00000000
+======== 0xff * 0xff ========
+r0
+0x00000002
+r1
+0x00000000
+r16
+0x000000ff
+r17
+0x000000ff
+sreg
+0x00000000
+======== 0 * 42 ========
+r0
+0x00000000
+r1
+0x00000000
+r16
+0x00000000
+r17
+0x0000002a
+sreg
+0x00000002
+======== 0x10 * 0x80 ========
+r0
+0x00000000
+r1
+0x000000f0
+r16
+0x00000010
+r17
+0x00000080
+sreg
+0x00000001
+EOF
+RUN
+
+NAME=AVR: fmulsu
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=avr
+wx 8903
+aei
+(fmulsu x y; ?e ======== $0 * $1 ========; ar r16 = $0; ar r17 = $1; ar pc = 0; aes; ?e r0; ar r0; ?e r1; ar r1; ?e r16; ar r16; ?e r17; ar r17; ?e sreg; ar sreg)
+.(fmulsu 42 13)
+.(fmulsu 0xff 0xff)
+.(fmulsu 0 42)
+.(fmulsu 0x10 0x80)
+.(fmulsu 13 42)
+.(fmulsu 42 0)
+.(fmulsu 0x80 0x10)
+EOF
+EXPECT=<<EOF
+======== 42 * 13 ========
+r0
+0x00000044
+r1
+0x00000004
+r16
+0x0000002a
+r17
+0x0000000d
+sreg
+0x00000000
+======== 0xff * 0xff ========
+r0
+0x00000002
+r1
+0x000000fe
+r16
+0x000000ff
+r17
+0x000000ff
+sreg
+0x00000001
+======== 0 * 42 ========
+r0
+0x00000000
+r1
+0x00000000
+r16
+0x00000000
+r17
+0x0000002a
+sreg
+0x00000002
+======== 0x10 * 0x80 ========
+r0
+0x00000000
+r1
+0x00000010
+r16
+0x00000010
+r17
+0x00000080
+sreg
+0x00000000
+======== 13 * 42 ========
+r0
+0x00000044
+r1
+0x00000004
+r16
+0x0000000d
+r17
+0x0000002a
+sreg
+0x00000000
+======== 42 * 0 ========
+r0
+0x00000000
+r1
+0x00000000
+r16
+0x0000002a
+r17
+0x00000000
+sreg
+0x00000002
+======== 0x80 * 0x10 ========
+r0
+0x00000000
+r1
+0x000000f0
+r16
+0x00000080
+r17
+0x00000010
+sreg
+0x00000001
+EOF
+RUN
+
+NAME=AVR: adiw
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=avr
+aei
+(adiw h l x; ?e ======== $0:$1 + $2 ========; wa adiw r27:r26, $2; pi 1; ar r27 = $0; ar r26 = $1; ar pc = 0; aes; ?e r26; ar r26; ?e r27; ar r27; ?e sreg; ar sreg)
+.(adiw 0xca 0xfe 0x3f)
+.(adiw 0x0a 0xfe 0x3f)
+.(adiw 0xff 0xff 0x01)
+.(adiw 0x77 0x7e 0x03)
+.(adiw 0x7f 0xfe 0x03)
+.(adiw 0x80 0x00 0x01)
+.(adiw 0x00 0x00 0x00)
+EOF
+EXPECT=<<EOF
+======== 0xca:0xfe + 0x3f ========
+adiw r27:r26, 0x3f
+r26
+0x0000003d
+r27
+0x000000cb
+sreg
+0x00000014
+======== 0x0a:0xfe + 0x3f ========
+adiw r27:r26, 0x3f
+r26
+0x0000003d
+r27
+0x0000000b
+sreg
+0x00000000
+======== 0xff:0xff + 0x01 ========
+adiw r27:r26, 0x01
+r26
+0x00000000
+r27
+0x00000000
+sreg
+0x00000003
+======== 0x77:0x7e + 0x03 ========
+adiw r27:r26, 0x03
+r26
+0x00000081
+r27
+0x00000077
+sreg
+0x00000000
+======== 0x7f:0xfe + 0x03 ========
+adiw r27:r26, 0x03
+r26
+0x00000001
+r27
+0x00000080
+sreg
+0x0000000c
+======== 0x80:0x00 + 0x01 ========
+adiw r27:r26, 0x01
+r26
+0x00000001
+r27
+0x00000080
+sreg
+0x00000014
+======== 0x00:0x00 + 0x00 ========
+adiw r27:r26, 0x00
+r26
+0x00000000
+r27
+0x00000000
+sreg
+0x00000002
+EOF
+RUN
+
+NAME=AVR: sbiw
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=avr
+aei
+(sbiw h l x; ?e ======== $0:$1 - $2 ========; wa sbiw r27:r26, $2; pi 1; ar r27 = $0; ar r26 = $1; ar pc = 0; aes; ?e r26; ar r26; ?e r27; ar r27; ?e sreg; ar sreg)
+.(sbiw 0xca 0x21 0x3f)
+.(sbiw 0x00 0x10 0x3f)
+.(sbiw 0x80 0x00 0x01)
+.(sbiw 0x80 0x05 0x01)
+.(sbiw 0x00 0x02 0x03)
+.(sbiw 0x00 0x12 0x12)
+EOF
+EXPECT=<<EOF
+======== 0xca:0x21 - 0x3f ========
+sbiw r27:r26, 0x3f
+r26
+0x000000e2
+r27
+0x000000c9
+sreg
+0x00000014
+======== 0x00:0x10 - 0x3f ========
+sbiw r27:r26, 0x3f
+r26
+0x000000d1
+r27
+0x000000ff
+sreg
+0x00000015
+======== 0x80:0x00 - 0x01 ========
+sbiw r27:r26, 0x01
+r26
+0x000000ff
+r27
+0x0000007f
+sreg
+0x00000018
+======== 0x80:0x05 - 0x01 ========
+sbiw r27:r26, 0x01
+r26
+0x00000004
+r27
+0x00000080
+sreg
+0x00000014
+======== 0x00:0x02 - 0x03 ========
+sbiw r27:r26, 0x03
+r26
+0x000000ff
+r27
+0x000000ff
+sreg
+0x00000015
+======== 0x00:0x12 - 0x12 ========
+sbiw r27:r26, 0x12
+r26
+0x00000000
+r27
+0x00000000
+sreg
+0x00000002
 EOF
 RUN
