@@ -9,8 +9,8 @@ RUN
 NAME=rzpipe.py
 FILE=bins/elf/_Exit (42)
 CMDS=<<EOF
-?q `env~?^ASAN=1$`
-?+ env LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
+?q `env~?^ASAN_LD_PRELOAD=`
+?+ env LD_PRELOAD=`env ASAN_LD_PRELOAD`
 #!pipe python3 scripts/get-funcs.py
 EOF
 EXPECT=<<EOF
@@ -37,8 +37,8 @@ RUN
 NAME=rzpipe load project
 FILE=--
 CMDS=<<EOF
-?q `env~?^ASAN=1$`
-?+ env LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
+?q `env~?^ASAN_LD_PRELOAD=`
+?+ env LD_PRELOAD=`env ASAN_LD_PRELOAD`
 !python3 -c 'import rzpipe;rz=rzpipe.open("--");rz.cmd("Po bins/other/ls.rzdb");print(rz.cmd("?v custom_main"))'
 EOF
 EXPECT=<<EOF

@@ -11,6 +11,7 @@ rz_demangler = library('rz_demangler', rz_demangler_sources,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
+  link_args: library_linkflags,
   soversion: rizin_libversion
 )
 
@@ -21,7 +22,6 @@ pkgconfig_mod.generate(rz_demangler,
   version: rizin_version,
   name: 'rz_demangler',
   filebase: 'rz_demangler',
-  libraries: pkgcfg_sanitize_libs,
   requires: [
     'rz_util'
   ],
