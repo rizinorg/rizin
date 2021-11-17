@@ -473,6 +473,11 @@ static int archinfo(RzAnalysis *analysis, int q) {
 	return 4; // XXX
 }
 
+static int address_bits(RzAnalysis *analysis, int bits) {
+	// thumb still has 32bit addrs, all other cases use the default behavior (-1)
+	return bits == 16 ? 32 : -1;
+}
+
 RzAnalysisPlugin rz_analysis_plugin_arm_gnu = {
 	.name = "arm.gnu",
 	.arch = "arm",
@@ -480,6 +485,7 @@ RzAnalysisPlugin rz_analysis_plugin_arm_gnu = {
 	.bits = 16 | 32 | 64,
 	.desc = "ARM code analysis plugin",
 	.archinfo = archinfo,
+	.address_bits = address_bits,
 	.op = &arm_op,
 	.set_reg_profile = set_reg_profile,
 };

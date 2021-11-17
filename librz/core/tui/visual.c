@@ -769,7 +769,7 @@ RZ_API int rz_core_visual_prompt(RzCore *core) {
 		rz_cons_flush();
 		ret = true;
 		if (rz_config_get_b(core->config, "cfg.debug")) {
-			rz_core_debug_regs2flags(core, 0);
+			rz_core_debug_regs2flags(core);
 		}
 	} else {
 		ret = false;
@@ -4016,7 +4016,7 @@ RZ_API int rz_core_visual(RzCore *core, const char *input) {
 			rz_core_seek(core, scrseek, true);
 		}
 		if (debug) {
-			rz_core_debug_regs2flags(core, 0);
+			rz_core_debug_regs2flags(core);
 		}
 		core->print->vflush = !skip;
 		visual_refresh(core);
