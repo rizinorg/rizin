@@ -22,7 +22,7 @@ RUN
 NAME=AVR: des encrypt
 FILE=malloc://1024
 CMDS=<<EOF
-(regs ;ar 8~:6..22) # show regs r0-r15
+(regs ;ar 8~:0..16) # show regs r0-r15
 e asm.arch=avr
 wx 0b941b942b943b944b945b946b947b948b949b94ab94bb94cb94db94eb94fb94
 ar r0 = 0x41
@@ -357,7 +357,7 @@ RUN
 NAME=AVR: des decrypt
 FILE=malloc://1024
 CMDS=<<EOF
-(regs ;ar 8~:6..22) # show regs r0-r15
+(regs ;ar 8~:0..16) # show regs r0-r15
 e asm.arch=avr
 wx 58940b941b942b943b944b945b946b947b948b949b94ab94bb94cb94db94eb94fb94
 ar r0 = 0xf5

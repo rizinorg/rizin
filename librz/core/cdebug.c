@@ -55,11 +55,11 @@ RZ_API bool rz_core_debug_step_one(RzCore *core, int times) {
 		rz_debug_trace_pc(core->dbg, pc);
 		if (!rz_debug_step(core->dbg, times)) {
 			eprintf("Step failed\n");
-			rz_core_debug_regs2flags(core, 0);
+			rz_core_debug_regs2flags(core);
 			core->break_loop = true;
 			return false;
 		}
-		rz_core_debug_regs2flags(core, 0);
+		rz_core_debug_regs2flags(core);
 	} else {
 		int i = 0;
 		do {
@@ -79,7 +79,7 @@ RZ_IPI void rz_core_debug_continue(RzCore *core) {
 		core->dbg->continue_all_threads = true;
 #endif
 		rz_debug_continue(core->dbg);
-		rz_core_debug_regs2flags(core, 0);
+		rz_core_debug_regs2flags(core);
 		rz_cons_break_pop();
 		rz_core_dbg_follow_seek_register(core);
 	} else {
@@ -153,7 +153,7 @@ RZ_API bool rz_core_debug_continue_until(RzCore *core, ut64 addr, ut64 to) {
 			rz_debug_step(core->dbg, 1);
 			steps++;
 		}
-		rz_core_debug_regs2flags(core, 0);
+		rz_core_debug_regs2flags(core);
 		rz_cons_break_pop();
 		return true;
 	}
@@ -164,7 +164,7 @@ RZ_API bool rz_core_debug_continue_until(RzCore *core, ut64 addr, ut64 to) {
 			eprintf("Cannot continue, run ood?\n");
 		} else {
 			rz_debug_continue(core->dbg);
-			rz_core_debug_regs2flags(core, 0);
+			rz_core_debug_regs2flags(core);
 		}
 		rz_bp_del(core->dbg->bp, addr);
 	} else {
@@ -190,31 +190,19 @@ static void regs_to_flags(RzCore *core, int size) {
 	}
 }
 
-static int get_regs_bits(RzCore *core) {
-	// Copied from cmd_analysis.c:__analysis_reg_list
-	int bits = core->analysis->bits;
-	if (!strcmp(core->analysis->cur->arch, "arm") && bits == 16) {
-		/* workaround for thumb */
-		bits = 32;
-	} else if ((!strcmp(core->analysis->cur->arch, "6502") && bits == 8) || (!strcmp(core->analysis->cur->arch, "avr") && bits == 8)) {
-		/* workaround for 6502 and avr*/
-		regs_to_flags(core, 16);
-	}
-	return bits;
-}
-
 RZ_IPI void rz_core_regs2flags(RzCore *core) {
 	rz_flag_space_push(core->flags, RZ_FLAGS_FS_REGISTERS);
-	int size = get_regs_bits(core);
+	int size = rz_analysis_get_address_bits(core->analysis);
 	regs_to_flags(core, size);
 	rz_flag_space_pop(core->flags);
 }
 
-RZ_IPI void rz_core_debug_regs2flags(RzCore *core, int bits) {
+/// update or create flags for all registers where it makes sense (regs that have the same size as an address)
+RZ_IPI void rz_core_debug_regs2flags(RzCore *core) {
 	if (core->bin->is_debugger) {
 		if (rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_GPR, false)) {
 			rz_flag_space_push(core->flags, RZ_FLAGS_FS_REGISTERS);
-			int size = bits <= 0 ? get_regs_bits(core) : bits;
+			int size = rz_analysis_get_address_bits(core->analysis);
 			regs_to_flags(core, size);
 			rz_flag_space_pop(core->flags);
 		}
@@ -224,7 +212,6 @@ RZ_IPI void rz_core_debug_regs2flags(RzCore *core, int bits) {
 }
 
 RZ_IPI bool rz_core_debug_reg_set(RzCore *core, const char *regname, ut64 val, const char *strval) {
-	int bits = (core->dbg->bits & RZ_SYS_BITS_64) ? 64 : 32;
 	RzRegItem *r = rz_reg_get(core->dbg->reg, regname, -1);
 	if (!r) {
 		int role = rz_reg_get_name_idx(regname);
@@ -251,19 +238,71 @@ RZ_IPI bool rz_core_debug_reg_set(RzCore *core, const char *regname, ut64 val, c
 		rz_reg_set_value(core->dbg->reg, r, val);
 	}
 	rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ANY, true);
-	rz_core_debug_regs2flags(core, bits);
+	rz_core_debug_regs2flags(core);
 	return true;
 }
 
-RZ_IPI bool rz_core_debug_reg_list(RzCore *core, int type, int size, PJ *pj, int rad, const char *use_color) {
+static bool foreach_reg_cb(RzIntervalNode *node, void *user) {
+	RzRegItem *from_list = user;
+	RzRegItem *from_tree = node->data;
+	if (from_list == from_tree) {
+		return true;
+	}
+	// Check if from_list is covered entirely by from_tree, but is also smaller than it.
+	// We already know that
+	//   from_tree->offset <= from_list->offset < from_tree->offset + from_tree->size
+	if (from_list->offset + from_list->size > from_tree->offset + from_tree->size) {
+		// from_list expands beyond from_tree, so it's not covered
+		return true;
+	}
+	if (from_list->offset + from_list->size == from_tree->offset + from_tree->size) {
+		// they end at the same position, so it is covered entirely, but is it also smaller?
+		if (from_list->offset == from_tree->offset) {
+			// nope
+			return true;
+		}
+	}
+	// from_list ends before from_tree, so it is covered and smaller
+	return false;
+}
+
+/// Filter out all registers that are smaller than but covered entirely by some other register
+static RZ_OWN RzList *regs_filter_covered(RZ_BORROW const RzList /* <RzRegItem> */ *regs) {
+	RzList *ret = rz_list_new();
+	if (!ret) {
+		return NULL;
+	}
+	RzIntervalTree t;
+	rz_interval_tree_init(&t, NULL);
+	RzRegItem *item;
+	RzListIter *it;
+	rz_list_foreach (regs, it, item) {
+		if (item->offset < 0 || item->size <= 0) {
+			continue;
+		}
+		rz_interval_tree_insert(&t, item->offset, item->offset + item->size - 1, item);
+	}
+	rz_list_foreach (regs, it, item) {
+		if (item->offset < 0 || item->size <= 0) {
+			rz_list_push(ret, item);
+			continue;
+		}
+		if (!rz_interval_tree_all_in(&t, item->offset, true, foreach_reg_cb, item)) {
+			// foreach_reg_cb break-ed so it found a cover
+			continue;
+		}
+		rz_list_push(ret, item);
+	}
+	rz_interval_tree_fini(&t);
+	return ret;
+}
+
+RZ_IPI bool rz_core_debug_reg_list(RzCore *core, int type, int size, bool skip_covered, PJ *pj, int rad, const char *use_color) {
 	RzDebug *dbg = core->dbg;
 	int delta, cols, n = 0;
 	const char *fmt, *fmt2, *kwhites;
 	RzPrint *pr = NULL;
 	int colwidth = 20;
-	RzListIter *iter;
-	RzRegItem *item;
-	const RzList *head;
 	ut64 diff;
 	char strvalue[256];
 	bool isJson = (rad == 'j' || rad == 'J');
@@ -303,13 +342,22 @@ RZ_IPI bool rz_core_debug_reg_list(RzCore *core, int type, int size, PJ *pj, int
 
 	int itmidx = -1;
 	dbg->creg = NULL;
-	head = rz_reg_get_list(dbg->reg, type);
+	const RzList *head = rz_reg_get_list(dbg->reg, type);
 	if (!head) {
 		return false;
 	}
 	if (rad == 1 || rad == '*') {
 		rz_cons_printf("fs+%s\n", RZ_FLAGS_FS_REGISTERS);
 	}
+	RzList *filtered_list = NULL;
+	if (skip_covered) {
+		filtered_list = regs_filter_covered(head);
+		if (filtered_list) {
+			head = filtered_list;
+		}
+	}
+	RzListIter *iter;
+	RzRegItem *item;
 	rz_list_foreach (head, iter, item) {
 		ut64 value;
 		utX valueBig;
@@ -456,6 +504,7 @@ RZ_IPI bool rz_core_debug_reg_list(RzCore *core, int type, int size, PJ *pj, int
 		rz_cons_printf("fs-\n");
 	}
 beach:
+	rz_list_free(filtered_list);
 	if (isJson) {
 		pj_end(pj);
 	} else if (n > 0 && (rad == 2 || rad == '=') && ((n % cols))) {
@@ -558,13 +607,13 @@ RZ_IPI void rz_core_debug_single_step_over(RzCore *core) {
 			rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
 			rz_reg_arena_swap(core->dbg->reg, true);
 			rz_debug_continue_until_optype(core->dbg, RZ_ANALYSIS_OP_TYPE_RET, 1);
-			rz_core_debug_regs2flags(core, 0);
+			rz_core_debug_regs2flags(core);
 			rz_cons_break_pop();
 			rz_core_dbg_follow_seek_register(core);
 			core->print->cur_enabled = 0;
 		} else {
 			rz_core_cmd(core, "dso", 0);
-			rz_core_debug_regs2flags(core, 0);
+			rz_core_debug_regs2flags(core);
 		}
 	} else {
 		rz_core_analysis_esil_step_over(core);
@@ -694,7 +743,7 @@ RZ_IPI void rz_core_debug_print_status(RzCore *core) {
 	const char *use_color = core->cons->context->pal.creg
 		? core->cons->context->pal.creg
 		: Color_BWHITE;
-	rz_core_debug_reg_list(core, RZ_REG_TYPE_GPR, core->dbg->bits, NULL, 3, use_color);
+	rz_core_debug_reg_list(core, RZ_REG_TYPE_GPR, core->dbg->bits, true, NULL, 3, use_color);
 	ut64 old_address = core->offset;
 	rz_core_seek(core, rz_debug_reg_get(core->dbg, "PC"), true);
 	rz_core_print_disasm_instructions(core, 0, 1);
