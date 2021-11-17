@@ -1,4 +1,5 @@
 executable('rz-run', 'rz-run.c',
+  c_args: executable_cflags,
   include_directories: [platform_inc],
   dependencies: [
     rz_main_dep,
@@ -7,5 +8,6 @@ executable('rz-run', 'rz-run.c',
   ],
   install: true,
   install_rpath: rpath_exe,
-  implicit_include_directories: false
+  implicit_include_directories: false,
+  link_args: executable_linkflags
 )

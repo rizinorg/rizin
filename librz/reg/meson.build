@@ -14,6 +14,7 @@ rz_reg = library('rz_reg', rz_reg_sources,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
+  link_args: library_linkflags,
   soversion: rizin_libversion
 )
 
@@ -25,7 +26,6 @@ pkgconfig_mod.generate(rz_reg,
   version: rizin_version,
   name: 'rz_reg',
   filebase: 'rz_reg',
-  libraries: pkgcfg_sanitize_libs,
   requires: [
     'rz_util'
   ],

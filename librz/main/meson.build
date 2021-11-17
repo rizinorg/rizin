@@ -46,6 +46,7 @@ rz_main = library('rz_main', rz_main_sources,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
+  link_args: library_linkflags,
   soversion: rizin_libversion
 )
 
@@ -57,7 +58,6 @@ pkgconfig_mod.generate(rz_main,
   subdirs: 'librz',
   version: rizin_version,
   name: 'rz_main',
-  libraries: pkgcfg_sanitize_libs,
   filebase: 'rz_main',
   requires: [
     'rz_core',
