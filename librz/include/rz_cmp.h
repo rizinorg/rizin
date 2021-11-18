@@ -20,10 +20,10 @@ typedef struct {
 	ut64 addr2;
 } RzCompareData;
 
-RZ_API RZ_OWN RzCompareData *rz_core_cmp_mem_mem(RZ_NONNULL RzCore *core, ut64 addr1, ut64 addr2, ut32 len);
-RZ_API RZ_OWN RzCompareData *rz_core_cmp_mem_data(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL const ut8 *data, ut32 len);
-RZ_API int rz_core_cmp_print(RZ_NONNULL RzCore *core, RZ_NONNULL const RzCompareData *cmp, RzOutputMode mode);
-RZ_API RZ_OWN RzList /*<RzCompareData>*/ *rz_core_cmp_disasm(RZ_NONNULL RzCore *core, ut64 addr1, ut64 addr2, ut32 len);
+RZ_API RZ_OWN RzCompareData *rz_core_cmp_mem_mem(RzCore *core, ut64 addr1, ut64 addr2, ut32 len);
+RZ_API RZ_OWN RzCompareData *rz_core_cmp_mem_data(RzCore *core, ut64 addr, RZ_NONNULL const ut8 *data, ut32 len);
+RZ_API int rz_core_cmp_print(RzCore *core, RZ_NONNULL const RzCompareData *cmp, RzOutputMode mode);
+RZ_API RZ_OWN RzList /*<RzCompareData>*/ *rz_core_cmp_disasm(RzCore *core, ut64 addr1, ut64 addr2, ut32 len);
 RZ_API void rz_core_cmp_free(RzCompareData *cmp);
 RZ_API bool rz_core_cmp_disasm_print(RzCore *core, const RzList /*<RzCompareData>*/ *compare, bool unified);
 

@@ -14,7 +14,7 @@
  * \param len Number of bytes to compare
  * \return RzCompareData* A pointer to RzCompareData comparison
  */
-RZ_API RZ_OWN RzCompareData *rz_core_cmp_mem_mem(RZ_NONNULL RzCore *core, ut64 addr1, ut64 addr2, ut32 len) {
+RZ_API RZ_OWN RzCompareData *rz_core_cmp_mem_mem(RzCore *core, ut64 addr1, ut64 addr2, ut32 len) {
 	rz_return_val_if_fail(core, NULL);
 
 	ut8 *buf1 = malloc(len * sizeof(ut8));
@@ -53,7 +53,7 @@ error_goto:
  * \param len Number of bytes to compare
  * \return RzCompareData* A pointer to RzCompareData comparison (the data1 corresponds to the data at addr (and addr1 = addr) and data2 is the str data (and addr2 = UT32_MAX))
  */
-RZ_API RZ_OWN RzCompareData *rz_core_cmp_mem_data(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL const ut8 *data, ut32 len) {
+RZ_API RZ_OWN RzCompareData *rz_core_cmp_mem_data(RzCore *core, ut64 addr, RZ_NONNULL const ut8 *data, ut32 len) {
 	rz_return_val_if_fail(core && data, NULL);
 
 	ut8 *buf1 = malloc(len * sizeof(ut8));
@@ -89,7 +89,7 @@ error_goto:
  * \param mode Mode to be used (options: default, diff, json)
  * \return int Number of lines/diffs printed (-1 if failed)
  */
-RZ_API int rz_core_cmp_print(RZ_NONNULL RzCore *core, RZ_NONNULL const RzCompareData *cmp, RzOutputMode mode) {
+RZ_API int rz_core_cmp_print(RzCore *core, RZ_NONNULL const RzCompareData *cmp, RzOutputMode mode) {
 	rz_return_val_if_fail(core && cmp, -1);
 
 	int i, eq = 0;
@@ -157,7 +157,7 @@ RZ_API int rz_core_cmp_print(RZ_NONNULL RzCore *core, RZ_NONNULL const RzCompare
  * \param len number of bytes to read instructions from
  * \return RzList<RzCompareData>* List of comparison data
  */
-RZ_API RZ_OWN RzList /*<RzCompareData>*/ *rz_core_cmp_disasm(RZ_NONNULL RzCore *core, ut64 addr1, ut64 addr2, ut32 len) {
+RZ_API RZ_OWN RzList /*<RzCompareData>*/ *rz_core_cmp_disasm(RzCore *core, ut64 addr1, ut64 addr2, ut32 len) {
 	rz_return_val_if_fail(core, NULL);
 
 	RzList *cmp_list = rz_list_new();
