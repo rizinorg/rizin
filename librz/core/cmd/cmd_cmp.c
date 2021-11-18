@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2009-2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_cmp.h"
+#include <rz_cmp.h>
 
 static int rizin_compare_words(RzCore *core, ut64 of, ut64 od, int len, int ws) {
 	int i;
@@ -123,11 +123,11 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_string_handler(RzCore *core, int argc, const char 
 	RzCmdStatus ret = RZ_CMD_STATUS_ERROR;
 	char *unescaped = strdup(argv[1]);
 	int len = rz_str_unescape(unescaped);
-	RzCompareData *cmp = rz_cmp_mem_data(core, core->offset, (ut8 *)unescaped, len);
+	RzCompareData *cmp = rz_core_cmp_mem_data(core, core->offset, (ut8 *)unescaped, len);
 	if (!cmp) {
 		goto end;
 	}
-	int val = rz_cmp_print(core, cmp, mode);
+	int val = rz_core_cmp_print(core, cmp, mode);
 	core->num->value = 1;
 	if (val != -1) {
 		core->num->value = 0;
@@ -135,7 +135,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_string_handler(RzCore *core, int argc, const char 
 	}
 
 end:
-	rz_cmp_free(cmp);
+	rz_core_cmp_free(cmp);
 	free(unescaped);
 	return ret;
 }
@@ -143,7 +143,7 @@ end:
 // c1
 RZ_IPI RzCmdStatus rz_cmd_cmp_bits_handler(RzCore *core, int argc, const char **argv) {
 	RzCmdStatus ret = RZ_CMD_STATUS_ERROR;
-	RzCompareData *cmp = rz_cmp_mem_mem(core, core->offset, rz_num_math(core->num, argv[1]), 1);
+	RzCompareData *cmp = rz_core_cmp_mem_mem(core, core->offset, rz_num_math(core->num, argv[1]), 1);
 	if (!cmp) {
 		return ret;
 	}
@@ -153,14 +153,14 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_bits_handler(RzCore *core, int argc, const char **
 		core->num->value = 0;
 		ret = RZ_CMD_STATUS_OK;
 	}
-	rz_cmp_free(cmp);
+	rz_core_cmp_free(cmp);
 	return ret;
 }
 
 // ca
 RZ_IPI RzCmdStatus rz_cmd_cmp_addr_handler(RzCore *core, int argc, const char **argv) {
 	RzCmdStatus ret = RZ_CMD_STATUS_ERROR;
-	RzCompareData *cmp = rz_cmp_mem_mem(core, core->offset, rz_num_math(core->num, argv[1]), rz_num_math(core->num, argv[2]));
+	RzCompareData *cmp = rz_core_cmp_mem_mem(core, core->offset, rz_num_math(core->num, argv[1]), rz_num_math(core->num, argv[2]));
 	if (!cmp) {
 		return ret;
 	}
@@ -169,8 +169,8 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_addr_handler(RzCore *core, int argc, const char **
 	} else {
 		core->num->value = 1;
 	}
-	int val = rz_cmp_print(core, cmp, RZ_OUTPUT_MODE_STANDARD);
-	rz_cmp_free(cmp);
+	int val = rz_core_cmp_print(core, cmp, RZ_OUTPUT_MODE_STANDARD);
+	rz_core_cmp_free(cmp);
 	if (val != -1) {
 		ret = RZ_CMD_STATUS_OK;
 	}
@@ -190,7 +190,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_bytes_handler(RzCore *core, int argc, const char *
 	ut64 mask = -1;
 	mask >>= 8 - sz;
 	ut64 valid_num = num & mask;
-	RzCompareData *cmp = rz_cmp_mem_data(core, core->offset, (ut8 *)&valid_num, sz);
+	RzCompareData *cmp = rz_core_cmp_mem_data(core, core->offset, (ut8 *)&valid_num, sz);
 	if (!cmp) {
 		goto end;
 	}
@@ -200,13 +200,13 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_bytes_handler(RzCore *core, int argc, const char *
 		core->num->value = 1;
 	}
 
-	int val = rz_cmp_print(core, cmp, RZ_OUTPUT_MODE_STANDARD);
+	int val = rz_core_cmp_print(core, cmp, RZ_OUTPUT_MODE_STANDARD);
 	if (val != -1) {
 		ret = RZ_CMD_STATUS_OK;
 	}
 
 end:
-	rz_cmp_free(cmp);
+	rz_core_cmp_free(cmp);
 	return ret;
 }
 
@@ -243,8 +243,8 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_hex_diff_lines_handler(RzCore *core, int argc, con
 
 // ccd
 RZ_IPI RzCmdStatus rz_cmd_cmp_disasm_handler(RzCore *core, int argc, const char **argv) {
-	RzList *cmp = rz_cmp_disasm(core, core->offset, rz_num_math(core->num, argv[1]), core->blocksize);
-	bool ret = rz_cmp_disasm_print(core, cmp, false);
+	RzList *cmp = rz_core_cmp_disasm(core, core->offset, rz_num_math(core->num, argv[1]), core->blocksize);
+	bool ret = rz_core_cmp_disasm_print(core, cmp, false);
 	rz_list_free(cmp);
 	return ret ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
@@ -266,12 +266,12 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_file_handler(RzCore *core, int argc, const char **
 		RZ_LOG_ERROR("Cannot read file: %s\n", argv[1]);
 		goto return_goto;
 	}
-	RzCompareData *cmp = rz_cmp_mem_data(core, core->offset, buf, core->blocksize);
+	RzCompareData *cmp = rz_core_cmp_mem_data(core, core->offset, buf, core->blocksize);
 	if (!cmp) {
 		goto return_goto;
 	}
-	int val = rz_cmp_print(core, cmp, RZ_OUTPUT_MODE_STANDARD);
-	rz_cmp_free(cmp);
+	int val = rz_core_cmp_print(core, cmp, RZ_OUTPUT_MODE_STANDARD);
+	rz_core_cmp_free(cmp);
 	if (val == -1) {
 		goto return_goto;
 	}
@@ -287,9 +287,9 @@ return_goto:
 
 // cu
 RZ_IPI RzCmdStatus rz_cmd_cmp_unified_handler(RzCore *core, int argc, const char **argv) {
-	RzCompareData *cmp = rz_cmp_mem_mem(core, core->offset, rz_num_math(core->num, argv[1]), core->blocksize);
+	RzCompareData *cmp = rz_core_cmp_mem_mem(core, core->offset, rz_num_math(core->num, argv[1]), core->blocksize);
 	bool ret = rizin_compare_unified(core, cmp);
-	rz_cmp_free(cmp);
+	rz_core_cmp_free(cmp);
 	return ret ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
@@ -319,8 +319,8 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_unified8_handler(RzCore *core, int argc, const cha
 
 // cud
 RZ_IPI RzCmdStatus rz_cmd_cmp_unified_disasm_handler(RzCore *core, int argc, const char **argv) {
-	RzList *cmp = rz_cmp_disasm(core, core->offset, rz_num_math(core->num, argv[1]), core->blocksize);
-	bool ret = rz_cmp_disasm_print(core, cmp, true);
+	RzList *cmp = rz_core_cmp_disasm(core, core->offset, rz_num_math(core->num, argv[1]), core->blocksize);
+	bool ret = rz_core_cmp_disasm_print(core, cmp, true);
 	rz_list_free(cmp);
 	return ret ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
@@ -371,12 +371,12 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_hexpair_string_handler(RzCore *core, int argc, con
 		ret = false;
 		goto return_goto;
 	}
-	RzCompareData *cmp = rz_cmp_mem_data(core, core->offset, buf, strlen(input) / 2);
+	RzCompareData *cmp = rz_core_cmp_mem_data(core, core->offset, buf, strlen(input) / 2);
 	if (!cmp) {
 		goto return_goto;
 	}
-	int val = rz_cmp_print(core, cmp, RZ_OUTPUT_MODE_STANDARD);
-	rz_cmp_free(cmp);
+	int val = rz_core_cmp_print(core, cmp, RZ_OUTPUT_MODE_STANDARD);
+	rz_core_cmp_free(cmp);
 	if (val == -1) {
 		ret = false;
 		goto return_goto;
@@ -402,13 +402,13 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_hex_block_hexdiff_handler(RzCore *core, int argc, 
 		goto return_goto;
 	}
 
-	RzCompareData *cmp = rz_cmp_mem_data(core, core->offset, buf, core->blocksize);
+	RzCompareData *cmp = rz_core_cmp_mem_data(core, core->offset, buf, core->blocksize);
 	if (!cmp) {
 		free(cmp);
 		goto return_goto;
 	}
-	int val = rz_cmp_print(core, cmp, RZ_OUTPUT_MODE_STANDARD);
-	rz_cmp_free(cmp);
+	int val = rz_core_cmp_print(core, cmp, RZ_OUTPUT_MODE_STANDARD);
+	rz_core_cmp_free(cmp);
 	if (val == -1) {
 		goto return_goto;
 	}

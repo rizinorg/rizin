@@ -15,7 +15,7 @@ bool test_cmp_data(void) {
 	rz_io_open(core->io, "malloc://100", RZ_PERM_RW, 0);
 	rz_io_write(core->io, (ut8 *)data, 100);
 
-	RzCompareData *cmp = rz_cmp_mem_mem(core, 0, 52, 24);
+	RzCompareData *cmp = rz_core_cmp_mem_mem(core, 0, 52, 24);
 	mu_assert_notnull(cmp, "RzCompareData object null");
 	mu_assert_eq(cmp->len, 24, "Incorrect length");
 	mu_assert_eq(cmp->addr1, 0, "Incorrect addr1");
@@ -23,7 +23,7 @@ bool test_cmp_data(void) {
 	mu_assert_memeq(cmp->data1, (ut8 *)la, 24, "Memory at offset 0 does not match");
 	mu_assert_memeq(cmp->data2, (ut8 *)la, 24, "Memory at offset 52 does not match");
 	mu_assert_eq(cmp->same, true, "Memory not same");
-	rz_cmp_free(cmp);
+	rz_core_cmp_free(cmp);
 
 	mu_end;
 }
