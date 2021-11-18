@@ -1064,14 +1064,17 @@ static char *get_regname_bybase(ut8 id, ut8 base) {
 	}
 }
 
+RzILOp *i8051_new_op_int(ut32 length, ut64 value) {
+	RzILOp *bitv = rz_il_new_op(RZIL_OP_BITV);
+	bitv->op.bitv->value = rz_il_bv_new_from_ut64(length, value);
+	return bitv;
+}
+
 RzPVector *i8051_add_imm(RzILVM *vm, ut64 id, const ut8 *buf, bool carry) {
 	RzILOp *var = rz_il_new_op(RZIL_OP_VAR);
 	var->op.var->v = "ACC";
 
-	RzILOp *int_ = rz_il_new_op(RZIL_OP_INT);
-	int_->op.int_->value = 0;
-	int_->op.int_->length = 8;
-	int_->op.int_->value = buf[2];
+	RzILOp *int_ = i8051_new_op_int(8, buf[2]);
 
 	RzILOp *add = rz_il_new_op(RZIL_OP_ADD);
 	add->op.add->x = var;
@@ -1201,10 +1204,7 @@ RzPVector *i8051_sub_imm(RzILVM *vm, ut64 id, const ut8 *buf, bool carry) {
 	RzILOp *var = rz_il_new_op(RZIL_OP_VAR);
 	var->op.var->v = "ACC";
 
-	RzILOp *int_ = rz_il_new_op(RZIL_OP_INT);
-	int_->op.int_->value = 0;
-	int_->op.int_->length = 8;
-	int_->op.int_->value = buf[2];
+	RzILOp *int_ = i8051_new_op_int(8, buf[2]);
 
 	RzILOp *sub = rz_il_new_op(RZIL_OP_SUB);
 	sub->op.sub->x = var;
@@ -1333,9 +1333,7 @@ RzPVector *i8051_inc_a(RzILVM *vm, ut64 id) {
 	RzILOp *var = rz_il_new_op(RZIL_OP_VAR);
 	var->op.var->v = "ACC";
 
-	RzILOp *int_ = rz_il_new_op(RZIL_OP_INT);
-	int_->op.int_->value = 1;
-	int_->op.int_->length = 8;
+	RzILOp *int_ = i8051_new_op_int(8, 1);
 
 	RzILOp *add = rz_il_new_op(RZIL_OP_ADD);
 	add->op.add->x = var;
@@ -1359,9 +1357,7 @@ RzPVector *i8051_inc_iram(RzILVM *vm, ut64 id, const ut8 *buf) {
 	load->op.load->mem = 0;
 	load->op.load->key = addr;
 
-	RzILOp *int_ = rz_il_new_op(RZIL_OP_INT);
-	int_->op.int_->value = 1;
-	int_->op.int_->length = 8;
+	RzILOp *int_ = i8051_new_op_int(8, 1);
 
 	RzILOp *add = rz_il_new_op(RZIL_OP_ADD);
 	add->op.add->x = load;
@@ -1386,9 +1382,7 @@ RzPVector *i8051_inc_ri(RzILVM *vm, ut64 id, const ut8 *buf) {
 	load->op.load->mem = 0;
 	load->op.load->key = var_tmp;
 
-	RzILOp *int_ = rz_il_new_op(RZIL_OP_INT);
-	int_->op.int_->value = 1;
-	int_->op.int_->length = 8;
+	RzILOp *int_ = i8051_new_op_int(8, 1);
 
 	RzILOp *add = rz_il_new_op(RZIL_OP_ADD);
 	add->op.add->x = load;
@@ -1411,9 +1405,7 @@ RzPVector *i8051_inc_rn(RzILVM *vm, ut64 id, const ut8 *buf) {
 	char *regname = get_regname_bybase(buf[0], 0x08);
 	var_tmp->op.var->v = regname;
 
-	RzILOp *int_ = rz_il_new_op(RZIL_OP_INT);
-	int_->op.int_->value = 1;
-	int_->op.int_->length = 8;
+	RzILOp *int_ = i8051_new_op_int(8, 1);
 
 	RzILOp *add = rz_il_new_op(RZIL_OP_ADD);
 	add->op.add->x = var_tmp;
@@ -1464,9 +1456,7 @@ RzPVector *i8051_dec_a(RzILVM *vm, ut64 id) {
 	RzILOp *var = rz_il_new_op(RZIL_OP_VAR);
 	var->op.var->v = "ACC";
 
-	RzILOp *int_ = rz_il_new_op(RZIL_OP_INT);
-	int_->op.int_->value = 1;
-	int_->op.int_->length = 8;
+	RzILOp *int_ = i8051_new_op_int(8, 1);
 
 	RzILOp *sub = rz_il_new_op(RZIL_OP_SUB);
 	sub->op.sub->x = var;
@@ -1490,9 +1480,7 @@ RzPVector *i8051_dec_iram(RzILVM *vm, ut64 id, const ut8 *buf) {
 	load->op.load->mem = 0;
 	load->op.load->key = addr;
 
-	RzILOp *int_ = rz_il_new_op(RZIL_OP_INT);
-	int_->op.int_->value = 1;
-	int_->op.int_->length = 8;
+	RzILOp *int_ = i8051_new_op_int(8, 1);
 
 	RzILOp *sub = rz_il_new_op(RZIL_OP_SUB);
 	sub->op.sub->x = load;
@@ -1517,9 +1505,7 @@ RzPVector *i8051_dec_ri(RzILVM *vm, ut64 id, const ut8 *buf) {
 	load->op.load->mem = 0;
 	load->op.load->key = var_tmp;
 
-	RzILOp *int_ = rz_il_new_op(RZIL_OP_INT);
-	int_->op.int_->value = 1;
-	int_->op.int_->length = 8;
+	RzILOp *int_ = i8051_new_op_int(8, 1);
 
 	RzILOp *sub = rz_il_new_op(RZIL_OP_SUB);
 	sub->op.sub->x = load;
@@ -1542,9 +1528,7 @@ RzPVector *i8051_dec_rn(RzILVM *vm, ut64 id, const ut8 *buf) {
 	char *regname = get_regname_bybase(buf[0], 0x18);
 	var_tmp->op.var->v = regname;
 
-	RzILOp *int_ = rz_il_new_op(RZIL_OP_INT);
-	int_->op.int_->value = 1;
-	int_->op.int_->length = 8;
+	RzILOp *int_ = i8051_new_op_int(8, 1);
 
 	RzILOp *sub = rz_il_new_op(RZIL_OP_SUB);
 	sub->op.sub->x = var_tmp;
@@ -1617,9 +1601,7 @@ RzPVector *i8051_or_iram_imm(RzILVM *vm, ut64 id, const ut8 *buf) {
 	load->op.load->mem = 0;
 	load->op.load->key = addr;
 
-	RzILOp *int_ = rz_il_new_op(RZIL_OP_INT);
-	int_->op.int_->value = buf[2];
-	int_->op.int_->length = 8;
+	RzILOp *int_ = i8051_new_op_int(8, buf[2]);
 
 	RzILOp *logor = rz_il_new_op(RZIL_OP_LOGOR);
 	logor->op.logor->x = load;
@@ -1639,9 +1621,7 @@ RzPVector *i8051_or_a_imm(RzILVM *vm, ut64 id, const ut8 *buf) {
 	RzILOp *var = rz_il_new_op(RZIL_OP_VAR);
 	var->op.var->v = "ACC";
 
-	RzILOp *int_ = rz_il_new_op(RZIL_OP_INT);
-	int_->op.int_->value = buf[1];
-	int_->op.int_->length = 8;
+	RzILOp *int_ = i8051_new_op_int(8, buf[1]);
 
 	RzILOp *logor = rz_il_new_op(RZIL_OP_LOGOR);
 	logor->op.logor->x = var;
@@ -1798,9 +1778,7 @@ RzPVector *i8051_and_iram_imm(RzILVM *vm, ut64 id, const ut8 *buf) {
 	load->op.load->mem = 0;
 	load->op.load->key = addr;
 
-	RzILOp *int_ = rz_il_new_op(RZIL_OP_INT);
-	int_->op.int_->value = buf[2];
-	int_->op.int_->length = 8;
+	RzILOp *int_ = i8051_new_op_int(8, buf[2]);
 
 	RzILOp *logand = rz_il_new_op(RZIL_OP_LOGAND);
 	logand->op.logand->x = load;
@@ -1820,9 +1798,7 @@ RzPVector *i8051_and_a_imm(RzILVM *vm, ut64 id, const ut8 *buf) {
 	RzILOp *var = rz_il_new_op(RZIL_OP_VAR);
 	var->op.var->v = "ACC";
 
-	RzILOp *int_ = rz_il_new_op(RZIL_OP_INT);
-	int_->op.int_->value = buf[1];
-	int_->op.int_->length = 8;
+	RzILOp *int_ = i8051_new_op_int(8, buf[1]);
 
 	RzILOp *logand = rz_il_new_op(RZIL_OP_LOGAND);
 	logand->op.logand->x = var;
@@ -1979,9 +1955,7 @@ RzPVector *i8051_xor_iram_imm(RzILVM *vm, ut64 id, const ut8 *buf) {
 	load->op.load->mem = 0;
 	load->op.load->key = addr;
 
-	RzILOp *int_ = rz_il_new_op(RZIL_OP_INT);
-	int_->op.int_->value = buf[2];
-	int_->op.int_->length = 8;
+	RzILOp *int_ = i8051_new_op_int(8, buf[2]);
 
 	RzILOp *logxor = rz_il_new_op(RZIL_OP_LOGXOR);
 	logxor->op.logxor->x = load;
@@ -2001,9 +1975,7 @@ RzPVector *i8051_xor_a_imm(RzILVM *vm, ut64 id, const ut8 *buf) {
 	RzILOp *var = rz_il_new_op(RZIL_OP_VAR);
 	var->op.var->v = "ACC";
 
-	RzILOp *int_ = rz_il_new_op(RZIL_OP_INT);
-	int_->op.int_->value = buf[1];
-	int_->op.int_->length = 8;
+	RzILOp *int_ = i8051_new_op_int(8, buf[1]);
 
 	RzILOp *logxor = rz_il_new_op(RZIL_OP_LOGXOR);
 	logxor->op.logxor->x = var;
@@ -2239,9 +2211,7 @@ RzPVector *i8051_mov_ri_imm(RzILVM *vm, ut64 id, const ut8 *buf) {
 	load->op.load->mem = 0;
 	load->op.load->key = var;
 
-	RzILOp *int_ = rz_il_new_op(RZIL_OP_INT);
-	int_->op.int_->length = 8;
-	int_->op.int_->value = buf[1];
+	RzILOp *int_ = i8051_new_op_int(8, buf[1]);
 
 	RzILOp *store = rz_il_new_op(RZIL_OP_STORE);
 	store->op.store->mem = 0;
@@ -2289,9 +2259,7 @@ RzPVector *i8051_mov_ri_iram(RzILVM *vm, ut64 id, const ut8 *buf) {
 }
 
 RzPVector *i8051_mov_a_imm(RzILVM *vm, ut64 id, const ut8 *buf) {
-	RzILOp *int_ = rz_il_new_op(RZIL_OP_INT);
-	int_->op.int_->length = 8;
-	int_->op.int_->value = buf[1];
+	RzILOp *int_ = i8051_new_op_int(8, buf[1]);
 
 	RzILOp *set = rz_il_new_op(RZIL_OP_SET);
 	set->op.set->x = int_;
@@ -2358,13 +2326,9 @@ RzPVector *i8051_mov_a_iram(RzILVM *vm, ut64 id, const ut8 *buf) {
 }
 
 RzPVector *i8051_mov_dptr_imm(RzILVM *vm, ut64 id, const ut8 *buf) {
-	RzILOp *int_ = rz_il_new_op(RZIL_OP_INT);
-	int_->op.int_->length = 8;
-	int_->op.int_->value = buf[1];
+	RzILOp *int_ = i8051_new_op_int(8, buf[1]);
 
-	RzILOp *int_2 = rz_il_new_op(RZIL_OP_INT);
-	int_2->op.int_->length = 8;
-	int_2->op.int_->value = buf[2];
+	RzILOp *int_2 = i8051_new_op_int(8, buf[2]);
 
 	RzILOp *set = rz_il_new_op(RZIL_OP_SET);
 	set->op.set->x = int_;
@@ -2385,9 +2349,7 @@ RzPVector *i8051_mov_dptr_imm(RzILVM *vm, ut64 id, const ut8 *buf) {
 }
 
 RzPVector *i8051_mov_rn_imm(RzILVM *vm, ut64 id, const ut8 *buf) {
-	RzILOp *int_ = rz_il_new_op(RZIL_OP_INT);
-	int_->op.int_->length = 8;
-	int_->op.int_->value = buf[1];
+	RzILOp *int_ = i8051_new_op_int(8, buf[1]);
 
 	char *regname = get_regname_bybase(buf[0], 0x78);
 	RzILOp *set = rz_il_new_op(RZIL_OP_SET);
@@ -2436,9 +2398,7 @@ RzPVector *i8051_mov_rn_iram(RzILVM *vm, ut64 id, const ut8 *buf) {
 }
 
 RzPVector *i8051_mov_iram_imm(RzILVM *vm, ut64 id, const ut8 *buf) {
-	RzILOp *int_ = rz_il_new_op(RZIL_OP_INT);
-	int_->op.int_->length = 8;
-	int_->op.int_->value = buf[2];
+	RzILOp *int_ = i8051_new_op_int(8, buf[2]);
 
 	ut32 addr = map_direct_addr(vm, buf[1]);
 	RzILOp *store = rz_il_new_op(RZIL_OP_STORE);
@@ -2606,9 +2566,7 @@ RzPVector *i8051_setb_c(RzILVM *vm, ut64 id, const ut8 *buf) {
 	RzILOp *var = rz_il_new_op(RZIL_OP_VAR);
 	var->op.var->v = "PSW";
 
-	RzILOp *int_ = rz_il_new_op(RZIL_OP_INT);
-	int_->op.int_->value = 0x80;
-	int_->op.int_->length = 8;
+	RzILOp *int_ = i8051_new_op_int(8, 0x80);
 
 	RzILOp *logor = rz_il_new_op(RZIL_OP_LOGOR);
 	logor->op.logor->x = var;
@@ -2632,9 +2590,7 @@ RzPVector *i8051_setb_bit(RzILVM *vm, ut64 id, const ut8 *buf) {
 	load->op.load->mem = 0;
 	load->op.load->key = addr;
 
-	RzILOp *int_ = rz_il_new_op(RZIL_OP_INT);
-	int_->op.int_->value = 0x1;
-	int_->op.int_->length = 8;
+	RzILOp *int_ = i8051_new_op_int(8, 1);
 
 	RzILOp *logor = rz_il_new_op(RZIL_OP_LOGOR);
 	logor->op.logor->x = load;
@@ -2665,9 +2621,7 @@ RzPVector *i8051_cpl_c(RzILVM *vm, ut64 id, const ut8 *buf) {
 	RzILOp *var = rz_il_new_op(RZIL_OP_VAR);
 	var->op.var->v = "PSW";
 
-	RzILOp *int_ = rz_il_new_op(RZIL_OP_INT);
-	int_->op.int_->value = 0x80;
-	int_->op.int_->length = 8;
+	RzILOp *int_ = i8051_new_op_int(8, 0x80);
 
 	RzILOp *logxor = rz_il_new_op(RZIL_OP_LOGXOR);
 	logxor->op.logxor->x = var;
@@ -2691,8 +2645,8 @@ RzPVector *i8051_cpl_bit(RzILVM *vm, ut64 id, const ut8 *buf) {
 	load->op.load->mem = 0;
 	load->op.load->key = addr;
 
-	RzILOp *not = rz_il_new_op(RZIL_OP_NOT);
-	not ->op.not_->bv = load;
+	RzILOp *not = rz_il_new_op(RZIL_OP_LOGNOT);
+	not ->op.lognot->bv = load;
 
 	RzILOp *store = rz_il_new_op(RZIL_OP_STORE);
 	store->op.store->mem = 0;
@@ -2708,8 +2662,8 @@ RzPVector *i8051_cpl_a(RzILVM *vm, ut64 id, const ut8 *buf) {
 	RzILOp *var = rz_il_new_op(RZIL_OP_VAR);
 	var->op.var->v = "ACC";
 
-	RzILOp *not = rz_il_new_op(RZIL_OP_NOT);
-	not ->op.not_->bv = var;
+	RzILOp *not = rz_il_new_op(RZIL_OP_LOGNOT);
+	not ->op.lognot->bv = var;
 
 	RzILOp *set = rz_il_new_op(RZIL_OP_SET);
 	set->op.set->x = not ;
@@ -2739,9 +2693,7 @@ RzPVector *i8051_clr_c(RzILVM *vm, ut64 id, const ut8 *buf) {
 	RzILOp *var = rz_il_new_op(RZIL_OP_VAR);
 	var->op.var->v = "PSW";
 
-	RzILOp *int_ = rz_il_new_op(RZIL_OP_INT);
-	int_->op.int_->value = 0x7F;
-	int_->op.int_->length = 8;
+	RzILOp *int_ = i8051_new_op_int(8, 0x7F);
 
 	RzILOp *logand = rz_il_new_op(RZIL_OP_LOGAND);
 	logand->op.logand->x = var;
@@ -2765,9 +2717,7 @@ RzPVector *i8051_clr_bit(RzILVM *vm, ut64 id, const ut8 *buf) {
 	load->op.load->mem = 0;
 	load->op.load->key = addr;
 
-	RzILOp *int_ = rz_il_new_op(RZIL_OP_INT);
-	int_->op.int_->value = 0x0;
-	int_->op.int_->length = 8;
+	RzILOp *int_ = i8051_new_op_int(8, 0);
 
 	RzILOp *logand = rz_il_new_op(RZIL_OP_LOGAND);
 	logand->op.logand->x = load;
@@ -2787,9 +2737,7 @@ RzPVector *i8051_clr_a(RzILVM *vm, ut64 id, const ut8 *buf) {
 	RzILOp *var = rz_il_new_op(RZIL_OP_VAR);
 	var->op.var->v = "ACC";
 
-	RzILOp *int_ = rz_il_new_op(RZIL_OP_INT);
-	int_->op.int_->value = 0x7F;
-	int_->op.int_->length = 8;
+	RzILOp *int_ = i8051_new_op_int(8, 0x7F);
 
 	RzILOp *logand = rz_il_new_op(RZIL_OP_LOGAND);
 	logand->op.logand->x = var;
@@ -2888,9 +2836,7 @@ RzPVector *i8051_push(RzILVM *vm, ut64 id, const ut8 *buf, _8051_op_t op) {
 	store->op.store->key = var_sp;
 	store->op.store->value = load;
 
-	RzILOp *int_ = rz_il_new_op(RZIL_OP_INT);
-	int_->op.int_->value = 0x1;
-	int_->op.int_->length = 8;
+	RzILOp *int_ = i8051_new_op_int(8, 1);
 
 	RzILOp *add = rz_il_new_op(RZIL_OP_ADD);
 	add->op.add->x = var_sp;
@@ -2921,9 +2867,7 @@ RzPVector *i8051_pop(RzILVM *vm, ut64 id, const ut8 *buf, _8051_op_t op) {
 	store->op.store->key = addr;
 	store->op.store->value = load;
 
-	RzILOp *int_ = rz_il_new_op(RZIL_OP_INT);
-	int_->op.int_->value = 0x1;
-	int_->op.int_->length = 8;
+	RzILOp *int_ = i8051_new_op_int(8, 1);
 
 	RzILOp *sub = rz_il_new_op(RZIL_OP_SUB);
 	sub->op.sub->x = var_sp;
@@ -2967,17 +2911,13 @@ RzPVector *i8051_rrc(RzILVM *vm, ut64 id, const ut8 *buf, _8051_op_t op) {
 	RzILOp *var_c = rz_il_new_op(RZIL_OP_VAR);
 	var_c->op.var->v = "PSW";
 
-	RzILOp *int_ = rz_il_new_op(RZIL_OP_INT);
-	int_->op.int_->value = 0x80;
-	int_->op.int_->length = 8;
+	RzILOp *int_ = i8051_new_op_int(8, 0x80);
 
 	RzILOp *logand = rz_il_new_op(RZIL_OP_LOGAND);
 	logand->op.logand->x = var_c;
 	logand->op.logand->y = int_; // c bit
 
-	RzILOp *int_1 = rz_il_new_op(RZIL_OP_INT);
-	int_1->op.int_->value = 0x1;
-	int_1->op.int_->length = 8;
+	RzILOp *int_1 = i8051_new_op_int(8, 1);
 
 	RzILOp *logand_1 = rz_il_new_op(RZIL_OP_LOGAND);
 	logand_1->op.logand->x = var_a;
@@ -3049,9 +2989,7 @@ RzPVector *i8051_rlc(RzILVM *vm, ut64 id, const ut8 *buf, _8051_op_t op) {
 	RzILOp *var_c = rz_il_new_op(RZIL_OP_VAR);
 	var_c->op.var->v = "PSW";
 
-	RzILOp *int_ = rz_il_new_op(RZIL_OP_INT);
-	int_->op.int_->value = 0x80;
-	int_->op.int_->length = 8;
+	RzILOp *int_ = i8051_new_op_int(8, 0x80);
 
 	RzILOp *logand = rz_il_new_op(RZIL_OP_LOGAND);
 	logand->op.logand->x = var_c;
@@ -3112,9 +3050,7 @@ RzPVector *i8051_xchd(RzILVM *vm, ut64 id, const ut8 *buf, _8051_op_t op) {
 	load->op.load->mem = 0;
 	load->op.load->key = var_reg;
 
-	RzILOp *int_ = rz_il_new_op(RZIL_OP_INT);
-	int_->op.int_->value = 0xF;
-	int_->op.int_->length = 8;
+	RzILOp *int_ = i8051_new_op_int(8, 0xF);
 
 	RzILOp *logand = rz_il_new_op(RZIL_OP_LOGAND);
 	logand->op.logand->x = var_a;
@@ -3153,9 +3089,7 @@ RzPVector *i8051_swap(RzILVM *vm, ut64 id, const ut8 *buf, _8051_op_t op) {
 	RzILOp *var_a = rz_il_new_op(RZIL_OP_VAR);
 	var_a->op.var->v = "ACC";
 
-	RzILOp *int_ = rz_il_new_op(RZIL_OP_INT);
-	int_->op.int_->value = 0xF0;
-	int_->op.int_->length = 8;
+	RzILOp *int_ = i8051_new_op_int(8, 0xF0);
 
 	RzILOp *logand = rz_il_new_op(RZIL_OP_LOGAND);
 	logand->op.logand->x = var_a;
