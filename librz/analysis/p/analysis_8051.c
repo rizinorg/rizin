@@ -1097,9 +1097,11 @@ RzPVector *i8051_add_direct(RzILVM *vm, ut64 id, const ut8 *buf, bool carry) {
 	RzILOp *var = rz_il_new_op(RZIL_OP_VAR);
 	var->op.var->v = "ACC";
 
+	RzILOp *mem_key = i8051_new_op_int(8, map_direct_addr(vm, buf[1]));
+
 	RzILOp *load = rz_il_new_op(RZIL_OP_LOAD);
 	load->op.load->mem = 0;
-	load->op.load->key = map_direct_addr(vm, buf[1]);
+	load->op.load->key = mem_key;
 
 	RzILOp *add = rz_il_new_op(RZIL_OP_ADD);
 	add->op.add->x = var;
@@ -1113,9 +1115,8 @@ RzPVector *i8051_add_direct(RzILVM *vm, ut64 id, const ut8 *buf, bool carry) {
 
 	RzILOp *perform = rz_il_new_op(RZIL_OP_PERFORM);
 	perform->op.perform->eff = set;
-	perform->op.perform = -1; // no return;
 
-	RzPVector *oplist = rz_il_make_oplist(id, 5, var, load, add, set, perform);
+	RzPVector *oplist = rz_il_make_oplist(id, 6, var, mem_key, load, add, set, perform);
 	return oplist;
 }
 
@@ -1227,9 +1228,11 @@ RzPVector *i8051_sub_direct(RzILVM *vm, ut64 id, const ut8 *buf, bool carry) {
 	RzILOp *var = rz_il_new_op(RZIL_OP_VAR);
 	var->op.var->v = "ACC";
 
+	RzILOp *mem_key = i8051_new_op_int(8, map_direct_addr(vm, buf[1]));
+
 	RzILOp *load = rz_il_new_op(RZIL_OP_LOAD);
 	load->op.load->mem = 0;
-	load->op.load->key = map_direct_addr(vm, buf[1]);
+	load->op.load->key = mem_key;
 
 	RzILOp *sub = rz_il_new_op(RZIL_OP_SUB);
 	sub->op.sub->x = var;
@@ -1244,7 +1247,7 @@ RzPVector *i8051_sub_direct(RzILVM *vm, ut64 id, const ut8 *buf, bool carry) {
 	RzILOp *perform = rz_il_new_op(RZIL_OP_PERFORM);
 	perform->op.perform->eff = set;
 
-	RzPVector *oplist = rz_il_make_oplist(id, 5, var, load, sub, set, perform);
+	RzPVector *oplist = rz_il_make_oplist(id, 6, var, mem_key, load, sub, set, perform);
 	return oplist;
 }
 
@@ -1351,11 +1354,11 @@ RzPVector *i8051_inc_a(RzILVM *vm, ut64 id) {
 }
 
 RzPVector *i8051_inc_iram(RzILVM *vm, ut64 id, const ut8 *buf) {
-	ut32 addr = map_direct_addr(vm, (ut32)buf[1]);
+	RzILOp *mem_key = i8051_new_op_int(8, map_direct_addr(vm, buf[1]));
 
 	RzILOp *load = rz_il_new_op(RZIL_OP_LOAD);
 	load->op.load->mem = 0;
-	load->op.load->key = addr;
+	load->op.load->key = mem_key;
 
 	RzILOp *int_ = i8051_new_op_int(8, 1);
 
@@ -1366,10 +1369,10 @@ RzPVector *i8051_inc_iram(RzILVM *vm, ut64 id, const ut8 *buf) {
 	RzILOp *store = rz_il_new_op(RZIL_OP_STORE);
 	store->op.store->mem = 0;
 	// probably wrong
-	store->op.store->key = addr;
+	store->op.store->key = mem_key;
 	store->op.store->value = add;
 
-	RzPVector *oplist = rz_il_make_oplist(id, 4, load, int_, add, store);
+	RzPVector *oplist = rz_il_make_oplist(id, 5, mem_key, load, int_, add, store);
 	return oplist;
 }
 
@@ -1418,7 +1421,7 @@ RzPVector *i8051_inc_rn(RzILVM *vm, ut64 id, const ut8 *buf) {
 	RzILOp *perform = rz_il_new_op(RZIL_OP_PERFORM);
 	perform->op.perform->eff = set;
 
-	RzPVector *oplist = rz_il_make_oplist(id, 6, var_tmp, int_, add, set, perform);
+	RzPVector *oplist = rz_il_make_oplist(id, 5, var_tmp, int_, add, set, perform);
 	return oplist;
 }
 
@@ -1474,11 +1477,11 @@ RzPVector *i8051_dec_a(RzILVM *vm, ut64 id) {
 }
 
 RzPVector *i8051_dec_iram(RzILVM *vm, ut64 id, const ut8 *buf) {
-	ut32 addr = map_direct_addr(vm, (ut32)buf[1]);
+	RzILOp *mem_key = i8051_new_op_int(8, map_direct_addr(vm, buf[1]));
 
 	RzILOp *load = rz_il_new_op(RZIL_OP_LOAD);
 	load->op.load->mem = 0;
-	load->op.load->key = addr;
+	load->op.load->key = mem_key;
 
 	RzILOp *int_ = i8051_new_op_int(8, 1);
 
@@ -1489,10 +1492,10 @@ RzPVector *i8051_dec_iram(RzILVM *vm, ut64 id, const ut8 *buf) {
 	RzILOp *store = rz_il_new_op(RZIL_OP_STORE);
 	store->op.store->mem = 0;
 	// probably wrong
-	store->op.store->key = addr;
+	store->op.store->key = mem_key;
 	store->op.store->value = sub;
 
-	RzPVector *oplist = rz_il_make_oplist(id, 4, load, int_, sub, store);
+	RzPVector *oplist = rz_il_make_oplist(id, 5, mem_key, load, int_, sub, store);
 	return oplist;
 }
 
@@ -1573,10 +1576,11 @@ RzPVector *i8051_dec(RzILVM *vm, ut64 id, const ut8 *buf, _8051_op_t op) {
 }
 
 RzPVector *i8051_or_iram_a(RzILVM *vm, ut64 id, const ut8 *buf) {
-	ut32 addr = map_direct_addr(vm, buf[1]);
+	RzILOp *mem_key = i8051_new_op_int(8, map_direct_addr(vm, buf[1]));
+
 	RzILOp *load = rz_il_new_op(RZIL_OP_LOAD);
 	load->op.load->mem = 0;
-	load->op.load->key = addr;
+	load->op.load->key = mem_key;
 
 	RzILOp *var = rz_il_new_op(RZIL_OP_VAR);
 	var->op.var->v = "ACC";
@@ -1588,18 +1592,19 @@ RzPVector *i8051_or_iram_a(RzILVM *vm, ut64 id, const ut8 *buf) {
 	RzILOp *store = rz_il_new_op(RZIL_OP_STORE);
 	store->op.store->mem = 0;
 	// probably wrong
-	store->op.store->key = addr;
+	store->op.store->key = mem_key;
 	store->op.store->value = logor;
 
-	RzPVector *oplist = rz_il_make_oplist(id, 4, load, var, logor, store);
+	RzPVector *oplist = rz_il_make_oplist(id, 5, mem_key, load, var, logor, store);
 	return oplist;
 }
 
 RzPVector *i8051_or_iram_imm(RzILVM *vm, ut64 id, const ut8 *buf) {
-	ut32 addr = map_direct_addr(vm, buf[1]);
+	RzILOp *mem_key = i8051_new_op_int(8, map_direct_addr(vm, buf[1]));
+
 	RzILOp *load = rz_il_new_op(RZIL_OP_LOAD);
 	load->op.load->mem = 0;
-	load->op.load->key = addr;
+	load->op.load->key = mem_key;
 
 	RzILOp *int_ = i8051_new_op_int(8, buf[2]);
 
@@ -1610,10 +1615,10 @@ RzPVector *i8051_or_iram_imm(RzILVM *vm, ut64 id, const ut8 *buf) {
 	RzILOp *store = rz_il_new_op(RZIL_OP_STORE);
 	store->op.store->mem = 0;
 	// probably wrong
-	store->op.store->key = addr;
+	store->op.store->key = mem_key;
 	store->op.store->value = logor;
 
-	RzPVector *oplist = rz_il_make_oplist(id, 4, load, int_, logor, store);
+	RzPVector *oplist = rz_il_make_oplist(id, 5, mem_key, load, int_, logor, store);
 	return oplist;
 }
 
@@ -1632,7 +1637,7 @@ RzPVector *i8051_or_a_imm(RzILVM *vm, ut64 id, const ut8 *buf) {
 	set->op.set->v = "ACC";
 
 	RzILOp *perform = rz_il_new_op(RZIL_OP_PERFORM);
-	perform->op.perform->eff = 3;
+	perform->op.perform->eff = set;
 
 	RzPVector *oplist = rz_il_make_oplist(id, 5, var, int_, logor, set, perform);
 	return oplist;
@@ -1642,10 +1647,11 @@ RzPVector *i8051_or_a_iram(RzILVM *vm, ut64 id, const ut8 *buf) {
 	RzILOp *var = rz_il_new_op(RZIL_OP_VAR);
 	var->op.var->v = "ACC";
 
-	ut32 addr = map_direct_addr(vm, buf[1]);
+	RzILOp *mem_key = i8051_new_op_int(8, map_direct_addr(vm, buf[1]));
+
 	RzILOp *load = rz_il_new_op(RZIL_OP_LOAD);
 	load->op.load->mem = 0;
-	load->op.load->key = addr;
+	load->op.load->key = mem_key;
 
 	RzILOp *logor = rz_il_new_op(RZIL_OP_LOGOR);
 	logor->op.logor->x = var;
@@ -1656,9 +1662,9 @@ RzPVector *i8051_or_a_iram(RzILVM *vm, ut64 id, const ut8 *buf) {
 	set->op.set->v = "ACC";
 
 	RzILOp *perform = rz_il_new_op(RZIL_OP_PERFORM);
-	perform->op.perform->eff = 3;
+	perform->op.perform->eff = set;
 
-	RzPVector *oplist = rz_il_make_oplist(id, 5, var, load, logor, set, perform);
+	RzPVector *oplist = rz_il_make_oplist(id, 6, var, mem_key, load, logor, set, perform);
 	return oplist;
 }
 
@@ -1750,10 +1756,11 @@ RzPVector *i8051_or(RzILVM *vm, ut64 id, const ut8 *buf, _8051_op_t op) {
 }
 
 RzPVector *i8051_and_iram_a(RzILVM *vm, ut64 id, const ut8 *buf) {
-	ut32 addr = map_direct_addr(vm, buf[1]);
+	RzILOp *mem_key = i8051_new_op_int(8, map_direct_addr(vm, buf[1]));
+
 	RzILOp *load = rz_il_new_op(RZIL_OP_LOAD);
 	load->op.load->mem = 0;
-	load->op.load->key = addr;
+	load->op.load->key = mem_key;
 
 	RzILOp *var = rz_il_new_op(RZIL_OP_VAR);
 	var->op.var->v = "ACC";
@@ -1765,18 +1772,19 @@ RzPVector *i8051_and_iram_a(RzILVM *vm, ut64 id, const ut8 *buf) {
 	RzILOp *store = rz_il_new_op(RZIL_OP_STORE);
 	store->op.store->mem = 0;
 	// probably wrong
-	store->op.store->key = addr;
+	store->op.store->key = mem_key;
 	store->op.store->value = logand;
 
-	RzPVector *oplist = rz_il_make_oplist(id, 4, load, var, logand, store);
+	RzPVector *oplist = rz_il_make_oplist(id, 5, mem_key, load, var, logand, store);
 	return oplist;
 }
 
 RzPVector *i8051_and_iram_imm(RzILVM *vm, ut64 id, const ut8 *buf) {
-	ut32 addr = map_direct_addr(vm, buf[1]);
+	RzILOp *mem_key = i8051_new_op_int(8, map_direct_addr(vm, buf[1]));
+
 	RzILOp *load = rz_il_new_op(RZIL_OP_LOAD);
 	load->op.load->mem = 0;
-	load->op.load->key = addr;
+	load->op.load->key = mem_key;
 
 	RzILOp *int_ = i8051_new_op_int(8, buf[2]);
 
@@ -1787,10 +1795,10 @@ RzPVector *i8051_and_iram_imm(RzILVM *vm, ut64 id, const ut8 *buf) {
 	RzILOp *store = rz_il_new_op(RZIL_OP_STORE);
 	store->op.store->mem = 0;
 	// probably wrong
-	store->op.store->key = addr;
+	store->op.store->key = mem_key;
 	store->op.store->value = logand;
 
-	RzPVector *oplist = rz_il_make_oplist(id, 4, load, int_, logand, store);
+	RzPVector *oplist = rz_il_make_oplist(id, 5, mem_key, load, int_, logand, store);
 	return oplist;
 }
 
@@ -1809,7 +1817,7 @@ RzPVector *i8051_and_a_imm(RzILVM *vm, ut64 id, const ut8 *buf) {
 	set->op.set->v = "ACC";
 
 	RzILOp *perform = rz_il_new_op(RZIL_OP_PERFORM);
-	perform->op.perform->eff = 3;
+	perform->op.perform->eff = set;
 
 	RzPVector *oplist = rz_il_make_oplist(id, 5, var, int_, logand, set, perform);
 	return oplist;
@@ -1819,10 +1827,11 @@ RzPVector *i8051_and_a_iram(RzILVM *vm, ut64 id, const ut8 *buf) {
 	RzILOp *var = rz_il_new_op(RZIL_OP_VAR);
 	var->op.var->v = "ACC";
 
-	ut32 addr = map_direct_addr(vm, buf[1]);
+	RzILOp *mem_key = i8051_new_op_int(8, map_direct_addr(vm, buf[1]));
+
 	RzILOp *load = rz_il_new_op(RZIL_OP_LOAD);
 	load->op.load->mem = 0;
-	load->op.load->key = addr;
+	load->op.load->key = mem_key;
 
 	RzILOp *logand = rz_il_new_op(RZIL_OP_LOGAND);
 	logand->op.logand->x = var;
@@ -1835,7 +1844,7 @@ RzPVector *i8051_and_a_iram(RzILVM *vm, ut64 id, const ut8 *buf) {
 	RzILOp *perform = rz_il_new_op(RZIL_OP_PERFORM);
 	perform->op.perform->eff = set;
 
-	RzPVector *oplist = rz_il_make_oplist(id, 5, var, load, logand, set, perform);
+	RzPVector *oplist = rz_il_make_oplist(id, 6, var, mem_key, load, logand, set, perform);
 	return oplist;
 }
 
@@ -1927,10 +1936,11 @@ RzPVector *i8051_and(RzILVM *vm, ut64 id, const ut8 *buf, _8051_op_t op) {
 }
 
 RzPVector *i8051_xor_iram_a(RzILVM *vm, ut64 id, const ut8 *buf) {
-	ut32 addr = map_direct_addr(vm, buf[1]);
+	RzILOp *mem_key = i8051_new_op_int(8, map_direct_addr(vm, buf[1]));
+
 	RzILOp *load = rz_il_new_op(RZIL_OP_LOAD);
 	load->op.load->mem = 0;
-	load->op.load->key = addr;
+	load->op.load->key = mem_key;
 
 	RzILOp *var = rz_il_new_op(RZIL_OP_VAR);
 	var->op.var->v = "ACC";
@@ -1942,18 +1952,19 @@ RzPVector *i8051_xor_iram_a(RzILVM *vm, ut64 id, const ut8 *buf) {
 	RzILOp *store = rz_il_new_op(RZIL_OP_STORE);
 	store->op.store->mem = 0;
 	// probably wrong
-	store->op.store->key = addr;
+	store->op.store->key = mem_key;
 	store->op.store->value = logxor;
 
-	RzPVector *oplist = rz_il_make_oplist(id, 4, load, var, logxor, store);
+	RzPVector *oplist = rz_il_make_oplist(id, 5, mem_key, load, var, logxor, store);
 	return oplist;
 }
 
 RzPVector *i8051_xor_iram_imm(RzILVM *vm, ut64 id, const ut8 *buf) {
-	ut32 addr = map_direct_addr(vm, buf[1]);
+	RzILOp *mem_key = i8051_new_op_int(8, map_direct_addr(vm, buf[1]));
+
 	RzILOp *load = rz_il_new_op(RZIL_OP_LOAD);
 	load->op.load->mem = 0;
-	load->op.load->key = addr;
+	load->op.load->key = mem_key;
 
 	RzILOp *int_ = i8051_new_op_int(8, buf[2]);
 
@@ -1964,10 +1975,10 @@ RzPVector *i8051_xor_iram_imm(RzILVM *vm, ut64 id, const ut8 *buf) {
 	RzILOp *store = rz_il_new_op(RZIL_OP_STORE);
 	store->op.store->mem = 0;
 	// probably wrong
-	store->op.store->key = addr;
+	store->op.store->key = mem_key;
 	store->op.store->value = logxor;
 
-	RzPVector *oplist = rz_il_make_oplist(id, 4, load, int_, logxor, store);
+	RzPVector *oplist = rz_il_make_oplist(id, 5, mem_key, load, int_, logxor, store);
 	return oplist;
 }
 
@@ -1996,10 +2007,11 @@ RzPVector *i8051_xor_a_iram(RzILVM *vm, ut64 id, const ut8 *buf) {
 	RzILOp *var = rz_il_new_op(RZIL_OP_VAR);
 	var->op.var->v = "ACC";
 
-	ut32 addr = map_direct_addr(vm, buf[1]);
+	RzILOp *mem_key = i8051_new_op_int(8, map_direct_addr(vm, buf[1]));
+
 	RzILOp *load = rz_il_new_op(RZIL_OP_LOAD);
 	load->op.load->mem = 0;
-	load->op.load->key = addr;
+	load->op.load->key = mem_key;
 
 	RzILOp *logxor = rz_il_new_op(RZIL_OP_LOGXOR);
 	logxor->op.logxor->x = var;
@@ -2012,7 +2024,7 @@ RzPVector *i8051_xor_a_iram(RzILVM *vm, ut64 id, const ut8 *buf) {
 	RzILOp *perform = rz_il_new_op(RZIL_OP_PERFORM);
 	perform->op.perform->eff = set;
 
-	RzPVector *oplist = rz_il_make_oplist(id, 5, var, load, logxor, set, perform);
+	RzPVector *oplist = rz_il_make_oplist(id, 6, var, mem_key, load, logxor, set, perform);
 	return oplist;
 }
 
@@ -2157,10 +2169,11 @@ RzPVector *i8051_xch_a_iram(RzILVM *vm, ut64 id, const ut8 *buf) {
 	RzILOp *var = rz_il_new_op(RZIL_OP_VAR);
 	var->op.var->v = "ACC";
 
-	ut32 addr = map_direct_addr(vm, buf[1]);
+	RzILOp *mem_key = i8051_new_op_int(8, map_direct_addr(vm, buf[1]));
+
 	RzILOp *load = rz_il_new_op(RZIL_OP_LOAD);
 	load->op.load->mem = 0;
-	load->op.load->key = addr;
+	load->op.load->key = mem_key;
 
 	RzILOp *set = rz_il_new_op(RZIL_OP_SET);
 	set->op.set->x = load;
@@ -2174,7 +2187,7 @@ RzPVector *i8051_xch_a_iram(RzILVM *vm, ut64 id, const ut8 *buf) {
 	store->op.store->key = load;
 	store->op.store->value = var;
 
-	RzPVector *oplist = rz_il_make_oplist(id, 5, var, load, set, perform, store);
+	RzPVector *oplist = rz_il_make_oplist(id, 6, var, mem_key, load, set, perform, store);
 	return oplist;
 }
 
@@ -2244,17 +2257,18 @@ RzPVector *i8051_mov_ri_iram(RzILVM *vm, ut64 id, const ut8 *buf) {
 	RzILOp *var = rz_il_new_op(RZIL_OP_VAR);
 	var->op.var->v = regname;
 
-	ut32 addr = map_direct_addr(vm, buf[1]);
+	RzILOp *mem_key = i8051_new_op_int(8, map_direct_addr(vm, buf[1]));
+
 	RzILOp *load = rz_il_new_op(RZIL_OP_LOAD);
 	load->op.load->mem = 0;
-	load->op.load->key = addr;
+	load->op.load->key = mem_key;
 
 	RzILOp *store = rz_il_new_op(RZIL_OP_STORE);
 	store->op.store->mem = 0;
 	store->op.store->key = var;
 	store->op.store->value = load;
 
-	RzPVector *oplist = rz_il_make_oplist(id, 3, var, load, store);
+	RzPVector *oplist = rz_il_make_oplist(id, 4, var, mem_key, load, store);
 	return oplist;
 }
 
@@ -2309,10 +2323,11 @@ RzPVector *i8051_mov_a_rn(RzILVM *vm, ut64 id, const ut8 *buf) {
 }
 
 RzPVector *i8051_mov_a_iram(RzILVM *vm, ut64 id, const ut8 *buf) {
-	ut32 addr = map_direct_addr(vm, buf[1]);
+	RzILOp *mem_key = i8051_new_op_int(8, map_direct_addr(vm, buf[1]));
+
 	RzILOp *load = rz_il_new_op(RZIL_OP_LOAD);
 	load->op.load->mem = 0;
-	load->op.load->key = addr;
+	load->op.load->key = mem_key;
 
 	RzILOp *set = rz_il_new_op(RZIL_OP_SET);
 	set->op.set->x = load;
@@ -2321,7 +2336,7 @@ RzPVector *i8051_mov_a_iram(RzILVM *vm, ut64 id, const ut8 *buf) {
 	RzILOp *perform = rz_il_new_op(RZIL_OP_PERFORM);
 	perform->op.perform->eff = set;
 
-	RzPVector *oplist = rz_il_make_oplist(id, 3, load, set, perform);
+	RzPVector *oplist = rz_il_make_oplist(id, 4, mem_key, load, set, perform);
 	return oplist;
 }
 
@@ -2380,9 +2395,10 @@ RzPVector *i8051_mov_rn_a(RzILVM *vm, ut64 id, const ut8 *buf) {
 }
 
 RzPVector *i8051_mov_rn_iram(RzILVM *vm, ut64 id, const ut8 *buf) {
-	ut32 addr = map_direct_addr(vm, buf[1]);
+	RzILOp *mem_key = i8051_new_op_int(8, map_direct_addr(vm, buf[1]));
+
 	RzILOp *load = rz_il_new_op(RZIL_OP_LOAD);
-	load->op.load->key = addr;
+	load->op.load->key = mem_key;
 	load->op.load->mem = 0;
 
 	char *regname = get_regname_bybase(buf[0], 0xF8);
@@ -2393,21 +2409,22 @@ RzPVector *i8051_mov_rn_iram(RzILVM *vm, ut64 id, const ut8 *buf) {
 	RzILOp *perform = rz_il_new_op(RZIL_OP_PERFORM);
 	perform->op.perform->eff = set;
 
-	RzPVector *oplist = rz_il_make_oplist(id, 3, load, set, perform);
+	RzPVector *oplist = rz_il_make_oplist(id, 4, mem_key, load, set, perform);
 	return oplist;
 }
 
 RzPVector *i8051_mov_iram_imm(RzILVM *vm, ut64 id, const ut8 *buf) {
 	RzILOp *int_ = i8051_new_op_int(8, buf[2]);
 
-	ut32 addr = map_direct_addr(vm, buf[1]);
+	RzILOp *mem_key = i8051_new_op_int(8, map_direct_addr(vm, buf[1]));
+
 	RzILOp *store = rz_il_new_op(RZIL_OP_STORE);
 	store->op.store->mem = 0;
 	// probably wrong
-	store->op.store->key = addr;
+	store->op.store->key = mem_key;
 	store->op.store->value = int_;
 
-	RzPVector *oplist = rz_il_make_oplist(id, 2, int_, store);
+	RzPVector *oplist = rz_il_make_oplist(id, 3, int_, mem_key, store);
 	return oplist;
 }
 
@@ -2420,14 +2437,15 @@ RzPVector *i8051_mov_iram_ri(RzILVM *vm, ut64 id, const ut8 *buf) {
 	load->op.load->mem = 0;
 	load->op.load->key = var;
 
-	ut32 addr = map_direct_addr(vm, buf[1]);
+	RzILOp *mem_key = i8051_new_op_int(8, map_direct_addr(vm, buf[1]));
+
 	RzILOp *store = rz_il_new_op(RZIL_OP_STORE);
 	store->op.store->mem = 0;
 	// probably wrong
-	store->op.store->key = addr;
+	store->op.store->key = mem_key;
 	store->op.store->value = load;
 
-	RzPVector *oplist = rz_il_make_oplist(id, 3, var, load, store);
+	RzPVector *oplist = rz_il_make_oplist(id, 4, var, load, mem_key, store);
 	return oplist;
 }
 
@@ -2436,14 +2454,15 @@ RzPVector *i8051_mov_iram_rn(RzILVM *vm, ut64 id, const ut8 *buf) {
 	RzILOp *var = rz_il_new_op(RZIL_OP_VAR);
 	var->op.var->v = regname;
 
-	ut32 addr = map_direct_addr(vm, buf[1]);
+	RzILOp *mem_key = i8051_new_op_int(8, map_direct_addr(vm, buf[1]));
+
 	RzILOp *store = rz_il_new_op(RZIL_OP_STORE);
 	store->op.store->mem = 0;
 	// probably wrong
-	store->op.store->key = addr;
+	store->op.store->key = mem_key;
 	store->op.store->value = var;
 
-	RzPVector *oplist = rz_il_make_oplist(id, 2, var, store);
+	RzPVector *oplist = rz_il_make_oplist(id, 3, var, mem_key, store);
 	return oplist;
 }
 
@@ -2451,31 +2470,34 @@ RzPVector *i8051_mov_iram_a(RzILVM *vm, ut64 id, const ut8 *buf) {
 	RzILOp *var = rz_il_new_op(RZIL_OP_VAR);
 	var->op.var->v = "ACC";
 
-	ut32 addr = map_direct_addr(vm, buf[1]);
+	RzILOp *mem_key = i8051_new_op_int(8, map_direct_addr(vm, buf[1]));
+
 	RzILOp *store = rz_il_new_op(RZIL_OP_STORE);
 	store->op.store->mem = 0;
 	// probably wrong
-	store->op.store->key = addr;
+	store->op.store->key = mem_key;
 	store->op.store->value = var;
 
-	RzPVector *oplist = rz_il_make_oplist(id, 2, var, store);
+	RzPVector *oplist = rz_il_make_oplist(id, 3, var, mem_key, store);
 	return oplist;
 }
 
 RzPVector *i8051_mov_iram_iram(RzILVM *vm, ut64 id, const ut8 *buf) {
-	ut32 addr_src = map_direct_addr(vm, buf[2]);
+	RzILOp *mem_key_src = i8051_new_op_int(8, map_direct_addr(vm, buf[2]));
+
 	RzILOp *load = rz_il_new_op(RZIL_OP_LOAD);
 	load->op.load->mem = 0;
-	load->op.load->key = addr_src;
+	load->op.load->key = mem_key_src;
 
-	ut32 addr = map_direct_addr(vm, buf[1]);
+	RzILOp *mem_key_dst = i8051_new_op_int(8, map_direct_addr(vm, buf[1]));
+
 	RzILOp *store = rz_il_new_op(RZIL_OP_STORE);
 	store->op.store->mem = 0;
 	// probably wrong
-	store->op.store->key = addr;
+	store->op.store->key = mem_key_dst;
 	store->op.store->value = load;
 
-	RzPVector *oplist = rz_il_make_oplist(id, 2, load, store);
+	RzPVector *oplist = rz_il_make_oplist(id, 4, mem_key_src, load, mem_key_dst, store);
 	return oplist;
 }
 
@@ -2584,11 +2606,11 @@ RzPVector *i8051_setb_c(RzILVM *vm, ut64 id, const ut8 *buf) {
 }
 
 RzPVector *i8051_setb_bit(RzILVM *vm, ut64 id, const ut8 *buf) {
-	ut32 addr = map_direct_addr(vm, buf[1]);
+	RzILOp *mem_key = i8051_new_op_int(8, map_direct_addr(vm, buf[1]));
 
 	RzILOp *load = rz_il_new_op(RZIL_OP_LOAD);
 	load->op.load->mem = 0;
-	load->op.load->key = addr;
+	load->op.load->key = mem_key;
 
 	RzILOp *int_ = i8051_new_op_int(8, 1);
 
@@ -2599,10 +2621,10 @@ RzPVector *i8051_setb_bit(RzILVM *vm, ut64 id, const ut8 *buf) {
 	RzILOp *store = rz_il_new_op(RZIL_OP_STORE);
 	store->op.store->mem = 0;
 	// probably wrong
-	store->op.store->key = addr;
+	store->op.store->key = mem_key;
 	store->op.store->value = logor;
 
-	RzPVector *oplist = rz_il_make_oplist(id, 4, load, int_, logor, store);
+	RzPVector *oplist = rz_il_make_oplist(id, 5, mem_key, load, int_, logor, store);
 	return oplist;
 }
 
@@ -2639,11 +2661,11 @@ RzPVector *i8051_cpl_c(RzILVM *vm, ut64 id, const ut8 *buf) {
 }
 
 RzPVector *i8051_cpl_bit(RzILVM *vm, ut64 id, const ut8 *buf) {
-	ut32 addr = map_direct_addr(vm, buf[1]);
+	RzILOp *mem_key = i8051_new_op_int(8, map_direct_addr(vm, buf[1]));
 
 	RzILOp *load = rz_il_new_op(RZIL_OP_LOAD);
 	load->op.load->mem = 0;
-	load->op.load->key = addr;
+	load->op.load->key = mem_key;
 
 	RzILOp *not = rz_il_new_op(RZIL_OP_LOGNOT);
 	not ->op.lognot->bv = load;
@@ -2651,10 +2673,10 @@ RzPVector *i8051_cpl_bit(RzILVM *vm, ut64 id, const ut8 *buf) {
 	RzILOp *store = rz_il_new_op(RZIL_OP_STORE);
 	store->op.store->mem = 0;
 	// probably wrong
-	store->op.store->key = addr;
+	store->op.store->key = mem_key;
 	store->op.store->value = not ;
 
-	RzPVector *oplist = rz_il_make_oplist(id, 3, load, not, store);
+	RzPVector *oplist = rz_il_make_oplist(id, 4, mem_key, load, not, store);
 	return oplist;
 }
 
@@ -2711,11 +2733,11 @@ RzPVector *i8051_clr_c(RzILVM *vm, ut64 id, const ut8 *buf) {
 }
 
 RzPVector *i8051_clr_bit(RzILVM *vm, ut64 id, const ut8 *buf) {
-	ut32 addr = map_direct_addr(vm, buf[1]);
+	RzILOp *mem_key = i8051_new_op_int(8, map_direct_addr(vm, buf[1]));
 
 	RzILOp *load = rz_il_new_op(RZIL_OP_LOAD);
 	load->op.load->mem = 0;
-	load->op.load->key = addr;
+	load->op.load->key = mem_key;
 
 	RzILOp *int_ = i8051_new_op_int(8, 0);
 
@@ -2726,10 +2748,10 @@ RzPVector *i8051_clr_bit(RzILVM *vm, ut64 id, const ut8 *buf) {
 	RzILOp *store = rz_il_new_op(RZIL_OP_STORE);
 	store->op.store->mem = 0;
 	// probably wrong
-	store->op.store->key = addr;
+	store->op.store->key = mem_key;
 	store->op.store->value = logand;
 
-	RzPVector *oplist = rz_il_make_oplist(id, 4, load, int_, logand, store);
+	RzPVector *oplist = rz_il_make_oplist(id, 5, mem_key, load, int_, logand, store);
 	return oplist;
 }
 
@@ -2826,10 +2848,11 @@ RzPVector *i8051_push(RzILVM *vm, ut64 id, const ut8 *buf, _8051_op_t op) {
 	RzILOp *var_sp = rz_il_new_op(RZIL_OP_VAR);
 	var_sp->op.var->v = "SP";
 
-	ut32 addr = map_direct_addr(vm, buf[1]);
+	RzILOp *mem_key = i8051_new_op_int(8, map_direct_addr(vm, buf[1]));
+
 	RzILOp *load = rz_il_new_op(RZIL_OP_LOAD);
 	load->op.load->mem = 0;
-	load->op.load->key = addr;
+	load->op.load->key = mem_key;
 
 	RzILOp *store = rz_il_new_op(RZIL_OP_STORE);
 	store->op.store->mem = 0;
@@ -2849,7 +2872,7 @@ RzPVector *i8051_push(RzILVM *vm, ut64 id, const ut8 *buf, _8051_op_t op) {
 	RzILOp *perform_sp = rz_il_new_op(RZIL_OP_PERFORM);
 	perform_sp->op.perform->eff = set_sp;
 
-	RzPVector *oplist = rz_il_make_oplist(id, 7, var_sp, load, store, int_, add, set_sp, perform_sp);
+	RzPVector *oplist = rz_il_make_oplist(id, 8, var_sp, mem_key, load, store, int_, add, set_sp, perform_sp);
 	return oplist;
 }
 
@@ -2861,10 +2884,11 @@ RzPVector *i8051_pop(RzILVM *vm, ut64 id, const ut8 *buf, _8051_op_t op) {
 	load->op.load->mem = 0;
 	load->op.load->key = var_sp;
 
-	ut32 addr = map_direct_addr(vm, buf[1]);
+	RzILOp *mem_key = i8051_new_op_int(8, map_direct_addr(vm, buf[1]));
+
 	RzILOp *store = rz_il_new_op(RZIL_OP_STORE);
 	store->op.store->mem = 0;
-	store->op.store->key = addr;
+	store->op.store->key = mem_key;
 	store->op.store->value = load;
 
 	RzILOp *int_ = i8051_new_op_int(8, 1);
@@ -2880,7 +2904,7 @@ RzPVector *i8051_pop(RzILVM *vm, ut64 id, const ut8 *buf, _8051_op_t op) {
 	RzILOp *perform_sp = rz_il_new_op(RZIL_OP_PERFORM);
 	perform_sp->op.perform->eff = set_sp;
 
-	RzPVector *oplist = rz_il_make_oplist(id, 7, var_sp, load, store, int_, sub, set_sp, perform_sp);
+	RzPVector *oplist = rz_il_make_oplist(id, 8, var_sp, load, mem_key, store, int_, sub, set_sp, perform_sp);
 	return oplist;
 }
 
@@ -2888,10 +2912,13 @@ RzPVector *i8051_rr(RzILVM *vm, ut64 id, const ut8 *buf, _8051_op_t op) {
 	RzILOp *var_a = rz_il_new_op(RZIL_OP_VAR);
 	var_a->op.var->v = "ACC";
 
+	RzILOp *one = i8051_new_op_int(8, 1);
+	RzILOp *seven = i8051_new_op_int(8, 7);
+
 	RzILOp *shiftr = rz_il_new_op(RZIL_OP_SHIFTR);
 	shiftr->op.shiftr->x = var_a;
-	shiftr->op.shiftr->y = 1;
-	shiftr->op.shiftr->fill_bit = 7;
+	shiftr->op.shiftr->y = one;
+	shiftr->op.shiftr->fill_bit = seven;
 
 	RzILOp *set = rz_il_new_op(RZIL_OP_SET);
 	set->op.set->x = shiftr;
@@ -2900,7 +2927,7 @@ RzPVector *i8051_rr(RzILVM *vm, ut64 id, const ut8 *buf, _8051_op_t op) {
 	RzILOp *perform = rz_il_new_op(RZIL_OP_PERFORM);
 	perform->op.perform->eff = set;
 
-	RzPVector *oplist = rz_il_make_oplist(id, 4, var_a, shiftr, set, perform);
+	RzPVector *oplist = rz_il_make_oplist(id, 6, var_a, one, seven, shiftr, set, perform);
 	return oplist;
 }
 
@@ -2925,11 +2952,13 @@ RzPVector *i8051_rrc(RzILVM *vm, ut64 id, const ut8 *buf, _8051_op_t op) {
 
 	RzILOp *shiftr = rz_il_new_op(RZIL_OP_SHIFTR);
 	shiftr->op.shiftr->x = var_a;
-	shiftr->op.shiftr->y = 1;
+	shiftr->op.shiftr->y = int_1;
+
+	RzILOp *seven = i8051_new_op_int(8, 7);
 
 	RzILOp *shiftl = rz_il_new_op(RZIL_OP_SHIFTL);
 	shiftl->op.shiftl->x = logand;
-	shiftl->op.shiftl->y = 7; // c bit for or operation
+	shiftl->op.shiftl->y = seven; // c bit for or operation
 
 	RzILOp *logor = rz_il_new_op(RZIL_OP_LOGOR);
 	logor->op.logor->x = shiftr;
@@ -2937,7 +2966,7 @@ RzPVector *i8051_rrc(RzILVM *vm, ut64 id, const ut8 *buf, _8051_op_t op) {
 
 	RzILOp *shiftl_1 = rz_il_new_op(RZIL_OP_SHIFTL);
 	shiftl_1->op.shiftl->x = logand;
-	shiftl_1->op.shiftl->y = 7; // right-most bit for or operation
+	shiftl_1->op.shiftl->y = seven; // right-most bit for or operation
 
 	RzILOp *logor_1 = rz_il_new_op(RZIL_OP_LOGOR);
 	logor_1->op.logor->x = var_c;
@@ -2957,7 +2986,7 @@ RzPVector *i8051_rrc(RzILVM *vm, ut64 id, const ut8 *buf, _8051_op_t op) {
 	RzILOp *perform_c = rz_il_new_op(RZIL_OP_PERFORM);
 	perform_c->op.perform->eff = set_c;
 
-	RzPVector *oplist = rz_il_make_oplist(id, 15, var_a, var_c, int_, logand, int_1, logand_1, shiftr, shiftl, logor,
+	RzPVector *oplist = rz_il_make_oplist(id, 16, var_a, var_c, int_, logand, int_1, logand_1, shiftr, seven, shiftl, logor,
 		shiftl_1, logor_1, set_a, perform_a, set_c, perform_c);
 	return oplist;
 }
@@ -2966,10 +2995,13 @@ RzPVector *i8051_rl(RzILVM *vm, ut64 id, const ut8 *buf, _8051_op_t op) {
 	RzILOp *var_a = rz_il_new_op(RZIL_OP_VAR);
 	var_a->op.var->v = "ACC";
 
+	RzILOp *one = i8051_new_op_int(8, 1);
+	RzILOp *zero = i8051_new_op_int(8, 0);
+
 	RzILOp *shiftl = rz_il_new_op(RZIL_OP_SHIFTL);
 	shiftl->op.shiftl->x = var_a;
-	shiftl->op.shiftl->y = 1;
-	shiftl->op.shiftl->fill_bit = 0;
+	shiftl->op.shiftl->y = one;
+	shiftl->op.shiftl->fill_bit = zero;
 
 	RzILOp *set = rz_il_new_op(RZIL_OP_SET);
 	set->op.set->x = shiftl;
@@ -2978,7 +3010,7 @@ RzPVector *i8051_rl(RzILVM *vm, ut64 id, const ut8 *buf, _8051_op_t op) {
 	RzILOp *perform = rz_il_new_op(RZIL_OP_PERFORM);
 	perform->op.perform->eff = set;
 
-	RzPVector *oplist = rz_il_make_oplist(id, 4, var_a, shiftl, set, perform);
+	RzPVector *oplist = rz_il_make_oplist(id, 6, var_a, one, zero, shiftl, set, perform);
 	return oplist;
 }
 
@@ -2999,13 +3031,16 @@ RzPVector *i8051_rlc(RzILVM *vm, ut64 id, const ut8 *buf, _8051_op_t op) {
 	logand_1->op.logand->x = var_a;
 	logand_1->op.logand->y = int_; // left-most bit
 
+	RzILOp *one = i8051_new_op_int(8, 1);
+	RzILOp *seven = i8051_new_op_int(8, 7);
+
 	RzILOp *shiftl = rz_il_new_op(RZIL_OP_SHIFTL);
 	shiftl->op.shiftr->x = var_a;
-	shiftl->op.shiftr->y = 1;
+	shiftl->op.shiftr->y = one;
 
 	RzILOp *shiftr = rz_il_new_op(RZIL_OP_SHIFTR);
 	shiftr->op.shiftl->x = logand;
-	shiftr->op.shiftl->y = 7; // c bit for or operation
+	shiftr->op.shiftl->y = seven; // c bit for or operation
 
 	RzILOp *logor = rz_il_new_op(RZIL_OP_LOGOR);
 	logor->op.logor->x = shiftl;
@@ -3013,7 +3048,7 @@ RzPVector *i8051_rlc(RzILVM *vm, ut64 id, const ut8 *buf, _8051_op_t op) {
 
 	RzILOp *shiftl_1 = rz_il_new_op(RZIL_OP_SHIFTL);
 	shiftl_1->op.shiftl->x = logand_1;
-	shiftl_1->op.shiftl->y = 7; // right-most bit for or operation
+	shiftl_1->op.shiftl->y = seven; // right-most bit for or operation
 
 	RzILOp *logor_1 = rz_il_new_op(RZIL_OP_LOGOR);
 	logor_1->op.logor->x = var_c;
@@ -3033,7 +3068,7 @@ RzPVector *i8051_rlc(RzILVM *vm, ut64 id, const ut8 *buf, _8051_op_t op) {
 	RzILOp *perform_c = rz_il_new_op(RZIL_OP_PERFORM);
 	perform_c->op.perform->eff = set_c;
 
-	RzPVector *oplist = rz_il_make_oplist(id, 14, var_a, var_c, int_, logand, logand_1, shiftl, shiftr, logor,
+	RzPVector *oplist = rz_il_make_oplist(id, 16, var_a, var_c, int_, logand, logand_1, one, seven, shiftl, shiftr, logor,
 		shiftl_1, logor_1, set_a, perform_a, set_c, perform_c);
 	return oplist;
 }
@@ -3095,26 +3130,28 @@ RzPVector *i8051_swap(RzILVM *vm, ut64 id, const ut8 *buf, _8051_op_t op) {
 	logand->op.logand->x = var_a;
 	logand->op.logand->y = int_;
 
+	RzILOp *four = i8051_new_op_int(8, 4);
+
 	RzILOp *shiftr = rz_il_new_op(RZIL_OP_SHIFTR);
 	shiftr->op.shiftr->x = logand;
-	shiftr->op.shiftr->y = 4; // shift 4 bits (1111)
+	shiftr->op.shiftr->y = four; // shift 4 bits (1111)
 
 	RzILOp *shiftl = rz_il_new_op(RZIL_OP_SHIFTL);
 	shiftl->op.shiftl->x = var_a;
-	shiftl->op.shiftl->y = 4; // shift 4 bits
+	shiftl->op.shiftl->y = four; // shift 4 bits
 
 	RzILOp *logor = rz_il_new_op(RZIL_OP_LOGOR);
 	logor->op.logor->x = shiftr;
 	logor->op.logor->y = shiftl; // SET
 
 	RzILOp *set_a = rz_il_new_op(RZIL_OP_SET);
-	set_a->op.set->x = 5;
+	set_a->op.set->x = logor;
 	set_a->op.set->v = "ACC";
 
 	RzILOp *perform_a = rz_il_new_op(RZIL_OP_PERFORM);
 	perform_a->op.perform->eff = set_a;
 
-	RzPVector *oplist = rz_il_make_oplist(id, 8, var_a, int_, logand, shiftr, shiftl, logor, set_a, perform_a);
+	RzPVector *oplist = rz_il_make_oplist(id, 9, var_a, int_, logand, four, shiftr, shiftl, logor, set_a, perform_a);
 	return oplist;
 }
 
@@ -3128,9 +3165,11 @@ RzPVector *i8051_movc_a_dptr(RzILVM *vm, ut64 id, const ut8 *buf) {
 	RzILOp *var_dph = rz_il_new_op(RZIL_OP_VAR);
 	var_dph->op.var->v = "DPH";
 
+	RzILOp *eight = i8051_new_op_int(8, 8);
+
 	RzILOp *shiftl = rz_il_new_op(RZIL_OP_SHIFTL);
 	shiftl->op.shiftl->x = var_dph;
-	shiftl->op.shiftl->y = 8;
+	shiftl->op.shiftl->y = eight;
 
 	RzILOp *logor = rz_il_new_op(RZIL_OP_LOGOR);
 	logor->op.logor->x = var_dpl;
@@ -3151,7 +3190,7 @@ RzPVector *i8051_movc_a_dptr(RzILVM *vm, ut64 id, const ut8 *buf) {
 	RzILOp *perform_a = rz_il_new_op(RZIL_OP_PERFORM);
 	perform_a->op.perform->eff = set_a;
 
-	RzPVector *oplist = rz_il_make_oplist(id, 9, var_a, var_dpl, var_dph, shiftl, logor, add, load, set_a, perform_a);
+	RzPVector *oplist = rz_il_make_oplist(id, 10, var_a, var_dpl, var_dph, eight, shiftl, logor, add, load, set_a, perform_a);
 	return oplist;
 }
 
@@ -3176,9 +3215,11 @@ RzPVector *i8051_movx_dptr_a(RzILVM *vm, ut64 id, const ut8 *buf) {
 	RzILOp *var_dph = rz_il_new_op(RZIL_OP_VAR);
 	var_dph->op.var->v = "DPH";
 
+	RzILOp *eight = i8051_new_op_int(8, 8);
+
 	RzILOp *shiftl = rz_il_new_op(RZIL_OP_SHIFTL);
 	shiftl->op.shiftl->x = var_dph;
-	shiftl->op.shiftl->y = 8;
+	shiftl->op.shiftl->y = eight;
 
 	RzILOp *logor = rz_il_new_op(RZIL_OP_LOGOR);
 	logor->op.logor->x = var_dpl;
@@ -3189,7 +3230,7 @@ RzPVector *i8051_movx_dptr_a(RzILVM *vm, ut64 id, const ut8 *buf) {
 	store->op.store->mem = 0;
 	store->op.store->value = var_a;
 
-	RzPVector *oplist = rz_il_make_oplist(id, 6, var_a, var_dpl, var_dph, shiftl, logor, store);
+	RzPVector *oplist = rz_il_make_oplist(id, 7, var_a, var_dpl, var_dph, eight, shiftl, logor, store);
 	return oplist;
 }
 
@@ -3220,16 +3261,18 @@ RzPVector *i8051_movx_a_dptr(RzILVM *vm, ut64 id, const ut8 *buf) {
 	RzILOp *var_dph = rz_il_new_op(RZIL_OP_VAR);
 	var_dph->op.var->v = "DPH";
 
+	RzILOp *eight = i8051_new_op_int(8, 8);
+
 	RzILOp *shiftl = rz_il_new_op(RZIL_OP_SHIFTL);
 	shiftl->op.shiftl->x = var_dph;
-	shiftl->op.shiftl->y = 8; // shift 8 bits
+	shiftl->op.shiftl->y = eight; // shift 8 bits
 
 	RzILOp *logor = rz_il_new_op(RZIL_OP_LOGOR);
 	logor->op.logor->x = var_dpl;
 	logor->op.logor->y = shiftl; // DPL+DPH = DPTR
 
-	RzILOp *load = rz_il_new_op(RZIL_OP_STORE);
-	load->op.load->key = 4;
+	RzILOp *load = rz_il_new_op(RZIL_OP_LOAD);
+	load->op.load->key = logor;
 	load->op.load->mem = 0;
 
 	RzILOp *set_a = rz_il_new_op(RZIL_OP_SET);
@@ -3239,7 +3282,7 @@ RzPVector *i8051_movx_a_dptr(RzILVM *vm, ut64 id, const ut8 *buf) {
 	RzILOp *perform_a = rz_il_new_op(RZIL_OP_PERFORM);
 	perform_a->op.perform->eff = set_a;
 
-	RzPVector *oplist = rz_il_make_oplist(id, 8, var_a, var_dpl, var_dph, shiftl, logor, load, set_a, perform_a);
+	RzPVector *oplist = rz_il_make_oplist(id, 9, var_a, var_dpl, var_dph, eight, shiftl, logor, load, set_a, perform_a);
 	return oplist;
 }
 
@@ -3289,7 +3332,7 @@ static bool rzil_init_i8051(RzAnalysis *analysis) {
 	RzAnalysisRzil *rzil = analysis->rzil;
 
 	if (rzil->inited) {
-		eprintf("Already init\n");
+		RZ_LOG_WARN("Already init\n");
 		return true;
 	}
 
