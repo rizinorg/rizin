@@ -288,9 +288,9 @@ RZ_API bool rz_core_cmp_disasm_print(RzCore *core, const RzList /*<RzCompareData
 }
 
 /**
- * \defgroup cmpwatch cmpwatch functions API
- * API for cmpwatch functions
- * @{
+ * \defgroup cmpwatch Memory watcher functions API
+ * API for memory watcher functions
+ * \{
  */
 RZ_API void rz_core_cmpwatch_free(RZ_NONNULL RzCoreCmpWatcher *w) {
 	rz_return_if_fail(w);
@@ -299,6 +299,13 @@ RZ_API void rz_core_cmpwatch_free(RZ_NONNULL RzCoreCmpWatcher *w) {
 	free(w);
 }
 
+/**
+ * \brief Get the memory watcher at address \p addr
+ *
+ * \param core Current RzCore instance
+ * \param addr Expected address for the memory watcher to be found
+ * \return RzCoreCmpWatcher* Pointer to the found memory watcher; NULL if not found
+ */
 RZ_API RzCoreCmpWatcher *rz_core_cmpwatch_get(RZ_NONNULL RzCore *core, ut64 addr) {
 	rz_return_val_if_fail(core, NULL);
 	RzListIter *iter;
@@ -311,6 +318,15 @@ RZ_API RzCoreCmpWatcher *rz_core_cmpwatch_get(RZ_NONNULL RzCore *core, ut64 addr
 	return NULL;
 }
 
+/**
+ * \brief Add a memory watcher at address \p addr od size \p size and command \p cmd
+ *
+ * \param core Current RzCore instance
+ * \param addr Address where to add the new memory watcher
+ * \param size Size of the memory watcher to be addded
+ * \param cmd Command to be associated with the memory watcher
+ * \return bool true if successful, false otherwise
+ */
 RZ_API bool rz_core_cmpwatch_add(RZ_NONNULL RzCore *core, ut64 addr, int size, const char *cmd) {
 	rz_return_val_if_fail(core, false);
 	RzCoreCmpWatcher *cmpw;
@@ -338,6 +354,13 @@ RZ_API bool rz_core_cmpwatch_add(RZ_NONNULL RzCore *core, ut64 addr, int size, c
 	return true;
 }
 
+/**
+ * \brief Delete a memory watcher at address \p addr
+ *
+ * \param core Current RzCore instance
+ * \param addr Address of the memory watcher to be deleted
+ * \return bool true if found and deleted; false otherwise
+ */
 RZ_API bool rz_core_cmpwatch_del(RZ_NONNULL RzCore *core, ut64 addr) {
 	rz_return_val_if_fail(core, false);
 	int ret = false;
@@ -352,12 +375,23 @@ RZ_API bool rz_core_cmpwatch_del(RZ_NONNULL RzCore *core, ut64 addr) {
 	return ret;
 }
 
+/**
+ * \brief Show/print the memory watcher present at address \p addr
+ *
+ * \param core Current RzCore instance
+ * \param addr Address of the memory watcher to be printed (if UT64_MAX, then all memory watchers will be printed)
+ * \param mode Output mode
+ * \return void Print nothing if no memory watcher found at \p addr
+ */
 RZ_API void rz_core_cmpwatch_show(RZ_NONNULL RzCore *core, ut64 addr, RzOutputMode mode) {
 	rz_return_if_fail(core);
 	char cmd[128];
 	RzListIter *iter;
 	RzCoreCmpWatcher *w;
 	rz_list_foreach (core->watchers, iter, w) {
+		if (addr != UT64_MAX && w->addr != addr) {
+			continue;
+		}
 		int is_diff = w->odata ? memcmp(w->odata, w->ndata, w->size) : 0;
 		switch (mode) {
 		case RZ_OUTPUT_MODE_RIZIN:
@@ -376,11 +410,22 @@ RZ_API void rz_core_cmpwatch_show(RZ_NONNULL RzCore *core, ut64 addr, RzOutputMo
 	}
 }
 
+/**
+ * \brief Update the memory watcher at address \p addr
+ *
+ * \param core Current RzCore instance
+ * \param addr Address of the memory watcher to be updated (if UT64_MAX, then all memory watchers will be updated)
+ * \return bool true if any memory watcher was updated; false otherwise
+ */
 RZ_API bool rz_core_cmpwatch_update(RZ_NONNULL RzCore *core, ut64 addr) {
 	rz_return_val_if_fail(core, false);
 	RzCoreCmpWatcher *w;
 	RzListIter *iter;
+	bool ret = false;
 	rz_list_foreach (core->watchers, iter, w) {
+		if (addr != UT64_MAX && w->addr != addr) {
+			continue;
+		}
 		free(w->odata);
 		w->odata = w->ndata;
 		w->ndata = malloc(w->size);
@@ -388,10 +433,18 @@ RZ_API bool rz_core_cmpwatch_update(RZ_NONNULL RzCore *core, ut64 addr) {
 			return false;
 		}
 		rz_io_nread_at(core->io, w->addr, w->ndata, w->size);
+		ret = true;
 	}
-	return !rz_list_empty(core->watchers);
+	return ret;
 }
 
+/**
+ * \brief Revert/reset a memory watcher at address \p addr
+ *
+ * \param core Current RzCore instance
+ * \param addr Address of the memory watcher to be resetted
+ * \return bool true if the memory watcher was resetted; false otherwise
+ */
 RZ_API bool rz_core_cmpwatch_revert(RZ_NONNULL RzCore *core, ut64 addr) {
 	rz_return_val_if_fail(core, false);
 	RzCoreCmpWatcher *w;
@@ -409,4 +462,4 @@ RZ_API bool rz_core_cmpwatch_revert(RZ_NONNULL RzCore *core, ut64 addr) {
 	}
 	return ret;
 }
-/** @} */
+/** \} */
