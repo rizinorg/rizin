@@ -358,9 +358,18 @@ RZ_API void rz_sign_flirt_node_free(RZ_NULLABLE RzFlirtNode *node) {
 	free(node);
 }
 
-/* Returns true if b matches the pattern in node. */
-/* Returns false otherwise. */
-static int is_pattern_matching(ut32 p_size, const ut8 *pattern, const ut8 *mask, const ut8 *b, ut32 b_size) {
+/**
+ * \brief Checks if a pattern does match the buffer data
+ *
+ * \param p_size   The pattern size
+ * \param pattern  The pattern to check agains
+ * \param mask     The pattern mask
+ * \param b        Buffer to check
+ * \param b_size   Size of the buffer to check
+ *
+ * \return True if pattern does match, false otherwise.
+ */
+static bool is_pattern_matching(ut32 p_size, const ut8 *pattern, const ut8 *mask, const ut8 *b, ut32 b_size) {
 	if (b_size < p_size) {
 		return false;
 	}
@@ -372,10 +381,18 @@ static int is_pattern_matching(ut32 p_size, const ut8 *pattern, const ut8 *mask,
 	return true;
 }
 
+/**
+ * \brief Checks if the module matches the buffer and renames the matched functions
+ *
+ * \param analysis  The RzAnalysis struct from where to fetch and modify the functions
+ * \param module    The FLIRT module to match against the buffer
+ * \param b         Buffer to check
+ * \param address   Function address
+ * \param buf_size  Size of the buffer to check
+ *
+ * \return True if pattern does match, false otherwise.
+ */
 static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module, ut8 *b, ut64 address, ut32 buf_size) {
-	/* Returns true if module matches b, according to the signatures infos.
-	 * Return false otherwise.
-	 * The buffer starts from the first byte after the pattern */
 	RzFlirtFunction *flirt_func;
 	RzAnalysisFunction *next_module_function;
 	RzListIter *tail_byte_it, *flirt_func_it;
@@ -393,8 +410,6 @@ static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module
 			}
 		}
 	}
-
-	// TODO referenced functions
 
 	rz_list_foreach (module->public_functions, flirt_func_it, flirt_func) {
 		// Once the first module function is found, we need to go through the module->public_functions
@@ -484,9 +499,14 @@ static int node_match_buffer(RzAnalysis *analysis, const RzFlirtNode *node, ut8 
 	return false;
 }
 
-/* Tries to find matching functions between the signature infos in root_node
- * and the analyzed functions in analysis
- * Returns false on error. */
+/**
+ * \brief Tries to find matching functions between the signature infos in root_node and the analyzed functions in analysis
+ *
+ * \param analysis   The analysis
+ * \param root_node  The root node
+ *
+ * \return False on error, otherwise true
+ */
 static bool node_match_functions(RzAnalysis *analysis, const RzFlirtNode *root_node) {
 	bool ret = true;
 
@@ -530,8 +550,8 @@ static bool node_match_functions(RzAnalysis *analysis, const RzFlirtNode *root_n
 }
 
 static ut8 read_module_tail_bytes(RzFlirtModule *module, ParseStatus *b) {
-	/*parses a module tail bytes*/
-	/*returns false on parsing error*/
+	/* parses a module tail bytes */
+	/* returns false on parsing error */
 	int i;
 	ut8 number_of_tail_bytes;
 	RzFlirtTailByte *tail_byte = NULL;
@@ -583,8 +603,8 @@ err_exit:
 }
 
 static ut8 read_module_referenced_functions(RzFlirtModule *module, ParseStatus *b) {
-	/*parses a module referenced functions*/
-	/*returns false on parsing error*/
+	/* parses a module referenced functions */
+	/* returns false on parsing error */
 	int i, j;
 	ut8 number_of_referenced_functions;
 	ut32 ref_function_name_length;
@@ -658,7 +678,7 @@ err_exit:
 
 static ut8 read_module_public_functions(RzFlirtModule *module, ParseStatus *b, ut8 *flags) {
 	/* Reads and set the public functions names and offsets associated within a module */
-	/*returns false on parsing error*/
+	/* returns false on parsing error */
 	int i;
 	ut16 offset = 0;
 	ut8 current_byte;
@@ -739,8 +759,8 @@ err_exit:
 }
 
 static ut8 parse_leaf(ParseStatus *b, RzFlirtNode *node) {
-	/*parses a signature leaf: modules with same leading pattern*/
-	/*returns false on parsing error*/
+	/* parses a signature leaf: modules with same leading pattern */
+	/* returns false on parsing error */
 	ut8 flags, crc_length;
 	ut16 crc16;
 	RzFlirtModule *module = NULL;
@@ -827,9 +847,9 @@ static ut8 read_node_length(RzFlirtNode *node, ParseStatus *b) {
 }
 
 static ut8 read_node_variant_mask(RzFlirtNode *node, ParseStatus *b) {
-	/*Reads and sets a node's variant bytes mask. This mask is then used to*/
-	/*read the non-variant bytes following.*/
-	/*returns false on parsing error*/
+	/* Reads and sets a node's variant bytes mask. This mask is then used to */
+	/* read the non-variant bytes following. */
+	/* returns false on parsing error */
 	if (node->length < 0x10) {
 		node->variant_mask = read_max_2_bytes(b);
 		if (is_status_err_or_eof(b)) {
@@ -851,8 +871,8 @@ static ut8 read_node_variant_mask(RzFlirtNode *node, ParseStatus *b) {
 }
 
 static bool read_node_bytes(RzFlirtNode *node, ParseStatus *b) {
-	/*Reads the node bytes, and also sets the variant bytes in pattern_mask*/
-	/*returns false on parsing error*/
+	/* Reads the node bytes, and also sets the variant bytes in pattern_mask */
+	/* returns false on parsing error */
 	int i;
 	ut64 current_mask_bit = 0;
 	if ((int)node->length < 0) {
@@ -880,8 +900,8 @@ static bool read_node_bytes(RzFlirtNode *node, ParseStatus *b) {
 }
 
 static ut8 parse_tree(ParseStatus *b, RzFlirtNode *root_node) {
-	/*parse a signature pattern tree or sub-tree*/
-	/*returns false on parsing error*/
+	/* parse a signature pattern tree or sub-tree */
+	/* returns false on parsing error */
 	RzFlirtNode *node = NULL;
 	int i, tree_nodes = read_multiple_bytes(b); // confirmed it's not read_byte(), XXX could it be read_max_2_bytes() ???
 	if (is_status_err_or_eof(b)) {

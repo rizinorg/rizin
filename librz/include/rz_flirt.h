@@ -41,14 +41,14 @@ extern "C" {
 #define RZ_FLIRT_SIG_ARCH_SPARC     23 // SPARC
 #define RZ_FLIRT_SIG_ARCH_ALPHA     24 // DEC Alpha
 #define RZ_FLIRT_SIG_ARCH_HPPA      25 // Hewlett-Packard PA-RISC
-#define RZ_FLIRT_SIG_ARCH_H8500     26 // Hitachi H8/500
-#define RZ_FLIRT_SIG_ARCH_TRICORE   27 // Tasking Tricore
+#define RZ_FLIRT_SIG_ARCH_H8500     26 // Renesas (formerly Hitachi) H8/500
+#define RZ_FLIRT_SIG_ARCH_TRICORE   27 // Tricore
 #define RZ_FLIRT_SIG_ARCH_DSP56K    28 // Motorola DSP5600x
 #define RZ_FLIRT_SIG_ARCH_C166      29 // Siemens C166 family
 #define RZ_FLIRT_SIG_ARCH_ST20      30 // SGS-Thomson ST20
 #define RZ_FLIRT_SIG_ARCH_IA64      31 // Intel Itanium IA64
 #define RZ_FLIRT_SIG_ARCH_I960      32 // Intel 960
-#define RZ_FLIRT_SIG_ARCH_F2MC      33 // Fujistu F2MC-16
+#define RZ_FLIRT_SIG_ARCH_F2MC      33 // Fujitsu F2MC-16
 #define RZ_FLIRT_SIG_ARCH_TMS320C54 34 // Texas Instruments TMS320C54xx
 #define RZ_FLIRT_SIG_ARCH_TMS320C55 35 // Texas Instruments TMS320C55xx
 #define RZ_FLIRT_SIG_ARCH_TRIMEDIA  36 // Trimedia

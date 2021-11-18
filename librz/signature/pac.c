@@ -2,6 +2,44 @@
 // SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+/** \file pac.c
+ * FLIRT uncompressed file format.
+ * 
+ * An example of uncompressed format is shown below:
+ * 
+ * ```
+ * # some comment
+ * 4154554889FD534889F3C60700E8........C6441DFF004189C485C07515BE2E 07 FAEE 003B :0000@ Curl_gethostname ^0027 strchr ........4885C07403C600004489E05B5D415CC3
+ * 31C04885D2741F488D4417FF4839C77610EB1D0F1F4400004883E8014839C777 13 9867 0033 :0000 Curl_memrchr 
+ * ---
+ * 
+ * ```
+ * 
+ * The '---' is the pat file terminator
+ * Some files may contain comments using hashtag (#) as prefix but it is not the standard format.
+ * 
+ * 4154554889FD534889F3C60700E8........C6441DFF004189C485C07515BE2E
+ *   `----- Each line starts with a pattern mask (usually 32 bytes long)
+ * 
+ * 07 FAEE
+ *  |    `---- CRC16 value
+ *  `--------- CRC16 length
+ * 
+ * 003B
+ *    ^------- Function size (min 2 bytes, but can be bigger)
+ * 
+ * :0000@ Curl_gethostname
+ * |   ||                `--- Symbol name
+ * |   |`-------------------- If set, then is local symbol
+ * |   `--------------------- Symbol offset and type (: -> public)
+ * `------------------------- Symbol type (: -> public, ^ -> reference)
+ * 
+ * This symbol, is a list and can be repeated N-times
+ * 
+ * ........4885C07403C600004489E05B5D415CC3
+ *   `----- The line can end with another pattern mask
+ */
+
 #include <rz_flirt.h>
 #include <rz_util.h>
 
@@ -54,7 +92,6 @@ static bool flirt_pat_parse_pattern_mask(const char *in_pattern, ut8 **out_bytes
 		goto err;
 	}
 
-	//eprintf("pattern: ");
 	for (ut32 i = 0; i < n_bytes; ++i) {
 		ut32 p = i << 1;
 		char high = in_pattern[p];
@@ -62,16 +99,13 @@ static bool flirt_pat_parse_pattern_mask(const char *in_pattern, ut8 **out_bytes
 		if (IS_HEXCHAR(high) && IS_HEXCHAR(low)) {
 			bytes[i] = parse_byte(high, low);
 			mask[i] = 0;
-			//eprintf("%02X(%c%c) ", bytes[i], high, low);
 		} else if (high == '.' && low == '.') {
 			bytes[i] = 0;
 			mask[i] = 1;
-			//eprintf("..");
 		} else {
 			goto err;
 		}
 	}
-	//eprintf("\n");
 
 	*out_bytes = bytes;
 	*out_mask = mask;
