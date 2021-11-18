@@ -692,6 +692,7 @@ NAME=aa ; zfs libc-v7.sig
 FILE=bins/elf/analysis/pid_stripped
 CMDS=aa ; zfs bins/other/sigs/libc-v7.sig
 EXPECT=<<EOF
+Found 1 FLIRT signatures via bins/other/sigs/libc-v7.sig
 EOF
 RUN
 
@@ -709,6 +710,7 @@ ARGS=-ecfg.oldshell=false
 FILE=bins/elf/analysis/pid_stripped
 CMDS=s 0x4e2420 ; af ; s 0x4e25c7 ; af ; zfs bins/other/sigs/libc-v7.sig ; afl ~4e2420
 EXPECT=<<EOF
+Found 1 FLIRT signatures via bins/other/sigs/libc-v7.sig
 0x004e2420   40 664          flirt.__libc_start_main
 EOF
 RUN
@@ -724,6 +726,7 @@ zfs bins/other/sigs/libc-v7.sig
 afl~4e2420
 EOF
 EXPECT=<<EOF
+Found 1 FLIRT signatures via bins/other/sigs/libc-v7.sig
 0x004e2420   40 664          flirt.__libc_start_main
 EOF
 RUN
@@ -732,6 +735,7 @@ NAME=aa ; zfs libc-v10.sig
 FILE=bins/elf/analysis/pid_stripped
 CMDS=aa ; zfs bins/other/sigs/libc-v10.sig
 EXPECT=<<EOF
+Found 1 FLIRT signatures via bins/other/sigs/libc-v10.sig
 EOF
 RUN
 
@@ -749,6 +753,7 @@ ARGS=-ecfg.oldshell=false
 FILE=bins/elf/analysis/pid_stripped
 CMDS=s 0x4e2420 ; af ; s 0x4e25c7 ; af ; zfs bins/other/sigs/libc-v10.sig ; afl ~4e2420
 EXPECT=<<EOF
+Found 1 FLIRT signatures via bins/other/sigs/libc-v10.sig
 0x004e2420   40 664          flirt.__libc_start_main
 EOF
 RUN
@@ -764,6 +769,7 @@ zfs bins/other/sigs/libc-v10.sig
 afl~4e2420
 EOF
 EXPECT=<<EOF
+Found 1 FLIRT signatures via bins/other/sigs/libc-v10.sig
 0x004e2420   40 664          flirt.__libc_start_main
 EOF
 RUN
@@ -1778,5 +1784,37 @@ EOF
 EXPECT=<<EOF
 int sym.new_function_name(int NEWARGC, char ** NEWARGV);
 sym.new_function_name
+EOF
+RUN
+
+NAME=FLIRT apply pac signature
+FILE=bins/flirt/elf-x86/curl-example
+CMDS=<<EOF
+aaa
+zfs bins/flirt/elf-x86/libcurl.a.pac
+EOF
+EXPECT=<<EOF
+Found 207 FLIRT signatures via bins/flirt/elf-x86/libcurl.a.pac
+EOF
+RUN
+
+NAME=FLIRT apply pac signature
+FILE=bins/flirt/elf-x86/curl-example
+CMDS=<<EOF
+aaa
+zfs bins/flirt/elf-x86/libcurl.a.sig
+EOF
+EXPECT=<<EOF
+Found 206 FLIRT signatures via bins/flirt/elf-x86/libcurl.a.sig
+EOF
+RUN
+
+NAME=FLIRT dump pac signature
+FILE==
+CMDS=<<EOF
+zfd bins/flirt/elf-x86/libcurl.a.pac~?
+EOF
+EXPECT=<<EOF
+166
 EOF
 RUN
