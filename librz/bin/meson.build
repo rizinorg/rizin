@@ -177,6 +177,7 @@ rz_bin = library('rz_bin', rz_bin_sources,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
+  link_args: library_linkflags,
   soversion: rizin_libversion
 )
 
@@ -188,7 +189,6 @@ pkgconfig_mod.generate(rz_bin,
   version: rizin_version,
   name: 'rz_bin',
   filebase: 'rz_bin',
-  libraries: pkgcfg_sanitize_libs,
   requires: pkgconfig_magic_requires + [
     'rz_util',
     'rz_io',

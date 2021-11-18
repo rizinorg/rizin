@@ -199,6 +199,7 @@ rz_analysis = library('rz_analysis', rz_analysis_sources,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
+  link_args: library_linkflags,
   soversion: rizin_libversion
 )
 
@@ -210,7 +211,6 @@ pkgconfig_mod.generate(rz_analysis,
   version: rizin_version,
   name: 'rz_analysis',
   filebase: 'rz_analysis',
-  libraries: pkgcfg_sanitize_libs,
   requires: [
     'rz_util',
     'rz_crypto',

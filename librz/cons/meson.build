@@ -24,6 +24,7 @@ rz_cons = library('rz_cons', rz_cons_sources,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
+  link_args: library_linkflags,
   soversion: rizin_libversion
 )
 
@@ -35,7 +36,6 @@ pkgconfig_mod.generate(rz_cons,
   version: rizin_version,
   name: 'rz_cons',
   filebase: 'rz_cons',
-  libraries: pkgcfg_sanitize_libs,
   requires: [
     'rz_util'
   ],

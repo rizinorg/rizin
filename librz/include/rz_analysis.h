@@ -1221,6 +1221,12 @@ typedef struct rz_analysis_plugin_t {
 	ut8 *(*analysis_mask)(RzAnalysis *analysis, int size, const ut8 *data, ut64 at);
 	RzList *(*preludes)(RzAnalysis *analysis);
 
+	/**
+	 * The actual bit-size of an address for given analysis.bits.
+	 * If unimplemented or returns <= 0, analysis.bits will be used as-is.
+	 */
+	int (*address_bits)(RzAnalysis *analysis, int bits);
+
 	// legacy rz_analysis_functions
 	RzAnalysisOpCallback op;
 
@@ -1460,6 +1466,7 @@ RZ_API bool rz_analysis_set_triplet(RzAnalysis *analysis, const char *os, const 
 RZ_API void rz_analysis_add_import(RzAnalysis *analysis, const char *imp);
 RZ_API void rz_analysis_remove_import(RzAnalysis *analysis, const char *imp);
 RZ_API void rz_analysis_purge_imports(RzAnalysis *analysis);
+RZ_API int rz_analysis_get_address_bits(RzAnalysis *analysis);
 
 /* op.c */
 RZ_API const char *rz_analysis_stackop_tostring(int s);
