@@ -29,7 +29,7 @@
  *    ^------- Function size (min 2 bytes, but can be bigger)
  * 
  * :0000@ Curl_gethostname
- * |   ||                `--- Symbol name
+ * |   ||     `-------------- Symbol name
  * |   |`-------------------- If set, then is local symbol
  * |   `--------------------- Symbol offset and type (: -> public)
  * `------------------------- Symbol type (: -> public, ^ -> reference)
@@ -48,6 +48,8 @@
 #else
 #define pac_dbg(...)
 #endif
+
+#define PAC_LINE_BUFFER_SIZE 1024
 
 extern void module_free(RzFlirtModule *module);
 
@@ -343,7 +345,7 @@ err:
  */
 RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_parse_string_buffer(RZ_NONNULL RzBuffer *flirt_buf) {
 	rz_return_val_if_fail(flirt_buf, NULL);
-	char buffer[1024];
+	char buffer[PAC_LINE_BUFFER_SIZE];
 	const char *buffer_end = buffer + sizeof(buffer);
 	ut32 line_num = 1;
 	char *newline = NULL;
