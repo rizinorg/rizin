@@ -392,12 +392,16 @@ typedef struct rz_core_item_t {
 
 RZ_API void rz_core_item_free(RzCoreItem *ci);
 
+/**
+ * \struct RzCoreCmpWatcher
+ * \brief Watcher which executes a command when listed
+ */
 typedef struct rz_core_cmpwatch_t {
-	ut64 addr;
-	int size;
-	char cmd[32];
-	ut8 *odata;
-	ut8 *ndata;
+	ut64 addr;			///< Address of the watcher
+	int size;			///< Size of the watcher
+	char cmd[32];		///< Command to be executed by the watcher
+	ut8 *odata;			///< original data at the given address
+	ut8 *ndata;			///< New data at the given address
 } RzCoreCmpWatcher;
 
 typedef int (*RzCoreSearchCallback)(RzCore *core, ut64 from, ut8 *buf, int len);
