@@ -7,8 +7,8 @@
  * \brief Modified read proxy of Mach-O binaries for use as part of a virtual file.
  *
  * This is used in Mach-O binaries that either contain LC_DYLD_CHANGED_FIXUPS/LC_DYLD_EXPORTS_TRIE
- * load commands or BIND_OPCODE_THREADED in their dyld info. This is currently only known
- * to exist on binaries with the "arm64e" architecture, as Apple calls it, which is essentially
+ * load commands or BIND_OPCODE_THREADED in their dyld info. This is especially present in, but not
+ * limited to binaries with the "arm64e" architecture, as Apple calls it, which is essentially
  * arm64 with pointer authentication.
  * In particular, we strip away additional info stored inside of pointers in the binary so we get
  * the raw pointers out for convenient analysis.
@@ -55,7 +55,8 @@ RZ_API void MACH0_(rebase_buffer)(struct MACH0_(obj_t) * obj, ut64 off, ut8 *buf
 				ut64 ptr_value = raw_ptr;
 				ut64 delta;
 				ut64 stride = 8;
-				if (obj->chained_starts[i]->pointer_format == DYLD_CHAINED_PTR_ARM64E) {
+				switch (obj->chained_starts[i]->pointer_format) {
+				case DYLD_CHAINED_PTR_ARM64E: {
 					bool is_bind = IS_PTR_BIND(raw_ptr);
 					if (is_auth && is_bind) {
 						struct dyld_chained_ptr_arm64e_auth_bind *p =
@@ -76,8 +77,10 @@ RZ_API void MACH0_(rebase_buffer)(struct MACH0_(obj_t) * obj, ut64 off, ut8 *buf
 						delta = p->next;
 						ptr_value = ((ut64)p->high8 << 56) | p->target;
 					}
-				} else if (obj->chained_starts[i]->pointer_format == DYLD_CHAINED_PTR_64_KERNEL_CACHE ||
-					obj->chained_starts[i]->pointer_format == DYLD_CHAINED_PTR_ARM64E_KERNEL) {
+					break;
+				}
+				case DYLD_CHAINED_PTR_64_KERNEL_CACHE:
+				case DYLD_CHAINED_PTR_ARM64E_KERNEL:
 					stride = 4;
 					if (is_auth) {
 						struct dyld_chained_ptr_arm64e_cache_auth_rebase *p =
@@ -91,9 +94,24 @@ RZ_API void MACH0_(rebase_buffer)(struct MACH0_(obj_t) * obj, ut64 off, ut8 *buf
 						ptr_value = ((ut64)p->high8 << 56) | p->target;
 						ptr_value += obj->baddr;
 					}
-				} else {
-					RZ_LOG_WARN("Unsupported Mach-O pointer format: %u\n", obj->chained_starts[i]->pointer_format);
 					break;
+				case DYLD_CHAINED_PTR_64_OFFSET:
+					stride = 4;
+					struct dyld_chained_ptr_64_bind *bind =
+						(struct dyld_chained_ptr_64_bind *)&raw_ptr;
+					if (bind->bind) {
+						delta = bind->next;
+					} else {
+						struct dyld_chained_ptr_64_rebase *p =
+							(struct dyld_chained_ptr_64_rebase *)&raw_ptr;
+						delta = p->next;
+						ptr_value = obj->baddr + (((ut64)p->high8 << 56) | p->target);
+					}
+					break;
+				default:
+					RZ_LOG_WARN("Unsupported Mach-O pointer format: %u at paddr 0x%" PFMT64x "\n",
+						obj->chained_starts[i]->pointer_format, cursor);
+					goto break_it_all;
 				}
 				ut64 in_buf = cursor - off;
 				if (cursor >= off && cursor <= eob - 8) {
@@ -103,6 +121,9 @@ RZ_API void MACH0_(rebase_buffer)(struct MACH0_(obj_t) * obj, ut64 off, ut8 *buf
 				if (!delta) {
 					break;
 				}
+				continue;
+			break_it_all:
+				break;
 			}
 		}
 	}
