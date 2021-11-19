@@ -552,6 +552,8 @@ jobs:
       run: brew install pkg-config
     - name: Install meson and ninja
       run: pip3 install meson ninja PyYAML
+    - name: Install ImageMagick
+      run: brew install imagemagick
     - name: Create OSX package
       run: |
         ./dist/osx/build_osx_package.sh
