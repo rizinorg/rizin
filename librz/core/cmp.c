@@ -22,8 +22,8 @@ RZ_API RZ_OWN RzCompareData *rz_core_cmp_mem_mem(RzCore *core, ut64 addr1, ut64 
 	if (!buf1 || !buf2) {
 		goto error_goto;
 	}
-	if (rz_io_nread_at(core->io, addr1, buf1, len) == -1 || rz_io_nread_at(core->io, addr2, buf2, len) == -1) {
-		RZ_LOG_ERROR("Cannot read at provided addresses: 0x%" PFMT64x " 0x%" PFMT64x "\n", addr1, addr2);
+	if (!(rz_io_nread_at(core->io, addr1, buf1, len) == len && rz_io_nread_at(core->io, addr2, buf2, len) == len)) {
+		RZ_LOG_ERROR("Cannot read %u bytes at provided addresses: 0x%" PFMT64x " 0x%" PFMT64x "\n", len, addr1, addr2);
 		goto error_goto;
 	}
 	RzCompareData *cmp = RZ_NEW0(RzCompareData);
@@ -61,7 +61,8 @@ RZ_API RZ_OWN RzCompareData *rz_core_cmp_mem_data(RzCore *core, ut64 addr, RZ_NO
 		RZ_LOG_ERROR("Cannot read at address: 0x%" PFMT64x "\n", addr);
 		goto error_goto;
 	}
-	if (rz_io_nread_at(core->io, addr, buf1, len) == -1) {
+	if (rz_io_nread_at(core->io, addr, buf1, len) != len) {
+		RZ_LOG_ERROR("Cannot read %u bytes at provided address: 0x%" PFMT64x "\n", len, addr);
 		goto error_goto;
 	}
 	RzCompareData *cmp = RZ_NEW0(RzCompareData);
