@@ -196,7 +196,7 @@ RZ_API RZ_OWN RzList /*<RzCompareData>*/ *rz_core_cmp_disasm(RzCore *core, ut64 
 		comp->addr1 = addr1 + i;
 		comp->data2 = (ut8 *)strdup(rz_strbuf_get(&op2.buf_asm));
 		comp->addr2 = addr2 + j;
-		comp->same = rz_mem_eq(comp->data1, comp->data2, comp->len);
+		comp->same = !strcmp((char *)comp->data1, (char *)comp->data2); // we can assume that instructions can be represented as plain chars
 		rz_list_append(cmp_list, comp);
 
 		if (op.size < 1) {
@@ -364,7 +364,7 @@ RZ_API bool rz_core_cmpwatch_add(RzCore *core, ut64 addr, int size, const char *
  * \brief Delete a memory watcher at address \p addr
  *
  * \param core Current RzCore instance
- * \param addr Address of the memory watcher to be deleted
+ * \param addr Address of the memory watcher to be deleted (if UT64_MAX, then all memory watchers will be deleted)
  * \return bool true if found and deleted; false otherwise
  */
 RZ_API bool rz_core_cmpwatch_del(RzCore *core, ut64 addr) {
@@ -447,7 +447,7 @@ RZ_API bool rz_core_cmpwatch_update(RzCore *core, ut64 addr) {
  * \brief Revert/reset a memory watcher at address \p addr
  *
  * \param core Current RzCore instance
- * \param addr Address of the memory watcher to be resetted
+ * \param addr Address of the memory watcher to be reset (if UT64_MAX, then all memory watchers will be reset)
  * \return bool true if the memory watcher was resetted; false otherwise
  */
 RZ_API bool rz_core_cmpwatch_revert(RzCore *core, ut64 addr) {

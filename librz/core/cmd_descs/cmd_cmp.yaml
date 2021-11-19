@@ -131,6 +131,10 @@ commands:
         summary: Update watcher at current offset
         cname: cmd_cmp_update_watcher
         args: []
+      - name: cwx
+        summary: Remove watcher at current offset
+        cname: cmd_cmp_remove_watcher
+        args: []
   - name: cx
     summary: Compare data at current offset with a hexpair string <hexpair>
     cname: cmd_cmp_hexpair_string

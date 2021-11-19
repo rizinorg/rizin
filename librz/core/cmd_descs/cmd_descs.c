@@ -2282,6 +2282,14 @@ static const RzCmdDescHelp cmd_cmp_update_watcher_help = {
 	.args = cmd_cmp_update_watcher_args,
 };
 
+static const RzCmdDescArg cmd_cmp_remove_watcher_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_cmp_remove_watcher_help = {
+	.summary = "Remove watcher at current offset",
+	.args = cmd_cmp_remove_watcher_args,
+};
+
 static const RzCmdDescArg cmd_cmp_hexpair_string_args[] = {
 	{
 		.name = "hexpair",
@@ -8540,6 +8548,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_cmp_update_watcher_cd = rz_cmd_desc_argv_new(core->rcmd, cw_cd, "cwu", rz_cmd_cmp_update_watcher_handler, &cmd_cmp_update_watcher_help);
 	rz_warn_if_fail(cmd_cmp_update_watcher_cd);
+
+	RzCmdDesc *cmd_cmp_remove_watcher_cd = rz_cmd_desc_argv_new(core->rcmd, cw_cd, "cwx", rz_cmd_cmp_remove_watcher_handler, &cmd_cmp_remove_watcher_help);
+	rz_warn_if_fail(cmd_cmp_remove_watcher_cd);
 
 	RzCmdDesc *cmd_cmp_hexpair_string_cd = rz_cmd_desc_argv_new(core->rcmd, c_cd, "cx", rz_cmd_cmp_hexpair_string_handler, &cmd_cmp_hexpair_string_help);
 	rz_warn_if_fail(cmd_cmp_hexpair_string_cd);
