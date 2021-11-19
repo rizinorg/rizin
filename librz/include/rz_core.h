@@ -392,18 +392,6 @@ typedef struct rz_core_item_t {
 
 RZ_API void rz_core_item_free(RzCoreItem *ci);
 
-/**
- * \struct RzCoreCmpWatcher
- * \brief Watcher which executes a command when listed
- */
-typedef struct rz_core_cmpwatch_t {
-	ut64 addr; ///< Address of the watcher
-	int size; ///< Size of the watcher
-	char cmd[32]; ///< Command to be executed by the watcher
-	ut8 *odata; ///< original data at the given address
-	ut8 *ndata; ///< New data at the given address
-} RzCoreCmpWatcher;
-
 typedef int (*RzCoreSearchCallback)(RzCore *core, ut64 from, ut8 *buf, int len);
 
 #ifdef RZ_API
@@ -991,15 +979,6 @@ RZ_API bool rz_core_dump(RzCore *core, const char *file, ut64 addr, ut64 size, i
 RZ_API void rz_core_diff_show(RzCore *core, RzCore *core2, bool json);
 RZ_API bool rz_core_diff_show_function(RzCore *core, RzCore *core2, ut64 addr, bool json);
 RZ_API void rz_core_clippy(RzCore *core, const char *msg);
-
-/* watchers */
-RZ_API void rz_core_cmpwatch_free(RzCoreCmpWatcher *w);
-RZ_API RzCoreCmpWatcher *rz_core_cmpwatch_get(RzCore *core, ut64 addr);
-RZ_API bool rz_core_cmpwatch_add(RzCore *core, ut64 addr, int size, const char *cmd);
-RZ_API bool rz_core_cmpwatch_del(RzCore *core, ut64 addr);
-RZ_API bool rz_core_cmpwatch_update(RzCore *core, ut64 addr);
-RZ_API void rz_core_cmpwatch_show(RzCore *core, ut64 addr, RzOutputMode mode);
-RZ_API bool rz_core_cmpwatch_revert(RzCore *core, ut64 addr);
 
 // TODO MOVE SOMEWHERE ELSE
 typedef char *(*PrintItemCallback)(void *user, void *p, bool selected);
