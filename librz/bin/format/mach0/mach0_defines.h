@@ -1477,6 +1477,7 @@ enum {
 	DYLD_CHAINED_PTR_32 = 3,
 	DYLD_CHAINED_PTR_32_CACHE = 4,
 	DYLD_CHAINED_PTR_32_FIRMWARE = 5,
+	DYLD_CHAINED_PTR_64_OFFSET = 6,
 	DYLD_CHAINED_PTR_ARM64E_KERNEL = 7,
 	DYLD_CHAINED_PTR_64_KERNEL_CACHE = 8,
 };
@@ -1517,6 +1518,22 @@ struct dyld_chained_ptr_arm64e_auth_bind {
 		next : 11,
 		bind : 1, // == 1
 		auth : 1; // == 1
+};
+
+struct dyld_chained_ptr_64_rebase {
+	uint64_t target : 36,
+		high8 : 8,
+		reserved : 7,
+		next : 12,
+		bind : 1; // == 0
+};
+
+struct dyld_chained_ptr_64_bind {
+	uint64_t ordinal : 24,
+		addend : 8,
+		reserved : 19,
+		next : 12,
+		bind : 1; // == 1
 };
 
 /* WARNING: this is guesswork based on trial and error */

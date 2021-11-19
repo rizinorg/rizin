@@ -89,3 +89,35 @@ global (!auth, bind)
 0x100008108  0400 0000 0000 1040                      .......@
 EOF
 RUN
+
+NAME=macOS arm64 with DYLD_CHAINED_PTR_64_OFFSET
+FILE=bins/mach0/hello-macos-arm64-chained
+CMDS=<<EOF
+p8 8 @ 0x100004028
+p8 8 @ 0x100004038
+pxr 8 @ 0x100004038
+ic
+icm
+icf
+EOF
+EXPECT=<<EOF
+0500000000002080
+643e000001000000
+0x100004038 0x0000000100003e64   d>...... 4294983268 3.__TEXT.__cstring str.static_method_called,section.3.__TEXT.__cstring R X 'invalid' static method called
+address     min         max         name super 
+-----------------------------------------------
+0x1000080f8 0x100003a7c 0x100003be0 Test 
+address     index class flags name                         
+-----------------------------------------------------------
+0x100003a7c 0     Test        init
+0x100003acc 1     Test        methodWithoutArgs
+0x100003b18 2     Test        methodWithOneArg:
+0x100003b68 3     Test        methodWithTwoArgs:secondArg:
+0x100003be0 4     Test        methodWithReturn
+0x100003aa0 5     Test  c     someStaticMethod
+address     index class flags name                  type                
+------------------------------------------------------------------------
+0x00000000  0     Test        isa                   struct objc_class *
+0x1000080f0 1     Test        Test::(ivar)someField i
+EOF
+RUN
