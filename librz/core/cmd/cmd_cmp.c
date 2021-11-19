@@ -327,7 +327,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_unified_disasm_handler(RzCore *core, int argc, con
 
 // cw
 RZ_IPI RzCmdStatus rz_cmd_cmp_add_memory_watcher_handler(RzCore *core, int argc, const char **argv) {
-	return rz_core_cmpwatch_add(core, core->offset, atoi(argv[0]), argv[1]) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+	return rz_core_cmpwatch_add(core, core->offset, atoi(argv[1]), argv[2]) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
 // cwl
