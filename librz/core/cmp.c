@@ -223,6 +223,9 @@ error_goto:
  * \return void
  */
 RZ_API void rz_core_cmp_free(RzCompareData *cmp) {
+	if (!cmp) {
+		return;
+	}
 	RZ_FREE(cmp->data1);
 	RZ_FREE(cmp->data2);
 	free(cmp);
