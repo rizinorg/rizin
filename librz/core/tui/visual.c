@@ -3271,7 +3271,7 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			rz_cons_flush();
 			rz_cons_set_raw(false);
 			rz_line_set_prompt("comment: ");
-			strcpy(buf, "\"CC ");
+			strcpy(buf, "CC ");
 			i = strlen(buf);
 			if (rz_cons_fgets(buf + i, sizeof(buf) - i, 0, NULL) > 0) {
 				ut64 addr, orig;
@@ -3280,35 +3280,25 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 					addr += core->print->cur;
 					rz_core_seek(core, addr, true);
 				}
-				if (!strcmp(buf + i, "-")) {
-					strcpy(buf, "CC-");
-				} else {
-					switch (buf[i]) {
-					case '-':
-						memcpy(buf, "\"CC-\x00", 5);
-						break;
-					case '!':
-						memcpy(buf, "\"CC!\x00", 5);
-						break;
-					default:
-						memcpy(buf, "\"CC ", 4);
-						break;
-					}
-					strcat(buf, "\"");
+				switch (buf[i]) {
+				case '-':
+					memcpy(buf, "CC-", 3);
+					break;
+				case '!':
+					memcpy(buf, "CC!", 3);
+					break;
 				}
-				if (buf[3] == ' ') {
-					// have to escape any quotes.
+				if (buf[2] == ' ') {
+					// have to escape any semicolons
 					int j, len = strlen(buf);
 					char *duped = strdup(buf);
-					for (i = 4, j = 4; i < len; i++, j++) {
+					for (i = 3, j = 3; i < len; i++, j++) {
 						char c = duped[i];
-						if (c == '"' && i != (len - 1)) {
+						if (c == ';') {
 							buf[j] = '\\';
 							j++;
-							buf[j] = '"';
-						} else {
-							buf[j] = c;
 						}
+						buf[j] = c;
 					}
 					free(duped);
 				}
