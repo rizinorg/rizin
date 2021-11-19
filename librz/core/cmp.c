@@ -400,8 +400,7 @@ RZ_API void rz_core_cmpwatch_show(RZ_NONNULL RzCore *core, ut64 addr, RzOutputMo
 			break;
 		case RZ_OUTPUT_MODE_STANDARD:
 			rz_cons_printf("0x%08" PFMT64x "%s\n", w->addr, is_diff ? " modified" : "");
-			snprintf(cmd, sizeof(cmd), "%s@%" PFMT64d "!%d",
-				w->cmd, w->addr, w->size);
+			snprintf(cmd, sizeof(cmd), "%s @ %" PFMT64d " @!%d", w->cmd, w->addr, w->size);
 			rz_core_cmd0(core, cmd);
 			break;
 		default:
