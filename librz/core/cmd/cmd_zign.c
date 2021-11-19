@@ -558,7 +558,7 @@ static int cmdFlirt(void *data, const char *input) {
 		RzListIter *iter;
 		RzList *files = rz_file_globsearch(input + 2, depth);
 		rz_list_foreach (files, iter, file) {
-			rz_sign_flirt_apply(core->analysis, file);
+			rz_sign_flirt_apply(core->analysis, file, NULL);
 		}
 		rz_list_free(files);
 		break;
@@ -1423,14 +1423,21 @@ RZ_IPI RzCmdStatus rz_zign_flirt_dump_handler(RzCore *core, int argc, const char
 }
 
 RZ_IPI RzCmdStatus rz_zign_flirt_scan_handler(RzCore *core, int argc, const char **argv) {
+	int new, old;
 	int depth = rz_config_get_i(core->config, "dir.depth");
-	char *file;
-	RzListIter *iter;
+	const char *arch = rz_config_get(core->config, "asm.arch");
+	char *file = NULL;
+	RzListIter *iter = NULL;
 	RzList *files = rz_file_globsearch(argv[1], depth);
+
+	old = rz_flag_count(core->flags, "flirt");
 	rz_list_foreach (files, iter, file) {
-		rz_sign_flirt_apply(core->analysis, file);
+		rz_sign_flirt_apply(core->analysis, file, arch);
 	}
 	rz_list_free(files);
+	new = rz_flag_count(core->flags, "flirt");
+
+	rz_cons_printf("Found %d FLIRT signatures via %s\n", new - old, argv[1]);
 	return RZ_CMD_STATUS_OK;
 }
 

@@ -50,6 +50,7 @@ if get_option('enable_tests')
     'event',
     'file',
     'flags',
+    'flirt',
     'glob',
     'graph',
     'hash',
