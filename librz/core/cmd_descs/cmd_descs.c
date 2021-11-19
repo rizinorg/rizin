@@ -2080,7 +2080,7 @@ static const RzCmdDescArg cmd_cmp_bytes_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_cmp_bytes_help = {
-	.summary = "Compare <n> (upto 8) bytes at current offset with a number <num> (also return in $?)",
+	.summary = "Compare <n> (up to 8) bytes at current offset with a number <num> (also return in $?)",
 	.args = cmd_cmp_bytes_args,
 };
 
