@@ -103,7 +103,6 @@ RZ_API int rz_core_cmp_print(RzCore *core, RZ_NONNULL const RzCompareData *cmp, 
 	if (state) {
 		mode = state->mode;
 		pj = state->d.pj;
-		rz_cmd_state_output_array_start(state);
 	}
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_o(pj);
@@ -146,9 +145,6 @@ RZ_API int rz_core_cmp_print(RzCore *core, RZ_NONNULL const RzCompareData *cmp, 
 		pj_ki(pj, "total_bytes", cmp->len);
 		pj_end(pj); // End array
 		pj_end(pj); // End object
-	}
-	if (state) {
-		rz_cmd_state_output_array_end(state);
 	}
 	return cmp->len - eq;
 }
