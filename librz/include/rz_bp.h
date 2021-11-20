@@ -120,7 +120,6 @@ RZ_API int rz_bp_plugin_del(RzBreakpoint *bp, const char *name);
 RZ_API void rz_bp_plugin_list(RzBreakpoint *bp);
 
 RZ_API int rz_bp_in(RzBreakpoint *bp, ut64 addr, int perm);
-RZ_API int rz_bp_list(RzBreakpoint *bp, RzCmdStateOutput *state);
 RZ_API int rz_bp_size(RzBreakpoint *bp);
 
 /* bp item attribs setters */

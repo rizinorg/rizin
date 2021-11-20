@@ -4410,7 +4410,75 @@ RZ_IPI RzCmdStatus rz_cmd_debug_add_bp_handler(RzCore *core, int argc, const cha
 
 // dbl
 RZ_IPI RzCmdStatus rz_cmd_debug_list_bp_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	rz_bp_list(core->dbg->bp, state);
+	RzBreakpointItem *b;
+	RzListIter *iter;
+	RzOutputMode mode = RZ_OUTPUT_MODE_STANDARD;
+	PJ *pj = NULL;
+	if (state) {
+		mode = state->mode;
+		pj = state->d.pj;
+		rz_cmd_state_output_array_start(state);
+	}
+	if (mode == RZ_OUTPUT_MODE_JSON) {
+		pj_a(pj);
+	}
+	rz_list_foreach (core->dbg->bp->bps, iter, b) {
+		switch (mode) {
+		case RZ_OUTPUT_MODE_STANDARD: {
+			core->dbg->bp->cb_printf("0x%08" PFMT64x " - 0x%08" PFMT64x
+				      " %d %c%c%c %s %s %s %s cmd=\"%s\" cond=\"%s\" "
+				      "name=\"%s\" module=\"%s\"\n",
+				b->addr, b->addr + b->size, b->size,
+				((b->perm & RZ_BP_PROT_READ) | (b->perm & RZ_BP_PROT_ACCESS)) ? 'r' : '-',
+				((b->perm & RZ_BP_PROT_WRITE) | (b->perm & RZ_BP_PROT_ACCESS)) ? 'w' : '-',
+				(b->perm & RZ_BP_PROT_EXEC) ? 'x' : '-',
+				b->hw ? "hw" : "sw",
+				b->trace ? "trace" : "break",
+				b->enabled ? "enabled" : "disabled",
+				rz_bp_is_valid(core->dbg->bp, b) ? "valid" : "invalid",
+				rz_str_get(b->data),
+				rz_str_get(b->cond),
+				rz_str_get(b->name),
+				rz_str_get(b->module_name));
+			break;
+		}
+		case RZ_OUTPUT_MODE_RIZIN: {
+			if (b->module_name) {
+				core->dbg->bp->cb_printf("dbm %s %" PFMT64d "\n", b->module_name, b->module_delta);
+			} else {
+				core->dbg->bp->cb_printf("db @ 0x%08" PFMT64x "\n", b->addr);
+			}
+			break;
+		}
+		case RZ_OUTPUT_MODE_JSON: {
+			pj_o(pj);
+			pj_kN(pj, "addr", b->addr);
+			pj_ki(pj, "size", b->size);
+			pj_ks(pj, "perm", rz_str_rwx_i(b->perm & 7)); /* filter out R_BP_PROT_ACCESS */
+			pj_kb(pj, "hw", b->hw);
+			pj_kb(pj, "trace", b->trace);
+			pj_kb(pj, "enabled", b->enabled);
+			pj_kb(pj, "valid", rz_bp_is_valid(core->dbg->bp, b));
+			pj_ks(pj, "data", rz_str_get(b->data));
+			pj_ks(pj, "cond", rz_str_get(b->cond));
+			pj_end(pj);
+			break;
+		}
+		case RZ_OUTPUT_MODE_QUIET: {
+			core->dbg->bp->cb_printf("0x%08" PFMT64x "\n", b->addr);
+			break;
+		}
+		default:
+			rz_warn_if_reached();
+		}
+	}
+	if (mode == RZ_OUTPUT_MODE_JSON) {
+		pj_end(pj);
+	}
+	if (state) {
+		rz_cmd_state_output_array_end(state);
+	}
+
 	return RZ_CMD_STATUS_OK;
 }
 
