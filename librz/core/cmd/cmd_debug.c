@@ -4410,25 +4410,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_add_bp_handler(RzCore *core, int argc, const cha
 
 // dbl
 RZ_IPI RzCmdStatus rz_cmd_debug_list_bp_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	RzOutputMode mode = state->mode;
-	switch (mode) {
-	case RZ_OUTPUT_MODE_STANDARD:
-		rz_bp_list(core->dbg->bp, 0);
-		break;
-	case RZ_OUTPUT_MODE_RIZIN:
-		rz_bp_list(core->dbg->bp, 1);
-		break;
-	case RZ_OUTPUT_MODE_JSON:
-		rz_bp_list(core->dbg->bp, 'j');
-		break;
-	case RZ_OUTPUT_MODE_QUIET:
-		rz_bp_list(core->dbg->bp, -1);
-		break;
-	default:
-		rz_warn_if_reached();
-		break;
-	}
-
+	rz_bp_list(core->dbg->bp, state);
 	return RZ_CMD_STATUS_OK;
 }
 

@@ -280,42 +280,30 @@ RZ_API int rz_bp_set_trace_all(RzBreakpoint *bp, int set) {
 	return true;
 }
 
-// TODO: deprecate
-RZ_API int rz_bp_list(RzBreakpoint *bp, int rad) {
+/**
+ * \brief List/print the breakpoints in \p bp using output state state
+ * 
+ * \param bp RzBreakpoint object to print the breakpoints from
+ * \param state RzCmdStateOutput state to use while printing (options: standard, rizin, json, quiet) (NULL means standard)
+ * \return int Number of breakpoints printed
+ */
+RZ_API int rz_bp_list(RzBreakpoint *bp, RzCmdStateOutput *state) {
 	int n = 0;
 	RzBreakpointItem *b;
 	RzListIter *iter;
+	RzOutputMode mode = RZ_OUTPUT_MODE_STANDARD;
 	PJ *pj = NULL;
-	if (rad == 'j') {
-		pj = pj_new();
-		if (!pj) {
-			return 0;
-		}
+	if (state) {
+		mode = state->mode;
+		pj = state->d.pj;
+		rz_cmd_state_output_array_start(state);
+	}
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_a(pj);
 	}
-	//eprintf ("Breakpoint list:\n");
 	rz_list_foreach (bp->bps, iter, b) {
-		if (pj) {
-			pj_o(pj);
-			pj_kN(pj, "addr", b->addr);
-			pj_ki(pj, "size", b->size);
-			pj_ks(pj, "perm", rz_str_rwx_i(b->perm & 7)); /* filter out R_BP_PROT_ACCESS */
-			pj_kb(pj, "hw", b->hw);
-			pj_kb(pj, "trace", b->trace);
-			pj_kb(pj, "enabled", b->enabled);
-			pj_kb(pj, "valid", rz_bp_is_valid(bp, b));
-			pj_ks(pj, "data", rz_str_get(b->data));
-			pj_ks(pj, "cond", rz_str_get(b->cond));
-			pj_end(pj);
-		} else if (rad == 1) {
-			if (b->module_name) {
-				bp->cb_printf("dbm %s %" PFMT64d "\n", b->module_name, b->module_delta);
-			} else {
-				bp->cb_printf("db @ 0x%08" PFMT64x "\n", b->addr);
-			}
-		} else if (rad == -1) {
-			bp->cb_printf("0x%08" PFMT64x "\n", b->addr);
-		} else {
+		switch (mode) {
+		case RZ_OUTPUT_MODE_STANDARD: {
 			bp->cb_printf("0x%08" PFMT64x " - 0x%08" PFMT64x
 				      " %d %c%c%c %s %s %s %s cmd=\"%s\" cond=\"%s\" "
 				      "name=\"%s\" module=\"%s\"\n",
@@ -331,14 +319,46 @@ RZ_API int rz_bp_list(RzBreakpoint *bp, int rad) {
 				rz_str_get(b->cond),
 				rz_str_get(b->name),
 				rz_str_get(b->module_name));
+			break;
+		}
+		case RZ_OUTPUT_MODE_RIZIN: {
+			if (b->module_name) {
+				bp->cb_printf("dbm %s %" PFMT64d "\n", b->module_name, b->module_delta);
+			} else {
+				bp->cb_printf("db @ 0x%08" PFMT64x "\n", b->addr);
+			}
+			break;
+		}
+		case RZ_OUTPUT_MODE_JSON: {
+			pj_o(pj);
+			pj_kN(pj, "addr", b->addr);
+			pj_ki(pj, "size", b->size);
+			pj_ks(pj, "perm", rz_str_rwx_i(b->perm & 7)); /* filter out R_BP_PROT_ACCESS */
+			pj_kb(pj, "hw", b->hw);
+			pj_kb(pj, "trace", b->trace);
+			pj_kb(pj, "enabled", b->enabled);
+			pj_kb(pj, "valid", rz_bp_is_valid(bp, b));
+			pj_ks(pj, "data", rz_str_get(b->data));
+			pj_ks(pj, "cond", rz_str_get(b->cond));
+			pj_end(pj);
+			break;
+		}
+		case RZ_OUTPUT_MODE_QUIET: {
+			bp->cb_printf("0x%08" PFMT64x "\n", b->addr);
+			break;
+		}
+		default:
+			rz_warn_if_reached();
 		}
 		n++;
 	}
-	if (pj) {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
-		bp->cb_printf("%s", pj_string(pj));
-		pj_free(pj);
 	}
+	if (state) {
+		rz_cmd_state_output_array_end(state);
+	}
+
 	return n;
 }
 
@@ -421,7 +441,7 @@ RZ_API bool rz_bp_is_valid(RzBreakpoint *bp, RzBreakpointItem *b) {
 
 /**
  * \brief set the condition for a RzBreakpointItem
- * 
+ *
  * \param item brekapoint item to set value for
  * \param cond value of cond to be set; if NULL is passed, then the cond value of \p item will be set to NULL
  * \return bool true if succesful; false otherwise; if false returned, then \p item will not have been modified
@@ -443,7 +463,7 @@ RZ_API bool rz_bp_item_set_cond(RZ_NONNULL RzBreakpointItem *item, RZ_NULLABLE c
 
 /**
  * \brief set the data for a RzBreakpointItem
- * 
+ *
  * \param item brekapoint item to set value for
  * \param data value of data to be set; if NULL is passed, then the data value of \p item will be set to NULL
  * \return bool true if succesful; false otherwise; if false returned, then \p item will not have been modified
@@ -465,7 +485,7 @@ RZ_API bool rz_bp_item_set_data(RZ_NONNULL RzBreakpointItem *item, RZ_NULLABLE c
 
 /**
  * \brief set the expr for a RzBreakpointItem
- * 
+ *
  * \param item brekapoint item to set value for
  * \param expr value of expr to be set; if NULL is passed, then the expr value of \p item will be set to NULL
  * \return bool true if succesful; false otherwise; if false returned, then \p item will not have been modified
@@ -487,7 +507,7 @@ RZ_API bool rz_bp_item_set_expr(RZ_NONNULL RzBreakpointItem *item, RZ_NULLABLE c
 
 /**
  * \brief set the name for a RzBreakpointItem
- * 
+ *
  * \param item brekapoint item to set value for
  * \param name value of name to be set; if NULL is passed, then the name value of \p item will be set to NULL
  * \return bool true if succesful; false otherwise; if false returned, then \p item will not have been modified
