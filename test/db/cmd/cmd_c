@@ -82,6 +82,7 @@ RUN
 
 NAME=cmd_cc
 FILE=bins/elf/ls
+ARGS=-e scr.columns=160
 CMDS=<<EOF
 cc 0x5af0
 ?e --------
@@ -126,6 +127,7 @@ RUN
 
 NAME=cmd_ccc
 FILE=bins/elf/ls
+ARGS=-e scr.columns=160
 CMDS=<<EOF
 ccc 0x5ad0
 ?e --------

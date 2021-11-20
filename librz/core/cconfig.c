@@ -2128,6 +2128,7 @@ static bool cb_scrcolumns(void *user, void *data) {
 	int n = atoi(node->value);
 	core->cons->force_columns = n;
 	core->dbg->regcols = n / 20;
+	rz_cons_get_size(NULL);
 	return true;
 }
 
