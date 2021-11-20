@@ -161,34 +161,6 @@ static bool meta_set_flag(RzCore *core, RzAnalysisMetaType mtype, ut64 addr, ut6
 	return rz_meta_set(core->analysis, mtype, addr, size, flag ? flag : str);
 }
 
-static void meta_comment_append(RzCore *core, const char *newcomment, RzAnalysisMetaType mtype, ut64 addr) {
-	const char *comment = rz_meta_get_string(core->analysis, mtype, addr);
-	char *nc = strdup(newcomment);
-	rz_str_unescape(nc);
-	if (comment) {
-		char *text = rz_str_newf("%s %s", comment, nc);
-		if (text) {
-			rz_meta_set_string(core->analysis, mtype, addr, text);
-			free(text);
-		} else {
-			rz_sys_perror("malloc");
-		}
-	} else {
-		rz_meta_set_string(core->analysis, mtype, addr, nc);
-	}
-	free(nc);
-}
-
-static void meta_editor(RzCore *core, RzAnalysisMetaType mtype, ut64 addr) {
-	const char *comment = rz_meta_get_string(core->analysis, mtype, addr);
-	char *out = rz_core_editor(core, NULL, comment);
-	if (out) {
-		rz_meta_del(core->analysis, mtype, addr, 1);
-		rz_meta_set_string(core->analysis, mtype, addr, out);
-		free(out);
-	}
-}
-
 static void meta_remove_all(RzCore *core, RzAnalysisMetaType mtype) {
 	rz_meta_del(core->analysis, mtype, 0, UT64_MAX);
 }
@@ -222,7 +194,7 @@ RZ_IPI RzCmdStatus rz_meta_remove_all_handler(RzCore *core, int argc, const char
 }
 
 RZ_IPI RzCmdStatus rz_comment_handler(RzCore *core, int argc, const char **argv) {
-	meta_comment_append(core, argv[1], RZ_META_TYPE_COMMENT, core->offset);
+	rz_core_meta_append(core, argv[1], RZ_META_TYPE_COMMENT, core->offset);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -240,7 +212,7 @@ RZ_IPI RzCmdStatus rz_comment_at_handler(RzCore *core, int argc, const char **ar
 }
 
 RZ_IPI RzCmdStatus rz_comment_append_handler(RzCore *core, int argc, const char **argv) {
-	meta_comment_append(core, argv[1], RZ_META_TYPE_COMMENT, core->offset);
+	rz_core_meta_append(core, argv[1], RZ_META_TYPE_COMMENT, core->offset);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -283,7 +255,7 @@ RZ_IPI RzCmdStatus rz_comment_filelink_handler(RzCore *core, int argc, const cha
 }
 
 RZ_IPI RzCmdStatus rz_comment_editor_handler(RzCore *core, int argc, const char **argv) {
-	meta_editor(core, RZ_META_TYPE_COMMENT, core->offset);
+	rz_core_meta_editor(core, RZ_META_TYPE_COMMENT, core->offset);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -720,6 +692,6 @@ RZ_IPI RzCmdStatus rz_meta_type_remove_all_handler(RzCore *core, int argc, const
 }
 
 RZ_IPI RzCmdStatus rz_meta_type_editor_handler(RzCore *core, int argc, const char **argv) {
-	meta_editor(core, RZ_META_TYPE_VARTYPE, core->offset);
+	rz_core_meta_editor(core, RZ_META_TYPE_VARTYPE, core->offset);
 	return RZ_CMD_STATUS_OK;
 }
