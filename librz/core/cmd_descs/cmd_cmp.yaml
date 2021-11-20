@@ -6,7 +6,7 @@ commands:
   - name: c
     summary: Compare an escaped <string> with data at current offset
     cname: cmd_cmp_string
-    type: RZ_CMD_DESC_TYPE_ARGV_MODES
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
     modes:
       - RZ_OUTPUT_MODE_STANDARD
       - RZ_OUTPUT_MODE_JSON
@@ -22,6 +22,10 @@ commands:
   - name: ca
     summary: Compare <n> bytes of data at <addr> with the data at current offset (also return in $?)
     cname: cmd_cmp_addr
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
     args:
       - name: addr
         type: RZ_CMD_ARG_TYPE_RZNUM
@@ -30,6 +34,10 @@ commands:
   - name: cb
     summary: Compare <n> (up to 8) bytes at current offset with a number <num> (also return in $?)
     cname: cmd_cmp_bytes
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
     args:
       - name: num
         type: RZ_CMD_ARG_TYPE_RZNUM
@@ -57,6 +65,10 @@ commands:
   - name: cf
     summary: Compare the contents of <file> with the data at current offset
     cname: cmd_cmp_file
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
     args:
       - name: file
         type: RZ_CMD_ARG_TYPE_FILE
@@ -138,12 +150,20 @@ commands:
   - name: cx
     summary: Compare data at current offset with a hexpair string <hexpair>
     cname: cmd_cmp_hexpair_string
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
     args:
       - name: hexpair
         type: RZ_CMD_ARG_TYPE_STRING
   - name: cX
     summary: Compare hexdump of data of block size at <addr> with the data at current offset using hexdiff output
     cname: cmd_cmp_hex_block_hexdiff
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
     args:
       - name: addr
         type: RZ_CMD_ARG_TYPE_RZNUM

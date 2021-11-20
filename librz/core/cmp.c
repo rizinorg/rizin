@@ -87,23 +87,25 @@ error_goto:
  *
  * \param core Current RzCore instance
  * \param cmp RzCompareData instance to be printed
- * \param mode Mode to be used (options: default, diff, json)
+ * \param state RzCmdStateOutput to be used (options: standard, json) (NULL means standard)
  * \return int Number of lines/diffs printed (-1 if failed)
  */
-RZ_API int rz_core_cmp_print(RzCore *core, RZ_NONNULL const RzCompareData *cmp, RzOutputMode mode) {
+RZ_API int rz_core_cmp_print(RzCore *core, RZ_NONNULL const RzCompareData *cmp, RzCmdStateOutput *state) {
 	rz_return_val_if_fail(core && cmp, -1);
 
 	int i, eq = 0;
 	bool data_str = cmp->addr2 == UT64_MAX;
-	PJ *pj = NULL;
 	if (cmp->len == UT8_MAX) {
 		return -1;
 	}
+	RzOutputMode mode = RZ_OUTPUT_MODE_STANDARD;
+	PJ *pj = NULL;
+	if (state) {
+		mode = state->mode;
+		pj = state->d.pj;
+		rz_cmd_state_output_array_start(state);
+	}
 	if (mode == RZ_OUTPUT_MODE_JSON) {
-		pj = pj_new();
-		if (!pj) {
-			return -1;
-		}
 		pj_o(pj);
 		pj_k(pj, "diff_bytes");
 		pj_a(pj);
@@ -144,7 +146,9 @@ RZ_API int rz_core_cmp_print(RzCore *core, RZ_NONNULL const RzCompareData *cmp, 
 		pj_ki(pj, "total_bytes", cmp->len);
 		pj_end(pj); // End array
 		pj_end(pj); // End object
-		rz_cons_println(pj_string(pj));
+	}
+	if (state) {
+		rz_cmd_state_output_array_end(state);
 	}
 	return cmp->len - eq;
 }

@@ -8498,15 +8498,15 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(basefind_compute_cd);
 	rz_cmd_desc_set_default_mode(basefind_compute_cd, RZ_OUTPUT_MODE_TABLE);
 
-	RzCmdDesc *c_cd = rz_cmd_desc_group_modes_new(core->rcmd, root_cd, "c", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_cmp_string_handler, &cmd_cmp_string_help, &c_help);
+	RzCmdDesc *c_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "c", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_cmp_string_handler, &cmd_cmp_string_help, &c_help);
 	rz_warn_if_fail(c_cd);
 	RzCmdDesc *cmd_cmp_bits_cd = rz_cmd_desc_argv_new(core->rcmd, c_cd, "c1", rz_cmd_cmp_bits_handler, &cmd_cmp_bits_help);
 	rz_warn_if_fail(cmd_cmp_bits_cd);
 
-	RzCmdDesc *cmd_cmp_addr_cd = rz_cmd_desc_argv_new(core->rcmd, c_cd, "ca", rz_cmd_cmp_addr_handler, &cmd_cmp_addr_help);
+	RzCmdDesc *cmd_cmp_addr_cd = rz_cmd_desc_argv_state_new(core->rcmd, c_cd, "ca", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_cmp_addr_handler, &cmd_cmp_addr_help);
 	rz_warn_if_fail(cmd_cmp_addr_cd);
 
-	RzCmdDesc *cmd_cmp_bytes_cd = rz_cmd_desc_argv_new(core->rcmd, c_cd, "cb", rz_cmd_cmp_bytes_handler, &cmd_cmp_bytes_help);
+	RzCmdDesc *cmd_cmp_bytes_cd = rz_cmd_desc_argv_state_new(core->rcmd, c_cd, "cb", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_cmp_bytes_handler, &cmd_cmp_bytes_help);
 	rz_warn_if_fail(cmd_cmp_bytes_cd);
 
 	RzCmdDesc *cmd_cmp_hex_block_cd = rz_cmd_desc_argv_new(core->rcmd, c_cd, "cc", rz_cmd_cmp_hex_block_handler, &cmd_cmp_hex_block_help);
@@ -8518,7 +8518,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_cmp_disasm_cd = rz_cmd_desc_argv_new(core->rcmd, c_cd, "ccd", rz_cmd_cmp_disasm_handler, &cmd_cmp_disasm_help);
 	rz_warn_if_fail(cmd_cmp_disasm_cd);
 
-	RzCmdDesc *cmd_cmp_file_cd = rz_cmd_desc_argv_new(core->rcmd, c_cd, "cf", rz_cmd_cmp_file_handler, &cmd_cmp_file_help);
+	RzCmdDesc *cmd_cmp_file_cd = rz_cmd_desc_argv_state_new(core->rcmd, c_cd, "cf", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_cmp_file_handler, &cmd_cmp_file_help);
 	rz_warn_if_fail(cmd_cmp_file_cd);
 
 	RzCmdDesc *cu_cd = rz_cmd_desc_group_new(core->rcmd, c_cd, "cu", rz_cmd_cmp_unified_handler, &cmd_cmp_unified_help, &cu_help);
@@ -8552,10 +8552,10 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_cmp_remove_watcher_cd = rz_cmd_desc_argv_new(core->rcmd, cw_cd, "cwx", rz_cmd_cmp_remove_watcher_handler, &cmd_cmp_remove_watcher_help);
 	rz_warn_if_fail(cmd_cmp_remove_watcher_cd);
 
-	RzCmdDesc *cmd_cmp_hexpair_string_cd = rz_cmd_desc_argv_new(core->rcmd, c_cd, "cx", rz_cmd_cmp_hexpair_string_handler, &cmd_cmp_hexpair_string_help);
+	RzCmdDesc *cmd_cmp_hexpair_string_cd = rz_cmd_desc_argv_state_new(core->rcmd, c_cd, "cx", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_cmp_hexpair_string_handler, &cmd_cmp_hexpair_string_help);
 	rz_warn_if_fail(cmd_cmp_hexpair_string_cd);
 
-	RzCmdDesc *cmd_cmp_hex_block_hexdiff_cd = rz_cmd_desc_argv_new(core->rcmd, c_cd, "cX", rz_cmd_cmp_hex_block_hexdiff_handler, &cmd_cmp_hex_block_hexdiff_help);
+	RzCmdDesc *cmd_cmp_hex_block_hexdiff_cd = rz_cmd_desc_argv_state_new(core->rcmd, c_cd, "cX", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_cmp_hex_block_hexdiff_handler, &cmd_cmp_hex_block_hexdiff_help);
 	rz_warn_if_fail(cmd_cmp_hex_block_hexdiff_cd);
 
 	RzCmdDesc *C_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "C", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_LONG, rz_meta_list_handler, &meta_list_help, &C_help);
