@@ -455,7 +455,7 @@ RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrS
 				}
 				str_type = RZ_STRING_ENC_UTF16BE;
 			} else if (can_be_ebcdic(ptr, size) && skip_ibm037 < 0) {
-				ut8 sz = RZ_MIN(size, 3);
+				ut8 sz = RZ_MIN(size, 15);
 				RzRune *runes = RZ_NEWS(RzRune, sz);
 				rz_return_val_if_fail(runes, -1);
 				int i = 0;
