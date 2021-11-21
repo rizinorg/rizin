@@ -7002,7 +7002,7 @@ RZ_IPI bool rz_core_analysis_types_propagation(RzCore *core) {
 	const bool delete_regs = !rz_flag_space_count(core->flags, RZ_FLAGS_FS_REGISTERS);
 	seek = core->offset;
 	rz_reg_arena_push(core->analysis->reg);
-	rz_reg_arena_zero(core->analysis->reg);
+	rz_reg_arena_zero(core->analysis->reg, RZ_REG_TYPE_ANY);
 	rz_core_analysis_esil_init(core);
 	rz_core_analysis_esil_init_mem(core, NULL, UT64_MAX, UT32_MAX);
 	ut8 *saved_arena = rz_reg_arena_peek(core->analysis->reg);

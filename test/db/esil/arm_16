@@ -24,21 +24,21 @@ CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
 wa clz r0, r1
-aer r1=0x80000000
+ar r1=0x80000000
 aes
-aer r0
-aer0
-aer r1=0x1
+ar r0
+ara0
+ar r1=0x1
 aes
-aer r0
-aer0
+ar r0
+ara0
 aes
-aer r0
+ar r0
 EOF
 EXPECT=<<EOF
-0x00000000
-0x0000001f
-0x00000020
+r0 = 0x00000000
+r0 = 0x0000001f
+r0 = 0x00000020
 EOF
 RUN
 
@@ -70,8 +70,8 @@ e asm.arch=arm
 e asm.bits=16
 aei
 aeim
-aer sp=0x00108000
-.aer*
+ar sp=0x00108000
+.arf
 wa cmp r1, 16
 aes
 ?v cpsr & 0xf0000000
@@ -89,9 +89,9 @@ e asm.arch=arm
 e asm.bits=16
 aei
 aeim
-aer sp=0x00108000
-aer cpsr=0xffffffff
-.aer*
+ar sp=0x00108000
+ar cpsr=0xffffffff
+.arf
 wa cmp r1, 16
 aes
 ?v cpsr & 0xf0000000
@@ -109,10 +109,10 @@ e asm.arch=arm
 e asm.bits=16
 aei
 aeim
-aer sp=0x00108000
-aer r1=0x10
-aer cpsr=0x40000000
-.aer*
+ar sp=0x00108000
+ar r1=0x10
+ar cpsr=0x40000000
+.arf
 wa cmp r1, 16
 aes
 ?v cpsr & 0xf0000000
@@ -130,10 +130,10 @@ e asm.arch=arm
 e asm.bits=16
 aei
 aeim
-aer sp=0x00108000
-aer r1=0x10
-aer cpsr=0x00000000
-.aer*
+ar sp=0x00108000
+ar r1=0x10
+ar cpsr=0x00000000
+.arf
 wa cmp r1, 16
 aes
 ?v cpsr & 0xf0000000
@@ -157,7 +157,7 @@ aes
 ar r0
 EOF
 EXPECT=<<EOF
-0x11223344
+r0 = 0x11223344
 EOF
 RUN
 
@@ -176,8 +176,8 @@ ar r2
 ar r3
 EOF
 EXPECT=<<EOF
-0xaabbccdd
-0xdeadbeef
+r2 = 0xaabbccdd
+r3 = 0xdeadbeef
 EOF
 RUN
 
@@ -196,8 +196,8 @@ ar r2
 ar r3
 EOF
 EXPECT=<<EOF
-0xaabbccdd
-0xdeadbeef
+r2 = 0xaabbccdd
+r3 = 0xdeadbeef
 EOF
 RUN
 
@@ -215,8 +215,8 @@ ar r2
 ar r3
 EOF
 EXPECT=<<EOF
-0xaabbccdd
-0xdeadbeef
+r2 = 0xaabbccdd
+r3 = 0xdeadbeef
 EOF
 RUN
 
@@ -236,9 +236,9 @@ ar r2
 ar r3
 EOF
 EXPECT=<<EOF
-0x00000008
-0xaabbccdd
-0xdeadbeef
+r1 = 0x00000008
+r2 = 0xaabbccdd
+r3 = 0xdeadbeef
 EOF
 RUN
 
@@ -258,9 +258,9 @@ ar r2
 ar r3
 EOF
 EXPECT=<<EOF
-0x0000000c
-0xaabbccdd
-0xdeadbeef
+r1 = 0x0000000c
+r2 = 0xaabbccdd
+r3 = 0xdeadbeef
 EOF
 RUN
 
@@ -280,10 +280,10 @@ aes
 ar r1; ar r4; ar r5; ar r3
 EOF
 EXPECT=<<EOF
-0x11111111
-0x44444444
-0x55555555
-0x00000010
+r1 = 0x11111111
+r4 = 0x44444444
+r5 = 0x55555555
+r3 = 0x00000010
 EOF
 RUN
 
@@ -300,7 +300,7 @@ ar r1
 p8 4 @ 4
 EOF
 EXPECT=<<EOF
-0x00000008
+r1 = 0x00000008
 ddccbbaa
 EOF
 RUN
@@ -323,7 +323,7 @@ EXPECT=<<EOF
 0x11111111
 0x44444444
 0x55555555
-0x00000010
+r2 = 0x00000010
 EOF
 RUN
 
@@ -339,7 +339,7 @@ aes
 ar r2
 EOF
 EXPECT=<<EOF
-0x00000033
+r2 = 0x00000033
 EOF
 RUN
 
@@ -472,7 +472,7 @@ aes
 ar r2
 EOF
 EXPECT=<<EOF
-0xeeddccbb
+r2 = 0xeeddccbb
 EOF
 RUN
 
@@ -493,10 +493,10 @@ ar r1
 ar cpsr
 EOF
 EXPECT=<<EOF
-0x00000002
-0x20000000
-0x00000004
-0x00000000
+r1 = 0x00000002
+cpsr = 0x20000000
+r1 = 0x00000004
+cpsr = 0x00000000
 EOF
 RUN
 
@@ -517,10 +517,10 @@ ar r1
 ar cpsr
 EOF
 EXPECT=<<EOF
-0x3ffffffe
-0x00000000
-0x0fffffff
-0x20000000
+r1 = 0x3ffffffe
+cpsr = 0x00000000
+r1 = 0x0fffffff
+cpsr = 0x20000000
 EOF
 RUN
 
@@ -536,7 +536,7 @@ aes
 ar r4
 EOF
 EXPECT=<<EOF
-0xfffffffe
+r4 = 0xfffffffe
 EOF
 RUN
 
@@ -552,7 +552,7 @@ aes
 ar r0
 EOF
 EXPECT=<<EOF
-0xfffffffb
+r0 = 0xfffffffb
 EOF
 RUN
 
@@ -566,7 +566,7 @@ aes
 ar r0
 EOF
 EXPECT=<<EOF
-0x00000004
+r0 = 0x00000004
 EOF
 RUN
 
@@ -578,14 +578,14 @@ e asm.bits=16
 wx 90e85000
 wv 0x11223344 @ 4
 wv 0x55667788 @ 8
-aer r0=4
+ar r0=4
 aes
 ar r4
 ar r6
 EOF
 EXPECT=<<EOF
-0x11223344
-0x55667788
+r4 = 0x11223344
+r6 = 0x55667788
 EOF
 RUN
 
@@ -596,13 +596,13 @@ e asm.arch=arm
 e asm.bits=16
 wx 7158 #ldr r1, [r6, r1]
 wv 0x11223344 @ 2
-aer r1=0x4796eebe
-aer r6=0xb8691144
+ar r1=0x4796eebe
+ar r6=0xb8691144
 aes
 ar r1
 EOF
 EXPECT=<<EOF
-0x11223344
+r1 = 0x11223344
 EOF
 RUN
 
@@ -613,14 +613,14 @@ e asm.arch=arm
 e asm.bits=16
 wa ldr r2, [r3], 10
 wx aabbccdd @ 10
-aer r3=10
+ar r3=10
 aes
 ar r2
 ar r3
 EOF
 EXPECT=<<EOF
-0xddccbbaa
-0x00000014
+r2 = 0xddccbbaa
+r3 = 0x00000014
 EOF
 RUN
 
@@ -630,13 +630,13 @@ CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
 wx 0144 #add r1, r0
-aer r1=0x4796eebe
-aer r0=0xb8691144
+ar r1=0x4796eebe
+ar r0=0xb8691144
 aes
 ar r1
 EOF
 EXPECT=<<EOF
-0x00000002
+r1 = 0x00000002
 EOF
 RUN
 
@@ -646,9 +646,9 @@ CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
 "wa adcs r1, r3;adcs r1, r3"
-aer r1=0x90000000
-aer r3=0x80000000
-aer cpsr=0x00000000
+ar r1=0x90000000
+ar r3=0x80000000
+ar cpsr=0x00000000
 aes
 ar r1
 ar cpsr
@@ -657,10 +657,10 @@ ar r1
 ar cpsr
 EOF
 EXPECT=<<EOF
-0x10000000
-0x30000000
-0x90000001
-0x80000000
+r1 = 0x10000000
+cpsr = 0x30000000
+r1 = 0x90000001
+cpsr = 0x80000000
 EOF
 RUN
 
@@ -670,14 +670,14 @@ CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
 wa adds r1, 1
-aer r1=0xffffffff
+ar r1=0xffffffff
 aes
 ar r1
 ar cpsr
 EOF
 EXPECT=<<EOF
-0x00000000
-0x60000000
+r1 = 0x00000000
+cpsr = 0x60000000
 EOF
 RUN
 
@@ -687,14 +687,14 @@ CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
 wa subs r1, 1
-aer r1=1
+ar r1=1
 aes
 ar r1
 ar cpsr
 EOF
 EXPECT=<<EOF
-0x00000000
-0x60000000
+r1 = 0x00000000
+cpsr = 0x60000000
 EOF
 RUN
 
@@ -704,13 +704,13 @@ CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
 wx 51fb0001 #smmla r1, r1, r0, r0
-aer r1=0x4796eebe
-aer r0=0x11
+ar r1=0x4796eebe
+ar r0=0x11
 aes
 ar r1
 EOF
 EXPECT=<<EOF
-0x00000015
+r1 = 0x00000015
 EOF
 RUN
 
@@ -720,13 +720,13 @@ CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
 wx 51fb1001 #smmlar r1, r1, r0, r0
-aer r1=0x4796eebe
-aer r0=0x11
+ar r1=0x4796eebe
+ar r0=0x11
 aes
 ar r1
 EOF
 EXPECT=<<EOF
-0x00000016
+r1 = 0x00000016
 EOF
 RUN
 
@@ -736,15 +736,15 @@ CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
 wx a1fb0212 #umull r1, r2, r1, r2
-aer r1=0x4796eebe
-aer r2=0x11
+ar r1=0x4796eebe
+ar r2=0x11
 aes
 ar r1
 ar r2
 EOF
 EXPECT=<<EOF
-0xc105da9e
-0x00000004
+r1 = 0xc105da9e
+r2 = 0x00000004
 EOF
 RUN
 
@@ -754,14 +754,14 @@ CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
 wx 01fb1200 #mls r0, r1, r2, r0
-aer r0=0x16161616
-aer r1=0x45
-aer r2=0x7823834
+ar r0=0x16161616
+ar r1=0x45
+ar r2=0x7823834
 aes
 ar r0
 EOF
 EXPECT=<<EOF
-0x0ffcf012
+r0 = 0x0ffcf012
 EOF
 RUN
 
@@ -771,14 +771,14 @@ CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
 wx 00fb0211 #mla r1, r0, r2, r1
-aer r1=0x16161616
-aer r0=0x45
-aer r2=0x7823834
+ar r1=0x16161616
+ar r0=0x45
+ar r2=0x7823834
 aes
 ar r1
 EOF
 EXPECT=<<EOF
-0x1c2f3c1a
+r1 = 0x1c2f3c1a
 EOF
 RUN
 
@@ -792,7 +792,7 @@ aes
 ar r1
 EOF
 EXPECT=<<EOF
-0xffffffed
+r1 = 0xffffffed
 EOF
 RUN
 
@@ -801,13 +801,13 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
-aer r4=0x696969f9
+ar r4=0x696969f9
 wx 6ff30604 #bfc r4, 0, 7
 aes
 ar r4
 EOF
 EXPECT=<<EOF
-0x69696980
+r4 = 0x69696980
 EOF
 RUN
 
@@ -816,14 +816,14 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
-aer r2=0x696969f9
-aer r3=0x33333333
+ar r2=0x696969f9
+ar r3=0x33333333
 wx 62f38703 #bfi r3, r2, 2, 6
 aes
 ar r3
 EOF
 EXPECT=<<EOF
-0x333333e7
+r3 = 0x333333e7
 EOF
 RUN
 
@@ -832,13 +832,13 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
-aer r5=0x11223344
+ar r5=0x11223344
 wx 2bba #rev r3, r5
 aes
 ar r3
 EOF
 EXPECT=<<EOF
-0x44332211
+r3 = 0x44332211
 EOF
 RUN
 
@@ -847,13 +847,13 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
-aer r7=0x11223344
+ar r7=0x11223344
 wx 7eba #rev16 r6, r7
 aes
 ar r6
 EOF
 EXPECT=<<EOF
-0x22114433
+r6 = 0x22114433
 EOF
 RUN
 
@@ -862,13 +862,13 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
-aer r1=0x11223344
+ar r1=0x11223344
 wx cfba #revsh r7, r1
 aes
 ar r7
 EOF
 EXPECT=<<EOF
-0x00004433
+r7 = 0x00004433
 EOF
 RUN
 
@@ -877,13 +877,13 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
-aer r1=0x11223388
+ar r1=0x11223388
 wx cfba #revsh r7, r1
 aes
 ar r7
 EOF
 EXPECT=<<EOF
-0xffff8833
+r7 = 0xffff8833
 EOF
 RUN
 
@@ -922,10 +922,10 @@ e asm.arch=arm
 e asm.bits=16
 wx 7846 # mov r0, pc
 aes
-aer r0
+ar r0
 EOF
 EXPECT=<<EOF
-0x00000002
+r0 = 0x00000002
 EOF
 RUN
 
@@ -936,12 +936,12 @@ e asm.arch=arm
 e asm.bits=16
 wx 00f002f8 # bl 8
 aes
-aer lr
-aer pc
+ar lr
+ar pc
 EOF
 EXPECT=<<EOF
-0x00000005
-0x00000008
+lr = 0x00000005
+pc = 0x00000008
 EOF
 RUN
 
@@ -1137,14 +1137,14 @@ e asm.arch=arm
 e asm.bits=16
 wx 10f8013f # ldrb r3, [r0, 1]!
 aes
-aer pc
-aer r0
-aer r3
+ar pc
+ar r0
+ar r3
 EOF
 EXPECT=<<EOF
-0x00000004
-0x00000001
-0x000000f8
+pc = 0x00000004
+r0 = 0x00000001
+r3 = 0x000000f8
 EOF
 RUN
 

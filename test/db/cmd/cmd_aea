@@ -87,14 +87,14 @@ CMDS=<<EOF
 s main
 aeim
 28aes
-ar?v0
-ar?a1
+ar v0
+ar a1
 sr PC
 pi 2
 EOF
 EXPECT=<<EOF
-0x0000000a
-0x00007a62
+v0 = 0x0000000a
+a1 = 0x00007a62
 lw a0, -segment.LOAD0(gp)
 lw t9, -sym.imp.printf(gp)
 EOF
@@ -106,14 +106,14 @@ CMDS=<<EOF
 s main
 aeim
 aesu 0x000804d8
-ar?v0
-ar?a1
+ar v0
+ar a1
 sr PC
 pi 2
 EOF
 EXPECT=<<EOF
-0x0000000a
-0x00007a62
+v0 = 0x0000000a
+a1 = 0x00007a62
 lw a0, -segment.LOAD0(gp)
 lw t9, -sym.imp.printf(gp)
 EOF

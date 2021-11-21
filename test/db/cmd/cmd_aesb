@@ -12,20 +12,22 @@ aeip
 aets+
 aeso
 aeso
-dr rip,rsp
+ar rip
+ar rsp
 pf q @ rsp
 aesb
-dr rip,rsp
+ar rip
+ar rsp
 pf q @ rsp
 dk 9
 aets-
 EOF
 EXPECT=<<EOF
-0x0040052f
-0x00177ff0
+rip = 0x0040052f
+rsp = 0x00177ff0
 0x00177ff0 = (qword)0x000000000040057c
-0x00400575
-0x00177ff8
+rip = 0x00400575
+rsp = 0x00177ff8
 0x00177ff8 = (qword)0x0000000000178000
 EOF
 RUN
