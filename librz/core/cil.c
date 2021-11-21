@@ -180,7 +180,7 @@ RZ_IPI void rz_core_analysis_esil_init_mem(RzCore *core, const char *name, ut64 
 			break;
 		}
 	}
-	rz_reg_set_value_by_role(core->analysis->reg, RZ_REG_NAME_SP, addr + (size / 2));
+	rz_reg_set_value_by_role(core->analysis->reg, RZ_REG_NAME_SP, addr + (size / 2)); // size / 2 to have free space in both directions
 	rz_reg_set_value_by_role(core->analysis->reg, RZ_REG_NAME_BP, addr + (size / 2));
 	rz_reg_set_value_by_role(core->analysis->reg, RZ_REG_NAME_PC, current_offset);
 	rz_core_regs2flags(core);
