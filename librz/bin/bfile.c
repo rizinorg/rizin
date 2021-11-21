@@ -256,7 +256,7 @@ static bool __isDataSection(RzBinFile *a, RzBinSection *s) {
 }
 
 static void get_strings_range(RzBinFile *bf, RzList *list, int min, int raw, ut64 from, ut64 to, RzBinSection *section) {
-	rz_return_if_fail(bf && bf->buf);
+	rz_return_if_fail(bf && bf->buf && bf->rbin);
 
 	RzBinPlugin *plugin = rz_bin_file_cur_plugin(bf);
 

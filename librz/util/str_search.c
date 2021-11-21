@@ -347,7 +347,7 @@ static inline bool can_be_ebcdic(ut8 *buf, ut64 size) {
  */
 RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrScanOptions *opt,
 	const ut64 from, const ut64 to, RzStrEnc type) {
-	rz_return_val_if_fail(opt || list || buf_to_scan, -1);
+	rz_return_val_if_fail(opt && list && buf_to_scan, -1);
 
 	if (from == to) {
 		return 0;
@@ -455,10 +455,11 @@ RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrS
 				}
 				str_type = RZ_STRING_ENC_UTF16BE;
 			} else if (can_be_ebcdic(ptr, size) && skip_ibm037 < 0) {
-				RzRune *runes = RZ_NEWS(RzRune, 15);
+				ut8 sz = RZ_MIN(size, 3);
+				RzRune *runes = RZ_NEWS(RzRune, sz);
 				rz_return_val_if_fail(runes, -1);
 				int i = 0;
-				for (; i < 15; i++) {
+				for (; i < sz; i++) {
 					rz_str_ibm037_to_unicode(ptr[i], &runes[i]);
 					if (!rz_isprint(runes[i])) {
 						break;
