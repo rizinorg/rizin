@@ -63,6 +63,41 @@
 		} \
 	} while (0)
 
+/// Parse things like "r25:r24" or just "r24". Result would be 24 in both cases.
+#define parse_register_pair_or_error(rn,rs) \
+	do { \
+		cchar *tmp = (rs); \
+		if (*tmp == 'r') { \
+			tmp++; \
+		} \
+		if (RZ_STR_ISEMPTY(tmp)) { \
+			RZ_LOG_ERROR("[!] avr_assembler: invalid register '%s'.\n", (rs)); \
+			return AVR_INVALID_SIZE; \
+		} \
+		(rn) = strtoll(tmp, (char **)&tmp, 0); \
+		if ((rn) > 31) { \
+			RZ_LOG_ERROR("[!] avr_assembler: expected register 0 <= reg <= 31 (parsed %u).\n", (rn)); \
+			return AVR_INVALID_SIZE; \
+		} \
+		if (*tmp == ':') { \
+			tmp++; \
+			ut16 high = (rn); \
+			if (*tmp == 'r') { \
+				tmp++; \
+			} \
+			(rn) = strtoll(tmp, NULL, 0); \
+			if ((rn) > 31) { \
+				RZ_LOG_ERROR("[!] avr_assembler: expected register 0 <= reg <= 31 (parsed %u).\n", (rn)); \
+				return AVR_INVALID_SIZE; \
+			} \
+			if (high != (rn) + 1) { \
+				RZ_LOG_ERROR("[!] avr_assembler: register pair r%u:r%u invalid: %u != %u + 1.\n", \
+						(unsigned int)high, (unsigned int)(rn), (unsigned int)high, (unsigned int)(rn)); \
+				return AVR_INVALID_SIZE; \
+			} \
+		} \
+	} while (0)
+
 #define parse_unsigned_or_error(rn,rs,limit) \
 	do { \
 		cchar *tmp = (rs); \
@@ -170,7 +205,7 @@ static ut32 avr_rdddddrrrr(ut16 cbins, cchar** tokens, ut32 ntokens, ut8 *data, 
 static ut32 avr_KKddKKKK(ut16 cbins, cchar** tokens, ut32 ntokens, ut8 *data, ut64 pc, bool be) {
 	/* <opcode> Rd, K | d = {24,26,28,30}, 0 <= K <= 63 */
 	ut16 Rd, K;
-	parse_register_or_error(Rd, tokens[1]);
+	parse_register_pair_or_error(Rd, tokens[1]);
 	parse_unsigned_or_error(K, tokens[2], 63);
 
 	if (Rd < 24 || Rd & 1) {
@@ -178,6 +213,7 @@ static ut32 avr_KKddKKKK(ut16 cbins, cchar** tokens, ut32 ntokens, ut8 *data, ut
 	}
 
 	Rd -= 24;
+	Rd >>= 1;
 
 	cbins |= (K & 0x000F);
 	cbins |= ((K << 2) & 0x00C0);
@@ -589,7 +625,7 @@ static ut32 avr_ddddrrrr_2x(ut16 cbins, cchar** tokens, ut32 ntokens, ut8 *data,
 	/* <opcode> Rd, Rr | 16 <= d <= 31 | 16 <= r <= 31 */
 	ut16 Rd, Rr;
 	parse_register_or_error_limit(Rd, tokens[1], 16, 31);
-	parse_register_or_error_limit(Rr, tokens[1], 16, 31);
+	parse_register_or_error_limit(Rr, tokens[2], 16, 31);
 
 	Rr -= 16;
 	Rd -= 16;

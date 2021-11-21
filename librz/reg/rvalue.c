@@ -224,7 +224,11 @@ RZ_API bool rz_reg_set_value(RzReg *reg, RzRegItem *item, ut64 value) {
 
 RZ_API bool rz_reg_set_value_by_role(RzReg *reg, RzRegisterId role, ut64 val) {
 	// TODO use mapping from RzRegisterId to RzRegItem (via RzRegSet)
-	RzRegItem *r = rz_reg_get(reg, rz_reg_get_name(reg, role), -1);
+	const char *name = rz_reg_get_name(reg, role);
+	if (!name) {
+		return false;
+	}
+	RzRegItem *r = rz_reg_get(reg, name, -1);
 	return rz_reg_set_value(reg, r, val);
 }
 

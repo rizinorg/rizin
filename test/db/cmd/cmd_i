@@ -5174,7 +5174,7 @@ RUN
 
 NAME=iRj
 FILE=bins/pe/standard.exe
-CMDS=iRj~{}
+CMDS=iRj sha1 md5~{}
 EXPECT=<<EOF
 [
   {
@@ -5184,7 +5184,9 @@ EXPECT=<<EOF
     "vaddr": 4198784,
     "size": 5672,
     "lang": "LANG_NEUTRAL",
-    "timestamp": "Thu Jan  1 00:00:00 1970 UTC"
+    "timestamp": "Thu Jan  1 00:00:00 1970 UTC",
+    "sha1": "ead6c27941988470ea241780d5f03bda35ffb023",
+    "md5": "4ca2df93b0862cc601fb4c5df46722aa"
   },
   {
     "name": "10",
@@ -5193,7 +5195,9 @@ EXPECT=<<EOF
     "vaddr": 4205072,
     "size": 76,
     "lang": "LANG_NEUTRAL",
-    "timestamp": "Thu Jan  1 00:00:00 1970 UTC"
+    "timestamp": "Thu Jan  1 00:00:00 1970 UTC",
+    "sha1": "ece05370137621ead05fcf468ba546e2dab83c7a",
+    "md5": "e6b62b76fb2eb2a0e0adde0c067da680"
   },
   {
     "name": "788",
@@ -5202,7 +5206,9 @@ EXPECT=<<EOF
     "vaddr": 4204464,
     "size": 20,
     "lang": "LANG_NEUTRAL",
-    "timestamp": "Thu Jan  1 00:00:00 1970 UTC"
+    "timestamp": "Thu Jan  1 00:00:00 1970 UTC",
+    "sha1": "6768033e216468247bd031a0a2d9876d79818f8f",
+    "md5": "441018525208457705bf09a8ee3c1093"
   },
   {
     "name": "1",
@@ -5211,7 +5217,9 @@ EXPECT=<<EOF
     "vaddr": 4204496,
     "size": 452,
     "lang": "LANG_NEUTRAL",
-    "timestamp": "Thu Jan  1 00:00:00 1970 UTC"
+    "timestamp": "Thu Jan  1 00:00:00 1970 UTC",
+    "sha1": "af9d0faa532f99a1a7e5b8f6bbf5ceaef55e38b6",
+    "md5": "3ce9d74193d28338494362767873ba7b"
   },
   {
     "name": "1",
@@ -5220,7 +5228,9 @@ EXPECT=<<EOF
     "vaddr": 4204960,
     "size": 74,
     "lang": "LANG_NEUTRAL",
-    "timestamp": "Thu Jan  1 00:00:00 1970 UTC"
+    "timestamp": "Thu Jan  1 00:00:00 1970 UTC",
+    "sha1": "1dcc0c704303ccc1729abd618f490073331e8b22",
+    "md5": "aa6672fe9e8426f8dd570c81095e1476"
   }
 ]
 EOF
@@ -5228,13 +5238,13 @@ RUN
 
 NAME=iRt
 FILE=bins/pe/standard.exe
-CMDS=iRt:quiet
+CMDS=iRt:quiet sha1 md5
 EXPECT=<<EOF
-0     1576 ICON       0x00401180 0x1628 LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC
-1     10   STRING     0x00402a10 0x4c   LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC
-2     788  GROUP_ICON 0x004027b0 0x14   LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC
-3     1    VERSION    0x004027d0 0x1c4  LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC
-4     1    MANIFEST   0x004029a0 0x4a   LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC
+0     1576 ICON       0x00401180 0x1628 LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC ead6c27941988470ea241780d5f03bda35ffb023 4ca2df93b0862cc601fb4c5df46722aa
+1     10   STRING     0x00402a10 0x4c   LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC ece05370137621ead05fcf468ba546e2dab83c7a e6b62b76fb2eb2a0e0adde0c067da680
+2     788  GROUP_ICON 0x004027b0 0x14   LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC 6768033e216468247bd031a0a2d9876d79818f8f 441018525208457705bf09a8ee3c1093
+3     1    VERSION    0x004027d0 0x1c4  LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC af9d0faa532f99a1a7e5b8f6bbf5ceaef55e38b6 3ce9d74193d28338494362767873ba7b
+4     1    MANIFEST   0x004029a0 0x4a   LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC 1dcc0c704303ccc1729abd618f490073331e8b22 aa6672fe9e8426f8dd570c81095e1476
 EOF
 RUN
 

@@ -57,6 +57,7 @@ jobs:
           linux-meson-gcc-tests,
           macos-meson-clang-tests,
           linux-gcc-tests-asan,
+          linux-clang-tests-asan,
           linux-gcc-tests-codecov,
           capstone-v3,
           capstone-next
@@ -101,6 +102,18 @@ jobs:
             run_tests: true
             enabled: ${{ (github.event_name != 'pull_request' || contains(github.head_ref, 'asan') || contains(github.head_ref, 'import')) && needs.changes.outputs.edited == 'true' }}
             timeout: 100
+            allow_failure: false
+          - name: linux-clang-tests-asan
+            os: ubuntu-20.04
+            build_system: meson
+            compiler: clang
+            cflags: '-DRZ_ASSERT_STDOUT=1 -Wno-cpp'
+            meson_options: -Dbuildtype=debugoptimized -Db_lundef=false -Db_sanitize=address,undefined -Duse_webui=true
+            asan: true
+            asan_options: 'detect_leaks=0,detect_odr_violation=0,allocator_may_return_null=1'
+            run_tests: true
+            enabled: ${{ (github.event_name != 'pull_request' || contains(github.head_ref, 'asan') || contains(github.head_ref, 'import')) && needs.changes.outputs.edited == 'true' }}
+            timeout: 115
             allow_failure: false
           - name: linux-gcc-tests-codecov
             os: ubuntu-20.04
@@ -209,12 +222,18 @@ jobs:
         export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
         if [ "$ASAN" == "true" ]; then
-          export ASAN=1
+          if [ "$CC" == "clang" ]; then
+            export ASAN_LD_PRELOAD=/usr/lib/llvm-11/lib/clang/11.0.0/lib/linux/libclang_rt.asan-x86_64.so
+            export LD_LIBRARY_PATH=/usr/lib/llvm-11/lib/clang/11.0.0/lib/linux:${LD_LIBRARY_PATH}
+          else
+            export ASAN_LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
+          fi
         fi
         ninja -C build test
       env:
         ASAN: ${{ matrix.asan }}
         ASAN_OPTIONS: ${{ matrix.asan_options }}
+        CC: ${{ matrix.compiler }}
     - name: Run tests
       if: matrix.run_tests && matrix.enabled
       run: |
@@ -223,13 +242,19 @@ jobs:
         export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
         if [ "$ASAN" == "true" ]; then
-          export ASAN=1
+          if [ "$CC" == "clang" ]; then
+            export ASAN_LD_PRELOAD=/usr/lib/llvm-11/lib/clang/11.0.0/lib/linux/libclang_rt.asan-x86_64.so
+            export LD_LIBRARY_PATH=/usr/lib/llvm-11/lib/clang/11.0.0/lib/linux:${LD_LIBRARY_PATH}
+          else
+            export ASAN_LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
+          fi
         fi
         cd test
         rz-test -L -o results.json
       env:
         ASAN: ${{ matrix.asan }}
         ASAN_OPTIONS: ${{ matrix.asan_options }}
+        CC: ${{ matrix.compiler }}
     - name: Upload coverage info
       if: matrix.coverage == '1' && matrix.enabled
       working-directory: build
@@ -240,10 +265,15 @@ jobs:
         export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
         export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
+        if [ "$ASAN" == "true" ] && [ "$CC" == "clang" ]; then
+          export LD_LIBRARY_PATH=/usr/lib/llvm-11/lib/clang/11.0.0/lib/linux:${LD_LIBRARY_PATH}
+        fi
         cd test
         rz-test -LF bins/fuzzed @fuzz
       env:
+        ASAN: ${{ matrix.asan }}
         ASAN_OPTIONS: ${{ matrix.asan_options }}
+        CC: ${{ matrix.compiler }}
     - name: Upload test results
       if: always() && matrix.run_tests && matrix.enabled
       uses: actions/upload-artifact@v2
@@ -514,7 +544,7 @@ jobs:
   build-osx-pkg:
     name: Build OSX package
     runs-on: macos-latest
-    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'osx') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
+    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'osx') || contains(github.head_ref, 'mac') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
     needs: [build-and-test]
     steps:
     - uses: actions/checkout@v2
@@ -522,6 +552,8 @@ jobs:
       run: brew install pkg-config
     - name: Install meson and ninja
       run: pip3 install meson ninja PyYAML
+    - name: Install ImageMagick
+      run: brew install imagemagick
     - name: Create OSX package
       run: |
         ./dist/osx/build_osx_package.sh

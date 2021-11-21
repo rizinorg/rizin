@@ -769,7 +769,7 @@ RZ_API int rz_core_visual_prompt(RzCore *core) {
 		rz_cons_flush();
 		ret = true;
 		if (rz_config_get_b(core->config, "cfg.debug")) {
-			rz_core_debug_regs2flags(core, 0);
+			rz_core_debug_regs2flags(core);
 		}
 	} else {
 		ret = false;
@@ -1086,17 +1086,9 @@ RZ_API void rz_core_visual_seek_animation_undo(RzCore *core) {
 }
 
 static void setprintmode(RzCore *core, int n) {
+	rz_config_set_i(core->config, "scr.visual.mode", core->printidx + n);
 	RzAsmOp op;
 
-	if (n > 0) {
-		core->printidx = RZ_ABS((core->printidx + 1) % NPF);
-	} else {
-		if (core->printidx) {
-			core->printidx--;
-		} else {
-			core->printidx = NPF - 1;
-		}
-	}
 	switch (core->printidx) {
 	case RZ_CORE_VISUAL_MODE_PD:
 	case RZ_CORE_VISUAL_MODE_DB:
@@ -1276,9 +1268,9 @@ RZ_API int rz_core_visual_prevopsz(RzCore *core, ut64 addr) {
 	return addr - prev_addr;
 }
 
-static void addComment(RzCore *core, ut64 addr) {
+static void add_comment(RzCore *core, ut64 addr, const char *prompt) {
 	char buf[1024];
-	rz_cons_printf("Enter comment for reference:\n");
+	rz_cons_print(prompt);
 	rz_core_visual_showcursor(core, true);
 	rz_cons_flush();
 	rz_cons_set_raw(false);
@@ -1287,7 +1279,13 @@ static void addComment(RzCore *core, ut64 addr) {
 	if (rz_cons_fgets(buf, sizeof(buf), 0, NULL) < 0) {
 		buf[0] = '\0';
 	}
-	rz_meta_set_string(core->analysis, RZ_META_TYPE_COMMENT, addr, buf);
+	if (!strcmp(buf, "-")) {
+		rz_meta_del(core->analysis, RZ_META_TYPE_COMMENT, addr, 1);
+	} else if (!strcmp(buf, "!")) {
+		rz_core_meta_editor(core, RZ_META_TYPE_COMMENT, addr);
+	} else {
+		rz_core_meta_append(core, buf, RZ_META_TYPE_COMMENT, addr);
+	}
 	rz_core_visual_showcursor(core, false);
 	rz_cons_set_raw(true);
 }
@@ -1548,7 +1546,7 @@ repeat:
 		skip = 9999;
 		goto repeat;
 	} else if (ch == ';') {
-		addComment(core, cur_ref_addr);
+		add_comment(core, cur_ref_addr, "\nEnter comment for reference:\n");
 		goto repeat;
 	} else if (ch == '.') {
 		skip = 0;
@@ -3272,61 +3270,8 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			rz_core_visual_hudstuff(core);
 			break;
 		case ';':
-			rz_cons_enable_mouse(false);
 			rz_cons_gotoxy(0, 0);
-			rz_cons_printf("Enter a comment: ('-' to remove, '!' to use $EDITOR)\n");
-			rz_core_visual_showcursor(core, true);
-			rz_cons_flush();
-			rz_cons_set_raw(false);
-			rz_line_set_prompt("comment: ");
-			strcpy(buf, "\"CC ");
-			i = strlen(buf);
-			if (rz_cons_fgets(buf + i, sizeof(buf) - i, 0, NULL) > 0) {
-				ut64 addr, orig;
-				addr = orig = core->offset;
-				if (core->print->cur_enabled) {
-					addr += core->print->cur;
-					rz_core_seek(core, addr, true);
-				}
-				if (!strcmp(buf + i, "-")) {
-					strcpy(buf, "CC-");
-				} else {
-					switch (buf[i]) {
-					case '-':
-						memcpy(buf, "\"CC-\x00", 5);
-						break;
-					case '!':
-						memcpy(buf, "\"CC!\x00", 5);
-						break;
-					default:
-						memcpy(buf, "\"CC ", 4);
-						break;
-					}
-					strcat(buf, "\"");
-				}
-				if (buf[3] == ' ') {
-					// have to escape any quotes.
-					int j, len = strlen(buf);
-					char *duped = strdup(buf);
-					for (i = 4, j = 4; i < len; i++, j++) {
-						char c = duped[i];
-						if (c == '"' && i != (len - 1)) {
-							buf[j] = '\\';
-							j++;
-							buf[j] = '"';
-						} else {
-							buf[j] = c;
-						}
-					}
-					free(duped);
-				}
-				rz_core_cmd(core, buf, 1);
-				if (core->print->cur_enabled) {
-					rz_core_seek(core, orig, true);
-				}
-			}
-			rz_cons_set_raw(true);
-			rz_core_visual_showcursor(core, false);
+			add_comment(core, core->offset, "Enter a comment: ('-' to remove, '!' to use cfg.editor)\n");
 			break;
 		case 'b':
 			rz_core_visual_browse(core, arg + 1);
@@ -3986,9 +3931,9 @@ RZ_API int rz_core_visual(RzCore *core, const char *input) {
 			const char *cmdvhex = rz_config_get(core->config, "cmd.stack");
 
 			if (cmdvhex && *cmdvhex) {
-				snprintf(debugstr, sizeof(debugstr),
-					"?0;f tmp;sr %s@e:cfg.seek.silent=true;%s;?1;%s;?1;"
-					"s tmp@e:cfg.seek.silent=true;f- tmp;pd $r",
+				rz_strf(debugstr,
+					"?0 ; f tmp ; sr %s @e: cfg.seek.silent=true ; %s ; ?1 ; %s ; ?1 ; "
+					"s tmp @e: cfg.seek.silent=true ; f- tmp ; pd $r",
 					reg, cmdvhex,
 					ref ? "drr" : "dr=");
 				debugstr[sizeof(debugstr) - 1] = 0;
@@ -3996,10 +3941,10 @@ RZ_API int rz_core_visual(RzCore *core, const char *input) {
 				const char *pxw = stackPrintCommand(core);
 				const char sign = (delta < 0) ? '+' : '-';
 				const int absdelta = RZ_ABS(delta);
-				snprintf(debugstr, sizeof(debugstr),
-					"diq;?0;f tmp;sr %s@e:cfg.seek.silent=true;%s %d@$$%c%d;"
-					"?1;%s;"
-					"?1;s tmp@e:cfg.seek.silent=true;f- tmp;afal;pd $r",
+				rz_strf(debugstr,
+					"diq ; ?0 ; f tmp ; sr %s @e: cfg.seek.silent=true ; %s %d @ $$%c%d;"
+					"?1 ; %s;"
+					"?1 ; s tmp @e: cfg.seek.silent=true ; f- tmp ; afal ; pd $r",
 					reg, pxa ? "pxa" : pxw, size, sign, absdelta,
 					ref ? "drr" : "dr=");
 			}
@@ -4024,7 +3969,7 @@ RZ_API int rz_core_visual(RzCore *core, const char *input) {
 			rz_core_seek(core, scrseek, true);
 		}
 		if (debug) {
-			rz_core_debug_regs2flags(core, 0);
+			rz_core_debug_regs2flags(core);
 		}
 		core->print->vflush = !skip;
 		visual_refresh(core);

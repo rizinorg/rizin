@@ -3,6 +3,8 @@
 
 #include <rz_core.h>
 #include <rz_cons.h>
+#include <rz_basefind.h>
+#include <rz_th.h>
 
 #include "core_private.h"
 
@@ -2430,6 +2432,16 @@ static bool cb_utf8_curvy(void *user, void *data) {
 	return true;
 }
 
+static bool cb_visual_mode(void *user, void *data) {
+	RzConfigNode *node = (RzConfigNode *)data;
+	if (node->i_value > RZ_CORE_VISUAL_MODE_CD) {
+		node->i_value = RZ_CORE_VISUAL_MODE_PX;
+	}
+	RzCore *core = (RzCore *)user;
+	core->printidx = node->i_value;
+	return true;
+}
+
 static bool cb_dotted(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -3639,6 +3651,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETDESC(n, "Convert string before display");
 	SETOPTIONS(n, "asciiesc", "asciidot", NULL);
 	SETBPREF("scr.confirmquit", "false", "Confirm on quit");
+	SETICB("scr.visual.mode", RZ_CORE_VISUAL_MODE_PX, &cb_visual_mode, "Visual mode (0: hexdump, 1: disassembly, 2: debug, 3: color blocks, 4: strings)");
 
 	/* str */
 	SETCB("str.escbslash", "false", &cb_str_escbslash, "Escape the backslash");
@@ -3706,6 +3719,15 @@ RZ_API int rz_core_config_init(RzCore *core) {
 
 	/* rap */
 	SETBPREF("rap.loop", "true", "Run rap as a forever-listening daemon (=:9090)");
+
+	/* basefind */
+	SETB("basefind.progress", false, "Basefind threads progress (true: enable, false: disable)");
+	SETI("basefind.base.start", RZ_BASEFIND_BASE_MIN_ADDRESS, "Basefind start address value");
+	SETI("basefind.base.end", RZ_BASEFIND_BASE_MAX_ADDRESS, "Basefind end address value");
+	SETI("basefind.base.increase", RZ_BASEFIND_BASE_INCREASE, "Basefind increase address by");
+	SETI("basefind.score.min", RZ_BASEFIND_SCORE_MIN_VALUE, "Basefind min score value to consider it valid");
+	SETI("basefind.string.min", RZ_BASEFIND_STRING_MIN_LENGTH, "Basefind min string size to find to consider it valid");
+	SETI("basefind.threads.max", RZ_THREAD_POOL_ALL_CORES, "Basefind max threads number (when 0 uses all available cores)");
 
 	/* nkeys */
 	SETPREF("key.s", "", "override step into action");

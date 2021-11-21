@@ -13,7 +13,7 @@ static RzILEvent *il_event_new_write_from_var(RzILVM *vm, RzILVar *var, RzILVal 
 	RzILBitVector *newnum = NULL;
 
 	if (new_val->type == RZIL_VAR_TYPE_BOOL) {
-		newnum = rz_il_bv_new_from_ut32(1, new_val->data.b->b);
+		newnum = rz_il_bv_new_from_ut64(1, new_val->data.b->b);
 	} else {
 		newnum = new_val->data.bv;
 	}
@@ -21,7 +21,7 @@ static RzILEvent *il_event_new_write_from_var(RzILVM *vm, RzILVar *var, RzILVal 
 	old_val = rz_il_hash_find_val_by_var(vm, var);
 	if (old_val) {
 		if (old_val->type == RZIL_VAR_TYPE_BOOL) {
-			oldnum = rz_il_bv_new_from_ut32(1, old_val->data.b->b);
+			oldnum = rz_il_bv_new_from_ut64(1, old_val->data.b->b);
 		} else {
 			oldnum = old_val->data.bv;
 		}

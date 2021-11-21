@@ -152,7 +152,17 @@ if get_option('default_library') == 'shared'
   endif
 endif
 
+executable_cflags = []
+executable_linkflags = []
 library_cflags = ['-DRZ_PLUGIN_INCORE=1']
+library_linkflags = []
+b_sanitize_opt = get_option('b_sanitize')
+if (b_sanitize_opt.contains('address') or b_sanitize_opt.contains('undefined')) and cc.get_id() == 'clang'
+  executable_cflags += '-shared-libasan'
+  executable_linkflags += '-shared-libasan'
+  library_cflags += '-shared-libasan'
+  library_linkflags += '-shared-libasan'
+endif
 
 rizin_prefix = get_option('prefix')
 rizin_bindir = get_option('bindir')
@@ -524,14 +534,6 @@ spp_dep = declare_dependency(
   link_whole: librzspp,
   include_directories: spp_inc
 )
-
-pkgcfg_sanitize_libs = ''
-if get_option('b_sanitize').contains('address')
-  pkgcfg_sanitize_libs += ' -lasan'
-endif
-if get_option('b_sanitize').contains('undefined')
-  pkgcfg_sanitize_libs += ' -lubsan'
-endif
 
 use_rpath = false
 use_rpath_absolute = false

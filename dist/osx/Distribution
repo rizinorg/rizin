@@ -15,5 +15,5 @@
     </choice>
     <pkg-ref id="re.rizin.rizin" version="0" onConclusion="none">rizin.pkg</pkg-ref>
     <welcome file="welcome.rtf" mime-type="text/enriched"/>
-    <background file="rizin-logo.png" mime-type="image/png" alignment="center"/>
+    <background file="rizin-logo.png" mime-type="image/png" />
 </installer-gui-script>

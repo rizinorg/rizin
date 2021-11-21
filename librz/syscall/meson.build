@@ -9,6 +9,7 @@ rz_syscall = library('rz_syscall', rz_syscall_sources,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
+  link_args: library_linkflags,
   soversion: rizin_libversion
 )
 
@@ -20,7 +21,6 @@ pkgconfig_mod.generate(rz_syscall,
   version: rizin_version,
   name: 'rz_syscall',
   filebase: 'rz_syscall',
-  libraries: pkgcfg_sanitize_libs,
   requires: [
     'rz_util'
   ],

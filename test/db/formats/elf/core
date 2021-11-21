@@ -200,6 +200,7 @@ CMDS=<<EOF
 dr
 EOF
 EXPECT=<<EOF
+wzr = 0x00000000
 x0 = 0x00000000
 x1 = 0x7ff5eb5ed8
 x2 = 0x7ff5eb5ee8

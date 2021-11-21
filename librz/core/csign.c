@@ -8,7 +8,7 @@
 #include <rz_flirt.h>
 
 static void flirt_print_module(const RzFlirtModule *module) {
-	RzListIter *pub_func_it, *ref_func_it, *tail_byte_it;
+	RzListIter *pub_func_it, *ref_func_it, *tail_bytes_it;
 	RzFlirtFunction *func, *ref_func;
 	RzFlirtTailByte *tail_byte;
 
@@ -30,7 +30,7 @@ static void flirt_print_module(const RzFlirtModule *module) {
 		}
 	}
 	if (module->tail_bytes) {
-		rz_list_foreach (module->tail_bytes, tail_byte_it, tail_byte) {
+		rz_list_foreach (module->tail_bytes, tail_bytes_it, tail_byte) {
 			rz_cons_printf(" (%04X: %02X)", tail_byte->offset, tail_byte->value);
 		}
 	}
@@ -49,7 +49,7 @@ static void flirt_print_module(const RzFlirtModule *module) {
 
 static void flirt_print_node_pattern(const RzFlirtNode *node) {
 	for (ut32 i = 0; i < node->length; i++) {
-		if (node->variant_bool_array[i]) {
+		if (node->pattern_mask[i]) {
 			rz_cons_printf("..");
 		} else {
 			rz_cons_printf("%02X", node->pattern_bytes[i]);
@@ -95,15 +95,24 @@ static void flirt_print_node(const RzFlirtNode *node, int indent) {
 RZ_API void rz_core_flirt_dump(RZ_NONNULL const char *flirt_file) {
 	rz_return_if_fail(RZ_STR_ISNOTEMPTY(flirt_file));
 
+	const char *extension = rz_str_lchr(flirt_file, '.');
+	if (RZ_STR_ISEMPTY(extension) || (strcmp(extension, ".sig") != 0 && strcmp(extension, ".pac") != 0)) {
+		RZ_LOG_ERROR("FLIRT: unknown extension '%s'\n", extension);
+		return;
+	}
+
 	RzBuffer *buffer = NULL;
 	RzFlirtNode *node = NULL;
 
 	if (!(buffer = rz_buf_new_slurp(flirt_file))) {
 		RZ_LOG_ERROR("FLIRT: Can't open %s\n", flirt_file);
 		return;
+	} else if (!strcmp(extension, ".pac")) {
+		node = rz_sign_flirt_parse_string_buffer(buffer);
+	} else {
+		node = rz_sign_flirt_parse_compressed_buffer(buffer, RZ_FLIRT_SIG_ARCH_ANY);
 	}
 
-	node = rz_sign_flirt_parse_buffer(buffer);
 	rz_buf_free(buffer);
 	if (node) {
 		flirt_print_node(node, -1);

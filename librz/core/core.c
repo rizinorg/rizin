@@ -1897,7 +1897,8 @@ RZ_API char *rz_core_analysis_hasrefs_to_depth(RzCore *core, ut64 value, PJ *pj,
 		}
 	}
 	ut64 type = rz_core_analysis_address(core, value);
-	RzBinSection *sect = value ? rz_bin_get_section_at(rz_bin_cur_object(core->bin), value, true) : NULL;
+	RzBinObject *obj = rz_bin_cur_object(core->bin);
+	RzBinSection *sect = value && obj ? rz_bin_get_section_at(obj, value, true) : NULL;
 	if (!((type & RZ_ANALYSIS_ADDR_TYPE_HEAP) || (type & RZ_ANALYSIS_ADDR_TYPE_STACK))) {
 		// Do not repeat "stack" or "heap" words unnecessarily.
 		if (sect && sect->name[0]) {
