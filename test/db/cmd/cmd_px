@@ -68,6 +68,23 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=pxr addr size != bits
+FILE=malloc://0x2000
+CMDS=<<EOF
+e asm.arch=6502
+w Hello @ 0x1234
+wx 3412 @ 2
+pxr 8 @ 0
+EOF
+EXPECT=<<EOF
+0x00000000 0000  ..
+0x00000002 3412  4. R W X 'pha' Hello
+0x00000004 0000  ..
+0x00000006 0000  ..
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=px 10
 FILE=malloc://1024
 CMDS=wx 90909090909090909090 ; px 10
