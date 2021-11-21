@@ -51,10 +51,7 @@ RZ_IPI void rz_core_analysis_esil_reinit(RzCore *core) {
 	rz_analysis_esil_free(core->analysis->esil);
 	core_esil_init(core);
 	// reinitialize
-	const char *pc = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
-	if (pc && rz_reg_getv(core->analysis->reg, pc) == 0LL) {
-		rz_core_analysis_set_reg(core, "PC", core->offset);
-	}
+	rz_reg_set_value_by_role(core->analysis->reg, RZ_REG_NAME_PC, core->offset);
 }
 
 static void initialize_stack(RzCore *core, ut64 addr, ut64 size) {
@@ -183,21 +180,9 @@ RZ_IPI void rz_core_analysis_esil_init_mem(RzCore *core, const char *name, ut64 
 			break;
 		}
 	}
-	// SP
-	const char *sp = rz_reg_get_name(core->dbg->reg, RZ_REG_NAME_SP);
-	if (sp) {
-		rz_debug_reg_set(core->dbg, sp, addr + (size / 2));
-	}
-	// BP
-	const char *bp = rz_reg_get_name(core->dbg->reg, RZ_REG_NAME_BP);
-	if (bp) {
-		rz_debug_reg_set(core->dbg, bp, addr + (size / 2));
-	}
-	// PC
-	const char *pc = rz_reg_get_name(core->dbg->reg, RZ_REG_NAME_PC);
-	if (pc) {
-		rz_debug_reg_set(core->dbg, pc, current_offset);
-	}
+	rz_reg_set_value_by_role(core->analysis->reg, RZ_REG_NAME_SP, addr + (size / 2)); // size / 2 to have free space in both directions
+	rz_reg_set_value_by_role(core->analysis->reg, RZ_REG_NAME_BP, addr + (size / 2));
+	rz_reg_set_value_by_role(core->analysis->reg, RZ_REG_NAME_PC, current_offset);
 	rz_core_regs2flags(core);
 	esil->stack_addr = addr;
 	esil->stack_size = size;
