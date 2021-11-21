@@ -6,21 +6,24 @@ ood
 db @ main
 3dc
 dr rflags=0x200 > /dev/null
-dr rflags,rax
+dr rflags
+dr rax
 dts+
 7ds
-dr rflags,rax
+dr rflags
+dr rax
 dcb
-dr rflags,rax
+dr rflags
+dr rax
 doc
 EOF
 REGEXP_FILTER_OUT=(0x[0-9A-Za-z]+\n)
 EXPECT=<<EOF
-0x00000200
-0x00000001
-0x00000216
-0x0000001e
-0x00000200
-0x00000001
+rflags = 0x00000200
+rax = 0x00000001
+rflags = 0x00000216
+rax = 0x0000001e
+rflags = 0x00000200
+rax = 0x00000001
 EOF
 RUN

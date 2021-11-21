@@ -72,7 +72,6 @@ static RzCmdDescriptor *cmd_descriptor(const char *cmd, const char *help[]) {
 
 static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpseek);
 
-static void cmd_debug_reg(RzCore *core, const char *str);
 static bool lastcmd_repeat(RzCore *core, int next);
 
 #include "cmd_block.c"
@@ -89,6 +88,7 @@ static bool lastcmd_repeat(RzCore *core, int next);
 #include "cmd_eval.c"
 #include "cmd_interpret.c"
 #include "cmd_analysis.c"
+#include "cmd_regs.c"
 #include "cmd_open.c"
 #include "cmd_type.c"
 #include "cmd_info.c"

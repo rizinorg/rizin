@@ -10,8 +10,8 @@ dr PC
 dk 9
 EOF
 EXPECT=<<EOF
-0x080482d0
-0x080482d2
+eip = 0x080482d0
+eip = 0x080482d2
 EOF
 RUN
 
@@ -27,7 +27,7 @@ dr PC
 dk 9
 EOF
 EXPECT=<<EOF
-0x080482d0
-0x080482d5
+eip = 0x080482d0
+eip = 0x080482d5
 EOF
 RUN

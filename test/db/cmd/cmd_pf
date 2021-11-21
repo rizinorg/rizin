@@ -174,8 +174,8 @@ CMDS=<<EOF
 e asm.bits=32
 e asm.arch=x86
 e analysis.arch=x86
-dr eax=4000
-dr eip=42
+ar eax=4000
+ar eip=42
 pf.plop rr (eax)reg1 (eip)reg2
 pf.plop
 pfj.plop

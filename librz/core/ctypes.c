@@ -715,7 +715,7 @@ RZ_API void rz_core_link_stroff(RzCore *core, RzAnalysisFunction *fcn) {
 		ut64 curpc = rz_reg_getv(esil->analysis->reg, pc_name);
 		int stacksz = rz_core_get_stacksz(core, fcn->addr, curpc);
 		if (stacksz > 0) {
-			rz_reg_arena_zero(esil->analysis->reg); // clear prev reg values
+			rz_reg_arena_zero(esil->analysis->reg, RZ_REG_TYPE_ANY); // clear prev reg values
 			rz_reg_set_value(esil->analysis->reg, sp, spval + stacksz);
 		}
 	} else {

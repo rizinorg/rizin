@@ -512,7 +512,7 @@ s 0x0040f710
 afvx
 aei
 aeim
-dr rsi=0x1111111111111111
+ar rsi=0x1111111111111111
 11ds
 afvd
 EOF
@@ -999,10 +999,10 @@ e asm.bits=64
 wx 000000
 ahe 33,rax,=
 aes
-dr?rax
+ar rax
 EOF
 EXPECT=<<EOF
-0x00000021
+rax = 0x00000021
 EOF
 RUN
 
@@ -3181,19 +3181,19 @@ e analysis.hasnext=0
 # testing mov eax, -4 sar
 wx 48c7c0fcffffff 48d1f8 48d1f8 48d1f8 48d1f8 48d1f8 48d1f8
 aes
-dr?rax
+ar rax
 aes
-dr?rax
+ar rax
 aes
-dr?rax
+ar rax
 aes
-dr?rax
+ar rax
 EOF
 EXPECT=<<EOF
-0xfffffffffffffffc
-0xfffffffffffffffe
-0xffffffffffffffff
-0xffffffffffffffff
+rax = 0xfffffffffffffffc
+rax = 0xfffffffffffffffe
+rax = 0xffffffffffffffff
+rax = 0xffffffffffffffff
 EOF
 RUN
 
@@ -3205,16 +3205,16 @@ e asm.bits=64
 e analysis.hasnext=0
 wx 48c7c0fcffffff 48d1f8 48d1f8 48d1f8
 aes
-dr?rax
+ar rax
 aes
-dr?rax
+ar rax
 aes
-dr?rax
+ar rax
 EOF
 EXPECT=<<EOF
-0xfffffffffffffffc
-0xfffffffffffffffe
-0xffffffffffffffff
+rax = 0xfffffffffffffffc
+rax = 0xfffffffffffffffe
+rax = 0xffffffffffffffff
 EOF
 RUN
 
@@ -3776,12 +3776,11 @@ e asm.bits=64
 ar=
 EOF
 EXPECT=<<EOF
-    rax 0x00000000           rbx 0x00000000           rcx 0x00000000
-    rdx 0x00000000           rsi 0x00000000           rdi 0x00000000
-     r8 0x00000000            r9 0x00000000           r10 0x00000000
-    r11 0x00000000           r12 0x00000000           r13 0x00000000
-    r14 0x00000000           r15 0x00000000           rip 0x00000000
-    rbp 0x00000000        rflags 0x00000000           rsp 0x00000000
+    rax 0x00000000          rbx 0x00000000          rcx 0x00000000          rdx 0x00000000
+    rsi 0x00000000          rdi 0x00000000           r8 0x00000000           r9 0x00000000
+    r10 0x00000000          r11 0x00000000          r12 0x00000000          r13 0x00000000
+    r14 0x00000000          r15 0x00000000          rip 0x00000000          rbp 0x00000000
+ rflags 0x00000000          rsp 0x00000000      
 EOF
 RUN
 

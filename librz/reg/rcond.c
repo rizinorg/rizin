@@ -29,7 +29,11 @@ RZ_API RzRegItem *rz_reg_cond_get(RzReg *reg, const char *name) {
 }
 
 RZ_API int rz_reg_cond_get_value(RzReg *r, const char *name) {
-	return (int)rz_reg_get_value(r, rz_reg_cond_get(r, name)) ? 1 : 0;
+	RzRegItem *ri = rz_reg_cond_get(r, name);
+	if (!ri) {
+		return 0;
+	}
+	return (int)rz_reg_get_value(r, ri) ? 1 : 0;
 }
 
 RZ_API bool rz_reg_cond_set(RzReg *r, const char *name, bool val) {
@@ -38,7 +42,6 @@ RZ_API bool rz_reg_cond_set(RzReg *r, const char *name, bool val) {
 		rz_reg_set_value(r, item, val);
 		return true;
 	}
-	// eprintf ("Cannot find '%s'\n", name);
 	return false;
 }
 
@@ -93,23 +96,6 @@ RZ_API int rz_reg_cond_from_string(const char *str) {
 	if (!strcmp(str, "le")) {
 		return RZ_REG_COND_LE;
 	}
-	// TODO: move this into core
-	eprintf("| Usage: drc[=] [condition](=1,0)\n"
-		"| eq    equal\n"
-		"| ne    not equal\n"
-		"| cf    carry flag set\n"
-		"| neg   negative value (has sign)\n"
-		"| of    overflow\n"
-		"|unsigned:\n"
-		"| hi    higher\n"
-		"| he    higher or equal\n"
-		"| lo    lower\n"
-		"| loe   lower or equal\n"
-		"|signed:\n"
-		"| ge    greater or equal\n"
-		"| gt    greater than\n"
-		"| le    less or equal\n"
-		"| lt    less than\n");
 	return -1;
 }
 

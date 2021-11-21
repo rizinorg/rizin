@@ -160,6 +160,7 @@ RZ_API const char *rz_reg_get_name_by_type(RzReg *reg, const char *name);
 RZ_API const char *rz_reg_get_type(int idx);
 RZ_API const char *rz_reg_get_name(RzReg *reg, int kind);
 RZ_API const char *rz_reg_get_role(int role);
+RZ_API int rz_reg_role_by_name(RZ_NONNULL const char *str);
 RZ_API RzRegItem *rz_reg_get(RzReg *reg, const char *name, int type);
 RZ_API const RzList *rz_reg_get_list(RzReg *reg, int type);
 RZ_API RzRegItem *rz_reg_get_at(RzReg *reg, int type, int regsize, int delta);
@@ -222,7 +223,7 @@ RZ_API int rz_reg_fit_arena(RzReg *reg);
 RZ_API void rz_reg_arena_swap(RzReg *reg, int copy);
 RZ_API int rz_reg_arena_push(RzReg *reg);
 RZ_API void rz_reg_arena_pop(RzReg *reg);
-RZ_API void rz_reg_arena_zero(RzReg *reg);
+RZ_API void rz_reg_arena_zero(RzReg *reg, RzRegisterType type);
 
 RZ_API ut8 *rz_reg_arena_peek(RzReg *reg);
 RZ_API void rz_reg_arena_poke(RzReg *reg, const ut8 *buf);
@@ -230,6 +231,8 @@ RZ_API ut8 *rz_reg_arena_dup(RzReg *reg, const ut8 *source);
 RZ_API const char *rz_reg_cond_to_string(int n);
 RZ_API int rz_reg_cond_from_string(const char *str);
 RZ_API void rz_reg_arena_shrink(RzReg *reg);
+
+RZ_API RZ_OWN RzList *rz_reg_filter_items_covered(RZ_BORROW RZ_NONNULL const RzList /* <RzRegItem> */ *regs);
 
 #ifdef __cplusplus
 }

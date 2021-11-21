@@ -7,8 +7,8 @@ aes
 ar pc; ar psw
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000000
+pc = 0x00000001
+psw = 0x00000000
 EOF
 RUN
 
@@ -21,8 +21,8 @@ aes
 ar pc; ar psw
 EOF
 EXPECT=<<EOF
-0x00000501
-0x00000000
+pc = 0x00000501
+psw = 0x00000000
 EOF
 RUN
 
@@ -35,8 +35,8 @@ aes
 ar pc; ar psw
 EOF
 EXPECT=<<EOF
-0x00001234
-0x00000000
+pc = 0x00001234
+psw = 0x00000000
 EOF
 RUN
 
@@ -49,8 +49,8 @@ aes
 ar pc; ar psw
 EOF
 EXPECT=<<EOF
-0x00000012
-0x00000000
+pc = 0x00000012
+psw = 0x00000000
 EOF
 RUN
 
@@ -65,8 +65,8 @@ aes
 ar pc; ar psw
 EOF
 EXPECT=<<EOF
-0x00001234
-0x00000000
+pc = 0x00001234
+psw = 0x00000000
 EOF
 RUN
 
@@ -82,9 +82,9 @@ ar pc; ar psw; ar sp
 p8 3 @ _idata+0x20
 EOF
 EXPECT=<<EOF
-0x00000501
-0x00000000
-0x00000022
+pc = 0x00000501
+psw = 0x00000000
+sp = 0x00000022
 ff0200
 EOF
 RUN
@@ -101,9 +101,9 @@ ar pc; ar psw; ar sp
 p8 3 @ _idata+0x20
 EOF
 EXPECT=<<EOF
-0x00001234
-0x00000000
-0x00000022
+pc = 0x00001234
+psw = 0x00000000
+sp = 0x00000022
 ff0300
 EOF
 RUN
@@ -119,9 +119,9 @@ aes
 ar pc; ar psw; ar sp
 EOF
 EXPECT=<<EOF
-0x00000123
-0x00000000
-0x00000020
+pc = 0x00000123
+psw = 0x00000000
+sp = 0x00000020
 EOF
 RUN
 
@@ -136,9 +136,9 @@ aes
 ar pc; ar psw; ar sp
 EOF
 EXPECT=<<EOF
-0x00000123
-0x00000000
-0x00000020
+pc = 0x00000123
+psw = 0x00000000
+sp = 0x00000020
 EOF
 RUN
 
@@ -155,9 +155,9 @@ ar pc; ar psw; ar sp
 p8 3 @ _idata+0x20
 EOF
 EXPECT=<<EOF
-0x00000002
-0x00000000
-0x00000022
+pc = 0x00000002
+psw = 0x00000000
+sp = 0x00000022
 ffff40
 EOF
 RUN
@@ -174,9 +174,9 @@ ar pc; ar psw; ar sp
 p8 1 @ _idata+0x30
 EOF
 EXPECT=<<EOF
-0x00000002
-0x00000000
-0x00000020
+pc = 0x00000002
+psw = 0x00000000
+sp = 0x00000020
 40
 EOF
 RUN
@@ -194,9 +194,9 @@ ar pc; ar psw
 pB 1 @ _idata+0x20
 EOF
 EXPECT=<<EOF
-0x00000003
-0x00000036
-0x00000000
+pc = 0x00000003
+pc = 0x00000036
+psw = 0x00000000
 00000000
 EOF
 RUN
@@ -214,9 +214,9 @@ ar pc; ar psw
 pB 1 @ _idata+0x20
 EOF
 EXPECT=<<EOF
-0x00000003
-0x00000036
-0x00000000
+pc = 0x00000003
+pc = 0x00000036
+psw = 0x00000000
 00010000
 EOF
 RUN
@@ -234,9 +234,9 @@ ar pc; ar psw
 pB 1 @ _idata+0x20
 EOF
 EXPECT=<<EOF
-0x00000003
-0x00000036
-0x00000000
+pc = 0x00000003
+pc = 0x00000036
+psw = 0x00000000
 00010000
 EOF
 RUN
@@ -254,9 +254,9 @@ aes
 ar pc; ar psw
 EOF
 EXPECT=<<EOF
-0x00000003
-0x00000036
-0x00000080
+pc = 0x00000003
+pc = 0x00000036
+psw = 0x00000080
 EOF
 RUN
 
@@ -273,9 +273,9 @@ aes
 ar pc; ar psw
 EOF
 EXPECT=<<EOF
-0x00000003
-0x00000036
-0x00000000
+pc = 0x00000003
+pc = 0x00000036
+psw = 0x00000000
 EOF
 RUN
 
@@ -292,9 +292,9 @@ aes
 ar pc; ar psw
 EOF
 EXPECT=<<EOF
-0x00000003
-0x00000036
-0x00000000
+pc = 0x00000003
+pc = 0x00000036
+psw = 0x00000000
 EOF
 RUN
 
@@ -311,9 +311,9 @@ aes
 ar pc; ar psw
 EOF
 EXPECT=<<EOF
-0x00000003
-0x00000036
-0x00000000
+pc = 0x00000003
+pc = 0x00000036
+psw = 0x00000000
 EOF
 RUN
 
@@ -329,10 +329,10 @@ aes
 ar pc; ar psw
 EOF
 EXPECT=<<EOF
-0x00000003
-0x00000000
-0x00000026
-0x00000080
+pc = 0x00000003
+psw = 0x00000000
+pc = 0x00000026
+psw = 0x00000080
 EOF
 RUN
 
@@ -349,10 +349,10 @@ aes
 ar pc; ar psw
 EOF
 EXPECT=<<EOF
-0x00000003
-0x00000000
-0x00000036
-0x00000080
+pc = 0x00000003
+psw = 0x00000000
+pc = 0x00000036
+psw = 0x00000080
 EOF
 RUN
 
@@ -369,10 +369,10 @@ aes
 ar pc; ar psw
 EOF
 EXPECT=<<EOF
-0x00000003
-0x00000000
-0x00000036
-0x00000000
+pc = 0x00000003
+psw = 0x00000000
+pc = 0x00000036
+psw = 0x00000000
 EOF
 RUN
 
@@ -388,10 +388,10 @@ aes
 ar pc; ar psw
 EOF
 EXPECT=<<EOF
-0x00000003
-0x00000000
-0x00000026
-0x00000080
+pc = 0x00000003
+psw = 0x00000000
+pc = 0x00000026
+psw = 0x00000080
 EOF
 RUN
 
@@ -409,9 +409,9 @@ ar pc
 p8 1 @ _idata+0x20
 EOF
 EXPECT=<<EOF
-0x00000003
+pc = 0x00000003
 00
-0x00000036
+pc = 0x00000036
 ff
 EOF
 RUN
@@ -430,10 +430,10 @@ ar pc
 ar r7
 EOF
 EXPECT=<<EOF
-0x00000002
-0x00000000
-0x00000034
-0x000000ff
+pc = 0x00000002
+r7 = 0x00000000
+pc = 0x00000034
+r7 = 0x000000ff
 EOF
 RUN
 
@@ -446,8 +446,8 @@ aes
 ar pc; ar psw
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000080
+pc = 0x00000001
+psw = 0x00000080
 EOF
 RUN
 
@@ -463,8 +463,8 @@ s _idata+0x20
 pB 1
 EOF
 EXPECT=<<EOF
-0x00000004
-0x00000000
+pc = 0x00000004
+psw = 0x00000000
 01010000
 EOF
 RUN
@@ -480,9 +480,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000000
-0x00000000
+pc = 0x00000001
+psw = 0x00000000
+a = 0x00000000
 EOF
 RUN
 
@@ -496,8 +496,8 @@ aes
 ar pc; ar psw
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000000
+pc = 0x00000001
+psw = 0x00000000
 EOF
 RUN
 
@@ -514,8 +514,8 @@ s _idata+0x20
 pB 1
 EOF
 EXPECT=<<EOF
-0x00000004
-0x00000000
+pc = 0x00000004
+psw = 0x00000000
 10101111
 EOF
 RUN
@@ -531,9 +531,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000001
-0x00000007
+pc = 0x00000001
+psw = 0x00000001
+a = 0x00000007
 EOF
 RUN
 
@@ -547,8 +547,8 @@ aes
 ar pc; ar psw
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000000
+pc = 0x00000001
+psw = 0x00000000
 EOF
 RUN
 
@@ -565,8 +565,8 @@ s _idata+0x20
 pB 1
 EOF
 EXPECT=<<EOF
-0x00000004
-0x00000000
+pc = 0x00000004
+psw = 0x00000000
 10111000
 EOF
 RUN
@@ -581,9 +581,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000000
-0x00000000
+pc = 0x00000001
+psw = 0x00000000
+a = 0x00000000
 EOF
 RUN
 
@@ -599,8 +599,8 @@ s _idata+0x20
 p8 1
 EOF
 EXPECT=<<EOF
-0x00000002
-0x00000000
+pc = 0x00000002
+psw = 0x00000000
 7f
 EOF
 RUN
@@ -618,8 +618,8 @@ s _idata+0x20
 p8 1
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000000
+pc = 0x00000001
+psw = 0x00000000
 7f
 EOF
 RUN
@@ -634,9 +634,9 @@ aes
 ar pc; ar psw; ar r7
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000000
-0x0000007f
+pc = 0x00000001
+psw = 0x00000000
+r7 = 0x0000007f
 EOF
 RUN
 
@@ -650,9 +650,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000000
-0x00000000
+pc = 0x00000001
+psw = 0x00000000
+a = 0x00000000
 EOF
 RUN
 
@@ -668,8 +668,8 @@ s _idata+0x20
 p8 1
 EOF
 EXPECT=<<EOF
-0x00000002
-0x00000000
+pc = 0x00000002
+psw = 0x00000000
 81
 EOF
 RUN
@@ -687,8 +687,8 @@ s _idata+0x20
 p8 1
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000000
+pc = 0x00000001
+psw = 0x00000000
 81
 EOF
 RUN
@@ -703,9 +703,9 @@ aes
 ar pc; ar psw; ar r7
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000000
-0x00000081
+pc = 0x00000001
+psw = 0x00000000
+r7 = 0x00000081
 EOF
 RUN
 
@@ -719,9 +719,9 @@ aes
 ar pc; ar psw; ar dptr
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000000
-0x00000100
+pc = 0x00000001
+psw = 0x00000000
+dptr = 0x00000100
 EOF
 RUN
 
@@ -735,9 +735,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000002
-0x00000080
-0x00000000
+pc = 0x00000002
+psw = 0x00000080
+a = 0x00000000
 EOF
 RUN
 
@@ -751,9 +751,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000002
-0x00000041
-0x00000010
+pc = 0x00000002
+psw = 0x00000041
+a = 0x00000010
 EOF
 RUN
 
@@ -767,9 +767,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000002
-0x00000005
-0x00000080
+pc = 0x00000002
+psw = 0x00000005
+a = 0x00000080
 EOF
 RUN
 
@@ -784,9 +784,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000002
-0x00000001
-0x000000a1
+pc = 0x00000002
+psw = 0x00000001
+a = 0x000000a1
 EOF
 RUN
 
@@ -802,9 +802,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000001
-0x000000a1
+pc = 0x00000001
+psw = 0x00000001
+a = 0x000000a1
 EOF
 RUN
 
@@ -819,9 +819,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000001
-0x000000a1
+pc = 0x00000001
+psw = 0x00000001
+a = 0x000000a1
 EOF
 RUN
 
@@ -836,9 +836,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000002
-0x00000081
-0x00000001
+pc = 0x00000002
+psw = 0x00000081
+a = 0x00000001
 EOF
 RUN
 
@@ -853,9 +853,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000002
-0x00000040
-0x00000011
+pc = 0x00000002
+psw = 0x00000040
+a = 0x00000011
 EOF
 RUN
 
@@ -870,9 +870,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000002
-0x00000004
-0x00000081
+pc = 0x00000002
+psw = 0x00000004
+a = 0x00000081
 EOF
 RUN
 
@@ -888,9 +888,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000002
-0x00000001
-0x000000a2
+pc = 0x00000002
+psw = 0x00000001
+a = 0x000000a2
 EOF
 RUN
 
@@ -907,9 +907,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000001
-0x000000a2
+pc = 0x00000001
+psw = 0x00000001
+a = 0x000000a2
 EOF
 RUN
 
@@ -925,9 +925,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000001
-0x000000a2
+pc = 0x00000001
+psw = 0x00000001
+a = 0x000000a2
 EOF
 RUN
 
@@ -945,12 +945,12 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000005
-0x000000c0
-0x000000cc
-0x00000009
-0x00000000
-0x00000014
+pc = 0x00000005
+psw = 0x000000c0
+a = 0x000000cc
+pc = 0x00000009
+psw = 0x00000000
+a = 0x00000014
 EOF
 RUN
 
@@ -969,12 +969,12 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000005
-0x000000c0
-0x000000cc
-0x00000009
-0x00000000
-0x00000014
+pc = 0x00000005
+psw = 0x000000c0
+a = 0x000000cc
+pc = 0x00000009
+psw = 0x00000000
+a = 0x00000014
 EOF
 RUN
 
@@ -995,12 +995,12 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000006
-0x000000c0
-0x000000cc
-0x0000000a
-0x00000000
-0x00000014
+pc = 0x00000006
+psw = 0x000000c0
+a = 0x000000cc
+pc = 0x0000000a
+psw = 0x00000000
+a = 0x00000014
 EOF
 RUN
 
@@ -1020,12 +1020,12 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000006
-0x000000c0
-0x000000cc
-0x0000000b
-0x00000000
-0x00000014
+pc = 0x00000006
+psw = 0x000000c0
+a = 0x000000cc
+pc = 0x0000000b
+psw = 0x00000000
+a = 0x00000014
 EOF
 RUN
 
@@ -1040,9 +1040,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000005
-0x00000001
-0x00000046
+pc = 0x00000005
+psw = 0x00000001
+a = 0x00000046
 EOF
 RUN
 
@@ -1057,9 +1057,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000005
-0x000000c1
-0x00000098
+pc = 0x00000005
+psw = 0x000000c1
+a = 0x00000098
 EOF
 RUN
 
@@ -1074,9 +1074,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000005
-0x00000080
-0x00000065
+pc = 0x00000005
+psw = 0x00000080
+a = 0x00000065
 EOF
 RUN
 
@@ -1095,16 +1095,16 @@ aes
 ar pc; ar ov;
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000001
-0x00000023
-0x00000001
-0x00000002
-0x00000001
-0x00000023
-0x00000000
-0x00000003
-0x00000001
+pc = 0x00000001
+psw = 0x00000001
+a = 0x00000023
+b = 0x00000001
+pc = 0x00000002
+psw = 0x00000001
+a = 0x00000023
+b = 0x00000000
+pc = 0x00000003
+ov = 0x00000001
 EOF
 RUN
 
@@ -1122,14 +1122,14 @@ aes
 ar pc; ar psw; ar a; ar b
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000001
-0x000000e0
-0x00000000
-0x00000002
-0x00000004
-0x000000a0
-0x00000002
+pc = 0x00000001
+psw = 0x00000001
+a = 0x000000e0
+b = 0x00000000
+pc = 0x00000002
+psw = 0x00000004
+a = 0x000000a0
+b = 0x00000002
 EOF
 RUN
 
@@ -1145,8 +1145,8 @@ ar pc; ar psw;
 p8 2 @ _idata+0x20
 EOF
 EXPECT=<<EOF
-0x00000002
-0x00000000
+pc = 0x00000002
+psw = 0x00000000
 b140
 EOF
 RUN
@@ -1162,8 +1162,8 @@ ar pc; ar psw;
 p8 2 @ _idata+0x20
 EOF
 EXPECT=<<EOF
-0x00000003
-0x00000000
+pc = 0x00000003
+psw = 0x00000000
 b140
 EOF
 RUN
@@ -1178,9 +1178,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000002
-0x00000001
-0x000000b3
+pc = 0x00000002
+psw = 0x00000001
+a = 0x000000b3
 EOF
 RUN
 
@@ -1195,9 +1195,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000002
-0x00000001
-0x000000b3
+pc = 0x00000002
+psw = 0x00000001
+a = 0x000000b3
 EOF
 RUN
 
@@ -1213,9 +1213,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000001
-0x000000b3
+pc = 0x00000001
+psw = 0x00000001
+a = 0x000000b3
 EOF
 RUN
 
@@ -1230,9 +1230,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000001
-0x000000b3
+pc = 0x00000001
+psw = 0x00000001
+a = 0x000000b3
 EOF
 RUN
 
@@ -1246,8 +1246,8 @@ aes
 ar pc; ar psw;
 EOF
 EXPECT=<<EOF
-0x00000002
-0x00000080
+pc = 0x00000002
+psw = 0x00000080
 EOF
 RUN
 
@@ -1261,8 +1261,8 @@ aes
 ar pc; ar psw;
 EOF
 EXPECT=<<EOF
-0x00000002
-0x00000080
+pc = 0x00000002
+psw = 0x00000080
 EOF
 RUN
 
@@ -1278,8 +1278,8 @@ ar pc; ar psw;
 p8 2 @ _idata+0x20
 EOF
 EXPECT=<<EOF
-0x00000002
-0x00000000
+pc = 0x00000002
+psw = 0x00000000
 1040
 EOF
 RUN
@@ -1295,8 +1295,8 @@ ar pc; ar psw;
 p8 2 @ _idata+0x20
 EOF
 EXPECT=<<EOF
-0x00000003
-0x00000000
+pc = 0x00000003
+psw = 0x00000000
 1040
 EOF
 RUN
@@ -1311,9 +1311,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000002
-0x00000001
-0x00000010
+pc = 0x00000002
+psw = 0x00000001
+a = 0x00000010
 EOF
 RUN
 
@@ -1328,9 +1328,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000002
-0x00000001
-0x00000010
+pc = 0x00000002
+psw = 0x00000001
+a = 0x00000010
 EOF
 RUN
 
@@ -1346,9 +1346,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000001
-0x00000010
+pc = 0x00000001
+psw = 0x00000001
+a = 0x00000010
 EOF
 RUN
 
@@ -1363,9 +1363,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000001
-0x00000010
+pc = 0x00000001
+psw = 0x00000001
+a = 0x00000010
 EOF
 RUN
 
@@ -1380,8 +1380,8 @@ aes
 ar pc; ar psw;
 EOF
 EXPECT=<<EOF
-0x00000003
-0x00000080
+pc = 0x00000003
+psw = 0x00000080
 EOF
 RUN
 
@@ -1396,8 +1396,8 @@ aes
 ar pc; ar psw;
 EOF
 EXPECT=<<EOF
-0x00000003
-0x00000000
+pc = 0x00000003
+psw = 0x00000000
 EOF
 RUN
 
@@ -1413,8 +1413,8 @@ ar pc; ar psw;
 p8 2 @ _idata+0x20
 EOF
 EXPECT=<<EOF
-0x00000002
-0x00000000
+pc = 0x00000002
+psw = 0x00000000
 0140
 EOF
 RUN
@@ -1430,8 +1430,8 @@ ar pc; ar psw;
 p8 2 @ _idata+0x20
 EOF
 EXPECT=<<EOF
-0x00000003
-0x00000000
+pc = 0x00000003
+psw = 0x00000000
 0140
 EOF
 RUN
@@ -1446,9 +1446,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000002
-0x00000001
-0x00000001
+pc = 0x00000002
+psw = 0x00000001
+a = 0x00000001
 EOF
 RUN
 
@@ -1463,9 +1463,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000002
-0x00000001
-0x00000001
+pc = 0x00000002
+psw = 0x00000001
+a = 0x00000001
 EOF
 RUN
 
@@ -1481,9 +1481,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000001
-0x00000001
+pc = 0x00000001
+psw = 0x00000001
+a = 0x00000001
 EOF
 RUN
 
@@ -1498,9 +1498,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000001
-0x00000001
+pc = 0x00000001
+psw = 0x00000001
+a = 0x00000001
 EOF
 RUN
 
@@ -1514,9 +1514,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000001
-0x000000c4
+pc = 0x00000001
+psw = 0x00000001
+a = 0x000000c4
 EOF
 RUN
 
@@ -1531,9 +1531,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000001
-0x0000008c
+pc = 0x00000001
+psw = 0x00000001
+a = 0x0000008c
 EOF
 RUN
 
@@ -1547,9 +1547,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000081
-0x0000004c
+pc = 0x00000001
+psw = 0x00000081
+a = 0x0000004c
 EOF
 RUN
 
@@ -1563,9 +1563,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000001
-0x00000013
+pc = 0x00000001
+psw = 0x00000001
+a = 0x00000013
 EOF
 RUN
 
@@ -1580,9 +1580,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000001
-0x00000031
+pc = 0x00000001
+psw = 0x00000001
+a = 0x00000031
 EOF
 RUN
 
@@ -1596,9 +1596,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000081
-0x00000032
+pc = 0x00000001
+psw = 0x00000081
+a = 0x00000032
 EOF
 RUN
 
@@ -1611,9 +1611,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000002
-0x00000001
-0x00000020
+pc = 0x00000002
+psw = 0x00000001
+a = 0x00000020
 EOF
 RUN
 
@@ -1628,8 +1628,8 @@ ar pc; ar psw;
 p8 2 @ _idata+0x20
 EOF
 EXPECT=<<EOF
-0x00000003
-0x00000000
+pc = 0x00000003
+psw = 0x00000000
 2140
 EOF
 RUN
@@ -1646,8 +1646,8 @@ ar pc; ar psw;
 p8 2 @ _idata+0x20
 EOF
 EXPECT=<<EOF
-0x00000002
-0x00000000
+pc = 0x00000002
+psw = 0x00000000
 3020
 EOF
 RUN
@@ -1661,9 +1661,9 @@ aes
 ar pc; ar psw; ar r7
 EOF
 EXPECT=<<EOF
-0x00000002
-0x00000000
-0x00000020
+pc = 0x00000002
+psw = 0x00000000
+r7 = 0x00000020
 EOF
 RUN
 
@@ -1678,8 +1678,8 @@ ar pc; ar psw;
 p8 2 @ _idata+0x20
 EOF
 EXPECT=<<EOF
-0x00000003
-0x00000000
+pc = 0x00000003
+psw = 0x00000000
 3030
 EOF
 RUN
@@ -1696,8 +1696,8 @@ ar pc; ar psw;
 p8 2 @ _idata+0x20
 EOF
 EXPECT=<<EOF
-0x00000002
-0x00000000
+pc = 0x00000002
+psw = 0x00000000
 4040
 EOF
 RUN
@@ -1714,8 +1714,8 @@ ar pc; ar psw;
 p8 2 @ _idata+0x20
 EOF
 EXPECT=<<EOF
-0x00000002
-0x00000000
+pc = 0x00000002
+psw = 0x00000000
 2140
 EOF
 RUN
@@ -1729,9 +1729,9 @@ aes
 ar pc; ar psw; ar dptr
 EOF
 EXPECT=<<EOF
-0x00000003
-0x00000000
-0x00002010
+pc = 0x00000003
+psw = 0x00000000
+dptr = 0x00002010
 EOF
 RUN
 
@@ -1747,8 +1747,8 @@ ar pc; ar psw
 pB 1 @ _idata+0x20
 EOF
 EXPECT=<<EOF
-0x00000006
-0x00000000
+pc = 0x00000006
+psw = 0x00000000
 11101000
 EOF
 RUN
@@ -1763,8 +1763,8 @@ aes
 ar pc; ar psw
 EOF
 EXPECT=<<EOF
-0x00000002
-0x00000080
+pc = 0x00000002
+psw = 0x00000080
 EOF
 RUN
 
@@ -1780,8 +1780,8 @@ ar pc; ar psw;
 p8 2 @ _idata+0x20
 EOF
 EXPECT=<<EOF
-0x00000002
-0x00000000
+pc = 0x00000002
+psw = 0x00000000
 3030
 EOF
 RUN
@@ -1797,9 +1797,9 @@ aes
 ar pc; ar psw; ar r7
 EOF
 EXPECT=<<EOF
-0x00000002
-0x00000000
-0x00000030
+pc = 0x00000002
+psw = 0x00000000
+r7 = 0x00000030
 EOF
 RUN
 
@@ -1813,9 +1813,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000002
-0x00000001
-0x00000040
+pc = 0x00000002
+psw = 0x00000001
+a = 0x00000040
 EOF
 RUN
 
@@ -1830,9 +1830,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000001
-0x00000040
+pc = 0x00000001
+psw = 0x00000001
+a = 0x00000040
 EOF
 RUN
 
@@ -1846,9 +1846,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000001
-0x00000020
+pc = 0x00000001
+psw = 0x00000001
+a = 0x00000020
 EOF
 RUN
 
@@ -1864,8 +1864,8 @@ ar pc; ar psw;
 p8 2 @ _idata+0x20
 EOF
 EXPECT=<<EOF
-0x00000002
-0x00000000
+pc = 0x00000002
+psw = 0x00000000
 2140
 EOF
 RUN
@@ -1883,8 +1883,8 @@ ar pc; ar psw;
 p8 2 @ _idata+0x20
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000000
+pc = 0x00000001
+psw = 0x00000000
 3020
 EOF
 RUN
@@ -1899,9 +1899,9 @@ aes
 ar pc; ar psw; ar r7
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000000
-0x00000020
+pc = 0x00000001
+psw = 0x00000000
+r7 = 0x00000020
 EOF
 RUN
 
@@ -1916,9 +1916,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000001
-0x00000010
+pc = 0x00000001
+psw = 0x00000001
+a = 0x00000010
 EOF
 RUN
 
@@ -1933,9 +1933,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000001
-0x00000040
+pc = 0x00000001
+psw = 0x00000001
+a = 0x00000040
 EOF
 RUN
 
@@ -1952,8 +1952,8 @@ ar pc; ar psw;
 p8 1 @ _xdata+0x100
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000000
+pc = 0x00000001
+psw = 0x00000000
 20
 EOF
 RUN
@@ -1971,8 +1971,8 @@ ar pc; ar psw;
 p8 1 @ _xdata+0x010
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000000
+pc = 0x00000001
+psw = 0x00000000
 20
 EOF
 RUN
@@ -1988,9 +1988,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000001
-0x00000010
+pc = 0x00000001
+psw = 0x00000001
+a = 0x00000010
 EOF
 RUN
 
@@ -2006,9 +2006,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000001
-0x00000010
+pc = 0x00000001
+psw = 0x00000001
+a = 0x00000010
 EOF
 RUN
 
@@ -2022,9 +2022,9 @@ aes
 ar pc; ar psw; ar a
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000001
-0x00000013
+pc = 0x00000001
+psw = 0x00000001
+a = 0x00000013
 EOF
 RUN
 
@@ -2040,9 +2040,9 @@ ar pc; ar psw; ar a
 p8 2 @ _idata+0x20
 EOF
 EXPECT=<<EOF
-0x00000002
-0x00000001
-0x00000040
+pc = 0x00000002
+psw = 0x00000001
+a = 0x00000040
 3020
 EOF
 RUN
@@ -2060,9 +2060,9 @@ ar pc; ar psw; ar a
 p8 2 @ _idata+0x20
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000001
-0x00000040
+pc = 0x00000001
+psw = 0x00000001
+a = 0x00000040
 3020
 EOF
 RUN
@@ -2078,10 +2078,10 @@ aes
 ar pc; ar psw; ar a; ar r7
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000001
-0x00000040
-0x00000020
+pc = 0x00000001
+psw = 0x00000001
+a = 0x00000040
+r7 = 0x00000020
 EOF
 RUN
 
@@ -2098,9 +2098,9 @@ ar pc; ar psw; ar a
 p8 1 @ _idata+0x20
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000001
-0x00000054
+pc = 0x00000001
+psw = 0x00000001
+a = 0x00000054
 36
 EOF
 RUN

@@ -4,11 +4,12 @@ ARGS=-a x86 -b 64
 CMDS=<<EOF
 ar rax=33
 ar rbx=44
-ar rax,rbx
+ar rax
+ar rbx
 EOF
 EXPECT=<<EOF
-0x00000021
-0x0000002c
+rax = 0x00000021
+rbx = 0x0000002c
 EOF
 RUN
 
@@ -246,7 +247,7 @@ ar eax=0x80000010
 ar eax
 EOF
 EXPECT=<<EOF
-0x00000021
+eax = 0x00000021
 EOF
 RUN
 
@@ -261,7 +262,7 @@ ar eax=0x02000001
 ar eax
 EOF
 EXPECT=<<EOF
-0x81000000
+eax = 0x81000000
 EOF
 RUN
 
@@ -297,12 +298,12 @@ ar rdi
 ar rip
 EOF
 EXPECT=<<EOF
-0x00000001
-0x006000d0
-0x004000c0
-0x00000000
-0x006000d8
-0x004000c3
+rcx = 0x00000001
+rdi = 0x006000d0
+rip = 0x004000c0
+rcx = 0x00000000
+rdi = 0x006000d8
+rip = 0x004000c3
 EOF
 RUN
 
@@ -335,7 +336,7 @@ ar a0
 ar a1
 EOF
 EXPECT=<<EOF
-0xffff8007
-0x00000005
+a0 = 0xffff8007
+a1 = 0x00000005
 EOF
 RUN

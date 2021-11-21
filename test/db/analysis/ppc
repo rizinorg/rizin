@@ -457,17 +457,17 @@ NAME=ppc-update-suffix-esil
 FILE=bins/elf/a6ppc.out
 CMDS=<<EOF
 40ds
-dr?r3
-dr?r4
+ar r3
+ar r4
 10ds
-dr?r3
-dr?r4
+ar r3
+ar r4
 EOF
 EXPECT=<<EOF
-0x0000ffbf
-0x10010107
-0x0000ffc1
-0x1001010a
+r3 = 0x0000ffbf
+r4 = 0x10010107
+r3 = 0x0000ffc1
+r4 = 0x1001010a
 EOF
 RUN
 

@@ -1,9 +1,7 @@
-NAME=drt
+NAME=drT
 FILE=bins/elf/sse2-add
 ARGS=-d
-CMDS=<<EOF
-drt
-EOF
+CMDS=drT
 EXPECT=<<EOF
 gpr
 drx
@@ -18,12 +16,10 @@ sec
 EOF
 RUN
 
-NAME=drt gpr
+NAME=dr gpr
 FILE=bins/elf/sse2-add
 ARGS=-d
-CMDS=<<EOF
-drt gpr~[0]
-EOF
+CMDS=dr gpr~[0]
 EXPECT=<<EOF
 rax
 eax
@@ -94,6 +90,7 @@ ebp
 bp
 bpl
 rip
+cs
 rflags
 eflags
 cf
@@ -106,36 +103,20 @@ if
 df
 of
 orax
+ss
+fs
+gs
+ds
+es
+fs_base
+gs_base
 EOF
 RUN
 
-NAME=drt flg
+NAME=dr all
 FILE=bins/elf/sse2-add
 ARGS=-d
-CMDS=<<EOF
-drt flg~[0]
-EOF
-EXPECT=<<EOF
-rflags
-eflags
-cf
-pf
-af
-zf
-sf
-tf
-if
-df
-of
-EOF
-RUN
-
-NAME=drt all
-FILE=bins/elf/sse2-add
-ARGS=-d
-CMDS=<<EOF
-drt all~[0]
-EOF
+CMDS=dr all~[0]
 EXPECT=<<EOF
 r15b
 r15w
