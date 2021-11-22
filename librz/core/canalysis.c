@@ -5283,7 +5283,6 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 	bool cfg_analysis_strings = rz_config_get_i(core->config, "analysis.strings");
 	bool emu_lazy = rz_config_get_i(core->config, "emu.lazy");
 	bool gp_fixed = rz_config_get_i(core->config, "analysis.gpfixed");
-	RzAnalysisEsil *ESIL = core->analysis->esil;
 	ut64 refptr = 0LL;
 	const char *pcname;
 	RzAnalysisOp op = RZ_EMPTY;
@@ -5359,12 +5358,15 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 	}
 	esilbreak_last_read = UT64_MAX;
 	rz_io_read_at(core->io, start, buf, iend + 1);
+	rz_reg_arena_push(core->analysis->reg);
+
+	RzAnalysisEsil *ESIL = core->analysis->esil;
 	if (!ESIL) {
 		rz_core_analysis_esil_reinit(core);
 		ESIL = core->analysis->esil;
 		if (!ESIL) {
 			eprintf("ESIL not initialized\n");
-			return;
+			goto out_pop_regs;
 		}
 		rz_core_analysis_esil_init_mem(core, NULL, UT64_MAX, UT32_MAX);
 	}
@@ -5389,7 +5391,7 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 	pcname = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
 	if (!pcname || !*pcname) {
 		eprintf("Cannot find program counter register in the current profile.\n");
-		return;
+		goto out_pop_regs;
 	}
 	esil_analysis_stop = false;
 	rz_cons_break_push(cccb, core);
@@ -5411,11 +5413,7 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 		arch = RZ_ARCH_MIPS;
 	}
 
-	const char *sn = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_SN);
-	if (!sn) {
-		eprintf("Warning: No SN reg alias for current architecture.\n");
-	}
-	rz_reg_arena_push(core->analysis->reg);
+	RZ_NULLABLE const char *sn = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_SN);
 
 	IterCtx ictx = { start, end, fcn, NULL };
 	size_t i = addr - start;
@@ -5697,6 +5695,7 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 	ESIL->user = NULL;
 	rz_analysis_op_fini(&op);
 	rz_cons_break_pop();
+out_pop_regs:
 	// restore register
 	rz_reg_arena_pop(core->analysis->reg);
 }

@@ -45,6 +45,7 @@ if get_option('enable_tests')
     'dwarf',
     'dwarf_info',
     'dwarf_integration',
+    'ebcdic',
     'endian',
     'event',
     'file',

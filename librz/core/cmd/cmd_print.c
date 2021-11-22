@@ -6496,7 +6496,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 		case 'r': // "pxr"
 			if (l) {
 				int mode = input[2];
-				int wordsize = core->analysis->bits / 8;
+				int wordsize = rz_analysis_get_address_bits(core->analysis) / 8;
 				if (mode == '?') {
 					eprintf("Usage: pxr[1248][*,jq] [length]\n");
 					break;
