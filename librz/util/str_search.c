@@ -5,12 +5,61 @@
 #include <rz_util/rz_utf8.h>
 #include <rz_util/rz_utf16.h>
 #include <rz_util/rz_utf32.h>
+#include <rz_util/rz_ebcdic.h>
 
 typedef enum {
 	SKIP_STRING,
 	RETRY_ASCII,
 	STRING_OK,
 } FalsePositiveResult;
+
+// clang-format off
+static const ut8 LATIN1_CLASS[256] = {
+  0,0,0,0,0,0,0,0, 0,1,1,0,0,1,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,
+  1,6,6,6,6,6,6,6, 6,6,6,6,6,6,6,6, 2,2,2,2,2,2,2,2, 2,2,6,6,6,6,6,6,
+  6,3,3,3,3,3,3,3, 3,3,3,3,3,3,3,3, 3,3,3,3,3,3,3,3, 3,3,3,6,6,6,6,6,
+  6,4,4,4,4,4,4,4, 4,4,4,4,4,4,4,4, 4,4,4,4,4,4,4,4, 4,4,4,6,6,6,6,0,
+
+  0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,
+  1,6,6,6,6,6,6,6, 6,6,6,6,6,6,6,6, 6,6,6,6,6,6,6,6, 6,6,6,6,6,6,6,6,
+  5,5,5,5,5,5,5,5, 5,5,5,5,5,5,5,5, 5,5,5,5,5,5,5,5, 5,5,5,5,5,5,5,6,
+  5,5,5,5,5,5,5,5, 5,5,5,5,5,5,5,5, 5,5,5,5,5,5,5,6, 5,5,5,5,5,5,5,5,
+};
+static const ut8 LATIN1[49] = {
+	0,0,0,0,0,0,0,
+	0,1,6,6,6,1,3,
+	0,6,12,6,6,1,3,
+	0,6,6,18,9,1,3,
+	0,6,6,9,18,1,3,
+	0,1,1,1,1,1,1,
+	0,3,3,3,3,1,3,
+};
+// clang-format on
+
+static inline int compute_index(ut8 x, ut8 y) {
+	return (x * 7 + y);
+}
+
+static st64 score(RzRune *buff, const int len) {
+	int score = 0;
+	for (RzRune *src = buff, *end = buff + len - 1; src < end; ++src) {
+		RzRune b1 = src[0], b2 = src[1];
+		ut8 c1 = LATIN1_CLASS[b1], c2 = LATIN1_CLASS[b2];
+		if (b1 > 0x7f) {
+			score -= 6;
+		}
+
+		ut8 i = compute_index(c1, c2);
+		assert(i < 49);
+		ut8 y = LATIN1[i];
+		if (y == 0) {
+			score += -100;
+		} else {
+			score += y;
+		}
+	}
+	return score;
+}
 
 /**
  * Free a RzDetectedString
@@ -160,6 +209,16 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 			if (rc == 1) {
 				rc = 2;
 			}
+		} else if (str_type == RZ_STRING_ENC_IBM037) {
+			rc = rz_str_ibm037_to_unicode(*(buf + needle - from), &r);
+		} else if (str_type == RZ_STRING_ENC_IBM290) {
+			rc = rz_str_ibm290_to_unicode(*(buf + needle - from), &r);
+		} else if (str_type == RZ_STRING_ENC_EBCDIC_ES) {
+			rc = rz_str_ebcdic_es_to_unicode(*(buf + needle - from), &r);
+		} else if (str_type == RZ_STRING_ENC_EBCDIC_UK) {
+			rc = rz_str_ebcdic_uk_to_unicode(*(buf + needle - from), &r);
+		} else if (str_type == RZ_STRING_ENC_EBCDIC_US) {
+			rc = rz_str_ebcdic_us_to_unicode(*(buf + needle - from), &r);
 		} else {
 			rc = rz_utf8_decode(buf + needle - from, to - needle, &r);
 			if (rc > 1) {
@@ -196,8 +255,6 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 			break;
 		}
 	}
-
-	tmp[i++] = '\0';
 
 	if (runes >= opt->min_str_length) {
 		FalsePositiveResult false_positive_result = reduce_false_positives(opt, tmp, i - 1, str_type);
@@ -272,6 +329,10 @@ static inline bool can_be_utf32_be(ut8 *buf, ut64 size) {
 	return !buf[0] && !buf[1] && !buf[2] && buf[3] && !buf[4] && !buf[5] && !buf[6];
 }
 
+static inline bool can_be_ebcdic(ut8 *buf, ut64 size) {
+	return buf[0] < 0x20 || buf[0] > 0x3f;
+}
+
 /**
  * \brief Look for strings in an RzBuffer.
  * \param buf_to_scan Pointer to a RzBuffer to scan
@@ -286,10 +347,7 @@ static inline bool can_be_utf32_be(ut8 *buf, ut64 size) {
  */
 RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrScanOptions *opt,
 	const ut64 from, const ut64 to, RzStrEnc type) {
-
-	rz_return_val_if_fail(opt, -1);
-	rz_return_val_if_fail(list, -1);
-	rz_return_val_if_fail(buf_to_scan, -1);
+	rz_return_val_if_fail(opt && list && buf_to_scan, -1);
 
 	if (from == to) {
 		return 0;
@@ -312,14 +370,20 @@ RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrS
 	rz_buf_read_at(buf_to_scan, from, buf, len);
 
 	needle = from;
+	ut8 *ptr;
+	ut64 size;
+	int skip_ibm037 = 0;
 	while (needle < to) {
+		ptr = buf + needle - from;
+		size = to - needle;
+		--skip_ibm037;
 		if (type == RZ_STRING_ENC_GUESS) {
-			if (can_be_utf32_le(buf + needle - from, to - needle)) {
+			if (can_be_utf32_le(ptr, size)) {
 				str_type = RZ_STRING_ENC_UTF32LE;
-			} else if (can_be_utf16_le(buf + needle - from, to - needle)) {
+			} else if (can_be_utf16_le(ptr, size)) {
 				str_type = RZ_STRING_ENC_UTF16LE;
-			} else if (can_be_utf32_be(buf + needle - from, to - needle)) {
-				if (to - needle > 3 && can_be_utf32_le(buf + needle - from + 3, to - needle - 3)) {
+			} else if (can_be_utf32_be(ptr, size)) {
+				if (to - needle > 3 && can_be_utf32_le(ptr + 3, size - 3)) {
 					// The string can be either utf32-le or utf32-be
 					RzDetectedString *ds_le = process_one_string(buf, from, needle + 3, to, RZ_STRING_ENC_UTF32LE, false, opt);
 					RzDetectedString *ds_be = process_one_string(buf, from, needle, to, RZ_STRING_ENC_UTF32BE, false, opt);
@@ -354,8 +418,8 @@ RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrS
 					continue;
 				}
 				str_type = RZ_STRING_ENC_UTF32BE;
-			} else if (can_be_utf16_be(buf + needle - from, to - needle)) {
-				if (to - needle > 1 && can_be_utf16_le(buf + needle - from + 1, to - needle - 1)) {
+			} else if (can_be_utf16_be(ptr, size)) {
+				if (to - needle > 1 && can_be_utf16_le(ptr + 1, size - 1)) {
 					// The string can be either utf16-le or utf16-be
 					RzDetectedString *ds_le = process_one_string(buf, from, needle + 1, to, RZ_STRING_ENC_UTF16LE, false, opt);
 					RzDetectedString *ds_be = process_one_string(buf, from, needle, to, RZ_STRING_ENC_UTF16BE, false, opt);
@@ -390,13 +454,33 @@ RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrS
 					continue;
 				}
 				str_type = RZ_STRING_ENC_UTF16BE;
+			} else if (can_be_ebcdic(ptr, size) && skip_ibm037 < 0) {
+				ut8 sz = RZ_MIN(size, 15);
+				RzRune *runes = RZ_NEWS(RzRune, sz);
+				rz_return_val_if_fail(runes, -1);
+				int i = 0;
+				for (; i < sz; i++) {
+					rz_str_ibm037_to_unicode(ptr[i], &runes[i]);
+					if (!rz_isprint(runes[i])) {
+						break;
+					}
+				}
+				int s = score(runes, i);
+				RZ_FREE(runes);
+				if (s >= 36) {
+					str_type = RZ_STRING_ENC_IBM037;
+				} else {
+					skip_ibm037 = i + 1;
+					continue;
+				}
 			} else {
-				int rc = rz_utf8_decode(buf + needle - from, to - needle, NULL);
+				int rc = rz_utf8_decode(ptr, size, NULL);
 				if (!rc) {
 					needle++;
 					continue;
+				} else {
+					str_type = RZ_STRING_ENC_8BIT;
 				}
-				str_type = RZ_STRING_ENC_8BIT;
 			}
 		} else if (type == RZ_STRING_ENC_UTF8) {
 			str_type = RZ_STRING_ENC_8BIT; // initial assumption
@@ -406,6 +490,9 @@ RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrS
 		if (!ds) {
 			needle++;
 			continue;
+		}
+		if (str_type == RZ_STRING_ENC_IBM037) {
+			skip_ibm037 = 0;
 		}
 
 		count++;

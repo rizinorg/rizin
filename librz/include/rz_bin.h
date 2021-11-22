@@ -171,6 +171,11 @@ enum {
 	RZ_BIN_STRING_ENC_WIDE_BE = 'n', // utf16-be / widechar string
 	RZ_BIN_STRING_ENC_WIDE32_BE = 'N', // utf32-be
 	RZ_BIN_STRING_ENC_BASE64 = '6',
+	RZ_BIN_STRING_ENC_IBM037 = 'c',
+	RZ_BIN_STRING_ENC_IBM290 = 'd',
+	RZ_BIN_STRING_ENC_EBCDIC_UK = 'k',
+	RZ_BIN_STRING_ENC_EBCDIC_US = 's',
+	RZ_BIN_STRING_ENC_EBCDIC_ES = 't',
 };
 
 enum {
