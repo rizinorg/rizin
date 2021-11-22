@@ -20,6 +20,11 @@ static char *meta_string_escape(RzCore *core, RzAnalysisMetaItem *mi) {
 		// All strings that are put into the metadata are already converted
 		esc_str = rz_str_escape_utf8(mi->str, &opt);
 		break;
+	case RZ_STRING_ENC_IBM037:
+	case RZ_STRING_ENC_IBM290:
+	case RZ_STRING_ENC_EBCDIC_UK:
+	case RZ_STRING_ENC_EBCDIC_US:
+	case RZ_STRING_ENC_EBCDIC_ES:
 	case RZ_STRING_ENC_8BIT:
 		esc_str = rz_str_escape_8bit(mi->str, false, &opt);
 		break;
