@@ -4419,9 +4419,6 @@ RZ_IPI RzCmdStatus rz_cmd_debug_list_bp_handler(RzCore *core, int argc, const ch
 		pj = state->d.pj;
 		rz_cmd_state_output_array_start(state);
 	}
-	if (mode == RZ_OUTPUT_MODE_JSON) {
-		pj_a(pj);
-	}
 	rz_list_foreach (core->dbg->bp->bps, iter, b) {
 		switch (mode) {
 		case RZ_OUTPUT_MODE_STANDARD: {
@@ -4471,9 +4468,6 @@ RZ_IPI RzCmdStatus rz_cmd_debug_list_bp_handler(RzCore *core, int argc, const ch
 		default:
 			rz_warn_if_reached();
 		}
-	}
-	if (mode == RZ_OUTPUT_MODE_JSON) {
-		pj_end(pj);
 	}
 	if (state) {
 		rz_cmd_state_output_array_end(state);
