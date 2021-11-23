@@ -4440,7 +4440,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_list_bp_handler(RzCore *core, int argc, const ch
 			pj_o(pj);
 			pj_kN(pj, "addr", b->addr);
 			pj_ki(pj, "size", b->size);
-			pj_ks(pj, "perm", rz_str_rwx_i(b->perm & 7)); // filter out only rwx bits
+			pj_ks(pj, "perm", rz_str_rwx_i(b->perm));
 			pj_kb(pj, "hw", b->hw);
 			pj_kb(pj, "trace", b->trace);
 			pj_kb(pj, "enabled", b->enabled);
