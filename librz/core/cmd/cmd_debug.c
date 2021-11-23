@@ -4406,17 +4406,14 @@ RZ_IPI RzCmdStatus rz_cmd_debug_add_bp_handler(RzCore *core, int argc, const cha
 
 // dbl
 RZ_IPI RzCmdStatus rz_cmd_debug_list_bp_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	rz_return_val_if_fail(state, RZ_CMD_STATUS_ERROR);
 	RzBreakpointItem *b;
 	RzListIter *iter;
-	RzOutputMode mode = RZ_OUTPUT_MODE_STANDARD;
 	PJ *pj = NULL;
-	if (state) {
-		mode = state->mode;
-		pj = state->d.pj;
-		rz_cmd_state_output_array_start(state);
-	}
+	pj = state->d.pj;
+	rz_cmd_state_output_array_start(state);
 	rz_list_foreach (core->dbg->bp->bps, iter, b) {
-		switch (mode) {
+		switch (state->mode) {
 		case RZ_OUTPUT_MODE_STANDARD: {
 			rz_cons_printf("0x%08" PFMT64x " - 0x%08" PFMT64x
 				       " %d %s %s %s %s %s cmd=\"%s\" cond=\"%s\" "
@@ -4433,14 +4430,13 @@ RZ_IPI RzCmdStatus rz_cmd_debug_list_bp_handler(RzCore *core, int argc, const ch
 				rz_str_get(b->module_name));
 			break;
 		}
-		case RZ_OUTPUT_MODE_RIZIN: {
+		case RZ_OUTPUT_MODE_RIZIN:
 			if (b->module_name) {
-				core->dbg->bp->cb_printf("dbm %s %" PFMT64d "\n", b->module_name, b->module_delta);
+				rz_cons_printf("dbm %s %" PFMT64d "\n", b->module_name, b->module_delta);
 			} else {
-				core->dbg->bp->cb_printf("db @ 0x%08" PFMT64x "\n", b->addr);
+				rz_cons_printf("db @ 0x%08" PFMT64x "\n", b->addr);
 			}
 			break;
-		}
 		case RZ_OUTPUT_MODE_JSON: {
 			pj_o(pj);
 			pj_kN(pj, "addr", b->addr);
@@ -4456,16 +4452,15 @@ RZ_IPI RzCmdStatus rz_cmd_debug_list_bp_handler(RzCore *core, int argc, const ch
 			break;
 		}
 		case RZ_OUTPUT_MODE_QUIET: {
-			core->dbg->bp->cb_printf("0x%08" PFMT64x "\n", b->addr);
+			rz_cons_printf("0x%08" PFMT64x "\n", b->addr);
 			break;
 		}
 		default:
 			rz_warn_if_reached();
+			break;
 		}
 	}
-	if (state) {
-		rz_cmd_state_output_array_end(state);
-	}
+	rz_cmd_state_output_array_end(state);
 
 	return RZ_CMD_STATUS_OK;
 }
