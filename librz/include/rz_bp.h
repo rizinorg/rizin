@@ -88,14 +88,6 @@ typedef struct rz_bp_t {
 	ut64 baddr;
 } RzBreakpoint;
 
-// DEPRECATED: USE RZ_PERM
-enum {
-	RZ_BP_PROT_EXEC = 1,
-	RZ_BP_PROT_WRITE = 2,
-	RZ_BP_PROT_READ = 4,
-	RZ_BP_PROT_ACCESS = 8,
-};
-
 typedef struct rz_bp_trace_t {
 	ut64 addr;
 	ut64 addr_end;

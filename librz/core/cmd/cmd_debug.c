@@ -2884,15 +2884,11 @@ static void add_breakpoint(RzCore *core, ut64 addr, const char *arg_perm, bool h
 	int rw = 0;
 
 	if (watch) {
-		if (!strcmp(arg_perm, "r")) {
-			rw = RZ_BP_PROT_READ;
-		} else if (!strcmp(arg_perm, "w")) {
-			rw = RZ_BP_PROT_WRITE;
-		} else if (!strcmp(arg_perm, "rw")) {
-			rw = RZ_BP_PROT_ACCESS;
-		} else {
+		rw = rz_str_rwx(arg_perm);
+		rw &= 7; // filter out the rwx bits only
+		if (rw == 0) {
 			RZ_LOG_WARN("Invalid permissions provided for setting watchpoint. Defaulting to \"rw\".\n");
-			rw = RZ_BP_PROT_ACCESS;
+			rw = RZ_PERM_RW;
 		}
 	}
 	bpi = rz_debug_bp_add(core->dbg, addr, hwbp, watch, rw, NULL, 0);
@@ -4423,12 +4419,10 @@ RZ_IPI RzCmdStatus rz_cmd_debug_list_bp_handler(RzCore *core, int argc, const ch
 		switch (mode) {
 		case RZ_OUTPUT_MODE_STANDARD: {
 			rz_cons_printf("0x%08" PFMT64x " - 0x%08" PFMT64x
-				       " %d %c%c%c %s %s %s %s cmd=\"%s\" cond=\"%s\" "
+				       " %d %s %s %s %s %s cmd=\"%s\" cond=\"%s\" "
 				       "name=\"%s\" module=\"%s\"\n",
 				b->addr, b->addr + b->size, b->size,
-				((b->perm & RZ_BP_PROT_READ) | (b->perm & RZ_BP_PROT_ACCESS)) ? 'r' : '-',
-				((b->perm & RZ_BP_PROT_WRITE) | (b->perm & RZ_BP_PROT_ACCESS)) ? 'w' : '-',
-				(b->perm & RZ_BP_PROT_EXEC) ? 'x' : '-',
+				rz_str_rwx_i(b->perm),
 				b->hw ? "hw" : "sw",
 				b->trace ? "trace" : "break",
 				b->enabled ? "enabled" : "disabled",
@@ -4451,7 +4445,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_list_bp_handler(RzCore *core, int argc, const ch
 			pj_o(pj);
 			pj_kN(pj, "addr", b->addr);
 			pj_ki(pj, "size", b->size);
-			pj_ks(pj, "perm", rz_str_rwx_i(b->perm & 7)); /* filter out R_BP_PROT_ACCESS */
+			pj_ks(pj, "perm", rz_str_rwx_i(b->perm & 7)); // filter out only rwx bits
 			pj_kb(pj, "hw", b->hw);
 			pj_kb(pj, "trace", b->trace);
 			pj_kb(pj, "enabled", b->enabled);
