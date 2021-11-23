@@ -5,7 +5,6 @@
 #include <rz_lib.h>
 #include <rz_io.h>
 #include <rz_list.h>
-#include <rz_cmd.h>
 
 #ifdef __cplusplus
 extern "C" {

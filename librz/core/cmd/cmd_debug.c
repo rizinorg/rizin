@@ -4422,7 +4422,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_list_bp_handler(RzCore *core, int argc, const ch
 	rz_list_foreach (core->dbg->bp->bps, iter, b) {
 		switch (mode) {
 		case RZ_OUTPUT_MODE_STANDARD: {
-			core->dbg->bp->cb_printf("0x%08" PFMT64x " - 0x%08" PFMT64x
+			rz_cons_printf("0x%08" PFMT64x " - 0x%08" PFMT64x
 						 " %d %c%c%c %s %s %s %s cmd=\"%s\" cond=\"%s\" "
 						 "name=\"%s\" module=\"%s\"\n",
 				b->addr, b->addr + b->size, b->size,
