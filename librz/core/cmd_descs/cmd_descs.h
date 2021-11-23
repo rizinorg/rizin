@@ -401,6 +401,14 @@ RZ_IPI RzCmdStatus rz_open_prioritize_handler(RzCore *core, int argc, const char
 RZ_IPI RzCmdStatus rz_open_prioritize_next_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_open_prioritize_prev_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_open_prioritize_next_rotate_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_open_maps_remove_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_open_maps_remove_all_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_open_maps_ascii_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_open_maps_all_fd_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_open_maps_relocate_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_open_maps_relocate_current_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_open_maps_resize_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI int rz_om_oldinput(void *data, const char *input);
 RZ_IPI int rz_cmd_open(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_cmd_print_gadget_add_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_print_gadget_print_as_rizin_handler(RzCore *core, int argc, const char **argv);
