@@ -4414,7 +4414,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_list_bp_handler(RzCore *core, int argc, const ch
 	rz_cmd_state_output_array_start(state);
 	rz_list_foreach (core->dbg->bp->bps, iter, b) {
 		switch (state->mode) {
-		case RZ_OUTPUT_MODE_STANDARD: {
+		case RZ_OUTPUT_MODE_STANDARD:
 			rz_cons_printf("0x%08" PFMT64x " - 0x%08" PFMT64x
 				       " %d %s %s %s %s %s cmd=\"%s\" cond=\"%s\" "
 				       "name=\"%s\" module=\"%s\"\n",
@@ -4429,7 +4429,6 @@ RZ_IPI RzCmdStatus rz_cmd_debug_list_bp_handler(RzCore *core, int argc, const ch
 				rz_str_get(b->name),
 				rz_str_get(b->module_name));
 			break;
-		}
 		case RZ_OUTPUT_MODE_RIZIN:
 			if (b->module_name) {
 				rz_cons_printf("dbm %s %" PFMT64d "\n", b->module_name, b->module_delta);
@@ -4437,7 +4436,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_list_bp_handler(RzCore *core, int argc, const ch
 				rz_cons_printf("db @ 0x%08" PFMT64x "\n", b->addr);
 			}
 			break;
-		case RZ_OUTPUT_MODE_JSON: {
+		case RZ_OUTPUT_MODE_JSON:
 			pj_o(pj);
 			pj_kN(pj, "addr", b->addr);
 			pj_ki(pj, "size", b->size);
@@ -4450,11 +4449,9 @@ RZ_IPI RzCmdStatus rz_cmd_debug_list_bp_handler(RzCore *core, int argc, const ch
 			pj_ks(pj, "cond", rz_str_get(b->cond));
 			pj_end(pj);
 			break;
-		}
-		case RZ_OUTPUT_MODE_QUIET: {
+		case RZ_OUTPUT_MODE_QUIET:
 			rz_cons_printf("0x%08" PFMT64x "\n", b->addr);
 			break;
-		}
 		default:
 			rz_warn_if_reached();
 			break;
