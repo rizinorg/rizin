@@ -232,12 +232,7 @@ static int rasm_disasm(RzAsmState *as, ut64 addr, const char *buf, int len, int 
 		clen = len; // XXX
 		data = (ut8 *)buf;
 	} else {
-		/* rz_hex_str2bin() returns a negative
-		 *  length while 0 is added to tail. */
 		clen = rz_hex_str2bin(buf, NULL);
-		if ((int)clen < 0) {
-			clen = abs((int)clen);
-		}
 		if ((int)clen < 1 || !(data = malloc(clen))) {
 			ret = 0;
 			goto beach;
