@@ -95,7 +95,7 @@ typedef struct rz_egg_t {
 	RzBuffer *buf;
 	RzBuffer *bin;
 	RzList *list;
-	//RzList *shellcodes; // XXX is plugins nao?
+	// RzList *shellcodes; // XXX is plugins nao?
 	RzAsm *rasm;
 	RzSyscall *syscall;
 	RzEggLang lang;
@@ -153,12 +153,12 @@ typedef struct rz_egg_emit_t {
 	const char *arch;
 	int size; /* in bytes.. 32bit arch is 4, 64bit is 8 .. */
 	const char *retvar;
-	//const char *syscall_body;
+	// const char *syscall_body;
 	const char *(*regs)(RzEgg *egg, int idx);
 	void (*init)(RzEgg *egg);
 	void (*call)(RzEgg *egg, const char *addr, int ptr);
 	void (*jmp)(RzEgg *egg, const char *addr, int ptr);
-	//void (*sc)(int num);
+	// void (*sc)(int num);
 	void (*frame)(RzEgg *egg, int sz);
 	char *(*syscall)(RzEgg *egg, int num);
 	void (*trap)(RzEgg *egg);
@@ -210,7 +210,7 @@ RZ_API bool rz_egg_assemble(RzEgg *egg);
 RZ_API bool rz_egg_assemble_asm(RzEgg *egg, char **asm_list);
 RZ_API void rz_egg_pattern(RzEgg *egg, int size);
 RZ_API RzBuffer *rz_egg_get_bin(RzEgg *egg);
-//RZ_API int rz_egg_dump (RzEgg *egg, const char *file) { }
+// RZ_API int rz_egg_dump (RzEgg *egg, const char *file) { }
 RZ_API char *rz_egg_get_source(RzEgg *egg);
 RZ_API RzBuffer *rz_egg_get_bin(RzEgg *egg);
 RZ_API char *rz_egg_get_assembly(RzEgg *egg);

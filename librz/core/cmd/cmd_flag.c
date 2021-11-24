@@ -262,7 +262,7 @@ static void __printRecursive(RzCore *core, RzList *flags, const char *prefix, in
 		} else {
 			rz_cons_printf("%s %s\n", rz_str_pad(' ', prefix_len), fn + prefix_len);
 		}
-		//rz_cons_printf (".fg %s\n", fn);
+		// rz_cons_printf (".fg %s\n", fn);
 		__printRecursive(core, flags, fn, mode, depth + 1);
 	}
 	rz_list_free(children);
@@ -978,7 +978,7 @@ rep:
 		char *s2 = NULL, *s3 = NULL;
 		char *comment = NULL;
 		bool comment_needs_free = false;
-		ut32 bsze = 1; //core->blocksize;
+		ut32 bsze = 1; // core->blocksize;
 		int eqdir = 0;
 
 		if (eq && eq > cstr) {

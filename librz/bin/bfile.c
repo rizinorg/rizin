@@ -623,8 +623,8 @@ RZ_IPI RzBinFile *rz_bin_file_xtr_load_buffer(RzBin *bin, RzBinXtrPlugin *xtr, c
 	if (bf->xtr_data) {
 		RzListIter *iter;
 		RzBinXtrData *x;
-		//populate xtr_data with baddr and laddr that will be used later on
-		//rz_bin_file_object_new_from_xtr_data
+		// populate xtr_data with baddr and laddr that will be used later on
+		// rz_bin_file_object_new_from_xtr_data
 		rz_list_foreach (bf->xtr_data, iter, x) {
 			x->obj_opts = *obj_opts;
 		}
@@ -948,8 +948,8 @@ RZ_API RzBinSymbol *rz_bin_file_add_method(RzBinFile *bf, const char *klass, con
 }
 
 RZ_API RzBinField *rz_bin_file_add_field(RzBinFile *binfile, const char *classname, const char *name) {
-	//TODO: add_field into class
-	//eprintf ("TODO add field: %s \n", name);
+	// TODO: add_field into class
+	// eprintf ("TODO add field: %s \n", name);
 	return NULL;
 }
 

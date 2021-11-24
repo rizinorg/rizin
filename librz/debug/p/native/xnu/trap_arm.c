@@ -52,7 +52,7 @@ static bool ios_hwstep_enable32(RzDebug *dbg, bool enable) {
 	if (ret != KERN_SUCCESS) {
 		perror("thread_get_state(unified)");
 	}
-	//eprintf ("PC = 0x%08x\n", state.ts_32.__pc);
+	// eprintf ("PC = 0x%08x\n", state.ts_32.__pc);
 	if (enable) {
 		int i;
 		RzIOBind *bio = &dbg->iob;

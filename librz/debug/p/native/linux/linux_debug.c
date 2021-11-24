@@ -88,14 +88,14 @@ int linux_handle_signals(RzDebug *dbg, int tid) {
 	}
 
 	if (siginfo.si_signo > 0) {
-		//siginfo_t newsiginfo = {0};
-		//ptrace (PTRACE_SETSIGINFO, dbg->pid, 0, &siginfo);
+		// siginfo_t newsiginfo = {0};
+		// ptrace (PTRACE_SETSIGINFO, dbg->pid, 0, &siginfo);
 		dbg->reason.type = RZ_DEBUG_REASON_SIGNAL;
 		dbg->reason.signum = siginfo.si_signo;
 		dbg->stopaddr = (ut64)siginfo.si_addr;
-		//dbg->errno = siginfo.si_errno;
-		// siginfo.si_code -> HWBKPT, USER, KERNEL or WHAT
-		// TODO: DO MORE RDEBUGREASON HERE
+		// dbg->errno = siginfo.si_errno;
+		//  siginfo.si_code -> HWBKPT, USER, KERNEL or WHAT
+		//  TODO: DO MORE RDEBUGREASON HERE
 		switch (dbg->reason.signum) {
 		case SIGTRAP: {
 			if (dbg->glob_libs || dbg->glob_unlibs) {
@@ -278,7 +278,7 @@ RzDebugReasonType linux_ptrace_event(RzDebug *dbg, int ptid, int status, bool do
 			rz_sys_perror("ptrace GETEVENTMSG");
 			return RZ_DEBUG_REASON_ERROR;
 		}
-		//TODO: Check other processes exit if dbg->trace_forks is on
+		// TODO: Check other processes exit if dbg->trace_forks is on
 		if (ptid != dbg->pid) {
 			eprintf("(%d) Thread exited with status=0x%" PFMT64x "\n", ptid, (ut64)data);
 			return RZ_DEBUG_REASON_EXIT_TID;
@@ -344,7 +344,7 @@ int linux_step(RzDebug *dbg) {
 	int ret = false;
 	int pid = dbg->tid;
 	ret = rz_debug_ptrace(dbg, PTRACE_SINGLESTEP, pid, 0, 0);
-	//XXX(jjd): why?? //linux_handle_signals (dbg);
+	// XXX(jjd): why?? //linux_handle_signals (dbg);
 	if (ret == -1) {
 		perror("native-singlestep");
 		ret = false;
@@ -1078,7 +1078,7 @@ int linux_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 #if !__ANDROID__
 	{
 		int i;
-		for (i = 0; i < 8; i++) { //DR0-DR7
+		for (i = 0; i < 8; i++) { // DR0-DR7
 			if (i == 4 || i == 5) {
 				continue;
 			}
@@ -1188,11 +1188,11 @@ int linux_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 		ret = rz_debug_ptrace(dbg, PTRACE_GETREGS, pid, NULL, &regs);
 #endif
 		/*
-			 * if perror here says 'no such process' and the
-			 * process exists still.. is because there's a missing call
-			 * to 'wait'. and the process is not yet available to accept
-			 * more ptrace queries.
-			 */
+		 * if perror here says 'no such process' and the
+		 * process exists still.. is because there's a missing call
+		 * to 'wait'. and the process is not yet available to accept
+		 * more ptrace queries.
+		 */
 		if (ret != 0) {
 			rz_sys_perror("PTRACE_GETREGS");
 			return false;
@@ -1347,7 +1347,7 @@ RzList *linux_desc_list(int pid) {
 				perm |= RZ_PERM_W;
 			}
 		}
-		//TODO: Offset
+		// TODO: Offset
 		desc = rz_debug_desc_new(atoi(de->d_name), buf, perm, type, 0);
 		if (!desc) {
 			break;

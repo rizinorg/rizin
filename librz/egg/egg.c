@@ -168,7 +168,7 @@ RZ_API bool rz_egg_setup(RzEgg *egg, const char *arch, int bits, int endian, con
 			break;
 		}
 	} else if (!strcmp(arch, "trace")) {
-		//rz_syscall_setup (egg->syscall, arch, os, bits);
+		// rz_syscall_setup (egg->syscall, arch, os, bits);
 		egg->remit = &emit_trace;
 		egg->bits = bits;
 		egg->endian = endian;
@@ -256,7 +256,7 @@ RZ_API void rz_egg_syscall(RzEgg *egg, const char *arg, ...) {
 	RzSyscallItem *item = rz_syscall_get(egg->syscall,
 		rz_syscall_get_num(egg->syscall, arg), -1);
 	if (!strcmp(arg, "close")) {
-		//egg->remit->syscall_args ();
+		// egg->remit->syscall_args ();
 	}
 	if (!item) {
 		return;
@@ -275,7 +275,7 @@ RZ_API void rz_egg_label(RzEgg *egg, const char *name) {
 
 RZ_API void rz_egg_math(RzEgg *egg) { //, char eq, const char *vs, char type, const char *sr
 	// TODO
-	//e->mathop (egg, op, type, eq, p);
+	// e->mathop (egg, op, type, eq, p);
 }
 
 RZ_API int rz_egg_raw(RzEgg *egg, const ut8 *b, int len) {
@@ -425,7 +425,7 @@ RZ_API RzBuffer *rz_egg_get_bin(RzEgg *egg) {
 	return egg->bin;
 }
 
-//RZ_API int rz_egg_dump (RzEgg *egg, const char *file) { }
+// RZ_API int rz_egg_dump (RzEgg *egg, const char *file) { }
 
 RZ_API char *rz_egg_get_source(RzEgg *egg) {
 	return rz_buf_to_string(egg->src);

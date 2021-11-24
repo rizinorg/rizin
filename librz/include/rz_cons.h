@@ -95,8 +95,8 @@ typedef struct rz_cons_grep_t {
 	int sort;
 	int sort_row;
 	bool sort_invert;
-	int f_line; //first line
-	int l_line; //last line
+	int f_line; // first line
+	int l_line; // last line
 	int tokens[RZ_CONS_GREP_TOKENS];
 	int tokens_used;
 	int amp;
@@ -363,7 +363,7 @@ typedef struct rz_cons_canvas_t {
 	char **b;
 	int *blen;
 	int *bsize;
-	const char *attr; //The current attr (inserted on each write)
+	const char *attr; // The current attr (inserted on each write)
 	HtUP *attrs; // all the different attributes <key: unsigned int loc, const char *attr>
 	RzStrConstPool constpool; // Pool for non-compile-time attrs
 	int sx; // scrollx
@@ -609,12 +609,12 @@ typedef struct rz_cons_t {
 #define Color_INVERT       "\x1b[7m"
 #define Color_INVERT_RESET "\x1b[27m"
 /* See 'man 4 console_codes' for details:
-      * "ESC c"        -- Reset
-      * "ESC ( K"      -- Select user mapping
-      * "ESC [ 0 m"    -- Reset all display attributes
-      * "ESC [ J"      -- Erase to the end of screen
-      * "ESC [ ? 25 h" -- Make cursor visible
-      */
+ * "ESC c"        -- Reset
+ * "ESC ( K"      -- Select user mapping
+ * "ESC [ 0 m"    -- Reset all display attributes
+ * "ESC [ J"      -- Erase to the end of screen
+ * "ESC [ ? 25 h" -- Make cursor visible
+ */
 #define Color_RESET_TERMINAL "\x1b" \
 			     "c\x1b(K\x1b[0m\x1b[J\x1b[?25h"
 #define Color_RESET      "\x1b[0m" /* reset all */

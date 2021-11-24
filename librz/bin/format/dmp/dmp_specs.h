@@ -100,7 +100,7 @@ typedef struct {
 	struct windows_exception_record64 Exception; // 0xf00 0x98 bytes
 	ut32 DumpType; // 0xf98 0x4 bytes
 	ut8 _padding5[0x4];
-	ut64 RequiredDumpSpace; //0xfa0
+	ut64 RequiredDumpSpace; // 0xfa0
 	ut64 SystemTime;
 	ut8 Comment[128];
 	ut64 SystemUpTime;

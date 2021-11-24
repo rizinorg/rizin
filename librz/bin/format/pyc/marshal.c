@@ -393,7 +393,7 @@ static pyc_object *get_binary_complex_object(RzBuffer *buffer) {
 	bool error = false;
 	double a, b;
 
-	//a + bj
+	// a + bj
 	a = get_float64(buffer, &error);
 	b = get_float64(buffer, &error);
 	if (error) {
@@ -870,8 +870,8 @@ static pyc_object *get_code_object(RzBuffer *buffer) {
 		return NULL;
 	}
 
-	//ret->type = TYPE_CODE_v1;
-	// support start from v1.0
+	// ret->type = TYPE_CODE_v1;
+	//  support start from v1.0
 	ret->data = cobj;
 
 	bool v10_to_12 = magic_int_within(magic_int, 39170, 16679, &error); // 1.0.1 - 1.2
@@ -879,7 +879,7 @@ static pyc_object *get_code_object(RzBuffer *buffer) {
 	bool v11_to_14 = magic_int_within(magic_int, 39170, 20117, &error); // 1.0.1 - 1.4
 	bool v15_to_22 = magic_int_within(magic_int, 20121, 60718, &error); // 1.5a1 - 2.2a1
 	bool v13_to_20 = magic_int_within(magic_int, 11913, 50824, &error); // 1.3b1 - 2.0b1
-	//bool v21_to_27 = (!v13_to_20) && magic_int_within (magic_int, 60124, 62212, &error);
+	// bool v21_to_27 = (!v13_to_20) && magic_int_within (magic_int, 60124, 62212, &error);
 	bool has_posonlyargcount = magic_int_within(magic_int, 3410, 3424, &error); // v3.8.0a4 - latest
 	if (error) {
 		free(ret);
@@ -931,10 +931,10 @@ static pyc_object *get_code_object(RzBuffer *buffer) {
 		cobj->flags = get_ut32(buffer, &error);
 	}
 
-	//to help disassemble the code
+	// to help disassemble the code
 	cobj->start_offset = rz_buf_tell(buffer) + 5; // 1 from get_object() and 4 from get_string_object()
 	if (!refs) {
-		return ret; //return for entried part to get the root object of this file
+		return ret; // return for entried part to get the root object of this file
 	}
 	cobj->code = get_object(buffer);
 	cobj->end_offset = rz_buf_tell(buffer);
@@ -1140,7 +1140,7 @@ static bool extract_sections_symbols(pyc_object *obj, RzList *sections, RzList *
 	RzBinSymbol *symbol = NULL;
 	RzListIter *i = NULL;
 
-	//each code object is a section
+	// each code object is a section
 	if_true_return(!obj || (obj->type != TYPE_CODE_v1 && obj->type != TYPE_CODE_v0), false);
 
 	cobj = obj->data;
@@ -1150,7 +1150,7 @@ static bool extract_sections_symbols(pyc_object *obj, RzList *sections, RzList *
 	if_true_return(!cobj->name->data, false);
 	if_true_return(!cobj->consts, false);
 
-	//add the cobj to objs list
+	// add the cobj to objs list
 	if (!rz_list_append(cobjs, cobj)) {
 		goto fail;
 	}
@@ -1175,7 +1175,7 @@ static bool extract_sections_symbols(pyc_object *obj, RzList *sections, RzList *
 	section = NULL;
 	// start building symbol
 	symbol->name = strdup(prefix);
-	//symbol->bind;
+	// symbol->bind;
 	symbol->type = RZ_BIN_TYPE_FUNC_STR;
 	symbol->size = cobj->end_offset - cobj->start_offset;
 	symbol->vaddr = cobj->start_offset;

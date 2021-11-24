@@ -550,7 +550,7 @@ void macosx_debug_regions(RzIO *io, task_t task, mach_vm_address_t address, int 
 			int perm = 0;
 
 			io->cb_printf(num_printed ? "   ... " : "Region ");
-			//findListOfBinaries(task, prev_address, prev_size);
+			// findListOfBinaries(task, prev_address, prev_size);
 			/* Quick hack to show size of segment, which GDB does not */
 			print_size = size;
 			if (print_size > 1024) {

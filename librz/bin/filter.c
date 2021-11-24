@@ -331,7 +331,7 @@ static bool bin_strfilter(RzBin *bin, const char *str) {
 			return false;
 		}
 		break;
-	case 'i': //IPV4
+	case 'i': // IPV4
 	{
 		int segment = 0;
 		int segmentsum = 0;

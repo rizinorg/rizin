@@ -4,7 +4,7 @@
 #include <rz_util.h>
 #include "minunit.h"
 
-//TODO test rz_str_chop_path
+// TODO test rz_str_chop_path
 
 bool test_rz_str_replace_char_once(void) {
 	char *str = strdup("hello world");
@@ -74,7 +74,7 @@ bool test_rz_str_replace_char(void) {
 	mu_end;
 }
 
-//TODO test rz_str_bits
+// TODO test rz_str_bits
 
 bool test_rz_str_bits64(void) {
 	char buf[65];
@@ -87,7 +87,7 @@ bool test_rz_str_bits64(void) {
 	mu_end;
 }
 
-//TODO test rz_str_bits_from_string
+// TODO test rz_str_bits_from_string
 
 bool test_rz_str_rwx(void) {
 	int rwx = rz_str_rwx("rwx");
@@ -107,7 +107,7 @@ bool test_rz_str_rwx(void) {
 	mu_end;
 }
 
-//TODO test rz_str_binstr2bin
+// TODO test rz_str_binstr2bin
 
 bool test_rz_str_rwx_i(void) {
 	const char *rwx = rz_str_rwx_i(7);
@@ -137,7 +137,7 @@ bool test_rz_str_trim(void) {
 	free(two);
 	mu_end;
 }
-//TODO find a way to test rz_str_home.
+// TODO find a way to test rz_str_home.
 
 bool test_rz_str_bool(void) {
 	const char *one = rz_str_bool(1);
@@ -171,8 +171,8 @@ bool test_rz_str_case(void) {
 	mu_end;
 }
 
-//TODO test rz_str_hash64, rz_str_hash
-//TODO test rz_str_delta (WHAT!)
+// TODO test rz_str_hash64, rz_str_hash
+// TODO test rz_str_delta (WHAT!)
 
 bool test_rz_str_split(void) {
 	char *hi = strdup("hello world");
@@ -223,8 +223,8 @@ bool test_rz_str_split_lines(void) {
 }
 
 bool test_rz_str_tokenize(void) {
-	//XXX rz_str_word0 doesn't work on "hello      world" to
-	// tokenize into ["hello", "world"]
+	// XXX rz_str_word0 doesn't work on "hello      world" to
+	//  tokenize into ["hello", "world"]
 	char *hi = strdup("hello world");
 	int r = rz_str_word_set0(hi);
 	mu_assert_eq(r, 2, "tokenize hello world");

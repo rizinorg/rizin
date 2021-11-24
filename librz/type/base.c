@@ -173,7 +173,7 @@ RZ_API void rz_type_db_save_base_type(const RzTypeDB *typedb, const RzBaseType *
 
 /**
  * \brief Returns C representation as string of RzBaseType (see rz_type_db_base_type_as_pretty_string for cusom print options)
- * 
+ *
  * \param typedb type database instance
  * \param btype RzBaseType to convert
  * \return char* one line C representation of the string with no semicolon at the end and no unfolding of inner types

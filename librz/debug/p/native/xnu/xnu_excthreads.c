@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2015 alvarofe <alvaro.felipe91@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-//FIXME deallocate all the port when they are not longer needed
+// FIXME deallocate all the port when they are not longer needed
 
 #include "xnu_threads.h"
 
@@ -43,9 +43,9 @@ static bool modify_trace_bit(RzDebug *dbg, xnu_thread_t *th, int enable) {
 	return true;
 }
 
-#elif __POWERPC__ //ppc processor
-//XXX poor support at this stage i don't care so much. Once intel and arm done it could be done
-//TODO add better support for ppc
+#elif __POWERPC__ // ppc processor
+// XXX poor support at this stage i don't care so much. Once intel and arm done it could be done
+// TODO add better support for ppc
 static bool modify_trace_bit(RzDebug *dbg, void *th, int enable) {
 	return false;
 }
@@ -72,7 +72,7 @@ static bool modify_trace_bit(RzDebug *dbg, xnu_thread *th, int enable) {
 }
 #endif
 
-#elif __arm || __arm64 || __aarch64 //arm processor
+#elif __arm || __arm64 || __aarch64 // arm processor
 
 // BCR address match type
 #define BCR_M_IMVA_MATCH       ((uint32_t)(0u << 21))
@@ -151,9 +151,9 @@ static int modify_trace_bit(RzDebug *dbg, xnu_thread_t *th, int enable) {
 		if (enable) {
 			static ut64 chained_address = 0;
 			RzIOBind *bio = &dbg->iob;
-			//set a breakpoint that will stop when the PC doesn't
-			//match the current one
-			//set the current PC as the breakpoint address
+			// set a breakpoint that will stop when the PC doesn't
+			// match the current one
+			// set the current PC as the breakpoint address
 			if (chained_address) {
 				state->__bvr[i] = chained_address & 0xFFFFFFFCu;
 				chained_address = 0;
@@ -161,8 +161,8 @@ static int modify_trace_bit(RzDebug *dbg, xnu_thread_t *th, int enable) {
 				state->__bvr[i] = regs->ts_32.__pc & 0xFFFFFFFCu;
 			}
 			state->__bcr[i] = BCR_M_IMVA_MISMATCH | // stop on
-				// address
-				// mismatch
+								// address
+								// mismatch
 				S_USER | // stop only in user mode
 				BCR_ENABLE; // enable this breakpoint
 			if (regs->ts_32.__cpsr & 0x20) {
@@ -186,9 +186,9 @@ static int modify_trace_bit(RzDebug *dbg, xnu_thread_t *th, int enable) {
 				// ARM breakpoint
 				state->__bcr[i] |= BAS_IMVA_ALL; // Stop when any address bits change
 			}
-			//disable bits
+			// disable bits
 			for (i = i + 1; i < 16; i++) {
-				//Disable all others
+				// Disable all others
 				state->__bcr[i] = 0;
 				state->__bvr[i] = 0;
 			}
@@ -204,7 +204,7 @@ static int modify_trace_bit(RzDebug *dbg, xnu_thread_t *th, int enable) {
 		eprintf("Bad flavor modificy_trace_bit arm\n");
 		return false;
 	}
-	//set state
+	// set state
 	if (!xnu_thread_set_drx(dbg, th)) {
 		eprintf("error to set drx modificy_trace_bit arm\n");
 		return false;
@@ -246,7 +246,7 @@ static bool xnu_restore_exception_ports(int pid) {
 	return true;
 }
 
-//TODO review more closely we are failing here
+// TODO review more closely we are failing here
 static void encode_reply(mig_reply_error_t *reply, mach_msg_header_t *hdr, int code) {
 	mach_msg_header_t *rh = &reply->Head;
 	rh->msgh_bits = MACH_MSGH_BITS(MACH_MSGH_BITS_REMOTE(hdr->msgh_bits), 0);
@@ -272,7 +272,7 @@ static bool validate_mach_message(RzDebug *dbg, exc_msg *msg) {
 		return false;
 	}
 	/*mach exception we are interested*/
-	//XXX for i386 this id seems to be different
+	// XXX for i386 this id seems to be different
 	if (msg->hdr.msgh_id > 2405 || msg->hdr.msgh_id < 2401) {
 		return false;
 	}
@@ -294,9 +294,9 @@ static bool validate_mach_message(RzDebug *dbg, exc_msg *msg) {
 		return false;
 	}
 	if (pid_to_task(dbg->pid) != msg->task.name) {
-		//we receive a exception from an unknown process this could
-		//happen if the child fork, as the created process will inherit
-		//its exception port
+		// we receive a exception from an unknown process this could
+		// happen if the child fork, as the created process will inherit
+		// its exception port
 		/*we got new rights to the task, get rid of it.*/
 		kr = mach_port_deallocate(mach_task_self(), msg->task.name);
 		if (kr != KERN_SUCCESS) {
@@ -374,7 +374,7 @@ static int handle_exception_message(RzDebug *dbg, exc_msg *msg, int *ret_code) {
 	return ret;
 }
 
-//TODO improve this code
+// TODO improve this code
 static int __xnu_wait(RzDebug *dbg, int pid) {
 	// here comes the important thing
 	kern_return_t kr;
@@ -476,7 +476,7 @@ bool xnu_create_exception_thread(RzDebug *dbg) {
 		EXCEPTION_DEFAULT | MACH_EXCEPTION_CODES, THREAD_STATE_NONE,
 		ex.masks, &ex.count, ex.ports, ex.behaviors, ex.flavors);
 	RETURN_ON_MACH_ERROR("failed to swap exception ports\n", false);
-	//get notification when process die
+	// get notification when process die
 	kr = mach_port_request_notification(task_self, task, MACH_NOTIFY_DEAD_NAME,
 		0, exception_port, MACH_MSG_TYPE_MAKE_SEND_ONCE, &req_port);
 	if (kr != KERN_SUCCESS) {

@@ -25,15 +25,15 @@ static int rz_bin_pemixed_init(struct rz_bin_pemixed_obj_t *bin, struct PE_(rz_b
 	return true;
 }
 
-//carves out dos from original pe
-//TODO: return mz file instead pe
+// carves out dos from original pe
+// TODO: return mz file instead pe
 struct PE_(rz_bin_pe_obj_t) * rz_bin_pemixed_init_dos(struct PE_(rz_bin_pe_obj_t) * pe_bin) {
 	ut8 *tmp_buf;
 
 	ut64 pe_hdr_off = pe_bin->dos_header->e_lfanew;
 
-	//idk if this is the most efficient way but could not find a function to read
-	//RzBuffer into another RzBuffer
+	// idk if this is the most efficient way but could not find a function to read
+	// RzBuffer into another RzBuffer
 	if (!(tmp_buf = malloc(pe_hdr_off))) {
 		return NULL;
 	}
@@ -63,7 +63,7 @@ struct PE_(rz_bin_pe_obj_t) * rz_bin_pemixed_init_native(struct PE_(rz_bin_pe_ob
 	struct PE_(rz_bin_pe_obj_t) *sub_bin_native = RZ_NEW0(struct PE_(rz_bin_pe_obj_t));
 	memcpy(sub_bin_native, pe_bin, sizeof(struct PE_(rz_bin_pe_obj_t)));
 
-	//copy pe_bin->b and assign to sub_bin_native
+	// copy pe_bin->b and assign to sub_bin_native
 
 	// if (!(tmp_buf = malloc (b_size))) {
 	// 	eprintf("bad malloc\n");
@@ -80,7 +80,7 @@ struct PE_(rz_bin_pe_obj_t) * rz_bin_pemixed_init_native(struct PE_(rz_bin_pe_ob
 		return NULL;
 	}
 
-	//calculate the dotnet data directory offset
+	// calculate the dotnet data directory offset
 	int dotnet_offset = pe_bin->dos_header->e_lfanew;
 	dotnet_offset += sizeof(PE_(image_nt_headers));
 	dotnet_offset -= sizeof(PE_(image_data_directory)) * 2;
@@ -106,12 +106,12 @@ struct PE_(rz_bin_pe_obj_t) * rz_bin_pemixed_init_native(struct PE_(rz_bin_pe_ob
 	return sub_bin_native;
 }
 
-//this method should just return the original pe file
-// struct PE_(rz_bin_pe_obj_t)* rz_bin_pemixed_init_net(struct PE_(rz_bin_pe_obj_t)* pe_bin) {
+// this method should just return the original pe file
+//  struct PE_(rz_bin_pe_obj_t)* rz_bin_pemixed_init_net(struct PE_(rz_bin_pe_obj_t)* pe_bin) {
 //		return pe_bin;
-// }
+//  }
 
-//not sure if this function is nessescary
+// not sure if this function is nessescary
 struct PE_(rz_bin_pe_obj_t) * rz_bin_pemixed_extract(struct rz_bin_pemixed_obj_t *bin, int sub_bin) {
 	if (!bin) {
 		return NULL;
@@ -128,7 +128,7 @@ struct PE_(rz_bin_pe_obj_t) * rz_bin_pemixed_extract(struct rz_bin_pemixed_obj_t
 	return NULL;
 }
 
-//if IL only bit is set; if true then it is pure .NET binary with no unmanaged code
+// if IL only bit is set; if true then it is pure .NET binary with no unmanaged code
 static bool check_il_only(ut32 flag) {
 	ut32 check_mask = 1;
 	return flag & check_mask;
@@ -138,13 +138,13 @@ void *rz_bin_pemixed_free(struct rz_bin_pemixed_obj_t *bin) {
 	if (!bin) {
 		return NULL;
 	}
-	//only one free is nessescary since they all point
-	//to the same original pe struct
-	//possible memleak here
+	// only one free is nessescary since they all point
+	// to the same original pe struct
+	// possible memleak here
 	PE_(rz_bin_pe_free)
 	(bin->sub_bin_net);
 	if (bin->sub_bin_dos) {
-		rz_buf_free(bin->sub_bin_dos->b); //dos is the only one with its own buf
+		rz_buf_free(bin->sub_bin_dos->b); // dos is the only one with its own buf
 	}
 	free(bin->sub_bin_dos);
 	free(bin->sub_bin_native);
@@ -178,9 +178,9 @@ struct rz_bin_pemixed_obj_t *rz_bin_pemixed_from_bytes_new(const ut8 *buf, ut64 
 		(pe_bin);
 		return rz_bin_pemixed_free(bin);
 	}
-	//check if binary only contains managed code
-	//check implemented here cuz we need to intialize
-	//the pe header to access the clr hdr
+	// check if binary only contains managed code
+	// check implemented here cuz we need to intialize
+	// the pe header to access the clr hdr
 	if (check_il_only(pe_bin->clr_hdr->Flags)) {
 		PE_(rz_bin_pe_free)
 		(pe_bin);

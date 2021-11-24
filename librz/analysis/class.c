@@ -611,8 +611,8 @@ RZ_API void rz_analysis_class_method_recover(RzAnalysis *analysis, RzBinClass *c
 	rz_list_sort(methods, &symbol_method_sort_by_addr);
 	rz_list_foreach (methods, iter_method, sym) {
 		if (!rz_analysis_class_method_exists(analysis, cls->name, sym->name)) {
-			//detect constructor or destructor but not implemented
-			//Temporarily set to default
+			// detect constructor or destructor but not implemented
+			// Temporarily set to default
 			RzAnalysisMethod method;
 			method.addr = sym->vaddr;
 			method.vtable_offset = -1;
@@ -1548,10 +1548,10 @@ RZ_API void rz_analysis_class_list_vtable_offset_functions(RzAnalysis *analysis,
 }
 
 /**
- * @brief Creates RzGraph from class inheritance information where 
+ * @brief Creates RzGraph from class inheritance information where
  *        each node has RzGraphNodeInfo as generic data
- * 
- * @param analysis 
+ *
+ * @param analysis
  * @return RzGraph* NULL if failure
  */
 RZ_API RzGraph *rz_analysis_class_get_inheritance_graph(RzAnalysis *analysis) {

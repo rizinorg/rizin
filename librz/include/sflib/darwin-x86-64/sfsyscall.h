@@ -1,6 +1,6 @@
-//ssed on the registers rdi, rsi, rdx, r10, r8 and r9
+// ssed on the registers rdi, rsi, rdx, r10, r8 and r9
 /*
- * sfsyscall.h --- SFLib syscall macros for OpenBSD/i386 
+ * sfsyscall.h --- SFLib syscall macros for OpenBSD/i386
  * see http://www.secdev.org/projects/shellforge.html for more informations
  *
  * Copyright (C) 2004  Philippe Biondi <phil@secdev.org>

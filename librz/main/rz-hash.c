@@ -855,7 +855,7 @@ static bool calculate_hash(RzHashContext *ctx, RzIO *io, const char *filename) {
 		bool result = false;
 
 		if (!rz_hash_parse_hexadecimal("-c", ctx->compare, &cmphash, &cmphashlen)) {
-			//RZ_LOG_ERROR("rz-hash: error, cannot allocate block memory\n");
+			// RZ_LOG_ERROR("rz-hash: error, cannot allocate block memory\n");
 			goto calculate_hash_end;
 		}
 

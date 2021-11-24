@@ -200,7 +200,7 @@ static RzList *mem(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *entries(RzBinFile *bf) { //Should be 3 offsets pointed by NMI, RESET, IRQ after mapping && default = 1st CHR
+static RzList *entries(RzBinFile *bf) { // Should be 3 offsets pointed by NMI, RESET, IRQ after mapping && default = 1st CHR
 	RzList *ret;
 	RzBinAddr *ptr = NULL;
 	if (!(ret = rz_list_new())) {

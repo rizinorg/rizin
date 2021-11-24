@@ -763,7 +763,7 @@ int nto_send(libqnxr_t *g, ut32 len, st32 report_errors) {
 			rlen = qnxr_read_packet(g);
 			if ((g->channelrd != SET_CHANNEL_TEXT) || (rlen == -1))
 				break;
-			//nto_incoming_text (rlen); TODO
+			// nto_incoming_text (rlen); TODO
 		}
 		if (rlen == -1) {
 			eprintf("%s: NAK received - resending\n", __func__);

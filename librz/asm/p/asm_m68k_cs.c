@@ -115,7 +115,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	}
 	cs_free(insn, n);
 beach:
-	//cs_close (&cd);
+	// cs_close (&cd);
 	if (op && buf_asm) {
 		if (!strncmp(buf_asm, "dc.w", 4)) {
 			rz_asm_op_set_asm(op, "invalid");

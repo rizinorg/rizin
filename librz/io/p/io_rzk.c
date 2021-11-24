@@ -12,12 +12,12 @@
 #include "io_rzk_windows.h"
 #elif defined(__linux__) && !defined(__GNU__)
 #include "io_rzk_linux.h"
-struct io_rzk_linux rzk_struct; //TODO: move this into desc->data
+struct io_rzk_linux rzk_struct; // TODO: move this into desc->data
 #endif
 
 int rzk__write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
 #if __WINDOWS__
-	//eprintf("writing to: 0x%"PFMT64x" len: %x\n",io->off, count);
+	// eprintf("writing to: 0x%"PFMT64x" len: %x\n",io->off, count);
 	return WriteKernelMemory(io->off, buf, count);
 #elif defined(__linux__) && !defined(__GNU__)
 	switch (rzk_struct.beid) {
@@ -114,7 +114,7 @@ static RzIODesc *rzk__open(RzIO *io, const char *pathname, int rw, int mode) {
 			free(w32);
 			return NULL;
 		}
-		//return rz_io_desc_new (&rz_io_plugin_rzk, -1, pathname, rw, mode, w32);
+		// return rz_io_desc_new (&rz_io_plugin_rzk, -1, pathname, rw, mode, w32);
 		return rz_io_desc_new(io, &rz_io_plugin_rzk, pathname, rw, mode, w32);
 #elif defined(__linux__) && !defined(__GNU__)
 		int fd = open("/dev/rzk", O_RDONLY);

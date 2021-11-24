@@ -217,21 +217,21 @@ typedef unsigned int socklen_t;
 /* SOCK_ constants */
 enum __socket_type {
 	SOCK_STREAM = 1, /* Sequenced, reliable, connection-based
-                                   byte streams.  */
+				   byte streams.  */
 #define SOCK_STREAM SOCK_STREAM
 	SOCK_DGRAM = 2, /* Connectionless, unreliable datagrams
-                                   of fixed maximum length.  */
+				   of fixed maximum length.  */
 #define SOCK_DGRAM SOCK_DGRAM
 	SOCK_RAW = 3, /* Raw protocol interface.  */
 #define SOCK_RAW SOCK_RAW
 	SOCK_RDM = 4, /* Reliably-delivered messages.  */
 #define SOCK_RDM SOCK_RDM
 	SOCK_SEQPACKET = 5, /* Sequenced, reliable, connection-based,
-                                   datagrams of fixed maximum length.  */
+				   datagrams of fixed maximum length.  */
 #define SOCK_SEQPACKET SOCK_SEQPACKET
 	SOCK_PACKET = 10 /* Linux specific way of getting packets
-                                   at the dev level.  For writing rarp and
-                                   other similar things on the user level. */
+				   at the dev level.  For writing rarp and
+				   other similar things on the user level. */
 #define SOCK_PACKET SOCK_PACKET
 };
 
@@ -397,7 +397,7 @@ struct msghdr {
 /* Structure used for storage of ancillary data object information.  */
 struct cmsghdr {
 	size_t cmsg_len; /* Length of data in cmsg_data plus length
-                                   of cmsghdr structure.  */
+				   of cmsghdr structure.  */
 	int cmsg_level; /* Originating protocol.  */
 	int cmsg_type; /* Protocol specific type.  */
 };

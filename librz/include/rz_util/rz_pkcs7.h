@@ -21,7 +21,7 @@ typedef struct rz_pkcs7_digestalgorithmidentifiers_t {
 } RPKCS7DigestAlgorithmIdentifiers;
 
 typedef struct rz_pkcs7_contentinfo_t {
-	RASN1String *contentType; //OID
+	RASN1String *contentType; // OID
 	RASN1Binary *content; // optional. oid structure definition
 } RPKCS7ContentInfo;
 
@@ -31,7 +31,7 @@ typedef struct rz_pkcs7_issuerandserialnumber_t {
 } RPKCS7IssuerAndSerialNumber;
 
 typedef struct rz_pkcs7_attribute_t {
-	RASN1String *oid; //OID
+	RASN1String *oid; // OID
 	RASN1Binary *data; // optional. oid structure definition
 } RPKCS7Attribute;
 
@@ -44,10 +44,10 @@ typedef struct rz_pkcs7_signerinfo_t {
 	ut32 version;
 	RPKCS7IssuerAndSerialNumber issuerAndSerialNumber;
 	RX509AlgorithmIdentifier digestAlgorithm;
-	RPKCS7Attributes authenticatedAttributes; //Optional
+	RPKCS7Attributes authenticatedAttributes; // Optional
 	RX509AlgorithmIdentifier digestEncryptionAlgorithm;
 	RASN1Binary *encryptedDigest;
-	RPKCS7Attributes unauthenticatedAttributes; //Optional
+	RPKCS7Attributes unauthenticatedAttributes; // Optional
 } RPKCS7SignerInfo;
 
 typedef struct rz_pkcs7_signerinfos_t {
@@ -59,8 +59,8 @@ typedef struct rz_pkcs7_signeddata_t {
 	ut32 version;
 	RPKCS7DigestAlgorithmIdentifiers digestAlgorithms;
 	RPKCS7ContentInfo contentInfo;
-	RPKCS7ExtendedCertificatesAndCertificates certificates; //Optional
-	RPKCS7CertificateRevocationLists crls; //Optional
+	RPKCS7ExtendedCertificatesAndCertificates certificates; // Optional
+	RPKCS7CertificateRevocationLists crls; // Optional
 	RPKCS7SignerInfos signerinfos;
 } RPKCS7SignedData;
 
@@ -70,7 +70,7 @@ typedef struct rz_pkcs7_container_t {
 } RCMS;
 
 typedef struct {
-	RASN1String *type; //OID
+	RASN1String *type; // OID
 	RASN1Binary *data; // optional.
 } SpcAttributeTypeAndOptionalValue;
 

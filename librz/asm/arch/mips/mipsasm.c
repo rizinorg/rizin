@@ -80,7 +80,7 @@ static struct {
 static int mips_r(ut8 *b, int op, int rs, int rt, int rd, int sa, int fun) {
 	//^this will keep the below mips_r fuctions working
 	// diff instructions use a diff arg order (add is rd, rs, rt - sll is rd, rt, sa - sllv is rd, rt, rs
-	//static int mips_r (ut8 *b, int op, int rd, int rs, int rt, int sa, int fun) {
+	// static int mips_r (ut8 *b, int op, int rd, int rs, int rt, int sa, int fun) {
 	if (rs < 0 || rt < 0 || rd < 0 || sa < 0) {
 		return -1;
 	}

@@ -79,4 +79,4 @@ PicBaselineOpcode pic_baseline_get_opcode(ut16 instr);
 const PicBaselineOpInfo *pic_baseline_get_op_info(PicBaselineOpcode opcode);
 int pic_baseline_disassemble(RzAsmOp *op, char *opbuf, const ut8 *b, int l);
 
-#endif //PIC_BASELINE_H
+#endif // PIC_BASELINE_H

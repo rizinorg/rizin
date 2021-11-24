@@ -48,7 +48,7 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 	if (bochs_open(&riob->desc, fileBochs, fileCfg) == true) {
 		desc = &riob->desc;
 		riobochs = rz_io_desc_new(io, &rz_io_plugin_bochs, file, rw, mode, riob);
-		//riogdb = rz_io_desc_new (&rz_io_plugin_gdb, riog->desc.sock->fd, file, rw, mode, riog);
+		// riogdb = rz_io_desc_new (&rz_io_plugin_gdb, riog->desc.sock->fd, file, rw, mode, riog);
 		free(fileBochs);
 		free(fileCfg);
 		return riobochs;

@@ -55,7 +55,7 @@ RZ_API RzSearch *rz_search_free(RzSearch *s) {
 	}
 	rz_list_free(s->hits);
 	rz_list_free(s->kws);
-	//rz_io_free(s->iob.io); this is supposed to be a weak reference
+	// rz_io_free(s->iob.io); this is supposed to be a weak reference
 	free(s->data);
 	free(s);
 	return NULL;

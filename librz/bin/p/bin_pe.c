@@ -74,7 +74,7 @@ static RzBuffer *create(RzBin *bin, const ut8 *code, int codelen, const ut8 *dat
 	W(p_lsrlc, &n, 2); // Fix SizeOfOptionalHeader
 
 	/* Sections */
-	p_start = 0x7c; //HACK: Headersize
+	p_start = 0x7c; // HACK: Headersize
 	hdrsize = 0x7c;
 
 	D(RZ_ROUND(codelen, 4)); // SizeOfCode (Unused)
@@ -107,7 +107,7 @@ static RzBuffer *create(RzBin *bin, const ut8 *code, int codelen, const ut8 *dat
 	B(code, codelen);
 
 	if (data && datalen > 0) {
-		//ut32 data_section = buf->length;
+		// ut32 data_section = buf->length;
 		eprintf("Warning: DATA section not support for PE yet\n");
 		B(data, datalen);
 	}

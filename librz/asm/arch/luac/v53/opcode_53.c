@@ -118,5 +118,5 @@ ut8 get_lua53_opcode_by_name(const char *name, int limit) {
 	lua_strcase("vararg") return OP_VARARG;
 	lua_strcase("extraarg") return OP_EXTRAARG;
 
-	return OP_EXTRAARG + 1; //invalid
+	return OP_EXTRAARG + 1; // invalid
 }

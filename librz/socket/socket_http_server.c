@@ -40,7 +40,7 @@ RZ_API RzSocketHTTPRequest *rz_socket_http_accept(RzSocket *s, RzSocketHTTPOptio
 #endif
 		memset(buf, 0, sizeof(buf));
 		xx = rz_socket_gets(hr->s, buf, sizeof(buf));
-		yy = rz_socket_ready(hr->s, 0, 20 * 1000); //this function uses usecs as argument
+		yy = rz_socket_ready(hr->s, 0, 20 * 1000); // this function uses usecs as argument
 		//		eprintf ("READ %d (%s) READY %d\n", xx, buf, yy);
 		if (!yy || (!xx && !pxx)) {
 			break;
@@ -59,7 +59,7 @@ RZ_API RzSocketHTTPRequest *rz_socket_http_accept(RzSocket *s, RzSocketHTTPOptio
 			}
 			hr->method = strdup(buf);
 			if (p) {
-				q = strstr(p + 1, " HTTP"); //strchr (p+1, ' ');
+				q = strstr(p + 1, " HTTP"); // strchr (p+1, ' ');
 				if (q) {
 					*q = 0;
 				}

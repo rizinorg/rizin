@@ -38,8 +38,8 @@ PC = 272
 	  "gpr    at      .64     8       0\n"
 	  "gpr    v0      .64     16      0\n"
 	Modified to (32 bits):
-          "gpr    at      .32     12      0\n"
-          "gpr    v0      .32     20      0\n"
+	  "gpr    at      .32     12      0\n"
+	  "gpr    v0      .32     20      0\n"
 
    It is using the same arena->size, but we are only using the last 4 bytes
    (LITTLE ENDIAN PROBLEMS?)

@@ -6,7 +6,7 @@
 
 /**
  * \brief serialize and save the breakpoints in a sdb
- * 
+ *
  * \param db sdb to save the breakpoints
  * \param bp RzBreakpoint instance to serialize and save
  */
@@ -84,7 +84,7 @@ enum {
 
 /**
  * \brief Create a new RzSerializeBpParser instance
- * 
+ *
  * \return NULL if fail, new instance otherwise
  */
 RZ_API RzSerializeBpParser rz_serialize_bp_parser_new(void) {
@@ -293,7 +293,7 @@ heaven:
 
 /**
  * \brief Load a serialized breakpoints to a RzBreakpoint instance
- * 
+ *
  * \param db sdb to load the breakpoints from
  * \param bp RzBreakpoint instance to load the deserialized breakpoints
  * \param res RzSerializeResultInfo to store info/errors/warnings

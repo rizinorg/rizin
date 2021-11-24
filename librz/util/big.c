@@ -377,7 +377,7 @@ RZ_API void rz_big_div(RzNumBig *c, RzNumBig *a, RzNumBig *b) {
 }
 
 RZ_API void rz_big_mod(RzNumBig *c, RzNumBig *a, RzNumBig *b) {
-	/*  
+	/*
     Take divmod and throw away div part
     */
 	rz_return_if_fail(a);
@@ -394,11 +394,11 @@ RZ_API void rz_big_mod(RzNumBig *c, RzNumBig *a, RzNumBig *b) {
 
 RZ_API void rz_big_divmod(RzNumBig *c, RzNumBig *d, RzNumBig *a, RzNumBig *b) {
 	/*
-    Puts a%b in d 
+    Puts a%b in d
     and a/b in c
-        
+
     mod(a,b) = a - ((a / b) * b)
-    
+
     example:
       mod(8, 3) = 8 - ((8 / 3) * 3) = 2
     */

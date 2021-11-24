@@ -307,7 +307,7 @@ RZ_API ut64 rz_reg_getv(RzReg *reg, const char *name) {
 RZ_API RzRegItem *rz_reg_get(RzReg *reg, const char *name, int type) {
 	int i, e;
 	rz_return_val_if_fail(reg && name, NULL);
-	//TODO: define flag register as RZ_REG_TYPE_FLG
+	// TODO: define flag register as RZ_REG_TYPE_FLG
 	if (type == RZ_REG_TYPE_FLG) {
 		type = RZ_REG_TYPE_GPR;
 	}

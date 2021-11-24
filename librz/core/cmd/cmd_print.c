@@ -2864,9 +2864,9 @@ static void _handle_call(RzCore *core, char *line, char **str) {
 		*str = strstr(line, " b ");
 		if (*str && strstr(*str, " 0x")) {
 			/*
-			* avoid treating branches to
-			* non-symbols as calls
-			*/
+			 * avoid treating branches to
+			 * non-symbols as calls
+			 */
 			*str = NULL;
 		}
 		if (!*str) {
@@ -3467,7 +3467,7 @@ static bool cmd_print_blocks(RzCore *core, const char *input) {
 		return false;
 	}
 	int cols = rz_config_get_i(core->config, "hex.cols");
-	//int cols = rz_cons_get_size (NULL) - 30;
+	// int cols = rz_cons_get_size (NULL) - 30;
 	ut64 off = core->offset;
 	ut64 from = UT64_MAX;
 	ut64 to = 0;
@@ -3663,8 +3663,8 @@ static bool checkAnalType(RzAnalysisOp *op, int t) {
 	} else if (t == 'j') {
 		switch (op->type) {
 		case RZ_ANALYSIS_OP_TYPE_JMP:
-		//case RZ_ANALYSIS_OP_TYPE_RJMP:
-		//case RZ_ANALYSIS_OP_TYPE_UJMP:
+		// case RZ_ANALYSIS_OP_TYPE_RJMP:
+		// case RZ_ANALYSIS_OP_TYPE_UJMP:
 		case RZ_ANALYSIS_OP_TYPE_CJMP:
 			return true;
 		default:
@@ -4214,7 +4214,7 @@ static void _pointer_table(RzCore *core, ut64 origin, ut64 offset, const ut8 *bu
 			rz_meta_del(core->analysis, RZ_META_TYPE_COMMENT, origin, 1);
 			rz_meta_set_string(core->analysis, RZ_META_TYPE_COMMENT, origin, "switch table");
 			rz_core_cmdf(core, "f switch.0x%08" PFMT64x "=0x%08" PFMT64x "\n", origin, origin);
-			rz_core_cmdf(core, "f jmptbl.0x%08" PFMT64x "=0x%08" PFMT64x "\n", offset, offset); //origin, origin);
+			rz_core_cmdf(core, "f jmptbl.0x%08" PFMT64x "=0x%08" PFMT64x "\n", offset, offset); // origin, origin);
 			rz_analysis_xrefs_set(core->analysis, offset, origin, RZ_ANALYSIS_REF_TYPE_DATA);
 			break;
 		}
@@ -4473,7 +4473,7 @@ static void disasm_until_ret(RzCore *core, ut64 addr, char type_print, const cha
 			char *mnem = op->mnemonic;
 			char *m = malloc((strlen(mnem) * 2) + 32);
 			strcpy(m, mnem);
-			//rz_parse_parse (core->parser, op->mnemonic, m);
+			// rz_parse_parse (core->parser, op->mnemonic, m);
 			if (type_print == 'q') {
 				rz_cons_printf("%s\n", m);
 			} else {
@@ -4501,7 +4501,7 @@ static void disasm_until_ret(RzCore *core, ut64 addr, char type_print, const cha
 			rz_analysis_op_free(op);
 			break;
 		}
-		//rz_io_read_at (core->io, n, rbuf, 512);
+		// rz_io_read_at (core->io, n, rbuf, 512);
 		rz_analysis_op_free(op);
 	}
 beach:
@@ -5189,7 +5189,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 					}
 					if (to < buf_len) {
 						buf[to] = 0;
-						//buf[buf_len - 1] = 0;
+						// buf[buf_len - 1] = 0;
 					}
 					rz_cons_println(buf + from);
 				}

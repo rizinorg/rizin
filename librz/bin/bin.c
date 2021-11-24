@@ -488,7 +488,7 @@ RZ_API void rz_bin_free(RzBin *bin) {
 	free(bin->force);
 	free(bin->srcdir);
 	free(bin->strenc);
-	//rz_bin_free_bin_files (bin);
+	// rz_bin_free_bin_files (bin);
 	rz_list_free(bin->binfiles);
 	rz_list_free(bin->binxtrs);
 	rz_list_free(bin->plugins);
@@ -1377,7 +1377,7 @@ static char *bin_demangle_rust(RzBinFile *binfile, const char *symbol, ut64 vadd
 
 /**
  * \brief Demangles a symbol based on the language or the RzBinFile data
- * 
+ *
  * This function demangles a symbol based on the language or the RzBinFile data
  * When a c++ or rust is selected as language, it will add methods into the
  * RzBinFile structure based on the demangled symbol.

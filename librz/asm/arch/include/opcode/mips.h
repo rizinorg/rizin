@@ -283,7 +283,7 @@ struct mips_opcode {
    "z" must be zero register
    "K" 5 bit Hardware Register (rdhwr instruction) (OP_*_RD)
    "+A" 5 bit ins/ext/dins/dext/dinsm/dextm position, which becomes
-        LSB (OP_*_SHAMT).
+	LSB (OP_*_SHAMT).
 	Enforces: 0 <= pos < 32.
    "+B" 5 bit ins/dins size, which becomes MSB (OP_*_INSMSB).
 	Requires that "+A" or "+E" occur first to set position.
@@ -336,10 +336,10 @@ struct mips_opcode {
    "l" 32 bit floating point constant in .lit4
 
    MDMX instruction operands (note that while these use the FP register
-   fields, they accept both $fN and $vN names for the registers):  
+   fields, they accept both $fN and $vN names for the registers):
    "O"	MDMX alignment offset (OP_*_ALN)
    "Q"	MDMX vector/scalar/immediate source (OP_*_VSEL and OP_*_FT)
-   "X"	MDMX destination register (OP_*_FD) 
+   "X"	MDMX destination register (OP_*_FD)
    "Y"	MDMX source register (OP_*_FS)
    "Z"	MDMX source register (OP_*_FT)
 

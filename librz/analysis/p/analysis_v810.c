@@ -304,7 +304,7 @@ static int v810_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		break;
 	case V810_RETI:
 		op->type = RZ_ANALYSIS_OP_TYPE_RET;
-		//rz_strbuf_appendf (&op->esil, "np,?{,fepc,fepsw,}{,eipc,eipsw,},psw,=,pc,=");
+		// rz_strbuf_appendf (&op->esil, "np,?{,fepc,fepsw,}{,eipc,eipsw,},psw,=,pc,=");
 		break;
 	case V810_JAL:
 	case V810_JR:

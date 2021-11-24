@@ -439,9 +439,9 @@ RZ_API RzAnalysisRefStr *rz_analysis_reflines_str(void *_core, ut64 addr, int op
 	c = NULL;
 	if (!str || !col_str) {
 		rz_list_free(lvls);
-		//rz_buf_free_to_string already free b and if that is the case
-		//b will be NULL and rz_buf_free will return but if there was
-		//an error we free b here so in other words is safe
+		// rz_buf_free_to_string already free b and if that is the case
+		// b will be NULL and rz_buf_free will return but if there was
+		// an error we free b here so in other words is safe
 		rz_buf_free(b);
 		rz_buf_free(c);
 		return NULL;

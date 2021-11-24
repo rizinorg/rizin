@@ -742,7 +742,7 @@ static ut64 dex_access_flags_to_bin_flags(ut64 access_flags) {
 		flags |= RZ_BIN_METH_NATIVE;
 	}
 	// RZ_BIN_METH_INTERFACE does not exists
-	//if (access_flags & ACCESS_FLAG_INTERFACE) {
+	// if (access_flags & ACCESS_FLAG_INTERFACE) {
 	//	flags |= RZ_BIN_METH_INTERFACE;
 	//}
 	if (access_flags & ACCESS_FLAG_ABSTRACT) {
@@ -755,15 +755,15 @@ static ut64 dex_access_flags_to_bin_flags(ut64 access_flags) {
 		flags |= RZ_BIN_METH_SYNTHETIC;
 	}
 	// RZ_BIN_METH_ANNOTATION does not exists
-	//if (access_flags & ACCESS_FLAG_ANNOTATION) {
+	// if (access_flags & ACCESS_FLAG_ANNOTATION) {
 	//	flags |= RZ_BIN_METH_ANNOTATION;
 	//}
 	// RZ_BIN_METH_ENUM does not exists
-	//if (access_flags & ACCESS_FLAG_ENUM) {
+	// if (access_flags & ACCESS_FLAG_ENUM) {
 	//	flags |= RZ_BIN_METH_ENUM;
 	//}
 	// RZ_BIN_METH_MODULE does not exists
-	//if (access_flags & ACCESS_FLAG_MODULE) {
+	// if (access_flags & ACCESS_FLAG_MODULE) {
 	//	flags |= RZ_BIN_METH_MODULE;
 	//}
 	if (access_flags & ACCESS_FLAG_CONSTRUCTOR) {
@@ -1894,6 +1894,6 @@ RZ_API RZ_OWN char *rz_bin_dex_version(RZ_NONNULL RzBinDex *dex) {
  */
 RZ_API ut64 rz_bin_dex_debug_info(RZ_NONNULL RzBinDex *dex) {
 	rz_return_val_if_fail(dex, 0);
-	//TODO
+	// TODO
 	return 0;
 }

@@ -420,8 +420,8 @@ bool test_pdb_type_save(void) {
 	// mu_assert_true(has_struct_member(test_class, "class_var1"), "class_var1");
 	// mu_assert_true(has_struct_member(test_class, "calss_var2"), "calss_var2");
 	// TODO: test member types also
-	//check_kv("struct.TEST_CLASS.class_var1", "int32_t,0,0");
-	//check_kv("struct.TEST_CLASS.calss_var2", "uint16_t,4,0");
+	// check_kv("struct.TEST_CLASS.class_var1", "int32_t,0,0");
+	// check_kv("struct.TEST_CLASS.calss_var2", "uint16_t,4,0");
 
 	// mu_assert_false(has_struct_member(test_class, "noSuchMember"), "no such struct member");
 	// Check the structure presence and validity

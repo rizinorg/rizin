@@ -453,7 +453,7 @@ static bool __dumpSections(RzBin *bin, const char *scnname, const char *output, 
 				free(ret);
 				return false;
 			}
-			//it does mean the user specified an output file
+			// it does mean the user specified an output file
 			if (strcmp(output, file)) {
 				rz_file_dump(output, buf, section->size, 0);
 			} else {
@@ -597,7 +597,7 @@ static int __lib_bin_dt(RzLibPlugin *pl, void *p, void *u) {
 static int __lib_bin_xtr_cb(RzLibPlugin *pl, void *user, void *data) {
 	struct rz_bin_xtr_plugin_t *hand = (struct rz_bin_xtr_plugin_t *)data;
 	RzBin *bin = user;
-	//printf(" * Added (dis)assembly plugin\n");
+	// printf(" * Added (dis)assembly plugin\n");
 	rz_bin_xtr_add(bin, hand);
 	return true;
 }
@@ -610,7 +610,7 @@ static int __lib_bin_xtr_dt(RzLibPlugin *pl, void *p, void *u) {
 static int __lib_bin_ldr_cb(RzLibPlugin *pl, void *user, void *data) {
 	struct rz_bin_ldr_plugin_t *hand = (struct rz_bin_ldr_plugin_t *)data;
 	RzBin *bin = user;
-	//printf(" * Added (dis)assembly plugin\n");
+	// printf(" * Added (dis)assembly plugin\n");
 	rz_bin_ldr_add(bin, hand);
 	return true;
 }

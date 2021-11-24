@@ -244,7 +244,7 @@ RZ_API int rz_reg_arena_push(RzReg *reg) {
 		if (!b) {
 			continue;
 		}
-		//b->size == a->size always because of how rz_reg_arena_new behave
+		// b->size == a->size always because of how rz_reg_arena_new behave
 		if (a->bytes) {
 			memcpy(b->bytes, a->bytes, b->size);
 		}
@@ -309,7 +309,7 @@ RZ_API int rz_reg_arena_set_bytes(RzReg *reg, const char *str) {
 		eprintf("Invalid input\n");
 		return -1;
 	}
-	int bin_str_len = (len + 1) / 2; //2 hex chrs for 1 byte
+	int bin_str_len = (len + 1) / 2; // 2 hex chrs for 1 byte
 	ut8 *bin_str = malloc(bin_str_len);
 	if (!bin_str) {
 		eprintf("Failed to decode hex str.\n");
@@ -317,10 +317,10 @@ RZ_API int rz_reg_arena_set_bytes(RzReg *reg, const char *str) {
 	}
 	rz_hex_str2bin(str, bin_str);
 
-	int i, n = 0; //n - cumulative sum of arena's sizes
+	int i, n = 0; // n - cumulative sum of arena's sizes
 	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 		int sz = reg->regset[i].arena->size;
-		int bl = bin_str_len - n; //bytes left
+		int bl = bin_str_len - n; // bytes left
 		int bln = bl - n;
 		if (bln > 0 && bln < sz) {
 			rz_reg_set_bytes(reg, i, bin_str + n, bln);

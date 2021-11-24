@@ -144,7 +144,7 @@ static bool sdb_load_callables(RzTypeDB *typedb, Sdb *sdb) {
 	SdbListIter *iter;
 	SdbList *l = sdb_foreach_list_filter(sdb, filter_func, false);
 	ls_foreach (l, iter, kv) {
-		//eprintf("loading function: \"%s\"\n", sdbkv_key(kv));
+		// eprintf("loading function: \"%s\"\n", sdbkv_key(kv));
 		callable = get_callable_type(typedb, sdb, sdbkv_key(kv), type_str_cache);
 		if (callable) {
 			ht_pp_update(typedb->callables, callable->name, callable);

@@ -25,7 +25,7 @@ typedef enum {
 } emulator_used;
 
 RZ_PACKED(
-	typedef struct { //SNES9x
+	typedef struct { // SNES9x
 		char song_title[32];
 		char game_title[32];
 		char name_of_dumper[16];
@@ -41,7 +41,7 @@ RZ_PACKED(
 id666_tag_text;
 
 RZ_PACKED(
-	typedef struct { //ZSNES
+	typedef struct { // ZSNES
 		char song_title[32];
 		char game_title[32];
 		char name_of_dumper[16];

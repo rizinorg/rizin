@@ -157,7 +157,7 @@ typedef ut64 mips64_regs_t[274];
 #define TRAP_UNK    5
 #endif
 
-//API
+// API
 bool linux_set_options(RzDebug *dbg, int pid);
 int linux_step(RzDebug *dbg);
 RzDebugReasonType linux_ptrace_event(RzDebug *dbg, int pid, int status, bool dowait);

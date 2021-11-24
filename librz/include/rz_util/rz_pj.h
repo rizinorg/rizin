@@ -27,7 +27,7 @@ RZ_API const char *pj_string(PJ *pj);
 RZ_API void pj_raw(PJ *j, const char *k);
 
 /* nesting */
-//RZ_API PJ *pj_begin(char type, PrintfCallback cb);
+// RZ_API PJ *pj_begin(char type, PrintfCallback cb);
 /* close the current json list or array */
 RZ_API PJ *pj_end(PJ *j);
 /* object, array */

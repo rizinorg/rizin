@@ -692,7 +692,7 @@ st32 get_hashfunc_23(st32 arg1, st32 arg2) {
 			if (v3 == 4210688) {
 				return 369;
 			}
-			//if ( (st32 (*)(char))v3 == (char *)hash_const_01 )
+			// if ( (st32 (*)(char))v3 == (char *)hash_const_01 )
 			if (v3 == hash_const_01) {
 				return 325;
 			}
@@ -739,7 +739,7 @@ st32 get_hashfunc_24(st32 arg1, st32 arg2) {
 		}
 		return arg1;
 	}
-	//if ( (st32 (*)(char))v3 != (char *)hash_const_01 ) {
+	// if ( (st32 (*)(char))v3 != (char *)hash_const_01 ) {
 	if (v3 != hash_const_01) {
 		if (v3 == 4259840) {
 			return 480;
@@ -780,7 +780,7 @@ st32 get_hashfunc_25(st32 arg1, st32 arg2) {
 		}
 		return 382;
 	}
-	//if ( (st32 (*)(char))v2 != (char *)hash_const_01 )
+	// if ( (st32 (*)(char))v2 != (char *)hash_const_01 )
 	if (v2 != hash_const_01) {
 		return arg1;
 	}
@@ -805,7 +805,7 @@ st32 get_hashfunc_26(st32 arg1, st32 arg2) {
 		}
 		return 311;
 	}
-	//if ( (st32 (*)(char))v3 != (st32 (*)(char))hash_const_01 ) {
+	// if ( (st32 (*)(char))v3 != (st32 (*)(char))hash_const_01 ) {
 	if (v3 != hash_const_01) {
 		if (v3 != 4243456) {
 			return arg1;
@@ -935,7 +935,7 @@ st32 get_hashfunc_29(st32 arg1, st32 arg2) {
 	v2 = arg2;
 	v3 = v2 & 0x40F800;
 	if (v3 <= (ut32)hash_const_03) {
-		//if ( (st32 (*)(int, int, int))v3 == (st32 (*)(int, int, int))hash_const_03)
+		// if ( (st32 (*)(int, int, int))v3 == (st32 (*)(int, int, int))hash_const_03)
 		if (v3 == hash_const_03) {
 			return 305;
 		}
@@ -2797,7 +2797,7 @@ static HASHCODE_ENTRY_T ins_hash[] = {
 	{ 0x223, get_hashfunc_01 }
 };
 
-//get hashcode from instruction bytecode
+// get hashcode from instruction bytecode
 st32 get_hash_code(ut32 ins_pos) {
 	ut32 len, ins_part1;
 	ut32 opcode, pos;
@@ -2830,13 +2830,13 @@ st32 get_hash_code(ut32 ins_pos) {
 	}
 
 	pos = (2 * opcode | (ins_part1 >> 31));
-	//arg = *(ut32 *)(((ut8 *)ins_hash)+ pos * 8);
+	// arg = *(ut32 *)(((ut8 *)ins_hash)+ pos * 8);
 	arg = ins_hash[pos].code;
 
 	ins_part2 >>= 7;
 	ins_part2 |= (ins_part1 * 2);
 
-	//get_hashcode_func = *(ut32 *)(((ut8 *)ins_hash + sizeof(ut32)) + pos * 8);
+	// get_hashcode_func = *(ut32 *)(((ut8 *)ins_hash + sizeof(ut32)) + pos * 8);
 	get_hashcode_func = ins_hash[pos].hash_func;
 
 	if (C55PLUS_DEBUG) {

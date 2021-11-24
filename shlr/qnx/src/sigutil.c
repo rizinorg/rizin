@@ -561,15 +561,15 @@ do_target_signal_to_host(enum target_signal oursig,
 
 		if (oursig >= TARGET_SIGNAL_REALTIME_33 && oursig <= TARGET_SIGNAL_REALTIME_63) {
 			/* This block of signals is continuous, and
-             TARGET_SIGNAL_REALTIME_33 is 33 by definition.  */
+	     TARGET_SIGNAL_REALTIME_33 is 33 by definition.  */
 			retsig = (int)oursig - (int)TARGET_SIGNAL_REALTIME_33 + 33;
 		} else if (oursig == TARGET_SIGNAL_REALTIME_32) {
 			/* TARGET_SIGNAL_REALTIME_32 isn't contiguous with
-             TARGET_SIGNAL_REALTIME_33.  It is 32 by definition.  */
+	     TARGET_SIGNAL_REALTIME_33.  It is 32 by definition.  */
 			retsig = 32;
 		} else if (oursig >= TARGET_SIGNAL_REALTIME_64 && oursig <= TARGET_SIGNAL_REALTIME_127) {
 			/* This block of signals is continuous, and
-             TARGET_SIGNAL_REALTIME_64 is 64 by definition.  */
+	     TARGET_SIGNAL_REALTIME_64 is 64 by definition.  */
 			retsig = (int)oursig - (int)TARGET_SIGNAL_REALTIME_64 + 64;
 		}
 

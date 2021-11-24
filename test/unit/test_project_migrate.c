@@ -31,7 +31,7 @@
  *
  * See also `librz/core/project_migrate.c` for general info on implementing project migrations.
  *
-  */
+ */
 
 bool test_migrate_v1_v2_noreturn() {
 	RzProject *prj = rz_project_load_file_raw("prj/v1-noreturn.rzdb");
