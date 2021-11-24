@@ -209,6 +209,7 @@ RZ_API RZ_OWN RzList /*<RzCompareData>*/ *rz_core_cmp_disasm(RzCore *core, ut64 
 		j += op2.size;
 	}
 
+	free(buf);
 	return cmp_list;
 
 error_goto:
