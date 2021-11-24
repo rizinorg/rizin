@@ -1894,7 +1894,7 @@ static void backedge_info(RzAGraph *g) {
 		}
 	}
 
-	//Assumption: layer layout is not changed w.r.t x-coordinate/y-coordinate for horizontal/vertical layout respectively.
+	// Assumption: layer layout is not changed w.r.t x-coordinate/y-coordinate for horizontal/vertical layout respectively.
 	if (inedge) {
 		RzANode *n = (RzANode *)g->layers[0].nodes[0]->data;
 		AEdge *e = RZ_NEW0(AEdge);
@@ -2043,9 +2043,9 @@ static void set_layout(RzAGraph *g) {
 		/* vertical align */
 		for (i = 0; i < g->n_layers; i++) {
 			int tmp_y = 0;
-			tmp_y = g->layers[0].gap; //TODO: XXX: set properly
+			tmp_y = g->layers[0].gap; // TODO: XXX: set properly
 			for (k = 1; k <= i; k++) {
-				tmp_y += g->layers[k - 1].height + g->layers[k].gap + 3; //XXX: should be 4?
+				tmp_y += g->layers[k - 1].height + g->layers[k].gap + 3; // XXX: should be 4?
 			}
 			if (g->is_tiny) {
 				tmp_y = i;
@@ -2289,7 +2289,7 @@ static void fold_asm_trace(RzCore *core, RzAGraph *g) {
 		n->is_mini = (tp == NULL);
 	}
 	g->need_update_dim = 1;
-	//agraph_refresh (rz_cons_singleton ()->event_data);
+	// agraph_refresh (rz_cons_singleton ()->event_data);
 }
 
 static void delete_dup_edges(RzAGraph *g) {
@@ -2519,12 +2519,12 @@ static void update_seek(RzConsCanvas *can, RzANode *n, int force) {
 
 	const bool doscroll = force || y < 0 || y + 5 > h || x + 5 > w || x + n->w + 5 < 0;
 	if (doscroll) {
-		if (n->w > w) { //too big for centering
+		if (n->w > w) { // too big for centering
 			can->sx = -n->x;
 		} else {
 			can->sx = -n->x - n->w / 2 + w / 2;
 		}
-		if (n->h > h) { //too big for centering
+		if (n->h > h) { // too big for centering
 			can->sy = -n->y;
 		} else {
 			can->sy = -n->y - n->h / 8 + h / 4;
@@ -2878,7 +2878,7 @@ static void agraph_print_edges(RzAGraph *g) {
 		rz_list_foreach (lyr, ito, tl) {
 			if (tl->layer == a->layer) {
 				tm = tl;
-				if (g->layout == 0) { //vertical layout
+				if (g->layout == 0) { // vertical layout
 					if (tm->minx > a->x) {
 						tm->minx = a->x;
 					}
@@ -2903,7 +2903,7 @@ static void agraph_print_edges(RzAGraph *g) {
 				tm->layer = a->layer;
 				tm->edgectr = 0;
 				tm->revedgectr = 0;
-				if (g->layout == 0) { //vertical layout
+				if (g->layout == 0) { // vertical layout
 					tm->minx = a->x;
 					tm->maxx = a->x + a->w;
 				} else {
@@ -3242,7 +3242,7 @@ static void agraph_toggle_tiny(RzAGraph *g) {
 	g->need_update_dim = 1;
 	agraph_refresh(rz_cons_singleton()->event_data);
 	agraph_set_layout((RzAGraph *)g);
-	//remove_dummy_nodes (g);
+	// remove_dummy_nodes (g);
 }
 
 static void agraph_toggle_mini(RzAGraph *g) {
@@ -3680,7 +3680,7 @@ RZ_API Sdb *rz_agraph_get_sdb(RzAGraph *g) {
 	g->need_update_dim = true;
 	g->need_set_layout = true;
 	(void)check_changes(g, false, NULL, NULL);
-	//remove_dummy_nodes (g);
+	// remove_dummy_nodes (g);
 	return g->db;
 }
 
@@ -3753,7 +3753,7 @@ RZ_API RzANode *rz_agraph_add_node_with_color(const RzAGraph *g, const char *tit
 			b[len - 1] = '\0';
 		}
 		estr = sdb_encode((const void *)b, -1);
-		//s = sdb_fmt ("base64:%s", estr);
+		// s = sdb_fmt ("base64:%s", estr);
 		s = rz_str_newf("base64:%s", estr);
 		free(estr);
 		free(b);
@@ -4899,7 +4899,7 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 
 /**
  * @brief Create RzAGraph from generic RzGraph with RzGraphNodeInfo as node data
- * 
+ *
  * @param graph <RzGraphNodeInfo>
  * @return RzAGraph* NULL if failure
  */

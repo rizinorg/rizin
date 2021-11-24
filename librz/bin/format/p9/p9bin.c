@@ -45,7 +45,7 @@ int rz_bin_p9_get_arch(RzBuffer *b, int *bits, int *big_endian) {
 		return RZ_ASM_ARCH_ARM;
 	case Q_MAGIC:
 		return RZ_ASM_ARCH_PPC;
-		//case A_MAGIC: // 68020
+		// case A_MAGIC: // 68020
 	}
 	return 0;
 }

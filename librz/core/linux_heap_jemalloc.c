@@ -372,22 +372,22 @@ static void GH(jemalloc_get_bins)(RzCore *core, const char *input) {
 					PRINT_YA("       nregs : ");
 					PRINTF_BA("0x%x\n", b->nregs);
 					// FIXME: It's a structure of bitmap_info_t
-					//PRINT_YA ("       bitmap_info : ");
-					//PRINTF_BA ("0x%"PFMT64x"\n", b->bitmap_info);
+					// PRINT_YA ("       bitmap_info : ");
+					// PRINTF_BA ("0x%"PFMT64x"\n", b->bitmap_info);
 					PRINT_YA("       reg0_offset : ");
 					PRINTF_BA("0x%" PFMT64x "\n\n", (ut64)b->reg0_offset);
 					// FIXME: It's a structure of malloc_mutex_t
-					//PRINTF_YA ("       bins[%d]->lock ", j);
-					//PRINTF_BA ("= 0x%"PFMT64x"\n", ar->bins[j].lock);
+					// PRINTF_YA ("       bins[%d]->lock ", j);
+					// PRINTF_BA ("= 0x%"PFMT64x"\n", ar->bins[j].lock);
 					// FIXME: It's a structure of arena_run_t*
-					//PRINTF_YA ("       bins[%d]->runcur ", j);
-					//PRINTF_BA ("@ 0x%"PFMT64x"\n", ar->bins[j].runcur);
+					// PRINTF_YA ("       bins[%d]->runcur ", j);
+					// PRINTF_BA ("@ 0x%"PFMT64x"\n", ar->bins[j].runcur);
 					// FIXME: It's a structure of arena_run_heap_t*
-					//PRINTF_YA ("       bins[%d]->runs ", j);
-					//PRINTF_BA ("@ 0x%"PFMTx"\n", ar->bins[j].runs);
+					// PRINTF_YA ("       bins[%d]->runs ", j);
+					// PRINTF_BA ("@ 0x%"PFMTx"\n", ar->bins[j].runs);
 					// FIXME: It's a structure of malloc_bin_stats_t
-					//PRINTF_YA ("       bins[%d]->stats ", j);
-					//PRINTF_BA ("= 0x%"PFMTx"\n", ar->bins[j].stats);
+					// PRINTF_YA ("       bins[%d]->stats ", j);
+					// PRINTF_BA ("= 0x%"PFMTx"\n", ar->bins[j].stats);
 					PRINT_YA("    }\n");
 				}
 				PRINT_YA("  }\n");
@@ -504,15 +504,15 @@ static int GH(cmd_dbg_map_jemalloc)(RzCore *core, const char *input) {
 	case '?':
 		rz_core_cmd_help(core, help_msg);
 		break;
-	case 'a': //dmha
+	case 'a': // dmha
 		GH(jemalloc_print_narenas)
 		(core, input + 1);
 		break;
-	case 'b': //dmhb
+	case 'b': // dmhb
 		GH(jemalloc_get_bins)
 		(core, input + 1);
 		break;
-	case 'c': //dmhc
+	case 'c': // dmhc
 		GH(jemalloc_get_chunks)
 		(core, input + 1);
 		break;

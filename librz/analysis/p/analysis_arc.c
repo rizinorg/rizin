@@ -460,7 +460,7 @@ static int arcompact_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const
 		return 0;
 	}
 	if (len < 8) {
-		//when rz_read_me32_arc/be32 oob read
+		// when rz_read_me32_arc/be32 oob read
 		return 0;
 	}
 

@@ -1102,7 +1102,7 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 
 /**
  * \brief Return a string contining the type pretty printed according to the options provided
- * 
+ *
  * \param typedb typedb for the current analysis
  * \param type type to be pretty printed
  * \param identifier name of the variable of the given type (RZ_NULLABLE)

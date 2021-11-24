@@ -12,11 +12,11 @@
  * 3. EBCDIC-UK
  * 4. EBCDIC-US
  * 5. EBCDIC-ES
- * 
+ *
  * see:
  *  - https://www.ibm.com/docs/en/zos/2.3.0?topic=sets-coded-character-sorted-by-ccsid
  *  - https://www.compart.com/en/unicode/search?q=EBCDIC#char-sets
- * 
+ *
  */
 
 static const RzRune ibm037_to_uni[256] = {
@@ -448,7 +448,7 @@ static const ut8 ebcdic_es_page20[256] = {
 
 /**
  * \brief Convert an ibm037 char into an unicode RzRune
- * 
+ *
  * \param src ibm037 char
  * \param dst unicode RzRune
  * \retval 0 if \p dst is null
@@ -462,7 +462,7 @@ RZ_API int rz_str_ibm037_to_unicode(const ut8 src, RZ_NONNULL RZ_OUT RzRune *dst
 
 /**
  * \brief Convert an unicode RzRune into an ibm037 char
- * 
+ *
  * \param dst ibm037 char
  * \param src unicode RzRune
  */
@@ -477,7 +477,7 @@ RZ_API int rz_str_ibm037_from_unicode(RZ_NONNULL RZ_OUT ut8 *dst, const RzRune s
 
 /**
  * \brief Convert an ibm037 char into an ascii char
- * 
+ *
  * \param dst ibm037 char
  * \param src ascii char
  */
@@ -493,7 +493,7 @@ RZ_API int rz_str_ibm037_to_ascii(const ut8 src, RZ_NONNULL RZ_OUT ut8 *dst) {
 
 /**
  * \brief Convert an ascii char into an ibm037 char
- * 
+ *
  * \param dst ibm037 char
  * \param src ascii char
  */

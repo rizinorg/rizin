@@ -38,7 +38,7 @@ RZ_PACKED(
 		ut32 id[8]; /* timestamp / checksum / sha1 / etc */
 
 		/* Supplemental command line data; kept here to maintain
-	 * binary compatibility with older versions of mkbootimg */
+		 * binary compatibility with older versions of mkbootimg */
 		ut8 extra_cmdline[BOOT_EXTRA_ARGS_SIZE];
 	});
 

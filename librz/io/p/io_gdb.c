@@ -408,7 +408,7 @@ gdb_lock_leave:
 }
 
 RzIOPlugin rz_io_plugin_gdb = {
-	//void *plugin;
+	// void *plugin;
 	.name = "gdb",
 	.license = "LGPL3",
 	.desc = "Attach to gdbserver instance",

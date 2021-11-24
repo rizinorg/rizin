@@ -8,8 +8,8 @@ typedef struct gen_hdr {
 	ut8 ReservedWord[2];
 	ut16 CheckSum;
 	ut8 ProductCode[2];
-	ut8 Version; //Low 4 bits version, Top 4 bits ProductCode
-	ut8 RegionRomSize; //Low 4 bits RomSize, Top 4 bits Region
+	ut8 Version; // Low 4 bits version, Top 4 bits ProductCode
+	ut8 RegionRomSize; // Low 4 bits RomSize, Top 4 bits Region
 } SMS_Header;
 
 static ut32 cb = 0;

@@ -245,7 +245,7 @@ RZ_API int rz_str_binstr2bin(const char *str, ut8 *out, int outlen) {
 			for (k = 0, j = i + 7; j >= i; j--, k++) {
 				// INVERSE for (k=0,j=i; j<i+8; j++,k++) {
 				if (str[j] == ' ') {
-					//k--;
+					// k--;
 					continue;
 				}
 				//		printf ("---> j=%d (%c) (%02x)\n", j, str[j], str[j]);
@@ -449,7 +449,7 @@ RZ_API int rz_str_word_set0_stack(char *str) {
 	if (str[i] == ' ') {
 		str[i] = 0;
 	}
-	s = rz_stack_new(5); //Some random number
+	s = rz_stack_new(5); // Some random number
 	for (i = 1, p = str; *p; p++) {
 		q = p - 1;
 		if (p > str && (*q == '\\')) {
@@ -1821,8 +1821,8 @@ RZ_API size_t rz_str_nlen(const char *str, size_t n) {
 #endif
 }
 
-//to handle wide string as well
-//XXX can be error prone
+// to handle wide string as well
+// XXX can be error prone
 RZ_API size_t rz_str_nlen_w(const char *str, int n) {
 	size_t len = 0;
 	if (str) {
@@ -1830,8 +1830,8 @@ RZ_API size_t rz_str_nlen_w(const char *str, int n) {
 			len++;
 			str++;
 			if (!*str) {
-				//handle wide strings
-				//xx00yy00bb00
+				// handle wide strings
+				// xx00yy00bb00
 				if (n - 2 > 0) {
 					if (str[2]) {
 						break;
@@ -3065,7 +3065,7 @@ RZ_API int rz_str_do_until_token(str_operation op, char *str, const char tok) {
 	}
 	if (!op) {
 		for (ret = 0; (str[ret] != tok) && str[ret]; ret++) {
-			//empty body
+			// empty body
 		}
 	} else {
 		for (ret = 0; (str[ret] != tok) && str[ret]; ret++) {

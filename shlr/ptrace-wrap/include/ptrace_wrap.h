@@ -63,4 +63,4 @@ long ptrace_wrap(ptrace_wrap_instance *inst, ptrace_wrap_ptrace_request request,
 pid_t ptrace_wrap_fork(ptrace_wrap_instance *inst, void (*child_callback)(void *), void *child_callback_user);
 void *ptrace_wrap_func(ptrace_wrap_instance *inst, ptrace_wrap_func_func func, void *user);
 
-#endif //PTRACE_WRAP_H
+#endif // PTRACE_WRAP_H

@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2015 maijin <maijin21@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-//CPU_memory_map: http://wiki.nesdev.com/w/index.php/CPU_memory_map
+// CPU_memory_map: http://wiki.nesdev.com/w/index.php/CPU_memory_map
 
 #ifndef _NES_H
 #define _NES_H

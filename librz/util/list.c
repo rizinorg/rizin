@@ -582,7 +582,7 @@ RZ_API RzListIter *rz_list_find_ptr(const RzList *list, const void *ptr) {
 
 /**
  * \brief Returns RzListIter element which matches via the RzListComparator
- * 
+ *
  * Find the first RzListIter that is equal to the given data
  * For searching by pointer comparison, rz_list_find_ptr() provides a simpler interface.
  *
@@ -672,7 +672,7 @@ RZ_API void rz_list_merge_sort(RzList *list, RzListComparator cmp) {
 	if (!list->sorted && list->head && cmp) {
 		RzListIter *iter;
 		list->head = _merge_sort(list->head, cmp);
-		//update tail reference
+		// update tail reference
 		iter = list->head;
 		while (iter && iter->n) {
 			iter = iter->n;

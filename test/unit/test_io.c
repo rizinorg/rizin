@@ -140,13 +140,13 @@ bool test_rz_io_pcache(void) {
 	io->ff = 1;
 	ut8 buf[8];
 	int fd = rz_io_fd_open(io, "malloc://3", RZ_PERM_RW, 0);
-	rz_io_map_add(io, fd, RZ_PERM_RW, 0LL, 0LL, 1); //8
+	rz_io_map_add(io, fd, RZ_PERM_RW, 0LL, 0LL, 1); // 8
 	rz_io_map_add(io, fd, RZ_PERM_RW, 1, 1, 1); //=
 	rz_io_map_add(io, fd, RZ_PERM_RW, 1, 2, 1); //=
 	rz_io_map_add(io, fd, RZ_PERM_RW, 1, 3, 1); //=
 	rz_io_map_add(io, fd, RZ_PERM_RW, 1, 4, 1); //=
 	rz_io_map_add(io, fd, RZ_PERM_RW, 1, 5, 1); //=
-	rz_io_map_add(io, fd, RZ_PERM_RW, 2, 6, 1); //D
+	rz_io_map_add(io, fd, RZ_PERM_RW, 2, 6, 1); // D
 	io->p_cache = 2;
 	io->va = true;
 	rz_io_fd_write_at(io, fd, 0, (const ut8 *)"8=D", 3);

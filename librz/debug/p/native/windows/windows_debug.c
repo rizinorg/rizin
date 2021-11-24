@@ -43,7 +43,7 @@ int w32_init(RzDebug *dbg) {
 	// escalate privs (required for win7/vista)
 	setup_debug_privileges(true);
 
-	HMODULE lib = GetModuleHandle(TEXT("kernel32")); //Always loaded
+	HMODULE lib = GetModuleHandle(TEXT("kernel32")); // Always loaded
 	if (!lib) {
 		return false;
 	}

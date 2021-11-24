@@ -514,8 +514,8 @@ static bool cb_asmarch(void *user, void *data) {
 		eprintf("asm.arch: cannot find (%s)\n", node->value);
 		return false;
 	}
-	//we should strdup here otherwise will crash if any rz_config_set
-	//free the old value
+	// we should strdup here otherwise will crash if any rz_config_set
+	// free the old value
 	char *asm_cpu = strdup(rz_config_get(core->config, "asm.cpu"));
 	if (core->rasm->cur) {
 		const char *newAsmCPU = core->rasm->cur->cpus;
@@ -553,7 +553,7 @@ static bool cb_asmarch(void *user, void *data) {
 		rz_config_set_i(core->config, "asm.bits", bits);
 	}
 
-	//rz_debug_set_arch (core->dbg, rz_sys_arch_id (node->value), bits);
+	// rz_debug_set_arch (core->dbg, rz_sys_arch_id (node->value), bits);
 	rz_debug_set_arch(core->dbg, node->value, bits);
 	if (!rz_config_set(core->config, "analysis.arch", node->value)) {
 		char *p, *s = strdup(node->value);
@@ -575,14 +575,14 @@ static bool cb_asmarch(void *user, void *data) {
 		const char *dir_prefix = rz_config_get(core->config, "dir.prefix");
 		const char *platform = rz_config_get(core->config, "asm.platform");
 		if (!rz_syscall_setup(core->analysis->syscall, node->value, core->analysis->bits, asmcpu, asmos)) {
-			//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
+			// eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
 			//	node->value, asmos, RZ_LIBDIR"/rizin/"RZ_VERSION"/syscall");
 		}
 		update_syscall_ns(core);
 		rz_arch_platform_init(core->analysis->platform_target, node->value, asmcpu, platform, dir_prefix);
 		rz_arch_profiles_init(core->analysis->arch_target, asmcpu, node->value, dir_prefix);
 	}
-	//if (!strcmp (node->value, "bf"))
+	// if (!strcmp (node->value, "bf"))
 	//	rz_config_set (core->config, "dbg.backend", "bf");
 	__setsegoff(core->config, node->value, core->rasm->bits);
 
@@ -711,7 +711,7 @@ static bool cb_asmbits(void *user, void *data) {
 	const char *asmcpu = rz_config_get(core->config, "asm.cpu");
 	if (core->analysis) {
 		if (!rz_syscall_setup(core->analysis->syscall, asmarch, bits, asmcpu, asmos)) {
-			//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
+			// eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
 			//	node->value, asmos, RZ_LIBDIR"/rizin/"RZ_VERSION"/syscall");
 		}
 		update_syscall_ns(core);
@@ -3045,7 +3045,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("esil.breakoninvalid", "false", "Break esil execution when instruction is invalid");
 	SETI("esil.timeout", 0, "A timeout (in seconds) for when we should give up emulating");
 	/* asm */
-	//asm.os needs to be first, since other asm.* depend on it
+	// asm.os needs to be first, since other asm.* depend on it
 	n = NODECB("asm.os", "none", &cb_asmos);
 	SETDESC(n, "Select operating system (kernel)");
 	SETOPTIONS(n, "ios", "dos", "darwin", "linux", "freebsd", "openbsd", "netbsd", "windows", "s110", "none", NULL);

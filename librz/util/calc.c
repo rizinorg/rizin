@@ -29,7 +29,7 @@ static inline RzNumCalcValue Nsetf(double v) {
 	n.n = (ut64)v;
 	return n;
 }
-//UNUSED static inline RzNumCalcValue Naddf(RzNumCalcValue n, double v) { n.d += v; n.n += (ut64)v; return n; }
+// UNUSED static inline RzNumCalcValue Naddf(RzNumCalcValue n, double v) { n.d += v; n.n += (ut64)v; return n; }
 static inline RzNumCalcValue Naddi(RzNumCalcValue n, ut64 v) {
 	n.d += (double)v;
 	n.n += v;
@@ -142,7 +142,7 @@ static RzNumCalcToken get_token(RzNum *, RzNumCalc *);
 static void error(RzNum *num, RzNumCalc *nc, const char *s) {
 	nc->errors++;
 	nc->calc_err = s;
-	//fprintf (stderr, "error: %s\n", s);
+	// fprintf (stderr, "error: %s\n", s);
 }
 
 static RzNumCalcValue expr(RzNum *num, RzNumCalc *nc, int get) {
@@ -175,7 +175,7 @@ static RzNumCalcValue term(RzNum *num, RzNumCalc *nc, int get) {
 		} else if (nc->curr_tok == RNCMOD) {
 			RzNumCalcValue d = prim(num, nc, 1);
 			if (!d.d) {
-				//error (num, nc, "divide by 0");
+				// error (num, nc, "divide by 0");
 				return d;
 			}
 			left = Nmod(left, d);
@@ -203,8 +203,8 @@ static RzNumCalcValue prim(RzNum *num, RzNumCalc *nc, int get) {
 		get_token(num, nc);
 		return v;
 	case RNCNAME:
-		//fprintf (stderr, "error: unknown keyword (%s)\n", nc->string_value);
-		//double& v = table[nc->string_value];
+		// fprintf (stderr, "error: unknown keyword (%s)\n", nc->string_value);
+		// double& v = table[nc->string_value];
 		rz_str_trim(nc->string_value);
 		v = Nset(rz_num_get(num, nc->string_value));
 		get_token(num, nc);
@@ -220,7 +220,7 @@ static RzNumCalcValue prim(RzNum *num, RzNumCalc *nc, int get) {
 		return v;
 	case RNCNEG:
 		get_token(num, nc);
-		return Nneg(nc->number_value); //prim (num, nc, 1), 1);
+		return Nneg(nc->number_value); // prim (num, nc, 1), 1);
 	case RNCINC:
 		return Naddi(prim(num, nc, 1), 1);
 	case RNCDEC:
@@ -253,7 +253,7 @@ static RzNumCalcValue prim(RzNum *num, RzNumCalc *nc, int get) {
 	case RNCROL:
 	case RNCROR:
 		return v;
-		//default: error (num, nc, "primary expected");
+		// default: error (num, nc, "primary expected");
 	}
 	return v;
 }

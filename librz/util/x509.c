@@ -50,7 +50,7 @@ bool rz_x509_parse_algorithmidentifier(RX509AlgorithmIdentifier *ai, RASN1Object
 
 	ai->algorithm = rz_asn1_stringify_oid(object->list.objects[0]->sector, object->list.objects[0]->length);
 	ai->parameters = NULL; // TODO
-	//ai->parameters = asn1_stringify_sector (object->list.objects[1]);
+	// ai->parameters = asn1_stringify_sector (object->list.objects[1]);
 	return true;
 }
 
@@ -129,7 +129,7 @@ bool rz_x509_parse_extension(RX509Extension *ext, RASN1Object *object) {
 		ext->extnID = rz_asn1_stringify_oid(o->sector, o->length);
 		o = object->list.objects[1];
 		if (o->tag == TAG_BOOLEAN && object->list.length > 2) {
-			//This field is optional (so len must be 3)
+			// This field is optional (so len must be 3)
 			ext->critical = o->sector[0] != 0;
 			o = object->list.objects[2];
 		}
@@ -169,13 +169,13 @@ bool rz_x509_parse_tbscertificate(RX509TBSCertificate *tbsc, RASN1Object *object
 		return false;
 	}
 	elems = object->list.objects;
-	//Following RFC
+	// Following RFC
 	if (elems[0]->list.length == 1 &&
 		elems[0]->klass == CLASS_CONTEXT &&
 		elems[0]->form == FORM_CONSTRUCTED &&
 		elems[0]->list.objects[0]->tag == TAG_INTEGER &&
 		elems[0]->list.objects[0]->length == 1) {
-		//Integer inside a CLASS_CONTEXT
+		// Integer inside a CLASS_CONTEXT
 		tbsc->version = (ut32)elems[0]->list.objects[0]->sector[0];
 		shift = 1;
 	} else {
@@ -254,7 +254,7 @@ RX509Certificate *rz_x509_parse_certificate2(const ut8 *buffer, ut32 length) {
 	}
 	object = rz_asn1_create_object(buffer, length, buffer);
 	certificate = rz_x509_parse_certificate(object);
-	//object freed by rz_x509_parse_certificate
+	// object freed by rz_x509_parse_certificate
 	return certificate;
 }
 
@@ -339,7 +339,7 @@ void rz_x509_free_extension(RX509Extension *ex) {
 	if (ex) {
 		rz_asn1_free_string(ex->extnID);
 		rz_asn1_free_binary(ex->extnValue);
-		//this is allocated dinamically so, i'll free
+		// this is allocated dinamically so, i'll free
 		free(ex);
 	}
 }
@@ -355,7 +355,7 @@ void rz_x509_free_extensions(RX509Extensions *ex) {
 		}
 		free(ex->extensions);
 	}
-	//no need to free ex, since this functions is used internally
+	// no need to free ex, since this functions is used internally
 }
 
 void rz_x509_free_subjectpublickeyinfo(RX509SubjectPublicKeyInfo *spki) {
@@ -380,7 +380,7 @@ void rz_x509_free_tbscertificate(RX509TBSCertificate *tbsc) {
 		rz_asn1_free_binary(tbsc->subjectUniqueID);
 		rz_asn1_free_binary(tbsc->issuerUniqueID);
 		rz_x509_free_extensions(&tbsc->extensions);
-		//no need to free tbsc, since this functions is used internally
+		// no need to free tbsc, since this functions is used internally
 	}
 }
 
@@ -482,13 +482,13 @@ static void rz_x509_extensions_dump(RX509Extensions *exts, const char *pad, RzSt
 		if (!e) {
 			continue;
 		}
-		//TODO handle extensions..
-		//s = rz_asn1_stringify_bytes (e->extnValue->sector, e->extnValue->length);
+		// TODO handle extensions..
+		// s = rz_asn1_stringify_bytes (e->extnValue->sector, e->extnValue->length);
 		rz_strbuf_appendf(sb, "%s%s: %s\n%s%u bytes\n", pad,
 			e->extnID ? e->extnID->string : "Missing",
 			e->critical ? "critical" : "",
 			pad, e->extnValue ? e->extnValue->length : 0);
-		//rz_asn1_free_string (s);
+		// rz_asn1_free_string (s);
 	}
 }
 
@@ -685,7 +685,7 @@ RZ_API void rz_x509_extensions_json(PJ *pj, RX509Extensions *exts) {
 			if (e->critical) {
 				pj_kb(pj, "Critical", e->critical);
 			}
-			//TODO handle extensions correctly..
+			// TODO handle extensions correctly..
 			if (e->extnValue) {
 				m = rz_asn1_stringify_integer(e->extnValue->binary, e->extnValue->length);
 				if (m) {

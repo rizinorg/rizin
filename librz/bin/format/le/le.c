@@ -257,10 +257,10 @@ RzList *rz_bin_le_get_libs(rz_bin_le_obj_t *bin) {
 }
 
 /*
-*	Creates & appends to l iter_n sections with the same paddr for each iter record.
-*	page->size is the total size of iter records that describe the page
-*	TODO: Don't do this
-*/
+ *	Creates & appends to l iter_n sections with the same paddr for each iter record.
+ *	page->size is the total size of iter records that describe the page
+ *	TODO: Don't do this
+ */
 static void __create_iter_sections(RzList *l, rz_bin_le_obj_t *bin, RzBinSection *sec, LE_object_page_entry *page, ut64 vaddr, int cur_page) {
 	rz_return_if_fail(l && bin && sec && page);
 	LE_image_header *h = bin->header;

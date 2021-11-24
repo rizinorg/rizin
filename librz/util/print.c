@@ -1109,7 +1109,7 @@ RZ_API void rz_print_hexdump(RzPrint *p, ut64 addr, const ut8 *buf, int len, int
 				if (col == 0) {
 					print(" ");
 				} else if (col == 1) {
-					//print (" ");
+					// print (" ");
 				} else {
 					print((col == 2) ? "|" : "");
 				}
@@ -1262,7 +1262,7 @@ static const char *getchardiff(RzPrint *p, char *fmt, ut8 a, ut8 b) {
 	} else {
 		sprintf(fmt, "%c", ch);
 	}
-	//else { fmt[0] = ch; fmt[1]=0; }
+	// else { fmt[0] = ch; fmt[1]=0; }
 	return fmt;
 }
 
@@ -1973,7 +1973,7 @@ RZ_API char *rz_print_colorize_opcode(RzPrint *print, char *p, const char *reg, 
 		/* free (t_o); */
 	}
 	strcpy(o + j, reset);
-	//strcpy (p, o); // may overflow .. but shouldnt because asm.buf_asm is big enought
+	// strcpy (p, o); // may overflow .. but shouldnt because asm.buf_asm is big enought
 	return strdup(o);
 }
 
@@ -2000,7 +2000,7 @@ RZ_API void rz_print_set_rowoff(RzPrint *p, int i, ut32 offset, bool overwrite) 
 	if (i >= p->row_offsets_sz) {
 		size_t new_size;
 		p->row_offsets_sz *= 2;
-		//XXX dangerous
+		// XXX dangerous
 		while (i >= p->row_offsets_sz) {
 			p->row_offsets_sz *= 2;
 		}

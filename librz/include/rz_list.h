@@ -26,7 +26,7 @@ typedef struct rz_list_t {
 typedef struct rz_list_range_t {
 	HtPP *h;
 	RzList *l;
-	//RzListComparator c;
+	// RzListComparator c;
 } RzListRange;
 
 // RzListComparator should return -1, 0, 1 to indicate "value < list_data", "value == list_data", "value > list_data".

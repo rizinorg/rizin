@@ -133,7 +133,7 @@ static int ar_parse_header(RzArFp *arf, filetable *tbl, ut64 arsize) {
 
 	/*
 	 * handle fake files
-	*/
+	 */
 	if (!strcmp(h.name, "/")) {
 		// skip over symbol table
 		if (rz_buf_seek(b, size, RZ_BUF_CUR) <= 0 || rz_buf_tell(b) > arsize) {
@@ -162,7 +162,7 @@ static int ar_parse_header(RzArFp *arf, filetable *tbl, ut64 arsize) {
 
 	/*
 	 * handle real files
-	*/
+	 */
 	RzList *list = rz_str_split_duplist(h.name, "/", false); // don't strip spaces
 	if (rz_list_length(list) != 2) {
 		rz_list_free(list);

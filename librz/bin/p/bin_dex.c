@@ -137,7 +137,7 @@ static RzList *entrypoints(RzBinFile *bf) {
 		return NULL;
 	}
 
-	//return rz_bin_java_class_entrypoints(dex);
+	// return rz_bin_java_class_entrypoints(dex);
 	return rz_bin_dex_entrypoints(dex);
 }
 

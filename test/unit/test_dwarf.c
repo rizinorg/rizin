@@ -187,10 +187,10 @@ bool test_dwarf3_c_basic(void) { // this should work for dwarf2 aswell
 
 /**
  * @brief Tests correct parsing of abbreviations and line information of DWARF3 C++ binary
- * 
- * 
- * 
- * 
+ *
+ *
+ *
+ *
  */
 bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
 	RzBin *bin = rz_bin_new();

@@ -321,8 +321,8 @@ RZ_API int rz_core_search_prelude(RzCore *core, ut64 from, ut64 to, const ut8 *b
 		}
 	}
 	// rz_search_reset might also benifet from having an if(s->data) RZ_FREE(s->data), but im not sure.
-	//add a commit that puts it in there to this PR if it wouldn't break anything. (don't have to worry about this happening again, since all searches start by resetting core->search)
-	//For now we will just use rz_search_kw_reset
+	// add a commit that puts it in there to this PR if it wouldn't break anything. (don't have to worry about this happening again, since all searches start by resetting core->search)
+	// For now we will just use rz_search_kw_reset
 	rz_search_kw_reset(core->search);
 	free(b);
 	return preludecnt;
@@ -670,7 +670,7 @@ RZ_API RzList *rz_core_get_boundaries_prot(RzCore *core, int perm, const char *m
 		rz_pvector_foreach (maps, it) {
 			RzIOMap *map = *it;
 			ut64 from = rz_itv_begin(map->itv);
-			//ut64 to = rz_itv_end (map->itv);
+			// ut64 to = rz_itv_end (map->itv);
 			int rwx = map->perm;
 			if ((rwx & mask) != mask) {
 				continue;
@@ -2956,8 +2956,8 @@ RZ_IPI int rz_cmd_search(void *data, const char *input) {
 	   this introduces a bug until we implement backwards search
 	   for all search types
 	   if (__to < __from) {
-	        eprintf ("Invalid search range. Check 'e search.{from|to}'\n");
-	        return false;
+		eprintf ("Invalid search range. Check 'e search.{from|to}'\n");
+		return false;
 	   }
 	   since the backward search will be implemented soon I'm not gonna stick
 	   checks for every case in switch // jjdredd

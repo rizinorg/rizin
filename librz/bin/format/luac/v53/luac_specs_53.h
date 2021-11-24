@@ -41,4 +41,4 @@ typedef ut32 LUA_INT;
 #define LUA_TNUMFLT (3 | (0 << 4)) /* float numbers */
 #define LUA_TNUMINT (3 | (1 << 4)) /* integer numbers */
 
-#endif //BUILD_LUAC_SPECS_53_H
+#endif // BUILD_LUAC_SPECS_53_H

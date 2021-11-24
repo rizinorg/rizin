@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2015 maijin <maijin21@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-//CPU_memory_map: http://wiki.nesdev.com/w/index.php/CPU_memory_map
+// CPU_memory_map: http://wiki.nesdev.com/w/index.php/CPU_memory_map
 
 #ifndef _SFC_SPECS_H
 #define _SFC_SPECS_H
@@ -17,7 +17,7 @@
 #define ADDMEM_START_ADDRESS 0x6000
 #define ADDMEM_SIZE          0x2000
 
-//identical for both LoROM and HiROM
+// identical for both LoROM and HiROM
 
 #define PPU1_REG_ADDRESS 0x2100
 #define PPU1_REG_SIZE    0x0100
@@ -45,15 +45,15 @@
 
 RZ_PACKED(
 	typedef struct {
-		char name[0x15]; //game title.
-		ut8 rom_setup; //ROM setup (LoROM/HiROM, etc.)
+		char name[0x15]; // game title.
+		ut8 rom_setup; // ROM setup (LoROM/HiROM, etc.)
 		ut8 rom_type;
-		ut8 rom_size; //in 1kb chunks
-		ut8 sram_size; //in 1kb chunks
+		ut8 rom_size; // in 1kb chunks
+		ut8 sram_size; // in 1kb chunks
 		ut8 dest_code;
-		ut8 fixed_0x33; //should be equal to 0x33
+		ut8 fixed_0x33; // should be equal to 0x33
 		ut8 rom_version;
-		ut16 comp_check; //should be equal to ~checksum
+		ut16 comp_check; // should be equal to ~checksum
 		ut16 checksum;
 	})
 sfc_int_hdr;

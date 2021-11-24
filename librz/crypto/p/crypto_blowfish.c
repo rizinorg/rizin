@@ -178,7 +178,7 @@ static void blowfish_crypt(struct blowfish_state *const state, const ut8 *inbuf,
 	int index1, index2;
 
 	if (!state || !inbuf || !outbuf || buflen < 0 || buflen % 8 != 0) {
-		//let user deal with padding
+		// let user deal with padding
 		if (buflen % 8 != 0) {
 			eprintf("Invalid input length %d. Expected length is multiple of 8 bytes.\n", buflen);
 		}
@@ -215,7 +215,7 @@ static void blowfish_decrypt(struct blowfish_state *const state, const ut8 *inbu
 	int index1, index2;
 
 	if (!state || !inbuf || !outbuf || buflen < 0 || buflen % 8 != 0) {
-		//length of encrypted output of blowfish is multiple of 8 bytes.
+		// length of encrypted output of blowfish is multiple of 8 bytes.
 		if ((buflen % 8) != 0) {
 			eprintf("Invalid input length %d. Expected length is multiple of 8 bytes.\n", buflen);
 		}

@@ -253,7 +253,7 @@ RZ_API bool rz_th_start(RzThread *th, int enable) {
 	} else {
 		if (th->running) {
 			// stop thread
-			//rz_th_kill (th, 0);
+			// rz_th_kill (th, 0);
 			rz_th_lock_enter(th->lock); // deadlock?
 		}
 	}
@@ -348,11 +348,11 @@ RZ_API size_t rz_th_physical_core_number() {
 
 /**
  * \brief returns a new RzThreadPool structure with a pool of thread
- * 
+ *
  * Returns a new RzThreadPool structure with a pool of thread limited
  * by either the physical core number count or by the value specified
  * by the user (if set to 0, it will be the max physical cores number)
- * 
+ *
  * \param  max_threads  The maximum number of threads needed in the pool
  * \return RzThreadPool The RzThreadPool structure
  */

@@ -120,7 +120,7 @@ static void add_mem_change(RzAnalysisEsilTrace *trace, int idx, ut64 addr, ut8 d
 static int trace_hook_reg_read(RzAnalysisEsil *esil, const char *name, ut64 *res, int *size) {
 	int ret = 0;
 	if (*name == '0') {
-		//eprintf ("Register not found in profile\n");
+		// eprintf ("Register not found in profile\n");
 		return 0;
 	}
 	if (ocbs.hook_reg_read) {
