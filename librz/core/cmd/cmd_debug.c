@@ -703,6 +703,7 @@ RZ_IPI void rz_core_dbg_follow_seek_register(RzCore *core) {
 		if ((pc < core->offset) || (pc > (core->offset + follow))) {
 			rz_core_seek_to_register(core, "PC", false);
 		}
+		rz_core_debug_sync_bits(core);
 	}
 }
 

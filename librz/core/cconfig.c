@@ -696,14 +696,6 @@ static bool cb_asmbits(void *user, void *data) {
 		bool load_from_debug = rz_config_get_b(core->config, "cfg.debug");
 		if (load_from_debug) {
 			if (core->dbg->cur && core->dbg->cur->reg_profile) {
-// XXX. that should depend on the plugin, not the host os
-#if __WINDOWS__
-#if !defined(_WIN64)
-				core->dbg->bits = RZ_SYS_BITS_32;
-#else
-				core->dbg->bits = RZ_SYS_BITS_64;
-#endif
-#endif
 				char *rp = core->dbg->cur->reg_profile(core->dbg);
 				rz_reg_set_profile_string(core->dbg->reg, rp);
 				rz_reg_set_profile_string(core->analysis->reg, rp);
@@ -3383,7 +3375,11 @@ RZ_API int rz_core_config_init(RzCore *core) {
 
 	SETCB("dbg.bpinmaps", "true", &cb_dbg_bpinmaps, "Activate breakpoints only if they are inside a valid map");
 	SETCB("dbg.forks", "false", &cb_dbg_forks, "Stop execution if fork() is done (see dbg.threads)");
+#if __WINDOWS__
+	n = NODECB("dbg.btalgo", "default", &cb_dbg_btalgo);
+#else
 	n = NODECB("dbg.btalgo", "fuzzy", &cb_dbg_btalgo);
+#endif
 	SETDESC(n, "Select backtrace algorithm");
 	SETOPTIONS(n, "default", "fuzzy", "analysis", "trace", NULL);
 	SETCB("dbg.threads", "false", &cb_stopthreads, "Stop all threads when debugger breaks (see dbg.forks)");
