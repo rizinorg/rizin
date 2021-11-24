@@ -223,10 +223,10 @@ jobs:
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
         if [ "$ASAN" == "true" ]; then
           if [ "$CC" == "clang" ]; then
-            export ASAN_LD_PRELOAD=/usr/lib/llvm-11/lib/clang/11.0.0/lib/linux/libclang_rt.asan-x86_64.so
-            export LD_LIBRARY_PATH=/usr/lib/llvm-11/lib/clang/11.0.0/lib/linux:${LD_LIBRARY_PATH}
+            export ASAN_LD_PRELOAD=$(clang -print-file-name=libclang_rt.asan-x86_64.so)
+            export LD_LIBRARY_PATH=$(dirname $(clang -print-file-name=libclang_rt.asan-x86_64.so)):${LD_LIBRARY_PATH}
           else
-            export ASAN_LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
+            export ASAN_LD_PRELOAD=$(gcc -print-file-name=libasan.so)
           fi
         fi
         ninja -C build test
@@ -243,10 +243,10 @@ jobs:
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
         if [ "$ASAN" == "true" ]; then
           if [ "$CC" == "clang" ]; then
-            export ASAN_LD_PRELOAD=/usr/lib/llvm-11/lib/clang/11.0.0/lib/linux/libclang_rt.asan-x86_64.so
-            export LD_LIBRARY_PATH=/usr/lib/llvm-11/lib/clang/11.0.0/lib/linux:${LD_LIBRARY_PATH}
+            export ASAN_LD_PRELOAD=$(clang -print-file-name=libclang_rt.asan-x86_64.so)
+            export LD_LIBRARY_PATH=$(dirname $(clang -print-file-name=libclang_rt.asan-x86_64.so)):${LD_LIBRARY_PATH}
           else
-            export ASAN_LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
+            export ASAN_LD_PRELOAD=$(gcc -print-file-name=libasan.so)
           fi
         fi
         cd test
@@ -266,7 +266,7 @@ jobs:
         export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
         if [ "$ASAN" == "true" ] && [ "$CC" == "clang" ]; then
-          export LD_LIBRARY_PATH=/usr/lib/llvm-11/lib/clang/11.0.0/lib/linux:${LD_LIBRARY_PATH}
+          export LD_LIBRARY_PATH=$(dirname $(clang -print-file-name=libclang_rt.asan-x86_64.so)):${LD_LIBRARY_PATH}
         fi
         cd test
         rz-test -LF bins/fuzzed @fuzz

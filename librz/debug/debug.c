@@ -461,6 +461,11 @@ RZ_API int rz_debug_stop(RzDebug *dbg) {
 RZ_API bool rz_debug_set_arch(RzDebug *dbg, const char *arch, int bits) {
 	if (arch && dbg && dbg->cur) {
 		switch (bits) {
+		case 16:
+			if (dbg->cur->bits & RZ_SYS_BITS_16) {
+				dbg->bits = RZ_SYS_BITS_16;
+			}
+			break;
 		case 27:
 			if (dbg->cur->bits == 27) {
 				dbg->bits = 27;
@@ -798,6 +803,9 @@ RZ_API int rz_debug_step_soft(RzDebug *dbg) {
 		return false;
 	}
 
+	const bool has_lr_reg = rz_reg_get_name(dbg->reg, RZ_REG_NAME_LR);
+	const bool arch_ret_is_pop = !strcmp(dbg->arch, "arm") && dbg->bits <= RZ_SYS_BITS_32;
+
 	pc = rz_debug_reg_get(dbg, dbg->reg->name[RZ_REG_NAME_PC]);
 	sp = rz_debug_reg_get(dbg, dbg->reg->name[RZ_REG_NAME_SP]);
 
@@ -815,8 +823,15 @@ RZ_API int rz_debug_step_soft(RzDebug *dbg) {
 	}
 	switch (op.type) {
 	case RZ_ANALYSIS_OP_TYPE_RET:
-		dbg->iob.read_at(dbg->iob.io, sp, (ut8 *)&sp_top, 8);
-		next[0] = (dbg->bits == RZ_SYS_BITS_32) ? sp_top.r32[0] : sp_top.r64;
+		if (arch_ret_is_pop && op.stackop == RZ_ANALYSIS_STACK_INC) {
+			dbg->iob.read_at(dbg->iob.io, sp - op.stackptr - 4, (ut8 *)&sp_top, 4);
+			next[0] = sp_top.r32[0];
+		} else if (has_lr_reg) {
+			next[0] = rz_debug_reg_get(dbg, dbg->reg->name[RZ_REG_NAME_LR]);
+		} else {
+			dbg->iob.read_at(dbg->iob.io, sp, (ut8 *)&sp_top, 8);
+			next[0] = (dbg->bits <= RZ_SYS_BITS_32) ? sp_top.r32[0] : sp_top.r64;
+		}
 		br = 1;
 		break;
 	case RZ_ANALYSIS_OP_TYPE_CJMP:
@@ -842,7 +857,7 @@ RZ_API int rz_debug_step_soft(RzDebug *dbg) {
 		if (!dbg->iob.read_at(dbg->iob.io, r, (ut8 *)&memval, 8)) {
 			next[0] = op.addr + op.size;
 		} else {
-			next[0] = (dbg->bits == RZ_SYS_BITS_32) ? memval.r32[0] : memval.r64;
+			next[0] = (dbg->bits <= RZ_SYS_BITS_32) ? memval.r32[0] : memval.r64;
 		}
 		br = 1;
 		break;
@@ -857,7 +872,7 @@ RZ_API int rz_debug_step_soft(RzDebug *dbg) {
 		if (!dbg->iob.read_at(dbg->iob.io, r * op.scale + op.disp, (ut8 *)&memval, 8)) {
 			next[0] = op.addr + op.size;
 		} else {
-			next[0] = (dbg->bits == RZ_SYS_BITS_32) ? memval.r32[0] : memval.r64;
+			next[0] = (dbg->bits <= RZ_SYS_BITS_32) ? memval.r32[0] : memval.r64;
 		}
 		br = 1;
 		break;
@@ -867,7 +882,11 @@ RZ_API int rz_debug_step_soft(RzDebug *dbg) {
 		break;
 	}
 
+	const int align = rz_analysis_archinfo(dbg->analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
 	for (i = 0; i < br; i++) {
+		if (align > 1) {
+			next[i] = next[i] - (next[i] % align);
+		}
 		RzBreakpointItem *bpi = rz_bp_add_sw(dbg->bp, next[i], dbg->bpsize, RZ_BP_PROT_EXEC);
 		if (bpi) {
 			bpi->swstep = true;
