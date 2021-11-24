@@ -194,7 +194,7 @@ static int analop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *bu
 	}
 
 	switch (insn->id) {
-		//case RISCV_INS_NOP:
+		// case RISCV_INS_NOP:
 		//	rz_strbuf_setf (&op->esil, ",");
 		//	break;
 	}
@@ -390,7 +390,7 @@ beach:
 		op_fillval(analysis, op, &hndl, insn);
 	}
 	cs_free(insn, n);
-	//cs_close (&handle);
+	// cs_close (&handle);
 fin:
 	return opsize;
 }

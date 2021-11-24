@@ -34,7 +34,7 @@ static bool buf_io_init(RzBuffer *b, const void *user) {
 }
 
 static bool buf_io_fini(RzBuffer *b) {
-	//struct buf_io_priv *priv = get_priv_io (b);
+	// struct buf_io_priv *priv = get_priv_io (b);
 	RZ_FREE(b->priv);
 	return true;
 }

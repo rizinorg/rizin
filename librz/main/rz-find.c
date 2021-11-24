@@ -269,7 +269,7 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 			}
 		}
 	} else if (ro->mode == RZ_SEARCH_STRING) {
-		rz_search_kw_add(rs, rz_search_keyword_new_hexmask("00", NULL)); //XXX
+		rz_search_kw_add(rs, rz_search_keyword_new_hexmask("00", NULL)); // XXX
 	}
 
 	ro->curfile = file;

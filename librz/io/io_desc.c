@@ -26,7 +26,7 @@ RZ_API RzIODesc *rz_io_desc_new(RzIO *io, RzIOPlugin *plugin, const char *uri, i
 		desc->plugin = plugin;
 		desc->data = data;
 		desc->perm = perm;
-		//because the uri-arg may live on the stack
+		// because the uri-arg may live on the stack
 		desc->uri = strdup(uri);
 	}
 	return desc;
@@ -58,7 +58,7 @@ RZ_API bool rz_io_desc_add(RzIO *io, RzIODesc *desc) {
 	return true;
 }
 
-RZ_API bool rz_io_desc_del(RzIO *io, int fd) { //can we pass this a riodesc and check if it belongs to the desc->io ?
+RZ_API bool rz_io_desc_del(RzIO *io, int fd) { // can we pass this a riodesc and check if it belongs to the desc->io ?
 	rz_return_val_if_fail(io && io->files, false);
 	RzIODesc *desc = rz_id_storage_get(io->files, fd);
 	rz_io_desc_free(desc);
@@ -179,13 +179,13 @@ RZ_API bool rz_io_desc_close(RzIODesc *desc) {
 	return true;
 }
 
-//returns length of written bytes
+// returns length of written bytes
 RZ_API int rz_io_desc_write(RzIODesc *desc, const ut8 *buf, int len) {
 	rz_return_val_if_fail(desc && buf, -1);
 	if (len < 0) {
 		return -1;
 	}
-	//check pointers and pcache
+	// check pointers and pcache
 	if (desc->io && (desc->io->p_cache & 2)) {
 		return rz_io_desc_cache_write(desc,
 			rz_io_desc_seek(desc, 0LL, RZ_IO_SEEK_CUR), buf, len);
@@ -361,7 +361,7 @@ RZ_IPI bool rz_io_desc_init(RzIO *io) {
 	rz_return_val_if_fail(io, false);
 	rz_io_desc_fini(io);
 	// TODO: it leaks if called twice
-	//fd is signed
+	// fd is signed
 	io->files = rz_id_storage_new(3, 0x80000000);
 	if (!io->files) {
 		return false;
@@ -378,7 +378,7 @@ static bool desc_fini_cb(void *user, void *data, ut32 id) {
 	return true;
 }
 
-//closes all descs and frees all descs and io->files
+// closes all descs and frees all descs and io->files
 RZ_IPI bool rz_io_desc_fini(RzIO *io) {
 	rz_return_val_if_fail(io, false);
 	if (io->files) {
@@ -386,7 +386,7 @@ RZ_IPI bool rz_io_desc_fini(RzIO *io) {
 		rz_id_storage_free(io->files);
 		io->files = NULL;
 	}
-	//no map-cleanup here, to keep it modular useable
+	// no map-cleanup here, to keep it modular useable
 	io->desc = NULL;
 	return true;
 }

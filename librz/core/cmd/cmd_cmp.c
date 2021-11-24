@@ -177,7 +177,7 @@ static int rizin_compare_words(RzCore *core, ut64 of, ut64 od, int len, int ws) 
 		case 4:
 			rz_cons_printf("%s0x%08" PFMT32x " %c 0x%08" PFMT32x "%s\n", color,
 				v0.v32, ch, v1.v32, colorEnd);
-			//rz_core_cmdf (core, "fd@0x%"PFMT64x, v0.v32);
+			// rz_core_cmdf (core, "fd@0x%"PFMT64x, v0.v32);
 			if (v0.v32 != v1.v32) {
 				//	rz_core_cmdf (core, "fd@0x%"PFMT64x, v1.v32);
 			}
@@ -185,7 +185,7 @@ static int rizin_compare_words(RzCore *core, ut64 of, ut64 od, int len, int ws) 
 		case 8:
 			rz_cons_printf("%s0x%016" PFMT64x " %c 0x%016" PFMT64x "%s\n",
 				color, v0.v64, ch, v1.v64, colorEnd);
-			//rz_core_cmdf (core, "fd@0x%"PFMT64x, v0.v64);
+			// rz_core_cmdf (core, "fd@0x%"PFMT64x, v0.v64);
 			if (v0.v64 != v1.v64) {
 				//	rz_core_cmdf (core, "fd@0x%"PFMT64x, v1.v64);
 			}

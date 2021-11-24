@@ -91,7 +91,7 @@ const char *gb_card_type_str[] = {
 	"TAMA5",
 	"HUC3",
 	"HUC1",
-	"XXX", //mbc4?
+	"XXX", // mbc4?
 	"XXX",
 	"ROM+MBC5",
 	"ROM+MBC5+RAM",

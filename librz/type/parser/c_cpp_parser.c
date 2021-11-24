@@ -16,7 +16,7 @@ TSLanguage *tree_sitter_c();
 
 // Declare the `tree_sitter_cpp` function, which is
 // implemented by the `tree-sitter-cpp` library.
-//TSLanguage *tree_sitter_cpp();
+// TSLanguage *tree_sitter_cpp();
 
 CParserState *c_parser_state_new(HtPP *base_types, HtPP *callable_types) {
 	CParserState *state = RZ_NEW0(CParserState);
@@ -257,12 +257,12 @@ RZ_API int rz_type_parse_file(RzTypeDB *typedb, const char *path, const char *di
 }
 
 /**
-* \brief Parses the C type string creating the new parser state
-*
-* \param typedb RzTypeDB instance
-* \param code The C type itself
-* \param error_msg A pointer where all error messages will be stored
-*/
+ * \brief Parses the C type string creating the new parser state
+ *
+ * \param typedb RzTypeDB instance
+ * \param code The C type itself
+ * \param error_msg A pointer where all error messages will be stored
+ */
 RZ_API int rz_type_parse_string(RzTypeDB *typedb, const char *code, char **error_msg) {
 	bool verbose = true;
 	// Create new C parser state
@@ -276,22 +276,22 @@ RZ_API int rz_type_parse_string(RzTypeDB *typedb, const char *code, char **error
 }
 
 /**
-* \brief Reset the C parser state
-*
-* \param typedb RzTypeDB instance
-*/
+ * \brief Reset the C parser state
+ *
+ * \param typedb RzTypeDB instance
+ */
 RZ_API void rz_type_parse_reset(RzTypeDB *typedb) {
 	rz_type_parser_free(typedb->parser);
 	typedb->parser = rz_type_parser_new();
 }
 
 /**
-* \brief Parses the single C type definition
-*
-* \param parser RzTypeParser parser instance
-* \param code The C type itself
-* \param error_msg A pointer where all error messages will be stored
-*/
+ * \brief Parses the single C type definition
+ *
+ * \param parser RzTypeParser parser instance
+ * \param code The C type itself
+ * \param error_msg A pointer where all error messages will be stored
+ */
 RZ_API RZ_OWN RzType *rz_type_parse_string_single(RzTypeParser *parser, const char *code, char **error_msg) {
 	rz_return_val_if_fail(parser && code, NULL);
 	if (error_msg) {
@@ -388,12 +388,12 @@ RZ_API RZ_OWN RzType *rz_type_parse_string_single(RzTypeParser *parser, const ch
 }
 
 /**
-* \brief Parses the single C type declaration
-*
-* \param parser RzTypeParser parser instance
-* \param code The C type itself
-* \param error_msg A pointer where all error messages will be stored
-*/
+ * \brief Parses the single C type declaration
+ *
+ * \param parser RzTypeParser parser instance
+ * \param code The C type itself
+ * \param error_msg A pointer where all error messages will be stored
+ */
 RZ_API RZ_OWN RzType *rz_type_parse_string_declaration_single(RzTypeParser *parser, const char *code, char **error_msg) {
 	if (error_msg) {
 		*error_msg = NULL;

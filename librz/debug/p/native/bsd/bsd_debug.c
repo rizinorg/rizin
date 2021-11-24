@@ -593,7 +593,7 @@ RzList *bsd_desc_list(int pid) {
 				perm |= RZ_PERM_W;
 			}
 		}
-		//TODO: Offset
+		// TODO: Offset
 		desc = rz_debug_desc_new(atoi(de->d_name), buf, perm, type, 0);
 		if (!desc) {
 			break;

@@ -1757,22 +1757,22 @@ static void update_sdb(RzCore *core) {
 	if (!core) {
 		return;
 	}
-	//SDB// analysis/
+	// SDB// analysis/
 	if (core->analysis && core->analysis->sdb) {
 		sdb_ns_set(DB, "analysis", core->analysis->sdb);
 	}
-	//SDB// bin/
+	// SDB// bin/
 	if (core->bin && core->bin->sdb) {
 		sdb_ns_set(DB, "bin", core->bin->sdb);
 	}
-	//SDB// bin/info
+	// SDB// bin/info
 	o = rz_bin_cur_object(core->bin);
 	if (o) {
 		sdb_ns_set(sdb_ns(DB, "bin", 1), "info", o->kv);
 	}
-	//sdb_ns_set (core->sdb, "flags", core->flags->sdb);
-	//sdb_ns_set (core->sdb, "bin", core->bin->sdb);
-	//SDB// syscall/
+	// sdb_ns_set (core->sdb, "flags", core->flags->sdb);
+	// sdb_ns_set (core->sdb, "bin", core->bin->sdb);
+	// SDB// syscall/
 	if (core->rasm && core->rasm->syscall && core->rasm->syscall->db) {
 		sdb_ns_set(DB, "syscall", core->rasm->syscall->db);
 	}
@@ -2126,19 +2126,19 @@ RZ_API const char *rz_core_analysis_optype_colorfor(RzCore *core, ut64 addr, boo
 	}
 	type = rz_core_analysis_address(core, addr);
 	if (type & RZ_ANALYSIS_ADDR_TYPE_EXEC) {
-		return core->cons->context->pal.ai_exec; //Color_RED;
+		return core->cons->context->pal.ai_exec; // Color_RED;
 	}
 	if (type & RZ_ANALYSIS_ADDR_TYPE_WRITE) {
-		return core->cons->context->pal.ai_write; //Color_BLUE;
+		return core->cons->context->pal.ai_write; // Color_BLUE;
 	}
 	if (type & RZ_ANALYSIS_ADDR_TYPE_READ) {
-		return core->cons->context->pal.ai_read; //Color_GREEN;
+		return core->cons->context->pal.ai_read; // Color_GREEN;
 	}
 	if (type & RZ_ANALYSIS_ADDR_TYPE_SEQUENCE) {
-		return core->cons->context->pal.ai_seq; //Color_MAGENTA;
+		return core->cons->context->pal.ai_seq; // Color_MAGENTA;
 	}
 	if (type & RZ_ANALYSIS_ADDR_TYPE_ASCII) {
-		return core->cons->context->pal.ai_ascii; //Color_YELLOW;
+		return core->cons->context->pal.ai_ascii; // Color_YELLOW;
 	}
 	return NULL;
 }
@@ -2448,7 +2448,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 		core->cons->user_fgets = (void *)rz_core_fgets;
 		core->cons->user_fgets_user = core;
 #endif
-		//rz_line_singleton ()->user = (void *)core;
+		// rz_line_singleton ()->user = (void *)core;
 		rz_line_hist_load(RZ_HOME_HISTORY);
 	}
 	core->print->cons = core->cons;
@@ -2541,8 +2541,8 @@ RZ_API bool rz_core_init(RzCore *core) {
 	rz_core_bind(core, &core->dbg->bp->corebind);
 	rz_core_bind(core, &core->io->corebind);
 	core->dbg->analysis = core->analysis; // XXX: dupped instance.. can cause lost pointerz
-	//rz_debug_use (core->dbg, "native");
-	// XXX pushing uninitialized regstate results in trashed reg values
+	// rz_debug_use (core->dbg, "native");
+	//  XXX pushing uninitialized regstate results in trashed reg values
 	//	rz_reg_arena_push (core->dbg->reg); // create a 2 level register state stack
 	//	core->dbg->analysis->reg = core->analysis->reg; // XXX: dupped instance.. can cause lost pointerz
 	core->io->cb_printf = rz_cons_printf;
@@ -2553,7 +2553,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	rz_core_config_init(core);
 
 	rz_core_loadlibs_init(core);
-	//rz_core_loadlibs (core);
+	// rz_core_loadlibs (core);
 
 	// TODO: get arch from rz_bin or from native arch
 	rz_asm_use(core->rasm, RZ_SYS_ARCH);
@@ -2613,8 +2613,8 @@ RZ_API void rz_core_fini(RzCore *c) {
 	rz_core_task_join(&c->tasks, NULL, -1);
 	rz_core_wait(c);
 	/* TODO: it leaks badly */
-	//update_sdb (c);
-	// avoid double free
+	// update_sdb (c);
+	//  avoid double free
 	rz_list_free(c->ropchain);
 	rz_event_free(c->ev);
 	free(c->cmdlog);
@@ -2631,8 +2631,8 @@ RZ_API void rz_core_fini(RzCore *c) {
 	rz_num_free(c->num);
 	// TODO: sync or not? sdb_sync (c->sdb);
 	// TODO: sync all dbs?
-	//rz_core_file_free (c->file);
-	//c->file = NULL;
+	// rz_core_file_free (c->file);
+	// c->file = NULL;
 	RZ_FREE(c->table_query);
 	rz_list_free(c->files);
 	rz_list_free(c->watchers);
@@ -2838,7 +2838,7 @@ extern void rz_core_echo(RzCore *core, const char *input);
 RZ_API int rz_core_prompt_exec(RzCore *r) {
 	int ret = rz_core_cmd(r, r->cmdqueue, true);
 	r->rc = r->num->value;
-	//int ret = rz_core_cmd (r, r->cmdqueue, true);
+	// int ret = rz_core_cmd (r, r->cmdqueue, true);
 	rz_cons_echo(NULL);
 	rz_cons_flush();
 	if (r->cons && r->cons->line && r->cons->line->zerosep) {
@@ -2973,7 +2973,7 @@ reaccept:
 							pipefd = -1;
 						}
 						eprintf("(flags: %d) len: %d filename: '%s'\n",
-							flg, cmd, ptr); //config.file);
+							flg, cmd, ptr); // config.file);
 					} else {
 						eprintf("Cannot open file (%s)\n", ptr);
 						rz_socket_close(c);
@@ -2982,7 +2982,7 @@ reaccept:
 							rz_socket_free(c);
 							goto reaccept;
 						}
-						goto out_of_function; //XXX: Close connection and goto accept
+						goto out_of_function; // XXX: Close connection and goto accept
 					}
 				}
 				buf[0] = RAP_PACKET_OPEN | RAP_PACKET_REPLY;
@@ -3008,7 +3008,7 @@ reaccept:
 						rz_core_block_size(core, i);
 					}
 					rz_write_be32(ptr + 1, i);
-					memcpy(ptr + 5, core->block, i); //core->blocksize);
+					memcpy(ptr + 5, core->block, i); // core->blocksize);
 					rz_socket_write(c, ptr, i + 5);
 					rz_socket_flush(c);
 					RZ_FREE(ptr);
@@ -3113,7 +3113,7 @@ reaccept:
 					}
 				} else {
 					if (buf[0] == 0) {
-						rz_core_seek(core, x, true); //buf[0]);
+						rz_core_seek(core, x, true); // buf[0]);
 					}
 					x = core->offset;
 				}
@@ -3127,7 +3127,7 @@ reaccept:
 				rz_socket_read_block(c, buf, 4);
 				i = rz_read_be32(buf);
 				{
-					//FIXME: Use rz_socket_close
+					// FIXME: Use rz_socket_close
 					int ret = close(i);
 					rz_write_be32(buf + 1, ret);
 					buf[0] = RAP_PACKET_CLOSE | RAP_PACKET_REPLY;
@@ -3309,7 +3309,7 @@ RZ_API RzBuffer *rz_core_syscall(RzCore *core, const char *name, const char *arg
 	char code[1024];
 	int num;
 
-	//arch check
+	// arch check
 	if (strcmp(core->analysis->cur->arch, "x86")) {
 		eprintf("architecture not yet supported!\n");
 		return 0;
@@ -3317,7 +3317,7 @@ RZ_API RzBuffer *rz_core_syscall(RzCore *core, const char *name, const char *arg
 
 	num = rz_syscall_get_num(core->analysis->syscall, name);
 
-	//bits check
+	// bits check
 	switch (core->rasm->bits) {
 	case 32:
 		if (strcmp(name, "setup") && !num) {

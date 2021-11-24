@@ -116,8 +116,8 @@ static bool test_parse_dwarf_types(void) {
 
 	mu_assert_false(has_union_member(unaligned, "noSuchMember"), "no such union member");
 	// TODO: Check also the exact types of the members
-	//check_kv("union.unaligned.u2", "short unsigned int,0,0");
-	//check_kv("union.unaligned.s8", "long long int,0,0");
+	// check_kv("union.unaligned.u2", "short unsigned int,0,0");
+	// check_kv("union.unaligned.s8", "long long int,0,0");
 
 	rz_bin_dwarf_debug_info_free(info);
 	rz_bin_dwarf_debug_abbrev_free(abbrevs);

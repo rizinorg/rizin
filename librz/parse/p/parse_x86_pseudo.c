@@ -227,19 +227,19 @@ static bool parse(RzParse *p, const char *data, RzStrBuf *sb) {
 		}
 	}
 	/* TODO: interpretation of memory location fails*/
-	//ensure imul & mul interpretations works
+	// ensure imul & mul interpretations works
 	if (strstr(w0, "mul")) {
 		if (nw == 2) {
 			rz_str_ncpy(wa[3], wa[1], sizeof(w3));
 
 			switch (wa[3][0]) {
 			case 'q':
-			case 'r': //qword, r..
+			case 'r': // qword, r..
 				rz_str_ncpy(wa[1], "rax", sizeof(w1));
 				rz_str_ncpy(wa[2], "rax", sizeof(w2));
 				break;
 			case 'd':
-			case 'e': //dword, e..
+			case 'e': // dword, e..
 				if (strlen(wa[3]) > 2) {
 					rz_str_ncpy(wa[1], "eax", sizeof(w1));
 					rz_str_ncpy(wa[2], "eax", sizeof(w2));

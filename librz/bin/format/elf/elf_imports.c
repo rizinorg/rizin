@@ -129,8 +129,8 @@ static ut64 get_import_addr_x86_manual(ELFOBJ *bin, RzBinElfReloc *rel) {
 		return UT64_MAX;
 	}
 
-	//XXX HACK ALERT!!!! full relro?? try to fix it
-	//will there always be .plt.got, what would happen if is .got.plt?
+	// XXX HACK ALERT!!!! full relro?? try to fix it
+	// will there always be .plt.got, what would happen if is .got.plt?
 	RzBinElfSection *s = Elf_(rz_bin_elf_get_section_with_name)(bin, ".plt.got");
 	if (Elf_(rz_bin_elf_has_relro)(bin) < RZ_BIN_ELF_PART_RELRO || !s) {
 		return UT64_MAX;
@@ -163,7 +163,7 @@ static ut64 get_import_addr_x86_manual(ELFOBJ *bin, RzBinElfReloc *rel) {
 			tmp = plt_sym_addr;
 		}
 
-		//relative address
+		// relative address
 		if ((plt_addr + 6 + tmp) == rel->vaddr) {
 			return plt_addr;
 		}

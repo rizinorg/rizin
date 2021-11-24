@@ -673,7 +673,7 @@ RecoveryTypeDescriptor *recovery_type_descriptor_new() {
 	td->valid = false;
 	memset(&td->td, 0, sizeof(td->td));
 	td->col = NULL;
-	//td->vtable = NULL;
+	// td->vtable = NULL;
 	return td;
 }
 
@@ -837,7 +837,7 @@ static void recovery_apply_vtable(RVTableContext *context, const char *class_nam
 			meth.vtable_offset = vmeth->vtable_offset;
 			RzAnalysisFunction *fcn = rz_analysis_get_function_at(context->analysis, vmeth->addr);
 			meth.name = fcn ? rz_str_new(fcn->name) : rz_str_newf("virtual_%" PFMT64d, meth.vtable_offset);
-			//Temporarily set as attr name
+			// Temporarily set as attr name
 			meth.real_name = fcn ? rz_str_new(fcn->name) : rz_str_newf("virtual_%" PFMT64d, meth.vtable_offset);
 			meth.method_type = RZ_ANALYSIS_CLASS_METHOD_VIRTUAL;
 		} else {

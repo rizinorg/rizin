@@ -62,7 +62,7 @@ static char *stackop2str(int type) {
 	switch (type) {
 	case RZ_ANALYSIS_STACK_NULL: return strdup("null");
 	case RZ_ANALYSIS_STACK_NOP: return strdup("nop");
-	//case RZ_ANALYSIS_STACK_INCSTACK: return strdup ("incstack");
+	// case RZ_ANALYSIS_STACK_INCSTACK: return strdup ("incstack");
 	case RZ_ANALYSIS_STACK_GET: return strdup("get");
 	case RZ_ANALYSIS_STACK_SET: return strdup("set");
 	}
@@ -108,8 +108,8 @@ static int showanalysis(RzAsmState *as, RzAnalysisOp *op, ut64 offset, ut8 *buf,
 		if (op->fail != -1LL) {
 			printf("fail:     0x%08" PFMT64x "\n", op->fail);
 		}
-		//if (op->ref != -1LL)
-		//      printf ("ref:      0x%08"PFMT64x"\n", op->ref);
+		// if (op->ref != -1LL)
+		//       printf ("ref:      0x%08"PFMT64x"\n", op->ref);
 		if (op->val != -1LL) {
 			printf("value:    0x%08" PFMT64x "\n", op->val);
 		}
@@ -766,7 +766,7 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 			len = strlen(usrstr);
 			if (skip && len > skip) {
 				skip *= 2;
-				//eprintf ("SKIP (%s) (%lld)\n", usrstr, skip);
+				// eprintf ("SKIP (%s) (%lld)\n", usrstr, skip);
 				memmove(usrstr, usrstr + skip, len - skip);
 				len -= skip;
 				usrstr[len] = 0;

@@ -77,5 +77,5 @@ return strdup(
 	"gpr	f31	.32	276	0\n"
 	"gpr	fsr	.32	280	0\n"
 	"gpr	fir	.32	284	0\n"
-	"gpr	unknw	.32	288	0\n" //Not documented what this part of the register packet is
+	"gpr	unknw	.32	288	0\n" // Not documented what this part of the register packet is
 );

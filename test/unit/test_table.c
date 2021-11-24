@@ -5,7 +5,7 @@
 #include "minunit.h"
 #define BUF_LENGTH 100
 
-//TODO test rz_str_chop_path
+// TODO test rz_str_chop_path
 
 bool test_rz_table(void) {
 	RzTable *t = rz_table_new();

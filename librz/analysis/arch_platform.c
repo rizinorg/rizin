@@ -124,7 +124,7 @@ RZ_API bool rz_arch_load_platform_sdb(RZ_NONNULL RzArchPlatformTarget *t, RZ_NON
 
 /**
  * \brief Initialize Platform Profiles by setting the path to the corresponding SDB file
- * 
+ *
  * \param t reference to RzArchPlatformTarget
  * \param arch reference to the selected architecture (value of `asm.arch`
  * \param platform reference to the selected platform (value of `asm.platform`)

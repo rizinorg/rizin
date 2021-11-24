@@ -112,45 +112,45 @@ struct rz_bin_pe_addr_t *PE_(check_msvcseh)(struct PE_(rz_bin_pe_obj_t) * bin) {
 					return entry;
 				}
 			}
-			//case2:
-			// from des address of jmp search for 50 FF xx FF xx E8
-			//50			 push    eax
-			//FF 37			 push    dword ptr[edi]
-			//FF 36          push    dword ptr[esi]
-			//E8 6F FC FF FF call    _main
+			// case2:
+			//  from des address of jmp search for 50 FF xx FF xx E8
+			// 50			 push    eax
+			// FF 37			 push    dword ptr[edi]
+			// FF 36          push    dword ptr[esi]
+			// E8 6F FC FF FF call    _main
 			for (n = 0; n < sizeof(b) - 6; n++) {
 				if (b[n] == 0x50 && b[n + 1] == 0xff && b[n + 3] == 0xff && b[n + 5] == 0xe8) {
 					follow_offset(entry, bin->b, b, sizeof(b), bin->big_endian, n + 5);
 					return entry;
 				}
 			}
-			//case3:
-			//50                                         push    eax
-			//FF 35 0C E2 40 00                          push    xxxxxxxx
-			//FF 35 08 E2 40 00                          push    xxxxxxxx
-			//E8 2B FD FF FF                             call    _main
+			// case3:
+			// 50                                         push    eax
+			// FF 35 0C E2 40 00                          push    xxxxxxxx
+			// FF 35 08 E2 40 00                          push    xxxxxxxx
+			// E8 2B FD FF FF                             call    _main
 			for (n = 0; n < sizeof(b) - 20; n++) {
 				if (b[n] == 0x50 && b[n + 1] == 0xff && b[n + 7] == 0xff && b[n + 13] == 0xe8) {
 					follow_offset(entry, bin->b, b, sizeof(b), bin->big_endian, n + 13);
 					return entry;
 				}
 			}
-			//case4:
-			//50                                        push    eax
-			//57                                        push    edi
-			//FF 36                                     push    dword ptr[esi]
-			//E8 D9 FD FF FF                            call    _main
+			// case4:
+			// 50                                        push    eax
+			// 57                                        push    edi
+			// FF 36                                     push    dword ptr[esi]
+			// E8 D9 FD FF FF                            call    _main
 			for (n = 0; n < sizeof(b) - 5; n++) {
 				if (b[n] == 0x50 && b[n + 1] == 0x57 && b[n + 2] == 0xff && b[n + 4] == 0xe8) {
 					follow_offset(entry, bin->b, b, sizeof(b), bin->big_endian, n + 4);
 					return entry;
 				}
 			}
-			//case5:
-			//57                                        push    edi
-			//56                                        push    esi
-			//FF 36                                     push    dword ptr[eax]
-			//E8 D9 FD FF FF                            call    _main
+			// case5:
+			// 57                                        push    edi
+			// 56                                        push    esi
+			// FF 36                                     push    dword ptr[eax]
+			// E8 D9 FD FF FF                            call    _main
 			for (n = 0; n < sizeof(b) - 5; n++) {
 				if (b[n] == 0x57 && b[n + 1] == 0x56 && b[n + 2] == 0xff && b[n + 4] == 0xe8) {
 					follow_offset(entry, bin->b, b, sizeof(b), bin->big_endian, n + 4);
@@ -255,17 +255,17 @@ struct rz_bin_pe_addr_t *PE_(check_msvcseh)(struct PE_(rz_bin_pe_obj_t) * bin) {
 			}
 		}
 	}
-	//Microsoft Visual-C
-	// 50                  push eax
-	// FF 75 9C            push dword [ebp - local_64h]
-	// 56                  push    esi
-	// 56                  push    esi
-	// FF 15 CC C0  44 00  call dword [sym.imp.KERNEL32.dll_GetModuleHandleA]
-	// 50                  push    eax
-	// E8 DB DA 00 00      call    main
-	// 89 45 A0            mov dword [ebp - local_60h], eax
-	// 50                  push    eax
-	// E8 2D 00 00  00     call 0x4015a6
+	// Microsoft Visual-C
+	//  50                  push eax
+	//  FF 75 9C            push dword [ebp - local_64h]
+	//  56                  push    esi
+	//  56                  push    esi
+	//  FF 15 CC C0  44 00  call dword [sym.imp.KERNEL32.dll_GetModuleHandleA]
+	//  50                  push    eax
+	//  E8 DB DA 00 00      call    main
+	//  89 45 A0            mov dword [ebp - local_60h], eax
+	//  50                  push    eax
+	//  E8 2D 00 00  00     call 0x4015a6
 	if (b[188] == 0x50 && b[201] == 0xe8) {
 		follow_offset(entry, bin->b, b, sizeof(b), bin->big_endian, 201);
 		return entry;
@@ -296,36 +296,36 @@ struct rz_bin_pe_addr_t *PE_(check_mingw)(struct PE_(rz_bin_pe_obj_t) * bin) {
 		return NULL;
 	}
 	// mingw
-	//55                                         push    ebp
-	//89 E5                                      mov     ebp, esp
-	//83 EC 08                                   sub     esp, 8
-	//C7 04 24 01 00 00 00                       mov     dword ptr[esp], 1
-	//FF 15 C8 63 41 00                          call    ds : __imp____set_app_type
-	//E8 B8 FE FF FF                             call    ___mingw_CRTStartup
+	// 55                                         push    ebp
+	// 89 E5                                      mov     ebp, esp
+	// 83 EC 08                                   sub     esp, 8
+	// C7 04 24 01 00 00 00                       mov     dword ptr[esp], 1
+	// FF 15 C8 63 41 00                          call    ds : __imp____set_app_type
+	// E8 B8 FE FF FF                             call    ___mingw_CRTStartup
 	if (b[0] == 0x55 && b[1] == 0x89 && b[3] == 0x83 && b[6] == 0xc7 && b[13] == 0xff && b[19] == 0xe8) {
 		sw = follow_offset(entry, bin->b, b, sizeof(b), bin->big_endian, 19);
 	}
-	//83 EC 1C                                   sub     esp, 1Ch
-	//C7 04 24 01 00 00 00                       mov[esp + 1Ch + var_1C], 1
-	//FF 15 F8 60 40 00                          call    ds : __imp____set_app_type
-	//E8 6B FD FF FF                             call    ___mingw_CRTStartup
+	// 83 EC 1C                                   sub     esp, 1Ch
+	// C7 04 24 01 00 00 00                       mov[esp + 1Ch + var_1C], 1
+	// FF 15 F8 60 40 00                          call    ds : __imp____set_app_type
+	// E8 6B FD FF FF                             call    ___mingw_CRTStartup
 	if (b[0] == 0x83 && b[3] == 0xc7 && b[10] == 0xff && b[16] == 0xe8) {
 		sw = follow_offset(entry, bin->b, b, sizeof(b), bin->big_endian, 16);
 	}
-	//83 EC 0C                                            sub     esp, 0Ch
-	//C7 05 F4 0A 81 00 00 00 00 00                       mov     ds : _mingw_app_type, 0
-	//ED E8 3E AD 24 00                                      call    ___security_init_cookie
-	//F2 83 C4 0C                                            add     esp, 0Ch
-	//F5 E9 86 FC FF FF                                      jmp     ___tmainCRTStartup
+	// 83 EC 0C                                            sub     esp, 0Ch
+	// C7 05 F4 0A 81 00 00 00 00 00                       mov     ds : _mingw_app_type, 0
+	// ED E8 3E AD 24 00                                      call    ___security_init_cookie
+	// F2 83 C4 0C                                            add     esp, 0Ch
+	// F5 E9 86 FC FF FF                                      jmp     ___tmainCRTStartup
 	if (b[0] == 0x83 && b[3] == 0xc7 && b[13] == 0xe8 && b[18] == 0x83 && b[21] == 0xe9) {
 		sw = follow_offset(entry, bin->b, b, sizeof(b), bin->big_endian, 21);
 	}
 	if (sw) {
 		// case1:
 		// from des address of call search for a1 xx xx xx xx 89 xx xx e8 xx xx xx xx
-		//A1 04 50 44 00                             mov     eax, ds:dword_445004
-		//89 04 24                                   mov[esp + 28h + lpTopLevelExceptionFilter], eax
-		//E8 A3 01 00 00                             call    sub_4013EE
+		// A1 04 50 44 00                             mov     eax, ds:dword_445004
+		// 89 04 24                                   mov[esp + 28h + lpTopLevelExceptionFilter], eax
+		// E8 A3 01 00 00                             call    sub_4013EE
 		for (n = 0; n < sizeof(b) - 12; n++) {
 			if (b[n] == 0xa1 && b[n + 5] == 0x89 && b[n + 8] == 0xe8) {
 				follow_offset(entry, bin->b, b, sizeof(b), bin->big_endian, n + 8);
@@ -407,9 +407,9 @@ ut64 PE_(rz_bin_pe_get_image_base)(struct PE_(rz_bin_pe_obj_t) * bin) {
 	}
 	imageBase = bin->nt_headers->optional_header.ImageBase;
 	if (!imageBase) {
-		//this should only happens with messed up binaries
-		//XXX this value should be user defined by bin.baddr
-		//but from here we can not access config API
+		// this should only happens with messed up binaries
+		// XXX this value should be user defined by bin.baddr
+		// but from here we can not access config API
 		imageBase = 0x10000;
 	}
 	return imageBase;
@@ -853,7 +853,7 @@ static struct rz_bin_pe_export_t *parse_symbol_table(struct PE_(rz_bin_pe_obj_t)
 
 	sections = bin->sections;
 	for (i = 0; i < bin->num_sections; i++) {
-		//XXX search by section with +x permission since the section can be left blank
+		// XXX search by section with +x permission since the section can be left blank
 		if (!strcmp((char *)sections[i].name, ".text")) {
 			text_rva = sections[i].vaddr;
 			text_off = sections[i].paddr;
@@ -868,7 +868,7 @@ static struct rz_bin_pe_export_t *parse_symbol_table(struct PE_(rz_bin_pe_obj_t)
 				break;
 			}
 			memcpy(&sr, buf + i, sizeof(sr));
-			//bprintf ("SECNUM %d\n", sr.secnum);
+			// bprintf ("SECNUM %d\n", sr.secnum);
 			if (sr.secnum == textn) {
 				if (sr.symtype == 32) {
 					char shortname[9];
@@ -946,8 +946,8 @@ static int bin_pe_init_sections(struct PE_(rz_bin_pe_obj_t) * bin) {
 		sections_size = bin->size;
 		bin->num_sections = bin->size / sizeof(PE_(image_section_header));
 		// massage this to make corkami happy
-		//bprintf ("Invalid NumberOfSections value\n");
-		//goto out_error;
+		// bprintf ("Invalid NumberOfSections value\n");
+		// goto out_error;
 	}
 	if (!(bin->section_header = malloc(sections_size))) {
 		rz_sys_perror("malloc (section header)");
@@ -1486,7 +1486,7 @@ static int bin_pe_init_imports(struct PE_(rz_bin_pe_obj_t) * bin) {
 	if (maxidsz < 0) {
 		maxidsz = 0;
 	}
-	//int maxcount = maxidsz/ sizeof (struct rz_bin_pe_import_t);
+	// int maxcount = maxidsz/ sizeof (struct rz_bin_pe_import_t);
 
 	RZ_FREE(bin->import_directory);
 	if (import_dir_paddr != 0) {
@@ -1510,10 +1510,10 @@ static int bin_pe_init_imports(struct PE_(rz_bin_pe_obj_t) * bin) {
 			if (read_image_import_directory(bin->b, import_dir_offset + indx * dir_size, curr_import_dir) <= 0) {
 				bprintf("Warning: read (import directory)\n");
 				RZ_FREE(import_dir);
-				break; //return false;
+				break; // return false;
 			}
 			if (((2 + indx) * dir_size) > import_dir_size) {
-				break; //goto fail;
+				break; // goto fail;
 			}
 			indx++;
 			count++;
@@ -1864,7 +1864,7 @@ static Var *Pe_r_bin_pe_parse_var(struct PE_(rz_bin_pe_obj_t) * bin, PE_DWord *c
 		return NULL;
 	}
 
-	var->szKey = (ut16 *)malloc(UT16_ALIGN(TRANSLATION_UTF_16_LEN)); //L"Translation"
+	var->szKey = (ut16 *)malloc(UT16_ALIGN(TRANSLATION_UTF_16_LEN)); // L"Translation"
 	if (!var->szKey) {
 		bprintf("Warning: malloc (Var szKey)\n");
 		free_Var(var);
@@ -1942,7 +1942,7 @@ static VarFileInfo *Pe_r_bin_pe_parse_var_file_info(struct PE_(rz_bin_pe_obj_t) 
 		return NULL;
 	}
 
-	varFileInfo->szKey = (ut16 *)malloc(UT16_ALIGN(VARFILEINFO_UTF_16_LEN)); //L"VarFileInfo"
+	varFileInfo->szKey = (ut16 *)malloc(UT16_ALIGN(VARFILEINFO_UTF_16_LEN)); // L"VarFileInfo"
 	if (!varFileInfo->szKey) {
 		bprintf("Warning: malloc (VarFileInfo szKey)\n");
 		free_VarFileInfo(varFileInfo);
@@ -2108,7 +2108,7 @@ static StringTable *Pe_r_bin_pe_parse_string_table(struct PE_(rz_bin_pe_obj_t) *
 		free_StringTable(stringTable);
 		return NULL;
 	}
-	stringTable->szKey = (ut16 *)malloc(UT16_ALIGN(EIGHT_HEX_DIG_UTF_16_LEN)); //EIGHT_HEX_DIG_UTF_16_LEN
+	stringTable->szKey = (ut16 *)malloc(UT16_ALIGN(EIGHT_HEX_DIG_UTF_16_LEN)); // EIGHT_HEX_DIG_UTF_16_LEN
 	if (!stringTable->szKey) {
 		bprintf("Warning: malloc (stringTable szKey)\n");
 		free_StringTable(stringTable);
@@ -2190,7 +2190,7 @@ static StringFileInfo *Pe_r_bin_pe_parse_string_file_info(struct PE_(rz_bin_pe_o
 		return NULL;
 	}
 
-	stringFileInfo->szKey = (ut16 *)malloc(UT16_ALIGN(STRINGFILEINFO_UTF_16_LEN)); //L"StringFileInfo"
+	stringFileInfo->szKey = (ut16 *)malloc(UT16_ALIGN(STRINGFILEINFO_UTF_16_LEN)); // L"StringFileInfo"
 	if (!stringFileInfo->szKey) {
 		bprintf("Warning: malloc (StringFileInfo szKey)\n");
 		free_StringFileInfo(stringFileInfo);
@@ -2250,11 +2250,11 @@ static PE_VS_VERSIONINFO *Pe_r_bin_pe_parse_version_info(struct PE_(rz_bin_pe_ob
 	}
 	PE_DWord startAddr = version_info_paddr;
 	PE_DWord curAddr = version_info_paddr;
-	//align32(curAddr); // XXX: do we really need this? Because in msdn
-	//wLength is The length, in bytes, of the VS_VERSIONINFO structure.
-	//This length does not include any padding that aligns any subsequent
-	//version resource data on a 32-bit boundary.
-	//Mb we are in subsequent version resource data and not aligned.
+	// align32(curAddr); // XXX: do we really need this? Because in msdn
+	// wLength is The length, in bytes, of the VS_VERSIONINFO structure.
+	// This length does not include any padding that aligns any subsequent
+	// version resource data on a 32-bit boundary.
+	// Mb we are in subsequent version resource data and not aligned.
 	sz = sizeof(ut16);
 	EXIT_ON_OVERFLOW(sz);
 	if (!rz_buf_read_le16_at(bin->b, curAddr, &vs_VersionInfo->wLength)) {
@@ -2279,7 +2279,7 @@ static PE_VS_VERSIONINFO *Pe_r_bin_pe_parse_version_info(struct PE_(rz_bin_pe_ob
 		goto out_error;
 	}
 
-	vs_VersionInfo->szKey = (ut16 *)malloc(UT16_ALIGN(VS_VERSION_INFO_UTF_16_LEN)); //L"VS_VERSION_INFO"
+	vs_VersionInfo->szKey = (ut16 *)malloc(UT16_ALIGN(VS_VERSION_INFO_UTF_16_LEN)); // L"VS_VERSION_INFO"
 	if (!vs_VersionInfo->szKey) {
 		bprintf("Warning: malloc (VS_VERSIONINFO szKey)\n");
 		goto out_error;
@@ -3077,7 +3077,7 @@ static void _parse_resource_directory(struct PE_(rz_bin_pe_obj_t) * bin, Pe_imag
 			}
 		}
 		if (entry.u2.OffsetToData >> 31) {
-			//detect here malicious file trying to making us infinite loop
+			// detect here malicious file trying to making us infinite loop
 			Pe_image_resource_directory identEntry;
 			ut32 OffsetToDirectory = entry.u2.OffsetToData & 0x7fffffff;
 			off = rsrc_base + OffsetToDirectory;
@@ -3205,7 +3205,7 @@ RZ_API void PE_(bin_pe_parse_resource)(struct PE_(rz_bin_pe_obj_t) * bin) {
 	ut32 curRes = 0;
 	int totalRes = 0;
 	HtUUOptions opt = { 0 };
-	HtUU *dirs = ht_uu_new_opt(&opt); //to avoid infinite loops
+	HtUU *dirs = ht_uu_new_opt(&opt); // to avoid infinite loops
 	if (!dirs) {
 		return;
 	}
@@ -3468,7 +3468,7 @@ struct rz_bin_pe_addr_t *PE_(rz_bin_pe_get_entrypoint)(struct PE_(rz_bin_pe_obj_
 		if (!paddr) {
 			ut64 min_off = -1;
 			for (i = 0; i < bin->num_sections; i++) {
-				//get the lowest section's paddr
+				// get the lowest section's paddr
 				if (sections[i].paddr < min_off) {
 					entry->paddr = sections[i].paddr;
 					entry->vaddr = sections[i].vaddr + base_addr;
@@ -3476,8 +3476,8 @@ struct rz_bin_pe_addr_t *PE_(rz_bin_pe_get_entrypoint)(struct PE_(rz_bin_pe_obj_
 				}
 			}
 			if (min_off == -1) {
-				//no section just a hack to try to fix entrypoint
-				//maybe doesn't work always
+				// no section just a hack to try to fix entrypoint
+				// maybe doesn't work always
 				int sa = RZ_MAX(bin->optional_header->SectionAlignment, 0x1000);
 				entry->paddr = pe_entry & ((sa << 1) - 1);
 				entry->vaddr = entry->paddr + base_addr;
@@ -3490,7 +3490,7 @@ struct rz_bin_pe_addr_t *PE_(rz_bin_pe_get_entrypoint)(struct PE_(rz_bin_pe_obj_
 		}
 		struct rz_bin_pe_section_t *sections = bin->sections;
 		for (i = 0; i < bin->num_sections; i++) {
-			//If there is a section with x without w perm is a good candidate to be the entrypoint
+			// If there is a section with x without w perm is a good candidate to be the entrypoint
 			if (sections[i].perm & PE_IMAGE_SCN_MEM_EXECUTE && !(sections[i].perm & PE_IMAGE_SCN_MEM_WRITE)) {
 				entry->paddr = sections[i].paddr;
 				entry->vaddr = sections[i].vaddr + base_addr;
@@ -3737,7 +3737,7 @@ static int get_debug_info(struct PE_(rz_bin_pe_obj_t) * bin, PE_(image_debug_dir
 		}
 		break;
 	default:
-		//bprintf("get_debug_info(): not supported type\n");
+		// bprintf("get_debug_info(): not supported type\n");
 		return 0;
 	}
 
@@ -3808,7 +3808,7 @@ struct rz_bin_pe_import_t *PE_(rz_bin_pe_get_imports)(struct PE_(rz_bin_pe_obj_t
 	struct rz_bin_pe_import_t *imps, *imports = NULL;
 	char dll_name[PE_NAME_LENGTH + 1];
 	int nimp = 0;
-	ut64 off; //used to cache value
+	ut64 off; // used to cache value
 	PE_DWord dll_name_offset = 0;
 	PE_DWord paddr = 0;
 	PE_DWord import_func_name_offset;
@@ -3843,7 +3843,7 @@ struct rz_bin_pe_import_t *PE_(rz_bin_pe_get_imports)(struct PE_(rz_bin_pe_obj_t
 			return NULL;
 		}
 		if (off + bin->import_directory_size > bin->size) {
-			//why chopping instead of returning and cleaning?
+			// why chopping instead of returning and cleaning?
 			bprintf("Warning: read (import directory too big)\n");
 			bin->import_directory_size = bin->size - bin->import_directory_offset;
 		}
@@ -3943,7 +3943,7 @@ struct rz_bin_pe_lib_t *PE_(rz_bin_pe_get_libs)(struct PE_(rz_bin_pe_obj_t) * bi
 	curr_delay_import_dir;
 	PE_DWord name_off = 0;
 	HtPP *lib_map = NULL;
-	ut64 off; //cache value
+	ut64 off; // cache value
 	int index = 0;
 	int len = 0;
 	int max_libs = 20;
@@ -4183,8 +4183,8 @@ char *PE_(rz_bin_pe_get_cc)(struct PE_(rz_bin_pe_obj_t) * bin) {
 	return NULL;
 }
 
-//This function try to detect anomalies within section
-//we check if there is a section mapped at entrypoint, otherwise add it up
+// This function try to detect anomalies within section
+// we check if there is a section mapped at entrypoint, otherwise add it up
 void PE_(rz_bin_pe_check_sections)(struct PE_(rz_bin_pe_obj_t) * bin, struct rz_bin_pe_section_t **sects) {
 	int i = 0;
 	struct rz_bin_pe_section_t *sections = *sects;
@@ -4200,23 +4200,23 @@ void PE_(rz_bin_pe_check_sections)(struct PE_(rz_bin_pe_obj_t) * bin, struct rz_
 	base_addr = PE_(rz_bin_pe_get_image_base)(bin);
 
 	for (i = 0; !sections[i].last; i++) {
-		//strcmp against .text doesn't work in somes cases
+		// strcmp against .text doesn't work in somes cases
 		if (strstr((const char *)sections[i].name, "text")) {
 			bool fix = false;
 			int j;
-			//check paddr boundaries
+			// check paddr boundaries
 			addr_beg = sections[i].paddr;
 			addr_end = addr_beg + sections[i].size;
 			if (entry->paddr < addr_beg || entry->paddr > addr_end) {
 				fix = true;
 			}
-			//check vaddr boundaries
+			// check vaddr boundaries
 			addr_beg = sections[i].vaddr + base_addr;
 			addr_end = addr_beg + sections[i].vsize;
 			if (entry->vaddr < addr_beg || entry->vaddr > addr_end) {
 				fix = true;
 			}
-			//look for other segment with x that is already mapped and hold entrypoint
+			// look for other segment with x that is already mapped and hold entrypoint
 			for (j = 0; !sections[j].last; j++) {
 				addr_beg = sections[j].paddr;
 				addr_end = addr_beg + sections[j].size;
@@ -4238,7 +4238,7 @@ void PE_(rz_bin_pe_check_sections)(struct PE_(rz_bin_pe_obj_t) * bin, struct rz_
 					}
 				}
 			}
-			//if either vaddr or paddr fail we should update this section
+			// if either vaddr or paddr fail we should update this section
 			if (fix) {
 				strcpy((char *)sections[i].name, "blob");
 				sections[i].paddr = entry->paddr;
@@ -4249,7 +4249,7 @@ void PE_(rz_bin_pe_check_sections)(struct PE_(rz_bin_pe_obj_t) * bin, struct rz_
 			goto out_function;
 		}
 	}
-	//if we arrive til here means there is no text section find one that is holding the code
+	// if we arrive til here means there is no text section find one that is holding the code
 	for (i = 0; !sections[i].last; i++) {
 		if (sections[i].size > bin->size) {
 			continue;
@@ -4268,7 +4268,7 @@ void PE_(rz_bin_pe_check_sections)(struct PE_(rz_bin_pe_obj_t) * bin, struct rz_
 			goto out_function;
 		}
 	}
-	//we need to create another section in order to load the entrypoint
+	// we need to create another section in order to load the entrypoint
 	void *ss = realloc(sections, (bin->num_sections + 2) * sizeof(struct rz_bin_pe_section_t));
 	if (!ss) {
 		goto out_function;
@@ -4397,7 +4397,7 @@ static struct rz_bin_pe_section_t *PE_(rz_bin_pe_get_sections)(struct PE_(rz_bin
 	}
 	shdr = bin->section_header;
 	for (i = 0; i < bin->num_sections; i++) {
-		//just allocate the needed
+		// just allocate the needed
 		if (shdr[i].SizeOfRawData || shdr[i].Misc.VirtualSize) {
 			section_count++;
 		}
@@ -4416,7 +4416,7 @@ static struct rz_bin_pe_section_t *PE_(rz_bin_pe_get_sections)(struct PE_(rz_bin
 			strncpy((char *)sections[j].name, new_name, RZ_ARRAY_SIZE(sections[j].name) - 1);
 			free(new_name);
 		} else if (shdr[i].Name[0] == '/') {
-			//long name is something deprecated but still used
+			// long name is something deprecated but still used
 			int idx = atoi((const char *)shdr[i].Name + 1);
 			ut64 sym_tbl_off = bin->nt_headers->file_header.PointerToSymbolTable;
 			int num_symbols = bin->nt_headers->file_header.NumberOfSymbols;

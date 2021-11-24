@@ -394,7 +394,7 @@ static int cont_rbtree_search_cmp_wrapper(const void *incoming, const RBNode *in
 static int cont_rbtree_free_cmp_wrapper(const void *data, const RBNode *in_tree, void *user) {
 	RCRBCmpWrap *cmp_wrap = (RCRBCmpWrap *)user;
 	const int ret = cont_rbtree_cmp_wrapper((void *)data, in_tree, user);
-	if (!ret && cmp_wrap->free) { //this is for deleting
+	if (!ret && cmp_wrap->free) { // this is for deleting
 		RContRBNode *in_tree_node = container_of((void *)in_tree, RContRBNode, node);
 		cmp_wrap->free(in_tree_node->data);
 	}

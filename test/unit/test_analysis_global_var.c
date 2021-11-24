@@ -96,7 +96,7 @@ bool test_rz_analysis_global_var() {
 	flag_exists = rz_flag_get(analysis->flb.f, glob->name);
 	mu_assert_notnull(flag_exists, "flag not found");
 
-	deleted = rz_analysis_var_global_delete_byaddr_in(analysis, 0x133A); //test RBTree again
+	deleted = rz_analysis_var_global_delete_byaddr_in(analysis, 0x133A); // test RBTree again
 	mu_assert_true(deleted, "delete global var");
 	glob = NULL;
 	glob = rz_analysis_var_global_get_byaddr_in(analysis, 0x133A);

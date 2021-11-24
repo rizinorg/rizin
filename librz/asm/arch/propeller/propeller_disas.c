@@ -256,7 +256,7 @@ int propeller_decode_command(const ut8 *instr, struct propeller_cmd *cmd) {
 	case PROP_RDBYTE:
 	case PROP_RDLONG:
 	case PROP_RDWORD:
-		//case PROP_RET:
+		// case PROP_RET:
 	case PROP_REV:
 	case PROP_ROL:
 	case PROP_ROR:
@@ -266,12 +266,12 @@ int propeller_decode_command(const ut8 *instr, struct propeller_cmd *cmd) {
 	case PROP_SUBABS:
 	case PROP_SUBS:
 	case PROP_SUBSX:
-		//case PROP_SUBX:
+		// case PROP_SUBX:
 	case PROP_SUMC:
 	case PROP_SUMNC:
 	case PROP_SUMNZ:
 	case PROP_SUMZ:
-		//case PROP_TEST:
+		// case PROP_TEST:
 	case PROP_TJZ:
 	case PROP_WAITCNT:
 	case PROP_WAITPEQ:

@@ -143,7 +143,7 @@ const ppc_t ppc_ops[] = {
 	{ "icbtls", 0x7C0003CC, 0x7C0003CC | F_MASK_DCBL, F_DCBL, RZ_ANALYSIS_OP_TYPE_IO, RZ_TYPE_COND_AL, { TYPE_IMM, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE } },
 	{ "ici", 0x7C00078C, 0x7C00078C | F_MASK_DCI, F_DCI, RZ_ANALYSIS_OP_TYPE_IO, RZ_TYPE_COND_AL, { TYPE_IMM, TYPE_NONE, TYPE_NONE, TYPE_NONE, TYPE_NONE } },
 	{ "icread", 0x7C0007CC, 0x7C0007CC | F_MASK_X, F_X, RZ_ANALYSIS_OP_TYPE_IO, RZ_TYPE_COND_AL, { TYPE_NONE, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE } },
-	//apply only X instead of A for lt, gt, eq
+	// apply only X instead of A for lt, gt, eq
 	{ "isel", 0x7C00001E, 0x7C00001E | F_MASK_A, F_A, RZ_ANALYSIS_OP_TYPE_CMOV, RZ_TYPE_COND_AL, { TYPE_NONE, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE } },
 	{ "iseleq", 0x7C00001E, 0x7C00009E | F_MASK_X, F_A, RZ_ANALYSIS_OP_TYPE_CMOV, RZ_TYPE_COND_AL, { TYPE_NONE, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE } },
 	{ "iselgt", 0x7C00001E, 0x7C00005E | F_MASK_X, F_A, RZ_ANALYSIS_OP_TYPE_CMOV, RZ_TYPE_COND_AL, { TYPE_NONE, TYPE_REG, TYPE_REG, TYPE_NONE, TYPE_NONE } },
@@ -777,7 +777,7 @@ static void set_ppc_fields(vle_t *v, const ppc_t *p, ut32 data) {
 	}
 	case F_MTPR: {
 		v->n = 2;
-		//inverted
+		// inverted
 		v->fields[1].value = (data & 0x1E00000) >> 21;
 		v->fields[1].type = p->types[1];
 		v->fields[0].value = (data & 0x1FF800) >> 11;

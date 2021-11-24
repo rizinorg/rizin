@@ -109,12 +109,12 @@ static RzList *ios_dbg_maps(RzDebug *dbg) {
 		kr = mach_vm_region_recurse(task, &address, &size, &depth,
 			(vm_region_recurse_info_t)&info, &info_count);
 		if (kr != KERN_SUCCESS) {
-			//eprintf ("Cannot kern succ recurse\n");
+			// eprintf ("Cannot kern succ recurse\n");
 			break;
 		}
 		if (!list) {
 			list = rz_list_new();
-			//list->free = (RzListFree*)rz_debug_map_free;
+			// list->free = (RzListFree*)rz_debug_map_free;
 		}
 		if (mr) {
 			if (address == mr->addr + mr->size) {
@@ -152,8 +152,8 @@ static RzList *ios_dbg_maps(RzDebug *dbg) {
 				info.inheritance ? " inherit" : "",
 				info.is_submap ? " submap" : "",
 				module_name, depth);
-			//info.shared ? "shar" : "priv",
-			//info.reserved ? "reserved" : "not-reserved",
+			// info.shared ? "shar" : "priv",
+			// info.reserved ? "reserved" : "not-reserved",
 			//""); //module_name);
 			mr = rz_debug_map_new(buf, address, address + size,
 				xwrz_testwx(info.protection), 0);
@@ -317,7 +317,7 @@ static RzList *osx_dbg_maps (RzDebug *dbg) {
 #endif
 
 static RzList *darwin_dbg_maps(RzDebug *dbg) {
-	//return osx_dbg_maps (dbg);
+	// return osx_dbg_maps (dbg);
 	return ios_dbg_maps(dbg);
 #if 0
 	const char *osname = dbg->analysis->syscall->os;

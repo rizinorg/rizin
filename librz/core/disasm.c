@@ -1565,7 +1565,7 @@ static void ds_atabs_option(RDisasmState *ds) {
 		comma = 0;
 		brackets = 0;
 		n = (ds->atabs - i);
-		t = strdup(b + 1); //XXX slow!
+		t = strdup(b + 1); // XXX slow!
 		if (n < 1) {
 			n = 1;
 		}
@@ -1921,7 +1921,7 @@ static void ds_show_functions(RDisasmState *ds) {
 			fcntype = "loc";
 			break;
 		}
-		//ds_set_pre (ds, core->cons->vline[CORNER_TL]);
+		// ds_set_pre (ds, core->cons->vline[CORNER_TL]);
 		if (ds->show_lines_fcn) {
 			ds->pre = DS_PRE_FCN_HEAD;
 		}
@@ -2159,7 +2159,7 @@ static void ds_show_comments_describe(RDisasmState *ds) {
 	}
 }
 
-//XXX review this with asm.cmt.right
+// XXX review this with asm.cmt.right
 static void ds_show_comments_right(RDisasmState *ds) {
 	int linelen;
 	RzCore *core = ds->core;
@@ -2269,7 +2269,7 @@ static void __preline_flag(RDisasmState *ds, RzFlagItem *flag) {
 
 #define printPre (outline || !*comma)
 static void ds_show_flags(RDisasmState *ds, bool overlapped) {
-	//const char *beginch;
+	// const char *beginch;
 	RzFlagItem *flag;
 	RzListIter *iter;
 	RzAnalysisFunction *f = NULL;
@@ -2915,7 +2915,7 @@ static bool requires_op_size(RDisasmState *ds) {
 static void ds_print_op_size(RDisasmState *ds) {
 	if (ds->show_size && requires_op_size(ds)) {
 		int size = ds->oplen;
-		rz_cons_printf("%d ", size); //ds->analop.size);
+		rz_cons_printf("%d ", size); // ds->analop.size);
 	}
 }
 
@@ -3019,7 +3019,7 @@ static bool ds_print_data_type(RDisasmState *ds, const ut8 *buf, int ib, int siz
 	if (size == 4 || size == 8) {
 		if (rz_str_startswith(rz_config_get(core->config, "asm.arch"), "arm")) {
 			ut64 bits = rz_config_get_i(core->config, "asm.bits");
-			//adjust address for arm/thumb address
+			// adjust address for arm/thumb address
 			if (bits < 64) {
 				if (n & 1) {
 					n--;
@@ -3117,7 +3117,7 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8 *buf, int len, int idx, in
 				delta = ds->at - node->start;
 				ds->oplen = mi_size - delta;
 				ds->asmop.size = (int)mi_size;
-				//i += mi->size-1;
+				// i += mi->size-1;
 				RZ_FREE(ds->line);
 				RZ_FREE(ds->line_col);
 				RZ_FREE(ds->refline);
@@ -3588,7 +3588,7 @@ static bool ds_print_core_vmode(RDisasmState *ds, int pos) {
 		if (ds->emuptr) {
 			if (rz_io_is_valid_offset(core->io, ds->emuptr, 0)) {
 				ds_print_shortcut(ds, ds->emuptr, pos);
-				//getPtr (ds, ds->emuptr, pos);
+				// getPtr (ds, ds->emuptr, pos);
 				ds->emuptr = 0;
 				ds->hinted_line = true;
 				gotShortcut = true;
@@ -3763,7 +3763,7 @@ static void ds_print_dwarf(RDisasmState *ds) {
 static void ds_print_asmop_payload(RDisasmState *ds, const ut8 *buf) {
 	if (ds->show_varaccess) {
 		// XXX assume analop is filled
-		//rz_analysis_op (core->analysis, &ds->analop, ds->at, core->block+i, core->blocksize-i);
+		// rz_analysis_op (core->analysis, &ds->analop, ds->at, core->block+i, core->blocksize-i);
 		int v = ds->analop.ptr;
 		switch (ds->analop.stackop) {
 		case RZ_ANALYSIS_STACK_GET:
@@ -4057,7 +4057,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 							}
 						}
 					}
-					//ds_align_comment (ds);
+					// ds_align_comment (ds);
 					{
 						const char *refptrstr = "";
 						if (core->print->flags & RZ_PRINT_FLAGS_SECSUB) {
@@ -4168,7 +4168,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					}
 				}
 			}
-			//XXX this should be refactored with along the above
+			// XXX this should be refactored with along the above
 			kind = rz_analysis_data_kind(core->analysis, refaddr, (const ut8 *)msg, len - 1);
 			if (kind) {
 				if (!strcmp(kind, "text")) {
@@ -5008,7 +5008,7 @@ static void ds_print_comments_right(RDisasmState *ds) {
 					}
 				}
 			}
-			//rz_cons_strcat_justify (comment, strlen (ds->refline) + 5, ';');
+			// rz_cons_strcat_justify (comment, strlen (ds->refline) + 5, ';');
 			ds_print_color_reset(ds);
 			RZ_FREE(ds->comment);
 		}
@@ -5224,12 +5224,12 @@ RZ_API int rz_core_print_disasm(RzPrint *p, RzCore *core, ut64 addr, ut8 *buf, i
 	// disable row_offsets to prevent other commands to overwrite computed info
 	p->calc_row_offsets = false;
 
-	//rz_cons_printf ("len =%d l=%d ib=%d limit=%d\n", len, l, invbreak, p->limit);
-	// TODO: import values from debugger is possible
-	// TODO: allow to get those register snapshots from traces
-	// TODO: per-function register state trace
-	// XXX - is there a better way to reset a the analysis counter so that
-	// when code is disassembled, it can actually find the correct offsets
+	// rz_cons_printf ("len =%d l=%d ib=%d limit=%d\n", len, l, invbreak, p->limit);
+	//  TODO: import values from debugger is possible
+	//  TODO: allow to get those register snapshots from traces
+	//  TODO: per-function register state trace
+	//  XXX - is there a better way to reset a the analysis counter so that
+	//  when code is disassembled, it can actually find the correct offsets
 	{ /* used by asm.emu */
 		rz_reg_arena_push(core->analysis->reg);
 	}
@@ -5290,7 +5290,7 @@ toro:
 			}
 			rz_cons_break_pop();
 			ds_free(ds);
-			return 0; //break;
+			return 0; // break;
 		}
 		if (core->print->flags & RZ_PRINT_FLAGS_UNALLOC) {
 			if (!core->analysis->iob.is_valid_offset(core->analysis->iob.io, ds->at, 0)) {
@@ -5625,9 +5625,9 @@ toro:
 			}
 		}
 		if (ds->lines < ds->l) {
-			//ds->addr += idx;
+			// ds->addr += idx;
 			if (!rz_io_read_at(core->io, ds->addr, buf, len)) {
-				//ds->tries = -1;
+				// ds->tries = -1;
 			}
 			goto toro;
 		}
@@ -5695,7 +5695,7 @@ RZ_API int rz_core_print_disasm_instructions_with_buf(RzCore *core, ut64 address
 	core->offset = address;
 
 	rz_cons_break_push(NULL, NULL);
-	//build ranges to map addr with bits
+	// build ranges to map addr with bits
 	j = 0;
 toro:
 	for (i = 0; check_end(nb_opcodes, nb_bytes, addrbytes * i, j); i += ret, j++) {
@@ -5963,7 +5963,7 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 		}
 	} else { // Disassemble `nb_bytes` bytes
 		if (nb_bytes < 0) {
-			//Backward disassembly of `nb_bytes` bytes
+			// Backward disassembly of `nb_bytes` bytes
 			nb_bytes = -nb_bytes;
 			addr -= nb_bytes;
 			rz_io_read_at(core->io, addr, buf, nb_bytes);
@@ -6414,7 +6414,7 @@ toro:
 		if (meta) {
 			switch (meta->type) {
 			case RZ_META_TYPE_DATA:
-				//rz_cons_printf (".data: %s\n", meta->str);
+				// rz_cons_printf (".data: %s\n", meta->str);
 				i += meta_size;
 				{
 					int idx = i;
@@ -6440,15 +6440,15 @@ toro:
 				}
 				continue;
 			case RZ_META_TYPE_STRING:
-				//rz_cons_printf (".string: %s\n", meta->str);
+				// rz_cons_printf (".string: %s\n", meta->str);
 				i += meta_size;
 				continue;
 			case RZ_META_TYPE_FORMAT:
-				//rz_cons_printf (".format : %s\n", meta->str);
+				// rz_cons_printf (".format : %s\n", meta->str);
 				i += meta_size;
 				continue;
 			case RZ_META_TYPE_MAGIC:
-				//rz_cons_printf (".magic : %s\n", meta->str);
+				// rz_cons_printf (".magic : %s\n", meta->str);
 				i += meta_size;
 				continue;
 			default:

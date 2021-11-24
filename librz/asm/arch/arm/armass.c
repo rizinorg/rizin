@@ -428,7 +428,7 @@ static ut32 itmask(char *input) {
 }
 
 static bool err;
-//decode str as number
+// decode str as number
 static ut64 getnum(const char *str) {
 	char *endptr;
 	err = false;
@@ -611,7 +611,7 @@ static char *getrange(char *s) {
 	return p;
 }
 
-//ret register #; -1 if failed
+// ret register #; -1 if failed
 static int getreg(const char *str) {
 	int i;
 	char *ep;
@@ -1184,7 +1184,7 @@ static st32 thumb_getoffset(char *label, ut64 cur) {
 	st32 res = rz_num_math(NULL, label);
 	res -= 4;
 	res -= cur; // possible integer underflow
-	//printf("thumb_getoffset: %s, %lld, %lld\n", label, res, cur);
+	// printf("thumb_getoffset: %s, %lld, %lld\n", label, res, cur);
 	return res;
 }
 
@@ -1827,7 +1827,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		case THUMB_COPROC_CONST_COREG_COREG_COREG: {
 			ao->a[5] = "0";
 		}
-			//intentional fallthrough
+			// intentional fallthrough
 		case THUMB_COPROC_CONST_COREG_COREG_COREG_CONST: {
 			ut32 coproc = getcoproc(ao->a[0]);
 			ut32 opc1 = getnum(ao->a[1]);
@@ -6108,7 +6108,7 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 					}
 					break;
 				case TYPE_COPROC:
-					//printf ("%s %s %s %s %s\n", ao->a[0], ao->a[1], ao->a[2], ao->a[3], ao->a[4] );
+					// printf ("%s %s %s %s %s\n", ao->a[0], ao->a[1], ao->a[2], ao->a[3], ao->a[4] );
 					if (ao->a[0]) {
 						coproc = getnum(ao->a[0] + 1);
 						if (coproc == -1 || coproc > 9) {
@@ -6215,7 +6215,7 @@ ut32 armass_assemble(const char *str, ut64 off, int thumb) {
 		return -1;
 	}
 	if (assemble[thumb](&aop, off, buf) <= 0) {
-		//eprintf ("armass: Unknown opcode (%s)\n", buf);
+		// eprintf ("armass: Unknown opcode (%s)\n", buf);
 		return -1;
 	}
 	return aop.o;
@@ -6340,8 +6340,8 @@ int main() {
 	display("pop {pc}");
 #endif
 
-	//10ab4:       00047e30        andeq   r7, r4, r0, lsr lr
-	//10ab8:       00036e70        andeq   r6, r3, r0, ror lr
+	// 10ab4:       00047e30        andeq   r7, r4, r0, lsr lr
+	// 10ab8:       00036e70        andeq   r6, r3, r0, ror lr
 
 	display("andeq r7, r4, r0, lsr lr");
 	display("andeq r6, r3, r0, ror lr");

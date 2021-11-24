@@ -80,7 +80,7 @@ static int rz_debug_bf_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 	r.mem = o->bfvm->base;
 	r.memi = o->bfvm->ptr;
 	memcpy(buf, &r, sizeof(r));
-	//rz_io_system (dbg->iob.io, "dr");
+	// rz_io_system (dbg->iob.io, "dr");
 	return sizeof(r);
 }
 
@@ -155,7 +155,7 @@ static char *rz_debug_bf_reg_profile(RzDebug *dbg) {
 }
 
 static int rz_debug_bf_breakpoint(struct rz_bp_t *bp, RzBreakpointItem *b, bool set) {
-	//rz_io_system (dbg->iob.io, "db");
+	// rz_io_system (dbg->iob.io, "db");
 	return false;
 }
 

@@ -463,7 +463,7 @@ static int analop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *bu
 			ESIL_LOAD("1");
 			break;
 		case MIPS_INS_LBU:
-			//one of these is wrong
+			// one of these is wrong
 			ESIL_LOAD("1");
 			break;
 		case MIPS_INS_LW:
@@ -1087,7 +1087,7 @@ beach:
 		op_fillval(analysis, op, &hndl, insn);
 	}
 	cs_free(insn, n);
-	//cs_close (&handle);
+	// cs_close (&handle);
 fin:
 	return opsize;
 }

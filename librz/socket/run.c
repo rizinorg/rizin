@@ -390,8 +390,8 @@ static int handle_redirection_proc(const char *cmd, bool in, bool out, bool err)
 
 static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
 #if __APPLE__ && !__POWERPC__
-	//XXX handle this in other layer since things changes a little bit
-	//this seems like a really good place to refactor stuff
+	// XXX handle this in other layer since things changes a little bit
+	// this seems like a really good place to refactor stuff
 	return 0;
 #else
 	if (!cmd || !*cmd) {
@@ -1088,7 +1088,7 @@ RZ_API int rz_run_start(RzRunProfile *p) {
 	posix_spawnattr_init(&attr);
 	if (p->_args[0]) {
 		char **envp = rz_sys_get_environ();
-		ut32 spflags = 0; //POSIX_SPAWN_START_SUSPENDED;
+		ut32 spflags = 0; // POSIX_SPAWN_START_SUSPENDED;
 		spflags |= POSIX_SPAWN_SETEXEC;
 		if (p->_aslr == 0) {
 #define _POSIX_SPAWN_DISABLE_ASLR 0x0100

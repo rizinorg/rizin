@@ -4,7 +4,7 @@
 #include <rz_core.h>
 
 /* ugly global vars */
-static int magicdepth = 99; //XXX: do not use global var here
+static int magicdepth = 99; // XXX: do not use global var here
 static RzMagic *ck = NULL; // XXX: Use RzCore->magic
 static char *ofile = NULL;
 static int kw_count = 0;
@@ -86,8 +86,8 @@ static int rz_core_magic_at(RzCore *core, const char *file, ut64 addr, int depth
 			}
 		}
 	}
-	//repeat:
-	//if (v) rz_cons_printf ("  %d # pm %s @ 0x%"PFMT64x"\n", depth, file? file: "", addr);
+	// repeat:
+	// if (v) rz_cons_printf ("  %d # pm %s @ 0x%"PFMT64x"\n", depth, file? file: "", addr);
 	if (delta + 2 > core->blocksize) {
 		eprintf("EOB\n");
 		ret = -1;
@@ -105,9 +105,9 @@ static int rz_core_magic_at(RzCore *core, const char *file, ut64 addr, int depth
 			if (mod < 1) {
 				mod = 1;
 			}
-			//rz_magic_free (ck);
-			//ck = NULL;
-			//return -1;
+			// rz_magic_free (ck);
+			// ck = NULL;
+			// return -1;
 			ret = mod + 1;
 			goto seek_exit;
 		}
@@ -141,8 +141,8 @@ static int rz_core_magic_at(RzCore *core, const char *file, ut64 addr, int depth
 			pj_end(pj);
 		}
 		rz_cons_clear_line(1);
-		//eprintf ("0x%08"PFMT64x" 0x%08"PFMT64x" %d %s\n", addr+adelta, addr+adelta, magicdepth-depth, p);
-		// walking children
+		// eprintf ("0x%08"PFMT64x" 0x%08"PFMT64x" %d %s\n", addr+adelta, addr+adelta, magicdepth-depth, p);
+		//  walking children
 		for (q = p; *q; q++) {
 			switch (*q) {
 			case ' ':
@@ -178,11 +178,11 @@ static int rz_core_magic_at(RzCore *core, const char *file, ut64 addr, int depth
 	{
 		int mod = core->search->align;
 		if (mod) {
-			ret = mod; //adelta%addr + deR_ABS(mod-adelta)+1;
+			ret = mod; // adelta%addr + deR_ABS(mod-adelta)+1;
 			goto seek_exit;
 		}
 	}
-	ret = adelta; //found;
+	ret = adelta; // found;
 
 seek_exit:
 	rz_core_seek(core, curoffset, true);

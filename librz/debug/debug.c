@@ -286,7 +286,7 @@ RZ_API RzBreakpointItem *rz_debug_bp_add(RzDebug *dbg, ut64 addr, int hw, bool w
 			}
 			rz_list_free(list);
 		} else {
-			//module holds the address
+			// module holds the address
 			addr = (ut64)rz_num_math(dbg->num, module);
 			if (!addr) {
 				return NULL;
@@ -314,7 +314,7 @@ RZ_API RzBreakpointItem *rz_debug_bp_add(RzDebug *dbg, ut64 addr, int hw, bool w
 		}
 	}
 	if (!module) {
-		//express db breakpoints as dbm due to ASLR when saving into project
+		// express db breakpoints as dbm due to ASLR when saving into project
 		rz_debug_map_sync(dbg);
 		rz_list_foreach (dbg->maps, iter, map) {
 			if (addr >= map->addr && addr < map->addr_end) {
@@ -325,7 +325,7 @@ RZ_API RzBreakpointItem *rz_debug_bp_add(RzDebug *dbg, ut64 addr, int hw, bool w
 		}
 	}
 	if (watch) {
-		hw = 1; //XXX
+		hw = 1; // XXX
 		bpi = rz_bp_watch_add(dbg->bp, addr, bpsz, hw, rw);
 	} else {
 		bpi = hw
@@ -413,7 +413,7 @@ RZ_API RzDebug *rz_debug_free(RzDebug *dbg) {
 	if (dbg) {
 		// TODO: free it correctly.. we must ensure this is an instance and not a reference..
 		rz_bp_free(dbg->bp);
-		//rz_reg_free(&dbg->reg);
+		// rz_reg_free(&dbg->reg);
 		free(dbg->snap_path);
 		rz_list_free(dbg->maps);
 		rz_list_free(dbg->maps_user);
@@ -444,7 +444,7 @@ RZ_API int rz_debug_attach(RzDebug *dbg, int pid) {
 		ret = dbg->cur->attach(dbg, pid);
 		if (ret != -1) {
 			dbg->reason.type = RZ_DEBUG_REASON_NONE; // after a successful attach, the process is not dead
-			rz_debug_select(dbg, pid, ret); //dbg->pid, dbg->tid);
+			rz_debug_select(dbg, pid, ret); // dbg->pid, dbg->tid);
 		}
 	}
 	return ret;
@@ -536,9 +536,9 @@ RZ_API ut64 rz_debug_execute(RzDebug *dbg, const ut8 *buf, int len, int restore)
 
 		/* execute code here */
 		dbg->iob.write_at(dbg->iob.io, rpc, buf, len);
-		//rz_bp_add_sw (dbg->bp, rpc+len, 4, RZ_BP_PROT_EXEC);
+		// rz_bp_add_sw (dbg->bp, rpc+len, 4, RZ_BP_PROT_EXEC);
 		rz_debug_continue(dbg);
-		//rz_bp_del (dbg->bp, rpc+len);
+		// rz_bp_del (dbg->bp, rpc+len);
 		/* TODO: check if stopped in breakpoint or not */
 
 		rz_bp_del(dbg->bp, rpc + len);
@@ -703,7 +703,7 @@ RZ_API RzDebugReasonType rz_debug_wait(RzDebug *dbg, RzBreakpointItem **bp) {
 			};
 			rz_event_send(dbg->ev, RZ_EVENT_DEBUG_PROCESS_FINISHED, &event);
 			// XXX(jjd): TODO: handle fallback or something else
-			//rz_debug_select (dbg, -1, -1);
+			// rz_debug_select (dbg, -1, -1);
 			return RZ_DEBUG_REASON_DEAD;
 		}
 
@@ -1090,7 +1090,7 @@ RZ_API int rz_debug_step_over(RzDebug *dbg, int steps) {
 				return steps_taken;
 			}
 		} else if ((op.prefix & (RZ_ANALYSIS_OP_PREFIX_REP | RZ_ANALYSIS_OP_PREFIX_REPNE | RZ_ANALYSIS_OP_PREFIX_LOCK))) {
-			//eprintf ("REP: skip to next instruction...\n");
+			// eprintf ("REP: skip to next instruction...\n");
 			if (!rz_debug_continue_until(dbg, ins_size)) {
 				eprintf("step over failed over rep\n");
 				return steps_taken;
@@ -1188,7 +1188,7 @@ repeat:
 		}
 		/* tell the inferior to go! */
 		ret = dbg->cur->cont(dbg, dbg->pid, dbg->tid, sig);
-		//XXX(jjd): why? //dbg->reason.signum = 0;
+		// XXX(jjd): why? //dbg->reason.signum = 0;
 		reason = rz_debug_wait(dbg, &bp);
 	} else {
 		return 0;
@@ -1326,7 +1326,7 @@ repeat:
 }
 
 RZ_API int rz_debug_continue(RzDebug *dbg) {
-	return rz_debug_continue_kill(dbg, 0); //dbg->reason.signum);
+	return rz_debug_continue_kill(dbg, 0); // dbg->reason.signum);
 }
 
 #if __WINDOWS__
@@ -1616,14 +1616,14 @@ RZ_API RzList *rz_debug_frames(RzDebug *dbg, ut64 at) {
 
 /* TODO: Implement fork and clone */
 RZ_API int rz_debug_child_fork(RzDebug *dbg) {
-	//if (dbg && dbg->cur && dbg->cur->frames)
-	//return dbg->cur->frames (dbg);
+	// if (dbg && dbg->cur && dbg->cur->frames)
+	// return dbg->cur->frames (dbg);
 	return 0;
 }
 
 RZ_API int rz_debug_child_clone(RzDebug *dbg) {
-	//if (dbg && dbg->cur && dbg->cur->frames)
-	//return dbg->cur->frames (dbg);
+	// if (dbg && dbg->cur && dbg->cur->frames)
+	// return dbg->cur->frames (dbg);
 	return 0;
 }
 
@@ -1681,7 +1681,7 @@ RZ_API ut64 rz_debug_get_baddr(RzDebug *dbg, const char *file) {
 	if (!dbg || !dbg->iob.io || !dbg->iob.io->desc) {
 		return 0LL;
 	}
-	if (!strcmp(dbg->iob.io->desc->plugin->name, "gdb")) { //this is very bad
+	if (!strcmp(dbg->iob.io->desc->plugin->name, "gdb")) { // this is very bad
 		// Tell gdb that we want baddr, not full mem map
 		dbg->iob.system(dbg->iob.io, "baddr");
 	}

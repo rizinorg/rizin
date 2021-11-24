@@ -129,7 +129,7 @@ static void print_format_values(RzCore *core, const char *fmt, bool onstack, ut6
 		break;
 	}
 	default:
-		//TODO: support types like structs and unions
+		// TODO: support types like structs and unions
 		rz_cons_println("unk_format");
 	}
 	rz_cons_print(Color_RESET);
@@ -186,7 +186,7 @@ RZ_API void rz_core_print_func_args(RzCore *core) {
 			}
 		} else {
 			int nargs = 4; // TODO: use a correct value here when available
-			//if (nargs > 0) {
+			// if (nargs > 0) {
 			int i;
 			const char *cc = rz_analysis_cc_default(core->analysis); // or use "reg" ?
 			for (i = 0; i < nargs; i++) {

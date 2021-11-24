@@ -206,8 +206,8 @@ struct mlist {
 	struct rz_magic *magic; /* array of magic entries */
 	ut32 nmagic; /* number of entries in array */
 	int mapped; /* allocation type: 0 => apprentice_file
-		      *                  1 => apprentice_map + malloc
-		      *                  2 => apprentice_map + mmap */
+		     *                  1 => apprentice_map + malloc
+		     *                  2 => apprentice_map + mmap */
 	struct mlist *next, *prev;
 };
 

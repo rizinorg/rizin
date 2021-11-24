@@ -9,7 +9,7 @@
 
 #define LM32_UNUSED 0
 
-//str has to be at least 8 chars elements long
+// str has to be at least 8 chars elements long
 static int reg_number_to_string(ut8 reg, char *str) {
 	ut8 match_idx = 0xff;
 	int i;
@@ -19,7 +19,7 @@ static int reg_number_to_string(ut8 reg, char *str) {
 			break;
 		}
 	}
-	//register number not found in array. this shouldn't happen
+	// register number not found in array. this shouldn't happen
 	if (match_idx == 0xff) {
 		return -1;
 	}
@@ -37,7 +37,7 @@ static int string_to_reg_number(const char *str, ut8 *num) {
 			break;
 		}
 	}
-	//register name string not found in array
+	// register name string not found in array
 	if (match_idx == 0xff)
 		return -1;
 	*num = RzAsmLm32Regs[match_idx].number;
@@ -53,7 +53,7 @@ static int string_to_csr_number(const char *str, ut8 *num) {
 			break;
 		}
 	}
-	//csr name string not found in array
+	// csr name string not found in array
 	if (match_idx == 0xff)
 		return -1;
 	*num = RzAsmLm32Csrs[match_idx].number;
@@ -68,7 +68,7 @@ static int string_to_opcode(const char *str, ut8 *num) {
 			tmp_num = i;
 		}
 	}
-	//string not found in array
+	// string not found in array
 	if (tmp_num == 0xff)
 		return -1;
 	*num = tmp_num;
@@ -76,7 +76,7 @@ static int string_to_opcode(const char *str, ut8 *num) {
 }
 #endif
 
-//str has to be at least 8 chars elements long
+// str has to be at least 8 chars elements long
 static int csr_number_to_string(ut8 csr, char *str) {
 	ut8 match_idx = 0xff;
 	int i;
@@ -86,7 +86,7 @@ static int csr_number_to_string(ut8 csr, char *str) {
 			break;
 		}
 	}
-	//csr number not found in array
+	// csr number not found in array
 	if (match_idx == 0xff) {
 		return -1;
 	}
@@ -94,7 +94,7 @@ static int csr_number_to_string(ut8 csr, char *str) {
 	return 0;
 }
 
-//sign_loc is the location of the sign bit before the shift
+// sign_loc is the location of the sign bit before the shift
 static st32 shift_and_signextend(ut8 shift, ut8 sign_loc, ut32 val) {
 	ut32 tmp = val << shift;
 	if (tmp & (1 << (shift + sign_loc))) {
@@ -119,39 +119,39 @@ static bool is_invalid_wcsr_instr(RzAsmLm32Instruction *instr) {
 	return instr->value & RzAsmLm32InstrWcsrInvalidBitsMask;
 }
 
-//ret == b ra
+// ret == b ra
 static bool is_pseudo_instr_ret(RzAsmLm32Instruction *instr) {
 	//"ra" == 0x1d
 	return (instr->op == lm32_op_b) && (instr->src0_reg == 0x1d);
 }
 
-//mv rX, rY == or rX, rY, r0
+// mv rX, rY == or rX, rY, r0
 static bool is_pseudo_instr_mv(RzAsmLm32Instruction *instr) {
 	return (instr->op == lm32_op_or) && !instr->src1_reg;
 }
 
-//mvhi rX, imm16 == orhi rX, r0, imm16
+// mvhi rX, imm16 == orhi rX, r0, imm16
 static bool is_pseudo_instr_mvhi(RzAsmLm32Instruction *instr) {
 	return (instr->op == lm32_op_orhi) && !instr->src0_reg;
 }
 
-//not rX, rY == xnor rX, rY, r0
+// not rX, rY == xnor rX, rY, r0
 static bool is_pseudo_instr_not(RzAsmLm32Instruction *instr) {
 	return (instr->op == lm32_op_xnor) && !instr->src1_reg;
 }
 
-//mvi rX, imm16 == addi rX, r0, imm16
+// mvi rX, imm16 == addi rX, r0, imm16
 static bool is_pseudo_instr_mvi(RzAsmLm32Instruction *instr) {
 	return (instr->op == lm32_op_addi) && !instr->src0_reg;
 }
 
-//nop == addi r0, r0, 0
+// nop == addi r0, r0, 0
 static bool is_pseudo_instr_nop(RzAsmLm32Instruction *instr) {
 	return (instr->op == lm32_op_addi) && !instr->dest_reg &&
 		!instr->src0_reg && !instr->immediate;
 }
 
-//raise instruction is used for break, scall
+// raise instruction is used for break, scall
 static bool is_pseudo_instr_raise(RzAsmLm32Instruction *instr) {
 	return instr->op == raise_instr;
 }
@@ -193,8 +193,8 @@ static int rz_asm_lm32_decode(RzAsmLm32Instruction *instr) {
 		if (is_invalid_imm5_instr(instr)) {
 			return -1;
 		}
-		//might be less bits used, but this shouldn't hurt
-		//invalid parameters are caught in print_pseudo_instruction anyway
+		// might be less bits used, but this shouldn't hurt
+		// invalid parameters are caught in print_pseudo_instruction anyway
 		instr->immediate = extract_imm5(instr->value);
 		break;
 	case one_reg:
@@ -215,15 +215,15 @@ static int rz_asm_lm32_decode(RzAsmLm32Instruction *instr) {
 		instr->src0_reg = extract_reg_v(instr->value);
 		instr->src1_reg = extract_reg_u(instr->value);
 		break;
-	case reg_csr: //wcsr
+	case reg_csr: // wcsr
 		if (is_invalid_wcsr_instr(instr)) {
 			return -1;
 		}
 		instr->src0_reg = extract_reg_v(instr->value);
 		instr->csr = extract_reg_u(instr->value);
 		break;
-	case csr_reg: //rcsr
-		//bitmask is the same as the two register one
+	case csr_reg: // rcsr
+		// bitmask is the same as the two register one
 		if (is_invalid_two_reg_instr(instr)) {
 			return -1;
 		}
@@ -239,7 +239,7 @@ static int rz_asm_lm32_decode(RzAsmLm32Instruction *instr) {
 		return -1;
 	}
 
-	//see if the instruction corresponds to a pseudo-instruction
+	// see if the instruction corresponds to a pseudo-instruction
 	instr->pseudoInstruction = is_pseudo_instr_ret(instr) || is_pseudo_instr_mv(instr) ||
 		is_pseudo_instr_mvhi(instr) || is_pseudo_instr_not(instr) || is_pseudo_instr_mvi(instr) ||
 		is_pseudo_instr_nop(instr) || is_pseudo_instr_raise(instr);
@@ -307,38 +307,38 @@ static int print_pseudo_instruction(RzAsmLm32Instruction *instr, char *str) {
 		return -1;
 	}
 	switch (instr->op) {
-	//ret == b ra
+	// ret == b ra
 	case lm32_op_b:
 		strcpy(str, "ret");
 		break;
-	//mv rX, rY == or rX, rY, r0
+	// mv rX, rY == or rX, rY, r0
 	case lm32_op_or:
 		sprintf(str, "mv %s, %s", instr->dest_reg_str, instr->src0_reg_str);
 		break;
-	//mvhi rX, imm16 == orhi rX, r0, imm16
+	// mvhi rX, imm16 == orhi rX, r0, imm16
 	case lm32_op_orhi:
 		sprintf(str, "mvhi %s, 0x%x", instr->dest_reg_str, instr->immediate);
 		break;
-	//not rX, rY == xnor rX, rY, r0
+	// not rX, rY == xnor rX, rY, r0
 	case lm32_op_xnor:
 		sprintf(str, "not %s, %s", instr->dest_reg_str, instr->src0_reg_str);
 		break;
-	//mvi rX, imm16 == addi rX, r0, imm16
-	//nop == addi r0, r0, 0
+	// mvi rX, imm16 == addi rX, r0, imm16
+	// nop == addi r0, r0, 0
 	case lm32_op_addi:
-		if (is_pseudo_instr_nop(instr)) { //nop
+		if (is_pseudo_instr_nop(instr)) { // nop
 			strcpy(str, "nop");
-		} else { //mvi
+		} else { // mvi
 			sprintf(str, "mvi %s, 0x%x", instr->dest_reg_str, instr->immediate);
 		}
 		break;
-	//break, scall
+	// break, scall
 	case lm32_op_raise:
 		switch (instr->immediate) {
-		case 0x2: //break
+		case 0x2: // break
 			strcpy(str, "break");
 			break;
-		case 0x7: //scall
+		case 0x7: // scall
 			strcpy(str, "scall");
 			break;
 		default:
@@ -356,16 +356,16 @@ static int rz_asm_lm32_stringify(RzAsmLm32Instruction *instr, char *str) {
 		return -1;
 	}
 
-	//pseudo instructions need some special handling
+	// pseudo instructions need some special handling
 	if (instr->pseudoInstruction) {
-		//return after printing the decoded pseudo instruction, so it doesn't get overwritten
+		// return after printing the decoded pseudo instruction, so it doesn't get overwritten
 		return print_pseudo_instruction(instr, str);
 	}
 
-	//get opcode string
+	// get opcode string
 	strcpy(str, instr->op_decode.name);
 
-	//get parameters (registers, immediate) string
+	// get parameters (registers, immediate) string
 	switch (instr->op_decode.type) {
 	case reg_imm16_signextend:
 		sprintf(str, "%s %s, %s, 0x%x", instr->op_decode.name, instr->dest_reg_str, instr->src0_reg_str,
@@ -377,7 +377,7 @@ static int rz_asm_lm32_stringify(RzAsmLm32Instruction *instr, char *str) {
 			instr->immediate);
 		break;
 	case reg_imm16_shift2_signextend:
-		//print the branch/call destination address
+		// print the branch/call destination address
 		sprintf(str, "%s %s, %s, 0x%x", instr->op_decode.name, instr->dest_reg_str, instr->src0_reg_str,
 			instr->immediate + instr->addr);
 		break;
@@ -398,10 +398,10 @@ static int rz_asm_lm32_stringify(RzAsmLm32Instruction *instr, char *str) {
 		sprintf(str, "%s %s, %s", instr->op_decode.name, instr->dest_reg_str, instr->csr_reg_str);
 		break;
 	case imm26:
-		//print the branch/call destination address
+		// print the branch/call destination address
 		sprintf(str, "%s 0x%x", instr->op_decode.name, instr->immediate + instr->addr);
 		break;
-	//case raise_instr: //unneeded; handled as pseudo instruction
+	// case raise_instr: //unneeded; handled as pseudo instruction
 	default:
 		return -1;
 	}
@@ -435,7 +435,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		a->invhex = 1;
 		return -1;
 	}
-	//op->buf_asm is 256 chars long, which is more than sufficient
+	// op->buf_asm is 256 chars long, which is more than sufficient
 	if (rz_asm_lm32_stringify(&instr, rz_strbuf_get(&op->buf_asm))) {
 		rz_strbuf_set(&op->buf_asm, "invalid");
 		a->invhex = 1;

@@ -35,7 +35,7 @@ KK = 0 - (sum of all bytes)
 #include <stdlib.h>
 #include <sys/types.h>
 
-//struct Rihex : holds sparse buffer + its own fd, for internal management
+// struct Rihex : holds sparse buffer + its own fd, for internal management
 typedef struct {
 	int fd;
 	RzBuffer *rbuf;
@@ -60,20 +60,20 @@ static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
 	return count;
 }
 
-//fw04b : write 04 record (extended address); ret <0 if error
+// fw04b : write 04 record (extended address); ret <0 if error
 static int fw04b(FILE *fd, ut16 eaddr) {
 	ut8 cks = 0 - (6 + (eaddr >> 8) + (eaddr & 0xff));
 	return fprintf(fd, ":02000004%04X%02X\n", eaddr, cks);
 }
 
-//write contiguous block of data to file; ret 0 if ok
-//max 65535 bytes; assumes a 04 rec was written before
+// write contiguous block of data to file; ret 0 if ok
+// max 65535 bytes; assumes a 04 rec was written before
 static int fwblock(FILE *fd, ut8 *b, ut32 start_addr, ut32 size) {
 	ut8 cks;
 	char linebuf[80];
 	ut16 last_addr;
 	int j;
-	ut32 i; //has to be bigger than size !
+	ut32 i; // has to be bigger than size !
 
 	if (size < 1 || size > 0x10000 || !fd || !b) {
 		return -1;
@@ -96,7 +96,7 @@ static int fwblock(FILE *fd, ut8 *b, ut32 start_addr, ut32 size) {
 		}
 		b += 0x10;
 		if (((i + start_addr) & 0xffff) < 0x10) {
-			//addr rollover: write ext address record
+			// addr rollover: write ext address record
 			if (fw04b(fd, (i + start_addr) >> 16) < 0) {
 				return -1;
 			}
@@ -105,7 +105,7 @@ static int fwblock(FILE *fd, ut8 *b, ut32 start_addr, ut32 size) {
 	if (i == size) {
 		return 0;
 	}
-	//write crumbs
+	// write crumbs
 	last_addr = i + start_addr;
 	cks = -last_addr;
 	cks -= last_addr >> 8;
@@ -161,20 +161,20 @@ static bool __plugin_open(RzIO *io, const char *pathname, bool many) {
 	return (!strncmp(pathname, "ihex://", 7));
 }
 
-//ihex_parse : parse ihex file loaded at *str, fill sparse buffer "rbuf"
-//supported rec types : 00, 01, 02, 04
-//ret 0 if ok
+// ihex_parse : parse ihex file loaded at *str, fill sparse buffer "rbuf"
+// supported rec types : 00, 01, 02, 04
+// ret 0 if ok
 static bool ihex_parse(RzBuffer *rbuf, char *str) {
 	ut8 *sec_tmp;
-	ut32 sec_start = 0; //addr for next section write
-	ut32 segreg = 0; //basis for addr fields
-	ut32 addr_tmp = 0; //addr for record
-	ut16 next_addr = 0; //for checking if records are sequential
+	ut32 sec_start = 0; // addr for next section write
+	ut32 segreg = 0; // basis for addr fields
+	ut32 addr_tmp = 0; // addr for record
+	ut16 next_addr = 0; // for checking if records are sequential
 	char *eol;
 	ut8 cksum;
 	int extH, extL;
 	int bc = 0, type, byte, i, l;
-	//fugly macro to prevent an overflow of rz_buf_write_at() len
+	// fugly macro to prevent an overflow of rz_buf_write_at() len
 #define SEC_MAX (sec_size < INT_MAX) ? sec_size : INT_MAX
 	ut32 sec_size = 0;
 	const int sec_count = UT16_MAX;
@@ -204,15 +204,15 @@ static bool ihex_parse(RzBuffer *rbuf, char *str) {
 			cksum += type;
 
 			if ((next_addr != addr_tmp) || ((sec_size + bc) > SEC_MAX)) {
-				//previous block is not contiguous, or
-				//section buffer is full => write a sparse chunk
+				// previous block is not contiguous, or
+				// section buffer is full => write a sparse chunk
 				if (sec_size && sec_size < UT16_MAX) {
 					if (rz_buf_write_at(rbuf, sec_start, sec_tmp, (int)sec_size) != sec_size) {
 						eprintf("sparse buffer problem, giving up\n");
 						goto fail;
 					}
 				}
-				//advance cursor, reset section
+				// advance cursor, reset section
 				sec_start = segreg + addr_tmp;
 				next_addr = addr_tmp;
 				sec_size = 0;
@@ -256,11 +256,11 @@ static bool ihex_parse(RzBuffer *rbuf, char *str) {
 			}
 			str = NULL;
 			break;
-		case 2: //extended segment record
-		case 4: //extended linear address rec
-			//both rec types are handled the same except :
+		case 2: // extended segment record
+		case 4: // extended linear address rec
+			// both rec types are handled the same except :
 			//	new address = seg_reg <<4 for type 02; new address = lin_addr <<16 for type 04.
-			//write current section
+			// write current section
 			if (sec_size) {
 				if (rz_buf_write_at(rbuf, sec_start, sec_tmp, sec_size) != sec_size) {
 					eprintf("sparse buffer problem, giving up\n");
@@ -292,14 +292,14 @@ static bool ihex_parse(RzBuffer *rbuf, char *str) {
 
 			segreg = extH << 8 | extL;
 
-			//segment rec(02) gives bits 4..19; linear rec(04) is bits 16..31
+			// segment rec(02) gives bits 4..19; linear rec(04) is bits 16..31
 			segreg = segreg << ((type == 2) ? 4 : 16);
 			next_addr = 0;
 			sec_start = segreg;
 
 			if (eol) {
 				// checksum
-				byte = 0; //break checksum if sscanf failed
+				byte = 0; // break checksum if sscanf failed
 				if (sscanf(str + 9 + 4, "%02x", &byte) != 1) {
 					cksum = 1;
 				}
@@ -314,8 +314,8 @@ static bool ihex_parse(RzBuffer *rbuf, char *str) {
 			}
 			str = eol;
 			break;
-		case 3: //undefined rec. Just skip.
-		case 5: //non-standard, sometimes "start linear address"
+		case 3: // undefined rec. Just skip.
+		case 5: // non-standard, sometimes "start linear address"
 			str = strchr(str + 1, ':');
 			break;
 		}

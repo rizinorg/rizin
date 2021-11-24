@@ -10,7 +10,7 @@ static bool check_buffer(RzBuffer *buf) {
 }
 
 static ut64 get_elf_vaddr64(RzBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
-	//NOTE(aaSSfxxx): since RVA is vaddr - "official" image base, we just need to add imagebase to vaddr
+	// NOTE(aaSSfxxx): since RVA is vaddr - "official" image base, we just need to add imagebase to vaddr
 	ELFOBJ *bin = bf->o->bin_obj;
 	return bin->baddr - bin->boffset + vaddr;
 }

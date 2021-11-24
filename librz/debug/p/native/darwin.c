@@ -45,8 +45,8 @@ int pids_sons_of_r(int pid, int recursive, int limit) {
 					&tmp, tmp2, tmp3, &mola);
 				if (mola == pid) {
 					pids_cmdline(p, tmp2);
-					//for(i=0; i<recursive*2;i++)
-					//      printf(" ");
+					// for(i=0; i<recursive*2;i++)
+					//       printf(" ");
 					cons_printf(" `- %d : %s (%s)\n",
 						p, tmp2, (tmp3[0] == 'S') ? "sleeping" : (tmp3[0] == 'T') ? "stopped"
 													  : "running");

@@ -101,10 +101,10 @@ static bool rz_pkcs7_parse_digestalgorithmidentifier(RPKCS7DigestAlgorithmIdenti
 			// rz_x509_parse_algorithmidentifier returns bool,
 			// so i have to allocate before calling the function
 			dai->elements[i] = (RX509AlgorithmIdentifier *)malloc(sizeof(RX509AlgorithmIdentifier));
-			//should i handle invalid memory? the function checks the pointer
-			//or it should return if dai->elements[i] == NULL ?
+			// should i handle invalid memory? the function checks the pointer
+			// or it should return if dai->elements[i] == NULL ?
 			if (dai->elements[i]) {
-				//Memset is needed to initialize to 0 the structure and avoid garbage.
+				// Memset is needed to initialize to 0 the structure and avoid garbage.
 				memset(dai->elements[i], 0, sizeof(RX509AlgorithmIdentifier));
 				rz_x509_parse_algorithmidentifier(dai->elements[i], object->list.objects[i]);
 			}
@@ -171,7 +171,7 @@ static bool rz_pkcs7_parse_signerinfo(RPKCS7SignerInfo *si, RASN1Object *object)
 		return false;
 	}
 	elems = object->list.objects;
-	//Following RFC
+	// Following RFC
 	si->version = (ut32)elems[0]->sector[0];
 	rz_pkcs7_parse_issuerandserialnumber(&si->issuerAndSerialNumber, elems[1]);
 	rz_x509_parse_algorithmidentifier(&si->digestAlgorithm, elems[2]);
@@ -245,8 +245,8 @@ static bool rz_pkcs7_parse_signerinfos(RPKCS7SignerInfos *ss, RASN1Object *objec
 			// rz_pkcs7_parse_signerinfo returns bool,
 			// so i have to allocate before calling the function
 			ss->elements[i] = RZ_NEW0(RPKCS7SignerInfo);
-			//should i handle invalid memory? the function checks the pointer
-			//or it should return if si->elements[i] == NULL ?
+			// should i handle invalid memory? the function checks the pointer
+			// or it should return if si->elements[i] == NULL ?
 			rz_pkcs7_parse_signerinfo(ss->elements[i], object->list.objects[i]);
 		}
 	}
@@ -272,17 +272,17 @@ static bool rz_pkcs7_parse_signeddata(RPKCS7SignedData *sd, RASN1Object *object)
 	}
 	memset(sd, 0, sizeof(RPKCS7SignedData));
 	RASN1Object **elems = object->list.objects;
-	//Following RFC
+	// Following RFC
 	sd->version = (ut32)elems[0]->sector[0];
 	rz_pkcs7_parse_digestalgorithmidentifier(&sd->digestAlgorithms, elems[1]);
 	rz_pkcs7_parse_contentinfo(&sd->contentInfo, elems[2]);
-	//Optional
+	// Optional
 	if (object->list.length > 3 && shift < object->list.length && elems[shift] &&
 		elems[shift]->klass == CLASS_CONTEXT && elems[shift]->tag == 0) {
 		rz_pkcs7_parse_extendedcertificatesandcertificates(&sd->certificates, elems[shift]);
 		shift++;
 	}
-	//Optional
+	// Optional
 	if (object->list.length > 3 && shift < object->list.length && elems[shift] &&
 		elems[shift]->klass == CLASS_CONTEXT && elems[shift]->tag == 1) {
 		rz_pkcs7_parse_certificaterevocationlists(&sd->crls, elems[shift]);

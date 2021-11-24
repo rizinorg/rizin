@@ -300,7 +300,7 @@ RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *bf, RzBinPlugin *plugin, RzBinO
 		// bf->sdb = o->kv;
 		// bf->sdb_info = o->kv;
 		// sdb_ns_set (bf->sdb, "info", o->kv);
-		//sdb_ns (sdb, sdb_fmt ("fd.%d", bf->fd), 1);
+		// sdb_ns (sdb, sdb_fmt ("fd.%d", bf->fd), 1);
 		sdb_set(bf->sdb, "archs", "0:0:x86:32", 0); // x86??
 		/* NOTE */
 		/* Those refs++ are necessary because sdb_ns() doesnt rerefs all

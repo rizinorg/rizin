@@ -13,8 +13,8 @@
   All instructions have an opcode in the first 7 bits.
   Instructions can have the following formats:
 
-        3 3 2 2 2 2 2 2 2 2 2 2 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0
-        1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
+	3 3 2 2 2 2 2 2 2 2 2 2 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0
+	1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
 iABC          C(8)     |      B(8)     |k|     A(8)      |   Op(7)     |
 iABx                Bx(17)               |     A(8)      |   Op(7)     |
 iAsBx              sBx (signed)(17)      |     A(8)      |   Op(7)     |
@@ -163,7 +163,7 @@ typedef enum {
 
 	OP_FORLOOP, /*	A Bx	update counters; if loop continues then pc-=Bx; */
 	OP_FORPREP, /*	A Bx	<check values and prepare counters>;
-                        if not to run then pc+=Bx+1;			*/
+			if not to run then pc+=Bx+1;			*/
 
 	OP_TFORPREP, /*	A Bx	create upvalue for R[A + 3]; pc+=Bx		*/
 	OP_TFORCALL, /*	A C	R[A+4], ... ,R[A+3+C] := R[A](R[A+1], R[A+2]);	*/
@@ -246,4 +246,4 @@ typedef enum {
 #define ISK(isk)    ((isk) ? "#CONST" : "#R")
 #define ISFLIP(isk) ((isk) ? "#FLIP" : "")
 
-#endif //BUILD_ARCH_54_H
+#endif // BUILD_ARCH_54_H

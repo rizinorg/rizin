@@ -66,7 +66,7 @@ static ut32 get_ins_bits(ut32 hash_code, ut32 ins_pos, char *ins,
 	}
 
 	op_str = ins_str[1 + hash_code * 4];
-	//printf("OPSTR => %s %d\n", ins, ins_len);
+	// printf("OPSTR => %s %d\n", ins, ins_len);
 
 	x = 0;
 	for (i = 0; i < ins_len; i++) {
@@ -81,9 +81,9 @@ static ut32 get_ins_bits(ut32 hash_code, ut32 ins_pos, char *ins,
 		}
 
 		len = (unsigned int)(aux - op_str);
-		//printf("INS_POS: %d POS: %d\n",  ins_pos, len / 8);
+		// printf("INS_POS: %d POS: %d\n",  ins_pos, len / 8);
 		op_b = get_ins_part(ins_pos + len / 8, 1);
-		//printf("OPP: %x\n", op_b);
+		// printf("OPP: %x\n", op_b);
 
 		x = len + 1;
 		res = (res * 2) | ((op_b >> ((1023 - len) % 8)) & 1);
@@ -123,7 +123,7 @@ static char *decode_regis(char *reg_arg, st32 hash_code, ut32 ins_bits,
 	reg_type = *reg_arg;
 	res = NULL;
 
-	//printf("REG_TYPE %d %d\n", reg_type, ins_bits);
+	// printf("REG_TYPE %d %d\n", reg_type, ins_bits);
 
 	switch (reg_type) {
 	case 33:
@@ -437,8 +437,8 @@ static char *do_decode(ut32 ins_off, ut32 ins_pos, ut32 two_ins, ut32 *next_ins_
 			return NULL;
 		}
 		ins_res = strcat_dup(ins_aux, ins_res, 1);
-		//printf("NEXT POS %d %d\n", ins_len_dec, reg_len_dec);
-		//getchar();
+		// printf("NEXT POS %d %d\n", ins_len_dec, reg_len_dec);
+		// getchar();
 		*next_ins_pos += ins_len_dec; // reg_len_dec;
 	}
 
@@ -494,7 +494,7 @@ char *c55plus_decode(ut32 ins_pos, ut32 *next_ins_pos) {
 		}
 		*next_ins_pos = next_ins1_pos + next_ins2_pos + 1;
 		if (*next_ins_pos != two_ins) {
-			//ins_res = strcat_dup(ins_res, " P-tag problem", 1);
+			// ins_res = strcat_dup(ins_res, " P-tag problem", 1);
 			err_code = -1;
 			free(ins_res);
 			return NULL;
@@ -643,9 +643,9 @@ static char *get_token_decoded(st32 hash_code, char *ins_token, ut32 ins_token_l
 				reg_arg++;
 				break;
 			case '!':
-				//strncpy(buff_aux, reg_arg + 1, 8);
+				// strncpy(buff_aux, reg_arg + 1, 8);
 				reg_arg += 10;
-				//ins_bits2 = get_ins_bits(hash_code, ins_pos, buff_aux, 8);
+				// ins_bits2 = get_ins_bits(hash_code, ins_pos, buff_aux, 8);
 				break;
 			}
 			aux = get_AR_regs_class2(ins_bits, &ret_len, ins_len + ins_pos, 1);

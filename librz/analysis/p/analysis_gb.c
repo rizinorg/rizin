@@ -18,7 +18,7 @@
 #include <gb.h>
 
 static const char *regs_1[] = { "Z", "N", "H", "C" };
-static const char *regs_8[] = { "b", "c", "d", "e", "h", "l", "a", "a" }; //deprecate this and rename regs_x
+static const char *regs_8[] = { "b", "c", "d", "e", "h", "l", "a", "a" }; // deprecate this and rename regs_x
 static const char *regs_x[] = { "b", "c", "d", "e", "h", "l", "hl", "a" };
 static const char *regs_16[] = { "bc", "de", "hl", "sp" };
 static const char *regs_16_alt[] = { "bc", "de", "hl", "af" };
@@ -144,7 +144,7 @@ static inline void gb_analysis_add_hl(RzReg *reg, RzAnalysisOp *op, const ut8 da
 	op->src[0] = rz_analysis_value_new();
 	op->dst->reg = rz_reg_get(reg, "hl", RZ_REG_TYPE_GPR);
 	op->src[0]->reg = rz_reg_get(reg, regs_16[((data & 0xf0) >> 4)], RZ_REG_TYPE_GPR);
-	rz_strbuf_setf(&op->esil, "%s,hl,+=,0,N,:=", regs_16[((data & 0xf0) >> 4)]); //hl+=<reg>,N=0
+	rz_strbuf_setf(&op->esil, "%s,hl,+=,0,N,:=", regs_16[((data & 0xf0) >> 4)]); // hl+=<reg>,N=0
 }
 
 static inline void gb_analysis_add_sp(RzReg *reg, RzAnalysisOp *op, const ut8 data) {
@@ -268,16 +268,16 @@ static inline void gb_analysis_cond(RzReg *reg, RzAnalysisOp *op, const ut8 data
 	}
 }
 
-static inline void gb_analysis_pp(RzReg *reg, RzAnalysisOp *op, const ut8 data) //push , pop
+static inline void gb_analysis_pp(RzReg *reg, RzAnalysisOp *op, const ut8 data) // push , pop
 {
 	RzAnalysisValue *val = rz_analysis_value_new();
 	val->reg = rz_reg_get(reg, regs_16_alt[(data >> 4) - 12], RZ_REG_TYPE_GPR);
 	if ((data & 0xf) == 1) {
 		op->dst = val;
-		rz_strbuf_setf(&op->esil, "sp,[2],%s,=,2,sp,+=", regs_16_alt[(data >> 4) - 12]); //pop
+		rz_strbuf_setf(&op->esil, "sp,[2],%s,=,2,sp,+=", regs_16_alt[(data >> 4) - 12]); // pop
 	} else {
 		op->src[0] = val;
-		rz_strbuf_setf(&op->esil, "2,sp,-=,%s,sp,=[2]", regs_16_alt[(data >> 4) - 12]); //push
+		rz_strbuf_setf(&op->esil, "2,sp,-=,%s,sp,=[2]", regs_16_alt[(data >> 4) - 12]); // push
 	}
 }
 
@@ -399,7 +399,7 @@ static void gb_analysis_xoaasc(RzReg *reg, RzAnalysisOp *op, const ut8 *data) {
 	}
 }
 
-static void gb_analysis_xoaasc_imm(RzReg *reg, RzAnalysisOp *op, const ut8 *data) //xor , or, and, add, adc, sub, sbc, cp
+static void gb_analysis_xoaasc_imm(RzReg *reg, RzAnalysisOp *op, const ut8 *data) // xor , or, and, add, adc, sub, sbc, cp
 {
 	op->dst = rz_analysis_value_new();
 	op->src[0] = rz_analysis_value_new();
@@ -418,7 +418,7 @@ static void gb_analysis_xoaasc_imm(RzReg *reg, RzAnalysisOp *op, const ut8 *data
 		break;
 	case RZ_ANALYSIS_OP_TYPE_ADD:
 		rz_strbuf_setf(&op->esil, "0x%02x,", data[1]);
-		if (data[0] == 0xce) { //adc
+		if (data[0] == 0xce) { // adc
 			op->src[1] = rz_analysis_value_new();
 			op->src[1]->reg = rz_reg_get(reg, "C", RZ_REG_TYPE_GPR);
 			rz_strbuf_append(&op->esil, "a,+=,C,NUM,7,$c,C,:=,3,$c,H,:=,a,+=,7,$c,C,|,C,:=,3,$c,H,|=,a,a,=,$z,Z,:=,0,N,:=");
@@ -428,7 +428,7 @@ static void gb_analysis_xoaasc_imm(RzReg *reg, RzAnalysisOp *op, const ut8 *data
 		break;
 	case RZ_ANALYSIS_OP_TYPE_SUB:
 		rz_strbuf_setf(&op->esil, "0x%02x,", data[1]);
-		if (data[0] == 0xde) { //sbc
+		if (data[0] == 0xde) { // sbc
 			op->src[1] = rz_analysis_value_new();
 			op->src[1]->reg = rz_reg_get(reg, "C", RZ_REG_TYPE_GPR);
 			rz_strbuf_append(&op->esil, "a,-=,C,NUM,8,$b,C,:=,4,$b,H,:=,a,-=,8,$b,C,|,C,=,4,$b,H,|,H,=,a,a,=,$z,Z,:=,1,N,:=");
@@ -442,7 +442,7 @@ static void gb_analysis_xoaasc_imm(RzReg *reg, RzAnalysisOp *op, const ut8 *data
 	}
 }
 
-static inline void gb_analysis_load_hl(RzReg *reg, RzAnalysisOp *op, const ut8 data) //load with [hl] as memref
+static inline void gb_analysis_load_hl(RzReg *reg, RzAnalysisOp *op, const ut8 data) // load with [hl] as memref
 {
 	op->dst = rz_analysis_value_new();
 	op->src[0] = rz_analysis_value_new();
@@ -455,7 +455,7 @@ static inline void gb_analysis_load_hl(RzReg *reg, RzAnalysisOp *op, const ut8 d
 		rz_strbuf_append(&op->esil, ",1,hl,-=");
 	}
 	if (data == 0x2a) {
-		rz_strbuf_set(&op->esil, "hl,[1],a,=,1,hl,+="); //hack in concept
+		rz_strbuf_set(&op->esil, "hl,[1],a,=,1,hl,+="); // hack in concept
 	}
 }
 
@@ -605,11 +605,11 @@ static inline void gb_analysis_cb_rr(RzReg *reg, RzAnalysisOp *op, const ut8 dat
 		op->dst->memref = 1;
 		rz_strbuf_setf(&op->esil, "1,%s,[1],&,H,:=,1,%s,[1],>>,7,C,<<,|,%s,=[1],H,C,:=,0,H,:=,0,N,:=", regs_x[data & 7], regs_x[data & 7], regs_x[data & 7]);
 	} else {
-		rz_strbuf_setf(&op->esil, "1,%s,&,H,:=,1,%s,>>,7,C,<<,|,%s,=,H,C,:=,0,H,:=,0,N,:=", regs_x[data & 7], regs_x[data & 7], regs_x[data & 7]); //HACK
+		rz_strbuf_setf(&op->esil, "1,%s,&,H,:=,1,%s,>>,7,C,<<,|,%s,=,H,C,:=,0,H,:=,0,N,:=", regs_x[data & 7], regs_x[data & 7], regs_x[data & 7]); // HACK
 	}
 }
 
-static inline void gb_analysis_cb_sla(RzReg *reg, RzAnalysisOp *op, const ut8 data) //sra+sla+srl in one function, like xoaasc
+static inline void gb_analysis_cb_sla(RzReg *reg, RzAnalysisOp *op, const ut8 data) // sra+sla+srl in one function, like xoaasc
 {
 	op->dst = rz_analysis_value_new();
 	op->src[0] = rz_analysis_value_new();
@@ -630,7 +630,7 @@ static inline void gb_analysis_cb_sra(RzReg *reg, RzAnalysisOp *op, const ut8 da
 	op->dst->reg = rz_reg_get(reg, regs_x[data & 7], RZ_REG_TYPE_GPR);
 	op->dst->memref = ((data & 7) == 6);
 	if (op->dst->memref) {
-		rz_strbuf_setf(&op->esil, "1,%s,[1],&,C,:=,0x80,%s,[1],&,1,%s,[1],>>,|,%s,=[1],$z,Z,:=,0,N,:=,0,H,:=", regs_x[data & 7], regs_x[data & 7], regs_x[data & 7], regs_x[data & 7]); //spaguesil
+		rz_strbuf_setf(&op->esil, "1,%s,[1],&,C,:=,0x80,%s,[1],&,1,%s,[1],>>,|,%s,=[1],$z,Z,:=,0,N,:=,0,H,:=", regs_x[data & 7], regs_x[data & 7], regs_x[data & 7], regs_x[data & 7]); // spaguesil
 	} else {
 		rz_strbuf_setf(&op->esil, "1,%s,&,C,:=,0x80,%s,&,1,%s,>>,|,%s,=,$z,Z,:=,0,N,:=,0,H,:=", regs_x[data & 7], regs_x[data & 7], regs_x[data & 7], regs_x[data & 7]);
 	}
@@ -816,7 +816,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 	case 0x77:
 		gb_analysis_store_hl(analysis->reg, op, data);
 		op->cycles = 8;
-		op->type = RZ_ANALYSIS_OP_TYPE_STORE; //LD
+		op->type = RZ_ANALYSIS_OP_TYPE_STORE; // LD
 		break;
 	case 0xe0:
 		gb_analysis_store(analysis->reg, op, data);
@@ -993,32 +993,32 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		gb_analysis_xoaasc(analysis->reg, op, data);
 		op->cycles = 8;
 		break;
-	case 0x07: //rlca
+	case 0x07: // rlca
 		op->cycles = 4;
 		op->type = RZ_ANALYSIS_OP_TYPE_ROL;
 		gb_analysis_cb_rlc(analysis->reg, op, 7);
 		break;
-	case 0x17: //rla
+	case 0x17: // rla
 		op->cycles = 4;
 		op->type = RZ_ANALYSIS_OP_TYPE_ROL;
 		gb_analysis_cb_rl(analysis->reg, op, 7);
 		break;
-	case 0x0f: //rrca
+	case 0x0f: // rrca
 		op->cycles = 4;
 		op->type = RZ_ANALYSIS_OP_TYPE_ROR;
 		gb_analysis_cb_rrc(analysis->reg, op, 7);
 		break;
-	case 0x1f: //rra
+	case 0x1f: // rra
 		op->cycles = 4;
 		op->type = RZ_ANALYSIS_OP_TYPE_ROR;
 		gb_analysis_cb_rr(analysis->reg, op, 7);
 		break;
 	case 0x2f:
-		gb_analysis_xor_cpl(analysis->reg, op); //cpl
+		gb_analysis_xor_cpl(analysis->reg, op); // cpl
 		op->cycles = 4;
 		op->type = RZ_ANALYSIS_OP_TYPE_XOR;
 		break;
-	case 0x3f: //ccf
+	case 0x3f: // ccf
 		gb_analysis_xor_ccf(analysis->reg, op);
 		op->cycles = 4;
 		op->type = RZ_ANALYSIS_OP_TYPE_XOR;
@@ -1174,7 +1174,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 	case 0x20:
 	case 0x28:
 	case 0x30:
-	case 0x38: //JR cond
+	case 0x38: // JR cond
 		gb_analysis_cond(analysis->reg, op, data[0]);
 		op->jump = addr + ilen + (st8)data[1];
 		op->fail = addr + ilen;
@@ -1208,7 +1208,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		break;
 	case 0x76:
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-		op->eob = true; //halt might wait for interrupts
+		op->eob = true; // halt might wait for interrupts
 		op->fail = addr + ilen;
 		if (len > 1) {
 			op->jump = addr + gbOpLength(gb_op[data[1]].type) + ilen;
@@ -1241,7 +1241,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		op->cycles = 24;
 		op->failcycles = 12;
 		break;
-	case 0xc7: //rst 0
+	case 0xc7: // rst 0
 		op->jump = 0x00;
 		op->fail = addr + ilen;
 		op->eob = true;
@@ -1249,7 +1249,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		op->cycles = 16;
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 		break;
-	case 0xcf: //rst 8
+	case 0xcf: // rst 8
 		op->jump = 0x08;
 		op->fail = addr + ilen;
 		op->eob = true;
@@ -1257,7 +1257,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		op->cycles = 16;
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 		break;
-	case 0xd7: //rst 16
+	case 0xd7: // rst 16
 		op->jump = 0x10;
 		op->fail = addr + ilen;
 		op->eob = true;
@@ -1265,7 +1265,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		op->cycles = 16;
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 		break;
-	case 0xdf: //rst 24
+	case 0xdf: // rst 24
 		op->jump = 0x18;
 		op->fail = addr + ilen;
 		op->eob = true;
@@ -1273,7 +1273,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		op->cycles = 16;
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 		break;
-	case 0xe7: //rst 32
+	case 0xe7: // rst 32
 		op->jump = 0x20;
 		op->fail = addr + ilen;
 		op->eob = true;
@@ -1281,7 +1281,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		op->cycles = 16;
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 		break;
-	case 0xef: //rst 40
+	case 0xef: // rst 40
 		op->jump = 0x28;
 		op->fail = addr + ilen;
 		op->eob = true;
@@ -1289,7 +1289,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		op->cycles = 16;
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 		break;
-	case 0xf7: //rst 48
+	case 0xf7: // rst 48
 		op->jump = 0x30;
 		op->fail = addr + ilen;
 		op->eob = true;
@@ -1297,7 +1297,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		op->cycles = 16;
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 		break;
-	case 0xff: //rst 56
+	case 0xff: // rst 56
 		op->jump = 0x38;
 		op->fail = addr + ilen;
 		op->eob = true;
@@ -1305,8 +1305,8 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		op->cycles = 16;
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 		break;
-	case 0xf3: //di
-	case 0xfb: //ei
+	case 0xf3: // di
+	case 0xfb: // ei
 		gb_analysis_mov_ime(analysis->reg, op, data[0]);
 		op->cycles = 4;
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
@@ -1316,12 +1316,12 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		op->cycles = 4;
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
-	case 0x27: //daa
+	case 0x27: // daa
 		op->cycles = 4;
 		op->type = RZ_ANALYSIS_OP_TYPE_XOR;
 		rz_strbuf_set(&op->esil, "a,daa,a,=,$z,Z,:=,3,$c,H,:=,7,$c,C,:=");
 		break;
-	case 0x10: //stop
+	case 0x10: // stop
 		op->type = RZ_ANALYSIS_OP_TYPE_NULL;
 		rz_strbuf_set(&op->esil, "TODO,stop");
 		break;
@@ -1415,7 +1415,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 			}
 			op->type = RZ_ANALYSIS_OP_TYPE_ACMP;
 			gb_analysis_and_bit(analysis->reg, op, data[1]);
-			break; //bit
+			break; // bit
 		case 16:
 		case 17:
 		case 18:
@@ -1431,7 +1431,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 			}
 			gb_analysis_and_res(analysis, op, data[1]);
 			op->type = RZ_ANALYSIS_OP_TYPE_AND;
-			break; //res
+			break; // res
 		case 24:
 		case 25:
 		case 26:
@@ -1447,7 +1447,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 			}
 			gb_analysis_or_set(analysis, op, data[1]);
 			op->type = RZ_ANALYSIS_OP_TYPE_OR;
-			break; //set
+			break; // set
 		}
 	}
 	if (op->type == RZ_ANALYSIS_OP_TYPE_CALL) {
@@ -1514,7 +1514,7 @@ static int esil_gb_init(RzAnalysisEsil *esil) {
 			esil->analysis->iob.read_at(esil->analysis->iob.io, 0x147, &user->mbc_id, 1);
 			esil->analysis->iob.read_at(esil->analysis->iob.io, 0x148, &user->romsz_id, 1);
 			esil->analysis->iob.read_at(esil->analysis->iob.io, 0x149, &user->ramsz_id, 1);
-			if (esil->analysis->reg) { //initial values
+			if (esil->analysis->reg) { // initial values
 				rz_reg_set_value(esil->analysis->reg, rz_reg_get(esil->analysis->reg, "mpc", -1), 0x100);
 				rz_reg_set_value(esil->analysis->reg, rz_reg_get(esil->analysis->reg, "sp", -1), 0xfffe);
 				rz_reg_set_value(esil->analysis->reg, rz_reg_get(esil->analysis->reg, "af", -1), 0x01b0);

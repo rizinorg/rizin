@@ -9,15 +9,15 @@ ps_operand_t ps_operands_array[] = {
 	{ 5, 11 }, // FB
 	{ 5, 6 }, // FC
 	{ 5, 21 }, // FD/FS
-	{ 3, 23 }, //crfD,
-	{ 1, 16 }, //WB,
-	{ 3, 12 }, //IB,
-	{ 1, 10 }, //WC,
-	{ 3, 7 }, //IC,
+	{ 3, 23 }, // crfD,
+	{ 1, 16 }, // WB,
+	{ 3, 12 }, // IB,
+	{ 1, 10 }, // WC,
+	{ 3, 7 }, // IC,
 	{ 5, 16 }, // RA
 	{ 5, 11 }, // RB
-	{ 5, 16 }, //DRA,
-	{ 5, 11 }, //DRB,
+	{ 5, 16 }, // DRA,
+	{ 5, 11 }, // DRB,
 };
 
 ps_opcode_t ps_opcodes_array[] = {
@@ -112,7 +112,7 @@ bool libps_decode(ut32 data, ppcps_t *ps) {
 					ps_operand_t *ps_operand = &ps_operands_array[instruction->operands[j]];
 
 					int bits = (data >> ps_operand->shift) & ((1 << ps_operand->bits) - 1);
-					//int ext_bits = (bits << (32 - ps_operand->bits)) >> (32 - ps_operand->bits);
+					// int ext_bits = (bits << (32 - ps_operand->bits)) >> (32 - ps_operand->bits);
 
 					switch (instruction->operands[j]) {
 					case OP_FA:

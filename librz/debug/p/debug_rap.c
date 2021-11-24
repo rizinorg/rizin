@@ -44,7 +44,7 @@ static int __rap_attach(RzDebug *dbg, int pid) {
 static int __rap_detach(RzDebug *dbg, int pid) {
 	// XXX TODO PID must be a socket here !!1
 	//	close (pid);
-	//XXX Maybe we should continue here?
+	// XXX Maybe we should continue here?
 	return true;
 }
 
@@ -61,7 +61,7 @@ static char *__rap_reg_profile(RzDebug *dbg) {
 }
 
 static int __rap_breakpoint(RzBreakpoint *bp, RzBreakpointItem *b, bool set) {
-	//rz_io_system (dbg->iob.io, "db");
+	// rz_io_system (dbg->iob.io, "db");
 	return false;
 }
 

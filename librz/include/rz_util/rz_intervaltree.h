@@ -98,4 +98,4 @@ static inline bool rz_interval_tree_empty(RzIntervalTree *tree) {
 #define rz_interval_tree_foreach_prev(tree, it, dat) \
 	for ((it) = rz_rbtree_last(&(tree)->root->node); rz_rbtree_iter_has(&it) && (dat = rz_rbtree_iter_get(&it, RzIntervalNode, node)->data); rz_rbtree_iter_prev(&(it)))
 
-#endif //RZ_INTERVALTREE_H
+#endif // RZ_INTERVALTREE_H

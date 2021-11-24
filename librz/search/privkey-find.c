@@ -39,7 +39,7 @@ static const ut8 *parse_next_field(const ut8 *start, ut32 *len) {
 }
 
 /* Check if `start` points to an ensemble of BER fields
-with the format as a private key syntax. We check only the first 
+with the format as a private key syntax. We check only the first
 three fields of the key */
 static int check_fields(const ut8 *start) {
 #define KEY_MAX_LEN 26000
