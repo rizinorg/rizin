@@ -47,6 +47,16 @@ RZ_API const char *rz_str_enc_as_string(RzStrEnc enc) {
 		return "utf16be";
 	case RZ_STRING_ENC_UTF32BE:
 		return "utf32be";
+	case RZ_STRING_ENC_IBM037:
+		return "ibm037";
+	case RZ_STRING_ENC_IBM290:
+		return "ibm290";
+	case RZ_STRING_ENC_EBCDIC_UK:
+		return "ebcdic_uk";
+	case RZ_STRING_ENC_EBCDIC_US:
+		return "ebcdic_us";
+	case RZ_STRING_ENC_EBCDIC_ES:
+		return "ebcdic_es";
 	case RZ_STRING_ENC_GUESS:
 		return "guessed";
 	default:

@@ -69,3 +69,51 @@ commands:
         cname: open_prioritize_next_rotate
         summary: Prioritize next file in the list (go back to first if on the last)
         args: []
+  - name: om
+    cname: om_oldinput
+    summary: Handle IO maps
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    subcommands:
+      - name: om-
+        cname: open_maps_remove
+        summary: Remove the IO map with corresponding <id>
+        args:
+          - name: id
+            type: RZ_CMD_ARG_TYPE_NUM
+      - name: om-*
+        cname: open_maps_remove_all
+        summary: Remove all IO maps
+        args: []
+      - name: om=
+        cname: open_maps_ascii
+        summary: List IO maps in ASCII art
+        args: []
+      - name: oma
+        cname: open_maps_all_fd
+        summary: Create a IO map covering all VA for given <fd> or current one if not provided
+        args:
+          - name: fd
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: omb
+        cname: open_maps_relocate
+        summary: Relocate map with corresponding <id> to <addr>
+        args:
+          - name: id
+            type: RZ_CMD_ARG_TYPE_NUM
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: omb.
+        cname: open_maps_relocate_current
+        summary: Relocate map at current offset to <addr>
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: omr
+        cname: open_maps_resize
+        summary: Resize map with corresponding <id>
+        args:
+          - name: id
+            type: RZ_CMD_ARG_TYPE_NUM
+          - name: newsize
+            type: RZ_CMD_ARG_TYPE_RZNUM

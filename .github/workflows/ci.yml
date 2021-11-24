@@ -544,7 +544,7 @@ jobs:
   build-osx-pkg:
     name: Build OSX package
     runs-on: macos-latest
-    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'osx') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
+    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'osx') || contains(github.head_ref, 'mac') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
     needs: [build-and-test]
     steps:
     - uses: actions/checkout@v2
@@ -552,6 +552,8 @@ jobs:
       run: brew install pkg-config
     - name: Install meson and ninja
       run: pip3 install meson ninja PyYAML
+    - name: Install ImageMagick
+      run: brew install imagemagick
     - name: Create OSX package
       run: |
         ./dist/osx/build_osx_package.sh

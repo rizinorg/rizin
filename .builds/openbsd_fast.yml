@@ -19,8 +19,6 @@ tasks:
         /usr/local/bin/python3 -m pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
     - build: |
         cd rizin
-        # Workaround to avoid running rz-pipe shm:// test due to memory constraints.
-        rm -f test/db/archos/not-windows-any/cmd_pipe
         meson --prefix=${HOME} build
         ninja -C build
     - install: |
@@ -38,7 +36,7 @@ tasks:
         # https://todo.sr.ht/~sircmpwn/builds.sr.ht/274
         ln -s ${HOME}/rizin-testbins test/bins
         # Running the unit tests
-        MALLOC_OPTIONS=S ninja -C build test
+        ninja -C build test
     - test: |
         cd rizin
         export PATH=${HOME}/bin:/usr/local/bin:${PATH}
@@ -49,4 +47,4 @@ tasks:
         ln -s ${HOME}/rizin-testbins test/bins
         cd test
         # Running the unit tests
-        MALLOC_OPTIONS=S rz-test -t 1200 -L -o results.json
+        rz-test -L -o results.json

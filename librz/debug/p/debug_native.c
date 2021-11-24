@@ -1496,7 +1496,7 @@ static RzList *rz_debug_desc_native_list(int pid) {
 	return xnu_desc_list(pid);
 #elif __WINDOWS__
 	return w32_desc_list(pid);
-#elif __KFBSD__
+#elif __KFBSD__ || __NetBSD__
 	return bsd_desc_list(pid);
 #elif __linux__
 	return linux_desc_list(pid);

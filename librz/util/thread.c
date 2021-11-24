@@ -313,7 +313,7 @@ RZ_API size_t rz_th_physical_core_number() {
 	mib[0] = CTL_HW;
 #if __NetBSD__
 	mib[1] = HW_NCPUONLINE;
-#elif __OpenBSD__ || __FreeBSD__
+#elif __OpenBSD__ || __FreeBSD__ || __DragonFly__
 	mib[1] = HW_NCPU;
 #else
 	mib[1] = HW_AVAILCPU;
