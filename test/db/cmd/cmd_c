@@ -1152,6 +1152,9 @@ NAME=cmd_cx
 FILE=bins/elf/ls
 CMDS=<<EOF
 cx 12 34 56 78 90 ab cd ef
+?!
+cx f3..1e
+?!
 EOF
 EXPECT=<<EOF
 0x00005ae0 (byte=01)   f3 ' '  ->  12 ' '
@@ -1166,6 +1169,9 @@ EXPECT=<<EOF
 0x00005ae9 (byte=10)   5e '^'  ->  31 '1'
 0x00005aea (byte=11)   48 'H'  ->  65 'e'
 Compare 0/11 equal bytes (0%)
+0x1
+Compare 3/3 equal bytes (100%)
+0x0
 EOF
 RUN
 
