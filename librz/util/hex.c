@@ -452,7 +452,7 @@ RZ_API int rz_hex_str2bin(const char *in, ut8 *out) {
 			continue;
 		} else if (!IS_WHITESPACE(*in) && *in != '\n') {
 			/* this is not a valid string */
-			return 0;
+			return -1;
 		}
 		/* ignore character */
 		in++;
@@ -462,7 +462,7 @@ RZ_API int rz_hex_str2bin(const char *in, ut8 *out) {
 		if (out) {
 			rz_hex_to_byte(&out[nibbles / 2], '0');
 		}
-		return -(nibbles + 1) / 2;
+		nibbles += 1;
 	}
 
 	return nibbles / 2;

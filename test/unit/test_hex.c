@@ -164,7 +164,11 @@ bool test_rz_str2bin(void) {
 	mu_assert_memeq(buf, (ut8 *)"ABCD", 4, "ABCD has been written");
 	mu_assert_eq(rz_hex_str2bin("616263646566", buf), 6, "6 bytes are written");
 	mu_assert_memeq(buf, (ut8 *)"abcdef", 6, "abcdef has been written");
-	mu_assert_eq(rz_hex_str2bin("61626364656", buf), -6, "error should be returned");
+	mu_assert_eq(rz_hex_str2bin("61626364656", buf), 6, "last byte with a single nibble should be correctly returned");
+	mu_assert_memeq(buf, (ut8 *)"abcde`", 6, "last nibble is interprted as 0x60");
+	mu_assert_true(rz_hex_str2bin("hello", buf) < 0, "an error should be returned because invalid string");
+	mu_assert_true(rz_hex_str2bin("hello123456", buf) < 0, "an error should be returned because invalid string");
+	mu_assert_true(rz_hex_str2bin("123456hello", buf) < 0, "an error should be returned because invalid string");
 	free(buf);
 	mu_end;
 }
