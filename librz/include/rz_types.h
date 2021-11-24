@@ -497,16 +497,26 @@ static inline void *rz_new_copy(int size, void *data) {
 #endif
 #else
 #ifdef _MSC_VER
-#ifdef _WIN64
+#if defined(_M_X64) || defined(_M_AMD64)
 #define RZ_SYS_ARCH   "x86"
 #define RZ_SYS_BITS   (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
 #define RZ_SYS_ENDIAN 0
 #define __x86_64__    1
-#else
+#elif defined(_M_IX86)
 #define RZ_SYS_ARCH   "x86"
 #define RZ_SYS_BITS   (RZ_SYS_BITS_32)
-#define __i386__      1
 #define RZ_SYS_ENDIAN 0
+#define __i386__      1
+#elif defined(_M_ARM64)
+#define RZ_SYS_ARCH   "arm"
+#define RZ_SYS_BITS   (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
+#define RZ_SYS_ENDIAN 0
+#define __arm64__     1
+#elif defined(_M_ARM)
+#define RZ_SYS_ARCH   "arm"
+#define RZ_SYS_BITS   RZ_SYS_BITS_32
+#define RZ_SYS_ENDIAN 0
+#define __arm__       1
 #endif
 #else
 #define RZ_SYS_ARCH   "unknown"

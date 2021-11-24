@@ -1301,17 +1301,16 @@ RzList *linux_desc_list(int pid) {
 	struct stat st;
 	DIR *dd = NULL;
 
-	snprintf(path, sizeof(path), "/proc/%i/fd/", pid);
+	rz_strf(path, "/proc/%i/fd/", pid);
 	if (!(dd = opendir(path))) {
 		rz_sys_perror("opendir /proc/x/fd");
 		return NULL;
 	}
-	ret = rz_list_new();
+	ret = rz_list_newf((RzListFree)rz_debug_desc_free);
 	if (!ret) {
 		closedir(dd);
 		return NULL;
 	}
-	ret->free = (RzListFree)rz_debug_desc_free;
 	while ((de = (struct dirent *)readdir(dd))) {
 		if (de->d_name[0] == '.') {
 			continue;
@@ -1319,16 +1318,15 @@ RzList *linux_desc_list(int pid) {
 		len = strlen(path);
 		len2 = strlen(de->d_name);
 		if (len + len2 + 1 >= sizeof(file)) {
-			rz_list_free(ret);
-			closedir(dd);
-			eprintf("Filename is too long");
-			return NULL;
+			RZ_LOG_ERROR("Filename is too long.\n");
+			goto fail;
 		}
 		memcpy(file, path, len);
 		memcpy(file + len, de->d_name, len2 + 1);
 		buf[0] = 0;
 		if (readlink(file, buf, sizeof(buf) - 1) == -1) {
-			return NULL;
+			RZ_LOG_ERROR("readlink %s failed.\n", file);
+			goto fail;
 		}
 		buf[sizeof(buf) - 1] = 0;
 		type = perm = 0;
@@ -1358,6 +1356,11 @@ RzList *linux_desc_list(int pid) {
 	}
 	closedir(dd);
 	return ret;
+
+fail:
+	rz_list_free(ret);
+	closedir(dd);
+	return NULL;
 }
 
 #endif
