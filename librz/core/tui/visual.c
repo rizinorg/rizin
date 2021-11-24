@@ -3363,6 +3363,7 @@ RZ_API void rz_core_visual_title(RzCore *core, int color) {
 			} else if (follow < 0) {
 				rz_core_seek(core, curpc + follow, true);
 			}
+			rz_core_debug_sync_bits(core);
 			oldpc = curpc;
 		}
 	}
