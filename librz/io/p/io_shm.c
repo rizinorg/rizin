@@ -82,7 +82,7 @@ static ut64 shm__lseek(RzIO *io, RzIODesc *fd, ut64 offset, int whence) {
 		io->off += offset;
 		return io->off;
 	case SEEK_END:
-		return 0xffffffff;
+		return io->off = (shm->size ? shm->size : 0xffffffff) + offset;
 	}
 	return io->off;
 }
