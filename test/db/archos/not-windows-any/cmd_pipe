@@ -34,37 +34,33 @@ Copied bins/pe/winver.exe succesfully
 -------------
 Shared buffer size 0x400
 -------------
-{'arch': 'x86', 'baddr': 4194304, 'binsz': 4294967295, 'bintype': 'pe', 'bits': 32, 'retguard': False, 'class': 'PE32', 'cmp.csum': '0x00000000', 'compiled': 'Thu Jan  1 00:00:00 1970 UTC', 'endian': 'LE', 'hdr.csum': '0x00000000', 'laddr': 0, 'lang': 'c', 'machine': 'i386', 'maxopsz': 16, 'minopsz': 1, 'os': 'windows', 'overlay': True, 'cc': 'cdecl', 'pcalign': 0, 'signed': False, 'subsys': 'Windows CUI', 'stripped': False, 'crypto': False, 'havecode': True, 'va': True, 'sanitiz': False, 'static': False, 'linenum': False, 'lsyms': False, 'canary': False, 'PIE': False, 'RELROCS': False, 'NX': False}
+{'arch': 'x86', 'baddr': 4194304, 'binsz': 1024, 'bintype': 'pe', 'bits': 32, 'retguard': False, 'class': 'PE32', 'cmp.csum': '0x00005082', 'compiled': 'Thu Jan  1 00:00:00 1970 UTC', 'endian': 'LE', 'hdr.csum': '0x00000000', 'laddr': 0, 'lang': 'c', 'machine': 'i386', 'maxopsz': 16, 'minopsz': 1, 'os': 'windows', 'overlay': False, 'cc': 'cdecl', 'pcalign': 0, 'signed': False, 'subsys': 'Windows CUI', 'stripped': False, 'crypto': False, 'havecode': True, 'va': True, 'sanitiz': False, 'static': False, 'linenum': False, 'lsyms': False, 'canary': False, 'PIE': False, 'RELROCS': False, 'NX': False}
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x00401000  6880 1040 00ff 15b4 1140 00ff 3590 1040  h..@.....@..5..@
 
-0x00401000    1 59           entry0
-0x004011b4    1 8            fcn.004011b4
-0x004011bc    8 3653 -> 7171 fcn.004011bc
-0x004011b0    1 17           fcn.004011b0
+0x00401000    1 58           entry0
 
             ;-- section.sect_0:
 / entry0 ();
-|           0x00401000      push  0x401080                             ; [00] -rwx section size 4096 named sect_0
-|           0x00401005      call  dword [fcn.004011b4]                 ; 0x4011b4
+|           0x00401000      push  0x401080                             ; LPOSVERSIONINFOA lpVersionInformation [0m; [00] -rwx section size 4096 named sect_0
+|           0x00401005      call  dword [sym.imp.kernel32.dll_GetVersionExA] ; 0x4011b4 ; BOOL GetVersionExA(LPOSVERSIONINFOA lpVersionInformation)
 |           0x0040100b      push  dword [0x401090]
 |           0x00401011      push  dword [0x40108c]
 |           0x00401017      push  dword [0x401088]
 |           0x0040101d      push  dword [0x401084]
-|           0x00401023      push  0x40103c                             ; " * a PE overriding OS values: OS Ver %i.%i.%i PlatformID %i\n\n" ; int32_t arg_73h
-|           0x00401028      call  dword [fcn.004011bc]                 ; 0x4011bc
+|           0x00401023      push  0x40103c                             ; " * a PE overriding OS values: OS Ver %i.%i.%i PlatformID %i\n\n" ; const char *format
+|           0x00401028      call  dword [sym.imp.msvcrt.dll_printf]    ; 0x4011bc ; int printf(const char *format)
 |           0x0040102e      add   esp, 0x10
 |           0x00401031      nop
-|           0x00401032      push  0
-|           0x00401034      call  dword [fcn.004011b0]                 ; 0x4011b0
-\           0x0040103a      int3
+|           0x00401032      push  0                                    ; UINT uExitCode
+\           0x00401034      call  dword [sym.imp.kernel32.dll_ExitProcess] ; 0x4011b0 ; VOID ExitProcess(UINT uExitCode)
 
 Copying bins/mach0/mach0_2-x86_64...
 Copied bins/mach0/mach0_2-x86_64 succesfully
 -------------
 Shared buffer size 0x10e8
 -------------
-{'arch': 'x86', 'baddr': 4294967296, 'binsz': 4294967295, 'bintype': 'mach0', 'bits': 64, 'class': 'MACH064', 'compiler': '', 'endian': 'LE', 'intrp': '/usr/lib/dyld', 'laddr': 0, 'lang': 'c', 'machine': 'x86 64 all', 'maxopsz': 16, 'minopsz': 1, 'os': 'macos', 'pcalign': 0, 'subsys': 'darwin', 'stripped': False, 'crypto': False, 'havecode': True, 'va': True, 'sanitiz': False, 'static': False, 'linenum': False, 'lsyms': False, 'canary': False, 'PIE': True, 'RELROCS': False, 'NX': False}
+{'arch': 'x86', 'baddr': 4294967296, 'binsz': 4328, 'bintype': 'mach0', 'bits': 64, 'class': 'MACH064', 'compiler': '', 'endian': 'LE', 'intrp': '/usr/lib/dyld', 'laddr': 0, 'lang': 'c', 'machine': 'x86 64 all', 'maxopsz': 16, 'minopsz': 1, 'os': 'macos', 'pcalign': 0, 'subsys': 'darwin', 'stripped': False, 'crypto': False, 'havecode': True, 'va': True, 'sanitiz': False, 'static': False, 'linenum': False, 'lsyms': False, 'canary': False, 'PIE': True, 'RELROCS': False, 'NX': False}
 - offset -    0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x100000f70  5548 89e5 4883 ec10 c745 fc00 0000 0089  UH..H....E......
 
