@@ -240,7 +240,14 @@ config_h = configure_file(
 )
 
 # handle magic library
-sys_magic = cc.find_library('magic', required: get_option('use_sys_magic'), static: is_static_build)
+sys_magic_opt = get_option('use_sys_magic')
+sys_magic = disabler()
+if sys_magic_opt.enabled() or sys_magic_opt.auto()
+  sys_magic = dependency('libmagic', required: false, static: is_static_build)
+  if not sys_magic.found()
+    sys_magic = cc.find_library('magic', required: sys_magic_opt, static: is_static_build)
+  endif
+endif
 
 # handle xxhash library
 r = run_command(py3_exe, check_meson_subproject_py, 'xxhash')
@@ -250,12 +257,12 @@ endif
 
 sys_xxhash_opt = get_option('use_sys_xxhash')
 if sys_xxhash_opt.enabled() or sys_xxhash_opt.auto()
-  xxhash_dep = dependency('xxhash', required: false, static: is_static_build)
+  xxhash_dep = dependency('libxxhash', required: false, static: is_static_build)
   if not xxhash_dep.found()
     xxhash_dep = cc.find_library('xxhash', required: sys_xxhash_opt, static: is_static_build)
   endif
 endif
-if sys_xxhash_opt.auto() or sys_xxhash_opt.disabled()
+if (sys_xxhash_opt.auto() and not xxhash_dep.found()) or sys_xxhash_opt.disabled()
   xxhash_proj = subproject('xxhash', default_options: ['default_library=static'])
   xxhash_dep = xxhash_proj.get_variable('xxhash_dep')
 endif
