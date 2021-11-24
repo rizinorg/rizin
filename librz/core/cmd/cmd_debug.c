@@ -2885,7 +2885,7 @@ static void add_breakpoint(RzCore *core, ut64 addr, const char *arg_perm, bool h
 
 	if (watch) {
 		rw = rz_str_rwx(arg_perm);
-		rw &= 7; // filter out the rwx bits only
+		rw &= RZ_PERM_RWX; // filter out the rwx bits only
 		if (rw == 0) {
 			RZ_LOG_WARN("Invalid permissions provided for setting watchpoint. Defaulting to \"rw\".\n");
 			rw = RZ_PERM_RW;
@@ -4406,7 +4406,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_add_bp_handler(RzCore *core, int argc, const cha
 
 // dbl
 RZ_IPI RzCmdStatus rz_cmd_debug_list_bp_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	rz_return_val_if_fail(state, RZ_CMD_STATUS_ERROR);
+	rz_return_val_if_fail(state && core->dbg && core->dbg->bp, RZ_CMD_STATUS_ERROR);
 	RzBreakpointItem *b;
 	RzListIter *iter;
 	PJ *pj = NULL;
