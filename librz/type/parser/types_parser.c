@@ -1350,6 +1350,7 @@ int parse_type_abstract_declarator_node(CParserState *state, TSNode node, const 
 				parser_error(state, "ERROR: Abstract pointer declarator AST should contain at least one node!\n");
 				node_malformed_error(state, node, text, "pointer declarator");
 				free(type);
+				(*tpair)->type = NULL;
 				return -1;
 			}
 			if (!ts_node_is_null(pointer_declarator)) {
@@ -1357,6 +1358,7 @@ int parse_type_abstract_declarator_node(CParserState *state, TSNode node, const 
 				if (!declarator_type) {
 					node_malformed_error(state, pointer_declarator, text, "pointer declarator");
 					free(type);
+					(*tpair)->type = NULL;
 					return -1;
 				}
 				if (is_abstract_declarator(declarator_type)) {
