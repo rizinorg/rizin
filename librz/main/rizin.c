@@ -126,7 +126,7 @@ static int main_help(int line) {
 			" -Q           quiet mode (no prompt) and quit faster (quickLeak=true)\n"
 			" -p [p.rzdb]  load project file\n"
 			" -r [rz-run]  specify rz-run profile to load (same as -e dbg.profile=X)\n"
-			" -R [rrz_testule] specify custom rz-run directive\n"
+			" -R [rule]    specify custom rz-run directive\n"
 			" -s [addr]    initial seek\n"
 #if USE_THREADS && ALLOW_THREADED
 			" -t           load rz-bin info in thread\n"
