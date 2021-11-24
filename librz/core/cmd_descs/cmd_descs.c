@@ -2067,7 +2067,7 @@ static const RzCmdDescArg cmd_cmp_addr_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_cmp_addr_help = {
-	.summary = "Compare <n> bytes of data at <addr> with the data at current offset (also return in $?)",
+	.summary = "Compare <n> bytes of data at <addr> with the data at current offset",
 	.args = cmd_cmp_addr_args,
 };
 
@@ -2085,7 +2085,7 @@ static const RzCmdDescArg cmd_cmp_bytes_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_cmp_bytes_help = {
-	.summary = "Compare <n> (up to 8) bytes at current offset with a number <num> (also return in $?)",
+	.summary = "Compare <n> (up to 8) bytes at current offset with a number <num>",
 	.args = cmd_cmp_bytes_args,
 };
 
@@ -2305,7 +2305,7 @@ static const RzCmdDescArg cmd_cmp_hexpair_string_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_cmp_hexpair_string_help = {
-	.summary = "Compare data at current offset with a hexpair string <hexpair>",
+	.summary = "Compare data at current offset with a hexpair string <hexpair> (also return in $?)",
 	.args = cmd_cmp_hexpair_string_args,
 };
 

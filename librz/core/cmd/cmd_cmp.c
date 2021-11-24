@@ -160,11 +160,6 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_addr_handler(RzCore *core, int argc, const char **
 	if (!cmp) {
 		return ret;
 	}
-	if (cmp->same) {
-		core->num->value = 0;
-	} else {
-		core->num->value = 1;
-	}
 	int val = rz_core_cmp_print(core, cmp, state);
 	rz_core_cmp_free(cmp);
 	if (val != -1) {
@@ -189,11 +184,6 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_bytes_handler(RzCore *core, int argc, const char *
 	RzCompareData *cmp = rz_core_cmp_mem_data(core, core->offset, (ut8 *)&valid_num, sz);
 	if (!cmp) {
 		goto end;
-	}
-	if (cmp->same) {
-		core->num->value = 0;
-	} else {
-		core->num->value = 1;
 	}
 	int val = rz_core_cmp_print(core, cmp, state);
 	if (val != -1) {
@@ -372,6 +362,7 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_hexpair_string_handler(RzCore *core, int argc, con
 	if (!cmp) {
 		goto return_goto;
 	}
+	core->num->value = cmp->same ? 0 : 1;
 	int val = rz_core_cmp_print(core, cmp, state);
 	rz_core_cmp_free(cmp);
 	if (val == -1) {
