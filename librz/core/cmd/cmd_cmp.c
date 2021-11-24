@@ -335,12 +335,8 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_remove_watcher_handler(RzCore *core, int argc, con
 
 // cx
 RZ_IPI RzCmdStatus rz_cmd_cmp_hexpair_string_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	RzStrBuf *concat_argv = rz_strbuf_new(NULL);
-	for (int i = 1; i < argc; i++) {
-		rz_strbuf_append(concat_argv, argv[i]);
-	}
-	char *input = rz_strbuf_drain(concat_argv);
-
+	char *input = strdup(argv[1]);
+	rz_str_remove_char(input, ' ');
 	unsigned char *buf;
 	int ret = false;
 	if (!(buf = (ut8 *)malloc(strlen(input) + 1))) {
