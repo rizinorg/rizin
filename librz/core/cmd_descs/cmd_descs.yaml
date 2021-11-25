@@ -199,9 +199,8 @@ commands:
         optional: true
         choices: ["32", "64"]
   - name: c
-    cname: cmd_cmp
     summary: Compare block with given data
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    subcommands: cmd_cmp
   - name: C
     summary: Code metadata (comments, format, hints, ..)
     subcommands: cmd_meta

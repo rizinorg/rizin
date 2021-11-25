@@ -6022,7 +6022,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "<", "pipe into RzCons.readChar", rz_cmd_pipein },
 		{ "0", "alias for s 0x", rz_cmd_ox },
 		{ "a", "analysis", rz_cmd_analysis },
-		{ "c", "compare memory", rz_cmd_cmp },
 		{ "d", "debugger operations", rz_cmd_debug },
 		{ "f", "get/set flags", rz_cmd_flag },
 		{ "k", "perform sdb query", rz_cmd_kuery },
