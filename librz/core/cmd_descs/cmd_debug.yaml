@@ -16,6 +16,7 @@ commands:
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
            - RZ_OUTPUT_MODE_STANDARD
+           - RZ_OUTPUT_MODE_TABLE
            - RZ_OUTPUT_MODE_RIZIN
            - RZ_OUTPUT_MODE_JSON
            - RZ_OUTPUT_MODE_QUIET
