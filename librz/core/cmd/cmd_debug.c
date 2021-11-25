@@ -4433,7 +4433,6 @@ RZ_IPI RzCmdStatus rz_cmd_debug_list_bp_handler(RzCore *core, int argc, const ch
 				rz_str_get(b->module_name));
 			break;
 		case RZ_OUTPUT_MODE_TABLE:
-			t->showFancy = true;
 			rz_table_add_rowf(t, "XXdsssssssss", b->addr, b->addr + b->size, b->size, rz_str_rwx_i(b->perm), b->hw ? "hw" : "sw", b->trace ? "trace" : "break", b->enabled ? "enabled" : "disabled", rz_bp_is_valid(core->dbg->bp, b) ? "valid" : "invalid", rz_str_get(b->data), rz_str_get(b->cond), rz_str_get(b->name), rz_str_get(b->module_name));
 			break;
 		case RZ_OUTPUT_MODE_RIZIN:
