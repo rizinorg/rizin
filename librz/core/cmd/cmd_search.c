@@ -3261,7 +3261,7 @@ reread:
 						search_collisions(core, hashName, hashValue, hashLength, mode);
 					} else {
 						int hashLength = rz_hex_str2bin(sp, hashValue);
-						if (hashLength > 0) {
+						if (hashLength > 0 && !rz_hex_str_has_nibble(sp)) {
 							search_collisions(core, hashName, hashValue, hashLength, mode);
 						} else {
 							eprintf("Invalid expected hash hexpairs.\n");

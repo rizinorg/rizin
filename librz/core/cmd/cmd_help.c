@@ -876,7 +876,7 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 			ut8 *out = malloc(strlen(input) + 1);
 			if (out) {
 				int len = rz_hex_str2bin(input + 1, out);
-				if (len >= 0) {
+				if (len >= 0 && !rz_hex_str_has_nibble(input + 1)) {
 					out[len] = 0;
 					rz_cons_println((const char *)out);
 				} else {

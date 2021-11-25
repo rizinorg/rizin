@@ -653,7 +653,7 @@ RZ_API RzAsmCode *rz_asm_mdisassemble_hexstr(RzAsm *a, RzParse *p, const char *h
 		return NULL;
 	}
 	int len = rz_hex_str2bin(hexstr, buf);
-	if (len < 1) {
+	if (len < 1 || rz_hex_str_has_nibble(hexstr)) {
 		free(buf);
 		return NULL;
 	}

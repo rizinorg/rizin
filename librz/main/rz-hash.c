@@ -272,7 +272,7 @@ static bool rz_hash_parse_hexadecimal(const char *option, const char *hexadecima
 	ut8 *b = (ut8 *)malloc(binlen);
 	if (b) {
 		*bufsize = rz_hex_str2bin(hexadecimal, b);
-		if (*bufsize < 1) {
+		if (*bufsize < 1 || rz_hex_str_has_nibble(hexadecimal)) {
 			RZ_LOG_ERROR("rz-hash: error, option %s is not a valid hexadecimal.\n", option);
 			free(b);
 			free(sstdin);

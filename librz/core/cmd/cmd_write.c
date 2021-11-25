@@ -182,7 +182,7 @@ static bool encrypt_or_decrypt_block(RzCore *core, const char *algo, const char 
 			if (iv) {
 				ut8 *biniv = malloc(strlen(iv) + 1);
 				int ivlen = rz_hex_str2bin(iv, biniv);
-				if (ivlen < 1) {
+				if (ivlen < 1 || rz_hex_str_has_nibble(iv)) {
 					ivlen = strlen(iv);
 					strcpy((char *)biniv, iv);
 				}
@@ -1079,7 +1079,7 @@ RZ_IPI int rz_w6_handler_old(void *data, const char *input) {
 				break;
 			}
 			const int bin_len = rz_hex_str2bin(str, bin_buf);
-			if (bin_len <= 0) {
+			if (bin_len <= 0 || rz_hex_str_has_nibble(str)) {
 				fail = 1;
 			} else {
 				buf = calloc(str_len + 1, 4);
@@ -1168,7 +1168,7 @@ RZ_IPI int rz_we_handler_old(void *data, const char *input) {
 			len = *input ? strlen(input) : 0;
 			bytes = len > 1 ? malloc(len + 1) : NULL;
 			len = bytes ? rz_hex_str2bin(input, bytes) : 0;
-			if (len > 0) {
+			if (len > 0 && !rz_hex_str_has_nibble(input)) {
 				ut64 cur_off = core->offset;
 				cmd_suc = rz_core_extend_at(core, cur_off, len);
 				if (cmd_suc) {
@@ -1220,7 +1220,7 @@ RZ_IPI int rz_we_handler_old(void *data, const char *input) {
 			len = *input ? strlen(input) : 0;
 			bytes = len > 1 ? malloc(len + 1) : NULL;
 			len = bytes ? rz_hex_str2bin(input, bytes) : 0;
-			if (len > 0) {
+			if (len > 0 && !rz_hex_str_has_nibble(input)) {
 				//ut64 cur_off = core->offset;
 				cmd_suc = rz_core_extend_at(core, addr, len);
 				if (cmd_suc) {
@@ -1830,7 +1830,7 @@ RZ_IPI int rz_wb_handler_old(void *data, const char *input) {
 	int wseek = rz_config_get_i(core->config, "cfg.wseek");
 	if (buf) {
 		len = rz_hex_str2bin(input, buf);
-		if (len > 0) {
+		if (len > 0 && !rz_hex_str_has_nibble(input)) {
 			rz_mem_copyloop(core->block, buf, core->blocksize, len);
 			if (!rz_core_write_at(core, core->offset, core->block, core->blocksize)) {
 				cmd_write_fail(core);
@@ -1863,7 +1863,7 @@ RZ_IPI int rz_wm_handler_old(void *data, const char *input) {
 		eprintf("Write mask disabled\n");
 		break;
 	case ' ':
-		if (size > 0) {
+		if (size > 0 && !rz_hex_str_has_nibble(input)) {
 			rz_io_use_fd(core->io, core->file->fd);
 			rz_io_set_write_mask(core->io, (const ut8 *)str, size);
 			WSEEK(core, size);

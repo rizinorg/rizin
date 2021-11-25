@@ -404,12 +404,12 @@ RZ_API RzPVector *rz_test_load_asm_test_file(RzStrConstPool *strpool, const char
 			break;
 		}
 		int bytesz = rz_hex_str2bin(hex, bytes);
-		if (bytesz == 0) {
+		if (bytesz < 0) {
 			eprintf(LINEFMT "Error: Expected hex chars.\n", file, linenum);
 			free(bytes);
 			goto fail;
 		}
-		if (bytesz < 0) {
+		if (rz_hex_str_has_nibble(hex) > 0) {
 			eprintf(LINEFMT "Error: Odd number of hex chars: %s\n", file, linenum, hex);
 			free(bytes);
 			goto fail;

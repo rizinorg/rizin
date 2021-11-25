@@ -8,6 +8,7 @@ extern "C" {
 RZ_API int rz_hex_pair2bin(const char *arg);
 RZ_API int rz_hex_str2binmask(const char *in, ut8 *out, ut8 *mask);
 RZ_API int rz_hex_str2bin(const char *in, ut8 *out);
+RZ_API int rz_hex_str_has_nibble(const char *in);
 RZ_API int rz_hex_bin2str(const ut8 *in, int len, char *out);
 RZ_API char *rz_hex_bin2strdup(const ut8 *in, int len);
 RZ_API bool rz_hex_to_byte(ut8 *val, ut8 c);

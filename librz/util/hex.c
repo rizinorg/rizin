@@ -468,6 +468,55 @@ RZ_API int rz_hex_str2bin(const char *in, ut8 *out) {
 	return nibbles / 2;
 }
 
+/**
+ * \brief Check whether the input string \p in has nibble
+ * 
+ * \param in Input string in hexadecimal form. An optional "0x" prefix may be present.
+ * \return 1 if the input string has nibble, 0 otherwise. -1 if not a valid string. 
+ */
+RZ_API int rz_hex_str_has_nibble(const char *in) {
+	long nibbles = 0;
+
+	while (in && *in) {
+		ut8 tmp;
+		/* skip hex prefix */
+		if (*in == '0' && in[1] == 'x') {
+			in += 2;
+		}
+		/* read hex digits */
+		while (!rz_hex_to_byte(&tmp, *in)) {
+			nibbles++;
+			in++;
+		}
+		if (*in == '\0') {
+			break;
+		}
+		/* comments */
+		if (*in == '#' || (*in == '/' && in[1] == '/')) {
+			if ((in = strchr(in, '\n'))) {
+				in++;
+			}
+			continue;
+		} else if (*in == '/' && in[1] == '*') {
+			if ((in = strstr(in, "*/"))) {
+				in += 2;
+			}
+			continue;
+		} else if (!IS_WHITESPACE(*in) && *in != '\n') {
+			/* this is not a valid string */
+			return -1;
+		}
+		/* ignore character */
+		in++;
+	}
+
+	if (nibbles % 2) {
+		return 1;
+	}
+
+	return 0;
+}
+
 RZ_API int rz_hex_str2binmask(const char *in, ut8 *out, ut8 *mask) {
 	ut8 *ptr;
 	int len, ilen = strlen(in) + 1;
@@ -478,10 +527,10 @@ RZ_API int rz_hex_str2binmask(const char *in, ut8 *out, ut8 *mask) {
 			*ptr = '0';
 		}
 	}
+	has_nibble = rz_hex_str_has_nibble(out);
 	len = rz_hex_str2bin((char *)out, out);
-	if (len < 0) {
-		has_nibble = 1;
-		len = -(len + 1);
+	if (has_nibble) {
+		len -= 1;
 	}
 	if (len != -1) {
 		memcpy(mask, in, ilen);
@@ -495,9 +544,10 @@ RZ_API int rz_hex_str2binmask(const char *in, ut8 *out, ut8 *mask) {
 				*ptr = '0';
 			}
 		}
+		has_nibble = rz_hex_str_has_nibble(mask);
 		len = rz_hex_str2bin((char *)mask, mask);
-		if (len < 0) {
-			len++;
+		if (has_nibble) {
+			len = -1 * len + 1;
 		}
 	}
 	return len;

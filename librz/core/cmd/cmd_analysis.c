@@ -8236,7 +8236,7 @@ RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
 		ut8 *buf = malloc(strlen(input) + 1);
 		if (buf) {
 			int len = rz_hex_str2bin(input + 1, buf);
-			if (len > 0) {
+			if (len > 0 && !rz_hex_str_has_nibble(input + 1)) {
 				core_analysis_bytes(core, buf, len, 0, input[1]);
 			}
 			free(buf);

@@ -2417,7 +2417,7 @@ escape_backtick:
 					if (buf) {
 						len = rz_hex_str2bin(ptr + 2, buf);
 						rz_core_block_size(core, RZ_ABS(len));
-						if (len > 0) {
+						if (len > 0 && !rz_hex_str_has_nibble(ptr + 2)) {
 							RzBuffer *b = rz_buf_new_with_bytes(buf, len);
 							RzIODesc *d = rz_io_open_buffer(core->io, b, RZ_PERM_RWX, 0);
 							if (d) {

@@ -25,7 +25,7 @@ static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
 			}
 			mal->offset = 0;
 			mal->size = rz_hex_str2bin(pathname + 6, mal->buf);
-			if ((int)mal->size < 1) {
+			if ((int)mal->size < 1 || rz_hex_str_has_nibble(pathname + 6)) {
 				RZ_FREE(mal->buf);
 			}
 		} else {

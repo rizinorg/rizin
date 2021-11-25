@@ -147,7 +147,7 @@ RZ_API ut8 *rz_core_transform_op(RzCore *core, const char *arg, char op) {
 			len = rz_hex_str2bin(arg, (ut8 *)str);
 			// Output is invalid if there was just a single nibble,
 			// but in that case, len is negative (-1).
-			if (len <= 0) {
+			if (len <= 0 || rz_hex_str_has_nibble(arg)) {
 				eprintf("Invalid hexpair string\n");
 				goto beach;
 			}
@@ -478,7 +478,7 @@ RZ_API int rz_core_write_hexpair(RzCore *core, ut64 addr, const char *pairs) {
 		return 0;
 	}
 	int len = rz_hex_str2bin(pairs, buf);
-	if (len < 0) {
+	if (len < 0 || rz_hex_str_has_nibble(pairs)) {
 		RZ_LOG_ERROR("Could not convert hexpair '%s' to bin data\n", pairs);
 		goto err;
 	}
@@ -838,7 +838,7 @@ RZ_API bool rz_core_write_base64_at(RzCore *core, ut64 addr, const char *s) {
 	}
 
 	const int bin_len = rz_hex_str2bin(s, bin_buf);
-	if (bin_len <= 0) {
+	if (bin_len <= 0 || rz_hex_str_has_nibble(s)) {
 		free(bin_buf);
 		return false;
 	}

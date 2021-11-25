@@ -317,11 +317,12 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 		}
 		ut8 *bytes = malloc(hexlen);
 		int byteslen = rz_hex_str2bin(hex, bytes);
-		free(hex);
-		if (byteslen <= 0) {
+		if (byteslen <= 0 || rz_hex_str_has_nibble(hex)) {
+			free(hex);
 			free(bytes);
 			goto rip;
 		}
+		free(hex);
 		out->bytes = bytes;
 		out->bytes_size = (size_t)byteslen;
 	rip:

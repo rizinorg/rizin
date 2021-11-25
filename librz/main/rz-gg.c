@@ -181,7 +181,7 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 				off = rz_num_math(NULL, arg);
 				b = malloc(strlen(opt.arg) + 1);
 				len = rz_hex_str2bin(p, b);
-				if (len > 0) {
+				if (len > 0 && !rz_hex_str_has_nibble(p)) {
 					rz_egg_patch(egg, off, (const ut8 *)b, len);
 				} else {
 					eprintf("Invalid hexstr for -w\n");
@@ -423,7 +423,7 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 	if (bytes) {
 		ut8 *b = malloc(strlen(bytes) + 1);
 		int len = rz_hex_str2bin(bytes, b);
-		if (len > 0) {
+		if (len > 0 && !rz_hex_str_has_nibble(bytes)) {
 			if (!rz_egg_raw(egg, b, len)) {
 				eprintf("Unknown '%s'\n", shellcode);
 				free(b);

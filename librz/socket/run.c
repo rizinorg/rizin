@@ -234,7 +234,7 @@ static char *getstr(const char *src) {
 			ret = strdup(src);
 		}
 		len = rz_hex_str2bin(src + 1, (ut8 *)ret);
-		if (len > 0) {
+		if (len > 0 && !rz_hex_str_has_nibble(src + 1)) {
 			ret[len] = 0;
 			return ret;
 		}

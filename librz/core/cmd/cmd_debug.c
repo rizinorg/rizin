@@ -4315,7 +4315,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 			ut8 bytes[4096];
 			if (strlen(input + 2) < 4096) {
 				int bytes_len = rz_hex_str2bin(input + 2, bytes);
-				if (bytes_len > 0)
+				if (bytes_len > 0 && !rz_hex_str_has_nibble(input + 2))
 					rz_debug_execute(core->dbg,
 						bytes, bytes_len, 0);
 				else
@@ -4362,7 +4362,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 				if (strlen(input + 2) < 4096) {
 					int bytes_len = rz_hex_str2bin(input + 2,
 						bytes);
-					if (bytes_len > 0) {
+					if (bytes_len > 0 && !rz_hex_str_has_nibble(input + 2)) {
 						rz_debug_execute(core->dbg,
 							bytes, bytes_len,
 							0);

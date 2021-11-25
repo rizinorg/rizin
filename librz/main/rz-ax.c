@@ -255,7 +255,7 @@ dotherax:
 		if (buf) {
 			memset(buf, '\0', n);
 			n = rz_hex_str2bin(str, (ut8 *)buf);
-			if (n > 0) {
+			if (n > 0 && !rz_hex_str_has_nibble(str)) {
 				fwrite(buf, n, 1, stdout);
 			}
 #if __EMSCRIPTEN__
@@ -302,7 +302,7 @@ dotherax:
 		ut32 *m = (ut32 *)buf;
 		memset(buf, '\0', n);
 		n = rz_hex_str2bin(str, (ut8 *)buf);
-		if (n < 1 || !memcmp(str, "0x", 2)) {
+		if (n < 1 || rz_hex_str_has_nibble(str) || !memcmp(str, "0x", 2)) {
 			ut64 q = rz_num_math(num, str);
 			s = rz_print_randomart((ut8 *)&q, sizeof(q), q);
 			printf("%s\n", s);

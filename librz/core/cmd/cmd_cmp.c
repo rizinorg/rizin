@@ -561,7 +561,7 @@ RZ_IPI int rz_cmd_cmp(void *data, const char *input) {
 		}
 
 		ret = rz_hex_str2bin(filled, buf);
-		if (ret < 1) {
+		if (ret < 1 || rz_hex_str_has_nibble(filled)) {
 			eprintf("Cannot parse hexpair\n");
 		} else {
 			val = rizin_compare(core, block, buf, ret, mode);

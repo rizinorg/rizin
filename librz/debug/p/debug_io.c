@@ -110,7 +110,7 @@ static int __reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 	}
 	rz_str_trim((char *)bregs);
 	int sz = rz_hex_str2bin(dr8, bregs);
-	if (sz > 0) {
+	if (sz > 0 && !rz_hex_str_has_nibble(dr8)) {
 		memcpy(buf, bregs, RZ_MIN(size, sz));
 		free(bregs);
 		free(dr8);

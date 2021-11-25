@@ -66,7 +66,7 @@ RZ_API RzSearchKeyword *rz_search_keyword_new_str(const char *kwbuf, const char 
 			return NULL;
 		}
 		bmlen = rz_hex_str2bin(bmstr, bmbuf);
-		if (bmlen < 1) {
+		if (bmlen < 1 || rz_hex_str_has_nibble(bmstr)) {
 			RZ_FREE(bmbuf);
 		}
 	}
@@ -93,7 +93,7 @@ RZ_API RzSearchKeyword *rz_search_keyword_new_wide(const char *kwbuf, const char
 			return NULL;
 		}
 		bmlen = rz_hex_str2bin(bmstr, bmbuf);
-		if (bmlen < 1) {
+		if (bmlen < 1 || rz_hex_str_has_nibble(bmstr)) {
 			RZ_FREE(bmbuf);
 		}
 	}
@@ -144,7 +144,7 @@ RZ_API RzSearchKeyword *rz_search_keyword_new_hex(const char *kwstr, const char 
 	}
 
 	kwlen = rz_hex_str2bin(kwstr, kwbuf);
-	if (kwlen < 1) {
+	if (kwlen < 1 || rz_hex_str_has_nibble(kwstr)) {
 		free(kwbuf);
 		return NULL;
 	}
@@ -157,7 +157,7 @@ RZ_API RzSearchKeyword *rz_search_keyword_new_hex(const char *kwstr, const char 
 			return NULL;
 		}
 		bmlen = rz_hex_str2bin(bmstr, bmbuf);
-		if (bmlen < 1) {
+		if (bmlen < 1 || rz_hex_str_has_nibble(bmstr)) {
 			free(bmbuf);
 			free(kwbuf);
 			return NULL;

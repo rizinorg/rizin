@@ -59,7 +59,7 @@ RZ_API int rz_asm_op_set_hex(RzAsmOp *op, const char *str) {
 	ut8 *bin = (ut8 *)strdup(str);
 	if (bin) {
 		int len = rz_hex_str2bin(str, bin);
-		if (len > 0) {
+		if (len > 0 && !rz_hex_str_has_nibble(str)) {
 			rz_strbuf_setbin(&op->buf, bin, len);
 		}
 		free(bin);
