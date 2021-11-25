@@ -472,9 +472,9 @@ RZ_API int rz_hex_str2bin(const char *in, ut8 *out) {
  * \brief Check whether the input string \p in has nibble
  * 
  * \param in Input string in hexadecimal form. An optional "0x" prefix may be present.
- * \return 1 if the input string has nibble, 0 otherwise. -1 if not a valid string. 
+ * \return true if the input string has nibble, false otherwise. 
  */
-RZ_API int rz_hex_str_has_nibble(const char *in) {
+RZ_API bool rz_hex_str_has_nibble(const char *in) {
 	long nibbles = 0;
 
 	while (in && *in) {
@@ -502,19 +502,11 @@ RZ_API int rz_hex_str_has_nibble(const char *in) {
 				in += 2;
 			}
 			continue;
-		} else if (!IS_WHITESPACE(*in) && *in != '\n') {
-			/* this is not a valid string */
-			return -1;
 		}
 		/* ignore character */
 		in++;
 	}
-
-	if (nibbles % 2) {
-		return 1;
-	}
-
-	return 0;
+	return nibbles % 2;
 }
 
 RZ_API int rz_hex_str2binmask(const char *in, ut8 *out, ut8 *mask) {
