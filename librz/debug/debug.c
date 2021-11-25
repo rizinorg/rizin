@@ -302,7 +302,7 @@ RZ_API RzBreakpointItem *rz_debug_bp_add(RzDebug *dbg, ut64 addr, int hw, bool w
 					m_delta = addr - map->addr;
 				}
 				perm = ((map->perm & 1) << 2) | (map->perm & 2) | ((map->perm & 4) >> 2);
-				if (!(perm & RZ_BP_PROT_EXEC)) {
+				if (!(perm & RZ_PERM_X)) {
 					eprintf("WARNING: setting bp within mapped memory without exec perm\n");
 				}
 				break;
@@ -329,8 +329,8 @@ RZ_API RzBreakpointItem *rz_debug_bp_add(RzDebug *dbg, ut64 addr, int hw, bool w
 		bpi = rz_bp_watch_add(dbg->bp, addr, bpsz, hw, rw);
 	} else {
 		bpi = hw
-			? rz_bp_add_hw(dbg->bp, addr, bpsz, RZ_BP_PROT_EXEC)
-			: rz_bp_add_sw(dbg->bp, addr, bpsz, RZ_BP_PROT_EXEC);
+			? rz_bp_add_hw(dbg->bp, addr, bpsz, RZ_PERM_X)
+			: rz_bp_add_sw(dbg->bp, addr, bpsz, RZ_PERM_X);
 	}
 	if (bpi) {
 		if (module_name) {
@@ -532,7 +532,7 @@ RZ_API ut64 rz_debug_execute(RzDebug *dbg, const ut8 *buf, int len, int restore)
 		dbg->iob.read_at(dbg->iob.io, rpc, backup, len);
 		dbg->iob.read_at(dbg->iob.io, rsp, stackbackup, len);
 
-		rz_bp_add_sw(dbg->bp, rpc + len, dbg->bpsize, RZ_BP_PROT_EXEC);
+		rz_bp_add_sw(dbg->bp, rpc + len, dbg->bpsize, RZ_PERM_X);
 
 		/* execute code here */
 		dbg->iob.write_at(dbg->iob.io, rpc, buf, len);
@@ -887,7 +887,7 @@ RZ_API int rz_debug_step_soft(RzDebug *dbg) {
 		if (align > 1) {
 			next[i] = next[i] - (next[i] % align);
 		}
-		RzBreakpointItem *bpi = rz_bp_add_sw(dbg->bp, next[i], dbg->bpsize, RZ_BP_PROT_EXEC);
+		RzBreakpointItem *bpi = rz_bp_add_sw(dbg->bp, next[i], dbg->bpsize, RZ_PERM_X);
 		if (bpi) {
 			bpi->swstep = true;
 		}
@@ -1154,7 +1154,7 @@ RZ_API int rz_debug_continue_kill(RzDebug *dbg, int sig) {
 			if (reg->cnum <= dbg->session->cnum) {
 				continue;
 			}
-			has_bp = rz_bp_get_in(dbg->bp, reg->data, RZ_BP_PROT_EXEC) != NULL;
+			has_bp = rz_bp_get_in(dbg->bp, reg->data, RZ_PERM_X) != NULL;
 			if (has_bp) {
 				eprintf("hit breakpoint at: 0x%" PFMT64x " cnum: %d\n", reg->data, reg->cnum);
 				rz_debug_goto_cnum(dbg, reg->cnum);
@@ -1402,9 +1402,9 @@ static int rz_debug_continue_until_internal(RzDebug *dbg, ut64 addr, bool block)
 		return false;
 	}
 	// Check if there was another breakpoint set at addr
-	bool has_bp = rz_bp_get_in(dbg->bp, addr, RZ_BP_PROT_EXEC) != NULL;
+	bool has_bp = rz_bp_get_in(dbg->bp, addr, RZ_PERM_X) != NULL;
 	if (!has_bp) {
-		rz_bp_add_sw(dbg->bp, addr, dbg->bpsize, RZ_BP_PROT_EXEC);
+		rz_bp_add_sw(dbg->bp, addr, dbg->bpsize, RZ_PERM_X);
 	}
 
 	// Continue until the bp is reached
@@ -1452,7 +1452,7 @@ RZ_API bool rz_debug_continue_back(RzDebug *dbg) {
 		if (reg->cnum >= dbg->session->cnum) {
 			continue;
 		}
-		has_bp = rz_bp_get_in(dbg->bp, reg->data, RZ_BP_PROT_EXEC) != NULL;
+		has_bp = rz_bp_get_in(dbg->bp, reg->data, RZ_PERM_X) != NULL;
 		if (has_bp) {
 			cnum = reg->cnum;
 			eprintf("hit breakpoint at: 0x%" PFMT64x " cnum: %d\n", reg->data, reg->cnum);

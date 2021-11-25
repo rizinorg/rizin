@@ -205,7 +205,7 @@ ARGS=-d
 CMDS=<<EOF
 e scr.color=0
 db @ main
-dbl~1[8]
+dbl:valid~:2
 EOF
 EXPECT=<<EOF
 valid
@@ -218,7 +218,7 @@ ARGS=-d
 CMDS=<<EOF
 e scr.color=0
 db @ 0x0
-dbl~1[8]
+dbl:valid~:2
 EOF
 EXPECT=<<EOF
 invalid
@@ -261,7 +261,7 @@ ARGS=-d
 CMDS=<<EOF
 e scr.color=0
 dbH @ main
-dbl~1[5]
+dbl:hwsw~:2
 EOF
 EXPECT=<<EOF
 hw

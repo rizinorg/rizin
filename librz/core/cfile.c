@@ -578,7 +578,7 @@ static bool setbpint(RzCore *r, const char *mode, const char *sym) {
 	if (!fi) {
 		return false;
 	}
-	bp = rz_bp_add_sw(r->dbg->bp, fi->offset, 1, RZ_BP_PROT_EXEC);
+	bp = rz_bp_add_sw(r->dbg->bp, fi->offset, 1, RZ_PERM_X);
 	if (bp) {
 		bp->internal = true;
 #if __linux__

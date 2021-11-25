@@ -88,14 +88,6 @@ typedef struct rz_bp_t {
 	ut64 baddr;
 } RzBreakpoint;
 
-// DEPRECATED: USE RZ_PERM
-enum {
-	RZ_BP_PROT_EXEC = 1,
-	RZ_BP_PROT_WRITE = 2,
-	RZ_BP_PROT_READ = 4,
-	RZ_BP_PROT_ACCESS = 8,
-};
-
 typedef struct rz_bp_trace_t {
 	ut64 addr;
 	ut64 addr_end;
@@ -119,8 +111,6 @@ RZ_API int rz_bp_plugin_del(RzBreakpoint *bp, const char *name);
 RZ_API void rz_bp_plugin_list(RzBreakpoint *bp);
 
 RZ_API int rz_bp_in(RzBreakpoint *bp, ut64 addr, int perm);
-// deprecate?
-RZ_API int rz_bp_list(RzBreakpoint *bp, int rad);
 RZ_API int rz_bp_size(RzBreakpoint *bp);
 
 /* bp item attribs setters */
