@@ -4413,7 +4413,8 @@ RZ_IPI RzCmdStatus rz_cmd_debug_list_bp_handler(RzCore *core, int argc, const ch
 	PJ *pj = state->d.pj;
 	RzTable *t = state->d.t;
 	rz_cmd_state_output_array_start(state);
-	rz_cmd_state_output_set_columnsf(state, "XXdsssssssss", "start addr", "end addr", "size", "perm", "hw/sw", "type", "state", "validity", "cmd", "cond", "name", "module");
+	rz_cmd_state_output_set_columnsf(state, "XXdsssssssss", "start addr", "end addr", "size",
+		"perm", "hw/sw", "type", "state", "validity", "cmd", "cond", "name", "module");
 
 	rz_list_foreach (core->dbg->bp->bps, iter, b) {
 		switch (state->mode) {
@@ -4433,7 +4434,10 @@ RZ_IPI RzCmdStatus rz_cmd_debug_list_bp_handler(RzCore *core, int argc, const ch
 				rz_str_get(b->module_name));
 			break;
 		case RZ_OUTPUT_MODE_TABLE:
-			rz_table_add_rowf(t, "XXdsssssssss", b->addr, b->addr + b->size, b->size, rz_str_rwx_i(b->perm), b->hw ? "hw" : "sw", b->trace ? "trace" : "break", b->enabled ? "enabled" : "disabled", rz_bp_is_valid(core->dbg->bp, b) ? "valid" : "invalid", rz_str_get(b->data), rz_str_get(b->cond), rz_str_get(b->name), rz_str_get(b->module_name));
+			rz_table_add_rowf(t, "XXdsssssssss", b->addr, b->addr + b->size, b->size,
+				rz_str_rwx_i(b->perm), b->hw ? "hw" : "sw", b->trace ? "trace" : "break",
+				b->enabled ? "enabled" : "disabled", rz_bp_is_valid(core->dbg->bp, b) ? "valid" : "invalid",
+				rz_str_get(b->data), rz_str_get(b->cond), rz_str_get(b->name), rz_str_get(b->module_name));
 			break;
 		case RZ_OUTPUT_MODE_RIZIN:
 			if (b->module_name) {
