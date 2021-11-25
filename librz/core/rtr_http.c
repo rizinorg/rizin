@@ -189,7 +189,7 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 			const char *allows_host;
 			char *p, *peer = rz_socket_to_string(rs->s);
 			char *allows = strdup(allow);
-			//eprintf ("Firewall (%s)\n", allows);
+			// eprintf ("Firewall (%s)\n", allows);
 			int i, count = rz_str_split(allows, ',');
 			p = strchr(peer, ':');
 			if (p) {
@@ -197,7 +197,7 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 			}
 			for (i = 0; i < count; i++) {
 				allows_host = rz_str_word_get0(allows, i);
-				//eprintf ("--- (%s) (%s)\n", host, peer);
+				// eprintf ("--- (%s) (%s)\n", host, peer);
 				if (!strcmp(allows_host, peer)) {
 					accepted = true;
 					break;
@@ -385,7 +385,7 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 				if (rs->path[strlen(rs->path) - 1] == '/') {
 					path = (*index == '/') ? strdup(index) : rz_str_append(path, index);
 				} else {
-					//snprintf (path, sizeof (path), "%s/%s", root, rs->path);
+					// snprintf (path, sizeof (path), "%s/%s", root, rs->path);
 					if (rz_file_is_directory(path)) {
 						char *res = rz_str_newf("Location: %s/\n%s", rs->path, headers);
 						rz_socket_http_response(rs, 302, NULL, 0, res);

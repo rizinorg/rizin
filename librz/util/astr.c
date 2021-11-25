@@ -374,7 +374,7 @@ RZ_API RASN1String *asn1_stringify_sector(RASN1Object *object) {
 			return rz_asn1_stringify_bytes(object->sector, object->length);
 		}
 	case TAG_BITSTRING:
-		//if (object->length < 8) {
+		// if (object->length < 8) {
 		return rz_asn1_stringify_bits(object->sector, object->length);
 		//} else {
 		//	return asn1_stringify_bytes (object->sector, object->length);

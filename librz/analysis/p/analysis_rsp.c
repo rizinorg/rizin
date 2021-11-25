@@ -366,12 +366,12 @@ static int rsp_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 	case RSP_OP_MFC2:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		op->dst = parsed_operands[0].value;
-		//op->src[0] = parsed_operands[1].value;
+		// op->src[0] = parsed_operands[1].value;
 		break;
 	case RSP_OP_MTC2:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		op->src[0] = parsed_operands[0].value;
-		//op->dst = parsed_operands[1].value;
+		// op->dst = parsed_operands[1].value;
 		break;
 	case RSP_OP_CFC2:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;

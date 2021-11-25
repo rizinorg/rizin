@@ -172,19 +172,19 @@ static proc_per_thread_t *get_proc_thread_content(int pid, int tid) {
 		return NULL;
 	}
 	while (!isdigit((ut8)*temp_p_sigpend++)) {
-		//empty body
+		// empty body
 	}
 	p_sigpend = temp_p_sigpend - 1;
 	while (isdigit((ut8)*temp_p_sigpend++)) {
-		//empty body
+		// empty body
 	}
 	p_sigpend[temp_p_sigpend - p_sigpend - 1] = '\0';
 	while (!isdigit((ut8)*temp_p_sighold++)) {
-		//empty body
+		// empty body
 	}
 	p_sighold = temp_p_sighold - 1;
 	while (isdigit((ut8)*temp_p_sighold++)) {
-		//empty body
+		// empty body
 	}
 	p_sighold[temp_p_sighold - p_sighold - 1] = '\0';
 	t->sigpend = atoi(p_sigpend);
@@ -390,7 +390,7 @@ static bool dump_this_map(char *buff_smaps, linux_map_entry_t *entry, ut8 filter
 			goto fail;
 		}
 		while (*flags_str++ == ' ') {
-			//empty body
+			// empty body
 		}
 		flags_str--;
 		p = strtok(flags_str, " ");
@@ -826,11 +826,11 @@ static proc_per_process_t *get_proc_process_content(RzDebug *dbg) {
 	/* Uid */
 	if (temp_p_uid) {
 		while (!isdigit((ut8)*temp_p_uid++)) {
-			//empty body
+			// empty body
 		}
 		p_uid = temp_p_uid - 1;
 		while (isdigit((ut8)*temp_p_uid++)) {
-			//empty body
+			// empty body
 		}
 		p_uid[temp_p_uid - p_uid - 1] = '\0';
 	} else {
@@ -841,11 +841,11 @@ static proc_per_process_t *get_proc_process_content(RzDebug *dbg) {
 	/* Gid */
 	if (temp_p_gid) {
 		while (!isdigit((ut8)*temp_p_gid++)) {
-			//empty body
+			// empty body
 		}
 		p_gid = temp_p_gid - 1;
 		while (isdigit((ut8)*temp_p_gid++)) {
-			//empty body
+			// empty body
 		}
 		p_gid[temp_p_gid - p_gid - 1] = '\0';
 	} else {

@@ -169,7 +169,7 @@ int lua54_anal_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		op->fail = op->addr + 4;
 		break;
 	case OP_FORPREP: /*	A Bx	<check values and prepare counters>;
-              if not to run then pc+=Bx+1;			*/
+	      if not to run then pc+=Bx+1;			*/
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		op->jump = op->addr + 4 + 4 * (LUA_GETARG_Bx(instruction) + 1);
 		op->fail = op->addr + 4;

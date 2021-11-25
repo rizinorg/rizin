@@ -137,7 +137,7 @@ static struct cEnv_t *rz_egg_Cfile_set_cEnv(const char *arch, const char *os, in
 		cEnv->TEXT = ".text";
 		cEnv->FMT = "pe";
 	} else if (isXNU(os)) {
-		//cEnv->TEXT = "0.__TEXT.__text";
+		// cEnv->TEXT = "0.__TEXT.__text";
 		cEnv->TEXT = "0..__text";
 	} else {
 		cEnv->TEXT = ".text";

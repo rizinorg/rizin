@@ -540,7 +540,7 @@ RZ_API int rz_hex_str_is_valid(const char *str) {
 		if (IS_HEXCHAR(str[i]) || IS_WHITESPACE(str[i])) {
 			continue;
 		}
-		return -1; //if we're here, then str isn't valid
+		return -1; // if we're here, then str isn't valid
 	}
 	return len;
 }

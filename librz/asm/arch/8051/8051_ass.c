@@ -273,7 +273,7 @@ static int str_iwhitecasecmp(char const *a, char const *b) {
 
 /******************************************************************************
  * ## Section 2: some weird datastructure
-                 ------------------------*/
+		 ------------------------*/
 
 typedef bool (*parse_mnem_args)(char const *const *, ut16, ut8 **);
 
@@ -324,7 +324,7 @@ static parse_mnem_args match_prefix_f(int *args, char const *str, ftable const t
 
 /******************************************************************************
  * ## Section 3: token classifiers
-                 -----------------*/
+		 -----------------*/
 
 /**
  * matches registers r0 and r1 when they are indirectly-addressed.
@@ -453,7 +453,7 @@ static int register_number(char const *reg) {
 
 /******************************************************************************
  * ## Section 4: Generic instruction emmiters
-                 ----------------------------*/
+		 ----------------------------*/
 
 static bool single_byte_instr(ut8 const instr, ut8 **out) {
 	(*out)[0] = instr;
@@ -517,7 +517,7 @@ static bool single_a_arg_instr(ut8 const firstbyte, char const *arg, ut8 **out) 
 
 /******************************************************************************
  * ## Section 5: Specific instruction parsing
-                 ----------------------------*/
+		 ----------------------------*/
 
 static bool mnem_acall(char const *const *arg, ut16 pc, ut8 **out) {
 	ut16 address;
@@ -1157,7 +1157,7 @@ static bool mnem_xchd(char const *const *arg, ut16 pc, ut8 **out) {
 
 /******************************************************************************
  * ## Section 6: mnemonic token dispatcher
-                 -------------------------*/
+		 -------------------------*/
 
 static parse_mnem_args mnemonic(char const *user_asm, int *nargs) {
 	return match_prefix_f(nargs, user_asm, (ftable){
@@ -1165,11 +1165,11 @@ static parse_mnem_args mnemonic(char const *user_asm, int *nargs) {
 #define zeroarg_mnem(mn) { #mn, &mnem_##mn, 0 },
 						       mnem(1, acall) mnem(2, addc) mnem(2, add) mnem(1, ajmp) mnem(2, anl) mnem(3, cjne) mnem(1, clr) mnem(1, cpl) mnem(1, da) mnem(1, dec) mnem(1, div) mnem(2, djnz) mnem(1, inc) mnem(2, jbc) mnem(2, jb) mnem(1, jc) mnem(1, jmp) mnem(2, jnb) mnem(1, jnc) mnem(1, jz) mnem(1, jnz) mnem(1, lcall) mnem(1, ljmp)
 						       /* so uh, the whitespace-independent matching sees movc and mov c as the same
- * thing...
- * My first thought was to add an exception for mov c, but later I saw that it'd
- * be better to match the space after each instruction, but the exception is
- * still here
- */
+							* thing...
+							* My first thought was to add an exception for mov c, but later I saw that it'd
+							* be better to match the space after each instruction, but the exception is
+							* still here
+							*/
 						       { "mov c,", &mnem_mov_c, 2 },
 						       mnem(2, movc) mnem(2, movx) mnem(2, mov) mnem(1, mul) mnem(2, orl) mnem(1, pop) mnem(1, push) mnem(2, xchd) mnem(2, xch) mnem(2, xrl) mnem(1, rlc) mnem(1, rl) mnem(1, rrc) mnem(1, rr) mnem(1, setb) mnem(1, sjmp) mnem(2, subb) mnem(1, swap) zeroarg_mnem(nop) zeroarg_mnem(reti) zeroarg_mnem(ret)
 #undef mnem
@@ -1178,7 +1178,7 @@ static parse_mnem_args mnemonic(char const *user_asm, int *nargs) {
 
 /******************************************************************************
  * ## Section 7: rizin glue and mnemonic tokenization
-                 --------------------------------------*/
+		 --------------------------------------*/
 
 int assemble_8051(RzAsm *a, RzAsmOp *op, char const *user_asm) {
 	if (!a || !op || !user_asm) {

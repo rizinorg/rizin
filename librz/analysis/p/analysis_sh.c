@@ -18,7 +18,7 @@
  * DIV1,MAC.W,MAC.L,rte,rts should be checked
  * also tests are written, but still could be some issues, if I misunderstand instructions.
  * If you found some bugs, please open an issue
-*/
+ */
 
 #define BIT_32(x)  x ",0x80000000,&"
 #define S16_EXT(x) x ",DUP,0x8000,&,?{,0xFFFFFFFFFFFF0000,|,}"
@@ -26,7 +26,7 @@
 #define IS_T       "sr,0x1,&,"
 #define SET_T      "0x1,sr,|="
 #define CLR_T      "0xFFFFFFFE,sr,&="
-//Macros for different instruction types
+// Macros for different instruction types
 
 #define IS_CLRT(x)   x == 0x0008
 #define IS_NOP(x)    x == 0x0009
@@ -37,7 +37,7 @@
 #define IS_CLRMAC(x) x == 0x0028
 #define IS_RTE(x)    x == 0x002b
 
-#define IS_STCSR1(x)            (((x)&0xF0CF) == 0x0002) //mask stc Rn,{SR,gbr,VBR,SSR}
+#define IS_STCSR1(x)            (((x)&0xF0CF) == 0x0002) // mask stc Rn,{SR,gbr,VBR,SSR}
 #define IS_BSRF(x)              ((x)&0xf0ff) == 0x0003
 #define IS_BRAF(x)              (((x)&0xf0ff) == 0x0023)
 #define IS_MOVB_REG_TO_R0REL(x) (((x)&0xF00F) == 0x0004)
@@ -111,17 +111,17 @@
 #define IS_ROTCL(x) (((x)&0xF0FF) == 0x4024)
 #define IS_ROTL(x)  (((x)&0xF0FF) == 0x4004)
 #define IS_ROTR(x)  (((x)&0xF0FF) == 0x4005)
-//not on sh2e : shad, shld
+// not on sh2e : shad, shld
 
 //#define IS_SHIFT1(x)	(((x) & 0xF0DE) == 0x4000)	//unused (treated as switch-case)
-//other shl{l,r}{,2,8,16} in switch case also.
+// other shl{l,r}{,2,8,16} in switch case also.
 
 #define IS_STSLMACL(x) (((x)&0xF0FF) == 0x4012)
 #define IS_STSLMACH(x) (((x)&0xF0FF) == 0x4002)
 #define IS_STCLSR(x)   (((x)&0xF0FF) == 0x4003)
 #define IS_STCLGBR(x)  (((x)&0xF0FF) == 0x4013)
 #define IS_STCLVBR(x)  (((x)&0xF0FF) == 0x4023)
-//todo: other stc.l not on sh2e
+// todo: other stc.l not on sh2e
 #define IS_STSLPR(x) (((x)&0xF0FF) == 0x4022)
 //#define IS_STSLFPUL(x)	(((x) & 0xF0FF) == 0x4052)
 //#define IS_STSLFPSCR(x)	(((x) & 0xF0FF) == 0x4062)
@@ -140,7 +140,7 @@
 #define IS_SWAPW(x)              (((x)&0xF00F) == 0x6009)
 #define IS_NEG(x)                (((x)&0xF00F) == 0x600B)
 #define IS_NEGC(x)               (((x)&0xF00F) == 0x600A)
-#define IS_EXT(x)                (((x)&0xF00C) == 0x600C) //match ext{s,u}.{b,w}
+#define IS_EXT(x)                (((x)&0xF00C) == 0x600C) // match ext{s,u}.{b,w}
 
 #define IS_MOVB_R0_REGDISP(x) (((x)&0xFF00) == 0x8000)
 #define IS_MOVW_R0_REGDISP(x) (((x)&0xFF00) == 0x8100)
@@ -163,8 +163,8 @@
 #define IS_MOVW_GBRREF_R0(x)   (((x)&0xFF00) == 0xC500)
 #define IS_MOVL_GBRREF_R0(x)   (((x)&0xFF00) == 0xC600)
 #define IS_MOVA_PCREL_R0(x)    (((x)&0xFF00) == 0xC700)
-#define IS_BINLOGIC_IMM_R0(x)  (((x)&0xFC00) == 0xC800) //match C{8,9,A,B}00
-#define IS_BINLOGIC_IMM_GBR(x) (((x)&0xFC00) == 0xCC00) //match C{C,D,E,F}00 : *.b #imm, @(R0,gbr)
+#define IS_BINLOGIC_IMM_R0(x)  (((x)&0xFC00) == 0xC800) // match C{8,9,A,B}00
+#define IS_BINLOGIC_IMM_GBR(x) (((x)&0xFC00) == 0xCC00) // match C{C,D,E,F}00 : *.b #imm, @(R0,gbr)
 
 /* Compute PC-relative displacement for branch instructions */
 #define GET_BRA_OFFSET(x) ((x)&0x0fff)
@@ -190,7 +190,7 @@ static ut64 disarm_12bit_offset(RzAnalysisOp *op, unsigned int insoff) {
 /* for bt,bf sign-extended offsets : return PC+4+ (exts.b offset)<<1 */
 static ut64 disarm_8bit_offset(ut64 pc, ut32 offs) {
 	/* pc (really, op->addr) is 64 bits, so we need to sign-extend
-		 * to 64 bits instead of the 32 the actual CPU does */
+	 * to 64 bits instead of the 32 the actual CPU does */
 	ut64 off = offs;
 	/* sign extend if higher bit is 1 (0x08) */
 	if ((off & 0x80) == 0x80) {
@@ -266,7 +266,7 @@ static RzAnalysisValue *analysis_regrel_jump(RzAnalysis *analysis, RzAnalysisOp 
 }
 
 /* 16 decoder routines, based on 1st nibble value */
-static int first_nibble_is_0(RzAnalysis *analysis, RzAnalysisOp *op, ut16 code) { //STOP
+static int first_nibble_is_0(RzAnalysis *analysis, RzAnalysisOp *op, ut16 code) { // STOP
 	if (IS_BSRF(code)) {
 		/* Call 'far' subroutine Rn+PC+4 */
 		op->type = RZ_ANALYSIS_OP_TYPE_UCALL;
@@ -288,10 +288,10 @@ static int first_nibble_is_0(RzAnalysis *analysis, RzAnalysisOp *op, ut16 code) 
 		op->type = RZ_ANALYSIS_OP_TYPE_RET;
 		op->delay = 1;
 		op->eob = true;
-		//rz_strbuf_setf (&op->esil, "1,SETD,r15,[4],4,+,pc,=,r15,4,+,[4],0xFFF0FFF,&,sr,=,8,r15,+=");
-		//not sure if should be added 4 to pc
+		// rz_strbuf_setf (&op->esil, "1,SETD,r15,[4],4,+,pc,=,r15,4,+,[4],0xFFF0FFF,&,sr,=,8,r15,+=");
+		// not sure if should be added 4 to pc
 		rz_strbuf_setf(&op->esil, "1,SETD,r15,[4],pc,=,r15,4,+,[4],0xFFF0FFF,&,sr,=,8,r15,+=");
-	} else if (IS_MOVB_REG_TO_R0REL(code)) { //0000nnnnmmmm0100 mov.b <REG_M>,@(R0,<REG_N>)
+	} else if (IS_MOVB_REG_TO_R0REL(code)) { // 0000nnnnmmmm0100 mov.b <REG_M>,@(R0,<REG_N>)
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		op->src[0] = analysis_fill_ai_rg(analysis, GET_SOURCE_REG(code));
 		op->dst = analysis_fill_r0_reg_ref(analysis, GET_TARGET_REG(code), BYTE_SIZE);
@@ -340,7 +340,7 @@ static int first_nibble_is_0(RzAnalysis *analysis, RzAnalysisOp *op, ut16 code) 
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		op->dst = analysis_fill_ai_rg(analysis, GET_TARGET_REG(code));
 		rz_strbuf_setf(&op->esil, "0x1,sr,&,r%d,=", GET_TARGET_REG(code));
-	} else if (IS_MULL(code)) { //multiply long
+	} else if (IS_MULL(code)) { // multiply long
 		op->type = RZ_ANALYSIS_OP_TYPE_MUL;
 		op->src[0] = analysis_fill_ai_rg(analysis, GET_TARGET_REG(code));
 		op->src[1] = analysis_fill_ai_rg(analysis, GET_SOURCE_REG(code));
@@ -348,11 +348,11 @@ static int first_nibble_is_0(RzAnalysis *analysis, RzAnalysisOp *op, ut16 code) 
 	} else if (IS_SLEEP(code)) {
 		op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 		rz_strbuf_setf(&op->esil, "sleep_called,TRAP");
-	} else if (IS_STSMACH(code)) { //0000nnnn0000101_ sts MAC*,<REG_N>
+	} else if (IS_STSMACH(code)) { // 0000nnnn0000101_ sts MAC*,<REG_N>
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		op->dst = analysis_fill_ai_rg(analysis, GET_TARGET_REG(code));
 		rz_strbuf_setf(&op->esil, "mach,r%d,=", GET_TARGET_REG(code));
-	} else if (IS_STSMACL(code)) { //0000nnnn0000101_ sts MAC*,<REG_N>
+	} else if (IS_STSMACL(code)) { // 0000nnnn0000101_ sts MAC*,<REG_N>
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		op->dst = analysis_fill_ai_rg(analysis, GET_TARGET_REG(code));
 		rz_strbuf_setf(&op->esil, "macl,r%d,=", GET_TARGET_REG(code));
@@ -360,10 +360,10 @@ static int first_nibble_is_0(RzAnalysis *analysis, RzAnalysisOp *op, ut16 code) 
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		op->dst = analysis_fill_ai_rg(analysis, GET_TARGET_REG(code));
 		rz_strbuf_setf(&op->esil, "macl,r%d,=", GET_TARGET_REG(code));
-	} else if (IS_STCSR1(code)) { //0000nnnn00010010 stc {sr,gbr,vbr,ssr},<REG_N>
+	} else if (IS_STCSR1(code)) { // 0000nnnn00010010 stc {sr,gbr,vbr,ssr},<REG_N>
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		op->dst = analysis_fill_ai_rg(analysis, GET_TARGET_REG(code));
-		//todo: plug in src
+		// todo: plug in src
 		switch (GET_SOURCE_REG(code)) {
 		case 0:
 			rz_strbuf_setf(&op->esil, "sr,r%d,=", GET_TARGET_REG(code));
@@ -378,32 +378,32 @@ static int first_nibble_is_0(RzAnalysis *analysis, RzAnalysisOp *op, ut16 code) 
 			rz_strbuf_setf(&op->esil, "%s", "");
 			break;
 		}
-	} else if (IS_STSPR(code)) { //0000nnnn00101010 sts PR,<REG_N>
+	} else if (IS_STSPR(code)) { // 0000nnnn00101010 sts PR,<REG_N>
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		op->dst = analysis_fill_ai_rg(analysis, GET_TARGET_REG(code));
 		rz_strbuf_setf(&op->esil, "pr,r%d,=", GET_TARGET_REG(code));
 	} else if (IS_MACL(code)) {
 		rz_strbuf_setf(&op->esil,
-			"mach,0x80000000,&,!," //mach_old sign (0)
+			"mach,0x80000000,&,!," // mach_old sign (0)
 			S32_EXT("r%d,[4]") "," //@Rn sign extended
 			S32_EXT("r%d,[4]") "," //@Rm sign extended
 					   "*," //(1)
-					   "macl,32,mach,<<,|," //macl | (mach << 32)
-					   "+," //MAC+@Rm*@Rn
+					   "macl,32,mach,<<,|," // macl | (mach << 32)
+					   "+," // MAC+@Rm*@Rn
 					   "32," S32_EXT("r%d,[4]") "," //@Rn sign extended
 			S32_EXT("r%d,[4]") "," //@Rm sign extended
 					   "*,"
-					   "4,r%d,+=," //Rn+=4
-					   "4,r%d,+=," //Rm+=4
-					   "0xffffffff00000000,&,>>,mach,=," //MACH > mach
+					   "4,r%d,+=," // Rn+=4
+					   "4,r%d,+=," // Rm+=4
+					   "0xffffffff00000000,&,>>,mach,=," // MACH > mach
 					   "0xffffffff,&,macl,=,"
-					   "0x2,sr,&,!,?{,BREAK,}," //if S==0 BREAK
+					   "0x2,sr,&,!,?{,BREAK,}," // if S==0 BREAK
 					   "0x00007fff,mach,>,"
 					   "0x80000000,mach,&,!,&,"
-					   "?{,0x00007fff,mach,=,0xffffffff,macl,=,}," //if (mach>0x00007fff&&mach>0) mac=0x00007fffffffffff
+					   "?{,0x00007fff,mach,=,0xffffffff,macl,=,}," // if (mach>0x00007fff&&mach>0) mac=0x00007fffffffffff
 					   "0xffff8000,mach,<,"
 					   "0x80000000,mach,&,!,!,&,"
-					   "?{,0xffff8000,mach,=,0x0,macl,=,}," //if (mach>0xffff8000&&mach<0) mac=0xffff800000000000
+					   "?{,0xffff8000,mach,=,0x0,macl,=,}," // if (mach>0xffff8000&&mach<0) mac=0xffff800000000000
 			,
 			GET_TARGET_REG(code), GET_SOURCE_REG(code),
 			GET_TARGET_REG(code), GET_SOURCE_REG(code),
@@ -413,7 +413,7 @@ static int first_nibble_is_0(RzAnalysis *analysis, RzAnalysisOp *op, ut16 code) 
 	return op->size;
 }
 
-//nibble=1; 0001nnnnmmmmi4*4 mov.l <REG_M>,@(<disp>,<REG_N>)
+// nibble=1; 0001nnnnmmmmi4*4 mov.l <REG_M>,@(<disp>,<REG_N>)
 static int movl_reg_rdisp(RzAnalysis *analysis, RzAnalysisOp *op, ut16 code) {
 	op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 	op->src[0] = analysis_fill_ai_rg(analysis, GET_SOURCE_REG(code));
@@ -465,12 +465,12 @@ static int first_nibble_is_2(RzAnalysis *analysis, RzAnalysisOp *op, ut16 code) 
 	} else if (IS_TSTRR(code)) {
 		op->type = RZ_ANALYSIS_OP_TYPE_ACMP;
 		rz_strbuf_setf(&op->esil, "1,sr,|=,r%d,r%d,&,?{,0xFFFFFFFE,sr,&=,}", GET_SOURCE_REG(code), GET_TARGET_REG(code));
-	} else if (IS_CMPSTR(code)) { //0010nnnnmmmm1100 cmp/str <REG_M>,<REG_N>
-		op->type = RZ_ANALYSIS_OP_TYPE_ACMP; //maybe not?
+	} else if (IS_CMPSTR(code)) { // 0010nnnnmmmm1100 cmp/str <REG_M>,<REG_N>
+		op->type = RZ_ANALYSIS_OP_TYPE_ACMP; // maybe not?
 		op->src[0] = analysis_fill_ai_rg(analysis, GET_SOURCE_REG(code));
 		op->src[1] = analysis_fill_ai_rg(analysis, GET_TARGET_REG(code));
 		rz_strbuf_setf(&op->esil, "0xFFFFFFFE,sr,&=,24,r%d,r%d,^,>>,0xFF,&,!,?{,1,sr,|=,},16,r%d,r%d,^,>>,0xFF,&,!,?{,1,sr,|=,},8,r%d,r%d,^,>>,0xFF,&,!,?{,1,sr,|=,},r%d,r%d,^,0xFF,&,!,?{,1,sr,|=,}", GET_SOURCE_REG(code), GET_TARGET_REG(code), GET_SOURCE_REG(code), GET_TARGET_REG(code), GET_SOURCE_REG(code), GET_TARGET_REG(code), GET_SOURCE_REG(code), GET_TARGET_REG(code));
-	} else if (IS_XTRCT(code)) { //0010nnnnmmmm1101 xtrct <REG_M>,<REG_N>
+	} else if (IS_XTRCT(code)) { // 0010nnnnmmmm1101 xtrct <REG_M>,<REG_N>
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		op->src[0] = analysis_fill_ai_rg(analysis, GET_SOURCE_REG(code));
 		op->src[1] = analysis_fill_ai_rg(analysis, GET_TARGET_REG(code));
@@ -484,7 +484,7 @@ static int first_nibble_is_2(RzAnalysis *analysis, RzAnalysisOp *op, ut16 code) 
 		op->src[0] = analysis_fill_ai_rg(analysis, GET_SOURCE_REG(code));
 		op->src[1] = analysis_fill_ai_rg(analysis, GET_TARGET_REG(code));
 		rz_strbuf_setf(&op->esil, "r%d,0xFFFF,&,r%d,0xFFFF,&,*,macl,=", GET_SOURCE_REG(code), GET_TARGET_REG(code));
-	} else if (IS_MULSW(code)) { //0010nnnnmmmm111_ mul{s,u}.w <REG_M>,<REG_N>
+	} else if (IS_MULSW(code)) { // 0010nnnnmmmm111_ mul{s,u}.w <REG_M>,<REG_N>
 		op->type = RZ_ANALYSIS_OP_TYPE_MUL;
 		op->src[0] = analysis_fill_ai_rg(analysis, GET_SOURCE_REG(code));
 		op->src[1] = analysis_fill_ai_rg(analysis, GET_TARGET_REG(code));
@@ -495,7 +495,7 @@ static int first_nibble_is_2(RzAnalysis *analysis, RzAnalysisOp *op, ut16 code) 
 }
 
 static int first_nibble_is_3(RzAnalysis *analysis, RzAnalysisOp *op, ut16 code) {
-	//TODO Handle carry/overflow , CMP/xx?
+	// TODO Handle carry/overflow , CMP/xx?
 	if (IS_ADD(code)) {
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		op->src[0] = analysis_fill_ai_rg(analysis, GET_SOURCE_REG(code));
@@ -556,20 +556,20 @@ static int first_nibble_is_3(RzAnalysis *analysis, RzAnalysisOp *op, ut16 code) 
 		op->src[0] = analysis_fill_ai_rg(analysis, GET_TARGET_REG(code));
 		op->src[1] = analysis_fill_ai_rg(analysis, GET_SOURCE_REG(code));
 		rz_strbuf_setf(&op->esil,
-			"1,sr,>>,sr,^,0x80,&," //old_Q^M
+			"1,sr,>>,sr,^,0x80,&," // old_Q^M
 			"0xFFFFFF7F,sr,&=,"
-			"1,r%d,DUP,0x80000000,&,?{,0x80,sr,|=,},<<,sr,0x1,&,|,r%d,=," //shift Q<-Rn<-T
+			"1,r%d,DUP,0x80000000,&,?{,0x80,sr,|=,},<<,sr,0x1,&,|,r%d,=," // shift Q<-Rn<-T
 			"DUP,!,!,?{,"
-			"r%d,NUM," //Rn_old (before subtract)
+			"r%d,NUM," // Rn_old (before subtract)
 			"r%d,r%d,+=,"
-			"r%d,<,}{," //tmp0
-			"r%d,NUM," //Rn_old (before subtract)
+			"r%d,<,}{," // tmp0
+			"r%d,NUM," // Rn_old (before subtract)
 			"r%d,r%d,-=,"
-			"r%d,>,}," //tmp0
-			"sr,0x80,&,!,!,^," //Q^tmp0
-			"sr,0x100,&,?{,!,}," //if (M) !(Q^tmp0)
-			"0xFFFFFF7F,sr,&=," //Q==0
-			"?{,0x80,sr,|=,}," //Q=!(Q^tmp0)or(Q^tmp0)
+			"r%d,>,}," // tmp0
+			"sr,0x80,&,!,!,^," // Q^tmp0
+			"sr,0x100,&,?{,!,}," // if (M) !(Q^tmp0)
+			"0xFFFFFF7F,sr,&=," // Q==0
+			"?{,0x80,sr,|=,}," // Q=!(Q^tmp0)or(Q^tmp0)
 			CLR_T ","
 			"1,sr,>>,sr,^,0x80,&,!,sr,|=", // sr=!Q^M
 			GET_TARGET_REG(code), GET_TARGET_REG(code),
@@ -594,44 +594,44 @@ static int first_nibble_is_3(RzAnalysis *analysis, RzAnalysisOp *op, ut16 code) 
 }
 
 static int first_nibble_is_4(RzAnalysis *analysis, RzAnalysisOp *op, ut16 code) {
-	switch (code & 0xF0FF) { //TODO: change to common } else if construction
-	case 0x4020: //shal
+	switch (code & 0xF0FF) { // TODO: change to common } else if construction
+	case 0x4020: // shal
 		op->type = RZ_ANALYSIS_OP_TYPE_SAL;
 		rz_strbuf_setf(&op->esil, "0xFFFFFFFE,sr,&=,r%d,0x80000000,&,?{,0x1,sr,|=,},1,r%d,<<=", GET_TARGET_REG(code), GET_TARGET_REG(code));
 		break;
-	case 0x4021: //shar
+	case 0x4021: // shar
 		op->type = RZ_ANALYSIS_OP_TYPE_SAR;
 		rz_strbuf_setf(&op->esil, "0xFFFFFFFE,sr,&=,r%d,0x1,&,?{,0x1,sr,|=,},0,r%d,0x80000000,&,?{,0x80000000,+,},1,r%d,>>=,r%d,|=", GET_TARGET_REG(code), GET_TARGET_REG(code), GET_TARGET_REG(code), GET_TARGET_REG(code));
 		break;
-	case 0x4000: //shll
+	case 0x4000: // shll
 		op->type = RZ_ANALYSIS_OP_TYPE_SHL;
 		rz_strbuf_setf(&op->esil, "0xFFFFFFFE,sr,&=,r%d,0x80000000,&,?{,0x1,sr,|=,},1,r%d,<<=", GET_TARGET_REG(code), GET_TARGET_REG(code));
 		break;
-	case 0x4008: //shll2
+	case 0x4008: // shll2
 		op->type = RZ_ANALYSIS_OP_TYPE_SHL;
 		rz_strbuf_setf(&op->esil, "2,r%d,<<=", GET_TARGET_REG(code));
 		break;
-	case 0x4018: //shll8
+	case 0x4018: // shll8
 		op->type = RZ_ANALYSIS_OP_TYPE_SHL;
 		rz_strbuf_setf(&op->esil, "8,r%d,<<=", GET_TARGET_REG(code));
 		break;
-	case 0x4028: //shll16
+	case 0x4028: // shll16
 		op->type = RZ_ANALYSIS_OP_TYPE_SHL;
 		rz_strbuf_setf(&op->esil, "16,r%d,<<=", GET_TARGET_REG(code));
 		break;
-	case 0x4001: //shlr
+	case 0x4001: // shlr
 		rz_strbuf_setf(&op->esil, "0xFFFFFFFE,sr,&=,r%d,0x1,&,?{,0x1,sr,|=,},1,r%d,>>=", GET_TARGET_REG(code), GET_TARGET_REG(code));
 		op->type = RZ_ANALYSIS_OP_TYPE_SHR;
 		break;
-	case 0x4009: //shlr2
+	case 0x4009: // shlr2
 		rz_strbuf_setf(&op->esil, "2,r%d,>>=", GET_TARGET_REG(code));
 		op->type = RZ_ANALYSIS_OP_TYPE_SHR;
 		break;
-	case 0x4019: //shlr8
+	case 0x4019: // shlr8
 		rz_strbuf_setf(&op->esil, "8,r%d,>>=", GET_TARGET_REG(code));
 		op->type = RZ_ANALYSIS_OP_TYPE_SHR;
 		break;
-	case 0x4029: //shlr16
+	case 0x4029: // shlr16
 		rz_strbuf_setf(&op->esil, "16,r%d,>>=", GET_TARGET_REG(code));
 		op->type = RZ_ANALYSIS_OP_TYPE_SHR;
 		break;
@@ -641,12 +641,12 @@ static int first_nibble_is_4(RzAnalysis *analysis, RzAnalysisOp *op, ut16 code) 
 
 	if (IS_JSR(code)) {
 		// op->type = RZ_ANALYSIS_OP_TYPE_UCALL; //call to reg
-		op->type = RZ_ANALYSIS_OP_TYPE_RCALL; //call to reg
+		op->type = RZ_ANALYSIS_OP_TYPE_RCALL; // call to reg
 		op->delay = 1;
 		op->dst = analysis_fill_ai_rg(analysis, GET_TARGET_REG(code));
 		rz_strbuf_setf(&op->esil, "1,SETD,pc,2,+,pr,=,r%d,pc,=", GET_TARGET_REG(code));
 	} else if (IS_JMP(code)) {
-		op->type = RZ_ANALYSIS_OP_TYPE_UJMP; //jmp to reg
+		op->type = RZ_ANALYSIS_OP_TYPE_UJMP; // jmp to reg
 		op->dst = analysis_fill_ai_rg(analysis, GET_TARGET_REG(code));
 		op->delay = 1;
 		op->eob = true;
@@ -666,7 +666,7 @@ static int first_nibble_is_4(RzAnalysis *analysis, RzAnalysisOp *op, ut16 code) 
 	} else if (IS_LDCLSRVBR(code)) {
 		op->type = RZ_ANALYSIS_OP_TYPE_POP;
 		rz_strbuf_setf(&op->esil, "r%d,[4],vbr,=,4,r%d,+=", GET_TARGET_REG(code), GET_TARGET_REG(code));
-		//todo ssr?
+		// todo ssr?
 	} else if (IS_LDSLMACH(code)) {
 		op->type = RZ_ANALYSIS_OP_TYPE_POP;
 		rz_strbuf_setf(&op->esil, "r%d,[4],mach,=,4,r%d,+=", GET_TARGET_REG(code), GET_TARGET_REG(code));
@@ -732,23 +732,23 @@ static int first_nibble_is_4(RzAnalysis *analysis, RzAnalysisOp *op, ut16 code) 
 		op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 	} else if (IS_MACW(code)) {
 		rz_strbuf_setf(&op->esil,
-			"0x2,sr,&,!,?{," //if S==0
+			"0x2,sr,&,!,?{," // if S==0
 			S16_EXT("r%d,[2]") "," //@Rn sign extended
 			S16_EXT("r%d,[2]") "," //@Rm sign extended
 					   "*,"
-					   "macl,32,mach,<<,|," //macl | (mach << 32)
-					   "+," //MAC+@Rm*@Rn
+					   "macl,32,mach,<<,|," // macl | (mach << 32)
+					   "+," // MAC+@Rm*@Rn
 					   "32," S16_EXT("r%d,[2]") "," //@Rn sign extended
 			S16_EXT("r%d,[2]") "," //@Rm sign extended
 					   "*,"
-					   "0xffffffff00000000,&,>>,mach,=," //MACH > mach
+					   "0xffffffff00000000,&,>>,mach,=," // MACH > mach
 					   "0xffffffff,&,macl,=,"
-					   "}{," //if S==1
+					   "}{," // if S==1
 			S16_EXT("r%d,[2]") "," //@Rn sign extended
 			S16_EXT("r%d,[2]") "," //@Rm sign extended
 					   "*"
-					   "macl,+=," //macl+(@Rm+@Rm)
-					   "31,$o,?{," //if overflow
+					   "macl,+=," // macl+(@Rm+@Rm)
+					   "31,$o,?{," // if overflow
 					   "macl,0x80000000,&,?{,"
 					   "0x7fffffff,macl,=,"
 					   "}{,"
@@ -756,8 +756,8 @@ static int first_nibble_is_4(RzAnalysis *analysis, RzAnalysisOp *op, ut16 code) 
 					   "},"
 					   "},"
 					   "},"
-					   "2,r%d,+=," //Rn+=2
-					   "2,r%d,+=,", //Rm+=2
+					   "2,r%d,+=," // Rn+=2
+					   "2,r%d,+=,", // Rm+=2
 			GET_TARGET_REG(code), GET_SOURCE_REG(code),
 			GET_TARGET_REG(code), GET_SOURCE_REG(code),
 			GET_TARGET_REG(code), GET_SOURCE_REG(code),
@@ -767,7 +767,7 @@ static int first_nibble_is_4(RzAnalysis *analysis, RzAnalysisOp *op, ut16 code) 
 	return op->size;
 }
 
-//nibble=5; 0101nnnnmmmmi4*4 mov.l @(<disp>,<REG_M>),<REG_N>
+// nibble=5; 0101nnnnmmmmi4*4 mov.l @(<disp>,<REG_M>),<REG_N>
 static int movl_rdisp_reg(RzAnalysis *analysis, RzAnalysisOp *op, ut16 code) {
 	op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 	op->dst = analysis_fill_ai_rg(analysis, GET_TARGET_REG(code));
@@ -798,21 +798,21 @@ static int first_nibble_is_6(RzAnalysis *analysis, RzAnalysisOp *op, ut16 code) 
 		op->dst = analysis_fill_ai_rg(analysis, GET_TARGET_REG(code));
 		rz_strbuf_setf(&op->esil, "r%d,[4],r%d,=", GET_SOURCE_REG(code), GET_TARGET_REG(code));
 	} else if (IS_EXT(code)) {
-		//ext{s,u}.{b,w} instructs. todo : more detail ?
+		// ext{s,u}.{b,w} instructs. todo : more detail ?
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		op->src[0] = analysis_fill_ai_rg(analysis, GET_SOURCE_REG(code));
 		op->dst = analysis_fill_ai_rg(analysis, GET_TARGET_REG(code));
 		switch (code & 0xF) {
-		case 0xC: //EXTU.B
+		case 0xC: // EXTU.B
 			rz_strbuf_setf(&op->esil, "r%d,0xFF,&,r%d,=", GET_SOURCE_REG(code), GET_TARGET_REG(code));
 			break;
-		case 0xD: //EXTU.W
+		case 0xD: // EXTU.W
 			rz_strbuf_setf(&op->esil, "r%d,0xFFFF,&,r%d,=", GET_SOURCE_REG(code), GET_TARGET_REG(code));
 			break;
-		case 0xE: //EXTS.B
+		case 0xE: // EXTS.B
 			rz_strbuf_setf(&op->esil, "r%d,0xFF,&,DUP,0x80,&,?{,0xFFFFFF00,|,},r%d,=", GET_SOURCE_REG(code), GET_TARGET_REG(code));
 			break;
-		case 0xF: //EXTS.W
+		case 0xF: // EXTS.W
 			rz_strbuf_setf(&op->esil, "r%d,0xFFFF,&,DUP,0x8000,&,?{,0xFFFF0000,|,},r%d,=", GET_SOURCE_REG(code), GET_TARGET_REG(code));
 			break;
 		default:
@@ -832,7 +832,7 @@ static int first_nibble_is_6(RzAnalysis *analysis, RzAnalysisOp *op, ut16 code) 
 		op->dst = analysis_fill_ai_rg(analysis, GET_TARGET_REG(code));
 		rz_strbuf_setf(&op->esil, "r%d,[4],r%d,=,4,r%d,+=", GET_SOURCE_REG(code), GET_TARGET_REG(code), GET_SOURCE_REG(code));
 	} else if (IS_NEG(code)) {
-		//todo: neg and negc details
+		// todo: neg and negc details
 		op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 		rz_strbuf_setf(&op->esil, "r%d,0,-,r%d,=", GET_SOURCE_REG(code), GET_TARGET_REG(code));
 		op->src[0] = analysis_fill_ai_rg(analysis, GET_SOURCE_REG(code));
@@ -843,7 +843,7 @@ static int first_nibble_is_6(RzAnalysis *analysis, RzAnalysisOp *op, ut16 code) 
 		op->src[0] = analysis_fill_ai_rg(analysis, GET_SOURCE_REG(code));
 		op->dst = analysis_fill_ai_rg(analysis, GET_TARGET_REG(code));
 	} else if (IS_NOT(code)) {
-		//todo : details?
+		// todo : details?
 		rz_strbuf_setf(&op->esil, "0xFFFFFFFF,r%d,^,r%d,=", GET_SOURCE_REG(code), GET_TARGET_REG(code));
 		op->type = RZ_ANALYSIS_OP_TYPE_NOT;
 		op->src[0] = analysis_fill_ai_rg(analysis, GET_SOURCE_REG(code));
@@ -851,7 +851,7 @@ static int first_nibble_is_6(RzAnalysis *analysis, RzAnalysisOp *op, ut16 code) 
 	} else if (IS_SWAPB(code)) {
 		rz_strbuf_setf(&op->esil, "r%d,0xFFFF0000,&,8,r%d,0xFF,&,<<,|,8,r%d,0xFF00,&,>>,|,r%d,=", GET_SOURCE_REG(code), GET_SOURCE_REG(code), GET_SOURCE_REG(code), GET_TARGET_REG(code));
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
-		//todo : details
+		// todo : details
 	} else if (IS_SWAPW(code)) {
 		rz_strbuf_setf(&op->esil, "16,r%d,0xFFFF,&,<<,16,r%d,0xFFFF0000,&,>>,|,r%d,=", GET_SOURCE_REG(code), GET_SOURCE_REG(code), GET_TARGET_REG(code));
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
@@ -859,10 +859,10 @@ static int first_nibble_is_6(RzAnalysis *analysis, RzAnalysisOp *op, ut16 code) 
 	return op->size;
 }
 
-//nibble=7; 0111nnnni8*1.... add #<imm>,<REG_N>
+// nibble=7; 0111nnnni8*1.... add #<imm>,<REG_N>
 static int add_imm(RzAnalysis *analysis, RzAnalysisOp *op, ut16 code) {
 	op->type = RZ_ANALYSIS_OP_TYPE_ADD;
-	op->src[0] = analysis_fill_im(analysis, (st8)(code & 0xFF)); //Casting to (st8) forces sign-extension.
+	op->src[0] = analysis_fill_im(analysis, (st8)(code & 0xFF)); // Casting to (st8) forces sign-extension.
 	op->dst = analysis_fill_ai_rg(analysis, GET_TARGET_REG(code));
 	rz_strbuf_setf(&op->esil, "0x%x,DUP,0x80,&,?{,0xFFFFFF00,|,},r%d,+=", code & 0xFF, GET_TARGET_REG(code));
 	return op->size;
@@ -870,7 +870,7 @@ static int add_imm(RzAnalysis *analysis, RzAnalysisOp *op, ut16 code) {
 
 static int first_nibble_is_8(RzAnalysis *analysis, RzAnalysisOp *op, ut16 code) {
 	if (IS_BT_OR_BF(code)) {
-		op->type = RZ_ANALYSIS_OP_TYPE_CJMP; //Jump if true or jump if false insns
+		op->type = RZ_ANALYSIS_OP_TYPE_CJMP; // Jump if true or jump if false insns
 		op->jump = disarm_8bit_offset(op->addr, GET_BTF_OFFSET(code));
 		op->fail = op->addr + 2;
 		op->eob = true;
@@ -878,10 +878,10 @@ static int first_nibble_is_8(RzAnalysis *analysis, RzAnalysisOp *op, ut16 code) 
 			rz_strbuf_setf(&op->esil, "sr,1,&,?{,0x%" PFMT64x ",pc,=,}", op->jump);
 		} else if (IS_BTS(code)) {
 			rz_strbuf_setf(&op->esil, "1,SETD,sr,1,&,?{,0x%" PFMT64x ",pc,=,}", op->jump);
-			op->delay = 1; //Only /S versions have a delay slot
+			op->delay = 1; // Only /S versions have a delay slot
 		} else if (IS_BFS(code)) {
 			rz_strbuf_setf(&op->esil, "1,SETD,sr,1,&,!,?{,0x%" PFMT64x ",pc,=,}", op->jump);
-			op->delay = 1; //Only /S versions have a delay slot
+			op->delay = 1; // Only /S versions have a delay slot
 		} else if (IS_BF(code)) {
 			rz_strbuf_setf(&op->esil, "sr,1,&,!,?{,0x%" PFMT64x ",pc,=,}", op->jump);
 		}
@@ -916,7 +916,7 @@ static int first_nibble_is_8(RzAnalysis *analysis, RzAnalysisOp *op, ut16 code) 
 	return op->size;
 }
 
-//nibble=9; 1001nnnni8p2.... mov.w @(<disp>,PC),<REG_N>
+// nibble=9; 1001nnnni8p2.... mov.w @(<disp>,PC),<REG_N>
 static int movw_pcdisp_reg(RzAnalysis *analysis, RzAnalysisOp *op, ut16 code) {
 	op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 	op->dst = analysis_fill_ai_rg(analysis, GET_TARGET_REG(code));
@@ -927,7 +927,7 @@ static int movw_pcdisp_reg(RzAnalysis *analysis, RzAnalysisOp *op, ut16 code) {
 	return op->size;
 }
 
-//nibble=A; 1010i12......... bra <bdisp12>
+// nibble=A; 1010i12......... bra <bdisp12>
 static int bra(RzAnalysis *analysis, RzAnalysisOp *op, ut16 code) {
 	/* Unconditional branch, relative to PC */
 	op->type = RZ_ANALYSIS_OP_TYPE_JMP;
@@ -938,7 +938,7 @@ static int bra(RzAnalysis *analysis, RzAnalysisOp *op, ut16 code) {
 	return op->size;
 }
 
-//nibble=B; 1011i12......... bsr <bdisp12>
+// nibble=B; 1011i12......... bsr <bdisp12>
 static int bsr(RzAnalysis *analysis, RzAnalysisOp *op, ut16 code) {
 	/* Subroutine call, relative to PC */
 	op->type = RZ_ANALYSIS_OP_TYPE_CALL;
@@ -956,54 +956,54 @@ static int first_nibble_is_c(RzAnalysis *analysis, RzAnalysisOp *op, ut16 code) 
 	} else if (IS_MOVA_PCREL_R0(code)) {
 		// 11000111i8p4.... mova @(<disp>,PC),R0
 		op->type = RZ_ANALYSIS_OP_TYPE_LEA;
-		op->src[0] = analysis_pcrel_disp_mov(analysis, op, code & 0xFF, LONG_SIZE); //this is wrong !
-		op->dst = analysis_fill_ai_rg(analysis, 0); //Always R0
+		op->src[0] = analysis_pcrel_disp_mov(analysis, op, code & 0xFF, LONG_SIZE); // this is wrong !
+		op->dst = analysis_fill_ai_rg(analysis, 0); // Always R0
 		rz_strbuf_setf(&op->esil, "0x%x,pc,+,r0,=", (code & 0xFF) * 4);
 	} else if (IS_BINLOGIC_IMM_R0(code)) { // 110010__i8 (binop) #imm, R0
 		op->src[0] = analysis_fill_im(analysis, code & 0xFF);
-		op->src[1] = analysis_fill_ai_rg(analysis, 0); //Always R0
-		op->dst = analysis_fill_ai_rg(analysis, 0); //Always R0 except tst #imm, R0
+		op->src[1] = analysis_fill_ai_rg(analysis, 0); // Always R0
+		op->dst = analysis_fill_ai_rg(analysis, 0); // Always R0 except tst #imm, R0
 		switch (code & 0xFF00) {
-		case 0xC800: //tst
-			//TODO : get correct op->dst ! (T flag)
+		case 0xC800: // tst
+			// TODO : get correct op->dst ! (T flag)
 			op->type = RZ_ANALYSIS_OP_TYPE_ACMP;
 			rz_strbuf_setf(&op->esil, "0xFFFFFFFE,sr,&=,r0,0x%x,&,!,?{,1,sr,|=,}", code & 0xFF);
 			break;
-		case 0xC900: //and
+		case 0xC900: // and
 			op->type = RZ_ANALYSIS_OP_TYPE_AND;
 			rz_strbuf_setf(&op->esil, "0x%x,r0,&=", code & 0xFF);
 			break;
-		case 0xCA00: //xor
+		case 0xCA00: // xor
 			op->type = RZ_ANALYSIS_OP_TYPE_XOR;
 			rz_strbuf_setf(&op->esil, "0x%x,r0,^=", code & 0xFF);
 			break;
-		case 0xCB00: //or
+		case 0xCB00: // or
 			op->type = RZ_ANALYSIS_OP_TYPE_OR;
 			rz_strbuf_setf(&op->esil, "0x%x,r0,|=", code & 0xFF);
 			break;
 		}
-	} else if (IS_BINLOGIC_IMM_GBR(code)) { //110011__i8 (binop).b #imm, @(R0,gbr)
+	} else if (IS_BINLOGIC_IMM_GBR(code)) { // 110011__i8 (binop).b #imm, @(R0,gbr)
 		op->src[0] = analysis_fill_im(analysis, code & 0xFF);
 		switch (code & 0xFF00) {
-		case 0xCC00: //tst
-			//TODO : get correct op->dst ! (T flag)
+		case 0xCC00: // tst
+			// TODO : get correct op->dst ! (T flag)
 			op->type = RZ_ANALYSIS_OP_TYPE_ACMP;
 			rz_strbuf_setf(&op->esil, "0xFFFFFFFE,sr,&=,r0,gbr,+,[1],0x%x,&,!,?{,1,sr,|=,}", code & 0xFF);
 			break;
-		case 0xCD00: //and
+		case 0xCD00: // and
 			op->type = RZ_ANALYSIS_OP_TYPE_AND;
 			rz_strbuf_setf(&op->esil, "r0,gbr,+,[1],0x%x,&,r0,gbr,+,=[1]", code & 0xFF);
 			break;
-		case 0xCE00: //xor
+		case 0xCE00: // xor
 			op->type = RZ_ANALYSIS_OP_TYPE_XOR;
 			rz_strbuf_setf(&op->esil, "r0,gbr,+,[1],0x%x,^,r0,gbr,+,=[1]", code & 0xFF);
 			break;
-		case 0xCF00: //or
+		case 0xCF00: // or
 			op->type = RZ_ANALYSIS_OP_TYPE_OR;
 			rz_strbuf_setf(&op->esil, "r0,gbr,+,[1],0x%x,|,r0,gbr,+,=[1]", code & 0xFF);
 			break;
 		}
-		//TODO : implement @(R0,gbr) dest and src[1]
+		// TODO : implement @(R0,gbr) dest and src[1]
 	} else if (IS_MOVB_R0_GBRREF(code)) {
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		op->src[0] = analysis_fill_ai_rg(analysis, 0);
@@ -1033,18 +1033,18 @@ static int first_nibble_is_c(RzAnalysis *analysis, RzAnalysisOp *op, ut16 code) 
 	return op->size;
 }
 
-//nibble=d; 1101nnnni8 : mov.l @(<disp>,PC), Rn
+// nibble=d; 1101nnnni8 : mov.l @(<disp>,PC), Rn
 static int movl_pcdisp_reg(RzAnalysis *analysis, RzAnalysisOp *op, ut16 code) {
 	op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 	op->src[0] = analysis_pcrel_disp_mov(analysis, op, code & 0xFF, LONG_SIZE);
-	//TODO: check it
+	// TODO: check it
 	op->dst = analysis_fill_ai_rg(analysis, GET_TARGET_REG(code));
-	//rz_strbuf_setf (&op->esil, "0x%x,[4],r%d,=", (code & 0xFF) * 4 + (op->addr & 0xfffffff3) + 4, GET_TARGET_REG (code));
+	// rz_strbuf_setf (&op->esil, "0x%x,[4],r%d,=", (code & 0xFF) * 4 + (op->addr & 0xfffffff3) + 4, GET_TARGET_REG (code));
 	rz_strbuf_setf(&op->esil, "0x%" PFMT64x ",[4],r%d,=", (code & 0xFF) * 4 + ((op->addr >> 2) << 2) + 4, GET_TARGET_REG(code));
 	return op->size;
 }
 
-//nibble=e; 1110nnnni8*1.... mov #<imm>,<REG_N>
+// nibble=e; 1110nnnni8*1.... mov #<imm>,<REG_N>
 static int mov_imm_reg(RzAnalysis *analysis, RzAnalysisOp *op, ut16 code) {
 	op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 	op->dst = analysis_fill_ai_rg(analysis, GET_TARGET_REG(code));
@@ -1053,9 +1053,9 @@ static int mov_imm_reg(RzAnalysis *analysis, RzAnalysisOp *op, ut16 code) {
 	return op->size;
 }
 
-//nibble=f;
+// nibble=f;
 static int fpu_insn(RzAnalysis *analysis, RzAnalysisOp *op, ut16 code) {
-	//Not interested on FPU stuff for now
+	// Not interested on FPU stuff for now
 	op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
 	return op->size;
 }
@@ -1103,7 +1103,7 @@ static int sh_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *d
 
 /* Set the profile register */
 static bool sh_set_reg_profile(RzAnalysis *analysis) {
-	//TODO Add system ( ssr, spc ) + fpu regs
+	// TODO Add system ( ssr, spc ) + fpu regs
 	const char *p =
 		"=PC	pc\n"
 		"=SN	r0\n"

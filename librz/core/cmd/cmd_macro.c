@@ -40,7 +40,7 @@ RZ_IPI int rz_cmd_macro(void *data, const char *input) {
 		break;
 	default: {
 		// XXX: stop at first ')'. if next is '(' and last
-		//int lastiscp = input[strlen (input)-1] == ')';
+		// int lastiscp = input[strlen (input)-1] == ')';
 		int mustcall = 0;
 		int i, j = 0;
 		buf = strdup(input);

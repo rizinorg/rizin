@@ -165,7 +165,7 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 #if !USE_ITERZ_API
 	cs_free(insn, n);
 #endif
-	//cs_close (&handle);
+	// cs_close (&handle);
 	return op->size;
 }
 

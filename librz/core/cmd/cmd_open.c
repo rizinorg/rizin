@@ -611,7 +611,7 @@ RZ_IPI int rz_om_oldinput(void *data, const char *input) {
 		}
 		P = strchr(input + 2, ' ');
 		if (P) {
-			id = (ut32)rz_num_math(core->num, input + 2); //mapid
+			id = (ut32)rz_num_math(core->num, input + 2); // mapid
 			new = rz_num_math(core->num, P + 1);
 			rz_io_map_resize(core->io, id, new);
 		}
@@ -627,7 +627,7 @@ RZ_IPI int rz_om_oldinput(void *data, const char *input) {
 	case 'p':
 		switch (input[1]) {
 		case 'd': // "ompf"
-			id = rz_num_math(core->num, input + 2); //mapid
+			id = rz_num_math(core->num, input + 2); // mapid
 			if (rz_io_map_exists_for_id(core->io, id)) {
 				rz_io_map_depriorize(core->io, id);
 			} else {
@@ -647,7 +647,7 @@ RZ_IPI int rz_om_oldinput(void *data, const char *input) {
 			}
 			break;
 		case ' ': // "omp"
-			id = rz_num_math(core->num, input + 2); //mapid
+			id = rz_num_math(core->num, input + 2); // mapid
 			if (rz_io_map_exists_for_id(core->io, id)) {
 				rz_io_map_priorize(core->io, id);
 				rz_core_block_read(core);
@@ -690,7 +690,7 @@ RZ_IPI int rz_om_oldinput(void *data, const char *input) {
 			case 6:
 				name = rz_str_word_get0(s, 5);
 			case 5:
-				//TODO: this needs some love because it is not optimal.
+				// TODO: this needs some love because it is not optimal.
 				rwx = rz_str_rwx(rz_str_word_get0(s, 4));
 				rwx_arg = true;
 			case 4:
@@ -869,7 +869,7 @@ static bool reopen_in_malloc_cb(void *user, void *data, ut32 id) {
 		return false;
 	}
 
-	rz_io_desc_read_at(desc, 0LL, buf, (int)size); //that cast o_O
+	rz_io_desc_read_at(desc, 0LL, buf, (int)size); // that cast o_O
 	rz_io_desc_write_at(ndesc, 0LL, buf, (int)size);
 	free(buf);
 	rz_io_desc_exchange(io, desc->fd, ndesc->fd);

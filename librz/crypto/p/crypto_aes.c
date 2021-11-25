@@ -61,7 +61,7 @@ static bool update(RzCrypto *cry, const ut8 *buf, int len) {
 	memcpy(ibuf, buf, len);
 	// Padding should start like 100000...
 	if (diff) {
-		ibuf[len] = 8; //0b1000;
+		ibuf[len] = 8; // 0b1000;
 	}
 
 	if (cry->dir == RZ_CRYPTO_DIR_ENCRYPT) {

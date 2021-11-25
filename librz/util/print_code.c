@@ -266,7 +266,7 @@ RZ_API void rz_print_code(RzPrint *p, ut64 addr, const ut8 *buf, int len, char l
 		print_c_instructions(p, addr, buf, len);
 		break;
 	case 'd': // "pcd"
-		print_c_code(p, addr, buf, len, 8, p->cols / 5); //3);
+		print_c_code(p, addr, buf, len, 8, p->cols / 5); // 3);
 		break;
 	default:
 		print_c_code(p, addr, buf, len, 1, p->cols / 1.5); // 12);

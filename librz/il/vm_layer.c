@@ -48,7 +48,7 @@ void *rz_il_handler_branch(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_load(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_store(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 
-//TODO: remove me when all the handlers are implemented
+// TODO: remove me when all the handlers are implemented
 void *rz_il_handler_unimplemented(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 
 static void free_label_kv(HtPPKv *kv) {

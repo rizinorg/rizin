@@ -200,11 +200,11 @@ typedef enum {
 	LF_STRUCTURE_19 = 0x1609,
 
 	/**     the following are numeric leaves.  They are used to indicate the
-	*      size of the following variable length data.  When the numeric
-	*      data is a single byte less than 0x8000, then the data is output
-	*      directly.  If the data is more the 0x8000 or is a negative value,
-	*      then the data is preceeded by the proper index.
-	*/
+	 *      size of the following variable length data.  When the numeric
+	 *      data is a single byte less than 0x8000, then the data is output
+	 *      directly.  If the data is more the 0x8000 or is a negative value,
+	 *      then the data is preceeded by the proper index.
+	 */
 	LF_CHAR = 0x8000, // signed character leaf
 	LF_SHORT = 0x8001, // signed short leaf
 	LF_USHORT = 0x8002, // unsigned short leaf

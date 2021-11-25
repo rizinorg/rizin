@@ -119,7 +119,7 @@ RZ_API ut64 rz_reg_get_value(RzReg *reg, RzRegItem *item) {
 		if (regset->arena && regset->arena->bytes && (off + 8 <= regset->arena->size)) {
 			return rz_read_ble64(regset->arena->bytes + off, reg->big_endian);
 		}
-		//eprintf ("rz_reg_get_value: null or oob arena for current regset\n");
+		// eprintf ("rz_reg_get_value: null or oob arena for current regset\n");
 		break;
 	case 80: // long double
 	case 96: // long floating value

@@ -129,7 +129,7 @@ static const char *getspr(const char *reg) {
 	}
 	spr = strtol(reg, NULL, 16);
 	if (spr > 9999) {
-		return NULL; //just to avoid overflows..
+		return NULL; // just to avoid overflows..
 	}
 
 	switch (spr) {
@@ -299,7 +299,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		char *str;
 		int max_operands;
 	} ops[] = {
-		{ "cmpb", "A = ((byte) B == (byte) C)", 3 }, //0
+		{ "cmpb", "A = ((byte) B == (byte) C)", 3 }, // 0
 		{ "cmpd", "A = (B == C)", 3 },
 		{ "cmpdi", "A = (B == C)", 3 },
 		{ "cmpld", "A = ((unsigned) B == (unsigned) C)", 3 },
@@ -325,29 +325,29 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "blt+", "if (A & FLG_LT) goto B", 2 },
 		{ "bne", "if (A & FLG_NE) goto B", 2 },
 		{ "bne-", "if (A & FLG_NE) goto B", 2 },
-		{ "bne+", "if (A & FLG_NE) goto B", 2 }, //26
-		{ "rldic", "A = rol64(B, C) & D", 4 }, //27
-		{ "rldcl", "A = rol64(B, C) & D", 4 }, //28
-		{ "rldicl", "A = rol64(B, C) & D", 4 }, //29
-		{ "rldcr", "A = rol64(B, C) & D", 4 }, //30
-		{ "rldicr", "A = rol64(B, C) & D", 4 }, //31
-		{ "rldimi", "A = (rol64(B, C) & D) | (A & E)", 5 }, //32
-		{ "rlwimi", "A = (rol32(B, C) & D) | (A & E)", 5 }, //33
-		{ "rlwimi.", "A = (rol32(B, C) & D) | (A & E)", 5 }, //33
-		{ "rlwinm", "A = rol32(B, C) & D", 5 }, //34
-		{ "rlwinm.", "A = rol32(B, C) & D", 5 }, //34
-		{ "rlwnm", "A = rol32(B, C) & D", 5 }, //35
-		{ "rlwnm.", "A = rol32(B, C) & D", 5 }, //35
-		{ "td", "if (B A C) trap", 3 }, //36
+		{ "bne+", "if (A & FLG_NE) goto B", 2 }, // 26
+		{ "rldic", "A = rol64(B, C) & D", 4 }, // 27
+		{ "rldcl", "A = rol64(B, C) & D", 4 }, // 28
+		{ "rldicl", "A = rol64(B, C) & D", 4 }, // 29
+		{ "rldcr", "A = rol64(B, C) & D", 4 }, // 30
+		{ "rldicr", "A = rol64(B, C) & D", 4 }, // 31
+		{ "rldimi", "A = (rol64(B, C) & D) | (A & E)", 5 }, // 32
+		{ "rlwimi", "A = (rol32(B, C) & D) | (A & E)", 5 }, // 33
+		{ "rlwimi.", "A = (rol32(B, C) & D) | (A & E)", 5 }, // 33
+		{ "rlwinm", "A = rol32(B, C) & D", 5 }, // 34
+		{ "rlwinm.", "A = rol32(B, C) & D", 5 }, // 34
+		{ "rlwnm", "A = rol32(B, C) & D", 5 }, // 35
+		{ "rlwnm.", "A = rol32(B, C) & D", 5 }, // 35
+		{ "td", "if (B A C) trap", 3 }, // 36
 		{ "tdi", "if (B A C) trap", 3 },
 		{ "tdu", "if (B A C) trap", 3 },
 		{ "tdui", "if (B A C) trap", 3 },
 		{ "tw", "if ((word) B A (word) C) trap", 3 },
 		{ "twi", "if ((word) B A (word) C) trap", 3 },
 		{ "twu", "if ((word) B A (word) C) trap", 3 },
-		{ "twui", "if ((word) B A (word) C) trap", 3 }, //43
-		{ "mfspr", "A = B", 2 }, //44
-		{ "mtspr", "A = B", 2 }, //45
+		{ "twui", "if ((word) B A (word) C) trap", 3 }, // 43
+		{ "mfspr", "A = B", 2 }, // 44
+		{ "mtspr", "A = B", 2 }, // 45
 		{ "add", "A = B + C", 3 },
 		{ "addc", "A = B + C", 3 },
 		{ "adde", "A = B + C", 3 },
@@ -500,7 +500,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "evldhx", "A = vector[C + B]", 3 },
 		{ "evldw", "A = vector[C + B]", 3 },
 		{ "evldwx", "A = vector[C + B]", 3 },
-		//Vector Load Half Word into Half Words Even and Splat  ??
+		// Vector Load Half Word into Half Words Even and Splat  ??
 		/*
 		   { "evlhhesplat", "A = B + C", 3},
 		   { "evlhhesplatx", "A = B + C", 3},
@@ -1388,38 +1388,38 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "xvcvuxwsp", "A = (float vector) ((unsigned word) B)", 2 },
 		{ "xvdivdp", "A = (double vector) B / C", 3 },
 		{ "xvdivsp", "A = (float vector) B / C", 3 },
-		//Multiply add (double & float)
-		//    { "xvmaddadp", "A = B + C", 3},
-		//    { "xvmaddasp", "A = B + C", 3},
-		//    { "xvmaddmdp", "A = B + C", 3},
-		//    { "xvmaddmsp", "A = B + C", 3},
+		// Multiply add (double & float)
+		//     { "xvmaddadp", "A = B + C", 3},
+		//     { "xvmaddasp", "A = B + C", 3},
+		//     { "xvmaddmdp", "A = B + C", 3},
+		//     { "xvmaddmsp", "A = B + C", 3},
 		{ "xvmaxdp", "A = (double vector) max(B)", 2 },
 		{ "xvmaxsp", "A = (float vector) max(B)", 2 },
 		{ "xvmindp", "A = (double vector) min(B)", 2 },
 		{ "xvminsp", "A = (float vector) min(B)", 2 },
 		{ "xvmovdp", "A = (double vector) B", 2 },
 		{ "xvmovsp", "A = (float vector) B", 2 },
-		//Multiply sub (double & float)
-		//    { "xvmsubadp", "A = B + C", 3},
-		//    { "xvmsubasp", "A = B + C", 3},
-		//    { "xvmsubmdp", "A = B + C", 3},
-		//    { "xvmsubmsp", "A = B + C", 3},
+		// Multiply sub (double & float)
+		//     { "xvmsubadp", "A = B + C", 3},
+		//     { "xvmsubasp", "A = B + C", 3},
+		//     { "xvmsubmdp", "A = B + C", 3},
+		//     { "xvmsubmsp", "A = B + C", 3},
 		{ "xvmuldp", "A = (double vector) B * C", 3 },
 		{ "xvmulsp", "A = (float vector) B * C", 3 },
 		{ "xvnabsdp", "A = (double vector) -abs(B)", 2 },
 		{ "xvnabssp", "A = (float vector) -abs(B)", 2 },
 		{ "xvnegdp", "A = (double vector) -B", 2 },
 		{ "xvnegsp", "A = (float vector) -B", 2 },
-		//Negate multiply add (double & float)
-		//    { "xvnmaddadp", "A = B + C", 3},
-		//    { "xvnmaddasp", "A = B + C", 3},
-		//    { "xvnmaddmdp", "A = B + C", 3},
-		//    { "xvnmaddmsp", "A = B + C", 3},
-		//Negate multiply sub (double & float)
-		//    { "xvnmsubadp", "A = B + C", 3},
-		//    { "xvnmsubasp", "A = B + C", 3},
-		//    { "xvnmsubmdp", "A = B + C", 3},
-		//    { "xvnmsubmsp", "A = B + C", 3},
+		// Negate multiply add (double & float)
+		//     { "xvnmaddadp", "A = B + C", 3},
+		//     { "xvnmaddasp", "A = B + C", 3},
+		//     { "xvnmaddmdp", "A = B + C", 3},
+		//     { "xvnmaddmsp", "A = B + C", 3},
+		// Negate multiply sub (double & float)
+		//     { "xvnmsubadp", "A = B + C", 3},
+		//     { "xvnmsubasp", "A = B + C", 3},
+		//     { "xvnmsubmdp", "A = B + C", 3},
+		//     { "xvnmsubmsp", "A = B + C", 3},
 		{ "xvrdpi", "A = (double vector) round(B)", 2 },
 		{ "xvrdpic", "A = (double vector) round(B)", 2 },
 		{ "xvrdpim", "A = (double vector) floor(B)", 2 },
@@ -1489,34 +1489,34 @@ static int replace(int argc, const char *argv[], char *newstr) {
 						if (letter == 4 && !strncmp(argv[0], "rlwinm", 6)) {
 							// { "rlwinm", "A = rol32(B, C) & D", 5},
 							w = ppc_mask;
-							//MASK(MB+32, ME+32)
+							// MASK(MB+32, ME+32)
 							ut64 MB = PPC_UT64(argv[4]) + 32;
 							ut64 ME = PPC_UT64(argv[5]) + 32;
 							snprintf(ppc_mask, sizeof(ppc_mask), "0x%" PFMT64x "", mask64(MB, ME));
 						} else if (letter == 4 && (!strncmp(argv[0], "rldcl", 5) || !strncmp(argv[0], "rldicl", 6))) {
 							// { "rld[i]cl", "A = rol64(B, C) & D", 4},
 							w = ppc_mask;
-							//MASK(MB, 63)
+							// MASK(MB, 63)
 							ut64 MB = PPC_UT64(argv[4]);
 							snprintf(ppc_mask, sizeof(ppc_mask), "0x%" PFMT64x "", mask64(MB, 63));
 						} else if (letter == 4 && !strncmp(argv[0], "rldic", 5)) {
 							// { "rldic", "A = rol64(B, C) & D", 4},
 							w = ppc_mask;
-							//MASK(MB, 63 - SH)
+							// MASK(MB, 63 - SH)
 							ut64 MB = PPC_UT64(argv[4]);
 							ut64 ME = 63 - PPC_UT64(argv[3]);
 							snprintf(ppc_mask, sizeof(ppc_mask), "0x%" PFMT64x "", mask64(MB, ME));
 						} else if (letter == 4 && (!strncmp(argv[0], "rldcr", 5) || !strncmp(argv[0], "rldicr", 6))) {
 							// { "rld[i]cr", "A = rol64(B, C) & D", 4},
 							w = ppc_mask;
-							//MASK(0, ME)
+							// MASK(0, ME)
 							ut64 ME = PPC_UT64(argv[4]);
 							snprintf(ppc_mask, sizeof(ppc_mask), "0x%" PFMT64x "", mask64(0, ME));
 						} else if (letter == 4 && !strncmp(argv[0], "rldimi", 6)) {
 							// { "rldimi", "A = (rol64(B, C) & D) | (A & E)", 5}, //32
 							// first mask (normal)
 							w = ppc_mask;
-							//MASK(MB, 63 - SH)
+							// MASK(MB, 63 - SH)
 							ut64 MB = PPC_UT64(argv[4]);
 							ut64 ME = 63 - PPC_UT64(argv[3]);
 							snprintf(ppc_mask, sizeof(ppc_mask), "0x%" PFMT64x "", mask64(MB, ME));
@@ -1524,7 +1524,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 							// { "rldimi", "A = (rol64(B, C) & D) | (A & E)", 5}, //32
 							// second mask (inverted)
 							w = ppc_mask;
-							//MASK(MB, 63 - SH)
+							// MASK(MB, 63 - SH)
 							ut64 MB = PPC_UT64(argv[4]);
 							ut64 ME = 63 - PPC_UT64(argv[3]);
 							ut64 inverted = ~(mask64(MB, ME));
@@ -1533,7 +1533,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 							// { "rlwimi", "A = (rol64(B, C) & D) | (A & E)", 5}, //32
 							// first mask (normal)
 							w = ppc_mask;
-							//MASK(MB, ME)
+							// MASK(MB, ME)
 							ut32 MB = PPC_UT32(argv[4]);
 							ut32 ME = PPC_UT32(argv[5]);
 							snprintf(ppc_mask, sizeof(ppc_mask), "0x%" PFMT32x "", mask32(MB, ME));
@@ -1541,7 +1541,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 							// { "rlwimi", "A = (rol32(B, C) & D) | (A & E)", 5}, //32
 							// second mask (inverted)
 							w = ppc_mask;
-							//MASK(MB, ME)
+							// MASK(MB, ME)
 							ut32 MB = PPC_UT32(argv[4]);
 							ut32 ME = PPC_UT32(argv[5]);
 							ut32 inverted = ~mask32(MB, ME);
@@ -1549,7 +1549,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 						} else if (letter == 4 && !strncmp(argv[0], "rlwnm", 5)) {
 							// { "rlwnm", "A = rol32(B, C) & D", 5}, //32
 							w = ppc_mask;
-							//MASK(MB, ME)
+							// MASK(MB, ME)
 							ut32 MB = PPC_UT32(argv[4]);
 							ut32 ME = PPC_UT32(argv[5]);
 							snprintf(ppc_mask, sizeof(ppc_mask), "0x%" PFMT32x "", mask32(MB, ME));
@@ -1586,7 +1586,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 								w = "?";
 								break;
 							}
-						} else if ((i == 44 && letter == 2) || (i == 45 && letter == 1)) { //spr
+						} else if ((i == 44 && letter == 2) || (i == 45 && letter == 1)) { // spr
 							w = getspr(w);
 						}
 						if (w != NULL) {
@@ -1654,7 +1654,7 @@ static bool parse(RzParse *p, const char *data, RzStrBuf *sb) {
 		if (ptr) {
 			*ptr = '\0';
 			for (++ptr; *ptr == ' '; ptr++) {
-				//nothing to see here
+				// nothing to see here
 			}
 			strncpy(w0, buf, WSZ - 1);
 			strncpy(w1, ptr, WSZ - 1);
@@ -1664,7 +1664,7 @@ static bool parse(RzParse *p, const char *data, RzStrBuf *sb) {
 			if (ptr) {
 				*ptr = '\0';
 				for (++ptr; *ptr == ' '; ptr++) {
-					//nothing to see here
+					// nothing to see here
 				}
 				strncpy(w1, optr, WSZ - 1);
 				strncpy(w2, ptr, WSZ - 1);
@@ -1673,7 +1673,7 @@ static bool parse(RzParse *p, const char *data, RzStrBuf *sb) {
 				if (ptr) {
 					*ptr = '\0';
 					for (++ptr; *ptr == ' '; ptr++) {
-						//nothing to see here
+						// nothing to see here
 					}
 					strncpy(w2, optr, WSZ - 1);
 					strncpy(w3, ptr, WSZ - 1);
@@ -1683,7 +1683,7 @@ static bool parse(RzParse *p, const char *data, RzStrBuf *sb) {
 					if (ptr) {
 						*ptr = '\0';
 						for (++ptr; *ptr == ' '; ptr++) {
-							//nothing to see here
+							// nothing to see here
 						}
 						strncpy(w3, optr, WSZ - 1);
 						strncpy(w4, ptr, WSZ - 1);
@@ -1693,7 +1693,7 @@ static bool parse(RzParse *p, const char *data, RzStrBuf *sb) {
 						if (ptr) {
 							*ptr = '\0';
 							for (++ptr; *ptr == ' '; ptr++) {
-								//nothing to see here
+								// nothing to see here
 							}
 							strncpy(w4, optr, WSZ - 1);
 							strncpy(w5, ptr, WSZ - 1);

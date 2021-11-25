@@ -100,7 +100,7 @@ char *get_AR_regs_class2(ut32 ins_bits, ut32 *ret_len, ut32 ins_pos, ut32 idx) {
 	if (ret_len) {
 		*ret_len = 0;
 	}
-	//printf("OP1 %x OP2 0x%x %x\n", op, op2, reg_num);
+	// printf("OP1 %x OP2 0x%x %x\n", op, op2, reg_num);
 	res = malloc(50);
 	if (!res) {
 		return NULL;
@@ -566,7 +566,7 @@ char *get_reg_name_1(ut32 idx) {
 	case 186: res = "bsa45"; break;
 	case 187: res = "bsa67"; break;
 	case 188: res = "bsac"; break;
-	case 189: //res = (char *)&off_42FBE8;
+	case 189: // res = (char *)&off_42FBE8;
 		res = "bkc";
 		break;
 	case 190: res = "bk03"; break;

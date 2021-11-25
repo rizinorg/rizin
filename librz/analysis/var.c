@@ -703,7 +703,7 @@ static void extract_arg(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysi
 			addr--;
 		}
 		if (strncmp(addr, "0x", 2)) {
-			//XXX: This is a workaround for inconsistent esil
+			// XXX: This is a workaround for inconsistent esil
 			if (!op->stackop && op->dst) {
 				const char *sp = rz_reg_get_name(analysis->reg, RZ_REG_NAME_SP);
 				const char *bp = rz_reg_get_name(analysis->reg, RZ_REG_NAME_BP);
@@ -887,7 +887,7 @@ static bool is_used_like_arg(const char *regname, const char *opsreg, const char
 		if (STR_EQUAL(opsreg, opdreg) && !src->memref && !dst->memref) {
 			return false;
 		}
-		//fallthrough
+		// fallthrough
 	default:
 		if (op_affect_dst(op) && arch_destroys_dst(analysis->cur->arch)) {
 			if (is_reg_in_src(regname, analysis, op)) {

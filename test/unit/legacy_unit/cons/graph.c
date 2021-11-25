@@ -89,7 +89,7 @@ repeat:
 	for (i = 0; nodes[i].text; i++) {
 		Node_print(can, &nodes[i], i == curnode);
 	}
-	//rz_cons_canvas_line (can, 12, 4+5, X+5, 5, 0);
+	// rz_cons_canvas_line (can, 12, 4+5, X+5, 5, 0);
 
 	rz_cons_canvas_print(can);
 	rz_cons_flush();

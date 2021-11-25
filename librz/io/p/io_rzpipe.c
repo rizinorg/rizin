@@ -163,7 +163,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *msg) {
 		return NULL;
 	}
 	char *res = rzpipe_read(RZP(fd));
-	//eprintf ("%s\n", res);
+	// eprintf ("%s\n", res);
 	/* TODO: parse json back */
 	char *r = strstr(res, "result");
 	if (r) {

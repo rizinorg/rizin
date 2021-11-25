@@ -60,4 +60,4 @@ bool lua53_assembly(const char *input, st32 input_size, LuaInstruction *instruct
 LuaOpNameList get_lua53_opnames(void);
 ut8 get_lua53_opcode_by_name(const char *name, int len);
 
-#endif //BUILD_LUA_ARCH_H
+#endif // BUILD_LUA_ARCH_H

@@ -49,7 +49,7 @@ static bool check_buffer(RzBuffer *b) {
 
 // TODO RzBufferify
 static RzList *oneshotall(RzBin *bin, const ut8 *buf, ut64 size) {
-	//extract dos componenent first
+	// extract dos componenent first
 	RzBinXtrData *data = oneshot(bin, buf, size, SUB_BIN_DOS);
 
 	if (!data) {
@@ -70,7 +70,7 @@ static RzList *oneshotall(RzBin *bin, const ut8 *buf, ut64 size) {
 	return res;
 }
 
-//implement this later
+// implement this later
 static void fill_metadata_info_from_hdr(RzBinXtrMetadata *meta, void *foo) { // struct Pe_32_rz_bin_pemixed_obj_t* pe_bin){
 	meta->arch = NULL;
 	meta->bits = 0;
@@ -78,7 +78,7 @@ static void fill_metadata_info_from_hdr(RzBinXtrMetadata *meta, void *foo) { // 
 	meta->type = NULL;
 	meta->libname = NULL;
 	meta->xtr_type = "net";
-	//strcpy (meta->xtr_type, "net");
+	// strcpy (meta->xtr_type, "net");
 }
 
 // XXX: ut8* should be RzBuffer *
@@ -106,9 +106,9 @@ static RzBinXtrData *oneshot(RzBin *bin, const ut8 *buf, ut64 size, int sub_bin_
 RzBinXtrPlugin rz_bin_xtr_plugin_xtr_pemixed = {
 	.name = "xtr.pemixed",
 	.desc = "Extract sub-binaries in PE files",
-	.load = NULL, //not yet implemented
-	.extract = NULL, //not yet implemented
-	.extractall = NULL, //not yet implemented
+	.load = NULL, // not yet implemented
+	.extract = NULL, // not yet implemented
+	.extractall = NULL, // not yet implemented
 	.destroy = &destroy,
 	.extract_from_bytes = &oneshot,
 	.extractall_from_bytes = &oneshotall,

@@ -32,7 +32,7 @@ static ut64 parse_size(char *s, char **end) {
 	return strtoul(s, end, 0) << 3;
 }
 
-//TODO: implement bool rz_reg_set_def_string()
+// TODO: implement bool rz_reg_set_def_string()
 static const char *parse_def(RzReg *reg, char **tok, const int n) {
 	char *end;
 	int type, type2;
@@ -62,7 +62,7 @@ static const char *parse_def(RzReg *reg, char **tok, const int n) {
 	if (rz_reg_get(reg, tok[1], RZ_REG_TYPE_ANY)) {
 		eprintf("Ignoring duplicated register definition '%s'\n", tok[1]);
 		return NULL;
-		//return "Duplicate register definition";
+		// return "Duplicate register definition";
 	}
 #endif
 
@@ -215,8 +215,8 @@ RZ_API bool rz_reg_set_profile_string(RzReg *reg, const char *str) {
 			if (r) {
 				eprintf("%s: Parse error @ line %d (%s)\n",
 					__FUNCTION__, l, r);
-				//eprintf ("(%s)\n", str);
-				// Clean up
+				// eprintf ("(%s)\n", str);
+				//  Clean up
 				rz_reg_free_internal(reg, false);
 				return false;
 			}
@@ -225,16 +225,16 @@ RZ_API bool rz_reg_set_profile_string(RzReg *reg, const char *str) {
 	reg->size = 0;
 	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 		RzRegSet *rs = &reg->regset[i];
-		//eprintf ("* arena %s size %d\n", rz_reg_get_type (i), rs->arena->size);
+		// eprintf ("* arena %s size %d\n", rz_reg_get_type (i), rs->arena->size);
 		if (rs && rs->arena) {
 			reg->size += rs->arena->size;
 		}
 	}
 	// Align to byte boundary if needed
-	//if (reg->size & 7) {
+	// if (reg->size & 7) {
 	//	reg->size += 8 - (reg->size & 7);
 	//}
-	//reg->size >>= 3; // bits to bytes (divide by 8)
+	// reg->size >>= 3; // bits to bytes (divide by 8)
 	rz_reg_fit_arena(reg);
 	// dup the last arena to allow regdiffing
 	rz_reg_arena_push(reg);

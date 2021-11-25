@@ -15,7 +15,7 @@ static int msp430_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut
 	struct msp430_cmd cmd;
 
 	memset(&cmd, 0, sizeof(cmd));
-	//op->id = ???;
+	// op->id = ???;
 	op->size = -1;
 	op->nopcode = 1;
 	op->type = RZ_ANALYSIS_OP_TYPE_UNK;

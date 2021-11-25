@@ -97,13 +97,13 @@ static RzList *backtrace_x86_64_analysis(RzDebug *dbg, ut64 at) {
 		bio->read_at(bio->io, _rbp + 8, (ut8 *)&ptr, 8);
 		if (!ptr || !_rbp)
 			break;
-		//fcn = rz_analysis_get_fcn_in (dbg->analysis, ptr, RZ_ANALYSIS_FCN_TYPE_NULL);
+		// fcn = rz_analysis_get_fcn_in (dbg->analysis, ptr, RZ_ANALYSIS_FCN_TYPE_NULL);
 		frame = RZ_NEW0(RzDebugFrame);
 		frame->addr = ptr;
 		frame->size = 0;
 		frame->sp = _rbp;
 		frame->bp = _rbp + 8;
-		//frame->name = (fcn && fcn->name) ? strdup (fcn->name) : NULL;
+		// frame->name = (fcn && fcn->name) ? strdup (fcn->name) : NULL;
 		rz_list_append(list, frame);
 		_rbp = ebp2;
 	}

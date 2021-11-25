@@ -11,7 +11,7 @@ extern "C" {
 
 typedef struct rz_core_t RzCore;
 
-//RZ_LIB_VERSION_HEADER (rz_cmd);
+// RZ_LIB_VERSION_HEADER (rz_cmd);
 
 #define MACRO_LIMIT   1024
 #define MACRO_LABELS  20

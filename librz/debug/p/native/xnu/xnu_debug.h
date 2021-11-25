@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2015 Álvaro Felipe Melchor <alvaro.felipe91@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-//code to support natively debugging mach binaries
+// code to support natively debugging mach binaries
 /*   _
     _\)/_
    /     \
@@ -51,7 +51,7 @@ int ptrace(int _request, pid_t _pid, caddr_t _addr, int _data);
 #include <mach/mach_interface.h>
 #include <mach/mach_traps.h>
 #include <mach/mach_types.h>
-//no available for ios #include <mach/mach_vm.h>
+// no available for ios #include <mach/mach_vm.h>
 #include <mach/mach_error.h>
 #include <mach/task.h>
 #include <mach/task_info.h>

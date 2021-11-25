@@ -535,29 +535,29 @@ static vmi_class_type_info *create_vmi_class_type(ut64 vtable_addr, char *name, 
 
 /**
  * @brief Try to parse as much valid looking RTTI as you can
- * 
- * @param context 
- * @param vtable_addr 
- * @param rtti_addr 
+ *
+ * @param context
+ * @param vtable_addr
+ * @param rtti_addr
  * @return class_type_info* NULL if not even default class RTTI could be parsed or error
  */
 static class_type_info *raw_rtti_parse(RVTableContext *context, ut64 vtable_addr, ut64 rtti_addr) {
 	/*
 		rtti_ptr   ----->  |                  vptr                |
-		                   |--------------------------------------|
-		                   |               type_name              |
-		                   |--------------------------------------| --- enough for __class_type_info
-		                   |  __class_type_info *base_type        | 
-		                   |--------------------------------------| --- enough for __si_class_type_info
-		                   |              uint flags              | --- must be atleast 16bits, it's 32 bit for 64-bit Itanium ABI
-		                   |--------------------------------------|
-		                   |           uint base_count            |
-		                   |--------------------------------------|
-		                   |  __base_class_type_info base_info[]  |
-		                   |--------------------------------------|
-		                   |---------       ARRAY         --------|
-		                   |-----__class_type_info *base_type-----|
-		                   |--------- long __offset_flags --------| ----- enough for __vmi_class_type_info
+				   |--------------------------------------|
+				   |               type_name              |
+				   |--------------------------------------| --- enough for __class_type_info
+				   |  __class_type_info *base_type        |
+				   |--------------------------------------| --- enough for __si_class_type_info
+				   |              uint flags              | --- must be atleast 16bits, it's 32 bit for 64-bit Itanium ABI
+				   |--------------------------------------|
+				   |           uint base_count            |
+				   |--------------------------------------|
+				   |  __base_class_type_info base_info[]  |
+				   |--------------------------------------|
+				   |---------       ARRAY         --------|
+				   |-----__class_type_info *base_type-----|
+				   |--------- long __offset_flags --------| ----- enough for __vmi_class_type_info
 		*/
 	ut64 rtti_vptr = 0;
 	ut64 addr = rtti_addr;
@@ -637,9 +637,9 @@ static class_type_info *raw_rtti_parse(RVTableContext *context, ut64 vtable_addr
 static class_type_info *rtti_itanium_type_info_new(RVTableContext *context, ut64 vtable_addr) {
 	/*
 		vpointer - 2 words | offset to top |
-		                   |---------------|
+				   |---------------|
 		vpointer - word    | RTTI pointer  |
-		                   |---------------|
+				   |---------------|
 		vpointer   ----->  |  virt_func_0  |
 	*/
 	ut64 rtti_ptr = vtable_addr - VT_WORD_SIZE(context); // RTTI pointer
@@ -777,7 +777,7 @@ static void recovery_apply_vtable(RVTableContext *context, const char *class_nam
 			meth.vtable_offset = vmeth->vtable_offset;
 			RzAnalysisFunction *fcn = rz_analysis_get_function_at(context->analysis, vmeth->addr);
 			meth.name = fcn ? rz_str_new(fcn->name) : rz_str_newf("virtual_%" PFMT64d, meth.vtable_offset);
-			//Temporarily set as attr name
+			// Temporarily set as attr name
 			meth.real_name = fcn ? rz_str_new(fcn->name) : rz_str_newf("virtual_%" PFMT64d, meth.vtable_offset);
 			meth.method_type = RZ_ANALYSIS_CLASS_METHOD_VIRTUAL;
 		} else {
@@ -798,9 +798,9 @@ static void recovery_apply_vtable(RVTableContext *context, const char *class_nam
 
 /**
  * @brief Add any base class information about the type into analysis/classes
- * 
- * @param context 
- * @param cti 
+ *
+ * @param context
+ * @param cti
  */
 static void add_class_bases(RVTableContext *context, const class_type_info *cti) {
 	class_type_info base_info;
@@ -874,7 +874,7 @@ RZ_API void rz_analysis_rtti_itanium_recover_all(RVTableContext *context, RzList
 		rz_analysis_class_create(context->analysis, cti->name);
 		// can't we name virtual functions virtual even without RTTI?
 		recovery_apply_vtable(context, cti->name, vtable);
-		//Temporarily detect by method name
+		// Temporarily detect by method name
 		detect_constructor_destructor(context->analysis, cti);
 
 		// we only need one of a kind

@@ -66,19 +66,19 @@ RZ_API bool rz_analysis_vtable_begin(RzAnalysis *analysis, RVTableContext *conte
 }
 
 static bool vtable_addr_in_text_section(RVTableContext *context, ut64 curAddress) {
-	//section of the curAddress
+	// section of the curAddress
 	RzBinSection *value = context->analysis->binb.get_vsect_at(context->analysis->binb.bin, curAddress);
-	//If the pointed value lies in .text section
+	// If the pointed value lies in .text section
 	return value && strstr(value->name, "text") && (value->perm & 1) != 0;
 }
 
 static bool vtable_is_value_in_text_section(RVTableContext *context, ut64 curAddress, ut64 *value) {
-	//value at the current address
+	// value at the current address
 	ut64 curAddressValue;
 	if (!context->read_addr(context->analysis, curAddress, &curAddressValue)) {
 		return false;
 	}
-	//if the value is in text section
+	// if the value is in text section
 	bool ret = vtable_addr_in_text_section(context, curAddressValue);
 	if (value) {
 		*value = curAddressValue;

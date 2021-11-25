@@ -20,7 +20,7 @@ static RzConsContext rz_cons_context_default = { { { { 0 } } } };
 static RzCons rz_cons_instance = { 0 };
 #define I rz_cons_instance
 
-//this structure goes into cons_stack when rz_cons_push/pop
+// this structure goes into cons_stack when rz_cons_push/pop
 typedef struct {
 	char *buf;
 	int buf_len;
@@ -301,7 +301,7 @@ RZ_API void rz_cons_context_break_push(RzConsContext *context, RzConsBreak cb, v
 		return;
 	}
 
-	//if we don't have any element in the stack start the signal
+	// if we don't have any element in the stack start the signal
 	RzConsBreakStack *b = RZ_NEW0(RzConsBreakStack);
 	if (!b) {
 		return;
@@ -314,11 +314,11 @@ RZ_API void rz_cons_context_break_push(RzConsContext *context, RzConsBreak cb, v
 #endif
 		context->breaked = false;
 	}
-	//save the actual state
+	// save the actual state
 	b->event_interrupt = context->event_interrupt;
 	b->event_interrupt_data = context->event_interrupt_data;
 	rz_stack_push(context->break_stack, b);
-	//configure break
+	// configure break
 	context->event_interrupt = cb;
 	context->event_interrupt_data = user;
 }
@@ -327,7 +327,7 @@ RZ_API void rz_cons_context_break_pop(RzConsContext *context, bool sig) {
 	if (!context->break_stack) {
 		return;
 	}
-	//restore old state
+	// restore old state
 	RzConsBreakStack *b = NULL;
 	b = rz_stack_pop(context->break_stack);
 	if (b) {
@@ -335,7 +335,7 @@ RZ_API void rz_cons_context_break_pop(RzConsContext *context, bool sig) {
 		context->event_interrupt_data = b->event_interrupt_data;
 		break_stack_free(b);
 	} else {
-		//there is not more elements in the stack
+		// there is not more elements in the stack
 #if __UNIX__
 		if (sig && rz_cons_context_is_main()) {
 			rz_sys_signal(SIGINT, SIG_IGN);
@@ -786,7 +786,7 @@ RZ_API void rz_cons_reset(void) {
  * \brief Return the current RzCons buffer
  */
 RZ_API const char *rz_cons_get_buffer(void) {
-	//check len otherwise it will return trash
+	// check len otherwise it will return trash
 	return I.context->buffer_len ? I.context->buffer : NULL;
 }
 
@@ -1057,7 +1057,7 @@ RZ_API void rz_cons_visual_flush(void) {
 
 RZ_API void rz_cons_print_fps(int col) {
 	int fps = 0, w = rz_cons_get_size(NULL);
-	static ut64 prev = 0LL; //rz_time_now_mono ();
+	static ut64 prev = 0LL; // rz_time_now_mono ();
 	fps = 0;
 	if (prev) {
 		ut64 now = rz_time_now_mono();

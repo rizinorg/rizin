@@ -80,7 +80,7 @@ static int binary_search(unsigned int *A, int key, int imin, int imax) {
 
 /**
  * \brief return remapped symbol address
- * 
+ *
  * \param omap_stream RzPdbOmapStream
  * \param address Where to remap
  * \return int

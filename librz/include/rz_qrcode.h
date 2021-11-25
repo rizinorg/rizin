@@ -1,12 +1,12 @@
 // SPDX-FileCopyrightText: 2015 Project Nayuki
 // SPDX-License-Identifier: MIT
 
-/* 
+/*
  * QR Code generator library (C)
- * 
+ *
  * Copyright (c) Project Nayuki. (MIT License)
  * https://www.nayuki.io/page/qr-code-generator-library
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
  * the Software without restriction, including without limitation the rights to
@@ -32,7 +32,7 @@
 
 /*---- Enumeration types and values ----*/
 
-/* 
+/*
  * Represents the error correction level used in a QR Code symbol.
  */
 enum qrcodegen_Ecc {
@@ -42,7 +42,7 @@ enum qrcodegen_Ecc {
 	qrcodegen_Ecc_HIGH,
 };
 
-/* 
+/*
  * Represents the mask pattern used in a QR Code symbol.
  */
 enum qrcodegen_Mask {
@@ -74,7 +74,7 @@ enum qrcodegen_Mask {
 
 /*---- Functions to generate QR Codes ----*/
 
-/* 
+/*
  * Encodes the given text string to a QR Code symbol, returning true if encoding succeeded.
  * If the data is too long to fit in any version in the given range
  * at the given ECC level, then false is returned.
@@ -96,7 +96,7 @@ enum qrcodegen_Mask {
 RZ_API bool rz_qrcode_text(const char *text, uint8_t tempBuffer[], uint8_t qrcode[],
 	enum qrcodegen_Ecc ecl, int minVersion, int maxVersion, enum qrcodegen_Mask mask, bool boostEcl);
 
-/* 
+/*
  * Encodes the given binary data to a QR Code symbol, returning true if encoding succeeded.
  * If the data is too long to fit in any version in the given range
  * at the given ECC level, then false is returned.

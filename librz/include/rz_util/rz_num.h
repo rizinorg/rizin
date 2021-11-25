@@ -25,7 +25,7 @@ typedef enum {
 	RNCMUL = '*',
 	RNCDIV = '/',
 	RNCMOD = '%',
-	//RNCXOR='^', RNCOR='|', RNCAND='&',
+	// RNCXOR='^', RNCOR='|', RNCAND='&',
 	RNCNEG = '~',
 	RNCAND = '&',
 	RNCORR = '|',
@@ -85,7 +85,7 @@ RZ_API void rz_num_minmax_swap_i(int *a, int *b); // XXX this can be a cpp macro
 RZ_API ut64 rz_num_math(RzNum *num, const char *str);
 RZ_API ut64 rz_num_get(RzNum *num, const char *str);
 RZ_API int rz_num_to_bits(char *out, ut64 num);
-RZ_API int rz_num_to_trits(char *out, ut64 num); //Rename this please
+RZ_API int rz_num_to_trits(char *out, ut64 num); // Rename this please
 RZ_API int rz_num_rand(int max);
 RZ_API void rz_num_irand(void);
 RZ_API ut16 rz_num_ntohs(ut16 foo);

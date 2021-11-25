@@ -728,7 +728,7 @@ RZ_API void rz_table_sort(RzTable *t, int nth, bool dec) {
 		Gnth = nth;
 		if (col->type && col->type->cmp) {
 			Gcmp = col->type->cmp;
-			t->rows->sorted = false; //force sorting
+			t->rows->sorted = false; // force sorting
 			rz_list_sort(t->rows, cmp);
 			if (dec) {
 				rz_list_reverse(t->rows);
@@ -752,7 +752,7 @@ RZ_API void rz_table_sortlen(RzTable *t, int nth, bool dec) {
 	RzTableColumn *col = rz_list_get_n(t->cols, nth);
 	if (col) {
 		Gnth = nth;
-		t->rows->sorted = false; //force sorting
+		t->rows->sorted = false; // force sorting
 		rz_list_sort(t->rows, cmplen);
 		if (dec) {
 			rz_list_reverse(t->rows);
@@ -1239,7 +1239,7 @@ RZ_API void rz_table_visual_list(RzTable *table, RzList *list, ut64 seek, ut64 l
  * /param t Referenced \p RzTable
  * /return t Referenced \p RzTable
  *
- * This function returns the transpose of the RzTable passed to the table. 
+ * This function returns the transpose of the RzTable passed to the table.
  */
 RZ_OWN RZ_API RzTable *rz_table_transpose(RZ_NONNULL RzTable *t) {
 	rz_return_val_if_fail(t, NULL);
@@ -1304,7 +1304,7 @@ RZ_OWN RZ_API RzTable *rz_table_transpose(RZ_NONNULL RzTable *t) {
 				}
 			}
 		}
-		//free(item);
+		// free(item);
 	}
 	rz_list_free(row_name);
 	return transpose;

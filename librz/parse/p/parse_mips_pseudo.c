@@ -172,7 +172,7 @@ static bool subvar(RzParse *p, RzAnalysisFunction *f, ut64 addr, int oplen, char
 			reg = analysis->reg->name[RZ_REG_NAME_SP];
 		}
 		char *tmpf;
-		//TODO: honor asm pseudo
+		// TODO: honor asm pseudo
 		if (RZ_ABS(delta) < 10) {
 			tmpf = "%d(%s)";
 		} else if (delta > 0) {

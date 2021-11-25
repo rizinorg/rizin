@@ -179,15 +179,15 @@ static int rz_cons_w32_hprint(DWORD hdl, const char *ptr, int len, bool vmode) {
 					if (vmode) {
 						int wlen = cols - linelen - 1;
 						char white[1024];
-						//wlen = 5;
+						// wlen = 5;
 						if (wlen > 0) {
 							memset(white, ' ', sizeof(white));
 							rz_xwrite(fd, white, wlen);
 						}
 					}
 					rz_xwrite(fd, "\n\r", 2);
-					//write (fd, "\r\n", 2);
-					//lines--;
+					// write (fd, "\r\n", 2);
+					// lines--;
 					linelen = 0;
 				}
 				if (vmode) {

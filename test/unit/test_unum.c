@@ -98,7 +98,7 @@ bool test_rz_num_str_len() {
 bool test_rz_num_str_split() {
 	char *str = malloc(0x20);
 	strcpy(str, "1 1 + 2 1 + (2 + 3) 4 ");
-	//expected "1\01 + 2\01 + (2 + 3)\04\0"
+	// expected "1\01 + 2\01 + (2 + 3)\04\0"
 	int count = rz_num_str_split(str);
 	mu_assert_eq(count, 4, "rz_num_str_split (str) == 4");
 	mu_assert_streq(str + 0, "1", "1");
@@ -113,7 +113,7 @@ bool test_rz_num_str_split_list() {
 	char *s;
 	char *str = malloc(0x20);
 	strcpy(str, "1 1 + 2 1 + (2 + 3) 4 ");
-	//expected {"1", "1 + 2", "1 + (2 + 3)", "4"} as list
+	// expected {"1", "1 + 2", "1 + (2 + 3)", "4"} as list
 	RzList *list = rz_num_str_split_list(str);
 	mu_assert_eq(rz_list_length(list), 4, "rz_list_length (list) == 4");
 	s = (char *)rz_list_pop_head(list);

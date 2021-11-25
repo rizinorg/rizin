@@ -397,8 +397,8 @@ RZ_API bool rz_bin_pdb_type_is_fwdref(RZ_NONNULL RzPdbTpiType *t) {
 }
 
 /**
- * \brief Get the RzPdbTpiType member list 
- * 
+ * \brief Get the RzPdbTpiType member list
+ *
  * \param stream TPI stream
  * \param t RzPdbTpiType
  * \return RzList *
@@ -440,7 +440,7 @@ RZ_API RZ_BORROW RzList *rz_bin_pdb_get_type_members(RZ_NONNULL RzPdbTpiStream *
 
 /**
  * \brief Get the name of the type
- * 
+ *
  * \param type RzPdbTpiType *
  * \return char *
  */
@@ -500,7 +500,7 @@ RZ_API RZ_BORROW char *rz_bin_pdb_get_type_name(RZ_NONNULL RzPdbTpiType *type) {
 
 /**
  * \brief Get the numeric value inside the type
- * 
+ *
  * \param type RzPdbTpiType *
  * \return ut64
  */

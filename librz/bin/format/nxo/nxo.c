@@ -56,7 +56,7 @@ static void walkSymbols(RzBuffer *buf, RzBinNXOObj *bin, ut64 symtab, ut64 strta
 		if (!rz_buf_read_le32_at(buf, symtab + i, &name)) {
 			break;
 		}
-		//ut64 type = rz_buf_read_le32_at (buf, symtab + i + 4);
+		// ut64 type = rz_buf_read_le32_at (buf, symtab + i + 4);
 		char *symName = readString(buf, strtab + name);
 		if (!symName) {
 			break;
@@ -171,7 +171,7 @@ void parseMod(RzBuffer *buf, RzBinNXOObj *bin, ut32 mod0, ut64 baddr) {
 		eprintf("symtab = 0x%" PFMT64x "\n", mo.symtab - mo.base);
 		eprintf("strtab = 0x%" PFMT64x "\n", mo.strtab - mo.base);
 		eprintf("strtabsz = 0x%" PFMT64x "\n", mo.strtab_size);
-		//ut32 modo = mh.mod_object;
+		// ut32 modo = mh.mod_object;
 		ut64 strtab = mo.strtab - mo.base;
 		ut64 symtab = mo.symtab - mo.base;
 		walkSymbols(buf, bin, symtab, strtab, mo.strtab_size, mo.relplt - mo.base, baddr);

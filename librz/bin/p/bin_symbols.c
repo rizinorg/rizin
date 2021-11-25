@@ -33,7 +33,7 @@ typedef struct symbols_metadata_t { // 0x40
 	ut32 name;
 	bool valid;
 	ut32 size;
-	//RzList *segments;
+	// RzList *segments;
 	ut32 addr;
 	int bits;
 	const char *arch;
@@ -103,7 +103,7 @@ static SymbolsMetadata parseMetadata(RzBuffer *buf, int off) {
 	// eprintf ("0x%08x  strlen   %d\n", 0x4c, sm.namelen);
 	// eprintf ("0x%08x  filename %s\n", 0x50, b + 16);
 	int delta = 16;
-	//sm.segments = parseSegments (buf, off + sm.namelen + delta, sm.n_segments);
+	// sm.segments = parseSegments (buf, off + sm.namelen + delta, sm.n_segments);
 	sm.size = (sm.n_segments * 32) + sm.namelen + delta;
 
 	// hack to detect format

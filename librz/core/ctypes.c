@@ -644,7 +644,7 @@ static void resolve_type_links(RzCore *core, ut64 at, struct TLAnalysisContext *
 	RzList *slinks = rz_analysis_type_paths_by_address(core->analysis, ctx->src_addr);
 	RzList *dlinks = rz_analysis_type_paths_by_address(core->analysis, ctx->dst_addr);
 	RzList *vlinks = rz_analysis_type_paths_by_address(core->analysis, ctx->src_addr + ctx->src_imm);
-	//TODO: Handle register based arg for struct offset propgation
+	// TODO: Handle register based arg for struct offset propgation
 	if (vlinks && rz_list_length(vlinks) && ctx->var && ctx->var->kind != 'r') {
 		RzTypePath *vlink = rz_list_get_top(vlinks);
 		// FIXME: For now we only propagate simple type identifiers,
@@ -658,7 +658,7 @@ static void resolve_type_links(RzCore *core, ut64 at, struct TLAnalysisContext *
 			if (varbtype) {
 				// if a var addr matches with struct , change it's type and name
 				// var int local_e0h --> var struct foo
-				//if (strcmp(var->name, vlink) && !*resolved) {
+				// if (strcmp(var->name, vlink) && !*resolved) {
 				if (!*resolved) {
 					*resolved = true;
 					rz_analysis_var_set_type(ctx->var, vlink->typ);
@@ -955,10 +955,10 @@ RZ_IPI void rz_core_types_print_all(RzCore *core, RzOutputMode mode) {
 		pj_a(pj);
 		rz_list_foreach (types, it, btype) {
 			pj_o(pj);
-			//rz_str_trim(format_s);
+			// rz_str_trim(format_s);
 			pj_ks(pj, "type", btype->name);
 			pj_ki(pj, "size", btype->size);
-			//pj_ks(pj, "format", format_s);
+			// pj_ks(pj, "format", format_s);
 			pj_end(pj);
 		}
 		pj_end(pj);

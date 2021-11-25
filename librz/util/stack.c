@@ -55,7 +55,7 @@ RZ_API bool rz_stack_push(RzStack *s, void *el) {
 	return true;
 }
 
-//the caller should be take care of the object returned
+// the caller should be take care of the object returned
 RZ_API void *rz_stack_pop(RzStack *s) {
 	if (s->top == -1) {
 		return NULL;

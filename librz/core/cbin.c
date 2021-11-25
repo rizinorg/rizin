@@ -159,7 +159,7 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 		char *k = sdbkv_key(kv);
 		char *v = sdbkv_value(kv);
 		char *dup = strdup(k);
-		//printf ("?e (%s) (%s)\n", k, v);
+		// printf ("?e (%s) (%s)\n", k, v);
 		if ((flagname = strstr(dup, ".offset"))) {
 			*flagname = 0;
 			flagname = dup;
@@ -1539,7 +1539,7 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 		free(rz_symbol_name);
 	}
 
-	//handle thumb and arm for entry point since they are not present in symbols
+	// handle thumb and arm for entry point since they are not present in symbols
 	if (is_arm) {
 		RzBinAddr *entry;
 		rz_list_foreach (o->entries, iter, entry) {
@@ -2796,7 +2796,7 @@ RZ_API bool rz_core_bin_whole_strings_print(RzCore *core, RzBinFile *bf, RzCmdSt
 
 	bool new_bf = false;
 	if (bf && strstr(bf->file, "malloc://")) {
-		//sync bf->buf to search string on it
+		// sync bf->buf to search string on it
 		ut8 *tmp = RZ_NEWS(ut8, bf->size);
 		if (!tmp) {
 			return false;
@@ -3092,7 +3092,7 @@ RZ_API bool rz_core_bin_info_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput
 			pj_ks(pj, "rpath", info->rpath);
 		}
 		if (info->rclass && !strcmp(info->rclass, "pe")) {
-			//this should be moved if added to mach0 (or others)
+			// this should be moved if added to mach0 (or others)
 			pj_kb(pj, "signed", info->signature);
 		}
 
@@ -3198,7 +3198,7 @@ RZ_API bool rz_core_bin_info_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput
 		}
 		rz_table_add_rowf(t, "ss", "rpath", str2na(info->rpath));
 		if (info->rclass && !strcmp(info->rclass, "pe")) {
-			//this should be moved if added to mach0 (or others)
+			// this should be moved if added to mach0 (or others)
 			table_add_row_bool(t, "signed", info->signature);
 		}
 
@@ -4401,7 +4401,7 @@ RZ_API int rz_core_bin_set_arch_bits(RzCore *r, const char *name, const char *ar
 		return false;
 	}
 	curfile = rz_bin_cur(r->bin);
-	//set env if the binfile changed or we are dealing with xtr
+	// set env if the binfile changed or we are dealing with xtr
 	if (curfile != binfile || binfile->curxtr) {
 		rz_core_bin_set_cur(r, binfile);
 		if (binfile->o && binfile->o->info) {
@@ -4676,7 +4676,7 @@ RZ_API char *rz_core_bin_method_flags_str(ut64 flags, int mode) {
 		rz_strbuf_append(buf, pj_string(pj));
 		pj_free(pj);
 	} else {
-		int pad_len = 4; //TODO: move to a config variable
+		int pad_len = 4; // TODO: move to a config variable
 		int len = 0;
 		if (!flags) {
 			goto padding;

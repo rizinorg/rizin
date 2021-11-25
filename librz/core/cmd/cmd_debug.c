@@ -1096,7 +1096,7 @@ static int dump_maps(RzCore *core, int perm, const char *filename) {
 		}
 		if (do_dump) {
 			ut8 *buf = malloc(map->size);
-			//TODO: use mmap here. we need a portable implementation
+			// TODO: use mmap here. we need a portable implementation
 			if (!buf) {
 				eprintf("Cannot allocate 0x%08" PFMT64x " bytes\n", map->size);
 				free(buf);
@@ -1123,7 +1123,7 @@ static int dump_maps(RzCore *core, int perm, const char *filename) {
 			free(buf);
 		}
 	}
-	//eprintf ("No debug region found here\n");
+	// eprintf ("No debug region found here\n");
 	return ret;
 }
 
@@ -1630,7 +1630,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmS_handler(RzCore *core, int argc, const char *
 			rz_cons_println(res);
 			free(name);
 			free(res);
-			if (libname || addr != UT64_MAX) { //only single match requested
+			if (libname || addr != UT64_MAX) { // only single match requested
 				break;
 			}
 		}
@@ -1648,7 +1648,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dml_handler(RzCore *core, int argc, const char *
 		if (addr >= map->addr && addr < map->addr_end) {
 			size_t sz;
 			char *buf = rz_file_slurp(argv[1], &sz);
-			//TODO: use mmap here. we need a portable implementation
+			// TODO: use mmap here. we need a portable implementation
 			if (!buf) {
 				eprintf("Cannot allocate 0x%08" PFMT64x " byte(s)\n", map->size);
 				return RZ_CMD_STATUS_ERROR;
@@ -1729,7 +1729,7 @@ RZ_API void rz_core_debug_rr(RzCore *core, RzReg *reg, int mode) {
 	int delta = 0;
 	ut64 diff, value;
 	int bits = core->rasm->bits;
-	//XXX: support other RzRegisterType
+	// XXX: support other RzRegisterType
 	const RzList *list = rz_reg_get_list(reg, RZ_REG_TYPE_GPR);
 	RzListIter *iter;
 	RzRegItem *r;
@@ -1757,7 +1757,7 @@ RZ_API void rz_core_debug_rr(RzCore *core, RzReg *reg, int mode) {
 		value = rz_reg_get_value(core->dbg->reg, r);
 		delta = 0;
 		int regSize = r->size;
-		//XXX: support larger regSize
+		// XXX: support larger regSize
 		if (regSize < 80) {
 			rz_reg_arena_swap(core->dbg->reg, false);
 			diff = rz_reg_get_value(core->dbg->reg, r);
@@ -2095,7 +2095,7 @@ static void cmd_debug_reg(RzCore *core, const char *str) {
 			}
 			char *arg;
 			RzList *args = rz_str_split_list(all, " ", 0);
-			rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ANY, false); //RZ_REG_TYPE_GPR, false);
+			rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ANY, false); // RZ_REG_TYPE_GPR, false);
 			int count = rz_list_length(args);
 			rz_list_foreach (args, iter, arg) {
 				ut64 off = rz_debug_reg_get(core->dbg, arg);
@@ -2465,10 +2465,10 @@ static void cmd_debug_reg(RzCore *core, const char *str) {
 				rz_core_debug_reg_list(core, RZ_REG_TYPE_XMM, 128, false, NULL, 0, 0);
 			}
 		}
-		//rz_debug_drx_list (core->dbg);
+		// rz_debug_drx_list (core->dbg);
 		break;
 	case 'f': // "drf"
-		//rz_debug_drx_list (core->dbg);
+		// rz_debug_drx_list (core->dbg);
 		if (str[1] == '?') {
 			eprintf("usage: drf [fpureg] [= value]\n");
 		} else if (str[1] == ' ') {
@@ -2507,7 +2507,7 @@ static void cmd_debug_reg(RzCore *core, const char *str) {
 			}
 			free(name);
 		} else {
-			//TODO: Do not use this hack to print fpu register
+			// TODO: Do not use this hack to print fpu register
 			rz_debug_reg_sync(core->dbg, -RZ_REG_TYPE_FPU, false);
 		}
 		break;
@@ -2613,7 +2613,7 @@ static void cmd_debug_reg(RzCore *core, const char *str) {
 				if (pcbits2) {
 					rz_core_debug_reg_list(core, RZ_REG_TYPE_GPR, pcbits2, false, NULL, '=', use_color); // xxx detect which one is current usage
 				}
-			} //else eprintf ("cannot retrieve registers from pid %d\n", core->dbg->pid);
+			} // else eprintf ("cannot retrieve registers from pid %d\n", core->dbg->pid);
 		} else {
 			RzReg *orig = core->dbg->reg;
 			core->dbg->reg = core->analysis->reg;
@@ -3003,7 +3003,7 @@ static void do_debug_trace_calls(RzCore *core, ut64 from, ut64 to, ut64 final_ad
 		}
 		addr = rz_debug_reg_get(dbg, "PC");
 		if (addr == final_addr) {
-			//we finished the tracing so break the loop
+			// we finished the tracing so break the loop
 			break;
 		}
 		addr_in_range = addr >= from && addr < to;
@@ -3703,7 +3703,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 				rz_cons_printf("opsize = %d\n", t->size);
 				rz_cons_printf("times = %d\n", t->times);
 				rz_cons_printf("count = %d\n", t->count);
-				//TODO cons_printf("time = %d\n", t->tm);
+				// TODO cons_printf("time = %d\n", t->tm);
 			}
 			break;
 		case 'a': // "dta"
@@ -3971,7 +3971,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 			// close file
 			{
 				int fd = atoi(input + 2);
-				//rz_core_cmdf (core, "dxs close %d", (int)rz_num_math ( core->num, input + 2));
+				// rz_core_cmdf (core, "dxs close %d", (int)rz_num_math ( core->num, input + 2));
 				RzBuffer *buf = rz_core_syscallf(core, "close", "%d", fd);
 				consumeBuffer(buf, "dx ", "Cannot close");
 			}
@@ -4004,7 +4004,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 		} else {
 			cmd_analysis_reg(core, input + 1);
 		}
-		//rz_core_cmd (core, "|reg", 0);
+		// rz_core_cmd (core, "|reg", 0);
 		break;
 	case 'p': // "dp"
 		cmd_debug_pid(core, input);
@@ -4297,7 +4297,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 		rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
 		for (; !rz_cons_is_breaked();) {
 			int pid = atoi(input + 1);
-			//int opid = core->dbg->pid = pid;
+			// int opid = core->dbg->pid = pid;
 			int res = rz_debug_kill(core->dbg, pid, 0, 0);
 			if (!res) {
 				break;

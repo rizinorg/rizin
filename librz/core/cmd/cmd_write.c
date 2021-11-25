@@ -155,7 +155,7 @@ static void cmd_write_fail(RzCore *core) {
 }
 
 static bool encrypt_or_decrypt_block(RzCore *core, const char *algo, const char *key, int direction, const char *iv) {
-	//TODO: generalise no_key_mode for all non key encoding/decoding.
+	// TODO: generalise no_key_mode for all non key encoding/decoding.
 	int keylen = 0;
 	bool no_key_mode = !strcmp("base64", algo) || !strcmp("base91", algo) || !strcmp("punycode", algo);
 	ut8 *binkey = NULL;
@@ -362,7 +362,7 @@ RZ_IPI int rz_wo_handler_old(void *data, const char *input) {
 		}
 			if (len > 0) {
 				/* XXX This seems to fail at generating long patterns (wopD 512K) */
-				buf = (ut8 *)rz_debruijn_pattern(len, 0, NULL); //debruijn_charset);
+				buf = (ut8 *)rz_debruijn_pattern(len, 0, NULL); // debruijn_charset);
 				if (buf) {
 					const ut8 *ptr = buf;
 					ut64 addr = core->offset;
@@ -878,7 +878,7 @@ static void cmd_write_pcache(RzCore *core, const char *input) {
 			break;
 		case '*':
 			rad = true;
-		case ' ': //fall-o-through
+		case ' ': // fall-o-through
 		case '\0':
 			if (input[0] && input[1]) {
 				fd = (int)rz_num_math(core->num, input + 1);
@@ -1221,7 +1221,7 @@ RZ_IPI int rz_we_handler_old(void *data, const char *input) {
 			bytes = len > 1 ? malloc(len + 1) : NULL;
 			len = bytes ? rz_hex_str2bin(input, bytes) : 0;
 			if (len > 0) {
-				//ut64 cur_off = core->offset;
+				// ut64 cur_off = core->offset;
 				cmd_suc = rz_core_extend_at(core, addr, len);
 				if (cmd_suc) {
 					if (!rz_core_write_at(core, addr, bytes, len)) {
@@ -1350,7 +1350,7 @@ RZ_IPI int rz_wc_handler_old(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	switch (input[0]) {
 	case '\0': // "wc"
-		//if (!rz_config_get_i (core->config, "io.cache"))
+		// if (!rz_config_get_i (core->config, "io.cache"))
 		//	eprintf ("[warning] e io.cache must be true\n");
 		rz_io_cache_list(core->io, 0);
 		break;
@@ -1362,7 +1362,7 @@ RZ_IPI int rz_wc_handler_old(void *data, const char *input) {
 		break;
 	case '+': // "wc+"
 		if (input[1] == '*') { // "wc+*"
-			//rz_io_cache_reset (core->io, core->io->cached);
+			// rz_io_cache_reset (core->io, core->io->cached);
 			eprintf("TODO\n");
 		} else if (input[1] == ' ') { // "wc+ "
 			char *p = strchr(input + 2, ' ');
@@ -1427,8 +1427,8 @@ RZ_IPI int rz_wc_handler_old(void *data, const char *input) {
 	case 'r': // "wcr"
 		rz_io_cache_reset(core->io, core->io->cached);
 		/* Before loading the core block we have to make sure that if
-			* the cache wrote past the original EOF these changes are no
-			* longer displayed. */
+		 * the cache wrote past the original EOF these changes are no
+		 * longer displayed. */
 		memset(core->block, 0xff, core->blocksize);
 		rz_core_block_read(core);
 		break;
@@ -1555,7 +1555,7 @@ RZ_IPI int rz_wt_handler_old(void *data, const char *input) {
 				}
 				RzIOMap *map = rz_io_map_get(core->io, poff);
 				toend = true;
-				//use physical address
+				// use physical address
 				poff = map ? poff - map->itv.addr + map->delta : poff;
 				str++;
 			}

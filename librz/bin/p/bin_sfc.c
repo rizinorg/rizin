@@ -16,7 +16,7 @@ static bool check_buffer(RzBuffer *b) {
 	if (length < 0x8000) {
 		return false;
 	}
-	//determine if ROM is headered, and add a 0x200 gap if so.
+	// determine if ROM is headered, and add a 0x200 gap if so.
 	ut16 cksum1;
 	if (!rz_buf_read_le16_at(b, 0x7fdc, &cksum1)) {
 		return false;
@@ -131,7 +131,7 @@ static RzList *sections(RzBinFile *bf) {
 	// RzBinSection *ptr = NULL;
 	int hdroffset = 0;
 	bool is_hirom = false;
-	int i = 0; //0x8000-long bank number for loops
+	int i = 0; // 0x8000-long bank number for loops
 #if THIS_IS_ALWAYS_FALSE_WTF
 	if ((bf->size & 0x8000) == 0x200) {
 		hdroffset = 0x200;
@@ -268,7 +268,7 @@ static RzList *mem(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *entries(RzBinFile *bf) { //Should be 3 offsets pointed by NMI, RESET, IRQ after mapping && default = 1st CHR
+static RzList *entries(RzBinFile *bf) { // Should be 3 offsets pointed by NMI, RESET, IRQ after mapping && default = 1st CHR
 	RzList *ret;
 	if (!(ret = rz_list_new())) {
 		return NULL;

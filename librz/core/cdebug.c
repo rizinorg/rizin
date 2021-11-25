@@ -317,14 +317,14 @@ RZ_IPI bool rz_core_debug_reg_list(RzCore *core, int type, int size, bool skip_c
 		size = 32;
 	}
 	if (dbg->bits & RZ_SYS_BITS_64) {
-		//fmt = "%s = 0x%08"PFMT64x"%s";
+		// fmt = "%s = 0x%08"PFMT64x"%s";
 		fmt = "%s = %s%s";
 		fmt2 = "%s%7s%s %s%s";
 		kwhites = "         ";
 		colwidth = dbg->regcols ? 20 : 25;
 		cols = 3;
 	} else {
-		//fmt = "%s = 0x%08"PFMT64x"%s";
+		// fmt = "%s = 0x%08"PFMT64x"%s";
 		fmt = "%s = %s%s";
 		fmt2 = "%s%7s%s %s%s";
 		kwhites = "    ";
@@ -656,7 +656,7 @@ RZ_IPI void rz_core_debug_breakpoint_toggle(RzCore *core, ut64 addr) {
 
 /**
  * \brief Put a breakpoint into every no-return function
- * 
+ *
  * \param core Current RzCore instance
  * \return void
  */

@@ -11,7 +11,7 @@
  *      : should move the prototypes and trace structure to new header, too
  * prototypes in <rz_analysis.h>
  * Used by : analysis_tp.c, debug/trace.c
-**/
+ **/
 
 #include <rz_util.h>
 #include <rz_analysis.h>

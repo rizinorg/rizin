@@ -73,7 +73,7 @@ static LPWCH override_env(const char *envvars[], const char *envvals[], size_t e
 	LPWCH cur = parent_env;
 	while (true) {
 		LPWCH var_begin = cur;
-		//wprintf (L"ENV: %s\n", cur);
+		// wprintf (L"ENV: %s\n", cur);
 		while (*cur && *cur != L'=') {
 			cur++;
 		}

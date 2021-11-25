@@ -1160,7 +1160,7 @@ static int parse_v10_header(RzBuffer *buf, idasig_v10_t *header) {
 
 /**
  * \brief Parses the RzBuffer containing a FLIRT structure and returns an RzFlirtNode
- * 
+ *
  * Parses the RzBuffer containing a FLIRT structure and returns an RzFlirtNode if expected_arch
  * matches the id or RZ_FLIRT_SIG_ARCH_ANY is set.
  *
@@ -1334,7 +1334,7 @@ exit:
  * \brief Returns the FLIRT arch id from a given arch name
  * Returns RZ_FLIRT_SIG_ARCH_ANY if name is not found.
  *
- * \param  arch The arch to convert to id 
+ * \param  arch The arch to convert to id
  * \return      The FLIRT arch id.
  */
 RZ_API ut32 rz_sign_flirt_id_from_name(RZ_NONNULL const char *arch) {
@@ -1352,7 +1352,7 @@ RZ_API ut32 rz_sign_flirt_id_from_name(RZ_NONNULL const char *arch) {
 /**
  * \brief Parses the FLIRT file and applies the signatures
  *
- * \param analysis    The RzAnalysis structure 
+ * \param analysis    The RzAnalysis structure
  * \param flirt_file  The FLIRT file to parse
  */
 RZ_API void rz_sign_flirt_apply(RzAnalysis *analysis, const char *flirt_file, const char *arch) {

@@ -157,7 +157,7 @@ RZ_API int rz_cons_arrow_to_hjkl(int ch) {
 			do {
 				ch = rz_cons_readchar();
 				// just for debugging
-				//eprintf ( "%c", ch);
+				// eprintf ( "%c", ch);
 				if (sc > 0) {
 					if (ch >= '0' && ch <= '9') {
 						pos[p++] = ch;
@@ -384,7 +384,7 @@ RZ_API int rz_cons_fgets(char *buf, int len, int argc, const char **argv) {
 	}
 	ret = strlen(buf);
 beach:
-	//rz_cons_enable_mouse (mouse);
+	// rz_cons_enable_mouse (mouse);
 	return ret;
 }
 
@@ -396,7 +396,7 @@ RZ_API int rz_cons_any_key(const char *msg) {
 	}
 	rz_cons_flush();
 	return rz_cons_readchar();
-	//rz_cons_strcat ("\x1b[2J\x1b[0;0H");
+	// rz_cons_strcat ("\x1b[2J\x1b[0;0H");
 }
 
 extern void resizeWin(void);

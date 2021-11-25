@@ -413,7 +413,7 @@ static void p_ere(struct parse *p, int stop) { /* character this ERE should end 
 		AHEAD(prevfwd);
 		ASTERN(O_CH, prevback);
 	}
-	//asert(!MORE() || SEE(stop));
+	// asert(!MORE() || SEE(stop));
 }
 
 /*
@@ -1415,7 +1415,7 @@ static void mcadd(struct parse *p, cset *cs, char *cp) {
  */
 /* ARGSUSED */
 static void mcinvert(struct parse *p, cset *cs) {
-	//asert(!cs->multis);	/* xxx */
+	// asert(!cs->multis);	/* xxx */
 	return;
 }
 
@@ -1427,7 +1427,7 @@ static void mcinvert(struct parse *p, cset *cs) {
  */
 /* ARGSUSED */
 static void mccase(struct parse *p, cset *cs) {
-	//asert(!cs->multis);	/* xxx */
+	// asert(!cs->multis);	/* xxx */
 	return;
 }
 

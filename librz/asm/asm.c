@@ -158,7 +158,7 @@ static inline int rz_asm_pseudo_incbin(RzAsmOp *op, char *input) {
 	rz_str_replace_char(input, ',', ' ');
 	// int len = rz_str_word_count (input);
 	rz_str_word_set0(input);
-	//const char *filename = rz_str_word_get0 (input, 0);
+	// const char *filename = rz_str_word_get0 (input, 0);
 	size_t skip = (size_t)rz_num_math(NULL, rz_str_word_get0(input, 1));
 	size_t count = (size_t)rz_num_math(NULL, rz_str_word_get0(input, 2));
 	char *content = rz_file_slurp(input, &bytes_read);
@@ -862,7 +862,7 @@ RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 					q++;
 				}
 				if (is_a_label) {
-					//if (stage != 2) {
+					// if (stage != 2) {
 					if (ptr_start[1] && ptr_start[1] != ' ') {
 						*ptr = 0;
 						char *p = strdup(ptr_start);
