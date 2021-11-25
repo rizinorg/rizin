@@ -31,6 +31,7 @@ if get_option('enable_tests')
     'bitmap',
     'buf',
     'cmd',
+    'compare',
     'config',
     'cons',
     'contrbtree',

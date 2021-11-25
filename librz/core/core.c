@@ -3,6 +3,7 @@
 
 #include <rz_core.h>
 #include <rz_socket.h>
+#include <rz_cmp.h>
 #include <config.h>
 #include <rz_util.h>
 #if __UNIX__
