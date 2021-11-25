@@ -242,16 +242,16 @@ static int windbg_breakpoint(RzBreakpoint *bp, RzBreakpointItem *b, bool set) {
 	flags = set ? flags | DEBUG_BREAKPOINT_ENABLED : flags & ~DEBUG_BREAKPOINT_ENABLED;
 	if (b->hw) {
 		ULONG access_type = 0;
-		if (b->perm & RZ_BP_PROT_EXEC) {
+		if (b->perm & RZ_PERM_X) {
 			access_type |= DEBUG_BREAK_EXECUTE;
 		}
-		if (b->perm & RZ_BP_PROT_READ) {
+		if (b->perm & RZ_PERM_R) {
 			access_type |= DEBUG_BREAK_READ;
 		}
-		if (b->perm & RZ_BP_PROT_WRITE) {
+		if (b->perm & RZ_PERM_W) {
 			access_type |= DEBUG_BREAK_WRITE;
 		}
-		if (b->perm & RZ_BP_PROT_ACCESS) {
+		if (b->perm & RZ_PERM_RW) {
 			access_type |= DEBUG_BREAK_READ;
 			access_type |= DEBUG_BREAK_WRITE;
 		}

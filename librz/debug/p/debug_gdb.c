@@ -468,7 +468,7 @@ static int rz_debug_gdb_breakpoint(RzBreakpoint *bp, RzBreakpointItem *b, bool s
 	bpsize = b->size;
 	// TODO handle conditions
 	switch (b->perm) {
-	case RZ_BP_PROT_EXEC: {
+	case RZ_PERM_X: {
 		if (set) {
 			ret = b->hw ? gdbr_set_hwbp(ctx->desc, b->addr, "", bpsize) : gdbr_set_bp(ctx->desc, b->addr, "", bpsize);
 		} else {

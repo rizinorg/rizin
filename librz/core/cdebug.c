@@ -159,7 +159,7 @@ RZ_API bool rz_core_debug_continue_until(RzCore *core, ut64 addr, ut64 to) {
 	}
 	eprintf("Continue until 0x%08" PFMT64x " using %d bpsize\n", addr, core->dbg->bpsize);
 	rz_reg_arena_swap(core->dbg->reg, true);
-	if (rz_bp_add_sw(core->dbg->bp, addr, core->dbg->bpsize, RZ_BP_PROT_EXEC)) {
+	if (rz_bp_add_sw(core->dbg->bp, addr, core->dbg->bpsize, RZ_PERM_X)) {
 		if (rz_debug_is_dead(core->dbg)) {
 			eprintf("Cannot continue, run ood?\n");
 		} else {

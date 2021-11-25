@@ -2885,15 +2885,11 @@ static void add_breakpoint(RzCore *core, ut64 addr, const char *arg_perm, bool h
 	int rw = 0;
 
 	if (watch) {
-		if (!strcmp(arg_perm, "r")) {
-			rw = RZ_BP_PROT_READ;
-		} else if (!strcmp(arg_perm, "w")) {
-			rw = RZ_BP_PROT_WRITE;
-		} else if (!strcmp(arg_perm, "rw")) {
-			rw = RZ_BP_PROT_ACCESS;
-		} else {
+		rw = rz_str_rwx(arg_perm);
+		rw &= RZ_PERM_RWX; // filter out the rwx bits only
+		if (rw == 0) {
 			RZ_LOG_WARN("Invalid permissions provided for setting watchpoint. Defaulting to \"rw\".\n");
-			rw = RZ_BP_PROT_ACCESS;
+			rw = RZ_PERM_RW;
 		}
 	}
 	bpi = rz_debug_bp_add(core->dbg, addr, hwbp, watch, rw, NULL, 0);
@@ -4411,24 +4407,67 @@ RZ_IPI RzCmdStatus rz_cmd_debug_add_bp_handler(RzCore *core, int argc, const cha
 
 // dbl
 RZ_IPI RzCmdStatus rz_cmd_debug_list_bp_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	RzOutputMode mode = state->mode;
-	switch (mode) {
-	case RZ_OUTPUT_MODE_STANDARD:
-		rz_bp_list(core->dbg->bp, 0);
-		break;
-	case RZ_OUTPUT_MODE_RIZIN:
-		rz_bp_list(core->dbg->bp, 1);
-		break;
-	case RZ_OUTPUT_MODE_JSON:
-		rz_bp_list(core->dbg->bp, 'j');
-		break;
-	case RZ_OUTPUT_MODE_QUIET:
-		rz_bp_list(core->dbg->bp, -1);
-		break;
-	default:
-		rz_warn_if_reached();
-		break;
+	rz_return_val_if_fail(state && core->dbg && core->dbg->bp, RZ_CMD_STATUS_ERROR);
+	RzBreakpointItem *b;
+	RzListIter *iter;
+	PJ *pj = state->d.pj;
+	RzTable *t = state->d.t;
+	rz_cmd_state_output_array_start(state);
+	rz_cmd_state_output_set_columnsf(state, "XXdsssssssss", "start", "end", "size",
+		"perm", "hwsw", "type", "state", "valid", "cmd", "cond", "name", "module");
+
+	rz_list_foreach (core->dbg->bp->bps, iter, b) {
+		switch (state->mode) {
+		case RZ_OUTPUT_MODE_STANDARD:
+			rz_cons_printf("0x%08" PFMT64x " - 0x%08" PFMT64x
+				       " %d %s %s %s %s %s cmd=\"%s\" cond=\"%s\" "
+				       "name=\"%s\" module=\"%s\"\n",
+				b->addr, b->addr + b->size, b->size,
+				rz_str_rwx_i(b->perm),
+				b->hw ? "hw" : "sw",
+				b->trace ? "trace" : "break",
+				b->enabled ? "enabled" : "disabled",
+				rz_bp_is_valid(core->dbg->bp, b) ? "valid" : "invalid",
+				rz_str_get(b->data),
+				rz_str_get(b->cond),
+				rz_str_get(b->name),
+				rz_str_get(b->module_name));
+			break;
+		case RZ_OUTPUT_MODE_TABLE:
+			rz_table_add_rowf(t, "XXdsssssssss", b->addr, b->addr + b->size, b->size,
+				rz_str_rwx_i(b->perm), b->hw ? "hw" : "sw", b->trace ? "trace" : "break",
+				b->enabled ? "enabled" : "disabled", rz_bp_is_valid(core->dbg->bp, b) ? "valid" : "invalid",
+				rz_str_get(b->data), rz_str_get(b->cond), rz_str_get(b->name), rz_str_get(b->module_name));
+			break;
+		case RZ_OUTPUT_MODE_RIZIN:
+			if (b->module_name) {
+				rz_cons_printf("dbm %s %" PFMT64d "\n", b->module_name, b->module_delta);
+			} else {
+				rz_cons_printf("db @ 0x%08" PFMT64x "\n", b->addr);
+			}
+			break;
+		case RZ_OUTPUT_MODE_JSON:
+			pj_o(pj);
+			pj_kN(pj, "addr", b->addr);
+			pj_ki(pj, "size", b->size);
+			pj_ks(pj, "perm", rz_str_rwx_i(b->perm));
+			pj_kb(pj, "hw", b->hw);
+			pj_kb(pj, "trace", b->trace);
+			pj_kb(pj, "enabled", b->enabled);
+			pj_kb(pj, "valid", rz_bp_is_valid(core->dbg->bp, b));
+			pj_ks(pj, "data", rz_str_get(b->data));
+			pj_ks(pj, "cond", rz_str_get(b->cond));
+			pj_end(pj);
+			break;
+		case RZ_OUTPUT_MODE_QUIET:
+			rz_cons_printf("0x%08" PFMT64x "\n", b->addr);
+			break;
+		default:
+			rz_warn_if_reached();
+			break;
+		}
 	}
+	rz_cmd_state_output_array_end(state);
 
 	return RZ_CMD_STATUS_OK;
 }

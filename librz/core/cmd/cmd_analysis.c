@@ -4111,7 +4111,7 @@ RZ_API bool rz_core_esil_continue_back(RzCore *core) {
 		if (reg->idx >= esil->trace->idx) {
 			continue;
 		}
-		bp_found = rz_bp_get_in(core->dbg->bp, reg->data, RZ_BP_PROT_EXEC) != NULL;
+		bp_found = rz_bp_get_in(core->dbg->bp, reg->data, RZ_PERM_X) != NULL;
 		if (bp_found) {
 			idx = reg->idx;
 			eprintf("hit breakpoint at: 0x%" PFMT64x " idx: %d\n", reg->data, reg->idx);
