@@ -4413,8 +4413,8 @@ RZ_IPI RzCmdStatus rz_cmd_debug_list_bp_handler(RzCore *core, int argc, const ch
 	PJ *pj = state->d.pj;
 	RzTable *t = state->d.t;
 	rz_cmd_state_output_array_start(state);
-	rz_cmd_state_output_set_columnsf(state, "XXdsssssssss", "start addr", "end addr", "size",
-		"perm", "hw/sw", "type", "state", "validity", "cmd", "cond", "name", "module");
+	rz_cmd_state_output_set_columnsf(state, "XXdsssssssss", "start", "end", "size",
+		"perm", "hwsw", "type", "state", "valid", "cmd", "cond", "name", "module");
 
 	rz_list_foreach (core->dbg->bp->bps, iter, b) {
 		switch (state->mode) {
