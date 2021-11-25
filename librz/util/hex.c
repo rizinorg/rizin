@@ -527,7 +527,7 @@ RZ_API int rz_hex_str2binmask(const char *in, ut8 *out, ut8 *mask) {
 			*ptr = '0';
 		}
 	}
-	has_nibble = rz_hex_str_has_nibble(out);
+	has_nibble = rz_hex_str_has_nibble((char *)out);
 	len = rz_hex_str2bin((char *)out, out);
 	if (has_nibble) {
 		len -= 1;
@@ -544,7 +544,7 @@ RZ_API int rz_hex_str2binmask(const char *in, ut8 *out, ut8 *mask) {
 				*ptr = '0';
 			}
 		}
-		has_nibble = rz_hex_str_has_nibble(mask);
+		has_nibble = rz_hex_str_has_nibble((char *)mask);
 		len = rz_hex_str2bin((char *)mask, mask);
 		if (has_nibble) {
 			len = -1 * len + 1;
