@@ -118,7 +118,7 @@ static int esilbreak_reg_read(RzAnalysisEsil *esil, const char *regname, ut64 *n
 	EsilBreak *ew;
 	RzListIter *iter;
 	if (regname[0] >= '0' && regname[0] <= '9') {
-		//eprintf (Color_CYAN"IMM READ %s\n"Color_RESET, regname);
+		// eprintf (Color_CYAN"IMM READ %s\n"Color_RESET, regname);
 		return 0;
 	}
 	eprintf(Color_YELLOW "REG READ %s\n" Color_RESET, regname);
@@ -195,7 +195,7 @@ static int esilbreak_reg_write(RzAnalysisEsil *esil, const char *regname, ut64 *
 	RzListIter *iter;
 	if (regname[0] >= '0' && regname[0] <= '9') {
 		// this should never happen
-		//eprintf (Color_BLUE"IMM WRTE %s\n"Color_RESET, regname);
+		// eprintf (Color_BLUE"IMM WRTE %s\n"Color_RESET, regname);
 		return 0;
 	}
 	eprintf(Color_MAGENTA "REG WRTE %s 0x%" PFMT64x "\n" Color_RESET, regname, *num);
@@ -232,9 +232,9 @@ RZ_API int rz_debug_esil_stepi(RzDebug *d) {
 	opc = rz_debug_reg_get(dbg, dbg->reg->name[RZ_REG_NAME_PC]);
 	dbg->iob.read_at(dbg->iob.io, opc, obuf, sizeof(obuf));
 
-	//dbg->iob.read_at (dbg->iob.io, npc, buf, sizeof (buf));
+	// dbg->iob.read_at (dbg->iob.io, npc, buf, sizeof (buf));
 
-	//dbg->analysis->reg = dbg->reg; // hack
+	// dbg->analysis->reg = dbg->reg; // hack
 	ESIL->cb.hook_mem_read = &esilbreak_mem_read;
 	ESIL->cb.hook_mem_write = &esilbreak_mem_write;
 	ESIL->cb.hook_reg_read = &esilbreak_reg_read;
@@ -259,7 +259,7 @@ RZ_API int rz_debug_esil_stepi(RzDebug *d) {
 			rz_analysis_esil_set_pc(ESIL, opc);
 			eprintf("0x%08" PFMT64x "  %s\n", opc, RZ_STRBUF_SAFEGET(&op.esil));
 			(void)rz_analysis_esil_parse(ESIL, RZ_STRBUF_SAFEGET(&op.esil));
-			//rz_analysis_esil_dumpstack (ESIL);
+			// rz_analysis_esil_dumpstack (ESIL);
 			rz_analysis_esil_stack_free(ESIL);
 			ret = 1;
 		}
@@ -292,7 +292,7 @@ RZ_API ut64 rz_debug_esil_step(RzDebug *dbg, ut32 count) {
 		if (count > 0) {
 			count--;
 			if (!count) {
-				//eprintf ("Limit reached\n");
+				// eprintf ("Limit reached\n");
 				break;
 			}
 		}

@@ -146,7 +146,7 @@ RzList *PE_(rz_bin_mdmp_pe_get_imports)(struct PE_(rz_bin_mdmp_pe_bin) * pe_bin)
 RzList *PE_(rz_bin_mdmp_pe_get_sections)(struct PE_(rz_bin_mdmp_pe_bin) * pe_bin) {
 	/* TODO: Vet code, taken verbatim(ish) from bin_pe.c */
 	int i;
-	ut64 ba = pe_bin->vaddr; //baddr (arch);
+	ut64 ba = pe_bin->vaddr; // baddr (arch);
 	struct rz_bin_pe_section_t *sections = NULL;
 	RzBinSection *ptr;
 	RzList *ret;
@@ -174,7 +174,7 @@ RzList *PE_(rz_bin_mdmp_pe_get_sections)(struct PE_(rz_bin_mdmp_pe_bin) * pe_bin
 			if (sections[i].vsize < pe_bin->bin->size) {
 				ptr->size = sections[i].vsize;
 			} else {
-				//hack give it page size
+				// hack give it page size
 				ptr->size = 4096;
 			}
 		}

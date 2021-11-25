@@ -708,7 +708,7 @@ typedef struct rz_bin_symbol_t {
 	/* only used by java */
 	char *visibility_str;
 	// ----------------
-	//char descriptor[RZ_BIN_SIZEOF_STRINGS+1];
+	// char descriptor[RZ_BIN_SIZEOF_STRINGS+1];
 	ut64 vaddr;
 	ut64 paddr;
 	ut32 size;
@@ -804,7 +804,7 @@ typedef struct rz_bin_mem_t {
 	ut64 addr;
 	int size;
 	int perms;
-	RzList /*<RzBinMem>*/ *mirrors; //for mirror access; stuff here should only create new maps not new fds
+	RzList /*<RzBinMem>*/ *mirrors; // for mirror access; stuff here should only create new maps not new fds
 } RzBinMem;
 
 typedef struct rz_bin_resource_t {

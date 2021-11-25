@@ -3,8 +3,8 @@
 
 /* definition */
 
-//static RzList *backtrace_frames_x86_32(RzDebug *dbg, ut64 at);
-//static RzList *backtrace_frames_x86_32_analysis(RzDebug *dbg, ut64 at);
+// static RzList *backtrace_frames_x86_32(RzDebug *dbg, ut64 at);
+// static RzList *backtrace_frames_x86_32_analysis(RzDebug *dbg, ut64 at);
 
 /* implementation */
 #include <rz_debug.h>

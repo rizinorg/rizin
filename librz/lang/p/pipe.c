@@ -108,8 +108,8 @@ static void lang_pipe_run_win(RzLang *lang) {
 					} else {
 						// send null termination // chop
 						rz_sys_perror("lang_pipe_run_win/dwWritten");
-						//WriteFile (hPipeInOut, "", 1, &dwWritten, NULL);
-						//break;
+						// WriteFile (hPipeInOut, "", 1, &dwWritten, NULL);
+						// break;
 					}
 				}
 				free(res);
@@ -198,7 +198,7 @@ static int lang_pipe_run(RzLang *lang, const char *code, int len) {
 			}
 			buf[sizeof(buf) - 1] = 0;
 			res = lang->cmd_str((RzCore *)lang->user, buf);
-			//eprintf ("%d %s\n", ret, buf);
+			// eprintf ("%d %s\n", ret, buf);
 			if (res) {
 				rz_xwrite(input[1], res, strlen(res) + 1);
 				free(res);

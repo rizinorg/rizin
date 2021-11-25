@@ -13,7 +13,7 @@
  * expressly authorized by QSS by written agreement.  For more information
  * (including whether this source code file has been published) please
  * email licensing@qnx.com. $
-*/
+ */
 
 /*
 

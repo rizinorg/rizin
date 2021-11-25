@@ -293,7 +293,7 @@ RZ_API int rz_bp_list(RzBreakpoint *bp, int rad) {
 		}
 		pj_a(pj);
 	}
-	//eprintf ("Breakpoint list:\n");
+	// eprintf ("Breakpoint list:\n");
 	rz_list_foreach (bp->bps, iter, b) {
 		if (pj) {
 			pj_o(pj);
@@ -421,7 +421,7 @@ RZ_API bool rz_bp_is_valid(RzBreakpoint *bp, RzBreakpointItem *b) {
 
 /**
  * \brief set the condition for a RzBreakpointItem
- * 
+ *
  * \param item brekapoint item to set value for
  * \param cond value of cond to be set; if NULL is passed, then the cond value of \p item will be set to NULL
  * \return bool true if succesful; false otherwise; if false returned, then \p item will not have been modified
@@ -443,7 +443,7 @@ RZ_API bool rz_bp_item_set_cond(RZ_NONNULL RzBreakpointItem *item, RZ_NULLABLE c
 
 /**
  * \brief set the data for a RzBreakpointItem
- * 
+ *
  * \param item brekapoint item to set value for
  * \param data value of data to be set; if NULL is passed, then the data value of \p item will be set to NULL
  * \return bool true if succesful; false otherwise; if false returned, then \p item will not have been modified
@@ -465,7 +465,7 @@ RZ_API bool rz_bp_item_set_data(RZ_NONNULL RzBreakpointItem *item, RZ_NULLABLE c
 
 /**
  * \brief set the expr for a RzBreakpointItem
- * 
+ *
  * \param item brekapoint item to set value for
  * \param expr value of expr to be set; if NULL is passed, then the expr value of \p item will be set to NULL
  * \return bool true if succesful; false otherwise; if false returned, then \p item will not have been modified
@@ -487,7 +487,7 @@ RZ_API bool rz_bp_item_set_expr(RZ_NONNULL RzBreakpointItem *item, RZ_NULLABLE c
 
 /**
  * \brief set the name for a RzBreakpointItem
- * 
+ *
  * \param item brekapoint item to set value for
  * \param name value of name to be set; if NULL is passed, then the name value of \p item will be set to NULL
  * \return bool true if succesful; false otherwise; if false returned, then \p item will not have been modified

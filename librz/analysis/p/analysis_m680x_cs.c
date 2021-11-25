@@ -510,7 +510,7 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 	}
 beach:
 	cs_free(insn, n);
-	//cs_close (&handle);
+	// cs_close (&handle);
 fin:
 	return opsize;
 }

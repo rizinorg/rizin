@@ -560,7 +560,7 @@ static int riscv_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 			esilprintf(op, "%s,%s,>,%s,=", ARG(2), ARG(1), ARG(0));
 		}
 		// debug
-		//else if (strcmp (name, "unimp") != 0 && name[0] != 'f' && name[1] != 'm') {
+		// else if (strcmp (name, "unimp") != 0 && name[0] != 'f' && name[1] != 'm') {
 		//	int i;
 		//	eprintf("[esil] missing risc v esil: %s", name);
 		//	for (i = 0; i < args.num; i++) {

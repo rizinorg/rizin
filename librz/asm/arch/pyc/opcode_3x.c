@@ -77,7 +77,7 @@ pyc_opcodes *opcode_3x(void) {
 	def_op(.op_obj = ret->opcodes, .op_name = "INPLACE_OR", .op_code = 79, .pop = 2, .push = 1);
 	def_op(.op_obj = ret->opcodes, .op_name = "BREAK_LOOP", .op_code = 80, .pop = 0, .push = 0);
 	def_op(.op_obj = ret->opcodes, .op_name = "WITH_CLEANUP", .op_code = 81, .pop = 1, .push = 0); // Cleans up the stack when a with statement
-		// block exits.  Handle stack special
+												       // block exits.  Handle stack special
 
 	def_op00(.op_obj = ret->opcodes, .op_name = "RETURN_VALUE", .op_code = 83, .pop = 1, .push = 0, .fallthrough = false);
 	def_op(.op_obj = ret->opcodes, .op_name = "IMPORT_STAR", .op_code = 84, .pop = 1, .push = 0);
@@ -95,7 +95,7 @@ pyc_opcodes *opcode_3x(void) {
 	jrel_op(.op_obj = ret->opcodes, .op_name = "FOR_ITER", .op_code = 93, .pop = 9, .push = 1);
 
 	def_op(.op_obj = ret->opcodes, .op_name = "UNPACK_EX", .op_code = 94, .pop = 9, .push = 1); // assignment with a starred target; TOS is #entries
-		// argument has a count
+												    // argument has a count
 	store_op00(.op_obj = ret->opcodes, .op_name = "STORE_ATTR", .op_code = 95, .pop = 2, .push = 0, .func = NAME_OP); // Operand is in name list
 	name_op(.op_obj = ret->opcodes, .op_name = "DELETE_ATTR", .op_code = 96, .pop = 1, .push = 0); // ""
 	store_op00(.op_obj = ret->opcodes, .op_name = "STORE_GLOBAL", .op_code = 97, .pop = 1, .push = 0, .func = NAME_OP); // ""
@@ -152,11 +152,11 @@ pyc_opcodes *opcode_3x(void) {
 	jrel_op(.op_obj = ret->opcodes, .op_name = "SETUP_WITH", .op_code = 143, .pop = 0, .push = 7);
 
 	def_op(.op_obj = ret->opcodes, .op_name = "LIST_APPEND", .op_code = 145, .pop = 2, .push = 1); // Calls list.append(TOS[-i], TOS).
-		// Used to implement list comprehensions.
+												       // Used to implement list comprehensions.
 	def_op(.op_obj = ret->opcodes, .op_name = "SET_ADD", .op_code = 146, .pop = 1, .push = 0); // Calls set.add(TOS1[-i], TOS).
-		// Used to implement set comprehensions.
+												   // Used to implement set comprehensions.
 	def_op(.op_obj = ret->opcodes, .op_name = "MAP_ADD", .op_code = 147, .pop = 2, .push = 1); // Calls dict.setitem(TOS1[-i], TOS, TOS1)
-		// Used to implement dict comprehensions.
+												   // Used to implement dict comprehensions.
 
 	def_op(.op_obj = ret->opcodes, .op_name = "EXTENDED_ARG", .op_code = 144);
 	ret->extended_arg = 144;

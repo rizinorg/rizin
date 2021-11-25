@@ -59,7 +59,7 @@
 #define HEXAGON_INSN_LEN (4)
 
 /** Maximum number of insns in a packet.
-*/
+ */
 #define MAX_PACKET_INSNS 4
 
 /* This is the mnemonic length for mapped insns. */
@@ -103,14 +103,14 @@
 		: (r) * ((p) ? 2 : 1) - HEXAGON_SUBREGS / 2 + HEXAGON_SUBREGS_HI)
 
 /** Slots used by some insns.
-*/
+ */
 #define HEXAGON_SLOTS_DUPLEX (0x3) /** < Paired isns. */
 #define HEXAGON_SLOTS_STORES (0x2) /** < In-order dual-stores. */
 #define HEXAGON_SLOTS_1      (0x2) /** < Slot #1. */
 #define HEXAGON_SLOTS_MEM1   (0x1) /** < Preference for single memory access. */
 
 /** Insn type opcode ranges.
-*/
+ */
 #define HEXAGON_INSN_TYPE_A7      (0x70000000) /** A-type. */
 #define HEXAGON_INSN_TYPE_X8      (0x80000000) /** X-type. */
 #define HEXAGON_INSN_TYPE_A11     (0xb0000000) /** A-type. */
@@ -433,7 +433,7 @@ extern int hexagon_verify_hw;
 extern hexagon_insn hexagon_nop, hexagon_kext;
 
 /** Packet delimeters.
-*/
+ */
 #define PACKET_BEGIN     '{' /** < Beginning of packet. */
 #define PACKET_END       '}' /** < End of packet. */
 #define PACKET_END_INNER ":endloop0" /** < End of inner loop. */
@@ -441,7 +441,7 @@ extern hexagon_insn hexagon_nop, hexagon_kext;
 #define PACKET_PAIR      ';' /** < Sub-insn separator. */
 
 /** Bits 15:14 in the instruction mark boundaries.
-*/
+ */
 #define HEXAGON_END_PACKET_POS  (14)
 #define HEXAGON_END_PACKET_MASK (3 << HEXAGON_END_PACKET_POS)
 #define HEXAGON_END_PACKET      (3 << HEXAGON_END_PACKET_POS) /** < End of packet. */
@@ -450,7 +450,7 @@ extern hexagon_insn hexagon_nop, hexagon_kext;
 #define HEXAGON_END_PAIR        (0 << HEXAGON_END_PACKET_POS) /** < Compound insn. */
 
 /** Get, set and reset packet bits in insn.
-*/
+ */
 #define HEXAGON_END_PACKET_GET(insn) \
 	((insn)&HEXAGON_END_PACKET_MASK) /** < Get */
 #define HEXAGON_END_PACKET_SET(insn, bits) \
@@ -462,7 +462,7 @@ extern hexagon_insn hexagon_nop, hexagon_kext;
 			: HEXAGON_END_NOT)) /** < Reset */
 
 /** Test for arch version.
-*/
+ */
 #define hexagon_if_arch_v1() (FALSE) /** < V1 (Obsolete) */
 #define hexagon_if_arch_v2() (hexagon_if_arch(HEXAGON_MACH_V2)) /** < V2 */
 #define hexagon_if_arch_v3() (hexagon_if_arch(HEXAGON_MACH_V3)) /** < V3 */

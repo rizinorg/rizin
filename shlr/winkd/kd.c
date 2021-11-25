@@ -45,8 +45,8 @@ int kd_send_data_packet(io_desc_t *desc, const uint32_t type, const uint32_t id,
 		return KD_E_MALFORMED;
 	}
 
-	//kd_req_t *r = (kd_req_t*) req;
-	//eprintf ("==== Send ====\n%08x\n", r->req);
+	// kd_req_t *r = (kd_req_t*) req;
+	// eprintf ("==== Send ====\n%08x\n", r->req);
 
 	pkt.leader = KD_PACKET_DATA;
 	pkt.length = req_len + buf_len;

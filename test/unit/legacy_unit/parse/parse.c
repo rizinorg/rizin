@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
 		printf("\n----\n\n");
 		rz_parse_use(p, "att2intel");
 		rz_parse_pseudocode(p, "movl $3, %eax", str); //, sizeof (str));
-		//rz_parse_filter (p, NULL, "movl $3, %eax", str, sizeof (str));
+		// rz_parse_filter (p, NULL, "movl $3, %eax", str, sizeof (str));
 		printf("%s\n", str);
 	} else {
 		char buf[128];

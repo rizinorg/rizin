@@ -59,7 +59,7 @@ RZ_LIB_VERSION_HEADER(rz_debug);
 		} \
 	} while (0)
 #define SNAP_PAGE_SIZE    4096
-#define CHECK_POINT_LIMIT 0x100000 //TODO: take the benchmark
+#define CHECK_POINT_LIMIT 0x100000 // TODO: take the benchmark
 /*
  * states that a process can be in
  */
@@ -227,7 +227,7 @@ typedef struct rz_debug_trace_t {
 	RzList *traces;
 	int count;
 	int enabled;
-	//int changed;
+	// int changed;
 	int tag;
 	int dup;
 	char *addresses;
@@ -396,7 +396,7 @@ typedef struct rz_debug_plugin_t {
 	RzBreakpointCallback breakpoint; /// Callback to be used for RzBreakpoint. When called, RzBreakpoint.user points to the RzDebug.
 	// XXX: specify, pid, tid, or RzDebug ?
 	int (*reg_read)(RzDebug *dbg, int type, ut8 *buf, int size);
-	int (*reg_write)(RzDebug *dbg, int type, const ut8 *buf, int size); //XXX struct rz_regset_t regs);
+	int (*reg_write)(RzDebug *dbg, int type, const ut8 *buf, int size); // XXX struct rz_regset_t regs);
 	char *(*reg_profile)(RzDebug *dbg);
 	int (*set_reg_profile)(RzDebug *dbg, const char *str);
 	/* memory */
@@ -456,10 +456,10 @@ RZ_API int rz_debug_continue_pass_exception(RzDebug *dbg);
 
 /* process/thread handling */
 RZ_API bool rz_debug_select(RzDebug *dbg, int pid, int tid);
-//RZ_API int rz_debug_pid_add(RzDebug *dbg);
-//RZ_API int rz_debug_pid_add_thread(RzDebug *dbg);
-//RZ_API int rz_debug_pid_del(RzDebug *dbg);
-//RZ_API int rz_debug_pid_del_thread(RzDebug *dbg);
+// RZ_API int rz_debug_pid_add(RzDebug *dbg);
+// RZ_API int rz_debug_pid_add_thread(RzDebug *dbg);
+// RZ_API int rz_debug_pid_del(RzDebug *dbg);
+// RZ_API int rz_debug_pid_del_thread(RzDebug *dbg);
 RZ_API int rz_debug_pid_list(RzDebug *dbg, int pid, char fmt);
 RZ_API RzDebugPid *rz_debug_pid_new(const char *path, int pid, int uid, char status, ut64 pc);
 RZ_API RzDebugPid *rz_debug_pid_free(RzDebugPid *pid);
@@ -639,10 +639,10 @@ extern RzDebugPlugin rz_debug_plugin_null;
 #endif
 
 /* regset */
-//RZ_API struct rz_regset_t* rz_regset_diff(struct rz_regset_t *a, struct rz_regset_t *b);
-//RZ_API int rz_regset_set(struct rz_regset_t *r, int idx, const char *name, ut64 value);
-//RZ_API struct rz_regset_t *rz_regset_new(int size);
-//RZ_API void rz_regset_free(struct rz_regset_t *r);
+// RZ_API struct rz_regset_t* rz_regset_diff(struct rz_regset_t *a, struct rz_regset_t *b);
+// RZ_API int rz_regset_set(struct rz_regset_t *r, int idx, const char *name, ut64 value);
+// RZ_API struct rz_regset_t *rz_regset_new(int size);
+// RZ_API void rz_regset_free(struct rz_regset_t *r);
 
 #if 0
 Missing callbacks

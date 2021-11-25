@@ -220,7 +220,7 @@ RZ_API RzList *rz_sys_dir(const char *path) {
 	char *cfname;
 	HANDLE fh = sys_opendir(path, &entry);
 	if (fh == INVALID_HANDLE_VALUE) {
-		//IFDGB eprintf ("Cannot open directory %ls\n", wcpath);
+		// IFDGB eprintf ("Cannot open directory %ls\n", wcpath);
 		return list;
 	}
 	list = rz_list_newf(free);
@@ -953,7 +953,7 @@ RZ_API int rz_sys_run(const ut8 *buf, int len) {
 	}
 	memcpy(ptr, buf, len);
 	rz_mem_protect(ptr, sz, "rx");
-	//rz_mem_protect (ptr, sz, "rwx"); // try, ignore if fail
+	// rz_mem_protect (ptr, sz, "rwx"); // try, ignore if fail
 	cb = (int (*)())ptr;
 #if USE_FORK
 #if __UNIX__

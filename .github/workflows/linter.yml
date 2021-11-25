@@ -67,21 +67,21 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
-    - name: Install wget
-      run: sudo apt --assume-yes install wget
+    - name: Install wget, software-properties-common, lsb-release (dependencies of LLVM install script)
+      run: sudo apt --assume-yes install wget software-properties-common lsb-release
 
-    - name: Install automatic llvm (stable branch)
-      run: sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
+    - name: Install automatic LLVM 13
+      run: wget https://apt.llvm.org/llvm.sh -O /tmp/llvm-install.sh; chmod +x /tmp/llvm-install.sh; sudo /tmp/llvm-install.sh 13
 
-    - name: Install clang-format-11
-      run: sudo apt --assume-yes install clang-format-11
+    - name: Install clang-format-13
+      run: sudo apt --assume-yes install clang-format-13
 
     - name: Install gitpython
       run: sudo pip install gitpython
 
     - name: Run clang-format
       run: |
-        sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-11 110
+        sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-13 130
         clang-format --version
         python sys/clang-format.py --check --verbose
 

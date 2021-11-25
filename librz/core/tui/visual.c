@@ -731,7 +731,7 @@ RZ_API void rz_core_visual_prompt_input(RzCore *core) {
 	bool mouse_state = __holdMouseState(core);
 	rz_cons_gotoxy(0, h);
 	rz_cons_reset_colors();
-	//rz_cons_printf ("\nPress <enter> to return to Visual mode.\n");
+	// rz_cons_printf ("\nPress <enter> to return to Visual mode.\n");
 	rz_cons_show_cursor(true);
 	core->vmode = false;
 
@@ -773,7 +773,7 @@ RZ_API int rz_core_visual_prompt(RzCore *core) {
 		}
 	} else {
 		ret = false;
-		//rz_cons_any_key (NULL);
+		// rz_cons_any_key (NULL);
 		rz_cons_clear00();
 		rz_core_visual_showcursor(core, false);
 	}
@@ -1327,8 +1327,8 @@ repeat:
 		if (fun) {
 			if (xref_to) { //  function xrefs
 				xrefs = rz_analysis_xrefs_get_to(core->analysis, addr);
-				//XXX xrefs = rz_analysis_function_get_xrefs_to(core->analysis, fun);
-				// this function is buggy so we must get the xrefs of the addr
+				// XXX xrefs = rz_analysis_function_get_xrefs_to(core->analysis, fun);
+				//  this function is buggy so we must get the xrefs of the addr
 			} else { // functon refs
 				xrefs = rz_analysis_function_get_xrefs_from(fun);
 			}
@@ -1855,7 +1855,7 @@ static void cursor_prevrow(RzCore *core, bool use_ocur) {
 				p->cur--;
 			}
 		} else {
-			p->cur = prev_roff + delta; //res;
+			p->cur = prev_roff + delta; // res;
 		}
 	} else {
 		p->cur -= p->cols;
@@ -3807,7 +3807,7 @@ static void visual_refresh(RzCore *core) {
 	core->cons->blankline = false;
 	core->cons->blankline = true;
 	core->curtab = 0; // which command are we focusing
-	//core->seltab = 0; // user selected tab
+	// core->seltab = 0; // user selected tab
 
 	if (rz_config_get_i(core->config, "scr.scrollbar")) {
 		rz_core_print_scrollbar(core);
@@ -3889,7 +3889,7 @@ RZ_API int rz_core_visual(RzCore *core, const char *input) {
 	}
 
 	obs = core->blocksize;
-	//rz_cons_set_cup (true);
+	// rz_cons_set_cup (true);
 
 	core->vmode = false;
 	/* honor vim */

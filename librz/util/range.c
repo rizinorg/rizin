@@ -7,7 +7,7 @@
 // TODO: redesign this api.. why? :)
 // TODO: add tags to ranges
 
-//void (*ranges_new_callback)(struct range_t *r) = NULL;
+// void (*ranges_new_callback)(struct range_t *r) = NULL;
 
 RZ_API RRange *rz_range_new(void) {
 	RRange *r = RZ_NEW0(RRange);
@@ -216,7 +216,7 @@ __reloop:
 		if (r->fr < fr && r->fr < to && r->to > fr && r->to > to) {
 			r->to = fr;
 			rz_range_add(rgs, to, r->to, 1);
-			//ranges_add(rang, to, r->to, 1);
+			// ranges_add(rang, to, r->to, 1);
 			goto __reloop;
 		}
 	}
@@ -233,7 +233,7 @@ RZ_API void rz_range_merge(RRange *rgs, RRange *r) {
 }
 #endif
 
-//int ranges_is_used(ut64 addr)
+// int ranges_is_used(ut64 addr)
 RZ_API int rz_range_contains(RRange *rgs, ut64 addr) {
 	RRangeItem *r;
 	RzListIter *iter;
@@ -361,13 +361,13 @@ RRange *rz_range_inverse(RRange *rgs, ut64 fr, ut64 to, int flags) {
 	rz_list_foreach (rgs->ranges, iter, r) {
 		if (r->fr > fr && r->fr < to) {
 			rz_range_add(newrgs, fr, r->fr, 1);
-			//eprintf("0x%08"PFMT64x" .. 0x%08"PFMT64x"\n", fr, r->fr);
+			// eprintf("0x%08"PFMT64x" .. 0x%08"PFMT64x"\n", fr, r->fr);
 			total += (r->fr - fr);
 			fr = r->to;
 		}
 	}
 	if (fr < to) {
-		//eprintf("0x%08"PFMT64x" .. 0x%08"PFMT64x"\n", fr, to);
+		// eprintf("0x%08"PFMT64x" .. 0x%08"PFMT64x"\n", fr, to);
 		rz_range_add(newrgs, fr, to, 1);
 	}
 	// eprintf("Total bytes: %"PFMT64d"\n", total);
@@ -382,8 +382,8 @@ RRange *rz_range_inverse(RRange *rgs, ut64 fr, ut64 to, int flags) {
 // TODO: move to num.c ?
 RZ_API int rz_range_overlap(ut64 a0, ut64 a1, ut64 b0, ut64 b1, int *d) {
 	// TODO: ensure ranges minmax .. innecesary at runtime?
-	//rz_num_minmax_swap (&a0, &a1);
-	//rz_num_minmax_swap (&b0, &b1);
+	// rz_num_minmax_swap (&a0, &a1);
+	// rz_num_minmax_swap (&b0, &b1);
 	return *d = (b0 - a0), !(a1 < b0 || a0 > b1);
 #if 0
 	// does not overlap

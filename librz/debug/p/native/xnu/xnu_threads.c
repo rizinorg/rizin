@@ -113,8 +113,8 @@ static bool xnu_thread_set_drx(RzDebug *dbg, xnu_thread_t *thread) {
 #define PPC_DEBUG_STATE32 1
 #endif
 	ppc_debug_state_t *regs;
-	//thread->flavor = PPC_DEBUG_STATE32;
-	//thread->count  = RZ_MIN (thread->count, sizeof (regs->uds.ds32));
+	// thread->flavor = PPC_DEBUG_STATE32;
+	// thread->count  = RZ_MIN (thread->count, sizeof (regs->uds.ds32));
 	return false;
 #else
 	regs->dsh.flavor = 0;
@@ -139,7 +139,7 @@ static bool xnu_thread_set_gpr(RzDebug *dbg, xnu_thread_t *thread) {
 	// thread->flavor is used in a switch+case but in regs->tsh.flavor we
 	// specify
 	thread->state = &regs->uts;
-	//thread->state = regs;
+	// thread->state = regs;
 	thread->flavor = x86_THREAD_STATE;
 	thread->count = x86_THREAD_STATE_COUNT;
 	if (dbg->bits == RZ_SYS_BITS_64) {
@@ -155,7 +155,7 @@ static bool xnu_thread_set_gpr(RzDebug *dbg, xnu_thread_t *thread) {
 	thread->flavor = ARM_UNIFIED_THREAD_STATE;
 	thread->count = ARM_UNIFIED_THREAD_STATE_COUNT;
 #endif
-	//thread->state = regs;
+	// thread->state = regs;
 	thread->state = &regs->uts;
 	if (dbg->bits == RZ_SYS_BITS_64) {
 		thread->flavor = ARM_THREAD_STATE64;
@@ -192,7 +192,7 @@ static bool xnu_thread_get_gpr(RzDebug *dbg, xnu_thread_t *thread) {
 #if __POWERPC__
 	thread->state = regs;
 #elif __arm64 || __aarch64 || __arch64__ || __arm64__
-	//thread->state = regs;
+	// thread->state = regs;
 	thread->state = &regs->uts;
 	if (dbg->bits == RZ_SYS_BITS_64) {
 		thread->flavor = ARM_THREAD_STATE64;
@@ -334,7 +334,7 @@ static int xnu_update_thread_list(RzDebug *dbg) {
 		// alive
 		rz_list_foreach_safe (dbg->threads, iter, iter2, thread) {
 			bool flag = true; // this flag will denote when delete
-				// a thread
+					  // a thread
 			for (i = 0; i < thread_count; i++) {
 				if (thread->port == thread_list[i]) {
 					flag = false;

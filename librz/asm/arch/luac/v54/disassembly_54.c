@@ -142,7 +142,7 @@ int lua54_disasm(RzAsmOp *op, const ut8 *buf, int len, LuaOpNameList opnames) {
 	case OP_LOADK: /*	A Bx	R[A] := K[Bx]					*/
 	case OP_FORLOOP: /*	A Bx	update counters; if loop continues then pc-=Bx; */
 	case OP_FORPREP: /*	A Bx	<check values and prepare counters>;
-                     if not to run then pc+=Bx+1;			*/
+		     if not to run then pc+=Bx+1;			*/
 	case OP_TFORPREP: /*	A Bx	create upvalue for R[A + 3]; pc+=Bx		*/
 	case OP_TFORLOOP: /*	A Bx	if R[A+2] ~= nil then { R[A]=R[A+2]; pc -= Bx }	*/
 	case OP_CLOSURE: /*	A Bx	R[A] := closure(KPROTO[Bx])			*/

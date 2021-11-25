@@ -9,20 +9,20 @@
 // NOTE: buf should be at least 16 bytes!
 // XXX addr should be off_t for 64 love
 static int ppc_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *bytes, int len, RzAnalysisOpMask mask) {
-	//int arch_ppc_op(ut64 addr, const u8 *bytes, struct op_t *op)
-	// XXX hack
+	// int arch_ppc_op(ut64 addr, const u8 *bytes, struct op_t *op)
+	//  XXX hack
 	int opcode = (bytes[0] & 0xf8) >> 3; // bytes 0-5
 	short baddr = ((bytes[2] << 8) | (bytes[3] & 0xfc)); // 16-29
 	int aa = bytes[3] & 0x2;
 	int lk = bytes[3] & 0x1;
-	//if (baddr>0x7fff)
-	//      baddr = -baddr;
+	// if (baddr>0x7fff)
+	//       baddr = -baddr;
 
 	op->addr = addr;
 	op->type = 0;
 	op->size = 4;
 
-	//eprintf("OPCODE IS %08x : %02x (opcode=%d) baddr = %d\n", addr, bytes[0], opcode, baddr);
+	// eprintf("OPCODE IS %08x : %02x (opcode=%d) baddr = %d\n", addr, bytes[0], opcode, baddr);
 
 	switch (opcode) {
 		//	case 0: // bl op->type = RZ_ANALYSIS_OP_TYPE_NOP; break;

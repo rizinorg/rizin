@@ -77,7 +77,7 @@ static bool _fill_bin_symbol(RzBin *rbin, struct rz_bin_coff_obj *bin, int idx, 
 	ptr->is_imported = is_imported_symbol(s);
 	ptr->vaddr = UT64_MAX;
 	if (s->n_scnum < bin->hdr.f_nscns + 1 && s->n_scnum > 0) {
-		//first index is 0 that is why -1
+		// first index is 0 that is why -1
 		sc_hdr = &bin->scn_hdrs[s->n_scnum - 1];
 		ptr->paddr = sc_hdr->s_scnptr + s->n_value;
 		if (bin->scn_va) {

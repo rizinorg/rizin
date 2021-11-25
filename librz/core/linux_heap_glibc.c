@@ -152,7 +152,7 @@ static GHT GH(tcache_chunk_size)(RzCore *core, GHT brk_start) {
 		return sz;
 	}
 	rz_io_read_at(core->io, brk_start, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
-	sz = (cnk->size >> 3) << 3; //clear chunk flag
+	sz = (cnk->size >> 3) << 3; // clear chunk flag
 	return sz;
 }
 

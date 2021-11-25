@@ -222,4 +222,4 @@ LuaProto *lua_parse_body_53(RzBuffer *buffer, ut64 offset, ut64 data_size);
 		return 0; \
 	}
 
-#endif //BUILD_LUAC_COMMON_H
+#endif // BUILD_LUAC_COMMON_H

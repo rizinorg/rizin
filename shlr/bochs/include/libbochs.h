@@ -34,8 +34,8 @@ typedef struct libbochs_t {
 	bool isRunning;
 } libbochs_t;
 
-//DWORD WINAPI MyThLector_(LPVOID lpParam)
-//DWORD WINAPI MyThEscritor_(LPVOID lpParam)
+// DWORD WINAPI MyThLector_(LPVOID lpParam)
+// DWORD WINAPI MyThEscritor_(LPVOID lpParam)
 bool bochs_wait(libbochs_t *b);
 void bochs_reset_buffer(libbochs_t *b);
 bool bochs_cmd_stop(libbochs_t *b);
@@ -66,7 +66,7 @@ bool bochs_open(libbochs_t *b, const char *rutaBochs, const char *rutaConfig);
 #endif
 #endif
 
-/*! 
+/*!
 int gdbr_remove_bp(libgdbr_t* g, ut64 address);
 int gdbr_remove_hwbp(libgdbr_t* g, ut64 address);
 */

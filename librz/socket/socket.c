@@ -589,7 +589,7 @@ RZ_API RzSocket *rz_socket_accept(RzSocket *s) {
 	if (!sock) {
 		return NULL;
 	}
-	//signal (SIGPIPE, SIG_DFL);
+	// signal (SIGPIPE, SIG_DFL);
 	sock->fd = accept(s->fd, (struct sockaddr *)&s->sa, &salen);
 	if (sock->fd == RZ_INVALID_SOCKET) {
 		if (errno != EWOULDBLOCK) {
@@ -712,7 +712,7 @@ RZ_API char *rz_socket_to_string(RzSocket *s) {
 				a[0], a[1], a[2], a[3], ntohs(sain->sin_port));
 		}
 	} else {
-		eprintf("getperrname: failed\n"); //rz_sys_perror ("getpeername");
+		eprintf("getperrname: failed\n"); // rz_sys_perror ("getpeername");
 	}
 	return str;
 #else
@@ -736,7 +736,7 @@ RZ_API int rz_socket_write(RzSocket *s, void *buf, int len) {
 	rz_sys_signal(SIGPIPE, SIG_IGN);
 #endif
 	for (;;) {
-		int b = 1500; //65536; // Use MTU 1500?
+		int b = 1500; // 65536; // Use MTU 1500?
 		if (b > len) {
 			b = len;
 		}
@@ -752,7 +752,7 @@ RZ_API int rz_socket_write(RzSocket *s, void *buf, int len) {
 		{
 			ret = send(s->fd, (char *)buf + delta, b, 0);
 		}
-		//if (ret == 0) return -1;
+		// if (ret == 0) return -1;
 		if (ret < 1) {
 			break;
 		}

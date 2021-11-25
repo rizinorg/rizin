@@ -7,7 +7,7 @@
 
 /**
  * \brief Serialize debug state (RzDebug) and save to a sdb
- * 
+ *
  * \param db sdb to save the state
  * \param dbg RzDebug instance to save
  */
@@ -18,7 +18,7 @@ RZ_API void rz_serialize_debug_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzDebug *dbg)
 
 /**
  * \brief Load a serialized debug state to a RzDebug instance
- * 
+ *
  * \param db sdb storing the serialized debug state
  * \param dbg RzDebug instance to load the state into
  * \param res RzSerializeResultInfo to store info/errors/warnings

@@ -64,10 +64,10 @@ enum {
 };
 
 typedef struct _SEGMENT {
-	ut16 offset; //Specifies the offset, in sectors, to the segment data (relative to the beginning of the file). A value of zero means no data exists.
-	ut16 length; //Length of the segment in bytes. A value of zero indicates that the segment length is 64K, unless the selector offset is also zero.
+	ut16 offset; // Specifies the offset, in sectors, to the segment data (relative to the beginning of the file). A value of zero means no data exists.
+	ut16 length; // Length of the segment in bytes. A value of zero indicates that the segment length is 64K, unless the selector offset is also zero.
 	ut16 flags; // NE_SEGMENT_FLAGS
-	ut16 minAllocSz; //A value of zero indicates that the minimum allocation size is 64K
+	ut16 minAllocSz; // A value of zero indicates that the minimum allocation size is 64K
 } NE_image_segment_entry;
 
 typedef struct _NAMEINFO {

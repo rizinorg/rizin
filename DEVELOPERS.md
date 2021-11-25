@@ -49,12 +49,13 @@ E.g.: `Bug fix did not change the general behavior of the function. No documenta
 In order to contribute with patches or plugins, we encourage you to use the same
 coding style as the rest of the code base.
 
-* Use git-clang-format 11 to format your code. You should invoke it as below
-(after making sure that your local copy of `dev` is up-to-date and your branch
-is up-to-date with `dev`):
+* Use git-clang-format 13 to format your code. If clang-format-13 is not available on
+  your Debian-based distribution, you can install it from https://apt.llvm.org/.
+  You should invoke it as below (after making sure that your local copy of `dev`
+  is up-to-date and your branch is up-to-date with `dev`):
 
 ```bash
-git-clang-format-11 --extensions c,cpp,h,hpp,inc --style file dev
+git-clang-format-13 --extensions c,cpp,h,hpp,inc --style file dev
 ```
 
 * Lines should be at most 100 chars. A tab is considered as 8 chars. If it makes
@@ -182,6 +183,12 @@ rz_core_wrap.cxx:32103:61: error: assigning to 'RzDebugReasonType' from incompat
 
 * Never ever use `%lld` or `%llx`. This is not portable. Always use the `PFMT64x`
   macros. Those are similar to the ones in GLIB. See all macroses in `librz/include/rz_types.h`.
+
+* Add a single space after the `//` when writing inline comments:
+
+```c
+int sum = 0; // set sum to 0
+```
 
 ### Shell Scripts
 

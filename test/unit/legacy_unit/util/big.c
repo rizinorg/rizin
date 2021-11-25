@@ -10,7 +10,7 @@ void main() {
 
 	rz_big_set_st(&n2, -2);
 	rz_big_set_str(&n3, "-3");
-	//rz_big_set_st (&n3, -3);
+	// rz_big_set_st (&n3, -3);
 	printf("n3last = %d\n", n3.last);
 	printf("%d %d\n", n3.dgts[0], n3.dgts[1]);
 	rz_big_mul(&n2, &n2, &n3);

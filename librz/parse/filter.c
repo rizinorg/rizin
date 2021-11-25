@@ -437,7 +437,7 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 						off <<= 8;
 					}
 
-					//Skip first '\x00' bytes
+					// Skip first '\x00' bytes
 					if (num[1] == '\0' && ch == '\0') {
 						continue;
 					}

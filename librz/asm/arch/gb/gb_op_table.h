@@ -20,7 +20,7 @@ static const char *cb_ops[] = { "rlc", "rrc", "rl", "rr", "sla", "sra", "swap", 
 static const char *cb_regs[] = { "b", "c", "d", "e", "h", "l", "[hl]", "a" };
 
 static gb_opcode gb_op[] = {
-	{ "nop", GB_8BIT }, //0x00
+	{ "nop", GB_8BIT }, // 0x00
 	{ "ld bc, 0x%04x", GB_8BIT + ARG_16 },
 	{ "ld [bc], a", GB_8BIT },
 	{ "inc bc", GB_8BIT },
@@ -28,7 +28,7 @@ static gb_opcode gb_op[] = {
 	{ "dec b", GB_8BIT },
 	{ "ld b, 0x%02x", GB_8BIT + ARG_8 },
 	{ "rlca", GB_8BIT },
-	{ "ld [0x%04x], sp", GB_8BIT + ARG_16 }, //word or byte?
+	{ "ld [0x%04x], sp", GB_8BIT + ARG_16 }, // word or byte?
 	{ "add hl, bc", GB_8BIT },
 	{ "ld a, [bc]", GB_8BIT },
 	{ "dec bc", GB_8BIT },
@@ -37,7 +37,7 @@ static gb_opcode gb_op[] = {
 	{ "ld c, 0x%02x", GB_8BIT + ARG_8 },
 	{ "rrca", GB_8BIT },
 
-	{ "stop", GB_8BIT }, //0x10
+	{ "stop", GB_8BIT }, // 0x10
 	{ "ld de, 0x%04x", GB_8BIT + ARG_16 },
 	{ "ld [de], a", GB_8BIT },
 	{ "inc de", GB_8BIT },
@@ -45,7 +45,7 @@ static gb_opcode gb_op[] = {
 	{ "dec d", GB_8BIT },
 	{ "ld d, 0x%02x", GB_8BIT + ARG_8 },
 	{ "rla", GB_8BIT },
-	{ "jr 0x%02x", GB_8BIT + ARG_8 }, //signed
+	{ "jr 0x%02x", GB_8BIT + ARG_8 }, // signed
 	{ "add hl, de", GB_8BIT },
 	{ "ld a, [de]", GB_8BIT },
 	{ "dec de", GB_8BIT },
@@ -54,7 +54,7 @@ static gb_opcode gb_op[] = {
 	{ "ld e, 0x%02x", GB_8BIT + ARG_8 },
 	{ "rra", GB_8BIT },
 
-	{ "jr nZ, 0x%02x", GB_8BIT + ARG_8 }, //0x20 //signed
+	{ "jr nZ, 0x%02x", GB_8BIT + ARG_8 }, // 0x20 //signed
 	{ "ld hl, 0x%04x", GB_8BIT + ARG_16 },
 	{ "ldi [hl], a", GB_8BIT },
 	{ "inc hl", GB_8BIT },
@@ -62,7 +62,7 @@ static gb_opcode gb_op[] = {
 	{ "dec h", GB_8BIT },
 	{ "ld h, 0x%02x", GB_8BIT + ARG_8 },
 	{ "daa", GB_8BIT },
-	{ "jr Z, 0x%02x", GB_8BIT + ARG_8 }, //signed
+	{ "jr Z, 0x%02x", GB_8BIT + ARG_8 }, // signed
 	{ "add hl, hl", GB_8BIT },
 	{ "ldi a, [hl]", GB_8BIT },
 	{ "dec hl", GB_8BIT },
@@ -71,7 +71,7 @@ static gb_opcode gb_op[] = {
 	{ "ld l, 0x%02x", GB_8BIT + ARG_8 },
 	{ "cpl", GB_8BIT },
 
-	{ "jr nC, 0x%02x", GB_8BIT + ARG_8 }, //0x30 //signed
+	{ "jr nC, 0x%02x", GB_8BIT + ARG_8 }, // 0x30 //signed
 	{ "ld sp, 0x%04x", GB_8BIT + ARG_16 },
 	{ "ldd [hl], a", GB_8BIT },
 	{ "inc sp", GB_8BIT },
@@ -79,7 +79,7 @@ static gb_opcode gb_op[] = {
 	{ "dec [hl]", GB_8BIT },
 	{ "ld [hl], 0x%02x", GB_8BIT + ARG_8 },
 	{ "scf", GB_8BIT },
-	{ "jr C, 0x%02x", GB_8BIT + ARG_8 }, //signed
+	{ "jr C, 0x%02x", GB_8BIT + ARG_8 }, // signed
 	{ "add hl, sp", GB_8BIT },
 	{ "ldd a, [hl]", GB_8BIT },
 	{ "dec sp", GB_8BIT },
@@ -88,7 +88,7 @@ static gb_opcode gb_op[] = {
 	{ "ld a, 0x%02x", GB_8BIT + ARG_8 },
 	{ "ccf", GB_8BIT },
 
-	{ "ld b, b", GB_8BIT }, //0x40
+	{ "ld b, b", GB_8BIT }, // 0x40
 	{ "ld b, c", GB_8BIT },
 	{ "ld b, d", GB_8BIT },
 	{ "ld b, e", GB_8BIT },
@@ -105,7 +105,7 @@ static gb_opcode gb_op[] = {
 	{ "ld c, [hl]", GB_8BIT },
 	{ "ld c, a", GB_8BIT },
 
-	{ "ld d, b", GB_8BIT }, //0x50
+	{ "ld d, b", GB_8BIT }, // 0x50
 	{ "ld d, c", GB_8BIT },
 	{ "ld d, d", GB_8BIT },
 	{ "ld d, e", GB_8BIT },
@@ -122,7 +122,7 @@ static gb_opcode gb_op[] = {
 	{ "ld e, [hl]", GB_8BIT },
 	{ "ld e, a", GB_8BIT },
 
-	{ "ld h, b", GB_8BIT }, //0x60
+	{ "ld h, b", GB_8BIT }, // 0x60
 	{ "ld h, c", GB_8BIT },
 	{ "ld h, d", GB_8BIT },
 	{ "ld h, e", GB_8BIT },
@@ -139,7 +139,7 @@ static gb_opcode gb_op[] = {
 	{ "ld l, [hl]", GB_8BIT },
 	{ "ld l, a", GB_8BIT },
 
-	{ "ld [hl], b", GB_8BIT }, //0X70
+	{ "ld [hl], b", GB_8BIT }, // 0X70
 	{ "ld [hl], c", GB_8BIT },
 	{ "ld [hl], d", GB_8BIT },
 	{ "ld [hl], e", GB_8BIT },
@@ -156,7 +156,7 @@ static gb_opcode gb_op[] = {
 	{ "ld a, [hl]", GB_8BIT },
 	{ "ld a, a", GB_8BIT },
 
-	{ "add b", GB_8BIT }, //0x80
+	{ "add b", GB_8BIT }, // 0x80
 	{ "add c", GB_8BIT },
 	{ "add d", GB_8BIT },
 	{ "add e", GB_8BIT },
@@ -173,7 +173,7 @@ static gb_opcode gb_op[] = {
 	{ "adc [hl]", GB_8BIT },
 	{ "adc a", GB_8BIT },
 
-	{ "sub b", GB_8BIT }, //0x90
+	{ "sub b", GB_8BIT }, // 0x90
 	{ "sub c", GB_8BIT },
 	{ "sub d", GB_8BIT },
 	{ "sub e", GB_8BIT },
@@ -190,7 +190,7 @@ static gb_opcode gb_op[] = {
 	{ "sbc [hl]", GB_8BIT },
 	{ "sbc a", GB_8BIT },
 
-	{ "and b", GB_8BIT }, //0xa0
+	{ "and b", GB_8BIT }, // 0xa0
 	{ "and c", GB_8BIT },
 	{ "and d", GB_8BIT },
 	{ "and e", GB_8BIT },
@@ -207,7 +207,7 @@ static gb_opcode gb_op[] = {
 	{ "xor [hl]", GB_8BIT },
 	{ "xor a", GB_8BIT },
 
-	{ "or b", GB_8BIT }, //0xb0
+	{ "or b", GB_8BIT }, // 0xb0
 	{ "or c", GB_8BIT },
 	{ "or d", GB_8BIT },
 	{ "or e", GB_8BIT },
@@ -224,7 +224,7 @@ static gb_opcode gb_op[] = {
 	{ "cp [hl]", GB_8BIT },
 	{ "cp a", GB_8BIT },
 
-	{ "ret nZ", GB_8BIT }, //0xc0
+	{ "ret nZ", GB_8BIT }, // 0xc0
 	{ "pop bc", GB_8BIT },
 	{ "jp nZ, 0x%04x", GB_8BIT + ARG_16 },
 	{ "jp 0x%04x", GB_8BIT + ARG_16 },
@@ -241,7 +241,7 @@ static gb_opcode gb_op[] = {
 	{ "adc 0x%02x", GB_8BIT + ARG_8 },
 	{ "rst 8", GB_8BIT },
 
-	{ "ret nC", GB_8BIT }, //0xd0
+	{ "ret nC", GB_8BIT }, // 0xd0
 	{ "pop de", GB_8BIT },
 	{ "jp nC, 0x%04x", GB_8BIT + ARG_16 },
 	{ "invalid", GB_8BIT },
@@ -258,7 +258,7 @@ static gb_opcode gb_op[] = {
 	{ "sbc 0x%02x", GB_8BIT + ARG_8 },
 	{ "rst 24", GB_8BIT },
 
-	{ "ld [%s], a", GB_8BIT + ARG_8 + GB_IO }, //0xe0
+	{ "ld [%s], a", GB_8BIT + ARG_8 + GB_IO }, // 0xe0
 	{ "pop hl", GB_8BIT },
 	{ "ld [0xff00 + c], a", GB_8BIT },
 	{ "invalid", GB_8BIT },
@@ -266,16 +266,16 @@ static gb_opcode gb_op[] = {
 	{ "push hl", GB_8BIT },
 	{ "and 0x%02x", GB_8BIT + ARG_8 },
 	{ "rst 32", GB_8BIT },
-	{ "add sp, 0x%02x", GB_8BIT + ARG_8 }, //signed
+	{ "add sp, 0x%02x", GB_8BIT + ARG_8 }, // signed
 	{ "jp hl", GB_8BIT },
-	{ "ld [0x%04x], a", GB_8BIT + ARG_16 }, //signed
+	{ "ld [0x%04x], a", GB_8BIT + ARG_16 }, // signed
 	{ "invalid", GB_8BIT },
 	{ "invalid", GB_8BIT },
 	{ "invalid", GB_8BIT },
 	{ "xor 0x%02x", GB_8BIT + ARG_8 },
 	{ "rst 40", GB_8BIT },
 
-	{ "ld a, [%s]", GB_8BIT + ARG_8 + GB_IO }, //0xf0
+	{ "ld a, [%s]", GB_8BIT + ARG_8 + GB_IO }, // 0xf0
 	{ "pop af", GB_8BIT },
 	{ "ld a, [0xff00 + c]", GB_8BIT },
 	{ "di", GB_8BIT },
@@ -283,7 +283,7 @@ static gb_opcode gb_op[] = {
 	{ "push af", GB_8BIT },
 	{ "or 0x%02x", GB_8BIT + ARG_8 },
 	{ "rst 48", GB_8BIT },
-	{ "ld hl, sp + 0x%02x", GB_8BIT + ARG_8 }, //signed
+	{ "ld hl, sp + 0x%02x", GB_8BIT + ARG_8 }, // signed
 	{ "ld sp, hl", GB_8BIT },
 	{ "ld a, [0x%04x]", GB_8BIT + ARG_16 },
 	{ "ei", GB_8BIT },

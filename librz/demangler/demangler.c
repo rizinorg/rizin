@@ -119,7 +119,7 @@ RZ_API void rz_demangler_free(RZ_NULLABLE RzDemangler *dem) {
 
 /**
  * \brief Iterates over the plugin list
- * 
+ *
  * Iterates over the plugin list and passes a RzDemanglerPlugin pointer
  * to the iter function; if the iter function returns false, then the
  * iteration is halted.
@@ -138,7 +138,7 @@ RZ_API void rz_demangler_plugin_iterate(RZ_NONNULL RzDemangler *dem, RZ_NONNULL 
 
 /**
  * \brief Adds a new demangler plugin to the plugin list
- * 
+ *
  * If two plugins handles the same language, then the old plugin is removed.
  */
 RZ_API bool rz_demangler_plugin_add(RZ_NONNULL RzDemangler *dem, RZ_NONNULL RzDemanglerPlugin *plugin) {
@@ -162,7 +162,7 @@ RZ_API bool rz_demangler_plugin_add(RZ_NONNULL RzDemangler *dem, RZ_NONNULL RzDe
 
 /**
  * \brief Returns a demangler plugin pointer based on the language that is found
- * 
+ *
  * This function returns NULL only when the requested language is not available.
  */
 RZ_API RZ_BORROW const RzDemanglerPlugin *rz_demangler_plugin_get(RZ_NONNULL RzDemangler *dem, RZ_NONNULL const char *language) {
@@ -181,7 +181,7 @@ RZ_API RZ_BORROW const RzDemanglerPlugin *rz_demangler_plugin_get(RZ_NONNULL RzD
 
 /**
  * \brief Resolves a symbol based on its language and return an output that needs to be freed
- * 
+ *
  * This function fails only when the requested language is not available.
  */
 RZ_API bool rz_demangler_resolve(RZ_NONNULL RzDemangler *dem, RZ_NULLABLE const char *symbol, RZ_NONNULL const char *language, RZ_NONNULL RZ_OWN char **output) {

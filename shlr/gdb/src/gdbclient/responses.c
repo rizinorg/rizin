@@ -249,7 +249,7 @@ int handle_stop_reason(libgdbr_t *g) {
 	switch (g->data[0]) {
 	case 'O':
 		unpack_hex(g->data + 1, g->data_len - 1, g->data + 1);
-		//g->data[g->data_len - 1] = '\0';
+		// g->data[g->data_len - 1] = '\0';
 		eprintf("%s", g->data + 1);
 		if (send_ack(g) < 0) {
 			return -1;

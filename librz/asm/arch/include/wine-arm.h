@@ -101,7 +101,7 @@
 #define ARM_DTX_I      0x04000000
 #define ARM_DTX_I_MASK 0x0C000000
 
-//is immediate value
+// is immediate value
 #define ARM_DTX_IM    0x00
 #define ARM_DTX_NOTIM (0x01 << 25)
 // pre / post indexing
