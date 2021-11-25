@@ -3257,6 +3257,10 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETPREF("prj.file", "", "Path of the currently opened project");
 	SETBPREF("prj.compress", "false", "Compress the project file while saving");
 
+	/* table */
+	SETPREF("table.style", "standard", "Style of showing tables (values: standard, fancy, JSON, CSV");
+	SETBPREF("table.header", "true", "Show the header column titles when showing table");
+
 	/* cfg */
 	SETBPREF("cfg.plugins", "true", "Load plugins at startup");
 	SETCB("time.fmt", "%Y-%m-%d %H:%M:%S %z", &cb_cfgdatefmt, "Date format (%Y-%m-%d %H:%M:%S %z)");
