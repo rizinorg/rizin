@@ -6,6 +6,7 @@ import argparse
 import glob
 import os
 import sys
+import subprocess
 
 import yaml
 from cmd_descs_util import CD_TYPE_OLDINPUT, compute_cname, get_handler_cname
@@ -54,6 +55,12 @@ def find_c_name_handler(basedir, rzcommand):
     return None
 
 
+def format_shell_command(args):
+    return " ".join(
+        [arg if '"' not in arg and "*" not in arg else f"'{arg}'" for arg in args]
+    )
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Find the C handler of a rizin command"
@@ -64,24 +71,35 @@ def main():
         type=str,
         help="Path to the cmd_descs directory containing the *.yaml files",
     )
+    parser.add_argument(
+        "-g",
+        "--grep",
+        action="store_true",
+        help="Run the grep command directly instead of just showing it",
+    )
     parser.add_argument("rzcommand", type=str, help="Name of the rizin command")
 
     args = parser.parse_args()
     c_name = find_c_name_handler(args.cmddescs_dir, args.rzcommand)
+    CRED = "\033[91m"
+    CEND = "\033[0m"
     if c_name is None:
         print(
             f"Command {args.rzcommand} does not exist or it is not converted to rzshell yet."
         )
-        sys.exit(1)
+        grep_cmd = ["git", "grep", "-n", f'"{args.rzcommand}"', "librz/core/cmd"]
+        print(
+            f"Some old commands may be found like this: {CRED}{format_shell_command(grep_cmd)}{CEND}"
+        )
+    else:
+        print(f"Rizin Command: {CRED}{args.rzcommand}{CEND}")
+        print(f"C handler: {CRED}{c_name}{CEND}")
+        grep_cmd = ["git", "grep", "-nWG", f"^[^[:blank:]].*{c_name}(", "*.c"]
+        print(f"Git command to get it: {CRED}{format_shell_command(grep_cmd)}{CEND}")
 
-    CRED = "\033[91m"
-    CEND = "\033[0m"
-
-    print(f"Rizin Command: {CRED}{args.rzcommand}{CEND}")
-    print(f"C handler: {CRED}{c_name}{CEND}")
-    print(
-        f'Git command to get it: {CRED}git grep -nWG "^[^[:blank:]].*{c_name}(" *.c{CEND}'
-    )
+    if args.grep:
+        print("--------")
+        sys.exit(subprocess.run(grep_cmd, check=False).returncode)
 
 
 if __name__ == "__main__":
