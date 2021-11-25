@@ -1165,10 +1165,7 @@ EXPECT=<<EOF
 0x00005ae5 (byte=06)   ed ' '  ->  ab ' '
 0x00005ae6 (byte=07)   49 'I'  ->  cd ' '
 0x00005ae7 (byte=08)   89 ' '  ->  ef ' '
-0x00005ae8 (byte=09)   d1 ' '  ->  33 '3'
-0x00005ae9 (byte=10)   5e '^'  ->  31 '1'
-0x00005aea (byte=11)   48 'H'  ->  65 'e'
-Compare 0/11 equal bytes (0%)
+Compare 0/8 equal bytes (0%)
 0x1
 Compare 3/3 equal bytes (100%)
 0x0
