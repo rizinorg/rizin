@@ -587,19 +587,9 @@ RZ_API void rz_core_debug_ri(RzCore *core, RzReg *reg, int mode) {
 
 RZ_IPI void rz_core_debug_sync_bits(RzCore *core) {
 	if (rz_config_get_b(core->config, "cfg.debug")) {
-		switch (core->dbg->bits) {
-		case RZ_SYS_BITS_8:
-			rz_config_set_i(core->config, "asm.bits", 8);
-			break;
-		case RZ_SYS_BITS_16:
-			rz_config_set_i(core->config, "asm.bits", 16);
-			break;
-		case RZ_SYS_BITS_32:
-			rz_config_set_i(core->config, "asm.bits", 32);
-			break;
-		case RZ_SYS_BITS_64:
-			rz_config_set_i(core->config, "asm.bits", 64);
-			break;
+		ut64 asm_bits = rz_config_get_i(core->config, "asm.bits");
+		if (asm_bits != core->dbg->bits * 8) {
+			rz_config_set_i(core->config, "asm.bits", core->dbg->bits * 8);
 		}
 	}
 }
