@@ -586,6 +586,7 @@ RZ_API void rz_core_debug_ri(RzCore *core, RzReg *reg, int mode) {
 }
 
 RZ_IPI void rz_core_debug_sync_bits(RzCore *core) {
+#if __WINDOWS__
 	if (rz_config_get_b(core->config, "cfg.debug")) {
 		switch (core->dbg->bits) {
 		case RZ_SYS_BITS_8:
@@ -602,6 +603,7 @@ RZ_IPI void rz_core_debug_sync_bits(RzCore *core) {
 			break;
 		}
 	}
+#endif
 }
 
 RZ_IPI void rz_core_debug_single_step_in(RzCore *core) {
