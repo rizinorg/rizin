@@ -5358,11 +5358,14 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 		ESIL = core->analysis->esil;
 		if (!ESIL) {
 			eprintf("ESIL not initialized\n");
-			return;
+			goto out_pop_regs;
 		}
 		rz_core_analysis_esil_init_mem(core, NULL, UT64_MAX, UT32_MAX);
 	}
 	const char *spname = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_SP);
+	if (!spname) {
+		goto out_pop_regs;
+	}
 	EsilBreakCtx ctx = {
 		&op,
 		fcn,
@@ -5383,7 +5386,7 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 	pcname = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
 	if (!pcname || !*pcname) {
 		eprintf("Cannot find program counter register in the current profile.\n");
-		return;
+		goto out_pop_regs;
 	}
 	esil_analysis_stop = false;
 	rz_cons_break_push(cccb, core);
@@ -5691,6 +5694,7 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 	ESIL->user = NULL;
 	rz_analysis_op_fini(&op);
 	rz_cons_break_pop();
+out_pop_regs:
 	// restore register
 	rz_reg_arena_pop(core->analysis->reg);
 }
