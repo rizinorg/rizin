@@ -466,7 +466,7 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 		break;
 	case 'b': // "?b"
 		if (input[1] == '6' && input[2] == '4') {
-			//b64 decoding takes at most strlen(str) * 4
+			// b64 decoding takes at most strlen(str) * 4
 			const int buflen = (strlen(input + 3) * 4) + 1;
 			char *buf = calloc(buflen, sizeof(char));
 			if (!buf) {
@@ -1084,12 +1084,12 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 		break;
 	}
 	case 't': { // "?t"
-		struct rz_prof_t prof;
-		rz_prof_start(&prof);
+		ut64 start = rz_time_now_mono();
 		rz_core_cmd(core, input + 1, 0);
-		rz_prof_end(&prof);
-		core->num->value = (ut64)(int)prof.result;
-		eprintf("%lf\n", prof.result);
+		ut64 end = rz_time_now_mono();
+		double seconds = (double)(end - start) / RZ_USEC_PER_SEC;
+		core->num->value = (ut64)seconds;
+		eprintf("%lf\n", seconds);
 		break;
 	}
 	case '?': // "??"

@@ -7,7 +7,7 @@
 
 RZ_API void rz_analysis_esil_sources_init(RzAnalysisEsil *esil) {
 	if (esil && !esil->sources) {
-		esil->sources = rz_id_storage_new(1, 0xffffffff); //0 is reserved for stuff from plugins
+		esil->sources = rz_id_storage_new(1, 0xffffffff); // 0 is reserved for stuff from plugins
 	}
 }
 

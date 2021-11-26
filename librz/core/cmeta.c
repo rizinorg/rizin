@@ -20,6 +20,11 @@ static char *meta_string_escape(RzCore *core, RzAnalysisMetaItem *mi) {
 		// All strings that are put into the metadata are already converted
 		esc_str = rz_str_escape_utf8(mi->str, &opt);
 		break;
+	case RZ_STRING_ENC_IBM037:
+	case RZ_STRING_ENC_IBM290:
+	case RZ_STRING_ENC_EBCDIC_UK:
+	case RZ_STRING_ENC_EBCDIC_US:
+	case RZ_STRING_ENC_EBCDIC_ES:
 	case RZ_STRING_ENC_8BIT:
 		esc_str = rz_str_escape_8bit(mi->str, false, &opt);
 		break;
@@ -329,4 +334,32 @@ RZ_IPI void rz_core_meta_print_list_in_function(RzCore *core, RzAnalysisMetaType
 	rz_cmd_state_output_array_start(state);
 	print_meta_list(core, type, addr, state);
 	rz_cmd_state_output_array_end(state);
+}
+
+RZ_IPI void rz_core_meta_append(RzCore *core, const char *newcomment, RzAnalysisMetaType mtype, ut64 addr) {
+	const char *comment = rz_meta_get_string(core->analysis, mtype, addr);
+	char *nc = strdup(newcomment);
+	rz_str_unescape(nc);
+	if (comment) {
+		char *text = rz_str_newf("%s %s", comment, nc);
+		if (text) {
+			rz_meta_set_string(core->analysis, mtype, addr, text);
+			free(text);
+		} else {
+			rz_sys_perror("malloc");
+		}
+	} else {
+		rz_meta_set_string(core->analysis, mtype, addr, nc);
+	}
+	free(nc);
+}
+
+RZ_IPI void rz_core_meta_editor(RzCore *core, RzAnalysisMetaType mtype, ut64 addr) {
+	const char *comment = rz_meta_get_string(core->analysis, mtype, addr);
+	char *out = rz_core_editor(core, NULL, comment);
+	if (out) {
+		rz_meta_del(core->analysis, mtype, addr, 1);
+		rz_meta_set_string(core->analysis, mtype, addr, out);
+		free(out);
+	}
 }

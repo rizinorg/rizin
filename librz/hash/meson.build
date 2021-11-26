@@ -45,6 +45,7 @@ rz_hash = library('rz_hash', rz_hash_sources,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
+  link_args: library_linkflags,
   soversion: rizin_libversion
 )
 
@@ -56,7 +57,6 @@ pkgconfig_mod.generate(rz_hash,
   version: rizin_version,
   name: 'rz_hash',
   filebase: 'rz_hash',
-  libraries: pkgcfg_sanitize_libs,
   requires: [
     'rz_util'
   ],

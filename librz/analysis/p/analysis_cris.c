@@ -234,7 +234,7 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 	}
 #endif
 	op->size = opsize;
-	//op->delay = 1;
+	// op->delay = 1;
 	return opsize;
 }
 

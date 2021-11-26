@@ -861,7 +861,7 @@ bool search_db_check_panel_type(RzCore *core, RzPanel *panel, const char *ch) {
 	return ret;
 }
 
-//TODO: Refactroing
+// TODO: Refactroing
 bool __is_abnormal_cursor_type(RzCore *core, RzPanel *panel) {
 	if (__check_panel_type(panel, PANEL_CMD_SYMBOLS) || __check_panel_type(panel, PANEL_CMD_FUNCTION)) {
 		return true;
@@ -1290,7 +1290,7 @@ int __add_cmd_panel(void *user) {
 }
 
 void __add_help_panel(RzCore *core) {
-	//TODO: all these things done below are very hacky and refactoring needed
+	// TODO: all these things done below are very hacky and refactoring needed
 	RzPanels *ps = core->panels;
 	int h;
 	const char *help = "Help";
@@ -1535,7 +1535,7 @@ void __fix_cursor_down(RzCore *core) {
 	bool cur_is_visible = core->offset + print->cur + 32 < print->screen_bounds;
 	if (!cur_is_visible) {
 		int i = 0;
-		//XXX: ugly hack
+		// XXX: ugly hack
 		for (i = 0; i < 2; i++) {
 			RzAsmOp op;
 			int sz = rz_asm_disassemble(core->rasm,
@@ -3970,7 +3970,7 @@ void __print_disassembly_cb(void *user, void *p) {
 	core->offset = panel->model->addr;
 	rz_core_seek(core, panel->model->addr, true);
 	if (rz_config_get_b(core->config, "cfg.debug")) {
-		rz_core_debug_regs2flags(core, 0);
+		rz_core_debug_regs2flags(core);
 	}
 	cmdstr = __handle_cmd_str_cache(core, panel, false);
 	core->offset = o_offset;
@@ -4669,7 +4669,7 @@ void __panels_refresh(RzCore *core) {
 	__refresh_core_offset(core);
 	__set_refresh_all(core, false, false);
 
-	//TODO use getPanel
+	// TODO use getPanel
 	for (i = 0; i < panels->n_panels; i++) {
 		if (i != panels->curnode) {
 			__panel_print(core, can, __get_panel(panels, i), 0);
@@ -4794,7 +4794,7 @@ void __do_panels_refreshOneShot(RzCore *core) {
 void __panel_single_step_in(RzCore *core) {
 	if (rz_config_get_b(core->config, "cfg.debug")) {
 		rz_core_debug_step_one(core, 1);
-		rz_core_debug_regs2flags(core, 0);
+		rz_core_debug_regs2flags(core);
 	} else {
 		rz_core_esil_step(core, UT64_MAX, NULL, NULL, false);
 		rz_core_regs2flags(core);
@@ -4806,7 +4806,7 @@ void __panel_single_step_over(RzCore *core) {
 	rz_config_set_b(core->config, "io.cache", false);
 	if (rz_config_get_b(core->config, "cfg.debug")) {
 		rz_core_cmd(core, "dso", 0);
-		rz_core_debug_regs2flags(core, 0);
+		rz_core_debug_regs2flags(core);
 	} else {
 		rz_core_analysis_esil_step_over(core);
 	}

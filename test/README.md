@@ -132,8 +132,8 @@ dbl~main
 EOF
 REGEXP_FILTER_OUT=([a-zA-Z="]+\s+)
 EXPECT=<<EOF
-x sw break enabled valid cmd="" cond="" name="main" pie"
-x sw break enabled valid cmd="" cond="" name="main" pie"
+0x000005c5 0x000005c6 1    --x  sw    break enabled valid             main
+0x000005c5 0x000005c6 1    --x  sw    break enabled valid             main
 EOF
 RUN
 ```

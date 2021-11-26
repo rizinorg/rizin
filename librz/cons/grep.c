@@ -154,7 +154,7 @@ static void parse_grep_expression(const char *str) {
 			break;
 		case '<':
 			grep->zoom = atoi(++str);
-			//grep->zoomy = atoi (arg);
+			// grep->zoomy = atoi (arg);
 			break;
 		case '+':
 			if (first) {
@@ -345,7 +345,7 @@ static char *find_next_intgrep(char *cmd, const char *quotes) {
 		if (p == cmd || *(p - 1) != '\\') {
 			return (char *)p;
 		}
-		//twiddle unescape
+		// twiddle unescape
 		memmove(p - 1, p, strlen(p) + 1);
 		cmd = p + 1;
 	} while (*cmd);

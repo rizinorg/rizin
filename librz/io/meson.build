@@ -88,6 +88,7 @@ rz_io = library('rz_io', rz_io_sources,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
+  link_args: library_linkflags,
   soversion: rizin_libversion
 )
 
@@ -99,7 +100,6 @@ pkgconfig_mod.generate(rz_io,
   version: rizin_version,
   name: 'rz_io',
   filebase: 'rz_io',
-  libraries: pkgcfg_sanitize_libs,
   requires: [
     'rz_util',
     'rz_socket'

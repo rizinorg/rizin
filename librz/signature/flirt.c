@@ -106,69 +106,6 @@
 
 #define DEBUG 0
 
-/*arch flags*/
-#define IDASIG__ARCH__386       0 // Intel 80x86
-#define IDASIG__ARCH__Z80       1 // 8085, Z80
-#define IDASIG__ARCH__I860      2 // Intel 860
-#define IDASIG__ARCH__8051      3 // 8051
-#define IDASIG__ARCH__TMS       4 // Texas Instruments TMS320C5x
-#define IDASIG__ARCH__6502      5 // 6502
-#define IDASIG__ARCH__PDP       6 // PDP11
-#define IDASIG__ARCH__68K       7 // Motoroal 680x0
-#define IDASIG__ARCH__JAVA      8 // Java
-#define IDASIG__ARCH__6800      9 // Motorola 68xx
-#define IDASIG__ARCH__ST7       10 // SGS-Thomson ST7
-#define IDASIG__ARCH__MC6812    11 // Motorola 68HC12
-#define IDASIG__ARCH__MIPS      12 // MIPS
-#define IDASIG__ARCH__ARM       13 // Advanced RISC Machines
-#define IDASIG__ARCH__TMSC6     14 // Texas Instruments TMS320C6x
-#define IDASIG__ARCH__PPC       15 // PowerPC
-#define IDASIG__ARCH__80196     16 // Intel 80196
-#define IDASIG__ARCH__Z8        17 // Z8
-#define IDASIG__ARCH__SH        18 // Renesas (formerly Hitachi) SuperH
-#define IDASIG__ARCH__NET       19 // Microsoft Visual Studio.Net
-#define IDASIG__ARCH__AVR       20 // Atmel 8-bit RISC processor(s)
-#define IDASIG__ARCH__H8        21 // Hitachi H8/300, H8/2000
-#define IDASIG__ARCH__PIC       22 // Microchip's PIC
-#define IDASIG__ARCH__SPARC     23 // SPARC
-#define IDASIG__ARCH__ALPHA     24 // DEC Alpha
-#define IDASIG__ARCH__HPPA      25 // Hewlett-Packard PA-RISC
-#define IDASIG__ARCH__H8500     26 // Hitachi H8/500
-#define IDASIG__ARCH__TRICORE   27 // Tasking Tricore
-#define IDASIG__ARCH__DSP56K    28 // Motorola DSP5600x
-#define IDASIG__ARCH__C166      29 // Siemens C166 family
-#define IDASIG__ARCH__ST20      30 // SGS-Thomson ST20
-#define IDASIG__ARCH__IA64      31 // Intel Itanium IA64
-#define IDASIG__ARCH__I960      32 // Intel 960
-#define IDASIG__ARCH__F2MC      33 // Fujistu F2MC-16
-#define IDASIG__ARCH__TMS320C54 34 // Texas Instruments TMS320C54xx
-#define IDASIG__ARCH__TMS320C55 35 // Texas Instruments TMS320C55xx
-#define IDASIG__ARCH__TRIMEDIA  36 // Trimedia
-#define IDASIG__ARCH__M32R      37 // Mitsubishi 32bit RISC
-#define IDASIG__ARCH__NEC_78K0  38 // NEC 78K0
-#define IDASIG__ARCH__NEC_78K0S 39 // NEC 78K0S
-#define IDASIG__ARCH__M740      40 // Mitsubishi 8bit
-#define IDASIG__ARCH__M7700     41 // Mitsubishi 16bit
-#define IDASIG__ARCH__ST9       42 // ST9+
-#define IDASIG__ARCH__FR        43 // Fujitsu FR Family
-#define IDASIG__ARCH__MC6816    44 // Motorola 68HC16
-#define IDASIG__ARCH__M7900     45 // Mitsubishi 7900
-#define IDASIG__ARCH__TMS320C3  46 // Texas Instruments TMS320C3
-#define IDASIG__ARCH__KR1878    47 // Angstrem KR1878
-#define IDASIG__ARCH__AD218X    48 // Analog Devices ADSP 218X
-#define IDASIG__ARCH__OAKDSP    49 // Atmel OAK DSP
-#define IDASIG__ARCH__TLCS900   50 // Toshiba TLCS-900
-#define IDASIG__ARCH__C39       51 // Rockwell C39
-#define IDASIG__ARCH__CR16      52 // NSC CR16
-#define IDASIG__ARCH__MN102L00  53 // Panasonic MN10200
-#define IDASIG__ARCH__TMS320C1X 54 // Texas Instruments TMS320C1x
-#define IDASIG__ARCH__NEC_V850X 55 // NEC V850 and V850ES/E1/E2
-#define IDASIG__ARCH__SCR_ADPT  56 // Processor module adapter for processor modules written in scripting languages
-#define IDASIG__ARCH__EBC       57 // EFI Bytecode
-#define IDASIG__ARCH__MSP430    58 // Texas Instruments MSP430
-#define IDASIG__ARCH__SPU       59 // Cell Broadband Engine Synergistic Processor Unit
-#define IDASIG__ARCH__DALVIK    60 // Android Dalvik Virtual Machine
-
 /*file_types flags*/
 #define IDASIG__FILE__DOS_EXE_OLD 0x00000001
 #define IDASIG__FILE__DOS_COM_OLD 0x00000002
@@ -268,6 +205,32 @@ typedef struct parse_status_t {
 	bool error;
 	ut8 version;
 } ParseStatus;
+
+typedef struct arch_id_t {
+	const char *name;
+	ut32 id;
+} ArchId;
+
+const ArchId arch_id_map[18] = {
+	{ "6502", RZ_FLIRT_SIG_ARCH_6502 },
+	{ "arm", RZ_FLIRT_SIG_ARCH_ARM },
+	{ "avr", RZ_FLIRT_SIG_ARCH_AVR },
+	{ "cr16", RZ_FLIRT_SIG_ARCH_CR16 },
+	{ "dalvik", RZ_FLIRT_SIG_ARCH_DALVIK },
+	{ "ebc", RZ_FLIRT_SIG_ARCH_EBC },
+	{ "h8300", RZ_FLIRT_SIG_ARCH_H8 },
+	{ "hppa", RZ_FLIRT_SIG_ARCH_HPPA },
+	{ "java", RZ_FLIRT_SIG_ARCH_JAVA },
+	{ "mips", RZ_FLIRT_SIG_ARCH_MIPS },
+	{ "msp430", RZ_FLIRT_SIG_ARCH_MSP430 },
+	{ "pic", RZ_FLIRT_SIG_ARCH_PIC },
+	{ "ppc", RZ_FLIRT_SIG_ARCH_PPC },
+	{ "sh", RZ_FLIRT_SIG_ARCH_SH },
+	{ "sparc", RZ_FLIRT_SIG_ARCH_SPARC },
+	{ "tricore", RZ_FLIRT_SIG_ARCH_TRICORE },
+	{ "x86", RZ_FLIRT_SIG_ARCH_386 },
+	{ "z80", RZ_FLIRT_SIG_ARCH_Z80 }
+};
 
 #define is_status_err_or_eof(p) (p->eof || p->error)
 
@@ -369,7 +332,7 @@ static ut32 read_multiple_bytes(ParseStatus *b) {
 	return read_word(b);
 }
 
-static void module_free(RzFlirtModule *module) {
+void module_free(RzFlirtModule *module) {
 	if (!module) {
 		return;
 	}
@@ -388,18 +351,48 @@ RZ_API void rz_sign_flirt_node_free(RZ_NULLABLE RzFlirtNode *node) {
 	if (!node) {
 		return;
 	}
-	free(node->variant_bool_array);
+	free(node->pattern_mask);
 	free(node->pattern_bytes);
 	rz_list_free(node->module_list);
 	rz_list_free(node->child_list);
 	free(node);
 }
 
-static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module,
-	ut8 *b, ut64 address, ut32 buf_size) {
-	/* Returns true if module matches b, according to the signatures infos.
-	 * Return false otherwise.
-	 * The buffer starts from the first byte after the pattern */
+/**
+ * \brief Checks if a pattern does match the buffer data
+ *
+ * \param p_size   The pattern size
+ * \param pattern  The pattern to check agains
+ * \param mask     The pattern mask
+ * \param b        Buffer to check
+ * \param b_size   Size of the buffer to check
+ *
+ * \return True if pattern does match, false otherwise.
+ */
+static bool is_pattern_matching(ut32 p_size, const ut8 *pattern, const ut8 *mask, const ut8 *b, ut32 b_size) {
+	if (b_size < p_size) {
+		return false;
+	}
+	for (ut32 i = 0; i < p_size; i++) {
+		if (!mask[i] && pattern[i] != b[i]) {
+			return false;
+		}
+	}
+	return true;
+}
+
+/**
+ * \brief Checks if the module matches the buffer and renames the matched functions
+ *
+ * \param analysis  The RzAnalysis struct from where to fetch and modify the functions
+ * \param module    The FLIRT module to match against the buffer
+ * \param b         Buffer to check
+ * \param address   Function address
+ * \param buf_size  Size of the buffer to check
+ *
+ * \return True if pattern does match, false otherwise.
+ */
+static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module, ut8 *b, ut64 address, ut32 buf_size) {
 	RzFlirtFunction *flirt_func;
 	RzAnalysisFunction *next_module_function;
 	RzListIter *tail_byte_it, *flirt_func_it;
@@ -417,8 +410,6 @@ static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module
 			}
 		}
 	}
-
-	// TODO referenced functions
 
 	rz_list_foreach (module->public_functions, flirt_func_it, flirt_func) {
 		// Once the first module function is found, we need to go through the module->public_functions
@@ -484,29 +475,12 @@ static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module
 	return true;
 }
 
-/* Returns true if b matches the pattern in node. */
-/* Returns false otherwise. */
-static int node_pattern_match(const RzFlirtNode *node, ut8 *b, int buf_size) {
-	int i;
-	if (buf_size < node->length) {
-		return false;
-	}
-	for (i = 0; i < node->length; i++) {
-		if (!node->variant_bool_array[i]) {
-			if (i < node->length && node->pattern_bytes[i] != b[i]) {
-				return false;
-			}
-		}
-	}
-	return true;
-}
-
 static int node_match_buffer(RzAnalysis *analysis, const RzFlirtNode *node, ut8 *b, ut64 address, ut32 buf_size, ut32 buf_idx) {
 	RzListIter *node_child_it, *module_it;
 	RzFlirtNode *child;
 	RzFlirtModule *module;
 
-	if (node_pattern_match(node, b + buf_idx, buf_size - buf_idx)) {
+	if (is_pattern_matching(node->length, node->pattern_bytes, node->pattern_mask, b + buf_idx, buf_size - buf_idx)) {
 		if (node->child_list) {
 			rz_list_foreach (node->child_list, node_child_it, child) {
 				if (node_match_buffer(analysis, child, b, address, buf_size, buf_idx + node->length)) {
@@ -525,9 +499,14 @@ static int node_match_buffer(RzAnalysis *analysis, const RzFlirtNode *node, ut8 
 	return false;
 }
 
-/* Tries to find matching functions between the signature infos in root_node
- * and the analyzed functions in analysis
- * Returns false on error. */
+/**
+ * \brief Tries to find matching functions between the signature infos in root_node and the analyzed functions in analysis
+ *
+ * \param analysis   The analysis
+ * \param root_node  The root node
+ *
+ * \return False on error, otherwise true
+ */
 static bool node_match_functions(RzAnalysis *analysis, const RzFlirtNode *root_node) {
 	bool ret = true;
 
@@ -571,8 +550,8 @@ static bool node_match_functions(RzAnalysis *analysis, const RzFlirtNode *root_n
 }
 
 static ut8 read_module_tail_bytes(RzFlirtModule *module, ParseStatus *b) {
-	/*parses a module tail bytes*/
-	/*returns false on parsing error*/
+	/* parses a module tail bytes */
+	/* returns false on parsing error */
 	int i;
 	ut8 number_of_tail_bytes;
 	RzFlirtTailByte *tail_byte = NULL;
@@ -624,8 +603,8 @@ err_exit:
 }
 
 static ut8 read_module_referenced_functions(RzFlirtModule *module, ParseStatus *b) {
-	/*parses a module referenced functions*/
-	/*returns false on parsing error*/
+	/* parses a module referenced functions */
+	/* returns false on parsing error */
 	int i, j;
 	ut8 number_of_referenced_functions;
 	ut32 ref_function_name_length;
@@ -699,7 +678,7 @@ err_exit:
 
 static ut8 read_module_public_functions(RzFlirtModule *module, ParseStatus *b, ut8 *flags) {
 	/* Reads and set the public functions names and offsets associated within a module */
-	/*returns false on parsing error*/
+	/* returns false on parsing error */
 	int i;
 	ut16 offset = 0;
 	ut8 current_byte;
@@ -780,8 +759,8 @@ err_exit:
 }
 
 static ut8 parse_leaf(ParseStatus *b, RzFlirtNode *node) {
-	/*parses a signature leaf: modules with same leading pattern*/
-	/*returns false on parsing error*/
+	/* parses a signature leaf: modules with same leading pattern */
+	/* returns false on parsing error */
 	ut8 flags, crc_length;
 	ut16 crc16;
 	RzFlirtModule *module = NULL;
@@ -868,9 +847,9 @@ static ut8 read_node_length(RzFlirtNode *node, ParseStatus *b) {
 }
 
 static ut8 read_node_variant_mask(RzFlirtNode *node, ParseStatus *b) {
-	/*Reads and sets a node's variant bytes mask. This mask is then used to*/
-	/*read the non-variant bytes following.*/
-	/*returns false on parsing error*/
+	/* Reads and sets a node's variant bytes mask. This mask is then used to */
+	/* read the non-variant bytes following. */
+	/* returns false on parsing error */
 	if (node->length < 0x10) {
 		node->variant_mask = read_max_2_bytes(b);
 		if (is_status_err_or_eof(b)) {
@@ -892,8 +871,8 @@ static ut8 read_node_variant_mask(RzFlirtNode *node, ParseStatus *b) {
 }
 
 static bool read_node_bytes(RzFlirtNode *node, ParseStatus *b) {
-	/*Reads the node bytes, and also sets the variant bytes in variant_bool_array*/
-	/*returns false on parsing error*/
+	/* Reads the node bytes, and also sets the variant bytes in pattern_mask */
+	/* returns false on parsing error */
 	int i;
 	ut64 current_mask_bit = 0;
 	if ((int)node->length < 0) {
@@ -903,11 +882,11 @@ static bool read_node_bytes(RzFlirtNode *node, ParseStatus *b) {
 	if (!(node->pattern_bytes = malloc(node->length))) {
 		return false;
 	}
-	if (!(node->variant_bool_array = malloc(node->length))) {
+	if (!(node->pattern_mask = malloc(node->length))) {
 		return false;
 	}
 	for (i = 0; i < node->length; i++, current_mask_bit >>= 1) {
-		node->variant_bool_array[i] = (bool)(node->variant_mask & current_mask_bit);
+		node->pattern_mask[i] = (bool)(node->variant_mask & current_mask_bit);
 		if (node->variant_mask & current_mask_bit) {
 			node->pattern_bytes[i] = 0x00;
 		} else {
@@ -921,8 +900,8 @@ static bool read_node_bytes(RzFlirtNode *node, ParseStatus *b) {
 }
 
 static ut8 parse_tree(ParseStatus *b, RzFlirtNode *root_node) {
-	/*parse a signature pattern tree or sub-tree*/
-	/*returns false on parsing error*/
+	/* parse a signature pattern tree or sub-tree */
+	/* returns false on parsing error */
 	RzFlirtNode *node = NULL;
 	int i, tree_nodes = read_multiple_bytes(b); // confirmed it's not read_byte(), XXX could it be read_max_2_bytes() ???
 	if (is_status_err_or_eof(b)) {
@@ -1182,10 +1161,14 @@ static int parse_v10_header(RzBuffer *buf, idasig_v10_t *header) {
 /**
  * \brief Parses the RzBuffer containing a FLIRT structure and returns an RzFlirtNode
  *
- * \param  flirt_buf The buffer to read
- * \return           Parsed FLIRT node
+ * Parses the RzBuffer containing a FLIRT structure and returns an RzFlirtNode if expected_arch
+ * matches the id or RZ_FLIRT_SIG_ARCH_ANY is set.
+ *
+ * \param  flirt_buf     The buffer to read
+ * \param  expected_arch The expected arch to be used for the buffer
+ * \return               Parsed FLIRT node
  */
-RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_parse_buffer(RZ_NONNULL RzBuffer *flirt_buf) {
+RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_parse_compressed_buffer(RZ_NONNULL RzBuffer *flirt_buf, ut32 expected_arch) {
 	rz_return_val_if_fail(flirt_buf, NULL);
 
 	ut8 *name = NULL;
@@ -1215,6 +1198,10 @@ RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_parse_buffer(RZ_NONNULL RzBuffer *flirt
 	}
 
 	parse_v5_header(flirt_buf, header);
+
+	if (expected_arch != RZ_FLIRT_SIG_ARCH_ANY && header->arch != expected_arch) {
+		goto exit;
+	}
 
 	if (ps.version >= 6) {
 		if (!(v6_v7 = RZ_NEW0(idasig_v6_v7_t))) {
@@ -1344,22 +1331,61 @@ exit:
 }
 
 /**
+ * \brief Returns the FLIRT arch id from a given arch name
+ * Returns RZ_FLIRT_SIG_ARCH_ANY if name is not found.
+ *
+ * \param  arch The arch to convert to id
+ * \return      The FLIRT arch id.
+ */
+RZ_API ut32 rz_sign_flirt_id_from_name(RZ_NONNULL const char *arch) {
+	rz_return_val_if_fail(RZ_STR_ISNOTEMPTY(arch), RZ_FLIRT_SIG_ARCH_ANY);
+
+	for (ut32 i = 0; i < RZ_ARRAY_SIZE(arch_id_map); ++i) {
+		if (!strcmp(arch, arch_id_map[i].name)) {
+			return arch_id_map[i].id;
+		}
+	}
+
+	return RZ_FLIRT_SIG_ARCH_ANY;
+}
+
+/**
  * \brief Parses the FLIRT file and applies the signatures
  *
- * \param analysis    The RzAnalysis structure 
+ * \param analysis    The RzAnalysis structure
  * \param flirt_file  The FLIRT file to parse
  */
-RZ_API void rz_sign_flirt_apply(RzAnalysis *analysis, const char *flirt_file) {
+RZ_API void rz_sign_flirt_apply(RzAnalysis *analysis, const char *flirt_file, const char *arch) {
 	rz_return_if_fail(analysis && RZ_STR_ISNOTEMPTY(flirt_file));
 	RzBuffer *flirt_buf = NULL;
 	RzFlirtNode *node = NULL;
+	ut32 id = RZ_FLIRT_SIG_ARCH_ANY;
+
+	const char *extension = rz_str_lchr(flirt_file, '.');
+	if (RZ_STR_ISEMPTY(extension) || (strcmp(extension, ".sig") != 0 && strcmp(extension, ".pac") != 0)) {
+		RZ_LOG_ERROR("FLIRT: unknown extension '%s'\n", extension);
+		return;
+	}
 
 	if (!(flirt_buf = rz_buf_new_slurp(flirt_file))) {
 		RZ_LOG_ERROR("FLIRT: Can't open %s\n", flirt_file);
 		return;
 	}
 
-	node = rz_sign_flirt_parse_buffer(flirt_buf);
+	if (RZ_STR_ISNOTEMPTY(arch)) {
+		ut32 id = rz_sign_flirt_id_from_name(arch);
+		if (id == RZ_FLIRT_SIG_ARCH_ANY) {
+			RZ_LOG_ERROR("FLIRT: unknown arch %s\n", arch);
+			return;
+		}
+	}
+
+	if (!strcmp(extension, ".pac")) {
+		node = rz_sign_flirt_parse_string_buffer(flirt_buf);
+	} else {
+		node = rz_sign_flirt_parse_compressed_buffer(flirt_buf, id);
+	}
+
 	rz_buf_free(flirt_buf);
 	if (node) {
 		if (!node_match_functions(analysis, node)) {

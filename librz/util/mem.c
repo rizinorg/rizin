@@ -120,10 +120,10 @@ static inline void writebit(ut8 *dst, int i, bool c) {
 	// eprintf ("Write %d %d = %d\n", byte, bit, c);
 	dst += byte;
 	if (c) {
-		//dst[byte] |= (1 << bit);
+		// dst[byte] |= (1 << bit);
 		RZ_BIT_SET(dst, bit);
 	} else {
-		//dst[byte] &= (1 << bit);
+		// dst[byte] &= (1 << bit);
 		RZ_BIT_UNSET(dst, bit);
 	}
 }

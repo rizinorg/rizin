@@ -102,8 +102,8 @@ RZ_API int rz_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, con
 
 	int ret = RZ_MIN(2, len);
 	if (len > 0 && analysis->cur && analysis->cur->op) {
-		//use core binding to set asm.bits correctly based on the addr
-		//this is because of the hassle of arm/thumb
+		// use core binding to set asm.bits correctly based on the addr
+		// this is because of the hassle of arm/thumb
 		if (analysis && analysis->coreb.archbits) {
 			analysis->coreb.archbits(analysis->coreb.core, addr);
 		}
@@ -182,7 +182,7 @@ RZ_API RzAnalysisOp *rz_analysis_op_copy(RzAnalysisOp *op) {
 RZ_API bool rz_analysis_op_nonlinear(int t) {
 	t &= RZ_ANALYSIS_OP_TYPE_MASK;
 	switch (t) {
-	//call
+	// call
 	case RZ_ANALYSIS_OP_TYPE_CALL:
 	case RZ_ANALYSIS_OP_TYPE_RCALL:
 	case RZ_ANALYSIS_OP_TYPE_ICALL:

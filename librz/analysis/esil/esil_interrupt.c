@@ -35,7 +35,7 @@ RZ_API void rz_analysis_esil_interrupt_free(RzAnalysisEsil *esil, RzAnalysisEsil
 	rz_return_if_fail(esil);
 	if (intr) {
 		if (intr->user) {
-			intr->handler->fini(intr->user); //fini must exist when user is !NULL
+			intr->handler->fini(intr->user); // fini must exist when user is !NULL
 		}
 		rz_analysis_esil_release_source(esil, intr->src_id);
 		free(intr);
@@ -50,7 +50,7 @@ RZ_API bool rz_analysis_esil_set_interrupt(RzAnalysisEsil *esil, RzAnalysisEsilI
 RZ_API int rz_analysis_esil_fire_interrupt(RzAnalysisEsil *esil, ut32 intr_num) {
 	rz_return_val_if_fail(esil, false);
 
-	if (esil->cmd && esil->cmd(esil, esil->cmd_intr, intr_num, 0)) { //compatibility
+	if (esil->cmd && esil->cmd(esil, esil->cmd_intr, intr_num, 0)) { // compatibility
 		return true;
 	}
 
@@ -97,7 +97,7 @@ RZ_API bool rz_analysis_esil_load_interrupts_from_lib(RzAnalysisEsil *esil, cons
 	RzAnalysisEsilInterruptHandler **handlers = (RzAnalysisEsilInterruptHandler **)
 		rz_lib_dl_sym(rz_analysis_esil_get_source(esil, src_id), "interrupts");
 	if (!handlers) {
-		rz_analysis_esil_release_source(esil, src_id); //unload
+		rz_analysis_esil_release_source(esil, src_id); // unload
 		return false;
 	}
 	return rz_analysis_esil_load_interrupts(esil, handlers, src_id);

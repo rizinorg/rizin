@@ -60,6 +60,21 @@ RZ_API void rz_il_vm_add_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name,
 }
 
 /**
+ * Add a register in VM (create a variable and value, and then bind value to variable)
+ * \param vm RzILVM, pointer to this vm
+ * \param name string, the name of register
+ * \param value bool, value of the bit register
+ */
+RZ_API void rz_il_vm_add_bit_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name, bool value) {
+	rz_return_if_fail(vm && name);
+	RzILVar *var = rz_il_vm_create_variable(vm, name);
+	var->type = RZIL_VAR_TYPE_BOOL;
+	RzILVal *val = rz_il_vm_create_value(vm, RZIL_VAR_TYPE_BOOL);
+	val->data.b->b = value;
+	rz_il_hash_bind(vm, var, val);
+}
+
+/**
  * Make a temporary value (type `RzILVal`) inside vm become a value store in VM
  * \param vm RzILVM, pointer to VM
  * \param temp_val_index int, the index of temporary value you attempt to fortify

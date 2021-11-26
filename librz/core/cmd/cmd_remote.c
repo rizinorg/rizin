@@ -125,7 +125,7 @@ RZ_IPI int rz_cmd_remote(void *data, const char *input) {
 	case '-': // "R-"
 		rz_core_rtr_remove(core, input + 1);
 		break;
-	//case ':': rz_core_rtr_cmds (core, input + 1); break;
+	// case ':': rz_core_rtr_cmds (core, input + 1); break;
 	case '<': // "R<"
 		rz_core_rtr_pushout(core, input + 1);
 		break;

@@ -203,11 +203,11 @@ static int decode_call(const ut8 *bytes, ebc_command_t *cmd) {
 	char sign;
 
 	if (!TEST_BIT(bytes[0], 6)) {
-		//CALL32
+		// CALL32
 		bits = 32;
 		ret = 2;
 		if (TEST_BIT(bytes[1], 3)) {
-			//operand 1 indirect
+			// operand 1 indirect
 			if (TEST_BIT(bytes[0], 7)) {
 				// immediate data is present
 				decode_index32(bytes + 2, &idx32);
@@ -222,7 +222,7 @@ static int decode_call(const ut8 *bytes, ebc_command_t *cmd) {
 					"@r%d", op1);
 			}
 		} else {
-			//operand 1 direct
+			// operand 1 direct
 			if (TEST_BIT(bytes[0], 7)) {
 				// immediate data present
 				i1 = *(ut32 *)(bytes + 2);
@@ -335,7 +335,7 @@ static int decode_not(const ut8 *bytes, ebc_command_t *cmd) {
 	op2 = (bytes[1] >> 4) & 0x07;
 
 	if (TEST_BIT(bytes[0], 7)) {
-		//immediate/index present
+		// immediate/index present
 		ret = 4;
 		if (TEST_BIT(bytes[1], 7)) {
 			ebc_index_t idx;

@@ -7,7 +7,7 @@
 
 /***
  * Core
-**/
+ **/
 typedef enum {
 
 	// Control flow operators
@@ -206,7 +206,7 @@ typedef enum {
 
 /***
  * Thread extension (0xFE ...)
-**/
+ **/
 typedef enum {
 
 	// Wait and notify
@@ -287,7 +287,7 @@ typedef enum {
 
 /***
  * SIMD extension (0xFD ...)
-**/
+ **/
 typedef enum {
 	// load ops
 	WASM_OP_V128LOAD = 0x00,

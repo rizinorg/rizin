@@ -535,11 +535,11 @@ const struct lh5801_insn_desc lh5801_insn_descs[] = {
 		.opcode = 0xd5 },
 	{ /* drl (x) */
 		.iclass = LH5801_INSNC_DRL,
-		.format = 0, //LH5801_IFMT_XREG|LH5801_IFMT_RMEM|LH5801_IFMT_FD_MOD,
+		.format = 0, // LH5801_IFMT_XREG|LH5801_IFMT_RMEM|LH5801_IFMT_FD_MOD,
 		.opcode = 0xd7 },
 	{ /* drr (x) */
 		.iclass = LH5801_INSNC_DRR,
-		.format = 0, //LH5801_IFMT_XREG|LH5801_IFMT_RMEM|LH5801_IFMT_FD_MOD,
+		.format = 0, // LH5801_IFMT_XREG|LH5801_IFMT_RMEM|LH5801_IFMT_FD_MOD,
 		.opcode = 0xd3 },
 	{ /* aex */
 		.iclass = LH5801_INSNC_AEX,

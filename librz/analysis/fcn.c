@@ -1400,10 +1400,10 @@ beach:
 
 /**
  * \brief Adds a new task item to the `tasks` parameter.
- * 
+ *
  * Used to create a new item to the `tasks` parameter
  * that can be worked on later by the `rz_analysis_run_tasks` function.
- * 
+ *
  * \param analysis Pointer to RzAnalysis instance.
  * \param tasks Pointer to RzVector to add a new RzAnalysisTaskItem to.
  * \param fcn Pointer to RzAnalysisFunction in which analysis will be performed on.
@@ -1424,11 +1424,11 @@ RZ_API bool rz_analysis_task_item_new(RZ_NONNULL RzAnalysis *analysis, RZ_NONNUL
 
 /**
  * \brief Runs analysis on the task items.
- * 
+ *
  * Runs control-flow and variable usage analysis on each of the task items until tasks vector becomes empty.
  * Items are removed from the tasks vector as they are processed.
  * Items are added to the tasks vector as new basic blocks are found to be analyzed.
- * 
+ *
  * \param tasks Pointer to RzVector of RzAnalysisTaskItem to be performed analysis on.
  */
 RZ_API int rz_analysis_run_tasks(RZ_NONNULL RzVector *tasks) {
@@ -1744,10 +1744,10 @@ RZ_API int rz_analysis_function_loops(RzAnalysisFunction *fcn) {
 
 RZ_API int rz_analysis_function_complexity(RzAnalysisFunction *fcn) {
 	/*
-        CC = E - N + 2P
-        E = the number of edges of the graph.
-        N = the number of nodes of the graph.
-        P = the number of connected components (exit nodes).
+	CC = E - N + 2P
+	E = the number of edges of the graph.
+	N = the number of nodes of the graph.
+	P = the number of connected components (exit nodes).
  */
 	RzAnalysis *analysis = fcn->analysis;
 	int E = 0, N = 0, P = 0;

@@ -35,9 +35,9 @@ RZ_API int rz_debug_reg_sync(RzDebug *dbg, int type, int write) {
 			int v = ((int)1 << i);
 			// skip checks on same request arena and check if this arena have inside the request arena type
 			if (n != i && (mask & v)) {
-				//eprintf(" req = %i arena = %i mask = %x search = %x \n", i, n, mask, v);
-				//eprintf(" request arena %i found at arena %i\n", i, n );
-				// if this arena have the request arena type, force to use this arena.
+				// eprintf(" req = %i arena = %i mask = %x search = %x \n", i, n, mask, v);
+				// eprintf(" request arena %i found at arena %i\n", i, n );
+				//  if this arena have the request arena type, force to use this arena.
 				i = n;
 				break;
 			}
@@ -61,17 +61,17 @@ RZ_API int rz_debug_reg_sync(RzDebug *dbg, int type, int write) {
 		} else {
 			// int bufsize = RZ_MAX (1024, dbg->reg->size*2); // i know. its hacky
 			int bufsize = dbg->reg->size;
-			//int bufsize = dbg->reg->regset[i].arena->size;
+			// int bufsize = dbg->reg->regset[i].arena->size;
 			if (bufsize > 0) {
 				ut8 *buf = calloc(1 + 1, bufsize);
 				if (!buf) {
 					return false;
 				}
-				//we have already checked dbg->h and dbg->h->reg_read above
+				// we have already checked dbg->h and dbg->h->reg_read above
 				size = dbg->cur->reg_read(dbg, i, buf, bufsize);
 				// we need to check against zero because reg_read can return false
 				if (size > 0) {
-					rz_reg_set_bytes(dbg->reg, i, buf, size); //RZ_MIN (size, bufsize));
+					rz_reg_set_bytes(dbg->reg, i, buf, size); // RZ_MIN (size, bufsize));
 					//		free (buf);
 					//		return true;
 				}

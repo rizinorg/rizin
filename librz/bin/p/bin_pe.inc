@@ -164,7 +164,7 @@ static RzList *maps(RzBinFile *bf) {
 			if (sections[i].vsize < bin->size) {
 				map->psize = sections[i].vsize;
 			} else {
-				//hack give it page size
+				// hack give it page size
 				map->psize = 4096;
 			}
 		}
@@ -257,7 +257,7 @@ static RzList *symbols(RzBinFile *bf) {
 			ptr->name = strdup((char *)symbols[i].name);
 			ptr->libname = *symbols[i].libname ? strdup((char *)symbols[i].libname) : NULL;
 			ptr->forwarder = rz_str_constpool_get(&bf->rbin->constpool, (char *)symbols[i].forwarder);
-			//strncpy (ptr->bind, "NONE", RZ_BIN_SIZEOF_STRINGS);
+			// strncpy (ptr->bind, "NONE", RZ_BIN_SIZEOF_STRINGS);
 			ptr->bind = RZ_BIN_BIND_GLOBAL_STR;
 			ptr->type = RZ_BIN_TYPE_FUNC_STR;
 			ptr->size = 0;
@@ -281,11 +281,11 @@ static RzList *symbols(RzBinFile *bf) {
 			if (!(ptr = RZ_NEW0(RzBinSymbol))) {
 				break;
 			}
-			//strncpy (ptr->name, (char*)symbols[i].name, RZ_BIN_SIZEOF_STRINGS);
+			// strncpy (ptr->name, (char*)symbols[i].name, RZ_BIN_SIZEOF_STRINGS);
 			ptr->name = strdup((const char *)imports[i].name);
 			ptr->libname = strdup((const char *)imports[i].libname);
 			ptr->is_imported = true;
-			//strncpy (ptr->forwarder, (char*)imports[i].forwarder, RZ_BIN_SIZEOF_STRINGS);
+			// strncpy (ptr->forwarder, (char*)imports[i].forwarder, RZ_BIN_SIZEOF_STRINGS);
 			ptr->bind = "NONE";
 			ptr->type = RZ_BIN_TYPE_FUNC_STR;
 			ptr->size = 0;
@@ -351,7 +351,7 @@ static RzList *imports(RzBinFile *bf) {
 		ptr->ordinal = imports[i].ordinal;
 		// NOTE(eddyb) a PE hint is just an optional possible DLL export table
 		// index for the import. There is no point in exposing it.
-		//ptr->hint = imports[i].hint;
+		// ptr->hint = imports[i].hint;
 		rz_list_append(ret, ptr);
 
 		if (!(rel = RZ_NEW0(RzBinReloc))) {
@@ -535,8 +535,8 @@ static int haschr(const RzBinFile *bf, ut16 dllCharacteristic) {
 	if (idx + 0x5E + 1 >= sz) {
 		return false;
 	}
-	//it's funny here idx+0x5E can be 158 and sz 159 but with
-	//the cast it reads two bytes until 160
+	// it's funny here idx+0x5E can be 158 and sz 159 but with
+	// the cast it reads two bytes until 160
 	return ((*(ut16 *)(buf + idx + 0x5E)) & dllCharacteristic);
 }
 

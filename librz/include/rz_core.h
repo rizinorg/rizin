@@ -95,11 +95,11 @@ RZ_LIB_VERSION_HEADER(rz_core);
 
 /* visual mode */
 typedef enum {
-	RZ_CORE_VISUAL_MODE_PX = 0,
-	RZ_CORE_VISUAL_MODE_PD = 1,
-	RZ_CORE_VISUAL_MODE_DB = 2,
-	RZ_CORE_VISUAL_MODE_OV = 3,
-	RZ_CORE_VISUAL_MODE_CD = 4
+	RZ_CORE_VISUAL_MODE_PX = 0, ///< Hexadecimal view
+	RZ_CORE_VISUAL_MODE_PD = 1, ///< Disassembly view
+	RZ_CORE_VISUAL_MODE_DB = 2, ///< Debug mode
+	RZ_CORE_VISUAL_MODE_OV = 3, ///< Color blocks (entropy)
+	RZ_CORE_VISUAL_MODE_CD = 4 ///< Print in string format
 } RzCoreVisualMode;
 
 typedef bool (*RzCorePluginInit)(RzCore *core);
@@ -391,14 +391,6 @@ typedef struct rz_core_item_t {
 } RzCoreItem;
 
 RZ_API void rz_core_item_free(RzCoreItem *ci);
-
-typedef struct rz_core_cmpwatch_t {
-	ut64 addr;
-	int size;
-	char cmd[32];
-	ut8 *odata;
-	ut8 *ndata;
-} RzCoreCmpWatcher;
 
 typedef int (*RzCoreSearchCallback)(RzCore *core, ut64 from, ut8 *buf, int len);
 
@@ -773,7 +765,7 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode);
 RZ_API int rz_core_bin_list(RzCore *core, int mode);
 RZ_API bool rz_core_bin_delete(RzCore *core, RzBinFile *bf);
 RZ_API ut64 rz_core_bin_impaddr(RzBin *bin, int va, const char *name);
-RZ_API RZ_OWN HtPP *rz_core_bin_section_digests(RzCore *core, RzBinSection *section, RzList *digests);
+RZ_API RZ_OWN HtPP *rz_core_bin_create_digests(RzCore *core, ut64 paddr, ut64 size, RzList *digests);
 
 RZ_API void rz_core_bin_print_source_line_sample(RzCore *core, const RzBinSourceLineSample *s, RzCmdStateOutput *state);
 RZ_API void rz_core_bin_print_source_line_info(RzCore *core, const RzBinSourceLineInfo *li, RzCmdStateOutput *state);
@@ -839,6 +831,7 @@ RZ_API RZ_OWN RzList *rz_heap_windows_heap_list(RzCore *core);
 #define RZ_CORE_BIN_ACC_RESOURCES        0x100000
 #define RZ_CORE_BIN_ACC_INITFINI         0x200000
 #define RZ_CORE_BIN_ACC_SEGMENTS         0x400000
+#define RZ_CORE_BIN_ACC_BASEFIND         0x800000
 #define RZ_CORE_BIN_ACC_TRYCATCH         0x20000000
 #define RZ_CORE_BIN_ACC_SECTIONS_MAPPING 0x40000000
 #define RZ_CORE_BIN_ACC_MAPS             0x80000000
@@ -904,12 +897,13 @@ RZ_API bool rz_core_bin_fields_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFi
 RZ_API bool rz_core_bin_headers_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf);
 RZ_API bool rz_core_bin_dwarf_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzCmdStateOutput *state);
 RZ_API bool rz_core_bin_memory_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzCmdStateOutput *state);
-RZ_API bool rz_core_bin_resources_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzCmdStateOutput *state);
+RZ_API bool rz_core_bin_resources_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzCmdStateOutput *state, RZ_NULLABLE RzList *hashes);
 RZ_API bool rz_core_bin_versions_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzCmdStateOutput *state);
 RZ_API bool rz_core_bin_trycatch_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzCmdStateOutput *state);
 RZ_API bool rz_core_bin_size_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzCmdStateOutput *state);
 RZ_API bool rz_core_bin_sections_mapping_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzCmdStateOutput *state);
 RZ_API bool rz_core_bin_print(RzCore *core, RZ_NONNULL RzBinFile *bf, ut32 mask, RzCoreBinFilter *filter, RzCmdStateOutput *state, RzList *hashes);
+RZ_API bool rz_core_bin_basefind_print(RzCore *core, ut32 pointer_size, RzCmdStateOutput *state);
 
 typedef enum {
 	RZ_CORE_STRING_KIND_UNKNOWN,
@@ -985,15 +979,6 @@ RZ_API bool rz_core_dump(RzCore *core, const char *file, ut64 addr, ut64 size, i
 RZ_API void rz_core_diff_show(RzCore *core, RzCore *core2, bool json);
 RZ_API bool rz_core_diff_show_function(RzCore *core, RzCore *core2, ut64 addr, bool json);
 RZ_API void rz_core_clippy(RzCore *core, const char *msg);
-
-/* watchers */
-RZ_API void rz_core_cmpwatch_free(RzCoreCmpWatcher *w);
-RZ_API RzCoreCmpWatcher *rz_core_cmpwatch_get(RzCore *core, ut64 addr);
-RZ_API int rz_core_cmpwatch_add(RzCore *core, ut64 addr, int size, const char *cmd);
-RZ_API int rz_core_cmpwatch_del(RzCore *core, ut64 addr);
-RZ_API int rz_core_cmpwatch_update(RzCore *core, ut64 addr);
-RZ_API int rz_core_cmpwatch_show(RzCore *core, ut64 addr, int mode);
-RZ_API int rz_core_cmpwatch_revert(RzCore *core, ut64 addr);
 
 // TODO MOVE SOMEWHERE ELSE
 typedef char *(*PrintItemCallback)(void *user, void *p, bool selected);

@@ -286,7 +286,7 @@ RZ_API RzBreakpointItem *rz_debug_bp_add(RzDebug *dbg, ut64 addr, int hw, bool w
 			}
 			rz_list_free(list);
 		} else {
-			//module holds the address
+			// module holds the address
 			addr = (ut64)rz_num_math(dbg->num, module);
 			if (!addr) {
 				return NULL;
@@ -302,7 +302,7 @@ RZ_API RzBreakpointItem *rz_debug_bp_add(RzDebug *dbg, ut64 addr, int hw, bool w
 					m_delta = addr - map->addr;
 				}
 				perm = ((map->perm & 1) << 2) | (map->perm & 2) | ((map->perm & 4) >> 2);
-				if (!(perm & RZ_BP_PROT_EXEC)) {
+				if (!(perm & RZ_PERM_X)) {
 					eprintf("WARNING: setting bp within mapped memory without exec perm\n");
 				}
 				break;
@@ -314,7 +314,7 @@ RZ_API RzBreakpointItem *rz_debug_bp_add(RzDebug *dbg, ut64 addr, int hw, bool w
 		}
 	}
 	if (!module) {
-		//express db breakpoints as dbm due to ASLR when saving into project
+		// express db breakpoints as dbm due to ASLR when saving into project
 		rz_debug_map_sync(dbg);
 		rz_list_foreach (dbg->maps, iter, map) {
 			if (addr >= map->addr && addr < map->addr_end) {
@@ -325,12 +325,12 @@ RZ_API RzBreakpointItem *rz_debug_bp_add(RzDebug *dbg, ut64 addr, int hw, bool w
 		}
 	}
 	if (watch) {
-		hw = 1; //XXX
+		hw = 1; // XXX
 		bpi = rz_bp_watch_add(dbg->bp, addr, bpsz, hw, rw);
 	} else {
 		bpi = hw
-			? rz_bp_add_hw(dbg->bp, addr, bpsz, RZ_BP_PROT_EXEC)
-			: rz_bp_add_sw(dbg->bp, addr, bpsz, RZ_BP_PROT_EXEC);
+			? rz_bp_add_hw(dbg->bp, addr, bpsz, RZ_PERM_X)
+			: rz_bp_add_sw(dbg->bp, addr, bpsz, RZ_PERM_X);
 	}
 	if (bpi) {
 		if (module_name) {
@@ -413,7 +413,7 @@ RZ_API RzDebug *rz_debug_free(RzDebug *dbg) {
 	if (dbg) {
 		// TODO: free it correctly.. we must ensure this is an instance and not a reference..
 		rz_bp_free(dbg->bp);
-		//rz_reg_free(&dbg->reg);
+		// rz_reg_free(&dbg->reg);
 		free(dbg->snap_path);
 		rz_list_free(dbg->maps);
 		rz_list_free(dbg->maps_user);
@@ -444,7 +444,7 @@ RZ_API int rz_debug_attach(RzDebug *dbg, int pid) {
 		ret = dbg->cur->attach(dbg, pid);
 		if (ret != -1) {
 			dbg->reason.type = RZ_DEBUG_REASON_NONE; // after a successful attach, the process is not dead
-			rz_debug_select(dbg, pid, ret); //dbg->pid, dbg->tid);
+			rz_debug_select(dbg, pid, ret); // dbg->pid, dbg->tid);
 		}
 	}
 	return ret;
@@ -461,6 +461,11 @@ RZ_API int rz_debug_stop(RzDebug *dbg) {
 RZ_API bool rz_debug_set_arch(RzDebug *dbg, const char *arch, int bits) {
 	if (arch && dbg && dbg->cur) {
 		switch (bits) {
+		case 16:
+			if (dbg->cur->bits & RZ_SYS_BITS_16) {
+				dbg->bits = RZ_SYS_BITS_16;
+			}
+			break;
 		case 27:
 			if (dbg->cur->bits == 27) {
 				dbg->bits = 27;
@@ -527,13 +532,13 @@ RZ_API ut64 rz_debug_execute(RzDebug *dbg, const ut8 *buf, int len, int restore)
 		dbg->iob.read_at(dbg->iob.io, rpc, backup, len);
 		dbg->iob.read_at(dbg->iob.io, rsp, stackbackup, len);
 
-		rz_bp_add_sw(dbg->bp, rpc + len, dbg->bpsize, RZ_BP_PROT_EXEC);
+		rz_bp_add_sw(dbg->bp, rpc + len, dbg->bpsize, RZ_PERM_X);
 
 		/* execute code here */
 		dbg->iob.write_at(dbg->iob.io, rpc, buf, len);
-		//rz_bp_add_sw (dbg->bp, rpc+len, 4, RZ_BP_PROT_EXEC);
+		// rz_bp_add_sw (dbg->bp, rpc+len, 4, RZ_BP_PROT_EXEC);
 		rz_debug_continue(dbg);
-		//rz_bp_del (dbg->bp, rpc+len);
+		// rz_bp_del (dbg->bp, rpc+len);
 		/* TODO: check if stopped in breakpoint or not */
 
 		rz_bp_del(dbg->bp, rpc + len);
@@ -698,7 +703,7 @@ RZ_API RzDebugReasonType rz_debug_wait(RzDebug *dbg, RzBreakpointItem **bp) {
 			};
 			rz_event_send(dbg->ev, RZ_EVENT_DEBUG_PROCESS_FINISHED, &event);
 			// XXX(jjd): TODO: handle fallback or something else
-			//rz_debug_select (dbg, -1, -1);
+			// rz_debug_select (dbg, -1, -1);
 			return RZ_DEBUG_REASON_DEAD;
 		}
 
@@ -798,6 +803,9 @@ RZ_API int rz_debug_step_soft(RzDebug *dbg) {
 		return false;
 	}
 
+	const bool has_lr_reg = rz_reg_get_name(dbg->reg, RZ_REG_NAME_LR);
+	const bool arch_ret_is_pop = !strcmp(dbg->arch, "arm") && dbg->bits <= RZ_SYS_BITS_32;
+
 	pc = rz_debug_reg_get(dbg, dbg->reg->name[RZ_REG_NAME_PC]);
 	sp = rz_debug_reg_get(dbg, dbg->reg->name[RZ_REG_NAME_SP]);
 
@@ -815,8 +823,15 @@ RZ_API int rz_debug_step_soft(RzDebug *dbg) {
 	}
 	switch (op.type) {
 	case RZ_ANALYSIS_OP_TYPE_RET:
-		dbg->iob.read_at(dbg->iob.io, sp, (ut8 *)&sp_top, 8);
-		next[0] = (dbg->bits == RZ_SYS_BITS_32) ? sp_top.r32[0] : sp_top.r64;
+		if (arch_ret_is_pop && op.stackop == RZ_ANALYSIS_STACK_INC) {
+			dbg->iob.read_at(dbg->iob.io, sp - op.stackptr - 4, (ut8 *)&sp_top, 4);
+			next[0] = sp_top.r32[0];
+		} else if (has_lr_reg) {
+			next[0] = rz_debug_reg_get(dbg, dbg->reg->name[RZ_REG_NAME_LR]);
+		} else {
+			dbg->iob.read_at(dbg->iob.io, sp, (ut8 *)&sp_top, 8);
+			next[0] = (dbg->bits <= RZ_SYS_BITS_32) ? sp_top.r32[0] : sp_top.r64;
+		}
 		br = 1;
 		break;
 	case RZ_ANALYSIS_OP_TYPE_CJMP:
@@ -842,7 +857,7 @@ RZ_API int rz_debug_step_soft(RzDebug *dbg) {
 		if (!dbg->iob.read_at(dbg->iob.io, r, (ut8 *)&memval, 8)) {
 			next[0] = op.addr + op.size;
 		} else {
-			next[0] = (dbg->bits == RZ_SYS_BITS_32) ? memval.r32[0] : memval.r64;
+			next[0] = (dbg->bits <= RZ_SYS_BITS_32) ? memval.r32[0] : memval.r64;
 		}
 		br = 1;
 		break;
@@ -857,7 +872,7 @@ RZ_API int rz_debug_step_soft(RzDebug *dbg) {
 		if (!dbg->iob.read_at(dbg->iob.io, r * op.scale + op.disp, (ut8 *)&memval, 8)) {
 			next[0] = op.addr + op.size;
 		} else {
-			next[0] = (dbg->bits == RZ_SYS_BITS_32) ? memval.r32[0] : memval.r64;
+			next[0] = (dbg->bits <= RZ_SYS_BITS_32) ? memval.r32[0] : memval.r64;
 		}
 		br = 1;
 		break;
@@ -867,8 +882,12 @@ RZ_API int rz_debug_step_soft(RzDebug *dbg) {
 		break;
 	}
 
+	const int align = rz_analysis_archinfo(dbg->analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
 	for (i = 0; i < br; i++) {
-		RzBreakpointItem *bpi = rz_bp_add_sw(dbg->bp, next[i], dbg->bpsize, RZ_BP_PROT_EXEC);
+		if (align > 1) {
+			next[i] = next[i] - (next[i] % align);
+		}
+		RzBreakpointItem *bpi = rz_bp_add_sw(dbg->bp, next[i], dbg->bpsize, RZ_PERM_X);
 		if (bpi) {
 			bpi->swstep = true;
 		}
@@ -1071,7 +1090,7 @@ RZ_API int rz_debug_step_over(RzDebug *dbg, int steps) {
 				return steps_taken;
 			}
 		} else if ((op.prefix & (RZ_ANALYSIS_OP_PREFIX_REP | RZ_ANALYSIS_OP_PREFIX_REPNE | RZ_ANALYSIS_OP_PREFIX_LOCK))) {
-			//eprintf ("REP: skip to next instruction...\n");
+			// eprintf ("REP: skip to next instruction...\n");
 			if (!rz_debug_continue_until(dbg, ins_size)) {
 				eprintf("step over failed over rep\n");
 				return steps_taken;
@@ -1135,7 +1154,7 @@ RZ_API int rz_debug_continue_kill(RzDebug *dbg, int sig) {
 			if (reg->cnum <= dbg->session->cnum) {
 				continue;
 			}
-			has_bp = rz_bp_get_in(dbg->bp, reg->data, RZ_BP_PROT_EXEC) != NULL;
+			has_bp = rz_bp_get_in(dbg->bp, reg->data, RZ_PERM_X) != NULL;
 			if (has_bp) {
 				eprintf("hit breakpoint at: 0x%" PFMT64x " cnum: %d\n", reg->data, reg->cnum);
 				rz_debug_goto_cnum(dbg, reg->cnum);
@@ -1169,7 +1188,7 @@ repeat:
 		}
 		/* tell the inferior to go! */
 		ret = dbg->cur->cont(dbg, dbg->pid, dbg->tid, sig);
-		//XXX(jjd): why? //dbg->reason.signum = 0;
+		// XXX(jjd): why? //dbg->reason.signum = 0;
 		reason = rz_debug_wait(dbg, &bp);
 	} else {
 		return 0;
@@ -1307,7 +1326,7 @@ repeat:
 }
 
 RZ_API int rz_debug_continue(RzDebug *dbg) {
-	return rz_debug_continue_kill(dbg, 0); //dbg->reason.signum);
+	return rz_debug_continue_kill(dbg, 0); // dbg->reason.signum);
 }
 
 #if __WINDOWS__
@@ -1383,9 +1402,9 @@ static int rz_debug_continue_until_internal(RzDebug *dbg, ut64 addr, bool block)
 		return false;
 	}
 	// Check if there was another breakpoint set at addr
-	bool has_bp = rz_bp_get_in(dbg->bp, addr, RZ_BP_PROT_EXEC) != NULL;
+	bool has_bp = rz_bp_get_in(dbg->bp, addr, RZ_PERM_X) != NULL;
 	if (!has_bp) {
-		rz_bp_add_sw(dbg->bp, addr, dbg->bpsize, RZ_BP_PROT_EXEC);
+		rz_bp_add_sw(dbg->bp, addr, dbg->bpsize, RZ_PERM_X);
 	}
 
 	// Continue until the bp is reached
@@ -1433,7 +1452,7 @@ RZ_API bool rz_debug_continue_back(RzDebug *dbg) {
 		if (reg->cnum >= dbg->session->cnum) {
 			continue;
 		}
-		has_bp = rz_bp_get_in(dbg->bp, reg->data, RZ_BP_PROT_EXEC) != NULL;
+		has_bp = rz_bp_get_in(dbg->bp, reg->data, RZ_PERM_X) != NULL;
 		if (has_bp) {
 			cnum = reg->cnum;
 			eprintf("hit breakpoint at: 0x%" PFMT64x " cnum: %d\n", reg->data, reg->cnum);
@@ -1597,14 +1616,14 @@ RZ_API RzList *rz_debug_frames(RzDebug *dbg, ut64 at) {
 
 /* TODO: Implement fork and clone */
 RZ_API int rz_debug_child_fork(RzDebug *dbg) {
-	//if (dbg && dbg->cur && dbg->cur->frames)
-	//return dbg->cur->frames (dbg);
+	// if (dbg && dbg->cur && dbg->cur->frames)
+	// return dbg->cur->frames (dbg);
 	return 0;
 }
 
 RZ_API int rz_debug_child_clone(RzDebug *dbg) {
-	//if (dbg && dbg->cur && dbg->cur->frames)
-	//return dbg->cur->frames (dbg);
+	// if (dbg && dbg->cur && dbg->cur->frames)
+	// return dbg->cur->frames (dbg);
 	return 0;
 }
 
@@ -1662,7 +1681,7 @@ RZ_API ut64 rz_debug_get_baddr(RzDebug *dbg, const char *file) {
 	if (!dbg || !dbg->iob.io || !dbg->iob.io->desc) {
 		return 0LL;
 	}
-	if (!strcmp(dbg->iob.io->desc->plugin->name, "gdb")) { //this is very bad
+	if (!strcmp(dbg->iob.io->desc->plugin->name, "gdb")) { // this is very bad
 		// Tell gdb that we want baddr, not full mem map
 		dbg->iob.system(dbg->iob.io, "baddr");
 	}

@@ -165,7 +165,7 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 #if !USE_ITERZ_API
 	cs_free(insn, n);
 #endif
-	//cs_close (&handle);
+	// cs_close (&handle);
 	return op->size;
 }
 
@@ -194,12 +194,17 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 	return rz_reg_set_profile_string(analysis->reg, p);
 }
 
+static int address_bits(RzAnalysis *analysis, int bits) {
+	return 16;
+}
+
 RzAnalysisPlugin rz_analysis_plugin_6502_cs = {
 	.name = "6502.cs",
 	.desc = "Capstone mos65xx analysis plugin",
 	.license = "LGPL3",
 	.arch = "6502",
 	.bits = 8,
+	.address_bits = address_bits,
 	.op = &analop,
 	.set_reg_profile = &set_reg_profile,
 };

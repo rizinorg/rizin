@@ -112,13 +112,13 @@ RZ_API bool rz_core_hack_arm(RzCore *core, const char *op, const RzAnalysisOp *a
 		if (bits == 16) {
 			switch (b[1]) {
 			case 0xb9: // CBNZ
-				rz_core_write_hexpair(core, core->offset + 1, "b1"); //CBZ
+				rz_core_write_hexpair(core, core->offset + 1, "b1"); // CBZ
 				break;
 			case 0xbb: // CBNZ
-				rz_core_write_hexpair(core, core->offset + 1, "b3"); //CBZ
+				rz_core_write_hexpair(core, core->offset + 1, "b3"); // CBZ
 				break;
 			case 0xd1: // BNE
-				rz_core_write_hexpair(core, core->offset + 1, "d0"); //BEQ
+				rz_core_write_hexpair(core, core->offset + 1, "d0"); // BEQ
 				break;
 			default:
 				eprintf("Current opcode is not conditional\n");
@@ -132,13 +132,13 @@ RZ_API bool rz_core_hack_arm(RzCore *core, const char *op, const RzAnalysisOp *a
 		if (bits == 16) {
 			switch (b[1]) {
 			case 0xb1: // CBZ
-				rz_core_write_hexpair(core, core->offset + 1, "b9"); //CBNZ
+				rz_core_write_hexpair(core, core->offset + 1, "b9"); // CBNZ
 				break;
 			case 0xb3: // CBZ
-				rz_core_write_hexpair(core, core->offset + 1, "bb"); //CBNZ
+				rz_core_write_hexpair(core, core->offset + 1, "bb"); // CBNZ
 				break;
 			case 0xd0: // BEQ
-				rz_core_write_hexpair(core, core->offset + 1, "d1"); //BNE
+				rz_core_write_hexpair(core, core->offset + 1, "d1"); // BNE
 				break;
 			default:
 				eprintf("Current opcode is not conditional\n");
@@ -158,7 +158,7 @@ RZ_API bool rz_core_hack_arm(RzCore *core, const char *op, const RzAnalysisOp *a
 			case 0xb9: // CBNZ
 			case 0xbb: // CBNZ
 			case 0xd1: // BNE
-				rz_core_write_hexpair(core, core->offset + 1, "e0"); //BEQ
+				rz_core_write_hexpair(core, core->offset + 1, "e0"); // BEQ
 				break;
 			default:
 				eprintf("Current opcode is not conditional\n");

@@ -6,7 +6,7 @@
 
 /**
  * \brief Create a new instance of global variable
- * 
+ *
  * \param name variable name
  * \param addr variable address
  * \param comment variable comment
@@ -38,7 +38,7 @@ int global_var_node_cmp(const void *incoming, const RBNode *in_tree, void *user)
 
 /**
  * \brief Add the global variable into hashtable
- * 
+ *
  * \param analysis RzAnalysis
  * \param global_var Global variable instance
  * \return true if succeed
@@ -72,7 +72,7 @@ RZ_API RZ_OWN bool rz_analysis_var_global_add(RzAnalysis *analysis, RZ_NONNULL R
 
 /**
  * \brief Free the global variable instance
- * 
+ *
  * \param glob Global variable instance
  * \return void
  */
@@ -113,7 +113,7 @@ RZ_API RZ_NULLABLE RzFlagItem *rz_analysis_var_global_get_flag_item(RzAnalysisVa
 
 /**
  * \brief Delete and free the global variable
- * 
+ *
  * \param analysis RzAnalysis
  * \param glob global variable to be deleted
  * \return true if succeed
@@ -128,7 +128,7 @@ RZ_API bool rz_analysis_var_global_delete(RZ_NONNULL RzAnalysis *analysis, RZ_NO
 
 /**
  * \brief Delete and free the global variable by its name
- * 
+ *
  * \param analysis RzAnalysis
  * \param name Global Variable name
  * \return true if succeed
@@ -146,7 +146,7 @@ RZ_API bool rz_analysis_var_global_delete_byname(RzAnalysis *analysis, RZ_NONNUL
 
 /**
  * \brief Same as rz_analysis_var_global_delete_byname at the address
- * 
+ *
  * \param analysis RzAnalysis
  * \param addr Global Variable address
  * \return true if succeed
@@ -164,7 +164,7 @@ RZ_API bool rz_analysis_var_global_delete_byaddr_at(RzAnalysis *analysis, ut64 a
 
 /**
  * \brief Same as rz_analysis_var_global_delete_byname in the address
- * 
+ *
  * \param analysis RzAnalysis
  * \param addr Global Variable address
  * \return true if succeed
@@ -182,7 +182,7 @@ RZ_API bool rz_analysis_var_global_delete_byaddr_in(RzAnalysis *analysis, ut64 a
 
 /**
  * \brief Get the instance of global variable by its name
- * 
+ *
  * \param analysis RzAnalysis
  * \param name Global variable name
  * \return RzAnalysisVarGlobal *
@@ -199,7 +199,7 @@ struct list_addr {
 
 /**
  * \brief Get the instance of global variable at the address
- * 
+ *
  * \param analysis RzAnalysis
  * \param addr Global variable address
  * \return RzAnalysisVarGlobal *
@@ -220,7 +220,7 @@ RZ_API RZ_BORROW RzAnalysisVarGlobal *rz_analysis_var_global_get_byaddr_at(RzAna
 
 /**
  * \brief Get the instance of global variable contains the address
- * 
+ *
  * \param analysis RzAnalysis
  * \param addr Global variable address
  * \return RzAnalysisVarGlobal *
@@ -252,7 +252,7 @@ static bool global_var_collect_cb(void *user, const void *k, const void *v) {
 
 /**
  * \brief Get all of the added global variables
- * 
+ *
  * \param analysis RzAnalysis
  * \return RzList *
  */
@@ -268,7 +268,7 @@ RZ_API RZ_OWN RzList *rz_analysis_var_global_get_all(RzAnalysis *analysis) {
 
 /**
  * \brief Rename the global variable
- * 
+ *
  * \param analysis RzAnalysis
  * \param old_name The old name of the global variable
  * \param newname The new name of the global variable
@@ -294,7 +294,7 @@ RZ_API bool rz_analysis_var_global_rename(RzAnalysis *analysis, RZ_NONNULL const
 
 /**
  * \brief Set the type of the global variable
- * 
+ *
  * \param glob Global variable instance
  * \param type The type to set. RzType*
  * \return void
@@ -312,7 +312,7 @@ RZ_API void rz_analysis_var_global_set_type(RzAnalysisVarGlobal *glob, RZ_NONNUL
 
 /**
  * \brief Add a constaint to global variable
- * 
+ *
  * \param glob Global variable instance
  * \param constraint RzTypeConstraint
  * \return void
@@ -324,7 +324,7 @@ RZ_API void rz_analysis_var_global_add_constraint(RzAnalysisVarGlobal *glob, RzT
 
 /**
  * \brief Get the pritable string of global variable constraints
- * 
+ *
  * \param glob Global variable instance
  * \return char *
  */

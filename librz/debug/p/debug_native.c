@@ -35,7 +35,7 @@ static int rz_debug_native_reg_write(RzDebug *dbg, int type, const ut8 *buf, int
 //#include <windows.h>
 #include "native/windows/windows_debug.h"
 // TODO: Move these onto windows.h?
-RZ_API RzList *rz_w32_dbg_modules(RzDebug *); //ugly!
+RZ_API RzList *rz_w32_dbg_modules(RzDebug *); // ugly!
 RZ_API RzList *rz_w32_dbg_maps(RzDebug *);
 #define RZ_DEBUG_REG_T CONTEXT
 #ifdef NTSTATUS
@@ -102,7 +102,7 @@ static int rz_debug_handle_signals(RzDebug *dbg) {
 }
 #endif
 
-//this is temporal
+// this is temporal
 #if __APPLE__ || __linux__
 
 static char *rz_debug_native_reg_profile(RzDebug *dbg) {
@@ -129,9 +129,10 @@ static int rz_debug_native_step(RzDebug *dbg) {
 		return false;
 	}
 	return true;
-#else // linux
+#elif __linux__
 	return linux_step(dbg);
 #endif
+	return 0;
 }
 
 // return thread id
@@ -257,7 +258,7 @@ static int rz_debug_native_continue(RzDebug *dbg, int pid, int tid, int sig) {
 			rz_sys_perror("PTRACE_CONT");
 		}
 	}
-	//return ret >= 0 ? tid : false;
+	// return ret >= 0 ? tid : false;
 	return tid;
 #endif
 }
@@ -474,7 +475,7 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 		return RZ_DEBUG_REASON_ERROR;
 	}
 
-	//eprintf ("rz_debug_native_wait: status=%d (0x%x) (return=%d)\n", status, status, ret);
+	// eprintf ("rz_debug_native_wait: status=%d (0x%x) (return=%d)\n", status, status, ret);
 
 #ifdef WAIT_ON_ALL_CHILDREN
 	if (ret != pid) {
@@ -619,7 +620,7 @@ static RzList *rz_debug_native_threads(RzDebug *dbg, int pid) {
 
 #if __sun || __NetBSD__ || __KFBSD__ || __OpenBSD__ || __DragonFly__
 
-//Function to read register from Linux, BSD, Android systems
+// Function to read register from Linux, BSD, Android systems
 static int bsd_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 	int showfpu = false;
 	int pid = dbg->pid;
@@ -740,7 +741,7 @@ static int rz_debug_native_reg_write(RzDebug *dbg, int type, const ut8 *buf, int
 #else
 		return bsd_reg_write(dbg, type, buf, size);
 #endif
-	} //else eprintf ("TODO: reg_write_non-gpr (%d)\n", type);
+	} // else eprintf ("TODO: reg_write_non-gpr (%d)\n", type);
 	return false;
 }
 
@@ -852,8 +853,8 @@ static RzDebugMap *linux_map_alloc(RzDebug *dbg, ut64 addr, int size, bool thp) 
 	};
 
 	/* NOTE: Since kernel 2.4,  that  system  call  has  been  superseded  by
-       		 mmap2(2 and  nowadays  the  glibc  mmap()  wrapper  function invokes
-       		 mmap2(2)). If arch is x86_32 then usage mmap2() */
+		 mmap2(2 and  nowadays  the  glibc  mmap()  wrapper  function invokes
+		 mmap2(2)). If arch is x86_32 then usage mmap2() */
 	if (!strcmp(dbg->arch, "x86") && dbg->bits == 4) {
 		sc_name = "mmap2";
 	} else {
@@ -1006,7 +1007,7 @@ static RzList *rz_debug_native_map_get(RzDebug *dbg) {
 	char region[100], region2[100], perms[5];
 	FILE *fd;
 	if (dbg->pid == -1) {
-		//eprintf ("rz_debug_native_map_get: No selected pid (-1)\n");
+		// eprintf ("rz_debug_native_map_get: No selected pid (-1)\n");
 		return NULL;
 	}
 	/* prepend 0x prefix */
@@ -1305,7 +1306,7 @@ static int rz_debug_native_drx(RzDebug *dbg, int n, ut64 addr, int sz, int rwx, 
 #else
 	eprintf("drx: Unsupported platform\n");
 #endif
-	return false;
+	return -1;
 }
 
 #if __linux__
@@ -1329,7 +1330,7 @@ static int rz_debug_native_drx(RzDebug *dbg, int n, ut64 addr, int sz, int rwx, 
 
 static bool ll_arm32_hwbp_set(pid_t pid, ut64 addr, int size, int wp, int type) {
 	const unsigned byte_mask = (1 << size) - 1;
-	//const unsigned type = 2; // Write.
+	// const unsigned type = 2; // Write.
 	const unsigned enable = 1;
 	const unsigned control = byte_mask << 5 | type << 3 | enable;
 	(void)ptrace(PTRACE_SETHBPREGS, pid, -1, (void *)(size_t)addr);
@@ -1348,7 +1349,7 @@ static bool arm32_hwbp_del(RzDebug *dbg, RzBreakpoint *bp, RzBreakpointItem *b) 
 
 #if (__arm64__ || __aarch64__) && defined(PTRACE_GETREGSET)
 // type = 2 = write
-//static volatile uint8_t var[96] __attribute__((__aligned__(32)));
+// static volatile uint8_t var[96] __attribute__((__aligned__(32)));
 
 static bool ll_arm64_hwbp_set(pid_t pid, ut64 _addr, int size, int wp, ut32 type) {
 	const volatile uint8_t *addr = (void *)(size_t)_addr; //&var[32 + wp];
@@ -1434,6 +1435,10 @@ static int rz_debug_native_bp(RzBreakpoint *bp, RzBreakpointItem *b, bool set) {
 		return set
 			? arm64_hwbp_add(dbg, bp, b)
 			: arm64_hwbp_del(dbg, bp, b);
+#elif __WINDOWS__
+		return set
+			? w32_hwbp_arm_add(dbg, bp, b)
+			: w32_hwbp_arm_del(dbg, bp, b);
 #elif __arm__ && __linux__
 		return set
 			? arm32_hwbp_add(dbg, bp, b)
@@ -1473,8 +1478,8 @@ static RzList *xnu_desc_list(int pid) {
 			perror("too few bytes");
 			break;
 		}
-		//printf ("FD %d RWX %x ", i, vi.pfi.fi_openflags);
-		//printf ("PATH %s\n", vi.pvip.vip_path);
+		// printf ("FD %d RWX %x ", i, vi.pfi.fi_openflags);
+		// printf ("PATH %s\n", vi.pvip.vip_path);
 		desc = rz_debug_desc_new(i,
 			vi.pvip.vip_path,
 			xwrz_testwx(vi.pfi.fi_openflags),
@@ -1491,7 +1496,7 @@ static RzList *rz_debug_desc_native_list(int pid) {
 	return xnu_desc_list(pid);
 #elif __WINDOWS__
 	return w32_desc_list(pid);
-#elif __KFBSD__
+#elif __KFBSD__ || __NetBSD__
 	return bsd_desc_list(pid);
 #elif __linux__
 	return linux_desc_list(pid);
@@ -1602,7 +1607,11 @@ RzDebugPlugin rz_debug_plugin_native = {
 #elif __aarch64__ || __arm64__
 	.bits = RZ_SYS_BITS_16 | RZ_SYS_BITS_32 | RZ_SYS_BITS_64,
 	.arch = "arm",
+#if __WINDOWS__
+	.canstep = 0,
+#else
 	.canstep = 1,
+#endif
 #elif __arm__
 	.bits = RZ_SYS_BITS_16 | RZ_SYS_BITS_32 | RZ_SYS_BITS_64,
 	.arch = "arm",
@@ -1656,7 +1665,9 @@ RzDebugPlugin rz_debug_plugin_native = {
 	.modules_get = rz_debug_native_modules_get,
 	.map_protect = rz_debug_native_map_protect,
 	.breakpoint = rz_debug_native_bp,
+#if __i386__ || __x86_64__
 	.drx = rz_debug_native_drx,
+#endif
 	.gcore = rz_debug_gcore,
 };
 

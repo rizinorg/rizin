@@ -40,7 +40,7 @@ static char *prompt(const char *str, const char *txt) {
 	if (rz_cons_fgets(cmd, sizeof(cmd), 0, NULL) < 0) {
 		*cmd = '\0';
 	}
-	//line[strlen(line)-1]='\0';
+	// line[strlen(line)-1]='\0';
 	if (*cmd) {
 		res = strdup(cmd);
 	}
@@ -220,7 +220,7 @@ RZ_API bool rz_core_visual_esil(RzCore *core) {
 			break;
 		case 'r':
 		case 'h':
-			x = 0; //RZ_MAX (x - 1, 0);
+			x = 0; // RZ_MAX (x - 1, 0);
 			break;
 		case '?':
 			rz_cons_clear00();
@@ -432,7 +432,7 @@ RZ_API bool rz_core_visual_bit_editor(RzCore *core) {
 		case 'k':
 		case 10:
 		case ' ':
-			//togglebit();
+			// togglebit();
 			{
 				const int nbyte = x / 8;
 				const int nbit = 7 - (x - (nbyte * 8));
@@ -992,14 +992,14 @@ RZ_API int rz_core_visual_classes(RzCore *core) {
 			if (rz_cons_fgets(cmd, sizeof(cmd), 0, NULL) < 0) {
 				cmd[0] = '\0';
 			}
-			//line[strlen(line)-1]='\0';
+			// line[strlen(line)-1]='\0';
 			rz_core_cmd(core, cmd, 1);
 			rz_cons_set_raw(1);
 			rz_cons_show_cursor(false);
 			if (cmd[0]) {
 				rz_cons_any_key(NULL);
 			}
-			//cons_gotoxy(0,0);
+			// cons_gotoxy(0,0);
 			rz_cons_clear();
 			break;
 		}
@@ -1201,14 +1201,14 @@ RZ_API int rz_core_visual_analysis_classes(RzCore *core) {
 			if (rz_cons_fgets(command, sizeof(command), 0, NULL) < 0) {
 				command[0] = '\0';
 			}
-			//line[strlen(line)-1]='\0';
+			// line[strlen(line)-1]='\0';
 			rz_core_cmd(core, command, 1);
 			rz_cons_set_raw(1);
 			rz_cons_show_cursor(false);
 			if (command[0]) {
 				rz_cons_any_key(NULL);
 			}
-			//cons_gotoxy(0,0);
+			// cons_gotoxy(0,0);
 			rz_cons_clear();
 			break;
 		}
@@ -1565,7 +1565,7 @@ RZ_API int rz_core_visual_trackflags(RzCore *core) {
 			}
 			if (fs2) {
 				int cols, rows = rz_cons_get_size(&cols);
-				//int rows = 20;
+				// int rows = 20;
 				rows -= 12;
 				rz_cons_printf("\n Selected: %s\n\n", fs2);
 				// Honor MAX_FORMATS here
@@ -1812,7 +1812,7 @@ RZ_API int rz_core_visual_trackflags(RzCore *core) {
 			if (*cmd) {
 				rz_cons_any_key(NULL);
 			}
-			//cons_gotoxy(0,0);
+			// cons_gotoxy(0,0);
 			rz_cons_clear();
 			continue;
 		}
@@ -1882,10 +1882,10 @@ RZ_API int rz_core_visual_comments(RzCore *core) {
 		ch = rz_cons_arrow_to_hjkl(ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
 		case 'a':
-			//TODO
+			// TODO
 			break;
 		case 'e':
-			//TODO
+			// TODO
 			break;
 		case 'd':
 			if (p) {
@@ -1984,7 +1984,7 @@ static void config_visual_hit(RzCore *core, const char *name, int editor) {
 			rz_cons_set_raw(1);
 			rz_cons_show_cursor(false);
 			rz_config_set(core->config, name, buf);
-			//node->value = rz_str_dup (node->value, buf);
+			// node->value = rz_str_dup (node->value, buf);
 		}
 	}
 }
@@ -2583,7 +2583,7 @@ RZ_API void rz_core_visual_debugtraces(RzCore *core, const char *input) {
 		rz_core_cmd0(core, "x 64@r:SP");
 		rz_core_debug_ri(core, core->dbg->reg, 0);
 		// limit by rows here
-		//int rows = rz_cons_get_size (NULL);
+		// int rows = rz_cons_get_size (NULL);
 		rz_core_cmdf(core, "dtd %d", delta);
 		rz_cons_visual_flush();
 		char ch;
@@ -2777,7 +2777,7 @@ RZ_API void rz_core_visual_analysis(RzCore *core, const char *input) {
 				rz_line_set_prompt("New name: ");
 				if (rz_cons_fgets(old, sizeof(old), 0, NULL)) {
 					if (*old) {
-						//old[strlen (old)-1] = 0;
+						// old[strlen (old)-1] = 0;
 						variable_rename(core, addr, variable_option, old);
 					}
 				}
@@ -2786,7 +2786,7 @@ RZ_API void rz_core_visual_analysis(RzCore *core, const char *input) {
 				rz_line_set_prompt("New name: ");
 				if (rz_cons_fgets(old, sizeof(old), 0, NULL)) {
 					if (*old) {
-						//old[strlen (old)-1] = 0;
+						// old[strlen (old)-1] = 0;
 						function_rename(core, addr, old);
 					}
 				}
@@ -2802,7 +2802,7 @@ RZ_API void rz_core_visual_analysis(RzCore *core, const char *input) {
 				rz_line_set_prompt("New type: ");
 				if (rz_cons_fgets(old, sizeof(old), 0, NULL)) {
 					if (*old) {
-						//old[strlen (old)-1] = 0;
+						// old[strlen (old)-1] = 0;
 						variable_set_type(core, addr, variable_option, old);
 					}
 				}
@@ -2989,7 +2989,7 @@ beach:
 	rz_config_set_i(core->config, "asm.bytes", asmbytes);
 }
 
-//define the data at offset according to the type (byte, word...) n times
+// define the data at offset according to the type (byte, word...) n times
 static void define_data_ntimes(RzCore *core, ut64 off, int times, int type) {
 	int i = 0;
 	rz_meta_del(core->analysis, RZ_META_TYPE_ANY, off, core->blocksize);
@@ -3006,7 +3006,7 @@ static bool isDisasmPrint(int mode) {
 }
 
 static void handleHints(RzCore *core) {
-	//TODO extend for more analysis hints
+	// TODO extend for more analysis hints
 	int i = 0;
 	char ch[64] = RZ_EMPTY;
 	const char *lines[] = { "[dh]- Define analysis hint:", " b [16,32,64]     set bits hint", NULL };
@@ -3319,7 +3319,7 @@ onemoretime:
 					break;
 				}
 				if (!p[j + 1 + ntotal]) {
-					//check if is still wide
+					// check if is still wide
 					if (j + 3 + ntotal < n) {
 						if (p[j + 3]) {
 							break;
@@ -3379,8 +3379,8 @@ onemoretime:
 			}
 		}
 		name[4 + n] = '\0';
-		//handle wide strings
-		//memcpy (name + 4, (const char *)p, n);
+		// handle wide strings
+		// memcpy (name + 4, (const char *)p, n);
 		if (is_wide) {
 			rz_meta_set(core->analysis, RZ_META_TYPE_STRING, off,
 				n * 2, (const char *)name + 4);

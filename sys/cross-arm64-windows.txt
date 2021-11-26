@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: 2021 GustavoLCR <gugulcr@gmail.com>
+# SPDX-License-Identifier: LGPL-3.0-only
+[binaries]
+c = 'cl'
+cpp = 'cl'
+ar = 'lib'
+windres = 'rc'
+
+[host_machine]
+system = 'windows'
+cpu_family = 'aarch64'
+cpu = 'armv8'
+endian = 'little'

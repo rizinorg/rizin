@@ -129,7 +129,7 @@ static int main_help(int line) {
 			" -Q           quiet mode (no prompt) and quit faster (quickLeak=true)\n"
 			" -p [p.rzdb]  load project file\n"
 			" -r [rz-run]  specify rz-run profile to load (same as -e dbg.profile=X)\n"
-			" -R [rrz_testule] specify custom rz-run directive\n"
+			" -R [rule]    specify custom rz-run directive\n"
 			" -s [addr]    initial seek\n"
 #if USE_THREADS && ALLOW_THREADED
 			" -t           load rz-bin info in thread\n"
@@ -263,7 +263,7 @@ static bool run_commands(RzCore *r, RzList *cmds, RzList *files, bool quiet, int
 	}
 	/* -c */
 	rz_list_foreach (cmds, iter, cmdn) {
-		//rz_core_cmd0 (r, cmdn);
+		// rz_core_cmd0 (r, cmdn);
 		rz_core_cmd_lines(r, cmdn);
 		rz_cons_flush();
 	}
@@ -712,7 +712,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				free(msg);
 			} else {
 				eprintf("Cannot read dbg.profile '%s'\n", dbg_profile);
-				pfile = NULL; //strdup ("");
+				pfile = NULL; // strdup ("");
 			}
 		} else {
 			pfile = argv[opt.ind] ? strdup(argv[opt.ind]) : NULL;
@@ -1456,7 +1456,7 @@ beach:
 	// not really needed, cause rz_core_fini will close the file
 	// and this fh may be come stale during the command
 	// execution.
-	//rz_core_file_close (r, fh);
+	// rz_core_file_close (r, fh);
 	rz_core_free(r);
 	rz_cons_set_raw(0);
 	rz_cons_free();

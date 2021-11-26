@@ -23,9 +23,9 @@ RZ_API int rz_core_setup_debugger(RzCore *r, const char *debugbackend, bool atta
 	if (attach) {
 		rz_core_debug_attach(r, pid);
 	}
-	//this makes to attach twice showing warnings in the output
-	//we get "resource busy" so it seems isn't an issue
-	rz_core_debug_regs2flags(r, 0);
+	// this makes to attach twice showing warnings in the output
+	// we get "resource busy" so it seems isn't an issue
+	rz_core_debug_regs2flags(r);
 	/* honor dbg.bep */
 	{
 		const char *bep = rz_config_get(r->config, "dbg.bep");
@@ -329,7 +329,7 @@ RZ_API void rz_core_arch_bits_at(RzCore *core, ut64 addr, RZ_OUT RZ_NULLABLE int
 			}
 		}
 	}
-	//if we found bits related with analysis hints pick it up
+	// if we found bits related with analysis hints pick it up
 	if (bits && !bitsval && !core->fixedbits) {
 		bitsval = rz_analysis_hint_bits_at(core->analysis, addr, NULL);
 	}
@@ -422,11 +422,11 @@ RZ_API int rz_core_shift_block(RzCore *core, ut64 addr, ut64 b_size, st64 dist) 
 
 	// cases
 	// addr + b_size + dist > file_end
-	//if ( (addr+b_size) + dist > file_end ) {
+	// if ( (addr+b_size) + dist > file_end ) {
 	//	res = false;
 	//}
 	// addr + b_size + dist < file_start (should work since dist is signed)
-	//else if ( (addr+b_size) + dist < 0 ) {
+	// else if ( (addr+b_size) + dist < 0 ) {
 	//	res = false;
 	//}
 	// addr + dist < file_start

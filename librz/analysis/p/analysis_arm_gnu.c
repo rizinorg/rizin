@@ -220,29 +220,29 @@ static int arm_op32(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		}
 	} else // 0x000037b8  00:0000   0             800000ef  svc 0x00000080
 		if (b[2] == 0xa0 && b[3] == 0xe1) {
-		int n = (b[0] << 16) + b[1];
-		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
-		switch (n) {
-		case 0:
-		case 0x0110:
-		case 0x0220:
-		case 0x0330:
-		case 0x0440:
-		case 0x0550:
-		case 0x0660:
-		case 0x0770:
-		case 0x0880:
-		case 0x0990:
-		case 0x0aa0:
-		case 0x0bb0:
-		case 0x0cc0:
-			op->type = RZ_ANALYSIS_OP_TYPE_NOP;
-			break;
-		}
-	} else if (b[3] == 0xef) {
-		op->type = RZ_ANALYSIS_OP_TYPE_SWI;
-		op->val = (b[0] | (b[1] << 8) | (b[2] << 2));
-	} else if ((b[3] & 0xf) == 5) { // [reg,0xa4]
+			int n = (b[0] << 16) + b[1];
+			op->type = RZ_ANALYSIS_OP_TYPE_MOV;
+			switch (n) {
+			case 0:
+			case 0x0110:
+			case 0x0220:
+			case 0x0330:
+			case 0x0440:
+			case 0x0550:
+			case 0x0660:
+			case 0x0770:
+			case 0x0880:
+			case 0x0990:
+			case 0x0aa0:
+			case 0x0bb0:
+			case 0x0cc0:
+				op->type = RZ_ANALYSIS_OP_TYPE_NOP;
+				break;
+			}
+		} else if (b[3] == 0xef) {
+			op->type = RZ_ANALYSIS_OP_TYPE_SWI;
+			op->val = (b[0] | (b[1] << 8) | (b[2] << 2));
+		} else if ((b[3] & 0xf) == 5) { // [reg,0xa4]
 #if 0
 		0x00000000      a4a09fa4 ldrge sl, [pc], 0xa4
 		0x00000000      a4a09fa5 ldrge sl, [pc, 0xa4]
@@ -252,61 +252,61 @@ static int arm_op32(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 			r2, r5, r7, sp, pc
 		}; < UNPREDICT
 #endif
-		if ((b[1] & 0xf0) == 0xf0) {
-			// ldr pc, [pc, #1] ;
-			// op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
-			op->type = RZ_ANALYSIS_OP_TYPE_RET; // FAKE FOR FUN
-			// op->stackop = RZ_ANALYSIS_STACK_SET;
-			op->jump = 1234;
-			// op->ptr = 4+addr+b[0]; // sure? :)
-			// op->ptrptr = true;
-		}
-		// eprintf("0x%08x\n", code[i] & ARM_DTX_LOAD);
-		// 0x0001B4D8,           1eff2fe1        bx    lr
-	} else if (b[3] == 0xe2 && b[2] == 0x8d && b[1] == 0xd0) {
-		// ADD SP, SP, ...
-		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
-		op->stackop = RZ_ANALYSIS_STACK_INC;
-		op->val = -b[0];
-	} else if (b[3] == 0xe2 && b[2] == 0x4d && b[1] == 0xd0) {
-		// SUB SP, SP, ..
-		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
-		op->stackop = RZ_ANALYSIS_STACK_INC;
-		op->val = b[0];
-	} else if (b[3] == 0xe2 && b[2] == 0x4c && b[1] == 0xb0) {
-		// SUB SP, FP, ..
-		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
-		op->stackop = RZ_ANALYSIS_STACK_INC;
-		op->val = -b[0];
-	} else if (b[3] == 0xe2 && b[2] == 0x4b && b[1] == 0xd0) {
-		// SUB SP, IP, ..
-		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
-		op->stackop = RZ_ANALYSIS_STACK_INC;
-		op->val = -b[0];
-	} else if ((code[i] == 0x1eff2fe1) ||
-		(code[i] == 0xe12fff1e)) { // bx lr
-		op->type = RZ_ANALYSIS_OP_TYPE_RET;
-	} else if ((code[i] & ARM_DTX_LOAD)) { // IS_LOAD(code[i])) {
-		ut32 ptr = 0;
-		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
-		if (b[2] == 0x1b) {
-			/* XXX pretty incomplete */
-			op->stackop = RZ_ANALYSIS_STACK_GET;
-			op->ptr = b[0];
-			// var_add_access(addr, -b[0], 1, 0); // TODO: set/get (the last 0)
-		} else {
-			// ut32 oaddr = addr+8+b[0];
-			// XXX TODO ret = rizin_read_at(oaddr, (ut8*)&ptr, 4);
-			if (analysis->bits == 32) {
-				b = (ut8 *)&ptr;
-				op->ptr = b[0] + (b[1] << 8) + (b[2] << 16) + (b[3] << 24);
-				// XXX data_xrefs_add(oaddr, op->ptr, 1);
-				// TODO change data type to pointer
+			if ((b[1] & 0xf0) == 0xf0) {
+				// ldr pc, [pc, #1] ;
+				// op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
+				op->type = RZ_ANALYSIS_OP_TYPE_RET; // FAKE FOR FUN
+				// op->stackop = RZ_ANALYSIS_STACK_SET;
+				op->jump = 1234;
+				// op->ptr = 4+addr+b[0]; // sure? :)
+				// op->ptrptr = true;
+			}
+			// eprintf("0x%08x\n", code[i] & ARM_DTX_LOAD);
+			// 0x0001B4D8,           1eff2fe1        bx    lr
+		} else if (b[3] == 0xe2 && b[2] == 0x8d && b[1] == 0xd0) {
+			// ADD SP, SP, ...
+			op->type = RZ_ANALYSIS_OP_TYPE_ADD;
+			op->stackop = RZ_ANALYSIS_STACK_INC;
+			op->val = -b[0];
+		} else if (b[3] == 0xe2 && b[2] == 0x4d && b[1] == 0xd0) {
+			// SUB SP, SP, ..
+			op->type = RZ_ANALYSIS_OP_TYPE_SUB;
+			op->stackop = RZ_ANALYSIS_STACK_INC;
+			op->val = b[0];
+		} else if (b[3] == 0xe2 && b[2] == 0x4c && b[1] == 0xb0) {
+			// SUB SP, FP, ..
+			op->type = RZ_ANALYSIS_OP_TYPE_SUB;
+			op->stackop = RZ_ANALYSIS_STACK_INC;
+			op->val = -b[0];
+		} else if (b[3] == 0xe2 && b[2] == 0x4b && b[1] == 0xd0) {
+			// SUB SP, IP, ..
+			op->type = RZ_ANALYSIS_OP_TYPE_SUB;
+			op->stackop = RZ_ANALYSIS_STACK_INC;
+			op->val = -b[0];
+		} else if ((code[i] == 0x1eff2fe1) ||
+			(code[i] == 0xe12fff1e)) { // bx lr
+			op->type = RZ_ANALYSIS_OP_TYPE_RET;
+		} else if ((code[i] & ARM_DTX_LOAD)) { // IS_LOAD(code[i])) {
+			ut32 ptr = 0;
+			op->type = RZ_ANALYSIS_OP_TYPE_MOV;
+			if (b[2] == 0x1b) {
+				/* XXX pretty incomplete */
+				op->stackop = RZ_ANALYSIS_STACK_GET;
+				op->ptr = b[0];
+				// var_add_access(addr, -b[0], 1, 0); // TODO: set/get (the last 0)
 			} else {
-				op->ptr = 0;
+				// ut32 oaddr = addr+8+b[0];
+				// XXX TODO ret = rizin_read_at(oaddr, (ut8*)&ptr, 4);
+				if (analysis->bits == 32) {
+					b = (ut8 *)&ptr;
+					op->ptr = b[0] + (b[1] << 8) + (b[2] << 16) + (b[3] << 24);
+					// XXX data_xrefs_add(oaddr, op->ptr, 1);
+					// TODO change data type to pointer
+				} else {
+					op->ptr = 0;
+				}
 			}
 		}
-	}
 
 	if (IS_LOAD(code[i])) {
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
@@ -473,6 +473,11 @@ static int archinfo(RzAnalysis *analysis, int q) {
 	return 4; // XXX
 }
 
+static int address_bits(RzAnalysis *analysis, int bits) {
+	// thumb still has 32bit addrs, all other cases use the default behavior (-1)
+	return bits == 16 ? 32 : -1;
+}
+
 RzAnalysisPlugin rz_analysis_plugin_arm_gnu = {
 	.name = "arm.gnu",
 	.arch = "arm",
@@ -480,6 +485,7 @@ RzAnalysisPlugin rz_analysis_plugin_arm_gnu = {
 	.bits = 16 | 32 | 64,
 	.desc = "ARM code analysis plugin",
 	.archinfo = archinfo,
+	.address_bits = address_bits,
 	.op = &arm_op,
 	.set_reg_profile = set_reg_profile,
 };

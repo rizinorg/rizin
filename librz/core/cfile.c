@@ -333,7 +333,7 @@ RZ_API int rz_core_file_reopen(RzCore *core, const char *args, int perm, int loa
 		perm = 7;
 	} else {
 		if (!perm) {
-			perm = 4; //RZ_PERM_R;
+			perm = 4; // RZ_PERM_R;
 		}
 	}
 	if (!ofilepath) {
@@ -409,7 +409,7 @@ RZ_API int rz_core_file_reopen(RzCore *core, const char *args, int perm, int loa
 		}
 
 		if (core->bin->cur && core->io && rz_io_desc_get(core->io, file->fd) && !loadbin) {
-			//force here NULL because is causing uaf look this better in future XXX @alvarofe
+			// force here NULL because is causing uaf look this better in future XXX @alvarofe
 			core->bin->cur = NULL;
 		}
 		// close old file
@@ -418,7 +418,7 @@ RZ_API int rz_core_file_reopen(RzCore *core, const char *args, int perm, int loa
 			" attempting to open read-only.\n",
 			path, perm);
 		// lower it down back
-		//ofile = rz_core_file_open (core, path, RZ_PERM_R, addr);
+		// ofile = rz_core_file_open (core, path, RZ_PERM_R, addr);
 		rz_core_file_set_by_file(core, ofile);
 	} else {
 		eprintf("Cannot reopen\n");
@@ -430,7 +430,7 @@ RZ_API int rz_core_file_reopen(RzCore *core, const char *args, int perm, int loa
 	rz_core_seek(core, origoff, true);
 	if (isdebug) {
 		rz_core_cmd0(core, ".dm*");
-		rz_core_debug_regs2flags(core, 0);
+		rz_core_debug_regs2flags(core);
 		rz_core_seek_to_register(core, "PC", false);
 	} else {
 		loadGP(core);
@@ -444,7 +444,7 @@ RZ_API int rz_core_file_reopen(RzCore *core, const char *args, int perm, int loa
 	// This is done to ensure that the file is correctly
 	// loaded into the view
 	free(obinfilepath);
-	//free (ofilepath);
+	// free (ofilepath);
 	free(path);
 	return ret;
 }
@@ -557,7 +557,7 @@ static ut64 get_base_from_maps(RzCore *core, const char *file) {
 				return map->addr;
 			}
 			// XXX - Commented out, as this could unexpected results
-			//b = map->addr;
+			// b = map->addr;
 		}
 	}
 	// fallback resolution copied from cmd_debug.c:rz_debug_get_baddr
@@ -578,7 +578,7 @@ static bool setbpint(RzCore *r, const char *mode, const char *sym) {
 	if (!fi) {
 		return false;
 	}
-	bp = rz_bp_add_sw(r->dbg->bp, fi->offset, 1, RZ_BP_PROT_EXEC);
+	bp = rz_bp_add_sw(r->dbg->bp, fi->offset, 1, RZ_PERM_X);
 	if (bp) {
 		bp->internal = true;
 #if __linux__
@@ -703,7 +703,7 @@ static int rz_core_file_do_load_for_io_plugin(RzCore *r, ut64 baseaddr, ut64 loa
 	opt.xtr_idx = xtr_idx;
 	RzBinFile *binfile = rz_bin_open_io(r->bin, &opt);
 	if (!binfile) {
-		//eprintf ("Failed to load the bin with an IO Plugin.\n");
+		// eprintf ("Failed to load the bin with an IO Plugin.\n");
 		return false;
 	}
 	if (cf) {
@@ -958,7 +958,7 @@ RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filen
 	if (cf && binfile && desc) {
 		binfile->fd = desc->fd;
 	}
-	//rz_core_bin_apply_all_info (r, binfile);
+	// rz_core_bin_apply_all_info (r, binfile);
 	plugin = rz_bin_file_cur_plugin(binfile);
 	if (plugin) {
 		if (plugin->strfilter) {
@@ -985,7 +985,7 @@ RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filen
 				rz_io_map_new(r->io, desc->fd, desc->perm, 0, laddr, rz_io_desc_size(desc));
 			}
 			// set use of raw strings
-			//rz_config_set (r->config, "bin.rawstr", "true");
+			// rz_config_set (r->config, "bin.rawstr", "true");
 			// rz_config_set_i (r->config, "io.va", false);
 			// get bin.minstr
 			r->bin->minstrlen = rz_config_get_i(r->config, "bin.minstr");
@@ -997,7 +997,7 @@ RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filen
 				if (!va) {
 					rz_config_set_i(r->config, "io.va", 0);
 				}
-				//workaround to map correctly malloc:// and raw binaries
+				// workaround to map correctly malloc:// and raw binaries
 				if (rz_io_desc_is_dbg(desc) || (!obj->maps || !va)) {
 					rz_io_map_new(r->io, desc->fd, desc->perm, 0, laddr, rz_io_desc_size(desc));
 				}
@@ -1053,7 +1053,7 @@ RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filen
 
 			RzFlagItem *flag = rz_flag_get(r->flags, name);
 			if (!flag) {
-				//RZ_LOG_DEBUG("Cannot find flag %s\n", name);
+				// RZ_LOG_DEBUG("Cannot find flag %s\n", name);
 				free(name);
 				continue;
 			}
@@ -1072,7 +1072,7 @@ RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filen
 		}
 	}
 
-	//If type == RZ_BIN_TYPE_CORE, we need to create all the maps
+	// If type == RZ_BIN_TYPE_CORE, we need to create all the maps
 	if (plugin && binfile && plugin->file_type && plugin->file_type(binfile) == RZ_BIN_TYPE_CORE) {
 		// Setting the right arch and bits, so regstate will be shown correctly
 		if (plugin->info) {
@@ -1095,7 +1095,7 @@ RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filen
 
 /**
  * \brief Open the file as a compilation of files
- * 
+ *
  * Calls rz_io_open_many and maps all the file descriptors to an RzCoreFile
  */
 RZ_API RZ_BORROW RzCoreFile *rz_core_file_open_many(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *file, int perm, ut64 loadaddr) {
@@ -1134,7 +1134,7 @@ RZ_API RZ_BORROW RzCoreFile *rz_core_file_open_many(RZ_NONNULL RzCore *r, RZ_NUL
 
 /**
  * \brief Tries to open the file as is, otherwise tries as is a compilation of files
- * 
+ *
  * Calls rz_io_open_nomap but if it fails, then tries with rz_core_file_open_many;
  * Also, loadaddr is rizin -m (mapaddr)
  */
@@ -1147,7 +1147,7 @@ RZ_API RZ_BORROW RzCoreFile *rz_core_file_open(RZ_NONNULL RzCore *r, RZ_NONNULL 
 	if (!strcmp(file, "=")) {
 		file = "malloc://512";
 	}
-	//if not flags was passed open it with -r--
+	// if not flags was passed open it with -r--
 	if (!flags) {
 		flags = RZ_PERM_R;
 	}
@@ -1216,8 +1216,8 @@ RZ_API RZ_BORROW RzCoreFile *rz_core_file_open(RZ_NONNULL RzCore *r, RZ_NONNULL 
 			}
 		}
 	}
-	//used by rz_core_bin_load otherwise won't load correctly
-	//this should be argument of rz_core_bin_load <shrug>
+	// used by rz_core_bin_load otherwise won't load correctly
+	// this should be argument of rz_core_bin_load <shrug>
 	if (loadaddr != UT64_MAX) {
 		rz_config_set_i(r->config, "bin.laddr", loadaddr);
 	}
@@ -1443,7 +1443,7 @@ RZ_API int rz_core_file_binlist(RzCore *core) {
 		}
 	}
 	rz_core_file_set_by_file(core, cur_cf);
-	//rz_core_bin_bind (core, cur_bf);
+	// rz_core_bin_bind (core, cur_bf);
 	return count;
 }
 

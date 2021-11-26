@@ -8,7 +8,7 @@
 
 /*
  * Binary loader for Plan 9's a.out executable format
- * 
+ *
  * Copyright (C) 2008 Anant Narayanan
  */
 struct plan9_exec {

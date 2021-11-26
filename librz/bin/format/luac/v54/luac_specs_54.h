@@ -49,4 +49,4 @@ typedef ut64 LUA_INTEGER;
 /* Body */
 #define LUAC_FILENAME_OFFSET 0x20
 
-#endif //BUILD_LUAC_54_H
+#endif // BUILD_LUAC_54_H

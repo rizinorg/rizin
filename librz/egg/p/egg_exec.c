@@ -157,7 +157,7 @@ static RzBuffer *build(RzEgg *egg) {
 	return buf;
 }
 
-//TODO: rename plugin to run
+// TODO: rename plugin to run
 RzEggPlugin rz_egg_plugin_exec = {
 	.name = "exec",
 	.type = RZ_EGG_PLUGIN_SHELLCODE,

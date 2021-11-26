@@ -19,8 +19,6 @@ https://en.wikipedia.org/wiki/Atmel_AVR_instruction_set
 
 #include "../../asm/arch/avr/disassembler.h"
 
-static RDESContext desctx;
-
 typedef struct _cpu_const_tag {
 	const char *const key;
 	ut8 type;
@@ -333,12 +331,13 @@ INST_HANDLER(adiw) { // ADIW Rd+1:Rd, K
 	const ut32 d = ((buf[0] & 0x30) >> 3) + 24;
 	const ut32 k = (buf[0] & 0x0f) | ((buf[0] >> 2) & 0x30);
 	op->val = k;
-	ESIL_A("%d,r%d_r%d,+=,", k, d + 1, d); // Rd+1_Rd + k
-		// FLAGS:
-	ESIL_A("7,$o,vf,:=,"); // V
-	ESIL_A("r%d_r%d,0x8000,&,!,!,nf,:=,", d + 1, d); // N
-	ESIL_A("$z,zf,:=,"); // Z
-	ESIL_A("15,$c,cf,:=,"); // C
+	ESIL_A("7,r%d,>>,", d + 1); // remember previous highest bit
+	ESIL_A("8,%d,8,r%d,<<,r%d,|,+,DUP,r%d,=,>>,r%d,=,", k, d + 1, d, d, d + 1); // Rd+1_Rd + k
+										    // FLAGS:
+	ESIL_A("DUP,!,7,r%d,>>,&,vf,:=,", d + 1); // V
+	ESIL_A("r%d,0x80,&,!,!,nf,:=,", d + 1); // N
+	ESIL_A("8,r%d,<<,r%d,|,!,zf,:=,", d + 1, d); // Z
+	ESIL_A("7,r%d,>>,!,&,cf,:=,", d + 1); // C
 	ESIL_A("vf,nf,^,sf,:="); // S
 }
 
@@ -421,10 +420,10 @@ INST_HANDLER(brbx) { // BRBC s, k
 	op->jump = op->addr + ((((buf[1] & 0x03) << 6) | ((buf[0] & 0xf8) >> 2)) | (buf[1] & 0x2 ? ~((int)0x7f) : 0)) + 2;
 	op->fail = op->addr + op->size;
 	op->cycles = 1; // XXX: This is a bug, because depends on eval state,
-		// so it cannot be really be known until this
-		// instruction is executed by the ESIL interpreter!!!
-		// In case of evaluating to true, this instruction
-		// needs 2 cycles, elsewhere it needs only 1 cycle.
+			// so it cannot be really be known until this
+			// instruction is executed by the ESIL interpreter!!!
+			// In case of evaluating to true, this instruction
+			// needs 2 cycles, elsewhere it needs only 1 cycle.
 	ESIL_A("%d,1,<<,sreg,&,", s); // SREG(s)
 	ESIL_A(buf[1] & 0x4
 			? "!," // BRBC => branch if cleared
@@ -473,7 +472,7 @@ INST_HANDLER(call) { // CALL k
 		op->cycles--; // AT*mega optimizes one cycle
 	}
 	ESIL_A("pc,"); // esil is already pointing to
-		// next instruction (@ret)
+		       // next instruction (@ret)
 	__generic_push(op, CPU_PC_SIZE(cpu)); // push @ret in stack
 	ESIL_A("%" PFMT64d ",pc,=,", op->jump); // jump!
 }
@@ -577,10 +576,10 @@ INST_HANDLER(cpse) { // CPSE Rd, Rr
 
 	// cycles
 	op->cycles = 1; // XXX: This is a bug, because depends on eval state,
-		// so it cannot be really be known until this
-		// instruction is executed by the ESIL interpreter!!!
-		// In case of evaluating to true, this instruction
-		// needs 2/3 cycles, elsewhere it needs only 1 cycle.
+			// so it cannot be really be known until this
+			// instruction is executed by the ESIL interpreter!!!
+			// In case of evaluating to true, this instruction
+			// needs 2/3 cycles, elsewhere it needs only 1 cycle.
 	ESIL_A("r%d,r%d,^,!,", r, d); // Rr == Rd
 	ESIL_A("?{,%" PFMT64d ",pc,=,},", op->jump); // ?true => jmp
 }
@@ -591,7 +590,7 @@ INST_HANDLER(dec) { // DEC Rd
 	}
 	const ut32 d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
 	ESIL_A("0x1,r%d,-=,", d); // Rd--
-		// FLAGS:
+				  // FLAGS:
 	ESIL_A("7,$o,vf,:=,"); // V
 	ESIL_A("r%d,0x80,&,!,!,nf,:=,", d); // N
 	ESIL_A("$z,zf,:=,"); // Z
@@ -599,11 +598,10 @@ INST_HANDLER(dec) { // DEC Rd
 }
 
 INST_HANDLER(des) { // DES k
-	if (desctx.round < 16) { //DES
-		op->type = RZ_ANALYSIS_OP_TYPE_CRYPTO;
-		op->cycles = 1; //redo this
-		rz_strbuf_setf(&op->esil, "%d,des", desctx.round);
-	}
+	op->type = RZ_ANALYSIS_OP_TYPE_CRYPTO;
+	op->cycles = 1;
+	int round = (buf[0] >> 4);
+	rz_strbuf_setf(&op->esil, "%d,des", round);
 }
 
 INST_HANDLER(eijmp) { // EIJMP
@@ -623,7 +621,7 @@ INST_HANDLER(eijmp) { // EIJMP
 INST_HANDLER(eicall) { // EICALL
 	// push pc in stack
 	ESIL_A("pc,"); // esil is already pointing to
-		// next instruction (@ret)
+		       // next instruction (@ret)
 	__generic_push(op, CPU_PC_SIZE(cpu)); // push @ret in stack
 	// do a standard EIJMP
 	INST_CALL(eijmp);
@@ -665,9 +663,10 @@ INST_HANDLER(fmul) { // FMUL Rd, Rr
 	const ut32 d = ((buf[0] >> 4) & 0x7) + 16;
 	const ut32 r = (buf[0] & 0x7) + 16;
 
-	ESIL_A("0xffff,1,r%d,r%d,*,<<,&,r1_r0,=,", r, d); // 0: r1_r0 = (rd * rr) << 1
-	ESIL_A("r1_r0,0x8000,&,!,!,cf,:=,"); // C = R/15
-	ESIL_A("$z,zf,:="); // Z = !R
+	ESIL_A("8,");
+	ESIL_A("0xffff,1,r%d,r%d,*,<<,&,DUP,r0,=,>>,r1,=,", r, d); // 0: r1_r0 = (rd * rr) << 1
+	ESIL_A("8,r1,<<,r0,|,DUP,0x8000,&,!,!,cf,:=,"); // C = R/15
+	ESIL_A("!,zf,:="); // Z = !R
 }
 
 INST_HANDLER(fmuls) { // FMULS Rd, Rr
@@ -677,13 +676,13 @@ INST_HANDLER(fmuls) { // FMULS Rd, Rr
 	const ut32 d = ((buf[0] >> 4) & 0x7) + 16;
 	const ut32 r = (buf[0] & 0x7) + 16;
 
-	ESIL_A("1,");
+	ESIL_A("8,1,");
 	ESIL_A("r%d,DUP,0x80,&,?{,0xff00,|,},", d); // sign extension Rd
 	ESIL_A("r%d,DUP,0x80,&,?{,0xff00,|,},", r); // sign extension Rr
-	ESIL_A("*,<<,r1_r0,=,"); // 0: (Rd*Rr)<<1
+	ESIL_A("*,<<,DUP,r0,=,>>,r1,=,"); // 0: (Rd*Rr)<<1
 
-	ESIL_A("r1_r0,0x8000,&,!,!,cf,:=,"); // C = R/16
-	ESIL_A("$z,zf,:="); // Z = !R
+	ESIL_A("8,r1,<<,r0,|,DUP,0x8000,&,!,!,cf,:=,"); // C = R/16
+	ESIL_A("!,zf,:="); // Z = !R
 }
 
 INST_HANDLER(fmulsu) { // FMULSU Rd, Rr
@@ -693,12 +692,12 @@ INST_HANDLER(fmulsu) { // FMULSU Rd, Rr
 	const ut32 d = ((buf[0] >> 4) & 0x7) + 16;
 	const ut32 r = (buf[0] & 0x7) + 16;
 
-	ESIL_A("1,");
+	ESIL_A("8,1,");
 	ESIL_A("r%d,DUP,0x80,&,?{,0xff00,|,},", d); // sign extension Rd
-	ESIL_A("r%d,*,<<,r1_r0,=,", r); // 0: (Rd*Rr)<<1
+	ESIL_A("r%d,*,<<,DUP,r0,=,>>,r1,=,", r); // 0: (Rd*Rr)<<1
 
-	ESIL_A("r1_r0,0x8000,&,!,!,cf,:=,"); // C = R/16
-	ESIL_A("$z,zf,:="); // Z = !R
+	ESIL_A("8,r1,<<,r0,|,DUP,0x8000,&,!,!,cf,:=,"); // C = R/16
+	ESIL_A("!,zf,:="); // Z = !R
 }
 
 INST_HANDLER(ijmp) { // IJMP k
@@ -715,7 +714,7 @@ INST_HANDLER(ijmp) { // IJMP k
 INST_HANDLER(icall) { // ICALL k
 	// push pc in stack
 	ESIL_A("pc,"); // esil is already pointing to
-		// next instruction (@ret)
+		       // next instruction (@ret)
 	__generic_push(op, CPU_PC_SIZE(cpu)); // push @ret in stack
 	// do a standard IJMP
 	INST_CALL(ijmp);
@@ -747,7 +746,7 @@ INST_HANDLER(inc) { // INC Rd
 	}
 	const ut32 d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
 	ESIL_A("1,r%d,+=,", d); // Rd++
-		// FLAGS:
+				// FLAGS:
 	ESIL_A("7,$o,vf,:=,"); // V
 	ESIL_A("r%d,0x80,&,!,!,nf,:=,", d); // N
 	ESIL_A("$z,zf,:=,"); // Z
@@ -988,9 +987,9 @@ INST_HANDLER(mul) { // MUL Rd, Rr
 	const ut32 d = ((buf[1] << 4) & 0x10) | ((buf[0] >> 4) & 0x0f);
 	const ut32 r = ((buf[1] << 3) & 0x10) | (buf[0] & 0x0f);
 
-	ESIL_A("r%d,r%d,*,r1_r0,=,", r, d); // 0: r1_r0 = rd * rr
-	ESIL_A("r1_r0,0x8000,&,!,!,cf,:=,"); // C = R/15
-	ESIL_A("$z,zf,:="); // Z = !R
+	ESIL_A("8,r%d,r%d,*,DUP,r0,=,>>,r1,=,", r, d); // 0: r1_r0 = rd * rr
+	ESIL_A("8,r1,<<,r0,|,DUP,0x8000,&,!,!,cf,:=,"); // C = R/15
+	ESIL_A("!,zf,:="); // Z = !R
 }
 
 INST_HANDLER(muls) { // MULS Rd, Rr
@@ -1000,12 +999,13 @@ INST_HANDLER(muls) { // MULS Rd, Rr
 	const ut32 d = (buf[0] >> 4 & 0x0f) + 16;
 	const ut32 r = (buf[0] & 0x0f) + 16;
 
+	ESIL_A("8,");
 	ESIL_A("r%d,DUP,0x80,&,?{,0xff00,|,},", d); // sign extension Rd
 	ESIL_A("r%d,DUP,0x80,&,?{,0xff00,|,},", r); // sign extension Rr
-	ESIL_A("*,r1_r0,=,"); // 0: (Rd*Rr)
+	ESIL_A("*,DUP,r0,=,>>,r1,=,"); // 0: (Rd*Rr)
 
-	ESIL_A("r1_r0,0x8000,&,!,!,cf,:=,"); // C = R/16
-	ESIL_A("$z,zf,:="); // Z = !R
+	ESIL_A("8,r1,<<,r0,|,DUP,0x8000,&,!,!,cf,:=,"); // C = R/16
+	ESIL_A("!,zf,:="); // Z = !R
 }
 
 INST_HANDLER(mulsu) { // MULSU Rd, Rr
@@ -1015,11 +1015,12 @@ INST_HANDLER(mulsu) { // MULSU Rd, Rr
 	const ut32 d = (buf[0] >> 4 & 0x07) + 16;
 	const ut32 r = (buf[0] & 0x07) + 16;
 
+	ESIL_A("8,");
 	ESIL_A("r%d,DUP,0x80,&,?{,0xff00,|,},", d); // sign extension Rd
-	ESIL_A("r%d,*,r1_r0,=,", r); // 0: (Rd*Rr)
+	ESIL_A("r%d,*,DUP,r0,=,>>,r1,=,", r); // 0: (Rd*Rr)
 
-	ESIL_A("r1_r0,0x8000,&,!,!,cf,:=,"); // C = R/16
-	ESIL_A("$z,zf,:="); // Z = !R
+	ESIL_A("8,r1,<<,r0,|,DUP,0x8000,&,!,!,cf,:=,"); // C = R/16
+	ESIL_A("!,zf,:="); // Z = !R
 }
 
 INST_HANDLER(neg) { // NEG Rd
@@ -1115,7 +1116,7 @@ INST_HANDLER(rcall) { // RCALL k
 	op->fail = op->addr + op->size;
 	// esil
 	ESIL_A("pc,"); // esil already points to next
-		// instruction (@ret)
+		       // instruction (@ret)
 	__generic_push(op, CPU_PC_SIZE(cpu)); // push @ret addr
 	ESIL_A("%" PFMT64d ",pc,=,", op->jump); // jump!
 	// cycles
@@ -1142,7 +1143,7 @@ INST_HANDLER(ret) { // RET
 }
 
 INST_HANDLER(reti) { // RETI
-	//XXX: There are not privileged instructions in ATMEL/AVR
+	// XXX: There are not privileged instructions in ATMEL/AVR
 	op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
 
 	// first perform a standard 'ret'
@@ -1286,10 +1287,10 @@ INST_HANDLER(sbix) { // SBIC A, b
 
 	// cycles
 	op->cycles = 1; // XXX: This is a bug, because depends on eval state,
-		// so it cannot be really be known until this
-		// instruction is executed by the ESIL interpreter!!!
-		// In case of evaluating to false, this instruction
-		// needs 2/3 cycles, elsewhere it needs only 1 cycle.
+			// so it cannot be really be known until this
+			// instruction is executed by the ESIL interpreter!!!
+			// In case of evaluating to false, this instruction
+			// needs 2/3 cycles, elsewhere it needs only 1 cycle.
 
 	// read port a and clear bit b
 	io_port = __generic_io_dest(a, 0, cpu);
@@ -1308,11 +1309,12 @@ INST_HANDLER(sbiw) { // SBIW Rd+1:Rd, K
 	int d = ((buf[0] & 0x30) >> 3) + 24;
 	int k = (buf[0] & 0xf) | ((buf[0] >> 2) & 0x30);
 	op->val = k;
-	ESIL_A("%d,r%d_r%d,-=,", k, d + 1, d); // 0(Rd+1:Rd - Rr)
+	ESIL_A("7,r%d,>>,", d + 1); // remember previous highest bit
+	ESIL_A("8,%d,8,r%d,<<,r%d,|,-,DUP,r%d,=,>>,r%d,=,", k, d + 1, d, d, d + 1); // 0(Rd+1_Rd - k)
 	ESIL_A("$z,zf,:=,");
-	ESIL_A("15,$c,cf,:=,"); // C
-	ESIL_A("r%d_r%d,0x8000,&,!,!,nf,:=,", d + 1, d); // N
-	ESIL_A("r%d_r%d,0x8080,&,0x8080,!,vf,:=,", d + 1, d); // V
+	ESIL_A("DUP,!,7,r%d,>>,&,cf,:=,", d + 1); // C
+	ESIL_A("r%d,0x80,&,!,!,nf,:=,", d + 1); // N
+	ESIL_A("7,r%d,>>,!,&,vf,:=,", d + 1); // V
 	ESIL_A("vf,nf,^,sf,:="); // S
 }
 
@@ -1337,10 +1339,10 @@ INST_HANDLER(sbrx) { // SBRC Rr, b
 
 	// cycles
 	op->cycles = 1; // XXX: This is a bug, because depends on eval state,
-		// so it cannot be really be known until this
-		// instruction is executed by the ESIL interpreter!!!
-		// In case of evaluating to false, this instruction
-		// needs 2/3 cycles, elsewhere it needs only 1 cycle.
+			// so it cannot be really be known until this
+			// instruction is executed by the ESIL interpreter!!!
+			// In case of evaluating to false, this instruction
+			// needs 2/3 cycles, elsewhere it needs only 1 cycle.
 	ESIL_A("%d,1,<<,r%d,&,", b, r); // Rr(b)
 	ESIL_A((buf[1] & 0xe) == 0xc
 			? "!," // SBRC => branch if cleared
@@ -1387,10 +1389,10 @@ INST_HANDLER(spm) { // SPM Z+
 	}
 
 	op->cycles = 1; // This is truly false. Datasheets do not publish how
-		// many cycles this instruction uses in all its
-		// operation modes and I am pretty sure that this value
-		// can vary substantially from one MCU type to another.
-		// So... one cycle is fine.
+			// many cycles this instruction uses in all its
+			// operation modes and I am pretty sure that this value
+			// can vary substantially from one MCU type to another.
+			// So... one cycle is fine.
 }
 
 INST_HANDLER(st) { // ST X, Rr
@@ -1553,7 +1555,7 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL(sbc, 0xfc00, 0x0800, 1, 2, SUB), // SBC Rd, Rr
 	INST_DECL(sub, 0xfc00, 0x1800, 1, 2, SUB), // SUB Rd, Rr
 	INST_DECL(in, 0xf800, 0xb000, 1, 2, IO), // IN Rd, A
-	//INST_DECL (lds16,  0xf800, 0xa000, 1,      2,   LOAD   ), // LDS Rd, k
+	// INST_DECL (lds16,  0xf800, 0xa000, 1,      2,   LOAD   ), // LDS Rd, k
 	INST_DECL(out, 0xf800, 0xb800, 1, 2, IO), // OUT A, Rr
 	INST_DECL(andi, 0xf000, 0x7000, 1, 2, AND), // ANDI Rd, K
 	INST_DECL(cpi, 0xf000, 0x3000, 1, 2, CMP), // CPI Rd, K
@@ -1685,51 +1687,78 @@ static int avr_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 }
 
 static bool avr_custom_des(RzAnalysisEsil *esil) {
-	ut64 key, encrypt, text, des_round;
-	ut32 key_lo, key_hi, buf_lo, buf_hi;
 	if (!esil || !esil->analysis || !esil->analysis->reg) {
 		return false;
 	}
-	if (!__esil_pop_argument(esil, &des_round)) {
+	ut64 arg;
+	if (!__esil_pop_argument(esil, &arg)) {
 		return false;
 	}
-	rz_analysis_esil_reg_read(esil, "hf", &encrypt, NULL);
-	rz_analysis_esil_reg_read(esil, "deskey", &key, NULL);
-	rz_analysis_esil_reg_read(esil, "text", &text, NULL);
-
-	key_lo = key & UT32_MAX;
-	key_hi = key >> 32;
-	buf_lo = text & UT32_MAX;
-	buf_hi = text >> 32;
-
-	if (des_round != desctx.round) {
-		desctx.round = des_round;
+	int round = arg;
+	if (round < 0 || round > 15) {
+		return false;
+	}
+	ut64 decrypt;
+	rz_analysis_esil_reg_read(esil, "hf", &decrypt, NULL);
+	if (decrypt) {
+		round = 15 - round;
+	}
+	ut8 regs[0x10];
+	static const char *reg_names[] = {
+		"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",
+		"r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15"
+	};
+	for (size_t i = 0; i < sizeof(regs); i++) {
+		ut64 v = 0;
+		rz_analysis_esil_reg_read(esil, reg_names[i], &v, NULL);
+		regs[i] = v;
 	}
 
-	if (!desctx.round) {
-		int i;
-		//generating all round keys
-		rz_des_permute_key(&key_lo, &key_hi);
-		for (i = 0; i < 16; i++) {
-			rz_des_round_key(i, &desctx.round_key_lo[i], &desctx.round_key_hi[i], &key_lo, &key_hi);
-		}
-		rz_des_permute_block0(&buf_lo, &buf_hi);
+	// Atmel's "AVR Instruction Set Manual" unfortunately is very ambiguous
+	// regarding the details of this instruction and leaves the most interesting
+	// questions open, especially what intermediate results are stored and how.
+	// The below implementation has been developed based on observing the exact
+	// results in the Simulator in Atmel/Microchip Studio emulating ATxmega128A1.
+	// Things may seem very strange (especially hi/lo swapping), but it is all
+	// intended to get the right behavior!
+	ut32 buf_hi = rz_read_at_le32(regs, 0);
+	ut32 buf_lo = rz_read_at_le32(regs, 4);
+	ut32 key_orig_hi = rz_read_at_le32(regs, 8);
+	ut32 key_orig_lo = rz_read_at_le32(regs, 0xc);
+	ut32 key_lo = key_orig_lo;
+	ut32 key_hi = key_orig_hi;
+	rz_des_permute_key(&key_lo, &key_hi);
+	int i = round;
+	if (!decrypt) {
+		rz_des_shift_key(i, false, &key_lo, &key_hi);
 	}
-
-	if (encrypt) {
-		rz_des_round(&buf_lo, &buf_hi, &desctx.round_key_lo[desctx.round], &desctx.round_key_hi[desctx.round]);
+	ut32 round_key_lo, round_key_hi;
+	rz_des_pc2(&round_key_lo, &round_key_hi, key_lo, key_hi);
+	if (decrypt) {
+		rz_des_shift_key(i, true, &key_lo, &key_hi);
+	}
+	rz_des_permute_block0(&buf_lo, &buf_hi);
+	rz_des_round(&buf_lo, &buf_hi, &round_key_lo, &round_key_hi);
+	if (arg < 15) {
+		rz_des_permute_block1(&buf_lo, &buf_hi);
 	} else {
-		rz_des_round(&buf_lo, &buf_hi, &desctx.round_key_lo[15 - desctx.round], &desctx.round_key_hi[15 - desctx.round]);
-	}
-
-	if (desctx.round == 15) {
 		rz_des_permute_block1(&buf_hi, &buf_lo);
-		desctx.round = 0;
-	} else {
-		desctx.round++;
+		buf_lo ^= buf_hi;
+		buf_hi ^= buf_lo;
+		buf_lo ^= buf_hi;
 	}
+	rz_des_permute_key_inv(&key_lo, &key_hi); // un-permute so the rz_des_permute_key() in the next round will restore it
+	key_lo |= key_orig_hi & 0x01010101; // restore the parity bits that got lost in PC-1
+	key_hi |= key_orig_lo & 0x01010101;
 
-	rz_analysis_esil_reg_write(esil, "text", text);
+	rz_write_at_le32(regs, buf_hi, 0);
+	rz_write_at_le32(regs, buf_lo, 4);
+	rz_write_at_le32(regs, key_lo, 8);
+	rz_write_at_le32(regs, key_hi, 0xc);
+	for (size_t i = 0; i < sizeof(regs); i++) {
+		ut64 v = regs[i];
+		rz_analysis_esil_reg_write(esil, reg_names[i], v);
+	}
 	return true;
 }
 
@@ -1757,7 +1786,7 @@ static bool avr_custom_spm_page_erase(RzAnalysisEsil *esil) {
 	addr &= ~(MASK(page_size_bits));
 
 	// perform erase
-	//eprintf ("SPM_PAGE_ERASE %ld bytes @ 0x%08" PFMT64x ".\n", page_size, addr);
+	// eprintf ("SPM_PAGE_ERASE %ld bytes @ 0x%08" PFMT64x ".\n", page_size, addr);
 	c = 0xff;
 	for (i = 0; i < (1ULL << page_size_bits); i++) {
 		rz_analysis_esil_mem_write(
@@ -1801,7 +1830,7 @@ static bool avr_custom_spm_page_fill(RzAnalysisEsil *esil) {
 	addr &= (MASK(page_size_bits) ^ 1);
 
 	// perform write to temporary page
-	//eprintf ("SPM_PAGE_FILL bytes (%02x, %02x) @ 0x%08" PFMT64x ".\n", r1, r0, addr);
+	// eprintf ("SPM_PAGE_FILL bytes (%02x, %02x) @ 0x%08" PFMT64x ".\n", r1, r0, addr);
 	rz_analysis_esil_mem_write(esil, addr++, &r0, 1);
 	rz_analysis_esil_mem_write(esil, addr++, &r1, 1);
 
@@ -1834,7 +1863,7 @@ static bool avr_custom_spm_page_write(RzAnalysisEsil *esil) {
 	addr &= (~(MASK(page_size_bits)) & CPU_PC_MASK(cpu));
 
 	// perform writing
-	//eprintf ("SPM_PAGE_WRITE %ld bytes @ 0x%08" PFMT64x ".\n", page_size, addr);
+	// eprintf ("SPM_PAGE_WRITE %ld bytes @ 0x%08" PFMT64x ".\n", page_size, addr);
 	if (!(t = malloc(1 << page_size_bits))) {
 		eprintf("Cannot alloc a buffer for copying the temporary page.\n");
 		return false;
@@ -1875,8 +1904,7 @@ static int esil_avr_init(RzAnalysisEsil *esil) {
 	if (!esil) {
 		return false;
 	}
-	desctx.round = 0;
-	rz_analysis_esil_set_op(esil, "des", avr_custom_des, 0, 0, RZ_ANALYSIS_ESIL_OP_TYPE_CUSTOM); //better meta info plz
+	rz_analysis_esil_set_op(esil, "des", avr_custom_des, 0, 0, RZ_ANALYSIS_ESIL_OP_TYPE_CUSTOM); // better meta info plz
 	rz_analysis_esil_set_op(esil, "SPM_PAGE_ERASE", avr_custom_spm_page_erase, 0, 0, RZ_ANALYSIS_ESIL_OP_TYPE_CUSTOM);
 	rz_analysis_esil_set_op(esil, "SPM_PAGE_FILL", avr_custom_spm_page_fill, 0, 0, RZ_ANALYSIS_ESIL_OP_TYPE_CUSTOM);
 	rz_analysis_esil_set_op(esil, "SPM_PAGE_WRITE", avr_custom_spm_page_write, 0, 0, RZ_ANALYSIS_ESIL_OP_TYPE_CUSTOM);
@@ -1917,7 +1945,6 @@ RAMPX, RAMPY, RAMPZ, RAMPD and EIND:
 		"gpr	r5	.8	5	0\n"
 		"gpr	r6	.8	6	0\n"
 		"gpr	r7	.8	7	0\n"
-		"gpr	text	.64	0	0\n"
 		"gpr	r8	.8	8	0\n"
 		"gpr	r9	.8	9	0\n"
 		"gpr	r10	.8	10	0\n"
@@ -1926,7 +1953,6 @@ RAMPX, RAMPY, RAMPZ, RAMPD and EIND:
 		"gpr	r13	.8	13	0\n"
 		"gpr	r14	.8	14	0\n"
 		"gpr	r15	.8	15	0\n"
-		"gpr	deskey	.64	8	0\n"
 		"gpr	r16	.8	16	0\n"
 		"gpr	r17	.8	17	0\n"
 		"gpr	r18	.8	18	0\n"
@@ -1943,17 +1969,6 @@ RAMPX, RAMPY, RAMPZ, RAMPD and EIND:
 		"gpr	r29	.8	29	0\n"
 		"gpr	r30	.8	30	0\n"
 		"gpr	r31	.8	31	0\n"
-
-		// 16 bit overlapped registers for 16 bit math
-		"gpr	r1_r0	.16	0	0\n" //this is a hack for mul
-		"gpr	r17_r16	.16	16	0\n"
-		"gpr	r19_r18	.16	18	0\n"
-		"gpr	r21_rz0	.16	20	0\n"
-		"gpr	r23_rz2	.16	22	0\n"
-		"gpr	r25_rz4	.16	24	0\n"
-		"gpr	r27_rz6	.16	26	0\n"
-		"gpr	r29_rz8	.16	28	0\n"
-		"gpr	r31_r30	.16	30	0\n"
 
 		// 16 bit overlapped registers for memory addressing
 		"gpr	x	.16	26	0\n"
@@ -2075,6 +2090,10 @@ static ut8 *analysis_mask_avr(RzAnalysis *analysis, int size, const ut8 *data, u
 	return ret;
 }
 
+static int address_bits(RzAnalysis *analysis, int bits) {
+	return bits == 8 ? 16 : -1;
+}
+
 RzAnalysisPlugin rz_analysis_plugin_avr = {
 	.name = "avr",
 	.desc = "AVR code analysis plugin",
@@ -2083,6 +2102,7 @@ RzAnalysisPlugin rz_analysis_plugin_avr = {
 	.esil = true,
 	.archinfo = archinfo,
 	.bits = 8 | 16, // 24 big regs conflicts
+	.address_bits = address_bits,
 	.op = &avr_op,
 	.set_reg_profile = &set_reg_profile,
 	.esil_init = esil_avr_init,

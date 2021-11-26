@@ -11,6 +11,7 @@ static const RzCmdDescDetail system_details[2];
 static const RzCmdDescDetail system_to_cons_details[2];
 static const RzCmdDescDetail hash_bang_details[2];
 static const RzCmdDescDetail pointer_details[2];
+static const RzCmdDescDetail cmd_cmp_unified_details[2];
 static const RzCmdDescDetail cmd_debug_list_bp_details[2];
 static const RzCmdDescDetail cmd_debug_add_cond_bp_details[2];
 static const RzCmdDescDetail cmd_debug_add_watchpoint_details[2];
@@ -112,6 +113,24 @@ static const RzCmdDescArg block_decrease_args[2];
 static const RzCmdDescArg block_increase_args[2];
 static const RzCmdDescArg block_flag_args[2];
 static const RzCmdDescArg block_max_args[2];
+static const RzCmdDescArg basefind_compute_args[2];
+static const RzCmdDescArg cmd_cmp_string_args[2];
+static const RzCmdDescArg cmd_cmp_bits_args[2];
+static const RzCmdDescArg cmd_cmp_addr_args[3];
+static const RzCmdDescArg cmd_cmp_bytes_args[3];
+static const RzCmdDescArg cmd_cmp_hex_block_args[2];
+static const RzCmdDescArg cmd_cmp_hex_diff_lines_args[2];
+static const RzCmdDescArg cmd_cmp_disasm_args[2];
+static const RzCmdDescArg cmd_cmp_file_args[2];
+static const RzCmdDescArg cmd_cmp_unified_args[2];
+static const RzCmdDescArg cmd_cmp_unified1_args[2];
+static const RzCmdDescArg cmd_cmp_unified2_args[2];
+static const RzCmdDescArg cmd_cmp_unified4_args[2];
+static const RzCmdDescArg cmd_cmp_unified8_args[2];
+static const RzCmdDescArg cmd_cmp_unified_disasm_args[2];
+static const RzCmdDescArg cmd_cmp_add_memory_watcher_args[3];
+static const RzCmdDescArg cmd_cmp_hexpair_string_args[2];
+static const RzCmdDescArg cmd_cmp_hex_block_hexdiff_args[2];
 static const RzCmdDescArg comment_args[2];
 static const RzCmdDescArg comment_append_args[2];
 static const RzCmdDescArg comment_filelink_args[2];
@@ -204,6 +223,7 @@ static const RzCmdDescArg cmd_info_pdb_show_args[2];
 static const RzCmdDescArg cmd_info_demangle_args[3];
 static const RzCmdDescArg cmd_info_kuery_args[2];
 static const RzCmdDescArg cmd_info_plugins_args[2];
+static const RzCmdDescArg cmd_info_resources_args[2];
 static const RzCmdDescArg cmd_info_sections_args[2];
 static const RzCmdDescArg cmd_info_segments_args[2];
 static const RzCmdDescArg plugins_load_args[2];
@@ -215,6 +235,11 @@ static const RzCmdDescArg open_plugins_args[2];
 static const RzCmdDescArg open_arch_bits_args[4];
 static const RzCmdDescArg open_use_args[2];
 static const RzCmdDescArg open_prioritize_args[2];
+static const RzCmdDescArg open_maps_remove_args[2];
+static const RzCmdDescArg open_maps_all_fd_args[2];
+static const RzCmdDescArg open_maps_relocate_args[3];
+static const RzCmdDescArg open_maps_relocate_current_args[2];
+static const RzCmdDescArg open_maps_resize_args[3];
 static const RzCmdDescArg cmd_print_gadget_add_args[6];
 static const RzCmdDescArg cmd_print_gadget_move_args[6];
 static const RzCmdDescArg cmd_print_msg_digest_args[2];
@@ -1981,8 +2006,321 @@ static const RzCmdDescHelp block_max_help = {
 	.args = block_max_args,
 };
 
-static const RzCmdDescHelp cmd_cmp_help = {
+static const char *basefind_compute_pointer_bits_choices[] = { "32", "64", NULL };
+static const RzCmdDescArg basefind_compute_args[] = {
+	{
+		.name = "pointer_bits",
+		.type = RZ_CMD_ARG_TYPE_CHOICES,
+		.optional = true,
+		.choices = basefind_compute_pointer_bits_choices,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp basefind_compute_help = {
+	.summary = "Computes the possibles firmware locations in memory (CPU intensive)",
+	.args = basefind_compute_args,
+};
+
+static const RzCmdDescHelp c_help = {
 	.summary = "Compare block with given data",
+};
+static const RzCmdDescArg cmd_cmp_string_args[] = {
+	{
+		.name = "string",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_cmp_string_help = {
+	.summary = "Compare an escaped <string> with data at current offset",
+	.args = cmd_cmp_string_args,
+};
+
+static const RzCmdDescArg cmd_cmp_bits_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_cmp_bits_help = {
+	.summary = "Compare 8-bit data at current offset with the data at <addr>",
+	.args = cmd_cmp_bits_args,
+};
+
+static const RzCmdDescArg cmd_cmp_addr_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "n",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_cmp_addr_help = {
+	.summary = "Compare <n> bytes of data at <addr> with the data at current offset",
+	.args = cmd_cmp_addr_args,
+};
+
+static const RzCmdDescArg cmd_cmp_bytes_args[] = {
+	{
+		.name = "num",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "n",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_cmp_bytes_help = {
+	.summary = "Compare <n> (up to 8) bytes at current offset with a number <num>",
+	.args = cmd_cmp_bytes_args,
+};
+
+static const RzCmdDescArg cmd_cmp_hex_block_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_cmp_hex_block_help = {
+	.summary = "Compare hexdump of data of block size at <addr> with the data at current offset",
+	.args = cmd_cmp_hex_block_args,
+};
+
+static const RzCmdDescArg cmd_cmp_hex_diff_lines_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_cmp_hex_diff_lines_help = {
+	.summary = "Show different lines between hexdump of a block of data at <addr> wth the data at current offset",
+	.args = cmd_cmp_hex_diff_lines_args,
+};
+
+static const RzCmdDescArg cmd_cmp_disasm_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_cmp_disasm_help = {
+	.summary = "Compare disassembly of block size at <addr> and at the current offset",
+	.args = cmd_cmp_disasm_args,
+};
+
+static const RzCmdDescArg cmd_cmp_file_args[] = {
+	{
+		.name = "file",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_cmp_file_help = {
+	.summary = "Compare the contents of <file> with the data at current offset",
+	.args = cmd_cmp_file_args,
+};
+
+static const RzCmdDescHelp cu_help = {
+	.summary = "Unified diff commands",
+};
+static const RzCmdDescDetailEntry cmd_cmp_unified_Applying_space_patches_detail_entries[] = {
+	{ .text = "Apply unified hex patch", .arg_str = NULL, .comment = "cu <offset> > file; wu file" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_cmp_unified_details[] = {
+	{ .name = "Applying patches", .entries = cmd_cmp_unified_Applying_space_patches_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg cmd_cmp_unified_args[] = {
+	{
+		.name = "offset",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_cmp_unified_help = {
+	.summary = "Compare data at <offset> with the current offset",
+	.details = cmd_cmp_unified_details,
+	.args = cmd_cmp_unified_args,
+};
+
+static const RzCmdDescArg cmd_cmp_unified1_args[] = {
+	{
+		.name = "offset",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_cmp_unified1_help = {
+	.summary = "Compare bytes at <offset> with the current offset",
+	.args = cmd_cmp_unified1_args,
+};
+
+static const RzCmdDescArg cmd_cmp_unified2_args[] = {
+	{
+		.name = "offset",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_cmp_unified2_help = {
+	.summary = "Compare words (16-bit) at <offset> with the current offset",
+	.args = cmd_cmp_unified2_args,
+};
+
+static const RzCmdDescArg cmd_cmp_unified4_args[] = {
+	{
+		.name = "offset",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_cmp_unified4_help = {
+	.summary = "Compare dwords (32-bit) at <offset> with the current offset",
+	.args = cmd_cmp_unified4_args,
+};
+
+static const RzCmdDescArg cmd_cmp_unified8_args[] = {
+	{
+		.name = "offset",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_cmp_unified8_help = {
+	.summary = "Compare qwords (64-bit) at <offset> with the current offset",
+	.args = cmd_cmp_unified8_args,
+};
+
+static const RzCmdDescArg cmd_cmp_unified_disasm_args[] = {
+	{
+		.name = "offset",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_cmp_unified_disasm_help = {
+	.summary = "Compare disassembly at <offset> with the current offset",
+	.args = cmd_cmp_unified_disasm_args,
+};
+
+static const RzCmdDescHelp cw_help = {
+	.summary = "Compare watcher commands",
+};
+static const RzCmdDescArg cmd_cmp_add_memory_watcher_args[] = {
+	{
+		.name = "sz",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{
+		.name = "cmd",
+		.type = RZ_CMD_ARG_TYPE_CMD,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_cmp_add_memory_watcher_help = {
+	.summary = "Add a memory watcher of size <sz> and command <cmd> at current offset",
+	.args = cmd_cmp_add_memory_watcher_args,
+};
+
+static const RzCmdDescArg cmd_cmp_list_compare_watchers_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_cmp_list_compare_watchers_help = {
+	.summary = "List all compare watchers",
+	.args = cmd_cmp_list_compare_watchers_args,
+};
+
+static const RzCmdDescArg cmd_cmp_reset_watcher_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_cmp_reset_watcher_help = {
+	.summary = "Reset/revert watcher at current offset",
+	.args = cmd_cmp_reset_watcher_args,
+};
+
+static const RzCmdDescArg cmd_cmp_update_watcher_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_cmp_update_watcher_help = {
+	.summary = "Update watcher at current offset",
+	.args = cmd_cmp_update_watcher_args,
+};
+
+static const RzCmdDescArg cmd_cmp_remove_watcher_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_cmp_remove_watcher_help = {
+	.summary = "Remove watcher at current offset",
+	.args = cmd_cmp_remove_watcher_args,
+};
+
+static const RzCmdDescArg cmd_cmp_hexpair_string_args[] = {
+	{
+		.name = "hexpair",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_cmp_hexpair_string_help = {
+	.summary = "Compare data at current offset with a hexpair string <hexpair> (also return in $?)",
+	.args = cmd_cmp_hexpair_string_args,
+};
+
+static const RzCmdDescArg cmd_cmp_hex_block_hexdiff_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_cmp_hex_block_hexdiff_help = {
+	.summary = "Compare hexdump of data of block size at <addr> with the data at current offset using hexdiff output",
+	.args = cmd_cmp_hex_block_hexdiff_args,
 };
 
 static const RzCmdDescHelp C_help = {
@@ -4535,6 +4873,13 @@ static const RzCmdDescHelp cmd_info_relocs_help = {
 };
 
 static const RzCmdDescArg cmd_info_resources_args[] = {
+	{
+		.name = "digests",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_ARRAY,
+		.optional = true,
+
+	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_info_resources_help = {
@@ -4924,6 +5269,104 @@ static const RzCmdDescArg open_prioritize_next_rotate_args[] = {
 static const RzCmdDescHelp open_prioritize_next_rotate_help = {
 	.summary = "Prioritize next file in the list (go back to first if on the last)",
 	.args = open_prioritize_next_rotate_args,
+};
+
+static const RzCmdDescHelp om_oldinput_help = {
+	.summary = "Handle IO maps",
+};
+static const RzCmdDescArg open_maps_remove_args[] = {
+	{
+		.name = "id",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_maps_remove_help = {
+	.summary = "Remove the IO map with corresponding <id>",
+	.args = open_maps_remove_args,
+};
+
+static const RzCmdDescArg open_maps_remove_all_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp open_maps_remove_all_help = {
+	.summary = "Remove all IO maps",
+	.args = open_maps_remove_all_args,
+};
+
+static const RzCmdDescArg open_maps_ascii_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp open_maps_ascii_help = {
+	.summary = "List IO maps in ASCII art",
+	.args = open_maps_ascii_args,
+};
+
+static const RzCmdDescArg open_maps_all_fd_args[] = {
+	{
+		.name = "fd",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_maps_all_fd_help = {
+	.summary = "Create a IO map covering all VA for given <fd> or current one if not provided",
+	.args = open_maps_all_fd_args,
+};
+
+static const RzCmdDescArg open_maps_relocate_args[] = {
+	{
+		.name = "id",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_maps_relocate_help = {
+	.summary = "Relocate map with corresponding <id> to <addr>",
+	.args = open_maps_relocate_args,
+};
+
+static const RzCmdDescArg open_maps_relocate_current_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_maps_relocate_current_help = {
+	.summary = "Relocate map at current offset to <addr>",
+	.args = open_maps_relocate_current_args,
+};
+
+static const RzCmdDescArg open_maps_resize_args[] = {
+	{
+		.name = "id",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{
+		.name = "newsize",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp open_maps_resize_help = {
+	.summary = "Resize map with corresponding <id>",
+	.args = open_maps_resize_args,
 };
 
 static const RzCmdDescHelp cmd_print_help = {
@@ -8154,8 +8597,69 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *block_max_cd = rz_cmd_desc_argv_new(core->rcmd, b_cd, "bm", rz_block_max_handler, &block_max_help);
 	rz_warn_if_fail(block_max_cd);
 
-	RzCmdDesc *cmd_cmp_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "c", rz_cmd_cmp, &cmd_cmp_help);
-	rz_warn_if_fail(cmd_cmp_cd);
+	RzCmdDesc *basefind_compute_cd = rz_cmd_desc_argv_state_new(core->rcmd, root_cd, "B", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_basefind_compute_handler, &basefind_compute_help);
+	rz_warn_if_fail(basefind_compute_cd);
+	rz_cmd_desc_set_default_mode(basefind_compute_cd, RZ_OUTPUT_MODE_TABLE);
+
+	RzCmdDesc *c_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "c", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_cmp_string_handler, &cmd_cmp_string_help, &c_help);
+	rz_warn_if_fail(c_cd);
+	RzCmdDesc *cmd_cmp_bits_cd = rz_cmd_desc_argv_new(core->rcmd, c_cd, "c1", rz_cmd_cmp_bits_handler, &cmd_cmp_bits_help);
+	rz_warn_if_fail(cmd_cmp_bits_cd);
+
+	RzCmdDesc *cmd_cmp_addr_cd = rz_cmd_desc_argv_state_new(core->rcmd, c_cd, "ca", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_cmp_addr_handler, &cmd_cmp_addr_help);
+	rz_warn_if_fail(cmd_cmp_addr_cd);
+
+	RzCmdDesc *cmd_cmp_bytes_cd = rz_cmd_desc_argv_state_new(core->rcmd, c_cd, "cb", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_cmp_bytes_handler, &cmd_cmp_bytes_help);
+	rz_warn_if_fail(cmd_cmp_bytes_cd);
+
+	RzCmdDesc *cmd_cmp_hex_block_cd = rz_cmd_desc_argv_new(core->rcmd, c_cd, "cc", rz_cmd_cmp_hex_block_handler, &cmd_cmp_hex_block_help);
+	rz_warn_if_fail(cmd_cmp_hex_block_cd);
+
+	RzCmdDesc *cmd_cmp_hex_diff_lines_cd = rz_cmd_desc_argv_new(core->rcmd, c_cd, "ccc", rz_cmd_cmp_hex_diff_lines_handler, &cmd_cmp_hex_diff_lines_help);
+	rz_warn_if_fail(cmd_cmp_hex_diff_lines_cd);
+
+	RzCmdDesc *cmd_cmp_disasm_cd = rz_cmd_desc_argv_new(core->rcmd, c_cd, "ccd", rz_cmd_cmp_disasm_handler, &cmd_cmp_disasm_help);
+	rz_warn_if_fail(cmd_cmp_disasm_cd);
+
+	RzCmdDesc *cmd_cmp_file_cd = rz_cmd_desc_argv_state_new(core->rcmd, c_cd, "cf", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_cmp_file_handler, &cmd_cmp_file_help);
+	rz_warn_if_fail(cmd_cmp_file_cd);
+
+	RzCmdDesc *cu_cd = rz_cmd_desc_group_new(core->rcmd, c_cd, "cu", rz_cmd_cmp_unified_handler, &cmd_cmp_unified_help, &cu_help);
+	rz_warn_if_fail(cu_cd);
+	RzCmdDesc *cmd_cmp_unified1_cd = rz_cmd_desc_argv_new(core->rcmd, cu_cd, "cu1", rz_cmd_cmp_unified1_handler, &cmd_cmp_unified1_help);
+	rz_warn_if_fail(cmd_cmp_unified1_cd);
+
+	RzCmdDesc *cmd_cmp_unified2_cd = rz_cmd_desc_argv_new(core->rcmd, cu_cd, "cu2", rz_cmd_cmp_unified2_handler, &cmd_cmp_unified2_help);
+	rz_warn_if_fail(cmd_cmp_unified2_cd);
+
+	RzCmdDesc *cmd_cmp_unified4_cd = rz_cmd_desc_argv_new(core->rcmd, cu_cd, "cu4", rz_cmd_cmp_unified4_handler, &cmd_cmp_unified4_help);
+	rz_warn_if_fail(cmd_cmp_unified4_cd);
+
+	RzCmdDesc *cmd_cmp_unified8_cd = rz_cmd_desc_argv_new(core->rcmd, cu_cd, "cu8", rz_cmd_cmp_unified8_handler, &cmd_cmp_unified8_help);
+	rz_warn_if_fail(cmd_cmp_unified8_cd);
+
+	RzCmdDesc *cmd_cmp_unified_disasm_cd = rz_cmd_desc_argv_new(core->rcmd, cu_cd, "cud", rz_cmd_cmp_unified_disasm_handler, &cmd_cmp_unified_disasm_help);
+	rz_warn_if_fail(cmd_cmp_unified_disasm_cd);
+
+	RzCmdDesc *cw_cd = rz_cmd_desc_group_new(core->rcmd, c_cd, "cw", rz_cmd_cmp_add_memory_watcher_handler, &cmd_cmp_add_memory_watcher_help, &cw_help);
+	rz_warn_if_fail(cw_cd);
+	RzCmdDesc *cmd_cmp_list_compare_watchers_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cw_cd, "cwl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN, rz_cmd_cmp_list_compare_watchers_handler, &cmd_cmp_list_compare_watchers_help);
+	rz_warn_if_fail(cmd_cmp_list_compare_watchers_cd);
+
+	RzCmdDesc *cmd_cmp_reset_watcher_cd = rz_cmd_desc_argv_new(core->rcmd, cw_cd, "cwr", rz_cmd_cmp_reset_watcher_handler, &cmd_cmp_reset_watcher_help);
+	rz_warn_if_fail(cmd_cmp_reset_watcher_cd);
+
+	RzCmdDesc *cmd_cmp_update_watcher_cd = rz_cmd_desc_argv_new(core->rcmd, cw_cd, "cwu", rz_cmd_cmp_update_watcher_handler, &cmd_cmp_update_watcher_help);
+	rz_warn_if_fail(cmd_cmp_update_watcher_cd);
+
+	RzCmdDesc *cmd_cmp_remove_watcher_cd = rz_cmd_desc_argv_new(core->rcmd, cw_cd, "cwx", rz_cmd_cmp_remove_watcher_handler, &cmd_cmp_remove_watcher_help);
+	rz_warn_if_fail(cmd_cmp_remove_watcher_cd);
+
+	RzCmdDesc *cmd_cmp_hexpair_string_cd = rz_cmd_desc_argv_state_new(core->rcmd, c_cd, "cx", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_cmp_hexpair_string_handler, &cmd_cmp_hexpair_string_help);
+	rz_warn_if_fail(cmd_cmp_hexpair_string_cd);
+
+	RzCmdDesc *cmd_cmp_hex_block_hexdiff_cd = rz_cmd_desc_argv_state_new(core->rcmd, c_cd, "cX", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_cmp_hex_block_hexdiff_handler, &cmd_cmp_hex_block_hexdiff_help);
+	rz_warn_if_fail(cmd_cmp_hex_block_hexdiff_cd);
 
 	RzCmdDesc *C_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "C", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_LONG, rz_meta_list_handler, &meta_list_help, &C_help);
 	rz_warn_if_fail(C_cd);
@@ -8330,8 +8834,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(cmd_debug_cd);
 	RzCmdDesc *db_cd = rz_cmd_desc_group_new(core->rcmd, cmd_debug_cd, "db", rz_cmd_debug_add_bp_handler, &cmd_debug_add_bp_help, &db_help);
 	rz_warn_if_fail(db_cd);
-	RzCmdDesc *cmd_debug_list_bp_cd = rz_cmd_desc_argv_state_new(core->rcmd, db_cd, "dbl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_debug_list_bp_handler, &cmd_debug_list_bp_help);
+	RzCmdDesc *cmd_debug_list_bp_cd = rz_cmd_desc_argv_state_new(core->rcmd, db_cd, "dbl", RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_debug_list_bp_handler, &cmd_debug_list_bp_help);
 	rz_warn_if_fail(cmd_debug_list_bp_cd);
+	rz_cmd_desc_set_default_mode(cmd_debug_list_bp_cd, RZ_OUTPUT_MODE_TABLE);
 
 	RzCmdDesc *cmd_debug_add_hw_bp_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "dbH", rz_cmd_debug_add_hw_bp_handler, &cmd_debug_add_hw_bp_help);
 	rz_warn_if_fail(cmd_debug_add_hw_bp_cd);
@@ -8916,6 +9421,29 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *open_prioritize_next_rotate_cd = rz_cmd_desc_argv_new(core->rcmd, op_cd, "opr", rz_open_prioritize_next_rotate_handler, &open_prioritize_next_rotate_help);
 	rz_warn_if_fail(open_prioritize_next_rotate_cd);
+
+	RzCmdDesc *om_oldinput_cd = rz_cmd_desc_oldinput_new(core->rcmd, cmd_open_cd, "om", rz_om_oldinput, &om_oldinput_help);
+	rz_warn_if_fail(om_oldinput_cd);
+	RzCmdDesc *open_maps_remove_cd = rz_cmd_desc_argv_new(core->rcmd, om_oldinput_cd, "om-", rz_open_maps_remove_handler, &open_maps_remove_help);
+	rz_warn_if_fail(open_maps_remove_cd);
+
+	RzCmdDesc *open_maps_remove_all_cd = rz_cmd_desc_argv_new(core->rcmd, om_oldinput_cd, "om-*", rz_open_maps_remove_all_handler, &open_maps_remove_all_help);
+	rz_warn_if_fail(open_maps_remove_all_cd);
+
+	RzCmdDesc *open_maps_ascii_cd = rz_cmd_desc_argv_new(core->rcmd, om_oldinput_cd, "om=", rz_open_maps_ascii_handler, &open_maps_ascii_help);
+	rz_warn_if_fail(open_maps_ascii_cd);
+
+	RzCmdDesc *open_maps_all_fd_cd = rz_cmd_desc_argv_new(core->rcmd, om_oldinput_cd, "oma", rz_open_maps_all_fd_handler, &open_maps_all_fd_help);
+	rz_warn_if_fail(open_maps_all_fd_cd);
+
+	RzCmdDesc *open_maps_relocate_cd = rz_cmd_desc_argv_new(core->rcmd, om_oldinput_cd, "omb", rz_open_maps_relocate_handler, &open_maps_relocate_help);
+	rz_warn_if_fail(open_maps_relocate_cd);
+
+	RzCmdDesc *open_maps_relocate_current_cd = rz_cmd_desc_argv_new(core->rcmd, om_oldinput_cd, "omb.", rz_open_maps_relocate_current_handler, &open_maps_relocate_current_help);
+	rz_warn_if_fail(open_maps_relocate_current_cd);
+
+	RzCmdDesc *open_maps_resize_cd = rz_cmd_desc_argv_new(core->rcmd, om_oldinput_cd, "omr", rz_open_maps_resize_handler, &open_maps_resize_help);
+	rz_warn_if_fail(open_maps_resize_cd);
 
 	RzCmdDesc *cmd_print_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "p", rz_cmd_print, &cmd_print_help);
 	rz_warn_if_fail(cmd_print_cd);

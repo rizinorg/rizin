@@ -277,7 +277,7 @@ static bool _list(void *user, void *data, ut32 id) {
 	return true;
 }
 
-RZ_API RzList *rz_id_storage_list(RzIDStorage *s) { //remove this pls
+RZ_API RzList *rz_id_storage_list(RzIDStorage *s) { // remove this pls
 	RzList *list = rz_list_newf(NULL);
 	rz_id_storage_foreach(s, _list, list);
 	return list;
@@ -452,7 +452,7 @@ RZ_API void rz_oids_free(ROIDStorage *storage) {
 	free(storage);
 }
 
-//returns the element with lowest order
+// returns the element with lowest order
 RZ_API void *rz_oids_last(ROIDStorage *storage) {
 	if (storage && storage->data && storage->data->data && storage->permutation) {
 		return storage->data->data[storage->permutation[0]];
@@ -460,7 +460,7 @@ RZ_API void *rz_oids_last(ROIDStorage *storage) {
 	return NULL;
 }
 
-//return the element with highest order
+// return the element with highest order
 RZ_API void *rz_oids_first(ROIDStorage *storage) {
 	if (storage && storage->data && storage->data->data && storage->permutation) {
 		return storage->data->data[storage->permutation[storage->ptop - 1]];
@@ -515,7 +515,7 @@ bool oids_od_bfind(ROIDStorage *st, ut32 *od, void *incoming, void *user) {
 		if (high <= low) {
 			od[0] = (ut32)low;
 			in = rz_oids_oget(st, od[0]);
-			//in - incoming
+			// in - incoming
 			if (!st->cmp(in, incoming, user, &cmp_res)) {
 				return false;
 			}
@@ -561,7 +561,7 @@ RZ_API bool rz_oids_insert(ROIDStorage *storage, void *data, ut32 *id, ut32 *od,
 	if (!storage || !storage->cmp || !id || !od) {
 		return false;
 	}
-	if (!storage->ptop) { //empty storage
+	if (!storage->ptop) { // empty storage
 		return rz_oids_add(storage, data, id, od);
 	}
 	if (!rz_id_storage_add(storage->data, data, id)) {

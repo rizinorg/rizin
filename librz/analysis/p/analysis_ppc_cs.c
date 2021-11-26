@@ -81,7 +81,7 @@ static char *getarg2(struct Getarg *gop, int n, const char *setstr) {
 	switch (op.type) {
 	case PPC_OP_INVALID:
 		words[n][0] = '\0';
-		//strcpy (words[n], "invalid");
+		// strcpy (words[n], "invalid");
 		break;
 	case PPC_OP_REG:
 		snprintf(words[n], sizeof(words[n]),
@@ -409,7 +409,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 			"gpr	dbat1u .32 468 0\n"
 			"gpr	dbat2u .32 476 0\n"
 			"gpr	dbat3u .32 484 0\n"
-			"gpr	mask   .64 488 0\n"; //not a real register used on complex functions
+			"gpr	mask   .64 488 0\n"; // not a real register used on complex functions
 	}
 	return strdup(p);
 }
@@ -421,7 +421,7 @@ static int analop_vle(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	if (len > 1 && !vle_init(&handle, buf, len) && (instr = vle_next(&handle))) {
 		op->size = instr->size;
 		op->type = instr->analysis_op;
-		//op->id = instr->type;
+		// op->id = instr->type;
 
 		switch (op->type) {
 		case RZ_ANALYSIS_OP_TYPE_ILL:
@@ -440,7 +440,7 @@ static int analop_vle(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			op->fail = addr + op->size;
 			break;
 		case RZ_ANALYSIS_OP_TYPE_CJMP:
-			op->cond = instr->cond; //RZ_TYPE_COND_NE;
+			op->cond = instr->cond; // RZ_TYPE_COND_NE;
 			op->eob = true;
 			op->jump = addr + instr->fields[instr->n - 1].value;
 			op->fail = addr + op->size;
@@ -489,7 +489,7 @@ static int analop_vle(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		case RZ_ANALYSIS_OP_TYPE_XOR:
 			break;
 		default:
-			//eprintf ("Missing an RZ_ANALYSIS_OP_TYPE (%"PFMT64u")\n", op->type);
+			// eprintf ("Missing an RZ_ANALYSIS_OP_TYPE (%"PFMT64u")\n", op->type);
 			break;
 		}
 		vle_free(instr);
@@ -1023,7 +1023,7 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 				}
 				op->jump = IMM(1);
 				op->fail = addr + op->size;
-				//op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
+				// op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
 			default:
 				break;
 			}
@@ -1283,7 +1283,7 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 			rz_strbuf_fini(&op->esil);
 		}
 		cs_free(insn, n);
-		//cs_close (&handle);
+		// cs_close (&handle);
 	}
 	return op->size;
 }

@@ -5,7 +5,7 @@
 #define _INCLUDE_XNU_THREADS_H_
 
 #if __POWERPC__
-//TODO add better support for PPC
+// TODO add better support for PPC
 #define RZ_REG_T        ppc_thread_state_t
 #define RZ_REG_STATE_T  PPC_THREAD_STATE
 #define RZ_REG_STATE_SZ PPC_THREAD_STATE_SZ
@@ -43,11 +43,11 @@ typedef struct _exception_info {
 	mach_port_t exception_port;
 } xnu_exception_info;
 
-//XXX use rizin types
+// XXX use rizin types
 typedef struct _xnu_thread {
-	thread_t port; //mach_port // XXX bad naming here
-	char *name; //name of thread
-	thread_basic_info_data_t basic_info; //need this?
+	thread_t port; // mach_port // XXX bad naming here
+	char *name; // name of thread
+	thread_basic_info_data_t basic_info; // need this?
 	ut8 stepping; // thread is stepping or not //TODO implement stepping
 	RZ_REG_T gpr; // type RZ_REG_T using unified API XXX bad naming
 	void *state;

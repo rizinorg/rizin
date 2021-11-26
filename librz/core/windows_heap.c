@@ -9,44 +9,44 @@
 #include "..\..\bin\pdb\pdb.h"
 
 /*
-*	Viewer discretion advised: Spaghetti code ahead
-*	Some Code references:
-*	https://securityxploded.com/enumheaps.php
-*	https://bitbucket.org/evolution536/crysearch-memory-scanner/
-*	https://processhacker.sourceforge.io
-*	http://www.tssc.de/winint
-*	https://www.nirsoft.net/kernel_struct/vista/
-*	https://github.com/yoichi/HeapStat/blob/master/heapstat.cpp
-*	https://doxygen.reactos.org/
-*
-*	References:
-*	Windows NT(2000) Native API Reference (Book)
-*	Papers:
-*	http://illmatics.com/Understanding_the_LFH.pdf
-*	http://illmatics.com/Windows%208%20Heap%20Internals.pdf
-*	https://www.blackhat.com/docs/us-16/materials/us-16-Yason-Windows-10-Segment-Heap-Internals-wp.pdf
-*
-*	This code has 2 different approaches to getting the heap info:
-*		1) Calling InitHeapInfo with both PDI_HEAPS and PDI_HEAP_BLOCKS.
-*			This will fill a buffer with HeapBlockBasicInfo like structures which
-*			is then walked through by calling GetFirstHeapBlock and subsequently GetNextHeapBlock
-*			(see 1st link). This approach is the more generic one as it uses Windows functions.
-*			Unfortunately it fails to offer more detailed information about each block (although it is possible to get this info later) and
-*			also fails misteriously once the count of allocated blocks reach a certain threshold (1mil or so) or if segment heap is active for the
-*			program (in this case everything locks in the next call for the function)
-*		2) In case 1 fails, Calling GetHeapBlocks, which will manually read and parse (poorly :[ ) each block.
-*			First it calls InitHeapInfo	with only the PDI_HEAPS flag, with the only objective of getting a list of heap header addresses. It will then
-*			do the job that InitHeapInfo would do if it was called with PDI_HEAP_BLOCKS as well, filling a buffer with HeapBlockBasicInfo structures that
-*			can also be walked with GetFirstHeapBlock and GetNextHeapBlock (and HeapBlockExtraInfo when needed).
-*
-*	TODO:
-*		Var to select algorithm?
-*		x86 vs x64 vs WOW64
-*		Graphs
-*		Print structures
-*		Make sure GetHeapBlocks actually works
-*		Maybe instead of using hardcoded structs we can get the offsets from ntdll.pdb
-*/
+ *	Viewer discretion advised: Spaghetti code ahead
+ *	Some Code references:
+ *	https://securityxploded.com/enumheaps.php
+ *	https://bitbucket.org/evolution536/crysearch-memory-scanner/
+ *	https://processhacker.sourceforge.io
+ *	http://www.tssc.de/winint
+ *	https://www.nirsoft.net/kernel_struct/vista/
+ *	https://github.com/yoichi/HeapStat/blob/master/heapstat.cpp
+ *	https://doxygen.reactos.org/
+ *
+ *	References:
+ *	Windows NT(2000) Native API Reference (Book)
+ *	Papers:
+ *	http://illmatics.com/Understanding_the_LFH.pdf
+ *	http://illmatics.com/Windows%208%20Heap%20Internals.pdf
+ *	https://www.blackhat.com/docs/us-16/materials/us-16-Yason-Windows-10-Segment-Heap-Internals-wp.pdf
+ *
+ *	This code has 2 different approaches to getting the heap info:
+ *		1) Calling InitHeapInfo with both PDI_HEAPS and PDI_HEAP_BLOCKS.
+ *			This will fill a buffer with HeapBlockBasicInfo like structures which
+ *			is then walked through by calling GetFirstHeapBlock and subsequently GetNextHeapBlock
+ *			(see 1st link). This approach is the more generic one as it uses Windows functions.
+ *			Unfortunately it fails to offer more detailed information about each block (although it is possible to get this info later) and
+ *			also fails misteriously once the count of allocated blocks reach a certain threshold (1mil or so) or if segment heap is active for the
+ *			program (in this case everything locks in the next call for the function)
+ *		2) In case 1 fails, Calling GetHeapBlocks, which will manually read and parse (poorly :[ ) each block.
+ *			First it calls InitHeapInfo	with only the PDI_HEAPS flag, with the only objective of getting a list of heap header addresses. It will then
+ *			do the job that InitHeapInfo would do if it was called with PDI_HEAP_BLOCKS as well, filling a buffer with HeapBlockBasicInfo structures that
+ *			can also be walked with GetFirstHeapBlock and GetNextHeapBlock (and HeapBlockExtraInfo when needed).
+ *
+ *	TODO:
+ *		Var to select algorithm?
+ *		x86 vs x64 vs WOW64
+ *		Graphs
+ *		Print structures
+ *		Make sure GetHeapBlocks actually works
+ *		Maybe instead of using hardcoded structs we can get the offsets from ntdll.pdb
+ */
 
 #define PDI_MODULES         0x01
 #define PDI_HEAPS           0x04
@@ -487,12 +487,12 @@ static RzList *GetListOfHeaps(RzDebug *dbg, HANDLE ph) {
 }
 
 /*
-*	This function may fail with PDI_HEAP_BLOCKS if:
-*		There's too many allocations
-*		The Segment Heap is activated (will block next time called)
-*		Notes:
-*			Some LFH allocations seem misaligned
-*/
+ *	This function may fail with PDI_HEAP_BLOCKS if:
+ *		There's too many allocations
+ *		The Segment Heap is activated (will block next time called)
+ *		Notes:
+ *			Some LFH allocations seem misaligned
+ */
 static PDEBUG_BUFFER InitHeapInfo(RzDebug *dbg, DWORD mask) {
 	// Check:
 	//	RtlpQueryProcessDebugInformationFromWow64

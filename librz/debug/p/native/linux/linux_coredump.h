@@ -12,14 +12,14 @@
 #if __i386__ || __x86_64__
 /*Macros for XSAVE/XRESTORE*/
 /*
-        From: http://www.intel.com/content/dam/www/public/us/en/documents/manuals/64-ia-32-architectures-software-developers-manual.pdf
-        Bit 00: x87 state.
-        Bit 01: SSE state.
-        Bit 02: AVX state.
-        Bits 04 - 03: MPX state. (https://software.intel.com/sites/default/files/managed/9d/f6/Intel_MPX_EnablingGuide.pdf)
-        Bits 07 - 05: AVX-512 state.
-        Bit 08: Used for IA32_XSS.
-        Bit 09: PKRU state
+	From: http://www.intel.com/content/dam/www/public/us/en/documents/manuals/64-ia-32-architectures-software-developers-manual.pdf
+	Bit 00: x87 state.
+	Bit 01: SSE state.
+	Bit 02: AVX state.
+	Bits 04 - 03: MPX state. (https://software.intel.com/sites/default/files/managed/9d/f6/Intel_MPX_EnablingGuide.pdf)
+	Bits 07 - 05: AVX-512 state.
+	Bit 08: Used for IA32_XSS.
+	Bit 09: PKRU state
 */
 #define X87_BIT     (1ULL << 0)
 #define SSE_BIT     (1ULL << 1)

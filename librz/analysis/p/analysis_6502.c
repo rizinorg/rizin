@@ -100,7 +100,7 @@ static void _6502_analysis_esil_get_addr_pattern2(RzAnalysisOp *op, const ut8 *d
 		op->cycles = 2;
 		snprintf(addrbuf, addrsize, "0x%02x", (len > 1) ? data[1] : 0);
 		break;
-	case 0x0a: //op a
+	case 0x0a: // op a
 		op->cycles = 2;
 		snprintf(addrbuf, addrsize, "a");
 		break;
@@ -134,7 +134,7 @@ static void _6502_analysis_esil_get_addr_pattern3(RzAnalysisOp *op, const ut8 *d
 		op->cycles = 2;
 		snprintf(addrbuf, addrsize, "0x%02x", (len > 1) ? data[1] : 0);
 		break;
-	case 0x08: //op a
+	case 0x08: // op a
 		op->cycles = 2;
 		snprintf(addrbuf, addrsize, "a");
 		break;
@@ -314,7 +314,7 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		return -1;
 	}
 
-	op->size = snes_op_get_size(1, 1, &snes_op[data[0]]); //snes-arch is similar to nes/6502
+	op->size = snes_op_get_size(1, 1, &snes_op[data[0]]); // snes-arch is similar to nes/6502
 	op->addr = addr;
 	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 	op->id = data[0];
@@ -935,7 +935,7 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 }
 
 static int esil_6502_init(RzAnalysisEsil *esil) {
-	if (esil->analysis && esil->analysis->reg) { //initial values
+	if (esil->analysis && esil->analysis->reg) { // initial values
 		rz_reg_set_value(esil->analysis->reg, rz_reg_get(esil->analysis->reg, "pc", -1), 0x0000);
 		rz_reg_set_value(esil->analysis->reg, rz_reg_get(esil->analysis->reg, "sp", -1), 0xff);
 		rz_reg_set_value(esil->analysis->reg, rz_reg_get(esil->analysis->reg, "a", -1), 0x00);
@@ -950,12 +950,17 @@ static int esil_6502_fini(RzAnalysisEsil *esil) {
 	return true;
 }
 
+static int address_bits(RzAnalysis *analysis, int bits) {
+	return 16;
+}
+
 RzAnalysisPlugin rz_analysis_plugin_6502 = {
 	.name = "6502",
 	.desc = "6502/NES analysis plugin",
 	.license = "LGPL3",
 	.arch = "6502",
 	.bits = 8,
+	.address_bits = address_bits,
 	.op = &_6502_op,
 	.set_reg_profile = &set_reg_profile,
 	.esil = true,

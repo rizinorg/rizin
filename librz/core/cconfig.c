@@ -3,6 +3,8 @@
 
 #include <rz_core.h>
 #include <rz_cons.h>
+#include <rz_basefind.h>
+#include <rz_th.h>
 
 #include "core_private.h"
 
@@ -512,8 +514,8 @@ static bool cb_asmarch(void *user, void *data) {
 		eprintf("asm.arch: cannot find (%s)\n", node->value);
 		return false;
 	}
-	//we should strdup here otherwise will crash if any rz_config_set
-	//free the old value
+	// we should strdup here otherwise will crash if any rz_config_set
+	// free the old value
 	char *asm_cpu = strdup(rz_config_get(core->config, "asm.cpu"));
 	if (core->rasm->cur) {
 		const char *newAsmCPU = core->rasm->cur->cpus;
@@ -551,7 +553,7 @@ static bool cb_asmarch(void *user, void *data) {
 		rz_config_set_i(core->config, "asm.bits", bits);
 	}
 
-	//rz_debug_set_arch (core->dbg, rz_sys_arch_id (node->value), bits);
+	// rz_debug_set_arch (core->dbg, rz_sys_arch_id (node->value), bits);
 	rz_debug_set_arch(core->dbg, node->value, bits);
 	if (!rz_config_set(core->config, "analysis.arch", node->value)) {
 		char *p, *s = strdup(node->value);
@@ -573,14 +575,14 @@ static bool cb_asmarch(void *user, void *data) {
 		const char *dir_prefix = rz_config_get(core->config, "dir.prefix");
 		const char *platform = rz_config_get(core->config, "asm.platform");
 		if (!rz_syscall_setup(core->analysis->syscall, node->value, core->analysis->bits, asmcpu, asmos)) {
-			//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
+			// eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
 			//	node->value, asmos, RZ_LIBDIR"/rizin/"RZ_VERSION"/syscall");
 		}
 		update_syscall_ns(core);
 		rz_arch_platform_init(core->analysis->platform_target, node->value, asmcpu, platform, dir_prefix);
 		rz_arch_profiles_init(core->analysis->arch_target, asmcpu, node->value, dir_prefix);
 	}
-	//if (!strcmp (node->value, "bf"))
+	// if (!strcmp (node->value, "bf"))
 	//	rz_config_set (core->config, "dbg.backend", "bf");
 	__setsegoff(core->config, node->value, core->rasm->bits);
 
@@ -694,14 +696,6 @@ static bool cb_asmbits(void *user, void *data) {
 		bool load_from_debug = rz_config_get_b(core->config, "cfg.debug");
 		if (load_from_debug) {
 			if (core->dbg->cur && core->dbg->cur->reg_profile) {
-// XXX. that should depend on the plugin, not the host os
-#if __WINDOWS__
-#if !defined(_WIN64)
-				core->dbg->bits = RZ_SYS_BITS_32;
-#else
-				core->dbg->bits = RZ_SYS_BITS_64;
-#endif
-#endif
 				char *rp = core->dbg->cur->reg_profile(core->dbg);
 				rz_reg_set_profile_string(core->dbg->reg, rp);
 				rz_reg_set_profile_string(core->analysis->reg, rp);
@@ -717,7 +711,7 @@ static bool cb_asmbits(void *user, void *data) {
 	const char *asmcpu = rz_config_get(core->config, "asm.cpu");
 	if (core->analysis) {
 		if (!rz_syscall_setup(core->analysis->syscall, asmarch, bits, asmcpu, asmos)) {
-			//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
+			// eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
 			//	node->value, asmos, RZ_LIBDIR"/rizin/"RZ_VERSION"/syscall");
 		}
 		update_syscall_ns(core);
@@ -945,7 +939,13 @@ static bool cb_binstrenc(void *user, void *data) {
 		{ "utf16le", "utf-16le,utf16-le" },
 		{ "utf32le", "utf-32le,utf32-le" },
 		{ "utf16be", "utf-16be,utf16-be" },
-		{ "utf32be", "utf-32be,utf32-be" }
+		{ "utf32be", "utf-32be,utf32-be" },
+		{ "ibm037", "ebcdic" },
+		{ "ibm290", NULL },
+		{ "ebcdices", NULL },
+		{ "ebcdicuk", NULL },
+		{ "ebcdicus", NULL },
+
 	};
 	int i;
 	char *enc = strdup(node->value);
@@ -2126,6 +2126,7 @@ static bool cb_scrcolumns(void *user, void *data) {
 	int n = atoi(node->value);
 	core->cons->force_columns = n;
 	core->dbg->regcols = n / 20;
+	rz_cons_get_size(NULL);
 	return true;
 }
 
@@ -2421,6 +2422,16 @@ static bool cb_utf8_curvy(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	core->cons->use_utf8_curvy = node->i_value;
+	return true;
+}
+
+static bool cb_visual_mode(void *user, void *data) {
+	RzConfigNode *node = (RzConfigNode *)data;
+	if (node->i_value > RZ_CORE_VISUAL_MODE_CD) {
+		node->i_value = RZ_CORE_VISUAL_MODE_PX;
+	}
+	RzCore *core = (RzCore *)user;
+	core->printidx = node->i_value;
 	return true;
 }
 
@@ -3035,7 +3046,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("esil.breakoninvalid", "false", "Break esil execution when instruction is invalid");
 	SETI("esil.timeout", 0, "A timeout (in seconds) for when we should give up emulating");
 	/* asm */
-	//asm.os needs to be first, since other asm.* depend on it
+	// asm.os needs to be first, since other asm.* depend on it
 	n = NODECB("asm.os", "none", &cb_asmos);
 	SETDESC(n, "Select operating system (kernel)");
 	SETOPTIONS(n, "ios", "dos", "darwin", "linux", "freebsd", "openbsd", "netbsd", "windows", "s110", "none", NULL);
@@ -3365,7 +3376,11 @@ RZ_API int rz_core_config_init(RzCore *core) {
 
 	SETCB("dbg.bpinmaps", "true", &cb_dbg_bpinmaps, "Activate breakpoints only if they are inside a valid map");
 	SETCB("dbg.forks", "false", &cb_dbg_forks, "Stop execution if fork() is done (see dbg.threads)");
+#if __WINDOWS__
+	n = NODECB("dbg.btalgo", "default", &cb_dbg_btalgo);
+#else
 	n = NODECB("dbg.btalgo", "fuzzy", &cb_dbg_btalgo);
+#endif
 	SETDESC(n, "Select backtrace algorithm");
 	SETOPTIONS(n, "default", "fuzzy", "analysis", "trace", NULL);
 	SETCB("dbg.threads", "false", &cb_stopthreads, "Stop all threads when debugger breaks (see dbg.forks)");
@@ -3633,6 +3648,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETDESC(n, "Convert string before display");
 	SETOPTIONS(n, "asciiesc", "asciidot", NULL);
 	SETBPREF("scr.confirmquit", "false", "Confirm on quit");
+	SETICB("scr.visual.mode", RZ_CORE_VISUAL_MODE_PX, &cb_visual_mode, "Visual mode (0: hexdump, 1: disassembly, 2: debug, 3: color blocks, 4: strings)");
 
 	/* str */
 	SETCB("str.escbslash", "false", &cb_str_escbslash, "Escape the backslash");
@@ -3700,6 +3716,15 @@ RZ_API int rz_core_config_init(RzCore *core) {
 
 	/* rap */
 	SETBPREF("rap.loop", "true", "Run rap as a forever-listening daemon (=:9090)");
+
+	/* basefind */
+	SETB("basefind.progress", false, "Basefind threads progress (true: enable, false: disable)");
+	SETI("basefind.base.start", RZ_BASEFIND_BASE_MIN_ADDRESS, "Basefind start address value");
+	SETI("basefind.base.end", RZ_BASEFIND_BASE_MAX_ADDRESS, "Basefind end address value");
+	SETI("basefind.base.increase", RZ_BASEFIND_BASE_INCREASE, "Basefind increase address by");
+	SETI("basefind.score.min", RZ_BASEFIND_SCORE_MIN_VALUE, "Basefind min score value to consider it valid");
+	SETI("basefind.string.min", RZ_BASEFIND_STRING_MIN_LENGTH, "Basefind min string size to find to consider it valid");
+	SETI("basefind.threads.max", RZ_THREAD_POOL_ALL_CORES, "Basefind max threads number (when 0 uses all available cores)");
 
 	/* nkeys */
 	SETPREF("key.s", "", "override step into action");

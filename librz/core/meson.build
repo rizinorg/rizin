@@ -4,6 +4,7 @@ rz_core_sources = [
   'agraph.c',
   'analysis_objc.c',
   'analysis_tp.c',
+  'basefind.c',
   'cagraph.c',
   'canalysis.c',
   'cannotated_code.c',
@@ -21,6 +22,7 @@ rz_core_sources = [
   'cio.c',
   'clang.c',
   'cmeta.c',
+  'cmp.c',
   'core.c',
   'cparser.c',
   'cpdb.c',
@@ -132,6 +134,7 @@ rz_core = library('rz_core', rz_core_sources,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
+  link_args: library_linkflags,
   soversion: rizin_libversion
 )
 
@@ -144,7 +147,6 @@ pkgconfig_mod.generate(
   version: rizin_version,
   name: 'rz_core',
   filebase: 'rz_core',
-  libraries: pkgcfg_sanitize_libs,
   requires: pkgconfig_magic_requires + [
     'rz_util',
     'rz_demangler',

@@ -125,7 +125,6 @@ RZ_API RzIO *rz_io_init(RzIO *io) {
 RZ_API void rz_io_free(RzIO *io) {
 	if (io) {
 		rz_io_fini(io);
-		rz_cache_free(io->buffer);
 		free(io);
 	}
 }
@@ -148,7 +147,7 @@ RZ_API RzIODesc *rz_io_open_nomap(RzIO *io, const char *uri, int perm, int mode)
 	if ((io->autofd || !io->desc) && desc) {
 		io->desc = desc;
 	}
-	//set desc as current if autofd or io->desc==NULL
+	// set desc as current if autofd or io->desc==NULL
 	return desc;
 }
 
@@ -218,7 +217,7 @@ RZ_API RzList *rz_io_open_many(RzIO *io, const char *uri, int perm, int mode) {
 			if (!desc->uri) {
 				desc->uri = strdup(uri);
 			}
-			//should autofd be honored here?
+			// should autofd be honored here?
 			rz_io_desc_add(io, desc);
 			if (!io->desc) {
 				io->desc = desc;
@@ -234,9 +233,9 @@ RZ_API bool rz_io_reopen(RzIO *io, int fd, int perm, int mode) {
 	if (!(old = rz_io_desc_get(io, fd))) {
 		return false;
 	}
-	//does this really work, or do we have to handler debuggers ugly
+	// does this really work, or do we have to handler debuggers ugly
 	uri = old->referer ? old->referer : old->uri;
-#if __WINDOWS__ //TODO: workaround, see https://github.com/rizinorg/rizin/issues/8840
+#if __WINDOWS__ // TODO: workaround, see https://github.com/rizinorg/rizin/issues/8840
 	if (old->plugin->close && old->plugin->close(old)) {
 		return false; // TODO: this is an unrecoverable scenario
 	}
@@ -363,7 +362,7 @@ RZ_API bool rz_io_write_at(RzIO *io, ut64 addr, const ut8 *buf, int len) {
 	if (io->write_mask) {
 		mybuf = rz_mem_dup((void *)buf, len);
 		for (i = 0; i < len; i++) {
-			//TODO: this needs some love because it is not optimal.
+			// TODO: this needs some love because it is not optimal.
 			mybuf[i] &= io->write_mask[i % io->write_mask_len];
 		}
 	}
@@ -453,7 +452,7 @@ RZ_API int rz_io_extend_at(RzIO *io, ut64 addr, ut64 size) {
 		ut64 cur_off = io->off;
 		rz_io_seek(io, addr, RZ_IO_SEEK_SET);
 		ret = rz_io_desc_extend(io->desc, size);
-		//no need to seek here
+		// no need to seek here
 		io->off = cur_off;
 		return ret;
 	}
@@ -692,7 +691,7 @@ RZ_API struct w32dbg_wrap_instance_t *rz_io_get_w32dbg_wrap(RzIO *io) {
 }
 #endif
 
-//remove all descs and maps
+// remove all descs and maps
 RZ_API int rz_io_fini(RzIO *io) {
 	if (!io) {
 		return false;

@@ -26,7 +26,7 @@ EXPECT=<<EOF
    38 * relocs
     4 * sections
     0 * segments
-  116 * strings
+  117 * strings
     1 * symbols
 EOF
 RUN
@@ -69,7 +69,7 @@ EXPECT=<<EOF
    38 * relocs
     5 * sections
     0 * segments
-  115 * strings
+  116 * strings
     1 * symbols
 EOF
 RUN

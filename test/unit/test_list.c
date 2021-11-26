@@ -210,7 +210,7 @@ bool test_rz_list_sort5(void) {
 	for (i = 0; i < 26; i++) {
 		rz_list_append(list, (void *)upper[i]);
 	}
-	//add more than 43 elements to trigger merge sort
+	// add more than 43 elements to trigger merge sort
 	rz_list_sort(list, (RzListComparator)strcmp);
 	mu_assert_streq((char *)list->head->data, upper[0], "First element");
 	mu_assert_streq((char *)list->tail->data, lower[25], "Last element");
@@ -355,7 +355,7 @@ bool test_rz_list_append_prepend(void) {
 
 	char buf[BUF_LENGTH];
 	int i;
-	//Check that the next sequence is correct
+	// Check that the next sequence is correct
 	iter = list->head;
 	for (i = 0; i < RZ_ARRAY_SIZE(test); ++i) {
 		snprintf(buf, BUF_LENGTH, "%d-th value in list from head", i);
@@ -363,7 +363,7 @@ bool test_rz_list_append_prepend(void) {
 		iter = iter->n;
 	}
 
-	//Check that the previous sequence is correct
+	// Check that the previous sequence is correct
 	iter = list->tail;
 	for (i = (RZ_ARRAY_SIZE(test)) - 1; i > 0; --i) {
 		snprintf(buf, BUF_LENGTH, "%d-th value in list from tail", i);
@@ -419,7 +419,7 @@ bool test_rz_list_reverse(void) {
 	rz_list_reverse(list);
 
 	char buf[BUF_LENGTH];
-	//Check that the sequence is correct
+	// Check that the sequence is correct
 	RzListIter *iter = list->head;
 	for (i = 0; i < RZ_ARRAY_SIZE(test); ++i) {
 		snprintf(buf, BUF_LENGTH, "%d-th value in list after reverse", i);

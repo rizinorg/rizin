@@ -99,7 +99,7 @@ static int rz_debug_gdb_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 	buflen = RZ_MAX(ctx->desc->data_len, buflen);
 	if (ctx->reg_buf) {
 		// if (buf_size < copy_size) { //desc->data_len) {
-		if (buflen > ctx->buf_size) { //copy_size) {
+		if (buflen > ctx->buf_size) { // copy_size) {
 			ut8 *new_buf = realloc(ctx->reg_buf, buflen);
 			if (!new_buf) {
 				return -1;
@@ -130,7 +130,7 @@ static int rz_debug_gdb_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 	return ctx->desc->data_len;
 }
 
-static RzList *rz_debug_gdb_map_get(RzDebug *dbg) { //TODO
+static RzList *rz_debug_gdb_map_get(RzDebug *dbg) { // TODO
 	RzDebugGdbCtx *ctx = dbg->plugin_data;
 	check_connection(dbg);
 	if (!ctx->desc || ctx->desc->pid <= 0) {
@@ -360,9 +360,9 @@ static int rz_debug_gdb_continue(RzDebug *dbg, int pid, int tid, int sig) {
 	}
 	gdbr_continue(ctx->desc, pid, -1, sig); // Continue all threads
 	if (ctx->desc->stop_reason.is_valid && ctx->desc->stop_reason.thread.present) {
-		//if (desc->tid != desc->stop_reason.thread.tid) {
+		// if (desc->tid != desc->stop_reason.thread.tid) {
 		//	eprintf ("thread id (%d) in reason differs from current thread id (%d)\n", dbg->pid, dbg->tid);
-		//}
+		// }
 		ctx->desc->tid = ctx->desc->stop_reason.thread.tid;
 	}
 	return ctx->desc->tid;
@@ -385,7 +385,7 @@ static RzDebugReasonType rz_debug_gdb_wait(RzDebug *dbg, int pid) {
 		dbg->pid = ctx->desc->stop_reason.thread.pid;
 		dbg->tid = ctx->desc->stop_reason.thread.tid;
 		if (dbg->pid != ctx->desc->pid || dbg->tid != ctx->desc->tid) {
-			//eprintf ("= attach %d %d\n", dbg->pid, dbg->tid);
+			// eprintf ("= attach %d %d\n", dbg->pid, dbg->tid);
 			gdbr_select(ctx->desc, dbg->pid, dbg->tid);
 		}
 	}
@@ -399,11 +399,11 @@ static int rz_debug_gdb_attach(RzDebug *dbg, int pid) {
 	RzIODesc *d = dbg->iob.io->desc;
 	// TODO: the core must update the dbg.swstep config var when this var is changed
 	dbg->swstep = false;
-	//eprintf ("XWJSTEP TOFALSE\n");
+	// eprintf ("XWJSTEP TOFALSE\n");
 	if (d && d->plugin && d->plugin->name && d->data) {
 		if (!strcmp("gdb", d->plugin->name)) {
 			RzIOGdb *g = d->data;
-			ctx->origrziogdb = (RzIOGdb **)&d->data; //TODO bit of a hack, please improve
+			ctx->origrziogdb = (RzIOGdb **)&d->data; // TODO bit of a hack, please improve
 			ctx->support_sw_bp = UNKNOWN;
 			ctx->support_hw_bp = UNKNOWN;
 			ctx->desc = &g->desc;
@@ -468,7 +468,7 @@ static int rz_debug_gdb_breakpoint(RzBreakpoint *bp, RzBreakpointItem *b, bool s
 	bpsize = b->size;
 	// TODO handle conditions
 	switch (b->perm) {
-	case RZ_BP_PROT_EXEC: {
+	case RZ_PERM_X: {
 		if (set) {
 			ret = b->hw ? gdbr_set_hwbp(ctx->desc, b->addr, "", bpsize) : gdbr_set_bp(ctx->desc, b->addr, "", bpsize);
 		} else {
@@ -519,7 +519,7 @@ static bool rz_debug_gdb_kill(RzDebug *dbg, int pid, int tid, int sig) {
 static int rz_debug_gdb_select(RzDebug *dbg, int pid, int tid) {
 	RzDebugGdbCtx *ctx = dbg->plugin_data;
 	if (!ctx->desc || !*ctx->origrziogdb) {
-		ctx->desc = NULL; //TODO hacky fix, please improve. I would suggest using a **desc instead of a *desc, so it is automatically updated
+		ctx->desc = NULL; // TODO hacky fix, please improve. I would suggest using a **desc instead of a *desc, so it is automatically updated
 		return false;
 	}
 

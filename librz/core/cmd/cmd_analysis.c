@@ -3408,8 +3408,10 @@ RZ_IPI int rz_cmd_analysis_fcn(void *data, const char *input) {
 	return true;
 }
 
-// size: 0: bits; -1: any; >0: exact size
-static void __analysis_reg_list(RzCore *core, int type, int bits, char mode) {
+/**
+ * \param bits if > 0, show only regs with this bit size, otherwise all
+ */
+static void print_reg_list(RzCore *core, int type, int bits, bool skip_covered, char mode) {
 	PJ *pj = NULL;
 	if (mode == 'i') {
 		rz_core_debug_ri(core, core->analysis->reg, 0);
@@ -3431,53 +3433,11 @@ static void __analysis_reg_list(RzCore *core, int type, int bits, char mode) {
 	} else {
 		use_color = NULL;
 	}
-	if (bits < 0) {
-		// TODO Change the `size` argument of rz_core_debug_reg_list to use -1 for any and 0 for analysis->bits
-		bits = 0;
-	} else if (!bits) {
-		bits = core->analysis->bits;
-	}
-	int mode2 = mode;
-	if (core->analysis) {
-		core->dbg->reg = core->analysis->reg;
-		if (core->analysis->cur && core->analysis->cur->arch) {
-			/* workaround for thumb */
-			if (!strcmp(core->analysis->cur->arch, "arm") && bits == 16) {
-				bits = 32;
-			}
-			/* workaround for 6502 and avr*/
-			if ((!strcmp(core->analysis->cur->arch, "6502") && bits == 8) || (!strcmp(core->analysis->cur->arch, "avr") && bits == 8)) {
-				if (mode == 'j') {
-					mode2 = 'J';
-					pj_o(pj);
-				}
-				rz_core_debug_reg_list(core, RZ_REG_TYPE_GPR, 16, pj, mode2, use_color); // XXX detect which one is current usage
-			}
-		}
-	}
-
-	if (mode == '=') {
-		int pcbits = 0;
-		const char *pcname = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
-		if (pcname) {
-			RzRegItem *reg = rz_reg_get(core->analysis->reg, pcname, 0);
-			if (reg && bits != reg->size) {
-				pcbits = reg->size;
-			}
-			if (pcbits) {
-				rz_core_debug_reg_list(core, RZ_REG_TYPE_GPR, pcbits, NULL, mode, use_color); // XXX detect which one is current usage
-			}
-		}
-	}
-	rz_core_debug_reg_list(core, type, bits, pj, mode2, use_color);
+	rz_core_debug_reg_list(core, type, bits, skip_covered, pj, mode, use_color);
 	if (mode == 'j') {
-		if (mode2 == 'J') {
-			pj_end(pj);
-		}
 		rz_cons_println(pj_string(pj));
 		pj_free(pj);
 	}
-
 	core->dbg->reg = hack;
 }
 
@@ -3494,7 +3454,7 @@ void cmd_analysis_reg(RzCore *core, const char *str) {
 		return;
 	}
 
-	int size = 0, i, type = RZ_REG_TYPE_GPR;
+	int i, type = RZ_REG_TYPE_GPR;
 	int bits = (core->analysis->bits & RZ_SYS_BITS_64) ? 64 : 32;
 	int use_colors = rz_config_get_i(core->config, "scr.color");
 	const char *use_color;
@@ -3746,15 +3706,16 @@ void cmd_analysis_reg(RzCore *core, const char *str) {
 		}
 		break;
 	case 'd': // "ard"
-		rz_core_debug_reg_list(core, RZ_REG_TYPE_GPR, bits, NULL, 3, use_color); // XXX detect which one is current usage
+		rz_core_debug_reg_list(core, RZ_REG_TYPE_GPR, bits, false, NULL, 3, use_color); // XXX detect which one is current usage
 		break;
 	case 'o': // "aro"
 		rz_reg_arena_swap(core->dbg->reg, false);
-		rz_core_debug_reg_list(core, RZ_REG_TYPE_GPR, bits, NULL, 0, use_color); // XXX detect which one is current usage
+		rz_core_debug_reg_list(core, RZ_REG_TYPE_GPR, bits, false, NULL, 0, use_color); // XXX detect which one is current usage
 		rz_reg_arena_swap(core->dbg->reg, false);
 		break;
 	case '=': // "ar="
 	{
+		int size = 0;
 		char *p = NULL;
 		char *bits = NULL;
 		if (str[1]) {
@@ -3787,7 +3748,7 @@ void cmd_analysis_reg(RzCore *core, const char *str) {
 				}
 			}
 		}
-		__analysis_reg_list(core, type, size, str[0]);
+		print_reg_list(core, type, size, !size, str[0]);
 		if (!rz_list_empty(core->dbg->q_regs)) {
 			rz_list_free(core->dbg->q_regs);
 		}
@@ -3801,7 +3762,7 @@ void cmd_analysis_reg(RzCore *core, const char *str) {
 	case 'j': // "arj"
 	case 'i': // "ari"
 	case '\0': // "ar"
-		__analysis_reg_list(core, type, size, str[0]);
+		print_reg_list(core, type, 0, true, str[0]);
 		break;
 	case ' ': { // "ar "
 		arg = strchr(str + 1, '=');
@@ -3825,12 +3786,12 @@ void cmd_analysis_reg(RzCore *core, const char *str) {
 				if (j - i + 1 <= sizeof name) {
 					rz_str_ncpy(name, str + i, j - i + 1);
 					if (IS_DIGIT(name[0])) { // e.g. ar 32
-						__analysis_reg_list(core, RZ_REG_TYPE_GPR, atoi(name), '\0');
+						print_reg_list(core, RZ_REG_TYPE_GPR, atoi(name), false, '\0');
 					} else if (showreg(core, name) > 0) { // e.g. ar rax
 					} else { // e.g. ar gpr ; ar all
 						type = rz_reg_type_by_name(name);
 						// TODO differentiate ALL and illegal register types and print error message for the latter
-						__analysis_reg_list(core, type, -1, '\0');
+						print_reg_list(core, type, 0, true, '\0');
 					}
 				}
 				i = j;
@@ -4150,7 +4111,7 @@ RZ_API bool rz_core_esil_continue_back(RzCore *core) {
 		if (reg->idx >= esil->trace->idx) {
 			continue;
 		}
-		bp_found = rz_bp_get_in(core->dbg->bp, reg->data, RZ_BP_PROT_EXEC) != NULL;
+		bp_found = rz_bp_get_in(core->dbg->bp, reg->data, RZ_PERM_X) != NULL;
 		if (bp_found) {
 			idx = reg->idx;
 			eprintf("hit breakpoint at: 0x%" PFMT64x " idx: %d\n", reg->data, reg->idx);

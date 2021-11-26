@@ -184,10 +184,23 @@ commands:
   - name: b
     summary: Display or change the block size
     subcommands: cmd_block
+  - name: B
+    summary: Computes the possibles firmware locations in memory (CPU intensive)
+    cname: basefind_compute
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    default_mode: RZ_OUTPUT_MODE_TABLE
+    modes:
+      - RZ_OUTPUT_MODE_TABLE
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_QUIET
+    args:
+      - name: pointer_bits
+        type: RZ_CMD_ARG_TYPE_CHOICES
+        optional: true
+        choices: ["32", "64"]
   - name: c
-    cname: cmd_cmp
     summary: Compare block with given data
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    subcommands: cmd_cmp
   - name: C
     summary: Code metadata (comments, format, hints, ..)
     subcommands: cmd_meta

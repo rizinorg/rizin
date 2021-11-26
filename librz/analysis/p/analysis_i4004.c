@@ -119,7 +119,7 @@ static int i4004_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 			op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		}
 		break;
-	case 1: //snprintf (basm, basz, "jcn %d 0x%02x", low, buf[1]); break;
+	case 1: // snprintf (basm, basz, "jcn %d 0x%02x", low, buf[1]); break;
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		op->jump = (addr & (~0xFF)) + buf[1];
 		op->fail = addr + rlen;
@@ -145,39 +145,39 @@ static int i4004_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		op->jump = (ut16)(low << 8) | buf[1];
 		break;
-	case 5: //snprintf (basm, basz, "jms 0x%03x", ((ut16)(low<<8) | buf[1])); break;
+	case 5: // snprintf (basm, basz, "jms 0x%03x", ((ut16)(low<<8) | buf[1])); break;
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 		op->jump = (ut16)(low << 8) | buf[1];
 		op->fail = addr + rlen;
 		break;
-	case 6: //snprintf (basm, basz, "inc r%d", low); break;
+	case 6: // snprintf (basm, basz, "inc r%d", low); break;
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		break;
-	case 7: //snprintf (basm, basz, "isz r%d, 0x%02x", low, buf[1]);
+	case 7: // snprintf (basm, basz, "isz r%d, 0x%02x", low, buf[1]);
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		op->fail = (addr & (~0xFF)) + buf[1];
 		op->jump = addr + rlen;
 		break;
 	case 8:
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
-		//snprintf (basm, basz, "add r%d", low); break;
+		// snprintf (basm, basz, "add r%d", low); break;
 		break;
 	case 9:
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
-		//snprintf (basm, basz, "sub r%d", low); break;
+		// snprintf (basm, basz, "sub r%d", low); break;
 		break;
-	case 10: //snprintf (basm, basz, "ld r%d", low); break;
+	case 10: // snprintf (basm, basz, "ld r%d", low); break;
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
-	case 11: //snprintf (basm, basz, "xch r%d", low); break;
+	case 11: // snprintf (basm, basz, "xch r%d", low); break;
 		op->type = RZ_ANALYSIS_OP_TYPE_XCHG;
 		break;
-	case 12: //snprintf (basm, basz, "bbl %d", low); break;
+	case 12: // snprintf (basm, basz, "bbl %d", low); break;
 		op->type = RZ_ANALYSIS_OP_TYPE_RET;
 		break;
 	case 13:
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
-		//snprintf (basm, basz, "ldm %d", low); break;
+		// snprintf (basm, basz, "ldm %d", low); break;
 		break;
 	case 14:
 		strncpy(basm, i4004_e[low], basz);

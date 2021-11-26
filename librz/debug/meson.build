@@ -103,6 +103,7 @@ rz_debug = library('rz_debug', rz_debug_sources,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
+  link_args: library_linkflags,
   soversion: rizin_libversion
 )
 
@@ -114,7 +115,6 @@ pkgconfig_mod.generate(rz_debug,
   version: rizin_version,
   name: 'rz_debug',
   filebase: 'rz_debug',
-  libraries: pkgcfg_sanitize_libs,
   requires: [
     'rz_util',
     'rz_hash',

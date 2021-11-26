@@ -74,7 +74,7 @@ static RzBuffer *create(RzBin *bin, const ut8 *code, int codelen, const ut8 *dat
 	phdrsz = rz_buf_size(buf) - p_phdr;
 	code_pa = rz_buf_size(buf);
 	code_va = code_pa + baddr;
-	phoff = 0x34; //p_phdr ;
+	phoff = 0x34; // p_phdr ;
 	filesize = code_pa + codelen + datalen;
 
 	W(p_start, &code_va, 4);
@@ -93,7 +93,7 @@ static RzBuffer *create(RzBin *bin, const ut8 *code, int codelen, const ut8 *dat
 	B(code, codelen);
 
 	if (data && datalen > 0) {
-		//ut32 data_section = buf->length;
+		// ut32 data_section = buf->length;
 		eprintf("Warning: DATA section not support for ELF yet\n");
 		B(data, datalen);
 	}

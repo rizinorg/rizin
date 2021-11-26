@@ -128,6 +128,21 @@ static inline void detected_string_to_bin_string(RzBinString *dst, RzDetectedStr
 	case RZ_STRING_ENC_UTF32BE:
 		type = RZ_BIN_STRING_ENC_WIDE32_BE;
 		break;
+	case RZ_STRING_ENC_IBM037:
+		type = RZ_BIN_STRING_ENC_IBM037;
+		break;
+	case RZ_STRING_ENC_IBM290:
+		type = RZ_BIN_STRING_ENC_IBM290;
+		break;
+	case RZ_STRING_ENC_EBCDIC_ES:
+		type = RZ_BIN_STRING_ENC_EBCDIC_ES;
+		break;
+	case RZ_STRING_ENC_EBCDIC_UK:
+		type = RZ_BIN_STRING_ENC_EBCDIC_UK;
+		break;
+	case RZ_STRING_ENC_EBCDIC_US:
+		type = RZ_BIN_STRING_ENC_EBCDIC_US;
+		break;
 	case RZ_STRING_ENC_GUESS:
 		type = RZ_BIN_STRING_ENC_DETECT;
 		break;
@@ -241,7 +256,7 @@ static bool __isDataSection(RzBinFile *a, RzBinSection *s) {
 }
 
 static void get_strings_range(RzBinFile *bf, RzList *list, int min, int raw, ut64 from, ut64 to, RzBinSection *section) {
-	rz_return_if_fail(bf && bf->buf);
+	rz_return_if_fail(bf && bf->buf && bf->rbin);
 
 	RzBinPlugin *plugin = rz_bin_file_cur_plugin(bf);
 
@@ -294,6 +309,16 @@ static void get_strings_range(RzBinFile *bf, RzList *list, int min, int raw, ut6
 		type = RZ_STRING_ENC_UTF16BE;
 	} else if (!strcmp(enc, "utf32be")) {
 		type = RZ_STRING_ENC_UTF32BE;
+	} else if (!strcmp(enc, "ibm037")) {
+		type = RZ_STRING_ENC_IBM037;
+	} else if (!strcmp(enc, "ibm290")) {
+		type = RZ_STRING_ENC_IBM290;
+	} else if (!strcmp(enc, "ebcdices")) {
+		type = RZ_STRING_ENC_EBCDIC_ES;
+	} else if (!strcmp(enc, "ebcdicuk")) {
+		type = RZ_STRING_ENC_EBCDIC_UK;
+	} else if (!strcmp(enc, "ebcdicus")) {
+		type = RZ_STRING_ENC_EBCDIC_US;
 	} else {
 		eprintf("ERROR: encoding %s not supported\n", enc);
 		return;
@@ -598,8 +623,8 @@ RZ_IPI RzBinFile *rz_bin_file_xtr_load_buffer(RzBin *bin, RzBinXtrPlugin *xtr, c
 	if (bf->xtr_data) {
 		RzListIter *iter;
 		RzBinXtrData *x;
-		//populate xtr_data with baddr and laddr that will be used later on
-		//rz_bin_file_object_new_from_xtr_data
+		// populate xtr_data with baddr and laddr that will be used later on
+		// rz_bin_file_object_new_from_xtr_data
 		rz_list_foreach (bf->xtr_data, iter, x) {
 			x->obj_opts = *obj_opts;
 		}
@@ -923,8 +948,8 @@ RZ_API RzBinSymbol *rz_bin_file_add_method(RzBinFile *bf, const char *klass, con
 }
 
 RZ_API RzBinField *rz_bin_file_add_field(RzBinFile *binfile, const char *classname, const char *name) {
-	//TODO: add_field into class
-	//eprintf ("TODO add field: %s \n", name);
+	// TODO: add_field into class
+	// eprintf ("TODO add field: %s \n", name);
 	return NULL;
 }
 

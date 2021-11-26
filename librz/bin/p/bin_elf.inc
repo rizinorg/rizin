@@ -348,7 +348,7 @@ static RzBuffer *create_elf(RzBin *bin, const ut8 *code, int codelen, const ut8 
 	}
 
 	if (data && datalen > 0) {
-		//ut32 data_section = buf->length;
+		// ut32 data_section = buf->length;
 		eprintf("Warning: DATA section not support for ELF yet\n");
 		rz_buf_append_bytes(result, data, datalen);
 	}
@@ -764,7 +764,7 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 			val = B + A;
 			break;
 		default:
-			//eprintf ("relocation %d not handle at this time\n", rel->type);
+			// eprintf ("relocation %d not handle at this time\n", rel->type);
 			break;
 		}
 		switch (word) {
@@ -1042,8 +1042,8 @@ static RzList *sections(RzBinFile *bf) {
 		return NULL;
 	}
 
-	//there is not leak in section since they are cached by elf.c
-	//and freed within Elf_(rz_bin_elf_free)
+	// there is not leak in section since they are cached by elf.c
+	// and freed within Elf_(rz_bin_elf_free)
 	size_t i;
 	RzBinElfSection *section;
 	rz_bin_elf_enumerate_sections(obj, section, i) {

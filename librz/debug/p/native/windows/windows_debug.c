@@ -43,7 +43,7 @@ int w32_init(RzDebug *dbg) {
 	// escalate privs (required for win7/vista)
 	setup_debug_privileges(true);
 
-	HMODULE lib = GetModuleHandle(TEXT("kernel32")); //Always loaded
+	HMODULE lib = GetModuleHandle(TEXT("kernel32")); // Always loaded
 	if (!lib) {
 		return false;
 	}
@@ -183,38 +183,26 @@ static PTHREAD_ITEM add_thread(RzDebug *dbg, DWORD pid, DWORD tid, HANDLE hThrea
 	return pthread;
 }
 
-static int suspend_thread(HANDLE th, int bits) {
+static inline int suspend_thread(HANDLE th) {
 	int ret;
-	//if (bits == RZ_SYS_BITS_32) {
 	if ((ret = SuspendThread(th)) == -1) {
 		rz_sys_perror("SuspendThread");
 	}
-	/*} else {
-		if ((ret = Wow64SuspendThread (th)) == -1) {
-			rz_sys_perror ("Wow64SuspendThread");
-		}
-	}*/
 	return ret;
 }
 
-static int resume_thread(HANDLE th, int bits) {
+static int resume_thread(HANDLE th) {
 	int ret;
-	//if (bits == RZ_SYS_BITS_32) {
 	if ((ret = ResumeThread(th)) == -1) {
 		rz_sys_perror("ResumeThread");
 	}
-	/*} else {
-		if ((ret = ResumeThread (th)) == -1) {
-			rz_sys_perror ("Wow64ResumeThread");
-		}
-	}*/
 	return ret;
 }
 
-static inline void continue_thread(HANDLE th, int bits) {
+static inline void continue_thread(HANDLE th) {
 	int ret;
 	do {
-		ret = resume_thread(th, bits);
+		ret = resume_thread(th);
 	} while (ret > 0);
 }
 
@@ -244,7 +232,7 @@ static bool is_process_alive(HANDLE ph) {
 	return false;
 }
 
-static int set_thread_context(HANDLE th, const ut8 *buf, int size, int bits) {
+static int set_thread_context(HANDLE th, const ut8 *buf, int size) {
 	bool ret;
 	CONTEXT ctx = { 0 };
 	size = RZ_MIN(size, sizeof(ctx));
@@ -255,11 +243,11 @@ static int set_thread_context(HANDLE th, const ut8 *buf, int size, int bits) {
 	return ret;
 }
 
-static int get_thread_context(HANDLE th, ut8 *buf, int size, int bits) {
+static int get_thread_context(HANDLE th, ut8 *buf, int size, DWORD context_flags) {
 	int ret = 0;
 	CONTEXT ctx = { 0 };
 	// TODO: support various types?
-	ctx.ContextFlags = CONTEXT_ALL;
+	ctx.ContextFlags = context_flags;
 	if (GetThreadContext(th, &ctx)) {
 		if (size > sizeof(ctx)) {
 			size = sizeof(ctx);
@@ -272,6 +260,21 @@ static int get_thread_context(HANDLE th, ut8 *buf, int size, int bits) {
 		}
 	}
 	return ret;
+}
+
+#if __i386__ || __x86_64__
+
+int w32_step(RzDebug *dbg) {
+	/* set TRAP flag */
+	CONTEXT ctx;
+	if (!w32_reg_read(dbg, RZ_REG_TYPE_GPR, (ut8 *)&ctx, sizeof(ctx))) {
+		return false;
+	}
+	ctx.EFlags |= 0x100;
+	if (!w32_reg_write(dbg, RZ_REG_TYPE_GPR, (ut8 *)&ctx, sizeof(ctx))) {
+		return false;
+	}
+	return w32_continue(dbg, dbg->pid, dbg->tid, dbg->reason.signum);
 }
 
 static int get_avx(HANDLE th, ut128 xmm[16], ut128 ymm[16]) {
@@ -416,6 +419,160 @@ static void print_fpu_context(HANDLE th, CONTEXT *ctx) {
 	}
 }
 
+static void transfer_drx(RzDebug *dbg, const ut8 *buf) {
+	CONTEXT cur_ctx;
+	if (w32_reg_read(dbg, RZ_REG_TYPE_ANY, (ut8 *)&cur_ctx, sizeof(CONTEXT))) {
+		CONTEXT *new_ctx = (CONTEXT *)buf;
+		size_t drx_size = offsetof(CONTEXT, Dr7) - offsetof(CONTEXT, Dr0) + sizeof(new_ctx->Dr7);
+		memcpy(&cur_ctx.Dr0, &new_ctx->Dr0, drx_size);
+		*new_ctx = cur_ctx;
+	}
+}
+
+#else
+
+static void transfer_drx(RzDebug *dbg, const ut8 *buf) {
+	// Do nothing (not supported)
+}
+
+static void print_fpu_context(HANDLE th, CONTEXT *buf) {
+	// TODO
+}
+
+int w32_step(RzDebug *dbg) {
+	// Do nothing (not supported)
+	return 0;
+}
+
+static inline void get_arm_hwbp_values(ut64 address, ut32 *control, ut64 *value) {
+	const ut32 type = 0b0100 << 20; // match
+	const ut32 bas = 0xF << 5; // match a64 and a32
+	const ut32 priv = 1 << 2;
+	const ut32 enable = 1;
+	*control = type | bas | priv | enable;
+	*value = address;
+}
+
+static inline void get_arm64_hwwp_values(ut64 address, int size, int rw, ut32 *control, ut64 *value) {
+	const unsigned int offset = address % 8;
+	const ut32 byte_mask = ((1 << size) - 1) << offset;
+	const ut32 priv = 1 << 2;
+	const ut32 enable = 1;
+	ut32 load_store = 0;
+	switch (rw) {
+	case RZ_BP_PROT_READ:
+		load_store = 1;
+		break;
+	case RZ_BP_PROT_WRITE:
+		load_store = 2;
+		break;
+	case RZ_BP_PROT_ACCESS:
+		load_store = 3;
+		break;
+	}
+	*control = byte_mask << 5 | load_store << 3 | priv | enable;
+	*value = address - offset;
+}
+
+static inline bool is_watchpoint(RzBreakpointItem *b) {
+	return b->perm & (RZ_BP_PROT_ACCESS | RZ_BP_PROT_READ | RZ_BP_PROT_WRITE);
+}
+
+static inline bool is_breakpoint(RzBreakpointItem *b) {
+	return b->perm & RZ_BP_PROT_EXEC;
+}
+
+int w32_hwbp_arm_add(RzDebug *dbg, RzBreakpoint *bp, RzBreakpointItem *b) {
+	rz_return_val_if_fail(dbg && bp && b, 0);
+	W32DbgWInst *wrap = dbg->plugin_data;
+	CONTEXT ctx;
+	const bool alive = is_thread_alive(dbg, wrap->pi.dwThreadId);
+	if (alive && suspend_thread(wrap->pi.hThread) == -1) {
+		return 0;
+	}
+	get_thread_context(wrap->pi.hThread, (ut8 *)&ctx, sizeof(CONTEXT), CONTEXT_DEBUG_REGISTERS);
+	ut32 control;
+	ut64 value;
+	int i;
+	if (is_watchpoint(b)) {
+		get_arm64_hwwp_values(b->addr, b->size, b->perm, &control, &value);
+		for (i = 0; i < ARM64_MAX_WATCHPOINTS; i++) {
+			if (!ctx.Wvr[i] || ctx.Wvr[i] == value) {
+				break;
+			}
+		}
+		if (i < ARM64_MAX_WATCHPOINTS) {
+			ctx.Wcr[i] = control;
+			ctx.Wvr[i] = value;
+		} else {
+			eprintf("Too many hardware watchpoints\n");
+		}
+	}
+	if (is_breakpoint(b)) {
+		get_arm_hwbp_values(b->addr, &control, &value);
+		for (i = 0; i < ARM64_MAX_BREAKPOINTS; i++) {
+			if (!ctx.Bvr[i] || ctx.Bvr[i] == value) {
+				break;
+			}
+		}
+		if (i < ARM64_MAX_BREAKPOINTS) {
+			ctx.Bcr[i] = control;
+			ctx.Bvr[i] = value;
+		} else {
+			eprintf("Too many hardware breakpoints\n");
+		}
+	}
+	set_thread_context(wrap->pi.hThread, (ut8 *)&ctx, sizeof(CONTEXT));
+	if (alive && resume_thread(wrap->pi.hThread) == -1) {
+		return 0;
+	}
+	return 1;
+}
+
+int w32_hwbp_arm_del(RzDebug *dbg, RzBreakpoint *bp, RzBreakpointItem *b) {
+	W32DbgWInst *wrap = dbg->plugin_data;
+	CONTEXT ctx;
+	const bool alive = is_thread_alive(dbg, wrap->pi.dwThreadId);
+	if (alive && suspend_thread(wrap->pi.hThread) == -1) {
+		return 0;
+	}
+	get_thread_context(wrap->pi.hThread, (ut8 *)&ctx, sizeof(CONTEXT), CONTEXT_DEBUG_REGISTERS);
+	ut32 control;
+	ut64 value;
+	int i;
+	if (is_watchpoint(b)) {
+		get_arm64_hwwp_values(b->addr, b->size, b->perm, &control, &value);
+		for (i = 0; i < ARM64_MAX_WATCHPOINTS; i++) {
+			if (ctx.Wcr[i] == control && ctx.Wvr[i] == value) {
+				break;
+			}
+		}
+		if (i < ARM64_MAX_WATCHPOINTS) {
+			ctx.Wcr[i] = 0;
+			ctx.Wvr[i] = 0;
+		}
+	}
+	if (is_breakpoint(b)) {
+		get_arm_hwbp_values(b->addr, &control, &value);
+		for (i = 0; i < ARM64_MAX_BREAKPOINTS; i++) {
+			if (ctx.Bvr[i] == value) {
+				break;
+			}
+		}
+		if (i < ARM64_MAX_BREAKPOINTS) {
+			ctx.Bcr[i] = 0;
+			ctx.Bvr[i] = 0;
+		}
+	}
+	set_thread_context(wrap->pi.hThread, (ut8 *)&ctx, sizeof(CONTEXT));
+	if (alive && resume_thread(wrap->pi.hThread, dbg->bits) == -1) {
+		return 0;
+	}
+	return 1;
+}
+
+#endif
+
 static HANDLE get_thread_handle_from_tid(RzDebug *dbg, int tid) {
 	rz_return_val_if_fail(dbg, NULL);
 	W32DbgWInst *wrap = dbg->plugin_data;
@@ -443,28 +600,18 @@ int w32_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 		return 0;
 	}
 	// Always suspend
-	if (alive && suspend_thread(th, dbg->bits) == -1) {
+	if (alive && suspend_thread(th) == -1) {
 		return 0;
 	}
-	size = get_thread_context(th, buf, size, dbg->bits);
+	size = get_thread_context(th, buf, size, CONTEXT_ALL);
 	if (showfpu) {
 		print_fpu_context(th, (CONTEXT *)buf);
 	}
 	// Always resume
-	if (alive && resume_thread(th, dbg->bits) == -1) {
+	if (alive && resume_thread(th) == -1) {
 		size = 0;
 	}
 	return size;
-}
-
-static void transfer_drx(RzDebug *dbg, const ut8 *buf) {
-	CONTEXT cur_ctx;
-	if (w32_reg_read(dbg, RZ_REG_TYPE_ANY, (ut8 *)&cur_ctx, sizeof(CONTEXT))) {
-		CONTEXT *new_ctx = (CONTEXT *)buf;
-		size_t drx_size = offsetof(CONTEXT, Dr7) - offsetof(CONTEXT, Dr0) + sizeof(new_ctx->Dr7);
-		memcpy(&cur_ctx.Dr0, &new_ctx->Dr0, drx_size);
-		*new_ctx = cur_ctx;
-	}
 }
 
 int w32_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
@@ -477,15 +624,15 @@ int w32_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 		return 0;
 	}
 	// Always suspend
-	if (suspend_thread(th, dbg->bits) == -1) {
+	if (suspend_thread(th) == -1) {
 		return false;
 	}
 	if (type == RZ_REG_TYPE_DRX) {
 		transfer_drx(dbg, buf);
 	}
-	bool ret = set_thread_context(th, buf, size, dbg->bits);
+	bool ret = set_thread_context(th, buf, size);
 	// Always resume
-	if (resume_thread(th, dbg->bits) == -1) {
+	if (resume_thread(th) == -1) {
 		ret = false;
 	}
 	return ret;
@@ -529,7 +676,7 @@ int w32_detach(RzDebug *dbg, int pid) {
 	PTHREAD_ITEM th;
 	rz_list_foreach (dbg->threads, it, th) {
 		if (th->bSuspended && !th->bFinished) {
-			resume_thread(th->hThread, dbg->bits);
+			resume_thread(th->hThread);
 		}
 	}
 	rz_list_purge(dbg->threads);
@@ -778,7 +925,7 @@ int w32_select(RzDebug *dbg, int pid, int tid) {
 		// Suspend all other threads
 		rz_list_foreach (dbg->threads, it, th) {
 			if (!th->bFinished && !th->bSuspended && th->tid != selected) {
-				suspend_thread(th->hThread, dbg->bits);
+				suspend_thread(th->hThread);
 				th->bSuspended = true;
 			}
 		}
@@ -1022,7 +1169,6 @@ int w32_dbg_wait(RzDebug *dbg, int pid) {
 		case UNLOAD_DLL_DEBUG_EVENT: {
 			PLIB_ITEM lib = (PLIB_ITEM)find_library(de.u.UnloadDll.lpBaseOfDll);
 			if (lib) {
-				CloseHandle(lib->hFile);
 				remove_library(lib);
 			}
 			ret = RZ_DEBUG_REASON_EXIT_LIB;
@@ -1073,6 +1219,11 @@ int w32_dbg_wait(RzDebug *dbg, int pid) {
 				next_event = 0;
 				break;
 			default:
+				if (rz_bp_get_at(dbg->bp, (size_t)de.u.Exception.ExceptionRecord.ExceptionAddress)) {
+					ret = RZ_DEBUG_REASON_BREAKPOINT;
+					next_event = 0;
+					break;
+				}
 				print_exception_event(&de);
 				if (is_exception_fatal(de.u.Exception.ExceptionRecord.ExceptionCode)) {
 					next_event = 0;
@@ -1093,7 +1244,7 @@ int w32_dbg_wait(RzDebug *dbg, int pid) {
 				eprintf("(%d) unknown event: %lu\n", pid, de.dwDebugEventCode);
 				ret = -1;
 			}
-			goto end;
+			next_event = 0;
 		}
 	} while (next_event);
 
@@ -1105,7 +1256,23 @@ int w32_dbg_wait(RzDebug *dbg, int pid) {
 			rz_warn_if_reached();
 		}
 	}
-
+#if __arm__ || __arm64__
+	if (ret != RZ_DEBUG_REASON_EXIT_TID) {
+		CONTEXT ctx;
+		suspend_thread(wrap->pi.hThread);
+		get_thread_context(wrap->pi.hThread, (ut8 *)&ctx, sizeof(ctx), CONTEXT_CONTROL);
+		resume_thread(wrap->pi.hThread);
+		if (ctx.Cpsr & 0x20) {
+			dbg->bits = RZ_SYS_BITS_16;
+		} else {
+#if __arm__
+			dbg->bits = RZ_SYS_BITS_32;
+#else
+			dbg->bits = RZ_SYS_BITS_64;
+#endif
+		}
+	}
+#endif
 end:
 	if (ret == RZ_DEBUG_REASON_DEAD) {
 		w32_detach(dbg, dbg->pid);
@@ -1114,20 +1281,6 @@ end:
 	}
 	rz_cons_break_pop();
 	return ret;
-}
-
-int w32_step(RzDebug *dbg) {
-	/* set TRAP flag */
-	CONTEXT ctx;
-	if (!w32_reg_read(dbg, RZ_REG_TYPE_GPR, (ut8 *)&ctx, sizeof(ctx))) {
-		return false;
-	}
-	ctx.EFlags |= 0x100;
-	if (!w32_reg_write(dbg, RZ_REG_TYPE_GPR, (ut8 *)&ctx, sizeof(ctx))) {
-		return false;
-	}
-	return w32_continue(dbg, dbg->pid, dbg->tid, dbg->reason.signum);
-	// (void)rz_debug_handle_signals (dbg);
 }
 
 int w32_continue(RzDebug *dbg, int pid, int tid, int sig) {
@@ -1146,7 +1299,7 @@ int w32_continue(RzDebug *dbg, int pid, int tid, int sig) {
 
 	PTHREAD_ITEM th = find_thread(dbg, tid);
 	if (th && th->hThread != INVALID_HANDLE_VALUE && th->bSuspended) {
-		continue_thread(th->hThread, dbg->bits);
+		continue_thread(th->hThread);
 		th->bSuspended = false;
 	}
 
@@ -1222,6 +1375,19 @@ int w32_map_protect(RzDebug *dbg, ut64 addr, int size, int perms) {
 		size, io_perms_to_prot(perms), &old);
 }
 
+static inline ut64 pc_from_context(CONTEXT *ctx) {
+#if __x86_64__
+	return ctx->Rip;
+#elif __arm__ || __arm64__
+	return ctx->Pc;
+#elif __i386__
+	return ctx->Eip;
+#else
+#pragma warning("platform not supported")
+	return 0;
+#endif
+}
+
 RzList *w32_thread_list(RzDebug *dbg, int pid, RzList *list) {
 	// pid is not respected for TH32CS_SNAPTHREAD flag
 	HANDLE th = w32_CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
@@ -1257,11 +1423,7 @@ RzList *w32_thread_list(RzDebug *dbg, int pid, RzList *list) {
 					dbg->tid = te.th32ThreadID;
 					w32_reg_read(dbg, RZ_REG_TYPE_GPR, (ut8 *)&ctx, sizeof(ctx));
 					// TODO: is needed check context for x32 and x64??
-#if _WIN64
-					pc = ctx.Rip;
-#else
-					pc = ctx.Eip;
-#endif
+					pc = pc_from_context(&ctx);
 					PTHREAD_ITEM pthread = find_thread(dbg, te.th32ThreadID);
 					if (pthread) {
 						if (pthread->bFinished) {
@@ -1404,6 +1566,7 @@ static RzDebugPid *build_debug_pid(int pid, int ppid, HANDLE ph, const TCHAR *na
 }
 
 RzList *w32_pid_list(RzDebug *dbg, int pid, RzList *list) {
+	W32DbgWInst *wrap = dbg->plugin_data;
 	HANDLE sh = w32_CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, pid);
 	if (sh == INVALID_HANDLE_VALUE) {
 		rz_sys_perror("CreateToolhelp32Snapshot");
@@ -1412,7 +1575,6 @@ RzList *w32_pid_list(RzDebug *dbg, int pid, RzList *list) {
 	PROCESSENTRY32 pe;
 	pe.dwSize = sizeof(pe);
 	if (Process32First(sh, &pe)) {
-		W32DbgWInst *wrap = dbg->plugin_data;
 		bool all = pid == 0;
 		do {
 			if (all || pe.th32ProcessID == pid || pe.th32ParentProcessID == pid) {

@@ -329,7 +329,7 @@ static ut32 cb(ArmOp *op) {
 	} else {
 		return UT32_MAX;
 	}
-	//printf ("%s %d, %llu\n", op->mnemonic, op->operands[0].reg, op->operands[1].immediate);
+	// printf ("%s %d, %llu\n", op->mnemonic, op->operands[0].reg, op->operands[1].immediate);
 	ut32 imm = op->operands[1].immediate;
 	data = k | encode1reg(op) | ((imm & 0x1c) << 27) | ((imm & 0x1fe0) << 11);
 	data = data | ((imm & 0x1fe000) >> 5);
@@ -704,15 +704,15 @@ static ut32 msr(ArmOp *op, int w) {
 	data = 0x00000000;
 
 	if (is_immediate) {
-		//only msr has immediate mode
+		// only msr has immediate mode
 		data = 0xd500401f;
-		if (b == 0xc210) { //op0 is SPSel
-			b = 0x05; //set to immediate mode encoding
+		if (b == 0xc210) { // op0 is SPSel
+			b = 0x05; // set to immediate mode encoding
 		}
 
-		data |= (b & 0xf0) << 12; //op1
-		data |= (b & 0x0f) << 5; //op2
-		data |= (r & 0xf) << 8; //CRm(#imm)
+		data |= (b & 0xf0) << 12; // op1
+		data |= (b & 0x0f) << 5; // op2
+		data |= (r & 0xf) << 8; // CRm(#imm)
 
 	} else {
 		if (w) {
@@ -1002,13 +1002,13 @@ static bool parseOperands(char *str, ArmOp *op) {
 		op->operands[operand].type = ARM_NOTYPE;
 		op->operands[operand].reg_type = ARM_UNDEFINED;
 
-		//parse MSR (immediate) operand 1
+		// parse MSR (immediate) operand 1
 		if (strcmp(op->mnemonic, "msr") == 0 && operand == 1) {
 
-			//operand 1 must be a immediate
+			// operand 1 must be a immediate
 			if (token[0] == '#' || (token[0] >= '0' && token[0] <= '9')) {
-				//immediate operand found.
-				op->operands[operand].sp_val = 0xfffe; //not regiter, but a immediate
+				// immediate operand found.
+				op->operands[operand].sp_val = 0xfffe; // not regiter, but a immediate
 				op->operands[operand].immediate = rz_num_math(NULL, token[0] == '#' ? token + 1 : token);
 				operand++;
 				token = next;
@@ -1016,7 +1016,7 @@ static bool parseOperands(char *str, ArmOp *op) {
 			}
 		}
 
-		//parse system registers
+		// parse system registers
 		if ((strcmp(op->mnemonic, "mrs") == 0 && operand == 1) || (strcmp(op->mnemonic, "msr") == 0 && operand == 0)) {
 			for (msr_op_index = 0; msr_const[msr_op_index].name; msr_op_index++) {
 				if (strcasecmp(token, msr_const[msr_op_index].name) == 0) {

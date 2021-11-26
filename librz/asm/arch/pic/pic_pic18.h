@@ -9,4 +9,4 @@
 
 int pic_pic18_disassemble(RzAsmOp *op, char *opbuf, const ut8 *b, int l);
 
-#endif //PIC_PIC18_H
+#endif // PIC_PIC18_H

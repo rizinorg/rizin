@@ -285,7 +285,7 @@ static char *rop_classify_constant(RzCore *core, RzList *ropList) {
 			rz_reg_arena_swap(core->dbg->reg, false);
 			diff_dst = rz_reg_get_value(core->dbg->reg, item_dst);
 			rz_reg_arena_swap(core->dbg->reg, false);
-			//restore initial value
+			// restore initial value
 			rz_reg_set_value(core->dbg->reg, item_dst, diff_dst);
 
 			if (value_dst != diff_dst) {
@@ -386,7 +386,7 @@ static char *rop_classify_mov(RzCore *core, RzList *ropList) {
 				rz_reg_arena_swap(core->dbg->reg, false);
 				diff_src = rz_reg_get_value(core->dbg->reg, item_src);
 				rz_reg_arena_swap(core->dbg->reg, false);
-				//restore initial value
+				// restore initial value
 				rz_reg_set_value(core->dbg->reg, item_src, diff_src);
 				if (value_dst == value_src && value_dst != diff_dst) {
 					mov = rz_str_appendf(mov, "%s <-- %s;",
