@@ -542,7 +542,7 @@ RZ_API RZ_OWN RzILBitVector *rz_il_bv_or(RZ_NONNULL RzILBitVector *x, RZ_NONNULL
  * \return ret RzILBitVector, a new bitvector, which is the result of XOR
  */
 RZ_API RZ_OWN RzILBitVector *rz_il_bv_xor(RZ_NONNULL RzILBitVector *x, RZ_NONNULL RzILBitVector *y) {
-	rz_return_val_if_fail(x && y, NULL);
+	rz_return_val_if_fail(x && y && x->bits.large_a && y->bits.large_a, NULL);
 	if (x->len != y->len) {
 		return NULL;
 	}
@@ -555,7 +555,6 @@ RZ_API RZ_OWN RzILBitVector *rz_il_bv_xor(RZ_NONNULL RzILBitVector *x, RZ_NONNUL
 		return ret;
 	}
 
-	rz_return_val_if_fail(x->bits.large_a && y->bits.large_a, NULL);
 	for (ut32 i = 0; i < ret->_elem_len; ++i) {
 		ret->bits.large_a[i] = x->bits.large_a[i] ^ y->bits.large_a[i];
 	}
