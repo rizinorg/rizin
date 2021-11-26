@@ -63,7 +63,7 @@ RZ_API bool rz_core_theme_load(RzCore *core, const char *name) {
 		return false;
 	}
 	if (!rz_str_cmp(name, "default", strlen(name))) {
-		core->curtheme = strdup(name);
+		core->curtheme = rz_str_dup(core->curtheme, name);
 		rz_cons_pal_init(core->cons->context);
 		return true;
 	}

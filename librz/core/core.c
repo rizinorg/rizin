@@ -2381,7 +2381,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	rz_core_seek_reset(core);
 	core->lastsearch = NULL;
 	core->cmdfilter = NULL;
-	core->curtheme = "default";
+	core->curtheme = strdup("default");
 	core->switch_file_view = 0;
 	core->cmdremote = 0;
 	core->incomment = false;
@@ -2666,6 +2666,7 @@ RZ_API void rz_core_fini(RzCore *c) {
 	rz_parse_free(c->parser);
 	free(c->times);
 	rz_core_seek_free(c);
+	RZ_FREE(c->curtheme);
 }
 
 RZ_API void rz_core_free(RzCore *c) {
