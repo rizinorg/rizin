@@ -18,7 +18,7 @@ static const RzCmdDescDetail cmd_debug_add_watchpoint_details[2];
 static const RzCmdDescDetail eval_getset_details[2];
 static const RzCmdDescDetail egg_config_details[2];
 static const RzCmdDescDetail history_list_or_exec_details[2];
-static const RzCmdDescDetail wB_details[2];
+static const RzCmdDescDetail write_bits_details[2];
 static const RzCmdDescDetail wv_details[2];
 static const RzCmdDescDetail w1_details[2];
 static const RzCmdDescDetail w2_details[2];
@@ -6646,17 +6646,16 @@ static const RzCmdDescHelp write_help = {
 	.args = write_args,
 };
 
-static const RzCmdDescDetailEntry wB_Examples_detail_entries[] = {
+static const RzCmdDescHelp wB_help = {
+	.summary = "Set or unset bits with given value",
+};
+static const RzCmdDescDetailEntry write_bits_Examples_detail_entries[] = {
 	{ .text = "wB", .arg_str = " 0x20", .comment = "Sets the 5th bit at current offset, leaving all other bits intact." },
 	{ 0 },
 };
-static const RzCmdDescDetail wB_details[] = {
-	{ .name = "Examples", .entries = wB_Examples_detail_entries },
+static const RzCmdDescDetail write_bits_details[] = {
+	{ .name = "Examples", .entries = write_bits_Examples_detail_entries },
 	{ 0 },
-};
-static const RzCmdDescHelp wB_help = {
-	.summary = "Set or unset bits with given value",
-	.details = wB_details,
 };
 static const RzCmdDescArg write_bits_args[] = {
 	{
@@ -6669,6 +6668,7 @@ static const RzCmdDescArg write_bits_args[] = {
 static const RzCmdDescHelp write_bits_help = {
 	.summary = "Set bits with given value",
 	.description = "Set the bits that are set in the value passed as arguments. 0 bits in the value argument are ignored, while the others are set at the current offset.",
+	.details = write_bits_details,
 	.args = write_bits_args,
 };
 
