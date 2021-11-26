@@ -95,6 +95,8 @@ static int value = 0;
 #define NCMDS (sizeof(cmd->cmds) / sizeof(*cmd->cmds))
 RZ_LIB_VERSION(rz_cmd);
 
+static void fill_details(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color);
+
 static int cd_sort(const void *a, const void *b) {
 	RzCmdDesc *ca = (RzCmdDesc *)a;
 	RzCmdDesc *cb = (RzCmdDesc *)b;
@@ -1100,6 +1102,8 @@ static char *group_get_help(RzCmd *cmd, RzCmdDesc *cd, bool use_color) {
 		RzCmdDesc *child = *(RzCmdDesc **)it_cd;
 		print_child_help(cmd, sb, child, max_len, use_color);
 	}
+
+	fill_details(cmd, cd, sb, use_color);
 	return rz_strbuf_drain(sb);
 }
 
