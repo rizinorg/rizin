@@ -843,6 +843,19 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 	dtrace->ht = ht_pp_new_size(fcn->ninstr, opt.dupvalue, opt.freefn, opt.calcsizeV);
 	dtrace->ht->opt = opt;
 
+	// Create a new context to store the return type propagation state
+	struct ReturnTypeAnalysisCtx retctx = {
+		.resolved = false,
+		.ret_type = NULL,
+		.ret_reg = NULL,
+	};
+	struct TypeAnalysisCtx ctx = {
+		.retctx = &retctx,
+		.cur_idx = 0,
+		.prev_dest = NULL,
+		.str_flag = false
+	};
+
 	HtUP *op_cache = NULL;
 	const char *pc = rz_reg_get_name(core->dbg->reg, RZ_REG_NAME_PC);
 	if (!pc) {
@@ -856,18 +869,6 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 	rz_list_sort(fcn->bbs, bb_cmpaddr);
 	// TODO: The algorithm can be more accurate if blocks are followed by their jmp/fail, not just by address
 	RzAnalysisBlock *bb;
-	// Create a new context to store the return type propagation state
-	struct ReturnTypeAnalysisCtx retctx = {
-		.resolved = false,
-		.ret_type = NULL,
-		.ret_reg = NULL
-	};
-	struct TypeAnalysisCtx ctx = {
-		.retctx = &retctx,
-		.cur_idx = 0,
-		.prev_dest = NULL,
-		.str_flag = false
-	};
 	rz_list_foreach (fcn->bbs, it, bb) {
 		ut64 addr = bb->addr;
 		rz_reg_set_value(core->dbg->reg, r, addr);

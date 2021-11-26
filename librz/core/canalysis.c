@@ -5371,6 +5371,9 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 		rz_core_analysis_esil_init_mem(core, NULL, UT64_MAX, UT32_MAX);
 	}
 	const char *spname = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_SP);
+	if (!spname) {
+		goto out_pop_regs;
+	}
 	EsilBreakCtx ctx = {
 		&op,
 		fcn,
