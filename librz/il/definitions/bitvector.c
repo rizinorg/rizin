@@ -578,7 +578,10 @@ RZ_API RZ_OWN RzILBitVector *rz_il_bv_complement_1(RZ_NONNULL RzILBitVector *bv)
 		return ret;
 	}
 
-	rz_return_val_if_fail(ret->bits.large_a && bv->bits.large_a, NULL);
+	if (!(ret->bits.large_a && bv->bits.large_a)) {
+		rz_il_bv_free(ret);
+		rz_return_val_if_reached(NULL);
+	}
 	for (ut32 i = 0; i < bv->_elem_len; ++i) {
 		ret->bits.large_a[i] = ~bv->bits.large_a[i];
 	}
