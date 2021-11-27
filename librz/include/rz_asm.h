@@ -115,7 +115,9 @@ typedef struct rz_asm_t {
 	int pcalign;
 	int dataalign;
 	int bitshift;
-	bool immdisp; // Display immediates with # symbol (for arm stuff).
+	bool immdisp; // Display immediates with # symbol (for arm/hexagon architectures). false = show hashs
+	bool immsign; // Print signed immediates as negative values, not their unsigned representation.
+	bool utf8; // Flag for plugins: Use utf-8 characters.
 	HtPP *flags;
 	int seggrn;
 	bool pseudo;

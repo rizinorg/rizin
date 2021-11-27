@@ -99,15 +99,12 @@ rz_analysis_sources = [
   'p/analysis_xtensa.c',
   'p/analysis_z80.c',
   #'arch/gb/meta_gb_cmt.c',
-  'arch/hexagon/hexagon_analysis.c',
   '../asm/arch/amd29k/amd29k.c',
   '../asm/arch/arm/winedbg/be_arm.c',
   '../asm/arch/avr/disassembler.c',
   '../asm/arch/cr16/cr16_disas.c',
   '../asm/arch/ebc/ebc_disas.c',
   '../asm/arch/h8300/h8300_disas.c',
-  '../asm/arch/hexagon/hexagon.c',
-  '../asm/arch/hexagon/hexagon_disas.c',
   '../asm/arch/java/jvm.c',
   '../asm/arch/mcore/mcore.c',
   '../asm/arch/msp430/msp430_disas.c',
@@ -172,7 +169,6 @@ rz_analysis_inc = [
   platform_inc,
   include_directories(
     'arch/gb',
-    'arch/hexagon',
   )
 ]
 
