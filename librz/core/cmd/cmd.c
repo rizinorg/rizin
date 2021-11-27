@@ -5257,7 +5257,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_dbgmap_stmt) {
 			RzCmdStatus cmd_res = handle_ts_stmt_tmpseek(state, command);
 			UPDATE_CMD_STATUS_RES(res, cmd_res, err);
 		}
-err:
+	err:
 		rz_list_free(dbg_maps_addrs);
 	}
 	return res;
