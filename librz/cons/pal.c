@@ -523,10 +523,11 @@ typedef struct {
 	const char *str;
 } RAttrStr;
 
-RZ_API void rz_cons_pal_list(int rad, const char *arg) {
-	char *name, **color;
+RZ_API RzList *rz_cons_pal_list(int rad, const char *arg) {
+	char *name = NULL, *current, **color;
 	const char *hasnext;
 	PJ *pj = pj_new();
+	RzList *ret = rz_list_new();
 	int i;
 	if (rad == 'j') {
 		pj_o(pj);
@@ -544,9 +545,8 @@ RZ_API void rz_cons_pal_list(int rad, const char *arg) {
 			pj_end(pj);
 			break;
 		case 'c': {
-			const char *prefix = rz_str_trim_head_ro(arg);
-			if (!prefix) {
-				prefix = "";
+			if (!arg) {
+				arg = "";
 			}
 			hasnext = (keys[i + 1].name) ? "\n" : "";
 			// TODO Need to replace the '.' char because this is not valid CSS
@@ -557,25 +557,18 @@ RZ_API void rz_cons_pal_list(int rad, const char *arg) {
 					name[j] = '_';
 				}
 			}
-			rz_cons_printf(".%s%s { color: rgb(%d, %d, %d); }%s",
-				prefix, name, rcolor->r, rcolor->g, rcolor->b, hasnext);
+			current = rz_str_newf(".%s%s { color: rgb(%d, %d, %d); }%s",
+				arg, name, rcolor->r, rcolor->g, rcolor->b, hasnext);
+			rz_list_append(ret, current);
 			free(name);
 		} break;
-		case 'h':
-			name = strdup(keys[i].name);
-			rz_str_replace_char(name, '.', '_');
-			rz_cons_printf(".%s { color:#%02x%02x%02x }\n",
-				name, rcolor->r, rcolor->g, rcolor->b);
-			free(name);
-			break;
 		case '*':
 		case 'r':
 		case 1:
-			rz_cons_printf("ec %s rgb:%02x%02x%02x",
+			current = rz_str_newf("ec %s rgb:%02x%02x%02x",
 				keys[i].name, rcolor->r, rcolor->g, rcolor->b);
 			if (rcolor->a == ALPHA_FGBG) {
-				rz_cons_printf(" rgb:%02x%02x%02x",
-					rcolor->r2, rcolor->g2, rcolor->b2);
+				rz_str_append(name, rz_str_newf(" rgb:%02x%02x%02x", rcolor->r2, rcolor->g2, rcolor->b2));
 			}
 			if (rcolor->attr) {
 				const RAttrStr attrs[] = {
@@ -587,19 +580,20 @@ RZ_API void rz_cons_pal_list(int rad, const char *arg) {
 				};
 				int j;
 				if (rcolor->a != ALPHA_FGBG) {
-					rz_cons_strcat(" .");
+					rz_str_append(current, " .");
 				}
 				for (j = 0; j < RZ_ARRAY_SIZE(attrs); j++) {
 					if (rcolor->attr & attrs[j].val) {
-						rz_cons_printf(" %s", attrs[j].str);
+						rz_str_append(current, attrs[j].str);
 					}
 				}
 			}
-			rz_cons_newline();
+			rz_list_append(ret, current);
 			break;
 		default:
-			rz_cons_printf(" %s##" Color_RESET "  %s\n", *color,
+			current = rz_str_newf(" %s##" Color_RESET "  %s\n", *color,
 				keys[i].name);
+			rz_list_append(ret, current);
 		}
 	}
 	if (rad == 'j') {
@@ -607,6 +601,7 @@ RZ_API void rz_cons_pal_list(int rad, const char *arg) {
 		rz_cons_println(pj_string(pj));
 		pj_free(pj);
 	}
+	return ret;
 }
 
 /* Modify the palette to set a color value.
