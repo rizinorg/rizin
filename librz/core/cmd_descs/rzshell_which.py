@@ -23,6 +23,10 @@ def find_entry(commands, rzcommand):
             e = find_entry(c["subcommands"], rzcommand)
             if e is not None:
                 return e
+        if "subcommands" in c and isinstance(c["subcommands"], str):
+            # This cd is only a group pointing to another file,
+            # the handler cname will be fetched from there.
+            return None
 
         if c["name"] == rzcommand:
             return c
