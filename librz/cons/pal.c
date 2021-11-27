@@ -526,18 +526,22 @@ typedef struct {
 RZ_API void rz_cons_pal_list(int rad, const char *arg) {
 	char *name, **color;
 	const char *hasnext;
+	PJ *pj = pj_new();
 	int i;
 	if (rad == 'j') {
-		rz_cons_print("{");
+		pj_o(pj);
 	}
 	for (i = 0; keys[i].name; i++) {
 		RzColor *rcolor = RZCOLOR_AT(i);
 		color = COLOR_AT(i);
 		switch (rad) {
 		case 'j':
-			hasnext = (keys[i + 1].name) ? "," : "";
-			rz_cons_printf("\"%s\":[%d,%d,%d]%s",
-				keys[i].name, rcolor->r, rcolor->g, rcolor->b, hasnext);
+			pj_k(pj, keys[i].name);
+			pj_a(pj);
+			pj_n(pj, rcolor->r);
+			pj_n(pj, rcolor->g);
+			pj_n(pj, rcolor->b);
+			pj_end(pj);
 			break;
 		case 'c': {
 			const char *prefix = rz_str_trim_head_ro(arg);
@@ -599,7 +603,9 @@ RZ_API void rz_cons_pal_list(int rad, const char *arg) {
 		}
 	}
 	if (rad == 'j') {
-		rz_cons_print("}\n");
+		pj_end(pj);
+		rz_cons_println(pj_string(pj));
+		pj_free(pj);
 	}
 }
 
