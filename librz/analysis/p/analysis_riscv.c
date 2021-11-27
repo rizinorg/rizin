@@ -907,6 +907,7 @@ RzAnalysisPlugin rz_analysis_plugin_riscv = {
 	.bits = 32 | 64,
 	.op = &riscv_op,
 	.get_reg_profile = &get_reg_profile,
+	.esil = true,
 };
 
 #ifndef RZ_PLUGIN_INCORE
