@@ -3,6 +3,7 @@ sdb_files = [
   'cc-arm-32',
   'cc-arm-64',
   'cc-avr-8',
+  'cc-hexagon-32',
   'cc-m68k-32',
   'cc-mips-32',
   'cc-mips-64',

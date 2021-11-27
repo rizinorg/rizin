@@ -103,6 +103,7 @@ rz_asm_sources = [
   #'arch/gb/gbdis.c',
   'arch/h8300/h8300_disas.c',
   'arch/hexagon/hexagon.c',
+  'arch/hexagon/hexagon_arch.c',
   'arch/hexagon/hexagon_disas.c',
   #'arch/hexagon/gnu/hexagon-dis.c',
   #'arch/hexagon/gnu/hexagon-opc.c',

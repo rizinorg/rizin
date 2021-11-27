@@ -189,6 +189,7 @@
 #define EM_CRX          114 /* National Semiconductor CRX */
 #define EM_CR16         115 /* National Semiconductor CompactRISC - CR16 */
 #define EM_SCORE        135 /* Sunplus Score */
+#define EM_QDSP6        164 /* Qualcomm DSP6 */
 
 /* If it is necessary to assign new unofficial EM_* values, please pick large
    random numbers (0x8523, 0xa7f2, etc.) to minimize the chances of collision
