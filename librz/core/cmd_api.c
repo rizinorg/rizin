@@ -2514,6 +2514,7 @@ RZ_API bool rz_cmd_state_output_init(RzCmdStateOutput *state, RzOutputMode mode)
 		}
 		break;
 	default:
+		memset(&state->d, 0, sizeof(state->d));
 		break;
 	}
 	return true;
