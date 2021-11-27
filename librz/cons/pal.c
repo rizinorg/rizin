@@ -521,7 +521,7 @@ RZ_API void rz_cons_pal_show(void) {
 typedef struct {
 	int val;
 	const char *str;
-} RAttrStr;
+} RzAttrStr;
 
 RZ_API RzList *rz_cons_pal_list(int rad, const char *arg) {
 	char *name = NULL, *current, **color;
@@ -571,7 +571,7 @@ RZ_API RzList *rz_cons_pal_list(int rad, const char *arg) {
 				rz_str_append(name, rz_str_newf(" rgb:%02x%02x%02x", rcolor->r2, rcolor->g2, rcolor->b2));
 			}
 			if (rcolor->attr) {
-				const RAttrStr attrs[] = {
+				const RzAttrStr attrs[] = {
 					{ RZ_CONS_ATTR_BOLD, "bold" },
 					{ RZ_CONS_ATTR_DIM, "dim" },
 					{ RZ_CONS_ATTR_ITALIC, "italic" },
