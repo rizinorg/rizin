@@ -394,8 +394,8 @@ RZ_API int rz_hex_bin2str(const ut8 *in, int len, char *out) {
 }
 
 /**
- * \brief Takes an unsigned integer and returns the signed integer in hex format as string.
- * E.g.: 0xffffffffffffffff -> "-0x1"
+ * \brief Takes an unsigned 32bit integer with MSB set to 1 and returns the signed integer in hex format as string.
+ * E.g.: 0xffffffff -> "-0x1"
  *
  * \param in The integer to convert to the signed string.
  * \param out The buffer to write the signed hex string to.
@@ -403,12 +403,12 @@ RZ_API int rz_hex_bin2str(const ut8 *in, int len, char *out) {
  * \return char* The signed integer as hex string.
  */
 RZ_API void rz_hex_ut2st_str(const ut64 in, RZ_INOUT char *out, const int len) {
-	if (len < 20) {
-		RZ_LOG_FATAL("Output buffer too small for 64bit value.\n");
+	char tmp[12];
+	if (len < RZ_ARRAY_SIZE(tmp)) {
+		RZ_LOG_FATAL("Output buffer too small for negative 32bit value.\n");
 	}
-	char tmp[20];
-	sprintf(tmp, "-0x%" PFMT32x, ~(ut32)in + 1);
-	memcpy(out, tmp, 20);
+	snprintf(tmp, RZ_ARRAY_SIZE(tmp), "-0x%" PFMT32x, ~(ut32)in + 1);
+	memcpy(out, tmp, RZ_ARRAY_SIZE(tmp));
 	return;
 }
 
