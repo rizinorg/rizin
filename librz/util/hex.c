@@ -402,12 +402,12 @@ RZ_API int rz_hex_bin2str(const ut8 *in, int len, char *out) {
  * \param len Length of the out buffer.
  * \return char* The signed integer as hex string.
  */
-RZ_API void rz_hex_ut2st_str(const ut64 in, RZ_INOUT char *out, const int len) {
+RZ_API void rz_hex_ut2st_str(const ut32 in, RZ_INOUT char *out, const int len) {
 	char tmp[12];
 	if (len < sizeof(tmp)) {
 		RZ_LOG_FATAL("Output buffer too small for negative 32bit value.\n");
 	}
-	snprintf(tmp, sizeof(tmp), "-0x%" PFMT32x, ~(ut32)in + 1);
+	snprintf(tmp, sizeof(tmp), "-0x%" PFMT32x, ~in + 1);
 	memcpy(out, tmp, sizeof(tmp));
 	return;
 }
