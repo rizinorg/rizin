@@ -430,7 +430,7 @@ _dAe  32 64      ppc         BSD     Capstone PowerPC disassembler (by pancake)
 _dA_  32 64      ppc.gnu     GPL3    PowerPC
 _dA_  32         propeller   LGPL3   propeller disassembly plugin
 _dA_  8 16       pyc         LGPL3   PYC disassemble plugin
-_dA_  32 64      riscv       GPL     RISC-V
+_dAe  32 64      riscv       GPL     RISC-V
 _dAe  32         rsp         LGPL3   Reality Signal Processor
 _dAe  32         sh          GPL3    SuperH-4 CPU
 _dA_  8 16       snes        LGPL3   SuperNES CPU

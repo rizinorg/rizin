@@ -62,7 +62,6 @@ RZ_API ut64 rz_reg_get_value_big(RzReg *reg, RzRegItem *item, utX *val) {
 		ret = val->v256.Low.Low;
 		break;
 	default:
-		eprintf("rz_reg_get_value_big: Bit size %d not supported\n", item->size);
 		break;
 	}
 	return ret;
@@ -130,7 +129,6 @@ RZ_API ut64 rz_reg_get_value(RzReg *reg, RzRegItem *item) {
 		// XXX 128 & 256 bit
 		return (ut64)rz_reg_get_longdouble(reg, item);
 	default:
-		eprintf("rz_reg_get_value: Bit size %d not supported\n", item->size);
 		break;
 	}
 	return 0LL;

@@ -6631,6 +6631,7 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 	bool didAap = false;
 	ut64 curseek = core->offset;
 	bool cfg_debug = rz_config_get_b(core->config, "cfg.debug");
+	bool plugin_supports_esil = core->analysis->cur->esil;
 	const char *oldstr = NULL;
 	if (rz_str_startswith(rz_config_get(core->config, "bin.lang"), "go")) {
 		oldstr = rz_print_rowlog(core->print, "Find function and symbol names from golang binaries (aang)");
@@ -6703,7 +6704,9 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		bool pcache = rz_config_get_b(core->config, "io.pcache");
 		rz_config_set_b(core->config, "io.pcache", false);
 		oldstr = rz_print_rowlog(core->print, "Emulate functions to find computed references (aaef)");
-		rz_core_analysis_esil_references_all_functions(core);
+		if (plugin_supports_esil) {
+			rz_core_analysis_esil_references_all_functions(core);
+		}
 		rz_print_rowlog_done(core->print, oldstr);
 		rz_core_task_yield(&core->tasks);
 		rz_config_set_b(core->config, "io.pcache", pcache);
@@ -6742,11 +6745,12 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		rz_print_rowlog_done(core->print, oldstr);
 		rz_core_task_yield(&core->tasks);
 	}
-
-	oldstr = rz_print_rowlog(core->print, "Type matching analysis for all functions (aaft)");
-	rz_core_analysis_types_propagation(core);
-	rz_print_rowlog_done(core->print, oldstr);
-	rz_core_task_yield(&core->tasks);
+	if (plugin_supports_esil) {
+		oldstr = rz_print_rowlog(core->print, "Type matching analysis for all functions (aaft)");
+		rz_core_analysis_types_propagation(core);
+		rz_print_rowlog_done(core->print, oldstr);
+		rz_core_task_yield(&core->tasks);
+	}
 
 	oldstr = rz_print_rowlog(core->print, "Propagate noreturn information");
 	rz_core_analysis_propagate_noreturn(core, UT64_MAX);
