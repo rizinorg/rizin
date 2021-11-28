@@ -92,6 +92,11 @@ RZ_API RzILFloat *rzil_float_new(RzILFloatFormat r, RzILBitVector *bv) {
 	return NULL;
 }
 
+RZ_API void rz_il_float_free(RzILFloat *f) {
+	rz_il_bv_free(f->s);
+	RZ_FREE(f);
+}
+
 /**
  * Return sign bit with exponent part
  * \param f float
@@ -350,10 +355,29 @@ static ut32 get_exp_delta(RzILFloat *a, RzILFloat *b, RzILFloat **bigger_exp_flo
 }
 
 // TODO
-static void normalize_float(RzILFloat *f);
+static bool is_specification(RzILFloat *f) {
+	bool exp_all_zero = check_part_bv(f->s, rzil_float_get_exp_start_pos(f), rzil_float_get_exp_len(f), check_all_zero);
+	if (!exp_all_zero) {
+		return true;
+	}
+	bool frac_all_zero = check_part_bv(f->s, 0, rzil_float_get_frac_len(f), check_all_zero);
+	if (frac_all_zero) {
+		// zero
+		return true;
+	}
+	return false;
+}
+
+static void specification_float(RzILFloat *f) {
+	if (is_specification(f)) {
+		return;
+	}
+
+	// TODO specification
+}
 
 // ref: https://www.quora.com/How-do-I-add-IEEE-754-floating-point-numbers
-RzILFloat *rzil_float_fadd(RzILFloatRMode r, RzILFloat *a, RzILFloat *b) {
+RZ_API RzILFloat *rzil_float_fadd(RzILFloatRMode r, RzILFloat *a, RzILFloat *b) {
 	rz_return_val_if_fail(a && b, NULL);
 
 	RzILFloat *bigger_exp = NULL;
@@ -361,7 +385,10 @@ RzILFloat *rzil_float_fadd(RzILFloatRMode r, RzILFloat *a, RzILFloat *b) {
 	ut32 exp_delta = get_exp_delta(a, b, &bigger_exp, &smaller_exp);
 
 	RzILBitVector *big_frac = rzil_float_get_frac(bigger_exp);
+	bool big_sign = rzil_float_get_sign(bigger_exp);
+
 	RzILBitVector *small_frac = rzil_float_get_frac(smaller_exp);
+	bool small_sign = rzil_float_get_sign(smaller_exp);
 
 	RzILFloat *result = rzil_float_new(bigger_exp->r, rz_il_bv_new(get_float_format_len(bigger_exp->r)));
 	if (!result) {
@@ -370,24 +397,89 @@ RzILFloat *rzil_float_fadd(RzILFloatRMode r, RzILFloat *a, RzILFloat *b) {
 		return NULL;
 	}
 
-	// realign exponent and adjust frac
+	// Assumption : the value before the point is 1
+	// line up the exponent and adjust frac
+	// TODO : save shifted out bits in local for rounding
 	rz_il_bv_rshift(small_frac, exp_delta);
+	rz_il_bv_set(small_frac, rz_il_bv_len(small_frac) - exp_delta, true);
 
-	// add frac
-	RzILBitVector *frac = rz_il_bv_add(big_frac, small_frac);
-	rz_il_bv_copy_nbits(frac, 0, result->s, 0, rzil_float_get_frac_len(bigger_exp));
+	// Add mantissa, there are 4 possible conditions
+	RzILBitVector *true_frac = NULL;
+	bool extra_bit = false;
+	bool final_sign;
+	if (big_sign ^ small_sign) {
+		// + -, - +, use abs value here
+		if (rz_il_bv_ule(big_frac, small_frac)) {
+			// big_frac <= small_frac
+			true_frac = rz_il_bv_sub(small_frac, big_frac, &extra_bit);
+			final_sign = small_sign;
+		}
+		else {
+			// big_frac > small_frac
+			true_frac = rz_il_bv_sub(big_frac, small_frac, &extra_bit);
+			final_sign = big_sign;
+		}
+	} else {
+		// ++, --
+		true_frac = rz_il_bv_add(big_frac, small_frac, &extra_bit);
+		final_sign = big_sign;
+	}
 
-	// normalize
-	normalize_float(result);
+	// set true_frac to float and set sign bit
+	rz_il_bv_copy_nbits(true_frac, 0, result->s, 0, rzil_float_get_frac_len(bigger_exp));
+	rz_il_bv_set(result->s, get_float_format_len(result->r) - 1, final_sign);
+
+	// specification
+	specification_float(result);
 
 	// round
 	rzil_float_round(result, r);
 
+	// check overflow ?
+
 	return result;
 }
 
-RzILFloat *rzil_float_fsub(RzILFloatRMode r, RzILFloat *a, RzILFloat *b);
-RzILFloat *rzil_float_fmul(RzILFloatRMode r, RzILFloat *a, RzILFloat *b);
+RZ_API RzILFloat *rzil_float_fsub(RzILFloatRMode r, RzILFloat *a, RzILFloat *b) {
+	RzILFloat *neg_b = rzil_float_new(b->r, rz_il_bv_dup(b->s));
+	if (!neg_b) {
+		return NULL;
+	}
+
+	// toggle sign bit
+	rz_il_bv_toggle(b->s, rz_il_bv_len(b->s) - 1);
+	RzILFloat *result = rzil_float_fadd(r, a, b);
+
+	rz_il_float_free(neg_b);
+	return result;
+}
+
+RZ_API RzILFloat *rzil_float_fmul(RzILFloatRMode r, RzILFloat *a, RzILFloat *b) {
+	bool final_sign = rzil_float_get_sign(a) ^ rzil_float_get_sign(b);
+
+	RzILBitVector *a_sexp, *b_sexp;
+	RzILBitVector *a_frac, *b_frac;
+	a_sexp = rzil_float_get_sigexp(a);
+	b_sexp = rzil_float_get_sigexp(b);
+	a_frac = rzil_float_get_frac(a);
+	b_frac = rzil_float_get_frac(b);
+
+	bool carry;
+	RzILBitVector *final_sexp = rz_il_bv_add(a_sexp, b_sexp, &carry);
+	RzILBitVector *final_frac = rz_il_bv_mul(a_frac, b_frac);
+
+	RzILFloat *result = rzil_float_new(a->r, rz_il_bv_new(get_float_format_len(a->r)));
+
+	// set true_frac to float and set sign bit
+	rz_il_bv_copy_nbits(final_frac, 0, result->s, 0, rz_il_bv_len(final_frac));
+	rz_il_bv_copy_nbits(final_sexp, 0, result->s, rzil_float_get_exp_start_pos(result), rz_il_bv_len(final_sexp));
+	rz_il_bv_set(result->s, get_float_format_len(result->r) - 1, final_sign);
+
+	specification_float(result);
+	rzil_float_round(result, r);
+	return result;
+}
+
 RzILFloat *rzil_float_fdiv(RzILFloatRMode r, RzILFloat *a, RzILFloat *b);
 RzILFloat *rzil_float_fsqrt(RzILFloatRMode r, RzILFloat *a, RzILFloat *b);
 RzILFloat *rzil_float_fmodulo(RzILFloatRMode r, RzILFloat *a, RzILFloat *b);
