@@ -407,7 +407,7 @@ RZ_API void rz_hex_ut2st_str(const ut64 in, RZ_INOUT char *out, const int len) {
 		RZ_LOG_FATAL("Output buffer too small for 64bit value.\n");
 	}
 	char tmp[20];
-	sprintf(tmp, "-0x%" PFMT64x, llabs((st64)in));
+	sprintf(tmp, "-0x%" PFMT32x, ~(ut32)in + 1);
 	memcpy(out, tmp, 20);
 	return;
 }
