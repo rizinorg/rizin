@@ -413,8 +413,7 @@ RZ_API RzILFloat *rzil_float_fadd(RzILFloatRMode r, RzILFloat *a, RzILFloat *b) 
 			// big_frac <= small_frac
 			true_frac = rz_il_bv_sub(small_frac, big_frac, &extra_bit);
 			final_sign = small_sign;
-		}
-		else {
+		} else {
 			// big_frac > small_frac
 			true_frac = rz_il_bv_sub(big_frac, small_frac, &extra_bit);
 			final_sign = big_sign;
