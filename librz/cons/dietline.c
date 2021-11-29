@@ -466,7 +466,7 @@ RZ_API void rz_line_hist_free(void) {
 
 /**
  * \brief Load the history of commands from \p path.
- * 
+ *
  * \param path Path of the history file, where commands executed in the shell
  *             were saved in a previous session
  * \return false(0) if it fails, true(!0) otherwise
@@ -492,7 +492,7 @@ RZ_API int rz_line_hist_load(RZ_NONNULL const char *path) {
 
 /**
  * \brief Save the history of commands executed until now to file \p path.
- * 
+ *
  * \param path Path of the history file, where commands executed in the shell
  *             will be saved
  * \return false(0) if it fails, true(!0) otherwise

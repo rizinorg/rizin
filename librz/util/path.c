@@ -73,7 +73,7 @@ RZ_API RZ_OWN char *rz_path_system_rc(void) {
 
 /**
  * \brief Return \p path prefixed by the home prefix
- * 
+ *
  * Return \p path prefixed by the home prefix. Please note that this is not the
  * home directory, but it is usually something like `~/.local`.
  *
