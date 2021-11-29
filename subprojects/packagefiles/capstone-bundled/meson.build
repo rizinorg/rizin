@@ -1,4 +1,4 @@
-project('capstone', 'c', meson_version: '>=0.55.0', default_options: ['werror=false'])
+project('capstone', 'c', meson_version: '>=0.55.0')
 
 cs_files = [
   'arch/AArch64/AArch64BaseInfo.c',
@@ -73,7 +73,11 @@ libcapstone_c_args = [
   '-DCAPSTONE_HAS_X86',
   '-DCAPSTONE_HAS_XCORE',
   '-DCAPSTONE_HAS_TMS320C64X',
-]  
+]
+warn_unneeded_flag = '-Wno-error=unneeded-internal-declaration'
+if meson.get_compiler('c').has_argument(warn_unneeded_flag)
+  libcapstone_c_args += warn_unneeded_flag
+endif
 
 libcapstone = library('capstone', cs_files,
   c_args: libcapstone_c_args,
