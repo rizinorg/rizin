@@ -160,7 +160,7 @@ RZ_API void rz_il_free_op(RzILOp *op) {
 		rz_il_free_op_2(boolxor, x, y);
 		break;
 	case RZIL_OP_BITV:
-		rz_il_bv_free(op->op.bitv->value);
+		rz_bitvector_free(op->op.bitv->value);
 		rz_il_free_op_0(bitv);
 		break;
 	case RZIL_OP_MSB:

@@ -5,8 +5,8 @@
 #include <rz_util.h>
 #include "minunit.h"
 
-static bool is_equal_bv(RzILBitVector *x, RzILBitVector *y) {
-	return rz_il_bv_cmp(x, y) == 0;
+static bool is_equal_bv(RzBitVector *x, RzBitVector *y) {
+	return rz_bitvector_cmp(x, y) == 0;
 }
 
 static bool is_equal_bool(RzILBool *x, RzILBool *y) {
@@ -17,28 +17,28 @@ bool test_rzil_bv_init32(void) {
 	char *s = NULL;
 
 	// create by given unsigned 32 bit
-	RzILBitVector *bits = rz_il_bv_new_from_ut64(32, 100);
-	RzILBitVector *bits_cmp = rz_il_bv_new(32);
+	RzBitVector *bits = rz_bitvector_new_from_ut64(32, 100);
+	RzBitVector *bits_cmp = rz_bitvector_new(32);
 
 	// 100 = 64 + 32 + 4 == 0b 0000 0000 0000 0000 0000 0000 0110 0100
-	rz_il_bv_set(bits_cmp, 2, true);
-	rz_il_bv_set(bits_cmp, 5, true);
-	rz_il_bv_set(bits_cmp, 6, true);
+	rz_bitvector_set(bits_cmp, 2, true);
+	rz_bitvector_set(bits_cmp, 5, true);
+	rz_bitvector_set(bits_cmp, 6, true);
 	mu_assert("new from 32", is_equal_bv(bits, bits_cmp));
 
 	// dup
-	RzILBitVector *bits_dup = rz_il_bv_dup(bits);
+	RzBitVector *bits_dup = rz_bitvector_dup(bits);
 	mu_assert("dup from bits 32", is_equal_bv(bits_dup, bits));
 
-	s = rz_il_bv_as_string(bits);
+	s = rz_bitvector_as_string(bits);
 	mu_assert_streq_free(s, "00000000000000000000000001100100", "string bit value of bv");
 
-	s = rz_il_bv_as_hex_string(bits);
+	s = rz_bitvector_as_hex_string(bits);
 	mu_assert_streq_free(s, "0x00000064", "string hex value of bv");
 
-	rz_il_bv_free(bits);
-	rz_il_bv_free(bits_cmp);
-	rz_il_bv_free(bits_dup);
+	rz_bitvector_free(bits);
+	rz_bitvector_free(bits_cmp);
+	rz_bitvector_free(bits_dup);
 	mu_end;
 }
 
@@ -46,28 +46,28 @@ bool test_rzil_bv_init64(void) {
 	char *s = NULL;
 
 	// create by given unsigned 64 bits
-	RzILBitVector *bits = rz_il_bv_new_from_ut64(64, 100);
-	RzILBitVector *bits_cmp = rz_il_bv_new(64);
+	RzBitVector *bits = rz_bitvector_new_from_ut64(64, 100);
+	RzBitVector *bits_cmp = rz_bitvector_new(64);
 
 	// 100 = 64 + 32 + 4 == 0b 0000 0000 0000 0000 0000 0000 0110 0100
-	rz_il_bv_set(bits_cmp, 2, true);
-	rz_il_bv_set(bits_cmp, 5, true);
-	rz_il_bv_set(bits_cmp, 6, true);
+	rz_bitvector_set(bits_cmp, 2, true);
+	rz_bitvector_set(bits_cmp, 5, true);
+	rz_bitvector_set(bits_cmp, 6, true);
 	mu_assert("new from 64", is_equal_bv(bits, bits_cmp));
 
 	// dup
-	RzILBitVector *bits_dup = rz_il_bv_dup(bits);
+	RzBitVector *bits_dup = rz_bitvector_dup(bits);
 	mu_assert("dup from bits 64", is_equal_bv(bits_dup, bits));
 
-	s = rz_il_bv_as_hex_string(bits);
+	s = rz_bitvector_as_hex_string(bits);
 	mu_assert_streq_free(s, "0x0000000000000064", "string hex value of bv");
 
-	s = rz_il_bv_as_string(bits);
+	s = rz_bitvector_as_string(bits);
 	mu_assert_streq_free(s, "0000000000000000000000000000000000000000000000000000000001100100", "string bit value of bv");
 
-	rz_il_bv_free(bits);
-	rz_il_bv_free(bits_cmp);
-	rz_il_bv_free(bits_dup);
+	rz_bitvector_free(bits);
+	rz_bitvector_free(bits_cmp);
+	rz_bitvector_free(bits_dup);
 	mu_end;
 }
 
@@ -75,415 +75,415 @@ bool test_rzil_bv_init128(void) {
 	char *s = NULL;
 
 	// create by given unsigned 128 bits
-	RzILBitVector *bits = rz_il_bv_new_from_ut64(128, 100);
-	RzILBitVector *bits_cmp = rz_il_bv_new(128);
+	RzBitVector *bits = rz_bitvector_new_from_ut64(128, 100);
+	RzBitVector *bits_cmp = rz_bitvector_new(128);
 
 	// 100 = 64 + 32 + 4 == 0b 0000 0000 0000 0000 0000 0000 0110 0100
-	rz_il_bv_set(bits_cmp, 2, true);
-	rz_il_bv_set(bits_cmp, 5, true);
-	rz_il_bv_set(bits_cmp, 6, true);
+	rz_bitvector_set(bits_cmp, 2, true);
+	rz_bitvector_set(bits_cmp, 5, true);
+	rz_bitvector_set(bits_cmp, 6, true);
 	mu_assert("new from 128", is_equal_bv(bits, bits_cmp));
 
 	// dup
-	RzILBitVector *bits_dup = rz_il_bv_dup(bits);
+	RzBitVector *bits_dup = rz_bitvector_dup(bits);
 	mu_assert("dup from bits 128", is_equal_bv(bits_dup, bits));
 
-	s = rz_il_bv_as_string(bits);
+	s = rz_bitvector_as_string(bits);
 	mu_assert_streq_free(s, "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001100100", "string bit value of bv");
 
-	s = rz_il_bv_as_hex_string(bits);
+	s = rz_bitvector_as_hex_string(bits);
 	mu_assert_streq_free(s, "0x00000000000000000000000000000064", "string hex value of bv");
 
-	rz_il_bv_free(bits);
-	rz_il_bv_free(bits_cmp);
-	rz_il_bv_free(bits_dup);
+	rz_bitvector_free(bits);
+	rz_bitvector_free(bits_cmp);
+	rz_bitvector_free(bits_dup);
 	mu_end;
 }
 
 bool test_rzil_bv_init_signed(void) {
 	char *s = NULL;
-	RzILBitVector *bits = NULL;
+	RzBitVector *bits = NULL;
 
 	// create by given signed 10 bits
-	bits = rz_il_bv_new_from_st64(10, -100);
-	s = rz_il_bv_as_string(bits);
+	bits = rz_bitvector_new_from_st64(10, -100);
+	s = rz_bitvector_as_string(bits);
 	mu_assert_streq_free(s, "1110011100", "string bit value of bv");
-	s = rz_il_bv_as_hex_string(bits);
+	s = rz_bitvector_as_hex_string(bits);
 	mu_assert_streq_free(s, "0x39c", "string hex value of bv");
-	rz_il_bv_free(bits);
+	rz_bitvector_free(bits);
 
 	// create by given signed 16 bits
-	bits = rz_il_bv_new_from_st64(16, -100);
-	s = rz_il_bv_as_string(bits);
+	bits = rz_bitvector_new_from_st64(16, -100);
+	s = rz_bitvector_as_string(bits);
 	mu_assert_streq_free(s, "1111111110011100", "string bit value of bv");
-	s = rz_il_bv_as_hex_string(bits);
+	s = rz_bitvector_as_hex_string(bits);
 	mu_assert_streq_free(s, "0xff9c", "string hex value of bv");
-	rz_il_bv_free(bits);
+	rz_bitvector_free(bits);
 
 	// create by given signed 24 bits
-	bits = rz_il_bv_new_from_st64(24, -100);
-	s = rz_il_bv_as_string(bits);
+	bits = rz_bitvector_new_from_st64(24, -100);
+	s = rz_bitvector_as_string(bits);
 	mu_assert_streq_free(s, "111111111111111110011100", "string bit value of bv");
-	s = rz_il_bv_as_hex_string(bits);
+	s = rz_bitvector_as_hex_string(bits);
 	mu_assert_streq_free(s, "0xffff9c", "string hex value of bv");
-	rz_il_bv_free(bits);
+	rz_bitvector_free(bits);
 
 	// create by given signed 32 bits
-	bits = rz_il_bv_new_from_st64(32, -100);
-	s = rz_il_bv_as_string(bits);
+	bits = rz_bitvector_new_from_st64(32, -100);
+	s = rz_bitvector_as_string(bits);
 	mu_assert_streq_free(s, "11111111111111111111111110011100", "string bit value of bv");
-	s = rz_il_bv_as_hex_string(bits);
+	s = rz_bitvector_as_hex_string(bits);
 	mu_assert_streq_free(s, "0xffffff9c", "string hex value of bv");
-	rz_il_bv_free(bits);
+	rz_bitvector_free(bits);
 
 	// create by given signed 64 bits
-	bits = rz_il_bv_new_from_st64(64, -100);
-	s = rz_il_bv_as_string(bits);
+	bits = rz_bitvector_new_from_st64(64, -100);
+	s = rz_bitvector_as_string(bits);
 	mu_assert_streq_free(s, "1111111111111111111111111111111111111111111111111111111110011100", "string bit value of bv");
-	s = rz_il_bv_as_hex_string(bits);
+	s = rz_bitvector_as_hex_string(bits);
 	mu_assert_streq_free(s, "0xffffffffffffff9c", "string hex value of bv");
-	rz_il_bv_free(bits);
+	rz_bitvector_free(bits);
 
 	// create by given signed 128 bits
-	bits = rz_il_bv_new_from_st64(128, -100);
-	s = rz_il_bv_as_string(bits);
+	bits = rz_bitvector_new_from_st64(128, -100);
+	s = rz_bitvector_as_string(bits);
 	mu_assert_streq_free(s, "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111110011100", "string bit value of bv");
-	s = rz_il_bv_as_hex_string(bits);
+	s = rz_bitvector_as_hex_string(bits);
 	mu_assert_streq_free(s, "0xffffffffffffffffffffffffffffff9c", "string hex value of bv");
-	rz_il_bv_free(bits);
+	rz_bitvector_free(bits);
 	mu_end;
 }
 
 bool test_rzil_bv_logic(void) {
-	RzILBitVector *x, *y;
-	RzILBitVector *result;
-	RzILBitVector *and, * or, *xor, *neg, *not, *ls, *rs, *ls_fill, *rs_fill;
+	RzBitVector *x, *y;
+	RzBitVector *result;
+	RzBitVector *and, * or, *xor, *neg, *not, *ls, *rs, *ls_fill, *rs_fill;
 
 	// x : 0101 0101
-	x = rz_il_bv_new(8);
-	rz_il_bv_set(x, 0, true);
-	rz_il_bv_set(x, 2, true);
-	rz_il_bv_set(x, 4, true);
-	rz_il_bv_set(x, 6, true);
+	x = rz_bitvector_new(8);
+	rz_bitvector_set(x, 0, true);
+	rz_bitvector_set(x, 2, true);
+	rz_bitvector_set(x, 4, true);
+	rz_bitvector_set(x, 6, true);
 
 	// y : 1010 1001
-	y = rz_il_bv_new(8);
-	rz_il_bv_set(y, 0, true);
-	rz_il_bv_set(y, 3, true);
-	rz_il_bv_set(y, 5, true);
-	rz_il_bv_set(y, 7, true);
+	y = rz_bitvector_new(8);
+	rz_bitvector_set(y, 0, true);
+	rz_bitvector_set(y, 3, true);
+	rz_bitvector_set(y, 5, true);
+	rz_bitvector_set(y, 7, true);
 
 	// and : 0000 0001
-	and = rz_il_bv_new(8);
-	rz_il_bv_set(and, 0, true);
+	and = rz_bitvector_new(8);
+	rz_bitvector_set(and, 0, true);
 
 	// xor : 1111 1100
-	xor = rz_il_bv_new(8);
-	rz_il_bv_toggle_all(xor);
-	rz_il_bv_set(xor, 0, false);
-	rz_il_bv_set(xor, 1, false);
+	xor = rz_bitvector_new(8);
+	rz_bitvector_toggle_all(xor);
+	rz_bitvector_set(xor, 0, false);
+	rz_bitvector_set(xor, 1, false);
 
 	// or : 1111 1101
-	or = rz_il_bv_new(8);
-	rz_il_bv_toggle_all(or);
-	rz_il_bv_set(or, 1, false);
+	or = rz_bitvector_new(8);
+	rz_bitvector_toggle_all(or);
+	rz_bitvector_set(or, 1, false);
 
 	// not of x : 1010 1010
-	not = rz_il_bv_new(8);
-	rz_il_bv_set(not, 1, true);
-	rz_il_bv_set(not, 3, true);
-	rz_il_bv_set(not, 5, true);
-	rz_il_bv_set(not, 7, true);
+	not = rz_bitvector_new(8);
+	rz_bitvector_set(not, 1, true);
+	rz_bitvector_set(not, 3, true);
+	rz_bitvector_set(not, 5, true);
+	rz_bitvector_set(not, 7, true);
 
 	// neg of x : 1010 1011
-	neg = rz_il_bv_new(8);
-	rz_il_bv_set(neg, 0, true);
-	rz_il_bv_set(neg, 1, true);
-	rz_il_bv_set(neg, 3, true);
-	rz_il_bv_set(neg, 5, true);
-	rz_il_bv_set(neg, 7, true);
+	neg = rz_bitvector_new(8);
+	rz_bitvector_set(neg, 0, true);
+	rz_bitvector_set(neg, 1, true);
+	rz_bitvector_set(neg, 3, true);
+	rz_bitvector_set(neg, 5, true);
+	rz_bitvector_set(neg, 7, true);
 
 	// left shift (3 bits) of y : 0100 1000
-	ls = rz_il_bv_new(8);
-	rz_il_bv_set(ls, 3, true);
-	rz_il_bv_set(ls, 6, true);
+	ls = rz_bitvector_new(8);
+	rz_bitvector_set(ls, 3, true);
+	rz_bitvector_set(ls, 6, true);
 
 	// left shift (3 bits) of y : 0100 1111
-	ls_fill = rz_il_bv_new(8);
-	rz_il_bv_set(ls_fill, 0, true);
-	rz_il_bv_set(ls_fill, 1, true);
-	rz_il_bv_set(ls_fill, 2, true);
-	rz_il_bv_set(ls_fill, 3, true);
-	rz_il_bv_set(ls_fill, 6, true);
+	ls_fill = rz_bitvector_new(8);
+	rz_bitvector_set(ls_fill, 0, true);
+	rz_bitvector_set(ls_fill, 1, true);
+	rz_bitvector_set(ls_fill, 2, true);
+	rz_bitvector_set(ls_fill, 3, true);
+	rz_bitvector_set(ls_fill, 6, true);
 
 	// right shift (3 bits) of y : 0001 0101
-	rs = rz_il_bv_new(8);
-	rz_il_bv_set(rs, 0, true);
-	rz_il_bv_set(rs, 2, true);
-	rz_il_bv_set(rs, 4, true);
+	rs = rz_bitvector_new(8);
+	rz_bitvector_set(rs, 0, true);
+	rz_bitvector_set(rs, 2, true);
+	rz_bitvector_set(rs, 4, true);
 
 	// right shift (3 bits) of y : 1111 0101
-	rs_fill = rz_il_bv_new(8);
-	rz_il_bv_toggle_all(rs_fill);
-	rz_il_bv_set(rs_fill, 1, false);
-	rz_il_bv_set(rs_fill, 3, false);
+	rs_fill = rz_bitvector_new(8);
+	rz_bitvector_toggle_all(rs_fill);
+	rz_bitvector_set(rs_fill, 1, false);
+	rz_bitvector_set(rs_fill, 3, false);
 
 	// test and
-	result = rz_il_bv_and(x, y);
+	result = rz_bitvector_and(x, y);
 	mu_assert("and x y", is_equal_bv(result, and));
-	rz_il_bv_free(result);
-	rz_il_bv_free(and);
+	rz_bitvector_free(result);
+	rz_bitvector_free(and);
 
-	result = rz_il_bv_or(x, y);
+	result = rz_bitvector_or(x, y);
 	mu_assert("or x y", is_equal_bv(result, or));
-	rz_il_bv_free(result);
-	rz_il_bv_free(or);
+	rz_bitvector_free(result);
+	rz_bitvector_free(or);
 
-	result = rz_il_bv_xor(x, y);
+	result = rz_bitvector_xor(x, y);
 	mu_assert("xor x y", is_equal_bv(result, xor));
-	rz_il_bv_free(result);
-	rz_il_bv_free(xor);
+	rz_bitvector_free(result);
+	rz_bitvector_free(xor);
 
-	result = rz_il_bv_not(x);
+	result = rz_bitvector_not(x);
 	mu_assert("not x", is_equal_bv(result, not ));
-	rz_il_bv_free(result);
-	rz_il_bv_free(not );
+	rz_bitvector_free(result);
+	rz_bitvector_free(not );
 
-	result = rz_il_bv_neg(x);
+	result = rz_bitvector_neg(x);
 	mu_assert("neg x", is_equal_bv(result, neg));
-	rz_il_bv_free(result);
-	rz_il_bv_free(neg);
+	rz_bitvector_free(result);
+	rz_bitvector_free(neg);
 
-	result = rz_il_bv_dup(y);
-	rz_il_bv_lshift(result, 3);
+	result = rz_bitvector_dup(y);
+	rz_bitvector_lshift(result, 3);
 	mu_assert("left shift y", is_equal_bv(result, ls));
-	rz_il_bv_free(result);
-	rz_il_bv_free(ls);
+	rz_bitvector_free(result);
+	rz_bitvector_free(ls);
 
-	result = rz_il_bv_dup(y);
-	rz_il_bv_lshift_fill(result, 3, true);
+	result = rz_bitvector_dup(y);
+	rz_bitvector_lshift_fill(result, 3, true);
 	mu_assert("left shift y filling 1", is_equal_bv(result, ls_fill));
-	rz_il_bv_free(result);
-	rz_il_bv_free(ls_fill);
+	rz_bitvector_free(result);
+	rz_bitvector_free(ls_fill);
 
-	result = rz_il_bv_dup(y);
-	rz_il_bv_rshift(result, 3);
+	result = rz_bitvector_dup(y);
+	rz_bitvector_rshift(result, 3);
 	mu_assert("right shift y", is_equal_bv(result, rs));
-	rz_il_bv_free(result);
-	rz_il_bv_free(rs);
+	rz_bitvector_free(result);
+	rz_bitvector_free(rs);
 
-	result = rz_il_bv_dup(y);
-	rz_il_bv_rshift_fill(result, 3, true);
+	result = rz_bitvector_dup(y);
+	rz_bitvector_rshift_fill(result, 3, true);
 	mu_assert("right shift y", is_equal_bv(result, rs_fill));
-	rz_il_bv_free(result);
-	rz_il_bv_free(rs_fill);
+	rz_bitvector_free(result);
+	rz_bitvector_free(rs_fill);
 
-	rz_il_bv_free(x);
-	rz_il_bv_free(y);
+	rz_bitvector_free(x);
+	rz_bitvector_free(y);
 	mu_end;
 }
 
 bool test_rzil_bv_algorithm32(void) {
-	RzILBitVector *x, *y;
-	RzILBitVector *result;
-	RzILBitVector *add, *sub, *mul, *div, *mod;
-	x = rz_il_bv_new_from_ut64(32, 121);
-	y = rz_il_bv_new_from_ut64(32, 33);
+	RzBitVector *x, *y;
+	RzBitVector *result;
+	RzBitVector *add, *sub, *mul, *div, *mod;
+	x = rz_bitvector_new_from_ut64(32, 121);
+	y = rz_bitvector_new_from_ut64(32, 33);
 
-	add = rz_il_bv_new_from_ut64(32, 154);
-	sub = rz_il_bv_new_from_ut64(32, 121 - 33);
-	div = rz_il_bv_new_from_ut64(32, 121 / 33);
-	mul = rz_il_bv_new_from_ut64(32, 121 * 33);
-	mod = rz_il_bv_new_from_ut64(32, 121 % 33);
+	add = rz_bitvector_new_from_ut64(32, 154);
+	sub = rz_bitvector_new_from_ut64(32, 121 - 33);
+	div = rz_bitvector_new_from_ut64(32, 121 / 33);
+	mul = rz_bitvector_new_from_ut64(32, 121 * 33);
+	mod = rz_bitvector_new_from_ut64(32, 121 % 33);
 
-	result = rz_il_bv_add(x, y, NULL);
-	mu_assert("Add x y", rz_il_bv_cmp(result, add) == 0);
-	rz_il_bv_free(result);
+	result = rz_bitvector_add(x, y, NULL);
+	mu_assert("Add x y", rz_bitvector_cmp(result, add) == 0);
+	rz_bitvector_free(result);
 
-	result = rz_il_bv_sub(x, y, NULL);
-	mu_assert("Sub x y", rz_il_bv_cmp(result, sub) == 0);
-	rz_il_bv_free(result);
+	result = rz_bitvector_sub(x, y, NULL);
+	mu_assert("Sub x y", rz_bitvector_cmp(result, sub) == 0);
+	rz_bitvector_free(result);
 
-	result = rz_il_bv_mul(x, y);
-	mu_assert("Mul x y", rz_il_bv_cmp(result, mul) == 0);
-	rz_il_bv_free(result);
+	result = rz_bitvector_mul(x, y);
+	mu_assert("Mul x y", rz_bitvector_cmp(result, mul) == 0);
+	rz_bitvector_free(result);
 
-	result = rz_il_bv_div(x, y);
+	result = rz_bitvector_div(x, y);
 	printf("\n");
-	mu_assert("Div x y", rz_il_bv_cmp(result, div) == 0);
-	rz_il_bv_free(result);
+	mu_assert("Div x y", rz_bitvector_cmp(result, div) == 0);
+	rz_bitvector_free(result);
 
-	result = rz_il_bv_mod(x, y);
-	mu_assert("Mod x y", rz_il_bv_cmp(result, mod) == 0);
-	rz_il_bv_free(result);
+	result = rz_bitvector_mod(x, y);
+	mu_assert("Mod x y", rz_bitvector_cmp(result, mod) == 0);
+	rz_bitvector_free(result);
 
-	rz_il_bv_free(x);
-	rz_il_bv_free(y);
-	rz_il_bv_free(add);
-	rz_il_bv_free(sub);
-	rz_il_bv_free(div);
-	rz_il_bv_free(mul);
-	rz_il_bv_free(mod);
+	rz_bitvector_free(x);
+	rz_bitvector_free(y);
+	rz_bitvector_free(add);
+	rz_bitvector_free(sub);
+	rz_bitvector_free(div);
+	rz_bitvector_free(mul);
+	rz_bitvector_free(mod);
 	mu_end;
 }
 
 bool test_rzil_bv_algorithm128(void) {
-	RzILBitVector *x, *y;
-	RzILBitVector *result;
-	RzILBitVector *add, *sub, *mul, *div, *mod;
-	x = rz_il_bv_new_from_ut64(128, 121);
-	y = rz_il_bv_new_from_ut64(128, 33);
+	RzBitVector *x, *y;
+	RzBitVector *result;
+	RzBitVector *add, *sub, *mul, *div, *mod;
+	x = rz_bitvector_new_from_ut64(128, 121);
+	y = rz_bitvector_new_from_ut64(128, 33);
 
-	add = rz_il_bv_new_from_ut64(128, 154);
-	sub = rz_il_bv_new_from_ut64(128, 121 - 33);
-	div = rz_il_bv_new_from_ut64(128, 121 / 33);
-	mul = rz_il_bv_new_from_ut64(128, 121 * 33);
-	mod = rz_il_bv_new_from_ut64(128, 121 % 33);
+	add = rz_bitvector_new_from_ut64(128, 154);
+	sub = rz_bitvector_new_from_ut64(128, 121 - 33);
+	div = rz_bitvector_new_from_ut64(128, 121 / 33);
+	mul = rz_bitvector_new_from_ut64(128, 121 * 33);
+	mod = rz_bitvector_new_from_ut64(128, 121 % 33);
 
-	result = rz_il_bv_add(x, y, NULL);
-	mu_assert("Add x y", rz_il_bv_cmp(result, add) == 0);
-	rz_il_bv_free(result);
+	result = rz_bitvector_add(x, y, NULL);
+	mu_assert("Add x y", rz_bitvector_cmp(result, add) == 0);
+	rz_bitvector_free(result);
 
-	result = rz_il_bv_sub(x, y, NULL);
-	mu_assert("Sub x y", rz_il_bv_cmp(result, sub) == 0);
-	rz_il_bv_free(result);
+	result = rz_bitvector_sub(x, y, NULL);
+	mu_assert("Sub x y", rz_bitvector_cmp(result, sub) == 0);
+	rz_bitvector_free(result);
 
-	result = rz_il_bv_mul(x, y);
-	mu_assert("Mul x y", rz_il_bv_cmp(result, mul) == 0);
-	rz_il_bv_free(result);
+	result = rz_bitvector_mul(x, y);
+	mu_assert("Mul x y", rz_bitvector_cmp(result, mul) == 0);
+	rz_bitvector_free(result);
 
-	result = rz_il_bv_div(x, y);
+	result = rz_bitvector_div(x, y);
 	printf("\n");
-	mu_assert("Div x y", rz_il_bv_cmp(result, div) == 0);
-	rz_il_bv_free(result);
+	mu_assert("Div x y", rz_bitvector_cmp(result, div) == 0);
+	rz_bitvector_free(result);
 
-	result = rz_il_bv_mod(x, y);
-	mu_assert("Mod x y", rz_il_bv_cmp(result, mod) == 0);
-	rz_il_bv_free(result);
+	result = rz_bitvector_mod(x, y);
+	mu_assert("Mod x y", rz_bitvector_cmp(result, mod) == 0);
+	rz_bitvector_free(result);
 
-	rz_il_bv_free(x);
-	rz_il_bv_free(y);
-	rz_il_bv_free(add);
-	rz_il_bv_free(sub);
-	rz_il_bv_free(div);
-	rz_il_bv_free(mul);
-	rz_il_bv_free(mod);
+	rz_bitvector_free(x);
+	rz_bitvector_free(y);
+	rz_bitvector_free(add);
+	rz_bitvector_free(sub);
+	rz_bitvector_free(div);
+	rz_bitvector_free(mul);
+	rz_bitvector_free(mod);
 	mu_end;
 }
 
 bool test_rzil_bv_cmp(void) {
-	RzILBitVector *x, *y;
+	RzBitVector *x, *y;
 
 	// x : 1000 0111, y : 0000 0111
-	x = rz_il_bv_new(8);
-	rz_il_bv_set(x, 0, true);
-	rz_il_bv_set(x, 1, true);
-	rz_il_bv_set(x, 2, true);
-	rz_il_bv_set(x, 7, true);
+	x = rz_bitvector_new(8);
+	rz_bitvector_set(x, 0, true);
+	rz_bitvector_set(x, 1, true);
+	rz_bitvector_set(x, 2, true);
+	rz_bitvector_set(x, 7, true);
 
-	y = rz_il_bv_new(8);
-	rz_il_bv_set(y, 0, true);
-	rz_il_bv_set(y, 1, true);
-	rz_il_bv_set(y, 2, true);
+	y = rz_bitvector_new(8);
+	rz_bitvector_set(y, 0, true);
+	rz_bitvector_set(y, 1, true);
+	rz_bitvector_set(y, 2, true);
 
 	// get msb and lsb of y
 	bool msb, lsb;
-	msb = rz_il_bv_msb(y);
-	lsb = rz_il_bv_lsb(y);
+	msb = rz_bitvector_msb(y);
+	lsb = rz_bitvector_lsb(y);
 
 	mu_assert("msb", msb == false);
 	mu_assert("lsb", lsb == true);
 
-	mu_assert("Unsigned : x > y", !rz_il_bv_ule(x, y));
-	mu_assert("Signed : x < y", rz_il_bv_sle(x, y));
+	mu_assert("Unsigned : x > y", !rz_bitvector_ule(x, y));
+	mu_assert("Signed : x < y", rz_bitvector_sle(x, y));
 
-	rz_il_bv_free(x);
-	rz_il_bv_free(y);
+	rz_bitvector_free(x);
+	rz_bitvector_free(y);
 
 	mu_end;
 }
 
 bool test_rzil_bv_operation(void) {
-	RzILBitVector *x, *y, *res, *prep, *append, *cut_h, *cut_t, *concat;
+	RzBitVector *x, *y, *res, *prep, *append, *cut_h, *cut_t, *concat;
 	char *s;
 
 	// 0000 1000
-	x = rz_il_bv_new(8);
-	rz_il_bv_set(x, 3, true);
+	x = rz_bitvector_new(8);
+	rz_bitvector_set(x, 3, true);
 
 	// prepend 3 : 000 0000 1000
-	prep = rz_il_bv_new(11);
-	rz_il_bv_set(prep, 3, true);
+	prep = rz_bitvector_new(11);
+	rz_bitvector_set(prep, 3, true);
 
 	// append 5 : 0000 1000 0000 0
-	append = rz_il_bv_new(13);
-	rz_il_bv_set(append, 8, true);
+	append = rz_bitvector_new(13);
+	rz_bitvector_set(append, 8, true);
 
 	// cut head 2: 00 1000
-	cut_h = rz_il_bv_new(6);
-	rz_il_bv_set(cut_h, 3, true);
+	cut_h = rz_bitvector_new(6);
+	rz_bitvector_set(cut_h, 3, true);
 
 	// cut tail 4: 0000
-	cut_t = rz_il_bv_new(4);
+	cut_t = rz_bitvector_new(4);
 
 	// y : 1011
-	y = rz_il_bv_new(4);
-	rz_il_bv_set(y, 0, true);
-	rz_il_bv_set(y, 1, true);
-	rz_il_bv_set(y, 3, true);
-	concat = rz_il_bv_new(12);
-	rz_il_bv_set(concat, 0, true);
-	rz_il_bv_set(concat, 1, true);
-	rz_il_bv_set(concat, 3, true);
-	rz_il_bv_set(concat, 7, true);
+	y = rz_bitvector_new(4);
+	rz_bitvector_set(y, 0, true);
+	rz_bitvector_set(y, 1, true);
+	rz_bitvector_set(y, 3, true);
+	concat = rz_bitvector_new(12);
+	rz_bitvector_set(concat, 0, true);
+	rz_bitvector_set(concat, 1, true);
+	rz_bitvector_set(concat, 3, true);
+	rz_bitvector_set(concat, 7, true);
 
-	res = rz_il_bv_prepend_zero(x, 3);
+	res = rz_bitvector_prepend_zero(x, 3);
 	mu_assert("prepend 3 zero", is_equal_bv(res, prep));
-	s = rz_il_bv_as_string(res);
+	s = rz_bitvector_as_string(res);
 	mu_assert_streq_free(s, "00000001000", "string bit value of bv");
-	s = rz_il_bv_as_hex_string(res);
+	s = rz_bitvector_as_hex_string(res);
 	mu_assert_streq_free(s, "0x08", "string hex value of bv");
-	rz_il_bv_free(res);
+	rz_bitvector_free(res);
 
-	res = rz_il_bv_append_zero(x, 5);
+	res = rz_bitvector_append_zero(x, 5);
 	mu_assert("append 5 zero", is_equal_bv(res, append));
-	s = rz_il_bv_as_string(res);
+	s = rz_bitvector_as_string(res);
 	mu_assert_streq_free(s, "0000100000000", "string bit value of bv");
-	s = rz_il_bv_as_hex_string(res);
+	s = rz_bitvector_as_hex_string(res);
 	mu_assert_streq_free(s, "0x100", "string hex value of bv");
-	rz_il_bv_free(res);
+	rz_bitvector_free(res);
 
-	res = rz_il_bv_cut_head(x, 2);
+	res = rz_bitvector_cut_head(x, 2);
 	mu_assert("cut head 2 zero", is_equal_bv(res, cut_h));
-	s = rz_il_bv_as_string(res);
+	s = rz_bitvector_as_string(res);
 	mu_assert_streq_free(s, "001000", "string bit value of bv");
-	s = rz_il_bv_as_hex_string(res);
+	s = rz_bitvector_as_hex_string(res);
 	mu_assert_streq_free(s, "0x8", "string hex value of bv");
-	rz_il_bv_free(res);
+	rz_bitvector_free(res);
 
-	res = rz_il_bv_cut_tail(x, 4);
+	res = rz_bitvector_cut_tail(x, 4);
 	mu_assert("cut tail 4 zero", is_equal_bv(res, cut_t));
-	s = rz_il_bv_as_string(res);
+	s = rz_bitvector_as_string(res);
 	mu_assert_streq_free(s, "0000", "string bit value of bv");
-	s = rz_il_bv_as_hex_string(res);
+	s = rz_bitvector_as_hex_string(res);
 	mu_assert_streq_free(s, "0x0", "string hex value of bv");
-	rz_il_bv_free(res);
+	rz_bitvector_free(res);
 
-	res = rz_il_bv_append(x, y);
+	res = rz_bitvector_append(x, y);
 	mu_assert("append x and y", is_equal_bv(res, concat));
-	s = rz_il_bv_as_string(res);
+	s = rz_bitvector_as_string(res);
 	mu_assert_streq_free(s, "000010001011", "string bit value of bv");
-	s = rz_il_bv_as_hex_string(res);
+	s = rz_bitvector_as_hex_string(res);
 	mu_assert_streq_free(s, "0x08b", "string hex value of bv");
-	rz_il_bv_free(res);
+	rz_bitvector_free(res);
 
-	rz_il_bv_free(prep);
-	rz_il_bv_free(append);
-	rz_il_bv_free(cut_h);
-	rz_il_bv_free(cut_t);
-	rz_il_bv_free(concat);
-	rz_il_bv_free(x);
-	rz_il_bv_free(y);
+	rz_bitvector_free(prep);
+	rz_bitvector_free(append);
+	rz_bitvector_free(cut_h);
+	rz_bitvector_free(cut_t);
+	rz_bitvector_free(concat);
+	rz_bitvector_free(x);
+	rz_bitvector_free(y);
 
 	mu_end;
 }
@@ -491,9 +491,9 @@ bool test_rzil_bv_operation(void) {
 bool test_rzil_bv_cast(void) {
 	ut32 normal, shadow;
 	normal = 2021;
-	RzILBitVector *bv = rz_il_bv_new_from_ut64(32, normal);
-	shadow = rz_il_bv_to_ut32(bv);
-	rz_il_bv_free(bv);
+	RzBitVector *bv = rz_bitvector_new_from_ut64(32, normal);
+	shadow = rz_bitvector_to_ut32(bv);
+	rz_bitvector_free(bv);
 
 	mu_assert("cast bv<->ut32", normal == shadow);
 	mu_end;
@@ -580,9 +580,9 @@ static bool test_rzil_mem() {
 	RzILMem *mem = rz_il_mem_new(8);
 	mu_assert_notnull(mem, "Create mem");
 
-	RzILBitVector *addr = rz_il_bv_new_from_ut64(16, 121);
-	RzILBitVector *valid_data = rz_il_bv_new_from_ut64(8, 177);
-	RzILBitVector *invalid_data = rz_il_bv_new_from_ut64(4, 6);
+	RzBitVector *addr = rz_bitvector_new_from_ut64(16, 121);
+	RzBitVector *valid_data = rz_bitvector_new_from_ut64(8, 177);
+	RzBitVector *invalid_data = rz_bitvector_new_from_ut64(4, 6);
 
 	RzILMem *result = rz_il_mem_store(mem, addr, valid_data);
 	mu_assert_eq(result, mem, "Store successfully");
@@ -590,13 +590,13 @@ static bool test_rzil_mem() {
 	result = rz_il_mem_store(mem, addr, invalid_data);
 	mu_assert_null(result, "Unmatched type");
 
-	RzILBitVector *data = rz_il_mem_load(mem, addr);
+	RzBitVector *data = rz_il_mem_load(mem, addr);
 	mu_assert("Load correct data", is_equal_bv(data, valid_data));
-	rz_il_bv_free(data);
+	rz_bitvector_free(data);
 
-	rz_il_bv_free(valid_data);
-	rz_il_bv_free(invalid_data);
-	rz_il_bv_free(addr);
+	rz_bitvector_free(valid_data);
+	rz_bitvector_free(invalid_data);
+	rz_bitvector_free(addr);
 	rz_il_mem_free(mem);
 
 	mu_end;

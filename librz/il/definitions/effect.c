@@ -156,7 +156,7 @@ static char *ctrl_effect_as_string(RzILCtrlEffect *eff) {
 	if (!eff) {
 		return NULL;
 	}
-	return rz_str_newf("[Ctrl Eff] pc -> %" PFMT64u "\n", rz_il_bv_to_ut64(eff->pc));
+	return rz_str_newf("[Ctrl Eff] pc -> %" PFMT64u "\n", rz_bitvector_to_ut64(eff->pc));
 }
 
 static char *data_effect_as_string(RzILDataEffect *eff) {

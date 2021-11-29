@@ -26,30 +26,30 @@ typedef enum rz_il_event_id_t {
 } RzILEventId;
 
 typedef struct rzil_vm_event_mem_read_t {
-	RzILBitVector *address;
-	RzILBitVector *value;
+	RzBitVector *address;
+	RzBitVector *value;
 } RzILEventMemRead;
 
 typedef struct rzil_vm_event_var_read_t {
 	char *variable;
-	RzILBitVector *value;
+	RzBitVector *value;
 } RzILEventVarRead;
 
 typedef struct rzil_vm_event_pc_write_t {
-	RzILBitVector *old_pc;
-	RzILBitVector *new_pc;
+	RzBitVector *old_pc;
+	RzBitVector *new_pc;
 } RzILEventPCWrite;
 
 typedef struct rzil_vm_event_mem_write_t {
-	RzILBitVector *address;
-	RzILBitVector *old_value;
-	RzILBitVector *new_value;
+	RzBitVector *address;
+	RzBitVector *old_value;
+	RzBitVector *new_value;
 } RzILEventMemWrite;
 
 typedef struct rzil_vm_event_var_write_t {
 	char *variable;
-	RzILBitVector *old_value;
-	RzILBitVector *new_value;
+	RzBitVector *old_value;
+	RzBitVector *new_value;
 } RzILEventVarWrite;
 
 typedef struct rzil_vm_event_t {
@@ -65,11 +65,11 @@ typedef struct rzil_vm_event_t {
 } RzILEvent;
 
 RZ_API RZ_OWN RzILEvent *rz_il_event_exception_new(RZ_NONNULL const char *exception);
-RZ_API RZ_OWN RzILEvent *rz_il_event_pc_write_new(RZ_NONNULL const RzILBitVector *old_pc, RZ_NONNULL const RzILBitVector *new_pc);
-RZ_API RZ_OWN RzILEvent *rz_il_event_mem_read_new(RZ_NONNULL const RzILBitVector *addr, RZ_NULLABLE const RzILBitVector *value);
-RZ_API RZ_OWN RzILEvent *rz_il_event_var_read_new(RZ_NONNULL const char *name, RZ_NULLABLE const RzILBitVector *value);
-RZ_API RZ_OWN RzILEvent *rz_il_event_mem_write_new(RZ_NONNULL const RzILBitVector *addr, RZ_NULLABLE const RzILBitVector *old_v, RZ_NONNULL const RzILBitVector *new_v);
-RZ_API RZ_OWN RzILEvent *rz_il_event_var_write_new(RZ_NONNULL const char *name, RZ_NULLABLE const RzILBitVector *old_v, RZ_NONNULL const RzILBitVector *new_v);
+RZ_API RZ_OWN RzILEvent *rz_il_event_pc_write_new(RZ_NONNULL const RzBitVector *old_pc, RZ_NONNULL const RzBitVector *new_pc);
+RZ_API RZ_OWN RzILEvent *rz_il_event_mem_read_new(RZ_NONNULL const RzBitVector *addr, RZ_NULLABLE const RzBitVector *value);
+RZ_API RZ_OWN RzILEvent *rz_il_event_var_read_new(RZ_NONNULL const char *name, RZ_NULLABLE const RzBitVector *value);
+RZ_API RZ_OWN RzILEvent *rz_il_event_mem_write_new(RZ_NONNULL const RzBitVector *addr, RZ_NULLABLE const RzBitVector *old_v, RZ_NONNULL const RzBitVector *new_v);
+RZ_API RZ_OWN RzILEvent *rz_il_event_var_write_new(RZ_NONNULL const char *name, RZ_NULLABLE const RzBitVector *old_v, RZ_NONNULL const RzBitVector *new_v);
 RZ_API void rz_il_event_free(RZ_NULLABLE RzILEvent *evt);
 
 #ifdef __cplusplus

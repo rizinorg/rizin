@@ -450,7 +450,6 @@ install_headers(rz_util_files, install_dir: join_paths(rizin_incdir, 'rz_util'))
 
 rz_il_definitions_files = [
   'include/rz_il/definitions/bag.h',
-  'include/rz_il/definitions/bitvector.h',
   'include/rz_il/definitions/bool.h',
   'include/rz_il/definitions/definitions.h',
   'include/rz_il/definitions/effect.h',

@@ -4,8 +4,8 @@
 #include <rz_il/definitions/mem.h>
 
 static void free_bv_key_value(HtPPKv *kv) {
-	rz_il_bv_free(kv->value);
-	rz_il_bv_free(kv->key);
+	rz_bitvector_free(kv->value);
+	rz_bitvector_free(kv->key);
 }
 
 /**
@@ -20,10 +20,10 @@ RZ_API RzILMem *rz_il_mem_new(ut32 min_unit_size) {
 	}
 
 	HtPPOptions options = { 0 };
-	options.cmp = (HtPPListComparator)rz_il_bv_cmp;
-	options.hashfn = (HtPPHashFunction)rz_il_bv_hash;
-	options.dupkey = (HtPPDupKey)rz_il_bv_dup;
-	options.dupvalue = (HtPPDupValue)rz_il_bv_dup;
+	options.cmp = (HtPPListComparator)rz_bitvector_cmp;
+	options.hashfn = (HtPPHashFunction)rz_bitvector_hash;
+	options.dupkey = (HtPPDupKey)rz_bitvector_dup;
+	options.dupvalue = (HtPPDupValue)rz_bitvector_dup;
 	options.freefn = (HtPPKvFreeFunc)free_bv_key_value;
 	options.elem_size = sizeof(HtPPKv);
 	HtPP *mem_map = ht_pp_new_opt(&options);
@@ -54,7 +54,7 @@ RZ_API void rz_il_mem_free(RzILMem *mem) {
  * \param value data (bitvector)
  * \return a pointer to memory
  */
-RZ_API RzILMem *rz_il_mem_store(RzILMem *mem, RzILBitVector *key, RzILBitVector *value) {
+RZ_API RzILMem *rz_il_mem_store(RzILMem *mem, RzBitVector *key, RzBitVector *value) {
 	if (value->len < mem->min_unit_size) {
 		RZ_LOG_ERROR("RzIL: Memory write size mismatch (expected size > %u, but got %u)\n", mem->min_unit_size, value->len);
 		return NULL;
@@ -69,11 +69,11 @@ RZ_API RzILMem *rz_il_mem_store(RzILMem *mem, RzILBitVector *key, RzILBitVector 
  * \param key address (bitvector)
  * \return data (bitvector)
  */
-RZ_API RzILBitVector *rz_il_mem_load(RzILMem *mem, RzILBitVector *key) {
-	RzILBitVector *val = ht_pp_find(mem->kv_map, key, NULL);
+RZ_API RzBitVector *rz_il_mem_load(RzILMem *mem, RzBitVector *key) {
+	RzBitVector *val = ht_pp_find(mem->kv_map, key, NULL);
 	if (val == NULL) {
 		return NULL;
 	}
-	RzILBitVector *ret = rz_il_bv_dup(val);
+	RzBitVector *ret = rz_bitvector_dup(val);
 	return ret;
 }

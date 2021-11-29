@@ -31,7 +31,7 @@ RZ_API RzILVal *rz_il_value_dup(RzILVal *val) {
 	}
 
 	if (ret->type == RZIL_VAR_TYPE_BV) {
-		ret->data.bv = rz_il_bv_dup(val->data.bv);
+		ret->data.bv = rz_bitvector_dup(val->data.bv);
 	}
 
 	if (ret->type == RZIL_VAR_TYPE_UNK) {
@@ -57,7 +57,7 @@ RZ_API void rz_il_value_free(RzILVal *val) {
 		rz_il_bool_free(val->data.b);
 		break;
 	case RZIL_VAR_TYPE_BV:
-		rz_il_bv_free(val->data.bv);
+		rz_bitvector_free(val->data.bv);
 		break;
 	case RZIL_VAR_TYPE_UNK:
 	default:

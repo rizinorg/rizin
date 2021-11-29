@@ -9,6 +9,7 @@ rz_util_sources = [
   'base85.c',
   'base91.c',
   'bitmap.c',
+  'bitvector.c',
   'buf.c',
   'calc.c',
   'chmod.c',

@@ -4,7 +4,7 @@
 #ifndef RZ_IL_DEFINITIONS_H
 #define RZ_IL_DEFINITIONS_H
 
-#include <rz_il/definitions/bitvector.h>
+#include <rz_util/rz_bitvector.h>
 #include <rz_il/definitions/effect.h>
 #include <rz_il/definitions/bool.h>
 #include <rz_il/definitions/value.h>

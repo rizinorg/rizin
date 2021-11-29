@@ -22,14 +22,14 @@ RZ_API void rz_il_vm_event_add(RzILVM *vm, RzILEvent *evt);
 
 // Memory operations
 RZ_API RzILMem *rz_il_vm_add_mem(RzILVM *vm, ut32 min_unit_size);
-RZ_API RzILBitVector *rz_il_vm_mem_load(RzILVM *vm, ut32 mem_index, RzILBitVector *key);
-RZ_API RzILMem *rz_il_vm_mem_store(RzILVM *vm, ut32 mem_index, RzILBitVector *key, RzILBitVector *value);
-RZ_API RzILMem *rz_il_vm_mem_store_zero(RzILVM *vm, ut32 mem_index, RzILBitVector *key, RzILBitVector **value);
+RZ_API RzBitVector *rz_il_vm_mem_load(RzILVM *vm, ut32 mem_index, RzBitVector *key);
+RZ_API RzILMem *rz_il_vm_mem_store(RzILVM *vm, ut32 mem_index, RzBitVector *key, RzBitVector *value);
+RZ_API RzILMem *rz_il_vm_mem_store_zero(RzILVM *vm, ut32 mem_index, RzBitVector *key, RzBitVector **value);
 
 // utils
-RZ_API RzILBitVector *rz_il_ut64_addr_to_bv(ut64 addr);
-RZ_API ut64 rz_il_bv_addr_to_ut64(RzILBitVector *addr);
-RZ_API void rz_il_free_bv_addr(RzILBitVector *addr);
+RZ_API RzBitVector *rz_il_ut64_addr_to_bv(ut64 addr);
+RZ_API ut64 rz_bitvector_addr_to_ut64(RzBitVector *addr);
+RZ_API void rz_il_free_bv_addr(RzBitVector *addr);
 
 #ifdef __cplusplus
 }

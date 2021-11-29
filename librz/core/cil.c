@@ -418,12 +418,12 @@ RZ_IPI void rz_core_analysis_rzil_reinit(RzCore *core) {
 	rz_analysis_rzil_setup(core->analysis);
 	if (core->analysis->rzil) {
 		// initialize the program counter with the current offset
-		rz_il_bv_set_from_ut64(core->analysis->rzil->vm->pc, core->offset);
+		rz_bitvector_set_from_ut64(core->analysis->rzil->vm->pc, core->offset);
 	}
 }
 
-static void rzil_print_register(int padding, const char *reg_name, RzILBitVector *number, RzStrBuf *sb) {
-	char *hex = rz_il_bv_as_hex_string(number);
+static void rzil_print_register(int padding, const char *reg_name, RzBitVector *number, RzStrBuf *sb) {
+	char *hex = rz_bitvector_as_hex_string(number);
 	if (sb) {
 		rz_strbuf_appendf(sb, " %s: %s ", reg_name, hex);
 		if (rz_strbuf_length(sb) > 95) {
@@ -431,7 +431,7 @@ static void rzil_print_register(int padding, const char *reg_name, RzILBitVector
 			rz_strbuf_fini(sb);
 		}
 	} else {
-		const char *arrow = !rz_il_bv_is_zero_vector(number) ? " <--" : "";
+		const char *arrow = !rz_bitvector_is_zero_vector(number) ? " <--" : "";
 		rz_cons_printf("%*s: %s%s\n", padding, reg_name, hex, arrow);
 	}
 	free(hex);
@@ -488,7 +488,7 @@ RZ_IPI void rz_core_rzil_step(RzCore *core) {
 		return;
 	}
 
-	ut64 addr = rz_il_bv_to_ut64(vm->pc);
+	ut64 addr = rz_bitvector_to_ut64(vm->pc);
 
 	// try load from vm
 	// fetch and parse if no opcode

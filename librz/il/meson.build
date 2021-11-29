@@ -1,6 +1,5 @@
 rz_il_sources = [
    'definitions/effect.c',
-   'definitions/bitvector.c',
    'definitions/variable.c',
    'definitions/value.c',
    'definitions/bool.c',

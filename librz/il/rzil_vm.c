@@ -55,7 +55,7 @@ RZ_API void rz_il_vm_add_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name,
 	RzILVar *var = rz_il_vm_create_variable(vm, name);
 	var->type = RZIL_VAR_TYPE_BV;
 	RzILVal *val = rz_il_vm_create_value(vm, RZIL_VAR_TYPE_BV);
-	val->data.bv = rz_il_bv_new(length);
+	val->data.bv = rz_bitvector_new(length);
 	rz_il_hash_bind(vm, var, val);
 }
 
@@ -87,12 +87,12 @@ RZ_API RzILVal *rz_il_vm_fortify_val(RzILVM *vm, RzILVal *val) {
 }
 
 /**
- * Make a temporary value (type `RzILBitVector`) inside vm become a value store in VM
+ * Make a temporary value (type `RzBitVector`) inside vm become a value store in VM
  * \param vm RzILVM, pointer to VM
  * \param temp_val_index int, the index of temporary value you attempt to fortify
  * \return val RzILVal, pointer to the fortified value
  */
-RZ_API RzILVal *rz_il_vm_fortify_bitv(RzILVM *vm, RzILBitVector *bitv) {
+RZ_API RzILVal *rz_il_vm_fortify_bitv(RzILVM *vm, RzBitVector *bitv) {
 	rz_return_val_if_fail(vm, NULL);
 	RzILVal *val = rz_il_value_new();
 	if (!val) {
@@ -195,11 +195,11 @@ RZ_API void rz_il_hash_bind(RzILVM *vm, RzILVar *var, RzILVal *val) {
  * Find the bitvector address by given name
  * \param vm RzILVM* vm, pointer to VM
  * \param lbl_name string, the name of label
- * \return addr RzILBitVector, address which has RzILBitVector type
+ * \return addr RzBitVector, address which has RzBitVector type
  */
-RZ_API RzILBitVector *rz_il_hash_find_addr_by_lblname(RzILVM *vm, RZ_NONNULL const char *lbl_name) {
+RZ_API RzBitVector *rz_il_hash_find_addr_by_lblname(RzILVM *vm, RZ_NONNULL const char *lbl_name) {
 	HtPP *lbl_table = vm->vm_global_label_table;
-	RzILBitVector *ret;
+	RzBitVector *ret;
 	bool found = false;
 
 	rz_return_val_if_fail(lbl_name, NULL);
@@ -227,15 +227,15 @@ RZ_API RzILEffectLabel *rz_il_vm_find_label_by_name(RzILVM *vm, RZ_NONNULL const
  * Create a label in VM
  * \param vm RzILVM, pointer to VM
  * \param name string, name of label
- * \param addr RzILBitVector, label address
+ * \param addr RzBitVector, label address
  * \return lbl RzILEffectLabel, pointer to label instance
  */
-RZ_API RzILEffectLabel *rz_il_vm_create_label(RzILVM *vm, RZ_NONNULL const char *name, RzILBitVector *addr) {
+RZ_API RzILEffectLabel *rz_il_vm_create_label(RzILVM *vm, RZ_NONNULL const char *name, RzBitVector *addr) {
 	rz_return_val_if_fail(name, NULL);
 	HtPP *lbl_table = vm->vm_global_label_table;
 
 	RzILEffectLabel *lbl = rz_il_effect_label_new(name, EFFECT_LABEL_ADDR);
-	lbl->addr = rz_il_bv_dup(addr);
+	lbl->addr = rz_bitvector_dup(addr);
 	ht_pp_insert(lbl_table, name, lbl);
 
 	return lbl;
@@ -264,13 +264,13 @@ RZ_API RzILEffectLabel *rz_il_vm_create_label_lazy(RzILVM *vm, RZ_NONNULL const 
  * \param name string, name of this label
  * \return lbl RzILEffectLabel, pointer to label instance
  */
-RZ_API RzILEffectLabel *rz_il_vm_update_label(RzILVM *vm, RZ_NONNULL char *name, RzILBitVector *addr) {
+RZ_API RzILEffectLabel *rz_il_vm_update_label(RzILVM *vm, RZ_NONNULL char *name, RzBitVector *addr) {
 	rz_return_val_if_fail(name, NULL);
 	RzILEffectLabel *lbl = ht_pp_find(vm->vm_global_label_table, name, NULL);
 	if (lbl->addr) {
-		rz_il_bv_free(lbl->addr);
+		rz_bitvector_free(lbl->addr);
 	}
-	lbl->addr = rz_il_bv_dup(addr);
+	lbl->addr = rz_bitvector_dup(addr);
 
 	return lbl;
 }
@@ -278,10 +278,10 @@ RZ_API RzILEffectLabel *rz_il_vm_update_label(RzILVM *vm, RZ_NONNULL char *name,
 /**
  * Store an opcode list to address
  * \param vm RzILVM, pointer to VM
- * \param addr RzILBitVector, address of this opcode list
+ * \param addr RzBitVector, address of this opcode list
  * \param oplist RzPVector of RzILOp, core theory opcodes
  */
-RZ_API void rz_il_vm_store_opcodes_to_addr(RzILVM *vm, RzILBitVector *addr, RzPVector *oplist) {
+RZ_API void rz_il_vm_store_opcodes_to_addr(RzILVM *vm, RzBitVector *addr, RzPVector *oplist) {
 	rz_return_if_fail(addr && oplist);
 	ht_pp_insert(vm->ct_opcodes, addr, oplist);
 }
@@ -308,13 +308,13 @@ RZ_API RzPVector *rz_il_make_oplist(int num, ...) {
 }
 
 // WARN : convertion breaks the original data
-static RzILBool *bitv_to_bool(RzILBitVector *bitv) {
-	RzILBool *result = rz_il_bool_new(!rz_il_bv_is_zero_vector(bitv));
-	rz_il_bv_free(bitv);
+static RzILBool *bitv_to_bool(RzBitVector *bitv) {
+	RzILBool *result = rz_il_bool_new(!rz_bitvector_is_zero_vector(bitv));
+	rz_bitvector_free(bitv);
 	return result;
 }
 
-static RzILVal *bitv_to_val(RzILBitVector *bitv) {
+static RzILVal *bitv_to_val(RzBitVector *bitv) {
 	RzILVal *ret = rz_il_value_new();
 	ret->type = RZIL_VAR_TYPE_BV;
 	ret->data.bv = bitv;
@@ -328,8 +328,8 @@ static RzILVal *bool_to_val(RzILBool *b) {
 	return ret;
 }
 
-static RzILBitVector *val_to_bitv(RzILVal *val) {
-	RzILBitVector *ret;
+static RzBitVector *val_to_bitv(RzILVal *val) {
+	RzBitVector *ret;
 	if (val->type != RZIL_VAR_TYPE_BV) {
 		RZ_LOG_ERROR("RzIL: Expected bitvector, but unknown or bool type detected\n");
 		return NULL;
@@ -364,7 +364,7 @@ static RzILBool *val_to_bool(RzILVal *val) {
  * \param type, RzILOpArgType*, a pointer to store type info for error-checking
  * \return bitv, value in bitvector
  */
-RZ_API RzILBitVector *rz_il_evaluate_bitv(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
+RZ_API RzBitVector *rz_il_evaluate_bitv(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	// check type and auto convertion between bitv/bool/val
 	void *input = rz_il_parse_op_root(vm, op, type);
 	RzILOpArgType t = *type;
@@ -372,7 +372,7 @@ RZ_API RzILBitVector *rz_il_evaluate_bitv(RzILVM *vm, RzILOp *op, RzILOpArgType 
 	switch (t) {
 	case RZIL_OP_ARG_BITV:
 	case RZIL_OP_ARG_BOOL:
-		return (RzILBitVector *)input;
+		return (RzBitVector *)input;
 	case RZIL_OP_ARG_VAL:
 		*type = RZIL_OP_ARG_BITV;
 		return val_to_bitv(input);
@@ -476,7 +476,7 @@ RZ_API RzILEffect *rz_il_evaluate_effect(RzILVM *vm, RzILOp *op, RzILOpArgType *
 	case RZIL_OP_ARG_EFF:
 		return result;
 	case RZIL_OP_ARG_BITV:
-		rz_il_bv_free(result);
+		rz_bitvector_free(result);
 		break;
 	case RZIL_OP_ARG_BOOL:
 		rz_il_bool_free(result);

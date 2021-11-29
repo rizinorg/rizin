@@ -43,7 +43,7 @@ typedef struct rz_il_op_t RzILOp;
  *  value is a bitvector constant.
  */
 struct rzil_op_bv_t {
-	RzILBitVector *value; ///< value of bitvector
+	RzBitVector *value; ///< value of bitvector
 };
 
 /**
@@ -169,7 +169,7 @@ struct rzil_op_set_t {
  *  jmp dst passes the control to a program located at dst.
  */
 struct rzil_op_jmp_t {
-	RzILOp *dst; ///< index of destination address (RzILBitVector)
+	RzILOp *dst; ///< index of destination address (RzBitVector)
 };
 
 /**
@@ -286,7 +286,7 @@ struct rzil_op_bool_inv_t {
  */
 struct rzil_op_load_t {
 	int mem; ///< index of the memory in VM (different from the temp_val_list)
-	RzILOp *key; ///< index of the RzILBitVector key (address)
+	RzILOp *key; ///< index of the RzBitVector key (address)
 };
 
 /**
@@ -297,7 +297,7 @@ struct rzil_op_load_t {
  */
 struct rzil_op_store_t {
 	int mem; ///< index of memory in VM
-	RzILOp *key; ///< index of the RzILBitVector key (address)
+	RzILOp *key; ///< index of the RzBitVector key (address)
 	RzILOp *value; ///< index of the RzILVal value (data) to store
 };
 
@@ -315,7 +315,7 @@ typedef enum {
 	RZIL_OP_OR,
 	RZIL_OP_XOR,
 
-	// RzILBitVector
+	// RzBitVector
 	RZIL_OP_BITV,
 	RZIL_OP_MSB,
 	RZIL_OP_LSB,
