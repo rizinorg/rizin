@@ -101,7 +101,7 @@ static BaseFindArray *basefind_create_array_of_addresses(RzCore *core) {
 	ut32 string_min_size = rz_config_get_i(core->config, "basefind.string.min");
 	if (string_min_size < 1) {
 		RZ_LOG_ERROR("basefind: cannot find strings when 'basefind.string.min' is zero.\n");
-		return NULL;
+		rz_goto_if_reached(error);
 	}
 
 	// if this list is sorted we can improve speed via half-interval search
