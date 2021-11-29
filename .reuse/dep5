@@ -179,10 +179,6 @@ Files: test/unit/rz_test_cmd_test
 Copyright: 2021 RizinOrg <info@rizin.re>
 License: LGPL-3.0-only
 
-Files: binrz/preload/trap-*
-Copyright: 2021 RadareOrg <pancake@nopcode.org>
-License: LGPL-3.0-only
-
 Files: librz/asm/arch/avr/README
 Copyright: RadareOrg <pancake@nopcode.org>
 License: LGPL-3.0-only
