@@ -105,17 +105,18 @@ static void list_themes_in_path(RzList *list, const char *path) {
 	rz_list_free(files);
 }
 
-static void print_cons_pal_list(int rad, const char *arg) {
-	RzList *lst = rz_cons_pal_list(rad, arg);
+static void print_cons_pal_list(RzOutputMode mode, const char *arg) {
+	RzList *lst = rz_cons_pal_list(mode, arg);
 	char *items = NULL;
 	RzListIter *it;
 	rz_list_foreach (lst, it, items) {
-		if (rad == 1) {
-			eprintf("%s \n", items);
+		if (mode == RZ_OUTPUT_MODE_RIZIN) {
+			rz_cons_printf("%s \n", items);
 		} else {
-			eprintf("%s", items);
+			rz_cons_printf("%s", items);
 		}
 	}
+	rz_list_free(lst);
 }
 
 RZ_API char *rz_core_theme_get(RzCore *core) {
@@ -174,24 +175,12 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_list_handler(RzCore *core, int argc, const 
 		eprintf("(%s)(%sCOLOR" Color_RESET ")\n", argv[1], color);
 		return RZ_CMD_STATUS_OK;
 	}
-	switch (mode) {
-	case RZ_OUTPUT_MODE_RIZIN:
-		print_cons_pal_list(1, NULL);
-		break;
-	case RZ_OUTPUT_MODE_JSON:
-		print_cons_pal_list('j', NULL);
-		break;
-	case RZ_OUTPUT_MODE_STANDARD:
-		print_cons_pal_list(0, NULL);
-		break;
-	default:
-		return RZ_CMD_STATUS_ERROR;
-	};
+	print_cons_pal_list(mode, NULL);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_eval_color_display_palette_css_handler(RzCore *core, int argc, const char **argv) {
-	print_cons_pal_list('c', argv[1]);
+	print_cons_pal_list(RZ_OUTPUT_MODE_LONG, argv[1]);
 	return RZ_CMD_STATUS_OK;
 }
 

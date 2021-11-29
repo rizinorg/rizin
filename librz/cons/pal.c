@@ -523,20 +523,32 @@ typedef struct {
 	const char *str;
 } RzAttrStr;
 
-RZ_API RzList *rz_cons_pal_list(int rad, const char *arg) {
-	char *name = NULL, *current, **color;
+/**
+ * \brief Returns a list of console eval colors and keys
+ *
+ * \param mode reference to RzOutputMode
+ * \param prefix reference to the optional argument for printing palettles in CSS
+ */
+RZ_API RzList RZ_OWN *rz_cons_pal_list(RzOutputMode mode, const char *prefix) {
+	char *name = NULL, *item, **color;
 	const char *hasnext;
-	PJ *pj = pj_new();
-	RzList *ret = rz_list_new();
 	int i;
-	if (rad == 'j') {
+	PJ *pj = pj_new();
+	if (!pj) {
+		return NULL;
+	}
+	RzList *ret = rz_list_new();
+	if (!ret) {
+		return NULL;
+	}
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_o(pj);
 	}
 	for (i = 0; keys[i].name; i++) {
 		RzColor *rcolor = RZCOLOR_AT(i);
 		color = COLOR_AT(i);
-		switch (rad) {
-		case 'j':
+		switch (mode) {
+		case RZ_OUTPUT_MODE_JSON:
 			pj_k(pj, keys[i].name);
 			pj_a(pj);
 			pj_n(pj, rcolor->r);
@@ -544,59 +556,59 @@ RZ_API RzList *rz_cons_pal_list(int rad, const char *arg) {
 			pj_n(pj, rcolor->b);
 			pj_end(pj);
 			break;
-		case 'c': {
-			if (!arg) {
-				arg = "";
+		case RZ_OUTPUT_MODE_LONG:
+			if (!prefix) {
+				prefix = "";
 			}
 			hasnext = (keys[i + 1].name) ? "\n" : "";
 			// TODO Need to replace the '.' char because this is not valid CSS
-			char *name = strdup(keys[i].name);
+			name = strdup(keys[i].name);
 			int j, len = strlen(name);
 			for (j = 0; j < len; j++) {
 				if (name[j] == '.') {
 					name[j] = '_';
 				}
 			}
-			current = rz_str_newf(".%s%s { color: rgb(%d, %d, %d); }%s",
-				arg, name, rcolor->r, rcolor->g, rcolor->b, hasnext);
-			rz_list_append(ret, current);
-			free(name);
-		} break;
-		case '*':
-		case 'r':
-		case 1:
-			current = rz_str_newf("ec %s rgb:%02x%02x%02x",
+			item = rz_str_newf(".%s%s { color: rgb(%d, %d, %d); }%s",
+				prefix, name, rcolor->r, rcolor->g, rcolor->b, hasnext);
+			rz_list_append(ret, item);
+			break;
+		case RZ_OUTPUT_MODE_RIZIN:
+			item = rz_str_newf("ec %s rgb:%02x%02x%02x",
 				keys[i].name, rcolor->r, rcolor->g, rcolor->b);
 			if (rcolor->a == ALPHA_FGBG) {
 				rz_str_append(name, rz_str_newf(" rgb:%02x%02x%02x", rcolor->r2, rcolor->g2, rcolor->b2));
 			}
 			if (rcolor->attr) {
 				const RzAttrStr attrs[] = {
-					{ RZ_CONS_ATTR_BOLD, "bold" },
-					{ RZ_CONS_ATTR_DIM, "dim" },
-					{ RZ_CONS_ATTR_ITALIC, "italic" },
-					{ RZ_CONS_ATTR_UNDERLINE, "underline" },
-					{ RZ_CONS_ATTR_BLINK, "blink" }
+					{ RZ_CONS_ATTR_BOLD, " bold" },
+					{ RZ_CONS_ATTR_DIM, " dim" },
+					{ RZ_CONS_ATTR_ITALIC, " italic" },
+					{ RZ_CONS_ATTR_UNDERLINE, " underline" },
+					{ RZ_CONS_ATTR_BLINK, " blink" }
 				};
 				int j;
 				if (rcolor->a != ALPHA_FGBG) {
-					rz_str_append(current, " .");
+					rz_str_append(item, " .");
 				}
 				for (j = 0; j < RZ_ARRAY_SIZE(attrs); j++) {
 					if (rcolor->attr & attrs[j].val) {
-						rz_str_append(current, attrs[j].str);
+						rz_str_append(item, attrs[j].str);
 					}
 				}
 			}
-			rz_list_append(ret, current);
+			rz_list_append(ret, item);
+			break;
+		case RZ_OUTPUT_MODE_STANDARD:
+			item = rz_str_newf(" %s##" Color_RESET "  %s\n", *color,
+				keys[i].name);
+			rz_list_append(ret, item);
 			break;
 		default:
-			current = rz_str_newf(" %s##" Color_RESET "  %s\n", *color,
-				keys[i].name);
-			rz_list_append(ret, current);
+			break;
 		}
 	}
-	if (rad == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
 		rz_cons_println(pj_string(pj));
 		pj_free(pj);
