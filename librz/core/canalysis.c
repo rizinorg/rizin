@@ -929,10 +929,11 @@ static int __core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, in
 		if (fcnlen < 0) {
 			switch (fcnlen) {
 			case RZ_ANALYSIS_RET_ERROR:
-			case RZ_ANALYSIS_RET_NEW:
-			case RZ_ANALYSIS_RET_DUP:
 			case RZ_ANALYSIS_RET_END:
 				break;
+			case RZ_ANALYSIS_RET_COND:
+			case RZ_ANALYSIS_RET_BRANCH:
+				continue;
 			default:
 				eprintf("Oops. Negative fcnsize at 0x%08" PFMT64x " (%d)\n", at, fcnlen);
 				continue;

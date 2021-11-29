@@ -376,6 +376,91 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=hexagon analysis.jmp.after endloop
+FILE==
+CMDS=<<EOF
+e asm.arch=hexagon
+e analysis.arch=hexagon
+e analysis.jmp.cref=true
+wx 0ec4057608c00f60464a0cc2034175f208c6c0ab0c8a0bf52ae6c19b464e86c3
+af
+aar
+pd 8
+EOF
+EXPECT=<<EOF
+/ fcn.00000000 ();
+|           0x00000000      ?       R14 = and(R5,##0x20)
+|       ,=< 0x00000004      [   loop0(0x8,R15)
+|       |   ; CODE XREFS from fcn.00000000 @ 0x4, 0x18
+|      .`-> 0x00000008      /       R7:6 = valignb(R11:10,R13:12,P2)
+|      :    0x0000000c      |       P3 = cmp.gtu(R21,R1)
+|      :    0x00000010      \       memd(R0++#0x8) = R7:6
+|      :    0x00000014      /       R13:12 = combine(R11,R10)
+|      `==< 0x00000018      \       if (P3) R11:10 = memd(R1++#0x8)     < endloop0
+|           0x0000001c      /       R7:6 = lsr(R7:6,R14)
+EOF
+RUN
+
+NAME=hexagon analysis.jmp.after conditional jumpr
+FILE==
+CMDS=<<EOF
+e asm.arch=hexagon
+e analysis.arch=hexagon
+wx 11400275114001f20e4021f1e0c282752943028c00417f53e34b82750ec22ef102478e8500c001940242636b027f427446ea005c3260
+af
+pd 0xd
+EOF
+EXPECT=<<EOF
+/ fcn.00000000 ();
+|           0x00000000      ?       P1 = !cmp.eq(R2,##0x0)
+|           0x00000004      ?       P1 = !cmp.eq(R1,R0)
+|           0x00000008      ?       R14 = or(R1,R0)
+|           0x0000000c      ?       P0 = cmp.gtu(R2,##0x17)
+|           0x00000010      /       R9 = lsr(R2,#0x3)
+|           0x00000014      |       if (!P1) jumpr:nt R31
+|           0x00000018      |       P3 = cmp.gtu(R2,##0x5f)
+|           0x0000001c      \       R14 = or(R14,R2)
+|           0x00000020      /       P2 = bitsclr(R14,#0x7)
+|           0x00000024      \       dcfetch(R1+#0x0)
+|           0x00000028      /       P2 = and(P2,!P3)
+|           0x0000002c      |       if (P2.new) R2 = add(R2,##0xfffffff8)
+|       ,=< 0x00000030      \       if (P2.new) jump:nt 0x2b4
+EOF
+RUN
+
+NAME=hexagon analysis.trap.after
+FILE==
+CMDS=<<EOF
+e asm.arch=hexagon
+e analysis.arch=hexagon
+e analysis.trap.after=true
+wx 104300000244804920c00224201cf4eb2846005a110800e82446005a01410078082c002ca0c2007801c0707000c0005402c0607000406270001f0c3e00c09f5202c00078
+af
+pd 0x12
+EOF
+EXPECT=<<EOF
+/ fcn.00000000 ();
+|           0x00000000      ?       immext(##0xc400)
+|           0x00000004      ?       R2 = memw(GP+##0xc420)
+|       ,=< 0x00000008      ?       if (cmp.eq(R2.new,#0x0)) jump:nt 0x40
+|       |   0x0000000c      [   memd(R29+#-0x10) = R17:16 ; allocframe(#0x10)
+|       |   0x00000010      /       call 0xc60
+|       |   0x00000014      \       memw(R29+#0x0) = R0 ; memw(R29+#0x4) = R1
+|       |   0x00000018      /       call 0xc60
+|       |   0x0000001c      |       R1 = ##0x8
+|       |   0x00000020      \       R0 = add(R29,#0x0) ; R16 = add(R29,#0x0)
+|       |   0x00000024      [   R0 = ##0x15
+|       |   0x00000028      [   R1 = R16
+|       |   0x0000002c      [   trap0(#0x0)
+|       |   0x00000030      [   R2 = R0
+|       |   0x00000034      /       R0 = R2
+|       |   0x00000038      \       R17:16 = memd(R29+#0x8) ; deallocframe
+|       |   0x0000003c      [   jumpr R31
+|       `-> 0x00000040      [   R2 = ##0x0
+\           0x00000044      [   invalid
+EOF
+RUN
+
 NAME=hexagon regs
 FILE=
 CMDS=<<EOF
@@ -697,5 +782,182 @@ s73:72
 s75:74
 s77:76
 s79:78
+EOF
+RUN
+
+NAME=hexagon basic block graph
+FILE=bins/elf/analysis/hexagon-hello-loop
+CMDS=<<EOF
+aaa
+s main
+agf
+EOF
+EXPECT=<<EOF
+[0x00005110]>  # int main (int argc, char **argv, char **envp);
+          .---------------------------------------------------.
+          |  0x5110                                           |
+          |   ; CALL XREF from sym.__libc_start_main @ 0x5e98 |
+          | int main (int argc, char **argv, char **envp);    |
+          | ; arg int argc @ r0                               |
+          | ?   allocframe(R29,#0x8):raw                      |
+          | [   R2 = add(R30,##-0x4)                          |
+          | [   memw(R2+#0x0) = ##0x0                         |
+          | [   R2 = add(R30,##-0x8)                          |
+          | [   memw(R2+#0x0) = ##0x0                         |
+          | [   jump 0x5128                                   |
+          `---------------------------------------------------'
+              v
+              |
+              '------.
+.----------------------.
+|                    | |
+|              .-----------------------------------------.
+|              |  0x5128                                 |
+|              | ; CODE XREFS from main @ 0x5124, 0x5150 |
+|              | [   R2 = memw(R30+##-0x8)               |
+|              | [   P0 = cmp.gt(R2,##0x2)               |
+|              | [   if (P0) jump:nt 0x5154              |
+|              `-----------------------------------------'
+|                      f t
+|                      | |
+|                      | '-----------.
+|          .-----------'             |
+|          |                         |
+|      .--------------------.    .-----------------------------------------.
+|      |  0x5134            |    |  0x5154                                 |
+|      | [   jump 0x5138    |    | ; DATA XREF from main @ 0x5130          |
+|      `--------------------'    | [   R0 = ##0x0                          |
+|          v                     | [   R31:30 = dealloc_return(R30):raw    |
+|          |                     `-----------------------------------------'
+|          |
+|          |
+|    .-----'
+|    |
+|.--------------------------------.
+||  0x5138                        |
+|| ; CODE XREF from main @ 0x5134 |
+|| [   call sym.pHello;[oa]       |
+|| [   call sym.pWorld;[ob]       |
+|| [   jump 0x5144                |
+|`--------------------------------'
+|    v
+|    |
+|    |
+|.--------------------------------.
+||  0x5144                        |
+|| ; CODE XREF from main @ 0x5140 |
+|| [   R2 = memw(R30+##-0x8)      |
+|| [   R2 = add(R2,##0x1)         |
+|| [   memw(R30+##-0x8) = R2      |
+|| [   jump 0x5128                |
+|`--------------------------------'
+|    v
+|    |
+`----'
+EOF
+RUN
+
+NAME=hexagon basic block cond return
+FILE=bins/elf/analysis/hexagon-hello-loop
+CMDS=<<EOF
+aaa
+s sym.thread_join
+pd 12
+EOF
+EXPECT=<<EOF
+/ sym.thread_join ();
+|           0x00005200      ?       R1 = HTID
+|           0x00005204      ?       R3 = ##0x1
+|           0x00005208      [   R1 = asl(R3,R1)
+|           0x0000520c      [   R1 = sub(##-0x1,R1)
+|           0x00005210      [   R0 = and(R0,R1)
+|           0x00005214      [   R0 = combine(R0.l,R0.l)
+|           ; CODE XREF from sym.thread_join @ 0x5228
+|       .-> 0x00005218      [   R2 = MODECTL
+|       :   0x0000521c      [   R2 = and(R0,R2)
+|       :   0x00005220      [   P0 = cmp.eq(R2,#0x0) ; if (P0.new) jumpr:nt R31
+|       :   0x00005224      [   pause(#0x1)
+\       `=< 0x00005228      [   jump 0x5218
+\           0x0000522c      [   nop
+EOF
+RUN
+
+NAME=hexagon basic block treat invalid as return
+FILE=bins/elf/analysis/hexagon-hello-loop
+CMDS=<<EOF
+e analysis.jmp.cref=true
+e analysis.trap.after=true
+e asm.pcalign=4
+e asm.imm.sign=false
+aaa
+s sym.sys_deinit_tls
+pd 11
+EOF
+EXPECT=<<EOF
+/ sym.sys_deinit_tls ();
+|           0x00005344      ?       R2 = UGP
+|           0x00005348      /       immext(##0x1100)
+|           0x0000534c      |       R3 = memw(GP+##0x1110)
+|           0x00005350      |       immext(##0x1100)
+|           0x00005354      \       R4 = memw(GP+##0x1108)
+|           0x00005358      [   R2 = sub(R2,R3)
+|       ,=< 0x0000535c      /       jump sym.free
+|       |   0x00005360      \       R0 = add(R2,R4)
+\       |   0x00005364      [   invalid
+        |   0x00005368      [   invalid
+        |   0x0000536c      [   invalid
+EOF
+RUN
+
+NAME=hexagon last instr. is endloop branch.
+FILE=bins/elf/analysis/hexagon-hello-loop
+CMDS=<<EOF
+e analysis.jmp.cref=true
+aaa
+s 0x00005abc
+pd 22
+EOF
+EXPECT=<<EOF
+|       ,=< 0x00005abc      ?       if (P3) jump:nt 0x5b1c
+|      ,==< 0x00005ac0      /       loop0(0x5acc,R4)
+|      ||   0x00005ac4      |       P0 = cmp.gtu(R4,##0x1)
+|      ||   0x00005ac8      \       R8 = R4
+|      ||   ; CODE XREFS from sym.memcpy @ 0x5ac0, 0x5b10
+|     .`--> 0x00005acc      /       if (P0) R17 = add(R17,##0x20)
+|     : |   0x00005ad0      \       dcfetch(R5+#0x0)
+|     : |   0x00005ad4      /       P3 = cmp.eq(R4,R8)
+|     : |   0x00005ad8      \       dczeroa(R17)
+|     : |   0x00005adc      /       R5:4 = vaddw(R5:4,R15:14)
+|     : |   0x00005ae0      |       R19:18 = valignb(R11:10,R13:12,P2)
+|     : |   0x00005ae4      |       R13:12 = memd(R1++#0x8)
+|     : |   0x00005ae8      \       if (!P3) memd(R0++#0x8) = R19:18
+|     : |   0x00005aec      /       R7:6 = valignb(R13:12,R11:10,P2)
+|     : |   0x00005af0      |       R11:10 = memd(R1++#0x8)
+|     : |   0x00005af4      \       memd(R0++#0x8) = R7:6
+|     : |   0x00005af8      /       R19:18 = valignb(R11:10,R13:12,P2)
+|     : |   0x00005afc      |       R13:12 = memd(R1++#0x8)
+|     : |   0x00005b00      \       memd(R0++#0x8) = R19:18
+|     : |   0x00005b04      /       R7:6 = valignb(R13:12,R11:10,P2)
+|     : |   0x00005b08      |       P0 = cmp.gtu(R4,##0x1)
+|     : |   0x00005b0c      |       R11:10 = memd(R1++#0x8)
+|     `===< 0x00005b10      \       memd(R0++#0x8) = R7:6     < endloop0
+EOF
+RUN
+
+NAME=hexagon multiple endloop refs.
+FILE=bins/elf/analysis/hexagon-hello-loop
+CMDS=<<EOF
+e analysis.jmp.cref=true
+e analysis.trap.after=true
+aaa
+s 0x00008df4
+axt
+EOF
+EXPECT=<<EOF
+sym._Mbtowcx 0x8df0 [CODE] ?   loop0(0x8df4,R2)
+sym._Mbtowcx 0x8e3c [CODE] ?   R6 = ##0x1 ; R7 = add(R7,#1)
+sym._Mbtowcx 0x8e54 [CODE] ?   R6 = ##0x2 ; R7 = add(R7,#1)
+sym._Mbtowcx 0x8e70 [CODE] ?   R6 = ##0x3 ; R7 = add(R7,#1)
+sym._Mbtowcx 0x8e98 [CODE] ?   nop
 EOF
 RUN
