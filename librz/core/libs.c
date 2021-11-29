@@ -68,6 +68,11 @@ static void loadSystemPlugins(RzCore *core, int where) {
 		char *hpd = rz_path_home(RZ_PLUGINS);
 		rz_lib_opendir(core->lib, hpd, false);
 		free(hpd);
+
+		// TODO: remove after 0.4.0 is released
+		hpd = rz_path_home(RZ_HOME_OLD_PLUGINS);
+		rz_lib_opendir(core->lib, hpd, false);
+		free(hpd);
 	}
 	if (where & RZ_CORE_LOADLIBS_SYSTEM) {
 		char *spd = rz_path_system(RZ_PLUGINS);

@@ -679,6 +679,8 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	bin = core.bin;
 	if (!(tmp = rz_sys_getenv("RZ_BIN_NOPLUGINS"))) {
 		char *homeplugindir = rz_path_home(RZ_PLUGINS);
+		// TODO: remove after 0.4.0 is released
+		char *oldhomeplugindir = rz_path_home(RZ_HOME_OLD_PLUGINS);
 		char *plugindir = rz_path_system(RZ_PLUGINS);
 		RzLib *l = rz_lib_new(NULL, NULL);
 		rz_lib_add_handler(l, RZ_LIB_TYPE_DEMANGLER, "demangler plugins",
@@ -695,8 +697,10 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			rz_lib_opendir(l, path, false);
 		}
 		rz_lib_opendir(l, homeplugindir, false);
+		rz_lib_opendir(l, oldhomeplugindir, false);
 		rz_lib_opendir(l, plugindir, false);
 		free(homeplugindir);
+		free(oldhomeplugindir);
 		free(plugindir);
 		free(path);
 		rz_lib_free(l);

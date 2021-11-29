@@ -417,10 +417,14 @@ static void __load_plugins(RzAsmState *as) {
 	}
 
 	char *homeplugindir = rz_path_home(RZ_PLUGINS);
+	// TODO: remove after 0.4.0 is released
+	char *oldhomeplugindir = rz_path_home(RZ_HOME_OLD_PLUGINS);
 	char *sysplugindir = rz_path_system(RZ_PLUGINS);
 	rz_lib_opendir(as->l, homeplugindir, false);
+	rz_lib_opendir(as->l, oldhomeplugindir, false);
 	rz_lib_opendir(as->l, sysplugindir, false);
 	free(homeplugindir);
+	free(oldhomeplugindir);
 	free(sysplugindir);
 
 	free(tmp);
