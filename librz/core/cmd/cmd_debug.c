@@ -1442,6 +1442,7 @@ RZ_IPI int rz_cmd_debug_dmi(void *data, const char *input) {
 		if (!ptr || !*ptr) {
 			rz_core_cmd(core, "dmm", 0);
 			free(ptr);
+			pj_free(pj);
 			break;
 		}
 		if (symbols_only) {
