@@ -761,7 +761,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 
 	if (do_list_io_plugins) {
 		if (rz_config_get_i(r->config, "cfg.plugins")) {
-			rz_core_loadlibs(r, RZ_CORE_LOADLIBS_ALL, NULL);
+			rz_core_loadlibs(r, RZ_CORE_LOADLIBS_ALL);
 		}
 		run_commands(r, NULL, prefiles, false, do_analysis);
 		run_commands(r, cmds, files, quiet, do_analysis);
@@ -829,7 +829,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		free(tmp);
 	}
 	if (rz_config_get_i(r->config, "cfg.plugins")) {
-		rz_core_loadlibs(r, RZ_CORE_LOADLIBS_ALL, NULL);
+		rz_core_loadlibs(r, RZ_CORE_LOADLIBS_ALL);
 	}
 	run_commands(r, NULL, prefiles, false, do_analysis);
 	rz_list_free(prefiles);

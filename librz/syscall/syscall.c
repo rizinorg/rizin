@@ -207,13 +207,16 @@ RZ_API bool rz_sysreg_load_sdb(RzSysregsDB *sysregdb, const char *path) {
 RZ_API bool rz_sysreg_set_arch(RzSyscall *s, const char *arch, const char *regs_dir) {
 	char buf[60];
 	char *path = rz_file_path_join(regs_dir, rz_strf(buf, "%s-%s-%d.sdb", arch, s->cpu, s->bits));
-	if (path) {
-		if (!rz_sysreg_load_sdb(s->srdb, path)) {
-			rz_sysregs_db_free(s->srdb);
-			s->srdb = rz_sysregs_db_new();
-			return false;
-		}
+	if (!path) {
+		return true;
 	}
+	if (!rz_sysreg_load_sdb(s->srdb, path)) {
+		free(path);
+		rz_sysregs_db_free(s->srdb);
+		s->srdb = rz_sysregs_db_new();
+		return false;
+	}
+	free(path);
 	return true;
 }
 

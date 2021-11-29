@@ -691,11 +691,11 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			&__lib_bin_ldr_cb, &__lib_bin_ldr_dt, bin);
 		/* load plugins everywhere */
 		char *path = rz_sys_getenv(RZ_LIB_ENV);
-		if (path && *path) {
-			rz_lib_opendir(l, path);
+		if (!RZ_STR_ISEMPTY(path)) {
+			rz_lib_opendir(l, path, false);
 		}
-		rz_lib_opendir(l, homeplugindir);
-		rz_lib_opendir(l, plugindir);
+		rz_lib_opendir(l, homeplugindir, false);
+		rz_lib_opendir(l, plugindir, false);
 		free(homeplugindir);
 		free(plugindir);
 		free(path);

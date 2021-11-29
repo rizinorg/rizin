@@ -79,6 +79,10 @@
 #define RZ_HOME_CACHEDIR  RZ_JOIN_2_PATHS(".cache", "rizin")
 
 #define RZ_HOME_HISTORY RZ_JOIN_2_PATHS(RZ_HOME_CACHEDIR, "history")
+// NOTE: Temporarly added only for compatibility reasons given that the plugin
+// directory has changed. For one release we are going to support also old paths
+// to give distros, plugin maintainers, etc. a bit more time to adapt
+#define RZ_HOME_OLD_PLUGINS RZ_JOIN_4_PATHS(RZ_HOME_PREFIX, "share", "rizin", "plugins")
 
 #define RZ_HOME_CONFIG_RC     RZ_JOIN_2_PATHS(RZ_HOME_CONFIGDIR, "rizinrc")
 #define RZ_HOME_CONFIG_RC_DIR RZ_JOIN_2_PATHS(RZ_HOME_CONFIGDIR, "rizinrc.d")

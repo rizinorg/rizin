@@ -2544,7 +2544,6 @@ RZ_API bool rz_core_init(RzCore *core) {
 	rz_core_config_init(core);
 
 	rz_core_loadlibs_init(core);
-	// rz_core_loadlibs (core);
 
 	// TODO: get arch from rz_bin or from native arch
 	rz_asm_use(core->rasm, RZ_SYS_ARCH);
