@@ -2932,7 +2932,9 @@ RZ_API RZ_OWN char *rz_base_type_as_format(const RzTypeDB *typedb, RZ_NONNULL Rz
 	RzStrBuf *format = rz_strbuf_new("");
 	RzStrBuf *fields = rz_strbuf_new("");
 	base_type_to_format_unfold(typedb, type, format, fields, NULL);
-	rz_strbuf_appendf(format, " %s", rz_strbuf_drain(fields));
+	char *fieldstr = rz_strbuf_drain(fields);
+	rz_strbuf_appendf(format, " %s", fieldstr);
+	free(fieldstr);
 	char *bufstr = rz_strbuf_drain(format);
 	rz_str_trim_tail(bufstr);
 	return bufstr;
