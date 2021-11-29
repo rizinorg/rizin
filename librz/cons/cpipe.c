@@ -30,14 +30,10 @@ RZ_API int rz_cons_pipe_open(const char *file, int fdn, int append) {
 	if (fdn < 1) {
 		return -1;
 	}
-	char *targetFile = (!strncmp(file, "~/", 2) || !strncmp(file, "~\\", 2))
-		? rz_str_home(file + 2)
-		: strdup(file);
 	const int fd_flags = O_BINARY | O_RDWR | O_CREAT | (append ? O_APPEND : O_TRUNC);
-	int fd = rz_sys_open(targetFile, fd_flags, 0644);
+	int fd = rz_sys_open(file, fd_flags, 0644);
 	if (fd == -1) {
 		eprintf("rz_cons_pipe_open: Cannot open file '%s'\n", file);
-		free(targetFile);
 		return -1;
 	}
 	if (backup_fd != -1) {
@@ -47,12 +43,10 @@ RZ_API int rz_cons_pipe_open(const char *file, int fdn, int append) {
 	backup_fdn = fdn;
 	if (!__dupDescriptor(fd, fdn)) {
 		eprintf("Cannot dup stdout to %d\n", fdn);
-		free(targetFile);
 		return -1;
 	}
 	close(fdn);
 	dup2(fd, fdn);
-	free(targetFile);
 	return fd;
 }
 

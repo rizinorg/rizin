@@ -67,7 +67,7 @@ RZ_API bool rz_core_theme_load(RzCore *core, const char *name) {
 		return true;
 	}
 
-	char *home_themes = rz_path_home(RZ_THEMES);
+	char *home_themes = rz_path_home_prefix(RZ_THEMES);
 	char *system_themes = rz_path_system(RZ_THEMES);
 	char *home_file = rz_file_path_join(home_themes, name);
 	char *system_file = rz_file_path_join(system_themes, name);
@@ -115,7 +115,7 @@ static bool dict2keylist(void *user, const void *key, const ut64 value) {
 
 RZ_API RZ_OWN RzList *rz_core_theme_list(RzCore *core) {
 	HtPU *themes = ht_pu_new0();
-	char *path = rz_path_home(RZ_THEMES);
+	char *path = rz_path_home_prefix(RZ_THEMES);
 	if (path) {
 		list_themes_in_path(themes, path);
 		RZ_FREE(path);

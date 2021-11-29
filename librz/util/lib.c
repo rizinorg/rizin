@@ -285,8 +285,17 @@ RZ_API int rz_lib_open(RzLib *lib, const char *file) {
 	}
 
 	if (__already_loaded(lib, file)) {
-		eprintf("Not loading library because it has already been loaded from somewhere else: '%s'\n", file);
+		RZ_LOG_INFO("Not loading library because it has already been loaded from somewhere else: '%s'\n", file);
 		return -1;
+	}
+
+	// TODO: remove after 0.4.0 is released
+	if (strstr(file, RZ_HOME_OLD_PLUGINS)) {
+		char *oldhomeplugins = rz_path_home_prefix(RZ_HOME_OLD_PLUGINS);
+		char *homeplugins = rz_path_home_prefix(RZ_PLUGINS);
+		RZ_LOG_WARN("Loading plugins from '%s' is deprecated, please install your home plugins in '%s' instead.\n", oldhomeplugins, homeplugins);
+		free(homeplugins);
+		free(oldhomeplugins);
 	}
 
 	void *handler = rz_lib_dl_open(file);

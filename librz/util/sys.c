@@ -510,14 +510,7 @@ RZ_API char *rz_sys_getdir(void) {
 
 RZ_API bool rz_sys_chdir(RZ_NONNULL const char *s) {
 	rz_return_val_if_fail(s, false);
-	char *homepath = NULL;
-	if (s[0] == '~') {
-		if (strlen(s) == 1) {
-			homepath = rz_sys_getenv(RZ_SYS_HOME);
-		} else if (s[1] == '/') {
-			homepath = rz_str_home(s + 2);
-		}
-	}
+	char *homepath = rz_path_home_expand(s);
 	if (homepath) {
 		int ret = chdir(homepath);
 		free(homepath);
@@ -1773,10 +1766,6 @@ RZ_API int rz_sys_fork(void) {
 }
 #endif
 
-static inline char *expand_home(const char *p) {
-	return (*p == '~') ? rz_str_home(p) : strdup(p);
-}
-
 RZ_API int rz_sys_truncate_fd(int fd, ut64 length) {
 #ifdef _MSC_VER
 	return _chsize_s(fd, length);
@@ -1835,7 +1824,7 @@ RZ_API int rz_sys_open_perms(int rizin_perms) {
 /* perm <-> mode */
 RZ_API int rz_sys_open(const char *path, int perm, int mode) {
 	rz_return_val_if_fail(path, -1);
-	char *epath = expand_home(path);
+	char *epath = rz_path_home_expand(path);
 	int ret = -1;
 #if __WINDOWS__
 	if (!strcmp(path, "/dev/null")) {
@@ -1906,10 +1895,7 @@ RZ_API int rz_sys_open(const char *path, int perm, int mode) {
 RZ_API FILE *rz_sys_fopen(const char *path, const char *mode) {
 	rz_return_val_if_fail(path && mode, NULL);
 	FILE *ret = NULL;
-	char *epath = NULL;
-	if (!epath) {
-		epath = expand_home(path);
-	}
+	char *epath = rz_path_home_expand(path);
 	if ((strchr(mode, 'w') || strchr(mode, 'a') || rz_file_is_regular(epath))) {
 #if __WINDOWS__
 		wchar_t *wepath = rz_utf8_to_utf16(epath);

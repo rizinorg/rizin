@@ -2935,7 +2935,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETPREF("pdb.useragent", "Microsoft-Symbol-Server/6.11.0001.402", "User agent for Microsoft symbol server");
 	SETPREF("pdb.server", "https://msdl.microsoft.com/download/symbols", "Semi-colon separated list of base URLs for Microsoft symbol servers");
 	{
-		char *pdb_path = rz_path_home(RZ_PDB);
+		char *pdb_path = rz_path_home_prefix(RZ_PDB);
 		SETPREF("pdb.symstore", pdb_path, "Path to downstream symbol store");
 		RZ_FREE(pdb_path);
 	}
@@ -3341,7 +3341,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("zign.match.hash", "true", "Use Hash for matching");
 	SETBPREF("zign.match.types", "false", "Use types for matching");
 	char home_zigns_msg[1024];
-	char *home_zigns_dir = rz_path_home(RZ_ZIGNS);
+	char *home_zigns_dir = rz_path_home_prefix(RZ_ZIGNS);
 	rz_strf(home_zigns_msg, "Autoload all zignatures located in %s", home_zigns_dir);
 	free(home_zigns_dir);
 	SETBPREF("zign.autoload", "false", home_zigns_msg);
@@ -3378,11 +3378,11 @@ RZ_API int rz_core_config_init(RzCore *core) {
 #if __ANDROID__
 	SETPREF("dir.projects", "/data/data/org.rizin.rizininstaller/rizin/projects", "Default path for projects");
 #else
-	char *projects_dir = rz_path_home(RZ_PROJECTS);
+	char *projects_dir = rz_path_home_prefix(RZ_PROJECTS);
 	SETPREF("dir.projects", projects_dir, "Default path for projects");
 	free(projects_dir);
 #endif
-	home_zigns_dir = rz_path_home(RZ_ZIGNS);
+	home_zigns_dir = rz_path_home_prefix(RZ_ZIGNS);
 	SETCB("dir.zigns", home_zigns_dir, &cb_dirzigns, "Default path for zignatures (see zo command)");
 	free(home_zigns_dir);
 	SETPREF("stack.reg", "SP", "Which register to use as stack pointer in the visual debug");
@@ -3529,7 +3529,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI("http.maxsize", 0, "Maximum file size for upload");
 	SETPREF("http.index", "index.html", "Main html file to check in directory");
 	SETPREF("http.bind", "localhost", "Server address");
-	char *wwwroot_dir = rz_path_home(RZ_WWWROOT);
+	char *wwwroot_dir = rz_path_home_prefix(RZ_WWWROOT);
 	SETPREF("http.homeroot", wwwroot_dir, "http home root directory");
 	free(wwwroot_dir);
 #if __ANDROID__

@@ -815,23 +815,21 @@ static void load_scripts_for(RzCore *core, const char *name) {
 	// TODO:
 	char *file;
 	RzListIter *iter;
-	char *binrc = rz_path_home(RZ_BINRC);
+	char *binrc = rz_path_home_prefix(RZ_BINRC);
 	char tmp[50];
 	char *hdir = rz_file_path_join(binrc, rz_strf(tmp, "bin-%s", name));
 	free(binrc);
-	char *path = rz_str_home(hdir);
-	RzList *files = rz_sys_dir(path);
+	RzList *files = rz_sys_dir(hdir);
 	if (!rz_list_empty(files)) {
-		eprintf("[binrc] path: %s\n", path);
+		eprintf("[binrc] path: %s\n", hdir);
 	}
 	rz_list_foreach (files, iter, file) {
 		if (*file && *file != '.') {
 			eprintf("[binrc] loading %s\n", file);
-			rz_core_cmdf(core, ". %s/%s", path, file);
+			rz_core_cmdf(core, ". %s/%s", hdir, file);
 		}
 	}
 	rz_list_free(files);
-	free(path);
 	free(hdir);
 }
 

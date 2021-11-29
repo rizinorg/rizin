@@ -73,11 +73,14 @@ RZ_API RZ_OWN char *rz_path_system_rc(void) {
 
 /**
  * \brief Return \p path prefixed by the home prefix
+ * 
+ * Return \p path prefixed by the home prefix. Please note that this is not the
+ * home directory, but it is usually something like `~/.local`.
  *
  * \param path Path to put in the home prefix context or NULL to just get the home prefix
  * \return \p path prefixed by the home prefix or just the home prefix
  */
-RZ_API RZ_OWN char *rz_path_home(RZ_NULLABLE const char *path) {
+RZ_API RZ_OWN char *rz_path_home_prefix(RZ_NULLABLE const char *path) {
 	char *home = rz_sys_getenv(RZ_SYS_HOME);
 	if (!home) {
 		home = rz_file_tmpdir();
@@ -130,4 +133,50 @@ RZ_API RZ_OWN char *rz_path_home_config_rc(void) {
  */
 RZ_API RZ_OWN char *rz_path_home_config_rcdir(void) {
 	return rz_path_home(RZ_HOME_CONFIG_RC_DIR);
+}
+
+/**
+ * \brief Return a new path relative to the home directory
+ *
+ * \param path Sub-path relative to the home directory
+ * \return New path prefixed by the home directory
+ */
+RZ_API RZ_OWN char *rz_path_home(RZ_NULLABLE const char *path) {
+	char *home = rz_sys_getenv(RZ_SYS_HOME);
+	if (!home) {
+		home = rz_file_tmpdir();
+		if (!home) {
+			return NULL;
+		}
+	}
+	char *res;
+	if (path) {
+		res = rz_file_path_join(home, path);
+		free(home);
+	} else {
+		res = home;
+	}
+	return res;
+}
+
+/**
+ * \brief Return a new path with the `~` char expanded to the home directory
+ *
+ * \param path Original path that may or may not contain the `~` prefix to refer
+ *             to the home directory
+ * \return New path with the `~` character replaced with the full path of the home directory
+ */
+RZ_API RZ_OWN char *rz_path_home_expand(RZ_NULLABLE const char *path) {
+	// if the path does not start with `~`, there is nothing to expand
+	if (path && path[0] != '~') {
+		return strdup(path);
+	}
+
+	// if the path starts with `~` but it is not `~/` or just `~`, then it is a
+	// valid name (e.g. `~hello`)
+	if (path && path[0] && path[1] && path[1] != '/') {
+		return strdup(path);
+	}
+
+	return rz_path_home(path + 1);
 }

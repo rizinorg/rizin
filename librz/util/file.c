@@ -205,26 +205,32 @@ RZ_API char *rz_file_abspath_rel(const char *cwd, const char *file) {
 	if (strstr(file, "://")) {
 		return strdup(file);
 	}
-	if (!strncmp(file, "~/", 2) || !strncmp(file, "~\\", 2)) {
-		ret = rz_str_home(file + 2);
-	} else {
+	ret = rz_path_home_expand(file);
 #if __UNIX__
-		if (cwd && *file != '/') {
-			ret = rz_str_newf("%s" RZ_SYS_DIR "%s", cwd, file);
+	if (cwd && *ret != '/') {
+		char *tmp = rz_str_newf("%s" RZ_SYS_DIR "%s", cwd, ret);
+		if (!tmp) {
+			free(ret);
+			return NULL;
 		}
+		free(ret);
+		ret = tmp;
+	}
 #elif __WINDOWS__
-		// Network path
-		if (!strncmp(file, "\\\\", 2)) {
-			return strdup(file);
+	// Network path
+	if (!strncmp(ret, "\\\\", 2)) {
+		return strdup(ret);
+	}
+	if (!strchr(ret, ':')) {
+		char *tmp = rz_str_newf("%s" RZ_SYS_DIR "%s", cwd, ret);
+		if (!tmp) {
+			free(ret);
+			return NULL;
 		}
-		if (!strchr(file, ':')) {
-			ret = rz_str_newf("%s" RZ_SYS_DIR "%s", cwd, file);
-		}
+		free(ret);
+		ret = tmp;
+	}
 #endif
-	}
-	if (!ret) {
-		ret = strdup(file);
-	}
 #if __UNIX__
 	char rp[PATH_MAX] = { 0 };
 	char *abspath = realpath(ret, rp); // second arg == NULL is only an extension

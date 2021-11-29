@@ -2584,7 +2584,7 @@ RZ_API char *rz_sign_path(RzAnalysis *a, const char *file) {
 		}
 		free(abs);
 	} else {
-		char *home = rz_path_home(RZ_ZIGNS);
+		char *home = rz_path_home_prefix(RZ_ZIGNS);
 		abs = rz_str_newf("%s%s%s", home, RZ_SYS_DIR, file);
 		free(home);
 		if (rz_file_is_regular(abs)) {

@@ -7302,7 +7302,7 @@ RZ_API void rz_core_analysis_cc_init(RzCore *core) {
 
 	int bits = core->analysis->bits;
 	char *types_dir = rz_path_system(RZ_SDB_TYPES);
-	char *home_types_dir = rz_path_home(RZ_SDB_TYPES);
+	char *home_types_dir = rz_path_home_prefix(RZ_SDB_TYPES);
 	char buf[40];
 	char *dbpath = rz_file_path_join(types_dir, rz_strf(buf, "cc-%s-%d.sdb", analysis_arch, bits));
 	char *dbhomepath = rz_file_path_join(home_types_dir, rz_strf(buf, "cc-%s-%d.sdb", analysis_arch, bits));

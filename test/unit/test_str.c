@@ -137,7 +137,6 @@ bool test_rz_str_trim(void) {
 	free(two);
 	mu_end;
 }
-// TODO find a way to test rz_str_home.
 
 bool test_rz_str_bool(void) {
 	const char *one = rz_str_bool(1);

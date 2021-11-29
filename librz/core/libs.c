@@ -65,12 +65,12 @@ static void loadSystemPlugins(RzCore *core, int where) {
 		free(p);
 	}
 	if (where & RZ_CORE_LOADLIBS_HOME) {
-		char *hpd = rz_path_home(RZ_PLUGINS);
+		char *hpd = rz_path_home_prefix(RZ_PLUGINS);
 		rz_lib_opendir(core->lib, hpd, false);
 		free(hpd);
 
 		// TODO: remove after 0.4.0 is released
-		hpd = rz_path_home(RZ_HOME_OLD_PLUGINS);
+		hpd = rz_path_home_prefix(RZ_HOME_OLD_PLUGINS);
 		rz_lib_opendir(core->lib, hpd, false);
 		free(hpd);
 	}
@@ -120,7 +120,7 @@ RZ_API int rz_core_loadlibs(RzCore *core, int where) {
 		return false;
 	}
 	// load script plugins
-	char *homeplugindir = rz_path_home(RZ_PLUGINS);
+	char *homeplugindir = rz_path_home_prefix(RZ_PLUGINS);
 	RzList *files = rz_sys_dir(homeplugindir);
 	RzListIter *iter;
 	char *file;
