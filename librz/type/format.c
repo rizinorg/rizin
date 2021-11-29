@@ -1772,7 +1772,8 @@ static int rz_type_format_data_internal(const RzTypeDB *typedb, RzPrint *p, RzSt
 
 static int rz_type_format_struct(const RzTypeDB *typedb, RzPrint *p, RzStrBuf *outbuf, ut64 seek, const ut8 *b, int len, const char *name,
 	int slide, int mode, const char *setval, char *field, int anon) {
-	const char *fmt;
+	char *fmt;
+	int ret = 0;
 	char namefmt[128];
 	slide++;
 	if ((slide % STRUCTPTR) > NESTDEPTH || (slide % STRUCTFLAG) / STRUCTPTR > NESTDEPTH) {
@@ -1780,16 +1781,18 @@ static int rz_type_format_struct(const RzTypeDB *typedb, RzPrint *p, RzStrBuf *o
 		return 0;
 	}
 	if (anon) {
-		fmt = name;
+		fmt = strdup(name);
 	} else {
-		fmt = rz_type_db_format_get(typedb, name);
-		if (!fmt) { // Fetch struct info from types DB
+		const char *dbfmt = rz_type_db_format_get(typedb, name);
+		if (!dbfmt) { // Fetch struct info from types DB
 			fmt = rz_type_format(typedb, name);
+		} else {
+			fmt = strdup(dbfmt);
 		}
 	}
 	if (RZ_STR_ISEMPTY(fmt)) {
 		eprintf("Undefined struct '%s'.\n", name);
-		return 0;
+		goto beach;
 	}
 	if (MUSTSEE && !SEEVALUE) {
 		snprintf(namefmt, sizeof(namefmt), "%%%ds", 10 + 6 * slide % STRUCTPTR);
@@ -1801,7 +1804,11 @@ static int rz_type_format_struct(const RzTypeDB *typedb, RzPrint *p, RzStrBuf *o
 		rz_strbuf_appendf(outbuf, "<%s>\n", name);
 	}
 	rz_type_format_data_internal(typedb, p, outbuf, seek, b, len, fmt, mode, setval, field);
-	return rz_type_format_struct_size(typedb, fmt, mode, 0);
+	ret = rz_type_format_struct_size(typedb, fmt, mode, 0);
+
+beach:
+	free(fmt);
+	return ret;
 }
 
 static char *get_args_offset(const char *arg) {
