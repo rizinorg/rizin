@@ -174,24 +174,28 @@ err:
 
 RZ_API RzLib *rz_lib_new(const char *symname, const char *symnamefunc) {
 	RzLib *lib = RZ_NEW(RzLib);
-	if (lib) {
-		lib->handlers = rz_list_newf(free);
-		lib->plugins = rz_list_newf(free);
-		lib->symname = strdup(symname ? symname : RZ_LIB_SYMNAME);
-		lib->symnamefunc = strdup(symnamefunc ? symnamefunc : RZ_LIB_SYMFUNC);
+	if (!lib) {
+		return NULL;
 	}
+	lib->handlers = rz_list_newf(free);
+	lib->plugins = rz_list_newf(free);
+	lib->symname = strdup(symname ? symname : RZ_LIB_SYMNAME);
+	lib->symnamefunc = strdup(symnamefunc ? symnamefunc : RZ_LIB_SYMFUNC);
+	lib->opened_dirs = ht_pu_new0();
 	return lib;
 }
 
 RZ_API void rz_lib_free(RzLib *lib) {
-	if (lib) {
-		rz_lib_close(lib, NULL);
-		rz_list_free(lib->handlers);
-		rz_list_free(lib->plugins);
-		free(lib->symname);
-		free(lib->symnamefunc);
-		free(lib);
+	if (!lib) {
+		return;
 	}
+	rz_lib_close(lib, NULL);
+	rz_list_free(lib->handlers);
+	rz_list_free(lib->plugins);
+	free(lib->symname);
+	free(lib->symnamefunc);
+	ht_pu_free(lib->opened_dirs);
+	free(lib);
 }
 
 static bool __lib_dl_check_filename(const char *file) {
@@ -369,7 +373,23 @@ RZ_API int rz_lib_open_ptr(RzLib *lib, const char *file, void *handler, RzLibStr
 	return ret;
 }
 
-RZ_API bool rz_lib_opendir(RzLib *lib, const char *path) {
+/**
+ * \brief Open all the libraries in the given directory, if it wasn't already
+ * opened.
+ *
+ * Opens all the files ending with the right library extension (e.g. ".so")
+ * present in the directory pointed by \p path . If \p path was already opened,
+ * it is not opened again unless \p force is set to true.
+ *
+ * \param lib Reference to RzLib
+ * \param path Directory to open
+ * \param force When true, a directory is re-scanned even if it was already opened
+ * \return True when the directory is scanned for libs, false otherwise
+ */
+RZ_API bool rz_lib_opendir(RzLib *lib, const char *path, bool force) {
+	if (!force && ht_pu_find(lib->opened_dirs, path, NULL)) {
+		return false;
+	}
 #if WANT_DYLINK
 	rz_return_val_if_fail(lib && path, false);
 #if __WINDOWS__
@@ -439,6 +459,7 @@ RZ_API bool rz_lib_opendir(RzLib *lib, const char *path) {
 	closedir(dh);
 #endif
 #endif
+	ht_pu_insert(lib->opened_dirs, path, 1);
 	return true;
 }
 

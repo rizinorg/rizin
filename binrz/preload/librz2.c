@@ -45,7 +45,7 @@ static void _libwrap_init(void) {
 	fflush(stdout);
 	web = rz_sys_getenv("RZ_RUN_WEB");
 	core = rz_core_new();
-	rz_core_loadlibs(core, RZ_CORE_LOADLIBS_ALL, NULL);
+	rz_core_loadlibs(core, RZ_CORE_LOADLIBS_ALL);
 	if (web) {
 		rz_equal_H_handler_old(core, "&");
 		rz_sys_setenv("RZ_RUN_WEB", NULL);
@@ -74,7 +74,7 @@ void alloc_console(void) {
 
 static void start_rz(void) {
 	core = rz_core_new();
-	rz_core_loadlibs(core, RZ_CORE_LOADLIBS_ALL, NULL);
+	rz_core_loadlibs(core, RZ_CORE_LOADLIBS_ALL);
 	RzCoreFile *fd = rz_core_file_open(core, "self://", RZ_PERM_RW, 0);
 	rz_core_prompt_loop(core);
 	rz_core_file_close(core, fd);
