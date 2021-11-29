@@ -1268,7 +1268,9 @@ RZ_API RzList *rz_file_globsearch(const char *_globbed_path, int maxdepth) {
  * \param s2 Second path, can be NULL
  * \return Full path
  */
-RZ_API RZ_OWN char *rz_file_path_join(const char *s1, const char *s2) {
+RZ_API RZ_OWN char *rz_file_path_join(RZ_NONNULL const char *s1, RZ_NULLABLE const char *s2) {
+	rz_return_val_if_fail(s1, NULL);
+
 	if (!s2) {
 		return strdup(s1);
 	}

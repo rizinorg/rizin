@@ -128,7 +128,7 @@ RZ_API bool rz_arch_load_platform_sdb(RZ_NONNULL RzArchPlatformTarget *t, RZ_NON
  * \param t reference to RzArchPlatformTarget
  * \param arch reference to the selected architecture (value of `asm.arch`
  * \param platform reference to the selected platform (value of `asm.platform`)
- * \param platforms_dir reference to the directory containing platforms files
+ * \param platforms_dir reference to the directory containing platform files
  */
 RZ_API bool rz_arch_platform_init(RzArchPlatformTarget *t, RZ_NONNULL const char *arch, RZ_NONNULL const char *cpu,
 	const char *platform, RZ_NONNULL const char *platforms_dir) {

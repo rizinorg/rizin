@@ -204,7 +204,9 @@ RZ_API bool rz_sysreg_load_sdb(RzSysregsDB *sysregdb, const char *path) {
  * \param arch reference to value of asm.arch
  * \param regs_dir path where registers SDB files are located
  */
-RZ_API bool rz_sysreg_set_arch(RzSyscall *s, const char *arch, const char *regs_dir) {
+RZ_API bool rz_sysreg_set_arch(RzSyscall *s, RZ_NONNULL const char *arch, RZ_NONNULL const char *regs_dir) {
+	rz_return_val_if_fail(s && regs_dir && arch, false);
+
 	char buf[60];
 	char *path = rz_file_path_join(regs_dir, rz_strf(buf, "%s-%s-%d.sdb", arch, s->cpu, s->bits));
 	if (!path) {

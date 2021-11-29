@@ -1150,9 +1150,9 @@ typedef int(RzLineReadCallback)(void *user, const char *line);
 RZ_API const char *rz_line_readline(void);
 RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user);
 
-RZ_API int rz_line_hist_load(const char *file);
+RZ_API int rz_line_hist_load(RZ_NONNULL const char *file);
 RZ_API int rz_line_hist_add(const char *line);
-RZ_API int rz_line_hist_save(const char *file);
+RZ_API int rz_line_hist_save(RZ_NONNULL const char *file);
 RZ_API int rz_line_hist_label(const char *label, void (*cb)(const char *));
 RZ_API void rz_line_label_show(void);
 RZ_API int rz_line_hist_list(void);

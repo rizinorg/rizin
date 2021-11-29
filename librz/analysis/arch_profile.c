@@ -203,7 +203,7 @@ static bool is_cpu_valid(const char *cpu_dir, const char *cpu) {
  * \param t reference to RzArchTarget
  * \param cpu reference to the selected CPU (value of `asm.cpu`)
  * \param arch reference to the selected architecture (value of `asm.arch`)
- * \param cpus_dir reference to the directory containing cpus files
+ * \param cpus_dir reference to the directory containing cpu files
  */
 RZ_API bool rz_arch_profiles_init(RzArchTarget *t, const char *cpu, const char *arch, const char *cpus_dir) {
 	if (!cpu_reload_needed(t, cpu, arch)) {

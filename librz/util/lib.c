@@ -396,6 +396,8 @@ RZ_API int rz_lib_open_ptr(RzLib *lib, const char *file, void *handler, RzLibStr
  * \return True when the directory is scanned for libs, false otherwise
  */
 RZ_API bool rz_lib_opendir(RzLib *lib, const char *path, bool force) {
+	rz_return_val_if_fail(lib && path, false);
+
 	if (!force && ht_pu_find(lib->opened_dirs, path, NULL)) {
 		return false;
 	}

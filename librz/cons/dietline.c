@@ -464,8 +464,16 @@ RZ_API void rz_line_hist_free(void) {
 	I.history.index = 0;
 }
 
-/* load history from file. TODO: if file == NULL load from ~/.<prg>.history or so */
-RZ_API int rz_line_hist_load(const char *path) {
+/**
+ * \brief Load the history of commands from \p path.
+ * 
+ * \param path Path of the history file, where commands executed in the shell
+ *             were saved in a previous session
+ * \return false(0) if it fails, true(!0) otherwise
+ */
+RZ_API int rz_line_hist_load(RZ_NONNULL const char *path) {
+	rz_return_val_if_fail(path, false);
+
 	FILE *fd;
 	char buf[RZ_LINE_BUFSIZE];
 	if (!path) {
@@ -482,13 +490,20 @@ RZ_API int rz_line_hist_load(const char *path) {
 	return true;
 }
 
+/**
+ * \brief Save the history of commands executed until now to file \p path.
+ * 
+ * \param path Path of the history file, where commands executed in the shell
+ *             will be saved
+ * \return false(0) if it fails, true(!0) otherwise
+ */
 RZ_API int rz_line_hist_save(const char *path) {
 	FILE *fd;
 	int i, ret = false;
 	if (RZ_STR_ISEMPTY(path)) {
 		return false;
 	}
-	char *p = (char *)rz_str_lastbut(path, RZ_SYS_DIR[0], NULL); // TODO: use fs
+	char *p = (char *)rz_str_lastbut(path, RZ_SYS_DIR[0], NULL);
 	if (p) {
 		*p = 0;
 		if (!rz_sys_mkdirp(path)) {
