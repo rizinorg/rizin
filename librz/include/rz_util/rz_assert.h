@@ -125,6 +125,12 @@ RZ_API void rz_assert_log(RLogLevel level, const char *fmt, ...) RZ_PRINTF_CHECK
 		return (val); \
 	} while (0)
 
+#define rz_goto_if_reached(where) \
+	do { \
+		H_LOG_(RZ_LOGLVL_ERROR, "file %s: line %d (%s): should not be reached; jumping to %s\n", __FILE__, __LINE__, RZ_FUNCTION, #where); \
+		goto where; \
+	} while (0)
+
 #else // RZ_CHECKS_LEVEL
 
 #include <assert.h>

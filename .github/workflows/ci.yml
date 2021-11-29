@@ -69,7 +69,7 @@ jobs:
             compiler: clang
             run_tests: true
             meson_options: -Dbuildtype=release
-            enabled: ${{ github.event_name != 'pull_request' && needs.changes.outputs.edited == 'true' }}
+            enabled: ${{ (github.event_name != 'pull_request' || contains(github.head_ref, 'clang')) && needs.changes.outputs.edited == 'true' }}
             timeout: 45
             allow_failure: false
           - name: linux-meson-gcc-tests
