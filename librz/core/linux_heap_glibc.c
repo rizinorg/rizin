@@ -1743,6 +1743,7 @@ RZ_API RzList *GH(rz_heap_arenas_list)(RzCore *core, GHT m_arena, MallocState *m
 			// thread arenas
 			item = RZ_NEW0(RzArenaListItem);
 			if (!item) {
+				free(ta);
 				break;
 			}
 			item->addr = ta_addr;
