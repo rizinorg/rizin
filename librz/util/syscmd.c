@@ -168,8 +168,8 @@ RZ_API RZ_OWN char *rz_syscmd_ls(const char *input) {
 	}
 	if (!path || !*path) {
 		path = ".";
-	} else if (!strncmp(path, "~/", 2)) {
-		homepath = rz_str_home(path + 2);
+	} else if (rz_str_startswith(path, "~")) {
+		homepath = rz_path_home_expand(path);
 		if (homepath) {
 			path = (const char *)homepath;
 		}

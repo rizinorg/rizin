@@ -496,13 +496,14 @@ static int bin_pe_parse_imports(struct PE_(rz_bin_pe_obj_t) * bin,
 					db = NULL;
 					free(sdb_module);
 					sdb_module = strdup(symdllname);
-					filename = sdb_fmt("%s.sdb", symdllname);
+					filename = rz_str_newf("%s.sdb", symdllname);
 					if (filename && rz_file_exists(filename)) {
 						db = sdb_new(NULL, filename, 0);
 					} else {
-						const char *dirPrefix = rz_sys_prefix(NULL);
-						filename = sdb_fmt(RZ_JOIN_4_PATHS("%s", RZ_SDB_FORMAT, "dll", "%s.sdb"),
-							dirPrefix, symdllname);
+						char *formats_dir = rz_path_system(RZ_SDB_FORMAT);
+						free(filename);
+						filename = rz_str_newf(RZ_JOIN_3_PATHS("%s", "dll", "%s.sdb"), formats_dir, symdllname);
+						free(formats_dir);
 						if (rz_file_exists(filename)) {
 							db = sdb_new(NULL, filename, 0);
 						}
@@ -517,6 +518,7 @@ static int bin_pe_parse_imports(struct PE_(rz_bin_pe_obj_t) * bin,
 				} else {
 					bprintf("Cannot find %s\n", filename);
 				}
+				RZ_FREE(filename);
 			} else {
 				import_ordinal++;
 				const ut64 off = bin_pe_rva_to_paddr(bin, import_table);

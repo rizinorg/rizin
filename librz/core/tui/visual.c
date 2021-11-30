@@ -466,10 +466,11 @@ static inline void prevPrintFormat(RzCore *core) {
 
 RZ_API int rz_core_visual_hud(RzCore *core) {
 	const char *c = rz_config_get(core->config, "hud.path");
-	char *f = rz_str_newf(RZ_JOIN_3_PATHS("%s", RZ_HUD, "main"),
-		rz_sys_prefix(NULL));
+	char *system_hud_dir = rz_path_system(RZ_HUD);
+	char *f = rz_file_path_join(system_hud_dir, "main");
+	free(system_hud_dir);
 	int use_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
-	char *homehud = rz_str_home(RZ_HOME_HUD);
+	char *homehud = rz_path_home_prefix(RZ_HUD);
 	char *res = NULL;
 	char *p = 0;
 	rz_cons_singleton()->context->color_mode = use_color;

@@ -180,20 +180,18 @@ if host_machine.system() == 'windows'
   rizin_flags = rizin_datdir / 'flag'
   rizin_hud = rizin_datdir / 'hud'
   rizin_plugins = rizin_libdir / 'plugins'
-  rizin_extras = rizin_libdir / 'extras'
   rizin_bindings = rizin_libdir / 'bindings'
 else
   rizin_datdir_rz = rizin_datdir / 'rizin'
-  rizin_wwwroot = rizin_datdir_rz / rizin_version / 'www'
-  rizin_sdb = rizin_datdir_rz / rizin_version
-  rizin_zigns = rizin_datdir_rz / rizin_version / 'zigns'
-  rizin_themes = rizin_datdir_rz / rizin_version / 'cons'
-  rizin_fortunes = rizin_datdir_rz / rizin_version / 'fortunes'
-  rizin_flags = rizin_datdir_rz / rizin_version / 'flag'
-  rizin_hud = rizin_datdir_rz / rizin_version / 'hud'
-  rizin_plugins = rizin_libdir / 'rizin' / rizin_version
-  rizin_extras = rizin_libdir / 'rizin-extras' / rizin_version
-  rizin_bindings = rizin_libdir / 'rizin-bindings' / rizin_version
+  rizin_wwwroot = rizin_datdir_rz / 'www'
+  rizin_sdb = rizin_datdir_rz
+  rizin_zigns = rizin_datdir_rz / 'zigns'
+  rizin_themes = rizin_datdir_rz / 'cons'
+  rizin_fortunes = rizin_datdir_rz / 'fortunes'
+  rizin_flags = rizin_datdir_rz / 'flag'
+  rizin_hud = rizin_datdir_rz / 'hud'
+  rizin_plugins = rizin_libdir / 'rizin' / 'plugins'
+  rizin_bindings = rizin_libdir / 'rizin-bindings'
 endif
 
 opts_overwrite = [
@@ -205,7 +203,6 @@ opts_overwrite = [
   'rizin_flags',
   'rizin_hud',
   'rizin_plugins',
-  'rizin_extras',
   'rizin_bindings'
 ]
 foreach opt : opts_overwrite
@@ -363,7 +360,6 @@ userconf.set('FORTUNES', rizin_fortunes)
 userconf.set('FLAGS', rizin_flags)
 userconf.set('HUD', rizin_hud)
 userconf.set('PLUGINS', rizin_plugins)
-userconf.set('EXTRAS', rizin_extras)
 userconf.set('BINDINGS', rizin_bindings)
 userconf.set10('HAVE_OPENSSL', sys_openssl.found())
 userconf.set10('HAVE_LIBUV', libuv_dep.found())
@@ -765,7 +761,6 @@ summary({
   'flags': rizin_flags,
   'hud': rizin_hud,
   'plugins': rizin_plugins,
-  'extras': rizin_extras,
   'bindings': rizin_bindings,
 }, section: 'Directories')
 

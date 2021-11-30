@@ -1754,17 +1754,22 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block,
 		return;
 	case 'o': // "pfo"
 		if (_input[2] == '?') {
+			char *prefix = rz_path_prefix(NULL);
+			char *sdb_format = rz_path_home_prefix(RZ_SDB_FORMAT);
 			eprintf("|Usage: pfo [format-file]\n"
-				" " RZ_JOIN_3_PATHS("~", RZ_HOME_SDB_FORMAT, "") "\n"
-										 " " RZ_JOIN_3_PATHS("%s", RZ_SDB_FORMAT, "") "\n",
-				rz_sys_prefix(NULL));
+				" %s\n"
+				" " RZ_JOIN_3_PATHS("%s", RZ_SDB_FORMAT, "") "\n",
+				sdb_format, prefix);
+			free(sdb_format);
+			free(prefix);
 		} else if (_input[2] == ' ') {
 			const char *fname = rz_str_trim_head_ro(_input + 3);
-			char *tmp = rz_str_newf(RZ_JOIN_2_PATHS(RZ_HOME_SDB_FORMAT, "%s"), fname);
-			char *home = rz_str_home(tmp);
-			free(tmp);
-			tmp = rz_str_newf(RZ_JOIN_2_PATHS(RZ_SDB_FORMAT, "%s"), fname);
-			char *path = rz_str_rz_prefix(tmp);
+			char *home_formats = rz_path_home_prefix(RZ_SDB_FORMAT);
+			char *home = rz_file_path_join(home_formats, fname);
+			free(home_formats);
+			char *system_formats = rz_path_system(RZ_SDB_FORMAT);
+			char *path = rz_file_path_join(system_formats, fname);
+			free(system_formats);
 			if (rz_str_endswith(_input, ".h")) {
 				char *error_msg = NULL;
 				const char *dir = rz_config_get(core->config, "dir.types");
@@ -1784,12 +1789,11 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block,
 			}
 			free(home);
 			free(path);
-			free(tmp);
 		} else {
 			RzList *files;
 			RzListIter *iter;
 			const char *fn;
-			char *home = rz_str_home(RZ_HOME_SDB_FORMAT RZ_SYS_DIR);
+			char *home = rz_path_home_prefix(RZ_SDB_FORMAT);
 			if (home) {
 				files = rz_sys_dir(home);
 				rz_list_foreach (files, iter, fn) {
@@ -1800,7 +1804,7 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block,
 				rz_list_free(files);
 				free(home);
 			}
-			char *path = rz_str_rz_prefix(RZ_SDB_FORMAT RZ_SYS_DIR);
+			char *path = rz_path_system(RZ_SDB_FORMAT);
 			if (path) {
 				files = rz_sys_dir(path);
 				rz_list_foreach (files, iter, fn) {

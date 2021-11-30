@@ -25,7 +25,7 @@ static RzCore *opencore(const char *fname) {
 		eprintf("Count not get core\n");
 		return NULL;
 	}
-	rz_core_loadlibs(c, RZ_CORE_LOADLIBS_ALL, NULL);
+	rz_core_loadlibs(c, RZ_CORE_LOADLIBS_ALL);
 	rz_config_set_i(c->config, "scr.interactive", false);
 	if (fname) {
 		rfile = rz_core_file_open(c, fname, 0, 0);
