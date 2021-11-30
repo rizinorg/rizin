@@ -128,17 +128,18 @@ RZ_API bool rz_arch_load_platform_sdb(RZ_NONNULL RzArchPlatformTarget *t, RZ_NON
  * \param t reference to RzArchPlatformTarget
  * \param arch reference to the selected architecture (value of `asm.arch`
  * \param platform reference to the selected platform (value of `asm.platform`)
- * \param dir_prefix reference to the directory prefix or the value of dir.prefix
+ * \param platforms_dir reference to the directory containing platform files
  */
 RZ_API bool rz_arch_platform_init(RzArchPlatformTarget *t, RZ_NONNULL const char *arch, RZ_NONNULL const char *cpu,
-	const char *platform, RZ_NONNULL const char *dir_prefix) {
+	const char *platform, RZ_NONNULL const char *platforms_dir) {
 
 	if (!platform) {
 		return false;
 	}
-	rz_return_val_if_fail(arch && cpu && dir_prefix, false);
-	char *path = rz_str_newf(RZ_JOIN_4_PATHS("%s", RZ_SDB, "asm/platforms", "%s-%s-%s.sdb"),
-		dir_prefix, arch, cpu, platform);
+	rz_return_val_if_fail(arch && cpu && platforms_dir, false);
+
+	char buf[50];
+	char *path = rz_file_path_join(platforms_dir, rz_strf(buf, "%s-%s-%s.sdb", arch, cpu, platform));
 	if (!path) {
 		return false;
 	}

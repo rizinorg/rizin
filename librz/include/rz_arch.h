@@ -45,7 +45,7 @@ RZ_API RZ_OWN RzArchProfile *rz_arch_profile_new();
 RZ_API RZ_OWN RzArchTarget *rz_arch_target_new();
 RZ_API void rz_arch_profile_free(RzArchProfile *profile);
 RZ_API void rz_arch_target_free(RzArchTarget *target);
-RZ_API bool rz_arch_profiles_init(RzArchTarget *c, const char *cpu, const char *arch, const char *dir_prefix);
+RZ_API bool rz_arch_profiles_init(RzArchTarget *c, const char *cpu, const char *arch, const char *cpus_dir);
 RZ_API void rz_arch_profile_add_flag_every_io(RzArchProfile *profile, RzFlag *flags);
 RZ_API bool rz_arch_load_profile_sdb(RzArchTarget *t, const char *path);
 RZ_API RZ_BORROW const char *rz_arch_profile_resolve_mmio(RZ_NONNULL RzArchProfile *profile, ut64 address);
@@ -57,7 +57,7 @@ RZ_API void rz_arch_platform_target_free(RzArchPlatformTarget *target);
 RZ_API void rz_arch_platform_item_free(RzArchPlatformItem *item);
 RZ_API bool rz_arch_load_platform_sdb(RZ_NONNULL RzArchPlatformTarget *t, RZ_NONNULL const char *path);
 RZ_API bool rz_arch_platform_init(RzArchPlatformTarget *t, RZ_NONNULL const char *arch, RZ_NONNULL const char *cpu,
-	const char *platform, RZ_NONNULL const char *dir_prefix);
+	const char *platform, RZ_NONNULL const char *platforms_dir);
 
 #ifdef __cplusplus
 }

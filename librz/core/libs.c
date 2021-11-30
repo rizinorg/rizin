@@ -51,51 +51,33 @@ CB(parse, parser)
 CB(bin, bin)
 CB(egg, egg)
 
-static void __openPluginsAt(RzCore *core, const char *arg, const char *user_path) {
-	if (arg && *arg) {
-		if (user_path) {
-			if (rz_str_endswith(user_path, arg)) {
-				return;
-			}
-		}
-		char *pdir = rz_str_rz_prefix(arg);
-		if (pdir) {
-			rz_lib_opendir(core->lib, pdir);
-			free(pdir);
-		}
-	}
-}
-
-static void __loadSystemPlugins(RzCore *core, int where, const char *path) {
+static void loadSystemPlugins(RzCore *core, int where) {
 #if RZ_LOADLIBS
-	if (!where) {
-		where = -1;
-	}
-	if (path) {
-		rz_lib_opendir(core->lib, path);
-	}
 	const char *dir_plugins = rz_config_get(core->config, "dir.plugins");
 	if (where & RZ_CORE_LOADLIBS_CONFIG) {
-		rz_lib_opendir(core->lib, dir_plugins);
+		rz_lib_opendir(core->lib, dir_plugins, false);
 	}
 	if (where & RZ_CORE_LOADLIBS_ENV) {
 		char *p = rz_sys_getenv(RZ_LIB_ENV);
 		if (p && *p) {
-			rz_lib_opendir(core->lib, p);
+			rz_lib_opendir(core->lib, p, false);
 		}
 		free(p);
 	}
 	if (where & RZ_CORE_LOADLIBS_HOME) {
-		char *hpd = rz_str_home(RZ_HOME_PLUGINS);
-		if (hpd) {
-			rz_lib_opendir(core->lib, hpd);
-			free(hpd);
-		}
+		char *hpd = rz_path_home_prefix(RZ_PLUGINS);
+		rz_lib_opendir(core->lib, hpd, false);
+		free(hpd);
+
+		// TODO: remove after 0.4.0 is released
+		hpd = rz_path_home_prefix(RZ_HOME_OLD_PLUGINS);
+		rz_lib_opendir(core->lib, hpd, false);
+		free(hpd);
 	}
 	if (where & RZ_CORE_LOADLIBS_SYSTEM) {
-		__openPluginsAt(core, RZ_PLUGINS, dir_plugins);
-		__openPluginsAt(core, RZ_EXTRAS, dir_plugins);
-		__openPluginsAt(core, RZ_BINDINGS, dir_plugins);
+		char *spd = rz_path_system(RZ_PLUGINS);
+		rz_lib_opendir(core->lib, spd, false);
+		free(spd);
 	}
 #endif
 }
@@ -129,16 +111,16 @@ static bool __isScriptFilename(const char *name) {
 	return false;
 }
 
-RZ_API int rz_core_loadlibs(RzCore *core, int where, const char *path) {
+RZ_API int rz_core_loadlibs(RzCore *core, int where) {
 	ut64 prev = rz_time_now_mono();
-	__loadSystemPlugins(core, where, path);
+	loadSystemPlugins(core, where);
 	/* TODO: all those default plugin paths should be defined in rz_lib */
 	if (!rz_config_get_i(core->config, "cfg.plugins")) {
 		core->times->loadlibs_time = 0;
 		return false;
 	}
 	// load script plugins
-	char *homeplugindir = rz_str_home(RZ_HOME_PLUGINS);
+	char *homeplugindir = rz_path_home_prefix(RZ_PLUGINS);
 	RzList *files = rz_sys_dir(homeplugindir);
 	RzListIter *iter;
 	char *file;

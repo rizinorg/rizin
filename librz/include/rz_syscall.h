@@ -103,7 +103,7 @@ RZ_API RzList *rz_syscall_list(RzSyscall *ctx);
 RZ_API int rz_syscall_get_swi(RzSyscall *s);
 
 RZ_API const char *rz_sysreg_get(RzSyscall *s, const char *type, ut64 num);
-RZ_API bool rz_sysreg_set_arch(RzSyscall *s, const char *arch, const char *dir_prefix);
+RZ_API bool rz_sysreg_set_arch(RzSyscall *s, RZ_NONNULL const char *arch, RZ_NONNULL const char *regs_dir);
 RZ_API bool rz_sysreg_load_sdb(RzSysregsDB *sysregdb, const char *path);
 RZ_API RzSysregsDB *rz_sysregs_db_new();
 RZ_API RZ_OWN RzSysregItem *rz_sysreg_item_new(RZ_NULLABLE const char *name);

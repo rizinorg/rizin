@@ -625,7 +625,7 @@ RZ_API bool rz_core_yank_file_all(RzCore *core, const char *filename);
 #define RZ_CORE_LOADLIBS_ALL    UT32_MAX
 
 RZ_API void rz_core_loadlibs_init(RzCore *core);
-RZ_API int rz_core_loadlibs(RzCore *core, int where, const char *path);
+RZ_API int rz_core_loadlibs(RzCore *core, int where);
 RZ_API RzCmd *rz_core_cmd_new(bool has_cons);
 RZ_API int rz_core_cmd_buffer(RzCore *core, const char *buf);
 RZ_API int rz_core_cmdf(RzCore *core, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);

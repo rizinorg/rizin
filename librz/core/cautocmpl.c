@@ -259,8 +259,6 @@ static void autocmplt_cmd_arg_file(RzLineNSCompletionResult *res, const char *s,
 	if (RZ_STR_ISEMPTY(input)) {
 		free(input);
 		input = strdup(".");
-	} else if (rz_str_startswith(input, "~")) {
-		input = rz_str_replace(input, "~", rz_str_home(NULL), 0);
 	} else if (!rz_file_is_abspath(input) && !rz_str_startswith(input, ".")) {
 		const char *fmt = ".%s%s";
 #if __WINDOWS__
@@ -275,8 +273,11 @@ static void autocmplt_cmd_arg_file(RzLineNSCompletionResult *res, const char *s,
 		free(input);
 		input = tmp;
 	}
-	char *basedir = rz_file_dirname(input);
-	const char *basename = rz_file_basename(input + 1);
+	char *einput = rz_path_home_expand(input);
+	free(input);
+
+	char *basedir = rz_file_dirname(einput);
+	const char *basename = rz_file_basename(einput + 1);
 #if __WINDOWS__
 	rz_str_replace_ch(basedir, '/', '\\', true);
 #endif
@@ -300,7 +301,7 @@ static void autocmplt_cmd_arg_file(RzLineNSCompletionResult *res, const char *s,
 	}
 	rz_list_free(l);
 	free(basedir);
-	free(input);
+	free(einput);
 }
 
 static void autocmplt_cmd_arg_env(RzLineNSCompletionResult *res, const char *s, size_t len) {

@@ -464,15 +464,22 @@ RZ_API void rz_line_hist_free(void) {
 	I.history.index = 0;
 }
 
-/* load history from file. TODO: if file == NULL load from ~/.<prg>.history or so */
-RZ_API int rz_line_hist_load(const char *file) {
+/**
+ * \brief Load the history of commands from \p path.
+ *
+ * \param path Path of the history file, where commands executed in the shell
+ *             were saved in a previous session
+ * \return false(0) if it fails, true(!0) otherwise
+ */
+RZ_API int rz_line_hist_load(RZ_NONNULL const char *path) {
+	rz_return_val_if_fail(path, false);
+
 	FILE *fd;
-	char buf[RZ_LINE_BUFSIZE], *path = rz_str_home(file);
+	char buf[RZ_LINE_BUFSIZE];
 	if (!path) {
 		return false;
 	}
 	if (!(fd = rz_sys_fopen(path, "r"))) {
-		free(path);
 		return false;
 	}
 	while (fgets(buf, sizeof(buf), fd) != NULL) {
@@ -480,43 +487,44 @@ RZ_API int rz_line_hist_load(const char *file) {
 		rz_line_hist_add(buf);
 	}
 	fclose(fd);
-	free(path);
 	return true;
 }
 
-RZ_API int rz_line_hist_save(const char *file) {
+/**
+ * \brief Save the history of commands executed until now to file \p path.
+ *
+ * \param path Path of the history file, where commands executed in the shell
+ *             will be saved
+ * \return false(0) if it fails, true(!0) otherwise
+ */
+RZ_API int rz_line_hist_save(const char *path) {
 	FILE *fd;
 	int i, ret = false;
-	if (!file || !*file) {
+	if (RZ_STR_ISEMPTY(path)) {
 		return false;
 	}
-	char *p, *path = rz_str_home(file);
-	if (path != NULL) {
-		p = (char *)rz_str_lastbut(path, RZ_SYS_DIR[0], NULL); // TODO: use fs
-		if (p) {
-			*p = 0;
-			if (!rz_sys_mkdirp(path)) {
-				eprintf("could not save history into %s\n", path);
-				goto end;
-			}
-			*p = RZ_SYS_DIR[0];
+	char *p = (char *)rz_str_lastbut(path, RZ_SYS_DIR[0], NULL);
+	if (p) {
+		*p = 0;
+		if (!rz_sys_mkdirp(path)) {
+			RZ_LOG_ERROR("Could not save history into %s\n", path);
+			return false;
 		}
-		fd = rz_sys_fopen(path, "w");
-		if (fd != NULL) {
-			if (I.history.data) {
-				for (i = 0; i < I.history.index; i++) {
-					fputs(I.history.data[i], fd);
-					fputs("\n", fd);
-				}
-				fclose(fd);
-				ret = true;
-			} else {
-				fclose(fd);
+		*p = RZ_SYS_DIR[0];
+	}
+	fd = rz_sys_fopen(path, "w");
+	if (fd != NULL) {
+		if (I.history.data) {
+			for (i = 0; i < I.history.index; i++) {
+				fputs(I.history.data[i], fd);
+				fputs("\n", fd);
 			}
+			fclose(fd);
+			ret = true;
+		} else {
+			fclose(fd);
 		}
 	}
-end:
-	free(path);
 	return ret;
 }
 
