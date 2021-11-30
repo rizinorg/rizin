@@ -293,7 +293,8 @@ RZ_API int rz_lib_open(RzLib *lib, const char *file) {
 	if (strstr(file, RZ_HOME_OLD_PLUGINS)) {
 		char *oldhomeplugins = rz_path_home_prefix(RZ_HOME_OLD_PLUGINS);
 		char *homeplugins = rz_path_home_prefix(RZ_PLUGINS);
-		RZ_LOG_WARN("Loading plugins from '%s' is deprecated, please install your home plugins in '%s' instead.\n", oldhomeplugins, homeplugins);
+		const char *basename = rz_file_basename(file);
+		RZ_LOG_WARN("Loading plugins from '%s' is deprecated, please install plugin '%s' in '%s' instead.\n", oldhomeplugins, basename, homeplugins);
 		free(homeplugins);
 		free(oldhomeplugins);
 	}
