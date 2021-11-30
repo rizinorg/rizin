@@ -1,5 +1,5 @@
 [wrap-git]
 url = https://github.com/rizinorg/capstone.git
-revision = 0f6ee6621c8e863bd791392b4c2ab67ec74bbefe
+revision = 0497e3ce1989d0354c2d8f26b3bf6b2618f407a5
 patch_directory = capstone-bundled
 directory = capstone-bundled
