@@ -65,14 +65,14 @@ static bool test_rzil_vm_basic_operation() {
 	mu_assert_eq(cur_var_r1_value, cur_var_r2_value, "Bind to the same value");
 
 	// 7. create label
-	RzBitVector *addr = rz_bitvector_new_from_ut64(16, 233);
+	RzBitVector *addr = rz_bv_new_from_ut64(16, 233);
 	RzILEffectLabel *blackhole = rz_il_vm_create_label(vm, "blackhole", addr);
 
 	// default type is LABEL_ADDR
 	mu_assert_eq(blackhole->type, EFFECT_LABEL_ADDR, "Label type");
 	mu_assert_streq(blackhole->label_id, "blackhole", "Label name");
 
-	bool is_equal_bv = rz_bitvector_cmp(blackhole->addr, addr) == 0 ? true : false;
+	bool is_equal_bv = rz_bv_cmp(blackhole->addr, addr) == 0 ? true : false;
 	mu_assert("Label address correct", is_equal_bv);
 
 	// find label
@@ -80,7 +80,7 @@ static bool test_rzil_vm_basic_operation() {
 	mu_assert_eq(blackhole, find_blackhole, "Find Label");
 
 	RzBitVector *find_addr = rz_il_hash_find_addr_by_lblname(vm, "blackhole");
-	is_equal_bv = rz_bitvector_cmp(find_addr, addr) == 0 ? true : false;
+	is_equal_bv = rz_bv_cmp(find_addr, addr) == 0 ? true : false;
 	mu_assert("Find address equal", is_equal_bv);
 
 	// 8. create label lazy (without giving an address)
@@ -94,10 +94,10 @@ static bool test_rzil_vm_basic_operation() {
 	// 9. update the address of lazy label
 	rz_il_vm_update_label(vm, "lazy", addr);
 	lazy_addr = rz_il_hash_find_addr_by_lblname(vm, "lazy");
-	is_equal_bv = rz_bitvector_cmp(lazy_addr, addr) == 0 ? true : false;
+	is_equal_bv = rz_bv_cmp(lazy_addr, addr) == 0 ? true : false;
 	mu_assert_true(is_equal_bv, "Update lazy label successfully");
 
-	rz_bitvector_free(addr);
+	rz_bv_free(addr);
 	rz_il_vm_free(vm);
 	mu_end;
 }
@@ -122,10 +122,10 @@ static bool test_rzil_vm_operation() {
 	RzILVal *r0 = rz_il_hash_find_val_by_name(vm, "r0");
 	RzILVal *r1 = rz_il_hash_find_val_by_name(vm, "r1");
 
-	bool is_zero = rz_bitvector_is_zero_vector(r0->data.bv);
+	bool is_zero = rz_bv_is_zero_vector(r0->data.bv);
 	mu_assert("Init r0 as all zero bitvector", is_zero);
 
-	is_zero = rz_bitvector_is_zero_vector(r1->data.bv);
+	is_zero = rz_bv_is_zero_vector(r1->data.bv);
 	mu_assert("Init r1 as all zero bitvector", is_zero);
 
 	rz_il_vm_free(vm);
@@ -151,8 +151,8 @@ static bool test_rzil_vm_root_evaluation() {
 	ite_root->op.ite->y = false_val;
 	add->op.add->x = arg1;
 	add->op.add->y = arg2;
-	arg1->op.bitv->value = rz_bitvector_new_from_st64(16, 23);
-	arg2->op.bitv->value = rz_bitvector_new_from_st64(16, 19);
+	arg1->op.bitv->value = rz_bv_new_from_st64(16, 23);
+	arg2->op.bitv->value = rz_bv_new_from_st64(16, 19);
 
 	// Partially evaluate `condition` only
 	RzILOpArgType type_checker = RZIL_OP_ARG_INIT;

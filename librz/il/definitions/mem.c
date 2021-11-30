@@ -4,8 +4,8 @@
 #include <rz_il/definitions/mem.h>
 
 static void free_bv_key_value(HtPPKv *kv) {
-	rz_bitvector_free(kv->value);
-	rz_bitvector_free(kv->key);
+	rz_bv_free(kv->value);
+	rz_bv_free(kv->key);
 }
 
 /**
@@ -20,10 +20,10 @@ RZ_API RzILMem *rz_il_mem_new(ut32 min_unit_size) {
 	}
 
 	HtPPOptions options = { 0 };
-	options.cmp = (HtPPListComparator)rz_bitvector_cmp;
-	options.hashfn = (HtPPHashFunction)rz_bitvector_hash;
-	options.dupkey = (HtPPDupKey)rz_bitvector_dup;
-	options.dupvalue = (HtPPDupValue)rz_bitvector_dup;
+	options.cmp = (HtPPListComparator)rz_bv_cmp;
+	options.hashfn = (HtPPHashFunction)rz_bv_hash;
+	options.dupkey = (HtPPDupKey)rz_bv_dup;
+	options.dupvalue = (HtPPDupValue)rz_bv_dup;
 	options.freefn = (HtPPKvFreeFunc)free_bv_key_value;
 	options.elem_size = sizeof(HtPPKv);
 	HtPP *mem_map = ht_pp_new_opt(&options);
@@ -74,6 +74,6 @@ RZ_API RzBitVector *rz_il_mem_load(RzILMem *mem, RzBitVector *key) {
 	if (val == NULL) {
 		return NULL;
 	}
-	RzBitVector *ret = rz_bitvector_dup(val);
+	RzBitVector *ret = rz_bv_dup(val);
 	return ret;
 }

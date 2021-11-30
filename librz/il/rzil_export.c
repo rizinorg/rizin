@@ -205,7 +205,7 @@ static void il_opdmp_bool_xor(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 
 static void il_opdmp_bitv(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 	RzILOpBv *opx = op->op.bitv;
-	char *num = rz_bitvector_as_hex_string(opx->value);
+	char *num = rz_bv_as_hex_string(opx->value);
 	if (sb) {
 		rz_strbuf_appendf(sb, "bitv(bits:%s, len:%u)", num, opx->value->len);
 	} else {
@@ -634,28 +634,28 @@ RZ_API void rz_il_event_stringify(RZ_NONNULL RzILEvent *evt, RZ_NONNULL RzStrBuf
 		rz_strbuf_appendf(sb, "exception(%s)", evt->data.exception);
 		break;
 	case RZIL_EVENT_PC_WRITE:
-		tmp0 = rz_bitvector_as_hex_string(evt->data.pc_write.old_pc);
-		tmp1 = rz_bitvector_as_hex_string(evt->data.pc_write.new_pc);
+		tmp0 = rz_bv_as_hex_string(evt->data.pc_write.old_pc);
+		tmp1 = rz_bv_as_hex_string(evt->data.pc_write.new_pc);
 		rz_strbuf_appendf(sb, "pc_write(old: %s, new: %s)", tmp0, tmp1);
 		break;
 	case RZIL_EVENT_MEM_READ:
-		tmp0 = rz_bitvector_as_hex_string(evt->data.mem_read.address);
-		tmp1 = evt->data.mem_read.value ? rz_bitvector_as_hex_string(evt->data.mem_read.value) : NULL;
+		tmp0 = rz_bv_as_hex_string(evt->data.mem_read.address);
+		tmp1 = evt->data.mem_read.value ? rz_bv_as_hex_string(evt->data.mem_read.value) : NULL;
 		rz_strbuf_appendf(sb, "mem_read(addr: %s, value: %s)", tmp0, tmp1 ? tmp1 : "uninitialized memory");
 		break;
 	case RZIL_EVENT_VAR_READ:
-		tmp1 = evt->data.var_read.value ? rz_bitvector_as_hex_string(evt->data.var_read.value) : NULL;
+		tmp1 = evt->data.var_read.value ? rz_bv_as_hex_string(evt->data.var_read.value) : NULL;
 		rz_strbuf_appendf(sb, "var_read(name: %s, value: %s)", evt->data.var_write.variable, tmp1 ? tmp1 : "uninitialized variable");
 		break;
 	case RZIL_EVENT_MEM_WRITE:
-		tmp0 = rz_bitvector_as_hex_string(evt->data.mem_write.address);
-		tmp1 = evt->data.mem_write.old_value ? rz_bitvector_as_hex_string(evt->data.mem_write.old_value) : NULL;
-		tmp2 = rz_bitvector_as_hex_string(evt->data.mem_write.new_value);
+		tmp0 = rz_bv_as_hex_string(evt->data.mem_write.address);
+		tmp1 = evt->data.mem_write.old_value ? rz_bv_as_hex_string(evt->data.mem_write.old_value) : NULL;
+		tmp2 = rz_bv_as_hex_string(evt->data.mem_write.new_value);
 		rz_strbuf_appendf(sb, "mem_write(addr: %s, old: %s, new: %s)", tmp0, tmp1 ? tmp1 : "uninitialized memory", tmp2);
 		break;
 	case RZIL_EVENT_VAR_WRITE:
-		tmp1 = evt->data.var_write.old_value ? rz_bitvector_as_hex_string(evt->data.var_write.old_value) : NULL;
-		tmp2 = rz_bitvector_as_hex_string(evt->data.var_write.new_value);
+		tmp1 = evt->data.var_write.old_value ? rz_bv_as_hex_string(evt->data.var_write.old_value) : NULL;
+		tmp2 = rz_bv_as_hex_string(evt->data.var_write.new_value);
 		rz_strbuf_appendf(sb, "var_write(name: %s, old: %s, new: %s)", evt->data.var_write.variable, tmp1 ? tmp1 : "uninitialized variable", tmp2);
 		break;
 	default:
@@ -681,8 +681,8 @@ RZ_API void rz_il_event_json(RZ_NONNULL RzILEvent *evt, RZ_NONNULL PJ *pj) {
 		pj_end(pj);
 		break;
 	case RZIL_EVENT_PC_WRITE:
-		tmp0 = rz_bitvector_as_hex_string(evt->data.pc_write.old_pc);
-		tmp1 = rz_bitvector_as_hex_string(evt->data.pc_write.new_pc);
+		tmp0 = rz_bv_as_hex_string(evt->data.pc_write.old_pc);
+		tmp1 = rz_bv_as_hex_string(evt->data.pc_write.new_pc);
 		pj_o(pj);
 		pj_ks(pj, "type", "pc_write");
 		pj_ks(pj, "old", tmp0);
@@ -690,8 +690,8 @@ RZ_API void rz_il_event_json(RZ_NONNULL RzILEvent *evt, RZ_NONNULL PJ *pj) {
 		pj_end(pj);
 		break;
 	case RZIL_EVENT_MEM_READ:
-		tmp0 = rz_bitvector_as_hex_string(evt->data.mem_read.address);
-		tmp1 = evt->data.mem_read.value ? rz_bitvector_as_hex_string(evt->data.mem_read.value) : NULL;
+		tmp0 = rz_bv_as_hex_string(evt->data.mem_read.address);
+		tmp1 = evt->data.mem_read.value ? rz_bv_as_hex_string(evt->data.mem_read.value) : NULL;
 		pj_o(pj);
 		pj_ks(pj, "type", "mem_read");
 		pj_ks(pj, "address", tmp0);
@@ -699,7 +699,7 @@ RZ_API void rz_il_event_json(RZ_NONNULL RzILEvent *evt, RZ_NONNULL PJ *pj) {
 		pj_end(pj);
 		break;
 	case RZIL_EVENT_VAR_READ:
-		tmp1 = evt->data.var_read.value ? rz_bitvector_as_hex_string(evt->data.var_read.value) : NULL;
+		tmp1 = evt->data.var_read.value ? rz_bv_as_hex_string(evt->data.var_read.value) : NULL;
 		pj_o(pj);
 		pj_ks(pj, "type", "var_read");
 		pj_ks(pj, "name", evt->data.var_read.variable);
@@ -707,9 +707,9 @@ RZ_API void rz_il_event_json(RZ_NONNULL RzILEvent *evt, RZ_NONNULL PJ *pj) {
 		pj_end(pj);
 		break;
 	case RZIL_EVENT_MEM_WRITE:
-		tmp0 = rz_bitvector_as_hex_string(evt->data.mem_write.address);
-		tmp1 = evt->data.mem_write.old_value ? rz_bitvector_as_hex_string(evt->data.mem_write.old_value) : NULL;
-		tmp2 = rz_bitvector_as_hex_string(evt->data.mem_write.new_value);
+		tmp0 = rz_bv_as_hex_string(evt->data.mem_write.address);
+		tmp1 = evt->data.mem_write.old_value ? rz_bv_as_hex_string(evt->data.mem_write.old_value) : NULL;
+		tmp2 = rz_bv_as_hex_string(evt->data.mem_write.new_value);
 		pj_o(pj);
 		pj_ks(pj, "type", "mem_write");
 		pj_ks(pj, "address", tmp0);
@@ -718,8 +718,8 @@ RZ_API void rz_il_event_json(RZ_NONNULL RzILEvent *evt, RZ_NONNULL PJ *pj) {
 		pj_end(pj);
 		break;
 	case RZIL_EVENT_VAR_WRITE:
-		tmp1 = evt->data.var_write.old_value ? rz_bitvector_as_hex_string(evt->data.var_write.old_value) : NULL;
-		tmp2 = rz_bitvector_as_hex_string(evt->data.var_write.new_value);
+		tmp1 = evt->data.var_write.old_value ? rz_bv_as_hex_string(evt->data.var_write.old_value) : NULL;
+		tmp2 = rz_bv_as_hex_string(evt->data.var_write.new_value);
 		pj_o(pj);
 		pj_ks(pj, "type", "var_write");
 		pj_ks(pj, "name", evt->data.var_write.variable);

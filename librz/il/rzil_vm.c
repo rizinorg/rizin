@@ -55,7 +55,7 @@ RZ_API void rz_il_vm_add_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name,
 	RzILVar *var = rz_il_vm_create_variable(vm, name);
 	var->type = RZIL_VAR_TYPE_BV;
 	RzILVal *val = rz_il_vm_create_value(vm, RZIL_VAR_TYPE_BV);
-	val->data.bv = rz_bitvector_new(length);
+	val->data.bv = rz_bv_new(length);
 	rz_il_hash_bind(vm, var, val);
 }
 
@@ -235,7 +235,7 @@ RZ_API RzILEffectLabel *rz_il_vm_create_label(RzILVM *vm, RZ_NONNULL const char 
 	HtPP *lbl_table = vm->vm_global_label_table;
 
 	RzILEffectLabel *lbl = rz_il_effect_label_new(name, EFFECT_LABEL_ADDR);
-	lbl->addr = rz_bitvector_dup(addr);
+	lbl->addr = rz_bv_dup(addr);
 	ht_pp_insert(lbl_table, name, lbl);
 
 	return lbl;
@@ -268,9 +268,9 @@ RZ_API RzILEffectLabel *rz_il_vm_update_label(RzILVM *vm, RZ_NONNULL char *name,
 	rz_return_val_if_fail(name, NULL);
 	RzILEffectLabel *lbl = ht_pp_find(vm->vm_global_label_table, name, NULL);
 	if (lbl->addr) {
-		rz_bitvector_free(lbl->addr);
+		rz_bv_free(lbl->addr);
 	}
-	lbl->addr = rz_bitvector_dup(addr);
+	lbl->addr = rz_bv_dup(addr);
 
 	return lbl;
 }
@@ -309,8 +309,8 @@ RZ_API RzPVector *rz_il_make_oplist(int num, ...) {
 
 // WARN : convertion breaks the original data
 static RzILBool *bitv_to_bool(RzBitVector *bitv) {
-	RzILBool *result = rz_il_bool_new(!rz_bitvector_is_zero_vector(bitv));
-	rz_bitvector_free(bitv);
+	RzILBool *result = rz_il_bool_new(!rz_bv_is_zero_vector(bitv));
+	rz_bv_free(bitv);
 	return result;
 }
 
@@ -476,7 +476,7 @@ RZ_API RzILEffect *rz_il_evaluate_effect(RzILVM *vm, RzILOp *op, RzILOpArgType *
 	case RZIL_OP_ARG_EFF:
 		return result;
 	case RZIL_OP_ARG_BITV:
-		rz_bitvector_free(result);
+		rz_bv_free(result);
 		break;
 	case RZIL_OP_ARG_BOOL:
 		rz_il_bool_free(result);

@@ -10,7 +10,7 @@
  * \param length int, the length of bitvector
  * \return bv RzBitVector, pointer to the new bitvector instance
  */
-RZ_API RZ_OWN RzBitVector *rz_bitvector_new(ut32 length) {
+RZ_API RZ_OWN RzBitVector *rz_bv_new(ut32 length) {
 	rz_return_val_if_fail(length, NULL);
 	RzBitVector *ret = RZ_NEW0(RzBitVector);
 	if (ret == NULL) {
@@ -36,7 +36,7 @@ RZ_API RZ_OWN RzBitVector *rz_bitvector_new(ut32 length) {
  * Free a bitvector
  * \param bv RzBitVector, pointer to the bitvector you want to free
  */
-RZ_API void rz_bitvector_free(RZ_NULLABLE RzBitVector *bv) {
+RZ_API void rz_bv_free(RZ_NULLABLE RzBitVector *bv) {
 	if (!bv) {
 		return;
 	}
@@ -51,7 +51,7 @@ RZ_API void rz_bitvector_free(RZ_NULLABLE RzBitVector *bv) {
  * \param bv RzBitVector, pointer to bitvector
  * \return str char*, bitvector string
  */
-RZ_API RZ_OWN char *rz_bitvector_as_string(RZ_NONNULL RzBitVector *bv) {
+RZ_API RZ_OWN char *rz_bv_as_string(RZ_NONNULL RzBitVector *bv) {
 	rz_return_val_if_fail(bv, NULL);
 
 	char *str = (char *)malloc(bv->len + 1);
@@ -60,9 +60,9 @@ RZ_API RZ_OWN char *rz_bitvector_as_string(RZ_NONNULL RzBitVector *bv) {
 	}
 
 	for (ut32 i = bv->len - 1, j = 0; i > 0; --i, j++) {
-		str[j] = rz_bitvector_get(bv, i) ? '1' : '0';
+		str[j] = rz_bv_get(bv, i) ? '1' : '0';
 	}
-	str[bv->len - 1] = rz_bitvector_get(bv, 0) ? '1' : '0';
+	str[bv->len - 1] = rz_bv_get(bv, 0) ? '1' : '0';
 	str[bv->len] = '\0';
 
 	return str;
@@ -73,7 +73,7 @@ RZ_API RZ_OWN char *rz_bitvector_as_string(RZ_NONNULL RzBitVector *bv) {
  * \param bv RzBitVector, pointer to bitvector
  * \return str char*, bitvector string in hexadecimal format
  */
-RZ_API RZ_OWN char *rz_bitvector_as_hex_string(RZ_NONNULL RzBitVector *bv) {
+RZ_API RZ_OWN char *rz_bv_as_hex_string(RZ_NONNULL RzBitVector *bv) {
 	rz_return_val_if_fail(bv, NULL);
 
 	if (bv->len <= 64) {
@@ -109,12 +109,12 @@ RZ_API RZ_OWN char *rz_bitvector_as_hex_string(RZ_NONNULL RzBitVector *bv) {
  * \param bv RzBitVector, pointer to the source bitvector
  * \return dup RzBitVector, pointer to a new bitvector, which is a copy of source
  */
-RZ_API RZ_OWN RzBitVector *rz_bitvector_dup(const RZ_NONNULL RzBitVector *bv) {
+RZ_API RZ_OWN RzBitVector *rz_bv_dup(const RZ_NONNULL RzBitVector *bv) {
 	rz_return_val_if_fail(bv, NULL);
 
-	RzBitVector *new_bv = rz_bitvector_new(bv->len);
-	if (!new_bv || !rz_bitvector_copy(bv, new_bv)) {
-		rz_bitvector_free(new_bv);
+	RzBitVector *new_bv = rz_bv_new(bv->len);
+	if (!new_bv || !rz_bv_copy(bv, new_bv)) {
+		rz_bv_free(new_bv);
 		return NULL;
 	}
 
@@ -128,7 +128,7 @@ RZ_API RZ_OWN RzBitVector *rz_bitvector_dup(const RZ_NONNULL RzBitVector *bv) {
  * \param dst RzBitVector, the destination bitvector
  * \return Actual size of copy
  */
-RZ_API ut32 rz_bitvector_copy(RZ_NONNULL const RzBitVector *src, RZ_NONNULL RzBitVector *dst) {
+RZ_API ut32 rz_bv_copy(RZ_NONNULL const RzBitVector *src, RZ_NONNULL RzBitVector *dst) {
 	rz_return_val_if_fail(src && dst, 0);
 
 	if (dst->len != src->len) {
@@ -152,7 +152,7 @@ RZ_API ut32 rz_bitvector_copy(RZ_NONNULL const RzBitVector *src, RZ_NONNULL RzBi
  * \param nbit ut32, control the size of copy (in bits)
  * \return copied_size ut32, Actual copied size
  */
-RZ_API ut32 rz_bitvector_copy_nbits(RZ_NONNULL const RzBitVector *src, ut32 src_start_pos, RZ_NONNULL RzBitVector *dst, ut32 dst_start_pos, ut32 nbit) {
+RZ_API ut32 rz_bv_copy_nbits(RZ_NONNULL const RzBitVector *src, ut32 src_start_pos, RZ_NONNULL RzBitVector *dst, ut32 dst_start_pos, ut32 nbit) {
 	rz_return_val_if_fail(src && dst, 0);
 
 	ut32 max_nbit = RZ_MIN((src->len - src_start_pos),
@@ -165,8 +165,8 @@ RZ_API ut32 rz_bitvector_copy_nbits(RZ_NONNULL const RzBitVector *src, ut32 src_
 
 	// normal case here
 	for (ut32 i = 0; i < max_nbit; ++i) {
-		bool c = rz_bitvector_get(src, src_start_pos + i);
-		rz_bitvector_set(dst, dst_start_pos + i, c);
+		bool c = rz_bv_get(src, src_start_pos + i);
+		rz_bv_set(dst, dst_start_pos + i, c);
 	}
 
 	return nbit;
@@ -178,17 +178,17 @@ RZ_API ut32 rz_bitvector_copy_nbits(RZ_NONNULL const RzBitVector *src, ut32 src_
  * \param delta_len ut32, the number of zero bits
  * \return ret RzBitVector, pointer to the new bitvector instance
  */
-RZ_API RZ_OWN RzBitVector *rz_bitvector_prepend_zero(RZ_NONNULL RzBitVector *bv, ut32 delta_len) {
+RZ_API RZ_OWN RzBitVector *rz_bv_prepend_zero(RZ_NONNULL RzBitVector *bv, ut32 delta_len) {
 	rz_return_val_if_fail(bv, NULL);
 
 	ut32 new_len = bv->len + delta_len;
-	RzBitVector *ret = rz_bitvector_new(new_len);
+	RzBitVector *ret = rz_bv_new(new_len);
 	if (ret == NULL) {
 		return NULL;
 	}
 
 	for (ut32 i = 0; i < bv->len; ++i) {
-		rz_bitvector_set(ret, i, rz_bitvector_get(bv, i));
+		rz_bv_set(ret, i, rz_bv_get(bv, i));
 	}
 
 	return ret;
@@ -200,18 +200,18 @@ RZ_API RZ_OWN RzBitVector *rz_bitvector_prepend_zero(RZ_NONNULL RzBitVector *bv,
  * \param delta_len, the number of zero bits
  * \return ret RzBitVector, pointert to the new btivector
  */
-RZ_API RZ_OWN RzBitVector *rz_bitvector_append_zero(RZ_NONNULL RzBitVector *bv, ut32 delta_len) {
+RZ_API RZ_OWN RzBitVector *rz_bv_append_zero(RZ_NONNULL RzBitVector *bv, ut32 delta_len) {
 	rz_return_val_if_fail(bv, NULL);
 
 	ut32 new_len = bv->len + delta_len;
-	RzBitVector *ret = rz_bitvector_new(new_len);
+	RzBitVector *ret = rz_bv_new(new_len);
 	if (ret == NULL) {
 		return NULL;
 	}
 
 	ut32 pos = delta_len;
 	for (ut32 i = 0; i < bv->len; ++i, ++pos) {
-		rz_bitvector_set(ret, pos, rz_bitvector_get(bv, i));
+		rz_bv_set(ret, pos, rz_bv_get(bv, i));
 	}
 
 	return ret;
@@ -223,17 +223,17 @@ RZ_API RZ_OWN RzBitVector *rz_bitvector_append_zero(RZ_NONNULL RzBitVector *bv, 
  * \param delta_len, the number of zero bits
  * \return ret RzBitVector, pointert to the new btivector
  */
-RZ_API RZ_OWN RzBitVector *rz_bitvector_cut_head(RZ_NONNULL RzBitVector *bv, ut32 delta_len) {
+RZ_API RZ_OWN RzBitVector *rz_bv_cut_head(RZ_NONNULL RzBitVector *bv, ut32 delta_len) {
 	rz_return_val_if_fail(bv, NULL);
 
 	ut32 new_len = bv->len - delta_len;
-	RzBitVector *ret = rz_bitvector_new(new_len);
+	RzBitVector *ret = rz_bv_new(new_len);
 	if (!ret) {
 		return NULL;
 	}
 
 	for (ut32 pos = 0; pos < new_len; ++pos) {
-		rz_bitvector_set(ret, pos, rz_bitvector_get(bv, pos));
+		rz_bv_set(ret, pos, rz_bv_get(bv, pos));
 	}
 
 	return ret;
@@ -245,18 +245,18 @@ RZ_API RZ_OWN RzBitVector *rz_bitvector_cut_head(RZ_NONNULL RzBitVector *bv, ut3
  * \param delta_len, the number of zero bits
  * \return ret RzBitVector, pointert to the new btivector
  */
-RZ_API RZ_OWN RzBitVector *rz_bitvector_cut_tail(RZ_NONNULL RzBitVector *bv, ut32 delta_len) {
+RZ_API RZ_OWN RzBitVector *rz_bv_cut_tail(RZ_NONNULL RzBitVector *bv, ut32 delta_len) {
 	rz_return_val_if_fail(bv, NULL);
 
 	ut32 new_len = bv->len - delta_len;
-	RzBitVector *ret = rz_bitvector_new(new_len);
+	RzBitVector *ret = rz_bv_new(new_len);
 	if (!ret) {
 		return NULL;
 	}
 
 	ut32 pos, i;
 	for (pos = 0, i = delta_len; pos < new_len; ++i, ++pos) {
-		rz_bitvector_set(ret, pos, rz_bitvector_get(bv, i));
+		rz_bv_set(ret, pos, rz_bv_get(bv, i));
 	}
 
 	return ret;
@@ -268,15 +268,15 @@ RZ_API RZ_OWN RzBitVector *rz_bitvector_cut_tail(RZ_NONNULL RzBitVector *bv, ut3
  * \param bv2 RzBitVector
  * \return ret RzBitVector, the new bitvector
  */
-RZ_API RZ_OWN RzBitVector *rz_bitvector_append(RZ_NONNULL RzBitVector *bv1, RZ_NONNULL RzBitVector *bv2) {
+RZ_API RZ_OWN RzBitVector *rz_bv_append(RZ_NONNULL RzBitVector *bv1, RZ_NONNULL RzBitVector *bv2) {
 	rz_return_val_if_fail(bv1 && bv2, NULL);
 
 	ut32 new_len = bv1->len + bv2->len;
-	RzBitVector *ret = rz_bitvector_new(new_len);
+	RzBitVector *ret = rz_bv_new(new_len);
 
 	// copy n bits from bv1
-	rz_bitvector_copy_nbits(bv2, 0, ret, 0, bv2->len);
-	rz_bitvector_copy_nbits(bv1, 0, ret, bv2->len, bv1->len);
+	rz_bv_copy_nbits(bv2, 0, ret, 0, bv2->len);
+	rz_bv_copy_nbits(bv1, 0, ret, bv2->len, bv1->len);
 
 	return ret;
 }
@@ -288,7 +288,7 @@ RZ_API RZ_OWN RzBitVector *rz_bitvector_append(RZ_NONNULL RzBitVector *bv1, RZ_N
  * \param b bit, true or false (set or unset)
  * \return ret bool, bool value at `pos` after this operation
  */
-RZ_API bool rz_bitvector_set(RZ_NONNULL RzBitVector *bv, ut32 pos, bool b) {
+RZ_API bool rz_bv_set(RZ_NONNULL RzBitVector *bv, ut32 pos, bool b) {
 	rz_return_val_if_fail(bv && pos < bv->len, false);
 	if (bv->len <= 64) {
 		if (b) {
@@ -315,7 +315,7 @@ RZ_API bool rz_bitvector_set(RZ_NONNULL RzBitVector *bv, ut32 pos, bool b) {
  * \param b bit, true or false (set or unset)
  * \return ret bool, bool value at every positions after this operation
  */
-RZ_API bool rz_bitvector_set_all(RZ_NONNULL RzBitVector *bv, bool b) {
+RZ_API bool rz_bv_set_all(RZ_NONNULL RzBitVector *bv, bool b) {
 	rz_return_val_if_fail(bv, false);
 
 	if (bv->len <= 64) {
@@ -344,11 +344,11 @@ RZ_API bool rz_bitvector_set_all(RZ_NONNULL RzBitVector *bv, bool b) {
  * \param b bit, true or false (set or unset)
  * \return ret bool, bool value at `pos` after this operation
  */
-RZ_API bool rz_bitvector_toggle(RZ_NONNULL RzBitVector *bv, ut32 pos) {
+RZ_API bool rz_bv_toggle(RZ_NONNULL RzBitVector *bv, ut32 pos) {
 	rz_return_val_if_fail(bv, false);
-	bool cur_bit = rz_bitvector_get(bv, pos);
+	bool cur_bit = rz_bv_get(bv, pos);
 	bool new_bit = !cur_bit;
-	rz_bitvector_set(bv, pos, new_bit);
+	rz_bv_set(bv, pos, new_bit);
 	return new_bit;
 }
 
@@ -358,7 +358,7 @@ RZ_API bool rz_bitvector_toggle(RZ_NONNULL RzBitVector *bv, ut32 pos) {
  * \param b bit, true or false (set or unset)
  * \return ret bool, bool value at every positions after this operation
  */
-RZ_API bool rz_bitvector_toggle_all(RZ_NONNULL RzBitVector *bv) {
+RZ_API bool rz_bv_toggle_all(RZ_NONNULL RzBitVector *bv) {
 	rz_return_val_if_fail(bv, false);
 	if (bv->len <= 64) {
 		bv->bits.small_u = ~(bv->bits.small_u);
@@ -377,7 +377,7 @@ RZ_API bool rz_bitvector_toggle_all(RZ_NONNULL RzBitVector *bv) {
  * \param pos int, position
  * \return ret bit, bool value of bit
  */
-RZ_API bool rz_bitvector_get(RZ_NONNULL const RzBitVector *bv, ut32 pos) {
+RZ_API bool rz_bv_get(RZ_NONNULL const RzBitVector *bv, ut32 pos) {
 	rz_return_val_if_fail(bv && pos < bv->len, false);
 	if (bv->len <= 64) {
 		return (bv->bits.small_u >> pos) & 1;
@@ -395,8 +395,8 @@ RZ_API bool rz_bitvector_get(RZ_NONNULL const RzBitVector *bv, ut32 pos) {
  * \param size int, shift bits
  * \return flag bool, success or not
  */
-RZ_API bool rz_bitvector_lshift(RZ_NONNULL RzBitVector *bv, ut32 size) {
-	return rz_bitvector_lshift_fill(bv, size, false);
+RZ_API bool rz_bv_lshift(RZ_NONNULL RzBitVector *bv, ut32 size) {
+	return rz_bv_lshift_fill(bv, size, false);
 }
 
 /**
@@ -406,8 +406,8 @@ RZ_API bool rz_bitvector_lshift(RZ_NONNULL RzBitVector *bv, ut32 size) {
  * \param size int, shift bits
  * \return flag bool, success or not
  */
-RZ_API bool rz_bitvector_rshift(RZ_NONNULL RzBitVector *bv, ut32 size) {
-	return rz_bitvector_rshift_fill(bv, size, false);
+RZ_API bool rz_bv_rshift(RZ_NONNULL RzBitVector *bv, ut32 size) {
+	return rz_bv_rshift_fill(bv, size, false);
 }
 
 /**
@@ -418,7 +418,7 @@ RZ_API bool rz_bitvector_rshift(RZ_NONNULL RzBitVector *bv, ut32 size) {
  * \param fill_bit bool, bit used in filling
  * \return flag bool, success or not
  */
-RZ_API bool rz_bitvector_lshift_fill(RZ_NONNULL RzBitVector *bv, ut32 size, bool fill_bit) {
+RZ_API bool rz_bv_lshift_fill(RZ_NONNULL RzBitVector *bv, ut32 size, bool fill_bit) {
 	rz_return_val_if_fail(bv, false);
 
 	// left shift
@@ -427,21 +427,21 @@ RZ_API bool rz_bitvector_lshift_fill(RZ_NONNULL RzBitVector *bv, ut32 size, bool
 	}
 
 	if (size >= bv->len) {
-		rz_bitvector_set_all(bv, fill_bit);
+		rz_bv_set_all(bv, fill_bit);
 		return true;
 	}
 
-	RzBitVector *tmp = rz_bitvector_new(bv->len);
-	rz_bitvector_set_all(tmp, fill_bit);
+	RzBitVector *tmp = rz_bv_new(bv->len);
+	rz_bv_set_all(tmp, fill_bit);
 
-	int copied_size = rz_bitvector_copy_nbits(bv, 0, tmp, size, bv->len - size);
+	int copied_size = rz_bv_copy_nbits(bv, 0, tmp, size, bv->len - size);
 	if (copied_size == 0) {
-		rz_bitvector_free(tmp);
+		rz_bv_free(tmp);
 		return false;
 	}
 
-	rz_bitvector_copy(tmp, bv);
-	rz_bitvector_free(tmp);
+	rz_bv_copy(tmp, bv);
+	rz_bv_free(tmp);
 
 	return true;
 }
@@ -454,7 +454,7 @@ RZ_API bool rz_bitvector_lshift_fill(RZ_NONNULL RzBitVector *bv, ut32 size, bool
  * \param fill_bit bool, bit used in filling
  * \return flag bool, success or not
  */
-RZ_API bool rz_bitvector_rshift_fill(RZ_NONNULL RzBitVector *bv, ut32 size, bool fill_bit) {
+RZ_API bool rz_bv_rshift_fill(RZ_NONNULL RzBitVector *bv, ut32 size, bool fill_bit) {
 	rz_return_val_if_fail(bv, false);
 
 	// left shift
@@ -463,21 +463,21 @@ RZ_API bool rz_bitvector_rshift_fill(RZ_NONNULL RzBitVector *bv, ut32 size, bool
 	}
 
 	if (size >= bv->len) {
-		rz_bitvector_set_all(bv, fill_bit);
+		rz_bv_set_all(bv, fill_bit);
 		return true;
 	}
 
-	RzBitVector *tmp = rz_bitvector_new(bv->len);
-	rz_bitvector_set_all(tmp, fill_bit);
+	RzBitVector *tmp = rz_bv_new(bv->len);
+	rz_bv_set_all(tmp, fill_bit);
 
-	int copied_size = rz_bitvector_copy_nbits(bv, size, tmp, 0, tmp->len - size);
+	int copied_size = rz_bv_copy_nbits(bv, size, tmp, 0, tmp->len - size);
 	if (copied_size == 0) {
-		rz_bitvector_free(tmp);
+		rz_bv_free(tmp);
 		return false;
 	}
 
-	rz_bitvector_copy(tmp, bv);
-	rz_bitvector_free(tmp);
+	rz_bv_copy(tmp, bv);
+	rz_bv_free(tmp);
 
 	return true;
 }
@@ -489,13 +489,13 @@ RZ_API bool rz_bitvector_rshift_fill(RZ_NONNULL RzBitVector *bv, ut32 size, bool
  * \param y RzBitVector, operand
  * \return ret RzBitVector, a new bitvector, which is the result of AND
  */
-RZ_API RZ_OWN RzBitVector *rz_bitvector_and(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
+RZ_API RZ_OWN RzBitVector *rz_bv_and(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
 	rz_return_val_if_fail(x && y, NULL);
 	if (x->len != y->len) {
 		return NULL;
 	}
 
-	RzBitVector *ret = rz_bitvector_new(x->len);
+	RzBitVector *ret = rz_bv_new(x->len);
 	if (!ret) {
 		return NULL;
 	} else if (x->len <= 64) {
@@ -516,13 +516,13 @@ RZ_API RZ_OWN RzBitVector *rz_bitvector_and(RZ_NONNULL RzBitVector *x, RZ_NONNUL
  * \param y RzBitVector, operand
  * \return ret RzBitVector, a new bitvector, which is the result of OR
  */
-RZ_API RZ_OWN RzBitVector *rz_bitvector_or(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
+RZ_API RZ_OWN RzBitVector *rz_bv_or(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
 	rz_return_val_if_fail(x && y, NULL);
 	if (x->len != y->len) {
 		return NULL;
 	}
 
-	RzBitVector *ret = rz_bitvector_new(x->len);
+	RzBitVector *ret = rz_bv_new(x->len);
 	if (!ret) {
 		return NULL;
 	} else if (x->len <= 64) {
@@ -543,13 +543,13 @@ RZ_API RZ_OWN RzBitVector *rz_bitvector_or(RZ_NONNULL RzBitVector *x, RZ_NONNULL
  * \param y RzBitVector, operand
  * \return ret RzBitVector, a new bitvector, which is the result of XOR
  */
-RZ_API RZ_OWN RzBitVector *rz_bitvector_xor(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
+RZ_API RZ_OWN RzBitVector *rz_bv_xor(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
 	rz_return_val_if_fail(x && y, NULL);
 	if (x->len != y->len) {
 		return NULL;
 	}
 
-	RzBitVector *ret = rz_bitvector_new(x->len);
+	RzBitVector *ret = rz_bv_new(x->len);
 	if (!ret) {
 		return NULL;
 	} else if (x->len <= 64) {
@@ -568,10 +568,10 @@ RZ_API RZ_OWN RzBitVector *rz_bitvector_xor(RZ_NONNULL RzBitVector *x, RZ_NONNUL
  * \param bv RzBitVector, operand
  * \return ret RzBitVector, a new bitvector, which is the 1's complement of bv
  */
-RZ_API RZ_OWN RzBitVector *rz_bitvector_complement_1(RZ_NONNULL RzBitVector *bv) {
+RZ_API RZ_OWN RzBitVector *rz_bv_complement_1(RZ_NONNULL RzBitVector *bv) {
 	rz_return_val_if_fail(bv, NULL);
 
-	RzBitVector *ret = rz_bitvector_new(bv->len);
+	RzBitVector *ret = rz_bv_new(bv->len);
 	if (!ret) {
 		return NULL;
 	} else if (ret->len <= 64) {
@@ -580,7 +580,7 @@ RZ_API RZ_OWN RzBitVector *rz_bitvector_complement_1(RZ_NONNULL RzBitVector *bv)
 	}
 
 	if (!(ret->bits.large_a && bv->bits.large_a)) {
-		rz_bitvector_free(ret);
+		rz_bv_free(ret);
 		rz_return_val_if_reached(NULL);
 	}
 	for (ut32 i = 0; i < bv->_elem_len; ++i) {
@@ -594,16 +594,16 @@ RZ_API RZ_OWN RzBitVector *rz_bitvector_complement_1(RZ_NONNULL RzBitVector *bv)
  * \param bv RzBitVector, operand
  * \return ret RzBitVector, a new bitvector, which is the 2's complement of bv
  */
-RZ_API RZ_OWN RzBitVector *rz_bitvector_complement_2(RZ_NONNULL RzBitVector *bv) {
+RZ_API RZ_OWN RzBitVector *rz_bv_complement_2(RZ_NONNULL RzBitVector *bv) {
 	rz_return_val_if_fail(bv, NULL);
 
 	// from right side to left, find the 1st 1 bit
 	// flip/toggle every bit before it
-	RzBitVector *ret = rz_bitvector_dup(bv);
+	RzBitVector *ret = rz_bv_dup(bv);
 
 	ut32 i;
 	for (i = 0; i < bv->len; ++i) {
-		if (rz_bitvector_get(bv, i) == true) {
+		if (rz_bv_get(bv, i) == true) {
 			break;
 		}
 	}
@@ -611,7 +611,7 @@ RZ_API RZ_OWN RzBitVector *rz_bitvector_complement_2(RZ_NONNULL RzBitVector *bv)
 	// assert bv[i] == true now
 	i += 1;
 	for (; i < bv->len; ++i) {
-		rz_bitvector_toggle(ret, i);
+		rz_bv_toggle(ret, i);
 	}
 
 	return ret;
@@ -625,7 +625,7 @@ RZ_API RZ_OWN RzBitVector *rz_bitvector_complement_2(RZ_NONNULL RzBitVector *bv)
  * \param carry bool*, bool pointer to where to save the carry value.
  * \return ret RzBitVector, point to the new bitvector
  */
-RZ_API RZ_OWN RzBitVector *rz_bitvector_add(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y, RZ_NULLABLE bool *carry) {
+RZ_API RZ_OWN RzBitVector *rz_bv_add(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y, RZ_NULLABLE bool *carry) {
 	rz_return_val_if_fail(x && y, NULL);
 
 	if (x->len != y->len) {
@@ -634,12 +634,12 @@ RZ_API RZ_OWN RzBitVector *rz_bitvector_add(RZ_NONNULL RzBitVector *x, RZ_NONNUL
 	}
 
 	bool a = false, b = false, _carry = false;
-	RzBitVector *ret = rz_bitvector_new(x->len);
+	RzBitVector *ret = rz_bv_new(x->len);
 
 	for (ut32 pos = 0; pos < x->len; ++pos) {
-		a = rz_bitvector_get(x, pos);
-		b = rz_bitvector_get(y, pos);
-		rz_bitvector_set(ret, pos, a ^ b ^ _carry);
+		a = rz_bv_get(x, pos);
+		b = rz_bv_get(y, pos);
+		rz_bv_set(ret, pos, a ^ b ^ _carry);
 		_carry = ((a & b) | (a & _carry)) | (b & _carry);
 	}
 	if (carry) {
@@ -657,15 +657,15 @@ RZ_API RZ_OWN RzBitVector *rz_bitvector_add(RZ_NONNULL RzBitVector *x, RZ_NONNUL
  * \param borrow bool*, bool pointer to where to save the borrow value.
  * \return ret RzBitVector, point to the new bitvector
  */
-RZ_API RZ_OWN RzBitVector *rz_bitvector_sub(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y, RZ_NULLABLE bool *borrow) {
+RZ_API RZ_OWN RzBitVector *rz_bv_sub(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y, RZ_NULLABLE bool *borrow) {
 	rz_return_val_if_fail(x && y, NULL);
 
 	RzBitVector *ret;
 	RzBitVector *neg_y;
 
-	neg_y = rz_bitvector_neg(y);
-	ret = rz_bitvector_add(x, neg_y, borrow);
-	rz_bitvector_free(neg_y);
+	neg_y = rz_bv_neg(y);
+	ret = rz_bv_add(x, neg_y, borrow);
+	rz_bv_free(neg_y);
 	return ret;
 }
 
@@ -676,7 +676,7 @@ RZ_API RZ_OWN RzBitVector *rz_bitvector_sub(RZ_NONNULL RzBitVector *x, RZ_NONNUL
  * \param y RzBitVector, Operand
  * \return ret RzBitVector, point to the new bitvector
  */
-RZ_API RZ_OWN RzBitVector *rz_bitvector_mul(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
+RZ_API RZ_OWN RzBitVector *rz_bv_mul(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
 	rz_return_val_if_fail(x && y, NULL);
 
 	RzBitVector *result, *dump, *tmp;
@@ -687,20 +687,20 @@ RZ_API RZ_OWN RzBitVector *rz_bitvector_mul(RZ_NONNULL RzBitVector *x, RZ_NONNUL
 		return NULL;
 	}
 
-	result = rz_bitvector_new(x->len);
-	dump = rz_bitvector_dup(x);
+	result = rz_bv_new(x->len);
+	dump = rz_bv_dup(x);
 
 	for (ut32 i = 0; i < y->len; ++i) {
-		cur_bit = rz_bitvector_get(y, i);
+		cur_bit = rz_bv_get(y, i);
 		if (cur_bit) {
-			tmp = rz_bitvector_add(result, dump, NULL);
-			rz_bitvector_free(result);
+			tmp = rz_bv_add(result, dump, NULL);
+			rz_bv_free(result);
 			result = tmp;
 		}
-		rz_bitvector_lshift(dump, 1);
+		rz_bv_lshift(dump, 1);
 	}
 
-	rz_bitvector_free(dump);
+	rz_bv_free(dump);
 	return result;
 }
 
@@ -723,8 +723,8 @@ int bv_unsigned_cmp(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
 	bool x_bit, y_bit;
 	for (ut32 i = 0; i < len; ++i) {
 		pos = len - 1 - i;
-		x_bit = rz_bitvector_get(x, pos);
-		y_bit = rz_bitvector_get(y, pos);
+		x_bit = rz_bv_get(x, pos);
+		y_bit = rz_bv_get(y, pos);
 		if (x_bit ^ y_bit) {
 			return x_bit ? 1 : -1;
 		}
@@ -741,16 +741,16 @@ int bv_unsigned_cmp(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
  * \param y RzBitVector, Operand
  * \return ret RzBitVector, point to the new bitvector
  */
-RZ_API RZ_OWN RzBitVector *rz_bitvector_div(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
+RZ_API RZ_OWN RzBitVector *rz_bv_div(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
 	rz_return_val_if_fail(x && y, NULL);
 	if (x->len != y->len) {
 		rz_warn_if_reached();
 		return NULL;
 	}
 
-	if (rz_bitvector_is_zero_vector(y)) {
-		RzBitVector *ret = rz_bitvector_new(y->len);
-		rz_bitvector_set_all(ret, true);
+	if (rz_bv_is_zero_vector(y)) {
+		RzBitVector *ret = rz_bv_new(y->len);
+		rz_bv_set_all(ret, true);
 		RZ_LOG_ERROR("RzIL: can't divide by zero\n");
 		return ret;
 	}
@@ -760,30 +760,30 @@ RZ_API RZ_OWN RzBitVector *rz_bitvector_div(RZ_NONNULL RzBitVector *x, RZ_NONNUL
 	// dividend < divisor
 	// remainder = dividend, quotient = 0
 	if (compare_result < 0) {
-		return rz_bitvector_new(x->len);
+		return rz_bv_new(x->len);
 	}
 
 	// dividend == divisor
 	// remainder = 0, quotient = dividend
 	if (compare_result == 0) {
-		return rz_bitvector_dup(x);
+		return rz_bv_dup(x);
 	}
 
 	// dividend > divisor
-	RzBitVector *dividend = rz_bitvector_dup(x);
+	RzBitVector *dividend = rz_bv_dup(x);
 	RzBitVector *tmp;
 	ut32 count = 0;
 
 	while (bv_unsigned_cmp(dividend, y) >= 0) {
 		count += 1;
-		tmp = rz_bitvector_sub(dividend, y, NULL);
-		rz_bitvector_free(dividend);
+		tmp = rz_bv_sub(dividend, y, NULL);
+		rz_bv_free(dividend);
 		dividend = tmp;
 	}
 
 	RzBitVector *remainder = dividend;
-	RzBitVector *quotient = rz_bitvector_new_from_ut64(x->len, count);
-	rz_bitvector_free(remainder);
+	RzBitVector *quotient = rz_bv_new_from_ut64(x->len, count);
+	rz_bv_free(remainder);
 	return quotient;
 }
 
@@ -794,15 +794,15 @@ RZ_API RZ_OWN RzBitVector *rz_bitvector_div(RZ_NONNULL RzBitVector *x, RZ_NONNUL
  * \param y RzBitVector, Operand
  * \return ret RzBitVector, point to the new bitvector
  */
-RZ_API RZ_OWN RzBitVector *rz_bitvector_mod(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
+RZ_API RZ_OWN RzBitVector *rz_bv_mod(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
 	rz_return_val_if_fail(x && y, NULL);
 	if (x->len != y->len) {
 		rz_warn_if_reached();
 		return NULL;
 	}
 
-	if (rz_bitvector_is_zero_vector(y)) {
-		return rz_bitvector_dup(x);
+	if (rz_bv_is_zero_vector(y)) {
+		return rz_bv_dup(x);
 	}
 
 	int compare_result = bv_unsigned_cmp(x, y);
@@ -810,22 +810,22 @@ RZ_API RZ_OWN RzBitVector *rz_bitvector_mod(RZ_NONNULL RzBitVector *x, RZ_NONNUL
 	// dividend < divisor
 	// remainder = dividend, quotient = 0
 	if (compare_result < 0) {
-		return rz_bitvector_dup(x);
+		return rz_bv_dup(x);
 	}
 
 	// dividend == divisor
 	// remainder = 0, quotient = dividend
 	if (compare_result == 0) {
-		return rz_bitvector_new(x->len);
+		return rz_bv_new(x->len);
 	}
 
 	// dividend > divisor
-	RzBitVector *dividend = rz_bitvector_dup(x);
+	RzBitVector *dividend = rz_bv_dup(x);
 	RzBitVector *tmp;
 
 	while (bv_unsigned_cmp(dividend, y) >= 0) {
-		tmp = rz_bitvector_sub(dividend, y, NULL);
-		rz_bitvector_free(dividend);
+		tmp = rz_bv_sub(dividend, y, NULL);
+		rz_bv_free(dividend);
 		dividend = tmp;
 	}
 
@@ -848,44 +848,44 @@ RZ_API RZ_OWN RzBitVector *rz_bitvector_mod(RZ_NONNULL RzBitVector *x, RZ_NONNUL
  * \param y RzBitVector, Operand
  * \return ret RzBitVector, point to the new bitvector
  */
-RZ_API RZ_OWN RzBitVector *rz_bitvector_sdiv(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
+RZ_API RZ_OWN RzBitVector *rz_bv_sdiv(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
 	rz_return_val_if_fail(x && y, NULL);
-	bool mx = rz_bitvector_msb(x);
-	bool my = rz_bitvector_msb(y);
+	bool mx = rz_bv_msb(x);
+	bool my = rz_bv_msb(y);
 
 	RzBitVector *neg_x, *neg_y, *tmp, *ret;
 
 	if ((!mx) && (!my)) {
-		return rz_bitvector_div(x, y);
+		return rz_bv_div(x, y);
 	}
 
 	if ((mx) && (!my)) {
-		neg_x = rz_bitvector_neg(x);
-		tmp = rz_bitvector_div(neg_x, y);
-		ret = rz_bitvector_neg(tmp);
+		neg_x = rz_bv_neg(x);
+		tmp = rz_bv_div(neg_x, y);
+		ret = rz_bv_neg(tmp);
 
-		rz_bitvector_free(tmp);
-		rz_bitvector_free(neg_x);
+		rz_bv_free(tmp);
+		rz_bv_free(neg_x);
 		return ret;
 	}
 
 	if ((!mx) && (my)) {
-		neg_y = rz_bitvector_neg(y);
-		tmp = rz_bitvector_div(x, neg_y);
-		ret = rz_bitvector_neg(tmp);
+		neg_y = rz_bv_neg(y);
+		tmp = rz_bv_div(x, neg_y);
+		ret = rz_bv_neg(tmp);
 
-		rz_bitvector_free(tmp);
-		rz_bitvector_free(neg_y);
+		rz_bv_free(tmp);
+		rz_bv_free(neg_y);
 		return ret;
 	}
 
 	if (mx && my) {
-		neg_x = rz_bitvector_neg(x);
-		neg_y = rz_bitvector_neg(y);
+		neg_x = rz_bv_neg(x);
+		neg_y = rz_bv_neg(y);
 
-		ret = rz_bitvector_div(neg_x, neg_y);
-		rz_bitvector_free(neg_x);
-		rz_bitvector_free(neg_y);
+		ret = rz_bv_div(neg_x, neg_y);
+		rz_bv_free(neg_x);
+		rz_bv_free(neg_y);
 		return ret;
 	}
 
@@ -907,46 +907,46 @@ RZ_API RZ_OWN RzBitVector *rz_bitvector_sdiv(RZ_NONNULL RzBitVector *x, RZ_NONNU
  * \param y RzBitVector, Operand
  * \return ret RzBitVector, point to the new bitvector
  */
-RZ_API RZ_OWN RzBitVector *rz_bitvector_smod(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
+RZ_API RZ_OWN RzBitVector *rz_bv_smod(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
 	rz_return_val_if_fail(x && y, NULL);
-	bool mx = rz_bitvector_msb(x);
-	bool my = rz_bitvector_msb(y);
+	bool mx = rz_bv_msb(x);
+	bool my = rz_bv_msb(y);
 
 	RzBitVector *neg_x, *neg_y, *tmp, *ret;
 
 	if ((!mx) && (!my)) {
-		return rz_bitvector_mod(x, y);
+		return rz_bv_mod(x, y);
 	}
 
 	if ((mx) && (!my)) {
-		neg_x = rz_bitvector_neg(x);
-		tmp = rz_bitvector_mod(neg_x, y);
-		ret = rz_bitvector_neg(tmp);
+		neg_x = rz_bv_neg(x);
+		tmp = rz_bv_mod(neg_x, y);
+		ret = rz_bv_neg(tmp);
 
-		rz_bitvector_free(tmp);
-		rz_bitvector_free(neg_x);
+		rz_bv_free(tmp);
+		rz_bv_free(neg_x);
 		return ret;
 	}
 
 	if ((!mx) && (my)) {
-		neg_y = rz_bitvector_neg(y);
-		tmp = rz_bitvector_mod(x, neg_y);
-		ret = rz_bitvector_neg(tmp);
+		neg_y = rz_bv_neg(y);
+		tmp = rz_bv_mod(x, neg_y);
+		ret = rz_bv_neg(tmp);
 
-		rz_bitvector_free(tmp);
-		rz_bitvector_free(neg_y);
+		rz_bv_free(tmp);
+		rz_bv_free(neg_y);
 		return ret;
 	}
 
 	if (mx && my) {
-		neg_x = rz_bitvector_neg(x);
-		neg_y = rz_bitvector_neg(y);
+		neg_x = rz_bv_neg(x);
+		neg_y = rz_bv_neg(y);
 
-		tmp = rz_bitvector_mod(neg_x, neg_y);
-		ret = rz_bitvector_neg(tmp);
-		rz_bitvector_free(neg_x);
-		rz_bitvector_free(neg_y);
-		rz_bitvector_free(tmp);
+		tmp = rz_bv_mod(neg_x, neg_y);
+		ret = rz_bv_neg(tmp);
+		rz_bv_free(neg_x);
+		rz_bv_free(neg_y);
+		rz_bv_free(tmp);
 		return ret;
 	}
 
@@ -958,8 +958,8 @@ RZ_API RZ_OWN RzBitVector *rz_bitvector_smod(RZ_NONNULL RzBitVector *x, RZ_NONNU
  * \param bv RzBitVector, operand
  * \return b bit, bool value of MSB
  */
-RZ_API bool rz_bitvector_msb(RZ_NONNULL RzBitVector *bv) {
-	return rz_bitvector_get(bv, bv->len - 1);
+RZ_API bool rz_bv_msb(RZ_NONNULL RzBitVector *bv) {
+	return rz_bv_get(bv, bv->len - 1);
 }
 
 /**
@@ -967,8 +967,8 @@ RZ_API bool rz_bitvector_msb(RZ_NONNULL RzBitVector *bv) {
  * \param bv RzBitVector, operand
  * \return b bit, bool value of LSB
  */
-RZ_API bool rz_bitvector_lsb(RZ_NONNULL RzBitVector *bv) {
-	return rz_bitvector_get(bv, 0);
+RZ_API bool rz_bv_lsb(RZ_NONNULL RzBitVector *bv) {
+	return rz_bv_get(bv, 0);
 }
 
 /**
@@ -976,7 +976,7 @@ RZ_API bool rz_bitvector_lsb(RZ_NONNULL RzBitVector *bv) {
  * \param x RzBitVector, pointer to bv
  * \return ret bool, return true if bv is a zero bitvector, false if not
  */
-RZ_API bool rz_bitvector_is_zero_vector(RZ_NONNULL RzBitVector *x) {
+RZ_API bool rz_bv_is_zero_vector(RZ_NONNULL RzBitVector *x) {
 	rz_return_val_if_fail(x, false);
 
 	if (x->len <= 64) {
@@ -999,7 +999,7 @@ RZ_API bool rz_bitvector_is_zero_vector(RZ_NONNULL RzBitVector *x) {
  * \param y RzBitVector, operand
  * \return ret bool, return true if x <= y, else return false
  */
-RZ_API bool rz_bitvector_ule(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
+RZ_API bool rz_bv_ule(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
 	rz_return_val_if_fail(x && y, false);
 	// x > y ? return false : return true
 	return bv_unsigned_cmp(x, y) <= 0;
@@ -1011,17 +1011,17 @@ RZ_API bool rz_bitvector_ule(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *
  * \param y RzBitVector, operand
  * \return ret bool, return true if x <= y, else return false
  */
-RZ_API bool rz_bitvector_sle(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
+RZ_API bool rz_bv_sle(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
 	rz_return_val_if_fail(x && y, false);
-	bool x_msb = rz_bitvector_msb(x);
-	bool y_msb = rz_bitvector_msb(y);
+	bool x_msb = rz_bv_msb(x);
+	bool y_msb = rz_bv_msb(y);
 
 	if (x_msb && y_msb) {
-		return !rz_bitvector_ule(x, y);
+		return !rz_bv_ule(x, y);
 	}
 
 	if (!x_msb && !y_msb) {
-		return rz_bitvector_ule(x, y);
+		return rz_bv_ule(x, y);
 	}
 
 	// if x_msb set, y_msb unset => x < y
@@ -1037,7 +1037,7 @@ RZ_API bool rz_bitvector_sle(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *
  * \param y RzBitVector, operand
  * \return ret int, return 1 if x != y, return 0 if x == y
  */
-RZ_API int rz_bitvector_cmp(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
+RZ_API int rz_bv_cmp(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
 	rz_return_val_if_fail(x && y, 0);
 
 	if (x->len != y->len) {
@@ -1046,7 +1046,7 @@ RZ_API int rz_bitvector_cmp(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y
 	}
 
 	for (ut32 i = 0; i < x->len; ++i) {
-		if (rz_bitvector_get(x, i) != rz_bitvector_get(y, i)) {
+		if (rz_bv_get(x, i) != rz_bv_get(y, i)) {
 			return 1;
 		}
 	}
@@ -1059,7 +1059,7 @@ RZ_API int rz_bitvector_cmp(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y
  * \param bv RzBitVector
  * \return len ut32, length of bitvector
  */
-RZ_API ut32 rz_bitvector_len(RZ_NONNULL RzBitVector *bv) {
+RZ_API ut32 rz_bv_len(RZ_NONNULL RzBitVector *bv) {
 	rz_return_val_if_fail(bv, 0);
 	return bv->len;
 }
@@ -1070,15 +1070,15 @@ RZ_API ut32 rz_bitvector_len(RZ_NONNULL RzBitVector *bv) {
  * \param value ut64, the value to convert
  * \return bv RzBitVector, pointer to new bitvector
  */
-RZ_API RZ_OWN RzBitVector *rz_bitvector_new_from_ut64(ut32 length, ut64 value) {
+RZ_API RZ_OWN RzBitVector *rz_bv_new_from_ut64(ut32 length, ut64 value) {
 	rz_return_val_if_fail(length > 0, NULL);
 
-	RzBitVector *bv = rz_bitvector_new(length);
+	RzBitVector *bv = rz_bv_new(length);
 	if (!bv) {
 		RZ_LOG_ERROR("RzIL: failed to allocate RzBitVector\n");
 		return NULL;
 	}
-	rz_bitvector_set_from_ut64(bv, value);
+	rz_bv_set_from_ut64(bv, value);
 	return bv;
 }
 
@@ -1088,15 +1088,15 @@ RZ_API RZ_OWN RzBitVector *rz_bitvector_new_from_ut64(ut32 length, ut64 value) {
  * \param value st64, the value to convert
  * \return bv RzBitVector, pointer to new bitvector
  */
-RZ_API RZ_OWN RzBitVector *rz_bitvector_new_from_st64(ut32 length, st64 value) {
+RZ_API RZ_OWN RzBitVector *rz_bv_new_from_st64(ut32 length, st64 value) {
 	rz_return_val_if_fail(length > 0, NULL);
 
-	RzBitVector *bv = rz_bitvector_new(length);
+	RzBitVector *bv = rz_bv_new(length);
 	if (!bv) {
 		RZ_LOG_ERROR("RzIL: failed to allocate RzBitVector\n");
 		return NULL;
 	}
-	rz_bitvector_set_from_st64(bv, value);
+	rz_bv_set_from_st64(bv, value);
 	return bv;
 }
 
@@ -1105,7 +1105,7 @@ RZ_API RZ_OWN RzBitVector *rz_bitvector_new_from_st64(ut32 length, st64 value) {
  * \param bv RzBitVector, pointer to bitvector
  * \param value ut64, the value to convert
  */
-RZ_API bool rz_bitvector_set_from_ut64(RZ_NONNULL RzBitVector *bv, ut64 value) {
+RZ_API bool rz_bv_set_from_ut64(RZ_NONNULL RzBitVector *bv, ut64 value) {
 	rz_return_val_if_fail(bv, false);
 
 	if (bv->len <= 64) {
@@ -1115,7 +1115,7 @@ RZ_API bool rz_bitvector_set_from_ut64(RZ_NONNULL RzBitVector *bv, ut64 value) {
 	}
 
 	for (ut32 i = 0; i < bv->len; ++i) {
-		rz_bitvector_set(bv, i, value & 1);
+		rz_bv_set(bv, i, value & 1);
 		value >>= 1;
 	}
 	return true;
@@ -1126,7 +1126,7 @@ RZ_API bool rz_bitvector_set_from_ut64(RZ_NONNULL RzBitVector *bv, ut64 value) {
  * \param bv RzBitVector, pointer to bitvector
  * \param value st64, the value to convert
  */
-RZ_API bool rz_bitvector_set_from_st64(RZ_NONNULL RzBitVector *bv, st64 value) {
+RZ_API bool rz_bv_set_from_st64(RZ_NONNULL RzBitVector *bv, st64 value) {
 	rz_return_val_if_fail(bv, false);
 	if (bv->len <= 64) {
 		bv->bits.small_u = *((ut64 *)&value);
@@ -1135,7 +1135,7 @@ RZ_API bool rz_bitvector_set_from_st64(RZ_NONNULL RzBitVector *bv, st64 value) {
 	}
 
 	for (ut32 i = 0; i < bv->len; ++i) {
-		rz_bitvector_set(bv, i, value & 1);
+		rz_bv_set(bv, i, value & 1);
 		value >>= 1;
 	}
 	return true;
@@ -1146,7 +1146,7 @@ RZ_API bool rz_bitvector_set_from_st64(RZ_NONNULL RzBitVector *bv, st64 value) {
  * \param x BitVector
  * \return ut32 bitvector hash
  */
-ut32 rz_bitvector_hash(RZ_NULLABLE RzBitVector *x) {
+ut32 rz_bv_hash(RZ_NULLABLE RzBitVector *x) {
 	ut32 h = 5381;
 	ut32 size = (x->len > 64) ? x->_elem_len : sizeof(x->bits.small_u);
 	ut8 *bits = (x->len > 64) ? x->bits.large_a : (ut8 *)&x->bits.small_u;
@@ -1168,14 +1168,14 @@ ut32 rz_bitvector_hash(RZ_NULLABLE RzBitVector *x) {
  * \param x BitVector
  * \return  ut8 value
  */
-RZ_API ut8 rz_bitvector_to_ut8(RZ_NONNULL RzBitVector *x) {
+RZ_API ut8 rz_bv_to_ut8(RZ_NONNULL RzBitVector *x) {
 	rz_return_val_if_fail(x, 0);
 	if (x->len <= 64) {
 		return (ut8)x->bits.small_u & UT8_MAX;
 	}
 	ut8 ret = 0;
 	for (ut32 i = 0; i < x->len && i < 8; ++i) {
-		if (rz_bitvector_get(x, i)) {
+		if (rz_bv_get(x, i)) {
 			ret |= 1 << i;
 		}
 	}
@@ -1187,14 +1187,14 @@ RZ_API ut8 rz_bitvector_to_ut8(RZ_NONNULL RzBitVector *x) {
  * \param x BitVector
  * \return ut16 value
  */
-RZ_API ut16 rz_bitvector_to_ut16(RZ_NONNULL RzBitVector *x) {
+RZ_API ut16 rz_bv_to_ut16(RZ_NONNULL RzBitVector *x) {
 	rz_return_val_if_fail(x, 0);
 	if (x->len <= 64) {
 		return (ut16)x->bits.small_u & UT16_MAX;
 	}
 	ut16 ret = 0;
 	for (ut32 i = 0; i < x->len && i < 16; ++i) {
-		if (rz_bitvector_get(x, i)) {
+		if (rz_bv_get(x, i)) {
 			ret |= 1 << i;
 		}
 	}
@@ -1206,14 +1206,14 @@ RZ_API ut16 rz_bitvector_to_ut16(RZ_NONNULL RzBitVector *x) {
  * \param x BitVector
  * \return ut32 value
  */
-RZ_API ut32 rz_bitvector_to_ut32(RzBitVector *x) {
+RZ_API ut32 rz_bv_to_ut32(RzBitVector *x) {
 	rz_return_val_if_fail(x, 0);
 	if (x->len <= 64) {
 		return (ut32)x->bits.small_u & UT32_MAX;
 	}
 	ut32 ret = 0;
 	for (ut32 i = 0; i < x->len && i < 32; ++i) {
-		if (rz_bitvector_get(x, i)) {
+		if (rz_bv_get(x, i)) {
 			ret |= 1 << i;
 		}
 	}
@@ -1225,14 +1225,14 @@ RZ_API ut32 rz_bitvector_to_ut32(RzBitVector *x) {
  * \param x RzBitVector, pointer to the bitvector
  * \return ret ut64, num value of bitvector
  */
-RZ_API ut64 rz_bitvector_to_ut64(RZ_NONNULL RzBitVector *x) {
+RZ_API ut64 rz_bv_to_ut64(RZ_NONNULL RzBitVector *x) {
 	rz_return_val_if_fail(x, 0);
 	if (x->len <= 64) {
 		return x->bits.small_u;
 	}
 	ut64 ret = 0;
 	for (ut32 i = 0; i < x->len && i < 64; ++i) {
-		if (rz_bitvector_get(x, i)) {
+		if (rz_bv_get(x, i)) {
 			ret |= 1 << i;
 		}
 	}

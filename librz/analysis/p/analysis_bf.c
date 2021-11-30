@@ -47,13 +47,13 @@ static inline RzILOp *bf_il_set_ptr(RzILOp *x) {
 
 static inline RzILOp *bf_il_one(ut32 length) {
 	RzILOp *bitv = rz_il_new_op(RZIL_OP_BITV);
-	bitv->op.bitv->value = rz_bitvector_new_from_ut64(length, 1);
+	bitv->op.bitv->value = rz_bv_new_from_ut64(length, 1);
 	return bitv;
 }
 
 static void bf_syscall_read(RzILVM *vm, RzILOp *op) {
 	ut8 c = getc(stdin);
-	RzBitVector *bv = rz_bitvector_new_from_ut64(BF_ALIGN_SIZE, c);
+	RzBitVector *bv = rz_bv_new_from_ut64(BF_ALIGN_SIZE, c);
 
 	RzILVal *ptr_val = rz_il_value_dup(rz_il_hash_find_val_by_name(vm, "ptr"));
 
@@ -69,10 +69,10 @@ static void bf_syscall_write(RzILVM *vm, RzILOp *op) {
 		// default write nothing
 		return;
 	}
-	ut32 c = rz_bitvector_to_ut32(bv);
+	ut32 c = rz_bv_to_ut32(bv);
 
 	rz_il_value_free(ptr_val);
-	rz_bitvector_free(bv);
+	rz_bv_free(bv);
 
 	putchar(c);
 }
