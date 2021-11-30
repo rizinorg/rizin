@@ -58,7 +58,6 @@ static bool pal_seek(RzCore *core, RzConsPalSeekMode mode, const char *file, RzL
 
 RZ_API bool rz_core_theme_load(RzCore *core, const char *name) {
 	bool failed = false;
-	char *path;
 	if (!name || !*name) {
 		return false;
 	}
@@ -68,16 +67,15 @@ RZ_API bool rz_core_theme_load(RzCore *core, const char *name) {
 		return true;
 	}
 
-	char *tmp = rz_str_newf(RZ_JOIN_2_PATHS(RZ_HOME_THEMES, "%s"), name);
-	char *home = tmp ? rz_str_home(tmp) : NULL;
-	free(tmp);
+	char *home_themes = rz_path_home_prefix(RZ_THEMES);
+	char *system_themes = rz_path_system(RZ_THEMES);
+	char *home_file = rz_file_path_join(home_themes, name);
+	char *system_file = rz_file_path_join(system_themes, name);
+	free(system_themes);
+	free(home_themes);
 
-	tmp = rz_str_newf(RZ_JOIN_2_PATHS(RZ_THEMES, "%s"), name);
-	path = tmp ? rz_str_rz_prefix(tmp) : NULL;
-	free(tmp);
-
-	if (!load_theme(core, home)) {
-		if (load_theme(core, path)) {
+	if (!load_theme(core, home_file)) {
+		if (load_theme(core, system_file)) {
 			core->curtheme = rz_str_dup(core->curtheme, name);
 		} else {
 			if (load_theme(core, name)) {
@@ -88,18 +86,18 @@ RZ_API bool rz_core_theme_load(RzCore *core, const char *name) {
 			}
 		}
 	}
-	free(home);
-	free(path);
+	free(home_file);
+	free(system_file);
 	return !failed;
 }
 
-static void list_themes_in_path(RzList *list, const char *path) {
+static void list_themes_in_path(HtPU *themes, const char *path) {
 	RzListIter *iter;
 	const char *fn;
 	RzList *files = rz_sys_dir(path);
 	rz_list_foreach (files, iter, fn) {
 		if (*fn && *fn != '.') {
-			rz_list_append(list, strdup(fn));
+			ht_pu_insert(themes, fn, 1);
 		}
 	}
 	rz_list_free(files);
@@ -109,22 +107,32 @@ RZ_API char *rz_core_theme_get(RzCore *core) {
 	return core->curtheme;
 }
 
+static bool dict2keylist(void *user, const void *key, const ut64 value) {
+	RzList *list = (RzList *)user;
+	rz_list_append(list, strdup(key));
+	return true;
+}
+
 RZ_API RZ_OWN RzList *rz_core_theme_list(RzCore *core) {
-	RzList *list = rz_list_newf(free);
-	char *tmp = strdup("default");
-	rz_list_append(list, tmp);
-	char *path = rz_str_home(RZ_HOME_THEMES RZ_SYS_DIR);
+	HtPU *themes = ht_pu_new0();
+	char *path = rz_path_home_prefix(RZ_THEMES);
 	if (path) {
-		list_themes_in_path(list, path);
+		list_themes_in_path(themes, path);
 		RZ_FREE(path);
 	}
 
-	path = rz_str_rz_prefix(RZ_THEMES RZ_SYS_DIR);
+	path = rz_path_system(RZ_THEMES);
 	if (path) {
-		list_themes_in_path(list, path);
+		list_themes_in_path(themes, path);
 		RZ_FREE(path);
 	}
+
+	RzList *list = rz_list_newf(free);
+	rz_list_append(list, strdup("default"));
+	ht_pu_foreach(themes, dict2keylist, list);
+
 	rz_list_sort(list, (RzListComparator)strcmp);
+	ht_pu_free(themes);
 	return list;
 }
 

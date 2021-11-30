@@ -15,7 +15,6 @@ option('rizin_fortunes', type: 'string', value: '', description: 'Install path f
 option('rizin_flags', type: 'string', value: '', description: 'Install path for flags tags')
 option('rizin_hud', type: 'string', value: '', description: 'Install path for hud file (V!/)')
 option('rizin_plugins', type: 'string', value: '', description: 'Path where plugins are expected to be found')
-option('rizin_extras', type: 'string', value: '', description: 'Path where extras are expected to be found')
 option('rizin_bindings', type: 'string', value: '', description: 'Path where rizin bindings are expected to be found')
 
 option('rizin_version_commit', type: 'string', value: '')

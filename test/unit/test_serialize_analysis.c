@@ -3,6 +3,7 @@
 
 #include <rz_analysis.h>
 #include <rz_sign.h>
+#include <rz_util/rz_path.h>
 #include "minunit.h"
 #include "test_sdb.h"
 
@@ -546,11 +547,12 @@ Sdb *vars_ref_db() {
 }
 
 bool test_analysis_var_save() {
-	const char *dir_prefix = rz_sys_prefix(NULL);
 	RzAnalysis *analysis = rz_analysis_new();
 	rz_analysis_use(analysis, "x86");
 	rz_analysis_set_bits(analysis, 64);
-	rz_type_db_init(analysis->typedb, dir_prefix, "x86", 64, "linux");
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
+	rz_type_db_init(analysis->typedb, types_dir, "x86", 64, "linux");
+	free(types_dir);
 
 	RzAnalysisFunction *f = rz_analysis_create_function(analysis, "hirsch", 1337, RZ_ANALYSIS_FCN_TYPE_NULL, NULL);
 
@@ -606,11 +608,12 @@ bool test_analysis_var_save() {
 }
 
 bool test_analysis_var_load() {
-	const char *dir_prefix = rz_sys_prefix(NULL);
 	RzAnalysis *analysis = rz_analysis_new();
 	rz_analysis_use(analysis, "x86");
 	rz_analysis_set_bits(analysis, 64);
-	rz_type_db_init(analysis->typedb, dir_prefix, "x86", 64, "linux");
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
+	rz_type_db_init(analysis->typedb, types_dir, "x86", 64, "linux");
+	free(types_dir);
 
 	Sdb *db = vars_ref_db();
 	RzSerializeAnalDiffParser diff_parser = rz_serialize_analysis_diff_parser_new();
@@ -1649,8 +1652,9 @@ bool test_analysis_save() {
 bool test_analysis_load() {
 	RzAnalysis *analysis = rz_analysis_new();
 
-	const char *dir_prefix = rz_sys_prefix(NULL);
-	rz_type_db_init(analysis->typedb, dir_prefix, "x86", 64, "linux");
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
+	rz_type_db_init(analysis->typedb, types_dir, "x86", 64, "linux");
+	free(types_dir);
 
 	Sdb *db = analysis_ref_db();
 	bool succ = rz_serialize_analysis_load(db, analysis, NULL);

@@ -560,7 +560,7 @@ static RzCoreFile *rz_diff_load_file_with_core(const char *filename, const char 
 		rz_diff_error("cannot allocate core\n");
 		goto rz_diff_load_file_with_core_fail;
 	}
-	rz_core_loadlibs(core, RZ_CORE_LOADLIBS_ALL, NULL);
+	rz_core_loadlibs(core, RZ_CORE_LOADLIBS_ALL);
 
 	rz_config_set_i(core->config, "scr.color", colors ? 1 : 0);
 	rz_config_set_b(core->config, "scr.interactive", false);

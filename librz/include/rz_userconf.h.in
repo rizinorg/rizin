@@ -3,6 +3,7 @@
 
 #include "rz_version.h"
 
+// clang-format off
 #define RZ_CHECKS_LEVEL             @RZ_CHECKS_LEVEL@
 #define DEBUGGER                    @DEBUGGER@
 #define HAVE_DECL_ADDR_NO_RANDOMIZE @HAVE_DECL_ADDR_NO_RANDOMIZE@
@@ -44,6 +45,7 @@
 #define WITH_SWIFT_DEMANGLER        @WITH_SWIFT_DEMANGLER@
 
 #define RZ_IS_PORTABLE @IS_PORTABLE@
+// clang-format on
 
 #define RZ_PREFIX  "@PREFIX@"
 #define RZ_BINDIR  "@BINDIR@"
@@ -52,42 +54,39 @@
 #define RZ_DATDIR  "@DATADIR@"
 #define RZ_WWWROOT "@WWWROOT@"
 
-#define RZ_PLUGINS   "@PLUGINS@"
-#define RZ_EXTRAS    "@EXTRAS@"
-#define RZ_BINDINGS  "@BINDINGS@"
-#define RZ_DATDIR_RZ "@DATADIR_RZ@"
-#define RZ_SDB       "@SDB@"
-#define RZ_ZIGNS     "@ZIGNS@"
-#define RZ_THEMES    "@THEMES@"
-#define RZ_FORTUNES  "@FORTUNES@"
-#define RZ_FLAGS     "@FLAGS@"
-#define RZ_HUD       "@HUD@"
+#define RZ_PLUGINS  "@PLUGINS@"
+#define RZ_DATADIR  "@DATADIR_RZ@"
+#define RZ_SDB      "@SDB@"
+#define RZ_ZIGNS    "@ZIGNS@"
+#define RZ_THEMES   "@THEMES@"
+#define RZ_FORTUNES "@FORTUNES@"
+#define RZ_FLAGS    "@FLAGS@"
+#define RZ_HUD      "@HUD@"
 
-#define RZ_SDB_TYPES   RZ_JOIN_2_PATHS(RZ_SDB, "types")
-#define RZ_SDB_OPCODES RZ_JOIN_2_PATHS(RZ_SDB, "opcodes")
-#define RZ_SDB_MAGIC   RZ_JOIN_2_PATHS(RZ_SDB, "magic")
-#define RZ_SDB_FORMAT  RZ_JOIN_2_PATHS(RZ_SDB, "format")
+#define RZ_SDB_ARCH_PLATFORMS RZ_JOIN_3_PATHS(RZ_SDB, "asm", "platforms")
+#define RZ_SDB_ARCH_CPUS      RZ_JOIN_3_PATHS(RZ_SDB, "asm", "cpus")
+#define RZ_SDB_TYPES          RZ_JOIN_2_PATHS(RZ_SDB, "types")
+#define RZ_SDB_OPCODES        RZ_JOIN_2_PATHS(RZ_SDB, "opcodes")
+#define RZ_SDB_REG            RZ_JOIN_2_PATHS(RZ_SDB, "reg")
+#define RZ_SDB_MAGIC          RZ_JOIN_2_PATHS(RZ_SDB, "magic")
+#define RZ_SDB_FORMAT         RZ_JOIN_2_PATHS(RZ_SDB, "format")
+#define RZ_PDB                RZ_JOIN_2_PATHS(RZ_DATADIR, "pdb")
+#define RZ_PROJECTS           RZ_JOIN_2_PATHS(RZ_DATADIR, "projects")
+#define RZ_BINRC              RZ_JOIN_2_PATHS(RZ_DATADIR, "rc.d")
 
+#define RZ_HOME_PREFIX    ".local"
 #define RZ_HOME_CONFIGDIR RZ_JOIN_2_PATHS(".config", "rizin")
-#define RZ_HOME_DATADIR   RZ_JOIN_3_PATHS(".local", "share", "rizin")
 #define RZ_HOME_CACHEDIR  RZ_JOIN_2_PATHS(".cache", "rizin")
 
-#define RZ_HOME_THEMES      RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "cons")
-#define RZ_HOME_PLUGINS     RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "plugins")
-#define RZ_HOME_ZIGNS       RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "zigns")
-#define RZ_HOME_PDB         RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "pdb")
-#define RZ_HOME_PROJECTS    RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "projects")
-#define RZ_HOME_WWWROOT     RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "www")
-#define RZ_HOME_SDB_TYPES   RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "types")
-#define RZ_HOME_SDB_FORMAT  RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "format")
-#define RZ_HOME_HUD         RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "hud")
-#define RZ_HOME_BINRC       RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "rc.d")
-#define RZ_HOME_BIN         RZ_JOIN_3_PATHS(RZ_HOME_DATADIR, "prefix", "bin")
-
 #define RZ_HOME_HISTORY RZ_JOIN_2_PATHS(RZ_HOME_CACHEDIR, "history")
+// NOTE: Temporarly added only for compatibility reasons given that the plugin
+// directory has changed. For one release we are going to support also old paths
+// to give distros, plugin maintainers, etc. a bit more time to adapt
+#define RZ_HOME_OLD_PLUGINS RZ_JOIN_3_PATHS("share", "rizin", "plugins")
 
-#define RZ_HOME_RC     RZ_JOIN_2_PATHS(RZ_HOME_CONFIGDIR, "rizinrc")
-#define RZ_HOME_RC_DIR RZ_JOIN_2_PATHS(RZ_HOME_CONFIGDIR, "rizinrc.d")
-#define RZ_GLOBAL_RC   RZ_JOIN_2_PATHS(RZ_DATDIR_RZ, "rizinrc")
+#define RZ_HOME_CONFIG_RC     RZ_JOIN_2_PATHS(RZ_HOME_CONFIGDIR, "rizinrc")
+#define RZ_HOME_CONFIG_RC_DIR RZ_JOIN_2_PATHS(RZ_HOME_CONFIGDIR, "rizinrc.d")
+#define RZ_GLOBAL_RC          RZ_JOIN_2_PATHS(RZ_DATADIR, "rizinrc")
+#define RZ_HOME_RC            ".rizinrc"
 
 #endif
