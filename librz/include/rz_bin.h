@@ -188,6 +188,7 @@ enum {
 typedef enum {
 	RZ_BIN_RELOC_8 = 8,
 	RZ_BIN_RELOC_16 = 16,
+	RZ_BIN_RELOC_24 = 24,
 	RZ_BIN_RELOC_32 = 32,
 	RZ_BIN_RELOC_64 = 64
 } RzBinRelocType;

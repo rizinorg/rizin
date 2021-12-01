@@ -24,6 +24,8 @@ RZ_API ut64 rz_bin_reloc_size(RzBinReloc *reloc) {
 		return 8;
 	case RZ_BIN_RELOC_16:
 		return 16;
+	case RZ_BIN_RELOC_24:
+		return 24;
 	case RZ_BIN_RELOC_32:
 		return 32;
 	case RZ_BIN_RELOC_64:
