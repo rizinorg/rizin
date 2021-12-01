@@ -11,7 +11,7 @@ extern "C" {
 #endif
 
 typedef union {
-	RzILBitVector *bv;
+	RzBitVector *bv;
 	RzILBool *b;
 } RzValUnion;
 
