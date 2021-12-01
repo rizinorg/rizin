@@ -1082,6 +1082,7 @@ static ut8 bin_reloc_size(RzBinReloc *reloc) {
 	switch (reloc->type) {
 		CASE(8);
 		CASE(16);
+		CASE(24);
 		CASE(32);
 		CASE(64);
 	}
@@ -1825,6 +1826,7 @@ static const char *bin_reloc_type_name(RzBinReloc *reloc) {
 	switch (reloc->type) {
 		CASE(8);
 		CASE(16);
+		CASE(24);
 		CASE(32);
 		CASE(64);
 	}
