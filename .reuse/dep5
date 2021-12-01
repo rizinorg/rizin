@@ -163,10 +163,6 @@ Files: pkgcfg/*.pc.acr
 Copyright: 2009 RadareOrg <pancake@nopcode.org>
 License: LGPL-3.0-only
 
-Files: librz/librz.pc.in
-Copyright: 2009 RadareOrg <pancake@nopcode.org>
-License: LGPL-3.0-only
-
 Files: subprojects/*.wrap
 Copyright: 2021 RizinOrg <info@rizin.re>
 License: LGPL-3.0-only
