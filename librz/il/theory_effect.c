@@ -9,11 +9,11 @@ static RzILEvent *il_event_new_write_from_var(RzILVM *vm, RzILVar *var, RzILVal 
 	rz_return_val_if_fail(vm && var && new_val, NULL);
 	RzILVal *old_val = NULL;
 	RzILEvent *evt = NULL;
-	RzILBitVector *oldnum = NULL;
-	RzILBitVector *newnum = NULL;
+	RzBitVector *oldnum = NULL;
+	RzBitVector *newnum = NULL;
 
 	if (new_val->type == RZIL_VAR_TYPE_BOOL) {
-		newnum = rz_il_bv_new_from_ut64(1, new_val->data.b->b);
+		newnum = rz_bv_new_from_ut64(1, new_val->data.b->b);
 	} else {
 		newnum = new_val->data.bv;
 	}
@@ -21,7 +21,7 @@ static RzILEvent *il_event_new_write_from_var(RzILVM *vm, RzILVar *var, RzILVal 
 	old_val = rz_il_hash_find_val_by_var(vm, var);
 	if (old_val) {
 		if (old_val->type == RZIL_VAR_TYPE_BOOL) {
-			oldnum = rz_il_bv_new_from_ut64(1, old_val->data.b->b);
+			oldnum = rz_bv_new_from_ut64(1, old_val->data.b->b);
 		} else {
 			oldnum = old_val->data.bv;
 		}
@@ -29,10 +29,10 @@ static RzILEvent *il_event_new_write_from_var(RzILVM *vm, RzILVar *var, RzILVal 
 
 	evt = rz_il_event_var_write_new(var->var_name, oldnum, newnum);
 	if (old_val->type == RZIL_VAR_TYPE_BOOL) {
-		rz_il_bv_free(oldnum);
+		rz_bv_free(oldnum);
 	}
 	if (new_val->type == RZIL_VAR_TYPE_BOOL) {
-		rz_il_bv_free(newnum);
+		rz_bv_free(newnum);
 	}
 	return evt;
 }
@@ -67,9 +67,9 @@ static void rz_il_perform_ctrl(RzILVM *vm, RzILEffect *eff) {
 	}
 
 	// Normal
-	RzILBitVector *new_addr = rz_il_bv_dup(eff->ctrl_eff->pc);
+	RzBitVector *new_addr = rz_bv_dup(eff->ctrl_eff->pc);
 	rz_il_vm_event_add(vm, rz_il_event_pc_write_new(vm->pc, new_addr));
-	rz_il_bv_free(vm->pc);
+	rz_bv_free(vm->pc);
 	vm->pc = new_addr;
 }
 
@@ -111,7 +111,7 @@ void *rz_il_handler_jmp(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 
 	RzILOpJmp *op_jmp = op->op.jmp;
-	RzILBitVector *addr = rz_il_evaluate_bitv(vm, op_jmp->dst, type);
+	RzBitVector *addr = rz_il_evaluate_bitv(vm, op_jmp->dst, type);
 	RzILEffect *eff = rz_il_effect_new(EFFECT_TYPE_CTRL);
 
 	eff->ctrl_eff->pc = addr;

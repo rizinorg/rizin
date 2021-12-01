@@ -29,6 +29,7 @@ if get_option('enable_tests')
     'bin',
     'bin_lines',
     'bitmap',
+    'bitvector',
     'buf',
     'cmd',
     'compare',

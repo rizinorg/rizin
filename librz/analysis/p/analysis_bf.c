@@ -47,13 +47,13 @@ static inline RzILOp *bf_il_set_ptr(RzILOp *x) {
 
 static inline RzILOp *bf_il_one(ut32 length) {
 	RzILOp *bitv = rz_il_new_op(RZIL_OP_BITV);
-	bitv->op.bitv->value = rz_il_bv_new_from_ut64(length, 1);
+	bitv->op.bitv->value = rz_bv_new_from_ut64(length, 1);
 	return bitv;
 }
 
 static void bf_syscall_read(RzILVM *vm, RzILOp *op) {
 	ut8 c = getc(stdin);
-	RzILBitVector *bv = rz_il_bv_new_from_ut64(BF_ALIGN_SIZE, c);
+	RzBitVector *bv = rz_bv_new_from_ut64(BF_ALIGN_SIZE, c);
 
 	RzILVal *ptr_val = rz_il_value_dup(rz_il_hash_find_val_by_name(vm, "ptr"));
 
@@ -64,15 +64,15 @@ static void bf_syscall_read(RzILVM *vm, RzILOp *op) {
 static void bf_syscall_write(RzILVM *vm, RzILOp *op) {
 	RzILVal *ptr_val = rz_il_value_dup(rz_il_hash_find_val_by_name(vm, "ptr"));
 
-	RzILBitVector *bv = rz_il_vm_mem_load(vm, 0, ptr_val->data.bv);
+	RzBitVector *bv = rz_il_vm_mem_load(vm, 0, ptr_val->data.bv);
 	if (!bv) {
 		// default write nothing
 		return;
 	}
-	ut32 c = rz_il_bv_to_ut32(bv);
+	ut32 c = rz_bv_to_ut32(bv);
 
 	rz_il_value_free(ptr_val);
-	rz_il_bv_free(bv);
+	rz_bv_free(bv);
 
 	putchar(c);
 }
@@ -190,7 +190,7 @@ RzPVector *bf_llimit(RzILVM *vm, BfContext *ctx, ut64 id, ut64 addr) {
 	//                  (goto ]))
 	char *cur_lbl_name = NULL, *to_free = NULL, *dst_lbl_name = NULL;
 	RzILEffectLabel *cur_label, *dst_label;
-	RzILBitVector *cur_addr;
+	RzBitVector *cur_addr;
 
 	cur_lbl_name = ht_up_find(ctx->label_names, addr, NULL);
 	if (!cur_lbl_name) {
@@ -258,7 +258,7 @@ RzPVector *bf_rlimit(RzILVM *vm, BfContext *ctx, ut64 id, ut64 addr) {
 	}
 
 	if (!rz_il_hash_find_addr_by_lblname(vm, cur_lbl_name)) {
-		RzILBitVector *cur_bv_addr = rz_il_ut64_addr_to_bv(addr);
+		RzBitVector *cur_bv_addr = rz_il_ut64_addr_to_bv(addr);
 		rz_il_vm_update_label(vm, cur_lbl_name, cur_bv_addr);
 		rz_il_free_bv_addr(cur_bv_addr);
 	}
