@@ -23,7 +23,69 @@ vaddr      paddr      type   name
 EOF
 RUN
 
-NAME=ELF: arm sh relocs
+NAME=ELF: arm relocs 1
+FILE=bins/elf/r2pay-arm32.so
+CMDS=<<EOF
+ir~?
+# ARM_RELATIVE
+s 0xb58c0
+pf bbbb
+pd 1
+# ARM_ABS32
+s 0xb58c4
+pf bbbb
+pd 1
+# ARM_ABS32
+s 0xb58d8
+pf bbbb
+pd 1
+# ARM_GLOB_DAT
+s 0xb5dbc
+pf bbbb
+pd 1
+# ARM_JUMP_SLOT
+s 0xb5e08
+pf bbbb
+pd 1
+EOF
+EXPECT=<<EOF
+427
+0x000b58c0 = 0x24
+0x000b58c1 = 0x45
+0x000b58c2 = 0x00
+0x000b58c3 = 0x00
+            ;-- section..fini_array:
+            ;-- segment.LOAD1:
+            0x000b58c0      .dword 0x00004524 ; entry0 ; entry.fini0 ; section..text; RELOC 32  ; [14] -rw- section size 4 named .fini_array
+0x000b58c4 = 0x60
+0x000b58c5 = 0x45
+0x000b58c6 = 0x00
+0x000b58c7 = 0x00
+            ;-- section..init_array:
+            ;-- .datadiv_decode1794556967687044894:
+            0x000b58c4      .dword 0x00004560 ; reloc.target..datadiv_decode1794556967687044894 ; sym..datadiv_decode1794556967687044894; RELOC 32 .datadiv_decode1794556967687044894 @ 0x00004560 ; [15] -rw- section size 364 named .init_array
+0x000b58d8 = 0x44
+0x000b58d9 = 0x8b
+0x000b58da = 0x09
+0x000b58db = 0x00
+            ;-- .datadiv_decode668687990735969933:
+            0x000b58d8      .dword 0x00098b44 ; reloc.target..datadiv_decode668687990735969933 ; sym..datadiv_decode668687990735969933; RELOC 32 .datadiv_decode668687990735969933 @ 0x00098b44
+0x000b5dbc = 0x24
+0x000b5dbd = 0x35
+0x000b5dbe = 0x14
+0x000b5dbf = 0x00
+            ;-- x.10:
+            0x000b5dbc      .dword 0x00143524 ; reloc.target.x.10 ; obj.x.10; RELOC 32 x.10 @ 0x00143524
+0x000b5e08 = 0xb4
+0x000b5e09 = 0x37
+0x000b5e0a = 0x14
+0x000b5e0b = 0x00
+            ;-- __cxa_atexit:
+            0x000b5e08      .dword 0x001437b4 ; reloc.target.__cxa_atexit; RELOC 32 __cxa_atexit
+EOF
+RUN
+
+NAME=ELF: arm relocs 2
 FILE=bins/elf/r2pay-arm32.so
 CMDS=<<EOF
 ir~?
