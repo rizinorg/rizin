@@ -7652,18 +7652,16 @@ static void xrefs_list_print(RzCore *core, RzList *list) {
 	RzAnalysisXRef *xref;
 
 	rz_list_foreach (list, iter, xref) {
-		char *name = core->analysis->coreb.getNameDelta(core->analysis->coreb.core, xref->from);
+		char *name = rz_flag_get_name_delta(core->flags, xref->from);
 		if (name) {
-			rz_str_replace_ch(name, ' ', 0, true);
 			rz_cons_printf("%40s", name);
 			free(name);
 		} else {
 			rz_cons_printf("%40s", "?");
 		}
 		rz_cons_printf(" 0x%" PFMT64x " -> %9s -> 0x%" PFMT64x, xref->from, rz_analysis_xrefs_type_tostring(xref->type), xref->to);
-		name = core->analysis->coreb.getNameDelta(core->analysis->coreb.core, xref->to);
+		name = rz_flag_get_name_delta(core->flags, xref->to);
 		if (name) {
-			rz_str_replace_ch(name, ' ', 0, true);
 			rz_cons_printf(" %s\n", name);
 			free(name);
 		} else {
