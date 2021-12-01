@@ -244,17 +244,7 @@ static const char *getName(RzCore *core, ut64 addr) {
 }
 
 static char *getNameDelta(RzCore *core, ut64 addr) {
-	RzFlagItem *item = rz_flag_get_at(core->flags, addr, true);
-	if (item) {
-		if (item->offset != addr) {
-			const char *name = core->flags->realnames
-				? item->realname
-				: item->name;
-			return rz_str_newf("%s+%" PFMT64u, name, addr - item->offset);
-		}
-		return strdup(item->name);
-	}
-	return NULL;
+	return rz_flag_get_name_delta(core->flags, addr);
 }
 
 static void archbits(RzCore *core, ut64 addr) {

@@ -6455,7 +6455,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 					const char *a, *b;
 					char *fn;
 					RzPrint *p = core->print;
-					RzFlagItem *f;
 					ut32 v = rz_read_ble32(core->block + i, core->print->big_endian);
 					if (p && p->colorfor) {
 						a = p->colorfor(p->user, v, true);
@@ -6467,19 +6466,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 					} else {
 						a = b = "";
 					}
-					f = rz_flag_get_at(core->flags, v, true);
-					fn = NULL;
-					if (f) {
-						st64 delta = (v - f->offset);
-						if (delta >= 0 && delta < 8192) {
-							if (v == f->offset) {
-								fn = strdup(f->name);
-							} else {
-								fn = rz_str_newf("%s+%" PFMT64d,
-									f->name, v - f->offset);
-							}
-						}
-					}
+					fn = rz_flag_get_name_delta(core->flags, v);
 					if (printOffset) {
 						rz_print_section(core->print, core->offset + i);
 						rz_cons_printf("0x%08" PFMT64x " %s0x%08" PFMT64x "%s%s%s\n",
@@ -6535,7 +6522,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 					const char *a, *b;
 					char *fn;
 					RzPrint *p = core->print;
-					RzFlagItem *f;
 					ut64 v = (ut64)rz_read_ble16(core->block + i, p->big_endian);
 					if (p && p->colorfor) {
 						a = p->colorfor(p->user, v, true);
@@ -6547,18 +6533,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 					} else {
 						a = b = "";
 					}
-					f = rz_flag_get_at(core->flags, v, true);
-					fn = NULL;
-					if (f) {
-						st64 delta = (v - f->offset);
-						if (delta >= 0 && delta < 8192) {
-							if (v == f->offset) {
-								fn = strdup(f->name);
-							} else {
-								fn = rz_str_newf("%s+%" PFMT64d, f->name, v - f->offset);
-							}
-						}
-					}
+					fn = rz_flag_get_name_delta(core->flags, v);
 					rz_cons_printf("0x%08" PFMT64x " %s0x%04" PFMT64x "%s %s\n",
 						(ut64)core->offset + i, a, v, b, fn ? fn : "");
 					free(fn);
@@ -6581,9 +6556,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				len = len - (len % 8);
 				for (i = 0; i < len; i += 8) {
 					const char *a, *b;
-					char *fn;
 					RzPrint *p = core->print;
-					RzFlagItem *f;
 					ut64 v = rz_read_ble64(core->block + i, p->big_endian);
 					if (p && p->colorfor) {
 						a = p->colorfor(p->user, v, true);
@@ -6595,18 +6568,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 					} else {
 						a = b = "";
 					}
-					f = rz_flag_get_at(core->flags, v, true);
-					fn = NULL;
-					if (f) {
-						st64 delta = (v - f->offset);
-						if (delta >= 0 && delta < 8192) {
-							if (v == f->offset) {
-								fn = strdup(f->name);
-							} else {
-								fn = rz_str_newf("%s+%" PFMT64d, f->name, v - f->offset);
-							}
-						}
-					}
+					char *fn = rz_flag_get_name_delta(core->flags, v);
 					if (printOffset) {
 						rz_print_section(core->print, core->offset + i);
 						rz_cons_printf("0x%08" PFMT64x " %s0x%016" PFMT64x "%s %s\n",

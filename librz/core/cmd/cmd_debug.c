@@ -1573,40 +1573,19 @@ static void backtrace_vars(RzCore *core, RzList *frames) {
 		ut64 b = f->bp ? f->bp : dbp;
 		rz_reg_setv(r, bp, s);
 		rz_reg_setv(r, sp, b);
-		//////////
-		char flagdesc[1024], flagdesc2[1024];
-		RzFlagItem *fi = rz_flag_get_at(core->flags, f->addr, true);
-		flagdesc[0] = flagdesc2[0] = 0;
-		if (fi) {
-			if (fi->offset != f->addr) {
-				int delta = (int)(f->addr - fi->offset);
-				if (delta > 0) {
-					snprintf(flagdesc, sizeof(flagdesc),
-						"%s+%d", fi->name, delta);
-				} else if (delta < 0) {
-					snprintf(flagdesc, sizeof(flagdesc),
-						"%s%d", fi->name, delta);
-				} else {
-					snprintf(flagdesc, sizeof(flagdesc),
-						"%s", fi->name);
-				}
-			} else {
-				snprintf(flagdesc, sizeof(flagdesc),
-					"%s", fi->name);
-			}
-		}
-		//////////
+		char *flagdesc = rz_flag_get_name_delta(core->flags, f->addr);
 		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, f->addr, 0);
 		// char *str = rz_str_newf ("[frame %d]", n);
 		rz_cons_printf("%d  0x%08" PFMT64x " sp: 0x%08" PFMT64x " %-5d"
-			       "[%s]  %s %s\n",
+			       "[%s]  %s\n",
 			n, f->addr, f->sp, (int)f->size,
-			fcn ? fcn->name : "??", flagdesc, flagdesc2);
+			fcn ? fcn->name : "??", flagdesc);
 		rz_cons_push();
 		char *res = rz_core_analysis_all_vars_display(core, fcn, true);
 		rz_cons_pop();
 		rz_cons_printf("%s", res);
 		free(res);
+		free(flagdesc);
 		n++;
 	}
 	rz_reg_setv(r, bp, dbp);
@@ -1665,24 +1644,9 @@ static void asciiart_backtrace(RzCore *core, RzList *frames) {
 }
 
 static void get_backtrace_info(RzCore *core, RzDebugFrame *frame, ut64 addr, char **flagdesc, char **flagdesc2, char **pcstr, char **spstr) {
-	RzFlagItem *f = rz_flag_get_at(core->flags, frame->addr, true);
-	*flagdesc = NULL;
+	*flagdesc = rz_flag_get_name_delta(core->flags, frame->addr);
 	*flagdesc2 = NULL;
-	if (f) {
-		if (f->offset != addr) {
-			int delta = (int)(frame->addr - f->offset);
-			if (delta > 0) {
-				*flagdesc = rz_str_newf("%s+%d", f->name, delta);
-			} else if (delta < 0) {
-				*flagdesc = rz_str_newf("%s%d", f->name, delta);
-			} else {
-				*flagdesc = rz_str_newf("%s", f->name);
-			}
-		} else {
-			*flagdesc = rz_str_newf("%s", f->name);
-		}
-	}
-	f = rz_flag_get_at(core->flags, frame->addr, true);
+	RzFlagItem *f = rz_flag_get_at(core->flags, frame->addr, true);
 	if (f && !strchr(f->name, '.')) {
 		f = rz_flag_get_at(core->flags, frame->addr - 1, true);
 	}

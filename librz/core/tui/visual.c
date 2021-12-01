@@ -1395,12 +1395,7 @@ repeat:
 				if (fun) {
 					name = strdup(fun->name);
 				} else {
-					RzFlagItem *f = rz_flag_get_at(core->flags, xaddr1, true);
-					if (f) {
-						name = rz_str_newf("%s + %" PFMT64d, f->name, xaddr1 - f->offset);
-					} else {
-						name = strdup("unk");
-					}
+					name = rz_flag_get_name_delta(core->flags, xaddr1);
 				}
 				if (w > 45) {
 					if (strlen(name) > w - 45) {

@@ -245,16 +245,8 @@ RZ_IPI RzCmdStatus rz_seek_history_list_handler(RzCore *core, int argc, const ch
 	rz_cmd_state_output_array_start(state);
 	bool current_met = false;
 	rz_list_foreach (list, iter, undo) {
-		RzFlagItem *f = rz_flag_get_at(core->flags, undo->offset, true);
 		const char *comment;
-		char *name = NULL;
-		if (f) {
-			if (f->offset != undo->offset) {
-				name = rz_str_newf("%s+%" PFMT64d, f->name, undo->offset - f->offset);
-			} else {
-				name = strdup(f->name);
-			}
-		}
+		char *name = rz_flag_get_name_delta(core->flags, undo->offset);
 		current_met |= undo->is_current;
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_JSON:
