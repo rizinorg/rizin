@@ -895,6 +895,10 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 		break;
 	case EM_ARM:
 		val = S + A;
+		if (rel->mode == DT_REL) {
+			rz_buf_read_at(obj->buf_patched, patch_addr, buf, 4);
+			val += rz_read_le32(buf);
+		}
 		rz_write_le32(buf, val);
 		rz_buf_write_at(obj->buf_patched, patch_addr, buf, 4);
 		break;
