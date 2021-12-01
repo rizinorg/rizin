@@ -107,5 +107,8 @@ pkgconfig_mod.generate(rz_io,
     'rz_util',
     'rz_socket'
   ],
-  description: 'rizin foundation libraries'
+  description: 'rizin foundation libraries',
+  variables: [
+    'plugindir=@0@'.format(rizin_plugins),
+  ],
 )

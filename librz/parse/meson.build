@@ -51,5 +51,8 @@ pkgconfig_mod.generate(rz_parse,
     'rz_syscall',
     'rz_reg'
   ],
-  description: 'rizin foundation libraries'
+  description: 'rizin foundation libraries',
+  variables: [
+    'plugindir=@0@'.format(rizin_plugins),
+  ],
 )

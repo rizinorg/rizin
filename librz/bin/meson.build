@@ -196,5 +196,8 @@ pkgconfig_mod.generate(rz_bin,
     'rz_syscall',
     'rz_type'
   ],
-  description: 'rizin foundation libraries'
+  description: 'rizin foundation libraries',
+  variables: [
+    'plugindir=@0@'.format(rizin_plugins),
+  ],
 )

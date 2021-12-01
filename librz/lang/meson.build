@@ -30,5 +30,8 @@ pkgconfig_mod.generate(rz_lang,
     'rz_util',
     'rz_cons'
   ],
-  description: 'rizin foundation libraries'
+  description: 'rizin foundation libraries',
+  variables: [
+    'plugindir=@0@'.format(rizin_plugins),
+  ],
 )
