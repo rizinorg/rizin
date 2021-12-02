@@ -8,7 +8,7 @@ axl~0x804969c
 axtj~{}
 EOF
 EXPECT=<<EOF
-                          section..plt+6 0x80482c6 ->      CODE -> 0x804969c section..got.plt+8
+                        section..plt + 6 0x80482c6 ->      CODE -> 0x804969c section..got.plt + 8
 [
   {
     "from": 134513350,
