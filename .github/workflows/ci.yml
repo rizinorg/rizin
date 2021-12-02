@@ -545,11 +545,19 @@ jobs:
       working-directory: rizin
     - name: Check that installed rizin runs
       run: rizin -qcq /bin/ls
-    - name: Check that libraries can be used
+    - name: Check that libraries can be used with pkg-config
       run: |
         echo -e "#include <rz_util.h>\nint main(int argc, char **argv) { return rz_str_newf (\"%s\", argv[0]) != NULL? 0: 1; }" > test.c
         clang -o test test.c $(pkg-config --libs --cflags rz_util)
         ./test
+    - name: Check CMake config files
+      run: |
+        echo -e "#include <rz_util.h>\nint main(int argc, char **argv) { return rz_str_newf (\"%s\", argv[0]) != NULL? 0: 1; }" > test.c
+        echo -e "cmake_minimum_required(VERSION 3.10)\nproject(RizinCMakeTest VERSION 1.0.0)\nfind_package(RzUtil)\nadd_executable(rizin_cmake_test test.c)\ntarget_link_libraries(rizin_cmake_test PRIVATE ${RzUtil_TARGET})\n" > CMakeLists.txt
+        mkdir cmake-test-build && cd cmake-test-build
+        cmake ..
+        make
+        ./rizin_cmake_test
 
   build-osx-pkg:
     name: Build OSX package
@@ -788,9 +796,9 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-python@v2
-    - name: Install pkg-config
+    - name: Install pkg-config and cmake
       shell: pwsh
-      run: choco install -y pkgconfiglite
+      run: choco install -y cmake pkgconfiglite
     - name: Extract rizin version
       shell: pwsh
       run: echo "##[set-output name=branch;]$( python sys\\version.py )"
@@ -805,7 +813,7 @@ jobs:
     - name: Check that installed rizin runs
       shell: pwsh
       run: ~\AppData\Local\Programs\rizin\bin\rizin.exe -qcq .\rizin.exe
-    - name: Check that libraries can be used
+    - name: Check that libraries can be used with pkg-config
       shell: pwsh
       run: |
         .\dist\windows\vsdevenv.ps1 ${{ matrix.bits }}
@@ -816,6 +824,19 @@ jobs:
         echo "#include <rz_util.h>`nint main(int argc, char **argv) { return rz_str_newf (`"%s`", argv[0]) != NULL? 0: 1; }" > test.c
         cl -IC:$env:HOMEPATH\AppData\Local\Programs\rizin\include\librz -IC:$env:HOMEPATH\AppData\Local\Programs\rizin\include\librz\sdb /Fetest.exe test.c /link /libpath:C:$env:HOMEPATH\AppData\Local\Programs\rizin\lib rz_util.lib
         .\test.exe
+    - name: Check CMake config files
+      shell: pwsh
+      run: |
+        .\dist\windows\vsdevenv.ps1 ${{ matrix.bits }}
+        $env:PATH = "$env:PATH;C:$env:HOMEPATH\AppData\Local\Programs\rizin\bin"
+        $env:PKG_CONFIG_PATH = "C:$env:HOMEPATH\AppData\Local\Programs\rizin\lib\pkgconfig"
+        $env:PKG_CONFIG_PATH
+        echo -e "#include <rz_util.h>\nint main(int argc, char **argv) { return rz_str_newf (\"%s\", argv[0]) != NULL? 0: 1; }" > test.c
+        echo -e "cmake_minimum_required(VERSION 3.10)\nproject(RizinCMakeTest VERSION 1.0.0)\nfind_package(RzUtil)\nadd_executable(rizin_cmake_test test.c)\ntarget_link_libraries(rizin_cmake_test PRIVATE ${RzUtil_TARGET})\n" > CMakeLists.txt
+        mkdir cmake-test-build && cd cmake-test-build
+        cmake ..
+        make
+        .\rizin_cmake_test
 
   create-release:
     name: Create draft release and upload artifacts
