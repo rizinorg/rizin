@@ -399,6 +399,7 @@ rz_util_files = [
   'include/rz_util/rz_base91.h',
   'include/rz_util/rz_big.h',
   'include/rz_util/rz_bitmap.h',
+  'include/rz_util/rz_bitvector.h',
   'include/rz_util/rz_buf.h',
   'include/rz_util/rz_debruijn.h',
   'include/rz_util/rz_event.h',
