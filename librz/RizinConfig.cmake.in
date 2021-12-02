@@ -1,0 +1,104 @@
+################################################################################
+# Automatically generated, DO NOT EDIT
+#
+# This module provides the Rizin package, which is composed of multiple 
+# components, such as:
+#
+#  Analysis
+#  Asm
+#  Bin
+#  Bp
+#  Config
+#  Cons
+#  Core
+#  Crypto
+#  Debug
+#  Demangler
+#  Diff
+#  Egg
+#  Flag
+#  Hash
+#  Il
+#  Io
+#  Lang
+#  Librz
+#  Magic
+#  Main
+#  Parse
+#  Reg
+#  Search
+#  Signature
+#  Socket
+#  Syscall
+#  Type
+#  Util
+#
+# This file is intended to be consumed by clients who wish to use Rizin libraries
+# from CMake. It can be used by doing `find_package(Rizin COMPONENTS Bin IO)` from
+# within a `CMakeLists.txt` file.
+#
+################################################################################
+
+set(Rizin_VERSION @RZ_VERSION@)
+
+@PACKAGE_INIT@
+
+macro(check_required_components _NAME)
+  foreach(comp ${${_NAME}_FIND_COMPONENTS})
+    if(NOT ${_NAME}_${comp}_FOUND)
+      if(${_NAME}_FIND_REQUIRED_${comp})
+        set(${_NAME}_FOUND FALSE)
+      endif()
+    endif()
+  endforeach()
+endmacro()
+
+if (NOT Rizin_FIND_COMPONENTS)
+    set(Rizin_FIND_COMPONENTS Core)
+endif()
+
+set(_supported_components
+    RzAnalysis
+    RzAsm
+    RzBin
+    RzBp
+    RzConfig
+    RzCons
+    RzCore
+    RzCrypto
+    RzDebug
+    RzDemangler
+    RzDiff
+    RzEgg
+    RzFlag
+    RzHash
+    RzIl
+    RzIO
+    RzLang
+    RzLibrz
+    RzMagic
+    RzMain
+    RzParse
+    RzReg
+    RzSearch
+    RzSignature
+    RzSocket
+    RzSyscall
+    RzType
+    RzUtil
+)
+
+get_filename_component(_rizin_cmake_path "${CMAKE_CURRENT_LIST_DIR}" ABSOLUTE)
+
+foreach(_comp ${Rizin_FIND_COMPONENTS})
+  if (NOT ";${_supported_components};" MATCHES ";${_comp};")
+    set(Rizin_FOUND False)
+    set(Rizin_NOT_FOUND_MESSAGE "Unsupported component: ${_comp}")
+  endif()
+  find_package(${_comp} PATHS ${_rizin_cmake_path})
+  if (NOT ${_comp}_FOUND)
+    set(Rizin_FOUND False)
+    set(Rizin_NOT_FOUND_MESSAGE "Failed to find Rizin component ${_comp}")
+    return()
+  endif()
+endforeach()

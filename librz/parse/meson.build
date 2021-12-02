@@ -60,6 +60,7 @@ pkgconfig_mod.generate(rz_parse,
 conf = configuration_data()
 conf.set('RZ_VERSION', rizin_version)
 conf.set('RIZIN_MODULE', 'RzParse')
+conf.set('RIZIN_MODULE_DEPS', ' '.join(['RzUtil', 'RzFlag', 'RzSyscall', 'RzReg', 'RzCons']))
 conf.set('INSTALL_INCDIR', rizin_incdir)
 conf.set('INSTALL_LIBDIR', rizin_libdir)
 conf.set('rizin_libname', rz_parse.name())

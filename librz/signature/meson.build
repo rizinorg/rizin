@@ -10,18 +10,20 @@ rz_sign_inc = [
   platform_inc,
 ]
 
+rz_sign_deps = [
+  rz_util_dep,
+  rz_analysis_dep,
+  rz_diff_dep,
+  rz_hash_dep,
+  rz_type_dep,
+  rz_search_dep,
+  rz_flag_dep,
+]
+
 rz_sign = library('rz_sign', rz_sign_sources,
   include_directories: rz_sign_inc,
   c_args: library_cflags,
-  dependencies: [
-    rz_util_dep,
-    rz_analysis_dep,
-    rz_diff_dep,
-    rz_hash_dep,
-    rz_type_dep,
-    rz_search_dep,
-    rz_flag_dep,
-  ],
+  dependencies: rz_sign_deps,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
@@ -52,6 +54,7 @@ pkgconfig_mod.generate(rz_sign,
 conf = configuration_data()
 conf.set('RZ_VERSION', rizin_version)
 conf.set('RIZIN_MODULE', 'RzSign')
+conf.set('RIZIN_MODULE_DEPS', ' '.join(['RzUtil', 'RzAnalysis', 'RzDiff', 'RzHash', 'RzSearch', 'RzType', 'RzFlag']))
 conf.set('INSTALL_INCDIR', rizin_incdir)
 conf.set('INSTALL_LIBDIR', rizin_libdir)
 conf.set('rizin_libname', rz_sign.name())

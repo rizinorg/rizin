@@ -38,6 +38,7 @@ pkgconfig_mod.generate(rz_reg,
 conf = configuration_data()
 conf.set('RZ_VERSION', rizin_version)
 conf.set('RIZIN_MODULE', 'RzReg')
+conf.set('RIZIN_MODULE_DEPS', ' '.join(['RzUtil']))
 conf.set('INSTALL_INCDIR', rizin_incdir)
 conf.set('INSTALL_LIBDIR', rizin_libdir)
 conf.set('rizin_libname', rz_reg.name())

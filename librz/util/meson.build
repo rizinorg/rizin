@@ -81,7 +81,7 @@ rz_util_sources = [
   'luhn.c'
 ]
 
-rz_util_deps = [ldl, lrt, mth, pth, utl, sdb_dep, zlib_dep, platform_deps]
+rz_util_deps = [ldl, lrt, mth, pth, utl, sdb_dep, zlib_dep] + platform_deps
 if ['freebsd', 'netbsd', 'haiku', 'dragonfly'].contains(host_machine.system())
   # backtrace_symbols_fd requires -lexecinfo
   rz_util_deps += [cc.find_library('execinfo', static: is_static_build)]
@@ -124,6 +124,7 @@ pkgconfig_mod.generate(rz_util,
 conf = configuration_data()
 conf.set('RZ_VERSION', rizin_version)
 conf.set('RIZIN_MODULE', 'RzUtil')
+conf.set('RIZIN_MODULE_DEPS', ' '.join([]))
 conf.set('INSTALL_INCDIR', rizin_incdir)
 conf.set('INSTALL_LIBDIR', rizin_libdir)
 conf.set('rizin_libname', rz_util.name())
