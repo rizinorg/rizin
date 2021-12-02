@@ -643,14 +643,14 @@ RZ_API RzFlagItem *rz_flag_get_at(RzFlag *f, ut64 off, bool closest) {
 RZ_API RZ_OWN char *rz_flag_get_name_delta(RZ_NONNULL RzFlag *f, ut64 addr) {
 	rz_return_val_if_fail(f, NULL);
 	RzFlagItem *item = rz_flag_get_at(f, addr, true);
-	if (item) {
-		if (item->offset == addr) {
-			return strdup(item->name);
-		}
-		const char *name = f->realnames ? item->realname : item->name;
-		return rz_str_newf("%s + %" PFMT64u, name, addr - item->offset);
+	if (!item) {
+		return NULL;
 	}
-	return NULL;
+	if (item->offset == addr) {
+		return strdup(item->name);
+	}
+	const char *name = f->realnames ? item->realname : item->name;
+	return rz_str_newf("%s + %" PFMT64u, name, addr - item->offset);
 }
 
 static bool append_to_list(RzFlagItem *fi, void *user) {
