@@ -38,13 +38,13 @@ pkgconfig_mod.generate(rz_lang,
 
 conf = configuration_data()
 conf.set('RZ_VERSION', rizin_version)
-conf.set('RIZIN_MODULE', 'RzLang')
+conf.set('RIZIN_MODULE', 'Lang')
 conf.set('RIZIN_MODULE_DEPS', ' '.join(['RzUtil', 'RzCons']))
 conf.set('INSTALL_INCDIR', rizin_incdir)
 conf.set('INSTALL_LIBDIR', rizin_libdir)
 conf.set('rizin_libname', rz_lang.name())
 cmake_mod.configure_package_config_file(
-  name: conf.get('RIZIN_MODULE'),
+  name: 'Rz' + conf.get('RIZIN_MODULE'),
   input: '../RzModulesConfig.cmake.in',
   install_dir: rizin_cmakedir,
   configuration: conf,

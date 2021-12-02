@@ -1,38 +1,34 @@
 ################################################################################
-# Automatically generated, DO NOT EDIT
 #
 # This module provides the following imported targets, if found:
 #
 #  Rizin::@RIZIN_MODULE@
 #
 # This file is intended to be consumed by clients who wish to use @rizin_libname@ from CMake.
-# It can be used by doing `find_package(@RIZIN_MODULE@)` from within a
+# It can be used by doing `find_package(Rz@RIZIN_MODULE@)` from within a
 # `CMakeLists.txt` file.
 #
 # Provides the following variables
-# @RIZIN_MODULE@_FOUND        - Flag for indicating that @RIZIN_MODULE@ package has been found
-# @RIZIN_MODULE@_VERSION      - Version of @RIZIN_MODULE@
-# @RIZIN_MODULE@_INCLUDE_DIRS - Directories to include
-# @RIZIN_MODULE@_LIBRARIES    - Libraries to link
-# @RIZIN_MODULE@_LIBRARY_DIRS - Library directories to search for link libraries
+# Rz@RIZIN_MODULE@_FOUND        - Flag for indicating that Rz@RIZIN_MODULE@ package has been found
+# Rz@RIZIN_MODULE@_VERSION      - Version of Rz@RIZIN_MODULE@
+# Rz@RIZIN_MODULE@_INCLUDE_DIRS - Directories to include
+# Rz@RIZIN_MODULE@_LIBRARIES    - Libraries to link
+# Rz@RIZIN_MODULE@_LIBRARY_DIRS - Library directories to search for link libraries
 #
 ################################################################################
 
-set(@RIZIN_MODULE@_VERSION @RZ_VERSION@)
+set(RIZIN_MODULE_PREFIXED Rz@RIZIN_MODULE@)
+set(${RIZIN_MODULE_PREFIXED}_VERSION @RZ_VERSION@)
 
 @PACKAGE_INIT@
 
-set(@RIZIN_MODULE@_INCLUDE_DIRS "${PACKAGE_PREFIX_DIR}/@INSTALL_INCDIR@" "${PACKAGE_PREFIX_DIR}/@INSTALL_INCDIR@/sdb")
-set_and_check(@RIZIN_MODULE@_LIBRARY_DIRS "${PACKAGE_PREFIX_DIR}/@INSTALL_LIBDIR@")
-set(@RIZIN_MODULE@_LIBRARIES "@rizin_libname@")
-set(_@RIZIN_MODULE@_DEPENDENCIES @RIZIN_MODULE_DEPS@)
-
-include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(@RIZIN_MODULE@ DEFAULT_MSG
-    @RIZIN_MODULE@_LIBRARIES @RIZIN_MODULE@_INCLUDE_DIRS)
+set(${RIZIN_MODULE_PREFIXED}_INCLUDE_DIRS "${PACKAGE_PREFIX_DIR}/@INSTALL_INCDIR@" "${PACKAGE_PREFIX_DIR}/@INSTALL_INCDIR@/sdb")
+set_and_check(${RIZIN_MODULE_PREFIXED}_LIBRARY_DIRS "${PACKAGE_PREFIX_DIR}/@INSTALL_LIBDIR@")
+set(${RIZIN_MODULE_PREFIXED}_LIBRARIES "@rizin_libname@")
+set(_${RIZIN_MODULE_PREFIXED}_DEPENDENCIES @RIZIN_MODULE_DEPS@)
 
 get_filename_component(_rizin_cmake_path "${CMAKE_CURRENT_LIST_DIR}" ABSOLUTE)
-foreach(_module_dep ${_@RIZIN_MODULE@_DEPENDENCIES})
+foreach(_module_dep ${_${RIZIN_MODULE_PREFIXED}_DEPENDENCIES})
   if (NOT ${_module_dep}_FOUND)
     find_package(${_module_dep} PATHS ${_rizin_cmake_path})
   endif()
@@ -42,19 +38,20 @@ foreach(_module_dep ${_@RIZIN_MODULE@_DEPENDENCIES})
     return()
   endif()
 
-  list(APPEND @RIZIN_MODULE@_INCLUDE_DIRS "${${_module_dep}_INCLUDE_DIRS}")
-  list(APPEND @RIZIN_MODULE@_LIBRARIES "${${_module_dep}_LIBRARIES}")
+  list(APPEND ${RIZIN_MODULE_PREFIXED}_INCLUDE_DIRS "${${_module_dep}_INCLUDE_DIRS}")
+  list(APPEND ${RIZIN_MODULE_PREFIXED}_LIBRARIES "${${_module_dep}_LIBRARIES}")
 endforeach()
 
-list(REMOVE_DUPLICATES @RIZIN_MODULE@_INCLUDE_DIRS)
-list(REMOVE_DUPLICATES @RIZIN_MODULE@_LIBRARIES)
+list(REMOVE_DUPLICATES ${RIZIN_MODULE_PREFIXED}_INCLUDE_DIRS)
+list(REMOVE_DUPLICATES ${RIZIN_MODULE_PREFIXED}_LIBRARIES)
 
-
-add_library(Rizin::@RIZIN_MODULE@ INTERFACE IMPORTED)
-set_target_properties(Rizin::@RIZIN_MODULE@ PROPERTIES
-    INTERFACE_INCLUDE_DIRECTORIES "${@RIZIN_MODULE@_INCLUDE_DIRS}")
-set_target_properties(Rizin::@RIZIN_MODULE@ PROPERTIES
-    INTERFACE_LINK_LIBRARIES "${@RIZIN_MODULE@_LIBRARIES}")
-set_target_properties(Rizin::@RIZIN_MODULE@ PROPERTIES
-    INTERFACE_LINK_DIRECTORIES "${@RIZIN_MODULE@_LIBRARY_DIRS}")
-set(@RIZIN_MODULE@_TARGET Rizin::@RIZIN_MODULE@)
+if(NOT TARGET Rizin::@RIZIN_MODULE@)
+	add_library(Rizin::@RIZIN_MODULE@ INTERFACE IMPORTED)
+	set_target_properties(Rizin::@RIZIN_MODULE@ PROPERTIES
+	    INTERFACE_INCLUDE_DIRECTORIES "${${RIZIN_MODULE_PREFIXED}_INCLUDE_DIRS}")
+	set_target_properties(Rizin::@RIZIN_MODULE@ PROPERTIES
+	    INTERFACE_LINK_LIBRARIES "${${RIZIN_MODULE_PREFIXED}_LIBRARIES}")
+	set_target_properties(Rizin::@RIZIN_MODULE@ PROPERTIES
+	    INTERFACE_LINK_DIRECTORIES "${${RIZIN_MODULE_PREFIXED}_LIBRARY_DIRS}")
+endif()
+set(${RIZIN_MODULE_PREFIXED}_TARGET Rizin::@RIZIN_MODULE@)
