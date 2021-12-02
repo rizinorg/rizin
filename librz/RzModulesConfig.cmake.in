@@ -1,0 +1,50 @@
+################################################################################
+# Automatically generated, DO NOT EDIT
+#
+# This module provides the following imported targets, if found:
+#
+#  Rizin::@RIZIN_MODULE@
+#
+# This file is intended to be consumed by clients who wish to use @rizin_libname@ from CMake.
+# It can be used by doing `find_package(@RIZIN_MODULE@)` from within a
+# `CMakeLists.txt` file.
+#
+# Provides the following variables
+# @RIZIN_MODULE@_FOUND        - Flag for indicating that @RIZIN_MODULE@ package has been found
+# @RIZIN_MODULE@_VERSION      - Version of @RIZIN_MODULE@
+# @RIZIN_MODULE@_INCLUDE_DIRS - Directories to include
+# @RIZIN_MODULE@_LIBRARIES    - Libraries to link
+# @RIZIN_MODULE@_LIBRARY_DIRS - Library directories to search for link libraries
+#
+################################################################################
+
+set(@RIZIN_MODULE@_VERSION @RZ_VERSION@)
+
+@PACKAGE_INIT@
+
+macro(check_required_components _NAME)
+  foreach(comp ${${_NAME}_FIND_COMPONENTS})
+    if(NOT ${_NAME}_${comp}_FOUND)
+      if(${_NAME}_FIND_REQUIRED_${comp})
+        set(${_NAME}_FOUND FALSE)
+      endif()
+    endif()
+  endforeach()
+endmacro()
+
+set(@RIZIN_MODULE@_INCLUDE_DIRS "${PACKAGE_PREFIX_DIR}/@INSTALL_INCDIR@" "${PACKAGE_PREFIX_DIR}/@INSTALL_INCDIR@/sdb")
+set_and_check(@RIZIN_MODULE@_LIBRARY_DIRS "${PACKAGE_PREFIX_DIR}/@INSTALL_LIBDIR@")
+set(@RIZIN_MODULE@_LIBRARIES "@rizin_libname@")
+
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(@RIZIN_MODULE@ DEFAULT_MSG
+    @RIZIN_MODULE@_LIBRARIES @RIZIN_MODULE@_INCLUDE_DIRS)
+
+check_required_components(@RIZIN_MODULE@)
+
+add_library(Rizin::@RIZIN_MODULE@ INTERFACE IMPORTED)
+set_target_properties(Rizin::@RIZIN_MODULE@ PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES "${@RIZIN_MODULE@_INCLUDE_DIRS}")
+set_target_properties(Rizin::@RIZIN_MODULE@ PROPERTIES
+    INTERFACE_LINK_LIBRARIES "${@RIZIN_MODULE@_LIBRARIES}")
+set(@RIZIN_MODULE@_TARGET Rizin::@RIZIN_MODULE@)

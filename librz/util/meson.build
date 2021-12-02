@@ -120,3 +120,16 @@ pkgconfig_mod.generate(rz_util,
   filebase: 'rz_util',
   description: 'rizin foundation libraries'
 )
+
+conf = configuration_data()
+conf.set('RZ_VERSION', rizin_version)
+conf.set('RIZIN_MODULE', 'RzUtil')
+conf.set('INSTALL_INCDIR', rizin_incdir)
+conf.set('INSTALL_LIBDIR', rizin_libdir)
+conf.set('rizin_libname', rz_util.name())
+cmake_mod.configure_package_config_file(
+  name: conf.get('RIZIN_MODULE'),
+  input: '../RzModulesConfig.cmake.in',
+  install_dir: rizin_cmakedir,
+  configuration: conf,
+)

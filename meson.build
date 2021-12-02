@@ -11,6 +11,7 @@ project('rizin', 'c',
 py3_exe = import('python').find_installation()
 git_exe = find_program('git', required: false)
 pkgconfig_mod = import('pkgconfig')
+cmake_mod = import('cmake')
 
 # Python scripts used during the build process
 create_tags_rz_py = files('sys/create_tags_rz.py')
@@ -168,6 +169,7 @@ endif
 rizin_prefix = get_option('prefix')
 rizin_bindir = get_option('bindir')
 rizin_libdir = get_option('libdir')
+rizin_cmakedir = rizin_libdir / 'cmake' / 'rizin'
 rizin_incdir = get_option('includedir') / 'librz'
 rizin_datdir = get_option('datadir')
 if host_machine.system() == 'windows'
