@@ -17,8 +17,7 @@
 #define boolt int
 
 #if defined(_MSC_VER)
-#include <BaseTsd.h>
-typedef SSIZE_T ssize_t;
+typedef intptr_t ssize_t;
 #endif
 
 #if defined(_MSC_VER)
