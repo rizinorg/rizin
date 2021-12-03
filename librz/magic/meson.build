@@ -47,13 +47,14 @@ pkgconfig_magic_requires = ['rz_magic']
 
 conf = configuration_data()
 conf.set('RZ_VERSION', rizin_version)
-conf.set('RIZIN_MODULE', 'Magic')
-conf.set('RIZIN_MODULE_DEPS', ' '.join(['RzUtil']))
+conf.set('RIZIN_MODULE', rz_magic.name())
+conf.set('RIZIN_MODULE_DEPS', ' '.join(['rz_util']))
 conf.set('INSTALL_INCDIR', rizin_incdir)
 conf.set('INSTALL_LIBDIR', rizin_libdir)
+conf.set('INSTALL_PLUGDIR', rizin_plugins)
 conf.set('rizin_libname', rz_magic.name())
 cmake_mod.configure_package_config_file(
-  name: 'Rz' + conf.get('RIZIN_MODULE'),
+  name: conf.get('rizin_libname'),
   input: '../RzModulesConfig.cmake.in',
   install_dir: rizin_cmakedir,
   configuration: conf,

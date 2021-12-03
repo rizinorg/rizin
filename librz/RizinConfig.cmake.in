@@ -18,7 +18,7 @@
 #  Flag
 #  Hash
 #  Il
-#  Io
+#  IO
 #  Lang
 #  Librz
 #  Magic
@@ -35,6 +35,10 @@
 # This file is intended to be consumed by clients who wish to use Rizin libraries
 # from CMake. It can be used by doing `find_package(Rizin COMPONENTS Bin IO)` from
 # within a `CMakeLists.txt` file.
+
+# Provides the following variables:
+#
+# Rizin_PLUGINDIR    - Directory where plugins are placed, without the prefix part
 #
 ################################################################################
 
@@ -80,15 +84,25 @@ set(_supported_components
 get_filename_component(_rizin_cmake_path "${CMAKE_CURRENT_LIST_DIR}" ABSOLUTE)
 
 foreach(_comp ${Rizin_FIND_COMPONENTS})
+  string(TOLOWER ${_comp} _comp_lower)
   if(NOT ";${_supported_components};" MATCHES ";${_comp};")
     set(Rizin_FOUND False)
     set(Rizin_NOT_FOUND_MESSAGE "Unsupported component: ${_comp}")
     return()
   endif()
-  find_package(Rz${_comp} PATHS ${_rizin_cmake_path})
-  if (NOT Rz${_comp}_FOUND)
+  find_package(rz_${_comp_lower} PATHS ${_rizin_cmake_path})
+  if (NOT rz_${_comp_lower}_FOUND)
     set(Rizin_FOUND False)
     set(Rizin_NOT_FOUND_MESSAGE "Failed to find Rizin component ${_comp}")
     return()
   endif()
+  add_library(Rizin::${_comp} UNKNOWN IMPORTED)
+  get_target_property(Rizin_${_comp}_LOCATION rz_${_comp_lower}::rz_${_comp_lower} IMPORTED_LOCATION)
+  set_target_properties(Rizin::${_comp} PROPERTIES
+    IMPORTED_LOCATION "${Rizin_${_comp}_LOCATION}"
+    IMPORTED_LINK_INTERFACE_LIBRARIES "${rz_${_comp_lower}_LIBRARIES}"
+    INTERFACE_LINK_DIRECTORIES "${rz_${_comp_lower}_LIBRARY_DIRS}"
+    INTERFACE_INCLUDE_DIRECTORIES "${rz_${_comp_lower}_INCLUDE_DIRS}")
 endforeach()
+
+set(Rizin_PLUGINDIR @INSTALL_PLUGDIR@)
