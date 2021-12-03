@@ -255,58 +255,58 @@ static void hex_set_pkt_info(const RzAsm *rz_asm, RZ_INOUT HexInsn *hi, const He
 	bool is_first = (k == 0);
 	HexPktInfo *hi_pi = &hi->pkt_info;
 
-	strncpy(hi_pi->syntax_postfix, "", 16);
+	strncpy(hi_pi->mnem_postfix, "", 16);
 	// Parse instr. position in pkt
 	if (is_first && is_last_instr(hi->parse_bits)) { // Single instruction packet.
 		hi_pi->first_insn = true;
 		hi_pi->last_insn = true;
 		// TODO No indent in visual mode for "[" without spaces.
 		if (p->is_valid) {
-			strncpy(hi_pi->syntax_prefix, HEX_PKT_SINGLE, 8);
+			strncpy(hi_pi->mnem_prefix, HEX_PKT_SINGLE, 8);
 		} else {
-			strncpy(hi_pi->syntax_prefix, HEX_PKT_UNK, 8);
+			strncpy(hi_pi->mnem_prefix, HEX_PKT_UNK, 8);
 		}
 	} else if (is_first) {
 		hi_pi->first_insn = true;
 		hi_pi->last_insn = false;
 		if (p->is_valid) {
-			strncpy(hi_pi->syntax_prefix, rz_asm->utf8 ? HEX_PKT_FIRST_UTF8 : HEX_PKT_FIRST, 8);
+			strncpy(hi_pi->mnem_prefix, rz_asm->utf8 ? HEX_PKT_FIRST_UTF8 : HEX_PKT_FIRST, 8);
 		} else {
-			strncpy(hi_pi->syntax_prefix, HEX_PKT_UNK, 8);
+			strncpy(hi_pi->mnem_prefix, HEX_PKT_UNK, 8);
 		}
 	} else if (is_last_instr(hi->parse_bits)) {
 		hi_pi->first_insn = false;
 		hi_pi->last_insn = true;
 		if (p->is_valid) {
-			strncpy(hi_pi->syntax_prefix, rz_asm->utf8 ? HEX_PKT_LAST_UTF8 : HEX_PKT_LAST, 8);
+			strncpy(hi_pi->mnem_prefix, rz_asm->utf8 ? HEX_PKT_LAST_UTF8 : HEX_PKT_LAST, 8);
 
 			switch (hex_get_loop_flag(p)) {
 			default:
 				break;
 			case HEX_LOOP_01:
-				strncpy(hi_pi->syntax_postfix, rz_asm->utf8 ? HEX_PKT_ELOOP_01_UTF8 : HEX_PKT_ELOOP_01, 24);
+				strncpy(hi_pi->mnem_postfix, rz_asm->utf8 ? HEX_PKT_ELOOP_01_UTF8 : HEX_PKT_ELOOP_01, 24);
 				break;
 			case HEX_LOOP_0:
-				strncpy(hi_pi->syntax_postfix, rz_asm->utf8 ? HEX_PKT_ELOOP_0_UTF8 : HEX_PKT_ELOOP_0, 24);
+				strncpy(hi_pi->mnem_postfix, rz_asm->utf8 ? HEX_PKT_ELOOP_0_UTF8 : HEX_PKT_ELOOP_0, 24);
 				break;
 			case HEX_LOOP_1:
-				strncpy(hi_pi->syntax_postfix, rz_asm->utf8 ? HEX_PKT_ELOOP_1_UTF8 : HEX_PKT_ELOOP_1, 24);
+				strncpy(hi_pi->mnem_postfix, rz_asm->utf8 ? HEX_PKT_ELOOP_1_UTF8 : HEX_PKT_ELOOP_1, 24);
 				break;
 			}
 		} else {
-			strncpy(hi_pi->syntax_prefix, HEX_PKT_UNK, 8);
+			strncpy(hi_pi->mnem_prefix, HEX_PKT_UNK, 8);
 		}
 	} else {
 		hi_pi->first_insn = false;
 		hi_pi->last_insn = false;
 		if (p->is_valid) {
-			strncpy(hi_pi->syntax_prefix, rz_asm->utf8 ? HEX_PKT_MID_UTF8 : HEX_PKT_MID, 8);
+			strncpy(hi_pi->mnem_prefix, rz_asm->utf8 ? HEX_PKT_MID_UTF8 : HEX_PKT_MID, 8);
 		} else {
-			strncpy(hi_pi->syntax_prefix, HEX_PKT_UNK, 8);
+			strncpy(hi_pi->mnem_prefix, HEX_PKT_UNK, 8);
 		}
 	}
 	if (update_mnemonic) {
-		sprintf(hi->mnem, "%s%s%s", hi_pi->syntax_prefix, hi->mnem_infix, hi_pi->syntax_postfix);
+		sprintf(hi->mnem, "%s%s%s", hi_pi->mnem_prefix, hi->mnem_infix, hi_pi->mnem_postfix);
 	}
 }
 
