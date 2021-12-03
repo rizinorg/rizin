@@ -4223,6 +4223,16 @@ static bool found_xref(RzCore *core, ut64 at, ut64 xref_to, RzAnalysisXRefType t
 	return true;
 }
 
+/**
+ * \brief Searches for xrefs in the range of the paramters \p 'from' and \p 'to'.
+ *
+ * \param core The Rizin core.
+ * \param from Start of search interval.
+ * \param to End of search interval.
+ * \param pj The print JSON object.
+ * \param rad The print mode. If set to 'j' the \p 'pj' parameter will filled with the xrefs found.
+ * \return int Number of found xrefs. -1 in case of failure.
+ */
 RZ_API int rz_core_analysis_search_xrefs(RzCore *core, ut64 from, ut64 to, PJ *pj, int rad) {
 	bool cfg_debug = rz_config_get_b(core->config, "cfg.debug");
 	bool cfg_analysis_strings = rz_config_get_i(core->config, "analysis.strings");
