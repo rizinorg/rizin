@@ -4300,6 +4300,14 @@ RZ_API int rz_core_analysis_search_xrefs(RzCore *core, ut64 from, ut64 to, PJ *p
 					count++;
 				}
 			}
+			for (ut8 i = 0; i < 6; ++i) {
+				st64 aval = op.analysis_vals[i].imm;
+				if (aval > asm_sub_varmin && aval != UT64_MAX && aval != UT32_MAX) {
+					if (found_xref(core, op.addr, aval, RZ_ANALYSIS_REF_TYPE_DATA, pj, rad, cfg_debug, cfg_analysis_strings)) {
+						count++;
+					}
+				}
+			}
 			// find references
 			if (op.ptr && op.ptr != UT64_MAX && op.ptr != UT32_MAX) {
 				if (found_xref(core, op.addr, op.ptr, RZ_ANALYSIS_REF_TYPE_DATA, pj, rad, cfg_debug, cfg_analysis_strings)) {
