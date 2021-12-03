@@ -66,7 +66,7 @@ typedef enum {
 typedef struct {
 	bool first_insn;
 	bool last_insn;
-	char syntax_prefix[8]; // Package indicator
+	char syntax_prefix[16]; // Package indicator
 	char syntax_postfix[24]; // for ":endloop" string.
 } HexPktInfo;
 
