@@ -169,7 +169,7 @@ endif
 rizin_prefix = get_option('prefix')
 rizin_bindir = get_option('bindir')
 rizin_libdir = get_option('libdir')
-rizin_cmakedir = rizin_libdir / 'cmake' / 'rizin'
+rizin_cmakedir = rizin_libdir / 'cmake'
 rizin_incdir = get_option('includedir') / 'librz'
 rizin_datdir = get_option('datadir')
 if host_machine.system() == 'windows'

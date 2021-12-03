@@ -242,6 +242,6 @@ conf.set('rizin_libname', rz_analysis.name())
 cmake_mod.configure_package_config_file(
   name: conf.get('rizin_libname'),
   input: '../RzModulesConfig.cmake.in',
-  install_dir: rizin_cmakedir,
+  install_dir: rizin_cmakedir / conf.get('rizin_libname'),
   configuration: conf,
 )
