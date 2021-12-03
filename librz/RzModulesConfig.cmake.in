@@ -5,13 +5,13 @@
 #  @RIZIN_MODULE@::@RIZIN_MODULE@
 #
 # This file is intended to be consumed by clients who wish to use @rizin_libname@ from CMake.
-# It can be used by doing `find_package(@RIZIN_MODULE@)` from within a
-# `CMakeLists.txt` file.
+# The recommended way to use find this module is using `find_package(Rizin COMPONENTS ...)`.
 #
 # Provides the following variables
 # @RIZIN_MODULE@_FOUND        - Flag for indicating that @RIZIN_MODULE@ package has been found
 # @RIZIN_MODULE@_VERSION      - Version of @RIZIN_MODULE@
 # @RIZIN_MODULE@_INCLUDE_DIRS - Directories to include
+# @RIZIN_MODULE@_LIBRARY      - Path to the single library that this module represents, without dependencies
 # @RIZIN_MODULE@_LIBRARIES    - Libraries to link
 # @RIZIN_MODULE@_LIBRARY_DIRS - Library directories to search for link libraries
 # @RIZIN_MODULE@_PLUGINDIR    - Directory where plugins are placed, without the prefix part
@@ -25,14 +25,17 @@ set(@RIZIN_MODULE@_VERSION @RZ_VERSION@)
 
 set(@RIZIN_MODULE@_INCLUDE_DIRS "${PACKAGE_PREFIX_DIR}/@INSTALL_INCDIR@" "${PACKAGE_PREFIX_DIR}/@INSTALL_INCDIR@/sdb")
 set_and_check(@RIZIN_MODULE@_LIBRARY_DIRS "${PACKAGE_PREFIX_DIR}/@INSTALL_LIBDIR@")
-set(@RIZIN_MODULE@_LIBRARIES @RIZIN_MODULE@::@RIZIN_MODULE@)
+find_library(@RIZIN_MODULE@_LIBRARY NAMES @RIZIN_MODULE@ HINTS "${@RIZIN_MODULE@_LIBRARY_DIRS}" NO_DEFAULT_PATH)
+set(@RIZIN_MODULE@_LIBRARIES "${@RIZIN_MODULE@_LIBRARY}")
 set(_@RIZIN_MODULE@_DEPENDENCIES @RIZIN_MODULE_DEPS@)
 set(@RIZIN_MODULE@_PLUGINDIR @INSTALL_PLUGDIR@)
 
+include(CMakeFindDependencyMacro)
 get_filename_component(_rizin_cmake_path "${CMAKE_CURRENT_LIST_DIR}" ABSOLUTE)
+set(_@RIZIN_MODULE@_DEPENDENCY_TARGETS)
 foreach(_module_dep ${_@RIZIN_MODULE@_DEPENDENCIES})
   if (NOT ${_module_dep}_FOUND)
-    find_package(${_module_dep} PATHS ${_rizin_cmake_path})
+    find_dependency(${_module_dep} PATHS ${_rizin_cmake_path})
   endif()
 
   if (NOT ${_module_dep}_FOUND)
@@ -42,6 +45,7 @@ foreach(_module_dep ${_@RIZIN_MODULE@_DEPENDENCIES})
 
   list(APPEND @RIZIN_MODULE@_INCLUDE_DIRS "${${_module_dep}_INCLUDE_DIRS}")
   list(APPEND @RIZIN_MODULE@_LIBRARIES "${${_module_dep}_LIBRARIES}")
+  list(APPEND _@RIZIN_MODULE@_DEPENDENCY_TARGETS "${_module_dep}::${_module_dep}")
 endforeach()
 
 list(REMOVE_DUPLICATES @RIZIN_MODULE@_INCLUDE_DIRS)
@@ -49,10 +53,10 @@ list(REMOVE_DUPLICATES @RIZIN_MODULE@_LIBRARIES)
 
 if(NOT TARGET @RIZIN_MODULE@::@RIZIN_MODULE@)
   add_library(@RIZIN_MODULE@::@RIZIN_MODULE@ SHARED IMPORTED)
+  target_link_libraries(@RIZIN_MODULE@::@RIZIN_MODULE@ INTERFACE ${_@RIZIN_MODULE@_DEPENDENCY_TARGETS})
   set_target_properties(@RIZIN_MODULE@::@RIZIN_MODULE@ PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES "${@RIZIN_MODULE@_INCLUDE_DIRS}")
   set_target_properties(@RIZIN_MODULE@::@RIZIN_MODULE@ PROPERTIES
-    IMPORTED_LOCATION "${@RIZIN_MODULE@_LIBRARY_DIRS}/lib@rizin_libname@.so"
-    IMPORTED_SONAME "lib@rizin_libname@.so")
+    IMPORTED_LOCATION "${@RIZIN_MODULE@_LIBRARY}")
 endif()
 set(@RIZIN_MODULE@_TARGET @RIZIN_MODULE@::@RIZIN_MODULE@)
