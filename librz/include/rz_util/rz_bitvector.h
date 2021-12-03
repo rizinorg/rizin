@@ -34,6 +34,7 @@ typedef struct bitvector_t {
 } RzBitVector;
 
 // init
+RZ_API bool rz_bv_init(RZ_NONNULL RzBitVector *bv, ut32 length);
 RZ_API RZ_OWN RzBitVector *rz_bv_new(ut32 length);
 RZ_API RZ_OWN RzBitVector *rz_bv_dup(const RZ_NONNULL RzBitVector *bv);
 RZ_API RZ_OWN RzBitVector *rz_bv_append(RZ_NONNULL RzBitVector *bv1, RZ_NONNULL RzBitVector *bv2);
@@ -42,6 +43,7 @@ RZ_API ut32 rz_bv_copy_nbits(
 	RZ_NONNULL const RzBitVector *src, ut32 src_start_pos,
 	RZ_NONNULL RzBitVector *dst, ut32 dst_start_pos,
 	ut32 nbit);
+RZ_API void rz_bv_fini(RZ_NONNULL RzBitVector *bv);
 RZ_API void rz_bv_free(RZ_NULLABLE RzBitVector *bv);
 // read and write to a bit
 RZ_API bool rz_bv_set(RZ_NONNULL RzBitVector *bv, ut32 pos, bool b);
