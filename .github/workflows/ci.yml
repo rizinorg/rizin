@@ -83,7 +83,7 @@ jobs:
             cflags: '-DRZ_ASSERT_STDOUT=1 -Wno-cpp'
             allow_failure: false
           - name: macos-meson-clang-tests
-            os: macos-latest
+            os: macos-11
             build_system: meson
             compiler: clang
             run_tests: true
@@ -153,10 +153,10 @@ jobs:
       with:
           fetch-depth: 2
     - name: Install pkg-config and cabextract with Homebrew
-      if: matrix.os == 'macos-latest' && matrix.enabled
+      if: matrix.os == 'macos-11' && matrix.enabled
       run: brew install pkg-config cabextract
     - name: Install python and other dependencies
-      if: (matrix.run_tests || matrix.build_system == 'meson') && matrix.os != 'macos-latest' && matrix.enabled
+      if: (matrix.run_tests || matrix.build_system == 'meson') && matrix.os != 'macos-11' && matrix.enabled
       run: sudo apt-get --assume-yes install python3-wheel python3-setuptools cabextract
     - name: Install meson and ninja
       if: matrix.build_system == 'meson' && matrix.enabled
@@ -209,7 +209,7 @@ jobs:
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
         ninja -C build install
     - name: Disable user authentication for debugging (MacOS)
-      if: matrix.os == 'macos-latest' && matrix.enabled
+      if: matrix.os == 'macos-11' && matrix.enabled
       run: |
         security authorizationdb read system.privilege.taskport > taskport.plist
         /usr/libexec/PlistBuddy -c 'Set :authenticate-user false' ./taskport.plist
@@ -543,7 +543,7 @@ jobs:
 
   build-osx-pkg:
     name: Build OSX package
-    runs-on: macos-latest
+    runs-on: macos-11
     if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'osx') || contains(github.head_ref, 'mac') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
     needs: [build-and-test]
     steps:
@@ -743,7 +743,7 @@ jobs:
       matrix:
         system:
           - macos-latest
-          - macos-11.0
+          - macos-11
     runs-on: ${{ matrix.system }}
     needs: [build-osx-pkg]
     steps:
