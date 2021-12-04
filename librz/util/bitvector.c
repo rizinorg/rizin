@@ -5,6 +5,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#define NELEM(N, ELEMPER) ((N + (ELEMPER)-1) / (ELEMPER))
+#define BV_ELEM_SIZE      8U
+
 /**
  * \brief Initialize a RzBitVector structure
  * \param bv Pointer to a uninitialized RzBitVector instance
@@ -98,7 +101,7 @@ RZ_API RZ_OWN char *rz_bv_as_hex_string(RZ_NONNULL RzBitVector *bv) {
 
 	if (bv->len <= 64) {
 		char format[32] = { 0 };
-		rz_strf(format, "0x%%0%d" PFMT64x, bv->len / 4);
+		rz_strf(format, "0x%%0%d" PFMT64x, (bv->len + 3) / 4);
 		return rz_str_newf(format, bv->bits.small_u);
 	}
 
@@ -1134,6 +1137,19 @@ RZ_API RZ_OWN RzBitVector *rz_bv_new_from_st64(ut32 length, st64 value) {
 }
 
 /**
+ * Create a new bitvector of size bits and apply rz_bv_set_from_bytes_le() to it
+ */
+RZ_API RZ_OWN RzBitVector *rz_bv_new_from_bytes_le(RZ_IN RZ_NONNULL const ut8 *buf, ut32 bit_offset, ut32 size) {
+	rz_return_val_if_fail(buf, NULL);
+	RzBitVector *bv = rz_bv_new(size);
+	if (!bv) {
+		return NULL;
+	}
+	rz_bv_set_from_bytes_le(bv, buf, bit_offset, size);
+	return bv;
+}
+
+/**
  * Convert ut64 to N-bits bitvector
  * \param bv RzBitVector, pointer to bitvector
  * \param value ut64, the value to convert
@@ -1172,6 +1188,34 @@ RZ_API bool rz_bv_set_from_st64(RZ_NONNULL RzBitVector *bv, st64 value) {
 		value >>= 1;
 	}
 	return true;
+}
+
+/**
+ * Set the bitvector's contents from the given bits. The bitvector's size is unchanged.
+ * If bv->len < size, additional bits are cut off, if bv->len > size, the rest is filled up with 0.
+ * \param buf little endian buffer of at least (bit_offset + size + 7) / 8 bytes
+ * \param bit_offset offset inside buf to start reading from, in bits
+ * \param size number of bits to read from buf
+ */
+RZ_API void rz_bv_set_from_bytes_le(RZ_NONNULL RzBitVector *bv, RZ_IN RZ_NONNULL const ut8 *buf, ut32 bit_offset, ut32 size) {
+	rz_return_if_fail(buf && size);
+	size = RZ_MIN(size, bv->len);
+	if (!bit_offset && size <= 64) {
+		ut64 val = 0;
+		for (ut32 i = 0; i < (size + 7) / 8; i++) {
+			val |= (ut64)buf[i] << (i * 8);
+		}
+		val &= (UT64_MAX >> (64 - size));
+		rz_bv_set_from_ut64(bv, val);
+		return;
+	}
+	for (ut32 i = 0; i < bv->len; i++) {
+		bool bit = false;
+		if (i < size) {
+			bit = !!(buf[(bit_offset + i) >> 3] & (1 << ((bit_offset + i) & 7)));
+		}
+		rz_bv_set(bv, i, bit);
+	}
 }
 
 /**
