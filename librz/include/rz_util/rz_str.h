@@ -241,7 +241,6 @@ RZ_API bool rz_str_endswith(const char *str, const char *needle);
 RZ_API bool rz_str_isnumber(const char *str);
 RZ_API const char *rz_str_last(const char *in, const char *ch);
 RZ_API char *rz_str_highlight(char *str, const char *word, const char *color, const char *color_reset);
-RZ_API char *rz_qrcode_gen(const ut8 *text, int len, bool utf8, bool inverted);
 RZ_API char *rz_str_from_ut64(ut64 val);
 RZ_API void rz_str_stripLine(char *str, const char *key);
 RZ_API char *rz_str_list_join(RzList *str, const char *sep);
