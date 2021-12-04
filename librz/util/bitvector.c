@@ -6,30 +6,52 @@
 #include <stdio.h>
 
 /**
+ * \brief Initialize a RzBitVector structure
+ * \param bv Pointer to a uninitialized RzBitVector instance
+ * \param length int, the length of bitvector
+ * \return true if succeed
+ */
+RZ_API bool rz_bv_init(RZ_NONNULL RzBitVector *bv, ut32 length) {
+	rz_return_val_if_fail(bv && length, false);
+	memset(bv, 0, sizeof(RzBitVector));
+	if (length > 64) {
+		// how much ut8 do we need to represent `length` bits ?
+		size_t real_elem_cnt = NELEM(length, BV_ELEM_SIZE);
+		ut8 *tmp = RZ_NEWS0(ut8, real_elem_cnt);
+		if (!tmp) {
+			return false;
+		}
+		bv->bits.large_a = tmp;
+		bv->_elem_len = real_elem_cnt;
+	}
+	bv->len = length;
+	return true;
+}
+
+/**
+ * \brief Clear a RzBitVector structure
+ */
+RZ_API void rz_bv_fini(RZ_NONNULL RzBitVector *bv) {
+	rz_return_if_fail(bv);
+	if (bv->len > 64) {
+		free(bv->bits.large_a);
+	}
+	memset(bv, 0, sizeof(RzBitVector));
+}
+
+/**
  * New a `length`-bits bitvector
  * \param length int, the length of bitvector
  * \return bv RzBitVector, pointer to the new bitvector instance
  */
 RZ_API RZ_OWN RzBitVector *rz_bv_new(ut32 length) {
 	rz_return_val_if_fail(length, NULL);
-	RzBitVector *ret = RZ_NEW0(RzBitVector);
-	if (ret == NULL) {
+	RzBitVector *bv = RZ_NEW(RzBitVector);
+	if (!bv || !rz_bv_init(bv, length)) {
+		free(bv);
 		return NULL;
 	}
-
-	if (length > 64) {
-		// how much ut8 do we need to represent `length` bits ?
-		size_t real_elem_cnt = NELEM(length, BV_ELEM_SIZE);
-		ret->bits.large_a = RZ_NEWS0(ut8, real_elem_cnt);
-		if (!ret->bits.large_a) {
-			free(ret);
-			return NULL;
-		}
-		ret->_elem_len = real_elem_cnt;
-	}
-	ret->len = length;
-
-	return ret;
+	return bv;
 }
 
 /**
@@ -40,9 +62,7 @@ RZ_API void rz_bv_free(RZ_NULLABLE RzBitVector *bv) {
 	if (!bv) {
 		return;
 	}
-	if (bv->len > 64) {
-		free(bv->bits.large_a);
-	}
+	rz_bv_fini(bv);
 	free(bv);
 }
 
@@ -431,17 +451,20 @@ RZ_API bool rz_bv_lshift_fill(RZ_NONNULL RzBitVector *bv, ut32 size, bool fill_b
 		return true;
 	}
 
-	RzBitVector *tmp = rz_bv_new(bv->len);
-	rz_bv_set_all(tmp, fill_bit);
+	RzBitVector tmp;
+	if (!rz_bv_init(&tmp, bv->len)) {
+		return false;
+	}
+	rz_bv_set_all(&tmp, fill_bit);
 
-	int copied_size = rz_bv_copy_nbits(bv, 0, tmp, size, bv->len - size);
+	int copied_size = rz_bv_copy_nbits(bv, 0, &tmp, size, bv->len - size);
 	if (copied_size == 0) {
-		rz_bv_free(tmp);
+		rz_bv_fini(&tmp);
 		return false;
 	}
 
-	rz_bv_copy(tmp, bv);
-	rz_bv_free(tmp);
+	rz_bv_copy(&tmp, bv);
+	rz_bv_fini(&tmp);
 
 	return true;
 }
@@ -467,17 +490,20 @@ RZ_API bool rz_bv_rshift_fill(RZ_NONNULL RzBitVector *bv, ut32 size, bool fill_b
 		return true;
 	}
 
-	RzBitVector *tmp = rz_bv_new(bv->len);
-	rz_bv_set_all(tmp, fill_bit);
+	RzBitVector tmp;
+	if (!rz_bv_init(&tmp, bv->len)) {
+		return false;
+	}
+	rz_bv_set_all(&tmp, fill_bit);
 
-	int copied_size = rz_bv_copy_nbits(bv, size, tmp, 0, tmp->len - size);
+	int copied_size = rz_bv_copy_nbits(bv, size, &tmp, 0, bv->len - size);
 	if (copied_size == 0) {
-		rz_bv_free(tmp);
+		rz_bv_fini(&tmp);
 		return false;
 	}
 
-	rz_bv_copy(tmp, bv);
-	rz_bv_free(tmp);
+	rz_bv_copy(&tmp, bv);
+	rz_bv_fini(&tmp);
 
 	return true;
 }
@@ -679,7 +705,7 @@ RZ_API RZ_OWN RzBitVector *rz_bv_sub(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBit
 RZ_API RZ_OWN RzBitVector *rz_bv_mul(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
 	rz_return_val_if_fail(x && y, NULL);
 
-	RzBitVector *result, *dump, *tmp;
+	RzBitVector dump;
 	bool cur_bit = false;
 
 	if (x->len != y->len) {
@@ -687,20 +713,27 @@ RZ_API RZ_OWN RzBitVector *rz_bv_mul(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBit
 		return NULL;
 	}
 
-	result = rz_bv_new(x->len);
-	dump = rz_bv_dup(x);
+	if (!rz_bv_init(&dump, x->len)) {
+		return NULL;
+	}
+	RzBitVector *result = rz_bv_new(x->len);
+	if (!result) {
+		goto exit;
+	}
+	rz_bv_copy(x, &dump);
 
 	for (ut32 i = 0; i < y->len; ++i) {
 		cur_bit = rz_bv_get(y, i);
 		if (cur_bit) {
-			tmp = rz_bv_add(result, dump, NULL);
+			RzBitVector *tmp = rz_bv_add(result, &dump, NULL);
 			rz_bv_free(result);
 			result = tmp;
 		}
-		rz_bv_lshift(dump, 1);
+		rz_bv_lshift(&dump, 1);
 	}
 
-	rz_bv_free(dump);
+exit:
+	rz_bv_fini(&dump);
 	return result;
 }
 
