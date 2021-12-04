@@ -33,7 +33,6 @@ rz_util_sources = [
   'path.c',
   'print.c',
   'punycode.c',
-  'qrcode.c',
   'queue.c',
   'asn1.c',
   'astr.c',

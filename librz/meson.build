@@ -369,7 +369,6 @@ include_files =[
   'include/rz_parse.h',
   'include/rz_pdb.h',
   'include/rz_project.h',
-  'include/rz_qrcode.h',
   'include/rz_reg.h',
   'include/rz_regex.h',
   'include/rz_search.h',
