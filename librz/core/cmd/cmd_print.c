@@ -246,7 +246,6 @@ static const char *help_msg_p[] = {
 	"pm", "[?] [magic]", "print libmagic data (see pm? and /m?)",
 	"po", "[?] hex", "print operation applied to block (see po?)",
 	"pp", "[?][sz] [len]", "print patterns, see pp? for more help",
-	"pq", "[?][is] [len]", "print QR code with the first Nbytes",
 	"pr", "[?][glx] [len]", "print N raw bytes (in lines or hexblocks, 'g'unzip)",
 	"ps", "[?][pwz] [len]", "print pascal/wide/zero-terminated strings",
 	"pt", "[?][dn] [len]", "print different timestamps",
@@ -500,7 +499,6 @@ static const char *help_msg_ps[] = {
 	"psi", "", "print string inside curseek",
 	"psj", "", "print string in JSON format",
 	"psp", "[j]", "print pascal string",
-	"psq", "", "alias for pqs",
 	"pss", "", "print string in screen (wrap width)",
 	"psu", "[zj]", "print utf16 unicode (json)",
 	"psw", "[j]", "print 16bit wide string",
@@ -6012,9 +6010,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				}
 			}
 			break;
-		case 'q': // "psq"
-			rz_core_cmd0(core, "pqs");
-			break;
 		case 's': // "pss"
 			if (l > 0) {
 				int h, w = rz_cons_get_size(&h);
@@ -6887,34 +6882,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			rz_io_read_at(core->io, offset0, core->block, len);
 			core->offset = offset0;
 			rz_cons_printf("\n");
-		}
-		break;
-	case 'q': // "pq"
-		switch (input[1]) {
-		case '?':
-			eprintf("Usage: pq[s] [len]\n");
-			len = 0;
-			break;
-		case 's': // "pqs"
-		case 'z': // for backward compat
-			len = rz_str_nlen((const char *)block, core->blocksize);
-			break;
-		default:
-			if (len < 1) {
-				len = 0;
-			}
-			if (len > core->blocksize) {
-				len = core->blocksize;
-			}
-			break;
-		}
-		if (len > 0) {
-			bool inverted = (input[1] == 'i'); // pqi -- inverted colors
-			char *res = rz_qrcode_gen(block, len, rz_config_get_i(core->config, "scr.utf8"), inverted);
-			if (res) {
-				rz_cons_printf("%s\n", res);
-				free(res);
-			}
 		}
 		break;
 	case 'z': // "pz"
