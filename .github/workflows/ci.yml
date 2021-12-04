@@ -83,7 +83,7 @@ jobs:
             cflags: '-DRZ_ASSERT_STDOUT=1 -Wno-cpp'
             allow_failure: false
           - name: macos-meson-clang-tests
-            os: macos-latest
+            os: macos-11
             build_system: meson
             compiler: clang
             run_tests: true
