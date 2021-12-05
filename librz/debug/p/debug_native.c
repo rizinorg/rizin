@@ -91,7 +91,7 @@ RZ_API RzList *rz_w32_dbg_maps(RzDebug *);
 /* begin of debugger code */
 #if DEBUGGER
 
-#if !__WINDOWS__ && !(__linux__ && !defined(WAIT_ON_ALL_CHILDREN))
+#if !__WINDOWS__ && !(__linux__ && !defined(WAIT_ON_ALL_CHILDREN)) && !__APPLE__
 static int rz_debug_handle_signals(RzDebug *dbg) {
 #if __KFBSD__ || __NetBSD__
 	return bsd_handle_signals(dbg);
