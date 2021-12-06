@@ -28,7 +28,7 @@
 			RZ_LOG_ERROR("Failed to write registers.\n"); \
 			failed = true; \
 		} \
-		rz_core_debug_regs2flags(core); \
+		rz_core_reg_update_flags(core); \
 	} while (0)
 
 static RzList *filter_reg_items(RzReg *reg, RZ_NULLABLE const char *filter) {
@@ -637,7 +637,7 @@ RZ_IPI RzCmdStatus rz_reg_flags_handler(RzCore *core, RzReg *reg, RzCmdRegSync s
 			return RZ_CMD_STATUS_ERROR;
 		}
 	} else {
-		ritems = rz_core_regs2flags_candidates(core, reg);
+		ritems = rz_core_reg_flags_candidates(core, reg);
 		if (!ritems) {
 			return RZ_CMD_STATUS_ERROR;
 		}

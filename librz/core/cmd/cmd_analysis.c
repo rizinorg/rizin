@@ -2420,7 +2420,7 @@ RZ_API int rz_core_esil_step_back(RzCore *core) {
 	RzAnalysisEsil *esil = core->analysis->esil;
 	if (esil->trace->idx > 0) {
 		rz_analysis_esil_trace_restore(esil, esil->trace->idx - 1);
-		rz_core_regs2flags(core);
+		rz_core_reg_update_flags(core);
 		return 1;
 	}
 	return 0;
@@ -2459,7 +2459,7 @@ RZ_API bool rz_core_esil_continue_back(RzCore *core) {
 	// Return to the nearest breakpoint or jump back to the first index if a breakpoint wasn't found
 	rz_analysis_esil_trace_restore(esil, idx);
 
-	rz_core_regs2flags(core);
+	rz_core_reg_update_flags(core);
 
 	return true;
 }
@@ -3055,7 +3055,7 @@ static void __core_analysis_appcall(RzCore *core, const char *input) {
 
 	rz_reg_setv(core->analysis->reg, "PC", core->offset);
 	rz_core_esil_step(core, 0, NULL, NULL, false);
-	rz_core_regs2flags(core);
+	rz_core_reg_update_flags(core);
 
 	rz_reg_setv(core->analysis->reg, "SP", sp);
 	free(inp);
@@ -3284,14 +3284,14 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 			rz_core_esil_step(core, UT64_MAX, NULL, NULL, false);
 			rz_debug_reg_set(core->dbg, "PC", pc + op->size);
 			rz_analysis_esil_set_pc(esil, pc + op->size);
-			rz_core_regs2flags(core);
+			rz_core_reg_update_flags(core);
 			rz_analysis_op_free(op);
 		} break;
 		case 'b': // "aesb"
 			if (!rz_core_esil_step_back(core)) {
 				eprintf("cannnot step back\n");
 			}
-			rz_core_regs2flags(core);
+			rz_core_reg_update_flags(core);
 			break;
 		case 'B': // "aesB"
 		{
@@ -3340,7 +3340,7 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 			if (until_expr || until_addr != UT64_MAX) {
 				rz_core_esil_step(core, until_addr, until_expr, NULL, false);
 			}
-			rz_core_regs2flags(core);
+			rz_core_reg_update_flags(core);
 			break;
 		case 's': // "aess"
 			if (input[2] == 'u') { // "aessu"
@@ -3390,7 +3390,7 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 			break;
 		default:
 			rz_core_esil_step(core, until_addr, until_expr, NULL, false);
-			rz_core_regs2flags(core);
+			rz_core_reg_update_flags(core);
 			break;
 		}
 		break;
@@ -3408,7 +3408,7 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 			if (!rz_core_esil_continue_back(core)) {
 				eprintf("cannnot continue back\n");
 			}
-			rz_core_regs2flags(core);
+			rz_core_reg_update_flags(core);
 			break;
 		} else if (input[1] == 's') { // "aecs"
 			const char *pc = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
@@ -3416,7 +3416,7 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 				if (!rz_core_esil_step(core, UT64_MAX, NULL, NULL, false)) {
 					break;
 				}
-				rz_core_regs2flags(core);
+				rz_core_reg_update_flags(core);
 				addr = rz_num_get(core->num, pc);
 				op = rz_core_analysis_op(core, addr, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT);
 				if (!op) {
@@ -3445,7 +3445,7 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 				if (!rz_core_esil_step(core, UT64_MAX, NULL, NULL, false)) {
 					break;
 				}
-				rz_core_regs2flags(core);
+				rz_core_reg_update_flags(core);
 				addr = rz_num_get(core->num, pc);
 				op = rz_core_analysis_op(core, addr, RZ_ANALYSIS_OP_MASK_BASIC);
 				if (!op) {
@@ -3476,7 +3476,7 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 				until_expr = "0";
 			}
 			rz_core_esil_step(core, until_addr, until_expr, NULL, false);
-			rz_core_regs2flags(core);
+			rz_core_reg_update_flags(core);
 		}
 		break;
 	case 'i': // "aei"
