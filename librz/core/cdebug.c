@@ -7,6 +7,13 @@
 #include <rz_debug.h>
 #include "core_private.h"
 
+/**
+ * \brief Check whether the core is in debug mode (equivalent to cfg.debug)
+ */
+RZ_API bool rz_core_is_debug(RzCore *core) {
+	return core->bin->is_debugger;
+}
+
 static bool is_x86_call(RzDebug *dbg, ut64 addr) {
 	ut8 buf[3];
 	ut8 *op = buf;
@@ -47,7 +54,7 @@ static bool is_x86_ret(RzDebug *dbg, ut64 addr) {
 }
 
 RZ_API bool rz_core_debug_step_one(RzCore *core, int times) {
-	if (rz_config_get_b(core->config, "cfg.debug")) {
+	if (rz_core_is_debug(core)) {
 		rz_reg_arena_swap(core->dbg->reg, true);
 		// sync registers for BSD PT_STEP/PT_CONT
 		rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_GPR, false);
@@ -55,16 +62,16 @@ RZ_API bool rz_core_debug_step_one(RzCore *core, int times) {
 		rz_debug_trace_pc(core->dbg, pc);
 		if (!rz_debug_step(core->dbg, times)) {
 			eprintf("Step failed\n");
-			rz_core_debug_regs2flags(core);
+			rz_core_reg_update_flags(core);
 			core->break_loop = true;
 			return false;
 		}
-		rz_core_debug_regs2flags(core);
+		rz_core_reg_update_flags(core);
 	} else {
 		int i = 0;
 		do {
 			rz_core_esil_step(core, UT64_MAX, NULL, NULL, false);
-			rz_core_regs2flags(core);
+			rz_core_reg_update_flags(core);
 			i++;
 		} while (i < times);
 	}
@@ -72,19 +79,19 @@ RZ_API bool rz_core_debug_step_one(RzCore *core, int times) {
 }
 
 RZ_IPI void rz_core_debug_continue(RzCore *core) {
-	if (rz_config_get_b(core->config, "cfg.debug")) {
+	if (rz_core_is_debug(core)) {
 		rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
 		rz_reg_arena_swap(core->dbg->reg, true);
 #if __linux__
 		core->dbg->continue_all_threads = true;
 #endif
 		rz_debug_continue(core->dbg);
-		rz_core_debug_regs2flags(core);
+		rz_core_reg_update_flags(core);
 		rz_cons_break_pop();
 		rz_core_dbg_follow_seek_register(core);
 	} else {
 		rz_core_esil_step(core, UT64_MAX, "0", NULL, false);
-		rz_core_regs2flags(core);
+		rz_core_reg_update_flags(core);
 	}
 }
 
@@ -153,7 +160,7 @@ RZ_API bool rz_core_debug_continue_until(RzCore *core, ut64 addr, ut64 to) {
 			rz_debug_step(core->dbg, 1);
 			steps++;
 		}
-		rz_core_debug_regs2flags(core);
+		rz_core_reg_update_flags(core);
 		rz_cons_break_pop();
 		return true;
 	}
@@ -164,7 +171,7 @@ RZ_API bool rz_core_debug_continue_until(RzCore *core, ut64 addr, ut64 to) {
 			eprintf("Cannot continue, run ood?\n");
 		} else {
 			rz_debug_continue(core->dbg);
-			rz_core_debug_regs2flags(core);
+			rz_core_reg_update_flags(core);
 		}
 		rz_bp_del(core->dbg->bp, addr);
 	} else {
@@ -173,60 +180,6 @@ RZ_API bool rz_core_debug_continue_until(RzCore *core, ut64 addr, ut64 to) {
 		return false;
 	}
 	return true;
-}
-
-/// Construct the list of registers that should be applied as flags by default
-/// (e.g. because their size matches the pointer size)
-RZ_IPI RzList /*<RzRegItem>*/ *rz_core_regs2flags_candidates(RzCore *core, RzReg *reg) {
-	const RzList *l = rz_reg_get_list(core->dbg->reg, RZ_REG_TYPE_GPR);
-	if (!l) {
-		return NULL;
-	}
-	int size = rz_analysis_get_address_bits(core->analysis);
-	RzList *ret = rz_list_new();
-	if (!ret) {
-		return NULL;
-	}
-	RzListIter *iter;
-	RzRegItem *item;
-	rz_list_foreach (l, iter, item) {
-		if (size != 0 && size != item->size) {
-			continue;
-		}
-		rz_list_push(ret, item);
-	}
-	return ret;
-}
-
-static void regs_to_flags(RzCore *core) {
-	RzList *l = rz_core_regs2flags_candidates(core, core->dbg->reg);
-	if (!l) {
-		return;
-	}
-	rz_flag_space_push(core->flags, RZ_FLAGS_FS_REGISTERS);
-	RzListIter *iter;
-	RzRegItem *reg;
-	rz_list_foreach (l, iter, reg) {
-		ut64 regval = rz_reg_get_value(core->dbg->reg, reg);
-		rz_flag_set(core->flags, reg->name, regval, reg->size / 8);
-	}
-	rz_flag_space_pop(core->flags);
-	rz_list_free(l);
-}
-
-RZ_IPI void rz_core_regs2flags(RzCore *core) {
-	regs_to_flags(core);
-}
-
-/// update or create flags for all registers where it makes sense (regs that have the same size as an address)
-RZ_IPI void rz_core_debug_regs2flags(RzCore *core) {
-	if (core->bin->is_debugger) {
-		if (rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_GPR, false)) {
-			regs_to_flags(core);
-		}
-	} else {
-		rz_core_regs2flags(core);
-	}
 }
 
 RZ_IPI bool rz_core_debug_reg_set(RzCore *core, const char *regname, ut64 val, const char *strval) {
@@ -256,7 +209,7 @@ RZ_IPI bool rz_core_debug_reg_set(RzCore *core, const char *regname, ut64 val, c
 		rz_reg_set_value(core->dbg->reg, r, val);
 	}
 	rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ANY, true);
-	rz_core_debug_regs2flags(core);
+	rz_core_reg_update_flags(core);
 	return true;
 }
 
@@ -477,7 +430,7 @@ beach:
 }
 
 RZ_IPI void rz_core_debug_sync_bits(RzCore *core) {
-	if (rz_config_get_b(core->config, "cfg.debug")) {
+	if (rz_core_is_debug(core)) {
 		ut64 asm_bits = rz_config_get_i(core->config, "asm.bits");
 		if (asm_bits != core->dbg->bits * 8) {
 			rz_config_set_i(core->config, "asm.bits", core->dbg->bits * 8);
@@ -486,7 +439,7 @@ RZ_IPI void rz_core_debug_sync_bits(RzCore *core) {
 }
 
 RZ_IPI void rz_core_debug_single_step_in(RzCore *core) {
-	if (rz_config_get_b(core->config, "cfg.debug")) {
+	if (rz_core_is_debug(core)) {
 		if (core->print->cur_enabled) {
 			rz_core_debug_continue_until(core, core->offset, core->offset + core->print->cur);
 			core->print->cur_enabled = 0;
@@ -495,25 +448,25 @@ RZ_IPI void rz_core_debug_single_step_in(RzCore *core) {
 		}
 	} else {
 		rz_core_esil_step(core, UT64_MAX, NULL, NULL, false);
-		rz_core_regs2flags(core);
+		rz_core_reg_update_flags(core);
 	}
 }
 
 RZ_IPI void rz_core_debug_single_step_over(RzCore *core) {
 	bool io_cache = rz_config_get_b(core->config, "io.cache");
 	rz_config_set_b(core->config, "io.cache", false);
-	if (rz_config_get_b(core->config, "cfg.debug")) {
+	if (rz_core_is_debug(core)) {
 		if (core->print->cur_enabled) {
 			rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
 			rz_reg_arena_swap(core->dbg->reg, true);
 			rz_debug_continue_until_optype(core->dbg, RZ_ANALYSIS_OP_TYPE_RET, 1);
-			rz_core_debug_regs2flags(core);
+			rz_core_reg_update_flags(core);
 			rz_cons_break_pop();
 			rz_core_dbg_follow_seek_register(core);
 			core->print->cur_enabled = 0;
 		} else {
 			rz_core_cmd(core, "dso", 0);
-			rz_core_debug_regs2flags(core);
+			rz_core_reg_update_flags(core);
 		}
 	} else {
 		rz_core_analysis_esil_step_over(core);

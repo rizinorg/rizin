@@ -1629,7 +1629,7 @@ static int rz_core_cmd_subst(RzCore *core, char *cmd) {
 			// XXX: do not flush here, we need rz_cons_push () and rz_cons_pop()
 			rz_cons_flush();
 			// XXX: we must import register flags in C
-			rz_core_debug_regs2flags(core);
+			rz_core_reg_update_flags(core);
 			(void)rz_core_cmd0(core, cr);
 		}
 		free(cr);

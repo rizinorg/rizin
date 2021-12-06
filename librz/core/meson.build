@@ -27,6 +27,7 @@ rz_core_sources = [
   'cparser.c',
   'cpdb.c',
   'cplugin.c',
+  'creg.c',
   'csign.c',
   'ctypes.c',
   'cvfile.c',

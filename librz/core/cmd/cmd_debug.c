@@ -455,7 +455,7 @@ static int step_until(RzCore *core, ut64 addr) {
 		off = rz_debug_reg_get(core->dbg, "PC");
 		// check breakpoint here
 	} while (off != addr);
-	rz_core_debug_regs2flags(core);
+	rz_core_reg_update_flags(core);
 	rz_cons_break_pop();
 	return true;
 }
@@ -482,7 +482,7 @@ static int step_until_esil(RzCore *core, const char *esilstr) {
 			break;
 		}
 	}
-	rz_core_regs2flags(core);
+	rz_core_reg_update_flags(core);
 	rz_cons_break_pop();
 	return true;
 }
@@ -544,7 +544,7 @@ static bool step_until_inst(RzCore *core, const char *instr, bool regex) {
 			}
 		}
 	}
-	rz_core_debug_regs2flags(core);
+	rz_core_reg_update_flags(core);
 	rz_cons_break_pop();
 	return true;
 }
@@ -630,7 +630,7 @@ static int step_until_optype(RzCore *core, RzList *optypes_list) {
 	}
 
 cleanup_after_push:
-	rz_core_debug_regs2flags(core);
+	rz_core_reg_update_flags(core);
 	rz_cons_break_pop();
 end:
 	return res;
@@ -668,7 +668,7 @@ static int step_until_flag(RzCore *core, const char *instr) {
 		}
 	}
 beach:
-	rz_core_debug_regs2flags(core);
+	rz_core_reg_update_flags(core);
 	rz_cons_break_pop();
 	return true;
 }
@@ -688,7 +688,7 @@ static int step_until_eof(RzCore *core) {
 			break;
 		}
 	} while (off <= now);
-	rz_core_debug_regs2flags(core);
+	rz_core_reg_update_flags(core);
 	rz_cons_break_pop();
 	return true;
 }
@@ -721,7 +721,7 @@ static int step_line(RzCore *core, int times) {
 			if (find_meta) {
 				continue;
 			}
-			rz_core_debug_regs2flags(core);
+			rz_core_reg_update_flags(core);
 			eprintf("Cannot retrieve dwarf info at 0x%08" PFMT64x "\n", off);
 			return false;
 		}
@@ -731,7 +731,7 @@ static int step_line(RzCore *core, int times) {
 	tmp_ptr = rz_file_slurp_line(file2, line2, 0);
 	eprintf("--> %s\n", tmp_ptr);
 	free(tmp_ptr);
-	rz_core_debug_regs2flags(core);
+	rz_core_reg_update_flags(core);
 
 	return true;
 }
@@ -2334,7 +2334,7 @@ RZ_IPI int rz_cmd_debug_step(void *data, const char *input) {
 					core->break_loop = true;
 					break;
 				}
-				rz_core_debug_regs2flags(core);
+				rz_core_reg_update_flags(core);
 				n++;
 			} while (!rz_num_conditional(core->num, input + 2));
 			rz_cons_break_pop();
@@ -2398,7 +2398,7 @@ RZ_IPI int rz_cmd_debug_step(void *data, const char *input) {
 			}
 			rz_debug_step(core->dbg, 1);
 		}
-		rz_core_debug_regs2flags(core);
+		rz_core_reg_update_flags(core);
 		break;
 	case 's': // "dss"
 	{
@@ -2421,7 +2421,7 @@ RZ_IPI int rz_cmd_debug_step(void *data, const char *input) {
 		}
 		rz_debug_reg_set(core->dbg, "PC", addr);
 		rz_reg_setv(core->analysis->reg, "PC", addr);
-		rz_core_debug_regs2flags(core);
+		rz_core_reg_update_flags(core);
 		if (bpi) {
 			(void)rz_debug_bp_add(core->dbg, addr, hwbp, false, 0, NULL, 0);
 		}
@@ -2441,7 +2441,7 @@ RZ_IPI int rz_cmd_debug_step(void *data, const char *input) {
 				if (bpi) {
 					(void)rz_debug_bp_add(core->dbg, addr, hwbp, false, 0, NULL, 0);
 				}
-				rz_core_debug_regs2flags(core);
+				rz_core_reg_update_flags(core);
 			} else {
 				for (i = 0; i < times; i++) {
 					rz_core_analysis_esil_step_over(core);
@@ -2456,7 +2456,7 @@ RZ_IPI int rz_cmd_debug_step(void *data, const char *input) {
 			} else if (rz_debug_step_back(core->dbg, times) < 0) {
 				eprintf("Error: stepping back failed\n");
 			} else {
-				rz_core_debug_regs2flags(core);
+				rz_core_reg_update_flags(core);
 			}
 		} else {
 			if (!rz_core_esil_step_back(core)) {
