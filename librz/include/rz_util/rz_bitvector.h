@@ -10,14 +10,6 @@
 extern "C" {
 #endif
 
-#define NELEM(N, ELEMPER) ((N + (ELEMPER)-1) / (ELEMPER))
-#define BV_ELEM_SIZE      8U
-
-typedef enum {
-	BV_BIG_END, ///< first bit is the most significant bit (MSB)
-	BV_LITTLE_END ///< first bit is the less significant bit (LSB)
-} BV_ENDIAN;
-
 /**
  *  \struct bitvector_t
  *  \brief structure for bitvector
@@ -26,11 +18,11 @@ typedef enum {
  */
 typedef struct bitvector_t {
 	union {
-		ut8 *large_a; ///< array of bytes for bitvectors > 64 bits whose size is defined in _elem_len
+		ut8 *large_a; ///< little endian array of bytes for bitvectors > 64 bits whose size is defined in _elem_len
 		ut64 small_u; ///< value of the bitvector when the size is <= 64 bits
 	} bits;
 	ut32 _elem_len; ///< length of ut8 array (bits.large_a) -- real / physical
-	ut32 len; ///< length of bits -- virtual / logical
+	ut32 len; ///< number of bits -- virtual / logical
 } RzBitVector;
 
 // init
@@ -90,8 +82,10 @@ RZ_API ut64 rz_bv_to_ut64(RZ_NONNULL RzBitVector *x);
 RZ_API bool rz_bv_is_zero_vector(RZ_NONNULL RzBitVector *x);
 RZ_API RZ_OWN RzBitVector *rz_bv_new_from_ut64(ut32 length, ut64 value);
 RZ_API RZ_OWN RzBitVector *rz_bv_new_from_st64(ut32 length, st64 value);
+RZ_API RZ_OWN RzBitVector *rz_bv_new_from_bytes_le(RZ_IN RZ_NONNULL const ut8 *buf, ut32 bit_offset, ut32 size);
 RZ_API bool rz_bv_set_from_ut64(RZ_NONNULL RzBitVector *bv, ut64 value);
 RZ_API bool rz_bv_set_from_st64(RZ_NONNULL RzBitVector *bv, st64 value);
+RZ_API void rz_bv_set_from_bytes_le(RZ_NONNULL RzBitVector *bv, RZ_IN RZ_NONNULL const ut8 *buf, ut32 bit_offset, ut32 size);
 RZ_API char *rz_bv_as_string(RZ_NONNULL RzBitVector *bv);
 RZ_API char *rz_bv_as_hex_string(RZ_NONNULL RzBitVector *bv);
 
