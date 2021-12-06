@@ -13,7 +13,7 @@ aes
 ar zero
 EOF
 EXPECT=<<EOF
-0x00000000
+zero = 0x00000000
 EOF
 RUN
 
@@ -32,7 +32,7 @@ aes
 ar a1
 EOF
 EXPECT=<<EOF
-0x00000005
+a1 = 0x00000005
 EOF
 RUN
 
@@ -52,7 +52,7 @@ aes
 ar a1
 EOF
 EXPECT=<<EOF
-0x00000004
+a1 = 0x00000004
 EOF
 RUN
 
@@ -70,7 +70,7 @@ aes
 ar zero
 EOF
 EXPECT=<<EOF
-0x00000000
+zero = 0x00000000
 EOF
 RUN
 
@@ -89,7 +89,7 @@ aes
 ar a1
 EOF
 EXPECT=<<EOF
-0x00000005
+a1 = 0x00000005
 EOF
 RUN
 
@@ -108,7 +108,7 @@ aes
 ar a1
 EOF
 EXPECT=<<EOF
-0xfffffffb
+a1 = 0xfffffffb
 EOF
 RUN
 
@@ -127,7 +127,7 @@ aes
 ar a1
 EOF
 EXPECT=<<EOF
-0x00000001
+a1 = 0x00000001
 EOF
 RUN
 
@@ -146,7 +146,7 @@ aes
 ar zero
 EOF
 EXPECT=<<EOF
-0x00000000
+zero = 0x00000000
 EOF
 RUN
 
@@ -165,7 +165,7 @@ aes
 ar a1
 EOF
 EXPECT=<<EOF
-0x00000005
+a1 = 0x00000005
 EOF
 RUN
 
@@ -185,7 +185,7 @@ aes
 ar a1
 EOF
 EXPECT=<<EOF
-0x00000004
+a1 = 0x00000004
 EOF
 RUN
 
@@ -203,7 +203,7 @@ aes
 ar zero
 EOF
 EXPECT=<<EOF
-0x00000000
+zero = 0x00000000
 EOF
 RUN
 
@@ -222,7 +222,7 @@ aes
 ar a1
 EOF
 EXPECT=<<EOF
-0x00000005
+a1 = 0x00000005
 EOF
 RUN
 
@@ -241,7 +241,7 @@ aes
 ar a1
 EOF
 EXPECT=<<EOF
-0xfffffffb
+a1 = 0xfffffffb
 EOF
 RUN
 
@@ -260,7 +260,7 @@ aes
 ar a1
 EOF
 EXPECT=<<EOF
-0x00000001
+a1 = 0x00000001
 EOF
 RUN
 
@@ -280,7 +280,7 @@ aes
 ar zero
 EOF
 EXPECT=<<EOF
-0x00000000
+zero = 0x00000000
 EOF
 RUN
 
@@ -300,7 +300,7 @@ aes
 ar a1
 EOF
 EXPECT=<<EOF
-0xfffffffc
+a1 = 0xfffffffc
 EOF
 RUN
 
@@ -320,7 +320,7 @@ aes
 ar a1
 EOF
 EXPECT=<<EOF
-0xfffffffa
+a1 = 0xfffffffa
 EOF
 RUN
 
@@ -340,7 +340,7 @@ aes
 ar a1
 EOF
 EXPECT=<<EOF
-0xfffffffc
+a1 = 0xfffffffc
 EOF
 RUN
 
@@ -360,7 +360,7 @@ aes
 ar a1
 EOF
 EXPECT=<<EOF
-0xfffffffa
+a1 = 0xfffffffa
 EOF
 RUN
 
@@ -380,7 +380,7 @@ aes
 ar a1
 EOF
 EXPECT=<<EOF
-0x10101010
+a1 = 0x10101010
 EOF
 RUN
 
@@ -399,7 +399,7 @@ aes
 ar a1
 EOF
 EXPECT=<<EOF
-0x0000ffff
+a1 = 0x0000ffff
 EOF
 RUN
 
@@ -415,7 +415,7 @@ aes
 ar a1
 EOF
 EXPECT=<<EOF
-0x00000001
+a1 = 0x00000001
 EOF
 RUN
 
@@ -431,7 +431,7 @@ aes
 ar zero
 EOF
 EXPECT=<<EOF
-0x00000000
+zero = 0x00000000
 EOF
 RUN
 
@@ -447,7 +447,7 @@ aes
 ar a1
 EOF
 EXPECT=<<EOF
-0x10101010
+a1 = 0x10101010
 EOF
 RUN
 
@@ -464,7 +464,7 @@ aes
 ar a1
 EOF
 EXPECT=<<EOF
-0x11111111
+a1 = 0x11111111
 EOF
 RUN
 
@@ -479,7 +479,7 @@ aes
 ar zero
 EOF
 EXPECT=<<EOF
-0x00000000
+zero = 0x00000000
 EOF
 RUN
 
@@ -494,7 +494,7 @@ aes
 ar a1
 EOF
 EXPECT=<<EOF
-0x0000ffff
+a1 = 0x0000ffff
 EOF
 RUN
 
@@ -510,7 +510,7 @@ aes
 ar a1
 EOF
 EXPECT=<<EOF
-0xffff0001
+a1 = 0xffff0001
 EOF
 RUN
 
@@ -526,7 +526,7 @@ aes
 ar zero
 EOF
 EXPECT=<<EOF
-0x00000000
+zero = 0x00000000
 EOF
 RUN
 
@@ -542,7 +542,7 @@ aes
 ar a1
 EOF
 EXPECT=<<EOF
-0x10101010
+a1 = 0x10101010
 EOF
 RUN
 
@@ -559,7 +559,7 @@ aes
 ar a1
 EOF
 EXPECT=<<EOF
-0x11111101
+a1 = 0x11111101
 EOF
 RUN
 
@@ -574,7 +574,7 @@ aes
 ar zero
 EOF
 EXPECT=<<EOF
-0x00000000
+zero = 0x00000000
 EOF
 RUN
 
@@ -589,7 +589,7 @@ aes
 ar a1
 EOF
 EXPECT=<<EOF
-0x0000ffff
+a1 = 0x0000ffff
 EOF
 RUN
 
@@ -605,7 +605,7 @@ aes
 ar a1
 EOF
 EXPECT=<<EOF
-0xffff0001
+a1 = 0xffff0001
 EOF
 RUN
 
@@ -621,7 +621,7 @@ aes
 ar a1
 EOF
 EXPECT=<<EOF
-0xffff000e
+a1 = 0xffff000e
 EOF
 RUN
 
@@ -637,7 +637,7 @@ aes
 ar zero
 EOF
 EXPECT=<<EOF
-0x00000000
+zero = 0x00000000
 EOF
 RUN
 
@@ -653,7 +653,7 @@ aes
 ar a1
 EOF
 EXPECT=<<EOF
-0xefefefef
+a1 = 0xefefefef
 EOF
 RUN
 
@@ -670,7 +670,7 @@ aes
 ar a1
 EOF
 EXPECT=<<EOF
-0x0000efef
+a1 = 0x0000efef
 EOF
 RUN
 
@@ -691,7 +691,7 @@ aes
 ar v1
 EOF
 EXPECT=<<EOF
-0x0000bbaa
+v1 = 0x0000bbaa
 EOF
 RUN
 
@@ -712,7 +712,7 @@ aes
 ar v1
 EOF
 EXPECT=<<EOF
-0x0000bbaa
+v1 = 0x0000bbaa
 EOF
 RUN
 
@@ -732,7 +732,7 @@ aes
 ar v1
 EOF
 EXPECT=<<EOF
-0x0000ddcc
+v1 = 0x0000ddcc
 EOF
 RUN
 
@@ -753,7 +753,7 @@ aes
 ar v1
 EOF
 EXPECT=<<EOF
-0xddccbbaa
+v1 = 0xddccbbaa
 EOF
 RUN
 
@@ -774,7 +774,7 @@ aes
 ar v1
 EOF
 EXPECT=<<EOF
-0xddccbbaa
+v1 = 0xddccbbaa
 EOF
 RUN
 
@@ -794,7 +794,7 @@ aes
 ar v1
 EOF
 EXPECT=<<EOF
-0x44332211
+v1 = 0x44332211
 EOF
 RUN
 
@@ -936,7 +936,7 @@ aes
 ar v0
 EOF
 EXPECT=<<EOF
-0xffff0000
+v0 = 0xffff0000
 EOF
 RUN
 
@@ -953,7 +953,7 @@ aes
 ar v0
 EOF
 EXPECT=<<EOF
-0xffff0000
+v0 = 0xffff0000
 EOF
 RUN
 
@@ -971,8 +971,8 @@ ar hi
 ar lo
 EOF
 EXPECT=<<EOF
-0x000492cc
-0xc28637b5
+hi = 0x000492cc
+lo = 0xc28637b5
 EOF
 RUN
 
@@ -990,8 +990,8 @@ ar hi
 ar lo
 EOF
 EXPECT=<<EOF
-0x000492cc
-0xc28637b5
+hi = 0x000492cc
+lo = 0xc28637b5
 EOF
 RUN
 
@@ -1014,8 +1014,8 @@ aes
 ar s0
 EOF
 EXPECT=<<EOF
-0x000000fc
-0xc28637b5
+s0 = 0x000000fc
+s0 = 0xc28637b5
 EOF
 RUN
 
@@ -1032,7 +1032,7 @@ aes
 ar v0
 EOF
 EXPECT=<<EOF
-0x12345678
+v0 = 0x12345678
 EOF
 RUN
 
@@ -1049,7 +1049,7 @@ aes
 ar v0
 EOF
 EXPECT=<<EOF
-0x12345678
+v0 = 0x12345678
 EOF
 RUN
 
@@ -1065,7 +1065,7 @@ aes
 ar zero
 EOF
 EXPECT=<<EOF
-0x00000000
+zero = 0x00000000
 EOF
 RUN
 
@@ -1081,7 +1081,7 @@ aes
 ar zero
 EOF
 EXPECT=<<EOF
-0x00000000
+zero = 0x00000000
 EOF
 RUN
 
@@ -1098,7 +1098,7 @@ aes
 ar lo
 EOF
 EXPECT=<<EOF
-0x00112233
+lo = 0x00112233
 EOF
 RUN
 
@@ -1115,7 +1115,7 @@ aes
 ar hi
 EOF
 EXPECT=<<EOF
-0x00112233
+hi = 0x00112233
 EOF
 RUN
 
@@ -1132,7 +1132,7 @@ aes
 ar hi
 EOF
 EXPECT=<<EOF
-0xffffffff
+hi = 0xffffffff
 EOF
 RUN
 
@@ -1150,7 +1150,7 @@ aes
 ar pc
 EOF
 EXPECT=<<EOF
-0x00000004
+pc = 0x00000004
 EOF
 RUN
 
@@ -1167,7 +1167,7 @@ aes
 ar pc
 EOF
 EXPECT=<<EOF
-0x0000003c
+pc = 0x0000003c
 EOF
 RUN
 
@@ -1184,7 +1184,7 @@ aes
 ar pc
 EOF
 EXPECT=<<EOF
-0x00000004
+pc = 0x00000004
 EOF
 RUN
 
@@ -1201,7 +1201,7 @@ aes
 ar pc
 EOF
 EXPECT=<<EOF
-0x0000003c
+pc = 0x0000003c
 EOF
 RUN
 
@@ -1217,7 +1217,7 @@ aes
 ar pc
 EOF
 EXPECT=<<EOF
-0x00000004
+pc = 0x00000004
 EOF
 RUN
 
@@ -1233,7 +1233,7 @@ aes
 ar pc
 EOF
 EXPECT=<<EOF
-0x0000000c
+pc = 0x0000000c
 EOF
 RUN
 
@@ -1249,7 +1249,7 @@ aes
 ar pc
 EOF
 EXPECT=<<EOF
-0x00000004
+pc = 0x00000004
 EOF
 RUN
 
@@ -1265,7 +1265,7 @@ aes
 ar pc
 EOF
 EXPECT=<<EOF
-0x0000003c
+pc = 0x0000003c
 EOF
 RUN
 
@@ -1280,7 +1280,7 @@ aes
 ar pc
 EOF
 EXPECT=<<EOF
-0x0000003c
+pc = 0x0000003c
 EOF
 RUN
 
@@ -1296,7 +1296,7 @@ aes
 ar pc
 EOF
 EXPECT=<<EOF
-0x0000003c
+pc = 0x0000003c
 EOF
 RUN
 
@@ -1312,7 +1312,7 @@ aes
 ar pc
 EOF
 EXPECT=<<EOF
-0x00000004
+pc = 0x00000004
 EOF
 RUN
 
@@ -1327,7 +1327,7 @@ aes
 ar pc
 EOF
 EXPECT=<<EOF
-0x0000003c
+pc = 0x0000003c
 EOF
 RUN
 
@@ -1343,7 +1343,7 @@ aes
 ar pc
 EOF
 EXPECT=<<EOF
-0x00000004
+pc = 0x00000004
 EOF
 RUN
 
@@ -1359,7 +1359,7 @@ aes
 ar pc
 EOF
 EXPECT=<<EOF
-0x0000003c
+pc = 0x0000003c
 EOF
 RUN
 
@@ -1374,7 +1374,7 @@ aes
 ar pc
 EOF
 EXPECT=<<EOF
-0x00000004
+pc = 0x00000004
 EOF
 RUN
 
@@ -1390,7 +1390,7 @@ aes
 ar pc
 EOF
 EXPECT=<<EOF
-0x0000003c
+pc = 0x0000003c
 EOF
 RUN
 
@@ -1406,7 +1406,7 @@ aes
 ar pc
 EOF
 EXPECT=<<EOF
-0x00000004
+pc = 0x00000004
 EOF
 RUN
 
@@ -1421,7 +1421,7 @@ aes
 ar pc
 EOF
 EXPECT=<<EOF
-0x00000004
+pc = 0x00000004
 EOF
 RUN
 
@@ -1437,8 +1437,8 @@ ar pc
 ar ra
 EOF
 EXPECT=<<EOF
-0x00000010
-0x00000008
+pc = 0x00000010
+ra = 0x00000008
 EOF
 RUN
 
@@ -1455,8 +1455,8 @@ ar pc
 ar ra
 EOF
 EXPECT=<<EOF
-0x00000010
-0x00000008
+pc = 0x00000010
+ra = 0x00000008
 EOF
 RUN
 
@@ -1473,8 +1473,8 @@ ar pc
 ar t4
 EOF
 EXPECT=<<EOF
-0x00000010
-0x00000008
+pc = 0x00000010
+t4 = 0x00000008
 EOF
 RUN
 
@@ -1491,8 +1491,8 @@ ar pc
 ar t4
 EOF
 EXPECT=<<EOF
-0x00000010
-0x00000008
+pc = 0x00000010
+t4 = 0x00000008
 EOF
 RUN
 
@@ -1509,7 +1509,7 @@ aes
 ar s0
 EOF
 EXPECT=<<EOF
-0x00000001
+s0 = 0x00000001
 EOF
 RUN
 
@@ -1526,7 +1526,7 @@ aes
 ar s0
 EOF
 EXPECT=<<EOF
-0x00000000
+s0 = 0x00000000
 EOF
 RUN
 
@@ -1543,7 +1543,7 @@ aes
 ar s0
 EOF
 EXPECT=<<EOF
-0x00000000
+s0 = 0x00000000
 EOF
 RUN
 
@@ -1560,7 +1560,7 @@ aes
 ar s0
 EOF
 EXPECT=<<EOF
-0x00000001
+s0 = 0x00000001
 EOF
 RUN
 
@@ -1577,7 +1577,7 @@ aes
 ar s0
 EOF
 EXPECT=<<EOF
-0x00000000
+s0 = 0x00000000
 EOF
 RUN
 
@@ -1594,7 +1594,7 @@ aes
 ar s0
 EOF
 EXPECT=<<EOF
-0x00000001
+s0 = 0x00000001
 EOF
 RUN
 
@@ -1611,7 +1611,7 @@ aes
 ar v1
 EOF
 EXPECT=<<EOF
-0x00000001
+v1 = 0x00000001
 EOF
 RUN
 
@@ -1628,7 +1628,7 @@ aes
 ar v1
 EOF
 EXPECT=<<EOF
-0xffffffff
+v1 = 0xffffffff
 EOF
 RUN
 
@@ -1645,7 +1645,7 @@ aes
 ar v1
 EOF
 EXPECT=<<EOF
-0xfffff257
+v1 = 0xfffff257
 EOF
 RUN
 
@@ -1670,7 +1670,7 @@ aes
 ar t9
 EOF
 EXPECT=<<EOF
-0x11223344
+t9 = 0x11223344
 EOF
 RUN
 
@@ -1742,7 +1742,7 @@ aesu 0x00400b40
 ar v0
 EOF
 EXPECT=<<EOF
-0x000035df
+v0 = 0x000035df
 EOF
 RUN
 

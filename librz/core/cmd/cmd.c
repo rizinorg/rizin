@@ -72,7 +72,6 @@ static RzCmdDescriptor *cmd_descriptor(const char *cmd, const char *help[]) {
 
 static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpseek);
 
-static void cmd_debug_reg(RzCore *core, const char *str);
 static bool lastcmd_repeat(RzCore *core, int next);
 
 #include "cmd_block.c"
@@ -89,6 +88,7 @@ static bool lastcmd_repeat(RzCore *core, int next);
 #include "cmd_eval.c"
 #include "cmd_interpret.c"
 #include "cmd_analysis.c"
+#include "cmd_regs.c"
 #include "cmd_open.c"
 #include "cmd_type.c"
 #include "cmd_info.c"
@@ -4103,7 +4103,8 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(redirect_stmt) {
 		} else {
 			old_alias_value = "";
 		}
-		new_alias_value = rz_str_newf("%s%s%s", start_char, old_alias_value, output);
+		new_alias_value = rz_str_newf("%s%s%s", start_char, old_alias_value, output ? output : "");
+		free(output);
 		rz_cmd_alias_set(state->core->rcmd, arg_str, new_alias_value, 1);
 		free(new_alias_value);
 		free(command_str);

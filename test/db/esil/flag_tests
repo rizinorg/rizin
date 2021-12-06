@@ -4,16 +4,16 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 "ae 1,-1,==,63,$o,of,:=,63,$s,sf,:=,64,$b,cf,:=,$z,zf,:="
-"aer?cf"
-"aer?sf"
-"aer?of"
-"aer?zf"
+ar cf
+ar sf
+ar of
+ar zf
 EOF
 EXPECT=<<EOF
-0x00000000
-0x00000001
-0x00000000
-0x00000000
+cf = 0x00000000
+sf = 0x00000001
+of = 0x00000000
+zf = 0x00000000
 EOF
 RUN
 
@@ -23,16 +23,16 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 "ae -1,1,==,63,$o,of,:=,63,$s,sf,:=,64,$b,cf,:=,$z,zf,:="
-"aer?cf"
-"aer?sf"
-"aer?of"
-"aer?zf"
+ar cf
+ar sf
+ar of
+ar zf
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000000
-0x00000000
-0x00000000
+cf = 0x00000001
+sf = 0x00000000
+of = 0x00000000
+zf = 0x00000000
 EOF
 RUN
 
@@ -42,16 +42,16 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 "ae 0x80000000,eax,:=,0x80000000,ebx,:=,eax,ebx,+=,31,$o,of,:=,31,$s,sf,:=,31,$c,cf,:=,$z,zf,:="
-"aer?cf"
-"aer?sf"
-"aer?of"
-"aer?zf"
+ar cf
+ar sf
+ar of
+ar zf
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000000
-0x00000001
-0x00000001
+cf = 0x00000001
+sf = 0x00000000
+of = 0x00000001
+zf = 0x00000001
 EOF
 RUN
 
@@ -61,16 +61,16 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 "ae 0x70000000,eax,:=,0x90000000,ebx,:=,eax,ebx,+=,31,$o,of,:=,31,$s,sf,:=,31,$c,cf,:=,$z,zf,:="
-"aer?cf"
-"aer?sf"
-"aer?of"
-"aer?zf"
+ar cf
+ar sf
+ar of
+ar zf
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000000
-0x00000000
-0x00000001
+cf = 0x00000001
+sf = 0x00000000
+of = 0x00000000
+zf = 0x00000001
 EOF
 RUN
 
@@ -80,16 +80,16 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 "ae 0x90000000,eax,:=,0x70000000,ebx,:=,eax,ebx,+=,31,$o,of,:=,31,$s,sf,:=,31,$c,cf,:=,$z,zf,:="
-"aer?cf"
-"aer?sf"
-"aer?of"
-"aer?zf"
+ar cf
+ar sf
+ar of
+ar zf
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000000
-0x00000000
-0x00000001
+cf = 0x00000001
+sf = 0x00000000
+of = 0x00000000
+zf = 0x00000001
 EOF
 RUN
 

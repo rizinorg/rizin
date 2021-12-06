@@ -156,8 +156,8 @@ FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
-dr eax=0x200
-dr ebx=0x300
+ar eax=0x200
+ar ebx=0x300
 s 0x100
 s
 sh*

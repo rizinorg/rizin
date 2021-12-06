@@ -22,6 +22,12 @@ commands:
         args:
           - name: value
             type: RZ_CMD_ARG_TYPE_NUM
+        details:
+          - name: Examples
+            entries:
+              - text: wB
+                arg_str: " 0x20"
+                comment: Sets the 5th bit at current offset, leaving all other bits intact.
       - name: wB-
         cname: write_unset_bits
         summary: Unset bits with given value
@@ -32,12 +38,6 @@ commands:
         args:
           - name: value
             type: RZ_CMD_ARG_TYPE_NUM
-    details:
-      - name: Examples
-        entries:
-          - text: wB
-            arg_str: " 0x20"
-            comment: Sets the 5th bit at current offset, leaving all other bits intact.
   - name: wv
     summary: Write value of given size
     subcommands:

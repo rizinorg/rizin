@@ -1193,7 +1193,10 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			}
 			rz_core_cmd0(r, ".dm*");
 			// Set Thumb Mode if necessary
-			rz_core_cmd0(r, "dr? thumb;?? e asm.bits=16");
+			RzRegItem *thumb_reg = rz_reg_get(r->dbg->reg, "thumb", RZ_REG_TYPE_ANY);
+			if (thumb_reg && rz_reg_get_value(r->dbg->reg, thumb_reg)) {
+				rz_config_set_i(r->config, "asm.bits", 16);
+			}
 			rz_cons_reset();
 		}
 		if (!pfile) {
