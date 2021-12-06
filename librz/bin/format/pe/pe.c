@@ -403,12 +403,7 @@ ut64 PE_(rz_bin_pe_get_image_base)(struct PE_(rz_bin_pe_obj_t) * bin) {
 		return 0LL;
 	}
 	imageBase = bin->nt_headers->optional_header.ImageBase;
-	if (!imageBase) {
-		// this should only happens with messed up binaries
-		// XXX this value should be user defined by bin.baddr
-		// but from here we can not access config API
-		imageBase = 0x10000;
-	}
+
 	return imageBase;
 }
 
