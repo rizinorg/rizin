@@ -183,7 +183,7 @@ RZ_IPI void rz_core_analysis_esil_init_mem(RzCore *core, const char *name, ut64 
 	rz_reg_set_value_by_role(core->analysis->reg, RZ_REG_NAME_SP, addr + (size / 2)); // size / 2 to have free space in both directions
 	rz_reg_set_value_by_role(core->analysis->reg, RZ_REG_NAME_BP, addr + (size / 2));
 	rz_reg_set_value_by_role(core->analysis->reg, RZ_REG_NAME_PC, current_offset);
-	rz_core_regs2flags(core);
+	rz_core_reg_update_flags(core);
 	esil->stack_addr = addr;
 	esil->stack_size = size;
 	initialize_stack(core, addr, size);
@@ -245,17 +245,17 @@ RZ_IPI void rz_core_analysis_esil_step_over(RzCore *core) {
 	}
 	rz_core_esil_step(core, until_addr, NULL, NULL, false);
 	rz_analysis_op_free(op);
-	rz_core_regs2flags(core);
+	rz_core_reg_update_flags(core);
 }
 
 RZ_IPI void rz_core_analysis_esil_step_over_until(RzCore *core, ut64 addr) {
 	rz_core_esil_step(core, addr, NULL, NULL, true);
-	rz_core_regs2flags(core);
+	rz_core_reg_update_flags(core);
 }
 
 RZ_IPI void rz_core_analysis_esil_step_over_untilexpr(RzCore *core, const char *expr) {
 	rz_core_esil_step(core, UT64_MAX, expr, NULL, true);
-	rz_core_regs2flags(core);
+	rz_core_reg_update_flags(core);
 }
 
 RZ_IPI void rz_core_analysis_esil_references_all_functions(RzCore *core) {
@@ -376,7 +376,7 @@ RZ_IPI int rz_core_analysis_set_reg(RzCore *core, const char *regname, ut64 val)
 	}
 	rz_reg_set_value(core->dbg->reg, r, val);
 	rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ANY, true);
-	rz_core_debug_regs2flags(core);
+	rz_core_reg_update_flags(core);
 	return 0;
 }
 
