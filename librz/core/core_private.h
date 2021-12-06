@@ -121,6 +121,7 @@ RZ_IPI RzCmdStatus rz_core_binldr_plugin_print(const RzBinLdrPlugin *ld, RzCmdSt
 /* cdebug.c */
 RZ_IPI bool rz_core_debug_reg_set(RzCore *core, const char *regname, ut64 val, const char *strval);
 RZ_IPI bool rz_core_debug_reg_list(RzCore *core, int type, int size, bool skip_covered, PJ *pj, int rad, const char *use_color);
+RZ_IPI RzList /*<RzRegItem>*/ *rz_core_regs2flags_candidates(RzCore *core, RzReg *reg);
 RZ_IPI void rz_core_debug_regs2flags(RzCore *core);
 RZ_IPI void rz_core_regs2flags(RzCore *core);
 RZ_IPI void rz_core_debug_sync_bits(RzCore *core);
@@ -151,6 +152,36 @@ RZ_IPI void rz_core_flag_describe(RzCore *core, ut64 addr, bool strict_offset, R
 /* cmd_debug.c */
 RZ_IPI void rz_core_dbg_follow_seek_register(RzCore *core);
 RZ_IPI void rz_core_static_debug_stop(void *u);
+
+/* cmd_regs.c */
+/// Callback for synchronizing register state in commands (only relevant for debug, not for analysis)
+typedef bool (*RzCmdRegSync)(RzCore *core, RzRegisterType type, bool write);
+RZ_IPI RzCmdStatus rz_regs_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_regs_columns_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_regs_references_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv, RzOutputMode mode);
+RZ_IPI void rz_regs_show_valgroup(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, const RzList *list);
+RZ_IPI RzCmdStatus rz_regs_valgroup_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_reg_arenas_handler(RzCore *core, RzReg *reg, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_reg_arenas_push_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_reg_arenas_pop_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_reg_arenas_swap_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_reg_arenas_zero_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_reg_arenas_hexdump_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_reg_arenas_stack_size_handler(RzCore *core, RzReg *reg, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_reg_arenas_write_hex_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_regs_args_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv, RzOutputMode mode);
+RZ_IPI RzCmdStatus rz_reg_types_handler(RzCore *core, RzReg *reg, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_reg_roles_handler(RzCore *core, RzReg *reg, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_reg_flags_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv, bool unset);
+RZ_IPI RzCmdStatus rz_reg_profile_handler(RzCore *core, RzReg *reg, int argc, const char **argv, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_reg_profile_comments_handler(RzCore *core, RzReg *reg, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_reg_profile_open_handler(RzCore *core, RzReg *reg, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_reg_profile_gdb_handler(RzCore *core, RzReg *reg, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_reg_cond_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_reg_cc_handler(RzCore *core, RzReg *reg, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_regs_diff_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_regs_prev_handler(RzCore *core, RzReg *reg, int argc, const char **argv, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_regs_fpu_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv);
 
 #if __WINDOWS__
 /* windows_heap.c */

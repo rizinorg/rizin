@@ -13,7 +13,7 @@ dr rip
 dk 9
 EOF
 EXPECT=<<EOF
-0x00400574
+rip = 0x00400574
 EOF
 RUN
 
@@ -31,7 +31,7 @@ dr rip
 dk 9
 EOF
 EXPECT=<<EOF
-0x00400574
+rip = 0x00400574
 EOF
 RUN
 
@@ -65,9 +65,9 @@ dr rip
 dk 9
 EOF
 EXPECT=<<EOF
-0x0040290d
-0x004028d1
-0x004028ca
-0x004028a0
+rip = 0x0040290d
+rip = 0x004028d1
+rip = 0x004028ca
+rip = 0x004028a0
 EOF
 RUN

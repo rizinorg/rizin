@@ -4,14 +4,14 @@ CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
 aei
-dr r1=0xF2
-dr r2=0x2
+ar r1=0xF2
+ar r2=0x2
 wx 0x312C
 aes
-dr? r1
+ar r1
 EOF
 EXPECT=<<EOF
-0x000000f4
+r1 = 0x000000f4
 EOF
 RUN
 
@@ -21,20 +21,20 @@ CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
 aei
-dr r1=0xF2
+ar r1=0xF2
 wx 0x712C
 aes
-dr? r1
+ar r1
 
 aeip
-dr r1=0xF2
+ar r1=0xF2
 wx 0x71FE
 aes
-dr? r1
+ar r1
 EOF
 EXPECT=<<EOF
-0x0000011e
-0x000000f0
+r1 = 0x0000011e
+r1 = 0x000000f0
 EOF
 RUN
 
@@ -44,41 +44,41 @@ CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
 aei
-dr r2=0xF2
-dr r3=0x4
-dr sr=1
+ar r2=0xF2
+ar r3=0x4
+ar sr=1
 wx 0x323E
 aes
-dr? r2
-dr? r3
-dr? sr
+ar r2
+ar r3
+ar sr
 
 aeip
-dr r2=0xFFFF0000
-dr r3=0x10000000
-dr sr=0
+ar r2=0xFFFF0000
+ar r3=0x10000000
+ar sr=0
 wx 0x323E
 aes
-dr? r2
-dr? sr
+ar r2
+ar sr
 
 aeip
-dr r2=0xFFFF0000
-dr r3=0x0000FFFF
-dr sr=1
+ar r2=0xFFFF0000
+ar r3=0x0000FFFF
+ar sr=1
 wx 0x323E
 aes
-dr? r2
-dr? sr
+ar r2
+ar sr
 EOF
 EXPECT=<<EOF
-0x000000f7
-0x00000004
-0x00000000
-0x0fff0000
-0x00000001
-0x00000000
-0x00000001
+r2 = 0x000000f7
+r3 = 0x00000004
+sr = 0x00000000
+r2 = 0x0fff0000
+sr = 0x00000001
+r2 = 0x00000000
+sr = 0x00000001
 EOF
 RUN
 
@@ -88,39 +88,39 @@ CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
 aei
-dr r2=0xF2
-dr r3=0x4
-dr sr=1
+ar r2=0xF2
+ar r3=0x4
+ar sr=1
 wx 0x323F
 aes
-dr? r2
-dr? sr
+ar r2
+ar sr
 
 aeip
-dr r2=0x8FFF0000
-dr r3=0x800A0000
-dr sr=0
+ar r2=0x8FFF0000
+ar r3=0x800A0000
+ar sr=0
 wx 0x323F
 aes
-dr? r2
-dr? sr
+ar r2
+ar sr
 
 aeip
-dr r2=0x4FFF0000
-dr r3=0x6F0F0000
-dr sr=0
+ar r2=0x4FFF0000
+ar r3=0x6F0F0000
+ar sr=0
 wx 0x323F
 aes
-dr? r2
-dr? sr
+ar r2
+ar sr
 EOF
 EXPECT=<<EOF
-0x000000f6
-0x00000000
-0x10090000
-0x00000001
-0xbf0e0000
-0x00000001
+r2 = 0x000000f6
+sr = 0x00000000
+r2 = 0x10090000
+sr = 0x00000001
+r2 = 0xbf0e0000
+sr = 0x00000001
 EOF
 RUN
 
@@ -130,14 +130,14 @@ CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
 aei
-dr r1=0x123456F3
-dr r2=0xcada4532
+ar r1=0x123456F3
+ar r2=0xcada4532
 wx 0x2129
 aes
-dr? r1
+ar r1
 EOF
 EXPECT=<<EOF
-0x02104432
+r1 = 0x02104432
 EOF
 RUN
 
@@ -147,8 +147,8 @@ CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
 aei
-dr r0=0x15
-dr gbr=0x10
+ar r0=0x15
+ar gbr=0x10
 wx 0xcd26
 s 0x24
 wx 0x12345678
@@ -167,27 +167,27 @@ CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
 aei
-dr sr=0
+ar sr=0
 s 0x10
 aeip
 wx 0x8b26
 aes
-dr? pc
+ar pc
 s 0x10
 aeip
 wx 0x8bfc
 aes
-dr? pc
-dr sr=1
+ar pc
+ar sr=1
 s 0x10
 aeip
 aes
-dr? pc
+ar pc
 EOF
 EXPECT=<<EOF
-0x00000060
-0x0000000c
-0x00000012
+pc = 0x00000060
+pc = 0x0000000c
+pc = 0x00000012
 EOF
 RUN
 
@@ -197,33 +197,33 @@ CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
 aei
-dr sr=0
+ar sr=0
 s 0x10
 aeip
-dr r1=0;
+ar r1=0;
 wx 0x8f26e102
 aes
-dr? pc
-dr? r1
+ar pc
+ar r1
 s 0x10
 aeip
-dr r1=0;
+ar r1=0;
 wx 0x8ffce102
 aes
-dr? pc
-dr? r1
-dr sr=1
+ar pc
+ar r1
+ar sr=1
 s 0x10
 aeip
 aes
-dr? pc
+ar pc
 EOF
 EXPECT=<<EOF
-0x00000060
-0x00000002
-0x0000000c
-0x00000002
-0x00000012
+pc = 0x00000060
+r1 = 0x00000002
+pc = 0x0000000c
+r1 = 0x00000002
+pc = 0x00000012
 EOF
 RUN
 
@@ -235,24 +235,24 @@ e cfg.bigendian=true
 aei
 s 0x10
 aeip
-dr r1=0
+ar r1=0
 wx 0xa026e102
 aes
-dr? pc
-dr? r1
+ar pc
+ar r1
 s 0x10
 aeip
-dr r1=0
+ar r1=0
 wx 0xaffce102
 aes
-dr? pc
-dr? r1
+ar pc
+ar r1
 EOF
 EXPECT=<<EOF
-0x00000060
-0x00000002
-0x0000000c
-0x00000002
+pc = 0x00000060
+r1 = 0x00000002
+pc = 0x0000000c
+r1 = 0x00000002
 EOF
 RUN
 
@@ -264,16 +264,16 @@ e cfg.bigendian=true
 aei
 s 0x10
 aeip
-dr r1=0
-dr r2=0x4c
+ar r1=0
+ar r2=0x4c
 wx 0x0223e102
 aes
-dr? pc
-dr? r1
+ar pc
+ar r1
 EOF
 EXPECT=<<EOF
-0x00000060
-0x00000002
+pc = 0x00000060
+r1 = 0x00000002
 EOF
 RUN
 
@@ -285,17 +285,17 @@ e cfg.bigendian=true
 aei
 s 0x10
 aeip
-dr r1=0
+ar r1=0
 wx 0xb026e102
 aes
-dr? pc
-dr? pr
-dr? r1
+ar pc
+ar pr
+ar r1
 EOF
 EXPECT=<<EOF
-0x00000060
-0x00000014
-0x00000002
+pc = 0x00000060
+pr = 0x00000014
+r1 = 0x00000002
 EOF
 RUN
 
@@ -307,18 +307,18 @@ e cfg.bigendian=true
 aei
 s 0x10
 aeip
-dr r1=0
-dr r2=0x4c
+ar r1=0
+ar r2=0x4c
 wx 0x0203e102
 aes
-dr? pc
-dr? pr
-dr? r1
+ar pc
+ar pr
+ar r1
 EOF
 EXPECT=<<EOF
-0x00000060
-0x00000014
-0x00000002
+pc = 0x00000060
+pr = 0x00000014
+r1 = 0x00000002
 EOF
 RUN
 
@@ -328,27 +328,27 @@ CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
 aei
-dr sr=1
+ar sr=1
 s 0x10
 aeip
 wx 0x8926
 aes
-dr? pc
+ar pc
 s 0x10
 aeip
 wx 0x89fc
 aes
-dr? pc
-dr sr=0
+ar pc
+ar sr=0
 s 0x10
 aeip
 aes
-dr? pc
+ar pc
 EOF
 EXPECT=<<EOF
-0x00000060
-0x0000000c
-0x00000012
+pc = 0x00000060
+pc = 0x0000000c
+pc = 0x00000012
 EOF
 RUN
 
@@ -358,33 +358,33 @@ CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
 aei
-dr sr=1
+ar sr=1
 s 0x10
 aeip
-dr r1=0;
+ar r1=0;
 wx 0x8d26e102
 aes
-dr? pc
-dr? r1
+ar pc
+ar r1
 s 0x10
 aeip
-dr r1=0;
+ar r1=0;
 wx 0x8dfce102
 aes
-dr? pc
-dr? r1
-dr sr=0
+ar pc
+ar r1
+ar sr=0
 s 0x10
 aeip
 aes
-dr? pc
+ar pc
 EOF
 EXPECT=<<EOF
-0x00000060
-0x00000002
-0x0000000c
-0x00000002
-0x00000012
+pc = 0x00000060
+r1 = 0x00000002
+pc = 0x0000000c
+r1 = 0x00000002
+pc = 0x00000012
 EOF
 RUN
 
@@ -394,16 +394,16 @@ CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
 aei
-dr mach=0xa
-dr macl=0xa
+ar mach=0xa
+ar macl=0xa
 wx 0x0028
 aes
-dr? mach
-dr? macl
+ar mach
+ar macl
 EOF
 EXPECT=<<EOF
-0x00000000
-0x00000000
+mach = 0x00000000
+macl = 0x00000000
 EOF
 RUN
 
@@ -413,13 +413,13 @@ CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
 aei
-dr sr=3
+ar sr=3
 wx 0x0008
 aes
-dr? sr
+ar sr
 EOF
 EXPECT=<<EOF
-0x00000002
+sr = 0x00000002
 EOF
 RUN
 
@@ -429,23 +429,23 @@ CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
 aei
-dr sr=0
-dr r1=0xa
-dr r2=0xa
+ar sr=0
+ar r1=0xa
+ar r2=0xa
 wx 0x3120
 aes
-dr? sr
+ar sr
 s 0
 aeip
-dr sr=1
-dr r1=0xa
-dr r2=0xb
+ar sr=1
+ar r1=0xa
+ar r2=0xb
 aes
-dr? sr
+ar sr
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000000
+sr = 0x00000001
+sr = 0x00000000
 EOF
 RUN
 
@@ -455,29 +455,29 @@ CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
 aei
-dr sr=1
-dr r1=0xFFFFFFFF
-dr r2=1
+ar sr=1
+ar r1=0xFFFFFFFF
+ar r2=1
 wx 0x3123
 aes
-dr? sr
+ar sr
 s 0 
 aeip
-dr sr=0x0
-dr r1=0x5
+ar sr=0x0
+ar r1=0x5
 aes
-dr? sr
+ar sr
 s 0 
 aeip
-dr r1=0x1
-dr sr=0
+ar r1=0x1
+ar sr=0
 aes
-dr? sr
+ar sr
 EOF
 EXPECT=<<EOF
-0x00000000
-0x00000001
-0x00000001
+sr = 0x00000000
+sr = 0x00000001
+sr = 0x00000001
 EOF
 RUN
 
@@ -487,29 +487,29 @@ CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
 aei
-dr sr=1
-dr r1=0xFFFFFFFF
-dr r2=1
+ar sr=1
+ar r1=0xFFFFFFFF
+ar r2=1
 wx 0x3127
 aes
-dr? sr
+ar sr
 s 0 
 aeip
-dr sr=0x0
-dr r1=0x5
+ar sr=0x0
+ar r1=0x5
 aes
-dr? sr
+ar sr
 s 0 
 aeip
-dr sr=0x1
-dr r1=0x1
+ar sr=0x1
+ar r1=0x1
 aes
-dr? sr
+ar sr
 EOF
 EXPECT=<<EOF
-0x00000000
-0x00000001
-0x00000000
+sr = 0x00000000
+sr = 0x00000001
+sr = 0x00000000
 EOF
 RUN
 
@@ -519,31 +519,31 @@ CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
 aei
-dr sr=0
-dr r1=0xFFFFFFFF
-dr r2=1
+ar sr=0
+ar r1=0xFFFFFFFF
+ar r2=1
 wx 0x3126
 aes
-dr? sr
+ar sr
 s 0 
 aeip
-dr r2=0xFFFFFFFF
-dr sr=0x1
-dr r1=0x5
+ar r2=0xFFFFFFFF
+ar sr=0x1
+ar r1=0x5
 aes
-dr? sr
+ar sr
 s 0 
 aeip
-dr sr=0x1
-dr r2=0x1
-dr r1=0x1
+ar sr=0x1
+ar r2=0x1
+ar r1=0x1
 aes
-dr? sr
+ar sr
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000000
-0x00000000
+sr = 0x00000001
+sr = 0x00000000
+sr = 0x00000000
 EOF
 RUN
 
@@ -553,31 +553,31 @@ CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
 aei
-dr sr=0
-dr r1=0xFFFFFFFF
-dr r2=1
+ar sr=0
+ar r1=0xFFFFFFFF
+ar r2=1
 wx 0x3122
 aes
-dr? sr
+ar sr
 s 0 
 aeip
-dr sr=0x1
-dr r2=0xFFFFFFFF
-dr r1=0x5
+ar sr=0x1
+ar r2=0xFFFFFFFF
+ar r1=0x5
 aes
-dr? sr
+ar sr
 s 0 
 aeip
-dr sr=0x0
-dr r2=0x1
-dr r1=0x1
+ar sr=0x0
+ar r2=0x1
+ar r1=0x1
 aes
-dr? sr
+ar sr
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000000
-0x00000001
+sr = 0x00000001
+sr = 0x00000000
+sr = 0x00000001
 EOF
 RUN
 
@@ -587,28 +587,28 @@ CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
 aei
-dr sr=1
-dr r1=0xFFFFFFFF
+ar sr=1
+ar r1=0xFFFFFFFF
 wx 0x4115
 aes
-dr? sr
+ar sr
 s 0 
 aeip
-dr r1=0x5
-dr sr=0x0
+ar r1=0x5
+ar sr=0x0
 aes
-dr? sr
+ar sr
 s 0 
 aeip
-dr r1=0x0
-dr sr=0x1
+ar r1=0x0
+ar sr=0x1
 aes
-dr? sr
+ar sr
 EOF
 EXPECT=<<EOF
-0x00000000
-0x00000001
-0x00000000
+sr = 0x00000000
+sr = 0x00000001
+sr = 0x00000000
 EOF
 RUN
 
@@ -618,28 +618,28 @@ CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
 aei
-dr sr=1
-dr r1=0xFFFFFFFF
+ar sr=1
+ar r1=0xFFFFFFFF
 wx 0x4111
 aes
-dr? sr
+ar sr
 s 0 
 aeip
-dr r1=0x5
-dr sr=0x0
+ar r1=0x5
+ar sr=0x0
 aes
-dr? sr
+ar sr
 s 0 
 aeip
-dr r1=0x0
-dr sr=0x1
+ar r1=0x0
+ar sr=0x1
 aes
-dr? sr
+ar sr
 EOF
 EXPECT=<<EOF
-0x00000000
-0x00000001
-0x00000001
+sr = 0x00000000
+sr = 0x00000001
+sr = 0x00000001
 EOF
 RUN
 
@@ -650,30 +650,30 @@ e asm.arch=sh
 e cfg.bigendian=true
 aei
 wx 0x212C
-dr sr=0
-dr r1=0x01234567
-dr r2=0x12344578
+ar sr=0
+ar r1=0x01234567
+ar r2=0x12344578
 aes
-dr? sr
+ar sr
 s 0 
 aeip
-dr sr=1
-dr r1=0x01234567
-dr r2=0x12345678
+ar sr=1
+ar r1=0x01234567
+ar r2=0x12345678
 aes
-dr? sr
+ar sr
 s 0 
 aeip
-dr sr=0
-dr r1=0x01234567
-dr r2=0x01235678
+ar sr=0
+ar r1=0x01234567
+ar r2=0x01235678
 aes
-dr? sr
+ar sr
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000000
-0x00000001
+sr = 0x00000001
+sr = 0x00000000
+sr = 0x00000001
 EOF
 RUN
 
@@ -684,29 +684,29 @@ e asm.arch=sh
 e cfg.bigendian=true
 aei
 wx 0x8816
-dr sr=0
-dr r0=0x16
+ar sr=0
+ar r0=0x16
 aes
-dr? sr
+ar sr
 s 0 
 aeip
 wx 0x88FE
-dr sr=0
-dr r0=0xFFFFFFFE
+ar sr=0
+ar r0=0xFFFFFFFE
 aes
-dr? sr
+ar sr
 s 0 
 aeip
 wx 0x88FE
-dr sr=1
-dr r0=0xFFeFFFFE
+ar sr=1
+ar r0=0xFFeFFFFE
 aes
-dr? sr
+ar sr
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000001
-0x00000000
+sr = 0x00000001
+sr = 0x00000001
+sr = 0x00000000
 EOF
 RUN
 
@@ -717,38 +717,38 @@ e asm.arch=sh
 e cfg.bigendian=true
 aei
 wx 0x2127
-dr sr=0
-dr r1=0xF0000000
-dr r2=0xF0000000
+ar sr=0
+ar r1=0xF0000000
+ar r2=0xF0000000
 aes
-dr? sr
+ar sr
 s 0
 aeip
-dr sr=0
-dr r1=0xF0000000
-dr r2=0x00000000
+ar sr=0
+ar r1=0xF0000000
+ar r2=0x00000000
 aes
-dr? sr
+ar sr
 s 0
 aeip
-dr sr=0
-dr r1=0x00000000
-dr r2=0xF0000000
+ar sr=0
+ar r1=0x00000000
+ar r2=0xF0000000
 aes
-dr? sr
+ar sr
 s 0
 aeip
-dr sr=0xffffffff
-dr r1=0x5
-dr r2=0x5
+ar sr=0xffffffff
+ar r1=0x5
+ar r2=0x5
 aes
-dr? sr
+ar sr
 EOF
 EXPECT=<<EOF
-0x00000300
-0x00000101
-0x00000201
-0xfffffcfe
+sr = 0x00000300
+sr = 0x00000101
+sr = 0x00000201
+sr = 0xfffffcfe
 EOF
 RUN
 
@@ -759,12 +759,12 @@ e asm.arch=sh
 e cfg.bigendian=true
 aei
 wx 0x0019
-dr sr=0xFFFFFFFF
+ar sr=0xFFFFFFFF
 aes
-dr? sr
+ar sr
 EOF
 EXPECT=<<EOF
-0xfffffcfe
+sr = 0xfffffcfe
 EOF
 RUN
 
@@ -775,16 +775,16 @@ e asm.arch=sh
 e cfg.bigendian=true
 aei
 wx 0x3124
-dr sr=0x0
-dr r1=02345678
-dr r2=00120000
+ar sr=0x0
+ar r1=02345678
+ar r2=00120000
 aes
-dr? sr
-dr? r1
+ar sr
+ar r1
 EOF
 EXPECT=<<EOF
-0x00000001
-0x0001d2ee
+sr = 0x00000001
+r1 = 0x0001d2ee
 EOF
 RUN
 
@@ -795,24 +795,24 @@ e asm.arch=sh
 e cfg.bigendian=true
 aei
 wx 0x312D
-dr r1=0x12345678
-dr r2=0x76543210
+ar r1=0x12345678
+ar r2=0x76543210
 aes
-dr? mach
-dr? macl
+ar mach
+ar macl
 s 0
 aeip
-dr r1=0xFFFFFF78
-dr r2=0x00043210
+ar r1=0xFFFFFF78
+ar r2=0x00043210
 aes
-dr? mach
-dr? macl
+ar mach
+ar macl
 EOF
 EXPECT=<<EOF
-0x086a1c97
-0x0b88d780
-0xffffffff
-0xfdc56780
+mach = 0x086a1c97
+macl = 0x0b88d780
+mach = 0xffffffff
+macl = 0xfdc56780
 EOF
 RUN
 
@@ -823,24 +823,24 @@ e asm.arch=sh
 e cfg.bigendian=true
 aei
 wx 0x3125
-dr r1=0x12345678
-dr r2=0x76543210
+ar r1=0x12345678
+ar r2=0x76543210
 aes
-dr? mach
-dr? macl
+ar mach
+ar macl
 s 0
 aeip
-dr r1=0xFFFFFF78
-dr r2=0x00043210
+ar r1=0xFFFFFF78
+ar r2=0x00043210
 aes
-dr? mach
-dr? macl
+ar mach
+ar macl
 EOF
 EXPECT=<<EOF
-0x086a1c97
-0x0b88d780
-0x0004320f
-0xfdc56780
+mach = 0x086a1c97
+macl = 0x0b88d780
+mach = 0x0004320f
+macl = 0xfdc56780
 EOF
 RUN
 
@@ -850,21 +850,21 @@ CMDS=<<EOF
 e asm.arch=sh
 e cfg.bigendian=true
 aei
-dr sr=0xffffffff
+ar sr=0xffffffff
 wx 0x4110
-dr r1=0x12345678
+ar r1=0x12345678
 aes
-dr? sr
+ar sr
 s 0
 aeip
-dr sr=0
-dr r1=0x1
+ar sr=0
+ar r1=0x1
 aes
-dr? sr
+ar sr
 EOF
 EXPECT=<<EOF
-0xfffffffe
-0x00000001
+sr = 0xfffffffe
+sr = 0x00000001
 EOF
 RUN
 
@@ -875,20 +875,20 @@ e asm.arch=sh
 e cfg.bigendian=true
 aei
 wx 0x612e
-dr r2=0x12345678
-dr r1=0x00000123
+ar r2=0x12345678
+ar r1=0x00000123
 aes
-dr? r1
+ar r1
 s 0
 aeip
-dr r2=0x12345688
-dr r1=0x00000123
+ar r2=0x12345688
+ar r1=0x00000123
 aes
-dr? r1
+ar r1
 EOF
 EXPECT=<<EOF
-0x00000078
-0xffffff88
+r1 = 0x00000078
+r1 = 0xffffff88
 EOF
 RUN
 
@@ -899,20 +899,20 @@ e asm.arch=sh
 e cfg.bigendian=true
 aei
 wx 0x612f
-dr r2=0x12345678
-dr r1=0x00000123
+ar r2=0x12345678
+ar r1=0x00000123
 aes
-dr? r1
+ar r1
 s 0
 aeip
-dr r2=0x12348688
-dr r1=0x00000123
+ar r2=0x12348688
+ar r1=0x00000123
 aes
-dr? r1
+ar r1
 EOF
 EXPECT=<<EOF
-0x00005678
-0xffff8688
+r1 = 0x00005678
+r1 = 0xffff8688
 EOF
 RUN
 
@@ -923,13 +923,13 @@ e asm.arch=sh
 e cfg.bigendian=true
 aei
 wx 0x612c
-dr r2=0xffffff78
-dr r1=0x00000123
+ar r2=0xffffff78
+ar r1=0x00000123
 aes
-dr? r1
+ar r1
 EOF
 EXPECT=<<EOF
-0x00000078
+r1 = 0x00000078
 EOF
 RUN
 
@@ -940,13 +940,13 @@ e asm.arch=sh
 e cfg.bigendian=true
 aei
 wx 0x612d
-dr r2=0xffffff78
-dr r1=0x00000123
+ar r2=0xffffff78
+ar r1=0x00000123
 aes
-dr? r1
+ar r1
 EOF
 EXPECT=<<EOF
-0x0000ff78
+r1 = 0x0000ff78
 EOF
 RUN
 
@@ -959,15 +959,15 @@ aei
 s 0x10
 aeip
 wx 0x412be202
-dr r2=0x5
-dr r1=0x00000123
+ar r2=0x5
+ar r1=0x00000123
 aes
-dr? pc
-dr? r2
+ar pc
+ar r2
 EOF
 EXPECT=<<EOF
-0x00000122
-0x00000002
+pc = 0x00000122
+r2 = 0x00000002
 EOF
 RUN
 
@@ -980,18 +980,18 @@ aei
 s 0x10
 aeip
 wx 0x410be202
-dr r2=0x5
-dr pr=0x1
-dr r1=0x00000123
+ar r2=0x5
+ar pr=0x1
+ar r1=0x00000123
 aes
-dr? pc
-dr? r2
-dr? pr
+ar pc
+ar r2
+ar pr
 EOF
 EXPECT=<<EOF
-0x00000122
-0x00000002
-0x00000014
+pc = 0x00000122
+r2 = 0x00000002
+pr = 0x00000014
 EOF
 RUN
 
@@ -1002,13 +1002,13 @@ e asm.arch=sh
 e cfg.bigendian=true
 aei
 wx 0x410e
-dr sr=0x5
-dr r1=0x12345
+ar sr=0x5
+ar r1=0x12345
 aes
-dr? sr
+ar sr
 EOF
 EXPECT=<<EOF
-0x00010345
+sr = 0x00010345
 EOF
 RUN
 
@@ -1019,12 +1019,12 @@ e asm.arch=sh
 e cfg.bigendian=true
 aei
 wx 0x411e
-dr gbr=0x5
-dr r1=0x12345
+ar gbr=0x5
+ar r1=0x12345
 aes
-dr? gbr
+ar gbr
 EOF
 EXPECT=<<EOF
-0x00012345
+gbr = 0x00012345
 EOF
 RUN

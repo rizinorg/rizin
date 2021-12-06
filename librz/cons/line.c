@@ -162,4 +162,16 @@ RZ_API void rz_line_ns_completion_result_add(RzLineNSCompletionResult *res, cons
 	ht_pp_insert(res->options_ht, dup, dup);
 }
 
+/**
+ * \brief Add a new option to the list of possible autocomplete-able value if it matches the given string
+ * \param option the option to be added
+ * \param cur currently entered prefix
+ */
+RZ_API void rz_line_ns_completion_result_propose(RzLineNSCompletionResult *res, const char *option, const char *cur, size_t cur_len) {
+	if (strncmp(option, cur, cur_len)) {
+		return;
+	}
+	rz_line_ns_completion_result_add(res, option);
+}
+
 #include "dietline.c"

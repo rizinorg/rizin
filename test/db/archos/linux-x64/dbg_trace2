@@ -11,8 +11,8 @@ dc
 dk 9
 EOF
 EXPECT=<<EOF
-0x004004ed
-0x004004ed
-0x004004ed
+rip = 0x004004ed
+rip = 0x004004ed
+rip = 0x004004ed
 EOF
 RUN

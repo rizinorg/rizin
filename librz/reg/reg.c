@@ -161,6 +161,18 @@ RZ_API const char *rz_reg_get_role(int role) {
 	return NULL;
 }
 
+/// Get the RzRegisterId with the given name or -1
+RZ_API int rz_reg_role_by_name(RZ_NONNULL const char *str) {
+	rz_return_val_if_fail(str, -1);
+	int i;
+	for (i = 0; i < RZ_REG_NAME_LAST && roles[i]; i++) {
+		if (!strcmp(roles[i], str)) {
+			return i;
+		}
+	}
+	return -1;
+}
+
 RZ_API void rz_reg_free_internal(RzReg *reg, bool init) {
 	rz_return_if_fail(reg);
 	ut32 i;
@@ -408,4 +420,63 @@ RZ_API RzRegSet *rz_reg_regset_get(RzReg *r, int type) {
 	}
 	RzRegSet *rs = &r->regset[type];
 	return rs->arena ? rs : NULL;
+}
+
+static bool foreach_reg_cb(RzIntervalNode *node, void *user) {
+	RzRegItem *from_list = user;
+	RzRegItem *from_tree = node->data;
+	if (from_list == from_tree) {
+		return true;
+	}
+	// Check if from_list is covered entirely by from_tree, but is also smaller than it.
+	// We already know that
+	//   from_tree->offset <= from_list->offset < from_tree->offset + from_tree->size
+	if (from_list->offset + from_list->size > from_tree->offset + from_tree->size) {
+		// from_list expands beyond from_tree, so it's not covered
+		return true;
+	}
+	if (from_list->offset + from_list->size == from_tree->offset + from_tree->size) {
+		// they end at the same position, so it is covered entirely, but is it also smaller?
+		if (from_list->offset == from_tree->offset) {
+			// nope
+			return true;
+		}
+	}
+	// from_list ends before from_tree, so it is covered and smaller
+	return false;
+}
+
+/**
+ * \brief Filter out all register items that are smaller than but covered entirely by some other register
+ * \param regs list of RzRegItem
+ */
+RZ_API RZ_OWN RzList *rz_reg_filter_items_covered(RZ_BORROW RZ_NONNULL const RzList /* <RzRegItem> */ *regs) {
+	rz_return_val_if_fail(regs, NULL);
+	RzList *ret = rz_list_new();
+	if (!ret) {
+		return NULL;
+	}
+	RzIntervalTree t;
+	rz_interval_tree_init(&t, NULL);
+	RzRegItem *item;
+	RzListIter *it;
+	rz_list_foreach (regs, it, item) {
+		if (item->offset < 0 || item->size <= 0) {
+			continue;
+		}
+		rz_interval_tree_insert(&t, item->offset, item->offset + item->size - 1, item);
+	}
+	rz_list_foreach (regs, it, item) {
+		if (item->offset < 0 || item->size <= 0) {
+			rz_list_push(ret, item);
+			continue;
+		}
+		if (!rz_interval_tree_all_in(&t, item->offset, true, foreach_reg_cb, item)) {
+			// foreach_reg_cb break-ed so it found a cover
+			continue;
+		}
+		rz_list_push(ret, item);
+	}
+	rz_interval_tree_fini(&t);
+	return ret;
 }

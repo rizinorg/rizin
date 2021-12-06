@@ -77,14 +77,14 @@ db @ main
 db @ main+3
 doo > $_
 dc # should hit the first breakpoint
-.dr*
+.drf
 ?v eip-main
 doo > $_
 dc # should hit the first breakpoint
-.dr*
+.drf
 ?v eip-main
 dc # should hit the the second breakpoint
-.dr*
+.drf
 ?v eip-main
 EOF
 EXPECT=<<EOF
