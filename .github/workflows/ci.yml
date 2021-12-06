@@ -87,7 +87,7 @@ jobs:
             build_system: meson
             compiler: clang
             run_tests: true
-            meson_options: -Dbuildtype=release -Duse_webui=true
+            meson_options: -Dbuildtype=release -Duse_webui=true --werror
             enabled: ${{ needs.changes.outputs.edited == 'true' }}
             timeout: 60
             allow_failure: false
