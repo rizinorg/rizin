@@ -49,11 +49,11 @@ ar
 pd 4
 aets+
 4aes
-ar~^rbx
-ar~^rdi
-ar~^rip
-ar~^rflags
-ar~^rsp
+ar rbx
+ar rdi
+ar rip
+ar rflags
+ar rsp
 ?e qword[0x0] = `pv8 @ 0`
 ?e
 dte
