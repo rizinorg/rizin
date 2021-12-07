@@ -58,6 +58,7 @@ RZ_API void rz_arch_platform_item_free(RzArchPlatformItem *item);
 RZ_API bool rz_arch_load_platform_sdb(RZ_NONNULL RzArchPlatformTarget *t, RZ_NONNULL const char *path);
 RZ_API bool rz_arch_platform_init(RzArchPlatformTarget *t, RZ_NONNULL const char *arch, RZ_NONNULL const char *cpu,
 	const char *platform, RZ_NONNULL const char *platforms_dir);
+RZ_API const char *rz_arch_platform_add_comments_references(RzArchPlatformTarget *t, ut64 port);
 
 #ifdef __cplusplus
 }

@@ -105,6 +105,18 @@ static bool sdb_load_arch_platform_by_path(RZ_NONNULL RzArchPlatformTarget *t, R
 	return result;
 }
 
+RZ_API const char *rz_arch_platform_add_comments_references(RzArchPlatformTarget *t, ut64 port) {
+	rz_return_val_if_fail(t, NULL);
+	if (!t->platforms) {
+		return NULL;
+	}
+	RzArchPlatformItem *item = ht_up_find(t->platforms, port, NULL);
+	if (item) {
+		return item->comment;
+	}
+	return NULL;
+}
+
 /**
  * \brief Loads the contents of the Platform Profile to the RzArchPlatformTarget
  *
