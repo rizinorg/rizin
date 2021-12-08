@@ -1794,7 +1794,7 @@ aaa
 zfs bins/flirt/elf-x86/libcurl.a.pac
 EOF
 EXPECT=<<EOF
-Found 207 FLIRT signatures via bins/flirt/elf-x86/libcurl.a.pac
+Found 100 FLIRT signatures via bins/flirt/elf-x86/libcurl.a.pac
 EOF
 RUN
 
@@ -1815,6 +1815,6 @@ CMDS=<<EOF
 zfd bins/flirt/elf-x86/libcurl.a.pac~?
 EOF
 EXPECT=<<EOF
-166
+207
 EOF
 RUN
