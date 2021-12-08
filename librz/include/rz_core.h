@@ -34,6 +34,7 @@
 #include <rz_util/rz_annotated_code.h>
 #include <rz_heap_glibc.h>
 #include <rz_windows_heap.h>
+#include <rz_flirt.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -1100,7 +1101,12 @@ RZ_API RzCoreAutocomplete *rz_core_autocomplete_find(RzCoreAutocomplete *parent,
 RZ_API bool rz_core_autocomplete_remove(RzCoreAutocomplete *parent, const char *cmd);
 RZ_API void rz_core_analysis_propagate_noreturn(RzCore *core, ut64 addr);
 
-RZ_API void rz_core_flirt_dump(RZ_NONNULL const char *flirt_file);
+RZ_API void rz_core_flirt_dump_node(RZ_NONNULL const RzFlirtNode *node);
+RZ_API void rz_core_flirt_dump_file(RZ_NONNULL const char *flirt_file);
+RZ_API ut8 rz_core_flirt_arch_from_name(RZ_NONNULL const char *arch);
+RZ_API ut32 rz_core_flirt_file_from_option_list(RZ_NONNULL const char *file_list);
+RZ_API ut16 rz_core_flirt_os_from_option_list(RZ_NONNULL const char *os_list);
+RZ_API ut16 rz_core_flirt_app_from_option_list(RZ_NONNULL const char *app_list);
 
 /* PLUGINS */
 extern RzCorePlugin rz_core_plugin_java;
