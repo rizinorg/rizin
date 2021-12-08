@@ -1,6 +1,7 @@
 rz_sign_sources = [
    'flirt.c',
    'pac.c',
+   'create.c',
    'zignature.c',
    'sign.c',
 ]

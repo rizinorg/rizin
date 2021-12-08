@@ -50,7 +50,7 @@ bool test_rz_inflate_buf(void) {
 		RzBuffer *inflated_buf = rz_buf_new_empty(strlen(test_cases[i].inflated));
 		mu_assert_true(rz_inflate_buf(deflated_buf, inflated_buf, 1 << 13, NULL), "rz_inflate_buf failed");
 		unsigned char *inflated = malloc(strlen(test_cases[i].inflated));
-		rz_buf_read(inflated_buf, inflated, strlen(test_cases[i].inflated));
+		rz_buf_read_at(inflated_buf, 0, inflated, strlen(test_cases[i].inflated));
 
 		mu_assert_notnull(inflated, "rz_buf_read failed");
 		mu_assert_memeq(inflated, (unsigned char *)test_cases[i].inflated, strlen(test_cases[i].inflated), "rz_inflate_buf does not return expected output");
@@ -66,7 +66,7 @@ bool test_rz_deflate_buf(void) {
 		RzBuffer *deflated_buf = rz_buf_new_empty(test_cases[i].deflated_length);
 		mu_assert_true(rz_deflate_buf(inflated_buf, deflated_buf, 1 << 18, NULL), "rz_deflate_buf failed");
 		unsigned char *deflated = malloc(test_cases[i].deflated_length);
-		rz_buf_read(deflated_buf, deflated, test_cases[i].deflated_length);
+		rz_buf_read_at(deflated_buf, 0, deflated, test_cases[i].deflated_length);
 
 		mu_assert_notnull(deflated, "rz_buf_read failed");
 		mu_deflated_eq(deflated, (unsigned char *)test_cases[i].deflated, test_cases[i].deflated_length, "rz_deflate_buf does not return expected output");

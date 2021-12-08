@@ -185,6 +185,12 @@ commands:
   - name: zf
     summary: Manage FLIRT signatures
     subcommands:
+      - name: zfc
+        cname: zign_flirt_create
+        summary: Create FLIRT a file
+        args:
+          - name: filename
+            type: RZ_CMD_ARG_TYPE_FILE
       - name: zfd
         cname: zign_flirt_dump
         summary: Open FLIRT file and dump
