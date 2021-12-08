@@ -13,11 +13,19 @@ RZ_API void rz_list_iter_free(RzListIter *list) {
 	/* do nothing? */
 }
 
+/**
+ * \brief returns the next RzList iterator in the list
+ *
+ * */
 RZ_API RzListIter *rz_list_iter_get_next(RzListIter *list) {
 	rz_return_val_if_fail(list, NULL);
 	return list->n;
 }
 
+/**
+ * \brief returns the value stored in the next RzList iterator
+ *
+ * */
 RZ_API void *rz_list_iter_get_next_data(RzListIter *list) {
 	rz_return_val_if_fail(list, NULL);
 	RzListIter *n = list->n;
@@ -27,11 +35,19 @@ RZ_API void *rz_list_iter_get_next_data(RzListIter *list) {
 	return n->data;
 }
 
+/**
+ * \brief returns the value stored in the list element
+ *
+ * */
 RZ_API void *rz_list_iter_get_data(RzListIter *list) {
 	rz_return_val_if_fail(list, NULL);
 	return list->data;
 }
 
+/**
+ * \brief returns the first RzList iterator int the list
+ *
+ * */
 RZ_API RzListIter *rz_list_iterator(const RzList *list) {
 	rz_return_val_if_fail(list, NULL);
 	return list->head;
