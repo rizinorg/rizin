@@ -8,7 +8,7 @@
 #include <rz_analysis.h>
 //#include "../../asm/arch/tricore/gnu/tricore-opc.c"
 
-static bool set_reg_profile(RzAnalysis *analysis) {
+static char *get_reg_profile(RzAnalysis *analysis) {
 	const char *p =
 		"=PC	pc\n"
 		"=SP	a10\n"
@@ -71,7 +71,7 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 		"gpr	BIV	.32	152	0\n"
 		"gpr	BTV	.32	156	0\n"
 		"gpr	pc	.32	160	0\n";
-	return rz_reg_set_profile_string(analysis->reg, p);
+	return strdup(p);
 }
 
 RzAnalysisPlugin rz_analysis_plugin_tricore = {
@@ -80,7 +80,7 @@ RzAnalysisPlugin rz_analysis_plugin_tricore = {
 	.license = "LGPL3",
 	.arch = "tricore",
 	.bits = 32,
-	.set_reg_profile = set_reg_profile,
+	.get_reg_profile = get_reg_profile,
 };
 
 #ifndef RZ_PLUGIN_INCORE

@@ -1682,3 +1682,15 @@ REGEXP_FILTER_OUT=ignoreme
 EXPECT=<<EOF
 EOF
 RUN
+
+NAME=Java Regs
+FILE=
+CMDS=<<EOF
+e asm.arch=java
+ar~!garbage
+EOF
+EXPECT=<<EOF
+pc = 0x00000000
+EOF
+EXPECT_ERR=
+RUN

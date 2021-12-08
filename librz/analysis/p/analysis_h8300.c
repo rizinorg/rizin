@@ -681,7 +681,7 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	return ret;
 }
 
-static bool set_reg_profile(RzAnalysis *analysis) {
+static char *get_reg_profile(RzAnalysis *analysis) {
 	char *p =
 		"=PC	pc\n"
 		"=SP	r7\n"
@@ -720,7 +720,7 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 		"gpr	Z	.1	.146	0\n"
 		"gpr	V	.1	.145	0\n"
 		"gpr	C	.1	.144	0\n";
-	return rz_reg_set_profile_string(analysis->reg, p);
+	return strdup(p);
 }
 
 RzAnalysisPlugin rz_analysis_plugin_h8300 = {
@@ -731,7 +731,7 @@ RzAnalysisPlugin rz_analysis_plugin_h8300 = {
 	.bits = 16,
 	.op = &h8300_op,
 	.esil = true,
-	.set_reg_profile = set_reg_profile,
+	.get_reg_profile = get_reg_profile,
 };
 
 #ifndef RZ_PLUGIN_INCORE

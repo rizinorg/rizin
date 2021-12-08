@@ -369,7 +369,7 @@ static int z80_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 	return ilen;
 }
 
-static bool set_reg_profile(RzAnalysis *analysis) {
+static char *get_reg_profile(RzAnalysis *analysis) {
 	const char *p =
 		"=PC	mpc\n"
 		"=SP	sp\n"
@@ -408,7 +408,7 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 		"gpr	mbcram	.16	16	0\n"
 
 		"gpr	ime	.1	18	0\n";
-	return rz_reg_set_profile_string(analysis->reg, p);
+	return strdup(p);
 }
 
 static int archinfo(RzAnalysis *analysis, int q) {
@@ -420,7 +420,7 @@ RzAnalysisPlugin rz_analysis_plugin_z80 = {
 	.arch = "z80",
 	.license = "LGPL3",
 	.bits = 16,
-	.set_reg_profile = &set_reg_profile,
+	.get_reg_profile = &get_reg_profile,
 	.desc = "Z80 CPU code analysis plugin",
 	.archinfo = archinfo,
 	.op = &z80_analysis_op,

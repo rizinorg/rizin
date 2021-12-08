@@ -1083,7 +1083,7 @@ static int archinfo(RzAnalysis *analysis, int query) {
 	}
 }
 
-static bool set_reg_profile(RzAnalysis *analysis) {
+static char *get_reg_profile(RzAnalysis *analysis) {
 	if (analysis->bits != 16) {
 		return false;
 	}
@@ -1135,7 +1135,7 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 	/* TODO: */
 	/* Should I add the Auxiliary Register Set? */
 	/* it contains the flag bits, amongst other things */
-	return rz_reg_set_profile_string(analysis->reg, p16);
+	return strdup(p16);
 }
 
 RzAnalysisPlugin rz_analysis_plugin_arc = {
@@ -1146,7 +1146,7 @@ RzAnalysisPlugin rz_analysis_plugin_arc = {
 	.desc = "ARC code analysis plugin",
 	.op = &arc_op,
 	.archinfo = archinfo,
-	.set_reg_profile = set_reg_profile,
+	.get_reg_profile = get_reg_profile,
 };
 
 #ifndef RZ_PLUGIN_INCORE

@@ -234,16 +234,12 @@ RZ_API char *rz_analysis_get_reg_profile(RzAnalysis *analysis) {
 // deprecate.. or at least reuse get_reg_profile...
 RZ_API bool rz_analysis_set_reg_profile(RzAnalysis *analysis) {
 	bool ret = false;
-	if (analysis && analysis->cur && analysis->cur->set_reg_profile) {
-		ret = analysis->cur->set_reg_profile(analysis);
-	} else {
-		char *p = rz_analysis_get_reg_profile(analysis);
-		if (p && *p) {
-			rz_reg_set_profile_string(analysis->reg, p);
-			ret = true;
-		}
-		free(p);
+	char *p = rz_analysis_get_reg_profile(analysis);
+	if (p) {
+		rz_reg_set_profile_string(analysis->reg, p);
+		ret = true;
 	}
+	free(p);
 	return ret;
 }
 
@@ -333,6 +329,7 @@ RZ_API void rz_analysis_set_cpu(RzAnalysis *analysis, const char *cpu) {
 	if (v != -1) {
 		analysis->pcalign = v;
 	}
+	rz_analysis_set_reg_profile(analysis);
 	rz_type_db_set_cpu(analysis->typedb, cpu);
 	char *types_dir = rz_path_system(RZ_SDB_TYPES);
 	rz_type_db_reload(analysis->typedb, types_dir);
