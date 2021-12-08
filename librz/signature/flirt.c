@@ -102,7 +102,7 @@
 
 #include <rz_lib.h>
 #include <rz_flirt.h>
-#include <zlib.h>
+#define MAX_WBITS 15
 
 #if 0
 #define sig_dbg(...) eprintf(__VA_ARGS__)
@@ -1515,7 +1515,7 @@ RZ_API bool rz_sign_flirt_write_compressed_pattern_to_buffer(RZ_NONNULL const Rz
 	bool ret = true;
 	if (options->deflate) {
 		ut64 block_size = 1ull << 20; // 1 Mb
-		if (!rz_deflatew_buf(body, buffer, block_size, NULL, MAX_WBITS)) {
+		if (!rz_deflatew_buf(body, buffer, block_size, NULL, 15)) {
 			RZ_LOG_ERROR("FLIRT: cannot deflate body\n");
 			ret = false;
 		}

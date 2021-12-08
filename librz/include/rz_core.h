@@ -1104,7 +1104,9 @@ RZ_API bool rz_core_autocomplete_remove(RzCoreAutocomplete *parent, const char *
 RZ_API void rz_core_analysis_propagate_noreturn(RzCore *core, ut64 addr);
 
 RZ_API void rz_core_flirt_dump_node(RZ_NONNULL const RzFlirtNode *node);
-RZ_API void rz_core_flirt_dump_file(RZ_NONNULL const char *flirt_file);
+RZ_API bool rz_core_flirt_dump_file(RZ_NONNULL const char *flirt_file);
+RZ_API bool rz_core_flirt_create_file(RZ_NONNULL RzCore *core, RZ_NONNULL const char *output_file, RZ_NULLABLE ut32 *written_nodes);
+RZ_API bool rz_core_flirt_convert_file(RZ_NONNULL RzCore *core, RZ_NONNULL const char *input_file, RZ_NONNULL const char *ouput_file);
 RZ_API ut8 rz_core_flirt_arch_from_name(RZ_NONNULL const char *arch);
 RZ_API ut32 rz_core_flirt_file_from_option_list(RZ_NONNULL const char *file_list);
 RZ_API ut16 rz_core_flirt_os_from_option_list(RZ_NONNULL const char *os_list);

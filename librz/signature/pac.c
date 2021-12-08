@@ -114,7 +114,7 @@ static bool flirt_pat_parse_pattern_mask(const char *in_pattern, RzFlirtNode *ch
 		}
 	}
 
-	child->pattern_bytes = bytes; 
+	child->pattern_bytes = bytes;
 	child->pattern_mask = mask;
 	child->length = n_bytes;
 	return true;

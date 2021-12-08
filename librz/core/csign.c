@@ -349,34 +349,196 @@ RZ_API void rz_core_flirt_dump_node(RZ_NONNULL const RzFlirtNode *node) {
  *
  * \param flirt_file FLIRT file name to dump
  */
-RZ_API void rz_core_flirt_dump_file(RZ_NONNULL const char *flirt_file) {
-	rz_return_if_fail(RZ_STR_ISNOTEMPTY(flirt_file));
+RZ_API bool rz_core_flirt_dump_file(RZ_NONNULL const char *flirt_file) {
+	rz_return_val_if_fail(RZ_STR_ISNOTEMPTY(flirt_file), false);
 
 	const char *extension = rz_str_lchr(flirt_file, '.');
 	if (RZ_STR_ISEMPTY(extension) || (strcmp(extension, ".sig") != 0 && strcmp(extension, ".pac") != 0)) {
 		RZ_LOG_ERROR("FLIRT: unknown extension '%s'\n", extension);
-		return;
+		return false;
 	}
 
 	RzBuffer *buffer = NULL;
 	RzFlirtNode *node = NULL;
 
 	if (!(buffer = rz_buf_new_slurp(flirt_file))) {
-		RZ_LOG_ERROR("FLIRT: Can't open %s\n", flirt_file);
-		return;
+		RZ_LOG_ERROR("FLIRT: cannot open %s (read mode)\n", flirt_file);
+		return false;
 	} else if (!strcmp(extension, ".pac")) {
 		node = rz_sign_flirt_parse_string_pattern_from_buffer(buffer, RZ_FLIRT_NODE_OPTIMIZE_NORMAL);
 	} else {
 		node = rz_sign_flirt_parse_compressed_pattern_from_buffer(buffer, RZ_FLIRT_SIG_ARCH_ANY);
 	}
+	rz_buf_free(buffer);
+
+	if (!node) {
+		RZ_LOG_ERROR("FLIRT: we encountered an error while parsing the file. Sorry.\n");
+		return false;
+	}
+	rz_core_flirt_dump_node(node);
+	rz_sign_flirt_node_free(node);
+	return true;
+}
+
+/**
+ * \brief      Generates a new FLIRT file from a given RzCore structure.
+ *
+ * \param  core           RzCore to use.
+ * \param  output_file    Output file.
+ * \param  written_nodes  When not NULL, returns the number of nodes written in the file.
+ *
+ * \return true on success, false on failure
+ */
+RZ_API bool rz_core_flirt_create_file(RZ_NONNULL RzCore *core, RZ_NONNULL const char *output_file, RZ_NULLABLE ut32 *written_nodes) {
+	rz_return_val_if_fail(core && RZ_STR_ISNOTEMPTY(output_file), false);
+
+	const char *extension = rz_str_lchr(output_file, '.');
+	if (RZ_STR_ISEMPTY(extension) || (strcmp(extension, ".sig") != 0 && strcmp(extension, ".pac") != 0)) {
+		RZ_LOG_ERROR("missing or unknown extension '%s'. supported only .pac and .sig\n", extension);
+		return false;
+	}
+
+	ut64 optimize = rz_config_get_i(core->config, "flirt.optimize");
+	if (optimize > RZ_FLIRT_NODE_OPTIMIZE_MAX) {
+		RZ_LOG_ERROR("config 'flirt.optimize' is set to an invalid value.\n");
+		return false;
+	}
+
+	RzFlirtNode *node = rz_sign_flirt_node_new(core->analysis, optimize);
+	if (!node) {
+		return false;
+	}
+
+	RzBuffer *buffer = rz_buf_new_file(output_file, O_RDWR | O_CREAT | O_TRUNC, 0644);
+	if (!buffer) {
+		RZ_LOG_ERROR("cannot create file '%s'\n", output_file);
+		return false;
+	}
+
+	bool result = false;
+	if (!strcmp(extension, ".pac")) {
+		result = rz_sign_flirt_write_string_pattern_to_buffer(node, buffer);
+	} else if (!strcmp(extension, ".sig")) {
+		ut64 hdr_version = rz_config_get_i(core->config, "flirt.header.version");
+		const char *hdr_arch = rz_config_get(core->config, "asm.arch");
+		const char *hdr_file = rz_config_get(core->config, "flirt.header.file");
+		const char *hdr_os = rz_config_get(core->config, "flirt.header.os");
+		const char *hdr_app = rz_config_get(core->config, "flirt.header.app");
+		const char *hdr_lib = rz_config_get(core->config, "flirt.library.name");
+		bool deflate = rz_config_get_b(core->config, "flirt.header.compress");
+
+		if (RZ_STR_ISEMPTY(hdr_lib)) {
+			RZ_LOG_WARN("config 'flirt.library.name' is empty. using default value\n");
+			hdr_lib = RZ_FLIRT_LIBRARY_NAME_DFL;
+		}
+
+		RzFlirtCompressedOptions options = {
+			.version = hdr_version,
+			.arch = rz_core_flirt_arch_from_name(hdr_arch),
+			.file = rz_core_flirt_file_from_option_list(hdr_file),
+			.os = rz_core_flirt_os_from_option_list(hdr_os),
+			.app = rz_core_flirt_app_from_option_list(hdr_app),
+			.deflate = deflate,
+			.libname = hdr_lib,
+		};
+		result = rz_sign_flirt_write_compressed_pattern_to_buffer(node, buffer, &options);
+	}
+
+	if (written_nodes) {
+		*written_nodes = rz_sign_flirt_node_count_nodes(node);
+	}
 
 	rz_buf_free(buffer);
-	if (node) {
-		rz_core_flirt_dump_node(node);
-		rz_sign_flirt_node_free(node);
-		return;
-	} else {
-		RZ_LOG_ERROR("FLIRT: We encountered an error while parsing the file. Sorry.\n");
-		return;
+	rz_sign_flirt_node_free(node);
+	return result;
+}
+
+/**
+ * \brief converts a FLIRT file to the other format.
+ *
+ * \param  input_file  Input file
+ * \param  output_file Output file
+ * \param  optimize    Optimization value (expects an RZ_FLIRT_NODE_OPTIMIZE_* value)
+ *
+ * \return true on success, false on failure
+ */
+RZ_API bool rz_core_flirt_convert_file(RZ_NONNULL RzCore *core, RZ_NONNULL const char *input_file, RZ_NONNULL const char *output_file) {
+	rz_return_val_if_fail(core && RZ_STR_ISNOTEMPTY(input_file) && RZ_STR_ISNOTEMPTY(output_file), false);
+
+	const char *in_extension = rz_str_lchr(input_file, '.');
+	if (RZ_STR_ISEMPTY(in_extension) || (strcmp(in_extension, ".sig") != 0 && strcmp(in_extension, ".pac") != 0)) {
+		RZ_LOG_ERROR("FLIRT: unknown input extension '%s'\n", in_extension);
+		return false;
 	}
+
+	const char *out_extension = rz_str_lchr(output_file, '.');
+	if (RZ_STR_ISEMPTY(out_extension) || (strcmp(out_extension, ".sig") != 0 && strcmp(out_extension, ".pac") != 0)) {
+		RZ_LOG_ERROR("FLIRT: unknown output extension '%s'\n", out_extension);
+		return false;
+	}
+
+	if (!strcmp(out_extension, in_extension)) {
+		RZ_LOG_ERROR("FLIRT: cannot convert '%s' to '%s' because the format is the same\n", input_file, output_file);
+		return false;
+	}
+
+	RzBuffer *buffer = NULL;
+	RzFlirtNode *node = NULL;
+
+	ut64 optimize = rz_config_get_i(core->config, "flirt.optimize");
+	if (optimize > RZ_FLIRT_NODE_OPTIMIZE_MAX) {
+		RZ_LOG_ERROR("config 'flirt.optimize' is set to an invalid value.\n");
+		return false;
+	}
+
+	if (!(buffer = rz_buf_new_slurp(input_file))) {
+		RZ_LOG_ERROR("FLIRT: cannot open %s (read mode)\n", input_file);
+		return false;
+	} else if (!strcmp(in_extension, ".pac")) {
+		node = rz_sign_flirt_parse_string_pattern_from_buffer(buffer, optimize);
+	} else {
+		node = rz_sign_flirt_parse_compressed_pattern_from_buffer(buffer, RZ_FLIRT_SIG_ARCH_ANY);
+	}
+	rz_buf_free(buffer);
+
+	if (!node) {
+		RZ_LOG_ERROR("FLIRT: we encountered an error while parsing the file. Sorry.\n");
+		return false;
+	}
+
+	bool result = false;
+	if (!(buffer = rz_buf_new_file(output_file, O_RDWR | O_CREAT | O_TRUNC, 0644))) {
+		RZ_LOG_ERROR("FLIRT: cannot open %s (write mode)\n", output_file);
+		return false;
+	} else if (!strcmp(out_extension, ".pac")) {
+		result = rz_sign_flirt_write_string_pattern_to_buffer(node, buffer);
+	} else {
+		ut64 hdr_version = rz_config_get_i(core->config, "flirt.header.version");
+		const char *hdr_arch = rz_config_get(core->config, "asm.arch");
+		const char *hdr_file = rz_config_get(core->config, "flirt.header.file");
+		const char *hdr_os = rz_config_get(core->config, "flirt.header.os");
+		const char *hdr_app = rz_config_get(core->config, "flirt.header.app");
+		const char *hdr_lib = rz_config_get(core->config, "flirt.library.name");
+		bool deflate = rz_config_get_b(core->config, "flirt.header.compress");
+
+		if (RZ_STR_ISEMPTY(hdr_lib)) {
+			RZ_LOG_WARN("config 'flirt.library.name' is empty. using default value\n");
+			hdr_lib = RZ_FLIRT_LIBRARY_NAME_DFL;
+		}
+
+		RzFlirtCompressedOptions options = {
+			.version = hdr_version,
+			.arch = rz_core_flirt_arch_from_name(hdr_arch),
+			.file = rz_core_flirt_file_from_option_list(hdr_file),
+			.os = rz_core_flirt_os_from_option_list(hdr_os),
+			.app = rz_core_flirt_app_from_option_list(hdr_app),
+			.deflate = deflate,
+			.libname = hdr_lib,
+		};
+		result = rz_sign_flirt_write_compressed_pattern_to_buffer(node, buffer, &options);
+	}
+
+	rz_buf_free(buffer);
+	rz_sign_flirt_node_free(node);
+	return result;
 }
