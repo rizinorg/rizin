@@ -1418,70 +1418,12 @@ RZ_IPI RzCmdStatus rz_zign_save_sdb_handler(RzCore *core, int argc, const char *
 }
 
 RZ_IPI RzCmdStatus rz_zign_flirt_create_handler(RzCore *core, int argc, const char **argv) {
-	bool result = false;
 	const char *filename = argv[1];
-	const char *extension = rz_str_lchr(filename, '.');
-
-	if (RZ_STR_ISEMPTY(extension) || (strcmp(extension, ".sig") != 0 && strcmp(extension, ".pac") != 0)) {
-		RZ_LOG_ERROR("missing or unknown extension '%s'. supported only .pac and .sig\n", extension);
-		return RZ_CMD_STATUS_ERROR;
-	}
-
-	ut64 optimize = rz_config_get_i(core->config, "flirt.optimize");
-	if (optimize > RZ_FLIRT_NODE_OPTIMIZE_MAX) {
-		RZ_LOG_ERROR("config 'flirt.optimize' is set to an invalid value.\n");
-		return RZ_CMD_STATUS_ERROR;
-	}
-
-	RzFlirtNode *node = rz_sign_flirt_node_new(core->analysis, optimize);
-	if (!node) {
-		return RZ_CMD_STATUS_ERROR;
-	}
-
-	RzBuffer *buffer = rz_buf_new_file(filename, O_RDWR | O_CREAT | O_TRUNC, 0644);
-	if (!buffer) {
-		RZ_LOG_ERROR("cannot create file '%s'\n", filename);
-		return RZ_CMD_STATUS_ERROR;
-	}
-
-	if (!strcmp(extension, ".pac")) {
-		result = rz_sign_flirt_write_string_pattern_to_buffer(node, buffer);
-	} else if (!strcmp(extension, ".sig")) {
-		ut64 hdr_version = rz_config_get_i(core->config, "flirt.header.version");
-		const char *hdr_arch = rz_config_get(core->config, "asm.arch");
-		const char *hdr_file = rz_config_get(core->config, "flirt.header.file");
-		const char *hdr_os = rz_config_get(core->config, "flirt.header.os");
-		const char *hdr_app = rz_config_get(core->config, "flirt.header.app");
-		const char *hdr_lib = rz_config_get(core->config, "flirt.library.name");
-		bool deflate = rz_config_get_b(core->config, "flirt.header.compress");
-
-		if (RZ_STR_ISEMPTY(hdr_lib)) {
-			RZ_LOG_WARN("config 'flirt.library.name' is empty. using default value\n");
-			hdr_lib = RZ_FLIRT_LIBRARY_NAME_DFL;
-		}
-
-		RzFlirtCompressedOptions options = {
-			.version = hdr_version,
-			.arch = rz_core_flirt_arch_from_name(hdr_arch),
-			.file = rz_core_flirt_file_from_option_list(hdr_file),
-			.os = rz_core_flirt_os_from_option_list(hdr_os),
-			.app = rz_core_flirt_app_from_option_list(hdr_app),
-			.deflate = deflate,
-			.libname = hdr_lib,
-		};
-		result = rz_sign_flirt_write_compressed_pattern_to_buffer(node, buffer, &options);
-	}
-
-	ut32 written_nodes = rz_sign_flirt_node_count_nodes(node);
-
-	rz_buf_free(buffer);
-	rz_sign_flirt_node_free(node);
-
-	if (!result) {
+	ut32 written_nodes = 0;
+	if (!rz_core_flirt_create_file(core, filename, &written_nodes)) {
 		RZ_LOG_ERROR("failed to create FLIRT file '%s'\n", filename);
 		return RZ_CMD_STATUS_ERROR;
 	}
-
 	rz_cons_printf("%u FLIRT signatures were written in '%s'\n", written_nodes, filename);
 	return RZ_CMD_STATUS_OK;
 }
