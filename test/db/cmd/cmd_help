@@ -334,6 +334,6 @@ CMDS=<<EOF
 EOF
 EXPECT=<<EOF
 | #![<interpreter-name> [<arg0> [<arg1> ...]]] # List all available interpreters / Run interpreter
-| .(<macro-name> [<macro-arg0> [<macro-arg1> ...])] # Interpret output of macro
+| .(<macro-name> [<macro-arg0> [<macro-arg1> ...]]) # Interpret output of macro
 EOF
 RUN
