@@ -435,8 +435,7 @@ static char *find_apk_binary(const char *filename, int rw, int mode, RzIO *io) {
 					eprintf("Warning: File %s does not exist, creating a new one.\n", name);
 				}
 				zfo->io_backref = io;
-				RzIODesc *desc = rz_io_desc_new(io, &rz_io_plugin_zip,
-					zfo->name, rw, mode, zfo);
+				RzIODesc *desc = rz_io_desc_new(io, &rz_io_plugin_zip, zfo->name, rw, mode, zfo);
 				desc->name = strdup(name);
 				rz_io_desc_add(io, desc);
 			}
