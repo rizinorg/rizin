@@ -908,21 +908,18 @@ static void fill_wrapped_comment(RzCmd *cmd, RzStrBuf *sb, const char *comment, 
 
 static size_t fill_args(RzStrBuf *sb, const RzCmdDesc *cd) {
 	const RzCmdDescArg *arg;
-	bool in_optionals = false;
 	size_t n_optionals = 0;
 	size_t len = 0;
 	bool has_array = false;
 	for (arg = cd->help->args; arg && arg->name; arg++) {
-		if (!arg->optional) {
-			if (in_optionals) {
+		if (arg->type == RZ_CMD_ARG_TYPE_FAKE) {
+			if (!arg->optional) {
+				// Assume arg is a closing bracket
 				for (; n_optionals > 0; n_optionals--) {
 					rz_strbuf_append(sb, "]");
 					len++;
 				}
 			}
-			in_optionals = false;
-		}
-		if (arg->type == RZ_CMD_ARG_TYPE_FAKE) {
 			rz_strbuf_append(sb, arg->name);
 			len += strlen(arg->name);
 			continue;
@@ -939,7 +936,6 @@ static size_t fill_args(RzStrBuf *sb, const RzCmdDesc *cd) {
 		if (arg->optional) {
 			rz_strbuf_append(sb, "[");
 			len++;
-			in_optionals = true;
 			n_optionals++;
 		}
 		if (arg->flags & RZ_CMD_ARG_FLAG_ARRAY) {
