@@ -348,10 +348,11 @@ RZ_API int rz_analysis_set_big_endian(RzAnalysis *analysis, int bigend) {
 	return true;
 }
 
-RZ_API ut8 *rz_analysis_mask(RzAnalysis *analysis, int size, const ut8 *data, ut64 at) {
+RZ_API ut8 *rz_analysis_mask(RzAnalysis *analysis, ut32 size, const ut8 *data, ut64 at) {
 	RzAnalysisOp *op = NULL;
 	ut8 *ret = NULL;
-	int oplen, idx = 0;
+	int oplen = 0;
+	ut32 idx = 0;
 
 	if (!data) {
 		return NULL;
