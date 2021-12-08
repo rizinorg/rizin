@@ -18,6 +18,15 @@ RZ_API RzListIter *rz_list_iter_get_next(RzListIter *list) {
 	return list->n;
 }
 
+RZ_API void *rz_list_iter_get_next_data(RzListIter *list) {
+	rz_return_val_if_fail(list, NULL);
+	RzListIter *n = list->n;
+	if (!n) {
+		return NULL;
+	}
+	return n->data;
+}
+
 RZ_API void *rz_list_iter_get_data(RzListIter *list) {
 	rz_return_val_if_fail(list, NULL);
 	return list->data;
@@ -68,6 +77,8 @@ RZ_API void *rz_list_last(const RzList *list) {
  *
  * */
 RZ_API void rz_list_init(RzList *list) {
+	rz_return_if_fail(list);
+
 	list->head = NULL;
 	list->tail = NULL;
 	list->free = NULL;
@@ -80,7 +91,9 @@ RZ_API void rz_list_init(RzList *list) {
  *
  * */
 RZ_API ut32 rz_list_length(const RzList *list) {
-	rz_return_val_if_fail(list, 0);
+	if (!list) {
+		return 0;
+	}
 	return list->length;
 }
 
