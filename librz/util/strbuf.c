@@ -107,7 +107,16 @@ RZ_API bool rz_strbuf_setbin(RzStrBuf *sb, const ut8 *s, size_t l) {
 	return true;
 }
 
-RZ_API bool rz_strbuf_slice(RzStrBuf *sb, int from, int len) {
+/**
+ * \brief Cuts the current string into a substring
+ *
+ * \param sb    RzStrBuf to use
+ * \param from  Begin index from where to cut
+ * \param len   Length of the substring to cut
+ *
+ * \return      false when fails to to cut the current buffer into a substring
+ */
+RZ_API bool rz_strbuf_slice(RZ_NONNULL RzStrBuf *sb, int from, int len) {
 	rz_return_val_if_fail(sb && from >= 0 && len >= 0, false);
 	if (from < 0 && len >= sb->len) {
 		return false;
