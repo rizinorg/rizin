@@ -12,17 +12,17 @@ typedef struct map_string_value_t {
 	ut32 value;
 } MapStringValue;
 
-const MapStringValue arch_map[18] = {
+const MapStringValue arch_map[29] = {
 	{ "x86", RZ_FLIRT_SIG_ARCH_386 },
 	{ "z80", RZ_FLIRT_SIG_ARCH_Z80 },
 	// { "i860", RZ_FLIRT_SIG_ARCH_I860 },
-	// { "8051", RZ_FLIRT_SIG_ARCH_8051 },
+	{ "8051", RZ_FLIRT_SIG_ARCH_8051 },
 	// { "tms", RZ_FLIRT_SIG_ARCH_TMS },
 	{ "6502", RZ_FLIRT_SIG_ARCH_6502 },
 	// { "pdp", RZ_FLIRT_SIG_ARCH_PDP },
-	// { "68k", RZ_FLIRT_SIG_ARCH_68K },
+	{ "m68k", RZ_FLIRT_SIG_ARCH_68K },
 	{ "java", RZ_FLIRT_SIG_ARCH_JAVA },
-	// { "6800", RZ_FLIRT_SIG_ARCH_6800 },
+	{ "m680x", RZ_FLIRT_SIG_ARCH_6800 },
 	// { "st7", RZ_FLIRT_SIG_ARCH_ST7 },
 	// { "mc6812", RZ_FLIRT_SIG_ARCH_MC6812 },
 	{ "mips", RZ_FLIRT_SIG_ARCH_MIPS },
@@ -48,7 +48,7 @@ const MapStringValue arch_map[18] = {
 	// { "i960", RZ_FLIRT_SIG_ARCH_I960 },
 	// { "f2mc", RZ_FLIRT_SIG_ARCH_F2MC },
 	// { "tms320c54", RZ_FLIRT_SIG_ARCH_TMS320C54 },
-	// { "tms320c55", RZ_FLIRT_SIG_ARCH_TMS320C55 },
+	{ "tms320", RZ_FLIRT_SIG_ARCH_TMS320C55 },
 	// { "trimedia", RZ_FLIRT_SIG_ARCH_TRIMEDIA },
 	// { "m32r", RZ_FLIRT_SIG_ARCH_M32R },
 	// { "nec_78k0", RZ_FLIRT_SIG_ARCH_NEC_78K0 },
@@ -68,12 +68,25 @@ const MapStringValue arch_map[18] = {
 	{ "cr16", RZ_FLIRT_SIG_ARCH_CR16 },
 	// { "mn102l00", RZ_FLIRT_SIG_ARCH_MN102L00 },
 	// { "tms320c1x", RZ_FLIRT_SIG_ARCH_TMS320C1X },
-	// { "nec_v850x", RZ_FLIRT_SIG_ARCH_NEC_V850X },
+	{ "v850", RZ_FLIRT_SIG_ARCH_NEC_V850X },
 	// { "scr_adpt", RZ_FLIRT_SIG_ARCH_SCR_ADPT },
 	{ "ebc", RZ_FLIRT_SIG_ARCH_EBC },
 	{ "msp430", RZ_FLIRT_SIG_ARCH_MSP430 },
 	// { "spu", RZ_FLIRT_SIG_ARCH_SPU },
 	{ "dalvik", RZ_FLIRT_SIG_ARCH_DALVIK },
+	// { "65c816", RZ_FLIRT_SIG_ARCH_65C816 },
+	// { "ad2106x", RZ_FLIRT_SIG_ARCH_AD2106X },
+	{ "arc", RZ_FLIRT_SIG_ARCH_ARC },
+	// { "dsp96k", RZ_FLIRT_SIG_ARCH_DSP96K },
+	// { "m16c", RZ_FLIRT_SIG_ARCH_M16C },
+	{ "pic", RZ_FLIRT_SIG_ARCH_PIC16 },
+	{ "riscv", RZ_FLIRT_SIG_ARCH_RISCV },
+	// { "rl78", RZ_FLIRT_SIG_ARCH_RL78 },
+	{ "sysz", RZ_FLIRT_SIG_ARCH_S390 },
+	{ "spc700", RZ_FLIRT_SIG_ARCH_SPC700 },
+	// { "tms320c28", RZ_FLIRT_SIG_ARCH_TMS320C28 },
+	// { "unsp", RZ_FLIRT_SIG_ARCH_UNSP },
+	{ "xtensa", RZ_FLIRT_SIG_ARCH_XTENSA },
 };
 
 const MapStringValue file_map[25] = {

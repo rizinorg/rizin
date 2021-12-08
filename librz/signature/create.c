@@ -12,20 +12,6 @@
 extern void module_free(RzFlirtModule *module);
 extern ut16 flirt_crc16(const ut8 *data_p, size_t length);
 
-#if 0
-static void sig_dbg_node(const char *name, const RzFlirtNode *node) {
-	eprintf("%s ", name);
-	for (ut32 i = 0; i < node->length; ++i) {
-		if (node->pattern_mask[i] != 0xFF) {
-			eprintf("..");
-			continue;
-		}
-		eprintf("%02X", node->pattern_bytes[i]);
-	}
-	eprintf("\n");
-}
-#endif
-
 static inline void flirt_function_sanitize_name(RzFlirtFunction *function) {
 	for (ut32 i = 0; i < RZ_FLIRT_NAME_MAX; ++i) {
 		char ch = function->name[i];
