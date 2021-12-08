@@ -81,6 +81,19 @@ enum rz_flirt_sig_arch_t {
 	RZ_FLIRT_SIG_ARCH_MSP430, // Texas Instruments MSP430
 	RZ_FLIRT_SIG_ARCH_SPU, // Cell Broadband Engine Synergistic Processor Unit
 	RZ_FLIRT_SIG_ARCH_DALVIK, // Android Dalvik Virtual Machine
+	RZ_FLIRT_SIG_ARCH_65C816, // 65802/65816
+	RZ_FLIRT_SIG_ARCH_AD2106X, // Analog Devices ADSP 2106X
+	RZ_FLIRT_SIG_ARCH_ARC, // Argonaut RISC Core
+	RZ_FLIRT_SIG_ARCH_DSP96K, // Motorola DSP96000
+	RZ_FLIRT_SIG_ARCH_M16C, // Renesas M16C
+	RZ_FLIRT_SIG_ARCH_PIC16, // Microchip 16-bit PIC
+	RZ_FLIRT_SIG_ARCH_RISCV, // RISC-V
+	RZ_FLIRT_SIG_ARCH_RL78, // Renesas RL78.
+	RZ_FLIRT_SIG_ARCH_S390, // IBM's S390
+	RZ_FLIRT_SIG_ARCH_SPC700, // Sony SPC700
+	RZ_FLIRT_SIG_ARCH_TMS320C28, // Texas Instruments TMS320C28x
+	RZ_FLIRT_SIG_ARCH_UNSP, // SunPlus unSP
+	RZ_FLIRT_SIG_ARCH_XTENSA, // Tensilica Xtensa
 	RZ_FLIRT_SIG_ARCH_ANY,
 };
 
