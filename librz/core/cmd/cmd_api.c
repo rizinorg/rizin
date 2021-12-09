@@ -913,6 +913,13 @@ static size_t fill_args(RzStrBuf *sb, const RzCmdDesc *cd) {
 	bool has_array = false;
 	for (arg = cd->help->args; arg && arg->name; arg++) {
 		if (arg->type == RZ_CMD_ARG_TYPE_FAKE) {
+			if (!arg->optional) {
+				// Assume arg is a closing bracket
+				for (; n_optionals > 0; n_optionals--) {
+					rz_strbuf_append(sb, "]");
+					len++;
+				}
+			}
 			rz_strbuf_append(sb, arg->name);
 			len += strlen(arg->name);
 			continue;

@@ -325,3 +325,15 @@ EXPECT=<<EOF
 {"zi":{"cmd":"zi","type":"argv_modes","args_str":"","args":[],"description":"","summary":"Show zignatures matching information"},"zij":{"cmd":"zij","type":"argv_modes","args_str":"","args":[],"description":"","summary":"Show zignatures matching information (JSON mode)"},"zi*":{"cmd":"zi*","type":"argv_modes","args_str":"","args":[],"description":"","summary":"Show zignatures matching information (rizin mode)"},"ziq":{"cmd":"ziq","type":"argv_modes","args_str":"","args":[],"description":"","summary":"Show zignatures matching information (quiet mode)"},"zii":{"cmd":"zii","type":"argv","args_str":" <from> <to>","args":[{"type":"number","name":"from","required":true},{"type":"number","name":"to","required":true}],"description":"","summary":"Show zignatures matching information in range"}}
 EOF
 RUN
+
+NAME=optional brackets
+FILE==
+CMDS=<<EOF
+?~interpreter-name
+.?~macro-arg0
+EOF
+EXPECT=<<EOF
+| #![<interpreter-name> [<arg0> [<arg1> ...]]] # List all available interpreters / Run interpreter
+| .(<macro-name> [<macro-arg0> [<macro-arg1> ...]]) # Interpret output of macro
+EOF
+RUN
