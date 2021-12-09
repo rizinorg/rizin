@@ -40,6 +40,8 @@ mkdir .tmp
 !rz-sign -o .tmp/hello_world.pac bins/elf/hello_world
 EOF
 EXPECT=<<EOF
+rz-sign: written 11 signatures to .tmp/hello_world.sig.
+rz-sign: written 11 signatures to .tmp/hello_world.pac.
 EOF
 RUN
 
@@ -47,9 +49,11 @@ NAME=FLIRT convert sig to pac and viceversa
 FILE==
 CMDS=<<EOF
 mkdir .tmp
-!rz-sign -c .tmp/hello_world.sig bins/other/sigs/libc-v7.pac
-!rz-sign -c .tmp/hello_world.pac .tmp/hello_world.sig
+!rz-sign -c .tmp/converted.sig bins/flirt/elf-x86/libcurl.a.pac
+!rz-sign -c .tmp/converted.pac .tmp/converted.sig
 EOF
 EXPECT=<<EOF
+rz-sign: bins/flirt/elf-x86/libcurl.a.pac was converted to .tmp/converted.sig.
+rz-sign: .tmp/converted.sig was converted to .tmp/converted.pac.
 EOF
 RUN

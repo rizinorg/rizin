@@ -157,7 +157,11 @@ RZ_API int rz_main_rz_sign(int argc, const char **argv) {
 
 	// set all evars
 	rz_list_foreach (evars, it, config) {
-		rz_config_eval(core->config, config);
+		if (!rz_config_eval(core->config, config)) {
+			RZ_LOG_ERROR("rz-sign: invalid option '%s'\n", config);
+			ret = -1;
+			goto rz_sign_end;
+		}
 	}
 
 	if (option == RZ_SIGN_OPT_DUMP_FLIRT) {
@@ -170,13 +174,18 @@ RZ_API int rz_main_rz_sign(int argc, const char **argv) {
 		perform_analysis(core, complexity);
 
 		// create flirt file
-		if (!rz_core_flirt_create_file(core, output_file, NULL)) {
+		ut32 n_nodes = 0;
+		if (!rz_core_flirt_create_file(core, output_file, &n_nodes)) {
 			ret = -1;
+		} else if (!quiet) {
+			rz_cons_printf("rz-sign: written %u signatures to %s.\n", n_nodes, output_file);
 		}
 	} else {
-		// conver flirt files
+		// convert a flirt file from .pac to .sig or viceversa
 		if (!rz_core_flirt_convert_file(core, input_file, output_file)) {
 			ret = -1;
+		} else if (!quiet) {
+			rz_cons_printf("rz-sign: %s was converted to %s.\n", input_file, output_file);
 		}
 	}
 	rz_cons_flush();

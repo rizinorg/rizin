@@ -3798,22 +3798,22 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETB("rzil.step.events.write", true, "enables/disables printing aezse write event");
 
 	/* FLIRT config */
-	SETBPREF("flirt.library.name", RZ_FLIRT_LIBRARY_NAME_DFL, "FLIRT library name for sig format");
-	SETI("flirt.header.version", 10, "FLIRT version for sig format");
-	n = NODECB("flirt.header.file", "all", &cb_flirt);
+	SETBPREF("flirt.sig.library", RZ_FLIRT_LIBRARY_NAME_DFL, "FLIRT library name for sig format");
+	SETI("flirt.sig.version", 10, "FLIRT version for sig format");
+	n = NODECB("flirt.sig.file", "all", &cb_flirt);
 	SETDESC(n, "FLIRT file list (comma separated) for sig format");
 	SETOPTIONS(n, "msdos", "win", "os2", "netware", "unix", "other", "all", "none", NULL);
-	n = NODECB("flirt.header.os", "all", &cb_flirt);
+	n = NODECB("flirt.sig.os", "all", &cb_flirt);
 	SETDESC(n, "FLIRT operating system list (comma separated) for sig format");
 	SETOPTIONS(n,
 		"aixar", "aout", "ar", "bin", "coff", "dos:com", "dos:com:old", "dos:exe", "dos:exe:old",
 		"dosdrv", "elf", "intelhex", "le", "loader", "lx", "moshex", "ne", "nlm", "omf", "omflib",
 		"pe", "pilot", "srec", "w32run", "zip", "all", "none", NULL);
-	n = NODECB("flirt.header.app", "all", &cb_flirt);
+	n = NODECB("flirt.sig.app", "all", &cb_flirt);
 	SETDESC(n, "FLIRT app list (comma separated) for sig format");
 	SETOPTIONS(n, "console", "graphics", "exe", "dll", "drv", "thread:single", "thread:multi", "16bit", "32bit", "64bit", "all", "none", NULL);
-	SETB("flirt.header.compress", false, "enables/disables FLIRT zlib compression when creating a signature file (available only for .sig files)");
-	SETI("flirt.optimize", RZ_FLIRT_NODE_OPTIMIZE_NORMAL, "FLIRT optimization option when creating a signature file (none: 0, normal: 1, smallest: 2)");
+	SETB("flirt.sig.deflate", false, "enables/disables FLIRT zlib compression when creating a signature file (available only for .sig files)");
+	SETI("flirt.node.optimize", RZ_FLIRT_NODE_OPTIMIZE_MAX, "FLIRT optimization option when creating a signature file (none: 0, normal: 1, smallest: 2)");
 
 	rz_config_lock(cfg, true);
 	return true;

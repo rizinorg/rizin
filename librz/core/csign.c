@@ -411,9 +411,9 @@ RZ_API bool rz_core_flirt_create_file(RZ_NONNULL RzCore *core, RZ_NONNULL const 
 		return false;
 	}
 
-	ut64 optimize = rz_config_get_i(core->config, "flirt.optimize");
+	ut64 optimize = rz_config_get_i(core->config, "flirt.node.optimize");
 	if (optimize > RZ_FLIRT_NODE_OPTIMIZE_MAX) {
-		RZ_LOG_ERROR("config 'flirt.optimize' is set to an invalid value.\n");
+		RZ_LOG_ERROR("config 'flirt.node.optimize' is set to an invalid value.\n");
 		return false;
 	}
 
@@ -432,17 +432,23 @@ RZ_API bool rz_core_flirt_create_file(RZ_NONNULL RzCore *core, RZ_NONNULL const 
 	if (!strcmp(extension, ".pac")) {
 		result = rz_sign_flirt_write_string_pattern_to_buffer(node, buffer);
 	} else if (!strcmp(extension, ".sig")) {
-		ut64 hdr_version = rz_config_get_i(core->config, "flirt.header.version");
+		ut64 hdr_version = rz_config_get_i(core->config, "flirt.sig.version");
 		const char *hdr_arch = rz_config_get(core->config, "asm.arch");
-		const char *hdr_file = rz_config_get(core->config, "flirt.header.file");
-		const char *hdr_os = rz_config_get(core->config, "flirt.header.os");
-		const char *hdr_app = rz_config_get(core->config, "flirt.header.app");
-		const char *hdr_lib = rz_config_get(core->config, "flirt.library.name");
-		bool deflate = rz_config_get_b(core->config, "flirt.header.compress");
+		const char *hdr_file = rz_config_get(core->config, "flirt.sig.file");
+		const char *hdr_os = rz_config_get(core->config, "flirt.sig.os");
+		const char *hdr_app = rz_config_get(core->config, "flirt.sig.app");
+		const char *hdr_lib = rz_config_get(core->config, "flirt.sig.library");
+		bool deflate = rz_config_get_b(core->config, "flirt.sig.deflate");
+		ut8 architecture = rz_core_flirt_arch_from_name(hdr_arch);
 
 		if (RZ_STR_ISEMPTY(hdr_lib)) {
-			RZ_LOG_WARN("config 'flirt.library.name' is empty. using default value\n");
+			RZ_LOG_WARN("config 'flirt.sig.library' is empty. using default value '" RZ_FLIRT_LIBRARY_NAME_DFL "'\n");
 			hdr_lib = RZ_FLIRT_LIBRARY_NAME_DFL;
+		} else if (architecture >= RZ_FLIRT_SIG_ARCH_ANY) {
+			RZ_LOG_ERROR("FLIRT: architecture '%s' is not supported as .sig file, we suggest to use the .pac format.\n", hdr_arch);
+			RZ_LOG_ERROR("FLIRT: we suggest to open an issue to discuss with the rizin team about it.\n");
+			result = false;
+			goto fail;
 		}
 
 		RzFlirtCompressedOptions options = {
@@ -461,6 +467,7 @@ RZ_API bool rz_core_flirt_create_file(RZ_NONNULL RzCore *core, RZ_NONNULL const 
 		*written_nodes = rz_sign_flirt_node_count_nodes(node);
 	}
 
+fail:
 	rz_buf_free(buffer);
 	rz_sign_flirt_node_free(node);
 	return result;
@@ -498,9 +505,9 @@ RZ_API bool rz_core_flirt_convert_file(RZ_NONNULL RzCore *core, RZ_NONNULL const
 	RzBuffer *buffer = NULL;
 	RzFlirtNode *node = NULL;
 
-	ut64 optimize = rz_config_get_i(core->config, "flirt.optimize");
+	ut64 optimize = rz_config_get_i(core->config, "flirt.node.optimize");
 	if (optimize > RZ_FLIRT_NODE_OPTIMIZE_MAX) {
-		RZ_LOG_ERROR("config 'flirt.optimize' is set to an invalid value.\n");
+		RZ_LOG_ERROR("config 'flirt.node.optimize' is set to an invalid value.\n");
 		return false;
 	}
 
@@ -526,22 +533,28 @@ RZ_API bool rz_core_flirt_convert_file(RZ_NONNULL RzCore *core, RZ_NONNULL const
 	} else if (!strcmp(out_extension, ".pac")) {
 		result = rz_sign_flirt_write_string_pattern_to_buffer(node, buffer);
 	} else {
-		ut64 hdr_version = rz_config_get_i(core->config, "flirt.header.version");
+		ut64 hdr_version = rz_config_get_i(core->config, "flirt.sig.version");
 		const char *hdr_arch = rz_config_get(core->config, "asm.arch");
-		const char *hdr_file = rz_config_get(core->config, "flirt.header.file");
-		const char *hdr_os = rz_config_get(core->config, "flirt.header.os");
-		const char *hdr_app = rz_config_get(core->config, "flirt.header.app");
-		const char *hdr_lib = rz_config_get(core->config, "flirt.library.name");
-		bool deflate = rz_config_get_b(core->config, "flirt.header.compress");
+		const char *hdr_file = rz_config_get(core->config, "flirt.sig.file");
+		const char *hdr_os = rz_config_get(core->config, "flirt.sig.os");
+		const char *hdr_app = rz_config_get(core->config, "flirt.sig.app");
+		const char *hdr_lib = rz_config_get(core->config, "flirt.sig.library");
+		bool deflate = rz_config_get_b(core->config, "flirt.sig.deflate");
+		ut8 architecture = rz_core_flirt_arch_from_name(hdr_arch);
 
 		if (RZ_STR_ISEMPTY(hdr_lib)) {
-			RZ_LOG_WARN("config 'flirt.library.name' is empty. using default value\n");
+			RZ_LOG_WARN("config 'flirt.sig.library' is empty. using default value '" RZ_FLIRT_LIBRARY_NAME_DFL "'\n");
 			hdr_lib = RZ_FLIRT_LIBRARY_NAME_DFL;
+		} else if (architecture >= RZ_FLIRT_SIG_ARCH_ANY) {
+			RZ_LOG_ERROR("FLIRT: architecture '%s' is not supported as .sig file, we suggest to use the .pac format.\n", hdr_arch);
+			RZ_LOG_ERROR("FLIRT: we suggest to open an issue to discuss with the rizin team about it.\n");
+			result = false;
+			goto fail;
 		}
 
 		RzFlirtCompressedOptions options = {
 			.version = hdr_version,
-			.arch = rz_core_flirt_arch_from_name(hdr_arch),
+			.arch = architecture,
 			.file = rz_core_flirt_file_from_option_list(hdr_file),
 			.os = rz_core_flirt_os_from_option_list(hdr_os),
 			.app = rz_core_flirt_app_from_option_list(hdr_app),
@@ -551,6 +564,7 @@ RZ_API bool rz_core_flirt_convert_file(RZ_NONNULL RzCore *core, RZ_NONNULL const
 		result = rz_sign_flirt_write_compressed_pattern_to_buffer(node, buffer, &options);
 	}
 
+fail:
 	rz_buf_free(buffer);
 	rz_sign_flirt_node_free(node);
 	return result;
