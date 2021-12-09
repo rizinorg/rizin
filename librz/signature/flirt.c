@@ -323,7 +323,7 @@ static bool is_pattern_matching(ut32 p_size, const ut8 *pattern, const ut8 *mask
 		return false;
 	}
 	for (ut32 i = 0; i < p_size; i++) {
-		if (mask[i] && pattern[i] != b[i]) {
+		if (mask[i] == 0xFF && pattern[i] != b[i]) {
 			return false;
 		}
 	}
@@ -367,7 +367,6 @@ static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module
 		next_module_function = rz_analysis_get_function_at((RzAnalysis *)analysis, address + flirt_func->offset);
 		if (next_module_function) {
 			char *name;
-			int name_offs = 0;
 			ut32 next_module_function_size;
 
 			// get function size from flirt signature
@@ -406,13 +405,7 @@ static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module
 				rz_analysis_trim_jmprefs((RzAnalysis *)analysis, next_module_function);
 			}
 
-			while (flirt_func->name[name_offs] == '?') { // skip '?' chars
-				name_offs++;
-			}
-			if (!flirt_func->name[name_offs]) {
-				continue;
-			}
-			name = rz_name_filter2(flirt_func->name + name_offs, true);
+			name = rz_name_filter2(flirt_func->name, true);
 			free(next_module_function->name);
 			next_module_function->name = rz_str_newf("flirt.%s", name);
 			analysis->flb.set(analysis->flb.f, next_module_function->name,
@@ -502,22 +495,31 @@ static ut8 read_module_tail_bytes(RzFlirtModule *module, ParseStatus *b) {
 	/* parses a module tail bytes */
 	/* returns false on parsing error */
 	int i;
-	ut8 number_of_tail_bytes;
+	ut32 number_of_tail_bytes;
 	RzFlirtTailByte *tail_byte = NULL;
 	if (!(module->tail_bytes = rz_list_newf((RzListFree)free))) {
 		RZ_LOG_ERROR("FLIRT: failed to allocate tail bytes list.\n");
 		goto err_exit;
 	}
 
-	if (b->version >= 8) { // this counter was introduced in version 8
-		number_of_tail_bytes = read_byte(b); // XXX are we sure it's not read_multiple_bytes?
+	if (b->version == 8 || b->version == 9) {
+		// this counter was introduced in version 8 and kept in version 9
+		number_of_tail_bytes = read_max_2_bytes(b);
 		if (is_status_err_or_eof(b)) {
-			RZ_LOG_ERROR("FLIRT: failed to read tail byte count because EOF (version >= 8).\n");
+			RZ_LOG_ERROR("FLIRT: failed to read referenced function count because EOF (version 8 or 9).\n");
+			goto err_exit;
+		}
+	} else if (b->version > 9) {
+		// this counter was changed from version 10
+		number_of_tail_bytes = read_multiple_bytes(b);
+		if (is_status_err_or_eof(b)) {
+			RZ_LOG_ERROR("FLIRT: failed to read referenced function count because EOF (version > 9).\n");
 			goto err_exit;
 		}
 	} else { // suppose there's only one
 		number_of_tail_bytes = 1;
 	}
+
 	for (i = 0; i < number_of_tail_bytes; i++) {
 		tail_byte = RZ_NEW0(RzFlirtTailByte);
 		if (!tail_byte) {
@@ -558,21 +560,30 @@ static ut8 read_module_referenced_functions(RzFlirtModule *module, ParseStatus *
 	/* parses a module referenced functions */
 	/* returns false on parsing error */
 	ut32 i, j;
-	ut8 number_of_referenced_functions;
+	ut32 number_of_referenced_functions;
 	ut32 ref_function_name_length;
 	RzFlirtFunction *ref_function = NULL;
 
 	module->referenced_functions = rz_list_newf((RzListFree)free);
 
-	if (b->version >= 8) { // this counter was introduced in version 8
-		number_of_referenced_functions = read_byte(b); // XXX are we sure it's not read_multiple_bytes?
+	if (b->version == 8 || b->version == 9) {
+		// this counter was introduced in version 8 and kept in version 9
+		number_of_referenced_functions = read_max_2_bytes(b);
 		if (is_status_err_or_eof(b)) {
-			RZ_LOG_ERROR("FLIRT: failed to read referenced function count because EOF.\n");
+			RZ_LOG_ERROR("FLIRT: failed to read referenced function count because EOF (version 8 or 9).\n");
+			goto err_exit;
+		}
+	} else if (b->version > 9) {
+		// this counter was changed from version 10
+		number_of_referenced_functions = read_multiple_bytes(b);
+		if (is_status_err_or_eof(b)) {
+			RZ_LOG_ERROR("FLIRT: failed to read referenced function count because EOF (version > 9).\n");
 			goto err_exit;
 		}
 	} else { // suppose there's only one
 		number_of_referenced_functions = 1;
 	}
+	sig_dbg("dbg: n refs: %02X\n", number_of_referenced_functions);
 
 	for (i = 0; i < number_of_referenced_functions; i++) {
 		ref_function = RZ_NEW0(RzFlirtFunction);
@@ -610,6 +621,7 @@ static ut8 read_module_referenced_functions(RzFlirtModule *module, ParseStatus *
 			RZ_LOG_ERROR("FLIRT: invalid referenced function name length (%u >= %u).\n", ref_function_name_length, RZ_FLIRT_NAME_MAX);
 			goto err_exit;
 		}
+		sig_dbg("dbg: REF length %02X\n", ref_function_name_length);
 		for (j = 0; j < ref_function_name_length; j++) {
 			ref_function->name[j] = read_byte(b);
 			if (is_status_err_or_eof(b)) {
@@ -697,7 +709,7 @@ static ut8 read_module_public_functions(RzFlirtModule *module, ParseStatus *b, u
 			function->name[i] = '\0';
 		}
 
-		sig_dbg("dbg: %04X:%s \n", function->offset, function->name);
+		sig_dbg("dbg: %04X: %s \n", function->offset, function->name);
 		*flags = current_byte;
 		rz_list_append(module->public_functions, function);
 	} while (*flags & IDASIG_PARSE_MORE_PUBLIC_NAMES);
@@ -1260,6 +1272,13 @@ static bool flirt_has_references(RZ_NONNULL const RzFlirtModule *module) {
 	return module->referenced_functions && rz_list_length(module->referenced_functions) > 0;
 }
 
+static bool rz_write_versioned_vle(RzBuffer *buffer, ut32 value, ut8 version) {
+	if (version < 9) {
+		return rz_write_vle16(buffer, value);
+	}
+	return rz_write_vle32(buffer, value);
+}
+
 static bool flirt_write_module(RZ_NONNULL const RzFlirtModule *module, RZ_NONNULL RzBuffer *buffer, ut8 flags, ut8 version, bool first) {
 	ut8 tmp[4];
 	size_t value = 0;
@@ -1285,7 +1304,7 @@ static bool flirt_write_module(RZ_NONNULL const RzFlirtModule *module, RZ_NONNUL
 
 	rz_list_foreach (module->public_functions, it, func) {
 		if (value > 0) {
-			tmp[0] = IDASIG_PARSE_MORE_PUBLIC_NAMES | flags;
+			tmp[0] = IDASIG_PARSE_MORE_PUBLIC_NAMES;
 			rz_buf_append_bytes(buffer, tmp, 1);
 		}
 		rz_write_vle32(buffer, func->offset - base_offset);
@@ -1311,32 +1330,44 @@ static bool flirt_write_module(RZ_NONNULL const RzFlirtModule *module, RZ_NONNUL
 	value = rz_list_length(module->tail_bytes);
 	if (value) {
 		if (version >= 8) {
-			tmp[0] = value; // n of tail bytes.
-			rz_buf_append_bytes(buffer, tmp, 1);
+			// n of tail bytes.
+			rz_write_versioned_vle(buffer, value, version);
 		}
+		value = 0;
 		rz_list_foreach (module->tail_bytes, it, byte) {
-			rz_write_vle32(buffer, byte->offset);
+			if (version < 8 && value > 1) {
+				RZ_LOG_WARN("FLIRT: the number of tail bytes (%u) is > 1 when version %u does allow only 1\n", rz_list_length(module->tail_bytes), version);
+				break;
+			}
+			value++;
 
+			rz_write_versioned_vle(buffer, byte->offset, version);
 			rz_buf_append_le_bits(buffer, tmp, byte->value, 8);
 		}
 	}
 
-	if (version >= 8 && has_ref) {
-		rz_write_vle32(buffer, rz_list_length(module->referenced_functions));
-	}
+	if (has_ref) {
+		// on sig files, it is not allowed to have multiple references.
+		tmp[0] = 1;
+		rz_buf_append_bytes(buffer, tmp, 1);
 
-	rz_list_foreach (module->referenced_functions, it, func) {
-		rz_write_vle16(buffer, func->offset);
-		value = strlen(func->name);
-		if (value > 0xFF) {
-			tmp[0] = 0; // when name length is > 0xFF the size byte is 0
-			rz_buf_append_bytes(buffer, tmp, 1);
-			rz_write_vle32(buffer, value);
-		} else {
-			tmp[0] = value;
-			rz_buf_append_bytes(buffer, tmp, 1);
+		value = 0;
+		rz_list_foreach (module->referenced_functions, it, func) {
+			if (value > 0) {
+				break;
+			}
+			value++;
+
+			rz_write_versioned_vle(buffer, func->offset, version);
+
+			ut32 length = strlen(func->name);
+			if (length > 0x7F) {
+				tmp[0] = 0; // when name length is > 0x7F the length is preceeded by a 0x00
+				rz_buf_append_bytes(buffer, tmp, 1);
+			}
+			rz_write_vle16(buffer, length);
+			rz_buf_append_bytes(buffer, (ut8 *)func->name, length);
 		}
-		rz_buf_append_string(buffer, func->name);
 	}
 
 	return true;

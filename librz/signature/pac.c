@@ -295,7 +295,7 @@ static bool flirt_pac_parse_line(RzFlirtNode *root, RzStrBuf *sb, ut32 line_num,
 		pac_dbg("%s function: %04x %s\n", to_append == module->referenced_functions ? "ref" : (function->is_local ? "loc" : "pub"), offset, tmp_tok);
 	}
 
-	if (RZ_STR_ISNOTEMPTY(tmp_tok) && (IS_HEXCHAR(tmp_tok[0]) || tmp_tok[0] == '.') && tail_bytes) {
+	if (tail_bytes && RZ_STR_ISNOTEMPTY(tmp_tok) && (IS_HEXCHAR(tmp_tok[0]) || tmp_tok[0] == '.')) {
 		size_t len_tok = strlen(tmp_tok);
 
 		module->tail_bytes = rz_list_newf((RzListFree)free);
@@ -304,7 +304,7 @@ static bool flirt_pac_parse_line(RzFlirtNode *root, RzStrBuf *sb, ut32 line_num,
 			goto err;
 		}
 
-		for (ut32 i = 0, o = 0; i < len_tok; i += 2, o++) {
+		for (ut32 i = 0, o = 0; i < len_tok && rz_list_length(module->tail_bytes) < 0xFF; i += 2, o++) {
 			if (tmp_tok[i] == '.' && tmp_tok[i + 1] == '.') {
 				continue;
 			} else if (!IS_HEXCHAR(tmp_tok[i]) || !IS_HEXCHAR(tmp_tok[i + 1])) {
@@ -326,12 +326,17 @@ static bool flirt_pac_parse_line(RzFlirtNode *root, RzStrBuf *sb, ut32 line_num,
 		pac_dbg("tail: %s\n", tmp_tok);
 	}
 
-	rz_list_free(tokens);
+	if (rz_list_length(module->public_functions) < 1) {
+		RZ_LOG_ERROR("FLIRT: a node must have at least one public function\n");
+		goto err;
+	}
+
 	if (!rz_list_append(root->child_list, child)) {
 		RZ_LOG_ERROR("FLIRT: cannot append child to root\n");
 		goto err;
 	}
 
+	rz_list_free(tokens);
 	return true;
 
 err:

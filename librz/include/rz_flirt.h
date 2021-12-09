@@ -15,7 +15,7 @@ extern "C" {
 
 #define RZ_FLIRT_NAME_MAX         1024
 #define RZ_FLIRT_LIBRARY_NAME_MAX 0xFF
-#define RZ_FLIRT_LIBRARY_NAME_DFL ("Built with rizin " RZ_VERSION)
+#define RZ_FLIRT_LIBRARY_NAME_DFL "Built with rizin " RZ_VERSION
 #define RZ_FLIRT_MAX_PRELUDE_SIZE (32) // this value is choosen as the default for FLIRT, but it can go between 1 and 64
 
 /* supported architectures */
