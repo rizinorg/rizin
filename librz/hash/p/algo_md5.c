@@ -20,7 +20,7 @@ rz_openssl_plugin_define_msg_digest(md5, EVP_md5, true);
 #include "../algorithms/md5/md5.h"
 
 static void *plugin_md5_context_new() {
-	return RZ_NEW0(MD5_CTX);
+	return RZ_NEW0(rz_MD5_CTX);
 }
 
 static void plugin_md5_context_free(void *context) {
@@ -38,21 +38,21 @@ static RzMsgDigestSize plugin_md5_block_size(void *context) {
 static bool plugin_md5_init(void *context) {
 	rz_return_val_if_fail(context, false);
 
-	MD5_Init((MD5_CTX *)context);
+	rz_MD5Init((rz_MD5_CTX *)context);
 	return true;
 }
 
 static bool plugin_md5_update(void *context, const ut8 *data, ut64 size) {
 	rz_return_val_if_fail(context && data, false);
 
-	MD5_Update((MD5_CTX *)context, data, size);
+	rz_MD5Update((rz_MD5_CTX *)context, data, size);
 	return true;
 }
 
 static bool plugin_md5_final(void *context, ut8 *digest) {
 	rz_return_val_if_fail(context && digest, false);
 
-	MD5_Final(digest, (MD5_CTX *)context);
+	rz_MD5Final(digest, (rz_MD5_CTX *)context);
 	return true;
 }
 
@@ -63,10 +63,10 @@ static bool plugin_md5_small_block(const ut8 *data, ut64 size, ut8 **digest, RzM
 		return false;
 	}
 
-	MD5_CTX ctx;
-	MD5_Init(&ctx);
-	MD5_Update(&ctx, data, size);
-	MD5_Final(dgst, &ctx);
+	rz_MD5_CTX ctx;
+	rz_MD5Init(&ctx);
+	rz_MD5Update(&ctx, data, size);
+	rz_MD5Final(dgst, &ctx);
 
 	*digest = dgst;
 	if (digest_size) {
@@ -77,8 +77,8 @@ static bool plugin_md5_small_block(const ut8 *data, ut64 size, ut8 **digest, RzM
 
 RzMsgDigestPlugin rz_msg_digest_plugin_md5 = {
 	.name = "md5",
-	.license = "RSA-MD",
-	.author = "RSA Data Security, Inc.",
+	.license = "LGPL2",
+	.author = "Alan DeKok (md5 algorithm implementation), deroad (plugin)",
 	.support_hmac = true,
 	.context_new = plugin_md5_context_new,
 	.context_free = plugin_md5_context_free,
