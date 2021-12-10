@@ -394,7 +394,6 @@ _dA_  16 32      arc         GPL3    Argonaut RISC Core
 a___  16 32 64   arm.as      LGPL3   as ARM Assembler (use RZ_ARM32_AS and RZ_ARM64_AS environment) (by pancake)
 adAe  16 32 64   arm         BSD     Capstone ARM disassembler
 _dA_  16 32 64   arm.gnu     GPL3    Acorn RISC Machine CPU
-_d__  16 32      arm.winedbg LGPL2   WineDBG's ARM disassembler
 adAe  8 16       avr         LGPL3   AVR Atmel
 adA_  16 32 64   bf          LGPL3   Brainfuck (by pancake, nibble) v4.0.0
 _dA_  32         chip8       LGPL3   Chip8 disassembler

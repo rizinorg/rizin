@@ -100,7 +100,6 @@ rz_analysis_sources = [
   'p/analysis_z80.c',
   #'arch/gb/meta_gb_cmt.c',
   '../asm/arch/amd29k/amd29k.c',
-  '../asm/arch/arm/winedbg/be_arm.c',
   '../asm/arch/avr/disassembler.c',
   '../asm/arch/cr16/cr16_disas.c',
   '../asm/arch/ebc/ebc_disas.c',
