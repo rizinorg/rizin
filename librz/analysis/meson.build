@@ -47,7 +47,6 @@ rz_analysis_sources = [
   'p/analysis_amd29k.c',
   'p/analysis_arc.c',
   'p/analysis_arm_cs.c',
-  'p/analysis_arm_gnu.c',
   'p/analysis_avr.c',
   'p/analysis_bf.c',
   'p/analysis_chip8.c',

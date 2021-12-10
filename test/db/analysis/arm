@@ -237,7 +237,7 @@ RUN
 NAME=endian
 FILE=malloc://32
 CMDS=<<EOF
-e asm.arch=arm.gnu
+e asm.arch=arm
 e asm.bits=32
 wx e59a9ae7
 e cfg.bigendian=false
@@ -246,8 +246,8 @@ e cfg.bigendian=true
 pi 1@ 0
 EOF
 EXPECT=<<EOF
-ldr r9, [sl, r5, ror 21]
-ldr r9, [sl, 2791]
+ldr sb, [sl, r5, ror 21]
+ldr sb, [sl, 0xae7]
 EOF
 RUN
 
@@ -433,22 +433,6 @@ jump: 0x00000020
 EOF
 RUN
 
-NAME=ARM64 bl gnu
-FILE=malloc://32
-CMDS=<<EOF
-s 4
-wx 07000094
-e asm.arch=arm.gnu
-e asm.bits=64
-pi 1
-ao~jump
-EOF
-EXPECT=<<EOF
-bl 0x00000020
-jump: 0x00000020
-EOF
-RUN
-
 NAME=arm subrel >256
 FILE=malloc://800
 CMDS=<<EOF
@@ -530,21 +514,6 @@ NAME=jump sign extend : arm.cs
 FILE=malloc://4
 CMDS=<<EOF
 e asm.arch=arm
-e asm.bits=32
-e io.va=true
-wx ffffffea # bl 0x80000000
-om 3 0x7ffffffc
-ao @ 0x7ffffffc~jump
-EOF
-EXPECT=<<EOF
-jump: 0x80000000
-EOF
-RUN
-
-NAME=jump sign extend : arm.gnu
-FILE=malloc://4
-CMDS=<<EOF
-e asm.arch=arm.gnu
 e asm.bits=32
 e io.va=true
 wx ffffffea # bl 0x80000000
