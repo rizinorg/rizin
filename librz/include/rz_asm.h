@@ -209,8 +209,6 @@ extern RzAsmPlugin rz_asm_plugin_amd29k;
 extern RzAsmPlugin rz_asm_plugin_arc;
 extern RzAsmPlugin rz_asm_plugin_arm_as;
 extern RzAsmPlugin rz_asm_plugin_arm_cs;
-extern RzAsmPlugin rz_asm_plugin_arm_gnu;
-extern RzAsmPlugin rz_asm_plugin_arm_winedbg;
 extern RzAsmPlugin rz_asm_plugin_avr;
 extern RzAsmPlugin rz_asm_plugin_bf;
 extern RzAsmPlugin rz_asm_plugin_null;
