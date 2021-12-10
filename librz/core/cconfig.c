@@ -3808,9 +3808,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 		"aixar", "aout", "ar", "bin", "coff", "dos:com", "dos:com:old", "dos:exe", "dos:exe:old",
 		"dosdrv", "elf", "intelhex", "le", "loader", "lx", "moshex", "ne", "nlm", "omf", "omflib",
 		"pe", "pilot", "srec", "w32run", "zip", "all", "none", NULL);
-	n = NODECB("flirt.sig.app", "all", &cb_flirt);
-	SETDESC(n, "FLIRT app list (comma separated) for sig format");
-	SETOPTIONS(n, "console", "graphics", "exe", "dll", "drv", "thread:single", "thread:multi", "16bit", "32bit", "64bit", "all", "none", NULL);
 	SETB("flirt.sig.deflate", false, "enables/disables FLIRT zlib compression when creating a signature file (available only for .sig files)");
 	SETI("flirt.node.optimize", RZ_FLIRT_NODE_OPTIMIZE_MAX, "FLIRT optimization option when creating a signature file (none: 0, normal: 1, smallest: 2)");
 

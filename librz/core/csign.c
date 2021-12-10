@@ -436,7 +436,6 @@ RZ_API bool rz_core_flirt_create_file(RZ_NONNULL RzCore *core, RZ_NONNULL const 
 		const char *hdr_arch = rz_config_get(core->config, "asm.arch");
 		const char *hdr_file = rz_config_get(core->config, "flirt.sig.file");
 		const char *hdr_os = rz_config_get(core->config, "flirt.sig.os");
-		const char *hdr_app = rz_config_get(core->config, "flirt.sig.app");
 		const char *hdr_lib = rz_config_get(core->config, "flirt.sig.library");
 		bool deflate = rz_config_get_b(core->config, "flirt.sig.deflate");
 		ut8 architecture = rz_core_flirt_arch_from_name(hdr_arch);
@@ -456,7 +455,7 @@ RZ_API bool rz_core_flirt_create_file(RZ_NONNULL RzCore *core, RZ_NONNULL const 
 			.arch = rz_core_flirt_arch_from_name(hdr_arch),
 			.file = rz_core_flirt_file_from_option_list(hdr_file),
 			.os = rz_core_flirt_os_from_option_list(hdr_os),
-			.app = rz_core_flirt_app_from_option_list(hdr_app),
+			.app = RZ_FLIRT_SIG_APP_ALL,
 			.deflate = deflate,
 			.libname = hdr_lib,
 		};
@@ -537,7 +536,6 @@ RZ_API bool rz_core_flirt_convert_file(RZ_NONNULL RzCore *core, RZ_NONNULL const
 		const char *hdr_arch = rz_config_get(core->config, "asm.arch");
 		const char *hdr_file = rz_config_get(core->config, "flirt.sig.file");
 		const char *hdr_os = rz_config_get(core->config, "flirt.sig.os");
-		const char *hdr_app = rz_config_get(core->config, "flirt.sig.app");
 		const char *hdr_lib = rz_config_get(core->config, "flirt.sig.library");
 		bool deflate = rz_config_get_b(core->config, "flirt.sig.deflate");
 		ut8 architecture = rz_core_flirt_arch_from_name(hdr_arch);
@@ -557,7 +555,7 @@ RZ_API bool rz_core_flirt_convert_file(RZ_NONNULL RzCore *core, RZ_NONNULL const
 			.arch = architecture,
 			.file = rz_core_flirt_file_from_option_list(hdr_file),
 			.os = rz_core_flirt_os_from_option_list(hdr_os),
-			.app = rz_core_flirt_app_from_option_list(hdr_app),
+			.app = RZ_FLIRT_SIG_APP_ALL,
 			.deflate = deflate,
 			.libname = hdr_lib,
 		};
