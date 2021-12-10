@@ -1326,6 +1326,7 @@ RZ_API const RzBinLdrPlugin *rz_bin_ldrplugin_get(RzBin *bin, const char *name) 
 	return NULL;
 }
 
+#if WITH_GPL
 static char *bin_demangle_cxx(RzBinFile *bf, const char *symbol, ut64 vaddr) {
 	char *out = rz_demangler_cxx(symbol);
 	if (!out || !bf) {
@@ -1374,6 +1375,7 @@ static char *bin_demangle_rust(RzBinFile *binfile, const char *symbol, ut64 vadd
 	free(str);
 	return rz_demangler_rust(symbol);
 }
+#endif
 
 /**
  * \brief Demangles a symbol based on the language or the RzBinFile data

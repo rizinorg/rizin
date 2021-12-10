@@ -4,8 +4,6 @@
 #include <rz_asm.h>
 #include <rz_lib.h>
 
-#if CSNEXT
-
 #include <capstone.h>
 #include <riscv.h>
 
@@ -104,7 +102,7 @@ static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
 	PJ *pj = pj_new();
 	if (!pj) {
-		return:
+		return;
 	}
 	pj_o(pj);
 	pj_ka(pj, "operands");
@@ -166,7 +164,7 @@ static const char *arg(csh *handle, cs_insn *insn, char *buf, int n) {
 					insn->detail->riscv.operands[n].mem.base));
 		} else {
 			sprintf(buf, "0x%" PFMT64x ",%s,+",
-				insn->detail->riscv.operands[n].mem.disp,
+				(ut64)insn->detail->riscv.operands[n].mem.disp,
 				cs_reg_name(*handle,
 					insn->detail->riscv.operands[n].mem.base));
 		}
@@ -608,14 +606,4 @@ RZ_API RzLibStruct rizin_plugin = {
 	.data = &rz_analysis_plugin_riscv_cs,
 	.version = RZ_VERSION
 };
-#endif
-
-#else
-RzAnalysisPlugin rz_analysis_plugin_riscv_cs = { 0 };
-#ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_ANALYSIS,
-	.version = RZ_VERSION
-};
-#endif
 #endif

@@ -1,4 +1,4 @@
-project('capstone', 'c', meson_version: '>=0.55.0')
+project('capstone', 'c', version: '3.0.5', meson_version: '>=0.55.0')
 
 cs_files = [
   'arch/AArch64/AArch64BaseInfo.c',

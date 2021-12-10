@@ -51,7 +51,6 @@ rz_analysis_sources = [
   'p/analysis_bf.c',
   'p/analysis_chip8.c',
   'p/analysis_cr16.c',
-  'p/analysis_cris.c',
   'p/analysis_dalvik.c',
   'p/analysis_ebc.c',
   'p/analysis_gb.c',
@@ -68,34 +67,26 @@ rz_analysis_sources = [
   'p/analysis_mips_cs.c',
   'p/analysis_mips_gnu.c',
   'p/analysis_msp430.c',
-  'p/analysis_nios2.c',
   'p/analysis_null.c',
   'p/analysis_or1k.c',
   'p/analysis_pic.c',
   'p/analysis_ppc_cs.c',
   'p/analysis_propeller.c',
   'p/analysis_pyc.c',
-  'p/analysis_riscv.c',
   'p/analysis_rsp.c',
-  'p/analysis_sh.c',
   'p/analysis_snes.c',
   'p/analysis_sparc_cs.c',
-  'p/analysis_sparc_gnu.c',
   'p/analysis_spc700.c',
   'p/analysis_sysz.c',
   'p/analysis_tms320.c',
   'p/analysis_tms320_c55x_plus.c',
   #'p/analysis_tms320c64x.c',
-  'p/analysis_tricore.c',
   'p/analysis_v810.c',
   'p/analysis_v850.c',
-  'p/analysis_vax.c',
   'p/analysis_wasm.c',
   'p/analysis_x86_cs.c',
   'p/analysis_xap.c',
   'p/analysis_xcore_cs.c',
-  'p/analysis_xtensa.c',
-  'p/analysis_z80.c',
   #'arch/gb/meta_gb_cmt.c',
   '../asm/arch/amd29k/amd29k.c',
   '../asm/arch/avr/disassembler.c',
@@ -120,10 +111,6 @@ rz_analysis_sources = [
   '../asm/arch/v810/v810_disas.c',
   '../asm/arch/v850/v850_disas.c',
   '../asm/arch/wasm/wasm.c',
-  '../asm/arch/xtensa/gnu/xtensa-dis.c',
-  '../asm/arch/xtensa/gnu/elf32-xtensa.c',
-  '../asm/arch/xtensa/gnu/xtensa-isa.c',
-  '../asm/arch/xtensa/gnu/xtensa-modules.c',
   '../asm/arch/pyc/opcode_10.c',
   '../asm/arch/pyc/opcode_11.c',
   '../asm/arch/pyc/opcode_12.c',
@@ -162,6 +149,27 @@ rz_analysis_sources = [
   '../asm/arch/luac/v53/opcode_53.c'
 ]
 
+if capstone_dep.version().split('.')[0].to_int() > 4
+  rz_analysis_sources += 'p/analysis_riscv_cs.c'
+endif
+
+if get_option('use_gpl')
+  rz_analysis_sources += [
+    'p/analysis_cris.c',
+    'p/analysis_nios2.c',
+    'p/analysis_riscv.c',
+    'p/analysis_sh.c',
+    'p/analysis_sparc_gnu.c',
+    'p/analysis_tricore.c',
+    'p/analysis_vax.c',
+    'p/analysis_xtensa.c',
+    'p/analysis_z80.c',
+    '../asm/arch/xtensa/gnu/xtensa-dis.c',
+    '../asm/arch/xtensa/gnu/elf32-xtensa.c',
+    '../asm/arch/xtensa/gnu/xtensa-isa.c',
+    '../asm/arch/xtensa/gnu/xtensa-modules.c',
+  ]
+endif
 rz_analysis_inc = [
   platform_inc,
   include_directories(

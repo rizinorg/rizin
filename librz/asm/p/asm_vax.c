@@ -74,7 +74,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 RzAsmPlugin rz_asm_plugin_vax = {
 	.name = "vax",
 	.arch = "vax",
-	.license = "GPL",
+	.license = "GPL3",
 	.bits = 8 | 32,
 	.endian = RZ_SYS_ENDIAN_LITTLE,
 	.desc = "VAX",
