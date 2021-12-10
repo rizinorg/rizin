@@ -1475,6 +1475,9 @@ RZ_API RZ_OWN char *rz_bin_demangle(RZ_NULLABLE RzBinFile *bf, RZ_NULLABLE const
 #if WITH_GPL
 	case RZ_BIN_LANGUAGE_RUST: demangled = bin_demangle_rust(bf, symbol, vaddr); break;
 	case RZ_BIN_LANGUAGE_CXX: demangled = bin_demangle_cxx(bf, symbol, vaddr); break;
+#else
+	case RZ_BIN_LANGUAGE_RUST: demangled = NULL; break;
+	case RZ_BIN_LANGUAGE_CXX: demangled = NULL; break;
 #endif
 	default: rz_demangler_resolve(bin->demangler, symbol, language, &demangled);
 	}
