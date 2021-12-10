@@ -73,7 +73,6 @@ rz_analysis_sources = [
   'p/analysis_or1k.c',
   'p/analysis_pic.c',
   'p/analysis_ppc_cs.c',
-  'p/analysis_ppc_gnu.c',
   'p/analysis_propeller.c',
   'p/analysis_pyc.c',
   'p/analysis_riscv.c',

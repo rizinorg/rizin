@@ -243,7 +243,6 @@ extern RzAsmPlugin rz_asm_plugin_or1k;
 extern RzAsmPlugin rz_asm_plugin_pic;
 extern RzAsmPlugin rz_asm_plugin_ppc_as;
 extern RzAsmPlugin rz_asm_plugin_ppc_cs;
-extern RzAsmPlugin rz_asm_plugin_ppc_gnu;
 extern RzAsmPlugin rz_asm_plugin_propeller;
 extern RzAsmPlugin rz_asm_plugin_riscv;
 extern RzAsmPlugin rz_asm_plugin_riscv_cs;

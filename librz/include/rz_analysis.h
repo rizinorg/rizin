@@ -2240,7 +2240,6 @@ extern RzAnalysisPlugin rz_analysis_plugin_nios2;
 extern RzAnalysisPlugin rz_analysis_plugin_or1k;
 extern RzAnalysisPlugin rz_analysis_plugin_pic;
 extern RzAnalysisPlugin rz_analysis_plugin_ppc_cs;
-extern RzAnalysisPlugin rz_analysis_plugin_ppc_gnu;
 extern RzAnalysisPlugin rz_analysis_plugin_propeller;
 extern RzAnalysisPlugin rz_analysis_plugin_riscv;
 extern RzAnalysisPlugin rz_analysis_plugin_riscv_cs;
