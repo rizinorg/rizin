@@ -242,15 +242,6 @@ io_plugins = [
   'zip'
 ]
 
-if host_machine.system() == 'windows'
-  io_plugins += [
-    'windbg',
-    'w32dbg',
-    'w32',
-  ]
-  debug_plugins += 'windbg'
-endif
-
 lang_plugins = [
   'lib',
   'pipe',
@@ -329,6 +320,15 @@ if get_option('use_gpl')
     'riscv_pseudo',
     'z80_pseudo'
   ]
+endif
+
+if host_machine.system() == 'windows'
+  io_plugins += [
+    'windbg',
+    'w32dbg',
+    'w32',
+  ]
+  debug_plugins += 'windbg'
 endif
 
 if get_option('use_swift_demangler')
