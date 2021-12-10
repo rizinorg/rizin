@@ -154,11 +154,9 @@ endif
 if get_option('use_gpl')
   rz_analysis_sources += [
     'p/analysis_arc.c',
-    'p/analysis_arm_gnu.c',
     'p/analysis_cris.c',
     'p/analysis_mips_gnu.c',
     'p/analysis_nios2.c',
-    'p/analysis_ppc_gnu.c',
     'p/analysis_riscv.c',
     'p/analysis_sh.c',
     'p/analysis_sparc_gnu.c',

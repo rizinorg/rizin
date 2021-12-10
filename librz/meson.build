@@ -298,11 +298,9 @@ if get_option('use_gpl')
   demangler_plugins += ['cpp', 'rust']
   analysis_plugins += [
     'arc',
-    'arm_gnu',
     'cris',
     'mips_gnu',
     'nios2',
-    'ppc_gnu',
     'riscv',
     'sh',
     'sparc_gnu',
@@ -313,14 +311,11 @@ if get_option('use_gpl')
   ]
   asm_plugins += [
     'arc',
-    'arm_gnu',
     'cris_gnu',
-    #'hexagon_gnu',
     'hppa_gnu',
     'lanai_gnu',
     'mips_gnu',
     'nios2',
-    'ppc_gnu',
     'riscv',
     'sh',
     'sparc_gnu',
