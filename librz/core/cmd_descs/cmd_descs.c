@@ -8631,7 +8631,7 @@ static const RzCmdDescArg zign_flirt_create_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp zign_flirt_create_help = {
-	.summary = "Create a FLIRT file with .pac or .sig",
+	.summary = "Create a FLIRT file (.pac or .sig)",
 	.args = zign_flirt_create_args,
 };
 
@@ -8644,7 +8644,7 @@ static const RzCmdDescArg zign_flirt_dump_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp zign_flirt_dump_help = {
-	.summary = "Opens a FLIRT file (.pac or .sigà) and dumps its contents",
+	.summary = "Open a FLIRT file (.pac or .sig) and dumps its contents",
 	.args = zign_flirt_dump_args,
 };
 
@@ -8657,7 +8657,7 @@ static const RzCmdDescArg zign_flirt_scan_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp zign_flirt_scan_help = {
-	.summary = "Opens a FLIRT file and tries to apply the signatures to the loaded binary",
+	.summary = "Open a FLIRT file (.pac or .sig) and tries to apply the signatures to the loaded binary",
 	.args = zign_flirt_scan_args,
 };
 

@@ -187,19 +187,19 @@ commands:
     subcommands:
       - name: zfc
         cname: zign_flirt_create
-        summary: Create a FLIRT file with .pac or .sig
+        summary: Create a FLIRT file (.pac or .sig)
         args:
           - name: filename
             type: RZ_CMD_ARG_TYPE_FILE
       - name: zfd
         cname: zign_flirt_dump
-        summary: Opens a FLIRT file (.pac or .sigà) and dumps its contents
+        summary: Open a FLIRT file (.pac or .sig) and dumps its contents
         args:
           - name: filename
             type: RZ_CMD_ARG_TYPE_FILE
       - name: zfs
         cname: zign_flirt_scan
-        summary: Opens a FLIRT file and tries to apply the signatures to the loaded binary
+        summary: Open a FLIRT file (.pac or .sig) and tries to apply the signatures to the loaded binary
         args:
           - name: filename
             type: RZ_CMD_ARG_TYPE_FILE
