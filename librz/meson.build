@@ -2,7 +2,6 @@ analysis_plugins = [
   '6502',
   '8051',
   'amd29k',
-  'arc',
   'arm_cs',
   'avr',
   'bf',
@@ -298,6 +297,7 @@ if get_option('use_gpl')
   debug_plugins += 'qnx'
   demangler_plugins += ['cpp', 'rust']
   analysis_plugins += [
+    'arc',
     'arm_gnu',
     'cris',
     'mips_gnu',

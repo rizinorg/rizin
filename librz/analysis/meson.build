@@ -45,7 +45,6 @@ rz_analysis_sources = [
   'p/analysis_6502_cs.c',
   'p/analysis_8051.c',
   'p/analysis_amd29k.c',
-  'p/analysis_arc.c',
   'p/analysis_arm_cs.c',
   'p/analysis_avr.c',
   'p/analysis_bf.c',
@@ -65,7 +64,6 @@ rz_analysis_sources = [
   'p/analysis_malbolge.c',
   'p/analysis_mcore.c',
   'p/analysis_mips_cs.c',
-  'p/analysis_mips_gnu.c',
   'p/analysis_msp430.c',
   'p/analysis_null.c',
   'p/analysis_or1k.c',
@@ -155,8 +153,12 @@ endif
 
 if get_option('use_gpl')
   rz_analysis_sources += [
+    'p/analysis_arc.c',
+    'p/analysis_arm_gnu.c',
     'p/analysis_cris.c',
+    'p/analysis_mips_gnu.c',
     'p/analysis_nios2.c',
+    'p/analysis_ppc_gnu.c',
     'p/analysis_riscv.c',
     'p/analysis_sh.c',
     'p/analysis_sparc_gnu.c',
