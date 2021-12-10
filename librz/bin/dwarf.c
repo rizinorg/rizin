@@ -1220,9 +1220,13 @@ static int init_die(RzBinDwarfDie *die, ut64 abbr_code, ut64 attr_count) {
 	if (!die) {
 		return -1;
 	}
-	die->attr_values = calloc(sizeof(RzBinDwarfAttrValue), attr_count);
-	if (!die->attr_values) {
-		return -1;
+	if (attr_count) {
+		die->attr_values = calloc(sizeof(RzBinDwarfAttrValue), attr_count);
+		if (!die->attr_values) {
+			return -1;
+		}
+	} else {
+		die->attr_values = NULL;
 	}
 	die->abbrev_code = abbr_code;
 	die->capacity = attr_count;
@@ -1726,25 +1730,27 @@ static const ut8 *parse_die(const ut8 *buf, const ut8 *buf_end, RzBinDwarfDebugI
 	size_t i;
 	const char *comp_dir = NULL;
 	ut64 line_info_offset = UT64_MAX;
-	for (i = 0; i < abbrev->count - 1; i++) {
-		memset(&die->attr_values[i], 0, sizeof(die->attr_values[i]));
+	if (abbrev->count) {
+		for (i = 0; i < abbrev->count - 1; i++) {
+			memset(&die->attr_values[i], 0, sizeof(die->attr_values[i]));
 
-		buf = parse_attr_value(buf, buf_end - buf, &abbrev->defs[i],
-			&die->attr_values[i], hdr, debug_str, debug_str_len, big_endian);
+			buf = parse_attr_value(buf, buf_end - buf, &abbrev->defs[i],
+				&die->attr_values[i], hdr, debug_str, debug_str_len, big_endian);
 
-		RzBinDwarfAttrValue *attribute = &die->attr_values[i];
+			RzBinDwarfAttrValue *attribute = &die->attr_values[i];
 
-		if (attribute->attr_name == DW_AT_comp_dir && (attribute->attr_form == DW_FORM_strp || attribute->attr_form == DW_FORM_string) && attribute->string.content) {
-			comp_dir = attribute->string.content;
-		}
-		if (attribute->attr_name == DW_AT_stmt_list) {
-			if (attribute->kind == DW_AT_KIND_CONSTANT) {
-				line_info_offset = attribute->uconstant;
-			} else if (attribute->kind == DW_AT_KIND_REFERENCE) {
-				line_info_offset = attribute->reference;
+			if (attribute->attr_name == DW_AT_comp_dir && (attribute->attr_form == DW_FORM_strp || attribute->attr_form == DW_FORM_string) && attribute->string.content) {
+				comp_dir = attribute->string.content;
 			}
+			if (attribute->attr_name == DW_AT_stmt_list) {
+				if (attribute->kind == DW_AT_KIND_CONSTANT) {
+					line_info_offset = attribute->uconstant;
+				} else if (attribute->kind == DW_AT_KIND_REFERENCE) {
+					line_info_offset = attribute->reference;
+				}
+			}
+			die->count++;
 		}
-		die->count++;
 	}
 
 	// If this is a compilation unit dir attribute, we want to cache it so the line info parsing
