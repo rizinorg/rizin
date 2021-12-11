@@ -135,24 +135,16 @@ static bool test_rzil_vm_operation() {
 static bool test_rzil_vm_root_evaluation() {
 	RzILVM *vm = rz_il_vm_new(0, 8, 16);
 
-	RzILOp *ite_root = rz_il_new_op(RZIL_OP_ITE);
-	RzILOp *add = rz_il_new_op(RZIL_OP_ADD);
-	RzILOp *arg1 = rz_il_new_op(RZIL_OP_BITV);
-	RzILOp *arg2 = rz_il_new_op(RZIL_OP_BITV);
-	RzILOp *true_val = rz_il_new_op(RZIL_OP_B1);
-	RzILOp *false_val = rz_il_new_op(RZIL_OP_B0);
-
 	// (ite (add 23 19)
 	//	true
 	//	false)
 	// evaluate (add 23 19) will get a bitvector, but condition require a bool
-	ite_root->op.ite->condition = add;
-	ite_root->op.ite->x = true_val;
-	ite_root->op.ite->y = false_val;
-	add->op.add->x = arg1;
-	add->op.add->y = arg2;
-	arg1->op.bitv->value = rz_bv_new_from_st64(16, 23);
-	arg2->op.bitv->value = rz_bv_new_from_st64(16, 19);
+	RzILOp *arg1 = rz_il_op_new_bitv_from_st64(16, 23);
+	RzILOp *arg2 = rz_il_op_new_bitv_from_st64(16, 19);
+	RzILOp *add = rz_il_op_new_add(arg1, arg2);
+	RzILOp *true_val = rz_il_op_new_b1();
+	RzILOp *false_val = rz_il_op_new_b0();
+	RzILOp *ite_root = rz_il_op_new_ite(add, true_val, false_val);
 
 	// Partially evaluate `condition` only
 	RzILOpArgType type_checker = RZIL_OP_ARG_INIT;
@@ -169,14 +161,11 @@ static bool test_rzil_vm_root_evaluation() {
 	rz_il_value_free(ite_val);
 
 	// Catch error
-	RzILOp *branch_root = rz_il_new_op(RZIL_OP_BRANCH);
-	RzILOp *branch_cond = rz_il_new_op(RZIL_OP_B1);
-	RzILOp *branch_true = rz_il_new_op(RZIL_OP_B1);
-	RzILOp *branch_false = NULL; // empty effect
 
-	branch_root->op.branch->condition = branch_cond;
-	branch_root->op.branch->true_eff = branch_true;
-	branch_root->op.branch->false_eff = branch_false;
+	RzILOp *branch_cond = rz_il_op_new_b1();
+	RzILOp *branch_true = rz_il_op_new_b1();
+	RzILOp *branch_false = NULL; // empty effect
+	RzILOp *branch_root = rz_il_op_new_branch(branch_cond, branch_true, branch_false);
 
 	type_checker = RZIL_OP_ARG_INIT;
 	RzILEffect *eff = rz_il_evaluate_effect(vm, branch_root, &type_checker);
@@ -184,8 +173,8 @@ static bool test_rzil_vm_root_evaluation() {
 	mu_assert_eq(type_checker, RZIL_OP_ARG_BOOL, "you cannot convert bool type to effect, such an error will be detected");
 	rz_il_effect_free(eff);
 
-	rz_il_free_op(ite_root);
-	rz_il_free_op(branch_root);
+	rz_il_op_free(ite_root);
+	rz_il_op_free(branch_root);
 	rz_il_vm_free(vm);
 	mu_end;
 }

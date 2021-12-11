@@ -273,7 +273,7 @@ void *rz_il_handler_smod(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 void *rz_il_handler_shiftl(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 
-	RzILOpShiftl *op_shiftl = op->op.shiftl;
+	RzILOpShiftLeft *op_shiftl = op->op.shiftl;
 
 	RzBitVector *bv = rz_il_evaluate_bitv(vm, op_shiftl->x, type);
 	RzBitVector *shift = rz_il_evaluate_bitv(vm, op_shiftl->y, type);
@@ -294,7 +294,7 @@ void *rz_il_handler_shiftl(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 void *rz_il_handler_shiftr(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 
-	RzILOpShiftr *op_shr = op->op.shiftr;
+	RzILOpShiftRight *op_shr = op->op.shiftr;
 
 	RzBitVector *bv = rz_il_evaluate_bitv(vm, op_shr->x, type);
 	RzBitVector *shift = rz_il_evaluate_bitv(vm, op_shr->y, type);
