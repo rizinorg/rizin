@@ -2301,7 +2301,6 @@ repeat:
 				return_tail(0);
 			} else {
 				rz_reg_setv(core->analysis->reg, "PC", op.addr + op.size);
-				rz_reg_setv(core->dbg->reg, "PC", op.addr + op.size);
 			}
 			return 1;
 		}
@@ -2324,7 +2323,7 @@ repeat:
 		}
 		bool isNextFall = false;
 		if (op.type == RZ_ANALYSIS_OP_TYPE_CJMP) {
-			ut64 pc = rz_debug_reg_get(core->dbg, "PC");
+			ut64 pc = rz_reg_getv(core->analysis->reg, name);
 			if (pc == addr + op.size) {
 				// do not opdelay here
 				isNextFall = true;
@@ -2371,12 +2370,11 @@ repeat:
 	if (core->analysis->pcalign > 0) {
 		pc -= (pc % core->analysis->pcalign);
 		rz_reg_setv(core->analysis->reg, name, pc);
-		rz_reg_setv(core->dbg->reg, name, pc);
 	}
 
 	st64 follow = (st64)rz_config_get_i(core->config, "dbg.follow");
 	if (follow > 0) {
-		ut64 pc = rz_debug_reg_get(core->dbg, "PC");
+		ut64 pc = rz_reg_getv(core->analysis->reg, name);
 		if ((pc < core->offset) || (pc > (core->offset + follow))) {
 			rz_core_seek_to_register(core, "PC", false);
 		}
