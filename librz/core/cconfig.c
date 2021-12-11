@@ -704,16 +704,7 @@ static bool cb_asmbits(void *user, void *data) {
 	}
 	if (core->dbg && core->analysis && core->analysis->cur) {
 		rz_debug_set_arch(core->dbg, core->analysis->cur->arch, bits);
-		bool load_from_debug = rz_config_get_b(core->config, "cfg.debug");
-		if (load_from_debug) {
-			if (core->dbg->cur && core->dbg->cur->reg_profile) {
-				char *rp = core->dbg->cur->reg_profile(core->dbg);
-				rz_reg_set_profile_string(core->analysis->reg, rp);
-				free(rp);
-			}
-		} else {
-			(void)rz_analysis_set_reg_profile(core->analysis);
-		}
+		rz_analysis_set_reg_profile(core->analysis);
 	}
 	rz_core_analysis_cc_init(core);
 	const char *asmos = rz_config_get(core->config, "asm.os");
