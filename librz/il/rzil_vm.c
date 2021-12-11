@@ -295,7 +295,7 @@ RZ_API void rz_il_vm_store_opcodes_to_addr(RzILVM *vm, RzBitVector *addr, RzPVec
 RZ_API RzPVector *rz_il_make_oplist(int num, ...) {
 	va_list args;
 	RzILOp *cur_op;
-	RzPVector *oplist = rz_pvector_new((RzPVectorFree)rz_il_free_op);
+	RzPVector *oplist = rz_pvector_new((RzPVectorFree)rz_il_op_free);
 
 	va_start(args, num);
 	for (int i = 0; i < num; ++i) {

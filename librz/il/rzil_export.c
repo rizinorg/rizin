@@ -188,7 +188,7 @@ static void il_opdmp_bool_true(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 }
 
 static void il_opdmp_bool_inv(RzILOp *op, RzStrBuf *sb, PJ *pj) {
-	il_op_param_2("inv", op->op.boolinv, x, ret);
+	il_op_param_1("inv", op->op.boolinv, x);
 }
 
 static void il_opdmp_bool_and(RzILOp *op, RzStrBuf *sb, PJ *pj) {
