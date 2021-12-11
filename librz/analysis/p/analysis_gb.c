@@ -1464,7 +1464,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 	the mbc can be seen as a register but it isn't. For the Gameboy the mbc is invisble.
 */
 
-static bool set_reg_profile(RzAnalysis *analysis) {
+static char *get_reg_profile(RzAnalysis *analysis) {
 	const char *p =
 		"=PC	mpc\n"
 		"=SP	sp\n"
@@ -1503,7 +1503,7 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 		"gpr	mbcram	.16	16	0\n"
 
 		"gpr	ime	.1	18	0\n";
-	return rz_reg_set_profile_string(analysis->reg, p);
+	return strdup(p);
 }
 
 static int esil_gb_init(RzAnalysisEsil *esil) {
@@ -1542,7 +1542,7 @@ RzAnalysisPlugin rz_analysis_plugin_gb = {
 	.esil = true,
 	.bits = 16,
 	.op = &gb_anop,
-	.set_reg_profile = &set_reg_profile,
+	.get_reg_profile = &get_reg_profile,
 	.esil_init = esil_gb_init,
 	.esil_fini = esil_gb_fini,
 };

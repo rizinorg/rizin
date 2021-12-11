@@ -5,7 +5,7 @@
 #include <rz_lib.h>
 #include "../../asm/arch/amd29k/amd29k.h"
 
-static bool set_reg_profile(RzAnalysis *analysis) {
+static char *get_reg_profile(RzAnalysis *analysis) {
 	const char *p =
 		"=PC	pc\n"
 		"=SP	gp1\n"
@@ -275,7 +275,7 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 		"gpr	lr126   .32 2024 0\n"
 		"gpr	lr127   .32 2032 0\n"
 		"gpr	lr128   .32 2040 0\n";
-	return rz_reg_set_profile_string(analysis->reg, p);
+	return strdup(p);
 }
 
 static int archinfo(RzAnalysis *a, int q) {
@@ -330,7 +330,7 @@ RzAnalysisPlugin rz_analysis_plugin_amd29k = {
 	.bits = 32,
 	.archinfo = archinfo,
 	.op = &analop,
-	.set_reg_profile = &set_reg_profile,
+	.get_reg_profile = &get_reg_profile,
 };
 
 #ifndef RZ_PLUGIN_INCORE

@@ -1231,7 +1231,6 @@ typedef struct rz_analysis_plugin_t {
 	// legacy rz_analysis_functions
 	RzAnalysisOpCallback op;
 
-	RzAnalysisRegProfCallback set_reg_profile;
 	RzAnalysisRegProfGetCallback get_reg_profile;
 	RzAnalysisFPBBCallback fingerprint_bb;
 	RzAnalysisFPFcnCallback fingerprint_fcn;
@@ -2216,7 +2215,6 @@ extern RzAnalysisPlugin rz_analysis_plugin_8051;
 extern RzAnalysisPlugin rz_analysis_plugin_amd29k;
 extern RzAnalysisPlugin rz_analysis_plugin_arc;
 extern RzAnalysisPlugin rz_analysis_plugin_arm_cs;
-extern RzAnalysisPlugin rz_analysis_plugin_arm_gnu;
 extern RzAnalysisPlugin rz_analysis_plugin_avr;
 extern RzAnalysisPlugin rz_analysis_plugin_bf;
 extern RzAnalysisPlugin rz_analysis_plugin_chip8;
@@ -2241,7 +2239,6 @@ extern RzAnalysisPlugin rz_analysis_plugin_nios2;
 extern RzAnalysisPlugin rz_analysis_plugin_or1k;
 extern RzAnalysisPlugin rz_analysis_plugin_pic;
 extern RzAnalysisPlugin rz_analysis_plugin_ppc_cs;
-extern RzAnalysisPlugin rz_analysis_plugin_ppc_gnu;
 extern RzAnalysisPlugin rz_analysis_plugin_propeller;
 extern RzAnalysisPlugin rz_analysis_plugin_riscv;
 extern RzAnalysisPlugin rz_analysis_plugin_riscv_cs;

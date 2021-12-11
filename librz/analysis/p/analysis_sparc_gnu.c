@@ -458,7 +458,7 @@ static int sparc_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	return sz;
 }
 
-static bool set_reg_profile(RzAnalysis *analysis) {
+static char *get_reg_profile(RzAnalysis *analysis) {
 	/* As far as I can see, sparc v9 register and instruction set
 	   don't depened  on bits of the running application.
 	   But: They depend on the bits of the consuming application,
@@ -594,7 +594,7 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 		"fpu	qf60	.128	544	0\n" /* df60 df62 */
 		"gpr	fsr	.64	560	0\n"; /* note that
 						   we've left out the filler */
-	return rz_reg_set_profile_string(analysis->reg, p);
+	return strdup(p);
 }
 
 static int archinfo(RzAnalysis *analysis, int q) {
@@ -609,7 +609,7 @@ RzAnalysisPlugin rz_analysis_plugin_sparc_gnu = {
 	.bits = 32 | 64,
 	.op = &sparc_op,
 	.archinfo = archinfo,
-	.set_reg_profile = set_reg_profile,
+	.get_reg_profile = get_reg_profile,
 };
 
 #ifndef RZ_PLUGIN_INCORE
