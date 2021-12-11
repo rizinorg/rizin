@@ -146,6 +146,16 @@ jobs:
             timeout: 45
             cflags: '-Wno-cpp'
             allow_failure: true
+          - name: no-gpl-code
+            os: ubuntu-20.04
+            build_system: meson
+            compiler: gcc
+            meson_options: -Dbuildtype=release -Duse_gpl=false --werror
+            run_tests: false
+            enabled: ${{ (github.event_name != 'pull_request' || contains(github.head_ref, 'gpl')) && needs.changes.outputs.edited == 'true' }}
+            timeout: 45
+            cflags: '-Wno-cpp'
+            allow_failure: false
 
     steps:
     - uses: actions/checkout@v2

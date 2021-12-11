@@ -164,6 +164,7 @@ if (b_sanitize_opt.contains('address') or b_sanitize_opt.contains('undefined')) 
   library_linkflags += '-shared-libasan'
 endif
 
+
 rizin_prefix = get_option('prefix')
 rizin_bindir = get_option('bindir')
 rizin_libdir = get_option('libdir')
@@ -211,6 +212,40 @@ foreach opt : opts_overwrite
     set_variable(opt, val)
   endif
 endforeach
+
+# handle capstone dependency
+capstone_dep = dependency('capstone', version: '>=3.0.4', required: get_option('use_sys_capstone'), static: is_static_build)
+if not capstone_dep.found()
+  capstone_version = get_option('use_capstone_version')
+  if capstone_version == 'bundled'
+    r = run_command(py3_exe, check_meson_subproject_py, 'capstone-bundled')
+    if r.returncode() == 1 and get_option('subprojects_check')
+      error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+    endif
+    capstone_proj = subproject('capstone-bundled', default_options: ['default_library=static'])
+  elif capstone_version == 'next'
+    r = run_command(py3_exe, check_meson_subproject_py, 'capstone-next')
+    if r.returncode() == 1 and get_option('subprojects_check')
+      error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+    endif
+    capstone_proj = subproject('capstone-next', default_options: ['default_library=static'])
+  elif capstone_version == 'v3'
+    r = run_command(py3_exe, check_meson_subproject_py, 'capstone-v3')
+    if r.returncode() == 1 and get_option('subprojects_check')
+      error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+    endif
+    capstone_proj = subproject('capstone-v3', default_options: ['default_library=static'])
+  elif capstone_version == 'v4'
+    r = run_command(py3_exe, check_meson_subproject_py, 'capstone-v4')
+    if r.returncode() == 1 and get_option('subprojects_check')
+      error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+    endif
+    capstone_proj = subproject('capstone-v4', default_options: ['default_library=static'])
+  else
+    error('Wrong capstone version selected. Please use one of the supported versions.')
+  endif
+  capstone_dep = capstone_proj.get_variable('capstone_dep')
+endif
 
 # load plugin configuration
 subdir('librz')
@@ -366,7 +401,7 @@ userconf.set10('HAVE_LIBUV', libuv_dep.found())
 userconf.set10('WANT_DYLINK', true)
 userconf.set10('HAVE_PTRACE', have_ptrace)
 userconf.set10('USE_PTRACE_WRAP', use_ptrace_wrap)
-userconf.set10('WITH_GPL', true)
+userconf.set10('WITH_GPL', get_option('use_gpl'))
 userconf.set10('WITH_SWIFT_DEMANGLER', get_option('use_swift_demangler'))
 userconf.set10('RZ_BUILD_DEBUG', get_option('buildtype').startswith('debug'))
 ok = cc.has_header_symbol('sys/personality.h', 'ADDR_NO_RANDOMIZE')
@@ -502,6 +537,34 @@ zlib_dep = dependency('zlib', required: get_option('use_sys_zlib'), static: is_s
 if not zlib_dep.found()
   zlib_proj = subproject('zlib', default_options: ['default_library=static'])
   zlib_dep = zlib_proj.get_variable('zlib_dep')
+endif
+
+# handle lz4 dependency
+r = run_command(py3_exe, check_meson_subproject_py, 'lz4')
+if r.returncode() == 1 and get_option('subprojects_check')
+  error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+endif
+
+lz4_dep = dependency('liblz4', required: get_option('use_sys_lz4'), static: is_static_build)
+if not lz4_dep.found()
+  lz4_proj = subproject('lz4', default_options: ['default_library=static'])
+  lz4_dep = lz4_proj.get_variable('lz4_dep')
+endif
+
+# handle zip dependency
+r = run_command(py3_exe, check_meson_subproject_py, 'libzip')
+if r.returncode() == 1 and get_option('subprojects_check')
+  error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+endif
+
+libzip_dep = dependency('libzip', required: get_option('use_sys_libzip'), static: is_static_build)
+if not libzip_dep.found()
+  libzip_proj = subproject('libzip', default_options: [
+    'default_library=static',
+    'static_runtime=@0@'.format(is_static_build),
+    'use_sys_openssl=@0@'.format(get_option('use_sys_libzip_openssl')),
+  ])
+  libzip_dep = libzip_proj.get_variable('libzip_dep')
 endif
 
 r = run_command(py3_exe, check_meson_subproject_py, 'sdb')
@@ -768,6 +831,7 @@ summary({
   'GPL code': get_option('use_gpl'),
   'Swift demangler': get_option('use_swift_demangler'),
   'Debugger enabled': has_debugger,
+  'Capstone version': capstone_dep.version(),
   'System magic library': sys_magic.found() and sys_magic.type_name() != 'internal',
   'System xxhash library': xxhash_dep.found() and xxhash_dep.type_name() != 'internal',
   'System openssl library': sys_openssl.found() and sys_openssl.type_name() != 'internal',

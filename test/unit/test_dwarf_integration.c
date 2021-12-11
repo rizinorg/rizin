@@ -130,6 +130,7 @@ static bool test_parse_dwarf_types(void) {
 }
 
 static bool test_dwarf_function_parsing_cpp(void) {
+#if WITH_GPL
 	RzBin *bin = rz_bin_new();
 	mu_assert_notnull(bin, "Couldn't create new RzBin");
 	RzIO *io = rz_io_new();
@@ -191,6 +192,7 @@ static bool test_dwarf_function_parsing_cpp(void) {
 	rz_analysis_free(analysis);
 	rz_bin_free(bin);
 	rz_io_free(io);
+#endif
 	mu_end;
 }
 
@@ -321,8 +323,8 @@ static bool test_dwarf_function_parsing_rust(void) {
 int all_tests(void) {
 	mu_run_test(test_parse_dwarf_types);
 	mu_run_test(test_dwarf_function_parsing_cpp);
-	mu_run_test(test_dwarf_function_parsing_go);
 	mu_run_test(test_dwarf_function_parsing_rust);
+	mu_run_test(test_dwarf_function_parsing_go);
 	return tests_passed != tests_run;
 }
 

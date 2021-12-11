@@ -573,7 +573,7 @@ static bool test_autocmplt_tmp_arch(void) {
 	mu_assert_notnull(core, "core should be created");
 	RzLineBuffer *buf = &core->cons->line->buffer;
 
-	const char *s = "pd @a:z";
+	const char *s = "pd @a:w";
 	strcpy(buf->data, s);
 	buf->length = strlen(s);
 	buf->index = buf->length;
@@ -582,8 +582,8 @@ static bool test_autocmplt_tmp_arch(void) {
 	mu_assert_notnull(r, "r should not be null");
 	mu_assert_eq(r->start, strlen("pd @a:"), "should autocomplete the @ operator");
 	mu_assert_eq(r->end, buf->length, "should autocomplete ending at end of buffer");
-	mu_assert_eq(rz_pvector_len(&r->options), 1, "there is just 1 arch starting with z: z80");
-	mu_assert_streq(rz_pvector_at(&r->options, 0), "z80", "hello string is there");
+	mu_assert_eq(rz_pvector_len(&r->options), 1, "there is just 1 arch starting with w: wasm");
+	mu_assert_streq(rz_pvector_at(&r->options, 0), "wasm", "hello string is there");
 	rz_line_ns_completion_result_free(r);
 
 	rz_core_free(core);

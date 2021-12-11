@@ -20,7 +20,6 @@ rz_debug_sources = [
   'p/debug_io.c',
   'p/debug_native.c',
   'p/debug_null.c',
-  'p/debug_qnx.c',
   'p/debug_rap.c',
   'p/debug_winkd.c',
   #'p/native/arm.c',
@@ -34,7 +33,6 @@ rz_debug_sources = [
 ]
 
 rz_debug_deps = [
-  qnx_dep,
   gdb_dep,
   bochs_dep,
   winkd_dep,
@@ -48,6 +46,11 @@ rz_debug_deps = [
   rz_egg_dep,
   rz_analysis_dep
 ]
+
+if get_option('use_gpl')
+  rz_debug_deps += qnx_dep
+  rz_debug_sources += 'p/debug_qnx.c'
+endif
 
 if host_machine.system() == 'linux' or host_machine.system() == 'android'
   rz_debug_sources += ['p/native/linux/linux_debug.c']
