@@ -1835,7 +1835,7 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block,
 		listFormats = true;
 	}
 
-	core->print->reg = core->dbg->reg;
+	core->print->reg = rz_core_reg_default(core);
 	core->print->get_register = rz_reg_get;
 	core->print->get_register_value = rz_reg_get_value;
 

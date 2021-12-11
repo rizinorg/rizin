@@ -28,7 +28,7 @@
 #define PANEL_CMD_SYMBOLS       "isq"
 #define PANEL_CMD_XREFS         "axl"
 #define PANEL_CMD_STACK         "px"
-#define PANEL_CMD_REGISTERS     "dr"
+#define PANEL_CMD_REGISTERS     "?== true `e cfg.debug`; ?! dr; ?? ar" // select dr or ar depending on cfg.debug
 #define PANEL_CMD_DISASSEMBLY   "pd"
 #define PANEL_CMD_DISASMSUMMARY "pdsf"
 #define PANEL_CMD_FUNCTION      "afl"
@@ -1824,7 +1824,7 @@ bool __handle_cursor_mode(RzCore *core, const int key) {
 		break;
 	case '*':
 		if (__check_panel_type(cur, PANEL_CMD_DISASSEMBLY)) {
-			rz_core_debug_reg_set(core, "PC", core->offset + print->cur, NULL);
+			rz_core_reg_set_by_role_or_name(core, "PC", core->offset + print->cur);
 			__set_panel_addr(core, cur, core->offset + print->cur);
 		}
 		break;
@@ -4847,7 +4847,7 @@ void __init_rotate_db(RzCore *core) {
 	sdb_ptr_set(db, "p==", &__rotate_entropy_h_cb, 0);
 	sdb_ptr_set(db, "p=", &__rotate_entropy_v_cb, 0);
 	sdb_ptr_set(db, "px", &__rotate_hexdump_cb, 0);
-	sdb_ptr_set(db, "dr", &__rotate_register_cb, 0);
+	sdb_ptr_set(db, PANEL_CMD_REGISTERS, &__rotate_register_cb, 0);
 	sdb_ptr_set(db, "af", &__rotate_function_cb, 0);
 	sdb_ptr_set(db, PANEL_CMD_HEXDUMP, &__rotate_hexdump_cb, 0);
 }
@@ -4857,7 +4857,7 @@ void __init_sdb(RzCore *core) {
 	sdb_set(db, "Symbols", "isq", 0);
 	sdb_set(db, "Stack", "px 256@r:SP", 0);
 	sdb_set(db, "Locals", "afvd", 0);
-	sdb_set(db, "Registers", "dr", 0);
+	sdb_set(db, "Registers", PANEL_CMD_REGISTERS, 0);
 	sdb_set(db, "RegisterRefs", "drr", 0);
 	sdb_set(db, "Disassembly", "pd", 0);
 	sdb_set(db, "Disassemble Summary", "pdsf", 0);
@@ -5150,7 +5150,7 @@ void __handle_menu(RzCore *core, const int key) {
 		}
 		break;
 	case '$':
-		rz_core_debug_reg_set(core, "PC", core->offset, NULL);
+		rz_core_reg_set_by_role_or_name(core, "PC", core->offset);
 		break;
 	case ' ':
 	case '\r':
@@ -5904,7 +5904,7 @@ void __rotate_hexdump_cb(void *user, bool rev) {
 
 void __rotate_register_cb(void *user, bool rev) {
 	RzCore *core = (RzCore *)user;
-	__rotate_panel_cmds(core, register_rotate, COUNT(register_rotate), "dr", rev);
+	__rotate_panel_cmds(core, register_rotate, COUNT(register_rotate), PANEL_CMD_REGISTERS, rev);
 }
 
 void __rotate_function_cb(void *user, bool rev) {
@@ -6424,9 +6424,9 @@ repeat:
 		break;
 	case '$':
 		if (core->print->cur_enabled) {
-			rz_core_debug_reg_set(core, "PC", core->offset + core->print->cur, NULL);
+			rz_core_reg_set_by_role_or_name(core, "PC", core->offset + core->print->cur);
 		} else {
-			rz_core_debug_reg_set(core, "PC", core->offset, NULL);
+			rz_core_reg_set_by_role_or_name(core, "PC", core->offset);
 		}
 		break;
 	case 's':

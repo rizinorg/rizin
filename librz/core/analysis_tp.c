@@ -821,6 +821,7 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 	}
 
 	RzAnalysis *analysis = core->analysis;
+	RzReg *reg = analysis->reg;
 	const int mininstrsz = rz_analysis_archinfo(analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
 	const int minopcode = RZ_MAX(1, mininstrsz);
 	RzConfigHold *hc = rz_config_hold_new(core->config);
@@ -857,11 +858,11 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 	};
 
 	HtUP *op_cache = NULL;
-	const char *pc = rz_reg_get_name(core->dbg->reg, RZ_REG_NAME_PC);
+	const char *pc = rz_reg_get_name(reg, RZ_REG_NAME_PC);
 	if (!pc) {
 		goto out_function;
 	}
-	RzRegItem *r = rz_reg_get(core->dbg->reg, pc, -1);
+	RzRegItem *r = rz_reg_get(reg, pc, -1);
 	if (!r) {
 		goto out_function;
 	}
@@ -871,7 +872,7 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 	RzAnalysisBlock *bb;
 	rz_list_foreach (fcn->bbs, it, bb) {
 		ut64 addr = bb->addr;
-		rz_reg_set_value(core->dbg->reg, r, addr);
+		rz_reg_set_value(reg, r, addr);
 		ht_up_free(op_cache);
 		op_cache = ht_up_new(NULL, free_op_cache_kv, NULL);
 		if (!op_cache) {
@@ -881,7 +882,7 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 			if (rz_cons_is_breaked()) {
 				goto out_function;
 			}
-			ut64 pcval = rz_reg_getv(analysis->reg, pc);
+			ut64 pcval = rz_reg_getv(reg, pc);
 			if ((addr >= bb->addr + bb->size) || (addr < bb->addr) || pcval != addr) {
 				break;
 			}
@@ -907,7 +908,7 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 			}
 
 			if (rz_analysis_op_nonlinear(aop->type)) { // skip the instr
-				rz_reg_set_value(core->dbg->reg, r, addr + aop->size);
+				rz_reg_set_value(reg, r, addr + aop->size);
 			} else {
 				rz_core_esil_step(core, UT64_MAX, NULL, NULL, false);
 			}
@@ -933,7 +934,7 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 		RzAnalysisVar *rvar = *vit;
 		if (rvar->kind == RZ_ANALYSIS_VAR_KIND_REG) {
 			RzAnalysisVar *lvar = rz_analysis_var_get_dst_var(rvar);
-			RzRegItem *i = rz_reg_index_get(analysis->reg, rvar->delta);
+			RzRegItem *i = rz_reg_index_get(reg, rvar->delta);
 			if (!i) {
 				continue;
 			}

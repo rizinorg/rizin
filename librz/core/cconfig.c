@@ -708,7 +708,6 @@ static bool cb_asmbits(void *user, void *data) {
 		if (load_from_debug) {
 			if (core->dbg->cur && core->dbg->cur->reg_profile) {
 				char *rp = core->dbg->cur->reg_profile(core->dbg);
-				rz_reg_set_profile_string(core->dbg->reg, rp);
 				rz_reg_set_profile_string(core->analysis->reg, rp);
 				free(rp);
 			}

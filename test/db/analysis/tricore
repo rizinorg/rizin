@@ -48,7 +48,7 @@ RUN
 
 NAME=TriCore return_0.elf
 FILE=bins/tricore/return_0.elf
-CMDS=drp
+CMDS=arp
 EXPECT=<<EOF
 =PC	pc
 =SP	a10

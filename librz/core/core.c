@@ -591,21 +591,7 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 					break;
 				}
 				*ptr = 0;
-				if (rz_config_get_b(core->config, "cfg.debug")) {
-					if (rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_GPR, false)) {
-						RzRegItem *r = rz_reg_get(core->dbg->reg, bptr, -1);
-						if (r) {
-							free(bptr);
-							return rz_reg_get_value(core->dbg->reg, r);
-						}
-					}
-				} else {
-					RzRegItem *r = rz_reg_get(core->analysis->reg, bptr, -1);
-					if (r) {
-						free(bptr);
-						return rz_reg_get_value(core->analysis->reg, r);
-					}
-				}
+				return rz_core_reg_getv_by_role_or_name(core, bptr);
 				free(bptr);
 				return 0; // UT64_MAX;
 			} else {

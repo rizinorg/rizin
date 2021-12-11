@@ -4518,15 +4518,16 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 			// TODO: toggle shortcut hotkeys
 			rz_core_visual_toggle_hints(core);
 			break;
-		case '$':
-			if (core->print->cur_enabled) {
-				rz_core_debug_reg_set(core, "PC", core->offset + core->print->cur, NULL);
-			} else {
-				rz_core_debug_reg_set(core, "PC", core->offset, NULL);
-			}
+		case '$': {
+			ut64 dst =
+				core->print->cur_enabled
+				? core->offset + core->print->cur
+				: core->offset;
+			rz_core_reg_set_by_role_or_name(core, "PC", dst);
 			rz_core_seek_to_register(core, "PC", false);
 			g->need_reload_nodes = true;
 			break;
+		}
 		case 'R':
 			if (rz_config_get_i(core->config, "scr.randpal")) {
 				rz_cons_pal_random();
