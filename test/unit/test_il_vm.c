@@ -16,8 +16,8 @@ static bool test_rzil_vm_basic_operation() {
 	RzILVM *vm = rz_il_vm_new(0, 8, 16);
 
 	// 1. create variables
-	RzILVar *var_r1 = rz_il_vm_create_variable(vm, "r1");
-	RzILVar *var_r2 = rz_il_vm_create_variable(vm, "r2");
+	RzILVar *var_r1 = rz_il_vm_create_variable(vm, "r1", RZIL_VAR_TYPE_UNK);
+	RzILVar *var_r2 = rz_il_vm_create_variable(vm, "r2", RZIL_VAR_TYPE_UNK);
 	mu_assert_notnull(var_r1, "Create var 1");
 	mu_assert_notnull(var_r2, "Create var 2");
 
@@ -36,8 +36,8 @@ static bool test_rzil_vm_basic_operation() {
 	mu_assert_eq(var_r2, find_var_r2, "Store and find r2");
 
 	// 3. create value
-	RzILVal *val_r1 = rz_il_vm_create_value(vm, RZIL_VAR_TYPE_BV);
-	RzILVal *val_r2 = rz_il_vm_create_value(vm, RZIL_VAR_TYPE_BOOL);
+	RzILVal *val_r1 = rz_il_vm_create_value_bitv(vm, rz_bv_new_zero(32));
+	RzILVal *val_r2 = rz_il_vm_create_value_bool(vm, false);
 	mu_assert_notnull(val_r1, "Create val 1");
 	mu_assert_notnull(val_r2, "Create val 2");
 
