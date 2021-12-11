@@ -3719,7 +3719,7 @@ RZ_API void rz_core_recover_vars(RzCore *core, RzAnalysisFunction *fcn, bool arg
 	rz_pvector_push(&ctx.reg_set, reg_set);
 	int saved_stack = fcn->stack;
 	RzAnalysisBlock *first_bb = rz_analysis_get_block_at(fcn->analysis, fcn->addr);
-	if (first_bb != NULL) {
+	if (first_bb) {
 		rz_analysis_block_recurse_depth_first(first_bb, (RzAnalysisBlockCb)analysis_block_cb, (RzAnalysisBlockCb)analysis_block_on_exit, &ctx);
 	}
 	rz_pvector_fini(&ctx.reg_set);
