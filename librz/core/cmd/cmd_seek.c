@@ -20,17 +20,8 @@ static void printPadded(RzCore *core, int pad) {
 }
 
 RZ_IPI bool rz_core_seek_to_register(RzCore *core, const char *regname, bool is_silent) {
-	ut64 off;
-	if (core->bin->is_debugger) {
-		off = rz_debug_reg_get(core->dbg, regname);
-		return rz_core_seek_opt(core, off, true, !is_silent);
-	} else {
-		RzReg *orig = core->dbg->reg;
-		core->dbg->reg = core->analysis->reg;
-		off = rz_debug_reg_get(core->dbg, regname);
-		core->dbg->reg = orig;
-		return rz_core_seek_opt(core, off, true, !is_silent);
-	}
+	ut64 off = rz_core_reg_getv_by_role_or_name(core, regname);
+	return rz_core_seek_opt(core, off, true, !is_silent);
 }
 
 RZ_IPI int rz_core_seek_opcode_backward(RzCore *core, int numinstr, bool silent) {

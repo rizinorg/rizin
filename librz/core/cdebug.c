@@ -182,37 +182,6 @@ RZ_API bool rz_core_debug_continue_until(RzCore *core, ut64 addr, ut64 to) {
 	return true;
 }
 
-RZ_IPI bool rz_core_debug_reg_set(RzCore *core, const char *regname, ut64 val, const char *strval) {
-	RzRegItem *r = rz_reg_get(core->dbg->reg, regname, -1);
-	if (!r) {
-		int role = rz_reg_get_name_idx(regname);
-		if (role != -1) {
-			const char *alias = rz_reg_get_name(core->dbg->reg, role);
-			if (alias) {
-				r = rz_reg_get(core->dbg->reg, alias, -1);
-			}
-		}
-	}
-	if (!r) {
-		eprintf("Unknown register '%s'\n", regname);
-		return false;
-	}
-
-	if (r->flags) {
-		if (strval) {
-			rz_reg_set_bvalue(core->dbg->reg, r, strval);
-		} else {
-			eprintf("String value cannot be NULL\n");
-			return false;
-		}
-	} else {
-		rz_reg_set_value(core->dbg->reg, r, val);
-	}
-	rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ANY, true);
-	rz_core_reg_update_flags(core);
-	return true;
-}
-
 RZ_IPI void rz_core_debug_sync_bits(RzCore *core) {
 	if (rz_core_is_debug(core)) {
 		ut64 asm_bits = rz_config_get_i(core->config, "asm.bits");
@@ -377,14 +346,14 @@ RZ_API RzCmdStatus rz_core_debug_plugins_print(RzCore *core, RzCmdStateOutput *s
 }
 
 RZ_IPI void rz_core_debug_print_status(RzCore *core) {
-	RzReg *reg = core->dbg->reg;
+	RzReg *reg = rz_core_reg_default(core);
 	RzList *ritems = rz_reg_filter_items_covered(reg->allregs);
 	if (ritems) {
 		rz_core_reg_print_diff(reg, ritems);
 		rz_list_free(ritems);
 	}
 	ut64 old_address = core->offset;
-	rz_core_seek(core, rz_debug_reg_get(core->dbg, "PC"), true);
+	rz_core_seek(core, rz_reg_get_value_by_role(reg, RZ_REG_NAME_PC), true);
 	rz_core_print_disasm_instructions(core, 0, 1);
 	rz_core_seek(core, old_address, true);
 	rz_cons_flush();

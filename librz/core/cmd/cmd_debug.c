@@ -1526,15 +1526,13 @@ RZ_IPI int rz_cmd_debug_heap_jemalloc(void *data, const char *input) {
 #include "../linux_heap_glibc.c"
 
 static void foreach_reg_set_or_clear(RzCore *core, bool set) {
-	RzReg *reg = rz_config_get_b(core->config, "cfg.debug")
-		? core->dbg->reg
-		: core->analysis->reg;
+	RzReg *reg = rz_core_reg_default(core);
 	const RzList *regs = rz_reg_get_list(reg, RZ_REG_TYPE_GPR);
 	RzListIter *it;
 	RzRegItem *reg_item;
 	rz_list_foreach (regs, it, reg_item) {
 		if (set) {
-			const ut64 value = rz_reg_get_value(core->dbg->reg, reg_item);
+			const ut64 value = rz_reg_get_value(reg, reg_item);
 			rz_flag_set(core->flags, reg_item->name, value, reg_item->size / 8);
 		} else {
 			rz_flag_unset_name(core->flags, reg_item->name);
@@ -2431,7 +2429,7 @@ RZ_IPI int rz_cmd_debug_step(void *data, const char *input) {
 		if (rz_config_get_i(core->config, "dbg.skipover")) {
 			rz_core_cmdf(core, "dss%s", input + 1);
 		} else {
-			if (rz_config_get_b(core->config, "cfg.debug")) {
+			if (rz_core_is_debug(core)) {
 				int hwbp = rz_config_get_i(core->config, "dbg.hwbp");
 				addr = rz_debug_reg_get(core->dbg, "PC");
 				RzBreakpointItem *bpi = rz_bp_get_at(core->dbg->bp, addr);

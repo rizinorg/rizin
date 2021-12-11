@@ -171,15 +171,13 @@ RZ_API ut64 rz_core_analysis_address(RzCore *core, ut64 addr) {
 	if (!core) {
 		return 0;
 	}
-	if (core->dbg && core->dbg->reg) {
-		rs = rz_reg_regset_get(core->dbg->reg, RZ_REG_TYPE_GPR);
-	}
+	rs = rz_reg_regset_get(core->analysis->reg, RZ_REG_TYPE_GPR);
 	if (rs) {
 		RzRegItem *r;
 		RzListIter *iter;
 		rz_list_foreach (rs->regs, iter, r) {
 			if (r->type == RZ_REG_TYPE_GPR) {
-				ut64 val = rz_reg_getv(core->dbg->reg, r->name);
+				ut64 val = rz_reg_getv(core->analysis->reg, r->name);
 				if (addr == val) {
 					types |= RZ_ANALYSIS_ADDR_TYPE_REG;
 					break;
@@ -194,11 +192,11 @@ RZ_API ut64 rz_core_analysis_address(RzCore *core, ut64 addr) {
 		types |= RZ_ANALYSIS_ADDR_TYPE_FUNC;
 	}
 	// check registers
-	if (core->bin && core->bin->is_debugger && core->dbg) { // TODO: if cfg.debug here
+	if (rz_core_is_debug(core)) {
 		RzDebugMap *map;
 		RzListIter *iter;
 		// use 'dm'
-		// XXX: this line makes r2 debugging MUCH slower
+		// XXX: this line makes rz debugging MUCH slower
 		// rz_debug_map_sync (core->dbg);
 		rz_list_foreach (core->dbg->maps, iter, map) {
 			if (addr >= map->addr && addr < map->addr_end) {

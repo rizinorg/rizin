@@ -128,7 +128,7 @@ static int __esil_stop(RzDebug *dbg) {
 static int __reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 	int sz;
 	/* do nothing */
-	ut8 *bytes = rz_reg_get_bytes(dbg->reg, type, &sz);
+	ut8 *bytes = rz_reg_get_bytes(dbg->analysis->reg, type, &sz);
 	memcpy(buf, bytes, RZ_MIN(size, sz));
 	free(bytes);
 	return size;

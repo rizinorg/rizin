@@ -303,3 +303,60 @@ ymm14
 ymm15
 EOF
 RUN
+
+NAME=Conditional dr/ar
+FILE=bins/elf/crackme0x00b
+CMDS=<<EOF
+ar eax=0x1337
+e cfg.debug
+# The following command is used exactly like this as PANEL_CMD_REGISTERS.
+# Here we make sure it does what it should, namely show dr or ar depending on cfg.debug.
+?== true `e cfg.debug`; ?! dr; ?? ar
+?e --
+ood > $_
+e cfg.debug
+# mask out anything aslr-dependent
+# we don't use ~ below to test the conditional command as-is
+dcu 0x080484a2
+dr ecx=0x42
+dr edx=0x42
+dr esp=0x42
+dr ebp=0x42
+dr esi=0x42
+dr edi=0x42
+dr rflags=0
+?== true `e cfg.debug`; ?! dr; ?? ar
+dk 9
+EOF
+EXPECT=<<EOF
+false
+oeax = 0x00000000
+eax = 0x00001337
+ebx = 0x00000000
+ecx = 0x00000000
+edx = 0x00000000
+esi = 0x00000000
+edi = 0x00000000
+esp = 0x00000000
+ebp = 0x00000000
+eip = 0x00000000
+eflags = 0x00000000
+--
+true
+eax = 0x080485d0
+ebx = 0x00000000
+ecx = 0x00000042
+edx = 0x00000042
+esi = 0x00000042
+edi = 0x00000042
+esp = 0x00000042
+ebp = 0x00000042
+eip = 0x080484a2
+xfs = 0x00000000
+xgs = 0x00000063
+xcs = 0x00000023
+xss = 0x0000002b
+rflags = 0x00000202
+oeax = 0xffffffff
+EOF
+RUN
