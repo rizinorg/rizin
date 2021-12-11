@@ -282,7 +282,7 @@ RZ_IPI void rz_core_analysis_esil_emulate(RzCore *core, ut64 addr, ut64 until_ad
 	int ret, bsize = RZ_MAX(4096, core->blocksize);
 	const int mininstrsz = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
 	const int minopcode = RZ_MAX(1, mininstrsz);
-	const char *pc = rz_reg_get_name(core->dbg->reg, RZ_REG_NAME_PC);
+	const char *pc = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
 	int stacksize = rz_config_get_i(core->config, "esil.stack.depth");
 	int iotrap = rz_config_get_i(core->config, "esil.iotrap");
 	ut64 addrsize = rz_config_get_i(core->config, "esil.addr.size");
@@ -300,10 +300,10 @@ RZ_IPI void rz_core_analysis_esil_emulate(RzCore *core, ut64 addr, ut64 until_ad
 		return;
 	}
 	if (addr == -1) {
-		addr = rz_reg_getv(core->dbg->reg, pc);
+		addr = rz_reg_getv(core->analysis->reg, pc);
 	}
 	(void)rz_analysis_esil_setup(core->analysis->esil, core->analysis, 0, 0, 0); // int romem, int stats, int nonull) {
-	ut64 cursp = rz_reg_getv(core->dbg->reg, "SP");
+	ut64 cursp = rz_reg_getv(core->analysis->reg, "SP");
 	ut64 oldoff = core->offset;
 	const ut64 flags = RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT | RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_DISASM;
 	for (i = 0, j = 0; j < off; i++, j++) {
@@ -330,7 +330,6 @@ RZ_IPI void rz_core_analysis_esil_emulate(RzCore *core, ut64 addr, ut64 until_ad
 			// nothing
 		} else {
 			rz_reg_setv(core->analysis->reg, "PC", aop.addr + aop.size);
-			rz_reg_setv(core->dbg->reg, "PC", aop.addr + aop.size);
 			const char *e = RZ_STRBUF_SAFEGET(&aop.esil);
 			if (e && *e) {
 				// eprintf ("   0x%08llx %d  %s\n", aop.addr, ret, aop.mnemonic);
@@ -346,7 +345,7 @@ RZ_IPI void rz_core_analysis_esil_emulate(RzCore *core, ut64 addr, ut64 until_ad
 		rz_analysis_op_fini(&aop);
 	}
 	rz_core_seek(core, oldoff, true);
-	rz_reg_setv(core->dbg->reg, "SP", cursp);
+	rz_reg_setv(core->analysis->reg, "SP", cursp);
 	free(buf);
 }
 
@@ -360,13 +359,13 @@ RZ_IPI void rz_core_analysis_esil_emulate_bb(RzCore *core) {
 }
 
 RZ_IPI int rz_core_analysis_set_reg(RzCore *core, const char *regname, ut64 val) {
-	RzRegItem *r = rz_reg_get(core->dbg->reg, regname, -1);
+	RzRegItem *r = rz_reg_get(core->analysis->reg, regname, -1);
 	if (!r) {
 		int role = rz_reg_get_name_idx(regname);
 		if (role != -1) {
-			const char *alias = rz_reg_get_name(core->dbg->reg, role);
+			const char *alias = rz_reg_get_name(core->analysis->reg, role);
 			if (alias) {
-				r = rz_reg_get(core->dbg->reg, alias, -1);
+				r = rz_reg_get(core->analysis->reg, alias, -1);
 			}
 		}
 	}
@@ -374,8 +373,7 @@ RZ_IPI int rz_core_analysis_set_reg(RzCore *core, const char *regname, ut64 val)
 		eprintf("ar: Unknown register '%s'\n", regname);
 		return -1;
 	}
-	rz_reg_set_value(core->dbg->reg, r, val);
-	rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ANY, true);
+	rz_reg_set_value(core->analysis->reg, r, val);
 	rz_core_reg_update_flags(core);
 	return 0;
 }
