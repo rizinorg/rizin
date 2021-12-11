@@ -1231,7 +1231,6 @@ typedef struct rz_analysis_plugin_t {
 	// legacy rz_analysis_functions
 	RzAnalysisOpCallback op;
 
-	RzAnalysisRegProfCallback set_reg_profile;
 	RzAnalysisRegProfGetCallback get_reg_profile;
 	RzAnalysisFPBBCallback fingerprint_bb;
 	RzAnalysisFPFcnCallback fingerprint_fcn;

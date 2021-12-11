@@ -1667,7 +1667,7 @@ static int mips_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 */
 
 /* Set the profile register */
-static bool mips_set_reg_profile(RzAnalysis *analysis) {
+static char *mips_get_reg_profile(RzAnalysis *analysis) {
 	const char *p =
 #if 0
           "=PC    pc\n"
@@ -1758,7 +1758,7 @@ static bool mips_set_reg_profile(RzAnalysis *analysis) {
 		/* extra */
 		"gpr	pc	.64	272	0\n";
 #endif
-		return rz_reg_set_profile_string(analysis->reg, p);
+		return strdup(p);
 }
 
 static int archinfo(RzAnalysis *analysis, int q) {
@@ -1774,7 +1774,7 @@ RzAnalysisPlugin rz_analysis_plugin_mips_gnu = {
 	.esil = true,
 	.archinfo = archinfo,
 	.op = &mips_op,
-	.set_reg_profile = mips_set_reg_profile,
+	.get_reg_profile = mips_get_reg_profile,
 };
 
 #ifndef RZ_PLUGIN_INCORE

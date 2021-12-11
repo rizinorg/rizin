@@ -909,7 +909,7 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	return op->size;
 }
 
-static bool set_reg_profile(RzAnalysis *analysis) {
+static char *get_reg_profile(RzAnalysis *analysis) {
 	char *p =
 		"=PC	pc\n"
 		"=SP	sp\n"
@@ -931,7 +931,7 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 		"gpr	N	.1	.31	0\n"
 		"gpr	sp	.8	4	0\n"
 		"gpr	pc	.16	5	0\n";
-	return rz_reg_set_profile_string(analysis->reg, p);
+	return strdup(p);
 }
 
 static int esil_6502_init(RzAnalysisEsil *esil) {
@@ -962,7 +962,7 @@ RzAnalysisPlugin rz_analysis_plugin_6502 = {
 	.bits = 8,
 	.address_bits = address_bits,
 	.op = &_6502_op,
-	.set_reg_profile = &set_reg_profile,
+	.get_reg_profile = &get_reg_profile,
 	.esil = true,
 	.esil_init = esil_6502_init,
 	.esil_fini = esil_6502_fini,

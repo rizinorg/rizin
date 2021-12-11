@@ -14,3 +14,17 @@ f bb.00027 = 0x00000027
 f bb.0002c = 0x0000002c
 EOF
 RUN
+
+NAME=m680x regs
+FILE=
+CMDS=<<EOF
+e asm.arch=m680x
+ar
+EOF
+EXPECT=<<EOF
+pc = 0x00000000
+sp = 0x00000000
+a0 = 0x00000000
+a1 = 0x00000000
+EOF
+RUN

@@ -11,3 +11,22 @@ EXPECT=<<EOF
 0x00000016    3 7            fcn.00000016
 EOF
 RUN
+
+NAME=z80 regs
+FILE=
+CMDS=<<EOF
+e asm.arch=z80
+ar
+EOF
+EXPECT=<<EOF
+mpc = 0x00000000
+sp = 0x00000000
+af = 0x00000000
+bc = 0x00000000
+de = 0x00000000
+hl = 0x00000000
+mbcrom = 0x00000000
+mbcram = 0x00000000
+ime = 0x00000000
+EOF
+RUN

@@ -1917,7 +1917,7 @@ static int esil_avr_fini(RzAnalysisEsil *esil) {
 	return true;
 }
 
-static bool set_reg_profile(RzAnalysis *analysis) {
+static char *get_reg_profile(RzAnalysis *analysis) {
 	const char *p =
 		"=PC	pcl\n"
 		"=SN	r24\n"
@@ -2027,7 +2027,7 @@ RAMPX, RAMPY, RAMPZ, RAMPD and EIND:
 		//		Store Program Memory Control and Status Register (SPMCSR)
 		"gpr    spmcsr  .8      64      0\n";
 
-	return rz_reg_set_profile_string(analysis->reg, p);
+	return strdup(p);
 }
 
 static int archinfo(RzAnalysis *analysis, int q) {
@@ -2104,7 +2104,7 @@ RzAnalysisPlugin rz_analysis_plugin_avr = {
 	.bits = 8 | 16, // 24 big regs conflicts
 	.address_bits = address_bits,
 	.op = &avr_op,
-	.set_reg_profile = &set_reg_profile,
+	.get_reg_profile = &get_reg_profile,
 	.esil_init = esil_avr_init,
 	.esil_fini = esil_avr_fini,
 	.analysis_mask = analysis_mask_avr,

@@ -1012,6 +1012,9 @@ static int i8051_hook_reg_write(RzAnalysisEsil *esil, const char *name, ut64 *va
 #endif
 
 static int esil_i8051_init(RzAnalysisEsil *esil) {
+	// reset emulation control registers based on cpu
+	set_cpu_model(esil->analysis, true);
+
 	if (esil->cb.user) {
 		return true;
 	}
@@ -1035,7 +1038,7 @@ static int esil_i8051_fini(RzAnalysisEsil *esil) {
 	return true;
 }
 
-static bool set_reg_profile(RzAnalysis *analysis) {
+static char *get_reg_profile(RzAnalysis *analysis) {
 	const char *p =
 		"=PC	pc\n"
 		"=SP	sp\n"
@@ -1086,14 +1089,7 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 		"gpr	_sfr	.32	28 0\n"
 		"gpr	_xdata	.32 32 0\n"
 		"gpr	_pdata	.32	36 0\n";
-
-	int retval = rz_reg_set_profile_string(analysis->reg, p);
-	if (retval) {
-		// reset emulation control registers based on cpu
-		set_cpu_model(analysis, true);
-	}
-
-	return retval;
+	return strdup(p);
 }
 
 static ut32 map_direct_addr(RzAnalysis *analysis, ut8 addr) {
@@ -1279,7 +1275,7 @@ RzAnalysisPlugin rz_analysis_plugin_8051 = {
 	.desc = "8051 CPU code analysis plugin",
 	.license = "LGPL3",
 	.op = &i8051_op,
-	.set_reg_profile = &set_reg_profile,
+	.get_reg_profile = &get_reg_profile,
 	.esil_init = esil_i8051_init,
 	.esil_fini = esil_i8051_fini
 };

@@ -1007,7 +1007,7 @@ beach:
 	return op->size;
 }
 
-static bool analysis_pic_midrange_set_reg_profile(RzAnalysis *esil) {
+static char *analysis_pic_midrange_get_reg_profile(RzAnalysis *esil) {
 	const char *p =
 		"=PC	pc\n"
 		"=SP	stkptr\n"
@@ -1034,10 +1034,10 @@ static bool analysis_pic_midrange_set_reg_profile(RzAnalysis *esil) {
 		"gpr	stkptr	.8	14	0\n"
 		"gpr	_sram	.32 15	0\n"
 		"gpr	_stack	.32 19	0\n";
-	return rz_reg_set_profile_string(esil->reg, p);
+	return strdup(p);
 }
 
-static bool analysis_pic_pic18_set_reg_profile(RzAnalysis *esil) {
+static char *analysis_pic_pic18_get_reg_profile(RzAnalysis *esil) {
 	const char *p =
 		"#pc lives in nowhere actually"
 		"=PC	pc\n"
@@ -1153,7 +1153,7 @@ static bool analysis_pic_pic18_set_reg_profile(RzAnalysis *esil) {
 		"gpr	stkptr	.8	96	0\n"
 		"gpr	tablat	.8	14	0\n";
 
-	return rz_reg_set_profile_string(esil->reg, p);
+	return strdup(p);
 }
 
 static int analysis_pic_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
@@ -1170,18 +1170,18 @@ static int analysis_pic_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 	return -1;
 }
 
-static bool analysis_pic_set_reg_profile(RzAnalysis *analysis) {
+static char *analysis_pic_get_reg_profile(RzAnalysis *analysis) {
 	if (analysis->cpu && strcasecmp(analysis->cpu, "baseline") == 0) {
 		// TODO: We are using the midrange profile as the baseline
-		return analysis_pic_midrange_set_reg_profile(analysis);
+		return analysis_pic_midrange_get_reg_profile(analysis);
 	}
 	if (analysis->cpu && strcasecmp(analysis->cpu, "midrange") == 0) {
-		return analysis_pic_midrange_set_reg_profile(analysis);
+		return analysis_pic_midrange_get_reg_profile(analysis);
 	}
 	if (analysis->cpu && strcasecmp(analysis->cpu, "pic18") == 0) {
-		return analysis_pic_pic18_set_reg_profile(analysis);
+		return analysis_pic_pic18_get_reg_profile(analysis);
 	}
-	return false;
+	return NULL;
 }
 
 RzAnalysisPlugin rz_analysis_plugin_pic = {
@@ -1191,7 +1191,7 @@ RzAnalysisPlugin rz_analysis_plugin_pic = {
 	.arch = "pic",
 	.bits = 8,
 	.op = &analysis_pic_op,
-	.set_reg_profile = &analysis_pic_set_reg_profile,
+	.get_reg_profile = &analysis_pic_get_reg_profile,
 	.esil = true
 };
 
