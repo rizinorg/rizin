@@ -1102,7 +1102,7 @@ static int sh_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *d
 }
 
 /* Set the profile register */
-static bool sh_set_reg_profile(RzAnalysis *analysis) {
+static char *sh_get_reg_profile(RzAnalysis *analysis) {
 	// TODO Add system ( ssr, spc ) + fpu regs
 	const char *p =
 		"=PC	pc\n"
@@ -1137,7 +1137,7 @@ static bool sh_set_reg_profile(RzAnalysis *analysis) {
 		"gpr	vbr	.32	80	0\n"
 		"gpr	mach	.32	84	0\n"
 		"gpr	macl	.32	88	0\n";
-	return rz_reg_set_profile_string(analysis->reg, p);
+	return strdup(p);
 }
 
 static int archinfo(RzAnalysis *analysis, int q) {
@@ -1157,7 +1157,7 @@ RzAnalysisPlugin rz_analysis_plugin_sh = {
 	.archinfo = archinfo,
 	.bits = 32,
 	.op = &sh_op,
-	.set_reg_profile = &sh_set_reg_profile,
+	.get_reg_profile = &sh_get_reg_profile,
 	.esil = true
 };
 

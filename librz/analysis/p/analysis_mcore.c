@@ -44,7 +44,7 @@ static int mcore_analysis(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, con
 	return op->size;
 }
 
-static bool set_reg_profile(RzAnalysis *analysis) {
+static char *get_reg_profile(RzAnalysis *analysis) {
 	const char *p =
 		"=PC	pc\n"
 		"=SP	r1\n"
@@ -107,7 +107,7 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 		"gpr	cr30  .32 184 0\n"
 		"gpr	cr31  .32 188 0\n"
 		"gpr	pc	.32 192 0\n";
-	return rz_reg_set_profile_string(analysis->reg, p);
+	return strdup(p);
 }
 
 static int archinfo(RzAnalysis *analysis, int q) {
@@ -122,7 +122,7 @@ RzAnalysisPlugin rz_analysis_plugin_mcore = {
 	.bits = 32,
 	.op = &mcore_analysis,
 	.archinfo = archinfo,
-	.set_reg_profile = &set_reg_profile,
+	.get_reg_profile = &get_reg_profile,
 };
 
 #ifndef RZ_PLUGIN_INCORE
