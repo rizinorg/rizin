@@ -218,7 +218,7 @@ RZ_API void rz_il_vm_fini(RzILVM *vm) {
 		for (ut32 i = 0; i < RZ_IL_VM_MAX_VAR; ++i) {
 			if (vm->vm_global_variable_list[i] != NULL) {
 				var = vm->vm_global_variable_list[i];
-				rz_il_free_variable(var);
+				rz_il_variable_free(var);
 				vm->vm_global_variable_list[i] = NULL;
 			}
 		}

@@ -58,30 +58,33 @@ struct rz_il_vm_t {
 };
 
 // VM operations about Variable and Value
-RZ_API RzBitVector *rz_il_hash_find_addr_by_lblname(RzILVM *vm, const char *lbl_name);
-RZ_API RzILEffectLabel *rz_il_vm_find_label_by_name(RzILVM *vm, const char *lbl_name);
-RZ_API RzILEffectLabel *rz_il_vm_create_label(RzILVM *vm, const char *name, RzBitVector *addr);
-RZ_API RzILEffectLabel *rz_il_vm_create_label_lazy(RzILVM *vm, const char *name);
-RZ_API RzILEffectLabel *rz_il_vm_update_label(RzILVM *vm, char *name, RzBitVector *addr);
-RZ_API RzILVal *rz_il_hash_find_val_by_var(RzILVM *vm, RzILVar *var);
-RZ_API RzILVal *rz_il_hash_find_val_by_name(RzILVM *vm, const char *var_name);
-RZ_API RzILVar *rz_il_find_var_by_name(RzILVM *vm, const char *var_name);
+RZ_API RZ_BORROW RzBitVector *rz_il_hash_find_addr_by_lblname(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *lbl_name);
+RZ_API RZ_BORROW RzILEffectLabel *rz_il_vm_find_label_by_name(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *lbl_name);
+RZ_API RZ_BORROW RzILEffectLabel *rz_il_vm_create_label(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name, RZ_NONNULL RZ_BORROW RzBitVector *addr);
+RZ_API RZ_BORROW RzILEffectLabel *rz_il_vm_create_label_lazy(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name);
+RZ_API RZ_BORROW RzILEffectLabel *rz_il_vm_update_label(RZ_NONNULL RzILVM *vm, RZ_NONNULL char *name, RZ_NONNULL RZ_BORROW RzBitVector *addr);
+RZ_API RZ_BORROW RzILVal *rz_il_hash_find_val_by_var(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILVar *var);
+RZ_API RZ_BORROW RzILVal *rz_il_hash_find_val_by_name(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *var_name);
+RZ_API RZ_BORROW RzILVar *rz_il_find_var_by_name(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *var_name);
 
-RZ_API RzILVar *rz_il_vm_create_variable(RzILVM *vm, const char *name);
-RZ_API RzILVal *rz_il_vm_create_value(RzILVM *vm, RZIL_VAR_TYPE type);
-RZ_API void rz_il_hash_bind(RzILVM *vm, RzILVar *var, RzILVal *val);
-RZ_API void rz_il_hash_cancel_binding(RzILVM *vm, RzILVar *var);
+RZ_API RZ_BORROW RzILVar *rz_il_vm_create_variable(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name, RzILVarType type);
+RZ_API RZ_BORROW RzILVal *rz_il_vm_create_value_bitv(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzBitVector *bitv);
+RZ_API RZ_BORROW RzILVal *rz_il_vm_create_value_bool(RZ_NONNULL RzILVM *vm, bool value);
+RZ_API RZ_BORROW RzILVal *rz_il_vm_create_value_unk(RZ_NONNULL RzILVM *vm);
+RZ_API void rz_il_hash_bind(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILVar *var, RZ_NONNULL RzILVal *val);
+RZ_API void rz_il_hash_cancel_binding(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILVar *var);
 
-RZ_API RzILVal *rz_il_vm_fortify_val(RzILVM *vm, RzILVal *val);
-RZ_API RzILVal *rz_il_vm_fortify_bitv(RzILVM *vm, RzBitVector *val);
-RZ_API RzILVal *rz_il_vm_fortify_bool(RzILVM *vm, RzILBool *val);
+RZ_API RZ_BORROW RzILVal *rz_il_vm_fortify_val(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILVal *val);
+RZ_API RZ_BORROW RzILVal *rz_il_vm_fortify_bitv(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzBitVector *val);
+RZ_API RZ_BORROW RzILVal *rz_il_vm_fortify_bool(RZ_NONNULL RzILVM *vm, bool val);
 
 RZ_API void rz_il_vm_add_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name, ut32 length);
 RZ_API void rz_il_vm_add_bit_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name, bool value);
 
 // VM store and load core theory opcodes
-RZ_API void rz_il_vm_store_opcodes_to_addr(RzILVM *vm, RzBitVector *addr, RzPVector *oplist);
-RZ_API RzPVector *rz_il_make_oplist(int num, ...);
+RZ_API void rz_il_vm_store_opcodes_to_addr(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzBitVector *addr, RZ_NONNULL RzPVector *oplist);
+RZ_API RZ_OWN RzPVector *rz_il_make_oplist(ut32 num, ...);
+#define rz_il_make_nop_list() rz_il_make_oplist(0, NULL)
 
 RZ_API void rz_il_op_stringify(RZ_NONNULL RzILOp *op, RZ_NONNULL RzStrBuf *sb);
 RZ_API void rz_il_oplist_stringify(RZ_NONNULL RzPVector *oplist, RZ_NONNULL RzStrBuf *sb);
@@ -93,13 +96,13 @@ RZ_API void rz_il_event_stringify(RZ_NONNULL RzILEvent *evt, RZ_NONNULL RzStrBuf
 RZ_API void rz_il_event_json(RZ_NONNULL RzILEvent *evt, RZ_NONNULL PJ *pj);
 
 // VM auto convert functions
-RZ_API RzBitVector *rz_il_evaluate_bitv(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
-RZ_API RzILBool *rz_il_evaluate_bool(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
-RZ_API RzILVal *rz_il_evaluate_val(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
-RZ_API RzILEffect *rz_il_evaluate_effect(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+RZ_API RZ_OWN RzBitVector *rz_il_evaluate_bitv(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOp *op, RZ_NONNULL RzILOpArgType *type);
+RZ_API RZ_OWN RzILBool *rz_il_evaluate_bool(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOp *op, RZ_NONNULL RzILOpArgType *type);
+RZ_API RZ_OWN RzILVal *rz_il_evaluate_val(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOp *op, RZ_NONNULL RzILOpArgType *type);
+RZ_API RZ_OWN RzILEffect *rz_il_evaluate_effect(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOp *op, RZ_NONNULL RzILOpArgType *type);
 
 // recursively parse and evaluate
-RZ_API void *rz_il_parse_op_root(RzILVM *vm, RzILOp *root, RzILOpArgType *type);
+RZ_API RZ_OWN void *rz_il_parse_op_root(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOp *op, RZ_NONNULL RzILOpArgType *type);
 
 #ifdef __cplusplus
 }
