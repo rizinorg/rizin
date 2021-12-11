@@ -238,7 +238,7 @@ static void autocmplt_flag_space(RzCore *core, RzLineNSCompletionResult *res, co
 }
 
 static void autocmplt_reg(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
-	RzReg *reg = rz_debug_is_dead(core->dbg) ? core->analysis->reg : core->dbg->reg;
+	RzReg *reg = rz_core_reg_default(core);
 	const RzList *regs = rz_reg_get_list(reg, RZ_REG_TYPE_ANY);
 	RzListIter *it;
 	RzRegItem *regitem;

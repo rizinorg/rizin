@@ -27,10 +27,13 @@ typedef struct {
 
 #define KEY_ALTQ 0xc5
 
+#define CMD_REGISTERS      "?== true `e cfg.debug`; ?! dr=; ?? ar=" // select dr= or ar= depending on cfg.debug
+#define CMD_REGISTERS_REFS "?== true `e cfg.debug`; ?! drr; ?? arr" // select drr or arr depending on cfg.debug
+
 static const char *printfmtSingle[NPF] = {
 	"xc", // HEXDUMP
 	"pd $r", // ASSEMBLY
-	"pxw 64@r:SP;dr=;pd $r", // DEBUGGER
+	("pxw 64@r:SP;" CMD_REGISTERS ";pd $r"), // DEBUGGER
 	"prc", // OVERVIEW
 	"pss", // PC//  copypasteable views
 };
@@ -65,7 +68,7 @@ static const char *printHexFormats[PRINT_HEX_FORMATS] = {
 };
 static int current3format = 0;
 static const char *print3Formats[PRINT_3_FORMATS] = { //  not used at all. its handled by the pd format
-	"pxw 64@r:SP;dr=;pd $r", // DEBUGGER
+	"pxw 64@r:SP;" CMD_REGISTERS ";pd $r", // DEBUGGER
 	"pCD"
 };
 static int current4format = 0;
@@ -2485,9 +2488,9 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			break;
 		case '$':
 			if (core->print->cur_enabled) {
-				rz_core_debug_reg_set(core, "PC", core->offset + core->print->cur, NULL);
+				rz_core_reg_set_by_role_or_name(core, "PC", core->offset + core->print->cur);
 			} else {
-				rz_core_debug_reg_set(core, "PC", core->offset, NULL);
+				rz_core_reg_set_by_role_or_name(core, "PC", core->offset);
 			}
 			break;
 		case '@':
@@ -3129,7 +3132,7 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			break;
 		case '*':
 			if (core->print->cur_enabled) {
-				rz_core_debug_reg_set(core, "PC", core->offset + core->print->cur, NULL);
+				rz_core_reg_set_by_role_or_name(core, "PC", core->offset + core->print->cur);
 			} else if (!autoblocksize) {
 				rz_core_block_size(core, core->blocksize + cols);
 			}
@@ -3889,7 +3892,7 @@ RZ_API int rz_core_visual(RzCore *core, const char *input) {
 					"?0 ; f tmp ; sr %s @e: cfg.seek.silent=true ; %s ; ?1 ; %s ; ?1 ; "
 					"s tmp @e: cfg.seek.silent=true ; f- tmp ; pd $r",
 					reg, cmdvhex,
-					ref ? "drr" : "dr=");
+					ref ? CMD_REGISTERS_REFS : CMD_REGISTERS);
 				debugstr[sizeof(debugstr) - 1] = 0;
 			} else {
 				const char *pxw = stackPrintCommand(core);
@@ -3900,7 +3903,7 @@ RZ_API int rz_core_visual(RzCore *core, const char *input) {
 					"?1 ; %s;"
 					"?1 ; s tmp @e: cfg.seek.silent=true ; f- tmp ; afal ; pd $r",
 					reg, pxa ? "pxa" : pxw, size, sign, absdelta,
-					ref ? "drr" : "dr=");
+					ref ? CMD_REGISTERS_REFS : CMD_REGISTERS);
 			}
 			printfmtSingle[2] = debugstr;
 		}

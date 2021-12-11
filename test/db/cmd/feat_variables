@@ -407,3 +407,18 @@ EXPECT=<<EOF
 8
 EOF
 RUN
+
+NAME=$r{reg}
+FILE==
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+?v $r{eax}
+ar eax=0xc0ffee
+?v $r{eax}
+EOF
+EXPECT=<<EOF
+0x0
+0xc0ffee
+EOF
+RUN
