@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
 // SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
@@ -20,22 +22,16 @@ typedef union {
  *  \brief structure of RzILVal
  */
 typedef struct rz_il_val_t {
-	RZIL_VAR_TYPE type; ///< type of value
+	RzILVarType type; ///< type of value
 	RzValUnion data; ///< data pointer
 } RzILVal;
 
-typedef enum {
-	RZIL_TEMP_BV,
-	RZIL_TEMP_BOOL,
-	RZIL_TEMP_VAL,
-	RZIL_TEMP_EFF,
-
-	RZIL_TEMP_EMPTY
-} RZIL_TEMP_TYPE;
-
-RZ_API RzILVal *rz_il_value_new(void);
-RZ_API RzILVal *rz_il_value_dup(RzILVal *val);
-RZ_API void rz_il_value_free(RzILVal *val);
+RZ_API RZ_OWN RzILVal *rz_il_value_new_bitv(RZ_NONNULL RzBitVector *bv);
+RZ_API RZ_OWN RzILVal *rz_il_value_new_bool(RZ_NONNULL RzILBool *b);
+#define rz_il_value_new_unk() rz_il_value_new(RZIL_VAR_TYPE_UNK)
+RZ_API RZ_OWN RzILVal *rz_il_value_new(RzILVarType type);
+RZ_API RZ_OWN RzILVal *rz_il_value_dup(RZ_NONNULL RzILVal *val);
+RZ_API void rz_il_value_free(RZ_NULLABLE RzILVal *val);
 
 #ifdef __cplusplus
 }

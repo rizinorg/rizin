@@ -440,7 +440,7 @@ static void rzil_print_register(int padding, const char *reg_name, RzBitVector *
 RZ_IPI void rz_core_analysis_rzil_vm_status(RzCore *core) {
 	RzAnalysisRzil *rzil = core->analysis->rzil;
 	if (!rzil || !rzil->vm) {
-		RZ_LOG_ERROR("RzIL: the VM is not initialized.")
+		RZ_LOG_ERROR("RzIL: the VM is not initialized.\n")
 		return;
 	}
 

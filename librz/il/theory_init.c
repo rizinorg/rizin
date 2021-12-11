@@ -54,8 +54,8 @@ void *rz_il_handler_var(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 
 void *rz_il_handler_unk(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
-
-	RzILVal *val = rz_il_value_new(); // has UNK
+	// has UNK
+	RzILVal *val = rz_il_value_new_unk();
 	*type = RZIL_OP_ARG_VAL;
 	return val;
 }
@@ -71,7 +71,8 @@ void *rz_il_handler_unimplemented(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 		"SEQ", "BLK", "REPEAT", "BRANCH", "INVALID"
 	};
 	RZ_LOG_ERROR("RzIL: unimplemented op handler (%s).\n", ops[op->code]);
-	RzILVal *val = rz_il_value_new(); // has UNK
+	// has UNK
+	RzILVal *val = rz_il_value_new_unk();
 	*type = RZIL_OP_ARG_VAL;
 	return val;
 }
