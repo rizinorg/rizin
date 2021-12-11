@@ -119,10 +119,6 @@ RZ_API bool rz_debug_reg_profile_sync(RzDebug *dbg) {
 		if (p) {
 			rz_reg_set_profile_string(dbg->reg, p);
 			rz_debug_reg_sync(dbg, RZ_REG_TYPE_ANY, false);
-			if (dbg->analysis && dbg->reg != dbg->analysis->reg) {
-				rz_reg_free(dbg->analysis->reg);
-				dbg->analysis->reg = dbg->reg;
-			}
 			free(p);
 		} else {
 			RZ_LOG_WARN("Cannot retrieve reg profile from debug plugin (%s)\n", dbg->cur->name);
