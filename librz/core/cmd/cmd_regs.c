@@ -8,6 +8,7 @@
 	do { \
 		if (sync_cb && !sync_cb(core, type, false)) { \
 			RZ_LOG_ERROR("Failed to read registers.\n"); \
+			rz_list_free(type); \
 			return RZ_CMD_STATUS_ERROR; \
 		} \
 	} while (0)
