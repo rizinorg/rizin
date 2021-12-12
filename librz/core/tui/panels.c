@@ -5253,7 +5253,10 @@ void __restore_panel_pos(RzPanel *panel) {
 }
 
 char *__get_panels_config_dir_path(void) {
-	return rz_str_home(RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, ".rzpanels"));
+	char *home_datadir = rz_path_home_prefix(RZ_DATADIR);
+	char *res = rz_file_path_join(home_datadir, ".rzpanels");
+	free(home_datadir);
+	return res;
 }
 
 char *__create_panels_config_path(const char *file) {

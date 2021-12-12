@@ -1,0 +1,9 @@
+NAME=null regs
+FILE=
+CMDS=<<EOF
+e asm.arch=x86 # populate reg profile
+e analysis.arch=null # reset to null
+ar
+EOF
+EXPECT=
+RUN

@@ -11,6 +11,7 @@
 #include <rz_bin.h>
 #include <ht_uu.h>
 #include <rz_util/rz_graph_drawable.h>
+#include <rz_util/rz_path.h>
 
 #include "core_private.h"
 
@@ -3718,7 +3719,9 @@ RZ_API void rz_core_recover_vars(RzCore *core, RzAnalysisFunction *fcn, bool arg
 	rz_pvector_push(&ctx.reg_set, reg_set);
 	int saved_stack = fcn->stack;
 	RzAnalysisBlock *first_bb = rz_analysis_get_block_at(fcn->analysis, fcn->addr);
-	rz_analysis_block_recurse_depth_first(first_bb, (RzAnalysisBlockCb)analysis_block_cb, (RzAnalysisBlockCb)analysis_block_on_exit, &ctx);
+	if (first_bb) {
+		rz_analysis_block_recurse_depth_first(first_bb, (RzAnalysisBlockCb)analysis_block_cb, (RzAnalysisBlockCb)analysis_block_on_exit, &ctx);
+	}
 	rz_pvector_fini(&ctx.reg_set);
 	fcn->stack = saved_stack;
 }
@@ -7001,7 +7004,7 @@ RZ_IPI bool rz_core_analysis_types_propagation(RzCore *core) {
 	const bool delete_regs = !rz_flag_space_count(core->flags, RZ_FLAGS_FS_REGISTERS);
 	seek = core->offset;
 	rz_reg_arena_push(core->analysis->reg);
-	rz_reg_arena_zero(core->analysis->reg);
+	rz_reg_arena_zero(core->analysis->reg, RZ_REG_TYPE_ANY);
 	rz_core_analysis_esil_init(core);
 	rz_core_analysis_esil_init_mem(core, NULL, UT64_MAX, UT32_MAX);
 	ut8 *saved_arena = rz_reg_arena_peek(core->analysis->reg);
@@ -7274,12 +7277,13 @@ RZ_API int rz_core_get_stacksz(RzCore *core, ut64 from, ut64 to) {
 
 RZ_API void rz_core_analysis_type_init(RzCore *core) {
 	rz_return_if_fail(core && core->analysis);
-	const char *dir_prefix = rz_config_get(core->config, "dir.prefix");
 	int bits = core->rasm->bits;
 	const char *analysis_arch = rz_config_get(core->config, "analysis.arch");
 	const char *os = rz_config_get(core->config, "asm.os");
 
-	rz_type_db_init(core->analysis->typedb, dir_prefix, analysis_arch, bits, os);
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
+	rz_type_db_init(core->analysis->typedb, types_dir, analysis_arch, bits, os);
+	free(types_dir);
 }
 
 static void sdb_concat_by_path(Sdb *s, const char *path) {
@@ -7298,12 +7302,15 @@ RZ_API void rz_core_analysis_cc_init(RzCore *core) {
 		return;
 	}
 
-	const char *dir_prefix = rz_config_get(core->config, "dir.prefix");
 	int bits = core->analysis->bits;
-	char *dbpath = rz_str_newf(RZ_JOIN_3_PATHS("%s", RZ_SDB_TYPES, "cc-%s-%d.sdb"),
-		dir_prefix, analysis_arch, bits);
-	char *dbhomepath = rz_str_newf(RZ_JOIN_3_PATHS("~", RZ_HOME_SDB_TYPES, "cc-%s-%d.sdb"),
-		analysis_arch, bits);
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
+	char *home_types_dir = rz_path_home_prefix(RZ_SDB_TYPES);
+	char buf[40];
+	char *dbpath = rz_file_path_join(types_dir, rz_strf(buf, "cc-%s-%d.sdb", analysis_arch, bits));
+	char *dbhomepath = rz_file_path_join(home_types_dir, rz_strf(buf, "cc-%s-%d.sdb", analysis_arch, bits));
+	free(types_dir);
+	free(home_types_dir);
+
 	// Avoid sdb reloading
 	if (cc->path && (!strcmp(cc->path, dbpath) || !strcmp(cc->path, dbhomepath))) {
 		free(dbpath);

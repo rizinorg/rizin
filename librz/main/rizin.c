@@ -143,54 +143,88 @@ static int main_help(int line) {
 			" -z, -zz      do not load strings or load them even in raw\n");
 	}
 	if (line == 2) {
-		char *datahome = rz_str_home(RZ_HOME_DATADIR);
-		char *incdir = rz_str_rz_prefix(RZ_INCDIR);
-		char *libdir = rz_str_rz_prefix(RZ_LIBDIR);
-		const char *dirPrefix = rz_sys_prefix(NULL);
+		char *datahome = rz_path_home_prefix(RZ_DATADIR);
+		char *incdir = rz_path_incdir();
+		char *libdir = rz_path_libdir();
+		char *home_rc = rz_path_home_rc();
+		char *home_config_rc = rz_path_home_config_rc();
+		char *home_config_rcdir = rz_path_home_config_rcdir();
+		char *system_rc = rz_path_system_rc();
+		char *binrc_dir = rz_path_home_prefix(RZ_BINRC);
+		char *binrc = rz_file_path_join(binrc_dir, "bin-<format>");
+		char *system_magic = rz_path_system(RZ_SDB_MAGIC);
+		char *home_plugins = rz_path_home_prefix(RZ_PLUGINS);
+		char *system_plugins = rz_path_system(RZ_PLUGINS);
+		char *home_zigns = rz_path_home_prefix(RZ_ZIGNS);
+		char *dirPrefix = rz_path_prefix(NULL);
+		// clang-format off
 		printf(
 			"Scripts:\n"
-			" system       ${RZ_PREFIX}/share/rizin/rizinrc\n"
-			" user         ~/.rizinrc " RZ_JOIN_2_PATHS("~", RZ_HOME_RC) " (and " RZ_JOIN_3_PATHS("~", RZ_HOME_RC_DIR, "") ")\n"
-																       " file         ${filename}.rz\n"
-																       "Plugins:\n"
-																       " binrc        " RZ_JOIN_4_PATHS("~", RZ_HOME_BINRC, "bin-<format>", "") " (elf, elf64, mach0, ..)\n"
-																										" RZ_USER_PLUGINS " RZ_JOIN_2_PATHS("~", RZ_HOME_PLUGINS) "\n"
-																																	  " RZ_LIBR_PLUGINS " RZ_JOIN_2_PATHS("%s", RZ_PLUGINS) "\n"
-																																								" RZ_USER_ZIGNS " RZ_JOIN_2_PATHS("~", RZ_HOME_ZIGNS) "\n"
-																																														      "Environment:\n"
-																																														      " RZ_CFG_OLDSHELL sets cfg.oldshell=true\n"
-																																														      " RZ_DEBUG      if defined, show error messages and crash signal\n"
-																																														      " RZ_DEBUG_ASSERT=1 set a breakpoint when hitting an assert\n"
-																																														      " RZ_MAGICPATH " RZ_JOIN_2_PATHS("%s", RZ_SDB_MAGIC) "\n"
-																																																					   " RZ_NOPLUGINS do not load rizin shared plugins\n"
-																																																					   " RZ_RCFILE    ~/.rizinrc (user preferences, batch script)\n" // TOO GENERIC
-																																																					   " RZ_RDATAHOME %s\n" // TODO: rename to RHOME RZHOME?
-																																																					   " RZ_VERSION   contains the current version of rizin\n"
-																																																					   "Paths:\n"
-																																																					   " RZ_PREFIX    %s\n"
-																																																					   " RZ_INCDIR    %s\n"
-																																																					   " RZ_LIBDIR    %s\n"
-																																																					   " RZ_LIBEXT    " RZ_LIB_EXT "\n",
-			dirPrefix, datahome, dirPrefix, dirPrefix, incdir, libdir);
-		free(libdir);
-		free(incdir);
+			" system       %s\n"
+			" user         %s %s (and %s)\n"
+			" file         ${filename}.rz\n"
+			"Plugins:\n"
+			" binrc        %s (elf, elf64, mach0, ..)\n"
+			" RZ_USER_PLUGINS %s\n"
+			" RZ_LIBR_PLUGINS %s\n"
+			" RZ_USER_ZIGNS %s\n"
+			"Environment:\n"
+			" RZ_CFG_OLDSHELL sets cfg.oldshell=true\n"
+			" RZ_DEBUG      if defined, show error messages and crash signal\n"
+			" RZ_DEBUG_ASSERT=1 set a breakpoint when hitting an assert\n"
+			" RZ_MAGICPATH %s\n"
+			" RZ_NOPLUGINS do not load rizin shared plugins\n"
+			" RZ_RCFILE    %s (user preferences, batch script)\n"
+			" RZ_RDATAHOME %s\n"
+			" RZ_VERSION   contains the current version of rizin\n"
+			"Paths:\n"
+			" RZ_PREFIX    %s\n"
+			" RZ_INCDIR    %s\n"
+			" RZ_LIBDIR    %s\n"
+			" RZ_LIBEXT    " RZ_LIB_EXT "\n",
+			system_rc,
+			home_rc, home_config_rc, home_config_rcdir,
+			home_plugins,
+			system_plugins,
+			home_zigns,
+			binrc,
+			system_magic,
+			home_rc,
+			datahome,
+			dirPrefix,
+			incdir,
+			libdir);
+		// clang-format on
 		free(datahome);
+		free(incdir);
+		free(libdir);
+		free(home_rc);
+		free(home_config_rc);
+		free(home_config_rcdir);
+		free(system_rc);
+		free(binrc_dir);
+		free(binrc);
+		free(system_magic);
+		free(home_plugins);
+		free(system_plugins);
+		free(home_zigns);
+		free(dirPrefix);
 	}
 	return 0;
 }
 
 static int main_print_var(const char *var_name) {
 	int i = 0;
-	const char *prefix = rz_sys_prefix(NULL);
-	char *incdir = rz_str_rz_prefix(RZ_INCDIR);
-	char *libdir = rz_str_rz_prefix(RZ_LIBDIR);
-	char *confighome = rz_str_home(RZ_HOME_CONFIGDIR);
-	char *datahome = rz_str_home(RZ_HOME_DATADIR);
-	char *cachehome = rz_str_home(RZ_HOME_CACHEDIR);
-	char *homeplugins = rz_str_home(RZ_HOME_PLUGINS);
-	char *homezigns = rz_str_home(RZ_HOME_ZIGNS);
-	char *plugins = rz_str_rz_prefix(RZ_PLUGINS);
-	char *magicpath = rz_str_rz_prefix(RZ_SDB_MAGIC);
+	char *prefix = rz_path_prefix(NULL);
+	char *incdir = rz_path_incdir();
+	char *libdir = rz_path_libdir();
+	char *confighome = rz_path_home_config();
+	char *datahome = rz_path_home_prefix(RZ_DATADIR);
+	char *cachehome = rz_path_home_cache();
+	char *homeplugins = rz_path_home_prefix(RZ_PLUGINS);
+	char *homezigns = rz_path_home_prefix(RZ_ZIGNS);
+	char *plugins = rz_path_system(RZ_PLUGINS);
+	char *magicpath = rz_path_system(RZ_SDB_MAGIC);
 	const char *is_portable = RZ_IS_PORTABLE ? "1" : "0";
 	struct rizin_var_t {
 		const char *name;
@@ -238,6 +272,7 @@ static int main_print_var(const char *var_name) {
 	free(homezigns);
 	free(plugins);
 	free(magicpath);
+	free(prefix);
 	return 0;
 }
 
@@ -727,7 +762,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 
 	if (do_list_io_plugins) {
 		if (rz_config_get_i(r->config, "cfg.plugins")) {
-			rz_core_loadlibs(r, RZ_CORE_LOADLIBS_ALL, NULL);
+			rz_core_loadlibs(r, RZ_CORE_LOADLIBS_ALL);
 		}
 		run_commands(r, NULL, prefiles, false, do_analysis);
 		run_commands(r, cmds, files, quiet, do_analysis);
@@ -795,7 +830,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		free(tmp);
 	}
 	if (rz_config_get_i(r->config, "cfg.plugins")) {
-		rz_core_loadlibs(r, RZ_CORE_LOADLIBS_ALL, NULL);
+		rz_core_loadlibs(r, RZ_CORE_LOADLIBS_ALL);
 	}
 	run_commands(r, NULL, prefiles, false, do_analysis);
 	rz_list_free(prefiles);
@@ -1158,7 +1193,10 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			}
 			rz_core_cmd0(r, ".dm*");
 			// Set Thumb Mode if necessary
-			rz_core_cmd0(r, "dr? thumb;?? e asm.bits=16");
+			RzRegItem *thumb_reg = rz_reg_get(r->dbg->reg, "thumb", RZ_REG_TYPE_ANY);
+			if (thumb_reg && rz_reg_get_value(r->dbg->reg, thumb_reg)) {
+				rz_config_set_i(r->config, "asm.bits", 16);
+			}
 			rz_cons_reset();
 		}
 		if (!pfile) {
@@ -1304,7 +1342,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		}
 	}
 	{
-		char *global_rc = rz_str_rz_prefix(RZ_GLOBAL_RC);
+		char *global_rc = rz_path_system_rc();
 		if (rz_file_exists(global_rc)) {
 			(void)rz_core_run_script(r, global_rc);
 		}
@@ -1440,7 +1478,9 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	}
 
 	if (mustSaveHistory(r->config)) {
-		rz_line_hist_save(RZ_HOME_HISTORY);
+		char *history = rz_path_home_history();
+		rz_line_hist_save(history);
+		free(history);
 	}
 
 	/* capture return value */

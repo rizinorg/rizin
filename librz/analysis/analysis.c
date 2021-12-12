@@ -6,6 +6,7 @@
 #include <rz_util.h>
 #include <rz_list.h>
 #include <rz_io.h>
+#include <rz_util/rz_path.h>
 #include <config.h>
 
 RZ_LIB_VERSION(rz_analysis);
@@ -233,16 +234,12 @@ RZ_API char *rz_analysis_get_reg_profile(RzAnalysis *analysis) {
 // deprecate.. or at least reuse get_reg_profile...
 RZ_API bool rz_analysis_set_reg_profile(RzAnalysis *analysis) {
 	bool ret = false;
-	if (analysis && analysis->cur && analysis->cur->set_reg_profile) {
-		ret = analysis->cur->set_reg_profile(analysis);
-	} else {
-		char *p = rz_analysis_get_reg_profile(analysis);
-		if (p && *p) {
-			rz_reg_set_profile_string(analysis->reg, p);
-			ret = true;
-		}
-		free(p);
+	char *p = rz_analysis_get_reg_profile(analysis);
+	if (p) {
+		rz_reg_set_profile_string(analysis->reg, p);
+		ret = true;
 	}
+	free(p);
 	return ret;
 }
 
@@ -253,9 +250,10 @@ static bool analysis_set_os(RzAnalysis *analysis, const char *os) {
 	}
 	free(analysis->os);
 	analysis->os = strdup(os);
-	const char *dir_prefix = rz_sys_prefix(NULL);
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
 	rz_type_db_set_os(analysis->typedb, os);
-	rz_type_db_reload(analysis->typedb, dir_prefix);
+	rz_type_db_reload(analysis->typedb, types_dir);
+	free(types_dir);
 	return true;
 }
 
@@ -295,11 +293,12 @@ RZ_API bool rz_analysis_set_bits(RzAnalysis *analysis, int bits) {
 	case 64:
 		if (analysis->bits != bits) {
 			bool is_hack = is_arm_thumb_hack(analysis, bits);
-			const char *dir_prefix = rz_sys_prefix(NULL);
 			analysis->bits = bits;
 			rz_type_db_set_bits(analysis->typedb, bits);
 			if (!is_hack) {
-				rz_type_db_reload(analysis->typedb, dir_prefix);
+				char *types_dir = rz_path_system(RZ_SDB_TYPES);
+				rz_type_db_reload(analysis->typedb, types_dir);
+				free(types_dir);
 			}
 			rz_analysis_set_reg_profile(analysis);
 		}
@@ -330,9 +329,11 @@ RZ_API void rz_analysis_set_cpu(RzAnalysis *analysis, const char *cpu) {
 	if (v != -1) {
 		analysis->pcalign = v;
 	}
+	rz_analysis_set_reg_profile(analysis);
 	rz_type_db_set_cpu(analysis->typedb, cpu);
-	const char *dir_prefix = rz_sys_prefix(NULL);
-	rz_type_db_reload(analysis->typedb, dir_prefix);
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
+	rz_type_db_reload(analysis->typedb, types_dir);
+	free(types_dir);
 }
 
 RZ_API int rz_analysis_set_big_endian(RzAnalysis *analysis, int bigend) {

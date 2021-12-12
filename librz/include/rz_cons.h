@@ -1150,9 +1150,9 @@ typedef int(RzLineReadCallback)(void *user, const char *line);
 RZ_API const char *rz_line_readline(void);
 RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user);
 
-RZ_API int rz_line_hist_load(const char *file);
+RZ_API int rz_line_hist_load(RZ_NONNULL const char *file);
 RZ_API int rz_line_hist_add(const char *line);
-RZ_API int rz_line_hist_save(const char *file);
+RZ_API int rz_line_hist_save(RZ_NONNULL const char *file);
 RZ_API int rz_line_hist_label(const char *label, void (*cb)(const char *));
 RZ_API void rz_line_label_show(void);
 RZ_API int rz_line_hist_list(void);
@@ -1171,6 +1171,7 @@ RZ_API void rz_line_completion_clear(RzLineCompletion *completion);
 RZ_API RzLineNSCompletionResult *rz_line_ns_completion_result_new(size_t start, size_t end, const char *end_string);
 RZ_API void rz_line_ns_completion_result_free(RzLineNSCompletionResult *res);
 RZ_API void rz_line_ns_completion_result_add(RzLineNSCompletionResult *res, const char *option);
+RZ_API void rz_line_ns_completion_result_propose(RzLineNSCompletionResult *res, const char *option, const char *cur, size_t cur_len);
 
 #define RZ_CONS_INVERT(x, y) (y ? (x ? Color_INVERT : Color_INVERT_RESET) : (x ? "[" : "]"))
 

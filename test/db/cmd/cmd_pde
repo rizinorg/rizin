@@ -130,7 +130,7 @@ CMDS=<<EOF
 wx 31c0c700ffff0000ffe0
 pdeqq
 pi 1
-dr eax
+ar eax
 EOF
 EXPECT=<<EOF
 xor eax, eax
@@ -138,7 +138,7 @@ mov dword [eax], 0xffff
 jmp eax
 invalid
 xor eax, eax
-0x00000000
+eax = 0x00000000
 EOF
 RUN
 

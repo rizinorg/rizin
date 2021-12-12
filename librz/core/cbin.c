@@ -656,8 +656,9 @@ RZ_API bool rz_core_bin_apply_config(RzCore *r, RzBinFile *binfile) {
 	if (info->default_cc && rz_analysis_cc_exist(r->analysis, info->default_cc)) {
 		rz_config_set(r->config, "analysis.cc", info->default_cc);
 	}
-	const char *dir_prefix = rz_config_get(r->config, "dir.prefix");
-	char *spath = rz_str_newf("%s/" RZ_SDB_TYPES "/spec.sdb", dir_prefix);
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
+	char *spath = rz_file_path_join(types_dir, "spec.sdb");
+	free(types_dir);
 	if (spath && rz_file_exists(spath)) {
 		sdb_concat_by_path(r->analysis->sdb_fmts, spath);
 	}
@@ -1081,6 +1082,7 @@ static ut8 bin_reloc_size(RzBinReloc *reloc) {
 	switch (reloc->type) {
 		CASE(8);
 		CASE(16);
+		CASE(24);
 		CASE(32);
 		CASE(64);
 	}
@@ -1184,14 +1186,15 @@ static void set_bin_relocs(RzCore *r, RzBinObject *o, RzBinReloc *reloc, bool va
 				free(*sdb_module);
 				*sdb_module = strdup(module);
 				/* always lowercase */
-				filename = sdb_fmt("%s.sdb", module);
+				filename = rz_str_newf("%s.sdb", module);
 				rz_str_case(filename, false);
 				if (rz_file_exists(filename)) {
 					*db = sdb_new(NULL, filename, 0);
 				} else {
-					const char *dirPrefix = rz_sys_prefix(NULL);
-					filename = sdb_fmt(RZ_JOIN_4_PATHS("%s", RZ_SDB_FORMAT, "dll", "%s.sdb"),
-						dirPrefix, module);
+					char *formats_dir = rz_path_system(RZ_SDB_FORMAT);
+					free(filename);
+					filename = rz_str_newf(RZ_JOIN_3_PATHS("%s", "dll", "%s.sdb"), formats_dir, module);
+					free(formats_dir);
 					if (rz_file_exists(filename)) {
 						*db = sdb_new(NULL, filename, 0);
 					}
@@ -1209,6 +1212,7 @@ static void set_bin_relocs(RzCore *r, RzBinObject *o, RzBinReloc *reloc, bool va
 					}
 				}
 			}
+			free(filename);
 		}
 		rz_analysis_hint_set_size(r->analysis, reloc->vaddr, 4);
 		rz_meta_set(r->analysis, RZ_META_TYPE_DATA, reloc->vaddr, 4, NULL);
@@ -1822,6 +1826,7 @@ static const char *bin_reloc_type_name(RzBinReloc *reloc) {
 	switch (reloc->type) {
 		CASE(8);
 		CASE(16);
+		CASE(24);
 		CASE(32);
 		CASE(64);
 	}

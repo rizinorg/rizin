@@ -14,12 +14,12 @@ ds ; dr PC
 dk 9
 EOF
 EXPECT=<<EOF
-0x004004ed
-0x004004ed
-0x004004ed
-0x004004ee
-0x004004f1
-0x004004f7
+rip = 0x004004ed
+rip = 0x004004ed
+rip = 0x004004ed
+rip = 0x004004ee
+rip = 0x004004f1
+rip = 0x004004f7
 EOF
 RUN
 
@@ -39,11 +39,11 @@ ds ; dr PC
 dk 9
 EOF
 EXPECT=<<EOF
-0x004004ed
-0x004004ed
-0x004004ed
-0x004004ee
-0x004004f1
-0x004004f7
+rip = 0x004004ed
+rip = 0x004004ed
+rip = 0x004004ed
+rip = 0x004004ee
+rip = 0x004004f1
+rip = 0x004004f7
 EOF
 RUN

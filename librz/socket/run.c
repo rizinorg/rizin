@@ -1018,7 +1018,9 @@ RZ_API int rz_run_config_env(RzRunProfile *p) {
 		if (p->_preload) {
 			eprintf("WARNING: Only one library can be opened at a time\n");
 		}
-		p->_preload = rz_str_rz_prefix(RZ_JOIN_2_PATHS(RZ_LIBDIR, "librz." RZ_LIB_EXT));
+		char *libdir = rz_path_libdir();
+		p->_preload = rz_file_path_join(libdir, "librz." RZ_LIB_EXT);
+		free(libdir);
 	}
 	if (p->_libpath) {
 #if __WINDOWS__

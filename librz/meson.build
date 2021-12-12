@@ -2,14 +2,11 @@ analysis_plugins = [
   '6502',
   '8051',
   'amd29k',
-  'arc',
   'arm_cs',
-  'arm_gnu',
   'avr',
   'bf',
   'chip8',
   'cr16',
-  'cris',
   'dalvik',
   'ebc',
   'gb',
@@ -24,64 +21,47 @@ analysis_plugins = [
   'malbolge',
   'mcore',
   'mips_cs',
-  'mips_gnu',
   'msp430',
-  'nios2',
   'null',
   'or1k',
   'pic',
   'ppc_cs',
-  'ppc_gnu',
   'propeller',
   'pyc',
-  'riscv',
   'rsp',
-  'sh',
   'snes',
   'sparc_cs',
-  'sparc_gnu',
   'spc700',
   'sysz',
   'tms320',
   #'tms320c64x',
-  'tricore',
   'v810',
   'v850',
-  'vax',
   'wasm',
   'x86_cs',
   'xap',
   'xcore_cs',
-  'xtensa',
-  'z80',
 ]
 
 asm_plugins = [
   '6502',
   '8051',
   'amd29k',
-  'arc',
   'arm_as',
   'arm_cs',
-  'arm_gnu',
-  'arm_winedbg',
   'avr',
   'bf',
   'chip8',
   'cr16',
-  'cris_gnu',
   'dalvik',
   'dcpu16',
   'ebc',
   'gb',
   'h8300',
   'hexagon',
-  #'hexagon_gnu',
-  'hppa_gnu',
   'i4004',
   'i8080',
   'java',
-  'lanai_gnu',
   'lh5801',
   'lm32',
   'luac',
@@ -91,30 +71,22 @@ asm_plugins = [
   'mcore',
   'mcs96',
   'mips_cs',
-  'mips_gnu',
   'msp430',
-  'nios2',
   'or1k',
   'pic',
   'ppc_as',
   'ppc_cs',
-  'ppc_gnu',
   'propeller',
   'pyc',
-  'riscv',
   'rsp',
-  'sh',
   'snes',
   'sparc_cs',
-  'sparc_gnu',
   'spc700',
   'sysz',
   'tms320',
   'tms320c64x',
-  'tricore',
   'v810',
   'v850',
-  'vax',
   'wasm',
   'x86_as',
   'x86_cs',
@@ -122,8 +94,6 @@ asm_plugins = [
   'x86_nz',
   'xap',
   'xcore_cs',
-  'xtensa',
-  'z80',
 ]
 
 bin_plugins = [
@@ -231,7 +201,6 @@ debug_plugins = [
   'io',
   'native',
   'null',
-  'qnx',
   'rap',
   'winkd'
 ]
@@ -260,7 +229,6 @@ io_plugins = [
   'null',
   'procpid',
   'ptrace',
-  'qnx',
   'rzk',
   'rzpipe',
   'rzweb',
@@ -273,15 +241,6 @@ io_plugins = [
   'winedbg',
   'zip'
 ]
-
-if host_machine.system() == 'windows'
-  io_plugins += [
-    'windbg',
-    'w32dbg',
-    'w32',
-  ]
-  debug_plugins += 'windbg'
-endif
 
 lang_plugins = [
   'lib',
@@ -308,12 +267,9 @@ parse_plugins = [
   'm68k_pseudo',
   'mips_pseudo',
   'ppc_pseudo',
-  'sh_pseudo',
-  'riscv_pseudo',
   'v850_pseudo',
   'wasm_pseudo',
   'x86_pseudo',
-  'z80_pseudo'
 ]
 
 demangler_plugins = [
@@ -322,9 +278,57 @@ demangler_plugins = [
   'objc',
 ]
 
+if capstone_dep.version().split('.')[0].to_int() > 4
+  analysis_plugins += 'riscv_cs'
+  asm_plugins += 'riscv_cs'
+endif
+
 if get_option('use_gpl')
-  demangler_plugins += 'cpp'
-  demangler_plugins += 'rust'
+  io_plugins += 'qnx'
+  debug_plugins += 'qnx'
+  demangler_plugins += ['cpp', 'rust']
+  analysis_plugins += [
+    'arc',
+    'cris',
+    'mips_gnu',
+    'nios2',
+    'riscv',
+    'sh',
+    'sparc_gnu',
+    'tricore',
+    'vax',
+    'xtensa',
+    'z80',
+  ]
+  asm_plugins += [
+    'arc',
+    'cris_gnu',
+    'hppa_gnu',
+    'lanai_gnu',
+    'mips_gnu',
+    'nios2',
+    'riscv',
+    'sh',
+    'sparc_gnu',
+    'tricore',
+    'vax',
+    'xtensa',
+    'z80',
+  ]
+  parse_plugins += [
+    'sh_pseudo',
+    'riscv_pseudo',
+    'z80_pseudo'
+  ]
+endif
+
+if host_machine.system() == 'windows'
+  io_plugins += [
+    'windbg',
+    'w32dbg',
+    'w32',
+  ]
+  debug_plugins += 'windbg'
 endif
 
 if get_option('use_swift_demangler')
@@ -369,7 +373,6 @@ include_files =[
   'include/rz_parse.h',
   'include/rz_pdb.h',
   'include/rz_project.h',
-  'include/rz_qrcode.h',
   'include/rz_reg.h',
   'include/rz_regex.h',
   'include/rz_search.h',
@@ -399,6 +402,7 @@ rz_util_files = [
   'include/rz_util/rz_base91.h',
   'include/rz_util/rz_big.h',
   'include/rz_util/rz_bitmap.h',
+  'include/rz_util/rz_bitvector.h',
   'include/rz_util/rz_buf.h',
   'include/rz_util/rz_debruijn.h',
   'include/rz_util/rz_event.h',
@@ -415,6 +419,7 @@ rz_util_files = [
   'include/rz_util/rz_mem.h',
   'include/rz_util/rz_name.h',
   'include/rz_util/rz_num.h',
+  'include/rz_util/rz_path.h',
   'include/rz_util/rz_panels.h',
   'include/rz_util/rz_pj.h',
   'include/rz_util/rz_pkcs7.h',
@@ -450,7 +455,6 @@ install_headers(rz_util_files, install_dir: join_paths(rizin_incdir, 'rz_util'))
 
 rz_il_definitions_files = [
   'include/rz_il/definitions/bag.h',
-  'include/rz_il/definitions/bitvector.h',
   'include/rz_il/definitions/bool.h',
   'include/rz_il/definitions/definitions.h',
   'include/rz_il/definitions/effect.h',
@@ -473,30 +477,32 @@ rz_crypto_files = [
 ]
 install_headers(rz_crypto_files, install_dir: join_paths(rizin_incdir, 'rz_crypto'))
 
-sflib_common_files = [
-  'include/sflib/common/sftypes.h',
-  'include/sflib/common/sfsocketcall.h'
-]
+if get_option('use_gpl')
+  sflib_common_files = [
+    'include/sflib/common/sftypes.h',
+    'include/sflib/common/sfsocketcall.h'
+  ]
 
-sflib_arch = [
-  'linux-x86-64',
-  'linux-x86-32',
-  'linux-arm-64',
-  'linux-arm-32',
-  'darwin-x86-64',
-  'darwin-x86-32',
-  'darwin-arm-64'
-]
+  sflib_arch = [
+    'linux-x86-64',
+    'linux-x86-32',
+    'linux-arm-64',
+    'linux-arm-32',
+    'darwin-x86-64',
+    'darwin-x86-32',
+    'darwin-arm-64'
+  ]
 
-sflib_arch_files = [
-  'sflib.h',
-  'sfsyscall.h',
-  'sfsysnr.h'
-]
+  sflib_arch_files = [
+    'sflib.h',
+    'sfsyscall.h',
+    'sfsysnr.h'
+  ]
 
-install_headers(sflib_common_files, install_dir: join_paths(rizin_incdir, 'sflib/common'))
-foreach arch : sflib_arch
-  foreach file : sflib_arch_files
-    install_headers(join_paths('include/sflib', arch, file), install_dir: join_paths(rizin_incdir, 'sflib', arch))
+  install_headers(sflib_common_files, install_dir: join_paths(rizin_incdir, 'sflib/common'))
+  foreach arch : sflib_arch
+    foreach file : sflib_arch_files
+      install_headers(join_paths('include/sflib', arch, file), install_dir: join_paths(rizin_incdir, 'sflib', arch))
+    endforeach
   endforeach
-endforeach
+endif

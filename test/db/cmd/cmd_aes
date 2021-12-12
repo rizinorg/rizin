@@ -44,16 +44,16 @@ s main
 aei
 aeim
 6aes
-s `aer~^rip[1]`
-aer
+s `arq rip`
+ar
 pd 4
 aets+
 4aes
-aer~^rbx
-aer~^rdi
-aer~^rip
-aer~^rflags
-aer~^rsp
+ar rbx
+ar rdi
+ar rip
+ar rflags
+ar rsp
 ?e qword[0x0] = `pv8 @ 0`
 ?e
 dte

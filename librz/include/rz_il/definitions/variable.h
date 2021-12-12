@@ -4,7 +4,7 @@
 #ifndef RZ_IL_VARIABLE_H
 #define RZ_IL_VARIABLE_H
 
-#include <rz_il/definitions/bitvector.h>
+#include <rz_util/rz_bitvector.h>
 #include <rz_il/definitions/bool.h>
 
 #ifdef __cplusplus

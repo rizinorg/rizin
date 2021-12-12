@@ -258,12 +258,21 @@ RZ_API int rz_reg_arena_push(RzReg *reg) {
 	return 0;
 }
 
-RZ_API void rz_reg_arena_zero(RzReg *reg) {
+RZ_API void rz_reg_arena_zero(RzReg *reg, RzRegisterType type) {
+	rz_return_if_fail(type < RZ_REG_TYPE_LAST || type == RZ_REG_TYPE_ANY);
+	if (type >= 0 && type < RZ_REG_TYPE_LAST) {
+		RzRegArena *a = reg->regset[type].arena;
+		if (!a || !a->bytes) {
+			return;
+		}
+		memset(a->bytes, 0, a->size);
+		return;
+	}
 	int i;
 	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 		RzRegArena *a = reg->regset[i].arena;
-		if (a->size > 0) {
-			memset(reg->regset[i].arena->bytes, 0, a->size);
+		if (a && a->bytes) {
+			memset(a->bytes, 0, a->size);
 		}
 	}
 }

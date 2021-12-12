@@ -715,7 +715,7 @@ RZ_API void rz_core_link_stroff(RzCore *core, RzAnalysisFunction *fcn) {
 		ut64 curpc = rz_reg_getv(esil->analysis->reg, pc_name);
 		int stacksz = rz_core_get_stacksz(core, fcn->addr, curpc);
 		if (stacksz > 0) {
-			rz_reg_arena_zero(esil->analysis->reg); // clear prev reg values
+			rz_reg_arena_zero(esil->analysis->reg, RZ_REG_TYPE_ANY); // clear prev reg values
 			rz_reg_set_value(esil->analysis->reg, sp, spval + stacksz);
 		}
 	} else {
@@ -1006,14 +1006,7 @@ RZ_IPI void rz_types_define(RzCore *core, const char *type) {
 
 RZ_IPI bool rz_types_open_file(RzCore *core, const char *path) {
 	const char *dir = rz_config_get(core->config, "dir.types");
-	char *homefile = NULL;
 	RzTypeDB *typedb = core->analysis->typedb;
-	if (*path == '~') {
-		if (path[1] && path[2]) {
-			homefile = rz_str_home(path + 2);
-			path = homefile;
-		}
-	}
 	if (!strcmp(path, "-")) {
 		char *tmp = rz_core_editor(core, "*.h", "");
 		if (tmp) {
@@ -1028,7 +1021,6 @@ RZ_IPI bool rz_types_open_file(RzCore *core, const char *path) {
 	} else {
 		if (!rz_file_exists(path)) {
 			RZ_LOG_ERROR("File \"%s\" does not exist\n", path);
-			free(homefile);
 			return false;
 		}
 		char *error_msg = NULL;
@@ -1038,7 +1030,6 @@ RZ_IPI bool rz_types_open_file(RzCore *core, const char *path) {
 			free(error_msg);
 		}
 	}
-	free(homefile);
 	return true;
 }
 

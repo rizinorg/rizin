@@ -16,8 +16,8 @@ rm ./memory.sdb
 rm ./checkpoints.sdb
 EOF
 EXPECT=<<EOF
-0x00400574
-0x00400565
+rip = 0x00400574
+rip = 0x00400565
 EOF
 RUN
 

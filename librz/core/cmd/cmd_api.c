@@ -95,6 +95,8 @@ static int value = 0;
 #define NCMDS (sizeof(cmd->cmds) / sizeof(*cmd->cmds))
 RZ_LIB_VERSION(rz_cmd);
 
+static void fill_details(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color);
+
 static int cd_sort(const void *a, const void *b) {
 	RzCmdDesc *ca = (RzCmdDesc *)a;
 	RzCmdDesc *cb = (RzCmdDesc *)b;
@@ -904,6 +906,13 @@ static void fill_wrapped_comment(RzCmd *cmd, RzStrBuf *sb, const char *comment, 
 	}
 }
 
+static void close_optionals(size_t *n_optionals, RzStrBuf *sb, size_t *len) {
+	for (; *n_optionals > 0; (*n_optionals)--) {
+		rz_strbuf_append(sb, "]");
+		(*len)++;
+	}
+}
+
 static size_t fill_args(RzStrBuf *sb, const RzCmdDesc *cd) {
 	const RzCmdDescArg *arg;
 	size_t n_optionals = 0;
@@ -911,6 +920,10 @@ static size_t fill_args(RzStrBuf *sb, const RzCmdDesc *cd) {
 	bool has_array = false;
 	for (arg = cd->help->args; arg && arg->name; arg++) {
 		if (arg->type == RZ_CMD_ARG_TYPE_FAKE) {
+			if (!arg->optional) {
+				// Assume arg is a closing bracket
+				close_optionals(&n_optionals, sb, &len);
+			}
 			rz_strbuf_append(sb, arg->name);
 			len += strlen(arg->name);
 			continue;
@@ -947,10 +960,7 @@ static size_t fill_args(RzStrBuf *sb, const RzCmdDesc *cd) {
 			}
 		}
 	}
-	for (; n_optionals > 0; n_optionals--) {
-		rz_strbuf_append(sb, "]");
-		len++;
-	}
+	close_optionals(&n_optionals, sb, &len);
 	return len;
 }
 
@@ -1100,6 +1110,8 @@ static char *group_get_help(RzCmd *cmd, RzCmdDesc *cd, bool use_color) {
 		RzCmdDesc *child = *(RzCmdDesc **)it_cd;
 		print_child_help(cmd, sb, child, max_len, use_color);
 	}
+
+	fill_details(cmd, cd, sb, use_color);
 	return rz_strbuf_drain(sb);
 }
 

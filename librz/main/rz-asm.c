@@ -373,16 +373,14 @@ static int rasm_asm(RzAsmState *as, const char *buf, ut64 offset, ut64 len, int 
 static int __lib_asm_cb(RzLibPlugin *pl, void *user, void *data) {
 	RzAsmPlugin *hand = (RzAsmPlugin *)data;
 	RzAsmState *as = (RzAsmState *)user;
-	rz_asm_add(as->a, hand);
-	return true;
+	return rz_asm_add(as->a, hand);
 }
 
 /* analysis callback */
 static int __lib_analysis_cb(RzLibPlugin *pl, void *user, void *data) {
 	RzAnalysisPlugin *hand = (RzAnalysisPlugin *)data;
 	RzAsmState *as = (RzAsmState *)user;
-	rz_analysis_add(as->analysis, hand);
-	return true;
+	return rz_analysis_add(as->analysis, hand);
 }
 
 static int print_assembly_output(RzAsmState *as, const char *buf, ut64 offset, ut64 len, int bits,
@@ -414,25 +412,20 @@ static void __load_plugins(RzAsmState *as) {
 	rz_lib_add_handler(as->l, RZ_LIB_TYPE_ANALYSIS, "analysis/emulation plugins", &__lib_analysis_cb, NULL, as);
 
 	char *path = rz_sys_getenv(RZ_LIB_ENV);
-	if (path && *path) {
-		rz_lib_opendir(as->l, path);
+	if (!RZ_STR_ISEMPTY(path)) {
+		rz_lib_opendir(as->l, path, false);
 	}
 
-	// load plugins from the home directory
-	char *homeplugindir = rz_str_home(RZ_HOME_PLUGINS);
-	rz_lib_opendir(as->l, homeplugindir);
+	char *homeplugindir = rz_path_home_prefix(RZ_PLUGINS);
+	// TODO: remove after 0.4.0 is released
+	char *oldhomeplugindir = rz_path_home_prefix(RZ_HOME_OLD_PLUGINS);
+	char *sysplugindir = rz_path_system(RZ_PLUGINS);
+	rz_lib_opendir(as->l, homeplugindir, false);
+	rz_lib_opendir(as->l, oldhomeplugindir, false);
+	rz_lib_opendir(as->l, sysplugindir, false);
 	free(homeplugindir);
-
-	// load plugins from the system directory
-	char *plugindir = rz_str_rz_prefix(RZ_PLUGINS);
-	char *extrasdir = rz_str_rz_prefix(RZ_EXTRAS);
-	char *bindingsdir = rz_str_rz_prefix(RZ_BINDINGS);
-	rz_lib_opendir(as->l, plugindir);
-	rz_lib_opendir(as->l, extrasdir);
-	rz_lib_opendir(as->l, bindingsdir);
-	free(plugindir);
-	free(extrasdir);
-	free(bindingsdir);
+	free(oldhomeplugindir);
+	free(sysplugindir);
 
 	free(tmp);
 	free(path);
@@ -529,14 +522,21 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 			len = rz_num_math(NULL, opt.arg);
 			break;
 		case 'L': {
+			// create a dummy RzCore with the current RzAsm/RzAnalysis
 			RzCore *core = rz_core_new();
+			RzAsm *tmp_asm = core->rasm;
+			RzAnalysis *tmp_analysis = core->analysis;
+			core->rasm = as->a;
+			core->analysis = as->analysis;
 			RzCmdStateOutput state = { 0 };
 			rz_cmd_state_output_init(&state, as->json ? RZ_OUTPUT_MODE_JSON : RZ_OUTPUT_MODE_STANDARD);
 			rz_core_asm_plugins_print(core, opt.argv[opt.ind], &state);
 			rz_cmd_state_output_print(&state);
 			rz_cmd_state_output_fini(&state);
 			rz_cons_flush();
-			free(core);
+			core->rasm = tmp_asm;
+			core->analysis = tmp_analysis;
+			rz_core_free(core);
 			ret = 1;
 			goto beach;
 		}

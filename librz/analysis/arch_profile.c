@@ -159,7 +159,7 @@ RZ_API bool rz_arch_load_profile_sdb(RzArchTarget *t, const char *path) {
 	return sdb_load_arch_profile_by_path(t, path);
 }
 
-static bool is_cpu_valid(char *cpu_dir, const char *cpu) {
+static bool is_cpu_valid(const char *cpu_dir, const char *cpu) {
 	RzList *files = rz_sys_dir(cpu_dir);
 	if (!files) {
 		return false;
@@ -203,30 +203,28 @@ static bool is_cpu_valid(char *cpu_dir, const char *cpu) {
  * \param t reference to RzArchTarget
  * \param cpu reference to the selected CPU (value of `asm.cpu`)
  * \param arch reference to the selected architecture (value of `asm.arch`)
- * \param dir_prefix reference to the directory prefix or the value of dir.prefix
+ * \param cpus_dir reference to the directory containing cpu files
  */
-RZ_API bool rz_arch_profiles_init(RzArchTarget *t, const char *cpu, const char *arch, const char *dir_prefix) {
+RZ_API bool rz_arch_profiles_init(RzArchTarget *t, const char *cpu, const char *arch, const char *cpus_dir) {
 	if (!cpu_reload_needed(t, cpu, arch)) {
 		return false;
 	}
-	if (!dir_prefix || !arch || !cpu) {
+	if (!cpus_dir || !arch || !cpu) {
 		return false;
 	}
-	char *path = rz_str_newf(RZ_JOIN_4_PATHS("%s", RZ_SDB, "asm/cpus", "%s-%s.sdb"),
-		dir_prefix, arch, cpu);
+	char buf[50];
+	char *path = rz_file_path_join(cpus_dir, rz_strf(buf, "%s-%s.sdb", arch, cpu));
 	if (!path || !arch) {
 		free(path);
 		return false;
 	}
-	char *cpu_dir = rz_str_newf(RZ_JOIN_3_PATHS("%s", RZ_SDB, "asm/cpus"), dir_prefix);
-	if (!is_cpu_valid(cpu_dir, cpu)) {
+	if (!is_cpu_valid(cpus_dir, cpu)) {
 		if (!strcmp(arch, "avr")) {
 			free(path);
-			path = rz_str_newf("%s" RZ_SYS_DIR RZ_SDB RZ_SYS_DIR "asm" RZ_SYS_DIR "cpus" RZ_SYS_DIR "avr-ATmega8.sdb", dir_prefix);
+			path = rz_file_path_join(cpus_dir, "avr-ATmega8.sdb");
 		}
 	}
 	rz_arch_load_profile_sdb(t, path);
 	free(path);
-	free(cpu_dir);
 	return true;
 }

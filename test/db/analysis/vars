@@ -509,3 +509,12 @@ afvW
     var_4h  0x27
 EOF
 RUN
+
+NAME=Analyze function with 0 basic blocks
+FILE=bins/elf/ls
+CMDS=<<EOF
+af+ 0 a
+aa
+EOF
+EXPECT=
+RUN

@@ -754,12 +754,7 @@ static bool try_loadlib(RzCore *core, const char *lib, ut64 addr) {
 
 RZ_API bool rz_core_file_loadlib(RzCore *core, const char *lib, ut64 libaddr) {
 	const char *dirlibs = rz_config_get(core->config, "dir.libs");
-	bool free_libdir = true;
-	char *libdir = rz_str_rz_prefix(RZ_LIBDIR);
-	if (!libdir) {
-		libdir = RZ_LIBDIR;
-		free_libdir = false;
-	}
+	char *libdir = rz_path_libdir();
 	if (!dirlibs || !*dirlibs) {
 		dirlibs = "." RZ_SYS_DIR;
 	}
@@ -798,9 +793,7 @@ RZ_API bool rz_core_file_loadlib(RzCore *core, const char *lib, ut64 libaddr) {
 			libpath++;
 		}
 	}
-	if (free_libdir) {
-		free(libdir);
-	}
+	free(libdir);
 	return ret;
 }
 
@@ -822,20 +815,21 @@ static void load_scripts_for(RzCore *core, const char *name) {
 	// TODO:
 	char *file;
 	RzListIter *iter;
-	char *hdir = rz_str_newf(RZ_JOIN_2_PATHS(RZ_HOME_BINRC, "bin-%s"), name);
-	char *path = rz_str_home(hdir);
-	RzList *files = rz_sys_dir(path);
+	char *binrc = rz_path_home_prefix(RZ_BINRC);
+	char tmp[50];
+	char *hdir = rz_file_path_join(binrc, rz_strf(tmp, "bin-%s", name));
+	free(binrc);
+	RzList *files = rz_sys_dir(hdir);
 	if (!rz_list_empty(files)) {
-		eprintf("[binrc] path: %s\n", path);
+		eprintf("[binrc] path: %s\n", hdir);
 	}
 	rz_list_foreach (files, iter, file) {
 		if (*file && *file != '.') {
 			eprintf("[binrc] loading %s\n", file);
-			rz_core_cmdf(core, ". %s/%s", path, file);
+			rz_core_cmdf(core, ". %s/%s", hdir, file);
 		}
 	}
 	rz_list_free(files);
-	free(path);
 	free(hdir);
 }
 

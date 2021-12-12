@@ -1,0 +1,17 @@
+NAME=gb regs
+CMDS=<<EOF
+e asm.arch=gb
+ar
+EOF
+EXPECT=<<EOF
+mpc = 0x00000000
+sp = 0x00000000
+af = 0x00000000
+bc = 0x00000000
+de = 0x00000000
+hl = 0x00000000
+mbcrom = 0x00000000
+mbcram = 0x00000000
+ime = 0x00000000
+EOF
+RUN

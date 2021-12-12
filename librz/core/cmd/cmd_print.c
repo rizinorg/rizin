@@ -246,7 +246,6 @@ static const char *help_msg_p[] = {
 	"pm", "[?] [magic]", "print libmagic data (see pm? and /m?)",
 	"po", "[?] hex", "print operation applied to block (see po?)",
 	"pp", "[?][sz] [len]", "print patterns, see pp? for more help",
-	"pq", "[?][is] [len]", "print QR code with the first Nbytes",
 	"pr", "[?][glx] [len]", "print N raw bytes (in lines or hexblocks, 'g'unzip)",
 	"ps", "[?][pwz] [len]", "print pascal/wide/zero-terminated strings",
 	"pt", "[?][dn] [len]", "print different timestamps",
@@ -500,7 +499,6 @@ static const char *help_msg_ps[] = {
 	"psi", "", "print string inside curseek",
 	"psj", "", "print string in JSON format",
 	"psp", "[j]", "print pascal string",
-	"psq", "", "alias for pqs",
 	"pss", "", "print string in screen (wrap width)",
 	"psu", "[zj]", "print utf16 unicode (json)",
 	"psw", "[j]", "print 16bit wide string",
@@ -1754,17 +1752,22 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block,
 		return;
 	case 'o': // "pfo"
 		if (_input[2] == '?') {
+			char *prefix = rz_path_prefix(NULL);
+			char *sdb_format = rz_path_home_prefix(RZ_SDB_FORMAT);
 			eprintf("|Usage: pfo [format-file]\n"
-				" " RZ_JOIN_3_PATHS("~", RZ_HOME_SDB_FORMAT, "") "\n"
-										 " " RZ_JOIN_3_PATHS("%s", RZ_SDB_FORMAT, "") "\n",
-				rz_sys_prefix(NULL));
+				" %s\n"
+				" " RZ_JOIN_3_PATHS("%s", RZ_SDB_FORMAT, "") "\n",
+				sdb_format, prefix);
+			free(sdb_format);
+			free(prefix);
 		} else if (_input[2] == ' ') {
 			const char *fname = rz_str_trim_head_ro(_input + 3);
-			char *tmp = rz_str_newf(RZ_JOIN_2_PATHS(RZ_HOME_SDB_FORMAT, "%s"), fname);
-			char *home = rz_str_home(tmp);
-			free(tmp);
-			tmp = rz_str_newf(RZ_JOIN_2_PATHS(RZ_SDB_FORMAT, "%s"), fname);
-			char *path = rz_str_rz_prefix(tmp);
+			char *home_formats = rz_path_home_prefix(RZ_SDB_FORMAT);
+			char *home = rz_file_path_join(home_formats, fname);
+			free(home_formats);
+			char *system_formats = rz_path_system(RZ_SDB_FORMAT);
+			char *path = rz_file_path_join(system_formats, fname);
+			free(system_formats);
 			if (rz_str_endswith(_input, ".h")) {
 				char *error_msg = NULL;
 				const char *dir = rz_config_get(core->config, "dir.types");
@@ -1784,12 +1787,11 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block,
 			}
 			free(home);
 			free(path);
-			free(tmp);
 		} else {
 			RzList *files;
 			RzListIter *iter;
 			const char *fn;
-			char *home = rz_str_home(RZ_HOME_SDB_FORMAT RZ_SYS_DIR);
+			char *home = rz_path_home_prefix(RZ_SDB_FORMAT);
 			if (home) {
 				files = rz_sys_dir(home);
 				rz_list_foreach (files, iter, fn) {
@@ -1800,7 +1802,7 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block,
 				rz_list_free(files);
 				free(home);
 			}
-			char *path = rz_str_rz_prefix(RZ_SDB_FORMAT RZ_SYS_DIR);
+			char *path = rz_path_system(RZ_SDB_FORMAT);
 			if (path) {
 				files = rz_sys_dir(path);
 				rz_list_foreach (files, iter, fn) {
@@ -6008,9 +6010,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				}
 			}
 			break;
-		case 'q': // "psq"
-			rz_core_cmd0(core, "pqs");
-			break;
 		case 's': // "pss"
 			if (l > 0) {
 				int h, w = rz_cons_get_size(&h);
@@ -6883,34 +6882,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			rz_io_read_at(core->io, offset0, core->block, len);
 			core->offset = offset0;
 			rz_cons_printf("\n");
-		}
-		break;
-	case 'q': // "pq"
-		switch (input[1]) {
-		case '?':
-			eprintf("Usage: pq[s] [len]\n");
-			len = 0;
-			break;
-		case 's': // "pqs"
-		case 'z': // for backward compat
-			len = rz_str_nlen((const char *)block, core->blocksize);
-			break;
-		default:
-			if (len < 1) {
-				len = 0;
-			}
-			if (len > core->blocksize) {
-				len = core->blocksize;
-			}
-			break;
-		}
-		if (len > 0) {
-			bool inverted = (input[1] == 'i'); // pqi -- inverted colors
-			char *res = rz_qrcode_gen(block, len, rz_config_get_i(core->config, "scr.utf8"), inverted);
-			if (res) {
-				rz_cons_printf("%s\n", res);
-				free(res);
-			}
 		}
 		break;
 	case 'z': // "pz"
