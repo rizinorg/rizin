@@ -1313,7 +1313,7 @@ RZ_API ut64 rz_bv_to_ut64(RZ_NONNULL RzBitVector *x) {
 	ut64 ret = 0;
 	for (ut32 i = 0; i < x->len && i < 64; ++i) {
 		if (rz_bv_get(x, i)) {
-			ret |= 1 << i;
+			ret |= 1ULL << i;
 		}
 	}
 	return ret;
