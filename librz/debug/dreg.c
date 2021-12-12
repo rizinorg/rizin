@@ -87,75 +87,30 @@ RZ_API int rz_debug_reg_sync(RzDebug *dbg, int type, int write) {
 }
 
 RZ_API int rz_debug_reg_set(struct rz_debug_t *dbg, const char *name, ut64 num) {
-	RzRegItem *ri;
-	int role = rz_reg_get_name_idx(name);
-	if (!dbg || !dbg->reg) {
+	RzRegItem *ri = rz_reg_get_by_role_or_name(dbg->reg, name);
+	if (!ri) {
 		return false;
 	}
-	if (role != -1) {
-		name = rz_reg_get_name(dbg->reg, role);
-	}
-	ri = rz_reg_get(dbg->reg, name, RZ_REG_TYPE_ANY);
-	if (ri) {
-		rz_reg_set_value(dbg->reg, ri, num);
-		rz_debug_reg_sync(dbg, RZ_REG_TYPE_ANY, true);
-	}
-	return (ri != NULL);
+	rz_reg_set_value(dbg->reg, ri, num);
+	rz_debug_reg_sync(dbg, RZ_REG_TYPE_ANY, true);
+	return true;
 }
 
 RZ_API ut64 rz_debug_reg_get(RzDebug *dbg, const char *name) {
-	// ignores errors
-	return rz_debug_reg_get_err(dbg, name, NULL, NULL);
+	rz_debug_reg_sync(dbg, RZ_REG_TYPE_ANY, false);
+	return rz_reg_getv_by_role_or_name(dbg->reg, name);
 }
 
-RZ_API ut64 rz_debug_reg_get_err(RzDebug *dbg, const char *name, int *err, utX *value) {
-	RzRegItem *ri = NULL;
-	ut64 ret = 0LL;
-	int role = rz_reg_get_name_idx(name);
-	const char *pname = name;
-	if (err) {
-		*err = 0;
-	}
-	if (!dbg || !dbg->reg) {
-		if (err) {
-			*err = 1;
-		}
-		return UT64_MAX;
-	}
-	if (role != -1) {
-		name = rz_reg_get_name(dbg->reg, role);
-		if (!name || *name == '\0') {
-			eprintf("No debug register profile defined for '%s'.\n", pname);
-			if (err) {
-				*err = 1;
-			}
-			return UT64_MAX;
-		}
-	}
-	ri = rz_reg_get(dbg->reg, name, RZ_REG_TYPE_ANY);
-	if (ri) {
-		rz_debug_reg_sync(dbg, RZ_REG_TYPE_ANY, false);
-		if (value && ri->size > 64) {
-			if (err) {
-				*err = ri->size;
-			}
-			ret = rz_reg_get_value_big(dbg->reg, ri, value);
-		} else {
-			ret = rz_reg_get_value(dbg->reg, ri);
-		}
-	} else {
-		if (err) {
-			*err = 1;
-		}
-	}
-	return ret;
-}
-
-// XXX: dup for get_Err!
 RZ_API ut64 rz_debug_num_callback(RzNum *userptr, const char *str, int *ok) {
 	RzDebug *dbg = (RzDebug *)userptr;
-	// resolve using regnu
-	return rz_debug_reg_get_err(dbg, str, ok, NULL);
+	rz_debug_reg_sync(dbg, RZ_REG_TYPE_ANY, false);
+	RzRegItem *ri = rz_reg_get_by_role_or_name(dbg->reg, str);
+	if (!ri) {
+		*ok = 0;
+		return UT64_MAX;
+	}
+	*ok = 1;
+	return rz_reg_get_value(dbg->reg, ri);
 }
 
 RZ_API bool rz_debug_reg_profile_sync(RzDebug *dbg) {
