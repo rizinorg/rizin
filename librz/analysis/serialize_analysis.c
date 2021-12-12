@@ -2206,15 +2206,6 @@ RZ_API bool rz_serialize_analysis_imports_load(RZ_NONNULL Sdb *db, RZ_NONNULL Rz
 	return sdb_foreach(db, import_load_cb, analysis);
 }
 
-RZ_API void rz_serialize_analysis_pin_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis) {
-	sdb_copy(analysis->sdb_pins, db);
-}
-
-RZ_API bool rz_serialize_analysis_pin_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res) {
-	sdb_copy(db, analysis->sdb_pins);
-	return true;
-}
-
 RZ_API void rz_serialize_analysis_cc_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis) {
 	sdb_copy(analysis->sdb_cc, db);
 }
@@ -2237,7 +2228,6 @@ RZ_API void rz_serialize_analysis_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis
 	rz_serialize_analysis_typelinks_save(sdb_ns(db, "typelinks", true), analysis);
 	rz_serialize_analysis_sign_save(sdb_ns(db, "zigns", true), analysis);
 	rz_serialize_analysis_imports_save(sdb_ns(db, "imports", true), analysis);
-	rz_serialize_analysis_pin_save(sdb_ns(db, "pins", true), analysis);
 	rz_serialize_analysis_cc_save(sdb_ns(db, "cc", true), analysis);
 	rz_serialize_analysis_global_var_save(sdb_ns(db, "vars", true), analysis);
 }
@@ -2286,7 +2276,6 @@ RZ_API bool rz_serialize_analysis_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis
 	SUB("hints", rz_serialize_analysis_hints_load(subdb, analysis, res));
 	SUB("zigns", rz_serialize_analysis_sign_load(subdb, analysis, res));
 	SUB("imports", rz_serialize_analysis_imports_load(subdb, analysis, res));
-	SUB("pins", rz_serialize_analysis_pin_load(subdb, analysis, res));
 	SUB("cc", rz_serialize_analysis_cc_load(subdb, analysis, res));
 	SUB("vars", rz_serialize_analysis_global_var_load(subdb, analysis, res));
 
