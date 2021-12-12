@@ -153,15 +153,18 @@ RZ_API bool rz_reg_is_readonly(RzReg *reg, RzRegItem *item);
 
 RZ_API RzRegSet *rz_reg_regset_get(RzReg *r, int type);
 RZ_API ut64 rz_reg_getv(RzReg *reg, const char *name);
+RZ_API ut64 rz_reg_getv_by_role_or_name(RzReg *reg, const char *name);
 RZ_API ut64 rz_reg_setv(RzReg *reg, const char *name, ut64 val);
 RZ_API const char *rz_reg_32_to_64(RzReg *reg, const char *rreg32);
 RZ_API const char *rz_reg_64_to_32(RzReg *reg, const char *rreg64);
 RZ_API const char *rz_reg_get_name_by_type(RzReg *reg, const char *name);
 RZ_API const char *rz_reg_get_type(int idx);
 RZ_API const char *rz_reg_get_name(RzReg *reg, int kind);
+RZ_API RzRegItem *rz_reg_get_by_role(RzReg *reg, RzRegisterId role);
 RZ_API const char *rz_reg_get_role(int role);
 RZ_API int rz_reg_role_by_name(RZ_NONNULL const char *str);
 RZ_API RzRegItem *rz_reg_get(RzReg *reg, const char *name, int type);
+RZ_API RzRegItem *rz_reg_get_by_role_or_name(RzReg *reg, const char *name);
 RZ_API const RzList *rz_reg_get_list(RzReg *reg, int type);
 RZ_API RzRegItem *rz_reg_get_at(RzReg *reg, int type, int regsize, int delta);
 RZ_API RzRegItem *rz_reg_next_diff(RzReg *reg, int type, const ut8 *buf, int buflen, RzRegItem *prev_ri, int regsize);
