@@ -782,10 +782,10 @@ RZ_API char *cmd_syscall_dostr(RzCore *core, st64 n, ut64 addr) {
 		n = -1;
 	}
 	if (n == -1 || defVector > 0) {
-		n = (int)rz_debug_reg_get(core->dbg, "oeax");
+		n = (int)rz_core_reg_getv_by_role_or_name(core, "oeax");
 		if (!n || n == -1) {
 			const char *a0 = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_SN);
-			n = (a0 == NULL) ? -1 : (int)rz_debug_reg_get(core->dbg, a0);
+			n = (a0 == NULL) ? -1 : (int)rz_core_reg_getv_by_role_or_name(core, a0);
 		}
 	}
 	RzSyscallItem *item = rz_syscall_get(core->analysis->syscall, n, defVector);
@@ -806,7 +806,7 @@ RZ_API char *cmd_syscall_dostr(RzCore *core, st64 n, ut64 addr) {
 		if (core->rasm->bits == 32 && core->rasm->cur && !strcmp(core->rasm->cur->arch, "x86")) {
 			regidx++;
 		}
-		ut64 arg = rz_debug_arg_get(core->dbg, cc, regidx);
+		ut64 arg = rz_core_arg_get(core, cc, regidx); // TODO here
 		// rz_cons_printf ("(%d:0x%"PFMT64x")\n", i, arg);
 		if (item->sargs) {
 			switch (item->sargs[i]) {
@@ -824,7 +824,7 @@ RZ_API char *cmd_syscall_dostr(RzCore *core, st64 n, ut64 addr) {
 				break;
 			case 'Z': {
 				// TODO replace the hardcoded CC with the sdb ones
-				ut64 len = rz_debug_arg_get(core->dbg, cc, i + 2);
+				ut64 len = rz_core_arg_get(core, cc, i + 2);
 				len = RZ_MIN(len + 1, sizeof(str) - 1);
 				if (len == 0) {
 					len = 16; // override default
@@ -6509,7 +6509,7 @@ static void cmd_analysis_aC(RzCore *core, const char *input) {
 					rz_strbuf_appendf(sb, "; 0x%" PFMT64x "(", pcv);
 				}
 				for (i = 0; i < nargs; i++) {
-					ut64 v = rz_debug_arg_get(core->dbg, cc, i);
+					ut64 v = rz_core_arg_get(core, cc, i);
 					rz_strbuf_appendf(sb, "%s0x%" PFMT64x, i ? ", " : "", v);
 				}
 				rz_strbuf_appendf(sb, ")");
