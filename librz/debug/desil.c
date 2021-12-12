@@ -158,7 +158,7 @@ static int exprmatchreg(RzDebug *dbg, const char *regname, const char *expr) {
 	} else {
 #define CURVAL 0){} \
 	rz_str_trim(s);if (!strcmp(regname,s) && regval
-		ut64 regval = rz_debug_reg_get_err(dbg, regname, NULL, NULL);
+		ut64 regval = rz_debug_reg_get(dbg, regname);
 		if (exprtoken(dbg, s, ">=", &p)) {
 			if (CURVAL >= rz_num_math(dbg->num, p))
 				ret = 1;

@@ -577,6 +577,8 @@ RZ_API ut32 rz_core_file_cur_fd(RzCore *core);
 
 /* creg.c */
 RZ_API RzReg *rz_core_reg_default(RzCore *core);
+RZ_API ut64 rz_core_reg_getv_by_role_or_name(RzCore *core, const char *name);
+RZ_API bool rz_core_reg_set_by_role_or_name(RzCore *core, const char *name, ut64 num);
 
 /* cdebug.c */
 RZ_API bool rz_core_is_debug(RzCore *core);
