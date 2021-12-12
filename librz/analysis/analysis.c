@@ -101,7 +101,6 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	analysis->sdb_noret = sdb_ns(analysis->sdb, "noreturn", 1);
 	analysis->zign_path = strdup("");
 	analysis->cb_printf = (PrintfCallback)printf;
-	(void)rz_analysis_pin_init(analysis);
 	(void)rz_analysis_xrefs_init(analysis);
 	analysis->diff_thbb = RZ_ANALYSIS_THRESHOLDBB;
 	analysis->diff_thfcn = RZ_ANALYSIS_THRESHOLDFCN;
@@ -161,7 +160,6 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 	rz_rbtree_free(a->bb_tree, __block_free_rb, NULL);
 	rz_spaces_fini(&a->meta_spaces);
 	rz_spaces_fini(&a->zign_spaces);
-	rz_analysis_pin_fini(a);
 	rz_syscall_free(a->syscall);
 	rz_arch_target_free(a->arch_target);
 	rz_arch_platform_target_free(a->platform_target);
@@ -453,8 +451,6 @@ RZ_API void rz_analysis_purge(RzAnalysis *analysis) {
 	sdb_reset(analysis->sdb_zigns);
 	sdb_reset(analysis->sdb_classes);
 	sdb_reset(analysis->sdb_classes_attrs);
-	rz_analysis_pin_fini(analysis);
-	rz_analysis_pin_init(analysis);
 	sdb_reset(analysis->sdb_cc);
 	sdb_reset(analysis->sdb_noret);
 	rz_list_free(analysis->fcns);

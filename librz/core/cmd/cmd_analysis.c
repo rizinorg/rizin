@@ -177,7 +177,6 @@ static const char *help_msg_ae[] = {
 	"aeli", "", "list loaded ESIL interrupts",
 	"aeli", " [file]", "load ESIL interrupts from shared object",
 	"aelir", " [interrupt number]", "remove ESIL interrupt and free it if needed",
-	"aep", "[?] [addr]", "manage esil pin hooks",
 	"aepc", " [addr]", "change esil PC to this address",
 	"aes", "", "perform emulated debugger step",
 	"aesp", " [X] [N]", "evaluate N instr from offset X",
@@ -295,15 +294,6 @@ static const char *help_msg_aec[] = {
 static const char *help_msg_aeC[] = {
 	"Examples:", "aeC", " arg0 arg1 ... @ calladdr",
 	"aeC", " 1 2 @ sym._add", "Call sym._add(1,2)",
-	NULL
-};
-
-static const char *help_msg_aep[] = {
-	"Usage:", "aep[-c] ", " [...]",
-	"aepc", " [addr]", "change program counter for esil",
-	"aep", "-[addr]", "remove pin",
-	"aep", " [name] @ [addr]", "set pin",
-	"aep", "", "list pins",
 	NULL
 };
 
@@ -3470,14 +3460,6 @@ repeat:
 	}
 	rz_asm_set_pc(core->rasm, addr);
 	// run esil pin command here
-	const char *pincmd = rz_analysis_pin_call(core->analysis, addr);
-	if (pincmd) {
-		rz_core_cmd0(core, pincmd);
-		ut64 pc = rz_debug_reg_get(core->dbg, "PC");
-		if (addr != pc) {
-			return_tail(1);
-		}
-	}
 	int dataAlign = rz_analysis_archinfo(esil->analysis, RZ_ANALYSIS_ARCHINFO_DATA_ALIGN);
 	if (dataAlign > 1) {
 		if (addr % dataAlign) {
@@ -4446,7 +4428,7 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 	RzAnalysisOp *op = NULL;
 
 	switch (input[0]) {
-	case 'p': // "aep"
+	case 'p':
 		switch (input[1]) {
 		case 'c': // "aepc"
 			if (input[2] == ' ' || input[2] == '=') {
@@ -4457,20 +4439,8 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 				eprintf("Missing argument\n");
 			}
 			break;
-		case 0:
-			rz_analysis_pin_list(core->analysis);
-			break;
-		case '-': // "aep-"
-			if (input[2]) {
-				addr = rz_num_math(core->num, input + 2);
-			}
-			rz_analysis_pin_unset(core->analysis, addr);
-			break;
-		case ' ': // "aep "
-			rz_analysis_pin(core->analysis, addr, input + 2);
-			break;
-		default: // "aep"
-			rz_core_cmd_help(core, help_msg_aep);
+		default:
+			rz_core_cmd_help(core, help_msg_ae);
 			break;
 		}
 		break;

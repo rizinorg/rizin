@@ -1564,10 +1564,6 @@ Sdb *analysis_ref_db() {
 	sdb_set(imports, "dogs", "i", 0);
 	sdb_set(imports, "sheep", "i", 0);
 
-	Sdb *pins = sdb_ns(db, "pins", true);
-	sdb_set(pins, "0x1337", "!sudo rm -rf /", 0);
-	sdb_set(pins, "0xc0ffee", "pd 42", 0);
-
 	Sdb *cc = sdb_ns(db, "cc", true);
 	sdb_set(cc, "cc.sectarian.ret", "rax", 0);
 	sdb_set(cc, "cc.sectarian.arg1", "rcx", 0);
@@ -1626,9 +1622,6 @@ bool test_analysis_save() {
 	rz_analysis_add_import(analysis, "pigs");
 	rz_analysis_add_import(analysis, "dogs");
 	rz_analysis_add_import(analysis, "sheep");
-
-	rz_analysis_pin(analysis, 0x1337, "!sudo rm -rf /");
-	rz_analysis_pin(analysis, 0xc0ffee, "pd 42");
 
 	rz_analysis_cc_set(analysis, "rax sectarian(rdx, rcx, stack)");
 
@@ -1703,13 +1696,6 @@ bool test_analysis_load() {
 	mu_assert_notnull(rz_list_find(analysis->imports, "pigs", (RzListComparator)strcmp), "import");
 	mu_assert_notnull(rz_list_find(analysis->imports, "dogs", (RzListComparator)strcmp), "import");
 	mu_assert_notnull(rz_list_find(analysis->imports, "sheep", (RzListComparator)strcmp), "import");
-
-	size_t pin_count = sdb_count(analysis->sdb_pins);
-	mu_assert_eq(pin_count, 2, "pins count");
-	const char *pin = rz_analysis_pin_call(analysis, 0x1337);
-	mu_assert_streq(pin, "!sudo rm -rf /", "pin");
-	pin = rz_analysis_pin_call(analysis, 0xc0ffee);
-	mu_assert_streq(pin, "pd 42", "pin");
 
 	char *cc = rz_analysis_cc_get(analysis, "sectarian");
 	mu_assert_streq(cc, "rax sectarian (rdx, rcx, stack);", "get cc");
