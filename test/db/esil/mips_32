@@ -1145,7 +1145,6 @@ ar > /dev/null
 ar v0=0x00112233
 ar v1=0x00112233
 wx 0e004314
-aep 0
 aes
 ar pc
 EOF
