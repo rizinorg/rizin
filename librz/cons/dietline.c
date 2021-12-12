@@ -476,9 +476,6 @@ RZ_API int rz_line_hist_load(RZ_NONNULL const char *path) {
 
 	FILE *fd;
 	char buf[RZ_LINE_BUFSIZE];
-	if (!path) {
-		return false;
-	}
 	if (!(fd = rz_sys_fopen(path, "r"))) {
 		return false;
 	}
