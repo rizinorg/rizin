@@ -25,7 +25,6 @@ rz_analysis_sources = [
   'labels.c',
   'meta.c',
   'op.c',
-  'pin.c',
   'reflines.c',
   'rtti.c',
   'rtti_msvc.c',

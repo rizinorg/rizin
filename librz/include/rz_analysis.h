@@ -595,7 +595,6 @@ typedef struct rz_analysis_t {
 	PrintfCallback cb_printf;
 	// moved from RzAnalysisFcn
 	Sdb *sdb; // root
-	Sdb *sdb_pins;
 	HtUP /*<RzVector<RzAnalysisAddrHintRecord>>*/ *addr_hints; // all hints that correspond to a single address
 	RBTree /*<RzAnalysisArchHintRecord>*/ arch_hints;
 	RBTree /*<RzAnalysisArchBitsRecord>*/ bits_hints;
@@ -1584,14 +1583,6 @@ RZ_API RzAnalysisRzilTrace *rz_analysis_rzil_trace_new(RzAnalysis *analysis, RzA
 RZ_API void rz_analysis_rzil_trace_free(RzAnalysisRzilTrace *trace);
 RZ_API void rz_analysis_rzil_trace_op(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzAnalysisRzilOp *op);
 RZ_API void rz_analysis_rzil_collect_info(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzAnalysisOp *op, bool use_new);
-
-/* pin */
-RZ_API void rz_analysis_pin_init(RzAnalysis *a);
-RZ_API void rz_analysis_pin_fini(RzAnalysis *a);
-RZ_API void rz_analysis_pin(RzAnalysis *a, ut64 addr, const char *name);
-RZ_API void rz_analysis_pin_unset(RzAnalysis *a, ut64 addr);
-RZ_API const char *rz_analysis_pin_call(RzAnalysis *a, ut64 addr);
-RZ_API void rz_analysis_pin_list(RzAnalysis *a);
 
 RZ_API bool rz_analysis_add_device_peripheral_map(RzBinObject *o, RzAnalysis *analysis);
 
