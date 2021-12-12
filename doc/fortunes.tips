@@ -1,5 +1,5 @@
 Tweak the disassembly output with `e asm.`
-Add custom Have you setup your ~/.rizinrc today?
+You can add commands into your ~/.rizinrc to customize your experience with Rizin
 In visual mode press 'c' to toggle the cursor mode. Use tab to navigate
 You can mark an offset in visual mode with the cursor and the ',' key. Later press '.' to go back
 You can debug a program from the graph view ('ag') using standard rizin commands
