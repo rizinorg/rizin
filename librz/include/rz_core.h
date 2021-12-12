@@ -646,6 +646,8 @@ RZ_API char *rz_core_disassemble_instr(RzCore *core, ut64 addr, int l);
 RZ_API char *rz_core_disassemble_bytes(RzCore *core, ut64 addr, int b);
 
 /* carg.c */
+RZ_API RZ_DEPRECATE ut64 rz_core_arg_get(RzCore *core, const char *cc, int num);
+RZ_API RZ_DEPRECATE bool rz_coret_arg_set(RzCore *core, const char *cc, int num, ut64 val);
 RZ_API RzList *rz_core_get_func_args(RzCore *core, const char *func_name);
 RZ_API void rz_core_print_func_args(RzCore *core);
 RZ_API char *resolve_fcn_name(RzAnalysis *analysis, const char *func_name);
