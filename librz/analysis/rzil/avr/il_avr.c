@@ -591,16 +591,27 @@ static RzPVector *avr_il_cpc(AVROp *aop, RzAnalysis *analysis) {
 	return rz_il_make_oplist(7, let, Z, H, V, N, C, S);
 }
 
+static RzPVector *avr_il_ijmp(AVROp *aop, RzAnalysis *analysis) {
+	RzILOp *addr, *ijmp;
+	// PC = Z << 1
+	ut32 pc_size = analysis->rzil->vm->addr_size;
+	addr = avr_il_get_indirect_address_z();
+	addr = rz_il_op_new_cast(pc_size, 1, addr);
+	ijmp = rz_il_op_new_jmp(addr);
+	ijmp = rz_il_op_new_perform(ijmp);
+	return rz_il_make_oplist(1, ijmp);
+}
+
 static RzPVector *avr_il_jmp(AVROp *aop, RzAnalysis *analysis) {
+	RzILOp *loc, *jmp;
 	// PC = PC + k + 1
 	ut16 k = aop->param[0];
 
 	ut32 pc_size = analysis->rzil->vm->addr_size;
-	RzILOp *loc = rz_il_op_new_bitv_from_ut64(pc_size, k - aop->size);
-	RzILOp *jmp = rz_il_op_new_jmp(loc);
-
-	RzILOp *perform = rz_il_op_new_perform(jmp);
-	return rz_il_make_oplist(1, perform);
+	loc = rz_il_op_new_bitv_from_ut64(pc_size, k - aop->size);
+	jmp = rz_il_op_new_jmp(loc);
+	jmp = rz_il_op_new_perform(jmp);
+	return rz_il_make_oplist(1, jmp);
 }
 
 static RzPVector *avr_il_ldi(AVROp *aop, RzAnalysis *analysis) {
@@ -992,7 +1003,7 @@ static avr_rzil_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_nop, /* AVR_OP_FMULS */
 	avr_il_nop, /* AVR_OP_FMULSU */
 	avr_il_nop, /* AVR_OP_ICALL */
-	avr_il_nop, /* AVR_OP_IJMP */
+	avr_il_ijmp,
 	avr_il_nop, /* AVR_OP_IN */
 	avr_il_nop, /* AVR_OP_INC */
 	avr_il_jmp,
