@@ -4,26 +4,29 @@
 #include <rz_core.h>
 #include "../core_private.h"
 
-#define SYNC_READ(type) \
+#define SYNC_READ(type, failed) \
 	do { \
+		failed = false; \
 		if (sync_cb && !sync_cb(core, type, false)) { \
 			RZ_LOG_ERROR("Failed to read registers.\n"); \
-			return RZ_CMD_STATUS_ERROR; \
+			failed = true; \
 		} \
 	} while (0)
-#define SYNC_READ_LIST(ritems) \
+#define SYNC_READ_LIST(ritems, failed) \
 	do { \
+		failed = false; \
 		if (rz_list_length(ritems) == 1) { \
-			SYNC_READ(((RzRegItem *)rz_list_head(ritems))->type); \
+			SYNC_READ(((RzRegItem *)rz_list_head(ritems))->type, failed); \
 		} else if (rz_list_length(ritems) > 1) { \
-			SYNC_READ(RZ_REG_TYPE_ANY); \
+			SYNC_READ(RZ_REG_TYPE_ANY, failed); \
 		} \
 	} while (0)
-#define SYNC_WRITE(type) \
+#define SYNC_WRITE(type, failed) \
 	do { \
+		failed = false; \
 		if (sync_cb && !sync_cb(core, type, true)) { \
 			RZ_LOG_ERROR("Failed to write registers.\n"); \
-			return RZ_CMD_STATUS_ERROR; \
+			failed = true; \
 		} \
 		rz_core_debug_regs2flags(core); \
 	} while (0)
@@ -138,11 +141,15 @@ static RzCmdStatus assign_reg(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, RZ
 		free(str);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	SYNC_READ(ri->type);
+	bool failed;
+	SYNC_READ(ri->type, failed);
+	if (failed) {
+		return RZ_CMD_STATUS_ERROR;
+	}
 	ut64 nval = rz_num_math(core->num, val);
 	rz_reg_set_value(reg, ri, nval);
-	SYNC_WRITE(ri->type);
-	return RZ_CMD_STATUS_OK;
+	SYNC_WRITE(ri->type, failed);
+	return failed ? RZ_CMD_STATUS_ERROR : RZ_CMD_STATUS_OK;
 }
 
 static const char *get_reg_color(RzCore *core, RzReg *reg, RzRegItem *item) {
@@ -174,7 +181,12 @@ static RzCmdStatus show_regs_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	SYNC_READ_LIST(ritems);
+	bool failed;
+	SYNC_READ_LIST(ritems, failed);
+	if (failed) {
+		rz_list_free(ritems);
+		return RZ_CMD_STATUS_ERROR;
+	}
 
 	if (state->mode == RZ_OUTPUT_MODE_TABLE) {
 		rz_table_set_columnsf(state->d.t, "ssXxs", "role", "name", "value", "size", "type");
@@ -256,7 +268,12 @@ RZ_IPI RzCmdStatus rz_regs_columns_handler(RzCore *core, RzReg *reg, RzCmdRegSyn
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	SYNC_READ_LIST(ritems);
+	bool failed;
+	SYNC_READ_LIST(ritems, failed);
+	if (failed) {
+		rz_list_free(ritems);
+		return RZ_CMD_STATUS_ERROR;
+	}
 
 	int cols = 4; // how many registers in a row
 	int colwidth = 24;
@@ -299,7 +316,12 @@ RZ_IPI RzCmdStatus rz_regs_columns_handler(RzCore *core, RzReg *reg, RzCmdRegSyn
 }
 
 static RzCmdStatus references_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, RzList *ritems, RzOutputMode mode) {
-	SYNC_READ_LIST(ritems);
+	bool failed;
+	SYNC_READ_LIST(ritems, failed);
+	if (failed) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+
 	int use_colors = rz_config_get_i(core->config, "scr.color");
 
 	int had_colors = use_colors;
@@ -448,23 +470,32 @@ RZ_IPI RzCmdStatus rz_reg_arenas_handler(RzCore *core, RzReg *reg, int argc, con
 }
 
 RZ_IPI RzCmdStatus rz_reg_arenas_push_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv) {
-	SYNC_READ(RZ_REG_TYPE_ANY);
+	bool failed;
+	SYNC_READ(RZ_REG_TYPE_ANY, failed);
+	if (failed) {
+		return RZ_CMD_STATUS_ERROR;
+	}
 	rz_reg_arena_push(reg);
-	SYNC_WRITE(RZ_REG_TYPE_ANY);
-	return RZ_CMD_STATUS_OK;
+	SYNC_WRITE(RZ_REG_TYPE_ANY, failed);
+	return failed ? RZ_CMD_STATUS_ERROR : RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_reg_arenas_pop_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv) {
 	rz_reg_arena_pop(reg);
-	SYNC_WRITE(RZ_REG_TYPE_ANY);
-	return RZ_CMD_STATUS_OK;
+	bool failed;
+	SYNC_WRITE(RZ_REG_TYPE_ANY, failed);
+	return failed ? RZ_CMD_STATUS_ERROR : RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_reg_arenas_swap_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv) {
-	SYNC_READ(RZ_REG_TYPE_ANY);
+	bool failed;
+	SYNC_READ(RZ_REG_TYPE_ANY, failed);
+	if (failed) {
+		return RZ_CMD_STATUS_ERROR;
+	}
 	rz_reg_arena_swap(reg, false);
-	SYNC_WRITE(RZ_REG_TYPE_ANY);
-	return RZ_CMD_STATUS_OK;
+	SYNC_WRITE(RZ_REG_TYPE_ANY, failed);
+	return failed ? RZ_CMD_STATUS_ERROR : RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_reg_arenas_zero_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv) {
@@ -477,8 +508,9 @@ RZ_IPI RzCmdStatus rz_reg_arenas_zero_handler(RzCore *core, RzReg *reg, RzCmdReg
 		}
 	}
 	rz_reg_arena_zero(reg, t);
-	SYNC_WRITE(t);
-	return RZ_CMD_STATUS_OK;
+	bool failed;
+	SYNC_WRITE(t, failed);
+	return failed ? RZ_CMD_STATUS_ERROR : RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_reg_arenas_hexdump_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv) {
@@ -490,7 +522,11 @@ RZ_IPI RzCmdStatus rz_reg_arenas_hexdump_handler(RzCore *core, RzReg *reg, RzCmd
 			return RZ_CMD_STATUS_ERROR;
 		}
 	}
-	SYNC_READ(t);
+	bool failed;
+	SYNC_READ(t, failed);
+	if (failed) {
+		return RZ_CMD_STATUS_ERROR;
+	}
 	int len = 0;
 	ut8 *buf = rz_reg_get_bytes(reg, t, &len);
 	if (buf) {
@@ -515,7 +551,11 @@ RZ_IPI RzCmdStatus rz_reg_arenas_write_hex_handler(RzCore *core, RzReg *reg, RzC
 			return RZ_CMD_STATUS_ERROR;
 		}
 	}
-	SYNC_READ(type);
+	bool failed;
+	SYNC_READ(type, failed);
+	if (failed) {
+		return RZ_CMD_STATUS_ERROR;
+	}
 	const char *hex = argv[1];
 	size_t maxsz = (strlen(hex) + 1) / 2;
 	if (!maxsz) {
@@ -539,8 +579,8 @@ RZ_IPI RzCmdStatus rz_reg_arenas_write_hex_handler(RzCore *core, RzReg *reg, RzC
 	}
 	memcpy(a->bytes, buf, RZ_MIN(sz, a->size));
 	free(buf);
-	SYNC_WRITE(type);
-	return RZ_CMD_STATUS_OK;
+	SYNC_WRITE(type, failed);
+	return failed ? RZ_CMD_STATUS_ERROR : RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_regs_args_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv, RzOutputMode mode) {
@@ -605,7 +645,12 @@ RZ_IPI RzCmdStatus rz_reg_flags_handler(RzCore *core, RzReg *reg, RzCmdRegSync s
 	if (!unset) {
 		// f- does not care about spaces
 		rz_cons_print("fs+ " RZ_FLAGS_FS_REGISTERS "\n");
-		SYNC_READ_LIST(ritems);
+		bool failed;
+		SYNC_READ_LIST(ritems, failed);
+		if (failed) {
+			rz_list_free(ritems);
+			return RZ_CMD_STATUS_ERROR;
+		}
 	}
 	RzListIter *iter;
 	RzRegItem *item;
@@ -702,7 +747,11 @@ RZ_IPI RzCmdStatus rz_reg_profile_gdb_handler(RzCore *core, RzReg *reg, int argc
 }
 
 RZ_IPI RzCmdStatus rz_reg_cond_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv) {
-	SYNC_READ(RZ_REG_TYPE_ANY);
+	bool failed;
+	SYNC_READ(RZ_REG_TYPE_ANY, failed);
+	if (failed) {
+		return RZ_CMD_STATUS_ERROR;
+	}
 	RzRegFlags *rf = rz_reg_cond_retrieve(reg, NULL);
 	if (!rf) {
 		return RZ_CMD_STATUS_ERROR;
@@ -728,7 +777,11 @@ RZ_IPI RzCmdStatus rz_reg_cc_handler(RzCore *core, RzReg *reg, int argc, const c
 }
 
 RZ_IPI RzCmdStatus rz_regs_diff_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv) {
-	SYNC_READ(RZ_REG_TYPE_ANY);
+	bool failed;
+	SYNC_READ(RZ_REG_TYPE_ANY, failed);
+	if (failed) {
+		return RZ_CMD_STATUS_ERROR;
+	}
 	RzListIter *iter;
 	RzRegItem *item;
 	rz_list_foreach (reg->allregs, iter, item) {
@@ -756,12 +809,16 @@ RZ_IPI RzCmdStatus rz_regs_prev_handler(RzCore *core, RzReg *reg, int argc, cons
 
 RZ_IPI RzCmdStatus rz_regs_fpu_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv) {
 	// TODO: everything here needs to be rewritten. It was taken from the old "drf" command.
+	bool failed;
 	if (argc <= 1) {
 		// TODO: Do not use this hack to print fpu register:
 		// By sending a negative value, this is signalling all the way through to the debug plugin,
 		// which then does the printing.
 		// This should be rewritten directly above the RzReg.
-		SYNC_READ(-RZ_REG_TYPE_FPU);
+		SYNC_READ(-RZ_REG_TYPE_FPU, failed);
+		if (failed) {
+			return RZ_CMD_STATUS_ERROR;
+		}
 		return RZ_CMD_STATUS_OK;
 	}
 	char *name = rz_str_trim_dup(argv[1]);
@@ -773,8 +830,15 @@ RZ_IPI RzCmdStatus rz_regs_fpu_handler(RzCore *core, RzReg *reg, RzCmdRegSync sy
 	if (p) {
 		*p++ = 0;
 	}
-	SYNC_READ(RZ_REG_TYPE_GPR);
-	SYNC_READ(RZ_REG_TYPE_FPU);
+	RzCmdStatus ret = RZ_CMD_STATUS_ERROR;
+	SYNC_READ(RZ_REG_TYPE_GPR, failed);
+	if (failed) {
+		goto error;
+	}
+	SYNC_READ(RZ_REG_TYPE_FPU, failed);
+	if (failed) {
+		goto error;
+	}
 	RzRegItem *item = rz_reg_get(reg, name, -1);
 	if (item) {
 		if (eq) {
@@ -787,8 +851,14 @@ RZ_IPI RzCmdStatus rz_regs_fpu_handler(RzCore *core, RzReg *reg, RzCmdRegSync sy
 			sscanf(eq, "%Lf", &val);
 #endif
 			rz_reg_set_double(reg, item, val);
-			SYNC_WRITE(RZ_REG_TYPE_GPR);
-			SYNC_WRITE(RZ_REG_TYPE_FPU);
+			SYNC_WRITE(RZ_REG_TYPE_GPR, failed);
+			if (failed) {
+				goto error;
+			}
+			SYNC_WRITE(RZ_REG_TYPE_FPU, failed);
+			if (failed) {
+				goto error;
+			}
 		} else {
 			long double res = rz_reg_get_longdouble(reg, item);
 			rz_cons_printf("%Lf\n", res);
@@ -797,6 +867,8 @@ RZ_IPI RzCmdStatus rz_regs_fpu_handler(RzCore *core, RzReg *reg, RzCmdRegSync sy
 		/* note, that negative type forces sync to print the regs from the backend */
 		eprintf("cannot find multimedia register '%s'\n", name);
 	}
+
+error:
 	free(name);
-	return RZ_CMD_STATUS_OK;
+	return ret;
 }

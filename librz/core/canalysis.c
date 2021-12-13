@@ -7042,11 +7042,14 @@ RZ_IPI bool rz_core_analysis_types_propagation(RzCore *core) {
 
 RZ_IPI bool rz_core_analysis_function_set_signature(RzCore *core, RzAnalysisFunction *fcn, const char *newsig) {
 	bool res = false;
+	char *fcnname = NULL;
 	char *fcnstr = rz_str_newf("%s;", newsig);
 	char *fcnstr_copy = strdup(fcnstr);
 	char *fcnname_aux = strtok(fcnstr_copy, "(");
+	if (!fcnname_aux) {
+		goto err;
+	}
 	rz_str_trim_tail(fcnname_aux);
-	char *fcnname = NULL;
 	const char *ls = rz_str_lchr(fcnname_aux, ' ');
 	fcnname = strdup(ls ? ls : fcnname_aux);
 	if (!fcnname) {

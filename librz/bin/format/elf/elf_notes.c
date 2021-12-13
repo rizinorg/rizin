@@ -99,6 +99,7 @@ static bool parse_note_file(ELFOBJ *bin, RzVector *notes, Elf_(Nhdr) * note_segm
 
 		RzBinElfNote *note = rz_vector_push(notes, NULL);
 		if (!note) {
+			free(name);
 			return false;
 		}
 
