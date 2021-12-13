@@ -10,3 +10,27 @@ EXPECT=<<EOF
  PC: 0x0000000000000010 ptr: 0x0000000000000001
 EOF
 RUN
+
+NAME=aezv: RzIL var set
+FILE=bins/bf/hello-ok.bf
+CMDS=<<EOF
+s 0
+aezi
+aezv
+?e --
+aezv PC 0x42
+aezv
+?e --
+aezv ptr 0xc0ffee
+aezv
+EOF
+EXPECT=<<EOF
+ PC: 0x0000000000000000 ptr: 0x0000000000000000
+--
+PC = 0x42
+ PC: 0x0000000000000042 ptr: 0x0000000000000000
+--
+ptr = 0xc0ffee
+ PC: 0x0000000000000042 ptr: 0x0000000000c0ffee
+EOF
+RUN
