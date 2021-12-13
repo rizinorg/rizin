@@ -13,9 +13,7 @@ import sys
 
 def parse():
     if len(sys.argv) <= 2:
-        print(
-            "Usage: {} <prefixdir> <cmakedir>".format(sys.argv[0])
-        )
+        print("Usage: {} <prefixdir> <cmakedir>".format(sys.argv[0]))
         sys.exit(1)
 
     prefix_dir = sys.argv[1]
@@ -32,8 +30,8 @@ def main():
         cmake_dir = os.path.abspath(os.path.join(prefix_dir, cmake_dir))
 
     # always use linux dir separator, CMake will take care of converting it properly
-    relpath = os.path.relpath(prefix_dir, cmake_dir).replace(os.sep, '/')
-    print('%s' % (relpath,))
+    relpath = os.path.relpath(prefix_dir, cmake_dir).replace(os.sep, "/")
+    print("%s" % (relpath,))
 
 
 if __name__ == "__main__":
