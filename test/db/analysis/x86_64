@@ -2491,7 +2491,7 @@ call-convention: amd64
 cyclomatic-cost: 4
 cyclomatic-complexity: 0
 bits: 64
-type: fcn [NEW]
+type: fcn [new]
 num-bbs: 2
 edges: 2
 end-bbs: 0
@@ -2550,7 +2550,7 @@ call-convention: amd64
 cyclomatic-cost: 6
 cyclomatic-complexity: 1
 bits: 64
-type: fcn [NEW]
+type: fcn [new]
 num-bbs: 2
 edges: 1
 end-bbs: 1
@@ -2623,7 +2623,7 @@ call-convention: amd64
 cyclomatic-cost: 7
 cyclomatic-complexity: 0
 bits: 64
-type: fcn [NEW]
+type: fcn [new]
 num-bbs: 2
 edges: 2
 end-bbs: 0
@@ -2704,7 +2704,7 @@ call-convention: amd64
 cyclomatic-cost: 7
 cyclomatic-complexity: 0
 bits: 64
-type: fcn [NEW]
+type: fcn [new]
 num-bbs: 3
 edges: 3
 end-bbs: 0
@@ -2794,7 +2794,7 @@ call-convention: amd64
 cyclomatic-cost: 9
 cyclomatic-complexity: 0
 bits: 64
-type: fcn [NEW]
+type: fcn [new]
 num-bbs: 4
 edges: 4
 end-bbs: 0
@@ -2918,7 +2918,7 @@ call-convention: amd64
 cyclomatic-cost: 4
 cyclomatic-complexity: 0
 bits: 64
-type: fcn [NEW]
+type: fcn [new]
 num-bbs: 3
 edges: 3
 end-bbs: 0
