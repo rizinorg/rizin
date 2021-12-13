@@ -756,6 +756,61 @@ static RzPVector *avr_il_rjmp(AVROp *aop, RzAnalysis *analysis) {
 	return rz_il_make_oplist(1, perform);
 }
 
+static RzPVector *avr_il_rol(AVROp *aop, RzAnalysis *analysis) {
+	RzILOp *x, *y, *rol, *H, *S, *V, *N, *Z, *C;
+	// Rd = rot_left(Rd, 1)
+	ut16 Rd = aop->param[0];
+
+	// simplified by adding itself with Carry
+	x = avr_il_new_reg(Rd);
+	y = avr_il_new_reg(Rd);
+	rol = rz_il_op_new_add(x, y);
+	y = avr_il_sreg_as_imm(AVR_SREG_C);
+	rol = rz_il_op_new_add(rol, y);
+	rol = rz_il_op_new_set(avr_registers[Rd], rol);
+	rol = rz_il_op_new_perform(rol);
+
+	// H: Rd3
+	x = avr_il_new_reg(Rd);
+	y = avr_il_new_imm(1u << 3);
+	H = rz_il_op_new_log_and(x, y);
+	H = rz_il_op_new_set(AVR_SREG_H, H);
+	H = rz_il_op_new_perform(H);
+
+	// C: Rd7
+	x = avr_il_new_reg(Rd);
+	y = avr_il_new_imm(1u << 7);
+	C = rz_il_op_new_log_and(x, y);
+	C = rz_il_op_new_set(AVR_SREG_C, C);
+	C = rz_il_op_new_perform(C);
+
+	// perform rotation since we need the result for the SREG flags.
+	// N: Res7
+	x = avr_il_new_reg(Rd);
+	y = avr_il_new_imm(1u << 7);
+	N = rz_il_op_new_log_and(x, y);
+	N = rz_il_op_new_set(AVR_SREG_N, N);
+	N = rz_il_op_new_perform(N);
+
+	// Z: !Res
+	x = avr_il_new_reg(Rd);
+	Z = rz_il_op_new_bool_inv(x);
+	Z = rz_il_op_new_set(AVR_SREG_Z, Z);
+	Z = rz_il_op_new_perform(Z);
+
+	// S: N ^ V, For signed tests.
+	S = avr_il_check_signess_flag();
+
+	// V: N ^ C, For N and C after the shift
+	x = rz_il_op_new_var(AVR_SREG_N);
+	y = rz_il_op_new_var(AVR_SREG_C);
+	V = rz_il_op_new_bool_xor(x, y);
+	V = rz_il_op_new_set(AVR_SREG_V, V);
+	V = rz_il_op_new_perform(V);
+
+	return rz_il_make_oplist(7, H, C, rol, N, Z, S, V);
+}
+
 static RzPVector *avr_il_sbiw(AVROp *aop, RzAnalysis *analysis) {
 	RzILOp *x, *let, *sbiw, *imm, *Z, *S, *V, *N, *C;
 	// Rd+1:Rd = Rd+1:Rd - K
@@ -957,7 +1012,7 @@ static avr_rzil_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_nop, /* AVR_OP_RET */
 	avr_il_nop, /* AVR_OP_RETI */
 	avr_il_rjmp,
-	avr_il_nop, /* AVR_OP_ROL */
+	avr_il_rol,
 	avr_il_nop, /* AVR_OP_ROR */
 	avr_il_nop, /* AVR_OP_SBC */
 	avr_il_nop, /* AVR_OP_SBCI */

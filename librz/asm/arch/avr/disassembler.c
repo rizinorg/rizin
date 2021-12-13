@@ -27,6 +27,8 @@ static ut32 avr_rdddddrrrr(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVR
 	ut16 Rd = ((data[0] & 0x01F0) >> 4);
 	Rr |= ((data[0] & 0x0200) >> 5);
 
+	aop->param[0] = Rd;
+	aop->param[1] = Rr;
 	if (Rd == Rr) {
 		aop->param[0] = Rd;
 		if (!strncmp(name, "adc", 3)) {
@@ -43,13 +45,10 @@ static ut32 avr_rdddddrrrr(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AVR
 			rz_strbuf_setf(sb, "clr r%u", Rd);
 		} else {
 			aop->mnemonic = id;
-			aop->param[1] = Rr;
 			rz_strbuf_setf(sb, "%s r%u, r%u", name, Rd, Rr);
 		}
 	} else {
 		aop->mnemonic = id;
-		aop->param[0] = Rd;
-		aop->param[1] = Rr;
 		rz_strbuf_setf(sb, "%s r%u, r%u", name, Rd, Rr);
 	}
 
