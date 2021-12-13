@@ -693,6 +693,16 @@ static RzPVector *avr_il_lsl(AVROp *aop, RzAnalysis *analysis) {
 	return rz_il_make_oplist(7, H, C, lsl, N, Z, S, V);
 }
 
+static RzPVector *avr_il_mov(AVROp *aop, RzAnalysis *analysis) {
+	RzILOp *mov;
+	// Rd = Rr
+	ut16 Rd = aop->param[0];
+	ut16 Rr = aop->param[1];
+
+	avr_il_assign_reg(mov, avr_registers[Rd], avr_registers[Rr]);
+	return rz_il_make_oplist(1, mov);
+}
+
 static RzPVector *avr_il_movw(AVROp *aop, RzAnalysis *analysis) {
 	RzILOp *let, *movw;
 	// Rd+1:Rd = Rr+1:Rr
@@ -996,7 +1006,7 @@ static avr_rzil_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_lpm,
 	avr_il_lsl,
 	avr_il_nop, /* AVR_OP_LSR */
-	avr_il_nop, /* AVR_OP_MOV */
+	avr_il_mov,
 	avr_il_movw,
 	avr_il_nop, /* AVR_OP_MUL */
 	avr_il_nop, /* AVR_OP_MULS */
