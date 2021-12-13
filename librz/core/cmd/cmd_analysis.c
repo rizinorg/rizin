@@ -8847,6 +8847,31 @@ static void function_list_print_quiet(RZ_UNUSED RzCore *core, RzList *list) {
 	}
 }
 
+static char function_type_to_char(RzAnalysisFunction *fcn) {
+	switch (fcn->type) {
+	case RZ_ANALYSIS_FCN_TYPE_LOC:
+		return 'l';
+	case RZ_ANALYSIS_FCN_TYPE_SYM:
+		return 's';
+	case RZ_ANALYSIS_FCN_TYPE_IMP:
+		return 'i';
+	default:
+		break;
+	}
+	return 'f';
+}
+
+static const char *diff_type_to_str(RzAnalysisDiff *diff) {
+	if (diff->type == RZ_ANALYSIS_DIFF_TYPE_NULL) {
+		return "new";
+	}
+	return diff->type == RZ_ANALYSIS_DIFF_TYPE_MATCH ? "match" : "unmatch";
+}
+
+static char diff_type_to_char(RzAnalysisDiff *diff) {
+	return diff->type == RZ_ANALYSIS_DIFF_TYPE_NULL ? 'n' : diff->type;
+}
+
 static void fcn_list_bbs(RzAnalysisFunction *fcn) {
 	RzAnalysisBlock *bbi;
 	RzListIter *iter;
@@ -8857,13 +8882,7 @@ static void fcn_list_bbs(RzAnalysisFunction *fcn) {
 		rz_cons_printf("0x%08" PFMT64x " ", bbi->jump);
 		rz_cons_printf("0x%08" PFMT64x, bbi->fail);
 		if (bbi->diff) {
-			if (bbi->diff->type == RZ_ANALYSIS_DIFF_TYPE_MATCH) {
-				rz_cons_printf(" m");
-			} else if (bbi->diff->type == RZ_ANALYSIS_DIFF_TYPE_UNMATCH) {
-				rz_cons_printf(" u");
-			} else {
-				rz_cons_printf(" n");
-			}
+			rz_cons_printf(" %c", diff_type_to_char(bbi->diff));
 		}
 		rz_cons_printf("\n");
 	}
@@ -8878,11 +8897,8 @@ static void function_list_print_as_cmd(RzCore *core, RzList *list) {
 		rz_cons_printf("\"f %s %" PFMT64u " 0x%08" PFMT64x "\"\n", name, rz_analysis_function_linear_size(fcn), fcn->addr);
 		rz_cons_printf("\"af+ 0x%08" PFMT64x " %s %c %c\"\n",
 			fcn->addr, name, // rz_analysis_fcn_size (fcn), name,
-			fcn->type == RZ_ANALYSIS_FCN_TYPE_LOC ? 'l' : fcn->type == RZ_ANALYSIS_FCN_TYPE_SYM ? 's'
-				: fcn->type == RZ_ANALYSIS_FCN_TYPE_IMP                                     ? 'i'
-														: 'f',
-			fcn->diff->type == RZ_ANALYSIS_DIFF_TYPE_MATCH ? 'm' : fcn->diff->type == RZ_ANALYSIS_DIFF_TYPE_UNMATCH ? 'u'
-																: 'n');
+			function_type_to_char(fcn),
+			diff_type_to_char(fcn->diff));
 		// FIXME: this command prints something annoying. Does it have important side-effects?
 		fcn_list_bbs(fcn);
 		if (fcn->bits != 0) {
@@ -9011,8 +9027,7 @@ static void function_print_to_json(RzCore *core, RzAnalysisFunction *fcn, PJ *pj
 		pj_k(pj, "regvars");
 		rz_analysis_var_list_show(core->analysis, fcn, 'r', 'j', pj);
 
-		pj_ks(pj, "difftype", fcn->diff->type == RZ_ANALYSIS_DIFF_TYPE_MATCH ? "match" : fcn->diff->type == RZ_ANALYSIS_DIFF_TYPE_UNMATCH ? "unmatch"
-																		  : "new");
+		pj_ks(pj, "difftype", diff_type_to_str(fcn->diff));
 		if (fcn->diff->addr != -1) {
 			pj_kn(pj, "diffaddr", fcn->diff->addr);
 		}
@@ -9241,9 +9256,7 @@ static void fcn_print_info(RzCore *core, RzAnalysisFunction *fcn) {
 	rz_cons_printf("\nbits: %d", fcn->bits);
 	rz_cons_printf("\ntype: %s", rz_analysis_fcntype_tostring(fcn->type));
 	if (fcn->type == RZ_ANALYSIS_FCN_TYPE_FCN || fcn->type == RZ_ANALYSIS_FCN_TYPE_SYM) {
-		rz_cons_printf(" [%s]",
-			fcn->diff->type == RZ_ANALYSIS_DIFF_TYPE_MATCH ? "MATCH" : fcn->diff->type == RZ_ANALYSIS_DIFF_TYPE_UNMATCH ? "UNMATCH"
-																    : "NEW");
+		rz_cons_printf(" [%s]", diff_type_to_str(fcn->diff));
 	}
 	rz_cons_printf("\nnum-bbs: %d", rz_list_length(fcn->bbs));
 	rz_cons_printf("\nedges: %d", rz_analysis_function_count_edges(fcn, &ebbs));
@@ -9302,9 +9315,7 @@ static void fcn_print_info(RzCore *core, RzAnalysisFunction *fcn) {
 		rz_analysis_var_list_show(core->analysis, fcn, 'b', 0, NULL);
 		rz_analysis_var_list_show(core->analysis, fcn, 's', 0, NULL);
 		rz_analysis_var_list_show(core->analysis, fcn, 'r', 0, NULL);
-		rz_cons_printf("diff: type: %s",
-			fcn->diff->type == RZ_ANALYSIS_DIFF_TYPE_MATCH ? "match" : fcn->diff->type == RZ_ANALYSIS_DIFF_TYPE_UNMATCH ? "unmatch"
-																    : "new");
+		rz_cons_printf("diff: type: %s", diff_type_to_str(fcn->diff));
 		if (fcn->diff->addr != -1) {
 			rz_cons_printf("addr: 0x%" PFMT64x, fcn->diff->addr);
 		}
