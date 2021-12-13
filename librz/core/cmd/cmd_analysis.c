@@ -8880,7 +8880,7 @@ RZ_IPI RzCmdStatus rz_rzil_vm_initialize_handler(RzCore *core, int argc, const c
 }
 
 RZ_IPI RzCmdStatus rz_rzil_vm_step_handler(RzCore *core, int argc, const char **argv) {
-	ut64 repeat_times = argc == 1 ? 1 : rz_num_math(core->num, argv[1]);
+	ut64 repeat_times = argc == 1 ? 1 : rz_num_math(NULL, argv[1]);
 	for (ut64 i = 0; i < repeat_times; ++i) {
 		rz_core_rzil_step(core);
 	}
@@ -8888,7 +8888,7 @@ RZ_IPI RzCmdStatus rz_rzil_vm_step_handler(RzCore *core, int argc, const char **
 }
 
 RZ_IPI RzCmdStatus rz_rzil_vm_step_with_events_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	ut64 repeat_times = argc == 1 ? 1 : rz_num_math(core->num, argv[1]);
+	ut64 repeat_times = argc == 1 ? 1 : rz_num_math(NULL, argv[1]);
 	PJ *pj = NULL;
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj = pj_new();
@@ -8905,6 +8905,28 @@ RZ_IPI RzCmdStatus rz_rzil_vm_step_with_events_handler(RzCore *core, int argc, c
 		pj_end(pj);
 		rz_cons_println(pj_string(pj));
 		pj_free(pj);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_rzil_vm_step_until_addr_handler(RzCore *core, int argc, const char **argv) {
+	ut64 address = rz_num_math(core->num, argv[1]);
+
+	if (!core->analysis->rzil || !core->analysis->rzil->vm) {
+		RZ_LOG_ERROR("RzIL: the VM is not initialized.\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	RzILVM *vm = core->analysis->rzil->vm;
+
+	ut64 pc = rz_bv_to_ut64(vm->pc);
+	while (pc != address) {
+		if (rz_cons_is_breaked()) {
+			rz_cons_printf("CTRL+C was pressed.\n");
+			break;
+		}
+		rz_core_rzil_step(core);
+		pc = rz_bv_to_ut64(vm->pc);
 	}
 	return RZ_CMD_STATUS_OK;
 }
