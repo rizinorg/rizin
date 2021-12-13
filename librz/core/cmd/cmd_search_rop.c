@@ -9,28 +9,16 @@
 #include "rz_types_base.h"
 
 static RzList *parse_list(const char *str) {
-	RzList *list;
-	char *line, *data, *p, *str_n;
+	char *line, *data, *str_n;
 
 	if (!str) {
 		return NULL;
 	}
-
 	str_n = strdup(str);
-	list = rz_list_newf(free);
-	if (!list) {
-		free(str_n);
-		return NULL;
-	}
 	line = strtok(str_n, "\n");
 	data = strchr(line, '=');
-	// TODO: use rz_str_split()
-	p = strtok(data + 1, ",");
 
-	while (p) {
-		rz_list_append(list, (void *)strdup(p));
-		p = strtok(NULL, ",");
-	}
+	RzList *list = rz_str_split_duplist(data + 1, ",", false);
 
 	free(str_n);
 	return list;

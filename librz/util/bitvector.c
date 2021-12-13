@@ -1225,10 +1225,13 @@ RZ_API void rz_bv_set_from_bytes_le(RZ_NONNULL RzBitVector *bv, RZ_IN RZ_NONNULL
  */
 ut32 rz_bv_hash(RZ_NULLABLE RzBitVector *x) {
 	ut32 h = 5381;
+	if (!x) {
+		return h;
+	}
+
 	ut32 size = (x->len > 64) ? x->_elem_len : sizeof(x->bits.small_u);
 	ut8 *bits = (x->len > 64) ? x->bits.large_a : (ut8 *)&x->bits.small_u;
-
-	if (!x || !size || !bits) {
+	if (!size || !bits) {
 		return h;
 	}
 
@@ -1310,7 +1313,7 @@ RZ_API ut64 rz_bv_to_ut64(RZ_NONNULL RzBitVector *x) {
 	ut64 ret = 0;
 	for (ut32 i = 0; i < x->len && i < 64; ++i) {
 		if (rz_bv_get(x, i)) {
-			ret |= 1 << i;
+			ret |= 1ULL << i;
 		}
 	}
 	return ret;
