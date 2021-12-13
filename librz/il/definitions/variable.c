@@ -12,7 +12,7 @@
  * \param name string, name of variable
  * \return var RzILVar, pointer to this variable
  */
-RZ_API RZ_OWN RzILVar *rz_il_variable_new(RZ_NONNULL const char *name, RzILVarType type) {
+RZ_API RZ_OWN RzILVar *rz_il_variable_new(RZ_NONNULL const char *name, RzILVarType type, bool is_mutable) {
 	rz_return_val_if_fail(name, NULL);
 	RzILVar *ret = RZ_NEW0(RzILVar);
 	if (!ret) {
@@ -23,6 +23,7 @@ RZ_API RZ_OWN RzILVar *rz_il_variable_new(RZ_NONNULL const char *name, RzILVarTy
 		free(ret);
 		return NULL;
 	}
+	ret->is_mutable = is_mutable;
 	ret->type = type;
 	return ret;
 }

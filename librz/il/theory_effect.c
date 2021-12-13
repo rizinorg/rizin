@@ -41,17 +41,70 @@ static void rz_il_perform_data(RzILVM *vm, RzILEffect *eff) {
 	RzILVar *var = NULL;
 	RzILVal *val = NULL;
 	RzILEvent *evt = NULL;
+	const char *var_name = NULL;
+	bool is_local = false, is_mutable = false;
 
 	val = eff->data_eff->val;
 	eff->data_eff->val = NULL;
-	var = rz_il_find_var_by_name(vm, eff->data_eff->var_name);
-	evt = il_event_new_write_from_var(vm, var, val);
+	var_name = eff->data_eff->var_name;
+	is_local = eff->data_eff->is_local;
+	is_mutable = eff->data_eff->is_mutable;
 
-	rz_il_hash_cancel_binding(vm, var);
-	rz_il_hash_bind(vm, var, val);
+	if (is_local) {
+		var = rz_il_find_local_var_by_name(vm, var_name);
+	} else {
+		var = rz_il_find_var_by_name(vm, var_name);
+	}
+	if (!var && !is_local) {
+		// it's a set to a global variable which has not been defined.
+		char *message = rz_str_newf("unknown global variable '%s'.", var_name);
+		evt = rz_il_event_exception_new(message);
+		free(message);
+		rz_il_value_free(val);
+		rz_il_vm_event_add(vm, evt);
+		return;
+	} else if (var && !var->is_mutable) {
+		// forbid changing an immutable type
+		char *message = rz_str_newf("cannot change %s variable '%s' because is not mutable.", is_local ? "local" : "global", var_name);
+		evt = rz_il_event_exception_new(message);
+		free(message);
+		rz_il_value_free(val);
+		rz_il_vm_event_add(vm, evt);
+		return;
+	}
 
-	rz_il_vm_fortify_val(vm, val);
-	rz_il_vm_event_add(vm, evt);
+	// enforce var type to val except if var is unk, because unk type can be set to any type.
+	if (var && var->type == RZIL_VAR_TYPE_BV && val->type == RZIL_VAR_TYPE_BOOL) {
+		RzBitVector *bv = rz_bv_new_from_ut64(1, val->data.b->b);
+		RzILVal *cast = rz_il_value_new_bitv(bv);
+		rz_il_value_free(val);
+		val = cast;
+	} else if (var && var->type == RZIL_VAR_TYPE_BOOL && val->type == RZIL_VAR_TYPE_BV) {
+		RzILBool *b = rz_il_bool_new(!rz_bv_is_zero_vector(val->data.bv));
+		RzILVal *cast = rz_il_value_new_bool(b);
+		rz_il_value_free(val);
+		val = cast;
+	}
+
+	if (is_local) {
+		// add/update local variable
+		if (var) {
+			// update mutable local variable
+			rz_il_hash_cancel_local_binding(vm, var);
+		} else {
+			// first set of an mutable/immutable local variable
+			var = rz_il_vm_create_local_variable(vm, var_name, val->type, is_mutable);
+		}
+		rz_il_hash_local_bind(vm, var, val);
+	} else {
+		// update global variable
+		evt = il_event_new_write_from_var(vm, var, val);
+		rz_il_hash_cancel_binding(vm, var);
+		rz_il_hash_bind(vm, var, val);
+
+		rz_il_vm_fortify_val(vm, val);
+		rz_il_vm_event_add(vm, evt);
+	}
 }
 
 static void rz_il_perform_ctrl(RzILVM *vm, RzILEffect *eff) {
@@ -67,7 +120,7 @@ static void rz_il_perform_ctrl(RzILVM *vm, RzILEffect *eff) {
 	}
 
 	// Normal
-	RzBitVector *new_addr = rz_bv_dup(eff->ctrl_eff->pc);
+	RzBitVector *new_addr = eff->ctrl_eff->pc;
 	rz_il_vm_event_add(vm, rz_il_event_pc_write_new(vm->pc, new_addr));
 	rz_bv_free(vm->pc);
 	vm->pc = new_addr;
@@ -100,7 +153,25 @@ void *rz_il_handler_set(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 
 	RzILEffect *eff = rz_il_effect_new(EFFECT_TYPE_DATA);
 	eff->data_eff->var_name = set_op->v;
+	eff->data_eff->is_local = false;
+	eff->data_eff->is_mutable = true;
 	eff->data_eff->val = rz_il_evaluate_val(vm, set_op->x, type);
+
+	// store effect in the temporay list
+	*type = RZIL_OP_ARG_EFF;
+	return eff;
+}
+
+void *rz_il_handler_let(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
+	rz_return_val_if_fail(vm && op && type, NULL);
+
+	RzILOpLet *let_op = op->op.let;
+
+	RzILEffect *eff = rz_il_effect_new(EFFECT_TYPE_DATA);
+	eff->data_eff->var_name = let_op->v;
+	eff->data_eff->is_local = true;
+	eff->data_eff->is_mutable = let_op->mut;
+	eff->data_eff->val = rz_il_evaluate_val(vm, let_op->x, type);
 
 	// store effect in the temporay list
 	*type = RZIL_OP_ARG_EFF;
@@ -140,7 +211,8 @@ void *rz_il_handler_goto(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 		eff->ctrl_eff = (void *)op;
 	} else {
 		// Normal
-		eff->ctrl_eff->pc = rz_il_hash_find_addr_by_lblname(vm, lname);
+		const RzBitVector *addr = rz_il_hash_find_addr_by_lblname(vm, lname);
+		eff->ctrl_eff->pc = rz_bv_dup(addr);
 	}
 
 	*type = RZIL_OP_ARG_EFF;
