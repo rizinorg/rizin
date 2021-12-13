@@ -238,7 +238,7 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_bitv_from_st64(ut32 length, st64 number) {
 RZ_API RZ_OWN RzILOp *rz_il_op_new_msb(RZ_NONNULL RzILOp *bv) {
 	rz_return_val_if_fail(bv, NULL);
 	RzILOp *ret;
-	rz_il_op_new_1(RZIL_OP_LSB, RzILOpLsb, lsb, bv);
+	rz_il_op_new_1(RZIL_OP_MSB, RzILOpLsb, lsb, bv);
 	return ret;
 }
 
@@ -249,7 +249,7 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_msb(RZ_NONNULL RzILOp *bv) {
 RZ_API RZ_OWN RzILOp *rz_il_op_new_lsb(RZ_NONNULL RzILOp *bv) {
 	rz_return_val_if_fail(bv, NULL);
 	RzILOp *ret;
-	rz_il_op_new_1(RZIL_OP_MSB, RzILOpMsb, lsb, bv);
+	rz_il_op_new_1(RZIL_OP_LSB, RzILOpMsb, lsb, bv);
 	return ret;
 }
 
@@ -261,7 +261,7 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_lsb(RZ_NONNULL RzILOp *bv) {
 RZ_API RZ_OWN RzILOp *rz_il_op_new_ule(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y) {
 	rz_return_val_if_fail(x && y, NULL);
 	RzILOp *ret;
-	rz_il_op_new_2(RZIL_OP_SLE, RzILOpUle, ule, x, y);
+	rz_il_op_new_2(RZIL_OP_ULE, RzILOpUle, ule, x, y);
 	return ret;
 }
 
@@ -273,7 +273,7 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_ule(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *
 RZ_API RZ_OWN RzILOp *rz_il_op_new_sle(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y) {
 	rz_return_val_if_fail(x && y, NULL);
 	RzILOp *ret;
-	rz_il_op_new_2(RZIL_OP_ULE, RzILOpSle, sle, x, y);
+	rz_il_op_new_2(RZIL_OP_SLE, RzILOpSle, sle, x, y);
 	return ret;
 }
 
@@ -486,6 +486,19 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_set(RZ_NONNULL const char *v, RZ_NONNULL RzIL
 	rz_return_val_if_fail(v && x, NULL);
 	RzILOp *ret;
 	rz_il_op_new_2(RZIL_OP_SET, RzILOpSet, set, v, x);
+	return ret;
+}
+
+/**
+ *  \brief op structure for `let` ('a var -> 'a pure -> 'b pure -> 'b pure -> data eff)
+ *
+ *  let v exp body bind the value of exp to v body.
+ *  essentially allows you to create a local variable
+ */
+RZ_API RZ_OWN RzILOp *rz_il_op_new_let(RZ_NONNULL const char *v, RZ_NONNULL RzILOp *x, bool mut) {
+	rz_return_val_if_fail(v && x, NULL);
+	RzILOp *ret;
+	rz_il_op_new_3(RZIL_OP_LET, RzILOpLet, let, v, x, mut);
 	return ret;
 }
 
@@ -720,6 +733,9 @@ RZ_API void rz_il_op_free(RZ_NULLABLE RzILOp *op) {
 		break;
 	case RZIL_OP_SET:
 		rz_il_op_free_1(set, x);
+		break;
+	case RZIL_OP_LET:
+		rz_il_op_free_1(let, x);
 		break;
 	case RZIL_OP_JMP:
 		rz_il_op_free_1(jmp, dst);

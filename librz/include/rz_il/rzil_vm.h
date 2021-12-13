@@ -38,15 +38,18 @@ typedef void (*RzILVmHook)(RzILVM *vm, RzILOp *op);
  */
 struct rz_il_vm_t {
 	RzILBag *vm_global_value_set; ///< Store all RzILVal instance
-	RzILVar **vm_global_variable_list; ///< Store all RzILVar instance
+	RzPVector /*<RzILVar*>*/ vm_global_variable_list; ///< Store all the global RzILVar instance
+	RzPVector /*<RzILVar*>*/ vm_local_variable_list; ///< Store all the local RzILVar instance
 
-	RzILMem **mems; ///< Array of Memory, memory are actually hashmap in VM
-	int var_count, val_count, mem_count, lab_count; ///< count for VM predefined things
+	RzPVector /*<RzILMem*>*/ vm_memory; ///< Array of Memory, memory are actually hashmap in VM
+	ut32 val_count, lab_count; ///< count for VM predefined things
 	ut32 addr_size; ///< size of address space
 	ut32 data_size; ///< size of minimal data unit
 
-	HtPP *vm_global_bind_table; ///< Hashtable to record relationships between var and val
+	HtPP *vm_global_bind_table; ///< Hashtable to record relationships between global var and val
+	HtPP *vm_local_bind_table; ///< Hashtable to record relationships between local var and val
 	HtPP *vm_global_label_table; ///< Hashtable to maintain the label and address
+	HtPP *vm_local_label_table; ///< Hashtable to maintain the label and address
 
 	HtPP *ct_opcodes; ///< Hashtable to maintain address and opcodes
 
@@ -63,16 +66,26 @@ RZ_API RZ_BORROW RzILEffectLabel *rz_il_vm_find_label_by_name(RZ_NONNULL RzILVM 
 RZ_API RZ_BORROW RzILEffectLabel *rz_il_vm_create_label(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name, RZ_NONNULL RZ_BORROW RzBitVector *addr);
 RZ_API RZ_BORROW RzILEffectLabel *rz_il_vm_create_label_lazy(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name);
 RZ_API RZ_BORROW RzILEffectLabel *rz_il_vm_update_label(RZ_NONNULL RzILVM *vm, RZ_NONNULL char *name, RZ_NONNULL RZ_BORROW RzBitVector *addr);
+
 RZ_API RZ_BORROW RzILVal *rz_il_hash_find_val_by_var(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILVar *var);
 RZ_API RZ_BORROW RzILVal *rz_il_hash_find_val_by_name(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *var_name);
 RZ_API RZ_BORROW RzILVar *rz_il_find_var_by_name(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *var_name);
 
-RZ_API RZ_BORROW RzILVar *rz_il_vm_create_variable(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name, RzILVarType type);
+RZ_API RZ_BORROW RzILVal *rz_il_hash_find_local_val_by_var(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILVar *var);
+RZ_API RZ_BORROW RzILVal *rz_il_hash_find_local_val_by_name(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *var_name);
+RZ_API RZ_BORROW RzILVar *rz_il_find_local_var_by_name(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *var_name);
+
+RZ_API RZ_BORROW RzILVar *rz_il_vm_create_global_variable(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name, RzILVarType type, bool is_mutable);
+RZ_API RZ_BORROW RzILVar *rz_il_vm_create_local_variable(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name, RzILVarType type, bool is_mutable);
 RZ_API RZ_BORROW RzILVal *rz_il_vm_create_value_bitv(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzBitVector *bitv);
 RZ_API RZ_BORROW RzILVal *rz_il_vm_create_value_bool(RZ_NONNULL RzILVM *vm, bool value);
 RZ_API RZ_BORROW RzILVal *rz_il_vm_create_value_unk(RZ_NONNULL RzILVM *vm);
+
 RZ_API void rz_il_hash_bind(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILVar *var, RZ_NONNULL RzILVal *val);
 RZ_API void rz_il_hash_cancel_binding(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILVar *var);
+
+RZ_API void rz_il_hash_local_bind(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILVar *var, RZ_NONNULL RzILVal *val);
+RZ_API void rz_il_hash_cancel_local_binding(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILVar *var);
 
 RZ_API RZ_BORROW RzILVal *rz_il_vm_fortify_val(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILVal *val);
 RZ_API RZ_BORROW RzILVal *rz_il_vm_fortify_bitv(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzBitVector *val);

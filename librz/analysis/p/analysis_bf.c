@@ -31,18 +31,9 @@ typedef struct bf_context_t {
 	ut64 op_count;
 } BfContext;
 
-static inline RzILOp *bf_il_ptr() {
-	return rz_il_op_new_var("ptr");
-}
-
-static inline RzILOp *bf_il_set_ptr(RzILOp *x) {
-	rz_return_val_if_fail(x, NULL);
-	return rz_il_op_new_set("ptr", x);
-}
-
-static inline RzILOp *bf_il_one(ut32 length) {
-	return rz_il_op_new_bitv_from_ut64(length, 1);
-}
+#define bf_il_ptr()      rz_il_op_new_var("ptr")
+#define bf_il_set_ptr(x) rz_il_op_new_set("ptr", x)
+#define bf_il_one(l)     rz_il_op_new_bitv_from_ut64(l, 1)
 
 static void bf_syscall_read(RzILVM *vm, RzILOp *op) {
 	ut8 c = getc(stdin);
@@ -160,9 +151,9 @@ RzPVector *bf_llimit(RzILVM *vm, BfContext *ctx, ut64 id, ut64 addr) {
 		cur_label = rz_il_vm_find_label_by_name(vm, cur_lbl_name);
 		if (!cur_label) {
 			// should always reach here if enter "!cur_lbl_name" branch
-			cur_addr = rz_il_ut64_addr_to_bv(addr);
+			cur_addr = rz_bv_new_from_ut64(vm->addr_size, addr);
 			rz_il_vm_create_label(vm, cur_lbl_name, cur_addr);
-			rz_il_free_bv_addr(cur_addr);
+			rz_bv_free(cur_addr);
 		}
 	}
 
@@ -204,9 +195,9 @@ RzPVector *bf_rlimit(RzILVM *vm, BfContext *ctx, ut64 id, ut64 addr) {
 	}
 
 	if (!rz_il_hash_find_addr_by_lblname(vm, cur_lbl_name)) {
-		RzBitVector *cur_bv_addr = rz_il_ut64_addr_to_bv(addr);
+		RzBitVector *cur_bv_addr = rz_bv_new_from_ut64(vm->addr_size, addr);
 		rz_il_vm_update_label(vm, cur_lbl_name, cur_bv_addr);
-		rz_il_free_bv_addr(cur_bv_addr);
+		rz_bv_free(cur_bv_addr);
 	}
 
 	// Get label of '['

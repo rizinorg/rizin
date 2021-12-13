@@ -332,13 +332,13 @@ void *rz_il_handler_cast(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	RzBitVector *bv = rz_il_evaluate_bitv(vm, op_cast->val, type);
 
 	if (shift == 0) {
-		rz_bv_copy_nbits(bv, 0, ret, 0, -1);
+		rz_bv_copy_nbits(bv, 0, ret, 0, RZ_MIN(bv->len, ret->len));
 	} else if (shift > 0) {
-		// left shift
-		rz_bv_copy_nbits(bv, 0, ret, shift, -1);
+		// left shift <<
+		rz_bv_copy_nbits(bv, 0, ret, shift, RZ_MIN(bv->len, ret->len));
 	} else {
-		// right shift
-		rz_bv_copy_nbits(bv, -shift, ret, 0, -1);
+		// right shift >>
+		rz_bv_copy_nbits(bv, -shift, ret, 0, RZ_MIN(bv->len, ret->len));
 	}
 	rz_bv_free(bv);
 

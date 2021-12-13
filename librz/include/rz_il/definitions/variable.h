@@ -25,10 +25,11 @@ typedef enum {
  */
 typedef struct rz_il_var_t {
 	char *var_name; ///< name of variable
+	bool is_mutable;
 	RzILVarType type; ///< data type of variable
 } RzILVar;
 
-RZ_API RZ_OWN RzILVar *rz_il_variable_new(RZ_NONNULL const char *name, RzILVarType type);
+RZ_API RZ_OWN RzILVar *rz_il_variable_new(RZ_NONNULL const char *name, RzILVarType type, bool is_mutable);
 RZ_API void rz_il_variable_free(RZ_NULLABLE RzILVar *var);
 
 #ifdef __cplusplus
