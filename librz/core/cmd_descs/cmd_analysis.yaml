@@ -519,7 +519,7 @@ commands:
           - name: address
             type: RZ_CMD_ARG_TYPE_RZNUM
       - name: aezv
-        summary: Print the current status of the RzIL Virtual Machine
+        summary: Print or modify the current status of the RzIL Virtual Machine
         cname: rzil_vm_status
         type: RZ_CMD_DESC_TYPE_ARGV_MODES
         modes:
@@ -530,6 +530,9 @@ commands:
         args:
           - name: var_name
             type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+          - name: number
+            type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
   #####################################################
   # Keep this in sync with dr in cmd_debug.yaml from here...
