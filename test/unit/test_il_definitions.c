@@ -151,7 +151,7 @@ static bool test_rzil_effect() {
 
 static bool test_rzil_float_type() {
 	// 0[sign] 11111111[exp] 0000000...[frac]
-	RzILBitVector *s = rz_il_bv_new_from_ut32(32, 2139095040u);
+	RzILBitVector *s = rz_il_bv_new_from_ut64(32, 2139095040u);
 	RzILFloat *f = rzil_float_new(RZIL_FLOAT_IEEE754_32, s);
 	mu_assert_notnull(f, "Create Flaot");
 
