@@ -2,7 +2,6 @@ rz_crypto_sources = [
   'des.c',
   'crypto.c',
   'p/crypto_aes.c',
-  'p/crypto_aes_algo.c',
   'p/crypto_aes_cbc.c',
   'p/crypto_base64.c',
   'p/crypto_base91.c',
@@ -21,9 +20,12 @@ rz_crypto_sources = [
   'p/crypto_xor.c',
 ]
 
+nettle_proj = subproject('nettle')
+aes_dep = nettle_proj.get_variable('aes_dep')
+
 rz_crypto = library('rz_crypto', rz_crypto_sources,
   include_directories: [platform_inc],
-  dependencies: [rz_util_dep],
+  dependencies: [rz_util_dep, aes_dep],
   c_args: library_cflags,
   install: true,
   implicit_include_directories: false,

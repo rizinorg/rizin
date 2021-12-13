@@ -27,6 +27,10 @@ Files: .clang-format
 Copyright: 2021 RizinOrg <info@rizin.re>
 License: LGPL-3.0-only
 
+Files: subprojects/nettle/.clang-format
+Copyright: 2021 RizinOrg <info@rizin.re>
+License: LGPL-3.0-only
+
 Files: .gitattributes
 Copyright: 2021 RizinOrg <info@rizin.re>
 License: LGPL-3.0-only
