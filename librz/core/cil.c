@@ -485,7 +485,7 @@ static void rzil_print_register_unk(ILPrint *p) {
 RZ_IPI void rz_core_analysis_rzil_vm_status(RzCore *core, const char *var_name, RzOutputMode mode) {
 	RzAnalysisRzil *rzil = core->analysis->rzil;
 	if (!rzil || !rzil->vm) {
-		RZ_LOG_ERROR("RzIL: the VM is not initialized.\n")
+		RZ_LOG_ERROR("RzIL: the VM is not initialized.\n");
 		return;
 	}
 

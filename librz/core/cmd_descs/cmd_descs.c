@@ -103,6 +103,7 @@ static const RzCmdDescArg analysis_function_opcode_stat_args[2];
 static const RzCmdDescArg analysis_function_all_opcode_stat_args[2];
 static const RzCmdDescArg rzil_vm_step_args[2];
 static const RzCmdDescArg rzil_vm_step_with_events_args[2];
+static const RzCmdDescArg rzil_vm_step_until_addr_args[2];
 static const RzCmdDescArg rzil_vm_status_args[2];
 static const RzCmdDescArg analysis_regs_args[2];
 static const RzCmdDescArg analysis_regs_columns_args[2];
@@ -1839,6 +1840,20 @@ static const RzCmdDescArg rzil_vm_step_with_events_args[] = {
 static const RzCmdDescHelp rzil_vm_step_with_events_help = {
 	.summary = "Step N instructions within the RzIL VM and output VM changes (read & write)",
 	.args = rzil_vm_step_with_events_args,
+};
+
+static const RzCmdDescArg rzil_vm_step_until_addr_args[] = {
+	{
+		.name = "address",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp rzil_vm_step_until_addr_help = {
+	.summary = "Step until PC equals given address",
+	.args = rzil_vm_step_until_addr_args,
 };
 
 static const RzCmdDescArg rzil_vm_status_args[] = {
@@ -9612,6 +9627,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *rzil_vm_step_with_events_cd = rz_cmd_desc_argv_modes_new(core->rcmd, aez_cd, "aezse", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_rzil_vm_step_with_events_handler, &rzil_vm_step_with_events_help);
 	rz_warn_if_fail(rzil_vm_step_with_events_cd);
+
+	RzCmdDesc *rzil_vm_step_until_addr_cd = rz_cmd_desc_argv_new(core->rcmd, aez_cd, "aezsu", rz_rzil_vm_step_until_addr_handler, &rzil_vm_step_until_addr_help);
+	rz_warn_if_fail(rzil_vm_step_until_addr_cd);
 
 	RzCmdDesc *rzil_vm_status_cd = rz_cmd_desc_argv_modes_new(core->rcmd, aez_cd, "aezv", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_rzil_vm_status_handler, &rzil_vm_status_help);
 	rz_warn_if_fail(rzil_vm_status_cd);

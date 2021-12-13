@@ -1,0 +1,12 @@
+NAME=aezsu: RzIL step until
+FILE=bins/bf/hello-ok.bf
+CMDS=<<EOF
+s 0
+aezi
+aezsu 0x10
+aezv
+EOF
+EXPECT=<<EOF
+ PC: 0x0000000000000010 ptr: 0x0000000000000001
+EOF
+RUN
