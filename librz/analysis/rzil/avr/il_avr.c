@@ -52,6 +52,12 @@
 		return v; \
 	}
 
+#define avr_return_val_if_invalid_indirect_address(x, v) \
+	if (x != 'X' && x != 'Y' && x != 'Z') { \
+		RZ_LOG_ERROR("RzIL: AVR: invalid indirect address register %c\n", x); \
+		return v; \
+	}
+
 #define avr_il_new_imm(imm) rz_il_op_new_bitv_from_ut64(AVR_REG_SIZE, (imm))
 #define avr_il_new_reg(reg) rz_il_op_new_var(avr_registers[reg])
 
@@ -126,12 +132,12 @@
 		(name) = rz_il_op_new_perform(_hook); \
 	} while (0)
 
-#define avr_il_get_indirect_address_x() avr_il_get_indirect_address_reg(27, 26)
-#define avr_il_get_indirect_address_y() avr_il_get_indirect_address_reg(29, 28)
-#define avr_il_get_indirect_address_z() avr_il_get_indirect_address_reg(31, 30)
-#define avr_il_inc_indirect_address_x() avr_il_inc_indirect_address_reg(27, 26)
-#define avr_il_inc_indirect_address_y() avr_il_inc_indirect_address_reg(29, 28)
-#define avr_il_inc_indirect_address_z() avr_il_inc_indirect_address_reg(31, 30)
+#define avr_il_get_indirect_address_x()          avr_il_get_indirect_address_reg(27, 26)
+#define avr_il_get_indirect_address_y()          avr_il_get_indirect_address_reg(29, 28)
+#define avr_il_get_indirect_address_z()          avr_il_get_indirect_address_reg(31, 30)
+#define avr_il_update_indirect_address_x(n, add) avr_il_update_indirect_address_reg(27, 26, n, add)
+#define avr_il_update_indirect_address_y(n, add) avr_il_update_indirect_address_reg(29, 28, n, add)
+#define avr_il_update_indirect_address_z(n, add) avr_il_update_indirect_address_reg(31, 30, n, add)
 
 typedef RzPVector *(*avr_rzil_op)(AVROp *aop, RzAnalysis *analysis);
 
@@ -148,14 +154,18 @@ static RzILOp *avr_il_get_indirect_address_reg(ut16 reg_high, ut16 reg_low) {
 	return rz_il_op_new_append(high, low); // addr
 }
 
-static RzILOp *avr_il_inc_indirect_address_reg(ut16 reg_high, ut16 reg_low) {
+static RzILOp *avr_il_update_indirect_address_reg(ut16 reg_high, ut16 reg_low, ut64 n, bool add) {
 	RzILOp *iar, *one, *let;
 	const char *high = avr_registers[reg_high]; // rH
 	const char *low = avr_registers[reg_low]; // rL
 
 	iar = avr_il_get_indirect_address_reg(reg_high, reg_low);
-	one = rz_il_op_new_bitv_from_ut64(AVR_IND_SIZE, 1);
-	iar = rz_il_op_new_add(iar, one);
+	one = rz_il_op_new_bitv_from_ut64(AVR_IND_SIZE, n);
+	if (add) {
+		iar = rz_il_op_new_add(iar, one);
+	} else {
+		iar = rz_il_op_new_sub(iar, one);
+	}
 	let = rz_il_op_new_let(high, low, iar);
 	return rz_il_op_new_perform(let);
 }
@@ -176,75 +186,6 @@ static RzILOp *avr_il_dup_value(RzILOp *op) {
 static RzILOp *avr_il_sreg_as_imm(const char *sreg_bit) {
 	RzILOp *bit = rz_il_op_new_var(sreg_bit);
 	return rz_il_op_new_cast(AVR_REG_SIZE, 0, bit);
-}
-
-static RzPVector *avr_il_nop(AVROp *aop, RzAnalysis *analysis) {
-	return NULL; // rz_il_make_nop_list();
-}
-
-static RzPVector *avr_il_brcc(AVROp *aop, RzAnalysis *analysis) {
-	// branch if C = 0
-	ut16 k = aop->param[0];
-
-	RzILOp *brop = NULL;
-	RzILOp *bit = rz_il_op_new_var(AVR_SREG_C);
-	RzILOp *inv = rz_il_op_new_bool_inv(bit);
-
-	avr_il_branch_when(brop, k - aop->size, inv);
-	return rz_il_make_oplist(1, brop);
-}
-
-static RzPVector *avr_il_brcs(AVROp *aop, RzAnalysis *analysis) {
-	// branch if C = 1
-	ut16 k = aop->param[0];
-
-	RzILOp *brop = NULL;
-	RzILOp *bit = rz_il_op_new_var(AVR_SREG_C);
-
-	avr_il_branch_when(brop, k - aop->size, bit);
-	return rz_il_make_oplist(1, brop);
-}
-
-static RzPVector *avr_il_breq(AVROp *aop, RzAnalysis *analysis) {
-	// branch if Z = 1
-	ut16 k = aop->param[0];
-
-	RzILOp *brop = NULL;
-	RzILOp *bit = rz_il_op_new_var(AVR_SREG_Z);
-
-	avr_il_branch_when(brop, k - aop->size, bit);
-	return rz_il_make_oplist(1, brop);
-}
-
-static RzPVector *avr_il_brne(AVROp *aop, RzAnalysis *analysis) {
-	// branch if Z = 0
-	ut16 k = aop->param[0];
-
-	RzILOp *brop = NULL;
-	RzILOp *bit = rz_il_op_new_var(AVR_SREG_Z);
-	RzILOp *inv = rz_il_op_new_bool_inv(bit);
-
-	avr_il_branch_when(brop, k - aop->size, inv);
-	return rz_il_make_oplist(1, brop);
-}
-
-static RzPVector *avr_il_clr(AVROp *aop, RzAnalysis *analysis) {
-	// Rd = Rd ^ Rd -> S=0, V=0, N=0, Z=1
-	ut16 Rd = aop->param[0];
-	avr_return_val_if_invalid_gpr(Rd, NULL);
-
-	RzILOp *clr = NULL;
-	RzILOp *sreg_s = NULL;
-	RzILOp *sreg_v = NULL;
-	RzILOp *sreg_n = NULL;
-	RzILOp *sreg_z = NULL;
-	avr_il_assign_imm(clr, avr_registers[Rd], 0);
-	avr_il_assign_bool(sreg_s, AVR_SREG_S, 0);
-	avr_il_assign_bool(sreg_v, AVR_SREG_V, 0);
-	avr_il_assign_bool(sreg_n, AVR_SREG_N, 0);
-	avr_il_assign_bool(sreg_z, AVR_SREG_Z, 1);
-
-	return rz_il_make_oplist(5, clr, sreg_s, sreg_v, sreg_n, sreg_z);
 }
 
 static RzILOp *avr_il_check_zero_flag(RzILOp *x, RzILOp *y, bool add_carry) {
@@ -432,6 +373,91 @@ static RzILOp *avr_il_check_signess_flag() {
 	return rz_il_op_new_perform(set);
 }
 
+static inline RzILOp *avr_il_set_sreg_bit_from_reg(ut16 Rr, ut8 bit_val, const char *bit_reg) {
+	RzILOp *reg = rz_il_op_new_var(avr_registers[Rr]);
+	RzILOp *bit = rz_il_op_new_bitv_from_ut64(AVR_REG_SIZE, bit_val);
+	RzILOp *and = rz_il_op_new_log_and(reg, bit);
+	RzILOp *set = rz_il_op_new_set(bit_reg, and);
+	return rz_il_op_new_perform(set);
+}
+
+static const char *resolve_mmio(RzAnalysis *analysis, ut16 address) {
+	RzArchProfile *profile = analysis->arch_target ? analysis->arch_target->profile : NULL;
+	if (!profile) {
+		return NULL;
+	}
+	return rz_arch_profile_resolve_mmio(profile, address);
+}
+
+static RzPVector *avr_il_nop(AVROp *aop, RzAnalysis *analysis) {
+	return NULL; // rz_il_make_nop_list();
+}
+
+static RzPVector *avr_il_brcc(AVROp *aop, RzAnalysis *analysis) {
+	// branch if C = 0
+	ut16 k = aop->param[0];
+
+	RzILOp *brop = NULL;
+	RzILOp *bit = rz_il_op_new_var(AVR_SREG_C);
+	RzILOp *inv = rz_il_op_new_bool_inv(bit);
+
+	avr_il_branch_when(brop, k - aop->size, inv);
+	return rz_il_make_oplist(1, brop);
+}
+
+static RzPVector *avr_il_brcs(AVROp *aop, RzAnalysis *analysis) {
+	// branch if C = 1
+	ut16 k = aop->param[0];
+
+	RzILOp *brop = NULL;
+	RzILOp *bit = rz_il_op_new_var(AVR_SREG_C);
+
+	avr_il_branch_when(brop, k - aop->size, bit);
+	return rz_il_make_oplist(1, brop);
+}
+
+static RzPVector *avr_il_breq(AVROp *aop, RzAnalysis *analysis) {
+	// branch if Z = 1
+	ut16 k = aop->param[0];
+
+	RzILOp *brop = NULL;
+	RzILOp *bit = rz_il_op_new_var(AVR_SREG_Z);
+
+	avr_il_branch_when(brop, k - aop->size, bit);
+	return rz_il_make_oplist(1, brop);
+}
+
+static RzPVector *avr_il_brne(AVROp *aop, RzAnalysis *analysis) {
+	// branch if Z = 0
+	ut16 k = aop->param[0];
+
+	RzILOp *brop = NULL;
+	RzILOp *bit = rz_il_op_new_var(AVR_SREG_Z);
+	RzILOp *inv = rz_il_op_new_bool_inv(bit);
+
+	avr_il_branch_when(brop, k - aop->size, inv);
+	return rz_il_make_oplist(1, brop);
+}
+
+static RzPVector *avr_il_clr(AVROp *aop, RzAnalysis *analysis) {
+	// Rd = Rd ^ Rd -> S=0, V=0, N=0, Z=1
+	ut16 Rd = aop->param[0];
+	avr_return_val_if_invalid_gpr(Rd, NULL);
+
+	RzILOp *clr = NULL;
+	RzILOp *sreg_s = NULL;
+	RzILOp *sreg_v = NULL;
+	RzILOp *sreg_n = NULL;
+	RzILOp *sreg_z = NULL;
+	avr_il_assign_imm(clr, avr_registers[Rd], 0);
+	avr_il_assign_bool(sreg_s, AVR_SREG_S, 0);
+	avr_il_assign_bool(sreg_v, AVR_SREG_V, 0);
+	avr_il_assign_bool(sreg_n, AVR_SREG_N, 0);
+	avr_il_assign_bool(sreg_z, AVR_SREG_Z, 1);
+
+	return rz_il_make_oplist(5, clr, sreg_s, sreg_v, sreg_n, sreg_z);
+}
+
 static RzPVector *avr_il_cpi(AVROp *aop, RzAnalysis *analysis) {
 	// compare Rd with Imm and sets the SREG flags
 	// changes H|S|V|N|Z|C
@@ -563,24 +589,8 @@ static RzPVector *avr_il_lpm(AVROp *aop, RzAnalysis *analysis) {
 	if (!post_inc) {
 		return rz_il_make_oplist(1, lpm);
 	}
-	RzILOp *zplus = avr_il_inc_indirect_address_z();
+	RzILOp *zplus = avr_il_update_indirect_address_z(1, true);
 	return rz_il_make_oplist(2, lpm, zplus);
-}
-
-static inline RzILOp *avr_il_set_sreg_bit_from_reg(ut16 Rr, ut8 bit_val, const char *bit_reg) {
-	RzILOp *reg = rz_il_op_new_var(avr_registers[Rr]);
-	RzILOp *bit = rz_il_op_new_bitv_from_ut64(AVR_REG_SIZE, bit_val);
-	RzILOp *and = rz_il_op_new_log_and(reg, bit);
-	RzILOp *set = rz_il_op_new_set(bit_reg, and);
-	return rz_il_op_new_perform(set);
-}
-
-static const char *resolve_mmio(RzAnalysis *analysis, ut16 address) {
-	RzArchProfile *profile = analysis->arch_target ? analysis->arch_target->profile : NULL;
-	if (!profile) {
-		return NULL;
-	}
-	return rz_arch_profile_resolve_mmio(profile, address);
 }
 
 static RzPVector *avr_il_out(AVROp *aop, RzAnalysis *analysis) {
@@ -640,6 +650,62 @@ static RzPVector *avr_il_ser(AVROp *aop, RzAnalysis *analysis) {
 	RzILOp *ser = NULL;
 	avr_il_assign_imm(ser, avr_registers[Rd], 0xFF);
 	return rz_il_make_oplist(1, ser);
+}
+
+static RzPVector *avr_il_st(AVROp *aop, RzAnalysis *analysis) {
+	RzILOp *st, *src, *addr, *post_op;
+	// *((ut8*)X) = Rd where X = (r27 << 8) | r26;
+	// *((ut8*)Y) = Rd where Y = (r29 << 8) | r28;
+	// *((ut8*)Z) = Rd where Z = (r31 << 8) | r30;
+	// When Z+ , Z is incremented by 1 after the execution (applies also to X and Y).
+	// When -X , X is decremented by 1 after the execution (applies also to Z and Y).
+	// When Y+q, Y is incremented by q after the execution (applies also to X and Z).
+
+	// undefined behaviour per ISA below
+	// st X+, r26 ; st X+, r27 ; st -X, r26 ; st -X, r27
+	// st Y+, r28 ; st Y+, r29 ; st -Y, r28 ; st -Y, r29
+	// st Z+, r30 ; st Z+, r31 ; st -Z, r30 ; st -Z, r31
+
+	ut16 Rd = aop->param[0];
+	char Rr = (char)aop->param[1]; // 'X' or 'Y' or 'Z'
+	char Op = (char)aop->param[2]; //  0  or '+' or '-'
+	ut16 q = aop->param[3];
+
+	avr_return_val_if_invalid_gpr(Rd, NULL);
+	avr_return_val_if_invalid_indirect_address(Rr, NULL);
+
+	switch (Rr) {
+	case 'X':
+		addr = avr_il_get_indirect_address_x();
+		break;
+	case 'Y':
+		addr = avr_il_get_indirect_address_y();
+		break;
+	default: // 'Z'
+		addr = avr_il_get_indirect_address_z();
+		break;
+	}
+
+	src = avr_il_new_reg(Rd);
+	st = rz_il_op_new_store(0, addr, src);
+
+	if (Op != '+' && Op != '-') {
+		return rz_il_make_oplist(1, st);
+	}
+
+	switch (Rr) {
+	case 'X':
+		post_op = avr_il_update_indirect_address_x(q, Op == '+');
+		break;
+	case 'Y':
+		post_op = avr_il_update_indirect_address_y(q, Op == '+');
+		break;
+	default: // 'Z'
+		post_op = avr_il_update_indirect_address_z(q, Op == '+');
+		break;
+	}
+
+	return rz_il_make_oplist(2, st, post_op);
 }
 
 static avr_rzil_op avr_ops[AVR_OP_SIZE] = {
@@ -748,7 +814,7 @@ static avr_rzil_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_nop, /* AVR_OP_SEZ */
 	avr_il_nop, /* AVR_OP_SLEEP */
 	avr_il_nop, /* AVR_OP_SPM */
-	avr_il_nop, /* AVR_OP_ST */
+	avr_il_st, /* AVR_OP_ST */
 	avr_il_nop, /* AVR_OP_STD */
 	avr_il_nop, /* AVR_OP_STS */
 	avr_il_nop, /* AVR_OP_SUB */

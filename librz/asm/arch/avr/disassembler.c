@@ -185,6 +185,7 @@ static ut32 avr_dddddcccc_zp(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, A
 	aop->param[0] = Rd;
 	aop->param[1] = 'Z';
 	aop->param[2] = '+';
+	aop->param[3] = 1;
 	rz_strbuf_setf(sb, "%s r%u, Z+", name, Rd);
 	return 2;
 }
@@ -233,6 +234,7 @@ static ut32 avr_dddddcccc_xp(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, A
 	aop->param[0] = Rd;
 	aop->param[1] = 'X';
 	aop->param[2] = '+';
+	aop->param[3] = 1;
 	rz_strbuf_setf(sb, "%s r%u, X+", name, Rd);
 	return 2;
 }
@@ -245,6 +247,7 @@ static ut32 avr_dddddcccc_xm(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, A
 	aop->param[0] = Rd;
 	aop->param[1] = 'X';
 	aop->param[2] = '-';
+	aop->param[3] = 1;
 	rz_strbuf_setf(sb, "%s r%u, -X", name, Rd);
 	return 2;
 }
@@ -268,6 +271,7 @@ static ut32 avr_dddddcccc_yp(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, A
 	aop->param[0] = Rd;
 	aop->param[1] = 'Y';
 	aop->param[2] = '+';
+	aop->param[3] = 1;
 	rz_strbuf_setf(sb, "%s r%u, Y+", name, Rd);
 	return 2;
 }
@@ -280,6 +284,7 @@ static ut32 avr_dddddcccc_ym(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, A
 	aop->param[0] = Rd;
 	aop->param[1] = 'Y';
 	aop->param[2] = '-';
+	aop->param[3] = 1;
 	rz_strbuf_setf(sb, "%s r%u, -Y", name, Rd);
 	return 2;
 }
@@ -308,6 +313,7 @@ static ut32 avr_dddddcccc_zm(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, A
 	aop->param[0] = Rd;
 	aop->param[1] = 'Z';
 	aop->param[2] = '-';
+	aop->param[3] = 1;
 	rz_strbuf_setf(sb, "%s r%u, -Z", name, Rd);
 	return 2;
 }
@@ -323,7 +329,7 @@ static ut32 avr_qcqqcdddddcqqq_z(cchar* name, AVROpMnem id, ut16 data[2], ut64 p
 	aop->param[0] = Rd;
 	aop->param[1] = 'Z';
 	aop->param[2] = '+';
-	aop->param[2] = q;
+	aop->param[3] = q;
 	rz_strbuf_setf(sb, "%s r%u, Z+%u", name, Rd, q);
 	return 2;
 }
@@ -448,8 +454,8 @@ static ut32 avr_rrrrrcccc_x(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AV
 	ut16 Rr = ((data[0] & 0x01F0) >> 4);
 
 	aop->mnemonic = id;
-	aop->param[0] = 'X';
-	aop->param[1] = Rr;
+	aop->param[0] = Rr;
+	aop->param[1] = 'X';
 	rz_strbuf_setf(sb, "%s X, r%u", name, Rr);
 	return 2;
 }
@@ -459,10 +465,10 @@ static ut32 avr_rrrrrcccc_xp(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, A
 	ut16 Rr = ((data[0] & 0x01F0) >> 4);
 
 	aop->mnemonic = id;
-	aop->param[0] = 'X';
-	aop->param[1] = '+';
-	aop->param[2] = 1;
-	aop->param[3] = Rr;
+	aop->param[0] = Rr;
+	aop->param[1] = 'X';
+	aop->param[2] = '+';
+	aop->param[3] = 1;
 	rz_strbuf_setf(sb, "%s X+1, r%u", name, Rr);
 	return 2;
 }
@@ -472,9 +478,10 @@ static ut32 avr_rrrrrcccc_xm(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, A
 	ut16 Rr = ((data[0] & 0x01F0) >> 4);
 
 	aop->mnemonic = id;
-	aop->param[0] = 'X';
-	aop->param[1] = '-';
-	aop->param[2] = Rr;
+	aop->param[0] = Rr;
+	aop->param[1] = 'X';
+	aop->param[2] = '-';
+	aop->param[3] = 1;
 	rz_strbuf_setf(sb, "%s -X, r%u", name, Rr);
 	return 2;
 }
@@ -484,8 +491,8 @@ static ut32 avr_rrrrrcccc_y(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AV
 	ut16 Rr = ((data[0] & 0x01F0) >> 4);
 
 	aop->mnemonic = id;
-	aop->param[0] = 'Y';
-	aop->param[1] = Rr;
+	aop->param[0] = Rr;
+	aop->param[1] = 'Y';
 	rz_strbuf_setf(sb, "%s Y, r%u", name, Rr);
 	return 2;
 }
@@ -495,10 +502,10 @@ static ut32 avr_rrrrrcccc_yp(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, A
 	ut16 Rr = ((data[0] & 0x01F0) >> 4);
 
 	aop->mnemonic = id;
-	aop->param[0] = 'Y';
-	aop->param[1] = '+';
-	aop->param[2] = 1;
-	aop->param[3] = Rr;
+	aop->param[0] = Rr;
+	aop->param[1] = 'Y';
+	aop->param[2] = '+';
+	aop->param[3] = 1;
 	rz_strbuf_setf(sb, "%s Y+1, r%u", name, Rr);
 	return 2;
 }
@@ -508,9 +515,10 @@ static ut32 avr_rrrrrcccc_ym(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, A
 	ut16 Rr = ((data[0] & 0x01F0) >> 4);
 
 	aop->mnemonic = id;
-	aop->param[0] = 'Y';
-	aop->param[1] = '-';
-	aop->param[2] = Rr;
+	aop->param[0] = Rr;
+	aop->param[1] = 'Y';
+	aop->param[2] = '-';
+	aop->param[3] = 1;
 	rz_strbuf_setf(sb, "%s -Y, r%u", name, Rr);
 	return 2;
 }
@@ -523,10 +531,10 @@ static ut32 avr_qcqqcrrrrrcqqq_y(cchar* name, AVROpMnem id, ut16 data[2], ut64 p
 	q |= ((data[0] & 0x2000) >> 8);
 
 	aop->mnemonic = id;
-	aop->param[0] = 'Y';
-	aop->param[1] = '+';
-	aop->param[2] = q;
-	aop->param[3] = Rr;
+	aop->param[0] = Rr;
+	aop->param[1] = 'Y';
+	aop->param[2] = '+';
+	aop->param[3] = q;
 	rz_strbuf_setf(sb, "%s Y+%u, r%u", name, q, Rr);
 	return 2;
 }
@@ -536,8 +544,8 @@ static ut32 avr_rrrrrcccc_z(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, AV
 	ut16 Rr = ((data[0] & 0x01F0) >> 4);
 
 	aop->mnemonic = id;
-	aop->param[0] = 'Z';
-	aop->param[1] = Rr;
+	aop->param[0] = Rr;
+	aop->param[1] = 'Z';
 	rz_strbuf_setf(sb, "%s Z, r%u", name, Rr);
 	return 2;
 }
@@ -547,10 +555,10 @@ static ut32 avr_rrrrrcccc_zp(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, A
 	ut16 Rr = ((data[0] & 0x01F0) >> 4);
 
 	aop->mnemonic = id;
-	aop->param[0] = 'Z';
-	aop->param[1] = '+';
-	aop->param[2] = 1;
-	aop->param[3] = Rr;
+	aop->param[0] = Rr;
+	aop->param[1] = 'Z';
+	aop->param[2] = '+';
+	aop->param[3] = 1;
 	rz_strbuf_setf(sb, "%s Z+1, r%u", name, Rr);
 	return 2;
 }
@@ -560,9 +568,10 @@ static ut32 avr_rrrrrcccc_zm(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, A
 	ut16 Rr = ((data[0] & 0x01F0) >> 4);
 
 	aop->mnemonic = id;
-	aop->param[0] = 'Z';
-	aop->param[1] = '-';
-	aop->param[2] = Rr;
+	aop->param[0] = Rr;
+	aop->param[1] = 'Z';
+	aop->param[2] = '-';
+	aop->param[3] = 1;
 	rz_strbuf_setf(sb, "%s -Z, r%u", name, Rr);
 	return 2;
 }
@@ -575,10 +584,10 @@ static ut32 avr_qcqqcrrrrrcqqq_z(cchar* name, AVROpMnem id, ut16 data[2], ut64 p
 	q |= ((data[0] & 0x2000) >> 8);
 
 	aop->mnemonic = id;
-	aop->param[0] = 'Z';
-	aop->param[1] = '+';
-	aop->param[2] = q;
-	aop->param[3] = Rr;
+	aop->param[0] = Rr;
+	aop->param[1] = 'Z';
+	aop->param[2] = '+';
+	aop->param[3] = q;
 	rz_strbuf_setf(sb, "%s Z+%u, r%u", name, q, Rr);
 	return 2;
 }
