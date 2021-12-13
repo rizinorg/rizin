@@ -17,6 +17,8 @@
 #define AVR_RAMPZ     "RAMPZ"
 #define AVR_RAMPD     "RAMPD"
 #define AVR_EIND      "EIND"
+#define AVR_LET_RES   "RES"
+#define AVR_LET_IND   "IND"
 
 // SREG = I|T|H|S|V|N|Z|C
 // bits   0|1|2|3|4|5|6|7
@@ -132,12 +134,12 @@
 		(name) = rz_il_op_new_perform(_hook); \
 	} while (0)
 
-#define avr_il_get_indirect_address_x()          avr_il_get_indirect_address_reg(27, 26)
-#define avr_il_get_indirect_address_y()          avr_il_get_indirect_address_reg(29, 28)
-#define avr_il_get_indirect_address_z()          avr_il_get_indirect_address_reg(31, 30)
-#define avr_il_update_indirect_address_x(n, add) avr_il_update_indirect_address_reg(27, 26, n, add)
-#define avr_il_update_indirect_address_y(n, add) avr_il_update_indirect_address_reg(29, 28, n, add)
-#define avr_il_update_indirect_address_z(n, add) avr_il_update_indirect_address_reg(31, 30, n, add)
+#define avr_il_get_indirect_address_x()             avr_il_get_indirect_address_reg(27, 26)
+#define avr_il_get_indirect_address_y()             avr_il_get_indirect_address_reg(29, 28)
+#define avr_il_get_indirect_address_z()             avr_il_get_indirect_address_reg(31, 30)
+#define avr_il_update_indirect_address_x(l, n, add) avr_il_update_indirect_address_reg(l, 27, 26, n, add)
+#define avr_il_update_indirect_address_y(l, n, add) avr_il_update_indirect_address_reg(l, 29, 28, n, add)
+#define avr_il_update_indirect_address_z(l, n, add) avr_il_update_indirect_address_reg(l, 31, 30, n, add)
 
 typedef RzPVector *(*avr_rzil_op)(AVROp *aop, RzAnalysis *analysis);
 
@@ -154,20 +156,33 @@ static RzILOp *avr_il_get_indirect_address_reg(ut16 reg_high, ut16 reg_low) {
 	return rz_il_op_new_append(high, low); // addr
 }
 
-static RzILOp *avr_il_update_indirect_address_reg(ut16 reg_high, ut16 reg_low, ut64 n, bool add) {
-	RzILOp *iar, *one, *let;
-	const char *high = avr_registers[reg_high]; // rH
-	const char *low = avr_registers[reg_low]; // rL
+static RzILOp *avr_il_update_indirect_address_reg(const char *local, ut16 reg_high, ut16 reg_low, ut64 n, bool add) {
+	RzILOp *iar, *num, *seq, *set_h, *set_l;
+	const char *Rh = avr_registers[reg_high]; // register high
+	const char *Rl = avr_registers[reg_low]; // register low
 
-	iar = avr_il_get_indirect_address_reg(reg_high, reg_low);
-	one = rz_il_op_new_bitv_from_ut64(AVR_IND_SIZE, n);
+	iar = rz_il_op_new_var(local);
+	num = rz_il_op_new_bitv_from_ut64(AVR_IND_SIZE, n);
 	if (add) {
-		iar = rz_il_op_new_add(iar, one);
+		iar = rz_il_op_new_add(iar, num);
 	} else {
-		iar = rz_il_op_new_sub(iar, one);
+		iar = rz_il_op_new_sub(iar, num);
 	}
-	let = rz_il_op_new_let(high, low, iar);
-	return rz_il_op_new_perform(let);
+	set_h = rz_il_op_new_cast(AVR_REG_SIZE, -8, iar);
+	set_h = rz_il_op_new_set(Rh, set_h);
+
+	iar = rz_il_op_new_var(local);
+	num = rz_il_op_new_bitv_from_ut64(AVR_IND_SIZE, n);
+	if (add) {
+		iar = rz_il_op_new_add(iar, num);
+	} else {
+		iar = rz_il_op_new_sub(iar, num);
+	}
+	set_l = rz_il_op_new_cast(AVR_REG_SIZE, 0, iar);
+	set_l = rz_il_op_new_set(Rl, set_l);
+
+	seq = rz_il_op_new_seq(set_h, set_l);
+	return rz_il_op_new_perform(seq);
 }
 
 static RzILOp *avr_il_dup_value(RzILOp *op) {
@@ -188,15 +203,11 @@ static RzILOp *avr_il_sreg_as_imm(const char *sreg_bit) {
 	return rz_il_op_new_cast(AVR_REG_SIZE, 0, bit);
 }
 
-static RzILOp *avr_il_check_zero_flag(RzILOp *x, RzILOp *y, bool add_carry) {
+static RzILOp *avr_il_check_zero_flag(const char *local, bool and_zero) {
 	// set Z to 1 if !(x - y) or !(x - y - C)
-	RzILOp *_sub = rz_il_op_new_sub(x, y);
-	if (add_carry) {
-		RzILOp *C = avr_il_sreg_as_imm(AVR_SREG_C);
-		_sub = rz_il_op_new_sub(_sub, C);
-	}
-	RzILOp *_inv = rz_il_op_new_bool_inv(_sub);
-	if (add_carry) {
+	RzILOp *_alu = rz_il_op_new_var(local);
+	RzILOp *_inv = rz_il_op_new_bool_inv(_alu);
+	if (and_zero) {
 		RzILOp *Z = avr_il_sreg_as_imm(AVR_SREG_Z);
 		_inv = rz_il_op_new_bool_and(_inv, Z);
 	}
@@ -204,39 +215,25 @@ static RzILOp *avr_il_check_zero_flag(RzILOp *x, RzILOp *y, bool add_carry) {
 	return rz_il_op_new_perform(_set);
 }
 
-static RzILOp *avr_il_check_half_carry_flag(RzILOp *x, RzILOp *y, bool add_carry) {
+static RzILOp *avr_il_check_half_carry_flag(const char *local, RzILOp *x, RzILOp *y) {
 	RzILOp *Rd, *Rr, *bit, *not0, *Res, *and0, *and1, *and2, *or0;
 	// Rd = X, Rr = Y, Res = Rd - Rr or Res = Rd - Rr - C
 	// H: (!Rd3 & Rr3) | (Rr3 & Res3) | (Res3 & !Rd3)
 	// Set if there was a carry from bit 3; cleared otherwise
 
-	Rd = avr_il_dup_value(x);
 	Rr = avr_il_dup_value(y);
 	// and0 = (!Rd3 & Rr3)
-	not0 = rz_il_op_new_log_not(Rd);
+	Rd = avr_il_dup_value(x);
+	not0 = rz_il_op_new_log_not(Rd); // !Rd
 	and0 = rz_il_op_new_log_and(not0, Rr);
 
-	Rd = avr_il_dup_value(x);
-	Rr = avr_il_dup_value(y);
 	// and1 = (Rr3 & Res3)
-	Res = rz_il_op_new_sub(Rd, Rr);
-	if (add_carry) {
-		// Res = Rd - Rr - C
-		RzILOp *C = avr_il_sreg_as_imm(AVR_SREG_C);
-		Res = rz_il_op_new_sub(Res, C);
-	}
-	Rr = avr_il_dup_value(y);
-	and1 = rz_il_op_new_log_and(Rr, Res);
+	Res = rz_il_op_new_var(local);
+	and1 = rz_il_op_new_log_and(y, Res);
 
 	// and2 = (Res3 & !Rd3)
-	Rd = avr_il_dup_value(x);
-	Res = rz_il_op_new_sub(x, y);
-	if (add_carry) {
-		// Res = Rd - Rr - C
-		RzILOp *C = avr_il_sreg_as_imm(AVR_SREG_C);
-		Res = rz_il_op_new_sub(Res, C);
-	}
-	not0 = rz_il_op_new_log_not(Rd);
+	Res = rz_il_op_new_var(local);
+	not0 = rz_il_op_new_log_not(x);
 	and2 = rz_il_op_new_log_and(Res, not0);
 
 	// or = (and0 | and1)
@@ -252,103 +249,69 @@ static RzILOp *avr_il_check_half_carry_flag(RzILOp *x, RzILOp *y, bool add_carry
 	return rz_il_op_new_perform(set);
 }
 
-static RzILOp *avr_il_check_two_complement_overflow_flag(RzILOp *x, RzILOp *y, bool add_carry) {
-	RzILOp *Rd, *Rr, *bit, *not0, *not1, *Res, *and0, *and1, *and, *or0;
+static RzILOp *avr_il_check_two_complement_overflow_flag(const char *local, RzILOp *x, RzILOp *y) {
+	RzILOp *Rd, *Rr, *bit, *not0, *not1, *Res, *and0, *and1, *or0;
 	// Rd = X, Rr = Y, Res = Rd - Rr or Res = Rd - Rr - C
 	// V: (Rd7 & !Rr7 & !Res7) | (!Rd7 & Rr7 & Res7)
 	// Set if two’s complement overflow resulted from the operation; cleared otherwise.
 
-	Rd = avr_il_dup_value(x);
-	Rr = avr_il_dup_value(y);
 	// and0 = Rd7 & !Rr7 & !Res7
-	Res = rz_il_op_new_sub(Rd, Rr); // Res = Rd - Rr
-	if (add_carry) {
-		// Res = Rd - Rr - C
-		RzILOp *C = avr_il_sreg_as_imm(AVR_SREG_C);
-		Res = rz_il_op_new_sub(Res, C);
-	}
+	Res = rz_il_op_new_var(local);
 	Rr = avr_il_dup_value(y);
 	not0 = rz_il_op_new_log_not(Rr); // !Rr
 	not1 = rz_il_op_new_log_not(Res); // !Res
 	Rd = avr_il_dup_value(x);
-	and = rz_il_op_new_log_and(Rd, not0); // Rd & !Rr
-	and0 = rz_il_op_new_log_and(and, not1); // Rd & !Rr & !Res
+	and0 = rz_il_op_new_log_and(Rd, not0); // Rd & !Rr
+	and0 = rz_il_op_new_log_and(and0, not1); // Rd & !Rr & !Res
 
-	Rd = avr_il_dup_value(x);
-	Rr = avr_il_dup_value(y);
-	// and1 = Rd7 & !Rr7 & !Res7
-	Res = rz_il_op_new_sub(Rd, Rr); // Res = Rd - Rr
-	if (add_carry) {
-		// Res = Rd - Rr - C
-		RzILOp *C = avr_il_sreg_as_imm(AVR_SREG_C);
-		Res = rz_il_op_new_sub(Res, C);
-	}
-	not0 = rz_il_op_new_log_not(y); // !Rr
-	not1 = rz_il_op_new_log_not(Res); // !Res
-	and = rz_il_op_new_log_and(x, not0); // Rd & !Rr
-	and1 = rz_il_op_new_log_and(and, not1); // Rd & !Rr & !Res
+	// and1 = !Rd7 & Rr7 & Res7
+	Res = rz_il_op_new_var(local);
+	not0 = rz_il_op_new_log_not(x); // !Rd
+	and1 = rz_il_op_new_log_and(not0, y); // !Rd & Rr
+	and1 = rz_il_op_new_log_and(and1, Res); // !Rd & Rr & Res
 
 	// or = and0 | and1
 	or0 = rz_il_op_new_log_or(and0, and1);
 
 	// extract bit 7 from or
 	bit = avr_il_new_imm(1u << 7);
-	and = rz_il_op_new_log_and(or0, bit);
-	RzILOp *set = rz_il_op_new_set(AVR_SREG_V, and);
+	and0 = rz_il_op_new_log_and(or0, bit);
+	RzILOp *set = rz_il_op_new_set(AVR_SREG_V, and0);
 	return rz_il_op_new_perform(set);
 }
 
-static RzILOp *avr_il_check_negative_flag(RzILOp *x, RzILOp *y, bool add_carry) {
+static RzILOp *avr_il_check_negative_flag(const char *local) {
 	// Res = Rd - Rr
 	// N: Res7 is set
 	// Set if MSB of the result is set; cleared otherwise.
-	RzILOp *Res = rz_il_op_new_sub(x, y);
-	if (add_carry) {
-		// Res = Rd - Rr - C
-		RzILOp *C = avr_il_sreg_as_imm(AVR_SREG_C);
-		Res = rz_il_op_new_sub(Res, C);
-	}
 
 	// extract bit 7 from Res
+	RzILOp *Res = rz_il_op_new_var(local);
 	RzILOp *bit = avr_il_new_imm(1u << 7);
 	RzILOp *and = rz_il_op_new_log_and(Res, bit);
 	RzILOp *set = rz_il_op_new_set(AVR_SREG_N, and);
 	return rz_il_op_new_perform(set);
 }
 
-static RzILOp *avr_il_check_carry_flag(RzILOp *x, RzILOp *y, bool add_carry) {
+static RzILOp *avr_il_check_carry_flag(const char *local, RzILOp *x, RzILOp *y) {
 	RzILOp *Rd, *Rr, *bit, *not0, *Res, *and0, *and1, *and2, *or0;
-	// Rd = X, Rr = Y, Res = Rd - Rr
-	// C: (!Rd7 & Rr7) | (Rr7 & Res7) | (Res7 & !Rd7)
-	// Set if the absolute value of Rr is larger than the absolute value of Rd; cleared otherwise
+	// Rd = X, Rr = Y, Res = Rd - Rr or Res = Rd - Rr - C
+	// H: (!Rd7 & Rr7) | (Rr7 & Res7) | (Res7 & !Rd7)
+	// Set if there was a carry from bit 7; cleared otherwise
 
-	Rd = avr_il_dup_value(x);
 	Rr = avr_il_dup_value(y);
 	// and0 = (!Rd7 & Rr7)
-	not0 = rz_il_op_new_log_not(Rd);
+	Rd = avr_il_dup_value(x);
+	not0 = rz_il_op_new_log_not(Rd); // !Rd
 	and0 = rz_il_op_new_log_and(not0, Rr);
 
-	Rd = avr_il_dup_value(x);
-	Rr = avr_il_dup_value(y);
 	// and1 = (Rr7 & Res7)
-	Res = rz_il_op_new_sub(Rd, Rr);
-	if (add_carry) {
-		// Res = Rd - Rr - C
-		RzILOp *C = avr_il_sreg_as_imm(AVR_SREG_C);
-		Res = rz_il_op_new_sub(Res, C);
-	}
-	Rr = avr_il_dup_value(y);
-	and1 = rz_il_op_new_log_and(Rr, Res);
+	Res = rz_il_op_new_var(local);
+	and1 = rz_il_op_new_log_and(y, Res);
 
 	// and2 = (Res7 & !Rd7)
-	Rd = avr_il_dup_value(x);
-	Res = rz_il_op_new_sub(x, y);
-	if (add_carry) {
-		// Res = Rd - Rr - C
-		RzILOp *C = avr_il_sreg_as_imm(AVR_SREG_C);
-		Res = rz_il_op_new_sub(Res, C);
-	}
-	not0 = rz_il_op_new_log_not(Rd);
+	Res = rz_il_op_new_var(local);
+	not0 = rz_il_op_new_log_not(x);
 	and2 = rz_il_op_new_log_and(Res, not0);
 
 	// or = (and0 | and1)
@@ -368,8 +331,8 @@ static RzILOp *avr_il_check_signess_flag() {
 	// S: N ^ V, For signed tests.
 	RzILOp *N = rz_il_op_new_var(AVR_SREG_N);
 	RzILOp *V = rz_il_op_new_var(AVR_SREG_V);
-	RzILOp * xor = rz_il_op_new_bool_xor(N, V);
-	RzILOp *set = rz_il_op_new_set(AVR_SREG_S, xor);
+	RzILOp *_xor = rz_il_op_new_bool_xor(N, V);
+	RzILOp *set = rz_il_op_new_set(AVR_SREG_S, _xor);
 	return rz_il_op_new_perform(set);
 }
 
@@ -464,41 +427,44 @@ static RzPVector *avr_il_cpi(AVROp *aop, RzAnalysis *analysis) {
 	ut16 Rd = aop->param[0];
 	ut16 K = aop->param[1];
 	avr_return_val_if_invalid_gpr(Rd, NULL);
-	RzILOp *x, *y, *Z, *H, *S, *V, *N, *C;
+	RzILOp *x, *y, *let, *Z, *H, *S, *V, *N, *C;
 
-	// set Z to 1 if !(x - y)
+	// result local variable
 	x = avr_il_new_reg(Rd);
 	y = avr_il_new_imm(K);
-	Z = avr_il_check_zero_flag(x, y, false);
+	let = rz_il_op_new_sub(x, y);
+	let = rz_il_op_new_let(AVR_LET_RES, let, false);
+	let = rz_il_op_new_perform(let);
+
+	// set Z to 1 if !(x - y)
+	Z = avr_il_check_zero_flag(AVR_LET_RES, false);
 
 	// H: (!Rd3 & Rr3) | (Rr3 & Res3) | (Res3 & !Rd3)
 	// Set if there was a borrow from bit 3; cleared otherwise
 	x = avr_il_new_reg(Rd);
 	y = avr_il_new_imm(K);
-	H = avr_il_check_half_carry_flag(x, y, false);
+	H = avr_il_check_half_carry_flag(AVR_LET_RES, x, y);
 
 	// V: (Rd7 & !Rr7 & !Res7) | (!Rd7 & Rr7 & Res7)
 	// Set if two’s complement overflow resulted from the operation; cleared otherwise.
 	x = avr_il_new_reg(Rd);
 	y = avr_il_new_imm(K);
-	V = avr_il_check_two_complement_overflow_flag(x, y, false);
+	V = avr_il_check_two_complement_overflow_flag(AVR_LET_RES, x, y);
 
 	// N: Res7
 	// Set if MSB of the result is set; cleared otherwise.
-	x = avr_il_new_reg(Rd);
-	y = avr_il_new_imm(K);
-	N = avr_il_check_negative_flag(x, y, false);
+	N = avr_il_check_negative_flag(AVR_LET_RES);
 
 	// C: (!Rd7 & Rr7) | (Rr7 & Res7) | (Res7 & !Rd7)
 	// Set if the absolute value of Rr is larger than the absolute value of Rd; cleared otherwise
 	x = avr_il_new_reg(Rd);
 	y = avr_il_new_imm(K);
-	C = avr_il_check_carry_flag(x, y, false);
+	C = avr_il_check_carry_flag(AVR_LET_RES, x, y);
 
 	// S: N ^ V, For signed tests.
 	S = avr_il_check_signess_flag();
 
-	return rz_il_make_oplist(6, Z, H, V, N, C, S);
+	return rz_il_make_oplist(7, let, Z, H, V, N, C, S);
 }
 
 static RzPVector *avr_il_cpc(AVROp *aop, RzAnalysis *analysis) {
@@ -507,45 +473,50 @@ static RzPVector *avr_il_cpc(AVROp *aop, RzAnalysis *analysis) {
 	ut16 Rd = aop->param[0];
 	ut16 Rr = aop->param[1];
 	avr_return_val_if_invalid_gpr(Rd, NULL);
-	RzILOp *x, *y, *Z, *H, *S, *V, *N, *C;
+	RzILOp *x, *y, *let, *Z, *H, *S, *V, *N, *C;
 
-	// set Z to 1 if !(x - y - C)
+	// result local variable
 	x = avr_il_new_reg(Rd);
 	y = avr_il_new_reg(Rr);
-	Z = avr_il_check_zero_flag(x, y, true);
+	C = avr_il_sreg_as_imm(AVR_SREG_C);
+	let = rz_il_op_new_sub(x, y);
+	let = rz_il_op_new_sub(let, C);
+	let = rz_il_op_new_let(AVR_LET_RES, let, false);
+	let = rz_il_op_new_perform(let);
+
+	// set Z to 1 if !(x - y - C)
+	Z = avr_il_check_zero_flag(AVR_LET_RES, true);
 
 	// Res = Rd - Rr - C
 	// H: (!Rd3 & Rr3) | (Rr3 & Res3) | (Res3 & !Rd3)
 	// Set if there was a borrow from bit 3; cleared otherwise
 	x = avr_il_new_reg(Rd);
 	y = avr_il_new_reg(Rr);
-	H = avr_il_check_half_carry_flag(x, y, true);
+	H = avr_il_check_half_carry_flag(AVR_LET_RES, x, y);
 
 	// Res = Rd - Rr - C
 	// V: (Rd7 & !Rr7 & !Res7) | (!Rd7 & Rr7 & Res7)
 	// Set if two’s complement overflow resulted from the operation; cleared otherwise.
 	x = avr_il_new_reg(Rd);
 	y = avr_il_new_reg(Rr);
-	V = avr_il_check_two_complement_overflow_flag(x, y, true);
+	V = avr_il_check_two_complement_overflow_flag(AVR_LET_RES, x, y);
 
 	// Res = Rd - Rr - C
 	// N: Res7
 	// Set if MSB of the result is set; cleared otherwise.
-	x = avr_il_new_reg(Rd);
-	y = avr_il_new_reg(Rr);
-	N = avr_il_check_negative_flag(x, y, true);
+	N = avr_il_check_negative_flag(AVR_LET_RES);
 
 	// Res = Rd - Rr - C
 	// C: (!Rd7 & Rr7) | (Rr7 & Res7) | (Res7 & !Rd7)
 	// Set if the absolute value of Rr is larger than the absolute value of Rd; cleared otherwise
 	x = avr_il_new_reg(Rd);
 	y = avr_il_new_reg(Rr);
-	C = avr_il_check_carry_flag(x, y, true);
+	C = avr_il_check_carry_flag(AVR_LET_RES, x, y);
 
 	// S: N ^ V, For signed tests.
 	S = avr_il_check_signess_flag();
 
-	return rz_il_make_oplist(6, Z, H, V, N, C, S);
+	return rz_il_make_oplist(7, let, Z, H, V, N, C, S);
 }
 
 static RzPVector *avr_il_jmp(AVROp *aop, RzAnalysis *analysis) {
@@ -589,8 +560,11 @@ static RzPVector *avr_il_lpm(AVROp *aop, RzAnalysis *analysis) {
 	if (!post_inc) {
 		return rz_il_make_oplist(1, lpm);
 	}
-	RzILOp *zplus = avr_il_update_indirect_address_z(1, true);
-	return rz_il_make_oplist(2, lpm, zplus);
+	z = avr_il_get_indirect_address_z();
+	RzILOp *let = rz_il_op_new_let(AVR_LET_IND, z, false);
+	let = rz_il_op_new_perform(let);
+	RzILOp *zpp = avr_il_update_indirect_address_z(AVR_LET_IND, 1, true); // Z++
+	return rz_il_make_oplist(3, lpm, let, zpp);
 }
 
 static RzPVector *avr_il_out(AVROp *aop, RzAnalysis *analysis) {
@@ -653,7 +627,7 @@ static RzPVector *avr_il_ser(AVROp *aop, RzAnalysis *analysis) {
 }
 
 static RzPVector *avr_il_st(AVROp *aop, RzAnalysis *analysis) {
-	RzILOp *st, *src, *addr, *post_op;
+	RzILOp *st, *src, *addr, *post_op, *let;
 	// *((ut8*)X) = Rd where X = (r27 << 8) | r26;
 	// *((ut8*)Y) = Rd where Y = (r29 << 8) | r28;
 	// *((ut8*)Z) = Rd where Z = (r31 << 8) | r30;
@@ -695,17 +669,22 @@ static RzPVector *avr_il_st(AVROp *aop, RzAnalysis *analysis) {
 
 	switch (Rr) {
 	case 'X':
-		post_op = avr_il_update_indirect_address_x(q, Op == '+');
+		addr = avr_il_get_indirect_address_x();
+		post_op = avr_il_update_indirect_address_x(AVR_LET_IND, q, Op == '+');
 		break;
 	case 'Y':
-		post_op = avr_il_update_indirect_address_y(q, Op == '+');
+		addr = avr_il_get_indirect_address_y();
+		post_op = avr_il_update_indirect_address_y(AVR_LET_IND, q, Op == '+');
 		break;
 	default: // 'Z'
-		post_op = avr_il_update_indirect_address_z(q, Op == '+');
+		addr = avr_il_get_indirect_address_z();
+		post_op = avr_il_update_indirect_address_z(AVR_LET_IND, q, Op == '+');
 		break;
 	}
 
-	return rz_il_make_oplist(2, st, post_op);
+	let = rz_il_op_new_let(AVR_LET_IND, addr, false);
+	let = rz_il_op_new_perform(let);
+	return rz_il_make_oplist(3, st, let, post_op);
 }
 
 static avr_rzil_op avr_ops[AVR_OP_SIZE] = {
