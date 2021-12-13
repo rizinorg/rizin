@@ -241,7 +241,7 @@ ____h_ xxhash32       LGPL3      deroad
 ____h_ parity         LGPL3      deroad
 ____h_ entropy        LGPL3      deroad
 ____h_ entropy_fract  LGPL3      deroad
-ED____ aes-ecb        MS-PL      Karl Malbrain
+ED____ aes-ecb        LGPL3      Nettle project (algorithm implementation), pancake (plugin)
 ED____ aes-cbc        LGPL-3     rakholiyajenish.07
 __ed__ base64         LGPL-3     rakholiyajenish.07
 __ed__ base91         LGPL-3     rakholiyajenish.07
