@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2016 rakholiyajenish.07 <rakholiyajenish.07@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-//Implemented AES version of RC6. keylen = 16, 23, or 32 bytes; w = 32; and r = 20.
+// Implemented AES version of RC6. keylen = 16, 23, or 32 bytes; w = 32; and r = 20.
 #include <rz_lib.h>
 #include <rz_crypto.h>
 #include <rz_util.h>
@@ -35,7 +35,7 @@ static bool rc6_init_state(struct rc6_state *const state, const ut8 *key, int ke
 	}
 
 	ut32 A = 0, B = 0, k = 0, j = 0;
-	ut32 v = 3 * t; //originally v = 2 * ((c > t) ? c : t);
+	ut32 v = 3 * t; // originally v = 2 * ((c > t) ? c : t);
 
 	int i;
 
@@ -77,7 +77,7 @@ static void rc6_encrypt(struct rc6_state *const state, const ut8 *inbuf, ut8 *ou
 	D = D + (state->S)[1];
 
 	for (i = 1; i <= r; i++) {
-		t = ROTL(B * (2 * B + 1), 5); //lgw == 5
+		t = ROTL(B * (2 * B + 1), 5); // lgw == 5
 		u = ROTL(D * (2 * D + 1), 5);
 		A = ROTL(A ^ t, u) + (state->S)[2 * i];
 		C = ROTL(C ^ u, t) + (state->S)[2 * i + 1];
@@ -170,7 +170,7 @@ static bool update(RzCrypto *cry, const ut8 *buf, int len) {
 	rz_return_val_if_fail(cry->user, false);
 	struct rc6_state *st = (struct rc6_state *)cry->user;
 
-	if (len % BLOCK_SIZE != 0) { //let user handle with with pad.
+	if (len % BLOCK_SIZE != 0) { // let user handle with with pad.
 		eprintf("Input should be multiple of 128bit.\n");
 		return false;
 	}

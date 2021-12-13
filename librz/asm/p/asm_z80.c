@@ -20,7 +20,7 @@ static int do_assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
 RzAsmPlugin rz_asm_plugin_z80 = {
 	.name = "z80",
 	.desc = "Zilog Z80",
-	.license = "GPL",
+	.license = "GPL3",
 	.author = "condret",
 	.arch = "z80",
 	.bits = 8,

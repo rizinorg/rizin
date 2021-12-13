@@ -35,14 +35,14 @@ typedef struct SPDBDownloader {
 
 /**
  * \brief initialization of pdb downloader by SPDBDownloaderOpt
- * 
+ *
  * \param opt PDB options
  * \param pdb_downloader PDB downloader that will be init
  */
 void init_pdb_downloader(SPDBDownloaderOpt *opt, SPDBDownloader *pdb_downloader);
 /**
  * \brief deinitialization of PDB downloader
- * 
+ *
  * \param pdb_downloader PDB downloader that will be deinit
  */
 void deinit_pdb_downloader(SPDBDownloader *pdb_downloader);

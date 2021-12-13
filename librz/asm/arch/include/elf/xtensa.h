@@ -148,7 +148,7 @@ typedef struct property_table_entry_t {
 /* Instruction-only properties about code. */
 #define XTENSA_PROP_INSN_NO_DENSITY 0x00000040
 #define XTENSA_PROP_INSN_NO_REORDER 0x00000080
-/* Historically, NO_TRANSFORM was a property of instructions, 
+/* Historically, NO_TRANSFORM was a property of instructions,
    but it should apply to literals under certain circumstances.  */
 #define XTENSA_PROP_NO_TRANSFORM 0x00000100
 

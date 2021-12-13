@@ -57,8 +57,8 @@ int main(int argc, char **argv) {
 	eprintf(" My pid is : %d\n", pid);
 	rz_debug_select(dbg, pid, tid);
 
-	//printf("--> regs pre step\n");
-	//rz_io_system(io, "reg");
+	// printf("--> regs pre step\n");
+	// rz_io_system(io, "reg");
 
 	rz_debug_reg_sync(dbg, RZ_REG_TYPE_GPR, 0);
 	rz_debug_reg_list(dbg, RZ_REG_TYPE_GPR, 32, NULL);
@@ -69,8 +69,8 @@ int main(int argc, char **argv) {
 	rz_debug_reg_sync(dbg, RZ_REG_TYPE_GPR, 0);
 	rz_debug_reg_list(dbg, RZ_REG_TYPE_GPR, 32, NULL);
 
-	//printf("--> regs post step\n");
-	//rz_io_system(io, "reg");
+	// printf("--> regs post step\n");
+	// rz_io_system(io, "reg");
 
 	printf("---\n");
 	rz_debug_continue(dbg);

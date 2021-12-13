@@ -9,7 +9,7 @@ aei
 ar t2
 EOF
 EXPECT=<<EOF
-0x00000005
+t2 = 0x00000005
 EOF
 RUN
 
@@ -25,8 +25,8 @@ ar a2
 ar a3
 EOF
 EXPECT=<<EOF
-0x000000ed
-0xffffff03
+a2 = 0x000000ed
+a3 = 0xffffff03
 EOF
 RUN
 
@@ -42,8 +42,8 @@ ar pc
 ar a3
 EOF
 EXPECT=<<EOF
-0x00000018
-0xfffffff8
+pc = 0x00000018
+a3 = 0xfffffff8
 EOF
 RUN
 
@@ -60,9 +60,9 @@ ar s7
 ar pc
 EOF
 EXPECT=<<EOF
-0x00080005
-0x00080005
-0x0000003c
+s2 = 0x00080005
+s7 = 0x00080005
+pc = 0x0000003c
 EOF
 RUN
 
@@ -78,7 +78,7 @@ ar ra
 ar pc
 EOF
 EXPECT=<<EOF
-0x0000000c
-0x00133742
+ra = 0x0000000c
+pc = 0x00133742
 EOF
 RUN

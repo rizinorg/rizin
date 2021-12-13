@@ -209,7 +209,7 @@ bool test_rz_analysis_addr_hints() {
 
 	rz_analysis_hint_unset_newbits(analysis, 0x1337);
 	cur.new_bits = 0;
-	//CHECK
+	// CHECK
 	hint = rz_analysis_hint_get(analysis, 0x1337);
 	assert_hint_eq(hint, &empty_hint);
 	rz_analysis_hint_free(hint);

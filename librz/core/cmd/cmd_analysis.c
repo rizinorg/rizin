@@ -177,9 +177,7 @@ static const char *help_msg_ae[] = {
 	"aeli", "", "list loaded ESIL interrupts",
 	"aeli", " [file]", "load ESIL interrupts from shared object",
 	"aelir", " [interrupt number]", "remove ESIL interrupt and free it if needed",
-	"aep", "[?] [addr]", "manage esil pin hooks",
 	"aepc", " [addr]", "change esil PC to this address",
-	"aer", " [..]", "handle ESIL registers like 'ar' or 'dr' does",
 	"aes", "", "perform emulated debugger step",
 	"aesp", " [X] [N]", "evaluate N instr from offset X",
 	"aesb", "", "step back",
@@ -296,15 +294,6 @@ static const char *help_msg_aec[] = {
 static const char *help_msg_aeC[] = {
 	"Examples:", "aeC", " arg0 arg1 ... @ calladdr",
 	"aeC", " 1 2 @ sym._add", "Call sym._add(1,2)",
-	NULL
-};
-
-static const char *help_msg_aep[] = {
-	"Usage:", "aep[-c] ", " [...]",
-	"aepc", " [addr]", "change program counter for esil",
-	"aep", "-[addr]", "remove pin",
-	"aep", " [name] @ [addr]", "set pin",
-	"aep", "", "list pins",
 	NULL
 };
 
@@ -638,54 +627,6 @@ static const char *help_msg_ao[] = {
 	"aoc", " [cycles]", "analyze which op could be executed in [cycles]",
 	"ao", " 5", "display opcode analysis of 5 opcodes",
 	"ao*", "", "display opcode in r commands",
-	NULL
-};
-
-static const char *help_msg_ar[] = {
-	"Usage: ar", "", "# Analysis Registers",
-	"ar", "", "Show 'gpr' registers",
-	"ar.", ">$snapshot", "Show rizin commands to set register values to the current state",
-	"ar,", "", "Show registers in table format (see dr,)",
-	".ar*", "", "Import register values as flags",
-	".ar-", "", "Unflag all registers",
-	"ar0", "", "Reset register arenas to 0",
-	"ara", "[?]", "Manage register arenas",
-	"arj", "", "Show 'gpr' registers in JSON format",
-	"arA", "", "Show values of function argument calls (A0, A1, A2, ..)",
-	"ar", " 16", "Show 16 bit registers",
-	"ar", " 32", "Show 32 bit registers",
-	"ar", " all", "Show all bit registers",
-	"ar", " <type>", "Show all registers of given type",
-	"arC", "", "Display register profile comments",
-	"arr", "", "Show register references (telescoping)",
-	"arrj", "", "Show register references (telescoping) in JSON format",
-	"ar=", "([size])(:[regs])", "Show register values in columns",
-	"ar?", " <reg>", "Show register value",
-	"arb", " <type>", "Display hexdump of the given arena",
-	"arc", " <name>", "Conditional flag registers",
-	"arcc", "", "Show calling convention defined from the register profile",
-	"ard", " <name>", "Show only different registers",
-	"arn", " <regalias>", "Get regname for pc,sp,bp,a0-3,zf,cf,of,sg",
-	"aro", "", "Show old (previous) register values",
-	"arp", "[?] <file>", "Load register profile from file",
-	"ars", "", "Stack register state",
-	"art", "", "List all register types",
-	"arw", " <hexnum>", "Set contents of the register arena",
-	NULL
-};
-
-static const char *help_msg_ara[] = {
-	"Usage:", "ara[+-s]", "Register Arena Push/Pop/Swap",
-	"ara", "", "show all register arenas allocated",
-	"ara", "+", "push a new register arena for each type",
-	"ara", "-", "pop last register arena",
-	"aras", "", "swap last two register arenas",
-	NULL
-};
-
-static const char *help_msg_arw[] = {
-	"Usage:", "arw ", "# Set contents of the register arena",
-	"arw", " <hexnum>", "Set contents of the register arena",
 	NULL
 };
 
@@ -3408,399 +3349,6 @@ RZ_IPI int rz_cmd_analysis_fcn(void *data, const char *input) {
 	return true;
 }
 
-/**
- * \param bits if > 0, show only regs with this bit size, otherwise all
- */
-static void print_reg_list(RzCore *core, int type, int bits, bool skip_covered, char mode) {
-	PJ *pj = NULL;
-	if (mode == 'i') {
-		rz_core_debug_ri(core, core->analysis->reg, 0);
-		return;
-	} else if (mode == 'j') {
-		pj = pj_new();
-		if (!pj) {
-			return;
-		}
-	}
-	RzReg *hack = core->dbg->reg;
-	const char *use_color;
-	int use_colors = rz_config_get_i(core->config, "scr.color");
-	if (use_colors) {
-#undef ConsP
-#define ConsP(x) (core->cons && core->cons->context->pal.x) ? core->cons->context->pal.x
-		use_color = ConsP(creg)
-		    : Color_BWHITE;
-	} else {
-		use_color = NULL;
-	}
-	rz_core_debug_reg_list(core, type, bits, skip_covered, pj, mode, use_color);
-	if (mode == 'j') {
-		rz_cons_println(pj_string(pj));
-		pj_free(pj);
-	}
-	core->dbg->reg = hack;
-}
-
-// XXX dup from drp :OOO
-void cmd_analysis_reg(RzCore *core, const char *str) {
-	if (0) {
-		/* enable this block when dr and ar use the same code but just using
-		   core->dbg->reg or core->analysis->reg and removing all the debugger
-		   dependent code */
-		RzReg *reg = core->dbg->reg;
-		core->dbg->reg = core->analysis->reg;
-		cmd_debug_reg(core, str);
-		core->dbg->reg = reg;
-		return;
-	}
-
-	int i, type = RZ_REG_TYPE_GPR;
-	int bits = (core->analysis->bits & RZ_SYS_BITS_64) ? 64 : 32;
-	int use_colors = rz_config_get_i(core->config, "scr.color");
-	const char *use_color;
-	const char *name;
-	char *arg;
-
-	if (use_colors) {
-#define ConsP(x) (core->cons && core->cons->context->pal.x) ? core->cons->context->pal.x
-		use_color = ConsP(creg)
-		    : Color_BWHITE;
-	} else {
-		use_color = NULL;
-	}
-	switch (str[0]) {
-	case 'l': // "arl"
-	{
-		const bool use_json = str[1] == 'j';
-		RzRegSet *rs = rz_reg_regset_get(core->analysis->reg, RZ_REG_TYPE_GPR);
-		if (rs) {
-			RzRegItem *r;
-			RzListIter *iter;
-			PJ *pj = pj_new();
-			pj_a(pj);
-			rz_list_foreach (rs->regs, iter, r) {
-				if (use_json) {
-					pj_s(pj, r->name);
-				} else {
-					rz_cons_println(r->name);
-				}
-			}
-			if (use_json) {
-				pj_end(pj);
-				const char *s = pj_string(pj);
-				rz_cons_println(s);
-			}
-			pj_free(pj);
-		}
-	} break;
-	case ',': // "ar,"
-		__tableRegList(core, core->analysis->reg, str + 1);
-		break;
-	case '0': // "ar0"
-		rz_reg_arena_zero(core->analysis->reg);
-		break;
-	case 'A': // "arA"
-	{
-		int nargs = 4;
-		RzReg *reg = core->analysis->reg;
-		for (i = 0; i < nargs; i++) {
-			const char *name = rz_reg_get_name(reg, rz_reg_get_name_idx(sdb_fmt("A%d", i)));
-			ut64 off = rz_reg_getv(core->analysis->reg, name);
-			rz_cons_printf("0x%08" PFMT64x " ", off);
-			// XXX very ugly hack
-			char *s = rz_core_cmd_strf(core, "pxr 32 @ 0x%08" PFMT64x, off);
-			if (s) {
-				char *nl = strchr(s, '\n');
-				if (nl) {
-					*nl = 0;
-					rz_cons_printf("%s\n", s);
-				}
-				free(s);
-			}
-		}
-	} break;
-	case 'C': // "arC"
-		if (core->analysis->reg->reg_profile_cmt) {
-			rz_cons_println(core->analysis->reg->reg_profile_cmt);
-		}
-		break;
-	case 'w': // "arw"
-		switch (str[1]) {
-		case '?': { // "arw?"
-			rz_core_cmd_help(core, help_msg_arw);
-			break;
-		}
-		case ' ': // "arw "
-			rz_reg_arena_set_bytes(core->analysis->reg, str + 1);
-			break;
-		default: // "arw"
-			rz_core_cmd_help(core, help_msg_arw);
-			break;
-		}
-		break;
-	case 'a': // "ara"
-		switch (str[1]) {
-		case '?': // "ara?"
-			rz_core_cmd_help(core, help_msg_ara);
-			break;
-		case 's': // "aras"
-			rz_reg_arena_swap(core->analysis->reg, false);
-			break;
-		case '+': // "ara+"
-			rz_reg_arena_push(core->analysis->reg);
-			break;
-		case '-': // "ara-"
-			rz_reg_arena_pop(core->analysis->reg);
-			break;
-		default: {
-			int i, j;
-			RzRegArena *a;
-			RzListIter *iter;
-			for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
-				RzRegSet *rs = &core->analysis->reg->regset[i];
-				j = 0;
-				rz_list_foreach (rs->pool, iter, a) {
-					rz_cons_printf("%s %p %d %d %s %d\n",
-						(a == rs->arena) ? "*" : ".", a,
-						i, j, rz_reg_get_type(i), a->size);
-					j++;
-				}
-			}
-		} break;
-		}
-		break;
-	case '?': // "ar?"
-		if (str[1]) {
-			ut64 off = rz_reg_getv(core->analysis->reg, str + 1);
-			rz_cons_printf("0x%08" PFMT64x "\n", off);
-		} else {
-			rz_core_cmd_help(core, help_msg_ar);
-		}
-		break;
-	case 'r': // "arr"
-		switch (str[1]) {
-		case 'j': // "arrj"
-			rz_core_debug_rr(core, core->analysis->reg, 'j');
-			break;
-		default:
-			rz_core_debug_rr(core, core->analysis->reg, 0);
-			break;
-		}
-		break;
-	case 'b': { // "arb" WORK IN PROGRESS // DEBUG COMMAND
-		int len, type = RZ_REG_TYPE_GPR;
-		arg = strchr(str, ' ');
-		if (arg) {
-			char *string = rz_str_trim_dup(arg + 1);
-			if (string) {
-				type = rz_reg_type_by_name(string);
-				if (type == -1 && string[0] != 'a') {
-					type = RZ_REG_TYPE_GPR;
-				}
-				free(string);
-			}
-		}
-		ut8 *buf = rz_reg_get_bytes(core->dbg->reg, type, &len);
-		if (buf) {
-			rz_print_hexdump(core->print, 0LL, buf, len, 32, 4, 1);
-			free(buf);
-		}
-	} break;
-	case 'c': // "arc"
-		// TODO: set flag values with drc zf=1
-		if (str[1] == 'c') { // "arcc"
-			char *s = rz_reg_profile_to_cc(core->analysis->reg);
-			if (s) {
-				rz_cons_printf("%s\n", s);
-				free(s);
-			}
-		} else {
-			RzRegItem *r;
-			const char *name = rz_str_trim_head_ro(str + 1);
-			if (*name && name[1]) {
-				r = rz_reg_cond_get(core->dbg->reg, name);
-				if (r) {
-					rz_cons_println(r->name);
-				} else {
-					int id = rz_reg_cond_from_string(name);
-					RzRegFlags *rf = rz_reg_cond_retrieve(core->dbg->reg, NULL);
-					if (rf) {
-						int o = rz_reg_cond_bits(core->dbg->reg, id, rf);
-						core->num->value = o;
-						// ORLY?
-						rz_cons_printf("%d\n", o);
-						free(rf);
-					} else {
-						eprintf("unknown conditional or flag register\n");
-					}
-				}
-			} else {
-				RzRegFlags *rf = rz_reg_cond_retrieve(core->dbg->reg, NULL);
-				if (rf) {
-					rz_cons_printf("| s:%d z:%d c:%d o:%d p:%d\n",
-						rf->s, rf->z, rf->c, rf->o, rf->p);
-					if (*name == '=') {
-						for (i = 0; i < RZ_REG_COND_LAST; i++) {
-							rz_cons_printf("%s:%d ",
-								rz_reg_cond_to_string(i),
-								rz_reg_cond_bits(core->dbg->reg, i, rf));
-						}
-						rz_cons_newline();
-					} else {
-						for (i = 0; i < RZ_REG_COND_LAST; i++) {
-							rz_cons_printf("%d %s\n",
-								rz_reg_cond_bits(core->dbg->reg, i, rf),
-								rz_reg_cond_to_string(i));
-						}
-					}
-					free(rf);
-				}
-			}
-		}
-		break;
-	case 's': // "ars"
-		switch (str[1]) {
-		case '-': // "ars-"
-			rz_reg_arena_pop(core->dbg->reg);
-			// restore debug registers if in debugger mode
-			rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_GPR, true);
-			break;
-		case '+': // "ars+"
-			rz_reg_arena_push(core->dbg->reg);
-			break;
-		case '?': { // "ars?"
-			// TODO #7967 help refactor: dup from drp
-			const char *help_msg[] = {
-				"Usage:", "drs", " # Register states commands",
-				"drs", "", "List register stack",
-				"drs+", "", "Push register state",
-				"drs-", "", "Pop register state",
-				NULL
-			};
-			rz_core_cmd_help(core, help_msg);
-		} break;
-		default:
-			rz_cons_printf("%d\n", rz_list_length(core->dbg->reg->regset[0].pool));
-			break;
-		}
-		break;
-	case 'p': // "arp"
-		// XXX we have to break out .h for these cmd_xxx files.
-		cmd_reg_profile(core, 'a', str);
-		break;
-	case 't': // "art"
-		for (i = 0; (name = rz_reg_get_type(i)); i++) {
-			rz_cons_println(name);
-		}
-		break;
-	case 'n': // "arn"
-		if (*(str + 1) == '\0') {
-			eprintf("Oops. try arn [PC|SP|BP|A0|A1|A2|A3|A4|R0|R1|ZF|SF|NF|OF]\n");
-			break;
-		}
-		name = rz_reg_get_name(core->dbg->reg, rz_reg_get_name_idx(str + 2));
-		if (name && *name) {
-			rz_cons_println(name);
-		} else {
-			eprintf("Oops. try arn [PC|SP|BP|A0|A1|A2|A3|A4|R0|R1|ZF|SF|NF|OF]\n");
-		}
-		break;
-	case 'd': // "ard"
-		rz_core_debug_reg_list(core, RZ_REG_TYPE_GPR, bits, false, NULL, 3, use_color); // XXX detect which one is current usage
-		break;
-	case 'o': // "aro"
-		rz_reg_arena_swap(core->dbg->reg, false);
-		rz_core_debug_reg_list(core, RZ_REG_TYPE_GPR, bits, false, NULL, 0, use_color); // XXX detect which one is current usage
-		rz_reg_arena_swap(core->dbg->reg, false);
-		break;
-	case '=': // "ar="
-	{
-		int size = 0;
-		char *p = NULL;
-		char *bits = NULL;
-		if (str[1]) {
-			p = strdup(str + 1);
-			if (str[1] != ':') {
-				// Bits were specified
-				bits = strtok(p, ":");
-				if (rz_str_isnumber(bits)) {
-					st64 sz = rz_num_math(core->num, bits);
-					if (sz > 0) {
-						size = sz;
-					}
-				} else {
-					rz_core_cmd_help(core, help_msg_ar);
-					break;
-				}
-			}
-			int len = bits ? strlen(bits) : 0;
-			if (str[len + 1] == ':') {
-				// We have some regs
-				char *regs = bits ? strtok(NULL, ":") : strtok((char *)str + 1, ":");
-				char *reg = strtok(regs, " ");
-				RzList *q_regs = rz_list_new();
-				if (q_regs) {
-					while (reg) {
-						rz_list_append(q_regs, reg);
-						reg = strtok(NULL, " ");
-					}
-					core->dbg->q_regs = q_regs;
-				}
-			}
-		}
-		print_reg_list(core, type, size, !size, str[0]);
-		if (!rz_list_empty(core->dbg->q_regs)) {
-			rz_list_free(core->dbg->q_regs);
-		}
-		core->dbg->q_regs = NULL;
-		free(p);
-	} break;
-	case '.': // "ar."
-	case '-': // "ar-"
-	case '*': // "ar*"
-	case 'R': // "arR"
-	case 'j': // "arj"
-	case 'i': // "ari"
-	case '\0': // "ar"
-		print_reg_list(core, type, 0, true, str[0]);
-		break;
-	case ' ': { // "ar "
-		arg = strchr(str + 1, '=');
-		if (arg) {
-			*arg = 0;
-			char *ostr = rz_str_trim_dup(str + 1);
-			char *regname = rz_str_trim_nc(ostr);
-			ut64 regval = rz_num_math(core->num, arg + 1);
-			rz_core_analysis_set_reg(core, regname, regval);
-			free(ostr);
-			return;
-		}
-		char name[32];
-		int i = 1, j;
-		while (str[i]) {
-			if (str[i] == ',') {
-				i++;
-			} else {
-				for (j = i; str[++j] && str[j] != ',';)
-					;
-				if (j - i + 1 <= sizeof name) {
-					rz_str_ncpy(name, str + i, j - i + 1);
-					if (IS_DIGIT(name[0])) { // e.g. ar 32
-						print_reg_list(core, RZ_REG_TYPE_GPR, atoi(name), false, '\0');
-					} else if (showreg(core, name) > 0) { // e.g. ar rax
-					} else { // e.g. ar gpr ; ar all
-						type = rz_reg_type_by_name(name);
-						// TODO differentiate ALL and illegal register types and print error message for the latter
-						print_reg_list(core, type, 0, true, '\0');
-					}
-				}
-				i = j;
-			}
-		}
-	}
-	}
-}
-
 static ut64 initializeEsil(RzCore *core) {
 	int romem = rz_config_get_i(core->config, "esil.romem");
 	int stats = rz_config_get_i(core->config, "esil.stats");
@@ -3912,14 +3460,6 @@ repeat:
 	}
 	rz_asm_set_pc(core->rasm, addr);
 	// run esil pin command here
-	const char *pincmd = rz_analysis_pin_call(core->analysis, addr);
-	if (pincmd) {
-		rz_core_cmd0(core, pincmd);
-		ut64 pc = rz_debug_reg_get(core->dbg, "PC");
-		if (addr != pc) {
-			return_tail(1);
-		}
-	}
 	int dataAlign = rz_analysis_archinfo(esil->analysis, RZ_ANALYSIS_ARCHINFO_DATA_ALIGN);
 	if (dataAlign > 1) {
 		if (addr % dataAlign) {
@@ -4111,7 +3651,7 @@ RZ_API bool rz_core_esil_continue_back(RzCore *core) {
 		if (reg->idx >= esil->trace->idx) {
 			continue;
 		}
-		bp_found = rz_bp_get_in(core->dbg->bp, reg->data, RZ_BP_PROT_EXEC) != NULL;
+		bp_found = rz_bp_get_in(core->dbg->bp, reg->data, RZ_PERM_X) != NULL;
 		if (bp_found) {
 			idx = reg->idx;
 			eprintf("hit breakpoint at: 0x%" PFMT64x " idx: %d\n", reg->data, reg->idx);
@@ -4888,7 +4428,7 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 	RzAnalysisOp *op = NULL;
 
 	switch (input[0]) {
-	case 'p': // "aep"
+	case 'p':
 		switch (input[1]) {
 		case 'c': // "aepc"
 			if (input[2] == ' ' || input[2] == '=') {
@@ -4899,26 +4439,10 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 				eprintf("Missing argument\n");
 			}
 			break;
-		case 0:
-			rz_analysis_pin_list(core->analysis);
-			break;
-		case '-': // "aep-"
-			if (input[2]) {
-				addr = rz_num_math(core->num, input + 2);
-			}
-			rz_analysis_pin_unset(core->analysis, addr);
-			break;
-		case ' ': // "aep "
-			rz_analysis_pin(core->analysis, addr, input + 2);
-			break;
-		default: // "aep"
-			rz_core_cmd_help(core, help_msg_aep);
+		default:
+			rz_core_cmd_help(core, help_msg_ae);
 			break;
 		}
-		break;
-	case 'r': // "aer"
-		// 'aer' is an alias for 'ar'
-		cmd_analysis_reg(core, input + 1);
 		break;
 	case '*': // "ae*"
 		// XXX: this is wip, not working atm
@@ -8310,7 +7834,6 @@ RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
 		cmd_analysis_aC(core, input + 1);
 		break;
 	case 'i': cmd_analysis_info(core, input + 1); break; // "ai"
-	case 'r': cmd_analysis_reg(core, input + 1); break; // "ar"
 	case 'e': cmd_analysis_esil(core, input + 1); break; // "ae"
 	case 'L': { // aL
 		RzCmdStateOutput state = { 0 };
@@ -9622,3 +9145,11 @@ RZ_IPI RzCmdStatus rz_analysis_xrefs_graph_handler(RzCore *core, int argc, const
 	ht_uu_free(ht);
 	return RZ_CMD_STATUS_OK;
 }
+
+#define CMD_REGS_PREFIX   analysis
+#define CMD_REGS_REG_PATH analysis->reg
+#define CMD_REGS_SYNC     NULL
+#include "cmd_regs_meta.inc"
+#undef CMD_REGS_PREFIX
+#undef CMD_REGS_REG_PATH
+#undef CMD_REGS_SYNC

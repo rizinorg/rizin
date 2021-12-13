@@ -3,6 +3,9 @@
 
 #include <rz_analysis.h>
 
+#if __WINDOWS__
+#include "bt/windows-all.c"
+#endif
 #include "bt/generic-x86.c"
 #include "bt/generic-x64.c"
 #include "bt/fuzzy-all.c"
@@ -46,19 +49,28 @@ static RzList *rz_debug_native_frames(RzDebug *dbg, ut64 at) {
 		if (!strcmp(dbg->btalgo, "fuzzy")) {
 			cb = backtrace_fuzzy;
 		} else if (!strcmp(dbg->btalgo, "analysis")) {
-			if (dbg->bits == RZ_SYS_BITS_64) {
-				cb = backtrace_x86_64_analysis;
+			if (!strcmp(dbg->arch, "x86")) {
+				if (dbg->bits == RZ_SYS_BITS_64) {
+					cb = backtrace_x86_64_analysis;
+				} else {
+					cb = backtrace_x86_32_analysis;
+				}
 			} else {
-				cb = backtrace_x86_32_analysis;
+				eprintf("Analysis backtrace not available for current architecture (%s)\n", dbg->arch);
+				return NULL;
 			}
 		}
 	}
 	if (!cb) {
+#if __WINDOWS__
+		cb = backtrace_windows;
+#else
 		if (dbg->bits == RZ_SYS_BITS_64) {
 			cb = backtrace_x86_64;
 		} else {
 			cb = backtrace_x86_32;
 		}
+#endif
 	}
 
 	RzList *list;

@@ -220,7 +220,7 @@ static int internal_esil_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int
 			}
 		}
 	}
-	//TODO: Check if error return from read_at.(on previous version of r2 this call always return len)
+	// TODO: Check if error return from read_at.(on previous version of r2 this call always return len)
 	(void)esil->analysis->iob.read_at(esil->analysis->iob.io, addr, buf, len);
 	// check if request address is mapped , if don't fire trap and esil ioer callback
 	// now with siol, read_at return true/false can't be used to check error vs len
@@ -245,7 +245,7 @@ static int internal_esil_mem_read_no_null(RzAnalysisEsil *esil, ut64 addr, ut8 *
 		esil->trap_code = addr;
 		return false;
 	}
-	//TODO: Check if error return from read_at.(on previous version of r2 this call always return len)
+	// TODO: Check if error return from read_at.(on previous version of r2 this call always return len)
 	(void)esil->analysis->iob.read_at(esil->analysis->iob.io, addr, buf, len);
 	// check if request address is mapped , if don't fire trap and esil ioer callback
 	// now with siol, read_at return true/false can't be used to check error vs len
@@ -414,7 +414,7 @@ static int internal_esil_reg_write_no_null(RzAnalysisEsil *esil, const char *reg
 		eprintf("Warning: RzReg profile does not contain BP register\n");
 		return false;
 	}
-	if (reg && reg->name && ((strcmp(reg->name, pc) && strcmp(reg->name, sp) && strcmp(reg->name, bp)) || num)) { //I trust k-maps
+	if (reg && reg->name && ((strcmp(reg->name, pc) && strcmp(reg->name, sp) && strcmp(reg->name, bp)) || num)) { // I trust k-maps
 		rz_reg_set_value(esil->analysis->reg, reg, num);
 		return true;
 	}
@@ -575,7 +575,7 @@ RZ_API int rz_analysis_esil_signext(RzAnalysisEsil *esil, bool assign) {
 		free(p_dst);
 	}
 
-	//Make sure the other bits are 0
+	// Make sure the other bits are 0
 	src &= UT64_MAX >> (64 - dst);
 
 	ut64 m = 0;
@@ -630,10 +630,10 @@ static bool esil_cf(RzAnalysisEsil *esil) {
 	ut64 bit;
 	rz_analysis_esil_get_parm(esil, src, &bit);
 	free(src);
-	//carry from bit <src>
-	//range of src goes from 0 to 63
+	// carry from bit <src>
+	// range of src goes from 0 to 63
 	//
-	//implements bit mod 64
+	// implements bit mod 64
 	const ut64 mask = genmask(bit & 0x3f);
 	return rz_analysis_esil_pushnum(esil, (esil->cur & mask) < (esil->old & mask));
 }
@@ -653,11 +653,11 @@ static bool esil_bf(RzAnalysisEsil *esil) {
 	ut64 bit;
 	rz_analysis_esil_get_parm(esil, src, &bit);
 	free(src);
-	//borrow from bit <src>
-	//range of src goes from 1 to 64
+	// borrow from bit <src>
+	// range of src goes from 1 to 64
 	//	you cannot borrow from bit 0, bc bit -1 cannot not exist
 	//
-	//implements (bit - 1) mod 64
+	// implements (bit - 1) mod 64
 	const ut64 mask = genmask((bit + 0x3f) & 0x3f);
 	return rz_analysis_esil_pushnum(esil, (esil->old & mask) < (esil->cur & mask));
 }
@@ -702,7 +702,7 @@ static bool esil_of(RzAnalysisEsil *esil) {
 	return res;
 }
 
-//checks sign bit at x (x,$s)
+// checks sign bit at x (x,$s)
 static bool esil_sf(RzAnalysisEsil *esil) {
 	rz_return_val_if_fail(esil, false);
 
@@ -855,7 +855,7 @@ static bool esil_negeq(RzAnalysisEsil *esil) {
 		ERR("esil_negeq: empty stack");
 	}
 	free(src);
-	//rz_analysis_esil_pushnum (esil, ret);
+	// rz_analysis_esil_pushnum (esil, ret);
 	return ret;
 }
 
@@ -1881,7 +1881,7 @@ static bool esil_poke_n(RzAnalysisEsil *esil, int bits) {
 		return false;
 	}
 	bool ret = false;
-	//eprintf ("GONA POKE %d src:%s dst:%s\n", bits, src, dst);
+	// eprintf ("GONA POKE %d src:%s dst:%s\n", bits, src, dst);
 	char *src2 = NULL;
 	if (src && rz_analysis_esil_get_parm(esil, src, &num)) {
 		if (dst && rz_analysis_esil_get_parm(esil, dst, &addr)) {
@@ -1978,7 +1978,7 @@ static bool esil_poke_some(RzAnalysisEsil *esil) {
 					const int size_bytes = regsize / 8;
 					const ut32 written = rz_analysis_esil_mem_write(esil, ptr, b, size_bytes);
 					if (written != size_bytes) {
-						//eprintf ("Cannot write at 0x%08" PFMT64x "\n", ptr);
+						// eprintf ("Cannot write at 0x%08" PFMT64x "\n", ptr);
 						esil->trap = 1;
 					}
 					ptr += size_bytes;
@@ -2009,13 +2009,13 @@ static bool esil_peek_n(RzAnalysisEsil *esil, int bits) {
 		eprintf("ESIL-ERROR at 0x%08" PFMT64x ": Cannot peek memory without specifying an address\n", esil->address);
 		return false;
 	}
-	//eprintf ("GONA PEEK %d dst:%s\n", bits, dst);
+	// eprintf ("GONA PEEK %d dst:%s\n", bits, dst);
 	if (dst && isregornum(esil, dst, &addr)) {
 		if (bits == 128) {
 			ut8 a[sizeof(ut64) * 2] = { 0 };
 			ret = rz_analysis_esil_mem_read(esil, addr, a, bytes);
-			ut64 b = rz_read_ble64(&a, 0); //esil->analysis->big_endian);
-			ut64 c = rz_read_ble64(&a[8], 0); //esil->analysis->big_endian);
+			ut64 b = rz_read_ble64(&a, 0); // esil->analysis->big_endian);
+			ut64 c = rz_read_ble64(&a[8], 0); // esil->analysis->big_endian);
 			snprintf(res, sizeof(res), "0x%" PFMT64x, b);
 			rz_analysis_esil_push(esil, res);
 			snprintf(res, sizeof(res), "0x%" PFMT64x, c);
@@ -2026,7 +2026,7 @@ static bool esil_peek_n(RzAnalysisEsil *esil, int bits) {
 		ut64 bitmask = genmask(bits - 1);
 		ut8 a[sizeof(ut64)] = { 0 };
 		ret = !!rz_analysis_esil_mem_read(esil, addr, a, bytes);
-		ut64 b = rz_read_ble64(a, 0); //esil->analysis->big_endian);
+		ut64 b = rz_read_ble64(a, 0); // esil->analysis->big_endian);
 		if (esil->analysis->big_endian) {
 			rz_mem_swapendian((ut8 *)&b, (const ut8 *)&b, bytes);
 		}
@@ -2090,7 +2090,7 @@ static bool esil_peek_some(RzAnalysisEsil *esil) {
 						return 0;
 					}
 					const ut32 read = rz_analysis_esil_mem_read(esil, ptr, a, 4);
-					if (read == 4) { //this is highly questionabla
+					if (read == 4) { // this is highly questionabla
 						num32 = rz_read_ble32(a, esil->analysis->big_endian);
 						rz_analysis_esil_reg_write(esil, foo, num32);
 					} else {
@@ -2116,18 +2116,18 @@ static bool esil_peek_some(RzAnalysisEsil *esil) {
 static bool esil_mem_oreq_n(RzAnalysisEsil *esil, int bits) {
 	bool ret = false;
 	ut64 s, d;
-	char *dst = rz_analysis_esil_pop(esil); //save the dst-addr
-	char *src0 = rz_analysis_esil_pop(esil); //get the src
+	char *dst = rz_analysis_esil_pop(esil); // save the dst-addr
+	char *src0 = rz_analysis_esil_pop(esil); // get the src
 	char *src1 = NULL;
-	if (src0 && rz_analysis_esil_get_parm(esil, src0, &s)) { //get the src
-		rz_analysis_esil_push(esil, dst); //push the dst-addr
-		ret = (!!esil_peek_n(esil, bits)); //read
-		src1 = rz_analysis_esil_pop(esil); //get the old dst-value
-		if (src1 && rz_analysis_esil_get_parm(esil, src1, &d)) { //get the old dst-value
-			d |= s; //calculate the new dst-value
-			rz_analysis_esil_pushnum(esil, d); //push the new dst-value
-			rz_analysis_esil_push(esil, dst); //push the dst-addr
-			ret &= (!!esil_poke_n(esil, bits)); //write
+	if (src0 && rz_analysis_esil_get_parm(esil, src0, &s)) { // get the src
+		rz_analysis_esil_push(esil, dst); // push the dst-addr
+		ret = (!!esil_peek_n(esil, bits)); // read
+		src1 = rz_analysis_esil_pop(esil); // get the old dst-value
+		if (src1 && rz_analysis_esil_get_parm(esil, src1, &d)) { // get the old dst-value
+			d |= s; // calculate the new dst-value
+			rz_analysis_esil_pushnum(esil, d); // push the new dst-value
+			rz_analysis_esil_push(esil, dst); // push the dst-addr
+			ret &= (!!esil_poke_n(esil, bits)); // write
 		} else {
 			ret = false;
 		}
@@ -2932,11 +2932,11 @@ static bool runword(RzAnalysisEsil *esil, const char *word) {
 		return false;
 	}
 
-	//eprintf ("WORD (%d) (%s)\n", esil->skip, word);
+	// eprintf ("WORD (%d) (%s)\n", esil->skip, word);
 	if (!strcmp(word, "}{")) {
 		if (esil->skip == 1) {
 			esil->skip = 0;
-		} else if (esil->skip == 0) { //this isn't perfect, but should work for valid esil
+		} else if (esil->skip == 0) { // this isn't perfect, but should work for valid esil
 			esil->skip = 1;
 		}
 		return true;
@@ -2960,8 +2960,8 @@ static bool runword(RzAnalysisEsil *esil, const char *word) {
 				}
 			}
 			rz_strbuf_set(&esil->current_opstr, word);
-			//so this is basically just sharing what's the operation with the operation
-			//useful for wrappers
+			// so this is basically just sharing what's the operation with the operation
+			// useful for wrappers
 			const bool ret = op->code(esil);
 			rz_strbuf_fini(&esil->current_opstr);
 			if (!ret) {
@@ -3128,8 +3128,8 @@ repeat:
 			str++;
 		}
 		word[wordi++] = *str;
-		//is *str is '\0' in the next iteration the condition will be true
-		//reading beyond the boundaries
+		// is *str is '\0' in the next iteration the condition will be true
+		// reading beyond the boundaries
 		if (*str) {
 			str++;
 		}
@@ -3166,8 +3166,8 @@ RZ_API bool rz_analysis_esil_runword(RzAnalysisEsil *esil, const char *word) {
 	return true;
 }
 
-//frees all elements from the stack, not the stack itself
-//rename to stack_empty() ?
+// frees all elements from the stack, not the stack itself
+// rename to stack_empty() ?
 RZ_API void rz_analysis_esil_stack_free(RzAnalysisEsil *esil) {
 	int i;
 	if (esil) {
@@ -3213,7 +3213,7 @@ static void rz_analysis_esil_setup_ops(RzAnalysisEsil *esil) {
 #define OT_MEMW           RZ_ANALYSIS_ESIL_OP_TYPE_MEM_WRITE
 #define OT_MEMR           RZ_ANALYSIS_ESIL_OP_TYPE_MEM_READ
 
-	OP("$", esil_interrupt, 0, 1, OT_UNK); //hm, type seems a bit wrong
+	OP("$", esil_interrupt, 0, 1, OT_UNK); // hm, type seems a bit wrong
 	OP("$z", esil_zf, 1, 0, OT_UNK);
 	OP("$c", esil_cf, 1, 1, OT_UNK);
 	OP("$b", esil_bf, 1, 1, OT_UNK);
@@ -3365,12 +3365,12 @@ static void rz_analysis_esil_setup_ops(RzAnalysisEsil *esil) {
 /* register callbacks using this analysis module. */
 RZ_API bool rz_analysis_esil_setup(RzAnalysisEsil *esil, RzAnalysis *analysis, int romem, int stats, int nonull) {
 	rz_return_val_if_fail(esil, false);
-	//esil->debug = 0;
+	// esil->debug = 0;
 	esil->analysis = analysis;
 	esil->parse_goto_count = analysis->esil_goto_limit;
 	esil->trap = 0;
 	esil->trap_code = 0;
-	//esil->user = NULL;
+	// esil->user = NULL;
 	esil->cb.reg_read = internal_esil_reg_read;
 	esil->cb.mem_read = internal_esil_mem_read;
 

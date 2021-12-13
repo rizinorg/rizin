@@ -96,7 +96,7 @@ static xnu_thread_t *get_xnu_thread(RzDebug *dbg, int tid) {
 		eprintf("Failed to update thread_list xnu_udpate_thread_list\n");
 		return NULL;
 	}
-	//TODO get the current thread
+	// TODO get the current thread
 	RzListIter *it = rz_list_find(dbg->threads, (const void *)(size_t)&tid,
 		(RzListComparator)&thread_find);
 	if (!it) {
@@ -128,7 +128,7 @@ static task_t task_for_pid_workaround(int Pid) {
 	kr = host_processor_set_priv(myhost, psDefault, &psDefault_control);
 	if (kr != KERN_SUCCESS) {
 		eprintf("host_processor_set_priv failed with error 0x%x\n", kr);
-		//mach_error ("host_processor_set_priv",kr);
+		// mach_error ("host_processor_set_priv",kr);
 		return -1;
 	}
 
@@ -172,14 +172,14 @@ int xnu_wait(RzDebug *dbg, int pid) {
 
 bool xnu_step(RzDebug *dbg) {
 #if XNU_USE_PTRACE
-	int ret = rz_debug_ptrace(dbg, PT_STEP, dbg->pid, (caddr_t)1, 0) == 0; //SIGINT
+	int ret = rz_debug_ptrace(dbg, PT_STEP, dbg->pid, (caddr_t)1, 0) == 0; // SIGINT
 	if (!ret) {
 		perror("ptrace-step");
 		eprintf("mach-error: %d, %s\n", ret, MACH_ERROR_STRING(ret));
 	}
 	return ret;
 #else
-	//we must find a way to get the current thread not just the first one
+	// we must find a way to get the current thread not just the first one
 	task_t task = pid_to_task(dbg->pid);
 	if (!task) {
 		eprintf("step failed on task %d for pid %d\n", task, dbg->tid);
@@ -227,15 +227,15 @@ int xnu_detach(RzDebug *dbg, int pid) {
 	return rz_debug_ptrace(dbg, PT_DETACH, pid, NULL, 0);
 #else
 	kern_return_t kr;
-	//do the cleanup necessary
-	//XXX check for errors and ref counts
+	// do the cleanup necessary
+	// XXX check for errors and ref counts
 	(void)xnu_restore_exception_ports(pid);
 	kr = mach_port_deallocate(mach_task_self(), task_dbg);
 	if (kr != KERN_SUCCESS) {
 		eprintf("xnu_detach: failed to deallocate port\n");
 		return false;
 	}
-	//we mark the task as not longer available since we deallocated the ref
+	// we mark the task as not longer available since we deallocated the ref
 	task_dbg = 0;
 	rz_list_free(dbg->threads);
 	dbg->threads = NULL;
@@ -304,13 +304,13 @@ int xnu_continue(RzDebug *dbg, int pid, int tid, int sig) {
 	if (!task) {
 		return false;
 	}
-	//TODO free refs count threads
+	// TODO free refs count threads
 	xnu_thread_t *th = get_xnu_thread(dbg, getcurthread(dbg));
 	if (!th) {
 		eprintf("failed to get thread in xnu_continue\n");
 		return false;
 	}
-	//disable trace bit if enable
+	// disable trace bit if enable
 	if (th->stepping) {
 		if (!clear_trace_bit(dbg, th)) {
 			eprintf("error clearing trace bit in xnu_continue\n");
@@ -348,10 +348,10 @@ char *xnu_reg_profile(RzDebug *dbg) {
 #endif
 }
 
-//rz_debug_select
-//using getcurthread has some drawbacks. You lose the ability to select
-//the thread you want to write or read from. but how that feature
-//is not implemented yet i don't care so much
+// rz_debug_select
+// using getcurthread has some drawbacks. You lose the ability to select
+// the thread you want to write or read from. but how that feature
+// is not implemented yet i don't care so much
 int xnu_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 	bool ret;
 	xnu_thread_t *th = get_xnu_thread(dbg, getcurthread(dbg));
@@ -376,7 +376,7 @@ int xnu_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 		ret = xnu_thread_set_drx(dbg, th);
 		break;
 	default:
-		//th->gpr has a header and the state we should copy on the state only
+		// th->gpr has a header and the state we should copy on the state only
 #if __POWERPC__
 #warning TODO powerpc support here
 #else
@@ -564,7 +564,7 @@ int xnu_map_protect(RzDebug *dbg, ut64 addr, int size, int perms) {
 	task_t task = pid_to_task(dbg->tid);
 #define xwrz_testwx(x) ((x & 1) << 2) | (x & 2) | ((x & 4) >> 2)
 	int xnu_perms = xwrz_testwx(perms);
-	ret = mach_vm_protect(task, (vm_address_t)addr, (vm_size_t)size, (boolean_t)0, xnu_perms); //VM_PROT_COPY | perms);
+	ret = mach_vm_protect(task, (vm_address_t)addr, (vm_size_t)size, (boolean_t)0, xnu_perms); // VM_PROT_COPY | perms);
 	if (ret != KERN_SUCCESS) {
 		perror("vm_protect");
 		return false;
@@ -582,13 +582,13 @@ task_t pid_to_task(int pid) {
 		return task_dbg;
 	}
 	if (task_dbg != 0 && old_pid != pid) {
-		//we changed the process pid so deallocate a ref from the old_task
-		//since we are going to get a new task
+		// we changed the process pid so deallocate a ref from the old_task
+		// since we are going to get a new task
 		kr = mach_port_deallocate(mach_task_self(), task_dbg);
 		if (kr != KERN_SUCCESS) {
 			eprintf("pid_to_task: fail to deallocate port\n");
 			/* ignore on purpose to not break process reload: ood */
-			//return 0;
+			// return 0;
 		}
 	}
 	err = task_for_pid(mach_task_self(), (pid_t)pid, &task);
@@ -748,7 +748,7 @@ static int xnu_write_mem_maps_to_buffer(RzBuffer *buffer, RzList *mem_maps, int 
 	vm_offset_t header, int header_end, int segment_command_sz, int *hoffset_out) {
 	RzListIter *iter, *iter2;
 	RzDebugMap *curr_map;
-	int foffset = 0; //start_offset;
+	int foffset = 0; // start_offset;
 	int hoffset = header_end;
 	kern_return_t kr = KERN_SUCCESS;
 	int error = 0;
@@ -977,7 +977,7 @@ bool xnu_generate_corefile(RzDebug *dbg, RzBuffer *dest) {
 	rz_buf_append_buf(dest, mem_maps_buffer);
 
 cleanup:
-	//if (corefile_fd > 0) close (corefile_fd);
+	// if (corefile_fd > 0) close (corefile_fd);
 	rz_buf_free(mem_maps_buffer);
 	free((void *)header);
 	free((void *)padding);
@@ -1022,7 +1022,7 @@ RzDebugPid *xnu_get_pid(int pid) {
 	procargs[0] = 0;
 	if (sysctl(mib, 3, procargs, &size, NULL, 0) == -1) {
 		if (EINVAL == errno) { // invalid == access denied for some reason
-			//eprintf("EINVAL returned fetching argument space\n");
+			// eprintf("EINVAL returned fetching argument space\n");
 			free(procargs);
 			return NULL;
 		}
@@ -1041,9 +1041,9 @@ RzDebugPid *xnu_get_pid(int pid) {
 		return NULL;
 	}
 
-	//TODO: save the environment variables to envlist as well
-	// Skip over the exec_path and '\0' characters.
-	// XXX: fix parsing
+	// TODO: save the environment variables to envlist as well
+	//  Skip over the exec_path and '\0' characters.
+	//  XXX: fix parsing
 #if 0
 	while (iter_args < end_args && *iter_args != '\0') { iter_args++; }
 	while (iter_args < end_args && *iter_args == '\0') { iter_args++; }
@@ -1053,7 +1053,7 @@ RzDebugPid *xnu_get_pid(int pid) {
 		return NULL;
 	}
 	curr_arg = iter_args;
-	start_args = iter_args; //reset start position to beginning of cmdline
+	start_args = iter_args; // reset start position to beginning of cmdline
 	foo = 1;
 	*psname = 0;
 	psnamelen = 0;
@@ -1068,7 +1068,7 @@ RzDebugPid *xnu_get_pid(int pid) {
 				memcpy(psname + psnamelen + 1, curr_arg, alen + 1);
 			}
 			psnamelen += alen;
-			//printf("arg[%i]: %s\n", iter_args, curr_arg);
+			// printf("arg[%i]: %s\n", iter_args, curr_arg);
 			/* Fetch next argument */
 			curr_arg = iter_args;
 			nargs--;
@@ -1114,7 +1114,7 @@ static const char *unparse_inheritance(vm_inherit_t i) {
 #define KERNEL_LOWER 0x80000000
 #endif
 
-//it's not used (yet)
+// it's not used (yet)
 vm_address_t get_kernel_base(task_t ___task) {
 	mach_msg_type_number_t info_count = VM_REGION_SUBMAP_INFO_COUNT_64;
 	vm_region_submap_info_data_64_t info;
@@ -1186,7 +1186,7 @@ static RzList *xnu_dbg_modules(RzDebug *dbg) {
 	int size, info_array_count, info_array_size, i;
 	ut64 info_array_address;
 	void *info_array = NULL;
-	//void *header_data = NULL;
+	// void *header_data = NULL;
 	char file_path[MAXPATHLEN] = { 0 };
 	count = TASK_DYLD_INFO_COUNT;
 	task_t task = pid_to_task(dbg->tid);
@@ -1252,7 +1252,7 @@ static RzList *xnu_dbg_modules(RzDebug *dbg) {
 		memset(file_path, 0, MAXPATHLEN);
 		dbg->iob.read_at(dbg->iob.io, file_path_address,
 			(ut8 *)file_path, MAXPATHLEN - 1);
-		//eprintf ("--> %d 0x%08"PFMT64x" %s\n", i, addr, file_path);
+		// eprintf ("--> %d 0x%08"PFMT64x" %s\n", i, addr, file_path);
 		size = mach0_size(dbg, addr);
 		mr = rz_debug_map_new(file_path, addr, addr + size, 7, 7);
 		if (!mr) {
@@ -1304,9 +1304,9 @@ static RzDebugMap *rz_debug_map_clone(RzDebugMap *m) {
 }
 
 RzList *xnu_dbg_maps(RzDebug *dbg, int only_modules) {
-	//bool contiguous = false;
-	//ut32 oldprot = UT32_MAX;
-	//ut32 oldmaxprot = UT32_MAX;
+	// bool contiguous = false;
+	// ut32 oldprot = UT32_MAX;
+	// ut32 oldmaxprot = UT32_MAX;
 	char buf[1024];
 	char module_name[MAXPATHLEN];
 	mach_vm_address_t address = MACH_VM_MIN_ADDRESS;

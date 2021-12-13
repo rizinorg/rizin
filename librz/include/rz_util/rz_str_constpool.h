@@ -27,4 +27,4 @@ RZ_API const char *rz_str_constpool_get(RzStrConstPool *pool, const char *str);
 }
 #endif
 
-#endif //RZ_STR_CONSTPOOL_H
+#endif // RZ_STR_CONSTPOOL_H

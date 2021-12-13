@@ -400,7 +400,7 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 		if (ts_node_is_null(first_leaf)) {
 			node_malformed_error(state, child, text, "field_declaration");
 			result = -1;
-			goto snexit;
+			goto srnexit;
 		}
 		const char *leaf_type = ts_node_type(first_leaf);
 		// If we have type qualifier in this position it is related to
@@ -420,7 +420,7 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 			parser_error(state, "ERROR: Struct field AST should contain (field_declaration) node!\n");
 			node_malformed_error(state, child, text, "struct field");
 			result = -1;
-			goto snexit;
+			goto srnexit;
 		}
 
 		// Every field node should have at least type and declarator:
@@ -430,7 +430,7 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 			parser_error(state, "ERROR: Struct field AST shoudl contain type and declarator items");
 			node_malformed_error(state, child, text, "struct field");
 			result = -1;
-			goto snexit;
+			goto srnexit;
 		}
 
 		// Every field can be:
@@ -459,22 +459,22 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 				parser_error(state, "ERROR: Struct bitfield cannot contain non-primitive bitfield!\n");
 				node_malformed_error(state, child, text, "struct field");
 				result = -1;
-				goto snexit;
+				goto srnexit;
 			}
+			free(real_type);
 			real_type = ts_node_sub_string(field_type, text);
 			if (!real_type) {
 				parser_error(state, "ERROR: Struct bitfield type should not be NULL!\n");
 				node_malformed_error(state, child, text, "struct field");
 				result = -1;
-				goto snexit;
+				goto srnexit;
 			}
 			real_identifier = ts_node_sub_string(field_declarator, text);
 			if (!real_identifier) {
 				parser_error(state, "ERROR: Struct bitfield identifier should not be NULL!\n");
 				node_malformed_error(state, child, text, "struct field");
-				free(real_type);
 				result = -1;
-				goto snexit;
+				goto srnexit;
 			}
 			if (ts_node_named_child_count(bitfield_clause) != 1) {
 				node_malformed_error(state, child, text, "struct field");
@@ -530,16 +530,15 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 				parser_error(state, "ERROR: Struct field type should not be NULL!\n");
 				node_malformed_error(state, child, text, "struct field");
 				result = -1;
-				goto snexit;
+				goto srnexit;
 			}
 			free(real_identifier);
 			real_identifier = ts_node_sub_string(field_declarator, text);
 			if (!real_identifier) {
 				parser_error(state, "ERROR: Struct declarator should not be NULL!\n");
 				node_malformed_error(state, child, text, "struct field");
-				free(real_type);
 				result = -1;
-				goto snexit;
+				goto srnexit;
 			}
 			parser_debug(state, "field type: %s field_declarator: %s\n", real_type, real_identifier);
 			ParserTypePair *membtpair = NULL;
@@ -584,6 +583,7 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 		}
 	}
 	*tpair = struct_pair;
+
 srnexit:
 	free(real_type);
 	free(real_identifier);
@@ -748,7 +748,7 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 				parser_error(state, "ERROR: Union bitfield cannot contain non-primitive bitfield!\n");
 				node_malformed_error(state, child, text, "union field");
 				result = -1;
-				goto unexit;
+				goto urnexit;
 			}
 			free(real_type);
 			real_type = ts_node_sub_string(field_type, text);
@@ -756,7 +756,7 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 				parser_error(state, "ERROR: Union bitfield type should not be NULL!\n");
 				node_malformed_error(state, child, text, "union field");
 				result = -1;
-				goto unexit;
+				goto urnexit;
 			}
 			free(real_identifier);
 			real_identifier = ts_node_sub_string(field_declarator, text);
@@ -765,7 +765,7 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 				node_malformed_error(state, child, text, "union field");
 				free(real_type);
 				result = -1;
-				goto unexit;
+				goto urnexit;
 			}
 			if (ts_node_named_child_count(bitfield_clause) != 1) {
 				node_malformed_error(state, child, text, "union field");
@@ -821,7 +821,7 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 				parser_error(state, "ERROR: Union field type should not be NULL!\n");
 				node_malformed_error(state, child, text, "union field");
 				result = -1;
-				goto unexit;
+				goto urnexit;
 			}
 			free(real_identifier);
 			real_identifier = ts_node_sub_string(field_declarator, text);
@@ -830,7 +830,7 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 				node_malformed_error(state, child, text, "union field");
 				free(real_type);
 				result = -1;
-				goto unexit;
+				goto urnexit;
 			}
 			parser_debug(state, "field type: %s field_declarator: %s\n", real_type, real_identifier);
 			ParserTypePair *membtpair = NULL;
@@ -1350,6 +1350,7 @@ int parse_type_abstract_declarator_node(CParserState *state, TSNode node, const 
 				parser_error(state, "ERROR: Abstract pointer declarator AST should contain at least one node!\n");
 				node_malformed_error(state, node, text, "pointer declarator");
 				free(type);
+				(*tpair)->type = NULL;
 				return -1;
 			}
 			if (!ts_node_is_null(pointer_declarator)) {
@@ -1357,6 +1358,7 @@ int parse_type_abstract_declarator_node(CParserState *state, TSNode node, const 
 				if (!declarator_type) {
 					node_malformed_error(state, pointer_declarator, text, "pointer declarator");
 					free(type);
+					(*tpair)->type = NULL;
 					return -1;
 				}
 				if (is_abstract_declarator(declarator_type)) {

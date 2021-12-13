@@ -17,7 +17,7 @@ RUN
 
 NAME=core registers
 FILE=bins/elf/analysis/core.1159
-CMDS=dr
+CMDS=ar
 EXPECT=<<EOF
 rax = 0x00000000
 rbx = 0x00000000
@@ -93,7 +93,7 @@ RUN
 NAME=core regs linux x86
 FILE=bins/elf/core/core-linux-x86
 CMDS=<<EOF
-dr
+ar
 EOF
 EXPECT=<<EOF
 oeax = 0xffffffff
@@ -144,7 +144,7 @@ RUN
 NAME=core regs linux x86_64
 FILE=bins/elf/core/core-linux-x86_64
 CMDS=<<EOF
-dr
+ar
 EOF
 EXPECT=<<EOF
 rax = 0x00000000
@@ -197,7 +197,7 @@ RUN
 NAME=core regs linux arm64
 FILE=bins/elf/core/core-linux-arm64
 CMDS=<<EOF
-dr
+ar
 EOF
 EXPECT=<<EOF
 wzr = 0x00000000
@@ -310,7 +310,7 @@ RUN
 NAME=core regs linux arm32
 FILE=bins/elf/core/core-linux-arm32
 CMDS=<<EOF
-dr
+ar
 EOF
 EXPECT=<<EOF
 sb = 0x00000000

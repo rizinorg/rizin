@@ -1184,22 +1184,22 @@ e analysis.hasnext=0
 # wx 48c7c0fcffffff 48d1f8 48d1f8 48d1f8 48d1f8 48d1f8 48d1f8
 wx b8fcffffff d1f8 d1f8 d1f8 d1f8 d1f8 d1f8
 aes
-dr?eax
+ar eax
 aes
-dr?eax
+ar eax
 aes
-dr?eax
+ar eax
 aes
-dr?eax
+ar eax
 aes
-dr?eax
+ar eax
 EOF
 EXPECT=<<EOF
-0xfffffffc
-0xfffffffe
-0xffffffff
-0xffffffff
-0xffffffff
+eax = 0xfffffffc
+eax = 0xfffffffe
+eax = 0xffffffff
+eax = 0xffffffff
+eax = 0xffffffff
 EOF
 RUN
 
@@ -3522,6 +3522,6 @@ aes
 ar xmm0
 EOF
 EXPECT=<<EOF
-0x000000000000000000000000a0a1a2a3
+xmm0 = 0x000000000000000000000000a0a1a2a3
 EOF
 RUN

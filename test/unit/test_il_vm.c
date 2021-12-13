@@ -65,22 +65,22 @@ static bool test_rzil_vm_basic_operation() {
 	mu_assert_eq(cur_var_r1_value, cur_var_r2_value, "Bind to the same value");
 
 	// 7. create label
-	RzILBitVector *addr = rz_il_bv_new_from_ut64(16, 233);
+	RzBitVector *addr = rz_bv_new_from_ut64(16, 233);
 	RzILEffectLabel *blackhole = rz_il_vm_create_label(vm, "blackhole", addr);
 
 	// default type is LABEL_ADDR
 	mu_assert_eq(blackhole->type, EFFECT_LABEL_ADDR, "Label type");
 	mu_assert_streq(blackhole->label_id, "blackhole", "Label name");
 
-	bool is_equal_bv = rz_il_bv_cmp(blackhole->addr, addr) == 0 ? true : false;
+	bool is_equal_bv = rz_bv_cmp(blackhole->addr, addr) == 0 ? true : false;
 	mu_assert("Label address correct", is_equal_bv);
 
 	// find label
 	RzILEffectLabel *find_blackhole = rz_il_vm_find_label_by_name(vm, "blackhole");
 	mu_assert_eq(blackhole, find_blackhole, "Find Label");
 
-	RzILBitVector *find_addr = rz_il_hash_find_addr_by_lblname(vm, "blackhole");
-	is_equal_bv = rz_il_bv_cmp(find_addr, addr) == 0 ? true : false;
+	RzBitVector *find_addr = rz_il_hash_find_addr_by_lblname(vm, "blackhole");
+	is_equal_bv = rz_bv_cmp(find_addr, addr) == 0 ? true : false;
 	mu_assert("Find address equal", is_equal_bv);
 
 	// 8. create label lazy (without giving an address)
@@ -88,16 +88,16 @@ static bool test_rzil_vm_basic_operation() {
 	RzILEffectLabel *find_lazy = rz_il_vm_find_label_by_name(vm, "lazy");
 	mu_assert_eq(lazy, find_lazy, "Find lazy label");
 
-	RzILBitVector *lazy_addr = rz_il_hash_find_addr_by_lblname(vm, "lazy");
+	RzBitVector *lazy_addr = rz_il_hash_find_addr_by_lblname(vm, "lazy");
 	mu_assert_null(lazy_addr, "Lazy label have NULL address");
 
 	// 9. update the address of lazy label
 	rz_il_vm_update_label(vm, "lazy", addr);
 	lazy_addr = rz_il_hash_find_addr_by_lblname(vm, "lazy");
-	is_equal_bv = rz_il_bv_cmp(lazy_addr, addr) == 0 ? true : false;
+	is_equal_bv = rz_bv_cmp(lazy_addr, addr) == 0 ? true : false;
 	mu_assert_true(is_equal_bv, "Update lazy label successfully");
 
-	rz_il_bv_free(addr);
+	rz_bv_free(addr);
 	rz_il_vm_free(vm);
 	mu_end;
 }
@@ -122,10 +122,10 @@ static bool test_rzil_vm_operation() {
 	RzILVal *r0 = rz_il_hash_find_val_by_name(vm, "r0");
 	RzILVal *r1 = rz_il_hash_find_val_by_name(vm, "r1");
 
-	bool is_zero = rz_il_bv_is_zero_vector(r0->data.bv);
+	bool is_zero = rz_bv_is_zero_vector(r0->data.bv);
 	mu_assert("Init r0 as all zero bitvector", is_zero);
 
-	is_zero = rz_il_bv_is_zero_vector(r1->data.bv);
+	is_zero = rz_bv_is_zero_vector(r1->data.bv);
 	mu_assert("Init r1 as all zero bitvector", is_zero);
 
 	rz_il_vm_free(vm);
@@ -135,24 +135,16 @@ static bool test_rzil_vm_operation() {
 static bool test_rzil_vm_root_evaluation() {
 	RzILVM *vm = rz_il_vm_new(0, 8, 16);
 
-	RzILOp *ite_root = rz_il_new_op(RZIL_OP_ITE);
-	RzILOp *add = rz_il_new_op(RZIL_OP_ADD);
-	RzILOp *arg1 = rz_il_new_op(RZIL_OP_BITV);
-	RzILOp *arg2 = rz_il_new_op(RZIL_OP_BITV);
-	RzILOp *true_val = rz_il_new_op(RZIL_OP_B1);
-	RzILOp *false_val = rz_il_new_op(RZIL_OP_B0);
-
 	// (ite (add 23 19)
 	//	true
 	//	false)
 	// evaluate (add 23 19) will get a bitvector, but condition require a bool
-	ite_root->op.ite->condition = add;
-	ite_root->op.ite->x = true_val;
-	ite_root->op.ite->y = false_val;
-	add->op.add->x = arg1;
-	add->op.add->y = arg2;
-	arg1->op.bitv->value = rz_il_bv_new_from_st64(16, 23);
-	arg2->op.bitv->value = rz_il_bv_new_from_st64(16, 19);
+	RzILOp *arg1 = rz_il_op_new_bitv_from_st64(16, 23);
+	RzILOp *arg2 = rz_il_op_new_bitv_from_st64(16, 19);
+	RzILOp *add = rz_il_op_new_add(arg1, arg2);
+	RzILOp *true_val = rz_il_op_new_b1();
+	RzILOp *false_val = rz_il_op_new_b0();
+	RzILOp *ite_root = rz_il_op_new_ite(add, true_val, false_val);
 
 	// Partially evaluate `condition` only
 	RzILOpArgType type_checker = RZIL_OP_ARG_INIT;
@@ -169,14 +161,11 @@ static bool test_rzil_vm_root_evaluation() {
 	rz_il_value_free(ite_val);
 
 	// Catch error
-	RzILOp *branch_root = rz_il_new_op(RZIL_OP_BRANCH);
-	RzILOp *branch_cond = rz_il_new_op(RZIL_OP_B1);
-	RzILOp *branch_true = rz_il_new_op(RZIL_OP_B1);
-	RzILOp *branch_false = NULL; // empty effect
 
-	branch_root->op.branch->condition = branch_cond;
-	branch_root->op.branch->true_eff = branch_true;
-	branch_root->op.branch->false_eff = branch_false;
+	RzILOp *branch_cond = rz_il_op_new_b1();
+	RzILOp *branch_true = rz_il_op_new_b1();
+	RzILOp *branch_false = NULL; // empty effect
+	RzILOp *branch_root = rz_il_op_new_branch(branch_cond, branch_true, branch_false);
 
 	type_checker = RZIL_OP_ARG_INIT;
 	RzILEffect *eff = rz_il_evaluate_effect(vm, branch_root, &type_checker);
@@ -184,8 +173,8 @@ static bool test_rzil_vm_root_evaluation() {
 	mu_assert_eq(type_checker, RZIL_OP_ARG_BOOL, "you cannot convert bool type to effect, such an error will be detected");
 	rz_il_effect_free(eff);
 
-	rz_il_free_op(ite_root);
-	rz_il_free_op(branch_root);
+	rz_il_op_free(ite_root);
+	rz_il_op_free(branch_root);
 	rz_il_vm_free(vm);
 	mu_end;
 }

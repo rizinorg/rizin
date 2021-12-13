@@ -280,68 +280,6 @@ RZ_API int rz_bp_set_trace_all(RzBreakpoint *bp, int set) {
 	return true;
 }
 
-// TODO: deprecate
-RZ_API int rz_bp_list(RzBreakpoint *bp, int rad) {
-	int n = 0;
-	RzBreakpointItem *b;
-	RzListIter *iter;
-	PJ *pj = NULL;
-	if (rad == 'j') {
-		pj = pj_new();
-		if (!pj) {
-			return 0;
-		}
-		pj_a(pj);
-	}
-	//eprintf ("Breakpoint list:\n");
-	rz_list_foreach (bp->bps, iter, b) {
-		if (pj) {
-			pj_o(pj);
-			pj_kN(pj, "addr", b->addr);
-			pj_ki(pj, "size", b->size);
-			pj_ks(pj, "perm", rz_str_rwx_i(b->perm & 7)); /* filter out R_BP_PROT_ACCESS */
-			pj_kb(pj, "hw", b->hw);
-			pj_kb(pj, "trace", b->trace);
-			pj_kb(pj, "enabled", b->enabled);
-			pj_kb(pj, "valid", rz_bp_is_valid(bp, b));
-			pj_ks(pj, "data", rz_str_get(b->data));
-			pj_ks(pj, "cond", rz_str_get(b->cond));
-			pj_end(pj);
-		} else if (rad == 1) {
-			if (b->module_name) {
-				bp->cb_printf("dbm %s %" PFMT64d "\n", b->module_name, b->module_delta);
-			} else {
-				bp->cb_printf("db @ 0x%08" PFMT64x "\n", b->addr);
-			}
-		} else if (rad == -1) {
-			bp->cb_printf("0x%08" PFMT64x "\n", b->addr);
-		} else {
-			bp->cb_printf("0x%08" PFMT64x " - 0x%08" PFMT64x
-				      " %d %c%c%c %s %s %s %s cmd=\"%s\" cond=\"%s\" "
-				      "name=\"%s\" module=\"%s\"\n",
-				b->addr, b->addr + b->size, b->size,
-				((b->perm & RZ_BP_PROT_READ) | (b->perm & RZ_BP_PROT_ACCESS)) ? 'r' : '-',
-				((b->perm & RZ_BP_PROT_WRITE) | (b->perm & RZ_BP_PROT_ACCESS)) ? 'w' : '-',
-				(b->perm & RZ_BP_PROT_EXEC) ? 'x' : '-',
-				b->hw ? "hw" : "sw",
-				b->trace ? "trace" : "break",
-				b->enabled ? "enabled" : "disabled",
-				rz_bp_is_valid(bp, b) ? "valid" : "invalid",
-				rz_str_get(b->data),
-				rz_str_get(b->cond),
-				rz_str_get(b->name),
-				rz_str_get(b->module_name));
-		}
-		n++;
-	}
-	if (pj) {
-		pj_end(pj);
-		bp->cb_printf("%s", pj_string(pj));
-		pj_free(pj);
-	}
-	return n;
-}
-
 RZ_API RzBreakpointItem *rz_bp_item_new(RzBreakpoint *bp) {
 	int i, j;
 	/* find empty slot */
@@ -421,7 +359,7 @@ RZ_API bool rz_bp_is_valid(RzBreakpoint *bp, RzBreakpointItem *b) {
 
 /**
  * \brief set the condition for a RzBreakpointItem
- * 
+ *
  * \param item brekapoint item to set value for
  * \param cond value of cond to be set; if NULL is passed, then the cond value of \p item will be set to NULL
  * \return bool true if succesful; false otherwise; if false returned, then \p item will not have been modified
@@ -443,7 +381,7 @@ RZ_API bool rz_bp_item_set_cond(RZ_NONNULL RzBreakpointItem *item, RZ_NULLABLE c
 
 /**
  * \brief set the data for a RzBreakpointItem
- * 
+ *
  * \param item brekapoint item to set value for
  * \param data value of data to be set; if NULL is passed, then the data value of \p item will be set to NULL
  * \return bool true if succesful; false otherwise; if false returned, then \p item will not have been modified
@@ -465,7 +403,7 @@ RZ_API bool rz_bp_item_set_data(RZ_NONNULL RzBreakpointItem *item, RZ_NULLABLE c
 
 /**
  * \brief set the expr for a RzBreakpointItem
- * 
+ *
  * \param item brekapoint item to set value for
  * \param expr value of expr to be set; if NULL is passed, then the expr value of \p item will be set to NULL
  * \return bool true if succesful; false otherwise; if false returned, then \p item will not have been modified
@@ -487,7 +425,7 @@ RZ_API bool rz_bp_item_set_expr(RZ_NONNULL RzBreakpointItem *item, RZ_NULLABLE c
 
 /**
  * \brief set the name for a RzBreakpointItem
- * 
+ *
  * \param item brekapoint item to set value for
  * \param name value of name to be set; if NULL is passed, then the name value of \p item will be set to NULL
  * \return bool true if succesful; false otherwise; if false returned, then \p item will not have been modified

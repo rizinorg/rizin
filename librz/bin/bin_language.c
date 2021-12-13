@@ -60,7 +60,7 @@ static inline bool check_dart(RzBinSymbol *sym) {
  *
  * Currently this method can detect the language only from bins that are either ELF, PE,
  * Mach-O, Java Class and Dex.
- * 
+ *
  * The current supported languages are: c, cxx, dart, dlang, go, groovy, java, kotlin, msvc,
  * objc, rust, swift.
  */

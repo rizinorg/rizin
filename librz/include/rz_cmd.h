@@ -11,7 +11,7 @@ extern "C" {
 
 typedef struct rz_core_t RzCore;
 
-//RZ_LIB_VERSION_HEADER (rz_cmd);
+// RZ_LIB_VERSION_HEADER (rz_cmd);
 
 #define MACRO_LIMIT   1024
 #define MACRO_LABELS  20
@@ -58,6 +58,8 @@ typedef enum rz_cmd_arg_type_t {
 	RZ_CMD_ARG_TYPE_CLASS_TYPE, ///< Argument is a C++/etc class name
 	RZ_CMD_ARG_TYPE_ANY_TYPE, ///< Argument is the any of the C or C++ type name
 	RZ_CMD_ARG_TYPE_GLOBAL_VAR, ///< Argument is a user defined global variable
+	RZ_CMD_ARG_TYPE_REG_FILTER, ///< Argument is a register name, size, type or "all"
+	RZ_CMD_ARG_TYPE_REG_TYPE, ///< Argument is a register type/arena like "gpr"
 } RzCmdArgType;
 
 /**

@@ -333,7 +333,7 @@ INST_HANDLER(adiw) { // ADIW Rd+1:Rd, K
 	op->val = k;
 	ESIL_A("7,r%d,>>,", d + 1); // remember previous highest bit
 	ESIL_A("8,%d,8,r%d,<<,r%d,|,+,DUP,r%d,=,>>,r%d,=,", k, d + 1, d, d, d + 1); // Rd+1_Rd + k
-		// FLAGS:
+										    // FLAGS:
 	ESIL_A("DUP,!,7,r%d,>>,&,vf,:=,", d + 1); // V
 	ESIL_A("r%d,0x80,&,!,!,nf,:=,", d + 1); // N
 	ESIL_A("8,r%d,<<,r%d,|,!,zf,:=,", d + 1, d); // Z
@@ -420,10 +420,10 @@ INST_HANDLER(brbx) { // BRBC s, k
 	op->jump = op->addr + ((((buf[1] & 0x03) << 6) | ((buf[0] & 0xf8) >> 2)) | (buf[1] & 0x2 ? ~((int)0x7f) : 0)) + 2;
 	op->fail = op->addr + op->size;
 	op->cycles = 1; // XXX: This is a bug, because depends on eval state,
-		// so it cannot be really be known until this
-		// instruction is executed by the ESIL interpreter!!!
-		// In case of evaluating to true, this instruction
-		// needs 2 cycles, elsewhere it needs only 1 cycle.
+			// so it cannot be really be known until this
+			// instruction is executed by the ESIL interpreter!!!
+			// In case of evaluating to true, this instruction
+			// needs 2 cycles, elsewhere it needs only 1 cycle.
 	ESIL_A("%d,1,<<,sreg,&,", s); // SREG(s)
 	ESIL_A(buf[1] & 0x4
 			? "!," // BRBC => branch if cleared
@@ -472,7 +472,7 @@ INST_HANDLER(call) { // CALL k
 		op->cycles--; // AT*mega optimizes one cycle
 	}
 	ESIL_A("pc,"); // esil is already pointing to
-		// next instruction (@ret)
+		       // next instruction (@ret)
 	__generic_push(op, CPU_PC_SIZE(cpu)); // push @ret in stack
 	ESIL_A("%" PFMT64d ",pc,=,", op->jump); // jump!
 }
@@ -576,10 +576,10 @@ INST_HANDLER(cpse) { // CPSE Rd, Rr
 
 	// cycles
 	op->cycles = 1; // XXX: This is a bug, because depends on eval state,
-		// so it cannot be really be known until this
-		// instruction is executed by the ESIL interpreter!!!
-		// In case of evaluating to true, this instruction
-		// needs 2/3 cycles, elsewhere it needs only 1 cycle.
+			// so it cannot be really be known until this
+			// instruction is executed by the ESIL interpreter!!!
+			// In case of evaluating to true, this instruction
+			// needs 2/3 cycles, elsewhere it needs only 1 cycle.
 	ESIL_A("r%d,r%d,^,!,", r, d); // Rr == Rd
 	ESIL_A("?{,%" PFMT64d ",pc,=,},", op->jump); // ?true => jmp
 }
@@ -590,7 +590,7 @@ INST_HANDLER(dec) { // DEC Rd
 	}
 	const ut32 d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
 	ESIL_A("0x1,r%d,-=,", d); // Rd--
-		// FLAGS:
+				  // FLAGS:
 	ESIL_A("7,$o,vf,:=,"); // V
 	ESIL_A("r%d,0x80,&,!,!,nf,:=,", d); // N
 	ESIL_A("$z,zf,:=,"); // Z
@@ -621,7 +621,7 @@ INST_HANDLER(eijmp) { // EIJMP
 INST_HANDLER(eicall) { // EICALL
 	// push pc in stack
 	ESIL_A("pc,"); // esil is already pointing to
-		// next instruction (@ret)
+		       // next instruction (@ret)
 	__generic_push(op, CPU_PC_SIZE(cpu)); // push @ret in stack
 	// do a standard EIJMP
 	INST_CALL(eijmp);
@@ -714,7 +714,7 @@ INST_HANDLER(ijmp) { // IJMP k
 INST_HANDLER(icall) { // ICALL k
 	// push pc in stack
 	ESIL_A("pc,"); // esil is already pointing to
-		// next instruction (@ret)
+		       // next instruction (@ret)
 	__generic_push(op, CPU_PC_SIZE(cpu)); // push @ret in stack
 	// do a standard IJMP
 	INST_CALL(ijmp);
@@ -746,7 +746,7 @@ INST_HANDLER(inc) { // INC Rd
 	}
 	const ut32 d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
 	ESIL_A("1,r%d,+=,", d); // Rd++
-		// FLAGS:
+				// FLAGS:
 	ESIL_A("7,$o,vf,:=,"); // V
 	ESIL_A("r%d,0x80,&,!,!,nf,:=,", d); // N
 	ESIL_A("$z,zf,:=,"); // Z
@@ -1116,7 +1116,7 @@ INST_HANDLER(rcall) { // RCALL k
 	op->fail = op->addr + op->size;
 	// esil
 	ESIL_A("pc,"); // esil already points to next
-		// instruction (@ret)
+		       // instruction (@ret)
 	__generic_push(op, CPU_PC_SIZE(cpu)); // push @ret addr
 	ESIL_A("%" PFMT64d ",pc,=,", op->jump); // jump!
 	// cycles
@@ -1143,7 +1143,7 @@ INST_HANDLER(ret) { // RET
 }
 
 INST_HANDLER(reti) { // RETI
-	//XXX: There are not privileged instructions in ATMEL/AVR
+	// XXX: There are not privileged instructions in ATMEL/AVR
 	op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
 
 	// first perform a standard 'ret'
@@ -1287,10 +1287,10 @@ INST_HANDLER(sbix) { // SBIC A, b
 
 	// cycles
 	op->cycles = 1; // XXX: This is a bug, because depends on eval state,
-		// so it cannot be really be known until this
-		// instruction is executed by the ESIL interpreter!!!
-		// In case of evaluating to false, this instruction
-		// needs 2/3 cycles, elsewhere it needs only 1 cycle.
+			// so it cannot be really be known until this
+			// instruction is executed by the ESIL interpreter!!!
+			// In case of evaluating to false, this instruction
+			// needs 2/3 cycles, elsewhere it needs only 1 cycle.
 
 	// read port a and clear bit b
 	io_port = __generic_io_dest(a, 0, cpu);
@@ -1339,10 +1339,10 @@ INST_HANDLER(sbrx) { // SBRC Rr, b
 
 	// cycles
 	op->cycles = 1; // XXX: This is a bug, because depends on eval state,
-		// so it cannot be really be known until this
-		// instruction is executed by the ESIL interpreter!!!
-		// In case of evaluating to false, this instruction
-		// needs 2/3 cycles, elsewhere it needs only 1 cycle.
+			// so it cannot be really be known until this
+			// instruction is executed by the ESIL interpreter!!!
+			// In case of evaluating to false, this instruction
+			// needs 2/3 cycles, elsewhere it needs only 1 cycle.
 	ESIL_A("%d,1,<<,r%d,&,", b, r); // Rr(b)
 	ESIL_A((buf[1] & 0xe) == 0xc
 			? "!," // SBRC => branch if cleared
@@ -1389,10 +1389,10 @@ INST_HANDLER(spm) { // SPM Z+
 	}
 
 	op->cycles = 1; // This is truly false. Datasheets do not publish how
-		// many cycles this instruction uses in all its
-		// operation modes and I am pretty sure that this value
-		// can vary substantially from one MCU type to another.
-		// So... one cycle is fine.
+			// many cycles this instruction uses in all its
+			// operation modes and I am pretty sure that this value
+			// can vary substantially from one MCU type to another.
+			// So... one cycle is fine.
 }
 
 INST_HANDLER(st) { // ST X, Rr
@@ -1555,7 +1555,7 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL(sbc, 0xfc00, 0x0800, 1, 2, SUB), // SBC Rd, Rr
 	INST_DECL(sub, 0xfc00, 0x1800, 1, 2, SUB), // SUB Rd, Rr
 	INST_DECL(in, 0xf800, 0xb000, 1, 2, IO), // IN Rd, A
-	//INST_DECL (lds16,  0xf800, 0xa000, 1,      2,   LOAD   ), // LDS Rd, k
+	// INST_DECL (lds16,  0xf800, 0xa000, 1,      2,   LOAD   ), // LDS Rd, k
 	INST_DECL(out, 0xf800, 0xb800, 1, 2, IO), // OUT A, Rr
 	INST_DECL(andi, 0xf000, 0x7000, 1, 2, AND), // ANDI Rd, K
 	INST_DECL(cpi, 0xf000, 0x3000, 1, 2, CMP), // CPI Rd, K
@@ -1786,7 +1786,7 @@ static bool avr_custom_spm_page_erase(RzAnalysisEsil *esil) {
 	addr &= ~(MASK(page_size_bits));
 
 	// perform erase
-	//eprintf ("SPM_PAGE_ERASE %ld bytes @ 0x%08" PFMT64x ".\n", page_size, addr);
+	// eprintf ("SPM_PAGE_ERASE %ld bytes @ 0x%08" PFMT64x ".\n", page_size, addr);
 	c = 0xff;
 	for (i = 0; i < (1ULL << page_size_bits); i++) {
 		rz_analysis_esil_mem_write(
@@ -1830,7 +1830,7 @@ static bool avr_custom_spm_page_fill(RzAnalysisEsil *esil) {
 	addr &= (MASK(page_size_bits) ^ 1);
 
 	// perform write to temporary page
-	//eprintf ("SPM_PAGE_FILL bytes (%02x, %02x) @ 0x%08" PFMT64x ".\n", r1, r0, addr);
+	// eprintf ("SPM_PAGE_FILL bytes (%02x, %02x) @ 0x%08" PFMT64x ".\n", r1, r0, addr);
 	rz_analysis_esil_mem_write(esil, addr++, &r0, 1);
 	rz_analysis_esil_mem_write(esil, addr++, &r1, 1);
 
@@ -1863,7 +1863,7 @@ static bool avr_custom_spm_page_write(RzAnalysisEsil *esil) {
 	addr &= (~(MASK(page_size_bits)) & CPU_PC_MASK(cpu));
 
 	// perform writing
-	//eprintf ("SPM_PAGE_WRITE %ld bytes @ 0x%08" PFMT64x ".\n", page_size, addr);
+	// eprintf ("SPM_PAGE_WRITE %ld bytes @ 0x%08" PFMT64x ".\n", page_size, addr);
 	if (!(t = malloc(1 << page_size_bits))) {
 		eprintf("Cannot alloc a buffer for copying the temporary page.\n");
 		return false;
@@ -1904,7 +1904,7 @@ static int esil_avr_init(RzAnalysisEsil *esil) {
 	if (!esil) {
 		return false;
 	}
-	rz_analysis_esil_set_op(esil, "des", avr_custom_des, 0, 0, RZ_ANALYSIS_ESIL_OP_TYPE_CUSTOM); //better meta info plz
+	rz_analysis_esil_set_op(esil, "des", avr_custom_des, 0, 0, RZ_ANALYSIS_ESIL_OP_TYPE_CUSTOM); // better meta info plz
 	rz_analysis_esil_set_op(esil, "SPM_PAGE_ERASE", avr_custom_spm_page_erase, 0, 0, RZ_ANALYSIS_ESIL_OP_TYPE_CUSTOM);
 	rz_analysis_esil_set_op(esil, "SPM_PAGE_FILL", avr_custom_spm_page_fill, 0, 0, RZ_ANALYSIS_ESIL_OP_TYPE_CUSTOM);
 	rz_analysis_esil_set_op(esil, "SPM_PAGE_WRITE", avr_custom_spm_page_write, 0, 0, RZ_ANALYSIS_ESIL_OP_TYPE_CUSTOM);
@@ -1917,7 +1917,7 @@ static int esil_avr_fini(RzAnalysisEsil *esil) {
 	return true;
 }
 
-static bool set_reg_profile(RzAnalysis *analysis) {
+static char *get_reg_profile(RzAnalysis *analysis) {
 	const char *p =
 		"=PC	pcl\n"
 		"=SN	r24\n"
@@ -2027,7 +2027,7 @@ RAMPX, RAMPY, RAMPZ, RAMPD and EIND:
 		//		Store Program Memory Control and Status Register (SPMCSR)
 		"gpr    spmcsr  .8      64      0\n";
 
-	return rz_reg_set_profile_string(analysis->reg, p);
+	return strdup(p);
 }
 
 static int archinfo(RzAnalysis *analysis, int q) {
@@ -2104,7 +2104,7 @@ RzAnalysisPlugin rz_analysis_plugin_avr = {
 	.bits = 8 | 16, // 24 big regs conflicts
 	.address_bits = address_bits,
 	.op = &avr_op,
-	.set_reg_profile = &set_reg_profile,
+	.get_reg_profile = &get_reg_profile,
 	.esil_init = esil_avr_init,
 	.esil_fini = esil_avr_fini,
 	.analysis_mask = analysis_mask_avr,

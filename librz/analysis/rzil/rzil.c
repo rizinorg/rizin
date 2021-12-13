@@ -35,15 +35,16 @@ RZ_API void rz_analysis_rzil_free(RZ_NULLABLE RzAnalysisRzil *rzil) {
 /**
  * Cleanup RZIL instance : clean VM, clean arch-specific user_data, and RZIL itself
  * \param analysis pointer to rizin's RzAnalysis
- * \param rzil pointer to RzAnalysisRzil
  */
 RZ_API void rz_analysis_rzil_cleanup(RzAnalysis *analysis) {
 	rz_return_if_fail(analysis);
-	if (!analysis->rzil || !analysis->cur || !analysis->cur->rzil_fini) {
+	if (!analysis->rzil) {
 		return;
 	}
-	analysis->cur->rzil_fini(analysis);
-	rz_analysis_rzil_free(analysis->rzil);
+	if (analysis->cur && analysis->cur->rzil_fini) {
+		analysis->cur->rzil_fini(analysis);
+	}
+	rz_analysis_rzil_free(analysis->rzil); // need to get rid of rzil even if we don't have callbacks
 	analysis->rzil = NULL;
 }
 
@@ -64,10 +65,6 @@ RZ_API bool rz_analysis_rzil_set_pc(RzAnalysisRzil *rzil, ut64 addr) {
 /**
  * Init an empty RZIL
  * \param analysis RzAnalysis* pointer to RzAnalysis
- * \param rzil RzAnalysisRzil* pointer to RzAnalysisRzil
- * \param romem int is read only mem ?
- * \param stats int use stats ?
- * \param nonull int is pc cannot be null ?
  * \return true if setup, else return false
  */
 RZ_API bool rz_analysis_rzil_setup(RzAnalysis *analysis) {

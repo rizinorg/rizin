@@ -292,7 +292,7 @@ static int __close(RzIODesc *desc) {
 
 static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 	RzIOPtrace *iop = (RzIOPtrace *)fd->data;
-	//printf("ptrace io command (%s)\n", cmd);
+	// printf("ptrace io command (%s)\n", cmd);
 	/* XXX ugly hack for testing purposes */
 	if (!strcmp(cmd, "")) {
 		return NULL;

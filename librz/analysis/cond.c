@@ -94,14 +94,14 @@ RZ_API RzAnalysisCond *rz_analysis_cond_new_from_op(RzAnalysisOp *op) {
 	if (!(cond = rz_analysis_cond_new())) {
 		return NULL;
 	}
-	//v->reg[0] = op->src[0];
-	//v->reg[1] = op->src[1];
+	// v->reg[0] = op->src[0];
+	// v->reg[1] = op->src[1];
 	cond->arg[0] = op->src[0];
 	op->src[0] = NULL;
 	cond->arg[1] = op->src[1];
 	op->src[1] = NULL;
 	// TODO: moar!
-	//cond->arg[1] = op->src[1];
+	// cond->arg[1] = op->src[1];
 	return cond;
 }
 

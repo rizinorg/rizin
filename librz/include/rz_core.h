@@ -392,14 +392,6 @@ typedef struct rz_core_item_t {
 
 RZ_API void rz_core_item_free(RzCoreItem *ci);
 
-typedef struct rz_core_cmpwatch_t {
-	ut64 addr;
-	int size;
-	char cmd[32];
-	ut8 *odata;
-	ut8 *ndata;
-} RzCoreCmpWatcher;
-
 typedef int (*RzCoreSearchCallback)(RzCore *core, ut64 from, ut8 *buf, int len);
 
 #ifdef RZ_API
@@ -587,8 +579,7 @@ RZ_API bool rz_core_debug_step_one(RzCore *core, int times);
 RZ_API bool rz_core_debug_continue_until(RzCore *core, ut64 addr, ut64 to);
 RZ_API void rz_core_debug_bp_add_noreturn_func(RzCore *core);
 
-RZ_API void rz_core_debug_ri(RzCore *core, RzReg *reg, int mode);
-RZ_API void rz_core_debug_rr(RzCore *core, RzReg *reg, int mode);
+RZ_API void rz_core_debug_ri(RzCore *core);
 RZ_API void rz_core_debug_set_register_flags(RzCore *core);
 RZ_API void rz_core_debug_clear_register_flags(RzCore *core);
 
@@ -633,7 +624,7 @@ RZ_API bool rz_core_yank_file_all(RzCore *core, const char *filename);
 #define RZ_CORE_LOADLIBS_ALL    UT32_MAX
 
 RZ_API void rz_core_loadlibs_init(RzCore *core);
-RZ_API int rz_core_loadlibs(RzCore *core, int where, const char *path);
+RZ_API int rz_core_loadlibs(RzCore *core, int where);
 RZ_API RzCmd *rz_core_cmd_new(bool has_cons);
 RZ_API int rz_core_cmd_buffer(RzCore *core, const char *buf);
 RZ_API int rz_core_cmdf(RzCore *core, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
@@ -987,15 +978,6 @@ RZ_API bool rz_core_dump(RzCore *core, const char *file, ut64 addr, ut64 size, i
 RZ_API void rz_core_diff_show(RzCore *core, RzCore *core2, bool json);
 RZ_API bool rz_core_diff_show_function(RzCore *core, RzCore *core2, ut64 addr, bool json);
 RZ_API void rz_core_clippy(RzCore *core, const char *msg);
-
-/* watchers */
-RZ_API void rz_core_cmpwatch_free(RzCoreCmpWatcher *w);
-RZ_API RzCoreCmpWatcher *rz_core_cmpwatch_get(RzCore *core, ut64 addr);
-RZ_API int rz_core_cmpwatch_add(RzCore *core, ut64 addr, int size, const char *cmd);
-RZ_API int rz_core_cmpwatch_del(RzCore *core, ut64 addr);
-RZ_API int rz_core_cmpwatch_update(RzCore *core, ut64 addr);
-RZ_API int rz_core_cmpwatch_show(RzCore *core, ut64 addr, int mode);
-RZ_API int rz_core_cmpwatch_revert(RzCore *core, ut64 addr);
 
 // TODO MOVE SOMEWHERE ELSE
 typedef char *(*PrintItemCallback)(void *user, void *p, bool selected);

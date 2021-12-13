@@ -62,7 +62,6 @@ RZ_API ut64 rz_reg_get_value_big(RzReg *reg, RzRegItem *item, utX *val) {
 		ret = val->v256.Low.Low;
 		break;
 	default:
-		eprintf("rz_reg_get_value_big: Bit size %d not supported\n", item->size);
 		break;
 	}
 	return ret;
@@ -119,7 +118,7 @@ RZ_API ut64 rz_reg_get_value(RzReg *reg, RzRegItem *item) {
 		if (regset->arena && regset->arena->bytes && (off + 8 <= regset->arena->size)) {
 			return rz_read_ble64(regset->arena->bytes + off, reg->big_endian);
 		}
-		//eprintf ("rz_reg_get_value: null or oob arena for current regset\n");
+		// eprintf ("rz_reg_get_value: null or oob arena for current regset\n");
 		break;
 	case 80: // long double
 	case 96: // long floating value
@@ -130,7 +129,6 @@ RZ_API ut64 rz_reg_get_value(RzReg *reg, RzRegItem *item) {
 		// XXX 128 & 256 bit
 		return (ut64)rz_reg_get_longdouble(reg, item);
 	default:
-		eprintf("rz_reg_get_value: Bit size %d not supported\n", item->size);
 		break;
 	}
 	return 0LL;
@@ -224,7 +222,11 @@ RZ_API bool rz_reg_set_value(RzReg *reg, RzRegItem *item, ut64 value) {
 
 RZ_API bool rz_reg_set_value_by_role(RzReg *reg, RzRegisterId role, ut64 val) {
 	// TODO use mapping from RzRegisterId to RzRegItem (via RzRegSet)
-	RzRegItem *r = rz_reg_get(reg, rz_reg_get_name(reg, role), -1);
+	const char *name = rz_reg_get_name(reg, role);
+	if (!name) {
+		return false;
+	}
+	RzRegItem *r = rz_reg_get(reg, name, -1);
 	return rz_reg_set_value(reg, r, val);
 }
 

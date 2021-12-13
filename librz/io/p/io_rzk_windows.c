@@ -135,7 +135,7 @@ int ReadKernelMemory(ut64 address, ut8 *buf, int len) {
 			ret = len;
 		} else {
 			ret = -1;
-			//eprintf("[rzk] ReadKernelMemory: Error IOCTL_READ_KERNEL_MEM.\n");
+			// eprintf("[rzk] ReadKernelMemory: Error IOCTL_READ_KERNEL_MEM.\n");
 		}
 		free(lpBuffer);
 	} else {

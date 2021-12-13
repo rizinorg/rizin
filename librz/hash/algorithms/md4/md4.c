@@ -31,7 +31,7 @@ static inline ut32 rotate_left_32(ut32 value, ut32 rot) {
 }
 
 static void md4_digest_block(RzMD4 *context) {
-	//printb(context->block, 64);
+	// printb(context->block, 64);
 
 	ut32 W[16];
 	ut32 A = context->digest[0];

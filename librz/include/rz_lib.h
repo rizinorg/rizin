@@ -3,6 +3,7 @@
 
 #include "rz_types.h"
 #include "rz_list.h"
+#include <ht_pu.h>
 
 #if __UNIX__
 #include <dlfcn.h>
@@ -94,6 +95,7 @@ typedef struct rz_lib_t {
 	char *symnamefunc;
 	RzList /*RzLibPlugin*/ *plugins;
 	RzList /*RzLibHandler*/ *handlers;
+	HtPU *opened_dirs; ///< Hashtable to keep track of already opened directories
 } RzLib;
 
 #ifdef RZ_API
@@ -110,7 +112,7 @@ RZ_API void rz_lib_free(RzLib *lib);
 RZ_API int rz_lib_run_handler(RzLib *lib, RzLibPlugin *plugin, RzLibStruct *symbol);
 RZ_API RzLibHandler *rz_lib_get_handler(RzLib *lib, int type);
 RZ_API int rz_lib_open(RzLib *lib, const char *file);
-RZ_API bool rz_lib_opendir(RzLib *lib, const char *path);
+RZ_API bool rz_lib_opendir(RzLib *lib, const char *path, bool force);
 RZ_API int rz_lib_open_ptr(RzLib *lib, const char *file, void *handler, RzLibStruct *stru);
 RZ_API char *rz_lib_path(const char *libname);
 RZ_API void rz_lib_list(RzLib *lib);

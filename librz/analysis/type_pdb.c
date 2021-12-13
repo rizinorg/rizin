@@ -530,6 +530,7 @@ static RzTypeUnionMember *parse_union_member(const RzTypeDB *typedb, RzPdbTpiStr
 	member->offset = offset;
 	return member;
 cleanup:
+	rz_type_free(type);
 	return NULL;
 }
 

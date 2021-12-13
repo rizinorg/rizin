@@ -15,8 +15,8 @@ p8 1@ sym.main
 dk 9
 EOF
 EXPECT=<<EOF
-0x080482d0
-0x080482d2
+eip = 0x080482d0
+eip = 0x080482d2
 55
 EOF
 RUN
@@ -36,8 +36,8 @@ p8 1@ sym.main
 dk 9
 EOF
 EXPECT=<<EOF
-0x08048400
-0x08048401
+eip = 0x08048400
+eip = 0x08048401
 55
 EOF
 RUN
@@ -59,8 +59,8 @@ p8 1@ sym.main
 dk 9
 EOF
 EXPECT=<<EOF
-0x080482d0
-0x080482d2
+eip = 0x080482d0
+eip = 0x080482d2
 55
 EOF
 RUN
@@ -80,8 +80,8 @@ p8 1@ sym.main
 dk 9
 EOF
 EXPECT=<<EOF
-0x08048400
-0x08048401
+eip = 0x08048400
+eip = 0x08048401
 55
 EOF
 RUN
@@ -124,8 +124,8 @@ dr rip
 dk 9
 EOF
 EXPECT=<<EOF
-0x000031c0
-0x004000ce
+rax = 0x000031c0
+rip = 0x004000ce
 EOF
 RUN
 
@@ -143,12 +143,12 @@ dc
 dk 9
 EOF
 EXPECT=<<EOF
-0x00000000
-0x00000220
-0x000031c0
-0x000033c2
-0x00000249
-0x00000440
+rax = 0x00000000
+rax = 0x00000220
+rax = 0x000031c0
+rax = 0x000033c2
+rax = 0x00000249
+rax = 0x00000440
 EOF
 RUN
 
@@ -173,10 +173,10 @@ dr PC
 EOF
 EXPECT=<<EOF
 [{"addr":4195619,"size":1,"perm":"--x","hw":false,"trace":false,"enabled":true,"valid":true,"data":"","cond":""},{"addr":4195610,"size":1,"perm":"--x","hw":false,"trace":false,"enabled":true,"valid":true,"data":"","cond":""}]
-0x00400523
-0x0040051a
-0x0040051a
-0x00400523
+rip = 0x00400523
+rip = 0x0040051a
+rip = 0x0040051a
+rip = 0x00400523
 EOF
 RUN
 
@@ -205,7 +205,7 @@ ARGS=-d
 CMDS=<<EOF
 e scr.color=0
 db @ main
-dbl~1[8]
+dbl:valid~:2
 EOF
 EXPECT=<<EOF
 valid
@@ -218,7 +218,7 @@ ARGS=-d
 CMDS=<<EOF
 e scr.color=0
 db @ 0x0
-dbl~1[8]
+dbl:valid~:2
 EOF
 EXPECT=<<EOF
 invalid
@@ -261,7 +261,7 @@ ARGS=-d
 CMDS=<<EOF
 e scr.color=0
 dbH @ main
-dbl~1[5]
+dbl:hwsw~:2
 EOF
 EXPECT=<<EOF
 hw

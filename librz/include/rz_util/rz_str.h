@@ -22,6 +22,11 @@ typedef enum {
 	RZ_STRING_ENC_UTF32LE = 'U',
 	RZ_STRING_ENC_UTF16BE = 'n',
 	RZ_STRING_ENC_UTF32BE = 'N',
+	RZ_STRING_ENC_IBM037 = 'c',
+	RZ_STRING_ENC_IBM290 = 'd',
+	RZ_STRING_ENC_EBCDIC_UK = 'k',
+	RZ_STRING_ENC_EBCDIC_US = 's',
+	RZ_STRING_ENC_EBCDIC_ES = 't',
 	RZ_STRING_ENC_GUESS = 'g',
 } RzStrEnc;
 
@@ -213,7 +218,6 @@ RZ_API char *rz_str_utf16_encode(const char *s, int len);
 RZ_API char *rz_str_escape_utf8_for_json(const char *s, int len);
 RZ_API char *rz_str_escape_mutf8_for_json(const char *s, int len);
 RZ_API char *rz_str_home(const char *str);
-RZ_API char *rz_str_rz_prefix(const char *str);
 RZ_API size_t rz_str_nlen(const char *s, size_t n);
 RZ_API size_t rz_str_nlen_w(const char *s, int n);
 RZ_API size_t rz_wstr_clen(const char *s);
@@ -237,7 +241,6 @@ RZ_API bool rz_str_endswith(const char *str, const char *needle);
 RZ_API bool rz_str_isnumber(const char *str);
 RZ_API const char *rz_str_last(const char *in, const char *ch);
 RZ_API char *rz_str_highlight(char *str, const char *word, const char *color, const char *color_reset);
-RZ_API char *rz_qrcode_gen(const ut8 *text, int len, bool utf8, bool inverted);
 RZ_API char *rz_str_from_ut64(ut64 val);
 RZ_API void rz_str_stripLine(char *str, const char *key);
 RZ_API char *rz_str_list_join(RzList *str, const char *sep);

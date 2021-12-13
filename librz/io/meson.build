@@ -25,7 +25,6 @@ rz_io_sources = [
   'p/io_null.c',
   'p/io_procpid.c',
   'p/io_ptrace.c',
-  'p/io_qnx.c',
   'p/io_rzk.c',
   'p/io_rzpipe.c',
   'p/io_rzweb.c',
@@ -53,7 +52,6 @@ rz_io_deps = [
   bochs_dep,
   gdb_dep,
   winkd_dep,
-  qnx_dep,
   libzip_dep,
   ar_dep,
   pth,
@@ -64,6 +62,11 @@ rz_io_deps = [
   rz_crypto_dep,
   rz_cons_dep,
 ]
+
+if get_option('use_gpl')
+  rz_io_deps += qnx_dep
+  rz_io_sources += 'p/io_qnx.c'
+endif
 
 if host_machine.system() == 'windows'
   rz_io_deps += w32dbg_wrap_dep

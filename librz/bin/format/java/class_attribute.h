@@ -56,13 +56,13 @@ typedef struct java_attribute_t {
 
 typedef struct java_attribute_constant_value_t {
 	/*
- * Must be pointing to one of these types:
- * CONSTANT_POOL_INTEGER: int, short, char, byte, boolean
- * CONSTANT_POOL_FLOAT:   float
- * CONSTANT_POOL_LONG:    long
- * CONSTANT_POOL_DOUBLE:  double
- * CONSTANT_POOL_STRING:  String
-*/
+	 * Must be pointing to one of these types:
+	 * CONSTANT_POOL_INTEGER: int, short, char, byte, boolean
+	 * CONSTANT_POOL_FLOAT:   float
+	 * CONSTANT_POOL_LONG:    long
+	 * CONSTANT_POOL_DOUBLE:  double
+	 * CONSTANT_POOL_STRING:  String
+	 */
 	ut16 index;
 } AttributeConstantValue;
 

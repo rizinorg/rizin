@@ -144,42 +144,42 @@ static int i8080_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	case 0xfd:
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 		break;
-	case 0xc7: //rst 0
+	case 0xc7: // rst 0
 		op->jump = 0x00;
 		op->fail = addr + ilen;
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		break;
-	case 0xcf: //rst 8
+	case 0xcf: // rst 8
 		op->jump = 0x08;
 		op->fail = addr + ilen;
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		break;
-	case 0xd7: //rst 16
+	case 0xd7: // rst 16
 		op->jump = 0x10;
 		op->fail = addr + ilen;
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		break;
-	case 0xdf: //rst 24
+	case 0xdf: // rst 24
 		op->jump = 0x18;
 		op->fail = addr + ilen;
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		break;
-	case 0xe7: //rst 32
+	case 0xe7: // rst 32
 		op->jump = 0x20;
 		op->fail = addr + ilen;
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		break;
-	case 0xef: //rst 40
+	case 0xef: // rst 40
 		op->jump = 0x28;
 		op->fail = addr + ilen;
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		break;
-	case 0xf7: //rst 48
+	case 0xf7: // rst 48
 		op->jump = 0x30;
 		op->fail = addr + ilen;
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		break;
-	case 0xff: //rst 56
+	case 0xff: // rst 56
 		op->jump = 0x38;
 		op->fail = addr + ilen;
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;

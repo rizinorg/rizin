@@ -1057,7 +1057,7 @@ static int analop64_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *
 		break;
 	case ARM64_INS_ADD:
 	case ARM64_INS_ADC: // Add with carry.
-		//case ARM64_INS_ADCS: // Add with carry.
+		// case ARM64_INS_ADCS: // Add with carry.
 		OPCALL("+");
 		break;
 	case ARM64_INS_SUB:
@@ -1221,11 +1221,11 @@ static int analop64_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *
 	case ARM64_INS_LDURB:
 	case ARM64_INS_LDURH:
 	case ARM64_INS_LDR:
-	//case ARM64_INS_LDRSB:
-	//case ARM64_INS_LDRSH:
+	// case ARM64_INS_LDRSB:
+	// case ARM64_INS_LDRSH:
 	case ARM64_INS_LDRB:
-	//case ARM64_INS_LDRSW:
-	//case ARM64_INS_LDURSW:
+	// case ARM64_INS_LDRSW:
+	// case ARM64_INS_LDURSW:
 	case ARM64_INS_LDXR:
 	case ARM64_INS_LDXRB:
 	case ARM64_INS_LDXRH:
@@ -1722,7 +1722,7 @@ static int analop64_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *
 		break;
 	/* ASR, SXTB, SXTH and SXTW are alias for SBFM */
 	case ARM64_INS_ASR: {
-		//OPCALL(">>>>");
+		// OPCALL(">>>>");
 		const char *r0 = REG64(0);
 		const char *r1 = REG64(1);
 		const int size = REGSIZE64(0) * 8;
@@ -1881,7 +1881,7 @@ static void arm32mathaddsub(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut
 	const char *dst = ARG(0);
 	const char *src;
 	bool noflags = false;
-	if (!strcmp(dst, "pc")) { //this is because strbuf_prepend doesn't exist and E_TOO_LAZY
+	if (!strcmp(dst, "pc")) { // this is because strbuf_prepend doesn't exist and E_TOO_LAZY
 		//		rz_strbuf_append (&op->esil, "$$,pc,=,");
 		noflags = true;
 	}
@@ -2047,7 +2047,7 @@ PUSH { r4, r5, r6, r7, lr }
 			rz_strbuf_appendf(&op->esil, "%s,%s,%d,+,=[4],",
 				REG(i), ARG(0), (i + offset) * 4);
 		}
-		if (insn->detail->arm.writeback == true) { //writeback, reg should be incremented
+		if (insn->detail->arm.writeback == true) { // writeback, reg should be incremented
 			rz_strbuf_appendf(&op->esil, "%d,%s,+=,",
 				direction * (insn->detail->arm.op_count - 1) * 4, ARG(0));
 		}
@@ -2185,7 +2185,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 	case ARM_INS_STRBT:
 	case ARM_INS_STRB:
 	case ARM_INS_STRD:
-		//case ARM_INS_STLXRB: // capstone has no STLXR?
+		// case ARM_INS_STLXRB: // capstone has no STLXR?
 		switch (insn->id) {
 		case ARM_INS_STRD:
 			str_ldr_bytes = 8; // just an indication, won't be used in esil code
@@ -2249,7 +2249,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 						}
 						break;
 					case ARM_SFT_RRX: // ROR with single bit shift, using previous cf rather than new cf
-						//TODO: r2 doesn't mark this as a shift, it falls through to no shift
+						// TODO: r2 doesn't mark this as a shift, it falls through to no shift
 						break;
 					default:
 						// Hopefully nothing here
@@ -2290,7 +2290,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 							REG(0), MEMBASE(1), str_ldr_bytes, MEMBASE(1), SHIFTVALUE(2), REG(2), MEMBASE(1));
 						break;
 					case ARM_SFT_RRX:
-						//TODO
+						// TODO
 						break;
 					default:
 						// Hopefully nothing here
@@ -2800,10 +2800,10 @@ static void anop64(ArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 		if (ISREG64(0) && REGID64(0) == ARM64_REG_SP) {
 			op->stackop = RZ_ANALYSIS_STACK_INC;
 			if (ISIMM64(1)) {
-				//sub sp, 0x54
+				// sub sp, 0x54
 				op->stackptr = IMM(1);
 			} else if (ISIMM64(2) && ISREG64(1) && REGID64(1) == ARM64_REG_SP) {
-				//sub sp, sp, 0x10
+				// sub sp, sp, 0x10
 				op->stackptr = IMM64(2);
 			}
 			op->val = op->stackptr;
@@ -2835,10 +2835,10 @@ static void anop64(ArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 		if (ISREG64(0) && REGID64(0) == ARM64_REG_SP) {
 			op->stackop = RZ_ANALYSIS_STACK_INC;
 			if (ISIMM64(1)) {
-				//add sp, 0x54
+				// add sp, 0x54
 				op->stackptr = -IMM(1);
 			} else if (ISIMM64(2) && ISREG64(1) && REGID64(1) == ARM64_REG_SP) {
-				//add sp, sp, 0x10
+				// add sp, sp, 0x10
 				op->stackptr = -IMM64(2);
 			}
 			op->val = op->stackptr;
@@ -2849,7 +2849,7 @@ static void anop64(ArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 		op->cycles = 1;
 		/* fallthru */
 	case ARM64_INS_ADC:
-	//case ARM64_INS_ADCS:
+	// case ARM64_INS_ADCS:
 	case ARM64_INS_UMADDL:
 	case ARM64_INS_SMADDL:
 	case ARM64_INS_FMADD:
@@ -3035,7 +3035,7 @@ static void anop64(ArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 		if (REGID(0) == ARM_REG_PC) {
 			op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
 			if (insn->detail->arm.cc != ARM_CC_AL) {
-				//op->type = RZ_ANALYSIS_OP_TYPE_MCJMP;
+				// op->type = RZ_ANALYSIS_OP_TYPE_MCJMP;
 				op->type = RZ_ANALYSIS_OP_TYPE_UCJMP;
 			}
 		} else {
@@ -3109,7 +3109,7 @@ static void anop64(ArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 		op->type = RZ_ANALYSIS_OP_TYPE_RCALL;
 		op->reg = cs_reg_name(handle, REGID64(0));
 		op->fail = addr + 4;
-		//op->jump = IMM64(0);
+		// op->jump = IMM64(0);
 		break;
 	case ARM64_INS_CBZ:
 	case ARM64_INS_CBNZ:
@@ -3289,7 +3289,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		if (ISREG(0) && REGID(0) == ARM_REG_SP) {
 			op->stackop = RZ_ANALYSIS_STACK_INC;
 			if (ISIMM(1)) {
-				//0x0000bf4e      95b0           sub sp, 0x54
+				// 0x0000bf4e      95b0           sub sp, 0x54
 				op->stackptr = IMM(1);
 			} else if (ISIMM(2) && ISREG(1) && REGID(1) == ARM_REG_SP) {
 				// 0x00008254    10d04de2     sub sp, sp, 0x10
@@ -3308,10 +3308,10 @@ jmp $$ + 4 + ( [delta] * 2 )
 		if (ISREG(0) && REGID(0) == ARM_REG_SP) {
 			op->stackop = RZ_ANALYSIS_STACK_INC;
 			if (ISIMM(1)) {
-				//add sp, 0x54
+				// add sp, 0x54
 				op->stackptr = -IMM(1);
 			} else if (ISIMM(2) && ISREG(1) && REGID(1) == ARM_REG_SP) {
-				//add sp, sp, 0x10
+				// add sp, sp, 0x10
 				op->stackptr = -IMM(2);
 			}
 			op->val = op->stackptr;
@@ -3321,7 +3321,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		if (REGID(0) == ARM_REG_PC) {
 			op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
 			if (REGID(1) == ARM_REG_PC && insn->detail->arm.cc != ARM_CC_AL) {
-				//op->type = RZ_ANALYSIS_OP_TYPE_RCJMP;
+				// op->type = RZ_ANALYSIS_OP_TYPE_RCJMP;
 				op->type = RZ_ANALYSIS_OP_TYPE_UCJMP;
 				op->fail = addr + op->size;
 				op->jump = ((addr & ~3LL) + (thumb ? 4 : 8) + MEMDISP(1)) & UT64_MAX;
@@ -3504,7 +3504,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		if (REGID(0) == ARM_REG_PC) {
 			op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
 			if (insn->detail->arm.cc != ARM_CC_AL) {
-				//op->type = RZ_ANALYSIS_OP_TYPE_MCJMP;
+				// op->type = RZ_ANALYSIS_OP_TYPE_MCJMP;
 				op->type = RZ_ANALYSIS_OP_TYPE_UCJMP;
 			}
 		} else {
@@ -3527,7 +3527,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 			op->ptr = (addr & ~3LL) + (thumb ? 4 : 8) + MEMDISP(1);
 			op->refptr = 4;
 			if (REGID(0) == ARM_REG_PC && insn->detail->arm.cc != ARM_CC_AL) {
-				//op->type = RZ_ANALYSIS_OP_TYPE_MCJMP;
+				// op->type = RZ_ANALYSIS_OP_TYPE_MCJMP;
 				op->type = RZ_ANALYSIS_OP_TYPE_UCJMP;
 				op->fail = addr + op->size;
 				op->jump = ((addr & ~3LL) + (thumb ? 4 : 8) + MEMDISP(1)) & UT64_MAX;
@@ -3553,8 +3553,8 @@ jmp $$ + 4 + ( [delta] * 2 )
 			op->jump = IMM(0) & UT32_MAX;
 			op->fail = addr + op->size;
 			op->hint.new_bits = (a->bits == 32) ? 16 : 32;
-			//switch instruction set always with blx label
-			// rz_analysis_hint_set_bits (a, op->jump, a->bits == 32? 16 : 32);
+			// switch instruction set always with blx label
+			//  rz_analysis_hint_set_bits (a, op->jump, a->bits == 32? 16 : 32);
 		}
 		break;
 	case ARM_INS_BL:
@@ -3919,7 +3919,7 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 				insn->op_str[0] ? " " : "",
 				insn->op_str);
 		}
-		//bool thumb = cs_insn_group (handle, insn, ARM_GRP_THUMB);
+		// bool thumb = cs_insn_group (handle, insn, ARM_GRP_THUMB);
 		bool thumb = a->bits == 16;
 		op->size = insn->size;
 		op->id = insn->id;
@@ -4225,13 +4225,13 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 
 			// CPSR bit fields:
 			// 576-580 Mode fields (and register sets associated to each field):
-			//10000 	User 	R0-R14, CPSR, PC
-			//10001 	FIQ 	R0-R7, R8_fiq-R14_fiq, CPSR, SPSR_fiq, PC
-			//10010 	IRQ 	R0-R12, R13_irq, R14_irq, CPSR, SPSR_irq, PC
-			//10011 	SVC (supervisor) 	R0-R12, R13_svc R14_svc CPSR, SPSR_irq, PC
-			//10111 	Abort 	R0-R12, R13_abt R14_abt CPSR, SPSR_abt PC
-			//11011 	Undefined 	R0-R12, R13_und R14_und, CPSR, SPSR_und PC
-			//11111 	System (ARMv4+) 	R0-R14, CPSR, PC
+			// 10000 	User 	R0-R14, CPSR, PC
+			// 10001 	FIQ 	R0-R7, R8_fiq-R14_fiq, CPSR, SPSR_fiq, PC
+			// 10010 	IRQ 	R0-R12, R13_irq, R14_irq, CPSR, SPSR_irq, PC
+			// 10011 	SVC (supervisor) 	R0-R12, R13_svc R14_svc CPSR, SPSR_irq, PC
+			// 10111 	Abort 	R0-R12, R13_abt R14_abt CPSR, SPSR_abt PC
+			// 11011 	Undefined 	R0-R12, R13_und R14_und, CPSR, SPSR_und PC
+			// 11111 	System (ARMv4+) 	R0-R14, CPSR, PC
 			"flg	tf	.1	.517	0	thumb\n" // +5
 			// 582 FIQ disable bit
 			// 583 IRQ disable bit

@@ -72,7 +72,6 @@ static RzCmdDescriptor *cmd_descriptor(const char *cmd, const char *help[]) {
 
 static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpseek);
 
-static void cmd_debug_reg(RzCore *core, const char *str);
 static bool lastcmd_repeat(RzCore *core, int next);
 
 #include "cmd_block.c"
@@ -89,6 +88,7 @@ static bool lastcmd_repeat(RzCore *core, int next);
 #include "cmd_eval.c"
 #include "cmd_interpret.c"
 #include "cmd_analysis.c"
+#include "cmd_regs.c"
 #include "cmd_open.c"
 #include "cmd_type.c"
 #include "cmd_info.c"
@@ -909,8 +909,8 @@ RZ_IPI int rz_cmd_kuery(void *data, const char *input) {
 	case ' ':
 		rz_core_kuery_print(core, input + 1);
 		break;
-	//case 's': rz_pair_save (s, input + 3); break;
-	//case 'l': rz_pair_load (sdb, input + 3); break;
+	// case 's': rz_pair_save (s, input + 3); break;
+	// case 'l': rz_pair_load (sdb, input + 3); break;
 	case '\0':
 		sdb_foreach(s, callback_foreach_kv, NULL);
 		break;
@@ -1408,7 +1408,7 @@ RZ_API int rz_core_cmd_pipe_old(RzCore *core, char *rizin_cmd, char *shell_cmd) 
 			} else {
 				close(fds[1]);
 				dup2(fds[0], 0);
-				//dup2 (1, 2); // stderr goes to stdout
+				// dup2 (1, 2); // stderr goes to stdout
 				rz_sys_execl("/bin/sh", "sh", "-c", shell_cmd, (const char *)NULL);
 				close(stdout_fd);
 			}
@@ -1880,7 +1880,7 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 
 	/* multiple commands */
 	// TODO: must honor " and ` boundaries
-	//ptr = strrchr (cmd, ';');
+	// ptr = strrchr (cmd, ';');
 	if (*cmd != '#') {
 		if (is_macro_command(cmd)) {
 			ptr = find_ch_after_macro(cmd, ';');
@@ -1899,13 +1899,13 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 			*ptr = ';';
 			rz_list_free(tmpenvs);
 			return ret;
-			//rz_cons_flush ();
+			// rz_cons_flush ();
 		}
 	}
 
 	// TODO must honor " and `
 	/* pipe console to shell process */
-	//ptr = strchr (cmd, '|');
+	// ptr = strchr (cmd, '|');
 	ptr = (char *)rz_str_lastbut(cmd, '|', quotestr);
 	if (ptr) {
 		if (ptr > cmd) {
@@ -1959,7 +1959,7 @@ escape_pipe:
 	// TODO must honor " and `
 	/* bool conditions */
 	ptr = (char *)rz_str_lastbut(cmd, '&', quotestr);
-	//ptr = strchr (cmd, '&');
+	// ptr = strchr (cmd, '&');
 	while (ptr && *ptr && ptr[1] == '&') {
 		*ptr = '\0';
 		ret = rz_cmd_call(core->rcmd, cmd);
@@ -2251,7 +2251,7 @@ escape_backtick:
 		}
 
 		for (; *ptr == ' '; ptr++) {
-			//nothing to see here
+			// nothing to see here
 		}
 		if (*ptr && ptr[1] == ':') {
 			/* do nothing here */
@@ -2823,7 +2823,7 @@ RZ_API int rz_core_cmd_foreach3(RzCore *core, const char *cmd, char *each) { // 
 			RzDebugMap *map;
 			rz_list_foreach (dbg->maps, iter, map) {
 				rz_core_seek(core, map->addr, true);
-				//rz_core_block_size (core, map->size);
+				// rz_core_block_size (core, map->size);
 				rz_core_cmd0(core, cmd);
 			}
 		}
@@ -2929,7 +2929,7 @@ RZ_API int rz_core_cmd_foreach3(RzCore *core, const char *cmd, char *each) { // 
 				ut64 addr = sec->vaddr;
 				ut64 size = sec->vsize;
 				// TODO:
-				//if (RZ_BIN_SCN_EXECUTABLE & sec->perm) {
+				// if (RZ_BIN_SCN_EXECUTABLE & sec->perm) {
 				//	continue;
 				//}
 				rz_core_seek_size(core, addr, size);
@@ -3122,7 +3122,7 @@ RZ_API int rz_core_cmd_foreach(RzCore *core, const char *cmd, char *each) {
 
 	oseek = core->offset;
 	ostr = str = strdup(each);
-	rz_cons_break_push(NULL, NULL); //pop on return
+	rz_cons_break_push(NULL, NULL); // pop on return
 	switch (each[0]) {
 	case '/': // "@@/"
 	{
@@ -3322,7 +3322,7 @@ RZ_API int rz_core_cmd_foreach(RzCore *core, const char *cmd, char *each) {
 					} else {
 						addr = rz_num_math(core->num, each);
 					}
-					//eprintf ("; 0x%08"PFMT64x":\n", addr);
+					// eprintf ("; 0x%08"PFMT64x":\n", addr);
 					each = str + 1;
 					rz_core_seek(core, addr, true);
 					rz_core_cmd(core, cmd, 0);
@@ -4103,7 +4103,8 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(redirect_stmt) {
 		} else {
 			old_alias_value = "";
 		}
-		new_alias_value = rz_str_newf("%s%s%s", start_char, old_alias_value, output);
+		new_alias_value = rz_str_newf("%s%s%s", start_char, old_alias_value, output ? output : "");
+		free(output);
 		rz_cmd_alias_set(state->core->rcmd, arg_str, new_alias_value, 1);
 		free(new_alias_value);
 		free(command_str);
@@ -5257,9 +5258,9 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_dbgmap_stmt) {
 			RzCmdStatus cmd_res = handle_ts_stmt_tmpseek(state, command);
 			UPDATE_CMD_STATUS_RES(res, cmd_res, err);
 		}
+	err:
 		rz_list_free(dbg_maps_addrs);
 	}
-err:
 	return res;
 }
 
@@ -5746,7 +5747,7 @@ RZ_API int rz_core_cmd_lines(RzCore *core, const char *lines) {
 			r = rz_core_cmd(core, data, 0);
 			if (r < 0) { //== -1) {
 				data = nl + 1;
-				ret = -1; //r; //false;
+				ret = -1; // r; //false;
 				break;
 			}
 			rz_cons_flush();
@@ -5806,7 +5807,7 @@ RZ_API int rz_core_cmd_command(RzCore *core, const char *command) {
 	return ret;
 }
 
-//TODO: Fix disasm loop is mandatory
+// TODO: Fix disasm loop is mandatory
 RZ_API char *rz_core_disassemble_instr(RzCore *core, ut64 addr, int l) {
 	char *cmd, *ret = NULL;
 	cmd = rz_str_newf("pd %i @ 0x%08" PFMT64x, l, addr);
@@ -6022,7 +6023,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "<", "pipe into RzCons.readChar", rz_cmd_pipein },
 		{ "0", "alias for s 0x", rz_cmd_ox },
 		{ "a", "analysis", rz_cmd_analysis },
-		{ "c", "compare memory", rz_cmd_cmp },
 		{ "d", "debugger operations", rz_cmd_debug },
 		{ "f", "get/set flags", rz_cmd_flag },
 		{ "k", "perform sdb query", rz_cmd_kuery },

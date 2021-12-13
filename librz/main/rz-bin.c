@@ -453,7 +453,7 @@ static bool __dumpSections(RzBin *bin, const char *scnname, const char *output, 
 				free(ret);
 				return false;
 			}
-			//it does mean the user specified an output file
+			// it does mean the user specified an output file
 			if (strcmp(output, file)) {
 				rz_file_dump(output, buf, section->size, 0);
 			} else {
@@ -597,7 +597,7 @@ static int __lib_bin_dt(RzLibPlugin *pl, void *p, void *u) {
 static int __lib_bin_xtr_cb(RzLibPlugin *pl, void *user, void *data) {
 	struct rz_bin_xtr_plugin_t *hand = (struct rz_bin_xtr_plugin_t *)data;
 	RzBin *bin = user;
-	//printf(" * Added (dis)assembly plugin\n");
+	// printf(" * Added (dis)assembly plugin\n");
 	rz_bin_xtr_add(bin, hand);
 	return true;
 }
@@ -610,7 +610,7 @@ static int __lib_bin_xtr_dt(RzLibPlugin *pl, void *p, void *u) {
 static int __lib_bin_ldr_cb(RzLibPlugin *pl, void *user, void *data) {
 	struct rz_bin_ldr_plugin_t *hand = (struct rz_bin_ldr_plugin_t *)data;
 	RzBin *bin = user;
-	//printf(" * Added (dis)assembly plugin\n");
+	// printf(" * Added (dis)assembly plugin\n");
 	rz_bin_ldr_add(bin, hand);
 	return true;
 }
@@ -678,10 +678,10 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	rz_core_init(&core);
 	bin = core.bin;
 	if (!(tmp = rz_sys_getenv("RZ_BIN_NOPLUGINS"))) {
-		char *homeplugindir = rz_str_home(RZ_HOME_PLUGINS);
-		char *plugindir = rz_str_rz_prefix(RZ_PLUGINS);
-		char *extrasdir = rz_str_rz_prefix(RZ_EXTRAS);
-		char *bindingsdir = rz_str_rz_prefix(RZ_BINDINGS);
+		char *homeplugindir = rz_path_home_prefix(RZ_PLUGINS);
+		// TODO: remove after 0.4.0 is released
+		char *oldhomeplugindir = rz_path_home_prefix(RZ_HOME_OLD_PLUGINS);
+		char *plugindir = rz_path_system(RZ_PLUGINS);
 		RzLib *l = rz_lib_new(NULL, NULL);
 		rz_lib_add_handler(l, RZ_LIB_TYPE_DEMANGLER, "demangler plugins",
 			&__lib_demangler_cb, &__lib_demangler_dt, bin->demangler);
@@ -693,17 +693,15 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			&__lib_bin_ldr_cb, &__lib_bin_ldr_dt, bin);
 		/* load plugins everywhere */
 		char *path = rz_sys_getenv(RZ_LIB_ENV);
-		if (path && *path) {
-			rz_lib_opendir(l, path);
+		if (!RZ_STR_ISEMPTY(path)) {
+			rz_lib_opendir(l, path, false);
 		}
-		rz_lib_opendir(l, homeplugindir);
-		rz_lib_opendir(l, plugindir);
-		rz_lib_opendir(l, extrasdir);
-		rz_lib_opendir(l, bindingsdir);
+		rz_lib_opendir(l, homeplugindir, false);
+		rz_lib_opendir(l, oldhomeplugindir, false);
+		rz_lib_opendir(l, plugindir, false);
 		free(homeplugindir);
+		free(oldhomeplugindir);
 		free(plugindir);
-		free(extrasdir);
-		free(bindingsdir);
 		free(path);
 		rz_lib_free(l);
 	}

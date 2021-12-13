@@ -101,7 +101,7 @@ static BaseFindArray *basefind_create_array_of_addresses(RzCore *core) {
 	ut32 string_min_size = rz_config_get_i(core->config, "basefind.string.min");
 	if (string_min_size < 1) {
 		RZ_LOG_ERROR("basefind: cannot find strings when 'basefind.string.min' is zero.\n");
-		return NULL;
+		rz_goto_if_reached(error);
 	}
 
 	// if this list is sorted we can improve speed via half-interval search
@@ -255,7 +255,7 @@ static inline bool create_thread_interval(RzThreadPool *pool, BaseFindThreadData
 
 /**
  * \brief Calculates a list of possible base addresses candidates using the strings position
- * 
+ *
  * The code finds all the strings in memory with a minimum acceptable size (via basefind.string.min)
  * and calculates all possible words 32 or 64 bit large sizes (endianness via cfg.bigendian) in the
  * given binary.
@@ -263,7 +263,7 @@ static inline bool create_thread_interval(RzThreadPool *pool, BaseFindThreadData
  * and basefind.base.end) which is increased over time (see basefind.base.increase).
  * The scores are ignored if below basefind.score.min otherwise they are added to the list with the
  * associated base address.
- * 
+ *
  * \param  core         RzCore struct to use.
  * \param  pointer_size Pointer size in bits.
  * \return RzList       Sorted list of pairs (score, address) from highest score to lowest.

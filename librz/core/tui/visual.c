@@ -70,7 +70,7 @@ static const char *print3Formats[PRINT_3_FORMATS] = { //  not used at all. its h
 };
 static int current4format = 0;
 static const char *print4Formats[PRINT_4_FORMATS] = {
-	"prc", "prc=a", "pxAv", "pxx", "p=e $r-2", "pq 64", "pk 64"
+	"prc", "prc=a", "pxAv", "pxx", "p=e $r-2", "pk 64"
 };
 static int current5format = 0;
 static const char *print5Formats[PRINT_5_FORMATS] = {
@@ -466,10 +466,11 @@ static inline void prevPrintFormat(RzCore *core) {
 
 RZ_API int rz_core_visual_hud(RzCore *core) {
 	const char *c = rz_config_get(core->config, "hud.path");
-	char *f = rz_str_newf(RZ_JOIN_3_PATHS("%s", RZ_HUD, "main"),
-		rz_sys_prefix(NULL));
+	char *system_hud_dir = rz_path_system(RZ_HUD);
+	char *f = rz_file_path_join(system_hud_dir, "main");
+	free(system_hud_dir);
 	int use_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
-	char *homehud = rz_str_home(RZ_HOME_HUD);
+	char *homehud = rz_path_home_prefix(RZ_HUD);
 	char *res = NULL;
 	char *p = 0;
 	rz_cons_singleton()->context->color_mode = use_color;
@@ -731,7 +732,7 @@ RZ_API void rz_core_visual_prompt_input(RzCore *core) {
 	bool mouse_state = __holdMouseState(core);
 	rz_cons_gotoxy(0, h);
 	rz_cons_reset_colors();
-	//rz_cons_printf ("\nPress <enter> to return to Visual mode.\n");
+	// rz_cons_printf ("\nPress <enter> to return to Visual mode.\n");
 	rz_cons_show_cursor(true);
 	core->vmode = false;
 
@@ -773,7 +774,7 @@ RZ_API int rz_core_visual_prompt(RzCore *core) {
 		}
 	} else {
 		ret = false;
-		//rz_cons_any_key (NULL);
+		// rz_cons_any_key (NULL);
 		rz_cons_clear00();
 		rz_core_visual_showcursor(core, false);
 	}
@@ -1268,9 +1269,9 @@ RZ_API int rz_core_visual_prevopsz(RzCore *core, ut64 addr) {
 	return addr - prev_addr;
 }
 
-static void addComment(RzCore *core, ut64 addr) {
+static void add_comment(RzCore *core, ut64 addr, const char *prompt) {
 	char buf[1024];
-	rz_cons_printf("Enter comment for reference:\n");
+	rz_cons_print(prompt);
 	rz_core_visual_showcursor(core, true);
 	rz_cons_flush();
 	rz_cons_set_raw(false);
@@ -1279,7 +1280,13 @@ static void addComment(RzCore *core, ut64 addr) {
 	if (rz_cons_fgets(buf, sizeof(buf), 0, NULL) < 0) {
 		buf[0] = '\0';
 	}
-	rz_meta_set_string(core->analysis, RZ_META_TYPE_COMMENT, addr, buf);
+	if (!strcmp(buf, "-")) {
+		rz_meta_del(core->analysis, RZ_META_TYPE_COMMENT, addr, 1);
+	} else if (!strcmp(buf, "!")) {
+		rz_core_meta_editor(core, RZ_META_TYPE_COMMENT, addr);
+	} else {
+		rz_core_meta_append(core, buf, RZ_META_TYPE_COMMENT, addr);
+	}
 	rz_core_visual_showcursor(core, false);
 	rz_cons_set_raw(true);
 }
@@ -1321,8 +1328,8 @@ repeat:
 		if (fun) {
 			if (xref_to) { //  function xrefs
 				xrefs = rz_analysis_xrefs_get_to(core->analysis, addr);
-				//XXX xrefs = rz_analysis_function_get_xrefs_to(core->analysis, fun);
-				// this function is buggy so we must get the xrefs of the addr
+				// XXX xrefs = rz_analysis_function_get_xrefs_to(core->analysis, fun);
+				//  this function is buggy so we must get the xrefs of the addr
 			} else { // functon refs
 				xrefs = rz_analysis_function_get_xrefs_from(fun);
 			}
@@ -1540,7 +1547,7 @@ repeat:
 		skip = 9999;
 		goto repeat;
 	} else if (ch == ';') {
-		addComment(core, cur_ref_addr);
+		add_comment(core, cur_ref_addr, "\nEnter comment for reference:\n");
 		goto repeat;
 	} else if (ch == '.') {
 		skip = 0;
@@ -1849,7 +1856,7 @@ static void cursor_prevrow(RzCore *core, bool use_ocur) {
 				p->cur--;
 			}
 		} else {
-			p->cur = prev_roff + delta; //res;
+			p->cur = prev_roff + delta; // res;
 		}
 	} else {
 		p->cur -= p->cols;
@@ -3264,61 +3271,8 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			rz_core_visual_hudstuff(core);
 			break;
 		case ';':
-			rz_cons_enable_mouse(false);
 			rz_cons_gotoxy(0, 0);
-			rz_cons_printf("Enter a comment: ('-' to remove, '!' to use $EDITOR)\n");
-			rz_core_visual_showcursor(core, true);
-			rz_cons_flush();
-			rz_cons_set_raw(false);
-			rz_line_set_prompt("comment: ");
-			strcpy(buf, "\"CC ");
-			i = strlen(buf);
-			if (rz_cons_fgets(buf + i, sizeof(buf) - i, 0, NULL) > 0) {
-				ut64 addr, orig;
-				addr = orig = core->offset;
-				if (core->print->cur_enabled) {
-					addr += core->print->cur;
-					rz_core_seek(core, addr, true);
-				}
-				if (!strcmp(buf + i, "-")) {
-					strcpy(buf, "CC-");
-				} else {
-					switch (buf[i]) {
-					case '-':
-						memcpy(buf, "\"CC-\x00", 5);
-						break;
-					case '!':
-						memcpy(buf, "\"CC!\x00", 5);
-						break;
-					default:
-						memcpy(buf, "\"CC ", 4);
-						break;
-					}
-					strcat(buf, "\"");
-				}
-				if (buf[3] == ' ') {
-					// have to escape any quotes.
-					int j, len = strlen(buf);
-					char *duped = strdup(buf);
-					for (i = 4, j = 4; i < len; i++, j++) {
-						char c = duped[i];
-						if (c == '"' && i != (len - 1)) {
-							buf[j] = '\\';
-							j++;
-							buf[j] = '"';
-						} else {
-							buf[j] = c;
-						}
-					}
-					free(duped);
-				}
-				rz_core_cmd(core, buf, 1);
-				if (core->print->cur_enabled) {
-					rz_core_seek(core, orig, true);
-				}
-			}
-			rz_cons_set_raw(true);
-			rz_core_visual_showcursor(core, false);
+			add_comment(core, core->offset, "Enter a comment: ('-' to remove, '!' to use cfg.editor)\n");
 			break;
 		case 'b':
 			rz_core_visual_browse(core, arg + 1);
@@ -3410,6 +3364,7 @@ RZ_API void rz_core_visual_title(RzCore *core, int color) {
 			} else if (follow < 0) {
 				rz_core_seek(core, curpc + follow, true);
 			}
+			rz_core_debug_sync_bits(core);
 			oldpc = curpc;
 		}
 	}
@@ -3853,7 +3808,7 @@ static void visual_refresh(RzCore *core) {
 	core->cons->blankline = false;
 	core->cons->blankline = true;
 	core->curtab = 0; // which command are we focusing
-	//core->seltab = 0; // user selected tab
+	// core->seltab = 0; // user selected tab
 
 	if (rz_config_get_i(core->config, "scr.scrollbar")) {
 		rz_core_print_scrollbar(core);
@@ -3935,7 +3890,7 @@ RZ_API int rz_core_visual(RzCore *core, const char *input) {
 	}
 
 	obs = core->blocksize;
-	//rz_cons_set_cup (true);
+	// rz_cons_set_cup (true);
 
 	core->vmode = false;
 	/* honor vim */

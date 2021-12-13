@@ -133,6 +133,6 @@ int dcpu16_disasm(char *out, size_t size_out, const ut16 *inp, int len, int *cos
 	if (cost)
 		*cost = instrGetCycles(&o) + ((o.b.opcode >= 0xc) ? 1 : 0);
 	instrPrint(out, size_out, &o);
-	//ind = (o.b.opcode >= 0xC);
+	// ind = (o.b.opcode >= 0xC);
 	return delta << 1;
 }

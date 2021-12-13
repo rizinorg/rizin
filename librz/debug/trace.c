@@ -39,7 +39,7 @@ RZ_API void rz_debug_trace_free(RzDebugTrace *trace) {
 // TODO: added overlap/mask support here...
 // TODO: think about tagged traces
 RZ_API int rz_debug_trace_tag(RzDebug *dbg, int tag) {
-	//if (tag>0 && tag<31) core->dbg->trace->tag = 1<<(sz-1);
+	// if (tag>0 && tag<31) core->dbg->trace->tag = 1<<(sz-1);
 	return (dbg->trace->tag = (tag > 0) ? tag : UT32_MAX);
 }
 
@@ -192,7 +192,7 @@ RZ_API void rz_debug_trace_op(RzDebug *dbg, RzAnalysisOp *op) {
 		}
 	}
 	if (oldpc != UT64_MAX) {
-		rz_debug_trace_add(dbg, oldpc, op->size); //XXX review what this line really do
+		rz_debug_trace_add(dbg, oldpc, op->size); // XXX review what this line really do
 	}
 	oldpc = op->addr;
 }

@@ -158,7 +158,7 @@ static inline int rz_asm_pseudo_incbin(RzAsmOp *op, char *input) {
 	rz_str_replace_char(input, ',', ' ');
 	// int len = rz_str_word_count (input);
 	rz_str_word_set0(input);
-	//const char *filename = rz_str_word_get0 (input, 0);
+	// const char *filename = rz_str_word_get0 (input, 0);
 	size_t skip = (size_t)rz_num_math(NULL, rz_str_word_get0(input, 1));
 	size_t count = (size_t)rz_num_math(NULL, rz_str_word_get0(input, 2));
 	char *content = rz_file_slurp(input, &bytes_read);
@@ -320,15 +320,15 @@ RZ_API bool rz_asm_use(RzAsm *a, const char *name) {
 		if (h->arch && h->name && !strcmp(h->name, name)) {
 			if (!a->cur || (a->cur && strcmp(a->cur->arch, h->arch))) {
 				plugin_fini(a);
-				char *rzprefix = rz_str_rz_prefix(RZ_SDB_OPCODES);
-				char *file = rz_str_newf("%s/%s.sdb", rz_str_get_null(rzprefix), h->arch);
+				char *opcodes_dir = rz_path_system(RZ_SDB_OPCODES);
+				char *file = rz_str_newf("%s/%s.sdb", opcodes_dir, h->arch);
 				if (file) {
 					rz_asm_set_cpu(a, NULL);
 					sdb_free(a->pair);
 					a->pair = sdb_new(NULL, file, 0);
 					free(file);
 				}
-				free(rzprefix);
+				free(opcodes_dir);
 			}
 			if (h->init && !h->init(&a->plugin_data)) {
 				RZ_LOG_ERROR("asm plugin '%s' failed to initialize.\n", h->name);
@@ -862,7 +862,7 @@ RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 					q++;
 				}
 				if (is_a_label) {
-					//if (stage != 2) {
+					// if (stage != 2) {
 					if (ptr_start[1] && ptr_start[1] != ' ') {
 						*ptr = 0;
 						char *p = strdup(ptr_start);

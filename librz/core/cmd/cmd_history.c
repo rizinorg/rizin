@@ -2,6 +2,9 @@
 // SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_util/rz_path.h>
+#include <rz_cmd.h>
+
 RZ_IPI RzCmdStatus rz_history_list_or_exec_handler(RzCore *core, int argc, const char **argv) {
 	if (argc == 1) {
 		rz_line_hist_list();
@@ -30,6 +33,8 @@ RZ_IPI RzCmdStatus rz_history_clear_handler(RzCore *core, int argc, const char *
 }
 
 RZ_IPI RzCmdStatus rz_history_save_handler(RzCore *core, int argc, const char **argv) {
-	rz_line_hist_save(RZ_HOME_HISTORY);
+	char *history = rz_path_home_history();
+	rz_line_hist_save(history);
+	free(history);
 	return RZ_CMD_STATUS_OK;
 }

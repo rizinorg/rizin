@@ -88,7 +88,7 @@ static RzIODesc *__rap_open(RzIO *io, const char *pathname, int rw, int mode) {
 			eprintf("rap: cannot listen here. Try rap://:9999\n");
 			return NULL;
 		}
-		//TODO: Handle ^C signal (SIGINT, exit); // ???
+		// TODO: Handle ^C signal (SIGINT, exit); // ???
 		eprintf("rap: listening at port %s ssl %s\n", port, (is_ssl) ? "on" : "off");
 		RzIORap *rior = RZ_NEW0(RzIORap);
 		rior->listener = true;

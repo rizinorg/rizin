@@ -379,8 +379,9 @@ static bool test_enum_types(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
 	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
-	const char *dir_prefix = rz_sys_prefix(NULL);
-	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+	free(types_dir);
 
 	char *error_msg = NULL;
 	RzType *ttype = rz_type_parse_string_single(typedb->parser, test_enum, &error_msg);
@@ -417,8 +418,9 @@ static bool test_const_types(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
 	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
-	const char *dir_prefix = rz_sys_prefix(NULL);
-	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+	free(types_dir);
 
 	char *error_msg = NULL;
 	// Const identifier but not pointer
@@ -469,8 +471,9 @@ static bool test_type_as_string(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
 	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
-	const char *dir_prefix = rz_sys_prefix(NULL);
-	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+	free(types_dir);
 
 	char *error_msg = NULL;
 	RzType *ttype = rz_type_parse_string_single(typedb->parser, array, &error_msg);
@@ -588,8 +591,9 @@ static bool test_type_as_pretty_string(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
 	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
-	const char *dir_prefix = rz_sys_prefix(NULL);
-	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+	free(types_dir);
 
 	char *error_msg = NULL;
 	RzType *ttype = rz_type_parse_string_single(typedb->parser, pretty_complex_const_pointer, &error_msg);
@@ -692,8 +696,9 @@ static bool test_array_types(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
 	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
-	const char *dir_prefix = rz_sys_prefix(NULL);
-	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+	free(types_dir);
 
 	char *error_msg = NULL;
 	// Zero-sized array
@@ -745,8 +750,9 @@ static bool test_struct_func_types(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
 	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
-	const char *dir_prefix = rz_sys_prefix(NULL);
-	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+	free(types_dir);
 
 	char *error_msg = NULL;
 	// Sturcture type with a function pointer
@@ -835,8 +841,9 @@ static bool test_struct_array_types(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
 	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
-	const char *dir_prefix = rz_sys_prefix(NULL);
-	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+	free(types_dir);
 
 	char *error_msg = NULL;
 	// Structure type with a pointer to a function pointer and array
@@ -883,8 +890,9 @@ static bool test_struct_identifier_without_specifier(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
 	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
-	const char *dir_prefix = rz_sys_prefix(NULL);
-	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+	free(types_dir);
 
 	char *error_msg = NULL;
 	int r = rz_type_parse_string(typedb, "struct bla { int a; };", &error_msg);
@@ -911,8 +919,9 @@ static bool test_union_identifier_without_specifier(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
 	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
-	const char *dir_prefix = rz_sys_prefix(NULL);
-	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+	free(types_dir);
 
 	char *error_msg = NULL;
 	int r = rz_type_parse_string(typedb, "union bla { int a; };", &error_msg);
@@ -943,8 +952,9 @@ static bool test_edit_types(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
 	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
-	const char *dir_prefix = rz_sys_prefix(NULL);
-	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+	free(types_dir);
 
 	char *error_msg = NULL;
 	RzType *ttype = rz_type_parse_string_single(typedb->parser, edit_array_old, &error_msg);

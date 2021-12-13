@@ -10,8 +10,8 @@ ar a6
 ar t2
 EOF
 EXPECT=<<EOF
-0xfffffffe80000005
-0xffffffff80000028
+a6 = 0xfffffffe80000005
+t2 = 0xffffffff80000028
 EOF
 RUN
 
@@ -26,7 +26,7 @@ aei
 ar a5
 EOF
 EXPECT=<<EOF
-0xffffffffce00007f
+a5 = 0xffffffffce00007f
 EOF
 RUN
 
@@ -45,10 +45,10 @@ ar a5
 ar a6
 EOF
 EXPECT=<<EOF
-0xffffffffffffffff
-0xff5af000
-0xffffffffffffff5a
-0xfffffffffffffff0
+a3 = 0xffffffffffffffff
+a4 = 0xff5af000
+a5 = 0xffffffffffffff5a
+a6 = 0xfffffffffffffff0
 EOF
 RUN
 
@@ -64,6 +64,6 @@ aeim
 ar a4
 EOF
 EXPECT=<<EOF
-0x00000ff2
+a4 = 0x00000ff2
 EOF
 RUN

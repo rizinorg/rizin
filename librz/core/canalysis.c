@@ -11,6 +11,7 @@
 #include <rz_bin.h>
 #include <ht_uu.h>
 #include <rz_util/rz_graph_drawable.h>
+#include <rz_util/rz_path.h>
 
 #include "core_private.h"
 
@@ -3718,7 +3719,9 @@ RZ_API void rz_core_recover_vars(RzCore *core, RzAnalysisFunction *fcn, bool arg
 	rz_pvector_push(&ctx.reg_set, reg_set);
 	int saved_stack = fcn->stack;
 	RzAnalysisBlock *first_bb = rz_analysis_get_block_at(fcn->analysis, fcn->addr);
-	rz_analysis_block_recurse_depth_first(first_bb, (RzAnalysisBlockCb)analysis_block_cb, (RzAnalysisBlockCb)analysis_block_on_exit, &ctx);
+	if (first_bb) {
+		rz_analysis_block_recurse_depth_first(first_bb, (RzAnalysisBlockCb)analysis_block_cb, (RzAnalysisBlockCb)analysis_block_on_exit, &ctx);
+	}
 	rz_pvector_fini(&ctx.reg_set);
 	fcn->stack = saved_stack;
 }
@@ -5283,7 +5286,6 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 	bool cfg_analysis_strings = rz_config_get_i(core->config, "analysis.strings");
 	bool emu_lazy = rz_config_get_i(core->config, "emu.lazy");
 	bool gp_fixed = rz_config_get_i(core->config, "analysis.gpfixed");
-	RzAnalysisEsil *ESIL = core->analysis->esil;
 	ut64 refptr = 0LL;
 	const char *pcname;
 	RzAnalysisOp op = RZ_EMPTY;
@@ -5359,16 +5361,22 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 	}
 	esilbreak_last_read = UT64_MAX;
 	rz_io_read_at(core->io, start, buf, iend + 1);
+	rz_reg_arena_push(core->analysis->reg);
+
+	RzAnalysisEsil *ESIL = core->analysis->esil;
 	if (!ESIL) {
 		rz_core_analysis_esil_reinit(core);
 		ESIL = core->analysis->esil;
 		if (!ESIL) {
 			eprintf("ESIL not initialized\n");
-			return;
+			goto out_pop_regs;
 		}
 		rz_core_analysis_esil_init_mem(core, NULL, UT64_MAX, UT32_MAX);
 	}
 	const char *spname = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_SP);
+	if (!spname) {
+		goto out_pop_regs;
+	}
 	EsilBreakCtx ctx = {
 		&op,
 		fcn,
@@ -5389,7 +5397,7 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 	pcname = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
 	if (!pcname || !*pcname) {
 		eprintf("Cannot find program counter register in the current profile.\n");
-		return;
+		goto out_pop_regs;
 	}
 	esil_analysis_stop = false;
 	rz_cons_break_push(cccb, core);
@@ -5411,11 +5419,7 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 		arch = RZ_ARCH_MIPS;
 	}
 
-	const char *sn = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_SN);
-	if (!sn) {
-		eprintf("Warning: No SN reg alias for current architecture.\n");
-	}
-	rz_reg_arena_push(core->analysis->reg);
+	RZ_NULLABLE const char *sn = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_SN);
 
 	IterCtx ictx = { start, end, fcn, NULL };
 	size_t i = addr - start;
@@ -5697,6 +5701,7 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 	ESIL->user = NULL;
 	rz_analysis_op_fini(&op);
 	rz_cons_break_pop();
+out_pop_regs:
 	// restore register
 	rz_reg_arena_pop(core->analysis->reg);
 }
@@ -6629,6 +6634,7 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 	bool didAap = false;
 	ut64 curseek = core->offset;
 	bool cfg_debug = rz_config_get_b(core->config, "cfg.debug");
+	bool plugin_supports_esil = core->analysis->cur->esil;
 	const char *oldstr = NULL;
 	if (rz_str_startswith(rz_config_get(core->config, "bin.lang"), "go")) {
 		oldstr = rz_print_rowlog(core->print, "Find function and symbol names from golang binaries (aang)");
@@ -6701,7 +6707,9 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		bool pcache = rz_config_get_b(core->config, "io.pcache");
 		rz_config_set_b(core->config, "io.pcache", false);
 		oldstr = rz_print_rowlog(core->print, "Emulate functions to find computed references (aaef)");
-		rz_core_analysis_esil_references_all_functions(core);
+		if (plugin_supports_esil) {
+			rz_core_analysis_esil_references_all_functions(core);
+		}
 		rz_print_rowlog_done(core->print, oldstr);
 		rz_core_task_yield(&core->tasks);
 		rz_config_set_b(core->config, "io.pcache", pcache);
@@ -6740,11 +6748,12 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		rz_print_rowlog_done(core->print, oldstr);
 		rz_core_task_yield(&core->tasks);
 	}
-
-	oldstr = rz_print_rowlog(core->print, "Type matching analysis for all functions (aaft)");
-	rz_core_analysis_types_propagation(core);
-	rz_print_rowlog_done(core->print, oldstr);
-	rz_core_task_yield(&core->tasks);
+	if (plugin_supports_esil) {
+		oldstr = rz_print_rowlog(core->print, "Type matching analysis for all functions (aaft)");
+		rz_core_analysis_types_propagation(core);
+		rz_print_rowlog_done(core->print, oldstr);
+		rz_core_task_yield(&core->tasks);
+	}
 
 	oldstr = rz_print_rowlog(core->print, "Propagate noreturn information");
 	rz_core_analysis_propagate_noreturn(core, UT64_MAX);
@@ -6995,7 +7004,7 @@ RZ_IPI bool rz_core_analysis_types_propagation(RzCore *core) {
 	const bool delete_regs = !rz_flag_space_count(core->flags, RZ_FLAGS_FS_REGISTERS);
 	seek = core->offset;
 	rz_reg_arena_push(core->analysis->reg);
-	rz_reg_arena_zero(core->analysis->reg);
+	rz_reg_arena_zero(core->analysis->reg, RZ_REG_TYPE_ANY);
 	rz_core_analysis_esil_init(core);
 	rz_core_analysis_esil_init_mem(core, NULL, UT64_MAX, UT32_MAX);
 	ut8 *saved_arena = rz_reg_arena_peek(core->analysis->reg);
@@ -7268,12 +7277,13 @@ RZ_API int rz_core_get_stacksz(RzCore *core, ut64 from, ut64 to) {
 
 RZ_API void rz_core_analysis_type_init(RzCore *core) {
 	rz_return_if_fail(core && core->analysis);
-	const char *dir_prefix = rz_config_get(core->config, "dir.prefix");
 	int bits = core->rasm->bits;
 	const char *analysis_arch = rz_config_get(core->config, "analysis.arch");
 	const char *os = rz_config_get(core->config, "asm.os");
 
-	rz_type_db_init(core->analysis->typedb, dir_prefix, analysis_arch, bits, os);
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
+	rz_type_db_init(core->analysis->typedb, types_dir, analysis_arch, bits, os);
+	free(types_dir);
 }
 
 static void sdb_concat_by_path(Sdb *s, const char *path) {
@@ -7292,12 +7302,15 @@ RZ_API void rz_core_analysis_cc_init(RzCore *core) {
 		return;
 	}
 
-	const char *dir_prefix = rz_config_get(core->config, "dir.prefix");
 	int bits = core->analysis->bits;
-	char *dbpath = rz_str_newf(RZ_JOIN_3_PATHS("%s", RZ_SDB_TYPES, "cc-%s-%d.sdb"),
-		dir_prefix, analysis_arch, bits);
-	char *dbhomepath = rz_str_newf(RZ_JOIN_3_PATHS("~", RZ_HOME_SDB_TYPES, "cc-%s-%d.sdb"),
-		analysis_arch, bits);
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
+	char *home_types_dir = rz_path_home_prefix(RZ_SDB_TYPES);
+	char buf[40];
+	char *dbpath = rz_file_path_join(types_dir, rz_strf(buf, "cc-%s-%d.sdb", analysis_arch, bits));
+	char *dbhomepath = rz_file_path_join(home_types_dir, rz_strf(buf, "cc-%s-%d.sdb", analysis_arch, bits));
+	free(types_dir);
+	free(home_types_dir);
+
 	// Avoid sdb reloading
 	if (cc->path && (!strcmp(cc->path, dbpath) || !strcmp(cc->path, dbhomepath))) {
 		free(dbpath);

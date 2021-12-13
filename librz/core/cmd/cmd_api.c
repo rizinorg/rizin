@@ -95,6 +95,8 @@ static int value = 0;
 #define NCMDS (sizeof(cmd->cmds) / sizeof(*cmd->cmds))
 RZ_LIB_VERSION(rz_cmd);
 
+static void fill_details(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color);
+
 static int cd_sort(const void *a, const void *b) {
 	RzCmdDesc *ca = (RzCmdDesc *)a;
 	RzCmdDesc *cb = (RzCmdDesc *)b;
@@ -904,6 +906,13 @@ static void fill_wrapped_comment(RzCmd *cmd, RzStrBuf *sb, const char *comment, 
 	}
 }
 
+static void close_optionals(size_t *n_optionals, RzStrBuf *sb, size_t *len) {
+	for (; *n_optionals > 0; (*n_optionals)--) {
+		rz_strbuf_append(sb, "]");
+		(*len)++;
+	}
+}
+
 static size_t fill_args(RzStrBuf *sb, const RzCmdDesc *cd) {
 	const RzCmdDescArg *arg;
 	size_t n_optionals = 0;
@@ -911,6 +920,10 @@ static size_t fill_args(RzStrBuf *sb, const RzCmdDesc *cd) {
 	bool has_array = false;
 	for (arg = cd->help->args; arg && arg->name; arg++) {
 		if (arg->type == RZ_CMD_ARG_TYPE_FAKE) {
+			if (!arg->optional) {
+				// Assume arg is a closing bracket
+				close_optionals(&n_optionals, sb, &len);
+			}
 			rz_strbuf_append(sb, arg->name);
 			len += strlen(arg->name);
 			continue;
@@ -947,10 +960,7 @@ static size_t fill_args(RzStrBuf *sb, const RzCmdDesc *cd) {
 			}
 		}
 	}
-	for (; n_optionals > 0; n_optionals--) {
-		rz_strbuf_append(sb, "]");
-		len++;
-	}
+	close_optionals(&n_optionals, sb, &len);
 	return len;
 }
 
@@ -1100,6 +1110,8 @@ static char *group_get_help(RzCmd *cmd, RzCmdDesc *cd, bool use_color) {
 		RzCmdDesc *child = *(RzCmdDesc **)it_cd;
 		print_child_help(cmd, sb, child, max_len, use_color);
 	}
+
+	fill_details(cmd, cd, sb, use_color);
 	return rz_strbuf_drain(sb);
 }
 
@@ -1484,7 +1496,7 @@ RZ_API void rz_cmd_macro_fini(RzCmdMacro *mac) {
 RZ_API int rz_cmd_macro_add(RzCmdMacro *mac, const char *oname) {
 	struct rz_cmd_macro_item_t *macro;
 	char *name, *args = NULL;
-	//char buf[RZ_CMD_MAXLEN];
+	// char buf[RZ_CMD_MAXLEN];
 	RzCmdMacroItem *m;
 	int macro_update;
 	RzListIter *iter;
@@ -1697,9 +1709,9 @@ RZ_API int rz_cmd_macro_cmd_args(RzCmdMacro *mac, const char *ptr, const char *a
 	for (pcmd = cmd; *pcmd && (*pcmd == ' ' || *pcmd == '\t'); pcmd++) {
 		;
 	}
-	//eprintf ("-pre %d\n", (int)mac->num->value);
+	// eprintf ("-pre %d\n", (int)mac->num->value);
 	int xx = (*pcmd == ')') ? 0 : mac->cmd(mac->user, pcmd);
-	//eprintf ("-pos %p %d\n", mac->num, (int)mac->num->value);
+	// eprintf ("-pos %p %d\n", mac->num, (int)mac->num->value);
 	return xx;
 }
 
@@ -1723,53 +1735,53 @@ RZ_API char *rz_cmd_macro_label_process(RzCmdMacro *mac, RzCmdMacroLabel *labels
 		} else
 			/* conditional goto */
 			if (ptr[0] == '?' && ptr[1] == '!' && ptr[2] != '?') {
-			if (mac->num && mac->num->value != 0) {
-				char *label = ptr + 3;
-				for (; *label == ' ' || *label == '.'; label++) {
-					;
+				if (mac->num && mac->num->value != 0) {
+					char *label = ptr + 3;
+					for (; *label == ' ' || *label == '.'; label++) {
+						;
+					}
+					//		eprintf("===> GOTO %s\n", label);
+					/* goto label ptr+3 */
+					for (i = 0; i < *labels_n; i++) {
+						if (!strcmp(label, labels[i].name)) {
+							return labels[i].ptr;
+						}
+					}
+					return NULL;
 				}
-				//		eprintf("===> GOTO %s\n", label);
-				/* goto label ptr+3 */
-				for (i = 0; i < *labels_n; i++) {
-					if (!strcmp(label, labels[i].name)) {
-						return labels[i].ptr;
+			} else
+				/* conditional goto */
+				if (ptr[0] == '?' && ptr[1] == '?' && ptr[2] != '?') {
+					if (mac->num->value == 0) {
+						char *label = ptr + 3;
+						for (; label[0] == ' ' || label[0] == '.'; label++) {
+							;
+						}
+						//		eprintf("===> GOTO %s\n", label);
+						/* goto label ptr+3 */
+						for (i = 0; i < *labels_n; i++) {
+							if (!strcmp(label, labels[i].name)) {
+								return labels[i].ptr;
+							}
+						}
+						return NULL;
+					}
+				} else {
+					for (i = 0; i < *labels_n; i++) {
+						//	eprintf("---| chk '%s'\n", labels[i].name);
+						if (!strcmp(ptr + 1, labels[i].name)) {
+							i = 0;
+							break;
+						}
+					}
+					/* Add label */
+					//	eprintf("===> ADD LABEL(%s)\n", ptr);
+					if (i == 0) {
+						strncpy(labels[*labels_n].name, ptr, 64);
+						labels[*labels_n].ptr = ptr + strlen(ptr) + 1;
+						*labels_n = *labels_n + 1;
 					}
 				}
-				return NULL;
-			}
-		} else
-			/* conditional goto */
-			if (ptr[0] == '?' && ptr[1] == '?' && ptr[2] != '?') {
-			if (mac->num->value == 0) {
-				char *label = ptr + 3;
-				for (; label[0] == ' ' || label[0] == '.'; label++) {
-					;
-				}
-				//		eprintf("===> GOTO %s\n", label);
-				/* goto label ptr+3 */
-				for (i = 0; i < *labels_n; i++) {
-					if (!strcmp(label, labels[i].name)) {
-						return labels[i].ptr;
-					}
-				}
-				return NULL;
-			}
-		} else {
-			for (i = 0; i < *labels_n; i++) {
-				//	eprintf("---| chk '%s'\n", labels[i].name);
-				if (!strcmp(ptr + 1, labels[i].name)) {
-					i = 0;
-					break;
-				}
-			}
-			/* Add label */
-			//	eprintf("===> ADD LABEL(%s)\n", ptr);
-			if (i == 0) {
-				strncpy(labels[*labels_n].name, ptr, 64);
-				labels[*labels_n].ptr = ptr + strlen(ptr) + 1;
-				*labels_n = *labels_n + 1;
-			}
-		}
 		return ptr + strlen(ptr) + 1;
 	}
 	return ptr;
@@ -2550,6 +2562,7 @@ RZ_API bool rz_cmd_state_output_init(RzCmdStateOutput *state, RzOutputMode mode)
 		}
 		break;
 	default:
+		memset(&state->d, 0, sizeof(state->d));
 		break;
 	}
 	return true;

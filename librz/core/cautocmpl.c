@@ -259,8 +259,6 @@ static void autocmplt_cmd_arg_file(RzLineNSCompletionResult *res, const char *s,
 	if (RZ_STR_ISEMPTY(input)) {
 		free(input);
 		input = strdup(".");
-	} else if (rz_str_startswith(input, "~")) {
-		input = rz_str_replace(input, "~", rz_str_home(NULL), 0);
 	} else if (!rz_file_is_abspath(input) && !rz_str_startswith(input, ".")) {
 		const char *fmt = ".%s%s";
 #if __WINDOWS__
@@ -275,8 +273,11 @@ static void autocmplt_cmd_arg_file(RzLineNSCompletionResult *res, const char *s,
 		free(input);
 		input = tmp;
 	}
-	char *basedir = rz_file_dirname(input);
-	const char *basename = rz_file_basename(input + 1);
+	char *einput = rz_path_home_expand(input);
+	free(input);
+
+	char *basedir = rz_file_dirname(einput);
+	const char *basename = rz_file_basename(einput + 1);
 #if __WINDOWS__
 	rz_str_replace_ch(basedir, '/', '\\', true);
 #endif
@@ -300,7 +301,7 @@ static void autocmplt_cmd_arg_file(RzLineNSCompletionResult *res, const char *s,
 	}
 	rz_list_free(l);
 	free(basedir);
-	free(input);
+	free(einput);
 }
 
 static void autocmplt_cmd_arg_env(RzLineNSCompletionResult *res, const char *s, size_t len) {
@@ -429,6 +430,57 @@ static void autocmplt_cmd_arg_global_var(RzCore *core, RzLineNSCompletionResult 
 		}
 	}
 	rz_list_free(list);
+}
+
+static void autocmplt_cmd_arg_reg_filter(RzCore *core, const RzCmdDesc *cd, RzLineNSCompletionResult *res, const char *s, size_t len) {
+	bool is_analysis = cd->name && cd->name[0] == 'a';
+	RzReg *reg = is_analysis ? core->analysis->reg : core->dbg->reg;
+	if (!reg) {
+		return;
+	}
+
+	rz_line_ns_completion_result_propose(res, "8", s, len);
+	rz_line_ns_completion_result_propose(res, "16", s, len);
+	rz_line_ns_completion_result_propose(res, "32", s, len);
+	rz_line_ns_completion_result_propose(res, "64", s, len);
+	rz_line_ns_completion_result_propose(res, "128", s, len);
+	rz_line_ns_completion_result_propose(res, "256", s, len);
+
+	for (int type = 0; type < RZ_REG_TYPE_LAST; type++) {
+		const char *name = rz_reg_get_type(type);
+		if (!name) {
+			continue;
+		}
+		rz_line_ns_completion_result_propose(res, name, s, len);
+	}
+	rz_line_ns_completion_result_propose(res, "all", s, len);
+
+	for (int role = 0; role < RZ_REG_NAME_LAST; role++) {
+		if (!reg->name[role]) {
+			// don't autocomplete if there isn't a register with this role anyway
+			continue;
+		}
+		const char *name = rz_reg_get_role(role);
+		if (!name) {
+			continue;
+		}
+		rz_line_ns_completion_result_propose(res, name, s, len);
+	}
+
+	RzListIter *iter;
+	RzRegItem *ri;
+	rz_list_foreach (reg->allregs, iter, ri) {
+		if (!ri->name) {
+			continue;
+		}
+		rz_line_ns_completion_result_propose(res, ri->name, s, len);
+	}
+}
+
+static void autocmplt_cmd_arg_reg_type(RzCore *core, const RzCmdDesc *cd, RzLineNSCompletionResult *res, const char *s, size_t len) {
+	for (int t = 0; t < RZ_REG_TYPE_LAST; t++) {
+		rz_line_ns_completion_result_propose(res, rz_reg_get_type(t), s, len);
+	}
 }
 
 static void autocmplt_cmd_arg_help_var(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
@@ -679,6 +731,12 @@ static void autocmplt_cmd_arg(RzCore *core, RzLineNSCompletionResult *res, const
 		break;
 	case RZ_CMD_ARG_TYPE_GLOBAL_VAR:
 		autocmplt_cmd_arg_global_var(core, res, s, len);
+		break;
+	case RZ_CMD_ARG_TYPE_REG_FILTER:
+		autocmplt_cmd_arg_reg_filter(core, cd, res, s, len);
+		break;
+	case RZ_CMD_ARG_TYPE_REG_TYPE:
+		autocmplt_cmd_arg_reg_type(core, cd, res, s, len);
 		break;
 	default:
 		break;

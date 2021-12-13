@@ -146,7 +146,7 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 	return op->size;
 }
 
-static bool set_reg_profile(RzAnalysis *analysis) {
+static char *get_reg_profile(RzAnalysis *analysis) {
 	const char *p =
 		"=PC	r15\n"
 		"=LR	r14\n"
@@ -181,7 +181,7 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 		"gpr	r13	.32	52	0\n"
 		"gpr	r14	.32	56	0\n"
 		"gpr	r15	.32	60	0\n";
-	return rz_reg_set_profile_string(analysis->reg, p);
+	return strdup(p);
 }
 
 static int archinfo(RzAnalysis *analysis, int q) {
@@ -205,7 +205,7 @@ RzAnalysisPlugin rz_analysis_plugin_sysz = {
 	.bits = 32 | 64,
 	.op = &analop,
 	.archinfo = archinfo,
-	.set_reg_profile = &set_reg_profile,
+	.get_reg_profile = &get_reg_profile,
 };
 
 #ifndef RZ_PLUGIN_INCORE

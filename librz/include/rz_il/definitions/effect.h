@@ -43,14 +43,14 @@ typedef enum {
 struct rzil_effect_label_t {
 	char *label_id; ///< Label name
 	union {
-		RzILBitVector *addr; ///< RzILBitVector address if EFFECT_LABEL_ADDR
+		RzBitVector *addr; ///< RzBitVector address if EFFECT_LABEL_ADDR
 		void *hook; ///< Function pointer if EFFECT_LABEL_SYSCALL / EFFECT_LABEL_HOOK
 	};
 	RzILEffectLabelType type; ///< type of label
 };
 
 struct rzil_control_effect_t {
-	RzILBitVector *pc; ///< New Program Counter
+	RzBitVector *pc; ///< New Program Counter
 };
 
 struct rzil_data_effect_t {

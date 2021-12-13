@@ -79,6 +79,11 @@ RZ_API RZ_BORROW const char *rz_bin_string_type(int type) {
 	case RZ_BIN_STRING_ENC_WIDE_BE: return "utf16be";
 	case RZ_BIN_STRING_ENC_WIDE32_BE: return "utf32be";
 	case RZ_BIN_STRING_ENC_BASE64: return "base64";
+	case RZ_STRING_ENC_IBM037: return "ibm037";
+	case RZ_STRING_ENC_IBM290: return "ibm290";
+	case RZ_STRING_ENC_EBCDIC_ES: return "ebcdices";
+	case RZ_STRING_ENC_EBCDIC_UK: return "ebcdicuk";
+	case RZ_STRING_ENC_EBCDIC_US: return "ebcdicus";
 	}
 	return "ascii"; // XXX
 }
@@ -483,7 +488,7 @@ RZ_API void rz_bin_free(RzBin *bin) {
 	free(bin->force);
 	free(bin->srcdir);
 	free(bin->strenc);
-	//rz_bin_free_bin_files (bin);
+	// rz_bin_free_bin_files (bin);
 	rz_list_free(bin->binfiles);
 	rz_list_free(bin->binxtrs);
 	rz_list_free(bin->plugins);
@@ -1321,6 +1326,7 @@ RZ_API const RzBinLdrPlugin *rz_bin_ldrplugin_get(RzBin *bin, const char *name) 
 	return NULL;
 }
 
+#if WITH_GPL
 static char *bin_demangle_cxx(RzBinFile *bf, const char *symbol, ut64 vaddr) {
 	char *out = rz_demangler_cxx(symbol);
 	if (!out || !bf) {
@@ -1369,10 +1375,11 @@ static char *bin_demangle_rust(RzBinFile *binfile, const char *symbol, ut64 vadd
 	free(str);
 	return rz_demangler_rust(symbol);
 }
+#endif
 
 /**
  * \brief Demangles a symbol based on the language or the RzBinFile data
- * 
+ *
  * This function demangles a symbol based on the language or the RzBinFile data
  * When a c++ or rust is selected as language, it will add methods into the
  * RzBinFile structure based on the demangled symbol.
@@ -1468,6 +1475,9 @@ RZ_API RZ_OWN char *rz_bin_demangle(RZ_NULLABLE RzBinFile *bf, RZ_NULLABLE const
 #if WITH_GPL
 	case RZ_BIN_LANGUAGE_RUST: demangled = bin_demangle_rust(bf, symbol, vaddr); break;
 	case RZ_BIN_LANGUAGE_CXX: demangled = bin_demangle_cxx(bf, symbol, vaddr); break;
+#else
+	case RZ_BIN_LANGUAGE_RUST: demangled = NULL; break;
+	case RZ_BIN_LANGUAGE_CXX: demangled = NULL; break;
 #endif
 	default: rz_demangler_resolve(bin->demangler, symbol, language, &demangled);
 	}

@@ -49,4 +49,4 @@ tasks:
         ln -s ${HOME}/rizin-testbins test/bins
         cd test
         # Running the unit tests
-        MALLOC_OPTIONS=S rz-test -L -o results.json
+        MALLOC_OPTIONS=S rz-test -t 1200 -L -o results.json

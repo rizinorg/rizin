@@ -393,6 +393,25 @@ RZ_API int rz_hex_bin2str(const ut8 *in, int len, char *out) {
 	return len;
 }
 
+/**
+ * \brief Takes an unsigned 32bit integer with MSB set to 1 and returns the signed integer in hex format as string.
+ * E.g.: 0xffffffff -> "-0x1"
+ *
+ * \param in The integer to convert to the signed string.
+ * \param out The buffer to write the signed hex string to.
+ * \param len Length of the out buffer.
+ * \return char* The signed integer as hex string.
+ */
+RZ_API void rz_hex_ut2st_str(const ut32 in, RZ_INOUT char *out, const int len) {
+	char tmp[12];
+	if (len < sizeof(tmp)) {
+		RZ_LOG_FATAL("Output buffer too small for negative 32bit value.\n");
+	}
+	snprintf(tmp, sizeof(tmp), "-0x%" PFMT32x, ~in + 1);
+	memcpy(out, tmp, sizeof(tmp));
+	return;
+}
+
 RZ_API char *rz_hex_bin2strdup(const ut8 *in, int len) {
 	int i, idx;
 	char tmp[5], *out;
@@ -540,7 +559,7 @@ RZ_API int rz_hex_str_is_valid(const char *str) {
 		if (IS_HEXCHAR(str[i]) || IS_WHITESPACE(str[i])) {
 			continue;
 		}
-		return -1; //if we're here, then str isn't valid
+		return -1; // if we're here, then str isn't valid
 	}
 	return len;
 }

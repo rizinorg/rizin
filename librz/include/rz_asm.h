@@ -115,7 +115,9 @@ typedef struct rz_asm_t {
 	int pcalign;
 	int dataalign;
 	int bitshift;
-	bool immdisp; // Display immediates with # symbol (for arm stuff).
+	bool immdisp; // Display immediates with # symbol (for arm/hexagon architectures). false = show hashs
+	bool immsign; // Print signed immediates as negative values, not their unsigned representation.
+	bool utf8; // Flag for plugins: Use utf-8 characters.
 	HtPP *flags;
 	int seggrn;
 	bool pseudo;
@@ -207,8 +209,6 @@ extern RzAsmPlugin rz_asm_plugin_amd29k;
 extern RzAsmPlugin rz_asm_plugin_arc;
 extern RzAsmPlugin rz_asm_plugin_arm_as;
 extern RzAsmPlugin rz_asm_plugin_arm_cs;
-extern RzAsmPlugin rz_asm_plugin_arm_gnu;
-extern RzAsmPlugin rz_asm_plugin_arm_winedbg;
 extern RzAsmPlugin rz_asm_plugin_avr;
 extern RzAsmPlugin rz_asm_plugin_bf;
 extern RzAsmPlugin rz_asm_plugin_null;
@@ -243,7 +243,6 @@ extern RzAsmPlugin rz_asm_plugin_or1k;
 extern RzAsmPlugin rz_asm_plugin_pic;
 extern RzAsmPlugin rz_asm_plugin_ppc_as;
 extern RzAsmPlugin rz_asm_plugin_ppc_cs;
-extern RzAsmPlugin rz_asm_plugin_ppc_gnu;
 extern RzAsmPlugin rz_asm_plugin_propeller;
 extern RzAsmPlugin rz_asm_plugin_riscv;
 extern RzAsmPlugin rz_asm_plugin_riscv_cs;

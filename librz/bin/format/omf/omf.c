@@ -40,7 +40,7 @@ bool rz_bin_checksum_omf_ok(const ut8 *buf, ut64 buf_size) {
 		eprintf("Invalid record (too short)\n");
 		return false;
 	}
-	//Some compiler set checksum to 0
+	// Some compiler set checksum to 0
 	if (!buf[size + 2]) {
 		return true;
 	}
@@ -133,7 +133,7 @@ static bool load_omf_lnames(OMF_record *record, const ut8 *buf, ut64 buf_size) {
 			memcpy(names[ct_name], buf + 3 + tmp_size + 1, cb);
 		}
 		ct_name++;
-		tmp_size += cb + 1; //buf[3 + tmp_size] + 1;
+		tmp_size += cb + 1; // buf[3 + tmp_size] + 1;
 	}
 	return true;
 }
@@ -241,7 +241,7 @@ static int load_omf_symb(OMF_record *record, ut32 ct, const ut8 *buf, int buf_si
 		if (ct >= buf_size) {
 			return false;
 		}
-		if (buf[ct] & 0x80) { //type index
+		if (buf[ct] & 0x80) { // type index
 			ct += 2;
 		} else {
 			ct++;

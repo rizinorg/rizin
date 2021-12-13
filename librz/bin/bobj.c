@@ -24,6 +24,8 @@ RZ_API ut64 rz_bin_reloc_size(RzBinReloc *reloc) {
 		return 8;
 	case RZ_BIN_RELOC_16:
 		return 16;
+	case RZ_BIN_RELOC_24:
+		return 24;
 	case RZ_BIN_RELOC_32:
 		return 32;
 	case RZ_BIN_RELOC_64:
@@ -300,7 +302,7 @@ RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *bf, RzBinPlugin *plugin, RzBinO
 		// bf->sdb = o->kv;
 		// bf->sdb_info = o->kv;
 		// sdb_ns_set (bf->sdb, "info", o->kv);
-		//sdb_ns (sdb, sdb_fmt ("fd.%d", bf->fd), 1);
+		// sdb_ns (sdb, sdb_fmt ("fd.%d", bf->fd), 1);
 		sdb_set(bf->sdb, "archs", "0:0:x86:32", 0); // x86??
 		/* NOTE */
 		/* Those refs++ are necessary because sdb_ns() doesnt rerefs all

@@ -6,6 +6,7 @@
 #include <rz_bin.h>
 #include <rz_core.h>
 #include <rz_pdb.h>
+#include <rz_util/rz_path.h>
 #include "test_types.h"
 #include "../../librz/bin/pdb/pdb.h"
 
@@ -366,8 +367,9 @@ bool test_pdb_tpi_rust(void) {
 
 bool test_pdb_type_save(void) {
 	RzAnalysis *analysis = rz_analysis_new();
-	const char *dir_prefix = rz_sys_prefix(NULL);
-	rz_type_db_init(analysis->typedb, dir_prefix, "x86", 32, "windows");
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
+	rz_type_db_init(analysis->typedb, types_dir, "x86", 32, "windows");
+	free(types_dir);
 
 	mu_assert_true(pdb_info_save_types(analysis, "bins/pdb/Project1.pdb"), "pdb parsing failed");
 
@@ -420,8 +422,8 @@ bool test_pdb_type_save(void) {
 	// mu_assert_true(has_struct_member(test_class, "class_var1"), "class_var1");
 	// mu_assert_true(has_struct_member(test_class, "calss_var2"), "calss_var2");
 	// TODO: test member types also
-	//check_kv("struct.TEST_CLASS.class_var1", "int32_t,0,0");
-	//check_kv("struct.TEST_CLASS.calss_var2", "uint16_t,4,0");
+	// check_kv("struct.TEST_CLASS.class_var1", "int32_t,0,0");
+	// check_kv("struct.TEST_CLASS.calss_var2", "uint16_t,4,0");
 
 	// mu_assert_false(has_struct_member(test_class, "noSuchMember"), "no such struct member");
 	// Check the structure presence and validity

@@ -595,7 +595,6 @@ typedef struct rz_analysis_t {
 	PrintfCallback cb_printf;
 	// moved from RzAnalysisFcn
 	Sdb *sdb; // root
-	Sdb *sdb_pins;
 	HtUP /*<RzVector<RzAnalysisAddrHintRecord>>*/ *addr_hints; // all hints that correspond to a single address
 	RBTree /*<RzAnalysisArchHintRecord>*/ arch_hints;
 	RBTree /*<RzAnalysisArchBitsRecord>*/ bits_hints;
@@ -838,6 +837,7 @@ typedef struct rz_analysis_op_t {
 	RzAnalysisOpDirection direction;
 	st64 ptr; /* reference to memory */ /* XXX signed? */
 	ut64 val; /* reference to value */ /* XXX signed? */
+	RzAnalysisValue analysis_vals[6]; /* Analyzable values */
 	int ptrsize; /* f.ex: zero extends for 8, 16 or 32 bits only */
 	st64 stackptr; /* stack pointer */
 	int refptr; /* if (0) ptr = "reference" else ptr = "load memory of refptr bytes" */
@@ -1230,7 +1230,6 @@ typedef struct rz_analysis_plugin_t {
 	// legacy rz_analysis_functions
 	RzAnalysisOpCallback op;
 
-	RzAnalysisRegProfCallback set_reg_profile;
 	RzAnalysisRegProfGetCallback get_reg_profile;
 	RzAnalysisFPBBCallback fingerprint_bb;
 	RzAnalysisFPFcnCallback fingerprint_fcn;
@@ -1584,14 +1583,6 @@ RZ_API RzAnalysisRzilTrace *rz_analysis_rzil_trace_new(RzAnalysis *analysis, RzA
 RZ_API void rz_analysis_rzil_trace_free(RzAnalysisRzilTrace *trace);
 RZ_API void rz_analysis_rzil_trace_op(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzAnalysisRzilOp *op);
 RZ_API void rz_analysis_rzil_collect_info(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzAnalysisOp *op, bool use_new);
-
-/* pin */
-RZ_API void rz_analysis_pin_init(RzAnalysis *a);
-RZ_API void rz_analysis_pin_fini(RzAnalysis *a);
-RZ_API void rz_analysis_pin(RzAnalysis *a, ut64 addr, const char *name);
-RZ_API void rz_analysis_pin_unset(RzAnalysis *a, ut64 addr);
-RZ_API const char *rz_analysis_pin_call(RzAnalysis *a, ut64 addr);
-RZ_API void rz_analysis_pin_list(RzAnalysis *a);
 
 RZ_API bool rz_analysis_add_device_peripheral_map(RzBinObject *o, RzAnalysis *analysis);
 
@@ -2215,7 +2206,6 @@ extern RzAnalysisPlugin rz_analysis_plugin_8051;
 extern RzAnalysisPlugin rz_analysis_plugin_amd29k;
 extern RzAnalysisPlugin rz_analysis_plugin_arc;
 extern RzAnalysisPlugin rz_analysis_plugin_arm_cs;
-extern RzAnalysisPlugin rz_analysis_plugin_arm_gnu;
 extern RzAnalysisPlugin rz_analysis_plugin_avr;
 extern RzAnalysisPlugin rz_analysis_plugin_bf;
 extern RzAnalysisPlugin rz_analysis_plugin_chip8;
@@ -2240,7 +2230,6 @@ extern RzAnalysisPlugin rz_analysis_plugin_nios2;
 extern RzAnalysisPlugin rz_analysis_plugin_or1k;
 extern RzAnalysisPlugin rz_analysis_plugin_pic;
 extern RzAnalysisPlugin rz_analysis_plugin_ppc_cs;
-extern RzAnalysisPlugin rz_analysis_plugin_ppc_gnu;
 extern RzAnalysisPlugin rz_analysis_plugin_propeller;
 extern RzAnalysisPlugin rz_analysis_plugin_riscv;
 extern RzAnalysisPlugin rz_analysis_plugin_riscv_cs;

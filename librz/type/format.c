@@ -24,11 +24,11 @@
 #define MUSTSEEJSON   (mode & RZ_PRINT_JSON && mode & RZ_PRINT_ISFIELD)
 #define MUSTSEESTRUCT (mode & RZ_PRINT_STRUCT)
 
-//this define is used as a way to acknowledge when updateAddr should take len
-//as real len of the buffer
+// this define is used as a way to acknowledge when updateAddr should take len
+// as real len of the buffer
 #define THRESHOLD (-4444)
 
-//TODO REWRITE THIS IS BECOMING A NIGHTMARE
+// TODO REWRITE THIS IS BECOMING A NIGHTMARE
 
 static float updateAddr(const ut8 *buf, int len, int endian, ut64 *addr, ut64 *addr64) {
 	float f = 0.0;
@@ -328,7 +328,7 @@ static void rz_type_format_char(RzStrBuf *outbuf, int endian, int mode,
 		rz_strbuf_appendf(outbuf, "\"w %s\" @ 0x%08" PFMT64x "\n", setval, seeki + ((elem >= 0) ? elem : 0));
 	} else if (MUSTSEE) {
 		if (!SEEVALUE && !ISQUIET) {
-			rz_strbuf_appendf(outbuf, "0x%08" PFMT64x " = ", seeki + ((elem >= 0) ? elem * 2 : 0)); //XXX:: shouldn't it be elem*1??
+			rz_strbuf_appendf(outbuf, "0x%08" PFMT64x " = ", seeki + ((elem >= 0) ? elem * 2 : 0)); // XXX:: shouldn't it be elem*1??
 		}
 		if (size == -1) {
 			rz_strbuf_appendf(outbuf, "'%c'", IS_PRINTABLE(buf[i]) ? buf[i] : '.');
@@ -1386,7 +1386,7 @@ static void rz_type_format_enum(const RzTypeDB *typedb, RzStrBuf *outbuf, ut64 s
 			rz_strbuf_appendf(outbuf, "%" PFMT64d ",\"enum\":\"%s\"}", addr, fmtname);
 		} else if (MUSTSEE) {
 			rz_strbuf_appendf(outbuf, "%s (enum %s) = 0x%" PFMT64x "\n", //`te %s 0x%x`\n",
-				fieldname, fmtname, addr); //enumvalue); //fmtname, addr);
+				fieldname, fmtname, addr); // enumvalue); //fmtname, addr);
 		}
 	}
 }
@@ -1423,7 +1423,7 @@ static void rz_type_format_num_specifier(RzStrBuf *outbuf, ut64 addr, int bytes,
 	} else if (bytes == 2) {
 		rz_strbuf_appendf(outbuf, fs, EXT(short));
 	} else if (bytes == 4) {
-		rz_strbuf_appendf(outbuf, fs, EXT(int)); //XXX: int is not necessarily 4 bytes I guess.
+		rz_strbuf_appendf(outbuf, fs, EXT(int)); // XXX: int is not necessarily 4 bytes I guess.
 	} else if (bytes == 8) {
 		rz_strbuf_appendf(outbuf, fs64, addr);
 	}
@@ -1619,7 +1619,7 @@ RZ_API int rz_type_format_struct_size(const RzTypeDB *typedb, const char *f, int
 		case '*':
 			size += tabsize * (typedb->target->bits / 8);
 			i++;
-			idx--; //no need to go ahead for args
+			idx--; // no need to go ahead for args
 			break;
 		case 'B':
 		case 'E':
@@ -1748,9 +1748,9 @@ RZ_API int rz_type_format_struct_size(const RzTypeDB *typedb, const char *f, int
 		case 'u':
 		case 'D':
 		case 'T':
-			//TODO complete this.
+			// TODO complete this.
 		default:
-			//idx--; //Does this makes sense?
+			// idx--; //Does this makes sense?
 			break;
 		}
 		idx++;
@@ -1772,7 +1772,8 @@ static int rz_type_format_data_internal(const RzTypeDB *typedb, RzPrint *p, RzSt
 
 static int rz_type_format_struct(const RzTypeDB *typedb, RzPrint *p, RzStrBuf *outbuf, ut64 seek, const ut8 *b, int len, const char *name,
 	int slide, int mode, const char *setval, char *field, int anon) {
-	const char *fmt;
+	char *fmt;
+	int ret = 0;
 	char namefmt[128];
 	slide++;
 	if ((slide % STRUCTPTR) > NESTDEPTH || (slide % STRUCTFLAG) / STRUCTPTR > NESTDEPTH) {
@@ -1780,16 +1781,18 @@ static int rz_type_format_struct(const RzTypeDB *typedb, RzPrint *p, RzStrBuf *o
 		return 0;
 	}
 	if (anon) {
-		fmt = name;
+		fmt = strdup(name);
 	} else {
-		fmt = rz_type_db_format_get(typedb, name);
-		if (!fmt) { // Fetch struct info from types DB
+		const char *dbfmt = rz_type_db_format_get(typedb, name);
+		if (!dbfmt) { // Fetch struct info from types DB
 			fmt = rz_type_format(typedb, name);
+		} else {
+			fmt = strdup(dbfmt);
 		}
 	}
 	if (RZ_STR_ISEMPTY(fmt)) {
 		eprintf("Undefined struct '%s'.\n", name);
-		return 0;
+		goto beach;
 	}
 	if (MUSTSEE && !SEEVALUE) {
 		snprintf(namefmt, sizeof(namefmt), "%%%ds", 10 + 6 * slide % STRUCTPTR);
@@ -1801,7 +1804,11 @@ static int rz_type_format_struct(const RzTypeDB *typedb, RzPrint *p, RzStrBuf *o
 		rz_strbuf_appendf(outbuf, "<%s>\n", name);
 	}
 	rz_type_format_data_internal(typedb, p, outbuf, seek, b, len, fmt, mode, setval, field);
-	return rz_type_format_struct_size(typedb, fmt, mode, 0);
+	ret = rz_type_format_struct_size(typedb, fmt, mode, 0);
+
+beach:
+	free(fmt);
+	return ret;
 }
 
 static char *get_args_offset(const char *arg) {
@@ -1894,7 +1901,7 @@ RZ_API const char *rz_type_db_format_get(const RzTypeDB *typedb, const char *nam
 	bool found = false;
 	const char *result = ht_pp_find(typedb->formats, name, &found);
 	if (!found || !result) {
-		//eprintf("Cannot find format \"%s\"\n", name);
+		// eprintf("Cannot find format \"%s\"\n", name);
 		return NULL;
 	}
 	return result;
@@ -2238,7 +2245,7 @@ static int rz_type_format_data_internal(const RzTypeDB *typedb, RzPrint *p, RzSt
 			case '*': // next char is a pointer
 				isptr = PTRSEEK;
 				arg++;
-				tmp = *arg; //last;
+				tmp = *arg; // last;
 				goto feed_me_again;
 			case '+': // toggle view flags
 				viewflags = !viewflags;
@@ -2268,7 +2275,7 @@ static int rz_type_format_data_internal(const RzTypeDB *typedb, RzPrint *p, RzSt
 				} else if (*(arg + 1) == '8') {
 					tmp = 'q';
 					arg++;
-				} else { //If pointer reference is not mentioned explicitly
+				} else { // If pointer reference is not mentioned explicitly
 					switch (typedb->target->bits) {
 					case 16: tmp = 'w'; break;
 					case 32: tmp = 'x'; break;
@@ -2420,7 +2427,7 @@ static int rz_type_format_data_internal(const RzTypeDB *typedb, RzPrint *p, RzSt
 					rz_type_format_int(outbuf, endian, mode, setval, seeki, buf, i, size);
 					i += (size == -1) ? 4 : 4 * size;
 					break;
-				case 'd': //WHY?? help says: 0x%%08x hexadecimal value (4 bytes)
+				case 'd': // WHY?? help says: 0x%%08x hexadecimal value (4 bytes)
 					rz_type_format_hex(outbuf, endian, mode, setval, seeki, buf, i, size);
 					i += (size == -1) ? 4 : 4 * size;
 					break;
@@ -2567,7 +2574,7 @@ static int rz_type_format_data_internal(const RzTypeDB *typedb, RzPrint *p, RzSt
 						}
 					}
 					oldslide = slide;
-					//slide += (isptr) ? STRUCTPTR : NESTEDSTRUCT;
+					// slide += (isptr) ? STRUCTPTR : NESTEDSTRUCT;
 					slide += NESTEDSTRUCT;
 					if (size == -1) {
 						s = rz_type_format_struct(typedb, p, outbuf, seeki,
@@ -2618,7 +2625,7 @@ static int rz_type_format_data_internal(const RzTypeDB *typedb, RzPrint *p, RzSt
 						}
 					}
 					oldslide = slide;
-					//slide -= (isptr) ? STRUCTPTR : NESTEDSTRUCT;
+					// slide -= (isptr) ? STRUCTPTR : NESTEDSTRUCT;
 					slide -= NESTEDSTRUCT;
 					if (mode & RZ_PRINT_SEEFLAGS) {
 						oldslide = slide;
@@ -2641,7 +2648,7 @@ static int rz_type_format_data_internal(const RzTypeDB *typedb, RzPrint *p, RzSt
 					} else {
 						invalid = 1;
 						break;
-						//or goto beach;???
+						// or goto beach;???
 					}
 					rz_type_format_num(outbuf, endian, mode, setval, seeki, buf, i, bytes, sign, size);
 					i += (size == -1) ? bytes : size * bytes;
@@ -2652,7 +2659,7 @@ static int rz_type_format_data_internal(const RzTypeDB *typedb, RzPrint *p, RzSt
 					/* ignore unknown chars */
 					invalid = 1;
 					break;
-				} //switch
+				} // switch
 			}
 			if (MUSTSEESTRUCT) {
 				if (oldslide) {
@@ -2763,7 +2770,7 @@ RZ_API char *rz_type_format_data(const RzTypeDB *typedb, RzPrint *p, ut64 seek, 
  *     uint16_t SizeOfOptionalHeader;
  *     pe_characteristics characteristics; // (bitfield enum)
  * };
-*/
+ */
 
 static const char *type_to_identifier(const RzTypeDB *typedb, RzType *type) {
 	if (type->kind == RZ_TYPE_KIND_IDENTIFIER) {

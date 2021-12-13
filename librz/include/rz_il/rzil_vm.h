@@ -50,7 +50,7 @@ struct rz_il_vm_t {
 
 	HtPP *ct_opcodes; ///< Hashtable to maintain address and opcodes
 
-	RzILBitVector *pc; ///< Program Counter of VM
+	RzBitVector *pc; ///< Program Counter of VM
 
 	RzILOpHandler *op_handler_table; ///< Array of Handler, handler can be indexed by opcode
 
@@ -58,11 +58,11 @@ struct rz_il_vm_t {
 };
 
 // VM operations about Variable and Value
-RZ_API RzILBitVector *rz_il_hash_find_addr_by_lblname(RzILVM *vm, const char *lbl_name);
+RZ_API RzBitVector *rz_il_hash_find_addr_by_lblname(RzILVM *vm, const char *lbl_name);
 RZ_API RzILEffectLabel *rz_il_vm_find_label_by_name(RzILVM *vm, const char *lbl_name);
-RZ_API RzILEffectLabel *rz_il_vm_create_label(RzILVM *vm, const char *name, RzILBitVector *addr);
+RZ_API RzILEffectLabel *rz_il_vm_create_label(RzILVM *vm, const char *name, RzBitVector *addr);
 RZ_API RzILEffectLabel *rz_il_vm_create_label_lazy(RzILVM *vm, const char *name);
-RZ_API RzILEffectLabel *rz_il_vm_update_label(RzILVM *vm, char *name, RzILBitVector *addr);
+RZ_API RzILEffectLabel *rz_il_vm_update_label(RzILVM *vm, char *name, RzBitVector *addr);
 RZ_API RzILVal *rz_il_hash_find_val_by_var(RzILVM *vm, RzILVar *var);
 RZ_API RzILVal *rz_il_hash_find_val_by_name(RzILVM *vm, const char *var_name);
 RZ_API RzILVar *rz_il_find_var_by_name(RzILVM *vm, const char *var_name);
@@ -73,14 +73,14 @@ RZ_API void rz_il_hash_bind(RzILVM *vm, RzILVar *var, RzILVal *val);
 RZ_API void rz_il_hash_cancel_binding(RzILVM *vm, RzILVar *var);
 
 RZ_API RzILVal *rz_il_vm_fortify_val(RzILVM *vm, RzILVal *val);
-RZ_API RzILVal *rz_il_vm_fortify_bitv(RzILVM *vm, RzILBitVector *val);
+RZ_API RzILVal *rz_il_vm_fortify_bitv(RzILVM *vm, RzBitVector *val);
 RZ_API RzILVal *rz_il_vm_fortify_bool(RzILVM *vm, RzILBool *val);
 
 RZ_API void rz_il_vm_add_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name, ut32 length);
 RZ_API void rz_il_vm_add_bit_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name, bool value);
 
 // VM store and load core theory opcodes
-RZ_API void rz_il_vm_store_opcodes_to_addr(RzILVM *vm, RzILBitVector *addr, RzPVector *oplist);
+RZ_API void rz_il_vm_store_opcodes_to_addr(RzILVM *vm, RzBitVector *addr, RzPVector *oplist);
 RZ_API RzPVector *rz_il_make_oplist(int num, ...);
 
 RZ_API void rz_il_op_stringify(RZ_NONNULL RzILOp *op, RZ_NONNULL RzStrBuf *sb);
@@ -93,7 +93,7 @@ RZ_API void rz_il_event_stringify(RZ_NONNULL RzILEvent *evt, RZ_NONNULL RzStrBuf
 RZ_API void rz_il_event_json(RZ_NONNULL RzILEvent *evt, RZ_NONNULL PJ *pj);
 
 // VM auto convert functions
-RZ_API RzILBitVector *rz_il_evaluate_bitv(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+RZ_API RzBitVector *rz_il_evaluate_bitv(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 RZ_API RzILBool *rz_il_evaluate_bool(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 RZ_API RzILVal *rz_il_evaluate_val(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 RZ_API RzILEffect *rz_il_evaluate_effect(RzILVM *vm, RzILOp *op, RzILOpArgType *type);

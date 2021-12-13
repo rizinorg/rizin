@@ -1,5 +1,10 @@
-// SPDX-FileCopyrightText: 2018 xvilka <anton.kochkov@gmail.com>
+// SPDX-FileCopyrightText: 2021 Rot127 <unisono@quyllur.org>
 // SPDX-License-Identifier: LGPL-3.0-only
+
+//========================================
+// The following code is generated.
+// Do not edit. Repository of code generator:
+// https://github.com/rizinorg/rz-hexagon
 
 #include <rz_types.h>
 #include <rz_util.h>
@@ -7,12 +12,23 @@
 #include <rz_lib.h>
 #include "hexagon.h"
 #include "hexagon_insn.h"
+#include "hexagon_arch.h"
 
+/**
+ * \brief Disassembles a hexagon opcode, write info to op and returns its size.
+ *
+ * \param a The current RzAsm struct.
+ * \param op The RzAsmOp which is be filled with the reversed opcode information.
+ * \param buf The buffer with the opcode.
+ * \param l The size to read from the buffer.
+ * \return int Size of the reversed opcode.
+ */
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int l) {
-	HexInsn hi = { 0 };
-	ut32 data = rz_read_le32(buf);
-	op->size = hexagon_disasm_instruction(data, &hi, (ut32)a->pc);
-	rz_strbuf_set(&op->buf_asm, hi.mnem);
+	ut32 addr = (ut32)a->pc;
+	HexReversedOpcode rev = { .action = HEXAGON_DISAS, .ana_op = NULL, .asm_op = op };
+
+	hexagon_reverse_opcode(a, &rev, buf, addr);
+
 	return op->size;
 }
 

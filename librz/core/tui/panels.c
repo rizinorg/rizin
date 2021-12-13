@@ -861,7 +861,7 @@ bool search_db_check_panel_type(RzCore *core, RzPanel *panel, const char *ch) {
 	return ret;
 }
 
-//TODO: Refactroing
+// TODO: Refactroing
 bool __is_abnormal_cursor_type(RzCore *core, RzPanel *panel) {
 	if (__check_panel_type(panel, PANEL_CMD_SYMBOLS) || __check_panel_type(panel, PANEL_CMD_FUNCTION)) {
 		return true;
@@ -1290,7 +1290,7 @@ int __add_cmd_panel(void *user) {
 }
 
 void __add_help_panel(RzCore *core) {
-	//TODO: all these things done below are very hacky and refactoring needed
+	// TODO: all these things done below are very hacky and refactoring needed
 	RzPanels *ps = core->panels;
 	int h;
 	const char *help = "Help";
@@ -1535,7 +1535,7 @@ void __fix_cursor_down(RzCore *core) {
 	bool cur_is_visible = core->offset + print->cur + 32 < print->screen_bounds;
 	if (!cur_is_visible) {
 		int i = 0;
-		//XXX: ugly hack
+		// XXX: ugly hack
 		for (i = 0; i < 2; i++) {
 			RzAsmOp op;
 			int sz = rz_asm_disassemble(core->rasm,
@@ -4669,7 +4669,7 @@ void __panels_refresh(RzCore *core) {
 	__refresh_core_offset(core);
 	__set_refresh_all(core, false, false);
 
-	//TODO use getPanel
+	// TODO use getPanel
 	for (i = 0; i < panels->n_panels; i++) {
 		if (i != panels->curnode) {
 			__panel_print(core, can, __get_panel(panels, i), 0);
@@ -5253,7 +5253,10 @@ void __restore_panel_pos(RzPanel *panel) {
 }
 
 char *__get_panels_config_dir_path(void) {
-	return rz_str_home(RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, ".rzpanels"));
+	char *home_datadir = rz_path_home_prefix(RZ_DATADIR);
+	char *res = rz_file_path_join(home_datadir, ".rzpanels");
+	free(home_datadir);
+	return res;
 }
 
 char *__create_panels_config_path(const char *file) {

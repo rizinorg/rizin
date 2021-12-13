@@ -1,17 +1,15 @@
 NAME=MAIN_ABI : arm-linux_android_abi register
 FILE=bins/abi_bins/elf/platforms/arm-linux-androideabi-echo
 ARGS=-A
-CMDS=<<EOF
-dr
-EOF
+CMDS=ar
 EXPECT=<<EOF
 sb = 0x00000000
 sl = 0x00000000
-fp = 0x00178000
+fp = 0x00000000
 ip = 0x00000000
-sp = 0x00178000
+sp = 0x00000000
 lr = 0x00000000
-pc = 0x00008440
+pc = 0x00000000
 r0 = 0x00000000
 r1 = 0x00000000
 r2 = 0x00000000
@@ -23,11 +21,11 @@ r7 = 0x00000000
 r8 = 0x00000000
 r9 = 0x00000000
 r10 = 0x00000000
-r11 = 0x00178000
+r11 = 0x00000000
 r12 = 0x00000000
-r13 = 0x00178000
+r13 = 0x00000000
 r14 = 0x00000000
-r15 = 0x00008440
+r15 = 0x00000000
 cpsr = 0x00000000
 EOF
 RUN
@@ -35,17 +33,15 @@ RUN
 NAME=MAIN_ABI : arm-linux_gnu_guneabi register
 FILE=bins/abi_bins/elf/platforms/arm-linux-gnueabi-echo
 ARGS=-A
-CMDS=<<EOF
-dr
-EOF
+CMDS=ar
 EXPECT=<<EOF
 sb = 0x00000000
 sl = 0x00000000
-fp = 0x00178000
+fp = 0x00000000
 ip = 0x00000000
-sp = 0x00178000
+sp = 0x00000000
 lr = 0x00000000
-pc = 0x00008438
+pc = 0x00000000
 r0 = 0x00000000
 r1 = 0x00000000
 r2 = 0x00000000
@@ -57,11 +53,11 @@ r7 = 0x00000000
 r8 = 0x00000000
 r9 = 0x00000000
 r10 = 0x00000000
-r11 = 0x00178000
+r11 = 0x00000000
 r12 = 0x00000000
-r13 = 0x00178000
+r13 = 0x00000000
 r14 = 0x00000000
-r15 = 0x00008438
+r15 = 0x00000000
 cpsr = 0x00000000
 EOF
 RUN
@@ -69,9 +65,7 @@ RUN
 NAME=MAIN_ABI : mips-linux-gnu-echo register
 FILE=bins/abi_bins/elf/platforms/mips-linux-gnu-echo
 ARGS=-A
-CMDS=<<EOF
-dr
-EOF
+CMDS=ar
 EXPECT=<<EOF
 zero = 0x00000000
 at = 0x00000000
@@ -102,10 +96,10 @@ t9 = 0x00000000
 k0 = 0x00000000
 k1 = 0x00000000
 gp = 0x00000000
-sp = 0x00178000
-fp = 0x00178000
+sp = 0x00000000
+fp = 0x00000000
 ra = 0x00000000
-pc = 0x004006a0
+pc = 0x00000000
 hi = 0x00000000
 lo = 0x00000000
 t = 0x00000000
@@ -115,9 +109,7 @@ RUN
 NAME=MAIN_ABI : mips64-linux-gnueabi register
 FILE=bins/abi_bins/elf/platforms/mips64-linux-gnueabi-echo
 ARGS=-A
-CMDS=<<EOF
-dr
-EOF
+CMDS=ar
 EXPECT=<<EOF
 zero = 0x00000000
 at = 0x00000000
@@ -148,10 +140,10 @@ t9 = 0x00000000
 k0 = 0x00000000
 k1 = 0x00000000
 gp = 0x00000000
-sp = 0x00178000
-fp = 0x00178000
+sp = 0x00000000
+fp = 0x00000000
 ra = 0x00000000
-pc = 0x120000af0
+pc = 0x00000000
 hi = 0x00000000
 lo = 0x00000000
 t = 0x00000000
@@ -161,14 +153,12 @@ RUN
 NAME=MAIN_ABI : powerpc-linux-gnu register
 FILE=bins/abi_bins/elf/platforms/powerpc-linux-gnu-symexec-guess
 ARGS=-A
-CMDS=<<EOF
-dr
-EOF
+CMDS=ar
 EXPECT=<<EOF
 srr0 = 0x00000000
 srr1 = 0x00000000
 r0 = 0x00000000
-r1 = 0x00178000
+r1 = 0x00000000
 r2 = 0x00000000
 r3 = 0x00000000
 r4 = 0x00000000
@@ -198,11 +188,11 @@ r27 = 0x00000000
 r28 = 0x00000000
 r29 = 0x00000000
 r30 = 0x00000000
-r31 = 0x00178000
+r31 = 0x00000000
 lr = 0x00000000
 ctr = 0x00000000
 msr = 0x00000000
-pc = 0x10000320
+pc = 0x00000000
 cr = 0x00000000
 xer = 0x00000000
 mq = 0x00000000
@@ -234,14 +224,12 @@ RUN
 NAME=MAIN_ABI : powerpc32-linux-gnu register
 FILE=bins/abi_bins/elf/platforms/powerpc32-linux-gnu-echo
 ARGS=-A
-CMDS=<<EOF
-dr
-EOF
+CMDS=ar
 EXPECT=<<EOF
 srr0 = 0x00000000
 srr1 = 0x00000000
 r0 = 0x00000000
-r1 = 0x00178000
+r1 = 0x00000000
 r2 = 0x00000000
 r3 = 0x00000000
 r4 = 0x00000000
@@ -271,11 +259,11 @@ r27 = 0x00000000
 r28 = 0x00000000
 r29 = 0x00000000
 r30 = 0x00000000
-r31 = 0x00178000
+r31 = 0x00000000
 lr = 0x00000000
 ctr = 0x00000000
 msr = 0x00000000
-pc = 0x10000420
+pc = 0x00000000
 cr = 0x00000000
 xer = 0x00000000
 mq = 0x00000000
@@ -307,9 +295,7 @@ RUN
 NAME=MAIN_ABI : x86_64-linux-gnu register
 FILE=bins/abi_bins/elf/platforms/x86_64-linux-gnu-echo
 ARGS=-A
-CMDS=<<EOF
-dr
-EOF
+CMDS=ar
 EXPECT=<<EOF
 rax = 0x00000000
 rbx = 0x00000000
@@ -335,9 +321,7 @@ RUN
 NAME=MAIN_ABI : x86_64-macho register
 FILE=bins/abi_bins/elf/platforms/x86_64-macho-echo
 ARGS=-A
-CMDS=<<EOF
-dr
-EOF
+CMDS=ar
 EXPECT=<<EOF
 rax = 0x00000000
 rbx = 0x00000000
@@ -363,9 +347,7 @@ RUN
 NAME=MAIN_ABI : x86-linux-gnu register
 FILE=bins/abi_bins/elf/platforms/x86-linux-gnu-echo
 ARGS=-A
-CMDS=<<EOF
-dr
-EOF
+CMDS=ar
 EXPECT=<<EOF
 oeax = 0x00000000
 eax = 0x00000000
@@ -384,9 +366,7 @@ RUN
 NAME=MAIN_ABI : i686-w64-mingw32 register
 FILE=bins/abi_bins/pe/platforms/i686-w64-mingw32-echo
 ARGS=-A
-CMDS=<<EOF
-dr
-EOF
+CMDS=ar
 EXPECT=<<EOF
 oeax = 0x00000000
 eax = 0x00000000
@@ -405,9 +385,7 @@ RUN
 NAME=MAIN_ABI : x86_64-w64-mingw32 register
 FILE=bins/abi_bins/pe/platforms/x86_64-w64-mingw32-echo
 ARGS=-A
-CMDS=<<EOF
-dr
-EOF
+CMDS=ar
 EXPECT=<<EOF
 rax = 0x00000000
 rbx = 0x00000000

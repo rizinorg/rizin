@@ -159,7 +159,7 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 		char *k = sdbkv_key(kv);
 		char *v = sdbkv_value(kv);
 		char *dup = strdup(k);
-		//printf ("?e (%s) (%s)\n", k, v);
+		// printf ("?e (%s) (%s)\n", k, v);
 		if ((flagname = strstr(dup, ".offset"))) {
 			*flagname = 0;
 			flagname = dup;
@@ -656,8 +656,9 @@ RZ_API bool rz_core_bin_apply_config(RzCore *r, RzBinFile *binfile) {
 	if (info->default_cc && rz_analysis_cc_exist(r->analysis, info->default_cc)) {
 		rz_config_set(r->config, "analysis.cc", info->default_cc);
 	}
-	const char *dir_prefix = rz_config_get(r->config, "dir.prefix");
-	char *spath = rz_str_newf("%s/" RZ_SDB_TYPES "/spec.sdb", dir_prefix);
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
+	char *spath = rz_file_path_join(types_dir, "spec.sdb");
+	free(types_dir);
 	if (spath && rz_file_exists(spath)) {
 		sdb_concat_by_path(r->analysis->sdb_fmts, spath);
 	}
@@ -1081,6 +1082,7 @@ static ut8 bin_reloc_size(RzBinReloc *reloc) {
 	switch (reloc->type) {
 		CASE(8);
 		CASE(16);
+		CASE(24);
 		CASE(32);
 		CASE(64);
 	}
@@ -1184,14 +1186,15 @@ static void set_bin_relocs(RzCore *r, RzBinObject *o, RzBinReloc *reloc, bool va
 				free(*sdb_module);
 				*sdb_module = strdup(module);
 				/* always lowercase */
-				filename = sdb_fmt("%s.sdb", module);
+				filename = rz_str_newf("%s.sdb", module);
 				rz_str_case(filename, false);
 				if (rz_file_exists(filename)) {
 					*db = sdb_new(NULL, filename, 0);
 				} else {
-					const char *dirPrefix = rz_sys_prefix(NULL);
-					filename = sdb_fmt(RZ_JOIN_4_PATHS("%s", RZ_SDB_FORMAT, "dll", "%s.sdb"),
-						dirPrefix, module);
+					char *formats_dir = rz_path_system(RZ_SDB_FORMAT);
+					free(filename);
+					filename = rz_str_newf(RZ_JOIN_3_PATHS("%s", "dll", "%s.sdb"), formats_dir, module);
+					free(formats_dir);
 					if (rz_file_exists(filename)) {
 						*db = sdb_new(NULL, filename, 0);
 					}
@@ -1209,6 +1212,7 @@ static void set_bin_relocs(RzCore *r, RzBinObject *o, RzBinReloc *reloc, bool va
 					}
 				}
 			}
+			free(filename);
 		}
 		rz_analysis_hint_set_size(r->analysis, reloc->vaddr, 4);
 		rz_meta_set(r->analysis, RZ_META_TYPE_DATA, reloc->vaddr, 4, NULL);
@@ -1539,7 +1543,7 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 		free(rz_symbol_name);
 	}
 
-	//handle thumb and arm for entry point since they are not present in symbols
+	// handle thumb and arm for entry point since they are not present in symbols
 	if (is_arm) {
 		RzBinAddr *entry;
 		rz_list_foreach (o->entries, iter, entry) {
@@ -1822,6 +1826,7 @@ static const char *bin_reloc_type_name(RzBinReloc *reloc) {
 	switch (reloc->type) {
 		CASE(8);
 		CASE(16);
+		CASE(24);
 		CASE(32);
 		CASE(64);
 	}
@@ -2796,7 +2801,7 @@ RZ_API bool rz_core_bin_whole_strings_print(RzCore *core, RzBinFile *bf, RzCmdSt
 
 	bool new_bf = false;
 	if (bf && strstr(bf->file, "malloc://")) {
-		//sync bf->buf to search string on it
+		// sync bf->buf to search string on it
 		ut8 *tmp = RZ_NEWS(ut8, bf->size);
 		if (!tmp) {
 			return false;
@@ -3092,7 +3097,7 @@ RZ_API bool rz_core_bin_info_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput
 			pj_ks(pj, "rpath", info->rpath);
 		}
 		if (info->rclass && !strcmp(info->rclass, "pe")) {
-			//this should be moved if added to mach0 (or others)
+			// this should be moved if added to mach0 (or others)
 			pj_kb(pj, "signed", info->signature);
 		}
 
@@ -3198,7 +3203,7 @@ RZ_API bool rz_core_bin_info_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput
 		}
 		rz_table_add_rowf(t, "ss", "rpath", str2na(info->rpath));
 		if (info->rclass && !strcmp(info->rclass, "pe")) {
-			//this should be moved if added to mach0 (or others)
+			// this should be moved if added to mach0 (or others)
 			table_add_row_bool(t, "signed", info->signature);
 		}
 
@@ -4401,7 +4406,7 @@ RZ_API int rz_core_bin_set_arch_bits(RzCore *r, const char *name, const char *ar
 		return false;
 	}
 	curfile = rz_bin_cur(r->bin);
-	//set env if the binfile changed or we are dealing with xtr
+	// set env if the binfile changed or we are dealing with xtr
 	if (curfile != binfile || binfile->curxtr) {
 		rz_core_bin_set_cur(r, binfile);
 		if (binfile->o && binfile->o->info) {
@@ -4676,7 +4681,7 @@ RZ_API char *rz_core_bin_method_flags_str(ut64 flags, int mode) {
 		rz_strbuf_append(buf, pj_string(pj));
 		pj_free(pj);
 	} else {
-		int pad_len = 4; //TODO: move to a config variable
+		int pad_len = 4; // TODO: move to a config variable
 		int len = 0;
 		if (!flags) {
 			goto padding;

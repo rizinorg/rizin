@@ -1,10 +1,10 @@
 #include <rz_search.h>
 
-//static char *buffer = "helloworldlibisniceandcoolib2loblubljb";
+// static char *buffer = "helloworldlibisniceandcoolib2loblubljb";
 char *buffer = "helloworldlibisnlizbiceandcoolib2loblubljb";
 
 static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
-	//const ut8 *buf = (ut8*)user;
+	// const ut8 *buf = (ut8*)user;
 	printf("HIT %d AT %" PFMT64d " (%s)\n", kw->count, addr, buffer + addr);
 	return 1;
 }

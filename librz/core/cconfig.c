@@ -439,10 +439,13 @@ static bool cb_asmcpu(void *user, void *data) {
 	rz_asm_set_cpu(core->rasm, node->value);
 	rz_config_set(core->config, "analysis.cpu", node->value);
 
-	const char *dir_prefix = rz_config_get(core->config, "dir.prefix");
-	rz_arch_profiles_init(core->analysis->arch_target, node->value, rz_config_get(core->config, "asm.arch"), dir_prefix);
+	char *cpus_dir = rz_path_system(RZ_SDB_ARCH_CPUS);
+	rz_arch_profiles_init(core->analysis->arch_target, node->value, rz_config_get(core->config, "asm.arch"), cpus_dir);
+	free(cpus_dir);
 	const char *platform = rz_config_get(core->config, "asm.platform");
-	rz_arch_platform_init(core->analysis->platform_target, rz_config_get(core->config, "asm.arch"), node->value, platform, dir_prefix);
+	char *platforms_dir = rz_path_system(RZ_SDB_ARCH_PLATFORMS);
+	rz_arch_platform_init(core->analysis->platform_target, rz_config_get(core->config, "asm.arch"), node->value, platform, platforms_dir);
+	free(platforms_dir);
 
 	return true;
 }
@@ -514,8 +517,8 @@ static bool cb_asmarch(void *user, void *data) {
 		eprintf("asm.arch: cannot find (%s)\n", node->value);
 		return false;
 	}
-	//we should strdup here otherwise will crash if any rz_config_set
-	//free the old value
+	// we should strdup here otherwise will crash if any rz_config_set
+	// free the old value
 	char *asm_cpu = strdup(rz_config_get(core->config, "asm.cpu"));
 	if (core->rasm->cur) {
 		const char *newAsmCPU = core->rasm->cur->cpus;
@@ -553,7 +556,7 @@ static bool cb_asmarch(void *user, void *data) {
 		rz_config_set_i(core->config, "asm.bits", bits);
 	}
 
-	//rz_debug_set_arch (core->dbg, rz_sys_arch_id (node->value), bits);
+	// rz_debug_set_arch (core->dbg, rz_sys_arch_id (node->value), bits);
 	rz_debug_set_arch(core->dbg, node->value, bits);
 	if (!rz_config_set(core->config, "analysis.arch", node->value)) {
 		char *p, *s = strdup(node->value);
@@ -572,17 +575,20 @@ static bool cb_asmarch(void *user, void *data) {
 	// set pcalign
 	if (core->analysis) {
 		const char *asmcpu = rz_config_get(core->config, "asm.cpu");
-		const char *dir_prefix = rz_config_get(core->config, "dir.prefix");
 		const char *platform = rz_config_get(core->config, "asm.platform");
 		if (!rz_syscall_setup(core->analysis->syscall, node->value, core->analysis->bits, asmcpu, asmos)) {
-			//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
+			// eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
 			//	node->value, asmos, RZ_LIBDIR"/rizin/"RZ_VERSION"/syscall");
 		}
 		update_syscall_ns(core);
-		rz_arch_platform_init(core->analysis->platform_target, node->value, asmcpu, platform, dir_prefix);
-		rz_arch_profiles_init(core->analysis->arch_target, asmcpu, node->value, dir_prefix);
+		char *platforms_dir = rz_path_system(RZ_SDB_ARCH_PLATFORMS);
+		char *cpus_dir = rz_path_system(RZ_SDB_ARCH_CPUS);
+		rz_arch_platform_init(core->analysis->platform_target, node->value, asmcpu, platform, platforms_dir);
+		rz_arch_profiles_init(core->analysis->arch_target, asmcpu, node->value, cpus_dir);
+		free(platforms_dir);
+		free(cpus_dir);
 	}
-	//if (!strcmp (node->value, "bf"))
+	// if (!strcmp (node->value, "bf"))
 	//	rz_config_set (core->config, "dbg.backend", "bf");
 	__setsegoff(core->config, node->value, core->rasm->bits);
 
@@ -623,12 +629,17 @@ static bool cb_asmarch(void *user, void *data) {
 	rz_analysis_set_big_endian(core->analysis, bigbin);
 	rz_core_analysis_cc_init(core);
 
-	const char *dir_prefix = rz_config_get(core->config, "dir.prefix");
 	const char *platform = rz_config_get(core->config, "asm.platform");
-	rz_sysreg_set_arch(core->analysis->syscall, node->value, dir_prefix);
+	char *regs_dir = rz_path_system(RZ_SDB_REG);
+	rz_sysreg_set_arch(core->analysis->syscall, node->value, regs_dir);
+	free(regs_dir);
 	if (asmcpu) {
-		rz_arch_platform_init(core->analysis->platform_target, node->value, asmcpu->value, platform, dir_prefix);
-		rz_arch_profiles_init(core->analysis->arch_target, asmcpu->value, node->value, dir_prefix);
+		char *platforms_dir = rz_path_system(RZ_SDB_ARCH_PLATFORMS);
+		char *cpus_dir = rz_path_system(RZ_SDB_ARCH_CPUS);
+		rz_arch_platform_init(core->analysis->platform_target, node->value, asmcpu->value, platform, platforms_dir);
+		rz_arch_profiles_init(core->analysis->arch_target, asmcpu->value, node->value, cpus_dir);
+		free(cpus_dir);
+		free(platforms_dir);
 	}
 
 	return true;
@@ -696,14 +707,6 @@ static bool cb_asmbits(void *user, void *data) {
 		bool load_from_debug = rz_config_get_b(core->config, "cfg.debug");
 		if (load_from_debug) {
 			if (core->dbg->cur && core->dbg->cur->reg_profile) {
-// XXX. that should depend on the plugin, not the host os
-#if __WINDOWS__
-#if !defined(_WIN64)
-				core->dbg->bits = RZ_SYS_BITS_32;
-#else
-				core->dbg->bits = RZ_SYS_BITS_64;
-#endif
-#endif
 				char *rp = core->dbg->cur->reg_profile(core->dbg);
 				rz_reg_set_profile_string(core->dbg->reg, rp);
 				rz_reg_set_profile_string(core->analysis->reg, rp);
@@ -719,7 +722,7 @@ static bool cb_asmbits(void *user, void *data) {
 	const char *asmcpu = rz_config_get(core->config, "asm.cpu");
 	if (core->analysis) {
 		if (!rz_syscall_setup(core->analysis->syscall, asmarch, bits, asmcpu, asmos)) {
-			//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
+			// eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
 			//	node->value, asmos, RZ_LIBDIR"/rizin/"RZ_VERSION"/syscall");
 		}
 		update_syscall_ns(core);
@@ -812,10 +815,11 @@ static bool cb_asmplatform(void *user, void *data) {
 	if (node->value[0]) {
 		core->rasm->platforms = strdup(node->value);
 	}
-	const char *dir_prefix = rz_config_get(core->config, "dir.prefix");
 	const char *asmcpu = rz_config_get(core->config, "asm.cpu");
 	const char *asmarch = rz_config_get(core->config, "asm.arch");
-	rz_arch_platform_init(core->analysis->platform_target, asmarch, asmcpu, node->value, dir_prefix);
+	char *platforms_dir = rz_path_system(RZ_SDB_ARCH_PLATFORMS);
+	rz_arch_platform_init(core->analysis->platform_target, asmarch, asmcpu, node->value, platforms_dir);
+	free(platforms_dir);
 	return 1;
 }
 
@@ -851,10 +855,17 @@ static bool cb_emuskip(void *user, void *data) {
 	return true;
 }
 
-static bool cb_asm_armimm(void *user, void *data) {
+static bool cb_asm_immhash(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	core->rasm->immdisp = node->i_value ? true : false;
+	return true;
+}
+
+static bool cb_asm_immsign(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	core->rasm->immsign = node->i_value;
 	return true;
 }
 
@@ -947,7 +958,13 @@ static bool cb_binstrenc(void *user, void *data) {
 		{ "utf16le", "utf-16le,utf16-le" },
 		{ "utf32le", "utf-32le,utf32-le" },
 		{ "utf16be", "utf-16be,utf16-be" },
-		{ "utf32be", "utf-32be,utf32-be" }
+		{ "utf32be", "utf-32be,utf32-be" },
+		{ "ibm037", "ebcdic" },
+		{ "ibm290", NULL },
+		{ "ebcdices", NULL },
+		{ "ebcdicuk", NULL },
+		{ "ebcdicus", NULL },
+
 	};
 	int i;
 	char *enc = strdup(node->value);
@@ -2128,6 +2145,7 @@ static bool cb_scrcolumns(void *user, void *data) {
 	int n = atoi(node->value);
 	core->cons->force_columns = n;
 	core->dbg->regcols = n / 20;
+	rz_cons_get_size(NULL);
 	return true;
 }
 
@@ -2414,7 +2432,9 @@ static bool cb_tracetag(void *user, void *data) {
 }
 
 static bool cb_utf8(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
+	core->rasm->utf8 = (bool)node->i_value;
 	rz_cons_set_utf8((bool)node->i_value);
 	return true;
 }
@@ -2627,11 +2647,6 @@ static bool cb_searchin(void *user, void *data) {
 static int __dbg_swstep_getter(void *user, RzConfigNode *node) {
 	RzCore *core = (RzCore *)user;
 	node->i_value = core->dbg->swstep;
-	return true;
-}
-
-static bool cb_dirpfx(RzCore *core, RzConfigNode *node) {
-	rz_sys_prefix(node->value);
 	return true;
 }
 
@@ -2899,9 +2914,9 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	{
 		char *pfx = rz_sys_getenv("RZ_PREFIX");
 		if (!pfx) {
-			pfx = strdup(rz_sys_prefix(NULL));
+			pfx = rz_path_prefix(NULL);
 		}
-		SETCB("dir.prefix", pfx, (RzConfigCallback)&cb_dirpfx, "Default prefix rizin was compiled for");
+		SETCB("dir.prefix", pfx, NULL, "Default prefix rizin was compiled for");
 		free(pfx);
 	}
 #if __ANDROID__
@@ -2920,7 +2935,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETPREF("pdb.useragent", "Microsoft-Symbol-Server/6.11.0001.402", "User agent for Microsoft symbol server");
 	SETPREF("pdb.server", "https://msdl.microsoft.com/download/symbols", "Semi-colon separated list of base URLs for Microsoft symbol servers");
 	{
-		char *pdb_path = rz_str_home(RZ_HOME_PDB);
+		char *pdb_path = rz_path_home_prefix(RZ_PDB);
 		SETPREF("pdb.symstore", pdb_path, "Path to downstream symbol store");
 		RZ_FREE(pdb_path);
 	}
@@ -3047,7 +3062,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("esil.breakoninvalid", "false", "Break esil execution when instruction is invalid");
 	SETI("esil.timeout", 0, "A timeout (in seconds) for when we should give up emulating");
 	/* asm */
-	//asm.os needs to be first, since other asm.* depend on it
+	// asm.os needs to be first, since other asm.* depend on it
 	n = NODECB("asm.os", "none", &cb_asmos);
 	SETDESC(n, "Select operating system (kernel)");
 	SETOPTIONS(n, "ios", "dos", "darwin", "linux", "freebsd", "openbsd", "netbsd", "windows", "s110", "none", NULL);
@@ -3081,7 +3096,8 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI("asm.hint.pos", 1, "Shortcut hint position (-1, 0, 1)");
 	SETBPREF("asm.slow", "true", "Perform slow analysis operations in disasm");
 	SETBPREF("asm.decode", "false", "Use code analysis as a disassembler");
-	SETICB("asm.imm.arm", false, &cb_asm_armimm, "Display # for immediates in ARM");
+	SETICB("asm.imm.hash", 0, &cb_asm_immhash, "Display # for immediates in ARM and Hexagon (0 = on)");
+	SETCB("asm.imm.sign", "true", &cb_asm_immsign, "False: Print signed immediates in unsigned representation. True: Print them with sign.");
 	SETBPREF("asm.imm.str", "true", "Show immediates values as strings");
 	SETBPREF("asm.imm.trim", "false", "Remove all offsets and constants from disassembly");
 	SETBPREF("asm.indent", "false", "Indent disassembly based on reflines depth");
@@ -3324,7 +3340,11 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("zign.match.refs", "true", "Use references for matching");
 	SETBPREF("zign.match.hash", "true", "Use Hash for matching");
 	SETBPREF("zign.match.types", "false", "Use types for matching");
-	SETBPREF("zign.autoload", "false", "Autoload all zignatures located in " RZ_JOIN_2_PATHS("~", RZ_HOME_ZIGNS));
+	char home_zigns_msg[1024];
+	char *home_zigns_dir = rz_path_home_prefix(RZ_ZIGNS);
+	rz_strf(home_zigns_msg, "Autoload all zignatures located in %s", home_zigns_dir);
+	free(home_zigns_dir);
+	SETBPREF("zign.autoload", "false", home_zigns_msg);
 	SETPREF("zign.diff.bthresh", "1.0", "Threshold for diffing zign bytes [0, 1] (see zc?)");
 	SETPREF("zign.diff.gthresh", "1.0", "Threshold for diffing zign graphs [0, 1] (see zc?)");
 	SETPREF("zign.threshold", "0.0", "Minimum similarity required for inclusion in zb output");
@@ -3339,10 +3359,10 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	/* dir */
 	SETI("dir.depth", 10, "Maximum depth when searching recursively for files");
 	{
-		char *path = rz_str_newf(RZ_JOIN_2_PATHS("%s", RZ_SDB_MAGIC), rz_config_get(core->config, "dir.prefix"));
+		char *path = rz_path_system(RZ_SDB_MAGIC);
 		SETPREF("dir.magic", path, "Path to rz_magic files");
 		free(path);
-		path = rz_str_newf(RZ_JOIN_2_PATHS("%s", RZ_PLUGINS), rz_config_get(core->config, "dir.prefix"));
+		path = rz_path_system(RZ_PLUGINS);
 		SETPREF("dir.plugins", path, "Path to plugin files to be loaded at startup");
 		free(path);
 	}
@@ -3358,9 +3378,13 @@ RZ_API int rz_core_config_init(RzCore *core) {
 #if __ANDROID__
 	SETPREF("dir.projects", "/data/data/org.rizin.rizininstaller/rizin/projects", "Default path for projects");
 #else
-	SETPREF("dir.projects", RZ_JOIN_2_PATHS("~", RZ_HOME_PROJECTS), "Default path for projects");
+	char *projects_dir = rz_path_home_prefix(RZ_PROJECTS);
+	SETPREF("dir.projects", projects_dir, "Default path for projects");
+	free(projects_dir);
 #endif
-	SETCB("dir.zigns", RZ_JOIN_2_PATHS("~", RZ_HOME_ZIGNS), &cb_dirzigns, "Default path for zignatures (see zo command)");
+	home_zigns_dir = rz_path_home_prefix(RZ_ZIGNS);
+	SETCB("dir.zigns", home_zigns_dir, &cb_dirzigns, "Default path for zignatures (see zo command)");
+	free(home_zigns_dir);
 	SETPREF("stack.reg", "SP", "Which register to use as stack pointer in the visual debug");
 	SETBPREF("stack.bytes", "true", "Show bytes instead of words in stack");
 	SETBPREF("stack.anotated", "false", "Show anotated hexdump in visual debug");
@@ -3377,7 +3401,11 @@ RZ_API int rz_core_config_init(RzCore *core) {
 
 	SETCB("dbg.bpinmaps", "true", &cb_dbg_bpinmaps, "Activate breakpoints only if they are inside a valid map");
 	SETCB("dbg.forks", "false", &cb_dbg_forks, "Stop execution if fork() is done (see dbg.threads)");
+#if __WINDOWS__
+	n = NODECB("dbg.btalgo", "default", &cb_dbg_btalgo);
+#else
 	n = NODECB("dbg.btalgo", "fuzzy", &cb_dbg_btalgo);
+#endif
 	SETDESC(n, "Select backtrace algorithm");
 	SETOPTIONS(n, "default", "fuzzy", "analysis", "trace", NULL);
 	SETCB("dbg.threads", "false", &cb_stopthreads, "Stop all threads when debugger breaks (see dbg.forks)");
@@ -3501,11 +3529,13 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI("http.maxsize", 0, "Maximum file size for upload");
 	SETPREF("http.index", "index.html", "Main html file to check in directory");
 	SETPREF("http.bind", "localhost", "Server address");
-	SETPREF("http.homeroot", RZ_JOIN_2_PATHS("~", RZ_HOME_WWWROOT), "http home root directory");
+	char *wwwroot_dir = rz_path_home_prefix(RZ_WWWROOT);
+	SETPREF("http.homeroot", wwwroot_dir, "http home root directory");
+	free(wwwroot_dir);
 #if __ANDROID__
 	SETPREF("http.root", "/data/data/org.rizin.rizininstaller/www", "http root directory");
 #else
-	char *wwwroot = rz_str_rz_prefix(RZ_WWWROOT);
+	char *wwwroot = rz_path_system(RZ_WWWROOT);
 	SETPREF("http.root", wwwroot, "http root directory");
 	free(wwwroot);
 #endif
@@ -3769,7 +3799,7 @@ RZ_API void rz_core_parse_rizinrc(RzCore *r) {
 		homerc = rcfile;
 	} else {
 		free(rcfile);
-		homerc = rz_str_home(".rizinrc");
+		homerc = rz_path_home_rc();
 	}
 	if (homerc && rz_file_is_regular(homerc)) {
 		if (has_debug) {
@@ -3778,7 +3808,7 @@ RZ_API void rz_core_parse_rizinrc(RzCore *r) {
 		rz_core_cmd_file(r, homerc);
 	}
 	free(homerc);
-	homerc = rz_str_home(RZ_HOME_RC);
+	homerc = rz_path_home_config_rc();
 	if (homerc && rz_file_is_regular(homerc)) {
 		if (has_debug) {
 			eprintf("USER CONFIG loaded from %s\n", homerc);
@@ -3786,7 +3816,7 @@ RZ_API void rz_core_parse_rizinrc(RzCore *r) {
 		rz_core_cmd_file(r, homerc);
 	}
 	free(homerc);
-	homerc = rz_str_home(RZ_HOME_RC_DIR);
+	homerc = rz_path_home_config_rcdir();
 	if (homerc) {
 		if (rz_file_is_directory(homerc)) {
 			char *file;

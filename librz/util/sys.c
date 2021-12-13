@@ -220,7 +220,7 @@ RZ_API RzList *rz_sys_dir(const char *path) {
 	char *cfname;
 	HANDLE fh = sys_opendir(path, &entry);
 	if (fh == INVALID_HANDLE_VALUE) {
-		//IFDGB eprintf ("Cannot open directory %ls\n", wcpath);
+		// IFDGB eprintf ("Cannot open directory %ls\n", wcpath);
 		return list;
 	}
 	list = rz_list_newf(free);
@@ -510,14 +510,7 @@ RZ_API char *rz_sys_getdir(void) {
 
 RZ_API bool rz_sys_chdir(RZ_NONNULL const char *s) {
 	rz_return_val_if_fail(s, false);
-	char *homepath = NULL;
-	if (s[0] == '~') {
-		if (strlen(s) == 1) {
-			homepath = rz_sys_getenv(RZ_SYS_HOME);
-		} else if (s[1] == '/') {
-			homepath = rz_str_home(s + 2);
-		}
-	}
+	char *homepath = rz_path_home_expand(s);
 	if (homepath) {
 		int ret = chdir(homepath);
 		free(homepath);
@@ -953,7 +946,7 @@ RZ_API int rz_sys_run(const ut8 *buf, int len) {
 	}
 	memcpy(ptr, buf, len);
 	rz_mem_protect(ptr, sz, "rx");
-	//rz_mem_protect (ptr, sz, "rwx"); // try, ignore if fail
+	// rz_mem_protect (ptr, sz, "rwx"); // try, ignore if fail
 	cb = (int (*)())ptr;
 #if USE_FORK
 #if __UNIX__
@@ -1286,36 +1279,6 @@ RZ_API int rz_sys_getpid(void) {
 #warning rz_sys_getpid not implemented for this platform
 	return -1;
 #endif
-}
-
-RZ_API const char *rz_sys_prefix(const char *pfx) {
-	static char *prefix = NULL;
-	if (!prefix) {
-#if RZ_IS_PORTABLE
-		char *pid_to_path = rz_sys_pid_to_path(rz_sys_getpid());
-		if (pid_to_path) {
-			char *t = rz_file_dirname(pid_to_path);
-			free(pid_to_path);
-			// When rz_sys_prefix is called from a unit test or from a
-			// not-yet-installed rizin binary this would return the wrong path.
-			// In those cases, just return RZ_PREFIX.
-			if (rz_str_endswith(t, RZ_SYS_DIR RZ_BINDIR)) {
-				prefix = rz_file_dirname(t);
-			}
-			free(t);
-		}
-		if (!prefix) {
-			prefix = strdup(RZ_PREFIX);
-		}
-#else
-		prefix = strdup(RZ_PREFIX);
-#endif
-	}
-	if (RZ_STR_ISNOTEMPTY(pfx)) {
-		free(prefix);
-		prefix = strdup(pfx);
-	}
-	return prefix;
 }
 
 RZ_API RSysInfo *rz_sys_info(void) {
@@ -1803,10 +1766,6 @@ RZ_API int rz_sys_fork(void) {
 }
 #endif
 
-static inline char *expand_home(const char *p) {
-	return (*p == '~') ? rz_str_home(p) : strdup(p);
-}
-
 RZ_API int rz_sys_truncate_fd(int fd, ut64 length) {
 #ifdef _MSC_VER
 	return _chsize_s(fd, length);
@@ -1865,7 +1824,7 @@ RZ_API int rz_sys_open_perms(int rizin_perms) {
 /* perm <-> mode */
 RZ_API int rz_sys_open(const char *path, int perm, int mode) {
 	rz_return_val_if_fail(path, -1);
-	char *epath = expand_home(path);
+	char *epath = rz_path_home_expand(path);
 	int ret = -1;
 #if __WINDOWS__
 	if (!strcmp(path, "/dev/null")) {
@@ -1936,10 +1895,7 @@ RZ_API int rz_sys_open(const char *path, int perm, int mode) {
 RZ_API FILE *rz_sys_fopen(const char *path, const char *mode) {
 	rz_return_val_if_fail(path && mode, NULL);
 	FILE *ret = NULL;
-	char *epath = NULL;
-	if (!epath) {
-		epath = expand_home(path);
-	}
+	char *epath = rz_path_home_expand(path);
 	if ((strchr(mode, 'w') || strchr(mode, 'a') || rz_file_is_regular(epath))) {
 #if __WINDOWS__
 		wchar_t *wepath = rz_utf8_to_utf16(epath);

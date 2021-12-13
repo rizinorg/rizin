@@ -63,7 +63,7 @@ RZ_API char *rz_str_trim_lines(char *str) {
 	RzListIter *iter;
 	RzStrBuf *sb = rz_strbuf_new("");
 	rz_list_foreach (list, iter, s) {
-		//rz_str_ansi_trim (s, -1, 99999);
+		// rz_str_ansi_trim (s, -1, 99999);
 		rz_str_ansi_filter(s, NULL, NULL, -1);
 		rz_str_trim(s);
 		if (*s) {

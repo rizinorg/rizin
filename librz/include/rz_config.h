@@ -58,8 +58,8 @@ typedef struct rz_config_hold_char_t {
 
 typedef struct rz_config_hold_t {
 	RzConfig *cfg;
-	RzList *list_num; //list of RzConfigHoldNum to hold numeric values
-	RzList *list_char; //list of RzConfigHoldChar to hold char values
+	RzList *list_num; // list of RzConfigHoldNum to hold numeric values
+	RzList *list_char; // list of RzConfigHoldChar to hold char values
 } RzConfigHold;
 
 #ifdef RZ_API

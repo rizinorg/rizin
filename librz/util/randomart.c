@@ -43,7 +43,7 @@
 #define FLDSIZE_Y (FLDBASE + 1)
 #define FLDSIZE_X (FLDBASE * 2 + 1)
 
-//static char * key_fingerprint_randomart(ut8 *dgst_raw, ut32 dgst_raw_len) {
+// static char * key_fingerprint_randomart(ut8 *dgst_raw, ut32 dgst_raw_len) {
 RZ_API char *rz_print_randomart(const ut8 *dgst_raw, ut32 dgst_raw_len, ut64 addr) {
 	/*
 	 * Chars to be used after each other every time the worm
@@ -101,7 +101,7 @@ RZ_API char *rz_print_randomart(const ut8 *dgst_raw, ut32 dgst_raw_len, ut64 add
 #if 0
 	snprintf(retval, FLDSIZE_X, "+--[%4s %4u]", key_type(k), key_size(k));
 #else
-	//strcpy (retval, "+-------------");
+	// strcpy (retval, "+-------------");
 	sprintf(retval, "+--[0x%08" PFMT64x "]-", addr);
 #endif
 	p = strchr(retval, '\0');

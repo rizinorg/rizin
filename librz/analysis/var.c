@@ -703,7 +703,7 @@ static void extract_arg(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysi
 			addr--;
 		}
 		if (strncmp(addr, "0x", 2)) {
-			//XXX: This is a workaround for inconsistent esil
+			// XXX: This is a workaround for inconsistent esil
 			if (!op->stackop && op->dst) {
 				const char *sp = rz_reg_get_name(analysis->reg, RZ_REG_NAME_SP);
 				const char *bp = rz_reg_get_name(analysis->reg, RZ_REG_NAME_BP);
@@ -887,7 +887,7 @@ static bool is_used_like_arg(const char *regname, const char *opsreg, const char
 		if (STR_EQUAL(opsreg, opdreg) && !src->memref && !dst->memref) {
 			return false;
 		}
-		//fallthrough
+		// fallthrough
 	default:
 		if (op_affect_dst(op) && arch_destroys_dst(analysis->cur->arch)) {
 			if (is_reg_in_src(regname, analysis, op)) {
@@ -1103,13 +1103,15 @@ RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzA
 RZ_API void rz_analysis_extract_vars(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysisOp *op) {
 	rz_return_if_fail(analysis && fcn && op);
 
-	const char *BP = analysis->reg->name[RZ_REG_NAME_BP];
-	const char *SP = analysis->reg->name[RZ_REG_NAME_SP];
+	const char *BP = rz_reg_get_name(analysis->reg, RZ_REG_NAME_BP);
+	const char *SP = rz_reg_get_name(analysis->reg, RZ_REG_NAME_SP);
 	if (BP) {
 		extract_arg(analysis, fcn, op, BP, "+", RZ_ANALYSIS_VAR_KIND_BPV);
 		extract_arg(analysis, fcn, op, BP, "-", RZ_ANALYSIS_VAR_KIND_BPV);
 	}
-	extract_arg(analysis, fcn, op, SP, "+", RZ_ANALYSIS_VAR_KIND_SPV);
+	if (SP) {
+		extract_arg(analysis, fcn, op, SP, "+", RZ_ANALYSIS_VAR_KIND_SPV);
+	}
 }
 
 static RzList *var_generate_list(RzAnalysis *a, RzAnalysisFunction *fcn, int kind) {

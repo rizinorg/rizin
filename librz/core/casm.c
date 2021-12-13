@@ -262,15 +262,26 @@ RZ_API RzList *rz_core_asm_strsearch(RzCore *core, const char *input, ut64 from,
 					idx++; // TODO: honor mininstrsz
 					continue;
 				}
-				ut64 val = analop.val; // maybe chk for ptr or others?
+				ut64 val = analop.val; // Referenced value
+
 				bool match = (val != UT64_MAX && val >= usrimm && val <= usrimm2);
+
+				if (!match) {
+					for (size_t i = 0; i < 6; ++i) {
+						st64 v = analop.analysis_vals[i].imm;
+						match = (v != ST64_MAX && v >= usrimm && v <= usrimm2);
+						if (match) {
+							break;
+						}
+					}
+				}
 				if (!match) {
 					ut64 val = analop.disp;
 					match = (val != UT64_MAX && val >= usrimm && val <= usrimm2);
 				}
 				if (!match) {
-					ut64 val = analop.ptr;
-					match = (val != UT64_MAX && val >= usrimm && val <= usrimm2);
+					st64 val = analop.ptr;
+					match = (val != ST64_MAX && val >= usrimm && val <= usrimm2);
 				}
 				if (match) {
 					if (!(hit = rz_core_asm_hit_new())) {
@@ -302,7 +313,7 @@ RZ_API RzList *rz_core_asm_strsearch(RzCore *core, const char *input, ut64 from,
 					idx++; // TODO: honor mininstrsz
 					continue;
 				}
-				//opsz = analop.size;
+				// opsz = analop.size;
 				opst = strdup(rz_strbuf_get(&analop.esil));
 				rz_analysis_op_fini(&analop);
 			} else {
@@ -315,7 +326,7 @@ RZ_API RzList *rz_core_asm_strsearch(RzCore *core, const char *input, ut64 from,
 					rz_asm_op_fini(&op);
 					continue;
 				}
-				//opsz = op.size;
+				// opsz = op.size;
 				opst = strdup(rz_strbuf_get(&op.buf_asm));
 				rz_asm_op_fini(&op);
 			}
@@ -364,7 +375,7 @@ RZ_API RzList *rz_core_asm_strsearch(RzCore *core, const char *input, ut64 from,
 					if (maxhits) {
 						count++;
 						if (count >= maxhits) {
-							//eprintf ("Error: search.maxhits reached\n");
+							// eprintf ("Error: search.maxhits reached\n");
 							goto beach;
 						}
 					}
@@ -453,7 +464,7 @@ static int prune_hits_in_hit_range(RzList *hits, RzCoreAsmHit *hit) {
 				to_check_hit->addr + to_check_hit->len);
 			// XXX - could this be a valid decode instruction we are deleting?
 			rz_list_delete(hits, iter);
-			//iter->data = NULL;
+			// iter->data = NULL;
 			to_check_hit = NULL;
 			result++;
 		}
@@ -823,7 +834,7 @@ static RzList *rz_core_asm_back_disassemble(RzCore *core, ut64 addr, int len, ut
 				hit_count = rz_list_length(hits);
 			}
 			add_hit_to_sorted_hits(hits, current_instr_addr, current_instr_len, is_valid);
-			//handle_forward_disassemble(core, hits, buf, len, current_buf_pos+current_instr_len, current_instr_addr+current_instr_len, addr/*end_addr*/);
+			// handle_forward_disassemble(core, hits, buf, len, current_buf_pos+current_instr_len, current_instr_addr+current_instr_len, addr/*end_addr*/);
 			hit_count++;
 			next_buf_pos = current_buf_pos;
 			last_num_invalid = 0;
@@ -838,7 +849,7 @@ static RzList *rz_core_asm_back_disassemble(RzCore *core, ut64 addr, int len, ut
 			last_num_invalid = 0;
 			// disassembly overlap
 		} else if (current_buf_pos + current_instr_len > next_buf_pos) {
-			//ut64 value = handle_disassembly_overlap(core, hits, buf, len, current_buf_pos, current_instr_addr);
+			// ut64 value = handle_disassembly_overlap(core, hits, buf, len, current_buf_pos, current_instr_addr);
 			next_buf_pos = current_buf_pos;
 			hit_count = rz_list_length(hits);
 			last_num_invalid = 0;

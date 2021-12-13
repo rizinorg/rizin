@@ -10,6 +10,7 @@
 #define __UNIX__ 0
 #endif
 
+#if __UNIX__ || __WINDOWS__ && !defined(__QNX__) && !defined(__HAIKU__)
 #if __UNIX__ && !defined(__QNX__) && !defined(__HAIKU__)
 #if HAVE_DECL_ASHMEM_NAME_LEN
 #include <linux/ashmem.h>
@@ -17,10 +18,16 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/mman.h>
-
+#elif __WINDOWS__
+#include <windows.h>
+#endif
 typedef struct {
+#if __WINDOWS__
+	HANDLE h;
+#else
 	int fd;
 	int id;
+#endif
 	char *name;
 	ut8 *buf;
 	ut32 size;
@@ -35,7 +42,11 @@ static int shm__write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
 		(void)memcpy(shm->buf + io->off, buf, count);
 		return count;
 	}
+#if !defined(__WINDOWS__)
 	return write(shm->fd, buf, count);
+#else
+	return 0;
+#endif
 }
 
 static int shm__read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
@@ -51,13 +62,21 @@ static int shm__read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
 		memcpy(buf, shm->buf + io->off, count);
 		return count;
 	}
+#if !defined(__WINDOWS__)
 	return read(shm->fd, buf, count);
+#else
+	return 0;
+#endif
 }
 
 static int shm__close(RzIODesc *fd) {
 	rz_return_val_if_fail(fd && fd->data, -1);
 	int ret;
 	RzIOShm *shm = fd->data;
+#if __WINDOWS__
+	UnmapViewOfFile(shm->buf);
+	ret = CloseHandle(shm->h);
+#else
 #if HAVE_SHM_OPEN || HAVE_DECL_ASHMEM_NAME_LEN
 	ret = close(shm->fd);
 #else
@@ -66,6 +85,7 @@ static int shm__close(RzIODesc *fd) {
 	} else {
 		ret = close(shm->fd);
 	}
+#endif
 #endif
 	free(shm->name);
 	RZ_FREE(fd->data);
@@ -76,16 +96,16 @@ static ut64 shm__lseek(RzIO *io, RzIODesc *fd, ut64 offset, int whence) {
 	rz_return_val_if_fail(fd && fd->data, -1);
 	RzIOShm *shm = fd->data;
 	switch (whence) {
-	case SEEK_SET:
+	case RZ_IO_SEEK_SET:
 		return io->off = offset;
-	case SEEK_CUR:
+	case RZ_IO_SEEK_CUR:
 		if (io->off + offset > shm->size) {
 			return io->off = shm->size;
 		}
 		io->off += offset;
 		return io->off;
-	case SEEK_END:
-		return 0xffffffff;
+	case RZ_IO_SEEK_END:
+		return io->off = (shm->size ? shm->size : 0xffffffff) + offset;
 	}
 	return io->off;
 }
@@ -123,6 +143,37 @@ static RzIODesc *shm__open(RzIO *io, const char *uri, int rw, int mode) {
 	}
 
 	shm->name = rz_str_newf("/%s", name);
+#if __WINDOWS__
+	LPWSTR wname = rz_utf8_to_utf16(name);
+	const DWORD desired_access = rw ? FILE_MAP_ALL_ACCESS : FILE_MAP_READ;
+	shm->h = OpenFileMappingW(desired_access, FALSE, wname);
+	free(wname);
+	if (!shm->h) {
+		RZ_LOG_ERROR("Cannot open shared memory \"%s\"\n", shm->name);
+		free(shm->name);
+		free(shm);
+		return NULL;
+	}
+	size_t given_size = 0;
+	if (size && (given_size = rz_num_math(NULL, size))) {
+		shm->size = given_size;
+	}
+	shm->buf = MapViewOfFile(shm->h, desired_access, 0, 0, given_size);
+	if (!shm->buf) {
+		RZ_LOG_ERROR("Cannot map shared memory \"%s\"\n", shm->name);
+		CloseHandle(shm->h);
+		free(shm->name);
+		free(shm);
+	}
+	if (!given_size) {
+		MEMORY_BASIC_INFORMATION mi;
+		if (VirtualQuery(shm->buf, &mi, sizeof(mi)) == sizeof(mi)) {
+			shm->size = mi.RegionSize;
+		}
+	}
+	RZ_LOG_INFO("Connected to shared memory \"%s\" size 0x%x\n",
+		shm->name, shm->size);
+#else
 #if HAVE_SHM_OPEN || HAVE_DECL_ASHMEM_NAME_LEN
 	shm->id = rz_str_hash(name);
 
@@ -194,6 +245,7 @@ static RzIODesc *shm__open(RzIO *io, const char *uri, int rw, int mode) {
 #endif
 	RZ_LOG_INFO("Connected to shared memory \"%s\" (0x%08x) size 0x%x\n",
 		shm->name, shm->id, shm->size);
+#endif // __WINDOWS__
 	return rz_io_desc_new(io, &rz_io_plugin_shm, uri, rw, mode, shm);
 }
 
@@ -213,7 +265,7 @@ RzIOPlugin rz_io_plugin_shm = {
 #else
 RzIOPlugin rz_io_plugin_shm = {
 	.name = "shm",
-	.desc = "shared memory resources (not for w32)",
+	.desc = "shared memory resources",
 };
 #endif
 

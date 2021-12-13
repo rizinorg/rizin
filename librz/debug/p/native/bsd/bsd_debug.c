@@ -541,8 +541,74 @@ RzList *bsd_desc_list(int pid) {
 
 	free(buf);
 	return ret;
+#elif __NetBSD__
+	RzList *ret = NULL;
+	char path[512], file[512], buf[512];
+	struct dirent *de;
+	RzDebugDesc *desc;
+	int type, perm;
+	int len, len2;
+	struct stat st;
+	DIR *dd = NULL;
+
+	rz_strf(path, "/proc/%i/fd/", pid);
+	if (!(dd = opendir(path))) {
+		rz_sys_perror("opendir /proc/x/fd");
+		return NULL;
+	}
+	ret = rz_list_newf((RzListFree)rz_debug_desc_free);
+	if (!ret) {
+		closedir(dd);
+		return NULL;
+	}
+	while ((de = (struct dirent *)readdir(dd))) {
+		if (de->d_name[0] == '.') {
+			continue;
+		}
+		len = strlen(path);
+		len2 = strlen(de->d_name);
+		if (len + len2 + 1 >= sizeof(file)) {
+			RZ_LOG_ERROR("Filename is too long.\n");
+			goto fail;
+		}
+		memcpy(file, path, len);
+		memcpy(file + len, de->d_name, len2 + 1);
+		buf[0] = 0;
+		if (readlink(file, buf, sizeof(buf) - 1) == -1) {
+			RZ_LOG_ERROR("readlink %s failed.\n", file);
+			goto fail;
+		}
+		buf[sizeof(buf) - 1] = 0;
+		type = perm = 0;
+		if (stat(file, &st) != -1) {
+			type = st.st_mode & S_IFIFO ? 'P' : st.st_mode & S_IFSOCK ? 'S'
+				: st.st_mode & S_IFCHR                            ? 'C'
+										  : '-';
+		}
+		if (lstat(path, &st) != -1) {
+			if (st.st_mode & S_IRUSR) {
+				perm |= RZ_PERM_R;
+			}
+			if (st.st_mode & S_IWUSR) {
+				perm |= RZ_PERM_W;
+			}
+		}
+		// TODO: Offset
+		desc = rz_debug_desc_new(atoi(de->d_name), buf, perm, type, 0);
+		if (!desc) {
+			break;
+		}
+		rz_list_append(ret, desc);
+	}
+	closedir(dd);
+	return ret;
+
+fail:
+	rz_list_free(ret);
+	closedir(dd);
+	return NULL;
 #else
-	return false;
+	return NULL;
 #endif
 }
 

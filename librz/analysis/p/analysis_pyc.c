@@ -111,9 +111,9 @@ static int pyc_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *data, i
 
 		if (op_obj->type & HASCONDITION) {
 			op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-			//op->fail = addr + ((is_python36)? 2: 3);
+			// op->fail = addr + ((is_python36)? 2: 3);
 		}
-		//goto analysis_end;
+		// goto analysis_end;
 	}
 
 	if (op_obj->type & HASCOMPARE) {

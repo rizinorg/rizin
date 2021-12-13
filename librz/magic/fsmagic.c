@@ -84,9 +84,9 @@ int file_fsmagic(struct rz_magic_set *ms, const char *fn, struct stat *sb) {
 	if (!fn)
 		return 0;
 		/*
-	 * Fstat is cheaper but fails for files you don't have read perms on.
-	 * On 4.2BSD and similar systems, use lstat() to identify symlinks.
-	 */
+		 * Fstat is cheaper but fails for files you don't have read perms on.
+		 * On 4.2BSD and similar systems, use lstat() to identify symlinks.
+		 */
 #ifdef S_IFLNK
 	if ((ms->flags & RZ_MAGIC_SYMLINK) == 0)
 		ret = lstat(fn, sb);

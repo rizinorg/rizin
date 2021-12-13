@@ -4,6 +4,7 @@
 #include <rz_analysis.h>
 #include <rz_bin.h>
 #include <rz_type.h>
+#include <rz_util/rz_path.h>
 #include "minunit.h"
 #include "test_types.h"
 
@@ -26,8 +27,9 @@ static bool test_parse_dwarf_types(void) {
 	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
 	rz_analysis_set_cpu(analysis, "x86");
 	rz_analysis_set_bits(analysis, 32);
-	const char *dir_prefix = rz_sys_prefix(NULL);
-	rz_type_db_init(analysis->typedb, dir_prefix, "x86", 32, "linux");
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
+	rz_type_db_init(analysis->typedb, types_dir, "x86", 32, "linux");
+	free(types_dir);
 
 	RzBinOptions opt = { 0 };
 	RzBinFile *bf = rz_bin_open(bin, "bins/pe/vista-glass.exe", &opt);
@@ -116,8 +118,8 @@ static bool test_parse_dwarf_types(void) {
 
 	mu_assert_false(has_union_member(unaligned, "noSuchMember"), "no such union member");
 	// TODO: Check also the exact types of the members
-	//check_kv("union.unaligned.u2", "short unsigned int,0,0");
-	//check_kv("union.unaligned.s8", "long long int,0,0");
+	// check_kv("union.unaligned.u2", "short unsigned int,0,0");
+	// check_kv("union.unaligned.s8", "long long int,0,0");
 
 	rz_bin_dwarf_debug_info_free(info);
 	rz_bin_dwarf_debug_abbrev_free(abbrevs);
@@ -128,6 +130,7 @@ static bool test_parse_dwarf_types(void) {
 }
 
 static bool test_dwarf_function_parsing_cpp(void) {
+#if WITH_GPL
 	RzBin *bin = rz_bin_new();
 	mu_assert_notnull(bin, "Couldn't create new RzBin");
 	RzIO *io = rz_io_new();
@@ -140,8 +143,9 @@ static bool test_dwarf_function_parsing_cpp(void) {
 	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
 	rz_analysis_set_cpu(analysis, "x86");
 	rz_analysis_set_bits(analysis, 64);
-	const char *dir_prefix = rz_sys_prefix(NULL);
-	rz_type_db_init(analysis->typedb, dir_prefix, "x86", 64, "linux");
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
+	rz_type_db_init(analysis->typedb, types_dir, "x86", 64, "linux");
+	free(types_dir);
 
 	RzBinOptions opt = { 0 };
 	rz_bin_options_init(&opt, 0, 0, 0, false, false);
@@ -188,6 +192,7 @@ static bool test_dwarf_function_parsing_cpp(void) {
 	rz_analysis_free(analysis);
 	rz_bin_free(bin);
 	rz_io_free(io);
+#endif
 	mu_end;
 }
 
@@ -263,8 +268,9 @@ static bool test_dwarf_function_parsing_rust(void) {
 	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
 	rz_analysis_set_cpu(analysis, "x86");
 	rz_analysis_set_bits(analysis, 64);
-	const char *dir_prefix = rz_sys_prefix(NULL);
-	rz_type_db_init(analysis->typedb, dir_prefix, "x86", 64, "linux");
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
+	rz_type_db_init(analysis->typedb, types_dir, "x86", 64, "linux");
+	free(types_dir);
 
 	RzBinOptions opt = { 0 };
 	rz_bin_options_init(&opt, 0, 0, 0, false, false);
@@ -317,8 +323,8 @@ static bool test_dwarf_function_parsing_rust(void) {
 int all_tests(void) {
 	mu_run_test(test_parse_dwarf_types);
 	mu_run_test(test_dwarf_function_parsing_cpp);
-	mu_run_test(test_dwarf_function_parsing_go);
 	mu_run_test(test_dwarf_function_parsing_rust);
+	mu_run_test(test_dwarf_function_parsing_go);
 	return tests_passed != tests_run;
 }
 

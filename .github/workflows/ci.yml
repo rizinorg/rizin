@@ -68,8 +68,8 @@ jobs:
             build_system: meson
             compiler: clang
             run_tests: true
-            meson_options: -Dbuildtype=release
-            enabled: ${{ github.event_name != 'pull_request' && needs.changes.outputs.edited == 'true' }}
+            meson_options: -Dbuildtype=release --werror
+            enabled: ${{ (github.event_name != 'pull_request' || contains(github.head_ref, 'clang')) && needs.changes.outputs.edited == 'true' }}
             timeout: 45
             allow_failure: false
           - name: linux-meson-gcc-tests
@@ -83,11 +83,11 @@ jobs:
             cflags: '-DRZ_ASSERT_STDOUT=1 -Wno-cpp'
             allow_failure: false
           - name: macos-meson-clang-tests
-            os: macos-latest
+            os: macos-11
             build_system: meson
             compiler: clang
             run_tests: true
-            meson_options: -Dbuildtype=release -Duse_webui=true
+            meson_options: -Dbuildtype=release -Duse_webui=true --werror
             enabled: ${{ needs.changes.outputs.edited == 'true' }}
             timeout: 60
             allow_failure: false
@@ -108,7 +108,7 @@ jobs:
             build_system: meson
             compiler: clang
             cflags: '-DRZ_ASSERT_STDOUT=1 -Wno-cpp'
-            meson_options: -Dbuildtype=debugoptimized -Db_lundef=false -Db_sanitize=address,undefined -Duse_webui=true
+            meson_options: -Dbuildtype=debugoptimized -Db_lundef=false -Db_sanitize=address,undefined -Duse_webui=true --werror
             asan: true
             asan_options: 'detect_leaks=0,detect_odr_violation=0,allocator_may_return_null=1'
             run_tests: true
@@ -146,6 +146,16 @@ jobs:
             timeout: 45
             cflags: '-Wno-cpp'
             allow_failure: true
+          - name: no-gpl-code
+            os: ubuntu-20.04
+            build_system: meson
+            compiler: gcc
+            meson_options: -Dbuildtype=release -Duse_gpl=false --werror
+            run_tests: false
+            enabled: ${{ (github.event_name != 'pull_request' || contains(github.head_ref, 'gpl')) && needs.changes.outputs.edited == 'true' }}
+            timeout: 45
+            cflags: '-Wno-cpp'
+            allow_failure: false
 
     steps:
     - uses: actions/checkout@v2
@@ -153,10 +163,10 @@ jobs:
       with:
           fetch-depth: 2
     - name: Install pkg-config and cabextract with Homebrew
-      if: matrix.os == 'macos-latest' && matrix.enabled
+      if: matrix.os == 'macos-11' && matrix.enabled
       run: brew install pkg-config cabextract
     - name: Install python and other dependencies
-      if: (matrix.run_tests || matrix.build_system == 'meson') && matrix.os != 'macos-latest' && matrix.enabled
+      if: (matrix.run_tests || matrix.build_system == 'meson') && matrix.os != 'macos-11' && matrix.enabled
       run: sudo apt-get --assume-yes install python3-wheel python3-setuptools cabextract
     - name: Install meson and ninja
       if: matrix.build_system == 'meson' && matrix.enabled
@@ -209,7 +219,7 @@ jobs:
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
         ninja -C build install
     - name: Disable user authentication for debugging (MacOS)
-      if: matrix.os == 'macos-latest' && matrix.enabled
+      if: matrix.os == 'macos-11' && matrix.enabled
       run: |
         security authorizationdb read system.privilege.taskport > taskport.plist
         /usr/libexec/PlistBuddy -c 'Set :authenticate-user false' ./taskport.plist
@@ -223,10 +233,10 @@ jobs:
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
         if [ "$ASAN" == "true" ]; then
           if [ "$CC" == "clang" ]; then
-            export ASAN_LD_PRELOAD=/usr/lib/llvm-11/lib/clang/11.0.0/lib/linux/libclang_rt.asan-x86_64.so
-            export LD_LIBRARY_PATH=/usr/lib/llvm-11/lib/clang/11.0.0/lib/linux:${LD_LIBRARY_PATH}
+            export ASAN_LD_PRELOAD=$(clang -print-file-name=libclang_rt.asan-x86_64.so)
+            export LD_LIBRARY_PATH=$(dirname $(clang -print-file-name=libclang_rt.asan-x86_64.so)):${LD_LIBRARY_PATH}
           else
-            export ASAN_LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
+            export ASAN_LD_PRELOAD=$(gcc -print-file-name=libasan.so)
           fi
         fi
         ninja -C build test
@@ -243,10 +253,10 @@ jobs:
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
         if [ "$ASAN" == "true" ]; then
           if [ "$CC" == "clang" ]; then
-            export ASAN_LD_PRELOAD=/usr/lib/llvm-11/lib/clang/11.0.0/lib/linux/libclang_rt.asan-x86_64.so
-            export LD_LIBRARY_PATH=/usr/lib/llvm-11/lib/clang/11.0.0/lib/linux:${LD_LIBRARY_PATH}
+            export ASAN_LD_PRELOAD=$(clang -print-file-name=libclang_rt.asan-x86_64.so)
+            export LD_LIBRARY_PATH=$(dirname $(clang -print-file-name=libclang_rt.asan-x86_64.so)):${LD_LIBRARY_PATH}
           else
-            export ASAN_LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
+            export ASAN_LD_PRELOAD=$(gcc -print-file-name=libasan.so)
           fi
         fi
         cd test
@@ -266,7 +276,7 @@ jobs:
         export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
         if [ "$ASAN" == "true" ] && [ "$CC" == "clang" ]; then
-          export LD_LIBRARY_PATH=/usr/lib/llvm-11/lib/clang/11.0.0/lib/linux:${LD_LIBRARY_PATH}
+          export LD_LIBRARY_PATH=$(dirname $(clang -print-file-name=libclang_rt.asan-x86_64.so)):${LD_LIBRARY_PATH}
         fi
         cd test
         rz-test -LF bins/fuzzed @fuzz
@@ -543,7 +553,7 @@ jobs:
 
   build-osx-pkg:
     name: Build OSX package
-    runs-on: macos-latest
+    runs-on: macos-11
     if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'osx') || contains(github.head_ref, 'mac') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
     needs: [build-and-test]
     steps:
@@ -743,7 +753,7 @@ jobs:
       matrix:
         system:
           - macos-latest
-          - macos-11.0
+          - macos-11
     runs-on: ${{ matrix.system }}
     needs: [build-osx-pkg]
     steps:

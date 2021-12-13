@@ -68,7 +68,7 @@ static void decode_buffer(RzStrBuf *sb, const ut8 *start, const ut8 *end, ut32 p
 		if (!*buffer) {
 			return;
 		}
-		//ut8 byte = *buffer;
+		// ut8 byte = *buffer;
 		ut8 number = buffer[0] >> 3;
 		ut8 wire = buffer[0] & 0x7;
 		buffer++;
