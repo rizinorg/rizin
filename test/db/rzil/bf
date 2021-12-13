@@ -7,7 +7,7 @@ e asm.bytes=true
 e analysis.arch=bf
 s 0
 aezi
-aezs 390
+390aezs
 EOF
 EXPECT=<<EOF
 Hello World!
@@ -38,7 +38,7 @@ ARGS=-b32
 CMDS=<<EOF
 s 0
 aezi
-aezs 906
+906aezs
 EOF
 EXPECT=<<EOF
 Hello World!
@@ -111,7 +111,7 @@ ARGS=-b32
 CMDS=<<EOF
 s 0
 aezi
-aezs 906
+906aezs
 EOF
 EXPECT=<<EOF
 Hello World!
@@ -127,7 +127,7 @@ e analysis.arch=bf
 e rzil.step.events.read=true
 s 0
 aezi
-aezse 390
+390aezse
 EOF
 EXPECT=<<EOF
 var_read(name: ptr, value: 0x0000000000000000)
@@ -1709,5 +1709,21 @@ var_read(name: ptr, value: 0x0000000000000002)
 mem_read(addr: 0x0000000000000002, value: 0x22)
 mem_write(addr: 0x0000000000000002, old: 0x22, new: 0x23)
 pc_write(old: 0x0000000000000011, new: 0x0000000000000012)
+EOF
+RUN
+
+NAME=aezsej
+FILE=bins/bf/hello-loops.bf
+ARGS=-b32
+CMDS=<<EOF
+e asm.arch=bf
+e analysis.arch=bf
+e rzil.step.events.read=true
+s 0
+aezi
+aezsej
+EOF
+EXPECT=<<EOF
+[{"type":"var_read","name":"ptr","value":"0x0000000000000000"},{"type":"var_read","name":"ptr","value":"0x0000000000000000"},{"type":"mem_read","address":"0x0000000000000000","value":"uninitialized memory"},{"type":"mem_write","address":"0x0000000000000000","old":"0x00","new":"0x01"},{"type":"pc_write","old":"0x0000000000000000","new":"0x0000000000000001"}]
 EOF
 RUN

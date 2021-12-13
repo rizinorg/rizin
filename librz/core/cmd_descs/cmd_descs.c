@@ -11,6 +11,7 @@ static const RzCmdDescDetail system_details[2];
 static const RzCmdDescDetail system_to_cons_details[2];
 static const RzCmdDescDetail hash_bang_details[2];
 static const RzCmdDescDetail pointer_details[2];
+static const RzCmdDescDetail cmd_analysis_il_details[2];
 static const RzCmdDescDetail analysis_reg_cond_details[4];
 static const RzCmdDescDetail ar_details[2];
 static const RzCmdDescDetail cmd_cmp_unified_details[2];
@@ -969,6 +970,50 @@ static const RzCmdDescHelp cmd_ox_help = {
 static const RzCmdDescHelp cmd_analysis_help = {
 	.summary = "Analysis commands",
 };
+static const RzCmdDescDetailEntry cmd_analysis_il_Examples_detail_entries[] = {
+	{ .text = "42aezs", .arg_str = "", .comment = "Step 42 times in the VM" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_analysis_il_details[] = {
+	{ .name = "Examples", .entries = cmd_analysis_il_Examples_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_analysis_il_help = {
+	.summary = "RzIL-based Emulation",
+	.details = cmd_analysis_il_details,
+};
+static const RzCmdDescArg cmd_analysis_il_init_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_analysis_il_init_help = {
+	.summary = "(Re)initialize the RzIL VM",
+	.args = cmd_analysis_il_init_args,
+};
+
+static const RzCmdDescArg cmd_analysis_il_state_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_analysis_il_state_help = {
+	.summary = "Show the current status of the RzIL VM",
+	.args = cmd_analysis_il_state_args,
+};
+
+static const RzCmdDescArg cmd_analysis_il_step_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_analysis_il_step_help = {
+	.summary = "Step a single instruction in the VM",
+	.args = cmd_analysis_il_step_args,
+};
+
+static const RzCmdDescArg cmd_analysis_il_step_events_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_analysis_il_step_events_help = {
+	.summary = "Step a single instruction in the VM and show events",
+	.args = cmd_analysis_il_step_events_args,
+};
+
 static const RzCmdDescHelp cmd_analysis_fcn_help = {
 	.summary = "Analyze Functions commands",
 };
@@ -9233,6 +9278,20 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_analysis_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "a", rz_cmd_analysis, &cmd_analysis_help);
 	rz_warn_if_fail(cmd_analysis_cd);
+	RzCmdDesc *cmd_analysis_il_cd = rz_cmd_desc_group_new(core->rcmd, cmd_analysis_cd, "aez", NULL, NULL, &cmd_analysis_il_help);
+	rz_warn_if_fail(cmd_analysis_il_cd);
+	RzCmdDesc *cmd_analysis_il_init_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_analysis_il_cd, "aezi", rz_cmd_analysis_il_init_handler, &cmd_analysis_il_init_help);
+	rz_warn_if_fail(cmd_analysis_il_init_cd);
+
+	RzCmdDesc *cmd_analysis_il_state_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_analysis_il_cd, "aezv", rz_cmd_analysis_il_state_handler, &cmd_analysis_il_state_help);
+	rz_warn_if_fail(cmd_analysis_il_state_cd);
+
+	RzCmdDesc *cmd_analysis_il_step_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_analysis_il_cd, "aezs", rz_cmd_analysis_il_step_handler, &cmd_analysis_il_step_help);
+	rz_warn_if_fail(cmd_analysis_il_step_cd);
+
+	RzCmdDesc *cmd_analysis_il_step_events_cd = rz_cmd_desc_argv_state_new(core->rcmd, cmd_analysis_il_cd, "aezse", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_analysis_il_step_events_handler, &cmd_analysis_il_step_events_help);
+	rz_warn_if_fail(cmd_analysis_il_step_events_cd);
+
 	RzCmdDesc *cmd_analysis_fcn_cd = rz_cmd_desc_oldinput_new(core->rcmd, cmd_analysis_cd, "af", rz_cmd_analysis_fcn, &cmd_analysis_fcn_help);
 	rz_warn_if_fail(cmd_analysis_fcn_cd);
 	RzCmdDesc *afb_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_analysis_fcn_cd, "afb", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_analysis_function_blocks_list_handler, &analysis_function_blocks_list_help, &afb_help);

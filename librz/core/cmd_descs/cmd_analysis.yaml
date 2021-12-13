@@ -3,6 +3,36 @@
 ---
 name: cmd_analysis
 commands:
+  - name: aez
+    summary: RzIL-based Emulation
+    cname: cmd_analysis_il
+    subcommands:
+      - name: aezi
+        summary: (Re)initialize the RzIL VM
+        cname: cmd_analysis_il_init
+        args: []
+      - name: aezv
+        summary: Show the current status of the RzIL VM
+        cname: cmd_analysis_il_state
+        args: []
+      - name: aezs
+        summary: Step a single instruction in the VM
+        cname: cmd_analysis_il_step
+        args: []
+      - name: aezse
+        summary: Step a single instruction in the VM and show events
+        cname: cmd_analysis_il_step_events
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+    details:
+      - name: Examples
+        entries:
+          - text: "42aezs"
+            arg_str: ""
+            comment: Step 42 times in the VM
   - name: af
     summary: Analyze Functions commands
     cname: cmd_analysis_fcn
