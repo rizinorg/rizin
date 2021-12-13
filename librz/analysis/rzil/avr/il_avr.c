@@ -463,6 +463,17 @@ static RzPVector *avr_il_brne(AVROp *aop, RzAnalysis *analysis) {
 	return rz_il_make_oplist(1, brop);
 }
 
+static RzPVector *avr_il_call(AVROp *aop, RzAnalysis *analysis) {
+	// PC = k
+	ut16 k = aop->param[0];
+
+	ut32 pc_size = analysis->rzil->vm->addr_size;
+	RzILOp *loc = rz_il_op_new_bitv_from_ut64(pc_size, k - aop->size);
+	RzILOp *jmp = rz_il_op_new_jmp(loc);
+	RzILOp *perform = rz_il_op_new_perform(jmp);
+	return rz_il_make_oplist(1, perform);
+}
+
 static RzPVector *avr_il_clr(AVROp *aop, RzAnalysis *analysis) {
 	// Rd = Rd ^ Rd -> S=0, V=0, N=0, Z=1
 	ut16 Rd = aop->param[0];
