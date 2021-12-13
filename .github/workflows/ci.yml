@@ -557,6 +557,7 @@ jobs:
         cmake ..
         make
         ./rizin_cmake_test
+      working-directory: rizin
 
   build-osx-pkg:
     name: Build OSX package
