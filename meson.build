@@ -19,6 +19,7 @@ syscall_preprocessing_py = files('sys/syscall_preprocessing.py')
 check_meson_subproject_py = files('sys/check_meson_subproject.py')
 git_exe_repo_py = files('sys/meson_git_wrapper.py')
 tree_sitter_wrap_py = files('sys/meson_tree_sitter_generate.py')
+cmake_package_prefix_dir_py = files('sys/meson_cmake_prefix_dir.py')
 
 is_static_build = get_option('static_runtime')
 if is_static_build and get_option('default_library') != 'static'
@@ -214,6 +215,8 @@ foreach opt : opts_overwrite
     set_variable(opt, val)
   endif
 endforeach
+
+cmake_package_relative_path = run_command(py3_exe, cmake_package_prefix_dir_py, rizin_prefix, rizin_cmakedir / 'xxx').stdout().strip()
 
 # handle capstone dependency
 capstone_dep = dependency('capstone', version: '>=3.0.4', required: get_option('use_sys_capstone'), static: is_static_build)
