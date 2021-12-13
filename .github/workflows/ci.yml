@@ -552,9 +552,8 @@ jobs:
         ./test
     - name: Check CMake config files
       run: |
-        echo -e "#include <rz_util.h>\nint main(int argc, char **argv) { return rz_str_newf (\"%s\", argv[0]) != NULL? 0: 1; }" > test.c
-        echo -e "cmake_minimum_required(VERSION 3.10)\nproject(RizinCMakeTest VERSION 1.0.0)\nfind_package(RzUtil)\nadd_executable(rizin_cmake_test test.c)\ntarget_link_libraries(rizin_cmake_test PRIVATE ${RzUtil_TARGET})\n" > CMakeLists.txt
-        mkdir cmake-test-build && cd cmake-test-build
+        cd .github/cmake_test
+        mkdir build && cd build
         cmake ..
         make
         ./rizin_cmake_test
@@ -831,9 +830,8 @@ jobs:
         $env:PATH = "$env:PATH;C:$env:HOMEPATH\AppData\Local\Programs\rizin\bin"
         $env:PKG_CONFIG_PATH = "C:$env:HOMEPATH\AppData\Local\Programs\rizin\lib\pkgconfig"
         $env:PKG_CONFIG_PATH
-        echo -e "#include <rz_util.h>\nint main(int argc, char **argv) { return rz_str_newf (\"%s\", argv[0]) != NULL? 0: 1; }" > test.c
-        echo -e "cmake_minimum_required(VERSION 3.10)\nproject(RizinCMakeTest VERSION 1.0.0)\nfind_package(RzUtil)\nadd_executable(rizin_cmake_test test.c)\ntarget_link_libraries(rizin_cmake_test PRIVATE ${RzUtil_TARGET})\n" > CMakeLists.txt
-        mkdir cmake-test-build && cd cmake-test-build
+        cd .github/cmake_test
+        mkdir build && cd build
         cmake ..
         make
         .\rizin_cmake_test
