@@ -628,6 +628,20 @@ static RzPVector *avr_il_lpm(AVROp *aop, RzAnalysis *analysis) {
 	return rz_il_make_oplist(3, lpm, let, zpp);
 }
 
+static RzPVector *avr_il_movw(AVROp *aop, RzAnalysis *analysis) {
+	RzILOp *let, *movw;
+	// Rd+1:Rd = Rr+1:Rr
+	ut16 Rd = aop->param[0];
+	ut16 Rr = aop->param[1];
+
+	let = avr_il_get_indirect_address_reg(Rr + 1, Rr);
+	let = rz_il_op_new_let(AVR_LET_IND, let, false);
+	let = rz_il_op_new_perform(let);
+
+	movw = avr_il_update_indirect_address_reg(AVR_LET_IND, Rd + 1, Rd, 0, false);
+	return rz_il_make_oplist(2, let, movw);
+}
+
 static RzPVector *avr_il_out(AVROp *aop, RzAnalysis *analysis) {
 	// I/O(A) = Rr -> None
 	ut16 A = aop->param[0];
@@ -863,7 +877,7 @@ static avr_rzil_op avr_ops[AVR_OP_SIZE] = {
 	avr_il_nop, /* AVR_OP_LSL */
 	avr_il_nop, /* AVR_OP_LSR */
 	avr_il_nop, /* AVR_OP_MOV */
-	avr_il_nop, /* AVR_OP_MOVW */
+	avr_il_movw,
 	avr_il_nop, /* AVR_OP_MUL */
 	avr_il_nop, /* AVR_OP_MULS */
 	avr_il_nop, /* AVR_OP_MULSU */
