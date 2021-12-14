@@ -312,7 +312,6 @@ static const char *help_msg_af[] = {
 	"afn", "[?] name [addr]", "rename name for function at address (change flag too)",
 	"afna", "", "suggest automatic name for current offset",
 	"afo", "[?j] [fcn.name]", "show address for the function name or current offset",
-	"afS", "[stack_size]", "set stack frame size for function at current address",
 	"aft", "[?]", "type matching, type propagation",
 	"afv[absrx]", "?", "manipulate args, registers and variables in function",
 	NULL
@@ -2539,14 +2538,6 @@ RZ_IPI int rz_cmd_analysis_fcn(void *data, const char *input) {
 			break;
 		}
 		break;
-	case 'S': // "afS"
-	{
-		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
-		if (fcn) {
-			fcn->maxstack = rz_num_math(core->num, input + 2);
-			// fcn->stack = fcn->maxstack;
-		}
-	} break;
 	case '?': // "af?"
 		rz_core_cmd_help(core, help_msg_af);
 		break;
