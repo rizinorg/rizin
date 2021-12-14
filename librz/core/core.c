@@ -860,9 +860,8 @@ static const char *rizin_argv[] = {
 	"afb?", "afb", "afb+", "afbb", "afbr", "afbi", "afbil", "afbj", "afbe", "afB", "afbc", "afb=",
 	"afB", "afC", "afCl", "afCc", "afc?", "afc", "afcr", "afcrj", "afca", "afcf", "afcfj",
 	"afck", "afcl", "afco", "afcR",
-	"afd", "aff", "afi",
-	"afl?", "afl", "afl+", "aflc", "aflj", "afll", "afllj", "aflm", "aflq", "aflqj", "afls",
-	"afm", "afM", "afn?", "afna", "afns", "afnsj", "afl=",
+	"afd", "aff",
+	"afm", "afM", "afn?", "afna", "afns", "afnsj",
 	"afo", "afs", "afS", "aft?", "aft", "afu",
 	"afv?", "afv", "afvr?", "afvr", "afvr*", "afvrj", "afvr-", "afvrg", "afvrs",
 	"afvb?", "afvb", "afvbj", "afvb-", "afvbg", "afvbs",
@@ -2187,7 +2186,7 @@ static void __foreach(RzCore *core, const char **cmds, int type) {
 
 static void __init_autocomplete_default(RzCore *core) {
 	const char *fcns[] = {
-		"afi", "afcf", "afn", NULL
+		"afcf", "afn", NULL
 	};
 	const char *seeks[] = {
 		"s", NULL

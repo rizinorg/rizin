@@ -3,12 +3,12 @@ FILE=bins/mach0/mac-ls2
 CMDS=<<EOF
 aaa
 afi~?
-afi.
+afl.
 afbi
 EOF
 EXPECT=<<EOF
 33
-entry0
+0x1000011e8 entry0
 0x1000011e8 0x100001211 00:0000 41 j 0x100001216 f 0x100001211
 EOF
 RUN

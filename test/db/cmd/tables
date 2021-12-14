@@ -144,16 +144,15 @@ af
 aflt:simple
 EOF
 EXPECT=<<EOF
-addr       size name           nbbs xref calls cc noreturn 
------------------------------------------------------------
-0x000007aa 157  main           3    9    6     2  
-0x00000660 6    sym.imp.strlen 1    1    0     1  
-0x00000670 6    sym.imp.malloc 1    1    0     1  
-0x00000640 6    sym.imp.strcpy 1    1    0     1  
-0x00000680 6    sym.imp.strcat 1    1    0     1  
-0x00000650 6    sym.imp.puts   1    1    0     1  
-0x00000630 6    sym.imp.free   1    1    0     1  
-
+addr       name           size xrefsTo xrefsFrom calls nbbs edges cc cost noreturn 
+-----------------------------------------------------------------------------------
+0x000007aa main           157  0       9         6     3    3     2  61   false
+0x00000660 sym.imp.strlen 6    2       1         0     1    0     1  3    false
+0x00000670 sym.imp.malloc 6    1       1         0     1    0     1  3    false
+0x00000640 sym.imp.strcpy 6    1       1         0     1    0     1  3    false
+0x00000680 sym.imp.strcat 6    1       1         0     1    0     1  3    false
+0x00000650 sym.imp.puts   6    1       1         0     1    0     1  3    false
+0x00000630 sym.imp.free   6    1       1         0     1    0     1  3    false
 EOF
 RUN
 

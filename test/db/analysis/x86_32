@@ -37,12 +37,12 @@ FILE=bins/pe/NoREpls.exe
 CMDS=<<EOF
 aaa
 s 0x00401e80
-afi.
+afl.
 aap
-afi.
+afl.
 EOF
 EXPECT=<<EOF
-fcn.00401e80
+0x00401e80 fcn.00401e80
 EOF
 RUN
 
@@ -1282,7 +1282,7 @@ b 0x4e
 wx 743684c0741284d2b8010000007509f3c30f1f8000000000488b4e40488b07488b1648394f407f187c1e4889d64889c7e933e1ffff0f1f0084d274c60f1f4000b8ffffffffc36690b801000000c3
 af
 pif~?
-afi $$~size[1]
+afi @ $$~size[1]
 EOF
 EXPECT=<<EOF
 32

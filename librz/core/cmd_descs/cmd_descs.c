@@ -98,6 +98,9 @@ static const RzCmdDescArg analysis_function_vars_sp_args[4];
 static const RzCmdDescArg analysis_function_vars_sp_del_args[2];
 static const RzCmdDescArg analysis_function_vars_sp_getref_args[3];
 static const RzCmdDescArg analysis_function_vars_sp_setref_args[3];
+static const RzCmdDescArg analysis_function_import_list_args[2];
+static const RzCmdDescArg analysis_function_opcode_stat_args[2];
+static const RzCmdDescArg analysis_function_all_opcode_stat_args[2];
 static const RzCmdDescArg analysis_regs_args[2];
 static const RzCmdDescArg analysis_regs_columns_args[2];
 static const RzCmdDescArg analysis_regs_references_args[2];
@@ -1654,6 +1657,129 @@ static const RzCmdDescArg analysis_function_vars_sp_setref_args[] = {
 static const RzCmdDescHelp analysis_function_vars_sp_setref_help = {
 	.summary = "Define var set reference",
 	.args = analysis_function_vars_sp_setref_args,
+};
+
+static const RzCmdDescHelp afl_help = {
+	.summary = "List functions",
+};
+static const RzCmdDescArg analysis_function_list_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_list_help = {
+	.summary = "List all functions",
+	.args = analysis_function_list_args,
+};
+
+static const RzCmdDescArg analysis_function_list_in_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_list_in_help = {
+	.summary = "List functions in current seek",
+	.args = analysis_function_list_in_args,
+};
+
+static const RzCmdDescArg analysis_function_count_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_count_help = {
+	.summary = "Display count of all functions",
+	.args = analysis_function_count_args,
+};
+
+static const RzCmdDescArg analysis_function_size_sum_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_size_sum_help = {
+	.summary = "Display sum of all functions sizes",
+	.args = analysis_function_size_sum_args,
+};
+
+static const RzCmdDescArg analysis_function_list_calls_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_list_calls_help = {
+	.summary = "List calls of all functions",
+	.args = analysis_function_list_calls_args,
+};
+
+static const RzCmdDescArg analysis_function_list_ascii_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_list_ascii_help = {
+	.summary = "Display ascii-art bars with function ranges",
+	.args = analysis_function_list_ascii_args,
+};
+
+static const RzCmdDescHelp afi_help = {
+	.summary = "Show/edit function information",
+};
+static const RzCmdDescArg analysis_function_info_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_info_help = {
+	.summary = "Show information of functions in current seek",
+	.args = analysis_function_info_args,
+};
+
+static const RzCmdDescHelp afii_help = {
+	.summary = "Show/add/delete imports used in function in current seek",
+};
+static const RzCmdDescArg analysis_function_import_list_args[] = {
+	{
+		.name = "import",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_import_list_help = {
+	.summary = "Show/add imports used in function in current seek",
+	.args = analysis_function_import_list_args,
+};
+
+static const RzCmdDescArg analysis_function_import_list_del_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_import_list_del_help = {
+	.summary = "Delete imports used in function in current seek",
+	.args = analysis_function_import_list_del_args,
+};
+
+static const RzCmdDescHelp afis_help = {
+	.summary = "Show opcode statistic in function",
+};
+static const char *analysis_function_opcode_stat_mode_choices[] = { "family", "type", NULL };
+static const RzCmdDescArg analysis_function_opcode_stat_args[] = {
+	{
+		.name = "mode",
+		.type = RZ_CMD_ARG_TYPE_CHOICES,
+		.optional = true,
+		.choices = analysis_function_opcode_stat_mode_choices,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_opcode_stat_help = {
+	.summary = "Enumerate unique opcodes/opcode families/opcode types in function",
+	.args = analysis_function_opcode_stat_args,
+};
+
+static const char *analysis_function_all_opcode_stat_mode_choices[] = { "family", "type", NULL };
+static const RzCmdDescArg analysis_function_all_opcode_stat_args[] = {
+	{
+		.name = "mode",
+		.type = RZ_CMD_ARG_TYPE_CHOICES,
+		.optional = true,
+		.choices = analysis_function_all_opcode_stat_mode_choices,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_all_opcode_stat_help = {
+	.summary = "Enumerate unique opcodes/opcode families/opcode types in all functions",
+	.args = analysis_function_all_opcode_stat_args,
 };
 
 static const RzCmdDescDetailEntry ar_Register_space_Filter_detail_entries[] = {
@@ -9353,6 +9479,35 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *analysis_function_vars_sp_setref_cd = rz_cmd_desc_argv_new(core->rcmd, afvs_cd, "afvss", rz_analysis_function_vars_sp_setref_handler, &analysis_function_vars_sp_setref_help);
 	rz_warn_if_fail(analysis_function_vars_sp_setref_cd);
+
+	RzCmdDesc *afl_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_analysis_fcn_cd, "afl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_LONG | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_TABLE, rz_analysis_function_list_handler, &analysis_function_list_help, &afl_help);
+	rz_warn_if_fail(afl_cd);
+	RzCmdDesc *analysis_function_list_in_cd = rz_cmd_desc_argv_new(core->rcmd, afl_cd, "afl.", rz_analysis_function_list_in_handler, &analysis_function_list_in_help);
+	rz_warn_if_fail(analysis_function_list_in_cd);
+
+	RzCmdDesc *analysis_function_count_cd = rz_cmd_desc_argv_new(core->rcmd, afl_cd, "aflc", rz_analysis_function_count_handler, &analysis_function_count_help);
+	rz_warn_if_fail(analysis_function_count_cd);
+
+	RzCmdDesc *analysis_function_size_sum_cd = rz_cmd_desc_argv_new(core->rcmd, afl_cd, "afl+", rz_analysis_function_size_sum_handler, &analysis_function_size_sum_help);
+	rz_warn_if_fail(analysis_function_size_sum_cd);
+
+	RzCmdDesc *analysis_function_list_calls_cd = rz_cmd_desc_argv_state_new(core->rcmd, afl_cd, "aflm", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_analysis_function_list_calls_handler, &analysis_function_list_calls_help);
+	rz_warn_if_fail(analysis_function_list_calls_cd);
+
+	RzCmdDesc *analysis_function_list_ascii_cd = rz_cmd_desc_argv_new(core->rcmd, afl_cd, "afl=", rz_analysis_function_list_ascii_handler, &analysis_function_list_ascii_help);
+	rz_warn_if_fail(analysis_function_list_ascii_cd);
+
+	RzCmdDesc *afi_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_analysis_fcn_cd, "afi", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_analysis_function_info_handler, &analysis_function_info_help, &afi_help);
+	rz_warn_if_fail(afi_cd);
+	RzCmdDesc *afii_cd = rz_cmd_desc_group_new(core->rcmd, afi_cd, "afii", rz_analysis_function_import_list_handler, &analysis_function_import_list_help, &afii_help);
+	rz_warn_if_fail(afii_cd);
+	RzCmdDesc *analysis_function_import_list_del_cd = rz_cmd_desc_argv_new(core->rcmd, afii_cd, "afii-", rz_analysis_function_import_list_del_handler, &analysis_function_import_list_del_help);
+	rz_warn_if_fail(analysis_function_import_list_del_cd);
+
+	RzCmdDesc *afis_cd = rz_cmd_desc_group_state_new(core->rcmd, afi_cd, "afis", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_TABLE, rz_analysis_function_opcode_stat_handler, &analysis_function_opcode_stat_help, &afis_help);
+	rz_warn_if_fail(afis_cd);
+	RzCmdDesc *analysis_function_all_opcode_stat_cd = rz_cmd_desc_argv_state_new(core->rcmd, afis_cd, "afisa", RZ_OUTPUT_MODE_TABLE, rz_analysis_function_all_opcode_stat_handler, &analysis_function_all_opcode_stat_help);
+	rz_warn_if_fail(analysis_function_all_opcode_stat_cd);
 
 	RzCmdDesc *ar_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_analysis_cd, "ar", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_analysis_regs_handler, &analysis_regs_help, &ar_help);
 	rz_warn_if_fail(ar_cd);
