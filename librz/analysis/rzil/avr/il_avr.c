@@ -111,9 +111,9 @@
 
 #define avr_il_store_reg(name, addr, reg) \
 	do { \
-		RzILOp *_bv = rz_il_op_new_bitv_from_ut64(32, addr); \
+		RzILOp *_loc = rz_il_op_new_bitv_from_ut64(32, addr); \
 		RzILOp *_var = rz_il_op_new_var((reg)); \
-		(name) = rz_il_op_new_store(0, _bv, _var); \
+		(name) = rz_il_op_new_store(_loc, _var); \
 	} while (0)
 
 #define avr_il_set16_from_reg(name, dst, and_mask, sh, src) \
@@ -636,7 +636,7 @@ static RzPVector *avr_il_lpm(AVROp *aop, RzAnalysis *analysis) {
 	avr_return_val_if_invalid_gpr(Rd, NULL);
 
 	RzILOp *z = avr_il_get_indirect_address_z();
-	RzILOp *load = rz_il_op_new_load(0, z);
+	RzILOp *load = rz_il_op_new_load(z, AVR_REG_SIZE);
 	RzILOp *set = rz_il_op_new_set(avr_registers[Rd], load);
 	RzILOp *lpm = rz_il_op_new_perform(set);
 
@@ -922,7 +922,7 @@ static RzPVector *avr_il_st(AVROp *aop, RzAnalysis *analysis) {
 	}
 
 	src = avr_il_new_reg(Rd);
-	st = rz_il_op_new_store(0, addr, src);
+	st = rz_il_op_new_store(addr, src);
 
 	if (Op != '+' && Op != '-') {
 		return rz_il_make_oplist(1, st);
@@ -1122,7 +1122,7 @@ RZ_IPI bool avr_rzil_init(RzAnalysis *analysis) {
 	ut32 addr_space = 22; // 22 bits address space
 	ut64 pc_address = 0;
 
-	if (!rz_il_vm_init(rzil->vm, pc_address, addr_space, addr_space)) {
+	if (!rz_il_vm_init(rzil->vm, pc_address, addr_space, rzil->ro_memory, analysis->big_endian)) {
 		RZ_LOG_ERROR("RzIL: AVR: failed to initialize VM\n");
 		return false;
 	}
@@ -1148,8 +1148,6 @@ RZ_IPI bool avr_rzil_init(RzAnalysis *analysis) {
 		rz_strf(reg, "R%d", i);
 		rz_il_vm_add_reg(rzil->vm, reg, AVR_REG_SIZE);
 	}
-
-	rz_il_vm_add_mem(rzil->vm, 8);
 
 	rzil->inited = true;
 	return true;
