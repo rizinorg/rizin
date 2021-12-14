@@ -314,7 +314,6 @@ static const char *help_msg_af[] = {
 	"afo", "[?j] [fcn.name]", "show address for the function name or current offset",
 	"afS", "[stack_size]", "set stack frame size for function at current address",
 	"aft", "[?]", "type matching, type propagation",
-	"afu", " addr", "resize and analyze function from current address until addr",
 	"afv[absrx]", "?", "manipulate args, registers and variables in function",
 	"afx", "", "list function references",
 	NULL
@@ -2203,15 +2202,6 @@ RZ_IPI int rz_cmd_analysis_fcn(void *data, const char *input) {
 			}
 		}
 	} break;
-	case 'u': { // "afu"
-		if (input[1] != ' ') {
-			eprintf("Missing argument\n");
-			return false;
-		}
-		ut64 addr_end = rz_num_math(core->num, input + 1);
-		rz_core_analysis_function_until(core, addr_end);
-		break;
-	}
 	case '+': { // "af+"
 		if (input[1] != ' ') {
 			eprintf("Missing arguments\n");
