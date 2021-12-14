@@ -1464,6 +1464,14 @@ static const RzCmdDescHelp analysis_function_vars_bp_del_help = {
 	.args = analysis_function_vars_bp_del_args,
 };
 
+static const RzCmdDescArg analysis_function_vars_bp_del_all_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_vars_bp_del_all_help = {
+	.summary = "Delete all arguments/locals",
+	.args = analysis_function_vars_bp_del_all_args,
+};
+
 static const RzCmdDescArg analysis_function_vars_bp_getref_args[] = {
 	{
 		.name = "delta",
@@ -1542,6 +1550,14 @@ static const RzCmdDescArg analysis_function_vars_regs_del_args[] = {
 static const RzCmdDescHelp analysis_function_vars_regs_del_help = {
 	.summary = "Delete register-based argument/local with the given name",
 	.args = analysis_function_vars_regs_del_args,
+};
+
+static const RzCmdDescArg analysis_function_vars_regs_del_all_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_vars_regs_del_all_help = {
+	.summary = "Delete all register-based arguments/locals",
+	.args = analysis_function_vars_regs_del_all_args,
 };
 
 static const RzCmdDescArg analysis_function_vars_regs_getref_args[] = {
@@ -9509,6 +9525,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_function_vars_bp_del_cd = rz_cmd_desc_argv_new(core->rcmd, afvb_cd, "afvb-", rz_analysis_function_vars_bp_del_handler, &analysis_function_vars_bp_del_help);
 	rz_warn_if_fail(analysis_function_vars_bp_del_cd);
 
+	RzCmdDesc *analysis_function_vars_bp_del_all_cd = rz_cmd_desc_argv_new(core->rcmd, afvb_cd, "afvb-*", rz_analysis_function_vars_bp_del_all_handler, &analysis_function_vars_bp_del_all_help);
+	rz_warn_if_fail(analysis_function_vars_bp_del_all_cd);
+
 	RzCmdDesc *analysis_function_vars_bp_getref_cd = rz_cmd_desc_argv_new(core->rcmd, afvb_cd, "afvbg", rz_analysis_function_vars_bp_getref_handler, &analysis_function_vars_bp_getref_help);
 	rz_warn_if_fail(analysis_function_vars_bp_getref_cd);
 
@@ -9519,6 +9538,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(afvr_cd);
 	RzCmdDesc *analysis_function_vars_regs_del_cd = rz_cmd_desc_argv_new(core->rcmd, afvr_cd, "afvr-", rz_analysis_function_vars_regs_del_handler, &analysis_function_vars_regs_del_help);
 	rz_warn_if_fail(analysis_function_vars_regs_del_cd);
+
+	RzCmdDesc *analysis_function_vars_regs_del_all_cd = rz_cmd_desc_argv_new(core->rcmd, afvr_cd, "afvr-*", rz_analysis_function_vars_regs_del_all_handler, &analysis_function_vars_regs_del_all_help);
+	rz_warn_if_fail(analysis_function_vars_regs_del_all_cd);
 
 	RzCmdDesc *analysis_function_vars_regs_getref_cd = rz_cmd_desc_argv_new(core->rcmd, afvr_cd, "afvrg", rz_analysis_function_vars_regs_getref_handler, &analysis_function_vars_regs_getref_help);
 	rz_warn_if_fail(analysis_function_vars_regs_getref_cd);

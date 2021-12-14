@@ -7477,6 +7477,10 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_bp_del_handler(RzCore *core, int ar
 	return analysis_function_vars_del(core, RZ_ANALYSIS_VAR_KIND_BPV, argv[1]);
 }
 
+RZ_IPI RzCmdStatus rz_analysis_function_vars_bp_del_all_handler(RzCore *core, int argc, const char **argv) {
+	return analysis_function_vars_del(core, RZ_ANALYSIS_VAR_KIND_BPV, "*");
+}
+
 RZ_IPI RzCmdStatus rz_analysis_function_vars_bp_getref_handler(RzCore *core, int argc, const char **argv) {
 	int delta = (int)rz_num_math(core->num, argv[1]);
 	ut64 addr = rz_num_math(core->num, argv[2]);
@@ -7525,6 +7529,10 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_regs_handler(RzCore *core, int argc
 
 RZ_IPI RzCmdStatus rz_analysis_function_vars_regs_del_handler(RzCore *core, int argc, const char **argv) {
 	return analysis_function_vars_del(core, RZ_ANALYSIS_VAR_KIND_REG, argv[1]);
+}
+
+RZ_IPI RzCmdStatus rz_analysis_function_vars_regs_del_all_handler(RzCore *core, int argc, const char **argv) {
+	return analysis_function_vars_del(core, RZ_ANALYSIS_VAR_KIND_REG, "*");
 }
 
 RZ_IPI RzCmdStatus rz_analysis_function_vars_regs_getref_handler(RzCore *core, int argc, const char **argv) {
