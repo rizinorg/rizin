@@ -55,6 +55,8 @@ struct rzil_control_effect_t {
 
 struct rzil_data_effect_t {
 	const char *var_name; ///< Name of variable, const one
+	bool is_mutable;
+	bool is_local;
 	RzILVal *val;
 	RzILDataEffOperation operation; ///< operation to value and variable
 };

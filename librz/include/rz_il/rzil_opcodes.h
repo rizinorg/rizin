@@ -163,6 +163,18 @@ struct rzil_op_set_t {
 };
 
 /**
+ *  \struct rzil_op_let_t
+ *  \brief op structure for `set` ('a var -> 'a pure -> data eff)
+ *
+ *  set v x changes the value stored in v to the value of x.
+ */
+struct rzil_op_let_t {
+	const char *v; ///< name of variable, const one
+	bool mut; ///< define is local variable is const or not
+	RzILOp *x; ///< index of RzILVal
+};
+
+/**
  *  \struct rzil_op_jmp_t
  *  \brief op structure for `jmp` (_ bitv -> ctrl eff)
  *
@@ -346,6 +358,7 @@ typedef enum {
 	// Effects (opcode with side effects)
 	RZIL_OP_PERFORM,
 	RZIL_OP_SET,
+	RZIL_OP_LET,
 	RZIL_OP_JMP,
 	RZIL_OP_GOTO,
 	RZIL_OP_SEQ,
@@ -395,6 +408,7 @@ typedef struct rzil_op_bool_inv_t RzILOpBoolInv;
 
 typedef struct rzil_op_perform_t RzILOpPerform;
 typedef struct rzil_op_set_t RzILOpSet;
+typedef struct rzil_op_let_t RzILOpLet;
 typedef struct rzil_op_jmp_t RzILOpJmp;
 typedef struct rzil_op_goto_t RzILOpGoto;
 typedef struct rzil_op_seq_t RzILOpSeq;
@@ -439,6 +453,7 @@ typedef union {
 
 	RzILOpPerform *perform;
 	RzILOpSet *set;
+	RzILOpLet *let;
 	RzILOpJmp *jmp;
 	RzILOpGoto *goto_;
 	RzILOpSeq *seq;
@@ -489,9 +504,10 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_log_or(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILO
 RZ_API RZ_OWN RzILOp *rz_il_op_new_log_xor(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y);
 RZ_API RZ_OWN RzILOp *rz_il_op_new_shiftl(RZ_NONNULL RzILOp *fill_bit, RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y);
 RZ_API RZ_OWN RzILOp *rz_il_op_new_shiftr(RZ_NONNULL RzILOp *fill_bit, RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_append(RZ_NONNULL RzILOp *suffix, RZ_NONNULL RzILOp *prefix);
+RZ_API RZ_OWN RzILOp *rz_il_op_new_append(RZ_NONNULL RzILOp *high, RZ_NONNULL RzILOp *low);
 RZ_API RZ_OWN RzILOp *rz_il_op_new_perform(RZ_NONNULL RzILOp *effect);
 RZ_API RZ_OWN RzILOp *rz_il_op_new_set(RZ_NONNULL const char *var, RZ_NONNULL RzILOp *x);
+RZ_API RZ_OWN RzILOp *rz_il_op_new_let(RZ_NONNULL const char *var, RZ_NONNULL RzILOp *x, bool is_mutable);
 RZ_API RZ_OWN RzILOp *rz_il_op_new_jmp(RZ_NONNULL RzILOp *dst);
 RZ_API RZ_OWN RzILOp *rz_il_op_new_goto(RZ_NONNULL const char *label);
 RZ_API RZ_OWN RzILOp *rz_il_op_new_seq(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y);

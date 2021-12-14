@@ -40,6 +40,7 @@ void *rz_il_handler_append(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 
 void *rz_il_handler_perform(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_set(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_let(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_jmp(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_goto(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_seq(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
@@ -50,6 +51,52 @@ void *rz_il_handler_store(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 
 // TODO: remove me when all the handlers are implemented
 void *rz_il_handler_unimplemented(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+
+static RzILOpHandler op_handler_table_default[RZIL_OP_MAX] = {
+	rz_il_handler_var, /* RZIL_OP_VAR */
+	rz_il_handler_unk, /* RZIL_OP_UNK */
+	rz_il_handler_ite, /* RZIL_OP_ITE */
+	rz_il_handler_bool_false, /* RZIL_OP_B0 */
+	rz_il_handler_bool_true, /* RZIL_OP_B1 */
+	rz_il_handler_bool_inv, /* RZIL_OP_INV */
+	rz_il_handler_bool_and, /* RZIL_OP_AND */
+	rz_il_handler_bool_or, /* RZIL_OP_OR */
+	rz_il_handler_bool_xor, /* RZIL_OP_XOR */
+	rz_il_handler_bitv, /* RZIL_OP_BITV */
+	rz_il_handler_msb, /* RZIL_OP_MSB */
+	rz_il_handler_lsb, /* RZIL_OP_LSB */
+	rz_il_handler_neg, /* RZIL_OP_NEG */
+	rz_il_handler_logical_not, /* RZIL_OP_LOGNOT */
+	rz_il_handler_add, /* RZIL_OP_ADD */
+	rz_il_handler_sub, /* RZIL_OP_SUB */
+	rz_il_handler_mul, /* RZIL_OP_MUL */
+	rz_il_handler_div, /* RZIL_OP_DIV */
+	rz_il_handler_mod, /* RZIL_OP_MOD */
+	rz_il_handler_sdiv, /* RZIL_OP_SDIV */
+	rz_il_handler_smod, /* RZIL_OP_SMOD */
+	rz_il_handler_logical_and, /* RZIL_OP_LOGAND */
+	rz_il_handler_logical_or, /* RZIL_OP_LOGOR */
+	rz_il_handler_logical_xor, /* RZIL_OP_LOGXOR */
+	rz_il_handler_shiftr, /* RZIL_OP_SHIFTR */
+	rz_il_handler_shiftl, /* RZIL_OP_SHIFTL */
+	rz_il_handler_sle, /* RZIL_OP_SLE */
+	rz_il_handler_ule, /* RZIL_OP_ULE */
+	rz_il_handler_cast, /* RZIL_OP_CAST */
+	rz_il_handler_unimplemented, // &rz_il_handler_concat, /* RZIL_OP_CONCAT */
+	rz_il_handler_append, /* RZIL_OP_APPEND */
+	rz_il_handler_load, /* RZIL_OP_LOAD */
+	rz_il_handler_store, /* RZIL_OP_STORE */
+	rz_il_handler_perform, /* RZIL_OP_PERFORM */
+	rz_il_handler_set, /* RZIL_OP_SET */
+	rz_il_handler_let, /* RZIL_OP_LET */
+	rz_il_handler_jmp, /* RZIL_OP_JMP */
+	rz_il_handler_goto, /* RZIL_OP_GOTO */
+	rz_il_handler_seq, /* RZIL_OP_SEQ */
+	rz_il_handler_unimplemented, // &rz_il_handler_blk, /* RZIL_OP_BLK */
+	rz_il_handler_unimplemented, // &rz_il_handler_repeat, /* RZIL_OP_REPEAT */
+	rz_il_handler_branch, /* RZIL_OP_BRANCH */
+	rz_il_handler_unimplemented, // &rz_il_handler_invalid, /* RZIL_OP_INVALID */
+};
 
 static void free_label_kv(HtPPKv *kv) {
 	free(kv->key);
@@ -68,8 +115,13 @@ static void free_opcode_kv(HtPPKv *kv) {
 	rz_pvector_free(kv->value);
 }
 
+static void free_bind_var(HtPPKv *kv) {
+	free(kv->key);
+}
+
 static void free_bind_var_val(HtPPKv *kv) {
 	free(kv->key);
+	rz_il_value_free(kv->value);
 }
 
 /**
@@ -83,16 +135,13 @@ RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, ut32 data
 	vm->addr_size = addr_size;
 	vm->data_size = data_size;
 
-	vm->vm_global_variable_list = RZ_NEWS0(RzILVar *, RZ_IL_VM_MAX_VAR);
-	if (!vm->vm_global_variable_list) {
-		RZ_LOG_ERROR("[VM INIT FAILED] : variable\n");
-		rz_il_vm_fini(vm);
-		return false;
-	}
+	rz_pvector_init(&vm->vm_global_variable_list, (RzPVectorFree)rz_il_variable_free);
+	rz_pvector_init(&vm->vm_local_variable_list, (RzPVectorFree)rz_il_variable_free);
+	rz_pvector_init(&vm->vm_memory, (RzPVectorFree)rz_il_mem_free);
 
 	vm->vm_global_value_set = rz_il_new_bag(RZ_IL_VM_MAX_VAL, (RzILBagFreeFunc)rz_il_value_free);
 	if (!vm->vm_global_value_set) {
-		RZ_LOG_ERROR("[VM INIT FAILED] : value bag\n");
+		RZ_LOG_ERROR("RzIL: cannot allocate VM value bag\n");
 		rz_il_vm_fini(vm);
 		return false;
 	}
@@ -109,6 +158,11 @@ RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, ut32 data
 	lbl_options.elem_size = sizeof(HtPPKv);
 	lbl_options.calcsizeK = (HtPPCalcSizeK)strlen;
 	vm->vm_global_label_table = ht_pp_new_opt(&lbl_options);
+	if (!vm->vm_global_label_table) {
+		RZ_LOG_ERROR("RzIL: cannot allocate VM label hashmap\n");
+		rz_il_vm_fini(vm);
+		return false;
+	}
 
 	// Binding Table for Variable and Value
 	HtPPOptions bind_options = { 0 };
@@ -116,22 +170,30 @@ RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, ut32 data
 	bind_options.hashfn = (HtPPHashFunction)sdb_hash;
 	bind_options.dupkey = (HtPPDupKey)strdup;
 	bind_options.dupvalue = NULL;
-	bind_options.freefn = (HtPPKvFreeFunc)free_bind_var_val;
+	bind_options.freefn = (HtPPKvFreeFunc)free_bind_var;
 	bind_options.elem_size = sizeof(HtPPKv);
 	bind_options.calcsizeK = (HtPPCalcSizeK)strlen;
 	vm->vm_global_bind_table = ht_pp_new_opt(&bind_options);
-
-	// TODO : More Arguments for vm init to control
-	//      1. Minimal unit size in memory
-	//      2. Multiple Memory
-	//      3. pc length
-	vm->mems = (RzILMem **)calloc(RZ_IL_VM_MAX_TEMP, sizeof(RzILMem *));
-	if (!vm->mems) {
-		RZ_LOG_ERROR("[VM INIT FAILED] : mem\n");
+	if (!vm->vm_global_bind_table) {
+		RZ_LOG_ERROR("RzIL: cannot allocate VM global hashmap\n");
 		rz_il_vm_fini(vm);
 		return false;
 	}
+
+	bind_options.freefn = (HtPPKvFreeFunc)free_bind_var_val;
+	vm->vm_local_bind_table = ht_pp_new_opt(&bind_options);
+	if (!vm->vm_local_bind_table) {
+		RZ_LOG_ERROR("RzIL: cannot allocate VM local hashmap\n");
+		rz_il_vm_fini(vm);
+		return false;
+	}
+
 	vm->pc = rz_bv_new_from_ut64(addr_size, start_addr);
+	if (!vm->pc) {
+		RZ_LOG_ERROR("RzIL: cannot allocate VM program counter\n");
+		rz_il_vm_fini(vm);
+		return false;
+	}
 
 	// Table for storing the core theory opcodes
 	HtPPOptions ops_options = { 0 };
@@ -142,63 +204,25 @@ RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, ut32 data
 	ops_options.freefn = free_opcode_kv;
 	ops_options.elem_size = sizeof(HtPPKv);
 	vm->ct_opcodes = ht_pp_new_opt(&ops_options);
+	if (!vm->ct_opcodes) {
+		RZ_LOG_ERROR("RzIL: cannot allocate VM core theory op codes\n");
+		rz_il_vm_fini(vm);
+		return false;
+	}
 
 	// init jump table of labels
 	vm->op_handler_table = RZ_NEWS0(RzILOpHandler, RZIL_OP_MAX);
-	vm->op_handler_table[RZIL_OP_VAR] = &rz_il_handler_var;
-	vm->op_handler_table[RZIL_OP_UNK] = &rz_il_handler_unk;
-	vm->op_handler_table[RZIL_OP_ITE] = &rz_il_handler_ite;
+	memcpy(vm->op_handler_table, op_handler_table_default, sizeof(RzILOpHandler) * RZIL_OP_MAX);
 
-	vm->op_handler_table[RZIL_OP_B0] = &rz_il_handler_bool_false;
-	vm->op_handler_table[RZIL_OP_B1] = &rz_il_handler_bool_true;
-	vm->op_handler_table[RZIL_OP_INV] = &rz_il_handler_bool_inv;
-	vm->op_handler_table[RZIL_OP_AND] = &rz_il_handler_bool_and;
-	vm->op_handler_table[RZIL_OP_OR] = &rz_il_handler_bool_or;
-	vm->op_handler_table[RZIL_OP_XOR] = &rz_il_handler_bool_xor;
-
-	vm->op_handler_table[RZIL_OP_BITV] = &rz_il_handler_bitv;
-	vm->op_handler_table[RZIL_OP_MSB] = &rz_il_handler_msb;
-	vm->op_handler_table[RZIL_OP_LSB] = &rz_il_handler_lsb;
-
-	vm->op_handler_table[RZIL_OP_NEG] = &rz_il_handler_neg;
-	vm->op_handler_table[RZIL_OP_LOGNOT] = &rz_il_handler_logical_not;
-	vm->op_handler_table[RZIL_OP_ADD] = &rz_il_handler_add;
-	vm->op_handler_table[RZIL_OP_SUB] = &rz_il_handler_sub;
-	vm->op_handler_table[RZIL_OP_MUL] = &rz_il_handler_mul;
-	vm->op_handler_table[RZIL_OP_DIV] = &rz_il_handler_div;
-	vm->op_handler_table[RZIL_OP_MOD] = &rz_il_handler_mod;
-	vm->op_handler_table[RZIL_OP_SDIV] = &rz_il_handler_sdiv;
-	vm->op_handler_table[RZIL_OP_SMOD] = &rz_il_handler_smod;
-	vm->op_handler_table[RZIL_OP_LOGAND] = &rz_il_handler_logical_and;
-	vm->op_handler_table[RZIL_OP_LOGOR] = &rz_il_handler_logical_or;
-	vm->op_handler_table[RZIL_OP_LOGXOR] = &rz_il_handler_logical_xor;
-	vm->op_handler_table[RZIL_OP_SHIFTR] = &rz_il_handler_shiftr;
-	vm->op_handler_table[RZIL_OP_SHIFTL] = &rz_il_handler_shiftl;
-
-	vm->op_handler_table[RZIL_OP_SLE] = &rz_il_handler_unimplemented; // &rz_il_handler_sle;
-	vm->op_handler_table[RZIL_OP_ULE] = &rz_il_handler_unimplemented; // &rz_il_handler_ule;
-	vm->op_handler_table[RZIL_OP_CAST] = &rz_il_handler_cast;
-	vm->op_handler_table[RZIL_OP_CONCAT] = &rz_il_handler_unimplemented; // &rz_il_handler_concat
-	vm->op_handler_table[RZIL_OP_APPEND] = &rz_il_handler_append;
-
-	vm->op_handler_table[RZIL_OP_LOAD] = &rz_il_handler_load;
-	vm->op_handler_table[RZIL_OP_STORE] = &rz_il_handler_store;
-
-	vm->op_handler_table[RZIL_OP_PERFORM] = &rz_il_handler_perform;
-	vm->op_handler_table[RZIL_OP_SET] = &rz_il_handler_set;
-	vm->op_handler_table[RZIL_OP_JMP] = &rz_il_handler_jmp;
-	vm->op_handler_table[RZIL_OP_GOTO] = &rz_il_handler_goto;
-	vm->op_handler_table[RZIL_OP_SEQ] = &rz_il_handler_seq;
-	vm->op_handler_table[RZIL_OP_BLK] = &rz_il_handler_unimplemented; // &rz_il_handler_blk;
-	vm->op_handler_table[RZIL_OP_REPEAT] = &rz_il_handler_unimplemented; // &rz_il_handler_repeat;
-	vm->op_handler_table[RZIL_OP_BRANCH] = &rz_il_handler_branch;
-	vm->op_handler_table[RZIL_OP_INVALID] = &rz_il_handler_unimplemented; // &rz_il_handler_invalid;
-
-	vm->var_count = 0;
+	vm->lab_count = 0;
 	vm->val_count = 0;
-	vm->mem_count = 0;
 
 	vm->events = rz_list_newf((RzListFree)rz_il_event_free);
+	if (!vm->events) {
+		RZ_LOG_ERROR("RzIL: cannot allocate VM event list\n");
+		rz_il_vm_fini(vm);
+		return false;
+	}
 	return true;
 }
 
@@ -207,52 +231,29 @@ RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, ut32 data
  * \param vm RzILVM* pointer to VM
  */
 RZ_API void rz_il_vm_fini(RzILVM *vm) {
-	RzILVar *var;
-
 	if (vm->vm_global_value_set) {
 		rz_il_free_bag(vm->vm_global_value_set);
 		vm->vm_global_value_set = NULL;
 	}
+	rz_pvector_fini(&vm->vm_global_variable_list);
+	rz_pvector_fini(&vm->vm_local_variable_list);
+	rz_pvector_fini(&vm->vm_memory);
 
-	if (vm->vm_global_variable_list) {
-		for (ut32 i = 0; i < RZ_IL_VM_MAX_VAR; ++i) {
-			if (vm->vm_global_variable_list[i] != NULL) {
-				var = vm->vm_global_variable_list[i];
-				rz_il_free_variable(var);
-				vm->vm_global_variable_list[i] = NULL;
-			}
-		}
-		free(vm->vm_global_variable_list);
-		vm->vm_global_variable_list = NULL;
-	}
+	ht_pp_free(vm->ct_opcodes);
+	vm->ct_opcodes = NULL;
 
-	if (vm->ct_opcodes) {
-		ht_pp_free(vm->ct_opcodes);
-		vm->ct_opcodes = NULL;
-	}
+	ht_pp_free(vm->vm_global_bind_table);
+	vm->vm_global_bind_table = NULL;
 
-	if (vm->mems) {
-		for (ut32 i = 0; i < vm->mem_count; ++i) {
-			rz_il_mem_free(vm->mems[i]);
-		}
-		free(vm->mems);
-		vm->mems = NULL;
-	}
+	ht_pp_free(vm->vm_local_bind_table);
+	vm->vm_local_bind_table = NULL;
 
-	if (vm->vm_global_bind_table) {
-		ht_pp_free(vm->vm_global_bind_table);
-		vm->vm_global_bind_table = NULL;
-	}
+	ht_pp_free(vm->vm_global_label_table);
+	vm->vm_global_label_table = NULL;
 
-	if (vm->vm_global_label_table) {
-		ht_pp_free(vm->vm_global_label_table);
-		vm->vm_global_label_table = NULL;
-	}
+	free(vm->op_handler_table);
+	vm->op_handler_table = NULL;
 
-	if (vm->op_handler_table) {
-		free(vm->op_handler_table);
-		vm->op_handler_table = NULL;
-	}
 	rz_bv_free(vm->pc);
 	vm->pc = NULL;
 
@@ -289,34 +290,6 @@ RZ_API void rz_il_vm_free(RzILVM *vm) {
 }
 
 /**
- * Convert to bitvector from ut64
- * similar API in librz/include/rz_util/rz_bitvector.h
- * \param addr ut64, an address
- * \return RzBitVector, 64-bit bitvector
- */
-RZ_API RzBitVector *rz_il_ut64_addr_to_bv(ut64 addr) {
-	return rz_bv_new_from_ut64(64, addr);
-}
-
-/**
- * Convert to ut64 from bitvector
- * similar API in librz/include/rz_util/rz_bitvector.h
- * \param addr RzBitVector, a bitvector address
- * \return ut64, the value of bitvector
- */
-RZ_API ut64 rz_bv_addr_to_ut64(RzBitVector *addr) {
-	return rz_bv_to_ut64(addr);
-}
-
-/**
- * the same as rz_bv_free, free a bitvector address
- * \param addr RzBitVector, a bitvector to free
- */
-RZ_API void rz_il_free_bv_addr(RzBitVector *addr) {
-	rz_bv_free(addr);
-}
-
-/**
  * Add a memory in VM. We design this to support multiple memory in the future
  * \param vm RzILVM, pointer to VM
  * \param min_unit_size ut32, size of minimal unit of the vm
@@ -324,8 +297,7 @@ RZ_API void rz_il_free_bv_addr(RzBitVector *addr) {
  */
 RZ_API RzILMem *rz_il_vm_add_mem(RzILVM *vm, ut32 min_unit_size) {
 	RzILMem *mem = rz_il_mem_new(min_unit_size);
-	vm->mems[vm->mem_count] = mem;
-	vm->mem_count += 1;
+	rz_pvector_push(&vm->vm_memory, mem);
 	return mem;
 }
 
@@ -337,17 +309,11 @@ RZ_API RzILMem *rz_il_vm_add_mem(RzILVM *vm, ut32 min_unit_size) {
  * \return val Bitvector, data at the address, has `vm->min_unit_size` length
  */
 RZ_API RzBitVector *rz_il_vm_mem_load(RzILVM *vm, ut32 mem_index, RzBitVector *key) {
-	RzILMem *m = NULL;
+	rz_return_val_if_fail(vm && key && mem_index < rz_pvector_len(&vm->vm_memory), NULL);
 	RzBitVector *value = NULL;
-
-	if (vm && vm->mems) {
-		if (mem_index >= vm->mem_count || mem_index < 0) {
-			return NULL;
-		}
-		m = vm->mems[mem_index];
-		value = rz_il_mem_load(m, key);
-		rz_il_vm_event_add(vm, rz_il_event_mem_read_new(key, value));
-	}
+	RzILMem *m = rz_pvector_at(&vm->vm_memory, mem_index);
+	value = rz_il_mem_load(m, key);
+	rz_il_vm_event_add(vm, rz_il_event_mem_read_new(key, value));
 	return value;
 }
 
@@ -362,20 +328,12 @@ RZ_API RzBitVector *rz_il_vm_mem_load(RzILVM *vm, ut32 mem_index, RzBitVector *k
  * \return mem Mem, the memory you store data to
  */
 RZ_API RzILMem *rz_il_vm_mem_store(RzILVM *vm, ut32 mem_index, RzBitVector *key, RzBitVector *value) {
-	RzILMem *m;
-
-	if (vm && vm->mems) {
-		if (mem_index >= vm->mem_count || mem_index < 0) {
-			return NULL;
-		}
-		m = vm->mems[mem_index];
-
-		RzBitVector *old_value = rz_il_mem_load(m, key);
-		rz_il_vm_event_add(vm, rz_il_event_mem_write_new(key, old_value, value));
-		rz_bv_free(old_value);
-		return rz_il_mem_store(m, key, value);
-	}
-	return NULL;
+	rz_return_val_if_fail(vm && key && mem_index < rz_pvector_len(&vm->vm_memory), NULL);
+	RzILMem *m = rz_pvector_at(&vm->vm_memory, mem_index);
+	RzBitVector *old_value = rz_il_mem_load(m, key);
+	rz_il_vm_event_add(vm, rz_il_event_mem_write_new(key, old_value, value));
+	rz_bv_free(old_value);
+	return rz_il_mem_store(m, key, value);
 }
 
 /**
@@ -388,21 +346,15 @@ RZ_API RzILMem *rz_il_vm_mem_store(RzILVM *vm, ut32 mem_index, RzBitVector *key,
  * \return mem Mem, the memory you store data to
  */
 RZ_API RzILMem *rz_il_vm_mem_store_zero(RzILVM *vm, ut32 mem_index, RzBitVector *key, RzBitVector **value) {
-	RzILMem *m = NULL;
-
-	if (vm && vm->mems) {
-		if (mem_index >= vm->mem_count || mem_index < 0) {
-			return NULL;
-		}
-		m = vm->mems[mem_index];
-
-		RzBitVector *zero = rz_bv_new(m->min_unit_size);
-		m = rz_il_mem_store(m, key, zero);
-		if (m && value) {
-			*value = zero;
-		}
+	rz_return_val_if_fail(vm && key && mem_index < rz_pvector_len(&vm->vm_memory), NULL);
+	RzILMem *m = rz_pvector_at(&vm->vm_memory, mem_index);
+	RzBitVector *zero = rz_bv_new(m->min_unit_size);
+	RzBitVector *old_value = rz_il_mem_load(m, key);
+	rz_bv_free(old_value);
+	if (value) {
+		*value = zero;
 	}
-	return m;
+	return rz_il_mem_store(m, key, zero);
 }
 
 /**
@@ -451,4 +403,12 @@ RZ_API void rz_il_vm_list_step(RzILVM *vm, RzPVector *op_list, ut32 op_size) {
 	rz_bv_free(vm->pc);
 	rz_bv_free(step);
 	vm->pc = next_pc;
+
+	// remove any local defined variable
+	void **it;
+	rz_pvector_foreach (&vm->vm_local_variable_list, it) {
+		RzILVar *var = *it;
+		rz_il_hash_cancel_local_binding(vm, var);
+	}
+	rz_pvector_clear(&vm->vm_local_variable_list);
 }

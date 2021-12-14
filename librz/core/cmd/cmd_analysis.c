@@ -3987,7 +3987,7 @@ static void cmd_analysis_rzil(RzCore *core, const char *input) {
 			rz_cons_printf("Usage: aezv - prints the current status of the Rizin IL VM\n");
 			break;
 		case 0: // "aezv"
-			rz_core_analysis_rzil_vm_status(core);
+			rz_core_analysis_rzil_vm_status(core, input + 1, RZ_OUTPUT_MODE_STANDARD);
 			break;
 		}
 		break;
@@ -9603,4 +9603,44 @@ exit:
 	rz_list_free(dbs);
 	ht_pu_free(keys_set);
 	return res;
+}
+
+RZ_IPI RzCmdStatus rz_rzil_vm_initialize_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_analysis_rzil_reinit(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_rzil_vm_step_handler(RzCore *core, int argc, const char **argv) {
+	ut64 repeat_times = argc == 1 ? 1 : rz_num_math(core->num, argv[1]);
+	for (ut64 i = 0; i < repeat_times; ++i) {
+		rz_core_rzil_step(core);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_rzil_vm_step_with_events_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	ut64 repeat_times = argc == 1 ? 1 : rz_num_math(core->num, argv[1]);
+	PJ *pj = NULL;
+	if (mode == RZ_OUTPUT_MODE_JSON) {
+		pj = pj_new();
+		if (!pj) {
+			RZ_LOG_ERROR("cannot allocate PJ.\n");
+			return RZ_CMD_STATUS_ERROR;
+		}
+		pj_a(pj);
+	}
+	for (ut64 i = 0; i < repeat_times; ++i) {
+		rz_core_analysis_rzil_step_with_events(core, pj);
+	}
+	if (mode == RZ_OUTPUT_MODE_JSON) {
+		pj_end(pj);
+		rz_cons_println(pj_string(pj));
+		pj_free(pj);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_rzil_vm_status_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	rz_core_analysis_rzil_vm_status(core, argc > 1 ? argv[1] : NULL, mode);
+	return RZ_CMD_STATUS_OK;
 }

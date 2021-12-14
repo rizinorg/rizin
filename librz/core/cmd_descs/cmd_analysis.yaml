@@ -475,6 +475,47 @@ commands:
                     type: RZ_CMD_ARG_TYPE_CHOICES
                     optional: true
                     choices: ["family", "type"]
+  - name: aez
+    summary: RzIL Emulation
+    type: RZ_CMD_DESC_TYPE_GROUP
+    subcommands:
+      - name: aezi
+        summary: Initialize the RzIL Virtual Machine at the current offset
+        type: RZ_CMD_DESC_TYPE_ARGV
+        cname: rzil_vm_initialize
+        args: []
+      - name: aezs
+        summary: Step N instructions within the RzIL Virtual Machine
+        type: RZ_CMD_DESC_TYPE_ARGV
+        cname: rzil_vm_step
+        args:
+          - name: n_times
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: aezse
+        summary: Step N instructions within the RzIL VM and output VM changes (read & write)
+        type: RZ_CMD_DESC_TYPE_ARGV_MODES
+        cname: rzil_vm_step_with_events
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: n_times
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: aezv
+        summary: Print the current status of the RzIL Virtual Machine
+        cname: rzil_vm_status
+        type: RZ_CMD_DESC_TYPE_ARGV_MODES
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_TABLE
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+        args:
+          - name: var_name
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
   #####################################################
   # Keep this in sync with dr in cmd_debug.yaml from here...
   - name: ar
