@@ -312,9 +312,7 @@ static const char *help_msg_af[] = {
 	"afn", "[?] name [addr]", "rename name for function at address (change flag too)",
 	"afna", "", "suggest automatic name for current offset",
 	"afo", "[?j] [fcn.name]", "show address for the function name or current offset",
-	"afs", "[!] ([fcnsign])", "get/set function signature at current address (afs! uses cfg.editor)",
 	"afS", "[stack_size]", "set stack frame size for function at current address",
-	"afsr", " [function_name] [new_type]", "change type for given function",
 	"aft", "[?]", "type matching, type propagation",
 	"afu", " addr", "resize and analyze function from current address until addr",
 	"afv[absrx]", "?", "manipulate args, registers and variables in function",
@@ -352,15 +350,6 @@ static const char *help_msg_afn[] = {
 	"afna", "", "construct a function name for the current offset",
 	"afns", "", "list all strings associated with the current function",
 	"afnsj", "", "list all strings associated with the current function in JSON format",
-	NULL
-};
-
-static const char *help_msg_afs[] = {
-	"Usage:", "afs[r]", " Analyze function signatures",
-	"afs", "[!] ([fcnsign])", "get/set function signature at current address (afs! uses cfg.editor)",
-	"afs*", " ([signame])", "get function signature in flags",
-	"afsj", " ([signame])", "get function signature in JSON",
-	"afsr", " [function_name] [new_type]", "change type for given function",
 	NULL
 };
 
@@ -2127,19 +2116,6 @@ static void afCc(RzCore *core, const char *input) {
 	}
 }
 
-static void cmd_afsj(RzCore *core, const char *arg) {
-	ut64 a = rz_num_math(core->num, arg);
-	const ut64 addr = a ? a : core->offset;
-	RzAnalysisFunction *f = rz_analysis_get_fcn_in(core->analysis, addr, -1);
-	if (f) {
-		char *s = rz_analysis_function_get_json(f);
-		rz_cons_printf("%s\n", s);
-		free(s);
-	} else {
-		eprintf("Cannot find function in 0x%08" PFMT64x "\n", addr);
-	}
-}
-
 RZ_IPI int rz_cmd_analysis_fcn(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 
@@ -2337,59 +2313,6 @@ RZ_IPI int rz_cmd_analysis_fcn(void *data, const char *input) {
 				rz_cons_printf("0x%08" PFMT64x "\n", fcn->addr);
 			}
 		} break;
-		}
-		break;
-	case 's': // "afs"
-		switch (input[1]) {
-		case '!': // "afs!"
-			rz_core_analysis_function_signature_editor(core, core->offset);
-			break;
-		case 'r': { // "afsr"
-			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
-			if (fcn) {
-				RzType *ttype = rz_type_parse_string_single(core->analysis->typedb->parser, input + 3, NULL);
-				if (ttype) {
-					rz_type_func_ret_set(core->analysis->typedb, fcn->name, ttype);
-				}
-			} else {
-				eprintf("There's no function defined in here.\n");
-			}
-			break;
-		}
-		case 'j': // "afsj"
-			cmd_afsj(core, input + 1);
-			break;
-		case 0: { // "afs"
-			RzAnalysisFunction *f = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
-			if (!f) {
-				eprintf("Cannot find function in 0x%08" PFMT64x "\n", core->offset);
-				break;
-			}
-			char *str = rz_analysis_function_get_signature(f);
-			if (str) {
-				rz_cons_println(str);
-				free(str);
-			} else {
-				eprintf("No signature at 0x%08" PFMT64x "\n", f->addr);
-			}
-			break;
-		}
-		case ' ': { // "afs "
-			const char *arg = rz_str_trim_head_ro(input + 1);
-			RzAnalysisFunction *f = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
-			if (!f) {
-				eprintf("Cannot find function in 0x%08" PFMT64x "\n", core->offset);
-				break;
-			}
-			if (!rz_core_analysis_function_set_signature(core, f, arg)) {
-				eprintf("Cannot set signature at 0x%08" PFMT64x "\n", core->offset);
-			}
-			break;
-		}
-		default:
-			// case '?': // "afs?"
-			rz_core_cmd_help(core, help_msg_afs);
-			break;
 		}
 		break;
 	case 'm': // "afm" - merge two functions
