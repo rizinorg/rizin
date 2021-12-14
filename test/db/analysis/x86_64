@@ -3972,3 +3972,12 @@ EXPECT=<<EOF
 }
 EOF
 RUN
+
+NAME=dwarf attribute kind check
+FILE=bins/elf/dwarf_attr_check
+CMDS=<<EOF
+aaa
+EOF
+EXPECT=<<EOF
+EOF
+RUN
