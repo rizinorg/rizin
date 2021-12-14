@@ -334,6 +334,8 @@ bool flirt_node_optimize(RzFlirtNode *root) {
 			goto fail;
 		}
 	}
+	rz_list_free(childs);
+
 	return true;
 
 fail:

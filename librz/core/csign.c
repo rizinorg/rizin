@@ -348,16 +348,6 @@ static void flirt_print_node(const RzFlirtNode *node, int indent) {
 }
 
 /**
- * \brief Dumps the contents of a RzFlirtNode
- *
- * \param node FLIRT node to dump
- */
-RZ_API void rz_core_flirt_dump_node(RZ_NONNULL const RzFlirtNode *node) {
-	rz_return_if_fail(node);
-	flirt_print_node(node, -1);
-}
-
-/**
  * \brief Dumps the contents of a FLIRT file
  *
  * \param flirt_file FLIRT file name to dump
@@ -388,7 +378,8 @@ RZ_API bool rz_core_flirt_dump_file(RZ_NONNULL const char *flirt_file) {
 		RZ_LOG_ERROR("FLIRT: we encountered an error while parsing the file. Sorry.\n");
 		return false;
 	}
-	rz_core_flirt_dump_node(node);
+
+	flirt_print_node(node, -1);
 	rz_sign_flirt_node_free(node);
 	return true;
 }
