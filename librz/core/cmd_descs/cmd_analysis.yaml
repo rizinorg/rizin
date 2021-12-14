@@ -383,6 +383,98 @@ commands:
                     type: RZ_CMD_ARG_TYPE_RZNUM
                   - name: addr
                     type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: afl
+        summary: List functions
+        subcommands:
+          - name: afl
+            summary: List all functions
+            cname: analysis_function_list
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_LONG
+              - RZ_OUTPUT_MODE_JSON
+              - RZ_OUTPUT_MODE_QUIET
+              - RZ_OUTPUT_MODE_RIZIN
+              - RZ_OUTPUT_MODE_TABLE
+            args: []
+          - name: afl.
+            summary: List functions in current seek
+            cname: analysis_function_list_in
+            args: []
+          - name: aflc
+            summary: Display count of all functions
+            cname: analysis_function_count
+            args: []
+          - name: afl+
+            summary: Display sum of all functions sizes
+            cname: analysis_function_size_sum
+            args: []
+          - name: aflm
+            summary: List calls of all functions
+            cname: analysis_function_list_calls
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+              - RZ_OUTPUT_MODE_QUIET
+            args: []
+          - name: afl=
+            summary: Display ascii-art bars with function ranges
+            cname: analysis_function_list_ascii
+            args: []
+      - name: afi
+        summary: Show/edit function information
+        subcommands:
+          - name: afi
+            summary: Show information of functions in current seek
+            cname: analysis_function_info
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+              - RZ_OUTPUT_MODE_RIZIN
+            args: []
+          - name: afii
+            summary: Show/add/delete imports used in function in current seek
+            subcommands:
+              - name: afii
+                summary: Show/add imports used in function in current seek
+                cname: analysis_function_import_list
+                args:
+                  - name: import
+                    type: RZ_CMD_ARG_TYPE_STRING
+                    optional: true
+              - name: afii-
+                summary: Delete imports used in function in current seek
+                cname: analysis_function_import_list_del
+                args: []
+          - name: afis
+            summary: Show opcode statistic in function
+            subcommands:
+              - name: afis
+                summary: Enumerate unique opcodes/opcode families/opcode types in function
+                cname: analysis_function_opcode_stat
+                type: RZ_CMD_DESC_TYPE_ARGV_STATE
+                modes:
+                  - RZ_OUTPUT_MODE_STANDARD
+                  - RZ_OUTPUT_MODE_TABLE
+                args:
+                  - name: mode
+                    type: RZ_CMD_ARG_TYPE_CHOICES
+                    optional: true
+                    choices: ["family", "type"]
+              - name: afisa
+                summary: Enumerate unique opcodes/opcode families/opcode types in all functions
+                cname: analysis_function_all_opcode_stat
+                type: RZ_CMD_DESC_TYPE_ARGV_STATE
+                modes:
+                  - RZ_OUTPUT_MODE_TABLE
+                args:
+                  - name: mode
+                    type: RZ_CMD_ARG_TYPE_CHOICES
+                    optional: true
+                    choices: ["family", "type"]
   #####################################################
   # Keep this in sync with dr in cmd_debug.yaml from here...
   - name: ar

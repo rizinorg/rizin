@@ -24,12 +24,12 @@ s 0x7cf
 anj
 an renamed_strlen
 anj
-afi. @ 1632
+afl. @ 1632
 EOF
 EXPECT=<<EOF
 [{"name":"sym.imp.strlen","type":"function","offset":1632}]
 [{"name":"renamed_strlen","type":"function","offset":1632}]
-renamed_strlen
+0x00000660 renamed_strlen
 EOF
 RUN
 
