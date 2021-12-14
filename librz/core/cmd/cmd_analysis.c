@@ -301,7 +301,6 @@ static const char *help_msg_af[] = {
 	"af+", " addr name [type] [diff]", "hand craft a function (requires afb+)",
 	"af-", " [addr]", "clean all function analysis data (or function at addr)",
 	"afa", "", "analyze function arguments in a call (afal honors dbg.funcarg)",
-	"afB", " 16", "set current function as thumb (change asm.bits)",
 	"afC[lc]", " ([addr])@[addr]", "calculate the Cycles (afC) or Cyclomatic Complexity (afCc)",
 	"afc", "[?] type @[addr]", "set calling convention for function",
 	"afd", "[addr]", "show function + delta for given offset",
@@ -2574,21 +2573,6 @@ RZ_IPI int rz_cmd_analysis_fcn(void *data, const char *input) {
 			rz_core_cmd_help(core, help_msg_afc);
 		}
 	} break;
-	case 'B': // "afB" // set function bits
-		if (input[1] == ' ') {
-			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
-			if (fcn) {
-				int bits = atoi(input + 2);
-				rz_analysis_hint_set_bits(core->analysis, rz_analysis_function_min_addr(fcn), bits);
-				rz_analysis_hint_set_bits(core->analysis, rz_analysis_function_max_addr(fcn), core->analysis->bits);
-				fcn->bits = bits;
-			} else {
-				eprintf("afB: Cannot find function to set bits at 0x%08" PFMT64x "\n", core->offset);
-			}
-		} else {
-			eprintf("Usage: afB [bits]\n");
-		}
-		break;
 	case 'n': // "afn"
 		switch (input[1]) {
 		case 's': // "afns"
