@@ -865,7 +865,7 @@ static const char *rizin_argv[] = {
 	"afv?", "afv", "afvr?", "afvr", "afvr*", "afvrj", "afvr-", "afvrg", "afvrs",
 	"afvb?", "afvb", "afvbj", "afvb-", "afvbg", "afvbs",
 	"afvs?", "afvs", "afvs*", "afvsj", "afvs-", "afvsg", "afvss",
-	"afv*", "afvR", "afvW", "afva", "afvd", "afvn", "afvt", "afv-", "af*", "afx",
+	"afv*", "afvR", "afvW", "afva", "afvd", "afvn", "afvt", "afv-", "af*",
 	"aF",
 	"ag?", "ag", "aga", "agA", "agc", "agC", "agd", "agf", "agi", "agr", "agR", "agx", "agg", "ag-",
 	"agn?", "agn", "agn-", "age?", "age", "age-",

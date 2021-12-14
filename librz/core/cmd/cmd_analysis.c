@@ -315,7 +315,6 @@ static const char *help_msg_af[] = {
 	"afS", "[stack_size]", "set stack frame size for function at current address",
 	"aft", "[?]", "type matching, type propagation",
 	"afv[absrx]", "?", "manipulate args, registers and variables in function",
-	"afx", "", "list function references",
 	NULL
 };
 
@@ -2548,78 +2547,6 @@ RZ_IPI int rz_cmd_analysis_fcn(void *data, const char *input) {
 			// fcn->stack = fcn->maxstack;
 		}
 	} break;
-	case 'x': // "afx"
-		switch (input[1]) {
-		case '\0': // "afx"
-		case 'j': // "afxj"
-		case ' ': // "afx "
-		{
-			PJ *pj = pj_new();
-			if (input[1] == 'j') {
-				pj_a(pj);
-			}
-			if (!pj) {
-				return false;
-			}
-			// list xrefs from current address
-			{
-				ut64 addr = input[1] == ' ' ? rz_num_math(core->num, input + 1) : core->offset;
-				RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, RZ_ANALYSIS_FCN_TYPE_NULL);
-				if (fcn) {
-					ut64 oaddr = core->offset;
-					RzAnalysisXRef *xref;
-					RzListIter *iter;
-					RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
-					rz_list_foreach (xrefs, iter, xref) {
-						if (input[1] == 'j') {
-							pj_o(pj);
-							pj_ks(pj, "type", rz_analysis_ref_type_tostring(xref->type));
-							pj_kn(pj, "from", xref->from);
-							pj_kn(pj, "to", xref->to);
-							pj_end(pj);
-						} else {
-							rz_cons_printf("%c 0x%08" PFMT64x " -> ", xref->type, xref->from);
-							switch (xref->type) {
-							case RZ_ANALYSIS_REF_TYPE_NULL:
-								rz_cons_printf("0x%08" PFMT64x " ", xref->to);
-								break;
-							case RZ_ANALYSIS_REF_TYPE_CODE:
-							case RZ_ANALYSIS_REF_TYPE_CALL:
-							case RZ_ANALYSIS_REF_TYPE_DATA:
-								rz_cons_printf("0x%08" PFMT64x " ", xref->to);
-								rz_core_seek(core, xref->from, 1);
-								rz_core_print_disasm_instructions(core, 0, 1);
-								break;
-							case RZ_ANALYSIS_REF_TYPE_STRING: {
-								char *s = rz_core_cmd_strf(core, "pxr 8 @ 0x%08" PFMT64x, xref->to);
-								char *nl = strchr(s, '\n');
-								if (nl) {
-									*nl = 0;
-								}
-								rz_cons_printf("%s\n", s);
-								free(s);
-							} break;
-							}
-						}
-					}
-					rz_list_free(xrefs);
-					rz_core_seek(core, oaddr, 1);
-				} else {
-					eprintf("afx: Cannot find function at 0x%08" PFMT64x "\n", addr);
-				}
-			}
-			if (input[1] == 'j') {
-				pj_end(pj);
-				rz_cons_println(pj_string(pj));
-			}
-			pj_free(pj);
-			break;
-		}
-		default:
-			eprintf("Wrong command. Look at af?\n");
-			break;
-		}
-		break;
 	case '?': // "af?"
 		rz_core_cmd_help(core, help_msg_af);
 		break;
