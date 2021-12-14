@@ -40,24 +40,18 @@ struct rz_il_vm_t {
 	RzILBag *vm_global_value_set; ///< Store all RzILVal instance
 	RzPVector /*<RzILVar*>*/ vm_global_variable_list; ///< Store all the global RzILVar instance
 	RzPVector /*<RzILVar*>*/ vm_local_variable_list; ///< Store all the local RzILVar instance
-
-	RzPVector /*<RzILMem*>*/ vm_memory; ///< Array of Memory, memory are actually hashmap in VM
+	RzBuffer *vm_memory; ///< rz_buf_new_sparse_overlay RZ_BUF_SPARSE_WRITE_MODE_SPARSE
 	ut32 val_count, lab_count; ///< count for VM predefined things
 	ut32 addr_size; ///< size of address space
-	ut32 data_size; ///< size of minimal data unit
-
 	HtPP *vm_global_bind_table; ///< Hashtable to record relationships between global var and val
 	HtPP *vm_local_bind_table; ///< Hashtable to record relationships between local var and val
 	HtPP *vm_global_label_table; ///< Hashtable to maintain the label and address
 	HtPP *vm_local_label_table; ///< Hashtable to maintain the label and address
-
 	HtPP *ct_opcodes; ///< Hashtable to maintain address and opcodes
-
 	RzBitVector *pc; ///< Program Counter of VM
-
 	RzILOpHandler *op_handler_table; ///< Array of Handler, handler can be indexed by opcode
-
 	RzList *events; ///< List of events that has happened in the last step
+	bool big_endian; ///< Sets the endianness of the memory reads/writes operations
 };
 
 // VM operations about Variable and Value

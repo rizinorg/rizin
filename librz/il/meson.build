@@ -3,7 +3,6 @@ rz_il_sources = [
    'definitions/variable.c',
    'definitions/value.c',
    'definitions/bool.c',
-   'definitions/mem.c',
    'definitions/bag.c',
    'theory_bitv.c',
    'theory_effect.c',

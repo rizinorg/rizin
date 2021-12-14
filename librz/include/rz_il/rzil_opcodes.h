@@ -285,8 +285,8 @@ struct rzil_op_bool_inv_t {
  *  load m k is the value associated with the key k in the memory m.
  */
 struct rzil_op_load_t {
-	int mem; ///< index of the memory in VM (different from the temp_val_list)
-	RzILOp *key; ///< index of the RzBitVector key (address)
+	RzILOp *key; ///< memory index of the RzBitVector key (address)
+	ut32 len; ///< n of bits to read
 };
 
 /**
@@ -296,9 +296,8 @@ struct rzil_op_load_t {
  *  store m k x a memory m in which the key k is associated with the word x.
  */
 struct rzil_op_store_t {
-	int mem; ///< index of memory in VM
-	RzILOp *key; ///< index of the RzBitVector key (address)
-	RzILOp *value; ///< index of the RzILVal value (data) to store
+	RzILOp *key; ///< memory index of the RzBitVector key (address)
+	RzILOp *value; ///< RzILVal value (data) to store
 };
 
 typedef enum {
@@ -501,8 +500,8 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_seq(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *
 RZ_API RZ_OWN RzILOp *rz_il_op_new_blk(RZ_NONNULL RzILOp *data_effect, RZ_NONNULL RzILOp *ctrl_effect);
 RZ_API RZ_OWN RzILOp *rz_il_op_new_repeat(RZ_NONNULL RzILOp *condition, RZ_NONNULL RzILOp *data_effect);
 RZ_API RZ_OWN RzILOp *rz_il_op_new_branch(RZ_NONNULL RzILOp *condition, RZ_NULLABLE RzILOp *true_effect, RZ_NULLABLE RzILOp *false_effect);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_load(int mem, RZ_NONNULL RzILOp *key);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_store(int mem, RZ_NONNULL RzILOp *key, RZ_NONNULL RzILOp *value);
+RZ_API RZ_OWN RzILOp *rz_il_op_new_load(RZ_NONNULL RzILOp *key, ut32 len);
+RZ_API RZ_OWN RzILOp *rz_il_op_new_store(RZ_NONNULL RzILOp *key, RZ_NONNULL RzILOp *value);
 RZ_API RZ_OWN RzILOp *rz_il_op_new_invalid();
 
 #ifdef __cplusplus

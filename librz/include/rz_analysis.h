@@ -1123,6 +1123,7 @@ typedef struct rz_analysis_rzil_callbacks_t {
 
 typedef struct rz_analysis_rzil_t {
 	RzILVM *vm;
+	RzBuffer *ro_memory;
 	RzAnalysisRzilTrace *trace;
 
 	RzAnalysisRzilCallbacks cb;

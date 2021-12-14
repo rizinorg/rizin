@@ -331,13 +331,13 @@ static void il_opdmp_load(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 	if (sb) {
 		rz_strbuf_append(sb, "load(key:");
 		il_op_resolve(opx->key, sb, pj);
-		rz_strbuf_appendf(sb, ", mem:%d)", opx->mem);
+		rz_strbuf_appendf(sb, ", len:%u)", opx->len);
 	} else {
 		pj_o(pj);
 		pj_ks(pj, "opcode", "load");
 		pj_k(pj, "key");
 		il_op_resolve(opx->key, sb, pj);
-		pj_kN(pj, "mem", opx->mem);
+		pj_kn(pj, "len", opx->len);
 		pj_end(pj);
 	}
 }
@@ -350,7 +350,7 @@ static void il_opdmp_store(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 		il_op_resolve(opx->key, sb, pj);
 		rz_strbuf_append(sb, ", value:");
 		il_op_resolve(opx->value, sb, pj);
-		rz_strbuf_appendf(sb, ", mem:%d)", opx->mem);
+		rz_strbuf_appendf(sb, ")");
 	} else {
 		pj_o(pj);
 		pj_ks(pj, "opcode", "store");
@@ -358,7 +358,6 @@ static void il_opdmp_store(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 		il_op_resolve(opx->key, sb, pj);
 		pj_k(pj, "value");
 		il_op_resolve(opx->value, sb, pj);
-		pj_kN(pj, "mem", opx->mem);
 		pj_end(pj);
 	}
 }
@@ -386,14 +385,14 @@ static void il_opdmp_set(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 static void il_opdmp_let(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 	RzILOpLet *opx = op->op.let;
 	if (sb) {
-		rz_strbuf_appendf(sb, "let(v:%s%s, x:", opx->v, opx->mut ? "" : ", const");
+		rz_strbuf_appendf(sb, "let(v:%s, x:", opx->v);
 		il_op_resolve(opx->x, sb, pj);
-		rz_strbuf_append(sb, ")");
+		rz_strbuf_append(sb, opx->mut ? ")" : ", const)");
 	} else {
 		pj_o(pj);
 		pj_ks(pj, "opcode", "let");
 		pj_ks(pj, "dst", opx->v);
-		pj_kb(pj, "mutable", opx->mut);
+		pj_kb(pj, "const", !opx->mut);
 		pj_k(pj, "src");
 		il_op_resolve(opx->x, sb, pj);
 		pj_end(pj);

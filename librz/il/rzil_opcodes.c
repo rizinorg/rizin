@@ -572,20 +572,20 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_branch(RZ_NONNULL RzILOp *condition, RZ_NULLA
 /**
  * \brief op structure for bitvector
  */
-RZ_API RZ_OWN RzILOp *rz_il_op_new_load(int mem, RZ_NONNULL RzILOp *key) {
+RZ_API RZ_OWN RzILOp *rz_il_op_new_load(RZ_NONNULL RzILOp *key, ut32 len) {
 	rz_return_val_if_fail(key, NULL);
 	RzILOp *ret;
-	rz_il_op_new_2(RZIL_OP_LOAD, RzILOpLoad, load, mem, key);
+	rz_il_op_new_2(RZIL_OP_LOAD, RzILOpLoad, load, len, key);
 	return ret;
 }
 
 /**
  * \brief op structure for bitvector
  */
-RZ_API RZ_OWN RzILOp *rz_il_op_new_store(int mem, RZ_NONNULL RzILOp *key, RZ_NONNULL RzILOp *value) {
+RZ_API RZ_OWN RzILOp *rz_il_op_new_store(RZ_NONNULL RzILOp *key, RZ_NONNULL RzILOp *value) {
 	rz_return_val_if_fail(key && value, NULL);
 	RzILOp *ret;
-	rz_il_op_new_3(RZIL_OP_STORE, RzILOpStore, store, mem, key, value);
+	rz_il_op_new_2(RZIL_OP_STORE, RzILOpStore, store, key, value);
 	return ret;
 }
 

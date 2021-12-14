@@ -128,16 +128,21 @@ static void free_bind_var_val(HtPPKv *kv) {
  * initiate an empty VM
  * \param vm RzILVM, pointer to an empty VM
  * \param start_addr ut64, initiation pc address
- * \param addr_size ut32, size of the address in VM
- * \param data_size ut32, size of the minimal data unit in VM
+ * \param addr_size  ut32, size of the address in VM
+ * \param ro_memory  RzBuffer, read only memory to use for reads in the VM
  */
-RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, ut32 data_size) {
-	vm->addr_size = addr_size;
-	vm->data_size = data_size;
+RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, RzBuffer *ro_memory, bool big_endian) {
+	rz_return_val_if_fail(vm && ro_memory, false);
 
 	rz_pvector_init(&vm->vm_global_variable_list, (RzPVectorFree)rz_il_variable_free);
 	rz_pvector_init(&vm->vm_local_variable_list, (RzPVectorFree)rz_il_variable_free);
-	rz_pvector_init(&vm->vm_memory, (RzPVectorFree)rz_il_mem_free);
+
+	vm->vm_memory = rz_buf_new_sparse_overlay(ro_memory, RZ_BUF_SPARSE_WRITE_MODE_SPARSE);
+	if (!vm->vm_memory) {
+		RZ_LOG_ERROR("RzIL: cannot allocate VM memory buffer\n");
+		rz_il_vm_fini(vm);
+		return false;
+	}
 
 	vm->vm_global_value_set = rz_il_new_bag(RZ_IL_VM_MAX_VAL, (RzILBagFreeFunc)rz_il_value_free);
 	if (!vm->vm_global_value_set) {
@@ -216,6 +221,8 @@ RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, ut32 data
 
 	vm->lab_count = 0;
 	vm->val_count = 0;
+	vm->addr_size = addr_size;
+	vm->big_endian = big_endian;
 
 	vm->events = rz_list_newf((RzListFree)rz_il_event_free);
 	if (!vm->events) {
@@ -237,7 +244,9 @@ RZ_API void rz_il_vm_fini(RzILVM *vm) {
 	}
 	rz_pvector_fini(&vm->vm_global_variable_list);
 	rz_pvector_fini(&vm->vm_local_variable_list);
-	rz_pvector_fini(&vm->vm_memory);
+
+	rz_buf_free(vm->vm_memory);
+	vm->vm_memory = NULL;
 
 	ht_pp_free(vm->ct_opcodes);
 	vm->ct_opcodes = NULL;
@@ -265,15 +274,16 @@ RZ_API void rz_il_vm_fini(RzILVM *vm) {
  * Create a new empty VM
  * \param vm RzILVM, pointer to an empty VM
  * \param start_addr ut64, initiation pc address
- * \param addr_size ut32, size of the address in VM
- * \param data_size ut32, size of the minimal data unit in VM
+ * \param addr_size  ut32, size of the address in VM
+ * \param ro_memory  RzBuffer, read only memory to use for reads in the VM
  */
-RZ_API RzILVM *rz_il_vm_new(ut64 start_addr, ut32 addr_size, ut32 data_size) {
+RZ_API RzILVM *rz_il_vm_new(ut64 start_addr, ut32 addr_size, RzBuffer *ro_memory, bool big_endian) {
+	rz_return_val_if_fail(ro_memory, NULL);
 	RzILVM *vm = RZ_NEW0(RzILVM);
 	if (!vm) {
 		return NULL;
 	}
-	rz_il_vm_init(vm, start_addr, addr_size, data_size);
+	rz_il_vm_init(vm, start_addr, addr_size, ro_memory, big_endian);
 	return vm;
 }
 
@@ -289,30 +299,64 @@ RZ_API void rz_il_vm_free(RzILVM *vm) {
 	free(vm);
 }
 
-/**
- * Add a memory in VM. We design this to support multiple memory in the future
- * \param vm RzILVM, pointer to VM
- * \param min_unit_size ut32, size of minimal unit of the vm
- * \return Mem memory, return a pointer to the newly created memory
- */
-RZ_API RzILMem *rz_il_vm_add_mem(RzILVM *vm, ut32 min_unit_size) {
-	RzILMem *mem = rz_il_mem_new(min_unit_size);
-	rz_pvector_push(&vm->vm_memory, mem);
-	return mem;
+static RzBitVector *read_n_bits(RzILVM *vm, ut32 n_bits, RzBitVector *key) {
+	RzBitVector *value = rz_bv_new_zero(n_bits);
+	if (!value) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	ut64 address = rz_bv_to_ut64(key);
+	ut32 n_bytes = rz_bv_len_bytes(value);
+
+	ut8 *data = calloc(n_bytes, 1);
+	if (!data) {
+		rz_warn_if_reached();
+		return value;
+	}
+
+	// we ignore bad reads.
+	rz_buf_read_at(vm->vm_memory, address, data, n_bytes);
+	if (vm->big_endian) {
+		value = rz_bv_new_from_bytes_be(data, 0, n_bits);
+	} else {
+		value = rz_bv_new_from_bytes_le(data, 0, n_bits);
+	}
+	free(data);
+	return value;
+}
+
+static void write_n_bits(RzILVM *vm, RzBitVector *value, RzBitVector *key) {
+	ut64 address = rz_bv_to_ut64(key);
+	ut32 n_bytes = rz_bv_len_bytes(value);
+
+	ut8 *data = calloc(n_bytes, 1);
+	if (!data) {
+		rz_warn_if_reached();
+		return;
+	}
+
+	if (vm->big_endian) {
+		rz_bv_set_to_bytes_be(value, data);
+	} else {
+		rz_bv_set_to_bytes_le(value, data);
+	}
+
+	// we ignore bad writes.
+	rz_buf_write_at(vm->vm_memory, address, data, n_bytes);
+	free(data);
 }
 
 /**
  * Load data from memory by given key and generates an RZIL_EVENT_MEM_READ event
- * \param vm RzILVM, pointer to VM
- * \param mem_index ut32, index to choose a memory
- * \param key RzBitVector, aka address, a key to load data from memory
- * \return val Bitvector, data at the address, has `vm->min_unit_size` length
+ * \param  vm     RzILVM, pointer to VM
+ * \param  n_bits ut32, how many bits to read from memory
+ * \param  key    RzBitVector, aka address, a key to load data from memory
+ * \return val    Bitvector, data at the address, has `vm->min_unit_size` length
  */
-RZ_API RzBitVector *rz_il_vm_mem_load(RzILVM *vm, ut32 mem_index, RzBitVector *key) {
-	rz_return_val_if_fail(vm && key && mem_index < rz_pvector_len(&vm->vm_memory), NULL);
-	RzBitVector *value = NULL;
-	RzILMem *m = rz_pvector_at(&vm->vm_memory, mem_index);
-	value = rz_il_mem_load(m, key);
+RZ_API RzBitVector *rz_il_vm_mem_load(RzILVM *vm, ut32 n_bits, RzBitVector *key) {
+	rz_return_val_if_fail(vm && key && n_bits > 0, NULL);
+	RzBitVector *value = read_n_bits(vm, n_bits, key);
 	rz_il_vm_event_add(vm, rz_il_event_mem_read_new(key, value));
 	return value;
 }
@@ -321,40 +365,17 @@ RZ_API RzBitVector *rz_il_vm_mem_load(RzILVM *vm, ut32 mem_index, RzBitVector *k
  * Store data to memory by key, will create a key-value pair
  * or update the key-value pair if key existed; also generates
  * an RZIL_EVENT_MEM_WRITE event
- * \param vm RzILVM* pointer to VM
- * \param mem_index ut32, index to choose a memory
- * \param key RzBitVector, aka address, a key to store data from memory
- * \param value RzBitVector, aka value to store in memory
- * \return mem Mem, the memory you store data to
+ * \param  vm    RzILVM* pointer to VM
+ * \param  key   RzBitVector, aka address, a key to store data from memory
+ * \param  value RzBitVector, aka value to store in memory
  */
-RZ_API RzILMem *rz_il_vm_mem_store(RzILVM *vm, ut32 mem_index, RzBitVector *key, RzBitVector *value) {
-	rz_return_val_if_fail(vm && key && mem_index < rz_pvector_len(&vm->vm_memory), NULL);
-	RzILMem *m = rz_pvector_at(&vm->vm_memory, mem_index);
-	RzBitVector *old_value = rz_il_mem_load(m, key);
+RZ_API void rz_il_vm_mem_store(RzILVM *vm, RzBitVector *key, RzBitVector *value) {
+	rz_return_if_fail(vm && key && value);
+	RzBitVector *old_value = read_n_bits(vm, value->len, key);
+
+	write_n_bits(vm, value, key);
 	rz_il_vm_event_add(vm, rz_il_event_mem_write_new(key, old_value, value));
 	rz_bv_free(old_value);
-	return rz_il_mem_store(m, key, value);
-}
-
-/**
- * Store a Bitvector with value ZERO to memory by key, will create a key-value pair
- * or update the key-value pair if key existed.
- * \param vm RzILVM* pointer to VM
- * \param mem_index ut32, index to choose a memory
- * \param key RzBitVector, aka address, a key to store data from memory
- * \param value RzBitVector**, aka the ZERO just stored in memory
- * \return mem Mem, the memory you store data to
- */
-RZ_API RzILMem *rz_il_vm_mem_store_zero(RzILVM *vm, ut32 mem_index, RzBitVector *key, RzBitVector **value) {
-	rz_return_val_if_fail(vm && key && mem_index < rz_pvector_len(&vm->vm_memory), NULL);
-	RzILMem *m = rz_pvector_at(&vm->vm_memory, mem_index);
-	RzBitVector *zero = rz_bv_new(m->min_unit_size);
-	RzBitVector *old_value = rz_il_mem_load(m, key);
-	rz_bv_free(old_value);
-	if (value) {
-		*value = zero;
-	}
-	return rz_il_mem_store(m, key, zero);
 }
 
 /**

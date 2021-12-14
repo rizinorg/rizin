@@ -15,6 +15,7 @@ static int getid(char ch) {
 }
 
 /* New IL uplift bf */
+#define BF_ADDR_MEM   0x10000
 #define BF_ADDR_SIZE  64
 #define BF_ALIGN_SIZE 8
 #define BF_ID_STACK   32
@@ -38,27 +39,17 @@ typedef struct bf_context_t {
 static void bf_syscall_read(RzILVM *vm, RzILOp *op) {
 	ut8 c = getc(stdin);
 	RzBitVector *bv = rz_bv_new_from_ut64(BF_ALIGN_SIZE, c);
-
-	RzILVal *ptr_val = rz_il_value_dup(rz_il_hash_find_val_by_name(vm, "ptr"));
-
-	rz_il_vm_mem_store(vm, 0, ptr_val->data.bv, bv);
-	rz_il_value_free(ptr_val);
+	RzILVal *ptr_val = rz_il_hash_find_val_by_name(vm, "ptr");
+	rz_il_vm_mem_store(vm, ptr_val->data.bv, bv);
+	rz_bv_free(bv);
 }
 
 static void bf_syscall_write(RzILVM *vm, RzILOp *op) {
-	RzILVal *ptr_val = rz_il_value_dup(rz_il_hash_find_val_by_name(vm, "ptr"));
-
-	RzBitVector *bv = rz_il_vm_mem_load(vm, 0, ptr_val->data.bv);
-	if (!bv) {
-		// default write nothing
-		return;
-	}
+	RzILVal *ptr_val = rz_il_hash_find_val_by_name(vm, "ptr");
+	RzBitVector *bv = rz_il_vm_mem_load(vm, BF_ALIGN_SIZE, ptr_val->data.bv);
 	ut32 c = rz_bv_to_ut32(bv);
-
-	rz_il_value_free(ptr_val);
-	rz_bv_free(bv);
-
 	putchar(c);
+	rz_bv_free(bv);
 }
 
 ut64 pop_astack(BfStack *stack) {
@@ -101,18 +92,18 @@ RzPVector *bf_left_arrow(RzILVM *vm, ut64 id) {
 RzPVector *bf_inc(RzILVM *vm, ut64 id) {
 	// (store mem (var ptr) (+ (load (var ptr)) (int 1)))
 	// mem == 0 because is the only mem in bf
-	RzILOp *load = rz_il_op_new_load(0, bf_il_ptr());
+	RzILOp *load = rz_il_op_new_load(bf_il_ptr(), BF_ALIGN_SIZE);
 	RzILOp *add = rz_il_op_new_add(load, bf_il_one(BF_ALIGN_SIZE));
-	RzILOp *store = rz_il_op_new_store(0, bf_il_ptr(), add);
+	RzILOp *store = rz_il_op_new_store(bf_il_ptr(), add);
 	return rz_il_make_oplist(1, store);
 }
 
 RzPVector *bf_dec(RzILVM *vm, ut64 id) {
 	// (store mem (var ptr) (- (load (var ptr)) (int 1)))
 	// mem == 0 because is the only mem in bf
-	RzILOp *load = rz_il_op_new_load(0, bf_il_ptr());
+	RzILOp *load = rz_il_op_new_load(bf_il_ptr(), BF_ALIGN_SIZE);
 	RzILOp *sub = rz_il_op_new_sub(load, bf_il_one(BF_ALIGN_SIZE));
-	RzILOp *store = rz_il_op_new_store(0, bf_il_ptr(), sub);
+	RzILOp *store = rz_il_op_new_store(bf_il_ptr(), sub);
 	return rz_il_make_oplist(1, store);
 }
 
@@ -162,7 +153,7 @@ RzPVector *bf_llimit(RzILVM *vm, BfContext *ctx, ut64 id, ut64 addr) {
 	free(to_free);
 
 	RzILOp *var = rz_il_op_new_var("ptr");
-	RzILOp *load = rz_il_op_new_load(0, var);
+	RzILOp *load = rz_il_op_new_load(var, BF_ALIGN_SIZE);
 
 	// goto ]
 	RzILOp *goto_ = rz_il_op_new_goto(dst_label->label_id);
@@ -202,7 +193,7 @@ RzPVector *bf_rlimit(RzILVM *vm, BfContext *ctx, ut64 id, ut64 addr) {
 	dst_label = rz_il_vm_find_label_by_name(vm, dst_lbl_name);
 
 	RzILOp *var = rz_il_op_new_var("ptr");
-	RzILOp *load = rz_il_op_new_load(0, var);
+	RzILOp *load = rz_il_op_new_load(var, BF_ALIGN_SIZE);
 
 	// goto [
 	RzILOp *goto_ = rz_il_op_new_goto(dst_label->label_id);
@@ -218,8 +209,11 @@ static bool bf_specific_init(RzAnalysisRzil *rzil) {
 	RzILVM *vm = rzil->vm;
 
 	// load reg
-	// TODO use info of reg profile
 	rz_il_vm_add_reg(vm, "ptr", BF_ADDR_SIZE);
+
+	// set ptr to BF_ADDR_MEM
+	RzILVal *ptr = rz_il_hash_find_val_by_name(vm, "ptr");
+	rz_bv_set_from_ut64(ptr->data.bv, BF_ADDR_MEM);
 
 	RzILEffectLabel *read_label = rz_il_vm_create_label_lazy(vm, "read");
 	RzILEffectLabel *write_label = rz_il_vm_create_label_lazy(vm, "write");
@@ -229,7 +223,6 @@ static bool bf_specific_init(RzAnalysisRzil *rzil) {
 	write_label->type = EFFECT_LABEL_HOOK;
 
 	// init mem
-	rz_il_vm_add_mem(vm, vm->data_size);
 	rzil->inited = true;
 
 	return true;
@@ -284,12 +277,11 @@ static bool bf_init_rzil(RzAnalysis *analysis) {
 	}
 
 	// TODO : get some arguments from rizin, predefined some for now.
-	int addrsize = BF_ADDR_SIZE;
-	int datasize = BF_ALIGN_SIZE;
+	ut32 addrsize = BF_ADDR_SIZE;
 	ut64 start_addr = 0;
 
 	// create core theory VM
-	if (!rz_il_vm_init(rzil->vm, start_addr, addrsize, datasize)) {
+	if (!rz_il_vm_init(rzil->vm, start_addr, addrsize, rzil->ro_memory, false)) {
 		RZ_LOG_ERROR("RzIL: brainfuck: failed to initialize VM\n");
 		return false;
 	}

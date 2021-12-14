@@ -5,10 +5,6 @@
 #include <rz_util.h>
 #include "minunit.h"
 
-static bool is_equal_bv(RzBitVector *x, RzBitVector *y) {
-	return rz_bv_cmp(x, y) == 0;
-}
-
 static bool is_equal_bool(RzILBool *x, RzILBool *y) {
 	return x->b == y->b;
 }
@@ -90,37 +86,9 @@ bool test_rzil_bool_logic(void) {
 	mu_end;
 }
 
-static bool test_rzil_mem() {
-	RzILMem *mem = rz_il_mem_new(8);
-	mu_assert_notnull(mem, "Create mem");
-
-	RzBitVector *addr = rz_bv_new_from_ut64(16, 121);
-	RzBitVector *valid_data = rz_bv_new_from_ut64(8, 177);
-	RzBitVector *invalid_data = rz_bv_new_from_ut64(4, 6);
-
-	RzILMem *result = rz_il_mem_store(mem, addr, valid_data);
-	mu_assert_eq(result, mem, "Store successfully");
-
-	result = rz_il_mem_store(mem, addr, invalid_data);
-	mu_assert_null(result, "Unmatched type");
-
-	RzBitVector *data = rz_il_mem_load(mem, addr);
-	mu_assert("Load correct data", is_equal_bv(data, valid_data));
-	rz_bv_free(data);
-
-	rz_bv_free(valid_data);
-	rz_bv_free(invalid_data);
-	rz_bv_free(addr);
-	rz_il_mem_free(mem);
-
-	mu_end;
-}
-
 bool all_tests() {
 	mu_run_test(test_rzil_bool_init);
 	mu_run_test(test_rzil_bool_logic);
-
-	mu_run_test(test_rzil_mem);
 	return tests_passed != tests_run;
 }
 

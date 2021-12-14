@@ -525,6 +525,7 @@ RZ_API void rz_io_bind(RzIO *io, RzIOBind *bnd) {
 
 	bnd->io = io;
 	bnd->init = true;
+	bnd->fd_get_current = rz_io_fd_get_current;
 	bnd->desc_use = rz_io_use_fd;
 	bnd->desc_get = rz_io_desc_get;
 	bnd->desc_size = rz_io_desc_size;
