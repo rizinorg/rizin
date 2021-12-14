@@ -301,8 +301,6 @@ static const char *help_msg_af[] = {
 	"af+", " addr name [type] [diff]", "hand craft a function (requires afb+)",
 	"af-", " [addr]", "clean all function analysis data (or function at addr)",
 	"afa", "", "analyze function arguments in a call (afal honors dbg.funcarg)",
-	"afb+", " fcnA bbA sz [j] [f] ([t]( [d]))", "add bb to function @ fcnaddr",
-	"afb", "[?] [addr]", "List basic blocks of given function",
 	"afB", " 16", "set current function as thumb (change asm.bits)",
 	"afC[lc]", " ([addr])@[addr]", "calculate the Cycles (afC) or Cyclomatic Complexity (afCc)",
 	"afc", "[?] type @[addr]", "set calling convention for function",
@@ -322,24 +320,6 @@ static const char *help_msg_af[] = {
 	"afu", " addr", "resize and analyze function from current address until addr",
 	"afv[absrx]", "?", "manipulate args, registers and variables in function",
 	"afx", "", "list function references",
-	NULL
-};
-
-static const char *help_msg_afb[] = {
-	"Usage:", "afb", " List basic blocks of given function",
-	".afbr-", "", "Set breakpoint on every return address of the function",
-	".afbr-*", "", "Remove breakpoint on every return address of the function",
-	"afb", " [addr]", "list basic blocks of function",
-	"afb.", " [addr]", "show info of current basic block",
-	"afb=", "", "display ascii-art bars for basic block regions",
-	"afb+", " fcn_at bbat bbsz [jump] [fail] ([diff])", "add basic block by hand",
-	"afbc", " [addr] [color(ut32)]", "set a color for the bb at a given address",
-	"afbe", " bbfrom bbto", "add basic-block edge for switch-cases",
-	"afbi", "[j]", "print current basic block information",
-	"afbj", " [addr]", "show basic blocks information in json",
-	"afbr", "", "Show addresses of instructions which leave the function",
-	"afbt", "", "Show basic blocks of current function in a table",
-	"afB", " [bits]", "define asm.bits for the given function",
 	NULL
 };
 
@@ -1992,109 +1972,6 @@ static void analysis_bb_list(RzCore *core, const char *input) {
 	}
 }
 
-static bool analysis_bb_edge(RzCore *core, const char *input) {
-	// "afbe" switch-bb-addr case-bb-addr
-	char *arg = strdup(rz_str_trim_head_ro(input));
-	char *sp = strchr(arg, ' ');
-	bool ret = false;
-	if (sp) {
-		*sp++ = 0;
-		ut64 switch_addr = rz_num_math(core->num, arg);
-		ut64 case_addr = rz_num_math(core->num, sp);
-		RzList *blocks = rz_analysis_get_blocks_in(core->analysis, switch_addr);
-		if (blocks && !rz_list_empty(blocks)) {
-			rz_analysis_block_add_switch_case(rz_list_first(blocks), switch_addr, 0, case_addr);
-			ret = true;
-		}
-		rz_list_free(blocks);
-	}
-	free(arg);
-	return ret;
-}
-
-static bool analysis_fcn_del_bb(RzCore *core, const char *input) {
-	ut64 addr = rz_num_math(core->num, input);
-	if (!addr) {
-		addr = core->offset;
-	}
-	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, -1);
-	if (fcn) {
-		if (!strcmp(input, "*")) {
-			while (!rz_list_empty(fcn->bbs)) {
-				rz_analysis_function_remove_block(fcn, rz_list_first(fcn->bbs));
-			}
-		} else {
-			RzAnalysisBlock *b;
-			RzListIter *iter;
-			rz_list_foreach (fcn->bbs, iter, b) {
-				if (b->addr == addr) {
-					rz_analysis_function_remove_block(fcn, b);
-					return true;
-				}
-			}
-			eprintf("Cannot find basic block\n");
-		}
-	} else {
-		eprintf("Cannot find function\n");
-	}
-	return false;
-}
-
-static int analysis_fcn_add_bb(RzCore *core, const char *input) {
-	// fcn_addr bb_addr bb_size [jump] [fail]
-	char *ptr;
-	const char *ptr2 = NULL;
-	ut64 fcnaddr = -1LL, addr = -1LL;
-	ut64 size = 0LL;
-	ut64 jump = UT64_MAX;
-	ut64 fail = UT64_MAX;
-	RzAnalysisFunction *fcn = NULL;
-	RzAnalysisDiff *diff = NULL;
-
-	while (*input == ' ')
-		input++;
-	ptr = strdup(input);
-
-	switch (rz_str_word_set0(ptr)) {
-	case 6:
-		ptr2 = rz_str_word_get0(ptr, 6);
-		if (!(diff = rz_analysis_diff_new())) {
-			eprintf("error: Cannot init RzAnalysisDiff\n");
-			free(ptr);
-			return false;
-		}
-		if (ptr2[0] == 'm') {
-			diff->type = RZ_ANALYSIS_DIFF_TYPE_MATCH;
-		} else if (ptr2[0] == 'u') {
-			diff->type = RZ_ANALYSIS_DIFF_TYPE_UNMATCH;
-		}
-	case 5: // get fail
-		fail = rz_num_math(core->num, rz_str_word_get0(ptr, 4));
-	case 4: // get jump
-		jump = rz_num_math(core->num, rz_str_word_get0(ptr, 3));
-	case 3: // get size
-		size = rz_num_math(core->num, rz_str_word_get0(ptr, 2));
-	case 2: // get addr
-		addr = rz_num_math(core->num, rz_str_word_get0(ptr, 1));
-	case 1: // get fcnaddr
-		fcnaddr = rz_num_math(core->num, rz_str_word_get0(ptr, 0));
-	}
-	fcn = rz_analysis_get_function_at(core->analysis, fcnaddr);
-	if (fcn) {
-		if (!rz_analysis_fcn_add_bb(core->analysis, fcn, addr, size, jump, fail, diff))
-		// if (!rz_analysis_fcn_add_bb_raw (core->analysis, fcn, addr, size, jump, fail, type, diff))
-		{
-			eprintf("afb+: Cannot add basic block at 0x%08" PFMT64x "\n", addr);
-		}
-	} else {
-		eprintf("afb+ Cannot find function at 0x%" PFMT64x " from 0x%08" PFMT64x " -> 0x%08" PFMT64x "\n",
-			fcnaddr, addr, jump);
-	}
-	rz_analysis_diff_free(diff);
-	free(ptr);
-	return true;
-}
-
 static void rz_core_analysis_nofunclist(RzCore *core, const char *input) {
 	int minlen = (int)(input[0] == ' ') ? rz_num_math(core->num, input + 1) : 16;
 	ut64 code_size = rz_num_get(core->num, "$SS");
@@ -2710,68 +2587,6 @@ RZ_IPI int rz_cmd_analysis_fcn(void *data, const char *input) {
 			}
 		} else {
 			eprintf("Usage: afB [bits]\n");
-		}
-		break;
-	case 'b': // "afb"
-		switch (input[1]) {
-		case '-': // "afb-"
-			analysis_fcn_del_bb(core, input + 2);
-			break;
-		case 'e': // "afbe"
-			analysis_bb_edge(core, input + 2);
-			break;
-		case 'r': { // "afbr"
-			char *sp = strchr(input + 1, ' ');
-			const char *arg = sp ? rz_str_trim_head_ro(sp) : NULL;
-			ut64 addr = arg ? rz_num_math(core->num, arg) : core->offset;
-			RzList *l = rz_analysis_get_functions_in(core->analysis, addr);
-			if (rz_list_empty(l)) {
-				eprintf("No functions at 0x%" PFMT64x, addr);
-				break;
-			}
-			RzAnalysisFunction *fcn = rz_list_first(l);
-			rz_core_analysis_fcn_returns(core, fcn);
-			break;
-		}
-		case '=': { // "afb="
-			char *sp = strchr(input + 1, ' ');
-			const char *arg = sp ? rz_str_trim_head_ro(sp) : NULL;
-			ut64 addr = arg ? rz_num_math(core->num, arg) : core->offset;
-			RzList *l = rz_analysis_get_functions_in(core->analysis, addr);
-			if (rz_list_empty(l)) {
-				eprintf("No functions at 0x%" PFMT64x, addr);
-				break;
-			}
-			RzAnalysisFunction *fcn = rz_list_first(l);
-			rz_core_analysis_bbs_asciiart(core, fcn);
-			break;
-		}
-		case '+': // "afb+"
-			analysis_fcn_add_bb(core, input + 2);
-			break;
-		case 'c': // "afbc"
-		{
-			const char *ptr = input + 2;
-			ut64 addr = rz_num_math(core->num, ptr);
-			ut32 color;
-			ptr = strchr(ptr, ' ');
-			if (ptr) {
-				ptr = strchr(ptr + 1, ' ');
-				if (ptr) {
-					color = rz_num_math(core->num, ptr + 1);
-					RzAnalysisBlock *block = rz_analysis_find_most_relevant_block_in(core->analysis, addr);
-					if (block) {
-						block->colorize = color;
-					} else {
-						eprintf("No basic block at 0x%08" PFMT64x "\n", addr);
-					}
-				}
-			}
-		} break;
-		default:
-		case '?': // "afb?"
-			rz_core_cmd_help(core, help_msg_afb);
-			break;
 		}
 		break;
 	case 'n': // "afn"
