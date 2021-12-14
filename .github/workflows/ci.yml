@@ -834,7 +834,7 @@ jobs:
         cd .github/cmake_test
         mkdir build && cd build
         cmake ..
-        make
+        msbuild RizinCMakeTest.sln
         .\rizin_cmake_test
 
   create-release:
