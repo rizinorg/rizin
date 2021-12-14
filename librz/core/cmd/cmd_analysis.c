@@ -9644,4 +9644,3 @@ RZ_IPI RzCmdStatus rz_rzil_vm_status_handler(RzCore *core, int argc, const char 
 	rz_core_analysis_rzil_vm_status(core, argc > 1 ? argv[1] : NULL, mode);
 	return RZ_CMD_STATUS_OK;
 }
-

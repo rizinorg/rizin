@@ -79,8 +79,8 @@ static RzILOpHandler op_handler_table_default[RZIL_OP_MAX] = {
 	rz_il_handler_logical_xor, /* RZIL_OP_LOGXOR */
 	rz_il_handler_shiftr, /* RZIL_OP_SHIFTR */
 	rz_il_handler_shiftl, /* RZIL_OP_SHIFTL */
-	rz_il_handler_unimplemented, // &rz_il_handler_sle, /* RZIL_OP_SLE */
-	rz_il_handler_unimplemented, // &rz_il_handler_ule, /* RZIL_OP_ULE */
+	rz_il_handler_sle, /* RZIL_OP_SLE */
+	rz_il_handler_ule, /* RZIL_OP_ULE */
 	rz_il_handler_cast, /* RZIL_OP_CAST */
 	rz_il_handler_unimplemented, // &rz_il_handler_concat, /* RZIL_OP_CONCAT */
 	rz_il_handler_append, /* RZIL_OP_APPEND */
