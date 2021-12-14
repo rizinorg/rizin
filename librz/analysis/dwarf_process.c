@@ -1413,17 +1413,17 @@ static void parse_function(Context *ctx, ut64 idx) {
 		switch (die->attr_values[i].attr_name) {
 		case DW_AT_name:
 			if (!get_linkage_name || !has_linkage_name) {
-				fcn.name = val->string.content;
+				fcn.name = val->kind == DW_AT_KIND_STRING ? val->string.content : fcn.name;
 			}
 			break;
 		case DW_AT_linkage_name:
 		case DW_AT_MIPS_linkage_name:
-			fcn.name = val->string.content;
+			fcn.name = val->kind == DW_AT_KIND_STRING ? val->string.content : fcn.name;
 			has_linkage_name = true;
 			break;
 		case DW_AT_low_pc:
 		case DW_AT_entry_pc:
-			fcn.addr = val->address;
+			fcn.addr = val->kind == DW_AT_KIND_ADDRESS ? val->address : fcn.addr;
 			break;
 		case DW_AT_specification: /* reference to declaration DIE with more info */
 		{
