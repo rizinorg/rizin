@@ -382,6 +382,7 @@ static const RzCmdDescArg zign_add_fcn_args[3];
 static const RzCmdDescArg zign_load_sdb_args[2];
 static const RzCmdDescArg zign_save_sdb_args[2];
 static const RzCmdDescArg zign_load_gzip_sdb_args[2];
+static const RzCmdDescArg zign_flirt_create_args[2];
 static const RzCmdDescArg zign_flirt_dump_args[2];
 static const RzCmdDescArg zign_flirt_scan_args[2];
 static const RzCmdDescArg zign_cmp_args[2];
@@ -8621,6 +8622,19 @@ static const RzCmdDescHelp zign_load_gzip_sdb_help = {
 static const RzCmdDescHelp zf_help = {
 	.summary = "Manage FLIRT signatures",
 };
+static const RzCmdDescArg zign_flirt_create_args[] = {
+	{
+		.name = "filename",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp zign_flirt_create_help = {
+	.summary = "Create a FLIRT file (.pac or .sig)",
+	.args = zign_flirt_create_args,
+};
+
 static const RzCmdDescArg zign_flirt_dump_args[] = {
 	{
 		.name = "filename",
@@ -8630,7 +8644,7 @@ static const RzCmdDescArg zign_flirt_dump_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp zign_flirt_dump_help = {
-	.summary = "Open FLIRT file and dump",
+	.summary = "Open a FLIRT file (.pac or .sig) and dumps its contents",
 	.args = zign_flirt_dump_args,
 };
 
@@ -8643,7 +8657,7 @@ static const RzCmdDescArg zign_flirt_scan_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp zign_flirt_scan_help = {
-	.summary = "Open FLIRT file and scan",
+	.summary = "Open a FLIRT file (.pac or .sig) and tries to apply the signatures to the loaded binary",
 	.args = zign_flirt_scan_args,
 };
 
@@ -11126,6 +11140,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *zf_cd = rz_cmd_desc_group_new(core->rcmd, z_cd, "zf", NULL, NULL, &zf_help);
 	rz_warn_if_fail(zf_cd);
+	RzCmdDesc *zign_flirt_create_cd = rz_cmd_desc_argv_new(core->rcmd, zf_cd, "zfc", rz_zign_flirt_create_handler, &zign_flirt_create_help);
+	rz_warn_if_fail(zign_flirt_create_cd);
+
 	RzCmdDesc *zign_flirt_dump_cd = rz_cmd_desc_argv_new(core->rcmd, zf_cd, "zfd", rz_zign_flirt_dump_handler, &zign_flirt_dump_help);
 	rz_warn_if_fail(zign_flirt_dump_cd);
 
