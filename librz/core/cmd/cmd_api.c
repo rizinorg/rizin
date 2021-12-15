@@ -944,9 +944,9 @@ static size_t fill_args(RzStrBuf *sb, const RzCmdDesc *cd) {
 		}
 		if (arg->flags & RZ_CMD_ARG_FLAG_ARRAY) {
 			has_array = true;
-			rz_strbuf_appendf(sb, "<%s0>", arg->name);
+			rz_strbuf_appendf(sb, "<%s1>", arg->name);
 			len += strlen(arg->name) + 3;
-			rz_strbuf_appendf(sb, " [<%s1> ...]", arg->name);
+			rz_strbuf_appendf(sb, " [<%s2> ...]", arg->name);
 			len += strlen(arg->name) + 10;
 		} else if (arg->flags & RZ_CMD_ARG_FLAG_OPTION) {
 			rz_strbuf_appendf(sb, "-%s", arg->name);
