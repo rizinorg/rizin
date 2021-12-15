@@ -833,8 +833,8 @@ jobs:
         $env:PKG_CONFIG_PATH
         cd .github/cmake_test
         mkdir build && cd build
-        cmake ..
-        msbuild RizinCMakeTest.sln
+        cmake -G Ninja ..
+        ninja
         .\rizin_cmake_test
 
   create-release:
