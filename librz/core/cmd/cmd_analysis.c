@@ -723,14 +723,6 @@ static int cmd_an(RzCore *core, bool use_json, const char *name) {
 	return ret;
 }
 
-static void function_delete_var_cmd(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisVarKind kind, const char *id) {
-	if (*id == '*') {
-		rz_analysis_function_delete_vars_by_kind(fcn, kind);
-	} else {
-		rz_core_analysis_function_delete_var(core, fcn, kind, id);
-	}
-}
-
 static void print_trampolines(RzCore *core, ut64 a, ut64 b, size_t element_size) {
 	int i;
 	for (i = 0; i < core->blocksize; i += element_size) {
@@ -7186,9 +7178,9 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_del_handler(RzCore *core, int argc,
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	function_delete_var_cmd(core, fcn, RZ_ANALYSIS_VAR_KIND_SPV, argv[1]);
-	function_delete_var_cmd(core, fcn, RZ_ANALYSIS_VAR_KIND_BPV, argv[1]);
-	function_delete_var_cmd(core, fcn, RZ_ANALYSIS_VAR_KIND_REG, argv[1]);
+	rz_core_analysis_function_delete_var(core, fcn, RZ_ANALYSIS_VAR_KIND_SPV, argv[1]);
+	rz_core_analysis_function_delete_var(core, fcn, RZ_ANALYSIS_VAR_KIND_BPV, argv[1]);
+	rz_core_analysis_function_delete_var(core, fcn, RZ_ANALYSIS_VAR_KIND_REG, argv[1]);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -7410,14 +7402,41 @@ static RzCmdStatus analysis_function_vars_kind_list(RzCore *core, RzAnalysisFunc
 	return RZ_CMD_STATUS_OK;
 }
 
-static RzCmdStatus analysis_function_vars_del(RzCore *core, RzAnalysisVarKind kind, const char *varname) {
-	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
+static RzAnalysisFunction *analysis_get_function_in(RzAnalysis *analysis, ut64 offset) {
+	RzAnalysisFunction *fcn = NULL;
+	RzList *list = rz_analysis_get_functions_in(analysis, offset);
+	if (rz_list_empty(list)) {
+		RZ_LOG_ERROR("No function found\n");
+		goto exit;
+	}
+	if (rz_list_length(list) > 1) {
+		RZ_LOG_ERROR("Multiple functions found\n");
+		goto exit;
+	}
+	fcn = rz_list_first(list);
 	if (!fcn) {
-		eprintf("Cannot find function in 0x%08" PFMT64x "\n", core->offset);
+		RZ_LOG_ERROR("No function found\n");
+	}
+exit:
+	rz_list_free(list);
+	return fcn;
+}
+
+static RzCmdStatus analysis_function_vars_del(RzCore *core, RzAnalysisVarKind kind, const char *varname) {
+	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, core->offset);
+	if (!fcn) {
 		return RZ_CMD_STATUS_ERROR;
 	}
+	rz_core_analysis_function_delete_var(core, fcn, kind, varname);
+	return RZ_CMD_STATUS_OK;
+}
 
-	function_delete_var_cmd(core, fcn, kind, varname);
+static RzCmdStatus analysis_function_vars_del_all(RzCore *core, RzAnalysisVarKind kind) {
+	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, core->offset);
+	if (!fcn) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_analysis_function_delete_vars_by_kind(fcn, kind);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -7478,7 +7497,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_bp_del_handler(RzCore *core, int ar
 }
 
 RZ_IPI RzCmdStatus rz_analysis_function_vars_bp_del_all_handler(RzCore *core, int argc, const char **argv) {
-	return analysis_function_vars_del(core, RZ_ANALYSIS_VAR_KIND_BPV, "*");
+	return analysis_function_vars_del_all(core, RZ_ANALYSIS_VAR_KIND_BPV);
 }
 
 RZ_IPI RzCmdStatus rz_analysis_function_vars_bp_getref_handler(RzCore *core, int argc, const char **argv) {
@@ -7532,7 +7551,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_regs_del_handler(RzCore *core, int 
 }
 
 RZ_IPI RzCmdStatus rz_analysis_function_vars_regs_del_all_handler(RzCore *core, int argc, const char **argv) {
-	return analysis_function_vars_del(core, RZ_ANALYSIS_VAR_KIND_REG, "*");
+	return analysis_function_vars_del_all(core, RZ_ANALYSIS_VAR_KIND_REG);
 }
 
 RZ_IPI RzCmdStatus rz_analysis_function_vars_regs_getref_handler(RzCore *core, int argc, const char **argv) {
@@ -8611,26 +8630,6 @@ RZ_IPI RzCmdStatus rz_analysis_function_info_handler(RzCore *core, int argc, con
 	}
 	rz_list_free(list);
 	return res;
-}
-
-static RzAnalysisFunction *analysis_get_function_in(RzAnalysis *analysis, ut64 offset) {
-	RzAnalysisFunction *fcn = NULL;
-	RzList *list = rz_analysis_get_functions_in(analysis, offset);
-	if (rz_list_empty(list)) {
-		RZ_LOG_ERROR("No function found\n");
-		goto exit;
-	}
-	if (rz_list_length(list) > 1) {
-		RZ_LOG_ERROR("Multiple functions found\n");
-		goto exit;
-	}
-	fcn = rz_list_first(list);
-	if (!fcn) {
-		RZ_LOG_ERROR("No function found\n");
-	}
-exit:
-	rz_list_free(list);
-	return fcn;
 }
 
 RZ_IPI RzCmdStatus rz_analysis_function_import_list_handler(RzCore *core, int argc, const char **argv) {
