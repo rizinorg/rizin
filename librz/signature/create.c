@@ -9,6 +9,8 @@
 #include <rz_flirt.h>
 #include <rz_util.h>
 
+#define starts_with_flag(b, c) (!strncmp(b, c, strlen(c)))
+
 extern void module_free(RzFlirtModule *module);
 extern ut16 flirt_crc16(const ut8 *data_p, size_t length);
 
@@ -26,9 +28,9 @@ static inline void flirt_function_sanitize_name(RzFlirtFunction *function) {
 
 static RzFlirtFunction *flirt_function_new(const char *name, bool is_local, ut64 offset, ut64 address) {
 	if (name) {
-		if (rz_str_startswith_const(name, "sym.")) {
+		if (starts_with_flag(name, "sym.")) {
 			name += strlen("sym.");
-		} else if (rz_str_startswith_const(name, "flirt.")) {
+		} else if (starts_with_flag(name, "flirt.")) {
 			name += strlen("flirt.");
 		}
 	}
@@ -380,8 +382,8 @@ RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_node_new(RZ_NONNULL RzAnalysis *analysi
 				   func->type != RZ_ANALYSIS_FCN_TYPE_LOC &&
 				   func->type != RZ_ANALYSIS_FCN_TYPE_SYM) ||
 			func_size < 1 ||
-			rz_str_startswith_const(func->name, "imp.") ||
-			rz_str_startswith_const(func->name, "sym.imp.")) {
+			starts_with_flag(func->name, "imp.") ||
+			starts_with_flag(func->name, "sym.imp.")) {
 			continue;
 		}
 

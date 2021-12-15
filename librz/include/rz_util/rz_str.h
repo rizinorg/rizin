@@ -237,7 +237,6 @@ RZ_API bool rz_str_glob(const char *str, const char *glob);
 RZ_API int rz_str_binstr2bin(const char *str, ut8 *out, int outlen);
 RZ_API char *rz_str_between(const char *str, const char *prefix, const char *suffix);
 RZ_API bool rz_str_startswith(const char *str, const char *needle);
-#define rz_str_startswith_const(b, const_str) (!strncmp(b, const_str, strlen(const_str)))
 RZ_API bool rz_str_endswith(const char *str, const char *needle);
 RZ_API bool rz_str_isnumber(const char *str);
 RZ_API const char *rz_str_last(const char *in, const char *ch);
