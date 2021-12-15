@@ -638,6 +638,7 @@ RZ_IPI RzCmdStatus rz_zign_generate_handler(RzCore *core, int argc, const char *
 RZ_IPI RzCmdStatus rz_zign_load_sdb_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_zign_save_sdb_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_zign_load_gzip_sdb_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_zign_flirt_create_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_zign_flirt_dump_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_zign_flirt_scan_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_zign_search_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);

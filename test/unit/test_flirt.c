@@ -13,7 +13,7 @@
 		RzFlirtNode *node = NULL; \
 		RzBuffer *buffer = rz_buf_new_with_string(string); \
 		mu_assert_notnull(buffer, "buffer is not null (" #name ")"); \
-		node = rz_sign_flirt_parse_string_buffer(buffer); \
+		node = rz_sign_flirt_parse_string_pattern_from_buffer(buffer, RZ_FLIRT_NODE_OPTIMIZE_NONE); \
 		mu_assert_notnull(node, "node is not null (" #name ")"); \
 		mu_assert_eq(rz_list_length(node->child_list), n_childs, "node contains one child (" #name ")"); \
 		rz_sign_flirt_node_free(node); \
