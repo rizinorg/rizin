@@ -182,7 +182,10 @@ pkgconfig_mod.generate(
 conf = configuration_data()
 conf.set('RZ_VERSION', rizin_version)
 conf.set('RIZIN_MODULE', rz_core.name())
-conf.set('RIZIN_MODULE_DEPS', ' '.join(['rz_util', 'rz_demangler', 'rz_diff', 'rz_magic', 'rz_socket', 'rz_flag', 'rz_cons', 'rz_lang', 'rz_hash', 'rz_crypto', 'rz_io', 'rz_reg', 'rz_bp', 'rz_syscall', 'rz_parse', 'rz_asm', 'rz_egg', 'rz_search', 'rz_sign', 'rz_il', 'rz_analysis', 'rz_type', 'rz_debug', 'rz_config', 'rz_bin']))
+conf.set('RIZIN_MODULE_DEPS', ' '.join(['rz_util', 'rz_demangler', 'rz_diff', 'rz_magic',
+  'rz_socket', 'rz_flag', 'rz_cons', 'rz_lang', 'rz_hash', 'rz_crypto', 'rz_io', 'rz_reg',
+  'rz_bp', 'rz_syscall', 'rz_parse', 'rz_asm', 'rz_egg', 'rz_search', 'rz_sign', 'rz_il',
+  'rz_analysis', 'rz_type', 'rz_debug', 'rz_config', 'rz_bin']))
 conf.set('PACKAGE_RELATIVE_PATH', cmake_package_relative_path)
 conf.set('INSTALL_INCDIR', rizin_incdir)
 conf.set('INSTALL_LIBDIR', rizin_libdir)
