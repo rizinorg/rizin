@@ -169,11 +169,47 @@ static bool test_rzil_vm_root_evaluation() {
 	mu_end;
 }
 
+static bool test_rzil_vm_op_set() {
+	RzILVM *vm = rz_il_vm_new(0, 8, 16);
+
+	RzILVar *var_r1 = rz_il_vm_create_global_variable(vm, "r1", RZIL_VAR_TYPE_UNK, true);
+	RzILVar *var_r2 = rz_il_vm_create_global_variable(vm, "r2", RZIL_VAR_TYPE_UNK, false);
+	rz_il_hash_bind(vm, var_r1, rz_il_vm_create_value_bitv(vm, rz_bv_new_zero(32)));
+	rz_il_hash_bind(vm, var_r2, rz_il_vm_create_value_bitv(vm, rz_bv_new_zero(32)));
+
+	// try to set immutable and fail
+	RzILOp *op = rz_il_op_new_set("r2", rz_il_op_new_bitv_from_ut64(24, 42));
+	RzILOpArgType tret = RZIL_OP_ARG_INIT;
+	rz_il_evaluate_effect(vm, op, &tret);
+	rz_il_op_free(op);
+	RzILVal *val = rz_il_hash_find_val_by_name(vm, var_r2->var_name);
+	mu_assert_notnull(val, "get val");
+	mu_assert_eq(val->type, RZIL_VAR_TYPE_BV, "unchanged bv");
+	mu_assert_eq(rz_bv_len(val->data.bv), 32, "unchanged bv len");
+	mu_assert_eq(rz_bv_to_ut64(val->data.bv), 0, "unchanged bv val");
+
+	// set mutable
+	op = rz_il_op_new_set("r1", rz_il_op_new_bitv_from_ut64(24, 42));
+	tret = RZIL_OP_ARG_INIT;
+	rz_il_evaluate_effect(vm, op, &tret);
+	rz_il_op_free(op);
+	val = rz_il_hash_find_val_by_name(vm, var_r1->var_name);
+	mu_assert_notnull(val, "get val");
+	mu_assert_eq(val->type, RZIL_VAR_TYPE_BV, "set bv");
+	mu_assert_eq(rz_bv_len(val->data.bv), 24, "set bv len");
+	mu_assert_eq(rz_bv_to_ut64(val->data.bv), 42, "set bv val");
+
+	rz_il_vm_free(vm);
+	mu_end;
+
+}
+
 bool all_tests() {
 	mu_run_test(test_rzil_vm_init);
 	mu_run_test(test_rzil_vm_basic_operation);
 	mu_run_test(test_rzil_vm_operation);
 	mu_run_test(test_rzil_vm_root_evaluation);
+	mu_run_test(test_rzil_vm_op_set);
 	return tests_passed != tests_run;
 }
 

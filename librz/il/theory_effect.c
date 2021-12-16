@@ -28,7 +28,7 @@ static RzILEvent *il_event_new_write_from_var(RzILVM *vm, RzILVar *var, RzILVal 
 	}
 
 	evt = rz_il_event_var_write_new(var->var_name, oldnum, newnum);
-	if (old_val->type == RZIL_VAR_TYPE_BOOL) {
+	if (old_val && old_val->type == RZIL_VAR_TYPE_BOOL) {
 		rz_bv_free(oldnum);
 	}
 	if (new_val->type == RZIL_VAR_TYPE_BOOL) {
@@ -37,19 +37,9 @@ static RzILEvent *il_event_new_write_from_var(RzILVM *vm, RzILVar *var, RzILVal 
 	return evt;
 }
 
-static void rz_il_perform_data(RzILVM *vm, RzILEffect *eff) {
+static void rz_il_set(RzILVM *vm, const char *var_name, bool is_local, bool is_mutable, RZ_OWN RzILVal *val) {
 	RzILVar *var = NULL;
-	RzILVal *val = NULL;
 	RzILEvent *evt = NULL;
-	const char *var_name = NULL;
-	bool is_local = false, is_mutable = false;
-
-	val = eff->data_eff->val;
-	eff->data_eff->val = NULL;
-	var_name = eff->data_eff->var_name;
-	is_local = eff->data_eff->is_local;
-	is_mutable = eff->data_eff->is_mutable;
-
 	if (is_local) {
 		var = rz_il_find_local_var_by_name(vm, var_name);
 	} else {
@@ -152,36 +142,16 @@ void *rz_il_handler_nop(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 
 void *rz_il_handler_set(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
-
 	RzILOpSet *set_op = op->op.set;
-
-	RzILEffect *eff = rz_il_effect_new(EFFECT_TYPE_DATA);
-	eff->data_eff->var_name = set_op->v;
-	eff->data_eff->is_local = false;
-	eff->data_eff->is_mutable = true;
-	eff->data_eff->val = rz_il_evaluate_val(vm, set_op->x, type);
-	rz_il_perform_data(vm, eff);
-	rz_il_effect_free(eff);
-
-	// store effect in the temporay list
+	rz_il_set(vm, set_op->v, false, true, rz_il_evaluate_val(vm, set_op->x, type));
 	*type = RZIL_OP_ARG_EFF;
 	return NULL;
 }
 
 void *rz_il_handler_let(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
-
 	RzILOpLet *let_op = op->op.let;
-
-	RzILEffect *eff = rz_il_effect_new(EFFECT_TYPE_DATA);
-	eff->data_eff->var_name = let_op->v;
-	eff->data_eff->is_local = true;
-	eff->data_eff->is_mutable = let_op->mut;
-	eff->data_eff->val = rz_il_evaluate_val(vm, let_op->x, type);
-	rz_il_perform_data(vm, eff);
-	rz_il_effect_free(eff);
-
-	// store effect in the temporay list
+	rz_il_set(vm, let_op->v, true, let_op->mut, rz_il_evaluate_val(vm, let_op->x, type));
 	*type = RZIL_OP_ARG_EFF;
 	return NULL;
 }
