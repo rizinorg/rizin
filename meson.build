@@ -115,6 +115,14 @@ platform_inc = include_directories(platform_inc)
 
 lib_name_suffix = []
 lib_name_prefix = []
+if get_option('default_library') == 'static' and cc.get_id() == 'msvc'
+  # On MSVC meson uses the .a suffix and lib as prefix, but cmake and other
+  # tools expect a .lib suffix and no prefix
+  # https://mesonbuild.com/FAQ.html#why-does-building-my-project-with-msvc-output-static-libraries-called-libfooa
+  lib_name_suffix = '.lib'
+  lib_name_prefix = ''
+endif
+
 if is_static_build
   if cc.get_id() == 'msvc'
     # Use -Db_vscrt=static_from_buildtype to avoid warnings due to multiple /M options
@@ -122,11 +130,6 @@ if is_static_build
       warning('To avoid warnings due to multiple /M options, please also set -Db_vscrt=mt or -Db_vscrt=mtd.')
       add_project_arguments('/MT', language: 'c')
     endif
-    # On MSVC meson uses the .a suffix, but cmake and other tools expect a .lib suffix
-    # On MSVC meson uses lib as prefix even on Windows static builds
-    # https://mesonbuild.com/FAQ.html#why-does-building-my-project-with-msvc-output-static-libraries-called-libfooa
-    lib_name_suffix = '.lib'
-    lib_name_prefix = ''
   else
     if cc.has_link_argument('-static')
       add_project_link_arguments('-static', language: 'c')
