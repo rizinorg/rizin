@@ -164,21 +164,7 @@ static bool test_rzil_vm_root_evaluation() {
 	mu_assert_eq(ite_val->data.b->b, true, "Return a True");
 	rz_il_value_free(ite_val);
 
-	// Catch error
-
-	RzILOp *branch_cond = rz_il_op_new_b1();
-	RzILOp *branch_true = rz_il_op_new_b1();
-	RzILOp *branch_false = NULL; // empty effect
-	RzILOp *branch_root = rz_il_op_new_branch(branch_cond, branch_true, branch_false);
-
-	type_checker = RZIL_OP_ARG_INIT;
-	RzILEffect *eff = rz_il_evaluate_effect(vm, branch_root, &type_checker);
-	mu_assert_null(eff, "Error happens");
-	mu_assert_eq(type_checker, RZIL_OP_ARG_BOOL, "you cannot convert bool type to effect, such an error will be detected");
-	rz_il_effect_free(eff);
-
 	rz_il_op_free(ite_root);
-	rz_il_op_free(branch_root);
 	rz_il_vm_free(vm);
 	mu_end;
 }
