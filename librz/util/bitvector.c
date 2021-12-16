@@ -605,6 +605,7 @@ RZ_API RZ_OWN RzBitVector *rz_bv_complement_1(RZ_NONNULL RzBitVector *bv) {
 		return NULL;
 	} else if (ret->len <= 64) {
 		ret->bits.small_u = ~bv->bits.small_u;
+		ret->bits.small_u &= UT64_MAX >> (64 - ret->len);
 		return ret;
 	}
 
@@ -1073,21 +1074,21 @@ RZ_API bool rz_bv_sle(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
  * \param y RzBitVector, operand
  * \return ret int, return 1 if x != y, return 0 if x == y
  */
-RZ_API int rz_bv_cmp(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
+RZ_API bool rz_bv_cmp(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
 	rz_return_val_if_fail(x && y, 0);
 
 	if (x->len != y->len) {
 		rz_warn_if_reached();
-		return 1;
+		return true;
 	}
 
 	for (ut32 i = 0; i < x->len; ++i) {
 		if (rz_bv_get(x, i) != rz_bv_get(y, i)) {
-			return 1;
+			return true;
 		}
 	}
 
-	return 0;
+	return false;
 }
 
 /**
@@ -1225,10 +1226,13 @@ RZ_API void rz_bv_set_from_bytes_le(RZ_NONNULL RzBitVector *bv, RZ_IN RZ_NONNULL
  */
 ut32 rz_bv_hash(RZ_NULLABLE RzBitVector *x) {
 	ut32 h = 5381;
+	if (!x) {
+		return h;
+	}
+
 	ut32 size = (x->len > 64) ? x->_elem_len : sizeof(x->bits.small_u);
 	ut8 *bits = (x->len > 64) ? x->bits.large_a : (ut8 *)&x->bits.small_u;
-
-	if (!x || !size || !bits) {
+	if (!size || !bits) {
 		return h;
 	}
 
@@ -1310,7 +1314,7 @@ RZ_API ut64 rz_bv_to_ut64(RZ_NONNULL RzBitVector *x) {
 	ut64 ret = 0;
 	for (ut32 i = 0; i < x->len && i < 64; ++i) {
 		if (rz_bv_get(x, i)) {
-			ret |= 1 << i;
+			ret |= 1ULL << i;
 		}
 	}
 	return ret;

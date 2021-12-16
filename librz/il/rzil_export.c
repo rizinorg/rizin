@@ -372,6 +372,23 @@ static void il_opdmp_set(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 	}
 }
 
+static void il_opdmp_let(RzILOp *op, RzStrBuf *sb, PJ *pj) {
+	RzILOpLet *opx = op->op.let;
+	if (sb) {
+		rz_strbuf_appendf(sb, "let(v:%s%s, x:", opx->v, opx->mut ? "" : ", const");
+		il_op_resolve(opx->x, sb, pj);
+		rz_strbuf_append(sb, ")");
+	} else {
+		pj_o(pj);
+		pj_ks(pj, "opcode", "let");
+		pj_ks(pj, "dst", opx->v);
+		pj_kb(pj, "mutable", opx->mut);
+		pj_k(pj, "src");
+		il_op_resolve(opx->x, sb, pj);
+		pj_end(pj);
+	}
+}
+
 static void il_opdmp_jmp(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 	il_op_param_1("jmp", op->op.jmp, dst);
 }
@@ -529,6 +546,9 @@ static void il_op_resolve(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 		return;
 	case RZIL_OP_SET:
 		il_opdmp_set(op, sb, pj);
+		return;
+	case RZIL_OP_LET:
+		il_opdmp_let(op, sb, pj);
 		return;
 	case RZIL_OP_JMP:
 		il_opdmp_jmp(op, sb, pj);

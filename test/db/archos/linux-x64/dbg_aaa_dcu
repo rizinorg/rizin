@@ -4,7 +4,7 @@ ARGS=-dA
 CMDS=<<EOF
 dcu main
 fd
-afi main~?name: main
+afi @ main~?name: main
 EOF
 EXPECT=<<EOF
 main

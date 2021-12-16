@@ -90,8 +90,12 @@ RZ_API char *rz_bv_as_string(RZ_NONNULL RzBitVector *bv);
 RZ_API char *rz_bv_as_hex_string(RZ_NONNULL RzBitVector *bv);
 
 RZ_API ut32 rz_bv_len(RZ_NONNULL RzBitVector *bv);
-RZ_API int rz_bv_cmp(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y);
+RZ_API bool rz_bv_cmp(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y);
 RZ_API ut32 rz_bv_hash(RZ_NULLABLE RzBitVector *x);
+#define rz_bv_new_zero(l)      rz_bv_new(l)
+#define rz_bv_new_one(l)       rz_bv_new_from_ut64(l, 1)
+#define rz_bv_new_two(l)       rz_bv_new_from_ut64(l, 2)
+#define rz_bv_new_minus_one(l) rz_bv_new_from_st64(l, -1)
 
 #ifdef __cplusplus
 }

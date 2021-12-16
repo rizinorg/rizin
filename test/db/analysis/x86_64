@@ -155,7 +155,6 @@ axc 0x100000e99 @ 0x100000e8b
 axc 0x100000eba @ 0x100000e94
 axc 0x100000e9e @ 0x100000e99
 afS 8 @ 0x100000da0
-
 EOF
 RUN
 
@@ -1820,13 +1819,13 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=afvb-ArgName
+NAME=afvb- ArgName
 FILE=bins/efi/bootia32.efi
 CMDS=<<EOF
 td "typedef void * EFI_HANDLE;"
 af
 afvb 8 ImageHandle blah @ 0x10002d8d
-afvb-ImageHandle
+afvb- ImageHandle
 afvb~?ImageHandle
 EOF
 EXPECT=<<EOF
@@ -1863,12 +1862,12 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=afvr-name
+NAME=afvr- name
 FILE=bins/efi/bootia32.efi
 CMDS=<<EOF
 af
 afvr esi myreg int @ 0x10002d8d
-afvr-myreg
+afvr- myreg
 afvr~?myreg
 EOF
 EXPECT=<<EOF
@@ -2492,7 +2491,7 @@ call-convention: amd64
 cyclomatic-cost: 4
 cyclomatic-complexity: 0
 bits: 64
-type: fcn [NEW]
+type: fcn [new]
 num-bbs: 2
 edges: 2
 end-bbs: 0
@@ -2551,7 +2550,7 @@ call-convention: amd64
 cyclomatic-cost: 6
 cyclomatic-complexity: 1
 bits: 64
-type: fcn [NEW]
+type: fcn [new]
 num-bbs: 2
 edges: 1
 end-bbs: 1
@@ -2624,7 +2623,7 @@ call-convention: amd64
 cyclomatic-cost: 7
 cyclomatic-complexity: 0
 bits: 64
-type: fcn [NEW]
+type: fcn [new]
 num-bbs: 2
 edges: 2
 end-bbs: 0
@@ -2705,7 +2704,7 @@ call-convention: amd64
 cyclomatic-cost: 7
 cyclomatic-complexity: 0
 bits: 64
-type: fcn [NEW]
+type: fcn [new]
 num-bbs: 3
 edges: 3
 end-bbs: 0
@@ -2795,7 +2794,7 @@ call-convention: amd64
 cyclomatic-cost: 9
 cyclomatic-complexity: 0
 bits: 64
-type: fcn [NEW]
+type: fcn [new]
 num-bbs: 4
 edges: 4
 end-bbs: 0
@@ -2919,7 +2918,7 @@ call-convention: amd64
 cyclomatic-cost: 4
 cyclomatic-complexity: 0
 bits: 64
-type: fcn [NEW]
+type: fcn [new]
 num-bbs: 3
 edges: 3
 end-bbs: 0
@@ -3037,9 +3036,9 @@ EXPECT=<<EOF
 |                             |
 `-----------------------------'
 
-address            size  nbbs edges    cc cost          min bound range max bound          calls locals args xref frame name
-================== ==== ===== ===== ===== ==== ================== ===== ================== ===== ====== ==== ==== ===== ====
-0x0000000000000003    9     3     3     0    4 0x0000000000000000     7 0x0000000000000007     0    0      0    0     0 fcn.00000003
+addr       name         size xrefsTo xrefsFrom calls nbbs edges cc cost noreturn min bound  range max bound  locals args frame 
+-------------------------------------------------------------------------------------------------------------------------------
+0x00000003 fcn.00000003 9    1       1         0     3    3     0  4    false    0x00000000 7     0x00000007 0      0    0
 EOF
 RUN
 
@@ -3971,5 +3970,14 @@ EXPECT=<<EOF
     ]
   }
 }
+EOF
+RUN
+
+NAME=dwarf attribute kind check
+FILE=bins/elf/dwarf_attr_check
+CMDS=<<EOF
+aaa
+EOF
+EXPECT=<<EOF
 EOF
 RUN

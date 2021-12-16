@@ -107,13 +107,27 @@ RZ_API bool rz_strbuf_setbin(RzStrBuf *sb, const ut8 *s, size_t l) {
 	return true;
 }
 
-// TODO: there's room for optimizations here
-RZ_API bool rz_strbuf_slice(RzStrBuf *sb, int from, int len) {
+/**
+ * \brief Cuts the current string into a substring
+ *
+ * \param sb    RzStrBuf to use
+ * \param from  Begin index from where to cut
+ * \param len   Length of the substring to cut
+ *
+ * \return      false when fails to to cut the current buffer into a substring
+ */
+RZ_API bool rz_strbuf_slice(RZ_NONNULL RzStrBuf *sb, int from, int len) {
 	rz_return_val_if_fail(sb && from >= 0 && len >= 0, false);
-	if (from < 1 && len >= sb->len) {
+	if (from < 0 && len >= sb->len) {
 		return false;
 	}
-	const char *s = rz_strbuf_get(sb);
+	char *s = rz_strbuf_get(sb);
+	if (!from) {
+		sb->len = len;
+		sb->ptrlen = len + 1;
+		s[len] = 0;
+		return true;
+	}
 	const char *fr = rz_str_ansi_chrn(s, from + 1);
 	const char *to = rz_str_ansi_chrn(s, from + len + 1);
 	char *r = rz_str_newlen(fr, to - fr);

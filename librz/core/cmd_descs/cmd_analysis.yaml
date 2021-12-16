@@ -285,6 +285,10 @@ commands:
                 args:
                   - name: varname
                     type: RZ_CMD_ARG_TYPE_FCN_VAR
+              - name: afvb-*
+                cname: analysis_function_vars_bp_del_all
+                summary: Delete all arguments/locals
+                args: []
               - name: afvbg
                 cname: analysis_function_vars_bp_getref
                 summary: Define var get reference
@@ -326,6 +330,10 @@ commands:
                 args:
                   - name: varname
                     type: RZ_CMD_ARG_TYPE_FCN_VAR
+              - name: afvr-*
+                cname: analysis_function_vars_regs_del_all
+                summary: Delete all register-based arguments/locals
+                args: []
               - name: afvrg
                 cname: analysis_function_vars_regs_getref
                 summary: Define register-based arguments and locals get references
@@ -383,6 +391,139 @@ commands:
                     type: RZ_CMD_ARG_TYPE_RZNUM
                   - name: addr
                     type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: afl
+        summary: List functions
+        subcommands:
+          - name: afl
+            summary: List all functions
+            cname: analysis_function_list
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_LONG
+              - RZ_OUTPUT_MODE_JSON
+              - RZ_OUTPUT_MODE_QUIET
+              - RZ_OUTPUT_MODE_RIZIN
+              - RZ_OUTPUT_MODE_TABLE
+            args: []
+          - name: afl.
+            summary: List functions in current seek
+            cname: analysis_function_list_in
+            args: []
+          - name: aflc
+            summary: Display count of all functions
+            cname: analysis_function_count
+            args: []
+          - name: afl+
+            summary: Display sum of all functions sizes
+            cname: analysis_function_size_sum
+            args: []
+          - name: aflm
+            summary: List calls of all functions
+            cname: analysis_function_list_calls
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+              - RZ_OUTPUT_MODE_QUIET
+            args: []
+          - name: afl=
+            summary: Display ascii-art bars with function ranges
+            cname: analysis_function_list_ascii
+            args: []
+      - name: afi
+        summary: Show/edit function information
+        subcommands:
+          - name: afi
+            summary: Show information of functions in current seek
+            cname: analysis_function_info
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+              - RZ_OUTPUT_MODE_RIZIN
+            args: []
+          - name: afii
+            summary: Show/add/delete imports used in function in current seek
+            subcommands:
+              - name: afii
+                summary: Show/add imports used in function in current seek
+                cname: analysis_function_import_list
+                args:
+                  - name: import
+                    type: RZ_CMD_ARG_TYPE_STRING
+                    optional: true
+              - name: afii-
+                summary: Delete imports used in function in current seek
+                cname: analysis_function_import_list_del
+                args: []
+          - name: afis
+            summary: Show opcode statistic in function
+            subcommands:
+              - name: afis
+                summary: Enumerate unique opcodes/opcode families/opcode types in function
+                cname: analysis_function_opcode_stat
+                type: RZ_CMD_DESC_TYPE_ARGV_STATE
+                modes:
+                  - RZ_OUTPUT_MODE_STANDARD
+                  - RZ_OUTPUT_MODE_TABLE
+                args:
+                  - name: mode
+                    type: RZ_CMD_ARG_TYPE_CHOICES
+                    optional: true
+                    choices: ["family", "type"]
+              - name: afisa
+                summary: Enumerate unique opcodes/opcode families/opcode types in all functions
+                cname: analysis_function_all_opcode_stat
+                type: RZ_CMD_DESC_TYPE_ARGV_STATE
+                modes:
+                  - RZ_OUTPUT_MODE_TABLE
+                args:
+                  - name: mode
+                    type: RZ_CMD_ARG_TYPE_CHOICES
+                    optional: true
+                    choices: ["family", "type"]
+  - name: aez
+    summary: RzIL Emulation
+    type: RZ_CMD_DESC_TYPE_GROUP
+    subcommands:
+      - name: aezi
+        summary: Initialize the RzIL Virtual Machine at the current offset
+        type: RZ_CMD_DESC_TYPE_ARGV
+        cname: rzil_vm_initialize
+        args: []
+      - name: aezs
+        summary: Step N instructions within the RzIL Virtual Machine
+        type: RZ_CMD_DESC_TYPE_ARGV
+        cname: rzil_vm_step
+        args:
+          - name: n_times
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: aezse
+        summary: Step N instructions within the RzIL VM and output VM changes (read & write)
+        type: RZ_CMD_DESC_TYPE_ARGV_MODES
+        cname: rzil_vm_step_with_events
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: n_times
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: aezv
+        summary: Print the current status of the RzIL Virtual Machine
+        cname: rzil_vm_status
+        type: RZ_CMD_DESC_TYPE_ARGV_MODES
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_TABLE
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+        args:
+          - name: var_name
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
   #####################################################
   # Keep this in sync with dr in cmd_debug.yaml from here...
   - name: ar

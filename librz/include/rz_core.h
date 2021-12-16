@@ -34,6 +34,7 @@
 #include <rz_util/rz_annotated_code.h>
 #include <rz_heap_glibc.h>
 #include <rz_windows_heap.h>
+#include <rz_flirt.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -682,9 +683,7 @@ RZ_API int rz_core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, i
 RZ_API char *rz_core_analysis_fcn_autoname(RzCore *core, ut64 addr, int dump, int mode);
 RZ_API void rz_core_analysis_autoname_all_fcns(RzCore *core);
 RZ_API void rz_core_analysis_autoname_all_golang_fcns(RzCore *core);
-RZ_DEPRECATE RZ_API int rz_core_analysis_fcn_list(RzCore *core, const char *input, const char *rad);
 RZ_API char *rz_core_analysis_fcn_name(RzCore *core, RzAnalysisFunction *fcn);
-RZ_API ut64 rz_core_analysis_fcn_list_size(RzCore *core);
 RZ_API int rz_core_analysis_fcn_clean(RzCore *core, ut64 addr);
 RZ_API int rz_core_print_bb_custom(RzCore *core, RzAnalysisFunction *fcn);
 RZ_API int rz_core_print_bb_gml(RzCore *core, RzAnalysisFunction *fcn);
@@ -1102,7 +1101,13 @@ RZ_API RzCoreAutocomplete *rz_core_autocomplete_find(RzCoreAutocomplete *parent,
 RZ_API bool rz_core_autocomplete_remove(RzCoreAutocomplete *parent, const char *cmd);
 RZ_API void rz_core_analysis_propagate_noreturn(RzCore *core, ut64 addr);
 
-RZ_API void rz_core_flirt_dump(RZ_NONNULL const char *flirt_file);
+RZ_API bool rz_core_flirt_dump_file(RZ_NONNULL const char *flirt_file);
+RZ_API bool rz_core_flirt_create_file(RZ_NONNULL RzCore *core, RZ_NONNULL const char *output_file, RZ_NULLABLE ut32 *written_nodes);
+RZ_API bool rz_core_flirt_convert_file(RZ_NONNULL RzCore *core, RZ_NONNULL const char *input_file, RZ_NONNULL const char *ouput_file);
+RZ_API ut8 rz_core_flirt_arch_from_name(RZ_NONNULL const char *arch);
+RZ_API ut32 rz_core_flirt_file_from_option_list(RZ_NONNULL const char *file_list);
+RZ_API ut16 rz_core_flirt_os_from_option_list(RZ_NONNULL const char *os_list);
+RZ_API ut16 rz_core_flirt_app_from_option_list(RZ_NONNULL const char *app_list);
 
 /* PLUGINS */
 extern RzCorePlugin rz_core_plugin_java;

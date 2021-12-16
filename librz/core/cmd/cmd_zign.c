@@ -545,7 +545,7 @@ static int cmdFlirt(void *data, const char *input) {
 			eprintf("Usage: zfd filename\n");
 			return false;
 		}
-		rz_core_flirt_dump(input + 2);
+		rz_core_flirt_dump_file(input + 2);
 		break;
 	case 's':
 		// TODO
@@ -558,7 +558,7 @@ static int cmdFlirt(void *data, const char *input) {
 		RzListIter *iter;
 		RzList *files = rz_file_globsearch(input + 2, depth);
 		rz_list_foreach (files, iter, file) {
-			rz_sign_flirt_apply(core->analysis, file, NULL);
+			rz_sign_flirt_apply(core->analysis, file, RZ_FLIRT_SIG_ARCH_ANY);
 		}
 		rz_list_free(files);
 		break;
@@ -1417,8 +1417,19 @@ RZ_IPI RzCmdStatus rz_zign_save_sdb_handler(RzCore *core, int argc, const char *
 	return rz_sign_save(core->analysis, argv[1]) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
+RZ_IPI RzCmdStatus rz_zign_flirt_create_handler(RzCore *core, int argc, const char **argv) {
+	const char *filename = argv[1];
+	ut32 written_nodes = 0;
+	if (!rz_core_flirt_create_file(core, filename, &written_nodes)) {
+		RZ_LOG_ERROR("failed to create FLIRT file '%s'\n", filename);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cons_printf("%u FLIRT signatures were written in '%s'\n", written_nodes, filename);
+	return RZ_CMD_STATUS_OK;
+}
+
 RZ_IPI RzCmdStatus rz_zign_flirt_dump_handler(RzCore *core, int argc, const char **argv) {
-	rz_core_flirt_dump(argv[1]);
+	rz_core_flirt_dump_file(argv[1]);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -1429,10 +1440,11 @@ RZ_IPI RzCmdStatus rz_zign_flirt_scan_handler(RzCore *core, int argc, const char
 	char *file = NULL;
 	RzListIter *iter = NULL;
 	RzList *files = rz_file_globsearch(argv[1], depth);
+	ut8 arch_id = rz_core_flirt_arch_from_name(arch);
 
 	old = rz_flag_count(core->flags, "flirt");
 	rz_list_foreach (files, iter, file) {
-		rz_sign_flirt_apply(core->analysis, file, arch);
+		rz_sign_flirt_apply(core->analysis, file, arch_id);
 	}
 	rz_list_free(files);
 	new = rz_flag_count(core->flags, "flirt");

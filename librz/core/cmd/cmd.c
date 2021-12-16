@@ -2738,6 +2738,9 @@ static void foreach_pairs(RzCore *core, const char *cmd, const char *each) {
 	const char *arg;
 	int pair = 0;
 	for (arg = each;;) {
+		if (!arg) {
+			return;
+		}
 		char *next = strchr(arg, ' ');
 		if (next) {
 			*next = 0;
