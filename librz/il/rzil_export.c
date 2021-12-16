@@ -82,6 +82,17 @@ static void il_op_resolve(RzILOp *op, RzStrBuf *sb, PJ *pj);
 		} \
 	} while (0)
 
+#define il_op_param_0(name) \
+	do { \
+		if (sb) { \
+			rz_strbuf_append(sb, name "()"); \
+		} else { \
+			pj_o(pj); \
+			pj_ks(pj, "opcode", name); \
+			pj_end(pj); \
+		} \
+	} while (0)
+
 #define il_op_param_1(name, opx, v0) \
 	do { \
 		if (sb) { \
@@ -352,8 +363,8 @@ static void il_opdmp_store(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 	}
 }
 
-static void il_opdmp_perform(RzILOp *op, RzStrBuf *sb, PJ *pj) {
-	il_op_param_1("perform", op->op.perform, eff);
+static void il_opdmp_nop(RzILOp *op, RzStrBuf *sb, PJ *pj) {
+	il_op_param_0("nop");
 }
 
 static void il_opdmp_set(RzILOp *op, RzStrBuf *sb, PJ *pj) {
@@ -541,8 +552,8 @@ static void il_op_resolve(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 	case RZIL_OP_STORE:
 		il_opdmp_store(op, sb, pj);
 		return;
-	case RZIL_OP_PERFORM:
-		il_opdmp_perform(op, sb, pj);
+	case RZIL_OP_NOP:
+		il_opdmp_nop(op, sb, pj);
 		return;
 	case RZIL_OP_SET:
 		il_opdmp_set(op, sb, pj);

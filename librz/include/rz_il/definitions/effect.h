@@ -15,7 +15,7 @@ extern "C" {
 #endif
 
 typedef enum {
-	EFFECT_TYPE_NON, // perform none effect will not affect data / control, used for passing info
+	EFFECT_TYPE_NON, // perform none effect will not affect data / control, used for passing info and for nops
 	EFFECT_TYPE_DATA,
 	EFFECT_TYPE_CTRL,
 } RzEffectType;

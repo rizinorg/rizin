@@ -38,7 +38,7 @@ void *rz_il_handler_bool_inv(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_cast(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_append(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 
-void *rz_il_handler_perform(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_nop(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_set(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_let(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_jmp(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
@@ -86,7 +86,7 @@ static RzILOpHandler op_handler_table_default[RZIL_OP_MAX] = {
 	rz_il_handler_append, /* RZIL_OP_APPEND */
 	rz_il_handler_load, /* RZIL_OP_LOAD */
 	rz_il_handler_store, /* RZIL_OP_STORE */
-	rz_il_handler_perform, /* RZIL_OP_PERFORM */
+	rz_il_handler_nop, /* RZIL_OP_NOP */
 	rz_il_handler_set, /* RZIL_OP_SET */
 	rz_il_handler_let, /* RZIL_OP_LET */
 	rz_il_handler_jmp, /* RZIL_OP_JMP */

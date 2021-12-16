@@ -141,17 +141,6 @@ struct rzil_op_shift_t {
 };
 
 /**
- *  \struct rzil_op_perform_t
- *  \brief op structure for `perform` ('a Effect.sort -> 'a eff)
- *
- *  perform s performs a generic effect of sort s.
- *  normally we set ret to -1 to show that no more effect after perform this one
- */
-struct rzil_op_perform_t {
-	RzILOp *eff; ///< index of effect to perform
-};
-
-/**
  *  \struct rzil_op_set_t
  *  \brief op structure for `set` ('a var -> 'a pure -> data eff)
  *
@@ -356,7 +345,7 @@ typedef enum {
 	RZIL_OP_STORE,
 
 	// Effects (opcode with side effects)
-	RZIL_OP_PERFORM,
+	RZIL_OP_NOP,
 	RZIL_OP_SET,
 	RZIL_OP_LET,
 	RZIL_OP_JMP,
@@ -406,7 +395,6 @@ typedef struct rzil_op_bool_operation_t RzILOpBoolOr;
 typedef struct rzil_op_bool_operation_t RzILOpBoolXor;
 typedef struct rzil_op_bool_inv_t RzILOpBoolInv;
 
-typedef struct rzil_op_perform_t RzILOpPerform;
 typedef struct rzil_op_set_t RzILOpSet;
 typedef struct rzil_op_let_t RzILOpLet;
 typedef struct rzil_op_jmp_t RzILOpJmp;
@@ -451,7 +439,6 @@ typedef union {
 	RzILOpShiftRight *shiftr;
 	RzILOpAppend *append;
 
-	RzILOpPerform *perform;
 	RzILOpSet *set;
 	RzILOpLet *let;
 	RzILOpJmp *jmp;
@@ -505,7 +492,7 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_log_xor(RZ_NONNULL RzILOp *x, RZ_NONNULL RzIL
 RZ_API RZ_OWN RzILOp *rz_il_op_new_shiftl(RZ_NONNULL RzILOp *fill_bit, RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y);
 RZ_API RZ_OWN RzILOp *rz_il_op_new_shiftr(RZ_NONNULL RzILOp *fill_bit, RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y);
 RZ_API RZ_OWN RzILOp *rz_il_op_new_append(RZ_NONNULL RzILOp *high, RZ_NONNULL RzILOp *low);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_perform(RZ_NONNULL RzILOp *effect);
+RZ_API RZ_OWN RzILOp *rz_il_op_new_nop();
 RZ_API RZ_OWN RzILOp *rz_il_op_new_set(RZ_NONNULL const char *var, RZ_NONNULL RzILOp *x);
 RZ_API RZ_OWN RzILOp *rz_il_op_new_let(RZ_NONNULL const char *var, RZ_NONNULL RzILOp *x, bool is_mutable);
 RZ_API RZ_OWN RzILOp *rz_il_op_new_jmp(RZ_NONNULL RzILOp *dst);

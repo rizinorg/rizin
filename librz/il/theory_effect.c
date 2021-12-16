@@ -126,9 +126,12 @@ static void rz_il_perform_ctrl(RzILVM *vm, RzILEffect *eff) {
 	vm->pc = new_addr;
 }
 
-void *rz_il_handler_perform(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
+void *rz_il_handler_nop(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
+	*type = RZIL_OP_ARG_EFF;
+	return NULL;
 
+#if 0
 	RzILOpPerform *perform_op = op->op.perform;
 
 	RzILEffect *eff = rz_il_evaluate_effect(vm, perform_op->eff, type);
@@ -144,6 +147,7 @@ void *rz_il_handler_perform(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	} while (eff != NULL);
 
 	return NULL;
+#endif
 }
 
 void *rz_il_handler_set(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
@@ -156,10 +160,12 @@ void *rz_il_handler_set(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	eff->data_eff->is_local = false;
 	eff->data_eff->is_mutable = true;
 	eff->data_eff->val = rz_il_evaluate_val(vm, set_op->x, type);
+	rz_il_perform_data(vm, eff);
+	rz_il_effect_free(eff);
 
 	// store effect in the temporay list
 	*type = RZIL_OP_ARG_EFF;
-	return eff;
+	return NULL;
 }
 
 void *rz_il_handler_let(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
@@ -172,10 +178,12 @@ void *rz_il_handler_let(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	eff->data_eff->is_local = true;
 	eff->data_eff->is_mutable = let_op->mut;
 	eff->data_eff->val = rz_il_evaluate_val(vm, let_op->x, type);
+	rz_il_perform_data(vm, eff);
+	rz_il_effect_free(eff);
 
 	// store effect in the temporay list
 	*type = RZIL_OP_ARG_EFF;
-	return eff;
+	return NULL;
 }
 
 void *rz_il_handler_jmp(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
@@ -184,11 +192,12 @@ void *rz_il_handler_jmp(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	RzILOpJmp *op_jmp = op->op.jmp;
 	RzBitVector *addr = rz_il_evaluate_bitv(vm, op_jmp->dst, type);
 	RzILEffect *eff = rz_il_effect_new(EFFECT_TYPE_CTRL);
-
 	eff->ctrl_eff->pc = addr;
+	rz_il_perform_ctrl(vm, eff);
+	rz_il_effect_free(eff);
 
 	*type = RZIL_OP_ARG_EFF;
-	return eff;
+	return NULL;
 }
 
 void *rz_il_handler_goto(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
@@ -214,24 +223,20 @@ void *rz_il_handler_goto(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 		const RzBitVector *addr = rz_il_hash_find_addr_by_lblname(vm, lname);
 		eff->ctrl_eff->pc = rz_bv_dup(addr);
 	}
+	rz_il_perform_ctrl(vm, eff);
+	rz_il_effect_free(eff);
 
 	*type = RZIL_OP_ARG_EFF;
-	return eff;
+	return NULL;
 }
 
 void *rz_il_handler_seq(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
-
 	RzILOpSeq *op_seq = op->op.seq;
-
-	RzILEffect *eff_x = rz_il_evaluate_effect(vm, op_seq->x, type);
-	RzILEffect *eff_y = rz_il_evaluate_effect(vm, op_seq->y, type);
-
-	// add eff_y to the next eff of eff_x
-	RzILEffect *eff_uni = eff_x;
-	eff_uni->next_eff = eff_y;
-
-	return eff_uni;
+	rz_il_evaluate_effect(vm, op_seq->x, type);
+	rz_il_evaluate_effect(vm, op_seq->y, type);
+	*type = RZIL_OP_ARG_EFF;
+	return NULL;
 }
 
 void *rz_il_handler_branch(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
@@ -240,18 +245,19 @@ void *rz_il_handler_branch(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	RzILOpBranch *op_branch = op->op.branch;
 
 	RzILBool *condition = rz_il_evaluate_bool(vm, op_branch->condition, type);
-	RzILEffect *ret;
 	if (condition->b) {
 		// true branch
-		ret = (op_branch->true_eff == NULL) ? rz_il_effect_new(EFFECT_TYPE_NON) : rz_il_evaluate_effect(vm, op_branch->true_eff, type);
+		if (op_branch->true_eff) {
+			rz_il_evaluate_effect(vm, op_branch->true_eff, type);
+		}
 	} else {
 		// false branch
-		ret = (op_branch->false_eff == NULL) ? rz_il_effect_new(EFFECT_TYPE_NON) : rz_il_evaluate_effect(vm, op_branch->false_eff, type);
+		if (op_branch->false_eff) {
+			rz_il_evaluate_effect(vm, op_branch->false_eff, type);
+		}
 	}
 	rz_il_bool_free(condition);
 
-	if (ret) {
-		*type = RZIL_OP_ARG_EFF;
-	}
-	return ret;
+	*type = RZIL_OP_ARG_EFF;
+	return NULL;
 }
