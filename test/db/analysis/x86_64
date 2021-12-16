@@ -1819,13 +1819,13 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=afvb-ArgName
+NAME=afvb- ArgName
 FILE=bins/efi/bootia32.efi
 CMDS=<<EOF
 td "typedef void * EFI_HANDLE;"
 af
 afvb 8 ImageHandle blah @ 0x10002d8d
-afvb-ImageHandle
+afvb- ImageHandle
 afvb~?ImageHandle
 EOF
 EXPECT=<<EOF
@@ -1862,12 +1862,12 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=afvr-name
+NAME=afvr- name
 FILE=bins/efi/bootia32.efi
 CMDS=<<EOF
 af
 afvr esi myreg int @ 0x10002d8d
-afvr-myreg
+afvr- myreg
 afvr~?myreg
 EOF
 EXPECT=<<EOF
