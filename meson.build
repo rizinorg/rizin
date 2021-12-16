@@ -119,7 +119,7 @@ if get_option('default_library') == 'static' and cc.get_id() == 'msvc'
   # On MSVC meson uses the .a suffix and lib as prefix, but cmake and other
   # tools expect a .lib suffix and no prefix
   # https://mesonbuild.com/FAQ.html#why-does-building-my-project-with-msvc-output-static-libraries-called-libfooa
-  lib_name_suffix = '.lib'
+  lib_name_suffix = 'lib'
   lib_name_prefix = ''
 endif
 
