@@ -47,7 +47,8 @@ rz_main = library('rz_main', rz_main_sources,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
   link_args: library_linkflags,
-  soversion: rizin_libversion
+  soversion: rizin_libversion,
+  name_suffix: lib_name_suffix,
 )
 
 rz_main_dep = declare_dependency(link_with: rz_main,

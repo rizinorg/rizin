@@ -102,7 +102,8 @@ rz_util = library('rz_util', rz_util_sources,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
   link_args: library_linkflags,
-  soversion: rizin_libversion
+  soversion: rizin_libversion,
+  name_suffix: lib_name_suffix,
 )
 
 rz_util_dep = declare_dependency(

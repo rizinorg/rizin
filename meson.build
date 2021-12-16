@@ -113,6 +113,7 @@ if host_machine.system() == 'windows'
 endif
 platform_inc = include_directories(platform_inc)
 
+lib_name_suffix = []
 if is_static_build
   if cc.get_id() == 'msvc'
     # Use -Db_vscrt=static_from_buildtype to avoid warnings due to multiple /M options
@@ -120,6 +121,9 @@ if is_static_build
       warning('To avoid warnings due to multiple /M options, please also set -Db_vscrt=mt or -Db_vscrt=mtd.')
       add_project_arguments('/MT', language: 'c')
     endif
+    # On MSVC meson uses the .a suffix, but cmake and other tools expect a .lib suffix
+    # https://mesonbuild.com/FAQ.html#why-does-building-my-project-with-msvc-output-static-libraries-called-libfooa
+    lib_name_suffix = '.lib'
   else
     if cc.has_link_argument('-static')
       add_project_link_arguments('-static', language: 'c')
