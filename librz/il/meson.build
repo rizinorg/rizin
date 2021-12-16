@@ -33,6 +33,7 @@ rz_il = library('rz_il', rz_il_sources,
   link_args: library_linkflags,
   soversion: rizin_libversion,
   name_suffix: lib_name_suffix,
+  name_prefix: lib_name_prefix,
 )
 
 rz_il_dep = declare_dependency(link_with: rz_il,

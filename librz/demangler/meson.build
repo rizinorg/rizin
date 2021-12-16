@@ -14,6 +14,7 @@ rz_demangler = library('rz_demangler', rz_demangler_sources,
   link_args: library_linkflags,
   soversion: rizin_libversion,
   name_suffix: lib_name_suffix,
+  name_prefix: lib_name_prefix,
 )
 
 rz_demangler_dep = declare_dependency(link_with: rz_demangler, include_directories: [platform_inc])

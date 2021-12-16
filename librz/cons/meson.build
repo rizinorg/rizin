@@ -27,6 +27,7 @@ rz_cons = library('rz_cons', rz_cons_sources,
   link_args: library_linkflags,
   soversion: rizin_libversion,
   name_suffix: lib_name_suffix,
+  name_prefix: lib_name_prefix,
 )
 
 rz_cons_dep = declare_dependency(link_with: rz_cons,

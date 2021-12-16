@@ -27,6 +27,7 @@ rz_magic = library('rz_magic', rz_magic_sources,
   link_args: library_linkflags,
   soversion: rizin_libversion,
   name_suffix: lib_name_suffix,
+  name_prefix: lib_name_prefix,
 )
 
 rz_magic_dep = declare_dependency(

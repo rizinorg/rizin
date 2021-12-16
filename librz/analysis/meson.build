@@ -202,6 +202,7 @@ rz_analysis = library('rz_analysis', rz_analysis_sources,
   link_args: library_linkflags,
   soversion: rizin_libversion,
   name_suffix: lib_name_suffix,
+  name_prefix: lib_name_prefix,
 )
 
 rz_analysis_dep = declare_dependency(link_with: rz_analysis,

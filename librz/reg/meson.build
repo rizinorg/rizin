@@ -17,6 +17,7 @@ rz_reg = library('rz_reg', rz_reg_sources,
   link_args: library_linkflags,
   soversion: rizin_libversion,
   name_suffix: lib_name_suffix,
+  name_prefix: lib_name_prefix,
 )
 
 rz_reg_dep = declare_dependency(link_with: rz_reg,
