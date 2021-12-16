@@ -857,16 +857,11 @@ static const char *rizin_argv[] = {
 	"aets?", "aets+", "aets-", "aes", "aesp", "aesb", "aeso", "aesou", "aess", "aesu", "aesue", "aetr", "aex",
 	"af?", "af", "afr", "af+", "af-",
 	"afa", "afan",
-	"afb?", "afb", "afb+", "afbb", "afbr", "afbi", "afbil", "afbj", "afbe", "afB", "afbc", "afb=",
-	"afB", "afC", "afCl", "afCc", "afc?", "afc", "afcr", "afcrj", "afca", "afcf", "afcfj",
+	"afC", "afCl", "afCc", "afc?", "afc", "afcr", "afcrj", "afca", "afcf", "afcfj",
 	"afck", "afcl", "afco", "afcR",
 	"afd", "aff",
 	"afm", "afM", "afn?", "afna", "afns", "afnsj",
-	"afo", "afs", "afS", "aft?", "aft", "afu",
-	"afv?", "afv", "afvr?", "afvr", "afvr*", "afvrj", "afvr-", "afvrg", "afvrs",
-	"afvb?", "afvb", "afvbj", "afvb-", "afvbg", "afvbs",
-	"afvs?", "afvs", "afvs*", "afvsj", "afvs-", "afvsg", "afvss",
-	"afv*", "afvR", "afvW", "afva", "afvd", "afvn", "afvt", "afv-", "af*", "afx",
+	"afo", "aft?", "aft", "af*",
 	"aF",
 	"ag?", "ag", "aga", "agA", "agc", "agC", "agd", "agf", "agi", "agr", "agR", "agx", "agg", "ag-",
 	"agn?", "agn", "agn-", "age?", "age", "age-",
@@ -2193,7 +2188,7 @@ static void __init_autocomplete_default(RzCore *core) {
 	};
 	const char *flags[] = {
 		"*", "s", "s+", "b", "f", "fg", "?", "?v", "ad", "bf", "c1", "db", "dbw",
-		"f-", "fr", "tf", "/a", "/v", "/r", "/re", "aav", "aep", "aef", "afb",
+		"f-", "fr", "tf", "/a", "/v", "/r", "/re", "aav", "aep", "aef",
 		"afc", "axg", "axt", "axf", "dcu", "ag", "agfl", "aecu", "aesu", "aeim", NULL
 	};
 	const char *evals[] = {

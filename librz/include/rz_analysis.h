@@ -1457,7 +1457,7 @@ RZ_API bool rz_analysis_set_bits(RzAnalysis *analysis, int bits);
 RZ_API bool rz_analysis_set_os(RzAnalysis *analysis, const char *os);
 RZ_API void rz_analysis_set_cpu(RzAnalysis *analysis, const char *cpu);
 RZ_API int rz_analysis_set_big_endian(RzAnalysis *analysis, int boolean);
-RZ_API ut8 *rz_analysis_mask(RzAnalysis *analysis, int size, const ut8 *data, ut64 at);
+RZ_API ut8 *rz_analysis_mask(RzAnalysis *analysis, ut32 size, const ut8 *data, ut64 at);
 RZ_API void rz_analysis_trace_bb(RzAnalysis *analysis, ut64 addr);
 RZ_API const char *rz_analysis_fcntype_tostring(int type);
 RZ_API void rz_analysis_bind(RzAnalysis *b, RzAnalysisBind *bnd);

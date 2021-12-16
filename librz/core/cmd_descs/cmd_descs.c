@@ -382,6 +382,7 @@ static const RzCmdDescArg zign_add_fcn_args[3];
 static const RzCmdDescArg zign_load_sdb_args[2];
 static const RzCmdDescArg zign_save_sdb_args[2];
 static const RzCmdDescArg zign_load_gzip_sdb_args[2];
+static const RzCmdDescArg zign_flirt_create_args[2];
 static const RzCmdDescArg zign_flirt_dump_args[2];
 static const RzCmdDescArg zign_flirt_scan_args[2];
 static const RzCmdDescArg zign_cmp_args[2];
@@ -1464,6 +1465,14 @@ static const RzCmdDescHelp analysis_function_vars_bp_del_help = {
 	.args = analysis_function_vars_bp_del_args,
 };
 
+static const RzCmdDescArg analysis_function_vars_bp_del_all_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_vars_bp_del_all_help = {
+	.summary = "Delete all arguments/locals",
+	.args = analysis_function_vars_bp_del_all_args,
+};
+
 static const RzCmdDescArg analysis_function_vars_bp_getref_args[] = {
 	{
 		.name = "delta",
@@ -1542,6 +1551,14 @@ static const RzCmdDescArg analysis_function_vars_regs_del_args[] = {
 static const RzCmdDescHelp analysis_function_vars_regs_del_help = {
 	.summary = "Delete register-based argument/local with the given name",
 	.args = analysis_function_vars_regs_del_args,
+};
+
+static const RzCmdDescArg analysis_function_vars_regs_del_all_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_vars_regs_del_all_help = {
+	.summary = "Delete all register-based arguments/locals",
+	.args = analysis_function_vars_regs_del_all_args,
 };
 
 static const RzCmdDescArg analysis_function_vars_regs_getref_args[] = {
@@ -8621,6 +8638,19 @@ static const RzCmdDescHelp zign_load_gzip_sdb_help = {
 static const RzCmdDescHelp zf_help = {
 	.summary = "Manage FLIRT signatures",
 };
+static const RzCmdDescArg zign_flirt_create_args[] = {
+	{
+		.name = "filename",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp zign_flirt_create_help = {
+	.summary = "Create a FLIRT file (.pac or .sig)",
+	.args = zign_flirt_create_args,
+};
+
 static const RzCmdDescArg zign_flirt_dump_args[] = {
 	{
 		.name = "filename",
@@ -8630,7 +8660,7 @@ static const RzCmdDescArg zign_flirt_dump_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp zign_flirt_dump_help = {
-	.summary = "Open FLIRT file and dump",
+	.summary = "Open a FLIRT file (.pac or .sig) and dumps its contents",
 	.args = zign_flirt_dump_args,
 };
 
@@ -8643,7 +8673,7 @@ static const RzCmdDescArg zign_flirt_scan_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp zign_flirt_scan_help = {
-	.summary = "Open FLIRT file and scan",
+	.summary = "Open a FLIRT file (.pac or .sig) and tries to apply the signatures to the loaded binary",
 	.args = zign_flirt_scan_args,
 };
 
@@ -9509,6 +9539,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_function_vars_bp_del_cd = rz_cmd_desc_argv_new(core->rcmd, afvb_cd, "afvb-", rz_analysis_function_vars_bp_del_handler, &analysis_function_vars_bp_del_help);
 	rz_warn_if_fail(analysis_function_vars_bp_del_cd);
 
+	RzCmdDesc *analysis_function_vars_bp_del_all_cd = rz_cmd_desc_argv_new(core->rcmd, afvb_cd, "afvb-*", rz_analysis_function_vars_bp_del_all_handler, &analysis_function_vars_bp_del_all_help);
+	rz_warn_if_fail(analysis_function_vars_bp_del_all_cd);
+
 	RzCmdDesc *analysis_function_vars_bp_getref_cd = rz_cmd_desc_argv_new(core->rcmd, afvb_cd, "afvbg", rz_analysis_function_vars_bp_getref_handler, &analysis_function_vars_bp_getref_help);
 	rz_warn_if_fail(analysis_function_vars_bp_getref_cd);
 
@@ -9519,6 +9552,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(afvr_cd);
 	RzCmdDesc *analysis_function_vars_regs_del_cd = rz_cmd_desc_argv_new(core->rcmd, afvr_cd, "afvr-", rz_analysis_function_vars_regs_del_handler, &analysis_function_vars_regs_del_help);
 	rz_warn_if_fail(analysis_function_vars_regs_del_cd);
+
+	RzCmdDesc *analysis_function_vars_regs_del_all_cd = rz_cmd_desc_argv_new(core->rcmd, afvr_cd, "afvr-*", rz_analysis_function_vars_regs_del_all_handler, &analysis_function_vars_regs_del_all_help);
+	rz_warn_if_fail(analysis_function_vars_regs_del_all_cd);
 
 	RzCmdDesc *analysis_function_vars_regs_getref_cd = rz_cmd_desc_argv_new(core->rcmd, afvr_cd, "afvrg", rz_analysis_function_vars_regs_getref_handler, &analysis_function_vars_regs_getref_help);
 	rz_warn_if_fail(analysis_function_vars_regs_getref_cd);
@@ -11126,6 +11162,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *zf_cd = rz_cmd_desc_group_new(core->rcmd, z_cd, "zf", NULL, NULL, &zf_help);
 	rz_warn_if_fail(zf_cd);
+	RzCmdDesc *zign_flirt_create_cd = rz_cmd_desc_argv_new(core->rcmd, zf_cd, "zfc", rz_zign_flirt_create_handler, &zign_flirt_create_help);
+	rz_warn_if_fail(zign_flirt_create_cd);
+
 	RzCmdDesc *zign_flirt_dump_cd = rz_cmd_desc_argv_new(core->rcmd, zf_cd, "zfd", rz_zign_flirt_dump_handler, &zign_flirt_dump_help);
 	rz_warn_if_fail(zign_flirt_dump_cd);
 
