@@ -7,15 +7,13 @@
 # without .git directories for subprojects
 
 import os
-import stat
 import shutil
-from subprocess import call
 
 
 def traverse_dir(d):
     for i in os.listdir(d):
         # ignore . and ..
-        if i == "." or i == "..":
+        if i in (".", ".."):
             continue
 
         fulli = os.path.abspath(os.path.join(d, i))
