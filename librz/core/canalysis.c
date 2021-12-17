@@ -5583,7 +5583,7 @@ static bool process_reference_noreturn_cb(void *u, const ut64 k, const void *v) 
 				}
 			}
 		} else {
-			eprintf("Fail to load %d bytes of data at 0x%08" PFMT64x "\n", CALL_BUF_SIZE, addr);
+			RZ_LOG_INFO("analysis: Fail to load %d bytes of data at 0x%08" PFMT64x "\n", CALL_BUF_SIZE, addr);
 		}
 	}
 	return true;
