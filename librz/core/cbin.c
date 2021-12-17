@@ -4004,7 +4004,7 @@ RZ_API bool rz_core_bin_fields_print(RzCore *core, RzBinFile *bf, RzCmdStateOutp
 			if (field->format && *field->format) {
 				pj_ks(state->d.pj, "format", field->format);
 			}
-			char *o = rz_core_cmd_strf(core, "pfj%c%s@0x%" PFMT64x,
+			char *o = rz_core_cmd_strf(core, "pfj%c%s@ 0x%" PFMT64x,
 				field->format_named ? '.' : ' ', field->format, field->vaddr);
 			if (o && *o) {
 				rz_str_trim_tail(o);
