@@ -400,9 +400,9 @@ RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_node_new(RZ_NONNULL RzAnalysis *analysi
 		}
 
 		if (!analysis->iob.read_at(analysis->iob.io, func->addr, pattern, (int)func_size)) {
-			RZ_LOG_ERROR("FLIRT: couldn't read function %s at 0x%" PFMT64x ".\n", func->name, func->addr);
+			RZ_LOG_WARN("FLIRT: couldn't read function %s at 0x%" PFMT64x ".\n", func->name, func->addr);
 			free(pattern);
-			goto fail;
+			continue;
 		}
 
 		ut8 *mask = rz_analysis_mask(analysis, func_size, pattern, func->addr);
@@ -432,6 +432,11 @@ RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_node_new(RZ_NONNULL RzAnalysis *analysi
 			rz_sign_flirt_node_free(child);
 			goto fail;
 		}
+	}
+
+	if (rz_list_length(root->child_list) < 1) {
+		RZ_LOG_ERROR("FLIRT: cannot create signature file when i do not have signatures.\n");
+		goto fail;
 	}
 
 	if (optimization == RZ_FLIRT_NODE_OPTIMIZE_NONE) {
