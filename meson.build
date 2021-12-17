@@ -780,6 +780,9 @@ if cli_enabled
   )
 endif
 
+meson_dist_script = files('sys/meson_dist_script.py')
+meson.add_dist_script(meson_dist_script)
+
 summary({
   'prefix': rizin_prefix,
   'bindir': rizin_bindir,
