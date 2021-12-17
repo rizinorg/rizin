@@ -885,7 +885,7 @@ static bool map_multi_dex(RzCore *core, RzIODesc *desc, ut32 id) {
 	}
 	RzCoreFile *cf = rz_core_file_cur(core);
 
-	// adds the current size and align next address
+	// adds the current size and aligns next address
 	ut64 base_address = RZ_CORE_BASE_ADDRESS_DEX;
 	RzBinFile *cur = rz_pvector_empty(&cf->binfiles) ? NULL : rz_pvector_tail(&cf->binfiles);
 	if (cur) {
@@ -1113,7 +1113,7 @@ RZ_API RZ_BORROW RzCoreFile *rz_core_file_open_many(RZ_NONNULL RzCore *r, RZ_NUL
 	}
 
 	if (!base_address) {
-		base_address = RZ_CORE_BASE_ADDRESS_DFLT;
+		base_address = RZ_CORE_BASE_ADDRESS_DEFAULT;
 	}
 
 	RzListIter *it = NULL;
@@ -1138,7 +1138,7 @@ RZ_API RZ_BORROW RzCoreFile *rz_core_file_open_many(RZ_NONNULL RzCore *r, RZ_NUL
 		if (!rz_core_bin_load(r, desc->name, base_address)) {
 			RZ_LOG_ERROR("failed to load %s\n", desc->name);
 		}
-		// adds the current size and align next address
+		// adds the current size and aligns next address
 		base_address += size;
 		rz_core_align_base_address(base_address);
 	}
