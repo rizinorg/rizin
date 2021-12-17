@@ -11,6 +11,7 @@ project('rizin', 'c',
 py3_exe = import('python').find_installation()
 git_exe = find_program('git', required: false)
 pkgconfig_mod = import('pkgconfig')
+cmake_mod = import('cmake')
 
 # Python scripts used during the build process
 create_tags_rz_py = files('sys/create_tags_rz.py')
@@ -18,9 +19,11 @@ syscall_preprocessing_py = files('sys/syscall_preprocessing.py')
 check_meson_subproject_py = files('sys/check_meson_subproject.py')
 git_exe_repo_py = files('sys/meson_git_wrapper.py')
 tree_sitter_wrap_py = files('sys/meson_tree_sitter_generate.py')
+cmake_package_prefix_dir_py = files('sys/meson_cmake_prefix_dir.py')
 
 is_static_build = get_option('static_runtime')
-if is_static_build and get_option('default_library') != 'static'
+is_static_libs_only = get_option('default_library') == 'static'
+if is_static_build and not is_static_libs_only
   error('Cannot use `static_runtime` when libraries are dynamically built. Set `--default-library=static` if you want to build statically.')
 endif
 
@@ -111,6 +114,16 @@ if host_machine.system() == 'windows'
 endif
 platform_inc = include_directories(platform_inc)
 
+lib_name_suffix = []
+lib_name_prefix = []
+if is_static_libs_only and cc.get_id() == 'msvc'
+  # On MSVC meson uses the .a suffix and lib as prefix, but cmake and other
+  # tools expect a .lib suffix and no prefix
+  # https://mesonbuild.com/FAQ.html#why-does-building-my-project-with-msvc-output-static-libraries-called-libfooa
+  lib_name_suffix = 'lib'
+  lib_name_prefix = ''
+endif
+
 if is_static_build
   if cc.get_id() == 'msvc'
     # Use -Db_vscrt=static_from_buildtype to avoid warnings due to multiple /M options
@@ -168,6 +181,7 @@ endif
 rizin_prefix = get_option('prefix')
 rizin_bindir = get_option('bindir')
 rizin_libdir = get_option('libdir')
+rizin_cmakedir = rizin_libdir / 'cmake'
 rizin_incdir = get_option('includedir') / 'librz'
 rizin_datdir = get_option('datadir')
 if host_machine.system() == 'windows'
@@ -212,6 +226,8 @@ foreach opt : opts_overwrite
     set_variable(opt, val)
   endif
 endforeach
+
+cmake_package_relative_path = run_command(py3_exe, cmake_package_prefix_dir_py, rizin_prefix, rizin_cmakedir / 'xxx').stdout().strip()
 
 # handle capstone dependency
 capstone_dep = dependency('capstone', version: '>=3.0.4', required: get_option('use_sys_capstone'), static: is_static_build)
@@ -517,16 +533,6 @@ rz_version_h = configure_file(
 # Copy missing header
 run_command(py3_exe, '-c', '__import__("shutil").copyfile("shlr/spp/config.def.h", "shlr/spp/config.h")')
 
-pcconf = configuration_data()
-pcconf.set('PREFIX', rizin_prefix)
-pcconf.set('VERSION', rizin_version)
-libr_pc = configure_file(
-  input: 'librz/librz.pc.in',
-  output: 'librz.pc',
-  configuration: pcconf,
-  install_dir: get_option('libdir') / 'pkgconfig'
-)
-
 # handle zlib dependency
 r = run_command(py3_exe, check_meson_subproject_py, 'zlib')
 if r.returncode() == 1 and get_option('subprojects_check')
@@ -733,42 +739,6 @@ if cli_enabled
   endif
   subdir('binrz/rz-pm')
   subdir('binrz/rz-test')
-endif
-
-if meson.is_subproject()
-  librz_dep = declare_dependency(
-    dependencies: [
-      rz_analysis_dep,
-      rz_asm_dep,
-      rz_bin_dep,
-      rz_bp_dep,
-      rz_config_dep,
-      rz_cons_dep,
-      rz_core_dep,
-      rz_main_dep,
-      rz_crypto_dep,
-      rz_debug_dep,
-      rz_egg_dep,
-      rz_flag_dep,
-      rz_hash_dep,
-      rz_io_dep,
-      rz_lang_dep,
-      rz_magic_dep,
-      rz_parse_dep,
-      rz_reg_dep,
-      rz_search_dep,
-      rz_socket_dep,
-      rz_syscall_dep,
-      rz_il_dep,
-      rz_sign_dep,
-      rz_type_dep,
-      rz_diff_dep,
-      rz_demangler_dep,
-      rz_util_dep
-    ],
-    include_directories: include_directories('.', 'librz/include'),
-    version: rizin_version
-  )
 endif
 
 if get_option('use_webui')

@@ -1,0 +1,65 @@
+################################################################################
+#
+# This module provides the following imported targets, if found:
+#
+#  @RIZIN_MODULE@::@RIZIN_MODULE@
+#
+# This file is intended to be consumed by clients who wish to use @rizin_libname@ from CMake.
+# The recommended way to use find this module is using `find_package(Rizin COMPONENTS ...)`.
+#
+# Provides the following variables
+# @RIZIN_MODULE@_FOUND        - Flag for indicating that @RIZIN_MODULE@ package has been found
+# @RIZIN_MODULE@_VERSION      - Version of @RIZIN_MODULE@
+# @RIZIN_MODULE@_INCLUDE_DIRS - Directories to include
+# @RIZIN_MODULE@_LIBRARY      - Path to the single library that this module represents, without dependencies
+# @RIZIN_MODULE@_LIBRARIES    - Libraries to link
+# @RIZIN_MODULE@_LIBRARY_DIRS - Library directories to search for link libraries
+# @RIZIN_MODULE@_PLUGINDIR    - Directory where plugins are placed, without the prefix part
+#
+################################################################################
+
+set(RIZIN_MODULE_PREFIXED @RIZIN_MODULE@)
+set(@RIZIN_MODULE@_VERSION @RZ_VERSION@)
+
+@PACKAGE_INIT@
+
+# FIXME: workaround for https://github.com/mesonbuild/meson/issues/9702 (see https://github.com/rizinorg/rizin/issues/2102)
+get_filename_component(PACKAGE_PREFIX_DIR_WORKAROUND "${CMAKE_CURRENT_LIST_DIR}/@PACKAGE_RELATIVE_PATH@" ABSOLUTE)
+
+set(@RIZIN_MODULE@_INCLUDE_DIRS "${PACKAGE_PREFIX_DIR_WORKAROUND}/@INSTALL_INCDIR@" "${PACKAGE_PREFIX_DIR_WORKAROUND}/@INSTALL_INCDIR@/sdb")
+set_and_check(@RIZIN_MODULE@_LIBRARY_DIRS "${PACKAGE_PREFIX_DIR_WORKAROUND}/@INSTALL_LIBDIR@")
+find_library(@RIZIN_MODULE@_LIBRARY NAMES @RIZIN_MODULE@ HINTS "${@RIZIN_MODULE@_LIBRARY_DIRS}" NO_DEFAULT_PATH REQUIRED)
+set(@RIZIN_MODULE@_LIBRARIES "${@RIZIN_MODULE@_LIBRARY}")
+set(_@RIZIN_MODULE@_DEPENDENCIES @RIZIN_MODULE_DEPS@)
+set(@RIZIN_MODULE@_PLUGINDIR @INSTALL_PLUGDIR@)
+
+include(CMakeFindDependencyMacro)
+get_filename_component(_rizin_cmake_path "${CMAKE_CURRENT_LIST_DIR}" ABSOLUTE)
+set(_@RIZIN_MODULE@_DEPENDENCY_TARGETS)
+foreach(_module_dep ${_@RIZIN_MODULE@_DEPENDENCIES})
+  if (NOT ${_module_dep}_FOUND)
+    find_dependency(${_module_dep} PATHS ${_rizin_cmake_path})
+  endif()
+
+  if (NOT ${_module_dep}_FOUND)
+    set(@RIZIN_MODULE@_FOUND False)
+    return()
+  endif()
+
+  list(APPEND @RIZIN_MODULE@_INCLUDE_DIRS "${${_module_dep}_INCLUDE_DIRS}")
+  list(APPEND @RIZIN_MODULE@_LIBRARIES "${${_module_dep}_LIBRARIES}")
+  list(APPEND _@RIZIN_MODULE@_DEPENDENCY_TARGETS "${_module_dep}::${_module_dep}")
+endforeach()
+
+list(REMOVE_DUPLICATES @RIZIN_MODULE@_INCLUDE_DIRS)
+list(REMOVE_DUPLICATES @RIZIN_MODULE@_LIBRARIES)
+
+if(NOT TARGET @RIZIN_MODULE@::@RIZIN_MODULE@)
+  add_library(@RIZIN_MODULE@::@RIZIN_MODULE@ SHARED IMPORTED)
+  target_link_libraries(@RIZIN_MODULE@::@RIZIN_MODULE@ INTERFACE ${_@RIZIN_MODULE@_DEPENDENCY_TARGETS})
+  set_target_properties(@RIZIN_MODULE@::@RIZIN_MODULE@ PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES "${@RIZIN_MODULE@_INCLUDE_DIRS}")
+  set_target_properties(@RIZIN_MODULE@::@RIZIN_MODULE@ PROPERTIES
+    IMPORTED_LOCATION "${@RIZIN_MODULE@_LIBRARY}")
+endif()
+set(@RIZIN_MODULE@_TARGET @RIZIN_MODULE@::@RIZIN_MODULE@)
