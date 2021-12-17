@@ -507,12 +507,14 @@ if get_option('use_gpl')
   endforeach
 endif
 
-conf = configuration_data()
-conf.set('RZ_VERSION', rizin_version)
-conf.set('INSTALL_PLUGDIR', rizin_plugins)
-cmake_mod.configure_package_config_file(
-  name: 'Rizin',
-  input: 'RizinConfig.cmake.in',
-  install_dir: rizin_cmakedir / 'Rizin',
-  configuration: conf,
-)
+if not is_static_libs_only
+  conf = configuration_data()
+  conf.set('RZ_VERSION', rizin_version)
+  conf.set('INSTALL_PLUGDIR', rizin_plugins)
+  cmake_mod.configure_package_config_file(
+    name: 'Rizin',
+    input: 'RizinConfig.cmake.in',
+    install_dir: rizin_cmakedir / 'Rizin',
+    configuration: conf,
+  )
+endif

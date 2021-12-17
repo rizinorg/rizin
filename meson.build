@@ -22,7 +22,8 @@ tree_sitter_wrap_py = files('sys/meson_tree_sitter_generate.py')
 cmake_package_prefix_dir_py = files('sys/meson_cmake_prefix_dir.py')
 
 is_static_build = get_option('static_runtime')
-if is_static_build and get_option('default_library') != 'static'
+is_static_libs_only = get_option('default_library') == 'static'
+if is_static_build and not is_static_libs_only
   error('Cannot use `static_runtime` when libraries are dynamically built. Set `--default-library=static` if you want to build statically.')
 endif
 
@@ -115,7 +116,7 @@ platform_inc = include_directories(platform_inc)
 
 lib_name_suffix = []
 lib_name_prefix = []
-if get_option('default_library') == 'static' and cc.get_id() == 'msvc'
+if is_static_libs_only and cc.get_id() == 'msvc'
   # On MSVC meson uses the .a suffix and lib as prefix, but cmake and other
   # tools expect a .lib suffix and no prefix
   # https://mesonbuild.com/FAQ.html#why-does-building-my-project-with-msvc-output-static-libraries-called-libfooa
