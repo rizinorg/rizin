@@ -1,7 +1,7 @@
 project('rizin', 'c',
   version: 'v0.3.3',
   license: 'LGPL3',
-  meson_version: '>=0.55.0',
+  meson_version: '>=0.55.3',
   default_options: [
     'buildtype=debugoptimized',
     'b_vscrt=from_buildtype',
@@ -688,8 +688,12 @@ if cli_enabled
   )
 endif
 
-meson_dist_script = files('sys/meson_dist_script.py')
-meson.add_dist_script(meson_dist_script)
+dist_script = 'sys/meson_dist_script.py'
+if meson.version().version_compare('<0.57.0')
+  meson.add_dist_script(meson.source_root() / dist_script)
+else
+  meson.add_dist_script(files(dist_script))
+endif
 
 summary({
   'prefix': rizin_prefix,
