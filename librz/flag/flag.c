@@ -637,12 +637,30 @@ RZ_API RzFlagItem *rz_flag_get_at(RzFlag *f, ut64 off, bool closest) {
 	return nice ? evalFlag(f, nice) : NULL;
 }
 
+RzFlagItem *get_flag_in(RzFlag *f, ut64 off) {
+	const RzFlagsAtOffset *flags_at = rz_flag_get_nearest_list(f, off, -1);
+	if (!flags_at) {
+		return NULL;
+	}
+	if (flags_at->off == off) {
+		return rz_list_last(flags_at->flags);
+	}
+	RzListIter *iter;
+	RzFlagItem *item;
+	rz_list_foreach (flags_at->flags, iter, item) {
+		if ((item->offset + item->size) >= off) {
+			return item;
+		}
+	}
+	return NULL;
+}
+
 /**
  * \brief Returns name of the closest flag with offset
  */
 RZ_API RZ_OWN char *rz_flag_get_name_delta(RZ_NONNULL RzFlag *f, ut64 addr) {
 	rz_return_val_if_fail(f, NULL);
-	RzFlagItem *item = rz_flag_get_at(f, addr, true);
+	RzFlagItem *item = get_flag_in(f, addr);
 	if (!item) {
 		return NULL;
 	}
