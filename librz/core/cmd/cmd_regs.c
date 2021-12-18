@@ -643,7 +643,6 @@ RZ_IPI RzCmdStatus rz_reg_flags_handler(RzCore *core, RzReg *reg, RzCmdRegSync s
 		}
 	}
 	if (!unset) {
-		// f- does not care about spaces
 		rz_cons_print("fs+ " RZ_FLAGS_FS_REGISTERS "\n");
 		bool failed;
 		SYNC_READ_LIST(ritems, failed);
