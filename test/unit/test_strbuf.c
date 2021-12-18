@@ -6,10 +6,20 @@
 
 bool test_rz_strbuf_slice(void) {
 	RzStrBuf *sa = rz_strbuf_new("foo,bar,cow");
-	rz_strbuf_slice(sa, 2, 4); // should be from/to instead of from/len ?
-	char *a = rz_strbuf_drain(sa);
-	mu_assert_streq(a, "o,ba", "slicing fails");
-	free(a);
+	rz_strbuf_slice(sa, 2, 4);
+	mu_assert_streq_free(rz_strbuf_drain(sa), "o,ba", "from + len");
+
+	sa = rz_strbuf_new("Restore our vision of natural progression");
+	rz_strbuf_slice(sa, 0, 18);
+	mu_assert_streq_free(rz_strbuf_drain(sa), "Restore our vision", "len");
+
+	sa = rz_strbuf_new("Drift with the ebb and flow");
+	rz_strbuf_slice(sa, 15, 9001);
+	mu_assert_streq_free(rz_strbuf_drain(sa), "ebb and flow", "from + escessive len");
+
+	sa = rz_strbuf_new("Intuition speak to me");
+	rz_strbuf_slice(sa, 0, 9001);
+	mu_assert_streq_free(rz_strbuf_drain(sa), "Intuition speak to me", "escessive len");
 
 	mu_end;
 }
