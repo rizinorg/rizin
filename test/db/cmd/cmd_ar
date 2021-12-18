@@ -569,6 +569,10 @@ e asm.arch=x86
 e asm.bits=64
 arf
 ?e --
+.arf
+fs
+f
+?e --
 arf-
 ?e --------
 arf rax
@@ -596,6 +600,30 @@ f rbp @ 0x0
 f rflags @ 0x0
 f rsp @ 0x0
 fs-
+--
+    0 * classes
+   18 * registers
+    0 * sections
+    0 * segments
+    0 * symbols
+0x00000000 1 rax
+0x00000000 1 rbx
+0x00000000 1 rcx
+0x00000000 1 rdx
+0x00000000 1 rsi
+0x00000000 1 rdi
+0x00000000 1 r8
+0x00000000 1 r9
+0x00000000 1 r10
+0x00000000 1 r11
+0x00000000 1 r12
+0x00000000 1 r13
+0x00000000 1 r14
+0x00000000 1 r15
+0x00000000 1 rip
+0x00000000 1 rbp
+0x00000000 1 rflags
+0x00000000 1 rsp
 --
 f- rax
 f- rbx
