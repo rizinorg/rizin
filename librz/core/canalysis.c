@@ -5940,6 +5940,105 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 	if (!is_unknown_file(core)) {
 		rz_analysis_add_device_peripheral_map(core->bin->cur->o, core->analysis);
 	}
+
+	if (rz_config_get_b(core->config, "analysis.apply.signature")) {
+		int n_applied = 0;
+		char message[100];
+		rz_print_rowlog(core->print, "Applying signatures from sigdb");
+		rz_core_analysis_sigdb_apply(core, &n_applied, NULL);
+		rz_strf(message, "Applied %d FLIRT signatures via sigdb", n_applied);
+		rz_print_rowlog_done(core->print, message);
+	}
+
+	return true;
+}
+
+RZ_API void rz_core_analysis_sigdb_list(RzCore *core) {
+	const char *sigdb_path = rz_config_get(core->config, "flirt.sigdb.path");
+	if (RZ_STR_ISEMPTY(sigdb_path) || !rz_file_is_directory(sigdb_path)) {
+		RZ_LOG_ERROR("Cannot sigdb path is unknown or invalid (path: %s)\n", sigdb_path);
+		return;
+	}
+	char glob[1024];
+	size_t sigdb_path_len = strlen(sigdb_path);
+	rz_strf(glob, RZ_JOIN_2_PATHS("%s", "**"), sigdb_path);
+
+	RzList *files = rz_file_globsearch(glob, 10);
+	const char *flirt_file = NULL;
+	RzListIter *iter = NULL;
+	rz_list_foreach (files, iter, flirt_file) {
+		if (!rz_str_endswith(flirt_file, ".pat") && !rz_str_endswith(flirt_file, ".sig")) {
+			continue;
+		}
+		rz_cons_printf("%s\n", flirt_file + sigdb_path_len + 1);
+	}
+	rz_list_free(files);
+}
+
+RZ_API bool rz_core_analysis_sigdb_apply(RzCore *core, int *n_applied, const char *filter) {
+	rz_return_val_if_fail(core, false);
+	const char *sigdb_path = NULL;
+	const char *bin = NULL;
+	const char *arch = NULL;
+	const char *flirt_file = NULL;
+	ut64 bits = 32;
+	size_t sigdb_path_len = 0;
+	RzList *files = NULL;
+	ut8 arch_id = RZ_FLIRT_SIG_ARCH_ANY;
+	int n_flags_new, n_flags_old;
+	RzListIter *iter = NULL;
+	char glob[1024];
+
+	sigdb_path = rz_config_get(core->config, "flirt.sigdb.path");
+	if (RZ_STR_ISEMPTY(sigdb_path) || !rz_file_is_directory(sigdb_path)) {
+		RZ_LOG_INFO("Cannot apply signatures due unknown sigdb path\n");
+		return false;
+	}
+	sigdb_path_len = strlen(sigdb_path) + 1;
+	RzBinObject *obj = core->bin ? rz_bin_cur_object(core->bin) : NULL;
+	if (!obj || !obj->plugin) {
+		RZ_LOG_INFO("Cannot apply signatures due unknown bin type\n");
+		return false;
+	} else if (!strcmp(obj->plugin->name, "elf64")) {
+		bin = "elf";
+	} else if (!strcmp(obj->plugin->name, "pe64")) {
+		bin = "pe";
+	} else {
+		bin = obj->plugin->name;
+	}
+	arch = rz_config_get(core->config, "asm.arch");
+	bits = rz_config_get_i(core->config, "asm.bits");
+	arch_id = rz_core_flirt_arch_from_name(arch);
+	if (arch_id >= RZ_FLIRT_SIG_ARCH_ANY) {
+		RZ_LOG_INFO("Cannot apply signatures due unknown arch (%s)\n", arch);
+		return false;
+	}
+
+	rz_strf(glob, RZ_JOIN_5_PATHS("%s", "%s", "%s", "%" PFMT64u, "*"), sigdb_path, bin, arch, bits);
+	files = rz_file_globsearch(glob, 10);
+
+	n_flags_old = rz_flag_count(core->flags, "flirt");
+	rz_list_foreach (files, iter, flirt_file) {
+		if (RZ_STR_ISEMPTY(filter) && strstr(flirt_file + sigdb_path_len, "c++") &&
+			obj->lang != RZ_BIN_LANGUAGE_CXX && obj->lang != RZ_BIN_LANGUAGE_RUST) {
+			// C++ libs can create many false positives.
+			continue;
+		} else if (RZ_STR_ISNOTEMPTY(filter) && !strstr(flirt_file + sigdb_path_len, filter)) {
+			continue;
+		}
+		if (filter) {
+			rz_cons_printf("Applying %s signature file\n", flirt_file + sigdb_path_len);
+		} else {
+			RZ_LOG_INFO("Applying %s signature file\n", flirt_file + sigdb_path_len);
+		}
+		rz_sign_flirt_apply(core->analysis, flirt_file, arch_id);
+	}
+	rz_list_free(files);
+	n_flags_new = rz_flag_count(core->flags, "flirt");
+
+	if (n_applied) {
+		*n_applied = n_flags_new - n_flags_old;
+	}
 	return true;
 }
 

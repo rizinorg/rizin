@@ -52,6 +52,7 @@ static const char *help_msg_aa[] = {
 	"aae", " [len] ([addr])", "analyze references with ESIL (optionally to address)",
 	"aaef", "", "analyze references with ESIL in all functions",
 	"aaf", "[e|r|t] ", "analyze all functions (e analysis.hasnext=1;afr @@c:isq) (aafe=aef@@F)",
+	"aaF", " ", "applies signatures from sigdb",
 	"aai", "[j]", "show info of all analysis parameters",
 	"aan", "[gr?]", "autoname functions (aang = golang, aanr = noreturn propagation)",
 	"aao", "", "analyze all objc references",
@@ -63,6 +64,13 @@ static const char *help_msg_aa[] = {
 	"aaT", " [len]", "analyze code after trap-sleds",
 	"aau", " [len]", "list mem areas (larger than len bytes) not covered by functions",
 	"aav", " [sat]", "find values referencing a specific section or map",
+	NULL
+};
+
+static const char *help_msg_aaF[] = {
+	"Usage:", "aaF", "[l] # applies signatures from sigdb automatically",
+	"aaF", " <filter>", "applies signatures from sigdb automatically",
+	"aaFl", " ", "lists all the signatures available in sigdb",
 	NULL
 };
 
@@ -5647,6 +5655,18 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 			rz_cons_printf(" aaf  = afr@@c:isq\n");
 		}
 		break;
+	case 'F': // "aaF"
+		switch (input[1]) {
+		case 'l': // "aaFl"
+			(void)rz_core_analysis_sigdb_list(core);
+			break;
+		case '?': // "aaF?"
+			rz_core_cmd_help(core, help_msg_aaF);
+			break;
+		default: // "aaF"
+			(void)rz_core_analysis_sigdb_apply(core, NULL, rz_str_trim_head_ro(input + 1));
+			break;
+		}
 	case 'c': // "aac"
 		switch (input[1]) {
 		case '*': // "aac*"
@@ -5656,7 +5676,7 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 			rz_cmd_analysis_calls(core, input + 1, input[2] == '*', true);
 			break;
 		case '?': // "aac?"
-			eprintf("Usage: aac, aac* or aaci (imports xrefs only)\n");
+			rz_cons_printf("Usage: aac, aac* or aaci (imports xrefs only)\n");
 			break;
 		default: // "aac"
 			rz_cmd_analysis_calls(core, input + 1, false, false);
