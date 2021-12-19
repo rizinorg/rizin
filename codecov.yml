@@ -20,3 +20,5 @@ ignore:
   - "mk"
   - "sys"
   - "test"
+
+comment: false
