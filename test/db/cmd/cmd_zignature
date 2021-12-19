@@ -1787,18 +1787,18 @@ sym.new_function_name
 EOF
 RUN
 
-NAME=FLIRT apply pac signature
+NAME=FLIRT apply pat signature
 FILE=bins/flirt/elf-x86/curl-example
 CMDS=<<EOF
 aaa
-zfs bins/flirt/elf-x86/libcurl.a.pac
+zfs bins/flirt/elf-x86/libcurl.a.pat
 EOF
 EXPECT=<<EOF
-Found 100 FLIRT signatures via bins/flirt/elf-x86/libcurl.a.pac
+Found 100 FLIRT signatures via bins/flirt/elf-x86/libcurl.a.pat
 EOF
 RUN
 
-NAME=FLIRT apply pac signature
+NAME=FLIRT apply pat signature
 FILE=bins/flirt/elf-x86/curl-example
 CMDS=<<EOF
 aaa
@@ -1809,10 +1809,10 @@ Found 206 FLIRT signatures via bins/flirt/elf-x86/libcurl.a.sig
 EOF
 RUN
 
-NAME=FLIRT dump pac signature
+NAME=FLIRT dump pat signature
 FILE==
 CMDS=<<EOF
-zfd bins/flirt/elf-x86/libcurl.a.pac~?
+zfd bins/flirt/elf-x86/libcurl.a.pat~?
 EOF
 EXPECT=<<EOF
 207

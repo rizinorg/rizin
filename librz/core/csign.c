@@ -356,7 +356,7 @@ RZ_API bool rz_core_flirt_dump_file(RZ_NONNULL const char *flirt_file) {
 	rz_return_val_if_fail(RZ_STR_ISNOTEMPTY(flirt_file), false);
 
 	const char *extension = rz_str_lchr(flirt_file, '.');
-	if (RZ_STR_ISEMPTY(extension) || (strcmp(extension, ".sig") != 0 && strcmp(extension, ".pac") != 0)) {
+	if (RZ_STR_ISEMPTY(extension) || (strcmp(extension, ".sig") != 0 && strcmp(extension, ".pat") != 0)) {
 		RZ_LOG_ERROR("FLIRT: unknown extension '%s'\n", extension);
 		return false;
 	}
@@ -367,7 +367,7 @@ RZ_API bool rz_core_flirt_dump_file(RZ_NONNULL const char *flirt_file) {
 	if (!(buffer = rz_buf_new_slurp(flirt_file))) {
 		RZ_LOG_ERROR("FLIRT: cannot open %s (read mode)\n", flirt_file);
 		return false;
-	} else if (!strcmp(extension, ".pac")) {
+	} else if (!strcmp(extension, ".pat")) {
 		node = rz_sign_flirt_parse_string_pattern_from_buffer(buffer, RZ_FLIRT_NODE_OPTIMIZE_NORMAL);
 	} else {
 		node = rz_sign_flirt_parse_compressed_pattern_from_buffer(buffer, RZ_FLIRT_SIG_ARCH_ANY);
@@ -397,8 +397,8 @@ RZ_API bool rz_core_flirt_create_file(RZ_NONNULL RzCore *core, RZ_NONNULL const 
 	rz_return_val_if_fail(core && RZ_STR_ISNOTEMPTY(output_file), false);
 
 	const char *extension = rz_str_lchr(output_file, '.');
-	if (RZ_STR_ISEMPTY(extension) || (strcmp(extension, ".sig") != 0 && strcmp(extension, ".pac") != 0)) {
-		RZ_LOG_ERROR("missing or unknown extension '%s'. supported only .pac and .sig\n", extension);
+	if (RZ_STR_ISEMPTY(extension) || (strcmp(extension, ".sig") != 0 && strcmp(extension, ".pat") != 0)) {
+		RZ_LOG_ERROR("missing or unknown extension '%s'. supported only .pat and .sig\n", extension);
 		return false;
 	}
 
@@ -420,7 +420,7 @@ RZ_API bool rz_core_flirt_create_file(RZ_NONNULL RzCore *core, RZ_NONNULL const 
 	}
 
 	bool result = false;
-	if (!strcmp(extension, ".pac")) {
+	if (!strcmp(extension, ".pat")) {
 		result = rz_sign_flirt_write_string_pattern_to_buffer(node, buffer);
 	} else if (!strcmp(extension, ".sig")) {
 		ut64 hdr_version = rz_config_get_i(core->config, "flirt.sig.version");
@@ -435,7 +435,7 @@ RZ_API bool rz_core_flirt_create_file(RZ_NONNULL RzCore *core, RZ_NONNULL const 
 			RZ_LOG_WARN("config 'flirt.sig.library' is empty. using default value '" RZ_FLIRT_LIBRARY_NAME_DFL "'\n");
 			hdr_lib = RZ_FLIRT_LIBRARY_NAME_DFL;
 		} else if (architecture >= RZ_FLIRT_SIG_ARCH_ANY) {
-			RZ_LOG_ERROR("FLIRT: architecture '%s' is not supported as .sig file, we suggest to use the .pac format.\n", hdr_arch);
+			RZ_LOG_ERROR("FLIRT: architecture '%s' is not supported as .sig file, we suggest to use the .pat format.\n", hdr_arch);
 			RZ_LOG_ERROR("FLIRT: we suggest to open an issue to discuss with the rizin team about it.\n");
 			result = false;
 			goto fail;
@@ -476,13 +476,13 @@ RZ_API bool rz_core_flirt_convert_file(RZ_NONNULL RzCore *core, RZ_NONNULL const
 	rz_return_val_if_fail(core && RZ_STR_ISNOTEMPTY(input_file) && RZ_STR_ISNOTEMPTY(output_file), false);
 
 	const char *in_extension = rz_str_lchr(input_file, '.');
-	if (RZ_STR_ISEMPTY(in_extension) || (strcmp(in_extension, ".sig") != 0 && strcmp(in_extension, ".pac") != 0)) {
+	if (RZ_STR_ISEMPTY(in_extension) || (strcmp(in_extension, ".sig") != 0 && strcmp(in_extension, ".pat") != 0)) {
 		RZ_LOG_ERROR("FLIRT: unknown input extension '%s'\n", in_extension);
 		return false;
 	}
 
 	const char *out_extension = rz_str_lchr(output_file, '.');
-	if (RZ_STR_ISEMPTY(out_extension) || (strcmp(out_extension, ".sig") != 0 && strcmp(out_extension, ".pac") != 0)) {
+	if (RZ_STR_ISEMPTY(out_extension) || (strcmp(out_extension, ".sig") != 0 && strcmp(out_extension, ".pat") != 0)) {
 		RZ_LOG_ERROR("FLIRT: unknown output extension '%s'\n", out_extension);
 		return false;
 	}
@@ -504,7 +504,7 @@ RZ_API bool rz_core_flirt_convert_file(RZ_NONNULL RzCore *core, RZ_NONNULL const
 	if (!(buffer = rz_buf_new_slurp(input_file))) {
 		RZ_LOG_ERROR("FLIRT: cannot open %s (read mode)\n", input_file);
 		return false;
-	} else if (!strcmp(in_extension, ".pac")) {
+	} else if (!strcmp(in_extension, ".pat")) {
 		node = rz_sign_flirt_parse_string_pattern_from_buffer(buffer, optimize);
 	} else {
 		node = rz_sign_flirt_parse_compressed_pattern_from_buffer(buffer, RZ_FLIRT_SIG_ARCH_ANY);
@@ -520,7 +520,7 @@ RZ_API bool rz_core_flirt_convert_file(RZ_NONNULL RzCore *core, RZ_NONNULL const
 	if (!(buffer = rz_buf_new_file(output_file, O_RDWR | O_CREAT | O_TRUNC, 0644))) {
 		RZ_LOG_ERROR("FLIRT: cannot open %s (write mode)\n", output_file);
 		return false;
-	} else if (!strcmp(out_extension, ".pac")) {
+	} else if (!strcmp(out_extension, ".pat")) {
 		result = rz_sign_flirt_write_string_pattern_to_buffer(node, buffer);
 	} else {
 		ut64 hdr_version = rz_config_get_i(core->config, "flirt.sig.version");
@@ -535,7 +535,7 @@ RZ_API bool rz_core_flirt_convert_file(RZ_NONNULL RzCore *core, RZ_NONNULL const
 			RZ_LOG_WARN("config 'flirt.sig.library' is empty. using default value '" RZ_FLIRT_LIBRARY_NAME_DFL "'\n");
 			hdr_lib = RZ_FLIRT_LIBRARY_NAME_DFL;
 		} else if (architecture >= RZ_FLIRT_SIG_ARCH_ANY) {
-			RZ_LOG_ERROR("FLIRT: architecture '%s' is not supported as .sig file, we suggest to use the .pac format.\n", hdr_arch);
+			RZ_LOG_ERROR("FLIRT: architecture '%s' is not supported as .sig file, we suggest to use the .pat format.\n", hdr_arch);
 			RZ_LOG_ERROR("FLIRT: we suggest to open an issue to discuss with the rizin team about it.\n");
 			result = false;
 			goto fail;
