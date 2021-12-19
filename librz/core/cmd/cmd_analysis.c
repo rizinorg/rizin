@@ -5667,6 +5667,7 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 			(void)rz_core_analysis_sigdb_apply(core, NULL, rz_str_trim_head_ro(input + 1));
 			break;
 		}
+		break;
 	case 'c': // "aac"
 		switch (input[1]) {
 		case '*': // "aac*"
