@@ -293,7 +293,6 @@ typedef struct rz_debug_t {
 
 	RzReg *reg;
 	RzList *q_regs;
-	const char *creg; // current register value
 	RzBreakpoint *bp;
 	char *snap_path;
 

@@ -5529,15 +5529,6 @@ void __insert_value(RzCore *core) {
 		__panel_prompt(prompt, buf, sizeof(buf));
 		rz_core_write_hexpair(core, cur->model->addr, buf);
 		cur->view->refresh = true;
-	} else if (__check_panel_type(cur, PANEL_CMD_REGISTERS)) {
-		const char *creg = core->dbg->creg;
-		if (creg) {
-			const char *prompt = "new-reg-value> ";
-			__panel_prompt(prompt, buf, sizeof(buf));
-			ut64 regval = rz_num_math(core->num, buf);
-			rz_core_debug_reg_set(core, creg, regval, buf);
-			cur->view->refresh = true;
-		}
 	} else if (__check_panel_type(cur, PANEL_CMD_DISASSEMBLY)) {
 		const char *prompt = "insert hex: ";
 		__panel_prompt(prompt, buf, sizeof(buf));
