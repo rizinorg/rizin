@@ -1167,7 +1167,7 @@ RZ_API void rz_sign_flirt_apply(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL cons
 	}
 
 	const char *extension = rz_str_lchr(flirt_file, '.');
-	if (RZ_STR_ISEMPTY(extension) || (strcmp(extension, ".sig") != 0 && strcmp(extension, ".pac") != 0)) {
+	if (RZ_STR_ISEMPTY(extension) || (strcmp(extension, ".sig") != 0 && strcmp(extension, ".pat") != 0)) {
 		RZ_LOG_ERROR("FLIRT: unknown extension '%s'\n", extension);
 		return;
 	}
@@ -1177,7 +1177,7 @@ RZ_API void rz_sign_flirt_apply(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL cons
 		return;
 	}
 
-	if (!strcmp(extension, ".pac")) {
+	if (!strcmp(extension, ".pat")) {
 		node = rz_sign_flirt_parse_string_pattern_from_buffer(flirt_buf, RZ_FLIRT_NODE_OPTIMIZE_MAX);
 	} else {
 		node = rz_sign_flirt_parse_compressed_pattern_from_buffer(flirt_buf, expected_arch);

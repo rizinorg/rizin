@@ -16,14 +16,14 @@ static void rz_sign_show_help(void) {
 	       " -h                          this help message\n"
 	       " -a [-a]                     add extra 'a' to analysis command (available only with -o option)\n"
 	       " -e [k=v]                    set an evaluable config variable (available only with -o option)\n"
-	       " -c [output.pac] [input.sig] parses a FLIRT signature and converts it to its other format\n"
+	       " -c [output.pat] [input.sig] parses a FLIRT signature and converts it to its other format\n"
 	       " -o [output.sig] [input.bin] performs an analysis on the binary and generates the FLIRT signature.\n"
 	       " -d [flirt.sig]              parses a FLIRT signature and dump its content\n"
 	       " -q                          quiet mode\n"
 	       " -v                          show version information\n"
 	       "Examples:\n"
 	       "  rz-sign -d signature.sig\n"
-	       "  rz-sign -c new_signature.pac old_signature.sig\n"
+	       "  rz-sign -c new_signature.pat old_signature.sig\n"
 	       "  rz-sign -o libc.sig libc.so.6\n");
 }
 
