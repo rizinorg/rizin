@@ -108,3 +108,23 @@ RZ_IPI void rz_core_reg_update_flags(RzCore *core) {
 	}
 	regs_to_flags(core, rz_core_reg_default(core));
 }
+
+/**
+ * \brief Print registers that have changed since the last step (drd/ard)
+ */
+RZ_IPI void rz_core_reg_print_diff(RzReg *reg, RzList *items) {
+	RzListIter *iter;
+	RzRegItem *item;
+	rz_list_foreach (items, iter, item) {
+		ut64 newval = rz_reg_get_value(reg, item);
+		rz_reg_arena_swap(reg, false);
+		ut64 oldval = rz_reg_get_value(reg, item);
+		rz_reg_arena_swap(reg, false);
+		ut64 delta = newval - oldval;
+		if (delta) {
+			rz_cons_printf(
+				"%s = 0x%" PFMT64x " was 0x%" PFMT64x " delta 0x%" PFMT64x "\n",
+				item->name, newval, oldval, delta);
+		}
+	}
+}

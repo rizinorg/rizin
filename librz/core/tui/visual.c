@@ -2635,15 +2635,7 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 				if (core->seltab == 0) {
 					addr = rz_debug_reg_get(core->dbg, "SP") + delta;
 				} else if (core->seltab == 1) {
-					char buf[128];
-					prompt_read("new-reg-value> ", buf, sizeof(buf));
-					if (*buf) {
-						const char *creg = core->dbg->creg;
-						if (creg) {
-							ut64 regval = rz_num_math(core->num, buf);
-							rz_core_debug_reg_set(core, creg, regval, buf);
-						}
-					}
+					// regs, writing in here not implemented
 					return true;
 				}
 			}
@@ -3066,14 +3058,9 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 		} break;
 		case '-':
 			if (core->print->cur_enabled) {
-				if (core->seltab < 2 && core->printidx == RZ_CORE_VISUAL_MODE_DB) {
-					if (core->seltab) {
-						const char *creg = core->dbg->creg;
-						if (creg) {
-							ut64 cregval = rz_debug_reg_get(core->dbg, creg);
-							rz_core_debug_reg_set(core, creg, cregval - 1, NULL);
-						}
-					} else {
+				if (core->printidx == RZ_CORE_VISUAL_MODE_DB) {
+					if (!core->seltab) {
+						// stack view
 						int w = rz_config_get_i(core->config, "hex.cols");
 						rz_config_set_i(core->config, "stack.size",
 							rz_config_get_i(core->config, "stack.size") - w);
@@ -3095,14 +3082,9 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			break;
 		case '+':
 			if (core->print->cur_enabled) {
-				if (core->seltab < 2 && core->printidx == RZ_CORE_VISUAL_MODE_DB) {
-					if (core->seltab) {
-						const char *creg = core->dbg->creg;
-						if (creg) {
-							ut64 cregval = rz_debug_reg_get(core->dbg, creg);
-							rz_core_debug_reg_set(core, creg, cregval + 1, NULL);
-						}
-					} else {
+				if (core->printidx == RZ_CORE_VISUAL_MODE_DB) {
+					if (!core->seltab) {
+						// stack view
 						int w = rz_config_get_i(core->config, "hex.cols");
 						rz_config_set_i(core->config, "stack.size",
 							rz_config_get_i(core->config, "stack.size") + w);
@@ -3125,22 +3107,7 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 		case '/': {
 			bool mouse_state = __holdMouseState(core);
 			if (core->print->cur_enabled) {
-				if (core->seltab < 2 && core->printidx == RZ_CORE_VISUAL_MODE_DB) {
-					if (core->seltab) {
-						const char *creg = core->dbg->creg;
-						if (creg) {
-							int delta = core->rasm->bits / 8;
-							ut64 cregval = rz_debug_reg_get(core->dbg, creg);
-							rz_core_debug_reg_set(core, creg, cregval - delta, NULL);
-						}
-					} else {
-						int w = rz_config_get_i(core->config, "hex.cols");
-						rz_config_set_i(core->config, "stack.size",
-							rz_config_get_i(core->config, "stack.size") - w);
-					}
-				} else {
-					visual_search(core);
-				}
+				visual_search(core);
 			} else {
 				if (autoblocksize) {
 					rz_core_cmd0(core, "?i highlight;e scr.highlight=`yp`");
@@ -3162,22 +3129,7 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			break;
 		case '*':
 			if (core->print->cur_enabled) {
-				if (core->seltab < 2 && core->printidx == RZ_CORE_VISUAL_MODE_DB) {
-					if (core->seltab) {
-						const char *creg = core->dbg->creg;
-						if (creg) {
-							int delta = core->rasm->bits / 8;
-							ut64 cregval = rz_debug_reg_get(core->dbg, creg);
-							rz_core_debug_reg_set(core, creg, cregval + delta, NULL);
-						}
-					} else {
-						int w = rz_config_get_i(core->config, "hex.cols");
-						rz_config_set_i(core->config, "stack.size",
-							rz_config_get_i(core->config, "stack.size") + w);
-					}
-				} else {
-					rz_core_debug_reg_set(core, "PC", core->offset + core->print->cur, NULL);
-				}
+				rz_core_debug_reg_set(core, "PC", core->offset + core->print->cur, NULL);
 			} else if (!autoblocksize) {
 				rz_core_block_size(core, core->blocksize + cols);
 			}
