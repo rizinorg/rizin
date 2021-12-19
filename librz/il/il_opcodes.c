@@ -611,10 +611,10 @@ RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_seqn(ut32 n, ...) {
  *
  *  blk lbl data ctrl a labeled sequence of effects.
  */
-RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_blk(RZ_NONNULL RzILOpEffect *data_eff, RZ_NONNULL RzILOpEffect *ctrl_eff) {
+RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_blk(RZ_NONNULL const char *label, RZ_NONNULL RzILOpEffect *data_eff, RZ_NONNULL RzILOpEffect *ctrl_eff) {
 	rz_return_val_if_fail(data_eff && ctrl_eff, NULL);
 	RzILOpEffect *ret;
-	rz_il_op_new_2(Effect, RZ_IL_OP_BLK, RzILOpArgsBlk, blk, data_eff, ctrl_eff);
+	rz_il_op_new_3(Effect, RZ_IL_OP_BLK, RzILOpArgsBlk, blk, label, data_eff, ctrl_eff);
 	return ret;
 }
 

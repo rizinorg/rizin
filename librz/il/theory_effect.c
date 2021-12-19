@@ -163,6 +163,37 @@ bool rz_il_handler_seq(RzILVM *vm, RzILOpEffect *op) {
 	return rz_il_evaluate_effect(vm, op_seq->x) && rz_il_evaluate_effect(vm, op_seq->y);
 }
 
+
+bool rz_il_handler_blk(RzILVM *vm, RzILOpEffect *op) {
+	rz_return_val_if_fail(vm && op, false);
+
+	RzILOpArgsBlk *op_blk = op->op.blk;
+	if (op_blk->label) {
+		rz_il_vm_create_label(vm, op_blk->label, vm->pc); // create the label if `blk` is labelled
+	}
+
+	return rz_il_evaluate_effect(vm, op_blk->data_eff) && rz_il_evaluate_effect(vm, op_blk->ctrl_eff);
+}
+
+bool rz_il_handler_repeat(RzILVM *vm, RzILOpEffect *op) {
+	rz_return_val_if_fail(vm && op, NULL);
+
+	RzILOpArgsRepeat *op_repeat = op->op.repeat;
+	bool res = true;
+	RzILBool *condition;
+	while ((condition = rz_il_evaluate_bool(vm, op_repeat->condition))) {
+		if (!condition->b) {
+			break;
+		}
+		res = res && rz_il_evaluate_effect(vm, op_repeat->data_eff);
+		rz_il_bool_free(condition);
+	}
+	rz_il_bool_free(condition);
+
+	return res;
+}
+
+
 bool rz_il_handler_branch(RzILVM *vm, RzILOpEffect *op) {
 	rz_return_val_if_fail(vm && op, false);
 

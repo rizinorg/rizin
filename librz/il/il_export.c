@@ -471,11 +471,26 @@ static void il_opdmp_seq(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
 }
 
 static void il_opdmp_blk(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
-	il_op_unimplemented("blk");
+	RzILOpArgsBlk *opx = op->op.blk;
+	if (sb) {
+		rz_strbuf_appendf(sb, "blk(lbl:%s, data:", opx->label);
+		il_op_effect_resolve(opx->data_eff, sb, pj);
+		rz_strbuf_append(sb, ", ctrl:");
+		il_op_effect_resolve(opx->ctrl_eff, sb, pj);
+		rz_strbuf_append(sb, ")");
+	} else {
+		pj_o(pj);
+		pj_ks(pj, "label", opx->label);
+		pj_k(pj, "data");
+		il_op_effect_resolve(opx->data_eff, sb, pj);
+		pj_k(pj, "ctrl");
+		il_op_effect_resolve(opx->ctrl_eff, sb, pj);
+		pj_end(pj);
+	}
 }
 
 static void il_opdmp_repeat(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
-	il_op_unimplemented("repeat");
+	il_op_param_2("repeat", op->op.repeat, pure, condition, effect, data_eff);
 }
 
 static void il_opdmp_branch(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
