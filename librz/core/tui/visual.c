@@ -3080,9 +3080,9 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 					}
 				} else {
 					if (core->print->ocur == -1) {
-						sprintf(buf, "wos 01 @ $$+%i!1", core->print->cur);
+						sprintf(buf, "wos 01 @ $$+%i @!1", core->print->cur);
 					} else {
-						sprintf(buf, "wos 01 @ $$+%i!%i", core->print->cur < core->print->ocur ? core->print->cur : core->print->ocur,
+						sprintf(buf, "wos 01 @ $$+%i @!%i", core->print->cur < core->print->ocur ? core->print->cur : core->print->ocur,
 							RZ_ABS(core->print->ocur - core->print->cur) + 1);
 					}
 					rz_core_cmd(core, buf, 0);
@@ -3109,9 +3109,9 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 					}
 				} else {
 					if (core->print->ocur == -1) {
-						sprintf(buf, "woa 01 @ $$+%i!1", core->print->cur);
+						sprintf(buf, "woa 01 @ $$+%i @!1", core->print->cur);
 					} else {
-						sprintf(buf, "woa 01 @ $$+%i!%i", core->print->cur < core->print->ocur ? core->print->cur : core->print->ocur,
+						sprintf(buf, "woa 01 @ $$+%i @!%i", core->print->cur < core->print->ocur ? core->print->cur : core->print->ocur,
 							RZ_ABS(core->print->ocur - core->print->cur) + 1);
 					}
 					rz_core_cmd(core, buf, 0);
