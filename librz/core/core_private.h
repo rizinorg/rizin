@@ -121,10 +121,10 @@ RZ_IPI RzCmdStatus rz_core_binldr_plugin_print(const RzBinLdrPlugin *ld, RzCmdSt
 /* creg.c */
 RZ_IPI void rz_core_reg_update_flags(RzCore *core);
 RZ_IPI RzList /*<RzRegItem>*/ *rz_core_reg_flags_candidates(RzCore *core, RzReg *reg);
+RZ_IPI void rz_core_reg_print_diff(RzReg *reg, RzList *items);
 
 /* cdebug.c */
 RZ_IPI bool rz_core_debug_reg_set(RzCore *core, const char *regname, ut64 val, const char *strval);
-RZ_IPI bool rz_core_debug_reg_list(RzCore *core, int type, int size, bool skip_covered, PJ *pj, int rad, const char *use_color);
 RZ_IPI void rz_core_debug_sync_bits(RzCore *core);
 RZ_IPI void rz_core_debug_single_step_in(RzCore *core);
 RZ_IPI void rz_core_debug_single_step_over(RzCore *core);
