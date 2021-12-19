@@ -5953,6 +5953,11 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 	return true;
 }
 
+/**
+ * \brief Outputs the list of signatures found in the flirt.sigdb.path
+ *
+ * \param core The RzCore instance
+ */
 RZ_API void rz_core_analysis_sigdb_list(RzCore *core) {
 	const char *sigdb_path = rz_config_get(core->config, "flirt.sigdb.path");
 	if (RZ_STR_ISEMPTY(sigdb_path) || !rz_file_is_directory(sigdb_path)) {
@@ -5975,6 +5980,14 @@ RZ_API void rz_core_analysis_sigdb_list(RzCore *core) {
 	rz_list_free(files);
 }
 
+/**
+ * \brief tries to apply the signatures in the flirt.sigdb.path
+ *
+ * \param core       The RzCore instance
+ * \param n_applied  Returns the number of successfully applied signatures
+ * \param filter     Filters the signatures found following the user input
+ * \return fail when an error occurs otherwise true
+ */
 RZ_API bool rz_core_analysis_sigdb_apply(RzCore *core, int *n_applied, const char *filter) {
 	rz_return_val_if_fail(core, false);
 	const char *sigdb_path = NULL;
@@ -6022,6 +6035,7 @@ RZ_API bool rz_core_analysis_sigdb_apply(RzCore *core, int *n_applied, const cha
 		if (RZ_STR_ISEMPTY(filter) && strstr(flirt_file + sigdb_path_len, "c++") &&
 			obj->lang != RZ_BIN_LANGUAGE_CXX && obj->lang != RZ_BIN_LANGUAGE_RUST) {
 			// C++ libs can create many false positives.
+			// So their usage is limited to C++ and RUST lang
 			continue;
 		} else if (RZ_STR_ISNOTEMPTY(filter) && !strstr(flirt_file + sigdb_path_len, filter)) {
 			continue;
