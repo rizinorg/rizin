@@ -112,7 +112,7 @@ RZ_API void rz_il_event_json(RZ_NONNULL RzILEvent *evt, RZ_NONNULL PJ *pj);
 RZ_API RZ_OWN RzBitVector *rz_il_evaluate_bitv(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOp *op, RZ_NONNULL RzILOpArgType *type);
 RZ_API RZ_OWN RzILBool *rz_il_evaluate_bool(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOp *op, RZ_NONNULL RzILOpArgType *type);
 RZ_API RZ_OWN RzILVal *rz_il_evaluate_val(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOp *op, RZ_NONNULL RzILOpArgType *type);
-RZ_API RZ_OWN RzILEffect *rz_il_evaluate_effect(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOp *op, RZ_NONNULL RzILOpArgType *type);
+RZ_API RZ_OWN void rz_il_evaluate_effect(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOp *op, RZ_NONNULL RzILOpArgType *type);
 
 // recursively parse and evaluate
 RZ_API RZ_OWN void *rz_il_parse_op_root(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOp *op, RZ_NONNULL RzILOpArgType *type);

@@ -576,8 +576,8 @@ RZ_API RZ_OWN RzILVal *rz_il_evaluate_val(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzIL
  * \param type, RzILOpArgType*, a pointer to store type info for error-checking
  * \return effect, RzILEffect*, expression value
  */
-RZ_API RZ_OWN RzILEffect *rz_il_evaluate_effect(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOp *op, RZ_NONNULL RzILOpArgType *type) {
-	rz_return_val_if_fail(vm && op && type, NULL);
+RZ_API RZ_OWN void rz_il_evaluate_effect(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOp *op, RZ_NONNULL RzILOpArgType *type) {
+	rz_return_if_fail(vm && op && type);
 	void *result = rz_il_parse_op_root(vm, op, type);
 	RzILOpArgType t = *type;
 
@@ -585,8 +585,6 @@ RZ_API RZ_OWN RzILEffect *rz_il_evaluate_effect(RZ_NONNULL RzILVM *vm, RZ_NONNUL
 	// else, convert to bitv if possible
 	// else report error
 	switch (t) {
-	case RZIL_OP_ARG_EFF:
-		return result;
 	case RZIL_OP_ARG_BITV:
 		rz_bv_free(result);
 		break;
@@ -603,8 +601,6 @@ RZ_API RZ_OWN RzILEffect *rz_il_evaluate_effect(RZ_NONNULL RzILVM *vm, RZ_NONNUL
 		RZ_LOG_ERROR("RzIL: unknown RzILEffect type\n");
 		break;
 	}
-
-	return NULL;
 }
 
 /**

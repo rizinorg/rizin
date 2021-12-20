@@ -18,8 +18,7 @@ typedef union {
 } RzValUnion;
 
 /**
- *  \struct rz_il_val_t
- *  \brief structure of RzILVal
+ * A concrete value of `'a pure`. Either a bitvector or boolean.
  */
 typedef struct rz_il_val_t {
 	RzILVarType type; ///< type of value

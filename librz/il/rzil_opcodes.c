@@ -465,15 +465,10 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_append(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILO
 	return ret;
 }
 
-/**
- *  \brief op structure for `perform` ('a Effect.sort -> 'a eff)
- *
- *  perform s performs a generic effect of sort s.
- */
-RZ_API RZ_OWN RzILOp *rz_il_op_new_perform(RZ_NONNULL RzILOp *eff) {
+RZ_API RZ_OWN RzILOp *rz_il_op_new_nop(RZ_NONNULL RzILOp *eff) {
 	rz_return_val_if_fail(eff, NULL);
 	RzILOp *ret;
-	rz_il_op_new_1(RZIL_OP_PERFORM, RzILOpPerform, perform, eff);
+	rz_il_op_new_0(RZIL_OP_NOP);
 	return ret;
 }
 
@@ -728,8 +723,8 @@ RZ_API void rz_il_op_free(RZ_NULLABLE RzILOp *op) {
 	case RZIL_OP_STORE:
 		rz_il_op_free_2(store, key, value);
 		break;
-	case RZIL_OP_PERFORM:
-		rz_il_op_free_1(perform, eff);
+	case RZIL_OP_NOP:
+		// nothing to free
 		break;
 	case RZIL_OP_SET:
 		rz_il_op_free_1(set, x);
