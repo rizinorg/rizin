@@ -201,7 +201,19 @@ static bool test_rzil_vm_op_set() {
 
 	rz_il_vm_free(vm);
 	mu_end;
+}
 
+static bool test_rzil_vm_op_jmp() {
+	RzILVM *vm = rz_il_vm_new(0, 8, 16);
+
+	RzILOp *op = rz_il_op_new_jmp(rz_il_op_new_bitv_from_ut64(8, 0x42));
+	RzILOpArgType tret = RZIL_OP_ARG_INIT;
+	rz_il_evaluate_effect(vm, op, &tret);
+	rz_il_op_free(op);
+	mu_assert_eq(rz_bv_to_ut64(vm->pc), 0x42, "jumped");
+
+	rz_il_vm_free(vm);
+	mu_end;
 }
 
 bool all_tests() {
@@ -210,6 +222,7 @@ bool all_tests() {
 	mu_run_test(test_rzil_vm_operation);
 	mu_run_test(test_rzil_vm_root_evaluation);
 	mu_run_test(test_rzil_vm_op_set);
+	mu_run_test(test_rzil_vm_op_jmp);
 	return tests_passed != tests_run;
 }
 

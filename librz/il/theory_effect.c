@@ -160,11 +160,10 @@ void *rz_il_handler_jmp(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 
 	RzILOpJmp *op_jmp = op->op.jmp;
-	RzBitVector *addr = rz_il_evaluate_bitv(vm, op_jmp->dst, type);
-	RzILEffect *eff = rz_il_effect_new(EFFECT_TYPE_CTRL);
-	eff->ctrl_eff->pc = addr;
-	rz_il_perform_ctrl(vm, eff);
-	rz_il_effect_free(eff);
+	RzBitVector *dst = rz_il_evaluate_bitv(vm, op_jmp->dst, type);
+	rz_il_vm_event_add(vm, rz_il_event_pc_write_new(vm->pc, dst));
+	rz_bv_free(vm->pc);
+	vm->pc = dst;
 
 	*type = RZIL_OP_ARG_EFF;
 	return NULL;
