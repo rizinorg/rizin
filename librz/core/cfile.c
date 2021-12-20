@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "core_private.h"
+#include "core_private_base.h"
 
 #define UPDATE_TIME(a) (r->times->file_open_time = rz_time_now_mono() - (a))
 
@@ -882,25 +883,36 @@ static bool map_multi_dex(RzCore *core, RzIODesc *desc, ut32 id) {
 	if (!rz_str_endswith(desc->name, ".dex")) {
 		return true;
 	}
+	RzCoreFile *cf = rz_core_file_cur(core);
+
+	// adds the current size and aligns next address
+	ut64 base_address = RZ_CORE_BASE_ADDRESS_DEX;
+	RzBinFile *cur = rz_pvector_empty(&cf->binfiles) ? NULL : rz_pvector_tail(&cf->binfiles);
+	if (cur) {
+		RzIODesc *iod = rz_io_desc_get(core->io, cur->fd);
+		if (iod) {
+			base_address = cur->loadaddr;
+			base_address += rz_io_desc_size(iod);
+			rz_core_align_base_address(base_address);
+		}
+	}
 
 	ut64 size = rz_io_desc_size(desc);
-	ut64 baddr = rz_io_map_next_available(core->io, 0x200000, size, 0x100000);
-	RZ_LOG_INFO("Mapping %s at 0x%" PFMT64x " with size 0x%" PFMT64x "\n", desc->name, baddr, size);
-	if (baddr != UT64_MAX) {
-		RzCoreFile *cf = rz_core_file_cur(core);
-		rz_io_use_fd(core->io, desc->fd);
-		RzBinOptions opt;
-		rz_core_bin_options_init(core, &opt, desc->fd, baddr, 0);
-		opt.xtr_idx = 0;
-		RzBinFile *binfile = rz_bin_open_io(core->bin, &opt);
-		if (!binfile) {
-			RZ_LOG_ERROR("Cannot load bin file %s.\n", desc->name);
-			return true;
-		}
+	RZ_LOG_INFO("Mapping at 0x%08" PFMT64x " with size 0x08%" PFMT64x " %s\n", base_address, size, desc->name);
 
-		rz_pvector_push(&cf->binfiles, binfile);
-		rz_core_bin_apply_all_info(core, binfile);
+	rz_io_use_fd(core->io, desc->fd);
+	RzBinOptions opt;
+	rz_core_bin_options_init(core, &opt, desc->fd, base_address, 0);
+	opt.xtr_idx = 0;
+	RzBinFile *binfile = rz_bin_open_io(core->bin, &opt);
+	if (!binfile) {
+		RZ_LOG_ERROR("Cannot load bin file %s.\n", desc->name);
+		return true;
 	}
+	binfile->loadaddr = base_address;
+
+	rz_pvector_push(&cf->binfiles, binfile);
+	rz_core_bin_apply_all_info(core, binfile);
 
 	return true;
 }
@@ -1092,12 +1104,16 @@ RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filen
  *
  * Calls rz_io_open_many and maps all the file descriptors to an RzCoreFile
  */
-RZ_API RZ_BORROW RzCoreFile *rz_core_file_open_many(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *file, int perm, ut64 loadaddr) {
+RZ_API RZ_BORROW RzCoreFile *rz_core_file_open_many(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *file, int perm, ut64 base_address) {
 	RzList *list_fds = rz_io_open_many(r->io, file, perm, 0644);
 
 	if (rz_list_empty(list_fds)) {
 		rz_list_free(list_fds);
 		return NULL;
+	}
+
+	if (!base_address) {
+		base_address = RZ_CORE_BASE_ADDRESS_DEFAULT;
 	}
 
 	RzListIter *it = NULL;
@@ -1117,9 +1133,14 @@ RZ_API RZ_BORROW RzCoreFile *rz_core_file_open_many(RZ_NONNULL RzCore *r, RZ_NUL
 		}
 		r->file = fh;
 		rz_list_append(r->files, fh);
-		if (!rz_core_bin_load(r, desc->name, loadaddr)) {
+		ut64 size = rz_io_desc_size(desc);
+		RZ_LOG_INFO("Mapping at 0x%08" PFMT64x " with size 0x08%" PFMT64x " %s\n", base_address, size, desc->name);
+		if (!rz_core_bin_load(r, desc->name, base_address)) {
 			RZ_LOG_ERROR("failed to load %s\n", desc->name);
 		}
+		// adds the current size and aligns next address
+		base_address += size;
+		rz_core_align_base_address(base_address);
 	}
 
 	rz_list_free(list_fds);

@@ -536,7 +536,7 @@ RZ_API ut64 rz_debug_execute(RzDebug *dbg, const ut8 *buf, int len, int restore)
 
 		/* execute code here */
 		dbg->iob.write_at(dbg->iob.io, rpc, buf, len);
-		// rz_bp_add_sw (dbg->bp, rpc+len, 4, RZ_BP_PROT_EXEC);
+		// rz_bp_add_sw (dbg->bp, rpc+len, 4, RZ_PERM_X);
 		rz_debug_continue(dbg);
 		// rz_bp_del (dbg->bp, rpc+len);
 		/* TODO: check if stopped in breakpoint or not */

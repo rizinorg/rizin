@@ -44,8 +44,6 @@
 
 set(Rizin_VERSION @RZ_VERSION@)
 
-@PACKAGE_INIT@
-
 if(NOT Rizin_FIND_COMPONENTS)
     set(Rizin_FIND_COMPONENTS Core)
 endif()

@@ -460,13 +460,13 @@ static inline void get_arm64_hwwp_values(ut64 address, int size, int rw, ut32 *c
 	const ut32 enable = 1;
 	ut32 load_store = 0;
 	switch (rw) {
-	case RZ_BP_PROT_READ:
+	case RZ_PERM_R:
 		load_store = 1;
 		break;
-	case RZ_BP_PROT_WRITE:
+	case RZ_PERM_W:
 		load_store = 2;
 		break;
-	case RZ_BP_PROT_ACCESS:
+	case RZ_PERM_RW:
 		load_store = 3;
 		break;
 	}
@@ -475,11 +475,11 @@ static inline void get_arm64_hwwp_values(ut64 address, int size, int rw, ut32 *c
 }
 
 static inline bool is_watchpoint(RzBreakpointItem *b) {
-	return b->perm & (RZ_BP_PROT_ACCESS | RZ_BP_PROT_READ | RZ_BP_PROT_WRITE);
+	return b->perm & (RZ_PERM_RW | RZ_PERM_R | RZ_PERM_W);
 }
 
 static inline bool is_breakpoint(RzBreakpointItem *b) {
-	return b->perm & RZ_BP_PROT_EXEC;
+	return b->perm & RZ_PERM_X;
 }
 
 int w32_hwbp_arm_add(RzDebug *dbg, RzBreakpoint *bp, RzBreakpointItem *b) {

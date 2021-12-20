@@ -89,15 +89,13 @@ ut64 parse_label_id(char *lbl_name) {
 RzPVector *bf_right_arrow(RzILVM *vm, ut64 id) {
 	// (set ptr (+ (val ptr) (int 1)))
 	RzILOp *add = rz_il_op_new_add(bf_il_ptr(), bf_il_one(BF_ADDR_SIZE));
-	RzILOp *perform = rz_il_op_new_perform(bf_il_set_ptr(add));
-	return rz_il_make_oplist(1, perform);
+	return rz_il_make_oplist(1, bf_il_set_ptr(add));
 }
 
 RzPVector *bf_left_arrow(RzILVM *vm, ut64 id) {
 	// (set ptr (- (val ptr) (int 1)))
 	RzILOp *sub = rz_il_op_new_sub(bf_il_ptr(), bf_il_one(BF_ADDR_SIZE));
-	RzILOp *perform = rz_il_op_new_perform(bf_il_set_ptr(sub));
-	return rz_il_make_oplist(1, perform);
+	return rz_il_make_oplist(1, bf_il_set_ptr(sub));
 }
 
 RzPVector *bf_inc(RzILVM *vm, ut64 id) {
@@ -121,15 +119,13 @@ RzPVector *bf_dec(RzILVM *vm, ut64 id) {
 RzPVector *bf_out(RzILVM *vm, ut64 id) {
 	// (goto write)
 	RzILOp *goto_ = rz_il_op_new_goto("write");
-	RzILOp *perform = rz_il_op_new_perform(goto_);
-	return rz_il_make_oplist(1, perform);
+	return rz_il_make_oplist(1, goto_);
 }
 
 RzPVector *bf_in(RzILVM *vm, ut64 id) {
 	// (goto hook_read)
 	RzILOp *goto_ = rz_il_op_new_goto("read");
-	RzILOp *perform = rz_il_op_new_perform(goto_);
-	return rz_il_make_oplist(1, perform);
+	return rz_il_make_oplist(1, goto_);
 }
 
 RzPVector *bf_llimit(RzILVM *vm, BfContext *ctx, ut64 id, ut64 addr) {
@@ -175,8 +171,7 @@ RzPVector *bf_llimit(RzILVM *vm, BfContext *ctx, ut64 id, ut64 addr) {
 	RzILOp *branch = rz_il_op_new_branch(load, NULL, goto_);
 
 	// perform
-	RzILOp *perform = rz_il_op_new_perform(branch);
-	return rz_il_make_oplist(1, perform);
+	return rz_il_make_oplist(1, branch);
 }
 
 RzPVector *bf_rlimit(RzILVM *vm, BfContext *ctx, ut64 id, ut64 addr) {
@@ -215,11 +210,8 @@ RzPVector *bf_rlimit(RzILVM *vm, BfContext *ctx, ut64 id, ut64 addr) {
 	// branch if (load mem (var ptr)) is true then goto ]
 	RzILOp *branch = rz_il_op_new_branch(load, goto_, NULL);
 
-	// perform
-	RzILOp *perform = rz_il_op_new_perform(branch);
-
 	free(to_free);
-	return rz_il_make_oplist(1, perform);
+	return rz_il_make_oplist(1, branch);
 }
 
 static bool bf_specific_init(RzAnalysisRzil *rzil) {

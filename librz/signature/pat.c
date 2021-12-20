@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-/** \file pac.c
+/** \file pat.c
  * FLIRT uncompressed file format.
  *
  * An example of uncompressed format is shown below:
@@ -15,7 +15,7 @@
  *
  * ```
  *
- * The '---' is the pac file terminator
+ * The '---' is the pat file terminator
  * Some files may contain comments using hashtag (#) as prefix but it is not the standard format.
  *
  * 4154554889FD534889F3C60700E8........C6441DFF004189C485C07515BE2E
@@ -44,12 +44,12 @@
 #include <rz_util.h>
 
 #if 0
-#define pac_dbg(...) eprintf(__VA_ARGS__)
+#define pat_dbg(...) eprintf(__VA_ARGS__)
 #else
-#define pac_dbg(...)
+#define pat_dbg(...)
 #endif
 
-#define PAC_LINE_BUFFER_SIZE 1024
+#define PAT_LINE_BUFFER_SIZE 1024
 
 extern void module_free(RzFlirtModule *module);
 extern bool flirt_node_optimize(RzFlirtNode *root);
@@ -134,10 +134,10 @@ err:
  * # some comment line
  * ---
  *
- * The '---' are the pac file terminator
+ * The '---' are the pat file terminator
  * Some files may contain comments using hashtag (#) as prefix
  */
-static bool flirt_pac_parse_line(RzFlirtNode *root, RzStrBuf *sb, ut32 line_num, bool tail_bytes) {
+static bool flirt_pat_parse_line(RzFlirtNode *root, RzStrBuf *sb, ut32 line_num, bool tail_bytes) {
 	RzFlirtNode *child = NULL;
 	RzFlirtModule *module = NULL;
 	char *tmp_tok = NULL;
@@ -204,7 +204,7 @@ static bool flirt_pac_parse_line(RzFlirtNode *root, RzStrBuf *sb, ut32 line_num,
 		RZ_LOG_ERROR("FLIRT: invalid pattern with mask (%s) at line %u\n", tmp_tok, line_num);
 		goto err;
 	}
-	pac_dbg("pattern: %s\n", tmp_tok);
+	pat_dbg("pattern: %s\n", tmp_tok);
 
 	// CRC16 length
 	// [...] 07
@@ -216,7 +216,7 @@ static bool flirt_pac_parse_line(RzFlirtNode *root, RzStrBuf *sb, ut32 line_num,
 		RZ_LOG_ERROR("FLIRT: invalid crc16 length (%s) at line %u\n", tmp_tok, line_num);
 		goto err;
 	}
-	pac_dbg("crc16 length: %s\n", tmp_tok);
+	pat_dbg("crc16 length: %s\n", tmp_tok);
 
 	// CRC16 value
 	// [...] FAEE
@@ -231,7 +231,7 @@ static bool flirt_pac_parse_line(RzFlirtNode *root, RzStrBuf *sb, ut32 line_num,
 		RZ_LOG_ERROR("FLIRT: invalid crc16 value (%s) at line %u\n", tmp_tok, line_num);
 		goto err;
 	}
-	pac_dbg("crc16: %s\n", tmp_tok);
+	pat_dbg("crc16: %s\n", tmp_tok);
 
 	// function size (min 2 bytes, but can be bigger)
 	// [...] 003B
@@ -241,7 +241,7 @@ static bool flirt_pac_parse_line(RzFlirtNode *root, RzStrBuf *sb, ut32 line_num,
 		RZ_LOG_ERROR("FLIRT: invalid function size (%s) at line %u\n", tmp_tok, line_num);
 		goto err;
 	}
-	pac_dbg("function size: %s\n", tmp_tok);
+	pat_dbg("function size: %s\n", tmp_tok);
 
 	// symbols
 	// :0000@ Curl_gethostname ^000E gethostname ^0027 strchr
@@ -292,7 +292,7 @@ static bool flirt_pac_parse_line(RzFlirtNode *root, RzStrBuf *sb, ut32 line_num,
 		function->is_local = is_local;
 		function->offset = offset;
 		strncpy(function->name, tmp_tok, RZ_MIN(len_tok, RZ_FLIRT_NAME_MAX - 1));
-		pac_dbg("%s function: %04x %s\n", to_append == module->referenced_functions ? "ref" : (function->is_local ? "loc" : "pub"), offset, tmp_tok);
+		pat_dbg("%s function: %04x %s\n", to_append == module->referenced_functions ? "ref" : (function->is_local ? "loc" : "pub"), offset, tmp_tok);
 	}
 
 	if (tail_bytes && RZ_STR_ISNOTEMPTY(tmp_tok) && (IS_HEXCHAR(tmp_tok[0]) || tmp_tok[0] == '.')) {
@@ -323,7 +323,7 @@ static bool flirt_pac_parse_line(RzFlirtNode *root, RzStrBuf *sb, ut32 line_num,
 			tail->offset = o;
 			tail->value = byte;
 		}
-		pac_dbg("tail: %s\n", tmp_tok);
+		pat_dbg("tail: %s\n", tmp_tok);
 	}
 
 	if (rz_list_length(module->public_functions) < 1) {
@@ -360,7 +360,7 @@ RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_parse_string_pattern_from_buffer(RZ_NON
 		return NULL;
 	}
 
-	char buffer[PAC_LINE_BUFFER_SIZE];
+	char buffer[PAT_LINE_BUFFER_SIZE];
 	const char *buffer_end = buffer + sizeof(buffer);
 	ut32 line_num = 1;
 	char *newline = NULL;
@@ -391,8 +391,8 @@ RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_parse_string_pattern_from_buffer(RZ_NON
 	do {
 		if (newline && rz_strbuf_length(line) > 0) {
 			char *p = newline + 1;
-			pac_dbg("%05u: %s\n", line_num, rz_strbuf_get(line));
-			bool parsed = flirt_pac_parse_line(root, line, line_num, tail_bytes);
+			pat_dbg("%05u: %s\n", line_num, rz_strbuf_get(line));
+			bool parsed = flirt_pat_parse_line(root, line, line_num, tail_bytes);
 			rz_strbuf_fini(line);
 			rz_strbuf_init(line);
 			if (!parsed) {
@@ -418,7 +418,7 @@ RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_parse_string_pattern_from_buffer(RZ_NON
 	} while (true);
 
 	if (rz_strbuf_length(line) > 0) {
-		flirt_pac_parse_line(root, line, line_num, tail_bytes);
+		flirt_pat_parse_line(root, line, line_num, tail_bytes);
 	}
 
 	rz_strbuf_free(line);
@@ -433,7 +433,7 @@ RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_parse_string_pattern_from_buffer(RZ_NON
 	return root;
 }
 
-static void flirt_pac_append_prelude(RzStrBuf *prelude, RZ_NONNULL const RzFlirtNode *child) {
+static void flirt_pat_append_prelude(RzStrBuf *prelude, RZ_NONNULL const RzFlirtNode *child) {
 	for (ut32 i = 0; i < child->length; i++) {
 		if (child->pattern_mask[i]) {
 			rz_strbuf_appendf(prelude, "%02X", child->pattern_bytes[i]);
@@ -443,8 +443,8 @@ static void flirt_pac_append_prelude(RzStrBuf *prelude, RZ_NONNULL const RzFlirt
 	}
 }
 
-static bool flirt_pac_write_line(RZ_NONNULL const RzFlirtNode *node, RZ_NONNULL RzBuffer *buffer, RzStrBuf *prelude) {
-	flirt_pac_append_prelude(prelude, node);
+static bool flirt_pat_write_line(RZ_NONNULL const RzFlirtNode *node, RZ_NONNULL RzBuffer *buffer, RzStrBuf *prelude) {
+	flirt_pat_append_prelude(prelude, node);
 	int prelude_len = rz_strbuf_length(prelude);
 
 	if (rz_list_length(node->child_list) > 0) {
@@ -452,7 +452,7 @@ static bool flirt_pac_write_line(RZ_NONNULL const RzFlirtNode *node, RZ_NONNULL 
 		RzFlirtNode *child;
 		rz_list_foreach (node->child_list, it, child) {
 			rz_strbuf_slice(prelude, 0, prelude_len);
-			if (!flirt_pac_write_line(child, buffer, prelude)) {
+			if (!flirt_pat_write_line(child, buffer, prelude)) {
 				return false;
 			}
 		}
@@ -528,7 +528,7 @@ RZ_API bool rz_sign_flirt_write_string_pattern_to_buffer(RZ_NONNULL const RzFlir
 	RzFlirtNode *child;
 	rz_list_foreach (root->child_list, it, child) {
 		rz_strbuf_init(&sb);
-		if (!flirt_pac_write_line(child, buffer, &sb)) {
+		if (!flirt_pat_write_line(child, buffer, &sb)) {
 			return false;
 		}
 		rz_strbuf_fini(&sb);
