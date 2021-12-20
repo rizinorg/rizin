@@ -90,6 +90,8 @@ else
 endif
 rz_core_inc = [platform_inc, include_directories(rz_core_inc), 'cmd_descs']
 
+shell_parser_dep = dependency('rizin-shell-parser')
+
 rz_core_deps = [
   rz_util_dep,
   rz_demangler_dep,

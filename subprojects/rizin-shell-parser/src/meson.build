@@ -11,4 +11,4 @@ else
 endif
 
 shell_parser_files = [files('scanner.c'), parser_c]
-shell_parser_inc = [platform_inc, include_directories('tree_sitter')]
+shell_parser_inc = [include_directories('tree_sitter')]

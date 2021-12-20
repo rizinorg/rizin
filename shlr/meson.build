@@ -1,7 +1,3 @@
-# new rizin shell parser
-subdir('rizin-shell-parser')
-
-
 # handle bochs dependency
 bochs_files = [
   'bochs/src/libbochs.c'
