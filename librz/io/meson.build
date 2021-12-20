@@ -69,7 +69,7 @@ if get_option('use_gpl')
 endif
 
 if host_machine.system() == 'windows'
-  rz_io_deps += w32dbg_wrap_dep
+  rz_io_deps += dependency('rzw32dbg_wrap')
 endif
 
 if host_machine.system() == 'linux' or host_machine.system() == 'android'

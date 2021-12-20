@@ -66,7 +66,7 @@ if host_machine.system() == 'windows'
     'p/native/windows/windows_debug.c',
     'p/native/windows/windows_message.c',
   ]
-  rz_debug_deps += w32dbg_wrap_dep
+  rz_debug_deps += dependency('rzw32dbg_wrap')
 endif
 
 if host_machine.system() != 'windows'
