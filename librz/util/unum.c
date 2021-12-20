@@ -271,6 +271,7 @@ RZ_API ut64 rz_num_get(RzNum *num, const char *str) {
 			len_num++;
 		}
 		switch (lch) {
+		case 'H':
 		case 'h': // hexa
 			if (!sscanf(str, "%" PFMT64x "%n", &ret, &chars_read) || chars_read != len_num) {
 				error(num, "invalid hex number");
