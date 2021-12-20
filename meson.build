@@ -716,29 +716,14 @@ subdir('librz/flag/d')
 subdir('librz/main')
 
 cli_option = get_option('cli')
-if cli_option.auto()
-  cli_enabled = not meson.is_subproject()
-else
-  cli_enabled = cli_option.enabled()
-endif
+cli_enabled = cli_option.auto() ? not meson.is_subproject() : cli_option.enabled()
 if cli_enabled
-  if get_option('blob')
-    subdir('binrz/blob')
-  else
-    subdir('binrz/rz-hash')
-    subdir('binrz/rz-run')
-    subdir('binrz/rz-asm')
-    subdir('binrz/rz-bin')
-    subdir('binrz/rizin')
-    subdir('binrz/rz-gg')
-    subdir('binrz/rz-agent')
-    subdir('binrz/rz-diff')
-    subdir('binrz/rz-find')
-    subdir('binrz/rz-sign')
-    subdir('binrz/rz-ax')
-  endif
-  subdir('binrz/rz-pm')
-  subdir('binrz/rz-test')
+  subdir('binrz')
+
+  install_data('doc/hud',
+    install_dir: rizin_hud,
+    rename: 'main'
+  )
 endif
 
 if get_option('use_webui')
@@ -748,37 +733,13 @@ if get_option('use_webui')
   )
 endif
 
-subdir('test/unit')
-subdir('test/integration')
+subdir('test')
 
 install_data(
   'doc/fortunes.fun',
   'doc/fortunes.tips',
   install_dir: rizin_fortunes
 )
-
-if cli_enabled
-  install_man(
-    'man/rz-agent.1',
-    'man/rz-pm.1',
-    'man/rz-bin.1',
-    'man/rizin.1',
-    'man/rz-diff.1',
-    'man/rz-find.1',
-    'man/rz-gg.1',
-    'man/rz-hash.1',
-    'man/rz-run.1',
-    'man/rz-asm.1',
-    'man/rz-ax.1',
-    'man/rz-sign.1',
-    'man/rz-esil.7',
-  )
-
-  install_data('doc/hud',
-    install_dir: rizin_hud,
-    rename: 'main'
-  )
-endif
 
 dist_script = 'sys/meson_dist_script.py'
 if meson.version().version_compare('<0.57.0')
