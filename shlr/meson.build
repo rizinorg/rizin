@@ -1,21 +1,3 @@
-# handle bochs dependency
-bochs_files = [
-  'bochs/src/libbochs.c'
-]
-
-bochs_inc = [platform_inc, include_directories('bochs/include')]
-
-librzbochs = static_library('rzbochs', bochs_files,
-  dependencies: [rz_util_dep],
-  include_directories: bochs_inc,
-  implicit_include_directories: false
-)
-
-bochs_dep = declare_dependency(
-  link_with: librzbochs,
-  include_directories: bochs_inc
-)
-
 if get_option('use_gpl')
   # handle qnx dependency
   qnx_files = [

@@ -114,6 +114,7 @@ rz_util_dep = declare_dependency(
     sdb_dep.partial_dependency(includes: true),
   ]
 )
+meson.override_dependency('rz_util', rz_util_dep)
 
 pkgconfig_mod.generate(rz_util,
   subdirs: ['librz', 'librz/sdb'],

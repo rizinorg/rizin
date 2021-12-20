@@ -49,7 +49,7 @@ if host_machine.system() == 'windows'
 endif
 
 rz_io_deps = [
-  bochs_dep,
+  dependency('rzbochs'),
   gdb_dep,
   winkd_dep,
   libzip_dep,
