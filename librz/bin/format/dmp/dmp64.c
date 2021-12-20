@@ -69,7 +69,6 @@ static int rz_bin_dmp64_init_header(struct rz_bin_dmp64_obj_t *obj) {
 }
 
 static int rz_bin_dmp64_init_bmp_pages(struct rz_bin_dmp64_obj_t *obj) {
-	int i;
 	if (!obj->bmp_header) {
 		return false;
 	}
@@ -83,6 +82,7 @@ static int rz_bin_dmp64_init_bmp_pages(struct rz_bin_dmp64_obj_t *obj) {
 	rz_bitmap_set_bytes(bitmap, obj->bitmap, num_pages / 8);
 
 	ut64 num_bitset = 0;
+	ut64 i;
 	for (i = 0; i < num_pages; i++) {
 		if (!rz_bitmap_test(bitmap, i)) {
 			continue;
@@ -91,6 +91,9 @@ static int rz_bin_dmp64_init_bmp_pages(struct rz_bin_dmp64_obj_t *obj) {
 		if (!page) {
 			rz_bitmap_free(bitmap);
 			return false;
+		}
+		if (UT64_MUL_OVFCHK(i, DMP_PAGE_SIZE)) {
+			break;
 		}
 		page->start = i * DMP_PAGE_SIZE;
 		page->file_offset = paddr_base + num_bitset * DMP_PAGE_SIZE;
