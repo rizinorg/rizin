@@ -81,7 +81,7 @@ if host_machine.system() == 'linux' or host_machine.system() == 'android'
 endif
 
 if use_ptrace_wrap
-  rz_io_deps += ptrace_wrap_dep
+  rz_io_deps += dependency('ptrace-wrap', default_options: ['is_static_build=' + is_static_build.to_string()])
 endif
 
 rz_io = library('rz_io', rz_io_sources,

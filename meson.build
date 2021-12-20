@@ -699,7 +699,6 @@ subdir('librz/demangler')
 subdir('librz/socket')
 subdir('librz/hash')
 subdir('librz/crypto')
-subdir('shlr')
 
 subdir('librz/cons')
 subdir('librz/diff')
