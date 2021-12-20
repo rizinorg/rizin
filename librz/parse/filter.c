@@ -42,10 +42,10 @@ static void insert(char *dst, const char *src) {
 }
 
 static int parse_number(const char *str) {
-	const char* p = str;
+	const char *p = str;
 	// Parse as hexadecmial (0x notation)
 	if (!strncmp(p, "0x", 2)) {
-		for (p+=2; *p && IS_HEXCHAR(*p); p++) {
+		for (p += 2; *p && IS_HEXCHAR(*p); p++) {
 		}
 		return p - str;
 	}
