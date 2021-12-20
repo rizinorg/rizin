@@ -64,7 +64,7 @@ rz_io_deps = [
 ]
 
 if get_option('use_gpl')
-  rz_io_deps += qnx_dep
+  rz_io_deps += dependency('rzqnx')
   rz_io_sources += 'p/io_qnx.c'
 endif
 

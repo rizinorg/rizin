@@ -1,26 +1,3 @@
-if get_option('use_gpl')
-  # handle qnx dependency
-  qnx_files = [
-    'qnx/src/core.c',
-    'qnx/src/packet.c',
-    'qnx/src/sigutil.c',
-    'qnx/src/utils.c',
-  ]
-
-  qnx_inc = [platform_inc, include_directories('qnx/include')]
-
-  librzqnx = static_library('rzqnx', qnx_files,
-    dependencies: [rz_util_dep, rz_socket_dep],
-    include_directories: qnx_inc,
-    implicit_include_directories: false
-  )
-
-  qnx_dep = declare_dependency(
-    link_with: librzqnx,
-    include_directories: qnx_inc
-  )
-endif
-
 # handle winkd dependency
 winkd_files = [
   'winkd/iob_pipe.c',

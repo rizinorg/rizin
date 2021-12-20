@@ -48,7 +48,7 @@ rz_debug_deps = [
 ]
 
 if get_option('use_gpl')
-  rz_debug_deps += qnx_dep
+  rz_debug_deps += dependency('rzqnx')
   rz_debug_sources += 'p/debug_qnx.c'
 endif
 
