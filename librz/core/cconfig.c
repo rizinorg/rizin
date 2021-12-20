@@ -3040,6 +3040,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	n = NODECB("analysis.cpp.abi", "itanium", &cb_analysis_cpp_abi);
 	SETDESC(n, "Select C++ ABI (Compiler)");
 	SETOPTIONS(n, "itanium", "msvc", NULL);
+	SETB("analysis.apply.signature", true, "enables/disables auto-applying signatures to the loaded binary (see also flirt.sigdb.path)");
 
 #if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
 	SETCB("dbg.malloc", "glibc", &cb_malloc, "Choose malloc structure parser");
@@ -3810,6 +3811,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 		"pe", "pilot", "srec", "w32run", "zip", "all", "none", NULL);
 	SETB("flirt.sig.deflate", false, "enables/disables FLIRT zlib compression when creating a signature file (available only for .sig files)");
 	SETI("flirt.node.optimize", RZ_FLIRT_NODE_OPTIMIZE_MAX, "FLIRT optimization option when creating a signature file (none: 0, normal: 1, smallest: 2)");
+	SETPREF("flirt.sigdb.path", "", "Rizin sigdb location on the filesystem.");
 
 	rz_config_lock(cfg, true);
 	return true;
