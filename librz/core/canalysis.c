@@ -5958,26 +5958,29 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
  *
  * \param core The RzCore instance
  */
-RZ_API void rz_core_analysis_sigdb_list(RzCore *core) {
-	const char *sigdb_path = rz_config_get(core->config, "flirt.sigdb.path");
-	if (RZ_STR_ISEMPTY(sigdb_path) || !rz_file_is_directory(sigdb_path)) {
-		RZ_LOG_ERROR("Cannot sigdb path is unknown or invalid (path: %s)\n", sigdb_path);
+RZ_API void rz_core_analysis_sigdb_print(RzCore *core) {
+	RzTable *table = rz_table_new();
+	if (!table) {
+		rz_warn_if_reached();
 		return;
 	}
-	char glob[1024];
-	size_t sigdb_path_len = strlen(sigdb_path);
-	rz_strf(glob, RZ_JOIN_2_PATHS("%s", "**"), sigdb_path);
+	rz_table_set_columnsf(table, "ssns", "bin", "arch", "bits", "name");
 
-	RzList *files = rz_file_globsearch(glob, 10);
-	const char *flirt_file = NULL;
+	const char *sigdb_path = rz_config_get(core->config, "flirt.sigdb.path");
+	RzList *sigdb = rz_analysis_sigdb_load_database(sigdb_path);
+	RzAnalysisSignature *sig = NULL;
 	RzListIter *iter = NULL;
-	rz_list_foreach (files, iter, flirt_file) {
-		if (!rz_str_endswith(flirt_file, ".pat") && !rz_str_endswith(flirt_file, ".sig")) {
-			continue;
-		}
-		rz_cons_printf("%s\n", flirt_file + sigdb_path_len + 1);
+
+	rz_list_foreach (sigdb, iter, sig) {
+		rz_table_add_rowf(table, "ssns", sig->bin_name, sig->arch_name, sig->arch_bits, sig->base_name);
 	}
-	rz_list_free(files);
+
+	char *output = rz_table_tostring(table);
+	if (output) {
+		rz_cons_printf("%s", output);
+		free(output);
+	}
+	rz_list_free(sigdb);
 }
 
 /**
@@ -5993,61 +5996,68 @@ RZ_API bool rz_core_analysis_sigdb_apply(RzCore *core, int *n_applied, const cha
 	const char *sigdb_path = NULL;
 	const char *bin = NULL;
 	const char *arch = NULL;
-	const char *flirt_file = NULL;
 	ut64 bits = 32;
-	size_t sigdb_path_len = 0;
-	RzList *files = NULL;
-	ut8 arch_id = RZ_FLIRT_SIG_ARCH_ANY;
-	int n_flags_new, n_flags_old;
+	RzAnalysisSignature *sig = NULL;
+	RzList *sigdb = NULL;
 	RzListIter *iter = NULL;
-	char glob[1024];
+	RzBinObject *obj = NULL;
+
+	int n_flags_new, n_flags_old;
+	ut8 arch_id = RZ_FLIRT_SIG_ARCH_ANY;
 
 	sigdb_path = rz_config_get(core->config, "flirt.sigdb.path");
 	if (RZ_STR_ISEMPTY(sigdb_path) || !rz_file_is_directory(sigdb_path)) {
 		RZ_LOG_INFO("Cannot apply signatures due unknown sigdb path\n");
 		return false;
 	}
-	sigdb_path_len = strlen(sigdb_path) + 1;
-	RzBinObject *obj = core->bin ? rz_bin_cur_object(core->bin) : NULL;
-	if (!obj || !obj->plugin) {
-		RZ_LOG_INFO("Cannot apply signatures due unknown bin type\n");
-		return false;
-	} else if (!strcmp(obj->plugin->name, "elf64")) {
-		bin = "elf";
-	} else if (!strcmp(obj->plugin->name, "pe64")) {
-		bin = "pe";
-	} else {
-		bin = obj->plugin->name;
+
+	if (RZ_STR_ISEMPTY(filter)) {
+		obj = core->bin ? rz_bin_cur_object(core->bin) : NULL;
+		if ((!obj || !obj->plugin)) {
+			RZ_LOG_INFO("Cannot apply signatures due unknown bin type\n");
+			return false;
+		} else if (!strcmp(obj->plugin->name, "elf64")) {
+			bin = "elf";
+		} else if (!strcmp(obj->plugin->name, "pe64")) {
+			bin = "pe";
+		} else {
+			bin = obj->plugin->name;
+		}
 	}
+
 	arch = rz_config_get(core->config, "asm.arch");
 	bits = rz_config_get_i(core->config, "asm.bits");
 	arch_id = rz_core_flirt_arch_from_name(arch);
-	if (arch_id >= RZ_FLIRT_SIG_ARCH_ANY) {
+	if (RZ_STR_ISEMPTY(filter) && arch_id >= RZ_FLIRT_SIG_ARCH_ANY) {
 		RZ_LOG_INFO("Cannot apply signatures due unknown arch (%s)\n", arch);
 		return false;
 	}
 
-	rz_strf(glob, RZ_JOIN_5_PATHS("%s", "%s", "%s", "%" PFMT64u, "*"), sigdb_path, bin, arch, bits);
-	files = rz_file_globsearch(glob, 10);
-
+	sigdb = rz_analysis_sigdb_load_database(sigdb_path);
 	n_flags_old = rz_flag_count(core->flags, "flirt");
-	rz_list_foreach (files, iter, flirt_file) {
-		if (RZ_STR_ISEMPTY(filter) && strstr(flirt_file + sigdb_path_len, "c++") &&
-			obj->lang != RZ_BIN_LANGUAGE_CXX && obj->lang != RZ_BIN_LANGUAGE_RUST) {
-			// C++ libs can create many false positives.
-			// So their usage is limited to C++ and RUST lang
-			continue;
-		} else if (RZ_STR_ISNOTEMPTY(filter) && !strstr(flirt_file + sigdb_path_len, filter)) {
-			continue;
-		}
-		if (filter) {
-			rz_cons_printf("Applying %s signature file\n", flirt_file + sigdb_path_len);
+	rz_list_foreach (sigdb, iter, sig) {
+		if (RZ_STR_ISEMPTY(filter)) {
+			// apply signatures automatically based on bin, arch and bits
+			if (strcmp(bin, sig->bin_name) || strcmp(arch, sig->arch_name) || bits != sig->arch_bits) {
+				continue;
+			} else if (strstr(sig->base_name, "c++") &&
+				obj->lang != RZ_BIN_LANGUAGE_CXX &&
+				obj->lang != RZ_BIN_LANGUAGE_RUST) {
+				// C++ libs can create many false positives, especially on C binaries.
+				// So their usage is limited to C++ and RUST lang
+				continue;
+			}
+			RZ_LOG_INFO("Applying %s signature file\n", sig->short_path);
 		} else {
-			RZ_LOG_INFO("Applying %s signature file\n", flirt_file + sigdb_path_len);
+			// apply signatures based on filter value
+			if (!strstr(sig->short_path, filter)) {
+				continue;
+			}
+			rz_cons_printf("Applying %s signature file\n", sig->short_path);
 		}
-		rz_sign_flirt_apply(core->analysis, flirt_file, arch_id);
+		rz_sign_flirt_apply(core->analysis, sig->file_path, arch_id);
 	}
-	rz_list_free(files);
+	rz_list_free(sigdb);
 	n_flags_new = rz_flag_count(core->flags, "flirt");
 
 	if (n_applied) {

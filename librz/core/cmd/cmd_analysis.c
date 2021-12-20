@@ -5658,7 +5658,7 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 	case 'F': // "aaF"
 		switch (input[1]) {
 		case 'l': // "aaFl"
-			(void)rz_core_analysis_sigdb_list(core);
+			(void)rz_core_analysis_sigdb_print(core);
 			break;
 		case '?': // "aaF?"
 			rz_core_cmd_help(core, help_msg_aaF);
