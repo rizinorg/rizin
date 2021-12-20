@@ -1,0 +1,33 @@
+NAME=de reg read
+FILE=bins/elf/hello_world
+ARGS=-d
+CMDS=<<EOF
+dcu main+8
+de r r rsp
+dec
+.drf
+s rip
+# the call instruction reads rsp, then we should be inside strlen
+pi 1
+EOF
+EXPECT=<<EOF
+jmp qword [reloc.strlen]
+EOF
+RUN
+
+NAME=de reg write
+FILE=bins/elf/hello_world
+ARGS=-d
+CMDS=<<EOF
+dcu main
+de w r rax
+dec
+.drf
+s rip-7
+pi 2
+EOF
+EXPECT=<<EOF
+lea rax, str.Hello
+mov qword [rbp - 0x18], rax
+EOF
+RUN
