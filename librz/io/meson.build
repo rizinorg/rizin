@@ -51,7 +51,7 @@ endif
 rz_io_deps = [
   dependency('rzbochs'),
   gdb_dep,
-  winkd_dep,
+  dependency('rzwinkd'),
   libzip_dep,
   ar_dep,
   pth,

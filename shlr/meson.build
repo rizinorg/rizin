@@ -1,33 +1,3 @@
-# handle winkd dependency
-winkd_files = [
-  'winkd/iob_pipe.c',
-  'winkd/iob_net.c',
-  'winkd/kd.c',
-  'winkd/transport.c',
-  'winkd/winkd.c',
-]
-
-winkd_inc = [platform_inc, include_directories('winkd')]
-
-librzwinkd_deps = [rz_util_dep, rz_socket_dep, rz_hash_dep, rz_crypto_dep]
-if host_machine.system() == 'haiku'
-  librzwinkd_deps += [
-    cc.find_library('network')
-  ]
-endif
-
-librzwinkd = static_library('rzwinkd', winkd_files,
-  dependencies: librzwinkd_deps,
-  include_directories: winkd_inc,
-  implicit_include_directories: false
-)
-
-winkd_dep = declare_dependency(
-  link_with: librzwinkd,
-  include_directories: winkd_inc
-)
-
-
 # handle ar dependency
 ar_files = [
   'ar/ar.c'

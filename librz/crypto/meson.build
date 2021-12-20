@@ -38,6 +38,7 @@ rz_crypto = library('rz_crypto', rz_crypto_sources,
 
 rz_crypto_dep = declare_dependency(link_with: rz_crypto,
                                   include_directories: [platform_inc])
+meson.override_dependency('rz_crypto', rz_crypto_dep)
 
 pkgconfig_mod.generate(rz_crypto,
   subdirs: 'librz',
