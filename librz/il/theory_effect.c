@@ -97,47 +97,10 @@ static void rz_il_set(RzILVM *vm, const char *var_name, bool is_local, bool is_m
 	}
 }
 
-static void rz_il_perform_ctrl(RzILVM *vm, RzILEffect *eff) {
-	if (eff->notation & (EFFECT_NOTATION_GOTO_HOOK | EFFECT_NOTATION_GOTO_SYS)) {
-		RzILOp *goto_op = (RzILOp *)eff->ctrl_eff;
-		eff->ctrl_eff = NULL;
-
-		RzILEffectLabel *label = rz_il_vm_find_label_by_name(vm, goto_op->op.goto_->lbl);
-		RzILVmHook internal_hook = (RzILVmHook)label->hook;
-
-		internal_hook(vm, goto_op);
-		return;
-	}
-
-	// Normal
-	RzBitVector *new_addr = eff->ctrl_eff->pc;
-	rz_il_vm_event_add(vm, rz_il_event_pc_write_new(vm->pc, new_addr));
-	rz_bv_free(vm->pc);
-	vm->pc = new_addr;
-}
-
 void *rz_il_handler_nop(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 	*type = RZIL_OP_ARG_EFF;
 	return NULL;
-
-#if 0
-	RzILOpPerform *perform_op = op->op.perform;
-
-	RzILEffect *eff = rz_il_evaluate_effect(vm, perform_op->eff, type);
-	do {
-		if (eff->effect_type == EFFECT_TYPE_DATA) {
-			rz_il_perform_data(vm, eff);
-		} else if (eff->effect_type == EFFECT_TYPE_CTRL) {
-			rz_il_perform_ctrl(vm, eff);
-		}
-		RzILEffect *tmp = eff->next_eff;
-		rz_il_effect_free(eff);
-		eff = tmp;
-	} while (eff != NULL);
-
-	return NULL;
-#endif
 }
 
 void *rz_il_handler_set(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
@@ -156,45 +119,30 @@ void *rz_il_handler_let(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	return NULL;
 }
 
-void *rz_il_handler_jmp(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
-	rz_return_val_if_fail(vm && op && type, NULL);
-
-	RzILOpJmp *op_jmp = op->op.jmp;
-	RzBitVector *dst = rz_il_evaluate_bitv(vm, op_jmp->dst, type);
+static void perform_jump(RzILVM *vm, RZ_OWN RzBitVector *dst) {
 	rz_il_vm_event_add(vm, rz_il_event_pc_write_new(vm->pc, dst));
 	rz_bv_free(vm->pc);
 	vm->pc = dst;
+}
 
+void *rz_il_handler_jmp(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
+	rz_return_val_if_fail(vm && op && type, NULL);
+	perform_jump(vm, rz_il_evaluate_bitv(vm, op->op.jmp->dst, type));
 	*type = RZIL_OP_ARG_EFF;
 	return NULL;
 }
 
 void *rz_il_handler_goto(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
-
 	RzILOpGoto *op_goto = op->op.goto_;
 	const char *lname = op_goto->lbl;
-	RzILEffect *eff = rz_il_effect_new(EFFECT_TYPE_CTRL);
-
 	RzILEffectLabel *label = rz_il_vm_find_label_by_name(vm, lname);
-	if (label->type == EFFECT_LABEL_SYSCALL) {
-		rz_il_effect_ctrl_free(eff->ctrl_eff);
-		eff->notation = EFFECT_NOTATION_GOTO_SYS;
-		// WARN : HACK to call hook
-		eff->ctrl_eff = (void *)op;
-	} else if (label->type == EFFECT_LABEL_HOOK) {
-		rz_il_effect_ctrl_free(eff->ctrl_eff);
-		eff->notation = EFFECT_NOTATION_GOTO_HOOK;
-		// WARN : HACK to call
-		eff->ctrl_eff = (void *)op;
+	if (label->type == EFFECT_LABEL_SYSCALL || label->type == EFFECT_LABEL_HOOK) {
+		RzILVmHook internal_hook = (RzILVmHook)label->hook;
+		internal_hook(vm, op);
 	} else {
-		// Normal
-		const RzBitVector *addr = rz_il_hash_find_addr_by_lblname(vm, lname);
-		eff->ctrl_eff->pc = rz_bv_dup(addr);
+		perform_jump(vm, rz_bv_dup(label->addr));
 	}
-	rz_il_perform_ctrl(vm, eff);
-	rz_il_effect_free(eff);
-
 	*type = RZIL_OP_ARG_EFF;
 	return NULL;
 }

@@ -216,6 +216,54 @@ static bool test_rzil_vm_op_jmp() {
 	mu_end;
 }
 
+static bool test_rzil_vm_op_goto_addr() {
+	RzILVM *vm = rz_il_vm_new(0, 8, 16);
+
+	RzBitVector *dst = rz_bv_new_from_ut64(8, 0x42);
+	rz_il_vm_create_label(vm, "beach", dst);
+	rz_bv_free(dst);
+
+	RzILOp *op = rz_il_op_new_goto("beach");
+	RzILOpArgType tret = RZIL_OP_ARG_INIT;
+	rz_il_evaluate_effect(vm, op, &tret);
+	rz_il_op_free(op);
+	mu_assert_eq(rz_bv_to_ut64(vm->pc), 0x42, "wentto");
+
+	rz_il_vm_free(vm);
+	mu_end;
+}
+
+static void hook_test(RzILVM *vm, RzILOp *op) {
+	RzILVar *var = rz_il_find_var_by_name(vm, "myvar");
+	rz_il_hash_bind(vm, var, rz_il_vm_create_value_bitv(vm, rz_bv_new_from_ut64(32, 0xc0ffee)));
+}
+
+static bool test_rzil_vm_op_goto_hook() {
+	RzILVM *vm = rz_il_vm_new(0, 8, 16);
+
+	RzILVar *var = rz_il_vm_create_global_variable(vm, "myvar", RZIL_VAR_TYPE_UNK, true);
+	rz_il_hash_bind(vm, var, rz_il_vm_create_value_bitv(vm, rz_bv_new_zero(32)));
+
+	RzBitVector *dst = rz_bv_new_from_ut64(8, 0x42);
+	RzILEffectLabel *label = rz_il_vm_create_label_lazy(vm, "beach");
+	label->type = EFFECT_LABEL_HOOK;
+	label->hook = hook_test;
+	rz_bv_free(dst);
+
+	RzILOp *op = rz_il_op_new_goto("beach");
+	RzILOpArgType tret = RZIL_OP_ARG_INIT;
+	rz_il_evaluate_effect(vm, op, &tret);
+	rz_il_op_free(op);
+
+	// check the effect we implemented in hook_test
+	RzILVal *val = rz_il_hash_find_val_by_name(vm, "myvar");
+	mu_assert_eq(val->type, RZIL_VAR_TYPE_BV, "val type");
+	mu_assert_eq(rz_bv_to_ut64(val->data.bv), 0xc0ffee, "val contents");
+
+	rz_il_vm_free(vm);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rzil_vm_init);
 	mu_run_test(test_rzil_vm_basic_operation);
@@ -223,6 +271,8 @@ bool all_tests() {
 	mu_run_test(test_rzil_vm_root_evaluation);
 	mu_run_test(test_rzil_vm_op_set);
 	mu_run_test(test_rzil_vm_op_jmp);
+	mu_run_test(test_rzil_vm_op_goto_addr);
+	mu_run_test(test_rzil_vm_op_goto_hook);
 	return tests_passed != tests_run;
 }
 
