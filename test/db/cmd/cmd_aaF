@@ -1,0 +1,41 @@
+NAME=Print SigDB contents
+FILE==
+CMDS=<<EOF
+e flirt.sigdb.path=bins/sigdb/fake-db
+aaFl
+EOF
+EXPECT=<<EOF
+bin arch bits name          
+----------------------------
+elf x86  64   match.sig
+elf x86  64   not-match.pat
+EOF
+RUN
+
+NAME=Do analysis and apply SigDB automatically
+FILE=bins/sigdb/elf-x86-64-static-libc
+CMDS=<<EOF
+e flirt.sigdb.path=bins/sigdb/fake-db
+aaa
+afl~printf
+EOF
+EXPECT=<<EOF
+0x00409c70   18 516  -> 514  flirt.printf
+0x0046fc50    7 516  -> 342  flirt.printf
+EOF
+RUN
+
+NAME=Do analysis and apply SigDB manually
+FILE=bins/sigdb/elf-x86-64-static-libc
+CMDS=<<EOF
+aaa
+e flirt.sigdb.path=bins/sigdb/fake-db
+aaF match.sig
+afl~printf
+EOF
+EXPECT=<<EOF
+Applying elf/x86/64/match.sig signature file
+0x00409c70   18 516  -> 514  flirt.printf
+0x0046fc50    7 516  -> 342  flirt.printf
+EOF
+RUN
