@@ -2349,3 +2349,60 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=parse hexadecimal integer literals (trailing-h notation)
+FILE=bins\pe\hello_world_stripped.exe
+ARGS=
+CMDS=<<EOF
+aaa
+s 0x00401533
+e asm.lines=false
+e asm.syntax=masm
+e asm.ucase=false
+pd 1
+e asm.ucase=true
+pd 1
+EOF
+EXPECT=<<EOF
+0x00401533      and   esp, 0fffffff0h
+0x00401533      AND   ESP, 0FFFFFFF0H
+EOF
+RUN
+
+NAME=variable name substitution (x86 MASM syntax)
+FILE=bins/elf/hello_world
+ARGS=
+CMDS=<<EOF
+aaa
+s 0x000007e3
+e asm.lines=false
+e asm.syntax=masm
+e asm.ucase=false
+pd 1
+e asm.ucase=true
+pd 1
+EOF
+EXPECT=<<EOF
+0x000007e3      mov   dword [size], eax
+0x000007e3      MOV   DWORD [size], EAX
+EOF
+RUN
+
+NAME=function name substitution (x86 MASM syntax)
+FILE=bins/elf/hello_world
+ARGS=
+CMDS=<<EOF
+aaa
+s 0x000007cf
+e asm.lines=false
+e asm.calls=false
+e asm.syntax=masm
+e asm.ucase=false
+pd 1
+e asm.ucase=true
+pd 1
+EOF
+EXPECT=<<EOF
+0x000007cf      call  sym.imp.strlen
+0x000007cf      CALL  sym.imp.strlen
+EOF
+RUN
