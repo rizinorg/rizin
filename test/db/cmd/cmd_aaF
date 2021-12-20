@@ -7,8 +7,8 @@ EOF
 EXPECT=<<EOF
 bin arch bits name          
 ----------------------------
-elf x86  64   not-match.pat
 elf x86  64   match.sig
+elf x86  64   not-match.pat
 EOF
 RUN
 
