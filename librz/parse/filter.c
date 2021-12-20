@@ -54,7 +54,7 @@ static int parse_number(const char *str) {
 		if (IS_HEXCHAR(*p)) {
 			continue;
 		}
-		if (*p == 'h') {
+		if (*p == 'h' || *p == 'H') {
 			return p - str + 1;
 		}
 		break;

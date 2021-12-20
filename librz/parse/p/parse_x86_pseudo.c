@@ -520,9 +520,9 @@ static bool subvar(RzParse *p, RzAnalysisFunction *f, ut64 addr, int oplen, char
 			delta_first_digit /= 16;
 		}
 		// Try with trailing-h notation (if using MASM syntax)
-		snprintf(oldstr, sizeof(oldstr) - 1, ucase ? "%s %c %s%Xh" : "%s %c %s%xh", reg, sign, delta_first_digit > 9 ? "0" : "", (int)delta);
-		if (strstr(tstr, oldstr) != NULL) {
-			tstr = rz_str_replace(tstr, oldstr, newstr, 1);
+		snprintf(oldstr, sizeof(oldstr) - 1, "%s %c %s%xh", reg, sign, delta_first_digit > 9 ? "0" : "", (int)delta);
+		if (rz_str_casestr(tstr, oldstr)) {
+			tstr = rz_str_replace_icase(tstr, oldstr, newstr, 1, 0);
 			break;
 		}
 		// Try with no spaces
