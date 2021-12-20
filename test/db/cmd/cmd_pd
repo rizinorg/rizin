@@ -2350,7 +2350,7 @@ EOF
 RUN
 
 NAME=parse hexadecimal integer literals (trailing-h notation)
-FILE=bins\pe\hello_world_stripped.exe
+FILE=bins/pe/hello_world_stripped.exe
 ARGS=
 CMDS=<<EOF
 aaa
