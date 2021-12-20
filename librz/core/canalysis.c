@@ -5970,9 +5970,11 @@ RZ_API void rz_core_analysis_sigdb_print(RzCore *core) {
 	RzList *sigdb = rz_analysis_sigdb_load_database(sigdb_path);
 	RzAnalysisSignature *sig = NULL;
 	RzListIter *iter = NULL;
+	ut64 bits;
 
 	rz_list_foreach (sigdb, iter, sig) {
-		rz_table_add_rowf(table, "ssns", sig->bin_name, sig->arch_name, sig->arch_bits, sig->base_name);
+		bits = sig->arch_bits;
+		rz_table_add_rowf(table, "ssns", sig->bin_name, sig->arch_name, bits, sig->base_name);
 	}
 
 	char *output = rz_table_tostring(table);
@@ -6053,7 +6055,8 @@ RZ_API bool rz_core_analysis_sigdb_apply(RzCore *core, int *n_applied, const cha
 			if (!strstr(sig->short_path, filter)) {
 				continue;
 			}
-			rz_cons_printf("Applying %s signature file\n", sig->short_path);
+			rz_cons_printf("Applying %s/%s/%u/%s signature file\n",
+				sig->bin_name, sig->arch_name, sig->arch_bits, sig->base_name);
 		}
 		rz_sign_flirt_apply(core->analysis, sig->file_path, arch_id);
 	}

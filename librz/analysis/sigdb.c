@@ -16,12 +16,19 @@ static void analysis_sigdb_signature_free(RzAnalysisSignature *sig) {
 	free(sig);
 }
 
+static int analysis_sigdb_signature_cmp(RzAnalysisSignature *a, RzAnalysisSignature *b) {
+	return strcmp(a->short_path, b->short_path);
+}
+
 static bool analysis_sigdb_signature_resolve_details(RzAnalysisSignature *sig, size_t path_len) {
 	char *bin_end = NULL;
 	char *arch_end = NULL;
 	char *bits_end = NULL;
 	char info[1024] = { 0 };
 
+#if __WINDOWS__
+	rz_str_replace_char(sig->file_path, '/', '\\');
+#endif
 	// expected path elf/x86/64/signature.sig/.pat
 	strncpy(info, sig->file_path + path_len, sizeof(info) - 1);
 	sig->base_name = rz_file_basename(sig->file_path);
@@ -43,7 +50,7 @@ static bool analysis_sigdb_signature_resolve_details(RzAnalysisSignature *sig, s
 	arch_end[0] = 0;
 	sig->arch_name = strdup(bin_end + strlen(RZ_SYS_DIR));
 	bits_end[0] = 0;
-	sig->arch_bits = atoi(arch_end + strlen(RZ_SYS_DIR));
+	sig->arch_bits = rz_get_input_num_value(NULL, arch_end + strlen(RZ_SYS_DIR));
 	return true;
 }
 
@@ -62,7 +69,6 @@ RZ_API RzList /*<RzAnalysisSignature>*/ *rz_analysis_sigdb_load_database(RZ_NONN
 	}
 
 	rz_strf(glob, RZ_JOIN_2_PATHS("%s", "**"), sigdb_path);
-
 	RzList *files = rz_file_globsearch(glob, 10);
 	char *file = NULL;
 	RzListIter *iter = NULL;
@@ -86,6 +92,7 @@ RZ_API RzList /*<RzAnalysisSignature>*/ *rz_analysis_sigdb_load_database(RZ_NONN
 		rz_list_append(sigs, sig);
 	}
 	rz_list_free(files);
+	rz_list_sort(sigs, (RzListComparator)analysis_sigdb_signature_cmp);
 	return sigs;
 
 fail:
