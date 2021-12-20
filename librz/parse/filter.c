@@ -41,6 +41,30 @@ static void insert(char *dst, const char *src) {
 	free(endNum);
 }
 
+static int parse_number(const char *str) {
+	const char* p = str;
+	// Parse as hexadecmial (0x notation)
+	if (!strncmp(p, "0x", 2)) {
+		for (p+=2; *p && IS_HEXCHAR(*p); p++) {
+		}
+		return p - str;
+	}
+	// Parse as hexadecimal (trailing 'h' notation)
+	for (; *p; p++) {
+		if (IS_HEXCHAR(*p)) {
+			continue;
+		}
+		if (*p == 'h') {
+			return p - str + 1;
+		}
+		break;
+	}
+	// Parse as decimal
+	for (; *p && IS_DIGIT(*p); p++) {
+	}
+	return p - str;
+}
+
 // TODO: move into rz_util/rz_str
 static void replaceWords(char *s, const char *k, const char *v) {
 	for (;;) {
@@ -378,7 +402,6 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 			}
 			int pnumleft, immbase = hint->immbase;
 			char num[256] = { 0 }, *pnum, *tmp;
-			bool is_hex = false;
 			int tmp_count;
 			if (hint->offset) {
 				*ptr = 0;
@@ -386,17 +409,7 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 				return true;
 			}
 			strncpy(num, ptr, sizeof(num) - 2);
-			pnum = num;
-			if (!strncmp(pnum, "0x", 2)) {
-				is_hex = true;
-				pnum += 2;
-			}
-			for (; *pnum; pnum++) {
-				if ((is_hex && IS_HEXCHAR(*pnum)) || IS_DIGIT(*pnum)) {
-					continue;
-				}
-				break;
-			}
+			pnum = num + parse_number(num);
 			*pnum = 0;
 			switch (immbase) {
 			case 0:
