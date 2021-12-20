@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_il/definitions/effect.h>
+#include <rz_il/definitions/label.h>
 
 /**
  * Create an effect label

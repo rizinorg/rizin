@@ -5,7 +5,7 @@
 #define RZ_IL_DEFINITIONS_H
 
 #include <rz_util/rz_bitvector.h>
-#include <rz_il/definitions/effect.h>
+#include <rz_il/definitions/label.h>
 #include <rz_il/definitions/bool.h>
 #include <rz_il/definitions/value.h>
 #include <rz_il/definitions/variable.h>

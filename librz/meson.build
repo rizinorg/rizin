@@ -457,7 +457,7 @@ rz_il_definitions_files = [
   'include/rz_il/definitions/bag.h',
   'include/rz_il/definitions/bool.h',
   'include/rz_il/definitions/definitions.h',
-  'include/rz_il/definitions/effect.h',
+  'include/rz_il/definitions/label.h',
   'include/rz_il/definitions/mem.h',
   'include/rz_il/definitions/value.h',
   'include/rz_il/definitions/variable.h',
