@@ -1,22 +1,3 @@
-# handle ar dependency
-ar_files = [
-  'ar/ar.c'
-]
-
-ar_inc = [platform_inc, include_directories(['ar'])]
-
-librzar = static_library('rzar', ar_files,
-  dependencies: [rz_util_dep],
-  include_directories: ar_inc,
-  implicit_include_directories: false
-)
-
-ar_dep = declare_dependency(
-  link_with: librzar,
-  include_directories: ar_inc
-)
-
-
 # handle ptrace-wrap dependency
 if use_ptrace_wrap
   subdir('ptrace-wrap')

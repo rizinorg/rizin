@@ -53,7 +53,7 @@ rz_io_deps = [
   gdb_dep,
   dependency('rzwinkd'),
   libzip_dep,
-  ar_dep,
+  dependency('rzar'),
   pth,
   lrt,
   rz_util_dep,
