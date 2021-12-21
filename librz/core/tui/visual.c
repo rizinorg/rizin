@@ -27,10 +27,13 @@ typedef struct {
 
 #define KEY_ALTQ 0xc5
 
+#define CMD_REGISTERS      "?== true `e cfg.debug`; ?! dr=; ?? ar=" // select dr= or ar= depending on cfg.debug
+#define CMD_REGISTERS_REFS "?== true `e cfg.debug`; ?! drr; ?? arr" // select drr or arr depending on cfg.debug
+
 static const char *printfmtSingle[NPF] = {
 	"xc", // HEXDUMP
 	"pd $r", // ASSEMBLY
-	"pxw 64@r:SP;dr=;pd $r", // DEBUGGER
+	("pxw 64@r:SP;" CMD_REGISTERS ";pd $r"), // DEBUGGER
 	"prc", // OVERVIEW
 	"pss", // PC//  copypasteable views
 };
@@ -65,7 +68,7 @@ static const char *printHexFormats[PRINT_HEX_FORMATS] = {
 };
 static int current3format = 0;
 static const char *print3Formats[PRINT_3_FORMATS] = { //  not used at all. its handled by the pd format
-	"pxw 64@r:SP;dr=;pd $r", // DEBUGGER
+	"pxw 64@r:SP;" CMD_REGISTERS ";pd $r", // DEBUGGER
 	"pCD"
 };
 static int current4format = 0;
@@ -770,7 +773,7 @@ RZ_API int rz_core_visual_prompt(RzCore *core) {
 		rz_cons_flush();
 		ret = true;
 		if (rz_config_get_b(core->config, "cfg.debug")) {
-			rz_core_debug_regs2flags(core);
+			rz_core_reg_update_flags(core);
 		}
 	} else {
 		ret = false;
@@ -2485,9 +2488,9 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			break;
 		case '$':
 			if (core->print->cur_enabled) {
-				rz_core_debug_reg_set(core, "PC", core->offset + core->print->cur, NULL);
+				rz_core_reg_set_by_role_or_name(core, "PC", core->offset + core->print->cur);
 			} else {
-				rz_core_debug_reg_set(core, "PC", core->offset, NULL);
+				rz_core_reg_set_by_role_or_name(core, "PC", core->offset);
 			}
 			break;
 		case '@':
@@ -2635,15 +2638,7 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 				if (core->seltab == 0) {
 					addr = rz_debug_reg_get(core->dbg, "SP") + delta;
 				} else if (core->seltab == 1) {
-					char buf[128];
-					prompt_read("new-reg-value> ", buf, sizeof(buf));
-					if (*buf) {
-						const char *creg = core->dbg->creg;
-						if (creg) {
-							ut64 regval = rz_num_math(core->num, buf);
-							rz_core_debug_reg_set(core, creg, regval, buf);
-						}
-					}
+					// regs, writing in here not implemented
 					return true;
 				}
 			}
@@ -3066,14 +3061,9 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 		} break;
 		case '-':
 			if (core->print->cur_enabled) {
-				if (core->seltab < 2 && core->printidx == RZ_CORE_VISUAL_MODE_DB) {
-					if (core->seltab) {
-						const char *creg = core->dbg->creg;
-						if (creg) {
-							ut64 cregval = rz_debug_reg_get(core->dbg, creg);
-							rz_core_debug_reg_set(core, creg, cregval - 1, NULL);
-						}
-					} else {
+				if (core->printidx == RZ_CORE_VISUAL_MODE_DB) {
+					if (!core->seltab) {
+						// stack view
 						int w = rz_config_get_i(core->config, "hex.cols");
 						rz_config_set_i(core->config, "stack.size",
 							rz_config_get_i(core->config, "stack.size") - w);
@@ -3095,14 +3085,9 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			break;
 		case '+':
 			if (core->print->cur_enabled) {
-				if (core->seltab < 2 && core->printidx == RZ_CORE_VISUAL_MODE_DB) {
-					if (core->seltab) {
-						const char *creg = core->dbg->creg;
-						if (creg) {
-							ut64 cregval = rz_debug_reg_get(core->dbg, creg);
-							rz_core_debug_reg_set(core, creg, cregval + 1, NULL);
-						}
-					} else {
+				if (core->printidx == RZ_CORE_VISUAL_MODE_DB) {
+					if (!core->seltab) {
+						// stack view
 						int w = rz_config_get_i(core->config, "hex.cols");
 						rz_config_set_i(core->config, "stack.size",
 							rz_config_get_i(core->config, "stack.size") + w);
@@ -3125,22 +3110,7 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 		case '/': {
 			bool mouse_state = __holdMouseState(core);
 			if (core->print->cur_enabled) {
-				if (core->seltab < 2 && core->printidx == RZ_CORE_VISUAL_MODE_DB) {
-					if (core->seltab) {
-						const char *creg = core->dbg->creg;
-						if (creg) {
-							int delta = core->rasm->bits / 8;
-							ut64 cregval = rz_debug_reg_get(core->dbg, creg);
-							rz_core_debug_reg_set(core, creg, cregval - delta, NULL);
-						}
-					} else {
-						int w = rz_config_get_i(core->config, "hex.cols");
-						rz_config_set_i(core->config, "stack.size",
-							rz_config_get_i(core->config, "stack.size") - w);
-					}
-				} else {
-					visual_search(core);
-				}
+				visual_search(core);
 			} else {
 				if (autoblocksize) {
 					rz_core_cmd0(core, "?i highlight;e scr.highlight=`yp`");
@@ -3162,22 +3132,7 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			break;
 		case '*':
 			if (core->print->cur_enabled) {
-				if (core->seltab < 2 && core->printidx == RZ_CORE_VISUAL_MODE_DB) {
-					if (core->seltab) {
-						const char *creg = core->dbg->creg;
-						if (creg) {
-							int delta = core->rasm->bits / 8;
-							ut64 cregval = rz_debug_reg_get(core->dbg, creg);
-							rz_core_debug_reg_set(core, creg, cregval + delta, NULL);
-						}
-					} else {
-						int w = rz_config_get_i(core->config, "hex.cols");
-						rz_config_set_i(core->config, "stack.size",
-							rz_config_get_i(core->config, "stack.size") + w);
-					}
-				} else {
-					rz_core_debug_reg_set(core, "PC", core->offset + core->print->cur, NULL);
-				}
+				rz_core_reg_set_by_role_or_name(core, "PC", core->offset + core->print->cur);
 			} else if (!autoblocksize) {
 				rz_core_block_size(core, core->blocksize + cols);
 			}
@@ -3937,7 +3892,7 @@ RZ_API int rz_core_visual(RzCore *core, const char *input) {
 					"?0 ; f tmp ; sr %s @e: cfg.seek.silent=true ; %s ; ?1 ; %s ; ?1 ; "
 					"s tmp @e: cfg.seek.silent=true ; f- tmp ; pd $r",
 					reg, cmdvhex,
-					ref ? "drr" : "dr=");
+					ref ? CMD_REGISTERS_REFS : CMD_REGISTERS);
 				debugstr[sizeof(debugstr) - 1] = 0;
 			} else {
 				const char *pxw = stackPrintCommand(core);
@@ -3948,7 +3903,7 @@ RZ_API int rz_core_visual(RzCore *core, const char *input) {
 					"?1 ; %s;"
 					"?1 ; s tmp @e: cfg.seek.silent=true ; f- tmp ; afal ; pd $r",
 					reg, pxa ? "pxa" : pxw, size, sign, absdelta,
-					ref ? "drr" : "dr=");
+					ref ? CMD_REGISTERS_REFS : CMD_REGISTERS);
 			}
 			printfmtSingle[2] = debugstr;
 		}
@@ -3971,7 +3926,7 @@ RZ_API int rz_core_visual(RzCore *core, const char *input) {
 			rz_core_seek(core, scrseek, true);
 		}
 		if (debug) {
-			rz_core_debug_regs2flags(core);
+			rz_core_reg_update_flags(core);
 		}
 		core->print->vflush = !skip;
 		visual_refresh(core);

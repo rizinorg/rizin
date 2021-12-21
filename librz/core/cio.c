@@ -25,7 +25,7 @@ RZ_API int rz_core_setup_debugger(RzCore *r, const char *debugbackend, bool atta
 	}
 	// this makes to attach twice showing warnings in the output
 	// we get "resource busy" so it seems isn't an issue
-	rz_core_debug_regs2flags(r);
+	rz_core_reg_update_flags(r);
 	/* honor dbg.bep */
 	{
 		const char *bep = rz_config_get(r->config, "dbg.bep");

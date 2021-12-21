@@ -30,6 +30,7 @@ RZ_IPI void rz_core_analysis_esil_emulate_bb(RzCore *core);
 RZ_IPI void rz_core_analysis_esil_default(RzCore *core);
 
 RZ_IPI void rz_core_analysis_rzil_reinit(RzCore *core);
+RZ_IPI bool rz_core_analysis_rzil_vm_set(RzCore *core, const char *var_name, ut64 value);
 RZ_IPI void rz_core_analysis_rzil_vm_status(RzCore *core, const char *varname, RzOutputMode mode);
 RZ_IPI void rz_core_rzil_step(RzCore *core);
 RZ_IPI void rz_core_analysis_rzil_step_with_events(RzCore *core, PJ *pj);
@@ -118,12 +119,12 @@ RZ_IPI RzCmdStatus rz_core_bin_plugin_print(const RzBinPlugin *bp, RzCmdStateOut
 RZ_IPI RzCmdStatus rz_core_binxtr_plugin_print(const RzBinXtrPlugin *bx, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_core_binldr_plugin_print(const RzBinLdrPlugin *ld, RzCmdStateOutput *state);
 
+/* creg.c */
+RZ_IPI void rz_core_reg_update_flags(RzCore *core);
+RZ_IPI RzList /*<RzRegItem>*/ *rz_core_reg_flags_candidates(RzCore *core, RzReg *reg);
+RZ_IPI void rz_core_reg_print_diff(RzReg *reg, RzList *items);
+
 /* cdebug.c */
-RZ_IPI bool rz_core_debug_reg_set(RzCore *core, const char *regname, ut64 val, const char *strval);
-RZ_IPI bool rz_core_debug_reg_list(RzCore *core, int type, int size, bool skip_covered, PJ *pj, int rad, const char *use_color);
-RZ_IPI RzList /*<RzRegItem>*/ *rz_core_regs2flags_candidates(RzCore *core, RzReg *reg);
-RZ_IPI void rz_core_debug_regs2flags(RzCore *core);
-RZ_IPI void rz_core_regs2flags(RzCore *core);
 RZ_IPI void rz_core_debug_sync_bits(RzCore *core);
 RZ_IPI void rz_core_debug_single_step_in(RzCore *core);
 RZ_IPI void rz_core_debug_single_step_over(RzCore *core);

@@ -1503,7 +1503,7 @@ static int show_syscall(RzDebug *dbg, const char *sysreg) {
 }
 
 RZ_API int rz_debug_continue_syscalls(RzDebug *dbg, int *sc, int n_sc) {
-	int i, err, reg, ret = false;
+	int i, reg, ret = false;
 	if (!dbg || !dbg->cur || rz_debug_is_dead(dbg)) {
 		return false;
 	}
@@ -1517,8 +1517,8 @@ RZ_API int rz_debug_continue_syscalls(RzDebug *dbg, int *sc, int n_sc) {
 		eprintf("--> cannot read registers\n");
 		return -1;
 	}
-	rz_debug_reg_get_err(dbg, "SN", &err, NULL);
-	if (err) {
+
+	if (!rz_reg_get_by_role(dbg->reg, RZ_REG_NAME_SN)) {
 		eprintf("Cannot find 'sn' register for current arch-os.\n");
 		return -1;
 	}

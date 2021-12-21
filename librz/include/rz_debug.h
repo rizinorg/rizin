@@ -293,7 +293,6 @@ typedef struct rz_debug_t {
 
 	RzReg *reg;
 	RzList *q_regs;
-	const char *creg; // current register value
 	RzBreakpoint *bp;
 	char *snap_path;
 
@@ -522,7 +521,6 @@ RZ_API bool rz_debug_reg_profile_sync(RzDebug *dbg);
 RZ_API int rz_debug_reg_sync(RzDebug *dbg, int type, int write);
 RZ_API int rz_debug_reg_set(RzDebug *dbg, const char *name, ut64 num);
 RZ_API ut64 rz_debug_reg_get(RzDebug *dbg, const char *name);
-RZ_API ut64 rz_debug_reg_get_err(RzDebug *dbg, const char *name, int *err, utX *value);
 
 RZ_API ut64 rz_debug_execute(RzDebug *dbg, const ut8 *buf, int len, int restore);
 RZ_API bool rz_debug_map_sync(RzDebug *dbg);
@@ -534,8 +532,6 @@ RZ_API RzList *rz_debug_frames(RzDebug *dbg, ut64 at);
 
 RZ_API bool rz_debug_is_dead(RzDebug *dbg);
 RZ_API int rz_debug_map_protect(RzDebug *dbg, ut64 addr, int size, int perms);
-RZ_API ut64 rz_debug_arg_get(RzDebug *dbg, const char *cc, int num);
-RZ_API bool rz_debug_arg_set(RzDebug *dbg, const char *cc, int num, ut64 value);
 
 /* breakpoints (most in rz_bp, this calls those) */
 RZ_API RzBreakpointItem *rz_debug_bp_add(RzDebug *dbg, ut64 addr, int hw, bool watch, int rw, const char *module, st64 m_delta);

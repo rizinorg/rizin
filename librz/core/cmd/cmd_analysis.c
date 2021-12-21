@@ -782,10 +782,10 @@ RZ_API char *cmd_syscall_dostr(RzCore *core, st64 n, ut64 addr) {
 		n = -1;
 	}
 	if (n == -1 || defVector > 0) {
-		n = (int)rz_debug_reg_get(core->dbg, "oeax");
+		n = (int)rz_core_reg_getv_by_role_or_name(core, "oeax");
 		if (!n || n == -1) {
 			const char *a0 = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_SN);
-			n = (a0 == NULL) ? -1 : (int)rz_debug_reg_get(core->dbg, a0);
+			n = (a0 == NULL) ? -1 : (int)rz_core_reg_getv_by_role_or_name(core, a0);
 		}
 	}
 	RzSyscallItem *item = rz_syscall_get(core->analysis->syscall, n, defVector);
@@ -806,7 +806,7 @@ RZ_API char *cmd_syscall_dostr(RzCore *core, st64 n, ut64 addr) {
 		if (core->rasm->bits == 32 && core->rasm->cur && !strcmp(core->rasm->cur->arch, "x86")) {
 			regidx++;
 		}
-		ut64 arg = rz_debug_arg_get(core->dbg, cc, regidx);
+		ut64 arg = rz_core_arg_get(core, cc, regidx); // TODO here
 		// rz_cons_printf ("(%d:0x%"PFMT64x")\n", i, arg);
 		if (item->sargs) {
 			switch (item->sargs[i]) {
@@ -824,7 +824,7 @@ RZ_API char *cmd_syscall_dostr(RzCore *core, st64 n, ut64 addr) {
 				break;
 			case 'Z': {
 				// TODO replace the hardcoded CC with the sdb ones
-				ut64 len = rz_debug_arg_get(core->dbg, cc, i + 2);
+				ut64 len = rz_core_arg_get(core, cc, i + 2);
 				len = RZ_MIN(len + 1, sizeof(str) - 1);
 				if (len == 0) {
 					len = 16; // override default
@@ -2301,7 +2301,6 @@ repeat:
 				return_tail(0);
 			} else {
 				rz_reg_setv(core->analysis->reg, "PC", op.addr + op.size);
-				rz_reg_setv(core->dbg->reg, "PC", op.addr + op.size);
 			}
 			return 1;
 		}
@@ -2324,7 +2323,7 @@ repeat:
 		}
 		bool isNextFall = false;
 		if (op.type == RZ_ANALYSIS_OP_TYPE_CJMP) {
-			ut64 pc = rz_debug_reg_get(core->dbg, "PC");
+			ut64 pc = rz_reg_getv(core->analysis->reg, name);
 			if (pc == addr + op.size) {
 				// do not opdelay here
 				isNextFall = true;
@@ -2371,12 +2370,11 @@ repeat:
 	if (core->analysis->pcalign > 0) {
 		pc -= (pc % core->analysis->pcalign);
 		rz_reg_setv(core->analysis->reg, name, pc);
-		rz_reg_setv(core->dbg->reg, name, pc);
 	}
 
 	st64 follow = (st64)rz_config_get_i(core->config, "dbg.follow");
 	if (follow > 0) {
-		ut64 pc = rz_debug_reg_get(core->dbg, "PC");
+		ut64 pc = rz_reg_getv(core->analysis->reg, name);
 		if ((pc < core->offset) || (pc > (core->offset + follow))) {
 			rz_core_seek_to_register(core, "PC", false);
 		}
@@ -2420,7 +2418,7 @@ RZ_API int rz_core_esil_step_back(RzCore *core) {
 	RzAnalysisEsil *esil = core->analysis->esil;
 	if (esil->trace->idx > 0) {
 		rz_analysis_esil_trace_restore(esil, esil->trace->idx - 1);
-		rz_core_regs2flags(core);
+		rz_core_reg_update_flags(core);
 		return 1;
 	}
 	return 0;
@@ -2459,7 +2457,7 @@ RZ_API bool rz_core_esil_continue_back(RzCore *core) {
 	// Return to the nearest breakpoint or jump back to the first index if a breakpoint wasn't found
 	rz_analysis_esil_trace_restore(esil, idx);
 
-	rz_core_regs2flags(core);
+	rz_core_reg_update_flags(core);
 
 	return true;
 }
@@ -3055,7 +3053,7 @@ static void __core_analysis_appcall(RzCore *core, const char *input) {
 
 	rz_reg_setv(core->analysis->reg, "PC", core->offset);
 	rz_core_esil_step(core, 0, NULL, NULL, false);
-	rz_core_regs2flags(core);
+	rz_core_reg_update_flags(core);
 
 	rz_reg_setv(core->analysis->reg, "SP", sp);
 	free(inp);
@@ -3284,14 +3282,14 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 			rz_core_esil_step(core, UT64_MAX, NULL, NULL, false);
 			rz_debug_reg_set(core->dbg, "PC", pc + op->size);
 			rz_analysis_esil_set_pc(esil, pc + op->size);
-			rz_core_regs2flags(core);
+			rz_core_reg_update_flags(core);
 			rz_analysis_op_free(op);
 		} break;
 		case 'b': // "aesb"
 			if (!rz_core_esil_step_back(core)) {
 				eprintf("cannnot step back\n");
 			}
-			rz_core_regs2flags(core);
+			rz_core_reg_update_flags(core);
 			break;
 		case 'B': // "aesB"
 		{
@@ -3340,7 +3338,7 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 			if (until_expr || until_addr != UT64_MAX) {
 				rz_core_esil_step(core, until_addr, until_expr, NULL, false);
 			}
-			rz_core_regs2flags(core);
+			rz_core_reg_update_flags(core);
 			break;
 		case 's': // "aess"
 			if (input[2] == 'u') { // "aessu"
@@ -3390,7 +3388,7 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 			break;
 		default:
 			rz_core_esil_step(core, until_addr, until_expr, NULL, false);
-			rz_core_regs2flags(core);
+			rz_core_reg_update_flags(core);
 			break;
 		}
 		break;
@@ -3408,7 +3406,7 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 			if (!rz_core_esil_continue_back(core)) {
 				eprintf("cannnot continue back\n");
 			}
-			rz_core_regs2flags(core);
+			rz_core_reg_update_flags(core);
 			break;
 		} else if (input[1] == 's') { // "aecs"
 			const char *pc = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
@@ -3416,7 +3414,7 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 				if (!rz_core_esil_step(core, UT64_MAX, NULL, NULL, false)) {
 					break;
 				}
-				rz_core_regs2flags(core);
+				rz_core_reg_update_flags(core);
 				addr = rz_num_get(core->num, pc);
 				op = rz_core_analysis_op(core, addr, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT);
 				if (!op) {
@@ -3445,7 +3443,7 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 				if (!rz_core_esil_step(core, UT64_MAX, NULL, NULL, false)) {
 					break;
 				}
-				rz_core_regs2flags(core);
+				rz_core_reg_update_flags(core);
 				addr = rz_num_get(core->num, pc);
 				op = rz_core_analysis_op(core, addr, RZ_ANALYSIS_OP_MASK_BASIC);
 				if (!op) {
@@ -3476,7 +3474,7 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 				until_expr = "0";
 			}
 			rz_core_esil_step(core, until_addr, until_expr, NULL, false);
-			rz_core_regs2flags(core);
+			rz_core_reg_update_flags(core);
 		}
 		break;
 	case 'i': // "aei"
@@ -6511,7 +6509,7 @@ static void cmd_analysis_aC(RzCore *core, const char *input) {
 					rz_strbuf_appendf(sb, "; 0x%" PFMT64x "(", pcv);
 				}
 				for (i = 0; i < nargs; i++) {
-					ut64 v = rz_debug_arg_get(core->dbg, cc, i);
+					ut64 v = rz_core_arg_get(core, cc, i);
 					rz_strbuf_appendf(sb, "%s0x%" PFMT64x, i ? ", " : "", v);
 				}
 				rz_strbuf_appendf(sb, ")");
@@ -8882,7 +8880,7 @@ RZ_IPI RzCmdStatus rz_rzil_vm_initialize_handler(RzCore *core, int argc, const c
 }
 
 RZ_IPI RzCmdStatus rz_rzil_vm_step_handler(RzCore *core, int argc, const char **argv) {
-	ut64 repeat_times = argc == 1 ? 1 : rz_num_math(core->num, argv[1]);
+	ut64 repeat_times = argc == 1 ? 1 : rz_num_math(NULL, argv[1]);
 	for (ut64 i = 0; i < repeat_times; ++i) {
 		rz_core_rzil_step(core);
 	}
@@ -8890,7 +8888,7 @@ RZ_IPI RzCmdStatus rz_rzil_vm_step_handler(RzCore *core, int argc, const char **
 }
 
 RZ_IPI RzCmdStatus rz_rzil_vm_step_with_events_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	ut64 repeat_times = argc == 1 ? 1 : rz_num_math(core->num, argv[1]);
+	ut64 repeat_times = argc == 1 ? 1 : rz_num_math(NULL, argv[1]);
 	PJ *pj = NULL;
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj = pj_new();
@@ -8911,7 +8909,37 @@ RZ_IPI RzCmdStatus rz_rzil_vm_step_with_events_handler(RzCore *core, int argc, c
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI RzCmdStatus rz_rzil_vm_step_until_addr_handler(RzCore *core, int argc, const char **argv) {
+	ut64 address = rz_num_math(core->num, argv[1]);
+
+	if (!core->analysis->rzil || !core->analysis->rzil->vm) {
+		RZ_LOG_ERROR("RzIL: the VM is not initialized.\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	RzILVM *vm = core->analysis->rzil->vm;
+
+	ut64 pc = rz_bv_to_ut64(vm->pc);
+	while (pc != address) {
+		if (rz_cons_is_breaked()) {
+			rz_cons_printf("CTRL+C was pressed.\n");
+			break;
+		}
+		rz_core_rzil_step(core);
+		pc = rz_bv_to_ut64(vm->pc);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
 RZ_IPI RzCmdStatus rz_rzil_vm_status_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	rz_core_analysis_rzil_vm_status(core, argc > 1 ? argv[1] : NULL, mode);
+	if (argc == 3) {
+		ut64 value = rz_num_math(core->num, argv[2]);
+		if (rz_core_analysis_rzil_vm_set(core, argv[1], value)) {
+			rz_cons_printf("%s = 0x%" PFMT64x "\n", argv[1], value);
+		}
+	} else {
+		// print variable or all variables
+		rz_core_analysis_rzil_vm_status(core, argc == 2 ? argv[1] : NULL, mode);
+	}
 	return RZ_CMD_STATUS_OK;
 }

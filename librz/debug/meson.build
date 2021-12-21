@@ -1,5 +1,4 @@
 rz_debug_sources = [
-  'arg.c',
   'ddesc.c',
   'debug.c',
   'dreg.c',
