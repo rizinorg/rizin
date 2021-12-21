@@ -81,7 +81,7 @@ rz_core_sources = [
   'tui/panels.c'
 ]
 
-rz_core_inc = []
+rz_core_inc = ['.']
 if host_machine.system() != 'windows'
   rz_core_inc += ['rz_jemalloc']
 else

@@ -221,17 +221,13 @@ Copyright: 1992, 1993, 1994 Henry Spencer
 Copyright: 1992, 1993, 1994 The Regents of the University of California
 License: BSD-3-Clause
 
-Files: shlr/arm/omap3430_registers
-Copyright: Anton Kochkov <anton.kochkov@gmail.com>
-License: LGPL-3.0-only
-
-Files: shlr/heap/include/rz_jemalloc/*
+Files: librz/core/rz_jemalloc/*
 Copyright: 2002-present Jason Evans <jasone@canonware.com>
 Copyright: 2007-2012 Mozilla Foundation.
 Copyright: 2009-present Facebook, Inc.
 License: BSD-2-Clause
 
-Files: shlr/spp/*
+Files: subprojects/rzspp/*
 Copyright: 2009-2020 pancake <pancake@nopcode.org>
 License: MIT
 

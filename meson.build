@@ -531,9 +531,6 @@ rz_version_h = configure_file(
   install_dir: rizin_incdir
 )
 
-# Copy missing header
-run_command(py3_exe, '-c', '__import__("shutil").copyfile("shlr/spp/config.def.h", "shlr/spp/config.h")')
-
 # handle zlib dependency
 r = run_command(py3_exe, check_meson_subproject_py, 'zlib')
 if r.returncode() == 1 and get_option('subprojects_check')
@@ -608,25 +605,6 @@ sdb_gen_cmd = [
   '==',
   '@INPUT@'
 ]
-
-# handle spp dependency
-spp_files = [
-  'shlr/spp/spp.c'
-]
-
-spp_inc = [platform_inc, include_directories('shlr/spp')]
-
-librzspp = static_library('rzspp', spp_files,
-  dependencies: sdb_dep.partial_dependency(includes: true),
-  include_directories: spp_inc,
-  c_args: ['-DHAVE_R_UTIL', '-DUSE_R2=1'],
-  implicit_include_directories: false
-)
-
-spp_dep = declare_dependency(
-  link_whole: librzspp,
-  include_directories: spp_inc
-)
 
 use_rpath = false
 use_rpath_absolute = false
