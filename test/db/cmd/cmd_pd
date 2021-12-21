@@ -2406,3 +2406,23 @@ EXPECT=<<EOF
 0x000007cf      CALL  sym.imp.strlen
 EOF
 RUN
+
+NAME=rip-relative addr substitution (x86 MASM syntax)
+FILE=bins/mach0/mac-ls
+ARGS=
+CMDS=<<EOF
+s 0x10000108a
+e asm.lines.bb=0
+e asm.bytes=0
+e asm.comments=false
+e asm.syntax=masm
+e asm.ucase=false
+pd 1
+e asm.ucase=true
+pd 1
+EOF
+EXPECT=<<EOF
+  0x10000108a      lea   rsi, section.4.__TEXT.__cstring
+  0x10000108a      LEA   RSI, section.4.__TEXT.__cstring
+EOF
+RUN
