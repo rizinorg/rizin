@@ -135,6 +135,7 @@ RZ_API int rz_main_rz_sign(int argc, const char **argv) {
 		goto rz_sign_end;
 	}
 	rz_config_set_b(core->config, "scr.interactive", false);
+	rz_config_set_b(core->config, "analysis.apply.signature", false);
 	rz_cons_reset();
 	rz_cons_set_interactive(false);
 

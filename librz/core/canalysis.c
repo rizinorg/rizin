@@ -5940,6 +5940,132 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 	if (!is_unknown_file(core)) {
 		rz_analysis_add_device_peripheral_map(core->bin->cur->o, core->analysis);
 	}
+
+	if (rz_config_get_b(core->config, "analysis.apply.signature")) {
+		int n_applied = 0;
+		char message[100];
+		rz_print_rowlog(core->print, "Applying signatures from sigdb");
+		rz_core_analysis_sigdb_apply(core, &n_applied, NULL);
+		rz_strf(message, "Applied %d FLIRT signatures via sigdb", n_applied);
+		rz_print_rowlog_done(core->print, message);
+	}
+
+	return true;
+}
+
+/**
+ * \brief Outputs the list of signatures found in the flirt.sigdb.path
+ *
+ * \param core The RzCore instance
+ */
+RZ_API void rz_core_analysis_sigdb_print(RzCore *core) {
+	RzTable *table = rz_table_new();
+	if (!table) {
+		rz_warn_if_reached();
+		return;
+	}
+	rz_table_set_columnsf(table, "ssns", "bin", "arch", "bits", "name");
+
+	const char *sigdb_path = rz_config_get(core->config, "flirt.sigdb.path");
+	RzList *sigdb = rz_analysis_sigdb_load_database(sigdb_path);
+	RzAnalysisSignature *sig = NULL;
+	RzListIter *iter = NULL;
+	ut64 bits;
+
+	rz_list_foreach (sigdb, iter, sig) {
+		bits = sig->arch_bits;
+		rz_table_add_rowf(table, "ssns", sig->bin_name, sig->arch_name, bits, sig->base_name);
+	}
+
+	char *output = rz_table_tostring(table);
+	if (output) {
+		rz_cons_printf("%s", output);
+		free(output);
+	}
+	rz_list_free(sigdb);
+}
+
+/**
+ * \brief tries to apply the signatures in the flirt.sigdb.path
+ *
+ * \param core       The RzCore instance
+ * \param n_applied  Returns the number of successfully applied signatures
+ * \param filter     Filters the signatures found following the user input
+ * \return fail when an error occurs otherwise true
+ */
+RZ_API bool rz_core_analysis_sigdb_apply(RzCore *core, int *n_applied, const char *filter) {
+	rz_return_val_if_fail(core, false);
+	const char *sigdb_path = NULL;
+	const char *bin = NULL;
+	const char *arch = NULL;
+	ut64 bits = 32;
+	RzAnalysisSignature *sig = NULL;
+	RzList *sigdb = NULL;
+	RzListIter *iter = NULL;
+	RzBinObject *obj = NULL;
+
+	int n_flags_new, n_flags_old;
+	ut8 arch_id = RZ_FLIRT_SIG_ARCH_ANY;
+
+	sigdb_path = rz_config_get(core->config, "flirt.sigdb.path");
+	if (RZ_STR_ISEMPTY(sigdb_path) || !rz_file_is_directory(sigdb_path)) {
+		RZ_LOG_INFO("Cannot apply signatures due unknown sigdb path\n");
+		return false;
+	}
+
+	if (RZ_STR_ISEMPTY(filter)) {
+		obj = core->bin ? rz_bin_cur_object(core->bin) : NULL;
+		if ((!obj || !obj->plugin)) {
+			RZ_LOG_INFO("Cannot apply signatures due unknown bin type\n");
+			return false;
+		} else if (!strcmp(obj->plugin->name, "elf64")) {
+			bin = "elf";
+		} else if (!strcmp(obj->plugin->name, "pe64")) {
+			bin = "pe";
+		} else {
+			bin = obj->plugin->name;
+		}
+	}
+
+	arch = rz_config_get(core->config, "asm.arch");
+	bits = rz_config_get_i(core->config, "asm.bits");
+	arch_id = rz_core_flirt_arch_from_name(arch);
+	if (RZ_STR_ISEMPTY(filter) && arch_id >= RZ_FLIRT_SIG_ARCH_ANY) {
+		RZ_LOG_INFO("Cannot apply signatures due unknown arch (%s)\n", arch);
+		return false;
+	}
+
+	sigdb = rz_analysis_sigdb_load_database(sigdb_path);
+	n_flags_old = rz_flag_count(core->flags, "flirt");
+	rz_list_foreach (sigdb, iter, sig) {
+		if (RZ_STR_ISEMPTY(filter)) {
+			// apply signatures automatically based on bin, arch and bits
+			if (strcmp(bin, sig->bin_name) || strcmp(arch, sig->arch_name) || bits != sig->arch_bits) {
+				continue;
+			} else if (strstr(sig->base_name, "c++") &&
+				obj->lang != RZ_BIN_LANGUAGE_CXX &&
+				obj->lang != RZ_BIN_LANGUAGE_RUST) {
+				// C++ libs can create many false positives, especially on C binaries.
+				// So their usage is limited to C++ and RUST lang
+				continue;
+			}
+			RZ_LOG_INFO("Applying %s signature file\n", sig->short_path);
+		} else {
+			// apply signatures based on filter value
+			if (!strstr(sig->short_path, filter)) {
+				continue;
+			}
+			rz_cons_printf("Applying %s/%s/%u/%s signature file\n",
+				sig->bin_name, sig->arch_name, sig->arch_bits, sig->base_name);
+		}
+		rz_sign_flirt_apply(core->analysis, sig->file_path, arch_id);
+	}
+	rz_list_free(sigdb);
+	n_flags_new = rz_flag_count(core->flags, "flirt");
+
+	if (n_applied) {
+		*n_applied = n_flags_new - n_flags_old;
+	}
 	return true;
 }
 
