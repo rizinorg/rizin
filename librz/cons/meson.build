@@ -32,6 +32,7 @@ rz_cons = library('rz_cons', rz_cons_sources,
 
 rz_cons_dep = declare_dependency(link_with: rz_cons,
                                 include_directories: [platform_inc])
+meson.override_dependency('rz_cons', rz_cons_dep)
 
 pkgconfig_mod.generate(rz_cons,
   subdirs: 'librz',

@@ -702,7 +702,6 @@ subdir('librz/crypto')
 
 subdir('librz/cons')
 subdir('librz/diff')
-subdir('shlr/gdb')
 subdir('librz/io')
 subdir('librz/bp')
 subdir('librz/syscall')
