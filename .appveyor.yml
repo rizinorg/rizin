@@ -48,7 +48,6 @@ only_commits:
     - '**/*.in'
     - '**/*.inc'
     - '**/meson.build'
-    - 'shlr/rizin-shell-parser/'
     - 'subprojects/'
     - 'test/'
     - '.appveyor.yml'

@@ -115,7 +115,7 @@ Files: test/prj/*.rzdb
 Copyright: 2020 RizinOrg <info@rizin.re>
 License: LGPL-3.0-only
 
-Files: shlr/rizin-shell-parser/*
+Files: subprojects/rizin-shell-parser/*
 Copyright: 2020 ret2libc <sirmy15@gmail.com>
 License: LGPL-3.0-only
 
@@ -235,7 +235,7 @@ Files: shlr/spp/*
 Copyright: 2009-2020 pancake <pancake@nopcode.org>
 License: MIT
 
-Files: shlr/winkd/profiles.h
+Files: subprojects/rzwinkd/profiles.h
 Copyright: 2014-2017 The Lemon Man <thatlemon@gmail.com>
 Copyright: 2019-2020 GustavoLCR <gugulcr@gmail.com>
 License: LGPL-3.0-only

@@ -37,7 +37,6 @@ jobs:
             - '**.in'
             - '**.inc'
             - '**/meson.build'
-            - 'shlr/rizin-shell-parser/**'
             - 'subprojects/**'
             - '.github/workflows/ci.yml'
             - 'test/**'
