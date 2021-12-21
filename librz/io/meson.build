@@ -1,3 +1,46 @@
+io_plugins = [
+  'ar',
+  'fd',
+  'bfdbg',
+  'bochs',
+  'debug',
+  'default',
+  'gdb',
+  'gprobe',
+  'gzip',
+  'http',
+  'ihex',
+  'srec',
+  'mach',
+  'malloc',
+  'null',
+  'procpid',
+  'ptrace',
+  'rzk',
+  'rzpipe',
+  'rzweb',
+  'rap',
+  'self',
+  'shm',
+  'sparse',
+  'tcp',
+  'winkd',
+  'winedbg',
+  'zip'
+]
+
+if get_option('use_gpl')
+  io_plugins += 'qnx'
+endif
+
+if host_machine.system() == 'windows'
+  io_plugins += [
+    'windbg',
+    'w32dbg',
+    'w32',
+  ]
+endif
+
 rz_io_sources = [
   'io.c',
   'io_fd.c',

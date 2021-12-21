@@ -1,3 +1,68 @@
+analysis_plugins = [
+  '6502',
+  '8051',
+  'amd29k',
+  'arm_cs',
+  'avr',
+  'bf',
+  'chip8',
+  'cr16',
+  'dalvik',
+  'ebc',
+  'gb',
+  'h8300',
+  'hexagon',
+  'i4004',
+  'i8080',
+  'java',
+  'luac',
+  'm68k_cs',
+  'm680x_cs',
+  'malbolge',
+  'mcore',
+  'mips_cs',
+  'msp430',
+  'null',
+  'or1k',
+  'pic',
+  'ppc_cs',
+  'propeller',
+  'pyc',
+  'rsp',
+  'snes',
+  'sparc_cs',
+  'spc700',
+  'sysz',
+  'tms320',
+  #'tms320c64x',
+  'v810',
+  'v850',
+  'wasm',
+  'x86_cs',
+  'xap',
+  'xcore_cs',
+]
+
+if capstone_dep.version().split('.')[0].to_int() > 4
+  analysis_plugins += 'riscv_cs'
+endif
+
+if get_option('use_gpl')
+  analysis_plugins += [
+    'arc',
+    'cris',
+    'mips_gnu',
+    'nios2',
+    'riscv',
+    'sh',
+    'sparc_gnu',
+    'tricore',
+    'vax',
+    'xtensa',
+    'z80',
+  ]
+endif
+
 rz_analysis_sources = [
   'analysis.c',
   'arch_platform.c',

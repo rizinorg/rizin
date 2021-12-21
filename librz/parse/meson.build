@@ -1,3 +1,27 @@
+parse_plugins = [
+  '6502_pseudo',
+  'arm_pseudo',
+  'att2intel',
+  'avr_pseudo',
+  'chip8_pseudo',
+  'tms320_pseudo',
+  'dalvik_pseudo',
+  'm68k_pseudo',
+  'mips_pseudo',
+  'ppc_pseudo',
+  'v850_pseudo',
+  'wasm_pseudo',
+  'x86_pseudo',
+]
+
+if get_option('use_gpl')
+  parse_plugins += [
+    'sh_pseudo',
+    'riscv_pseudo',
+    'z80_pseudo'
+  ]
+endif
+
 rz_parse_sources = [
   'filter.c',
   'parse.c',

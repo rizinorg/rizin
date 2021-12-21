@@ -1,3 +1,23 @@
+debug_plugins = [
+  'bf',
+  'bochs',
+  'esil',
+  'gdb',
+  'io',
+  'native',
+  'null',
+  'rap',
+  'winkd'
+]
+
+if get_option('use_gpl')
+  debug_plugins += 'qnx'
+endif
+
+if host_machine.system() == 'windows'
+  debug_plugins += 'windbg'
+endif
+
 rz_debug_sources = [
   'arg.c',
   'ddesc.c',

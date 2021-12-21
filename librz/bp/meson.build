@@ -1,3 +1,12 @@
+bp_plugins = [
+  'arm',
+  'bf',
+  'mips',
+  'ppc',
+  'sh',
+  'x86'
+]
+
 rz_bp_sources = [
   'bp.c',
   'bp_io.c',

@@ -1,3 +1,17 @@
+lang_plugins = [
+  'lib',
+  'pipe',
+  'rust',
+  'vala'
+]
+
+if host_machine.system() != 'windows'
+  lang_plugins += [
+    'c',
+    'cpipe'
+  ]
+endif
+
 rz_lang_sources = [
   'lang.c',
   # included in lang.c
