@@ -139,7 +139,7 @@ Files: binrz/rizin/*
 Copyright: 2009 RadareOrg <pancake@nopcode.org>
 License: LGPL-3.0-only
 
-Files: man/*
+Files: binrz/man/*
 Copyright: 2020 RizinOrg <info@rizin.re>
 License: LGPL-3.0-only
 
