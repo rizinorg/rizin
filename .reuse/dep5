@@ -221,7 +221,7 @@ Copyright: 1992, 1993, 1994 Henry Spencer
 Copyright: 1992, 1993, 1994 The Regents of the University of California
 License: BSD-3-Clause
 
-Files: librz/core/rz_jemalloc/*
+Files: subprojects/rzheap/rz_jemalloc/*
 Copyright: 2002-present Jason Evans <jasone@canonware.com>
 Copyright: 2007-2012 Mozilla Foundation.
 Copyright: 2009-present Facebook, Inc.
