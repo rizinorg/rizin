@@ -386,16 +386,6 @@ subdir('egg')
 subdir('debug')
 subdir('core')
 
-subdir('analysis/d')
-subdir('asm/d')
-subdir('asm/cpus')
-subdir('asm/platforms')
-subdir('bin/d')
-subdir('syscall/d')
-subdir('reg/d')
-subdir('cons/d')
-subdir('magic/d')
-subdir('flag/d')
 subdir('main')
 
 

@@ -221,3 +221,5 @@ if not is_static_libs_only
     configuration: conf,
   )
 endif
+
+subdir('d')
