@@ -21,6 +21,7 @@ rz_config = library('rz_config', rz_config_sources,
 
 rz_config_dep = declare_dependency(link_with: rz_config,
                                   include_directories: [platform_inc])
+meson.override_dependency('rz_config', rz_config_dep)
 
 pkgconfig_mod.generate(rz_config,
   subdirs: 'librz',

@@ -37,6 +37,7 @@ rz_bp = library('rz_bp', rz_bp_sources,
 
 rz_bp_dep = declare_dependency(link_with: rz_bp,
                               include_directories: [platform_inc])
+meson.override_dependency('rz_bp', rz_bp_dep)
 
 pkgconfig_mod.generate(rz_bp,
   subdirs: 'librz',

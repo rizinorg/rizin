@@ -273,6 +273,7 @@ rz_analysis = library('rz_analysis', rz_analysis_sources,
 
 rz_analysis_dep = declare_dependency(link_with: rz_analysis,
                                 include_directories: rz_analysis_inc)
+meson.override_dependency('rz_analysis', rz_analysis_dep)
 
 pkgconfig_mod.generate(rz_analysis,
   subdirs: 'librz',

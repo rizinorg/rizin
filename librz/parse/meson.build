@@ -64,6 +64,7 @@ rz_parse = library('rz_parse', rz_parse_sources,
 
 rz_parse_dep = declare_dependency(link_with: rz_parse,
                                  include_directories: platform_inc)
+meson.override_dependency('rz_parse', rz_parse_dep)
 
 pkgconfig_mod.generate(rz_parse,
   subdirs: 'librz',

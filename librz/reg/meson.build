@@ -22,6 +22,7 @@ rz_reg = library('rz_reg', rz_reg_sources,
 
 rz_reg_dep = declare_dependency(link_with: rz_reg,
                                include_directories: [platform_inc])
+meson.override_dependency('rz_reg', rz_reg_dep)
 
 pkgconfig_mod.generate(rz_reg,
   subdirs: 'librz',

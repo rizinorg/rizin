@@ -133,6 +133,7 @@ rz_debug = library('rz_debug', rz_debug_sources,
 
 rz_debug_dep = declare_dependency(link_with: rz_debug,
                                  include_directories: rz_debug_inc)
+meson.override_dependency('rz_debug', rz_debug_dep)
 
 pkgconfig_mod.generate(rz_debug,
   subdirs: 'librz',

@@ -36,6 +36,7 @@ rz_lang = library('rz_lang', rz_lang_sources,
 
 rz_lang_dep = declare_dependency(link_with: rz_lang,
                                 include_directories: [platform_inc])
+meson.override_dependency('rz_lang', rz_lang_dep)
 
 pkgconfig_mod.generate(rz_lang,
   subdirs: 'librz',

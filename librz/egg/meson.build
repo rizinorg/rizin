@@ -40,6 +40,7 @@ rz_egg = library('rz_egg', rz_egg_sources,
 
 rz_egg_dep = declare_dependency(link_with: rz_egg,
                                include_directories: [platform_inc])
+meson.override_dependency('rz_egg', rz_egg_dep)
 
 pkgconfig_mod.generate(rz_egg,
   subdirs: 'librz',

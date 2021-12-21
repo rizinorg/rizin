@@ -317,6 +317,7 @@ rz_asm = library('rz_asm', rz_asm_sources,
 
 rz_asm_dep = declare_dependency(link_with: rz_asm,
                                include_directories: rz_asm_inc)
+meson.override_dependency('rz_asm', rz_asm_dep)
 
 pkgconfig_mod.generate(rz_asm,
   subdirs: 'librz',

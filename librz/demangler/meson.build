@@ -32,6 +32,7 @@ rz_demangler = library('rz_demangler', rz_demangler_sources,
 )
 
 rz_demangler_dep = declare_dependency(link_with: rz_demangler, include_directories: [platform_inc])
+meson.override_dependency('rz_demangler', rz_demangler_dep)
 
 pkgconfig_mod.generate(rz_demangler,
   subdirs: 'librz',

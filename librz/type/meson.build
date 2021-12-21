@@ -44,6 +44,7 @@ rz_type = library('rz_type', rz_type_sources,
 
 rz_type_dep = declare_dependency(link_with: rz_type,
                                 include_directories: rz_type_inc)
+meson.override_dependency('rz_type', rz_type_dep)
 
 pkgconfig_mod.generate(rz_type,
   subdirs: 'librz',

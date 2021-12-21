@@ -34,6 +34,7 @@ rz_magic_dep = declare_dependency(
   link_with: rz_magic,
   include_directories: platform_inc
 )
+meson.override_dependency('rz_magic', rz_magic_dep)
 
 pkgconfig_mod.generate(rz_magic,
   subdirs: 'librz',

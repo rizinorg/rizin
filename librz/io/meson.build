@@ -142,6 +142,7 @@ rz_io = library('rz_io', rz_io_sources,
 
 rz_io_dep = declare_dependency(link_with: rz_io,
                               include_directories: platform_inc)
+meson.override_dependency('rz_io', rz_io_dep)
 
 pkgconfig_mod.generate(rz_io,
   subdirs: 'librz',
