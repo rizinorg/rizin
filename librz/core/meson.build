@@ -86,13 +86,10 @@ rz_core_sources = [
 ]
 
 rz_core_inc = ['.']
-if host_machine.system() != 'windows'
-  rz_core_inc += ['rz_jemalloc']
-else
+if host_machine.system() == 'windows'
   rz_core_sources += 'windows_heap.c'
-  rz_core_inc += ['rz_windows']
 endif
-rz_core_inc = [platform_inc, include_directories(rz_core_inc), 'cmd_descs']
+rz_core_inc = [platform_inc, 'cmd_descs']
 
 shell_parser_dep = dependency('rizin-shell-parser')
 
@@ -124,9 +121,10 @@ rz_core_deps = [
   rz_bin_dep,
   platform_deps,
   dependency('rzgdb'),
+  dependency('rzheap'),
   shell_parser_dep,
   lrt,
-  mth
+  mth,
 ]
 
 if libuv_dep.found()
