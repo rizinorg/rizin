@@ -415,60 +415,6 @@ static const char *help_msg_agn[] = {
 	NULL
 };
 
-static const char *help_msg_ah[] = {
-	"Usage:", "ah[lba-]", "Analysis Hints",
-	"ah?", "", "show this help",
-	"ah?", " offset", "show hint of given offset",
-	"ah", "", "list hints in human-readable format",
-	"ah.", "", "list hints in human-readable format from current offset",
-	"ah-", "", "remove all hints",
-	"ah-", " offset [size]", "remove hints at given offset",
-	"ah*", " offset", "list hints in rizin commands format",
-	"aha", " ppc @ 0x42", "force arch ppc for all addrs >= 0x42 or until the next hint",
-	"aha", " 0 @ 0x84", "disable the effect of arch hints for all addrs >= 0x84 or until the next hint",
-	"ahb", " 16 @ 0x42", "force 16bit for all addrs >= 0x42 or until the next hint",
-	"ahb", " 0 @ 0x84", "disable the effect of bits hints for all addrs >= 0x84 or until the next hint",
-	"ahc", " 0x804804", "override call/jump address",
-	"ahd", " foo a0,33", "replace opcode string",
-	"ahe", " 3,eax,+=", "set vm analysis string",
-	"ahf", " 0x804840", "override fallback address for call",
-	"ahF", " 0x10", "set stackframe size at current offset",
-	"ahh", " 0x804840", "highlight this address offset in disasm",
-	"ahi", "[?] 10", "define numeric base for immediates (2, 8, 10, 10u, 16, i, p, S, s)",
-	"ahj", "", "list hints in JSON",
-	"aho", " call", "change opcode type (see aho?) (deprecated, moved to \"ahd\")",
-	"ahp", " addr", "set pointer hint",
-	"ahr", " val", "set hint for return value of a function",
-	"ahs", " 4", "set opcode size=4",
-	"ahS", " jz", "set asm.syntax=jz for this opcode",
-	"aht", " [?] <type>", "Mark immediate as a type offset (deprecated, moved to \"aho\")",
-	"ahv", " val", "change opcode's val field (useful to set jmptbl sizes in jmp rax)",
-	NULL
-};
-
-static const char *help_msg_ahi[] = {
-	"Usage:", "ahi [2|8|10|10u|16|bodhipSs] [@ offset]", " Define numeric base",
-	"ahi", " <base>", "set numeric base (2, 8, 10, 16)",
-	"ahi", " 10|d", "set base to signed decimal (10), sign bit should depend on receiver size",
-	"ahi", " 10u|du", "set base to unsigned decimal (11)",
-	"ahi", " b", "set base to binary (2)",
-	"ahi", " o", "set base to octal (8)",
-	"ahi", " h", "set base to hexadecimal (16)",
-	"ahi", " i", "set base to IP address (32)",
-	"ahi", " p", "set base to htons(port) (3)",
-	"ahi", " S", "set base to syscall (80)",
-	"ahi", " s", "set base to string (1)",
-	NULL
-};
-
-static const char *help_msg_aht[] = {
-	"Usage: aht[...]", "", "",
-	"ahts", " <offset>", "List all matching structure offsets",
-	"aht", " <struct.member>", "Change immediate to structure offset",
-	"aht?", "", "show this help",
-	NULL
-};
-
 static const char *help_msg_ao[] = {
 	"Usage:", "ao[e?] [len]", "Analyze Opcodes",
 	"aoj", " N", "display opcode analysis information in JSON for N opcodes",
@@ -3865,9 +3811,6 @@ static void cmd_analysis_opcode(RzCore *core, const char *input) {
 			eprintf("Use: aod[?a] ([opcode])    describe current, [given] or all mnemonics\n");
 		}
 		break;
-	case '*': // "ao*"
-		rz_core_analysis_hint_list(core->analysis, input[0]);
-		break;
 	case 0: // "ao"
 	case ' ': { // "ao "
 		int count = 0;
@@ -4305,309 +4248,6 @@ static inline RzFlagItem *core_flag_get_at_as_ref_type(RzCore *core, RzAnalysisX
 
 #define var_ref_list(a, d, t) sdb_fmt("var.0x%" PFMT64x ".%d.%d.%s", \
 	a, 1, d, (t == 'R') ? "reads" : "writes");
-
-static void cmd_analysis_hint(RzCore *core, const char *input) {
-	switch (input[0]) {
-	case '?': // "ah?"
-		if (input[1]) {
-			ut64 addr = rz_num_math(core->num, input + 1);
-			rz_core_analysis_hint_print(core->analysis, addr, 0);
-		} else {
-			rz_core_cmd_help(core, help_msg_ah);
-		}
-		break;
-	case '.': // "ah."
-		rz_core_analysis_hint_print(core->analysis, core->offset, 0);
-		break;
-	case 'a': // "aha" set arch
-		if (input[1] == ' ') {
-			char *ptr = strdup(input + 2);
-			rz_str_word_set0(ptr);
-			const char *arch = rz_str_word_get0(ptr, 0);
-			rz_analysis_hint_set_arch(core->analysis, core->offset, !arch || strcmp(arch, "0") == 0 ? NULL : arch);
-			free(ptr);
-		} else if (input[1] == '-') {
-			rz_analysis_hint_unset_arch(core->analysis, core->offset);
-		} else {
-			eprintf("Missing argument\n");
-		}
-		break;
-	case 'o': // "aho"
-		if (input[1] == ' ') {
-			const char *arg = rz_str_trim_head_ro(input + 1);
-			int type = rz_analysis_optype_from_string(arg);
-			rz_analysis_hint_set_type(core->analysis, core->offset, type);
-		} else {
-			eprintf("Usage: aho [type] # can be mov, jmp, call, ...\n");
-		}
-		break;
-	case 'b': // "ahb" set bits
-		if (input[1] == ' ') {
-			char *ptr = strdup(input + 2);
-			int bits;
-			int i = rz_str_word_set0(ptr);
-			if (i == 2) {
-				rz_num_math(core->num, rz_str_word_get0(ptr, 1));
-			}
-			bits = rz_num_math(core->num, rz_str_word_get0(ptr, 0));
-			rz_analysis_hint_set_bits(core->analysis, core->offset, bits);
-			free(ptr);
-		} else if (input[1] == '-') {
-			rz_analysis_hint_unset_bits(core->analysis, core->offset);
-		} else {
-			eprintf("Missing argument\n");
-		}
-		break;
-	case 'i': // "ahi"
-		if (input[1] == '?') {
-			rz_core_cmd_help(core, help_msg_ahi);
-		} else if (isdigit(input[1])) {
-			rz_analysis_hint_set_nword(core->analysis, core->offset, input[1] - '0');
-			input++;
-		} else if (input[1] == '-') { // "ahi-"
-			rz_analysis_hint_set_immbase(core->analysis, core->offset, 0);
-		}
-		if (input[1] == ' ') {
-			// You can either specify immbase with letters, or numbers
-			int base = rz_num_base_of_string(core->num, input + 2);
-			rz_analysis_hint_set_immbase(core->analysis, core->offset, base);
-		} else if (input[1] != '?' && input[1] != '-') {
-			eprintf("|ERROR| Usage: ahi <base>\n");
-		}
-		break;
-	case 'h': // "ahh"
-		if (input[1] == '-') {
-			rz_analysis_hint_unset_high(core->analysis, core->offset);
-		} else if (input[1] == ' ') {
-			rz_analysis_hint_set_high(core->analysis, rz_num_math(core->num, input + 1));
-		} else {
-			rz_analysis_hint_set_high(core->analysis, core->offset);
-		}
-		break;
-	case 'c': // "ahc"
-		if (input[1] == ' ') {
-			rz_analysis_hint_set_jump(
-				core->analysis, core->offset,
-				rz_num_math(core->num, input + 1));
-		} else if (input[1] == '-') {
-			rz_analysis_hint_unset_jump(core->analysis, core->offset);
-		}
-		break;
-	case 'f': // "ahf"
-		if (input[1] == ' ') {
-			rz_analysis_hint_set_fail(
-				core->analysis, core->offset,
-				rz_num_math(core->num, input + 1));
-		} else if (input[1] == '-') {
-			rz_analysis_hint_unset_fail(core->analysis, core->offset);
-		}
-		break;
-	case 'F': // "ahF" set stackframe size
-		if (input[1] == ' ') {
-			rz_analysis_hint_set_stackframe(
-				core->analysis, core->offset,
-				rz_num_math(core->num, input + 1));
-		} else if (input[1] == '-') {
-			rz_analysis_hint_unset_stackframe(core->analysis, core->offset);
-		}
-		break;
-	case 's': // "ahs" set size (opcode length)
-		if (input[1] == ' ') {
-			rz_analysis_hint_set_size(core->analysis, core->offset, atoi(input + 1));
-		} else if (input[1] == '-') {
-			rz_analysis_hint_unset_size(core->analysis, core->offset);
-		} else {
-			eprintf("Usage: ahs 16\n");
-		}
-		break;
-	case 'S': // "ahS" set asm.syntax
-		if (input[1] == ' ') {
-			rz_analysis_hint_set_syntax(core->analysis, core->offset, input + 2);
-		} else if (input[1] == '-') {
-			rz_analysis_hint_unset_syntax(core->analysis, core->offset);
-		} else {
-			eprintf("Usage: ahS att\n");
-		}
-		break;
-	case 'd': // "ahd" set opcode string
-		if (input[1] == ' ') {
-			rz_analysis_hint_set_opcode(core->analysis, core->offset, input + 2);
-		} else if (input[1] == '-') {
-			rz_analysis_hint_unset_opcode(core->analysis, core->offset);
-		} else {
-			eprintf("Usage: ahd popall\n");
-		}
-		break;
-	case 'e': // "ahe" set ESIL string
-		if (input[1] == ' ') {
-			rz_analysis_hint_set_esil(core->analysis, core->offset, input + 2);
-		} else if (input[1] == '-') {
-			rz_analysis_hint_unset_esil(core->analysis, core->offset);
-		} else {
-			eprintf("Usage: ahe r0,pc,=\n");
-		}
-		break;
-	case 'p': // "ahp"
-		if (input[1] == ' ') {
-			rz_analysis_hint_set_pointer(core->analysis, core->offset, rz_num_math(core->num, input + 1));
-		} else if (input[1] == '-') { // "ahp-"
-			rz_analysis_hint_unset_pointer(core->analysis, core->offset);
-		}
-		break;
-	case 'r': // "ahr"
-		if (input[1] == ' ') {
-			rz_analysis_hint_set_ret(core->analysis, core->offset, rz_num_math(core->num, input + 1));
-		} else if (input[1] == '-') { // "ahr-"
-			rz_analysis_hint_unset_ret(core->analysis, core->offset);
-		}
-	case '*': // "ah*"
-	case 'j': // "ahj"
-	case '\0': // "ah"
-		if (input[0] && input[1] == ' ') {
-			char *ptr = strdup(rz_str_trim_head_ro(input + 2));
-			rz_str_word_set0(ptr);
-			ut64 addr = rz_num_math(core->num, rz_str_word_get0(ptr, 0));
-			rz_core_analysis_hint_print(core->analysis, addr, input[0]);
-			free(ptr);
-		} else {
-			rz_core_analysis_hint_list(core->analysis, input[0]);
-		}
-		break;
-	case 'v': // "ahv"
-		if (input[1] == ' ') {
-			rz_analysis_hint_set_val(
-				core->analysis, core->offset,
-				rz_num_math(core->num, input + 1));
-		} else if (input[1] == '-') {
-			rz_analysis_hint_unset_val(core->analysis, core->offset);
-		}
-		break;
-	case '-': // "ah-"
-		if (input[1]) {
-			if (input[1] == '*') {
-				rz_analysis_hint_clear(core->analysis);
-			} else {
-				char *ptr = strdup(rz_str_trim_head_ro(input + 1));
-				ut64 addr;
-				int size = 1;
-				int i = rz_str_word_set0(ptr);
-				if (i == 2) {
-					size = rz_num_math(core->num, rz_str_word_get0(ptr, 1));
-				}
-				const char *a0 = rz_str_word_get0(ptr, 0);
-				if (a0 && *a0) {
-					addr = rz_num_math(core->num, a0);
-				} else {
-					addr = core->offset;
-				}
-				rz_analysis_hint_del(core->analysis, addr, size);
-				free(ptr);
-			}
-		} else {
-			rz_analysis_hint_clear(core->analysis);
-		}
-		break;
-	case 't': // "aht"
-		switch (input[1]) {
-		case 's': { // "ahts"
-			char *off = strdup(input + 2);
-			rz_str_trim(off);
-			int toff = rz_num_math(NULL, off);
-			if (toff) {
-				RzList *typeoffs = rz_type_db_get_by_offset(core->analysis->typedb, toff);
-				RzListIter *iter;
-				RzTypePath *ty;
-				// We only print type paths here
-				rz_list_foreach (typeoffs, iter, ty) {
-					rz_cons_printf("%s\n", ty->path);
-				}
-				rz_list_free(typeoffs);
-			}
-			free(off);
-			break;
-		}
-		case ' ': { // "aht "
-			// rz_analysis_hint_set_opcode (core->analysis, core->offset, input + 2);
-			const char *off = NULL;
-			char *type = strdup(rz_str_trim_head_ro(input + 2));
-			char *idx = strchr(type, ' ');
-			if (idx) {
-				*idx++ = 0;
-				off = idx;
-			}
-			char *ptr = strchr(type, '=');
-			ut64 offimm = 0;
-			int i = 0;
-			ut64 addr;
-
-			if (ptr) {
-				*ptr++ = 0;
-				rz_str_trim(ptr);
-				if (ptr && *ptr) {
-					addr = rz_num_math(core->num, ptr);
-				} else {
-					eprintf("address is unvalid\n");
-					free(type);
-					break;
-				}
-			} else {
-				addr = core->offset;
-			}
-			rz_str_trim(type);
-			RzAsmOp asmop;
-			RzAnalysisOp op = { 0 };
-			ut8 code[128] = { 0 };
-			(void)rz_io_read_at(core->io, core->offset, code, sizeof(code));
-			rz_asm_set_pc(core->rasm, addr);
-			(void)rz_asm_disassemble(core->rasm, &asmop, code, core->blocksize);
-			int ret = rz_analysis_op(core->analysis, &op, core->offset, code, core->blocksize, RZ_ANALYSIS_OP_MASK_VAL);
-			if (ret >= 0) {
-				// HACK: Just convert only the first imm seen
-				for (i = 0; i < 3; i++) {
-					if (op.src[i]) {
-						if (op.src[i]->imm) {
-							offimm = op.src[i]->imm;
-						} else if (op.src[i]->delta) {
-							offimm = op.src[i]->delta;
-						}
-					}
-				}
-				if (!offimm && op.dst) {
-					if (op.dst->imm) {
-						offimm = op.dst->imm;
-					} else if (op.dst->delta) {
-						offimm = op.dst->delta;
-					}
-				}
-				if (offimm != 0) {
-					if (off) {
-						offimm += rz_num_math(NULL, off);
-					}
-					// TODO: Allow to select from multiple choices
-					RzList *otypes = rz_type_db_get_by_offset(core->analysis->typedb, offimm);
-					RzListIter *iter;
-					RzTypePath *tpath;
-					rz_list_foreach (otypes, iter, tpath) {
-						// TODO: Support also arrays and pointers
-						if (tpath->typ->kind == RZ_TYPE_KIND_IDENTIFIER) {
-							if (!strcmp(type, tpath->path)) {
-								rz_analysis_hint_set_offset(core->analysis, addr, tpath->path);
-								break;
-							}
-						}
-					}
-					rz_list_free(otypes);
-				}
-			}
-			rz_analysis_op_fini(&op);
-			free(type);
-		} break;
-		case '?': // "aht?"
-			rz_core_cmd_help(core, help_msg_aht);
-			break;
-		}
-	}
-}
 
 static char *getViewerPath(void) {
 	int i;
@@ -6708,7 +6348,7 @@ RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
 		break;
 	case '*': // "a*"
 		rz_core_cmd0_rzshell(core, "afl*");
-		rz_core_analysis_hint_list(core->analysis, '*');
+		rz_core_cmd0_rzshell(core, "ah*");
 		rz_core_cmd0_rzshell(core, "ax*");
 		break;
 	case 'a': // "aa"
@@ -6761,9 +6401,6 @@ RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
 			rz_core_cmd_help(core, help_msg_ad);
 			break;
 		}
-		break;
-	case 'h': // "ah"
-		cmd_analysis_hint(core, input + 1);
 		break;
 	case 0: // "a"
 		rz_core_analysis_info(core, "");
@@ -8941,5 +8578,270 @@ RZ_IPI RzCmdStatus rz_rzil_vm_status_handler(RzCore *core, int argc, const char 
 		// print variable or all variables
 		rz_core_analysis_rzil_vm_status(core, argc == 2 ? argv[1] : NULL, mode);
 	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_hint_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	rz_core_analysis_hint_list_print(core->analysis, state);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_hint_list_at_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	rz_core_analysis_hint_print(core->analysis, core->offset, state);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_hint_del_handler(RzCore *core, int argc, const char **argv) {
+	ut64 size = 1;
+	if (argc == 2) {
+		size = rz_num_math(core->num, argv[1]);
+	}
+	rz_analysis_hint_del(core->analysis, core->offset, size);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_hint_del_all_handler(RzCore *core, int argc, const char **argv) {
+	rz_analysis_hint_clear(core->analysis);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_hint_set_arch_handler(RzCore *core, int argc, const char **argv) {
+	const char *arch = !strcmp(argv[1], "0") ? NULL : argv[1];
+	rz_analysis_hint_set_arch(core->analysis, core->offset, arch);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_hint_del_arch_handler(RzCore *core, int argc, const char **argv) {
+	rz_analysis_hint_unset_arch(core->analysis, core->offset);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_hint_set_bits_handler(RzCore *core, int argc, const char **argv) {
+	ut64 bits = rz_num_math(core->num, argv[1]);
+	rz_analysis_hint_set_bits(core->analysis, core->offset, bits);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_hint_del_bits_handler(RzCore *core, int argc, const char **argv) {
+	rz_analysis_hint_unset_bits(core->analysis, core->offset);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_hint_set_high_handler(RzCore *core, int argc, const char **argv) {
+	rz_analysis_hint_set_high(core->analysis, core->offset);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_hint_del_high_handler(RzCore *core, int argc, const char **argv) {
+	rz_analysis_hint_unset_high(core->analysis, core->offset);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_hint_set_jump_handler(RzCore *core, int argc, const char **argv) {
+	ut64 jump = rz_num_math(core->num, argv[1]);
+	rz_analysis_hint_set_jump(core->analysis, core->offset, jump);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_hint_del_jump_handler(RzCore *core, int argc, const char **argv) {
+	rz_analysis_hint_unset_jump(core->analysis, core->offset);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_hint_set_esil_handler(RzCore *core, int argc, const char **argv) {
+	rz_analysis_hint_set_esil(core->analysis, core->offset, argv[1]);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_hint_del_esil_handler(RzCore *core, int argc, const char **argv) {
+	rz_analysis_hint_unset_esil(core->analysis, core->offset);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_hint_set_opcode_handler(RzCore *core, int argc, const char **argv) {
+	rz_analysis_hint_set_opcode(core->analysis, core->offset, argv[1]);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_hint_del_opcode_handler(RzCore *core, int argc, const char **argv) {
+	rz_analysis_hint_unset_opcode(core->analysis, core->offset);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_hint_set_size_handler(RzCore *core, int argc, const char **argv) {
+	ut64 size = rz_num_math(core->num, argv[1]);
+	rz_analysis_hint_set_size(core->analysis, core->offset, size);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_hint_del_size_handler(RzCore *core, int argc, const char **argv) {
+	rz_analysis_hint_unset_size(core->analysis, core->offset);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_hint_set_fail_handler(RzCore *core, int argc, const char **argv) {
+	ut64 fail = rz_num_math(core->num, argv[1]);
+	rz_analysis_hint_set_fail(core->analysis, core->offset, fail);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_hint_del_fail_handler(RzCore *core, int argc, const char **argv) {
+	rz_analysis_hint_unset_fail(core->analysis, core->offset);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_hint_set_stackframe_handler(RzCore *core, int argc, const char **argv) {
+	ut64 size = rz_num_math(core->num, argv[1]);
+	rz_analysis_hint_set_stackframe(core->analysis, core->offset, size);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_hint_del_stackframe_handler(RzCore *core, int argc, const char **argv) {
+	rz_analysis_hint_unset_stackframe(core->analysis, core->offset);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_hint_set_syntax_handler(RzCore *core, int argc, const char **argv) {
+	rz_analysis_hint_set_syntax(core->analysis, core->offset, argv[1]);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_hint_del_syntax_handler(RzCore *core, int argc, const char **argv) {
+	rz_analysis_hint_unset_syntax(core->analysis, core->offset);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_hint_set_ptr_handler(RzCore *core, int argc, const char **argv) {
+	ut64 ptr = rz_num_math(core->num, argv[1]);
+	rz_analysis_hint_set_pointer(core->analysis, core->offset, ptr);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_hint_del_ptr_handler(RzCore *core, int argc, const char **argv) {
+	rz_analysis_hint_unset_pointer(core->analysis, core->offset);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_hint_set_ret_handler(RzCore *core, int argc, const char **argv) {
+	ut64 ret = rz_num_math(core->num, argv[1]);
+	rz_analysis_hint_set_ret(core->analysis, core->offset, ret);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_hint_del_ret_handler(RzCore *core, int argc, const char **argv) {
+	rz_analysis_hint_unset_ret(core->analysis, core->offset);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_hint_set_val_handler(RzCore *core, int argc, const char **argv) {
+	ut64 val = rz_num_math(core->num, argv[1]);
+	rz_analysis_hint_set_val(core->analysis, core->offset, val);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_hint_del_val_handler(RzCore *core, int argc, const char **argv) {
+	rz_analysis_hint_unset_val(core->analysis, core->offset);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_hint_set_optype_handler(RzCore *core, int argc, const char **argv) {
+	int type = rz_analysis_optype_from_string(argv[1]);
+	if (type < 0) {
+		return RZ_CMD_STATUS_WRONG_ARGS;
+	}
+	rz_analysis_hint_set_type(core->analysis, core->offset, type);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_hint_del_optype_handler(RzCore *core, int argc, const char **argv) {
+	rz_analysis_hint_unset_type(core->analysis, core->offset);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_hint_set_immbase_handler(RzCore *core, int argc, const char **argv) {
+	int base = rz_num_base_of_string(core->num, argv[1]);
+	if (argc == 3) {
+		ut64 nword = rz_num_math(core->num, argv[2]);
+		rz_analysis_hint_set_nword(core->analysis, core->offset, (int)(nword));
+	}
+	rz_analysis_hint_set_immbase(core->analysis, core->offset, base);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_hint_del_immbase_handler(RzCore *core, int argc, const char **argv) {
+	rz_analysis_hint_unset_immbase(core->analysis, core->offset);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_hint_set_offset_handler(RzCore *core, int argc, const char **argv) {
+	RzAnalysisOp op = { 0 };
+	ut8 code[128] = { 0 };
+	if (!rz_io_read_at(core->io, core->offset, code, sizeof(code))) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzCmdStatus res = RZ_CMD_STATUS_ERROR;
+	int ret = rz_analysis_op(core->analysis, &op, core->offset, code, sizeof(code), RZ_ANALYSIS_OP_MASK_VAL);
+	if (ret < 1) {
+		goto exit;
+	}
+	// HACK: Just convert only the first imm seen
+	ut64 offimm = 0;
+	for (int i = 0; i < 3; i++) {
+		if (op.src[i]) {
+			if (op.src[i]->imm) {
+				offimm = op.src[i]->imm;
+			} else if (op.src[i]->delta) {
+				offimm = op.src[i]->delta;
+			}
+		}
+	}
+	if (!offimm && op.dst) {
+		if (op.dst->imm) {
+			offimm = op.dst->imm;
+		} else if (op.dst->delta) {
+			offimm = op.dst->delta;
+		}
+	}
+	if (!offimm) {
+		goto exit;
+	}
+	// TODO: Allow to select from multiple choices
+	RzList *otypes = rz_type_db_get_by_offset(core->analysis->typedb, offimm);
+	RzListIter *iter;
+	RzTypePath *tpath;
+	rz_list_foreach (otypes, iter, tpath) {
+		// TODO: Support also arrays and pointers
+		if (tpath->typ->kind == RZ_TYPE_KIND_IDENTIFIER) {
+			if (!strcmp(argv[1], tpath->path)) {
+				rz_analysis_hint_set_offset(core->analysis, core->offset, tpath->path);
+				break;
+			}
+		}
+	}
+	rz_list_free(otypes);
+	res = RZ_CMD_STATUS_OK;
+exit:
+	rz_analysis_op_fini(&op);
+	return res;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_hint_del_offset_handler(RzCore *core, int argc, const char **argv) {
+	rz_analysis_hint_unset_offset(core->analysis, core->offset);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_list_struct_offsets_handler(RzCore *core, int argc, const char **argv) {
+	ut64 toff = rz_num_math(core->num, argv[1]);
+	if (!toff) {
+		return RZ_CMD_STATUS_WRONG_ARGS;
+	}
+	RzList *typeoffs = rz_type_db_get_by_offset(core->analysis->typedb, toff);
+	RzListIter *iter;
+	RzTypePath *ty;
+	// We only print type paths here
+	rz_list_foreach (typeoffs, iter, ty) {
+		rz_cons_printf("%s\n", ty->path);
+	}
+	rz_list_free(typeoffs);
 	return RZ_CMD_STATUS_OK;
 }

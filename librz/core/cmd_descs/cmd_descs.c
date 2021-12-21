@@ -13,6 +13,20 @@ static const RzCmdDescDetail hash_bang_details[2];
 static const RzCmdDescDetail pointer_details[2];
 static const RzCmdDescDetail analysis_reg_cond_details[4];
 static const RzCmdDescDetail ar_details[2];
+static const RzCmdDescDetail analysis_hint_set_arch_details[2];
+static const RzCmdDescDetail analysis_hint_set_bits_details[2];
+static const RzCmdDescDetail analysis_hint_set_high_details[2];
+static const RzCmdDescDetail analysis_hint_set_jump_details[2];
+static const RzCmdDescDetail analysis_hint_set_esil_details[2];
+static const RzCmdDescDetail analysis_hint_set_opcode_details[2];
+static const RzCmdDescDetail analysis_hint_set_size_details[2];
+static const RzCmdDescDetail analysis_hint_set_fail_details[2];
+static const RzCmdDescDetail analysis_hint_set_stackframe_details[2];
+static const RzCmdDescDetail analysis_hint_set_syntax_details[2];
+static const RzCmdDescDetail analysis_hint_set_val_details[2];
+static const RzCmdDescDetail analysis_hint_set_optype_details[2];
+static const RzCmdDescDetail analysis_hint_set_immbase_details[3];
+static const RzCmdDescDetail analysis_hint_set_offset_details[2];
 static const RzCmdDescDetail cmd_cmp_unified_details[2];
 static const RzCmdDescDetail cmd_debug_list_bp_details[2];
 static const RzCmdDescDetail cmd_debug_add_cond_bp_details[2];
@@ -132,6 +146,23 @@ static const RzCmdDescArg analysis_xrefs_set_d_args[2];
 static const RzCmdDescArg analysis_xrefs_set_s_args[2];
 static const RzCmdDescArg analysis_xrefs_del_args[3];
 static const RzCmdDescArg analysis_xrefs_copy_args[2];
+static const RzCmdDescArg analysis_hint_del_args[2];
+static const RzCmdDescArg analysis_hint_set_arch_args[2];
+static const RzCmdDescArg analysis_hint_set_bits_args[2];
+static const RzCmdDescArg analysis_hint_set_jump_args[2];
+static const RzCmdDescArg analysis_hint_set_esil_args[2];
+static const RzCmdDescArg analysis_hint_set_opcode_args[2];
+static const RzCmdDescArg analysis_hint_set_size_args[2];
+static const RzCmdDescArg analysis_hint_set_fail_args[2];
+static const RzCmdDescArg analysis_hint_set_stackframe_args[2];
+static const RzCmdDescArg analysis_hint_set_syntax_args[2];
+static const RzCmdDescArg analysis_hint_set_ptr_args[2];
+static const RzCmdDescArg analysis_hint_set_ret_args[2];
+static const RzCmdDescArg analysis_hint_set_val_args[2];
+static const RzCmdDescArg analysis_hint_set_optype_args[2];
+static const RzCmdDescArg analysis_hint_set_immbase_args[3];
+static const RzCmdDescArg analysis_hint_set_offset_args[2];
+static const RzCmdDescArg analysis_list_struct_offsets_args[2];
 static const RzCmdDescArg block_args[2];
 static const RzCmdDescArg block_decrease_args[2];
 static const RzCmdDescArg block_increase_args[2];
@@ -2562,6 +2593,554 @@ static const RzCmdDescArg analysis_xrefs_graph_args[] = {
 static const RzCmdDescHelp analysis_xrefs_graph_help = {
 	.summary = "Show xrefs graph to reach function at current seek",
 	.args = analysis_xrefs_graph_args,
+};
+
+static const RzCmdDescHelp ah_help = {
+	.summary = "Analysis hints",
+};
+static const RzCmdDescArg analysis_hint_list_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_hint_list_help = {
+	.summary = "List all analysis hints",
+	.args = analysis_hint_list_args,
+};
+
+static const RzCmdDescArg analysis_hint_list_at_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_hint_list_at_help = {
+	.summary = "List analysis hints at current seek",
+	.args = analysis_hint_list_at_args,
+};
+
+static const RzCmdDescArg analysis_hint_del_args[] = {
+	{
+		.name = "size",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_hint_del_help = {
+	.summary = "Delete analysis hints in region starting from current seek",
+	.args = analysis_hint_del_args,
+};
+
+static const RzCmdDescArg analysis_hint_del_all_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_hint_del_all_help = {
+	.summary = "Delete all analysis hints",
+	.args = analysis_hint_del_all_args,
+};
+
+static const RzCmdDescDetailEntry analysis_hint_set_arch_empty_detail_entries[] = {
+	{ .text = "aha ppc @ 0x42", .arg_str = NULL, .comment = "Force arch ppc for all addresses >= 0x42 or until the next hint" },
+	{ .text = "aha 0 @ 0x84", .arg_str = NULL, .comment = "Disable the effect of arch hints for all addresses >= 0x84 or until the next hint" },
+	{ 0 },
+};
+static const RzCmdDescDetail analysis_hint_set_arch_details[] = {
+	{ .name = "", .entries = analysis_hint_set_arch_empty_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg analysis_hint_set_arch_args[] = {
+	{
+		.name = "arch",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_hint_set_arch_help = {
+	.summary = "Set arch hint",
+	.details = analysis_hint_set_arch_details,
+	.args = analysis_hint_set_arch_args,
+};
+
+static const RzCmdDescArg analysis_hint_del_arch_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_hint_del_arch_help = {
+	.summary = "Delete arch hint",
+	.args = analysis_hint_del_arch_args,
+};
+
+static const RzCmdDescDetailEntry analysis_hint_set_bits_empty_detail_entries[] = {
+	{ .text = "ahb 16 @ 0x42", .arg_str = NULL, .comment = "Force 16bit for all addresses >= 0x42 or until the next hint" },
+	{ 0 },
+};
+static const RzCmdDescDetail analysis_hint_set_bits_details[] = {
+	{ .name = "", .entries = analysis_hint_set_bits_empty_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg analysis_hint_set_bits_args[] = {
+	{
+		.name = "bits",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_hint_set_bits_help = {
+	.summary = "Set bits hint",
+	.details = analysis_hint_set_bits_details,
+	.args = analysis_hint_set_bits_args,
+};
+
+static const RzCmdDescArg analysis_hint_del_bits_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_hint_del_bits_help = {
+	.summary = "Delete bits hint",
+	.args = analysis_hint_del_bits_args,
+};
+
+static const RzCmdDescDetailEntry analysis_hint_set_high_empty_detail_entries[] = {
+	{ .text = "ahh @ 0x804840", .arg_str = NULL, .comment = "Highlight this address offset in disasm" },
+	{ 0 },
+};
+static const RzCmdDescDetail analysis_hint_set_high_details[] = {
+	{ .name = "", .entries = analysis_hint_set_high_empty_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg analysis_hint_set_high_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_hint_set_high_help = {
+	.summary = "Set highlight hint",
+	.details = analysis_hint_set_high_details,
+	.args = analysis_hint_set_high_args,
+};
+
+static const RzCmdDescArg analysis_hint_del_high_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_hint_del_high_help = {
+	.summary = "Delete highlight hint",
+	.args = analysis_hint_del_high_args,
+};
+
+static const RzCmdDescDetailEntry analysis_hint_set_jump_empty_detail_entries[] = {
+	{ .text = "ahc ", .arg_str = "0x804840", .comment = "Replace call/jump address with 0x804840" },
+	{ 0 },
+};
+static const RzCmdDescDetail analysis_hint_set_jump_details[] = {
+	{ .name = "", .entries = analysis_hint_set_jump_empty_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg analysis_hint_set_jump_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_hint_set_jump_help = {
+	.summary = "Set jump/call address hint",
+	.details = analysis_hint_set_jump_details,
+	.args = analysis_hint_set_jump_args,
+};
+
+static const RzCmdDescArg analysis_hint_del_jump_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_hint_del_jump_help = {
+	.summary = "Delete jump/call address hint",
+	.args = analysis_hint_del_jump_args,
+};
+
+static const RzCmdDescDetailEntry analysis_hint_set_esil_empty_detail_entries[] = {
+	{ .text = "ahe ", .arg_str = "\"3,eax,+=\"", .comment = "Replace ESIL VM analysis string" },
+	{ 0 },
+};
+static const RzCmdDescDetail analysis_hint_set_esil_details[] = {
+	{ .name = "", .entries = analysis_hint_set_esil_empty_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg analysis_hint_set_esil_args[] = {
+	{
+		.name = "string",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_hint_set_esil_help = {
+	.summary = "Set ESIL string hint",
+	.details = analysis_hint_set_esil_details,
+	.args = analysis_hint_set_esil_args,
+};
+
+static const RzCmdDescArg analysis_hint_del_esil_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_hint_del_esil_help = {
+	.summary = "Delete ESIL string hint",
+	.args = analysis_hint_del_esil_args,
+};
+
+static const RzCmdDescDetailEntry analysis_hint_set_opcode_empty_detail_entries[] = {
+	{ .text = "ahd ", .arg_str = "\"foo a0,33\"", .comment = "Replace opcode string" },
+	{ 0 },
+};
+static const RzCmdDescDetail analysis_hint_set_opcode_details[] = {
+	{ .name = "", .entries = analysis_hint_set_opcode_empty_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg analysis_hint_set_opcode_args[] = {
+	{
+		.name = "opcode",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_hint_set_opcode_help = {
+	.summary = "Set opcode hint",
+	.details = analysis_hint_set_opcode_details,
+	.args = analysis_hint_set_opcode_args,
+};
+
+static const RzCmdDescArg analysis_hint_del_opcode_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_hint_del_opcode_help = {
+	.summary = "Delete opcode hint",
+	.args = analysis_hint_del_opcode_args,
+};
+
+static const RzCmdDescDetailEntry analysis_hint_set_size_empty_detail_entries[] = {
+	{ .text = "ahs ", .arg_str = "4", .comment = "Set opcode size=4" },
+	{ 0 },
+};
+static const RzCmdDescDetail analysis_hint_set_size_details[] = {
+	{ .name = "", .entries = analysis_hint_set_size_empty_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg analysis_hint_set_size_args[] = {
+	{
+		.name = "size",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_hint_set_size_help = {
+	.summary = "Set opcode size hint",
+	.details = analysis_hint_set_size_details,
+	.args = analysis_hint_set_size_args,
+};
+
+static const RzCmdDescArg analysis_hint_del_size_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_hint_del_size_help = {
+	.summary = "Delete opcode size hint",
+	.args = analysis_hint_del_size_args,
+};
+
+static const RzCmdDescDetailEntry analysis_hint_set_fail_empty_detail_entries[] = {
+	{ .text = "ahf ", .arg_str = "0x804840", .comment = "Replace fallback address for call with 0x804840" },
+	{ 0 },
+};
+static const RzCmdDescDetail analysis_hint_set_fail_details[] = {
+	{ .name = "", .entries = analysis_hint_set_fail_empty_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg analysis_hint_set_fail_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_hint_set_fail_help = {
+	.summary = "Set fallback address hint",
+	.details = analysis_hint_set_fail_details,
+	.args = analysis_hint_set_fail_args,
+};
+
+static const RzCmdDescArg analysis_hint_del_fail_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_hint_del_fail_help = {
+	.summary = "Delete fallback address hint",
+	.args = analysis_hint_del_fail_args,
+};
+
+static const RzCmdDescDetailEntry analysis_hint_set_stackframe_empty_detail_entries[] = {
+	{ .text = "ahF ", .arg_str = "0x10", .comment = "Set stackframe size to 0x10" },
+	{ 0 },
+};
+static const RzCmdDescDetail analysis_hint_set_stackframe_details[] = {
+	{ .name = "", .entries = analysis_hint_set_stackframe_empty_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg analysis_hint_set_stackframe_args[] = {
+	{
+		.name = "size",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_hint_set_stackframe_help = {
+	.summary = "Set stackframe size hint",
+	.details = analysis_hint_set_stackframe_details,
+	.args = analysis_hint_set_stackframe_args,
+};
+
+static const RzCmdDescArg analysis_hint_del_stackframe_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_hint_del_stackframe_help = {
+	.summary = "Delete stackframe size hint",
+	.args = analysis_hint_del_stackframe_args,
+};
+
+static const RzCmdDescDetailEntry analysis_hint_set_syntax_empty_detail_entries[] = {
+	{ .text = "ahS ", .arg_str = "jz", .comment = "Set asm.syntax=jz for opcode at current seek" },
+	{ 0 },
+};
+static const RzCmdDescDetail analysis_hint_set_syntax_details[] = {
+	{ .name = "", .entries = analysis_hint_set_syntax_empty_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg analysis_hint_set_syntax_args[] = {
+	{
+		.name = "string",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_hint_set_syntax_help = {
+	.summary = "Set asm syntax hint",
+	.details = analysis_hint_set_syntax_details,
+	.args = analysis_hint_set_syntax_args,
+};
+
+static const RzCmdDescArg analysis_hint_del_syntax_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_hint_del_syntax_help = {
+	.summary = "Delete asm syntax hint",
+	.args = analysis_hint_del_syntax_args,
+};
+
+static const RzCmdDescArg analysis_hint_set_ptr_args[] = {
+	{
+		.name = "pointer",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_hint_set_ptr_help = {
+	.summary = "Set pointer hint",
+	.args = analysis_hint_set_ptr_args,
+};
+
+static const RzCmdDescArg analysis_hint_del_ptr_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_hint_del_ptr_help = {
+	.summary = "Delete pointer hint",
+	.args = analysis_hint_del_ptr_args,
+};
+
+static const RzCmdDescArg analysis_hint_set_ret_args[] = {
+	{
+		.name = "return",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_hint_set_ret_help = {
+	.summary = "Set function return value hint",
+	.args = analysis_hint_set_ret_args,
+};
+
+static const RzCmdDescArg analysis_hint_del_ret_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_hint_del_ret_help = {
+	.summary = "Delete function return value hint",
+	.args = analysis_hint_del_ret_args,
+};
+
+static const RzCmdDescDetailEntry analysis_hint_set_val_empty_detail_entries[] = {
+	{ .text = "ahv ", .arg_str = "val", .comment = "Change opcode's value field (useful to set jmptbl sizes in jmp rax)" },
+	{ 0 },
+};
+static const RzCmdDescDetail analysis_hint_set_val_details[] = {
+	{ .name = "", .entries = analysis_hint_set_val_empty_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg analysis_hint_set_val_args[] = {
+	{
+		.name = "value",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_hint_set_val_help = {
+	.summary = "Set opcode value hint",
+	.details = analysis_hint_set_val_details,
+	.args = analysis_hint_set_val_args,
+};
+
+static const RzCmdDescArg analysis_hint_del_val_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_hint_del_val_help = {
+	.summary = "Delete opcode value hint",
+	.args = analysis_hint_del_val_args,
+};
+
+static const RzCmdDescDetailEntry analysis_hint_set_optype_empty_detail_entries[] = {
+	{ .text = "aho ", .arg_str = "call", .comment = "Change opcode type to <call>" },
+	{ 0 },
+};
+static const RzCmdDescDetail analysis_hint_set_optype_details[] = {
+	{ .name = "", .entries = analysis_hint_set_optype_empty_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg analysis_hint_set_optype_args[] = {
+	{
+		.name = "string",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_hint_set_optype_help = {
+	.summary = "Set opcode type hint",
+	.details = analysis_hint_set_optype_details,
+	.args = analysis_hint_set_optype_args,
+};
+
+static const RzCmdDescArg analysis_hint_del_optype_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_hint_del_optype_help = {
+	.summary = "Delete opcode type hint",
+	.args = analysis_hint_del_optype_args,
+};
+
+static const RzCmdDescDetailEntry analysis_hint_set_immbase_empty_detail_entries[] = {
+	{ .text = "ahi ", .arg_str = "<base>", .comment = "Set numeric <base> (2, 8, 10, 16)" },
+	{ .text = "ahi 10|d", .arg_str = NULL, .comment = "Set base to signed decimal (10), sign bit should depend on receiver size" },
+	{ .text = "ahi 10u|du", .arg_str = NULL, .comment = "Set base to unsigned decimal (11)" },
+	{ .text = "ahi b", .arg_str = NULL, .comment = "Set base to binary (2)" },
+	{ .text = "ahi o", .arg_str = NULL, .comment = "Set base to octal (8)" },
+	{ .text = "ahi h", .arg_str = NULL, .comment = "Set base to hexadecimal (16)" },
+	{ .text = "ahi i", .arg_str = NULL, .comment = "Set base to IP address (32)" },
+	{ .text = "ahi p", .arg_str = NULL, .comment = "Set base to htons(port) (3)" },
+	{ .text = "ahi S", .arg_str = NULL, .comment = "Set base to syscall (80)" },
+	{ .text = "ahi s", .arg_str = NULL, .comment = "Set base to string (1)" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry analysis_hint_set_immbase_Set_space_base_space_of_space_the_space_N_minus_th_space_immediate_space__oparen_indexing_space_starts_space_from_space_0_cparen__detail_entries[] = {
+	{ .text = "ahi 16 1", .arg_str = NULL, .comment = "Set base of the 1-st immediate to hexadecimal" },
+	{ 0 },
+};
+static const RzCmdDescDetail analysis_hint_set_immbase_details[] = {
+	{ .name = "", .entries = analysis_hint_set_immbase_empty_detail_entries },
+	{ .name = "Set base of the N-th immediate (indexing starts from 0)", .entries = analysis_hint_set_immbase_Set_space_base_space_of_space_the_space_N_minus_th_space_immediate_space__oparen_indexing_space_starts_space_from_space_0_cparen__detail_entries },
+	{ 0 },
+};
+static const char *analysis_hint_set_immbase_type_choices[] = { "2", "8", "10", "10u", "16", "b", "o", "h", "i", "p", "S", "s", NULL };
+static const RzCmdDescArg analysis_hint_set_immbase_args[] = {
+	{
+		.name = "type",
+		.type = RZ_CMD_ARG_TYPE_CHOICES,
+		.choices = analysis_hint_set_immbase_type_choices,
+
+	},
+	{
+		.name = "nword",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_hint_set_immbase_help = {
+	.summary = "Set immediate base hint",
+	.details = analysis_hint_set_immbase_details,
+	.args = analysis_hint_set_immbase_args,
+};
+
+static const RzCmdDescArg analysis_hint_del_immbase_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_hint_del_immbase_help = {
+	.summary = "Delete immediate base hint",
+	.args = analysis_hint_del_immbase_args,
+};
+
+static const RzCmdDescDetailEntry analysis_hint_set_offset_empty_detail_entries[] = {
+	{ .text = "aht ", .arg_str = "struct.member", .comment = "Replace immediate with <struct.member>" },
+	{ 0 },
+};
+static const RzCmdDescDetail analysis_hint_set_offset_details[] = {
+	{ .name = "", .entries = analysis_hint_set_offset_empty_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg analysis_hint_set_offset_args[] = {
+	{
+		.name = "struct.member",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_hint_set_offset_help = {
+	.summary = "Set structure offset hint",
+	.details = analysis_hint_set_offset_details,
+	.args = analysis_hint_set_offset_args,
+};
+
+static const RzCmdDescArg analysis_hint_del_offset_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_hint_del_offset_help = {
+	.summary = "Delete structure offset hint",
+	.args = analysis_hint_del_offset_args,
+};
+
+static const RzCmdDescArg analysis_list_struct_offsets_args[] = {
+	{
+		.name = "offset",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_list_struct_offsets_help = {
+	.summary = "List all matching structure offsets",
+	.args = analysis_list_struct_offsets_args,
 };
 
 static const RzCmdDescHelp b_help = {
@@ -9782,6 +10361,119 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *analysis_xrefs_graph_cd = rz_cmd_desc_argv_state_new(core->rcmd, ax_cd, "axg", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_analysis_xrefs_graph_handler, &analysis_xrefs_graph_help);
 	rz_warn_if_fail(analysis_xrefs_graph_cd);
+
+	RzCmdDesc *ah_cd = rz_cmd_desc_group_new(core->rcmd, cmd_analysis_cd, "ah", NULL, NULL, &ah_help);
+	rz_warn_if_fail(ah_cd);
+	RzCmdDesc *analysis_hint_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, ah_cd, "ahl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_analysis_hint_list_handler, &analysis_hint_list_help);
+	rz_warn_if_fail(analysis_hint_list_cd);
+
+	RzCmdDesc *analysis_hint_list_at_cd = rz_cmd_desc_argv_state_new(core->rcmd, ah_cd, "ahl.", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_analysis_hint_list_at_handler, &analysis_hint_list_at_help);
+	rz_warn_if_fail(analysis_hint_list_at_cd);
+
+	RzCmdDesc *analysis_hint_del_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "ah-", rz_analysis_hint_del_handler, &analysis_hint_del_help);
+	rz_warn_if_fail(analysis_hint_del_cd);
+
+	RzCmdDesc *analysis_hint_del_all_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "ah-*", rz_analysis_hint_del_all_handler, &analysis_hint_del_all_help);
+	rz_warn_if_fail(analysis_hint_del_all_cd);
+
+	RzCmdDesc *analysis_hint_set_arch_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "aha", rz_analysis_hint_set_arch_handler, &analysis_hint_set_arch_help);
+	rz_warn_if_fail(analysis_hint_set_arch_cd);
+
+	RzCmdDesc *analysis_hint_del_arch_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "aha-", rz_analysis_hint_del_arch_handler, &analysis_hint_del_arch_help);
+	rz_warn_if_fail(analysis_hint_del_arch_cd);
+
+	RzCmdDesc *analysis_hint_set_bits_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "ahb", rz_analysis_hint_set_bits_handler, &analysis_hint_set_bits_help);
+	rz_warn_if_fail(analysis_hint_set_bits_cd);
+
+	RzCmdDesc *analysis_hint_del_bits_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "ahb-", rz_analysis_hint_del_bits_handler, &analysis_hint_del_bits_help);
+	rz_warn_if_fail(analysis_hint_del_bits_cd);
+
+	RzCmdDesc *analysis_hint_set_high_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "ahh", rz_analysis_hint_set_high_handler, &analysis_hint_set_high_help);
+	rz_warn_if_fail(analysis_hint_set_high_cd);
+
+	RzCmdDesc *analysis_hint_del_high_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "ahh-", rz_analysis_hint_del_high_handler, &analysis_hint_del_high_help);
+	rz_warn_if_fail(analysis_hint_del_high_cd);
+
+	RzCmdDesc *analysis_hint_set_jump_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "ahc", rz_analysis_hint_set_jump_handler, &analysis_hint_set_jump_help);
+	rz_warn_if_fail(analysis_hint_set_jump_cd);
+
+	RzCmdDesc *analysis_hint_del_jump_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "ahc-", rz_analysis_hint_del_jump_handler, &analysis_hint_del_jump_help);
+	rz_warn_if_fail(analysis_hint_del_jump_cd);
+
+	RzCmdDesc *analysis_hint_set_esil_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "ahe", rz_analysis_hint_set_esil_handler, &analysis_hint_set_esil_help);
+	rz_warn_if_fail(analysis_hint_set_esil_cd);
+
+	RzCmdDesc *analysis_hint_del_esil_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "ahe-", rz_analysis_hint_del_esil_handler, &analysis_hint_del_esil_help);
+	rz_warn_if_fail(analysis_hint_del_esil_cd);
+
+	RzCmdDesc *analysis_hint_set_opcode_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "ahd", rz_analysis_hint_set_opcode_handler, &analysis_hint_set_opcode_help);
+	rz_warn_if_fail(analysis_hint_set_opcode_cd);
+
+	RzCmdDesc *analysis_hint_del_opcode_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "ahd-", rz_analysis_hint_del_opcode_handler, &analysis_hint_del_opcode_help);
+	rz_warn_if_fail(analysis_hint_del_opcode_cd);
+
+	RzCmdDesc *analysis_hint_set_size_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "ahs", rz_analysis_hint_set_size_handler, &analysis_hint_set_size_help);
+	rz_warn_if_fail(analysis_hint_set_size_cd);
+
+	RzCmdDesc *analysis_hint_del_size_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "ahs-", rz_analysis_hint_del_size_handler, &analysis_hint_del_size_help);
+	rz_warn_if_fail(analysis_hint_del_size_cd);
+
+	RzCmdDesc *analysis_hint_set_fail_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "ahf", rz_analysis_hint_set_fail_handler, &analysis_hint_set_fail_help);
+	rz_warn_if_fail(analysis_hint_set_fail_cd);
+
+	RzCmdDesc *analysis_hint_del_fail_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "ahf-", rz_analysis_hint_del_fail_handler, &analysis_hint_del_fail_help);
+	rz_warn_if_fail(analysis_hint_del_fail_cd);
+
+	RzCmdDesc *analysis_hint_set_stackframe_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "ahF", rz_analysis_hint_set_stackframe_handler, &analysis_hint_set_stackframe_help);
+	rz_warn_if_fail(analysis_hint_set_stackframe_cd);
+
+	RzCmdDesc *analysis_hint_del_stackframe_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "ahF-", rz_analysis_hint_del_stackframe_handler, &analysis_hint_del_stackframe_help);
+	rz_warn_if_fail(analysis_hint_del_stackframe_cd);
+
+	RzCmdDesc *analysis_hint_set_syntax_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "ahS", rz_analysis_hint_set_syntax_handler, &analysis_hint_set_syntax_help);
+	rz_warn_if_fail(analysis_hint_set_syntax_cd);
+
+	RzCmdDesc *analysis_hint_del_syntax_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "ahS-", rz_analysis_hint_del_syntax_handler, &analysis_hint_del_syntax_help);
+	rz_warn_if_fail(analysis_hint_del_syntax_cd);
+
+	RzCmdDesc *analysis_hint_set_ptr_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "ahp", rz_analysis_hint_set_ptr_handler, &analysis_hint_set_ptr_help);
+	rz_warn_if_fail(analysis_hint_set_ptr_cd);
+
+	RzCmdDesc *analysis_hint_del_ptr_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "ahp-", rz_analysis_hint_del_ptr_handler, &analysis_hint_del_ptr_help);
+	rz_warn_if_fail(analysis_hint_del_ptr_cd);
+
+	RzCmdDesc *analysis_hint_set_ret_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "ahr", rz_analysis_hint_set_ret_handler, &analysis_hint_set_ret_help);
+	rz_warn_if_fail(analysis_hint_set_ret_cd);
+
+	RzCmdDesc *analysis_hint_del_ret_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "ahr-", rz_analysis_hint_del_ret_handler, &analysis_hint_del_ret_help);
+	rz_warn_if_fail(analysis_hint_del_ret_cd);
+
+	RzCmdDesc *analysis_hint_set_val_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "ahv", rz_analysis_hint_set_val_handler, &analysis_hint_set_val_help);
+	rz_warn_if_fail(analysis_hint_set_val_cd);
+
+	RzCmdDesc *analysis_hint_del_val_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "ahv-", rz_analysis_hint_del_val_handler, &analysis_hint_del_val_help);
+	rz_warn_if_fail(analysis_hint_del_val_cd);
+
+	RzCmdDesc *analysis_hint_set_optype_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "aho", rz_analysis_hint_set_optype_handler, &analysis_hint_set_optype_help);
+	rz_warn_if_fail(analysis_hint_set_optype_cd);
+
+	RzCmdDesc *analysis_hint_del_optype_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "aho-", rz_analysis_hint_del_optype_handler, &analysis_hint_del_optype_help);
+	rz_warn_if_fail(analysis_hint_del_optype_cd);
+
+	RzCmdDesc *analysis_hint_set_immbase_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "ahi", rz_analysis_hint_set_immbase_handler, &analysis_hint_set_immbase_help);
+	rz_warn_if_fail(analysis_hint_set_immbase_cd);
+
+	RzCmdDesc *analysis_hint_del_immbase_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "ahi-", rz_analysis_hint_del_immbase_handler, &analysis_hint_del_immbase_help);
+	rz_warn_if_fail(analysis_hint_del_immbase_cd);
+
+	RzCmdDesc *analysis_hint_set_offset_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "aht", rz_analysis_hint_set_offset_handler, &analysis_hint_set_offset_help);
+	rz_warn_if_fail(analysis_hint_set_offset_cd);
+
+	RzCmdDesc *analysis_hint_del_offset_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "aht-", rz_analysis_hint_del_offset_handler, &analysis_hint_del_offset_help);
+	rz_warn_if_fail(analysis_hint_del_offset_cd);
+
+	RzCmdDesc *analysis_list_struct_offsets_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "ahts", rz_analysis_list_struct_offsets_handler, &analysis_list_struct_offsets_help);
+	rz_warn_if_fail(analysis_list_struct_offsets_cd);
 
 	RzCmdDesc *b_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "b", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_block_handler, &block_help, &b_help);
 	rz_warn_if_fail(b_cd);
