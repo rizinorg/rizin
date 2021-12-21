@@ -3127,7 +3127,7 @@ RZ_API bool rz_str_startswith_icase(const char *str, const char *needle) {
 	if (str == needle) {
 		return true;
 	}
-	return !strnicmp(str, needle, strlen(needle));
+	return !rz_str_ncasecmp(str, needle, strlen(needle));
 }
 
 RZ_API bool rz_str_endswith(const char *str, const char *needle) {
