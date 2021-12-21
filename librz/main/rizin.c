@@ -20,6 +20,11 @@ static bool is_valid_gdb_file(RzCoreFile *fh) {
 	return d && strncmp(d->name, "gdb://", 6);
 }
 
+static bool is_valid_dmp_file(RzCoreFile *fh) {
+	RzIODesc *d = fh && fh->core ? rz_io_desc_get(fh->core->io, fh->fd) : NULL;
+	return d && strncmp(d->name, "dmp://", 6);
+}
+
 static char *get_file_in_cur_dir(const char *filepath) {
 	filepath = rz_file_basename(filepath);
 	if (rz_file_exists(filepath) && !rz_file_is_directory(filepath)) {
@@ -983,7 +988,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 					}
 					fh = rz_core_file_open(r, pfile, perms, mapaddr);
 					iod = (r->io && fh) ? rz_io_desc_get(r->io, fh->fd) : NULL;
-					if (!strcmp(debugbackend, "gdb")) {
+					if (!strcmp(debugbackend, "gdb") || !strcmp(debugbackend, "dmp")) {
 						const char *filepath = rz_config_get(r->config, "dbg.exe.path");
 						ut64 addr = baddr;
 						if (addr == UINT64_MAX) {
@@ -1001,7 +1006,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 								}
 								rz_core_bin_load(r, NULL, addr);
 							}
-						} else if (is_valid_gdb_file(fh)) {
+						} else if (is_valid_gdb_file(fh) || is_valid_dmp_file(fh)) {
 							filepath = iod->name;
 							if (rz_file_exists(filepath) && !rz_file_is_directory(filepath)) {
 								if (addr == UINT64_MAX) {
@@ -1244,7 +1249,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		}
 
 		debug = r->file && iod && (r->file->fd == iod->fd) && iod->plugin &&
-			iod->plugin->isdbg;
+			(iod->plugin->isdbg || !strcmp(iod->plugin->name, "dmp"));
 		if (debug) {
 			rz_core_setup_debugger(r, debugbackend, baddr == UT64_MAX);
 		}

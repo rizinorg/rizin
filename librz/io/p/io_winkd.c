@@ -59,7 +59,7 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 		return NULL;
 	}
 
-	WindCtx *ctx = winkd_ctx_new(desc);
+	KdCtx *ctx = winkd_kdctx_new(desc);
 	if (!ctx) {
 		eprintf("Failed to initialize winkd context\n");
 		return NULL;
@@ -103,7 +103,7 @@ static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
 }
 
 static int __close(RzIODesc *fd) {
-	winkd_ctx_free((WindCtx **)&fd->data);
+	winkd_kdctx_free((KdCtx **)&fd->data);
 	return true;
 }
 
