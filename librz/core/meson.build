@@ -83,10 +83,10 @@ rz_core_sources = [
 
 rz_core_inc = []
 if host_machine.system() != 'windows'
-  rz_core_inc += ['../../shlr/heap/include']
+  rz_core_inc += ['rz_jemalloc']
 else
   rz_core_sources += 'windows_heap.c'
-  rz_core_inc += ['../../shlr/heap/include/rz_windows']
+  rz_core_inc += ['rz_windows']
 endif
 rz_core_inc = [platform_inc, include_directories(rz_core_inc), 'cmd_descs']
 
