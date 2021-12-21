@@ -145,6 +145,15 @@ RZ_API const char *rz_reg_get_name(RzReg *reg, int role) {
 	return NULL;
 }
 
+RZ_API RzRegItem *rz_reg_get_by_role(RzReg *reg, RzRegisterId role) {
+	rz_return_val_if_fail(reg, NULL);
+	const char *name = rz_reg_get_name(reg, role);
+	if (!name) {
+		return NULL;
+	}
+	return rz_reg_get(reg, name, RZ_REG_TYPE_ANY);
+}
+
 static const char *roles[RZ_REG_NAME_LAST + 1] = {
 	"PC", "SP", "SR", "BP", "LR",
 	"A0", "A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9",
@@ -316,6 +325,12 @@ RZ_API ut64 rz_reg_getv(RzReg *reg, const char *name) {
 	return ri ? rz_reg_get_value(reg, ri) : UT64_MAX;
 }
 
+RZ_API ut64 rz_reg_getv_by_role_or_name(RzReg *reg, const char *name) {
+	rz_return_val_if_fail(reg && name, UT64_MAX);
+	RzRegItem *ri = rz_reg_get_by_role_or_name(reg, name);
+	return ri ? rz_reg_get_value(reg, ri) : UT64_MAX;
+}
+
 RZ_API RzRegItem *rz_reg_get(RzReg *reg, const char *name, int type) {
 	int i, e;
 	rz_return_val_if_fail(reg && name, NULL);
@@ -348,6 +363,17 @@ RZ_API RzRegItem *rz_reg_get(RzReg *reg, const char *name, int type) {
 		}
 	}
 	return NULL;
+}
+
+RZ_API RzRegItem *rz_reg_get_by_role_or_name(RzReg *reg, const char *name) {
+	int role = rz_reg_get_name_idx(name);
+	if (role != -1) {
+		RzRegItem *r = rz_reg_get_by_role(reg, role);
+		if (r) {
+			return r;
+		}
+	}
+	return rz_reg_get(reg, name, RZ_REG_TYPE_ANY);
 }
 
 RZ_API const RzList *rz_reg_get_list(RzReg *reg, int type) {

@@ -7,6 +7,13 @@
 #include <rz_debug.h>
 #include "core_private.h"
 
+/**
+ * \brief Check whether the core is in debug mode (equivalent to cfg.debug)
+ */
+RZ_API bool rz_core_is_debug(RzCore *core) {
+	return core->bin->is_debugger;
+}
+
 static bool is_x86_call(RzDebug *dbg, ut64 addr) {
 	ut8 buf[3];
 	ut8 *op = buf;
@@ -47,7 +54,7 @@ static bool is_x86_ret(RzDebug *dbg, ut64 addr) {
 }
 
 RZ_API bool rz_core_debug_step_one(RzCore *core, int times) {
-	if (rz_config_get_b(core->config, "cfg.debug")) {
+	if (rz_core_is_debug(core)) {
 		rz_reg_arena_swap(core->dbg->reg, true);
 		// sync registers for BSD PT_STEP/PT_CONT
 		rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_GPR, false);
@@ -55,16 +62,16 @@ RZ_API bool rz_core_debug_step_one(RzCore *core, int times) {
 		rz_debug_trace_pc(core->dbg, pc);
 		if (!rz_debug_step(core->dbg, times)) {
 			eprintf("Step failed\n");
-			rz_core_debug_regs2flags(core);
+			rz_core_reg_update_flags(core);
 			core->break_loop = true;
 			return false;
 		}
-		rz_core_debug_regs2flags(core);
+		rz_core_reg_update_flags(core);
 	} else {
 		int i = 0;
 		do {
 			rz_core_esil_step(core, UT64_MAX, NULL, NULL, false);
-			rz_core_regs2flags(core);
+			rz_core_reg_update_flags(core);
 			i++;
 		} while (i < times);
 	}
@@ -72,19 +79,19 @@ RZ_API bool rz_core_debug_step_one(RzCore *core, int times) {
 }
 
 RZ_IPI void rz_core_debug_continue(RzCore *core) {
-	if (rz_config_get_b(core->config, "cfg.debug")) {
+	if (rz_core_is_debug(core)) {
 		rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
 		rz_reg_arena_swap(core->dbg->reg, true);
 #if __linux__
 		core->dbg->continue_all_threads = true;
 #endif
 		rz_debug_continue(core->dbg);
-		rz_core_debug_regs2flags(core);
+		rz_core_reg_update_flags(core);
 		rz_cons_break_pop();
 		rz_core_dbg_follow_seek_register(core);
 	} else {
 		rz_core_esil_step(core, UT64_MAX, "0", NULL, false);
-		rz_core_regs2flags(core);
+		rz_core_reg_update_flags(core);
 	}
 }
 
@@ -153,7 +160,7 @@ RZ_API bool rz_core_debug_continue_until(RzCore *core, ut64 addr, ut64 to) {
 			rz_debug_step(core->dbg, 1);
 			steps++;
 		}
-		rz_core_debug_regs2flags(core);
+		rz_core_reg_update_flags(core);
 		rz_cons_break_pop();
 		return true;
 	}
@@ -164,7 +171,7 @@ RZ_API bool rz_core_debug_continue_until(RzCore *core, ut64 addr, ut64 to) {
 			eprintf("Cannot continue, run ood?\n");
 		} else {
 			rz_debug_continue(core->dbg);
-			rz_core_debug_regs2flags(core);
+			rz_core_reg_update_flags(core);
 		}
 		rz_bp_del(core->dbg->bp, addr);
 	} else {
@@ -175,309 +182,8 @@ RZ_API bool rz_core_debug_continue_until(RzCore *core, ut64 addr, ut64 to) {
 	return true;
 }
 
-/// Construct the list of registers that should be applied as flags by default
-/// (e.g. because their size matches the pointer size)
-RZ_IPI RzList /*<RzRegItem>*/ *rz_core_regs2flags_candidates(RzCore *core, RzReg *reg) {
-	const RzList *l = rz_reg_get_list(core->dbg->reg, RZ_REG_TYPE_GPR);
-	if (!l) {
-		return NULL;
-	}
-	int size = rz_analysis_get_address_bits(core->analysis);
-	RzList *ret = rz_list_new();
-	if (!ret) {
-		return NULL;
-	}
-	RzListIter *iter;
-	RzRegItem *item;
-	rz_list_foreach (l, iter, item) {
-		if (size != 0 && size != item->size) {
-			continue;
-		}
-		rz_list_push(ret, item);
-	}
-	return ret;
-}
-
-static void regs_to_flags(RzCore *core) {
-	RzList *l = rz_core_regs2flags_candidates(core, core->dbg->reg);
-	if (!l) {
-		return;
-	}
-	rz_flag_space_push(core->flags, RZ_FLAGS_FS_REGISTERS);
-	RzListIter *iter;
-	RzRegItem *reg;
-	rz_list_foreach (l, iter, reg) {
-		ut64 regval = rz_reg_get_value(core->dbg->reg, reg);
-		rz_flag_set(core->flags, reg->name, regval, reg->size / 8);
-	}
-	rz_flag_space_pop(core->flags);
-	rz_list_free(l);
-}
-
-RZ_IPI void rz_core_regs2flags(RzCore *core) {
-	regs_to_flags(core);
-}
-
-/// update or create flags for all registers where it makes sense (regs that have the same size as an address)
-RZ_IPI void rz_core_debug_regs2flags(RzCore *core) {
-	if (core->bin->is_debugger) {
-		if (rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_GPR, false)) {
-			regs_to_flags(core);
-		}
-	} else {
-		rz_core_regs2flags(core);
-	}
-}
-
-RZ_IPI bool rz_core_debug_reg_set(RzCore *core, const char *regname, ut64 val, const char *strval) {
-	RzRegItem *r = rz_reg_get(core->dbg->reg, regname, -1);
-	if (!r) {
-		int role = rz_reg_get_name_idx(regname);
-		if (role != -1) {
-			const char *alias = rz_reg_get_name(core->dbg->reg, role);
-			if (alias) {
-				r = rz_reg_get(core->dbg->reg, alias, -1);
-			}
-		}
-	}
-	if (!r) {
-		eprintf("Unknown register '%s'\n", regname);
-		return false;
-	}
-
-	if (r->flags) {
-		if (strval) {
-			rz_reg_set_bvalue(core->dbg->reg, r, strval);
-		} else {
-			eprintf("String value cannot be NULL\n");
-			return false;
-		}
-	} else {
-		rz_reg_set_value(core->dbg->reg, r, val);
-	}
-	rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ANY, true);
-	rz_core_debug_regs2flags(core);
-	return true;
-}
-
-RZ_IPI bool rz_core_debug_reg_list(RzCore *core, int type, int size, bool skip_covered, PJ *pj, int rad, const char *use_color) {
-	RzDebug *dbg = core->dbg;
-	int delta, cols, n = 0;
-	const char *fmt, *fmt2, *kwhites;
-	RzPrint *pr = NULL;
-	int colwidth = 20;
-	ut64 diff;
-	char strvalue[256];
-	bool isJson = (rad == 'j' || rad == 'J');
-	if (!dbg || !dbg->reg) {
-		return false;
-	}
-	if (dbg->corebind.core) {
-		pr = ((RzCore *)dbg->corebind.core)->print;
-	}
-	if (size != 0 && !(dbg->reg->bits & size)) {
-		// TODO: verify if 32bit exists, otherwise use 64 or 8?
-		size = 32;
-	}
-	if (dbg->bits & RZ_SYS_BITS_64) {
-		// fmt = "%s = 0x%08"PFMT64x"%s";
-		fmt = "%s = %s%s";
-		fmt2 = "%s%7s%s %s%s";
-		kwhites = "         ";
-		colwidth = dbg->regcols ? 20 : 25;
-		cols = 3;
-	} else {
-		// fmt = "%s = 0x%08"PFMT64x"%s";
-		fmt = "%s = %s%s";
-		fmt2 = "%s%7s%s %s%s";
-		kwhites = "    ";
-		colwidth = 20;
-		cols = 4;
-	}
-	if (dbg->regcols) {
-		cols = dbg->regcols;
-	}
-	if (isJson) {
-		pj_o(pj);
-	}
-	// with the new field "arena" into reg items why need
-	// to get all arenas.
-
-	int itmidx = -1;
-	dbg->creg = NULL;
-	const RzList *head = rz_reg_get_list(dbg->reg, type);
-	if (!head) {
-		return false;
-	}
-	if (rad == 1 || rad == '*') {
-		rz_cons_printf("fs+%s\n", RZ_FLAGS_FS_REGISTERS);
-	}
-	RzList *filtered_list = NULL;
-	if (skip_covered) {
-		filtered_list = rz_reg_filter_items_covered(head);
-		if (filtered_list) {
-			head = filtered_list;
-		}
-	}
-	RzListIter *iter;
-	RzRegItem *item;
-	rz_list_foreach (head, iter, item) {
-		ut64 value;
-		utX valueBig;
-		if (type != -1) {
-			if (type != item->type && RZ_REG_TYPE_FLG != item->type) {
-				continue;
-			}
-			if (size != 0 && size != item->size) {
-				continue;
-			}
-		}
-		// Is this register being asked?
-		if (dbg->q_regs) {
-			if (!rz_list_empty(dbg->q_regs)) {
-				RzListIter *iterreg;
-				RzList *q_reg = dbg->q_regs;
-				char *q_name;
-				bool found = false;
-				rz_list_foreach (q_reg, iterreg, q_name) {
-					if (!strcmp(item->name, q_name)) {
-						found = true;
-						break;
-					}
-				}
-				if (!found) {
-					continue;
-				}
-				rz_list_delete(q_reg, iterreg);
-			} else {
-				// List is empty, all requested regs were taken, no need to go further
-				goto beach;
-			}
-		}
-		int regSize = item->size;
-		if (regSize < 80) {
-			value = rz_reg_get_value(dbg->reg, item);
-			rz_reg_arena_swap(dbg->reg, false);
-			diff = rz_reg_get_value(dbg->reg, item);
-			rz_reg_arena_swap(dbg->reg, false);
-			delta = value - diff;
-			if (isJson) {
-				pj_kn(pj, item->name, value);
-			} else {
-				if (pr && pr->wide_offsets && dbg->bits & RZ_SYS_BITS_64) {
-					snprintf(strvalue, sizeof(strvalue), "0x%016" PFMT64x, value);
-				} else {
-					snprintf(strvalue, sizeof(strvalue), "0x%08" PFMT64x, value);
-				}
-			}
-		} else {
-			rz_reg_get_value_big(dbg->reg, item, &valueBig);
-			switch (regSize) {
-			case 80:
-				snprintf(strvalue, sizeof(strvalue), "0x%04x%016" PFMT64x "", valueBig.v80.High, valueBig.v80.Low);
-				break;
-			case 96:
-				snprintf(strvalue, sizeof(strvalue), "0x%08x%016" PFMT64x "", valueBig.v96.High, valueBig.v96.Low);
-				break;
-			case 128:
-				snprintf(strvalue, sizeof(strvalue), "0x%016" PFMT64x "%016" PFMT64x "", valueBig.v128.High, valueBig.v128.Low);
-				break;
-			case 256:
-				snprintf(strvalue, sizeof(strvalue), "0x%016" PFMT64x "%016" PFMT64x "%016" PFMT64x "%016" PFMT64x "",
-					valueBig.v256.High.High, valueBig.v256.High.Low, valueBig.v256.Low.High, valueBig.v256.Low.Low);
-				break;
-			default:
-				snprintf(strvalue, sizeof(strvalue), "ERROR");
-			}
-			if (isJson) {
-				pj_ks(pj, item->name, strvalue);
-			}
-			delta = 0; // TODO: calculate delta with big values.
-		}
-		itmidx++;
-
-		if (isJson) {
-			continue;
-		}
-		switch (rad) {
-		case '-':
-			rz_cons_printf("f-%s\n", item->name);
-			break;
-		case 'R':
-			rz_cons_printf("aer %s = %s\n", item->name, strvalue);
-			break;
-		case 1:
-		case '*':
-			rz_cons_printf("f %s %d %s\n", item->name, item->size / 8, strvalue);
-			break;
-		case '.':
-			rz_cons_printf("dr %s=%s\n", item->name, strvalue);
-			break;
-		case '=': {
-			int len, highlight = use_color && pr && pr->cur_enabled && itmidx == pr->cur;
-			char whites[32], content[300];
-			const char *a = "", *b = "";
-			if (highlight) {
-				a = Color_INVERT;
-				b = Color_INVERT_RESET;
-				dbg->creg = item->name;
-			}
-			strcpy(whites, kwhites);
-			if (delta && use_color) {
-				rz_cons_printf("%s", use_color);
-			}
-			snprintf(content, sizeof(content),
-				fmt2, "", item->name, "", strvalue, "");
-			len = colwidth - strlen(content);
-			if (len < 0) {
-				len = 0;
-			}
-			memset(whites, ' ', sizeof(whites));
-			whites[len] = 0;
-			rz_cons_printf(fmt2, a, item->name, b, strvalue,
-				((n + 1) % cols) ? whites : "\n");
-			if (highlight) {
-				rz_cons_printf(Color_INVERT_RESET);
-			}
-			if (delta && use_color) {
-				rz_cons_printf(Color_RESET);
-			}
-		} break;
-		case 'd':
-		case 3:
-			if (delta) {
-				char woot[512];
-				snprintf(woot, sizeof(woot),
-					" was 0x%" PFMT64x " delta %d\n", diff, delta);
-				rz_cons_printf(fmt, item->name, strvalue, woot);
-			}
-			break;
-		default:
-			if (delta && use_color) {
-				rz_cons_printf("%s", use_color);
-				rz_cons_printf(fmt, item->name, strvalue, Color_RESET "\n");
-			} else {
-				rz_cons_printf(fmt, item->name, strvalue, "\n");
-			}
-			break;
-		}
-		n++;
-	}
-	if (rad == 1 || rad == '*') {
-		rz_cons_printf("fs-\n");
-	}
-beach:
-	rz_list_free(filtered_list);
-	if (isJson) {
-		pj_end(pj);
-	} else if (n > 0 && (rad == 2 || rad == '=') && ((n % cols))) {
-		rz_cons_printf("\n");
-	}
-	return n != 0;
-}
-
 RZ_IPI void rz_core_debug_sync_bits(RzCore *core) {
-	if (rz_config_get_b(core->config, "cfg.debug")) {
+	if (rz_core_is_debug(core)) {
 		ut64 asm_bits = rz_config_get_i(core->config, "asm.bits");
 		if (asm_bits != core->dbg->bits * 8) {
 			rz_config_set_i(core->config, "asm.bits", core->dbg->bits * 8);
@@ -486,7 +192,7 @@ RZ_IPI void rz_core_debug_sync_bits(RzCore *core) {
 }
 
 RZ_IPI void rz_core_debug_single_step_in(RzCore *core) {
-	if (rz_config_get_b(core->config, "cfg.debug")) {
+	if (rz_core_is_debug(core)) {
 		if (core->print->cur_enabled) {
 			rz_core_debug_continue_until(core, core->offset, core->offset + core->print->cur);
 			core->print->cur_enabled = 0;
@@ -495,25 +201,25 @@ RZ_IPI void rz_core_debug_single_step_in(RzCore *core) {
 		}
 	} else {
 		rz_core_esil_step(core, UT64_MAX, NULL, NULL, false);
-		rz_core_regs2flags(core);
+		rz_core_reg_update_flags(core);
 	}
 }
 
 RZ_IPI void rz_core_debug_single_step_over(RzCore *core) {
 	bool io_cache = rz_config_get_b(core->config, "io.cache");
 	rz_config_set_b(core->config, "io.cache", false);
-	if (rz_config_get_b(core->config, "cfg.debug")) {
+	if (rz_core_is_debug(core)) {
 		if (core->print->cur_enabled) {
 			rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
 			rz_reg_arena_swap(core->dbg->reg, true);
 			rz_debug_continue_until_optype(core->dbg, RZ_ANALYSIS_OP_TYPE_RET, 1);
-			rz_core_debug_regs2flags(core);
+			rz_core_reg_update_flags(core);
 			rz_cons_break_pop();
 			rz_core_dbg_follow_seek_register(core);
 			core->print->cur_enabled = 0;
 		} else {
 			rz_core_cmd(core, "dso", 0);
-			rz_core_debug_regs2flags(core);
+			rz_core_reg_update_flags(core);
 		}
 	} else {
 		rz_core_analysis_esil_step_over(core);
@@ -640,12 +346,14 @@ RZ_API RzCmdStatus rz_core_debug_plugins_print(RzCore *core, RzCmdStateOutput *s
 }
 
 RZ_IPI void rz_core_debug_print_status(RzCore *core) {
-	const char *use_color = core->cons->context->pal.creg
-		? core->cons->context->pal.creg
-		: Color_BWHITE;
-	rz_core_debug_reg_list(core, RZ_REG_TYPE_GPR, core->dbg->bits, true, NULL, 3, use_color);
+	RzReg *reg = rz_core_reg_default(core);
+	RzList *ritems = rz_reg_filter_items_covered(reg->allregs);
+	if (ritems) {
+		rz_core_reg_print_diff(reg, ritems);
+		rz_list_free(ritems);
+	}
 	ut64 old_address = core->offset;
-	rz_core_seek(core, rz_debug_reg_get(core->dbg, "PC"), true);
+	rz_core_seek(core, rz_reg_get_value_by_role(reg, RZ_REG_NAME_PC), true);
 	rz_core_print_disasm_instructions(core, 0, 1);
 	rz_core_seek(core, old_address, true);
 	rz_cons_flush();

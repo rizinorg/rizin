@@ -575,7 +575,13 @@ RZ_API int rz_core_write_op(RzCore *core, const char *arg, char op);
 RZ_API ut8 *rz_core_transform_op(RzCore *core, const char *arg, char op);
 RZ_API ut32 rz_core_file_cur_fd(RzCore *core);
 
+/* creg.c */
+RZ_API RzReg *rz_core_reg_default(RzCore *core);
+RZ_API ut64 rz_core_reg_getv_by_role_or_name(RzCore *core, const char *name);
+RZ_API bool rz_core_reg_set_by_role_or_name(RzCore *core, const char *name, ut64 num);
+
 /* cdebug.c */
+RZ_API bool rz_core_is_debug(RzCore *core);
 RZ_API bool rz_core_debug_step_one(RzCore *core, int times);
 RZ_API bool rz_core_debug_continue_until(RzCore *core, ut64 addr, ut64 to);
 RZ_API void rz_core_debug_bp_add_noreturn_func(RzCore *core);
@@ -640,6 +646,8 @@ RZ_API char *rz_core_disassemble_instr(RzCore *core, ut64 addr, int l);
 RZ_API char *rz_core_disassemble_bytes(RzCore *core, ut64 addr, int b);
 
 /* carg.c */
+RZ_API RZ_DEPRECATE ut64 rz_core_arg_get(RzCore *core, const char *cc, int num);
+RZ_API RZ_DEPRECATE bool rz_coret_arg_set(RzCore *core, const char *cc, int num, ut64 val);
 RZ_API RzList *rz_core_get_func_args(RzCore *core, const char *func_name);
 RZ_API void rz_core_print_func_args(RzCore *core);
 RZ_API char *resolve_fcn_name(RzAnalysis *analysis, const char *func_name);

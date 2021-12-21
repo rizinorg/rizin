@@ -28,7 +28,7 @@
 			RZ_LOG_ERROR("Failed to write registers.\n"); \
 			failed = true; \
 		} \
-		rz_core_debug_regs2flags(core); \
+		rz_core_reg_update_flags(core); \
 	} while (0)
 
 static RzList *filter_reg_items(RzReg *reg, RZ_NULLABLE const char *filter) {
@@ -637,13 +637,12 @@ RZ_IPI RzCmdStatus rz_reg_flags_handler(RzCore *core, RzReg *reg, RzCmdRegSync s
 			return RZ_CMD_STATUS_ERROR;
 		}
 	} else {
-		ritems = rz_core_regs2flags_candidates(core, reg);
+		ritems = rz_core_reg_flags_candidates(core, reg);
 		if (!ritems) {
 			return RZ_CMD_STATUS_ERROR;
 		}
 	}
 	if (!unset) {
-		// f- does not care about spaces
 		rz_cons_print("fs+ " RZ_FLAGS_FS_REGISTERS "\n");
 		bool failed;
 		SYNC_READ_LIST(ritems, failed);
@@ -782,20 +781,7 @@ RZ_IPI RzCmdStatus rz_regs_diff_handler(RzCore *core, RzReg *reg, RzCmdRegSync s
 	if (failed) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	RzListIter *iter;
-	RzRegItem *item;
-	rz_list_foreach (reg->allregs, iter, item) {
-		ut64 newval = rz_reg_get_value(reg, item);
-		rz_reg_arena_swap(reg, false);
-		ut64 oldval = rz_reg_get_value(reg, item);
-		rz_reg_arena_swap(reg, false);
-		ut64 delta = newval - oldval;
-		if (delta) {
-			rz_cons_printf(
-				"%s = 0x%" PFMT64x " was 0x%" PFMT64x " delta 0x%" PFMT64x "\n",
-				item->name, newval, oldval, delta);
-		}
-	}
+	rz_core_reg_print_diff(reg, reg->allregs);
 	return RZ_CMD_STATUS_OK;
 }
 
