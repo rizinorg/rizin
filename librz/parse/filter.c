@@ -234,7 +234,7 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 			}
 			if (f) {
 				RzFlagItem *flag2;
-				bool lea = x86 && rz_str_startswith(data, "lea") && (data[3] == ' ' || data[3] == 0x1b);
+				bool lea = x86 && rz_str_startswith_icase(data, "lea") && (data[3] == ' ' || data[3] == 0x1b);
 				bool remove_brackets = false;
 				flag = p->flag_get(f, off);
 				if ((!flag || arm) && p->subrel_addr) {
