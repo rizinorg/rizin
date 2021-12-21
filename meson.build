@@ -104,7 +104,7 @@ else
 endif
 
 platform_deps = []
-platform_inc = ['.', 'librz/include']
+platform_inc = ['.', 'librz', 'librz/include']
 if host_machine.system() == 'windows'
   platform_deps = [
     cc.find_library('ws2_32'),
@@ -262,30 +262,6 @@ if not capstone_dep.found()
   endif
   capstone_dep = capstone_proj.get_variable('capstone_dep')
 endif
-
-# load plugin configuration
-subdir('librz')
-
-conf_data = configuration_data()
-conf_data.set('plugins_core', '&rz_core_plugin_' + ', &rz_core_plugin_'.join(core_plugins) + ', 0')
-conf_data.set('plugins_analysis', '&rz_analysis_plugin_' + ', &rz_analysis_plugin_'.join(analysis_plugins) + ', 0')
-conf_data.set('plugins_asm', '&rz_asm_plugin_' + ', &rz_asm_plugin_'.join(asm_plugins) + ', 0')
-conf_data.set('plugins_bp', '&rz_bp_plugin_' + ', &rz_bp_plugin_'.join(bp_plugins) + ', 0')
-conf_data.set('plugins_bin', '&rz_bin_plugin_' + ', &rz_bin_plugin_'.join(bin_plugins) + ', 0')
-conf_data.set('plugins_bin_ldr', '&rz_bin_ldr_plugin_' + ', &rz_bin_ldr_plugin_'.join(bin_ldr_plugins) + ', 0')
-conf_data.set('plugins_bin_xtr', '&rz_bin_xtr_plugin_' + ', &rz_bin_xtr_plugin_'.join(bin_xtr_plugins) + ', 0')
-conf_data.set('plugins_crypto', '&rz_crypto_plugin_' + ', &rz_crypto_plugin_'.join(crypto_plugins) + ', 0')
-conf_data.set('plugins_io', '&rz_io_plugin_' + ', &rz_io_plugin_'.join(io_plugins) + ', 0')
-conf_data.set('plugins_debug', '&rz_debug_plugin_' + ', &rz_debug_plugin_'.join(debug_plugins) + ', 0')
-conf_data.set('plugins_egg', '&rz_egg_plugin_' + ', &rz_egg_plugin_'.join(egg_plugins) + ', 0')
-conf_data.set('plugins_lang', '&rz_lang_plugin_' + ', &rz_lang_plugin_'.join(lang_plugins) + ', 0')
-conf_data.set('plugins_parse', '&rz_parse_plugin_' + ', &rz_parse_plugin_'.join(parse_plugins) + ', 0')
-conf_data.set('plugins_demangler', '&rz_demangler_plugin_' + ', &rz_demangler_plugin_'.join(demangler_plugins))
-config_h = configure_file(
-  input: 'librz/config.h.in',
-  output: 'config.h',
-  configuration: conf_data
-)
 
 # handle magic library
 sys_magic_opt = get_option('use_sys_magic')
@@ -672,45 +648,7 @@ if host_machine.system() == 'windows'
   ]
 endif
 
-subdir('librz/util')
-subdir('librz/demangler')
-subdir('librz/socket')
-subdir('librz/hash')
-subdir('librz/crypto')
-
-subdir('librz/cons')
-subdir('librz/diff')
-subdir('librz/io')
-subdir('librz/bp')
-subdir('librz/syscall')
-subdir('librz/search')
-subdir('librz/magic')
-subdir('librz/flag')
-subdir('librz/reg')
-subdir('librz/type')
-subdir('librz/bin')
-subdir('librz/config')
-subdir('librz/parse')
-subdir('librz/lang')
-subdir('librz/asm')
-subdir('librz/il')
-subdir('librz/analysis')
-subdir('librz/signature')
-subdir('librz/egg')
-subdir('librz/debug')
-subdir('librz/core')
-
-subdir('librz/analysis/d')
-subdir('librz/asm/d')
-subdir('librz/asm/cpus')
-subdir('librz/asm/platforms')
-subdir('librz/bin/d')
-subdir('librz/syscall/d')
-subdir('librz/reg/d')
-subdir('librz/cons/d')
-subdir('librz/magic/d')
-subdir('librz/flag/d')
-subdir('librz/main')
+subdir('librz')
 
 cli_option = get_option('cli')
 cli_enabled = cli_option.auto() ? not meson.is_subproject() : cli_option.enabled()
