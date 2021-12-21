@@ -263,10 +263,14 @@ RZ_API ut64 rz_num_get(RzNum *num, const char *str) {
 	} else {
 		char *endptr;
 		int len_num = len > 0 ? len - 1 : 0;
+		// Trim separators on the right
+		while (len_num > 0 && IS_SEPARATOR(str[len_num])) {
+			len_num--;
+		}
 		int chars_read = len_num;
 		bool zero_read = false;
-		lch = str[len > 0 ? len - 1 : 0];
-		if (*str == '0' && IS_DIGIT(*(str + 1)) && lch != 'b' && lch != 'h') {
+		lch = str[len_num];
+		if (*str == '0' && IS_DIGIT(*(str + 1)) && lch != 'b' && lch != 'h' && lch != 'H') {
 			lch = 'o';
 			len_num++;
 		}
