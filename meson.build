@@ -723,13 +723,6 @@ if cli_enabled
   )
 endif
 
-if get_option('use_webui')
-  install_subdir('shlr/www',
-    install_dir: rizin_wwwroot,
-    strip_directory: true
-  )
-endif
-
 subdir('test')
 
 install_data(
