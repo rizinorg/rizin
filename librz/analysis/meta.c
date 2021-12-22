@@ -5,7 +5,6 @@
 
 #include <rz_analysis.h>
 #include <rz_core.h>
-#include <rz_io.h>
 
 static bool item_matches_filter(RzAnalysisMetaItem *item, RzAnalysisMetaType type, RZ_NULLABLE const RzSpace *space) {
 	return (type == RZ_META_TYPE_ANY || item->type == type) && (!space || item->space == space);

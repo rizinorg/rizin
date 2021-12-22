@@ -364,7 +364,10 @@ RZ_IPI void rz_core_meta_editor(RzCore *core, RzAnalysisMetaType mtype, ut64 add
 	}
 }
 
-/// meta string
+/**
+ * RzCoreMetaString
+ * @{
+ */
 
 static bool meta_string_8bit_add(RzCore *core, ut64 addr, size_t limit, ut8 **name, size_t *name_len) {
 	rz_return_val_if_fail(limit && name && name_len, false);
@@ -483,3 +486,5 @@ RZ_API bool rz_core_meta_pascal_string_add(RzCore *core, ut64 addr, RzStrEnc enc
 	}
 	return true;
 }
+
+/**@{*/
