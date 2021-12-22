@@ -1908,10 +1908,6 @@ RZ_API ut64 rz_meta_get_size(RzAnalysis *a, RzAnalysisMetaType type);
 
 RZ_API const char *rz_meta_type_to_string(int type);
 
-RZ_API bool rz_meta_string_add(RzCore *core, ut64 addr, ut64 size, RzStrEnc encoding, RZ_NULLABLE const char *name);
-
-RZ_API bool rz_meta_pascal_string_add(RzCore *core, ut64 addr, RzStrEnc encoding, RZ_NULLABLE const char *name);
-
 /* hints */
 
 RZ_API void rz_analysis_hint_del(RzAnalysis *analysis, ut64 addr, ut64 size); // delete all hints that are contained within the given range, if size > 1, this operation is quite heavy!

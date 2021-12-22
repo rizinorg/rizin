@@ -431,7 +431,7 @@ RZ_IPI RzCmdStatus rz_meta_data_remove_all_handler(RzCore *core, int argc, const
 
 RZ_IPI RzCmdStatus rz_meta_string_handler(RzCore *core, int argc, const char **argv) {
 	ut64 size = argc > 1 ? rz_num_math(core->num, argv[1]) : 0;
-	if (!rz_meta_string_add(core, core->offset, size, RZ_STRING_ENC_GUESS, NULL)) {
+	if (!rz_core_meta_string_add(core, core->offset, size, RZ_STRING_ENC_GUESS, NULL)) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	return RZ_CMD_STATUS_OK;
@@ -453,7 +453,7 @@ RZ_IPI RzCmdStatus rz_meta_string_at_handler(RzCore *core, int argc, const char 
 }
 
 RZ_IPI RzCmdStatus rz_meta_string_pascal_handler(RzCore *core, int argc, const char **argv) {
-	if (!rz_meta_pascal_string_add(core, core->offset, RZ_STRING_ENC_UTF8, NULL)) {
+	if (!rz_core_meta_pascal_string_add(core, core->offset, RZ_STRING_ENC_UTF8, NULL)) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	return RZ_CMD_STATUS_OK;
@@ -461,7 +461,7 @@ RZ_IPI RzCmdStatus rz_meta_string_pascal_handler(RzCore *core, int argc, const c
 
 RZ_IPI RzCmdStatus rz_meta_string_utf8_handler(RzCore *core, int argc, const char **argv) {
 	ut64 size = argc > 1 ? rz_num_math(core->num, argv[1]) : 0;
-	if (!rz_meta_string_add(core, core->offset, size, RZ_STRING_ENC_UTF8, NULL)) {
+	if (!rz_core_meta_string_add(core, core->offset, size, RZ_STRING_ENC_UTF8, NULL)) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	return RZ_CMD_STATUS_OK;
@@ -469,7 +469,7 @@ RZ_IPI RzCmdStatus rz_meta_string_utf8_handler(RzCore *core, int argc, const cha
 
 RZ_IPI RzCmdStatus rz_meta_string_8bit_handler(RzCore *core, int argc, const char **argv) {
 	ut64 size = argc > 1 ? rz_num_math(core->num, argv[1]) : 0;
-	if (!rz_meta_string_add(core, core->offset, size, RZ_STRING_ENC_8BIT, NULL)) {
+	if (!rz_core_meta_string_add(core, core->offset, size, RZ_STRING_ENC_8BIT, NULL)) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	return RZ_CMD_STATUS_OK;
@@ -480,7 +480,7 @@ RZ_IPI RzCmdStatus rz_meta_string_wide16_handler(RzCore *core, int argc, const c
 	RzBinObject *obj = rz_bin_cur_object(core->bin);
 	bool big_endian = obj ? rz_bin_object_is_big_endian(obj) : RZ_SYS_ENDIAN;
 	RzStrEnc enc = big_endian ? RZ_STRING_ENC_UTF16BE : RZ_STRING_ENC_UTF16LE;
-	if (!rz_meta_string_add(core, core->offset, size, enc, NULL)) {
+	if (!rz_core_meta_string_add(core, core->offset, size, enc, NULL)) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	return RZ_CMD_STATUS_OK;
@@ -491,7 +491,7 @@ RZ_IPI RzCmdStatus rz_meta_string_wide32_handler(RzCore *core, int argc, const c
 	RzBinObject *obj = rz_bin_cur_object(core->bin);
 	bool big_endian = obj ? rz_bin_object_is_big_endian(obj) : RZ_SYS_ENDIAN;
 	RzStrEnc enc = big_endian ? RZ_STRING_ENC_UTF32BE : RZ_STRING_ENC_UTF32LE;
-	if (!rz_meta_string_add(core, core->offset, size, enc, NULL)) {
+	if (!rz_core_meta_string_add(core, core->offset, size, enc, NULL)) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	return RZ_CMD_STATUS_OK;
