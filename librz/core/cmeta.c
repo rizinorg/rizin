@@ -424,11 +424,11 @@ static bool meta_string_guess_add(RzCore *core, ut64 addr, size_t limit, ut8 **n
 
 /**
  * \brief add a string to RzCore
- * 
+ *
  * \param core RzCore of core that will be add to
  * \param addr string's address
  * \param size string's max size
- * \param encoding string's encoding 
+ * \param encoding string's encoding
  * \param name string's value, or null that will be autodetect at \p addr
  * \return is add successful?
  */
