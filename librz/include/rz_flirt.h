@@ -186,9 +186,35 @@ enum rz_flirt_node_optimization_t {
 	RZ_FLIRT_NODE_OPTIMIZE_MAX, ///< optimize the tree structure and drops the tail bytes
 };
 
+typedef enum rz_flirt_file_type_t {
+	RZ_FLIRT_FILE_TYPE_UNKNOWN = 0, ///< unknown type
+	RZ_FLIRT_FILE_TYPE_SIG, ///< `.sig` compressed pattern file
+	RZ_FLIRT_FILE_TYPE_PAT, ///< `.pat` text format pattern file
+} RzFlirtFileType;
+
+typedef struct rz_flirt_sig_info_t {
+	ut8 version; ///< FLIRT sig version
+	ut8 architecture; ///< FLIRT sig architecture/processor id
+	ut32 n_modules; ///< FLIRT sig total number of modules/signatures contained
+	char *name; ///< FLIRT sig name
+} RzFlirtSigInfo;
+
+typedef struct rz_flirt_pat_info_t {
+	ut32 n_modules; ///< FLIRT pat total number of modules/signatures contained
+} RzFlirtPatInfo;
+
+typedef struct rz_flirt_info_t {
+	RzFlirtFileType type; ///< Flirt file type
+	union {
+		RzFlirtSigInfo sig; ///< Sig info
+		RzFlirtPatInfo pat; ///< Pat info
+	} u;
+} RzFlirtInfo;
+
 RZ_API ut32 rz_sign_flirt_node_count_nodes(RZ_NONNULL const RzFlirtNode *node);
 RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_node_new(RZ_NONNULL RzAnalysis *analysis, ut32 optimization);
 RZ_API void rz_sign_flirt_node_free(RZ_NULLABLE RzFlirtNode *node);
+RZ_API void rz_sign_flirt_info_fini(RZ_NULLABLE RzFlirtInfo *info);
 
 RZ_API void rz_sign_flirt_apply(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL const char *flirt_file, ut8 expected_arch);
 
@@ -202,10 +228,10 @@ typedef struct rz_flirt_compressed_options_t {
 	const char *libname;
 } RzFlirtCompressedOptions;
 
-RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_parse_compressed_pattern_from_buffer(RZ_NONNULL RzBuffer *flirt_buf, ut8 expected_arch);
+RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_parse_compressed_pattern_from_buffer(RZ_NONNULL RzBuffer *flirt_buf, ut8 expected_arch, RZ_NULLABLE RzFlirtInfo *info);
 RZ_API bool rz_sign_flirt_write_compressed_pattern_to_buffer(RZ_NONNULL const RzFlirtNode *node, RZ_NONNULL RzBuffer *buffer, RzFlirtCompressedOptions *options);
 
-RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_parse_string_pattern_from_buffer(RZ_NONNULL RzBuffer *flirt_buf, ut32 optimization);
+RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_parse_string_pattern_from_buffer(RZ_NONNULL RzBuffer *flirt_buf, ut32 optimization, RZ_NULLABLE RzFlirtInfo *info);
 RZ_API bool rz_sign_flirt_write_string_pattern_to_buffer(RZ_NONNULL const RzFlirtNode *node, RZ_NONNULL RzBuffer *buffer);
 
 #ifdef __cplusplus
