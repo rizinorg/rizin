@@ -99,7 +99,7 @@ jobs:
         npm install prettier
 
     - name: Run prettier
-      run: find . -name "*.js" | grep -v "subprojects" | xargs npx prettier  --print-width 120 --check
+      run: find . -name "*.js" | grep -v "subprojects/tree-sitter-0" | grep -v "bindings/node/index.js" | xargs npx prettier  --print-width 120 --check
 
   python:
     needs: changes

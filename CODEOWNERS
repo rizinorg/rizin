@@ -29,8 +29,8 @@ librz/socket/ @XVilka @yossizap
 librz/syscall/ @ret2libc @wargio
 librz/type/ @XVilka
 librz/util/ @ret2libc @thestr4ng3r
-shlr/gdb/ @yossizap
-shlr/ptrace-wrap/ @thestr4ng3r
-shlr/rizin-shell-parser/ @ret2libc
-shlr/w32dbg_wrap/ @yossizap
-shlr/winkd/ @yossizap
+subprojects/rzgdb/ @yossizap
+subprojects/ptrace-wrap/ @thestr4ng3r
+subprojects/rizin-shell-parser/ @ret2libc
+subprojects/rzw32dbg_wrap/ @yossizap
+subprojects/rzwinkd/ @yossizap

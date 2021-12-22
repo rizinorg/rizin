@@ -4,8 +4,8 @@
 
 #include "rz_core.h"
 #include "rz_socket.h"
-#include "gdb/include/libgdbr.h"
-#include "gdb/include/gdbserver/core.h"
+#include <libgdbr.h>
+#include <gdbserver/core.h>
 
 #if HAVE_LIBUV
 #include <uv.h>

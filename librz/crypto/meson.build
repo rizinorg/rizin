@@ -1,3 +1,22 @@
+crypto_plugins = [
+  'aes',
+  'aes_cbc',
+  'base64',
+  'base91',
+  'blowfish',
+  'cps2',
+  'des',
+  'punycode',
+  'rc2',
+  'rc4',
+  'rc6',
+  'rol',
+  'ror',
+  'rot',
+  'serpent',
+  'xor',
+]
+
 rz_crypto_sources = [
   'des.c',
   'crypto.c',
@@ -38,6 +57,7 @@ rz_crypto = library('rz_crypto', rz_crypto_sources,
 
 rz_crypto_dep = declare_dependency(link_with: rz_crypto,
                                   include_directories: [platform_inc])
+meson.override_dependency('rz_crypto', rz_crypto_dep)
 
 pkgconfig_mod.generate(rz_crypto,
   subdirs: 'librz',

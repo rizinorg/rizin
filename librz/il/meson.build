@@ -38,6 +38,7 @@ rz_il = library('rz_il', rz_il_sources,
 
 rz_il_dep = declare_dependency(link_with: rz_il,
                                 include_directories: rz_il_inc)
+meson.override_dependency('rz_il', rz_il_dep)
 
 pkgconfig_mod.generate(rz_il,
   subdirs: 'librz',

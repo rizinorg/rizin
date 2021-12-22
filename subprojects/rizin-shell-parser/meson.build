@@ -1,3 +1,8 @@
+project('rizin-shell-parser', 'c',
+  license : [ 'LGPL']
+)
+
+tree_sitter_dep = dependency('tree-sitter')
 grammar_js = files('grammar.js')
 
 subdir('src')
@@ -13,3 +18,4 @@ shell_parser_dep = declare_dependency(
   include_directories: shell_parser_inc,
   dependencies: tree_sitter_dep
 )
+meson.override_dependency('rizin-shell-parser', shell_parser_dep)
