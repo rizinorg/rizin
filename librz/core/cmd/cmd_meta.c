@@ -429,113 +429,9 @@ RZ_IPI RzCmdStatus rz_meta_data_remove_all_handler(RzCore *core, int argc, const
 	return RZ_CMD_STATUS_OK;
 }
 
-static bool meta_string_8bit_add(RzCore *core, ut64 addr, size_t limit, ut8 **name, size_t *name_len) {
-	rz_return_val_if_fail(limit && name && name_len, false);
-	*name = malloc(limit + 1);
-	if (!*name) {
-		return false;
-	}
-	if (!rz_io_read_at(core->io, addr, *name, limit)) {
-		free(*name);
-		return false;
-	}
-	(*name)[limit] = '\0';
-	*name_len = strlen((char *)*name);
-	return true;
-}
-
-static bool meta_string_guess_add(RzCore *core, ut64 addr, size_t limit, ut8 **name, size_t *name_len, RzDetectedString **ds, RzStrEnc encoding) {
-	rz_return_val_if_fail(limit && name && name_len && ds, false);
-	*name = malloc(limit + 1);
-	if (!*name) {
-		return false;
-	}
-	RzBinFile *bf = rz_bin_cur(core->bin);
-	RzBinObject *obj = rz_bin_cur_object(core->bin);
-	if (!bf || !obj) {
-		free(*name);
-		return false;
-	}
-	bool big_endian = obj ? rz_bin_object_is_big_endian(obj) : RZ_SYS_ENDIAN;
-	RzUtilStrScanOptions scan_opt = {
-		.buf_size = 2048,
-		.max_uni_blocks = 4,
-		.min_str_length = 4,
-		.prefer_big_endian = big_endian
-	};
-	RzList *str_list = rz_list_new();
-	if (!str_list) {
-		free(*name);
-		return false;
-	}
-	ut64 paddr = rz_io_v2p(core->io, addr);
-	int count = rz_scan_strings(bf->buf, str_list, &scan_opt, paddr, paddr + limit, encoding);
-	if (count <= 0) {
-		rz_list_free(str_list);
-		free(*name);
-		return false;
-	}
-	*ds = rz_list_first(str_list);
-	rz_list_free(str_list);
-	rz_str_ncpy(*((char **)name), (*ds)->string, limit);
-	(*name)[limit] = '\0';
-	return true;
-}
-
-static bool meta_string_add(RzCore *core, ut64 addr, ut64 size, RzStrEnc encoding, RZ_NULLABLE const char *name) {
-	char *guessname = NULL;
-	size_t name_len = 0;
-	ut64 limit = size ? size : core->blocksize;
-	size_t n = 0;
-	bool result = false;
-	if (encoding == RZ_STRING_ENC_8BIT || encoding == RZ_STRING_ENC_UTF8) {
-		if (!meta_string_8bit_add(core, addr, limit, (ut8 **)&guessname, &name_len)) {
-			goto out;
-		}
-		n = size == 0 ? name_len + 1 : size;
-	} else {
-		RzDetectedString *ds = NULL;
-		if (!meta_string_guess_add(core, addr, limit, (ut8 **)&guessname, &name_len, &ds, encoding)) {
-			goto out;
-		}
-		if (!ds) {
-			goto out;
-		}
-		encoding = ds->type;
-		n = ds->size;
-	}
-	if (!name) {
-		result = rz_meta_set_with_subtype(core->analysis, RZ_META_TYPE_STRING, encoding, addr, n, guessname);
-	} else {
-		result = rz_meta_set_with_subtype(core->analysis, RZ_META_TYPE_STRING, encoding, addr, n, name);
-	}
-out:
-	free(guessname);
-	return result;
-}
-
-static bool meta_pascal_string_add(RzCore *core, ut64 addr, RzStrEnc encoding, RZ_NULLABLE const char *name) {
-	rz_return_val_if_fail(encoding == RZ_STRING_ENC_8BIT || encoding == RZ_STRING_ENC_UTF8, false);
-	// We shall read the first byte and it will be the size of the 8-bit or UTF-8 string
-	RzBinFile *bf = rz_bin_cur(core->bin);
-	if (!bf) {
-		return false;
-	}
-	ut8 size;
-	ut64 paddr = rz_io_v2p(core->io, addr);
-	if (!rz_buf_read8_at(bf->buf, paddr, &size)) {
-		return false;
-	}
-	// Note the offset is off by one since the first byte was the size of the string
-	if (!meta_string_add(core, core->offset + 1, size, encoding, NULL)) {
-		return false;
-	}
-	return true;
-}
-
 RZ_IPI RzCmdStatus rz_meta_string_handler(RzCore *core, int argc, const char **argv) {
 	ut64 size = argc > 1 ? rz_num_math(core->num, argv[1]) : 0;
-	if (!meta_string_add(core, core->offset, size, RZ_STRING_ENC_GUESS, NULL)) {
+	if (!rz_meta_string_add(core, core->offset, size, RZ_STRING_ENC_GUESS, NULL)) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	return RZ_CMD_STATUS_OK;
@@ -557,7 +453,7 @@ RZ_IPI RzCmdStatus rz_meta_string_at_handler(RzCore *core, int argc, const char 
 }
 
 RZ_IPI RzCmdStatus rz_meta_string_pascal_handler(RzCore *core, int argc, const char **argv) {
-	if (!meta_pascal_string_add(core, core->offset, RZ_STRING_ENC_UTF8, NULL)) {
+	if (!rz_meta_pascal_string_add(core, core->offset, RZ_STRING_ENC_UTF8, NULL)) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	return RZ_CMD_STATUS_OK;
@@ -565,7 +461,7 @@ RZ_IPI RzCmdStatus rz_meta_string_pascal_handler(RzCore *core, int argc, const c
 
 RZ_IPI RzCmdStatus rz_meta_string_utf8_handler(RzCore *core, int argc, const char **argv) {
 	ut64 size = argc > 1 ? rz_num_math(core->num, argv[1]) : 0;
-	if (!meta_string_add(core, core->offset, size, RZ_STRING_ENC_UTF8, NULL)) {
+	if (!rz_meta_string_add(core, core->offset, size, RZ_STRING_ENC_UTF8, NULL)) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	return RZ_CMD_STATUS_OK;
@@ -573,7 +469,7 @@ RZ_IPI RzCmdStatus rz_meta_string_utf8_handler(RzCore *core, int argc, const cha
 
 RZ_IPI RzCmdStatus rz_meta_string_8bit_handler(RzCore *core, int argc, const char **argv) {
 	ut64 size = argc > 1 ? rz_num_math(core->num, argv[1]) : 0;
-	if (!meta_string_add(core, core->offset, size, RZ_STRING_ENC_8BIT, NULL)) {
+	if (!rz_meta_string_add(core, core->offset, size, RZ_STRING_ENC_8BIT, NULL)) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	return RZ_CMD_STATUS_OK;
@@ -584,7 +480,7 @@ RZ_IPI RzCmdStatus rz_meta_string_wide16_handler(RzCore *core, int argc, const c
 	RzBinObject *obj = rz_bin_cur_object(core->bin);
 	bool big_endian = obj ? rz_bin_object_is_big_endian(obj) : RZ_SYS_ENDIAN;
 	RzStrEnc enc = big_endian ? RZ_STRING_ENC_UTF16BE : RZ_STRING_ENC_UTF16LE;
-	if (!meta_string_add(core, core->offset, size, enc, NULL)) {
+	if (!rz_meta_string_add(core, core->offset, size, enc, NULL)) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	return RZ_CMD_STATUS_OK;
@@ -595,7 +491,7 @@ RZ_IPI RzCmdStatus rz_meta_string_wide32_handler(RzCore *core, int argc, const c
 	RzBinObject *obj = rz_bin_cur_object(core->bin);
 	bool big_endian = obj ? rz_bin_object_is_big_endian(obj) : RZ_SYS_ENDIAN;
 	RzStrEnc enc = big_endian ? RZ_STRING_ENC_UTF32BE : RZ_STRING_ENC_UTF32LE;
-	if (!meta_string_add(core, core->offset, size, enc, NULL)) {
+	if (!rz_meta_string_add(core, core->offset, size, enc, NULL)) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	return RZ_CMD_STATUS_OK;
