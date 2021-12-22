@@ -292,7 +292,7 @@ pkgconfig_mod.generate(rz_analysis,
     'rz_diff',
     'rz_bin',
     'rz_flag',
-    'rz_type',
+    'rz_type'
   ],
   description: 'rizin foundation libraries',
   variables: [
