@@ -700,6 +700,10 @@ NAME=zfd libc-v7.sig
 FILE=bins/elf/analysis/pid_stripped
 CMDS=zfd bins/other/sigs/libc-v7.sig
 EXPECT=<<EOF
+SIG format
+Signature:    , 7 modules
+Version:      1
+Architecture: 0 (x86)
 41564155B8........4154554D89C4534889CD4D89CD4881EC900000004885C0:
  0. 16 D2A2 0298 0000:__libc_start_main
 EOF
@@ -739,10 +743,14 @@ Found 1 FLIRT signatures via bins/other/sigs/libc-v10.sig
 EOF
 RUN
 
-NAME=zfd libc-v10.sig
+NAME=zfd libc-v10.sig (malformed v10)
 FILE=bins/elf/analysis/pid_stripped
 CMDS=zfd bins/other/sigs/libc-v10.sig
 EXPECT=<<EOF
+SIG format
+Signature:    FLIRT v10, 10 modules
+Version:      1
+Architecture: 0 (x86)
 41564155B8........4154554D89C4534889CD4D89CD4881EC900000004885C0:
  0. 16 D2A2 0298 0000:__libc_start_main
 EOF
@@ -1815,6 +1823,6 @@ CMDS=<<EOF
 zfd bins/flirt/elf-x86/libcurl.a.pat~?
 EOF
 EXPECT=<<EOF
-207
+209
 EOF
 RUN

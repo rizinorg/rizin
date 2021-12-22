@@ -160,6 +160,24 @@ RZ_API ut8 rz_core_flirt_arch_from_name(RZ_NONNULL const char *arch) {
 }
 
 /**
+ * \brief Returns the FLIRT arch name (string format) from a given arch id
+ * Returns "unknown" if name is not found.
+ *
+ * \param  arch The arch to convert to string
+ * \return      The FLIRT arch name.
+ */
+RZ_API const char *rz_core_flirt_arch_from_id(ut8 arch) {
+	for (ut32 i = 0; i < RZ_ARRAY_SIZE(arch_map); ++i) {
+		if (arch != arch_map[i].value) {
+			continue;
+		}
+		return arch_map[i].name;
+	}
+
+	return "unknown";
+}
+
+/**
  * \brief Returns the FLIRT file flags from a given list (comma spaced) of file types
  * Returns RZ_FLIRT_SIG_FILE_ALL if file_list is "any" and 0 if no valid value is not found.
  *
@@ -361,6 +379,7 @@ RZ_API bool rz_core_flirt_dump_file(RZ_NONNULL const char *flirt_file) {
 		return false;
 	}
 
+	RzFlirtInfo info = { 0 };
 	RzBuffer *buffer = NULL;
 	RzFlirtNode *node = NULL;
 
@@ -368,9 +387,9 @@ RZ_API bool rz_core_flirt_dump_file(RZ_NONNULL const char *flirt_file) {
 		RZ_LOG_ERROR("FLIRT: cannot open %s (read mode)\n", flirt_file);
 		return false;
 	} else if (!strcmp(extension, ".pat")) {
-		node = rz_sign_flirt_parse_string_pattern_from_buffer(buffer, RZ_FLIRT_NODE_OPTIMIZE_NORMAL);
+		node = rz_sign_flirt_parse_string_pattern_from_buffer(buffer, RZ_FLIRT_NODE_OPTIMIZE_NORMAL, &info);
 	} else {
-		node = rz_sign_flirt_parse_compressed_pattern_from_buffer(buffer, RZ_FLIRT_SIG_ARCH_ANY);
+		node = rz_sign_flirt_parse_compressed_pattern_from_buffer(buffer, RZ_FLIRT_SIG_ARCH_ANY, &info);
 	}
 	rz_buf_free(buffer);
 
@@ -379,8 +398,25 @@ RZ_API bool rz_core_flirt_dump_file(RZ_NONNULL const char *flirt_file) {
 		return false;
 	}
 
+	switch (info.type) {
+	case RZ_FLIRT_FILE_TYPE_SIG:
+		rz_cons_printf("SIG format\n");
+		rz_cons_printf("Signature:    %s, %u modules\n", info.u.sig.name ? info.u.sig.name : "", info.u.sig.n_modules);
+		rz_cons_printf("Version:      %u\n", info.u.sig.version);
+		rz_cons_printf("Architecture: %u (%s)\n", info.u.sig.architecture, rz_core_flirt_arch_from_id(info.u.sig.architecture));
+		break;
+	case RZ_FLIRT_FILE_TYPE_PAT:
+		rz_cons_printf("PAT format\n");
+		rz_cons_printf("Signature:    %u modules\n", info.u.pat.n_modules);
+		break;
+	default:
+		rz_warn_if_reached();
+		break;
+	}
+
 	flirt_print_node(node, -1);
 	rz_sign_flirt_node_free(node);
+	rz_sign_flirt_info_fini(&info);
 	return true;
 }
 
@@ -505,9 +541,9 @@ RZ_API bool rz_core_flirt_convert_file(RZ_NONNULL RzCore *core, RZ_NONNULL const
 		RZ_LOG_ERROR("FLIRT: cannot open %s (read mode)\n", input_file);
 		return false;
 	} else if (!strcmp(in_extension, ".pat")) {
-		node = rz_sign_flirt_parse_string_pattern_from_buffer(buffer, optimize);
+		node = rz_sign_flirt_parse_string_pattern_from_buffer(buffer, optimize, NULL);
 	} else {
-		node = rz_sign_flirt_parse_compressed_pattern_from_buffer(buffer, RZ_FLIRT_SIG_ARCH_ANY);
+		node = rz_sign_flirt_parse_compressed_pattern_from_buffer(buffer, RZ_FLIRT_SIG_ARCH_ANY, NULL);
 	}
 	rz_buf_free(buffer);
 
