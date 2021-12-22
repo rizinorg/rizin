@@ -10,7 +10,7 @@ void *rz_il_handler_load(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	RzILOpLoad *op_load = op->op.load;
 
 	RzBitVector *addr = rz_il_evaluate_bitv(vm, op_load->key, type);
-	RzBitVector *ret = rz_il_vm_mem_load(vm, op_load->len, addr);
+	RzBitVector *ret = rz_il_vm_mem_load(vm, op_load->mem, addr);
 	rz_bv_free(addr);
 	*type = RZIL_OP_ARG_BITV;
 	return ret;
@@ -24,7 +24,7 @@ void *rz_il_handler_store(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	RzBitVector *addr = rz_il_evaluate_bitv(vm, op_store->key, type);
 	RzBitVector *value = rz_il_evaluate_bitv(vm, op_store->value, type);
 
-	rz_il_vm_mem_store(vm, addr, value);
+	rz_il_vm_mem_store(vm, op_store->mem, addr, value);
 	rz_bv_free(addr);
 	rz_bv_free(value);
 

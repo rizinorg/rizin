@@ -78,11 +78,11 @@ aoj @ 0x6a ~{.rzil}
 EOF
 EXPECT=<<EOF
 opcode: inc [ptr]
-rzil: [store(key:var(v:ptr), value:add(x:load(key:var(v:ptr), len:8), y:bitv(bits:0x01, len:8)))]
-[{"opcode":"store","key":{"opcode":"var","value":"ptr"},"value":{"opcode":"add","x":{"opcode":"load","key":{"opcode":"var","value":"ptr"},"len":8},"y":{"opcode":"bitv","bits":"0x01","len":8}}}]
+rzil: [store(mem:0, key:var(v:ptr), value:add(x:load(mem:0, key:var(v:ptr)), y:bitv(bits:0x01, len:8)))]
+[{"opcode":"store","mem":0,"key":{"opcode":"var","value":"ptr"},"value":{"opcode":"add","x":{"opcode":"load","mem":0,"key":{"opcode":"var","value":"ptr"}},"y":{"opcode":"bitv","bits":"0x01","len":8}}}]
 opcode: while [ptr]
-rzil: [branch(condition:load(key:var(v:ptr), len:8), true_eff:nop, false_eff:goto(lbl:]8))]
-[{"opcode":"branch","condition":{"opcode":"load","key":{"opcode":"var","value":"ptr"},"len":8},"true_eff":{"opcode":"nop"},"false_eff":{"opcode":"goto","label":"]8"}}]
+rzil: [branch(condition:load(mem:0, key:var(v:ptr)), true_eff:nop, false_eff:goto(lbl:]8))]
+[{"opcode":"branch","condition":{"opcode":"load","mem":0,"key":{"opcode":"var","value":"ptr"}},"true_eff":{"opcode":"nop"},"false_eff":{"opcode":"goto","label":"]8"}}]
 opcode: inc ptr
 rzil: [set(v:ptr, x:add(x:var(v:ptr), y:bitv(bits:0x0000000000000001, len:64)))]
 [{"opcode":"set","dst":"ptr","src":{"opcode":"add","x":{"opcode":"var","value":"ptr"},"y":{"opcode":"bitv","bits":"0x0000000000000001","len":64}}}]
@@ -90,11 +90,11 @@ opcode: dec ptr
 rzil: [set(v:ptr, x:sub(x:var(v:ptr), y:bitv(bits:0x0000000000000001, len:64)))]
 [{"opcode":"set","dst":"ptr","src":{"opcode":"sub","x":{"opcode":"var","value":"ptr"},"y":{"opcode":"bitv","bits":"0x0000000000000001","len":64}}}]
 opcode: dec [ptr]
-rzil: [store(key:var(v:ptr), value:sub(x:load(key:var(v:ptr), len:8), y:bitv(bits:0x01, len:8)))]
-[{"opcode":"store","key":{"opcode":"var","value":"ptr"},"value":{"opcode":"sub","x":{"opcode":"load","key":{"opcode":"var","value":"ptr"},"len":8},"y":{"opcode":"bitv","bits":"0x01","len":8}}}]
+rzil: [store(mem:0, key:var(v:ptr), value:sub(x:load(mem:0, key:var(v:ptr)), y:bitv(bits:0x01, len:8)))]
+[{"opcode":"store","mem":0,"key":{"opcode":"var","value":"ptr"},"value":{"opcode":"sub","x":{"opcode":"load","mem":0,"key":{"opcode":"var","value":"ptr"}},"y":{"opcode":"bitv","bits":"0x01","len":8}}}]
 opcode: loop
-rzil: [branch(condition:load(key:var(v:ptr), len:8), true_eff:goto(lbl:[14), false_eff:nop)]
-[{"opcode":"branch","condition":{"opcode":"load","key":{"opcode":"var","value":"ptr"},"len":8},"true_eff":{"opcode":"goto","label":"[14"},"false_eff":{"opcode":"nop"}}]
+rzil: [branch(condition:load(mem:0, key:var(v:ptr)), true_eff:goto(lbl:[14), false_eff:nop)]
+[{"opcode":"branch","condition":{"opcode":"load","mem":0,"key":{"opcode":"var","value":"ptr"}},"true_eff":{"opcode":"goto","label":"[14"},"false_eff":{"opcode":"nop"}}]
 opcode: out [ptr]
 rzil: [goto(lbl:write)]
 [{"opcode":"goto","label":"write"}]

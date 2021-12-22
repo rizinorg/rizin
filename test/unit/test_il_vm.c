@@ -6,17 +6,14 @@
 #include "minunit.h"
 
 static bool test_rzil_vm_init() {
-	RzBuffer *b = rz_buf_new_empty(10);
-	RzILVM *vm = rz_il_vm_new(0, 8, b, true);
+	RzILVM *vm = rz_il_vm_new(0, 8, true);
 	mu_assert_eq(vm->addr_size, 8, "VM Init");
 	rz_il_vm_free(vm);
-	rz_buf_free(b);
 	mu_end;
 }
 
 static bool test_rzil_vm_basic_operation() {
-	RzBuffer *b = rz_buf_new_empty(0x100);
-	RzILVM *vm = rz_il_vm_new(0, 8, b, true);
+	RzILVM *vm = rz_il_vm_new(0, 8,  true);
 
 	// 1. create variables
 	RzILVar *var_r1 = rz_il_vm_create_global_variable(vm, "r1", RZIL_VAR_TYPE_UNK, true);
@@ -106,13 +103,11 @@ static bool test_rzil_vm_basic_operation() {
 
 	rz_bv_free(addr);
 	rz_il_vm_free(vm);
-	rz_buf_free(b);
 	mu_end;
 }
 
 static bool test_rzil_vm_operation() {
-	RzBuffer *b = rz_buf_new_empty(10);
-	RzILVM *vm = rz_il_vm_new(0, 8, b, false);
+	RzILVM *vm = rz_il_vm_new(0, 8, false);
 
 	// 1. create register r0 and r1
 	rz_il_vm_add_reg(vm, "r0", 8);
@@ -138,13 +133,11 @@ static bool test_rzil_vm_operation() {
 	mu_assert("Init r1 as all zero bitvector", is_zero);
 
 	rz_il_vm_free(vm);
-	rz_buf_free(b);
 	mu_end;
 }
 
 static bool test_rzil_vm_root_evaluation() {
-	RzBuffer *b = rz_buf_new_empty(10);
-	RzILVM *vm = rz_il_vm_new(0, 8, b, false);
+	RzILVM *vm = rz_il_vm_new(0, 8, false);
 
 	// (ite (add 23 19)
 	//	true
@@ -173,13 +166,11 @@ static bool test_rzil_vm_root_evaluation() {
 
 	rz_il_op_free(ite_root);
 	rz_il_vm_free(vm);
-	rz_buf_free(b);
 	mu_end;
 }
 
 static bool test_rzil_vm_op_set() {
-	RzBuffer *b = rz_buf_new_empty(10);
-	RzILVM *vm = rz_il_vm_new(0, 8, b, false);
+	RzILVM *vm = rz_il_vm_new(0, 8, false);
 
 	RzILVar *var_r1 = rz_il_vm_create_global_variable(vm, "r1", RZIL_VAR_TYPE_UNK, true);
 	RzILVar *var_r2 = rz_il_vm_create_global_variable(vm, "r2", RZIL_VAR_TYPE_UNK, false);
@@ -209,13 +200,11 @@ static bool test_rzil_vm_op_set() {
 	mu_assert_eq(rz_bv_to_ut64(val->data.bv), 42, "set bv val");
 
 	rz_il_vm_free(vm);
-	rz_buf_free(b);
 	mu_end;
 }
 
 static bool test_rzil_vm_op_jmp() {
-	RzBuffer *b = rz_buf_new_empty(10);
-	RzILVM *vm = rz_il_vm_new(0, 8, b, false);
+	RzILVM *vm = rz_il_vm_new(0, 8, false);
 
 	RzILOp *op = rz_il_op_new_jmp(rz_il_op_new_bitv_from_ut64(8, 0x42));
 	RzILOpArgType tret = RZIL_OP_ARG_INIT;
@@ -224,13 +213,11 @@ static bool test_rzil_vm_op_jmp() {
 	mu_assert_eq(rz_bv_to_ut64(vm->pc), 0x42, "jumped");
 
 	rz_il_vm_free(vm);
-	rz_buf_free(b);
 	mu_end;
 }
 
 static bool test_rzil_vm_op_goto_addr() {
-	RzBuffer *b = rz_buf_new_empty(10);
-	RzILVM *vm = rz_il_vm_new(0, 8, b, false);
+	RzILVM *vm = rz_il_vm_new(0, 8, false);
 
 	RzBitVector *dst = rz_bv_new_from_ut64(8, 0x42);
 	rz_il_vm_create_label(vm, "beach", dst);
@@ -243,7 +230,6 @@ static bool test_rzil_vm_op_goto_addr() {
 	mu_assert_eq(rz_bv_to_ut64(vm->pc), 0x42, "wentto");
 
 	rz_il_vm_free(vm);
-	rz_buf_free(b);
 	mu_end;
 }
 
@@ -253,8 +239,7 @@ static void hook_test(RzILVM *vm, RzILOp *op) {
 }
 
 static bool test_rzil_vm_op_goto_hook() {
-	RzBuffer *b = rz_buf_new_empty(10);
-	RzILVM *vm = rz_il_vm_new(0, 8, b, false);
+	RzILVM *vm = rz_il_vm_new(0, 8, false);
 
 	RzILVar *var = rz_il_vm_create_global_variable(vm, "myvar", RZIL_VAR_TYPE_UNK, true);
 	rz_il_hash_bind(vm, var, rz_il_vm_create_value_bitv(vm, rz_bv_new_zero(32)));
@@ -276,7 +261,6 @@ static bool test_rzil_vm_op_goto_hook() {
 	mu_assert_eq(rz_bv_to_ut64(val->data.bv), 0xc0ffee, "val contents");
 
 	rz_il_vm_free(vm);
-	rz_buf_free(b);
 	mu_end;
 }
 

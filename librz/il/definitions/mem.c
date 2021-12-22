@@ -3,34 +3,25 @@
 
 #include <rz_il/definitions/mem.h>
 
-static void free_bv_key_value(HtPPKv *kv) {
-	rz_bv_free(kv->value);
-	rz_bv_free(kv->key);
-}
+#define KEY_LEN_MAX 64 // because RzBuffer uses ut64 addresses
 
 /**
- * Create a Mem (Array)
- * \param min_unit_size, minimal size of a data unit of current arch
- * \return RzILMem*
+ * Create a memory for accessing the given buffer.
  */
-RZ_API RzILMem *rz_il_mem_new(ut32 min_unit_size) {
+RZ_API RzILMem *rz_il_mem_new(RzBuffer *buf, ut32 key_len) {
+	rz_return_val_if_fail(buf && key_len, NULL);
+	if (key_len > KEY_LEN_MAX) {
+		// no assertion because it's not stricly a programming error to call this
+		// with a higher len. It's just not supported.
+		return NULL;
+	}
 	RzILMem *ret = RZ_NEW0(RzILMem);
 	if (!ret) {
 		return NULL;
 	}
-
-	HtPPOptions options = { 0 };
-	options.cmp = (HtPPListComparator)rz_bv_cmp;
-	options.hashfn = (HtPPHashFunction)rz_bv_hash;
-	options.dupkey = (HtPPDupKey)rz_bv_dup;
-	options.dupvalue = (HtPPDupValue)rz_bv_dup;
-	options.freefn = (HtPPKvFreeFunc)free_bv_key_value;
-	options.elem_size = sizeof(HtPPKv);
-	HtPP *mem_map = ht_pp_new_opt(&options);
-
-	ret->kv_map = mem_map;
-	ret->min_unit_size = min_unit_size;
-
+	rz_buf_ref(buf);
+	ret->buf = buf;
+	ret->key_len = key_len;
 	return ret;
 }
 
@@ -42,25 +33,56 @@ RZ_API void rz_il_mem_free(RzILMem *mem) {
 	if (!mem) {
 		return;
 	}
-
-	ht_pp_free(mem->kv_map);
+	rz_buf_free(mem->buf);
 	free(mem);
 }
 
 /**
- * Store data (bitvector) into an address (bitvector)
- * \param mem Memory
- * \param key address (bitvector)
- * \param value data (bitvector)
- * \return a pointer to memory
+ * \brief Get the bit-size of a key (address) into the memory
+ *
+ * For all k, `rz_bv_len(rz_il_mem_load(mem, k)) == rz_il_mem_value_len(mem)`.
+ * So this could be seen as the size of a byte. Because we only support RzBuffer-based mems
+ * at the moment, this is always 8, but more options may be available in the future.
  */
-RZ_API RzILMem *rz_il_mem_store(RzILMem *mem, RzBitVector *key, RzBitVector *value) {
-	if (value->len < mem->min_unit_size) {
-		RZ_LOG_ERROR("RzIL: Memory write size mismatch (expected size > %u, but got %u)\n", mem->min_unit_size, value->len);
-		return NULL;
+RZ_API ut32 rz_il_mem_key_len(RzILMem *mem) {
+	return mem->key_len;
+}
+
+/**
+ * \brief Get the bit-size of a value in the memory
+ *
+ * For all k, `rz_bv_len(rz_il_mem_load(mem, k)) == rz_il_mem_value_len(mem)`.
+ * So this could be seen as the size of a byte. Because we only support RzBuffer-based mems
+ * at the moment, this is always 8, but more options may be available in the future.
+ */
+RZ_API ut32 rz_il_mem_value_len(RzILMem *mem) {
+	return 8;
+}
+
+#define return_val_if_key_len_wrong(mem, key, ret) do { \
+	if (rz_bv_len(key) != rz_il_mem_key_len(mem)) { \
+		RZ_LOG_ERROR("RzIL: Memory write key size mismatch (expected size = %u, but got %u)\n", \
+				(unsigned int)rz_il_mem_key_len(mem), (unsigned int)rz_bv_len(key)); \
+		return ret; \
+	} \
+} while (0);
+
+/**
+ * Store data (bitvector) into an address (bitvector)
+ * \param key address
+ * \param value data
+ * \return whether the store succeeded
+ */
+RZ_API bool rz_il_mem_store(RzILMem *mem, RzBitVector *key, RzBitVector *value) {
+	rz_return_val_if_fail(mem && key && value, false);
+	return_val_if_key_len_wrong(mem, key, false);
+	if (rz_bv_len(value) != rz_il_mem_value_len(mem)) {
+		RZ_LOG_ERROR("RzIL: Memory write value size mismatch (expected size = %u, but got %u)\n",
+				(unsigned int)rz_il_mem_value_len(mem), (unsigned int)rz_bv_len(value));
+		return false;
 	}
-	ht_pp_update(mem->kv_map, key, value);
-	return mem;
+	ut8 v = rz_bv_to_ut8(value);
+	return rz_buf_write_at(mem->buf, rz_bv_to_ut64(key), &v, 1) == 1;
 }
 
 /**
@@ -70,10 +92,61 @@ RZ_API RzILMem *rz_il_mem_store(RzILMem *mem, RzBitVector *key, RzBitVector *val
  * \return data (bitvector)
  */
 RZ_API RzBitVector *rz_il_mem_load(RzILMem *mem, RzBitVector *key) {
-	RzBitVector *val = ht_pp_find(mem->kv_map, key, NULL);
-	if (val == NULL) {
+	rz_return_val_if_fail(mem && key, NULL);
+	return_val_if_key_len_wrong(mem, key, NULL);
+	ut8 v = 0;
+	if (rz_buf_read_at(mem->buf, rz_bv_to_ut64(key), &v, 1) != 1) {
 		return NULL;
 	}
-	RzBitVector *ret = rz_bv_dup(val);
-	return ret;
+	return rz_bv_new_from_ut64(rz_il_mem_value_len(mem), v);
 }
+
+#if 0
+static RzBitVector *read_n_bits(RzILVM *vm, ut32 n_bits, RzBitVector *key) {
+	RzBitVector *value = rz_bv_new_zero(n_bits);
+	if (!value) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	ut64 address = rz_bv_to_ut64(key);
+	ut32 n_bytes = rz_bv_len_bytes(value);
+
+	ut8 *data = calloc(n_bytes, 1);
+	if (!data) {
+		rz_warn_if_reached();
+		return value;
+	}
+
+	// we ignore bad reads.
+	rz_buf_read_at(vm->vm_memory, address, data, n_bytes);
+	if (vm->big_endian) {
+		value = rz_bv_new_from_bytes_be(data, 0, n_bits);
+	} else {
+		value = rz_bv_new_from_bytes_le(data, 0, n_bits);
+	}
+	free(data);
+	return value;
+}
+
+static void write_n_bits(RzILVM *vm, RzBitVector *value, RzBitVector *key) {
+	ut64 address = rz_bv_to_ut64(key);
+	ut32 n_bytes = rz_bv_len_bytes(value);
+
+	ut8 *data = calloc(n_bytes, 1);
+	if (!data) {
+		rz_warn_if_reached();
+		return;
+	}
+
+	if (vm->big_endian) {
+		rz_bv_set_to_bytes_be(value, data);
+	} else {
+		rz_bv_set_to_bytes_le(value, data);
+	}
+
+	// we ignore bad writes.
+	rz_buf_write_at(vm->vm_memory, address, data, n_bytes);
+	free(data);
+}
+#endif

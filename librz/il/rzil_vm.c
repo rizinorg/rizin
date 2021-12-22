@@ -595,6 +595,7 @@ RZ_API RZ_OWN void rz_il_evaluate_effect(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILO
 		rz_il_value_free(result);
 		break;
 	case RZIL_OP_ARG_MEM:
+	case RZIL_OP_ARG_EFF:
 		break;
 	default:
 		RZ_LOG_ERROR("RzIL: unknown RzILEffect type\n");

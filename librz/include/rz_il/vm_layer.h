@@ -11,10 +11,12 @@ extern "C" {
 #endif
 
 // VM high level operations
-RZ_API RzILVM *rz_il_vm_new(ut64 start_addr, ut32 addr_size, RzBuffer *ro_memory, bool big_endian);
+RZ_API RzILVM *rz_il_vm_new(ut64 start_addr, ut32 addr_size, bool big_endian);
 RZ_API void rz_il_vm_free(RzILVM *vm);
-RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, RzBuffer *ro_memory, bool big_endian);
+RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, bool big_endian);
 RZ_API void rz_il_vm_fini(RzILVM *vm);
+RZ_API void rz_il_vm_add_mem(RzILVM *vm, RzILMemIndex index, RZ_OWN RzILMem *mem);
+RZ_API RzILMem *rz_il_vm_get_mem(RzILVM *vm, RzILMemIndex index);
 RZ_API void rz_il_vm_step(RzILVM *vm, RzILOp *root);
 RZ_API void rz_il_vm_list_step(RzILVM *vm, RzPVector *op_list, ut32 op_size);
 
@@ -22,8 +24,8 @@ RZ_API void rz_il_vm_list_step(RzILVM *vm, RzPVector *op_list, ut32 op_size);
 RZ_API void rz_il_vm_event_add(RzILVM *vm, RzILEvent *evt);
 
 // Memory operations
-RZ_API RzBitVector *rz_il_vm_mem_load(RzILVM *vm, ut32 n_bits, RzBitVector *key);
-RZ_API void rz_il_vm_mem_store(RzILVM *vm, RzBitVector *key, RzBitVector *value);
+RZ_API RzBitVector *rz_il_vm_mem_load(RzILVM *vm, RzILMemIndex index, RzBitVector *key);
+RZ_API void rz_il_vm_mem_store(RzILVM *vm, RzILMemIndex index, RzBitVector *key, RzBitVector *value);
 
 #ifdef __cplusplus
 }

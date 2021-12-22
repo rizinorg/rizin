@@ -329,15 +329,15 @@ static void il_opdmp_append(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 static void il_opdmp_load(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 	RzILOpLoad *opx = op->op.load;
 	if (sb) {
-		rz_strbuf_append(sb, "load(key:");
+		rz_strbuf_appendf(sb, "load(mem:%u, key:", (unsigned int)opx->mem);
 		il_op_resolve(opx->key, sb, pj);
-		rz_strbuf_appendf(sb, ", len:%u)", opx->len);
+		rz_strbuf_append(sb, ")");
 	} else {
 		pj_o(pj);
 		pj_ks(pj, "opcode", "load");
+    pj_kn(pj, "mem", opx->mem);
 		pj_k(pj, "key");
 		il_op_resolve(opx->key, sb, pj);
-		pj_kn(pj, "len", opx->len);
 		pj_end(pj);
 	}
 }
@@ -346,7 +346,7 @@ static void il_opdmp_store(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 	RzILOpStore *opx = op->op.store;
 
 	if (sb) {
-		rz_strbuf_append(sb, "store(key:");
+		rz_strbuf_appendf(sb, "store(mem:%u, key:", (unsigned int)opx->mem);
 		il_op_resolve(opx->key, sb, pj);
 		rz_strbuf_append(sb, ", value:");
 		il_op_resolve(opx->value, sb, pj);
@@ -354,6 +354,7 @@ static void il_opdmp_store(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 	} else {
 		pj_o(pj);
 		pj_ks(pj, "opcode", "store");
+    pj_kn(pj, "mem", opx->mem);
 		pj_k(pj, "key");
 		il_op_resolve(opx->key, sb, pj);
 		pj_k(pj, "value");

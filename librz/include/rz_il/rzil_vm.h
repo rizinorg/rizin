@@ -14,10 +14,6 @@ extern "C" {
 
 #define RZ_IL_VM_MAX_VAR  2048
 #define RZ_IL_VM_MAX_VAL  1024
-#define RZ_IL_VM_MAX_LAB  1024
-#define RZ_IL_VM_MAX_EFF  1024
-#define RZ_IL_VM_MAX_FLG  1024
-#define RZ_IL_VM_MAX_TEMP 32
 
 typedef enum {
 	RZIL_OP_ARG_BOOL,
@@ -40,7 +36,7 @@ struct rz_il_vm_t {
 	RzILBag *vm_global_value_set; ///< Store all RzILVal instance
 	RzPVector /*<RzILVar*>*/ vm_global_variable_list; ///< Store all the global RzILVar instance
 	RzPVector /*<RzILVar*>*/ vm_local_variable_list; ///< Store all the local RzILVar instance
-	RzBuffer *vm_memory; ///< rz_buf_new_sparse_overlay RZ_BUF_SPARSE_WRITE_MODE_SPARSE
+	RzPVector /*<RzILMem*>*/ vm_memory; ///< Memories available in the VM, by their inded. May be sparse (contain NULLs).
 	ut32 val_count, lab_count; ///< count for VM predefined things
 	ut32 addr_size; ///< size of address space
 	HtPP *vm_global_bind_table; ///< Hashtable to record relationships between global var and val

@@ -15,10 +15,10 @@ static int getid(char ch) {
 }
 
 /* New IL uplift bf */
-#define BF_ADDR_MEM   0x10000
-#define BF_ADDR_SIZE  64
-#define BF_ALIGN_SIZE 8
-#define BF_ID_STACK   32
+#define BF_ADDR_MEM  0x10000
+#define BF_ADDR_SIZE 64
+#define BF_BYTE_SIZE 8
+#define BF_ID_STACK  32
 
 struct bf_stack_t {
 	ut64 stack[BF_ID_STACK];
@@ -38,15 +38,15 @@ typedef struct bf_context_t {
 
 static void bf_syscall_read(RzILVM *vm, RzILOp *op) {
 	ut8 c = getc(stdin);
-	RzBitVector *bv = rz_bv_new_from_ut64(BF_ALIGN_SIZE, c);
+	RzBitVector *bv = rz_bv_new_from_ut64(BF_BYTE_SIZE, c);
 	RzILVal *ptr_val = rz_il_hash_find_val_by_name(vm, "ptr");
-	rz_il_vm_mem_store(vm, ptr_val->data.bv, bv);
+	rz_il_vm_mem_store(vm, 0, ptr_val->data.bv, bv);
 	rz_bv_free(bv);
 }
 
 static void bf_syscall_write(RzILVM *vm, RzILOp *op) {
 	RzILVal *ptr_val = rz_il_hash_find_val_by_name(vm, "ptr");
-	RzBitVector *bv = rz_il_vm_mem_load(vm, BF_ALIGN_SIZE, ptr_val->data.bv);
+	RzBitVector *bv = rz_il_vm_mem_load(vm, 0, ptr_val->data.bv);
 	ut32 c = rz_bv_to_ut32(bv);
 	putchar(c);
 	rz_bv_free(bv);
@@ -92,18 +92,18 @@ RzPVector *bf_left_arrow(RzILVM *vm, ut64 id) {
 RzPVector *bf_inc(RzILVM *vm, ut64 id) {
 	// (store mem (var ptr) (+ (load (var ptr)) (int 1)))
 	// mem == 0 because is the only mem in bf
-	RzILOp *load = rz_il_op_new_load(bf_il_ptr(), BF_ALIGN_SIZE);
-	RzILOp *add = rz_il_op_new_add(load, bf_il_one(BF_ALIGN_SIZE));
-	RzILOp *store = rz_il_op_new_store(bf_il_ptr(), add);
+	RzILOp *load = rz_il_op_new_load(0, bf_il_ptr());
+	RzILOp *add = rz_il_op_new_add(load, bf_il_one(BF_BYTE_SIZE));
+	RzILOp *store = rz_il_op_new_store(0, bf_il_ptr(), add);
 	return rz_il_make_oplist(1, store);
 }
 
 RzPVector *bf_dec(RzILVM *vm, ut64 id) {
 	// (store mem (var ptr) (- (load (var ptr)) (int 1)))
 	// mem == 0 because is the only mem in bf
-	RzILOp *load = rz_il_op_new_load(bf_il_ptr(), BF_ALIGN_SIZE);
-	RzILOp *sub = rz_il_op_new_sub(load, bf_il_one(BF_ALIGN_SIZE));
-	RzILOp *store = rz_il_op_new_store(bf_il_ptr(), sub);
+	RzILOp *load = rz_il_op_new_load(0, bf_il_ptr());
+	RzILOp *sub = rz_il_op_new_sub(load, bf_il_one(BF_BYTE_SIZE));
+	RzILOp *store = rz_il_op_new_store(0, bf_il_ptr(), sub);
 	return rz_il_make_oplist(1, store);
 }
 
@@ -153,7 +153,7 @@ RzPVector *bf_llimit(RzILVM *vm, BfContext *ctx, ut64 id, ut64 addr) {
 	free(to_free);
 
 	RzILOp *var = rz_il_op_new_var("ptr");
-	RzILOp *load = rz_il_op_new_load(var, BF_ALIGN_SIZE);
+	RzILOp *load = rz_il_op_new_load(0, var);
 
 	// goto ]
 	RzILOp *goto_ = rz_il_op_new_goto(dst_label->label_id);
@@ -193,7 +193,7 @@ RzPVector *bf_rlimit(RzILVM *vm, BfContext *ctx, ut64 id, ut64 addr) {
 	dst_label = rz_il_vm_find_label_by_name(vm, dst_lbl_name);
 
 	RzILOp *var = rz_il_op_new_var("ptr");
-	RzILOp *load = rz_il_op_new_load(var, BF_ALIGN_SIZE);
+	RzILOp *load = rz_il_op_new_load(0, var);
 
 	// goto [
 	RzILOp *goto_ = rz_il_op_new_goto(dst_label->label_id);
@@ -222,8 +222,6 @@ static bool bf_specific_init(RzAnalysisRzil *rzil) {
 	read_label->type = EFFECT_LABEL_SYSCALL;
 	write_label->type = EFFECT_LABEL_HOOK;
 
-	// init mem
-	rz_il_vm_add_mem(vm, vm->data_size);
 	rzil->inited = true;
 
 	return true;
@@ -282,10 +280,23 @@ static bool bf_init_rzil(RzAnalysis *analysis) {
 	ut64 start_addr = 0;
 
 	// create core theory VM
-	if (!rz_il_vm_init(rzil->vm, start_addr, addrsize, rzil->ro_memory, false)) {
+	if (!rz_il_vm_init(rzil->vm, start_addr, addrsize, false)) {
 		RZ_LOG_ERROR("RzIL: brainfuck: failed to initialize VM\n");
 		return false;
 	}
+
+	RzBuffer *buf = rz_buf_new_sparse_overlay(rzil->ro_memory, RZ_BUF_SPARSE_WRITE_MODE_SPARSE);
+	if (!buf) {
+		rz_il_vm_fini(rzil->vm);
+		return false;
+	}
+	RzILMem *mem = rz_il_mem_new(buf, 64);
+	if (!mem) {
+		rz_buf_free(buf);
+		rz_il_vm_fini(rzil->vm);
+		return false;
+	}
+	rz_il_vm_add_mem(rzil->vm, 0, mem);
 
 	// init bf RZIL user-defined context
 	rzil->user = bf_context_new();
