@@ -21,7 +21,7 @@ afl~printf
 EOF
 EXPECT=<<EOF
 0x00409c70   18 516  -> 514  flirt.printf
-0x0046fc50    7 516  -> 342  flirt.printf
+0x0046fc50    7 516  -> 342  flirt.printf_1
 EOF
 RUN
 
@@ -36,6 +36,6 @@ EOF
 EXPECT=<<EOF
 Applying elf/x86/64/match.sig signature file
 0x00409c70   18 516  -> 514  flirt.printf
-0x0046fc50    7 516  -> 342  flirt.printf
+0x0046fc50    7 516  -> 342  flirt.printf_1
 EOF
 RUN
