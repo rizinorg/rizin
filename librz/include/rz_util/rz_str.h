@@ -243,7 +243,7 @@ RZ_API char *rz_str_between(const char *str, const char *prefix, const char *suf
  * \return True if \p needle is found at the beginning of \p str and false otherwise
  * \see rz_str_startswith_icase()
  */
-RZ_API bool rz_str_startswith(const char *str, const char *needle);
+RZ_API bool rz_str_startswith(RZ_NONNULL const char *str, RZ_NONNULL const char *needle);
 /**
  * \brief Checks if a string starts with a specifc sequence of characters (case insensitive)
  * \param str C-string to be scanned
@@ -251,7 +251,7 @@ RZ_API bool rz_str_startswith(const char *str, const char *needle);
  * \return True if \p needle is found at the beginning of \p str and false otherwise
  * \see rz_str_startswith()
  */
-RZ_API bool rz_str_startswith_icase(const char *str, const char *needle);
+RZ_API bool rz_str_startswith_icase(RZ_NONNULL const char *str, RZ_NONNULL const char *needle);
 RZ_API bool rz_str_endswith(const char *str, const char *needle);
 RZ_API bool rz_str_isnumber(const char *str);
 RZ_API const char *rz_str_last(const char *in, const char *ch);

@@ -3114,7 +3114,7 @@ RZ_API char *rz_str_between(const char *cmt, const char *prefix, const char *suf
 	return NULL;
 }
 
-RZ_API bool rz_str_startswith(const char *str, const char *needle) {
+RZ_API bool rz_str_startswith(RZ_NONNULL const char *str, RZ_NONNULL const char *needle) {
 	rz_return_val_if_fail(str && needle, false);
 	if (str == needle) {
 		return true;
@@ -3122,7 +3122,7 @@ RZ_API bool rz_str_startswith(const char *str, const char *needle) {
 	return !strncmp(str, needle, strlen(needle));
 }
 
-RZ_API bool rz_str_startswith_icase(const char *str, const char *needle) {
+RZ_API bool rz_str_startswith_icase(RZ_NONNULL const char *str, RZ_NONNULL const char *needle) {
 	rz_return_val_if_fail(str && needle, false);
 	if (str == needle) {
 		return true;
