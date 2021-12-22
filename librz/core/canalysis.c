@@ -3307,7 +3307,7 @@ RZ_API int rz_core_analysis_search(RzCore *core, ut64 from, ut64 to, ut64 ref, i
 	return count;
 }
 
-static bool found_xref(RzCore *core, ut64 at, ut64 xref_to, RzAnalysisXRefType type, PJ *pj, int rad, int cfg_debug, bool cfg_analysis_strings) {
+static bool found_xref(RzCore *core, ut64 at, ut64 xref_to, RzAnalysisXRefType type, PJ *pj, RzOutputMode out_mode, int cfg_debug, bool cfg_analysis_strings) {
 	// Validate the reference. If virtual addressing is enabled, we
 	// allow only references to virtual addresses in order to reduce
 	// the number of false positives. In debugger mode, the reference
@@ -3324,7 +3324,7 @@ static bool found_xref(RzCore *core, ut64 at, ut64 xref_to, RzAnalysisXRefType t
 			return false;
 		}
 	}
-	if (!rad) {
+	if (out_mode == RZ_OUTPUT_MODE_STANDARD) {
 		if (cfg_analysis_strings && type == RZ_ANALYSIS_REF_TYPE_DATA) {
 			int len = 0;
 			char *str_string = is_string_at(core, xref_to, &len);
@@ -3346,7 +3346,7 @@ static bool found_xref(RzCore *core, ut64 at, ut64 xref_to, RzAnalysisXRefType t
 		if (xref_to) {
 			rz_analysis_xrefs_set(core->analysis, at, xref_to, type);
 		}
-	} else if (rad == 'j') {
+	} else if (out_mode == RZ_OUTPUT_MODE_JSON) {
 		char *key = sdb_fmt("0x%" PFMT64x, xref_to);
 		char *value = sdb_fmt("0x%" PFMT64x, at);
 		pj_ks(pj, key, value);
@@ -3382,10 +3382,10 @@ static bool found_xref(RzCore *core, ut64 at, ut64 xref_to, RzAnalysisXRefType t
  * \param from Start of search interval.
  * \param to End of search interval.
  * \param pj The print JSON object.
- * \param rad The print mode. If set to 'j' the \p 'pj' parameter will filled with the xrefs found.
+ * \param out_mode The output mode. If set to RZ_OUTPUT_MODE_JSON the \p 'pj' parameter will filled with the xrefs found.
  * \return int Number of found xrefs. -1 in case of failure.
  */
-RZ_API int rz_core_analysis_search_xrefs(RzCore *core, ut64 from, ut64 to, PJ *pj, int rad) {
+RZ_API int rz_core_analysis_search_xrefs(RzCore *core, ut64 from, ut64 to, PJ *pj, RzOutputMode out_mode) {
 	bool cfg_debug = rz_config_get_b(core->config, "cfg.debug");
 	bool cfg_analysis_strings = rz_config_get_i(core->config, "analysis.strings");
 	ut64 at;
@@ -3448,45 +3448,45 @@ RZ_API int rz_core_analysis_search_xrefs(RzCore *core, ut64 from, ut64 to, PJ *p
 			}
 			// find references
 			if ((st64)op.val > asm_sub_varmin && op.val != UT64_MAX && op.val != UT32_MAX) {
-				if (found_xref(core, op.addr, op.val, RZ_ANALYSIS_REF_TYPE_DATA, pj, rad, cfg_debug, cfg_analysis_strings)) {
+				if (found_xref(core, op.addr, op.val, RZ_ANALYSIS_REF_TYPE_DATA, pj, out_mode, cfg_debug, cfg_analysis_strings)) {
 					count++;
 				}
 			}
 			for (ut8 i = 0; i < 6; ++i) {
 				st64 aval = op.analysis_vals[i].imm;
 				if (aval > asm_sub_varmin && aval != UT64_MAX && aval != UT32_MAX) {
-					if (found_xref(core, op.addr, aval, RZ_ANALYSIS_REF_TYPE_DATA, pj, rad, cfg_debug, cfg_analysis_strings)) {
+					if (found_xref(core, op.addr, aval, RZ_ANALYSIS_REF_TYPE_DATA, pj, out_mode, cfg_debug, cfg_analysis_strings)) {
 						count++;
 					}
 				}
 			}
 			// find references
 			if (op.ptr && op.ptr != UT64_MAX && op.ptr != UT32_MAX) {
-				if (found_xref(core, op.addr, op.ptr, RZ_ANALYSIS_REF_TYPE_DATA, pj, rad, cfg_debug, cfg_analysis_strings)) {
+				if (found_xref(core, op.addr, op.ptr, RZ_ANALYSIS_REF_TYPE_DATA, pj, out_mode, cfg_debug, cfg_analysis_strings)) {
 					count++;
 				}
 			}
 			// find references
 			if (op.addr > 512 && op.disp > 512 && op.disp && op.disp != UT64_MAX) {
-				if (found_xref(core, op.addr, op.disp, RZ_ANALYSIS_REF_TYPE_DATA, pj, rad, cfg_debug, cfg_analysis_strings)) {
+				if (found_xref(core, op.addr, op.disp, RZ_ANALYSIS_REF_TYPE_DATA, pj, out_mode, cfg_debug, cfg_analysis_strings)) {
 					count++;
 				}
 			}
 			switch (op.type) {
 			case RZ_ANALYSIS_OP_TYPE_JMP:
-				if (found_xref(core, op.addr, op.jump, RZ_ANALYSIS_REF_TYPE_CODE, pj, rad, cfg_debug, cfg_analysis_strings)) {
+				if (found_xref(core, op.addr, op.jump, RZ_ANALYSIS_REF_TYPE_CODE, pj, out_mode, cfg_debug, cfg_analysis_strings)) {
 					count++;
 				}
 				break;
 			case RZ_ANALYSIS_OP_TYPE_CJMP:
 				if (rz_config_get_b(core->config, "analysis.jmp.cref") &&
-					found_xref(core, op.addr, op.jump, RZ_ANALYSIS_REF_TYPE_CODE, pj, rad, cfg_debug, cfg_analysis_strings)) {
+					found_xref(core, op.addr, op.jump, RZ_ANALYSIS_REF_TYPE_CODE, pj, out_mode, cfg_debug, cfg_analysis_strings)) {
 					count++;
 				}
 				break;
 			case RZ_ANALYSIS_OP_TYPE_CALL:
 			case RZ_ANALYSIS_OP_TYPE_CCALL:
-				if (found_xref(core, op.addr, op.jump, RZ_ANALYSIS_REF_TYPE_CALL, pj, rad, cfg_debug, cfg_analysis_strings)) {
+				if (found_xref(core, op.addr, op.jump, RZ_ANALYSIS_REF_TYPE_CALL, pj, out_mode, cfg_debug, cfg_analysis_strings)) {
 					count++;
 				}
 				break;
@@ -3497,7 +3497,7 @@ RZ_API int rz_core_analysis_search_xrefs(RzCore *core, ut64 from, ut64 to, PJ *p
 			case RZ_ANALYSIS_OP_TYPE_MJMP:
 			case RZ_ANALYSIS_OP_TYPE_UCJMP:
 				count++;
-				if (found_xref(core, op.addr, op.ptr, RZ_ANALYSIS_REF_TYPE_CODE, pj, rad, cfg_debug, cfg_analysis_strings)) {
+				if (found_xref(core, op.addr, op.ptr, RZ_ANALYSIS_REF_TYPE_CODE, pj, out_mode, cfg_debug, cfg_analysis_strings)) {
 					count++;
 				}
 				break;
@@ -3506,7 +3506,7 @@ RZ_API int rz_core_analysis_search_xrefs(RzCore *core, ut64 from, ut64 to, PJ *p
 			case RZ_ANALYSIS_OP_TYPE_RCALL:
 			case RZ_ANALYSIS_OP_TYPE_IRCALL:
 			case RZ_ANALYSIS_OP_TYPE_UCCALL:
-				if (found_xref(core, op.addr, op.ptr, RZ_ANALYSIS_REF_TYPE_CALL, pj, rad, cfg_debug, cfg_analysis_strings)) {
+				if (found_xref(core, op.addr, op.ptr, RZ_ANALYSIS_REF_TYPE_CALL, pj, out_mode, cfg_debug, cfg_analysis_strings)) {
 					count++;
 				}
 				break;
