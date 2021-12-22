@@ -1,3 +1,78 @@
+asm_plugins = [
+  '6502',
+  '8051',
+  'amd29k',
+  'arm_as',
+  'arm_cs',
+  'avr',
+  'bf',
+  'chip8',
+  'cr16',
+  'dalvik',
+  'dcpu16',
+  'ebc',
+  'gb',
+  'h8300',
+  'hexagon',
+  'i4004',
+  'i8080',
+  'java',
+  'lh5801',
+  'lm32',
+  'luac',
+  'm68k_cs',
+  'm680x_cs',
+  'malbolge',
+  'mcore',
+  'mcs96',
+  'mips_cs',
+  'msp430',
+  'or1k',
+  'pic',
+  'ppc_as',
+  'ppc_cs',
+  'propeller',
+  'pyc',
+  'rsp',
+  'snes',
+  'sparc_cs',
+  'spc700',
+  'sysz',
+  'tms320',
+  'tms320c64x',
+  'v810',
+  'v850',
+  'wasm',
+  'x86_as',
+  'x86_cs',
+  'x86_nasm',
+  'x86_nz',
+  'xap',
+  'xcore_cs',
+]
+
+if capstone_dep.version().split('.')[0].to_int() > 4
+  asm_plugins += 'riscv_cs'
+endif
+
+if get_option('use_gpl')
+  asm_plugins += [
+    'arc',
+    'cris_gnu',
+    'hppa_gnu',
+    'lanai_gnu',
+    'mips_gnu',
+    'nios2',
+    'riscv',
+    'sh',
+    'sparc_gnu',
+    'tricore',
+    'vax',
+    'xtensa',
+    'z80',
+  ]
+endif
+
 rz_asm_sources = [
   'asm.c',
   'aop.c',
@@ -202,7 +277,6 @@ endif
 rz_asm_inc = [
   platform_inc,
   include_directories(
-    '../../shlr',
     'arch/include',
     'arch',
     'arch/h8300',
@@ -230,7 +304,7 @@ rz_asm = library('rz_asm', rz_asm_sources,
     rz_parse_dep,
     rz_bin_dep,
     capstone_dep,
-    spp_dep,
+    dependency('rzspp'),
   ],
   install: true,
   implicit_include_directories: false,
@@ -243,6 +317,7 @@ rz_asm = library('rz_asm', rz_asm_sources,
 
 rz_asm_dep = declare_dependency(link_with: rz_asm,
                                include_directories: rz_asm_inc)
+meson.override_dependency('rz_asm', rz_asm_dep)
 
 pkgconfig_mod.generate(rz_asm,
   subdirs: 'librz',
@@ -280,3 +355,7 @@ if not is_static_libs_only
     configuration: conf,
   )
 endif
+
+subdir('d')
+subdir('cpus')
+subdir('platforms')

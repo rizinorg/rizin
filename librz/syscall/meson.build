@@ -17,6 +17,7 @@ rz_syscall = library('rz_syscall', rz_syscall_sources,
 
 rz_syscall_dep = declare_dependency(link_with: rz_syscall,
                                    include_directories: [platform_inc])
+meson.override_dependency('rz_syscall', rz_syscall_dep)
 
 pkgconfig_mod.generate(rz_syscall,
   subdirs: 'librz',
@@ -46,3 +47,5 @@ if not is_static_libs_only
     configuration: conf,
   )
 endif
+
+subdir('d')

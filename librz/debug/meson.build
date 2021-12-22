@@ -1,3 +1,23 @@
+debug_plugins = [
+  'bf',
+  'bochs',
+  'esil',
+  'gdb',
+  'io',
+  'native',
+  'null',
+  'rap',
+  'winkd'
+]
+
+if get_option('use_gpl')
+  debug_plugins += 'qnx'
+endif
+
+if host_machine.system() == 'windows'
+  debug_plugins += 'windbg'
+endif
+
 rz_debug_sources = [
   'ddesc.c',
   'debug.c',
@@ -32,9 +52,9 @@ rz_debug_sources = [
 ]
 
 rz_debug_deps = [
-  gdb_dep,
-  bochs_dep,
-  winkd_dep,
+  dependency('rzgdb'),
+  dependency('rzbochs'),
+  dependency('rzwinkd'),
   rz_util_dep,
   rz_cons_dep,
   rz_hash_dep,
@@ -47,7 +67,7 @@ rz_debug_deps = [
 ]
 
 if get_option('use_gpl')
-  rz_debug_deps += qnx_dep
+  rz_debug_deps += dependency('rzqnx')
   rz_debug_sources += 'p/debug_qnx.c'
 endif
 
@@ -65,7 +85,7 @@ if host_machine.system() == 'windows'
     'p/native/windows/windows_debug.c',
     'p/native/windows/windows_message.c',
   ]
-  rz_debug_deps += w32dbg_wrap_dep
+  rz_debug_deps += dependency('rzw32dbg_wrap')
 endif
 
 if host_machine.system() != 'windows'
@@ -113,6 +133,7 @@ rz_debug = library('rz_debug', rz_debug_sources,
 
 rz_debug_dep = declare_dependency(link_with: rz_debug,
                                  include_directories: rz_debug_inc)
+meson.override_dependency('rz_debug', rz_debug_dep)
 
 pkgconfig_mod.generate(rz_debug,
   subdirs: 'librz',

@@ -4,8 +4,8 @@ on:
   pull_request:
     paths:
       - 'subprojects/tree-sitter.wrap'
-      - 'shlr/rizin-shell-parser/*'
-      - 'shlr/rizin-shell-parser/**/*'
+      - 'subprojects/rizin-shell-parser/*'
+      - 'subprojects/rizin-shell-parser/**/*'
     branches:
       - dev
 
@@ -18,10 +18,10 @@ jobs:
     - uses: actions/setup-node@v1
       with:
         node-version: '12.x'
-    - run: cd shlr/rizin-shell-parser/ && npm install
+    - run: cd subprojects/rizin-shell-parser/ && npm install
     - name: Run tests
       run: |
-        cd shlr/rizin-shell-parser
+        cd subprojects/rizin-shell-parser
         export PATH=${PATH}:./node_modules/.bin
         tree-sitter generate
         tree-sitter test

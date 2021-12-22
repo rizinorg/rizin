@@ -18,7 +18,6 @@ EXTRA_FLAGS+= -Duse_sys_lz4=disabled
 EXTRA_FLAGS+= -Duse_sys_xxhash=disabled
 EXTRA_FLAGS+= -Duse_sys_libuv=disabled
 EXTRA_FLAGS+= -Duse_sys_openssl=disabled
-EXTRA_FLAGS+= -Duse_webui=false
 
 # architectures with debugging support
 DEBUG_SUPPORT=0

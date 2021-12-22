@@ -53,6 +53,7 @@ rz_hash = library('rz_hash', rz_hash_sources,
 
 rz_hash_dep = declare_dependency(link_with: rz_hash,
                                 include_directories: [platform_inc])
+meson.override_dependency('rz_hash', rz_hash_dep)
 
 pkgconfig_mod.generate(rz_hash,
   subdirs: 'librz',

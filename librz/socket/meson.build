@@ -39,6 +39,7 @@ rz_socket = library('rz_socket', rz_socket_sources,
 rz_socket_dep = declare_dependency(link_with: rz_socket,
   dependencies: [rz_util_dep],
   include_directories: [platform_inc])
+meson.override_dependency('rz_socket', rz_socket_dep)
 
 pkgconfig_mod.generate(rz_socket,
   subdirs: 'librz',

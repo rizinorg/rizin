@@ -124,9 +124,9 @@ language, Evaluable Strings Intermediate Language (ESIL).
 
 ### librz/debug/p/debug_gdb.c
 
-A Rizin debugger plug-in that uses a remote GDB server/stub as its backend.
-The protocol parsing itself is located at shlr/gdb. And corresponding IO plugin is
-located in librz/io/p/io_gdb.c
+A Rizin debugger plug-in that uses a remote GDB server/stub as its backend.  The
+protocol parsing itself is located at subprojects/rzgdb. And corresponding IO
+plugin is located in librz/io/p/io_gdb.c
 
 ### librz/debug/p/debug_native.c
 
@@ -210,9 +210,9 @@ See doc/rap
 
 ### librz/debug/p/debug_winkd.c
 
-A debugger plugin that enables debugging code remotely via WinDbg protocol. WinDbg protocol
-parser is located in shlr/winkd. Corresponding IO plugin located in librz/io/p/io_winkd.c
-See doc/winkd
+A debugger plugin that enables debugging code remotely via WinDbg protocol.
+WinDbg protocol parser is located in subprojects/rzwinkd. Corresponding IO
+plugin located in librz/io/p/io_winkd.c See doc/winkd.
 
 ## Conclusion
 

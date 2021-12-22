@@ -1,3 +1,7 @@
+core_plugins = [
+  'java',
+]
+
 subdir('cmd_descs')
 
 rz_core_sources = [
@@ -82,14 +86,13 @@ rz_core_sources = [
   'tui/panels.c'
 ]
 
-rz_core_inc = []
-if host_machine.system() != 'windows'
-  rz_core_inc += ['../../shlr/heap/include']
-else
+rz_core_inc = ['.']
+if host_machine.system() == 'windows'
   rz_core_sources += 'windows_heap.c'
-  rz_core_inc += ['../../shlr/heap/include/rz_windows']
 endif
-rz_core_inc = [platform_inc, include_directories(rz_core_inc), 'cmd_descs']
+rz_core_inc = [platform_inc, 'cmd_descs']
+
+shell_parser_dep = dependency('rizin-shell-parser')
 
 rz_core_deps = [
   rz_util_dep,
@@ -118,10 +121,11 @@ rz_core_deps = [
   rz_config_dep,
   rz_bin_dep,
   platform_deps,
-  gdb_dep,
+  dependency('rzgdb'),
+  dependency('rzheap'),
   shell_parser_dep,
   lrt,
-  mth
+  mth,
 ]
 
 if libuv_dep.found()
@@ -143,6 +147,7 @@ rz_core = library('rz_core', rz_core_sources,
 
 rz_core_dep = declare_dependency(link_with: rz_core,
                                 include_directories: rz_core_inc)
+meson.override_dependency('rz_core', rz_core_dep)
 
 pkgconfig_mod.generate(
   rz_core,

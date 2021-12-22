@@ -65,7 +65,7 @@ typedef struct {
 	int f[O_Max];
 } Profile;
 
-// grep -e "^winkd_" shlr/wind/wind.c | sed -e 's/ {$/;/' -e 's/^/int /'
+// grep -e "^winkd_" subprojects/rzwinkd/winkd.c | sed -e 's/ {$/;/' -e 's/^/int /'
 int winkd_get_bits(WindCtx *ctx);
 ut64 winkd_get_target_base(WindCtx *ctx);
 ut32 winkd_get_target(WindCtx *ctx);

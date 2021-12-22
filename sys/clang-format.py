@@ -14,15 +14,13 @@ from git import Repo
 dirlist = [
     "binrz",
     "librz",
-    "shlr/ar",
-    "shlr/bochs",
-    "shlr/gdb",
-    "shlr/java",
-    "shlr/ptrace-wrap",
-    "shlr/qnx",
-    "shlr/rar",
-    "shlr/w32dbg_wrap",
-    "shlr/winkd",
+    "subprojects/rzar",
+    "subprojects/rzbochs",
+    "subprojects/rzgdb",
+    "subprojects/ptrace-wrap",
+    "subprojects/rzqnx",
+    "subprojects/rzw32dbg_wrap",
+    "subprojects/rzwinkd",
     "test/unit",
 ]
 

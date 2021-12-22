@@ -18,8 +18,7 @@ if r.returncode() == 1 and get_option('subprojects_check')
   error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
 endif
 
-tree_sitter_c_proj = subproject('tree-sitter-c', default_options: ['default_library=static'])
-tree_sitter_c_dep = tree_sitter_c_proj.get_variable('tree_sitter_c_dep')
+tree_sitter_c_dep = dependency('tree-sitter-c')
 
 rz_type_inc = [
   platform_inc,
@@ -31,7 +30,6 @@ rz_type = library('rz_type', rz_type_sources,
   c_args: library_cflags,
   dependencies: [
     rz_util_dep,
-    tree_sitter_dep,
     tree_sitter_c_dep,
     lrt
   ],
@@ -46,6 +44,7 @@ rz_type = library('rz_type', rz_type_sources,
 
 rz_type_dep = declare_dependency(link_with: rz_type,
                                 include_directories: rz_type_inc)
+meson.override_dependency('rz_type', rz_type_dep)
 
 pkgconfig_mod.generate(rz_type,
   subdirs: 'librz',

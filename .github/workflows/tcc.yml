@@ -8,7 +8,6 @@ on:
     - '**.in'
     - '**.inc'
     - '**/meson.build'
-    - 'shlr/rizin-shell-parser/**'
     - 'subprojects/**'
     - 'test/**'
     - '.github/workflows/tcc.yml'
@@ -25,7 +24,6 @@ on:
     - '**.in'
     - '**.inc'
     - '**/meson.build'
-    - 'shlr/rizin-shell-parser/**'
     - 'subprojects/**'
     - '.github/workflows/tcc.yml'
     branches:

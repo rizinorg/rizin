@@ -1,3 +1,46 @@
+io_plugins = [
+  'ar',
+  'fd',
+  'bfdbg',
+  'bochs',
+  'debug',
+  'default',
+  'gdb',
+  'gprobe',
+  'gzip',
+  'http',
+  'ihex',
+  'srec',
+  'mach',
+  'malloc',
+  'null',
+  'procpid',
+  'ptrace',
+  'rzk',
+  'rzpipe',
+  'rzweb',
+  'rap',
+  'self',
+  'shm',
+  'sparse',
+  'tcp',
+  'winkd',
+  'winedbg',
+  'zip'
+]
+
+if get_option('use_gpl')
+  io_plugins += 'qnx'
+endif
+
+if host_machine.system() == 'windows'
+  io_plugins += [
+    'windbg',
+    'w32dbg',
+    'w32',
+  ]
+endif
+
 rz_io_sources = [
   'io.c',
   'io_fd.c',
@@ -49,11 +92,11 @@ if host_machine.system() == 'windows'
 endif
 
 rz_io_deps = [
-  bochs_dep,
-  gdb_dep,
-  winkd_dep,
+  dependency('rzbochs'),
+  dependency('rzgdb'),
+  dependency('rzwinkd'),
   libzip_dep,
-  ar_dep,
+  dependency('rzar'),
   pth,
   lrt,
   rz_util_dep,
@@ -64,12 +107,12 @@ rz_io_deps = [
 ]
 
 if get_option('use_gpl')
-  rz_io_deps += qnx_dep
+  rz_io_deps += dependency('rzqnx')
   rz_io_sources += 'p/io_qnx.c'
 endif
 
 if host_machine.system() == 'windows'
-  rz_io_deps += w32dbg_wrap_dep
+  rz_io_deps += dependency('rzw32dbg_wrap')
 endif
 
 if host_machine.system() == 'linux' or host_machine.system() == 'android'
@@ -81,7 +124,7 @@ if host_machine.system() == 'linux' or host_machine.system() == 'android'
 endif
 
 if use_ptrace_wrap
-  rz_io_deps += ptrace_wrap_dep
+  rz_io_deps += dependency('ptrace-wrap', default_options: ['is_static_build=' + is_static_build.to_string()])
 endif
 
 rz_io = library('rz_io', rz_io_sources,
@@ -99,6 +142,7 @@ rz_io = library('rz_io', rz_io_sources,
 
 rz_io_dep = declare_dependency(link_with: rz_io,
                               include_directories: platform_inc)
+meson.override_dependency('rz_io', rz_io_dep)
 
 pkgconfig_mod.generate(rz_io,
   subdirs: 'librz',
