@@ -116,45 +116,11 @@ static bool test_rzil_mem() {
 	mu_end;
 }
 
-static bool test_rzil_effect() {
-	RzILEffect *general_effect = rz_il_effect_new(EFFECT_TYPE_NON);
-	mu_assert_notnull(general_effect, "Create Empty General Effect");
-
-	mu_assert_eq(general_effect->effect_type, EFFECT_TYPE_NON, "Empty effect has correct type");
-	mu_assert_null(general_effect->next_eff, "Empty doesn't have next effect");
-	mu_assert_null(general_effect->ctrl_eff, "Empty doesn't include control effect");
-	mu_assert_null(general_effect->data_eff, "Empty doesn't include data effect");
-	rz_il_effect_free(general_effect);
-
-	RzILCtrlEffect *c_eff = rz_il_effect_ctrl_new();
-	mu_assert_notnull(c_eff, "Create empty control effect");
-	mu_assert_null(c_eff->pc, "Empty control effect have no next pc info");
-
-	RzILDataEffect *d_eff = rz_il_effect_data_new();
-	mu_assert_notnull(d_eff, "Create empty data effect");
-	mu_assert_null(d_eff->var_name, "Empty data effect doesn't have variable name");
-
-	RzILEffect *data_effect, *contrl_effect;
-	// wrap data effect
-	data_effect = rz_il_wrap_data_effect(d_eff);
-	mu_assert_eq(data_effect->effect_type, EFFECT_TYPE_DATA, "Wrap data effect");
-	mu_assert_eq(data_effect->data_eff, d_eff, "Get data effect from general one");
-	rz_il_effect_free(data_effect);
-
-	contrl_effect = rz_il_wrap_ctrl_effect(c_eff);
-	mu_assert_eq(contrl_effect->effect_type, EFFECT_TYPE_CTRL, "Wrap control effect");
-	mu_assert_eq(contrl_effect->ctrl_eff, c_eff, "Get control effect from general one");
-	rz_il_effect_free(contrl_effect);
-
-	mu_end;
-}
-
 bool all_tests() {
 	mu_run_test(test_rzil_bool_init);
 	mu_run_test(test_rzil_bool_logic);
 
 	mu_run_test(test_rzil_mem);
-	mu_run_test(test_rzil_effect);
 	return tests_passed != tests_run;
 }
 

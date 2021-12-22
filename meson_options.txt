@@ -36,7 +36,5 @@ option('use_swift_demangler', type: 'boolean', value: true, description: 'If fal
 option('use_gpl', type: 'boolean', value: true, description: 'Set to false when you want to disable gpl code')
 option('debugger', type: 'boolean', value: true)
 
-option('use_webui', type: 'boolean', value: false, description: 'Install different WebUIs for rizin')
-
 option('enable_tests', type: 'boolean', value: true, description: 'Build unit tests in test/unit')
 option('enable_rz_test', type: 'boolean', value: true, description: 'Build rz-test executable for regression testing')

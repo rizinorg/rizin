@@ -91,7 +91,7 @@ RZ_API RzList *rz_w32_dbg_maps(RzDebug *);
 /* begin of debugger code */
 #if DEBUGGER
 
-#if !__WINDOWS__ && !(__linux__ && !defined(WAIT_ON_ALL_CHILDREN))
+#if !__WINDOWS__ && !(__linux__ && !defined(WAIT_ON_ALL_CHILDREN)) && !__APPLE__
 static int rz_debug_handle_signals(RzDebug *dbg) {
 #if __KFBSD__ || __NetBSD__
 	return bsd_handle_signals(dbg);
@@ -763,16 +763,24 @@ static int io_perms_to_prot(int io_perms) {
 
 #if __linux__
 static int sys_thp_mode(void) {
-	const char *thp = "/sys/kernel/mm/transparent_hugepage/enabled";
+	size_t i;
+	const char *thp[] = {
+		"/sys/kernel/mm/transparent_hugepage/enabled",
+		"/sys/kernel/mm/redhat_transparent_hugepage/enabled",
+	};
 	int ret = 0;
-	char *val = rz_file_slurp(thp, NULL);
-	if (val) {
-		if (strstr(val, "[madvise]")) {
-			ret = 1;
-		} else if (strstr(val, "[always]")) {
-			ret = 2;
+
+	for (i = 0; i < RZ_ARRAY_SIZE(thp); i++) {
+		char *val = rz_file_slurp(thp[i], NULL);
+		if (val) {
+			if (strstr(val, "[madvise]")) {
+				ret = 1;
+			} else if (strstr(val, "[always]")) {
+				ret = 2;
+			}
+			free(val);
+			break;
 		}
-		free(val);
 	}
 
 	return ret;

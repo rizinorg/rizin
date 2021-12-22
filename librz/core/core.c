@@ -591,21 +591,7 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 					break;
 				}
 				*ptr = 0;
-				if (rz_config_get_b(core->config, "cfg.debug")) {
-					if (rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_GPR, false)) {
-						RzRegItem *r = rz_reg_get(core->dbg->reg, bptr, -1);
-						if (r) {
-							free(bptr);
-							return rz_reg_get_value(core->dbg->reg, r);
-						}
-					}
-				} else {
-					RzRegItem *r = rz_reg_get(core->analysis->reg, bptr, -1);
-					if (r) {
-						free(bptr);
-						return rz_reg_get_value(core->analysis->reg, r);
-					}
-				}
+				return rz_core_reg_getv_by_role_or_name(core, bptr);
 				free(bptr);
 				return 0; // UT64_MAX;
 			} else {
@@ -786,18 +772,19 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 			}
 
 			// check for reg alias
-			struct rz_reg_item_t *r = rz_reg_get(core->dbg->reg, str, -1);
+			RzReg *reg = rz_core_reg_default(core);
+			struct rz_reg_item_t *r = rz_reg_get(reg, str, -1);
 			if (!r) {
 				int role = rz_reg_get_name_idx(str);
 				if (role != -1) {
-					const char *alias = rz_reg_get_name(core->dbg->reg, role);
+					const char *alias = rz_reg_get_name(reg, role);
 					if (alias) {
-						r = rz_reg_get(core->dbg->reg, alias, -1);
+						r = rz_reg_get(reg, alias, -1);
 						if (r) {
 							if (ok) {
 								*ok = true;
 							}
-							ret = rz_reg_get_value(core->dbg->reg, r);
+							ret = rz_reg_get_value(reg, r);
 							return ret;
 						}
 					}
@@ -806,7 +793,7 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 				if (ok) {
 					*ok = true;
 				}
-				ret = rz_reg_get_value(core->dbg->reg, r);
+				ret = rz_reg_get_value(reg, r);
 				return ret;
 			}
 		}
@@ -854,20 +841,14 @@ static const char *rizin_argv[] = {
 	"ae?", "ae??", "ae", "aea", "aeA", "aeaf", "aeAf", "aeC", "aec?", "aec", "aecb", "aecs", "aecc", "aecu", "aecue",
 	"aef", "aefa",
 	"aei", "aeim", "aeip", "aek", "aek-", "aeli", "aelir", "aep?", "aep", "aep-", "aepc",
-	"aer", "aets?", "aets+", "aets-", "aes", "aesp", "aesb", "aeso", "aesou", "aess", "aesu", "aesue", "aetr", "aex",
+	"aets?", "aets+", "aets-", "aes", "aesp", "aesb", "aeso", "aesou", "aess", "aesu", "aesue", "aetr", "aex",
 	"af?", "af", "afr", "af+", "af-",
 	"afa", "afan",
-	"afb?", "afb", "afb+", "afbb", "afbr", "afbi", "afbil", "afbj", "afbe", "afB", "afbc", "afb=",
-	"afB", "afC", "afCl", "afCc", "afc?", "afc", "afcr", "afcrj", "afca", "afcf", "afcfj",
+	"afC", "afCl", "afCc", "afc?", "afc", "afcr", "afcrj", "afca", "afcf", "afcfj",
 	"afck", "afcl", "afco", "afcR",
-	"afd", "aff", "afi",
-	"afl?", "afl", "afl+", "aflc", "aflj", "afll", "afllj", "aflm", "aflq", "aflqj", "afls",
-	"afm", "afM", "afn?", "afna", "afns", "afnsj", "afl=",
-	"afo", "afs", "afS", "aft?", "aft", "afu",
-	"afv?", "afv", "afvr?", "afvr", "afvr*", "afvrj", "afvr-", "afvrg", "afvrs",
-	"afvb?", "afvb", "afvbj", "afvb-", "afvbg", "afvbs",
-	"afvs?", "afvs", "afvs*", "afvsj", "afvs-", "afvsg", "afvss",
-	"afv*", "afvR", "afvW", "afva", "afvd", "afvn", "afvt", "afv-", "af*", "afx",
+	"afd", "aff",
+	"afm", "afM", "afn?", "afna", "afns", "afnsj",
+	"afo", "aft?", "aft", "af*",
 	"aF",
 	"ag?", "ag", "aga", "agA", "agc", "agC", "agd", "agf", "agi", "agr", "agR", "agx", "agg", "ag-",
 	"agn?", "agn", "agn-", "age?", "age", "age-",
@@ -965,7 +946,6 @@ static const char *rizin_argv[] = {
 	"pj?", "pj", "pj.", "pj..",
 	"pk?", "pk", "pK?", "pK",
 	"pm?", "pm",
-	"pq?", "pq", "pqi", "pqz",
 	"pr?", "pr", "prc", "prx", "prg?", "prg", "prgi", "prgo", "prz",
 	"ps?", "ps", "psb", "psi", "psj", "psp", "pss", "psu", "psw", "psW", "psx", "psz", "ps+",
 	"pt?", "pt", "pt.", "ptd", "pth", "ptn",
@@ -2188,14 +2168,14 @@ static void __foreach(RzCore *core, const char **cmds, int type) {
 
 static void __init_autocomplete_default(RzCore *core) {
 	const char *fcns[] = {
-		"afi", "afcf", "afn", NULL
+		"afcf", "afn", NULL
 	};
 	const char *seeks[] = {
 		"s", NULL
 	};
 	const char *flags[] = {
 		"*", "s", "s+", "b", "f", "fg", "?", "?v", "ad", "bf", "c1", "db", "dbw",
-		"f-", "fr", "tf", "/a", "/v", "/r", "/re", "aav", "aep", "aef", "afb",
+		"f-", "fr", "tf", "/a", "/v", "/r", "/re", "aav", "aep", "aef",
 		"afc", "axg", "axt", "axf", "dcu", "ag", "agfl", "aecu", "aesu", "aeim", NULL
 	};
 	const char *evals[] = {

@@ -1,5 +1,24 @@
+debug_plugins = [
+  'bf',
+  'bochs',
+  'esil',
+  'gdb',
+  'io',
+  'native',
+  'null',
+  'rap',
+  'winkd'
+]
+
+if get_option('use_gpl')
+  debug_plugins += 'qnx'
+endif
+
+if host_machine.system() == 'windows'
+  debug_plugins += 'windbg'
+endif
+
 rz_debug_sources = [
-  'arg.c',
   'ddesc.c',
   'debug.c',
   'dreg.c',
@@ -20,7 +39,6 @@ rz_debug_sources = [
   'p/debug_io.c',
   'p/debug_native.c',
   'p/debug_null.c',
-  'p/debug_qnx.c',
   'p/debug_rap.c',
   'p/debug_winkd.c',
   #'p/native/arm.c',
@@ -34,10 +52,9 @@ rz_debug_sources = [
 ]
 
 rz_debug_deps = [
-  qnx_dep,
-  gdb_dep,
-  bochs_dep,
-  winkd_dep,
+  dependency('rzgdb'),
+  dependency('rzbochs'),
+  dependency('rzwinkd'),
   rz_util_dep,
   rz_cons_dep,
   rz_hash_dep,
@@ -48,6 +65,11 @@ rz_debug_deps = [
   rz_egg_dep,
   rz_analysis_dep
 ]
+
+if get_option('use_gpl')
+  rz_debug_deps += dependency('rzqnx')
+  rz_debug_sources += 'p/debug_qnx.c'
+endif
 
 if host_machine.system() == 'linux' or host_machine.system() == 'android'
   rz_debug_sources += ['p/native/linux/linux_debug.c']
@@ -63,7 +85,7 @@ if host_machine.system() == 'windows'
     'p/native/windows/windows_debug.c',
     'p/native/windows/windows_message.c',
   ]
-  rz_debug_deps += w32dbg_wrap_dep
+  rz_debug_deps += dependency('rzw32dbg_wrap')
 endif
 
 if host_machine.system() != 'windows'
@@ -104,11 +126,14 @@ rz_debug = library('rz_debug', rz_debug_sources,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
   link_args: library_linkflags,
-  soversion: rizin_libversion
+  soversion: rizin_libversion,
+  name_suffix: lib_name_suffix,
+  name_prefix: lib_name_prefix,
 )
 
 rz_debug_dep = declare_dependency(link_with: rz_debug,
                                  include_directories: rz_debug_inc)
+meson.override_dependency('rz_debug', rz_debug_dep)
 
 pkgconfig_mod.generate(rz_debug,
   subdirs: 'librz',
@@ -126,5 +151,26 @@ pkgconfig_mod.generate(rz_debug,
     'rz_cons',
     'rz_egg'
   ],
-  description: 'rizin foundation libraries'
+  description: 'rizin foundation libraries',
+  variables: [
+    'plugindir=@0@'.format(rizin_plugins),
+  ],
 )
+
+if not is_static_libs_only
+  conf = configuration_data()
+  conf.set('RZ_VERSION', rizin_version)
+  conf.set('RIZIN_MODULE', rz_debug.name())
+  conf.set('RIZIN_MODULE_DEPS', ' '.join(['rz_util', 'rz_hash', 'rz_reg', 'rz_syscall', 'rz_analysis', 'rz_io', 'rz_bp', 'rz_cons', 'rz_egg']))
+  conf.set('PACKAGE_RELATIVE_PATH', cmake_package_relative_path)
+  conf.set('INSTALL_INCDIR', rizin_incdir)
+  conf.set('INSTALL_LIBDIR', rizin_libdir)
+  conf.set('INSTALL_PLUGDIR', rizin_plugins)
+  conf.set('rizin_libname', rz_debug.name())
+  cmake_mod.configure_package_config_file(
+    name: conf.get('rizin_libname'),
+    input: '../RzModulesConfig.cmake.in',
+    install_dir: rizin_cmakedir / conf.get('rizin_libname'),
+    configuration: conf,
+  )
+endif

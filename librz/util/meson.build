@@ -33,7 +33,6 @@ rz_util_sources = [
   'path.c',
   'print.c',
   'punycode.c',
-  'qrcode.c',
   'queue.c',
   'asn1.c',
   'astr.c',
@@ -82,7 +81,7 @@ rz_util_sources = [
   'luhn.c'
 ]
 
-rz_util_deps = [ldl, lrt, mth, pth, utl, sdb_dep, zlib_dep, platform_deps]
+rz_util_deps = [ldl, lrt, mth, pth, utl, sdb_dep, zlib_dep] + platform_deps
 if ['freebsd', 'netbsd', 'haiku', 'dragonfly'].contains(host_machine.system())
   # backtrace_symbols_fd requires -lexecinfo
   rz_util_deps += [cc.find_library('execinfo', static: is_static_build)]
@@ -103,7 +102,9 @@ rz_util = library('rz_util', rz_util_sources,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
   link_args: library_linkflags,
-  soversion: rizin_libversion
+  soversion: rizin_libversion,
+  name_suffix: lib_name_suffix,
+  name_prefix: lib_name_prefix,
 )
 
 rz_util_dep = declare_dependency(
@@ -113,6 +114,7 @@ rz_util_dep = declare_dependency(
     sdb_dep.partial_dependency(includes: true),
   ]
 )
+meson.override_dependency('rz_util', rz_util_dep)
 
 pkgconfig_mod.generate(rz_util,
   subdirs: ['librz', 'librz/sdb'],
@@ -121,3 +123,21 @@ pkgconfig_mod.generate(rz_util,
   filebase: 'rz_util',
   description: 'rizin foundation libraries'
 )
+
+if not is_static_libs_only
+  conf = configuration_data()
+  conf.set('RZ_VERSION', rizin_version)
+  conf.set('RIZIN_MODULE', rz_util.name())
+  conf.set('RIZIN_MODULE_DEPS', ' '.join([]))
+  conf.set('PACKAGE_RELATIVE_PATH', cmake_package_relative_path)
+  conf.set('INSTALL_INCDIR', rizin_incdir)
+  conf.set('INSTALL_LIBDIR', rizin_libdir)
+  conf.set('INSTALL_PLUGDIR', rizin_plugins)
+  conf.set('rizin_libname', rz_util.name())
+  cmake_mod.configure_package_config_file(
+    name: conf.get('rizin_libname'),
+    input: '../RzModulesConfig.cmake.in',
+    install_dir: rizin_cmakedir / conf.get('rizin_libname'),
+    configuration: conf,
+  )
+endif

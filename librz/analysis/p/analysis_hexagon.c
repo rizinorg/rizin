@@ -27,7 +27,7 @@ RZ_API int hexagon_v6_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, cons
 	return op->size;
 }
 
-RZ_API bool set_reg_profile(RzAnalysis *analysis) {
+RZ_API char *get_reg_profile(RzAnalysis *analysis) {
 	const char *p =
 
 		"=PC	pc\n"
@@ -375,7 +375,7 @@ RZ_API bool set_reg_profile(RzAnalysis *analysis) {
 		"gpr	s75:74	.64	13676	0\n"
 		"gpr	s77:76	.64	13684	0\n"
 		"gpr	s79:78	.64	13692	0\n";
-	return rz_reg_set_profile_string(analysis->reg, p);
+	return strdup(p);
 }
 
 RzAnalysisPlugin rz_analysis_plugin_hexagon = {
@@ -386,7 +386,7 @@ RzAnalysisPlugin rz_analysis_plugin_hexagon = {
 	.bits = 32,
 	.op = hexagon_v6_op,
 	.esil = false,
-	.set_reg_profile = set_reg_profile,
+	.get_reg_profile = get_reg_profile,
 };
 
 #ifndef RZ_PLUGIN_INCORE

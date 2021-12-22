@@ -25,3 +25,11 @@ nth vaddr bind type lib name
 []
 EOF
 RUN
+
+NAME=ELF/Dwarf: abbrev empty
+FILE=bins/elf/dwarf_fuzzed_abbrev_empty
+CMDS=<<EOF
+aaa
+EOF
+EXPECT=
+RUN

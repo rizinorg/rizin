@@ -704,17 +704,7 @@ static bool cb_asmbits(void *user, void *data) {
 	}
 	if (core->dbg && core->analysis && core->analysis->cur) {
 		rz_debug_set_arch(core->dbg, core->analysis->cur->arch, bits);
-		bool load_from_debug = rz_config_get_b(core->config, "cfg.debug");
-		if (load_from_debug) {
-			if (core->dbg->cur && core->dbg->cur->reg_profile) {
-				char *rp = core->dbg->cur->reg_profile(core->dbg);
-				rz_reg_set_profile_string(core->dbg->reg, rp);
-				rz_reg_set_profile_string(core->analysis->reg, rp);
-				free(rp);
-			}
-		} else {
-			(void)rz_analysis_set_reg_profile(core->analysis);
-		}
+		rz_analysis_set_reg_profile(core->analysis);
 	}
 	rz_core_analysis_cc_init(core);
 	const char *asmos = rz_config_get(core->config, "asm.os");
@@ -2901,6 +2891,16 @@ static bool cb_dbg_verbose(void *user, void *data) {
 	return true;
 }
 
+static bool cb_flirt(void *user, void *data) {
+	rz_return_val_if_fail(data, false);
+	RzConfigNode *node = (RzConfigNode *)data;
+	if (*node->value == '?') {
+		print_node_options(node);
+		return false;
+	}
+	return true;
+}
+
 RZ_API int rz_core_config_init(RzCore *core) {
 	int i;
 	char buf[128], *p, *tmpdir;
@@ -3030,6 +3030,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	n = NODECB("analysis.cpp.abi", "itanium", &cb_analysis_cpp_abi);
 	SETDESC(n, "Select C++ ABI (Compiler)");
 	SETOPTIONS(n, "itanium", "msvc", NULL);
+	SETB("analysis.apply.signature", true, "enables/disables auto-applying signatures to the loaded binary (see also flirt.sigdb.path)");
 
 #if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
 	SETCB("dbg.malloc", "glibc", &cb_malloc, "Choose malloc structure parser");
@@ -3783,9 +3784,24 @@ RZ_API int rz_core_config_init(RzCore *core) {
 		NULL);
 
 	/* RzIL config */
-	SETB("rzil.status.compact", true, "enables/disables compact printing when aezv is called");
 	SETB("rzil.step.events.read", false, "enables/disables printing aezse read event");
 	SETB("rzil.step.events.write", true, "enables/disables printing aezse write event");
+
+	/* FLIRT config */
+	SETBPREF("flirt.sig.library", RZ_FLIRT_LIBRARY_NAME_DFL, "FLIRT library name for sig format");
+	SETI("flirt.sig.version", 10, "FLIRT version for sig format");
+	n = NODECB("flirt.sig.file", "all", &cb_flirt);
+	SETDESC(n, "FLIRT file list (comma separated) for sig format");
+	SETOPTIONS(n, "msdos", "win", "os2", "netware", "unix", "other", "all", "none", NULL);
+	n = NODECB("flirt.sig.os", "all", &cb_flirt);
+	SETDESC(n, "FLIRT operating system list (comma separated) for sig format");
+	SETOPTIONS(n,
+		"aixar", "aout", "ar", "bin", "coff", "dos:com", "dos:com:old", "dos:exe", "dos:exe:old",
+		"dosdrv", "elf", "intelhex", "le", "loader", "lx", "moshex", "ne", "nlm", "omf", "omflib",
+		"pe", "pilot", "srec", "w32run", "zip", "all", "none", NULL);
+	SETB("flirt.sig.deflate", false, "enables/disables FLIRT zlib compression when creating a signature file (available only for .sig files)");
+	SETI("flirt.node.optimize", RZ_FLIRT_NODE_OPTIMIZE_MAX, "FLIRT optimization option when creating a signature file (none: 0, normal: 1, smallest: 2)");
+	SETPREF("flirt.sigdb.path", "", "Rizin sigdb location on the filesystem.");
 
 	rz_config_lock(cfg, true);
 	return true;

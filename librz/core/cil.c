@@ -183,7 +183,7 @@ RZ_IPI void rz_core_analysis_esil_init_mem(RzCore *core, const char *name, ut64 
 	rz_reg_set_value_by_role(core->analysis->reg, RZ_REG_NAME_SP, addr + (size / 2)); // size / 2 to have free space in both directions
 	rz_reg_set_value_by_role(core->analysis->reg, RZ_REG_NAME_BP, addr + (size / 2));
 	rz_reg_set_value_by_role(core->analysis->reg, RZ_REG_NAME_PC, current_offset);
-	rz_core_regs2flags(core);
+	rz_core_reg_update_flags(core);
 	esil->stack_addr = addr;
 	esil->stack_size = size;
 	initialize_stack(core, addr, size);
@@ -245,17 +245,17 @@ RZ_IPI void rz_core_analysis_esil_step_over(RzCore *core) {
 	}
 	rz_core_esil_step(core, until_addr, NULL, NULL, false);
 	rz_analysis_op_free(op);
-	rz_core_regs2flags(core);
+	rz_core_reg_update_flags(core);
 }
 
 RZ_IPI void rz_core_analysis_esil_step_over_until(RzCore *core, ut64 addr) {
 	rz_core_esil_step(core, addr, NULL, NULL, true);
-	rz_core_regs2flags(core);
+	rz_core_reg_update_flags(core);
 }
 
 RZ_IPI void rz_core_analysis_esil_step_over_untilexpr(RzCore *core, const char *expr) {
 	rz_core_esil_step(core, UT64_MAX, expr, NULL, true);
-	rz_core_regs2flags(core);
+	rz_core_reg_update_flags(core);
 }
 
 RZ_IPI void rz_core_analysis_esil_references_all_functions(RzCore *core) {
@@ -282,7 +282,7 @@ RZ_IPI void rz_core_analysis_esil_emulate(RzCore *core, ut64 addr, ut64 until_ad
 	int ret, bsize = RZ_MAX(4096, core->blocksize);
 	const int mininstrsz = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
 	const int minopcode = RZ_MAX(1, mininstrsz);
-	const char *pc = rz_reg_get_name(core->dbg->reg, RZ_REG_NAME_PC);
+	const char *pc = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
 	int stacksize = rz_config_get_i(core->config, "esil.stack.depth");
 	int iotrap = rz_config_get_i(core->config, "esil.iotrap");
 	ut64 addrsize = rz_config_get_i(core->config, "esil.addr.size");
@@ -300,10 +300,10 @@ RZ_IPI void rz_core_analysis_esil_emulate(RzCore *core, ut64 addr, ut64 until_ad
 		return;
 	}
 	if (addr == -1) {
-		addr = rz_reg_getv(core->dbg->reg, pc);
+		addr = rz_reg_getv(core->analysis->reg, pc);
 	}
 	(void)rz_analysis_esil_setup(core->analysis->esil, core->analysis, 0, 0, 0); // int romem, int stats, int nonull) {
-	ut64 cursp = rz_reg_getv(core->dbg->reg, "SP");
+	ut64 cursp = rz_reg_getv(core->analysis->reg, "SP");
 	ut64 oldoff = core->offset;
 	const ut64 flags = RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT | RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_DISASM;
 	for (i = 0, j = 0; j < off; i++, j++) {
@@ -330,7 +330,6 @@ RZ_IPI void rz_core_analysis_esil_emulate(RzCore *core, ut64 addr, ut64 until_ad
 			// nothing
 		} else {
 			rz_reg_setv(core->analysis->reg, "PC", aop.addr + aop.size);
-			rz_reg_setv(core->dbg->reg, "PC", aop.addr + aop.size);
 			const char *e = RZ_STRBUF_SAFEGET(&aop.esil);
 			if (e && *e) {
 				// eprintf ("   0x%08llx %d  %s\n", aop.addr, ret, aop.mnemonic);
@@ -346,7 +345,7 @@ RZ_IPI void rz_core_analysis_esil_emulate(RzCore *core, ut64 addr, ut64 until_ad
 		rz_analysis_op_fini(&aop);
 	}
 	rz_core_seek(core, oldoff, true);
-	rz_reg_setv(core->dbg->reg, "SP", cursp);
+	rz_reg_setv(core->analysis->reg, "SP", cursp);
 	free(buf);
 }
 
@@ -360,13 +359,13 @@ RZ_IPI void rz_core_analysis_esil_emulate_bb(RzCore *core) {
 }
 
 RZ_IPI int rz_core_analysis_set_reg(RzCore *core, const char *regname, ut64 val) {
-	RzRegItem *r = rz_reg_get(core->dbg->reg, regname, -1);
+	RzRegItem *r = rz_reg_get(core->analysis->reg, regname, -1);
 	if (!r) {
 		int role = rz_reg_get_name_idx(regname);
 		if (role != -1) {
-			const char *alias = rz_reg_get_name(core->dbg->reg, role);
+			const char *alias = rz_reg_get_name(core->analysis->reg, role);
 			if (alias) {
-				r = rz_reg_get(core->dbg->reg, alias, -1);
+				r = rz_reg_get(core->analysis->reg, alias, -1);
 			}
 		}
 	}
@@ -374,9 +373,8 @@ RZ_IPI int rz_core_analysis_set_reg(RzCore *core, const char *regname, ut64 val)
 		eprintf("ar: Unknown register '%s'\n", regname);
 		return -1;
 	}
-	rz_reg_set_value(core->dbg->reg, r, val);
-	rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ANY, true);
-	rz_core_debug_regs2flags(core);
+	rz_reg_set_value(core->analysis->reg, r, val);
+	rz_core_reg_update_flags(core);
 	return 0;
 }
 
@@ -422,51 +420,219 @@ RZ_IPI void rz_core_analysis_rzil_reinit(RzCore *core) {
 	}
 }
 
-static void rzil_print_register(int padding, const char *reg_name, RzBitVector *number, RzStrBuf *sb) {
-	char *hex = rz_bv_as_hex_string(number);
-	if (sb) {
-		rz_strbuf_appendf(sb, " %s: %s ", reg_name, hex);
-		if (rz_strbuf_length(sb) > 95) {
-			rz_cons_printf("%s\n", rz_strbuf_get(sb));
-			rz_strbuf_fini(sb);
-		}
+/**
+ * \brief Set a vm variable from user input
+ * \return whether the set succeeded
+ *
+ * Sets the given var, or "PC" to the given value.
+ * The type of the variable is handled dynamically.
+ * This is intended for setting from user input only.
+ */
+RZ_IPI bool rz_core_analysis_rzil_vm_set(RzCore *core, const char *var_name, ut64 value) {
+	rz_return_val_if_fail(core && core->analysis && var_name, false);
+
+	RzAnalysisRzil *rzil = core->analysis->rzil;
+	if (!rzil || !rzil->vm) {
+		RZ_LOG_ERROR("RzIL: Run 'aezi' first to initialize the VM\n");
+		return false;
+	}
+
+	bool found = false;
+	RzBitVector *bv = NULL;
+
+	if (!strcmp(var_name, "PC")) {
+		found = true;
+		bv = rz_bv_new_from_ut64(rzil->vm->pc->len, value);
+		rz_bv_free(rzil->vm->pc);
+		rzil->vm->pc = bv;
 	} else {
-		const char *arrow = !rz_bv_is_zero_vector(number) ? " <--" : "";
-		rz_cons_printf("%*s: %s%s\n", padding, reg_name, hex, arrow);
+		RzILVal *oldval = NULL;
+		RzILVal *newval = NULL;
+		RzILVar *var = NULL;
+		void **it = NULL;
+		rz_pvector_foreach (&rzil->vm->vm_global_variable_list, it) {
+			var = *it;
+			if (var_name && strcmp(var_name, var->var_name)) {
+				continue;
+			}
+			found = true;
+			oldval = rz_il_hash_find_val_by_var(rzil->vm, var);
+			switch (oldval->type) {
+			case RZIL_VAR_TYPE_BV:
+				bv = rz_bv_new_from_ut64(oldval->data.bv->len, value);
+				newval = rz_il_vm_create_value_bitv(rzil->vm, bv);
+				break;
+			case RZIL_VAR_TYPE_BOOL:
+				newval = rz_il_vm_create_value_bool(rzil->vm, value);
+				break;
+			case RZIL_VAR_TYPE_UNK:
+				RZ_LOG_ERROR("RzIL: cannot set an Unknown type via command line\n");
+				break;
+			default:
+				rz_warn_if_reached();
+				break;
+			}
+
+			rz_il_hash_cancel_binding(rzil->vm, var);
+			rz_il_hash_bind(rzil->vm, var, newval);
+			break;
+		}
+	}
+	return found;
+}
+
+typedef struct il_print_t {
+	RzOutputMode mode;
+	const char *name;
+	void *ptr;
+} ILPrint;
+#define p_sb(x)  ((RzStrBuf *)x)
+#define p_tbl(x) ((RzTable *)x)
+#define p_pj(x)  ((PJ *)x)
+
+static void rzil_print_register_bool(bool value, ILPrint *p) {
+	switch (p->mode) {
+	case RZ_OUTPUT_MODE_STANDARD:
+		rz_strbuf_appendf(p_sb(p->ptr), " %s: %s", p->name, rz_str_bool(value));
+		break;
+	case RZ_OUTPUT_MODE_TABLE:
+		rz_table_add_rowf(p_tbl(p->ptr), "sss", p->name, "bool", rz_str_bool(value));
+		break;
+	case RZ_OUTPUT_MODE_JSON:
+		pj_kb(p_pj(p->ptr), p->name, value);
+		break;
+	default:
+		rz_cons_printf("%s\n", rz_str_bool(value));
+		break;
+	}
+}
+
+static void rzil_print_register_bitv(RzBitVector *number, ILPrint *p) {
+	char *hex = rz_bv_as_hex_string(number);
+	switch (p->mode) {
+	case RZ_OUTPUT_MODE_STANDARD:
+		rz_strbuf_appendf(p_sb(p->ptr), " %s: %s", p->name, hex);
+		break;
+	case RZ_OUTPUT_MODE_TABLE:
+		rz_table_add_rowf(p_tbl(p->ptr), "sss", p->name, "bitv", hex);
+		break;
+	case RZ_OUTPUT_MODE_JSON:
+		pj_ks(p_pj(p->ptr), p->name, hex);
+		break;
+	default:
+		rz_cons_printf("%s\n", hex);
+		break;
 	}
 	free(hex);
 }
 
-RZ_IPI void rz_core_analysis_rzil_vm_status(RzCore *core) {
+static void rzil_print_register_unk(ILPrint *p) {
+	switch (p->mode) {
+	case RZ_OUTPUT_MODE_STANDARD:
+		rz_strbuf_appendf(p_sb(p->ptr), " %s: unk", p->name);
+		break;
+	case RZ_OUTPUT_MODE_TABLE:
+		rz_table_add_rowf(p_tbl(p->ptr), "sss", p->name, "unkn", "");
+		break;
+	case RZ_OUTPUT_MODE_JSON:
+		pj_knull(p_pj(p->ptr), p->name);
+		break;
+	default:
+		rz_cons_printf("unknown\n");
+		break;
+	}
+}
+
+RZ_IPI void rz_core_analysis_rzil_vm_status(RzCore *core, const char *var_name, RzOutputMode mode) {
 	RzAnalysisRzil *rzil = core->analysis->rzil;
 	if (!rzil || !rzil->vm) {
-		RZ_LOG_ERROR("RzIL: the VM is not initialized.")
+		RZ_LOG_ERROR("RzIL: Run 'aezi' first to initialize the VM\n");
 		return;
 	}
 
-	bool compact = rz_config_get_b(core->config, "rzil.status.compact");
+	ILPrint p = { 0 };
+	p.mode = mode;
 
-	int namelen = 2;
-	for (ut32 i = 0; i < rzil->vm->var_count; ++i) {
-		RzILVar *var = rzil->vm->vm_global_variable_list[i];
-		int len = strlen(var->var_name);
-		namelen = RZ_MAX(namelen, len);
+	switch (mode) {
+	case RZ_OUTPUT_MODE_STANDARD:
+		p.ptr = rz_strbuf_new("");
+		break;
+	case RZ_OUTPUT_MODE_TABLE:
+		p.ptr = rz_table_new();
+		rz_table_set_columnsf(p_tbl(p.ptr), "sss", "variable", "type", "value");
+		break;
+	case RZ_OUTPUT_MODE_JSON:
+		p.ptr = pj_new();
+		pj_o(p_pj(p.ptr));
+		break;
+	default:
+		break;
 	}
-	rz_cons_printf("RzIL VM status\n");
-	RzStrBuf *sb = compact ? rz_strbuf_new("") : NULL;
 
-	rzil_print_register(namelen, "PC", rzil->vm->pc, sb);
-	for (ut32 i = 0; i < rzil->vm->var_count; ++i) {
-		RzILVar *var = rzil->vm->vm_global_variable_list[i];
+	if (!var_name || !strcmp(var_name, "PC")) {
+		p.name = "PC";
+		rzil_print_register_bitv(rzil->vm->pc, &p);
+	}
+
+	void **it;
+	rz_pvector_foreach (&rzil->vm->vm_global_variable_list, it) {
+		RzILVar *var = *it;
+		if (var_name && strcmp(var_name, var->var_name)) {
+			continue;
+		}
+		p.name = var->var_name;
 		RzILVal *val = rz_il_hash_find_val_by_var(rzil->vm, var);
-		rzil_print_register(namelen, var->var_name, val->data.bv, sb);
+		switch (val->type) {
+		case RZIL_VAR_TYPE_BV:
+			rzil_print_register_bitv(val->data.bv, &p);
+			break;
+		case RZIL_VAR_TYPE_BOOL:
+			rzil_print_register_bool(val->data.b->b, &p);
+			break;
+		case RZIL_VAR_TYPE_UNK:
+			rzil_print_register_unk(&p);
+			break;
+		default:
+			rz_warn_if_reached();
+			break;
+		}
+		if (var_name) {
+			break;
+		}
+		if (rz_strbuf_length(p_sb(p.ptr)) > 95) {
+			rz_cons_printf("%s\n", rz_strbuf_get(p_sb(p.ptr)));
+			rz_strbuf_fini(p_sb(p.ptr));
+		}
 	}
 
-	if (sb && rz_strbuf_length(sb) > 0) {
-		rz_cons_printf("%s\n", rz_strbuf_get(sb));
+	char *out = NULL;
+	switch (mode) {
+	case RZ_OUTPUT_MODE_STANDARD:
+		if (rz_strbuf_length(p_sb(p.ptr)) > 0) {
+			out = rz_strbuf_drain(p_sb(p.ptr));
+		} else {
+			rz_strbuf_free(p_sb(p.ptr));
+			return;
+		}
+		break;
+	case RZ_OUTPUT_MODE_TABLE:
+		out = rz_table_tostring((RzTable *)p.ptr);
+		rz_table_free(p_tbl(p.ptr));
+		break;
+	case RZ_OUTPUT_MODE_JSON:
+		pj_end(p_pj(p.ptr));
+		out = pj_drain(p_pj(p.ptr));
+		break;
+	default:
+		return;
 	}
-	rz_strbuf_free(sb);
+
+	rz_cons_printf("%s\n", out);
+	free(out);
 }
+#undef p_sb
+#undef p_tbl
+#undef p_pj
 
 // step a list of ct_opcode at a given address
 RZ_IPI void rz_core_rzil_step(RzCore *core) {
@@ -524,7 +690,8 @@ RZ_IPI void rz_core_analysis_rzil_step_with_events(RzCore *core, PJ *pj) {
 	bool evt_write = rz_config_get_b(core->config, "rzil.step.events.write");
 
 	if (!evt_read && !evt_write) {
-		RZ_LOG_ERROR("cannot print events if all the events are disabled.");
+		RZ_LOG_ERROR("RzIL: cannot print events when all the events are disabled.");
+		RZ_LOG_ERROR("RzIL: please set 'rzil.step.events.read' or/and 'rzil.step.events.write' to true and try again.");
 		return;
 	}
 
@@ -537,11 +704,11 @@ RZ_IPI void rz_core_analysis_rzil_step_with_events(RzCore *core, PJ *pj) {
 		} else if (!evt_write && (evt->type != RZIL_EVENT_MEM_READ && evt->type != RZIL_EVENT_VAR_READ)) {
 			continue;
 		}
-		if (pj) {
-			rz_il_event_json(evt, pj);
-		} else {
+		if (!pj) {
 			rz_il_event_stringify(evt, sb);
 			rz_strbuf_append(sb, "\n");
+		} else {
+			rz_il_event_json(evt, pj);
 		}
 	}
 	if (!pj) {

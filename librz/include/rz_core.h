@@ -34,6 +34,7 @@
 #include <rz_util/rz_annotated_code.h>
 #include <rz_heap_glibc.h>
 #include <rz_windows_heap.h>
+#include <rz_flirt.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -574,13 +575,18 @@ RZ_API int rz_core_write_op(RzCore *core, const char *arg, char op);
 RZ_API ut8 *rz_core_transform_op(RzCore *core, const char *arg, char op);
 RZ_API ut32 rz_core_file_cur_fd(RzCore *core);
 
+/* creg.c */
+RZ_API RzReg *rz_core_reg_default(RzCore *core);
+RZ_API ut64 rz_core_reg_getv_by_role_or_name(RzCore *core, const char *name);
+RZ_API bool rz_core_reg_set_by_role_or_name(RzCore *core, const char *name, ut64 num);
+
 /* cdebug.c */
+RZ_API bool rz_core_is_debug(RzCore *core);
 RZ_API bool rz_core_debug_step_one(RzCore *core, int times);
 RZ_API bool rz_core_debug_continue_until(RzCore *core, ut64 addr, ut64 to);
 RZ_API void rz_core_debug_bp_add_noreturn_func(RzCore *core);
 
-RZ_API void rz_core_debug_ri(RzCore *core, RzReg *reg, int mode);
-RZ_API void rz_core_debug_rr(RzCore *core, RzReg *reg, int mode);
+RZ_API void rz_core_debug_ri(RzCore *core);
 RZ_API void rz_core_debug_set_register_flags(RzCore *core);
 RZ_API void rz_core_debug_clear_register_flags(RzCore *core);
 
@@ -640,6 +646,8 @@ RZ_API char *rz_core_disassemble_instr(RzCore *core, ut64 addr, int l);
 RZ_API char *rz_core_disassemble_bytes(RzCore *core, ut64 addr, int b);
 
 /* carg.c */
+RZ_API RZ_DEPRECATE ut64 rz_core_arg_get(RzCore *core, const char *cc, int num);
+RZ_API RZ_DEPRECATE bool rz_coret_arg_set(RzCore *core, const char *cc, int num, ut64 val);
 RZ_API RzList *rz_core_get_func_args(RzCore *core, const char *func_name);
 RZ_API void rz_core_print_func_args(RzCore *core);
 RZ_API char *resolve_fcn_name(RzAnalysis *analysis, const char *func_name);
@@ -683,9 +691,7 @@ RZ_API int rz_core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, i
 RZ_API char *rz_core_analysis_fcn_autoname(RzCore *core, ut64 addr, int dump, int mode);
 RZ_API void rz_core_analysis_autoname_all_fcns(RzCore *core);
 RZ_API void rz_core_analysis_autoname_all_golang_fcns(RzCore *core);
-RZ_DEPRECATE RZ_API int rz_core_analysis_fcn_list(RzCore *core, const char *input, const char *rad);
 RZ_API char *rz_core_analysis_fcn_name(RzCore *core, RzAnalysisFunction *fcn);
-RZ_API ut64 rz_core_analysis_fcn_list_size(RzCore *core);
 RZ_API int rz_core_analysis_fcn_clean(RzCore *core, ut64 addr);
 RZ_API int rz_core_print_bb_custom(RzCore *core, RzAnalysisFunction *fcn);
 RZ_API int rz_core_print_bb_gml(RzCore *core, RzAnalysisFunction *fcn);
@@ -693,6 +699,8 @@ RZ_API bool rz_core_analysis_graph(RzCore *core, ut64 addr, int opts);
 RZ_API RzList *rz_core_analysis_graph_to(RzCore *core, ut64 addr, int n);
 RZ_API int rz_core_analysis_all(RzCore *core);
 RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *dh_orig);
+RZ_API bool rz_core_analysis_sigdb_apply(RzCore *core, int *n_applied, const char *filter);
+RZ_API void rz_core_analysis_sigdb_print(RzCore *core);
 RZ_API RzList *rz_core_analysis_cycles(RzCore *core, int ccl);
 RZ_API RzList *rz_core_analysis_fcn_get_calls(RzCore *core, RzAnalysisFunction *fcn); // get all calls from a function
 RZ_API void rz_cmd_analysis_calls(RzCore *core, const char *input, bool printCommands, bool importsOnly);
@@ -1103,7 +1111,13 @@ RZ_API RzCoreAutocomplete *rz_core_autocomplete_find(RzCoreAutocomplete *parent,
 RZ_API bool rz_core_autocomplete_remove(RzCoreAutocomplete *parent, const char *cmd);
 RZ_API void rz_core_analysis_propagate_noreturn(RzCore *core, ut64 addr);
 
-RZ_API void rz_core_flirt_dump(RZ_NONNULL const char *flirt_file);
+RZ_API bool rz_core_flirt_dump_file(RZ_NONNULL const char *flirt_file);
+RZ_API bool rz_core_flirt_create_file(RZ_NONNULL RzCore *core, RZ_NONNULL const char *output_file, RZ_NULLABLE ut32 *written_nodes);
+RZ_API bool rz_core_flirt_convert_file(RZ_NONNULL RzCore *core, RZ_NONNULL const char *input_file, RZ_NONNULL const char *ouput_file);
+RZ_API ut8 rz_core_flirt_arch_from_name(RZ_NONNULL const char *arch);
+RZ_API ut32 rz_core_flirt_file_from_option_list(RZ_NONNULL const char *file_list);
+RZ_API ut16 rz_core_flirt_os_from_option_list(RZ_NONNULL const char *os_list);
+RZ_API ut16 rz_core_flirt_app_from_option_list(RZ_NONNULL const char *app_list);
 
 /* PLUGINS */
 extern RzCorePlugin rz_core_plugin_java;

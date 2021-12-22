@@ -715,7 +715,7 @@ RZ_API void rz_core_link_stroff(RzCore *core, RzAnalysisFunction *fcn) {
 		ut64 curpc = rz_reg_getv(esil->analysis->reg, pc_name);
 		int stacksz = rz_core_get_stacksz(core, fcn->addr, curpc);
 		if (stacksz > 0) {
-			rz_reg_arena_zero(esil->analysis->reg); // clear prev reg values
+			rz_reg_arena_zero(esil->analysis->reg, RZ_REG_TYPE_ANY); // clear prev reg values
 			rz_reg_set_value(esil->analysis->reg, sp, spval + stacksz);
 		}
 	} else {
@@ -832,7 +832,7 @@ beach:
 	rz_core_seek(core, oldoff, true);
 	rz_analysis_esil_free(esil);
 	rz_reg_arena_pop(core->analysis->reg);
-	rz_core_regs2flags(core);
+	rz_core_reg_update_flags(core);
 	rz_cons_break_pop();
 	free(buf);
 }

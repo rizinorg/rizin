@@ -1,3 +1,68 @@
+bin_plugins = [
+  'any',
+  'art',
+  'avr',
+  'bf',
+  'bflt',
+  'bios',
+  'bootimg',
+  'cgc',
+  'coff',
+  'dex',
+  'dmp64',
+  'dol',
+  'dyldcache',
+  'elf',
+  'elf64',
+  'java',
+  'le',
+  'luac',
+  'mach0',
+  'mach064',
+  'mbn',
+  'mdmp',
+  'menuet',
+  'mz',
+  'ne',
+  'nes',
+  'nin3ds',
+  'ninds',
+  'ningb',
+  'ningba',
+  'nro',
+  'nso',
+  'omf',
+  'qnx',
+  'p9',
+  'pe',
+  'pe64',
+  'pebble',
+  'prg',
+  'psxexe',
+  'pyc',
+  'sfc',
+  'smd',
+  'sms',
+  'spc700',
+  'symbols',
+  'te',
+  'vsf',
+  'wasm',
+  'xbe',
+  'xnu_kernelcache',
+  'z64',
+  'zimg',
+]
+
+bin_ldr_plugins = [
+  'ldr_linux',
+]
+
+bin_xtr_plugins = [
+  'xtr_fatmach0',
+  'xtr_sep64',
+]
+
 rz_bin_sources = [
   'bin.c',
   'bin_language.c',
@@ -178,11 +243,14 @@ rz_bin = library('rz_bin', rz_bin_sources,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
   link_args: library_linkflags,
-  soversion: rizin_libversion
+  soversion: rizin_libversion,
+  name_suffix: lib_name_suffix,
+  name_prefix: lib_name_prefix,
 )
 
 rz_bin_dep = declare_dependency(link_with: rz_bin,
                                include_directories: rz_bin_inc)
+meson.override_dependency('rz_bin', rz_bin_dep)
 
 pkgconfig_mod.generate(rz_bin,
   subdirs: 'librz',
@@ -196,5 +264,28 @@ pkgconfig_mod.generate(rz_bin,
     'rz_syscall',
     'rz_type'
   ],
-  description: 'rizin foundation libraries'
+  description: 'rizin foundation libraries',
+  variables: [
+    'plugindir=@0@'.format(rizin_plugins),
+  ],
 )
+
+if not is_static_libs_only
+  conf = configuration_data()
+  conf.set('RZ_VERSION', rizin_version)
+  conf.set('RIZIN_MODULE', rz_bin.name())
+  conf.set('RIZIN_MODULE_DEPS', ' '.join(['rz_util', 'rz_io', 'rz_socket', 'rz_syscall', 'rz_type']))
+  conf.set('PACKAGE_RELATIVE_PATH', cmake_package_relative_path)
+  conf.set('INSTALL_INCDIR', rizin_incdir)
+  conf.set('INSTALL_LIBDIR', rizin_libdir)
+  conf.set('INSTALL_PLUGDIR', rizin_plugins)
+  conf.set('rizin_libname', rz_bin.name())
+  cmake_mod.configure_package_config_file(
+    name: conf.get('rizin_libname'),
+    input: '../RzModulesConfig.cmake.in',
+    install_dir: rizin_cmakedir / conf.get('rizin_libname'),
+    configuration: conf,
+  )
+endif
+
+subdir('d')

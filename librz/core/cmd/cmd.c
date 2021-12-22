@@ -72,7 +72,6 @@ static RzCmdDescriptor *cmd_descriptor(const char *cmd, const char *help[]) {
 
 static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpseek);
 
-static void cmd_debug_reg(RzCore *core, const char *str);
 static bool lastcmd_repeat(RzCore *core, int next);
 
 #include "cmd_block.c"
@@ -89,6 +88,7 @@ static bool lastcmd_repeat(RzCore *core, int next);
 #include "cmd_eval.c"
 #include "cmd_interpret.c"
 #include "cmd_analysis.c"
+#include "cmd_regs.c"
 #include "cmd_open.c"
 #include "cmd_type.c"
 #include "cmd_info.c"
@@ -1629,7 +1629,7 @@ static int rz_core_cmd_subst(RzCore *core, char *cmd) {
 			// XXX: do not flush here, we need rz_cons_push () and rz_cons_pop()
 			rz_cons_flush();
 			// XXX: we must import register flags in C
-			rz_core_debug_regs2flags(core);
+			rz_core_reg_update_flags(core);
 			(void)rz_core_cmd0(core, cr);
 		}
 		free(cr);
@@ -2738,6 +2738,9 @@ static void foreach_pairs(RzCore *core, const char *cmd, const char *each) {
 	const char *arg;
 	int pair = 0;
 	for (arg = each;;) {
+		if (!arg) {
+			return;
+		}
 		char *next = strchr(arg, ' ');
 		if (next) {
 			*next = 0;
@@ -2848,11 +2851,12 @@ RZ_API int rz_core_cmd_foreach3(RzCore *core, const char *cmd, char *each) { // 
 		break;
 	case 'r': // @@@r
 	{
+		RzReg *reg = rz_core_reg_default(core);
 		ut64 offorig = core->offset;
 		for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 			RzRegItem *item;
 			ut64 value;
-			head = rz_reg_get_list(core->dbg->reg, i);
+			head = rz_reg_get_list(reg, i);
 			if (!head) {
 				continue;
 			}
@@ -2868,7 +2872,7 @@ RZ_API int rz_core_cmd_foreach3(RzCore *core, const char *cmd, char *each) { // 
 			}
 			const char *item_name;
 			rz_list_foreach (list, iter, item_name) {
-				value = rz_reg_getv(core->dbg->reg, item_name);
+				value = rz_reg_getv(reg, item_name);
 				rz_core_seek(core, value, true);
 				rz_cons_printf("%s: ", item_name);
 				rz_core_cmd0(core, cmd);
@@ -4103,7 +4107,8 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(redirect_stmt) {
 		} else {
 			old_alias_value = "";
 		}
-		new_alias_value = rz_str_newf("%s%s%s", start_char, old_alias_value, output);
+		new_alias_value = rz_str_newf("%s%s%s", start_char, old_alias_value, output ? output : "");
+		free(output);
 		rz_cmd_alias_set(state->core->rcmd, arg_str, new_alias_value, 1);
 		free(new_alias_value);
 		free(command_str);
@@ -5079,12 +5084,13 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_register_stmt) {
 	RzCore *core = state->core;
 	TSNode command = ts_node_named_child(node, 0);
 	ut64 offorig = core->offset;
+	RzReg *reg = rz_core_reg_default(core);
 	int i;
 	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 		RzRegItem *item;
 		ut64 value;
-		const RzList *head = rz_reg_get_list(core->dbg->reg, i);
+		const RzList *head = rz_reg_get_list(reg, i);
 		if (!head) {
 			continue;
 		}
@@ -5101,7 +5107,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_register_stmt) {
 		}
 		const char *item_name;
 		rz_list_foreach (list, iter, item_name) {
-			value = rz_reg_getv(core->dbg->reg, item_name);
+			value = rz_reg_getv(reg, item_name);
 			rz_core_seek(core, value, true);
 			rz_cons_printf("%s: ", item_name);
 			RzCmdStatus cmd_res = handle_ts_stmt_tmpseek(state, command);

@@ -285,6 +285,10 @@ commands:
                 args:
                   - name: varname
                     type: RZ_CMD_ARG_TYPE_FCN_VAR
+              - name: afvb-*
+                cname: analysis_function_vars_bp_del_all
+                summary: Delete all arguments/locals
+                args: []
               - name: afvbg
                 cname: analysis_function_vars_bp_getref
                 summary: Define var get reference
@@ -326,6 +330,10 @@ commands:
                 args:
                   - name: varname
                     type: RZ_CMD_ARG_TYPE_FCN_VAR
+              - name: afvr-*
+                cname: analysis_function_vars_regs_del_all
+                summary: Delete all register-based arguments/locals
+                args: []
               - name: afvrg
                 cname: analysis_function_vars_regs_getref
                 summary: Define register-based arguments and locals get references
@@ -383,6 +391,416 @@ commands:
                     type: RZ_CMD_ARG_TYPE_RZNUM
                   - name: addr
                     type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: afl
+        summary: List functions
+        subcommands:
+          - name: afl
+            summary: List all functions
+            cname: analysis_function_list
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_LONG
+              - RZ_OUTPUT_MODE_JSON
+              - RZ_OUTPUT_MODE_QUIET
+              - RZ_OUTPUT_MODE_RIZIN
+              - RZ_OUTPUT_MODE_TABLE
+            args: []
+          - name: afl.
+            summary: List functions in current seek
+            cname: analysis_function_list_in
+            args: []
+          - name: aflc
+            summary: Display count of all functions
+            cname: analysis_function_count
+            args: []
+          - name: afl+
+            summary: Display sum of all functions sizes
+            cname: analysis_function_size_sum
+            args: []
+          - name: aflm
+            summary: List calls of all functions
+            cname: analysis_function_list_calls
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+              - RZ_OUTPUT_MODE_QUIET
+            args: []
+          - name: afl=
+            summary: Display ascii-art bars with function ranges
+            cname: analysis_function_list_ascii
+            args: []
+      - name: afi
+        summary: Show/edit function information
+        subcommands:
+          - name: afi
+            summary: Show information of functions in current seek
+            cname: analysis_function_info
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+              - RZ_OUTPUT_MODE_RIZIN
+            args: []
+          - name: afii
+            summary: Show/add/delete imports used in function in current seek
+            subcommands:
+              - name: afii
+                summary: Show/add imports used in function in current seek
+                cname: analysis_function_import_list
+                args:
+                  - name: import
+                    type: RZ_CMD_ARG_TYPE_STRING
+                    optional: true
+              - name: afii-
+                summary: Delete imports used in function in current seek
+                cname: analysis_function_import_list_del
+                args: []
+          - name: afis
+            summary: Show opcode statistic in function
+            subcommands:
+              - name: afis
+                summary: Enumerate unique opcodes/opcode families/opcode types in function
+                cname: analysis_function_opcode_stat
+                type: RZ_CMD_DESC_TYPE_ARGV_STATE
+                modes:
+                  - RZ_OUTPUT_MODE_STANDARD
+                  - RZ_OUTPUT_MODE_TABLE
+                args:
+                  - name: mode
+                    type: RZ_CMD_ARG_TYPE_CHOICES
+                    optional: true
+                    choices: ["family", "type"]
+              - name: afisa
+                summary: Enumerate unique opcodes/opcode families/opcode types in all functions
+                cname: analysis_function_all_opcode_stat
+                type: RZ_CMD_DESC_TYPE_ARGV_STATE
+                modes:
+                  - RZ_OUTPUT_MODE_TABLE
+                args:
+                  - name: mode
+                    type: RZ_CMD_ARG_TYPE_CHOICES
+                    optional: true
+                    choices: ["family", "type"]
+  - name: aez
+    summary: RzIL Emulation
+    type: RZ_CMD_DESC_TYPE_GROUP
+    subcommands:
+      - name: aezi
+        summary: Initialize the RzIL Virtual Machine at the current offset
+        type: RZ_CMD_DESC_TYPE_ARGV
+        cname: rzil_vm_initialize
+        args: []
+      - name: aezs
+        summary: Step N instructions within the RzIL Virtual Machine
+        type: RZ_CMD_DESC_TYPE_ARGV
+        cname: rzil_vm_step
+        args:
+          - name: n_times
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: aezse
+        summary: Step N instructions within the RzIL VM and output VM changes (read & write)
+        type: RZ_CMD_DESC_TYPE_ARGV_MODES
+        cname: rzil_vm_step_with_events
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: n_times
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: aezsu
+        summary: Step until PC equals given address
+        type: RZ_CMD_DESC_TYPE_ARGV
+        cname: rzil_vm_step_until_addr
+        args:
+          - name: address
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: aezv
+        summary: Print or modify the current status of the RzIL Virtual Machine
+        cname: rzil_vm_status
+        type: RZ_CMD_DESC_TYPE_ARGV_MODES
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_TABLE
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+        args:
+          - name: var_name
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+          - name: number
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+  #####################################################
+  # Keep this in sync with dr in cmd_debug.yaml from here...
+  - name: ar
+    summary: Emulation Registers
+    details:
+      - name: Register Filter
+        entries:
+          - text: "ar"
+            arg_str: ""
+            comment: Show a sensible default selection of registers
+          - text: "ar"
+            arg_str: " rax"
+            comment: Show a single register
+          - text: "ar"
+            arg_str: " 16"
+            comment: Show 16 bits wide gpr registers
+          - text: "ar"
+            arg_str: " xmm"
+            comment: Show registers of type xmm (see `arT` for possible types)
+          - text: "ar"
+            arg_str: " PC"
+            comment: Show the register with the given role (see `arR` for possible roles)
+          - text: "ar"
+            arg_str: " all"
+            comment: Show all registers available
+    subcommands:
+      - name: ar
+        summary: Show registers with their values, or assign one (`ar reg=value`)
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        cname: analysis_regs
+        args_str: " [<filter> [= <value>]]"
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
+          - RZ_OUTPUT_MODE_TABLE
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+        args:
+          - name: filter
+            type: RZ_CMD_ARG_TYPE_REG_FILTER
+            flags: RZ_CMD_ARG_FLAG_LAST
+            optional: true
+      - name: ar=
+        summary: Show registers in columns
+        type: RZ_CMD_DESC_TYPE_ARGV
+        cname: analysis_regs_columns
+        args:
+          - name: filter
+            type: RZ_CMD_ARG_TYPE_REG_FILTER
+            optional: true
+      - name: arr
+        summary: Show register references (telescoping)
+        type: RZ_CMD_DESC_TYPE_ARGV_MODES
+        cname: analysis_regs_references
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: filter
+            type: RZ_CMD_ARG_TYPE_REG_FILTER
+            optional: true
+      - name: ari
+        summary: Show register grouped by their values
+        type: RZ_CMD_DESC_TYPE_ARGV
+        cname: analysis_regs_valgroup
+        args:
+          - name: filter
+            type: RZ_CMD_ARG_TYPE_REG_FILTER
+            optional: true
+      - name: arA
+        summary: Show values of default function argument registers (A0, A1, A2, ...) with telescoping
+        cname: analysis_regs_args
+        type: RZ_CMD_DESC_TYPE_ARGV_MODES
+        details: [] # Explicitly empty to not show parent ones
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: arcc
+        summary: Show calling convention defined by registers
+        cname: analysis_reg_cc
+        args: []
+        details: [] # Explicitly empty to not show parent ones
+      - name: ard
+        summary: Show register differences from previous contents
+        cname: analysis_regs_diff
+        args: []
+        details: [] # Explicitly empty to not show parent ones
+      - name: aro
+        summary: Show previous register contents
+        cname: analysis_regs_prev
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
+          - RZ_OUTPUT_MODE_TABLE
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+        args:
+          - name: filter
+            type: RZ_CMD_ARG_TYPE_REG_FILTER
+            flags: RZ_CMD_ARG_FLAG_LAST
+            optional: true
+      - name: arF
+        summary: Show fpu registers
+        type: RZ_CMD_DESC_TYPE_ARGV
+        cname: analysis_regs_fpu
+        args_str: " [<register> [= <value>]]"
+        args:
+          - name: reg
+            type: RZ_CMD_ARG_TYPE_STRING
+            flags: RZ_CMD_ARG_FLAG_LAST
+            optional: true
+      - name: arf
+        summary: Show commands for setting registers as flags
+        subcommands:
+          - name: arf
+            summary: Show commands for setting registers as flags
+            cname: analysis_reg_flags
+            args:
+              - name: filter
+                type: RZ_CMD_ARG_TYPE_REG_FILTER
+                optional: true
+          - name: arf-
+            summary: Show commands for unsetting flags from `arf`
+            cname: analysis_reg_flags_unset
+            args:
+              - name: filter
+                type: RZ_CMD_ARG_TYPE_REG_FILTER
+                optional: true
+      - name: ara
+        summary: Register arena commands (underlying binary data)
+        details: [] # Explicitly empty to not show parent ones
+        subcommands:
+          - name: ara
+            summary: Show all currently allocated register arenas
+            cname: analysis_reg_arenas
+            args: []
+          - name: ara+
+            summary: Push a new set of arenas to the stack
+            cname: analysis_reg_arenas_push
+            args: []
+          - name: ara-
+            summary: Pop a set of arenas from the stack
+            cname: analysis_reg_arenas_pop
+            args: []
+          - name: araS
+            summary: Show number of stack elements
+            cname: analysis_reg_arenas_stack_size
+            args: []
+          - name: aras
+            summary: Swap last two register arenas on the stack
+            cname: analysis_reg_arenas_swap
+            args: []
+          - name: ara0
+            summary: Reset the specified or all arena contents to 0
+            cname: analysis_reg_arenas_zero
+            args:
+              - name: type
+                type: RZ_CMD_ARG_TYPE_REG_TYPE
+                optional: true
+          - name: arab
+            summary: Display hexdump of given arena (or gpr if none given)
+            cname: analysis_reg_arenas_hexdump
+            args:
+              - name: type
+                type: RZ_CMD_ARG_TYPE_REG_TYPE
+                optional: true
+          - name: araw
+            summary: Write hexadecimal data <hex> into the given arena (or gpr if none given)
+            cname: analysis_reg_arenas_write_hex
+            args:
+              - name: hex
+                type: RZ_CMD_ARG_TYPE_STRING
+              - name: type
+                type: RZ_CMD_ARG_TYPE_REG_TYPE
+                optional: true
+      - name: arp
+        summary: Register profile commands (defining available registers)
+        details: [] # Explicitly empty to not show parent ones
+        subcommands:
+          - name: arp
+            summary: Show the current register profile
+            cname: analysis_reg_profile
+            args: []
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+          - name: arpc
+            summary: Show register profile comments
+            cname: analysis_reg_profile_comments
+            args: []
+          - name: arpo
+            summary: Load a new register profile from file
+            cname: analysis_reg_profile_open
+            args:
+              - name: file
+                type: RZ_CMD_ARG_TYPE_FILE
+          - name: arpg
+            summary: Convert gdb profile from the given file to rizin register profile
+            cname: analysis_reg_profile_gdb
+            args:
+              - name: file
+                type: RZ_CMD_ARG_TYPE_FILE
+      - name: arc
+        summary: Conditional flags (aliases to processor flags)
+        cname: analysis_reg_cond
+        args: []
+        details:
+          - name: Basic
+            entries:
+              - text: eq
+                arg_str: ""
+                comment: equal
+              - text: ne
+                arg_str: ""
+                comment: not equal
+              - text: cf
+                arg_str: ""
+                comment: carry flag set
+              - text: neg
+                arg_str: ""
+                comment: negative value (has sign)
+              - text: of
+                arg_str: ""
+                comment: overflow
+          - name: Unsigned
+            entries:
+              - text: hi
+                arg_str: ""
+                comment: higher
+              - text: he
+                arg_str: ""
+                comment: higher or equal
+              - text: lo
+                arg_str: ""
+                comment: lower
+              - text: loe
+                arg_str: ""
+                comment: lower or equal
+          - name: Signed
+            entries:
+              - text: gt
+                arg_str: ""
+                comment: greater
+              - text: ge
+                arg_str: ""
+                comment: greater or equal
+              - text: lt
+                arg_str: ""
+                comment: less
+              - text: le
+                arg_str: ""
+                comment: less or equal
+      - name: arT
+        summary: List all register types
+        cname: analysis_reg_types
+        details: [] # Explicitly empty to not show parent ones
+        args: []
+      - name: arR
+        summary: List all register roles
+        cname: analysis_reg_roles
+        details: [] # Explicitly empty to not show parent ones
+        args: []
+  # ... to here
+  #####################################################
   - name: av
     summary: C++ vtables and RTTI
     subcommands:

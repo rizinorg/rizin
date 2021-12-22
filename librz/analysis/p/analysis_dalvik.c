@@ -700,7 +700,7 @@ static int dalvik_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut
 	return sz;
 }
 
-static bool set_reg_profile(RzAnalysis *analysis) {
+static char *get_reg_profile(RzAnalysis *analysis) {
 	const char *p =
 		"=PC	ip\n"
 		"=SP	sp\n"
@@ -748,13 +748,13 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 		"gpr	ip	.32	116	0\n"
 		"gpr	sp	.32	120	0\n"
 		"gpr	bp	.32	124	0\n";
-	return rz_reg_set_profile_string(analysis->reg, p);
+	return strdup(p);
 }
 
 RzAnalysisPlugin rz_analysis_plugin_dalvik = {
 	.name = "dalvik",
 	.arch = "dalvik",
-	.set_reg_profile = &set_reg_profile,
+	.get_reg_profile = &get_reg_profile,
 	.license = "LGPL3",
 	.bits = 32,
 	.desc = "Dalvik (Android VM) bytecode analysis plugin",

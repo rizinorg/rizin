@@ -82,6 +82,17 @@ static void il_op_resolve(RzILOp *op, RzStrBuf *sb, PJ *pj);
 		} \
 	} while (0)
 
+#define il_op_param_0(name) \
+	do { \
+		if (sb) { \
+			rz_strbuf_append(sb, name "()"); \
+		} else { \
+			pj_o(pj); \
+			pj_ks(pj, "opcode", name); \
+			pj_end(pj); \
+		} \
+	} while (0)
+
 #define il_op_param_1(name, opx, v0) \
 	do { \
 		if (sb) { \
@@ -188,7 +199,7 @@ static void il_opdmp_bool_true(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 }
 
 static void il_opdmp_bool_inv(RzILOp *op, RzStrBuf *sb, PJ *pj) {
-	il_op_param_2("inv", op->op.boolinv, x, ret);
+	il_op_param_1("inv", op->op.boolinv, x);
 }
 
 static void il_opdmp_bool_and(RzILOp *op, RzStrBuf *sb, PJ *pj) {
@@ -352,8 +363,8 @@ static void il_opdmp_store(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 	}
 }
 
-static void il_opdmp_perform(RzILOp *op, RzStrBuf *sb, PJ *pj) {
-	il_op_param_1("perform", op->op.perform, eff);
+static void il_opdmp_nop(RzILOp *op, RzStrBuf *sb, PJ *pj) {
+	il_op_param_0("nop");
 }
 
 static void il_opdmp_set(RzILOp *op, RzStrBuf *sb, PJ *pj) {
@@ -366,6 +377,23 @@ static void il_opdmp_set(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 		pj_o(pj);
 		pj_ks(pj, "opcode", "set");
 		pj_ks(pj, "dst", opx->v);
+		pj_k(pj, "src");
+		il_op_resolve(opx->x, sb, pj);
+		pj_end(pj);
+	}
+}
+
+static void il_opdmp_let(RzILOp *op, RzStrBuf *sb, PJ *pj) {
+	RzILOpLet *opx = op->op.let;
+	if (sb) {
+		rz_strbuf_appendf(sb, "let(v:%s%s, x:", opx->v, opx->mut ? "" : ", const");
+		il_op_resolve(opx->x, sb, pj);
+		rz_strbuf_append(sb, ")");
+	} else {
+		pj_o(pj);
+		pj_ks(pj, "opcode", "let");
+		pj_ks(pj, "dst", opx->v);
+		pj_kb(pj, "mutable", opx->mut);
 		pj_k(pj, "src");
 		il_op_resolve(opx->x, sb, pj);
 		pj_end(pj);
@@ -524,11 +552,14 @@ static void il_op_resolve(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 	case RZIL_OP_STORE:
 		il_opdmp_store(op, sb, pj);
 		return;
-	case RZIL_OP_PERFORM:
-		il_opdmp_perform(op, sb, pj);
+	case RZIL_OP_NOP:
+		il_opdmp_nop(op, sb, pj);
 		return;
 	case RZIL_OP_SET:
 		il_opdmp_set(op, sb, pj);
+		return;
+	case RZIL_OP_LET:
+		il_opdmp_let(op, sb, pj);
 		return;
 	case RZIL_OP_JMP:
 		il_opdmp_jmp(op, sb, pj);

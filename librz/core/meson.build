@@ -1,3 +1,7 @@
+core_plugins = [
+  'java',
+]
+
 subdir('cmd_descs')
 
 rz_core_sources = [
@@ -27,6 +31,7 @@ rz_core_sources = [
   'cparser.c',
   'cpdb.c',
   'cplugin.c',
+  'creg.c',
   'csign.c',
   'ctypes.c',
   'cvfile.c',
@@ -81,14 +86,13 @@ rz_core_sources = [
   'tui/panels.c'
 ]
 
-rz_core_inc = []
-if host_machine.system() != 'windows'
-  rz_core_inc += ['../../shlr/heap/include']
-else
+rz_core_inc = ['.']
+if host_machine.system() == 'windows'
   rz_core_sources += 'windows_heap.c'
-  rz_core_inc += ['../../shlr/heap/include/rz_windows']
 endif
-rz_core_inc = [platform_inc, include_directories(rz_core_inc), 'cmd_descs']
+rz_core_inc = [platform_inc, 'cmd_descs']
+
+shell_parser_dep = dependency('rizin-shell-parser')
 
 rz_core_deps = [
   rz_util_dep,
@@ -117,10 +121,11 @@ rz_core_deps = [
   rz_config_dep,
   rz_bin_dep,
   platform_deps,
-  gdb_dep,
+  dependency('rzgdb'),
+  dependency('rzheap'),
   shell_parser_dep,
   lrt,
-  mth
+  mth,
 ]
 
 if libuv_dep.found()
@@ -135,11 +140,14 @@ rz_core = library('rz_core', rz_core_sources,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
   link_args: library_linkflags,
-  soversion: rizin_libversion
+  soversion: rizin_libversion,
+  name_suffix: lib_name_suffix,
+  name_prefix: lib_name_prefix,
 )
 
 rz_core_dep = declare_dependency(link_with: rz_core,
                                 include_directories: rz_core_inc)
+meson.override_dependency('rz_core', rz_core_dep)
 
 pkgconfig_mod.generate(
   rz_core,
@@ -173,5 +181,29 @@ pkgconfig_mod.generate(
     'rz_sign',
     'rz_il'
   ],
-  description: 'rizin foundation libraries'
+  description: 'rizin foundation libraries',
+  variables: [
+    'plugindir=@0@'.format(rizin_plugins),
+  ],
 )
+
+if not is_static_libs_only
+  conf = configuration_data()
+  conf.set('RZ_VERSION', rizin_version)
+  conf.set('RIZIN_MODULE', rz_core.name())
+  conf.set('RIZIN_MODULE_DEPS', ' '.join(['rz_util', 'rz_demangler', 'rz_diff', 'rz_magic',
+    'rz_socket', 'rz_flag', 'rz_cons', 'rz_lang', 'rz_hash', 'rz_crypto', 'rz_io', 'rz_reg',
+    'rz_bp', 'rz_syscall', 'rz_parse', 'rz_asm', 'rz_egg', 'rz_search', 'rz_sign', 'rz_il',
+    'rz_analysis', 'rz_type', 'rz_debug', 'rz_config', 'rz_bin']))
+  conf.set('PACKAGE_RELATIVE_PATH', cmake_package_relative_path)
+  conf.set('INSTALL_INCDIR', rizin_incdir)
+  conf.set('INSTALL_LIBDIR', rizin_libdir)
+  conf.set('INSTALL_PLUGDIR', rizin_plugins)
+  conf.set('rizin_libname', rz_core.name())
+  cmake_mod.configure_package_config_file(
+    name: conf.get('rizin_libname'),
+    input: '../RzModulesConfig.cmake.in',
+    install_dir: rizin_cmakedir / conf.get('rizin_libname'),
+    configuration: conf,
+  )
+endif

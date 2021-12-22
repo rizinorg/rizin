@@ -55,7 +55,7 @@ dcu main
 dr eip
 EOF
 EXPECT=<<EOF
-0x080483d0
+eip = 0x080483d0
 EOF
 RUN
 
@@ -83,14 +83,14 @@ dr rip
 dc
 EOF
 EXPECT=<<EOF
-0x0040052f
-0x0040053c
-0x00400549
-0x0040054f
-0x0040055b
-0x00400567
-0x0040056e
-0x00400510
+rip = 0x0040052f
+rip = 0x0040053c
+rip = 0x00400549
+rip = 0x0040054f
+rip = 0x0040055b
+rip = 0x00400567
+rip = 0x0040056e
+rip = 0x00400510
 Hello world
 EOF
 RUN
@@ -106,8 +106,8 @@ dso
 dr rip
 EOF
 EXPECT=<<EOF
-0x00400575
-0x0040057c
+rip = 0x00400575
+rip = 0x0040057c
 Hello world
 EOF
 RUN
@@ -123,8 +123,8 @@ dso
 dr rip
 EOF
 EXPECT=<<EOF
-0x00400539
-0x0040053b
+rip = 0x00400539
+rip = 0x0040053b
 Hello world
 EOF
 RUN
@@ -140,8 +140,8 @@ dso
 dr rip
 EOF
 EXPECT=<<EOF
-0x00400546
-0x00400548
+rip = 0x00400546
+rip = 0x00400548
 Hello world
 EOF
 RUN
@@ -157,8 +157,8 @@ dso
 dr rip
 EOF
 EXPECT=<<EOF
-0x00400549
-0x0040054e
+rip = 0x00400549
+rip = 0x0040054e
 Hello world
 EOF
 RUN
@@ -172,7 +172,7 @@ dsu 0x400546
 dr rip
 EOF
 EXPECT=<<EOF
-0x00400546
+rip = 0x00400546
 EOF
 RUN
 
@@ -185,7 +185,7 @@ dsui mov eax
 dr rip
 EOF
 EXPECT=<<EOF
-0x00400524
+rip = 0x00400524
 EOF
 RUN
 
@@ -200,7 +200,7 @@ dsi rax=2
 dr rax
 EOF
 EXPECT=<<EOF
-0x00000002
+rax = 0x00000002
 EOF
 RUN
 
@@ -242,7 +242,7 @@ dcu main
 dr rip
 EOF
 EXPECT=<<EOF
-0x00400582
+rip = 0x00400582
 EOF
 RUN
 

@@ -902,7 +902,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 RzAnalysisPlugin rz_analysis_plugin_riscv = {
 	.name = "riscv",
 	.desc = "RISC-V analysis plugin",
-	.license = "GPL",
+	.license = "LGPL",
 	.arch = "riscv",
 	.bits = 32 | 64,
 	.op = &riscv_op,

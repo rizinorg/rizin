@@ -2581,7 +2581,7 @@ RZ_API void rz_core_visual_debugtraces(RzCore *core, const char *input) {
 			rz_core_cmdf(core, ".dte %d", i);
 		}
 		rz_core_cmd0(core, "x 64@r:SP");
-		rz_core_debug_ri(core, core->dbg->reg, 0);
+		rz_core_debug_ri(core);
 		// limit by rows here
 		// int rows = rz_cons_get_size (NULL);
 		rz_core_cmdf(core, "dtd %d", delta);

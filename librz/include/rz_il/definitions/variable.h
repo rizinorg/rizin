@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
 // SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
@@ -15,20 +17,20 @@ typedef enum {
 	RZIL_VAR_TYPE_BV,
 	RZIL_VAR_TYPE_BOOL,
 	RZIL_VAR_TYPE_UNK, // Unkown value
-} RZIL_VAR_TYPE;
+} RzILVarType;
 
 /**
  *  \struct rz_il_var_t
  *  \brief structure of RzILVar
  */
-struct rz_il_var_t {
+typedef struct rz_il_var_t {
 	char *var_name; ///< name of variable
-	RZIL_VAR_TYPE type; ///< data type of variable
-};
-typedef struct rz_il_var_t RzILVar;
+	bool is_mutable;
+	RzILVarType type; ///< data type of variable
+} RzILVar;
 
-RZ_API RzILVar *rz_il_new_variable(const char *name);
-RZ_API void rz_il_free_variable(RzILVar *var);
+RZ_API RZ_OWN RzILVar *rz_il_variable_new(RZ_NONNULL const char *name, RzILVarType type, bool is_mutable);
+RZ_API void rz_il_variable_free(RZ_NULLABLE RzILVar *var);
 
 #ifdef __cplusplus
 }

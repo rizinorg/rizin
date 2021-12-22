@@ -11,14 +11,18 @@ static const RzCmdDescDetail system_details[2];
 static const RzCmdDescDetail system_to_cons_details[2];
 static const RzCmdDescDetail hash_bang_details[2];
 static const RzCmdDescDetail pointer_details[2];
+static const RzCmdDescDetail analysis_reg_cond_details[4];
+static const RzCmdDescDetail ar_details[2];
 static const RzCmdDescDetail cmd_cmp_unified_details[2];
 static const RzCmdDescDetail cmd_debug_list_bp_details[2];
 static const RzCmdDescDetail cmd_debug_add_cond_bp_details[2];
 static const RzCmdDescDetail cmd_debug_add_watchpoint_details[2];
+static const RzCmdDescDetail debug_reg_cond_details[4];
+static const RzCmdDescDetail dr_details[2];
 static const RzCmdDescDetail eval_getset_details[2];
 static const RzCmdDescDetail egg_config_details[2];
 static const RzCmdDescDetail history_list_or_exec_details[2];
-static const RzCmdDescDetail wB_details[2];
+static const RzCmdDescDetail write_bits_details[2];
 static const RzCmdDescDetail wv_details[2];
 static const RzCmdDescDetail w1_details[2];
 static const RzCmdDescDetail w2_details[2];
@@ -94,6 +98,26 @@ static const RzCmdDescArg analysis_function_vars_sp_args[4];
 static const RzCmdDescArg analysis_function_vars_sp_del_args[2];
 static const RzCmdDescArg analysis_function_vars_sp_getref_args[3];
 static const RzCmdDescArg analysis_function_vars_sp_setref_args[3];
+static const RzCmdDescArg analysis_function_import_list_args[2];
+static const RzCmdDescArg analysis_function_opcode_stat_args[2];
+static const RzCmdDescArg analysis_function_all_opcode_stat_args[2];
+static const RzCmdDescArg rzil_vm_step_args[2];
+static const RzCmdDescArg rzil_vm_step_with_events_args[2];
+static const RzCmdDescArg rzil_vm_step_until_addr_args[2];
+static const RzCmdDescArg rzil_vm_status_args[3];
+static const RzCmdDescArg analysis_regs_args[2];
+static const RzCmdDescArg analysis_regs_columns_args[2];
+static const RzCmdDescArg analysis_regs_references_args[2];
+static const RzCmdDescArg analysis_regs_valgroup_args[2];
+static const RzCmdDescArg analysis_regs_prev_args[2];
+static const RzCmdDescArg analysis_regs_fpu_args[2];
+static const RzCmdDescArg analysis_reg_flags_args[2];
+static const RzCmdDescArg analysis_reg_flags_unset_args[2];
+static const RzCmdDescArg analysis_reg_arenas_zero_args[2];
+static const RzCmdDescArg analysis_reg_arenas_hexdump_args[2];
+static const RzCmdDescArg analysis_reg_arenas_write_hex_args[3];
+static const RzCmdDescArg analysis_reg_profile_open_args[2];
+static const RzCmdDescArg analysis_reg_profile_gdb_args[2];
 static const RzCmdDescArg analysis_print_global_variable_args[2];
 static const RzCmdDescArg analysis_global_variable_add_args[4];
 static const RzCmdDescArg analysis_global_variable_delete_byaddr_args[2];
@@ -196,6 +220,21 @@ static const RzCmdDescArg debug_memory_permission_args[3];
 static const RzCmdDescArg cmd_debug_dmL_args[2];
 static const RzCmdDescArg cmd_debug_dmS_args[3];
 static const RzCmdDescArg cmd_debug_process_heap_block_args[2];
+static const RzCmdDescArg debug_regs_args[2];
+static const RzCmdDescArg debug_regs_columns_args[2];
+static const RzCmdDescArg debug_regs_references_args[2];
+static const RzCmdDescArg debug_regs_valgroup_args[2];
+static const RzCmdDescArg debug_regs_prev_args[2];
+static const RzCmdDescArg debug_regs_fpu_args[2];
+static const RzCmdDescArg debug_reg_flags_args[2];
+static const RzCmdDescArg debug_reg_flags_unset_args[2];
+static const RzCmdDescArg debug_reg_arenas_zero_args[2];
+static const RzCmdDescArg debug_reg_arenas_hexdump_args[2];
+static const RzCmdDescArg debug_reg_arenas_write_hex_args[3];
+static const RzCmdDescArg debug_reg_profile_open_args[2];
+static const RzCmdDescArg debug_reg_profile_gdb_args[2];
+static const RzCmdDescArg debug_drx_args[5];
+static const RzCmdDescArg debug_drx_unset_args[2];
 static const RzCmdDescArg eval_getset_args[2];
 static const RzCmdDescArg eval_list_args[2];
 static const RzCmdDescArg eval_bool_invert_args[2];
@@ -344,6 +383,7 @@ static const RzCmdDescArg zign_add_fcn_args[3];
 static const RzCmdDescArg zign_load_sdb_args[2];
 static const RzCmdDescArg zign_save_sdb_args[2];
 static const RzCmdDescArg zign_load_gzip_sdb_args[2];
+static const RzCmdDescArg zign_flirt_create_args[2];
 static const RzCmdDescArg zign_flirt_dump_args[2];
 static const RzCmdDescArg zign_flirt_scan_args[2];
 static const RzCmdDescArg zign_cmp_args[2];
@@ -1426,6 +1466,14 @@ static const RzCmdDescHelp analysis_function_vars_bp_del_help = {
 	.args = analysis_function_vars_bp_del_args,
 };
 
+static const RzCmdDescArg analysis_function_vars_bp_del_all_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_vars_bp_del_all_help = {
+	.summary = "Delete all arguments/locals",
+	.args = analysis_function_vars_bp_del_all_args,
+};
+
 static const RzCmdDescArg analysis_function_vars_bp_getref_args[] = {
 	{
 		.name = "delta",
@@ -1504,6 +1552,14 @@ static const RzCmdDescArg analysis_function_vars_regs_del_args[] = {
 static const RzCmdDescHelp analysis_function_vars_regs_del_help = {
 	.summary = "Delete register-based argument/local with the given name",
 	.args = analysis_function_vars_regs_del_args,
+};
+
+static const RzCmdDescArg analysis_function_vars_regs_del_all_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_vars_regs_del_all_help = {
+	.summary = "Delete all register-based arguments/locals",
+	.args = analysis_function_vars_regs_del_all_args,
 };
 
 static const RzCmdDescArg analysis_function_vars_regs_getref_args[] = {
@@ -1622,6 +1678,582 @@ static const RzCmdDescArg analysis_function_vars_sp_setref_args[] = {
 static const RzCmdDescHelp analysis_function_vars_sp_setref_help = {
 	.summary = "Define var set reference",
 	.args = analysis_function_vars_sp_setref_args,
+};
+
+static const RzCmdDescHelp afl_help = {
+	.summary = "List functions",
+};
+static const RzCmdDescArg analysis_function_list_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_list_help = {
+	.summary = "List all functions",
+	.args = analysis_function_list_args,
+};
+
+static const RzCmdDescArg analysis_function_list_in_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_list_in_help = {
+	.summary = "List functions in current seek",
+	.args = analysis_function_list_in_args,
+};
+
+static const RzCmdDescArg analysis_function_count_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_count_help = {
+	.summary = "Display count of all functions",
+	.args = analysis_function_count_args,
+};
+
+static const RzCmdDescArg analysis_function_size_sum_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_size_sum_help = {
+	.summary = "Display sum of all functions sizes",
+	.args = analysis_function_size_sum_args,
+};
+
+static const RzCmdDescArg analysis_function_list_calls_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_list_calls_help = {
+	.summary = "List calls of all functions",
+	.args = analysis_function_list_calls_args,
+};
+
+static const RzCmdDescArg analysis_function_list_ascii_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_list_ascii_help = {
+	.summary = "Display ascii-art bars with function ranges",
+	.args = analysis_function_list_ascii_args,
+};
+
+static const RzCmdDescHelp afi_help = {
+	.summary = "Show/edit function information",
+};
+static const RzCmdDescArg analysis_function_info_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_info_help = {
+	.summary = "Show information of functions in current seek",
+	.args = analysis_function_info_args,
+};
+
+static const RzCmdDescHelp afii_help = {
+	.summary = "Show/add/delete imports used in function in current seek",
+};
+static const RzCmdDescArg analysis_function_import_list_args[] = {
+	{
+		.name = "import",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_import_list_help = {
+	.summary = "Show/add imports used in function in current seek",
+	.args = analysis_function_import_list_args,
+};
+
+static const RzCmdDescArg analysis_function_import_list_del_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_import_list_del_help = {
+	.summary = "Delete imports used in function in current seek",
+	.args = analysis_function_import_list_del_args,
+};
+
+static const RzCmdDescHelp afis_help = {
+	.summary = "Show opcode statistic in function",
+};
+static const char *analysis_function_opcode_stat_mode_choices[] = { "family", "type", NULL };
+static const RzCmdDescArg analysis_function_opcode_stat_args[] = {
+	{
+		.name = "mode",
+		.type = RZ_CMD_ARG_TYPE_CHOICES,
+		.optional = true,
+		.choices = analysis_function_opcode_stat_mode_choices,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_opcode_stat_help = {
+	.summary = "Enumerate unique opcodes/opcode families/opcode types in function",
+	.args = analysis_function_opcode_stat_args,
+};
+
+static const char *analysis_function_all_opcode_stat_mode_choices[] = { "family", "type", NULL };
+static const RzCmdDescArg analysis_function_all_opcode_stat_args[] = {
+	{
+		.name = "mode",
+		.type = RZ_CMD_ARG_TYPE_CHOICES,
+		.optional = true,
+		.choices = analysis_function_all_opcode_stat_mode_choices,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_all_opcode_stat_help = {
+	.summary = "Enumerate unique opcodes/opcode families/opcode types in all functions",
+	.args = analysis_function_all_opcode_stat_args,
+};
+
+static const RzCmdDescHelp aez_help = {
+	.summary = "RzIL Emulation",
+};
+static const RzCmdDescArg rzil_vm_initialize_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp rzil_vm_initialize_help = {
+	.summary = "Initialize the RzIL Virtual Machine at the current offset",
+	.args = rzil_vm_initialize_args,
+};
+
+static const RzCmdDescArg rzil_vm_step_args[] = {
+	{
+		.name = "n_times",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp rzil_vm_step_help = {
+	.summary = "Step N instructions within the RzIL Virtual Machine",
+	.args = rzil_vm_step_args,
+};
+
+static const RzCmdDescArg rzil_vm_step_with_events_args[] = {
+	{
+		.name = "n_times",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp rzil_vm_step_with_events_help = {
+	.summary = "Step N instructions within the RzIL VM and output VM changes (read & write)",
+	.args = rzil_vm_step_with_events_args,
+};
+
+static const RzCmdDescArg rzil_vm_step_until_addr_args[] = {
+	{
+		.name = "address",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp rzil_vm_step_until_addr_help = {
+	.summary = "Step until PC equals given address",
+	.args = rzil_vm_step_until_addr_args,
+};
+
+static const RzCmdDescArg rzil_vm_status_args[] = {
+	{
+		.name = "var_name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.optional = true,
+
+	},
+	{
+		.name = "number",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp rzil_vm_status_help = {
+	.summary = "Print or modify the current status of the RzIL Virtual Machine",
+	.args = rzil_vm_status_args,
+};
+
+static const RzCmdDescDetailEntry ar_Register_space_Filter_detail_entries[] = {
+	{ .text = "ar", .arg_str = "", .comment = "Show a sensible default selection of registers" },
+	{ .text = "ar", .arg_str = " rax", .comment = "Show a single register" },
+	{ .text = "ar", .arg_str = " 16", .comment = "Show 16 bits wide gpr registers" },
+	{ .text = "ar", .arg_str = " xmm", .comment = "Show registers of type xmm (see `arT` for possible types)" },
+	{ .text = "ar", .arg_str = " PC", .comment = "Show the register with the given role (see `arR` for possible roles)" },
+	{ .text = "ar", .arg_str = " all", .comment = "Show all registers available" },
+	{ 0 },
+};
+static const RzCmdDescDetail ar_details[] = {
+	{ .name = "Register Filter", .entries = ar_Register_space_Filter_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescHelp ar_help = {
+	.summary = "Emulation Registers",
+	.details = ar_details,
+};
+static const RzCmdDescArg analysis_regs_args[] = {
+	{
+		.name = "filter",
+		.type = RZ_CMD_ARG_TYPE_REG_FILTER,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_regs_help = {
+	.summary = "Show registers with their values, or assign one (`ar reg=value`)",
+	.args_str = " [<filter> [= <value>]]",
+	.args = analysis_regs_args,
+};
+
+static const RzCmdDescArg analysis_regs_columns_args[] = {
+	{
+		.name = "filter",
+		.type = RZ_CMD_ARG_TYPE_REG_FILTER,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_regs_columns_help = {
+	.summary = "Show registers in columns",
+	.args = analysis_regs_columns_args,
+};
+
+static const RzCmdDescArg analysis_regs_references_args[] = {
+	{
+		.name = "filter",
+		.type = RZ_CMD_ARG_TYPE_REG_FILTER,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_regs_references_help = {
+	.summary = "Show register references (telescoping)",
+	.args = analysis_regs_references_args,
+};
+
+static const RzCmdDescArg analysis_regs_valgroup_args[] = {
+	{
+		.name = "filter",
+		.type = RZ_CMD_ARG_TYPE_REG_FILTER,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_regs_valgroup_help = {
+	.summary = "Show register grouped by their values",
+	.args = analysis_regs_valgroup_args,
+};
+
+static const RzCmdDescDetail analysis_regs_args_details[] = {
+	{ 0 },
+};
+static const RzCmdDescArg analysis_regs_args_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_regs_args_help = {
+	.summary = "Show values of default function argument registers (A0, A1, A2, ...) with telescoping",
+	.details = analysis_regs_args_details,
+	.args = analysis_regs_args_args,
+};
+
+static const RzCmdDescDetail analysis_reg_cc_details[] = {
+	{ 0 },
+};
+static const RzCmdDescArg analysis_reg_cc_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_reg_cc_help = {
+	.summary = "Show calling convention defined by registers",
+	.details = analysis_reg_cc_details,
+	.args = analysis_reg_cc_args,
+};
+
+static const RzCmdDescDetail analysis_regs_diff_details[] = {
+	{ 0 },
+};
+static const RzCmdDescArg analysis_regs_diff_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_regs_diff_help = {
+	.summary = "Show register differences from previous contents",
+	.details = analysis_regs_diff_details,
+	.args = analysis_regs_diff_args,
+};
+
+static const RzCmdDescArg analysis_regs_prev_args[] = {
+	{
+		.name = "filter",
+		.type = RZ_CMD_ARG_TYPE_REG_FILTER,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_regs_prev_help = {
+	.summary = "Show previous register contents",
+	.args = analysis_regs_prev_args,
+};
+
+static const RzCmdDescArg analysis_regs_fpu_args[] = {
+	{
+		.name = "reg",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_regs_fpu_help = {
+	.summary = "Show fpu registers",
+	.args_str = " [<register> [= <value>]]",
+	.args = analysis_regs_fpu_args,
+};
+
+static const RzCmdDescHelp arf_help = {
+	.summary = "Show commands for setting registers as flags",
+};
+static const RzCmdDescArg analysis_reg_flags_args[] = {
+	{
+		.name = "filter",
+		.type = RZ_CMD_ARG_TYPE_REG_FILTER,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_reg_flags_help = {
+	.summary = "Show commands for setting registers as flags",
+	.args = analysis_reg_flags_args,
+};
+
+static const RzCmdDescArg analysis_reg_flags_unset_args[] = {
+	{
+		.name = "filter",
+		.type = RZ_CMD_ARG_TYPE_REG_FILTER,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_reg_flags_unset_help = {
+	.summary = "Show commands for unsetting flags from `arf`",
+	.args = analysis_reg_flags_unset_args,
+};
+
+static const RzCmdDescDetail ara_details[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp ara_help = {
+	.summary = "Register arena commands (underlying binary data)",
+	.details = ara_details,
+};
+static const RzCmdDescArg analysis_reg_arenas_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_reg_arenas_help = {
+	.summary = "Show all currently allocated register arenas",
+	.args = analysis_reg_arenas_args,
+};
+
+static const RzCmdDescArg analysis_reg_arenas_push_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_reg_arenas_push_help = {
+	.summary = "Push a new set of arenas to the stack",
+	.args = analysis_reg_arenas_push_args,
+};
+
+static const RzCmdDescArg analysis_reg_arenas_pop_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_reg_arenas_pop_help = {
+	.summary = "Pop a set of arenas from the stack",
+	.args = analysis_reg_arenas_pop_args,
+};
+
+static const RzCmdDescArg analysis_reg_arenas_stack_size_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_reg_arenas_stack_size_help = {
+	.summary = "Show number of stack elements",
+	.args = analysis_reg_arenas_stack_size_args,
+};
+
+static const RzCmdDescArg analysis_reg_arenas_swap_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_reg_arenas_swap_help = {
+	.summary = "Swap last two register arenas on the stack",
+	.args = analysis_reg_arenas_swap_args,
+};
+
+static const RzCmdDescArg analysis_reg_arenas_zero_args[] = {
+	{
+		.name = "type",
+		.type = RZ_CMD_ARG_TYPE_REG_TYPE,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_reg_arenas_zero_help = {
+	.summary = "Reset the specified or all arena contents to 0",
+	.args = analysis_reg_arenas_zero_args,
+};
+
+static const RzCmdDescArg analysis_reg_arenas_hexdump_args[] = {
+	{
+		.name = "type",
+		.type = RZ_CMD_ARG_TYPE_REG_TYPE,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_reg_arenas_hexdump_help = {
+	.summary = "Display hexdump of given arena (or gpr if none given)",
+	.args = analysis_reg_arenas_hexdump_args,
+};
+
+static const RzCmdDescArg analysis_reg_arenas_write_hex_args[] = {
+	{
+		.name = "hex",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "type",
+		.type = RZ_CMD_ARG_TYPE_REG_TYPE,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_reg_arenas_write_hex_help = {
+	.summary = "Write hexadecimal data <hex> into the given arena (or gpr if none given)",
+	.args = analysis_reg_arenas_write_hex_args,
+};
+
+static const RzCmdDescDetail arp_details[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp arp_help = {
+	.summary = "Register profile commands (defining available registers)",
+	.details = arp_details,
+};
+static const RzCmdDescArg analysis_reg_profile_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_reg_profile_help = {
+	.summary = "Show the current register profile",
+	.args = analysis_reg_profile_args,
+};
+
+static const RzCmdDescArg analysis_reg_profile_comments_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_reg_profile_comments_help = {
+	.summary = "Show register profile comments",
+	.args = analysis_reg_profile_comments_args,
+};
+
+static const RzCmdDescArg analysis_reg_profile_open_args[] = {
+	{
+		.name = "file",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_reg_profile_open_help = {
+	.summary = "Load a new register profile from file",
+	.args = analysis_reg_profile_open_args,
+};
+
+static const RzCmdDescArg analysis_reg_profile_gdb_args[] = {
+	{
+		.name = "file",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_reg_profile_gdb_help = {
+	.summary = "Convert gdb profile from the given file to rizin register profile",
+	.args = analysis_reg_profile_gdb_args,
+};
+
+static const RzCmdDescDetailEntry analysis_reg_cond_Basic_detail_entries[] = {
+	{ .text = "eq", .arg_str = "", .comment = "equal" },
+	{ .text = "ne", .arg_str = "", .comment = "not equal" },
+	{ .text = "cf", .arg_str = "", .comment = "carry flag set" },
+	{ .text = "neg", .arg_str = "", .comment = "negative value (has sign)" },
+	{ .text = "of", .arg_str = "", .comment = "overflow" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry analysis_reg_cond_Unsigned_detail_entries[] = {
+	{ .text = "hi", .arg_str = "", .comment = "higher" },
+	{ .text = "he", .arg_str = "", .comment = "higher or equal" },
+	{ .text = "lo", .arg_str = "", .comment = "lower" },
+	{ .text = "loe", .arg_str = "", .comment = "lower or equal" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry analysis_reg_cond_Signed_detail_entries[] = {
+	{ .text = "gt", .arg_str = "", .comment = "greater" },
+	{ .text = "ge", .arg_str = "", .comment = "greater or equal" },
+	{ .text = "lt", .arg_str = "", .comment = "less" },
+	{ .text = "le", .arg_str = "", .comment = "less or equal" },
+	{ 0 },
+};
+static const RzCmdDescDetail analysis_reg_cond_details[] = {
+	{ .name = "Basic", .entries = analysis_reg_cond_Basic_detail_entries },
+	{ .name = "Unsigned", .entries = analysis_reg_cond_Unsigned_detail_entries },
+	{ .name = "Signed", .entries = analysis_reg_cond_Signed_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg analysis_reg_cond_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_reg_cond_help = {
+	.summary = "Conditional flags (aliases to processor flags)",
+	.details = analysis_reg_cond_details,
+	.args = analysis_reg_cond_args,
+};
+
+static const RzCmdDescDetail analysis_reg_types_details[] = {
+	{ 0 },
+};
+static const RzCmdDescArg analysis_reg_types_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_reg_types_help = {
+	.summary = "List all register types",
+	.details = analysis_reg_types_details,
+	.args = analysis_reg_types_args,
+};
+
+static const RzCmdDescDetail analysis_reg_roles_details[] = {
+	{ 0 },
+};
+static const RzCmdDescArg analysis_reg_roles_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_reg_roles_help = {
+	.summary = "List all register roles",
+	.details = analysis_reg_roles_details,
+	.args = analysis_reg_roles_args,
 };
 
 static const RzCmdDescHelp av_help = {
@@ -4086,6 +4718,435 @@ static const RzCmdDescArg cmd_debug_heap_jemalloc_args[] = {
 static const RzCmdDescHelp cmd_debug_heap_jemalloc_help = {
 	.summary = "Jemalloc heap commands",
 	.args = cmd_debug_heap_jemalloc_args,
+};
+
+static const RzCmdDescDetailEntry dr_Register_space_Filter_detail_entries[] = {
+	{ .text = "dr", .arg_str = "", .comment = "Show a sensible default selection of registers" },
+	{ .text = "dr", .arg_str = " rax", .comment = "Show a single register" },
+	{ .text = "dr", .arg_str = " 16", .comment = "Show 16 bits wide gpr registers" },
+	{ .text = "dr", .arg_str = " xmm", .comment = "Show registers of type xmm (see `drT` for possible types)" },
+	{ .text = "dr", .arg_str = " PC", .comment = "Show the register with the given role (see `drR` for possible roles)" },
+	{ .text = "dr", .arg_str = " all", .comment = "Show all registers available" },
+	{ 0 },
+};
+static const RzCmdDescDetail dr_details[] = {
+	{ .name = "Register Filter", .entries = dr_Register_space_Filter_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescHelp dr_help = {
+	.summary = "CPU Registers",
+	.details = dr_details,
+};
+static const RzCmdDescArg debug_regs_args[] = {
+	{
+		.name = "filter",
+		.type = RZ_CMD_ARG_TYPE_REG_FILTER,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp debug_regs_help = {
+	.summary = "Show registers with their values, or assign one (`dr reg=value`)",
+	.args_str = " [<filter> [= <value>]]",
+	.args = debug_regs_args,
+};
+
+static const RzCmdDescArg debug_regs_columns_args[] = {
+	{
+		.name = "filter",
+		.type = RZ_CMD_ARG_TYPE_REG_FILTER,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp debug_regs_columns_help = {
+	.summary = "Show registers in columns",
+	.args = debug_regs_columns_args,
+};
+
+static const RzCmdDescArg debug_regs_references_args[] = {
+	{
+		.name = "filter",
+		.type = RZ_CMD_ARG_TYPE_REG_FILTER,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp debug_regs_references_help = {
+	.summary = "Show register references (telescoping)",
+	.args = debug_regs_references_args,
+};
+
+static const RzCmdDescArg debug_regs_valgroup_args[] = {
+	{
+		.name = "filter",
+		.type = RZ_CMD_ARG_TYPE_REG_FILTER,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp debug_regs_valgroup_help = {
+	.summary = "Show register grouped by their values",
+	.args = debug_regs_valgroup_args,
+};
+
+static const RzCmdDescDetail debug_regs_args_details[] = {
+	{ 0 },
+};
+static const RzCmdDescArg debug_regs_args_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp debug_regs_args_help = {
+	.summary = "Show values of default function drgument registers (A0, A1, A2, ...) with telescoping",
+	.details = debug_regs_args_details,
+	.args = debug_regs_args_args,
+};
+
+static const RzCmdDescDetail debug_reg_cc_details[] = {
+	{ 0 },
+};
+static const RzCmdDescArg debug_reg_cc_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp debug_reg_cc_help = {
+	.summary = "Show calling convention defined by registers",
+	.details = debug_reg_cc_details,
+	.args = debug_reg_cc_args,
+};
+
+static const RzCmdDescDetail debug_regs_diff_details[] = {
+	{ 0 },
+};
+static const RzCmdDescArg debug_regs_diff_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp debug_regs_diff_help = {
+	.summary = "Show register differences from previous contents",
+	.details = debug_regs_diff_details,
+	.args = debug_regs_diff_args,
+};
+
+static const RzCmdDescArg debug_regs_prev_args[] = {
+	{
+		.name = "filter",
+		.type = RZ_CMD_ARG_TYPE_REG_FILTER,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp debug_regs_prev_help = {
+	.summary = "Show previous register contents",
+	.args = debug_regs_prev_args,
+};
+
+static const RzCmdDescArg debug_regs_fpu_args[] = {
+	{
+		.name = "reg",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp debug_regs_fpu_help = {
+	.summary = "Show fpu registers",
+	.args_str = " [<register> [= <value>]]",
+	.args = debug_regs_fpu_args,
+};
+
+static const RzCmdDescHelp drf_help = {
+	.summary = "Show commands for setting registers as flags",
+};
+static const RzCmdDescArg debug_reg_flags_args[] = {
+	{
+		.name = "filter",
+		.type = RZ_CMD_ARG_TYPE_REG_FILTER,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp debug_reg_flags_help = {
+	.summary = "Show commands for setting registers as flags",
+	.args = debug_reg_flags_args,
+};
+
+static const RzCmdDescArg debug_reg_flags_unset_args[] = {
+	{
+		.name = "filter",
+		.type = RZ_CMD_ARG_TYPE_REG_FILTER,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp debug_reg_flags_unset_help = {
+	.summary = "Show commands for unsetting flags from `drf`",
+	.args = debug_reg_flags_unset_args,
+};
+
+static const RzCmdDescDetail dra_details[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp dra_help = {
+	.summary = "Register arena commands (underlying binary data)",
+	.details = dra_details,
+};
+static const RzCmdDescArg debug_reg_arenas_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp debug_reg_arenas_help = {
+	.summary = "Show all currently allocated register arenas",
+	.args = debug_reg_arenas_args,
+};
+
+static const RzCmdDescArg debug_reg_arenas_push_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp debug_reg_arenas_push_help = {
+	.summary = "Push a new set of arenas to the stack",
+	.args = debug_reg_arenas_push_args,
+};
+
+static const RzCmdDescArg debug_reg_arenas_pop_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp debug_reg_arenas_pop_help = {
+	.summary = "Pop a set of arenas from the stack",
+	.args = debug_reg_arenas_pop_args,
+};
+
+static const RzCmdDescArg debug_reg_arenas_stack_size_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp debug_reg_arenas_stack_size_help = {
+	.summary = "Show number of stack elements",
+	.args = debug_reg_arenas_stack_size_args,
+};
+
+static const RzCmdDescArg debug_reg_arenas_swap_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp debug_reg_arenas_swap_help = {
+	.summary = "Swap last two register arenas on the stack",
+	.args = debug_reg_arenas_swap_args,
+};
+
+static const RzCmdDescArg debug_reg_arenas_zero_args[] = {
+	{
+		.name = "type",
+		.type = RZ_CMD_ARG_TYPE_REG_TYPE,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp debug_reg_arenas_zero_help = {
+	.summary = "Reset the specified or all arena contents to 0",
+	.args = debug_reg_arenas_zero_args,
+};
+
+static const RzCmdDescArg debug_reg_arenas_hexdump_args[] = {
+	{
+		.name = "type",
+		.type = RZ_CMD_ARG_TYPE_REG_TYPE,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp debug_reg_arenas_hexdump_help = {
+	.summary = "Display hexdump of given arena (or gpr if none given)",
+	.args = debug_reg_arenas_hexdump_args,
+};
+
+static const RzCmdDescArg debug_reg_arenas_write_hex_args[] = {
+	{
+		.name = "hex",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "type",
+		.type = RZ_CMD_ARG_TYPE_REG_TYPE,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp debug_reg_arenas_write_hex_help = {
+	.summary = "Write hexadecimal data <hex> into the given arena (or gpr if none given)",
+	.args = debug_reg_arenas_write_hex_args,
+};
+
+static const RzCmdDescDetail drp_details[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp drp_help = {
+	.summary = "Register profile commands (defining available registers)",
+	.details = drp_details,
+};
+static const RzCmdDescArg debug_reg_profile_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp debug_reg_profile_help = {
+	.summary = "Show the current register profile",
+	.args = debug_reg_profile_args,
+};
+
+static const RzCmdDescArg debug_reg_profile_comments_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp debug_reg_profile_comments_help = {
+	.summary = "Show register profile comments",
+	.args = debug_reg_profile_comments_args,
+};
+
+static const RzCmdDescArg debug_reg_profile_open_args[] = {
+	{
+		.name = "file",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp debug_reg_profile_open_help = {
+	.summary = "Load a new register profile from file",
+	.args = debug_reg_profile_open_args,
+};
+
+static const RzCmdDescArg debug_reg_profile_gdb_args[] = {
+	{
+		.name = "file",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp debug_reg_profile_gdb_help = {
+	.summary = "Convert gdb profile from the given file to rizin register profile",
+	.args = debug_reg_profile_gdb_args,
+};
+
+static const RzCmdDescDetailEntry debug_reg_cond_Basic_detail_entries[] = {
+	{ .text = "eq", .arg_str = "", .comment = "equal" },
+	{ .text = "ne", .arg_str = "", .comment = "not equal" },
+	{ .text = "cf", .arg_str = "", .comment = "carry flag set" },
+	{ .text = "neg", .arg_str = "", .comment = "negative value (has sign)" },
+	{ .text = "of", .arg_str = "", .comment = "overflow" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry debug_reg_cond_Unsigned_detail_entries[] = {
+	{ .text = "hi", .arg_str = "", .comment = "higher" },
+	{ .text = "he", .arg_str = "", .comment = "higher or equal" },
+	{ .text = "lo", .arg_str = "", .comment = "lower" },
+	{ .text = "loe", .arg_str = "", .comment = "lower or equal" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry debug_reg_cond_Signed_detail_entries[] = {
+	{ .text = "gt", .arg_str = "", .comment = "greater" },
+	{ .text = "ge", .arg_str = "", .comment = "greater or equal" },
+	{ .text = "lt", .arg_str = "", .comment = "less" },
+	{ .text = "le", .arg_str = "", .comment = "less or equal" },
+	{ 0 },
+};
+static const RzCmdDescDetail debug_reg_cond_details[] = {
+	{ .name = "Basic", .entries = debug_reg_cond_Basic_detail_entries },
+	{ .name = "Unsigned", .entries = debug_reg_cond_Unsigned_detail_entries },
+	{ .name = "Signed", .entries = debug_reg_cond_Signed_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg debug_reg_cond_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp debug_reg_cond_help = {
+	.summary = "Conditional flags (aliases to processor flags)",
+	.details = debug_reg_cond_details,
+	.args = debug_reg_cond_args,
+};
+
+static const RzCmdDescDetail debug_reg_types_details[] = {
+	{ 0 },
+};
+static const RzCmdDescArg debug_reg_types_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp debug_reg_types_help = {
+	.summary = "List all register types",
+	.details = debug_reg_types_details,
+	.args = debug_reg_types_args,
+};
+
+static const RzCmdDescDetail debug_reg_roles_details[] = {
+	{ 0 },
+};
+static const RzCmdDescArg debug_reg_roles_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp debug_reg_roles_help = {
+	.summary = "List all register roles",
+	.details = debug_reg_roles_details,
+	.args = debug_reg_roles_args,
+};
+
+static const RzCmdDescDetail drx_details[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp drx_help = {
+	.summary = "Show hardware breakpoint registers",
+	.details = drx_details,
+};
+static const RzCmdDescArg debug_drx_args[] = {
+	{
+		.name = "number",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{
+		.name = "address",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "length",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{
+		.name = "perms",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp debug_drx_help = {
+	.summary = "Show or modify hardware breakpoint registers",
+	.args = debug_drx_args,
+};
+
+static const RzCmdDescArg debug_drx_unset_args[] = {
+	{
+		.name = "number",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp debug_drx_unset_help = {
+	.summary = "Clear hardware breakpoint",
+	.args = debug_drx_unset_args,
 };
 
 static const RzCmdDescHelp e_help = {
@@ -6646,17 +7707,16 @@ static const RzCmdDescHelp write_help = {
 	.args = write_args,
 };
 
-static const RzCmdDescDetailEntry wB_Examples_detail_entries[] = {
+static const RzCmdDescHelp wB_help = {
+	.summary = "Set or unset bits with given value",
+};
+static const RzCmdDescDetailEntry write_bits_Examples_detail_entries[] = {
 	{ .text = "wB", .arg_str = " 0x20", .comment = "Sets the 5th bit at current offset, leaving all other bits intact." },
 	{ 0 },
 };
-static const RzCmdDescDetail wB_details[] = {
-	{ .name = "Examples", .entries = wB_Examples_detail_entries },
+static const RzCmdDescDetail write_bits_details[] = {
+	{ .name = "Examples", .entries = write_bits_Examples_detail_entries },
 	{ 0 },
-};
-static const RzCmdDescHelp wB_help = {
-	.summary = "Set or unset bits with given value",
-	.details = wB_details,
 };
 static const RzCmdDescArg write_bits_args[] = {
 	{
@@ -6669,6 +7729,7 @@ static const RzCmdDescArg write_bits_args[] = {
 static const RzCmdDescHelp write_bits_help = {
 	.summary = "Set bits with given value",
 	.description = "Set the bits that are set in the value passed as arguments. 0 bits in the value argument are ignored, while the others are set at the current offset.",
+	.details = write_bits_details,
 	.args = write_bits_args,
 };
 
@@ -7598,6 +8659,19 @@ static const RzCmdDescHelp zign_load_gzip_sdb_help = {
 static const RzCmdDescHelp zf_help = {
 	.summary = "Manage FLIRT signatures",
 };
+static const RzCmdDescArg zign_flirt_create_args[] = {
+	{
+		.name = "filename",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp zign_flirt_create_help = {
+	.summary = "Create a FLIRT file (.pac or .sig)",
+	.args = zign_flirt_create_args,
+};
+
 static const RzCmdDescArg zign_flirt_dump_args[] = {
 	{
 		.name = "filename",
@@ -7607,7 +8681,7 @@ static const RzCmdDescArg zign_flirt_dump_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp zign_flirt_dump_help = {
-	.summary = "Open FLIRT file and dump",
+	.summary = "Open a FLIRT file (.pac or .sig) and dumps its contents",
 	.args = zign_flirt_dump_args,
 };
 
@@ -7620,7 +8694,7 @@ static const RzCmdDescArg zign_flirt_scan_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp zign_flirt_scan_help = {
-	.summary = "Open FLIRT file and scan",
+	.summary = "Open a FLIRT file (.pac or .sig) and tries to apply the signatures to the loaded binary",
 	.args = zign_flirt_scan_args,
 };
 
@@ -8486,6 +9560,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_function_vars_bp_del_cd = rz_cmd_desc_argv_new(core->rcmd, afvb_cd, "afvb-", rz_analysis_function_vars_bp_del_handler, &analysis_function_vars_bp_del_help);
 	rz_warn_if_fail(analysis_function_vars_bp_del_cd);
 
+	RzCmdDesc *analysis_function_vars_bp_del_all_cd = rz_cmd_desc_argv_new(core->rcmd, afvb_cd, "afvb-*", rz_analysis_function_vars_bp_del_all_handler, &analysis_function_vars_bp_del_all_help);
+	rz_warn_if_fail(analysis_function_vars_bp_del_all_cd);
+
 	RzCmdDesc *analysis_function_vars_bp_getref_cd = rz_cmd_desc_argv_new(core->rcmd, afvb_cd, "afvbg", rz_analysis_function_vars_bp_getref_handler, &analysis_function_vars_bp_getref_help);
 	rz_warn_if_fail(analysis_function_vars_bp_getref_cd);
 
@@ -8496,6 +9573,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(afvr_cd);
 	RzCmdDesc *analysis_function_vars_regs_del_cd = rz_cmd_desc_argv_new(core->rcmd, afvr_cd, "afvr-", rz_analysis_function_vars_regs_del_handler, &analysis_function_vars_regs_del_help);
 	rz_warn_if_fail(analysis_function_vars_regs_del_cd);
+
+	RzCmdDesc *analysis_function_vars_regs_del_all_cd = rz_cmd_desc_argv_new(core->rcmd, afvr_cd, "afvr-*", rz_analysis_function_vars_regs_del_all_handler, &analysis_function_vars_regs_del_all_help);
+	rz_warn_if_fail(analysis_function_vars_regs_del_all_cd);
 
 	RzCmdDesc *analysis_function_vars_regs_getref_cd = rz_cmd_desc_argv_new(core->rcmd, afvr_cd, "afvrg", rz_analysis_function_vars_regs_getref_handler, &analysis_function_vars_regs_getref_help);
 	rz_warn_if_fail(analysis_function_vars_regs_getref_cd);
@@ -8513,6 +9593,126 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *analysis_function_vars_sp_setref_cd = rz_cmd_desc_argv_new(core->rcmd, afvs_cd, "afvss", rz_analysis_function_vars_sp_setref_handler, &analysis_function_vars_sp_setref_help);
 	rz_warn_if_fail(analysis_function_vars_sp_setref_cd);
+
+	RzCmdDesc *afl_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_analysis_fcn_cd, "afl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_LONG | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_TABLE, rz_analysis_function_list_handler, &analysis_function_list_help, &afl_help);
+	rz_warn_if_fail(afl_cd);
+	RzCmdDesc *analysis_function_list_in_cd = rz_cmd_desc_argv_new(core->rcmd, afl_cd, "afl.", rz_analysis_function_list_in_handler, &analysis_function_list_in_help);
+	rz_warn_if_fail(analysis_function_list_in_cd);
+
+	RzCmdDesc *analysis_function_count_cd = rz_cmd_desc_argv_new(core->rcmd, afl_cd, "aflc", rz_analysis_function_count_handler, &analysis_function_count_help);
+	rz_warn_if_fail(analysis_function_count_cd);
+
+	RzCmdDesc *analysis_function_size_sum_cd = rz_cmd_desc_argv_new(core->rcmd, afl_cd, "afl+", rz_analysis_function_size_sum_handler, &analysis_function_size_sum_help);
+	rz_warn_if_fail(analysis_function_size_sum_cd);
+
+	RzCmdDesc *analysis_function_list_calls_cd = rz_cmd_desc_argv_state_new(core->rcmd, afl_cd, "aflm", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_analysis_function_list_calls_handler, &analysis_function_list_calls_help);
+	rz_warn_if_fail(analysis_function_list_calls_cd);
+
+	RzCmdDesc *analysis_function_list_ascii_cd = rz_cmd_desc_argv_new(core->rcmd, afl_cd, "afl=", rz_analysis_function_list_ascii_handler, &analysis_function_list_ascii_help);
+	rz_warn_if_fail(analysis_function_list_ascii_cd);
+
+	RzCmdDesc *afi_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_analysis_fcn_cd, "afi", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_analysis_function_info_handler, &analysis_function_info_help, &afi_help);
+	rz_warn_if_fail(afi_cd);
+	RzCmdDesc *afii_cd = rz_cmd_desc_group_new(core->rcmd, afi_cd, "afii", rz_analysis_function_import_list_handler, &analysis_function_import_list_help, &afii_help);
+	rz_warn_if_fail(afii_cd);
+	RzCmdDesc *analysis_function_import_list_del_cd = rz_cmd_desc_argv_new(core->rcmd, afii_cd, "afii-", rz_analysis_function_import_list_del_handler, &analysis_function_import_list_del_help);
+	rz_warn_if_fail(analysis_function_import_list_del_cd);
+
+	RzCmdDesc *afis_cd = rz_cmd_desc_group_state_new(core->rcmd, afi_cd, "afis", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_TABLE, rz_analysis_function_opcode_stat_handler, &analysis_function_opcode_stat_help, &afis_help);
+	rz_warn_if_fail(afis_cd);
+	RzCmdDesc *analysis_function_all_opcode_stat_cd = rz_cmd_desc_argv_state_new(core->rcmd, afis_cd, "afisa", RZ_OUTPUT_MODE_TABLE, rz_analysis_function_all_opcode_stat_handler, &analysis_function_all_opcode_stat_help);
+	rz_warn_if_fail(analysis_function_all_opcode_stat_cd);
+
+	RzCmdDesc *aez_cd = rz_cmd_desc_group_new(core->rcmd, cmd_analysis_cd, "aez", NULL, NULL, &aez_help);
+	rz_warn_if_fail(aez_cd);
+	RzCmdDesc *rzil_vm_initialize_cd = rz_cmd_desc_argv_new(core->rcmd, aez_cd, "aezi", rz_rzil_vm_initialize_handler, &rzil_vm_initialize_help);
+	rz_warn_if_fail(rzil_vm_initialize_cd);
+
+	RzCmdDesc *rzil_vm_step_cd = rz_cmd_desc_argv_new(core->rcmd, aez_cd, "aezs", rz_rzil_vm_step_handler, &rzil_vm_step_help);
+	rz_warn_if_fail(rzil_vm_step_cd);
+
+	RzCmdDesc *rzil_vm_step_with_events_cd = rz_cmd_desc_argv_modes_new(core->rcmd, aez_cd, "aezse", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_rzil_vm_step_with_events_handler, &rzil_vm_step_with_events_help);
+	rz_warn_if_fail(rzil_vm_step_with_events_cd);
+
+	RzCmdDesc *rzil_vm_step_until_addr_cd = rz_cmd_desc_argv_new(core->rcmd, aez_cd, "aezsu", rz_rzil_vm_step_until_addr_handler, &rzil_vm_step_until_addr_help);
+	rz_warn_if_fail(rzil_vm_step_until_addr_cd);
+
+	RzCmdDesc *rzil_vm_status_cd = rz_cmd_desc_argv_modes_new(core->rcmd, aez_cd, "aezv", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_rzil_vm_status_handler, &rzil_vm_status_help);
+	rz_warn_if_fail(rzil_vm_status_cd);
+
+	RzCmdDesc *ar_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_analysis_cd, "ar", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_analysis_regs_handler, &analysis_regs_help, &ar_help);
+	rz_warn_if_fail(ar_cd);
+	RzCmdDesc *analysis_regs_columns_cd = rz_cmd_desc_argv_new(core->rcmd, ar_cd, "ar=", rz_analysis_regs_columns_handler, &analysis_regs_columns_help);
+	rz_warn_if_fail(analysis_regs_columns_cd);
+
+	RzCmdDesc *analysis_regs_references_cd = rz_cmd_desc_argv_modes_new(core->rcmd, ar_cd, "arr", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_regs_references_handler, &analysis_regs_references_help);
+	rz_warn_if_fail(analysis_regs_references_cd);
+
+	RzCmdDesc *analysis_regs_valgroup_cd = rz_cmd_desc_argv_new(core->rcmd, ar_cd, "ari", rz_analysis_regs_valgroup_handler, &analysis_regs_valgroup_help);
+	rz_warn_if_fail(analysis_regs_valgroup_cd);
+
+	RzCmdDesc *analysis_regs_args_cd = rz_cmd_desc_argv_modes_new(core->rcmd, ar_cd, "arA", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_regs_args_handler, &analysis_regs_args_help);
+	rz_warn_if_fail(analysis_regs_args_cd);
+
+	RzCmdDesc *analysis_reg_cc_cd = rz_cmd_desc_argv_new(core->rcmd, ar_cd, "arcc", rz_analysis_reg_cc_handler, &analysis_reg_cc_help);
+	rz_warn_if_fail(analysis_reg_cc_cd);
+
+	RzCmdDesc *analysis_regs_diff_cd = rz_cmd_desc_argv_new(core->rcmd, ar_cd, "ard", rz_analysis_regs_diff_handler, &analysis_regs_diff_help);
+	rz_warn_if_fail(analysis_regs_diff_cd);
+
+	RzCmdDesc *analysis_regs_prev_cd = rz_cmd_desc_argv_state_new(core->rcmd, ar_cd, "aro", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_analysis_regs_prev_handler, &analysis_regs_prev_help);
+	rz_warn_if_fail(analysis_regs_prev_cd);
+
+	RzCmdDesc *analysis_regs_fpu_cd = rz_cmd_desc_argv_new(core->rcmd, ar_cd, "arF", rz_analysis_regs_fpu_handler, &analysis_regs_fpu_help);
+	rz_warn_if_fail(analysis_regs_fpu_cd);
+
+	RzCmdDesc *arf_cd = rz_cmd_desc_group_new(core->rcmd, ar_cd, "arf", rz_analysis_reg_flags_handler, &analysis_reg_flags_help, &arf_help);
+	rz_warn_if_fail(arf_cd);
+	RzCmdDesc *analysis_reg_flags_unset_cd = rz_cmd_desc_argv_new(core->rcmd, arf_cd, "arf-", rz_analysis_reg_flags_unset_handler, &analysis_reg_flags_unset_help);
+	rz_warn_if_fail(analysis_reg_flags_unset_cd);
+
+	RzCmdDesc *ara_cd = rz_cmd_desc_group_new(core->rcmd, ar_cd, "ara", rz_analysis_reg_arenas_handler, &analysis_reg_arenas_help, &ara_help);
+	rz_warn_if_fail(ara_cd);
+	RzCmdDesc *analysis_reg_arenas_push_cd = rz_cmd_desc_argv_new(core->rcmd, ara_cd, "ara+", rz_analysis_reg_arenas_push_handler, &analysis_reg_arenas_push_help);
+	rz_warn_if_fail(analysis_reg_arenas_push_cd);
+
+	RzCmdDesc *analysis_reg_arenas_pop_cd = rz_cmd_desc_argv_new(core->rcmd, ara_cd, "ara-", rz_analysis_reg_arenas_pop_handler, &analysis_reg_arenas_pop_help);
+	rz_warn_if_fail(analysis_reg_arenas_pop_cd);
+
+	RzCmdDesc *analysis_reg_arenas_stack_size_cd = rz_cmd_desc_argv_new(core->rcmd, ara_cd, "araS", rz_analysis_reg_arenas_stack_size_handler, &analysis_reg_arenas_stack_size_help);
+	rz_warn_if_fail(analysis_reg_arenas_stack_size_cd);
+
+	RzCmdDesc *analysis_reg_arenas_swap_cd = rz_cmd_desc_argv_new(core->rcmd, ara_cd, "aras", rz_analysis_reg_arenas_swap_handler, &analysis_reg_arenas_swap_help);
+	rz_warn_if_fail(analysis_reg_arenas_swap_cd);
+
+	RzCmdDesc *analysis_reg_arenas_zero_cd = rz_cmd_desc_argv_new(core->rcmd, ara_cd, "ara0", rz_analysis_reg_arenas_zero_handler, &analysis_reg_arenas_zero_help);
+	rz_warn_if_fail(analysis_reg_arenas_zero_cd);
+
+	RzCmdDesc *analysis_reg_arenas_hexdump_cd = rz_cmd_desc_argv_new(core->rcmd, ara_cd, "arab", rz_analysis_reg_arenas_hexdump_handler, &analysis_reg_arenas_hexdump_help);
+	rz_warn_if_fail(analysis_reg_arenas_hexdump_cd);
+
+	RzCmdDesc *analysis_reg_arenas_write_hex_cd = rz_cmd_desc_argv_new(core->rcmd, ara_cd, "araw", rz_analysis_reg_arenas_write_hex_handler, &analysis_reg_arenas_write_hex_help);
+	rz_warn_if_fail(analysis_reg_arenas_write_hex_cd);
+
+	RzCmdDesc *arp_cd = rz_cmd_desc_group_state_new(core->rcmd, ar_cd, "arp", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_reg_profile_handler, &analysis_reg_profile_help, &arp_help);
+	rz_warn_if_fail(arp_cd);
+	RzCmdDesc *analysis_reg_profile_comments_cd = rz_cmd_desc_argv_new(core->rcmd, arp_cd, "arpc", rz_analysis_reg_profile_comments_handler, &analysis_reg_profile_comments_help);
+	rz_warn_if_fail(analysis_reg_profile_comments_cd);
+
+	RzCmdDesc *analysis_reg_profile_open_cd = rz_cmd_desc_argv_new(core->rcmd, arp_cd, "arpo", rz_analysis_reg_profile_open_handler, &analysis_reg_profile_open_help);
+	rz_warn_if_fail(analysis_reg_profile_open_cd);
+
+	RzCmdDesc *analysis_reg_profile_gdb_cd = rz_cmd_desc_argv_new(core->rcmd, arp_cd, "arpg", rz_analysis_reg_profile_gdb_handler, &analysis_reg_profile_gdb_help);
+	rz_warn_if_fail(analysis_reg_profile_gdb_cd);
+
+	RzCmdDesc *analysis_reg_cond_cd = rz_cmd_desc_argv_new(core->rcmd, ar_cd, "arc", rz_analysis_reg_cond_handler, &analysis_reg_cond_help);
+	rz_warn_if_fail(analysis_reg_cond_cd);
+
+	RzCmdDesc *analysis_reg_types_cd = rz_cmd_desc_argv_new(core->rcmd, ar_cd, "arT", rz_analysis_reg_types_handler, &analysis_reg_types_help);
+	rz_warn_if_fail(analysis_reg_types_cd);
+
+	RzCmdDesc *analysis_reg_roles_cd = rz_cmd_desc_argv_new(core->rcmd, ar_cd, "arR", rz_analysis_reg_roles_handler, &analysis_reg_roles_help);
+	rz_warn_if_fail(analysis_reg_roles_cd);
 
 	RzCmdDesc *av_cd = rz_cmd_desc_group_modes_new(core->rcmd, cmd_analysis_cd, "av", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_analysis_list_vtables_handler, &analysis_list_vtables_help, &av_help);
 	rz_warn_if_fail(av_cd);
@@ -9093,6 +10293,85 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_debug_heap_jemalloc_cd = rz_cmd_desc_oldinput_new(core->rcmd, dm_cd, "dmx", rz_cmd_debug_heap_jemalloc, &cmd_debug_heap_jemalloc_help);
 	rz_warn_if_fail(cmd_debug_heap_jemalloc_cd);
+
+	RzCmdDesc *dr_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_debug_cd, "dr", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_debug_regs_handler, &debug_regs_help, &dr_help);
+	rz_warn_if_fail(dr_cd);
+	RzCmdDesc *debug_regs_columns_cd = rz_cmd_desc_argv_new(core->rcmd, dr_cd, "dr=", rz_debug_regs_columns_handler, &debug_regs_columns_help);
+	rz_warn_if_fail(debug_regs_columns_cd);
+
+	RzCmdDesc *debug_regs_references_cd = rz_cmd_desc_argv_modes_new(core->rcmd, dr_cd, "drr", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_debug_regs_references_handler, &debug_regs_references_help);
+	rz_warn_if_fail(debug_regs_references_cd);
+
+	RzCmdDesc *debug_regs_valgroup_cd = rz_cmd_desc_argv_new(core->rcmd, dr_cd, "dri", rz_debug_regs_valgroup_handler, &debug_regs_valgroup_help);
+	rz_warn_if_fail(debug_regs_valgroup_cd);
+
+	RzCmdDesc *debug_regs_args_cd = rz_cmd_desc_argv_modes_new(core->rcmd, dr_cd, "drA", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_debug_regs_args_handler, &debug_regs_args_help);
+	rz_warn_if_fail(debug_regs_args_cd);
+
+	RzCmdDesc *debug_reg_cc_cd = rz_cmd_desc_argv_new(core->rcmd, dr_cd, "drcc", rz_debug_reg_cc_handler, &debug_reg_cc_help);
+	rz_warn_if_fail(debug_reg_cc_cd);
+
+	RzCmdDesc *debug_regs_diff_cd = rz_cmd_desc_argv_new(core->rcmd, dr_cd, "drd", rz_debug_regs_diff_handler, &debug_regs_diff_help);
+	rz_warn_if_fail(debug_regs_diff_cd);
+
+	RzCmdDesc *debug_regs_prev_cd = rz_cmd_desc_argv_state_new(core->rcmd, dr_cd, "dro", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_debug_regs_prev_handler, &debug_regs_prev_help);
+	rz_warn_if_fail(debug_regs_prev_cd);
+
+	RzCmdDesc *debug_regs_fpu_cd = rz_cmd_desc_argv_new(core->rcmd, dr_cd, "drF", rz_debug_regs_fpu_handler, &debug_regs_fpu_help);
+	rz_warn_if_fail(debug_regs_fpu_cd);
+
+	RzCmdDesc *drf_cd = rz_cmd_desc_group_new(core->rcmd, dr_cd, "drf", rz_debug_reg_flags_handler, &debug_reg_flags_help, &drf_help);
+	rz_warn_if_fail(drf_cd);
+	RzCmdDesc *debug_reg_flags_unset_cd = rz_cmd_desc_argv_new(core->rcmd, drf_cd, "drf-", rz_debug_reg_flags_unset_handler, &debug_reg_flags_unset_help);
+	rz_warn_if_fail(debug_reg_flags_unset_cd);
+
+	RzCmdDesc *dra_cd = rz_cmd_desc_group_new(core->rcmd, dr_cd, "dra", rz_debug_reg_arenas_handler, &debug_reg_arenas_help, &dra_help);
+	rz_warn_if_fail(dra_cd);
+	RzCmdDesc *debug_reg_arenas_push_cd = rz_cmd_desc_argv_new(core->rcmd, dra_cd, "dra+", rz_debug_reg_arenas_push_handler, &debug_reg_arenas_push_help);
+	rz_warn_if_fail(debug_reg_arenas_push_cd);
+
+	RzCmdDesc *debug_reg_arenas_pop_cd = rz_cmd_desc_argv_new(core->rcmd, dra_cd, "dra-", rz_debug_reg_arenas_pop_handler, &debug_reg_arenas_pop_help);
+	rz_warn_if_fail(debug_reg_arenas_pop_cd);
+
+	RzCmdDesc *debug_reg_arenas_stack_size_cd = rz_cmd_desc_argv_new(core->rcmd, dra_cd, "draS", rz_debug_reg_arenas_stack_size_handler, &debug_reg_arenas_stack_size_help);
+	rz_warn_if_fail(debug_reg_arenas_stack_size_cd);
+
+	RzCmdDesc *debug_reg_arenas_swap_cd = rz_cmd_desc_argv_new(core->rcmd, dra_cd, "dras", rz_debug_reg_arenas_swap_handler, &debug_reg_arenas_swap_help);
+	rz_warn_if_fail(debug_reg_arenas_swap_cd);
+
+	RzCmdDesc *debug_reg_arenas_zero_cd = rz_cmd_desc_argv_new(core->rcmd, dra_cd, "dra0", rz_debug_reg_arenas_zero_handler, &debug_reg_arenas_zero_help);
+	rz_warn_if_fail(debug_reg_arenas_zero_cd);
+
+	RzCmdDesc *debug_reg_arenas_hexdump_cd = rz_cmd_desc_argv_new(core->rcmd, dra_cd, "drab", rz_debug_reg_arenas_hexdump_handler, &debug_reg_arenas_hexdump_help);
+	rz_warn_if_fail(debug_reg_arenas_hexdump_cd);
+
+	RzCmdDesc *debug_reg_arenas_write_hex_cd = rz_cmd_desc_argv_new(core->rcmd, dra_cd, "draw", rz_debug_reg_arenas_write_hex_handler, &debug_reg_arenas_write_hex_help);
+	rz_warn_if_fail(debug_reg_arenas_write_hex_cd);
+
+	RzCmdDesc *drp_cd = rz_cmd_desc_group_state_new(core->rcmd, dr_cd, "drp", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_debug_reg_profile_handler, &debug_reg_profile_help, &drp_help);
+	rz_warn_if_fail(drp_cd);
+	RzCmdDesc *debug_reg_profile_comments_cd = rz_cmd_desc_argv_new(core->rcmd, drp_cd, "drpc", rz_debug_reg_profile_comments_handler, &debug_reg_profile_comments_help);
+	rz_warn_if_fail(debug_reg_profile_comments_cd);
+
+	RzCmdDesc *debug_reg_profile_open_cd = rz_cmd_desc_argv_new(core->rcmd, drp_cd, "drpo", rz_debug_reg_profile_open_handler, &debug_reg_profile_open_help);
+	rz_warn_if_fail(debug_reg_profile_open_cd);
+
+	RzCmdDesc *debug_reg_profile_gdb_cd = rz_cmd_desc_argv_new(core->rcmd, drp_cd, "drpg", rz_debug_reg_profile_gdb_handler, &debug_reg_profile_gdb_help);
+	rz_warn_if_fail(debug_reg_profile_gdb_cd);
+
+	RzCmdDesc *debug_reg_cond_cd = rz_cmd_desc_argv_new(core->rcmd, dr_cd, "drc", rz_debug_reg_cond_handler, &debug_reg_cond_help);
+	rz_warn_if_fail(debug_reg_cond_cd);
+
+	RzCmdDesc *debug_reg_types_cd = rz_cmd_desc_argv_new(core->rcmd, dr_cd, "drT", rz_debug_reg_types_handler, &debug_reg_types_help);
+	rz_warn_if_fail(debug_reg_types_cd);
+
+	RzCmdDesc *debug_reg_roles_cd = rz_cmd_desc_argv_new(core->rcmd, dr_cd, "drR", rz_debug_reg_roles_handler, &debug_reg_roles_help);
+	rz_warn_if_fail(debug_reg_roles_cd);
+
+	RzCmdDesc *drx_cd = rz_cmd_desc_group_new(core->rcmd, dr_cd, "drx", rz_debug_drx_handler, &debug_drx_help, &drx_help);
+	rz_warn_if_fail(drx_cd);
+	RzCmdDesc *debug_drx_unset_cd = rz_cmd_desc_argv_new(core->rcmd, drx_cd, "drx-", rz_debug_drx_unset_handler, &debug_drx_unset_help);
+	rz_warn_if_fail(debug_drx_unset_cd);
 
 	RzCmdDesc *e_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "e", rz_eval_getset_handler, &eval_getset_help, &e_help);
 	rz_warn_if_fail(e_cd);
@@ -9907,6 +11186,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *zf_cd = rz_cmd_desc_group_new(core->rcmd, z_cd, "zf", NULL, NULL, &zf_help);
 	rz_warn_if_fail(zf_cd);
+	RzCmdDesc *zign_flirt_create_cd = rz_cmd_desc_argv_new(core->rcmd, zf_cd, "zfc", rz_zign_flirt_create_handler, &zign_flirt_create_help);
+	rz_warn_if_fail(zign_flirt_create_cd);
+
 	RzCmdDesc *zign_flirt_dump_cd = rz_cmd_desc_argv_new(core->rcmd, zf_cd, "zfd", rz_zign_flirt_dump_handler, &zign_flirt_dump_help);
 	rz_warn_if_fail(zign_flirt_dump_cd);
 

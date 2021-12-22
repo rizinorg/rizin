@@ -1202,9 +1202,16 @@ rep:
 		case '?':
 			rz_core_cmd_help(core, help_msg_fs);
 			break;
-		case '+':
-			rz_flag_space_push(core->flags, input + 2);
+		case '+': {
+			char *name = strdup(input + 2);
+			if (!name) {
+				return 0;
+			}
+			rz_str_trim(name);
+			rz_flag_space_push(core->flags, name);
+			free(name);
 			break;
+		}
 		case 'r':
 			if (input[2] == ' ') {
 				char *newname = strdup(input + 3);

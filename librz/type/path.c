@@ -174,7 +174,6 @@ static bool structured_member_walker(const RzTypeDB *typedb, RzList /* RzTypePat
  * \param offset The offset of the path to match against
  */
 RZ_API RZ_OWN RzList /* RzTypePath */ *rz_type_path_by_offset(const RzTypeDB *typedb, RzBaseType *btype, ut64 offset) {
-	bool nofail = true;
 	RzList *list = rz_list_newf((RzListFree)rz_type_path_free);
 	if (btype->kind == RZ_BASE_TYPE_KIND_STRUCT) {
 		RzType *t = rz_type_identifier_of_base_type(typedb, btype, false);
@@ -189,7 +188,7 @@ RZ_API RZ_OWN RzList /* RzTypePath */ *rz_type_path_by_offset(const RzTypeDB *ty
 			}
 			// We go into the nested structures/unions if they are members of the structure
 			char *path = rz_str_newf("%s.%s", btype->name, memb->name);
-			nofail &= structured_member_walker(typedb, list, t, memb->type, path, memb_offset + offset);
+			structured_member_walker(typedb, list, t, memb->type, path, memb_offset + offset);
 			memb_offset += rz_type_db_get_bitsize(typedb, memb->type) / 8;
 			free(path);
 		}
@@ -202,7 +201,7 @@ RZ_API RZ_OWN RzList /* RzTypePath */ *rz_type_path_by_offset(const RzTypeDB *ty
 		RzTypeUnionMember *memb;
 		rz_vector_foreach(&btype->union_data.members, memb) {
 			char *path = rz_str_newf("%s.%s", btype->name, memb->name);
-			nofail &= structured_member_walker(typedb, list, t, memb->type, path, offset);
+			structured_member_walker(typedb, list, t, memb->type, path, offset);
 			free(path);
 		}
 	} else {

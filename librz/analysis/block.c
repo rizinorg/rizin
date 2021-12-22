@@ -492,6 +492,7 @@ typedef struct {
 } RecurseDepthFirstCtx;
 
 RZ_API bool rz_analysis_block_recurse_depth_first(RzAnalysisBlock *block, RzAnalysisBlockCb cb, RZ_NULLABLE RzAnalysisBlockCb on_exit, void *user) {
+	rz_return_val_if_fail(block && cb, true);
 	bool breaked = false;
 	HtUP *visited = ht_up_new0();
 	if (!visited) {

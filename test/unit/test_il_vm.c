@@ -16,8 +16,8 @@ static bool test_rzil_vm_basic_operation() {
 	RzILVM *vm = rz_il_vm_new(0, 8, 16);
 
 	// 1. create variables
-	RzILVar *var_r1 = rz_il_vm_create_variable(vm, "r1");
-	RzILVar *var_r2 = rz_il_vm_create_variable(vm, "r2");
+	RzILVar *var_r1 = rz_il_vm_create_global_variable(vm, "r1", RZIL_VAR_TYPE_UNK, true);
+	RzILVar *var_r2 = rz_il_vm_create_global_variable(vm, "r2", RZIL_VAR_TYPE_UNK, false);
 	mu_assert_notnull(var_r1, "Create var 1");
 	mu_assert_notnull(var_r2, "Create var 2");
 
@@ -29,6 +29,10 @@ static bool test_rzil_vm_basic_operation() {
 	mu_assert_eq(var_r1->type, RZIL_VAR_TYPE_UNK, "var r1 type unk");
 	mu_assert_eq(var_r2->type, RZIL_VAR_TYPE_UNK, "var r2 type unk");
 
+	// check mutablity
+	mu_assert_eq(var_r1->is_mutable, true, "var r1 is mutable");
+	mu_assert_eq(var_r2->is_mutable, false, "var r2 is not mutable");
+
 	// 2. find vars from vm
 	RzILVar *find_var_r1 = rz_il_find_var_by_name(vm, "r1");
 	RzILVar *find_var_r2 = rz_il_find_var_by_name(vm, "r2");
@@ -36,8 +40,8 @@ static bool test_rzil_vm_basic_operation() {
 	mu_assert_eq(var_r2, find_var_r2, "Store and find r2");
 
 	// 3. create value
-	RzILVal *val_r1 = rz_il_vm_create_value(vm, RZIL_VAR_TYPE_BV);
-	RzILVal *val_r2 = rz_il_vm_create_value(vm, RZIL_VAR_TYPE_BOOL);
+	RzILVal *val_r1 = rz_il_vm_create_value_bitv(vm, rz_bv_new_zero(32));
+	RzILVal *val_r2 = rz_il_vm_create_value_bool(vm, false);
 	mu_assert_notnull(val_r1, "Create val 1");
 	mu_assert_notnull(val_r2, "Create val 2");
 
@@ -135,24 +139,16 @@ static bool test_rzil_vm_operation() {
 static bool test_rzil_vm_root_evaluation() {
 	RzILVM *vm = rz_il_vm_new(0, 8, 16);
 
-	RzILOp *ite_root = rz_il_new_op(RZIL_OP_ITE);
-	RzILOp *add = rz_il_new_op(RZIL_OP_ADD);
-	RzILOp *arg1 = rz_il_new_op(RZIL_OP_BITV);
-	RzILOp *arg2 = rz_il_new_op(RZIL_OP_BITV);
-	RzILOp *true_val = rz_il_new_op(RZIL_OP_B1);
-	RzILOp *false_val = rz_il_new_op(RZIL_OP_B0);
-
 	// (ite (add 23 19)
 	//	true
 	//	false)
 	// evaluate (add 23 19) will get a bitvector, but condition require a bool
-	ite_root->op.ite->condition = add;
-	ite_root->op.ite->x = true_val;
-	ite_root->op.ite->y = false_val;
-	add->op.add->x = arg1;
-	add->op.add->y = arg2;
-	arg1->op.bitv->value = rz_bv_new_from_st64(16, 23);
-	arg2->op.bitv->value = rz_bv_new_from_st64(16, 19);
+	RzILOp *arg1 = rz_il_op_new_bitv_from_st64(16, 23);
+	RzILOp *arg2 = rz_il_op_new_bitv_from_st64(16, 19);
+	RzILOp *add = rz_il_op_new_add(arg1, arg2);
+	RzILOp *true_val = rz_il_op_new_b1();
+	RzILOp *false_val = rz_il_op_new_b0();
+	RzILOp *ite_root = rz_il_op_new_ite(add, true_val, false_val);
 
 	// Partially evaluate `condition` only
 	RzILOpArgType type_checker = RZIL_OP_ARG_INIT;
@@ -168,24 +164,102 @@ static bool test_rzil_vm_root_evaluation() {
 	mu_assert_eq(ite_val->data.b->b, true, "Return a True");
 	rz_il_value_free(ite_val);
 
-	// Catch error
-	RzILOp *branch_root = rz_il_new_op(RZIL_OP_BRANCH);
-	RzILOp *branch_cond = rz_il_new_op(RZIL_OP_B1);
-	RzILOp *branch_true = rz_il_new_op(RZIL_OP_B1);
-	RzILOp *branch_false = NULL; // empty effect
+	rz_il_op_free(ite_root);
+	rz_il_vm_free(vm);
+	mu_end;
+}
 
-	branch_root->op.branch->condition = branch_cond;
-	branch_root->op.branch->true_eff = branch_true;
-	branch_root->op.branch->false_eff = branch_false;
+static bool test_rzil_vm_op_set() {
+	RzILVM *vm = rz_il_vm_new(0, 8, 16);
 
-	type_checker = RZIL_OP_ARG_INIT;
-	RzILEffect *eff = rz_il_evaluate_effect(vm, branch_root, &type_checker);
-	mu_assert_null(eff, "Error happens");
-	mu_assert_eq(type_checker, RZIL_OP_ARG_BOOL, "you cannot convert bool type to effect, such an error will be detected");
-	rz_il_effect_free(eff);
+	RzILVar *var_r1 = rz_il_vm_create_global_variable(vm, "r1", RZIL_VAR_TYPE_UNK, true);
+	RzILVar *var_r2 = rz_il_vm_create_global_variable(vm, "r2", RZIL_VAR_TYPE_UNK, false);
+	rz_il_hash_bind(vm, var_r1, rz_il_vm_create_value_bitv(vm, rz_bv_new_zero(32)));
+	rz_il_hash_bind(vm, var_r2, rz_il_vm_create_value_bitv(vm, rz_bv_new_zero(32)));
 
-	rz_il_free_op(ite_root);
-	rz_il_free_op(branch_root);
+	// try to set immutable and fail
+	RzILOp *op = rz_il_op_new_set("r2", rz_il_op_new_bitv_from_ut64(24, 42));
+	RzILOpArgType tret = RZIL_OP_ARG_INIT;
+	rz_il_evaluate_effect(vm, op, &tret);
+	rz_il_op_free(op);
+	RzILVal *val = rz_il_hash_find_val_by_name(vm, var_r2->var_name);
+	mu_assert_notnull(val, "get val");
+	mu_assert_eq(val->type, RZIL_VAR_TYPE_BV, "unchanged bv");
+	mu_assert_eq(rz_bv_len(val->data.bv), 32, "unchanged bv len");
+	mu_assert_eq(rz_bv_to_ut64(val->data.bv), 0, "unchanged bv val");
+
+	// set mutable
+	op = rz_il_op_new_set("r1", rz_il_op_new_bitv_from_ut64(24, 42));
+	tret = RZIL_OP_ARG_INIT;
+	rz_il_evaluate_effect(vm, op, &tret);
+	rz_il_op_free(op);
+	val = rz_il_hash_find_val_by_name(vm, var_r1->var_name);
+	mu_assert_notnull(val, "get val");
+	mu_assert_eq(val->type, RZIL_VAR_TYPE_BV, "set bv");
+	mu_assert_eq(rz_bv_len(val->data.bv), 24, "set bv len");
+	mu_assert_eq(rz_bv_to_ut64(val->data.bv), 42, "set bv val");
+
+	rz_il_vm_free(vm);
+	mu_end;
+}
+
+static bool test_rzil_vm_op_jmp() {
+	RzILVM *vm = rz_il_vm_new(0, 8, 16);
+
+	RzILOp *op = rz_il_op_new_jmp(rz_il_op_new_bitv_from_ut64(8, 0x42));
+	RzILOpArgType tret = RZIL_OP_ARG_INIT;
+	rz_il_evaluate_effect(vm, op, &tret);
+	rz_il_op_free(op);
+	mu_assert_eq(rz_bv_to_ut64(vm->pc), 0x42, "jumped");
+
+	rz_il_vm_free(vm);
+	mu_end;
+}
+
+static bool test_rzil_vm_op_goto_addr() {
+	RzILVM *vm = rz_il_vm_new(0, 8, 16);
+
+	RzBitVector *dst = rz_bv_new_from_ut64(8, 0x42);
+	rz_il_vm_create_label(vm, "beach", dst);
+	rz_bv_free(dst);
+
+	RzILOp *op = rz_il_op_new_goto("beach");
+	RzILOpArgType tret = RZIL_OP_ARG_INIT;
+	rz_il_evaluate_effect(vm, op, &tret);
+	rz_il_op_free(op);
+	mu_assert_eq(rz_bv_to_ut64(vm->pc), 0x42, "wentto");
+
+	rz_il_vm_free(vm);
+	mu_end;
+}
+
+static void hook_test(RzILVM *vm, RzILOp *op) {
+	RzILVar *var = rz_il_find_var_by_name(vm, "myvar");
+	rz_il_hash_bind(vm, var, rz_il_vm_create_value_bitv(vm, rz_bv_new_from_ut64(32, 0xc0ffee)));
+}
+
+static bool test_rzil_vm_op_goto_hook() {
+	RzILVM *vm = rz_il_vm_new(0, 8, 16);
+
+	RzILVar *var = rz_il_vm_create_global_variable(vm, "myvar", RZIL_VAR_TYPE_UNK, true);
+	rz_il_hash_bind(vm, var, rz_il_vm_create_value_bitv(vm, rz_bv_new_zero(32)));
+
+	RzBitVector *dst = rz_bv_new_from_ut64(8, 0x42);
+	RzILEffectLabel *label = rz_il_vm_create_label_lazy(vm, "beach");
+	label->type = EFFECT_LABEL_HOOK;
+	label->hook = hook_test;
+	rz_bv_free(dst);
+
+	RzILOp *op = rz_il_op_new_goto("beach");
+	RzILOpArgType tret = RZIL_OP_ARG_INIT;
+	rz_il_evaluate_effect(vm, op, &tret);
+	rz_il_op_free(op);
+
+	// check the effect we implemented in hook_test
+	RzILVal *val = rz_il_hash_find_val_by_name(vm, "myvar");
+	mu_assert_eq(val->type, RZIL_VAR_TYPE_BV, "val type");
+	mu_assert_eq(rz_bv_to_ut64(val->data.bv), 0xc0ffee, "val contents");
+
 	rz_il_vm_free(vm);
 	mu_end;
 }
@@ -195,6 +269,10 @@ bool all_tests() {
 	mu_run_test(test_rzil_vm_basic_operation);
 	mu_run_test(test_rzil_vm_operation);
 	mu_run_test(test_rzil_vm_root_evaluation);
+	mu_run_test(test_rzil_vm_op_set);
+	mu_run_test(test_rzil_vm_op_jmp);
+	mu_run_test(test_rzil_vm_op_goto_addr);
+	mu_run_test(test_rzil_vm_op_goto_hook);
 	return tests_passed != tests_run;
 }
 

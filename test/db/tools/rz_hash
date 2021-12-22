@@ -174,7 +174,7 @@ CMDS=!rz-hash -L
 EXPECT=<<EOF
 flags  algorithm      license    author
 ____hm md4            LGPL3      deroad
-____hm md5            RSA-MD     RSA Data Security, Inc.
+____hm md5            LGPL2      Alan DeKok (md5 algorithm implementation), deroad (plugin)
 ____hm sha1           LGPL3      deroad
 ____hm sha256         BSD-3      Aaron D. Gifford
 ____hm sha384         BSD-3      Aaron D. Gifford
@@ -241,7 +241,7 @@ ____h_ xxhash32       LGPL3      deroad
 ____h_ parity         LGPL3      deroad
 ____h_ entropy        LGPL3      deroad
 ____h_ entropy_fract  LGPL3      deroad
-ED____ aes-ecb        MS-PL      Karl Malbrain
+ED____ aes-ecb        LGPL3      Nettle project (algorithm implementation), pancake (plugin)
 ED____ aes-cbc        LGPL-3     rakholiyajenish.07
 __ed__ base64         LGPL-3     rakholiyajenish.07
 __ed__ base91         LGPL-3     rakholiyajenish.07

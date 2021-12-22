@@ -9,28 +9,16 @@
 #include "rz_types_base.h"
 
 static RzList *parse_list(const char *str) {
-	RzList *list;
-	char *line, *data, *p, *str_n;
+	char *line, *data, *str_n;
 
 	if (!str) {
 		return NULL;
 	}
-
 	str_n = strdup(str);
-	list = rz_list_newf(free);
-	if (!list) {
-		free(str_n);
-		return NULL;
-	}
 	line = strtok(str_n, "\n");
 	data = strchr(line, '=');
-	// TODO: use rz_str_split()
-	p = strtok(data + 1, ",");
 
-	while (p) {
-		rz_list_append(list, (void *)strdup(p));
-		p = strtok(NULL, ",");
-	}
+	RzList *list = rz_str_split_duplist(data + 1, ",", false);
 
 	free(str_n);
 	return list;
@@ -170,14 +158,14 @@ static void fillRegisterValues(RzCore *core) {
 	RzRegItem *reg_item;
 	int nr = 10;
 
-	const RzList *regs = rz_reg_get_list(core->dbg->reg, RZ_REG_TYPE_GPR);
+	const RzList *regs = rz_reg_get_list(core->analysis->reg, RZ_REG_TYPE_GPR);
 	if (!regs) {
 		return;
 	}
 	rz_list_foreach (regs, iter_reg, reg_item) {
-		rz_reg_arena_pop(core->dbg->reg);
-		rz_reg_set_value(core->dbg->reg, reg_item, nr);
-		rz_reg_arena_push(core->dbg->reg);
+		rz_reg_arena_pop(core->analysis->reg);
+		rz_reg_set_value(core->analysis->reg, reg_item, nr);
+		rz_reg_arena_push(core->analysis->reg);
 		nr += 3;
 	}
 }
@@ -249,7 +237,7 @@ static char *rop_classify_constant(RzCore *core, RzList *ropList) {
 		}
 		// init regs with known values
 		fillRegisterValues(core);
-		head = rz_reg_get_list(core->dbg->reg, RZ_REG_TYPE_GPR);
+		head = rz_reg_get_list(core->analysis->reg, RZ_REG_TYPE_GPR);
 		if (!head) {
 			ct = NULL;
 			goto continue_error;
@@ -270,7 +258,7 @@ static char *rop_classify_constant(RzCore *core, RzList *ropList) {
 		if (!rz_list_find(ops_list, "=", (RzListComparator)strcmp)) {
 			goto continue_error;
 		}
-		head = rz_reg_get_list(core->dbg->reg, RZ_REG_TYPE_GPR);
+		head = rz_reg_get_list(core->analysis->reg, RZ_REG_TYPE_GPR);
 		if (!head) {
 			goto out_error;
 		}
@@ -281,12 +269,12 @@ static char *rop_classify_constant(RzCore *core, RzList *ropList) {
 				continue;
 			}
 
-			value_dst = rz_reg_get_value(core->dbg->reg, item_dst);
-			rz_reg_arena_swap(core->dbg->reg, false);
-			diff_dst = rz_reg_get_value(core->dbg->reg, item_dst);
-			rz_reg_arena_swap(core->dbg->reg, false);
+			value_dst = rz_reg_get_value(core->analysis->reg, item_dst);
+			rz_reg_arena_swap(core->analysis->reg, false);
+			diff_dst = rz_reg_get_value(core->analysis->reg, item_dst);
+			rz_reg_arena_swap(core->analysis->reg, false);
 			// restore initial value
-			rz_reg_set_value(core->dbg->reg, item_dst, diff_dst);
+			rz_reg_set_value(core->analysis->reg, item_dst, diff_dst);
 
 			if (value_dst != diff_dst) {
 				rz_list_foreach (constants, iter_const, constant) {
@@ -329,7 +317,7 @@ static char *rop_classify_mov(RzCore *core, RzList *ropList) {
 	rz_list_foreach (ropList, iter_r, esil_str) {
 		// init regs with known values
 		fillRegisterValues(core);
-		head = rz_reg_get_list(core->dbg->reg, RZ_REG_TYPE_GPR);
+		head = rz_reg_get_list(core->analysis->reg, RZ_REG_TYPE_GPR);
 		if (!head) {
 			goto out_error;
 		}
@@ -352,7 +340,7 @@ static char *rop_classify_mov(RzCore *core, RzList *ropList) {
 			goto continue_error;
 		}
 
-		head = rz_reg_get_list(core->dbg->reg, RZ_REG_TYPE_GPR);
+		head = rz_reg_get_list(core->analysis->reg, RZ_REG_TYPE_GPR);
 		if (!head) {
 			goto out_error;
 		}
@@ -368,10 +356,10 @@ static char *rop_classify_mov(RzCore *core, RzList *ropList) {
 				continue;
 			}
 
-			value_dst = rz_reg_get_value(core->dbg->reg, item_dst);
-			rz_reg_arena_swap(core->dbg->reg, false);
-			diff_dst = rz_reg_get_value(core->dbg->reg, item_dst);
-			rz_reg_arena_swap(core->dbg->reg, false);
+			value_dst = rz_reg_get_value(core->analysis->reg, item_dst);
+			rz_reg_arena_swap(core->analysis->reg, false);
+			diff_dst = rz_reg_get_value(core->analysis->reg, item_dst);
+			rz_reg_arena_swap(core->analysis->reg, false);
 			rz_list_foreach (head, iter_src, item_src) {
 				ut64 diff_src, value_src;
 				if (!rz_list_find(reg_read, item_src->name,
@@ -382,12 +370,12 @@ static char *rop_classify_mov(RzCore *core, RzList *ropList) {
 				if (item_src == item_dst || isFlag(item_src)) {
 					continue;
 				}
-				value_src = rz_reg_get_value(core->dbg->reg, item_src);
-				rz_reg_arena_swap(core->dbg->reg, false);
-				diff_src = rz_reg_get_value(core->dbg->reg, item_src);
-				rz_reg_arena_swap(core->dbg->reg, false);
+				value_src = rz_reg_get_value(core->analysis->reg, item_src);
+				rz_reg_arena_swap(core->analysis->reg, false);
+				diff_src = rz_reg_get_value(core->analysis->reg, item_src);
+				rz_reg_arena_swap(core->analysis->reg, false);
 				// restore initial value
-				rz_reg_set_value(core->dbg->reg, item_src, diff_src);
+				rz_reg_set_value(core->analysis->reg, item_src, diff_src);
 				if (value_dst == value_src && value_dst != diff_dst) {
 					mov = rz_str_appendf(mov, "%s <-- %s;",
 						item_dst->name, item_src->name);
@@ -428,7 +416,7 @@ static char *rop_classify_arithmetic(RzCore *core, RzList *ropList) {
 	rz_list_foreach (ropList, iter_r, esil_str) {
 		// init regs with known values
 		fillRegisterValues(core);
-		head = rz_reg_get_list(core->dbg->reg, RZ_REG_TYPE_GPR);
+		head = rz_reg_get_list(core->analysis->reg, RZ_REG_TYPE_GPR);
 		if (!head) {
 			goto out_error;
 		}
@@ -455,10 +443,10 @@ static char *rop_classify_arithmetic(RzCore *core, RzList *ropList) {
 			rz_list_foreach (head, iter_src1, item_src1) {
 				ut64 value_src1, diff_src1;
 
-				value_src1 = rz_reg_get_value(core->dbg->reg, item_src1);
-				rz_reg_arena_swap(core->dbg->reg, false);
-				diff_src1 = rz_reg_get_value(core->dbg->reg, item_src1);
-				rz_reg_arena_swap(core->dbg->reg, false);
+				value_src1 = rz_reg_get_value(core->analysis->reg, item_src1);
+				rz_reg_arena_swap(core->analysis->reg, false);
+				diff_src1 = rz_reg_get_value(core->analysis->reg, item_src1);
+				rz_reg_arena_swap(core->analysis->reg, false);
 				if (!rz_list_find(reg_read, item_src1->name,
 					    (RzListComparator)strcmp)) {
 					continue;
@@ -466,9 +454,9 @@ static char *rop_classify_arithmetic(RzCore *core, RzList *ropList) {
 
 				rz_list_foreach (head, iter_src2, item_src2) {
 					ut64 value_src2, diff_src2;
-					value_src2 = rz_reg_get_value(core->dbg->reg, item_src2);
-					rz_reg_arena_swap(core->dbg->reg, false);
-					diff_src2 = rz_reg_get_value(core->dbg->reg, item_src2);
+					value_src2 = rz_reg_get_value(core->analysis->reg, item_src2);
+					rz_reg_arena_swap(core->analysis->reg, false);
+					diff_src2 = rz_reg_get_value(core->analysis->reg, item_src2);
 
 					if (!rz_list_find(reg_read, item_src2->name,
 						    (RzListComparator)strcmp)) {
@@ -483,8 +471,8 @@ static char *rop_classify_arithmetic(RzCore *core, RzList *ropList) {
 						ut64 value_dst;
 						bool redundant = false, simulate, simulate_r;
 
-						value_dst = rz_reg_get_value(core->dbg->reg, item_dst);
-						rz_reg_arena_swap(core->dbg->reg, false);
+						value_dst = rz_reg_get_value(core->analysis->reg, item_dst);
+						rz_reg_arena_swap(core->analysis->reg, false);
 						if (!rz_list_find(reg_write, item_dst->name,
 							    (RzListComparator)strcmp)) {
 							continue;
@@ -560,7 +548,7 @@ static char *rop_classify_arithmetic_const(RzCore *core, RzList *ropList) {
 		}
 		// init regs with known values
 		fillRegisterValues(core);
-		head = rz_reg_get_list(core->dbg->reg, RZ_REG_TYPE_GPR);
+		head = rz_reg_get_list(core->analysis->reg, RZ_REG_TYPE_GPR);
 		if (!head) {
 			arithmetic = NULL;
 			continue;
@@ -590,10 +578,10 @@ static char *rop_classify_arithmetic_const(RzCore *core, RzList *ropList) {
 		rz_list_foreach (ops_list, iter_ops, op) {
 			rz_list_foreach (head, iter_src1, item_src1) {
 				ut64 value_src1, diff_src1;
-				value_src1 = rz_reg_get_value(core->dbg->reg, item_src1);
-				rz_reg_arena_swap(core->dbg->reg, false);
-				diff_src1 = rz_reg_get_value(core->dbg->reg, item_src1);
-				rz_reg_arena_swap(core->dbg->reg, false);
+				value_src1 = rz_reg_get_value(core->analysis->reg, item_src1);
+				rz_reg_arena_swap(core->analysis->reg, false);
+				diff_src1 = rz_reg_get_value(core->analysis->reg, item_src1);
+				rz_reg_arena_swap(core->analysis->reg, false);
 
 				if (!rz_list_find(reg_read, item_src1->name,
 					    (RzListComparator)strcmp)) {
@@ -602,10 +590,10 @@ static char *rop_classify_arithmetic_const(RzCore *core, RzList *ropList) {
 				rz_list_foreach (head, iter_dst, item_dst) {
 					ut64 value_dst, diff_dst;
 					bool redundant = false, simulate, simulate_r;
-					value_dst = rz_reg_get_value(core->dbg->reg, item_dst);
-					rz_reg_arena_swap(core->dbg->reg, false);
-					diff_dst = rz_reg_get_value(core->dbg->reg, item_dst);
-					rz_reg_arena_swap(core->dbg->reg, false);
+					value_dst = rz_reg_get_value(core->analysis->reg, item_dst);
+					rz_reg_arena_swap(core->analysis->reg, false);
+					diff_dst = rz_reg_get_value(core->analysis->reg, item_dst);
+					rz_reg_arena_swap(core->analysis->reg, false);
 					if (!rz_list_find(reg_write, item_dst->name,
 						    (RzListComparator)strcmp)) {
 						continue;

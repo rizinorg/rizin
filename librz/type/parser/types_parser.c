@@ -763,7 +763,6 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 			if (!real_identifier) {
 				parser_error(state, "ERROR: Union bitfield identifier should not be NULL!\n");
 				node_malformed_error(state, child, text, "union field");
-				free(real_type);
 				result = -1;
 				goto urnexit;
 			}
@@ -828,7 +827,6 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 			if (!real_identifier) {
 				parser_error(state, "ERROR: Union declarator should not be NULL!\n");
 				node_malformed_error(state, child, text, "union field");
-				free(real_type);
 				result = -1;
 				goto urnexit;
 			}

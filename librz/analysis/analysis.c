@@ -101,7 +101,6 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	analysis->sdb_noret = sdb_ns(analysis->sdb, "noreturn", 1);
 	analysis->zign_path = strdup("");
 	analysis->cb_printf = (PrintfCallback)printf;
-	(void)rz_analysis_pin_init(analysis);
 	(void)rz_analysis_xrefs_init(analysis);
 	analysis->diff_thbb = RZ_ANALYSIS_THRESHOLDBB;
 	analysis->diff_thfcn = RZ_ANALYSIS_THRESHOLDFCN;
@@ -161,7 +160,6 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 	rz_rbtree_free(a->bb_tree, __block_free_rb, NULL);
 	rz_spaces_fini(&a->meta_spaces);
 	rz_spaces_fini(&a->zign_spaces);
-	rz_analysis_pin_fini(a);
 	rz_syscall_free(a->syscall);
 	rz_arch_target_free(a->arch_target);
 	rz_arch_platform_target_free(a->platform_target);
@@ -234,16 +232,12 @@ RZ_API char *rz_analysis_get_reg_profile(RzAnalysis *analysis) {
 // deprecate.. or at least reuse get_reg_profile...
 RZ_API bool rz_analysis_set_reg_profile(RzAnalysis *analysis) {
 	bool ret = false;
-	if (analysis && analysis->cur && analysis->cur->set_reg_profile) {
-		ret = analysis->cur->set_reg_profile(analysis);
-	} else {
-		char *p = rz_analysis_get_reg_profile(analysis);
-		if (p && *p) {
-			rz_reg_set_profile_string(analysis->reg, p);
-			ret = true;
-		}
-		free(p);
+	char *p = rz_analysis_get_reg_profile(analysis);
+	if (p) {
+		rz_reg_set_profile_string(analysis->reg, p);
+		ret = true;
 	}
+	free(p);
 	return ret;
 }
 
@@ -333,6 +327,7 @@ RZ_API void rz_analysis_set_cpu(RzAnalysis *analysis, const char *cpu) {
 	if (v != -1) {
 		analysis->pcalign = v;
 	}
+	rz_analysis_set_reg_profile(analysis);
 	rz_type_db_set_cpu(analysis->typedb, cpu);
 	char *types_dir = rz_path_system(RZ_SDB_TYPES);
 	rz_type_db_reload(analysis->typedb, types_dir);
@@ -348,10 +343,11 @@ RZ_API int rz_analysis_set_big_endian(RzAnalysis *analysis, int bigend) {
 	return true;
 }
 
-RZ_API ut8 *rz_analysis_mask(RzAnalysis *analysis, int size, const ut8 *data, ut64 at) {
+RZ_API ut8 *rz_analysis_mask(RzAnalysis *analysis, ut32 size, const ut8 *data, ut64 at) {
 	RzAnalysisOp *op = NULL;
 	ut8 *ret = NULL;
-	int oplen, idx = 0;
+	int oplen = 0;
+	ut32 idx = 0;
 
 	if (!data) {
 		return NULL;
@@ -456,8 +452,6 @@ RZ_API void rz_analysis_purge(RzAnalysis *analysis) {
 	sdb_reset(analysis->sdb_zigns);
 	sdb_reset(analysis->sdb_classes);
 	sdb_reset(analysis->sdb_classes_attrs);
-	rz_analysis_pin_fini(analysis);
-	rz_analysis_pin_init(analysis);
 	sdb_reset(analysis->sdb_cc);
 	sdb_reset(analysis->sdb_noret);
 	rz_list_free(analysis->fcns);

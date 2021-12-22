@@ -26,11 +26,6 @@ RZ_API RzBitVector *rz_il_vm_mem_load(RzILVM *vm, ut32 mem_index, RzBitVector *k
 RZ_API RzILMem *rz_il_vm_mem_store(RzILVM *vm, ut32 mem_index, RzBitVector *key, RzBitVector *value);
 RZ_API RzILMem *rz_il_vm_mem_store_zero(RzILVM *vm, ut32 mem_index, RzBitVector *key, RzBitVector **value);
 
-// utils
-RZ_API RzBitVector *rz_il_ut64_addr_to_bv(ut64 addr);
-RZ_API ut64 rz_bv_addr_to_ut64(RzBitVector *addr);
-RZ_API void rz_il_free_bv_addr(RzBitVector *addr);
-
 #ifdef __cplusplus
 }
 #endif

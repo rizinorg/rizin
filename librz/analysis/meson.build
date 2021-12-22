@@ -1,58 +1,120 @@
+analysis_plugins = [
+  '6502',
+  '8051',
+  'amd29k',
+  'arm_cs',
+  'avr',
+  'bf',
+  'chip8',
+  'cr16',
+  'dalvik',
+  'ebc',
+  'gb',
+  'h8300',
+  'hexagon',
+  'i4004',
+  'i8080',
+  'java',
+  'luac',
+  'm68k_cs',
+  'm680x_cs',
+  'malbolge',
+  'mcore',
+  'mips_cs',
+  'msp430',
+  'null',
+  'or1k',
+  'pic',
+  'ppc_cs',
+  'propeller',
+  'pyc',
+  'rsp',
+  'snes',
+  'sparc_cs',
+  'spc700',
+  'sysz',
+  'tms320',
+  #'tms320c64x',
+  'v810',
+  'v850',
+  'wasm',
+  'x86_cs',
+  'xap',
+  'xcore_cs',
+]
+
+if capstone_dep.version().split('.')[0].to_int() > 4
+  analysis_plugins += 'riscv_cs'
+endif
+
+if get_option('use_gpl')
+  analysis_plugins += [
+    'arc',
+    'cris',
+    'mips_gnu',
+    'nios2',
+    'riscv',
+    'sh',
+    'sparc_gnu',
+    'tricore',
+    'vax',
+    'xtensa',
+    'z80',
+  ]
+endif
+
 rz_analysis_sources = [
   'analysis.c',
-  'arch_profile.c',
   'arch_platform.c',
+  'arch_profile.c',
   'block.c',
-  'function.c',
-  'jmptbl.c',
   'cc.c',
   'class.c',
   'cond.c',
   'cycles.c',
   'data.c',
   'diff.c',
+  'dwarf_process.c',
   'esil/esil.c',
-  'esil/esil_stats.c',
-  'esil/esil_trace.c',
   'esil/esil_interrupt.c',
   'esil/esil_sources.c',
-  'rzil/rzil_stats.c',
-  'rzil/rzil_trace.c',
-  'rzil/rzil.c',
+  'esil/esil_stats.c',
+  'esil/esil_trace.c',
   'fcn.c',
+  'function.c',
   'hint.c',
   'il_trace.c',
+  'jmptbl.c',
   'labels.c',
   'meta.c',
   'op.c',
-  'pin.c',
   'reflines.c',
   'rtti.c',
-  'rtti_msvc.c',
   'rtti_itanium.c',
+  'rtti_msvc.c',
+  'rzil/rzil.c',
+  'rzil/rzil_stats.c',
+  'rzil/rzil_trace.c',
+  'serialize_analysis.c',
+  'serialize_typelink.c',
+  'sigdb.c',
   'switch.c',
-  'dwarf_process.c',
+  'type_pdb.c',
+  'typelink.c',
   'value.c',
   'var.c',
   'var_global.c',
   'vtable.c',
   'xrefs.c',
-  'serialize_analysis.c',
-  'serialize_typelink.c',
-  'type_pdb.c',
-  'typelink.c',
   'p/analysis_6502.c',
   'p/analysis_6502_cs.c',
   'p/analysis_8051.c',
   'p/analysis_amd29k.c',
-  'p/analysis_arc.c',
   'p/analysis_arm_cs.c',
-  'p/analysis_arm_gnu.c',
   'p/analysis_avr.c',
   'p/analysis_bf.c',
   'p/analysis_chip8.c',
   'p/analysis_cr16.c',
-  'p/analysis_cris.c',
   'p/analysis_dalvik.c',
   'p/analysis_ebc.c',
   'p/analysis_gb.c',
@@ -67,40 +129,29 @@ rz_analysis_sources = [
   'p/analysis_malbolge.c',
   'p/analysis_mcore.c',
   'p/analysis_mips_cs.c',
-  'p/analysis_mips_gnu.c',
   'p/analysis_msp430.c',
-  'p/analysis_nios2.c',
   'p/analysis_null.c',
   'p/analysis_or1k.c',
   'p/analysis_pic.c',
   'p/analysis_ppc_cs.c',
-  'p/analysis_ppc_gnu.c',
   'p/analysis_propeller.c',
   'p/analysis_pyc.c',
-  'p/analysis_riscv.c',
   'p/analysis_rsp.c',
-  'p/analysis_sh.c',
   'p/analysis_snes.c',
   'p/analysis_sparc_cs.c',
-  'p/analysis_sparc_gnu.c',
   'p/analysis_spc700.c',
   'p/analysis_sysz.c',
   'p/analysis_tms320.c',
   'p/analysis_tms320_c55x_plus.c',
   #'p/analysis_tms320c64x.c',
-  'p/analysis_tricore.c',
   'p/analysis_v810.c',
   'p/analysis_v850.c',
-  'p/analysis_vax.c',
   'p/analysis_wasm.c',
   'p/analysis_x86_cs.c',
   'p/analysis_xap.c',
   'p/analysis_xcore_cs.c',
-  'p/analysis_xtensa.c',
-  'p/analysis_z80.c',
   #'arch/gb/meta_gb_cmt.c',
   '../asm/arch/amd29k/amd29k.c',
-  '../asm/arch/arm/winedbg/be_arm.c',
   '../asm/arch/avr/disassembler.c',
   '../asm/arch/cr16/cr16_disas.c',
   '../asm/arch/ebc/ebc_disas.c',
@@ -123,10 +174,6 @@ rz_analysis_sources = [
   '../asm/arch/v810/v810_disas.c',
   '../asm/arch/v850/v850_disas.c',
   '../asm/arch/wasm/wasm.c',
-  '../asm/arch/xtensa/gnu/xtensa-dis.c',
-  '../asm/arch/xtensa/gnu/elf32-xtensa.c',
-  '../asm/arch/xtensa/gnu/xtensa-isa.c',
-  '../asm/arch/xtensa/gnu/xtensa-modules.c',
   '../asm/arch/pyc/opcode_10.c',
   '../asm/arch/pyc/opcode_11.c',
   '../asm/arch/pyc/opcode_12.c',
@@ -165,6 +212,29 @@ rz_analysis_sources = [
   '../asm/arch/luac/v53/opcode_53.c'
 ]
 
+if capstone_dep.version().split('.')[0].to_int() > 4
+  rz_analysis_sources += 'p/analysis_riscv_cs.c'
+endif
+
+if get_option('use_gpl')
+  rz_analysis_sources += [
+    'p/analysis_arc.c',
+    'p/analysis_cris.c',
+    'p/analysis_mips_gnu.c',
+    'p/analysis_nios2.c',
+    'p/analysis_riscv.c',
+    'p/analysis_sh.c',
+    'p/analysis_sparc_gnu.c',
+    'p/analysis_tricore.c',
+    'p/analysis_vax.c',
+    'p/analysis_xtensa.c',
+    'p/analysis_z80.c',
+    '../asm/arch/xtensa/gnu/xtensa-dis.c',
+    '../asm/arch/xtensa/gnu/elf32-xtensa.c',
+    '../asm/arch/xtensa/gnu/xtensa-isa.c',
+    '../asm/arch/xtensa/gnu/xtensa-modules.c',
+  ]
+endif
 rz_analysis_inc = [
   platform_inc,
   include_directories(
@@ -196,11 +266,14 @@ rz_analysis = library('rz_analysis', rz_analysis_sources,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
   link_args: library_linkflags,
-  soversion: rizin_libversion
+  soversion: rizin_libversion,
+  name_suffix: lib_name_suffix,
+  name_prefix: lib_name_prefix,
 )
 
 rz_analysis_dep = declare_dependency(link_with: rz_analysis,
                                 include_directories: rz_analysis_inc)
+meson.override_dependency('rz_analysis', rz_analysis_dep)
 
 pkgconfig_mod.generate(rz_analysis,
   subdirs: 'librz',
@@ -221,5 +294,29 @@ pkgconfig_mod.generate(rz_analysis,
     'rz_flag',
     'rz_type'
   ],
-  description: 'rizin foundation libraries'
+  description: 'rizin foundation libraries',
+  variables: [
+    'plugindir=@0@'.format(rizin_plugins),
+  ],
 )
+
+if not is_static_libs_only
+  conf = configuration_data()
+  conf.set('RZ_VERSION', rizin_version)
+  conf.set('RIZIN_MODULE', rz_analysis.name())
+  conf.set('RIZIN_MODULE_DEPS', ' '.join(['rz_util', 'rz_crypto', 'rz_reg', 'rz_asm', 'rz_parse',
+    'rz_syscall', 'rz_search', 'rz_cons', 'rz_diff', 'rz_bin', 'rz_flag', 'rz_type']))
+  conf.set('PACKAGE_RELATIVE_PATH', cmake_package_relative_path)
+  conf.set('INSTALL_INCDIR', rizin_incdir)
+  conf.set('INSTALL_LIBDIR', rizin_libdir)
+  conf.set('INSTALL_PLUGDIR', rizin_plugins)
+  conf.set('rizin_libname', rz_analysis.name())
+  cmake_mod.configure_package_config_file(
+    name: conf.get('rizin_libname'),
+    input: '../RzModulesConfig.cmake.in',
+    install_dir: rizin_cmakedir / conf.get('rizin_libname'),
+    configuration: conf,
+  )
+endif
+
+subdir('d')

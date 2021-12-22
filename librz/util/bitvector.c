@@ -5,6 +5,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#define NELEM(N, ELEMPER) ((N + (ELEMPER)-1) / (ELEMPER))
+#define BV_ELEM_SIZE      8U
+
 /**
  * \brief Initialize a RzBitVector structure
  * \param bv Pointer to a uninitialized RzBitVector instance
@@ -98,7 +101,7 @@ RZ_API RZ_OWN char *rz_bv_as_hex_string(RZ_NONNULL RzBitVector *bv) {
 
 	if (bv->len <= 64) {
 		char format[32] = { 0 };
-		rz_strf(format, "0x%%0%d" PFMT64x, bv->len / 4);
+		rz_strf(format, "0x%%0%d" PFMT64x, (bv->len + 3) / 4);
 		return rz_str_newf(format, bv->bits.small_u);
 	}
 
@@ -602,6 +605,7 @@ RZ_API RZ_OWN RzBitVector *rz_bv_complement_1(RZ_NONNULL RzBitVector *bv) {
 		return NULL;
 	} else if (ret->len <= 64) {
 		ret->bits.small_u = ~bv->bits.small_u;
+		ret->bits.small_u &= UT64_MAX >> (64 - ret->len);
 		return ret;
 	}
 
@@ -1070,21 +1074,21 @@ RZ_API bool rz_bv_sle(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
  * \param y RzBitVector, operand
  * \return ret int, return 1 if x != y, return 0 if x == y
  */
-RZ_API int rz_bv_cmp(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
+RZ_API bool rz_bv_cmp(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
 	rz_return_val_if_fail(x && y, 0);
 
 	if (x->len != y->len) {
 		rz_warn_if_reached();
-		return 1;
+		return true;
 	}
 
 	for (ut32 i = 0; i < x->len; ++i) {
 		if (rz_bv_get(x, i) != rz_bv_get(y, i)) {
-			return 1;
+			return true;
 		}
 	}
 
-	return 0;
+	return false;
 }
 
 /**
@@ -1134,6 +1138,19 @@ RZ_API RZ_OWN RzBitVector *rz_bv_new_from_st64(ut32 length, st64 value) {
 }
 
 /**
+ * Create a new bitvector of size bits and apply rz_bv_set_from_bytes_le() to it
+ */
+RZ_API RZ_OWN RzBitVector *rz_bv_new_from_bytes_le(RZ_IN RZ_NONNULL const ut8 *buf, ut32 bit_offset, ut32 size) {
+	rz_return_val_if_fail(buf, NULL);
+	RzBitVector *bv = rz_bv_new(size);
+	if (!bv) {
+		return NULL;
+	}
+	rz_bv_set_from_bytes_le(bv, buf, bit_offset, size);
+	return bv;
+}
+
+/**
  * Convert ut64 to N-bits bitvector
  * \param bv RzBitVector, pointer to bitvector
  * \param value ut64, the value to convert
@@ -1175,16 +1192,47 @@ RZ_API bool rz_bv_set_from_st64(RZ_NONNULL RzBitVector *bv, st64 value) {
 }
 
 /**
+ * Set the bitvector's contents from the given bits. The bitvector's size is unchanged.
+ * If bv->len < size, additional bits are cut off, if bv->len > size, the rest is filled up with 0.
+ * \param buf little endian buffer of at least (bit_offset + size + 7) / 8 bytes
+ * \param bit_offset offset inside buf to start reading from, in bits
+ * \param size number of bits to read from buf
+ */
+RZ_API void rz_bv_set_from_bytes_le(RZ_NONNULL RzBitVector *bv, RZ_IN RZ_NONNULL const ut8 *buf, ut32 bit_offset, ut32 size) {
+	rz_return_if_fail(buf && size);
+	size = RZ_MIN(size, bv->len);
+	if (!bit_offset && size <= 64) {
+		ut64 val = 0;
+		for (ut32 i = 0; i < (size + 7) / 8; i++) {
+			val |= (ut64)buf[i] << (i * 8);
+		}
+		val &= (UT64_MAX >> (64 - size));
+		rz_bv_set_from_ut64(bv, val);
+		return;
+	}
+	for (ut32 i = 0; i < bv->len; i++) {
+		bool bit = false;
+		if (i < size) {
+			bit = !!(buf[(bit_offset + i) >> 3] & (1 << ((bit_offset + i) & 7)));
+		}
+		rz_bv_set(bv, i, bit);
+	}
+}
+
+/**
  * Calculates the hash from the bitvector data
  * \param x BitVector
  * \return ut32 bitvector hash
  */
 ut32 rz_bv_hash(RZ_NULLABLE RzBitVector *x) {
 	ut32 h = 5381;
+	if (!x) {
+		return h;
+	}
+
 	ut32 size = (x->len > 64) ? x->_elem_len : sizeof(x->bits.small_u);
 	ut8 *bits = (x->len > 64) ? x->bits.large_a : (ut8 *)&x->bits.small_u;
-
-	if (!x || !size || !bits) {
+	if (!size || !bits) {
 		return h;
 	}
 
@@ -1266,7 +1314,7 @@ RZ_API ut64 rz_bv_to_ut64(RZ_NONNULL RzBitVector *x) {
 	ut64 ret = 0;
 	for (ut32 i = 0; i < x->len && i < 64; ++i) {
 		if (rz_bv_get(x, i)) {
-			ret |= 1 << i;
+			ret |= 1ULL << i;
 		}
 	}
 	return ret;

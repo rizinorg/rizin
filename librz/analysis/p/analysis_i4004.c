@@ -10,7 +10,7 @@
 
 #define AVR_SOFTCAST(x, y) ((x) + ((y)*0x100))
 
-static bool set_reg_profile(RzAnalysis *analysis) {
+static char *get_reg_profile(RzAnalysis *analysis) {
 	const char *p =
 		"=PC	PC\n"
 		/* syntax not yet supported */
@@ -41,8 +41,7 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 		"gpr	PC1	.64	34	0\n"
 		"gpr	PC2	.64	34	0\n"
 		"gpr	PC3	.64	34	0\n";
-
-	return rz_reg_set_profile_string(analysis->reg, p);
+	return strdup(p);
 }
 
 /* That 3 is a hack */
@@ -209,7 +208,7 @@ RzAnalysisPlugin rz_analysis_plugin_i4004 = {
 	.esil = false,
 	.bits = 8,
 	.op = &i4004_op,
-	.set_reg_profile = &set_reg_profile
+	.get_reg_profile = &get_reg_profile
 };
 
 #ifndef RZ_PLUGIN_INCORE

@@ -595,7 +595,6 @@ typedef struct rz_analysis_t {
 	PrintfCallback cb_printf;
 	// moved from RzAnalysisFcn
 	Sdb *sdb; // root
-	Sdb *sdb_pins;
 	HtUP /*<RzVector<RzAnalysisAddrHintRecord>>*/ *addr_hints; // all hints that correspond to a single address
 	RBTree /*<RzAnalysisArchHintRecord>*/ arch_hints;
 	RBTree /*<RzAnalysisArchBitsRecord>*/ bits_hints;
@@ -1231,7 +1230,6 @@ typedef struct rz_analysis_plugin_t {
 	// legacy rz_analysis_functions
 	RzAnalysisOpCallback op;
 
-	RzAnalysisRegProfCallback set_reg_profile;
 	RzAnalysisRegProfGetCallback get_reg_profile;
 	RzAnalysisFPBBCallback fingerprint_bb;
 	RzAnalysisFPFcnCallback fingerprint_fcn;
@@ -1459,7 +1457,7 @@ RZ_API bool rz_analysis_set_bits(RzAnalysis *analysis, int bits);
 RZ_API bool rz_analysis_set_os(RzAnalysis *analysis, const char *os);
 RZ_API void rz_analysis_set_cpu(RzAnalysis *analysis, const char *cpu);
 RZ_API int rz_analysis_set_big_endian(RzAnalysis *analysis, int boolean);
-RZ_API ut8 *rz_analysis_mask(RzAnalysis *analysis, int size, const ut8 *data, ut64 at);
+RZ_API ut8 *rz_analysis_mask(RzAnalysis *analysis, ut32 size, const ut8 *data, ut64 at);
 RZ_API void rz_analysis_trace_bb(RzAnalysis *analysis, ut64 addr);
 RZ_API const char *rz_analysis_fcntype_tostring(int type);
 RZ_API void rz_analysis_bind(RzAnalysis *b, RzAnalysisBind *bnd);
@@ -1585,14 +1583,6 @@ RZ_API RzAnalysisRzilTrace *rz_analysis_rzil_trace_new(RzAnalysis *analysis, RzA
 RZ_API void rz_analysis_rzil_trace_free(RzAnalysisRzilTrace *trace);
 RZ_API void rz_analysis_rzil_trace_op(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzAnalysisRzilOp *op);
 RZ_API void rz_analysis_rzil_collect_info(RzAnalysis *analysis, RzAnalysisRzil *rzil, RzAnalysisOp *op, bool use_new);
-
-/* pin */
-RZ_API void rz_analysis_pin_init(RzAnalysis *a);
-RZ_API void rz_analysis_pin_fini(RzAnalysis *a);
-RZ_API void rz_analysis_pin(RzAnalysis *a, ut64 addr, const char *name);
-RZ_API void rz_analysis_pin_unset(RzAnalysis *a, ut64 addr);
-RZ_API const char *rz_analysis_pin_call(RzAnalysis *a, ut64 addr);
-RZ_API void rz_analysis_pin_list(RzAnalysis *a);
 
 RZ_API bool rz_analysis_add_device_peripheral_map(RzBinObject *o, RzAnalysis *analysis);
 
@@ -2208,6 +2198,17 @@ RZ_API bool rz_serialize_analysis_cc_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnaly
 RZ_API void rz_serialize_analysis_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis);
 RZ_API bool rz_serialize_analysis_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res);
 
+typedef struct rz_analysis_signature_t {
+	char *bin_name; ///< RzBinPlugin name (elf64 and pe64 are named as elf and pe)
+	char *arch_name; ///< RzAsmPlugin name
+	ut32 arch_bits; ///< Architecture bits
+	const char *base_name; ///< basename of file
+	const char *short_path; ///< Short path without sigdb path
+	char *file_path; ///< full path to the signature file
+} RzAnalysisSignature;
+
+RZ_API RzList /*<RzAnalysisSignature>*/ *rz_analysis_sigdb_load_database(RZ_NONNULL const char *sigdb_path);
+
 /* plugin pointers */
 extern RzAnalysisPlugin rz_analysis_plugin_null;
 extern RzAnalysisPlugin rz_analysis_plugin_6502;
@@ -2216,7 +2217,6 @@ extern RzAnalysisPlugin rz_analysis_plugin_8051;
 extern RzAnalysisPlugin rz_analysis_plugin_amd29k;
 extern RzAnalysisPlugin rz_analysis_plugin_arc;
 extern RzAnalysisPlugin rz_analysis_plugin_arm_cs;
-extern RzAnalysisPlugin rz_analysis_plugin_arm_gnu;
 extern RzAnalysisPlugin rz_analysis_plugin_avr;
 extern RzAnalysisPlugin rz_analysis_plugin_bf;
 extern RzAnalysisPlugin rz_analysis_plugin_chip8;
@@ -2241,7 +2241,6 @@ extern RzAnalysisPlugin rz_analysis_plugin_nios2;
 extern RzAnalysisPlugin rz_analysis_plugin_or1k;
 extern RzAnalysisPlugin rz_analysis_plugin_pic;
 extern RzAnalysisPlugin rz_analysis_plugin_ppc_cs;
-extern RzAnalysisPlugin rz_analysis_plugin_ppc_gnu;
 extern RzAnalysisPlugin rz_analysis_plugin_propeller;
 extern RzAnalysisPlugin rz_analysis_plugin_riscv;
 extern RzAnalysisPlugin rz_analysis_plugin_riscv_cs;

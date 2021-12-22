@@ -711,7 +711,7 @@ fin:
 	return opsize;
 }
 
-static bool set_reg_profile(RzAnalysis *analysis) {
+static char *get_reg_profile(RzAnalysis *analysis) {
 	const char *p =
 		"=PC    pc\n"
 		"=SP    a7\n"
@@ -766,7 +766,7 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 		"gpr	fpcr	.32	176	0\n"
 		"gpr	fpsr	.32	180	0\n"
 		"gpr	fpiar	.32	184	0\n";
-	return rz_reg_set_profile_string(analysis->reg, p);
+	return strdup(p);
 }
 
 RzAnalysisPlugin rz_analysis_plugin_m68k_cs = {
@@ -775,7 +775,7 @@ RzAnalysisPlugin rz_analysis_plugin_m68k_cs = {
 	.license = "BSD",
 	.esil = false,
 	.arch = "m68k",
-	.set_reg_profile = &set_reg_profile,
+	.get_reg_profile = &get_reg_profile,
 	.bits = 32,
 	.op = &analop,
 };
