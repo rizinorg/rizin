@@ -120,6 +120,7 @@ rz_il_definitions_files = [
   'rz_il/definitions/bool.h',
   'rz_il/definitions/definitions.h',
   'rz_il/definitions/label.h',
+  'rz_il/definitions/mem.h',
   'rz_il/definitions/value.h',
   'rz_il/definitions/variable.h',
 ]

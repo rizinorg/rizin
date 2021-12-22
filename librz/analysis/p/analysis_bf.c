@@ -223,6 +223,7 @@ static bool bf_specific_init(RzAnalysisRzil *rzil) {
 	write_label->type = EFFECT_LABEL_HOOK;
 
 	// init mem
+	rz_il_vm_add_mem(vm, vm->data_size);
 	rzil->inited = true;
 
 	return true;
