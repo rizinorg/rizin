@@ -326,7 +326,6 @@ RZ_API RzBitVector *rz_il_vm_mem_load(RzILVM *vm, RzILMemIndex index, RzBitVecto
 		RZ_LOG_ERROR("Non-existent mem %u referenced\n", (unsigned int)index);
 		return NULL;
 	}
-	//RzBitVector *value = read_n_bits(vm, n_bits, key);
 	RzBitVector *value = rz_il_mem_load(mem, key);
 	rz_il_vm_event_add(vm, rz_il_event_mem_read_new(key, value));
 	return value;
@@ -347,13 +346,51 @@ RZ_API void rz_il_vm_mem_store(RzILVM *vm, RzILMemIndex index, RzBitVector *key,
 		RZ_LOG_ERROR("Non-existent mem %u referenced\n", (unsigned int)index);
 		return;
 	}
-	//RzBitVector *old_value = read_n_bits(vm, value->len, key);
 	RzBitVector *old_value = rz_il_mem_load(mem, key);
 	rz_il_mem_store(mem, key, value);
-	//write_n_bits(vm, value, key);
 	rz_il_vm_event_add(vm, rz_il_event_mem_write_new(key, old_value, value));
 	rz_bv_free(old_value);
 }
+
+/**
+ * Load data from memory by given key and generates an RZIL_EVENT_MEM_READ event
+ * \param  vm     RzILVM, pointer to VM
+ * \param  key    RzBitVector, aka address, a key to load data from memory
+ * \return val    Bitvector, data at the address, has `vm->min_unit_size` length
+ */
+RZ_API RzBitVector *rz_il_vm_mem_loadw(RzILVM *vm, RzILMemIndex index, RzBitVector *key, ut32 n_bits) {
+	rz_return_val_if_fail(vm && key, NULL);
+	RzILMem *mem = rz_il_vm_get_mem(vm, index);
+	if (!mem) {
+		RZ_LOG_ERROR("Non-existent mem %u referenced\n", (unsigned int)index);
+		return NULL;
+	}
+	RzBitVector *value = rz_il_mem_loadw(mem, key, n_bits, vm->big_endian);
+	rz_il_vm_event_add(vm, rz_il_event_mem_read_new(key, value));
+	return value;
+}
+
+/**
+ * Store data to memory by key, will create a key-value pair
+ * or update the key-value pair if key existed; also generates
+ * an RZIL_EVENT_MEM_WRITE event
+ * \param  vm    RzILVM* pointer to VM
+ * \param  key   RzBitVector, aka address, a key to store data from memory
+ * \param  value RzBitVector, aka value to store in memory
+ */
+RZ_API void rz_il_vm_mem_storew(RzILVM *vm, RzILMemIndex index, RzBitVector *key, RzBitVector *value) {
+	rz_return_if_fail(vm && key && value);
+	RzILMem *mem = rz_il_vm_get_mem(vm, index);
+	if (!mem) {
+		RZ_LOG_ERROR("Non-existent mem %u referenced\n", (unsigned int)index);
+		return;
+	}
+	RzBitVector *old_value = rz_il_mem_loadw(mem, key, rz_bv_len(value), vm->big_endian);
+	rz_il_mem_storew(mem, key, value, vm->big_endian);
+	rz_il_vm_event_add(vm, rz_il_event_mem_write_new(key, old_value, value));
+	rz_bv_free(old_value);
+}
+
 
 /**
  * Step execute a single RZIL root

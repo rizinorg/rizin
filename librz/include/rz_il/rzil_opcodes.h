@@ -284,11 +284,10 @@ struct rzil_op_bool_inv_t {
  *
  *  load m k is the value associated with the key k in the memory m.
  */
-struct rzil_op_load_t {
+typedef struct rzil_op_load_t {
 	RzILMemIndex mem; ///< index of the mem inside the vm to use
-	RzILOp *key; ///< memory index of the RzBitVector key (address)
-	//ut32 len; ///< n of bits to read
-};
+	RzILOp *key; ///< memory index of the RzBitVector key (address), must have exactly the size of a key in the memory
+} RzILOpLoad;
 
 /**
  *  \struct rzil_op_store_t
@@ -296,11 +295,33 @@ struct rzil_op_load_t {
  *
  *  store m k x a memory m in which the key k is associated with the word x.
  */
-struct rzil_op_store_t {
+typedef struct rzil_op_store_t {
+	RzILMemIndex mem; ///< index of memory in the vm to use
+	RzILOp *key; ///< address where to store to, must have exactly the size of a key in the memory
+	RzILOp *value; ///< value to store, must have exactly the size of a memory cell
+} RzILOpStore;
+
+/**
+ * \brief Load an entire word of arbitrary bit size from a memory
+ *
+ * Endianness is determined by the vm
+ */
+typedef struct rzil_op_loadw_t {
+	RzILMemIndex mem; ///< index of the mem inside the vm to use
+	RzILOp *key; ///< memory index of the RzBitVector key (address)
+	ut32 n_bits; ///< n of bits to read, and of the resulting bitvector
+} RzILOpLoadW;
+
+/**
+ * \brief Store an entire word of arbitrary bit size into a memory
+ *
+ * Endianness is determined by the vm
+ */
+typedef struct rzil_op_storew_t {
 	RzILMemIndex mem; ///< index of memory in the vm to use
 	RzILOp *key; ///< address where to store to
-	RzILOp *value; ///< RzILVal value (data) to store
-};
+	RzILOp *value; ///< value to store, arbitrary size
+} RzILOpStoreW;
 
 typedef enum {
 	// Init
@@ -344,6 +365,8 @@ typedef enum {
 	// Memory
 	RZIL_OP_LOAD,
 	RZIL_OP_STORE,
+	RZIL_OP_LOADW,
+	RZIL_OP_STOREW,
 
 	// Effects (opcode with side effects)
 	RZIL_OP_NOP,
@@ -405,9 +428,6 @@ typedef struct rzil_op_blk_t RzILOpBlk;
 typedef struct rzil_op_repeat_t RzILOpRepeat;
 typedef struct rzil_op_branch_t RzILOpBranch;
 
-typedef struct rzil_op_load_t RzILOpLoad;
-typedef struct rzil_op_store_t RzILOpStore;
-
 // Then define a union to union all of these struct
 typedef union {
 	RzILOpIte *ite;
@@ -451,6 +471,8 @@ typedef union {
 
 	RzILOpLoad *load;
 	RzILOpStore *store;
+	RzILOpLoadW *loadw;
+	RzILOpStoreW *storew;
 } RzILOpUnion;
 
 struct rz_il_op_t {
@@ -504,6 +526,7 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_repeat(RZ_NONNULL RzILOp *condition, RZ_NONNU
 RZ_API RZ_OWN RzILOp *rz_il_op_new_branch(RZ_NONNULL RzILOp *condition, RZ_NULLABLE RzILOp *true_effect, RZ_NULLABLE RzILOp *false_effect);
 RZ_API RZ_OWN RzILOp *rz_il_op_new_load(RzILMemIndex mem, RZ_NONNULL RzILOp *key);
 RZ_API RZ_OWN RzILOp *rz_il_op_new_store(RzILMemIndex mem, RZ_NONNULL RzILOp *key, RZ_NONNULL RzILOp *value);
+// TODO: loadw, storew here
 RZ_API RZ_OWN RzILOp *rz_il_op_new_invalid();
 
 #ifdef __cplusplus

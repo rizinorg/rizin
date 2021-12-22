@@ -68,7 +68,23 @@ RZ_API ut32 rz_il_mem_value_len(RzILMem *mem) {
 } while (0);
 
 /**
- * Store data (bitvector) into an address (bitvector)
+ * Load a single memory value (bitvector) from current address (bitvector)
+ * \param mem Memory
+ * \param key address (bitvector)
+ * \return data (bitvector)
+ */
+RZ_API RzBitVector *rz_il_mem_load(RzILMem *mem, RzBitVector *key) {
+	rz_return_val_if_fail(mem && key, NULL);
+	return_val_if_key_len_wrong(mem, key, NULL);
+	ut8 v = 0;
+	if (rz_buf_read_at(mem->buf, rz_bv_to_ut64(key), &v, 1) != 1) {
+		return NULL;
+	}
+	return rz_bv_new_from_ut64(rz_il_mem_value_len(mem), v);
+}
+
+/**
+ * Store a single memory value (bitvector) into an address (bitvector)
  * \param key address
  * \param value data
  * \return whether the store succeeded
@@ -85,24 +101,7 @@ RZ_API bool rz_il_mem_store(RzILMem *mem, RzBitVector *key, RzBitVector *value) 
 	return rz_buf_write_at(mem->buf, rz_bv_to_ut64(key), &v, 1) == 1;
 }
 
-/**
- * Load data (bitvector) from current address (bitvector)
- * \param mem Memory
- * \param key address (bitvector)
- * \return data (bitvector)
- */
-RZ_API RzBitVector *rz_il_mem_load(RzILMem *mem, RzBitVector *key) {
-	rz_return_val_if_fail(mem && key, NULL);
-	return_val_if_key_len_wrong(mem, key, NULL);
-	ut8 v = 0;
-	if (rz_buf_read_at(mem->buf, rz_bv_to_ut64(key), &v, 1) != 1) {
-		return NULL;
-	}
-	return rz_bv_new_from_ut64(rz_il_mem_value_len(mem), v);
-}
-
-#if 0
-static RzBitVector *read_n_bits(RzILVM *vm, ut32 n_bits, RzBitVector *key) {
+static RzBitVector *read_n_bits(RzBuffer *buf, ut32 n_bits, RzBitVector *key, bool big_endian) {
 	RzBitVector *value = rz_bv_new_zero(n_bits);
 	if (!value) {
 		rz_warn_if_reached();
@@ -114,13 +113,12 @@ static RzBitVector *read_n_bits(RzILVM *vm, ut32 n_bits, RzBitVector *key) {
 
 	ut8 *data = calloc(n_bytes, 1);
 	if (!data) {
-		rz_warn_if_reached();
 		return value;
 	}
 
 	// we ignore bad reads.
-	rz_buf_read_at(vm->vm_memory, address, data, n_bytes);
-	if (vm->big_endian) {
+	rz_buf_read_at(buf, address, data, n_bytes);
+	if (big_endian) {
 		value = rz_bv_new_from_bytes_be(data, 0, n_bits);
 	} else {
 		value = rz_bv_new_from_bytes_le(data, 0, n_bits);
@@ -129,24 +127,46 @@ static RzBitVector *read_n_bits(RzILVM *vm, ut32 n_bits, RzBitVector *key) {
 	return value;
 }
 
-static void write_n_bits(RzILVM *vm, RzBitVector *value, RzBitVector *key) {
+static bool write_n_bits(RzBuffer *buf, RzBitVector *key, RzBitVector *value, bool big_endian) {
 	ut64 address = rz_bv_to_ut64(key);
 	ut32 n_bytes = rz_bv_len_bytes(value);
 
 	ut8 *data = calloc(n_bytes, 1);
 	if (!data) {
-		rz_warn_if_reached();
-		return;
+		return false;
 	}
 
-	if (vm->big_endian) {
+	if (big_endian) {
 		rz_bv_set_to_bytes_be(value, data);
 	} else {
 		rz_bv_set_to_bytes_le(value, data);
 	}
 
-	// we ignore bad writes.
-	rz_buf_write_at(vm->vm_memory, address, data, n_bytes);
+	bool succ = rz_buf_write_at(buf, address, data, n_bytes) == n_bytes;
 	free(data);
+	return succ;
 }
-#endif
+
+/**
+ * Load an entire work of the given size from the given address
+ * \param key address (bitvector)
+ * \param n_bits How many bits to read. This also determines the size of the returned bitvector
+ * \return data (bitvector)
+ */
+RZ_API RzBitVector *rz_il_mem_loadw(RzILMem *mem, RzBitVector *key, ut32 n_bits, bool big_endian) {
+	rz_return_val_if_fail(mem && key && n_bits, NULL);
+	return_val_if_key_len_wrong(mem, key, NULL);
+	return read_n_bits(mem->buf, n_bits, key, big_endian);
+}
+
+/**
+ * Store an entire word or arbitrary size at an address
+ * \param key address
+ * \param value data
+ * \return whether the store succeeded
+ */
+RZ_API bool rz_il_mem_storew(RzILMem *mem, RzBitVector *key, RzBitVector *value, bool big_endian) {
+	rz_return_val_if_fail(mem && key && value, false);
+	return_val_if_key_len_wrong(mem, key, false);
+	return write_n_bits(mem->buf, key, value, big_endian);
+}
