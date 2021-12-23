@@ -236,21 +236,7 @@ RZ_API char *rz_str_replace_thunked(char *str, char *clean, int *thunk, int clen
 RZ_API bool rz_str_glob(const char *str, const char *glob);
 RZ_API int rz_str_binstr2bin(const char *str, ut8 *out, int outlen);
 RZ_API char *rz_str_between(const char *str, const char *prefix, const char *suffix);
-/**
- * \brief Checks if a string starts with a specifc sequence of characters (case sensitive)
- * \param str C-string to be scanned
- * \param needle C-string containing the sequence of characters to match
- * \return True if \p needle is found at the beginning of \p str and false otherwise
- * \see rz_str_startswith_icase()
- */
 RZ_API bool rz_str_startswith(RZ_NONNULL const char *str, RZ_NONNULL const char *needle);
-/**
- * \brief Checks if a string starts with a specifc sequence of characters (case insensitive)
- * \param str C-string to be scanned
- * \param needle C-string containing the sequence of characters to match
- * \return True if \p needle is found at the beginning of \p str and false otherwise
- * \see rz_str_startswith()
- */
 RZ_API bool rz_str_startswith_icase(RZ_NONNULL const char *str, RZ_NONNULL const char *needle);
 RZ_API bool rz_str_endswith(const char *str, const char *needle);
 RZ_API bool rz_str_isnumber(const char *str);
