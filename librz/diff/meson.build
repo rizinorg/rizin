@@ -20,6 +20,7 @@ rz_diff = library('rz_diff', rz_diff_sources,
 
 rz_diff_dep = declare_dependency(link_with: rz_diff,
                                 include_directories: [platform_inc])
+meson.override_dependency('rz_diff', rz_diff_dep)
 
 pkgconfig_mod.generate(rz_diff,
   subdirs: 'librz',

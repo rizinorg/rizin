@@ -8,7 +8,7 @@
 #include <rz_util.h>
 #include <rz_asm.h>
 #define USE_R2 1
-#include <spp/spp.h>
+#include <spp.h>
 #include <config.h>
 
 RZ_LIB_VERSION(rz_asm);

@@ -104,7 +104,7 @@ else
 endif
 
 platform_deps = []
-platform_inc = ['.', 'librz/include']
+platform_inc = ['.', 'librz', 'librz/include']
 if host_machine.system() == 'windows'
   platform_deps = [
     cc.find_library('ws2_32'),
@@ -263,30 +263,6 @@ if not capstone_dep.found()
   capstone_dep = capstone_proj.get_variable('capstone_dep')
 endif
 
-# load plugin configuration
-subdir('librz')
-
-conf_data = configuration_data()
-conf_data.set('plugins_core', '&rz_core_plugin_' + ', &rz_core_plugin_'.join(core_plugins) + ', 0')
-conf_data.set('plugins_analysis', '&rz_analysis_plugin_' + ', &rz_analysis_plugin_'.join(analysis_plugins) + ', 0')
-conf_data.set('plugins_asm', '&rz_asm_plugin_' + ', &rz_asm_plugin_'.join(asm_plugins) + ', 0')
-conf_data.set('plugins_bp', '&rz_bp_plugin_' + ', &rz_bp_plugin_'.join(bp_plugins) + ', 0')
-conf_data.set('plugins_bin', '&rz_bin_plugin_' + ', &rz_bin_plugin_'.join(bin_plugins) + ', 0')
-conf_data.set('plugins_bin_ldr', '&rz_bin_ldr_plugin_' + ', &rz_bin_ldr_plugin_'.join(bin_ldr_plugins) + ', 0')
-conf_data.set('plugins_bin_xtr', '&rz_bin_xtr_plugin_' + ', &rz_bin_xtr_plugin_'.join(bin_xtr_plugins) + ', 0')
-conf_data.set('plugins_crypto', '&rz_crypto_plugin_' + ', &rz_crypto_plugin_'.join(crypto_plugins) + ', 0')
-conf_data.set('plugins_io', '&rz_io_plugin_' + ', &rz_io_plugin_'.join(io_plugins) + ', 0')
-conf_data.set('plugins_debug', '&rz_debug_plugin_' + ', &rz_debug_plugin_'.join(debug_plugins) + ', 0')
-conf_data.set('plugins_egg', '&rz_egg_plugin_' + ', &rz_egg_plugin_'.join(egg_plugins) + ', 0')
-conf_data.set('plugins_lang', '&rz_lang_plugin_' + ', &rz_lang_plugin_'.join(lang_plugins) + ', 0')
-conf_data.set('plugins_parse', '&rz_parse_plugin_' + ', &rz_parse_plugin_'.join(parse_plugins) + ', 0')
-conf_data.set('plugins_demangler', '&rz_demangler_plugin_' + ', &rz_demangler_plugin_'.join(demangler_plugins))
-config_h = configure_file(
-  input: 'librz/config.h.in',
-  output: 'config.h',
-  configuration: conf_data
-)
-
 # handle magic library
 sys_magic_opt = get_option('use_sys_magic')
 sys_magic = disabler()
@@ -365,6 +341,7 @@ if not tree_sitter_dep.found()
   tree_sitter_proj = subproject('tree-sitter', default_options: ['default_library=static'])
   tree_sitter_dep = tree_sitter_proj.get_variable('tree_sitter_dep')
 endif
+meson.override_dependency('tree-sitter', tree_sitter_dep)
 
 has_debugger = get_option('debugger')
 have_ptrace = not ['windows', 'cygwin', 'sunos', 'haiku'].contains(host_machine.system())
@@ -530,9 +507,6 @@ rz_version_h = configure_file(
   install_dir: rizin_incdir
 )
 
-# Copy missing header
-run_command(py3_exe, '-c', '__import__("shutil").copyfile("shlr/spp/config.def.h", "shlr/spp/config.h")')
-
 # handle zlib dependency
 r = run_command(py3_exe, check_meson_subproject_py, 'zlib')
 if r.returncode() == 1 and get_option('subprojects_check')
@@ -573,6 +547,25 @@ if not libzip_dep.found()
   libzip_dep = libzip_proj.get_variable('libzip_dep')
 endif
 
+# handle mpc dependency
+r = run_command(py3_exe, check_meson_subproject_py, 'mpc')
+if r.returncode() == 1 and get_option('subprojects_check')
+  error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+endif
+
+mpc_proj = subproject('mpc', default_options: ['default_library=static'])
+mpc_dep = mpc_proj.get_variable('mpc_dep')
+
+# handle yxml dependency
+r = run_command(py3_exe, check_meson_subproject_py, 'yxml')
+if r.returncode() == 1 and get_option('subprojects_check')
+  error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+endif
+
+yxml_proj = subproject('yxml', default_options: ['default_library=static'])
+yxml_dep = yxml_proj.get_variable('yxml_dep')
+
+# handle sdb dependency
 r = run_command(py3_exe, check_meson_subproject_py, 'sdb')
 if r.returncode() == 1 and get_option('subprojects_check')
   error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
@@ -588,24 +581,6 @@ sdb_gen_cmd = [
   '==',
   '@INPUT@'
 ]
-
-spp_files = [
-  'shlr/spp/spp.c'
-]
-
-spp_inc = [platform_inc, include_directories('shlr/spp')]
-
-librzspp = static_library('rzspp', spp_files,
-  dependencies: sdb_dep.partial_dependency(includes: true),
-  include_directories: spp_inc,
-  c_args: ['-DHAVE_R_UTIL', '-DUSE_R2=1'],
-  implicit_include_directories: false
-)
-
-spp_dep = declare_dependency(
-  link_whole: librzspp,
-  include_directories: spp_inc
-)
 
 use_rpath = false
 use_rpath_absolute = false
@@ -673,112 +648,26 @@ if host_machine.system() == 'windows'
   ]
 endif
 
-subdir('librz/util')
-subdir('librz/demangler')
-subdir('librz/socket')
-subdir('librz/hash')
-subdir('librz/crypto')
-subdir('shlr')
-
-subdir('librz/cons')
-subdir('librz/diff')
-subdir('shlr/gdb')
-subdir('librz/io')
-subdir('librz/bp')
-subdir('librz/syscall')
-subdir('librz/search')
-subdir('librz/magic')
-subdir('librz/flag')
-subdir('librz/reg')
-subdir('librz/type')
-subdir('librz/bin')
-subdir('librz/config')
-subdir('librz/parse')
-subdir('librz/lang')
-subdir('librz/asm')
-subdir('librz/il')
-subdir('librz/analysis')
-subdir('librz/signature')
-subdir('librz/egg')
-subdir('librz/debug')
-subdir('librz/core')
-
-subdir('librz/analysis/d')
-subdir('librz/asm/d')
-subdir('librz/asm/cpus')
-subdir('librz/asm/platforms')
-subdir('librz/bin/d')
-subdir('librz/syscall/d')
-subdir('librz/reg/d')
-subdir('librz/cons/d')
-subdir('librz/magic/d')
-subdir('librz/flag/d')
-subdir('librz/main')
+subdir('librz')
 
 cli_option = get_option('cli')
-if cli_option.auto()
-  cli_enabled = not meson.is_subproject()
-else
-  cli_enabled = cli_option.enabled()
-endif
+cli_enabled = cli_option.auto() ? not meson.is_subproject() : cli_option.enabled()
 if cli_enabled
-  if get_option('blob')
-    subdir('binrz/blob')
-  else
-    subdir('binrz/rz-hash')
-    subdir('binrz/rz-run')
-    subdir('binrz/rz-asm')
-    subdir('binrz/rz-bin')
-    subdir('binrz/rizin')
-    subdir('binrz/rz-gg')
-    subdir('binrz/rz-agent')
-    subdir('binrz/rz-diff')
-    subdir('binrz/rz-find')
-    subdir('binrz/rz-sign')
-    subdir('binrz/rz-ax')
-  endif
-  subdir('binrz/rz-pm')
-  subdir('binrz/rz-test')
-endif
-
-if get_option('use_webui')
-  install_subdir('shlr/www',
-    install_dir: rizin_wwwroot,
-    strip_directory: true
-  )
-endif
-
-subdir('test/unit')
-subdir('test/integration')
-
-install_data(
-  'doc/fortunes.fun',
-  'doc/fortunes.tips',
-  install_dir: rizin_fortunes
-)
-
-if cli_enabled
-  install_man(
-    'man/rz-agent.1',
-    'man/rz-pm.1',
-    'man/rz-bin.1',
-    'man/rizin.1',
-    'man/rz-diff.1',
-    'man/rz-find.1',
-    'man/rz-gg.1',
-    'man/rz-hash.1',
-    'man/rz-run.1',
-    'man/rz-asm.1',
-    'man/rz-ax.1',
-    'man/rz-sign.1',
-    'man/rz-esil.7',
-  )
+  subdir('binrz')
 
   install_data('doc/hud',
     install_dir: rizin_hud,
     rename: 'main'
   )
 endif
+
+subdir('test')
+
+install_data(
+  'doc/fortunes.fun',
+  'doc/fortunes.tips',
+  install_dir: rizin_fortunes
+)
 
 dist_script = 'sys/meson_dist_script.py'
 if meson.version().version_compare('<0.57.0')

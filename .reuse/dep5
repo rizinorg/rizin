@@ -115,7 +115,7 @@ Files: test/prj/*.rzdb
 Copyright: 2020 RizinOrg <info@rizin.re>
 License: LGPL-3.0-only
 
-Files: shlr/rizin-shell-parser/*
+Files: subprojects/rizin-shell-parser/*
 Copyright: 2020 ret2libc <sirmy15@gmail.com>
 License: LGPL-3.0-only
 
@@ -139,7 +139,7 @@ Files: binrz/rizin/*
 Copyright: 2009 RadareOrg <pancake@nopcode.org>
 License: LGPL-3.0-only
 
-Files: man/*
+Files: binrz/man/*
 Copyright: 2020 RizinOrg <info@rizin.re>
 License: LGPL-3.0-only
 
@@ -221,21 +221,17 @@ Copyright: 1992, 1993, 1994 Henry Spencer
 Copyright: 1992, 1993, 1994 The Regents of the University of California
 License: BSD-3-Clause
 
-Files: shlr/arm/omap3430_registers
-Copyright: Anton Kochkov <anton.kochkov@gmail.com>
-License: LGPL-3.0-only
-
-Files: shlr/heap/include/rz_jemalloc/*
+Files: subprojects/rzheap/rz_jemalloc/*
 Copyright: 2002-present Jason Evans <jasone@canonware.com>
 Copyright: 2007-2012 Mozilla Foundation.
 Copyright: 2009-present Facebook, Inc.
 License: BSD-2-Clause
 
-Files: shlr/spp/*
+Files: subprojects/rzspp/*
 Copyright: 2009-2020 pancake <pancake@nopcode.org>
 License: MIT
 
-Files: shlr/winkd/profiles.h
+Files: subprojects/rzwinkd/profiles.h
 Copyright: 2014-2017 The Lemon Man <thatlemon@gmail.com>
 Copyright: 2019-2020 GustavoLCR <gugulcr@gmail.com>
 License: LGPL-3.0-only

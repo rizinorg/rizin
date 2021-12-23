@@ -4,8 +4,7 @@ ts_c_files = [
   'src/parser.c'
 ]
 
-tree_sitter_proj = subproject('tree-sitter', default_options: ['default_library=static'])
-tree_sitter_dep = tree_sitter_proj.get_variable('tree_sitter_dep')
+tree_sitter_dep = dependency('tree-sitter')
 
 libtsc = static_library('tree-sitter-c', ts_c_files,
   include_directories: ['src'],
@@ -18,3 +17,4 @@ tree_sitter_c_dep = declare_dependency(
   include_directories: ['src/tree_sitter'],
   dependencies: tree_sitter_dep
 )
+meson.override_dependency('tree-sitter-c', tree_sitter_c_dep)

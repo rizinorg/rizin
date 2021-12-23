@@ -55,6 +55,7 @@ rz_main = library('rz_main', rz_main_sources,
 rz_main_dep = declare_dependency(link_with: rz_main,
                                 include_directories: [platform_inc],
                                 dependencies: rz_main_deps)
+meson.override_dependency('rz_main', rz_main_dep)
 
 pkgconfig_mod.generate(rz_main,
   subdirs: 'librz',

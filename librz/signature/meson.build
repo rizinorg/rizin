@@ -35,6 +35,7 @@ rz_sign = library('rz_sign', rz_sign_sources,
 
 rz_sign_dep = declare_dependency(link_with: rz_sign,
                                 include_directories: rz_sign_inc)
+meson.override_dependency('rz_sign', rz_sign_dep)
 
 pkgconfig_mod.generate(rz_sign,
   subdirs: 'librz',

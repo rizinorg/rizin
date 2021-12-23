@@ -22,6 +22,7 @@ rz_flag = library('rz_flag', rz_flag_sources,
 
 rz_flag_dep = declare_dependency(link_with: rz_flag,
                                 include_directories: [platform_inc])
+meson.override_dependency('rz_flag', rz_flag_dep)
 
 pkgconfig_mod.generate(rz_flag,
   subdirs: 'librz',
@@ -51,3 +52,5 @@ if not is_static_libs_only
     configuration: conf,
   )
 endif
+
+subdir('d')

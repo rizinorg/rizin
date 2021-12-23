@@ -224,12 +224,12 @@ PDB:
   - librz/core/cpdb.c
 
 GDB:
-  - shlr/gdb/**/*
+  - subprojects/rzgdb/**/*
   - librz/io/p/io_gdb.c
   - librz/debug/p/debug_gdb.c
 
 WinDbg:
-  - shlr/winkd/**/*
+  - subprojects/rzwinkd/**/*
   - librz/io/p/io_winkd.c
   - librz/io/p/io_windbg.c
   - librz/debug/p/debug_winkd.c

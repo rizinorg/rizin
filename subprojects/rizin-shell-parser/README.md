@@ -17,7 +17,7 @@ When you update something in grammar.js or src/scanner.c you have to re-generate
 the parser. The process works as follows:
 
 1. Do changes as needed to grammar.js and/or src/scanner.c
-2. Install npm dependencies with: `cd shlr/rizin-shell-parser ; npm install`
+2. Install npm dependencies with: `cd subprojects/rizin-shell-parser ; npm install`
 3. Make sure tree-sitter is in PATH: `export PATH=$PATH:./node_modules/.bin`
 4. Re-generate the parser files: `tree-sitter generate`
 5. Check tests still pass: `tree-sitter test`. Use `tree-sitter parse

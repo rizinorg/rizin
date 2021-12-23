@@ -23,6 +23,7 @@ rz_search = library('rz_search', rz_search_sources,
 
 rz_search_dep = declare_dependency(link_with: rz_search,
                                   include_directories: [platform_inc])
+meson.override_dependency('rz_search', rz_search_dep)
 
 pkgconfig_mod.generate(rz_search,
   subdirs: 'librz',
