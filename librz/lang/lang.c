@@ -1,17 +1,14 @@
 // SPDX-FileCopyrightText: 2009-2018 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "config.h"
 #include <rz_lang.h>
 #include <rz_util.h>
+#include <rz_cons.h>
 
 RZ_LIB_VERSION(rz_lang);
 
-#include "p/pipe.c" // hardcoded
-#include "p/c.c" // hardcoded
-#include "p/lib.c"
-#if __UNIX__
-#include "p/cpipe.c" // hardcoded
-#endif
+static RzLangPlugin *lang_static_plugins[] = { RZ_LANG_STATIC_PLUGINS };
 
 static RzLang *__lang = NULL;
 
@@ -40,12 +37,10 @@ RZ_API RzLang *rz_lang_new(void) {
 	}
 	lang->defs->free = (RzListFree)rz_lang_def_free;
 	lang->cb_printf = (PrintfCallback)printf;
-#if __UNIX__
-	rz_lang_add(lang, &rz_lang_plugin_c);
-	rz_lang_add(lang, &rz_lang_plugin_cpipe);
-#endif
-	rz_lang_add(lang, &rz_lang_plugin_pipe);
-	rz_lang_add(lang, &rz_lang_plugin_lib);
+
+	for (int i = 0; i < RZ_ARRAY_SIZE(lang_static_plugins); i++) {
+		rz_lang_add(lang, lang_static_plugins[i]);
+	}
 
 	return lang;
 }

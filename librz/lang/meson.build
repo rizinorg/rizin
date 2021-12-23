@@ -1,8 +1,6 @@
 lang_plugins = [
   'lib',
   'pipe',
-  'rust',
-  'vala'
 ]
 
 if host_machine.system() != 'windows'
@@ -14,12 +12,17 @@ endif
 
 rz_lang_sources = [
   'lang.c',
-  # included in lang.c
-  #'p/c.c',
-  #'p/cpipe.c',
-  #'p/lib.c',
-  #'p/pipe.c',
+  'p/lib.c',
+  'p/pipe.c',
+  'p/pipe_helper.c',
 ]
+
+if host_machine.system() != 'windows'
+  rz_lang_sources += [
+    'p/c.c',
+    'p/cpipe.c',
+  ]
+endif
 
 rz_lang = library('rz_lang', rz_lang_sources,
   include_directories: platform_inc,

@@ -69,6 +69,13 @@ RZ_API bool rz_lang_define(RzLang *lang, const char *type, const char *name, voi
 RZ_API void rz_lang_undef(RzLang *lang, const char *name);
 RZ_API void rz_lang_def_free(RzLangDef *def);
 
+extern RzLangPlugin rz_lang_plugin_lib;
+extern RzLangPlugin rz_lang_plugin_pipe;
+extern RzLangPlugin rz_lang_plugin_rust;
+extern RzLangPlugin rz_lang_plugin_vala;
+extern RzLangPlugin rz_lang_plugin_c;
+extern RzLangPlugin rz_lang_plugin_cpipe;
+
 #endif
 
 #ifdef __cplusplus
