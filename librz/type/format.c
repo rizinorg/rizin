@@ -2852,23 +2852,24 @@ static void base_type_to_format_unfold(const RzTypeDB *typedb, RZ_NONNULL RzBase
 		rz_vector_foreach(&type->struct_data.members, memb) {
 			const char *membtype = type_to_identifier(typedb, memb->type);
 			// Avoid infinite recursion in case of self-referential structures
-			if (strcmp(membtype, type->name)) {
-				if (rz_type_is_identifier(memb->type)) {
-					// Search the base type of the same name and generate the format from it
-					RzBaseType *btyp = rz_type_get_base_type(typedb, memb->type);
-					if (btyp) {
-						base_type_to_format_no_unfold(typedb, btyp, memb->name, format, fields);
-					}
-				} else {
-					char *membfmt = rz_type_as_format(typedb, memb->type);
-					rz_strbuf_append(format, membfmt);
-					if (!rz_type_is_atomic(typedb, memb->type)) {
-						rz_strbuf_appendf(fields, "(%s)%s ", membtype, memb->name);
-					} else {
-						rz_strbuf_appendf(fields, "%s ", memb->name);
-					}
-					free(membfmt);
+			if (!strcmp(membtype, type->name)) {
+				continue;
+			}
+			if (rz_type_is_identifier(memb->type)) {
+				// Search the base type of the same name and generate the format from it
+				RzBaseType *btyp = rz_type_get_base_type(typedb, memb->type);
+				if (btyp) {
+					base_type_to_format_no_unfold(typedb, btyp, memb->name, format, fields);
 				}
+			} else {
+				char *membfmt = rz_type_as_format(typedb, memb->type);
+				rz_strbuf_append(format, membfmt);
+				if (!rz_type_is_atomic(typedb, memb->type)) {
+					rz_strbuf_appendf(fields, "(%s)%s ", membtype, memb->name);
+				} else {
+					rz_strbuf_appendf(fields, "%s ", memb->name);
+				}
+				free(membfmt);
 			}
 		}
 		break;
@@ -2880,23 +2881,24 @@ static void base_type_to_format_unfold(const RzTypeDB *typedb, RZ_NONNULL RzBase
 		rz_vector_foreach(&type->union_data.members, memb) {
 			const char *membtype = type_to_identifier(typedb, memb->type);
 			// Avoid infinite recursion in case of self-referential unions
-			if (strcmp(membtype, type->name)) {
-				if (rz_type_is_identifier(memb->type)) {
-					// Search the base type of the same name and generate the format from it
-					RzBaseType *btyp = rz_type_get_base_type(typedb, memb->type);
-					if (btyp) {
-						base_type_to_format_no_unfold(typedb, btyp, memb->name, format, fields);
-					}
-				} else {
-					char *membfmt = rz_type_as_format(typedb, memb->type);
-					rz_strbuf_append(format, membfmt);
-					if (!rz_type_is_atomic(typedb, memb->type)) {
-						rz_strbuf_appendf(fields, "(%s)%s ", membtype, memb->name);
-					} else {
-						rz_strbuf_appendf(fields, "%s ", memb->name);
-					}
-					free(membfmt);
+			if (!strcmp(membtype, type->name)) {
+				continue;
+			}
+			if (rz_type_is_identifier(memb->type)) {
+				// Search the base type of the same name and generate the format from it
+				RzBaseType *btyp = rz_type_get_base_type(typedb, memb->type);
+				if (btyp) {
+					base_type_to_format_no_unfold(typedb, btyp, memb->name, format, fields);
 				}
+			} else {
+				char *membfmt = rz_type_as_format(typedb, memb->type);
+				rz_strbuf_append(format, membfmt);
+				if (!rz_type_is_atomic(typedb, memb->type)) {
+					rz_strbuf_appendf(fields, "(%s)%s ", membtype, memb->name);
+				} else {
+					rz_strbuf_appendf(fields, "%s ", memb->name);
+				}
+				free(membfmt);
 			}
 		}
 		break;
@@ -2907,6 +2909,13 @@ static void base_type_to_format_unfold(const RzTypeDB *typedb, RZ_NONNULL RzBase
 		break;
 	}
 	case RZ_BASE_TYPE_KIND_TYPEDEF: {
+		// Avoid infinite recursion in case of self-referential typedefs
+		if (rz_type_is_identifier(type->type)) {
+			const char *ttype = type_to_identifier(typedb, type->type);
+			if (!strcmp(ttype, type->name)) {
+				break;
+			}
+		}
 		type_to_format_pair(typedb, format, fields, identifier, type->type);
 		break;
 	}
