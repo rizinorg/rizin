@@ -1157,7 +1157,7 @@ RZ_API RZ_OWN RzBitVector *rz_bv_new_from_st64(ut32 length, st64 value) {
 }
 
 /**
- * Create a new bitvector of size bits and apply rz_bv_set_from_bytes_le() to it
+ * Create a new bitvector of \p size bits and apply rz_bv_set_from_bytes_le() to it
  */
 RZ_API RZ_OWN RzBitVector *rz_bv_new_from_bytes_le(RZ_IN RZ_NONNULL const ut8 *buf, ut32 bit_offset, ut32 size) {
 	rz_return_val_if_fail(buf, NULL);
@@ -1170,7 +1170,7 @@ RZ_API RZ_OWN RzBitVector *rz_bv_new_from_bytes_le(RZ_IN RZ_NONNULL const ut8 *b
 }
 
 /**
- * Create a new bitvector of size bits and apply rz_bv_set_from_bytes_be() to it
+ * Create a new bitvector of \p size bits and apply rz_bv_set_from_bytes_be() to it
  */
 RZ_API RZ_OWN RzBitVector *rz_bv_new_from_bytes_be(RZ_IN RZ_NONNULL const ut8 *buf, ut32 bit_offset, ut32 size) {
 	rz_return_val_if_fail(buf, NULL);
