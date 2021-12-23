@@ -526,7 +526,8 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_repeat(RZ_NONNULL RzILOp *condition, RZ_NONNU
 RZ_API RZ_OWN RzILOp *rz_il_op_new_branch(RZ_NONNULL RzILOp *condition, RZ_NULLABLE RzILOp *true_effect, RZ_NULLABLE RzILOp *false_effect);
 RZ_API RZ_OWN RzILOp *rz_il_op_new_load(RzILMemIndex mem, RZ_NONNULL RzILOp *key);
 RZ_API RZ_OWN RzILOp *rz_il_op_new_store(RzILMemIndex mem, RZ_NONNULL RzILOp *key, RZ_NONNULL RzILOp *value);
-// TODO: loadw, storew here
+RZ_API RZ_OWN RzILOp *rz_il_op_new_loadw(RzILMemIndex mem, RZ_NONNULL RzILOp *key, ut32 n_bits);
+RZ_API RZ_OWN RzILOp *rz_il_op_new_storew(RzILMemIndex mem, RZ_NONNULL RzILOp *key, RZ_NONNULL RzILOp *value);
 RZ_API RZ_OWN RzILOp *rz_il_op_new_invalid();
 
 #ifdef __cplusplus

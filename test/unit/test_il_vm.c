@@ -264,6 +264,128 @@ static bool test_rzil_vm_op_goto_hook() {
 	mu_end;
 }
 
+static bool test_rzil_vm_op_load() {
+	const ut8 data[] = { 0x0, 0x1, 0x2, 0x42, 0x4, 0x5 };
+	RzILVM *vm = rz_il_vm_new(0, 8, false);
+	RzBuffer *buf = rz_buf_new_with_pointers(data, sizeof(data), false);
+	rz_buf_set_overflow_byte(buf, 0xaa);
+	rz_il_vm_add_mem(vm, 0, rz_il_mem_new(buf, 16));
+	rz_buf_free(buf);
+
+	RzILOp *op = rz_il_op_new_load(0, rz_il_op_new_bitv_from_ut64(16, 3));
+	RzILOpArgType tret = RZIL_OP_ARG_INIT;
+	RzBitVector *res = rz_il_evaluate_bitv(vm, op, &tret);
+	rz_il_op_free(op);
+	mu_assert_notnull(res, "eval res");
+	mu_assert_eq(rz_bv_len(res), 8, "res byte size");
+	mu_assert_eq(rz_bv_to_ut64(res), 0x42, "res value");
+
+	op = rz_il_op_new_load(0, rz_il_op_new_bitv_from_ut64(16, 100));
+	tret = RZIL_OP_ARG_INIT;
+	res = rz_il_evaluate_bitv(vm, op, &tret);
+	rz_il_op_free(op);
+	mu_assert_notnull(res, "eval res");
+	mu_assert_eq(rz_bv_len(res), 8, "res byte size");
+	mu_assert_eq(rz_bv_to_ut64(res), 0xaa, "res value (overflow)");
+
+	rz_il_vm_free(vm);
+	mu_end;
+}
+
+static bool test_rzil_vm_op_store() {
+	ut8 data[] = { 0x0, 0x1, 0x2, 0x42, 0x4, 0x5 };
+	RzILVM *vm = rz_il_vm_new(0, 8, false);
+	RzBuffer *buf = rz_buf_new_with_pointers(data, sizeof(data), false);
+	rz_il_vm_add_mem(vm, 0, rz_il_mem_new(buf, 16));
+	rz_buf_free(buf);
+
+	RzILOp *op = rz_il_op_new_store(0, rz_il_op_new_bitv_from_ut64(16, 2), rz_il_op_new_bitv_from_ut64(8, 0xab));
+	RzILOpArgType tret = RZIL_OP_ARG_INIT;
+	rz_il_evaluate_effect(vm, op, &tret);
+	rz_il_op_free(op);
+	ut8 expect[] = { 0x0, 0x1, 0xab, 0x42, 0x4, 0x5 };
+	mu_assert_memeq(data, expect, sizeof(expect), "stored");
+
+	rz_il_vm_free(vm);
+	mu_end;
+}
+
+static bool test_rzil_vm_op_loadw_le() {
+	const ut8 data[] = { 0x0, 0x1, 0x2, 0x42, 0x4, 0x5 };
+	RzILVM *vm = rz_il_vm_new(0, 8, false);
+	RzBuffer *buf = rz_buf_new_with_pointers(data, sizeof(data), false);
+	rz_buf_set_overflow_byte(buf, 0xaa);
+	rz_il_vm_add_mem(vm, 0, rz_il_mem_new(buf, 16));
+	rz_buf_free(buf);
+
+	RzILOp *op = rz_il_op_new_loadw(0, rz_il_op_new_bitv_from_ut64(16, 3), 16);
+	RzILOpArgType tret = RZIL_OP_ARG_INIT;
+	RzBitVector *res = rz_il_evaluate_bitv(vm, op, &tret);
+	rz_il_op_free(op);
+	mu_assert_notnull(res, "eval res");
+	mu_assert_eq(rz_bv_len(res), 16, "res byte size");
+	mu_assert_eq(rz_bv_to_ut64(res), 0x442, "res value");
+
+	rz_il_vm_free(vm);
+	mu_end;
+}
+
+static bool test_rzil_vm_op_storew_le() {
+	ut8 data[] = { 0x0, 0x1, 0x2, 0x42, 0x4, 0x5 };
+	RzILVM *vm = rz_il_vm_new(0, 8, false);
+	RzBuffer *buf = rz_buf_new_with_pointers(data, sizeof(data), false);
+	rz_il_vm_add_mem(vm, 0, rz_il_mem_new(buf, 16));
+	rz_buf_free(buf);
+
+	RzILOp *op = rz_il_op_new_storew(0, rz_il_op_new_bitv_from_ut64(16, 2), rz_il_op_new_bitv_from_ut64(16, 0xabcd));
+	RzILOpArgType tret = RZIL_OP_ARG_INIT;
+	rz_il_evaluate_effect(vm, op, &tret);
+	rz_il_op_free(op);
+	ut8 expect[] = { 0x0, 0x1, 0xcd, 0xab, 0x4, 0x5 };
+	mu_assert_memeq(data, expect, sizeof(expect), "stored");
+
+	rz_il_vm_free(vm);
+	mu_end;
+}
+
+static bool test_rzil_vm_op_loadw_be() {
+	const ut8 data[] = { 0x0, 0x1, 0x2, 0x42, 0x4, 0x5 };
+	RzILVM *vm = rz_il_vm_new(0, 8, true);
+	RzBuffer *buf = rz_buf_new_with_pointers(data, sizeof(data), false);
+	rz_buf_set_overflow_byte(buf, 0xaa);
+	rz_il_vm_add_mem(vm, 0, rz_il_mem_new(buf, 16));
+	rz_buf_free(buf);
+
+	RzILOp *op = rz_il_op_new_loadw(0, rz_il_op_new_bitv_from_ut64(16, 3), 16);
+	RzILOpArgType tret = RZIL_OP_ARG_INIT;
+	RzBitVector *res = rz_il_evaluate_bitv(vm, op, &tret);
+	rz_il_op_free(op);
+	mu_assert_notnull(res, "eval res");
+	mu_assert_eq(rz_bv_len(res), 16, "res byte size");
+	mu_assert_eq(rz_bv_to_ut64(res), 0x4204, "res value");
+
+	rz_il_vm_free(vm);
+	mu_end;
+}
+
+static bool test_rzil_vm_op_storew_be() {
+	ut8 data[] = { 0x0, 0x1, 0x2, 0x42, 0x4, 0x5 };
+	RzILVM *vm = rz_il_vm_new(0, 8, true);
+	RzBuffer *buf = rz_buf_new_with_pointers(data, sizeof(data), false);
+	rz_il_vm_add_mem(vm, 0, rz_il_mem_new(buf, 16));
+	rz_buf_free(buf);
+
+	RzILOp *op = rz_il_op_new_storew(0, rz_il_op_new_bitv_from_ut64(16, 2), rz_il_op_new_bitv_from_ut64(16, 0xabcd));
+	RzILOpArgType tret = RZIL_OP_ARG_INIT;
+	rz_il_evaluate_effect(vm, op, &tret);
+	rz_il_op_free(op);
+	ut8 expect[] = { 0x0, 0x1, 0xab, 0xcd, 0x4, 0x5 };
+	mu_assert_memeq(data, expect, sizeof(expect), "stored");
+
+	rz_il_vm_free(vm);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rzil_vm_init);
 	mu_run_test(test_rzil_vm_basic_operation);
@@ -273,6 +395,12 @@ bool all_tests() {
 	mu_run_test(test_rzil_vm_op_jmp);
 	mu_run_test(test_rzil_vm_op_goto_addr);
 	mu_run_test(test_rzil_vm_op_goto_hook);
+	mu_run_test(test_rzil_vm_op_load);
+	mu_run_test(test_rzil_vm_op_store);
+	mu_run_test(test_rzil_vm_op_loadw_le);
+	mu_run_test(test_rzil_vm_op_storew_le);
+	mu_run_test(test_rzil_vm_op_loadw_be);
+	mu_run_test(test_rzil_vm_op_storew_be);
 	return tests_passed != tests_run;
 }
 

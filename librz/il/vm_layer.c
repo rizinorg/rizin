@@ -48,6 +48,8 @@ void *rz_il_handler_branch(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 
 void *rz_il_handler_load(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 void *rz_il_handler_store(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_loadw(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
+void *rz_il_handler_storew(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
 
 // TODO: remove me when all the handlers are implemented
 void *rz_il_handler_unimplemented(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
@@ -86,6 +88,8 @@ static RzILOpHandler op_handler_table_default[RZIL_OP_MAX] = {
 	rz_il_handler_append, /* RZIL_OP_APPEND */
 	rz_il_handler_load, /* RZIL_OP_LOAD */
 	rz_il_handler_store, /* RZIL_OP_STORE */
+	rz_il_handler_loadw, /* RZIL_OP_LOADW */
+	rz_il_handler_storew, /* RZIL_OP_STOREW */
 	rz_il_handler_nop, /* RZIL_OP_NOP */
 	rz_il_handler_set, /* RZIL_OP_SET */
 	rz_il_handler_let, /* RZIL_OP_LET */

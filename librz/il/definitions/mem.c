@@ -61,7 +61,7 @@ RZ_API ut32 rz_il_mem_value_len(RzILMem *mem) {
 
 #define return_val_if_key_len_wrong(mem, key, ret) do { \
 	if (rz_bv_len(key) != rz_il_mem_key_len(mem)) { \
-		RZ_LOG_ERROR("RzIL: Memory write key size mismatch (expected size = %u, but got %u)\n", \
+		RZ_LOG_ERROR("RzIL: Memory key size mismatch (expected size = %u, but got %u)\n", \
 				(unsigned int)rz_il_mem_key_len(mem), (unsigned int)rz_bv_len(key)); \
 		return ret; \
 	} \
@@ -77,9 +77,7 @@ RZ_API RzBitVector *rz_il_mem_load(RzILMem *mem, RzBitVector *key) {
 	rz_return_val_if_fail(mem && key, NULL);
 	return_val_if_key_len_wrong(mem, key, NULL);
 	ut8 v = 0;
-	if (rz_buf_read_at(mem->buf, rz_bv_to_ut64(key), &v, 1) != 1) {
-		return NULL;
-	}
+	rz_buf_read_at(mem->buf, rz_bv_to_ut64(key), &v, 1);
 	return rz_bv_new_from_ut64(rz_il_mem_value_len(mem), v);
 }
 
@@ -116,7 +114,7 @@ static RzBitVector *read_n_bits(RzBuffer *buf, ut32 n_bits, RzBitVector *key, bo
 		return value;
 	}
 
-	// we ignore bad reads.
+	// we ignore bad reads. RzBuffer fills up with its "overflow byte" on failure.
 	rz_buf_read_at(buf, address, data, n_bytes);
 	if (big_endian) {
 		value = rz_bv_new_from_bytes_be(data, 0, n_bits);

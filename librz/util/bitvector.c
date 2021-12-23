@@ -1316,7 +1316,7 @@ RZ_API void rz_bv_set_to_bytes_be(RZ_NONNULL const RzBitVector *bv, RZ_OUT RZ_NO
 		return;
 	}
 	ut64 val = bv->bits.small_u;
-	for (ut32 i = bytes - 1; i > bytes; i--) {
+	for (ut32 i = bytes - 1; i; i--) {
 		buf[i] = val & 0xFF;
 		val >>= 8;
 	}
