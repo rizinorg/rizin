@@ -431,6 +431,23 @@ boo_t = const char *** const *** const * const * const
 EOF
 RUN
 
+NAME=typedef self-reference
+FILE=bins/elf/analysis/self-ref-typedef
+CMDS=<<EOF
+tt const_reference
+ttc const_reference
+t const_reference
+tc const_reference
+EOF
+EXPECT=<<EOF
+const_reference = const_reference
+typedef const_reference const_reference;
+pf 
+typedef const_reference const_reference;
+EOF
+RUN
+
+
 NAME=t-*
 FILE==
 CMDS=<<EOF
