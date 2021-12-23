@@ -285,7 +285,7 @@ static bool bf_init_rzil(RzAnalysis *analysis) {
 		return false;
 	}
 
-	RzBuffer *buf = rz_buf_new_sparse_overlay(rzil->ro_memory, RZ_BUF_SPARSE_WRITE_MODE_SPARSE);
+	RzBuffer *buf = rz_buf_new_sparse_overlay(rzil->io_buf, RZ_BUF_SPARSE_WRITE_MODE_SPARSE);
 	if (!buf) {
 		rz_il_vm_fini(rzil->vm);
 		return false;

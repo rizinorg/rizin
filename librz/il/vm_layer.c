@@ -133,7 +133,6 @@ static void free_bind_var_val(HtPPKv *kv) {
  * \param vm RzILVM, pointer to an empty VM
  * \param start_addr ut64, initiation pc address
  * \param addr_size  ut32, size of the address in VM
- * \param ro_memory  RzBuffer, read only memory to use for reads in the VM
  */
 RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, bool big_endian) {
 	rz_return_val_if_fail(vm, false);
@@ -271,7 +270,6 @@ RZ_API void rz_il_vm_fini(RzILVM *vm) {
  * \param vm RzILVM, pointer to an empty VM
  * \param start_addr ut64, initiation pc address
  * \param addr_size  ut32, size of the address in VM
- * \param ro_memory  RzBuffer, read only memory to use for reads in the VM
  */
 RZ_API RzILVM *rz_il_vm_new(ut64 start_addr, ut32 addr_size, bool big_endian) {
 	RzILVM *vm = RZ_NEW0(RzILVM);
