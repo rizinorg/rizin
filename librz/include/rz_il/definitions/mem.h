@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2021 Florian Märkl <info@florianmaerkl.de>
 // SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
@@ -10,12 +11,12 @@
 extern "C" {
 #endif
 
-typedef unsigned int RzILMemIndex;
+typedef ut32 RzILMemIndex;
 
 /**
  * \brief A single memory as part of the RzIL VM.
  *
- * This can be seen as an of bitvectors, indexed by bitvector keys, covering a
+ * This can be seen as an array of bitvectors, indexed by bitvector keys, covering a
  * certain address space. It corresponds to `('a, 'b) mem` in bap where 'a and 'b
  * statically determine the size of all keys and values, respectively.
  * Because currently our memory can only bind to an RzBuffer, the key size is limited to
