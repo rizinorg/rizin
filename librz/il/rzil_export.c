@@ -335,7 +335,7 @@ static void il_opdmp_load(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 	} else {
 		pj_o(pj);
 		pj_ks(pj, "opcode", "load");
-    pj_kn(pj, "mem", opx->mem);
+		pj_kn(pj, "mem", opx->mem);
 		pj_k(pj, "key");
 		il_op_resolve(opx->key, sb, pj);
 		pj_end(pj);
@@ -354,7 +354,7 @@ static void il_opdmp_store(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 	} else {
 		pj_o(pj);
 		pj_ks(pj, "opcode", "store");
-    pj_kn(pj, "mem", opx->mem);
+		pj_kn(pj, "mem", opx->mem);
 		pj_k(pj, "key");
 		il_op_resolve(opx->key, sb, pj);
 		pj_k(pj, "value");

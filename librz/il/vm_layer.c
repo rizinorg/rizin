@@ -395,7 +395,6 @@ RZ_API void rz_il_vm_mem_storew(RzILVM *vm, RzILMemIndex index, RzBitVector *key
 	rz_bv_free(old_value);
 }
 
-
 /**
  * Step execute a single RZIL root
  * \param vm, RzILVM, pointer to the VM

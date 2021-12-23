@@ -59,13 +59,14 @@ RZ_API ut32 rz_il_mem_value_len(RzILMem *mem) {
 	return 8;
 }
 
-#define return_val_if_key_len_wrong(mem, key, ret) do { \
-	if (rz_bv_len(key) != rz_il_mem_key_len(mem)) { \
-		RZ_LOG_ERROR("RzIL: Memory key size mismatch (expected size = %u, but got %u)\n", \
+#define return_val_if_key_len_wrong(mem, key, ret) \
+	do { \
+		if (rz_bv_len(key) != rz_il_mem_key_len(mem)) { \
+			RZ_LOG_ERROR("RzIL: Memory key size mismatch (expected size = %u, but got %u)\n", \
 				(unsigned int)rz_il_mem_key_len(mem), (unsigned int)rz_bv_len(key)); \
-		return ret; \
-	} \
-} while (0);
+			return ret; \
+		} \
+	} while (0);
 
 /**
  * Load a single memory value (bitvector) from current address (bitvector)
@@ -92,7 +93,7 @@ RZ_API bool rz_il_mem_store(RzILMem *mem, RzBitVector *key, RzBitVector *value) 
 	return_val_if_key_len_wrong(mem, key, false);
 	if (rz_bv_len(value) != rz_il_mem_value_len(mem)) {
 		RZ_LOG_ERROR("RzIL: Memory write value size mismatch (expected size = %u, but got %u)\n",
-				(unsigned int)rz_il_mem_value_len(mem), (unsigned int)rz_bv_len(value));
+			(unsigned int)rz_il_mem_value_len(mem), (unsigned int)rz_bv_len(value));
 		return false;
 	}
 	ut8 v = rz_bv_to_ut8(value);

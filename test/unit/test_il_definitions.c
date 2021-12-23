@@ -234,7 +234,6 @@ static bool test_rzil_mem_storew() {
 	mu_end;
 }
 
-
 bool all_tests() {
 	mu_run_test(test_rzil_bool_init);
 	mu_run_test(test_rzil_bool_logic);

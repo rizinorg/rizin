@@ -12,8 +12,8 @@
 extern "C" {
 #endif
 
-#define RZ_IL_VM_MAX_VAR  2048
-#define RZ_IL_VM_MAX_VAL  1024
+#define RZ_IL_VM_MAX_VAR 2048
+#define RZ_IL_VM_MAX_VAL 1024
 
 typedef enum {
 	RZIL_OP_ARG_BOOL,

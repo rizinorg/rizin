@@ -13,7 +13,7 @@ static bool test_rzil_vm_init() {
 }
 
 static bool test_rzil_vm_basic_operation() {
-	RzILVM *vm = rz_il_vm_new(0, 8,  true);
+	RzILVM *vm = rz_il_vm_new(0, 8, true);
 
 	// 1. create variables
 	RzILVar *var_r1 = rz_il_vm_create_global_variable(vm, "r1", RZIL_VAR_TYPE_UNK, true);
