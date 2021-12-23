@@ -182,7 +182,7 @@ RZ_API int rz_main_rz_sign(int argc, const char **argv) {
 			rz_cons_printf("rz-sign: written %u signatures to %s.\n", n_nodes, output_file);
 		}
 	} else {
-		// convert a flirt file from .pac to .sig or viceversa
+		// convert a flirt file from .pat to .sig or viceversa
 		if (!rz_core_flirt_convert_file(core, input_file, output_file)) {
 			ret = -1;
 		} else if (!quiet) {

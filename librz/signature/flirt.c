@@ -308,6 +308,21 @@ RZ_API void rz_sign_flirt_node_free(RZ_NULLABLE RzFlirtNode *node) {
 }
 
 /**
+ * \brief Frees an RzFlirtInfo struct elements without freeing the pointer
+ *
+ * \param RzFlirtInfo  The RzFlirtInfo elements to be freed
+ */
+RZ_API void rz_sign_flirt_info_fini(RZ_NULLABLE RzFlirtInfo *info) {
+	if (!info) {
+		return;
+	}
+	if (info->type == RZ_FLIRT_FILE_TYPE_SIG) {
+		free(info->u.sig.name);
+	}
+	memset(info, 0, sizeof(RzFlirtInfo));
+}
+
+/**
  * \brief Checks if a pattern does match the buffer data
  *
  * \param p_size   The pattern size
@@ -346,6 +361,7 @@ static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module
 	RzAnalysisFunction *next_module_function;
 	RzListIter *tail_byte_it, *flirt_func_it;
 	RzFlirtTailByte *tail_byte;
+	ut32 name_index = 0;
 
 	if (32 + module->crc_length < buf_size &&
 		module->crc16 != flirt_crc16(b + 32, module->crc_length)) {
@@ -405,9 +421,23 @@ static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module
 				rz_analysis_trim_jmprefs((RzAnalysis *)analysis, next_module_function);
 			}
 
+			// remove old name from map
+			ht_pp_delete(analysis->ht_name_fun, next_module_function->name);
+
 			name = rz_name_filter2(flirt_func->name, true);
 			free(next_module_function->name);
 			next_module_function->name = rz_str_newf("flirt.%s", name);
+
+			// verify that the name is unique
+			while (ht_pp_find(analysis->ht_name_fun, next_module_function->name, NULL)) {
+				name_index++;
+				free(next_module_function->name);
+				next_module_function->name = rz_str_newf("flirt.%s_%u", name, name_index);
+			}
+
+			// insert new name into the map
+			ht_pp_insert(analysis->ht_name_fun, next_module_function->name, next_module_function);
+
 			analysis->flb.set(analysis->flb.f, next_module_function->name,
 				next_module_function->addr, next_module_function_size);
 			RZ_LOG_DEBUG("FLIRT: Found %s\n", next_module_function->name);
@@ -1012,9 +1042,10 @@ exit:
  *
  * \param  flirt_buf     The buffer to read
  * \param  expected_arch The expected arch to be used for the buffer
+ * \param  info          Pointer to a RzFlirtInfo that can be used to get info about the sig file
  * \return               Parsed FLIRT node
  */
-RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_parse_compressed_pattern_from_buffer(RZ_NONNULL RzBuffer *flirt_buf, ut8 expected_arch) {
+RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_parse_compressed_pattern_from_buffer(RZ_NONNULL RzBuffer *flirt_buf, ut8 expected_arch, RZ_NULLABLE RzFlirtInfo *info) {
 	rz_return_val_if_fail(flirt_buf && expected_arch <= RZ_FLIRT_SIG_ARCH_ANY, NULL);
 
 	ut8 *name = NULL;
@@ -1139,6 +1170,15 @@ RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_parse_compressed_pattern_from_buffer(RZ
 		free(node);
 	}
 
+	if (info && ret) {
+		info->type = RZ_FLIRT_FILE_TYPE_SIG;
+		info->u.sig.version = rz_sign_flirt_node_count_nodes(ret);
+		info->u.sig.architecture = header->arch;
+		info->u.sig.n_modules = ps.version;
+		info->u.sig.name = (char *)name;
+		name = NULL;
+	}
+
 exit:
 	free(buf);
 	rz_buf_free(rz_buf);
@@ -1178,9 +1218,9 @@ RZ_API void rz_sign_flirt_apply(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL cons
 	}
 
 	if (!strcmp(extension, ".pat")) {
-		node = rz_sign_flirt_parse_string_pattern_from_buffer(flirt_buf, RZ_FLIRT_NODE_OPTIMIZE_MAX);
+		node = rz_sign_flirt_parse_string_pattern_from_buffer(flirt_buf, RZ_FLIRT_NODE_OPTIMIZE_MAX, NULL);
 	} else {
-		node = rz_sign_flirt_parse_compressed_pattern_from_buffer(flirt_buf, expected_arch);
+		node = rz_sign_flirt_parse_compressed_pattern_from_buffer(flirt_buf, expected_arch, NULL);
 	}
 
 	rz_buf_free(flirt_buf);
