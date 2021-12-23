@@ -466,7 +466,13 @@ out:
 
 /**
  * \brief add a pascal string to RzCore
- * \see rz_core_meta_string_add
+ *
+ * \param core RzCore of core that will be add to
+ * \param addr string's address
+ * \param size string's max size
+ * \param encoding string's encoding
+ * \param name string's value, or null that will be autodetect at \p addr
+ * \return is add successful?
  */
 RZ_API bool rz_core_meta_pascal_string_add(RzCore *core, ut64 addr, RzStrEnc encoding, RZ_NULLABLE const char *name) {
 	rz_return_val_if_fail(encoding == RZ_STRING_ENC_8BIT || encoding == RZ_STRING_ENC_UTF8, false);
