@@ -570,9 +570,9 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_branch(RZ_NONNULL RzILOp *condition, RZ_NULLA
 }
 
 /**
- * \brief op structure for bitvector
+ * \brief Helper to create RzILOpLoad
  */
-RZ_API RZ_OWN RzILOp *rz_il_op_new_load(int mem, RZ_NONNULL RzILOp *key) {
+RZ_API RZ_OWN RzILOp *rz_il_op_new_load(RzILMemIndex mem, RZ_NONNULL RzILOp *key) {
 	rz_return_val_if_fail(key, NULL);
 	RzILOp *ret;
 	rz_il_op_new_2(RZIL_OP_LOAD, RzILOpLoad, load, mem, key);
@@ -580,12 +580,32 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_load(int mem, RZ_NONNULL RzILOp *key) {
 }
 
 /**
- * \brief op structure for bitvector
+ * \brief Helper to create RzILOpStoreW
  */
-RZ_API RZ_OWN RzILOp *rz_il_op_new_store(int mem, RZ_NONNULL RzILOp *key, RZ_NONNULL RzILOp *value) {
+RZ_API RZ_OWN RzILOp *rz_il_op_new_store(RzILMemIndex mem, RZ_NONNULL RzILOp *key, RZ_NONNULL RzILOp *value) {
 	rz_return_val_if_fail(key && value, NULL);
 	RzILOp *ret;
 	rz_il_op_new_3(RZIL_OP_STORE, RzILOpStore, store, mem, key, value);
+	return ret;
+}
+
+/**
+ * \brief Helper to create RzILOpLoadW
+ */
+RZ_API RZ_OWN RzILOp *rz_il_op_new_loadw(RzILMemIndex mem, RZ_NONNULL RzILOp *key, ut32 n_bits) {
+	rz_return_val_if_fail(key && n_bits, NULL);
+	RzILOp *ret;
+	rz_il_op_new_3(RZIL_OP_LOADW, RzILOpLoadW, loadw, mem, key, n_bits);
+	return ret;
+}
+
+/**
+ * \brief Helper to create RzILOpStoreW
+ */
+RZ_API RZ_OWN RzILOp *rz_il_op_new_storew(RzILMemIndex mem, RZ_NONNULL RzILOp *key, RZ_NONNULL RzILOp *value) {
+	rz_return_val_if_fail(key && value, NULL);
+	RzILOp *ret;
+	rz_il_op_new_3(RZIL_OP_STOREW, RzILOpStoreW, storew, mem, key, value);
 	return ret;
 }
 
@@ -722,6 +742,12 @@ RZ_API void rz_il_op_free(RZ_NULLABLE RzILOp *op) {
 		break;
 	case RZIL_OP_STORE:
 		rz_il_op_free_2(store, key, value);
+		break;
+	case RZIL_OP_LOADW:
+		rz_il_op_free_1(loadw, key);
+		break;
+	case RZIL_OP_STOREW:
+		rz_il_op_free_2(storew, key, value);
 		break;
 	case RZIL_OP_NOP:
 		// nothing to free
