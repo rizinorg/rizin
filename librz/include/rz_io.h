@@ -191,6 +191,7 @@ typedef struct rz_event_io_map_del_t {
 
 struct rz_io_bind_t;
 
+typedef int (*RzIOGetCurrentFd)(RzIO *io);
 typedef bool (*RzIODescUse)(RzIO *io, int fd);
 typedef RzIODesc *(*RzIODescGet)(RzIO *io, int fd);
 typedef ut64 (*RzIODescSize)(RzIODesc *desc);
@@ -231,6 +232,7 @@ typedef struct w32dbg_wrap_instance_t *(*RzIOGetW32DbgWrap)(RzIO *io);
 typedef struct rz_io_bind_t {
 	int init;
 	RzIO *io;
+	RzIOGetCurrentFd fd_get_current;
 	RzIODescUse desc_use;
 	RzIODescGet desc_get;
 	RzIODescSize desc_size;

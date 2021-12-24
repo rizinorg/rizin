@@ -329,15 +329,15 @@ static void il_opdmp_append(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 static void il_opdmp_load(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 	RzILOpLoad *opx = op->op.load;
 	if (sb) {
-		rz_strbuf_append(sb, "load(key:");
+		rz_strbuf_appendf(sb, "load(mem:%u, key:", (unsigned int)opx->mem);
 		il_op_resolve(opx->key, sb, pj);
-		rz_strbuf_appendf(sb, ", mem:%d)", opx->mem);
+		rz_strbuf_append(sb, ")");
 	} else {
 		pj_o(pj);
 		pj_ks(pj, "opcode", "load");
+		pj_kn(pj, "mem", opx->mem);
 		pj_k(pj, "key");
 		il_op_resolve(opx->key, sb, pj);
-		pj_kN(pj, "mem", opx->mem);
 		pj_end(pj);
 	}
 }
@@ -346,19 +346,19 @@ static void il_opdmp_store(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 	RzILOpStore *opx = op->op.store;
 
 	if (sb) {
-		rz_strbuf_append(sb, "store(key:");
+		rz_strbuf_appendf(sb, "store(mem:%u, key:", (unsigned int)opx->mem);
 		il_op_resolve(opx->key, sb, pj);
 		rz_strbuf_append(sb, ", value:");
 		il_op_resolve(opx->value, sb, pj);
-		rz_strbuf_appendf(sb, ", mem:%d)", opx->mem);
+		rz_strbuf_appendf(sb, ")");
 	} else {
 		pj_o(pj);
 		pj_ks(pj, "opcode", "store");
+		pj_kn(pj, "mem", opx->mem);
 		pj_k(pj, "key");
 		il_op_resolve(opx->key, sb, pj);
 		pj_k(pj, "value");
 		il_op_resolve(opx->value, sb, pj);
-		pj_kN(pj, "mem", opx->mem);
 		pj_end(pj);
 	}
 }
@@ -386,14 +386,14 @@ static void il_opdmp_set(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 static void il_opdmp_let(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 	RzILOpLet *opx = op->op.let;
 	if (sb) {
-		rz_strbuf_appendf(sb, "let(v:%s%s, x:", opx->v, opx->mut ? "" : ", const");
+		rz_strbuf_appendf(sb, "let(v:%s, x:", opx->v);
 		il_op_resolve(opx->x, sb, pj);
-		rz_strbuf_append(sb, ")");
+		rz_strbuf_append(sb, opx->mut ? ")" : ", const)");
 	} else {
 		pj_o(pj);
 		pj_ks(pj, "opcode", "let");
 		pj_ks(pj, "dst", opx->v);
-		pj_kb(pj, "mutable", opx->mut);
+		pj_kb(pj, "const", !opx->mut);
 		pj_k(pj, "src");
 		il_op_resolve(opx->x, sb, pj);
 		pj_end(pj);
