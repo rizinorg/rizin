@@ -3114,12 +3114,34 @@ RZ_API char *rz_str_between(const char *cmt, const char *prefix, const char *suf
 	return NULL;
 }
 
-RZ_API bool rz_str_startswith(const char *str, const char *needle) {
+/**
+ * \brief Checks if a string starts with a specifc sequence of characters (case sensitive)
+ * \param str C-string to be scanned
+ * \param needle C-string containing the sequence of characters to match
+ * \return True if \p needle is found at the beginning of \p str and false otherwise
+ * \see rz_str_startswith_icase()
+ */
+RZ_API bool rz_str_startswith(RZ_NONNULL const char *str, RZ_NONNULL const char *needle) {
 	rz_return_val_if_fail(str && needle, false);
 	if (str == needle) {
 		return true;
 	}
 	return !strncmp(str, needle, strlen(needle));
+}
+
+/**
+ * \brief Checks if a string starts with a specifc sequence of characters (case insensitive)
+ * \param str C-string to be scanned
+ * \param needle C-string containing the sequence of characters to match
+ * \return True if \p needle is found at the beginning of \p str and false otherwise
+ * \see rz_str_startswith()
+ */
+RZ_API bool rz_str_startswith_icase(RZ_NONNULL const char *str, RZ_NONNULL const char *needle) {
+	rz_return_val_if_fail(str && needle, false);
+	if (str == needle) {
+		return true;
+	}
+	return !rz_str_ncasecmp(str, needle, strlen(needle));
 }
 
 RZ_API bool rz_str_endswith(const char *str, const char *needle) {
