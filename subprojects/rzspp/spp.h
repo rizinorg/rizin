@@ -17,8 +17,6 @@
 #endif
 #if RZ_SWIG
   #define S_API export
-#elif RZ_INLINE
-  #define S_API inline
 #else
   #if defined(__GNUC__) && __GNUC__ >= 4
     #define S_API __attribute__((visibility("default")))

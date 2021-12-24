@@ -1,33 +1,16 @@
-lang_plugins = [
-  'lib',
-  'pipe',
-]
-
-if host_machine.system() != 'windows'
-  lang_plugins += [
-    'c',
-    'cpipe'
-  ]
-endif
-
 rz_lang_sources = [
   'lang.c',
-  'p/lib.c',
-  'p/pipe.c',
-  'p/pipe_helper.c',
 ]
 
-if host_machine.system() != 'windows'
-  rz_lang_sources += [
-    'p/c.c',
-    'p/cpipe.c',
-  ]
-endif
+rz_lang_dependencies = [rz_util_dep, rz_cons_dep]
+
+subdir('p')
 
 rz_lang = library('rz_lang', rz_lang_sources,
   include_directories: platform_inc,
   c_args: library_cflags,
-  dependencies: [rz_util_dep, rz_cons_dep],
+  dependencies: rz_lang_dependencies,
+  link_with: lang_static_plugins,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
@@ -38,8 +21,29 @@ rz_lang = library('rz_lang', rz_lang_sources,
 )
 
 rz_lang_dep = declare_dependency(link_with: rz_lang,
-                                include_directories: [platform_inc])
+  dependencies: rz_lang_dependencies,
+  include_directories: [platform_inc]
+)
 meson.override_dependency('rz_lang', rz_lang_dep)
+
+foreach p : lang_shared_plugins
+  side_plugin = configure_file(
+    input: '../shared_plugin.c.in',
+    output: 'shared_plugin_@0@.c'.format(p.name()),
+    configuration: {
+      'lib_type': 'RZ_LIB_TYPE_LANG',
+      'plugin_type': 'RzLangPlugin',
+      'plugin_header': 'rz_lang.h',
+      'plugin_name': 'rz_lang_plugin_@0@'.format(p.name()),
+    },
+  )
+  shared_library('lang_' + p.name(), [side_plugin],
+    link_whole: p,
+    dependencies: [rz_lang_dep],
+    install: true,
+    install_dir: rizin_plugins,
+  )
+endforeach
 
 pkgconfig_mod.generate(rz_lang,
   subdirs: 'librz',

@@ -24,11 +24,3 @@ RzLangPlugin rz_lang_plugin_pipe = {
 	.run = lang_pipe_run,
 	.run_file = (void *)lang_pipe_file,
 };
-
-#ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_LANG,
-	.data = &rz_lang_plugin_pipe,
-	.version = RZ_VERSION
-};
-#endif

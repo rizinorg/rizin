@@ -1,12 +1,3 @@
-bp_plugins = [
-  'arm',
-  'bf',
-  'mips',
-  'ppc',
-  'sh',
-  'x86'
-]
-
 rz_bp_sources = [
   'bp.c',
   'bp_io.c',
@@ -14,18 +5,17 @@ rz_bp_sources = [
   'bp_traptrace.c',
   'bp_watch.c',
   'serialize_bp.c',
-  'p/bp_arm.c',
-  'p/bp_bf.c',
-  'p/bp_mips.c',
-  'p/bp_ppc.c',
-  'p/bp_sh.c',
-  'p/bp_x86.c'
 ]
+
+rz_bp_dependencies = [rz_util_dep]
+
+subdir('p')
 
 rz_bp = library('rz_bp', rz_bp_sources,
   include_directories: [platform_inc],
   c_args: library_cflags,
-  dependencies: [rz_util_dep],
+  dependencies: [rz_bp_dependencies],
+  link_with: bp_static_plugins,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
@@ -36,8 +26,29 @@ rz_bp = library('rz_bp', rz_bp_sources,
 )
 
 rz_bp_dep = declare_dependency(link_with: rz_bp,
-                              include_directories: [platform_inc])
+  dependencies: rz_bp_dependencies,
+  include_directories: [platform_inc]
+)
 meson.override_dependency('rz_bp', rz_bp_dep)
+
+foreach p : bp_shared_plugins
+  side_plugin = configure_file(
+    input: '../shared_plugin.c.in',
+    output: 'shared_plugin_@0@.c'.format(p.name()),
+    configuration: {
+      'lib_type': 'RZ_LIB_TYPE_BP',
+      'plugin_type': 'RzBreakpointPlugin',
+      'plugin_header': 'rz_bp.h',
+      'plugin_name': 'rz_bp_plugin_@0@'.format(p.name()),
+    },
+  )
+  shared_library('bp_' + p.name(), [side_plugin],
+    link_whole: p,
+    dependencies: [rz_bp_dep],
+    install: true,
+    install_dir: rizin_plugins,
+  )
+endforeach
 
 pkgconfig_mod.generate(rz_bp,
   subdirs: 'librz',

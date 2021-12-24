@@ -988,13 +988,6 @@ static bool cb_binfilter(void *user, void *data) {
 	return true;
 }
 
-static bool cb_useldr(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	core->bin->use_ldr = node->i_value;
-	return true;
-}
-
 static bool cb_binat(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -3241,7 +3234,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	/* bin */
 	SETPREF("bin.hashlimit", "10M", "Only compute hash when opening a file if smaller than this size");
 	SETCB("bin.usextr", "true", &cb_usextr, "Use extract plugins when loading files");
-	SETCB("bin.useldr", "true", &cb_useldr, "Use loader plugins when loading files");
 	SETCB("bin.str.purge", "", &cb_strpurge, "Purge strings (e bin.str.purge=? provides more detail)");
 	SETBPREF("bin.b64str", "false", "Try to debase64 the strings");
 	SETCB("bin.at", "false", &cb_binat, "RzBin.cur depends on RzCore.offset");

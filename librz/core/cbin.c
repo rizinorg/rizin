@@ -4857,44 +4857,11 @@ RZ_API RzCmdStatus rz_core_binxtr_plugin_print(const RzBinXtrPlugin *bx, RzCmdSt
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_API RzCmdStatus rz_core_binldr_plugin_print(const RzBinLdrPlugin *ld, RzCmdStateOutput *state) {
-	rz_return_val_if_fail(ld && state, RZ_CMD_STATUS_ERROR);
-
-	const char *name;
-
-	rz_cmd_state_output_set_columnsf(state, "sss", "type", "name", "description");
-	switch (state->mode) {
-	case RZ_OUTPUT_MODE_QUIET:
-		rz_cons_printf("%s\n", ld->name);
-		break;
-	case RZ_OUTPUT_MODE_JSON:
-		pj_o(state->d.pj);
-		pj_ks(state->d.pj, "name", ld->name);
-		pj_ks(state->d.pj, "description", ld->desc);
-		pj_ks(state->d.pj, "license", ld->license ? ld->license : "???");
-		pj_end(state->d.pj);
-		break;
-	case RZ_OUTPUT_MODE_STANDARD:
-		name = strncmp(ld->name, "ldr.", 4) ? ld->name : ld->name + 3;
-		rz_cons_printf("ldr  %-11s %s (%s)\n", name,
-			ld->desc, ld->license ? ld->license : "???");
-		break;
-	case RZ_OUTPUT_MODE_TABLE:
-		rz_table_add_rowf(state->d.t, "sss", "ldr", ld->name, ld->desc);
-		break;
-	default:
-		rz_warn_if_reached();
-		return RZ_CMD_STATUS_NONEXISTINGCMD;
-	}
-	return RZ_CMD_STATUS_OK;
-}
-
 RZ_API RzCmdStatus rz_core_bin_plugins_print(RzBin *bin, RzCmdStateOutput *state) {
 	rz_return_val_if_fail(bin && state, RZ_CMD_STATUS_ERROR);
 
 	RzBinPlugin *bp;
 	RzBinXtrPlugin *bx;
-	RzBinLdrPlugin *ld;
 	RzListIter *iter;
 	RzCmdStatus status;
 
@@ -4907,12 +4874,6 @@ RZ_API RzCmdStatus rz_core_bin_plugins_print(RzBin *bin, RzCmdStateOutput *state
 	}
 	rz_list_foreach (bin->binxtrs, iter, bx) {
 		status = rz_core_binxtr_plugin_print(bx, state);
-		if (status != RZ_CMD_STATUS_OK) {
-			return status;
-		}
-	}
-	rz_list_foreach (bin->binldrs, iter, ld) {
-		status = rz_core_binldr_plugin_print(ld, state);
 		if (status != RZ_CMD_STATUS_OK) {
 			return status;
 		}

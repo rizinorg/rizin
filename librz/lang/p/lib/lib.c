@@ -51,11 +51,3 @@ RzLangPlugin rz_lang_plugin_lib = {
 	.init = lang_lib_init,
 	.run_file = lang_lib_file_run,
 };
-
-#ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_LANG,
-	.data = &rz_lang_plugin_lib,
-	.version = RZ_VERSION
-};
-#endif

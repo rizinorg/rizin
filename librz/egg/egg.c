@@ -79,7 +79,7 @@ RZ_API RzEgg *rz_egg_new(void) {
 		goto beach;
 	}
 	egg->plugins = rz_list_new();
-	for (i = 0; egg_static_plugins[i]; i++) {
+	for (i = 0; i < RZ_ARRAY_SIZE(egg_static_plugins); i++) {
 		rz_egg_add(egg, egg_static_plugins[i]);
 	}
 	return egg;

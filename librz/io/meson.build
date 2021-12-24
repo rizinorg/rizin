@@ -41,6 +41,8 @@ if host_machine.system() == 'windows'
   ]
 endif
 
+io_enabled_static_plugins = io_plugins
+
 rz_io_sources = [
   'io.c',
   'io_fd.c',

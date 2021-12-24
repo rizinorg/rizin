@@ -63,6 +63,8 @@ if get_option('use_gpl')
   ]
 endif
 
+analysis_enabled_static_plugins = analysis_plugins
+
 rz_analysis_sources = [
   'analysis.c',
   'arch_platform.c',

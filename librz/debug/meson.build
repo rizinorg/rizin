@@ -18,6 +18,8 @@ if host_machine.system() == 'windows'
   debug_plugins += 'windbg'
 endif
 
+debug_enabled_static_plugins = debug_plugins
+
 rz_debug_sources = [
   'ddesc.c',
   'debug.c',

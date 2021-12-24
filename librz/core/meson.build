@@ -2,6 +2,8 @@ core_plugins = [
   'java',
 ]
 
+core_enabled_static_plugins = core_plugins
+
 subdir('cmd_descs')
 
 rz_core_sources = [

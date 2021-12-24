@@ -12,6 +12,8 @@ if get_option('use_swift_demangler')
   demangler_plugins += 'swift'
 endif
 
+demangler_enabled_static_plugins = demangler_plugins
+
 rz_demangler_sources = [
   'demangler.c'
 ]

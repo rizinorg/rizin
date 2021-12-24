@@ -73,6 +73,8 @@ if get_option('use_gpl')
   ]
 endif
 
+asm_enabled_static_plugins = asm_plugins
+
 rz_asm_sources = [
   'asm.c',
   'aop.c',

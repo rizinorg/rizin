@@ -17,6 +17,8 @@ crypto_plugins = [
   'xor',
 ]
 
+crypto_enabled_static_plugins = crypto_plugins
+
 rz_crypto_sources = [
   'des.c',
   'crypto.c',

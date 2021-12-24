@@ -117,7 +117,6 @@ RZ_IPI void rz_core_agraph_print_write(RzCore *core, const char *filename);
 
 RZ_IPI RzCmdStatus rz_core_bin_plugin_print(const RzBinPlugin *bp, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_core_binxtr_plugin_print(const RzBinXtrPlugin *bx, RzCmdStateOutput *state);
-RZ_IPI RzCmdStatus rz_core_binldr_plugin_print(const RzBinLdrPlugin *ld, RzCmdStateOutput *state);
 
 /* creg.c */
 RZ_IPI void rz_core_reg_update_flags(RzCore *core);

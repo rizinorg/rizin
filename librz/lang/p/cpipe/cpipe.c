@@ -108,15 +108,6 @@ RzLangPlugin rz_lang_plugin_cpipe = {
 	.fini = NULL,
 	.run_file = (void *)lang_cpipe_file,
 };
-
-#ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_LANG,
-	.data = &rz_lang_plugin_cpipe,
-	.version = RZ_VERSION
-};
-#endif
-
 #else
 #ifdef _MSC_VER
 #pragma message("Warning: cpipe RzLangPlugin is not implemented on this platform")

@@ -20,7 +20,6 @@ static RzLibTypeName rz_lib_types[] = {
 	{ RZ_LIB_TYPE_PARSE, "parse" },
 	{ RZ_LIB_TYPE_BIN, "bin" },
 	{ RZ_LIB_TYPE_BIN_XTR, "bin_xtr" },
-	{ RZ_LIB_TYPE_BIN_LDR, "bin_ldr" },
 	{ RZ_LIB_TYPE_BP, "bp" },
 	{ RZ_LIB_TYPE_SYSCALL, "syscall" },
 	{ RZ_LIB_TYPE_FASTCALL, "fastcall" },

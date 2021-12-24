@@ -54,14 +54,14 @@ bin_plugins = [
   'zimg',
 ]
 
-bin_ldr_plugins = [
-  'ldr_linux',
-]
+bin_enabled_static_plugins = bin_plugins
 
 bin_xtr_plugins = [
   'xtr_fatmach0',
   'xtr_sep64',
 ]
+
+bin_xtr_enabled_static_plugins = bin_xtr_plugins
 
 rz_bin_sources = [
   'bin.c',
@@ -88,7 +88,6 @@ rz_bin_sources = [
   'p/bin_elf.c',
   'p/bin_elf64.c',
   'p/bin_java.c',
-  'p/bin_ldr_linux.c',
   'p/bin_le.c',
   'p/bin_luac.c',
   'p/bin_mach0.c',

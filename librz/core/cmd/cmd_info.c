@@ -471,12 +471,6 @@ RZ_IPI RzCmdStatus rz_cmd_info_plugins_handler(RzCore *core, int argc, const cha
 		return RZ_CMD_STATUS_OK;
 	}
 
-	const RzBinLdrPlugin *lbp = rz_bin_ldrplugin_get(core->bin, plugin_name);
-	if (lbp) {
-		rz_core_binldr_plugin_print(lbp, state);
-		return RZ_CMD_STATUS_OK;
-	}
-
 	return RZ_CMD_STATUS_ERROR;
 }
 

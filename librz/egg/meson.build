@@ -4,6 +4,8 @@ egg_plugins = [
   'xor'
 ]
 
+egg_enabled_static_plugins = egg_plugins
+
 rz_egg_sources = [
   'egg.c',
   'egg_Cfile.c',

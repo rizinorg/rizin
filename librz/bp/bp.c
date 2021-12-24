@@ -32,9 +32,9 @@ RZ_API RzBreakpoint *rz_bp_new(void) {
 	bp->traces = rz_bp_traptrace_new();
 	bp->cb_printf = (PrintfCallback)printf;
 	bp->bps = rz_list_newf((RzListFree)rz_bp_item_free);
-	bp->plugins = rz_list_newf((RzListFree)free);
+	bp->plugins = rz_list_newf(NULL);
 	bp->nhwbps = 0;
-	for (i = 0; bp_static_plugins[i]; i++) {
+	for (i = 0; i < RZ_ARRAY_SIZE(bp_static_plugins); i++) {
 		static_plugin = RZ_NEW(RzBreakpointPlugin);
 		memcpy(static_plugin, bp_static_plugins[i],
 			sizeof(RzBreakpointPlugin));

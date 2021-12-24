@@ -22,6 +22,8 @@ if get_option('use_gpl')
   ]
 endif
 
+parse_enabled_static_plugins = parse_plugins
+
 rz_parse_sources = [
   'filter.c',
   'parse.c',

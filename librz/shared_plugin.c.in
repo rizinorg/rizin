@@ -1,0 +1,13 @@
+#include <rz_lib.h>
+#include <rz_types.h>
+#include <@plugin_header@>
+
+// clang-format off
+extern @plugin_type@ @plugin_name@;
+
+RZ_API RzLibStruct rizin_plugin = {
+	.type = @lib_type@,
+	.data = &@plugin_name@,
+	.version = RZ_VERSION
+};
+// clang-format on

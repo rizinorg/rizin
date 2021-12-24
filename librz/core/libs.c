@@ -52,7 +52,6 @@ CB(bin, bin)
 CB(egg, egg)
 
 static void loadSystemPlugins(RzCore *core, int where) {
-#if RZ_LOADLIBS
 	const char *dir_plugins = rz_config_get(core->config, "dir.plugins");
 	if (where & RZ_CORE_LOADLIBS_CONFIG) {
 		rz_lib_opendir(core->lib, dir_plugins, false);
@@ -79,7 +78,6 @@ static void loadSystemPlugins(RzCore *core, int where) {
 		rz_lib_opendir(core->lib, spd, false);
 		free(spd);
 	}
-#endif
 }
 
 RZ_API void rz_core_loadlibs_init(RzCore *core) {

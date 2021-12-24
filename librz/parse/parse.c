@@ -31,7 +31,7 @@ RZ_API RzParse *rz_parse_new(void) {
 	p->subtail = false;
 	p->minval = 0x100;
 	p->localvar_only = false;
-	for (i = 0; parse_static_plugins[i]; i++) {
+	for (i = 0; i < RZ_ARRAY_SIZE(parse_static_plugins); i++) {
 		rz_parse_add(p, parse_static_plugins[i]);
 	}
 	return p;

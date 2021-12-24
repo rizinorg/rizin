@@ -16,11 +16,3 @@ struct rz_bp_plugin_t rz_bp_plugin_bf = {
 	.nbps = 2,
 	.bps = rz_bp_plugin_bf_bps,
 };
-
-#ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_BP,
-	.data = &rz_bp_plugin_bf,
-	.version = RZ_VERSION
-};
-#endif

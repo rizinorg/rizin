@@ -270,8 +270,6 @@ typedef int (*PrintfCallback)(const char *str, ...) RZ_PRINTF_CHECK(1, 2);
 #endif
 #if RZ_SWIG
 #define RZ_API export
-#elif RZ_INLINE
-#define RZ_API inline
 #else
 #if defined(__GNUC__) && __GNUC__ >= 4
 #define RZ_API __attribute__((visibility("default")))
