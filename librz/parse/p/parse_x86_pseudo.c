@@ -514,6 +514,17 @@ static bool subvar(RzParse *p, RzAnalysisFunction *f, ut64 addr, int oplen, char
 				break;
 			}
 		}
+		// Figure out the first hex digit of the delta to know if we need a leading zero
+		st64 delta_first_digit = delta;
+		while (delta_first_digit >= 16) {
+			delta_first_digit /= 16;
+		}
+		// Try with trailing-h notation (if using MASM syntax)
+		snprintf(oldstr, sizeof(oldstr) - 1, "%s %c %s%xh", reg, sign, delta_first_digit > 9 ? "0" : "", (int)delta);
+		if (rz_str_casestr(tstr, oldstr)) {
+			tstr = rz_str_replace_icase(tstr, oldstr, newstr, 1, 0);
+			break;
+		}
 		// Try with no spaces
 		snprintf(oldstr, sizeof(oldstr) - 1, "[%s%c0x%x]", reg, sign, (int)delta);
 		if (strstr(tstr, oldstr) != NULL) {
