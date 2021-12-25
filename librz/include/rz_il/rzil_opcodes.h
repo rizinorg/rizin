@@ -113,18 +113,20 @@ typedef struct rz_il_op_args_alg_log_operations_t RzILOpArgsLogor;
 typedef struct rz_il_op_args_alg_log_operations_t RzILOpArgsLogxor;
 
 /**
- *  \brief op structure for sle/ule ('a bitv -> 'a bitv -> bool)
+ *  \brief op structure for binary comparison ops ('a bitv -> 'a bitv -> bool)
  *
+ *  [EQ] eq x y binary predicate for bitwise equality
  *  [SLE] sle x y binary predicate for singed less than or equal
  *  [ULE] ule x y binary predicate for unsigned less than or equal
  */
-struct rz_il_op_args_sle_ule_t {
+struct rz_il_op_args_cmp_t {
 	RzILOpBitVector *x; ///< index of operand 1
 	RzILOpBitVector *y; ///< index of operand 2
 };
 
-typedef struct rz_il_op_args_sle_ule_t RzILOpArgsSle;
-typedef struct rz_il_op_args_sle_ule_t RzILOpArgsUle;
+typedef struct rz_il_op_args_cmp_t RzILOpArgsEq;
+typedef struct rz_il_op_args_cmp_t RzILOpArgsSle;
+typedef struct rz_il_op_args_cmp_t RzILOpArgsUle;
 
 /**
  *  \brief op structure for casting bitv
@@ -369,6 +371,7 @@ typedef enum {
 	RZIL_OP_LOGXOR,
 	RZIL_OP_SHIFTR,
 	RZIL_OP_SHIFTL,
+	RZIL_OP_EQ,
 	RZIL_OP_SLE,
 	RZIL_OP_ULE,
 	RZIL_OP_CAST,
@@ -406,6 +409,7 @@ struct rz_il_op_pure_t {
 		RzILOpArgsBv *bitv;
 		RzILOpArgsMsb *msb;
 		RzILOpArgsLsb *lsb;
+		RzILOpArgsEq *eq;
 		RzILOpArgsUle *ule;
 		RzILOpArgsSle *sle;
 		RzILOpArgsCast *cast;
@@ -446,6 +450,7 @@ RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_bitv_from_ut64(ut32 length, ut64 num
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_bitv_from_st64(ut32 length, st64 number);
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_msb(RZ_NONNULL RzILOpPure *val);
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_lsb(RZ_NONNULL RzILOpPure *val);
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_eq(RZ_NONNULL RzILOpPure *x, RZ_NONNULL RzILOpPure *y);
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_ule(RZ_NONNULL RzILOpPure *x, RZ_NONNULL RzILOpPure *y);
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_sle(RZ_NONNULL RzILOpPure *x, RZ_NONNULL RzILOpPure *y);
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_cast(ut32 length, int shift, RZ_NONNULL RzILOpBitVector *val);

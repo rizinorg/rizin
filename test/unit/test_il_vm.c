@@ -146,14 +146,16 @@ static bool test_rzil_vm_root_evaluation() {
 	RzILOpBitVector *arg1 = rz_il_op_new_bitv_from_st64(16, 23);
 	RzILOpBitVector *arg2 = rz_il_op_new_bitv_from_st64(16, 19);
 	RzILOpBitVector *add = rz_il_op_new_add(arg1, arg2);
+	RzILOpBool *condition = rz_il_op_new_bool_inv(rz_il_op_new_eq(add, rz_il_op_new_bitv_from_ut64(16, 0)));
 	RzILOpBool *true_val = rz_il_op_new_b1();
 	RzILOpBool *false_val = rz_il_op_new_b0();
-	RzILOpBitVector *ite_root = rz_il_op_new_ite(add, true_val, false_val);
+	RzILOpBitVector *ite_root = rz_il_op_new_ite(condition, true_val, false_val);
 
 	// Partially evaluate `condition` only
-	RzILBool *condition = rz_il_evaluate_bool(vm, ite_root->op.ite->condition);
-	mu_assert_eq(condition->b, true, "Correctly convert bitv to bool");
-	rz_il_bool_free(condition);
+	RzILBool *condition_res = rz_il_evaluate_bool(vm, ite_root->op.ite->condition);
+	mu_assert_notnull(condition_res, "boolean eval success");
+	mu_assert_eq(condition_res->b, true, "Evaluate boolean condition");
+	rz_il_bool_free(condition_res);
 
 	// Evaluate the whole ite expression
 	RzILVal *ite_val = rz_il_evaluate_val(vm, ite_root);

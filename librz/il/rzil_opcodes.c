@@ -254,6 +254,16 @@ RZ_API RZ_OWN RzILOpBool *rz_il_op_new_lsb(RZ_NONNULL RzILOpBitVector *bv) {
 }
 
 /**
+ *  [EQ] eq x y binary predicate for bitwise equality
+ */
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_eq(RZ_NONNULL RzILOpBitVector *x, RZ_NONNULL RzILOpBitVector *y) {
+	rz_return_val_if_fail(x && y, NULL);
+	RzILOpBool *ret;
+	rz_il_op_new_2(Bool, RZIL_OP_EQ, RzILOpArgsEq, eq, x, y);
+	return ret;
+}
+
+/**
  *  \brief op structure for sle/ule ('a bitv -> 'a bitv -> bool)
  *
  *  [ULE] ule x y binary predicate for unsigned less than or equal
@@ -708,6 +718,9 @@ RZ_API void rz_il_op_pure_free(RZ_NULLABLE RzILOpPure *op) {
 		break;
 	case RZIL_OP_SHIFTL:
 		rz_il_op_free_3(pure, shiftl, fill_bit, x, y);
+		break;
+	case RZIL_OP_EQ:
+		rz_il_op_free_2(pure, eq, x, y);
 		break;
 	case RZIL_OP_SLE:
 		rz_il_op_free_2(pure, sle, x, y);

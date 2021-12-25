@@ -55,6 +55,21 @@ void *rz_il_handler_logical_not(RzILVM *vm, RzILOpBitVector *op, RzILPureType *t
 	return result;
 }
 
+void *rz_il_handler_eq(RzILVM *vm, RzILOpBitVector *op, RzILPureType *type) {
+	rz_return_val_if_fail(vm && op && type, NULL);
+
+	RzILOpArgsSle *op_sle = op->op.sle;
+
+	RzBitVector *x = rz_il_evaluate_bitv(vm, op_sle->x);
+	RzBitVector *y = rz_il_evaluate_bitv(vm, op_sle->y);
+	RzILBool *result = x && y ? rz_il_bool_new(rz_bv_eq(x, y)) : NULL;
+	rz_bv_free(x);
+	rz_bv_free(y);
+
+	*type = RZ_IL_PURE_TYPE_BOOL;
+	return result;
+}
+
 void *rz_il_handler_sle(RzILVM *vm, RzILOpBitVector *op, RzILPureType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 

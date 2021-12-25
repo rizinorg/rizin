@@ -11,6 +11,7 @@ void *rz_il_handler_unk(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
 void *rz_il_handler_bitv(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
 void *rz_il_handler_msb(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
 void *rz_il_handler_lsb(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
+void *rz_il_handler_eq(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
 void *rz_il_handler_ule(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
 void *rz_il_handler_sle(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
 void *rz_il_handler_neg(RzILVM *vm, RzILOpPure *op, RzILPureType *type);
@@ -82,6 +83,7 @@ static RzILOpPureHandler op_handler_pure_table_default[RZIL_OP_PURE_MAX] = {
 	[RZIL_OP_LOGXOR] = rz_il_handler_logical_xor,
 	[RZIL_OP_SHIFTR] = rz_il_handler_shiftr,
 	[RZIL_OP_SHIFTL] = rz_il_handler_shiftl,
+	[RZIL_OP_EQ] = rz_il_handler_eq,
 	[RZIL_OP_SLE] = rz_il_handler_sle,
 	[RZIL_OP_ULE] = rz_il_handler_ule,
 	[RZIL_OP_CAST] = rz_il_handler_cast,
