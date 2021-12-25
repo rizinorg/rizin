@@ -384,16 +384,16 @@ static bool meta_string_8bit_add(RzCore *core, ut64 addr, size_t limit, ut8 **na
 	return true;
 }
 
-static bool meta_string_guess_add(RzCore *core, ut64 addr, size_t limit, ut8 **name, size_t *name_len, RzDetectedString **ds, RzStrEnc encoding) {
-	rz_return_val_if_fail(limit && name && name_len && ds, false);
-	*name = malloc(limit + 1);
-	if (!*name) {
+static bool meta_string_guess_add(RzCore *core, ut64 addr, size_t limit, char **name_out, size_t *name_len, RzDetectedString **ds, RzStrEnc encoding) {
+	rz_return_val_if_fail(limit && name_out && name_len && ds, false);
+	char *name = malloc(limit + 1);
+	if (!name) {
 		return false;
 	}
 	RzBinFile *bf = rz_bin_cur(core->bin);
 	RzBinObject *obj = rz_bin_cur_object(core->bin);
 	if (!bf || !obj) {
-		free(*name);
+		free(name);
 		return false;
 	}
 	bool big_endian = obj ? rz_bin_object_is_big_endian(obj) : RZ_SYS_ENDIAN;
@@ -405,20 +405,21 @@ static bool meta_string_guess_add(RzCore *core, ut64 addr, size_t limit, ut8 **n
 	};
 	RzList *str_list = rz_list_new();
 	if (!str_list) {
-		free(*name);
+		free(name);
 		return false;
 	}
 	ut64 paddr = rz_io_v2p(core->io, addr);
 	int count = rz_scan_strings(bf->buf, str_list, &scan_opt, paddr, paddr + limit, encoding);
 	if (count <= 0) {
 		rz_list_free(str_list);
-		free(*name);
+		free(name);
 		return false;
 	}
 	*ds = rz_list_first(str_list);
 	rz_list_free(str_list);
 	rz_str_ncpy(*((char **)name), (*ds)->string, limit);
-	(*name)[limit] = '\0';
+	name[limit] = '\0';
+	*name_out = name;
 	return true;
 }
 
@@ -445,8 +446,8 @@ RZ_API bool rz_core_meta_string_add(RzCore *core, ut64 addr, ut64 size, RzStrEnc
 		n = size == 0 ? name_len + 1 : size;
 	} else {
 		RzDetectedString *ds = NULL;
-		if (!meta_string_guess_add(core, addr, limit, (ut8 **)&guessname, &name_len, &ds, encoding)) {
-			goto out;
+		if (!meta_string_guess_add(core, addr, limit, &guessname, &name_len, &ds, encoding)) {
+			return false;
 		}
 		if (!ds) {
 			goto out;
