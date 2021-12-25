@@ -810,8 +810,6 @@ typedef enum rz_analysis_data_type_t {
 // For switchting to AST-like approach in the future
 typedef struct rz_analysis_rzil_op_t {
 	RzPVector *ops;
-	// TODO : use root approach in the future
-	RzILOp **root_node;
 } RzAnalysisRzilOp;
 
 typedef struct rz_analysis_op_t {

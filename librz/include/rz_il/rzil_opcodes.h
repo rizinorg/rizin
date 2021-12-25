@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2021 Florian Märkl <info@florianmaerkl.de>
 // SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
@@ -10,7 +11,6 @@
 extern "C" {
 #endif
 
-typedef struct rz_il_op_t RzILOp;
 /**
  * \file rzil_opcodes.h
  * \brief signatures of core theory opcodes
@@ -36,6 +36,13 @@ typedef struct rz_il_op_t RzILOp;
  * 2. For core and array theories https://smtlib.cs.uiowa.edu/theories.shtml
  */
 
+typedef struct rz_il_op_pure_t RzILOpPure;
+
+typedef RzILOpPure RzILOpBool;
+typedef RzILOpPure RzILOpBitVector;
+
+typedef struct rz_il_op_effect_t RzILOpEffect;
+
 /**
  * \brief value is a bitvector constant.
  *
@@ -51,7 +58,7 @@ typedef struct rz_il_op_args_bv_t {
  *  [LSB] lsb x is the least significant bit of x.
  */
 struct rz_il_op_args_msb_lsb_t {
-	RzILOp *bv; ///< index of bitvector operand
+	RzILOpBitVector *bv;
 };
 
 typedef struct rz_il_op_args_msb_lsb_t RzILOpArgsMsb;
@@ -63,7 +70,7 @@ typedef struct rz_il_op_args_msb_lsb_t RzILOpArgsLsb;
  *  neg x is two-complement unary minus
  */
 typedef struct rz_il_op_args_neg_t {
-	RzILOp *bv; ///< unary operand
+	RzILOpBitVector *bv; ///< unary operand
 } RzILOpArgsNeg;
 
 /**
@@ -72,7 +79,7 @@ typedef struct rz_il_op_args_neg_t {
  *  not x is one-complement negation.
  */
 typedef struct rz_il_op_args_logical_not_t {
-	RzILOp *bv; ///< unary operand
+	RzILOpBitVector *bv; ///< unary operand
 } RzILOpArgsLogNot;
 
 /**
@@ -90,8 +97,8 @@ typedef struct rz_il_op_args_logical_not_t {
  *  [LOGXOR] logxor x y is a bitwise logical xor of x and y.
  */
 struct rz_il_op_args_alg_log_operations_t {
-	RzILOp *x; ///< left operand
-	RzILOp *y; ///< right operand
+	RzILOpBitVector *x; ///< left operand
+	RzILOpBitVector *y; ///< right operand
 };
 
 typedef struct rz_il_op_args_alg_log_operations_t RzILOpArgsAdd;
@@ -112,8 +119,8 @@ typedef struct rz_il_op_args_alg_log_operations_t RzILOpArgsLogxor;
  *  [ULE] ule x y binary predicate for unsigned less than or equal
  */
 struct rz_il_op_args_sle_ule_t {
-	RzILOp *x; ///< index of operand 1
-	RzILOp *y; ///< index of operand 2
+	RzILOpBitVector *x; ///< index of operand 1
+	RzILOpBitVector *y; ///< index of operand 2
 };
 
 typedef struct rz_il_op_args_sle_ule_t RzILOpArgsSle;
@@ -125,7 +132,7 @@ typedef struct rz_il_op_args_sle_ule_t RzILOpArgsUle;
 typedef struct rz_il_op_args_cast_t {
 	ut32 length; ///< new bits lenght
 	int shift; ///< shift old bits (positive is << and >> negative)
-	RzILOp *val; ///< value to cast
+	RzILOpBitVector *val; ///< value to cast
 } RzILOpArgsCast;
 
 /**
@@ -133,8 +140,8 @@ typedef struct rz_il_op_args_cast_t {
  *  \brief op structure for appending 2 bitv: MSB:LSB bv1:bv2
  */
 typedef struct rz_il_op_args_append_t {
-	RzILOp *x; ///< index of the bv 1
-	RzILOp *y; ///< index of the bv 2
+	RzILOpBitVector *x; ///< index of the bv 1
+	RzILOpBitVector *y; ///< index of the bv 2
 } RzILOpArgsAppend;
 
 /**
@@ -144,9 +151,9 @@ typedef struct rz_il_op_args_append_t {
  *  [RSHIFT] shiftr s x m shifts x right by m bits filling with s.
  */
 struct rz_il_op_args_shift_t {
-	RzILOp *fill_bit; ///< index of fill bit
-	RzILOp *x; ///< index of operand 1
-	RzILOp *y; ///< index of operand 2
+	RzILOpBool *fill_bit; ///< index of fill bit
+	RzILOpBitVector *x; ///< index of operand 1
+	RzILOpBitVector *y; ///< index of operand 2
 };
 
 typedef struct rz_il_op_args_shift_t RzILOpArgsShiftLeft;
@@ -159,7 +166,7 @@ typedef struct rz_il_op_args_shift_t RzILOpArgsShiftRight;
  */
 typedef struct rz_il_op_args_set_t {
 	const char *v; ///< name of variable, const one
-	RzILOp *x; ///< index of RzILVal
+	RzILOpPure *x; ///< value to set the variable to
 } RzILOpArgsSet;
 
 /**
@@ -170,7 +177,7 @@ typedef struct rz_il_op_args_set_t {
 typedef struct rz_il_op_args_let_t {
 	const char *v; ///< name of variable, const one
 	bool mut; ///< define is local variable is const or not
-	RzILOp *x; ///< index of RzILVal
+	RzILOpPure *x; ///< value to set the variable to
 } RzILOpArgsLet;
 
 /**
@@ -179,7 +186,7 @@ typedef struct rz_il_op_args_let_t {
  *  jmp dst passes the control to a program located at dst.
  */
 typedef struct rz_il_op_args_jmp_t {
-	RzILOp *dst; ///< index of destination address (RzBitVector)
+	RzILOpBitVector *dst; ///< index of destination address
 } RzILOpArgsJmp;
 
 /**
@@ -197,8 +204,8 @@ typedef struct rz_il_op_args_goto_t {
  *  seq x y performs effect x, after that perform effect y. Pack two effects into one.
  */
 typedef struct rz_il_op_args_seq_t {
-	RzILOp *x; ///< index of the first effect
-	RzILOp *y; ///< index of the second effect
+	RzILOpEffect *x; ///< perform this first
+	RzILOpEffect *y; ///< perform this second
 } RzILOpArgsSeq;
 
 /**
@@ -207,8 +214,8 @@ typedef struct rz_il_op_args_seq_t {
  *  blk lbl data ctrl a labeled sequence of effects.
  */
 typedef struct rz_il_op_args_blk_t {
-	RzILOp *data_eff; ///< index of data_eff
-	RzILOp *ctrl_eff; ///< index of ctrl_eff
+	RzILOpEffect *data_eff;
+	RzILOpEffect *ctrl_eff;
 } RzILOpArgsBlk;
 
 /**
@@ -217,8 +224,8 @@ typedef struct rz_il_op_args_blk_t {
  *  repeat c data repeats data effects until the condition c holds.
  */
 typedef struct rz_il_op_args_repeat_t {
-	RzILOp *condition; ///< index of BOOL condition
-	RzILOp *data_eff; ///< index of data effect
+	RzILOpBool *condition; ///< condition for executing the effect
+	RzILOpEffect *data_eff; ///< index of data effect
 } RzILOpArgsRepeat;
 
 /**
@@ -227,9 +234,9 @@ typedef struct rz_il_op_args_repeat_t {
  *  branch c lhs rhs if c holds then performs lhs else rhs.
  */
 typedef struct rz_il_op_args_branch_t {
-	RzILOp *condition; ///< index of BOOL condition
-	RzILOp *true_eff; ///< index of true effect, set to -1 means do nothing
-	RzILOp *false_eff; ///< index of false effect, set to -1 means do nothing
+	RzILOpBool *condition;
+	RzILOpEffect *true_eff; ///< index of true effect, set to -1 means do nothing
+	RzILOpEffect *false_eff; ///< index of false effect, set to -1 means do nothing
 } RzILOpArgsBranch;
 
 /**
@@ -238,9 +245,9 @@ typedef struct rz_il_op_args_branch_t {
  *  ite c x y is x if c evaluates to b1 else y.
  */
 typedef struct rz_il_op_args_ite_t {
-	RzILOp *condition; ///< index of BOOL condition
-	RzILOp *x; ///< index of RzILVal operand 1
-	RzILOp *y; ///< index of RzILVal operand 2
+	RzILOpBool *condition; ///< index of BOOL condition
+	RzILOpPure *x; ///< index of RzILVal operand 1
+	RzILOpPure *y; ///< index of RzILVal operand 2
 } RzILOpArgsIte;
 
 /**
@@ -263,8 +270,8 @@ typedef struct rz_il_op_args_var_t {
  *  xor(x, y) is a conjunction of x xor y.
  */
 struct rz_il_op_args_bool_operation_t {
-	RzILOp *x; ///< index of the BOOL operand
-	RzILOp *y; ///< index of the BOOL operand
+	RzILOpBool *x; ///< left operand
+	RzILOpBool *y; ///< right operand
 };
 
 typedef struct rz_il_op_args_bool_operation_t RzILOpArgsBoolAnd;
@@ -279,7 +286,7 @@ typedef struct rz_il_op_args_bool_operation_t RzILOpArgsBoolXor;
  *  inv(x) inverts x (also known as not operation).
  */
 struct rz_il_op_args_bool_inv_t {
-	RzILOp *x; ///< index of the BOOL operand
+	RzILOpBool *x; ///< single operand
 };
 
 typedef struct rz_il_op_args_bool_inv_t RzILOpArgsBoolInv;
@@ -291,7 +298,7 @@ typedef struct rz_il_op_args_bool_inv_t RzILOpArgsBoolInv;
  */
 typedef struct rz_il_op_args_load_t {
 	RzILMemIndex mem; ///< index of the mem inside the vm to use
-	RzILOp *key; ///< memory index of the RzBitVector key (address), must have exactly the size of a key in the memory
+	RzILOpBitVector *key; ///< index of the cell (address) in mem, must have exactly the size of a key in the memory
 } RzILOpArgsLoad;
 
 /**
@@ -301,8 +308,8 @@ typedef struct rz_il_op_args_load_t {
  */
 typedef struct rz_il_op_args_store_t {
 	RzILMemIndex mem; ///< index of memory in the vm to use
-	RzILOp *key; ///< address where to store to, must have exactly the size of a key in the memory
-	RzILOp *value; ///< value to store, must have exactly the size of a memory cell
+	RzILOpBitVector *key; ///< address where to store to, must have exactly the size of a key in the memory
+	RzILOpBitVector *value; ///< value to store, must have exactly the size of a memory cell
 } RzILOpArgsStore;
 
 /**
@@ -312,7 +319,7 @@ typedef struct rz_il_op_args_store_t {
  */
 typedef struct rz_il_op_args_loadw_t {
 	RzILMemIndex mem; ///< index of the mem inside the vm to use
-	RzILOp *key; ///< memory index of the RzBitVector key (address)
+	RzILOpBitVector *key; ///< memory index of the RzBitVector key (address)
 	ut32 n_bits; ///< n of bits to read, and of the resulting bitvector
 } RzILOpArgsLoadW;
 
@@ -323,9 +330,12 @@ typedef struct rz_il_op_args_loadw_t {
  */
 typedef struct rz_il_op_args_storew_t {
 	RzILMemIndex mem; ///< index of memory in the vm to use
-	RzILOp *key; ///< address where to store to
-	RzILOp *value; ///< value to store, arbitrary size
+	RzILOpBitVector *key; ///< address where to store to
+	RzILOpBitVector *value; ///< value to store, arbitrary size
 } RzILOpArgsStoreW;
+
+/////////////////////////////
+// Opcodes of type 'a pure //
 
 typedef enum {
 	// Init
@@ -368,11 +378,103 @@ typedef enum {
 
 	// Memory
 	RZIL_OP_LOAD,
-	RZIL_OP_STORE,
 	RZIL_OP_LOADW,
+
+	RZIL_OP_PURE_MAX
+} RzILOpPureCode;
+
+/**
+ * \brief An IL op performing a pure computation, 'a pure
+ *
+ * BAP uses ocaml's type system for statically differentiating between different
+ * kinds of pure ops. Some ops however are polymorphic over all pure types,
+ * such as `ite : bool -> 'a pure -> 'a pure -> 'a pure`, which is not directly possible in C.
+ * So our pure ops are dynamically typed (only on the level of C, the IL is still fully statically typed)
+ * and we simply use typedefs like `RzILOpBool` and `RzILOpBitVector` to at least weakly indicate which concrete type is required.
+ */
+struct rz_il_op_pure_t {
+	RzILOpPureCode code;
+	union {
+		RzILOpArgsIte *ite;
+		RzILOpArgsVar *var;
+	
+		RzILOpArgsBoolAnd *booland;
+		RzILOpArgsBoolOr *boolor;
+		RzILOpArgsBoolXor *boolxor;
+		RzILOpArgsBoolInv *boolinv;
+	
+		RzILOpArgsBv *bitv;
+		RzILOpArgsMsb *msb;
+		RzILOpArgsLsb *lsb;
+		RzILOpArgsUle *ule;
+		RzILOpArgsSle *sle;
+		RzILOpArgsCast *cast;
+		RzILOpArgsNeg *neg;
+		RzILOpArgsLogNot *lognot;
+		RzILOpArgsAdd *add;
+		RzILOpArgsSub *sub;
+		RzILOpArgsMul *mul;
+		RzILOpArgsDiv *div;
+		RzILOpArgsSdiv *sdiv;
+		RzILOpArgsSmod *smod;
+		RzILOpArgsMod *mod;
+		RzILOpArgsLogand *logand;
+		RzILOpArgsLogor *logor;
+		RzILOpArgsLogxor *logxor;
+		RzILOpArgsShiftLeft *shiftl;
+		RzILOpArgsShiftRight *shiftr;
+		RzILOpArgsAppend *append;
+	
+		RzILOpArgsLoad *load;
+		RzILOpArgsLoadW *loadw;
+	} op;
+};
+
+RZ_API void rz_il_op_pure_free(RZ_NULLABLE RzILOpPure *op);
+
+RZ_API RZ_OWN RzILOpPure *rz_il_op_new_ite(RZ_NONNULL RzILOpPure *condition, RZ_NULLABLE RzILOpPure *x, RZ_NULLABLE RzILOpPure *y);
+RZ_API RZ_OWN RzILOpPure *rz_il_op_new_unk();
+RZ_API RZ_OWN RzILOpPure *rz_il_op_new_var(RZ_NONNULL const char *var);
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_b0();
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_b1();
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_bool_and(RZ_NONNULL RzILOpBool *x, RZ_NONNULL RzILOpBool *y);
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_bool_or(RZ_NONNULL RzILOpBool *x, RZ_NONNULL RzILOpBool *y);
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_bool_xor(RZ_NONNULL RzILOpBool *x, RZ_NONNULL RzILOpBool *y);
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_bool_inv(RZ_NONNULL RzILOpBool *x);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_bitv(RZ_NONNULL RzBitVector *value);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_bitv_from_ut64(ut32 length, ut64 number);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_bitv_from_st64(ut32 length, st64 number);
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_msb(RZ_NONNULL RzILOpPure *val);
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_lsb(RZ_NONNULL RzILOpPure *val);
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_ule(RZ_NONNULL RzILOpPure *x, RZ_NONNULL RzILOpPure *y);
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_sle(RZ_NONNULL RzILOpPure *x, RZ_NONNULL RzILOpPure *y);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_cast(ut32 length, int shift, RZ_NONNULL RzILOpBitVector *val);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_neg(RZ_NONNULL RzILOpBitVector *value);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_log_not(RZ_NONNULL RzILOpBitVector *value);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_add(RZ_NONNULL RzILOpBitVector *x, RZ_NONNULL RzILOpBitVector *y);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_sub(RZ_NONNULL RzILOpBitVector *x, RZ_NONNULL RzILOpBitVector *y);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_mul(RZ_NONNULL RzILOpBitVector *x, RZ_NONNULL RzILOpBitVector *y);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_div(RZ_NONNULL RzILOpBitVector *x, RZ_NONNULL RzILOpBitVector *y);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_sdiv(RZ_NONNULL RzILOpBitVector *x, RZ_NONNULL RzILOpBitVector *y);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_smod(RZ_NONNULL RzILOpBitVector *x, RZ_NONNULL RzILOpBitVector *y);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_mod(RZ_NONNULL RzILOpBitVector *x, RZ_NONNULL RzILOpBitVector *y);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_log_and(RZ_NONNULL RzILOpBitVector *x, RZ_NONNULL RzILOpBitVector *y);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_log_or(RZ_NONNULL RzILOpBitVector *x, RZ_NONNULL RzILOpBitVector *y);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_log_xor(RZ_NONNULL RzILOpBitVector *x, RZ_NONNULL RzILOpBitVector *y);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_shiftl(RZ_NONNULL RzILOpBitVector *fill_bit, RZ_NONNULL RzILOpBitVector *x, RZ_NONNULL RzILOpBitVector *y);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_shiftr(RZ_NONNULL RzILOpBitVector *fill_bit, RZ_NONNULL RzILOpBitVector *x, RZ_NONNULL RzILOpBitVector *y);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_append(RZ_NONNULL RzILOpBitVector *high, RZ_NONNULL RzILOpBitVector *low);
+
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_load(RzILMemIndex mem, RZ_NONNULL RzILOpBitVector *key);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_loadw(RzILMemIndex mem, RZ_NONNULL RzILOpBitVector *key, ut32 n_bits);
+
+///////////////////////////////
+// Opcodes of type 'a effect //
+
+typedef enum {
+	RZIL_OP_STORE,
 	RZIL_OP_STOREW,
 
-	// Effects (opcode with side effects)
 	RZIL_OP_NOP,
 	RZIL_OP_SET,
 	RZIL_OP_LET,
@@ -383,111 +485,40 @@ typedef enum {
 	RZIL_OP_REPEAT,
 	RZIL_OP_BRANCH,
 
-	RZIL_OP_INVALID,
-	RZIL_OP_MAX,
-} RzILOpArgsCode;
+	RZIL_OP_EFFECT_MAX
+} RzILOpEffectCode;
 
-// Then define a union to union all of these struct
-typedef union {
-	RzILOpArgsIte *ite;
-	RzILOpArgsVar *var;
-
-	RzILOpArgsBoolAnd *booland;
-	RzILOpArgsBoolOr *boolor;
-	RzILOpArgsBoolXor *boolxor;
-	RzILOpArgsBoolInv *boolinv;
-
-	RzILOpArgsBv *bitv;
-	RzILOpArgsMsb *msb;
-	RzILOpArgsLsb *lsb;
-	RzILOpArgsUle *ule;
-	RzILOpArgsSle *sle;
-	RzILOpArgsCast *cast;
-	RzILOpArgsNeg *neg;
-	RzILOpArgsLogNot *lognot;
-	RzILOpArgsAdd *add;
-	RzILOpArgsSub *sub;
-	RzILOpArgsMul *mul;
-	RzILOpArgsDiv *div;
-	RzILOpArgsSdiv *sdiv;
-	RzILOpArgsSmod *smod;
-	RzILOpArgsMod *mod;
-	RzILOpArgsLogand *logand;
-	RzILOpArgsLogor *logor;
-	RzILOpArgsLogxor *logxor;
-	RzILOpArgsShiftLeft *shiftl;
-	RzILOpArgsShiftRight *shiftr;
-	RzILOpArgsAppend *append;
-
-	RzILOpArgsSet *set;
-	RzILOpArgsLet *let;
-	RzILOpArgsJmp *jmp;
-	RzILOpArgsGoto *goto_;
-	RzILOpArgsSeq *seq;
-	RzILOpArgsBlk *blk;
-	RzILOpArgsRepeat *repeat;
-	RzILOpArgsBranch *branch;
-
-	RzILOpArgsLoad *load;
-	RzILOpArgsStore *store;
-	RzILOpArgsLoadW *loadw;
-	RzILOpArgsStoreW *storew;
-} RzILOpArgsUnion;
-
-struct rz_il_op_t {
-	RzILOpArgsCode code;
-	RzILOpArgsUnion op;
+struct rz_il_op_effect_t {
+	RzILOpEffectCode code;
+	union {
+		RzILOpArgsSet *set;
+		RzILOpArgsLet *let;
+		RzILOpArgsJmp *jmp;
+		RzILOpArgsGoto *goto_;
+		RzILOpArgsSeq *seq;
+		RzILOpArgsBlk *blk;
+		RzILOpArgsRepeat *repeat;
+		RzILOpArgsBranch *branch;
+	
+		RzILOpArgsStore *store;
+		RzILOpArgsStoreW *storew;
+	} op;
 };
 
-// Opcode
-RZ_API void rz_il_op_free(RZ_NULLABLE RzILOp *op);
+RZ_API void rz_il_op_effect_free(RZ_NULLABLE RzILOpEffect *op);
 
-RZ_API RZ_OWN RzILOp *rz_il_op_new_ite(RZ_NONNULL RzILOp *condition, RZ_NULLABLE RzILOp *x, RZ_NULLABLE RzILOp *y);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_unk();
-RZ_API RZ_OWN RzILOp *rz_il_op_new_var(RZ_NONNULL const char *var);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_b0();
-RZ_API RZ_OWN RzILOp *rz_il_op_new_b1();
-RZ_API RZ_OWN RzILOp *rz_il_op_new_bool_and(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_bool_or(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_bool_xor(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_bool_inv(RZ_NONNULL RzILOp *x);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_bitv(RZ_NONNULL RzBitVector *value);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_bitv_from_ut64(ut32 length, ut64 number);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_bitv_from_st64(ut32 length, st64 number);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_msb(RZ_NONNULL RzILOp *val);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_lsb(RZ_NONNULL RzILOp *val);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_ule(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_sle(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_cast(ut32 length, int shift, RZ_NONNULL RzILOp *val);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_neg(RZ_NONNULL RzILOp *value);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_log_not(RZ_NONNULL RzILOp *value);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_add(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_sub(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_mul(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_div(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_sdiv(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_smod(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_mod(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_log_and(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_log_or(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_log_xor(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_shiftl(RZ_NONNULL RzILOp *fill_bit, RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_shiftr(RZ_NONNULL RzILOp *fill_bit, RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_append(RZ_NONNULL RzILOp *high, RZ_NONNULL RzILOp *low);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_nop();
-RZ_API RZ_OWN RzILOp *rz_il_op_new_set(RZ_NONNULL const char *var, RZ_NONNULL RzILOp *x);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_let(RZ_NONNULL const char *var, RZ_NONNULL RzILOp *x, bool is_mutable);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_jmp(RZ_NONNULL RzILOp *dst);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_goto(RZ_NONNULL const char *label);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_seq(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_blk(RZ_NONNULL RzILOp *data_effect, RZ_NONNULL RzILOp *ctrl_effect);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_repeat(RZ_NONNULL RzILOp *condition, RZ_NONNULL RzILOp *data_effect);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_branch(RZ_NONNULL RzILOp *condition, RZ_NULLABLE RzILOp *true_effect, RZ_NULLABLE RzILOp *false_effect);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_load(RzILMemIndex mem, RZ_NONNULL RzILOp *key);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_store(RzILMemIndex mem, RZ_NONNULL RzILOp *key, RZ_NONNULL RzILOp *value);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_loadw(RzILMemIndex mem, RZ_NONNULL RzILOp *key, ut32 n_bits);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_storew(RzILMemIndex mem, RZ_NONNULL RzILOp *key, RZ_NONNULL RzILOp *value);
-RZ_API RZ_OWN RzILOp *rz_il_op_new_invalid();
+RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_nop();
+RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_set(RZ_NONNULL const char *var, RZ_NONNULL RzILOpPure *x);
+RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_let(RZ_NONNULL const char *var, RZ_NONNULL RzILOpPure *x, bool is_mutable);
+RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_jmp(RZ_NONNULL RzILOpBitVector *dst);
+RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_goto(RZ_NONNULL const char *label);
+RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_seq(RZ_NONNULL RzILOpEffect *x, RZ_NONNULL RzILOpEffect *y);
+RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_blk(RZ_NONNULL RzILOpEffect *data_effect, RZ_NONNULL RzILOpEffect *ctrl_effect);
+RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_repeat(RZ_NONNULL RzILOpBool *condition, RZ_NONNULL RzILOpEffect *data_effect);
+RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_branch(RZ_NONNULL RzILOpBool *condition, RZ_NULLABLE RzILOpEffect *true_effect, RZ_NULLABLE RzILOpEffect *false_effect);
+
+RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_store(RzILMemIndex mem, RZ_NONNULL RzILOpBitVector *key, RZ_NONNULL RzILOpBitVector *value);
+RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_storew(RzILMemIndex mem, RZ_NONNULL RzILOpBitVector *key, RZ_NONNULL RzILOpBitVector *value);
 
 #ifdef __cplusplus
 }

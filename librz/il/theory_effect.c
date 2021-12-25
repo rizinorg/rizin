@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2021 Florian Märkl <info@florianmaerkl.de>
 // SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
@@ -97,26 +98,31 @@ static void rz_il_set(RzILVM *vm, const char *var_name, bool is_local, bool is_m
 	}
 }
 
-void *rz_il_handler_nop(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
-	rz_return_val_if_fail(vm && op && type, NULL);
-	*type = RZIL_OP_ARG_EFF;
-	return NULL;
+bool rz_il_handler_nop(RzILVM *vm, RzILOpEffect *op) {
+	rz_return_val_if_fail(vm && op, false);
+	return true;
 }
 
-void *rz_il_handler_set(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
-	rz_return_val_if_fail(vm && op && type, NULL);
+bool rz_il_handler_set(RzILVM *vm, RzILOpEffect *op) {
+	rz_return_val_if_fail(vm && op, false);
 	RzILOpArgsSet *set_op = op->op.set;
-	rz_il_set(vm, set_op->v, false, true, rz_il_evaluate_val(vm, set_op->x, type));
-	*type = RZIL_OP_ARG_EFF;
-	return NULL;
+	RzILVal *val = rz_il_evaluate_val(vm, set_op->x);
+	if (!val) {
+		return false;
+	}
+	rz_il_set(vm, set_op->v, false, true, val);
+	return true;
 }
 
-void *rz_il_handler_let(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
-	rz_return_val_if_fail(vm && op && type, NULL);
+bool rz_il_handler_let(RzILVM *vm, RzILOpEffect *op) {
+	rz_return_val_if_fail(vm && op, false);
 	RzILOpArgsLet *let_op = op->op.let;
-	rz_il_set(vm, let_op->v, true, let_op->mut, rz_il_evaluate_val(vm, let_op->x, type));
-	*type = RZIL_OP_ARG_EFF;
-	return NULL;
+	RzILVal *val = rz_il_evaluate_val(vm, let_op->x);
+	if (!val) {
+		return false;
+	}
+	rz_il_set(vm, let_op->v, true, let_op->mut, val);
+	return false;
 }
 
 static void perform_jump(RzILVM *vm, RZ_OWN RzBitVector *dst) {
@@ -125,56 +131,55 @@ static void perform_jump(RzILVM *vm, RZ_OWN RzBitVector *dst) {
 	vm->pc = dst;
 }
 
-void *rz_il_handler_jmp(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
-	rz_return_val_if_fail(vm && op && type, NULL);
-	perform_jump(vm, rz_il_evaluate_bitv(vm, op->op.jmp->dst, type));
-	*type = RZIL_OP_ARG_EFF;
-	return NULL;
+bool rz_il_handler_jmp(RzILVM *vm, RzILOpEffect *op) {
+	rz_return_val_if_fail(vm && op, false);
+	RzBitVector *dst = rz_il_evaluate_bitv(vm, op->op.jmp->dst);
+	if (!dst) {
+		return false;
+	}
+	perform_jump(vm, dst);
+	return true;
 }
 
-void *rz_il_handler_goto(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
-	rz_return_val_if_fail(vm && op && type, NULL);
+bool rz_il_handler_goto(RzILVM *vm, RzILOpEffect *op) {
+	rz_return_val_if_fail(vm && op, false);
 	RzILOpArgsGoto *op_goto = op->op.goto_;
 	const char *lname = op_goto->lbl;
 	RzILEffectLabel *label = rz_il_vm_find_label_by_name(vm, lname);
+	if (!label) {
+		return false;
+	}
 	if (label->type == EFFECT_LABEL_SYSCALL || label->type == EFFECT_LABEL_HOOK) {
 		RzILVmHook internal_hook = (RzILVmHook)label->hook;
 		internal_hook(vm, op);
 	} else {
 		perform_jump(vm, rz_bv_dup(label->addr));
 	}
-	*type = RZIL_OP_ARG_EFF;
-	return NULL;
+	return true;
 }
 
-void *rz_il_handler_seq(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
-	rz_return_val_if_fail(vm && op && type, NULL);
+bool rz_il_handler_seq(RzILVM *vm, RzILOpEffect *op) {
+	rz_return_val_if_fail(vm && op, false);
 	RzILOpArgsSeq *op_seq = op->op.seq;
-	rz_il_evaluate_effect(vm, op_seq->x, type);
-	rz_il_evaluate_effect(vm, op_seq->y, type);
-	*type = RZIL_OP_ARG_EFF;
-	return NULL;
+	return rz_il_evaluate_effect(vm, op_seq->x) && rz_il_evaluate_effect(vm, op_seq->y);
 }
 
-void *rz_il_handler_branch(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
-	rz_return_val_if_fail(vm && op && type, NULL);
+bool rz_il_handler_branch(RzILVM *vm, RzILOpEffect *op) {
+	rz_return_val_if_fail(vm && op, false);
 
 	RzILOpArgsBranch *op_branch = op->op.branch;
 
-	RzILBool *condition = rz_il_evaluate_bool(vm, op_branch->condition, type);
+	RzILBool *condition = rz_il_evaluate_bool(vm, op_branch->condition);
+	if (!condition) {
+		return false;
+	}
+	bool ret;
 	if (condition->b) {
-		// true branch
-		if (op_branch->true_eff) {
-			rz_il_evaluate_effect(vm, op_branch->true_eff, type);
-		}
+		ret = rz_il_evaluate_effect(vm, op_branch->true_eff);
 	} else {
-		// false branch
-		if (op_branch->false_eff) {
-			rz_il_evaluate_effect(vm, op_branch->false_eff, type);
-		}
+		ret = rz_il_evaluate_effect(vm, op_branch->false_eff);
 	}
 	rz_il_bool_free(condition);
 
-	*type = RZIL_OP_ARG_EFF;
-	return NULL;
+	return ret;
 }

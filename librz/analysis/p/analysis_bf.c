@@ -36,7 +36,7 @@ typedef struct bf_context_t {
 #define bf_il_set_ptr(x) rz_il_op_new_set("ptr", x)
 #define bf_il_one(l)     rz_il_op_new_bitv_from_ut64(l, 1)
 
-static void bf_syscall_read(RzILVM *vm, RzILOp *op) {
+static void bf_syscall_read(RzILVM *vm, RzILOpEffect *op) {
 	ut8 c = getc(stdin);
 	RzBitVector *bv = rz_bv_new_from_ut64(BF_BYTE_SIZE, c);
 	RzILVal *ptr_val = rz_il_hash_find_val_by_name(vm, "ptr");
@@ -44,7 +44,7 @@ static void bf_syscall_read(RzILVM *vm, RzILOp *op) {
 	rz_bv_free(bv);
 }
 
-static void bf_syscall_write(RzILVM *vm, RzILOp *op) {
+static void bf_syscall_write(RzILVM *vm, RzILOpEffect *op) {
 	RzILVal *ptr_val = rz_il_hash_find_val_by_name(vm, "ptr");
 	RzBitVector *bv = rz_il_vm_mem_load(vm, 0, ptr_val->data.bv);
 	ut32 c = rz_bv_to_ut32(bv);
@@ -79,43 +79,43 @@ ut64 parse_label_id(char *lbl_name) {
 
 RzPVector *bf_right_arrow(RzILVM *vm, ut64 id) {
 	// (set ptr (+ (val ptr) (int 1)))
-	RzILOp *add = rz_il_op_new_add(bf_il_ptr(), bf_il_one(BF_ADDR_SIZE));
+	RzILOpBitVector *add = rz_il_op_new_add(bf_il_ptr(), bf_il_one(BF_ADDR_SIZE));
 	return rz_il_make_oplist(1, bf_il_set_ptr(add));
 }
 
 RzPVector *bf_left_arrow(RzILVM *vm, ut64 id) {
 	// (set ptr (- (val ptr) (int 1)))
-	RzILOp *sub = rz_il_op_new_sub(bf_il_ptr(), bf_il_one(BF_ADDR_SIZE));
+	RzILOpBitVector *sub = rz_il_op_new_sub(bf_il_ptr(), bf_il_one(BF_ADDR_SIZE));
 	return rz_il_make_oplist(1, bf_il_set_ptr(sub));
 }
 
 RzPVector *bf_inc(RzILVM *vm, ut64 id) {
 	// (store mem (var ptr) (+ (load (var ptr)) (int 1)))
 	// mem == 0 because is the only mem in bf
-	RzILOp *load = rz_il_op_new_load(0, bf_il_ptr());
-	RzILOp *add = rz_il_op_new_add(load, bf_il_one(BF_BYTE_SIZE));
-	RzILOp *store = rz_il_op_new_store(0, bf_il_ptr(), add);
+	RzILOpBitVector *load = rz_il_op_new_load(0, bf_il_ptr());
+	RzILOpBitVector *add = rz_il_op_new_add(load, bf_il_one(BF_BYTE_SIZE));
+	RzILOpEffect *store = rz_il_op_new_store(0, bf_il_ptr(), add);
 	return rz_il_make_oplist(1, store);
 }
 
 RzPVector *bf_dec(RzILVM *vm, ut64 id) {
 	// (store mem (var ptr) (- (load (var ptr)) (int 1)))
 	// mem == 0 because is the only mem in bf
-	RzILOp *load = rz_il_op_new_load(0, bf_il_ptr());
-	RzILOp *sub = rz_il_op_new_sub(load, bf_il_one(BF_BYTE_SIZE));
-	RzILOp *store = rz_il_op_new_store(0, bf_il_ptr(), sub);
+	RzILOpBitVector *load = rz_il_op_new_load(0, bf_il_ptr());
+	RzILOpBitVector *sub = rz_il_op_new_sub(load, bf_il_one(BF_BYTE_SIZE));
+	RzILOpEffect *store = rz_il_op_new_store(0, bf_il_ptr(), sub);
 	return rz_il_make_oplist(1, store);
 }
 
 RzPVector *bf_out(RzILVM *vm, ut64 id) {
 	// (goto write)
-	RzILOp *goto_ = rz_il_op_new_goto("write");
+	RzILOpEffect *goto_ = rz_il_op_new_goto("write");
 	return rz_il_make_oplist(1, goto_);
 }
 
 RzPVector *bf_in(RzILVM *vm, ut64 id) {
 	// (goto hook_read)
-	RzILOp *goto_ = rz_il_op_new_goto("read");
+	RzILOpEffect *goto_ = rz_il_op_new_goto("read");
 	return rz_il_make_oplist(1, goto_);
 }
 
@@ -152,14 +152,14 @@ RzPVector *bf_llimit(RzILVM *vm, BfContext *ctx, ut64 id, ut64 addr) {
 	free(dst_lbl_name);
 	free(to_free);
 
-	RzILOp *var = rz_il_op_new_var("ptr");
-	RzILOp *load = rz_il_op_new_load(0, var);
+	RzILOpBitVector *var = rz_il_op_new_var("ptr");
+	RzILOpBitVector *load = rz_il_op_new_load(0, var);
 
 	// goto ]
-	RzILOp *goto_ = rz_il_op_new_goto(dst_label->label_id);
+	RzILOpEffect *goto_ = rz_il_op_new_goto(dst_label->label_id);
 
 	// branch if (load mem (var ptr)) is false then goto ]
-	RzILOp *branch = rz_il_op_new_branch(load, NULL, goto_);
+	RzILOpEffect *branch = rz_il_op_new_branch(load, NULL, goto_);
 
 	// perform
 	return rz_il_make_oplist(1, branch);
@@ -192,14 +192,14 @@ RzPVector *bf_rlimit(RzILVM *vm, BfContext *ctx, ut64 id, ut64 addr) {
 	rz_return_val_if_fail(dst_lbl_name, NULL);
 	dst_label = rz_il_vm_find_label_by_name(vm, dst_lbl_name);
 
-	RzILOp *var = rz_il_op_new_var("ptr");
-	RzILOp *load = rz_il_op_new_load(0, var);
+	RzILOpBitVector *var = rz_il_op_new_var("ptr");
+	RzILOpBitVector *load = rz_il_op_new_load(0, var);
 
 	// goto [
-	RzILOp *goto_ = rz_il_op_new_goto(dst_label->label_id);
+	RzILOpEffect *goto_ = rz_il_op_new_goto(dst_label->label_id);
 
 	// branch if (load mem (var ptr)) is true then goto ]
-	RzILOp *branch = rz_il_op_new_branch(load, goto_, NULL);
+	RzILOpEffect *branch = rz_il_op_new_branch(load, goto_, NULL);
 
 	free(to_free);
 	return rz_il_make_oplist(1, branch);
@@ -414,7 +414,6 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 	}
 	if (oplist) {
 		op->rzil_op->ops = oplist;
-		op->rzil_op->root_node = NULL;
 	}
 	ctx->op_count++;
 	return op->size;

@@ -21,25 +21,26 @@ static RzILEvent *il_event_new_read_from_name(RzILVM *vm, const char *name, RzIL
 	return evt;
 }
 
-void *rz_il_handler_ite(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
+void *rz_il_handler_ite(RzILVM *vm, RzILOpPure *op, RzILPureType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 
 	RzILOpArgsIte *op_ite = op->op.ite;
 
-	RzILBool *condition = rz_il_evaluate_bool(vm, op_ite->condition, type);
+	RzILBool *condition = rz_il_evaluate_bool(vm, op_ite->condition);
+	if (!condition) {
+		return NULL;
+	}
 	RzILVal *ret;
-
-	*type = RZIL_OP_ARG_VAL;
 	if (condition->b) {
-		ret = rz_il_evaluate_val(vm, op_ite->x, type); // true branch
+		ret = rz_il_evaluate_pure(vm, op_ite->x, type); // true branch
 	} else {
-		ret = rz_il_evaluate_val(vm, op_ite->y, type); // false branch
+		ret = rz_il_evaluate_pure(vm, op_ite->y, type); // false branch
 	}
 	rz_il_bool_free(condition);
 	return ret;
 }
 
-void *rz_il_handler_var(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
+void *rz_il_handler_var(RzILVM *vm, RzILOpPure *op, RzILPureType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 	bool is_local = false;
 
@@ -49,37 +50,44 @@ void *rz_il_handler_var(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 		val = rz_il_hash_find_local_val_by_name(vm, var_op->v);
 		is_local = true;
 	}
-	val = rz_il_value_dup(val);
+
+	if (!val) {
+		return NULL;
+	}
 
 	if (!is_local) {
 		rz_il_vm_event_add(vm, il_event_new_read_from_name(vm, var_op->v, val));
 	}
 
-	*type = RZIL_OP_ARG_VAL;
-	return val;
+	void *ret = NULL;
+	switch (val->type) {
+	case RZIL_VAR_TYPE_BOOL:
+		*type = RZ_IL_PURE_TYPE_BOOL;
+		ret = rz_il_bool_new(val->data.b->b);
+		break;
+	case RZIL_VAR_TYPE_BV:
+		*type = RZ_IL_PURE_TYPE_BITV;
+		ret = rz_bv_dup(val->data.bv);
+		break;
+	default:
+		break;
+	}
+	return ret;
 }
 
-void *rz_il_handler_unk(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
+void *rz_il_handler_unk(RzILVM *vm, RzILOpPure *op, RzILPureType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
-	// has UNK
-	RzILVal *val = rz_il_value_new_unk();
-	*type = RZIL_OP_ARG_VAL;
-	return val;
+	return NULL;
 }
 
-void *rz_il_handler_unimplemented(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
+void *rz_il_handler_pure_unimplemented(RzILVM *vm, RzILOpPure *op, RzILPureType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
-	const char *ops[] = {
-		"VAR", "UNK", "ITE", "B0", "B1", "INV", "AND_", "OR_",
-		"BITV", "MSB", "LSB", "NEG", "NOT", "ADD", "SUB", "MUL",
-		"DIV", "SDIV", "MOD", "SMOD", "LOGAND", "LOGOR", "LOGXOR",
-		"SHIFTR", "SHIFTL", "SLE", "ULE", "CAST", "CONCAT",
-		"APPEND", "LOAD", "STORE", "PERFORM", "SET", "JMP", "GOTO",
-		"SEQ", "BLK", "REPEAT", "BRANCH", "INVALID"
-	};
-	RZ_LOG_ERROR("RzIL: unimplemented op handler (%s).\n", ops[op->code]);
-	// has UNK
-	RzILVal *val = rz_il_value_new_unk();
-	*type = RZIL_OP_ARG_VAL;
-	return val;
+	RZ_LOG_ERROR("RzIL: unimplemented op handler (%d).\n", (int)op->code);
+	return NULL;
+}
+
+bool rz_il_handler_effect_unimplemented(RzILVM *vm, RzILOpEffect *op) {
+	rz_return_val_if_fail(vm && op, NULL);
+	RZ_LOG_ERROR("RzIL: unimplemented op handler (%d).\n", (int)op->code);
+	return false;
 }

@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2021 Florian Märkl <info@florianmaerkl.de>
 // SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
@@ -16,17 +17,26 @@ extern "C" {
 #define RZ_IL_VM_MAX_VAL 1024
 
 typedef enum {
-	RZIL_OP_ARG_BOOL,
-	RZIL_OP_ARG_BITV,
-	RZIL_OP_ARG_VAL,
-	RZIL_OP_ARG_EFF,
-	RZIL_OP_ARG_MEM,
-	RZIL_OP_ARG_INIT
-} RzILOpArgType;
+	RZ_IL_PURE_TYPE_BOOL, ///< RzILBool
+	RZ_IL_PURE_TYPE_BITV ///< RzBitVector
+} RzILPureType;
 
 typedef struct rz_il_vm_t RzILVM;
-typedef void *(*RzILOpHandler)(RzILVM *vm, RzILOp *op, RzILOpArgType *type);
-typedef void (*RzILVmHook)(RzILVM *vm, RzILOp *op);
+
+/**
+ * \brief Evaluation callack for a single pure opcode
+ * \param type when returning a non-null value, this must be set to the respective type.
+ * \return The evaluated value of the type indicated by *type, or NULL if an error occured and the execution should be aborted
+ */
+typedef void *(*RzILOpPureHandler)(RzILVM *vm, RzILOpPure *op, RZ_NONNULL RZ_OUT RzILPureType *type);
+
+/**
+ * \brief Evaluation (execution) callack for a single effect opcode
+ * \return false if an error occured and the execution should be aborted
+ */
+typedef bool (*RzILOpEffectHandler)(RzILVM *vm, RzILOpEffect *op);
+
+typedef void (*RzILVmHook)(RzILVM *vm, RzILOpEffect *op);
 
 /**
  *  \struct rz_il_vm_t
@@ -45,7 +55,8 @@ struct rz_il_vm_t {
 	HtPP *vm_local_label_table; ///< Hashtable to maintain the label and address
 	HtPP *ct_opcodes; ///< Hashtable to maintain address and opcodes
 	RzBitVector *pc; ///< Program Counter of VM
-	RzILOpHandler *op_handler_table; ///< Array of Handler, handler can be indexed by opcode
+	RzILOpPureHandler *op_handler_pure_table; ///< Array of Handler, handler can be indexed by opcode
+	RzILOpEffectHandler *op_handler_effect_table; ///< Array of Handler, handler can be indexed by opcode
 	RzList *events; ///< List of events that has happened in the last step
 	bool big_endian; ///< Sets the endianness of the memory reads/writes operations
 };
@@ -89,23 +100,26 @@ RZ_API void rz_il_vm_store_opcodes_to_addr(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzB
 RZ_API RZ_OWN RzPVector *rz_il_make_oplist(ut32 num, ...);
 #define rz_il_make_nop_list() rz_il_make_oplist(0, NULL)
 
-RZ_API void rz_il_op_stringify(RZ_NONNULL RzILOp *op, RZ_NONNULL RzStrBuf *sb);
+RZ_API void rz_il_op_pure_stringify(RZ_NONNULL RzILOpPure *op, RZ_NONNULL RzStrBuf *sb);
+RZ_API void rz_il_op_effect_stringify(RZ_NONNULL RzILOpEffect *op, RZ_NONNULL RzStrBuf *sb);
 RZ_API void rz_il_oplist_stringify(RZ_NONNULL RzPVector *oplist, RZ_NONNULL RzStrBuf *sb);
 
-RZ_API void rz_il_op_json(RZ_NONNULL RzILOp *op, RZ_NONNULL PJ *pj);
+RZ_API void rz_il_op_pure_json(RZ_NONNULL RzILOpPure *op, RZ_NONNULL PJ *pj);
+RZ_API void rz_il_op_effect_json(RZ_NONNULL RzILOpEffect *op, RZ_NONNULL PJ *pj);
 RZ_API void rz_il_oplist_json(RZ_NONNULL RzPVector *oplist, RZ_NONNULL PJ *pj);
 
 RZ_API void rz_il_event_stringify(RZ_NONNULL RzILEvent *evt, RZ_NONNULL RzStrBuf *sb);
 RZ_API void rz_il_event_json(RZ_NONNULL RzILEvent *evt, RZ_NONNULL PJ *pj);
 
 // VM auto convert functions
-RZ_API RZ_OWN RzBitVector *rz_il_evaluate_bitv(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOp *op, RZ_NONNULL RzILOpArgType *type);
-RZ_API RZ_OWN RzILBool *rz_il_evaluate_bool(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOp *op, RZ_NONNULL RzILOpArgType *type);
-RZ_API RZ_OWN RzILVal *rz_il_evaluate_val(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOp *op, RZ_NONNULL RzILOpArgType *type);
-RZ_API RZ_OWN void rz_il_evaluate_effect(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOp *op, RZ_NONNULL RzILOpArgType *type);
+RZ_API RZ_NULLABLE RZ_OWN RzBitVector *rz_il_evaluate_bitv(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpBitVector *op);
+RZ_API RZ_NULLABLE RZ_OWN RzILBool *rz_il_evaluate_bool(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpBool *op);
+RZ_API RZ_NULLABLE RZ_OWN RzILVal *rz_il_evaluate_val(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpPure *op);
+RZ_API RZ_NULLABLE RZ_OWN RzILVal *rz_il_evaluate_pure(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpPure *op, RZ_NONNULL RzILPureType *type);
+RZ_API bool rz_il_evaluate_effect(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpEffect *op);
 
 // recursively parse and evaluate
-RZ_API RZ_OWN void *rz_il_parse_op_root(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOp *op, RZ_NONNULL RzILOpArgType *type);
+RZ_API RZ_OWN void *rz_il_parse_op_root(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpEffect *op);
 
 #ifdef __cplusplus
 }
