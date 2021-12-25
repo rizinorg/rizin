@@ -110,6 +110,9 @@ static RzEgg *rz_core_egg_setup(RzCore *core) {
 static RzCmdStatus rz_core_egg_compile_file(RzCore *core, const char *file) {
 	rz_return_val_if_fail(file, false);
 	RzEgg *egg = rz_core_egg_setup(core);
+	if (!egg) {
+		return RZ_CMD_STATUS_ERROR;
+	}
 	if (!rz_egg_load_file(egg, file)) {
 		RZ_LOG_ERROR("Cannot load file \"%s\"\n", file);
 		return RZ_CMD_STATUS_ERROR;
