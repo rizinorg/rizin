@@ -107,7 +107,6 @@ static RzILOpEffectHandler op_handler_effect_table_default[RZIL_OP_EFFECT_MAX] =
 	[RZIL_OP_BRANCH] = rz_il_handler_branch,
 };
 
-
 static void free_label_kv(HtPPKv *kv) {
 	free(kv->key);
 	RzILEffectLabel *lbl = kv->value;

@@ -400,12 +400,12 @@ struct rz_il_op_pure_t {
 	union {
 		RzILOpArgsIte *ite;
 		RzILOpArgsVar *var;
-	
+
 		RzILOpArgsBoolAnd *booland;
 		RzILOpArgsBoolOr *boolor;
 		RzILOpArgsBoolXor *boolxor;
 		RzILOpArgsBoolInv *boolinv;
-	
+
 		RzILOpArgsBv *bitv;
 		RzILOpArgsMsb *msb;
 		RzILOpArgsLsb *lsb;
@@ -428,7 +428,7 @@ struct rz_il_op_pure_t {
 		RzILOpArgsShiftLeft *shiftl;
 		RzILOpArgsShiftRight *shiftr;
 		RzILOpArgsAppend *append;
-	
+
 		RzILOpArgsLoad *load;
 		RzILOpArgsLoadW *loadw;
 	} op;
@@ -504,7 +504,7 @@ struct rz_il_op_effect_t {
 		RzILOpArgsBlk *blk;
 		RzILOpArgsRepeat *repeat;
 		RzILOpArgsBranch *branch;
-	
+
 		RzILOpArgsStore *store;
 		RzILOpArgsStoreW *storew;
 	} op;

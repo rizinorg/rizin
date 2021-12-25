@@ -113,17 +113,17 @@ static void il_op_effect_resolve(RzILOpEffect *op, RzStrBuf *sb, PJ *pj);
 	do { \
 		if (sb) { \
 			rz_strbuf_append(sb, name "(" #v0 ":"); \
-			il_op_ ## sort0 ## _resolve(opx->v0, sb, pj); \
+			il_op_##sort0##_resolve(opx->v0, sb, pj); \
 			rz_strbuf_append(sb, ", " #v1 ":"); \
-			il_op_ ## sort1 ## _resolve(opx->v1, sb, pj); \
+			il_op_##sort1##_resolve(opx->v1, sb, pj); \
 			rz_strbuf_append(sb, ")"); \
 		} else { \
 			pj_o(pj); \
 			pj_ks(pj, "opcode", name); \
 			pj_k(pj, #v0); \
-			il_op_ ## sort0 ## _resolve(opx->v0, sb, pj); \
+			il_op_##sort0##_resolve(opx->v0, sb, pj); \
 			pj_k(pj, #v1); \
-			il_op_ ## sort1 ## _resolve(opx->v1, sb, pj); \
+			il_op_##sort1##_resolve(opx->v1, sb, pj); \
 			pj_end(pj); \
 		} \
 	} while (0)
@@ -132,21 +132,21 @@ static void il_op_effect_resolve(RzILOpEffect *op, RzStrBuf *sb, PJ *pj);
 	do { \
 		if (sb) { \
 			rz_strbuf_append(sb, name "(" #v0 ":"); \
-			il_op_ ## sort0 ## _resolve(opx->v0, sb, pj); \
+			il_op_##sort0##_resolve(opx->v0, sb, pj); \
 			rz_strbuf_append(sb, ", " #v1 ":"); \
-			il_op_ ## sort1 ## _resolve(opx->v1, sb, pj); \
+			il_op_##sort1##_resolve(opx->v1, sb, pj); \
 			rz_strbuf_append(sb, ", " #v2 ":"); \
-			il_op_ ## sort2 ## _resolve(opx->v2, sb, pj); \
+			il_op_##sort2##_resolve(opx->v2, sb, pj); \
 			rz_strbuf_append(sb, ")"); \
 		} else { \
 			pj_o(pj); \
 			pj_ks(pj, "opcode", name); \
 			pj_k(pj, #v0); \
-			il_op_ ## sort0 ## _resolve(opx->v0, sb, pj); \
+			il_op_##sort0##_resolve(opx->v0, sb, pj); \
 			pj_k(pj, #v1); \
-			il_op_ ## sort1 ## _resolve(opx->v1, sb, pj); \
+			il_op_##sort1##_resolve(opx->v1, sb, pj); \
 			pj_k(pj, #v2); \
-			il_op_ ## sort2 ## _resolve(opx->v2, sb, pj); \
+			il_op_##sort2##_resolve(opx->v2, sb, pj); \
 			pj_end(pj); \
 		} \
 	} while (0)

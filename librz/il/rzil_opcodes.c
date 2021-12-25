@@ -5,7 +5,7 @@
 
 #define rz_il_op_new_0(sort, id) \
 	do { \
-		ret = RZ_NEW0(RzILOp ## sort); \
+		ret = RZ_NEW0(RzILOp##sort); \
 		if (!ret) { \
 			return NULL; \
 		} \
@@ -14,7 +14,7 @@
 
 #define rz_il_op_new_1(sort, id, t, s, v0) \
 	do { \
-		ret = RZ_NEW0(RzILOp ## sort); \
+		ret = RZ_NEW0(RzILOp##sort); \
 		if (!ret) { \
 			return NULL; \
 		} \
@@ -29,7 +29,7 @@
 
 #define rz_il_op_new_2(sort, id, t, s, v0, v1) \
 	do { \
-		ret = RZ_NEW0(RzILOp ## sort); \
+		ret = RZ_NEW0(RzILOp##sort); \
 		if (!ret) { \
 			return NULL; \
 		} \
@@ -45,7 +45,7 @@
 
 #define rz_il_op_new_3(sort, id, t, s, v0, v1, v2) \
 	do { \
-		ret = RZ_NEW0(RzILOp ## sort); \
+		ret = RZ_NEW0(RzILOp##sort); \
 		if (!ret) { \
 			return NULL; \
 		} \
@@ -626,18 +626,18 @@ RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_storew(RzILMemIndex mem, RZ_NONNULL RzI
 #define rz_il_op_free_0(s) free(op->op.s)
 
 #define rz_il_op_free_1(sort, s, v0) \
-	rz_il_op_ ## sort ## _free(op->op.s->v0); \
+	rz_il_op_##sort##_free(op->op.s->v0); \
 	free(op->op.s)
 
 #define rz_il_op_free_2(sort, s, v0, v1) \
-	rz_il_op_ ## sort ## _free(op->op.s->v0); \
-	rz_il_op_ ## sort ## _free(op->op.s->v1); \
+	rz_il_op_##sort##_free(op->op.s->v0); \
+	rz_il_op_##sort##_free(op->op.s->v1); \
 	free(op->op.s)
 
 #define rz_il_op_free_3(sort, s, v0, v1, v2) \
-	rz_il_op_ ## sort ## _free(op->op.s->v0); \
-	rz_il_op_ ## sort ## _free(op->op.s->v1); \
-	rz_il_op_ ## sort ## _free(op->op.s->v2); \
+	rz_il_op_##sort##_free(op->op.s->v0); \
+	rz_il_op_##sort##_free(op->op.s->v1); \
+	rz_il_op_##sort##_free(op->op.s->v2); \
 	free(op->op.s)
 
 RZ_API void rz_il_op_pure_free(RZ_NULLABLE RzILOpPure *op) {

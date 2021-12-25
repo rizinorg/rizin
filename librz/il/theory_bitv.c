@@ -338,7 +338,8 @@ void *rz_il_handler_cast(RzILVM *vm, RzILOpBitVector *op, RzILPureType *type) {
 	RzILOpArgsCast *op_cast = op->op.cast;
 	int shift = op_cast->shift;
 
-	RzBitVector *bv = rz_il_evaluate_bitv(vm, op_cast->val);;
+	RzBitVector *bv = rz_il_evaluate_bitv(vm, op_cast->val);
+	;
 
 	RzBitVector *ret = NULL;
 	if (bv) {

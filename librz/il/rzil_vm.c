@@ -434,12 +434,12 @@ static bool eval_effect(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpEffect *op) {
 
 static const char *pure_type_name(RzILPureType type) {
 	switch (type) {
-		case RZ_IL_PURE_TYPE_BITV:
-			return "bitvector";
-		case RZ_IL_PURE_TYPE_BOOL:
-			return "bool";
-		default:
-			return "unknown";
+	case RZ_IL_PURE_TYPE_BITV:
+		return "bitvector";
+	case RZ_IL_PURE_TYPE_BOOL:
+		return "bool";
+	default:
+		return "unknown";
 	}
 }
 
