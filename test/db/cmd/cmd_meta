@@ -106,3 +106,42 @@ hello
 0x0000000a CCu "hello"
 EOF
 RUN
+
+NAME=Cs without bin
+FILE==
+CMDS=<<EOF
+ob-*
+w "Friendly Conversation"
+Cs
+# Right now, this does nothing. We just check that it doesn't crash.
+# Later, it will be nice if it also actually detects the string.
+C
+EOF
+EXPECT=
+RUN
+
+NAME=Cs8 without bin
+FILE==
+CMDS=<<EOF
+ob-*
+w "Friendly Conversation"
+Cs8
+C
+EOF
+EXPECT=<<EOF
+0x00000000 utf8[22] "Friendly Conversation"
+EOF
+RUN
+
+NAME=Csb without bin
+FILE==
+CMDS=<<EOF
+ob-*
+w "Friendly Conversation"
+Csb
+C
+EOF
+EXPECT=<<EOF
+0x00000000 ascii[22] "Friendly Conversation"
+EOF
+RUN
