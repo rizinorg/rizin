@@ -2058,60 +2058,6 @@ RZ_IPI int rz_cmd_analysis_fcn(void *data, const char *input) {
 			rz_core_cmd_help(core, help_msg_afc);
 		}
 	} break;
-	case 'n': // "afn"
-		switch (input[1]) {
-		case 's': // "afns"
-			if (input[2] == 'j') { // "afnsj"
-				free(rz_core_analysis_fcn_autoname(core, core->offset, 1, input[2]));
-			} else {
-				free(rz_core_analysis_fcn_autoname(core, core->offset, 1, 0));
-			}
-			break;
-		case 'a': // "afna"
-		{
-			char *name = rz_core_analysis_fcn_autoname(core, core->offset, 0, 0);
-			if (name) {
-				rz_cons_printf("afn %s 0x%08" PFMT64x "\n", name, core->offset);
-				free(name);
-			}
-		} break;
-		case '.': // "afn."
-		case 0: // "afn"
-		{
-			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
-			if (fcn) {
-				rz_cons_printf("%s\n", fcn->name);
-			}
-		} break;
-		case ' ': // "afn "
-		{
-			ut64 off = core->offset;
-			char *p, *name = strdup(rz_str_trim_head_ro(input + 2));
-			if ((p = strchr(name, ' '))) {
-				*p++ = 0;
-				off = rz_num_math(core->num, p);
-			}
-			if (*name == '?') {
-				eprintf("Usage: afn newname [off]   # set new name to given function\n");
-			} else {
-				if (rz_str_startswith(name, "base64:")) {
-					char *res = (char *)rz_base64_decode_dyn(name + 7, -1);
-					if (res) {
-						free(name);
-						name = res;
-					}
-				}
-				if (!*name || !rz_core_analysis_function_rename(core, off, name)) {
-					eprintf("Cannot find function at 0x%08" PFMT64x "\n", off);
-				}
-			}
-			free(name);
-		} break;
-		default:
-			rz_core_cmd_help(core, help_msg_afn);
-			break;
-		}
-		break;
 	case '?': // "af?"
 		rz_core_cmd_help(core, help_msg_af);
 		break;
@@ -8872,6 +8818,34 @@ exit:
 	rz_list_free(dbs);
 	ht_pu_free(keys_set);
 	return res;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_function_rename_handler(RzCore *core, int argc, const char **argv) {
+	return rz_core_analysis_function_rename(core, core->offset, argv[1]) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_function_autoname_handler(RzCore *core, int argc, const char **argv) {
+	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, core->offset);
+	if (!fcn) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	char *name = rz_core_analysis_function_autoname(core, fcn);
+	if (!name) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cons_printf("%s\n", name);
+	free(name);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_function_strings_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, core->offset);
+	if (!fcn) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	PJ *pj = state->mode == RZ_OUTPUT_MODE_JSON ? state->d.pj : NULL;
+	rz_core_analysis_function_strings_print(core, fcn, pj);
+	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_rzil_vm_initialize_handler(RzCore *core, int argc, const char **argv) {

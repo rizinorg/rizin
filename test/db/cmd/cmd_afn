@@ -5,10 +5,10 @@ e asm.arch=avr
 wa ret
 af
 afn foobar
-afn
+afl.
 EOF
 EXPECT=<<EOF
-foobar
+0x00000000 foobar
 EOF
 RUN
 
@@ -19,10 +19,10 @@ e asm.arch=avr
 wa reti
 af
 afn foobar
-afn
+afl.
 EOF
 EXPECT=<<EOF
-foobar
+0x00000000 foobar
 EOF
 RUN
 
@@ -34,13 +34,13 @@ f@F:functions~483f4,48540
 ?e --
 f@F:*~483f4,48540
 afn mymain @ 0x08048540
-afn @ 0x08048540
+afl. @ 0x08048540
 "?e The main flag shouldn't be renamed, it comes from bin:"
 f@F:functions~483f4,48540
 ?e --
 f@F:*~483f4,48540
 afn myfunc @ 0x080483f4
-afn @ 0x080483f4
+afl. @ 0x080483f4
 ?e Here the flag is owned by the fcn and should be renamed:
 f@F:functions~483f4,48540
 ?e --
@@ -58,7 +58,7 @@ EXPECT=<<EOF
 0x080483f4 33 fcn.080483f4
 0x08048540 92 main
 0x08048540 92 sym.main
-mymain
+0x08048540 mymain
 The main flag shouldn't be renamed, it comes from bin:
 0x080483f4 33 fcn.080483f4
 0x08048540 92 mymain
@@ -67,7 +67,7 @@ The main flag shouldn't be renamed, it comes from bin:
 0x08048540 92 main
 0x08048540 92 sym.main
 0x08048540 92 mymain
-myfunc
+0x080483f4 myfunc
 Here the flag is owned by the fcn and should be renamed:
 0x080483f4 33 myfunc
 0x08048540 92 mymain
