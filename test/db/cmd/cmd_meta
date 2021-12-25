@@ -107,6 +107,18 @@ hello
 EOF
 RUN
 
+NAME=Cs
+FILE==
+CMDS=<<EOF
+w "Friendly Conversation"
+Cs
+C
+EOF
+EXPECT=<<EOF
+0x00000000 ascii[22] "Friendly Conversation"
+EOF
+RUN
+
 NAME=Cs without bin
 FILE==
 CMDS=<<EOF

@@ -417,7 +417,7 @@ static bool meta_string_guess_add(RzCore *core, ut64 addr, size_t limit, char **
 	}
 	*ds = rz_list_first(str_list);
 	rz_list_free(str_list);
-	rz_str_ncpy(*((char **)name), (*ds)->string, limit);
+	rz_str_ncpy(name, (*ds)->string, limit);
 	name[limit] = '\0';
 	*name_out = name;
 	return true;
