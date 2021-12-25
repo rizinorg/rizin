@@ -317,8 +317,6 @@ static const char *help_msg_af[] = {
 	"afl", "[?] [ls*] [fcn name]", "list functions (addr, size, bbs, name) (see afll)",
 	"afm", " name", "merge two functions",
 	"afM", " name", "print functions map",
-	"afn", "[?] name [addr]", "rename name for function at address (change flag too)",
-	"afna", "", "suggest automatic name for current offset",
 	"afo", "[?j] [fcn.name]", "show address for the function name or current offset",
 	"aft", "[?]", "type matching, type propagation",
 	NULL
@@ -343,17 +341,6 @@ static const char *help_msg_afC[] = {
 	"afC", "", "function cycles cost",
 	"afCc", "", "cyclomatic complexity",
 	"afCl", "", "loop count (backward jumps)",
-	NULL
-};
-
-static const char *help_msg_afn[] = {
-	"Usage:", "afn[sa]", " Analyze function names",
-	"afn", " [name]", "rename the function",
-	"afn", " base64:encodedname", "rename the function",
-	"afn.", "", "same as afn without arguments. show the function name in current offset",
-	"afna", "", "construct a function name for the current offset",
-	"afns", "", "list all strings associated with the current function",
-	"afnsj", "", "list all strings associated with the current function in JSON format",
 	NULL
 };
 

@@ -606,7 +606,7 @@ static bool blacklisted_word(const char *name) {
 }
 
 /**
- * @brief Suggest a name for the function
+ * \brief Suggest a name for the function
  */
 RZ_API RZ_OWN char *rz_core_analysis_function_autoname(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisFunction *fcn) {
 	rz_return_val_if_fail(core && fcn, NULL);
@@ -673,7 +673,7 @@ RZ_API RZ_OWN char *rz_core_analysis_function_autoname(RZ_NONNULL RzCore *core, 
 }
 
 /**
- * @brief Print all string flags referenced by the function
+ * \brief Print all string flags referenced by the function
  */
 RZ_API void rz_core_analysis_function_strings_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NULLABLE PJ *pj) {
 	rz_return_if_fail(core && fcn);
