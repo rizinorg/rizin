@@ -7,7 +7,7 @@
 
 void *rz_il_handler_load(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
-	RzILOpLoad *op_load = op->op.load;
+	RzILOpArgsLoad *op_load = op->op.load;
 
 	RzBitVector *addr = rz_il_evaluate_bitv(vm, op_load->key, type);
 	RzBitVector *ret = rz_il_vm_mem_load(vm, op_load->mem, addr);
@@ -19,7 +19,7 @@ void *rz_il_handler_load(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 void *rz_il_handler_store(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 
-	RzILOpStore *op_store = op->op.store;
+	RzILOpArgsStore *op_store = op->op.store;
 
 	RzBitVector *addr = rz_il_evaluate_bitv(vm, op_store->key, type);
 	RzBitVector *value = rz_il_evaluate_bitv(vm, op_store->value, type);
@@ -34,7 +34,7 @@ void *rz_il_handler_store(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 
 void *rz_il_handler_loadw(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
-	RzILOpLoadW *op_loadw = op->op.loadw;
+	RzILOpArgsLoadW *op_loadw = op->op.loadw;
 
 	RzBitVector *addr = rz_il_evaluate_bitv(vm, op_loadw->key, type);
 	RzBitVector *ret = rz_il_vm_mem_loadw(vm, op_loadw->mem, addr, op_loadw->n_bits);
@@ -46,7 +46,7 @@ void *rz_il_handler_loadw(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 void *rz_il_handler_storew(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 
-	RzILOpStoreW *op_storew = op->op.storew;
+	RzILOpArgsStoreW *op_storew = op->op.storew;
 
 	RzBitVector *addr = rz_il_evaluate_bitv(vm, op_storew->key, type);
 	RzBitVector *value = rz_il_evaluate_bitv(vm, op_storew->value, type);

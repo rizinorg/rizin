@@ -29,7 +29,7 @@ void *rz_il_handler_bool_true(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 void *rz_il_handler_bool_and(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 
-	RzILOpBoolAnd *op_and = op->op.booland;
+	RzILOpArgsBoolAnd *op_and = op->op.booland;
 	RzILBool *x = rz_il_evaluate_bool(vm, op_and->x, type);
 	RzILBool *y = rz_il_evaluate_bool(vm, op_and->y, type);
 
@@ -44,7 +44,7 @@ void *rz_il_handler_bool_and(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 void *rz_il_handler_bool_or(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 
-	RzILOpBoolOr *op_or = op->op.boolor;
+	RzILOpArgsBoolOr *op_or = op->op.boolor;
 	RzILBool *x = rz_il_evaluate_bool(vm, op_or->x, type);
 	RzILBool *y = rz_il_evaluate_bool(vm, op_or->y, type);
 
@@ -59,7 +59,7 @@ void *rz_il_handler_bool_or(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 void *rz_il_handler_bool_xor(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 
-	RzILOpBoolXor *op_xor = op->op.boolxor;
+	RzILOpArgsBoolXor *op_xor = op->op.boolxor;
 	RzILBool *x = rz_il_evaluate_bool(vm, op_xor->x, type);
 	RzILBool *y = rz_il_evaluate_bool(vm, op_xor->y, type);
 
@@ -77,7 +77,7 @@ void *rz_il_handler_bool_xor(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 void *rz_il_handler_bool_inv(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 
-	RzILOpBoolInv *op_inv = op->op.boolinv;
+	RzILOpArgsBoolInv *op_inv = op->op.boolinv;
 	RzILBool *x = rz_il_evaluate_bool(vm, op_inv->x, type);
 	RzILBool *result = rz_il_bool_not(x);
 	rz_il_bool_free(x);

@@ -41,39 +41,39 @@ typedef struct rz_il_op_t RzILOp;
  *
  * In BAP: `int : 's Bitv.t Value.sort -> word -> 's bitv`
  */
-typedef struct rz_il_op_bv_t {
+typedef struct rz_il_op_args_bv_t {
 	RzBitVector *value; ///< value of bitvector
-} RzILOpBv;
+} RzILOpArgsBv;
 
 /**
  *  \brief op structure for `msb` and `lsb` ('s bitv -> bool)
  *  [MSB] msb x is the most significant bit of x.
  *  [LSB] lsb x is the least significant bit of x.
  */
-struct rz_il_op_msb_lsb_t {
+struct rz_il_op_args_msb_lsb_t {
 	RzILOp *bv; ///< index of bitvector operand
 };
 
-typedef struct rz_il_op_msb_lsb_t RzILOpMsb;
-typedef struct rz_il_op_msb_lsb_t RzILOpLsb;
+typedef struct rz_il_op_args_msb_lsb_t RzILOpArgsMsb;
+typedef struct rz_il_op_args_msb_lsb_t RzILOpArgsLsb;
 
 /**
  *  \brief op structure for `neg` ('s bitv -> 's bitv)
  *
  *  neg x is two-complement unary minus
  */
-typedef struct rz_il_op_neg_t {
+typedef struct rz_il_op_args_neg_t {
 	RzILOp *bv; ///< unary operand
-} RzILOpNeg;
+} RzILOpArgsNeg;
 
 /**
  *  \brief op structure for `not` ('s bitv -> 's bitv)
  *
  *  not x is one-complement negation.
  */
-typedef struct rz_il_op_logical_not_t {
+typedef struct rz_il_op_args_logical_not_t {
 	RzILOp *bv; ///< unary operand
-} RzILOpLogNot;
+} RzILOpArgsLogNot;
 
 /**
  *  \brief op structure for two-operand algorithm and logical operations ('s bitv -> 's bitv -> 's bitv)
@@ -89,21 +89,21 @@ typedef struct rz_il_op_logical_not_t {
  *  [LOGOR] logor x y is a bitwise logical or of x and y.
  *  [LOGXOR] logxor x y is a bitwise logical xor of x and y.
  */
-struct rz_il_op_alg_log_operations_t {
+struct rz_il_op_args_alg_log_operations_t {
 	RzILOp *x; ///< left operand
 	RzILOp *y; ///< right operand
 };
 
-typedef struct rz_il_op_alg_log_operations_t RzILOpAdd;
-typedef struct rz_il_op_alg_log_operations_t RzILOpSub;
-typedef struct rz_il_op_alg_log_operations_t RzILOpMul;
-typedef struct rz_il_op_alg_log_operations_t RzILOpDiv;
-typedef struct rz_il_op_alg_log_operations_t RzILOpSdiv;
-typedef struct rz_il_op_alg_log_operations_t RzILOpMod;
-typedef struct rz_il_op_alg_log_operations_t RzILOpSmod;
-typedef struct rz_il_op_alg_log_operations_t RzILOpLogand;
-typedef struct rz_il_op_alg_log_operations_t RzILOpLogor;
-typedef struct rz_il_op_alg_log_operations_t RzILOpLogxor;
+typedef struct rz_il_op_args_alg_log_operations_t RzILOpArgsAdd;
+typedef struct rz_il_op_args_alg_log_operations_t RzILOpArgsSub;
+typedef struct rz_il_op_args_alg_log_operations_t RzILOpArgsMul;
+typedef struct rz_il_op_args_alg_log_operations_t RzILOpArgsDiv;
+typedef struct rz_il_op_args_alg_log_operations_t RzILOpArgsSdiv;
+typedef struct rz_il_op_args_alg_log_operations_t RzILOpArgsMod;
+typedef struct rz_il_op_args_alg_log_operations_t RzILOpArgsSmod;
+typedef struct rz_il_op_args_alg_log_operations_t RzILOpArgsLogand;
+typedef struct rz_il_op_args_alg_log_operations_t RzILOpArgsLogor;
+typedef struct rz_il_op_args_alg_log_operations_t RzILOpArgsLogxor;
 
 /**
  *  \brief op structure for sle/ule ('a bitv -> 'a bitv -> bool)
@@ -111,31 +111,31 @@ typedef struct rz_il_op_alg_log_operations_t RzILOpLogxor;
  *  [SLE] sle x y binary predicate for singed less than or equal
  *  [ULE] ule x y binary predicate for unsigned less than or equal
  */
-struct rz_il_op_sle_ule_t {
+struct rz_il_op_args_sle_ule_t {
 	RzILOp *x; ///< index of operand 1
 	RzILOp *y; ///< index of operand 2
 };
 
-typedef struct rz_il_op_sle_ule_t RzILOpSle;
-typedef struct rz_il_op_sle_ule_t RzILOpUle;
+typedef struct rz_il_op_args_sle_ule_t RzILOpArgsSle;
+typedef struct rz_il_op_args_sle_ule_t RzILOpArgsUle;
 
 /**
  *  \brief op structure for casting bitv
  */
-typedef struct rz_il_op_cast_t {
+typedef struct rz_il_op_args_cast_t {
 	ut32 length; ///< new bits lenght
 	int shift; ///< shift old bits (positive is << and >> negative)
 	RzILOp *val; ///< value to cast
-} RzILOpCast;
+} RzILOpArgsCast;
 
 /**
- *  \struct rz_il_op_append_t
+ *  \struct rz_il_op_args_append_t
  *  \brief op structure for appending 2 bitv: MSB:LSB bv1:bv2
  */
-typedef struct rz_il_op_append_t {
+typedef struct rz_il_op_args_append_t {
 	RzILOp *x; ///< index of the bv 1
 	RzILOp *y; ///< index of the bv 2
-} RzILOpAppend;
+} RzILOpArgsAppend;
 
 /**
  *  \brief op structure for lshift and rshift (bool -> 's bitv -> 'b bitv -> 's bitv)
@@ -143,114 +143,114 @@ typedef struct rz_il_op_append_t {
  *  [LSHIFT] shiftl s x m shifts x left by m bits filling with s.
  *  [RSHIFT] shiftr s x m shifts x right by m bits filling with s.
  */
-struct rz_il_op_shift_t {
+struct rz_il_op_args_shift_t {
 	RzILOp *fill_bit; ///< index of fill bit
 	RzILOp *x; ///< index of operand 1
 	RzILOp *y; ///< index of operand 2
 };
 
-typedef struct rz_il_op_shift_t RzILOpShiftLeft;
-typedef struct rz_il_op_shift_t RzILOpShiftRight;
+typedef struct rz_il_op_args_shift_t RzILOpArgsShiftLeft;
+typedef struct rz_il_op_args_shift_t RzILOpArgsShiftRight;
 
 /**
  *  \brief op structure for `set` ('a var -> 'a pure -> data eff)
  *
  *  set v x changes the value stored in v to the value of x.
  */
-typedef struct rz_il_op_set_t {
+typedef struct rz_il_op_args_set_t {
 	const char *v; ///< name of variable, const one
 	RzILOp *x; ///< index of RzILVal
-} RzILOpSet;
+} RzILOpArgsSet;
 
 /**
  *  \brief op structure for `set` ('a var -> 'a pure -> data eff)
  *
  *  set v x changes the value stored in v to the value of x.
  */
-typedef struct rz_il_op_let_t {
+typedef struct rz_il_op_args_let_t {
 	const char *v; ///< name of variable, const one
 	bool mut; ///< define is local variable is const or not
 	RzILOp *x; ///< index of RzILVal
-} RzILOpLet;
+} RzILOpArgsLet;
 
 /**
  *  \brief op structure for `jmp` (_ bitv -> ctrl eff)
  *
  *  jmp dst passes the control to a program located at dst.
  */
-typedef struct rz_il_op_jmp_t {
+typedef struct rz_il_op_args_jmp_t {
 	RzILOp *dst; ///< index of destination address (RzBitVector)
-} RzILOpJmp;
+} RzILOpArgsJmp;
 
 /**
  *  \brief op structure for `goto` (label -> ctrl eff)
  *
  *  goto lbl passes the control to a program labeled with lbl.
  */
-typedef struct rz_il_op_goto_t {
+typedef struct rz_il_op_args_goto_t {
 	const char *lbl; ///< name of the label, const one
-} RzILOpGoto;
+} RzILOpArgsGoto;
 
 /**
  *  \brief op structure for `Seq` ('a eff -> 'a eff -> 'a eff)
  *
  *  seq x y performs effect x, after that perform effect y. Pack two effects into one.
  */
-typedef struct rz_il_op_seq_t {
+typedef struct rz_il_op_args_seq_t {
 	RzILOp *x; ///< index of the first effect
 	RzILOp *y; ///< index of the second effect
-} RzILOpSeq;
+} RzILOpArgsSeq;
 
 /**
  *  \brief op structure for `blk` (label -> data eff -> ctrl eff -> unit eff)
  *
  *  blk lbl data ctrl a labeled sequence of effects.
  */
-typedef struct rz_il_op_blk_t {
+typedef struct rz_il_op_args_blk_t {
 	RzILOp *data_eff; ///< index of data_eff
 	RzILOp *ctrl_eff; ///< index of ctrl_eff
-} RzILOpBlk;
+} RzILOpArgsBlk;
 
 /**
  *  \brief op structure for `repeat` (bool -> data eff -> data eff)
  *
  *  repeat c data repeats data effects until the condition c holds.
  */
-typedef struct rz_il_op_repeat_t {
+typedef struct rz_il_op_args_repeat_t {
 	RzILOp *condition; ///< index of BOOL condition
 	RzILOp *data_eff; ///< index of data effect
-} RzILOpRepeat;
+} RzILOpArgsRepeat;
 
 /**
  *  \brief op structure for `branch` (bool -> 'a eff -> 'a eff -> 'a eff)
  *
  *  branch c lhs rhs if c holds then performs lhs else rhs.
  */
-typedef struct rz_il_op_branch_t {
+typedef struct rz_il_op_args_branch_t {
 	RzILOp *condition; ///< index of BOOL condition
 	RzILOp *true_eff; ///< index of true effect, set to -1 means do nothing
 	RzILOp *false_eff; ///< index of false effect, set to -1 means do nothing
-} RzILOpBranch;
+} RzILOpArgsBranch;
 
 /**
  *  \brief op structure for `ite` (bool -> 'a pure -> 'a pure -> 'a pure)
  *
  *  ite c x y is x if c evaluates to b1 else y.
  */
-typedef struct rz_il_op_ite_t {
+typedef struct rz_il_op_args_ite_t {
 	RzILOp *condition; ///< index of BOOL condition
 	RzILOp *x; ///< index of RzILVal operand 1
 	RzILOp *y; ///< index of RzILVal operand 2
-} RzILOpIte;
+} RzILOpArgsIte;
 
 /**
  *  \brief op structure for `var` ('a var -> 'a pure)
  *
  *  var v is the value of the variable v.
  */
-typedef struct rz_il_op_var_t {
+typedef struct rz_il_op_args_var_t {
 	const char *v; ///< name of variable, const one
-} RzILOpVar;
+} RzILOpArgsVar;
 
 /**
  *  \brief op structure for `and`, `or` and `xor` (bool -> bool -> bool)
@@ -262,14 +262,14 @@ typedef struct rz_il_op_var_t {
  *  or(x, y)  is a conjunction of x or y.
  *  xor(x, y) is a conjunction of x xor y.
  */
-struct rz_il_op_bool_operation_t {
+struct rz_il_op_args_bool_operation_t {
 	RzILOp *x; ///< index of the BOOL operand
 	RzILOp *y; ///< index of the BOOL operand
 };
 
-typedef struct rz_il_op_bool_operation_t RzILOpBoolAnd;
-typedef struct rz_il_op_bool_operation_t RzILOpBoolOr;
-typedef struct rz_il_op_bool_operation_t RzILOpBoolXor;
+typedef struct rz_il_op_args_bool_operation_t RzILOpArgsBoolAnd;
+typedef struct rz_il_op_args_bool_operation_t RzILOpArgsBoolOr;
+typedef struct rz_il_op_args_bool_operation_t RzILOpArgsBoolXor;
 
 /**
  *  \brief op structure for `inv` (!bool -> bool)
@@ -278,54 +278,54 @@ typedef struct rz_il_op_bool_operation_t RzILOpBoolXor;
  *	  val inv : bool -> bool
  *  inv(x) inverts x (also known as not operation).
  */
-struct rz_il_op_bool_inv_t {
+struct rz_il_op_args_bool_inv_t {
 	RzILOp *x; ///< index of the BOOL operand
 };
 
-typedef struct rz_il_op_bool_inv_t RzILOpBoolInv;
+typedef struct rz_il_op_args_bool_inv_t RzILOpArgsBoolInv;
 
 /**
  *  \brief op structure for `load` (('a, 'b) mem -> 'a bitv -> 'b bitv)
  *
  *  load m k is the value associated with the key k in the memory m.
  */
-typedef struct rz_il_op_load_t {
+typedef struct rz_il_op_args_load_t {
 	RzILMemIndex mem; ///< index of the mem inside the vm to use
 	RzILOp *key; ///< memory index of the RzBitVector key (address), must have exactly the size of a key in the memory
-} RzILOpLoad;
+} RzILOpArgsLoad;
 
 /**
  *  \brief op structure for `store` (('a, 'b) mem -> 'a bitv -> 'b bitv -> ('a, 'b) mem)
  *
  *  store m k x a memory m in which the key k is associated with the word x.
  */
-typedef struct rz_il_op_store_t {
+typedef struct rz_il_op_args_store_t {
 	RzILMemIndex mem; ///< index of memory in the vm to use
 	RzILOp *key; ///< address where to store to, must have exactly the size of a key in the memory
 	RzILOp *value; ///< value to store, must have exactly the size of a memory cell
-} RzILOpStore;
+} RzILOpArgsStore;
 
 /**
  * \brief Load an entire word of arbitrary bit size from a memory
  *
  * Endianness is determined by the vm
  */
-typedef struct rz_il_op_loadw_t {
+typedef struct rz_il_op_args_loadw_t {
 	RzILMemIndex mem; ///< index of the mem inside the vm to use
 	RzILOp *key; ///< memory index of the RzBitVector key (address)
 	ut32 n_bits; ///< n of bits to read, and of the resulting bitvector
-} RzILOpLoadW;
+} RzILOpArgsLoadW;
 
 /**
  * \brief Store an entire word of arbitrary bit size into a memory
  *
  * Endianness is determined by the vm
  */
-typedef struct rz_il_op_storew_t {
+typedef struct rz_il_op_args_storew_t {
 	RzILMemIndex mem; ///< index of memory in the vm to use
 	RzILOp *key; ///< address where to store to
 	RzILOp *value; ///< value to store, arbitrary size
-} RzILOpStoreW;
+} RzILOpArgsStoreW;
 
 typedef enum {
 	// Init
@@ -385,58 +385,58 @@ typedef enum {
 
 	RZIL_OP_INVALID,
 	RZIL_OP_MAX,
-} RzILOpCode;
+} RzILOpArgsCode;
 
 // Then define a union to union all of these struct
 typedef union {
-	RzILOpIte *ite;
-	RzILOpVar *var;
+	RzILOpArgsIte *ite;
+	RzILOpArgsVar *var;
 
-	RzILOpBoolAnd *booland;
-	RzILOpBoolOr *boolor;
-	RzILOpBoolXor *boolxor;
-	RzILOpBoolInv *boolinv;
+	RzILOpArgsBoolAnd *booland;
+	RzILOpArgsBoolOr *boolor;
+	RzILOpArgsBoolXor *boolxor;
+	RzILOpArgsBoolInv *boolinv;
 
-	RzILOpBv *bitv;
-	RzILOpMsb *msb;
-	RzILOpLsb *lsb;
-	RzILOpUle *ule;
-	RzILOpSle *sle;
-	RzILOpCast *cast;
-	RzILOpNeg *neg;
-	RzILOpLogNot *lognot;
-	RzILOpAdd *add;
-	RzILOpSub *sub;
-	RzILOpMul *mul;
-	RzILOpDiv *div;
-	RzILOpSdiv *sdiv;
-	RzILOpSmod *smod;
-	RzILOpMod *mod;
-	RzILOpLogand *logand;
-	RzILOpLogor *logor;
-	RzILOpLogxor *logxor;
-	RzILOpShiftLeft *shiftl;
-	RzILOpShiftRight *shiftr;
-	RzILOpAppend *append;
+	RzILOpArgsBv *bitv;
+	RzILOpArgsMsb *msb;
+	RzILOpArgsLsb *lsb;
+	RzILOpArgsUle *ule;
+	RzILOpArgsSle *sle;
+	RzILOpArgsCast *cast;
+	RzILOpArgsNeg *neg;
+	RzILOpArgsLogNot *lognot;
+	RzILOpArgsAdd *add;
+	RzILOpArgsSub *sub;
+	RzILOpArgsMul *mul;
+	RzILOpArgsDiv *div;
+	RzILOpArgsSdiv *sdiv;
+	RzILOpArgsSmod *smod;
+	RzILOpArgsMod *mod;
+	RzILOpArgsLogand *logand;
+	RzILOpArgsLogor *logor;
+	RzILOpArgsLogxor *logxor;
+	RzILOpArgsShiftLeft *shiftl;
+	RzILOpArgsShiftRight *shiftr;
+	RzILOpArgsAppend *append;
 
-	RzILOpSet *set;
-	RzILOpLet *let;
-	RzILOpJmp *jmp;
-	RzILOpGoto *goto_;
-	RzILOpSeq *seq;
-	RzILOpBlk *blk;
-	RzILOpRepeat *repeat;
-	RzILOpBranch *branch;
+	RzILOpArgsSet *set;
+	RzILOpArgsLet *let;
+	RzILOpArgsJmp *jmp;
+	RzILOpArgsGoto *goto_;
+	RzILOpArgsSeq *seq;
+	RzILOpArgsBlk *blk;
+	RzILOpArgsRepeat *repeat;
+	RzILOpArgsBranch *branch;
 
-	RzILOpLoad *load;
-	RzILOpStore *store;
-	RzILOpLoadW *loadw;
-	RzILOpStoreW *storew;
-} RzILOpUnion;
+	RzILOpArgsLoad *load;
+	RzILOpArgsStore *store;
+	RzILOpArgsLoadW *loadw;
+	RzILOpArgsStoreW *storew;
+} RzILOpArgsUnion;
 
 struct rz_il_op_t {
-	RzILOpCode code;
-	RzILOpUnion op;
+	RzILOpArgsCode code;
+	RzILOpArgsUnion op;
 };
 
 // Opcode

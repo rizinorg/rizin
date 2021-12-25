@@ -24,7 +24,7 @@ static RzILEvent *il_event_new_read_from_name(RzILVM *vm, const char *name, RzIL
 void *rz_il_handler_ite(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 
-	RzILOpIte *op_ite = op->op.ite;
+	RzILOpArgsIte *op_ite = op->op.ite;
 
 	RzILBool *condition = rz_il_evaluate_bool(vm, op_ite->condition, type);
 	RzILVal *ret;
@@ -43,7 +43,7 @@ void *rz_il_handler_var(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 	bool is_local = false;
 
-	RzILOpVar *var_op = op->op.var;
+	RzILOpArgsVar *var_op = op->op.var;
 	RzILVal *val = rz_il_hash_find_val_by_name(vm, var_op->v);
 	if (!val) {
 		val = rz_il_hash_find_local_val_by_name(vm, var_op->v);

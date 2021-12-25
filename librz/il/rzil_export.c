@@ -151,7 +151,7 @@ static void il_op_resolve(RzILOp *op, RzStrBuf *sb, PJ *pj);
 	} while (0)
 
 static void il_opdmp_var(RzILOp *op, RzStrBuf *sb, PJ *pj) {
-	RzILOpVar *opx = op->op.var;
+	RzILOpArgsVar *opx = op->op.var;
 	if (sb) {
 		rz_strbuf_appendf(sb, "var(v:%s)", opx->v);
 	} else {
@@ -215,7 +215,7 @@ static void il_opdmp_bool_xor(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 }
 
 static void il_opdmp_bitv(RzILOp *op, RzStrBuf *sb, PJ *pj) {
-	RzILOpBv *opx = op->op.bitv;
+	RzILOpArgsBv *opx = op->op.bitv;
 	char *num = rz_bv_as_hex_string(opx->value);
 	if (sb) {
 		rz_strbuf_appendf(sb, "bitv(bits:%s, len:%u)", num, opx->value->len);
@@ -302,7 +302,7 @@ static void il_opdmp_ule(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 }
 
 static void il_opdmp_cast(RzILOp *op, RzStrBuf *sb, PJ *pj) {
-	RzILOpCast *opx = op->op.cast;
+	RzILOpArgsCast *opx = op->op.cast;
 	if (sb) {
 		rz_strbuf_append(sb, "cast(val:");
 		il_op_resolve(opx->val, sb, pj);
@@ -327,7 +327,7 @@ static void il_opdmp_append(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 }
 
 static void il_opdmp_load(RzILOp *op, RzStrBuf *sb, PJ *pj) {
-	RzILOpLoad *opx = op->op.load;
+	RzILOpArgsLoad *opx = op->op.load;
 	if (sb) {
 		rz_strbuf_appendf(sb, "load(mem:%u, key:", (unsigned int)opx->mem);
 		il_op_resolve(opx->key, sb, pj);
@@ -343,7 +343,7 @@ static void il_opdmp_load(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 }
 
 static void il_opdmp_store(RzILOp *op, RzStrBuf *sb, PJ *pj) {
-	RzILOpStore *opx = op->op.store;
+	RzILOpArgsStore *opx = op->op.store;
 
 	if (sb) {
 		rz_strbuf_appendf(sb, "store(mem:%u, key:", (unsigned int)opx->mem);
@@ -368,7 +368,7 @@ static void il_opdmp_nop(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 }
 
 static void il_opdmp_set(RzILOp *op, RzStrBuf *sb, PJ *pj) {
-	RzILOpSet *opx = op->op.set;
+	RzILOpArgsSet *opx = op->op.set;
 	if (sb) {
 		rz_strbuf_appendf(sb, "set(v:%s, x:", opx->v);
 		il_op_resolve(opx->x, sb, pj);
@@ -384,7 +384,7 @@ static void il_opdmp_set(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 }
 
 static void il_opdmp_let(RzILOp *op, RzStrBuf *sb, PJ *pj) {
-	RzILOpLet *opx = op->op.let;
+	RzILOpArgsLet *opx = op->op.let;
 	if (sb) {
 		rz_strbuf_appendf(sb, "let(v:%s, x:", opx->v);
 		il_op_resolve(opx->x, sb, pj);
@@ -405,7 +405,7 @@ static void il_opdmp_jmp(RzILOp *op, RzStrBuf *sb, PJ *pj) {
 }
 
 static void il_opdmp_goto(RzILOp *op, RzStrBuf *sb, PJ *pj) {
-	RzILOpGoto *opx = op->op.goto_;
+	RzILOpArgsGoto *opx = op->op.goto_;
 	if (sb) {
 		rz_strbuf_appendf(sb, "goto(lbl:%s)", opx->lbl);
 	} else {

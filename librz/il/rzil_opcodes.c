@@ -68,7 +68,7 @@
 RZ_API RZ_OWN RzILOp *rz_il_op_new_ite(RZ_NONNULL RzILOp *condition, RZ_NULLABLE RzILOp *x, RZ_NULLABLE RzILOp *y) {
 	rz_return_val_if_fail(condition && (x || y), NULL);
 	RzILOp *ret;
-	rz_il_op_new_3(RZIL_OP_ITE, RzILOpIte, ite, condition, x, y);
+	rz_il_op_new_3(RZIL_OP_ITE, RzILOpArgsIte, ite, condition, x, y);
 	return ret;
 }
 
@@ -89,7 +89,7 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_unk() {
 RZ_API RZ_OWN RzILOp *rz_il_op_new_var(RZ_NONNULL const char *v) {
 	rz_return_val_if_fail(v, NULL);
 	RzILOp *ret;
-	rz_il_op_new_1(RZIL_OP_VAR, RzILOpVar, var, v);
+	rz_il_op_new_1(RZIL_OP_VAR, RzILOpArgsVar, var, v);
 	return ret;
 }
 
@@ -121,7 +121,7 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_b1() {
 RZ_API RZ_OWN RzILOp *rz_il_op_new_bool_and(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y) {
 	rz_return_val_if_fail(x && y, NULL);
 	RzILOp *ret;
-	rz_il_op_new_2(RZIL_OP_AND, RzILOpBoolAnd, booland, x, y);
+	rz_il_op_new_2(RZIL_OP_AND, RzILOpArgsBoolAnd, booland, x, y);
 	return ret;
 }
 
@@ -135,7 +135,7 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_bool_and(RZ_NONNULL RzILOp *x, RZ_NONNULL RzI
 RZ_API RZ_OWN RzILOp *rz_il_op_new_bool_or(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y) {
 	rz_return_val_if_fail(x && y, NULL);
 	RzILOp *ret;
-	rz_il_op_new_2(RZIL_OP_OR, RzILOpBoolOr, boolor, x, y);
+	rz_il_op_new_2(RZIL_OP_OR, RzILOpArgsBoolOr, boolor, x, y);
 	return ret;
 }
 
@@ -149,7 +149,7 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_bool_or(RZ_NONNULL RzILOp *x, RZ_NONNULL RzIL
 RZ_API RZ_OWN RzILOp *rz_il_op_new_bool_xor(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y) {
 	rz_return_val_if_fail(x && y, NULL);
 	RzILOp *ret;
-	rz_il_op_new_2(RZIL_OP_XOR, RzILOpBoolXor, boolxor, x, y);
+	rz_il_op_new_2(RZIL_OP_XOR, RzILOpArgsBoolXor, boolxor, x, y);
 	return ret;
 }
 
@@ -163,7 +163,7 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_bool_xor(RZ_NONNULL RzILOp *x, RZ_NONNULL RzI
 RZ_API RZ_OWN RzILOp *rz_il_op_new_bool_inv(RZ_NONNULL RzILOp *x) {
 	rz_return_val_if_fail(x, NULL);
 	RzILOp *ret;
-	rz_il_op_new_1(RZIL_OP_INV, RzILOpBoolInv, boolinv, x);
+	rz_il_op_new_1(RZIL_OP_INV, RzILOpArgsBoolInv, boolinv, x);
 	return ret;
 }
 
@@ -175,7 +175,7 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_bool_inv(RZ_NONNULL RzILOp *x) {
 RZ_API RZ_OWN RzILOp *rz_il_op_new_bitv(RZ_NONNULL RzBitVector *value) {
 	rz_return_val_if_fail(value, NULL);
 	RzILOp *ret;
-	rz_il_op_new_1(RZIL_OP_BITV, RzILOpBv, bitv, value);
+	rz_il_op_new_1(RZIL_OP_BITV, RzILOpArgsBv, bitv, value);
 	return ret;
 }
 
@@ -194,7 +194,7 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_bitv_from_ut64(ut32 length, ut64 number) {
 		rz_bv_free(value);
 		return NULL;
 	}
-	ret->op.bitv = RZ_NEW0(RzILOpBv);
+	ret->op.bitv = RZ_NEW0(RzILOpArgsBv);
 	if (!ret->op.bitv) {
 		rz_bv_free(value);
 		free(ret);
@@ -220,7 +220,7 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_bitv_from_st64(ut32 length, st64 number) {
 		rz_bv_free(value);
 		return NULL;
 	}
-	ret->op.bitv = RZ_NEW0(RzILOpBv);
+	ret->op.bitv = RZ_NEW0(RzILOpArgsBv);
 	if (!ret->op.bitv) {
 		rz_bv_free(value);
 		free(ret);
@@ -238,7 +238,7 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_bitv_from_st64(ut32 length, st64 number) {
 RZ_API RZ_OWN RzILOp *rz_il_op_new_msb(RZ_NONNULL RzILOp *bv) {
 	rz_return_val_if_fail(bv, NULL);
 	RzILOp *ret;
-	rz_il_op_new_1(RZIL_OP_MSB, RzILOpLsb, lsb, bv);
+	rz_il_op_new_1(RZIL_OP_MSB, RzILOpArgsLsb, lsb, bv);
 	return ret;
 }
 
@@ -249,7 +249,7 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_msb(RZ_NONNULL RzILOp *bv) {
 RZ_API RZ_OWN RzILOp *rz_il_op_new_lsb(RZ_NONNULL RzILOp *bv) {
 	rz_return_val_if_fail(bv, NULL);
 	RzILOp *ret;
-	rz_il_op_new_1(RZIL_OP_LSB, RzILOpMsb, lsb, bv);
+	rz_il_op_new_1(RZIL_OP_LSB, RzILOpArgsMsb, lsb, bv);
 	return ret;
 }
 
@@ -261,7 +261,7 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_lsb(RZ_NONNULL RzILOp *bv) {
 RZ_API RZ_OWN RzILOp *rz_il_op_new_ule(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y) {
 	rz_return_val_if_fail(x && y, NULL);
 	RzILOp *ret;
-	rz_il_op_new_2(RZIL_OP_ULE, RzILOpUle, ule, x, y);
+	rz_il_op_new_2(RZIL_OP_ULE, RzILOpArgsUle, ule, x, y);
 	return ret;
 }
 
@@ -273,7 +273,7 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_ule(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *
 RZ_API RZ_OWN RzILOp *rz_il_op_new_sle(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y) {
 	rz_return_val_if_fail(x && y, NULL);
 	RzILOp *ret;
-	rz_il_op_new_2(RZIL_OP_SLE, RzILOpSle, sle, x, y);
+	rz_il_op_new_2(RZIL_OP_SLE, RzILOpArgsSle, sle, x, y);
 	return ret;
 }
 
@@ -283,7 +283,7 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_sle(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *
 RZ_API RZ_OWN RzILOp *rz_il_op_new_cast(ut32 length, int shift, RZ_NONNULL RzILOp *val) {
 	rz_return_val_if_fail(length > 0 && val, NULL);
 	RzILOp *ret;
-	rz_il_op_new_3(RZIL_OP_CAST, RzILOpCast, cast, length, shift, val);
+	rz_il_op_new_3(RZIL_OP_CAST, RzILOpArgsCast, cast, length, shift, val);
 	return ret;
 }
 
@@ -295,7 +295,7 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_cast(ut32 length, int shift, RZ_NONNULL RzILO
 RZ_API RZ_OWN RzILOp *rz_il_op_new_neg(RZ_NONNULL RzILOp *bv) {
 	rz_return_val_if_fail(bv, NULL);
 	RzILOp *ret;
-	rz_il_op_new_1(RZIL_OP_NEG, RzILOpNeg, neg, bv);
+	rz_il_op_new_1(RZIL_OP_NEG, RzILOpArgsNeg, neg, bv);
 	return ret;
 }
 
@@ -307,7 +307,7 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_neg(RZ_NONNULL RzILOp *bv) {
 RZ_API RZ_OWN RzILOp *rz_il_op_new_log_not(RZ_NONNULL RzILOp *bv) {
 	rz_return_val_if_fail(bv, NULL);
 	RzILOp *ret;
-	rz_il_op_new_1(RZIL_OP_LOGNOT, RzILOpLogNot, lognot, bv);
+	rz_il_op_new_1(RZIL_OP_LOGNOT, RzILOpArgsLogNot, lognot, bv);
 	return ret;
 }
 
@@ -319,7 +319,7 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_log_not(RZ_NONNULL RzILOp *bv) {
 RZ_API RZ_OWN RzILOp *rz_il_op_new_add(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y) {
 	rz_return_val_if_fail(x && y, NULL);
 	RzILOp *ret;
-	rz_il_op_new_2(RZIL_OP_ADD, RzILOpAdd, add, x, y);
+	rz_il_op_new_2(RZIL_OP_ADD, RzILOpArgsAdd, add, x, y);
 	return ret;
 }
 
@@ -331,7 +331,7 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_add(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *
 RZ_API RZ_OWN RzILOp *rz_il_op_new_sub(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y) {
 	rz_return_val_if_fail(x && y, NULL);
 	RzILOp *ret;
-	rz_il_op_new_2(RZIL_OP_SUB, RzILOpSub, sub, x, y);
+	rz_il_op_new_2(RZIL_OP_SUB, RzILOpArgsSub, sub, x, y);
 	return ret;
 }
 
@@ -343,7 +343,7 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_sub(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *
 RZ_API RZ_OWN RzILOp *rz_il_op_new_mul(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y) {
 	rz_return_val_if_fail(x && y, NULL);
 	RzILOp *ret;
-	rz_il_op_new_2(RZIL_OP_MUL, RzILOpMul, mul, x, y);
+	rz_il_op_new_2(RZIL_OP_MUL, RzILOpArgsMul, mul, x, y);
 	return ret;
 }
 
@@ -355,7 +355,7 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_mul(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *
 RZ_API RZ_OWN RzILOp *rz_il_op_new_div(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y) {
 	rz_return_val_if_fail(x && y, NULL);
 	RzILOp *ret;
-	rz_il_op_new_2(RZIL_OP_DIV, RzILOpDiv, div, x, y);
+	rz_il_op_new_2(RZIL_OP_DIV, RzILOpArgsDiv, div, x, y);
 	return ret;
 }
 
@@ -367,7 +367,7 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_div(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *
 RZ_API RZ_OWN RzILOp *rz_il_op_new_sdiv(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y) {
 	rz_return_val_if_fail(x && y, NULL);
 	RzILOp *ret;
-	rz_il_op_new_2(RZIL_OP_SDIV, RzILOpSdiv, sdiv, x, y);
+	rz_il_op_new_2(RZIL_OP_SDIV, RzILOpArgsSdiv, sdiv, x, y);
 	return ret;
 }
 
@@ -379,7 +379,7 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_sdiv(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp 
 RZ_API RZ_OWN RzILOp *rz_il_op_new_smod(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y) {
 	rz_return_val_if_fail(x && y, NULL);
 	RzILOp *ret;
-	rz_il_op_new_2(RZIL_OP_MOD, RzILOpSmod, smod, x, y);
+	rz_il_op_new_2(RZIL_OP_MOD, RzILOpArgsSmod, smod, x, y);
 	return ret;
 }
 
@@ -391,7 +391,7 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_smod(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp 
 RZ_API RZ_OWN RzILOp *rz_il_op_new_mod(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y) {
 	rz_return_val_if_fail(x && y, NULL);
 	RzILOp *ret;
-	rz_il_op_new_2(RZIL_OP_SMOD, RzILOpMod, mod, x, y);
+	rz_il_op_new_2(RZIL_OP_SMOD, RzILOpArgsMod, mod, x, y);
 	return ret;
 }
 
@@ -403,7 +403,7 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_mod(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *
 RZ_API RZ_OWN RzILOp *rz_il_op_new_log_and(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y) {
 	rz_return_val_if_fail(x && y, NULL);
 	RzILOp *ret;
-	rz_il_op_new_2(RZIL_OP_LOGAND, RzILOpLogand, logand, x, y);
+	rz_il_op_new_2(RZIL_OP_LOGAND, RzILOpArgsLogand, logand, x, y);
 	return ret;
 }
 
@@ -415,7 +415,7 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_log_and(RZ_NONNULL RzILOp *x, RZ_NONNULL RzIL
 RZ_API RZ_OWN RzILOp *rz_il_op_new_log_or(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y) {
 	rz_return_val_if_fail(x && y, NULL);
 	RzILOp *ret;
-	rz_il_op_new_2(RZIL_OP_LOGOR, RzILOpLogor, logor, x, y);
+	rz_il_op_new_2(RZIL_OP_LOGOR, RzILOpArgsLogor, logor, x, y);
 	return ret;
 }
 
@@ -427,7 +427,7 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_log_or(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILO
 RZ_API RZ_OWN RzILOp *rz_il_op_new_log_xor(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y) {
 	rz_return_val_if_fail(x && y, NULL);
 	RzILOp *ret;
-	rz_il_op_new_2(RZIL_OP_LOGXOR, RzILOpLogxor, logxor, x, y);
+	rz_il_op_new_2(RZIL_OP_LOGXOR, RzILOpArgsLogxor, logxor, x, y);
 	return ret;
 }
 
@@ -439,7 +439,7 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_log_xor(RZ_NONNULL RzILOp *x, RZ_NONNULL RzIL
 RZ_API RZ_OWN RzILOp *rz_il_op_new_shiftl(RZ_NONNULL RzILOp *fill_bit, RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y) {
 	rz_return_val_if_fail(fill_bit && x && y, NULL);
 	RzILOp *ret;
-	rz_il_op_new_3(RZIL_OP_SHIFTL, RzILOpShiftLeft, shiftl, fill_bit, x, y);
+	rz_il_op_new_3(RZIL_OP_SHIFTL, RzILOpArgsShiftLeft, shiftl, fill_bit, x, y);
 	return ret;
 }
 
@@ -451,7 +451,7 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_shiftl(RZ_NONNULL RzILOp *fill_bit, RZ_NONNUL
 RZ_API RZ_OWN RzILOp *rz_il_op_new_shiftr(RZ_NONNULL RzILOp *fill_bit, RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y) {
 	rz_return_val_if_fail(fill_bit && x && y, NULL);
 	RzILOp *ret;
-	rz_il_op_new_3(RZIL_OP_SHIFTR, RzILOpShiftRight, shiftr, fill_bit, x, y);
+	rz_il_op_new_3(RZIL_OP_SHIFTR, RzILOpArgsShiftRight, shiftr, fill_bit, x, y);
 	return ret;
 }
 
@@ -461,7 +461,7 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_shiftr(RZ_NONNULL RzILOp *fill_bit, RZ_NONNUL
 RZ_API RZ_OWN RzILOp *rz_il_op_new_append(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y) {
 	rz_return_val_if_fail(x && y, NULL);
 	RzILOp *ret;
-	rz_il_op_new_2(RZIL_OP_APPEND, RzILOpAppend, append, x, y);
+	rz_il_op_new_2(RZIL_OP_APPEND, RzILOpArgsAppend, append, x, y);
 	return ret;
 }
 
@@ -480,7 +480,7 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_nop(RZ_NONNULL RzILOp *eff) {
 RZ_API RZ_OWN RzILOp *rz_il_op_new_set(RZ_NONNULL const char *v, RZ_NONNULL RzILOp *x) {
 	rz_return_val_if_fail(v && x, NULL);
 	RzILOp *ret;
-	rz_il_op_new_2(RZIL_OP_SET, RzILOpSet, set, v, x);
+	rz_il_op_new_2(RZIL_OP_SET, RzILOpArgsSet, set, v, x);
 	return ret;
 }
 
@@ -493,7 +493,7 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_set(RZ_NONNULL const char *v, RZ_NONNULL RzIL
 RZ_API RZ_OWN RzILOp *rz_il_op_new_let(RZ_NONNULL const char *v, RZ_NONNULL RzILOp *x, bool mut) {
 	rz_return_val_if_fail(v && x, NULL);
 	RzILOp *ret;
-	rz_il_op_new_3(RZIL_OP_LET, RzILOpLet, let, v, x, mut);
+	rz_il_op_new_3(RZIL_OP_LET, RzILOpArgsLet, let, v, x, mut);
 	return ret;
 }
 
@@ -505,7 +505,7 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_let(RZ_NONNULL const char *v, RZ_NONNULL RzIL
 RZ_API RZ_OWN RzILOp *rz_il_op_new_jmp(RZ_NONNULL RzILOp *dst) {
 	rz_return_val_if_fail(dst, NULL);
 	RzILOp *ret;
-	rz_il_op_new_1(RZIL_OP_JMP, RzILOpJmp, jmp, dst);
+	rz_il_op_new_1(RZIL_OP_JMP, RzILOpArgsJmp, jmp, dst);
 	return ret;
 }
 
@@ -517,7 +517,7 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_jmp(RZ_NONNULL RzILOp *dst) {
 RZ_API RZ_OWN RzILOp *rz_il_op_new_goto(RZ_NONNULL const char *lbl) {
 	rz_return_val_if_fail(lbl, NULL);
 	RzILOp *ret;
-	rz_il_op_new_1(RZIL_OP_GOTO, RzILOpGoto, goto_, lbl);
+	rz_il_op_new_1(RZIL_OP_GOTO, RzILOpArgsGoto, goto_, lbl);
 	return ret;
 }
 
@@ -529,7 +529,7 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_goto(RZ_NONNULL const char *lbl) {
 RZ_API RZ_OWN RzILOp *rz_il_op_new_seq(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *y) {
 	rz_return_val_if_fail(x && y, NULL);
 	RzILOp *ret;
-	rz_il_op_new_2(RZIL_OP_SEQ, RzILOpSeq, seq, x, y);
+	rz_il_op_new_2(RZIL_OP_SEQ, RzILOpArgsSeq, seq, x, y);
 	return ret;
 }
 
@@ -541,7 +541,7 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_seq(RZ_NONNULL RzILOp *x, RZ_NONNULL RzILOp *
 RZ_API RZ_OWN RzILOp *rz_il_op_new_blk(RZ_NONNULL RzILOp *data_eff, RZ_NONNULL RzILOp *ctrl_eff) {
 	rz_return_val_if_fail(data_eff && ctrl_eff, NULL);
 	RzILOp *ret;
-	rz_il_op_new_2(RZIL_OP_BLK, RzILOpBlk, blk, data_eff, ctrl_eff);
+	rz_il_op_new_2(RZIL_OP_BLK, RzILOpArgsBlk, blk, data_eff, ctrl_eff);
 	return ret;
 }
 
@@ -553,7 +553,7 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_blk(RZ_NONNULL RzILOp *data_eff, RZ_NONNULL R
 RZ_API RZ_OWN RzILOp *rz_il_op_new_repeat(RZ_NONNULL RzILOp *condition, RZ_NONNULL RzILOp *data_eff) {
 	rz_return_val_if_fail(condition && data_eff, NULL);
 	RzILOp *ret;
-	rz_il_op_new_2(RZIL_OP_REPEAT, RzILOpRepeat, repeat, condition, data_eff);
+	rz_il_op_new_2(RZIL_OP_REPEAT, RzILOpArgsRepeat, repeat, condition, data_eff);
 	return ret;
 }
 
@@ -565,47 +565,47 @@ RZ_API RZ_OWN RzILOp *rz_il_op_new_repeat(RZ_NONNULL RzILOp *condition, RZ_NONNU
 RZ_API RZ_OWN RzILOp *rz_il_op_new_branch(RZ_NONNULL RzILOp *condition, RZ_NULLABLE RzILOp *true_eff, RZ_NULLABLE RzILOp *false_eff) {
 	rz_return_val_if_fail(condition && (true_eff || false_eff), NULL);
 	RzILOp *ret;
-	rz_il_op_new_3(RZIL_OP_BRANCH, RzILOpBranch, branch, condition, true_eff, false_eff);
+	rz_il_op_new_3(RZIL_OP_BRANCH, RzILOpArgsBranch, branch, condition, true_eff, false_eff);
 	return ret;
 }
 
 /**
- * \brief Helper to create RzILOpLoad
+ * \brief Helper to create RzILOpArgsLoad
  */
 RZ_API RZ_OWN RzILOp *rz_il_op_new_load(RzILMemIndex mem, RZ_NONNULL RzILOp *key) {
 	rz_return_val_if_fail(key, NULL);
 	RzILOp *ret;
-	rz_il_op_new_2(RZIL_OP_LOAD, RzILOpLoad, load, mem, key);
+	rz_il_op_new_2(RZIL_OP_LOAD, RzILOpArgsLoad, load, mem, key);
 	return ret;
 }
 
 /**
- * \brief Helper to create RzILOpStoreW
+ * \brief Helper to create RzILOpArgsStoreW
  */
 RZ_API RZ_OWN RzILOp *rz_il_op_new_store(RzILMemIndex mem, RZ_NONNULL RzILOp *key, RZ_NONNULL RzILOp *value) {
 	rz_return_val_if_fail(key && value, NULL);
 	RzILOp *ret;
-	rz_il_op_new_3(RZIL_OP_STORE, RzILOpStore, store, mem, key, value);
+	rz_il_op_new_3(RZIL_OP_STORE, RzILOpArgsStore, store, mem, key, value);
 	return ret;
 }
 
 /**
- * \brief Helper to create RzILOpLoadW
+ * \brief Helper to create RzILOpArgsLoadW
  */
 RZ_API RZ_OWN RzILOp *rz_il_op_new_loadw(RzILMemIndex mem, RZ_NONNULL RzILOp *key, ut32 n_bits) {
 	rz_return_val_if_fail(key && n_bits, NULL);
 	RzILOp *ret;
-	rz_il_op_new_3(RZIL_OP_LOADW, RzILOpLoadW, loadw, mem, key, n_bits);
+	rz_il_op_new_3(RZIL_OP_LOADW, RzILOpArgsLoadW, loadw, mem, key, n_bits);
 	return ret;
 }
 
 /**
- * \brief Helper to create RzILOpStoreW
+ * \brief Helper to create RzILOpArgsStoreW
  */
 RZ_API RZ_OWN RzILOp *rz_il_op_new_storew(RzILMemIndex mem, RZ_NONNULL RzILOp *key, RZ_NONNULL RzILOp *value) {
 	rz_return_val_if_fail(key && value, NULL);
 	RzILOp *ret;
-	rz_il_op_new_3(RZIL_OP_STOREW, RzILOpStoreW, storew, mem, key, value);
+	rz_il_op_new_3(RZIL_OP_STOREW, RzILOpArgsStoreW, storew, mem, key, value);
 	return ret;
 }
 

@@ -105,7 +105,7 @@ void *rz_il_handler_nop(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 
 void *rz_il_handler_set(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
-	RzILOpSet *set_op = op->op.set;
+	RzILOpArgsSet *set_op = op->op.set;
 	rz_il_set(vm, set_op->v, false, true, rz_il_evaluate_val(vm, set_op->x, type));
 	*type = RZIL_OP_ARG_EFF;
 	return NULL;
@@ -113,7 +113,7 @@ void *rz_il_handler_set(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 
 void *rz_il_handler_let(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
-	RzILOpLet *let_op = op->op.let;
+	RzILOpArgsLet *let_op = op->op.let;
 	rz_il_set(vm, let_op->v, true, let_op->mut, rz_il_evaluate_val(vm, let_op->x, type));
 	*type = RZIL_OP_ARG_EFF;
 	return NULL;
@@ -134,7 +134,7 @@ void *rz_il_handler_jmp(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 
 void *rz_il_handler_goto(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
-	RzILOpGoto *op_goto = op->op.goto_;
+	RzILOpArgsGoto *op_goto = op->op.goto_;
 	const char *lname = op_goto->lbl;
 	RzILEffectLabel *label = rz_il_vm_find_label_by_name(vm, lname);
 	if (label->type == EFFECT_LABEL_SYSCALL || label->type == EFFECT_LABEL_HOOK) {
@@ -149,7 +149,7 @@ void *rz_il_handler_goto(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 
 void *rz_il_handler_seq(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
-	RzILOpSeq *op_seq = op->op.seq;
+	RzILOpArgsSeq *op_seq = op->op.seq;
 	rz_il_evaluate_effect(vm, op_seq->x, type);
 	rz_il_evaluate_effect(vm, op_seq->y, type);
 	*type = RZIL_OP_ARG_EFF;
@@ -159,7 +159,7 @@ void *rz_il_handler_seq(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 void *rz_il_handler_branch(RzILVM *vm, RzILOp *op, RzILOpArgType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 
-	RzILOpBranch *op_branch = op->op.branch;
+	RzILOpArgsBranch *op_branch = op->op.branch;
 
 	RzILBool *condition = rz_il_evaluate_bool(vm, op_branch->condition, type);
 	if (condition->b) {
