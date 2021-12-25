@@ -153,13 +153,13 @@ RzPVector *bf_llimit(RzILVM *vm, BfContext *ctx, ut64 id, ut64 addr) {
 	free(to_free);
 
 	RzILOpBitVector *var = rz_il_op_new_var("ptr");
-	RzILOpBitVector *load = rz_il_op_new_load(0, var);
+	RzILOpBool *cond = rz_il_op_new_non_zero(rz_il_op_new_load(0, var));
 
 	// goto ]
 	RzILOpEffect *goto_ = rz_il_op_new_goto(dst_label->label_id);
 
 	// branch if (load mem (var ptr)) is false then goto ]
-	RzILOpEffect *branch = rz_il_op_new_branch(load, NULL, goto_);
+	RzILOpEffect *branch = rz_il_op_new_branch(cond, NULL, goto_);
 
 	// perform
 	return rz_il_make_oplist(1, branch);
@@ -193,13 +193,13 @@ RzPVector *bf_rlimit(RzILVM *vm, BfContext *ctx, ut64 id, ut64 addr) {
 	dst_label = rz_il_vm_find_label_by_name(vm, dst_lbl_name);
 
 	RzILOpBitVector *var = rz_il_op_new_var("ptr");
-	RzILOpBitVector *load = rz_il_op_new_load(0, var);
+	RzILOpBool *cond = rz_il_op_new_non_zero(rz_il_op_new_load(0, var));
 
 	// goto [
 	RzILOpEffect *goto_ = rz_il_op_new_goto(dst_label->label_id);
 
 	// branch if (load mem (var ptr)) is true then goto ]
-	RzILOpEffect *branch = rz_il_op_new_branch(load, goto_, NULL);
+	RzILOpEffect *branch = rz_il_op_new_branch(cond, goto_, NULL);
 
 	free(to_free);
 	return rz_il_make_oplist(1, branch);

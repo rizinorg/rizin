@@ -254,6 +254,24 @@ RZ_API RZ_OWN RzILOpBool *rz_il_op_new_lsb(RZ_NONNULL RzILOpBitVector *bv) {
 }
 
 /**
+ *  [IS_ZERO] is_zero x holds if x is a bitvector of all zeros.
+ */
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_is_zero(RZ_NONNULL RzILOpPure *bv) {
+	rz_return_val_if_fail(bv, NULL);
+	RzILOpBool *ret;
+	rz_il_op_new_1(Bool, RZIL_OP_IS_ZERO, RzILOpArgsIsZero, is_zero, bv);
+	return ret;
+}
+
+/**
+ *  [NON_ZERO] is_zero x holds if x is a bitvector of all zeros.
+ */
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_non_zero(RZ_NONNULL RzILOpPure *bv) {
+	rz_return_val_if_fail(bv, NULL);
+	return rz_il_op_new_bool_inv(rz_il_op_new_is_zero(bv));
+}
+
+/**
  *  [EQ] eq x y binary predicate for bitwise equality
  */
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_eq(RZ_NONNULL RzILOpBitVector *x, RZ_NONNULL RzILOpBitVector *y) {
@@ -676,6 +694,9 @@ RZ_API void rz_il_op_pure_free(RZ_NULLABLE RzILOpPure *op) {
 		break;
 	case RZIL_OP_LSB:
 		rz_il_op_free_1(pure, lsb, bv);
+		break;
+	case RZIL_OP_IS_ZERO:
+		rz_il_op_free_1(pure, is_zero, bv);
 		break;
 	case RZIL_OP_NEG:
 		rz_il_op_free_1(pure, neg, bv);

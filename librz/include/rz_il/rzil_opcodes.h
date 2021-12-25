@@ -53,16 +53,18 @@ typedef struct rz_il_op_args_bv_t {
 } RzILOpArgsBv;
 
 /**
- *  \brief op structure for `msb` and `lsb` ('s bitv -> bool)
+ *  \brief op structure for `'s bitv -> bool`
  *  [MSB] msb x is the most significant bit of x.
  *  [LSB] lsb x is the least significant bit of x.
+ *  [IS_ZERO] is_zero x holds if x is a bitvector of all zeros.
  */
-struct rz_il_op_args_msb_lsb_t {
+struct rz_il_op_args_un_bv_b_t {
 	RzILOpBitVector *bv;
 };
 
-typedef struct rz_il_op_args_msb_lsb_t RzILOpArgsMsb;
-typedef struct rz_il_op_args_msb_lsb_t RzILOpArgsLsb;
+typedef struct rz_il_op_args_un_bv_b_t RzILOpArgsMsb;
+typedef struct rz_il_op_args_un_bv_b_t RzILOpArgsLsb;
+typedef struct rz_il_op_args_un_bv_b_t RzILOpArgsIsZero;
 
 /**
  *  \brief op structure for `neg` ('s bitv -> 's bitv)
@@ -357,6 +359,7 @@ typedef enum {
 	RZIL_OP_BITV,
 	RZIL_OP_MSB,
 	RZIL_OP_LSB,
+	RZIL_OP_IS_ZERO,
 	RZIL_OP_NEG,
 	RZIL_OP_LOGNOT,
 	RZIL_OP_ADD,
@@ -409,6 +412,7 @@ struct rz_il_op_pure_t {
 		RzILOpArgsBv *bitv;
 		RzILOpArgsMsb *msb;
 		RzILOpArgsLsb *lsb;
+		RzILOpArgsIsZero *is_zero;
 		RzILOpArgsEq *eq;
 		RzILOpArgsUle *ule;
 		RzILOpArgsSle *sle;
@@ -450,6 +454,8 @@ RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_bitv_from_ut64(ut32 length, ut64 num
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_bitv_from_st64(ut32 length, st64 number);
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_msb(RZ_NONNULL RzILOpPure *val);
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_lsb(RZ_NONNULL RzILOpPure *val);
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_is_zero(RZ_NONNULL RzILOpPure *bv);
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_non_zero(RZ_NONNULL RzILOpPure *bv);
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_eq(RZ_NONNULL RzILOpPure *x, RZ_NONNULL RzILOpPure *y);
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_ule(RZ_NONNULL RzILOpPure *x, RZ_NONNULL RzILOpPure *y);
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_sle(RZ_NONNULL RzILOpPure *x, RZ_NONNULL RzILOpPure *y);

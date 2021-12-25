@@ -238,6 +238,10 @@ static void il_opdmp_lsb(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 	il_op_param_1("lsb", op->op.lsb, bv);
 }
 
+static void il_opdmp_is_zero(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
+	il_op_param_1("is_zero", op->op.lsb, bv);
+}
+
 static void il_opdmp_neg(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 	il_op_param_1("neg", op->op.neg, bv);
 }
@@ -292,6 +296,10 @@ static void il_opdmp_shiftr(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 
 static void il_opdmp_shiftl(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 	il_op_param_3("shiftl", op->op.shiftl, pure, x, pure, y, pure, fill_bit);
+}
+
+static void il_opdmp_eq(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
+	il_op_param_2("eq", op->op.ule, pure, x, pure, y);
 }
 
 static void il_opdmp_sle(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
@@ -480,6 +488,9 @@ static void il_op_pure_resolve(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 	case RZIL_OP_LSB:
 		il_opdmp_lsb(op, sb, pj);
 		return;
+	case RZIL_OP_IS_ZERO:
+		il_opdmp_is_zero(op, sb, pj);
+		return;
 	case RZIL_OP_NEG:
 		il_opdmp_neg(op, sb, pj);
 		return;
@@ -521,6 +532,9 @@ static void il_op_pure_resolve(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 		return;
 	case RZIL_OP_SHIFTL:
 		il_opdmp_shiftl(op, sb, pj);
+		return;
+	case RZIL_OP_EQ:
+		il_opdmp_eq(op, sb, pj);
 		return;
 	case RZIL_OP_SLE:
 		il_opdmp_sle(op, sb, pj);

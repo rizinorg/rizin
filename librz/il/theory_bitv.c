@@ -29,6 +29,18 @@ void *rz_il_handler_lsb(RzILVM *vm, RzILOpBitVector *op, RzILPureType *type) {
 	return result;
 }
 
+void *rz_il_handler_is_zero(RzILVM *vm, RzILOpBitVector *op, RzILPureType *type) {
+	rz_return_val_if_fail(vm && op && type, NULL);
+
+	RzILOpArgsLsb *op_lsb = op->op.lsb;
+	RzBitVector *bv = rz_il_evaluate_bitv(vm, op_lsb->bv);
+	RzILBool *result = bv ? rz_il_bool_new(rz_bv_is_zero_vector(bv)) : NULL;
+	rz_bv_free(bv);
+
+	*type = RZ_IL_PURE_TYPE_BOOL;
+	return result;
+}
+
 void *rz_il_handler_neg(RzILVM *vm, RzILOpBitVector *op, RzILPureType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 
