@@ -138,8 +138,8 @@ files: `cmd_descs.c` and `cmd_descs.h`.
 
 ## Where is the handler of command `x`?
 
-You can use the script `librz/core/cmd_descs/rzshell_find_handler.py` to get the
-name of the function handling the specified command.
+You can use the script `sys/rzshell_which.py` to get the name of the function
+handling the specified command.
 
 If that doesn't work, please report the problem to us! However, you can still
 find the handler yourself by looking at the file
