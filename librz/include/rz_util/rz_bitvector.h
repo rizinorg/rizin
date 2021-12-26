@@ -71,6 +71,7 @@ RZ_API RZ_OWN RzBitVector *rz_bv_smod(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBi
 
 RZ_API bool rz_bv_msb(RZ_NONNULL RzBitVector *bv);
 RZ_API bool rz_bv_lsb(RZ_NONNULL RzBitVector *bv);
+RZ_API bool rz_bv_eq(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y);
 RZ_API bool rz_bv_ule(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y);
 RZ_API bool rz_bv_sle(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y);
 // some convert functions

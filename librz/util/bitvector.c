@@ -1033,6 +1033,14 @@ RZ_API bool rz_bv_is_zero_vector(RZ_NONNULL RzBitVector *x) {
 }
 
 /**
+ * Check if x == y
+ */
+RZ_API bool rz_bv_eq(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
+	rz_return_val_if_fail(x && y, false);
+	return bv_unsigned_cmp(x, y) == 0;
+}
+
+/**
  * Check if x <= y (as unsigned value)
  * \param x RzBitVector, operand
  * \param y RzBitVector, operand
