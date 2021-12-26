@@ -24,14 +24,14 @@ typedef enum {
 typedef struct rz_il_vm_t RzILVM;
 
 /**
- * \brief Evaluation callack for a single pure opcode
+ * \brief Evaluation callback for a single pure opcode
  * \param type when returning a non-null value, this must be set to the respective type.
  * \return The evaluated value of the type indicated by *type, or NULL if an error occured and the execution should be aborted
  */
 typedef void *(*RzILOpPureHandler)(RzILVM *vm, RzILOpPure *op, RZ_NONNULL RZ_OUT RzILPureType *type);
 
 /**
- * \brief Evaluation (execution) callack for a single effect opcode
+ * \brief Evaluation (execution) callback for a single effect opcode
  * \return false if an error occured and the execution should be aborted
  */
 typedef bool (*RzILOpEffectHandler)(RzILVM *vm, RzILOpEffect *op);
