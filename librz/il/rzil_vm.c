@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2021 Florian Märkl <info@florianmaerkl.de>
 // SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
@@ -404,12 +405,12 @@ RZ_API void rz_il_vm_store_opcodes_to_addr(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzB
  */
 RZ_API RZ_OWN RzPVector *rz_il_make_oplist(ut32 num, ...) {
 	va_list args;
-	RzILOp *cur_op;
-	RzPVector *oplist = rz_pvector_new((RzPVectorFree)rz_il_op_free);
+	RzILOpEffect *cur_op;
+	RzPVector *oplist = rz_pvector_new((RzPVectorFree)rz_il_op_effect_free);
 
 	va_start(args, num);
 	for (ut32 i = 0; i < num; ++i) {
-		cur_op = va_arg(args, RzILOp *);
+		cur_op = va_arg(args, RzILOpEffect *);
 		rz_pvector_push(oplist, cur_op);
 	}
 	va_end(args);
@@ -417,206 +418,108 @@ RZ_API RZ_OWN RzPVector *rz_il_make_oplist(ut32 num, ...) {
 	return oplist;
 }
 
-static RzBitVector *bool_to_bitv(RzILBool *b) {
-	RzBitVector *result = rz_bv_new_from_ut64(1, b->b ? 1 : 0);
-	rz_il_bool_free(b);
-	return result;
+static void *eval_pure(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpPure *op, RZ_NONNULL RzILPureType *type) {
+	rz_return_val_if_fail(vm && op && type, NULL);
+	RzILOpPureHandler handler = vm->op_handler_pure_table[op->code];
+	rz_return_val_if_fail(handler, NULL);
+	return handler(vm, op, type);
 }
 
-static RzILBool *bitv_to_bool(RzBitVector *bitv) {
-	bool value = !rz_bv_is_zero_vector(bitv);
-	rz_bv_free(bitv);
-	return rz_il_bool_new(value);
+static bool eval_effect(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpEffect *op) {
+	rz_return_val_if_fail(vm && op, NULL);
+	RzILOpEffectHandler handler = vm->op_handler_effect_table[op->code];
+	rz_return_val_if_fail(handler, NULL);
+	return handler(vm, op);
 }
 
-static RzBitVector *val_to_bitv(RzILVal *val) {
-	RzBitVector *ret = NULL;
-	if (val->type == RZIL_VAR_TYPE_BOOL) {
-		ret = bool_to_bitv(val->data.b);
-		val->data.b = NULL;
-	} else if (val->type == RZIL_VAR_TYPE_BV) {
-		ret = val->data.bv;
-		val->data.bv = NULL;
-	} else {
-		RZ_LOG_ERROR("RzIL: Expected bool or bitvector, but unknown type detected (returning zero)\n");
-		ret = rz_bv_new_zero(1);
+static const char *pure_type_name(RzILPureType type) {
+	switch (type) {
+	case RZ_IL_PURE_TYPE_BITV:
+		return "bitvector";
+	case RZ_IL_PURE_TYPE_BOOL:
+		return "bool";
+	default:
+		return "unknown";
 	}
-	rz_il_value_free(val);
-	return ret;
-}
-
-static RzILBool *val_to_bool(RzILVal *val) {
-	RzILBool *ret = NULL;
-	if (val->type == RZIL_VAR_TYPE_BV) {
-		ret = bitv_to_bool(val_to_bitv(val));
-		val = NULL;
-	} else if (val->type == RZIL_VAR_TYPE_BOOL) {
-		ret = val->data.b;
-		val->data.b = NULL;
-	} else {
-		RZ_LOG_ERROR("RzIL: Expected bool or bitvector, but unknown type detected (returning false)\n");
-		ret = rz_il_bool_new(false);
-	}
-	rz_il_value_free(val);
-	return ret;
 }
 
 /**
- * Evaluate the an expression (Opcode) and return a bitvector value
- * This function will automatically convert valid value(Bool/BitVector/RzILVal) into bitv
- * to ensure caller to get a bitvector type value.
- * \param vm, RzILVM*, pointer to RzILVM
- * \param op, RzILOp* Pointer to opcode
- * \param type, RzILOpArgType*, a pointer to store type info for error-checking
- * \return bitv, value in bitvector
+ * Evaluate the given pure op, asserting it returns a bitvector.
+ * \return value in bitvector, or NULL if an error occurred (e.g. the op returned some other type)
  */
-RZ_API RZ_OWN RzBitVector *rz_il_evaluate_bitv(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOp *op, RZ_NONNULL RzILOpArgType *type) {
-	rz_return_val_if_fail(vm && op && type, NULL);
+RZ_API RZ_NULLABLE RZ_OWN RzBitVector *rz_il_evaluate_bitv(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpBitVector *op) {
+	rz_return_val_if_fail(vm && op, NULL);
 	// check type and auto convertion between bitv/bool/val
-	void *input = rz_il_parse_op_root(vm, op, type);
-	RzILOpArgType t = *type;
-
-	switch (t) {
-	case RZIL_OP_ARG_BITV:
-		return input;
-	case RZIL_OP_ARG_BOOL:
-		*type = RZIL_OP_ARG_BITV;
-		return bool_to_bitv(input);
-	case RZIL_OP_ARG_VAL:
-		*type = RZIL_OP_ARG_BITV;
-		return val_to_bitv(input);
-	case RZIL_OP_ARG_EFF:
-	case RZIL_OP_ARG_MEM:
-	default:
-		RZ_LOG_ERROR("RzIL: unknown RzILOpArgType bitvector type\n");
-		break;
+	RzILPureType type = -1;
+	void *res = eval_pure(vm, op, &type);
+	if (!res) {
+		// propagate error
+		return NULL;
 	}
-
-	return rz_bv_new_zero(1);
+	if (type != RZ_IL_PURE_TYPE_BITV) {
+		RZ_LOG_ERROR("RzIL: type error: expected bitvector, got %s\n", pure_type_name(type));
+		return NULL;
+	}
+	return res;
 }
 
 /**
- * Evaluate the an expression (Opcode) and return a bool value
- * This function will automatically convert valid value(Bool/BitVector/RzILVal) into bool
- * to ensure caller to get a bool type value.
- * \param vm, RzILVM*, pointer to RzILVM
- * \param op, RzILOp* Pointer to opcode
- * \param type, RzILOpArgType*, a pointer to store type info for error-checking
- * \return bool, Bool*, the value of this expression
+ * Evaluate the given pure op, asserting it returns a bool.
+ * \return value in bool, or NULL if an error occurred (e.g. the op returned some other type)
  */
-RZ_API RZ_OWN RzILBool *rz_il_evaluate_bool(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOp *op, RZ_NONNULL RzILOpArgType *type) {
-	rz_return_val_if_fail(vm && op && type, NULL);
-	void *result = rz_il_parse_op_root(vm, op, type);
-	RzILOpArgType t = *type;
-
-	// check if type is bitv
-	// else, convert to bitv if possible
-	// else report error
-	switch (t) {
-	case RZIL_OP_ARG_BITV:
-		*type = RZIL_OP_ARG_BOOL;
-		return bitv_to_bool(result);
-	case RZIL_OP_ARG_BOOL:
-		return result;
-	case RZIL_OP_ARG_VAL:
-		*type = RZIL_OP_ARG_BOOL;
-		return val_to_bool(result);
-	case RZIL_OP_ARG_EFF:
-	case RZIL_OP_ARG_MEM:
-	default:
-		RZ_LOG_ERROR("RzIL: unknown RzILOpArgType bool type\n");
-		break;
+RZ_API RZ_NULLABLE RZ_OWN RzILBool *rz_il_evaluate_bool(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpBool *op) {
+	rz_return_val_if_fail(vm && op, NULL);
+	// check type and auto convertion between bitv/bool/val
+	RzILPureType type = -1;
+	void *res = eval_pure(vm, op, &type);
+	if (!res) {
+		// propagate error
+		return NULL;
 	}
-
-	return rz_il_bool_new(false);
+	if (type != RZ_IL_PURE_TYPE_BOOL) {
+		RZ_LOG_ERROR("RzIL: type error: expected bool, got %s\n", pure_type_name(type));
+		return NULL;
+	}
+	return res;
 }
 
 /**
- * Evaluate the an expression (Opcode) and return a RzILVal
- * This function will automatically convert valid value (Bitv/Bool/RzILVal) into RzILVal
- * to ensure caller to get a RzILVal type value.
- * \param vm, RzILVM*, pointer to RzILVM
- * \param op, RzILOp* Pointer to opcode
- * \param type, RzILOpArgType*, a pointer to store type info for error-checking
+ * Evaluate the given pure op, returning the resulting bool or bitvector.
  * \return val, RzILVal*, RzILVal type value
  */
-RZ_API RZ_OWN RzILVal *rz_il_evaluate_val(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOp *op, RZ_NONNULL RzILOpArgType *type) {
-	rz_return_val_if_fail(vm && op && type, NULL);
-	void *result = rz_il_parse_op_root(vm, op, type);
-	RzILOpArgType t = *type;
-
-	// check if type is bitv
-	// else, convert to bitv if possible
-	// else report error
-	switch (t) {
-	case RZIL_OP_ARG_BITV:
-		*type = RZIL_OP_ARG_VAL;
-		return rz_il_value_new_bitv(result);
-	case RZIL_OP_ARG_BOOL:
-		*type = RZIL_OP_ARG_VAL;
-		return rz_il_value_new_bool(result);
-	case RZIL_OP_ARG_VAL:
-		return result;
-	case RZIL_OP_ARG_EFF:
-	case RZIL_OP_ARG_MEM:
-	default:
-		RZ_LOG_ERROR("RzIL: unknown RzILOpArgType value type\n");
-		break;
+RZ_API RZ_NULLABLE RZ_OWN RzILVal *rz_il_evaluate_val(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpPure *op) {
+	rz_return_val_if_fail(vm && op, NULL);
+	// check type and auto convertion between bitv/bool/val
+	RzILPureType type = -1;
+	void *res = eval_pure(vm, op, &type);
+	if (!res) {
+		// propagate error
+		return NULL;
 	}
-
-	return rz_il_value_new_unk();
-}
-
-/**
- * Evaluate the an expression (Opcode) and return a effect
- * This function will automatically convert valid value into effect
- * to ensure caller to get an effect type value.
- * \param vm, RzILVM*, pointer to RzILVM
- * \param op, RzILOp* Pointer to opcode
- * \param type, RzILOpArgType*, a pointer to store type info for error-checking
- * \return effect, RzILEffect*, expression value
- */
-RZ_API RZ_OWN void rz_il_evaluate_effect(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOp *op, RZ_NONNULL RzILOpArgType *type) {
-	rz_return_if_fail(vm && op && type);
-	void *result = rz_il_parse_op_root(vm, op, type);
-	RzILOpArgType t = *type;
-
-	// check if type is bitv
-	// else, convert to bitv if possible
-	// else report error
-	switch (t) {
-	case RZIL_OP_ARG_BITV:
-		rz_bv_free(result);
-		break;
-	case RZIL_OP_ARG_BOOL:
-		rz_il_bool_free(result);
-		break;
-	case RZIL_OP_ARG_VAL:
-		rz_il_value_free(result);
-		break;
-	case RZIL_OP_ARG_MEM:
-	case RZIL_OP_ARG_EFF:
-		break;
+	switch (type) {
+	case RZ_IL_PURE_TYPE_BOOL:
+		return rz_il_value_new_bool(res);
+	case RZ_IL_PURE_TYPE_BITV:
+		return rz_il_value_new_bitv(res);
 	default:
-		RZ_LOG_ERROR("RzIL: unknown RzILEffect type\n");
-		break;
+		RZ_LOG_ERROR("RzIL: type error: expected bitvector, got %s\n", pure_type_name(type));
+		return NULL;
 	}
 }
 
 /**
- * It invoke handler to execute an opcode (the root one)
- * during the execution, subroutines (handler) might use `evaluate_*` families
- * to evaluate sub expressions. And `evaluate_*` families will also invoke this
- * function to handle different opcodes. And thus this is a recursive function
- * \param vm, RzILVM*, pointer to RzILVM
- * \param root, RzILOp*, pointer to opcode
- * \param type, RzILOpArgType*, pointer to store the type info of root value
- * \return the value of root expression, the type info stored in RzILOpArgType type
+ * Evaluate the given pure op, returning the resulting value and its type.
  */
-// recursively parse and evaluate
-RZ_API RZ_OWN void *rz_il_parse_op_root(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOp *root, RZ_NONNULL RzILOpArgType *type) {
-	rz_return_val_if_fail(vm && root && type, NULL);
-	RzILOpHandler handler = vm->op_handler_table[root->code];
-	rz_return_val_if_fail(handler, NULL);
-	return handler(vm, root, type);
+RZ_API RZ_NULLABLE RZ_OWN RzILVal *rz_il_evaluate_pure(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpPure *op, RZ_NONNULL RzILPureType *type) {
+	rz_return_val_if_fail(vm && op, NULL);
+	return eval_pure(vm, op, type);
+}
+
+/**
+ * Evaluate (execute) the given effect op
+ * \return false if an error occured and the execution should be aborted
+ */
+RZ_API bool rz_il_evaluate_effect(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpEffect *op) {
+	rz_return_val_if_fail(vm && op, false);
+	return eval_effect(vm, op);
 }
