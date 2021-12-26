@@ -239,8 +239,8 @@ typedef struct rz_il_op_args_repeat_t {
  */
 typedef struct rz_il_op_args_branch_t {
 	RzILOpBool *condition;
-	RzILOpEffect *true_eff; ///< index of true effect, set to -1 means do nothing
-	RzILOpEffect *false_eff; ///< index of false effect, set to -1 means do nothing
+	RZ_NONNULL RzILOpEffect *true_eff; ///< effect for when condition evaluates to true
+	RZ_NONNULL RzILOpEffect *false_eff; ///< effect for when condition evaluates to false
 } RzILOpArgsBranch;
 
 /**

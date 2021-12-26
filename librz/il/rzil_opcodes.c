@@ -592,6 +592,12 @@ RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_repeat(RZ_NONNULL RzILOpBool *condition
 RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_branch(RZ_NONNULL RzILOpBool *condition, RZ_NULLABLE RzILOpEffect *true_eff, RZ_NULLABLE RzILOpEffect *false_eff) {
 	rz_return_val_if_fail(condition && (true_eff || false_eff), NULL);
 	RzILOpEffect *ret;
+	if (!true_eff) {
+		true_eff = rz_il_op_new_nop();
+	}
+	if (!false_eff) {
+		false_eff = rz_il_op_new_nop();
+	}
 	rz_il_op_new_3(Effect, RZIL_OP_BRANCH, RzILOpArgsBranch, branch, condition, true_eff, false_eff);
 	return ret;
 }
