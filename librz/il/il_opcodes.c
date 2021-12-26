@@ -269,7 +269,7 @@ RZ_API RZ_OWN RzILOpBool *rz_il_op_new_ule(RZ_NONNULL RzILOpBitVector *x, RZ_NON
 /**
  *  \brief op structure for sle/ule ('a bitv -> 'a bitv -> bool)
  *
- *  [SLE] sle x y binary predicate for singed less than or equal
+ *  [SLE] sle x y binary predicate for signed less than or equal
  */
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_sle(RZ_NONNULL RzILOpBitVector *x, RZ_NONNULL RzILOpBitVector *y) {
 	rz_return_val_if_fail(x && y, NULL);
@@ -323,7 +323,7 @@ RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_neg(RZ_NONNULL RzILOpBitVector *bv) 
 /**
  *  \brief op structure for `not` ('s bitv -> 's bitv)
  *
- *  neg x is one-complement unary minus
+ *  not x is one-complement unary minus
  */
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_log_not(RZ_NONNULL RzILOpBitVector *bv) {
 	rz_return_val_if_fail(bv, NULL);
