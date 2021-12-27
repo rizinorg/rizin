@@ -11,10 +11,9 @@
 extern "C" {
 #endif
 
-struct bool_t {
+typedef struct rz_il_bool_t {
 	bool b;
-};
-typedef struct bool_t RzILBool;
+} RzILBool;
 
 RZ_API RzILBool *rz_il_bool_new(bool true_or_false);
 RZ_API RzILBool *rz_il_bool_and(RzILBool *a, RzILBool *b);

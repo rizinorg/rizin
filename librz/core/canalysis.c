@@ -500,124 +500,6 @@ RZ_IPI void rz_core_analysis_bb_info_print(RzCore *core, RzAnalysisBlock *bb, ut
 	bb_info_print(core, fcn, bb, addr, state->mode, state->d.pj, state->d.t);
 }
 
-static bool blacklisted_word(char *name) {
-	const char *list[] = {
-		"__stack_chk_guard",
-		"__stderrp",
-		"__stdinp",
-		"__stdoutp",
-		"_DefaultRuneLocale"
-	};
-	int i;
-	for (i = 0; i < sizeof(list) / sizeof(list[0]); i++) {
-		if (strstr(name, list[i])) {
-			return true;
-		}
-	}
-	return false;
-}
-
-static char *analysis_fcn_autoname(RzCore *core, RzAnalysisFunction *fcn, int dump, int mode) {
-	int use_getopt = 0;
-	int use_isatty = 0;
-	PJ *pj = NULL;
-	char *do_call = NULL;
-	RzAnalysisXRef *xref;
-	RzListIter *iter;
-	RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
-	if (mode == 'j') {
-		// start a new JSON object
-		pj = pj_new();
-		pj_a(pj);
-	}
-	if (xrefs) {
-		rz_list_foreach (xrefs, iter, xref) {
-			RzFlagItem *f = rz_flag_get_i(core->flags, xref->to);
-			if (f) {
-				// If dump is true, print all strings referenced by the function
-				if (dump) {
-					// take only strings flags
-					if (!strncmp(f->name, "str.", 4)) {
-						if (mode == 'j') {
-							// add new json item
-							pj_o(pj);
-							pj_kn(pj, "addr", xref->from);
-							pj_kn(pj, "ref", xref->to);
-							pj_ks(pj, "flag", f->name);
-							pj_end(pj);
-						} else {
-							rz_cons_printf("0x%08" PFMT64x " 0x%08" PFMT64x " %s\n", xref->from, xref->to, f->name);
-						}
-					}
-				} else if (do_call) { // break if a proper autoname found and not in dump mode
-					break;
-				}
-				// enter only if a candidate name hasn't found yet
-				if (!do_call) {
-					if (blacklisted_word(f->name)) {
-						continue;
-					}
-					if (strstr(f->name, ".isatty")) {
-						use_isatty = 1;
-					}
-					if (strstr(f->name, ".getopt")) {
-						use_getopt = 1;
-					}
-					if (!strncmp(f->name, "method.", 7)) {
-						free(do_call);
-						do_call = strdup(f->name + 7);
-						continue;
-					}
-					if (!strncmp(f->name, "str.", 4)) {
-						free(do_call);
-						do_call = strdup(f->name + 4);
-						continue;
-					}
-					if (!strncmp(f->name, "sym.imp.", 8)) {
-						free(do_call);
-						do_call = strdup(f->name + 8);
-						continue;
-					}
-					if (!strncmp(f->name, "reloc.", 6)) {
-						free(do_call);
-						do_call = strdup(f->name + 6);
-						continue;
-					}
-				}
-			}
-		}
-		rz_list_free(xrefs);
-	}
-	if (mode == 'j') {
-		pj_end(pj);
-	}
-	if (pj) {
-		rz_cons_printf("%s\n", pj_string(pj));
-		pj_free(pj);
-	}
-	// TODO: append counter if name already exists
-	if (use_getopt) {
-		RzFlagItem *item = rz_flag_get(core->flags, "main");
-		free(do_call);
-		// if referenced from entrypoint. this should be main
-		if (item && item->offset == fcn->addr) {
-			return strdup("main"); // main?
-		}
-		return strdup("parse_args"); // main?
-	}
-	if (use_isatty) {
-		char *ret = rz_str_newf("sub.setup_tty_%s_%" PFMT64x, do_call, fcn->addr);
-		free(do_call);
-		return ret;
-	}
-	if (do_call) {
-		char *ret = rz_str_newf("sub.%s_%" PFMT64x, do_call, fcn->addr);
-		free(do_call);
-		return ret;
-	}
-	return NULL;
-}
-
 /*this only autoname those function that start with fcn.* or sym.func.* */
 RZ_API void rz_core_analysis_autoname_all_fcns(RzCore *core) {
 	RzListIter *it;
@@ -627,7 +509,7 @@ RZ_API void rz_core_analysis_autoname_all_fcns(RzCore *core) {
 		if (!strncmp(fcn->name, "fcn.", 4) || !strncmp(fcn->name, "sym.func.", 9)) {
 			RzFlagItem *item = rz_flag_get(core->flags, fcn->name);
 			if (item) {
-				char *name = analysis_fcn_autoname(core, fcn, 0, 0);
+				char *name = rz_core_analysis_function_autoname(core, fcn);
 				if (name) {
 					rz_flag_rename(core->flags, item, name);
 					free(fcn->name);
@@ -707,14 +589,114 @@ RZ_API void rz_core_analysis_autoname_all_golang_fcns(RzCore *core) {
 	}
 }
 
-/* suggest a name for the function at the address 'addr'.
- * If dump is true, every strings associated with the function is printed */
-RZ_API char *rz_core_analysis_fcn_autoname(RzCore *core, ut64 addr, int dump, int mode) {
-	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, 0);
-	if (fcn) {
-		return analysis_fcn_autoname(core, fcn, dump, mode);
+static bool blacklisted_word(const char *name) {
+	const char *list[] = {
+		"__stack_chk_guard",
+		"__stderrp",
+		"__stdinp",
+		"__stdoutp",
+		"_DefaultRuneLocale"
+	};
+	for (int i = 0; i < RZ_ARRAY_SIZE(list); i++) {
+		if (strstr(name, list[i])) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
+ * \brief Suggest a name for the function
+ */
+RZ_API RZ_OWN char *rz_core_analysis_function_autoname(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisFunction *fcn) {
+	rz_return_val_if_fail(core && fcn, NULL);
+
+	RzAnalysisXRef *xref;
+	RzListIter *iter;
+	bool use_getopt = false;
+	bool use_isatty = false;
+	char *do_call = NULL;
+	RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
+	rz_list_foreach (xrefs, iter, xref) {
+		RzFlagItem *f = rz_flag_get_i(core->flags, xref->to);
+		if (f && !blacklisted_word(f->name)) {
+			if (strstr(f->name, ".isatty")) {
+				use_isatty = 1;
+			}
+			if (strstr(f->name, ".getopt")) {
+				use_getopt = 1;
+			}
+			if (!strncmp(f->name, "method.", 7)) {
+				free(do_call);
+				do_call = strdup(f->name + 7);
+				break;
+			}
+			if (!strncmp(f->name, "str.", 4)) {
+				free(do_call);
+				do_call = strdup(f->name + 4);
+				break;
+			}
+			if (!strncmp(f->name, "sym.imp.", 8)) {
+				free(do_call);
+				do_call = strdup(f->name + 8);
+				break;
+			}
+			if (!strncmp(f->name, "reloc.", 6)) {
+				free(do_call);
+				do_call = strdup(f->name + 6);
+				break;
+			}
+		}
+	}
+	rz_list_free(xrefs);
+	// TODO: append counter if name already exists
+	if (use_getopt) {
+		RzFlagItem *item = rz_flag_get(core->flags, "main");
+		free(do_call);
+		// if referenced from entrypoint. this should be main
+		if (item && item->offset == fcn->addr) {
+			return strdup("main"); // main?
+		}
+		return strdup("parse_args"); // main?
+	}
+	if (use_isatty) {
+		char *ret = rz_str_newf("sub.setup_tty_%s_%" PFMT64x, do_call, fcn->addr);
+		free(do_call);
+		return ret;
+	}
+	if (do_call) {
+		char *ret = rz_str_newf("sub.%s_%" PFMT64x, do_call, fcn->addr);
+		free(do_call);
+		return ret;
 	}
 	return NULL;
+}
+
+/**
+ * \brief Print all string flags referenced by the function
+ */
+RZ_API void rz_core_analysis_function_strings_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NULLABLE PJ *pj) {
+	rz_return_if_fail(core && fcn);
+
+	RzAnalysisXRef *xref;
+	RzListIter *iter;
+	RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
+	rz_list_foreach (xrefs, iter, xref) {
+		RzFlagItem *f = rz_flag_get_by_spaces(core->flags, xref->to, RZ_FLAGS_FS_STRINGS, NULL);
+		if (!f || !f->space || strcmp(f->space->name, RZ_FLAGS_FS_STRINGS)) {
+			continue;
+		}
+		if (pj) {
+			pj_o(pj);
+			pj_kn(pj, "addr", xref->from);
+			pj_kn(pj, "ref", xref->to);
+			pj_ks(pj, "flag", f->name);
+			pj_end(pj);
+		} else {
+			rz_cons_printf("0x%08" PFMT64x " 0x%08" PFMT64x " %s\n", xref->from, xref->to, f->name);
+		}
+	}
+	rz_list_free(xrefs);
 }
 
 static ut64 *next_append(ut64 *next, int *nexti, ut64 v) {
@@ -1156,7 +1138,7 @@ RZ_API RzAnalysisOp *rz_core_analysis_op(RzCore *core, ut64 addr, int mask) {
 	}
 	return op;
 err_op:
-	free(op);
+	rz_analysis_op_free(op);
 	return NULL;
 }
 
@@ -5573,11 +5555,13 @@ static bool process_reference_noreturn_cb(void *u, const ut64 k, const void *v) 
 					// Find the block that has an instruction at exactly the reference addr
 					RzAnalysisBlock *block = find_block_at_xref_addr(core, addr);
 					if (!block) {
+						rz_analysis_op_fini(&op);
 						return true;
 					}
 					relocation_noreturn_process(core, noretl, todo, block, rel, op.size, addr);
 				}
 			}
+			rz_analysis_op_fini(&op);
 		} else {
 			RZ_LOG_INFO("analysis: Fail to load %d bytes of data at 0x%08" PFMT64x "\n", CALL_BUF_SIZE, addr);
 		}

@@ -30,6 +30,10 @@ RZ_API RZ_OWN RzSysregItem *rz_sysreg_item_new(RZ_NULLABLE const char *name) {
 	return sysregitem;
 }
 
+static void free_port_kv(HtUPKv *kv) {
+	rz_sysreg_item_free(kv->value);
+}
+
 /**
  * \brief Creates a new RzSysregDB type
  */
@@ -38,7 +42,7 @@ RZ_API RzSysregsDB *rz_sysregs_db_new() {
 	if (!sysregdb) {
 		return NULL;
 	}
-	sysregdb->port = ht_up_new0();
+	sysregdb->port = ht_up_new(NULL, free_port_kv, NULL);
 	if (!sysregdb->port) {
 		free(sysregdb);
 		return NULL;
@@ -158,6 +162,7 @@ static bool sdb_load_sysregs(RzSysregsDB *sysregdb, Sdb *sdb) {
 				return false;
 			}
 			ut64 address = sdb_num_get(sdb, argument_key, NULL);
+			free(argument_key);
 			if (!address) {
 				rz_sysreg_item_free(sysregitem);
 				return false;
@@ -165,13 +170,14 @@ static bool sdb_load_sysregs(RzSysregsDB *sysregdb, Sdb *sdb) {
 
 			argument_key = rz_str_newf("%s.comment", name);
 			comment = sdb_get(sdb, argument_key, NULL);
-			sysregitem->type = sdbkv_value(kv);
-			sysregitem->name = strdup(name);
-			sysregitem->comment = strdup(comment);
+			free(argument_key);
+			sysregitem->type = strdup(sdbkv_value(kv));
+			sysregitem->comment = comment;
 
 			ht_up_insert(sysregdb->port, address, sysregitem);
 		}
 	}
+	ls_free(l);
 	return true;
 }
 
@@ -212,6 +218,8 @@ RZ_API bool rz_sysreg_set_arch(RzSyscall *s, RZ_NONNULL const char *arch, RZ_NON
 	if (!path) {
 		return true;
 	}
+	rz_sysregs_db_free(s->srdb);
+	s->srdb = rz_sysregs_db_new();
 	if (!rz_sysreg_load_sdb(s->srdb, path)) {
 		free(path);
 		rz_sysregs_db_free(s->srdb);

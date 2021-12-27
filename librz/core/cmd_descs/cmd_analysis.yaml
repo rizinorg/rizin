@@ -483,6 +483,27 @@ commands:
                     type: RZ_CMD_ARG_TYPE_CHOICES
                     optional: true
                     choices: ["family", "type"]
+      - name: afn
+        summary: Analyze function names
+        subcommands:
+          - name: afn
+            summary: Rename function at current seek
+            cname: analysis_function_rename
+            args:
+              - name: new name
+                type: RZ_CMD_ARG_TYPE_STRING
+          - name: afna
+            summary: Suggest a name for the function in current seek
+            cname: analysis_function_autoname
+            args: []
+          - name: afns
+            summary: Print all strings referenced by the function in current seek
+            cname: analysis_function_strings
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+            args: []
   - name: aez
     summary: RzIL Emulation
     type: RZ_CMD_DESC_TYPE_GROUP
