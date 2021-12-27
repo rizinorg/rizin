@@ -8308,6 +8308,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_list_handler(RzCore *core, int argc, con
 RZ_IPI RzCmdStatus rz_analysis_function_list_in_handler(RzCore *core, int argc, const char **argv) {
 	RzList *list = rz_analysis_get_functions_in(core->analysis, core->offset);
 	function_list_print_quiet(core, list);
+	rz_list_free(list);
 	return RZ_CMD_STATUS_OK;
 }
 
