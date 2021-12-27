@@ -163,7 +163,6 @@ bool rz_il_handler_seq(RzILVM *vm, RzILOpEffect *op) {
 	return rz_il_evaluate_effect(vm, op_seq->x) && rz_il_evaluate_effect(vm, op_seq->y);
 }
 
-
 bool rz_il_handler_blk(RzILVM *vm, RzILOpEffect *op) {
 	rz_return_val_if_fail(vm && op, false);
 
@@ -192,7 +191,6 @@ bool rz_il_handler_repeat(RzILVM *vm, RzILOpEffect *op) {
 
 	return res;
 }
-
 
 bool rz_il_handler_branch(RzILVM *vm, RzILOpEffect *op) {
 	rz_return_val_if_fail(vm && op, false);
