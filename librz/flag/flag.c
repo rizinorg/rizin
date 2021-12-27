@@ -853,7 +853,7 @@ RZ_API void rz_flag_unset_all_in_space(RzFlag *f, const char *space_name) {
 		rz_flag_unset(f, flag);
 	}
 	rz_flag_space_pop(f);
-	free(flags);
+	rz_list_free(flags);
 }
 
 struct flag_relocate_t {

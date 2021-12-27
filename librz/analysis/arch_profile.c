@@ -19,6 +19,10 @@ RZ_API void rz_arch_profile_free(RzArchProfile *p) {
 	free(p);
 }
 
+static void free_mmio_kv(HtUPKv *kv) {
+	free(kv->value);
+}
+
 /**
  * \brief Creates a new RzArchProfile type
  */
@@ -27,12 +31,12 @@ RZ_API RZ_OWN RzArchProfile *rz_arch_profile_new() {
 	if (!profile) {
 		return NULL;
 	}
-	profile->registers_mmio = ht_up_new0();
+	profile->registers_mmio = ht_up_new((HtUPDupValue)strdup, free_mmio_kv, (HtUPCalcSizeV)strlen);
 	if (!profile->registers_mmio) {
 		free(profile);
 		return NULL;
 	}
-	profile->registers_extended = ht_up_new0();
+	profile->registers_extended = ht_up_new((HtUPDupValue)strdup, free_mmio_kv, (HtUPCalcSizeV)strlen);
 	if (!profile->registers_extended) {
 		ht_up_free(profile->registers_mmio);
 		free(profile);
@@ -99,8 +103,11 @@ static bool sdb_load_arch_profile(RzArchTarget *t, Sdb *sdb) {
 	rz_return_val_if_fail(t && sdb, false);
 	SdbKv *kv;
 	SdbListIter *iter;
-	SdbList *l = sdb_foreach_list(sdb, false);
 	RzArchProfile *c = rz_arch_profile_new();
+	if (!c) {
+		return false;
+	}
+	SdbList *l = sdb_foreach_list(sdb, false);
 	ls_foreach (l, iter, kv) {
 		if (!strcmp(sdbkv_key(kv), "PC")) {
 			c->pc = rz_num_math(NULL, sdbkv_value(kv));
@@ -125,15 +132,19 @@ static bool sdb_load_arch_profile(RzArchTarget *t, Sdb *sdb) {
 			char *io_name = sdbkv_key(kv);
 			char *argument_key = rz_str_newf("%s.address", io_name);
 			ut64 io_address = sdb_num_get(sdb, argument_key, NULL);
+			free(argument_key);
 			ht_up_insert(c->registers_mmio, io_address, io_name);
 		}
 		if (!strcmp(sdbkv_value(kv), "ext_io")) {
 			char *ext_io_name = sdbkv_key(kv);
 			char *argument_key = rz_str_newf("%s.address", ext_io_name);
 			ut64 ext_io_address = sdb_num_get(sdb, argument_key, NULL);
+			free(argument_key);
 			ht_up_insert(c->registers_extended, ext_io_address, ext_io_name);
 		}
 	}
+	ls_free(l);
+	rz_arch_profile_free(t->profile);
 	t->profile = c;
 	return true;
 }

@@ -1138,7 +1138,7 @@ RZ_API RzAnalysisOp *rz_core_analysis_op(RzCore *core, ut64 addr, int mask) {
 	}
 	return op;
 err_op:
-	free(op);
+	rz_analysis_op_free(op);
 	return NULL;
 }
 
@@ -5557,11 +5557,13 @@ static bool process_reference_noreturn_cb(void *u, const ut64 k, const void *v) 
 					// Find the block that has an instruction at exactly the reference addr
 					RzAnalysisBlock *block = find_block_at_xref_addr(core, addr);
 					if (!block) {
+						rz_analysis_op_fini(&op);
 						return true;
 					}
 					relocation_noreturn_process(core, noretl, todo, block, rel, op.size, addr);
 				}
 			}
+			rz_analysis_op_fini(&op);
 		} else {
 			RZ_LOG_INFO("analysis: Fail to load %d bytes of data at 0x%08" PFMT64x "\n", CALL_BUF_SIZE, addr);
 		}
