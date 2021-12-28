@@ -98,13 +98,13 @@ static void il_op_effect_resolve(RzILOpEffect *op, RzStrBuf *sb, PJ *pj);
 	do { \
 		if (sb) { \
 			rz_strbuf_append(sb, name "(" #v0 ":"); \
-			il_op_pure_resolve(opx->v0, sb, pj); \
+			il_op_pure_resolve(opx.v0, sb, pj); \
 			rz_strbuf_append(sb, ")"); \
 		} else { \
 			pj_o(pj); \
 			pj_ks(pj, "opcode", name); \
 			pj_k(pj, #v0); \
-			il_op_pure_resolve(opx->v0, sb, pj); \
+			il_op_pure_resolve(opx.v0, sb, pj); \
 			pj_end(pj); \
 		} \
 	} while (0)
@@ -113,17 +113,17 @@ static void il_op_effect_resolve(RzILOpEffect *op, RzStrBuf *sb, PJ *pj);
 	do { \
 		if (sb) { \
 			rz_strbuf_append(sb, name "(" #v0 ":"); \
-			il_op_##sort0##_resolve(opx->v0, sb, pj); \
+			il_op_##sort0##_resolve(opx.v0, sb, pj); \
 			rz_strbuf_append(sb, ", " #v1 ":"); \
-			il_op_##sort1##_resolve(opx->v1, sb, pj); \
+			il_op_##sort1##_resolve(opx.v1, sb, pj); \
 			rz_strbuf_append(sb, ")"); \
 		} else { \
 			pj_o(pj); \
 			pj_ks(pj, "opcode", name); \
 			pj_k(pj, #v0); \
-			il_op_##sort0##_resolve(opx->v0, sb, pj); \
+			il_op_##sort0##_resolve(opx.v0, sb, pj); \
 			pj_k(pj, #v1); \
-			il_op_##sort1##_resolve(opx->v1, sb, pj); \
+			il_op_##sort1##_resolve(opx.v1, sb, pj); \
 			pj_end(pj); \
 		} \
 	} while (0)
@@ -132,27 +132,27 @@ static void il_op_effect_resolve(RzILOpEffect *op, RzStrBuf *sb, PJ *pj);
 	do { \
 		if (sb) { \
 			rz_strbuf_append(sb, name "(" #v0 ":"); \
-			il_op_##sort0##_resolve(opx->v0, sb, pj); \
+			il_op_##sort0##_resolve(opx.v0, sb, pj); \
 			rz_strbuf_append(sb, ", " #v1 ":"); \
-			il_op_##sort1##_resolve(opx->v1, sb, pj); \
+			il_op_##sort1##_resolve(opx.v1, sb, pj); \
 			rz_strbuf_append(sb, ", " #v2 ":"); \
-			il_op_##sort2##_resolve(opx->v2, sb, pj); \
+			il_op_##sort2##_resolve(opx.v2, sb, pj); \
 			rz_strbuf_append(sb, ")"); \
 		} else { \
 			pj_o(pj); \
 			pj_ks(pj, "opcode", name); \
 			pj_k(pj, #v0); \
-			il_op_##sort0##_resolve(opx->v0, sb, pj); \
+			il_op_##sort0##_resolve(opx.v0, sb, pj); \
 			pj_k(pj, #v1); \
-			il_op_##sort1##_resolve(opx->v1, sb, pj); \
+			il_op_##sort1##_resolve(opx.v1, sb, pj); \
 			pj_k(pj, #v2); \
-			il_op_##sort2##_resolve(opx->v2, sb, pj); \
+			il_op_##sort2##_resolve(opx.v2, sb, pj); \
 			pj_end(pj); \
 		} \
 	} while (0)
 
 static void il_opdmp_var(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-	RzILOpArgsVar *opx = op->op.var;
+	RzILOpArgsVar *opx = &op->op.var;
 	if (sb) {
 		rz_strbuf_appendf(sb, "var(v:%s)", opx->v);
 	} else {
@@ -216,7 +216,7 @@ static void il_opdmp_bool_xor(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 }
 
 static void il_opdmp_bitv(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-	RzILOpArgsBv *opx = op->op.bitv;
+	RzILOpArgsBv *opx = &op->op.bitv;
 	char *num = rz_bv_as_hex_string(opx->value);
 	if (sb) {
 		rz_strbuf_appendf(sb, "bitv(bits:%s, len:%u)", num, opx->value->len);
@@ -311,7 +311,7 @@ static void il_opdmp_ule(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 }
 
 static void il_opdmp_cast(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-	RzILOpArgsCast *opx = op->op.cast;
+	RzILOpArgsCast *opx = &op->op.cast;
 	if (sb) {
 		rz_strbuf_append(sb, "cast(val:");
 		il_op_pure_resolve(opx->val, sb, pj);
@@ -339,7 +339,7 @@ static void il_opdmp_append(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 }
 
 static void il_opdmp_load(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-	RzILOpArgsLoad *opx = op->op.load;
+	RzILOpArgsLoad *opx = &op->op.load;
 	if (sb) {
 		rz_strbuf_appendf(sb, "load(mem:%u, key:", (unsigned int)opx->mem);
 		il_op_pure_resolve(opx->key, sb, pj);
@@ -355,7 +355,7 @@ static void il_opdmp_load(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 }
 
 static void il_opdmp_store(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
-	RzILOpArgsStore *opx = op->op.store;
+	RzILOpArgsStore *opx = &op->op.store;
 
 	if (sb) {
 		rz_strbuf_appendf(sb, "store(mem:%u, key:", (unsigned int)opx->mem);
@@ -380,7 +380,7 @@ static void il_opdmp_nop(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
 }
 
 static void il_opdmp_set(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
-	RzILOpArgsSet *opx = op->op.set;
+	RzILOpArgsSet *opx = &op->op.set;
 	if (sb) {
 		rz_strbuf_appendf(sb, "set(v:%s, x:", opx->v);
 		il_op_pure_resolve(opx->x, sb, pj);
@@ -396,7 +396,7 @@ static void il_opdmp_set(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
 }
 
 static void il_opdmp_let(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
-	RzILOpArgsLet *opx = op->op.let;
+	RzILOpArgsLet *opx = &op->op.let;
 	if (sb) {
 		rz_strbuf_appendf(sb, "let(v:%s, x:", opx->v);
 		il_op_pure_resolve(opx->x, sb, pj);
@@ -417,7 +417,7 @@ static void il_opdmp_jmp(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
 }
 
 static void il_opdmp_goto(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
-	RzILOpArgsGoto *opx = op->op.goto_;
+	RzILOpArgsGoto *opx = &op->op.goto_;
 	if (sb) {
 		rz_strbuf_appendf(sb, "goto(lbl:%s)", opx->lbl);
 	} else {

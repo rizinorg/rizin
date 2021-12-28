@@ -152,7 +152,7 @@ static bool test_rzil_vm_root_evaluation() {
 	RzILOpBitVector *ite_root = rz_il_op_new_ite(condition, true_val, false_val);
 
 	// Partially evaluate `condition` only
-	RzILBool *condition_res = rz_il_evaluate_bool(vm, ite_root->op.ite->condition);
+	RzILBool *condition_res = rz_il_evaluate_bool(vm, ite_root->op.ite.condition);
 	mu_assert_notnull(condition_res, "boolean eval success");
 	mu_assert_eq(condition_res->b, true, "Evaluate boolean condition");
 	rz_il_bool_free(condition_res);
