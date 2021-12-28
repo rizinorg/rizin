@@ -134,8 +134,8 @@ typedef struct rz_il_op_args_cmp_t RzILOpArgsUle;
  *  \brief op structure for casting bitv
  */
 typedef struct rz_il_op_args_cast_t {
-	ut32 length; ///< new bits lenght
-	int shift; ///< shift old bits (positive is << and >> negative)
+	ut32 length; ///< new bits length
+	RzILOpBool *fill; ///< If m = size val - length > 0 then m fill-bits are prepended to the most significant part of the vector.
 	RzILOpBitVector *val; ///< value to cast
 } RzILOpArgsCast;
 
@@ -459,7 +459,7 @@ RZ_API RZ_OWN RzILOpBool *rz_il_op_new_non_zero(RZ_NONNULL RzILOpPure *bv);
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_eq(RZ_NONNULL RzILOpPure *x, RZ_NONNULL RzILOpPure *y);
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_ule(RZ_NONNULL RzILOpPure *x, RZ_NONNULL RzILOpPure *y);
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_sle(RZ_NONNULL RzILOpPure *x, RZ_NONNULL RzILOpPure *y);
-RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_cast(ut32 length, int shift, RZ_NONNULL RzILOpBitVector *val);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_cast(ut32 length, RZ_NONNULL RzILOpBool *fill, RZ_NONNULL RzILOpBitVector *val);
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_neg(RZ_NONNULL RzILOpBitVector *value);
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_log_not(RZ_NONNULL RzILOpBitVector *value);
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_add(RZ_NONNULL RzILOpBitVector *x, RZ_NONNULL RzILOpBitVector *y);

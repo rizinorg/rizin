@@ -344,7 +344,7 @@ RZ_API bool rz_bv_set_all(RZ_NONNULL RzBitVector *bv, bool b) {
 	rz_return_val_if_fail(bv, false);
 
 	if (bv->len <= 64) {
-		bv->bits.small_u = b ? UT64_MAX : 0;
+		bv->bits.small_u = b ? (UT64_MAX & ((1ull << bv->len) - 1)) : 0;
 		return b;
 	}
 
