@@ -260,7 +260,7 @@ static RzBuffer *new_buffer(RzBufferType type, void *user) {
 		methods = &buffer_file_methods;
 		break;
 	case RZ_BUFFER_IO_FD:
-		methods = &buffer_io_methods;
+		methods = &buffer_io_fd_methods;
 		break;
 	case RZ_BUFFER_IO:
 		methods = &buffer_io_methods;
@@ -497,7 +497,7 @@ RZ_API RZ_OWN RzBuffer *rz_buf_new_with_io_fd(RZ_NONNULL void *iob, int fd) {
 	u.iob = (RzIOBind *)iob;
 	u.fd = fd;
 
-	return new_buffer(RZ_BUFFER_IO, &u);
+	return new_buffer(RZ_BUFFER_IO_FD, &u);
 }
 
 /**
@@ -1157,7 +1157,7 @@ RZ_API st64 rz_buf_read_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL RZ_OUT 
 }
 
 /**
- * \brief Modified the current cursor position in the buffer.
+ * \brief Modify the current cursor position in the buffer.
  * \param b ...
  * \param addr ...
  * \param whence The relative position of the address.

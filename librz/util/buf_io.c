@@ -32,27 +32,23 @@ static bool buf_io_fini(RzBuffer *b) {
 static st64 buf_io_seek(RzBuffer *b, st64 addr, int whence) {
 	BufIOPriv *priv = b->priv;
 	priv->offset = rz_seek_offset(priv->offset, 0, addr, whence);
-	return priv->offset; // TODO: this might be negative and be detected as error
-}
-
-static ut64 buf_io_get_size(RzBuffer *b) {
-	return 0; // TODO: overflow :-(
-}
-
-static bool buf_io_resize(RzBuffer *b, ut64 newsize) {
-	return false;
+	// can't express the seek right if the highest bit is set,
+	// but at least tell the caller there was no error:
+	return RZ_MIN(priv->offset, ST64_MAX);
 }
 
 static st64 buf_io_read(RzBuffer *b, ut8 *buf, ut64 len) {
 	BufIOPriv *priv = b->priv;
 	len = RZ_MIN(INT_MAX, len); // remove if read_at takes ut64 at some point
-	return priv->iob->read_at(priv->iob->io, priv->offset, buf, len);
+	bool r = priv->iob->read_at(priv->iob->io, priv->offset, buf, len);
+	return r ? len : -1;
 }
 
 static st64 buf_io_write(RzBuffer *b, const ut8 *buf, ut64 len) {
 	BufIOPriv *priv = b->priv;
 	len = RZ_MIN(INT_MAX, len); // remove if write_at takes ut64 at some point
-	return priv->iob->write_at(priv->iob->io, priv->offset, buf, len);
+	bool r = priv->iob->write_at(priv->iob->io, priv->offset, buf, len);
+	return r ? len : -1;
 }
 
 static const RzBufferMethods buffer_io_methods = {
@@ -60,7 +56,5 @@ static const RzBufferMethods buffer_io_methods = {
 	.fini = buf_io_fini,
 	.read = buf_io_read,
 	.write = buf_io_write,
-	.get_size = buf_io_get_size,
-	.resize = buf_io_resize,
 	.seek = buf_io_seek,
 };
