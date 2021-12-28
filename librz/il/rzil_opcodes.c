@@ -561,6 +561,64 @@ RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_seq(RZ_NONNULL RzILOpEffect *x, RZ_NONN
 }
 
 /**
+ * Chain \p n opcodes given as varargs in sequence using seq if necessary
+ *
+ * It works exactly like this seq helper from BAP:
+ *     let rec seq = function
+ *       | [] -> CT.perform Theory.Effect.Sort.bot
+ *       | [x] -> x
+ *       | x :: xs -> CT.seq x @@ seq xs
+ *
+ * \param n number of total opcodes given
+ * \param ... \p num RzILOpEffect * ops to be executed in sequence
+ */
+RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_seqn(ut32 n, ...) {
+	if (!n) {
+		return rz_il_op_new_nop();
+	}
+	RzILOpEffect *root = NULL;
+	RzILOpEffect *prev_seq = NULL;
+	va_list args;
+	va_start(args, n);
+	for (ut32 i = 0; i < n; ++i) {
+		RzILOpEffect *cur_op = va_arg(args, RzILOpEffect *);
+		if (i == n - 1) {
+			// last one
+			if (prev_seq) {
+				prev_seq->op.seq->y = cur_op;
+			} else {
+				// n == 1, no need for seq at all
+				root = cur_op;
+			}
+			break;
+		}
+		RzILOpEffect *seq = RZ_NEW0(RzILOpEffect);
+		if (!seq) {
+			break;
+		}
+		seq->op.seq = RZ_NEW0(RzILOpArgsSeq);
+		if (!seq->op.seq) {
+			free(seq);
+			break;
+		}
+		seq->code = RZIL_OP_SEQ;
+		seq->op.seq->x = cur_op;
+		if (prev_seq) {
+			// not the first one
+			// We let the seq recurse in the second op because that
+			// can enable tail call elimination in the evaluation.
+			prev_seq->op.seq->y = seq;
+		} else {
+			// first one
+			root = seq;
+		}
+		prev_seq = seq;
+	}
+	va_end(args);
+	return root;
+}
+
+/**
  *  \brief op structure for `blk` (label -> data eff -> ctrl eff -> unit eff)
  *
  *  blk lbl data ctrl a labeled sequence of effects.

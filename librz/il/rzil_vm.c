@@ -386,27 +386,6 @@ RZ_API RZ_BORROW RzILEffectLabel *rz_il_vm_update_label(RZ_NONNULL RzILVM *vm, R
 	return lbl;
 }
 
-/**
- * Make a core theory opcode vector
- * \param num int, number of total opcodes
- * \param ... op RzILOp, op will be pushed to vector one by one
- * \return oplist RzPVector*, pointer to the opcode
- */
-RZ_API RZ_OWN RzPVector *rz_il_make_oplist(ut32 num, ...) {
-	va_list args;
-	RzILOpEffect *cur_op;
-	RzPVector *oplist = rz_pvector_new((RzPVectorFree)rz_il_op_effect_free);
-
-	va_start(args, num);
-	for (ut32 i = 0; i < num; ++i) {
-		cur_op = va_arg(args, RzILOpEffect *);
-		rz_pvector_push(oplist, cur_op);
-	}
-	va_end(args);
-
-	return oplist;
-}
-
 static void *eval_pure(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpPure *op, RZ_NONNULL RzILPureType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 	RzILOpPureHandler handler = vm->op_handler_pure_table[op->code];

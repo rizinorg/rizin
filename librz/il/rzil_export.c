@@ -665,45 +665,6 @@ RZ_API void rz_il_op_effect_json(RZ_NONNULL RzILOpEffect *op, RZ_NONNULL PJ *pj)
 	il_op_effect_resolve(op, NULL, pj);
 }
 
-/**
- * Generates the string representation of the IL statements
- * \param op_list RzPVector*, array of IL statements
- * \param sb RzStrBuf*, a pointer to the string buffer
- */
-RZ_API void rz_il_oplist_stringify(RZ_NONNULL RzPVector *op_list, RZ_NONNULL RzStrBuf *sb) {
-	rz_return_if_fail(op_list && sb);
-
-	ut32 i = 0;
-	void **iter;
-	rz_strbuf_append(sb, "[");
-	rz_pvector_foreach (op_list, iter) {
-		RzILOpEffect *ilop = *iter;
-		if (i > 0) {
-			rz_strbuf_append(sb, ", ");
-		}
-		rz_il_op_effect_stringify(ilop, sb);
-		i++;
-	}
-	rz_strbuf_append(sb, "]");
-}
-
-/**
- * Generates the JSON representation of the IL statements
- * \param code RzPVector*, array of IL statements
- * \param pj PJ*, a pointer to the JSON buffer
- */
-RZ_API void rz_il_oplist_json(RZ_NONNULL RzPVector *op_list, RZ_NONNULL PJ *pj) {
-	rz_return_if_fail(op_list && pj);
-
-	pj_a(pj);
-	void **iter;
-	rz_pvector_foreach (op_list, iter) {
-		RzILOpEffect *ilop = *iter;
-		rz_il_op_effect_json(ilop, pj);
-	}
-	pj_end(pj);
-}
-
 RZ_API void rz_il_event_stringify(RZ_NONNULL RzILEvent *evt, RZ_NONNULL RzStrBuf *sb) {
 	rz_return_if_fail(evt && sb);
 	char *tmp0 = NULL, *tmp1 = NULL, *tmp2 = NULL;

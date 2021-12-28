@@ -54,8 +54,7 @@ RZ_API bool rz_analysis_op_fini(RzAnalysisOp *op) {
 	op->switch_op = NULL;
 	RZ_FREE(op->mnemonic);
 	if (op->rzil_op) {
-		// TODO free root_node once it is implemented
-		rz_pvector_free(op->rzil_op->ops);
+		rz_il_op_effect_free(op->rzil_op->op);
 		RZ_FREE(op->rzil_op);
 	}
 	return true;
