@@ -120,9 +120,9 @@ static RzBitVector *read_n_bits(RzBuffer *buf, ut32 n_bits, RzBitVector *key, bo
 	// we ignore bad reads. RzBuffer fills up with its "overflow byte" on failure.
 	rz_buf_read_at(buf, address, data, n_bytes);
 	if (big_endian) {
-		value = rz_bv_new_from_bytes_be(data, 0, n_bits);
+		rz_bv_set_from_bytes_be(value, data, 0, n_bits);
 	} else {
-		value = rz_bv_new_from_bytes_le(data, 0, n_bits);
+		rz_bv_set_from_bytes_le(value, data, 0, n_bits);
 	}
 	free(data);
 	return value;
