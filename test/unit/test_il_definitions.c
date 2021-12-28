@@ -91,6 +91,7 @@ static bool test_rzil_mem_load() {
 	RzBuffer *buf = rz_buf_new_with_pointers(data, sizeof(data), false);
 	rz_buf_set_overflow_byte(buf, 0xaa);
 	RzILMem *mem = rz_il_mem_new(buf, 16);
+	rz_buf_free(buf); // buf is refcounted
 	mu_assert_notnull(mem, "Create mem");
 
 	// valid read
@@ -125,6 +126,7 @@ static bool test_rzil_mem_store() {
 	ut8 data[] = { 0x0, 0x0, 0x0, 0x0, 0x0, 0x42, 0x0, 0x0 };
 	RzBuffer *buf = rz_buf_new_with_pointers(data, sizeof(data), false);
 	RzILMem *mem = rz_il_mem_new(buf, 16);
+	rz_buf_free(buf); // buf is refcounted
 	mu_assert_notnull(mem, "Create mem");
 
 	RzBitVector *addr = rz_bv_new_from_ut64(16, 1);
@@ -163,6 +165,7 @@ static bool test_rzil_mem_loadw() {
 	RzBuffer *buf = rz_buf_new_with_pointers(data, sizeof(data), false);
 	rz_buf_set_overflow_byte(buf, 0xaa);
 	RzILMem *mem = rz_il_mem_new(buf, 16);
+	rz_buf_free(buf); // buf is refcounted
 	mu_assert_notnull(mem, "Create mem");
 
 	// valid read (le)
@@ -179,12 +182,14 @@ static bool test_rzil_mem_loadw() {
 	mu_assert_eq(rz_bv_len(val), 16, "loadw size");
 	mu_assert_eq(rz_bv_to_ut64(val), 0x1337, "loadw val");
 	rz_bv_free(val);
+	rz_bv_free(addr);
 
 	// invalid key size
-	rz_bv_free(addr);
 	addr = rz_bv_new_from_ut64(8, 1);
 	val = rz_il_mem_loadw(mem, addr, 16, false);
+	rz_bv_free(addr);
 	mu_assert_null(val, "invalid key size");
+	rz_bv_free(val);
 
 	// valid read (overflow)
 	addr = rz_bv_new_from_ut64(16, 100);
@@ -203,6 +208,7 @@ static bool test_rzil_mem_storew() {
 	ut8 data[] = { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
 	RzBuffer *buf = rz_buf_new_with_pointers(data, sizeof(data), false);
 	RzILMem *mem = rz_il_mem_new(buf, 32);
+	rz_buf_free(buf); // buf is refcounted
 	mu_assert_notnull(mem, "Create mem");
 
 	// valid write (le)
