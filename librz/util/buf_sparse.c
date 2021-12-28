@@ -98,7 +98,7 @@ static st64 sparse_write(SparsePriv *priv, ut64 addr, const ut8 *data, ut64 len)
 	c->data = newbuf;
 	c->to = newto;
 	memcpy(c->data + (addr - c->from), data, len);
-	if (in_end_chunk) {
+	if (in_end_chunk && in_end_chunk != c) {
 		memcpy(c->data + (addr - c->from) + len,
 			in_end_chunk->data + (addr + len - in_end_chunk->from),
 			in_end_chunk->to - (addr + len) + 1);
