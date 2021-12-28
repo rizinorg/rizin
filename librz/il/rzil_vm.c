@@ -387,17 +387,6 @@ RZ_API RZ_BORROW RzILEffectLabel *rz_il_vm_update_label(RZ_NONNULL RzILVM *vm, R
 }
 
 /**
- * Store an opcode list to address
- * \param vm RzILVM, pointer to VM
- * \param addr RzBitVector, address of this opcode list
- * \param oplist RzPVector of RzILOp, core theory opcodes
- */
-RZ_API void rz_il_vm_store_opcodes_to_addr(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzBitVector *addr, RZ_NONNULL RzPVector *oplist) {
-	rz_return_if_fail(vm && addr && oplist);
-	ht_pp_insert(vm->ct_opcodes, addr, oplist);
-}
-
-/**
  * Make a core theory opcode vector
  * \param num int, number of total opcodes
  * \param ... op RzILOp, op will be pushed to vector one by one

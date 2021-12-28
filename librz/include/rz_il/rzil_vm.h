@@ -53,7 +53,6 @@ struct rz_il_vm_t {
 	HtPP *vm_local_bind_table; ///< Hashtable to record relationships between local var and val
 	HtPP *vm_global_label_table; ///< Hashtable to maintain the label and address
 	HtPP *vm_local_label_table; ///< Hashtable to maintain the label and address
-	HtPP *ct_opcodes; ///< Hashtable to maintain address and opcodes
 	RzBitVector *pc; ///< Program Counter of VM
 	RzILOpPureHandler *op_handler_pure_table; ///< Array of Handler, handler can be indexed by opcode
 	RzILOpEffectHandler *op_handler_effect_table; ///< Array of Handler, handler can be indexed by opcode
@@ -96,7 +95,6 @@ RZ_API void rz_il_vm_add_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name,
 RZ_API void rz_il_vm_add_bit_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *name, bool value);
 
 // VM store and load core theory opcodes
-RZ_API void rz_il_vm_store_opcodes_to_addr(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzBitVector *addr, RZ_NONNULL RzPVector *oplist);
 RZ_API RZ_OWN RzPVector *rz_il_make_oplist(ut32 num, ...);
 #define rz_il_make_nop_list() rz_il_make_oplist(0, NULL)
 
