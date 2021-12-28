@@ -807,9 +807,8 @@ typedef enum rz_analysis_data_type_t {
 	RZ_ANALYSIS_DATATYPE_FLOAT,
 } RzAnalysisDataType;
 
-// For switchting to AST-like approach in the future
 typedef struct rz_analysis_rzil_op_t {
-	RzPVector *ops;
+	RzILOpEffect *op;
 } RzAnalysisRzilOp;
 
 typedef struct rz_analysis_op_t {

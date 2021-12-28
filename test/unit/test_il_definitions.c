@@ -234,6 +234,65 @@ static bool test_rzil_mem_storew() {
 	mu_end;
 }
 
+static bool test_rzil_seqn() {
+	// n = 0 ==> just a nop
+	RzILOpEffect *s = rz_il_op_new_seqn(0);
+	mu_assert_notnull(s, "seqn 0");
+	mu_assert_eq(s->code, RZIL_OP_NOP, "seqn 0 nop");
+	rz_il_op_effect_free(s);
+
+	// n = 1 ==> just the op
+	RzILOpEffect *e0 = rz_il_op_new_goto("beach");
+	s = rz_il_op_new_seqn(1, e0);
+	mu_assert_notnull(s, "seqn 1");
+	mu_assert_ptreq(s, e0, "seqn 1 op");
+	rz_il_op_effect_free(s);
+
+	// n = 2 ==> single seq
+	// (seq e0 e1)
+	e0 = rz_il_op_new_goto("beach");
+	RzILOpEffect *e1 = rz_il_op_new_goto("beach2");
+	s = rz_il_op_new_seqn(2, e0, e1);
+	mu_assert_notnull(s, "seqn 2");
+	mu_assert_eq(s->code, RZIL_OP_SEQ, "seqn 2 seq");
+	mu_assert_ptreq(s->op.seq->x, e0, "seqn 2 first");
+	mu_assert_ptreq(s->op.seq->y, e1, "seqn 2 second");
+	rz_il_op_effect_free(s);
+
+	// n = 3 ==> nested seq with recursion in the second op:
+	// (seq e0 (seq e1 e2))
+	e0 = rz_il_op_new_goto("beach");
+	e1 = rz_il_op_new_goto("beach2");
+	RzILOpEffect *e2 = rz_il_op_new_goto("beach3");
+	s = rz_il_op_new_seqn(3, e0, e1, e2);
+	mu_assert_notnull(s, "seqn 3");
+	mu_assert_eq(s->code, RZIL_OP_SEQ, "seqn 3 seq");
+	mu_assert_ptreq(s->op.seq->x, e0, "seqn 3 first");
+	mu_assert_eq(s->op.seq->y->code, RZIL_OP_SEQ, "seqn 3 second seq");
+	mu_assert_ptreq(s->op.seq->y->op.seq->x, e1, "seqn 3 second");
+	mu_assert_ptreq(s->op.seq->y->op.seq->y, e2, "seqn 3 third");
+	rz_il_op_effect_free(s);
+
+	// n = 4 ==> nested seq with recursion in the second op and no confusion:
+	// (seq e0 (seq e1 (seq e2 e3)))
+	e0 = rz_il_op_new_goto("beach");
+	e1 = rz_il_op_new_goto("beach2");
+	e2 = rz_il_op_new_goto("beach3");
+	RzILOpEffect *e3 = rz_il_op_new_goto("beach3");
+	s = rz_il_op_new_seqn(4, e0, e1, e2, e3);
+	mu_assert_notnull(s, "seqn 4");
+	mu_assert_eq(s->code, RZIL_OP_SEQ, "seqn 4 seq");
+	mu_assert_ptreq(s->op.seq->x, e0, "seqn 4 first");
+	mu_assert_eq(s->op.seq->y->code, RZIL_OP_SEQ, "seqn 4 second seq");
+	mu_assert_ptreq(s->op.seq->y->op.seq->x, e1, "seqn 4 second");
+	mu_assert_eq(s->op.seq->y->op.seq->y->code, RZIL_OP_SEQ, "seqn 4 third seq");
+	mu_assert_ptreq(s->op.seq->y->op.seq->y->op.seq->x, e2, "seqn 4 third");
+	mu_assert_ptreq(s->op.seq->y->op.seq->y->op.seq->y, e3, "seqn 4 fourth");
+	rz_il_op_effect_free(s);
+
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rzil_bool_init);
 	mu_run_test(test_rzil_bool_logic);
@@ -241,6 +300,7 @@ bool all_tests() {
 	mu_run_test(test_rzil_mem_store);
 	mu_run_test(test_rzil_mem_loadw);
 	mu_run_test(test_rzil_mem_storew);
+	mu_run_test(test_rzil_seqn);
 	return tests_passed != tests_run;
 }
 

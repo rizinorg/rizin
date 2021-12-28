@@ -524,6 +524,7 @@ RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_let(RZ_NONNULL const char *var, RZ_NONN
 RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_jmp(RZ_NONNULL RzILOpBitVector *dst);
 RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_goto(RZ_NONNULL const char *label);
 RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_seq(RZ_NONNULL RzILOpEffect *x, RZ_NONNULL RzILOpEffect *y);
+RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_seqn(ut32 n, ...);
 RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_blk(RZ_NONNULL RzILOpEffect *data_effect, RZ_NONNULL RzILOpEffect *ctrl_effect);
 RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_repeat(RZ_NONNULL RzILOpBool *condition, RZ_NONNULL RzILOpEffect *data_effect);
 RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_branch(RZ_NONNULL RzILOpBool *condition, RZ_NULLABLE RzILOpEffect *true_effect, RZ_NULLABLE RzILOpEffect *false_effect);
