@@ -196,7 +196,7 @@ bool test_rz_buf_mmap(void) {
 	mu_end;
 }
 
-bool test_rz_buf_io(void) {
+bool test_rz_buf_io_fd(void) {
 	RzBuffer *b;
 	const char *content = "Something To\nSay Here..";
 	const int length = 23;
@@ -215,7 +215,7 @@ bool test_rz_buf_io(void) {
 	RzIOBind bnd;
 	rz_io_bind(io, &bnd);
 
-	b = rz_buf_new_with_io(&bnd, desc->fd);
+	b = rz_buf_new_with_io_fd(&bnd, desc->fd);
 	mu_assert_notnull(b, "rz_buf_new_file failed");
 	rz_buf_seek(b, 0, RZ_BUF_SET);
 
@@ -227,6 +227,11 @@ bool test_rz_buf_io(void) {
 	rz_buf_free(b);
 	rz_io_close(io);
 	rz_io_free(io);
+	mu_end;
+}
+
+bool test_rz_buf_io(void) {
+	mu_fail("TODO");
 	mu_end;
 }
 
@@ -1267,6 +1272,7 @@ int all_tests() {
 	mu_run_test(test_rz_buf_mmap);
 	mu_run_test(test_rz_buf_with_buf);
 	mu_run_test(test_rz_buf_slice);
+	mu_run_test(test_rz_buf_io_fd);
 	mu_run_test(test_rz_buf_io);
 	mu_run_test(test_rz_buf_sparse_common);
 	mu_run_test(test_rz_buf_sparse_split);

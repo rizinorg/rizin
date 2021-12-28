@@ -8,6 +8,7 @@
 
 typedef enum {
 	RZ_BUFFER_FILE,
+	RZ_BUFFER_IO_FD,
 	RZ_BUFFER_IO,
 	RZ_BUFFER_BYTES,
 	RZ_BUFFER_MMAP,
@@ -19,6 +20,7 @@ typedef enum {
 #include "buf_sparse.c"
 #include "buf_bytes.c"
 #include "buf_mmap.c"
+#include "buf_io_fd.c"
 #include "buf_io.c"
 #include "buf_ref.c"
 
@@ -257,6 +259,9 @@ static RzBuffer *new_buffer(RzBufferType type, void *user) {
 	case RZ_BUFFER_FILE:
 		methods = &buffer_file_methods;
 		break;
+	case RZ_BUFFER_IO_FD:
+		methods = &buffer_io_methods;
+		break;
 	case RZ_BUFFER_IO:
 		methods = &buffer_io_methods;
 		break;
@@ -484,15 +489,28 @@ RZ_API RZ_OWN RzBuffer *rz_buf_new_with_bytes(RZ_NULLABLE RZ_OWN const ut8 *byte
  * The function creates a new buffer wrapping access to a file descriptor
  * through the RzIOBind methods specified in librz/io.
  */
-RZ_API RZ_OWN RzBuffer *rz_buf_new_with_io(RZ_NONNULL void *iob, int fd) {
+RZ_API RZ_OWN RzBuffer *rz_buf_new_with_io_fd(RZ_NONNULL void *iob, int fd) {
 	rz_return_val_if_fail(iob && fd >= 0, NULL);
 
-	struct buf_io_user u = { 0 };
+	struct buf_io_fd_user u = { 0 };
 
 	u.iob = (RzIOBind *)iob;
 	u.fd = fd;
 
 	return new_buffer(RZ_BUFFER_IO, &u);
+}
+
+/**
+ * \brief Creates a new buffer wrapping the memory map exposed by RzIOBind.
+ * \param iob Pointer to RzIOBind structure.
+ * \return Return the new allocated buffer.
+ *
+ * This buffer will use `rz_io_read_at()`/`rz_io_write_at()` as implemented by
+ * the RzIOBind given.
+ */
+RZ_API RZ_OWN RzBuffer *rz_buf_new_with_io(RZ_NONNULL void *iob) {
+	rz_return_val_if_fail(iob, NULL);
+	return new_buffer(RZ_BUFFER_IO, iob);
 }
 
 /**

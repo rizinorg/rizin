@@ -63,7 +63,7 @@ static RzBinFile *basefind_new_bin_file(RzCore *core) {
 		return NULL;
 	}
 
-	bf->buf = rz_buf_new_with_io(&core->bin->iob, core->file->fd);
+	bf->buf = rz_buf_new_with_io_fd(&core->bin->iob, core->file->fd);
 	bf->rbin = core->bin;
 	return bf;
 }

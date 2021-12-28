@@ -346,7 +346,7 @@ RZ_API RzBinFile *rz_bin_open_io(RzBin *bin, RzBinOptions *opt) {
 		is_debugger = false;
 	}
 	if (!buf) {
-		buf = rz_buf_new_with_io(&bin->iob, opt->fd);
+		buf = rz_buf_new_with_io_fd(&bin->iob, opt->fd);
 	}
 	if (!buf) {
 		return NULL;
