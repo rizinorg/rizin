@@ -77,49 +77,45 @@ ut64 parse_label_id(char *lbl_name) {
 	return addr;
 }
 
-RzPVector *bf_right_arrow(RzILVM *vm, ut64 id) {
+RzILOpEffect *bf_right_arrow(RzILVM *vm, ut64 id) {
 	// (set ptr (+ (val ptr) (int 1)))
 	RzILOpBitVector *add = rz_il_op_new_add(bf_il_ptr(), bf_il_one(BF_ADDR_SIZE));
-	return rz_il_make_oplist(1, bf_il_set_ptr(add));
+	return bf_il_set_ptr(add);
 }
 
-RzPVector *bf_left_arrow(RzILVM *vm, ut64 id) {
+RzILOpEffect *bf_left_arrow(RzILVM *vm, ut64 id) {
 	// (set ptr (- (val ptr) (int 1)))
 	RzILOpBitVector *sub = rz_il_op_new_sub(bf_il_ptr(), bf_il_one(BF_ADDR_SIZE));
-	return rz_il_make_oplist(1, bf_il_set_ptr(sub));
+	return bf_il_set_ptr(sub);
 }
 
-RzPVector *bf_inc(RzILVM *vm, ut64 id) {
+RzILOpEffect *bf_inc(RzILVM *vm, ut64 id) {
 	// (store mem (var ptr) (+ (load (var ptr)) (int 1)))
 	// mem == 0 because is the only mem in bf
 	RzILOpBitVector *load = rz_il_op_new_load(0, bf_il_ptr());
 	RzILOpBitVector *add = rz_il_op_new_add(load, bf_il_one(BF_BYTE_SIZE));
-	RzILOpEffect *store = rz_il_op_new_store(0, bf_il_ptr(), add);
-	return rz_il_make_oplist(1, store);
+	return rz_il_op_new_store(0, bf_il_ptr(), add);
 }
 
-RzPVector *bf_dec(RzILVM *vm, ut64 id) {
+RzILOpEffect *bf_dec(RzILVM *vm, ut64 id) {
 	// (store mem (var ptr) (- (load (var ptr)) (int 1)))
 	// mem == 0 because is the only mem in bf
 	RzILOpBitVector *load = rz_il_op_new_load(0, bf_il_ptr());
 	RzILOpBitVector *sub = rz_il_op_new_sub(load, bf_il_one(BF_BYTE_SIZE));
-	RzILOpEffect *store = rz_il_op_new_store(0, bf_il_ptr(), sub);
-	return rz_il_make_oplist(1, store);
+	return rz_il_op_new_store(0, bf_il_ptr(), sub);
 }
 
-RzPVector *bf_out(RzILVM *vm, ut64 id) {
+RzILOpEffect *bf_out(RzILVM *vm, ut64 id) {
 	// (goto write)
-	RzILOpEffect *goto_ = rz_il_op_new_goto("write");
-	return rz_il_make_oplist(1, goto_);
+	return rz_il_op_new_goto("write");
 }
 
-RzPVector *bf_in(RzILVM *vm, ut64 id) {
+RzILOpEffect *bf_in(RzILVM *vm, ut64 id) {
 	// (goto hook_read)
-	RzILOpEffect *goto_ = rz_il_op_new_goto("read");
-	return rz_il_make_oplist(1, goto_);
+	return rz_il_op_new_goto("read");
 }
 
-RzPVector *bf_llimit(RzILVM *vm, BfContext *ctx, ut64 id, ut64 addr) {
+RzILOpEffect *bf_llimit(RzILVM *vm, BfContext *ctx, ut64 id, ut64 addr) {
 	// (perform (branch (load mem (var ptr))
 	//                  (do nothing)
 	//                  (goto ]))
@@ -159,13 +155,10 @@ RzPVector *bf_llimit(RzILVM *vm, BfContext *ctx, ut64 id, ut64 addr) {
 	RzILOpEffect *goto_ = rz_il_op_new_goto(dst_label->label_id);
 
 	// branch if (load mem (var ptr)) is false then goto ]
-	RzILOpEffect *branch = rz_il_op_new_branch(cond, NULL, goto_);
-
-	// perform
-	return rz_il_make_oplist(1, branch);
+	return rz_il_op_new_branch(cond, NULL, goto_);
 }
 
-RzPVector *bf_rlimit(RzILVM *vm, BfContext *ctx, ut64 id, ut64 addr) {
+RzILOpEffect *bf_rlimit(RzILVM *vm, BfContext *ctx, ut64 id, ut64 addr) {
 	// (perform (branch (load mem (var ptr))
 	//                  (goto [)
 	//                  (do nothing))
@@ -202,7 +195,7 @@ RzPVector *bf_rlimit(RzILVM *vm, BfContext *ctx, ut64 id, ut64 addr) {
 	RzILOpEffect *branch = rz_il_op_new_branch(cond, goto_, NULL);
 
 	free(to_free);
-	return rz_il_make_oplist(1, branch);
+	return branch;
 }
 
 static bool bf_specific_init(RzAnalysisRzil *rzil) {
@@ -320,7 +313,7 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 
 	BfContext *ctx = analysis->rzil->user;
 	RzILVM *vm = analysis->rzil->vm;
-	RzPVector *oplist = NULL;
+	RzILOpEffect *ilop = NULL;
 	op->rzil_op = RZ_NEW0(RzAnalysisRzilOp);
 	if (!op->rzil_op) {
 		RZ_LOG_ERROR("Fail to init rzil op\n");
@@ -330,7 +323,7 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 
 	switch (buf[0]) {
 	case '[':
-		oplist = bf_llimit(vm, ctx, op->id, addr);
+		ilop = bf_llimit(vm, ctx, op->id, addr);
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		op->fail = addr + 1;
 		buf = rz_mem_dup((void *)buf, len);
@@ -377,31 +370,31 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 		free((ut8 *)buf);
 		break;
 	case ']':
-		oplist = bf_rlimit(vm, ctx, op->id, addr);
+		ilop = bf_rlimit(vm, ctx, op->id, addr);
 		op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
 		break;
 	case '>':
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
-		oplist = bf_right_arrow(vm, op->id);
+		ilop = bf_right_arrow(vm, op->id);
 		break;
 	case '<':
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
-		oplist = bf_left_arrow(vm, op->id);
+		ilop = bf_left_arrow(vm, op->id);
 		break;
 	case '+':
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
-		oplist = bf_inc(vm, op->id);
+		ilop = bf_inc(vm, op->id);
 		break;
 	case '-':
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
-		oplist = bf_dec(vm, op->id);
+		ilop = bf_dec(vm, op->id);
 		break;
 	case '.':
-		oplist = bf_out(vm, op->id);
+		ilop = bf_out(vm, op->id);
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		break;
 	case ',':
-		oplist = bf_in(vm, op->id);
+		ilop = bf_in(vm, op->id);
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		break;
 	case 0x00:
@@ -410,10 +403,11 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 		break;
 	default:
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
+		ilop = rz_il_op_new_nop();
 		break;
 	}
-	if (oplist) {
-		op->rzil_op->ops = oplist;
+	if (ilop) {
+		op->rzil_op->op = ilop;
 	}
 	ctx->op_count++;
 	return op->size;

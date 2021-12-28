@@ -400,20 +400,12 @@ RZ_API void rz_il_vm_event_add(RzILVM *vm, RzILEvent *evt) {
  * \param op_list, a list of op roots.
  * \param op_size, how much the pc value has to increate of.
  */
-RZ_API bool rz_il_vm_list_step(RzILVM *vm, RzPVector *op_list, ut32 op_size) {
-	rz_return_val_if_fail(vm && op_list, false);
+RZ_API bool rz_il_vm_list_step(RzILVM *vm, RzILOpEffect *op, ut32 op_size) {
+	rz_return_val_if_fail(vm && op, false);
 
 	rz_list_purge(vm->events);
 
-	bool succ = true;
-	void **iter;
-	rz_pvector_foreach (op_list, iter) {
-		RzILOpEffect *root = *iter;
-		if (!rz_il_evaluate_effect(vm, root)) {
-			succ = false;
-			break;
-		}
-	}
+	bool succ = rz_il_evaluate_effect(vm, op);
 
 	RzBitVector *step = rz_bv_new_from_ut64(vm->pc->len, op_size);
 	RzBitVector *next_pc = rz_bv_add(vm->pc, step, NULL);

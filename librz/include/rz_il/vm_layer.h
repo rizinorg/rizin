@@ -17,7 +17,7 @@ RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, bool big_
 RZ_API void rz_il_vm_fini(RzILVM *vm);
 RZ_API void rz_il_vm_add_mem(RzILVM *vm, RzILMemIndex index, RZ_OWN RzILMem *mem);
 RZ_API RzILMem *rz_il_vm_get_mem(RzILVM *vm, RzILMemIndex index);
-RZ_API bool rz_il_vm_list_step(RzILVM *vm, RzPVector *op_list, ut32 op_size);
+RZ_API bool rz_il_vm_list_step(RzILVM *vm, RzILOpEffect *op, ut32 op_size);
 
 // VM Event operations
 RZ_API void rz_il_vm_event_add(RzILVM *vm, RzILEvent *evt);
