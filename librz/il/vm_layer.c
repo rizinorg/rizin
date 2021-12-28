@@ -121,11 +121,6 @@ static void free_label_kv(HtPPKv *kv) {
 	free(lbl);
 }
 
-static void free_opcode_kv(HtPPKv *kv) {
-	rz_bv_free(kv->key);
-	rz_pvector_free(kv->value);
-}
-
 static void free_bind_var(HtPPKv *kv) {
 	free(kv->key);
 }
@@ -204,21 +199,6 @@ RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, bool big_
 		return false;
 	}
 
-	// Table for storing the core theory opcodes
-	HtPPOptions ops_options = { 0 };
-	ops_options.cmp = (HtPPListComparator)rz_bv_cmp;
-	ops_options.hashfn = (HtPPHashFunction)rz_bv_hash;
-	ops_options.dupkey = (HtPPDupKey)rz_bv_dup;
-	ops_options.dupvalue = NULL; // dump key only, since the opcode used in hash map only
-	ops_options.freefn = free_opcode_kv;
-	ops_options.elem_size = sizeof(HtPPKv);
-	vm->ct_opcodes = ht_pp_new_opt(&ops_options);
-	if (!vm->ct_opcodes) {
-		RZ_LOG_ERROR("RzIL: cannot allocate VM core theory op codes\n");
-		rz_il_vm_fini(vm);
-		return false;
-	}
-
 	// init jump table of labels
 	vm->op_handler_pure_table = RZ_NEWS0(RzILOpPureHandler, RZIL_OP_PURE_MAX);
 	memcpy(vm->op_handler_pure_table, op_handler_pure_table_default, sizeof(RzILOpPureHandler) * RZIL_OP_PURE_MAX);
@@ -251,9 +231,6 @@ RZ_API void rz_il_vm_fini(RzILVM *vm) {
 	rz_pvector_fini(&vm->vm_global_variable_list);
 	rz_pvector_fini(&vm->vm_local_variable_list);
 	rz_pvector_fini(&vm->vm_memory);
-
-	ht_pp_free(vm->ct_opcodes);
-	vm->ct_opcodes = NULL;
 
 	ht_pp_free(vm->vm_global_bind_table);
 	vm->vm_global_bind_table = NULL;
