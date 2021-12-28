@@ -308,10 +308,10 @@ RZ_API RZ_OWN RzILOpBool *rz_il_op_new_sle(RZ_NONNULL RzILOpBitVector *x, RZ_NON
 /**
  *  \brief op structure for casting bitv
  */
-RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_cast(ut32 length, int shift, RZ_NONNULL RzILOpBitVector *val) {
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_cast(ut32 length, RZ_NONNULL RzILOpBool *fill, RZ_NONNULL RzILOpBitVector *val) {
 	rz_return_val_if_fail(length > 0 && val, NULL);
 	RzILOpBitVector *ret;
-	rz_il_op_new_3(BitVector, RZIL_OP_CAST, RzILOpArgsCast, cast, length, shift, val);
+	rz_il_op_new_3(BitVector, RZIL_OP_CAST, RzILOpArgsCast, cast, length, fill, val);
 	return ret;
 }
 

@@ -348,25 +348,21 @@ void *rz_il_handler_cast(RzILVM *vm, RzILOpBitVector *op, RzILPureType *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 
 	RzILOpArgsCast *op_cast = op->op.cast;
-	int shift = op_cast->shift;
-
-	RzBitVector *bv = rz_il_evaluate_bitv(vm, op_cast->val);
-	;
-
-	RzBitVector *ret = NULL;
-	if (bv) {
-		ret = rz_bv_new(op_cast->length);
-		if (shift == 0) {
-			rz_bv_copy_nbits(bv, 0, ret, 0, RZ_MIN(bv->len, ret->len));
-		} else if (shift > 0) {
-			// left shift <<
-			rz_bv_copy_nbits(bv, 0, ret, shift, RZ_MIN(bv->len, ret->len));
-		} else {
-			// right shift >>
-			rz_bv_copy_nbits(bv, -shift, ret, 0, RZ_MIN(bv->len, ret->len));
-		}
-		rz_bv_free(bv);
+	RzILBool *fill = rz_il_evaluate_bool(vm, op_cast->fill);
+	if (!fill) {
+		return NULL;
 	}
+	RzBitVector *bv = rz_il_evaluate_bitv(vm, op_cast->val);
+	if (!bv) {
+		return NULL;
+	}
+
+	RzBitVector *ret = rz_bv_new(op_cast->length);
+	rz_bv_set_all(ret, fill->b);
+	rz_bv_copy_nbits(bv, 0, ret, 0, RZ_MIN(bv->len, ret->len));
+
+	rz_il_bool_free(fill);
+	rz_bv_free(bv);
 
 	*type = RZ_IL_PURE_TYPE_BITV;
 	return ret;

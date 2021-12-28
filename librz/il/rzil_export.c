@@ -315,14 +315,17 @@ static void il_opdmp_cast(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 	if (sb) {
 		rz_strbuf_append(sb, "cast(val:");
 		il_op_pure_resolve(opx->val, sb, pj);
-		rz_strbuf_appendf(sb, ", length:%u, shift:%d)", opx->length, opx->shift);
+		rz_strbuf_appendf(sb, ", length:%u, fill:", opx->length);
+		il_op_pure_resolve(opx->fill, sb, pj);
+		rz_strbuf_append(sb, ")");
 	} else {
 		pj_o(pj);
 		pj_ks(pj, "opcode", "cast");
 		pj_k(pj, "value");
 		il_op_pure_resolve(opx->val, sb, pj);
 		pj_kn(pj, "length", opx->length);
-		pj_kN(pj, "shift", opx->shift);
+		pj_k(pj, "fill");
+		il_op_pure_resolve(opx->fill, sb, pj);
 		pj_end(pj);
 	}
 }
