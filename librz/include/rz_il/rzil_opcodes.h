@@ -401,40 +401,40 @@ typedef enum {
 struct rz_il_op_pure_t {
 	RzILOpPureCode code;
 	union {
-		RzILOpArgsIte *ite;
-		RzILOpArgsVar *var;
+		RzILOpArgsIte ite;
+		RzILOpArgsVar var;
 
-		RzILOpArgsBoolAnd *booland;
-		RzILOpArgsBoolOr *boolor;
-		RzILOpArgsBoolXor *boolxor;
-		RzILOpArgsBoolInv *boolinv;
+		RzILOpArgsBoolAnd booland;
+		RzILOpArgsBoolOr boolor;
+		RzILOpArgsBoolXor boolxor;
+		RzILOpArgsBoolInv boolinv;
 
-		RzILOpArgsBv *bitv;
-		RzILOpArgsMsb *msb;
-		RzILOpArgsLsb *lsb;
-		RzILOpArgsIsZero *is_zero;
-		RzILOpArgsEq *eq;
-		RzILOpArgsUle *ule;
-		RzILOpArgsSle *sle;
-		RzILOpArgsCast *cast;
-		RzILOpArgsNeg *neg;
-		RzILOpArgsLogNot *lognot;
-		RzILOpArgsAdd *add;
-		RzILOpArgsSub *sub;
-		RzILOpArgsMul *mul;
-		RzILOpArgsDiv *div;
-		RzILOpArgsSdiv *sdiv;
-		RzILOpArgsSmod *smod;
-		RzILOpArgsMod *mod;
-		RzILOpArgsLogand *logand;
-		RzILOpArgsLogor *logor;
-		RzILOpArgsLogxor *logxor;
-		RzILOpArgsShiftLeft *shiftl;
-		RzILOpArgsShiftRight *shiftr;
-		RzILOpArgsAppend *append;
+		RzILOpArgsBv bitv;
+		RzILOpArgsMsb msb;
+		RzILOpArgsLsb lsb;
+		RzILOpArgsIsZero is_zero;
+		RzILOpArgsEq eq;
+		RzILOpArgsUle ule;
+		RzILOpArgsSle sle;
+		RzILOpArgsCast cast;
+		RzILOpArgsNeg neg;
+		RzILOpArgsLogNot lognot;
+		RzILOpArgsAdd add;
+		RzILOpArgsSub sub;
+		RzILOpArgsMul mul;
+		RzILOpArgsDiv div;
+		RzILOpArgsSdiv sdiv;
+		RzILOpArgsSmod smod;
+		RzILOpArgsMod mod;
+		RzILOpArgsLogand logand;
+		RzILOpArgsLogor logor;
+		RzILOpArgsLogxor logxor;
+		RzILOpArgsShiftLeft shiftl;
+		RzILOpArgsShiftRight shiftr;
+		RzILOpArgsAppend append;
 
-		RzILOpArgsLoad *load;
-		RzILOpArgsLoadW *loadw;
+		RzILOpArgsLoad load;
+		RzILOpArgsLoadW loadw;
 	} op;
 };
 
@@ -502,17 +502,17 @@ typedef enum {
 struct rz_il_op_effect_t {
 	RzILOpEffectCode code;
 	union {
-		RzILOpArgsSet *set;
-		RzILOpArgsLet *let;
-		RzILOpArgsJmp *jmp;
-		RzILOpArgsGoto *goto_;
-		RzILOpArgsSeq *seq;
-		RzILOpArgsBlk *blk;
-		RzILOpArgsRepeat *repeat;
-		RzILOpArgsBranch *branch;
+		RzILOpArgsSet set;
+		RzILOpArgsLet let;
+		RzILOpArgsJmp jmp;
+		RzILOpArgsGoto goto_;
+		RzILOpArgsSeq seq;
+		RzILOpArgsBlk blk;
+		RzILOpArgsRepeat repeat;
+		RzILOpArgsBranch branch;
 
-		RzILOpArgsStore *store;
-		RzILOpArgsStoreW *storew;
+		RzILOpArgsStore store;
+		RzILOpArgsStoreW storew;
 	} op;
 };
 

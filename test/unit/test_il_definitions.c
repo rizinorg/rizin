@@ -261,8 +261,8 @@ static bool test_rzil_seqn() {
 	s = rz_il_op_new_seqn(2, e0, e1);
 	mu_assert_notnull(s, "seqn 2");
 	mu_assert_eq(s->code, RZIL_OP_SEQ, "seqn 2 seq");
-	mu_assert_ptreq(s->op.seq->x, e0, "seqn 2 first");
-	mu_assert_ptreq(s->op.seq->y, e1, "seqn 2 second");
+	mu_assert_ptreq(s->op.seq.x, e0, "seqn 2 first");
+	mu_assert_ptreq(s->op.seq.y, e1, "seqn 2 second");
 	rz_il_op_effect_free(s);
 
 	// n = 3 ==> nested seq with recursion in the second op:
@@ -273,10 +273,10 @@ static bool test_rzil_seqn() {
 	s = rz_il_op_new_seqn(3, e0, e1, e2);
 	mu_assert_notnull(s, "seqn 3");
 	mu_assert_eq(s->code, RZIL_OP_SEQ, "seqn 3 seq");
-	mu_assert_ptreq(s->op.seq->x, e0, "seqn 3 first");
-	mu_assert_eq(s->op.seq->y->code, RZIL_OP_SEQ, "seqn 3 second seq");
-	mu_assert_ptreq(s->op.seq->y->op.seq->x, e1, "seqn 3 second");
-	mu_assert_ptreq(s->op.seq->y->op.seq->y, e2, "seqn 3 third");
+	mu_assert_ptreq(s->op.seq.x, e0, "seqn 3 first");
+	mu_assert_eq(s->op.seq.y->code, RZIL_OP_SEQ, "seqn 3 second seq");
+	mu_assert_ptreq(s->op.seq.y->op.seq.x, e1, "seqn 3 second");
+	mu_assert_ptreq(s->op.seq.y->op.seq.y, e2, "seqn 3 third");
 	rz_il_op_effect_free(s);
 
 	// n = 4 ==> nested seq with recursion in the second op and no confusion:
@@ -288,12 +288,12 @@ static bool test_rzil_seqn() {
 	s = rz_il_op_new_seqn(4, e0, e1, e2, e3);
 	mu_assert_notnull(s, "seqn 4");
 	mu_assert_eq(s->code, RZIL_OP_SEQ, "seqn 4 seq");
-	mu_assert_ptreq(s->op.seq->x, e0, "seqn 4 first");
-	mu_assert_eq(s->op.seq->y->code, RZIL_OP_SEQ, "seqn 4 second seq");
-	mu_assert_ptreq(s->op.seq->y->op.seq->x, e1, "seqn 4 second");
-	mu_assert_eq(s->op.seq->y->op.seq->y->code, RZIL_OP_SEQ, "seqn 4 third seq");
-	mu_assert_ptreq(s->op.seq->y->op.seq->y->op.seq->x, e2, "seqn 4 third");
-	mu_assert_ptreq(s->op.seq->y->op.seq->y->op.seq->y, e3, "seqn 4 fourth");
+	mu_assert_ptreq(s->op.seq.x, e0, "seqn 4 first");
+	mu_assert_eq(s->op.seq.y->code, RZIL_OP_SEQ, "seqn 4 second seq");
+	mu_assert_ptreq(s->op.seq.y->op.seq.x, e1, "seqn 4 second");
+	mu_assert_eq(s->op.seq.y->op.seq.y->code, RZIL_OP_SEQ, "seqn 4 third seq");
+	mu_assert_ptreq(s->op.seq.y->op.seq.y->op.seq.x, e2, "seqn 4 third");
+	mu_assert_ptreq(s->op.seq.y->op.seq.y->op.seq.y, e3, "seqn 4 fourth");
 	rz_il_op_effect_free(s);
 
 	mu_end;

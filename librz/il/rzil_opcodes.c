@@ -18,13 +18,8 @@
 		if (!ret) { \
 			return NULL; \
 		} \
-		ret->op.s = RZ_NEW0(t); \
-		if (!ret->op.s) { \
-			free(ret); \
-			return NULL; \
-		} \
 		ret->code = id; \
-		ret->op.s->v0 = v0; \
+		ret->op.s.v0 = v0; \
 	} while (0)
 
 #define rz_il_op_new_2(sort, id, t, s, v0, v1) \
@@ -33,14 +28,9 @@
 		if (!ret) { \
 			return NULL; \
 		} \
-		ret->op.s = RZ_NEW0(t); \
-		if (!ret->op.s) { \
-			free(ret); \
-			return NULL; \
-		} \
 		ret->code = id; \
-		ret->op.s->v0 = v0; \
-		ret->op.s->v1 = v1; \
+		ret->op.s.v0 = v0; \
+		ret->op.s.v1 = v1; \
 	} while (0)
 
 #define rz_il_op_new_3(sort, id, t, s, v0, v1, v2) \
@@ -49,15 +39,10 @@
 		if (!ret) { \
 			return NULL; \
 		} \
-		ret->op.s = RZ_NEW0(t); \
-		if (!ret->op.s) { \
-			free(ret); \
-			return NULL; \
-		} \
 		ret->code = id; \
-		ret->op.s->v0 = v0; \
-		ret->op.s->v1 = v1; \
-		ret->op.s->v2 = v2; \
+		ret->op.s.v0 = v0; \
+		ret->op.s.v1 = v1; \
+		ret->op.s.v2 = v2; \
 	} while (0)
 
 /**
@@ -194,14 +179,8 @@ RZ_API RZ_OWN RzILOpBool *rz_il_op_new_bitv_from_ut64(ut32 length, ut64 number) 
 		rz_bv_free(value);
 		return NULL;
 	}
-	ret->op.bitv = RZ_NEW0(RzILOpArgsBv);
-	if (!ret->op.bitv) {
-		rz_bv_free(value);
-		free(ret);
-		return NULL;
-	}
 	ret->code = RZIL_OP_BITV;
-	ret->op.bitv->value = value;
+	ret->op.bitv.value = value;
 	return ret;
 }
 
@@ -220,14 +199,8 @@ RZ_API RZ_OWN RzILOpBool *rz_il_op_new_bitv_from_st64(ut32 length, st64 number) 
 		rz_bv_free(value);
 		return NULL;
 	}
-	ret->op.bitv = RZ_NEW0(RzILOpArgsBv);
-	if (!ret->op.bitv) {
-		rz_bv_free(value);
-		free(ret);
-		return NULL;
-	}
 	ret->code = RZIL_OP_BITV;
-	ret->op.bitv->value = value;
+	ret->op.bitv.value = value;
 	return ret;
 }
 
@@ -585,7 +558,7 @@ RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_seqn(ut32 n, ...) {
 		if (i == n - 1) {
 			// last one
 			if (prev_seq) {
-				prev_seq->op.seq->y = cur_op;
+				prev_seq->op.seq.y = cur_op;
 			} else {
 				// n == 1, no need for seq at all
 				root = cur_op;
@@ -596,18 +569,13 @@ RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_seqn(ut32 n, ...) {
 		if (!seq) {
 			break;
 		}
-		seq->op.seq = RZ_NEW0(RzILOpArgsSeq);
-		if (!seq->op.seq) {
-			free(seq);
-			break;
-		}
 		seq->code = RZIL_OP_SEQ;
-		seq->op.seq->x = cur_op;
+		seq->op.seq.x = cur_op;
 		if (prev_seq) {
 			// not the first one
 			// We let the seq recurse in the second op because that
 			// can enable tail call elimination in the evaluation.
-			prev_seq->op.seq->y = seq;
+			prev_seq->op.seq.y = seq;
 		} else {
 			// first one
 			root = seq;
@@ -705,22 +673,17 @@ RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_storew(RzILMemIndex mem, RZ_NONNULL RzI
 #undef rz_il_op_new_2
 #undef rz_il_op_new_3
 
-#define rz_il_op_free_0(s) free(op->op.s)
-
 #define rz_il_op_free_1(sort, s, v0) \
-	rz_il_op_##sort##_free(op->op.s->v0); \
-	free(op->op.s)
+	rz_il_op_##sort##_free(op->op.s.v0);
 
 #define rz_il_op_free_2(sort, s, v0, v1) \
-	rz_il_op_##sort##_free(op->op.s->v0); \
-	rz_il_op_##sort##_free(op->op.s->v1); \
-	free(op->op.s)
+	rz_il_op_##sort##_free(op->op.s.v0); \
+	rz_il_op_##sort##_free(op->op.s.v1);
 
 #define rz_il_op_free_3(sort, s, v0, v1, v2) \
-	rz_il_op_##sort##_free(op->op.s->v0); \
-	rz_il_op_##sort##_free(op->op.s->v1); \
-	rz_il_op_##sort##_free(op->op.s->v2); \
-	free(op->op.s)
+	rz_il_op_##sort##_free(op->op.s.v0); \
+	rz_il_op_##sort##_free(op->op.s.v1); \
+	rz_il_op_##sort##_free(op->op.s.v2);
 
 RZ_API void rz_il_op_pure_free(RZ_NULLABLE RzILOpPure *op) {
 	if (!op) {
@@ -728,17 +691,14 @@ RZ_API void rz_il_op_pure_free(RZ_NULLABLE RzILOpPure *op) {
 	}
 	switch (op->code) {
 	case RZIL_OP_VAR:
-		rz_il_op_free_0(var);
 		break;
 	case RZIL_OP_UNK:
-		// nothing to free
 		break;
 	case RZIL_OP_ITE:
 		rz_il_op_free_3(pure, ite, condition, x, y);
 		break;
 	case RZIL_OP_B0:
 	case RZIL_OP_B1:
-		// nothing to free
 		break;
 	case RZIL_OP_INV:
 		rz_il_op_free_1(pure, boolinv, x);
@@ -750,8 +710,7 @@ RZ_API void rz_il_op_pure_free(RZ_NULLABLE RzILOpPure *op) {
 		rz_il_op_free_2(pure, boolxor, x, y);
 		break;
 	case RZIL_OP_BITV:
-		rz_bv_free(op->op.bitv->value);
-		rz_il_op_free_0(bitv);
+		rz_bv_free(op->op.bitv.value);
 		break;
 	case RZIL_OP_MSB:
 		rz_il_op_free_1(pure, msb, bv);
@@ -848,7 +807,6 @@ RZ_API void rz_il_op_effect_free(RZ_NULLABLE RzILOpEffect *op) {
 		rz_il_op_free_2(pure, storew, key, value);
 		break;
 	case RZIL_OP_NOP:
-		// nothing to free
 		break;
 	case RZIL_OP_SET:
 		rz_il_op_free_1(pure, set, x);
@@ -860,7 +818,6 @@ RZ_API void rz_il_op_effect_free(RZ_NULLABLE RzILOpEffect *op) {
 		rz_il_op_free_1(pure, jmp, dst);
 		break;
 	case RZIL_OP_GOTO:
-		rz_il_op_free_0(goto_);
 		break;
 	case RZIL_OP_SEQ:
 		rz_il_op_free_2(effect, seq, x, y);
@@ -869,11 +826,11 @@ RZ_API void rz_il_op_effect_free(RZ_NULLABLE RzILOpEffect *op) {
 		rz_il_op_free_2(effect, blk, data_eff, ctrl_eff);
 		break;
 	case RZIL_OP_REPEAT:
-		rz_il_op_pure_free(op->op.repeat->condition);
+		rz_il_op_pure_free(op->op.repeat.condition);
 		rz_il_op_free_1(effect, repeat, data_eff);
 		break;
 	case RZIL_OP_BRANCH:
-		rz_il_op_pure_free(op->op.repeat->condition);
+		rz_il_op_pure_free(op->op.repeat.condition);
 		rz_il_op_free_2(effect, branch, true_eff, false_eff);
 		break;
 	default:
