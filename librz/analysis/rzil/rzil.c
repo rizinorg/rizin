@@ -29,6 +29,7 @@ RZ_API void rz_analysis_rzil_free(RZ_NULLABLE RzAnalysisRzil *rzil) {
 		return;
 	}
 	rz_il_vm_free(rzil->vm);
+	rz_buf_free(rzil->io_buf);
 	free(rzil);
 }
 
@@ -77,6 +78,8 @@ RZ_API bool rz_analysis_rzil_setup(RzAnalysis *analysis) {
 	if (!rzil) {
 		return false;
 	}
+	int fd = analysis->iob.fd_get_current(analysis->iob.io);
+	rzil->io_buf = rz_buf_new_with_io(&analysis->iob, fd);
 	analysis->rzil = rzil;
 	analysis->cur->rzil_init(analysis);
 	return true;

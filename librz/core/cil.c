@@ -137,7 +137,7 @@ RZ_IPI void rz_core_analysis_esil_init_mem(RzCore *core, const char *name, ut64 
 	}
 	RzIOMap *stack_map;
 	if (!name && addr == UT64_MAX && size == UT32_MAX) {
-		char *fi = sdb_get(core->sdb, "aeim.fd", 0);
+		const char *fi = sdb_const_get(core->sdb, "aeim.fd", 0);
 		if (fi) {
 			// Close the fd associated with the aeim stack
 			ut64 fd = sdb_atoi(fi);
@@ -636,8 +636,6 @@ RZ_IPI void rz_core_analysis_rzil_vm_status(RzCore *core, const char *var_name, 
 
 // step a list of ct_opcode at a given address
 RZ_IPI void rz_core_rzil_step(RzCore *core) {
-	RzPVector *oplist;
-
 	if (!core->analysis || !core->analysis->rzil) {
 		RZ_LOG_ERROR("RzIL: Run 'aezi' first to initialize the VM\n");
 		return;
@@ -662,10 +660,10 @@ RZ_IPI void rz_core_rzil_step(RzCore *core) {
 	// analysis current data to trigger rzil_set_op_code
 	(void)rz_io_read_at_mapped(core->io, addr, code, sizeof(code));
 	int size = rz_analysis_op(analysis, &op, addr, code, sizeof(code), RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_HINT);
-	oplist = op.rzil_op ? op.rzil_op->ops : NULL;
+	RzILOpEffect *ilop = op.rzil_op ? op.rzil_op->op : NULL;
 
-	if (oplist) {
-		rz_il_vm_list_step(vm, oplist, size > 0 ? size : 1);
+	if (ilop) {
+		rz_il_vm_list_step(vm, ilop, size > 0 ? size : 1);
 	} else {
 		RZ_LOG_ERROR("RzIL: invalid instruction detected or reach the end of code at address 0x%08" PFMT64x "\n", addr);
 	}

@@ -350,9 +350,10 @@ err:
  *
  * \param  flirt_buf     The buffer to read
  * \param  optimization  Optimization to apply after creation of the flatten nodes.
+ * \param  info          Pointer to a RzFlirtInfo that can be used to get info about the pat file
  * \return               Parsed FLIRT node
  */
-RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_parse_string_pattern_from_buffer(RZ_NONNULL RzBuffer *flirt_buf, ut32 optimization) {
+RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_parse_string_pattern_from_buffer(RZ_NONNULL RzBuffer *flirt_buf, ut32 optimization, RZ_NULLABLE RzFlirtInfo *info) {
 	rz_return_val_if_fail(flirt_buf, NULL);
 
 	if (optimization > RZ_FLIRT_NODE_OPTIMIZE_MAX) {
@@ -428,6 +429,11 @@ RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_parse_string_pattern_from_buffer(RZ_NON
 	} else if (!flirt_node_optimize(root)) {
 		rz_sign_flirt_node_free(root);
 		return NULL;
+	}
+
+	if (info) {
+		info->type = RZ_FLIRT_FILE_TYPE_PAT;
+		info->u.pat.n_modules = rz_sign_flirt_node_count_nodes(root);
 	}
 
 	return root;

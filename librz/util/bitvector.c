@@ -8,6 +8,10 @@
 #define NELEM(N, ELEMPER) ((N + (ELEMPER)-1) / (ELEMPER))
 #define BV_ELEM_SIZE      8U
 
+// optimization for reversing 8 bits which uses 32 bits
+// https://graphics.stanford.edu/~seander/bithacks.html#BitReverseObvious
+#define reverse_byte(x) ((((x)*0x0802LU & 0x22110LU) | ((x)*0x8020LU & 0x88440LU)) * 0x10101LU >> 16)
+
 /**
  * \brief Initialize a RzBitVector structure
  * \param bv Pointer to a uninitialized RzBitVector instance
@@ -116,9 +120,7 @@ RZ_API RZ_OWN char *rz_bv_as_hex_string(RZ_NONNULL RzBitVector *bv) {
 	str[1] = 'x';
 	for (ut32 i = 0, j = 2; i < bv->_elem_len; i++, j += 2) {
 		ut8 b8 = bv->bits.large_a[i];
-		// optimization for reversing 8 bits which uses 32 bits
-		// https://graphics.stanford.edu/~seander/bithacks.html#BitReverseObvious
-		b8 = ((b8 * 0x0802LU & 0x22110LU) | (b8 * 0x8020LU & 0x88440LU)) * 0x10101LU >> 16;
+		b8 = reverse_byte(b8);
 		str[j + 0] = hex[b8 >> 4];
 		str[j + 1] = hex[b8 & 15];
 	}
@@ -1031,6 +1033,14 @@ RZ_API bool rz_bv_is_zero_vector(RZ_NONNULL RzBitVector *x) {
 }
 
 /**
+ * Check if x == y
+ */
+RZ_API bool rz_bv_eq(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
+	rz_return_val_if_fail(x && y, false);
+	return bv_unsigned_cmp(x, y) == 0;
+}
+
+/**
  * Check if x <= y (as unsigned value)
  * \param x RzBitVector, operand
  * \param y RzBitVector, operand
@@ -1092,13 +1102,30 @@ RZ_API bool rz_bv_cmp(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
 }
 
 /**
- * Get the length of bitvector
+ * Get the length of bitvector in bits
  * \param bv RzBitVector
- * \return len ut32, length of bitvector
+ * \return len ut32, length of bitvector in bits
  */
-RZ_API ut32 rz_bv_len(RZ_NONNULL RzBitVector *bv) {
+RZ_API ut32 rz_bv_len(RZ_NONNULL const RzBitVector *bv) {
 	rz_return_val_if_fail(bv, 0);
 	return bv->len;
+}
+
+/**
+ * Get the length of bitvector in bytes
+ * \param bv RzBitVector
+ * \return len ut32, length of bitvector in bytes
+ */
+RZ_API ut32 rz_bv_len_bytes(RZ_NONNULL const RzBitVector *bv) {
+	rz_return_val_if_fail(bv, 0);
+	if (bv->len > 64) {
+		return bv->_elem_len;
+	}
+	ut32 align = bv->len;
+	if (align & 3) {
+		align += 8 - (align & 3);
+	}
+	return align >> 3;
 }
 
 /**
@@ -1138,7 +1165,7 @@ RZ_API RZ_OWN RzBitVector *rz_bv_new_from_st64(ut32 length, st64 value) {
 }
 
 /**
- * Create a new bitvector of size bits and apply rz_bv_set_from_bytes_le() to it
+ * Create a new bitvector of \p size bits and apply rz_bv_set_from_bytes_le() to it
  */
 RZ_API RZ_OWN RzBitVector *rz_bv_new_from_bytes_le(RZ_IN RZ_NONNULL const ut8 *buf, ut32 bit_offset, ut32 size) {
 	rz_return_val_if_fail(buf, NULL);
@@ -1147,6 +1174,19 @@ RZ_API RZ_OWN RzBitVector *rz_bv_new_from_bytes_le(RZ_IN RZ_NONNULL const ut8 *b
 		return NULL;
 	}
 	rz_bv_set_from_bytes_le(bv, buf, bit_offset, size);
+	return bv;
+}
+
+/**
+ * Create a new bitvector of \p size bits and apply rz_bv_set_from_bytes_be() to it
+ */
+RZ_API RZ_OWN RzBitVector *rz_bv_new_from_bytes_be(RZ_IN RZ_NONNULL const ut8 *buf, ut32 bit_offset, ut32 size) {
+	rz_return_val_if_fail(buf, NULL);
+	RzBitVector *bv = rz_bv_new(size);
+	if (!bv) {
+		return NULL;
+	}
+	rz_bv_set_from_bytes_be(bv, buf, bit_offset, size);
 	return bv;
 }
 
@@ -1213,10 +1253,82 @@ RZ_API void rz_bv_set_from_bytes_le(RZ_NONNULL RzBitVector *bv, RZ_IN RZ_NONNULL
 	for (ut32 i = 0; i < bv->len; i++) {
 		bool bit = false;
 		if (i < size) {
-			bit = !!(buf[(bit_offset + i) >> 3] & (1 << ((bit_offset + i) & 7)));
+			ut32 idx = (bit_offset + i) >> 3;
+			ut32 sh = (bit_offset + i) & 7;
+			bit = (buf[idx] >> sh) & 1;
 		}
 		rz_bv_set(bv, i, bit);
 	}
+}
+
+/**
+ * Set the bitvector's contents from the given bits. The bitvector's size is unchanged.
+ * If bv->len < size, additional bits are cut off, if bv->len > size, the rest is filled up with 0.
+ * \param buf big endian buffer of at least (bit_offset + size + 7) / 8 bytes
+ * \param bit_offset offset inside buf to start reading from, in bits
+ * \param size number of bits to read from buf
+ */
+RZ_API void rz_bv_set_from_bytes_be(RZ_NONNULL RzBitVector *bv, RZ_IN RZ_NONNULL const ut8 *buf, ut32 bit_offset, ut32 size) {
+	rz_return_if_fail(buf && size);
+	size = RZ_MIN(size, bv->len);
+	// upper bits goes always in the upper bit of the bitv
+	for (ut32 i = 0; i < bv->len; i++) {
+		bool bit = false;
+		if (i < size) {
+			ut32 idx = (bit_offset + i) >> 3;
+			ut32 sh = ((bit_offset + i) & 7);
+			ut8 b8 = buf[idx];
+			b8 = reverse_byte(b8);
+			bit = (b8 >> sh) & 1;
+		}
+		rz_bv_set(bv, bv->len - 1 - i, bit);
+	}
+}
+
+/**
+ * \brief Set the buffer contents from the given bitvector's bits in little endian format.
+ * \param bv  BitVector to use as source of the bits
+ * \param buf buffer to write little endian data.
+ */
+RZ_API void rz_bv_set_to_bytes_le(RZ_NONNULL const RzBitVector *bv, RZ_OUT RZ_NONNULL ut8 *buf) {
+	rz_return_if_fail(bv && buf);
+	ut32 bytes = rz_bv_len_bytes(bv);
+	if (bv->len > 64) {
+		for (ut32 i = 0; i < bytes; i++) {
+			ut8 b8 = bv->bits.large_a[i];
+			buf[i] = reverse_byte(b8);
+		}
+		return;
+	}
+	ut64 val = bv->bits.small_u;
+	for (ut32 i = 0; i < bytes; i++) {
+		buf[i] = val & 0xFF;
+		val >>= 8;
+	}
+}
+
+/**
+ * \brief Set the buffer contents from the given bitvector's bits in big endian format.
+ * \param bv  BitVector to use as source of the bits
+ * \param buf buffer to write big endian data.
+ */
+RZ_API void rz_bv_set_to_bytes_be(RZ_NONNULL const RzBitVector *bv, RZ_OUT RZ_NONNULL ut8 *buf) {
+	rz_return_if_fail(bv && buf);
+	ut32 bytes = rz_bv_len_bytes(bv);
+	if (bv->len > 64) {
+		ut32 end = bytes - 1;
+		for (ut32 i = 0; i < bytes; i++) {
+			ut8 b8 = bv->bits.large_a[i];
+			buf[end - i] = reverse_byte(b8);
+		}
+		return;
+	}
+	ut64 val = bv->bits.small_u;
+	for (ut32 i = bytes - 1; i; i--) {
+		buf[i] = val & 0xFF;
+		val >>= 8;
+	}
+	buf[0] = val & 0xFF;
 }
 
 /**

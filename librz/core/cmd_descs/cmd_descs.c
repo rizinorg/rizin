@@ -101,6 +101,7 @@ static const RzCmdDescArg analysis_function_vars_sp_setref_args[3];
 static const RzCmdDescArg analysis_function_import_list_args[2];
 static const RzCmdDescArg analysis_function_opcode_stat_args[2];
 static const RzCmdDescArg analysis_function_all_opcode_stat_args[2];
+static const RzCmdDescArg analysis_function_rename_args[2];
 static const RzCmdDescArg rzil_vm_step_args[2];
 static const RzCmdDescArg rzil_vm_step_with_events_args[2];
 static const RzCmdDescArg rzil_vm_step_until_addr_args[2];
@@ -1801,6 +1802,39 @@ static const RzCmdDescArg analysis_function_all_opcode_stat_args[] = {
 static const RzCmdDescHelp analysis_function_all_opcode_stat_help = {
 	.summary = "Enumerate unique opcodes/opcode families/opcode types in all functions",
 	.args = analysis_function_all_opcode_stat_args,
+};
+
+static const RzCmdDescHelp afn_help = {
+	.summary = "Analyze function names",
+};
+static const RzCmdDescArg analysis_function_rename_args[] = {
+	{
+		.name = "new name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_rename_help = {
+	.summary = "Rename function at current seek",
+	.args = analysis_function_rename_args,
+};
+
+static const RzCmdDescArg analysis_function_autoname_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_autoname_help = {
+	.summary = "Suggest a name for the function in current seek",
+	.args = analysis_function_autoname_args,
+};
+
+static const RzCmdDescArg analysis_function_strings_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_strings_help = {
+	.summary = "Print all strings referenced by the function in current seek",
+	.args = analysis_function_strings_args,
 };
 
 static const RzCmdDescHelp aez_help = {
@@ -8668,7 +8702,7 @@ static const RzCmdDescArg zign_flirt_create_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp zign_flirt_create_help = {
-	.summary = "Create a FLIRT file (.pac or .sig)",
+	.summary = "Create a FLIRT file (.pat or .sig)",
 	.args = zign_flirt_create_args,
 };
 
@@ -8681,7 +8715,7 @@ static const RzCmdDescArg zign_flirt_dump_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp zign_flirt_dump_help = {
-	.summary = "Open a FLIRT file (.pac or .sig) and dumps its contents",
+	.summary = "Open a FLIRT file (.pat or .sig) and dumps its contents",
 	.args = zign_flirt_dump_args,
 };
 
@@ -8694,7 +8728,7 @@ static const RzCmdDescArg zign_flirt_scan_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp zign_flirt_scan_help = {
-	.summary = "Open a FLIRT file (.pac or .sig) and tries to apply the signatures to the loaded binary",
+	.summary = "Open a FLIRT file (.pat or .sig) and tries to apply the signatures to the loaded binary",
 	.args = zign_flirt_scan_args,
 };
 
@@ -9622,6 +9656,14 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(afis_cd);
 	RzCmdDesc *analysis_function_all_opcode_stat_cd = rz_cmd_desc_argv_state_new(core->rcmd, afis_cd, "afisa", RZ_OUTPUT_MODE_TABLE, rz_analysis_function_all_opcode_stat_handler, &analysis_function_all_opcode_stat_help);
 	rz_warn_if_fail(analysis_function_all_opcode_stat_cd);
+
+	RzCmdDesc *afn_cd = rz_cmd_desc_group_new(core->rcmd, cmd_analysis_fcn_cd, "afn", rz_analysis_function_rename_handler, &analysis_function_rename_help, &afn_help);
+	rz_warn_if_fail(afn_cd);
+	RzCmdDesc *analysis_function_autoname_cd = rz_cmd_desc_argv_new(core->rcmd, afn_cd, "afna", rz_analysis_function_autoname_handler, &analysis_function_autoname_help);
+	rz_warn_if_fail(analysis_function_autoname_cd);
+
+	RzCmdDesc *analysis_function_strings_cd = rz_cmd_desc_argv_state_new(core->rcmd, afn_cd, "afns", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_strings_handler, &analysis_function_strings_help);
+	rz_warn_if_fail(analysis_function_strings_cd);
 
 	RzCmdDesc *aez_cd = rz_cmd_desc_group_new(core->rcmd, cmd_analysis_cd, "aez", NULL, NULL, &aez_help);
 	rz_warn_if_fail(aez_cd);

@@ -688,7 +688,8 @@ RZ_API void rz_core_analysis_flag_every_function(RzCore *core);
 RZ_API bool rz_core_analysis_function_rename(RzCore *core, ut64 addr, const char *_name);
 RZ_API bool rz_core_analysis_function_add(RzCore *core, const char *name, ut64 addr, bool analyze_recursively);
 RZ_API int rz_core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, int depth);
-RZ_API char *rz_core_analysis_fcn_autoname(RzCore *core, ut64 addr, int dump, int mode);
+RZ_API RZ_OWN char *rz_core_analysis_function_autoname(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisFunction *fcn);
+RZ_API void rz_core_analysis_function_strings_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NULLABLE PJ *pj);
 RZ_API void rz_core_analysis_autoname_all_fcns(RzCore *core);
 RZ_API void rz_core_analysis_autoname_all_golang_fcns(RzCore *core);
 RZ_API char *rz_core_analysis_fcn_name(RzCore *core, RzAnalysisFunction *fcn);
@@ -913,6 +914,10 @@ RZ_API bool rz_core_bin_sections_mapping_print(RZ_NONNULL RzCore *core, RZ_NONNU
 RZ_API bool rz_core_bin_print(RzCore *core, RZ_NONNULL RzBinFile *bf, ut32 mask, RzCoreBinFilter *filter, RzCmdStateOutput *state, RzList *hashes);
 RZ_API bool rz_core_bin_basefind_print(RzCore *core, ut32 pointer_size, RzCmdStateOutput *state);
 
+// cmeta.c
+RZ_API bool rz_core_meta_string_add(RzCore *core, ut64 addr, ut64 size, RzStrEnc encoding, RZ_NULLABLE const char *name);
+RZ_API bool rz_core_meta_pascal_string_add(RzCore *core, ut64 addr, RzStrEnc encoding, RZ_NULLABLE const char *name);
+
 typedef enum {
 	RZ_CORE_STRING_KIND_UNKNOWN,
 	RZ_CORE_STRING_KIND_ASCII,
@@ -1114,6 +1119,7 @@ RZ_API void rz_core_analysis_propagate_noreturn(RzCore *core, ut64 addr);
 RZ_API bool rz_core_flirt_dump_file(RZ_NONNULL const char *flirt_file);
 RZ_API bool rz_core_flirt_create_file(RZ_NONNULL RzCore *core, RZ_NONNULL const char *output_file, RZ_NULLABLE ut32 *written_nodes);
 RZ_API bool rz_core_flirt_convert_file(RZ_NONNULL RzCore *core, RZ_NONNULL const char *input_file, RZ_NONNULL const char *ouput_file);
+RZ_API const char *rz_core_flirt_arch_from_id(ut8 arch);
 RZ_API ut8 rz_core_flirt_arch_from_name(RZ_NONNULL const char *arch);
 RZ_API ut32 rz_core_flirt_file_from_option_list(RZ_NONNULL const char *file_list);
 RZ_API ut16 rz_core_flirt_os_from_option_list(RZ_NONNULL const char *os_list);

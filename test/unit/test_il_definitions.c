@@ -5,10 +5,6 @@
 #include <rz_util.h>
 #include "minunit.h"
 
-static bool is_equal_bv(RzBitVector *x, RzBitVector *y) {
-	return rz_bv_cmp(x, y) == 0;
-}
-
 static bool is_equal_bool(RzILBool *x, RzILBool *y) {
 	return x->b == y->b;
 }
@@ -90,28 +86,215 @@ bool test_rzil_bool_logic(void) {
 	mu_end;
 }
 
-static bool test_rzil_mem() {
-	RzILMem *mem = rz_il_mem_new(8);
+static bool test_rzil_mem_load() {
+	ut8 data[] = { 0x0, 0x0, 0x0, 0x0, 0x0, 0x42, 0x0, 0x0 };
+	RzBuffer *buf = rz_buf_new_with_pointers(data, sizeof(data), false);
+	rz_buf_set_overflow_byte(buf, 0xaa);
+	RzILMem *mem = rz_il_mem_new(buf, 16);
+	rz_buf_free(buf); // buf is refcounted
 	mu_assert_notnull(mem, "Create mem");
 
-	RzBitVector *addr = rz_bv_new_from_ut64(16, 121);
-	RzBitVector *valid_data = rz_bv_new_from_ut64(8, 177);
-	RzBitVector *invalid_data = rz_bv_new_from_ut64(4, 6);
+	// valid read
+	RzBitVector *addr = rz_bv_new_from_ut64(16, 5);
+	RzBitVector *val = rz_il_mem_load(mem, addr);
+	mu_assert_notnull(val, "load success");
+	mu_assert_eq(rz_bv_len(val), 8, "load size");
+	mu_assert_eq(rz_bv_to_ut64(val), 0x42, "load val");
+	rz_bv_free(val);
+	rz_bv_free(addr);
 
-	RzILMem *result = rz_il_mem_store(mem, addr, valid_data);
-	mu_assert_eq(result, mem, "Store successfully");
+	// invalid key size
+	addr = rz_bv_new_from_ut64(8, 1);
+	val = rz_il_mem_load(mem, addr);
+	mu_assert_null(val, "invalid key size");
+	rz_bv_free(addr);
 
-	result = rz_il_mem_store(mem, addr, invalid_data);
-	mu_assert_null(result, "Unmatched type");
+	// valid read (overflow)
+	addr = rz_bv_new_from_ut64(16, 100);
+	val = rz_il_mem_load(mem, addr);
+	mu_assert_notnull(val, "load success");
+	mu_assert_eq(rz_bv_len(val), 8, "load size");
+	mu_assert_eq(rz_bv_to_ut64(val), 0xaa, "load val");
+	rz_bv_free(val);
 
-	RzBitVector *data = rz_il_mem_load(mem, addr);
-	mu_assert("Load correct data", is_equal_bv(data, valid_data));
-	rz_bv_free(data);
-
-	rz_bv_free(valid_data);
-	rz_bv_free(invalid_data);
 	rz_bv_free(addr);
 	rz_il_mem_free(mem);
+	mu_end;
+}
+
+static bool test_rzil_mem_store() {
+	ut8 data[] = { 0x0, 0x0, 0x0, 0x0, 0x0, 0x42, 0x0, 0x0 };
+	RzBuffer *buf = rz_buf_new_with_pointers(data, sizeof(data), false);
+	RzILMem *mem = rz_il_mem_new(buf, 16);
+	rz_buf_free(buf); // buf is refcounted
+	mu_assert_notnull(mem, "Create mem");
+
+	RzBitVector *addr = rz_bv_new_from_ut64(16, 1);
+
+	// valid write
+	RzBitVector *val = rz_bv_new_from_ut64(8, 177);
+	bool succ = rz_il_mem_store(mem, addr, val);
+	rz_bv_free(val);
+	mu_assert_true(succ, "Store successfully");
+	const ut8 expect0[] = { 0x0, 177, 0x0, 0x0, 0x0, 0x42, 0x0, 0x0 };
+	mu_assert_memeq(data, expect0, sizeof(expect0), "stored");
+
+	// invalid data size
+	val = rz_bv_new_from_ut64(4, 2);
+	succ = rz_il_mem_store(mem, addr, val);
+	rz_bv_free(val);
+	mu_assert_false(succ, "Unmatched value type");
+	mu_assert_memeq(data, expect0, sizeof(expect0), "not stored");
+
+	// invalid key size
+	rz_bv_free(addr);
+	addr = rz_bv_new_from_ut64(8, 1);
+	val = rz_bv_new_from_ut64(8, 177);
+	succ = rz_il_mem_store(mem, addr, val);
+	rz_bv_free(val);
+	mu_assert_false(succ, "invalid key size");
+	mu_assert_memeq(data, expect0, sizeof(expect0), "not stored");
+
+	rz_bv_free(addr);
+	rz_il_mem_free(mem);
+	mu_end;
+}
+
+static bool test_rzil_mem_loadw() {
+	ut8 data[] = { 0x0, 0x0, 0x0, 0x0, 0x13, 0x37, 0x0, 0x0 };
+	RzBuffer *buf = rz_buf_new_with_pointers(data, sizeof(data), false);
+	rz_buf_set_overflow_byte(buf, 0xaa);
+	RzILMem *mem = rz_il_mem_new(buf, 16);
+	rz_buf_free(buf); // buf is refcounted
+	mu_assert_notnull(mem, "Create mem");
+
+	// valid read (le)
+	RzBitVector *addr = rz_bv_new_from_ut64(16, 4);
+	RzBitVector *val = rz_il_mem_loadw(mem, addr, 16, false);
+	mu_assert_notnull(val, "loadw success");
+	mu_assert_eq(rz_bv_len(val), 16, "loadw size");
+	mu_assert_eq(rz_bv_to_ut64(val), 0x3713, "loadw val");
+	rz_bv_free(val);
+
+	// valid read (be)
+	val = rz_il_mem_loadw(mem, addr, 16, true);
+	mu_assert_notnull(val, "loadw success");
+	mu_assert_eq(rz_bv_len(val), 16, "loadw size");
+	mu_assert_eq(rz_bv_to_ut64(val), 0x1337, "loadw val");
+	rz_bv_free(val);
+	rz_bv_free(addr);
+
+	// invalid key size
+	addr = rz_bv_new_from_ut64(8, 1);
+	val = rz_il_mem_loadw(mem, addr, 16, false);
+	rz_bv_free(addr);
+	mu_assert_null(val, "invalid key size");
+	rz_bv_free(val);
+
+	// valid read (overflow)
+	addr = rz_bv_new_from_ut64(16, 100);
+	val = rz_il_mem_loadw(mem, addr, 16, false);
+	mu_assert_notnull(val, "load success");
+	mu_assert_eq(rz_bv_len(val), 16, "load size");
+	mu_assert_eq(rz_bv_to_ut64(val), 0xaaaa, "load val");
+	rz_bv_free(val);
+
+	rz_bv_free(addr);
+	rz_il_mem_free(mem);
+	mu_end;
+}
+
+static bool test_rzil_mem_storew() {
+	ut8 data[] = { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
+	RzBuffer *buf = rz_buf_new_with_pointers(data, sizeof(data), false);
+	RzILMem *mem = rz_il_mem_new(buf, 32);
+	rz_buf_free(buf); // buf is refcounted
+	mu_assert_notnull(mem, "Create mem");
+
+	// valid write (le)
+	RzBitVector *addr = rz_bv_new_from_ut64(32, 4);
+	RzBitVector *val = rz_bv_new_from_ut64(16, 0x1337);
+	bool succ = rz_il_mem_storew(mem, addr, val, false);
+	rz_bv_free(addr);
+	mu_assert_true(succ, "storew success");
+	const ut8 expect0[] = { 0x0, 0x0, 0x0, 0x0, 0x37, 0x13, 0x0, 0x0 };
+	mu_assert_memeq(data, expect0, sizeof(expect0), "stored");
+
+	// valid write (be)
+	addr = rz_bv_new_from_ut64(32, 2);
+	succ = rz_il_mem_storew(mem, addr, val, true);
+	mu_assert_true(succ, "storew success");
+	const ut8 expect1[] = { 0x0, 0x0, 0x13, 0x37, 0x37, 0x13, 0x0, 0x0 };
+	mu_assert_memeq(data, expect1, sizeof(expect1), "stored");
+	rz_bv_free(val);
+	rz_bv_free(addr);
+
+	// invalid key size
+	addr = rz_bv_new_from_ut64(8, 1);
+	val = rz_il_mem_load(mem, addr);
+	mu_assert_null(val, "invalid key size");
+	mu_assert_memeq(data, expect1, sizeof(expect1), "not stored");
+	rz_bv_free(addr);
+
+	rz_il_mem_free(mem);
+	mu_end;
+}
+
+static bool test_rzil_seqn() {
+	// n = 0 ==> just a nop
+	RzILOpEffect *s = rz_il_op_new_seqn(0);
+	mu_assert_notnull(s, "seqn 0");
+	mu_assert_eq(s->code, RZIL_OP_NOP, "seqn 0 nop");
+	rz_il_op_effect_free(s);
+
+	// n = 1 ==> just the op
+	RzILOpEffect *e0 = rz_il_op_new_goto("beach");
+	s = rz_il_op_new_seqn(1, e0);
+	mu_assert_notnull(s, "seqn 1");
+	mu_assert_ptreq(s, e0, "seqn 1 op");
+	rz_il_op_effect_free(s);
+
+	// n = 2 ==> single seq
+	// (seq e0 e1)
+	e0 = rz_il_op_new_goto("beach");
+	RzILOpEffect *e1 = rz_il_op_new_goto("beach2");
+	s = rz_il_op_new_seqn(2, e0, e1);
+	mu_assert_notnull(s, "seqn 2");
+	mu_assert_eq(s->code, RZIL_OP_SEQ, "seqn 2 seq");
+	mu_assert_ptreq(s->op.seq->x, e0, "seqn 2 first");
+	mu_assert_ptreq(s->op.seq->y, e1, "seqn 2 second");
+	rz_il_op_effect_free(s);
+
+	// n = 3 ==> nested seq with recursion in the second op:
+	// (seq e0 (seq e1 e2))
+	e0 = rz_il_op_new_goto("beach");
+	e1 = rz_il_op_new_goto("beach2");
+	RzILOpEffect *e2 = rz_il_op_new_goto("beach3");
+	s = rz_il_op_new_seqn(3, e0, e1, e2);
+	mu_assert_notnull(s, "seqn 3");
+	mu_assert_eq(s->code, RZIL_OP_SEQ, "seqn 3 seq");
+	mu_assert_ptreq(s->op.seq->x, e0, "seqn 3 first");
+	mu_assert_eq(s->op.seq->y->code, RZIL_OP_SEQ, "seqn 3 second seq");
+	mu_assert_ptreq(s->op.seq->y->op.seq->x, e1, "seqn 3 second");
+	mu_assert_ptreq(s->op.seq->y->op.seq->y, e2, "seqn 3 third");
+	rz_il_op_effect_free(s);
+
+	// n = 4 ==> nested seq with recursion in the second op and no confusion:
+	// (seq e0 (seq e1 (seq e2 e3)))
+	e0 = rz_il_op_new_goto("beach");
+	e1 = rz_il_op_new_goto("beach2");
+	e2 = rz_il_op_new_goto("beach3");
+	RzILOpEffect *e3 = rz_il_op_new_goto("beach3");
+	s = rz_il_op_new_seqn(4, e0, e1, e2, e3);
+	mu_assert_notnull(s, "seqn 4");
+	mu_assert_eq(s->code, RZIL_OP_SEQ, "seqn 4 seq");
+	mu_assert_ptreq(s->op.seq->x, e0, "seqn 4 first");
+	mu_assert_eq(s->op.seq->y->code, RZIL_OP_SEQ, "seqn 4 second seq");
+	mu_assert_ptreq(s->op.seq->y->op.seq->x, e1, "seqn 4 second");
+	mu_assert_eq(s->op.seq->y->op.seq->y->code, RZIL_OP_SEQ, "seqn 4 third seq");
+	mu_assert_ptreq(s->op.seq->y->op.seq->y->op.seq->x, e2, "seqn 4 third");
+	mu_assert_ptreq(s->op.seq->y->op.seq->y->op.seq->y, e3, "seqn 4 fourth");
+	rz_il_op_effect_free(s);
 
 	mu_end;
 }
@@ -119,8 +302,11 @@ static bool test_rzil_mem() {
 bool all_tests() {
 	mu_run_test(test_rzil_bool_init);
 	mu_run_test(test_rzil_bool_logic);
-
-	mu_run_test(test_rzil_mem);
+	mu_run_test(test_rzil_mem_load);
+	mu_run_test(test_rzil_mem_store);
+	mu_run_test(test_rzil_mem_loadw);
+	mu_run_test(test_rzil_mem_storew);
+	mu_run_test(test_rzil_seqn);
 	return tests_passed != tests_run;
 }
 

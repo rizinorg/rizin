@@ -5,7 +5,6 @@
 #include <rz_analysis.h>
 #include <rz_util.h>
 #include <rz_list.h>
-#include <rz_io.h>
 #include <rz_util/rz_path.h>
 #include <config.h>
 

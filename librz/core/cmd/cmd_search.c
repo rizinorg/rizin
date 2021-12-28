@@ -1107,12 +1107,11 @@ static RzList *construct_rop_gadget(RzCore *core, ut64 addr, ut8 *buf, int bufle
 			valid = (endaddr == idx - opsz);
 			goto ret;
 		}
-		free(opst);
-		aop.mnemonic = NULL;
+		rz_analysis_op_fini(&aop);
 		nb_instr++;
 	}
 ret:
-	free(aop.mnemonic);
+	rz_analysis_op_fini(&aop);
 	free(grep_str);
 	if (regex && rx) {
 		rz_list_free(hitlist);
@@ -1184,6 +1183,7 @@ static void print_rop(RzCore *core, RzList *hitlist, PJ *pj, int mode) {
 			pj_ks(pj, "type", rz_analysis_optype_to_string(analop.type));
 			pj_end(pj);
 			free(buf);
+			rz_analysis_op_fini(&analop);
 		}
 		pj_end(pj);
 		if (db && hit) {
@@ -1225,6 +1225,7 @@ static void print_rop(RzCore *core, RzList *hitlist, PJ *pj, int mode) {
 				rz_cons_printf(" %s;", rz_asm_op_get_asm(&asmop));
 			}
 			free(buf);
+			rz_analysis_op_fini(&analop);
 		}
 		if (db && hit) {
 			const ut64 addr = ((RzCoreAsmHit *)hitlist->head->data)->addr;
@@ -1279,6 +1280,7 @@ static void print_rop(RzCore *core, RzList *hitlist, PJ *pj, int mode) {
 			}
 			free(asm_op_hex);
 			free(buf);
+			rz_analysis_op_fini(&analop);
 		}
 		if (db && hit) {
 			const ut64 addr = ((RzCoreAsmHit *)hitlist->head->data)->addr;
