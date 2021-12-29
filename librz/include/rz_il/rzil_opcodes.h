@@ -439,6 +439,7 @@ struct rz_il_op_pure_t {
 };
 
 RZ_API void rz_il_op_pure_free(RZ_NULLABLE RzILOpPure *op);
+RZ_API RzILOpPure *rz_il_op_pure_dup(RZ_NULLABLE RzILOpPure *op);
 
 RZ_API RZ_OWN RzILOpPure *rz_il_op_new_ite(RZ_NONNULL RzILOpPure *condition, RZ_NULLABLE RzILOpPure *x, RZ_NULLABLE RzILOpPure *y);
 RZ_API RZ_OWN RzILOpPure *rz_il_op_new_unk();
