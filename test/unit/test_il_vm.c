@@ -554,6 +554,21 @@ static bool test_rzil_vm_op_storew_be() {
 	mu_end;
 }
 
+static bool test_rzil_vm_op_append() {
+	RzILVM *vm = rz_il_vm_new(0, 8, true);
+
+	RzILOpPure *op = rz_il_op_new_append(rz_il_op_new_bitv_from_ut64(16, 0xc0ff), rz_il_op_new_bitv_from_ut64(8, 0xee));
+	RzBitVector *r = rz_il_evaluate_bitv(vm, op);
+	rz_il_op_pure_free(op);
+	mu_assert_notnull(r, "eval");
+	mu_assert_eq(rz_bv_len(r), 24, "eval len");
+	mu_assert_eq(rz_bv_to_ut64(r), 0xc0ffee, "eval val");
+	rz_bv_free(r);
+
+	rz_il_vm_free(vm);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rzil_vm_init);
 	mu_run_test(test_rzil_vm_basic_operation);
@@ -574,6 +589,7 @@ bool all_tests() {
 	mu_run_test(test_rzil_vm_op_storew_le);
 	mu_run_test(test_rzil_vm_op_loadw_be);
 	mu_run_test(test_rzil_vm_op_storew_be);
+	mu_run_test(test_rzil_vm_op_append);
 	return tests_passed != tests_run;
 }
 

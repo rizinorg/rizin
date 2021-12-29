@@ -477,12 +477,12 @@ RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_shiftr(RZ_NONNULL RzILOpBool *fill_b
 }
 
 /**
- *  \brief op structure for appending 2 bitv: MSB:LSB y:x
+ *  \brief op structure for appending 2 bitv: MSB:LSB high:low
  */
-RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_append(RZ_NONNULL RzILOpBitVector *x, RZ_NONNULL RzILOpBitVector *y) {
-	rz_return_val_if_fail(x && y, NULL);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_append(RZ_NONNULL RzILOpBitVector *high, RZ_NONNULL RzILOpBitVector *low) {
+	rz_return_val_if_fail(high && low, NULL);
 	RzILOpBitVector *ret;
-	rz_il_op_new_2(BitVector, RZ_IL_OP_APPEND, RzILOpArgsAppend, append, x, y);
+	rz_il_op_new_2(BitVector, RZ_IL_OP_APPEND, RzILOpArgsAppend, append, high, low);
 	return ret;
 }
 
@@ -828,7 +828,7 @@ RZ_API RzILOpPure *rz_il_op_pure_dup(RZ_NONNULL RzILOpPure *op) {
 		rz_warn_if_reached();
 		break;
 	case RZ_IL_OP_APPEND:
-		DUP_OP2(append, x, y);
+		DUP_OP2(append, high, low);
 		break;
 	case RZ_IL_OP_LOAD:
 		r->op.load.mem = op->op.load.mem;
@@ -955,7 +955,7 @@ RZ_API void rz_il_op_pure_free(RZ_NULLABLE RzILOpPure *op) {
 		rz_warn_if_reached();
 		break;
 	case RZ_IL_OP_APPEND:
-		rz_il_op_free_2(pure, append, x, y);
+		rz_il_op_free_2(pure, append, high, low);
 		break;
 	case RZ_IL_OP_LOAD:
 		rz_il_op_free_1(pure, load, key);

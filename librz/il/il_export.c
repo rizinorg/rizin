@@ -335,7 +335,7 @@ static void il_opdmp_concat(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 }
 
 static void il_opdmp_append(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-	il_op_param_2("append", op->op.append, pure, x, pure, y);
+	il_op_param_2("append", op->op.append, pure, high, pure, low);
 }
 
 static void il_opdmp_load(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {

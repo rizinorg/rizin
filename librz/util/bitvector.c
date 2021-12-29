@@ -289,20 +289,15 @@ RZ_API RZ_OWN RzBitVector *rz_bv_cut_tail(RZ_NONNULL RzBitVector *bv, ut32 delta
 
 /**
  * Append bv2 to bv1 to get new bitvector
- * \param bv1 RzBitVector
- * \param bv2 RzBitVector
+ * \param high bitvector to occupy the most significant part of the result
+ * \param low bitvector to occupy the least significant part of the result
  * \return ret RzBitVector, the new bitvector
  */
-RZ_API RZ_OWN RzBitVector *rz_bv_append(RZ_NONNULL RzBitVector *bv1, RZ_NONNULL RzBitVector *bv2) {
-	rz_return_val_if_fail(bv1 && bv2, NULL);
-
-	ut32 new_len = bv1->len + bv2->len;
-	RzBitVector *ret = rz_bv_new(new_len);
-
-	// copy n bits from bv1
-	rz_bv_copy_nbits(bv2, 0, ret, 0, bv2->len);
-	rz_bv_copy_nbits(bv1, 0, ret, bv2->len, bv1->len);
-
+RZ_API RZ_OWN RzBitVector *rz_bv_append(RZ_NONNULL RzBitVector *high, RZ_NONNULL RzBitVector *low) {
+	rz_return_val_if_fail(high && low, NULL);
+	RzBitVector *ret = rz_bv_new(high->len + low->len);
+	rz_bv_copy_nbits(low, 0, ret, 0, low->len);
+	rz_bv_copy_nbits(high, 0, ret, low->len, high->len);
 	return ret;
 }
 
