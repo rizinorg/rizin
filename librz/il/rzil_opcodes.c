@@ -673,6 +673,159 @@ RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_storew(RzILMemIndex mem, RZ_NONNULL RzI
 #undef rz_il_op_new_2
 #undef rz_il_op_new_3
 
+RZ_API RzILOpPure *rz_il_op_pure_dup(RZ_NULLABLE RzILOpPure *op) {
+	rz_return_val_if_fail(op, NULL);
+	RzILOpPure *r = RZ_NEW0(RzILOpPure);
+	if (!r) {
+		return NULL;
+	}
+#define DUP_OP1(arg, m0) \
+	do { \
+		r->op.arg.m0 = rz_il_op_pure_dup(op->op.arg.m0); \
+		if (!r->op.arg.m0) { \
+			return NULL; \
+		} \
+	} while (0);
+#define DUP_OP2(arg, m0, m1) \
+	do { \
+		r->op.arg.m0 = rz_il_op_pure_dup(op->op.arg.m0); \
+		r->op.arg.m1 = rz_il_op_pure_dup(op->op.arg.m1); \
+		if (!r->op.arg.m0 || !r->op.arg.m1) { \
+			rz_il_op_pure_free(r->op.arg.m0); \
+			rz_il_op_pure_free(r->op.arg.m1); \
+			return NULL; \
+		} \
+	} while (0);
+#define DUP_OP3(arg, m0, m1, m2) \
+	do { \
+		r->op.arg.m0 = rz_il_op_pure_dup(op->op.arg.m0); \
+		r->op.arg.m1 = rz_il_op_pure_dup(op->op.arg.m1); \
+		r->op.arg.m2 = rz_il_op_pure_dup(op->op.arg.m2); \
+		if (!r->op.arg.m0 || !r->op.arg.m1 || !r->op.arg.m2) { \
+			rz_il_op_pure_free(r->op.arg.m0); \
+			rz_il_op_pure_free(r->op.arg.m1); \
+			rz_il_op_pure_free(r->op.arg.m2); \
+			return NULL; \
+		} \
+	} while (0);
+	r->code = op->code;
+	switch (op->code) {
+	case RZIL_OP_VAR:
+		r->op.var.v = op->op.var.v;
+		break;
+	case RZIL_OP_UNK:
+		break;
+	case RZIL_OP_ITE:
+		DUP_OP3(ite, condition, x, y);
+		break;
+	case RZIL_OP_B0:
+		break;
+	case RZIL_OP_B1:
+		break;
+	case RZIL_OP_INV:
+		DUP_OP1(boolinv, x);
+		break;
+	case RZIL_OP_AND:
+		DUP_OP2(booland, x, y);
+		break;
+	case RZIL_OP_OR:
+		DUP_OP2(boolor, x, y);
+		break;
+	case RZIL_OP_XOR:
+		DUP_OP2(boolxor, x, y);
+		break;
+	case RZIL_OP_BITV:
+		r->op.bitv.value = rz_bv_dup(op->op.bitv.value);
+		break;
+	case RZIL_OP_MSB:
+		DUP_OP1(msb, bv);
+		break;
+	case RZIL_OP_LSB:
+		DUP_OP1(lsb, bv);
+		break;
+	case RZIL_OP_IS_ZERO:
+		DUP_OP1(is_zero, bv);
+		break;
+	case RZIL_OP_NEG:
+		DUP_OP1(neg, bv);
+		break;
+	case RZIL_OP_LOGNOT:
+		DUP_OP1(lognot, bv);
+		break;
+	case RZIL_OP_ADD:
+		DUP_OP2(add, x, y);
+		break;
+	case RZIL_OP_SUB:
+		DUP_OP2(sub, x, y);
+		break;
+	case RZIL_OP_MUL:
+		DUP_OP2(mul, x, y);
+		break;
+	case RZIL_OP_DIV:
+		DUP_OP2(div, x, y);
+		break;
+	case RZIL_OP_SDIV:
+		DUP_OP2(sdiv, x, y);
+		break;
+	case RZIL_OP_MOD:
+		DUP_OP2(mod, x, y);
+		break;
+	case RZIL_OP_SMOD:
+		DUP_OP2(smod, x, y);
+		break;
+	case RZIL_OP_LOGAND:
+		DUP_OP2(logand, x, y);
+		break;
+	case RZIL_OP_LOGOR:
+		DUP_OP2(logor, x, y);
+		break;
+	case RZIL_OP_LOGXOR:
+		DUP_OP2(logxor, x, y);
+		break;
+	case RZIL_OP_SHIFTR:
+		DUP_OP2(shiftr, x, y);
+		break;
+	case RZIL_OP_SHIFTL:
+		DUP_OP2(shiftl, x, y);
+		break;
+	case RZIL_OP_EQ:
+		DUP_OP2(eq, x, y);
+		break;
+	case RZIL_OP_SLE:
+		DUP_OP2(sle, x, y);
+		break;
+	case RZIL_OP_ULE:
+		DUP_OP2(ule, x, y);
+		break;
+	case RZIL_OP_CAST:
+		r->op.cast.length = op->op.cast.length;
+		DUP_OP2(cast, fill, val);
+		break;
+	case RZIL_OP_CONCAT:
+		rz_warn_if_reached();
+		break;
+	case RZIL_OP_APPEND:
+		DUP_OP2(append, x, y);
+		break;
+	case RZIL_OP_LOAD:
+		r->op.load.mem = op->op.load.mem;
+		DUP_OP1(load, key);
+		break;
+	case RZIL_OP_LOADW:
+		r->op.loadw.mem = op->op.loadw.mem;
+		r->op.loadw.n_bits = op->op.loadw.n_bits;
+		DUP_OP1(loadw, key);
+		break;
+	default:
+		rz_warn_if_reached();
+		break;
+	}
+#undef DUP_OP
+#undef DUP_OP2
+#undef DUP_OP3
+	return r;
+}
+
 #define rz_il_op_free_1(sort, s, v0) \
 	rz_il_op_##sort##_free(op->op.s.v0);
 
