@@ -189,7 +189,7 @@ static bool test_rzil_vm_op_cast() {
 	mu_assert_eq(rz_bv_to_ut64(r), 0x2, "eval val");
 	rz_bv_free(r);
 
-	// 8 -> 16 (false)
+	// 8 -> 13 (false)
 	op = rz_il_op_new_cast(13, rz_il_op_new_b0(), rz_il_op_new_bitv_from_ut64(8, 0x42));
 	r = rz_il_evaluate_bitv(vm, op);
 	rz_il_op_pure_free(op);
@@ -198,13 +198,63 @@ static bool test_rzil_vm_op_cast() {
 	mu_assert_eq(rz_bv_to_ut64(r), 0x42, "eval val");
 	rz_bv_free(r);
 
-	// 8 -> 16 (true)
+	// 8 -> 13 (true)
 	op = rz_il_op_new_cast(13, rz_il_op_new_b1(), rz_il_op_new_bitv_from_ut64(8, 0x42));
 	r = rz_il_evaluate_bitv(vm, op);
 	rz_il_op_pure_free(op);
 	mu_assert_notnull(r, "eval");
 	mu_assert_eq(rz_bv_len(r), 13, "eval length");
 	mu_assert_eq(rz_bv_to_ut64(r), 0x1f42, "eval val");
+	rz_bv_free(r);
+
+	rz_il_vm_free(vm);
+	mu_end;
+}
+
+static bool test_rzil_vm_op_unsigned() {
+	RzILVM *vm = rz_il_vm_new(0, 8, false);
+
+	// msb not set, filled with 0
+	RzILOpPure *op = rz_il_op_new_unsigned(13, rz_il_op_new_bitv_from_ut64(8, 0x42));
+	RzBitVector *r = rz_il_evaluate_bitv(vm, op);
+	rz_il_op_pure_free(op);
+	mu_assert_notnull(r, "eval");
+	mu_assert_eq(rz_bv_len(r), 13, "eval length");
+	mu_assert_eq(rz_bv_to_ut64(r), 0x42, "eval val");
+	rz_bv_free(r);
+
+	// msb set, still filled with 0
+	op = rz_il_op_new_unsigned(13, rz_il_op_new_bitv_from_ut64(8, 0xf2));
+	r = rz_il_evaluate_bitv(vm, op);
+	rz_il_op_pure_free(op);
+	mu_assert_notnull(r, "eval");
+	mu_assert_eq(rz_bv_len(r), 13, "eval length");
+	mu_assert_eq(rz_bv_to_ut64(r), 0xf2, "eval val");
+	rz_bv_free(r);
+
+	rz_il_vm_free(vm);
+	mu_end;
+}
+
+static bool test_rzil_vm_op_signed() {
+	RzILVM *vm = rz_il_vm_new(0, 8, false);
+
+	// msb not set, filled with 0
+	RzILOpPure *op = rz_il_op_new_signed(13, rz_il_op_new_bitv_from_ut64(8, 0x42));
+	RzBitVector *r = rz_il_evaluate_bitv(vm, op);
+	rz_il_op_pure_free(op);
+	mu_assert_notnull(r, "eval");
+	mu_assert_eq(rz_bv_len(r), 13, "eval length");
+	mu_assert_eq(rz_bv_to_ut64(r), 0x42, "eval val");
+	rz_bv_free(r);
+
+	// msb set, filled with 1
+	op = rz_il_op_new_signed(13, rz_il_op_new_bitv_from_ut64(8, 0xf2));
+	r = rz_il_evaluate_bitv(vm, op);
+	rz_il_op_pure_free(op);
+	mu_assert_notnull(r, "eval");
+	mu_assert_eq(rz_bv_len(r), 13, "eval length");
+	mu_assert_eq(rz_bv_to_ut64(r), 0x1ff2, "eval val");
 	rz_bv_free(r);
 
 	rz_il_vm_free(vm);
@@ -430,6 +480,8 @@ bool all_tests() {
 	mu_run_test(test_rzil_vm_operation);
 	mu_run_test(test_rzil_vm_root_evaluation);
 	mu_run_test(test_rzil_vm_op_cast);
+	mu_run_test(test_rzil_vm_op_unsigned);
+	mu_run_test(test_rzil_vm_op_signed);
 	mu_run_test(test_rzil_vm_op_set);
 	mu_run_test(test_rzil_vm_op_jmp);
 	mu_run_test(test_rzil_vm_op_goto_addr);

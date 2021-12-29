@@ -289,6 +289,26 @@ RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_cast(ut32 length, RZ_NONNULL RzILOpB
 }
 
 /**
+ * \brief Extend val to length bits, filling up with zeroes
+ *
+ * For length > val->len, this fits the general notion of zero extension.
+ */
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_unsigned(ut32 length, RZ_NONNULL RzILOpBitVector *val) {
+	rz_return_val_if_fail(length && val, NULL);
+	return rz_il_op_new_cast(length, rz_il_op_new_b0(), val);
+}
+
+/**
+ * \brief Extend val to length bits, filling up with val's most significant bit
+ *
+ * For length > val->len, this fits the general notion of sign extension.
+ */
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_signed(ut32 length, RZ_NONNULL RzILOpBitVector *val) {
+	rz_return_val_if_fail(length && val, NULL);
+	return rz_il_op_new_cast(length, rz_il_op_new_msb(rz_il_op_pure_dup(val)), val);
+}
+
+/**
  *  \brief op structure for `neg` ('s bitv -> 's bitv)
  *
  *  neg x is two-complement unary minus
@@ -673,7 +693,10 @@ RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_storew(RzILMemIndex mem, RZ_NONNULL RzI
 #undef rz_il_op_new_2
 #undef rz_il_op_new_3
 
-RZ_API RzILOpPure *rz_il_op_pure_dup(RZ_NULLABLE RzILOpPure *op) {
+/**
+ * Duplicate the given op recursively, for example to reuse it multiple times in another op.
+ */
+RZ_API RzILOpPure *rz_il_op_pure_dup(RZ_NONNULL RzILOpPure *op) {
 	rz_return_val_if_fail(op, NULL);
 	RzILOpPure *r = RZ_NEW0(RzILOpPure);
 	if (!r) {
