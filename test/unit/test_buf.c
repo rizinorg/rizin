@@ -196,7 +196,7 @@ bool test_rz_buf_mmap(void) {
 	mu_end;
 }
 
-bool test_rz_buf_io(void) {
+bool test_rz_buf_io_fd(void) {
 	RzBuffer *b;
 	const char *content = "Something To\nSay Here..";
 	const int length = 23;
@@ -215,8 +215,8 @@ bool test_rz_buf_io(void) {
 	RzIOBind bnd;
 	rz_io_bind(io, &bnd);
 
-	b = rz_buf_new_with_io(&bnd, desc->fd);
-	mu_assert_notnull(b, "rz_buf_new_file failed");
+	b = rz_buf_new_with_io_fd(&bnd, desc->fd);
+	mu_assert_notnull(b, "rz_buf_new_with_io_fd");
 	rz_buf_seek(b, 0, RZ_BUF_SET);
 
 	if (test_buf(b) != MU_PASSED) {
@@ -224,6 +224,53 @@ bool test_rz_buf_io(void) {
 	}
 
 	// Cleanup
+	rz_buf_free(b);
+	rz_io_close(io);
+	rz_io_free(io);
+	mu_end;
+}
+
+bool test_rz_buf_io(void) {
+	RzIO *io = rz_io_new();
+	io->ff = true;
+	io->Oxff = 0xff;
+	io->va = true;
+	RzIODesc *desc = rz_io_open_at(io, "hex://0102030405060708", RZ_PERM_RW, 0644, 0x10, NULL);
+	mu_assert_notnull(desc, "file should be opened for writing");
+	RzIOBind bnd;
+	rz_io_bind(io, &bnd);
+
+	RzBuffer *b = rz_buf_new_with_io(&bnd);
+	rz_buf_set_overflow_byte(b, 0x42); // we don't want to see this 0x42 anywhere because the IO 0xff should be used!
+	mu_assert_notnull(b, "rz_buf_new_with_io");
+	rz_buf_seek(b, 0, RZ_BUF_SET);
+
+	ut8 data[0x20] = { 0 };
+	st64 red = rz_buf_read_at(b, 0x4, data, sizeof(data));
+	mu_assert_eq(red, sizeof(data), "read size");
+	ut8 data_expect[0x20] = {
+		0xff, 0xff, 0xff, 0xff,
+		0xff, 0xff, 0xff, 0xff,
+		0xff, 0xff, 0xff, 0xff,
+		0x01, 0x02, 0x03, 0x04,
+		0x05, 0x06, 0x07, 0x08,
+		0xff, 0xff, 0xff, 0xff,
+		0xff, 0xff, 0xff, 0xff,
+		0xff, 0xff, 0xff, 0xff
+	};
+	mu_assert_memeq(data, data_expect, sizeof(data), "read");
+
+	ut8 wdata[] = { 0xab, 0xcd };
+	st64 written = rz_buf_write_at(b, 0x11, wdata, sizeof(wdata));
+	mu_assert_eq(written, sizeof(wdata), "written size");
+	memset(data, 0, sizeof(data));
+	int redi = rz_io_desc_read_at(desc, 0, data, 8);
+	mu_assert_eq(redi, 8, "read size from rewritten fd");
+	ut8 data_expect1[0x8] = {
+		0x01, 0x0ab, 0xcd, 0x04, 0x05, 0x06, 0x07, 0x08
+	};
+	mu_assert_memeq(data, data_expect1, sizeof(data_expect1), "rewritten fd");
+
 	rz_buf_free(b);
 	rz_io_close(io);
 	rz_io_free(io);
@@ -1267,6 +1314,7 @@ int all_tests() {
 	mu_run_test(test_rz_buf_mmap);
 	mu_run_test(test_rz_buf_with_buf);
 	mu_run_test(test_rz_buf_slice);
+	mu_run_test(test_rz_buf_io_fd);
 	mu_run_test(test_rz_buf_io);
 	mu_run_test(test_rz_buf_sparse_common);
 	mu_run_test(test_rz_buf_sparse_split);

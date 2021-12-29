@@ -2832,7 +2832,7 @@ RZ_API bool rz_core_bin_whole_strings_print(RzCore *core, RzBinFile *bf, RzCmdSt
 			free(bf);
 			return false;
 		}
-		bf->buf = rz_buf_new_with_io(&core->bin->iob, core->file->fd);
+		bf->buf = rz_buf_new_with_io_fd(&core->bin->iob, core->file->fd);
 		bf->o = NULL;
 		bf->rbin = core->bin;
 		new_bf = true;

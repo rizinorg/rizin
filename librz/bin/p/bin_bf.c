@@ -108,6 +108,40 @@ static RzList *entries(RzBinFile *bf) {
 	return ret;
 }
 
+static RzList *maps(RzBinFile *bf) {
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_map_free);
+	if (!ret) {
+		return NULL;
+	}
+
+	RzBinMap *map = RZ_NEW0(RzBinMap);
+	if (!map) {
+		rz_list_free(ret);
+		return NULL;
+	}
+	map->paddr = 0;
+	map->vaddr = 0;
+	map->psize = bf->size;
+	map->vsize = bf->size;
+	map->perm = RZ_PERM_RWX;
+	map->name = strdup("code");
+	rz_list_append(ret, map);
+
+	map = RZ_NEW0(RzBinMap);
+	if (!map) {
+		rz_list_free(ret);
+		return NULL;
+	}
+	map->paddr = 0;
+	map->vaddr = 0x10000;
+	map->psize = 0;
+	map->vsize = 0x10000;
+	map->perm = RZ_PERM_RW;
+	map->name = strdup("mem");
+	rz_list_append(ret, map);
+	return ret;
+}
+
 RzBinPlugin rz_bin_plugin_bf = {
 	.name = "bf",
 	.desc = "brainfuck",
@@ -118,6 +152,7 @@ RzBinPlugin rz_bin_plugin_bf = {
 	.baddr = &baddr,
 	.entries = entries,
 	.strings = &strings,
+	.maps = &maps,
 	.info = &info,
 };
 
