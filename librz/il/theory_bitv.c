@@ -132,11 +132,11 @@ void *rz_il_handler_append(RzILVM *vm, RzILOpBitVector *op, RzILPureType *type) 
 
 	RzILOpArgsAppend *op_append = &op->op.append;
 
-	RzBitVector *x = rz_il_evaluate_bitv(vm, op_append->x);
-	RzBitVector *y = rz_il_evaluate_bitv(vm, op_append->y);
-	RzBitVector *result = x && y ? rz_bv_append(x, y) : NULL;
-	rz_bv_free(x);
-	rz_bv_free(y);
+	RzBitVector *high = rz_il_evaluate_bitv(vm, op_append->high);
+	RzBitVector *low = rz_il_evaluate_bitv(vm, op_append->low);
+	RzBitVector *result = high && low ? rz_bv_append(high, low) : NULL;
+	rz_bv_free(low);
+	rz_bv_free(high);
 
 	*type = RZ_IL_PURE_TYPE_BITV;
 	return result;

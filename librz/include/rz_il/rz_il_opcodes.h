@@ -141,11 +141,11 @@ typedef struct rz_il_op_args_cast_t {
 
 /**
  *  \struct rz_il_op_args_append_t
- *  \brief op structure for appending 2 bitv: MSB:LSB bv1:bv2
+ *  \brief op structure for appending 2 bitv: MSB:LSB high:low
  */
 typedef struct rz_il_op_args_append_t {
-	RzILOpBitVector *x; ///< index of the bv 1
-	RzILOpBitVector *y; ///< index of the bv 2
+	RzILOpBitVector *high; ///< bitvector occupying the most significant bits
+	RzILOpBitVector *low; ///< bitvector occupying the least significant bits
 } RzILOpArgsAppend;
 
 /**
