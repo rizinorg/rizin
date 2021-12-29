@@ -128,6 +128,8 @@ install_headers(rz_il_definitions_files, install_dir: join_paths(rizin_incdir, '
 
 rz_il_files = [
   'rz_il/rz_il_opcodes.h',
+  'rz_il/rz_il_opbuilder_begin.h',
+  'rz_il/rz_il_opbuilder_end.h',
   'rz_il/rz_il_events.h',
   'rz_il/rz_il_reg.h',
   'rz_il/rz_il_validate.h',
