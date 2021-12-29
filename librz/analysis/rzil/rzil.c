@@ -78,8 +78,7 @@ RZ_API bool rz_analysis_rzil_setup(RzAnalysis *analysis) {
 	if (!rzil) {
 		return false;
 	}
-	int fd = analysis->iob.fd_get_current(analysis->iob.io);
-	rzil->io_buf = rz_buf_new_with_io(&analysis->iob, fd);
+	rzil->io_buf = rz_buf_new_with_io(&analysis->iob);
 	analysis->rzil = rzil;
 	analysis->cur->rzil_init(analysis);
 	return true;

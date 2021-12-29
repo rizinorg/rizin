@@ -248,7 +248,7 @@ static void cmd_search_bin(RzCore *core, RzInterval itv) {
 	int size; // , sz = sizeof (buf);
 
 	int fd = core->file->fd;
-	RzBuffer *b = rz_buf_new_with_io(&core->analysis->iob, fd);
+	RzBuffer *b = rz_buf_new_with_io_fd(&core->analysis->iob, fd);
 	rz_cons_break_push(NULL, NULL);
 	while (from < to) {
 		if (rz_cons_is_breaked()) {
