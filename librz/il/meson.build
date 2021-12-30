@@ -10,11 +10,11 @@ rz_il_sources = [
    'theory_init.c',
    'theory_bool.c',
    'theory_mem.c',
-   'rzil_opcodes.c',
-   'rzil_export.c',
-   'rzil_vm_events.c',
-   'rzil_vm.c',
-   'vm_layer.c',
+   'il_opcodes.c',
+   'il_export.c',
+   'il_events.c',
+   'il_vm.c',
+   'il_vm_eval.c',
 ]
 
 rz_il_inc = [

@@ -21,16 +21,14 @@ typedef enum {
 	// more
 } RzILEffectLabelType;
 
-struct rzil_effect_label_t {
+typedef struct rz_il_effect_label_t {
 	char *label_id; ///< Label name
 	union {
 		RzBitVector *addr; ///< RzBitVector address if EFFECT_LABEL_ADDR
 		void *hook; ///< Function pointer if EFFECT_LABEL_SYSCALL / EFFECT_LABEL_HOOK
 	};
 	RzILEffectLabelType type; ///< type of label
-};
-
-typedef struct rzil_effect_label_t RzILEffectLabel;
+} RzILEffectLabel;
 
 RZ_API RzILEffectLabel *rz_il_effect_label_new(const char *name, RzILEffectLabelType type);
 
