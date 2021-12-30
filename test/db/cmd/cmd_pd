@@ -1711,11 +1711,11 @@ pd 1 @b:32
 e analysis.ignbithints=0
 pd 1 @b:16
 pd 1 @b:32
-ah*
+ahl*
 pd 1 @a:x86
-ah*
+ahl*
 pd 1 @a:x86:64
-ah*
+ahl*
 EOF
 EXPECT=<<EOF
 0x00005c20      31ed4989       ldc   p9, c8, [r1, -0x124]!
@@ -1866,9 +1866,9 @@ ARGS=-aarm -b32
 CMDS=<<EOF
 e asm.bytes=true
 ahb 16 @ 0xc
-ah*
+ahl*
 pd 1 @b:32 @ 0xc
-ah*
+ahl*
 EOF
 EXPECT=<<EOF
 ahb 16 @ 0xc
