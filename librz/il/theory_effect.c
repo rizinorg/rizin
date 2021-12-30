@@ -166,7 +166,7 @@ bool rz_il_handler_seq(RzILVM *vm, RzILOpEffect *op) {
 bool rz_il_handler_blk(RzILVM *vm, RzILOpEffect *op) {
 	rz_return_val_if_fail(vm && op, false);
 
-	RzILOpArgsBlk *op_blk = op->op.blk;
+	RzILOpArgsBlk *op_blk = &op->op.blk;
 	if (op_blk->label) {
 		rz_il_vm_create_label(vm, op_blk->label, vm->pc); // create the label if `blk` is labelled
 	}
@@ -177,7 +177,7 @@ bool rz_il_handler_blk(RzILVM *vm, RzILOpEffect *op) {
 bool rz_il_handler_repeat(RzILVM *vm, RzILOpEffect *op) {
 	rz_return_val_if_fail(vm && op, NULL);
 
-	RzILOpArgsRepeat *op_repeat = op->op.repeat;
+	RzILOpArgsRepeat *op_repeat = &op->op.repeat;
 	bool res = true;
 	RzILBool *condition;
 	while ((condition = rz_il_evaluate_bool(vm, op_repeat->condition))) {

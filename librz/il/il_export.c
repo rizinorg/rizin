@@ -471,7 +471,7 @@ static void il_opdmp_seq(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
 }
 
 static void il_opdmp_blk(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
-	RzILOpArgsBlk *opx = op->op.blk;
+	RzILOpArgsBlk *opx = &op->op.blk;
 	if (sb) {
 		rz_strbuf_appendf(sb, "blk(lbl:%s, data:", opx->label);
 		il_op_effect_resolve(opx->data_eff, sb, pj);
