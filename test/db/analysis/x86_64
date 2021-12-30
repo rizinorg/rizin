@@ -3275,7 +3275,7 @@ aaa
 f~switch
 f~case.
 C~Cd 4
-ah
+ahl
 axf @ 0x59d
 afb 0x59d
 EOF

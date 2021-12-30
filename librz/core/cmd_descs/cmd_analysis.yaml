@@ -1013,4 +1013,309 @@ commands:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
           - RZ_OUTPUT_MODE_RIZIN
-        args: []      
+        args: []
+  - name: ah
+    summary: Analysis hints
+    subcommands:
+      - name: ahl
+        summary: List all analysis hints
+        cname: analysis_hint_list
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_RIZIN
+        args: []
+      - name: ahl.
+        summary: List analysis hints at current seek
+        cname: analysis_hint_list_at
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_RIZIN
+        args: []
+      - name: ah-
+        summary: Delete analysis hints in region starting from current seek
+        cname: analysis_hint_del
+        args:
+          - name: size
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: ah-*
+        summary: Delete all analysis hints
+        cname: analysis_hint_del_all
+        args: []
+      - name: aha
+        summary: Set arch hint
+        cname: analysis_hint_set_arch
+        args:
+          - name: arch
+            type: RZ_CMD_ARG_TYPE_STRING
+        details:
+          - name: ""
+            entries:
+              - text: "aha ppc @ 0x42"
+                comment: "Force arch ppc for all addresses >= 0x42 or until the next hint"
+              - text: "aha 0 @ 0x84"
+                comment: "Disable the effect of arch hints for all addresses >= 0x84 or until the next hint"
+      - name: aha-
+        summary: Delete arch hint
+        cname: analysis_hint_del_arch
+        args: []
+      - name: ahb
+        summary: Set bits hint
+        cname: analysis_hint_set_bits
+        args:
+          - name: bits
+            type: RZ_CMD_ARG_TYPE_NUM
+        details:
+          - name: ""
+            entries:
+              - text: "ahb 16 @ 0x42"
+                comment: "Force 16bit for all addresses >= 0x42 or until the next hint"
+      - name: ahb-
+        summary: Delete bits hint
+        cname: analysis_hint_del_bits
+        args: []
+      - name: ahh
+        summary: Set highlight hint
+        cname: analysis_hint_set_high
+        args: []
+        details:
+          - name: ""
+            entries:
+              - text: "ahh @ 0x804840"
+                comment: "Highlight this address offset in disasm"
+      - name: ahh-
+        summary: Delete highlight hint
+        cname: analysis_hint_del_high
+        args: []
+      - name: ahc
+        summary: Set jump/call address hint
+        cname: analysis_hint_set_jump
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+        details:
+          - name: ""
+            entries:
+              - text: "ahc "
+                arg_str: "0x804840"
+                comment: "Replace call/jump address with 0x804840"
+      - name: ahc-
+        summary: Delete jump/call address hint
+        cname: analysis_hint_del_jump
+        args: []
+      - name: ahe
+        summary: Set ESIL string hint
+        cname: analysis_hint_set_esil
+        args:
+          - name: string
+            type: RZ_CMD_ARG_TYPE_STRING
+        details:
+          - name: ""
+            entries:
+              - text: "ahe "
+                arg_str: '"3,eax,+="'
+                comment: "Replace ESIL VM analysis string"
+      - name: ahe-
+        summary: Delete ESIL string hint
+        cname: analysis_hint_del_esil
+        args: []
+      - name: ahd
+        summary: Set opcode hint
+        cname: analysis_hint_set_opcode
+        args:
+          - name: opcode
+            type: RZ_CMD_ARG_TYPE_STRING
+        details:
+          - name: ""
+            entries:
+              - text: "ahd "
+                arg_str: '"foo a0,33"'
+                comment: "Replace opcode string"
+      - name: ahd-
+        summary: Delete opcode hint
+        cname: analysis_hint_del_opcode
+        args: []
+      - name: ahs
+        summary: Set opcode size hint
+        cname: analysis_hint_set_size
+        args:
+          - name: size
+            type: RZ_CMD_ARG_TYPE_RZNUM
+        details:
+          - name: ""
+            entries:
+              - text: "ahs "
+                arg_str: "4"
+                comment: "Set opcode size=4"
+      - name: ahs-
+        summary: Delete opcode size hint
+        cname: analysis_hint_del_size
+        args: []
+      - name: ahf
+        summary: Set fallback address hint
+        cname: analysis_hint_set_fail
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+        details:
+          - name: ""
+            entries:
+              - text: "ahf "
+                arg_str: "0x804840"
+                comment: Replace fallback address for call with 0x804840
+      - name: ahf-
+        summary: Delete fallback address hint
+        cname: analysis_hint_del_fail
+        args: []
+      - name: ahF
+        summary: Set stackframe size hint
+        cname: analysis_hint_set_stackframe
+        args:
+          - name: size
+            type: RZ_CMD_ARG_TYPE_NUM
+        details:
+          - name: ""
+            entries:
+              - text: "ahF "
+                arg_str: "0x10"
+                comment: Set stackframe size to 0x10
+      - name: ahF-
+        summary: Delete stackframe size hint
+        cname: analysis_hint_del_stackframe
+        args: []
+      - name: ahS
+        summary: Set asm syntax hint
+        cname: analysis_hint_set_syntax
+        args:
+          - name: string
+            type: RZ_CMD_ARG_TYPE_STRING
+        details:
+          - name: ""
+            entries:
+              - text: "ahS "
+                arg_str: jz
+                comment: Set asm.syntax=jz for opcode at current seek
+      - name: ahS-
+        summary: Delete asm syntax hint
+        cname: analysis_hint_del_syntax
+        args: []
+      - name: ahp
+        summary: Set pointer hint
+        cname: analysis_hint_set_ptr
+        args:
+          - name: pointer
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: ahp-
+        summary: Delete pointer hint
+        cname: analysis_hint_del_ptr
+        args: []
+      - name: ahr
+        summary: Set function return value hint
+        cname: analysis_hint_set_ret
+        args:
+          - name: return
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: ahr-
+        summary: Delete function return value hint
+        cname: analysis_hint_del_ret
+        args: []
+      - name: ahv
+        summary: Set opcode value hint
+        cname: analysis_hint_set_val
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_RZNUM
+        details:
+          - name: ""
+            entries:
+              - text: "ahv "
+                arg_str: val
+                comment: Change opcode's value field (useful to set jmptbl sizes in jmp rax)
+      - name: ahv-
+        summary: Delete opcode value hint
+        cname: analysis_hint_del_val
+        args: []
+      - name: aho
+        summary: Set opcode type hint
+        cname: analysis_hint_set_optype
+        args:
+          - name: string
+            type: RZ_CMD_ARG_TYPE_STRING
+        details:
+          - name: ""
+            entries:
+              - text: "aho "
+                arg_str: call
+                comment: "Change opcode type to <call>"
+      - name: aho-
+        summary: Delete opcode type hint
+        cname: analysis_hint_del_optype
+        args: []
+      - name: ahi
+        summary: Set immediate base hint
+        cname: analysis_hint_set_immbase
+        args:
+          - name: type
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            choices: ["2", "8", "10", "10u", "16", "b", "o", "h", "i", "p", "S", "s"]
+          - name: nword
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+        details:
+          - name: ""
+            entries:
+              - text: "ahi "
+                arg_str: <base>
+                comment: Set numeric <base> (2, 8, 10, 16)
+              - text: ahi 10|d
+                comment: Set base to signed decimal (10), sign bit should depend on receiver size
+              - text: ahi 10u|du
+                comment: Set base to unsigned decimal (11)
+              - text: ahi b
+                comment: Set base to binary (2)
+              - text: ahi o
+                comment: Set base to octal (8)
+              - text: ahi h
+                comment: Set base to hexadecimal (16)
+              - text: ahi i
+                comment: Set base to IP address (32)
+              - text: ahi p
+                comment: Set base to htons(port) (3)
+              - text: ahi S
+                comment: Set base to syscall (80)
+              - text: ahi s
+                comment: Set base to string (1)
+          - name: Set base of the N-th immediate (indexing starts from 0)
+            entries:
+              - text: ahi 16 1
+                comment: Set base of the 1-st immediate to hexadecimal
+      - name: ahi-
+        summary: Delete immediate base hint
+        cname: analysis_hint_del_immbase
+        args: []
+      - name: aht
+        summary: Set structure offset hint
+        cname: analysis_hint_set_offset
+        args:
+          - name: struct.member
+            type: RZ_CMD_ARG_TYPE_STRING
+        details:
+          - name: ""
+            entries:
+              - text: "aht "
+                arg_str: struct.member
+                comment: Replace immediate with <struct.member>
+      - name: aht-
+        summary: Delete structure offset hint
+        cname: analysis_hint_del_offset
+        args: []
+      - name: ahts
+        summary: List all matching structure offsets
+        cname: analysis_list_struct_offsets
+        args:
+          - name: offset
+            type: RZ_CMD_ARG_TYPE_RZNUM
