@@ -12,7 +12,7 @@ extern "C" {
 #endif
 
 /**
- * \file rzil_vm_events.h
+ * \file
  * \brief list of types of events that can happen on the VM
  */
 
@@ -25,34 +25,34 @@ typedef enum rz_il_event_id_t {
 	RZIL_EVENT_VAR_WRITE,
 } RzILEventId;
 
-typedef struct rzil_vm_event_mem_read_t {
+typedef struct rz_il_vm_event_mem_read_t {
 	RzBitVector *address;
 	RzBitVector *value;
 } RzILEventMemRead;
 
-typedef struct rzil_vm_event_var_read_t {
+typedef struct rz_il_vm_event_var_read_t {
 	char *variable;
 	RzBitVector *value;
 } RzILEventVarRead;
 
-typedef struct rzil_vm_event_pc_write_t {
+typedef struct rz_il_vm_event_pc_write_t {
 	RzBitVector *old_pc;
 	RzBitVector *new_pc;
 } RzILEventPCWrite;
 
-typedef struct rzil_vm_event_mem_write_t {
+typedef struct rz_il_vm_event_mem_write_t {
 	RzBitVector *address;
 	RzBitVector *old_value;
 	RzBitVector *new_value;
 } RzILEventMemWrite;
 
-typedef struct rzil_vm_event_var_write_t {
+typedef struct rz_il_vm_event_var_write_t {
 	char *variable;
 	RzBitVector *old_value;
 	RzBitVector *new_value;
 } RzILEventVarWrite;
 
-typedef struct rzil_vm_event_t {
+typedef struct rz_il_vm_event_t {
 	RzILEventId type;
 	union {
 		char *exception;

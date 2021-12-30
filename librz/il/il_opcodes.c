@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_il/rzil_opcodes.h>
+#include <rz_il/rz_il_opcodes.h>
 
 #define rz_il_op_new_0(sort, id) \
 	do { \
@@ -965,7 +965,7 @@ RZ_API void rz_il_op_pure_free(RZ_NULLABLE RzILOpPure *op) {
 		break;
 	default:
 		rz_warn_if_reached();
-		RZ_LOG_ERROR("RzIl: unknown opcode %u\n", op->code);
+		RZ_LOG_ERROR("RzIL: unknown opcode %u\n", op->code);
 		break;
 	}
 	free(op);
@@ -1011,7 +1011,7 @@ RZ_API void rz_il_op_effect_free(RZ_NULLABLE RzILOpEffect *op) {
 		break;
 	default:
 		rz_warn_if_reached();
-		RZ_LOG_ERROR("RzIl: unknown opcode %u\n", op->code);
+		RZ_LOG_ERROR("RzIL: unknown opcode %u\n", op->code);
 		break;
 	}
 	free(op);

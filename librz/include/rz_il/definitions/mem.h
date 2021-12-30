@@ -23,7 +23,7 @@ typedef ut32 RzILMemIndex;
  * a maximum of 64bits and the value size is always 8, but this can be extended in
  * the future if necessary.
  */
-typedef struct rzil_mem_t {
+typedef struct rz_il_mem_t {
 	RzBuffer *buf;
 	ut32 key_len;
 } RzILMem;

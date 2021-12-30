@@ -6,8 +6,8 @@
 #define RZIL_VM_H
 
 #include <rz_il/definitions/definitions.h>
-#include <rz_il/rzil_opcodes.h>
-#include <rz_il/rzil_vm_events.h>
+#include <rz_il/rz_il_opcodes.h>
+#include <rz_il/rz_il_events.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -59,6 +59,24 @@ struct rz_il_vm_t {
 	RzList *events; ///< List of events that has happened in the last step
 	bool big_endian; ///< Sets the endianness of the memory reads/writes operations
 };
+
+// VM high level operations
+RZ_API RzILVM *rz_il_vm_new(ut64 start_addr, ut32 addr_size, bool big_endian);
+RZ_API void rz_il_vm_free(RzILVM *vm);
+RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, bool big_endian);
+RZ_API void rz_il_vm_fini(RzILVM *vm);
+RZ_API void rz_il_vm_add_mem(RzILVM *vm, RzILMemIndex index, RZ_OWN RzILMem *mem);
+RZ_API RzILMem *rz_il_vm_get_mem(RzILVM *vm, RzILMemIndex index);
+RZ_API bool rz_il_vm_list_step(RzILVM *vm, RzILOpEffect *op, ut32 op_size);
+
+// VM Event operations
+RZ_API void rz_il_vm_event_add(RzILVM *vm, RzILEvent *evt);
+
+// Memory operations
+RZ_API RzBitVector *rz_il_vm_mem_load(RzILVM *vm, RzILMemIndex index, RzBitVector *key);
+RZ_API void rz_il_vm_mem_store(RzILVM *vm, RzILMemIndex index, RzBitVector *key, RzBitVector *value);
+RZ_API RzBitVector *rz_il_vm_mem_loadw(RzILVM *vm, RzILMemIndex index, RzBitVector *key, ut32 n_bits);
+RZ_API void rz_il_vm_mem_storew(RzILVM *vm, RzILMemIndex index, RzBitVector *key, RzBitVector *value);
 
 // VM operations about Variable and Value
 RZ_API RZ_BORROW RzBitVector *rz_il_hash_find_addr_by_lblname(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *lbl_name);

@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-/** \file rzil_export.c
+/** \file
  * Outputs the IL statements & events in JSON or string format.
  * The string format of a statement looks like below:
  *    [store(key:var(v:ptr), value:add(x:load(key:var(v:ptr), mem:0), y:int(value:1, length:8)), mem:0)]
@@ -66,7 +66,7 @@
  * }
  */
 
-#include <rz_il/rzil_vm.h>
+#include <rz_il/rz_il_vm.h>
 
 static void il_op_pure_resolve(RzILOpPure *op, RzStrBuf *sb, PJ *pj);
 static void il_op_effect_resolve(RzILOpEffect *op, RzStrBuf *sb, PJ *pj);
