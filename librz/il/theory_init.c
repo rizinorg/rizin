@@ -1,9 +1,8 @@
 // SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_il/rzil_opcodes.h>
-#include <rz_il/vm_layer.h>
-#include <rz_il/rzil_vm.h>
+#include <rz_il/rz_il_opcodes.h>
+#include <rz_il/rz_il_vm.h>
 
 static RzILEvent *il_event_new_read_from_name(RzILVM *vm, const char *name, RzILVal *value) {
 	rz_return_val_if_fail(vm && name, NULL);

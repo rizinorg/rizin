@@ -12,7 +12,7 @@ extern "C" {
 #endif
 
 /**
- * \file rzil_opcodes.h
+ * \file
  * \brief signatures of core theory opcodes
  *
  * Modular Hierarchy of the whole core theory

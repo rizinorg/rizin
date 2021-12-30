@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_il/rzil_opcodes.h>
-#include <rz_il/rzil_vm.h>
+#include <rz_il/rz_il_opcodes.h>
+#include <rz_il/rz_il_vm.h>
 
 /**
  * \brief also known as b0
