@@ -75,20 +75,23 @@ static int dmp_write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
 	if (ctx->target == TARGET_BACKEND) {
 		return rz_io_desc_write_at(ctx->backend, io->off, buf, count);
 	}
+	int ret;
 	ut64 address = io->off;
 	if (!ctx->target == TARGET_PHYSICAL) {
-		const ut64 dir_base = ctx->target == TARGET_KERNEL
-			? ctx->kernelDirectoryTable
-			: ctx->windctx.target->dir_base_table;
-		if (!winkd_va_to_pa(&ctx->windctx, dir_base, address, &address)) {
-			return 0;
+		WindProc *saved_proc = ctx->windctx.target;
+		WindProc kernel_proc = { .dir_base_table = ctx->kernelDirectoryTable };
+		if (ctx->target == TARGET_KERNEL) {
+			ctx->windctx.target = &kernel_proc;
 		}
+		ret = winkd_write_at_uva(&ctx->windctx, buf, address, count);
+		ctx->windctx.target = saved_proc;
+		return ret;
 	}
 	const ut64 saved_target = ctx->target;
 	const int saved_io_va = io->va;
 	ctx->target = TARGET_BACKEND; // Use RzIOMap maps
 	io->va = true;
-	int ret = rz_io_write_at(io, address, buf, count);
+	ret = rz_io_write_at(io, address, buf, count);
 	io->va = saved_io_va;
 	ctx->target = saved_target;
 	return ret;
@@ -116,20 +119,23 @@ static int dmp_read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
 	if (ctx->target == TARGET_BACKEND) {
 		return rz_io_desc_read_at(ctx->backend, io->off, buf, count);
 	}
+	int ret;
 	ut64 address = io->off;
 	if (ctx->target != TARGET_PHYSICAL) {
-		const ut64 dir_base = ctx->target == TARGET_KERNEL || !ctx->windctx.target
-			? ctx->kernelDirectoryTable
-			: ctx->windctx.target->dir_base_table;
-		if (!winkd_va_to_pa(&ctx->windctx, dir_base, address, &address)) {
-			return 0;
+		WindProc *saved_proc = ctx->windctx.target;
+		WindProc kernel_proc = { .dir_base_table = ctx->kernelDirectoryTable };
+		if (ctx->target == TARGET_KERNEL) {
+			ctx->windctx.target = &kernel_proc;
 		}
+		ret = winkd_read_at_uva(&ctx->windctx, buf, address, count);
+		ctx->windctx.target = saved_proc;
+		return ret;
 	}
 	const ut64 saved_target = ctx->target;
 	const int saved_io_va = io->va;
 	ctx->target = TARGET_BACKEND; // Use RzIOMap maps
 	io->va = true;
-	int ret = rz_io_read_at(io, address, buf, count);
+	ret = rz_io_read_at(io, address, buf, count);
 	io->va = saved_io_va;
 	ctx->target = saved_target;
 	return ret;
