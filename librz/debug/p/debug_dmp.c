@@ -4,6 +4,7 @@
 #include <rz_core.h>
 #include <rz_debug.h>
 #include <dmp_specs.h>
+#include <dmp64.h>
 #include <pe_specs.h>
 #include <winkd.h>
 
@@ -17,19 +18,10 @@ static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 		return false;
 	}
 	dbg->plugin_data = core->io->desc->data;
-	return true;
-}
-
-static int rz_debug_dmp_attach(RzDebug *dbg, int pid) {
-	if (!rz_debug_dmp_init(dbg, &dbg->plugin_data)) {
-		return -1;
-	}
-	RzCore *core = dbg->corebind.core;
 	DmpCtx *ctx = dbg->plugin_data;
 	int DumpType = 0;
 	int MachineImageType = 0; // Windows Architecture (IMAGE_FILE_MACHINE)
 	int MinorVersion = 0; // Windows Version
-
 	RzBuffer *b = rz_buf_new_with_io(&dbg->iob, core->io->desc->fd);
 	rz_buf_read_le64_at(b, offsetof(dmp64_header, DirectoryTableBase), &ctx->kernelDirectoryTable);
 	rz_buf_read_le64_at(b, offsetof(dmp64_header, PsActiveProcessHead), &ctx->windctx.PsActiveProcessHead);
@@ -41,6 +33,7 @@ static int rz_debug_dmp_attach(RzDebug *dbg, int pid) {
 	rz_buf_free(b);
 
 	if (DumpType == DMP_DUMPTYPE_TRIAGE) {
+		dbg->corebind.cmd(dbg->corebind.core, "e io.va=1");
 		ctx->target = TARGET_PHYSICAL;
 		ctx->kernelDirectoryTable = TARGET_PHYSICAL;
 	} else {
@@ -62,21 +55,61 @@ static int rz_debug_dmp_attach(RzDebug *dbg, int pid) {
 		ctx->windctx.is_pae = true;
 		break;
 	default:
-		return -1;
+		return false;
 	}
 
 	// Fix mapping
 	RzIOMap *map = rz_io_map_get(core->io, 0);
-	if (map && !map->delta) {
+	if (map) {
 		rz_io_map_resize(core->io, map->id, UT64_MAX);
 		rz_io_map_depriorize(core->io, map->id);
 	}
 
 	ctx->windctx.profile = winkd_get_profile(dbg->bits * 8, MinorVersion, winkd_get_sp(&ctx->windctx));
-	if (!ctx->windctx.profile) {
-		// TODO: Download ntoskrnl.pdb and generate profile automatically
-		return -1;
+	RzListIter *it;
+	WindModule mod = { 0 };
+	if (DumpType == DMP_DUMPTYPE_TRIAGE) {
+		struct rz_bin_dmp64_obj_t *obj = core->bin->cur->o->bin_obj;
+		dmp_driver_desc *driver;
+		rz_list_foreach (obj->drivers, it, driver) {
+			if (rz_str_endswith(driver->file, "\\ntoskrnl.exe")) {
+				mod.name = driver->file;
+				mod.addr = driver->base;
+				mod.size = driver->size;
+				mod.timestamp = driver->timestamp;
+				break;
+			}
+		}
+	} else {
+		WindProc kernel = { .dir_base_table = ctx->kernelDirectoryTable, .uniqueid = 4 };
+		ctx->windctx.target = &kernel;
+		RzList *modules = winkd_list_modules(&ctx->windctx);
+		WindModule *m;
+		rz_list_foreach (modules, it, m) {
+			if (rz_str_endswith(m->name, "\\ntoskrnl.exe")) {
+				mod = *m;
+				break;
+			}
+		}
 	}
+	if (mod.name) {
+		core->bin->cur->o->opts.baseaddr = mod.addr;
+		const char *server = dbg->corebind.cfgGet(dbg->corebind.core, "pdb.server");
+		const char *symstore = dbg->corebind.cfgGet(dbg->corebind.core, "pdb.symstore");
+		char *pdbpath, *exepath;
+		if (winkd_download_module_and_pdb(&mod, server, symstore, &exepath, &pdbpath)) {
+			dbg->corebind.cmdf(dbg->corebind.core, "idp %s", pdbpath);
+			free(exepath);
+			free(pdbpath);
+		}
+	}
+	return true;
+}
+
+static int rz_debug_dmp_attach(RzDebug *dbg, int pid) {
+	RzCore *core = dbg->corebind.core;
+	DmpCtx *ctx = dbg->plugin_data;
+
 	winkd_set_target(&ctx->windctx, 4, 0);
 	return dbg->pid = 4;
 }
