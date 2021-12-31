@@ -976,7 +976,9 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			}
 			if (debug == 2) {
 				// autodetect backend with -D
-				rz_config_set(r->config, "dbg.backend", debugbackend);
+				if (strcmp(debugbackend, "dmp")) {
+					rz_config_set(r->config, "dbg.backend", debugbackend);
+				}
 				if (strcmp(debugbackend, "native")) {
 					if (!haveRarunProfile) {
 						pfile = strdup(argv[opt.ind++]);
