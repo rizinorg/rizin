@@ -295,7 +295,8 @@ static struct optype {
  * \param  name       string, name of the optype
  * \return type       int, id of the op type (one of \link _RzAnalysisOpType \endlink)
  */
-RZ_API int rz_analysis_optype_from_string(const char *name) {
+RZ_API int rz_analysis_optype_from_string(RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(name, -1);
 	int i;
 	for (i = 0; RZ_ARRAY_SIZE(optypes); i++) {
 		if (!strcmp(optypes[i].name, name)) {
@@ -576,9 +577,9 @@ RZ_API const char *rz_analysis_op_family_to_string(int id) {
  * \param  name     string, name of the op family
  * \return id       int, id of the operation family (one of \link RzAnalysisOpFamily \endlink)
  */
-RZ_API int rz_analysis_op_family_from_string(const char *name) {
+RZ_API int rz_analysis_op_family_from_string(RZ_NONNULL const char *name) {
 	int i;
-
+	rz_return_val_if_fail(name, RZ_ANALYSIS_OP_FAMILY_UNKNOWN);
 	for (i = 0; i < RZ_ARRAY_SIZE(op_families); i++) {
 		if (!strcmp(name, op_families[i].name)) {
 			return op_families[i].id;
