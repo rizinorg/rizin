@@ -28,8 +28,8 @@ typedef struct WindThread {
 typedef struct WindModule {
 	char *name;
 	ut64 addr;
-	ut64 size;
-	ut64 timestamp;
+	ut32 size;
+	ut32 timestamp;
 } WindModule;
 
 enum {
