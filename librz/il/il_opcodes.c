@@ -457,7 +457,7 @@ RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_log_xor(RZ_NONNULL RzILOpBitVector *
  *
  *  [LSHIFT] shiftl s x m shifts x left by m bits filling with s.
  */
-RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_shiftl(RZ_NONNULL RzILOpBitVector *fill_bit, RZ_NONNULL RzILOpBitVector *x, RZ_NONNULL RzILOpBitVector *y) {
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_shiftl(RZ_NONNULL RzILOpBool *fill_bit, RZ_NONNULL RzILOpBitVector *x, RZ_NONNULL RzILOpBitVector *y) {
 	rz_return_val_if_fail(fill_bit && x && y, NULL);
 	RzILOpBitVector *ret;
 	rz_il_op_new_3(BitVector, RZIL_OP_SHIFTL, RzILOpArgsShiftLeft, shiftl, fill_bit, x, y);
@@ -469,7 +469,7 @@ RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_shiftl(RZ_NONNULL RzILOpBitVector *f
  *
  *  [RSHIFT] shiftr s x m shifts x right by m bits filling with s.
  */
-RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_shiftr(RZ_NONNULL RzILOpBitVector *fill_bit, RZ_NONNULL RzILOpBitVector *x, RZ_NONNULL RzILOpBitVector *y) {
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_shiftr(RZ_NONNULL RzILOpBool *fill_bit, RZ_NONNULL RzILOpBitVector *x, RZ_NONNULL RzILOpBitVector *y) {
 	rz_return_val_if_fail(fill_bit && x && y, NULL);
 	RzILOpBitVector *ret;
 	rz_il_op_new_3(BitVector, RZIL_OP_SHIFTR, RzILOpArgsShiftRight, shiftr, fill_bit, x, y);

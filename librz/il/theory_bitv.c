@@ -306,7 +306,7 @@ void *rz_il_handler_shiftl(RzILVM *vm, RzILOpBitVector *op, RzILPureType *type) 
 	rz_bv_free(bv);
 	rz_il_bool_free(fill_bit);
 
-	*type = RZ_IL_PURE_TYPE_BOOL;
+	*type = RZ_IL_PURE_TYPE_BITV;
 	return result;
 }
 
@@ -321,7 +321,7 @@ void *rz_il_handler_shiftr(RzILVM *vm, RzILOpBitVector *op, RzILPureType *type) 
 
 	RzBitVector *result = NULL;
 	if (bv && shift && fill_bit) {
-		RzBitVector *result = rz_bv_dup(bv);
+		result = rz_bv_dup(bv);
 		rz_bv_rshift_fill(result, rz_bv_to_ut32(shift), fill_bit);
 	}
 
