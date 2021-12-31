@@ -367,40 +367,40 @@ RzList *winkd_list_process(WindCtx *ctx) {
 	return ret;
 }
 
-int winkd_write_at_uva(WindCtx *ctx, const uint8_t *buf, ut64 offset, int count) {
-	ut64 pa;
-	ut32 totwritten = 0;
-	while (totwritten < count) {
-		if (!winkd_va_to_pa(ctx, ctx->target->dir_base_table, offset, &pa)) {
-			return 0;
+int winkd_op_at_uva(WindCtx *ctx, uint8_t *buf, ut64 address, int count, bool write) {
+	ut32 total = 0;
+	ut32 offset = 0;
+	const ut64 end = address + count;
+	while (address < end) {
+		ut64 pa;
+		const ut32 restOfPage = 0x1000 - (address & 0xfff);
+		if (!winkd_va_to_pa(ctx, ctx->target->dir_base_table, address, &pa)) {
+			if (UT64_ADD_OVFCHK(address, restOfPage)) {
+				break;
+			}
+			address += restOfPage;
+			offset += restOfPage;
+			continue;
 		}
-		ut32 restOfPage = 0x1000 - (offset & 0xfff);
-		int written = ctx->write_at_physical(ctx, pa, buf + totwritten, RZ_MIN(count - totwritten, restOfPage));
-		if (!written) {
-			break;
+		int result;
+		if (write) {
+			result = ctx->write_at_physical(ctx->user, pa, buf + offset, RZ_MIN(count - offset, restOfPage));
+		} else {
+			result = ctx->read_at_physical(ctx->user, pa, buf + offset, RZ_MIN(count - offset, restOfPage));
 		}
-		offset += written;
-		totwritten += written;
+		address += restOfPage;
+		offset += restOfPage;
+		total += result;
 	}
-	return totwritten;
+	return total;
 }
 
-int winkd_read_at_uva(WindCtx *ctx, uint8_t *buf, ut64 offset, int count) {
-	ut64 pa;
-	ut32 totread = 0;
-	while (totread < count) {
-		if (!winkd_va_to_pa(ctx, ctx->target->dir_base_table, offset, &pa)) {
-			return totread;
-		}
-		ut32 restOfPage = 0x1000 - (offset & 0xfff);
-		int read = ctx->read_at_physical(ctx->user, pa, buf + totread, RZ_MIN(count - totread, restOfPage));
-		if (!read) {
-			break;
-		}
-		offset += read;
-		totread += read;
-	}
-	return totread;
+int winkd_read_at_uva(WindCtx *ctx, uint8_t *buf, ut64 address, int count) {
+	return winkd_op_at_uva(ctx, buf, address, count, false);
+}
+
+int winkd_write_at_uva(WindCtx *ctx, const uint8_t *buf, ut64 address, int count) {
+	return winkd_op_at_uva(ctx, (uint8_t *)buf, address, count, true);
 }
 
 RzList *winkd_list_modules(WindCtx *ctx) {
