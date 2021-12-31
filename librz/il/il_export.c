@@ -362,7 +362,7 @@ static void il_opdmp_loadw(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 		rz_strbuf_appendf(sb, ", bits:%u)", (ut32)opx->n_bits);
 	} else {
 		pj_o(pj);
-		pj_ks(pj, "opcode", "load");
+		pj_ks(pj, "opcode", "loadw");
 		pj_kn(pj, "mem", opx->mem);
 		pj_k(pj, "key");
 		il_op_pure_resolve(opx->key, sb, pj);
@@ -403,7 +403,7 @@ static void il_opdmp_storew(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
 		rz_strbuf_append(sb, ")");
 	} else {
 		pj_o(pj);
-		pj_ks(pj, "opcode", "store");
+		pj_ks(pj, "opcode", "storew");
 		pj_kn(pj, "mem", opx->mem);
 		pj_k(pj, "key");
 		il_op_pure_resolve(opx->key, sb, pj);
