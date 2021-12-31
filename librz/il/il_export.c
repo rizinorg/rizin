@@ -366,6 +366,7 @@ static void il_opdmp_loadw(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 		pj_kn(pj, "mem", opx->mem);
 		pj_k(pj, "key");
 		il_op_pure_resolve(opx->key, sb, pj);
+		pj_kn(pj, "bits", opx->n_bits);
 		pj_end(pj);
 	}
 }
