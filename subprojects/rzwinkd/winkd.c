@@ -478,8 +478,8 @@ RzList *winkd_list_modules(WindCtx *ctx) {
 			break;
 		}
 		winkd_read_at_uva(ctx, (uint8_t *)&mod->addr, ptr + baseoff, 4 << ctx->is_64bit);
-		winkd_read_at_uva(ctx, (uint8_t *)&mod->size, ptr + sizeoff, 4 << ctx->is_64bit);
-		winkd_read_at_uva(ctx, (uint8_t *)&mod->timestamp, ptr + timestampoff, is_target_kernel ? 4 : 4 << ctx->is_64bit);
+		winkd_read_at_uva(ctx, (uint8_t *)&mod->size, ptr + sizeoff, 4);
+		winkd_read_at_uva(ctx, (uint8_t *)&mod->timestamp, ptr + timestampoff, 4);
 
 		ut16 length;
 		winkd_read_at_uva(ctx, (uint8_t *)&length, ptr + nameoff, sizeof(ut16));

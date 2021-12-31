@@ -32,6 +32,7 @@ rz_debug_sources = [
   'snap.c',
   'trace.c',
   'p/bfvm.c',
+  'p/common_winkd.c',
   'p/debug_bf.c',
   'p/debug_bochs.c',
   'p/debug_esil.c',
@@ -59,6 +60,7 @@ rz_debug_deps = [
   rz_cons_dep,
   rz_hash_dep,
   rz_io_dep,
+  rz_bin_dep,
   rz_reg_dep,
   rz_bp_dep,
   rz_syscall_dep,
@@ -147,6 +149,7 @@ pkgconfig_mod.generate(rz_debug,
     'rz_syscall',
     'rz_analysis',
     'rz_io',
+    'rz_bin',
     'rz_bp',
     'rz_cons',
     'rz_egg'
@@ -162,7 +165,7 @@ if not is_static_libs_only
   conf = configuration_data()
   conf.set('RZ_VERSION', rizin_version)
   conf.set('RIZIN_MODULE', rz_debug.name())
-  conf.set('RIZIN_MODULE_DEPS', ' '.join(['rz_util', 'rz_hash', 'rz_reg', 'rz_syscall', 'rz_analysis', 'rz_io', 'rz_bp', 'rz_cons', 'rz_egg']))
+  conf.set('RIZIN_MODULE_DEPS', ' '.join(['rz_util', 'rz_hash', 'rz_reg', 'rz_syscall', 'rz_analysis', 'rz_io', 'rz_bin', 'rz_bp', 'rz_cons', 'rz_egg']))
   conf.set('PACKAGE_RELATIVE_PATH', cmake_package_relative_path)
   conf.set('INSTALL_INCDIR', rizin_incdir)
   conf.set('INSTALL_LIBDIR', rizin_libdir)
