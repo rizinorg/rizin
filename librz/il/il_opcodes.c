@@ -237,7 +237,7 @@ RZ_API RZ_OWN RzILOpBool *rz_il_op_new_is_zero(RZ_NONNULL RzILOpPure *bv) {
 }
 
 /**
- *  [NON_ZERO] is_zero x holds if x is a bitvector of all zeros.
+ *  [NON_ZERO] non_zero x holds if x is not a bitvector of all zeroes.
  */
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_non_zero(RZ_NONNULL RzILOpPure *bv) {
 	rz_return_val_if_fail(bv, NULL);
