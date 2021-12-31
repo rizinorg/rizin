@@ -341,9 +341,25 @@ static void il_opdmp_append(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 static void il_opdmp_load(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 	RzILOpArgsLoad *opx = &op->op.load;
 	if (sb) {
-		rz_strbuf_appendf(sb, "load(mem:%u, key:", (unsigned int)opx->mem);
+		rz_strbuf_appendf(sb, "load(mem:%u, key:", (ut32)opx->mem);
 		il_op_pure_resolve(opx->key, sb, pj);
 		rz_strbuf_append(sb, ")");
+	} else {
+		pj_o(pj);
+		pj_ks(pj, "opcode", "load");
+		pj_kn(pj, "mem", opx->mem);
+		pj_k(pj, "key");
+		il_op_pure_resolve(opx->key, sb, pj);
+		pj_end(pj);
+	}
+}
+
+static void il_opdmp_loadw(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
+	RzILOpArgsLoadW *opx = &op->op.loadw;
+	if (sb) {
+		rz_strbuf_appendf(sb, "loadw(mem:%u, key:", (ut32)opx->mem);
+		il_op_pure_resolve(opx->key, sb, pj);
+		rz_strbuf_appendf(sb, ", bits:%u)", (ut32)opx->n_bits);
 	} else {
 		pj_o(pj);
 		pj_ks(pj, "opcode", "load");
@@ -358,11 +374,32 @@ static void il_opdmp_store(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
 	RzILOpArgsStore *opx = &op->op.store;
 
 	if (sb) {
-		rz_strbuf_appendf(sb, "store(mem:%u, key:", (unsigned int)opx->mem);
+		rz_strbuf_appendf(sb, "store(mem:%u, key:", (ut32)opx->mem);
 		il_op_pure_resolve(opx->key, sb, pj);
 		rz_strbuf_append(sb, ", value:");
 		il_op_pure_resolve(opx->value, sb, pj);
-		rz_strbuf_appendf(sb, ")");
+		rz_strbuf_append(sb, ")");
+	} else {
+		pj_o(pj);
+		pj_ks(pj, "opcode", "store");
+		pj_kn(pj, "mem", opx->mem);
+		pj_k(pj, "key");
+		il_op_pure_resolve(opx->key, sb, pj);
+		pj_k(pj, "value");
+		il_op_pure_resolve(opx->value, sb, pj);
+		pj_end(pj);
+	}
+}
+
+static void il_opdmp_storew(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
+	RzILOpArgsStore *opx = &op->op.store;
+
+	if (sb) {
+		rz_strbuf_appendf(sb, "storew(mem:%u, key:", (ut32)opx->mem);
+		il_op_pure_resolve(opx->key, sb, pj);
+		rz_strbuf_append(sb, ", value:");
+		il_op_pure_resolve(opx->value, sb, pj);
+		rz_strbuf_append(sb, ")");
 	} else {
 		pj_o(pj);
 		pj_ks(pj, "opcode", "store");
@@ -557,6 +594,9 @@ static void il_op_pure_resolve(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 	case RZIL_OP_LOAD:
 		il_opdmp_load(op, sb, pj);
 		return;
+	case RZIL_OP_LOADW:
+		il_opdmp_loadw(op, sb, pj);
+		return;
 	default:
 		rz_warn_if_reached();
 		if (sb) {
@@ -585,6 +625,9 @@ static void il_op_effect_resolve(RzILOpEffect *op, RzStrBuf *sb, PJ *pj) {
 	switch (op->code) {
 	case RZIL_OP_STORE:
 		il_opdmp_store(op, sb, pj);
+		return;
+	case RZIL_OP_STOREW:
+		il_opdmp_storew(op, sb, pj);
 		return;
 	case RZIL_OP_NOP:
 		il_opdmp_nop(op, sb, pj);

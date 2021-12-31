@@ -121,7 +121,7 @@ bool rz_il_handler_let(RzILVM *vm, RzILOpEffect *op) {
 		return false;
 	}
 	rz_il_set(vm, let_op->v, true, let_op->mut, val);
-	return false;
+	return true;
 }
 
 static void perform_jump(RzILVM *vm, RZ_OWN RzBitVector *dst) {

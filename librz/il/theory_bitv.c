@@ -306,7 +306,7 @@ void *rz_il_handler_shiftl(RzILVM *vm, RzILOpBitVector *op, RzILPureType *type) 
 	rz_bv_free(bv);
 	rz_il_bool_free(fill_bit);
 
-	*type = RZ_IL_PURE_TYPE_BOOL;
+	*type = RZ_IL_PURE_TYPE_BITV;
 	return result;
 }
 
