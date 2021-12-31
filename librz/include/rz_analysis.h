@@ -2088,7 +2088,7 @@ typedef enum {
 
 RZ_API void rz_analysis_class_recover_from_rzbin(RzAnalysis *analysis);
 RZ_API void rz_analysis_class_recover_all(RzAnalysis *analysis);
-RZ_API void rz_analysis_class_create(RzAnalysis *analysis, const char *name);
+RZ_API RzAnalysisClassErr rz_analysis_class_create(RzAnalysis *analysis, const char *name);
 RZ_API void rz_analysis_class_delete(RzAnalysis *analysis, const char *name);
 RZ_API bool rz_analysis_class_exists(RzAnalysis *analysis, const char *name);
 RZ_API SdbList *rz_analysis_class_get_all(RzAnalysis *analysis, bool sorted);
@@ -2118,12 +2118,6 @@ RZ_API RzVector /*<RzAnalysisVTable>*/ *rz_analysis_class_vtable_get_all(RzAnaly
 RZ_API RzAnalysisClassErr rz_analysis_class_vtable_set(RzAnalysis *analysis, const char *class_name, RzAnalysisVTable *vtable);
 RZ_API RzAnalysisClassErr rz_analysis_class_vtable_delete(RzAnalysis *analysis, const char *class_name, const char *vtable_id);
 
-RZ_API void rz_analysis_class_print(RzAnalysis *analysis, const char *class_name, bool detailed);
-RZ_API void rz_analysis_class_json(RzAnalysis *analysis, PJ *j, const char *class_name);
-RZ_API void rz_analysis_class_list(RzAnalysis *analysis, int mode);
-RZ_API void rz_analysis_class_list_bases(RzAnalysis *analysis, const char *class_name);
-RZ_API void rz_analysis_class_list_vtables(RzAnalysis *analysis, const char *class_name);
-RZ_API void rz_analysis_class_list_vtable_offset_functions(RzAnalysis *analysis, const char *class_name, ut64 offset);
 RZ_API RzGraph /*<RzGraphNodeInfo>*/ *rz_analysis_class_get_inheritance_graph(RzAnalysis *analysis);
 
 RZ_API size_t rz_analysis_function_arg_count(RzAnalysis *a, RzAnalysisFunction *fcn);

@@ -1319,3 +1319,155 @@ commands:
         args:
           - name: offset
             type: RZ_CMD_ARG_TYPE_RZNUM
+  - name: ac
+    summary: Classes
+    subcommands:
+      - name: ac
+        summary: Add class
+        cname: analysis_class_add
+        args:
+          - name: class_name
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: ac-
+        summary: Delete class
+        cname: analysis_class_del
+        args:
+          - name: class_name
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: acn
+        summary: Rename class
+        cname: analysis_class_rename
+        args:
+          - name: class_name
+            type: RZ_CMD_ARG_TYPE_STRING
+          - name: new_name
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: acl
+        summary: List all classes
+        cname: analysis_class_list
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_LONG
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_RIZIN
+        args: []
+      - name: aci
+        summary: Show information of class
+        cname: analysis_class_info
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_LONG
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: class_name
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: acg
+        summary: Print inheritance ascii graph
+        cname: analysis_class_graph
+        args:
+          - name: class_name
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: acm
+        summary: Class methods
+        subcommands:
+          - name: acm
+            summary: Add/edit method
+            cname: analysis_class_method_add
+            args:
+              - name: class_name
+                type: RZ_CMD_ARG_TYPE_STRING
+              - name: method_name
+                type: RZ_CMD_ARG_TYPE_STRING
+              - name: offset
+                type: RZ_CMD_ARG_TYPE_NUM
+              - name: vtable_offset
+                type: RZ_CMD_ARG_TYPE_NUM
+                optional: true
+          - name: acm-
+            summary: Delete method
+            cname: analysis_class_method_del
+            args:
+              - name: class_name
+                type: RZ_CMD_ARG_TYPE_STRING
+              - name: method_name
+                type: RZ_CMD_ARG_TYPE_STRING
+          - name: acmn
+            summary: Rename method
+            cname: analysis_class_method_rename
+            args:
+              - name: class_name
+                type: RZ_CMD_ARG_TYPE_STRING
+              - name: method_name
+                type: RZ_CMD_ARG_TYPE_STRING
+              - name: new_method_name
+                type: RZ_CMD_ARG_TYPE_STRING
+      - name: acb
+        summary: Base classes
+        subcommands:
+          - name: acb
+            summary: Add base class
+            cname: analysis_class_base_add
+            args:
+              - name: class_name
+                type: RZ_CMD_ARG_TYPE_STRING
+              - name: base_class_name
+                type: RZ_CMD_ARG_TYPE_STRING
+              - name: offset
+                type: RZ_CMD_ARG_TYPE_NUM
+                optional: true
+          - name: acb-
+            summary: Delete base class
+            cname: analysis_class_base_del
+            args:
+              - name: class_name
+                type: RZ_CMD_ARG_TYPE_STRING
+              - name: base_class_name
+                type: RZ_CMD_ARG_TYPE_STRING
+          - name: acbl
+            summary: List base classes
+            cname: analysis_class_base_list
+            args:
+              - name: class_name
+                type: RZ_CMD_ARG_TYPE_STRING
+      - name: acv
+        summary: Class vtable
+        subcommands:
+          - name: acv
+            summary: Add vtable address to class
+            cname: analysis_class_vtable_add
+            args:
+              - name: class_name
+                type: RZ_CMD_ARG_TYPE_STRING
+              - name: addr
+                type: RZ_CMD_ARG_TYPE_RZNUM
+              - name: offset
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+              - name: size
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+          - name: acv-
+            summary: Delete vtable by id
+            cname: analysis_class_vtable_del
+            args:
+              - name: class_name
+                type: RZ_CMD_ARG_TYPE_STRING
+              - name: vtable_id
+                type: RZ_CMD_ARG_TYPE_STRING
+          - name: acvl
+            summary: List class vtables
+            cname: analysis_class_vtable_list
+            args:
+              - name: class_name
+                type: RZ_CMD_ARG_TYPE_STRING
+          - name: acvf
+            summary: Lookup function address on vtable offset
+            cname: analysis_class_vtable_lookup
+            args:
+              - name: offset
+                type: RZ_CMD_ARG_TYPE_RZNUM
+              - name: class_name
+                type: RZ_CMD_ARG_TYPE_STRING
+                optional: true

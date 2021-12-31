@@ -164,6 +164,21 @@ static const RzCmdDescArg analysis_hint_set_optype_args[2];
 static const RzCmdDescArg analysis_hint_set_immbase_args[3];
 static const RzCmdDescArg analysis_hint_set_offset_args[2];
 static const RzCmdDescArg analysis_list_struct_offsets_args[2];
+static const RzCmdDescArg analysis_class_add_args[2];
+static const RzCmdDescArg analysis_class_del_args[2];
+static const RzCmdDescArg analysis_class_rename_args[3];
+static const RzCmdDescArg analysis_class_info_args[2];
+static const RzCmdDescArg analysis_class_graph_args[2];
+static const RzCmdDescArg analysis_class_method_add_args[5];
+static const RzCmdDescArg analysis_class_method_del_args[3];
+static const RzCmdDescArg analysis_class_method_rename_args[4];
+static const RzCmdDescArg analysis_class_base_add_args[4];
+static const RzCmdDescArg analysis_class_base_del_args[3];
+static const RzCmdDescArg analysis_class_base_list_args[2];
+static const RzCmdDescArg analysis_class_vtable_add_args[5];
+static const RzCmdDescArg analysis_class_vtable_del_args[3];
+static const RzCmdDescArg analysis_class_vtable_list_args[2];
+static const RzCmdDescArg analysis_class_vtable_lookup_args[3];
 static const RzCmdDescArg block_args[2];
 static const RzCmdDescArg block_decrease_args[2];
 static const RzCmdDescArg block_increase_args[2];
@@ -3175,6 +3190,314 @@ static const RzCmdDescArg analysis_list_struct_offsets_args[] = {
 static const RzCmdDescHelp analysis_list_struct_offsets_help = {
 	.summary = "List all matching structure offsets",
 	.args = analysis_list_struct_offsets_args,
+};
+
+static const RzCmdDescHelp ac_help = {
+	.summary = "Classes",
+};
+static const RzCmdDescArg analysis_class_add_args[] = {
+	{
+		.name = "class_name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_class_add_help = {
+	.summary = "Add class",
+	.args = analysis_class_add_args,
+};
+
+static const RzCmdDescArg analysis_class_del_args[] = {
+	{
+		.name = "class_name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_class_del_help = {
+	.summary = "Delete class",
+	.args = analysis_class_del_args,
+};
+
+static const RzCmdDescArg analysis_class_rename_args[] = {
+	{
+		.name = "class_name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "new_name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_class_rename_help = {
+	.summary = "Rename class",
+	.args = analysis_class_rename_args,
+};
+
+static const RzCmdDescArg analysis_class_list_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_class_list_help = {
+	.summary = "List all classes",
+	.args = analysis_class_list_args,
+};
+
+static const RzCmdDescArg analysis_class_info_args[] = {
+	{
+		.name = "class_name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_class_info_help = {
+	.summary = "Show information of class",
+	.args = analysis_class_info_args,
+};
+
+static const RzCmdDescArg analysis_class_graph_args[] = {
+	{
+		.name = "class_name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_class_graph_help = {
+	.summary = "Print inheritance ascii graph",
+	.args = analysis_class_graph_args,
+};
+
+static const RzCmdDescHelp acm_help = {
+	.summary = "Class methods",
+};
+static const RzCmdDescArg analysis_class_method_add_args[] = {
+	{
+		.name = "class_name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "method_name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "offset",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{
+		.name = "vtable_offset",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_class_method_add_help = {
+	.summary = "Add/edit method",
+	.args = analysis_class_method_add_args,
+};
+
+static const RzCmdDescArg analysis_class_method_del_args[] = {
+	{
+		.name = "class_name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "method_name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_class_method_del_help = {
+	.summary = "Delete method",
+	.args = analysis_class_method_del_args,
+};
+
+static const RzCmdDescArg analysis_class_method_rename_args[] = {
+	{
+		.name = "class_name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "method_name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "new_method_name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_class_method_rename_help = {
+	.summary = "Rename method",
+	.args = analysis_class_method_rename_args,
+};
+
+static const RzCmdDescHelp acb_help = {
+	.summary = "Base classes",
+};
+static const RzCmdDescArg analysis_class_base_add_args[] = {
+	{
+		.name = "class_name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "base_class_name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "offset",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_class_base_add_help = {
+	.summary = "Add base class",
+	.args = analysis_class_base_add_args,
+};
+
+static const RzCmdDescArg analysis_class_base_del_args[] = {
+	{
+		.name = "class_name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "base_class_name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_class_base_del_help = {
+	.summary = "Delete base class",
+	.args = analysis_class_base_del_args,
+};
+
+static const RzCmdDescArg analysis_class_base_list_args[] = {
+	{
+		.name = "class_name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_class_base_list_help = {
+	.summary = "List base classes",
+	.args = analysis_class_base_list_args,
+};
+
+static const RzCmdDescHelp acv_help = {
+	.summary = "Class vtable",
+};
+static const RzCmdDescArg analysis_class_vtable_add_args[] = {
+	{
+		.name = "class_name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "offset",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "size",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_class_vtable_add_help = {
+	.summary = "Add vtable address to class",
+	.args = analysis_class_vtable_add_args,
+};
+
+static const RzCmdDescArg analysis_class_vtable_del_args[] = {
+	{
+		.name = "class_name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "vtable_id",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_class_vtable_del_help = {
+	.summary = "Delete vtable by id",
+	.args = analysis_class_vtable_del_args,
+};
+
+static const RzCmdDescArg analysis_class_vtable_list_args[] = {
+	{
+		.name = "class_name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_class_vtable_list_help = {
+	.summary = "List class vtables",
+	.args = analysis_class_vtable_list_args,
+};
+
+static const RzCmdDescArg analysis_class_vtable_lookup_args[] = {
+	{
+		.name = "offset",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "class_name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_class_vtable_lookup_help = {
+	.summary = "Lookup function address on vtable offset",
+	.args = analysis_class_vtable_lookup_args,
 };
 
 static const RzCmdDescHelp b_help = {
@@ -10516,6 +10839,50 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *analysis_list_struct_offsets_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "ahts", rz_analysis_list_struct_offsets_handler, &analysis_list_struct_offsets_help);
 	rz_warn_if_fail(analysis_list_struct_offsets_cd);
+
+	RzCmdDesc *ac_cd = rz_cmd_desc_group_new(core->rcmd, cmd_analysis_cd, "ac", rz_analysis_class_add_handler, &analysis_class_add_help, &ac_help);
+	rz_warn_if_fail(ac_cd);
+	RzCmdDesc *analysis_class_del_cd = rz_cmd_desc_argv_new(core->rcmd, ac_cd, "ac-", rz_analysis_class_del_handler, &analysis_class_del_help);
+	rz_warn_if_fail(analysis_class_del_cd);
+
+	RzCmdDesc *analysis_class_rename_cd = rz_cmd_desc_argv_new(core->rcmd, ac_cd, "acn", rz_analysis_class_rename_handler, &analysis_class_rename_help);
+	rz_warn_if_fail(analysis_class_rename_cd);
+
+	RzCmdDesc *analysis_class_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, ac_cd, "acl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_LONG | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_analysis_class_list_handler, &analysis_class_list_help);
+	rz_warn_if_fail(analysis_class_list_cd);
+
+	RzCmdDesc *analysis_class_info_cd = rz_cmd_desc_argv_state_new(core->rcmd, ac_cd, "aci", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_LONG | RZ_OUTPUT_MODE_JSON, rz_analysis_class_info_handler, &analysis_class_info_help);
+	rz_warn_if_fail(analysis_class_info_cd);
+
+	RzCmdDesc *analysis_class_graph_cd = rz_cmd_desc_argv_new(core->rcmd, ac_cd, "acg", rz_analysis_class_graph_handler, &analysis_class_graph_help);
+	rz_warn_if_fail(analysis_class_graph_cd);
+
+	RzCmdDesc *acm_cd = rz_cmd_desc_group_new(core->rcmd, ac_cd, "acm", rz_analysis_class_method_add_handler, &analysis_class_method_add_help, &acm_help);
+	rz_warn_if_fail(acm_cd);
+	RzCmdDesc *analysis_class_method_del_cd = rz_cmd_desc_argv_new(core->rcmd, acm_cd, "acm-", rz_analysis_class_method_del_handler, &analysis_class_method_del_help);
+	rz_warn_if_fail(analysis_class_method_del_cd);
+
+	RzCmdDesc *analysis_class_method_rename_cd = rz_cmd_desc_argv_new(core->rcmd, acm_cd, "acmn", rz_analysis_class_method_rename_handler, &analysis_class_method_rename_help);
+	rz_warn_if_fail(analysis_class_method_rename_cd);
+
+	RzCmdDesc *acb_cd = rz_cmd_desc_group_new(core->rcmd, ac_cd, "acb", rz_analysis_class_base_add_handler, &analysis_class_base_add_help, &acb_help);
+	rz_warn_if_fail(acb_cd);
+	RzCmdDesc *analysis_class_base_del_cd = rz_cmd_desc_argv_new(core->rcmd, acb_cd, "acb-", rz_analysis_class_base_del_handler, &analysis_class_base_del_help);
+	rz_warn_if_fail(analysis_class_base_del_cd);
+
+	RzCmdDesc *analysis_class_base_list_cd = rz_cmd_desc_argv_new(core->rcmd, acb_cd, "acbl", rz_analysis_class_base_list_handler, &analysis_class_base_list_help);
+	rz_warn_if_fail(analysis_class_base_list_cd);
+
+	RzCmdDesc *acv_cd = rz_cmd_desc_group_new(core->rcmd, ac_cd, "acv", rz_analysis_class_vtable_add_handler, &analysis_class_vtable_add_help, &acv_help);
+	rz_warn_if_fail(acv_cd);
+	RzCmdDesc *analysis_class_vtable_del_cd = rz_cmd_desc_argv_new(core->rcmd, acv_cd, "acv-", rz_analysis_class_vtable_del_handler, &analysis_class_vtable_del_help);
+	rz_warn_if_fail(analysis_class_vtable_del_cd);
+
+	RzCmdDesc *analysis_class_vtable_list_cd = rz_cmd_desc_argv_new(core->rcmd, acv_cd, "acvl", rz_analysis_class_vtable_list_handler, &analysis_class_vtable_list_help);
+	rz_warn_if_fail(analysis_class_vtable_list_cd);
+
+	RzCmdDesc *analysis_class_vtable_lookup_cd = rz_cmd_desc_argv_new(core->rcmd, acv_cd, "acvf", rz_analysis_class_vtable_lookup_handler, &analysis_class_vtable_lookup_help);
+	rz_warn_if_fail(analysis_class_vtable_lookup_cd);
 
 	RzCmdDesc *b_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "b", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_block_handler, &block_help, &b_help);
 	rz_warn_if_fail(b_cd);
