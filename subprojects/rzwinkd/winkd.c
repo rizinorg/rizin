@@ -548,7 +548,10 @@ RzList *winkd_list_modules(WindCtx *ctx) {
 	const ut64 baseoff = ctx->is_64bit ? 0x30 : 0x18;
 	const ut64 sizeoff = ctx->is_64bit ? 0x40 : 0x20;
 	const ut64 nameoff = ctx->is_64bit ? 0x48 : 0x24;
-
+	const ut64 timestampoff = is_target_kernel
+		? ctx->is_64bit ? 0x9c : 0x58
+		: ctx->is_64bit ? 0x80
+				: 0x44;
 	do {
 
 		ut64 next = 0;
@@ -568,6 +571,7 @@ RzList *winkd_list_modules(WindCtx *ctx) {
 		}
 		winkd_read_at_uva(ctx, (uint8_t *)&mod->addr, ptr + baseoff, 4 << ctx->is_64bit);
 		winkd_read_at_uva(ctx, (uint8_t *)&mod->size, ptr + sizeoff, 4 << ctx->is_64bit);
+		winkd_read_at_uva(ctx, (uint8_t *)&mod->timestamp, ptr + timestampoff, is_target_kernel ? 4 : 4 << ctx->is_64bit);
 
 		ut16 length;
 		winkd_read_at_uva(ctx, (uint8_t *)&length, ptr + nameoff, sizeof(ut16));
