@@ -271,15 +271,15 @@ static struct optype {
 	{ RZ_ANALYSIS_OP_TYPE_SWITCH, "switch" },
 	{ RZ_ANALYSIS_OP_TYPE_TRAP, "trap" },
 	{ RZ_ANALYSIS_OP_TYPE_UCALL, "ucall" },
-	{ RZ_ANALYSIS_OP_TYPE_RCALL, "rcall" }, 
-	{ RZ_ANALYSIS_OP_TYPE_ICALL, "icall" }, 
-	{ RZ_ANALYSIS_OP_TYPE_IRCALL, "ircall" }, 
+	{ RZ_ANALYSIS_OP_TYPE_RCALL, "rcall" },
+	{ RZ_ANALYSIS_OP_TYPE_ICALL, "icall" },
+	{ RZ_ANALYSIS_OP_TYPE_IRCALL, "ircall" },
 	{ RZ_ANALYSIS_OP_TYPE_UCCALL, "uccall" },
 	{ RZ_ANALYSIS_OP_TYPE_UCJMP, "ucjmp" },
 	{ RZ_ANALYSIS_OP_TYPE_UJMP, "ujmp" },
-	{ RZ_ANALYSIS_OP_TYPE_RJMP, "rjmp" }, 
-	{ RZ_ANALYSIS_OP_TYPE_IJMP, "ijmp" }, 
-	{ RZ_ANALYSIS_OP_TYPE_IRJMP, "irjmp" }, 
+	{ RZ_ANALYSIS_OP_TYPE_RJMP, "rjmp" },
+	{ RZ_ANALYSIS_OP_TYPE_IJMP, "ijmp" },
+	{ RZ_ANALYSIS_OP_TYPE_IRJMP, "irjmp" },
 	{ RZ_ANALYSIS_OP_TYPE_UNK, "unk" },
 	{ RZ_ANALYSIS_OP_TYPE_UPUSH, "upush" },
 	{ RZ_ANALYSIS_OP_TYPE_RPUSH, "rpush" },
@@ -319,7 +319,7 @@ RZ_API const char *rz_analysis_optype_to_string(int type) {
 			return optypes[i].name;
 		}
 	}
-	
+
 	type &= RZ_ANALYSIS_OP_TYPE_MASK;
 
 	for (i = 0; i < RZ_ARRAY_SIZE(optypes); i++) {
