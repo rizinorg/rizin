@@ -23,7 +23,7 @@
 
 #define BS 1024
 #ifdef __WINDOWS__
-#define StructStat struct _stat
+#define StructStat struct _stat64
 #else
 #define StructStat struct stat
 #endif
@@ -35,7 +35,7 @@ static int file_stat(const char *file, StructStat *pStat) {
 	if (!wfile) {
 		return -1;
 	}
-	int ret = _wstat(wfile, pStat);
+	int ret = _wstati64(wfile, pStat);
 	free(wfile);
 	return ret;
 #else // __WINDOWS__
