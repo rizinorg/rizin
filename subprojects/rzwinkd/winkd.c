@@ -1334,3 +1334,93 @@ int winkd_break_read(KdCtx *ctx) {
 #endif
 	return 1;
 }
+
+static inline char *download_pdb(const char *path, const char *symserver, const char *symstore) {
+	rz_sys_setenv("RZ_BIN_PDBSERVER", symserver);
+	rz_sys_setenv("RZ_BIN_SYMSTORE", symstore);
+	char *direscaped = rz_str_escape_sh(path);
+	char *ret = rz_sys_cmd_strf("rz-bin -PPj %s", direscaped);
+	free(direscaped);
+	return ret;
+}
+
+bool winkd_download_module_and_pdb(WindModule *module, const char *symserver, const char *symstore, char **exepath, char **pdbpath) {
+	if (exepath) {
+		*exepath = NULL;
+	}
+	if (pdbpath) {
+		*pdbpath = NULL;
+	}
+	char *sum = rz_str_newf("%08" PFMT32x "%" PFMT32x, module->timestamp, module->size);
+	const char *file = rz_str_rchr(module->name, NULL, '\\') + 1;
+	char *dir = rz_str_newf("%s%s%s%s%s",
+		symstore, RZ_SYS_DIR,
+		file, RZ_SYS_DIR,
+		sum);
+	if (!rz_sys_mkdirp(dir)) {
+		free(dir);
+		return false;
+	}
+	char *path = rz_str_newf("%s%s%s", dir, RZ_SYS_DIR, file);
+	if (rz_file_exists(path)) {
+		goto success;
+	}
+	char *url = rz_str_newf("%s/%s/%s/%s", symserver, file, sum, file);
+#if __WINDOWS__
+	if (rz_str_startswith(url, "\\\\")) { // Network path
+		wchar_t *origin = rz_utf8_to_utf16(url);
+		wchar_t *dest = rz_utf8_to_utf16(path);
+		BOOL ret = CopyFileW(origin, dest, FALSE);
+		free(origin);
+		free(dest);
+		if (ret) {
+			goto success;
+		}
+		free(dir);
+		free(path);
+		return false;
+	}
+#endif
+	int len;
+	char *file_buf = rz_socket_http_get(url, NULL, &len);
+	free(url);
+	if (!len || RZ_STR_ISEMPTY(file_buf)) {
+		free(dir);
+		free(file_buf);
+		free(path);
+		return false;
+	}
+	FILE *f = fopen(path, "wb");
+	if (f) {
+		fwrite(file_buf, sizeof(char), (size_t)len, f);
+		fclose(f);
+	}
+	free(file_buf);
+	char *res;
+success:
+	res = download_pdb(path, symserver, symstore);
+	if (exepath) {
+		*exepath = path;
+	} else {
+		free(path);
+	}
+	RzJson *json = rz_json_parse(res);
+	if (!json) {
+		return false;
+	}
+	const RzJson *pdb = rz_json_get(json, "pdb");
+	if (!pdb) {
+		return false;
+	}
+	const RzJson *jpath = rz_json_get(pdb, "path");
+	if (!jpath) {
+		return false;
+	}
+	if (pdbpath) {
+		*pdbpath = strdup(jpath->str_value);
+	}
+	rz_json_free(json);
+	free(res);
+	free(dir);
+	return true;
+}
