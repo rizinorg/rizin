@@ -290,9 +290,14 @@ static struct optype {
 	{ RZ_ANALYSIS_OP_TYPE_CRYPTO, "crypto" }
 };
 
+/**
+ * Return the op type corresponding the given name
+ * \param  name       string, name of the optype
+ * \return type       int, id of the op type (one of \link _RzAnalysisOpType \endlink)
+ */
 RZ_API int rz_analysis_optype_from_string(const char *name) {
 	int i;
-	for (i = 0; optypes[i].name; i++) {
+	for (i = 0; RZ_ARRAY_SIZE(optypes); i++) {
 		if (!strcmp(optypes[i].name, name)) {
 			return optypes[i].type;
 		}
@@ -300,11 +305,15 @@ RZ_API int rz_analysis_optype_from_string(const char *name) {
 	return -1;
 }
 
+/**
+ * Return the name of the given op type
+ * \param  type       int, id of the op type (one of \link _RzAnalysisOpType \endlink)
+ * \return name       string, string, name of the optype
+ */
 RZ_API const char *rz_analysis_optype_to_string(int type) {
 	int i;
-	int optypes_size = sizeof(optypes) / sizeof(optypes[0]);
 
-	for (i = 0; i < optypes_size; i++) {
+	for (i = 0; i < RZ_ARRAY_SIZE(optypes); i++) {
 		if (optypes[i].type == type) {
 			return optypes[i].name;
 		}
@@ -312,7 +321,7 @@ RZ_API const char *rz_analysis_optype_to_string(int type) {
 	
 	type &= RZ_ANALYSIS_OP_TYPE_MASK;
 
-	for (i = 0; i < optypes_size; i++) {
+	for (i = 0; i < RZ_ARRAY_SIZE(optypes); i++) {
 		if (optypes[i].type == type) {
 			return optypes[i].name;
 		}
@@ -546,10 +555,15 @@ static const struct {
 	{ RZ_ANALYSIS_OP_FAMILY_THREAD, "thread" },
 };
 
+/**
+ * Return the name of the given op family
+ * \param  id       int, id of the operation family (one of \link RzAnalysisOpFamily \endlink)
+ * \return name     string, name of the op family
+ */
 RZ_API const char *rz_analysis_op_family_to_string(int id) {
 	int i;
 
-	for (i = 0; i < sizeof(op_families) / sizeof(op_families[0]); i++) {
+	for (i = 0; i < RZ_ARRAY_SIZE(op_families); i++) {
 		if (op_families[i].id == id) {
 			return op_families[i].name;
 		}
@@ -557,11 +571,16 @@ RZ_API const char *rz_analysis_op_family_to_string(int id) {
 	return NULL;
 }
 
-RZ_API int rz_analysis_op_family_from_string(const char *f) {
+/**
+ * Return the op family id given its name
+ * \param  name     string, name of the op family
+ * \return id       int, id of the operation family (one of \link RzAnalysisOpFamily \endlink)
+ */
+RZ_API int rz_analysis_op_family_from_string(const char *name) {
 	int i;
 
-	for (i = 0; i < sizeof(op_families) / sizeof(op_families[0]); i++) {
-		if (!strcmp(f, op_families[i].name)) {
+	for (i = 0; i < RZ_ARRAY_SIZE(op_families); i++) {
+		if (!strcmp(name, op_families[i].name)) {
 			return op_families[i].id;
 		}
 	}
