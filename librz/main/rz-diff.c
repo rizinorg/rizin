@@ -604,11 +604,6 @@ static RzCoreFile *rz_diff_load_file_with_core(const char *filename, const char 
 		rz_config_eval(core->config, config);
 	}
 
-	if (!rz_core_analysis_everything(core, false, NULL)) {
-		rz_diff_error("cannot set analyze binary '%s'\n", filename);
-		goto rz_diff_load_file_with_core_fail;
-	}
-
 	return cfile;
 
 rz_diff_load_file_with_core_fail:
@@ -1426,6 +1421,7 @@ static bool rz_diff_graphs_files(DiffContext *ctx) {
 	if (ctx->type == DIFF_TYPE_PLOTDIFF) {
 		ut64 address_a = 0;
 		ut64 address_b = 0;
+		bool analyze_recursively = rz_config_get_i(a->core->config, "analysis.calls");
 
 		if (!convert_offset_from_input(a->core, ctx->input_a, &address_a)) {
 			rz_diff_error("cannot convert '%s' into an offset\n", ctx->input_a);
@@ -1436,12 +1432,31 @@ static bool rz_diff_graphs_files(DiffContext *ctx) {
 			rz_diff_error("cannot convert '%s' into an offset\n", ctx->input_b);
 			goto rz_diff_graphs_files_bad;
 		}
+
+		if (!rz_core_analysis_function_add(a->core, NULL, address_a, analyze_recursively)) {
+			rz_diff_error("cannot find function at '%s' in '%s' \n", ctx->input_a, ctx->file_a);
+			goto rz_diff_graphs_files_bad;
+		}
+
+		if (!rz_core_analysis_function_add(b->core, NULL, address_b, analyze_recursively)) {
+			rz_diff_error("cannot find function at '%s' in '%s' \n", ctx->input_b, ctx->file_b);
+			goto rz_diff_graphs_files_bad;
+		}
+
 		if (!rz_core_gdiff_function_2_files(a->core, b->core, address_a, address_b)) {
 			rz_diff_error("cannot diff graphs with inputs '%s' with '%s'\n", ctx->input_a, ctx->input_b);
 			goto rz_diff_graphs_files_bad;
 		}
 		rz_core_diff_show_function(a->core, b->core, address_a, ctx->mode == DIFF_MODE_JSON);
 	} else {
+		if (!rz_core_analysis_everything(a->core, false, NULL)) {
+			rz_diff_error("cannot set analyze binary '%s'\n", ctx->file_a);
+			goto rz_diff_graphs_files_bad;
+		}
+		if (!rz_core_analysis_everything(b->core, false, NULL)) {
+			rz_diff_error("cannot set analyze binary '%s'\n", ctx->file_b);
+			goto rz_diff_graphs_files_bad;
+		}
 		if (!rz_core_gdiff_2_files(a->core, b->core)) {
 			rz_diff_error("cannot diff all graphs\n");
 			goto rz_diff_graphs_files_bad;
