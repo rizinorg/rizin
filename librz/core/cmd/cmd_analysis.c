@@ -436,7 +436,10 @@ static const char *help_msg_as[] = {
  * Case of overlapped functions is treated as an error.
  */
 static RzAnalysisFunction *analysis_get_function_in(RzAnalysis *analysis, ut64 offset) {
-	RzAnalysisFunction *fcn = NULL;
+	RzAnalysisFunction *fcn = rz_analysis_get_function_at(analysis, offset);
+	if (fcn) {
+		return fcn;
+	}
 	RzList *list = rz_analysis_get_functions_in(analysis, offset);
 	if (rz_list_empty(list)) {
 		RZ_LOG_ERROR("No function found\n");
