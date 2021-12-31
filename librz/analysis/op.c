@@ -237,7 +237,7 @@ static struct optype {
 	{ RZ_ANALYSIS_OP_TYPE_CJMP, "cjmp" },
 	{ RZ_ANALYSIS_OP_TYPE_MJMP, "mjmp" },
 	{ RZ_ANALYSIS_OP_TYPE_CMP, "cmp" },
-	{ RZ_ANALYSIS_OP_TYPE_IO, "cret" },
+	{ RZ_ANALYSIS_OP_TYPE_CRET, "cret" },
 	{ RZ_ANALYSIS_OP_TYPE_ILL, "ill" },
 	{ RZ_ANALYSIS_OP_TYPE_JMP, "jmp" },
 	{ RZ_ANALYSIS_OP_TYPE_LEA, "lea" },
@@ -271,15 +271,15 @@ static struct optype {
 	{ RZ_ANALYSIS_OP_TYPE_SWITCH, "switch" },
 	{ RZ_ANALYSIS_OP_TYPE_TRAP, "trap" },
 	{ RZ_ANALYSIS_OP_TYPE_UCALL, "ucall" },
-	{ RZ_ANALYSIS_OP_TYPE_RCALL, "rcall" }, // needs to be changed
-	{ RZ_ANALYSIS_OP_TYPE_ICALL, "ucall" }, // needs to be changed
-	{ RZ_ANALYSIS_OP_TYPE_IRCALL, "ucall" }, // needs to be changed
+	{ RZ_ANALYSIS_OP_TYPE_RCALL, "rcall" }, 
+	{ RZ_ANALYSIS_OP_TYPE_ICALL, "icall" }, 
+	{ RZ_ANALYSIS_OP_TYPE_IRCALL, "ircall" }, 
 	{ RZ_ANALYSIS_OP_TYPE_UCCALL, "uccall" },
 	{ RZ_ANALYSIS_OP_TYPE_UCJMP, "ucjmp" },
 	{ RZ_ANALYSIS_OP_TYPE_UJMP, "ujmp" },
-	{ RZ_ANALYSIS_OP_TYPE_RJMP, "rjmp" }, // needs to be changed
-	{ RZ_ANALYSIS_OP_TYPE_IJMP, "ujmp" }, // needs to be changed
-	{ RZ_ANALYSIS_OP_TYPE_IRJMP, "ujmp" }, // needs to be changed
+	{ RZ_ANALYSIS_OP_TYPE_RJMP, "rjmp" }, 
+	{ RZ_ANALYSIS_OP_TYPE_IJMP, "ijmp" }, 
+	{ RZ_ANALYSIS_OP_TYPE_IRJMP, "irjmp" }, 
 	{ RZ_ANALYSIS_OP_TYPE_UNK, "unk" },
 	{ RZ_ANALYSIS_OP_TYPE_UPUSH, "upush" },
 	{ RZ_ANALYSIS_OP_TYPE_RPUSH, "rpush" },
@@ -287,91 +287,35 @@ static struct optype {
 	{ RZ_ANALYSIS_OP_TYPE_XOR, "xor" },
 	{ RZ_ANALYSIS_OP_TYPE_CASE, "case" },
 	{ RZ_ANALYSIS_OP_TYPE_CPL, "cpl" },
-	{ RZ_ANALYSIS_OP_TYPE_CRYPTO, "crypto" },
-	{ 0, NULL }
+	{ RZ_ANALYSIS_OP_TYPE_CRYPTO, "crypto" }
 };
 
-RZ_API int rz_analysis_optype_from_string(const char *type) {
+RZ_API int rz_analysis_optype_from_string(const char *name) {
 	int i;
 	for (i = 0; optypes[i].name; i++) {
-		if (!strcmp(optypes[i].name, type)) {
+		if (!strcmp(optypes[i].name, name)) {
 			return optypes[i].type;
 		}
 	}
 	return -1;
 }
 
-RZ_API const char *rz_analysis_optype_to_string(int t) {
-	bool once = true;
-repeat:
-	// TODO: delete
-	switch (t) {
-	case RZ_ANALYSIS_OP_TYPE_IO: return "io";
-	case RZ_ANALYSIS_OP_TYPE_ACMP: return "acmp";
-	case RZ_ANALYSIS_OP_TYPE_ADD: return "add";
-	case RZ_ANALYSIS_OP_TYPE_SYNC: return "sync";
-	case RZ_ANALYSIS_OP_TYPE_AND: return "and";
-	case RZ_ANALYSIS_OP_TYPE_CALL: return "call";
-	case RZ_ANALYSIS_OP_TYPE_CCALL: return "ccall";
-	case RZ_ANALYSIS_OP_TYPE_CJMP: return "cjmp";
-	case RZ_ANALYSIS_OP_TYPE_MJMP: return "mjmp";
-	case RZ_ANALYSIS_OP_TYPE_CMP: return "cmp";
-	case RZ_ANALYSIS_OP_TYPE_CRET: return "cret";
-	case RZ_ANALYSIS_OP_TYPE_DIV: return "div";
-	case RZ_ANALYSIS_OP_TYPE_ILL: return "ill";
-	case RZ_ANALYSIS_OP_TYPE_JMP: return "jmp";
-	case RZ_ANALYSIS_OP_TYPE_LEA: return "lea";
-	case RZ_ANALYSIS_OP_TYPE_LEAVE: return "leave";
-	case RZ_ANALYSIS_OP_TYPE_LOAD: return "load";
-	case RZ_ANALYSIS_OP_TYPE_NEW: return "new";
-	case RZ_ANALYSIS_OP_TYPE_MOD: return "mod";
-	case RZ_ANALYSIS_OP_TYPE_CMOV: return "cmov";
-	case RZ_ANALYSIS_OP_TYPE_MOV: return "mov";
-	case RZ_ANALYSIS_OP_TYPE_CAST: return "cast";
-	case RZ_ANALYSIS_OP_TYPE_MUL: return "mul";
-	case RZ_ANALYSIS_OP_TYPE_NOP: return "nop";
-	case RZ_ANALYSIS_OP_TYPE_NOT: return "not";
-	case RZ_ANALYSIS_OP_TYPE_NULL: return "null";
-	case RZ_ANALYSIS_OP_TYPE_OR: return "or";
-	case RZ_ANALYSIS_OP_TYPE_POP: return "pop";
-	case RZ_ANALYSIS_OP_TYPE_PUSH: return "push";
-	case RZ_ANALYSIS_OP_TYPE_RPUSH: return "rpush";
-	case RZ_ANALYSIS_OP_TYPE_REP: return "rep";
-	case RZ_ANALYSIS_OP_TYPE_RET: return "ret";
-	case RZ_ANALYSIS_OP_TYPE_ROL: return "rol";
-	case RZ_ANALYSIS_OP_TYPE_ROR: return "ror";
-	case RZ_ANALYSIS_OP_TYPE_SAL: return "sal";
-	case RZ_ANALYSIS_OP_TYPE_SAR: return "sar";
-	case RZ_ANALYSIS_OP_TYPE_SHL: return "shl";
-	case RZ_ANALYSIS_OP_TYPE_SHR: return "shr";
-	case RZ_ANALYSIS_OP_TYPE_STORE: return "store";
-	case RZ_ANALYSIS_OP_TYPE_SUB: return "sub";
-	case RZ_ANALYSIS_OP_TYPE_SWI: return "swi";
-	case RZ_ANALYSIS_OP_TYPE_CSWI: return "cswi";
-	case RZ_ANALYSIS_OP_TYPE_SWITCH: return "switch";
-	case RZ_ANALYSIS_OP_TYPE_TRAP: return "trap";
-	case RZ_ANALYSIS_OP_TYPE_UCALL: return "ucall";
-	case RZ_ANALYSIS_OP_TYPE_RCALL: return "rcall"; // needs to be changed
-	case RZ_ANALYSIS_OP_TYPE_ICALL: return "ucall"; // needs to be changed
-	case RZ_ANALYSIS_OP_TYPE_IRCALL: return "ucall"; // needs to be changed
-	case RZ_ANALYSIS_OP_TYPE_UCCALL: return "uccall";
-	case RZ_ANALYSIS_OP_TYPE_UCJMP: return "ucjmp";
-	case RZ_ANALYSIS_OP_TYPE_UJMP: return "ujmp";
-	case RZ_ANALYSIS_OP_TYPE_RJMP: return "rjmp"; // needs to be changed
-	case RZ_ANALYSIS_OP_TYPE_IJMP: return "ujmp"; // needs to be changed
-	case RZ_ANALYSIS_OP_TYPE_IRJMP: return "ujmp"; // needs to be changed
-	case RZ_ANALYSIS_OP_TYPE_UNK: return "unk";
-	case RZ_ANALYSIS_OP_TYPE_UPUSH: return "upush";
-	case RZ_ANALYSIS_OP_TYPE_XCHG: return "xchg";
-	case RZ_ANALYSIS_OP_TYPE_XOR: return "xor";
-	case RZ_ANALYSIS_OP_TYPE_CASE: return "case";
-	case RZ_ANALYSIS_OP_TYPE_CPL: return "cpl";
-	case RZ_ANALYSIS_OP_TYPE_CRYPTO: return "crypto";
+RZ_API const char *rz_analysis_optype_to_string(int type) {
+	int i;
+	int optypes_size = sizeof(optypes) / sizeof(optypes[0]);
+
+	for (i = 0; i < optypes_size; i++) {
+		if (optypes[i].type == type) {
+			return optypes[i].name;
+		}
 	}
-	if (once) {
-		once = false;
-		t &= RZ_ANALYSIS_OP_TYPE_MASK; // ignore the modifier bits... we don't want this!
-		goto repeat;
+	
+	type &= RZ_ANALYSIS_OP_TYPE_MASK;
+
+	for (i = 0; i < optypes_size; i++) {
+		if (optypes[i].type == type) {
+			return optypes[i].name;
+		}
 	}
 	return "undefined";
 }
@@ -586,45 +530,39 @@ RZ_API const char *rz_analysis_stackop_tostring(int s) {
 	return "unk";
 }
 
-RZ_API const char *rz_analysis_op_family_to_string(int n) {
-	switch (n) {
-	case RZ_ANALYSIS_OP_FAMILY_UNKNOWN: return "unk";
-	case RZ_ANALYSIS_OP_FAMILY_CPU: return "cpu";
-	case RZ_ANALYSIS_OP_FAMILY_SECURITY: return "sec";
-	case RZ_ANALYSIS_OP_FAMILY_FPU: return "fpu";
-	case RZ_ANALYSIS_OP_FAMILY_MMX: return "mmx";
-	case RZ_ANALYSIS_OP_FAMILY_SSE: return "sse";
-	case RZ_ANALYSIS_OP_FAMILY_PRIV: return "priv";
-	case RZ_ANALYSIS_OP_FAMILY_THREAD: return "thrd";
-	case RZ_ANALYSIS_OP_FAMILY_CRYPTO: return "crpt";
-	case RZ_ANALYSIS_OP_FAMILY_IO: return "io";
-	case RZ_ANALYSIS_OP_FAMILY_VIRT: return "virt";
+static const struct {
+	int id;
+	const char *name;
+} op_families[] = {
+	{ RZ_ANALYSIS_OP_FAMILY_CPU, "cpu" },
+	{ RZ_ANALYSIS_OP_FAMILY_FPU, "fpu" },
+	{ RZ_ANALYSIS_OP_FAMILY_MMX, "mmx" },
+	{ RZ_ANALYSIS_OP_FAMILY_SSE, "sse" },
+	{ RZ_ANALYSIS_OP_FAMILY_PRIV, "priv" },
+	{ RZ_ANALYSIS_OP_FAMILY_VIRT, "virt" },
+	{ RZ_ANALYSIS_OP_FAMILY_CRYPTO, "crpt" },
+	{ RZ_ANALYSIS_OP_FAMILY_IO, "io" },
+	{ RZ_ANALYSIS_OP_FAMILY_SECURITY, "sec" },
+	{ RZ_ANALYSIS_OP_FAMILY_THREAD, "thread" },
+};
+
+RZ_API const char *rz_analysis_op_family_to_string(int id) {
+	int i;
+
+	for (i = 0; i < sizeof(op_families) / sizeof(op_families[0]); i++) {
+		if (op_families[i].id == id) {
+			return op_families[i].name;
+		}
 	}
 	return NULL;
 }
 
 RZ_API int rz_analysis_op_family_from_string(const char *f) {
-	struct op_family {
-		const char *name;
-		int id;
-	};
-	static const struct op_family of[] = {
-		{ "cpu", RZ_ANALYSIS_OP_FAMILY_CPU },
-		{ "fpu", RZ_ANALYSIS_OP_FAMILY_FPU },
-		{ "mmx", RZ_ANALYSIS_OP_FAMILY_MMX },
-		{ "sse", RZ_ANALYSIS_OP_FAMILY_SSE },
-		{ "priv", RZ_ANALYSIS_OP_FAMILY_PRIV },
-		{ "virt", RZ_ANALYSIS_OP_FAMILY_VIRT },
-		{ "crpt", RZ_ANALYSIS_OP_FAMILY_CRYPTO },
-		{ "io", RZ_ANALYSIS_OP_FAMILY_IO },
-		{ "sec", RZ_ANALYSIS_OP_FAMILY_SECURITY },
-		{ "thread", RZ_ANALYSIS_OP_FAMILY_THREAD },
-	};
-
 	int i;
-	for (i = 0; i < sizeof(of) / sizeof(of[0]); i++) {
-		if (!strcmp(f, of[i].name)) {
-			return of[i].id;
+
+	for (i = 0; i < sizeof(op_families) / sizeof(op_families[0]); i++) {
+		if (!strcmp(f, op_families[i].name)) {
+			return op_families[i].id;
 		}
 	}
 	return RZ_ANALYSIS_OP_FAMILY_UNKNOWN;
