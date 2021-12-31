@@ -29,6 +29,7 @@ typedef struct WindModule {
 	char *name;
 	ut64 addr;
 	ut64 size;
+	ut64 timestamp;
 } WindModule;
 
 enum {
