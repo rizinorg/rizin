@@ -433,7 +433,8 @@ static const char *help_msg_as[] = {
 /**
  * \brief Helper to get function in \p offset
  *
- * Case of overlapped functions is treated as an error.
+ * Case of overlapped functions is treated as an error
+ * if \p offset is not an entry point.
  */
 static RzAnalysisFunction *analysis_get_function_in(RzAnalysis *analysis, ut64 offset) {
 	RzAnalysisFunction *fcn = rz_analysis_get_function_at(analysis, offset);
