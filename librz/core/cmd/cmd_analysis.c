@@ -443,11 +443,13 @@ static RzAnalysisFunction *analysis_get_function_in(RzAnalysis *analysis, ut64 o
 	}
 	RzList *list = rz_analysis_get_functions_in(analysis, offset);
 	if (rz_list_empty(list)) {
-		RZ_LOG_ERROR("No function found in 0x%08" PFMT64x "\n", offset);
+		RZ_LOG_ERROR("No function found in 0x%08" PFMT64x ".\n", offset);
 		goto exit;
 	}
 	if (rz_list_length(list) > 1) {
-		RZ_LOG_ERROR("Overlapped functions found in 0x%08" PFMT64x "\n", offset);
+		RZ_LOG_ERROR("Multiple overlapping functions found at 0x%08" PFMT64x ". "
+			     "Re-run this command at the entrypoint of one of them to disambiguate.\n",
+			offset);
 		goto exit;
 	}
 	fcn = rz_list_first(list);
