@@ -430,6 +430,31 @@ static const char *help_msg_as[] = {
 	NULL
 };
 
+/**
+ * \brief Helper to get function in \p offset
+ *
+ * Case of overlapped functions is treated as an error.
+ */
+static RzAnalysisFunction *analysis_get_function_in(RzAnalysis *analysis, ut64 offset) {
+	RzAnalysisFunction *fcn = NULL;
+	RzList *list = rz_analysis_get_functions_in(analysis, offset);
+	if (rz_list_empty(list)) {
+		RZ_LOG_ERROR("No function found\n");
+		goto exit;
+	}
+	if (rz_list_length(list) > 1) {
+		RZ_LOG_ERROR("Overlapped functions found\n");
+		goto exit;
+	}
+	fcn = rz_list_first(list);
+	if (!fcn) {
+		rz_warn_if_reached();
+	}
+exit:
+	rz_list_free(list);
+	return fcn;
+}
+
 static int cmpaddr(const void *_a, const void *_b) {
 	const RzAnalysisFunction *a = _a, *b = _b;
 	return (a->addr > b->addr) ? 1 : (a->addr < b->addr) ? -1
@@ -6349,12 +6374,10 @@ RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
 
 RZ_IPI RzCmdStatus rz_analysis_function_blocks_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	ut64 addr = argc > 1 ? rz_num_math(core->num, argv[1]) : core->offset;
-	RzList *l = rz_analysis_get_functions_in(core->analysis, addr);
-	if (rz_list_empty(l)) {
-		eprintf("No functions at 0x%" PFMT64x, addr);
+	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, addr);
+	if (!fcn) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	RzAnalysisFunction *fcn = rz_list_first(l);
 	rz_core_analysis_bbs_info_print(core, fcn, state);
 	return RZ_CMD_STATUS_OK;
 }
@@ -6373,9 +6396,8 @@ RZ_IPI RzCmdStatus rz_analysis_function_blocks_del_handler(RzCore *core, int arg
 
 RZ_IPI RzCmdStatus rz_analysis_function_blocks_del_all_handler(RzCore *core, int argc, const char **argv) {
 	ut64 addr = argc > 1 ? rz_num_math(core->num, argv[1]) : core->offset;
-	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, -1);
+	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, addr);
 	if (!fcn) {
-		eprintf("Cannot find function\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	while (!rz_list_empty(fcn->bbs)) {
@@ -6399,24 +6421,20 @@ RZ_IPI RzCmdStatus rz_analysis_function_blocks_edge_handler(RzCore *core, int ar
 
 RZ_IPI RzCmdStatus rz_analysis_function_returns_handler(RzCore *core, int argc, const char **argv) {
 	ut64 addr = argc > 1 ? rz_num_math(core->num, argv[1]) : core->offset;
-	RzList *l = rz_analysis_get_functions_in(core->analysis, addr);
-	if (rz_list_empty(l)) {
-		eprintf("No functions at 0x%" PFMT64x, addr);
+	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, addr);
+	if (!fcn) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	RzAnalysisFunction *fcn = rz_list_first(l);
 	rz_core_analysis_fcn_returns(core, fcn);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_analysis_function_blocks_asciiart_handler(RzCore *core, int argc, const char **argv) {
 	ut64 addr = argc > 1 ? rz_num_math(core->num, argv[1]) : core->offset;
-	RzList *l = rz_analysis_get_functions_in(core->analysis, addr);
-	if (rz_list_empty(l)) {
-		eprintf("No functions at 0x%" PFMT64x, addr);
+	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, addr);
+	if (!fcn) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	RzAnalysisFunction *fcn = rz_list_first(l);
 	rz_core_analysis_bbs_asciiart(core, fcn);
 	return RZ_CMD_STATUS_OK;
 }
@@ -6473,9 +6491,9 @@ RZ_IPI RzCmdStatus rz_analysis_function_blocks_color_handler(RzCore *core, int a
 
 RZ_IPI RzCmdStatus rz_analysis_function_setbits_handler(RzCore *core, int argc, const char **argv) {
 	int bits = atoi(argv[1]);
-	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
+	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, core->offset);
 	if (!fcn) {
-		eprintf("No function at 0x%" PFMT64x "\n", core->offset);
+		return RZ_CMD_STATUS_ERROR;
 	}
 	RzListIter *iter;
 	RzAnalysisBlock *bb;
@@ -6488,9 +6506,8 @@ RZ_IPI RzCmdStatus rz_analysis_function_setbits_handler(RzCore *core, int argc, 
 }
 
 RZ_IPI RzCmdStatus rz_analysis_function_signature_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	RzAnalysisFunction *f = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
+	RzAnalysisFunction *f = analysis_get_function_in(core->analysis, core->offset);
 	if (!f) {
-		eprintf("Cannot find function in 0x%08" PFMT64x "\n", core->offset);
 		return RZ_CMD_STATUS_ERROR;
 	}
 
@@ -6525,9 +6542,8 @@ RZ_IPI RzCmdStatus rz_analysis_function_signature_editor_handler(RzCore *core, i
 }
 
 RZ_IPI RzCmdStatus rz_analysis_function_signature_type_handler(RzCore *core, int argc, const char **argv) {
-	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
+	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, core->offset);
 	if (!fcn) {
-		eprintf("Cannot find function in 0x%08" PFMT64x "\n", core->offset);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	char *error_msg = NULL;
@@ -6564,9 +6580,8 @@ static void xref_list_print_to_json(RZ_UNUSED RzCore *core, RzList *list, PJ *pj
 }
 
 RZ_IPI RzCmdStatus rz_analysis_function_xrefs_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
+	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, core->offset);
 	if (!fcn) {
-		eprintf("Cannot find function in 0x%08" PFMT64x "\n", core->offset);
 		return RZ_CMD_STATUS_ERROR;
 	}
 
@@ -6620,9 +6635,8 @@ exit:
 }
 
 RZ_IPI RzCmdStatus rz_analysis_function_stacksz_handler(RzCore *core, int argc, const char **argv) {
-	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
+	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, core->offset);
 	if (!fcn) {
-		eprintf("Cannot find function in 0x%08" PFMT64x "\n", core->offset);
 		return RZ_CMD_STATUS_ERROR;
 	}
 
@@ -6631,9 +6645,8 @@ RZ_IPI RzCmdStatus rz_analysis_function_stacksz_handler(RzCore *core, int argc, 
 }
 
 RZ_IPI RzCmdStatus rz_analysis_function_address_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
+	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, core->offset);
 	if (!fcn) {
-		eprintf("Cannot find function in 0x%08" PFMT64x "\n", core->offset);
 		return RZ_CMD_STATUS_ERROR;
 	}
 
@@ -6672,9 +6685,8 @@ RZ_IPI RzCmdStatus rz_analysis_function_until_handler(RzCore *core, int argc, co
 }
 
 RZ_IPI RzCmdStatus rz_analysis_function_vars_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
+	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, core->offset);
 	if (!fcn) {
-		eprintf("Cannot find function in 0x%08" PFMT64x "\n", core->offset);
 		return RZ_CMD_STATUS_ERROR;
 	}
 
@@ -6721,9 +6733,8 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_handler(RzCore *core, int argc, con
 }
 
 RZ_IPI RzCmdStatus rz_analysis_function_vars_dis_refs_handler(RzCore *core, int argc, const char **argv) {
-	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
+	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, core->offset);
 	if (!fcn) {
-		eprintf("Cannot find function in 0x%08" PFMT64x "\n", core->offset);
 		return RZ_CMD_STATUS_ERROR;
 	}
 
@@ -6757,9 +6768,8 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_dis_refs_handler(RzCore *core, int 
 }
 
 RZ_IPI RzCmdStatus rz_analysis_function_vars_del_handler(RzCore *core, int argc, const char **argv) {
-	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
+	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, core->offset);
 	if (!fcn) {
-		eprintf("Cannot find function in 0x%08" PFMT64x "\n", core->offset);
 		return RZ_CMD_STATUS_ERROR;
 	}
 
@@ -6770,9 +6780,8 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_del_handler(RzCore *core, int argc,
 }
 
 RZ_IPI RzCmdStatus rz_analysis_function_vars_detect_handler(RzCore *core, int argc, const char **argv) {
-	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
+	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, core->offset);
 	if (!fcn) {
-		eprintf("Cannot find function in 0x%08" PFMT64x "\n", core->offset);
 		return RZ_CMD_STATUS_ERROR;
 	}
 
@@ -6782,9 +6791,8 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_detect_handler(RzCore *core, int ar
 }
 
 RZ_IPI RzCmdStatus rz_analysis_function_vars_display_handler(RzCore *core, int argc, const char **argv) {
-	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
+	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, core->offset);
 	if (!fcn) {
-		eprintf("Cannot find function in 0x%08" PFMT64x "\n", core->offset);
 		return RZ_CMD_STATUS_ERROR;
 	}
 
@@ -6824,7 +6832,10 @@ static int delta_cmp2(const void *a, const void *b) {
 }
 
 RZ_IPI RzCmdStatus rz_analysis_function_vars_stackframe_handler(RzCore *core, int argc, const char **argv) {
-	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
+	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, core->offset);
+	if (!fcn) {
+		return RZ_CMD_STATUS_ERROR;
+	}
 	RzListIter *iter;
 	RzAnalysisVar *p;
 	RzList *list = rz_analysis_var_all_list(core->analysis, fcn);
@@ -6862,9 +6873,8 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_rename_handler(RzCore *core, int ar
 }
 
 static RzCmdStatus analysis_function_vars_accesses(RzCore *core, int access_type, const char *varname) {
-	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
+	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, core->offset);
 	if (!fcn) {
-		eprintf("Cannot find function in 0x%08" PFMT64x "\n", core->offset);
 		return RZ_CMD_STATUS_ERROR;
 	}
 
@@ -6896,9 +6906,8 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_writes_handler(RzCore *core, int ar
 }
 
 RZ_IPI RzCmdStatus rz_analysis_function_vars_type_handler(RzCore *core, int argc, const char **argv) {
-	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
+	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, core->offset);
 	if (!fcn) {
-		eprintf("Cannot find function in 0x%08" PFMT64x "\n", core->offset);
 		return RZ_CMD_STATUS_ERROR;
 	}
 
@@ -6919,9 +6928,8 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_type_handler(RzCore *core, int argc
 }
 
 RZ_IPI RzCmdStatus rz_analysis_function_args_and_vars_xrefs_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode, bool use_args, bool use_vars) {
-	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
+	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, core->offset);
 	if (!fcn) {
-		eprintf("Cannot find function in 0x%08" PFMT64x "\n", core->offset);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	PJ *pj = NULL;
@@ -6987,26 +6995,6 @@ static RzCmdStatus analysis_function_vars_kind_list(RzCore *core, RzAnalysisFunc
 	return RZ_CMD_STATUS_OK;
 }
 
-static RzAnalysisFunction *analysis_get_function_in(RzAnalysis *analysis, ut64 offset) {
-	RzAnalysisFunction *fcn = NULL;
-	RzList *list = rz_analysis_get_functions_in(analysis, offset);
-	if (rz_list_empty(list)) {
-		RZ_LOG_ERROR("No function found\n");
-		goto exit;
-	}
-	if (rz_list_length(list) > 1) {
-		RZ_LOG_ERROR("Multiple functions found\n");
-		goto exit;
-	}
-	fcn = rz_list_first(list);
-	if (!fcn) {
-		RZ_LOG_ERROR("No function found\n");
-	}
-exit:
-	rz_list_free(list);
-	return fcn;
-}
-
 static RzCmdStatus analysis_function_vars_del(RzCore *core, RzAnalysisVarKind kind, const char *varname) {
 	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, core->offset);
 	if (!fcn) {
@@ -7026,9 +7014,8 @@ static RzCmdStatus analysis_function_vars_del_all(RzCore *core, RzAnalysisVarKin
 }
 
 static RzCmdStatus analysis_function_vars_getsetref(RzCore *core, int delta, ut64 addr, RzAnalysisVarKind kind, RzAnalysisVarAccessType access_type) {
-	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
+	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, core->offset);
 	if (!fcn) {
-		eprintf("Cannot find function in 0x%08" PFMT64x "\n", core->offset);
 		return RZ_CMD_STATUS_ERROR;
 	}
 
@@ -7051,9 +7038,8 @@ static RzCmdStatus analysis_function_vars_getsetref(RzCore *core, int delta, ut6
 /// --------- Base pointer based variable handlers -------------
 
 RZ_IPI RzCmdStatus rz_analysis_function_vars_bp_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
+	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, core->offset);
 	if (!fcn) {
-		eprintf("Cannot find function in 0x%08" PFMT64x "\n", core->offset);
 		return RZ_CMD_STATUS_ERROR;
 	}
 
@@ -7100,9 +7086,8 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_bp_setref_handler(RzCore *core, int
 /// --------- Register-based variable handlers -------------
 
 RZ_IPI RzCmdStatus rz_analysis_function_vars_regs_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
+	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, core->offset);
 	if (!fcn) {
-		eprintf("Cannot find function in 0x%08" PFMT64x "\n", core->offset);
 		return RZ_CMD_STATUS_ERROR;
 	}
 
@@ -7164,9 +7149,8 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_regs_setref_handler(RzCore *core, i
 /// --------- Stack-based variable handlers -------------
 
 RZ_IPI RzCmdStatus rz_analysis_function_vars_sp_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
+	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, core->offset);
 	if (!fcn) {
-		eprintf("Cannot find function in 0x%08" PFMT64x "\n", core->offset);
 		return RZ_CMD_STATUS_ERROR;
 	}
 
