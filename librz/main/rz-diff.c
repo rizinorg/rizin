@@ -1262,7 +1262,7 @@ static char *execute_command(const char *command, const char *filename, DiffCont
 		return NULL;
 	}
 
-	if (ctx->analyze_all && !rz_core_analysis_everything(a->core, false, NULL)) {
+	if (ctx->analyze_all && !rz_core_analysis_everything(cfile->core, false, NULL)) {
 		rz_diff_error("cannot analyze binary '%s'\n", ctx->file_a);
 	}
 
