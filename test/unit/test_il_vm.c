@@ -358,10 +358,9 @@ static bool test_rzil_vm_op_repeat() {
 
 	RzILVar *var = rz_il_vm_create_global_variable(vm, "leetbap", RZIL_VAR_TYPE_UNK, true);
 	rz_il_hash_bind(vm, var, rz_il_vm_create_value_bitv(vm, rz_bv_new_from_ut64(8, 0x42)));
-	RzILOpBitVector *bitv_val = rz_il_op_new_bitv(rz_il_hash_find_val_by_name(vm, var->var_name)->data.bv);
-	RzILOpBitVector *sub = rz_il_op_new_sub(bitv_val, rz_il_op_new_bitv_from_ut64(8, 0x01));
+	RzILOpBitVector *sub = rz_il_op_new_sub(rz_il_op_new_var("leetbap"), rz_il_op_new_bitv_from_ut64(8, 0x01));
 	RzILOpEffect *data_eff = rz_il_op_new_set("leetbap", sub);
-	RzILOpBool *c = rz_il_op_new_non_zero(sub);
+	RzILOpBool *c = rz_il_op_new_non_zero(rz_il_op_pure_dup(sub));
 
 	RzILOpEffect *op = rz_il_op_new_repeat(c, data_eff);
 	bool succ = rz_il_evaluate_effect(vm, op);
