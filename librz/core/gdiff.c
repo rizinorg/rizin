@@ -447,7 +447,7 @@ static int graph_construct_nodes(RzCore *core, RzCore *core2, RzAnalysisFunction
 				core2->config = core->config;
 
 				char *modified = rz_core_cmd_strf(core2, "pdb @ 0x%08" PFMT64x, bbi->diff->addr);
-				if (!strcmp(original, modified)) {
+				if (!modified || !strcmp(original, modified)) {
 					// sometimes the mismatch is on a call value
 					// but the output is actually the same due sym./imp.
 					free(modified);
@@ -471,6 +471,7 @@ static int graph_construct_nodes(RzCore *core, RzCore *core2, RzAnalysisFunction
 				core2->config = oc;
 			} else {
 			graph_construct_nodes_is_same:
+
 				rz_str_replace_char(original, '"', '\'');
 				original = rz_str_replace(original, "\n", "\\l", 1);
 				printf("\t\"0x%08" PFMT64x "\" [fillcolor=\"%s\","

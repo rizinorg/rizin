@@ -75,6 +75,7 @@ typedef struct diff_context_t {
 	bool compare_addresses;
 	bool show_time;
 	bool colors;
+	bool analyze_all;
 	const char *architecture;
 	const char *input_a;
 	const char *input_b;
@@ -209,6 +210,7 @@ static void rz_diff_show_help(bool usage_only) {
 		"  -v        show version information\n"
 		"  -e [k=v]  set an evaluable config variable\n"
 		"  -A        compare virtual and physical addresses\n"
+		"  -B        run 'aaa' when loading the bin\n"
 		"  -C        disable colors\n"
 		"  -T        show timestamp information\n"
 		"  -S [WxH]  sets the width and height of the terminal for visual mode\n"
@@ -264,12 +266,13 @@ static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ct
 
 	RzGetopt opt;
 	int c;
-	rz_getopt_init(&opt, argc, argv, "hHjqvACTa:b:e:d:t:0:1:S:");
+	rz_getopt_init(&opt, argc, argv, "hHjqvABCTa:b:e:d:t:0:1:S:");
 	while ((c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case '0': rz_diff_ctx_set_def(ctx, input_a, NULL, opt.arg); break;
 		case '1': rz_diff_ctx_set_def(ctx, input_b, NULL, opt.arg); break;
 		case 'A': rz_diff_ctx_set_def(ctx, compare_addresses, false, true); break;
+		case 'B': rz_diff_ctx_set_def(ctx, analyze_all, false, true); break;
 		case 'C': rz_diff_ctx_set_def(ctx, colors, true, false); break;
 		case 'T': rz_diff_ctx_set_def(ctx, show_time, false, true); break;
 		case 'a': rz_diff_ctx_set_def(ctx, architecture, NULL, opt.arg); break;
@@ -1259,6 +1262,10 @@ static char *execute_command(const char *command, const char *filename, DiffCont
 		return NULL;
 	}
 
+	if (ctx->analyze_all && !rz_core_analysis_everything(a->core, false, NULL)) {
+		rz_diff_error("cannot analyze binary '%s'\n", ctx->file_a);
+	}
+
 	char *output = rz_core_cmd_str(cfile->core, command);
 	rz_core_free(cfile->core);
 	return output;
@@ -1421,7 +1428,6 @@ static bool rz_diff_graphs_files(DiffContext *ctx) {
 	if (ctx->type == DIFF_TYPE_PLOTDIFF) {
 		ut64 address_a = 0;
 		ut64 address_b = 0;
-		bool analyze_recursively = rz_config_get_i(a->core->config, "analysis.calls");
 
 		if (!convert_offset_from_input(a->core, ctx->input_a, &address_a)) {
 			rz_diff_error("cannot convert '%s' into an offset\n", ctx->input_a);
@@ -1433,14 +1439,25 @@ static bool rz_diff_graphs_files(DiffContext *ctx) {
 			goto rz_diff_graphs_files_bad;
 		}
 
-		if (!rz_core_analysis_function_add(a->core, NULL, address_a, analyze_recursively)) {
-			rz_diff_error("cannot find function at '%s' in '%s' \n", ctx->input_a, ctx->file_a);
-			goto rz_diff_graphs_files_bad;
-		}
-
-		if (!rz_core_analysis_function_add(b->core, NULL, address_b, analyze_recursively)) {
-			rz_diff_error("cannot find function at '%s' in '%s' \n", ctx->input_b, ctx->file_b);
-			goto rz_diff_graphs_files_bad;
+		if (ctx->analyze_all) {
+			if (!rz_core_analysis_everything(a->core, false, NULL)) {
+				rz_diff_error("cannot analyze binary '%s'\n", ctx->file_a);
+				goto rz_diff_graphs_files_bad;
+			}
+			if (!rz_core_analysis_everything(b->core, false, NULL)) {
+				rz_diff_error("cannot analyze binary '%s'\n", ctx->file_b);
+				goto rz_diff_graphs_files_bad;
+			}
+		} else {
+			bool analyze_recursively = rz_config_get_i(a->core->config, "analysis.calls");
+			if (!rz_core_analysis_function_add(a->core, NULL, address_a, analyze_recursively)) {
+				rz_diff_error("cannot find function at '%s' in '%s' \n", ctx->input_a, ctx->file_a);
+				goto rz_diff_graphs_files_bad;
+			}
+			if (!rz_core_analysis_function_add(b->core, NULL, address_b, analyze_recursively)) {
+				rz_diff_error("cannot find function at '%s' in '%s' \n", ctx->input_b, ctx->file_b);
+				goto rz_diff_graphs_files_bad;
+			}
 		}
 
 		if (!rz_core_gdiff_function_2_files(a->core, b->core, address_a, address_b)) {
@@ -1450,11 +1467,11 @@ static bool rz_diff_graphs_files(DiffContext *ctx) {
 		rz_core_diff_show_function(a->core, b->core, address_a, ctx->mode == DIFF_MODE_JSON);
 	} else {
 		if (!rz_core_analysis_everything(a->core, false, NULL)) {
-			rz_diff_error("cannot set analyze binary '%s'\n", ctx->file_a);
+			rz_diff_error("cannot analyze binary '%s'\n", ctx->file_a);
 			goto rz_diff_graphs_files_bad;
 		}
 		if (!rz_core_analysis_everything(b->core, false, NULL)) {
-			rz_diff_error("cannot set analyze binary '%s'\n", ctx->file_b);
+			rz_diff_error("cannot analyze binary '%s'\n", ctx->file_b);
 			goto rz_diff_graphs_files_bad;
 		}
 		if (!rz_core_gdiff_2_files(a->core, b->core)) {
